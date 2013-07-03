@@ -1048,6 +1048,7 @@ out:
  * @chip:	nand chip info structure
  * @buf:	data buffer
  */
+ 
 static int brcmnand_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
 	const uint8_t *buf, int oob_required)
 {
@@ -1198,7 +1199,7 @@ out:
  * @raw:	use _raw version of write_page
  */
 static int brcmnand_write_page(struct mtd_info *mtd, struct nand_chip *chip,
-	const uint8_t *buf,int oob_required, int page, int cached, int raw)
+	uint32_t offset, int data_len,const uint8_t *buf,int oob_required, int page, int cached, int raw)
 {
 	chip->pagebuf = page;
 	chip->ecc.write_page(mtd, chip, buf,oob_required);
@@ -1308,7 +1309,7 @@ static int brcmnand_do_write_ops(struct mtd_info *mtd, loff_t to,
 		if (unlikely(oob))
 			oob = brcmnand_fill_oob(chip, oob, ops);
 			
-		ret = chip->write_page(mtd, chip, wbuf, 0,page, cached,
+		ret = chip->write_page(mtd, chip, 0, bytes, wbuf, 0,page, cached,
 		                       (ops->mode == MTD_OPS_RAW));
 		if (ret)
 			break;
@@ -1897,6 +1898,14 @@ brcmnand_command_lp(struct mtd_info *mtd, unsigned int command, int column, int 
 	}
 
 	chip->cmd_ctrl(mtd, NAND_CMD_NONE, NAND_NCE);
+
+#define NAND_CMD_DEPLETE1	0x100
+#define NAND_CMD_STATUS_ERROR	0x72
+/* multi-bank error status (banks 0-3) */
+#define NAND_CMD_STATUS_ERROR0	0x73
+#define NAND_CMD_STATUS_ERROR1	0x74
+#define NAND_CMD_STATUS_ERROR2	0x75
+#define NAND_CMD_STATUS_ERROR3	0x76
 
 	/*
 	 * program and erase have their own busy handlers

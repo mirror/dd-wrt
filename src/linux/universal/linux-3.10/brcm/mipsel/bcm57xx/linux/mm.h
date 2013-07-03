@@ -93,7 +93,7 @@
 #ifdef CONFIG_PROC_FS
 //#include <linux/smp_lock.h>
 #include <linux/proc_fs.h>
-#define BCM_PROC_FS 1
+//#define BCM_PROC_FS 1
 #endif
 #ifdef NETIF_F_HW_VLAN_TX
 #include <linux/if_vlan.h>

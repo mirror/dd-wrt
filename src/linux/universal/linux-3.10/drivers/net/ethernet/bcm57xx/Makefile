@@ -26,7 +26,7 @@ EXTRA_AFLAGS+=-I$(srctree)/brcm/include -I$(srctree)/brcm/shared/bcmwifi/include
 
 obj-$(CONFIG_BCM57XX) := bcm57xx.o
 
-bcm57xx-objs := $(B57SRCDIR)/linux/b57um.o $(B57SRCDIR)/linux/b57proc.o \
+bcm57xx-objs := $(B57SRCDIR)/linux/b57um.o \
 		$(B57SRCDIR)/linux/b57diag.o \
 		$(B57SRCDIR)/sys/tigon3.o $(B57SRCDIR)/sys/autoneg.o \
                 $(B57SRCDIR)/sys/5701rls.o $(B57SRCDIR)/sys/tcp_seg.o \
