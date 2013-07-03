@@ -3114,7 +3114,6 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_USBIP
 	{"usb_ip", "0", 0},
 #endif
-<<<<<<< .mine
 #ifdef HAVE_FREECWMP
 	{"freecwmp_enable", "1", 0},
 	{"freecwmp_acs_username", "softathome", 0},
@@ -3129,11 +3128,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"freecwmp_local_username", "softathome", 0},
 	{"freecwmp_local_password", "softathome", 0},
 #endif
-=======
 #ifdef HAVE_ZABBIX
 	{"zabbix_enable", "0", 0},
 #endif
->>>>>>> .r21982
 	{0, 0, 0}
 };
 #else
