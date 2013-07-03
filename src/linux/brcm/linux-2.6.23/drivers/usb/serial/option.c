@@ -28,6 +28,7 @@
   device features.
 */
 
+#define DRIVER_VERSION ""
 #define DRIVER_AUTHOR "Matthias Urlichs <smurf@smurf.noris.de>"
 #define DRIVER_DESC "USB Driver for GSM modems"
 
