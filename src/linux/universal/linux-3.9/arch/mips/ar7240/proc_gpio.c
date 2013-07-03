@@ -220,12 +220,14 @@ void set_wmac_gpio(int gpio, int val)
 
 }
 #endif
+extern int ath_nopcie;
 void set_wl0_gpio(int gpio, int val)
 {
 	register gpio_words wl0;
 	int shift;
 	int addr;
-
+	if (ath_nopcie)
+	    return;
 	unsigned int output = GPIOOUT_WL0_ADDR;
 	if (is_ar9300)
 		output = KSEG1ADDR(AR7240_PCI_MEM_BASE + 0x4050);
