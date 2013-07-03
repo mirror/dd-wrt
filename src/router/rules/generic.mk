@@ -19,6 +19,9 @@ endif
 ifeq ($(CONFIG_SANSFIL),y)
 DD_CFLAGS += -DHAVE_SANSFIL
 endif
+ifeq ($(CONFIG_ONNET_BLANK),y)
+DD_CFLAGS += -DHAVE_ONNET_BLANK
+endif
 ifeq ($(CONFIG_KORENRON),y)
 DD_CFLAGS += -DHAVE_KORENRON
 endif
