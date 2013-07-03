@@ -320,6 +320,11 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 		}
 		fclose(fp);
 	}
+	
+	if( !strcmp(fs, "") ){
+		sysprintf("echo \"<b>%s</b> not mounted <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "Unsupported Filesystem", dev);
+		return 1;
+	}
 
 	/* strategy one: mount to default location */
 	if (host == -1)		//K3
