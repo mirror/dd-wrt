@@ -89,6 +89,8 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 		}
 #elif HAVE_IPR
 		websWrite(wp, "IPR-CP v1.0 (%s)", SVN_REVISION);
+#elif HAVE_ONNET_BLANK
+		websWrite(wp, "Enterprise AP (%s)", date);
 #elif HAVE_ONNET
 		if (nvram_match("DD_BOARD", "Atheros Hornet")) {
 			websWrite(wp, "OTAi 9331 (%s)", date);
