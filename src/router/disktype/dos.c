@@ -35,6 +35,10 @@
  * Various local tweaks and additions.
  */
 
+struct volume {
+	u1	volume_serial[8];
+};
+
 struct systypes {
   unsigned char type;
   char *name;
@@ -596,7 +600,11 @@ void detect_ntfs(SECTION *section, int level)
 
   /* tell the user */
   print_line(level, "NTFS file system");
-
+  
+  /* use ntfs volume serial as uuid */
+  struct volume *vol = (struct volume *)(buf+72);
+  print_line(level + 1,  "UUID  %02X%02X%02X%02X%02X%02X%02X%02X", vol->volume_serial[7], vol->volume_serial[6] , vol->volume_serial[5] , vol->volume_serial[4], vol->volume_serial[3], vol->volume_serial[2], vol->volume_serial[1], vol->volume_serial[0]);
+  
   format_blocky_size(s, sectcount, sectsize, "sectors", NULL);
   print_line(level + 1, "Volume size %s", s);
 }
