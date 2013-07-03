@@ -51,7 +51,7 @@ else
 endif
 
 
-BCM947XX_OBJS += setup.o prom.o time.o irq.o perfcntr.o nvram_linux.o gpio.o cfe_env.o
+BCM947XX_OBJS += setup.o prom.o time.o irq.o nvram_linux.o gpio.o cfe_env.o
 
 # bcm947xx-objs += $(BCM947XX_OBJS)
 # obj-y += bcm947xx.o
