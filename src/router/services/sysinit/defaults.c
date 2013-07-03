@@ -91,6 +91,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_style", "ipr", 0},
 #elif HAVE_ENEO
 	{"router_style", "eneo", 0},
+#elif HAVE_ONNET
+	{"router_style", "onnet", 0},
 #elif HAVE_KORENRON
 	{"router_style", "korenron", 0},
 #else
@@ -346,7 +348,11 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_WNR2000
 	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_WHRHPGN
+#ifdef HAVE_ONNET
+	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+#else
 	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
+#endif
 #elif HAVE_DIR615E
 	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_DIR400
@@ -842,6 +848,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_WIKINGS)
 	{"wl0_ssid", "Excel Networks", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "Excel Networks", 0},	/* Service set ID (network name) */
+	{"wkregdomain", "IR"},
 #elif defined(HAVE_ESPOD)
 	{"wl0_ssid", "ESPOD", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "ESPOD", 0},	/* Service set ID (network name) */
@@ -860,6 +867,13 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_ssid", "imm", 0},
 	{"ath1_ssid", "imm_1", 0},
 	{"ath2_ssid", "imm_2", 0},
+#elif defined(HAVE_ONNET_BLANK)
+	{"ath0_ssid", "Enterprise WIFI", 0},
+	{"ath1_ssid", "Enterprise WIFI_1", 0},
+	{"ath2_ssid", "Enterprise WIFI_2", 0},
+#elif defined(HAVE_ONNET)
+	{"ath0_ssid", "OTAi", 0},
+	{"ath1_ssid", "OTAi_1", 0},
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
 	{"ath0_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
@@ -1013,6 +1027,9 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_CARLSONWIRELESS
 	{"ath0_channelbw", "40", 0},	/* ath0 channel bandwidth */
+#elif defined(HAVE_ONNET)
+	{"ath0_channelbw", "2040", 0},
+	{"ath1_channelbw", "2040", 0},
 #else
 	{"ath0_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
 	{"ath1_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
@@ -1410,6 +1427,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_name", "IMMERSIVE", 0},
 #elif  HAVE_NEXTMEDIA
 	{"router_name", "NEXTMEDIA", 0},
+#elif  HAVE_ONNET_BLANK
+	{"router_name", "Enterprise AP", 0},
+#elif  HAVE_ONNET
+	{"router_name", "OTAi", 0},
 #elif  HAVE_DDLAN
 	{"router_name", "WDSL-Modem XXX", 0},
 #elif  HAVE_TMK
@@ -3093,9 +3114,26 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_USBIP
 	{"usb_ip", "0", 0},
 #endif
+<<<<<<< .mine
+#ifdef HAVE_FREECWMP
+	{"freecwmp_enable", "1", 0},
+	{"freecwmp_acs_username", "softathome", 0},
+	{"freecwmp_acs_password", "softathome", 0},
+	{"freecwmp_acs_hostname", "86.96.241.17", 0},
+	{"freecwmp_acs_port", "7547", 0},
+	{"freecwmp_acs_path", "/ACSserver/ACS", 0},
+	{"freecwmp_acs_periodic_enable", "1", 0},
+	{"freecwmp_acs_periodic_interval", "172800", 0},
+	{"freecwmp_local_port", "51005", 0},
+	{"freecwmp_local_auth_enable", "1", 0},
+	{"freecwmp_local_username", "softathome", 0},
+	{"freecwmp_local_password", "softathome", 0},
+#endif
+=======
 #ifdef HAVE_ZABBIX
 	{"zabbix_enable", "0", 0},
 #endif
+>>>>>>> .r21982
 	{0, 0, 0}
 };
 #else
