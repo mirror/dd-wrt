@@ -437,6 +437,8 @@ static void __init ar7242_pci_reset(void)
 #define AR724X_PCI_CRP_SIZE	0x100
 static void __iomem *ar724x_pci_localcfg_base;
 
+int ath_nopcie=0;
+
 static int __init ar7242_pci_setup(void)
 {
 	void __iomem *base = ar724x_pci_ctrl_base;
@@ -478,6 +480,7 @@ static int __init ar7242_pci_setup(void)
 	t = __raw_readl(base + AR724X_PCI_REG_RESET);
 	if ((t & 0x1) == 0x0) {
 		printk(KERN_WARNING "PCI: no PCIe module found\n");
+		ath_nopcie=1;
 		return -ENODEV;
 	}
 

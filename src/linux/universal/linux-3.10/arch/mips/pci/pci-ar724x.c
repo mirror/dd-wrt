@@ -217,6 +217,7 @@ static void __init ar724x_pci_reset(void)
 	ar71xx_device_start(AR724X_RESET_PCIE_PHY);
 	ar71xx_device_start(AR724X_RESET_PCIE);
 }
+int ath_nopcie=0;
 
 static int __init ar724x_pci_setup(void)
 {
@@ -252,6 +253,7 @@ static int __init ar724x_pci_setup(void)
 	t = __raw_readl(base + AR724X_PCI_REG_RESET);
 	if ((t & AR724X_PCI_RESET_LINK_UP) == 0x0) {
 		printk(KERN_WARNING "PCI: no PCIe module found\n");
+		ath_nopcie=1;
 		return -ENODEV;
 	}
 

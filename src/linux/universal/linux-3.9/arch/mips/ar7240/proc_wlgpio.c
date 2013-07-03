@@ -106,6 +106,7 @@ gpio_proc_write (struct file *file, const char *buffer, unsigned long count,
   return procfs_buffer_size;
 }
 
+extern int ath_nopcie;
 
 
 
@@ -120,6 +121,8 @@ register_proc (void)
 #else
   int gpiocount = 16;
 #endif
+  if (ath_nopcie)
+    return;
   /* create directory gpio */
   gpio_dir = proc_mkdir ("wl0gpio", NULL);
   if (gpio_dir == NULL)
