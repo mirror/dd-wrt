@@ -1763,7 +1763,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	 "Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp",
 	 "Status_Wireless.asp", "Status_SputnikAPD.asp",
 	 "Status_OpenVPN.asp", "Status_Bandwidth.asp",
-	 "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", ""}
+	 "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", "Status_CWMP.asp"}
 	};
 	/*
 	 * real name is bmenu.menuname[i][j] 
@@ -1826,7 +1826,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 						      "statuSysInfo",
 						      "statuActivate",
 						      "statuMyPage",
-						      "statuGpio", ""}
+						      "statuGpio", 
+						      "statuCWMP"}
 	};
 	static char menu[8][12][32];
 	static char menuname[8][13][32];
@@ -2086,6 +2087,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					j++;
 #ifndef HAVE_STATUS_GPIO
 				if (!strcmp(menu[i][j], "Gpio.asp"))
+					j++;
+#endif
+#ifndef HAVE_FREECWMP
+				if (!strcmp(menu[i][j], "Status_CWMP.asp"))
 					j++;
 #endif
 #ifdef HAVE_MADWIFI

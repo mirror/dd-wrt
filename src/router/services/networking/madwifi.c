@@ -1743,6 +1743,12 @@ static void configure_single(int count)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "ERC_vap"));
 #elif defined(HAVE_CORENET)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "corenet.ap"));
+#elif defined(HAVE_ONNET_BLANK)
+		sysprintf("iwconfig %s essid -- \"%s\"", var,
+			  nvram_default_get(ssid, "Enterprise WIFI_vap"));
+#elif defined(HAVE_ONNET)
+		sysprintf("iwconfig %s essid -- \"%s\"", var,
+			  nvram_default_get(ssid, "OTAi_vap"));
 #elif defined(HAVE_KORENRON)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "WBR2000_vap"));
 #else

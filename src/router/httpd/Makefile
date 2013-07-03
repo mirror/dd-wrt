@@ -217,10 +217,10 @@ endif
 ifeq ($(CONFIG_GUESTPORT),y)
 CFLAGS += -DHAVE_GUESTPORT
 endif
-endif
-
 ifeq ($(CONFIG_FREECWMP),y)
 CFLAGS += -DHAVE_FREECWMP
+VISOBJS += freecwmp.o
+endif
 endif
 
 ifeq ($(CONFIG_RB500),y)
@@ -386,6 +386,9 @@ CFLAGS += -DHAVE_ENEO
 endif
 ifeq ($(CONFIG_ONNET),y)
 CFLAGS += -DHAVE_ONNET
+endif
+ifeq ($(CONFIG_ONNET_BLANK),y)
+CFLAGS += -DHAVE_ONNET_BLANK
 endif
 ifeq ($(CONFIG_VILIM),y)
 CFLAGS += -DHAVE_VILIM
