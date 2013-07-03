@@ -231,59 +231,7 @@ static	int	atoi(const char *p)
 	return	(minus ? -ret : ret);
 }
 
-static	int	buffalo_set_value_write_proc(struct file *file, const char *buf, unsigned long count, void *data)
-{
-	char			tmp[16];
-	int				len	= count;
 
-//	printk(KERN_EMERG "@@set_value called\n");
-
-	if (len>=sizeof(tmp))	len	= sizeof(tmp)-1;
-	memset(tmp,0,sizeof(tmp));
-	if(copy_from_user(tmp, buf, len)){
-		printk(KERN_NOTICE "@@copy_from_user fail\n");
-		return -EFAULT;
-	}
-
-	if (data)
-	{
-		u_int32_t	val = atoi(tmp);
-		printk(KERN_EMERG "@@change value %d -> %d\n", *(u_int32_t *)data, val);
-
-		*(u_int32_t *)data	= val;
-		buffalo_spi_clock_update();
-		return	count;
-	}
-	return	-EFAULT;
-}
-
-static struct proc_dir_entry *g_pktlog_pde;
-static	void	create_proc_entry_buffalo(void *sc)
-{
-//	static int idx=0;
-	struct proc_dir_entry *ent;
-	char name[32];
-
-#define BUFFALO_DEBUG_PROC_DIR "spi_debug"
-	sprintf(name, BUFFALO_DEBUG_PROC_DIR);
-	g_pktlog_pde = proc_mkdir(name, NULL);
-
-//	if (idx)	return;
-
-	//	g_buffalo_backup_clock
-	sprintf(name, "clock_div");
-	ent	= create_proc_entry(name, 0644, g_pktlog_pde);
-	if (ent) {
-		extern	u_int32_t	g_buffalo_clock_div;
-		ent->data		= &g_buffalo_clock_div;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,22)
-		ent->owner = THIS_MODULE;
-#endif
-		ent->write_proc	= buffalo_set_value_write_proc;
-	}
-	//	count-up
-//	idx++;
-}
 #endif	//CONFIG_BUFFALO
 
 #define AR7240_FLASH_SIZE_2MB          (2*1024*1024)
@@ -704,7 +652,6 @@ static int __init ar7240_flash_init(void)
 #endif	//CONFIG_BUFFALO
 
 #ifdef	CONFIG_BUFFALO
-	create_proc_entry_buffalo(NULL);
 	get_ahb_clock();
 //	buffalo_spi_clock_update();
 #else	//CONFIG_BUFFALO
