@@ -747,13 +747,26 @@ ifeq ($(CONFIG_BUFFALO_SA),y)
 	#test
 	#tools/bufenc/encryptRC4 WZR-HP-G450H 1.99 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg450-firmware.enc
 	#tools/bufenc/mkfw -hw_ver=0 -productid=00000003  -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.99" "2.08" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_MULTI.enc
+
+	tools/bufenc/encryptRC4 BHR-4GRV 1.93 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/bhr4grv-firmware.enc
+	tools/bufenc/mkfw -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "BHR-4GRV" "BHR-4GRV" "1.93" "2.08" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/bhr4grv-firmware.enc $(ARCH)-uclibc/bhr4grv-firmware_MULTI.enc
+
 else
 	tools/bufenc/encryptRC4 WZR-HP-G450H 1.86 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg450-firmware.enc
 	tools/bufenc/mkfw -hw_ver=0 -productid=00000003  -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.86" "2.08" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_MULTI.enc
+
+	tools/bufenc/encryptRC4 BHR-4GRV 1.93 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/bhr4grv-firmware.enc
+	tools/bufenc/mkfw -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "BHR-4GRV" "BHR-4GRV" "1.93" "2.08" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/bhr4grv-firmware.enc $(ARCH)-uclibc/bhr4grv-firmware_MULTI.enc
+
 endif
 else
 	tools/bufenc/encryptRC4 WZR-HP-G450H 1.86 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg450-firmware.enc
 	tools/bufenc/mkfw -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.86" "2.08" "US-EU-AP-TW-KR-CH-JP-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_MULTI.enc
+
+	tools/bufenc/encryptRC4 BHR-4GRV 1.93 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/bhr4grv-firmware.enc
+#	tools/bufenc/mkfw -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "BHR-4GRV" "BHR-4GRV" "1.93" "1.04" "JP" "jp" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/bhr4grv-firmware.enc $(ARCH)-uclibc/bhr4grv-firmware_MULTI.enc
+	tools/bufenc/mkfw -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "BHR-4GRV" "BHR-4GRV" "1.93" "1.04" "US-EU-AP-TW-KR-CH-JP-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/bhr4grv-firmware.enc $(ARCH)-uclibc/bhr4grv-firmware_MULTI.enc
+
 endif
 else
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),EU-US)
