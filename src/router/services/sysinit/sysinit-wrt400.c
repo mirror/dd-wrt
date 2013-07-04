@@ -169,11 +169,11 @@ void start_sysinit(void)
 #elif HAVE_WZRG450
 		fseek(fp, 0x51002, SEEK_SET);	//osprey eeprom mac location
 		fread(mactmp, 6, 1, fp);
-		fclose(fp);
 		if (!memcmp(mactmp, "\xff\xff\xff\xff\xff\xff", 6)) {
 			fseek(fp, 0x50000, SEEK_SET);	//osprey eeprom mac location
 			fread(mactmp, 6, 1, fp);
 		}
+		fclose(fp);
 		for (i = 0; i < 6; i++)
 			copy[i] = mactmp[i];
 		for (i = 0; i < 6; i++)
