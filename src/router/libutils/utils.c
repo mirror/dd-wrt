@@ -1868,10 +1868,19 @@ int internal_getRouterBrand()
 #elif HAVE_WZRG450
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
+	char *model = getUEnv("product");
+
+
 #ifdef HAVE_BUFFALO
-	setRouter("WZR-HP-G450H");
+	if (!strcmp(model,"BHR-4GRV"))
+	    setRouter("BHR-4GRV");
+	else
+	    setRouter("WZR-HP-G450H");
 #else
-	setRouter("Buffalo WZR-HP-G450H");
+	if (!strcmp(model,"BHR-4GRV"))
+	    setRouter("Buffalo BHR-4GRV");
+	else
+	    setRouter("Buffalo WZR-HP-G450H");
 #endif
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRG300NH
