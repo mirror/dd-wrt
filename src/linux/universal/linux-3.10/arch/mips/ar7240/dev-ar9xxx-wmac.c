@@ -28,27 +28,28 @@
 static struct ath9k_platform_data ar9xxx_wmac_data = {
 	.led_pin = -1,
 };
+
 static char ar9xxx_wmac_mac[6];
 
 static struct resource ar9xxx_wmac_resources[] = {
 	{
-		/* .start and .end fields are filled dynamically */
-		.flags	= IORESOURCE_MEM,
-	}, {
-		.start	= AR71XX_CPU_IRQ_IP2,
-		.end	= AR71XX_CPU_IRQ_IP2,
-		.flags	= IORESOURCE_IRQ,
-	},
+	 /* .start and .end fields are filled dynamically */
+	 .flags = IORESOURCE_MEM,
+	 }, {
+	     .start = AR71XX_CPU_IRQ_IP2,
+	     .end = AR71XX_CPU_IRQ_IP2,
+	     .flags = IORESOURCE_IRQ,
+	     },
 };
 
 static struct platform_device ar9xxx_wmac_device = {
-	.name		= "ath9k",
-	.id		= -1,
-	.resource	= ar9xxx_wmac_resources,
-	.num_resources	= ARRAY_SIZE(ar9xxx_wmac_resources),
+	.name = "ath9k",
+	.id = -1,
+	.resource = ar9xxx_wmac_resources,
+	.num_resources = ARRAY_SIZE(ar9xxx_wmac_resources),
 	.dev = {
 		.platform_data = &ar9xxx_wmac_data,
-	},
+		},
 };
 
 static void ar913x_wmac_init(void)
@@ -98,8 +99,7 @@ static void ar933x_wmac_init(void)
 	ar9xxx_wmac_device.name = "ar933x_wmac";
 	ar9xxx_wmac_resources[0].start = AR933X_WMAC_BASE;
 	ar9xxx_wmac_resources[0].end = AR933X_WMAC_BASE + AR933X_WMAC_SIZE - 1;
-	if (ar71xx_ref_freq == MHZ_25)
-	{
+	if (ar71xx_ref_freq == MHZ_25) {
 		printk(KERN_EMERG "25MHZ ref freq\n");
 		ar9xxx_wmac_data.is_clk_25mhz = true;
 	}
@@ -118,11 +118,10 @@ static void ar934x_wmac_init(void)
 	ar9xxx_wmac_resources[0].end = AR934X_WMAC_BASE + AR934X_WMAC_SIZE - 1;
 	ar9xxx_wmac_resources[1].start = AR934X_IP2_IRQ_WMAC;
 	ar9xxx_wmac_resources[1].start = AR934X_IP2_IRQ_WMAC;
-	if (ar71xx_ref_freq == MHZ_25)
-		{
+	if (ar71xx_ref_freq == MHZ_25) {
 		printk(KERN_EMERG "25MHZ ref freq\n");
 		ar9xxx_wmac_data.is_clk_25mhz = true;
-		}
+	}
 }
 
 void __init ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr)
@@ -149,8 +148,7 @@ void __init ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr)
 	}
 
 	if (cal_data)
-		memcpy(ar9xxx_wmac_data.eeprom_data, cal_data,
-		       sizeof(ar9xxx_wmac_data.eeprom_data));
+		memcpy(ar9xxx_wmac_data.eeprom_data, cal_data, sizeof(ar9xxx_wmac_data.eeprom_data));
 
 	if (mac_addr) {
 		memcpy(ar9xxx_wmac_mac, mac_addr, sizeof(ar9xxx_wmac_mac));

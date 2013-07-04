@@ -20,10 +20,10 @@
 
 static void (*_prom_putchar) (unsigned char);
 
-static inline void prom_putchar_wait(void __iomem *reg, u32 mask, u32 val)
+static inline void prom_putchar_wait(void __iomem * reg, u32 mask, u32 val)
 {
 	u32 t;
-	int cnt=1000;
+	int cnt = 1000;
 	do {
 		t = __raw_readl(reg);
 		if ((t & mask) == val)
@@ -45,11 +45,9 @@ static void prom_putchar_ar933x(unsigned char ch)
 {
 	void __iomem *base = (void __iomem *)(KSEG1ADDR(AR933X_UART_BASE));
 
-	prom_putchar_wait(base + AR933X_UART_DATA_REG, AR933X_UART_DATA_TX_CSR,
-			  AR933X_UART_DATA_TX_CSR);
+	prom_putchar_wait(base + AR933X_UART_DATA_REG, AR933X_UART_DATA_TX_CSR, AR933X_UART_DATA_TX_CSR);
 	__raw_writel(AR933X_UART_DATA_TX_CSR | ch, base + AR933X_UART_DATA_REG);
-	prom_putchar_wait(base + AR933X_UART_DATA_REG, AR933X_UART_DATA_TX_CSR,
-			  AR933X_UART_DATA_TX_CSR);
+	prom_putchar_wait(base + AR933X_UART_DATA_REG, AR933X_UART_DATA_TX_CSR, AR933X_UART_DATA_TX_CSR);
 }
 
 static void prom_putchar_dummy(unsigned char ch)

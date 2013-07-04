@@ -61,27 +61,23 @@ EXPORT_SYMBOL_GPL(ar71xx_ahb_freq);
 u32 ar71xx_ddr_freq;
 EXPORT_SYMBOL_GPL(ar71xx_ddr_freq);
 
-
 static int __init ar7100_init_ioc(void);
 void Uart16550Init(void);
 
-void
-ar7100_restart(char *command)
+void ar7100_restart(char *command)
 {
-	for(;;) {
+	for (;;) {
 		ar7100_reg_wr(AR7100_RESET, AR7100_RESET_FULL_CHIP);
 	}
 }
 
-void
-ar7100_halt(void)
+void ar7100_halt(void)
 {
 	printk(KERN_NOTICE "\n** You can safely turn off the power\n");
-	while (1);
+	while (1) ;
 }
 
-void
-ar7100_power_off(void)
+void ar7100_power_off(void)
 {
 	ar7100_halt();
 }
@@ -89,20 +85,19 @@ ar7100_power_off(void)
 #define sysRegRead(phys)	\
 	(*(volatile u32 *)KSEG1ADDR(phys))
 
-
-int is_ar9000=0;
+int is_ar9000 = 0;
 EXPORT_SYMBOL(is_ar9000);
-const char 
+const char
 *get_system_type(void)
 {
-char *chip;
-u32 id;
-u32 rev;
-static char str[64];
-is_ar9000=0;
+	char *chip;
+	u32 id;
+	u32 rev;
+	static char str[64];
+	is_ar9000 = 0;
 	id = ar71xx_reset_rr(RESET_REG_REV_ID) & REV_ID_MASK;
 	rev = (id >> REV_ID_REVISION_SHIFT) & REV_ID_REVISION_MASK;
-switch (id & REV_ID_CHIP_MASK) {
+	switch (id & REV_ID_CHIP_MASK) {
 	case REV_ID_CHIP_AR7130:
 		chip = "7130";
 		break;
@@ -114,23 +109,21 @@ switch (id & REV_ID_CHIP_MASK) {
 		break;
 	case REV_ID_CHIP_AR9130:
 		chip = "9130";
-		is_ar9000=1;
+		is_ar9000 = 1;
 		break;
 	case REV_ID_CHIP_AR9132:
 		chip = "9132";
-		is_ar9000=1;
+		is_ar9000 = 1;
 		break;
 	default:
 		chip = "71xx";
 	}
-sprintf(str, "Atheros AR%s rev %u (0x%02x)",
-		chip, rev, id);
-return str;
+	sprintf(str, "Atheros AR%s rev %u (0x%02x)", chip, rev, id);
+	return str;
 }
 
 #if defined(CONFIG_AR9100)
-int
-valid_wmac_num(u_int16_t wmac_num)
+int valid_wmac_num(u_int16_t wmac_num)
 {
 	return (wmac_num == 0);
 }
@@ -139,41 +132,37 @@ valid_wmac_num(u_int16_t wmac_num)
  * HOWL has only one wmac device, hence the following routines
  * ignore the wmac_num parameter
  */
-int
-get_wmac_irq(u_int16_t wmac_num)
+int get_wmac_irq(u_int16_t wmac_num)
 {
 	return AR7100_CPU_IRQ_WMAC;
 }
 
-unsigned long
-get_wmac_base(u_int16_t wmac_num)
+unsigned long get_wmac_base(u_int16_t wmac_num)
 {
 	return KSEG1ADDR(AR9100_WMAC_BASE);
 }
 
-unsigned long
-get_wmac_mem_len(u_int16_t wmac_num)
+unsigned long get_wmac_mem_len(u_int16_t wmac_num)
 {
 	return AR9100_WMAC_LEN;
 }
 
-void
-enable_wmac_led()
+void enable_wmac_led()
 {
-    ar7100_reg_rmw_set(AR7100_GPIO_FUNCTIONS, AR7100_GPIO_FUNCTION_WMAC_LED);
+	ar7100_reg_rmw_set(AR7100_GPIO_FUNCTIONS, AR7100_GPIO_FUNCTION_WMAC_LED);
 }
-EXPORT_SYMBOL(enable_wmac_led);
 
+EXPORT_SYMBOL(enable_wmac_led);
 
 extern void ar7100_set_gpio(int gpio, int val);
 
-void
-disable_wmac_led()
+void disable_wmac_led()
 {
-    ar7100_reg_rmw_clear(AR7100_GPIO_FUNCTIONS, AR7100_GPIO_FUNCTION_WMAC_LED);
-    
-    ar7100_set_gpio(6,1);
+	ar7100_reg_rmw_clear(AR7100_GPIO_FUNCTIONS, AR7100_GPIO_FUNCTION_WMAC_LED);
+
+	ar7100_set_gpio(6, 1);
 }
+
 EXPORT_SYMBOL(disable_wmac_led);
 
 EXPORT_SYMBOL(valid_wmac_num);
@@ -190,10 +179,9 @@ static void __init ar71xx_detect_mem_size(void)
 	u8 memsave;
 	u32 size;
 
-	p = (volatile u8 *) KSEG1ADDR(0);
+	p = (volatile u8 *)KSEG1ADDR(0);
 	memsave = *p;
-	for (size = AR71XX_MEM_SIZE_MIN;
-	     size <= (AR71XX_MEM_SIZE_MAX >> 1); size <<= 1) {
+	for (size = AR71XX_MEM_SIZE_MIN; size <= (AR71XX_MEM_SIZE_MAX >> 1); size <<= 1) {
 		volatile u8 *r;
 
 		r = (p + size);
@@ -211,7 +199,6 @@ static void __init ar71xx_detect_mem_size(void)
 
 	add_memory_region(0, size, BOOT_MEM_RAM);
 }
-
 
 /*
  * The bootloader musta set cpu_pll_config.
@@ -244,8 +231,7 @@ static void __init ar71xx_detect_sys_frequency(void)
 	u32 freq;
 	u32 div;
 
-	if ((ar71xx_reset_rr(RESET_REG_REV_ID) & REV_ID_MASK) >=
-			REV_ID_CHIP_AR9130) {
+	if ((ar71xx_reset_rr(RESET_REG_REV_ID) & REV_ID_MASK) >= REV_ID_CHIP_AR9130) {
 		return ar91xx_detect_sys_frequency();
 	}
 
@@ -267,24 +253,23 @@ static void __init ar71xx_detect_sys_frequency(void)
 #define AR71XX_UART_FLAGS (UPF_BOOT_AUTOCONF | UPF_SKIP_TEST)
 extern int early_serial_setup(struct uart_port *port);
 
-void __init
-ar7100_serial_setup(void)
+void __init ar7100_serial_setup(void)
 {
 	struct uart_port p;
 
 	memset(&p, 0, sizeof(p));
 
-	p.flags     = AR71XX_UART_FLAGS;
-	p.iotype    = UPIO_MEM32;
-	p.uartclk   = ar71xx_ahb_freq;
-	p.irq       = AR7100_MISC_IRQ_UART;
-	p.regshift  = 2;
-	p.mapbase   = (u32)KSEG1ADDR(AR7100_UART_BASE);
-	p.membase   = (void __iomem *)p.mapbase;
+	p.flags = AR71XX_UART_FLAGS;
+	p.iotype = UPIO_MEM32;
+	p.uartclk = ar71xx_ahb_freq;
+	p.irq = AR7100_MISC_IRQ_UART;
+	p.regshift = 2;
+	p.mapbase = (u32)KSEG1ADDR(AR7100_UART_BASE);
+	p.membase = (void __iomem *)p.mapbase;
 
 	if (early_serial_setup(&p) != 0)
 		printk(KERN_ERR "early_serial_setup failed\n");
-	
+
 }
 
 unsigned int __cpuinit get_c0_compare_irq(void)
@@ -294,36 +279,31 @@ unsigned int __cpuinit get_c0_compare_irq(void)
 
 unsigned int __cpuinit get_c0_compare_int(void)
 {
-    //printk("%s: returning timer irq : %d\n",__func__, AR7240_CPU_IRQ_TIMER);
-    return AR7100_CPU_IRQ_TIMER;
+	//printk("%s: returning timer irq : %d\n",__func__, AR7240_CPU_IRQ_TIMER);
+	return AR7100_CPU_IRQ_TIMER;
 }
-
 
 void __init plat_time_init(void)
 {
-    mips_hpt_frequency =  ar71xx_cpu_freq/2;
-    printk("%s: plat time init done\n", __func__);
+	mips_hpt_frequency = ar71xx_cpu_freq / 2;
+	printk("%s: plat time init done\n", __func__);
 }
 
-
 #if 1
-int 
-ar7100_be_handler(struct pt_regs *regs, int is_fixup)
+int ar7100_be_handler(struct pt_regs *regs, int is_fixup)
 {
 #ifndef CONFIG_AR9100
 	int error = 0, status, trouble = 0;
 #if 0
 	if (!is_fixup && (regs->cp0_cause & 4)) {
 		/* Data bus error - print PA */
-		printk("DBE physical address: %010Lx\n",
-		       __read_64bit_c0_register($26, 1));
+		printk("DBE physical address: %010Lx\n", __read_64bit_c0_register($26, 1));
 	}
 #endif
 	error = ar7100_reg_rd(AR7100_PCI_ERROR) & 3;
 
 	if (error) {
-		printk("PCI error %d at PCI addr 0x%x\n", 
-		       error, ar7100_reg_rd(AR7100_PCI_ERROR_ADDRESS));
+		printk("PCI error %d at PCI addr 0x%x\n", error, ar7100_reg_rd(AR7100_PCI_ERROR_ADDRESS));
 		ar7100_reg_wr(AR7100_PCI_ERROR, error);
 		ar7100_local_read_config(PCI_STATUS, 2, &status);
 		printk("PCI status: %#x\n", status);
@@ -334,8 +314,7 @@ ar7100_be_handler(struct pt_regs *regs, int is_fixup)
 	error = ar7100_reg_rd(AR7100_PCI_AHB_ERROR) & 1;
 
 	if (error) {
-		printk("AHB error at AHB address 0x%x\n", 
-		       ar7100_reg_rd(AR7100_PCI_AHB_ERROR_ADDRESS));
+		printk("AHB error at AHB address 0x%x\n", ar7100_reg_rd(AR7100_PCI_AHB_ERROR_ADDRESS));
 		ar7100_reg_wr(AR7100_PCI_AHB_ERROR, error);
 		ar7100_local_read_config(PCI_STATUS, 2, &status);
 		printk("PCI status: %#x\n", status);
@@ -348,8 +327,6 @@ ar7100_be_handler(struct pt_regs *regs, int is_fixup)
 }
 #endif
 
-
-
 void ar7100_gpio_config_output(int gpio);
 
 void __init plat_mem_setup(void)
@@ -357,24 +334,20 @@ void __init plat_mem_setup(void)
 #if 1
 	board_be_handler = ar7100_be_handler;
 #endif
-//	board_time_init	= ar7100_timer_init;
+//      board_time_init = ar7100_timer_init;
 	_machine_restart = ar7100_restart;
 	_machine_halt = ar7100_halt;
 	pm_power_off = ar7100_power_off;
 
-	ar71xx_ddr_base = ioremap_nocache(AR71XX_DDR_CTRL_BASE,
-						AR71XX_DDR_CTRL_SIZE);
+	ar71xx_ddr_base = ioremap_nocache(AR71XX_DDR_CTRL_BASE, AR71XX_DDR_CTRL_SIZE);
 
-	ar71xx_pll_base = ioremap_nocache(AR71XX_PLL_BASE,
-						AR71XX_PLL_SIZE);
+	ar71xx_pll_base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
 
-	ar71xx_reset_base = ioremap_nocache(AR71XX_RESET_BASE,
-						AR71XX_RESET_SIZE);
+	ar71xx_reset_base = ioremap_nocache(AR71XX_RESET_BASE, AR71XX_RESET_SIZE);
 
 	ar71xx_gpio_base = ioremap_nocache(AR71XX_GPIO_BASE, AR71XX_GPIO_SIZE);
 
-	ar71xx_usb_ctrl_base = ioremap_nocache(AR71XX_USB_CTRL_BASE,
-						AR71XX_USB_CTRL_SIZE);
+	ar71xx_usb_ctrl_base = ioremap_nocache(AR71XX_USB_CTRL_BASE, AR71XX_USB_CTRL_SIZE);
 
 	ar71xx_detect_mem_size();
 
@@ -387,18 +360,18 @@ void __init plat_mem_setup(void)
 	 ** is if system screws up before we register console, we won't see
 	 ** any msgs on the console.  System being stable now this should be
 	 ** a special case anyways. Just initialize Uart here.
-	 */ 
+	 */
 
 	Uart16550Init();
 
 #if 0
 	ar7100_serial_setup();
 #endif
-	printk(KERN_INFO "booting platform %s\n",get_system_type());
+	printk(KERN_INFO "booting platform %s\n", get_system_type());
 #ifdef CONFIG_AR9100
-    ar7100_set_gpio(6,1);
-    ar7100_reg_wr(AR9100_OBS_GPIO_1, 0x16);
-    ar7100_reg_wr(AR9100_OBS_OE, 0x40);
+	ar7100_set_gpio(6, 1);
+	ar7100_reg_wr(AR9100_OBS_GPIO_1, 0x16);
+	ar7100_reg_wr(AR9100_OBS_OE, 0x40);
 #endif
 }
 
@@ -453,7 +426,7 @@ void Uart16550Init()
 	MY_WRITE(0xb8040008, 0x2f);
 #endif
 
-	div = freq/(AG7100_CONSOLE_BAUD*16);
+	div = freq / (AG7100_CONSOLE_BAUD * 16);
 
 	/* set DIAB bit */
 	UART16550_WRITE(OFS_LINE_CONTROL, 0x80);
@@ -463,9 +436,9 @@ void Uart16550Init()
 	UART16550_WRITE(OFS_DIVISOR_MSB, (div >> 8) & 0xff);
 
 	/*UART16550_WRITE(OFS_DIVISOR_LSB, 0x61);
-	  UART16550_WRITE(OFS_DIVISOR_MSB, 0x03);*/
+	   UART16550_WRITE(OFS_DIVISOR_MSB, 0x03); */
 
-	/* clear DIAB bit*/ 
+	/* clear DIAB bit */
 	UART16550_WRITE(OFS_LINE_CONTROL, 0x00);
 
 	/* set data format */
@@ -474,10 +447,9 @@ void Uart16550Init()
 	UART16550_WRITE(OFS_INTR_ENABLE, 0);
 }
 
-
 u8 Uart16550GetPoll(void)
 {
-	while((UART16550_READ(OFS_LINE_STATUS) & 0x1) == 0);
+	while ((UART16550_READ(OFS_LINE_STATUS) & 0x1) == 0) ;
 	return UART16550_READ(OFS_RCV_BUFFER);
 }
 
@@ -487,45 +459,42 @@ void Uart16550Put(u8 byte)
 		serial_inited = 1;
 		Uart16550Init();
 	}
-	while (((UART16550_READ(OFS_LINE_STATUS)) & 0x20) == 0x0);
+	while (((UART16550_READ(OFS_LINE_STATUS)) & 0x20) == 0x0) ;
 	UART16550_WRITE(OFS_SEND_BUFFER, byte);
 }
 
 unsigned int ar7100_serial_in(int offset)
 {
-    return UART16550_READ(offset);
+	return UART16550_READ(offset);
 }
 
 void ar7100_serial_out(int offset, int value)
 {
-    UART16550_WRITE(offset, (u8)value);
+	UART16550_WRITE(offset, (u8)value);
 }
 
 #include <asm/uaccess.h>
 #define M_PERFCTL_EVENT(event)          ((event) << 5)
 unsigned int clocks_at_start;
 
-void
-start_cntrs(unsigned int event0, unsigned int event1)
+void start_cntrs(unsigned int event0, unsigned int event1)
 {
 	write_c0_perfcntr0(0x00000000);
 	write_c0_perfcntr1(0x00000000);
 	/*
 	 * go...
 	 */
-	write_c0_perfctrl0(0x80000000|M_PERFCTL_EVENT(event0)|0xf);
-	write_c0_perfctrl1(0x00000000|M_PERFCTL_EVENT(event1)|0xf);
+	write_c0_perfctrl0(0x80000000 | M_PERFCTL_EVENT(event0) | 0xf);
+	write_c0_perfctrl1(0x00000000 | M_PERFCTL_EVENT(event1) | 0xf);
 }
 
-void
-stop_cntrs(void)
+void stop_cntrs(void)
 {
 	write_c0_perfctrl0(0);
 	write_c0_perfctrl1(0);
 }
 
-void
-read_cntrs(unsigned int *c0, unsigned int *c1)
+void read_cntrs(unsigned int *c0, unsigned int *c1)
 {
 	*c0 = read_c0_perfcntr0();
 	*c1 = read_c0_perfcntr1();
@@ -536,12 +505,11 @@ static int ar7100_ioc_open(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static ssize_t
-ar7100_ioc_read(struct file * file, char * buf, size_t count, loff_t *ppos)
+static ssize_t ar7100_ioc_read(struct file *file, char *buf, size_t count, loff_t * ppos)
 {
 	unsigned int c0, c1, ticks = (read_c0_count() - clocks_at_start);
 	char str[256];
-	unsigned int secs = ticks/mips_hpt_frequency;
+	unsigned int secs = ticks / mips_hpt_frequency;
 
 	read_cntrs(&c0, &c1);
 	stop_cntrs();
@@ -552,23 +520,20 @@ ar7100_ioc_read(struct file * file, char * buf, size_t count, loff_t *ppos)
 }
 
 #if 0
-static void
-ar7100_dcache_test(void)
+static void ar7100_dcache_test(void)
 {
 	int i, j;
 	unsigned char p;
 
-	for(i = 0; i < 4; i++) {
-		for(j = 0; j < (10*1024); j++) {
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < (10 * 1024); j++) {
 			p = *((unsigned char *)0x81000000 + j);
 		}
 	}
 }
 #endif
 
-            
-static ssize_t
-ar7100_ioc_write(struct file * file, const char * buf, size_t count, loff_t *ppos)
+static ssize_t ar7100_ioc_write(struct file *file, const char *buf, size_t count, loff_t * ppos)
 {
 	int event0, event1;
 
@@ -582,21 +547,19 @@ ar7100_ioc_write(struct file * file, const char * buf, size_t count, loff_t *ppo
 }
 
 struct file_operations ar7100_ioc_fops = {
-	.open	= ar7100_ioc_open,
-	.read	= ar7100_ioc_read,
-	.write	= ar7100_ioc_write,
+	.open = ar7100_ioc_open,
+	.read = ar7100_ioc_read,
+	.write = ar7100_ioc_write,
 };
 
 /*
  * General purpose ioctl i/f
  */
-int __init
-ar7100_init_ioc(void)
+int __init ar7100_init_ioc(void)
 {
 	static int _mymajor;
 
-	_mymajor = register_chrdev(77, "AR7100_GPIOC", 
-				   &ar7100_ioc_fops);
+	_mymajor = register_chrdev(77, "AR7100_GPIOC", &ar7100_ioc_fops);
 
 	if (_mymajor < 0) {
 		printk("Failed to register GPIOC\n");
@@ -606,11 +569,10 @@ ar7100_init_ioc(void)
 	printk("AR7100 GPIOC major %d\n", _mymajor);
 	return 0;
 }
+
 unsigned int getCPUClock(void)
 {
-    return ar71xx_cpu_freq/1000000;
+	return ar71xx_cpu_freq / 1000000;
 }
 
-
 device_initcall(ar7100_init_ioc);
-

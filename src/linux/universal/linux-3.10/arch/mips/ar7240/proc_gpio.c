@@ -39,10 +39,7 @@ static void cleanup_proc(void);
 static char procfs_buffer[PROCFS_MAX_SIZE];
 static unsigned long procfs_buffer_size = 0;
 
-
-static ssize_t
-gpio_proc_read(struct file *file, char __user *buffer,
-		  size_t size, loff_t *ppos)
+static ssize_t gpio_proc_read(struct file *file, char __user * buffer, size_t size, loff_t * ppos)
 {
 	unsigned int *data = PDE_DATA(file_inode(file));
 
@@ -74,26 +71,18 @@ gpio_proc_read(struct file *file, char __user *buffer,
 		buf[0] = '0';
 #endif
 	buf[1] = 0;
-	return simple_read_from_buffer(buffer, size, ppos, buf,
-					sizeof(buf));
+	return simple_read_from_buffer(buffer, size, ppos, buf, sizeof(buf));
 }
 
-static ssize_t
-gpio_proc_info_read(struct file *file, char __user *buffer,
-		  size_t size, loff_t *ppos)
+static ssize_t gpio_proc_info_read(struct file *file, char __user * buffer, size_t size, loff_t * ppos)
 {
 	char buf[128];
-	sprintf
-		(buf, "GPIO_IN   %#08X \nGPIO_OUT  %#08X \nGPIO_DIR  %#08X \n",
-		 ar7240_reg_rd(AR7240_GPIO_IN), ar7240_reg_rd(AR7240_GPIO_OUT),
-		 ar7240_reg_rd(AR7240_GPIO_OE));
-		return simple_read_from_buffer(buffer, size, ppos, buf, strlen(buf));
+	sprintf(buf, "GPIO_IN   %#08X \nGPIO_OUT  %#08X \nGPIO_DIR  %#08X \n", ar7240_reg_rd(AR7240_GPIO_IN), ar7240_reg_rd(AR7240_GPIO_OUT), ar7240_reg_rd(AR7240_GPIO_OE));
+	return simple_read_from_buffer(buffer, size, ppos, buf, strlen(buf));
 
 }
 
-static ssize_t gpio_proc_write(struct file* file, const char __user * buffer,
-                             size_t count, loff_t *ppos)
-
+static ssize_t gpio_proc_write(struct file *file, const char __user * buffer, size_t count, loff_t * ppos)
 {
 	u32 reg = 0;
 	unsigned int *data = PDE_DATA(file_inode(file));
@@ -120,12 +109,10 @@ static ssize_t gpio_proc_write(struct file* file, const char __user * buffer,
 		if (procfs_buffer[0] == '0' || procfs_buffer[0] == 'i')
 			reg = reg | GPIO_CR_M(((unsigned int)data) & PIN_MASK);
 		if (procfs_buffer[0] == '1' || procfs_buffer[0] == 'o')
-			reg =
-			    reg & ~(GPIO_CR_M(((unsigned int)data) & PIN_MASK));
+			reg = reg & ~(GPIO_CR_M(((unsigned int)data) & PIN_MASK));
 	} else {
 		if (procfs_buffer[0] == '0' || procfs_buffer[0] == 'i')
-			reg =
-			    reg & ~(GPIO_CR_M(((unsigned int)data) & PIN_MASK));
+			reg = reg & ~(GPIO_CR_M(((unsigned int)data) & PIN_MASK));
 		if (procfs_buffer[0] == '1' || procfs_buffer[0] == 'o')
 			reg = reg | GPIO_CR_M(((unsigned int)data) & PIN_MASK);
 	}
@@ -221,7 +208,6 @@ void set_wmac_gpio(int gpio, int val)
 	ar7240_reg_wr(GPIO_WMAC_ADDR, wl0);	//ar9283 register [0x4048]
 	ar7240_reg_rd(GPIO_WMAC_ADDR);	//ar9283 register [0x4048]
 
-
 }
 #endif
 extern int ath_nopcie;
@@ -231,7 +217,7 @@ void set_wl0_gpio(int gpio, int val)
 	int shift;
 	int addr;
 	if (ath_nopcie)
-	    return;
+		return;
 	unsigned int output = GPIOOUT_WL0_ADDR;
 	if (is_ar9300)
 		output = KSEG1ADDR(AR7240_PCI_MEM_BASE + 0x4050);
@@ -279,29 +265,23 @@ int get_wl0_gpio(int gpio)
 	if (is_ar9300)
 		output = KSEG1ADDR(AR7240_PCI_MEM_BASE + 0x4050);
 
-	ar7240_reg_rmw(output,
-		       (AR9287_GPIO_OE_OUT_DRV_NO << gpio_shift),
-		       (AR9287_GPIO_OE_OUT_DRV << gpio_shift));
+	ar7240_reg_rmw(output, (AR9287_GPIO_OE_OUT_DRV_NO << gpio_shift), (AR9287_GPIO_OE_OUT_DRV << gpio_shift));
 
 	if (is_ar9300)
-		return (MS(ar7240_reg_rd(GPIOOUT_WL0_ADDR), AR9300_GPIO_IN_VAL) &
-			(1 << gpio)) != 0;
+		return (MS(ar7240_reg_rd(GPIOOUT_WL0_ADDR), AR9300_GPIO_IN_VAL) & (1 << gpio)) != 0;
 	else
-		return (MS(ar7240_reg_rd(GPIO_WL0_ADDR), AR9287_GPIO_IN_VAL) &
-			(1 << gpio)) != 0;
-	
+		return (MS(ar7240_reg_rd(GPIO_WL0_ADDR), AR9287_GPIO_IN_VAL) & (1 << gpio)) != 0;
+
 }
+
 #ifdef CONFIG_WASP_SUPPORT
 int get_wmac_gpio(int gpio)
 {
 	u32 gpio_shift;
 	gpio_shift = 2 * gpio;
-	ar7240_reg_rmw(GPIOOUT_WMAC_ADDR,
-		       (AR9287_GPIO_OE_OUT_DRV_NO << gpio_shift),
-		       (AR9287_GPIO_OE_OUT_DRV << gpio_shift));
+	ar7240_reg_rmw(GPIOOUT_WMAC_ADDR, (AR9287_GPIO_OE_OUT_DRV_NO << gpio_shift), (AR9287_GPIO_OE_OUT_DRV << gpio_shift));
 
-	return (MS(ar7240_reg_rd(GPIOIN_WMAC_ADDR), AR9300_GPIO_IN_VAL) &
-		(1 << gpio)) != 0;
+	return (MS(ar7240_reg_rd(GPIOIN_WMAC_ADDR), AR9300_GPIO_IN_VAL) & (1 << gpio)) != 0;
 }
 #endif
 
@@ -351,7 +331,6 @@ static const struct file_operations fops_info = {
 	.llseek = default_llseek,
 };
 
-
 static __init int register_proc(void)
 {
 	unsigned char i, flag = 0;
@@ -379,14 +358,13 @@ static __init int register_proc(void)
 			sprintf(proc_name, "%i_dir", i % gpiocount);
 		}
 
-		proc_gpio = proc_create_data(proc_name, S_IRUGO, gpio_dir,&fops_data, ((i % gpiocount) | flag));
+		proc_gpio = proc_create_data(proc_name, S_IRUGO, gpio_dir, &fops_data, ((i % gpiocount) | flag));
 
 	}
 
-	proc_gpio = proc_create("info", S_IRUGO, gpio_dir,&fops_info);
+	proc_gpio = proc_create("info", S_IRUGO, gpio_dir, &fops_info);
 
-	printk(KERN_NOTICE
-	       "gpio_proc: module loaded and /proc/gpio/ created\n");
+	printk(KERN_NOTICE "gpio_proc: module loaded and /proc/gpio/ created\n");
 	ar71xx_gpio_init();
 	return 0;
 

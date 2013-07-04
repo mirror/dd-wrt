@@ -32,26 +32,24 @@
 
 void prom_putchar(unsigned char ch)
 {
-	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0);
+	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0) ;
 	UART_WRITE(UART_TX, ch);
-	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0);
+	while (((UART_READ(UART_LSR)) & UART_LSR_THRE) == 0) ;
 }
-
-
 
 int __ath_flash_size;
 
 void __init prom_init(void)
 {
 #ifdef CONFIG_AR9100
-    printk ("flash_size passed from bootloader = %d\n", fw_arg3);
-    __ath_flash_size = fw_arg3;
+	printk("flash_size passed from bootloader = %d\n", fw_arg3);
+	__ath_flash_size = fw_arg3;
 #endif
 	/* 
 	 * if user passes kernel args, ignore the default one 
 	 */
 
-	mips_machtype  = MACH_ATHEROS_AP81;
+	mips_machtype = MACH_ATHEROS_AP81;
 
 }
 

@@ -21,10 +21,10 @@
 
 static struct ar71xx_pci_irq pb9x_pci_irqs[] __initdata = {
 	{
-		.slot	= 0,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV0,
-	}
+	 .slot = 0,
+	 .pin = 1,
+	 .irq = AR71XX_PCI_IRQ_DEV0,
+	 }
 };
 
 void __init pb9x_pci_init(void)

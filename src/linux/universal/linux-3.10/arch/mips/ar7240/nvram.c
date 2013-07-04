@@ -28,18 +28,17 @@ char *nvram_find_var(const char *name, const char *buf, unsigned buf_len)
 		return NULL;
 
 	if (len == 1)
-		return memchr(buf, (int) *name, buf_len);
+		return memchr(buf, (int)*name, buf_len);
 
-	last = (char *) buf + buf_len - len;
-	for (cur = (char *) buf; cur <= last; cur++)
+	last = (char *)buf + buf_len - len;
+	for (cur = (char *)buf; cur <= last; cur++)
 		if (cur[0] == name[0] && memcmp(cur, name, len) == 0)
 			return cur + len;
 
 	return NULL;
 }
 
-int nvram_parse_mac_addr(const char *nvram, unsigned nvram_len,
-			 const char *name, char *mac)
+int nvram_parse_mac_addr(const char *nvram, unsigned nvram_len, const char *name, char *mac)
 {
 	char *buf;
 	char *mac_str;
@@ -59,8 +58,7 @@ int nvram_parse_mac_addr(const char *nvram, unsigned nvram_len,
 		goto free;
 	}
 
-	t = sscanf(mac_str, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx",
-		   &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+	t = sscanf(mac_str, "%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
 
 	if (t != 6) {
 		ret = -EINVAL;

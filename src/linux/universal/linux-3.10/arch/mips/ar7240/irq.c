@@ -28,8 +28,7 @@ static void ar71xx_gpio_irq_dispatch(void)
 	void __iomem *base = ar71xx_gpio_base;
 	u32 pending;
 
-	pending = __raw_readl(base + AR71XX_GPIO_REG_INT_PENDING) &
-		  __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
+	pending = __raw_readl(base + AR71XX_GPIO_REG_INT_PENDING) & __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
 
 	if (pending)
 		do_IRQ(AR71XX_GPIO_IRQ_BASE + fls(pending) - 1);
@@ -47,7 +46,7 @@ static void ar71xx_gpio_irq_unmask(struct irq_data *d)
 	__raw_writel(t | (1 << irq), base + AR71XX_GPIO_REG_INT_ENABLE);
 
 	/* flush write */
-	(void) __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
+	(void)__raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
 }
 
 static void ar71xx_gpio_irq_mask(struct irq_data *d)
@@ -60,19 +59,19 @@ static void ar71xx_gpio_irq_mask(struct irq_data *d)
 	__raw_writel(t & ~(1 << irq), base + AR71XX_GPIO_REG_INT_ENABLE);
 
 	/* flush write */
-	(void) __raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
+	(void)__raw_readl(base + AR71XX_GPIO_REG_INT_ENABLE);
 }
 
 static struct irq_chip ar71xx_gpio_irq_chip = {
-	.name		= "AR71XX GPIO",
-	.irq_unmask	= ar71xx_gpio_irq_unmask,
-	.irq_mask	= ar71xx_gpio_irq_mask,
-	.irq_mask_ack	= ar71xx_gpio_irq_mask,
+	.name = "AR71XX GPIO",
+	.irq_unmask = ar71xx_gpio_irq_unmask,
+	.irq_mask = ar71xx_gpio_irq_mask,
+	.irq_mask_ack = ar71xx_gpio_irq_mask,
 };
 
 static struct irqaction ar71xx_gpio_irqaction = {
-	.handler	= no_action,
-	.name		= "cascade [AR71XX GPIO]",
+	.handler = no_action,
+	.name = "cascade [AR71XX GPIO]",
 };
 
 #define GPIO_INT_ALL	0xffff
@@ -91,10 +90,8 @@ static void __init ar71xx_gpio_irq_init(void)
 	/* setup polarity of all GPIO interrupts to active high */
 	__raw_writel(GPIO_INT_ALL, base + AR71XX_GPIO_REG_INT_POLARITY);
 
-	for (i = AR71XX_GPIO_IRQ_BASE;
-	     i < AR71XX_GPIO_IRQ_BASE + AR71XX_GPIO_IRQ_COUNT; i++)
-		irq_set_chip_and_handler(i, &ar71xx_gpio_irq_chip,
-					 handle_level_irq);
+	for (i = AR71XX_GPIO_IRQ_BASE; i < AR71XX_GPIO_IRQ_BASE + AR71XX_GPIO_IRQ_COUNT; i++)
+		irq_set_chip_and_handler(i, &ar71xx_gpio_irq_chip, handle_level_irq);
 
 	setup_irq(AR71XX_MISC_IRQ_GPIO, &ar71xx_gpio_irqaction);
 }
@@ -159,7 +156,7 @@ static void ar71xx_misc_irq_unmask(struct irq_data *d)
 	__raw_writel(t | (1 << irq), base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 
 	/* flush write */
-	(void) __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
+	(void)__raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 }
 
 static void ar71xx_misc_irq_mask(struct irq_data *d)
@@ -172,7 +169,7 @@ static void ar71xx_misc_irq_mask(struct irq_data *d)
 	__raw_writel(t & ~(1 << irq), base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 
 	/* flush write */
-	(void) __raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
+	(void)__raw_readl(base + AR71XX_RESET_REG_MISC_INT_ENABLE);
 }
 
 static void ar724x_misc_irq_ack(struct irq_data *d)
@@ -185,18 +182,18 @@ static void ar724x_misc_irq_ack(struct irq_data *d)
 	__raw_writel(t & ~(1 << irq), base + AR71XX_RESET_REG_MISC_INT_STATUS);
 
 	/* flush write */
-	(void) __raw_readl(base + AR71XX_RESET_REG_MISC_INT_STATUS);
+	(void)__raw_readl(base + AR71XX_RESET_REG_MISC_INT_STATUS);
 }
 
 static struct irq_chip ar71xx_misc_irq_chip = {
-	.name		= "AR71XX MISC",
-	.irq_unmask	= ar71xx_misc_irq_unmask,
-	.irq_mask	= ar71xx_misc_irq_mask,
+	.name = "AR71XX MISC",
+	.irq_unmask = ar71xx_misc_irq_unmask,
+	.irq_mask = ar71xx_misc_irq_mask,
 };
 
 static struct irqaction ar71xx_misc_irqaction = {
-	.handler	= no_action,
-	.name		= "cascade [AR71XX MISC]",
+	.handler = no_action,
+	.name = "cascade [AR71XX MISC]",
 };
 
 static void __init ar71xx_misc_irq_init(void)
@@ -223,10 +220,8 @@ static void __init ar71xx_misc_irq_init(void)
 		break;
 	}
 
-	for (i = AR71XX_MISC_IRQ_BASE;
-	     i < AR71XX_MISC_IRQ_BASE + AR71XX_MISC_IRQ_COUNT; i++)
-		irq_set_chip_and_handler(i, &ar71xx_misc_irq_chip,
-					 handle_level_irq);
+	for (i = AR71XX_MISC_IRQ_BASE; i < AR71XX_MISC_IRQ_BASE + AR71XX_MISC_IRQ_COUNT; i++)
+		irq_set_chip_and_handler(i, &ar71xx_misc_irq_chip, handle_level_irq);
 
 	setup_irq(AR71XX_CPU_IRQ_MISC, &ar71xx_misc_irqaction);
 }
@@ -255,14 +250,11 @@ static void ar934x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
 static void ar934x_ip2_irq_init(void)
 {
 	int i;
-	for (i = AR934X_IP2_IRQ_BASE;
-	     i < AR934X_IP2_IRQ_BASE + AR934X_IP2_IRQ_COUNT; i++)
-		irq_set_chip_and_handler(i, &dummy_irq_chip,
-					 handle_level_irq);
+	for (i = AR934X_IP2_IRQ_BASE; i < AR934X_IP2_IRQ_BASE + AR934X_IP2_IRQ_COUNT; i++)
+		irq_set_chip_and_handler(i, &dummy_irq_chip, handle_level_irq);
 
 	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, ar934x_ip2_irq_dispatch);
 }
-
 
 /*
  * The IP2/IP3 lines are tied to a PCI/WMAC/USB device. Drivers for
@@ -329,8 +321,8 @@ static void ar934x_ip3_handler(void)
 	do_IRQ(AR71XX_CPU_IRQ_USB);
 }
 
-static void (*ip2_handler)(void);
-static void (*ip3_handler)(void);
+static void (*ip2_handler) (void);
+static void (*ip3_handler) (void);
 
 asmlinkage void plat_irq_dispatch(void)
 {
@@ -404,9 +396,7 @@ void __init arch_init_irq(void)
 
 	ar71xx_misc_irq_init();
 
-	if (ar71xx_soc == AR71XX_SOC_AR9341 ||
-	    ar71xx_soc == AR71XX_SOC_AR9342 ||
-	    ar71xx_soc == AR71XX_SOC_AR9344)
+	if (ar71xx_soc == AR71XX_SOC_AR9341 || ar71xx_soc == AR71XX_SOC_AR9342 || ar71xx_soc == AR71XX_SOC_AR9344)
 		ar934x_ip2_irq_init();
 
 	cp0_perfcount_irq = AR71XX_MISC_IRQ_PERFC;
