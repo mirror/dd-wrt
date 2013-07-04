@@ -57,7 +57,7 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	if (*cal_data != 0xa55a && *cal_data != 0x5aa5) {
 		pr_err("pci %s: invalid calibration data\n", pci_name(dev));
 		ar71xx_pci_plat_dev_init = NULL;
-		dev->dev.platform_data = NULL; //clear empty settings
+		dev->dev.platform_data = NULL;	//clear empty settings
 		return;
 	}
 
@@ -78,8 +78,7 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 
 	switch (ar71xx_soc) {
 	case AR71XX_SOC_AR7161:
-		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0,
-				       AR71XX_PCI_MEM_BASE);
+		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, AR71XX_PCI_MEM_BASE);
 		break;
 	case AR71XX_SOC_AR7240:
 		pci_write_config_dword(dev, PCI_BASE_ADDRESS_0, 0xffff);
@@ -127,20 +126,17 @@ static void ath9k_pci_fixup(struct pci_dev *dev)
 	dev->vendor = val & 0xffff;
 	dev->device = (val >> 16) & 0xffff;
 
-	printk(KERN_EMERG "bootstrap returns device %X:%X\n", dev->vendor,
-	       dev->device);
+	printk(KERN_EMERG "bootstrap returns device %X:%X\n", dev->vendor, dev->device);
 #if !defined(CONFIG_DIR825C1) && !defined(CONFIG_WDR2543)
 	if (dev->device == 0x0030)	//AR9300 Hack
 	{
-	is_ar9300=1;
-		printk(KERN_EMERG "move calibration data offset %d\n",
-		       sizeof(wmac_data.eeprom_data));
-		memmove(calcopy, calcopy + 0x1000,
-		       sizeof(wmac_data.eeprom_data) - 0x1000);
+		is_ar9300 = 1;
+		printk(KERN_EMERG "move calibration data offset %d\n", sizeof(wmac_data.eeprom_data));
+		memmove(calcopy, calcopy + 0x1000, sizeof(wmac_data.eeprom_data) - 0x1000);
 		wmac_data.led_pin = 15;
 	}
 #else
-	is_ar9300=1;
+	is_ar9300 = 1;
 #endif
 	pci_read_config_dword(dev, PCI_CLASS_REVISION, &val);
 	dev->revision = val & 0xff;

@@ -49,15 +49,12 @@
 #	define wddbg printk
 #else
 #	define wddbg(junk, ...)
-#endif /* AR7240_WDT_TEST_CODE 8*/
+#endif				/* AR7240_WDT_TEST_CODE 8 */
 
 extern uint32_t ar7240_ahb_freq;
 
 typedef struct {
-	int	open: 1,
-		can_close: 1,
-		tmo,
-		action;
+	int open:1, can_close:1, tmo, action;
 	wait_queue_head_t wq;
 } ar7240_wdt_t;
 
@@ -67,28 +64,25 @@ static ar7240_wdt_t *wdt = &wdt_softc_array;
 
 irqreturn_t ar7240_wdt_isr(int, void *, struct pt_regs *);
 
-static struct irqaction ar7240_wdt_irq =
-    			{ ar7240_wdt_isr, SA_INTERRUPT, { { 0, } },
-			  "ar7240_wdt_isr", NULL, NULL };
-
+static struct irqaction ar7240_wdt_irq = { ar7240_wdt_isr, SA_INTERRUPT, {{0,}},
+"ar7240_wdt_isr", NULL, NULL
+};
 
 #ifdef AR7240_WDT_TEST_CODE
 /* Return the value present in the watchdog register */
-static inline uint32_t
-ar7240_get_wd_timer(void)
+static inline uint32_t ar7240_get_wd_timer(void)
 {
 	uint32_t val;
 
-	val = (uint32_t)ar7240_reg_rd(AR7240_WATCHDOG_TMR);
+	val = (uint32_t) ar7240_reg_rd(AR7240_WATCHDOG_TMR);
 	val = (val * USEC_PER_SEC) / ar7240_ahb_freq;
 
 	return val;
 }
-#endif /* AR7240_WDT_TEST_CODE */
+#endif				/* AR7240_WDT_TEST_CODE */
 
 /* Set the timeout value in the watchdog register */
-static inline void
-ar7240_set_wd_timer(uint32_t usec /* micro seconds */)
+static inline void ar7240_set_wd_timer(uint32_t usec /* micro seconds */ )
 {
 	usec = usec * (ar7240_ahb_freq / USEC_PER_SEC);
 
@@ -97,8 +91,7 @@ ar7240_set_wd_timer(uint32_t usec /* micro seconds */)
 	ar7240_reg_wr(AR7240_WATCHDOG_TMR, usec);
 }
 
-static inline int
-ar7240_set_wd_timer_action(uint32_t val)
+static inline int ar7240_set_wd_timer_action(uint32_t val)
 {
 	if (val & ~AR7240_WD_ACT_MASK) {
 		return EINVAL;
@@ -118,22 +111,18 @@ ar7240_set_wd_timer_action(uint32_t val)
 }
 
 #ifdef AR7240_WDT_TEST_CODE
-static inline uint32_t
-ar7240_get_wd_timer_action(void)
+static inline uint32_t ar7240_get_wd_timer_action(void)
 {
-	return (uint32_t)(ar7240_reg_rd(AR7240_WATCHDOG_TMR_CONTROL) &
-			AR7240_WD_ACT_MASK);
+	return (uint32_t) (ar7240_reg_rd(AR7240_WATCHDOG_TMR_CONTROL) & AR7240_WD_ACT_MASK);
 }
 
-static inline uint32_t
-ar7240_get_wd_timer_last(void)
+static inline uint32_t ar7240_get_wd_timer_last(void)
 {
-	return ((uint32_t)(ar7240_reg_rd(AR7240_WATCHDOG_TMR_CONTROL) &
-				AR7240_WD_LAST_MASK) >> AR7240_WD_LAST_SHIFT);
+	return ((uint32_t) (ar7240_reg_rd(AR7240_WATCHDOG_TMR_CONTROL) & AR7240_WD_LAST_MASK) >> AR7240_WD_LAST_SHIFT);
 }
-#endif /* AR7240_WDT_TEST_CODE */
+#endif				/* AR7240_WDT_TEST_CODE */
 
-irqreturn_t ar7240_wdt_isr(int cpl, void *dev_id, struct pt_regs *regs)
+irqreturn_t ar7240_wdt_isr(int cpl, void *dev_id, struct pt_regs * regs)
 {
 	unsigned delay;
 	extern int ar7240_gpio_in_val(int);
@@ -160,8 +149,7 @@ irqreturn_t ar7240_wdt_isr(int cpl, void *dev_id, struct pt_regs *regs)
 	return IRQ_HANDLED;
 }
 
-static int
-ar7240wdt_open(struct inode *inode, struct file *file)
+static int ar7240wdt_open(struct inode *inode, struct file *file)
 {
 	wddbg("%s: called\n", __func__);
 
@@ -185,8 +173,7 @@ ar7240wdt_open(struct inode *inode, struct file *file)
 	return nonseekable_open(inode, file);
 }
 
-static int
-ar7240wdt_close(struct inode *inode, struct file *file)
+static int ar7240wdt_close(struct inode *inode, struct file *file)
 {
 	wddbg("%s: called\n", __func__);
 
@@ -204,49 +191,41 @@ ar7240wdt_close(struct inode *inode, struct file *file)
 	return 0;
 }
 
-static ssize_t
-ar7240wdt_read(struct file *file, char *buf, size_t count, loff_t *ppos)
+static ssize_t ar7240wdt_read(struct file *file, char *buf, size_t count, loff_t * ppos)
 {
 	wddbg("%s: called\n", __func__);
 
 	return -ENOTSUPP;
 }
 
-static int
-ar7240wdt_ioctl(struct inode *inode, struct file *file, unsigned int cmd,
-		unsigned long arg)
+static int ar7240wdt_ioctl(struct inode *inode, struct file *file, unsigned int cmd, unsigned long arg)
 {
 	int ret = 0;
 
 	wddbg("%s: called\n", __func__);
 
-	switch(cmd) {
-		case FACTORY_RESET:
-			wddbg("%s: intr action\n", __func__);
+	switch (cmd) {
+	case FACTORY_RESET:
+		wddbg("%s: intr action\n", __func__);
 
-			if ((ret = request_irq(
-					AR7240_MISC_IRQ_WATCHDOG,
-					ar7240_wdt_isr,
-					SA_INTERRUPT,
-					"Watchdog Timer",
-					wdt))) {
-				wddbg("%s: request_irq %d\n", __func__, ret);
-				return ret;
-			}
+		if ((ret = request_irq(AR7240_MISC_IRQ_WATCHDOG, ar7240_wdt_isr, SA_INTERRUPT, "Watchdog Timer", wdt))) {
+			wddbg("%s: request_irq %d\n", __func__, ret);
+			return ret;
+		}
 
-			ar7240_set_wd_timer_action(AR7240_WD_ACT_GP_INTR);
-			sleep_on(&wdt->wq);
-			free_irq(AR7240_MISC_IRQ_WATCHDOG, wdt);
-			break;
+		ar7240_set_wd_timer_action(AR7240_WD_ACT_GP_INTR);
+		sleep_on(&wdt->wq);
+		free_irq(AR7240_MISC_IRQ_WATCHDOG, wdt);
+		break;
 
-		default: ret = -EINVAL;
+	default:
+		ret = -EINVAL;
 	}
 
 	return ret;
 }
 
-static ssize_t
-ar7240wdt_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
+static ssize_t ar7240wdt_write(struct file *file, const char *buf, size_t count, loff_t * ppos)
 {
 	int i;
 	char c;
@@ -273,11 +252,11 @@ ar7240wdt_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 }
 
 static struct file_operations ar7240wdt_fops = {
-	read:	ar7240wdt_read,
-	write:	ar7240wdt_write,
-	ioctl:	ar7240wdt_ioctl,
-	open:	ar7240wdt_open,
-	release:ar7240wdt_close
+      read:ar7240wdt_read,
+      write:ar7240wdt_write,
+      ioctl:ar7240wdt_ioctl,
+      open:ar7240wdt_open,
+      release:ar7240wdt_close
 };
 
 static struct miscdevice ar7240wdt_miscdev = {
@@ -286,8 +265,7 @@ static struct miscdevice ar7240wdt_miscdev = {
 	&ar7240wdt_fops
 };
 
-void
-ar7240wdt_init(void)
+void ar7240wdt_init(void)
 {
 	int ret;
 	extern void ar7240_gpio_config_input(int);
@@ -303,6 +281,4 @@ ar7240wdt_init(void)
 	ar7240_gpio_config_input(AR7240_GPIO_RESET);
 }
 
-
 late_initcall(ar7240wdt_init);
-

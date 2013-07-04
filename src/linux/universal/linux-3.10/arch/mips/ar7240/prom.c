@@ -38,17 +38,11 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/ar933x_uart.h>
 
-
-
 void __init prom_init(void)
 {
-    mips_machtype  = MACH_ATHEROS_AR7240;
+	mips_machtype = MACH_ATHEROS_AR7240;
 }
 
 void __init prom_free_prom_memory(void)
 {
 }
-
-
-
-

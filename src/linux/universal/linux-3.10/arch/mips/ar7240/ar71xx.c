@@ -92,6 +92,7 @@ void ar71xx_device_stop(u32 mask)
 		BUG();
 	}
 }
+
 EXPORT_SYMBOL_GPL(ar71xx_device_stop);
 
 void ar71xx_device_start(u32 mask)
@@ -151,6 +152,7 @@ void ar71xx_device_start(u32 mask)
 		BUG();
 	}
 }
+
 EXPORT_SYMBOL_GPL(ar71xx_device_start);
 
 void ar71xx_device_reset_rmw(u32 clear, u32 set)
@@ -199,6 +201,7 @@ void ar71xx_device_reset_rmw(u32 clear, u32 set)
 	ar71xx_reset_wr(reg, t);
 	spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 }
+
 EXPORT_SYMBOL_GPL(ar71xx_device_reset_rmw);
 
 int ar71xx_device_stopped(u32 mask)
@@ -251,26 +254,28 @@ int ar71xx_device_stopped(u32 mask)
 
 	return ((t & mask) == mask);
 }
+
 EXPORT_SYMBOL_GPL(ar71xx_device_stopped);
 void ar71xx_ddr_flush(u32 reg)
 {
 	ar71xx_ddr_wr(reg, 1);
-	while ((ar71xx_ddr_rr(reg) & 0x1))
-		;
+	while ((ar71xx_ddr_rr(reg) & 0x1)) ;
 
 	ar71xx_ddr_wr(reg, 1);
-	while ((ar71xx_ddr_rr(reg) & 0x1))
-		;
+	while ((ar71xx_ddr_rr(reg) & 0x1)) ;
 }
+
 EXPORT_SYMBOL_GPL(ar71xx_ddr_flush);
 void ar71xx_flash_acquire(void)
 {
 	mutex_lock(&ar71xx_flash_mutex);
 }
+
 EXPORT_SYMBOL_GPL(ar71xx_flash_acquire);
 
 void ar71xx_flash_release(void)
 {
 	mutex_unlock(&ar71xx_flash_mutex);
 }
+
 EXPORT_SYMBOL_GPL(ar71xx_flash_release);

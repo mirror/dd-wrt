@@ -17,8 +17,7 @@
 
 #include "dev-leds-gpio.h"
 
-void __init ar71xx_add_device_leds_gpio(int id, unsigned num_leds,
-					struct gpio_led *leds)
+void __init ar71xx_add_device_leds_gpio(int id, unsigned num_leds, struct gpio_led *leds)
 {
 	struct platform_device *pdev;
 	struct gpio_led_platform_data pdata;

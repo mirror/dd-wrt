@@ -21,15 +21,17 @@
 struct ath9k_platform_data wmac_data = {
 	.led_pin = -1,
 };
+
 static char ap91_wmac_mac[6];
 
 static struct ar71xx_pci_irq ap91_pci_irqs[] __initdata = {
 	{
-		.slot	= 0,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV0,
-	}
+	 .slot = 0,
+	 .pin = 1,
+	 .irq = AR71XX_PCI_IRQ_DEV0,
+	 }
 };
+
 static int ap91_pci_plat_dev_init(struct pci_dev *dev)
 {
 	switch (PCI_SLOT(dev->devfn)) {
@@ -57,8 +59,7 @@ int __init pcibios_init(void);
 void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 {
 	if (cal_data)
-		memcpy(wmac_data.eeprom_data, cal_data,
-		       sizeof(wmac_data.eeprom_data));
+		memcpy(wmac_data.eeprom_data, cal_data, sizeof(wmac_data.eeprom_data));
 
 	if (mac_addr) {
 		memcpy(ap91_wmac_mac, mac_addr, sizeof(ap91_wmac_mac));
