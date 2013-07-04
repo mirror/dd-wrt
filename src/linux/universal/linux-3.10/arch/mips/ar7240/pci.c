@@ -21,7 +21,7 @@
 unsigned ar71xx_pci_nr_irqs __initdata;
 struct ar71xx_pci_irq *ar71xx_pci_irq_map __initdata;
 
-int (*ar71xx_pci_plat_dev_init)(struct pci_dev *dev);
+int (*ar71xx_pci_plat_dev_init) (struct pci_dev * dev);
 
 static int ar71xx_be_handler(struct pt_regs *regs, int is_fixup)
 {
@@ -58,8 +58,6 @@ int __init pcibios_map_irq(const struct pci_dev *dev, uint8_t slot, uint8_t pin)
 		ret = ar724x_pcibios_map_irq(dev, slot, pin);
 		break;
 
-
-
 	default:
 		break;
 	}
@@ -92,8 +90,8 @@ int __init ar71xx_pci_init(unsigned nr_irqs, struct ar71xx_pci_irq *map)
 		if (t & AR934X_BOOTSTRAP_PCIE_RC) {
 			ret = ar724x_pcibios_init(AR934X_IP2_IRQ_PCIE);
 			break;
-		}else
-		printk("no pci device found\n");
+		} else
+			printk("no pci device found\n");
 
 		/* fall through */
 	default:

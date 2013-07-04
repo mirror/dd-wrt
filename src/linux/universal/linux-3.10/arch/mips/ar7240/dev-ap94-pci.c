@@ -21,22 +21,24 @@
 static struct ath9k_platform_data ap94_wmac0_data = {
 	.led_pin = -1,
 };
+
 static struct ath9k_platform_data ap94_wmac1_data = {
 	.led_pin = -1,
 };
+
 static char ap94_wmac0_mac[6];
 static char ap94_wmac1_mac[6];
 
 static struct ar71xx_pci_irq ap94_pci_irqs[] __initdata = {
 	{
-		.slot   = 0,
-		.pin    = 1,
-		.irq    = AR71XX_PCI_IRQ_DEV0,
-	}, {
-		.slot   = 1,
-		.pin    = 1,
-		.irq    = AR71XX_PCI_IRQ_DEV1,
-	}
+	 .slot = 0,
+	 .pin = 1,
+	 .irq = AR71XX_PCI_IRQ_DEV0,
+	 }, {
+	     .slot = 1,
+	     .pin = 1,
+	     .irq = AR71XX_PCI_IRQ_DEV1,
+	     }
 };
 
 static int ap94_pci_plat_dev_init(struct pci_dev *dev)
@@ -80,16 +82,13 @@ __init void ap94_pci_setup_wmac_gpio(unsigned wmac, u32 mask, u32 val)
 	}
 }
 
-void __init ap94_pci_init(u8 *cal_data0, u8 *mac_addr0,
-			  u8 *cal_data1, u8 *mac_addr1)
+void __init ap94_pci_init(u8 *cal_data0, u8 *mac_addr0, u8 *cal_data1, u8 *mac_addr1)
 {
 	if (cal_data0)
-		memcpy(ap94_wmac0_data.eeprom_data, cal_data0,
-		       sizeof(ap94_wmac0_data.eeprom_data));
+		memcpy(ap94_wmac0_data.eeprom_data, cal_data0, sizeof(ap94_wmac0_data.eeprom_data));
 
 	if (cal_data1)
-		memcpy(ap94_wmac1_data.eeprom_data, cal_data1,
-		       sizeof(ap94_wmac1_data.eeprom_data));
+		memcpy(ap94_wmac1_data.eeprom_data, cal_data1, sizeof(ap94_wmac1_data.eeprom_data));
 
 	if (mac_addr0) {
 		memcpy(ap94_wmac0_mac, mac_addr0, sizeof(ap94_wmac0_mac));

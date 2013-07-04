@@ -30,11 +30,10 @@
  * when one IC is connected to another, this will be used to enable to Parent
  * IC's irq line to which the child IC is connected
  */
-static struct irqaction cascade  = {
-	.handler	= no_action, 
-	.name		= "cascade", 
+static struct irqaction cascade = {
+	.handler = no_action,
+	.name = "cascade",
 };
-
 
 static void ar7100_dispatch_misc_intr(void);
 static void ar7100_dispatch_pci_intr(void);
@@ -55,7 +54,7 @@ void __init arch_init_irq(void)
 
 	ar7100_misc_irq_init(AR7100_MISC_IRQ_BASE);
 	cp0_perfcount_irq = AR7100_MISC_IRQ_PERF_COUNTER;
-//	ar7100_gpio_irq_init(AR7100_GPIO_IRQ_BASE);
+//      ar7100_gpio_irq_init(AR7100_GPIO_IRQ_BASE);
 #ifdef CONFIG_PCI
 	ar7100_pci_irq_init(AR7100_PCI_IRQ_BASE);
 #endif
@@ -63,82 +62,68 @@ void __init arch_init_irq(void)
 	/*
 	 * enable cascades
 	 */
-	setup_irq(AR7100_CPU_IRQ_MISC,  &cascade);
+	setup_irq(AR7100_CPU_IRQ_MISC, &cascade);
 	setup_irq(AR7100_MISC_IRQ_GPIO, &cascade);
 #ifdef CONFIG_PCI
-	setup_irq(AR7100_CPU_IRQ_PCI,   &cascade);
+	setup_irq(AR7100_CPU_IRQ_PCI, &cascade);
 #endif
 	printk(KERN_EMERG "irq init done\n");
-//	set_c0_status(ST0_IM);
+//      set_c0_status(ST0_IM);
 }
 
-static void
-ar7100_dispatch_misc_intr(void)
+static void ar7100_dispatch_misc_intr(void)
 {
 	int pending;
 
-	pending = ar7100_reg_rd(AR7100_MISC_INT_STATUS) &
-		ar7100_reg_rd(AR7100_MISC_INT_MASK);
-	if (pending & MIMR_UART)
-		{
-//		printk(KERN_EMERG "dispatch uart\n");
+	pending = ar7100_reg_rd(AR7100_MISC_INT_STATUS) & ar7100_reg_rd(AR7100_MISC_INT_MASK);
+	if (pending & MIMR_UART) {
+//              printk(KERN_EMERG "dispatch uart\n");
 		do_IRQ(AR7100_MISC_IRQ_UART);
-		}
-	else if (pending & MIMR_DMA)
-		{
-//		printk(KERN_EMERG "dispatch dma\n");
+	} else if (pending & MIMR_DMA) {
+//              printk(KERN_EMERG "dispatch dma\n");
 
 		do_IRQ(AR7100_MISC_IRQ_DMA);
-		}
+	}
 
-	else if (pending & MIMR_PERF_COUNTER)
-		{
-//		printk(KERN_EMERG "dispatch perf counter\n");
+	else if (pending & MIMR_PERF_COUNTER) {
+//              printk(KERN_EMERG "dispatch perf counter\n");
 
 		do_IRQ(AR7100_MISC_IRQ_PERF_COUNTER);
-		}
+	}
 
-	else if (pending & MIMR_TIMER)
-		{
-//		printk(KERN_EMERG "dispatch timer\n");
+	else if (pending & MIMR_TIMER) {
+//              printk(KERN_EMERG "dispatch timer\n");
 		do_IRQ(AR7100_MISC_IRQ_TIMER);
-		}
+	}
 
-	else if (pending & MIMR_OHCI_USB)
-		{
-//		printk(KERN_EMERG "dispatch ohci\n");
+	else if (pending & MIMR_OHCI_USB) {
+//              printk(KERN_EMERG "dispatch ohci\n");
 		do_IRQ(AR7100_MISC_IRQ_USB_OHCI);
-		}
+	}
 
-	else if (pending & MIMR_ERROR)
-		{
-//		printk(KERN_EMERG "dispatch error\n");
+	else if (pending & MIMR_ERROR) {
+//              printk(KERN_EMERG "dispatch error\n");
 		do_IRQ(AR7100_MISC_IRQ_ERROR);
-		}
+	}
 
-	else if (pending & MIMR_GPIO)
-		{
-//		printk(KERN_EMERG "dispatch gpio\n");
+	else if (pending & MIMR_GPIO) {
+//              printk(KERN_EMERG "dispatch gpio\n");
 		ar7100_dispatch_gpio_intr();
-		}
+	}
 
-	else if (pending & MIMR_WATCHDOG)
-		{
-//		printk(KERN_EMERG "dispatch watchdog\n");
+	else if (pending & MIMR_WATCHDOG) {
+//              printk(KERN_EMERG "dispatch watchdog\n");
 		do_IRQ(AR7100_MISC_IRQ_WATCHDOG);
-		}
-	else
+	} else
 		spurious_interrupt();
 }
 
 #ifndef CONFIG_AR9100
-static void
-ar7100_dispatch_pci_intr(void)
+static void ar7100_dispatch_pci_intr(void)
 {
 	int pending;
 
-	pending  = ar7100_reg_rd(AR7100_PCI_INT_STATUS) &
-		ar7100_reg_rd(AR7100_PCI_INT_MASK);
+	pending = ar7100_reg_rd(AR7100_PCI_INT_STATUS) & ar7100_reg_rd(AR7100_PCI_INT_MASK);
 
 	if (pending & PISR_DEV0)
 		do_IRQ(AR7100_PCI_IRQ_DEV0);
@@ -151,15 +136,13 @@ ar7100_dispatch_pci_intr(void)
 }
 #endif
 
-static void
-ar7100_dispatch_gpio_intr(void)
+static void ar7100_dispatch_gpio_intr(void)
 {
 	int pending, i;
 
-	pending = ar7100_reg_rd(AR7100_GPIO_INT_PENDING) &
-		ar7100_reg_rd(AR7100_GPIO_INT_MASK);
+	pending = ar7100_reg_rd(AR7100_GPIO_INT_PENDING) & ar7100_reg_rd(AR7100_GPIO_INT_MASK);
 
-	for(i = 0; i < AR7100_GPIO_COUNT; i++) {
+	for (i = 0; i < AR7100_GPIO_COUNT; i++) {
 		if (pending & (1 << i))
 			do_IRQ(AR7100_GPIO_IRQn(i));
 	}
@@ -175,7 +158,7 @@ asmlinkage void plat_irq_dispatch(void)
 {
 	int pending = read_c0_status() & read_c0_cause() & ST0_IM;
 
-	if (pending & CAUSEF_IP7) 
+	if (pending & CAUSEF_IP7)
 		do_IRQ(AR7100_CPU_IRQ_TIMER);
 #ifndef CONFIG_AR9100
 	else if (pending & CAUSEF_IP2)
@@ -185,16 +168,16 @@ asmlinkage void plat_irq_dispatch(void)
 		do_IRQ(AR7100_CPU_IRQ_WMAC);
 #endif
 
-	else if (pending & CAUSEF_IP4) 
+	else if (pending & CAUSEF_IP4)
 		do_IRQ(AR7100_CPU_IRQ_GE0);
 
-	else if (pending & CAUSEF_IP5) 
+	else if (pending & CAUSEF_IP5)
 		do_IRQ(AR7100_CPU_IRQ_GE1);
 
-	else if (pending & CAUSEF_IP3) 
+	else if (pending & CAUSEF_IP3)
 		do_IRQ(AR7100_CPU_IRQ_USB);
 
-	else if (pending & CAUSEF_IP6) 
+	else if (pending & CAUSEF_IP6)
 		ar7100_dispatch_misc_intr();
 
 	/*
@@ -203,45 +186,35 @@ asmlinkage void plat_irq_dispatch(void)
 	 * performance impact - flush after every interrupt or taking a few
 	 * "spurious" interrupts. For now, its the latter.
 	 */
-	else 
-	  printk("spurious IRQ pending: 0x%x\n", pending);
+	else
+		printk("spurious IRQ pending: 0x%x\n", pending);
 }
 
-static void
-ar7100_misc_irq_enable(struct irq_data *irq)
+static void ar7100_misc_irq_enable(struct irq_data *irq)
 {
-	ar7100_reg_rmw_set(AR7100_MISC_INT_MASK, 
-			   (1 << (irq->irq - AR7100_MISC_IRQ_BASE)));
+	ar7100_reg_rmw_set(AR7100_MISC_INT_MASK, (1 << (irq->irq - AR7100_MISC_IRQ_BASE)));
 }
 
-static void
-ar7100_misc_irq_disable(struct irq_data *irq)
+static void ar7100_misc_irq_disable(struct irq_data *irq)
 {
-	ar7100_reg_rmw_clear(AR7100_MISC_INT_MASK, 
-			     (1 << (irq->irq - AR7100_MISC_IRQ_BASE)));
+	ar7100_reg_rmw_clear(AR7100_MISC_INT_MASK, (1 << (irq->irq - AR7100_MISC_IRQ_BASE)));
 }
-
-
 
 static struct irq_chip ar7100_misc_irq_chip = {
-	.name		= "AR7100 MISC",
-	.irq_unmask		= ar7100_misc_irq_enable,
-	.irq_mask		= ar7100_misc_irq_disable,
+	.name = "AR7100 MISC",
+	.irq_unmask = ar7100_misc_irq_enable,
+	.irq_mask = ar7100_misc_irq_disable,
 };
-
 
 /*
  * Determine interrupt source among interrupts that use IP6
  */
-static void
-ar7100_misc_irq_init(int irq_base)
+static void ar7100_misc_irq_init(int irq_base)
 {
 	int i;
 	ar7100_misc_irq_chip.irq_mask_ack = ar7100_misc_irq_disable;
 
 	for (i = irq_base; i < irq_base + AR7100_MISC_IRQ_COUNT; i++) {
-		irq_set_chip_and_handler(i, &ar7100_misc_irq_chip,
-					 handle_level_irq);
+		irq_set_chip_and_handler(i, &ar7100_misc_irq_chip, handle_level_irq);
 	}
 }
-

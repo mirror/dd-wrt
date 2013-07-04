@@ -20,18 +20,18 @@
 
 static struct ar71xx_pci_irq pb42_pci_irqs[] __initdata = {
 	{
-		.slot	= 0,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV0,
-	}, {
-		.slot	= 1,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV1,
-	}, {
-		.slot	= 2,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV2,
-	}
+	 .slot = 0,
+	 .pin = 1,
+	 .irq = AR71XX_PCI_IRQ_DEV0,
+	 }, {
+	     .slot = 1,
+	     .pin = 1,
+	     .irq = AR71XX_PCI_IRQ_DEV1,
+	     }, {
+		 .slot = 2,
+		 .pin = 1,
+		 .irq = AR71XX_PCI_IRQ_DEV2,
+		 }
 };
 
 void __init pb42_pci_init(void)
