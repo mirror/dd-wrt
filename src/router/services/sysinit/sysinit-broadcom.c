@@ -776,7 +776,7 @@ void start_sysinit(void)
 		nvram_set("vlan2hwname", "et0");
 		nvram_set("vlan1ports", "0 1 2 3 8*");
 		nvram_set("vlan2ports", "4 8");
-
+		
 		/* now it goes evil */
 		int mtd = getMTD("board_data");
 		char devname[32];
@@ -1720,18 +1720,18 @@ void start_sysinit(void)
 			{"pa5gw2a0", "0xFA72", 0},
 			{"pa5gw2a1", "0xFA7A", 0},
 			{"pa5gw2a2", "0xFA88", 0},
-			{"maxp5ga0", "0x48", 0},
-			{"maxp5ga1", "0x48", 0},
-			{"maxp5ga2", "0x48", 0},
+			{"maxp5ga0", "0x4E", 0},
+			{"maxp5ga1", "0x4E", 0},
+			{"maxp5ga2", "0x4E", 0},
 
 			{"pa5ghw0a0", "0xFE9A", 0},
 			{"pa5ghw0a1", "0xFE89", 0},
 			{"pa5ghw0a2", "0xFE98", 0},
 			{"pa5ghw1a0", "0x15E7", 0},
-			{"pa5ghw1a1", "0x15F9", 0},
+			{"pa5ghw1a1", "0x155F", 0},
 			{"pa5ghw1a2", "0x15CD", 0},
 			{"pa5ghw2a0", "0xFAAC", 0},
-			{"pa5ghw2a1", "0xFA94", 0},
+			{"pa5ghw2a1", "0xFAB0", 0},
 			{"pa5ghw2a2", "0xFAB2", 0},
 			{"maxp5gha0", "0x40", 0},
 			{"maxp5gha1", "0x40", 0},
@@ -1749,6 +1749,18 @@ void start_sysinit(void)
 			{"maxp5gla0", "0x48", 0},
 			{"maxp5gla1", "0x48", 0},
 			{"maxp5gla2", "0x48", 0},
+			
+			{"mcs32po", "0x2222", 0},
+
+			{"legofdmbw205gmpo", "0x33221100", 0},
+			{"legofdmbw20ul5gmpo", "0x33221100", 0},
+			{"mcsbw205glpo", "0x11000000", 0},
+			{"mcsbw205gmpo", "0x44221100", 0},
+			{"mcsbw20ul5glpo", "0x11000000", 0},
+			{"mcsbw20ul5gmpo", "0x44221100", 0},
+			{"mcsbw405glpo", "0x33222222", 0},
+			{"mcsbw405gmpo", "0x66443322", 0},
+
 
 			{0, 0, 0}
 		};
