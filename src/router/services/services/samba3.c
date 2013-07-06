@@ -165,14 +165,9 @@ void start_samba3(void)
 					free(csu);
 				}
 			}
-			fprintf(stdout,"cs->users %p\n",cs->users);
-			free(cs->users);
-			fprintf(stdout,"free done\n");
 		      nextshare:;
 			csnext = cs->next;
-			fprintf(stdout,"cs %p\n",cs);
 			free(cs);
-			fprintf(stdout,"free done\n");
 		}
 		fclose(fp);
 	}
