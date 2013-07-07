@@ -86,6 +86,17 @@ char *get_monitor(void);
 int set_channel(char *dev,int channel)
 {
     struct iwreq wrq;
+#ifdef HAVE_ATH9K
+    int flags=0;
+	if (is_ath9k(nvram_safe_get("wifi_display"))) {
+    		if (channel>14) flags=2;
+    		else flags=1;
+		sysprintf("iw dev %s scan freq %d passive",dev,ieee80211_ieee2mhz(channel,flags));
+		sysprintf("echo \"SETCHANNEL-SCAN %s %d\" | logger -t SETCHANNEL",dev,ieee80211_ieee2mhz(channel,flags));
+	}
+	else
+#endif
+   {
     memset( &wrq, 0, sizeof( struct iwreq ) );
     strncpy( wrq.ifr_name, get_monitor(), IFNAMSIZ );
     if (channel>14)
@@ -104,6 +115,7 @@ int set_channel(char *dev,int channel)
 //            return;
 //        }
     }
+}
 return 0;
 }
 #endif
@@ -136,10 +148,12 @@ void channelHopper(wiviz_cfg * cfg) {
 #endif
     //Set the channel
 #ifdef HAVE_MADWIFI
+   {
     printf("set channel %d\n",nc);
     int ret = set_channel(nvram_safe_get("wifi_display"),nc);
     if (ret==-1)
 	continue;
+   }
 #elif HAVE_RT2880
     sysprintf("iwpriv ra0 set Channel=%d",nc);
 #else
