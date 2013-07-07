@@ -92,7 +92,6 @@ int set_channel(char *dev,int channel)
     		if (channel>14) flags=2;
     		else flags=1;
 		sysprintf("iw dev %s scan freq %d passive",dev,ieee80211_ieee2mhz(channel,flags));
-		sysprintf("echo \"SETCHANNEL-SCAN %s %d\" | logger -t SETCHANNEL",dev,ieee80211_ieee2mhz(channel,flags));
 	}
 	else
 #endif
