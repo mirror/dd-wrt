@@ -77,21 +77,13 @@ int wl_ioctl(char *name, int cmd, void *buf, int len)
 
 
 
-char *get_monitor(void)
-{
-char *ifname = nvram_safe_get("wifi_display");
-#ifdef HAVE_ATH9K
-if (is_ath9k(ifname))
-    return "mon.ath0";
-else
-#endif
-{
-int devcount;
-sscanf( ifname, "ath%d", &devcount );
-static char mon[32];
-sprintf(mon,"mon%d",devcount);
-return mon;
-}
+char *get_monitor(void) {
+	char *ifname = nvram_safe_get("wifi_display");
+	int devcount;
+	sscanf( ifname, "ath%d", &devcount );
+	static char mon[32];
+	sprintf(mon,"mon%d",devcount);
+	return mon;
 }
 #endif
 
