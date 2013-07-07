@@ -111,7 +111,10 @@ int main(int argc, char **argv)
 #ifdef HAVE_MADWIFI
 			// return to original channel
 #ifdef HAVE_ATH9K
-			if (!is_ath9k(wl_dev))
+			if (is_ath9k(wl_dev)) {
+				sysprintf("ifconfig %s down", get_monitor());
+				sysprintf("iw dev %s del", get_monitor());
+			}
 #endif
 			{
 				sysprintf("iwconfig %s channel %sM", get_monitor(), nvram_nget("%s_channel", nvram_safe_get("wifi_display")));
@@ -172,7 +175,10 @@ int main(int argc, char **argv)
 	cfg.readFromWl = 1;
 #else
 #ifdef HAVE_ATH9K
-	if (!is_ath9k(nvram_safe_get("wifi_display")))
+	if (is_ath9k(nvram_safe_get("wifi_display"))) {
+		sysprintf("iw phy phy%d interface add %s type monitor", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")),get_monitor());
+		sysprintf("ifconfig %s up", get_monitor());
+	}
 #endif
 	{
 		if (is_ar5008(nvram_safe_get("wifi_display"))) {
@@ -186,7 +192,7 @@ int main(int argc, char **argv)
 #endif
 	reloadConfig();
 
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_ATH9K)
 	s = openMonitorSocket(get_monitor());	// for testing we use ath0
 #else
 
