@@ -156,7 +156,7 @@ chartables.c:   dftables
 		./dftables >chartables.c
 
 dftables:       dftables.c maketables.c pcre.h internal.h config.h Makefile
-		$(CC) -o dftables $(CFLAGS) dftables.c
+		gcc -o dftables $(CFLAGS) dftables.c
 
 install:        all
 		$(LIBTOOL) $(INSTALL_DATA) libpcre.$(LIBSUFFIX) $(DESTDIR)/$(LIBDIR)/libpcre.$(LIBSUFFIX)
