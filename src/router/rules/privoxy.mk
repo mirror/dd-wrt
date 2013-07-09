@@ -15,7 +15,6 @@ privoxy-install:
 	install -D privoxy/trust $(INSTALLDIR)/privoxy/etc/privoxy/trust
 	install -D privoxy/configs/privoxy.webproxy $(INSTALLDIR)/privoxy/etc/config/privoxy.webproxy
 	install -D privoxy/configs/privoxy.nvramconfig $(INSTALLDIR)/privoxy/etc/config/privoxy.nvramconfig
-	install -D privoxy/configs/privoxy.startup $(INSTALLDIR)/privoxy/etc/config/privoxy.startup
 	cp -rf privoxy/templates $(INSTALLDIR)/privoxy/etc/privoxy/
 	$(STRIP) $(INSTALLDIR)/privoxy/usr/sbin/privoxy
 
