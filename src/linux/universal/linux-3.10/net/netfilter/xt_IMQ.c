@@ -22,9 +22,8 @@ static int imq_checkentry(const struct xt_tgchk_param *par)
 	struct xt_imq_info *mr = par->targinfo;
 
 	if (mr->todev > IMQ_MAX_DEVS - 1) {
-		printk(KERN_WARNING
-		       "IMQ: invalid device specified, highest is %u\n",
-		       IMQ_MAX_DEVS - 1);
+		pr_warn("IMQ: invalid device specified, highest is %u\n",
+			IMQ_MAX_DEVS - 1);
 		return -EINVAL;
 	}
 
@@ -66,8 +65,7 @@ module_init(imq_init);
 module_exit(imq_fini);
 
 MODULE_AUTHOR("http://www.linuximq.net");
-MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. "
-		   "See http://www.linuximq.net/ for more information.");
+MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS("ipt_IMQ");
 MODULE_ALIAS("ip6t_IMQ");

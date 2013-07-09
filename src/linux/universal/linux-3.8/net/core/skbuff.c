@@ -689,7 +689,7 @@ static void skb_release_head_state(struct sk_buff *skb)
 	the chain of cb-backups. */
 	while (skb->cb_next != NULL) {
 		if (net_ratelimit())
-			printk(KERN_WARNING "IMQ: kfree_skb: skb->cb_next: "
+			pr_warn("IMQ: kfree_skb: skb->cb_next: "
 				"%08x\n", (unsigned int)skb->cb_next);
 
 		skb_restore_cb(skb);
@@ -701,8 +701,7 @@ static void skb_release_head_state(struct sk_buff *skb)
 	 * If this happens we need to add refcounting, etc for nf_queue_entry.
 	 */
 	if (skb->nf_queue_entry && net_ratelimit())
-		printk(KERN_WARNING
-				"IMQ: kfree_skb: skb->nf_queue_entry != NULL");
+		pr_warn("%s\n", "IMQ: kfree_skb: skb->nf_queue_entry != NULL");
 #endif
 #if IS_ENABLED(CONFIG_NF_CONNTRACK)
 	nf_conntrack_put(skb->nfct);
