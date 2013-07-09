@@ -1,0 +1,33 @@
+<h2><% tran("privoxy.legend"); %></h2>
+<fieldset>
+<legend><% tran("privoxy.server"); %></legend>
+<div class="setting">
+           <div class="label"><% tran("privoxy.server"); %></div>
+           <input class="spaceradio" type="radio" name="privoxy_enable" value="1" <% nvram_checked("privoxy_enable", "1"); %> onclick="show_layer_ext(this, 'privoxyconfig', true)" /><% tran("share.enable"); %>&nbsp;
+           <input class="spaceradio" type="radio" name="privoxy_enable" value="0" <% nvram_checked("privoxy_enable", "0"); %> onclick="show_layer_ext(this, 'privoxyconfig', false)"/><% tran("share.disable"); %>
+</div>
+<div id="privoxyconfig">
+  <div class="setting">
+           <div class="label"><% tran("privoxy.transp"); %></div>
+           <input class="spaceradio" type="radio" name="privoxy_transp_enable" value="1" <% nvram_checked("privoxy_transp_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
+           <input class="spaceradio" type="radio" name="privoxy_transp_enable" value="0" <% nvram_checked("privoxy_transp_enable", "0"); %> /><% tran("share.disable"); %>
+  </div>
+  <div class="setting">
+             <div class="label"><% tran("privoxy.custom"); %></div>
+	     <input class="spaceradio" type="radio" name="privoxy_advanced" value="1" <% nvram_checked("privoxy_advanced", "1"); %> onclick="show_layer_ext(this, 'privoxyadvanced', true)"/><% tran("share.enable"); %>&nbsp;
+             <input class="spaceradio" type="radio" name="privoxy_advanced" value="0" <% nvram_checked("privoxy_advanced", "0"); %> onclick="show_layer_ext(this, 'privoxyadvanced', false)"/><% tran("share.disable");%>
+  </div>
+  <div id="privoxyadvanced">
+	    <div class="setting">
+              <div class="label"><% tran("privoxy.custom"); %></div>
+              <textarea cols="80" rows="12" id="privoxy_conf" name="privoxy_conf"></textarea>
+              <script type="text/javascript">
+              //<![CDATA[
+              var privoxy_conf = fix_cr( '<% nvram_get("privoxy_conf"); %>' );
+              document.getElementById("privoxy_conf").value = privoxy_conf;
+              //]]>
+              </script>
+	  </div>
+  </div>
+</div>
+</fieldset><br />
