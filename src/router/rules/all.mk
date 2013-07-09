@@ -254,6 +254,7 @@ include rules/libqmi.mk
 include rules/strongswan.mk
 include rules/gmp.mk
 include rules/sqlite.mk
+include rules/privoxy.mk
 
 #
 # Generic rules
