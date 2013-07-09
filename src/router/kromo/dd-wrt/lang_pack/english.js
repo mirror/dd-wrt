@@ -460,6 +460,7 @@ bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="SIP Proxy";
+bmenu.servicesPrivoxy="Adblocking";
 //bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
@@ -745,6 +746,17 @@ nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
 nas.dlna_thumb="Include Cover Artwork";
 nas.dlna_dir="Files Directory";
+
+//** Privoxy.asp **//
+var privoxy = new Object();
+privoxy.titl = "Adblocking";
+privoxy.server = "Privoxy";
+privoxy.legend = "Filtering Proxy Server";
+privoxy.transp = "Transparent Mode";
+privoxy.custom = "Custom Configuration";
+
+var hprivoxy=new Object();
+hprivoxy.right2="Enable privoxy and configure your clients proxy settings. Proxy IP = <b>Router IP</b> Proxy Port = <b>8118</b>";
 
 var hnas=new Object();
 hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through ftp or samba.";

@@ -1226,6 +1226,11 @@ CFLAGS_EXTRA += -DHAVE_ZABBIX
 OBJS += zabbix.o
 endif
 
+ifeq ($(CONFIG_PRIVOXY),y)
+CFLAGS_EXTRA += -DHAVE_PRIVOXY
+OBJS += privoxy.o
+endif
+
 ifeq ($(CONFIG_LLTD),y)
 CFLAGS_EXTRA += -DHAVE_LLTD
 OBJS += lltd.o

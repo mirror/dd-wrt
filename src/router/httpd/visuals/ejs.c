@@ -1729,7 +1729,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 						       "PPTP.asp", "USB.asp",
 						       "NAS.asp", "Hotspot.asp",
 						       "Nintendo.asp",
-						       "Milkfish.asp", "", "",
+#ifdef HAVE_PRIVOXY
+						       "Milkfish.asp", "Privoxy.asp", "",
+#else
+ 						       "Milkfish.asp", "", "",
+#endif  
 						       ""}, {
 							     "Firewall.asp",
 							     "VPN.asp", "", "",
@@ -1790,7 +1794,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		 "servicesPppoesrv", "servicesPptp",
 		 "servicesUSB", "servicesNAS",
 		 "servicesHotspot", "servicesNintendo",
-		 "servicesMilkfish", "", "", ""}, {
+#ifdef HAVE_PRIVOXY	 
+		 "servicesMilkfish", "servicesPrivoxy", "", ""}, {
+#else
+		 "servicesMilkfish", "", "", ""}, {  
+#endif
 						   "security", "firwall", "vpn",
 						   "", "", "", "", "", "",
 						   "", "", "", ""}, {
@@ -2041,6 +2049,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 //                              if (!strcmp(menu[i][j], "AnchorFree.asp"))
 //                                      j++;
 //#endif
+#ifndef HAVE_PRIVOXY
+                              if (!strcmp(menu[i][j], "Privoxy.asp"))
+                                      j++;
+#endif
 //#ifdef HAVE_ESPOD
 //                              if (!strcmp(menu[i][j], "AnchorFree.asp"))
 //                                      j++;

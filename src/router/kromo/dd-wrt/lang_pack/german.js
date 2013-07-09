@@ -692,6 +692,11 @@ nas.dlna_srv="MiniDLNA";
 nas.dlna_thumb="Cover Bilder einbinden";
 nas.dlna_dir="Datei Verzeichnis";
 
+privoxy.titl = "Werbefilter";
+privoxy.server = "Privoxy";
+privoxy.legend = "Proxy Server";
+privoxy.transp = "Transparenter Modus";
+privoxy.custom = "Eigene Konfiguration";
 
 // **************************************************************** Hotspot.asp **********************************************************************//
 
