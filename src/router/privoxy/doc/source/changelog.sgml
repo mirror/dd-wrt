@@ -1,0 +1,1135 @@
+<!--
+ File        :  $Source: /cvsroot/ijbswa/current/doc/source/changelog.sgml,v $
+
+ Purpose     :  Entity included in other project documents.
+
+ $Id: changelog.sgml,v 2.6 2013/03/07 14:26:47 fabiankeil Exp $
+
+ Copyright (C) 2013 Privoxy Developers http://www.privoxy.org/
+ See LICENSE.
+
+ ======================================================================
+  This file used for inclusion with other documents only.
+ ======================================================================
+
+ If you make changes to this file, please verify the finished
+ docs all display as intended.
+
+ This file is included into:
+
+  user-manual
+-->
+
+<para>
+ <application>Privoxy 3.0.21</application> stable is a bug-fix release
+ for Privoxy 3.0.20 beta. It also addresses two security issues that
+ affect all previous Privoxy versions. The changes since 3.0.20 beta are:
+</para>
+
+<!--
+ The SGML ChangeLog can be generated with: utils/changelog2doc.pl ChangeLog
+-->
+<para>
+ <itemizedlist>
+  <listitem>
+   <para>
+    Bug fixes:
+    <itemizedlist>
+    <listitem>
+     <para>
+      On POSIX-like platforms, network sockets with file descriptor
+      values above FD_SETSIZE are properly rejected. Previously they
+      could cause memory corruption in configurations that allowed
+      the limit to be reached.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Proxy authentication headers are removed unless the new directive
+      enable-proxy-authentication-forwarding is used. Forwarding the
+      headers potentionally allows malicious sites to trick the user
+      into providing them with login information.
+      Reported by Chris John Riley.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Compiles on OS/2 again now that unistd.h is only included
+      on platforms that have it.
+     </para>
+    </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    General improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      The show-status page shows the FEATURE_STRPTIME_SANITY_CHECKS status.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      A couple of assert()s that could theoretically dereference
+      NULL pointers in debug builds have been relocated.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Added an LSB info block to the generic start script.
+      Based on a patch from Natxo Asenjo.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      The max-client-connections default has been changed to 128
+      which should be more than enough for most setups.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Action file improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Block rover.ebay./ar.*\&amp;adtype= instead of "/.*\&amp;adtype=" which
+      caused too man false positives.
+      Reported by u302320 in #360284, additional feedback from Adam Piggott.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Unblock '.advrider.com/' and '/.*ADVrider'.
+      Anonymously reported in #3603636.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Stop blocking '/js/slider\.js'.
+      Reported by Adam Piggott in #3606635 and _lvm in #2791160.
+     </para>
+    </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Filter file improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Added an iframes filter.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Documentation improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      The whole GPLv2 text is included in the user manual now,
+      so Privoxy can serve it itself and the user can read it
+      without having to wade through GPLv3 ads first.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Properly numbered and underlined a couple of section titles
+      in the config that where previously overlooked due to a flaw
+      in the conversion script. Reported by Ralf Jungblut.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Improved the support instruction to hopefully make it harder to
+      unintentionally provide insufficient information when requesting
+      support. Previously it wasn't obvious that the information we need
+      in bug reports is usually also required in support requests.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Removed documentation about packages that haven't been provided
+      in years.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Privoxy-Regression-Test:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Only log the test number when not running in verbose mode
+      The position of the test is rarely relevant and it previously
+      wasn't exactly obvious which one of the numbers was useful to
+      repeat the test with --test-number.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    GNUmakefile improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Factor generate-config-file out of config-file to make testing
+      more convenient.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      The clean target now also takes care of patch leftovers.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+ </itemizedlist>
+</para>
+
+<para>
+ <application>Privoxy 3.0.20</application> beta contained the
+ following changes compared to the previous stable release:
+</para>
+
+<para>
+ <itemizedlist>
+    <listitem>
+   <para>
+    Bug fixes:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Client sockets are now properly shutdown and drained before being
+      closed. This fixes page truncation issues with clients that aggressively
+      pipeline data on platforms that otherwise discard already written data.
+      The issue mainly affected Opera users and was initially reported
+      by Kevin in #3464439, szotsaki provided additional information to track
+      down the cause.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Fix latency calculation for shared connections (disabled by default).
+      It was broken since their introduction in 2009. The calculated latency
+      for most connections would be 0 in which case the timeout detection
+      failed to account for the real latency.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Reject URLs with invalid port. Previously they were parsed incorrectly and
+      characters between the port number and the first slash were silently
+      dropped as shown by curl test 187.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      The default-server-timeout and socket-timeout directives accept 0 as
+      valid value.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Fix a race condition on Windows that could cause Privoxy to become
+      unresponsive after toggling it on or off through the taskbar icon.
+      Reported by Tim H. in #3525694.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Fix the compilation on Windows when configured without IPv6 support.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Fix an assertion that could cause debug builds to abort() in case of
+      socks5 connection failures with "debug 2" enabled.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Fix an assertion that could cause debug builds to abort() if a filter
+      contained nul bytes in the replacement text.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    General improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Significantly improved keep-alive support for both client and server
+      connections.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      New debug log level 65536 which logs all actions that were applied to
+      the request.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      New directive client-header-order to forward client headers in a
+      different order than the one in which they arrived.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      New directive tolerate-pipelining to allow client-side pipelining.
+      If enabled (3.0.20 beta enables it by default), Privoxy will keep
+      pipelined client requests around to deal with them once the current
+      request has been served.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      New --config-test option to let Privoxy exit after checking whether or not
+      the configuration seems valid. The limitations noted in TODO #22 and #23
+      still apply. Based on a patch by Ramkumar Chinchani.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      New limit-cookie-lifetime{} action to let cookies expire before the end
+      of the session. Suggested by Rick Sykes in #1049575.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Increase the hard-coded maximum number of actions and filter files from
+      10 to 30 (each). It doesn't significantly affect Privoxy's memory usage
+      and recompiling wasn't an option for all Privoxy users that reached the
+      limit.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add support for chunk-encoded client request bodies. Previously
+      chunk-encoded request bodies weren't guaranteed to be forwarded correctly,
+      so this can also be considered a bug fix although chunk-encoded request
+      bodies aren't commonly used in the real world.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add support for Tor's optimistic-data SOCKS extension, which can reduce the
+      latency for requests on newly created connections. Currently only the
+      headers are sent optimistically and only if the client request has already
+      been read completely which rules out requests with large bodies.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      After preventing the client from pipelining, don't signal keep-alive
+      intentions. When looking at the response headers alone, it previously
+      wasn't obvious from the client's perspective that no additional responses
+      should be expected.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Stop considering client sockets tainted after receiving a request with body.
+      It hasn't been necessary for a while now and unnecessarily causes test
+      failures when using curl's test suite.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Allow HTTP/1.0 clients to signal interest in keep-alive through the
+      Proxy-Connection header. While such client are rare in the real world, it
+      doesn't hurt and couple of curl tests rely on it.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Only remove duplicated Content-Type headers when filters are enabled.
+      If they are not it doesn't cause ill effects and the user might not want it.
+      Downgrade the removal message to LOG_LEVEL_HEADER to clarify that it's not
+      an error in Privoxy and is unlikely to cause any problems in general.
+      Anonymously reported in #3599335.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Set the socket option SO_LINGER for the client socket.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Move several variable declarations to the beginning of their code block.
+      It's required when compiling with gcc 2.95 which is still used on some
+      platforms. Initial patch submitted by Simon South in #3564815.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Optionally try to sanity-check strptime() results before trusting them.
+      Broken strptime() implementations have caused problems in the past and
+      the most recent offender seems to be FreeBSD's libc (standards/173421).
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      When filtering is enabled, let Range headers pass if the range starts at
+      the beginning. This should work around (or at least reduce) the video
+      playback issues with various Apple clients as reported by Duc in #3426305.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Do not confuse a client hanging up with a connection time out. If a client
+      closes its side of the connection without sending a request line, do not
+      send the CLIENT_CONNECTION_TIMEOUT_RESPONSE, but report the condition
+      properly.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Allow closing curly braces as part of action values as long as they are
+      escaped.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      On Windows, the logfile is now written before showing the GUI error
+      message which blocks until the user acknowledges it.
+      Reported by Adriaan in #3593603.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Remove an unreasonable parameter limit in the CGI interface. The new
+      parameter limit depends on the memory available and is currently unlikely
+      to be reachable, due to other limits in both Privoxy and common clients.
+      Reported by Andrew on ijbswa-users@.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Decrease the chances of parse failures after requests with unsupported
+      methods were sent to the CGI interface.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Action file improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Remove the comment that indicated that updated default.action versions
+      are released on their own.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block 'optimize.indieclick.com/' and 'optimized-by.rubiconproject.com/'
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Unblock 'adjamblog.wordpress.com/' and 'adjamblog.files.wordpress.com/'.
+      Reported by Ryan Farmer in #3496116.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Unblock '/.*Bugtracker'. Reported by pwhk in #3522341.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add test URLs for '.freebsd.org' and '.watson.org'.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Unblock '.urbandictionary.com/popular'.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block '.adnxs.com/'.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block 'farm.plista.com/widgetdata.php'.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block 'rotation.linuxnewmedia.com/'.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block 'reklamy.sfd.pl/'. Reported by kacperdominik in #3399948.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block 'g.adspeed.net/'.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Unblock 'websupport.wdc.com/'. Reported by Adam Piggot in #3577851.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block '/openx/www/delivery/'.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Disable fast-redirects for '.googleapis.com/'.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block 'imp.double.net/'. Reported by David Bo in #3070411.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block 'gm-link.com/' which is used for email tracking.
+      Reported by David Bo in #1812733.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Verify that requests to "bwp." are blocked. URL taken from #1736879
+      submitted by Francois Marier.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block '/.*bannerid='. Reported by Adam Piggott in #2975779.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block 'cltomedia.info/delivery/' and '.adexprt.com/'.
+      Anonymously reported in #2965254.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block 'de17a.com/'. Reported by David Bo in #3061472.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block 'oskar.tradera.com/'. Reported by David Bo in #3060596.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block '/scripts/webtrends\.js'. Reported by johnd16 in #3002729.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block requests for 'pool.*.adhese.com/'. Reported by johnd16 in #3002716.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Update path pattern for Coremetrics and add tests.
+      Pattern and URLs submitted by Adam Piggott #3168443.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Enable +fast-redirects{check-decoded-url} for 'tr.anp.se/'.
+      Reported by David Bo in #3268832.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Unblock '.conrad.se/newsletter/banners/'. Reported by David Bo in #3413824.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block '.tynt.com/'. Reported by Dan Stahlke in #3421767.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Unblock '.bbci.co.uk/radio/'. Reported by Adam Piggott in #3569603.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Block requests to 'service.maxymiser.net/'.
+      Reported by johnd16 in #3118401 (with a previous URL).
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Disable fast-redirects for Google's "let's pretend your computer is
+      infected" page.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Unblock '/.*download' to resolve actionsfile feedback #3498129.
+      Submitted by Steven Kolins (soundcloud.com not working).
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Unblock '.wlxrs.com/' which is required by hotmail.com.
+      Fixes #3413827 submitted by David Bo.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add two unblock patterns for popup radio and TV players.
+      Submitted by Adam Piggott in #3596089.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Filter file improvements & bug fixes:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Add a referer tagger.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Reduce the likelihood that the google filter messes up HTML-generating
+      JavaScript. Reported by Zeno Kugy in #3520260.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Documentation improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Revised all OS X sections due to new packaging module (OSXPackageBuilder).
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Update the list of supported operating systems to clarify that all Windows
+      versions after 95 are expected to work and note that the platform-specific
+      code for AmigaOS and QNX currently isn't maintained.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Update 'Signals' section, the only explicitly handled signals are SIGINT,
+      SIGTERM and SIGHUP.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add Haiku to the list of operating systems on which Privoxy is known to
+      run.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add DragonFly to the list of BSDs on which Privoxy is known to run.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Removed references to redhat-specific documentation set since it no longer
+      exists.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Removed references to building PDFs since we no longer do so.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Multiple listen-address directives are supported since 3.0.18, correct the
+      documentation to say so.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Remove bogus section about long and short being preferable to int.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Corrected some Internet JunkBuster references to Privoxy.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Removed references to www.junkbusters.com since it is no longer
+      maintained. Reported by Angelina Matson.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Various grammar and spelling corrections
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add a client-header-tagger{} example for disabling filtering for range
+      requests.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Correct a URL in the "Privoxy with Tor" FAQ.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Spell 'refresh-tags' correctly. Reported by Don in #3571927.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Sort manpage options alphabetically.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Remove an incorrect sentence in the toggle section. The toggle state
+      doesn't affect whether or not the Windows version uses the tray icon.
+      Reported by Zeno Kugy in #3596395.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add new contributors since 3.0.19.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Log message improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      When stopping to watch a client socket due to pipelining, additionally log
+      the socket number.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Log the client socket and its condition before closing it. This makes it
+      more obvious that the socket actually gets closed and should help when
+      diagnosing problems like #3464439.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      In case of SOCKS5 failures, do not explicitly log the server's response.
+      It hasn't helped so far and the response can already be logged by enabling
+      "debug 32768" anyway. This reverts v1.81 and the follow-up bug fix v1.84.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Relocate the connection-accepted message from listen_loop() to serve().
+      This way it's printed by the thread that is actually serving the
+      connection which is nice when grepping for thread ids in log files.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Code cleanups:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Remove compatibility layer for versions prior to 3.0 since it has been
+      obsolete for more than 10 years now.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Remove the ijb_isupper() and ijb_tolower() macros from parsers.c since
+      they aren't used in this file.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Removed the 'Functions declared include:' comment sections since they tend
+      to be incomplete, incorrect and out of date and the benefit seems
+      questionable.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Various comment grammar and comprehensibility improvements.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Remove a pointless fflush() call in chat(). Flushing all streams pretty
+      much all the time for no obvious reason is ridiculous.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Relocate ijb_isupper()'s definition to project.h and get the ijb_tolower()
+      definition from there, too.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Relocate ijb_isdigit()'s definition to project.h.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Rename ijb_foo macros to privoxy_foo.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add malloc_or_die() which will allow to simplify code paths where malloc()
+      failures don't need to be handled gracefully.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add strdup_or_die() which will allow to simplify code paths where strdup()
+      failures don't need to be handled gracefully.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Replace strdup() calls with strdup_or_die() calls where it's safe and
+      simplifies the code.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Fix white-space around parentheses.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add missing white-space behind if's and the following parentheses.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Unwrap a memcpy() call in resolve_hostname_to_ip().
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Declare pcrs_get_delimiter()'s delimiters[] static const.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Various optimisations to remove dead code and merge inefficient code
+      structures for improved clarity, performance or code compactness.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Various data type corrections.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Change visibility of several code segments when compiling without
+      FEATURE_CONNECTION_KEEP_ALIVE enabled for clarity.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      In pcrs_get_delimiter(), do not use delimiters outside the ASCII range.
+      Fixes a clang complaint.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Fix an error message in get_last_url() nobody is supposed to see.
+      Reported by Matthew Fischer in #3507301.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Fix a typo in the no-zlib-support complaint. Patch submitted by Matthew
+      Fischer in #3507304.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Shorten ssplit()'s prototype by removing the last two arguments. We always
+      want to skip empty fields and ignore leading delimiters, so having
+      parameters for this only complicates the API.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Use an enum for the type of the action value.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Rename action_name's member takes_value to value_type as it isn't used as
+      boolean.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Turn family mismatches in match_sockaddr() into fatal errors.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Let enlist_unique_header() verify that the caller didn't pass a header
+      containing either \r or \n.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Change the hashes used in load_config() to unsigned int. That's what
+      hash_string() actually returns and using a potentially larger type
+      is at best useless.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Use privoxy_tolower() instead of vanilla tolower() with manual casting of
+      the argument.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Catch ssplit() failures in parse_cgi_parameters().
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Privoxy-Regression-Test:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Add an 'Overwrite condition' directive to skip any matching tests before
+      it. As it has a global scope, using it is more convenient than clowning
+      around with the Ignore directive.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Log to STDOUT instead of STDERR.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Include the Privoxy version in the output.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Various grammar and spelling corrections in documentation and code.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Additional tests for range requests with filtering enabled.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Tests with mostly invalid range request.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Add a couple of hide-if-modified-since{} tests with different date formats.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Cleaned up the format of the regression-tests.action file to match the
+      format of default.action.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Remove the "Copyright" line from print_version(). When using --help, every
+      line of screen space matters and thus shouldn't be wasted on things the
+      user doesn't care about.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    Privoxy-Log-Parser:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Improve the --statistics performance by skipping sanity checks for input
+      that shouldn't affect the results anyway. Add a --strict-checks option
+      that enables some of the checks again, just in case anybody cares.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      The distribution of client requests per connection is included in
+      the --statistic output.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      The --accept-unknown-messages option has been removed and the behavior
+      is now the default.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Accept and (mostly) highlight new log messages introduced with
+      Privoxy 3.0.20.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    uagen:
+    <itemizedlist>
+    <listitem>
+     <para>
+      Bump generated Firefox version to 17.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    GNUmakefile improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      The dok-tidy target no longer taints documents with a tidy-mark
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Change RA_MODE from 0664 to 0644. Suggested by Markus Dittrich in
+      #3505445.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Remove tidy's clean flag as it changes the scope of attributes.
+      Link-specific colors end up being applied to all text. Reported by Adam
+      Piggott in #3569551.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Leave it up to the user whether or not smart tags are inserted.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Let w3m itself do the line wrapping for the config file. It works better
+      than fmt as it can honour pre tags causing less unintentional line breaks.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Ditch a pointless '-r' passed to rm to delete files.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      The config-file target now requires less manual intervention and updates
+      the original config.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Change WDUMP to generate ASCII. Add WDUMP_UTF8 to allow UTF-8 in the
+      AUTHORS file so the names are right.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Stop pretending that lynx and links are supported for the documentation.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+  <listitem>
+   <para>
+    configure improvements:
+    <itemizedlist>
+    <listitem>
+     <para>
+      On Haiku, do not pass -lpthread to the compiler. Haiku's pthreads
+      implementation is contained in its system library, libroot, so no
+      additional library needs to be searched.
+      Patch submitted by Simon South in #3564815.
+     </para>
+    </listitem>
+    <listitem>
+     <para>
+      Additional Haiku-specific improvements. Disable checks intended for
+      multi-user systems as Haiku is presently single-user. Group Haiku-specific
+      settings in their own section, following the pattern for Solaris, OS/2 and
+      AmigaOS. Add additional library-related settings to remove the need for
+      providing configure with custom LDFLAGS.
+      Submitted by Simon South in #3574538.
+     </para>
+     </listitem>
+    </itemizedlist>
+   </para>
+  </listitem>
+ </itemizedlist>
+</para>

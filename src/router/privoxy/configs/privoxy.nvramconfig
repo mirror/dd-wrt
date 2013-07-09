@@ -1,0 +1,4 @@
+ "privoxy_enable"  "Privoxy Server"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
+ "privoxy_transp_enable"  "Privoxy Transparent" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
+ "privoxy_advanced"  "Privoxy Advanced Conf" "CHOICE" "2"  "0"  "1"  "FALSE" "0"
+ "privoxy_conf"  "Privoxy Config"  "NULL"  "FALSE" "0"
