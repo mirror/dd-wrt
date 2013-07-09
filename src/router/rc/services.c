@@ -101,6 +101,9 @@ int start_services_main(int argc, char **argv)
 #ifdef HAVE_MINIDLNA
 	handle = start_service_nofree_f("dlna", handle);
 #endif
+#ifdef HAVE_PRIVOXY
+	handle = start_service_nofree_f("privoxy", handle);
+#endif
 #ifdef HAVE_SYSLOG
 	handle = start_service_nofree_f("syslog", handle);
 #endif
@@ -262,6 +265,9 @@ int stop_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_MINIDLNA
 	handle = stop_service_nofree("dlna", handle);
+#endif
+#ifdef HAVE_PRIVOXY
+	handle = stop_service_nofree("privoxy", handle);
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER

@@ -663,6 +663,11 @@ ifneq ($(CONFIG_SAMBASRV),y)
 endif
 endif
 
+ifneq ($(CONFIG_PRIVOXY),y)
+	rm -f $(INSTALLDIR)/www/Privoxy.asp
+	rm -f $(INSTALLDIR)/www/help/HPrivoxy.asp
+endif
+
 ifneq ($(AOL_SUPPORT),1)
 	rm -f $(INSTALLDIR)/www/aol.asp
 	rm -f $(INSTALLDIR)/www/aol_error.asp
