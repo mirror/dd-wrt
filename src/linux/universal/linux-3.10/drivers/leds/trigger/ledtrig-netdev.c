@@ -32,7 +32,7 @@
 #include <net/net_namespace.h>
 #endif
 
-#include "leds.h"
+#include "../leds.h"
 
 /*
  * Configurable sysfs attributes:
