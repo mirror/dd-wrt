@@ -716,7 +716,7 @@ pcre/chartables.c:   pcre/dftables@EXEEXT@
 		pcre/dftables@EXEEXT@ >pcre/chartables.c
 
 pcre/dftables@EXEEXT@:       pcre/dftables.c pcre/maketables.c pcre/pcre.h pcre/internal.h pcre/config.h
-		$(CC) -o pcre/dftables@EXEEXT@ $(CFLAGS) pcre/dftables.c
+		gcc -o pcre/dftables@EXEEXT@ pcre/dftables.c
 
 # Win32
 w32log.@OBJEXT@: w32log.c errlog.h config.h jcc.h loadcfg.h miscutil.h pcre/pcre.h pcre/pcreposix.h pcrs.h project.h w32log.h w32taskbar.h win32.h
