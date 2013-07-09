@@ -237,6 +237,7 @@ obj-$(CONFIG_LIBQMI) += glib20 libqmi
 obj-$(CONFIG_UQMI) += json-c libubox uqmi
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 obj-$(CONFIG_STRONGSWAN) += gmp strongswan sqlite
+obj-$(CONFIG_PRIVOXY) += privoxy
 
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 #obj-$(CONFIG_OPROFILE) += oprofile
@@ -257,9 +258,6 @@ ifneq ($(CONFIG_DIST),"micro")
 CONFIG_AQOS=y
 endif
 
-ifeq ($(CONFIG_CHILLISPOT),y)
-CONFIG_COOVA_CHILLI=y
-endif
 
 all:
 
