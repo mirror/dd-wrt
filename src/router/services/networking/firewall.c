@@ -632,6 +632,13 @@ static void nat_prerouting(void)
 	 * ICMP packets are always redirected to INPUT chains 
 	 */
 	save2file("-A PREROUTING -p icmp -d %s -j DNAT --to-destination %s\n", wanaddr, nvram_safe_get("lan_ipaddr"));
+	
+#ifdef HAVE_PRIVOXY
+	//privoxy transparent mode
+	if (nvram_match("privoxy_transp_enable", "1") && nvram_match("privoxy_enable", "1")){		
+		save2file("-A PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
+	}
+#endif
 
 #ifdef HAVE_TFTP
 	/*

@@ -648,6 +648,10 @@ endif
 CFLAGS += -DHAVE_MINIDLNA
 endif
 
+ifeq ($(CONFIG_PRIVOXY),y)
+CFLAGS += -DHAVE_PRIVOXY
+endif
+
 CFLAGS += -DHAVE_AQOS
 
 ifeq ($(CONFIG_PPTPD),y)

@@ -669,6 +669,10 @@ endif
 CFLAGS += -DHAVE_MINIDLNA
 endif
 
+ifeq ($(CONFIG_PRIVOXY),y)
+CFLAGS += -DHAVE_PRIVOXY
+endif
+
 ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
 VISOBJS += sputnik.o
