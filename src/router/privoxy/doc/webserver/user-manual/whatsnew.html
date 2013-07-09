@@ -1,0 +1,1102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+  <title>What's New in this Release</title>
+  <meta name="GENERATOR" content=
+  "Modular DocBook HTML Stylesheet Version 1.79">
+  <link rel="HOME" title="Privoxy 3.0.21 User Manual" href="index.html">
+  <link rel="PREVIOUS" title="Installation" href="installation.html">
+  <link rel="NEXT" title="Quickstart to Using Privoxy" href=
+  "quickstart.html">
+  <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
+  <meta http-equiv="Content-Type" content="text/html; charset=us-ascii">
+  <link rel="STYLESHEET" type="text/css" href="p_doc.css">
+</head>
+
+<body class="SECT1" bgcolor="#EEEEEE" text="#000000" link="#0000FF" vlink=
+"#840084" alink="#0000FF">
+  <div class="NAVHEADER">
+    <table summary="Header navigation table" width="100%" border="0"
+    cellpadding="0" cellspacing="0">
+      <tr>
+        <th colspan="3" align="center">Privoxy 3.0.21 User Manual</th>
+      </tr>
+
+      <tr>
+        <td width="10%" align="left" valign="bottom"><a href=
+        "installation.html" accesskey="P">Prev</a></td>
+
+        <td width="80%" align="center" valign="bottom"></td>
+
+        <td width="10%" align="right" valign="bottom"><a href=
+        "quickstart.html" accesskey="N">Next</a></td>
+      </tr>
+    </table>
+    <hr align="left" width="100%">
+  </div>
+
+  <div class="SECT1">
+    <h1 class="SECT1"><a name="WHATSNEW" id="WHATSNEW">3. What's New in this
+    Release</a></h1>
+
+    <p><span class="APPLICATION">Privoxy 3.0.21</span> stable is a bug-fix
+    release for Privoxy 3.0.20 beta. It also addresses two security issues
+    that affect all previous Privoxy versions. The changes since 3.0.20 beta
+    are:</p>
+
+    <ul>
+      <li>
+        <p>Bug fixes:</p>
+
+        <ul>
+          <li>
+            <p>On POSIX-like platforms, network sockets with file descriptor
+            values above FD_SETSIZE are properly rejected. Previously they
+            could cause memory corruption in configurations that allowed the
+            limit to be reached.</p>
+          </li>
+
+          <li>
+            <p>Proxy authentication headers are removed unless the new
+            directive enable-proxy-authentication-forwarding is used.
+            Forwarding the headers potentionally allows malicious sites to
+            trick the user into providing them with login information. Reported
+            by Chris John Riley.</p>
+          </li>
+
+          <li>
+            <p>Compiles on OS/2 again now that unistd.h is only included on
+            platforms that have it.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>General improvements:</p>
+
+        <ul>
+          <li>
+            <p>The show-status page shows the FEATURE_STRPTIME_SANITY_CHECKS
+            status.</p>
+          </li>
+
+          <li>
+            <p>A couple of assert()s that could theoretically dereference
+            NULL pointers in debug builds have been relocated.</p>
+          </li>
+
+          <li>
+            <p>Added an LSB info block to the generic start script. Based on
+            a patch from Natxo Asenjo.</p>
+          </li>
+
+          <li>
+            <p>The max-client-connections default has been changed to 128
+            which should be more than enough for most setups.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>Action file improvements:</p>
+
+        <ul>
+          <li>
+            <p>Block rover.ebay./ar.*\&amp;adtype= instead of
+            "/.*\&amp;adtype=" which caused too man false positives. Reported
+            by u302320 in #360284, additional feedback from Adam Piggott.</p>
+          </li>
+
+          <li>
+            <p>Unblock '.advrider.com/' and '/.*ADVrider'. Anonymously
+            reported in #3603636.</p>
+          </li>
+
+          <li>
+            <p>Stop blocking '/js/slider\.js'. Reported by Adam Piggott in
+            #3606635 and _lvm in #2791160.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>Filter file improvements:</p>
+
+        <ul>
+          <li>
+            <p>Added an iframes filter.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>Documentation improvements:</p>
+
+        <ul>
+          <li>
+            <p>The whole GPLv2 text is included in the user manual now, so
+            Privoxy can serve it itself and the user can read it without
+            having to wade through GPLv3 ads first.</p>
+          </li>
+
+          <li>
+            <p>Properly numbered and underlined a couple of section titles in
+            the config that where previously overlooked due to a flaw in the
+            conversion script. Reported by Ralf Jungblut.</p>
+          </li>
+
+          <li>
+            <p>Improved the support instruction to hopefully make it harder
+            to unintentionally provide insufficient information when
+            requesting support. Previously it wasn't obvious that the
+            information we need in bug reports is usually also required in
+            support requests.</p>
+          </li>
+
+          <li>
+            <p>Removed documentation about packages that haven't been
+            provided in years.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>Privoxy-Regression-Test:</p>
+
+        <ul>
+          <li>
+            <p>Only log the test number when not running in verbose mode The
+            position of the test is rarely relevant and it previously wasn't
+            exactly obvious which one of the numbers was useful to repeat the
+            test with --test-number.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>GNUmakefile improvements:</p>
+
+        <ul>
+          <li>
+            <p>Factor generate-config-file out of config-file to make testing
+            more convenient.</p>
+          </li>
+
+          <li>
+            <p>The clean target now also takes care of patch leftovers.</p>
+          </li>
+        </ul>
+      </li>
+    </ul>
+
+    <p><span class="APPLICATION">Privoxy 3.0.20</span> beta contained the
+    following changes compared to the previous stable release:</p>
+
+    <ul>
+      <li>
+        <p>Bug fixes:</p>
+
+        <ul>
+          <li>
+            <p>Client sockets are now properly shutdown and drained before
+            being closed. This fixes page truncation issues with clients that
+            aggressively pipeline data on platforms that otherwise discard
+            already written data. The issue mainly affected Opera users and
+            was initially reported by Kevin in #3464439, szotsaki provided
+            additional information to track down the cause.</p>
+          </li>
+
+          <li>
+            <p>Fix latency calculation for shared connections (disabled by
+            default). It was broken since their introduction in 2009. The
+            calculated latency for most connections would be 0 in which case
+            the timeout detection failed to account for the real latency.</p>
+          </li>
+
+          <li>
+            <p>Reject URLs with invalid port. Previously they were parsed
+            incorrectly and characters between the port number and the first
+            slash were silently dropped as shown by curl test 187.</p>
+          </li>
+
+          <li>
+            <p>The default-server-timeout and socket-timeout directives
+            accept 0 as valid value.</p>
+          </li>
+
+          <li>
+            <p>Fix a race condition on Windows that could cause Privoxy to
+            become unresponsive after toggling it on or off through the
+            taskbar icon. Reported by Tim H. in #3525694.</p>
+          </li>
+
+          <li>
+            <p>Fix the compilation on Windows when configured without IPv6
+            support.</p>
+          </li>
+
+          <li>
+            <p>Fix an assertion that could cause debug builds to abort() in
+            case of socks5 connection failures with "debug 2" enabled.</p>
+          </li>
+
+          <li>
+            <p>Fix an assertion that could cause debug builds to abort() if a
+            filter contained nul bytes in the replacement text.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>General improvements:</p>
+
+        <ul>
+          <li>
+            <p>Significantly improved keep-alive support for both client and
+            server connections.</p>
+          </li>
+
+          <li>
+            <p>New debug log level 65536 which logs all actions that were
+            applied to the request.</p>
+          </li>
+
+          <li>
+            <p>New directive client-header-order to forward client headers in
+            a different order than the one in which they arrived.</p>
+          </li>
+
+          <li>
+            <p>New directive tolerate-pipelining to allow client-side
+            pipelining. If enabled (3.0.20 beta enables it by default),
+            Privoxy will keep pipelined client requests around to deal with
+            them once the current request has been served.</p>
+          </li>
+
+          <li>
+            <p>New --config-test option to let Privoxy exit after checking
+            whether or not the configuration seems valid. The limitations
+            noted in TODO #22 and #23 still apply. Based on a patch by
+            Ramkumar Chinchani.</p>
+          </li>
+
+          <li>
+            <p>New limit-cookie-lifetime{} action to let cookies expire
+            before the end of the session. Suggested by Rick Sykes in
+            #1049575.</p>
+          </li>
+
+          <li>
+            <p>Increase the hard-coded maximum number of actions and filter
+            files from 10 to 30 (each). It doesn't significantly affect
+            Privoxy's memory usage and recompiling wasn't an option for all
+            Privoxy users that reached the limit.</p>
+          </li>
+
+          <li>
+            <p>Add support for chunk-encoded client request bodies.
+            Previously chunk-encoded request bodies weren't guaranteed to be
+            forwarded correctly, so this can also be considered a bug fix
+            although chunk-encoded request bodies aren't commonly used in the
+            real world.</p>
+          </li>
+
+          <li>
+            <p>Add support for Tor's optimistic-data SOCKS extension, which
+            can reduce the latency for requests on newly created connections.
+            Currently only the headers are sent optimistically and only if
+            the client request has already been read completely which rules
+            out requests with large bodies.</p>
+          </li>
+
+          <li>
+            <p>After preventing the client from pipelining, don't signal
+            keep-alive intentions. When looking at the response headers
+            alone, it previously wasn't obvious from the client's perspective
+            that no additional responses should be expected.</p>
+          </li>
+
+          <li>
+            <p>Stop considering client sockets tainted after receiving a
+            request with body. It hasn't been necessary for a while now and
+            unnecessarily causes test failures when using curl's test
+            suite.</p>
+          </li>
+
+          <li>
+            <p>Allow HTTP/1.0 clients to signal interest in keep-alive
+            through the Proxy-Connection header. While such client are rare
+            in the real world, it doesn't hurt and couple of curl tests rely
+            on it.</p>
+          </li>
+
+          <li>
+            <p>Only remove duplicated Content-Type headers when filters are
+            enabled. If they are not it doesn't cause ill effects and the
+            user might not want it. Downgrade the removal message to
+            LOG_LEVEL_HEADER to clarify that it's not an error in Privoxy and
+            is unlikely to cause any problems in general. Anonymously
+            reported in #3599335.</p>
+          </li>
+
+          <li>
+            <p>Set the socket option SO_LINGER for the client socket.</p>
+          </li>
+
+          <li>
+            <p>Move several variable declarations to the beginning of their
+            code block. It's required when compiling with gcc 2.95 which is
+            still used on some platforms. Initial patch submitted by Simon
+            South in #3564815.</p>
+          </li>
+
+          <li>
+            <p>Optionally try to sanity-check strptime() results before
+            trusting them. Broken strptime() implementations have caused
+            problems in the past and the most recent offender seems to be
+            FreeBSD's libc (standards/173421).</p>
+          </li>
+
+          <li>
+            <p>When filtering is enabled, let Range headers pass if the range
+            starts at the beginning. This should work around (or at least
+            reduce) the video playback issues with various Apple clients as
+            reported by Duc in #3426305.</p>
+          </li>
+
+          <li>
+            <p>Do not confuse a client hanging up with a connection time out.
+            If a client closes its side of the connection without sending a
+            request line, do not send the CLIENT_CONNECTION_TIMEOUT_RESPONSE,
+            but report the condition properly.</p>
+          </li>
+
+          <li>
+            <p>Allow closing curly braces as part of action values as long as
+            they are escaped.</p>
+          </li>
+
+          <li>
+            <p>On Windows, the logfile is now written before showing the GUI
+            error message which blocks until the user acknowledges it.
+            Reported by Adriaan in #3593603.</p>
+          </li>
+
+          <li>
+            <p>Remove an unreasonable parameter limit in the CGI interface.
+            The new parameter limit depends on the memory available and is
+            currently unlikely to be reachable, due to other limits in both
+            Privoxy and common clients. Reported by Andrew on
+            ijbswa-users@.</p>
+          </li>
+
+          <li>
+            <p>Decrease the chances of parse failures after requests with
+            unsupported methods were sent to the CGI interface.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>Action file improvements:</p>
+
+        <ul>
+          <li>
+            <p>Remove the comment that indicated that updated default.action
+            versions are released on their own.</p>
+          </li>
+
+          <li>
+            <p>Block 'optimize.indieclick.com/' and
+            'optimized-by.rubiconproject.com/'</p>
+          </li>
+
+          <li>
+            <p>Unblock 'adjamblog.wordpress.com/' and
+            'adjamblog.files.wordpress.com/'. Reported by Ryan Farmer in
+            #3496116.</p>
+          </li>
+
+          <li>
+            <p>Unblock '/.*Bugtracker'. Reported by pwhk in #3522341.</p>
+          </li>
+
+          <li>
+            <p>Add test URLs for '.freebsd.org' and '.watson.org'.</p>
+          </li>
+
+          <li>
+            <p>Unblock '.urbandictionary.com/popular'.</p>
+          </li>
+
+          <li>
+            <p>Block '.adnxs.com/'.</p>
+          </li>
+
+          <li>
+            <p>Block 'farm.plista.com/widgetdata.php'.</p>
+          </li>
+
+          <li>
+            <p>Block 'rotation.linuxnewmedia.com/'.</p>
+          </li>
+
+          <li>
+            <p>Block 'reklamy.sfd.pl/'. Reported by kacperdominik in
+            #3399948.</p>
+          </li>
+
+          <li>
+            <p>Block 'g.adspeed.net/'.</p>
+          </li>
+
+          <li>
+            <p>Unblock 'websupport.wdc.com/'. Reported by Adam Piggot in
+            #3577851.</p>
+          </li>
+
+          <li>
+            <p>Block '/openx/www/delivery/'.</p>
+          </li>
+
+          <li>
+            <p>Disable fast-redirects for '.googleapis.com/'.</p>
+          </li>
+
+          <li>
+            <p>Block 'imp.double.net/'. Reported by David Bo in #3070411.</p>
+          </li>
+
+          <li>
+            <p>Block 'gm-link.com/' which is used for email tracking.
+            Reported by David Bo in #1812733.</p>
+          </li>
+
+          <li>
+            <p>Verify that requests to "bwp." are blocked. URL taken from
+            #1736879 submitted by Francois Marier.</p>
+          </li>
+
+          <li>
+            <p>Block '/.*bannerid='. Reported by Adam Piggott in
+            #2975779.</p>
+          </li>
+
+          <li>
+            <p>Block 'cltomedia.info/delivery/' and '.adexprt.com/'.
+            Anonymously reported in #2965254.</p>
+          </li>
+
+          <li>
+            <p>Block 'de17a.com/'. Reported by David Bo in #3061472.</p>
+          </li>
+
+          <li>
+            <p>Block 'oskar.tradera.com/'. Reported by David Bo in
+            #3060596.</p>
+          </li>
+
+          <li>
+            <p>Block '/scripts/webtrends\.js'. Reported by johnd16 in
+            #3002729.</p>
+          </li>
+
+          <li>
+            <p>Block requests for 'pool.*.adhese.com/'. Reported by johnd16
+            in #3002716.</p>
+          </li>
+
+          <li>
+            <p>Update path pattern for Coremetrics and add tests. Pattern and
+            URLs submitted by Adam Piggott #3168443.</p>
+          </li>
+
+          <li>
+            <p>Enable +fast-redirects{check-decoded-url} for 'tr.anp.se/'.
+            Reported by David Bo in #3268832.</p>
+          </li>
+
+          <li>
+            <p>Unblock '.conrad.se/newsletter/banners/'. Reported by David Bo
+            in #3413824.</p>
+          </li>
+
+          <li>
+            <p>Block '.tynt.com/'. Reported by Dan Stahlke in #3421767.</p>
+          </li>
+
+          <li>
+            <p>Unblock '.bbci.co.uk/radio/'. Reported by Adam Piggott in
+            #3569603.</p>
+          </li>
+
+          <li>
+            <p>Block requests to 'service.maxymiser.net/'. Reported by
+            johnd16 in #3118401 (with a previous URL).</p>
+          </li>
+
+          <li>
+            <p>Disable fast-redirects for Google's "let's pretend your
+            computer is infected" page.</p>
+          </li>
+
+          <li>
+            <p>Unblock '/.*download' to resolve actionsfile feedback
+            #3498129. Submitted by Steven Kolins (soundcloud.com not
+            working).</p>
+          </li>
+
+          <li>
+            <p>Unblock '.wlxrs.com/' which is required by hotmail.com. Fixes
+            #3413827 submitted by David Bo.</p>
+          </li>
+
+          <li>
+            <p>Add two unblock patterns for popup radio and TV players.
+            Submitted by Adam Piggott in #3596089.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>Filter file improvements &amp; bug fixes:</p>
+
+        <ul>
+          <li>
+            <p>Add a referer tagger.</p>
+          </li>
+
+          <li>
+            <p>Reduce the likelihood that the google filter messes up
+            HTML-generating JavaScript. Reported by Zeno Kugy in
+            #3520260.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>Documentation improvements:</p>
+
+        <ul>
+          <li>
+            <p>Revised all OS X sections due to new packaging module
+            (OSXPackageBuilder).</p>
+          </li>
+
+          <li>
+            <p>Update the list of supported operating systems to clarify that
+            all Windows versions after 95 are expected to work and note that
+            the platform-specific code for AmigaOS and QNX currently isn't
+            maintained.</p>
+          </li>
+
+          <li>
+            <p>Update 'Signals' section, the only explicitly handled signals
+            are SIGINT, SIGTERM and SIGHUP.</p>
+          </li>
+
+          <li>
+            <p>Add Haiku to the list of operating systems on which Privoxy is
+            known to run.</p>
+          </li>
+
+          <li>
+            <p>Add DragonFly to the list of BSDs on which Privoxy is known to
+            run.</p>
+          </li>
+
+          <li>
+            <p>Removed references to redhat-specific documentation set since
+            it no longer exists.</p>
+          </li>
+
+          <li>
+            <p>Removed references to building PDFs since we no longer do
+            so.</p>
+          </li>
+
+          <li>
+            <p>Multiple listen-address directives are supported since 3.0.18,
+            correct the documentation to say so.</p>
+          </li>
+
+          <li>
+            <p>Remove bogus section about long and short being preferable to
+            int.</p>
+          </li>
+
+          <li>
+            <p>Corrected some Internet JunkBuster references to Privoxy.</p>
+          </li>
+
+          <li>
+            <p>Removed references to www.junkbusters.com since it is no
+            longer maintained. Reported by Angelina Matson.</p>
+          </li>
+
+          <li>
+            <p>Various grammar and spelling corrections</p>
+          </li>
+
+          <li>
+            <p>Add a client-header-tagger{} example for disabling filtering
+            for range requests.</p>
+          </li>
+
+          <li>
+            <p>Correct a URL in the "Privoxy with Tor" FAQ.</p>
+          </li>
+
+          <li>
+            <p>Spell 'refresh-tags' correctly. Reported by Don in
+            #3571927.</p>
+          </li>
+
+          <li>
+            <p>Sort manpage options alphabetically.</p>
+          </li>
+
+          <li>
+            <p>Remove an incorrect sentence in the toggle section. The toggle
+            state doesn't affect whether or not the Windows version uses the
+            tray icon. Reported by Zeno Kugy in #3596395.</p>
+          </li>
+
+          <li>
+            <p>Add new contributors since 3.0.19.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>Log message improvements:</p>
+
+        <ul>
+          <li>
+            <p>When stopping to watch a client socket due to pipelining,
+            additionally log the socket number.</p>
+          </li>
+
+          <li>
+            <p>Log the client socket and its condition before closing it.
+            This makes it more obvious that the socket actually gets closed
+            and should help when diagnosing problems like #3464439.</p>
+          </li>
+
+          <li>
+            <p>In case of SOCKS5 failures, do not explicitly log the server's
+            response. It hasn't helped so far and the response can already be
+            logged by enabling "debug 32768" anyway. This reverts v1.81 and
+            the follow-up bug fix v1.84.</p>
+          </li>
+
+          <li>
+            <p>Relocate the connection-accepted message from listen_loop() to
+            serve(). This way it's printed by the thread that is actually
+            serving the connection which is nice when grepping for thread ids
+            in log files.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>Code cleanups:</p>
+
+        <ul>
+          <li>
+            <p>Remove compatibility layer for versions prior to 3.0 since it
+            has been obsolete for more than 10 years now.</p>
+          </li>
+
+          <li>
+            <p>Remove the ijb_isupper() and ijb_tolower() macros from
+            parsers.c since they aren't used in this file.</p>
+          </li>
+
+          <li>
+            <p>Removed the 'Functions declared include:' comment sections
+            since they tend to be incomplete, incorrect and out of date and
+            the benefit seems questionable.</p>
+          </li>
+
+          <li>
+            <p>Various comment grammar and comprehensibility
+            improvements.</p>
+          </li>
+
+          <li>
+            <p>Remove a pointless fflush() call in chat(). Flushing all
+            streams pretty much all the time for no obvious reason is
+            ridiculous.</p>
+          </li>
+
+          <li>
+            <p>Relocate ijb_isupper()'s definition to project.h and get the
+            ijb_tolower() definition from there, too.</p>
+          </li>
+
+          <li>
+            <p>Relocate ijb_isdigit()'s definition to project.h.</p>
+          </li>
+
+          <li>
+            <p>Rename ijb_foo macros to privoxy_foo.</p>
+          </li>
+
+          <li>
+            <p>Add malloc_or_die() which will allow to simplify code paths
+            where malloc() failures don't need to be handled gracefully.</p>
+          </li>
+
+          <li>
+            <p>Add strdup_or_die() which will allow to simplify code paths
+            where strdup() failures don't need to be handled gracefully.</p>
+          </li>
+
+          <li>
+            <p>Replace strdup() calls with strdup_or_die() calls where it's
+            safe and simplifies the code.</p>
+          </li>
+
+          <li>
+            <p>Fix white-space around parentheses.</p>
+          </li>
+
+          <li>
+            <p>Add missing white-space behind if's and the following
+            parentheses.</p>
+          </li>
+
+          <li>
+            <p>Unwrap a memcpy() call in resolve_hostname_to_ip().</p>
+          </li>
+
+          <li>
+            <p>Declare pcrs_get_delimiter()'s delimiters[] static const.</p>
+          </li>
+
+          <li>
+            <p>Various optimisations to remove dead code and merge
+            inefficient code structures for improved clarity, performance or
+            code compactness.</p>
+          </li>
+
+          <li>
+            <p>Various data type corrections.</p>
+          </li>
+
+          <li>
+            <p>Change visibility of several code segments when compiling
+            without FEATURE_CONNECTION_KEEP_ALIVE enabled for clarity.</p>
+          </li>
+
+          <li>
+            <p>In pcrs_get_delimiter(), do not use delimiters outside the
+            ASCII range. Fixes a clang complaint.</p>
+          </li>
+
+          <li>
+            <p>Fix an error message in get_last_url() nobody is supposed to
+            see. Reported by Matthew Fischer in #3507301.</p>
+          </li>
+
+          <li>
+            <p>Fix a typo in the no-zlib-support complaint. Patch submitted
+            by Matthew Fischer in #3507304.</p>
+          </li>
+
+          <li>
+            <p>Shorten ssplit()'s prototype by removing the last two
+            arguments. We always want to skip empty fields and ignore leading
+            delimiters, so having parameters for this only complicates the
+            API.</p>
+          </li>
+
+          <li>
+            <p>Use an enum for the type of the action value.</p>
+          </li>
+
+          <li>
+            <p>Rename action_name's member takes_value to value_type as it
+            isn't used as boolean.</p>
+          </li>
+
+          <li>
+            <p>Turn family mismatches in match_sockaddr() into fatal
+            errors.</p>
+          </li>
+
+          <li>
+            <p>Let enlist_unique_header() verify that the caller didn't pass
+            a header containing either \r or \n.</p>
+          </li>
+
+          <li>
+            <p>Change the hashes used in load_config() to unsigned int.
+            That's what hash_string() actually returns and using a
+            potentially larger type is at best useless.</p>
+          </li>
+
+          <li>
+            <p>Use privoxy_tolower() instead of vanilla tolower() with manual
+            casting of the argument.</p>
+          </li>
+
+          <li>
+            <p>Catch ssplit() failures in parse_cgi_parameters().</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>Privoxy-Regression-Test:</p>
+
+        <ul>
+          <li>
+            <p>Add an 'Overwrite condition' directive to skip any matching
+            tests before it. As it has a global scope, using it is more
+            convenient than clowning around with the Ignore directive.</p>
+          </li>
+
+          <li>
+            <p>Log to STDOUT instead of STDERR.</p>
+          </li>
+
+          <li>
+            <p>Include the Privoxy version in the output.</p>
+          </li>
+
+          <li>
+            <p>Various grammar and spelling corrections in documentation and
+            code.</p>
+          </li>
+
+          <li>
+            <p>Additional tests for range requests with filtering
+            enabled.</p>
+          </li>
+
+          <li>
+            <p>Tests with mostly invalid range request.</p>
+          </li>
+
+          <li>
+            <p>Add a couple of hide-if-modified-since{} tests with different
+            date formats.</p>
+          </li>
+
+          <li>
+            <p>Cleaned up the format of the regression-tests.action file to
+            match the format of default.action.</p>
+          </li>
+
+          <li>
+            <p>Remove the "Copyright" line from print_version(). When using
+            --help, every line of screen space matters and thus shouldn't be
+            wasted on things the user doesn't care about.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>Privoxy-Log-Parser:</p>
+
+        <ul>
+          <li>
+            <p>Improve the --statistics performance by skipping sanity checks
+            for input that shouldn't affect the results anyway. Add a
+            --strict-checks option that enables some of the checks again,
+            just in case anybody cares.</p>
+          </li>
+
+          <li>
+            <p>The distribution of client requests per connection is included
+            in the --statistic output.</p>
+          </li>
+
+          <li>
+            <p>The --accept-unknown-messages option has been removed and the
+            behavior is now the default.</p>
+          </li>
+
+          <li>
+            <p>Accept and (mostly) highlight new log messages introduced with
+            Privoxy 3.0.20.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>uagen:</p>
+
+        <ul>
+          <li>
+            <p>Bump generated Firefox version to 17.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>GNUmakefile improvements:</p>
+
+        <ul>
+          <li>
+            <p>The dok-tidy target no longer taints documents with a
+            tidy-mark</p>
+          </li>
+
+          <li>
+            <p>Change RA_MODE from 0664 to 0644. Suggested by Markus Dittrich
+            in #3505445.</p>
+          </li>
+
+          <li>
+            <p>Remove tidy's clean flag as it changes the scope of
+            attributes. Link-specific colors end up being applied to all
+            text. Reported by Adam Piggott in #3569551.</p>
+          </li>
+
+          <li>
+            <p>Leave it up to the user whether or not smart tags are
+            inserted.</p>
+          </li>
+
+          <li>
+            <p>Let w3m itself do the line wrapping for the config file. It
+            works better than fmt as it can honour pre tags causing less
+            unintentional line breaks.</p>
+          </li>
+
+          <li>
+            <p>Ditch a pointless '-r' passed to rm to delete files.</p>
+          </li>
+
+          <li>
+            <p>The config-file target now requires less manual intervention
+            and updates the original config.</p>
+          </li>
+
+          <li>
+            <p>Change WDUMP to generate ASCII. Add WDUMP_UTF8 to allow UTF-8
+            in the AUTHORS file so the names are right.</p>
+          </li>
+
+          <li>
+            <p>Stop pretending that lynx and links are supported for the
+            documentation.</p>
+          </li>
+        </ul>
+      </li>
+
+      <li>
+        <p>configure improvements:</p>
+
+        <ul>
+          <li>
+            <p>On Haiku, do not pass -lpthread to the compiler. Haiku's
+            pthreads implementation is contained in its system library,
+            libroot, so no additional library needs to be searched. Patch
+            submitted by Simon South in #3564815.</p>
+          </li>
+
+          <li>
+            <p>Additional Haiku-specific improvements. Disable checks
+            intended for multi-user systems as Haiku is presently
+            single-user. Group Haiku-specific settings in their own section,
+            following the pattern for Solaris, OS/2 and AmigaOS. Add
+            additional library-related settings to remove the need for
+            providing configure with custom LDFLAGS. Submitted by Simon South
+            in #3574538.</p>
+          </li>
+        </ul>
+      </li>
+    </ul>
+
+    <div class="SECT2">
+      <h2 class="SECT2"><a name="UPGRADERSNOTE" id="UPGRADERSNOTE">3.1. Note
+      to Upgraders</a></h2>
+
+      <p>A quick list of things to be aware of before upgrading from earlier
+      versions of <span class="APPLICATION">Privoxy</span>:</p>
+
+      <ul>
+        <li>
+          <p>The recommended way to upgrade <span class=
+          "APPLICATION">Privoxy</span> is to backup your old configuration
+          files, install the new ones, verify that <span class=
+          "APPLICATION">Privoxy</span> is working correctly and finally merge
+          back your changes using <span class="APPLICATION">diff</span> and
+          maybe <span class="APPLICATION">patch</span>.</p>
+
+          <p>There are a number of new features in each <span class=
+          "APPLICATION">Privoxy</span> release and most of them have to be
+          explicitly enabled in the configuration files. Old configuration
+          files obviously don't do that and due to syntax changes using old
+          configuration files with a new <span class=
+          "APPLICATION">Privoxy</span> isn't always possible anyway.</p>
+        </li>
+
+        <li>
+          <p>Note that some installers remove earlier versions completely,
+          including configuration files, therefore you should really save any
+          important configuration files!</p>
+        </li>
+
+        <li>
+          <p>On the other hand, other installers don't overwrite existing
+          configuration files, thinking you will want to do that
+          yourself.</p>
+        </li>
+
+        <li>
+          <p>In the default configuration only fatal errors are logged now.
+          You can change that in the <a href="config.html#DEBUG">debug
+          section</a> of the configuration file. You may also want to enable
+          more verbose logging until you verified that the new <span class=
+          "APPLICATION">Privoxy</span> version is working as expected.</p>
+        </li>
+
+        <li>
+          <p>Three other config file settings are now off by default:
+          <a href="config.html#ENABLE-REMOTE-TOGGLE">enable-remote-toggle</a>,
+          <a href=
+          "config.html#ENABLE-REMOTE-HTTP-TOGGLE">enable-remote-http-toggle</a>,
+          and <a href=
+          "config.html#ENABLE-EDIT-ACTIONS">enable-edit-actions</a>. If you
+          use or want these, you will need to explicitly enable them, and be
+          aware of the security issues involved.</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="NAVFOOTER">
+    <hr align="left" width="100%">
+
+    <table summary="Footer navigation table" width="100%" border="0"
+    cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="33%" align="left" valign="top"><a href="installation.html"
+        accesskey="P">Prev</a></td>
+
+        <td width="34%" align="center" valign="top"><a href="index.html"
+        accesskey="H">Home</a></td>
+
+        <td width="33%" align="right" valign="top"><a href="quickstart.html"
+        accesskey="N">Next</a></td>
+      </tr>
+
+      <tr>
+        <td width="33%" align="left" valign="top">Installation</td>
+
+        <td width="34%" align="center" valign="top">&nbsp;</td>
+
+        <td width="33%" align="right" valign="top">Quickstart to Using
+        Privoxy</td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>
