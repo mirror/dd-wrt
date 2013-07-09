@@ -121,6 +121,16 @@
  *              - Clean-up, move 'get imq device pointer by imqX name' to
  *                separate function from imq_nf_queue().
  *
+ *             2012/01/05 - Jussi Kivilinna <jussi.kivilinna@mbnet.fi>
+ *              - Port to 3.2
+ *
+ *             2012/03/19 - Jussi Kivilinna <jussi.kivilinna@mbnet.fi>
+ *              - Port to 3.3
+ *
+ *             2012/12/12 - Jussi Kivilinna <jussi.kivilinna@mbnet.fi>
+ *              - Port to 3.7
+ *              - Fix checkpatch.pl warnings
+ *
  *	       Also, many thanks to pablo Sebastian Greco for making the initial
  *	       patch and to those who helped the testing.
  *
@@ -152,7 +162,7 @@
 #include <net/ip.h>
 #include <net/ipv6.h>
 
-static int imq_nf_queue(struct nf_queue_entry *entry, unsigned int queue_num);
+static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num);
 
 static nf_hookfn imq_nf_hook;
 
@@ -283,14 +293,15 @@ recheck:
 #if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
 	case htons(ETH_P_IPV6): {
 		const struct ipv6hdr *iph = ipv6_hdr(skb);
-		__be16 frag_off;
+		__be16 fo = 0;
 
 		if (unlikely(!pskb_may_pull(skb, sizeof(struct ipv6hdr))))
 			goto other;
 
 		addr1 = iph->daddr.s6_addr32[3];
 		addr2 = iph->saddr.s6_addr32[3];
-		ihl = ipv6_skip_exthdr(skb, sizeof(struct ipv6hdr), &ip_proto, &frag_off);
+		ihl = ipv6_skip_exthdr(skb, sizeof(struct ipv6hdr), &ip_proto,
+				       &fo);
 		if (unlikely(ihl < 0))
 			goto other;
 
@@ -501,7 +512,7 @@ static struct net_device *get_imq_device_by_index(int index)
 	return dev;
 }
 
-static int imq_nf_queue(struct nf_queue_entry *entry, unsigned int queue_num)
+static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num)
 {
 	struct net_device *dev;
 	struct sk_buff *skb_orig, *skb, *skb_shared;
@@ -515,9 +526,8 @@ static int imq_nf_queue(struct nf_queue_entry *entry, unsigned int queue_num)
 	index = entry->skb->imq_flags & IMQ_F_IFMASK;
 	if (unlikely(index > numdevs - 1)) {
 		if (net_ratelimit())
-			printk(KERN_WARNING
-			       "IMQ: invalid device specified, highest is %u\n",
-			       numdevs - 1);
+			pr_warn("IMQ: invalid device specified, highest is %u\n",
+				numdevs - 1);
 		retval = -EINVAL;
 		goto out;
 	}
@@ -587,8 +597,9 @@ static int imq_nf_queue(struct nf_queue_entry *entry, unsigned int queue_num)
 	users = atomic_read(&skb->users);
 
 	skb_shared = skb_get(skb); /* increase reference count by one */
-	skb_save_cb(skb_shared); /* backup skb->cb, as qdisc layer will
-					overwrite it */
+
+	/* backup skb->cb, as qdisc layer will overwrite it */
+	skb_save_cb(skb_shared);
 	qdisc_enqueue_root(skb_shared, q); /* might kfree_skb */
 
 	if (likely(atomic_read(&skb_shared->users) == users + 1)) {
@@ -611,9 +622,11 @@ static int imq_nf_queue(struct nf_queue_entry *entry, unsigned int queue_num)
 	} else {
 		skb_restore_cb(skb_shared); /* restore skb->cb */
 		skb->nf_queue_entry = NULL;
-		/* qdisc dropped packet and decreased skb reference count of
+		/*
+		 * qdisc dropped packet and decreased skb reference count of
 		 * skb, so we don't really want to and try refree as that would
-		 * actually destroy the skb. */
+		 * actually destroy the skb.
+		 */
 		spin_unlock(root_lock);
 		goto packet_not_eaten_by_imq_dev;
 	}
@@ -689,7 +702,7 @@ static int imq_validate(struct nlattr *tb[], struct nlattr *data[])
 	}
 	return 0;
 end:
-	printk(KERN_WARNING "IMQ: imq_validate failed (%d)\n", ret);
+	pr_warn("IMQ: imq_validate failed (%d)\n", ret);
 	return ret;
 }
 
@@ -701,6 +714,7 @@ static struct rtnl_link_ops imq_link_ops __read_mostly = {
 };
 
 static const struct nf_queue_handler imq_nfqh = {
+	.name  = "imq",
 	.outfn = imq_nf_queue,
 };
 
@@ -746,13 +760,13 @@ static int __init imq_init_devs(void)
 	int err, i;
 
 	if (numdevs < 1 || numdevs > IMQ_MAX_DEVS) {
-		printk(KERN_ERR "IMQ: numdevs has to be betweed 1 and %u\n",
+		pr_err("IMQ: numdevs has to be betweed 1 and %u\n",
 		       IMQ_MAX_DEVS);
 		return -EINVAL;
 	}
 
 	if (numqueues < 1 || numqueues > IMQ_MAX_QUEUES) {
-		printk(KERN_ERR "IMQ: numqueues has to be betweed 1 and %u\n",
+		pr_err("IMQ: numqueues has to be betweed 1 and %u\n",
 		       IMQ_MAX_QUEUES);
 		return -EINVAL;
 	}
@@ -778,6 +792,7 @@ extern unsigned int numcpucores;
 #else
 static unsigned int numcpucores=1;
 #endif
+
 static int __init imq_init_module(void)
 {
 	int err;
@@ -787,33 +802,34 @@ static int __init imq_init_module(void)
 	BUILD_BUG_ON(CONFIG_IMQ_NUM_DEVS < 2);
 	BUILD_BUG_ON(CONFIG_IMQ_NUM_DEVS - 1 > IMQ_F_IFMASK);
 #endif
-	numqueues = numcpucores;
+       numqueues = numcpucores;
+
 	err = imq_init_devs();
 	if (err) {
-		printk(KERN_ERR "IMQ: Error trying imq_init_devs(net)\n");
+		pr_err("IMQ: Error trying imq_init_devs(net)\n");
 		return err;
 	}
 
 	err = imq_init_hooks();
 	if (err) {
-		printk(KERN_ERR "IMQ: Error trying imq_init_hooks()\n");
+		pr_err(KERN_ERR "IMQ: Error trying imq_init_hooks()\n");
 		rtnl_link_unregister(&imq_link_ops);
 		memset(imq_devs_cache, 0, sizeof(imq_devs_cache));
 		return err;
 	}
 
-	printk(KERN_INFO "IMQ driver loaded successfully. "
-		"(numdevs = %d, numqueues = %d)\n", numdevs, numqueues);
+	pr_info("IMQ driver loaded successfully. (numdevs = %d, numqueues = %d)\n",
+		numdevs, numqueues);
 
 #if defined(CONFIG_IMQ_BEHAVIOR_BA) || defined(CONFIG_IMQ_BEHAVIOR_BB)
-	printk(KERN_INFO "\tHooking IMQ before NAT on PREROUTING.\n");
+	pr_info("\tHooking IMQ before NAT on PREROUTING.\n");
 #else
-	printk(KERN_INFO "\tHooking IMQ after NAT on PREROUTING.\n");
+	pr_info("\tHooking IMQ after NAT on PREROUTING.\n");
 #endif
 #if defined(CONFIG_IMQ_BEHAVIOR_AB) || defined(CONFIG_IMQ_BEHAVIOR_BB)
-	printk(KERN_INFO "\tHooking IMQ before NAT on POSTROUTING.\n");
+	pr_info("\tHooking IMQ before NAT on POSTROUTING.\n");
 #else
-	printk(KERN_INFO "\tHooking IMQ after NAT on POSTROUTING.\n");
+	pr_info("\tHooking IMQ after NAT on POSTROUTING.\n");
 #endif
 
 	return 0;
@@ -835,7 +851,7 @@ static void __exit imq_exit_module(void)
 {
 	imq_unhook();
 	imq_cleanup_devs();
-	printk(KERN_INFO "IMQ driver unloaded successfully.\n");
+	pr_info("IMQ driver unloaded successfully.\n");
 }
 
 module_init(imq_init_module);
@@ -843,12 +859,10 @@ module_exit(imq_exit_module);
 
 module_param(numdevs, int, 0);
 module_param(numqueues, int, 0);
-MODULE_PARM_DESC(numdevs, "number of IMQ devices (how many imq* devices will "
-			"be created)");
+MODULE_PARM_DESC(numdevs, "number of IMQ devices (how many imq* devices will be created)");
 MODULE_PARM_DESC(numqueues, "number of queues per IMQ device");
 MODULE_AUTHOR("http://www.linuximq.net");
-MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See "
-			"http://www.linuximq.net/ for more information.");
+MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See http://www.linuximq.net/ for more information.");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS_RTNL_LINK("imq");
 
