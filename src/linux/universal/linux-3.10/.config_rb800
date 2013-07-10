@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.10.0-rc7 Kernel Configuration
+# Linux/powerpc 3.10.0 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -101,10 +101,8 @@ CONFIG_GENERIC_CMOS_UPDATE=y
 #
 # Timers subsystem
 #
-CONFIG_TICK_ONESHOT=y
-CONFIG_NO_HZ_COMMON=y
-# CONFIG_HZ_PERIODIC is not set
-CONFIG_NO_HZ_IDLE=y
+CONFIG_HZ_PERIODIC=y
+# CONFIG_NO_HZ_IDLE is not set
 # CONFIG_NO_HZ is not set
 # CONFIG_HIGH_RES_TIMERS is not set
 
@@ -1243,6 +1241,7 @@ CONFIG_NET_VENDOR_ATHEROS=y
 # CONFIG_ATL1 is not set
 # CONFIG_ATL1E is not set
 CONFIG_ATL1C=m
+# CONFIG_ALX is not set
 # CONFIG_NET_CADENCE is not set
 # CONFIG_NET_VENDOR_BROADCOM is not set
 # CONFIG_NET_VENDOR_BROCADE is not set
