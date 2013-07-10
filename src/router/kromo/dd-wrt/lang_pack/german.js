@@ -698,6 +698,8 @@ privoxy.legend = "Proxy Server";
 privoxy.transp = "Transparenter Modus";
 privoxy.custom = "Eigene Konfiguration";
 
+hprivoxy.right2="Schaltet Privoxy ein und konfiguriert ihn für ihre Clients. Proxy IP = <b>Router IP</b> Proxy Port = <b>8118</b>";
+
 // **************************************************************** Hotspot.asp **********************************************************************//
 
 hotspot.titl="Hotspot";
