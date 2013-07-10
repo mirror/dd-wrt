@@ -714,7 +714,6 @@ static struct rtnl_link_ops imq_link_ops __read_mostly = {
 };
 
 static const struct nf_queue_handler imq_nfqh = {
-	.name  = "imq",
 	.outfn = imq_nf_queue,
 };
 
