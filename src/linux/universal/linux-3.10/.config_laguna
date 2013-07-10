@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.0-rc7 Kernel Configuration
+# Linux/arm 3.10.0 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -65,10 +65,9 @@ CONFIG_GENERIC_CLOCKEVENTS_BROADCAST=y
 # Timers subsystem
 #
 CONFIG_TICK_ONESHOT=y
-CONFIG_NO_HZ_COMMON=y
-# CONFIG_HZ_PERIODIC is not set
-CONFIG_NO_HZ_IDLE=y
-CONFIG_NO_HZ=y
+CONFIG_HZ_PERIODIC=y
+# CONFIG_NO_HZ_IDLE is not set
+# CONFIG_NO_HZ is not set
 CONFIG_HIGH_RES_TIMERS=y
 
 #
@@ -90,7 +89,6 @@ CONFIG_RCU_STALL_COMMON=y
 CONFIG_RCU_FANOUT=32
 CONFIG_RCU_FANOUT_LEAF=16
 CONFIG_RCU_FANOUT_EXACT=y
-# CONFIG_RCU_FAST_NO_HZ is not set
 # CONFIG_TREE_RCU_TRACE is not set
 # CONFIG_RCU_NOCB_CPU is not set
 # CONFIG_IKCONFIG is not set
@@ -1513,6 +1511,7 @@ CONFIG_SPI_CNS3XXX=y
 #
 CONFIG_PPS=m
 # CONFIG_PPS_DEBUG is not set
+# CONFIG_NTP_PPS is not set
 
 #
 # PPS clients support
