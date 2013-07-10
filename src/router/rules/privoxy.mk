@@ -16,7 +16,6 @@ privoxy-install:
 	install -D privoxy/configs/privoxy.webproxy $(INSTALLDIR)/privoxy/etc/config/privoxy.webproxy
 	install -D privoxy/configs/privoxy.nvramconfig $(INSTALLDIR)/privoxy/etc/config/privoxy.nvramconfig
 	cp -rf privoxy/templates $(INSTALLDIR)/privoxy/etc/privoxy/
-	chmod 666 $(INSTALLDIR)/privoxy/etc/privoxy/*
 	$(STRIP) $(INSTALLDIR)/privoxy/usr/sbin/privoxy
 
 privoxy-clean:
