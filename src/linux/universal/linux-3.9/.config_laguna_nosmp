@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.9.8-rc1 Kernel Configuration
+# Linux/arm 3.9.9 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -1488,6 +1488,7 @@ CONFIG_SPI_CNS3XXX=y
 #
 CONFIG_PPS=m
 # CONFIG_PPS_DEBUG is not set
+# CONFIG_NTP_PPS is not set
 
 #
 # PPS clients support

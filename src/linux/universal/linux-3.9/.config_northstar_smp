@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.9.8-rc1 Kernel Configuration
+# Linux/arm 3.9.9 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -82,7 +82,6 @@ CONFIG_RCU_STALL_COMMON=y
 CONFIG_RCU_FANOUT=2
 CONFIG_RCU_FANOUT_LEAF=2
 # CONFIG_RCU_FANOUT_EXACT is not set
-# CONFIG_RCU_FAST_NO_HZ is not set
 # CONFIG_TREE_RCU_TRACE is not set
 # CONFIG_RCU_BOOST is not set
 # CONFIG_RCU_NOCB_CPU is not set
