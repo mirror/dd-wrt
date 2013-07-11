@@ -92,7 +92,6 @@ int m_str_to_uint(const char* str, unsigned int *val);
 #define DEF_MP_INT(X) mp_int X = {0, 0, 0, NULL}
 
 /* Dropbear assertion */
-#define dropbear_assert(X) 
-//do { if (!(X)) { fail_assert(#X, __FILE__, __LINE__); } } while (0)
+#define dropbear_assert(X) do { if (!(X)) { fail_assert(#X, __FILE__, __LINE__); } } while (0)
 
 #endif /* _DBUTIL_H_ */
