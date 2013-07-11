@@ -31,3 +31,6 @@ endif
 ifeq ($(CONFIG_WIRCOM),y)
 DD_CFLAGS += -DHAVE_WIRCOM
 endif
+ifeq ($(CONFIG_SRS),y)
+DD_CFLAGS += -DHAVE_SRS
+endif
