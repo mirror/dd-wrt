@@ -92,8 +92,8 @@ much traffic. */
 #define DROPBEAR_AES256
 /* Compiling in Blowfish will add ~6kB to runtime heap memory usage */
 /*#define DROPBEAR_BLOWFISH*/
-#define DROPBEAR_TWOFISH256
-#define DROPBEAR_TWOFISH128
+/*#define DROPBEAR_TWOFISH256
+#define DROPBEAR_TWOFISH128*/
 
 /* Enable "Counter Mode" for ciphers. This is more secure than normal
  * CBC mode against certain attacks. This adds around 1kB to binary 
@@ -119,7 +119,7 @@ much traffic. */
  * If you disable MD5, Dropbear will fall back to SHA1 fingerprints,
  * which are not the standard form. */
 #define DROPBEAR_SHA1_HMAC
-#define DROPBEAR_SHA1_96_HMAC
+/*#define DROPBEAR_SHA1_96_HMAC*/
 /*#define DROPBEAR_SHA2_256_HMAC*/
 /*#define DROPBEAR_SHA2_512_HMAC*/
 #define DROPBEAR_MD5_HMAC
