@@ -1,5 +1,5 @@
 igmp-proxy-configure:
-	cd igmp-proxy && ./configure --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) -O2 -ffunction-sections -fdata-sections -Wl,--gc-sections -std=gnu99"
+	cd igmp-proxy && ./configure --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) $(MIPS16_OPT)  -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -ffunction-sections -fdata-sections -Wl,--gc-sections -std=gnu99"
 
 igmp-proxy-clean:
 	make -C igmp-proxy clean
