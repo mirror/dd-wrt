@@ -25,6 +25,8 @@ libpcap-install:
 ifeq ($(CONFIG_LIBPCAP_SHARED),y)
 	install -d $(INSTALLDIR)/libpcap/usr/lib
 	install libpcap_noring/libpcap.so $(INSTALLDIR)/libpcap/usr/lib
+	-cd $(INSTALLDIR)/libpcap/usr/lib ; ln -s libpcap.so libpcap.so.1 
+	-cd $(INSTALLDIR)/libpcap/usr/lib ; ln -s libpcap.so libpcap.so.1.0.0
 endif
 
 libpcap-clean:
