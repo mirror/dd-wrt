@@ -234,13 +234,13 @@ void igmpProxyRun() {
     int     MaxFD, Rt, secs;
     fd_set  ReadFDS;
     socklen_t dummy = 0;
-    struct  timeval  curtime, lasttime, difftime, tv; 
+    struct  timespec  curtime, lasttime, difftime, tv; 
     // The timeout is a pointer in order to set it to NULL if nessecary.
-    struct  timeval  *timeout = &tv;
+    struct  timespec  *timeout = &tv;
 
     // Initialize timer vars
-    difftime.tv_usec = 0;
-    gettimeofday(&curtime, NULL);
+    difftime.tv_nsec = 0;
+    clock_gettime(CLOCK_MONOTONIC, &curtime);
     lasttime = curtime;
 
     // First thing we send a membership query in downstream VIF's...
@@ -263,7 +263,7 @@ void igmpProxyRun() {
         if(secs == -1) {
             timeout = NULL;
         } else {
-            timeout->tv_usec = 0;
+            timeout->tv_nsec = 0;
             timeout->tv_sec = secs;
         }
 
@@ -274,7 +274,7 @@ void igmpProxyRun() {
         FD_SET( MRouterFD, &ReadFDS );
 
         // wait for input
-        Rt = select( MaxFD +1, &ReadFDS, NULL, NULL, timeout );
+        Rt = pselect( MaxFD +1, &ReadFDS, NULL, NULL, timeout, NULL );
 
         // log and ignore failures
         if( Rt < 0 ) {
@@ -307,20 +307,20 @@ void igmpProxyRun() {
              */
             if (Rt == 0) {
                 curtime.tv_sec = lasttime.tv_sec + secs;
-                curtime.tv_usec = lasttime.tv_usec;
+                curtime.tv_nsec = lasttime.tv_nsec;
                 Rt = -1; /* don't do this next time through the loop */
             } else {
-                gettimeofday(&curtime, NULL);
+                clock_gettime(CLOCK_MONOTONIC, &curtime);
             }
             difftime.tv_sec = curtime.tv_sec - lasttime.tv_sec;
-            difftime.tv_usec += curtime.tv_usec - lasttime.tv_usec;
-            while (difftime.tv_usec > 1000000) {
+            difftime.tv_nsec += curtime.tv_nsec - lasttime.tv_nsec;
+            while (difftime.tv_nsec > 1000000000) {
                 difftime.tv_sec++;
-                difftime.tv_usec -= 1000000;
+                difftime.tv_nsec -= 1000000000;
             }
-            if (difftime.tv_usec < 0) {
+            if (difftime.tv_nsec < 0) {
                 difftime.tv_sec--;
-                difftime.tv_usec += 1000000;
+                difftime.tv_nsec += 1000000000;
             }
             lasttime = curtime;
             if (secs == 0 || difftime.tv_sec > 0)
