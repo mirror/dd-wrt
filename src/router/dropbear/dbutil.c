@@ -177,9 +177,6 @@ void dropbear_trace2(const char* format, ...) {
 }
 #endif /* DEBUG_TRACE */
 
-#ifndef IPV6_TCLASS 
-#define IPV6_TCLASS		67
-#endif
 static void set_sock_priority(int sock) {
 
 	int val;
