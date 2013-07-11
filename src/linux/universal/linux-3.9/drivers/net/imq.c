@@ -162,7 +162,7 @@
 #include <net/ip.h>
 #include <net/ipv6.h>
 
-static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num);
+static int imq_nf_queue(struct nf_queue_entry *entry, unsigned int queue_num);
 
 static nf_hookfn imq_nf_hook;
 
@@ -512,7 +512,7 @@ static struct net_device *get_imq_device_by_index(int index)
 	return dev;
 }
 
-static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num)
+static int imq_nf_queue(struct nf_queue_entry *entry, unsigned int queue_num)
 {
 	struct net_device *dev;
 	struct sk_buff *skb_orig, *skb, *skb_shared;
@@ -714,7 +714,6 @@ static struct rtnl_link_ops imq_link_ops __read_mostly = {
 };
 
 static const struct nf_queue_handler imq_nfqh = {
-	.name  = "imq",
 	.outfn = imq_nf_queue,
 };
 
