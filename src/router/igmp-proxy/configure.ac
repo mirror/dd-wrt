@@ -26,6 +26,8 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len], [], [], [[
 #include <netinet/in.h>
 ]])
 
+AC_SEARCH_LIBS([clock_gettime],[rt])
+
 AC_CONFIG_FILES([
 	Makefile
 	doc/Makefile
