@@ -274,8 +274,21 @@ void igmpProxyRun() {
         FD_SET( MRouterFD, &ReadFDS );
 
         // wait for input
-        Rt = pselect( MaxFD +1, &ReadFDS, NULL, NULL, timeout, NULL );
+#ifndef __USE_XOPEN2K
+#ifndef TIMESPEC_TO_TIMEVAL
+# define TIMESPEC_TO_TIMEVAL(tv, ts) {                                   \
+        (tv)->tv_sec = (ts)->tv_sec;                                    \
+        (tv)->tv_usec = (ts)->tv_nsec / 1000;                           \
+}
+#endif
 
+	struct  timeval compat_timeout;
+	TIMESPEC_TO_TIMEVAL(&compat_timeout,timeout);	
+        Rt = select( MaxFD +1, &ReadFDS, NULL, NULL, &compat_timeout);
+#else
+
+        Rt = pselect( MaxFD +1, &ReadFDS, NULL, NULL, timeout, NULL );
+#endif
         // log and ignore failures
         if( Rt < 0 ) {
             my_log( LOG_WARNING, errno, "select() failure" );
