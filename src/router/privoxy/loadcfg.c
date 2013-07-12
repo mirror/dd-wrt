@@ -1,4 +1,4 @@
-const char loadcfg_rcs[] = "$Id: loadcfg.c,v 1.137 2013/03/07 14:08:49 fabiankeil Exp $";
+const char loadcfg_rcs[] = "$Id: loadcfg.c,v 1.138 2013/04/23 09:42:53 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/loadcfg.c,v $
@@ -1317,10 +1317,10 @@ struct configuration_spec * load_config(void)
             break;
 
 /* *************************************************************************
- * single-threaded
+ * single-threaded 0|1
  * *************************************************************************/
          case hash_single_threaded :
-            config->multi_threaded = 0;
+            config->multi_threaded =  0 == parse_toggle_state(cmd, arg);
             break;
 
 /* *************************************************************************

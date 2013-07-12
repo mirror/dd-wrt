@@ -11,7 +11,7 @@
 #
 #  File        :  $Source: /cvsroot/ijbswa/current/default.action.master,v $
 #
-#  $Id: default.action.master,v 1.287 2013/03/03 10:53:36 fabiankeil Exp $
+#  $Id: default.action.master,v 1.296 2013/06/02 14:11:46 fabiankeil Exp $
 #
 #  Requires    :  This version requires Privoxy v3.0.11 or later due to
 #                 syntax changes.
@@ -645,8 +645,6 @@ ad*.
 *banner*.
 count*.
 *counter.
-#MASTER# PROBLEM URL: http://www.newegg.com
-promotions.
 #MASTER# BLOCK-REFERRER: http://tech.cybernetnews.com/
 # Blocked URL = http://metrics.performancing.com/
 metrics.
@@ -1120,6 +1118,9 @@ cltomedia.info/delivery/
 #MASTER# BLOCK-REFERRER: http://thepiratebay.se/
 # Blocked URL = http://cdn2.adexprt.com/clkads/sky2.html
 .adexprt.com/
+# Blocked URL = http://data.gosquared.com/pv?a=GSN-311503-M&cs=UTF-8&cd=24&fl=11.7%20r700&je=0&la=de-de&sw=1280&sh=1024&dm=adn.speedtest.net&pa=%2F&pt=Speedtest.net%20-%20Der%20Globale%20Breitband-Geschwindigkeitstest&pr=http%3A&po=-&pl=0&tl=82&ri=1&ru=http%3A%2F%2Fadn.speedtest.net%2F&ui=1876309225&re=1&vi=1&pv=5&lv=1369129426&vw=1280&vh=878&dw=1263&dh=1325&st=0&sl=0&tv=4.0
+data.gosquared.com/
+
 
 #----------------------------------------------------------------------------
 # JavaScripts and Texts for ad and popup generation
@@ -1860,7 +1861,9 @@ adjamblog.files.wordpress.com/
 websupport.wdc.com/
 #MASTER# UNBLOCK-REFERRER: http://conradelektronik.m13.mailplus.nl/genericservice/code/servlet/React?encId=xSgAxBFNnFrne8j&actId=357685&command=openhtml
 # URL = http://content.conrad.se/newsletter/banners/OFFER_750987_exk.jpg
-.conrad.se/newsletter/banners/
+#MASTER# UNBLOCK-REFERRER: http://nyhetsbrev.conrad.se/form.do?agnCI=25&agnFN=fullview&agnUID=A.C.E4N.Bv_m.EnED.EDtQoE_5_4bI7xQlTGfxSA
+# URL = http://media.conrad.se/newsletter/banner7/endoskop_123344.jpg
+.conrad.se/newsletter/
 #MASTER# REMARKS: Actionsfile feedback item #3413827  2011-09-25 12:11
 #MASTER# REMARKS: This domain hosts JS, images and CSS upon which hotmail.com depends
 .wlxrs.com/
@@ -1870,6 +1873,13 @@ websupport.wdc.com/
 # URL = http://www.smugmug.com/community/ADVrider
 # URL = http://www.siteinfotool.com/advrider.com
 /.*ADVrider
+#MASTER# UNBLOCK-REFERRER: http://www.speedtest.net/
+#MASTER# REMARKS: Support request #3612908  2013-05-08 07:31:46 PDT
+#MASTER# REMARKS: Appears to be a content delivery subdomain for the parent domain
+# URL = http://adn.speedtest.net
+adn.speedtest.net
+# URL = http://adressbuch.bundestag.de/adressbuch/
+.bundestag.de/
 
 #############################################################################
 # Site-specific special rules:
@@ -2042,6 +2052,8 @@ webcache.googleusercontent.com/
 .googleapis.com/
 # URL = http://www.google.com.au/sorry/?continue=http://www.google.com.au/search%3Fhl%3Den%26tbo%3Dd%26output%3Dsearch%26sclient%3Dpsy-ab%26q%3Dnew%2Bcars%26btnG%3D
 .google./sorry/\?continue?=
+# URL = http://www.microsofttranslator.com/bv.aspx?from=ru&to=en&a=http://ru.wikipedia.org/wiki/Privoxy
+.microsofttranslator.com/
 
 {+redirect{s@.*url=@http://@} -block}
 # Sticky Actions = +redirect -block
@@ -2203,6 +2215,10 @@ javabog.dk/ijk/
 .couchsurfing.org/
 # URL = http://www.thinkgeek.com/tshirts-apparel/unisex/generic/
 .thinkgeek.com/
+# URL = http://www.dgb-tagungszentren.de/hattingen/unsere-extras
+.dgb-tagungszentren.de/
+# URL = http://creativecommons.org/licenses/
+creativecommons.org/
 
 {-filter{banners-by-link}}
 # Sticky Actions = -filter{banners-by-link}

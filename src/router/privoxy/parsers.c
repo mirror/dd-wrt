@@ -1,4 +1,4 @@
-const char parsers_rcs[] = "$Id: parsers.c,v 1.275 2013/03/07 14:08:50 fabiankeil Exp $";
+const char parsers_rcs[] = "$Id: parsers.c,v 1.277 2013/04/23 09:43:25 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/parsers.c,v $
@@ -1386,7 +1386,7 @@ static jb_err header_tagger(struct client_state *csp, char *header)
                   if (0 == size)
                   {
                      /*
-                      * There is to technical limitation which makes
+                      * There is no technical limitation which makes
                       * it impossible to use empty tags, but I assume
                       * no one would do it intentionally.
                       */
@@ -3268,9 +3268,6 @@ static jb_err client_max_forwards(struct client_state *csp, char **header)
  *                port information, parse and evaluate the Host
  *                header field.
  *
- *                Also, kill ill-formed HOST: headers as sent by
- *                Apple's iTunes software when used with a proxy.
- *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
  *          2  :  header = On input, pointer to header to modify.
@@ -3285,18 +3282,6 @@ static jb_err client_max_forwards(struct client_state *csp, char **header)
 static jb_err client_host(struct client_state *csp, char **header)
 {
    char *p, *q;
-
-   /*
-    * If the header field name is all upper-case, chances are that it's
-    * an ill-formed one from iTunes. BTW, killing innocent headers here is
-    * not a problem -- they are regenerated later.
-    */
-   if ((*header)[1] == 'O')
-   {
-      log_error(LOG_LEVEL_HEADER, "Killed all-caps Host header line: %s", *header);
-      freez(*header);
-      return JB_ERR_OK;
-   }
 
    if (!csp->http->hostport || (*csp->http->hostport == '*') ||
        *csp->http->hostport == ' ' || *csp->http->hostport == '\0')

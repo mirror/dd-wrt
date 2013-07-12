@@ -1,4 +1,4 @@
-$Id: TODO,v 1.79 2013/03/01 17:39:46 fabiankeil Exp $
+$Id: TODO,v 1.80 2013/05/28 14:38:39 fabiankeil Exp $
 
 Some Privoxy-related tasks, sorted by the time they
 have been added, not by priority.
@@ -314,3 +314,6 @@ http://ijbswa.cvs.sourceforge.net/viewvc/ijbswa/current/TODO
 110) Add a global-buffer-limit directive that roughly limits how
      much malloc'ed memory Privoxy will use and can potentionally
      be smaller than (buffer-limit * max-client-connections).
+
+111) Reject requests if hosts and ports in request line and Host
+     header don't match (before filters have been applied).

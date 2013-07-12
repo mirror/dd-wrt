@@ -1,4 +1,4 @@
-const char filters_rcs[] = "$Id: filters.c,v 1.176 2012/12/07 12:45:20 fabiankeil Exp $";
+const char filters_rcs[] = "$Id: filters.c,v 1.177 2013/04/23 09:37:28 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/filters.c,v $
@@ -199,10 +199,6 @@ static int match_sockaddr(const struct sockaddr_storage *network,
       network_addr += 12;
       netmask_addr += 12;
       addr_len = 4;
-   }
-   else if (network->ss_family != address->ss_family)
-   {
-      return 0;
    }
 
    /* XXX: Port check is signaled in netmask */
