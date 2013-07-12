@@ -148,7 +148,7 @@
    <p class="small" align="center"> \
     Request blocked by <a href="@default-cgi@" target="_blank">Privoxy</a>: @block-reason@ \
     <br>See <a href="@default-cgi@show-url-info?url=@hostport@@path-ue@" \
-     target="_blank">why this block applies</a> \
+     >why this block applies</a> \
     <!-- @if-force-support-start --> \
     or <a href="http://@hostport@@force-prefix@@path@">go \
     <!-- if-force-support-end@ --> \
@@ -184,7 +184,7 @@
         <p> \
           <b>Please note that this <font color=red>@code-status@</font> release \
           of the proxy software is not intended for production systems! \
-          <br>Use at your own risk. See the <a href="http://www.gnu.org/copyleft/gpl.html">license</a> for details.</b> \
+          <br>Use at your own risk. See the <a href="@user-manual@copyright.html">license</a> for details.</b> \
         </p> \
       </td> \
     </tr> \
@@ -196,7 +196,7 @@
         <p>Your request for <b>@protocol@@hostport@@path@</b> was blocked. \
          <br>Block reason: @block-reason@ \
          <br><a href="@default-cgi@show-url-info?url=@hostport@@path-ue@" \
-         target="_blank">See why this block applies</a> \
+          >See why this block applies</a> \
 <!-- @if-force-support-start --> \
           or <a href="http://@hostport@@force-prefix@@path@">go there anyway</a>. \
 <!-- if-force-support-end@ --> \
@@ -270,9 +270,9 @@
 
   <noscript>
    <p class="small" align="center">
-    Request blocked by <a href="@default-cgi@" target="_blank">Privoxy</a>: @block-reason@
+    Request blocked by <a href="@default-cgi@">Privoxy</a>: @block-reason@
     <br>See <a href="@default-cgi@show-url-info?url=@hostport@@path-ue@"
-     target="_blank">why this block applies</a>
+     >why this block applies</a>
     <!-- @if-force-support-start -->
     or <a href="http://@hostport@@force-prefix@@path@">go
     <!-- if-force-support-end@ -->
