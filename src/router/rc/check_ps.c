@@ -41,6 +41,9 @@ struct mon mons[] = {
 	{"udhcpd", 1, M_LAN},
 	{"dnsmasq", 1, M_LAN, "dnsmasq_enable", "1"},
 	{"dhcpfwd", 1, M_LAN, "dhcpfwd_enable", "1"},
+#ifdef HAVE_PRIVOXY
+	{"privoxy", 1, M_LAN, "privoxy_enable", "1"},
+#endif
 #ifdef HAVE_NOCAT
 	{"splashd", 1, M_LAN, "NC_enable", "1"},
 #endif
