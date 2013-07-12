@@ -1,4 +1,4 @@
-const char jbsockets_rcs[] = "$Id: jbsockets.c,v 1.123 2013/03/06 21:06:18 diem Exp $";
+const char jbsockets_rcs[] = "$Id: jbsockets.c,v 1.124 2013/03/20 11:30:05 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/jbsockets.c,v $
@@ -1072,7 +1072,7 @@ void get_host_information(jb_socket afd, char **ip_address, char **port,
  *      configured with --disable-ipv6-support.
  *      The proper fix is to not use NI_MAXSERV in
  *      that case. It works by accident on other platforms
- *      as <netdb.h> in included unconditionally there.
+ *      as <netdb.h> is included unconditionally there.
  */
 #ifndef NI_MAXSERV
 #define NI_MAXSERV 32
