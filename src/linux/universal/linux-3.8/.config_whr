@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.8.10 Kernel Configuration
+# Linux/mips 3.8.13 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -281,6 +281,7 @@ CONFIG_MODULE_UNLOAD=y
 # CONFIG_MODVERSIONS is not set
 # CONFIG_MODULE_SRCVERSION_ALL is not set
 # CONFIG_MODULE_SIG is not set
+CONFIG_MODULE_STRIPPED=y
 CONFIG_BLOCK=y
 # CONFIG_LBDAF is not set
 # CONFIG_BLK_DEV_BSG is not set
