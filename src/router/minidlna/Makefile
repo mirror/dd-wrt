@@ -15,8 +15,10 @@
 #		   them.   
 #
 #############################################################################################
+FFMPEG_VER=2.0
+
 SUBDIRS += zlib-1.2.7
-SUBDIRS += ffmpeg-1.2
+SUBDIRS += ffmpeg-$(FFMPEG_VER)
 SUBDIRS += libogg-1.3.0
 SUBDIRS += libexif-0.6.19
 SUBDIRS += flac-1.2.1
@@ -66,8 +68,8 @@ zlib:
 	MINI_DLNA_PATH=$(MINI_DLNA_PATH))
 
 ffmpeg:
-	if [ ! -f ./ffmpeg-1.2/config.mak ];then \
-	cd ffmpeg-1.2 && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-cflags="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections " --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-avfilter --disable-filters --enable-small --disable-postproc --disable-network \
+	if [ ! -f ./ffmpeg-$(FFMPEG_VER)/config.mak ];then \
+	cd ffmpeg-$(FFMPEG_VER) && (./configure --enable-shared --enable-gpl --target-os=linux  --arch=$(ARCH) --extra-cflags="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections " --cc="ccache $(ARCH)-linux-uclibc-gcc" --enable-cross-compile --disable-muxers --disable-encoders --disable-avfilter --disable-filters --enable-small --disable-postproc --disable-network \
 	--enable-shared \
 	--disable-mipsfpu \
 	--disable-mipsdspr1 \
@@ -217,10 +219,10 @@ copy:
 	cp ./flac-1.2.1/src/libFLAC/.libs/libFLAC.a		./lib/libFLAC.a && \
 	cp ./libexif-0.6.19/libexif/.libs/libexif.a 		./lib/libexif.a  && \
 	cp ./libogg-1.3.0/src/.libs/libogg.a		./lib/libogg.a && \
-	cp ./ffmpeg-1.2/libavutil/libavutil.a		./lib/libavutil.a && \
-	cp ./ffmpeg-1.2/libavdevice/libavdevice.a		./lib/libavdevice.a && \
-	cp ./ffmpeg-1.2/libavformat/libavformat.a		./lib/libavformat.a && \
-	cp ./ffmpeg-1.2/libavcodec/libavcodec.a		./lib/libavcodec.a && \
+	cp ./ffmpeg-$(FFMPEG_VER)/libavutil/libavutil.a		./lib/libavutil.a && \
+	cp ./ffmpeg-$(FFMPEG_VER)/libavdevice/libavdevice.a		./lib/libavdevice.a && \
+	cp ./ffmpeg-$(FFMPEG_VER)/libavformat/libavformat.a		./lib/libavformat.a && \
+	cp ./ffmpeg-$(FFMPEG_VER)/libavcodec/libavcodec.a		./lib/libavcodec.a && \
 	cp ./sqlite-3.6.22/.libs/libsqlite3.a 		./lib/libsqlite3.a && \
 	cp ./jpeg-8/.libs/libjpeg.a			./lib/libjpeg.a && \
 	cp ./libid3tag-0.15.0b/.libs/libid3tag.a 	./lib/libid3tag.a
@@ -234,7 +236,7 @@ distclean:
 	-rm -f ./libid3tag-0.15.0b/Makefile
 	-cd ./flac-1.2.1/	&& make distclean
 	-cd ./zlib-1.2.7/	&& make clean
-	-cd ./ffmpeg-1.2/	&& make distclean
+	-cd ./ffmpeg-$(FFMPEG_VER)/	&& make distclean
 	-cd ./jpeg-8/		&& make distclean
 	-cd ./minidlna/		&& make clean
 	-rm ./lib/*.so.*

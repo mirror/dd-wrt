@@ -15,9 +15,9 @@
 
 LDFLAGS+= -Wl,--gc-sections
 CFLAGS = -Wall $(COPTS)  -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__ -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVFORMAT_AVFORMAT_H \
-         -I$(MINI_DLNA_PATH)/ffmpeg-1.2 \
-         -I$(MINI_DLNA_PATH)/ffmpeg-1.2/libavcodec \
-         -I$(MINI_DLNA_PATH)/ffmpeg-1.2/libavformat \
+         -I$(MINI_DLNA_PATH)/ffmpeg-2.0 \
+         -I$(MINI_DLNA_PATH)/ffmpeg-2.0/libavcodec \
+         -I$(MINI_DLNA_PATH)/ffmpeg-2.0/libavformat \
          -I$(MINI_DLNA_PATH)/sqlite-3.6.22 \
          -I$(MINI_DLNA_PATH)/libexif-0.6.19 \
          -I$(MINI_DLNA_PATH)/libid3tag-0.15.0b/include \
