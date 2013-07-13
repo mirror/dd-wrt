@@ -1573,6 +1573,13 @@ config MODULE_SRCVERSION_ALL
 	  the version).  With this option, such a "srcversion" field
 	  will be created for all modules.  If unsure, say N.
 
+config MODULE_STRIPPED
+	bool "Reduce module size"
+	depends on MODULES
+	help
+	  Remove module parameter descriptions, author info, version, aliases,
+	  device tables, etc.
+
 endif # MODULES
 
 config INIT_ALL_POSSIBLE

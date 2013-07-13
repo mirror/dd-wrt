@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.5.7 Kernel Configuration
+# Linux/mips 3.5.7.16 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -60,6 +60,7 @@ CONFIG_MACH_AR7240=y
 # CONFIG_DIR615E is not set
 # CONFIG_AR7240_EMULATION is not set
 CONFIG_WASP_SUPPORT=y
+ 
  
 # CONFIG_RB2011 is not set
 # CONFIG_AR7100_USB_GPIO_LED is not set
@@ -274,6 +275,7 @@ CONFIG_MODULE_UNLOAD=y
 # CONFIG_MODULE_FORCE_UNLOAD is not set
 # CONFIG_MODVERSIONS is not set
 # CONFIG_MODULE_SRCVERSION_ALL is not set
+CONFIG_MODULE_STRIPPED=y
 CONFIG_BLOCK=y
 CONFIG_LBDAF=y
 # CONFIG_BLK_DEV_BSG is not set
@@ -1374,7 +1376,6 @@ CONFIG_USB_STORAGE=m
 # CONFIG_USB_STORAGE_KARMA is not set
 # CONFIG_USB_STORAGE_CYPRESS_ATACB is not set
 # CONFIG_USB_STORAGE_ENE_UB6250 is not set
-# CONFIG_USB_UAS is not set
 # CONFIG_USB_LIBUSUAL is not set
 
 #
@@ -1621,8 +1622,8 @@ CONFIG_INOTIFY_USER=y
 # CONFIG_QUOTACTL is not set
 # CONFIG_AUTOFS4_FS is not set
 CONFIG_FUSE_FS=m
-# CONFIG_CUSE is not set
 # CONFIG_OVERLAYFS_FS is not set
+# CONFIG_CUSE is not set
 
 #
 # Caches
