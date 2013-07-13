@@ -16,6 +16,16 @@
 /* Chosen so that structs with an unsigned long line up. */
 #define MAX_PARAM_PREFIX_LEN (64 - sizeof(unsigned long))
 
+/* This struct is here for syntactic coherency, it is not used */
+#define __MODULE_INFO_DISABLED(name)					  \
+  struct __UNIQUE_ID(name) {}
+
+#ifdef CONFIG_MODULE_STRIPPED
+#define __MODULE_INFO_STRIP(tag, name, info) __MODULE_INFO_DISABLED(name)
+#else
+#define __MODULE_INFO_STRIP(tag, name, info) __MODULE_INFO(tag, name, info)
+#endif
+
 #ifdef MODULE
 #define __MODULE_INFO(tag, name, info)					  \
 static const char __UNIQUE_ID(name)[]					  \
@@ -23,8 +33,7 @@ static const char __UNIQUE_ID(name)[]					  \
   = __stringify(tag) "=" info
 #else  /* !MODULE */
 /* This struct is here for syntactic coherency, it is not used */
-#define __MODULE_INFO(tag, name, info)					  \
-  struct __UNIQUE_ID(name) {}
+#define __MODULE_INFO(tag, name, info) __MODULE_INFO_DISABLED(name)
 #endif
 #define __MODULE_PARM_TYPE(name, _type)					  \
   __MODULE_INFO(parmtype, name##type, #name ":" _type)
@@ -32,7 +41,7 @@ static const char __UNIQUE_ID(name)[]					  \
 /* One for each parameter, describing how to use it.  Some files do
    multiple of these per line, so can't just use MODULE_INFO. */
 #define MODULE_PARM_DESC(_parm, desc) \
-	__MODULE_INFO(parm, _parm, #_parm ":" desc)
+	__MODULE_INFO_STRIP(parm, _parm, #_parm ":" desc)
 
 struct kernel_param;
 
