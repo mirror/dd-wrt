@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.5.7 Kernel Configuration
+# Linux/arm 3.5.7.16 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -142,6 +142,7 @@ CONFIG_MODULE_UNLOAD=y
 # CONFIG_MODULE_FORCE_UNLOAD is not set
 # CONFIG_MODVERSIONS is not set
 # CONFIG_MODULE_SRCVERSION_ALL is not set
+CONFIG_MODULE_STRIPPED=y
 CONFIG_BLOCK=y
 CONFIG_LBDAF=y
 # CONFIG_BLK_DEV_BSG is not set

@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.5.7 Kernel Configuration
+# Linux/mips 3.5.7.16 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -272,6 +272,7 @@ CONFIG_MODULE_UNLOAD=y
 # CONFIG_MODULE_FORCE_UNLOAD is not set
 # CONFIG_MODVERSIONS is not set
 # CONFIG_MODULE_SRCVERSION_ALL is not set
+CONFIG_MODULE_STRIPPED=y
 CONFIG_BLOCK=y
 CONFIG_LBDAF=y
 # CONFIG_BLK_DEV_BSG is not set
@@ -1405,7 +1406,6 @@ CONFIG_USB_STORAGE=m
 # CONFIG_USB_STORAGE_KARMA is not set
 # CONFIG_USB_STORAGE_CYPRESS_ATACB is not set
 # CONFIG_USB_STORAGE_ENE_UB6250 is not set
-# CONFIG_USB_UAS is not set
 # CONFIG_USB_LIBUSUAL is not set
 
 #

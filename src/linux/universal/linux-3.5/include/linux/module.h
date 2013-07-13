@@ -79,7 +79,7 @@ void sort_extable(struct exception_table_entry *start,
 void sort_main_extable(void);
 void trim_init_extable(struct module *m);
 
-#ifdef MODULE
+#if defined(MODULE) && !defined(CONFIG_MODULE_STRIPPED)
 #define MODULE_GENERIC_TABLE(gtype,name)			\
 extern const struct gtype##_id __mod_##gtype##_table		\
   __attribute__ ((unused, alias(__stringify(name))))
@@ -90,9 +90,10 @@ extern const struct gtype##_id __mod_##gtype##_table		\
 
 /* Generic info of form tag = "info" */
 #define MODULE_INFO(tag, info) __MODULE_INFO(tag, tag, info)
+#define MODULE_INFO_STRIP(tag, info) __MODULE_INFO_STRIP(tag, tag, info)
 
 /* For userspace: you can also call me... */
-#define MODULE_ALIAS(_alias) MODULE_INFO(alias, _alias)
+#define MODULE_ALIAS(_alias) MODULE_INFO_STRIP(alias, _alias)
 
 /*
  * The following license idents are currently accepted as indicating free
@@ -128,10 +129,10 @@ extern const struct gtype##_id __mod_##gtype##_table		\
  * Author(s), use "Name <email>" or just "Name", for multiple
  * authors use multiple MODULE_AUTHOR() statements/lines.
  */
-#define MODULE_AUTHOR(_author) MODULE_INFO(author, _author)
+#define MODULE_AUTHOR(_author) MODULE_INFO_STRIP(author, _author)
   
 /* What your module does. */
-#define MODULE_DESCRIPTION(_description) MODULE_INFO(description, _description)
+#define MODULE_DESCRIPTION(_description) MODULE_INFO_STRIP(description, _description)
 
 #define MODULE_DEVICE_TABLE(type,name)		\
   MODULE_GENERIC_TABLE(type##_device,name)
@@ -152,7 +153,9 @@ extern const struct gtype##_id __mod_##gtype##_table		\
 */
 
 #if defined(MODULE) || !defined(CONFIG_SYSFS)
-#define MODULE_VERSION(_version) MODULE_INFO(version, _version)
+#define MODULE_VERSION(_version) MODULE_INFO_STRIP(version, _version)
+#elif defined(CONFIG_MODULE_STRIPPED)
+#define MODULE_VERSION(_version) __MODULE_INFO_DISABLED(version)
 #else
 #define MODULE_VERSION(_version)					\
 	static struct module_version_attribute ___modver_attr = {	\
@@ -174,7 +177,7 @@ extern const struct gtype##_id __mod_##gtype##_table		\
 /* Optional firmware file (or files) needed by the module
  * format is simply firmware file name.  Multiple firmware
  * files require multiple MODULE_FIRMWARE() specifiers */
-#define MODULE_FIRMWARE(_firmware) MODULE_INFO(firmware, _firmware)
+#define MODULE_FIRMWARE(_firmware) MODULE_INFO_STRIP(firmware, _firmware)
 
 /* Given an address, look for it in the exception tables */
 const struct exception_table_entry *search_exception_tables(unsigned long add);
