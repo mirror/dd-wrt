@@ -26,8 +26,10 @@ void start_privoxy(void)
 	sysprintf("grep -q nobody /etc/passwd || echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
 	mkdir("/var/log/privoxy", 0777);
 
-	if (nvram_match("privoxy_transp_enable", "1"))
+	if (nvram_match("privoxy_transp_enable", "1")) {
+		sysprintf("iptables -A PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
 		mode = 1;
+	}
 
 	FILE *fp = fopen("/tmp/privoxy.conf", "wb");
 
