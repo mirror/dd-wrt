@@ -748,12 +748,12 @@ nas.dlna_thumb="Include Cover Artwork";
 nas.dlna_dir="Files Directory";
 
 //** Privoxy.asp **//
-var privoxy = new Object();
-privoxy.titl = "Adblocking";
-privoxy.server = "Privoxy";
-privoxy.legend = "Filtering Proxy Server";
-privoxy.transp = "Transparent Mode";
-privoxy.custom = "Custom Configuration";
+var privoxy=new Object();
+privoxy.titl="Adblocking";
+privoxy.server="Privoxy";
+privoxy.legend="Filtering Proxy Server";
+privoxy.transp="Transparent Mode";
+privoxy.custom="Custom Configuration";
 
 var hprivoxy=new Object();
 hprivoxy.right2="Enable privoxy and configure your clients proxy settings. Proxy IP = <b>Router IP</b> Proxy Port = <b>8118</b>";
