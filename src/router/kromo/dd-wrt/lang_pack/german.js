@@ -184,9 +184,9 @@ share._24h="Jeden Tag";
 share._48h="Alle 2 Tage";
 share._168h="Jede Woche";
 share.days="Tage";
-share.from2 = share.from;
-share.to2 = share.to;
-share.days_genetive = share.days;
+share.from2=share.from;
+share.to2=share.to;
+share.days_genetive=share.days;
 share.standard="Standard";
 share.user="Nutzer";
 share.privatekey="Privater Schlüssel";
@@ -692,11 +692,11 @@ nas.dlna_srv="MiniDLNA";
 nas.dlna_thumb="Cover Bilder einbinden";
 nas.dlna_dir="Datei Verzeichnis";
 
-privoxy.titl = "Werbefilter";
-privoxy.server = "Privoxy";
-privoxy.legend = "Proxy Server";
-privoxy.transp = "Transparenter Modus";
-privoxy.custom = "Eigene Konfiguration";
+privoxy.titl="Werbefilter";
+privoxy.server="Privoxy";
+privoxy.legend="Proxy Server";
+privoxy.transp="Transparenter Modus";
+privoxy.custom="Eigene Konfiguration";
 
 hprivoxy.right2="Schaltet Privoxy ein und konfiguriert ihn für ihre Clients. Proxy IP = <b>Router IP</b> Proxy Port = <b>8118</b>";
 
