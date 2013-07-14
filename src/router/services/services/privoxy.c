@@ -27,6 +27,7 @@ void start_privoxy(void)
 	mkdir("/var/log/privoxy", 0777);
 
 	if (nvram_match("privoxy_transp_enable", "1")) {
+		sysprintf("iptables -D PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
 		sysprintf("iptables -A PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
 		mode = 1;
 	}
