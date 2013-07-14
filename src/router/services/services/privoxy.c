@@ -62,6 +62,7 @@ void start_privoxy(void)
 
 void stop_privoxy(void)
 {
+	sysprintf("iptables -D PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
 	stop_process("privoxy", "privoxy");
 }
 #endif

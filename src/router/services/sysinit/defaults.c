@@ -3133,6 +3133,8 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 #ifdef HAVE_PRIVOXY
 	{"privoxy_enable", "0", 0},
+	{"privoxy_advanced", "0", 0},
+	{"privoxy_transp_enable", "0", 0},
 #endif
 	{0, 0, 0}
 };
