@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.0 Kernel Configuration
+# Linux/arm 3.10.1 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -353,8 +353,10 @@ CONFIG_PCI_SYSCALL=y
 #
 CONFIG_HAVE_SMP=y
 CONFIG_SMP=y
-# CONFIG_SMP_ON_UP is not set
-# CONFIG_ARM_CPU_TOPOLOGY is not set
+CONFIG_SMP_ON_UP=y
+CONFIG_ARM_CPU_TOPOLOGY=y
+CONFIG_SCHED_MC=y
+CONFIG_SCHED_SMT=y
 CONFIG_HAVE_ARM_SCU=y
 CONFIG_HAVE_ARM_TWD=y
 # CONFIG_MCPM is not set
