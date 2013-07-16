@@ -104,7 +104,7 @@ AUTOMAKE = ${SHELL} ./missing --run automake-1.9
 AWK = gawk
 CC = $(ARCH)-linux-uclibc-gcc
 CCDEPMODE = depmode=none
-CFLAGS = $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fno-builtin -Wall -DSBINDIR='"$(sbindir)"'
+CFLAGS = $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -fno-builtin -Wall -DSBINDIR='"$(sbindir)"'
 CPP = $(ARCH)-linux-uclibc-gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
