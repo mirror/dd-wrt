@@ -1,6 +1,6 @@
 pptpd-configure:
 ifeq ($(CONFIG_PPTP_ACCEL),y)
-	cd pptpd-accel && ./configure CC="$(CC)" CFLAGS="$(COPTS) -DNEED_PRINTF" --prefix=/usr --host=$(ARCH)-linux
+	cd pptpd-accel && ./configure CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" --prefix=/usr --host=$(ARCH)-linux
 
 endif
 	@true
