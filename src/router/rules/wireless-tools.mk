@@ -2,7 +2,7 @@ wireless-tools-clean:
 	make -C wireless-tools clean
 
 wireless-tools:
-	make -C wireless-tools CC="$(CC)" CFLAGS="$(COPTS)" all iwmulticall
+	make -C wireless-tools CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT)" all iwmulticall
 
 wireless-tools-install:
 ifneq ($(CONFIG_JUSTLIBIW),y)
