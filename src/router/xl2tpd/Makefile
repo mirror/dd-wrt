@@ -90,7 +90,7 @@ OSFLAGS+= -DUSE_KERNEL
 
 FFLAGS= -DIP_ALLOCATION
 
-CFLAGS+= $(DFLAGS) $(COPTS) -fno-builtin -Wall -DSANITY $(OSFLAGS) $(FFLAGS)
+CFLAGS+= $(DFLAGS) $(COPTS) $(MIPS16_OPT) -fno-builtin -Wall -DSANITY $(OSFLAGS) $(FFLAGS)
 HDRS=l2tp.h avp.h misc.h control.h call.h scheduler.h file.h aaa.h md5.h
 OBJS=xl2tpd.o pty.o misc.o control.o avp.o call.o network.o avpsend.o scheduler.o file.o aaa.o md5.o
 SRCS=${OBJS:.o=.c} ${HDRS}
