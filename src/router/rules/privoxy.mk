@@ -24,4 +24,4 @@ privoxy-clean:
 privoxy-configure:
 	cd privoxy && rm -rf config.{cache,status} \
 	&& autoheader && autoconf \
-	&& ./configure ac_cv_func_setpgrp_void=yes --prefix=/usr --sysconfdir=/etc/privoxy --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc LDFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/zlib -lz -fPIC" 
+	&& ./configure ac_cv_func_setpgrp_void=yes --prefix=/usr --enable-compression --sysconfdir=/etc/privoxy --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc LDFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/zlib -lz -fPIC" 
