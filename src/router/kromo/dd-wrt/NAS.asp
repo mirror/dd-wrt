@@ -546,7 +546,7 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div><h2><% tran("share.help"); %></h2></div>
 						<dl>
-							<dt class="term"><% tran("nas.proftpd_srv"); %></dt>
+							<dt class="term"><% tran("nas.samba3_legend"); %></dt>
 							<dd class="definition"><% tran("hnas.right2"); %></dd>
 						</dl>
 						<br />
