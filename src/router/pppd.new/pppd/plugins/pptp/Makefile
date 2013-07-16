@@ -12,7 +12,7 @@ VERSION = $(shell awk -F '"' '/VERSION/ { print $$2; }' ../../patchlevel.h)
 INSTALL	= install
 
 PLUGIN=pptp
-CFLAGS=-Wall -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include  -I. -I../../../ $(COPTS) -fPIC -DRC_LOG_FACILITY=LOG_DAEMON -DNEED_PRINTF
+CFLAGS=-Wall -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include  -I. -I../../../ $(COPTS)  $(MIPS16_OPT) -fPIC -DRC_LOG_FACILITY=LOG_DAEMON -DNEED_PRINTF
 
 
 
