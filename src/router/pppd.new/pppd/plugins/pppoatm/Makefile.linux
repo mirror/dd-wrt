@@ -1,4 +1,4 @@
-CFLAGS	= $(COPTS) -I../.. -I../../../include -fPIC
+CFLAGS	= $(COPTS)  $(MIPS16_OPT) -I../.. -I../../../include -fPIC
 LDFLAGS	= -shared
 INSTALL	= install
 
