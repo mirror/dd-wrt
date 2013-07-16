@@ -26,7 +26,7 @@ INSTALL	= install
 RP_VERSION=3.8
 
 #COPTS=-O2 -g
-CFLAGS=$(COPTS) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I../../../include '-DRP_VERSION="$(RP_VERSION)"' 
+CFLAGS=$(COPTS)  $(MIPS16_OPT) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I../../../include '-DRP_VERSION="$(RP_VERSION)"' 
 #CFLAGS=$(COPTS) -I$(LINUXDIR)/include/linux
 
 include $(TOP)/.config
