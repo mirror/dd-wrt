@@ -94,7 +94,7 @@ ifeq ($(ARCHITECTURE),broadcom)
 CFLAGS= -DBROADCOM
 endif
 
-CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) -Os -ffunction-sections -fdata-sections -Wl,--gc-sections $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"' 
+CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) $(MIPS16_OPT) -Os -ffunction-sections -fdata-sections -Wl,--gc-sections $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"' 
 
 
 ifdef CHAPMS
