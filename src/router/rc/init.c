@@ -233,6 +233,7 @@ void shutdown_system(void)
 	kill(-1, SIGKILL);
 	sync();
 	sleep(1);
+	system("/bin/umount -a -r");
 
 }
 
