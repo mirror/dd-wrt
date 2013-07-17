@@ -95,8 +95,9 @@ static ssize_t gpio_proc_write(struct file *file, const char __user * buffer, si
 	return procfs_buffer_size;
 }
 
+#ifndef CONFIG_MACH_HORNET
 extern int ath_nopcie;
-
+#endif
 static const struct file_operations fops_data = {
 	.read = gpio_proc_read,
 	.write = gpio_proc_write,
@@ -112,8 +113,10 @@ static __init int register_proc(void)
 #else
 	int gpiocount = 16;
 #endif
+#ifndef CONFIG_MACH_HORNET
 	if (ath_nopcie)
 		return;
+#endif
 	/* create directory gpio */
 	gpio_dir = proc_mkdir("wl0gpio", NULL);
 	if (gpio_dir == NULL)
