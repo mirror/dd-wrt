@@ -166,6 +166,9 @@ endif
 ifeq ($(CONFIG_NORTHSTAR),y)
   CFLAGS += -DHAVE_NORTHSTAR
 endif
+ifeq ($(CONFIG_CARAMBOLA),y)
+  CFLAGS += -DHAVE_CARAMBOLA
+endif
 ifeq ($(CONFIG_NEXTMEDIA),y)
   CFLAGS += -DHAVE_NEXTMEDIA
 endif
