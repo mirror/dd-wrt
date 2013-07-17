@@ -183,6 +183,15 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_CARAMBOLA)
+int getbuttonstate()
+{
+	int ret = get_gpio(12);
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_HORNET)
 int getbuttonstate()
 {
@@ -810,6 +819,9 @@ void period_check(int sig)
 #elif defined(HAVE_WZRHPAG300NH)
 	sesgpio = 0x105;
 	val |= get_gpio(5) << 5;	//aoss pushbutton
+#elif defined(HAVE_CARAMBOLA)
+	sesgpio = 0x00b;
+	val |= get_gpio(11) << 11;	//aoss pushbutton
 #elif defined(HAVE_HORNET)
 	sesgpio = 0x00b;
 	val |= get_gpio(11) << 11;	//aoss pushbutton
