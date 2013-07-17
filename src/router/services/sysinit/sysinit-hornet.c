@@ -157,6 +157,16 @@ void start_sysinit(void)
 	setEthLED(17, "eth1");
 #endif
 #endif
+#ifdef HAVE_CARAMBOLA
+	system("swconfig dev switch0 set reset 1");
+	system("swconfig dev switch0 set enable_vlan 1");
+	system("swconfig dev switch0 vlan 1 set ports \"0t 1\"");
+	system("swconfig dev switch0 vlan 2 set ports \"0t 2\"");
+	system("swconfig dev switch0 set apply");
+	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+	eval("vconfig", "add", "eth1", "1");
+	eval("vconfig", "add", "eth1", "2");
+#endif
 	struct ifreq ifr;
 	int s;
 
