@@ -648,6 +648,7 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 	struct trx_header *trx;
 	unsigned char *buf;
 	uint blocksize, pagesize, mask, blk_offset, off, shift = 0;
+	uint rbsize;
 	int ret;
 
 	pagesize = nfl->pagesize;
@@ -665,7 +666,7 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 
 	/* Look at every block boundary till 16MB; higher space is reserved for application data. */
 	
-	blocksize = mtd->erasesize;//65536;
+	rbsize = blocksize = mtd->erasesize;//65536;
 
 	if (nvram_match("boardnum","24") && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
@@ -675,9 +676,9 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 	}
 
 
-	printk("lookup_nflash_rootfs_offset: offset = 0x%x\n", offset);
+	printk("lookup_nflash_rootfs_offset: offset = 0x%x, 0x%x\n", offset, blocksize);
 	for (off = offset; off < offset + size; off += blocksize) {
-		mask = blocksize - 1;
+		mask = rbsize - 1;
 		blk_offset = off & ~mask;
 		if (hndnand_checkbadb(nfl, blk_offset) != 0)
 			continue;
