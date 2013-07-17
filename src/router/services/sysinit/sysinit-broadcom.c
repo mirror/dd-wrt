@@ -2837,6 +2837,13 @@ void start_sysinit(void)
 		break;
 
 	}
+	
+#ifdef HAVE_80211AC
+	if ( nvram_get("et_txq_thresh") == NULL ) {
+		nvram_set("et_txq_thresh","1024");
+		nvram_set("et_dispatch_mode","1");
+	}
+#endif	
 
 	if (need_reboot) {
 		nvram_commit();
