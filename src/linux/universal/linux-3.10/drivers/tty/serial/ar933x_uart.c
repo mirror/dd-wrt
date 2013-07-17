@@ -223,56 +223,6 @@ static void ar933x_uart_get_scale_step(unsigned int clk,
 	}
 }
 
-/*
- * baudrate = (clk / (scale + 1)) * (step * (1 / 2^17))
- */
-static unsigned long ar933x_uart_get_baud(unsigned int clk,
-					  unsigned int scale,
-					  unsigned int step)
-{
-	u64 t;
-	u32 div;
-
-	div = (2 << 16) * (scale + 1);
-	t = clk;
-	t *= step;
-	t += (div / 2);
-	do_div(t, div);
-
-	return t;
-}
-
-static void ar933x_uart_get_scale_step(unsigned int clk,
-				       unsigned int baud,
-				       unsigned int *scale,
-				       unsigned int *step)
-{
-	unsigned int tscale;
-	long min_diff;
-
-	*scale = 0;
-	*step = 0;
-
-	min_diff = baud;
-	for (tscale = 0; tscale < AR933X_UART_MAX_SCALE; tscale++) {
-		u64 tstep;
-		int diff;
-
-		tstep = baud * (tscale + 1);
-		tstep *= (2 << 16);
-		do_div(tstep, clk);
-
-		if (tstep > AR933X_UART_MAX_STEP)
-			break;
-
-		diff = abs(ar933x_uart_get_baud(clk, tscale, tstep) - baud);
-		if (diff < min_diff) {
-			min_diff = diff;
-			*scale = tscale;
-			*step = tstep;
-		}
-	}
-}
 
 static void ar933x_uart_set_termios(struct uart_port *port,
 				    struct ktermios *new,
