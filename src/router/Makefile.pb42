@@ -282,6 +282,9 @@ endif
 ifeq ($(CONFIG_HORNET),y)
 	cp $(LINUXDIR)/.config_hornet $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_CARAMBOLA),y)
+	cp $(LINUXDIR)/.config_carambola $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_WASP),y)
 	cp $(LINUXDIR)/.config_wasp $(LINUXDIR)/.config
 endif
