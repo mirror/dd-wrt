@@ -1498,6 +1498,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_CARAMBOLA
+	setRouter("8Devices Carambola 2");
+	nvram_default_get("ath0_rxantenna", "1");
+	nvram_default_get("ath0_txantenna", "1");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_HORNET
 	setRouter("Atheros Hornet");
 	nvram_default_get("ath0_rxantenna", "1");
@@ -1868,6 +1873,9 @@ int internal_getRouterBrand()
 #elif HAVE_WZRG450
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
+
+	void *getUEnv(char *name);
+
 	char *model = getUEnv("product");
 
 
@@ -3231,7 +3239,7 @@ int check_wan_link(int num)
 	return wan_link;
 }
 
-#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH)
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450)
 void *getUEnv(char *name)
 {
 #ifdef HAVE_WZRG300NH
@@ -4590,6 +4598,12 @@ int led_control(int type, int act)
 		connected_gpio = 0x106;
 		ses_gpio = 0x10e;
 		sec0_gpio = 0x10e;
+		break;
+#elif HAVE_CARAMBOLA
+	case ROUTER_BOARD_WHRHPGN:
+//		usb_power = 0x01a;
+//		usb_gpio = 0x001;
+//		ses_gpio = 0x11b;
 		break;
 #elif HAVE_HORNET
 	case ROUTER_BOARD_WHRHPGN:
