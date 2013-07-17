@@ -39,6 +39,16 @@ static inline unsigned int get_core_count(void)
 	return 1;
 }
 
+static void __cpuinit write_pen_release(int val)
+{
+	pen_release = val;
+	smp_wmb();
+	__cpuc_flush_dcache_area((void *)&pen_release, sizeof(pen_release));
+	outer_clean_range(__pa(&pen_release), __pa(&pen_release + 1));
+}
+
+
+
 static DEFINE_SPINLOCK(boot_lock);
 
 static void __cpuinit brcm_secondary_init(unsigned int cpu)
@@ -57,9 +67,7 @@ static void __cpuinit brcm_secondary_init(unsigned int cpu)
 	 * let the primary processor know we're out of the
 	 * pen, then head off into the C entry point
 	 */
-	pen_release = -1;
-	smp_wmb();
-	clean_dcache_area((void *)  &pen_release, sizeof(pen_release));
+	write_pen_release(-1);
 
 	/*
 	 * Synchronise with the boot thread.
@@ -85,12 +93,7 @@ static int __cpuinit brcm_boot_secondary(unsigned int cpu, struct task_struct *i
 	 * Note that "pen_release" is the hardware CPU ID, whereas
 	 * "cpu" is Linux's internal ID.
 	 */
-	pen_release = cpu;
-	smp_wmb();
-
-	clean_dcache_area((void *)  &pen_release, sizeof(pen_release));
-	outer_clean_range(__pa(&pen_release), __pa(&pen_release + 
-			sizeof(pen_release)));
+	write_pen_release(cpu);
 
 	dsb_sev();
 
@@ -98,7 +101,7 @@ static int __cpuinit brcm_boot_secondary(unsigned int cpu, struct task_struct *i
 	 * Timeout set on purpose in jiffies so that on slow processors
 	 * that must also have low HZ it will wait longer.
 	 */
-	timeout = jiffies + 128;
+	timeout = jiffies + (HZ * 10);
 
 	udelay(100);
 	/*
@@ -108,6 +111,7 @@ static int __cpuinit brcm_boot_secondary(unsigned int cpu, struct task_struct *i
 	 */
 	if (pen_release != -1)
 		tick_broadcast(cpumask_of(cpu));
+
 
 	while (time_before(jiffies, timeout)) {
 		smp_rmb();
