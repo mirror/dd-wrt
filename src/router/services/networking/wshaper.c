@@ -759,16 +759,25 @@ void start_wshaper(void)
 		insmod("sch_fq_codel");
 #endif
 
-	if (!strcmp(wshaper_dev, "WAN"))
-		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd);
-	else
-		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd, "imq1");
+	//under K3 interface defaults are way to high, set some sane values
+	eval("ifconfig", "imq0", "down");	
+	eval("ifconfig", "imq0", "mtu", "1500");
+	eval("ifconfig", "imq0", "txqueuelen", "30");
+	eval("ifconfig", "imq0", "up");
 
+	if (!strcmp(wshaper_dev, "WAN")){
+		eval("ifconfig", "imq1", "down");
+		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd);
+	}else{
+		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd, "imq1");
+	}
 	svqos_iptables();
 
 #endif
 	nvram_set("qos_done", "1");
 
+	eval("startservice", "firewall");
+	
 	return;
 }
 
