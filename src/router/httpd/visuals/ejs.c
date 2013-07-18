@@ -1727,7 +1727,12 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 						       "FreeRadius.asp",
 						       "PPPoE_Server.asp",
 						       "PPTP.asp", "USB.asp",
-						       "NAS.asp", "Hotspot.asp",
+						       "NAS.asp", 
+#ifndef HAVE_SANSFIL
+							"Hotspot.asp",
+#else
+							"",
+#endif
 						       "Nintendo.asp",
 #ifdef HAVE_PRIVOXY
 						       "Milkfish.asp", "Privoxy.asp", "",
