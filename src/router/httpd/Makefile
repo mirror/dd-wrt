@@ -201,7 +201,9 @@ endif
 ifeq ($(CONFIG_SUBQUARTER),y)
   CFLAGS += -DHAVE_SUBQUARTER
 endif
-
+ifeq ($(CONFIG_SANSFIL),y)
+  CFLAGS += -DHAVE_SANSFIL
+endif
 include $(TOP)/rules/generic.mk
 CFLAGS += $(DD_CFLAGS)
 
