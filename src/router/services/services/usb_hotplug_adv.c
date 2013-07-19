@@ -117,6 +117,7 @@ void start_hotplug_block(void)
 	int c;
 	char part[5];
 	char match[5];
+	char dev[5];
 	char devname[32];
 
 	if (!(devpath = getenv("DEVPATH")))
@@ -131,12 +132,17 @@ void start_hotplug_block(void)
 
 	int len = strlen(devpath) - 4;
 	strcpy(part, &devpath[len]);
-
+	strcpy(dev, &devpath[len]);
+	
+	
+	
 	for (c = 97; c < 103; c++) {	//support sda - sdf
-		for (i = 1; i < 5; i++) {	//support up to 4 partitions
+		sprintf(dev, "sd%c", c);
+		if (strcmp(part, dev) == 0) 
+			 sysprintf("/usr/sbin/disktype /dev/%s", dev);
+		for (i = 1; i < 5; i++) {	//support up to 4 partitions		 
 			sprintf(match, "sd%c%d", c, i);
 			if (strcmp(part, match) == 0) {
-				sleep(i);
 				sprintf(devname, "/dev/%s", part);
 				//devices may come in unordered so lets do a little trick
 				sysprintf("echo  \"<b>Partition %s:</b>\" >> /tmp/disk/%s", part, part);
@@ -460,10 +466,13 @@ int usb_add_ufd(char *link, int host, char *devpath, int mode)
 	char part_link[128];
 
 	struct dirent *entry;
-
+	
+	
+	
+	sysprintf("mkdir -p /tmp/disk/");
 	usb_stop_services();
 	//create directory to store disktype dumps
-	sysprintf("mkdir -p /tmp/disk/");
+
 	//sysprintf("echo usb_add_ufd host %d devname %s >> /tmp/hotplugs", host, devpath);
 
 	if (mode == 1) {	//K3
