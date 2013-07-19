@@ -431,8 +431,7 @@ int svqos_iptables(void)
 	/* add openvpn filter rules */
 #ifdef HAVE_AQOS
 #ifdef HAVE_OPENVPN
-	if (nvram_invmatch("openvpn_enable", "0")
-	    || nvram_invmatch("openvpncl_enable", "0")) {
+	if (nvram_invmatch("openvpn_enable", "0") || nvram_invmatch("openvpncl_enable", "0")) {
 		char iflist[256];
 		static char word[256];
 		char *next;
@@ -679,6 +678,7 @@ int svqos_iptables(void)
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 
+#ifndef HAVE_80211AC // deactivate on ac models for now as it might be responsible for kernel crash - needs some more testing
 	// http://svn.dd-wrt.com:8000/ticket/2803 && http://svn.dd-wrt.com/ticket/2811   
 	do {
 		if (sscanf(qos_pkts, "%3s ", pkt_filter) < 1)
@@ -686,12 +686,13 @@ int svqos_iptables(void)
 		sysprintf("iptables -t mangle -A FILTER_OUT -p tcp -m tcp --tcp-flags %s %s -m length --length :64 -j CLASSIFY --set-class 1:100", pkt_filter, pkt_filter);
 
 	} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
-
+#endif
 // obsolete
 //      system2
 //          ("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
-
-	system2("iptables -t mangle -A FILTER_OUT -j VPN_DSCP");
+	if (nvram_invmatch("openvpn_enable", "0") || nvram_invmatch("openvpncl_enable", "0")) {
+		system2("iptables -t mangle -A FILTER_OUT -j VPN_DSCP");
+	}
 	system2("iptables -t mangle -A FILTER_OUT -j CONNMARK --save");
 	system2("iptables -t mangle -A FILTER_OUT -j RETURN");
 
@@ -776,7 +777,6 @@ void start_wshaper(void)
 #endif
 	nvram_set("qos_done", "1");
 
-	eval("startservice", "firewall");
 	
 	return;
 }
