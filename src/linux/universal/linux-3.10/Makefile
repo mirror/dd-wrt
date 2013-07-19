@@ -1,6 +1,6 @@
 VERSION = 3
 PATCHLEVEL = 10
-SUBLEVEL = 2 
+SUBLEVEL = 2
 EXTRAVERSION = -rc1
 NAME = Unicycling Gorilla
 
