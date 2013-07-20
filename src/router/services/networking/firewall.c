@@ -1730,7 +1730,7 @@ static void filter_input(void)
 		if (nvram_match("limit_pptp", "1")) {
 			save2file("-A INPUT -i %s -p tcp --dport %d -j logbrute\n", wanface, PPTP_PORT);
 		} else {
-			save2file("-A INPUT -i %s -p tcp --dport %d -j %s\n", wanface, PPTP_PORT, TARG_PASS);
+			save2file("-A INPUT -i %s -p tcp --dport %d -j %s\n", wanface, PPTP_PORT, log_accept);
 		}
 	}
 #endif
@@ -1751,7 +1751,7 @@ static void filter_input(void)
 		if (nvram_match("limit_ftp", "1")) {
 			save2file("-A INPUT -i %s -p tcp --dport %s -j logbrute\n", wanface, nvram_safe_get("proftpd_port"));
 		} else {
-			save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("proftpd_port"), TARG_PASS);
+			save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("proftpd_port"), log_accept);
 		}
 	}
 #endif
@@ -1773,21 +1773,21 @@ static void filter_input(void)
 		save2file("-A INPUT -p %s --dport %s -j %s\n", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", nvram_safe_get("openvpn_port"), log_accept);
 		if (nvram_match("openvpn_tuntap", "tun")) {
 //			if (strlen(nvram_safe_get("openvpn_ccddef")) = 0) {
-				save2file("-A INPUT -i %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), TARG_PASS);
-				save2file("-A FORWARD -i %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), TARG_PASS);
-				save2file("-A FORWARD -o %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), TARG_PASS);
+				save2file("-A INPUT -i %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), log_accept);
+				save2file("-A FORWARD -i %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), log_accept);
+				save2file("-A FORWARD -o %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), log_accept);
 //			}
 		}
 	}
 #endif
 	if (wanactive()) {
 		if (nvram_invmatch("dr_wan_rx", "0"))
-			save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", wanface, RIP_PORT, TARG_PASS);
+			save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", wanface, RIP_PORT, log_accept);
 		else
 			save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", wanface, RIP_PORT, log_drop);
 	}
 	if (nvram_invmatch("dr_lan_rx", "0"))
-		save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", lanface, RIP_PORT, TARG_PASS);
+		save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", lanface, RIP_PORT, log_accept);
 	else
 		save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", lanface, RIP_PORT, log_drop);
 
@@ -1796,7 +1796,7 @@ static void filter_input(void)
 		save2file("-A INPUT -p udp -i %s --dport %d -j %s\n", buff, RIP_PORT, log_drop);
 	}
 
-	save2file("-A INPUT -p udp --dport %d -j %s\n", RIP_PORT, TARG_PASS);
+	save2file("-A INPUT -p udp --dport %d -j %s\n", RIP_PORT, log_accept);
 
 	/*
 	 * end lonewolf mods 
@@ -1851,7 +1851,7 @@ static void filter_input(void)
 		if (nvram_match("limit_ssh", "1"))
 			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j logbrute\n", wanface, nvram_safe_get("lan_ipaddr") , nvram_safe_get("sshd_port"));
 		else
-			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"), TARG_PASS);
+			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"), log_accept);
 	}
 #endif
 	/*
@@ -1872,7 +1872,7 @@ static void filter_input(void)
 		if (nvram_match("limit_telnet", "1"))
 			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j logbrute\n", wanface, nvram_safe_get("lan_ipaddr"));
 		else
-			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), TARG_PASS);
+			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), log_accept);
 	}
 #endif
 	if (remotetelnet) {
@@ -1883,12 +1883,12 @@ static void filter_input(void)
 	 * ICMP request from WAN interface 
 	 */
 	if (wanactive())
-		save2file("-A INPUT -i %s -p icmp -j %s\n", wanface, nvram_match("block_wan", "1") ? log_drop : TARG_PASS);
+		save2file("-A INPUT -i %s -p icmp -j %s\n", wanface, nvram_match("block_wan", "1") ? log_drop : log_accept);
 
 	/*
 	 * IGMP query from WAN interface 
 	 */
-	save2file("-A INPUT -p igmp -j %s\n", doMultiCast() == 0 ? log_drop : TARG_PASS);
+	save2file("-A INPUT -p igmp -j %s\n", doMultiCast() == 0 ? log_drop : log_accept);
 #ifndef HAVE_MICRO
 	/*
 	 * SNMP access from WAN interface 
@@ -1903,7 +1903,7 @@ static void filter_input(void)
 	 * Remote Upgrade 
 	 */
 	if (nvram_match("remote_upgrade", "1"))
-		save2file("-A INPUT -p udp --dport %d -j %s\n", TFTP_PORT, TARG_PASS);
+		save2file("-A INPUT -p udp --dport %d -j %s\n", TFTP_PORT, log_accept);
 #endif
 
 #ifdef HAVE_MILKFISH
@@ -1923,7 +1923,7 @@ static void filter_input(void)
 	 * Ident request backs by telnet or IRC server 
 	 */
 	if (nvram_match("block_ident", "0"))
-		save2file("-A INPUT -p tcp --dport %d -j %s\n", IDENT_PORT, TARG_PASS);
+		save2file("-A INPUT -p tcp --dport %d -j %s\n", IDENT_PORT, log_accept);
 
 	/*
 	 * Filter known SPI state 
