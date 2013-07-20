@@ -1851,16 +1851,17 @@ static void filter_input(void)
 		if (nvram_match("limit_ssh", "1"))
 			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j logbrute\n", wanface, nvram_safe_get("lan_ipaddr") , nvram_safe_get("sshd_port"));
 		else
-			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"), log_accept);
+			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j %s\n", wan_face, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"), log_accept);
 	}
-#endif
+#else
 	/*
 	 * Remote Web GUI Management Botho 03-05-2006 : remote ssh & remote GUI
 	 * management are not linked anymore 
 	 */
 	if (remotessh) {
-		save2file("-A INPUT -d %s -p tcp --dport %s -j %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"), log_accept);
+		save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j %s\n", wan_face, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"), log_accept);
 	}
+#endif
 #endif
 
 #ifdef HAVE_TELNET
@@ -1872,12 +1873,13 @@ static void filter_input(void)
 		if (nvram_match("limit_telnet", "1"))
 			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j logbrute\n", wanface, nvram_safe_get("lan_ipaddr"));
 		else
-			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), log_accept);
+			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j %s\n", wan_face, nvram_safe_get("lan_ipaddr"), log_accept);
+	}
+#else
+	if (remotetelnet) {
+			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j %s\n", wan_face, nvram_safe_get("lan_ipaddr"), log_accept);
 	}
 #endif
-	if (remotetelnet) {
-		save2file("-A INPUT -p tcp -d %s --dport 23 -j %s\n", nvram_safe_get("lan_ipaddr"), log_accept);
-	}
 #endif
 	/*
 	 * ICMP request from WAN interface 
