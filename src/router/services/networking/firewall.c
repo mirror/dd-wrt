@@ -1857,7 +1857,7 @@ static void filter_input(void)
 	 * management are not linked anymore 
 	 */
 	if (remotessh) {
-		save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j %s\n", wan_face, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"), log_accept);
+		save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"), log_accept);
 	}
 #endif
 
@@ -1872,7 +1872,7 @@ static void filter_input(void)
 	}
 #endif
 	if (remotetelnet) {
-			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j %s\n", wan_face, nvram_safe_get("lan_ipaddr"), log_accept);
+			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), log_accept);
 	}
 #endif
 	/*
