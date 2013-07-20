@@ -1851,7 +1851,7 @@ static void filter_input(void)
 		if (nvram_match("limit_ssh", "1"))
 			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j logbrute\n", wanface, nvram_safe_get("lan_ipaddr") , nvram_safe_get("sshd_port"));
 	}
-#endig
+#endif
 	/*
 	 * Remote Web GUI Management Botho 03-05-2006 : remote ssh & remote GUI
 	 * management are not linked anymore 
