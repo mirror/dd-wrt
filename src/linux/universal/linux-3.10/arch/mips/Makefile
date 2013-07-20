@@ -93,7 +93,9 @@ LDFLAGS_vmlinux			+= -G 0 -static -n -nostdlib --gc-sections
 KBUILD_AFLAGS_MODULE		+= -mno-long-calls
 KBUILD_CFLAGS_MODULE		+= -mno-long-calls
 
+ifndef CONFIG_FUNCTION_TRACER
 KBUILD_CFLAGS_KERNEL		+= -ffunction-sections -fdata-sections
+endif
 
 cflags-y += -ffreestanding
 
