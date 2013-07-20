@@ -143,10 +143,14 @@ drop:
 static int br_handle_local_finish(struct sk_buff *skb)
 {
 	struct net_bridge_port *p = br_port_get_rcu(skb->dev);
-	u16 vid = 0;
 
-	br_vlan_get_tag(skb, &vid);
-	br_fdb_update(p->br, p, eth_hdr(skb)->h_source, vid);
+	if (p->state != BR_STATE_DISABLED) {
+		u16 vid = 0;
+
+		br_vlan_get_tag(skb, &vid);
+		br_fdb_update(p->br, p, eth_hdr(skb)->h_source, vid);
+	}
+
 	return 0;	 /* process further */
 }
 
@@ -216,6 +220,18 @@ rx_handler_result_t br_handle_frame(struct sk_buff **pskb)
 
 forward:
 	switch (p->state) {
+	case BR_STATE_DISABLED:
+		if (ether_addr_equal(p->br->dev->dev_addr, dest))
+			skb->pkt_type = PACKET_HOST;
+
+		if (BR_HOOK(NFPROTO_BRIDGE, NF_BR_PRE_ROUTING, skb, skb->dev, NULL,
+			br_handle_local_finish))
+			break;
+
+		BR_INPUT_SKB_CB(skb)->brdev = p->br->dev;
+		br_pass_frame_up(skb);
+		break;
+
 	case BR_STATE_FORWARDING:
 		rhook = rcu_dereference(br_should_route_hook);
 		if (rhook) {
