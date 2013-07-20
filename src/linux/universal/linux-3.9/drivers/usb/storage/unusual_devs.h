@@ -1252,6 +1252,18 @@ UNUSUAL_DEV( 0x0af0, 0x8304, 0x0000, 0x0000,
 		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
 		0 ),
 
+UNUSUAL_DEV( 0x0af0, 0x9200, 0x0000, 0x0000,
+		"Option",
+		"Globetrotter 67xxWFS SD-Card",
+		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
+		0 ),
+
+UNUSUAL_DEV( 0x0af0, 0x9300, 0x0000, 0x0000,
+		"Option",
+		"Globetrotter 66xxWFS SD-Card",
+		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
+		0 ),
+
 UNUSUAL_DEV( 0x0af0, 0xc100, 0x0000, 0x0000,
 		"Option",
 		"GI 070x SD-Card",
