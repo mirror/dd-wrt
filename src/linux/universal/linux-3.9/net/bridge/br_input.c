@@ -114,8 +114,8 @@ int br_handle_frame_finish(struct sk_buff *skb)
 			skb2 = skb;
 
 		br->dev->stats.multicast++;
-	} else if ((p->flags & BR_ISOLATE_MODE) ||(dst = __br_fdb_get(br, dest, vid)) &&
-			dst->is_local) {
+	} else if ((p->flags & BR_ISOLATE_MODE) || ((dst = __br_fdb_get(br, dest, vid)) &&
+			dst->is_local)) {
 		skb2 = skb;
 		/* Do not forward the packet since it's local. */
 		skb = NULL;
