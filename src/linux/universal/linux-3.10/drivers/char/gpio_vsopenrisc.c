@@ -1,4 +1,4 @@
-#include <linux/version.h>7
+#include <linux/version.h>
 #include <linux/module.h>
 #include <linux/major.h>
 #include <linux/string.h>
@@ -50,6 +50,13 @@
 #define PROC_NAME_LEDS			   "vsopenrisc/leds"
 #define PROC_NAME_BUZZER		   "vsopenrisc/buzzer"
 #define PROC_NAME_BUZZER_FRQ	   	   "vsopenrisc/buzzer_frq"
+
+
+typedef	int (read_proc_t)(char *page, char **start, off_t off,
+			  int count, int *eof, void *data);
+
+typedef	int (write_proc_t)(struct file *file, const char __user *buffer,
+			   unsigned long count, void *data);
 
 static char *table_proc_name[] = { "gpio_data"
 								 , "gpio_ctrl"
@@ -506,13 +513,17 @@ unsigned int gpio_poll(struct file *filp, poll_table *wait)
 
 // Support for the gpios in /proc
 
-static int proc_gpio_read(char *buffer, char **buffer_location, off_t offset,
-					int buffer_length, int *eof, void *data)
+
+static ssize_t proc_gpio_read(struct file *file, char __user * outbuffer, size_t size, loff_t * ppos)
 {
-	int i, ret = 0, cmd = (int)data;
+	unsigned int *data = PDE_DATA(file_inode(file));
+	int i, ret = 0, cmd;
 	unsigned long val = 0;
 	char temp[32];
-
+	char buffer[64];
+	int offset = 0;
+	cmd = (int)data;
+	
 	switch (cmd)
 	{
 		case GPIO_VAL_DATA:
@@ -542,23 +553,24 @@ static int proc_gpio_read(char *buffer, char **buffer_location, off_t offset,
 			break;
 	}
 
-	if (!offset)
+	if (offset)
 	{
 		ret = sprintf(buffer, "0x%08lX\n", val);
 		if (cmd != GPIO_CMD_GET_CHANGE)
 			ret = strlen(strcat(buffer, "\nSetting Values:\n---------------\n<mask> <value>\n"));
 	}
-
-	return ret;
+	return simple_read_from_buffer(outbuffer, size, ppos, buffer, ret);
 }
 
-static int proc_gpio_write(struct file *file, const char *buffer, 
-					unsigned long count, void *data)
-{
-	char temp[256], *tmp;
-	int size = sizeof(temp) - 1, cmd = (int)data;
-	unsigned long val, mask;
 
+static ssize_t proc_gpio_write(struct file *file, const char __user * buffer, size_t count, loff_t * ppos)
+{
+	unsigned int *data = PDE_DATA(file_inode(file));
+	char temp[256], *tmp;
+	int size = sizeof(temp) - 1, cmd;
+	unsigned long val, mask;
+	cmd = (int)data;
+	
 	if (count < size)
 		size = count;
 
@@ -601,25 +613,18 @@ static int proc_gpio_write(struct file *file, const char *buffer,
 	return count;
 }
 
-static int proc_btn_rst_read(char *buffer, char **buffer_location, off_t offset,
-					int buffer_length, int *eof, void *data)
+static ssize_t proc_btn_rst_read(struct file *file, char __user * outbuffer, size_t size, loff_t * ppos)
 {
-	int ret = 0;
+	char buffer[3];
 
-	if (!offset)
-	{
 		if (BUTTON_RESET())
 			strcpy(buffer, "1\n");
 		else
 			strcpy(buffer, "0\n");
-		ret = 2;
-	}
-
-	return ret;
+	return simple_read_from_buffer(outbuffer, size, ppos, buffer, sizeof(buffer));
 }
 
-static int proc_btn_rst_write(struct file *file, const char *buffer, 
-					unsigned long count, void *data)
+static ssize_t proc_btn_rst_write(struct file *file, const char __user * buffer, size_t count, loff_t * ppos)
 {
 	char temp[32];
 	int size = sizeof(temp) - 1;
@@ -636,25 +641,19 @@ static int proc_btn_rst_write(struct file *file, const char *buffer,
 	return count;
 }
 
-static int proc_btn_wlan_read(char *buffer, char **buffer_location, off_t offset,
-					int buffer_length, int *eof, void *data)
+static ssize_t proc_btn_wlan_read(struct file *file, char __user * outbuffer, size_t size, loff_t * ppos)
 {
-	int ret = 0;
+	char buffer[3];
 
-	if (!offset)
-	{
 		if (BUTTON_WLAN())
 			strcpy(buffer, "1\n");
 		else
 			strcpy(buffer, "0\n");
-		ret = 2;
-	}
 
-	return ret;
+	return simple_read_from_buffer(outbuffer, size, ppos, buffer, sizeof(buffer));
 }
 
-static int proc_btn_wlan_write(struct file *file, const char *buffer, 
-					unsigned long count, void *data)
+static ssize_t proc_btn_wlan_write(struct file *file, const char __user * buffer, size_t count, loff_t * ppos)
 {
 	return 0;
 }
@@ -674,13 +673,11 @@ static struct
 static int led_str_size = sizeof(led_str) / sizeof(led_str[0]);
 
 
-static int proc_leds_read(char *buffer, char **buffer_location, off_t offset,
-					int buffer_length, int *eof, void *data)
+static ssize_t proc_leds_read(struct file *file, char __user * outbuffer, size_t size, loff_t * ppos)
 {
 	int ret = 0;
+	char buffer[32];
 
-	if (!offset)
-	{
 		unsigned long val = gpio_get();
 		sprintf(buffer, "0x%02X\n%s %s %s", LEDS(val),
 						(val & LED_BLUE_MASK)?LED_BLUE_STR_ON:LED_BLUE_STR_OFF,
@@ -692,13 +689,11 @@ static int proc_leds_read(char *buffer, char **buffer_location, off_t offset,
 		    }
 		strcat(buffer,"\n");
 		ret = strlen(buffer);
-	}
 
-	return ret;
+	return simple_read_from_buffer(outbuffer, size, ppos, buffer, ret);
 }
 
-static int proc_leds_write(struct file *file, const char *buffer, 
-					unsigned long count, void *data)
+static ssize_t proc_leds_write(struct file *file, const char __user * buffer, size_t count, loff_t * ppos)
 {
 	char temp[256], *tmp;
 	int i, size = sizeof(temp) - 1;
@@ -768,21 +763,17 @@ static void set_buzzer(int mode)
 	}
 }
 
-static int proc_buzzer_read_frq(char *buffer, char **buffer_location, off_t offset,
-					int buffer_length, int *eof, void *data)
+static ssize_t proc_buzzer_read_frq(struct file *file, char __user * outbuffer, size_t size, loff_t * ppos)
 {
 	int ret = 0;
+	char buffer[48];
 
-	if (!offset)
-	{
-		ret = sprintf(buffer, "Buzzer frequncy: 0x%08lX ms\n", buzzer_freq);
-	}
+		ret = sprintf(buffer, "Buzzer frequency: 0x%08lX ms\n", buzzer_freq);
 
-	return ret;
+	return simple_read_from_buffer(outbuffer, size, ppos, buffer, ret);
 }
 
-static int proc_buzzer_write_frq(struct file *file, const char *buffer, 
-					unsigned long count, void *data)
+static ssize_t proc_buzzer_write_frq(struct file *file, const char __user * buffer, size_t count, loff_t * ppos)
 {
 	char temp[32];
 	unsigned long val;
@@ -830,22 +821,18 @@ static int proc_buzzer_write_frq(struct file *file, const char *buffer,
 	return count;
 }
 
-static int proc_buzzer_read(char *buffer, char **buffer_location, off_t offset,
-					int buffer_length, int *eof, void *data)
+static ssize_t proc_buzzer_read(struct file *file, char __user * outbuffer, size_t size, loff_t * ppos)
 {
 	int ret = 0;
+	char buffer[32];
 
-	if (!offset)
-	{
 		unsigned long val = gpio_get();
 		ret = sprintf(buffer, "Buzzer: %s\n", (val & BUZZER_MASK)?BUZZER_STR_ON:BUZZER_STR_OFF);
-	}
 
-	return ret;
+	return simple_read_from_buffer(outbuffer, size, ppos, buffer, ret);
 }
 
-static int proc_buzzer_write(struct file *file, const char *buffer, 
-					unsigned long count, void *data)
+static ssize_t proc_buzzer_write(struct file *file, const char __user * buffer, size_t count, loff_t * ppos)
 {
 	char temp[32];
 	int size = sizeof(temp) - 1;
@@ -875,36 +862,6 @@ static int proc_buzzer_write(struct file *file, const char *buffer,
 		
 
 	return count;
-}
-/****************************************************************************/
-static struct proc_dir_entry *dir;
-
-struct proc_dir_entry *proc_init(char *name, read_proc_t *read_proc, 
-									write_proc_t *write_proc, void *data)
-{
-	struct proc_dir_entry *proc_entry = create_proc_entry(name, 0644, dir);
-
-	if (proc_entry == NULL)
-	{
-		//remove_proc_entry(name, &proc_root);
-		remove_proc_entry(name, 0);
-		printk(KERN_ALERT "Could not initialize /proc/%s\n", name);
-		return NULL;
-	}
-	else
-	{
-		proc_entry->read_proc = read_proc;
-		proc_entry->write_proc = write_proc;
-//		proc_entry->owner = THIS_MODULE;
-		proc_entry->mode = S_IFREG | S_IRUGO;
-		proc_entry->uid = 0;
-		proc_entry->gid = 0;
-		proc_entry->size = 0;
-		proc_entry->data = data;
-		//printk(KERN_INFO "/proc/%s created\n", name);
-	}
-	
-	return proc_entry;
 }
 
 /****************************************************************************/
@@ -941,6 +898,7 @@ static struct miscdevice gpio_vsopenrisc_miscdev = {
 static int __init gpio_vsopenrisc_probe(struct platform_device *pdev)
 {
 	int res;
+
 
 	gpio_vsopenrisc_miscdev.parent = &pdev->dev;
 
@@ -990,9 +948,48 @@ static struct platform_driver gpio_vsopenrisc_driver = {
 	},
 };
 
+static const struct file_operations rst_fops_data = {
+	.read = proc_btn_rst_read,
+	.write = proc_btn_rst_write,
+	.llseek = default_llseek,
+};
+
+static const struct file_operations wlan_fops_data = {
+	.read = proc_btn_wlan_read,
+	.write = proc_btn_wlan_write,
+	.llseek = default_llseek,
+};
+
+static const struct file_operations leds_fops_data = {
+	.read = proc_leds_read,
+	.write = proc_leds_write,
+	.llseek = default_llseek,
+};
+
+static const struct file_operations buzzer_fops_data = {
+	.read = proc_buzzer_read,
+	.write = proc_buzzer_write,
+	.llseek = default_llseek,
+};
+
+
+static const struct file_operations buzzer_frq_fops_data = {
+	.read = proc_buzzer_read_frq,
+	.write = proc_buzzer_write_frq,
+	.llseek = default_llseek,
+};
+
+static const struct file_operations gpio_fops_data = {
+	.read = proc_gpio_read,
+	.write = proc_gpio_write,
+	.llseek = default_llseek,
+};
+
+
 INIT_RET_TYPE gpio_init(void)
 {
 	int i;
+	static struct proc_dir_entry *dir;
 
 	printk(KERN_INFO "gpio_vsopenrisc: GPIO driver.\n");
 
@@ -1030,15 +1027,16 @@ INIT_RET_TYPE gpio_init(void)
 #endif
 	dir = proc_mkdir("vsopenrisc", NULL);
 
-	proc_init(PROC_NAME_BTN_RST, proc_btn_rst_read, proc_btn_rst_write, NULL);
-	proc_init(PROC_NAME_BTN_WLAN, proc_btn_wlan_read, proc_btn_wlan_write, NULL);
-	proc_init(PROC_NAME_LEDS, proc_leds_read, proc_leds_write, NULL);
-	proc_init(PROC_NAME_BUZZER, proc_buzzer_read, proc_buzzer_write, NULL);
-	proc_init(PROC_NAME_BUZZER_FRQ, proc_buzzer_read_frq, proc_buzzer_write_frq, NULL);
+	proc_create_data(PROC_NAME_BTN_RST, 0644, dir, &rst_fops_data, NULL);
+	proc_create_data(PROC_NAME_BTN_WLAN, 0644, dir, &wlan_fops_data, NULL);
+	proc_create_data(PROC_NAME_LEDS, 0644, dir, &leds_fops_data, NULL);
+	proc_create_data(PROC_NAME_BUZZER, 0644, dir, &buzzer_fops_data, NULL);
+	proc_create_data(PROC_NAME_BUZZER_FRQ, 0644, dir, &buzzer_frq_fops_data, NULL);
 
 	for (i = 0; i < GPIO_VAL_MAX; i++)
 	{
-		proc_init(table_proc_name[i], proc_gpio_read, proc_gpio_write, (void*)i);
+	    	proc_create_data(table_proc_name[i], 0644, dir, &gpio_fops_data, (void*)i);
+
 	}
 
 	//return(0);
