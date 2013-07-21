@@ -10,7 +10,7 @@
  *
  */
 
-#ifdef CONFIG_SWCONFIG_LEDS
+#ifdef CONFIG_LEDS_TRIGGERS
 
 #include <linux/leds.h>
 #include <linux/ctype.h>
