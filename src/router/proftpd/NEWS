@@ -1,4 +1,4 @@
-$Id: NEWS,v 1.1368.2.76 2013/03/06 18:02:37 castaglia Exp $
+$Id: NEWS,v 1.1368.2.87 2013/06/14 17:21:25 castaglia Exp $
 
 -----------------------------------------------------------------------------
   More details on the bugs listed below can be found by using the bug number
@@ -8,6 +8,22 @@ $Id: NEWS,v 1.1368.2.76 2013/03/06 18:02:37 castaglia Exp $
 
   where `N' is the bug number.
 -----------------------------------------------------------------------------
+
+1.3.4d - Released 14-Jun-2013
+--------------------------------
+- Bug 3909 - Build fails with --disable-ipv6.
+- Bug 3918 - mod_sftp segfault after SIGHUP when evaluating client banner.
+- Bug 3921 - Single failed keyboard-interactive login attempt causes SSH
+  connection to close prematurely.
+- Bug 3925 - SFTP directory listings are sensitive to locale environment
+  variables.
+- Bug 3929 - pam_session_close() requires root privs on some platforms.
+- Bug 3932 - SQLAuthType Backend returns "password mismatch" for MySQL
+  PASSWORD().
+- Bug 3935 - scp download of nonexistent file results in client hang.
+- Bug 3927 - Default ControlsSocket created despite custom ControlsSocket path.
+- Bug 3937 - Segfault when retrieving SSH public key from LDAP directory.
+- Bug 3939 - Disable Controls for "ServerType inetd" servers.
 
 1.3.4c - Released 06-Mar-2013
 --------------------------------

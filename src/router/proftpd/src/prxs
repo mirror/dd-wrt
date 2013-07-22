@@ -29,8 +29,8 @@ Getopt::Long::Configure("no_ignorecase");
 
 my $prog = basename($0);
 
-my $compiler = q(ccache arm-linux-uclibc-gcc);
-my $cflags = q( -DLINUX -Os -pipe -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9  -msoft-float -mfloat-abi=soft -fno-caller-saves -ffunction-sections -fdata-sections -Wl,--gc-sections -Wall -DPR_SHARED_MODULE);
+my $compiler = q(ccache mips-linux-uclibc-gcc);
+my $cflags = q( -DLINUX -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float  -fno-caller-saves  -mno-branch-likely -ffunction-sections -fdata-sections -Wl,--gc-sections -Wall -DPR_SHARED_MODULE);
 my $cppflags = q();
 my $ltdl_ldflags = q();
 my $sbindir = q(/tmp/proftpd/sbin);

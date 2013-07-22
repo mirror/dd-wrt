@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # ---------------------------------------------------------------------------
 # Copyright (C) 2000-2013 TJ Saunders <tj@castaglia.org>
 #
@@ -21,7 +21,7 @@
 # format, or AuthGroupFile, in group(5) format.  The idea is somewhat similar
 # to Apache's htpasswd program.
 #
-#  $Id: ftpasswd,v 1.13.2.1 2013/01/13 21:06:17 castaglia Exp $
+#  $Id: ftpasswd,v 1.13.2.2 2013/04/23 23:25:27 castaglia Exp $
 # ---------------------------------------------------------------------------
 
 use strict;

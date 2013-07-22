@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2012 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Inet support functions, many wrappers for netdb functions
- * $Id: inet.c,v 1.135.2.3 2012/07/27 16:27:57 castaglia Exp $
+ * $Id: inet.c,v 1.135.2.5 2013/04/23 15:14:41 castaglia Exp $
  */
 
 #include "conf.h"
@@ -1223,49 +1223,73 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, pr_netaddr_t *addr, int strm_type,
    * errno will have a value of EBADF; this is an "acceptable" error.  Any
    * other errno value constitutes an unacceptable error.
    */
-  if (pr_inet_get_conn_info(res, fd) < 0 && errno != EBADF)
+  if (pr_inet_get_conn_info(res, fd) < 0 &&
+      errno != EBADF) {
     return NULL;
+  }
 
   if (addr) {
-    if (!res->remote_addr)
+    if (!res->remote_addr) {
       res->remote_addr = pr_netaddr_alloc(res->pool);
+    }
 
     memcpy(res->remote_addr, addr, sizeof(pr_netaddr_t));
   }
 
-  if (resolve && res->remote_addr)
+  if (resolve &&
+      res->remote_addr != NULL) {
     res->remote_name = pr_netaddr_get_dnsstr(res->remote_addr);
+  }
 
-  if (!res->remote_name)
+  if (res->remote_name == NULL) {
     res->remote_name = pr_netaddr_get_ipstr(res->remote_addr);
+    if (res->remote_name == NULL) {
+      /* If we can't even get the IP address as a string, then something
+       * is very wrong, and we should not contine to handle this connection.
+       */
+      return NULL;
+    }
+  }
 
-  if (fd == -1 && c->listen_fd != -1)
+  if (fd == -1 &&
+      c->listen_fd != -1) {
     fd = c->listen_fd;
+  }
 
   if (rfd != -1) {
-    if (fd != rfd)
+    if (fd != rfd) {
       dup2(fd, rfd);
-    else
-      close_fd = FALSE;
 
-  } else
+    } else {
+      close_fd = FALSE;
+    }
+
+  } else {
     rfd = dup(fd);
+  }
 
   if (wfd != -1) {
     if (fd != wfd) {
-      if (wfd == STDOUT_FILENO)
+      if (wfd == STDOUT_FILENO) {
         fflush(stdout);
+      }
+
       dup2(fd, wfd);
 
-    } else
+    } else {
       close_fd = FALSE;
+    }
 
-  } else
+  } else {
     wfd = dup(fd);
+  }
 
   /* Now discard the original socket */
-  if (rfd != -1 && wfd != -1 && close_fd)
-    close(fd);
+  if (rfd != -1 &&
+      wfd != -1 &&
+      close_fd) {
+    (void) close(fd);
+  }
 
   res->rfd = rfd;
   res->wfd = wfd;

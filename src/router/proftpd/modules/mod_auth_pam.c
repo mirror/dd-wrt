@@ -35,7 +35,7 @@
  *
  * -- DO NOT MODIFY THE TWO LINES BELOW --
  * $Libraries: -lpam$
- * $Id: mod_auth_pam.c,v 1.26.2.1 2013/02/26 23:14:19 castaglia Exp $
+ * $Id: mod_auth_pam.c,v 1.26.2.2 2013/04/30 16:00:53 castaglia Exp $
  */
 
 #include "conf.h"
@@ -171,7 +171,7 @@ static struct pam_conv pam_conv = {
 };
 
 static void auth_pam_exit_ev(const void *event_data, void *user_data) {
-  int pam_error = 0;
+  int pam_error = 0, disable_id_switching;
 
   /* Sanity check.
    */
@@ -182,6 +182,16 @@ static void auth_pam_exit_ev(const void *event_data, void *user_data) {
    * friends.
    */
   pr_signals_block();
+
+  /* If ID switching has been disabled, we need to re-enable it; some
+   * (spurious, IMHO) PAM errors can happen if pam_close_session(3) is called
+   * without proper root privs (Bug#3929).
+   */
+  disable_id_switching = session.disable_id_switching;
+  if (disable_id_switching) {
+    session.disable_id_switching = FALSE;
+  }
+
   PRIVS_ROOT
 
   /* Give up our credentials, close our session, and finally close out this
@@ -209,6 +219,12 @@ static void auth_pam_exit_ev(const void *event_data, void *user_data) {
   pamh = NULL;
 #endif
 
+  PRIVS_RELINQUISH
+  pr_signals_unblock();
+
+  /* Restore any "ID switching disabled" setting. */
+  session.disable_id_switching = disable_id_switching;
+
   if (pam_user != NULL) {
     memset(pam_user, '\0', pam_user_len);
     free(pam_user);
@@ -216,8 +232,6 @@ static void auth_pam_exit_ev(const void *event_data, void *user_data) {
     pam_user_len = 0;
   }
 
-  PRIVS_RELINQUISH
-  pr_signals_unblock();
 }
 
 MODRET pam_auth(cmd_rec *cmd) {

@@ -1,6 +1,6 @@
 /*
  * mod_ldap - LDAP password lookup module for ProFTPD
- * Copyright (c) 1999-2011, John Morrissey <jwm@horde.net>
+ * Copyright (c) 1999-2013, John Morrissey <jwm@horde.net>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@
  *                                                   LDAPDefaultAuthScheme
  *
  *
- * $Id: mod_ldap.c,v 1.93.2.2 2011/12/21 00:14:17 castaglia Exp $
+ * $Id: mod_ldap.c,v 1.93.2.3 2013/05/08 21:43:21 castaglia Exp $
  * $Libraries: -lldap -llber$
  */
 
@@ -1002,7 +1002,7 @@ handle_ldap_ssh_pubkey_lookup(cmd_rec *cmd)
     return PR_DECLINED(cmd);
   }
 
-  if (cached_ssh_pubkeys != NULL ||
+  if (cached_ssh_pubkeys != NULL &&
       strcasecmp(((char **)cached_ssh_pubkeys->elts)[0], cmd->argv[0]) == 0) {
 
     pr_log_debug(DEBUG3, MOD_LDAP_VERSION ": returning cached SSH public keys for %s", cmd->argv[0]);
