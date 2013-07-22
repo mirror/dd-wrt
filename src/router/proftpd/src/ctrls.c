@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2012 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Controls API routines
- * $Id: ctrls.c,v 1.30.2.3 2012/02/24 01:14:24 castaglia Exp $
+ * $Id: ctrls.c,v 1.30.2.4 2013/05/28 21:04:37 castaglia Exp $
  */
 
 #include "conf.h"
@@ -1975,7 +1975,7 @@ void init_ctrls(void) {
 
   sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (sockfd < 0) {
-    pr_log_pri(PR_LOG_DEBUG, "unable to create Unix domain socket: %s",
+    pr_log_debug(DEBUG10, "unable to create Unix domain socket: %s",
       strerror(errno));
     return;
   }
@@ -1986,8 +1986,7 @@ void init_ctrls(void) {
   socklen = sizeof(struct sockaddr_un);
 
   if (bind(sockfd, (struct sockaddr *) &sockun, socklen) < 0) {
-    pr_log_pri(PR_LOG_DEBUG,
-      "unable to bind to Unix domain socket at '%s': %s",
+    pr_log_debug(DEBUG10, "unable to bind to Unix domain socket at '%s': %s",
       sockpath, strerror(errno));
     (void) close(sockfd);
     (void) unlink(sockpath);
@@ -1995,8 +1994,7 @@ void init_ctrls(void) {
   }
 
   if (fstat(sockfd, &st) < 0) {
-    pr_log_pri(PR_LOG_DEBUG,
-      "unable to stat Unix domain socket at '%s': %s",
+    pr_log_debug(DEBUG10, "unable to stat Unix domain socket at '%s': %s",
       sockpath, strerror(errno));
     (void) close(sockfd);
     (void) unlink(sockpath);

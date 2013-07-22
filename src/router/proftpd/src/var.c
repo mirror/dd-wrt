@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2008 The ProFTPD Project team
+ * Copyright (c) 2004-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Variables API implementation
- * $Id: var.c,v 1.6 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: var.c,v 1.6.2.1 2013/04/23 15:20:57 castaglia Exp $
  */
 
 #include "conf.h"
@@ -210,7 +210,7 @@ int pr_var_set(pool *p, const char *name, const char *desc, int type,
       if (desc)
         v->v_desc = (const char *) pstrdup(p, desc);
       v->v_type = PR_VAR_TYPE_FUNC; 
-      v->v_val = (var_vstr_cb) val;
+      v->v_val = val;
 
       if (data) {
         v->v_data = data;

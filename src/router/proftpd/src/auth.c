@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Authentication front-end for ProFTPD
- * $Id: auth.c,v 1.88 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: auth.c,v 1.88.2.2 2013/04/23 22:37:54 castaglia Exp $
  */
 
 #include "conf.h"
@@ -91,14 +91,16 @@ static void uidcache_create(void) {
 
     uid_tab = pr_table_alloc(auth_pool, 0);
 
-    if (pr_table_ctl(uid_tab, PR_TABLE_CTL_SET_KEY_CMP, uid_keycmp_cb) < 0) {
+    if (pr_table_ctl(uid_tab, PR_TABLE_CTL_SET_KEY_CMP,
+        (void *) uid_keycmp_cb) < 0) {
       pr_trace_msg(trace_channel, 2,
         "error setting key comparison callback for uidcache: %s",
         strerror(errno));
       ok = FALSE;
     }
 
-    if (pr_table_ctl(uid_tab, PR_TABLE_CTL_SET_KEY_HASH, uid_hash_cb) < 0) {
+    if (pr_table_ctl(uid_tab, PR_TABLE_CTL_SET_KEY_HASH,
+        (void *) uid_hash_cb) < 0) {
       pr_trace_msg(trace_channel, 2,
         "error setting key hash callback for uidcache: %s",
         strerror(errno));
@@ -159,14 +161,16 @@ static void gidcache_create(void) {
 
     gid_tab = pr_table_alloc(auth_pool, 0);
 
-    if (pr_table_ctl(gid_tab, PR_TABLE_CTL_SET_KEY_CMP, gid_keycmp_cb) < 0) {
+    if (pr_table_ctl(gid_tab, PR_TABLE_CTL_SET_KEY_CMP,
+        (void *) gid_keycmp_cb) < 0) {
       pr_trace_msg(trace_channel, 2,
         "error setting key comparison callback for gidcache: %s",
         strerror(errno));
       ok = FALSE;
     }
 
-    if (pr_table_ctl(gid_tab, PR_TABLE_CTL_SET_KEY_HASH, gid_hash_cb) < 0) {
+    if (pr_table_ctl(gid_tab, PR_TABLE_CTL_SET_KEY_HASH,
+        (void *) gid_hash_cb) < 0) {
       pr_trace_msg(trace_channel, 2,
         "error setting key hash callback for gidcache: %s",
         strerror(errno));
