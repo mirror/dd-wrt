@@ -140,7 +140,7 @@ void start_hotplug_block(void)
 		sprintf(dev, "sd%c", c);
 		if (strcmp(part, dev) == 0) 
 			 sysprintf("/usr/sbin/disktype /dev/%s", dev);
-		for (i = 1; i < 5; i++) {	//support up to 4 partitions		 
+		for (i = 1; i < 7; i++) {	//support up to 6 partitions		 
 			sprintf(match, "sd%c%d", c, i);
 			if (strcmp(part, match) == 0) {
 				sprintf(devname, "/dev/%s", part);
