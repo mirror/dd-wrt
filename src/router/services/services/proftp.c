@@ -151,9 +151,6 @@ void start_ftpsrv(void)
 		csnext = cs->next;
 		free(cs);
 	}
-	fprintf(fp, "AuthUserFile	/tmp/proftpd/etc/passwd\n");
-
-#if 0
 	if (nvram_match("proftpd_rad", "0"))
 		fprintf(fp, "AuthUserFile	/tmp/proftpd/etc/passwd\n");
 	else {
@@ -166,7 +163,6 @@ void start_ftpsrv(void)
 			nvram_safe_get("proftpd_sharedkey"), nvram_safe_get("proftpd_authserverip"), nvram_safe_get("proftpd_acctserverport"), nvram_safe_get("proftpd_sharedkey"));
 		fprintf(fp, "RadiusUserInfo 0 0 %s /bin/false\n", nvram_safe_get("proftpd_dir"));
 	}
-#endif
 
 // Anonymous ftp - read only
 	if (nvram_match("proftpd_anon", "1")) {
