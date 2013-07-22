@@ -173,7 +173,7 @@ mvswitch_mangle_rx(struct net_device *dev, struct sk_buff *skb)
 	if (vlan == -1)
 		return;
 
-	__vlan_hwaccel_put_tag(skb, vlan);
+	__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vlan);
 }
 
 
@@ -317,9 +317,6 @@ mvswitch_config_init(struct phy_device *pdev)
 
 #ifdef HEADER_MODE
 	dev->priv_flags |= IFF_NO_IP_ALIGN;
-	dev->features |= NETIF_F_HW_VLAN_RX | NETIF_F_HW_VLAN_TX;
-#else
-	dev->features |= NETIF_F_HW_VLAN_RX;
 #endif
 
 	return 0;
