@@ -160,8 +160,8 @@ static inline int iegbe_82547_fifo_workaround(struct iegbe_adapter *adapter,
                           struct sk_buff *skb);
 
 static bool iegbe_vlan_used(struct iegbe_adapter *adapter);
-static int iegbe_vlan_rx_add_vid(struct net_device *netdev, uint16_t vid);
-static int iegbe_vlan_rx_kill_vid(struct net_device *netdev, uint16_t vid);
+static int iegbe_vlan_rx_add_vid(struct net_device *netdev,__be16 proto, uint16_t vid);
+static int iegbe_vlan_rx_kill_vid(struct net_device *netdev,__be16 proto, uint16_t vid);
 static void iegbe_restore_vlan(struct iegbe_adapter *adapter);
 
 static int iegbe_notify_reboot(struct notifier_block *,
@@ -328,7 +328,7 @@ static void iegbe_update_mng_vlan(struct iegbe_adapter *adapter)
                 if (!test_bit(old_vid, adapter->active_vlans)) {
 			if (hw->mng_cookie.status &
                                 E1000_MNG_DHCP_COOKIE_STATUS_VLAN_SUPPORT) {
-                                iegbe_vlan_rx_add_vid(netdev, vid);
+                                iegbe_vlan_rx_add_vid(netdev, htons(ETH_P_8021Q), vid);
                                 adapter->mng_vlan_id = vid;
                         } else
                                 adapter->mng_vlan_id = E1000_MNG_VLAN_NONE;
@@ -336,7 +336,7 @@ static void iegbe_update_mng_vlan(struct iegbe_adapter *adapter)
                         if ((old_vid != (u16)E1000_MNG_VLAN_NONE) &&
                                         (vid != old_vid) &&
                             !test_bit(old_vid, adapter->active_vlans))
-                                iegbe_vlan_rx_kill_vid(netdev, old_vid);
+                                iegbe_vlan_rx_kill_vid(netdev, htons(ETH_P_8021Q), old_vid);
                 } else
                         adapter->mng_vlan_id = vid;
         }
@@ -842,10 +842,7 @@ static int iegbe_probe(struct pci_dev *pdev,
 
 	if (hw->mac_type >= iegbe_82543) {
         netdev->features = NETIF_F_SG |
-                   NETIF_F_HW_CSUM |
-                   NETIF_F_HW_VLAN_TX |
-                   NETIF_F_HW_VLAN_RX |
-                   NETIF_F_HW_VLAN_FILTER;
+                   NETIF_F_HW_CSUM;
     }
 
 	if ((hw->mac_type >= iegbe_82544) &&
@@ -1249,7 +1246,7 @@ static int iegbe_close(struct net_device *netdev)
 	if ((hw->mng_cookie.status &
 			  E1000_MNG_DHCP_COOKIE_STATUS_VLAN_SUPPORT) &&
 	     !test_bit(adapter->mng_vlan_id, adapter->active_vlans)) {
-		iegbe_vlan_rx_kill_vid(netdev, adapter->mng_vlan_id);
+		iegbe_vlan_rx_kill_vid(netdev, htons(ETH_P_8021Q), adapter->mng_vlan_id);
 	}
 	return 0;
 }
@@ -3875,7 +3872,7 @@ static bool iegbe_clean_rx_irq(struct iegbe_adapter *adapter,
 			u16 vid;
 
 			vid = le16_to_cpu(rx_desc->special);
-			__vlan_hwaccel_put_tag(skb, vid);
+			__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vid);
 		} else {
 			netif_receive_skb(skb);
 		}
@@ -4028,7 +4025,7 @@ copydone:
         if(unlikely(iegbe_vlan_used(adapter) && (staterr & E1000_RXD_STAT_VP))) {
 	    u16 vid;
 	    vid = le16_to_cpu(rx_desc->wb.middle.vlan);
-	    __vlan_hwaccel_put_tag(skb, vid);
+	    __vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), vid);
         } else {
             netif_receive_skb(skb);
         }
@@ -4577,7 +4574,7 @@ static void iegbe_vlan_mode(struct net_device *netdev, bool vlan_on)
         rctl &= ~E1000_RCTL_VFE;
         E1000_WRITE_REG(&adapter->hw, RCTL, rctl);
         if(adapter->mng_vlan_id != (uint16_t)E1000_MNG_VLAN_NONE) {
-            iegbe_vlan_rx_kill_vid(netdev, adapter->mng_vlan_id);
+            iegbe_vlan_rx_kill_vid(netdev, htons(ETH_P_8021Q), adapter->mng_vlan_id);
             adapter->mng_vlan_id = E1000_MNG_VLAN_NONE;
         }
     }
@@ -4586,7 +4583,7 @@ static void iegbe_vlan_mode(struct net_device *netdev, bool vlan_on)
     iegbe_irq_enable(adapter);
 }
 
-static int iegbe_vlan_rx_add_vid(struct net_device *netdev, u16 vid)
+static int iegbe_vlan_rx_add_vid(struct net_device *netdev,__be16 proto, u16 vid)
 {
     struct iegbe_adapter *adapter = netdev_priv(netdev);
     uint32_t vfta, index;
@@ -4610,7 +4607,7 @@ static int iegbe_vlan_rx_add_vid(struct net_device *netdev, u16 vid)
     return 0;
 }
 
-static int iegbe_vlan_rx_kill_vid(struct net_device *netdev, u16 vid)
+static int iegbe_vlan_rx_kill_vid(struct net_device *netdev,__be16 proto, u16 vid)
 {
 	struct iegbe_adapter *adapter = netdev_priv(netdev);
 	u32 vfta, index;
@@ -4643,7 +4640,7 @@ static void iegbe_restore_vlan(struct iegbe_adapter *adapter)
 
 	iegbe_vlan_mode(adapter->netdev, true);
 	for_each_set_bit(vid, adapter->active_vlans, VLAN_N_VID)
- 			iegbe_vlan_rx_add_vid(adapter->netdev, vid);
+ 			iegbe_vlan_rx_add_vid(adapter->netdev, htons(ETH_P_8021Q), vid);
 }
 
 
