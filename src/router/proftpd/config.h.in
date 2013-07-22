@@ -393,11 +393,17 @@
 /* Define if you have the munlockall function.  */
 #undef HAVE_MUNLOCKALL
 
+/* Define if you have the MySQL make_scrambled_password function.  */
+#undef HAVE_MYSQL_MAKE_SCRAMBLED_PASSWORD
+
 /* Define if you have the MySQL make_scrambled_password_323 function.  */
 #undef HAVE_MYSQL_MAKE_SCRAMBLED_PASSWORD_323
 
 /* Define if you have the MySQL my_make_scrambled_password function.  */
 #undef HAVE_MYSQL_MY_MAKE_SCRAMBLED_PASSWORD
+
+/* Define if you have the MySQL my_make_scrambled_password_323 function.  */
+#undef HAVE_MYSQL_MY_MAKE_SCRAMBLED_PASSWORD_323
 
 /* Define if you have the nl_langinfo function.  */
 #undef HAVE_NL_LANGINFO
