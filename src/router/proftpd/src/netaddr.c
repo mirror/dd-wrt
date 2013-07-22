@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2011 The ProFTPD Project team
+ * Copyright (c) 2003-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Network address routines
- * $Id: netaddr.c,v 1.79.2.1 2012/09/06 17:15:26 castaglia Exp $
+ * $Id: netaddr.c,v 1.79.2.3 2013/04/23 15:13:10 castaglia Exp $
  */
 
 #include "conf.h"
@@ -690,8 +690,8 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
         pr_freeaddrinfo(info);
       }
     }
-#endif /* PR_USE_IPV6 */
   }
+#endif /* PR_USE_IPV6 */
 
   return na;
 }
@@ -1331,7 +1331,7 @@ const char *pr_netaddr_get_ipstr(pr_netaddr_t *na) {
 #else
   char buf[INET_ADDRSTRLEN];
 #endif /* PR_USE_IPV6 */
-  int res = 0;
+  int res = 0, xerrno;
   
   if (!na) {
     errno = EINVAL;
@@ -1347,14 +1347,17 @@ const char *pr_netaddr_get_ipstr(pr_netaddr_t *na) {
   memset(buf, '\0', sizeof(buf));
   res = pr_getnameinfo(pr_netaddr_get_sockaddr(na),
     pr_netaddr_get_sockaddr_len(na), buf, sizeof(buf), NULL, 0, NI_NUMERICHOST);
+  xerrno = errno;
 
   if (res != 0) {
     if (res != EAI_SYSTEM) {
-      pr_log_pri(PR_LOG_INFO, "getnameinfo error: %s", pr_gai_strerror(res));
+      pr_log_pri(PR_LOG_WARNING, "getnameinfo error: %s", pr_gai_strerror(res));
+      errno = EIO;
 
     } else {
-      pr_log_pri(PR_LOG_INFO, "getnameinfo system error: [%d] %s",
-        errno, strerror(errno));
+      pr_log_pri(PR_LOG_WARNING, "getnameinfo system error: [%d] %s",
+        xerrno, strerror(xerrno));
+      errno = xerrno;
     }
 
     return NULL;

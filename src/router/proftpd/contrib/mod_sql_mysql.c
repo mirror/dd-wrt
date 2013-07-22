@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sql_mysql -- Support for connecting to MySQL databases.
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2004-2011 TJ Saunders
+ * Copyright (c) 2004-2013 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql_mysql.c,v 1.64.2.1 2012/12/10 23:51:41 castaglia Exp $
+ * $Id: mod_sql_mysql.c,v 1.64.2.2 2013/04/30 16:10:56 castaglia Exp $
  */
 
 /*
@@ -137,9 +137,20 @@
 
 #include <mysql.h>
 
-/* 
- * timer-handling code adds the need for a couple of forward declarations
+/* The my_make_scrambled_password{,_323} functions are not part of the public
+ * MySQL API and are not declared in any of the MySQL header files. But the
+ * use of these functions are required for implementing the "Backend"
+ * SQLAuthType for MySQL. Thus these functions are declared here (Bug#3908).
  */
+#if defined(HAVE_MYSQL_MY_MAKE_SCRAMBLED_PASSWORD)
+void my_make_scrambled_password(char *to, const char *from, size_t fromlen);
+#endif
+
+#if defined(HAVE_MYSQL_MY_MAKE_SCRAMBLED_PASSWORD_323)
+void my_make_scrambled_password_323(char *to, const char *from, size_t fromlen);
+#endif
+
+/* Timer-handling code adds the need for a couple of forward declarations. */
 MODRET cmd_close(cmd_rec *cmd);
 module sql_mysql_module;
 
@@ -1441,9 +1452,8 @@ MODRET cmd_escapestring(cmd_rec * cmd) {
  *  If this backend does not provide this functionality, this cmd *must*
  *  return ERROR.
  */
-MODRET cmd_checkauth(cmd_rec * cmd) {
+MODRET cmd_checkauth(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
-  db_conn_t *conn = NULL;
   char scrambled[256]={'\0'};
   char *c_clear = NULL;
   char *c_hash = NULL;
@@ -1459,8 +1469,8 @@ MODRET cmd_checkauth(cmd_rec * cmd) {
   }
 
   /* get the named connection -- not used in this case, but for consistency */
-  entry = _sql_get_connection( cmd->argv[0] );
-  if (!entry) {
+  entry = _sql_get_connection(cmd->argv[0]);
+  if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_checkauth");
     return PR_ERROR_MSG(cmd, MOD_SQL_MYSQL_VERSION, "unknown named connection");
   }
@@ -1470,47 +1480,71 @@ MODRET cmd_checkauth(cmd_rec * cmd) {
     return PR_ERROR_INT(cmd, PR_AUTH_NOPWD);
   }
 
-  conn = (db_conn_t *) entry->data;
-
   c_clear = cmd->argv[1];
   c_hash = cmd->argv[2];
 
-#if MYSQL_VERSION_ID >= 40100 && MYSQL_VERSION_ID < 40101
-  make_scrambled_password(scrambled, c_clear, 1, NULL);
-
-#elif HAVE_MYSQL_MY_MAKE_SCRAMBLED_PASSWORD
-  my_make_scrambled_password(scrambled, c_clear, strlen(c_clear));
-
-#else
-  make_scrambled_password(scrambled, c_clear);
-#endif
-
-  success = !strcmp(scrambled, c_hash); 
-
-  if (!success) {
-
-#ifdef HAVE_MYSQL_MAKE_SCRAMBLED_PASSWORD_323
-    /* Try to work around MySQL's stupid handling of password length
-     * changes in 4.1, and the stupidity and whining of admins who
-     * cannot deal with those changes.
-     */
+  /* Checking order (damn MySQL API changes):
+   *
+   *  my_make_scrambled_password (if available)
+   *  my_make_scrambled_password_323 (if available)
+   *  make_scrambled_password (if available)
+   *  make_scrammbed_password_323 (if available)
+   */
+#if defined(HAVE_MYSQL_MY_MAKE_SCRAMBLED_PASSWORD)
+  if (success == FALSE) {
     memset(scrambled, '\0', sizeof(scrambled));
-    make_scrambled_password_323(scrambled, c_clear);
+
+    my_make_scrambled_password(scrambled, c_clear, strlen(c_clear));
+    success = (strcmp(scrambled, c_hash) == 0);
+  }
+#endif /* HAVE_MYSQL_MY_MAKE_SCRAMBLED_PASSWORD */
+
+#if defined(HAVE_MYSQL_MY_MAKE_SCRAMBLED_PASSWORD_323)
+  if (success == FALSE) {
+    memset(scrambled, '\0', sizeof(scrambled));
 
     sql_log(DEBUG_FUNC, "%s",
-      "checking again using deprecated legacy MySQL password algorithm");
+      "checking again using deprecated legacy MySQL password algorithm (my_make_scrambled_password_323 function)");
     sql_log(DEBUG_FUNC, "%s",
       "warning: support for this legacy MySQ-3.xL password algorithm will be dropped from MySQL in the future");
-    success = !strcmp(scrambled, c_hash);
-    if (!success)
-      sql_log(DEBUG_FUNC, "%s", "password mismatch");
-#else
+
+    my_make_scrambled_password_323(scrambled, c_clear, strlen(c_clear));
+    success = (strcmp(scrambled, c_hash) == 0);
+  }
+#endif /* HAVE_MYSQL_MY_MAKE_SCRAMBLED_PASSWORD_323 */
+
+#if defined(HAVE_MYSQL_MAKE_SCRAMBLED_PASSWORD)
+  if (success == FALSE) {
+    memset(scrambled, '\0', sizeof(scrambled));
+
+# if MYSQL_VERSION_ID >= 40100 && MYSQL_VERSION_ID < 40101
+    make_scrambled_password(scrambled, c_clear, 1, NULL);
+# else
+    make_scrambled_password(scrambled, c_clear);
+# endif
+    success = (strcmp(scrambled, c_hash) == 0);
+  }
+#endif /* HAVE_MYSQL_MAKE_SCRAMBLED_PASSWORD */
+
+#if defined(HAVE_MYSQL_MAKE_SCRAMBLED_PASSWORD_323)
+  if (success == FALSE) {
+    memset(scrambled, '\0', sizeof(scrambled));
+ 
+    sql_log(DEBUG_FUNC, "%s",
+      "checking again using deprecated legacy MySQL password algorithm (make_scrambled_password_323 function)");
+    sql_log(DEBUG_FUNC, "%s",
+      "warning: support for this legacy MySQ-3.xL password algorithm will be dropped from MySQL in the future");
+
+    make_scrambled_password_323(scrambled, c_clear);
+    success = (strcmp(scrambled, c_hash) == 0);
+  }
+#endif /* HAVE_MYSQL_MAKE_SCRAMBLED_PASSWORD_323 */
+
+  if (success == FALSE) {
     sql_log(DEBUG_FUNC, "%s", "password mismatch");
-#endif /* No MySQL make_scrambled_password_323() function */
   }
 
   sql_log(DEBUG_FUNC, "%s", "exiting \tmysql cmd_checkauth");
-
   return success ? PR_HANDLED(cmd) : PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
 }
 

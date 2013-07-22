@@ -25,7 +25,7 @@
  */
 
 /* Core FTPD module
- * $Id: mod_core.c,v 1.413.2.5 2013/01/14 20:44:11 castaglia Exp $
+ * $Id: mod_core.c,v 1.413.2.6 2013/04/11 18:29:25 castaglia Exp $
  */
 
 #include "conf.h"
@@ -197,8 +197,39 @@ static int core_idle_timeout_cb(CALLBACK_FRAME) {
   return 0;
 }
 
-static int core_scrub_scoreboard_cb(CALLBACK_FRAME) {
+/* If the environment variable being set/unset is locale-related, then we need
+ * to call setlocale(3) again.
+ *
+ * Note: We deliberately set LC_NUMERIC to "C", regardless of configuration.
+ * Failure to do so will cause problems with formatting of e.g. floats in
+ * SQL query strings.
+ */
+static void core_handle_locale_env(const char *env_name) {
+#if defined(PR_USE_NLS) && defined(HAVE_LOCALE_H)
+  register unsigned int i;
+  const char *locale_envs[] = {
+    "LC_ALL",
+    "LC_COLLATE",
+    "LC_CTYPE",
+    "LC_MESSAGES",
+    "LC_MONETARY",
+    "LC_NUMERIC",
+    "LC_TIME",
+    "LANG",
+    NULL
+  };
 
+  for (i = 0; locale_envs[i] != NULL; i++) {
+    if (strcmp(env_name, locale_envs[i]) == 0) {
+      if (setlocale(LC_ALL, "") != NULL) {
+        setlocale(LC_NUMERIC, "C");
+      }
+    }
+  }
+#endif /* PR_USE_NLS and HAVE_LOCALE_H */
+}
+
+static int core_scrub_scoreboard_cb(CALLBACK_FRAME) {
   /* Always return 1 when leaving this function, to make sure the timer
    * gets called again.
    */
@@ -543,6 +574,9 @@ MODRET set_setenv(cmd_rec *cmd) {
     if (pr_env_set(cmd->server->pool, cmd->argv[1], cmd->argv[2]) < 0) {
       pr_log_debug(DEBUG1, "%s: unable to set environ variable '%s': %s",
         cmd->argv[0], cmd->argv[1], strerror(errno));
+
+    } else {
+      core_handle_locale_env(cmd->argv[1]);
     }
   }
 
@@ -1462,10 +1496,32 @@ MODRET set_umask(cmd_rec *cmd) {
 }
 
 MODRET set_unsetenv(cmd_rec *cmd) {
+  int ctxt_type;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]); 
+
+  /* In addition, if this is the "server config" context, unset the
+   * environ variable now.  If there was a <Daemon> context, that would
+   * be a more appropriate place for configuring parse-time environ
+   * variables.
+   */
+  ctxt_type = (cmd->config && cmd->config->config_type != CONF_PARAM ?
+    cmd->config->config_type : cmd->server->config_type ?
+    cmd->server->config_type : CONF_ROOT);
+
+  if (ctxt_type == CONF_ROOT) {
+    if (pr_env_unset(cmd->server->pool, cmd->argv[1]) < 0) {
+      pr_log_debug(DEBUG1, "%s: unable to unset environ variable '%s': %s",
+        cmd->argv[0], cmd->argv[1], strerror(errno));
+
+    } else {
+      core_handle_locale_env(cmd->argv[1]);
+    }
+  }
+
   return PR_HANDLED(cmd);
 }
 
@@ -5512,6 +5568,9 @@ static int core_sess_init(void) {
     if (pr_env_set(session.pool, c->argv[0], c->argv[1]) < 0) {
       pr_log_debug(DEBUG1, "unable to set environ variable '%s': %s",
         (char *) c->argv[0], strerror(errno));
+
+    } else {
+      core_handle_locale_env(c->argv[0]);
     }
 
     c = find_config_next(c, c->next, CONF_PARAM, "SetEnv", FALSE);
@@ -5524,6 +5583,9 @@ static int core_sess_init(void) {
     if (pr_env_unset(session.pool, c->argv[0]) < 0) {
       pr_log_debug(DEBUG1, "unable to unset environ variable '%s': %s",
         (char *) c->argv[0], strerror(errno));
+
+    } else {
+      core_handle_locale_env(c->argv[0]);
     }
 
     c = find_config_next(c, c->next, CONF_PARAM, "UnsetEnv", FALSE);

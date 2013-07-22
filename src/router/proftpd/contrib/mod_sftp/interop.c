@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: interop.c,v 1.14 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: interop.c,v 1.14.2.1 2013/03/14 21:51:43 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -30,8 +30,6 @@
 #include "disconnect.h"
 #include "interop.h"
 #include "fxp.h"
-
-extern module sftp_module;
 
 extern module sftp_module;
 
@@ -179,7 +177,7 @@ int sftp_interop_handle_version(const char *client_version) {
     version);
 
   /* First matching pattern wins. */
-  for (i = 0; known_versions[i].pattern; i++) {
+  for (i = 0; known_versions[i].pattern != NULL; i++) {
     int res;
 
     pr_signals_handle();
@@ -386,7 +384,7 @@ int sftp_interop_init(void) {
   /* Compile the regexps for all of the known client versions, to save the
    * time when a client connects.
    */
-  for (i = 0; known_versions[i].pattern; i++) {
+  for (i = 0; known_versions[i].pattern != NULL; i++) {
     pr_regex_t *pre;
     int res;
 
@@ -418,8 +416,11 @@ int sftp_interop_init(void) {
 int sftp_interop_free(void) {
   register unsigned int i;
 
-  for (i = 0; known_versions[i].pre; i++) {
-    pr_regexp_free(NULL, known_versions[i].pre);
+  for (i = 0; known_versions[i].pattern != NULL; i++) {
+    if (known_versions[i].pre != NULL) {
+      pr_regexp_free(NULL, known_versions[i].pre);
+      known_versions[i].pre = NULL;
+    }
   }
 
   return 0;

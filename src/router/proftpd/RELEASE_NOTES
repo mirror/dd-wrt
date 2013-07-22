@@ -6,6 +6,12 @@ This file contains a description of the major changes to ProFTPD for the
 releases.  More information on these changes can be found in the NEWS and
 ChangeLog files.
 
+1.3.4d
+---------
+
+  + Fixed broken build when using --disable-ipv6 configure option
+  + Fixed mod_sql "SQLAuthType Backend" MySQL issues
+
 1.3.4c
 ---------
 
@@ -401,4 +407,4 @@ ChangeLog files.
 
       Support for this directive has been removed.
 
-Last Updated: $Date: 2013/03/06 17:07:46 $
+Last Updated: $Date: 2013/06/14 17:01:29 $

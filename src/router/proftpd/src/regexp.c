@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Regex management code
- * $Id: regexp.c,v 1.19 2011/08/02 17:10:47 castaglia Exp $
+ * $Id: regexp.c,v 1.19.2.1 2013/03/14 21:51:44 castaglia Exp $
  */
 
 #include "conf.h"
@@ -83,7 +83,7 @@ static void regexp_cleanup(void) {
     pr_regex_t **pres = (pr_regex_t **) regexp_list->elts;
 
     for (i = 0; i < regexp_list->nelts; i++) {
-      if (pres[i]) {
+      if (pres[i] != NULL) {
 
 #ifdef PR_USE_PCRE
         if (pres[i]->pcre != NULL) {
@@ -157,6 +157,10 @@ void pr_regexp_free(module *m, pr_regex_t *pre) {
   pres = (pr_regex_t **) regexp_list->elts;
 
   for (i = 0; i < regexp_list->nelts; i++) {
+    if (pres[i] == NULL) {
+      continue;
+    }
+
     if ((pre != NULL && pres[i] == pre) ||
         (m != NULL && pres[i]->m == m)) {
 
@@ -174,9 +178,10 @@ void pr_regexp_free(module *m, pr_regex_t *pre) {
         pres[i]->re = NULL;
       }
 
+      pres[i]->pattern = NULL;
+
       /* This frees the memory allocated for the object itself. */
       destroy_pool(pres[i]->regex_pool);
-
       pres[i] = NULL;
     }
   }
@@ -415,16 +420,19 @@ static int regexp_exec_pcre(pr_regex_t *pre, const char *str,
 
 static int regexp_exec_posix(pr_regex_t *pre, const char *str,
     size_t nmatches, regmatch_t *matches, int flags) {
+  int res;
 
   pr_trace_msg(trace_channel, 9,
     "executing POSIX regex '%s' against subject '%s'",
     pr_regexp_get_pattern(pre), str);
-  return regexec(pre->re, str, nmatches, matches, flags);
+  res = regexec(pre->re, str, nmatches, matches, flags);
+  return res;
 }
 
 int pr_regexp_exec(pr_regex_t *pre, const char *str, size_t nmatches,
     regmatch_t *matches, int flags, unsigned long match_limit,
     unsigned long match_limit_recursion) {
+  int res;
 
   if (pre == NULL ||
       str == NULL) {
@@ -439,7 +447,8 @@ int pr_regexp_exec(pr_regex_t *pre, const char *str, size_t nmatches,
   }
 #endif /* PR_USE_PCRE */
 
-  return regexp_exec_posix(pre, str, nmatches, matches, flags);
+  res = regexp_exec_posix(pre, str, nmatches, matches, flags);
+  return res;
 }
 
 int pr_regexp_set_limits(unsigned long match_limit,
