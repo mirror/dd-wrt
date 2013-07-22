@@ -27,8 +27,8 @@ void start_privoxy(void)
 	mkdir("/var/log/privoxy", 0777);
 
 	if (nvram_match("privoxy_transp_enable", "1")) {
-		sysprintf("iptables -D PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
-		sysprintf("iptables -A PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
+		sysprintf("iptables -t nat -D PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
+		sysprintf("iptables -t nat -A PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
 		mode = 1;
 	}
 
@@ -65,7 +65,7 @@ void start_privoxy(void)
 
 void stop_privoxy(void)
 {
-	sysprintf("iptables -D PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
+	sysprintf("iptables -t nat -D PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
 	stop_process("privoxy", "privoxy");
 }
 #endif
