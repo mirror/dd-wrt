@@ -73,9 +73,15 @@ static int detect_ethernet_devices(void)
 	if (detect("PCnet32"))	// vmware?
 		returncode = try_module("pcnet32");
 	if (detect("Tigon3"))	// Broadcom 
+	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("tg3");
-	else if (detect("NetXtreme"))	// Broadcom 
+	} else if (detect("NetXtreme")) {	// Broadcom 
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("tg3");
+	}
 	if (detect("NetXtreme II"))	// Broadcom 
 		returncode = try_module("bnx2");
 	if (detect("BCM44"))	// Broadcom 
@@ -94,66 +100,96 @@ static int detect_ethernet_devices(void)
 #endif
 	if (detect("PRO/1000"))	// Intel Gigabit 
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	} else if (detect("82541"))	// Intel Gigabit
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	} else if (detect("82542"))	// Intel Gigabit
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	} else if (detect("82543"))	// Intel Gigabit
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	} else if (detect("82544"))	// Intel Gigabit
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	} else if (detect("82545"))	// Intel Gigabit
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	} else if (detect("82546"))	// Intel Gigabit
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	} else if (detect("82547"))	// Intel Gigabit
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	} else if (detect("82571"))	// Intel Gigabit 
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	} else if (detect("82572"))	// Intel Gigabit 
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	} else if (detect("82573"))	// Intel Gigabit 
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	} else if (detect("82574"))	// Intel Gigabit 
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	} else if (detect("82583"))	// Intel Gigabit 
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 	}
 #ifndef HAVE_XSCALE
 	if (detect("Tolapai"))	// Realtek 8169 Adapter (various notebooks) 
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 		returncode = try_module("e1000gcu");
 		returncode = try_module("e1000gbe");
 	} else if (detect("EP80579"))	// Realtek 8169 Adapter (various notebooks) 
 	{
+		try_module("pps_core");
+		try_module("ptp");
 		returncode = try_module("e1000");
 		returncode = try_module("e1000e");
 		returncode = try_module("e1000gcu");
