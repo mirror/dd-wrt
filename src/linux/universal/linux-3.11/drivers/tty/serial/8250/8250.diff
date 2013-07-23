@@ -1,0 +1,297 @@
+--- 8250.c	2013-04-01 22:03:41.673979982 +0200
++++ 8250_core.c	2013-04-01 22:01:20.838274821 +0200
+@@ -80,7 +80,7 @@
+ #define DEBUG_INTR(fmt...)	do { } while (0)
+ #endif
+ 
+-#define PASS_LIMIT	2048
++#define PASS_LIMIT	512
+ 
+ #define BOTH_EMPTY 	(UART_LSR_TEMT | UART_LSR_THRE)
+ 
+@@ -325,7 +325,7 @@
+ 	},
+ };
+ 
+-
++/* Uart divisor latch read */
+ static int default_serial_dl_read(struct uart_8250_port *up)
+ {
+ 	return serial_in(up, UART_DLL) | serial_in(up, UART_DLM) << 8;
+@@ -338,9 +338,9 @@
+ 	serial_out(up, UART_DLM, value >> 8 & 0xff);
+ }
+ 
+-#if defined(CONFIG_MIPS_ALCHEMY) || defined (CONFIG_SERIAL_8250_RT288X)
++#if defined(CONFIG_MIPS_ALCHEMY) || defined(CONFIG_SERIAL_8250_RT288X)
+ 
+-/* Au1x00 and RT288x UART hardware has a weird register layout */
++/* Au1x00/RT288x UART hardware has a weird register layout */
+ static const u8 au_io_in_map[] = {
+ 	[UART_RX]  = 0,
+ 	[UART_IER] = 2,
+@@ -384,57 +384,6 @@
+ 
+ #endif
+ 
+-#ifdef CONFIG_SERIAL_8250_RM9K
+-
+-static const u8
+-	regmap_in[8] = {
+-		[UART_RX]	= 0x00,
+-		[UART_IER]	= 0x0c,
+-		[UART_IIR]	= 0x14,
+-		[UART_LCR]	= 0x1c,
+-		[UART_MCR]	= 0x20,
+-		[UART_LSR]	= 0x24,
+-		[UART_MSR]	= 0x28,
+-		[UART_SCR]	= 0x2c
+-	},
+-	regmap_out[8] = {
+-		[UART_TX] 	= 0x04,
+-		[UART_IER]	= 0x0c,
+-		[UART_FCR]	= 0x18,
+-		[UART_LCR]	= 0x1c,
+-		[UART_MCR]	= 0x20,
+-		[UART_LSR]	= 0x24,
+-		[UART_MSR]	= 0x28,
+-		[UART_SCR]	= 0x2c
+-	};
+-
+-static unsigned int rm9k_serial_in(struct uart_port *p, int offset)
+-{
+-	offset = regmap_in[offset] << p->regshift;
+-	return readl(p->membase + offset);
+-}
+-
+-static void rm9k_serial_out(struct uart_port *p, int offset, int value)
+-{
+-	offset = regmap_out[offset] << p->regshift;
+-	writel(value, p->membase + offset);
+-}
+-
+-static int rm9k_serial_dl_read(struct uart_8250_port *up)
+-{
+-	return ((__raw_readl(up->port.membase + 0x10) << 8) |
+-		(__raw_readl(up->port.membase + 0x08) & 0xff)) & 0xffff;
+-}
+-
+-
+-static void rm9k_serial_dl_write(struct uart_8250_port *up, int value)
+-{
+-	__raw_writel(value, up->port.membase + 0x08);
+-	__raw_writel(value >> 8, up->port.membase + 0x10);
+-}
+-
+-#endif
+-
+ static unsigned int hub6_serial_in(struct uart_port *p, int offset)
+ {
+ 	offset = offset << p->regshift;
+@@ -461,20 +410,6 @@
+ 	writeb(value, p->membase + offset);
+ }
+ 
+-static unsigned int memdelay_serial_in(struct uart_port *p, int offset)
+-{
+-	struct uart_8250_port *up = (struct uart_8250_port *)p;
+-	udelay(up->port.rw_delay);
+-	return mem_serial_in(p, offset);
+-}
+-
+-static void memdelay_serial_out(struct uart_port *p, int offset, int value)
+-{
+-	struct uart_8250_port *up = (struct uart_8250_port *)p;
+-	udelay(up->port.rw_delay);
+-	mem_serial_out(p, offset, value);
+-}
+-
+ static void mem32_serial_out(struct uart_port *p, int offset, int value)
+ {
+ 	offset = offset << p->regshift;
+@@ -487,7 +422,6 @@
+ 	return readl(p->membase + offset);
+ }
+ 
+-
+ static unsigned int io_serial_in(struct uart_port *p, int offset)
+ {
+ 	offset = offset << p->regshift;
+@@ -526,18 +460,6 @@
+ 		p->serial_in = mem32_serial_in;
+ 		p->serial_out = mem32_serial_out;
+ 		break;
+-#ifdef CONFIG_SERIAL_8250_RM9K
+-	case UPIO_RM9000:
+-		p->serial_in = rm9k_serial_in;
+-		p->serial_out = rm9k_serial_out;
+-		up->dl_read = rm9k_serial_dl_read;
+-		up->dl_write = rm9k_serial_dl_write;
+-		break;
+-#endif
+-	case UPIO_MEM_DELAY:
+-		p->serial_in = memdelay_serial_in;
+-		p->serial_out = memdelay_serial_out;
+-		break;
+ 
+ #if defined(CONFIG_MIPS_ALCHEMY) || defined(CONFIG_SERIAL_8250_RT288X)
+ 	case UPIO_AU:
+@@ -564,7 +486,6 @@
+ 	switch (p->iotype) {
+ 	case UPIO_MEM:
+ 	case UPIO_MEM32:
+-	case UPIO_MEM_DELAY:
+ 	case UPIO_AU:
+ 		p->serial_out(p, offset, value);
+ 		p->serial_in(p, UART_LCR);	/* safe, no side-effects */
+@@ -574,8 +495,6 @@
+ 	}
+ }
+ 
+-
+-
+ /*
+  * For the 16C950
+  */
+@@ -767,19 +686,22 @@
+  */
+ static unsigned int autoconfig_read_divisor_id(struct uart_8250_port *p)
+ {
+-	unsigned char old_lcr;
+-	unsigned int old_dl;
++	unsigned char old_dll, old_dlm, old_lcr;
+ 	unsigned int id;
+ 
+ 	old_lcr = serial_in(p, UART_LCR);
+ 	serial_out(p, UART_LCR, UART_LCR_CONF_MODE_A);
+ 
+-	old_dl = serial_dl_read(p);
++	old_dll = serial_in(p, UART_DLL);
++	old_dlm = serial_in(p, UART_DLM);
++
++	serial_out(p, UART_DLL, 0);
++	serial_out(p, UART_DLM, 0);
+ 
+-	serial_dl_write(p, 0);
+-	id = serial_dl_read(p);
++	id = serial_in(p, UART_DLL) | serial_in(p, UART_DLM) << 8;
+ 
+-	serial_dl_write(p, old_dl);
++	serial_out(p, UART_DLL, old_dll);
++	serial_out(p, UART_DLM, old_dlm);
+ 	serial_out(p, UART_LCR, old_lcr);
+ 
+ 	return id;
+@@ -905,7 +827,7 @@
+ 	/*
+ 	 * Exar ST16C2550 "A2" devices incorrectly detect as
+ 	 * having an EFR, and report an ID of 0x0201.  See
+-	 * http://linux.derkeiler.com/Mailing-Lists/Kernel/2004-11/4812.html
++	 * http://linux.derkeiler.com/Mailing-Lists/Kernel/2004-11/4812.html 
+ 	 */
+ 	if (autoconfig_read_divisor_id(up) == 0x0201 && size_fifo(up) == 16)
+ 		return 1;
+@@ -1847,13 +1769,11 @@
+ 	if (!(iir & UART_IIR_NO_INT))
+ 		serial8250_tx_chars(up);
+ 
+-
+ 	if (up->port.irq)
+ 		serial_out(up, UART_IER, ier);
+ 
+ 	spin_unlock_irqrestore(&up->port.lock, flags);
+ 
+-
+ 	/* Standard timer interval plus 0.2s to keep the port running */
+ 	mod_timer(&up->timer,
+ 		jiffies + uart_poll_timeout(&up->port) + HZ / 5);
+@@ -2600,7 +2520,6 @@
+ 	case UPIO_TSI:
+ 	case UPIO_MEM32:
+ 	case UPIO_MEM:
+-	case UPIO_MEM_DELAY:
+ 		if (!port->mapbase)
+ 			break;
+ 
+@@ -2637,7 +2556,6 @@
+ 	case UPIO_TSI:
+ 	case UPIO_MEM32:
+ 	case UPIO_MEM:
+-	case UPIO_MEM_DELAY:
+ 		if (!port->mapbase)
+ 			break;
+ 
+@@ -3154,27 +3072,26 @@
+ 		irqflag = IRQF_SHARED;
+ 
+ 	for (i = 0; p && p->flags != 0; p++, i++) {
+-		uart.port.iobase		= p->iobase;
+-		uart.port.membase		= p->membase;
++		uart.port.iobase	= p->iobase;
++		uart.port.membase	= p->membase;
+ 		uart.port.irq		= p->irq;
+-		uart.port.irqflags		= p->irqflags;
+-		uart.port.uartclk		= p->uartclk;
+-		uart.port.regshift		= p->regshift;
+-		uart.port.iotype		= p->iotype;
++		uart.port.irqflags	= p->irqflags;
++		uart.port.uartclk	= p->uartclk;
++		uart.port.regshift	= p->regshift;
++		uart.port.iotype	= p->iotype;
+ 		uart.port.flags		= p->flags;
+-		uart.port.mapbase		= p->mapbase;
++		uart.port.mapbase	= p->mapbase;
+ 		uart.port.hub6		= p->hub6;
+ 		uart.port.private_data	= p->private_data;
+ 		uart.port.type		= p->type;
+-		uart.port.serial_in		= p->serial_in;
+-		uart.port.serial_out		= p->serial_out;
+-		uart.port.handle_irq		= p->handle_irq;
++		uart.port.serial_in	= p->serial_in;
++		uart.port.serial_out	= p->serial_out;
++		uart.port.handle_irq	= p->handle_irq;
+ 		uart.port.handle_break	= p->handle_break;
+ 		uart.port.set_termios	= p->set_termios;
+-		uart.port.pm			= p->pm;
++		uart.port.pm		= p->pm;
+ 		uart.port.dev		= &dev->dev;
+-		uart.port.rw_delay		= p->rw_delay;
+-		uart.port.irqflags		|= irqflag;
++		uart.port.irqflags	|= irqflag;
+ 		ret = serial8250_register_8250_port(&uart);
+ 		if (ret < 0) {
+ 			dev_err(&dev->dev, "unable to register port at index %d "
+@@ -3325,7 +3242,6 @@
+ 		uart->port.flags        = up->port.flags | UPF_BOOT_AUTOCONF;
+ 		uart->bugs		= up->bugs;
+ 		uart->port.mapbase      = up->port.mapbase;
+-		uart->port.rw_delay	= up->port.rw_delay;
+ 		uart->port.private_data = up->port.private_data;
+ 		uart->port.fifosize	= up->port.fifosize;
+ 		uart->tx_loadsz		= up->tx_loadsz;
+@@ -3356,7 +3272,8 @@
+ 			uart->dl_read = up->dl_read;
+ 		if (up->dl_write)
+ 			uart->dl_write = up->dl_write;
+- 
++		if (up->dma)
++			uart->dma = up->dma;
+ 
+ 		if (serial8250_isa_config != NULL)
+ 			serial8250_isa_config(0, &uart->port,
+@@ -3501,6 +3418,7 @@
+ #endif
+ MODULE_ALIAS_CHARDEV_MAJOR(TTY_MAJOR);
+ 
++#ifdef CONFIG_SERIAL_8250_DEPRECATED_OPTIONS
+ #ifndef MODULE
+ /* This module was renamed to 8250_core in 3.7.  Keep the old "8250" name
+  * working as well for the module options so we don't break people.  We
+@@ -3527,5 +3445,6 @@
+ #endif
+ }
+ #else
+-MODULE_ALIAS("8250");
++MODULE_ALIAS("8250_core");
++#endif
+ #endif

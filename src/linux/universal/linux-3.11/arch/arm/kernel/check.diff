@@ -1,0 +1,99 @@
+Index: irq.c
+===================================================================
+--- irq.c	(revision 19797)
++++ irq.c	(working copy)
+@@ -40,6 +40,9 @@
+ #include <asm/mach/irq.h>
+ #include <asm/mach/time.h>
+ 
++#include <typedefs.h>
++#include <bcmdefs.h>
++
+ /*
+  * No architecture-specific irq_finish function defined in arm/arch/irqs.h.
+  */
+@@ -70,9 +73,8 @@
+ void handle_IRQ(unsigned int irq, struct pt_regs *regs)
+ {
+ 	struct pt_regs *old_regs = set_irq_regs(regs);
++    	irq_enter();
+ 
+-	irq_enter();
+-
+ 	/*
+ 	 * Some hardware gives randomly wrong interrupts.  Rather
+ 	 * than crashing, do something sensible.
+@@ -95,8 +97,7 @@
+ /*
+  * asm_do_IRQ is the interface to be used from assembly code.
+  */
+-asmlinkage void __exception_irq_entry
+-asm_do_IRQ(unsigned int irq, struct pt_regs *regs)
++asmlinkage void  BCMFASTPATH asm_do_IRQ(unsigned int irq, struct pt_regs *regs)
+ {
+ 	handle_IRQ(irq, regs);
+ }
+Index: vmlinux.lds.S
+===================================================================
+--- vmlinux.lds.S	(revision 19797)
++++ vmlinux.lds.S	(working copy)
+@@ -112,6 +112,11 @@
+ 			ARM_CPU_KEEP(PROC_INFO)
+ 	}
+ 
++	. = ALIGN(32);
++	__fastpath_begin = .;
++	.text.fastpath : { *(.text.fastpath) }
++	__fastpath_end = .;
++
+ 	RO_DATA(PAGE_SIZE)
+ 
+ #ifdef CONFIG_ARM_UNWIND
+Index: bios32.c
+===================================================================
+--- bios32.c	(revision 19797)
++++ bios32.c	(working copy)
+@@ -392,7 +401,6 @@
+ {
+ 	struct pci_sys_data *sys = dev->sysdata;
+ 	int slot, oldpin = *pin;
+-
+ 	if (sys->swizzle)
+ 		slot = sys->swizzle(dev, pin);
+ 	else
+@@ -441,7 +449,6 @@
+ 		sys->swizzle = hw->swizzle;
+ 		sys->map_irq = hw->map_irq;
+ 		INIT_LIST_HEAD(&sys->resources);
+-
+ 		ret = hw->setup(nr, sys);
+ 
+ 		if (ret > 0) {
+@@ -451,9 +458,9 @@
+ 				pci_add_resource_offset(&sys->resources,
+ 					 &iomem_resource, sys->mem_offset);
+ 			}
+-
++			
+ 			if (hw->scan)
+-				sys->bus = hw->scan(nr, sys);
++				sys->bus = hw->scan(nr, sys);	
+ 			else
+ 				sys->bus = pci_scan_root_bus(NULL, sys->busnr,
+ 						hw->ops, sys, &sys->resources);
+@@ -476,7 +483,6 @@
+ {
+ 	struct pci_sys_data *sys;
+ 	LIST_HEAD(head);
+-
+ 	pci_add_flags(PCI_REASSIGN_ALL_RSRC);
+ 	if (hw->preinit)
+ 		hw->preinit();
+@@ -489,6 +495,7 @@
+ 	list_for_each_entry(sys, &head, node) {
+ 		struct pci_bus *bus = sys->bus;
+ 
++
+ 		if (!pci_has_flag(PCI_PROBE_ONLY)) {
+ 			/*
+ 			 * Size the bridge windows.
