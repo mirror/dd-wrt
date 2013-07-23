@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <zabbix_export>
     <version>2.0</version>
-    <date>2013-01-27T23:16:53Z</date>
+    <date>2013-07-23T09:19:33Z</date>
     <groups>
         <group>
             <name>DD-WRT</name>
@@ -196,45 +196,6 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>vfs.file.cksum[/etc/services]</key>
-                    <delay>86400</delay>
-                    <history>7</history>
-                    <trends>365</trends>
-                    <status>0</status>
-                    <value_type>3</value_type>
-                    <allowed_hosts/>
-                    <units/>
-                    <delta>0</delta>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
-                    <formula>0</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <data_type>0</data_type>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
-                    <inventory_link>0</inventory_link>
-                    <applications>
-                        <application>
-                            <name>Integrity</name>
-                        </application>
-                    </applications>
-                    <valuemap/>
-                </item>
-                <item>
-                    <name>Checksum of $1</name>
-                    <type>0</type>
-                    <snmp_community/>
-                    <multiplier>0</multiplier>
-                    <snmp_oid/>
                     <key>vfs.file.cksum[/opt/etc/xinetd.conf]</key>
                     <delay>600</delay>
                     <history>7</history>
@@ -347,17 +308,17 @@
                     <valuemap/>
                 </item>
                 <item>
-                    <name>CPU $2 time ($3)</name>
+                    <name>Checksum of $1</name>
                     <type>0</type>
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>system.cpu.util[,system,avg1]</key>
-                    <delay>10</delay>
-                    <history>90</history>
+                    <key>vfs.file.cksum[/etc/services]</key>
+                    <delay>86400</delay>
+                    <history>7</history>
                     <trends>365</trends>
-                    <status>3</status>
-                    <value_type>0</value_type>
+                    <status>0</status>
+                    <value_type>3</value_type>
                     <allowed_hosts/>
                     <units/>
                     <delta>0</delta>
@@ -365,7 +326,7 @@
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
                     <snmpv3_authpassphrase/>
                     <snmpv3_privpassphrase/>
-                    <formula>1</formula>
+                    <formula>0</formula>
                     <delay_flex/>
                     <params/>
                     <ipmi_sensor/>
@@ -380,10 +341,7 @@
                     <inventory_link>0</inventory_link>
                     <applications>
                         <application>
-                            <name>CPU</name>
-                        </application>
-                        <application>
-                            <name>Performance</name>
+                            <name>Integrity</name>
                         </application>
                     </applications>
                     <valuemap/>
@@ -437,6 +395,48 @@
                     <multiplier>0</multiplier>
                     <snmp_oid/>
                     <key>system.cpu.util[,idle,avg1]</key>
+                    <delay>10</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <status>3</status>
+                    <value_type>0</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <delta>0</delta>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <description/>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>CPU</name>
+                        </application>
+                        <application>
+                            <name>Performance</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                </item>
+                <item>
+                    <name>CPU $2 time ($3)</name>
+                    <type>0</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>system.cpu.util[,system,avg1]</key>
                     <delay>10</delay>
                     <history>90</history>
                     <trends>365</trends>
@@ -562,45 +562,6 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>vfs.file.regcount[/var/log/messages, &quot;DROP&quot;]</key>
-                    <delay>600</delay>
-                    <history>7</history>
-                    <trends>0</trends>
-                    <status>0</status>
-                    <value_type>3</value_type>
-                    <allowed_hosts/>
-                    <units/>
-                    <delta>0</delta>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
-                    <formula>0</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <data_type>0</data_type>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
-                    <inventory_link>0</inventory_link>
-                    <applications>
-                        <application>
-                            <name>Network</name>
-                        </application>
-                    </applications>
-                    <valuemap/>
-                </item>
-                <item>
-                    <name>DROP in /var/log/messages</name>
-                    <type>0</type>
-                    <snmp_community/>
-                    <multiplier>0</multiplier>
-                    <snmp_oid/>
                     <key>vfs.file.regtop[/var/log/messages, &quot;SRC=[0-9.]*&quot; ,&quot;DROP&quot;]</key>
                     <delay>600</delay>
                     <history>7</history>
@@ -635,12 +596,12 @@
                     <valuemap/>
                 </item>
                 <item>
-                    <name>DROP INVALID in /var/log/messages</name>
+                    <name>DROP in /var/log/messages</name>
                     <type>0</type>
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>vfs.file.regcount[/var/log/messages, &quot;DROP INVALID&quot;]</key>
+                    <key>vfs.file.regcount[/var/log/messages, &quot;DROP&quot;]</key>
                     <delay>600</delay>
                     <history>7</history>
                     <trends>0</trends>
@@ -685,6 +646,45 @@
                     <trends>0</trends>
                     <status>0</status>
                     <value_type>2</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <delta>0</delta>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privpassphrase/>
+                    <formula>0</formula>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <description/>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>Network</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                </item>
+                <item>
+                    <name>DROP INVALID in /var/log/messages</name>
+                    <type>0</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>vfs.file.regcount[/var/log/messages, &quot;DROP INVALID&quot;]</key>
+                    <delay>600</delay>
+                    <history>7</history>
+                    <trends>0</trends>
+                    <status>0</status>
+                    <value_type>3</value_type>
                     <allowed_hosts/>
                     <units/>
                     <delta>0</delta>
@@ -833,10 +833,10 @@
                     <name>Free disk space on $1</name>
                     <type>0</type>
                     <snmp_community/>
-                    <multiplier>1</multiplier>
+                    <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>vfs.fs.size[/opt,free]</key>
-                    <delay>180</delay>
+                    <key>vfs.fs.size[/var,free]</key>
+                    <delay>300</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
@@ -848,7 +848,7 @@
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
                     <snmpv3_authpassphrase/>
                     <snmpv3_privpassphrase/>
-                    <formula>1024</formula>
+                    <formula/>
                     <delay_flex/>
                     <params/>
                     <ipmi_sensor/>
@@ -878,10 +878,10 @@
                     <name>Free disk space on $1</name>
                     <type>0</type>
                     <snmp_community/>
-                    <multiplier>0</multiplier>
+                    <multiplier>1</multiplier>
                     <snmp_oid/>
-                    <key>vfs.fs.size[/var,free]</key>
-                    <delay>300</delay>
+                    <key>vfs.fs.size[/jffs,free]</key>
+                    <delay>180</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
@@ -893,7 +893,7 @@
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
                     <snmpv3_authpassphrase/>
                     <snmpv3_privpassphrase/>
-                    <formula/>
+                    <formula>1024</formula>
                     <delay_flex/>
                     <params/>
                     <ipmi_sensor/>
@@ -970,7 +970,7 @@
                     <snmp_community/>
                     <multiplier>1</multiplier>
                     <snmp_oid/>
-                    <key>vfs.fs.size[/jffs,free]</key>
+                    <key>vfs.fs.size[/opt,free]</key>
                     <delay>180</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1558,7 +1558,7 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>net.if.in[eth1,bytes]</key>
+                    <key>net.if.in[ppp0,bytes]</key>
                     <delay>5</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1571,7 +1571,49 @@
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
                     <snmpv3_authpassphrase/>
                     <snmpv3_privpassphrase/>
-                    <formula>0</formula>
+                    <formula>1</formula>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <description/>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>Network</name>
+                        </application>
+                        <application>
+                            <name>Performance</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                </item>
+                <item>
+                    <name>Incoming traffic on interface $1</name>
+                    <type>0</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>net.if.in[eth0,bytes]</key>
+                    <delay>5</delay>
+                    <history>7</history>
+                    <trends>365</trends>
+                    <status>3</status>
+                    <value_type>0</value_type>
+                    <allowed_hosts/>
+                    <units>Bps</units>
+                    <delta>1</delta>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
                     <delay_flex/>
                     <params/>
                     <ipmi_sensor/>
@@ -1642,7 +1684,7 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>net.if.in[ppp0,bytes]</key>
+                    <key>net.if.in[eth1,bytes]</key>
                     <delay>5</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -1655,49 +1697,7 @@
                     <snmpv3_securitylevel>0</snmpv3_securitylevel>
                     <snmpv3_authpassphrase/>
                     <snmpv3_privpassphrase/>
-                    <formula>1</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <data_type>0</data_type>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
-                    <inventory_link>0</inventory_link>
-                    <applications>
-                        <application>
-                            <name>Network</name>
-                        </application>
-                        <application>
-                            <name>Performance</name>
-                        </application>
-                    </applications>
-                    <valuemap/>
-                </item>
-                <item>
-                    <name>Incoming traffic on interface $1</name>
-                    <type>0</type>
-                    <snmp_community/>
-                    <multiplier>0</multiplier>
-                    <snmp_oid/>
-                    <key>net.if.in[eth0,bytes]</key>
-                    <delay>5</delay>
-                    <history>7</history>
-                    <trends>365</trends>
-                    <status>3</status>
-                    <value_type>0</value_type>
-                    <allowed_hosts/>
-                    <units>Bps</units>
-                    <delta>1</delta>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
-                    <formula>1</formula>
+                    <formula>0</formula>
                     <delay_flex/>
                     <params/>
                     <ipmi_sensor/>
@@ -2086,7 +2086,7 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>proc.num[pound]</key>
+                    <key>proc.num[proftpd]</key>
                     <delay>120</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -2164,11 +2164,11 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>proc.num[proftpd]</key>
+                    <key>proc.num[dnsmasq]</key>
                     <delay>120</delay>
                     <history>7</history>
                     <trends>365</trends>
-                    <status>1</status>
+                    <status>0</status>
                     <value_type>3</value_type>
                     <allowed_hosts/>
                     <units/>
@@ -2203,7 +2203,7 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>proc.num[dnsmasq]</key>
+                    <key>proc.num[zabbix_agentd]</key>
                     <delay>120</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -2281,46 +2281,7 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>proc.num[zabbix_agentd]</key>
-                    <delay>120</delay>
-                    <history>7</history>
-                    <trends>365</trends>
-                    <status>0</status>
-                    <value_type>3</value_type>
-                    <allowed_hosts/>
-                    <units/>
-                    <delta>0</delta>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
-                    <formula>0</formula>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <data_type>0</data_type>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
-                    <inventory_link>0</inventory_link>
-                    <applications>
-                        <application>
-                            <name>Processes</name>
-                        </application>
-                    </applications>
-                    <valuemap/>
-                </item>
-                <item>
-                    <name>Number of running processes dropbear</name>
-                    <type>0</type>
-                    <snmp_community/>
-                    <multiplier>0</multiplier>
-                    <snmp_oid/>
-                    <key>proc.num[cron]</key>
+                    <key>proc.num[pound]</key>
                     <delay>120</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -2364,6 +2325,45 @@
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
+                    <value_type>3</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <delta>0</delta>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privpassphrase/>
+                    <formula>0</formula>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <description/>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>Processes</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                </item>
+                <item>
+                    <name>Number of running processes dropbear</name>
+                    <type>0</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>proc.num[cron]</key>
+                    <delay>120</delay>
+                    <history>7</history>
+                    <trends>365</trends>
+                    <status>1</status>
                     <value_type>3</value_type>
                     <allowed_hosts/>
                     <units/>
@@ -3170,12 +3170,90 @@
                     <valuemap/>
                 </item>
                 <item>
+                    <name>Temperature WL0</name>
+                    <type>0</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>temperature.wl0</key>
+                    <delay>60</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <status>0</status>
+                    <value_type>0</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <delta>0</delta>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <description/>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>General</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                </item>
+                <item>
+                    <name>Temperature WL1</name>
+                    <type>0</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>temperature.wl1</key>
+                    <delay>60</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <status>0</status>
+                    <value_type>0</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <delta>0</delta>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <description/>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>General</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                </item>
+                <item>
                     <name>Total disk space on $1</name>
                     <type>0</type>
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>vfs.fs.size[/opt,total]</key>
+                    <key>vfs.fs.size[/,total]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -3259,7 +3337,7 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>vfs.fs.size[/,total]</key>
+                    <key>vfs.fs.size[/tmp,total]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -3301,7 +3379,7 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>vfs.fs.size[/tmp,total]</key>
+                    <key>vfs.fs.size[/opt,total]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -3385,7 +3463,7 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>vfs.fs.inode[/tmp,total]</key>
+                    <key>vfs.fs.inode[/opt,total]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -3427,7 +3505,7 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>vfs.fs.inode[/opt,total]</key>
+                    <key>vfs.fs.inode[/tmp,total]</key>
                     <delay>3600</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -3508,12 +3586,12 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>vfs.fs.size[/tmp,used]</key>
+                    <key>vfs.fs.size[/var,used]</key>
                     <delay>300</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
-                    <value_type>3</value_type>
+                    <value_type>0</value_type>
                     <allowed_hosts/>
                     <units>B</units>
                     <delta>0</delta>
@@ -3592,12 +3670,12 @@
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>vfs.fs.size[/var,used]</key>
+                    <key>vfs.fs.size[/tmp,used]</key>
                     <delay>300</delay>
                     <history>7</history>
                     <trends>365</trends>
                     <status>0</status>
-                    <value_type>0</value_type>
+                    <value_type>3</value_type>
                     <allowed_hosts/>
                     <units>B</units>
                     <delta>0</delta>
@@ -3606,48 +3684,6 @@
                     <snmpv3_authpassphrase/>
                     <snmpv3_privpassphrase/>
                     <formula/>
-                    <delay_flex/>
-                    <params/>
-                    <ipmi_sensor/>
-                    <data_type>0</data_type>
-                    <authtype>0</authtype>
-                    <username/>
-                    <password/>
-                    <publickey/>
-                    <privatekey/>
-                    <port/>
-                    <description/>
-                    <inventory_link>0</inventory_link>
-                    <applications>
-                        <application>
-                            <name>Availability</name>
-                        </application>
-                        <application>
-                            <name>Filesystem</name>
-                        </application>
-                    </applications>
-                    <valuemap/>
-                </item>
-                <item>
-                    <name>Used disk space on $1 in %</name>
-                    <type>0</type>
-                    <snmp_community/>
-                    <multiplier>0</multiplier>
-                    <snmp_oid/>
-                    <key>vfs.fs.size[/opt,pused]</key>
-                    <delay>300</delay>
-                    <history>7</history>
-                    <trends>365</trends>
-                    <status>0</status>
-                    <value_type>0</value_type>
-                    <allowed_hosts/>
-                    <units>%</units>
-                    <delta>0</delta>
-                    <snmpv3_securityname/>
-                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
-                    <snmpv3_authpassphrase/>
-                    <snmpv3_privpassphrase/>
-                    <formula>1</formula>
                     <delay_flex/>
                     <params/>
                     <ipmi_sensor/>
@@ -3719,6 +3755,48 @@
                     <multiplier>0</multiplier>
                     <snmp_oid/>
                     <key>vfs.fs.size[/var,pused]</key>
+                    <delay>300</delay>
+                    <history>7</history>
+                    <trends>365</trends>
+                    <status>0</status>
+                    <value_type>0</value_type>
+                    <allowed_hosts/>
+                    <units>%</units>
+                    <delta>0</delta>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <description/>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>Availability</name>
+                        </application>
+                        <application>
+                            <name>Filesystem</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                </item>
+                <item>
+                    <name>Used disk space on $1 in %</name>
+                    <type>0</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>vfs.fs.size[/opt,pused]</key>
                     <delay>300</delay>
                     <history>7</history>
                     <trends>365</trends>
@@ -3872,12 +3950,51 @@
                     <valuemap/>
                 </item>
                 <item>
-                    <name>Wireless clients</name>
+                    <name>Wireless clients WL0</name>
                     <type>0</type>
                     <snmp_community/>
                     <multiplier>0</multiplier>
                     <snmp_oid/>
-                    <key>clients.wireless</key>
+                    <key>clients.wl0</key>
+                    <delay>60</delay>
+                    <history>90</history>
+                    <trends>365</trends>
+                    <status>0</status>
+                    <value_type>3</value_type>
+                    <allowed_hosts/>
+                    <units/>
+                    <delta>0</delta>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privpassphrase/>
+                    <formula>1</formula>
+                    <delay_flex/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <data_type>0</data_type>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <description/>
+                    <inventory_link>0</inventory_link>
+                    <applications>
+                        <application>
+                            <name>Network</name>
+                        </application>
+                    </applications>
+                    <valuemap/>
+                </item>
+                <item>
+                    <name>Wireless clients WL1</name>
+                    <type>0</type>
+                    <snmp_community/>
+                    <multiplier>0</multiplier>
+                    <snmp_oid/>
+                    <key>clients.wl1</key>
                     <delay>60</delay>
                     <history>90</history>
                     <trends>365</trends>
@@ -4169,7 +4286,7 @@
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Template_Linux_DDWRT:system.cpu.load[,avg1].last(0)}&gt;5</expression>
+            <expression>{Template_Linux_DDWRT:system.cpu.load[,avg1].last(0)}&gt;50 | {Template_Linux_DDWRT:system.cpu.load[,avg1].avg(7200)}&gt;5</expression>
             <name>Processor load is too high on {HOSTNAME}</name>
             <url/>
             <status>0</status>
@@ -4179,7 +4296,7 @@
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Template_Linux_DDWRT:system.cpu.load[,avg1].last(0)}&gt;50 | {Template_Linux_DDWRT:system.cpu.load[,avg1].avg(7200)}&gt;5</expression>
+            <expression>{Template_Linux_DDWRT:system.cpu.load[,avg1].last(0)}&gt;5</expression>
             <name>Processor load is too high on {HOSTNAME}</name>
             <url/>
             <status>0</status>
@@ -4239,16 +4356,6 @@
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Template_Linux_DDWRT:proc.num[].last(0)}&gt;800 | {Template_Linux_DDWRT:proc.num[].min(900)}&gt;300</expression>
-            <name>Too many processes on {HOSTNAME}</name>
-            <url/>
-            <status>0</status>
-            <priority>4</priority>
-            <description/>
-            <type>0</type>
-            <dependencies/>
-        </trigger>
-        <trigger>
             <expression>{Template_Linux_DDWRT:proc.num[].last(0)}&gt;300</expression>
             <name>Too many processes on {HOSTNAME}</name>
             <url/>
@@ -4259,7 +4366,17 @@
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Template_Linux_DDWRT:proc.num[,,run].last(0)}&gt;20 | {Template_Linux_DDWRT:proc.num[,,run].avg(7200)}&gt;10</expression>
+            <expression>{Template_Linux_DDWRT:proc.num[].last(0)}&gt;800 | {Template_Linux_DDWRT:proc.num[].min(900)}&gt;300</expression>
+            <name>Too many processes on {HOSTNAME}</name>
+            <url/>
+            <status>0</status>
+            <priority>4</priority>
+            <description/>
+            <type>0</type>
+            <dependencies/>
+        </trigger>
+        <trigger>
+            <expression>{Template_Linux_DDWRT:proc.num[,,run].last(0)}&gt;10</expression>
             <name>Too many processes running on {HOSTNAME}</name>
             <url/>
             <status>0</status>
@@ -4269,7 +4386,7 @@
             <dependencies/>
         </trigger>
         <trigger>
-            <expression>{Template_Linux_DDWRT:proc.num[,,run].last(0)}&gt;10</expression>
+            <expression>{Template_Linux_DDWRT:proc.num[,,run].last(0)}&gt;20 | {Template_Linux_DDWRT:proc.num[,,run].avg(7200)}&gt;10</expression>
             <name>Too many processes running on {HOSTNAME}</name>
             <url/>
             <status>0</status>
@@ -4348,7 +4465,7 @@
             <yaxismax>100.0000</yaxismax>
             <show_work_period>1</show_work_period>
             <show_triggers>1</show_triggers>
-            <type>0</type>
+            <type>1</type>
             <show_legend>1</show_legend>
             <show_3d>0</show_3d>
             <percent_left>0.0000</percent_left>
@@ -4359,27 +4476,39 @@
             <ymax_item_1>0</ymax_item_1>
             <graph_items>
                 <graph_item>
-                    <sortorder>0</sortorder>
+                    <sortorder>2</sortorder>
                     <drawtype>0</drawtype>
-                    <color>C80000</color>
+                    <color>990000</color>
                     <yaxisside>0</yaxisside>
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
                         <host>Template_Linux_DDWRT</host>
-                        <key>system.cpu.util[,system,avg1]</key>
+                        <key>system.cpu.load[,avg15]</key>
                     </item>
                 </graph_item>
                 <graph_item>
                     <sortorder>1</sortorder>
                     <drawtype>0</drawtype>
-                    <color>00C800</color>
+                    <color>000099</color>
                     <yaxisside>0</yaxisside>
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
                         <host>Template_Linux_DDWRT</host>
-                        <key>system.cpu.util[,user,avg1]</key>
+                        <key>system.cpu.load[,avg5]</key>
+                    </item>
+                </graph_item>
+                <graph_item>
+                    <sortorder>0</sortorder>
+                    <drawtype>0</drawtype>
+                    <color>009900</color>
+                    <yaxisside>0</yaxisside>
+                    <calc_fnc>2</calc_fnc>
+                    <type>0</type>
+                    <item>
+                        <host>Template_Linux_DDWRT</host>
+                        <key>system.cpu.load[,avg1]</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -4467,6 +4596,18 @@
             <ymax_item_1>0</ymax_item_1>
             <graph_items>
                 <graph_item>
+                    <sortorder>2</sortorder>
+                    <drawtype>0</drawtype>
+                    <color>0000C8</color>
+                    <yaxisside>0</yaxisside>
+                    <calc_fnc>2</calc_fnc>
+                    <type>0</type>
+                    <item>
+                        <host>Template_Linux_DDWRT</host>
+                        <key>clients.wl1</key>
+                    </item>
+                </graph_item>
+                <graph_item>
                     <sortorder>0</sortorder>
                     <drawtype>0</drawtype>
                     <color>DDDD00</color>
@@ -4481,13 +4622,13 @@
                 <graph_item>
                     <sortorder>1</sortorder>
                     <drawtype>0</drawtype>
-                    <color>3333FF</color>
+                    <color>00CC00</color>
                     <yaxisside>0</yaxisside>
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
                         <host>Template_Linux_DDWRT</host>
-                        <key>clients.wireless</key>
+                        <key>clients.wl0</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -4511,18 +4652,6 @@
             <ymax_item_1>0</ymax_item_1>
             <graph_items>
                 <graph_item>
-                    <sortorder>0</sortorder>
-                    <drawtype>0</drawtype>
-                    <color>00CC00</color>
-                    <yaxisside>0</yaxisside>
-                    <calc_fnc>2</calc_fnc>
-                    <type>0</type>
-                    <item>
-                        <host>Template_Linux_DDWRT</host>
-                        <key>net.if.in[ppp0,bytes]</key>
-                    </item>
-                </graph_item>
-                <graph_item>
                     <sortorder>1</sortorder>
                     <drawtype>0</drawtype>
                     <color>00BBBB</color>
@@ -4532,6 +4661,18 @@
                     <item>
                         <host>Template_Linux_DDWRT</host>
                         <key>net.if.out[ppp0,bytes]</key>
+                    </item>
+                </graph_item>
+                <graph_item>
+                    <sortorder>0</sortorder>
+                    <drawtype>0</drawtype>
+                    <color>00CC00</color>
+                    <yaxisside>0</yaxisside>
+                    <calc_fnc>2</calc_fnc>
+                    <type>0</type>
+                    <item>
+                        <host>Template_Linux_DDWRT</host>
+                        <key>net.if.in[ppp0,bytes]</key>
                     </item>
                 </graph_item>
             </graph_items>
@@ -4555,6 +4696,18 @@
             <ymax_item_1>0</ymax_item_1>
             <graph_items>
                 <graph_item>
+                    <sortorder>1</sortorder>
+                    <drawtype>0</drawtype>
+                    <color>66FFFF</color>
+                    <yaxisside>0</yaxisside>
+                    <calc_fnc>2</calc_fnc>
+                    <type>0</type>
+                    <item>
+                        <host>Template_Linux_DDWRT</host>
+                        <key>net.if.out[eth1,bytes]</key>
+                    </item>
+                </graph_item>
+                <graph_item>
                     <sortorder>0</sortorder>
                     <drawtype>0</drawtype>
                     <color>009900</color>
@@ -4566,16 +4719,48 @@
                         <key>net.if.in[eth1,bytes]</key>
                     </item>
                 </graph_item>
+            </graph_items>
+        </graph>
+        <graph>
+            <name>Temperatures</name>
+            <width>900</width>
+            <height>200</height>
+            <yaxismin>0.0000</yaxismin>
+            <yaxismax>100.0000</yaxismax>
+            <show_work_period>1</show_work_period>
+            <show_triggers>1</show_triggers>
+            <type>0</type>
+            <show_legend>1</show_legend>
+            <show_3d>0</show_3d>
+            <percent_left>0.0000</percent_left>
+            <percent_right>0.0000</percent_right>
+            <ymin_type_1>0</ymin_type_1>
+            <ymax_type_1>0</ymax_type_1>
+            <ymin_item_1>0</ymin_item_1>
+            <ymax_item_1>0</ymax_item_1>
+            <graph_items>
                 <graph_item>
-                    <sortorder>1</sortorder>
+                    <sortorder>0</sortorder>
                     <drawtype>0</drawtype>
-                    <color>66FFFF</color>
+                    <color>DDDD00</color>
                     <yaxisside>0</yaxisside>
                     <calc_fnc>2</calc_fnc>
                     <type>0</type>
                     <item>
                         <host>Template_Linux_DDWRT</host>
-                        <key>net.if.out[eth1,bytes]</key>
+                        <key>temperature.wl0</key>
+                    </item>
+                </graph_item>
+                <graph_item>
+                    <sortorder>1</sortorder>
+                    <drawtype>0</drawtype>
+                    <color>3333FF</color>
+                    <yaxisside>0</yaxisside>
+                    <calc_fnc>2</calc_fnc>
+                    <type>0</type>
+                    <item>
+                        <host>Template_Linux_DDWRT</host>
+                        <key>temperature.wl1</key>
                     </item>
                 </graph_item>
             </graph_items>

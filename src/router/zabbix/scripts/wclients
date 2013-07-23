@@ -1,3 +1,3 @@
 #!/bin/sh
 
-wl -i eth1 assoclist | wc -l
+wl -i $1 assoclist | wc -l
