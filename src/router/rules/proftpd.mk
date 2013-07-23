@@ -1,5 +1,5 @@
 proftpd-configure:
-	cd proftpd && ./configure --host=$(ARCH)-linux --prefix=/tmp/proftpd --with-modules=mod_radius ac_cv_func_setpgrp_void=y ac_cv_func_setgrent_void=y CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	cd proftpd && ./configure --host=$(ARCH)-linux --prefix=/tmp/proftpd --with-modules=mod_radius ac_cv_func_setpgrp_void=y ac_cv_func_setgrent_void=y CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 	
 proftpd:
 	$(MAKE) -C proftpd
