@@ -174,10 +174,12 @@ ifneq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_RT2880),y)
 ifeq ($(CONFIG_BCMMODERN),y)
 	install -D wl.modern $(INSTALLDIR)/utils/usr/sbin/wl
+	chmod +s $(INSTALLDIR)/utils/usr/sbin/wl
 else
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BCMMODERN),y)
 	install -D wl.modern $(INSTALLDIR)/utils/usr/sbin/wl
+	chmod +s $(INSTALLDIR)/utils/usr/sbin/wl
 else
 ifeq ($(CONFIG_BUFFALO),y)
 	install -D wl.bcm $(INSTALLDIR)/utils/usr/sbin/wl
@@ -188,6 +190,7 @@ endif
 else
 	install -D wl.v23 $(INSTALLDIR)/utils/usr/sbin/wl
 endif
+
 
 endif
 endif
