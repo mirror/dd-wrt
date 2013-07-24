@@ -66,7 +66,7 @@ static int squashfs_statfs(struct dentry *, struct kstatfs *);
 static int squashfs_symlink_readpage(struct file *file, struct page *page);
 static int squashfs_readpage(struct file *file, struct page *page);
 static int squashfs_readpage4K(struct file *file, struct page *page);
-static int squashfs_readdir(struct file *, void *, filldir_t);
+static int squashfs_readdir(struct file *, struct dir_context *ctx);
 static struct inode *squashfs_alloc_inode(struct super_block *sb);
 static void squashfs_destroy_inode(struct inode *inode);
 static int init_inodecache(void);
@@ -120,7 +120,7 @@ SQSH_EXTERN struct address_space_operations squashfs_aops_4K = {
 
 static struct file_operations squashfs_dir_ops = {
 	.read = generic_read_dir,
-	.readdir = squashfs_readdir
+	.iterate = squashfs_readdir
 };
 
 SQSH_EXTERN struct inode_operations squashfs_dir_inode_ops = {
@@ -1798,7 +1798,7 @@ static int get_dir_index_using_name(struct super_block *s, long long
 }
 
 
-static int squashfs_readdir(struct file *file, void *dirent, filldir_t filldir)
+static int squashfs_readdir(struct file *file, struct dir_context *ctx)
 {
 	struct inode *i = file->f_dentry->d_inode;
 	struct squashfs_sb_info *msblk = i->i_sb->s_fs_info;
@@ -1813,11 +1813,11 @@ static int squashfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 
 	TRACE("Entered squashfs_readdir [%llx:%x]\n", next_block, next_offset);
 
-	while(file->f_pos < 3) {
+	while(ctx->pos < 3) {
 		char *name;
 		int size, i_ino;
 
-		if(file->f_pos == 0) {
+		if(ctx->pos == 0) {
 			name = ".";
 			size = 1;
 			i_ino = i->i_ino;
@@ -1826,18 +1826,11 @@ static int squashfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 			size = 2;
 			i_ino = SQUASHFS_I(i)->u.s2.parent_inode;
 		}
-		TRACE("Calling filldir(%x, %s, %d, %d, %d, %d)\n",
-				(unsigned int) dirent, name, size, (int)
-				file->f_pos, i_ino,
-				squashfs_filetype_table[1]);
 
-		if (filldir(dirent, name, size,
-				file->f_pos, i_ino,
-				squashfs_filetype_table[1]) < 0) {
-				TRACE("Filldir returned less than 0\n");
+		if (!dir_emit(ctx, name, size, i_ino,
+				squashfs_filetype_table[1]))
 				goto finish;
-		}
-		file->f_pos += size;
+		ctx->pos += size;
 		dirs_read++;
 	}
 
@@ -1845,7 +1838,7 @@ static int squashfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 				SQUASHFS_I(i)->u.s2.directory_index_start,
 				SQUASHFS_I(i)->u.s2.directory_index_offset,
 				SQUASHFS_I(i)->u.s2.directory_index_count,
-				file->f_pos);
+				ctx->pos);
 
 	while (length < i_size_read(i)) {
 		/* read directory header */
@@ -1898,27 +1891,17 @@ static int squashfs_readdir(struct file *file, void *dirent, filldir_t filldir)
 
 			length += dire->size + 1;
 
-			if (file->f_pos >= length)
+			if (ctx->pos >= length)
 				continue;
 
 			dire->name[dire->size + 1] = '\0';
 
-			TRACE("Calling filldir(%x, %s, %d, %d, %x:%x, %d, %d)\n",
-					(unsigned int) dirent, dire->name,
-					dire->size + 1, (int) file->f_pos,
-					dirh.start_block, dire->offset,
-					dirh.inode_number + dire->inode_number,
-					squashfs_filetype_table[dire->type]);
 
-			if (filldir(dirent, dire->name, dire->size + 1,
-					file->f_pos,
-					dirh.inode_number + dire->inode_number,
-					squashfs_filetype_table[dire->type])
-					< 0) {
-				TRACE("Filldir returned less than 0\n");
+			if (!dir_emit(ctx, dire->name, dire->size + 1,
+ 					dirh.inode_number + dire->inode_number,
+					squashfs_filetype_table[dire->type]))
 				goto finish;
-			}
-			file->f_pos = length;
+			ctx->pos = length;
 			dirs_read++;
 		}
 	}
