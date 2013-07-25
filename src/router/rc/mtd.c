@@ -61,37 +61,22 @@
 static unsigned long calculate_checksum(int action, char *s, int size);
 #endif
 #define WGR614_LZMA_LOADER_SIZE		0x000919	//loader+400.lzma = 2329 bytes, please change if size changes!
-#define FLASH_SIZE_4M			0x400000
-#define FLASH_SIZE_8M			0x800000
-#define CFE_SIZE_128K			0x020000
-#define CFE_SIZE_256K			0x040000
+#define FLASH_SIZE_4M				0x400000
+#define FLASH_SIZE_8M				0x800000
+#define CFE_SIZE_128K				0x020000
+#define CFE_SIZE_256K				0x040000
 #define NETGEAR_LEN_CHK_ADDR_4M		0x3AFFF8
 #define NETGEAR_LEN_CHK_ADDR_8M		0x7AFFF8
 #define NETGEAR_LEN_CHK_ADDR_8M_2	0x73FFF8
 /* end */
 
 /* Belkin series */
-#define TRX_MAGIC_F7D3301		0x20100322	/* Belkin Share Max; router's birthday ? */
-#define TRX_MAGIC_F7D3302		0x20090928	/* Belkin Share; router's birthday ? */
-#define TRX_MAGIC_F7D4302		0x20091006	/* Belkin Play; router's birthday ? */
-#define TRX_MAGIC_F5D8235V3		0x00017116	/* Belkin F7D8235V3 */
-#define TRX_MAGIC_QA			0x12345678	/* Belkin: cfe: It's QA firmware */
+#define TRX_MAGIC_F7D3301			0x20100322	/* Belkin Share Max; router's birthday ? */
+#define TRX_MAGIC_F7D3302			0x20090928	/* Belkin Share; router's birthday ? */
+#define TRX_MAGIC_F7D4302			0x20091006	/* Belkin Play; router's birthday ? */
+#define TRX_MAGIC_F5D8235V3			0x00017116	/* Belkin F7D8235V3 */
+#define TRX_MAGIC_QA				0x12345678	/* Belkin: cfe: It's QA firmware */
 /* end */
-
-/* Netgear chk header */
-#define CHK_MAGIC			0x5E24232A
-
-struct __attribute__((__packed__)) chk_header {
-	uint32_t 	magic;
-	uint32_t 	header_len;
-	uint8_t  	reserved[8];
-	uint32_t 	kernel_chksum;
-	uint32_t 	rootfs_chksum;
-	uint32_t 	kernel_len;
-	uint32_t 	rootfs_len;
-	uint32_t 	image_chksum;
-	uint32_t 	header_chksum;
-};
 
 /* 
  * Open an MTD device
@@ -229,7 +214,6 @@ int mtd_write(const char *path, const char *mtd)
 	struct etrx_header etrx;
 #endif
 	struct trx_header trx;
-	struct chk_header chk;
 	unsigned long crc;
 	int squashfound = 0;
 	unsigned int crc_data = 0;
@@ -273,7 +257,7 @@ int mtd_write(const char *path, const char *mtd)
 	sleep(1);
 
 	/* 
-	 * Examine TRX/CHK header 
+	 * Examine TRX header 
 	 */
 #ifdef HAVE_WRT160NL
 	fprintf(stderr, "size of ETRX header = %d\n", sizeof(struct etrx_header));
@@ -283,61 +267,7 @@ int mtd_write(const char *path, const char *mtd)
 		return -1;
 	memcpy(&trx, &etrx.trx, sizeof(struct trx_header));
 #else
-	/* support netgear *.chk */ 
-	if (brand == ROUTER_NETGEAR_WNDR4000 || brand == ROUTER_NETGEAR_WNDR4500 || brand == ROUTER_NETGEAR_WNDR4500V2 || brand == ROUTER_NETGEAR_R6300 ) {
-		 
-		char board_id[18];
-		
-		if ((fp = fopen(path, "r"))) {
-		  
-			safe_fread(&chk, 1, sizeof(struct chk_header), fp);
-			
-			if (chk.magic != CHK_MAGIC) {
-				fprintf(stderr, "Error: magic number: %x expected %x\n", chk.magic, CHK_MAGIC);
-				fclose(fp);
-				return -1;
-			}
-			safe_fread(board_id, 1, sizeof(board_id), fp);
-			
-			switch (brand) {
-			  
-			case ROUTER_NETGEAR_WNDR4000:
-				if (strncmp(board_id, "U12H181T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H181T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_WNDR4500:
-				if (strncmp(board_id, "U12H189T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H189T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_WNDR4500V2:
-				if (strncmp(board_id, "U12H224T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H224T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			case ROUTER_NETGEAR_R6300: 	
-				if (strncmp(board_id, "U12H218T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H218T00_NETGEAR");
-					fclose(fp);
-					return -1;
-				}
-				break;
-			}
-		}
-                else
-			return -1;
-		
-		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
-
-	} 
-	else if ((fp = fopen(path, "r")))
+	if ((fp = fopen(path, "r")))
 		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
 	else
 		return -1;
