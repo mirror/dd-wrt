@@ -573,6 +573,14 @@ static void nat_prerouting(void)
 	if (!strcmp(remote_ip_any, "1") || !strncmp(remote_ip, "0.0.0.0", 7))
 		remote_any = 1;
 	/*
+	* Block ads on all http requests
+	*/	
+#ifdef HAVE_PRIVOXY
+	if (nvram_match("privoxy_transp_enable", "1") && nvram_match("privoxy_enable", "1")){
+		save2file("-A PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-port 8118\n", wanaddr);
+	}
+#endif
+	/*
 	 * Enable remote Web GUI management 
 	 */
 	if (remotemanage) {
@@ -633,12 +641,6 @@ static void nat_prerouting(void)
 	 */
 	save2file("-A PREROUTING -p icmp -d %s -j DNAT --to-destination %s\n", wanaddr, nvram_safe_get("lan_ipaddr"));
 	
-#ifdef HAVE_PRIVOXY
-	//privoxy transparent mode
-	if (nvram_match("privoxy_transp_enable", "1") && nvram_match("privoxy_enable", "1")){		
-		save2file("-A PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
-	}
-#endif
 
 #ifdef HAVE_TFTP
 	/*

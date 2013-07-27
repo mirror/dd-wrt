@@ -25,10 +25,11 @@ void start_privoxy(void)
 
 	sysprintf("grep -q nobody /etc/passwd || echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
 	mkdir("/var/log/privoxy", 0777);
-
+	
+	char *wan = get_wan_ipaddr();
 	if (nvram_match("privoxy_transp_enable", "1")) {
-		sysprintf("iptables -t nat -D PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
-		sysprintf("iptables -t nat -A PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
+		sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-port 8118\n", wan);
+		sysprintf("iptables -t nat -I PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-port 8118\n", wan);
 		mode = 1;
 	}
 
@@ -65,7 +66,8 @@ void start_privoxy(void)
 
 void stop_privoxy(void)
 {
-	sysprintf("iptables -t nat -D PREROUTING -p tcp --dport %s -j REDIRECT --to-port %s\n", "80", "8118");
+	char *wan = get_wan_ipaddr();
+	sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-port 8118\n", wan);
 	stop_process("privoxy", "privoxy");
 }
 #endif
