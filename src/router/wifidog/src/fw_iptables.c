@@ -141,11 +141,20 @@ iptables_compile(const char * table, const char *chain, const t_firewall_rule *r
 
 	memset(command, 0, MAX_BUF);
 
-	if (rule->block_allow == 1) {
-		mode = safe_strdup("logaccept");
+	if (chain && (!strcmp(chain,"nat") || !strcmp(chain,"mangle"))) {
+		if (rule->block_allow == 1) {
+			mode = safe_strdup("ACCEPT");
+		} else {
+			mode = safe_strdup("REJECT");
+		}
 	} else {
-		mode = safe_strdup("logreject");
+		if (rule->block_allow == 1) {
+			mode = safe_strdup("logaccept");
+		} else {
+			mode = safe_strdup("logreject");
+		}
 	}
+
 
 	snprintf(command, sizeof(command),  "-t %s -A %s ",table, chain);
 	if (rule->mask != NULL) {
@@ -213,7 +222,7 @@ iptables_fw_set_authservers(void)
 	for (auth_server = config->auth_servers; auth_server != NULL; auth_server = auth_server->next) {
 		if (auth_server->last_ip && strcmp(auth_server->last_ip, "0.0.0.0") != 0) {
 			iptables_do_command("-t filter -A " TABLE_WIFIDOG_AUTHSERVERS " -d %s -j logaccept", auth_server->last_ip);
-			iptables_do_command("-t nat -A " TABLE_WIFIDOG_AUTHSERVERS " -d %s -j logaccept", auth_server->last_ip);
+			iptables_do_command("-t nat -A " TABLE_WIFIDOG_AUTHSERVERS " -d %s -j ACCEPT", auth_server->last_ip);
 		}
 	}
 
@@ -282,11 +291,11 @@ iptables_fw_init(void)
 	iptables_do_command("-t nat -A PREROUTING -i %s -j " TABLE_WIFIDOG_OUTGOING, config->gw_interface);
 
 	iptables_do_command("-t nat -A " TABLE_WIFIDOG_OUTGOING " -d %s -j " TABLE_WIFIDOG_WIFI_TO_ROUTER, config->gw_address);
-	iptables_do_command("-t nat -A " TABLE_WIFIDOG_WIFI_TO_ROUTER " -j logaccept");
+	iptables_do_command("-t nat -A " TABLE_WIFIDOG_WIFI_TO_ROUTER " -j ACCEPT");
 
 	iptables_do_command("-t nat -A " TABLE_WIFIDOG_OUTGOING " -j " TABLE_WIFIDOG_WIFI_TO_INTERNET);
-	iptables_do_command("-t nat -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m mark --mark 0x%u -j logaccept", FW_MARK_KNOWN);
-	iptables_do_command("-t nat -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m mark --mark 0x%u -j logaccept", FW_MARK_PROBATION);
+	iptables_do_command("-t nat -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m mark --mark 0x%u -j ACCEPT", FW_MARK_KNOWN);
+	iptables_do_command("-t nat -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -m mark --mark 0x%u -j ACCEPT", FW_MARK_PROBATION);
 	iptables_do_command("-t nat -A " TABLE_WIFIDOG_WIFI_TO_INTERNET " -j " TABLE_WIFIDOG_UNKNOWN);
 
 	iptables_do_command("-t nat -A " TABLE_WIFIDOG_UNKNOWN " -j " TABLE_WIFIDOG_AUTHSERVERS);
