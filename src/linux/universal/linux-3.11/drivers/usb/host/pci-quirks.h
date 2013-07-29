@@ -22,6 +22,7 @@ static inline int usb_amd_find_chipset_info(void)
 {
 	return 0;
 }
+struct pci_dev;
 static inline void usb_amd_quirk_pll_disable(void) {}
 static inline void usb_amd_quirk_pll_enable(void) {}
 static inline void usb_amd_dev_put(void) {}
