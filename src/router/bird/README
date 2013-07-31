@@ -1,0 +1,81 @@
+		       BIRD Internet Routing Daemon
+
+		(c) 1998--2008  Martin Mares <mj@ucw.cz>
+                (c) 1998--2000  Pavel Machek <pavel@ucw.cz>
+                (c) 1998--2008  Ondrej Filip <feela@network.cz>
+                (c) 2009--2013  CZ.NIC z.s.p.o.
+
+================================================================================
+
+The BIRD project is an attempt to create a routing daemon running on UNIX-like
+systems (but not necessarily limited to them) with full support of all modern
+routing protocols, easy to use configuration interface and powerful route
+filtering language.
+
+If you want to help us debugging, enhancing and porting BIRD or just lurk
+around to see what's going to develop from this strange creature, feel free
+to subscribe to the BIRD users mailing list (bird-users@bird.network.cz),
+send subscribes to majordomo at the same machine).  Bug reports, suggestions,
+feature requests (: and code :) are welcome.
+
+You can download the latest version from ftp://bird.network.cz/pub/bird/
+and look at the BIRD home page at http://bird.network.cz/.
+
+BIRD development started as a student project at the Faculty of Math
+and Physics, Charles University, Prague, Czech Republic under supervision
+of RNDr. Libor Forst <forst@cuni.cz>. BIRD has been developed and supported
+by CZ.NIC z.s.p.o. http://www.nic.cz/ since 2009.
+
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program; if not, write to the Free Software
+    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+
+How to install BIRD:
+
+	./configure
+	make
+	make install
+	vi /usr/local/etc/bird.conf
+
+Online documentation is available as HTML files in the doc directory,
+you can install it by `make install-docs' and rebuild it by `make docs',
+but for the latter you need SGMLtools and LaTeX to be installed on your
+machine. You can also download a neatly formatted PostScript version
+as a separate archive (bird-doc-*.tar.gz).
+
+What do we support:
+
+	o  Both IPv4 and IPv6 (use --enable-ipv6 when configuring)
+	o  Multiple routing tables
+	o  BGP
+	o  RIP
+	o  OSPF
+	o  Static routes
+	o  Inter-table protocol
+	o  IPv6 router advertisements
+	o  Command-line interface (using the `birdc' client; to get
+	   some help, just press `?')
+	o  Soft reconfiguration -- no online commands for changing the
+	   configuration in very limited ways, just edit the configuration
+	   file and issue a `configure' command or send SIGHUP and BIRD
+	   will start using the new configuration, possibly restarting
+	   protocols affected by the configuration changes.
+	o  Powerful language for route filtering (see doc/bird.conf.example).
+
+What is missing:
+
+	o  See the TODO list
+
+Good Luck and enjoy the BIRD :)
+						The BIRD Team

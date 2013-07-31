@@ -1,0 +1,60 @@
+#!/usr/bin/perl
+# Process `cvs log' output to get a resonable changelog
+# (c) 2003--2004 Martin Mares <mj@ucw.cz>
+
+use Digest::MD5;
+use POSIX;
+
+my %names= (
+	'mj'	=> 'Martin Mares <mj@ucw.cz>',
+	'feela'	=> 'Ondrej Filip <feela@network.cz>',
+	'pavel' => 'Pavel Machek <pavel@ucw.cz>'
+);
+
+while (<STDIN>) {
+	chomp;
+	/^$/ && next;
+	/^[?]/ && next;
+	/^RCS file: / || die;
+	$_ = <STDIN>;
+	chomp;
+	my ($file) = /^Working file: (.*)$/ or die;
+	#print "$file\n";
+	do {
+		$_ = <STDIN> or die;
+	} while (!/^description:/);
+	$_ = <STDIN>;
+	for(;;) {
+		/^======/ && last;
+		if (/^------/) { $_ = <STDIN>; next; }
+		/^revision / || die;
+		$_ = <STDIN>;
+		my ($author) = /;\s*author:\s*([^;]+)/ or die;
+		my ($yy,$mm,$dd,$HH,$MM,$SS) = /^date: (....)\/(..)\/(..) (..):(..):(..);/ or die;
+		my $t = POSIX::mktime($SS,$MM,$HH,$dd,$mm-1,$yy-1900) or die;
+		my $T = sprintf("%06d", int(($t + 1800)/3600));
+		$d = "";
+		while ($_ = <STDIN>) {
+			/^(-----|=====)/ && last;
+			$d .= "  $_";
+		}
+		my $id = "$T:" . Digest::MD5::md5_hex($d);
+		if (!defined $msg{$id}) {
+			$date{$id} = "$yy-$mm-$dd $HH:$MM:$SS";
+			$msg{$id} = $d;
+			$files{$id} = "";
+			$author{$id} = $author;
+		}
+		$files{$id} .= "  * $file\n";
+		#print "\t$id\n";
+	}
+}
+
+foreach $id (sort keys %date) {
+	if (!exists ($names{$author{$id}})) {
+		die "Unknown commiter $author{$id}";
+	}
+	print "### ", $date{$id}, "  ", $names{$author{$id}}, "\n\n";
+	print $files{$id}, "\n";
+	print $msg{$id}, "\n";
+}

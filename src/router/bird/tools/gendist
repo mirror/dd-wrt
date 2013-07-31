@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+#  Generate BIRD Distribution Archive
+#  (c) 2000--2004 Martin Mares <mj@ucw.cz>
+#
+
+set -e
+AC=`if [ -x /usr/bin/autoconf2.50 ] ; then echo autoconf2.50 ; else echo autoconf ; fi`
+$AC
+./configure
+make distclean
+$AC
+rm -rf autom4te*cache
+( cd doc ; make docs ; make clean )
+VERSION=`sed <sysdep/config.h '/BIRD_VERSION/!d;s/^.*"\(.*\)"$/\1/'`
+REL=bird-$VERSION
+DREL=bird-doc-$VERSION
+T=/tmp/bird
+echo Building $REL
+rm -rf $T/$REL $T/$DREL
+mkdir -p $T/$REL $T/$DREL $T/$DREL/doc
+cp -a . $T/$REL
+echo Generating ChangeLog
+git log  >$T/$REL/ChangeLog
+mv $T/$REL/doc/*.ps $T/$DREL/doc
+rm -f $T/$REL/bird.conf*
+rm -rf $T/$REL/.git/
+rm -rf `find $T/$REL -name CVS -o -name tmp` $T/$REL/{misc,rfc,doc/slides}
+( cd $T ; tar czvvf $REL.tar.gz $REL )
+( cd $T ; tar czvvf $DREL.tar.gz $DREL )
+rm -rf $T/$REL $T/$DREL
+echo -n "OK? "
+read OK
+echo Uploading to Atrey...
+scp $T/$REL.tar.gz $T/$DREL.tar.gz atrey.karlin.mff.cuni.cz:~ftp/pub/bird/
+echo Uploading to Trubka...
+scp $T/$REL.tar.gz $T/$DREL.tar.gz bird.network.cz:~ftp/pub/bird/
+echo Done.

@@ -1,0 +1,63 @@
+<!-- This is a DTD, but will be read as -*- sgml -*-   -->
+<!-- ================================================= -->
+<!-- $Id$ 
+
+     This is dtd/isoent for SGML-Tools.
+
+     Initial revision June 23st, 1997, by B. Kreimeier
+
+     $Log$
+     Revision 1.1  2000-05-31 14:27:50  mj
+     This should be enough from the SGMLtools distribution to make the
+     SGMLtools happy.
+
+     The only symlink you need now is dist/birddoc -> dist/sgmltool. I'm
+     convinced it could be avoided by renaming the directory instead, but I'd
+     rather avoid it due to CVS pecularities.
+
+     Revision 1.1  1997/07/09 13:27:16  cg
+     * Completely new DTD setup by Bernd (BK).
+
+
+                                                       -->
+<!-- ================================================= -->
+<!-- Revision Comments                                 -->
+<!-- BK/97/06/22: installed 0.99.12, applied changes
+     made for new entity mapping.                      -->
+<!-- ================================================= -->
+
+
+<!-- ================================================= -->
+<!-- ISO entities                                      -->
+<!-- ================================================= -->
+
+
+<!ENTITY % ISOdia PUBLIC
+  "ISO 8879:1986//ENTITIES Diacritical Marks//EN">
+%ISOdia;
+
+<!ENTITY % ISOgrk3 PUBLIC
+  "ISO 8879:1986//ENTITIES Greek Symbols//EN">
+%ISOgrk3;
+
+<!ENTITY % ISOlat1 PUBLIC
+  "ISO 8879:1986//ENTITIES Added Latin 1//EN">
+%ISOlat1;
+
+<!ENTITY % ISOnum PUBLIC
+  "ISO 8879:1986//ENTITIES Numeric and Special Graphic//EN">
+%ISOnum;
+
+<!ENTITY % ISOpub PUBLIC
+  "ISO 8879:1986//ENTITIES Publishing//EN">
+%ISOpub;
+
+
+
+<!-- ================================================= -->
+<!-- end of dtd/isoent                                 -->
+<!--
+     Local Variables:
+     mode: sgml
+     End:                                              -->
+<!-- ================================================= -->

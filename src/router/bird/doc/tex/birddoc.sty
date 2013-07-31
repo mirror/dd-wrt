@@ -1,0 +1,124 @@
+%% This is a LaTeX style file for typesetting BIRD documentation.
+%% Hacked up by Martin Mares <mj@ucw.cz>
+%%
+%% This is a modified version of linuxdoc-qwertz.sty, for use with SGML-generated LaTeX
+%% by Matt Welsh (mdw@sunsite.unc.edu)
+%%
+%% Based on linuxdoc.sty by Michael K. Johnson, and latex.tex by 
+%% Leslie Lamport. 
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesClass{birddoc}
+
+%%% GLOBAL LAYOUT THINGS
+
+\marginparwidth 0.0 in
+\parindent=0 in
+\parskip=0.5ex
+%\parindent=0.5in
+%\parskip=0pt
+\topmargin -0.5 in
+\setlength{\textheight}{\paperheight}
+\addtolength{\textheight}{-2 in}
+%\advance\headsep 2 ex
+\advance\textheight -2 ex
+%\renewcommand{\baselinestretch}{1.14}
+\setcounter{tocdepth}{1}
+\oddsidemargin 0.15 in
+\evensidemargin -0.35 in
+\textwidth 6.5in
+
+\def\ps@headings{\let\@mkboth\markboth
+ \def\@oddfoot{}\def\@evenfoot{}%       No feet.
+ \def\@evenhead{\protect\rule[-4pt]{\textwidth}{.5pt}\kern-\textwidth
+                \rm \thepage\hfil \bf \leftmark}     % Left heading.
+ \def\@oddhead{\protect\rule[-4pt]{\textwidth}{.5pt}\kern-\textwidth
+               {\bf \rightmark}\hfil \rm\thepage}    % Right heading.
+ \def\chaptermark##1{\markboth {{\ifnum \c@secnumdepth >\m@ne
+     \@chapapp\ \thechapter. \ \fi ##1}}{}}%
+ \def\sectionmark##1{\markright {{\ifnum \c@secnumdepth >\z@
+  \thesection. \ \fi ##1}}}}
+
+\def\@makechapterhead#1{%
+  {\parindent \z@ \raggedright \normalfont
+    \huge \bfseries \@chapapp\space\thechapter: #1\par\nobreak
+    \vskip 20\p@
+  }}
+\def\@makeschapterhead#1{%
+  {\parindent \z@ \raggedright \normalfont
+    \huge \bfseries #1\par\nobreak
+    \vskip 20\p@
+  }}
+
+%% Titlepage stuff
+
+\gdef\@title{}
+\gdef\title#1{\gdef\@title{#1}}
+\gdef\@date{}
+\gdef\date#1{\gdef\@date{#1}}
+\gdef\@author{}
+\gdef\author#1{\gdef\@author{#1}}
+\gdef\@abstract{}
+\gdef\abstract#1{\gdef\@abstract{#1}}
+
+\def\maketitle{\thispagestyle{empty}\let\footnotesize\small%
+\let\footnoterule\relax
+%\setcounter{page}{0}%
+%\null
+%\vskip 3 in
+\noindent
+{\huge\sf \@title}\\
+\rule{\textwidth}{1mm}\\
+\mbox{}\@author\ \hfill \@date\ \\
+\vskip 1 ex
+\noindent{\sf \@abstract}
+\setcounter{footnote}{0}%
+\gdef\@author{}\gdef\@title{}\gdef\@years{}\gdef\@abstract{}
+\let\maketitle\relax}
+
+\def\birdnarrow{\advance\@totalleftmargin by 0.5in}
+
+%% Needs to be here for the previous ps@headings defs to work.
+\pagestyle{headings}
+
+\def\progdoc{
+\raggedbottom
+}
+
+%%% USEFUL MACROS
+
+\newcommand{\linux}{Linux}              % Always use this when
+				        % refering to the \linux\
+				        % operating system, like that.
+\newcommand{\key}[1]{{\fbox{\small\tt #1}}}   % Use this to mark keys, like
+				              % \key{del} for the delete key.
+\newcommand{\ret}{\fbox{\sf return}}    % Special case for the return key.
+\newcommand{\st}{\small\tt}             % Small typewriter -- comes in handy.
+%\newcommand{\lb}{{\tt\char '173}}       % Left Brace '{'
+%\newcommand{\rb}{{\tt\char '175}}       % Right Brace '}'
+\newcommand{\lbr}{$\langle$}		% Left Bracket '<'
+\newcommand{\rbr}{$\rangle$}		% Right Bracket '>'
+\newcommand{\bs}{{\tt\char '134}}       % BackSlash '\'
+\newcommand{\tm}{${}^{\mbox{\tiny\sf TM}}$}
+\newcommand{\TM}{\tm}                   % TM trademark symbol in
+				        % either case
+\newcommand{\cparam}[1]{{\rm \lbr{\sl #1}\rbr}}
+					% Metavariables.
+
+%% Define NAMEURL macro to handle the optional name argument
+%% This calls on the \url macro from the url.sty package so the 
+%% URL will be hyphenated correctly.
+\def\nameurl#1#2{{\em #2} {\tt <\url{#1}>}}
+\def\onlynameurl#1{{\em #1}}
+
+%% the tscreen environment automatically goes into typewriter type,
+%%  but is otherwise like the screen environment
+
+\newenvironment{tscreen}%
+ {\begin{quote}\bgroup\small\tt}%
+ {\egroup\end{quote}}
+
+%% Typesetting of function descriptions
+
+\def\function{\bigbreak\hrule\nobreak\bigskip\nobreak\leftline{\bf Function}\nobreak\smallskip\nobreak\parskip=0pt\relax}
+\def\funcsect#1{\medbreak\leftline{\bf #1}\nobreak}
