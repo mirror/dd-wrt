@@ -238,7 +238,7 @@ server_connect(void)
 }
 
 
-#define PRINTF(LEN, PARGS...) do { if (!skip_input) len = printf(PARGS); } while(0)
+#define PRINTF(LEN, PARGS...) do { if (!skip_input) len = fprintf(stdout,PARGS); } while(0)
 
 static void
 server_got_reply(char *x)
