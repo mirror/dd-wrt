@@ -11,6 +11,7 @@ zabbix-install:
 	install -D zabbix/config/zabbix.startup $(INSTALLDIR)/zabbix/etc/config/zabbix.startup
 	install -D zabbix/config/zabbix.webservices $(INSTALLDIR)/zabbix/etc/config/zabbix.webservices
 	install -D zabbix/scripts/wclients $(INSTALLDIR)/zabbix/usr/sbin/wclients
+	install -D zabbix/scripts/clients $(INSTALLDIR)/zabbix/usr/sbin/clients
 	install -D zabbix/scripts/topcpu $(INSTALLDIR)/zabbix/usr/sbin/topcpu
 	install -D zabbix/scripts/temps $(INSTALLDIR)/zabbix/usr/sbin/temps
 	install -D zabbix/src/zabbix_agent/zabbix_agentd $(INSTALLDIR)/zabbix/usr/sbin/zabbix_agentd
