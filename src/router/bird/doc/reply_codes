@@ -1,0 +1,69 @@
+Reply codes of BIRD command-line interface
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+0xxx	Action suceessfully completed
+1xxx	Table entry
+2xxx	Table heading
+8xxx	Run-time error
+9xxx	Parse-time error
+<space>	Continuation
++	Spontaneous printout
+
+0000	OK
+0001	Welcome
+0002	Reading configuration
+0003	Reconfigured
+0004	Reconfiguration in progress
+0005	Reconfiguration already in progress, queueing
+0006	Reconfiguration ignored, shutting down
+0007	Shutdown ordered
+0008	Already disabled
+0009	Disabled
+0010	Already enabled
+0011	Enabled
+0012	Restarted
+0013	Status report
+0014	Route count
+0015	Reloading
+0016	Access restricted
+0017	Reconfiguration already in progress, removing queued config
+0018	Reconfiguration confirmed
+0019	Nothing to do (configure undo/confirm)
+0020	Configuration OK
+0021	Undo requested
+0022	Undo scheduled
+0023	Evaluation of expression
+
+1000	BIRD version
+1001	Interface list
+1002	Protocol list
+1003	Interface address
+1004	Interface flags
+1005	Interface summary
+1006	Protocol details
+1007	Route list
+1008	Route details
+1009	Static route list
+1010	Symbol list
+1011	Uptime
+1012	Route extended attribute list
+1013	Show ospf neighbors
+1014	Show ospf
+1015	Show ospf interface
+1016	Show ospf state/topology
+1017	Show ospf lsadb
+1018	Show memory
+1019	Show ROA list
+
+8000	Reply too long
+8001	Route not found
+8002	Configuration file error
+8003	No protocols match
+8004	Stopped due to reconfiguration
+8005	Protocol is down => cannot dump
+8006	Reload failed
+8007	Access denied
+8008	Evaluation runtime error
+
+9000	Command too long
+9001	Parse error
+9002	Invalid symbol type

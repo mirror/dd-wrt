@@ -1,0 +1,408 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 1.0.9">
+ <TITLE>BIRD User's Guide: Filters</TITLE>
+ <LINK HREF="bird-6.html" REL=next>
+ <LINK HREF="bird-4.html" REL=previous>
+ <LINK HREF="bird.html#toc5" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="bird-6.html">Next</A>
+<A HREF="bird-4.html">Previous</A>
+<A HREF="bird.html#toc5">Contents</A>
+<HR>
+<H2><A NAME="s5">5.</A> <A HREF="bird.html#toc5">Filters</A></H2>
+
+<H2><A NAME="ss5.1">5.1</A> <A HREF="bird.html#toc5.1">Introduction</A>
+</H2>
+
+<P>BIRD contains a simple programming language. (No, it can't yet read mail :-). There are
+two objects in this language: filters and functions. Filters are interpreted by BIRD core when a route is
+being passed between protocols and routing tables. The filter language contains control structures such
+as if's and switches, but it allows no loops. An example of a filter using many features can be found in filter/test.conf. 
+<P>
+<P>Filter gets the route, looks at its attributes and
+modifies some of them if it wishes. At the end, it decides whether to
+pass the changed route through (using <CODE>accept</CODE>) or whether to <CODE>reject</CODE> it. A simple filter looks
+like this:
+<P>
+<HR>
+<PRE>
+filter not_too_far
+int var;
+{
+        if defined( rip_metric ) then
+                var = rip_metric;
+        else {
+                var = 1;
+                rip_metric = 1;
+        }
+        if rip_metric &gt; 10 then
+                reject "RIP metric is too big";
+        else
+                accept "ok";
+}
+</PRE>
+<HR>
+<P>
+<P>As you can see, a filter has a header, a list of local variables, and a body. The header consists of
+the <CODE>filter</CODE> keyword followed by a (unique) name of filter. The list of local variables consists of
+<CODE><I>type name</I>;</CODE> pairs where each pair defines one local variable. The body consists of
+<CODE> { <I>statements</I> }</CODE>. Each <I>statement</I> is terminated by a <CODE>;</CODE>. You can group
+several statements to a single compound statement by using braces (<CODE>{ <I>statements</I> }</CODE>) which is useful if
+you want to make a bigger block of code conditional.
+<P>
+<P>BIRD supports functions, so that you don't have to repeat the same blocks of code over and
+over. Functions can have zero or more parameters and they can have local variables. Recursion is not allowed. Function definitions
+look like this:
+<P>
+<HR>
+<PRE>
+function name ()
+int local_variable;
+{
+        local_variable = 5;
+}
+
+function with_parameters (int parameter)
+{
+        print parameter;
+}
+</PRE>
+<HR>
+<P>
+<P>Unlike in C, variables are declared after the <CODE>function</CODE> line, but before the first <CODE>{</CODE>. You can't declare
+variables in nested blocks. Functions are called like in C: <CODE>name();
+with_parameters(5);</CODE>. Function may return values using the <CODE>return <I>[expr]</I></CODE>
+command. Returning a value exits from current function (this is similar to C).
+<P>
+<P>Filters are declared in a way similar to functions except they can't have explicit
+parameters. They get a route table entry as an implicit parameter, it is also passed automatically 
+to any functions called. The filter must terminate with either
+<CODE>accept</CODE> or <CODE>reject</CODE> statement. If there's a runtime error in filter, the route
+is rejected. 
+<P>
+<P>A nice trick to debug filters is to use <CODE>show route filter
+<I>name</I></CODE> from the command line client. An example session might look
+like:
+<P>
+<HR>
+<PRE>
+pavel@bug:~/bird$ ./birdc -s bird.ctl
+BIRD 0.0.0 ready.
+bird> show route
+10.0.0.0/8         dev eth0 [direct1 23:21] (240)
+195.113.30.2/32    dev tunl1 [direct1 23:21] (240)
+127.0.0.0/8        dev lo [direct1 23:21] (240)
+bird> show route ?
+show route [&lt;prefix>] [table &lt;t>] [filter &lt;f>] [all] [primary]...
+bird> show route filter { if 127.0.0.5 ~ net then accept; }
+127.0.0.0/8        dev lo [direct1 23:21] (240)
+bird>
+</PRE>
+<HR>
+<P>
+<H2><A NAME="ss5.2">5.2</A> <A HREF="bird.html#toc5.2">Data types</A>
+</H2>
+
+<P>Each variable and each value has certain type. Booleans, integers and enums are
+incompatible with each other (that is to prevent you from shooting in the foot).
+<P>
+<DL>
+<DT><CODE>bool</CODE><DD><P>This is a boolean type, it can have only two values, <CODE>true</CODE> and
+<CODE>false</CODE>. Boolean is the only type you can use in <CODE>if</CODE>
+statements.
+<P>
+<DT><CODE>int</CODE><DD><P>This is a general integer type, you can expect it to store signed values from -2000000000
+to +2000000000. Overflows are not checked. You can use <CODE>0x1234</CODE> syntax to write hexadecimal values.
+<P>
+<DT><CODE>pair</CODE><DD><P>This is a pair of two short integers. Each component can have values from 0 to
+65535. Literals of this type are written as <CODE>(1234,5678)</CODE>. The same syntax can also be
+used to construct a pair from two arbitrary integer expressions (for example <CODE>(1+2,a)</CODE>).
+<P>
+<DT><CODE>quad</CODE><DD><P>This is a dotted quad of numbers used to represent
+router IDs (and others).  Each component can have a value
+from 0 to 255. Literals of this type are written like IPv4
+addresses.
+<P>
+<DT><CODE>string</CODE><DD><P>This is a string of characters. There are no ways to modify strings in
+filters. You can pass them between functions, assign them to variables of type <CODE>string</CODE>, print
+such variables, but you can't concatenate two strings. String literals
+are written as <CODE>"This is a string constant"</CODE>.
+<P>
+<DT><CODE>ip</CODE><DD><P>This type can hold a single IP address. Depending on the compile-time configuration of BIRD you are using, it
+is either an IPv4 or IPv6 address. IP addresses are written in the standard notation (<CODE>10.20.30.40</CODE> or <CODE>fec0:3:4::1</CODE>). You can apply special operator <CODE>.mask(<I>num</I>)</CODE>
+on values of type ip. It masks out all but first <CODE><I>num</I></CODE> bits from the IP
+address. So <CODE>1.2.3.4.mask(8) = 1.0.0.0</CODE> is true.
+<P>
+<DT><CODE>prefix</CODE><DD><P>This type can hold a network prefix consisting of IP address and prefix length. Prefix literals are written as
+<CODE><I>ipaddress</I>/<I>pxlen</I></CODE>, or
+<CODE><I>ipaddress</I>/<I>netmask</I></CODE>. There are two special
+operators on prefixes:
+<CODE>.ip</CODE> which extracts the IP address from the pair, and <CODE>.len</CODE>, which separates prefix
+length from the pair. So <CODE>1.2.0.0/16.pxlen = 16</CODE> is true.
+<P>
+<DT><CODE>ec</CODE><DD><P>This is a specialized type used to represent BGP
+extended community values. It is essentially a 64bit value,
+literals of this type are usually written as <CODE>(<I>kind</I>,
+<I>key</I>, <I>value</I>)</CODE>, where <CODE>kind</CODE> is a kind of
+extended community (e.g. <CODE>rt</CODE> / <CODE>ro</CODE> for a route
+target / route origin communities), the format and possible
+values of <CODE>key</CODE> and <CODE>value</CODE> are usually integers, but
+it depends on the used kind. Similarly to pairs, ECs can be
+constructed using expressions for <CODE>key</CODE> and
+<CODE>value</CODE> parts, (e.g. <CODE>(ro, myas, 3*10)</CODE>, where
+<CODE>myas</CODE> is an integer variable).
+<P>
+<DT><CODE>int|pair|quad|ip|prefix|ec|enum set</CODE><DD><P>Filters recognize four types of sets. Sets are similar to strings: you can pass them around
+but you can't modify them. Literals of type <CODE>int set</CODE> look like <CODE>[ 1, 2, 5..7 ]</CODE>. As you can see, both simple values and ranges are permitted in
+sets.
+<P>For pair sets, expressions like <CODE>(123,*)</CODE> can be used to denote ranges (in
+that case <CODE>(123,0)..(123,65535)</CODE>). You can also use <CODE>(123,5..100)</CODE> for range
+<CODE>(123,5)..(123,100)</CODE>. You can also use <CODE>*</CODE> and <CODE>a..b</CODE> expressions
+in the first part of a pair, note that such expressions are translated to a set
+of intervals, which may be memory intensive. E.g. <CODE>(*,4..20)</CODE> is translated to
+<CODE>(0,4..20), (1,4..20), (2,4..20), ... (65535, 4..20)</CODE>.
+<P>EC sets use similar expressions like pair sets, e.g. <CODE>(rt, 123, 10..20)</CODE> 
+or <CODE>(ro, 123, *)</CODE>. Expressions requiring the translation (like  <CODE>(rt, *, 3)</CODE>)
+are not allowed (as they usually have 4B range for ASNs).
+<P>You can also use expressions for int, pair and EC set values. However it must
+be possible to evaluate these expressions before daemon boots. So you can use
+only constants inside them. E.g.
+<HR>
+<PRE>
+         define one=1;
+         define myas=64500;
+         int set odds;
+         pair set ps;
+         ec set es;
+
+         odds = [ one, 2+1, 6-one, 2*2*2-1, 9, 11 ];
+         ps = [ (1,one+one), (3,4)..(4,8), (5,*), (6,3..6), (7..9,*) ];
+         es = [ (rt, myas, 3*10), (rt, myas+one, 0..16*16*16-1), (ro, myas+2, *) ];
+        
+</PRE>
+<HR>
+<P>Sets of prefixes are special: their literals does not allow ranges, but allows
+prefix patterns that are written as <CODE><I>ipaddress</I>/<I>pxlen</I>{<I>low</I>,<I>high</I>}</CODE>.
+Prefix <CODE><I>ip1</I>/<I>len1</I></CODE> matches prefix pattern <CODE><I>ip2</I>/<I>len2</I>{<I>l</I>,<I>h</I>}</CODE> if 
+the first <CODE>min(len1, len2)</CODE> bits of <CODE>ip1</CODE> and <CODE>ip2</CODE> are identical and <CODE>len1 &lt;= ip1 &lt;= len2</CODE>.
+A valid prefix pattern has to satisfy <CODE>low &lt;= high</CODE>, but <CODE>pxlen</CODE> is not constrained by <CODE>low</CODE>
+or <CODE>high</CODE>. Obviously, a prefix matches a prefix set literal if it matches any prefix pattern in the
+prefix set literal.
+<P>There are also two shorthands for prefix patterns: <CODE><I>address</I>/<I>len</I>+</CODE> is a shorthand for
+<CODE><I>address</I>/<I>len</I>{<I>len</I>,<I>maxlen</I>}</CODE> (where <CODE><I>maxlen</I></CODE> is 32 for IPv4 and 128 for IPv6), 
+that means network prefix <CODE><I>address</I>/<I>len</I></CODE> and all its subnets. <CODE><I>address</I>/<I>len</I>-</CODE>
+is a shorthand for <CODE><I>address</I>/<I>len</I>{0,<I>len</I>}</CODE>, that means network prefix <CODE><I>address</I>/<I>len</I></CODE>
+and all its supernets (network prefixes that contain it).
+<P>For example, <CODE>[ 1.0.0.0/8, 2.0.0.0/8+, 3.0.0.0/8-, 4.0.0.0/8{16,24} ]</CODE> matches
+prefix <CODE>1.0.0.0/8</CODE>, all subprefixes of <CODE>2.0.0.0/8</CODE>, all superprefixes of <CODE>3.0.0.0/8</CODE> and prefixes
+<CODE>4.X.X.X</CODE> whose prefix length is 16 to 24. <CODE>[ 0.0.0.0/0{20,24} ]</CODE> matches all prefixes (regardless of
+IP address) whose prefix length is 20 to 24, <CODE>[ 1.2.3.4/32- ]</CODE> matches any prefix that contains IP address
+<CODE>1.2.3.4</CODE>. <CODE>1.2.0.0/16 ~ [ 1.0.0.0/8{15,17} ]</CODE> is true,
+but <CODE>1.0.0.0/16 ~ [ 1.0.0.0/8- ]</CODE> is false.
+<P>Cisco-style patterns like <CODE>10.0.0.0/8 ge 16 le 24</CODE> can be expressed
+in BIRD as <CODE>10.0.0.0/8{16,24}</CODE>, <CODE>192.168.0.0/16 le 24</CODE> as 
+<CODE>192.168.0.0/16{16,24}</CODE> and <CODE>192.168.0.0/16 ge 24</CODE> as
+<CODE>192.168.0.0/16{24,32}</CODE>.
+<P>
+<DT><CODE>enum</CODE><DD><P>Enumeration types are fixed sets of possibilities. You can't define your own
+variables of such type, but some route attributes are of enumeration
+type. Enumeration types are incompatible with each other.
+<P>
+<DT><CODE>bgppath</CODE><DD><P>BGP path is a list of autonomous system numbers. You can't write literals of this type.
+There are several special operators on bgppaths:
+<P><CODE><I>P</I>.first</CODE> returns the first ASN (the neighbor ASN) in path <I>P</I>.
+<P><CODE><I>P</I>.last</CODE> returns the last ASN (the source ASN) in path <I>P</I>.
+<P>Both <CODE>first</CODE> and <CODE>last</CODE> return zero if there is no appropriate ASN,
+for example if the path contains an AS set element as the first (or the last) part.
+<P><CODE><I>P</I>.len</CODE> returns the length of path <I>P</I>.
+<P><CODE>prepend(<I>P</I>,<I>A</I>)</CODE> prepends ASN <I>A</I> to path <I>P</I> and returns the result.
+Statement <CODE><I>P</I> = prepend(<I>P</I>, <I>A</I>);</CODE> can be shortened to
+<CODE><I>P</I>.prepend(<I>A</I>);</CODE> if <I>P</I> is appropriate route attribute
+(for example <CODE>bgp_path</CODE>).
+<P>
+<DT><CODE>bgpmask</CODE><DD><P>BGP masks are patterns used for BGP path matching
+(using <CODE>path ~ [= 2 3 5 * =]</CODE> syntax). The masks
+resemble wildcard patterns as used by UNIX shells. Autonomous
+system numbers match themselves, <CODE>*</CODE> matches any (even empty)
+sequence of arbitrary AS numbers and <CODE>?</CODE> matches one arbitrary AS number.
+For example, if <CODE>bgp_path</CODE> is 4 3 2 1, then:
+<CODE>bgp_path ~ [= * 4 3 * =]</CODE> is true, but 
+<CODE>bgp_path ~ [= * 4 5 * =]</CODE> is false.
+BGP mask expressions can also contain integer expressions enclosed in parenthesis
+and integer variables, for example <CODE>[= * 4 (1+2) a =]</CODE>.
+There is also old syntax that uses / .. / instead of [= .. =] and ? instead of *.
+<P>
+<DT><CODE>clist</CODE><DD><P>Clist is similar to a set, except that unlike other sets, it
+can be modified. The type is used for community list (a set
+of pairs) and for cluster list (a set of quads). There exist
+no literals of this type. There are three special operators on
+clists:
+<P><CODE>add(<I>C</I>,<I>P</I>)</CODE> adds pair (or quad) <I>P</I> to clist
+<I>C</I> and returns the result.  If item <I>P</I> is already in
+clist <I>C</I>, it does nothing. <I>P</I> may also be a clist,
+in that case all its members are added; i.e., it works as clist union.
+<P><CODE>delete(<I>C</I>,<I>P</I>)</CODE> deletes pair (or quad)
+<I>P</I> from clist <I>C</I> and returns the result.  If clist
+<I>C</I> does not contain item <I>P</I>, it does nothing.
+<I>P</I> may also be a pair (or quad) set, in that case the
+operator deletes all items from clist <I>C</I> that are also
+members of set <I>P</I>. Moreover, <I>P</I> may also be a clist,
+which works analogously; i.e., it works as clist difference.
+<P><CODE>filter(<I>C</I>,<I>P</I>)</CODE> deletes all items from clist
+<I>C</I> that are not members of pair (or quad) set <I>P</I>.
+I.e., <CODE>filter</CODE> do the same as <CODE>delete</CODE> with inverted
+set <I>P</I>. <I>P</I> may also be a clist, which works analogously;
+i.e., it works as clist intersection.
+<P>Statement <CODE><I>C</I> = add(<I>C</I>, <I>P</I>);</CODE> can be shortened to
+<CODE><I>C</I>.add(<I>P</I>);</CODE> if <I>C</I> is appropriate route
+attribute (for example <CODE>bgp_community</CODE>). Similarly for
+<CODE>delete</CODE> and <CODE>filter</CODE>.
+<P>
+<DT><CODE>eclist</CODE><DD><P>Eclist is a data type used for BGP extended community lists.
+Eclists are very similar to clists, but they are sets of ECs
+instead of pairs. The same operations (like <CODE>add</CODE>,
+<CODE>delete</CODE>, or <CODE>~</CODE> membership operator) can be
+used to modify or test eclists, with ECs instead of pairs as
+arguments.
+</DL>
+<P>
+<H2><A NAME="ss5.3">5.3</A> <A HREF="bird.html#toc5.3">Operators</A>
+</H2>
+
+<P>The filter language supports common integer operators <CODE>(+,-,*,/)</CODE>, parentheses <CODE>(a*(b+c))</CODE>, comparison
+<CODE>(a=b, a!=b, a&lt;b, a&gt;=b)</CODE>. Logical operations include unary not (<CODE>!</CODE>), and (<CODE>&amp;&amp;</CODE>) and or (<CODE>||</CODE>). 
+Special operators include <CODE>~</CODE> for "is element of a set" operation - it can be
+used on element and set of elements of the same type (returning true if element is contained in the given set), or
+on two strings (returning true if first string matches a shell-like pattern stored in second string) or on IP and prefix (returning true if IP is within the range defined by that prefix), or on
+prefix and prefix (returning true if first prefix is more specific than second one) or on bgppath and bgpmask (returning true if the path matches the mask) or on number and bgppath (returning true if the number is in the path) or on bgppath and int (number) set (returning true if any ASN from the path is in the set) or on pair/quad and clist (returning true if the pair/quad is element of the clist) or on clist and pair/quad set (returning true if there is an element of the clist that is also a member of the pair/quad set).
+<P>
+<P>There is one operator related to ROA infrastructure -
+<CODE>roa_check()</CODE>. It examines a ROA table and does RFC 6483 route
+origin validation for a given network prefix. The basic usage
+is <CODE>roa_check(<I>table</I>)</CODE>, which checks current route (which
+should be from BGP to have AS_PATH argument) in the specified ROA
+table and returns ROA_UNKNOWN if there is no relevant ROA, ROA_VALID
+if there is a matching ROA, or ROA_INVALID if there are some relevant
+ROAs but none of them match. There is also an extended variant
+<CODE>roa_check(<I>table</I>, <I>prefix</I>, <I>asn</I>)</CODE>, which allows to
+specify a prefix and an ASN as arguments.
+<P>
+<P>
+<H2><A NAME="ss5.4">5.4</A> <A HREF="bird.html#toc5.4">Control structures</A>
+</H2>
+
+<P>Filters support two control structures: conditions and case switches. 
+<P>
+<P>Syntax of a condition is: <CODE>if
+<I>boolean expression</I> then <I>command1</I>; else <I>command2</I>;</CODE> and you can use <CODE>{
+<I>command_1</I>; <I>command_2</I>; <I>...</I> }</CODE> instead of either command. The <CODE>else</CODE>
+clause may be omitted. If the <CODE><I>boolean expression</I></CODE> is true, <CODE><I>command1</I></CODE> is executed, otherwise <CODE><I>command2</I></CODE> is executed.
+<P>
+<P>The <CODE>case</CODE> is similar to case from Pascal. Syntax is <CODE>case <I>expr</I> { else: |
+<I>num_or_prefix [ .. num_or_prefix]</I>: <I>statement</I> ; [ ... ] }</CODE>. The expression after
+<CODE>case</CODE> can be of any type which can be on the left side of the ~ operator and anything that could
+be a member of a set is allowed before <CODE>:</CODE>. Multiple commands are allowed without <CODE>{}</CODE> grouping.
+If <CODE><I>expr</I></CODE> matches one of the <CODE>:</CODE> clauses, statements between it and next <CODE>:</CODE> statement are executed. If <CODE><I>expr</I></CODE> matches neither of the <CODE>:</CODE> clauses, the statements after <CODE>else:</CODE> are executed.
+<P>
+<P>Here is example that uses <CODE>if</CODE> and <CODE>case</CODE> structures:
+<P>
+<HR>
+<PRE>
+case arg1 {
+        2: print "two"; print "I can do more commands without {}";
+        3 .. 5: print "three to five";
+        else: print "something else";
+}
+
+if 1234 = i then printn "."; else { 
+  print "not 1234"; 
+  print "You need {} around multiple commands"; 
+}
+</PRE>
+<HR>
+<P>
+<H2><A NAME="ss5.5">5.5</A> <A HREF="bird.html#toc5.5">Route attributes</A>
+</H2>
+
+<P>A filter is implicitly passed a route, and it can access its
+attributes just like it accesses variables. Attempts to access undefined
+attribute result in a runtime error; you can check if an attribute is
+defined by using the <CODE>defined( <I>attribute</I> )</CODE> operator.
+One notable exception to this rule are attributes of clist type, where
+undefined value is regarded as empty clist for most purposes.
+<P>
+<DL>
+<DT><CODE><I>prefix</I> net</CODE><DD><P>Network the route is talking about. Read-only. (See the chapter about routing tables.)
+<P>
+<DT><CODE><I>enum</I> scope</CODE><DD><P>The scope of the route. Possible values: <CODE>SCOPE_HOST</CODE> for
+routes local to this host, <CODE>SCOPE_LINK</CODE> for those specific
+for a physical link, <CODE>SCOPE_SITE</CODE> and
+<CODE>SCOPE_ORGANIZATION</CODE> for private routes and
+<CODE>SCOPE_UNIVERSE</CODE> for globally visible routes. This
+attribute is not interpreted by BIRD and can be used to mark
+routes in filters. The default value for new routes is
+<CODE>SCOPE_UNIVERSE</CODE>.
+<P>
+<DT><CODE><I>int</I> preference</CODE><DD><P>Preference of the route. Valid values are 0-65535. (See the chapter about routing tables.)
+<P>
+<DT><CODE><I>ip</I> from</CODE><DD><P>The router which the route has originated from. Read-only.
+<P>
+<DT><CODE><I>ip</I> gw</CODE><DD><P>Next hop packets routed using this route should be forwarded to.
+<P>
+<DT><CODE><I>string</I> proto</CODE><DD><P>The name of the protocol which the route has been imported from. Read-only.
+<P>
+<DT><CODE><I>enum</I> source</CODE><DD><P>what protocol has told me about this route. Possible values: <CODE>RTS_DUMMY</CODE>, <CODE>RTS_STATIC</CODE>, <CODE>RTS_INHERIT</CODE>, <CODE>RTS_DEVICE</CODE>, <CODE>RTS_STATIC_DEVICE</CODE>, <CODE>RTS_REDIRECT</CODE>, <CODE>RTS_RIP</CODE>, <CODE>RTS_OSPF</CODE>, <CODE>RTS_OSPF_IA</CODE>, <CODE>RTS_OSPF_EXT1</CODE>, <CODE>RTS_OSPF_EXT2</CODE>, <CODE>RTS_BGP</CODE>, <CODE>RTS_PIPE</CODE>.
+<P>
+<DT><CODE><I>enum</I> cast</CODE><DD><P>Route type (Currently <CODE>RTC_UNICAST</CODE> for normal routes,
+<CODE>RTC_BROADCAST</CODE>, <CODE>RTC_MULTICAST</CODE>, <CODE>RTC_ANYCAST</CODE> will
+be used in the future for broadcast, multicast and anycast
+routes). Read-only.
+<P>
+<DT><CODE><I>enum</I> dest</CODE><DD><P>Type of destination the packets should be sent to
+(<CODE>RTD_ROUTER</CODE> for forwarding to a neighboring router,
+<CODE>RTD_DEVICE</CODE> for routing to a directly-connected network,
+<CODE>RTD_MULTIPATH</CODE> for multipath destinations,
+<CODE>RTD_BLACKHOLE</CODE> for packets to be silently discarded,
+<CODE>RTD_UNREACHABLE</CODE>, <CODE>RTD_PROHIBIT</CODE> for packets that
+should be returned with ICMP host unreachable / ICMP
+administratively prohibited messages). Can be changed, but
+only to <CODE>RTD_BLACKHOLE</CODE>, <CODE>RTD_UNREACHABLE</CODE> or
+<CODE>RTD_PROHIBIT</CODE>.
+<P>
+<DT><CODE><I>int</I> igp_metric</CODE><DD><P>The optional attribute that can be used to specify a distance
+to the network for routes that do not have a native protocol
+metric attribute (like <CODE>ospf_metric1</CODE> for OSPF routes). It
+is used mainly by BGP to compare internal distances to boundary
+routers (see below). It is also used when the route is exported
+to OSPF as a default value for OSPF type 1 metric.
+</DL>
+<P>
+<P>There also exist some protocol-specific attributes which are described in the corresponding protocol sections.
+<P>
+<H2><A NAME="ss5.6">5.6</A> <A HREF="bird.html#toc5.6">Other statements</A>
+</H2>
+
+<P>The following statements are available:
+<P>
+<DL>
+<DT><CODE><I>variable</I> = <I>expr</I></CODE><DD><P>Set variable to a given value.
+<P>
+<DT><CODE>accept|reject [ <I>expr</I> ]</CODE><DD><P>Accept or reject the route, possibly printing <CODE><I>expr</I></CODE>.
+<P>
+<DT><CODE>return <I>expr</I></CODE><DD><P>Return <CODE><I>expr</I></CODE> from the current function, the function ends at this point.
+<P>
+<DT><CODE>print|printn <I>expr</I> [<I>, expr...</I>]</CODE><DD><P>Prints given expressions; useful mainly while debugging
+filters. The <CODE>printn</CODE> variant does not terminate the line.
+<P>
+<DT><CODE>quitbird</CODE><DD><P>Terminates BIRD. Useful when debugging the filter interpreter.
+</DL>
+<P>
+<HR>
+<A HREF="bird-6.html">Next</A>
+<A HREF="bird-4.html">Previous</A>
+<A HREF="bird.html#toc5">Contents</A>
+</BODY>
+</HTML>

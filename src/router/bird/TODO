@@ -1,0 +1,45 @@
+Core
+~~~~
+- socket open failure should not be fatal
+- &&,||: priorities
+- static: allow specifying a per-route filter program for setting route attributes?
+
+Globals
+~~~~~~~
+- right usage of DBG vs. debug
+- logging and tracing; use appropriate log levels
+- check incoming packets and log errors!!
+- check log calls for trailing newlines and log levels followed by comma
+- check if all protocols set proper packet priorities and TTL's.
+- try compiling with -Wunused
+- does everybody test return value of sk_open?
+- protocols: implement CLI hooks and per-procotol CLI commands
+- protocols: implement reconfigure hook
+- protocols: use locking
+- check use of system includes and sprintf()
+
+Various ideas
+~~~~~~~~~~~~~
+- client: Ctrl-R eats one more enter
+- bgp: timing of updates?
+- netlink: import Linux route attributes to our rta's, so that they can be filtered?
+- config: executable config files
+- filters: user defined attributes?
+- io: use poll if available
+- route recalculation timing and flap dampening [see RFC2439 for algorithms]
+- aggregate engine: standard route aggregation and summarization [RFC2519]
+- aggregate engine: injection of manually configured pseudo-static routes
+- generate default route if any working BGP connection exists (aggregate engine again?)
+- generate default route to IGP's (aggregate engine yet another time?)
+- look at RFC 2386 (QoS-based routing)
+- cli: show tables?
+
+OSPF
+~~~~
+	- check incoming packets using neighbor cache
+	- RFC2328 appendix E: Use a better algorithm
+	- automatic generation of external route tags (RFC1403)
+	- RFC2370 opaque LSA's
+	- Limit export rate of external LSAs (like Gated does)
+	- Bugfix in link state retransmission list (aging)
+	- Graceful OSPF restart - RFC3623

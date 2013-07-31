@@ -1,0 +1,47 @@
+#!/usr/bin/perl
+
+$srcdir = $ARGV[0];
+
+open(OUT, ">prog.sgml") || die "Cannot create output file";
+include("doc/prog-head.sgml");
+process("");
+include("doc/prog-foot.sgml");
+close OUT;
+exit 0;
+
+sub include {
+  my $f = shift @_;
+  open(IN, "$srcdir/$f") || die "Unable to find $f";
+  while (<IN>) {
+    print OUT;
+  }
+  close IN;
+}
+
+sub process {
+  my $dir = shift @_;
+  print "$dir/Doc\n";
+  open(IN, "$srcdir/$dir/Doc") || die "Unable to read $dir/Doc";
+  my @docfile = <IN>;
+  close IN;
+  foreach $_ (@docfile) {
+    chomp;
+    /^#/ && next;
+    /^([A-Z]+)\s*(.*)/ || die "Parse error: $_";
+    $cmd = $1;
+    $arg = $2;
+    if ($cmd eq "C") { process("$dir/$arg"); }
+    elsif ($cmd eq "H") {
+      push @stack, "H";
+      print OUT "<chapt>$arg\n";
+    } elsif ($cmd eq "S") {
+      print "    $arg\n";
+      open(DOC, "cd $srcdir/$dir ; $srcdir/doc/kernel-doc -bird $arg |") || die "Unable to start kernel-doc";
+      while (<DOC>) { print OUT; }
+      close DOC;
+    } elsif ($cmd eq "D") {
+      print "    $arg\n";
+      include("$dir/$arg");
+    } else { die "Unknown command: $cmd"; }
+  }
+}

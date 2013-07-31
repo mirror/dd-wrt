@@ -1,0 +1,202 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 1.0.9">
+ <TITLE>BIRD Programmer's Documentation: System dependent parts</TITLE>
+ <LINK HREF="prog-7.html" REL=next>
+ <LINK HREF="prog-5.html" REL=previous>
+ <LINK HREF="prog.html#toc6" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="prog-7.html">Next</A>
+<A HREF="prog-5.html">Previous</A>
+<A HREF="prog.html#toc6">Contents</A>
+<HR>
+<H2><A NAME="s6">6.</A> <A HREF="prog.html#toc6">System dependent parts</A></H2>
+
+<H2><A NAME="ss6.1">6.1</A> <A HREF="prog.html#toc6.1">Introduction</A>
+</H2>
+
+<P>We've tried to make BIRD as portable as possible, but unfortunately
+communication with the network stack differs from one OS to another,
+so we need at least some OS specific code. The good news is that this
+code is isolated in a small set of modules:
+<P>
+<DL>
+<DT><CODE>config.h</CODE><DD><P>is a header file with configuration information,
+definition of the standard set of types and so on.
+<DT>Startup module<DD><P>controls BIRD startup. Common for a family of OS's (e.g.,
+for all Unices).
+<DT>Logging module<DD><P>manages the system logs. [per OS family]
+<DT>IO module<DD><P>gives an implementation of sockets, timers and the
+global event queue. [per OS family]
+<DT>KRT module<DD><P>implements the Kernel and Device protocols. This
+is the most arcane part of the system dependent stuff and some
+functions differ even between various releases of a single OS.
+</DL>
+<H2><A NAME="ss6.2">6.2</A> <A HREF="prog.html#toc6.2">Logging</A>
+</H2>
+
+<P>
+<P>The Logging module offers a simple set of functions for writing
+messages to system logs and to the debug output. Message classes
+used by this module are described in <CODE>birdlib.h</CODE> and also in the
+user's manual.
+<P>
+<P><HR><H3>Function</H3>
+<P><I>void</I>
+<B>log_reset</B>
+(<B>void</B>) --     reset the log buffer
+<P>
+<H3>Logging</H3>
+<P>
+<P>This function resets a log buffer and discards buffered
+messages. Should be used before a log message is prepared
+using <B>logn()</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>log_commit</B>
+(<I>int</I> <B>class</B>) --     commit a log message
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>int</I> <B>class</B><DD><P>message class information (<I>L_DEBUG</I> to <I>L_BUG</I>, see <CODE>lib/birdlib.h</CODE>)
+</DL>
+<H3>Description</H3>
+<P>This function writes a message prepared in the log buffer to the
+log file (as specified in the configuration). The log buffer is
+reset after that. The log message is a full line, <B>log_commit()</B>
+terminates it.
+<P>The message class is an integer, not a first char of a string like
+in <B>log()</B>, so it should be written like *L_INFO.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>log_msg</B>
+(<I>char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     log a message
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>char *</I> <B>msg</B><DD><P>printf-like formatting string with message class information
+prepended (<I>L_DEBUG</I> to <I>L_BUG</I>, see <CODE>lib/birdlib.h</CODE>)
+<DT><I>...</I> <B>...</B><DD><P>variable arguments
+</DL>
+<H3>Description</H3>
+<P>This function formats a message according to the format string <B>msg</B>
+and writes it to the corresponding log file (as specified in the
+configuration). Please note that the message is automatically
+formatted as a full line, no need to include <CODE>\n</CODE> inside.
+It is essentially a sequence of <B>log_reset()</B>, <B>logn()</B> and <B>log_commit()</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>logn</B>
+(<I>char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     prepare a partial message in the log buffer
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>char *</I> <B>msg</B><DD><P>printf-like formatting string (without message class information)
+<DT><I>...</I> <B>...</B><DD><P>variable arguments
+</DL>
+<H3>Description</H3>
+<P>This function formats a message according to the format string <B>msg</B>
+and adds it to the log buffer. Messages in the log buffer are
+logged when the buffer is flushed using <B>log_commit()</B> function. The
+message should not contain <CODE>\n</CODE>, <B>log_commit()</B> also terminates a
+line.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>bug</B>
+(<I>char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     report an internal error
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>char *</I> <B>msg</B><DD><P>a printf-like error message
+<DT><I>...</I> <B>...</B><DD><P>variable arguments
+</DL>
+<H3>Description</H3>
+<P>This function logs an internal error and aborts execution
+of the program.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>die</B>
+(<I>char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     report a fatal error
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>char *</I> <B>msg</B><DD><P>a printf-like error message
+<DT><I>...</I> <B>...</B><DD><P>variable arguments
+</DL>
+<H3>Description</H3>
+<P>This function logs a fatal error and aborts execution
+of the program.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>debug</B>
+(<I>char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     write to debug output
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>char *</I> <B>msg</B><DD><P>a printf-like message
+<DT><I>...</I> <B>...</B><DD><P>variable arguments
+</DL>
+<H3>Description</H3>
+<P>This function formats the message <B>msg</B> and prints it out
+to the debugging output. No newline character is appended.
+
+<H2><A NAME="ss6.3">6.3</A> <A HREF="prog.html#toc6.3">Kernel synchronization</A>
+</H2>
+
+<P>
+<P>This system dependent module implements the Kernel and Device protocol,
+that is synchronization of interface lists and routing tables with the
+OS kernel.
+<P>The whole kernel synchronization is a bit messy and touches some internals
+of the routing table engine, because routing table maintenance is a typical
+example of the proverbial compatibility between different Unices and we want
+to keep the overhead of our KRT business as low as possible and avoid maintaining
+a local routing table copy.
+<P>The kernel syncer can work in three different modes (according to system config header):
+Either with a single routing table and single KRT protocol [traditional UNIX]
+or with many routing tables and separate KRT protocols for all of them
+or with many routing tables, but every scan including all tables, so we start
+separate KRT protocols which cooperate with each other [Linux].
+In this case, we keep only a single scan timer.
+<P>We use FIB node flags in the routing table to keep track of route
+synchronization status. We also attach temporary <I>rte</I>'s to the routing table,
+but it cannot do any harm to the rest of BIRD since table synchronization is
+an atomic process.
+<P>When starting up, we cheat by looking if there is another
+KRT instance to be initialized later and performing table scan
+only once for all the instances.
+<P>The code uses OS-dependent parts for kernel updates and scans. These parts are
+in more specific sysdep directories (e.g. sysdep/linux) in functions krt_sys_* 
+and kif_sys_* (and some others like <B>krt_replace_rte()</B>) and krt-sys.h header file.
+This is also used for platform specific protocol options and route attributes.
+<P>There was also an old code that used traditional UNIX ioctls for these tasks.
+It was unmaintained and later removed. For reference, see sysdep/krt-* files
+in commit 396dfa9042305f62da1f56589c4b98fac57fc2f6
+<P>
+<P>
+<HR>
+<A HREF="prog-7.html">Next</A>
+<A HREF="prog-5.html">Previous</A>
+<A HREF="prog.html#toc6">Contents</A>
+</BODY>
+</HTML>

@@ -1,0 +1,27 @@
+<!doctype birddoc system>
+
+<!--
+    BIRD: Programmer's Documentation
+
+    Copyright (c) 2000 Martin Mares <mj@ucw.cz>
+ -->
+
+<book>
+<progdoc>
+
+<title>BIRD Programmer's Documentation
+<author>
+Ondrej Filip <it/&lt;feela@network.cz&gt;/,
+Pavel Machek <it/&lt;pavel@ucw.cz&gt;/,
+Martin Mares <it/&lt;mj@ucw.cz&gt;/,
+Ondrej Zajicek <it/&lt;santiago@crfreenet.org&gt;/
+</author>
+
+<abstract>
+This document contains programmer's documentation for the BIRD Internet Routing Daemon project.
+</abstract>
+
+<!-- Table of contents -->
+<toc>
+
+<!-- Begin the document -->

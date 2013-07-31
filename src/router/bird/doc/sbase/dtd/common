@@ -1,0 +1,98 @@
+<!-- This is a DTD, but will be read as -*- sgml -*-   -->
+<!-- ================================================= -->
+<!-- $Id$ 
+
+     This is COMMON ENTITY for SGML-Tools.
+
+     The definitions herein are used by both
+     LINUXDOC97 Strict DTD and SGMLTOOL DTD.
+
+     Initial revision May 16, 1997, by B. Kreimeier
+
+     &Log:$
+
+                                                       -->
+<!-- ================================================= -->
+<!-- Revision Comments                                 -->
+
+<!-- BK/97/05/16: created from linuxdoc97.dtd          -->
+<!-- BK/97/07/17: Moved <descrip> to linuxdoc97.dtd.   -->
+<!-- BK/97/05/18: removed quote and code back from
+     "common", as I want to modify them (caption)      -->
+<!-- ================================================= -->
+
+
+
+
+
+<!-- ================================================= -->
+<!-- TITLE, TITLEPAGE                                  -->
+<!-- MDW: hacked, abstract now part of titlepag        -->
+<!-- ================================================= -->
+
+<!element titlepag o o (title, author, date?, abstract?)>
+<!element title - o (%inline) >
+
+<!usemap oneline titlepag>
+
+<!element author - o 
+        (name, (and, name )*)>
+
+<!element name o o (%inline) >
+<!element and - o empty>
+<!element date - o (#pcdata) >
+
+
+<!element abstract - o (%inline)>
+<!usemap oneline abstract>
+
+<!element toc - o empty>
+
+<!-- ================================================= -->
+<!-- SECTion - section hierarchy                       -->
+<!-- ================================================= -->
+
+<!element header - - (lhead, rhead) >
+<!element lhead - o (%inline)>
+<!element rhead - o (%inline)>
+
+<!entity % sect "heading, header?, p* " >
+
+<!element heading o o (%inline)>
+<!element sect  - o (%sect, sect1*)>
+<!element sect1 - o (%sect, sect2*)>
+<!element sect2 - o (%sect, sect3*)>
+<!element sect3 - o (%sect, sect4*)>
+<!element sect4 - o (%sect)>
+
+<!usemap oneline (sect,sect1,sect2,sect3,sect4)>
+
+<!-- ================================================= -->
+<!-- LIST elements                                     -->
+<!-- Group of all list elements, except descrip        -->
+<!-- ================================================= -->
+
+<!element itemize - - (item+)>
+<!element enum - - (item+)>
+<!element item o o ((%inline; | %sectpar;)*, p*) >
+
+<!usemap global (itemize,enum)>
+
+
+
+<!-- ================================================= -->
+<!-- P - paragraph, smallest block of text             -->
+<!-- ================================================= -->
+
+<!element  p o o (( %inline | %sectpar )+) >
+<!usemap pmap p>
+
+
+
+<!-- ================================================= -->
+<!-- end of COMMON ENTITY                             -->
+<!--
+     Local Variables:
+     mode: sgml
+     End:                                              -->
+<!-- ================================================= -->

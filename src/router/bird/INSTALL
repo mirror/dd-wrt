@@ -1,0 +1,30 @@
+How to install BIRD
+===================
+
+$ ./configure
+$ make
+# make install
+
+Default location for configuration file is /usr/local/etc/bird.conf and
+for control socket is /usr/local/var/run/bird.ctl . You can change that
+by --sysconfdir and --localstatedir configure options.
+
+
+Requirements
+============
+
+For compiling BIRD you need these programs and libraries:
+
+ - GNU C Compiler
+ - GNU Make
+ - GNU Bison
+ - GNU M4
+ - Flex
+
+ - ncurses library
+ - GNU Readline library (2.1 or newer)
+
+For compiling BIRD documentation you also need:
+
+ - Linuxdoc-Tools
+ - LaTeX

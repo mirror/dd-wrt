@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 1.0.9">
+ <TITLE>BIRD User's Guide: About routing tables</TITLE>
+ <LINK HREF="bird-3.html" REL=next>
+ <LINK HREF="bird-1.html" REL=previous>
+ <LINK HREF="bird.html#toc2" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="bird-3.html">Next</A>
+<A HREF="bird-1.html">Previous</A>
+<A HREF="bird.html#toc2">Contents</A>
+<HR>
+<H2><A NAME="s2">2.</A> <A HREF="bird.html#toc2">About routing tables</A></H2>
+
+<P>BIRD has one or more routing tables which may or may not be
+synchronized with OS kernel and which may or may not be synchronized with
+each other (see the Pipe protocol). Each routing table contains a list of
+known routes. Each route consists of:
+<P>
+<UL>
+<LI>network prefix this route is for (network address and prefix length -- the number of bits forming the network part of the address; also known as a netmask)</LI>
+<LI>preference of this route</LI>
+<LI>IP address of router which told us about this route</LI>
+<LI>IP address of router we should forward the packets to
+using this route</LI>
+<LI>other attributes common to all routes</LI>
+<LI>dynamic attributes defined by protocols which may or
+may not be present (typically protocol metrics)</LI>
+</UL>
+<P>Routing table maintains multiple entries
+for a network, but at most one entry for one network and one
+protocol. The entry with the highest preference is used for routing (we
+will call such an entry the <I>selected route</I>). If
+there are more entries with the same preference and they are from the same
+protocol, the protocol decides (typically according to metrics). If they aren't,
+an internal ordering is used to break the tie. You can
+get the list of route attributes in the Route attributes section.
+<P>
+<P>Each protocol is connected to a routing table through two filters
+which can accept, reject and modify the routes. An <I>export</I>
+filter checks routes passed from the routing table to the protocol,
+an <I>import</I> filter checks routes in the opposite direction.
+When the routing table gets a route from a protocol, it recalculates
+the selected route and broadcasts it to all protocols connected to
+the table. The protocols typically send the update to other routers
+in the network. Note that although most protocols are interested 
+in receiving just selected routes, some protocols (e.g. the <CODE>Pipe</CODE>
+protocol) receive and process all entries in routing tables (accepted
+by filters).
+<P>
+<P>
+<A NAME="dsc-sorted"></A> Usually, a routing table just chooses a
+selected route from a list of entries for one network. But if the
+<CODE>sorted</CODE> option is activated, these lists of entries are kept
+completely sorted (according to preference or some protocol-dependent
+metric).
+<P>This is needed for some features of some protocols
+(e.g. <CODE>secondary</CODE> option of BGP protocol, which allows to accept
+not just a selected route, but the first route (in the sorted list)
+that is accepted by filters), but it is incompatible with some other
+features (e.g. <CODE>deterministic med</CODE> option of BGP protocol, which
+activates a way of choosing selected route that cannot be described
+using comparison and ordering). Minor advantage is that routes are
+shown sorted in <CODE>show route</CODE>, minor disadvantage is that it is
+slightly more computationally expensive.
+<P>
+<P>
+<HR>
+<A HREF="bird-3.html">Next</A>
+<A HREF="bird-1.html">Previous</A>
+<A HREF="bird.html#toc2">Contents</A>
+</BODY>
+</HTML>

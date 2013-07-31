@@ -1,0 +1,42 @@
+<!--
+	BIRD Programmer's Guide: Resources
+
+	(c) 2000 Martin Mares <mj@ucw.cz>
+-->
+
+<chapt>Resources
+
+<sect>Introduction
+
+<p>Most large software projects implemented in classical procedural
+programming languages usually end up with lots of code taking care
+of resource allocation and deallocation. Bugs in such code are often
+very difficult to find, because they cause only `resource leakage',
+that is keeping a lot of memory and other resources which nobody
+references to.
+
+<p>We've tried to solve this problem by employing a resource tracking
+system which keeps track of all the resources allocated by all the
+modules of BIRD, deallocates everything automatically when a module
+shuts down and it is able to print out the list of resources and
+the corresponding modules they are allocated by.
+
+<p>Each allocated resource (from now we'll speak about allocated
+resources only) is represented by a structure starting with a standard
+header (struct <struct/resource/) consisting of a list node (resources are
+often linked to various lists) and a pointer to <struct/resclass/ -- a resource
+class structure pointing to functions implementing generic resource
+operations (such as freeing of the resource) for the particular resource
+type.
+
+<p>There exist the following types of resources:
+
+<itemize>
+<item><it/Resource pools/ (<struct/pool/)
+<item><it/Memory blocks/
+<item><it/Linear memory pools/ (<struct/linpool/)
+<item><it/Slabs/ (<struct/slab/)
+<item><it/Events/ (<struct/event/) 
+<item><it/Timers/ (<struct/timer/) 
+<item><it/Sockets/ (<struct/socket/) 
+</itemize>

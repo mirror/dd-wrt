@@ -1,0 +1,46 @@
+#!/usr/bin/perl 
+#
+#   sgmltools.in
+#
+#   $Id$
+#
+#   SGML-Tools driver. Calls all other SGML-Tools components, contains
+#   configuration information, etcetera.
+#
+package main;
+
+sub BEGIN 
+{
+  require 5.004;
+}
+use strict;
+
+use vars qw($prefix $DataDir $BinDir $progs);
+
+$prefix = "/usr";
+$DataDir = "sbase";
+$BinDir = "/usr/bin";
+
+use lib "/usr/share/linuxdoc-tools";
+use lib "/usr/perl5";
+use lib "/usr/lib/perl5";
+use lib "/usr/share/perl5";
+$progs = {
+  "NSGMLS" => "/usr/bin/nsgmls",
+  "SGMLSASP" => "/usr/bin/sgmlsasp",
+  "GROFF" => "/usr/bin/groff",
+  "GROFFMACRO" => "-ms",
+  "AWK" => "/usr/share/linuxdoc-tools/awkwhich"
+};
+$ENV{"SGML_CATALOG_FILES"} = "sbase/dtd/catalog";
+
+require "./LinuxDocTools.pm";
+&LinuxDocTools::init;
+
+my @FileList = LinuxDocTools::process_options ("txt", @ARGV);
+for my $curfile (@FileList)
+  {
+    LinuxDocTools::process_file ($curfile);
+  }
+
+exit 0;
