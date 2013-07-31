@@ -1,0 +1,90 @@
+\input mjmac
+
+\hsize=7truein
+\vsize=9.5truein
+\language=\czech
+\chyph
+
+\centerline{\Big Projekt BIRD}
+\bigskip
+\centerline{\Big\ss (Basic Internet Routing Daemon)}
+\bigskip
+\centerline{\large\it zpráva o~stavu projektu ke~dni 10. 11. 1999}
+
+\vskip 0.5in
+
+\leftline{\Large Obsazení}
+
+\noindent\halign{\quad \hfil # & \quad # \hfil \cr
+Vedoucí projektu:	& RNDr. Libor Forst \cr
+\noalign{\medskip}
+Úèastníci:		& Ondøej Filip \cr
+			& Pavel Machek \cr
+			& Martin Mare¹ \cr
+}
+
+\bigskip
+\leftline{\Large Specifikace}
+
+   Cílem projektu je vyvinout program umo¾òující dynamický routing
+internetovských protokolù (IPv4 a IPv6) pro operaèní systémy kompatibilní
+s~UNIXem (zejména pak pro Linux). Tento program komunikuje s~ostatními
+routery v~síti (respektive její èásti, na ní¾ se dynamický routing vztahuje)
+prostøednictvím standardních protokolù (RIPv2, OSPFv2, BGP4), vymìòuje si
+s~nimi informace o~topologii sítì a jejích dynamických zmìnách a podle takto
+zji¹tìné topologie nastavuje routovací tabulky jádra OS.
+
+   Program dále zaji¹»uje distribuci routovacích informací mezi jednotlivými
+(jinak na sobì nazávislými) protokoly, pøièem¾ tyto informace umo¾òuje
+filtrovat podle pravidel specifikovaných v~jednoduchém programovacím
+jazyku, èím¾ lze mimo jiné realizovat policy-based routing, který
+je jinak dostupný pouze v~drahých komerèních routerech.
+
+   Projekt si rovnì¾ klade za cíl vyu¾ít nejnovìj¹ích vymo¾eností
+moderních UNIXových OS, jako jsou vícenásobné routovací tabulky, netlink
+apod.
+
+   Router bude mo¾no za bìhu ovládat prostøednictvím øídících pøíkazù
+pøedávaných po lokálním socketu. To zahrnuje výpis stavových informací
+celého systému (routovacích tabulek, topologických map protokolu OSPF,
+atributových tabulek BGP a jiných údajù nezbytných pro správce sítì)
+a zejména zmìnu konfigurace bez nutnosti restartu protokolù zmìnami
+nedotèených.
+
+\medskip
+
+\leftline{\Large Stav projektu}
+
+   Po ztrátì jednoho z~èlenù týmu pokraèuje vývoj ponìkud pomalej¹ím
+tempem ne¾ se pùvodnì oèekávalo, nicménì zadání projektu hodláme splnit
+v~celém rozsahu a projekt bìhem tohoto ¹kolního roku dokonèit. V~souèasné
+dobì chybí zejména dokumentace (její nynìj¹í podoba se omezuje výhradnì
+na~bohaté komentáøe ve~zdrojových textech) a podpora protokolu BGP.
+
+\medskip
+
+\noindent Stav jednotlivých èástí projektu:
+
+\medskip
+
+\halign{# \hfil & \qquad \hfil#\cr
+Building system		& 100\%		\cr
+Jádro routeru		& 90\%		\cr
+Správa datových struktur & 80\%		\cr
+Podpora IPv4		& 100\%		\cr
+Podpora IPv6		& 70\%		\cr
+Interface na Linux 2.0	& 100\%		\cr
+Interface na Linux 2.2	& 100\%		\cr
+Interface na FreeBSD	& 20\%		\cr
+Protokol RIP		& 90\%		\cr
+Protokol OSPF pro IPv4	& 40\%		\cr
+Protokol OSPF pro IPv6	& 10\%		\cr
+Protokol BGP		& 0\%		\cr
+Interpreter filtrù	& 70\%		\cr
+Parser konfigurace	& 70\%		\cr
+Dálkové ovládání	& 20\%		\cr
+Dokumentace		& 0\%		\cr
+Online help		& 0\%		\cr
+}
+
+\bye

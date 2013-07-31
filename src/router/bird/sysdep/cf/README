@@ -1,0 +1,13 @@
+Available configuration variables:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+CONFIG_AUTO_ROUTES	Device routes are added automagically by the kernel
+CONFIG_SELF_CONSCIOUS	We're able to recognize whether route was installed by us
+CONFIG_MULTIPLE_TABLES	The kernel supports multiple routing tables
+CONFIG_ALL_TABLES_AT_ONCE	Kernel scanner wants to process all tables at once
+
+CONFIG_MC_PROPER_SRC	Multicast packets have source address according to socket saddr field
+CONFIG_SKIP_MC_BIND	Don't call bind on multicast socket (def for *BSD)
+CONFIG_UNIX_DONTROUTE	Use setsockopts DONTROUTE (undef for *BSD)
+
+CONFIG_RESTRICTED_PRIVILEGES	Implements restricted privileges using drop_uid()

@@ -1,0 +1,27 @@
+<!--
+	BIRD Programmer's Guide: Sysdeps
+
+	(c) 2000 Martin Mares <mj@ucw.cz>
+-->
+
+<chapt>System dependent parts
+
+<sect>Introduction
+
+<p>We've tried to make BIRD as portable as possible, but unfortunately
+communication with the network stack differs from one OS to another,
+so we need at least some OS specific code. The good news is that this
+code is isolated in a small set of modules:
+
+<descrip>
+<tagp><tt/config.h/</tagp> is a header file with configuration information,
+definition of the standard set of types and so on.
+<tagp/Startup module/ controls BIRD startup. Common for a family of OS's (e.g.,
+for all Unices).
+<tagp/Logging module/ manages the system logs. [per OS family]
+<tagp/IO module/ gives an implementation of sockets, timers and the
+global event queue. [per OS family]
+<tagp/KRT module/ implements the Kernel and Device protocols. This
+is the most arcane part of the system dependent stuff and some
+functions differ even between various releases of a single OS.
+</descrip>

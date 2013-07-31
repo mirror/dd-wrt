@@ -1,0 +1,421 @@
+
+% birddoc to LaTeX replacement file
+
+% The \relax is there to avoid sgml2latex rewriting the class
+<book>		+ "\\relax\\documentclass\[a4paper,10pt,openany\]{book}\n"
+			"\\usepackage{birddoc}\n"
+			"\\usepackage{qwertz}\n"
+			"\\usepackage{url}\n"
+			"\\usepackage\[latin1\]{inputenc}\n"
+			"\\usepackage{epsfig}\n"
+			"\\usepackage{[OPTS]}\n"
+			"\\pagestyle{headings}%end-preamble\n" 	+
+
+</book>		+	"\\end{document}"	+
+
+% Manual Pages are expected to be formatted using nroff (or groff), unless
+% they are included  as sections of other qwertz documents.  
+
+<manpage>
+</manpage>
+
+<progdoc>		"\\progdoc"
+</progdoc>
+
+<titlepag>
+</titlepag>	+	"\n\n\\begin{document}\n"
+			"\\maketitle\n"		+
+
+<title>		+	"\\title{"	
+</title>		"}"		+
+
+<subtitle>		"\\\\\n"
+			"{\\large "
+</subtitle>		"}" +
+
+<author>	+	"\\author{"	
+</author>		"}"	+
+
+<name>		
+</name>
+
+<and>			"\\and "	+
+</and>
+
+<thanks>		"\\thanks{"
+</thanks>		"}"
+
+<inst>			" \\\\\n\\\\" 	+
+</inst>
+
+<date>		+	"\\date{"
+</date>			"}"		  +
+
+<newline>		"\\\\ "		  
+</newline>
+
+<label>			"\\label{[ID]}"
+</label>	
+
+<header>	+	"\\markboth"
+</header>	
+
+<lhead>			"{"
+</lhead>		"}"
+
+<rhead>			"{"
+</rhead>		"}"	+
+
+% <comment>	+	"\n\n\\begin{verbatim}"	+
+% </comment>	+	"\\end{verbatim}\n\n"	+
+
+<comment>		"{\\tt "
+</comment>		"}"
+
+% Hacked by mdw to use linuxdoc-sgml \abstract{...}
+<abstract>	+	"\\abstract{"	
+</abstract>	 	"}"	+
+
+<appendix>	+	"\n \\appendix \n"	+
+</appendix>
+
+<toc>		+	"\\tableofcontents"	+
+</toc>
+
+<lof>		+	"\\listoffigures"	+
+</lof>
+
+<lot>		+	"\\listoftables"	+
+</lot>
+
+<chapt>		+	"\n\\chapter"
+</chapt>
+
+<sect>		+	"\n\\section"
+</sect>
+
+<sect1>		+	"\n\\subsection"
+</sect1>
+
+<sect2>		+	"\n\\subsubsection"
+</sect2>
+
+<sect3>		+	"\n\\paragraph"
+</sect3>	
+
+<sect4>		+	"\n\\subparagraph"
+</sect4>
+
+<heading>		"{"
+</heading>		"}\n\n" 
+
+<p>		
+</p>			"\n\n"
+
+<itemize>	+	"\\begin{itemize}"	+
+</itemize>	+	"\\end{itemize}"	+
+
+<enum>		+	"\\begin{enumerate}"	+
+</enum>		+	"\\end{enumerate}"	+
+
+<list>		+	"\\begin{list}{}{}\n"     +
+</list>		+	"\\end{list}"		+
+
+<descrip>	+	"\\begin{description}"	+
+</descrip>	+	"\\end{description}"	+
+
+<item>		+	"\\item "
+</item>
+
+<tag>		+	"\\item\[{\\ttfamily "
+</tag>			"}\] \\hfil\\break\n"	+
+
+<tagp>		+	"\\item\[ "
+</tagp>			"\] \\hfil\\break\n"	+
+
+<cite>			"\\cite{[ID]"
+</cite>			"}"
+
+<ncite>			"\\cite\[[NOTE]\]{[ID]"
+</ncite>		"}"
+
+<idx>	                "\\idx{"
+</idx>                  "}"
+
+<cdx>			"\\cdx{"
+</cdx>			"}"
+
+<nidx>	                "\\nidx{"
+</nidx>                  "}"
+
+<ncdx>			"\\ncdx{"
+</ncdx>			"}"
+
+% The idea here is to automatically insert soft hyphens after every slash in
+% the filename, so long filenames will break naturally.  The url{} macro is
+% a kluge but it works,
+<file>			"\\url{"
+</file>			"}"
+
+<footnote>		"\\footnote{"
+</footnote>		"}"
+
+<sq>			"``"
+</sq>			"''"
+
+<lq>		+	"\\begin{quotation}\n"	+
+</lq>		+	"\n\\end{quotation}\n\n"	+
+
+<em>		 	"{\\it "
+</em>			"\\/}"
+
+<m>		 	"{\\it "
+</m>			"\\/}"
+
+<bf>			"{\\bf "
+</bf>			"}"
+
+<it>			"{\\it "
+</it>			"\\/}"
+
+<sf>			"{\\sf "
+</sf>			"}"
+
+<sl>			"{\\sl "
+</sl>			"}"
+
+<rm>                    "{\\rm "
+</rm>                   "}"
+
+<tt>			"{\\tt "
+</tt>			"}"
+
+<cf>			"{\\tt "
+</cf>			"}"
+
+<const>			"{\\tt "
+</const>		"}"
+
+<func>			"{\\it "
+</func>			"\\/}"
+
+<struct>		"{\\tt "
+</struct>		"}"
+
+<param>			"{\\it "
+</param>		"\\/}"
+
+<type>			"{\\rm "
+</type>			"}"
+
+<funcdef>		"{\\it "
+</funcdef>		"\\/}"
+
+<function>		"{\\function "
+</function>		"}\n\n"
+
+<funcsect>		"\n\\funcsect{"
+</funcsect>		"}"
+
+<hrule>			"\\hrule"
+
+% Added by mdw
+<cparam>		"\\cparam{"
+</cparam>		"}"
+
+<ref>			"\\ref{[ID]} {([NAME])}"
+</ref>
+
+<pageref>		"\\pageref{[ID]}"
+</pageref>
+
+%url added by HG
+<url>			"\\nameurl{[URL]}{[NAME]}"
+</url>
+
+<htmlurl>		"\\onlynameurl{[NAME]}"
+</htmlurl>
+
+<x>	
+</x>
+
+<mc>			
+</mc>
+
+<biblio>	+	"\\bibliographystyle{[STYLE]}\n"
+			"\\bibliography{[FILES]}\n"
+			"\\addbibtoc{}"	+
+</biblio>	
+
+% <macro>		+	"\\macro{[ID]}{\\qw[ID]}"
+% </macro>
+
+% <main>		+	"\\macro{qwmain}{\\qwmain}"
+% </main>
+
+%<code>		+	"\\par\n"
+%			"\\medbreak\\hrule\\nopagebreak\n"
+%			"\\begin{verbatim}"	+
+%
+%</code>		+	"\\end{verbatim}\n"
+%			"\\nopagebreak\\hrule\\medbreak\n" +
+
+<code>		+	"\\par\n"
+			"\\goodbreak{\\birdnarrow\n"
+			"\\begin{verbatim}"	+
+
+</code>		+	"\\end{verbatim}\n"
+			"}\\smallbreak\n" +
+
+<verb>		+	"\\begin{verbatim}"	+
+</verb>		+	"\\end{verbatim}"	+
+
+% tscreen added by mdw
+<tscreen>	+	"\\begin{tscreen}"	+
+</tscreen>	+	"\\end{tscreen}"	+
+
+<quote> +       "\\begin{quotation}"    +
+</quote>        +       "\\end{quotation}"      +
+
+% theorems and such
+
+<def>		+	"\\begin{definition}"
+</def>		+	"\\end{definition}\n\n" 	+
+
+<prop>		+	"\\begin{proposition}"	+
+</prop>		+	"\\end{proposition}"	+
+
+<lemma>		+	"\\begin{lemma}"
+</lemma>	+	"\\end{lemma}\n\n"	+
+
+<coroll>	+	"\\begin{corollary}"
+</coroll>	+	"\\end{corollary}\n\n"	+
+
+<proof>		+	"\n{\\noindent{\\bf Proof.}  "	+
+</proof>	+	"}"
+
+<theorem>	+	"\\begin{theorem}"
+</theorem>	+	"\\end{theorem}\n\n"	+
+
+<thtag>			"\["
+</thtag>		"\]"			+
+
+% mathematics 
+
+<f>			"$"
+</f>			"$"
+
+<dm>		+	"\\\["	
+</dm>			"\\\]"  +
+
+<eq>		+	"\\begin{equation}"	+
+</eq>		+	"\\end{equation}\n"	+
+
+<fr>			"\\frac"
+</fr>		
+
+<nu>			"{"
+</nu>			"}"
+
+<de>			"{"
+</de>			"}"
+
+<lim>			
+</lim>
+
+<op>
+</op>
+
+<ll>			"_{"
+</ll>			"}"
+
+<ul>			"^{"
+</ul>			"}"
+
+<opd>
+</opd>
+
+<pr>			"\\prod"
+</pr>
+
+<in>			"\\int"
+</in>
+
+<sum>			"\\sum"
+</sum>		
+
+<root>			"\\sqrt\[[n]\]{"
+</root>			"}"
+
+<ar>		+	"\\begin{array}{[ca]}"	+
+</ar>		+	"\\end{array}"		+
+
+<arr>                   " \\\\ " +
+</arr>
+
+<arc>                   " & "
+</arc>
+
+
+<sup>			"^{"
+</sup>			"}"
+
+<inf>			"_{"
+</inf>			"}"
+
+<unl>			"\\underline{"
+</unl>			"}"
+
+<ovl>			"\\overline{"
+</ovl>			"}"
+
+<rf>			"\\mbox{\\tt "
+</rf>			"}"
+
+<v>			"\\vec{"
+</v>			"}"
+
+<fi>			"{\\cal "
+</fi>			"}"
+
+<phr>			"{\\rm "
+</phr>			"}"
+
+<tu>			"\\\\ \n"
+</tu>
+
+% figures
+
+<figure>	+	"\\begin{figure}\[[LOC]\]"	+
+</figure>	+	"\\end{figure}\n"		+
+
+<eps>		+   	"\\centerline{\\epsfig{file=[FILE],height=[HEIGHT],angle=[ANGLE]}}"  +
+</eps>                	
+            	
+
+<ph>		+	"\\vspace{[VSPACE]}\n\\par"	+
+</ph>	
+
+<caption>	+	"\\caption{"
+</caption>		"}" 	+
+
+% tables
+
+<table>		+ 	"\\begin{table}\[[LOC]\]"	+
+</table>	+	"\\end{table}"		+
+
+<tabular>	+	"\\begin{center}\n"
+			"\\begin{tabular}{[ca]}"	+
+</tabular>	+	"\\end{tabular}\n"
+			"\\end{center}"		+
+
+<rowsep>		"\\\\ "		+
+</rowsep>
+
+<colsep>		"& "
+</colsep>
+
+<hline>		+	"\\hline"	+
+</hline>
+
+% end of latex replacement file

@@ -1,0 +1,75 @@
+/*
+ *	This is an example configuration file.
+ */
+
+# Yet another comment
+
+router id 62.168.0.1;
+
+define xyzzy = (120+10);
+
+protocol device {
+#	disabled;
+#	interface "eth*", "ppp*";
+}
+
+protocol direct {
+}
+
+protocol kernel {
+	disabled;
+#	learn;			# Learn all routes from the kernel
+#	scan time 10;		# Scan kernel tables every 10 seconds
+}
+
+protocol static {
+#	disabled;
+
+	import filter { print "ahoj"; 
+	print source;
+	if source = RTS_STATIC then {
+		print "It is from static";
+	}
+	print from;
+	from = 1.2.3.4;
+	print from;
+	print scope;
+	scope = SCOPE_HOST;
+	print scope;
+	if !(scope ~ [ SCOPE_HOST, SCOPE_SITE ]) then {
+		print "Failed in test";
+		quitbird;
+	}
+		
+	preference = 15;
+	print preference;
+	preference = 29;
+	print preference;
+	rip_metric = 1;
+	print rip_metric;
+	rip_metric = rip_metric + 5;
+	print rip_metric;
+	bgp_community = - empty - ; 
+	print "nazdar";
+	bgp_community = add(bgp_community, (1,2));
+	print "cau";
+	bgp_community = add(bgp_community, (2,3));
+	bgp_community.add((4,5));
+	print "community = ", bgp_community;
+	bgp_community.delete((2,3));
+	print "community = ", bgp_community;
+	bgp_community.empty;
+	print "community = ", bgp_community;
+	print "done";
+	};
+
+	route 0.0.0.0/0 via 195.113.31.113;
+	route 62.168.0.0/25 reject;
+	route 1.2.3.4/32 via 195.113.31.124;
+#	route 10.0.0.0/8 reject;
+#	route 10.1.1.0:255.255.255.0 via 62.168.0.3;
+#	route 10.1.2.0:255.255.255.0 via 62.168.0.3;
+#	route 10.1.3.0:255.255.255.0 via 62.168.0.4;
+#	route 10.2.0.0/24 via "arc0";
+	export all;
+}

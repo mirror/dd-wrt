@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 1.0.9">
+ <TITLE>BIRD User's Guide: Remote control</TITLE>
+ <LINK HREF="bird-5.html" REL=next>
+ <LINK HREF="bird-3.html" REL=previous>
+ <LINK HREF="bird.html#toc4" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="bird-5.html">Next</A>
+<A HREF="bird-3.html">Previous</A>
+<A HREF="bird.html#toc4">Contents</A>
+<HR>
+<H2><A NAME="s4">4.</A> <A HREF="bird.html#toc4">Remote control</A></H2>
+
+<P>You can use the command-line client birdc to talk with
+a running BIRD. Communication is done using a bird.ctl UNIX
+domain socket (unless changed with the <CODE>-s</CODE> option given to both
+the server and the client). The commands can perform simple actions
+such as enabling/disabling of protocols, telling BIRD to show various
+information, telling it to show routing table filtered by filter, or
+asking BIRD to reconfigure. Press <CODE>?</CODE> at any time to get online
+help. Option <CODE>-r</CODE> can be used to enable a restricted mode of BIRD
+client, which allows just read-only commands (<CODE>show ...</CODE>). Option
+<CODE>-v</CODE> can be passed to the client, to make it dump numeric return
+codes along with the messages. You do not necessarily need to use
+birdc to talk to BIRD, your own applications could do that, too
+-- the format of communication between BIRD and birdc is stable
+(see the programmer's documentation).
+<P>
+<P>There is also lightweight variant of BIRD client called
+birdcl, which does not support command line editing and history
+and has minimal dependencies. This is useful for running BIRD in
+resource constrained environments, where Readline library (required
+for regular BIRD client) is not available.
+<P>
+<P>Many commands have the <I>name</I> of the protocol instance as an argument.
+This argument can be omitted if there exists only a single instance.
+<P>
+<P>Here is a brief list of supported functions:
+<P>
+<DL>
+<DT><CODE>show status</CODE><DD><P>Show router status, that is BIRD version, uptime and time from last reconfiguration.
+<P>
+<DT><CODE>show protocols [all]</CODE><DD><P>Show list of protocol instances along with tables they are connected to and protocol status, possibly giving verbose information, if <CODE>all</CODE> is specified.
+<P>
+<DT><CODE>show ospf interface [<I>name</I>] ["<I>interface</I>"]</CODE><DD><P>Show detailed information about OSPF interfaces.
+<P>
+<DT><CODE>show ospf neighbors [<I>name</I>] ["<I>interface</I>"]</CODE><DD><P>Show a list of OSPF neighbors and a state of adjacency to them.
+<P>
+<DT><CODE>show ospf state [all] [<I>name</I>]</CODE><DD><P>Show detailed information about OSPF areas based on a content
+of the link-state database. It shows network topology, stub
+networks, aggregated networks and routers from other areas and
+external routes. The command shows information about reachable
+network nodes, use option <CODE>all</CODE> to show information about
+all network nodes in the link-state database.
+<P>
+<DT><CODE>show ospf topology [all] [<I>name</I>]</CODE><DD><P>Show a topology of OSPF areas based on a content of the
+link-state database.  It is just a stripped-down version of
+'show ospf state'.
+<P>
+<DT><CODE>show ospf lsadb [global | area <I>id</I> | link] [type <I>num</I>] [lsid <I>id</I>] [self | router <I>id</I>] [<I>name</I>] </CODE><DD><P>Show contents of an OSPF LSA database. Options could be used to filter entries.
+<P>
+<DT><CODE>show static [<I>name</I>]</CODE><DD><P>Show detailed information about static routes.
+<P>
+<DT><CODE>show interfaces [summary]</CODE><DD><P>Show the list of interfaces. For each interface, print its type, state, MTU and addresses assigned. 
+<P>
+<DT><CODE>show symbols [table|filter|function|protocol|template|roa|<I>symbol</I>]</CODE><DD><P>Show the list of symbols defined in the configuration (names of protocols, routing tables etc.).
+<P>
+<DT><CODE>show route [[for] <I>prefix</I>|<I>IP</I>] [table <I>sym</I>] [filter <I>f</I>|where <I>c</I>] [(export|preexport) <I>p</I>] [protocol <I>p</I>] [<I>options</I>]</CODE><DD><P>Show contents of a routing table (by default of the main one or
+the table attached to a respective protocol),
+that is routes, their metrics and (in case the <CODE>all</CODE> switch is given)
+all their attributes.
+<P>
+<P>You can specify a <I>prefix</I> if you want to print routes for a
+specific network. If you use <CODE>for <I>prefix or IP</I></CODE>, you'll get
+the entry which will be used for forwarding of packets to the given
+destination. By default, all routes for each network are printed with
+the selected one at the top, unless <CODE>primary</CODE> is given in which case
+only the selected route is shown.
+<P>
+<P>You can also ask for printing only routes processed and accepted by
+a given filter (<CODE>filter <I>name</I></CODE> or <CODE>filter { <I>filter</I> }</CODE> or matching a given condition (<CODE>where <I>condition</I></CODE>).
+The <CODE>export</CODE> and <CODE>preexport</CODE> switches ask for printing of entries
+that are exported to the specified protocol. With <CODE>preexport</CODE>, the
+export filter of the protocol is skipped.
+<P>
+<P>You can also select just routes added by a specific protocol.
+<CODE>protocol <I>p</I></CODE>.
+<P>
+<P>If BIRD is configured to keep filtered routes (see <CODE>import keep filtered</CODE>
+option), you can show them instead of routes by using <CODE>filtered</CODE> switch.
+<P>
+<P>The <CODE>stats</CODE> switch requests showing of route statistics (the
+number of networks, number of routes before and after filtering). If
+you use <CODE>count</CODE> instead, only the statistics will be printed.
+<P>
+<DT><CODE>show roa [<I>prefix</I> | in <I>prefix</I> | for <I>prefix</I>] [as <I>num</I>] [table <I>t</I>>]</CODE><DD><P>Show contents of a ROA table (by default of the first one).
+You can specify a <I>prefix</I> to print ROA entries for a
+specific network. If you use <CODE>for <I>prefix</I></CODE>, you'll
+get all entries relevant for route validation of the network
+prefix; i.e., ROA entries whose prefixes cover the network
+prefix. Or you can use <CODE>in <I>prefix</I></CODE> to get ROA entries
+covered by the network prefix. You could also use <CODE>as</CODE> option
+to show just entries for given AS.
+<P>
+<DT><CODE>add roa <I>prefix</I> max <I>num</I>] as <I>num</I> [table <I>t</I>>]</CODE><DD><P>Add a new ROA entry to a ROA table. Such entry is called
+<I>dynamic</I> compared to <I>static</I> entries specified in the
+config file. These dynamic entries survive reconfiguration.
+<P>
+<DT><CODE>delete roa <I>prefix</I> max <I>num</I>] as <I>num</I> [table <I>t</I>>]</CODE><DD><P>Delete the specified ROA entry from a ROA table. Only dynamic
+ROA entries (i.e., the ones added by <CODE>add roa</CODE> command) can
+be deleted.
+<P>
+<DT><CODE>flush roa [table <I>t</I>>]</CODE><DD><P>Remove all dynamic ROA entries from a ROA table.
+<P>
+<DT><CODE>configure [soft] ["<I>config file</I>"] [timeout [<I>num</I>]]</CODE><DD><P>Reload configuration from a given file. BIRD will smoothly
+switch itself to the new configuration, protocols are
+reconfigured if possible, restarted otherwise. Changes in
+filters usually lead to restart of affected protocols.
+<P>If <CODE>soft</CODE> option is used, changes in filters does not cause
+BIRD to restart affected protocols, therefore already accepted
+routes (according to old filters) would be still propagated,
+but new routes would be processed according to the new
+filters.
+<P>If <CODE>timeout</CODE> option is used, config timer is activated. The
+new configuration could be either confirmed using
+<CODE>configure confirm</CODE> command, or it will be reverted to the
+old one when the config timer expires. This is useful for cases
+when reconfiguration breaks current routing and a router becames
+inaccessible for an administrator. The config timeout expiration is
+equivalent to <CODE>configure undo</CODE> command. The timeout duration
+could be specified, default is 300 s.
+<P>
+<DT><CODE>configure confirm</CODE><DD><P>Deactivate the config undo timer and therefore confirm the current
+configuration.
+<P>
+<DT><CODE>configure undo</CODE><DD><P>Undo the last configuration change and smoothly switch back to
+the previous (stored) configuration. If the last configuration
+change was soft, the undo change is also soft. There is only
+one level of undo, but in some specific cases when several
+reconfiguration requests are given immediately in a row and
+the intermediate ones are skipped then the undo also skips them back.
+<P>
+<DT><CODE>configure check ["<I>config file</I>"]</CODE><DD><P>Read and parse given config file, but do not use it. useful
+for checking syntactic and some semantic validity of an config
+file.
+<P>
+<DT><CODE>enable|disable|restart <I>name</I>|"<I>pattern</I>"|all</CODE><DD><P>Enable, disable or restart a given protocol instance,
+instances matching the <CODE><I>pattern</I></CODE> or
+<CODE>all</CODE> instances.
+<P>
+<DT><CODE>reload [in|out] <I>name</I>|"<I>pattern</I>"|all</CODE><DD><P>Reload a given protocol instance, that means re-import routes
+from the protocol instance and re-export preferred routes to
+the instance. If <CODE>in</CODE> or <CODE>out</CODE> options are used, the
+command is restricted to one direction (re-import or
+re-export).
+<P>This command is useful if appropriate filters have changed but
+the protocol instance was not restarted (or reloaded),
+therefore it still propagates the old set of routes. For example
+when <CODE>configure soft</CODE> command was used to change filters.
+<P>Re-export always succeeds, but re-import is protocol-dependent
+and might fail (for example, if BGP neighbor does not support
+route-refresh extension). In that case, re-export is also
+skipped. Note that for the pipe protocol, both directions are
+always reloaded together (<CODE>in</CODE> or <CODE>out</CODE> options are
+ignored in that case).
+<P>
+<DT><CODE>down</CODE><DD><P>Shut BIRD down.
+<P>
+<DT><CODE>debug <I>protocol</I>|<I>pattern</I>|all all|off|{ states | routes | filters | events | packets }</CODE><DD><P>Control protocol debugging.
+<P>
+<DT><CODE>dump resources|sockets|interfaces|neighbors|attributes|routes|protocols</CODE><DD><P>Dump contents of internal data structures to the debugging output.
+<P>
+<DT><CODE>echo all|off|{ <I>list of log classes</I> } [ <I>buffer-size</I> ]</CODE><DD><P>Control echoing of log messages to the command-line output.
+See 
+<A HREF="bird-3.html#dsc-log">log option</A> for a list of log classes.
+<P>
+<DT><CODE>eval <I>expr</I></CODE><DD><P>Evaluate given expression.
+<P>
+</DL>
+<P>
+<HR>
+<A HREF="bird-5.html">Next</A>
+<A HREF="bird-3.html">Previous</A>
+<A HREF="bird.html#toc4">Contents</A>
+</BODY>
+</HTML>

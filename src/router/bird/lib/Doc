@@ -1,0 +1,10 @@
+H Library functions
+S ip.c ipv4.c ipv6.c
+S lists.c
+S checksum.c bitops.c patmatch.c printf.c xmalloc.c
+D resource.sgml
+S resource.c
+S mempool.c
+S slab.c
+S event.c
+S ../sysdep/unix/io.c
