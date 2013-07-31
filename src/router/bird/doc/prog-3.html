@@ -1,0 +1,383 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 1.0.9">
+ <TITLE>BIRD Programmer's Documentation: Configuration</TITLE>
+ <LINK HREF="prog-4.html" REL=next>
+ <LINK HREF="prog-2.html" REL=previous>
+ <LINK HREF="prog.html#toc3" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="prog-4.html">Next</A>
+<A HREF="prog-2.html">Previous</A>
+<A HREF="prog.html#toc3">Contents</A>
+<HR>
+<H2><A NAME="s3">3.</A> <A HREF="prog.html#toc3">Configuration</A></H2>
+
+<H2><A NAME="ss3.1">3.1</A> <A HREF="prog.html#toc3.1">Configuration manager</A>
+</H2>
+
+<P>
+<P>Configuration of BIRD is complex, yet straightforward. There are three
+modules taking care of the configuration: config manager (which takes care
+of storage of the config information and controls switching between configs),
+lexical analyzer and parser.
+<P>The configuration manager stores each config as a <I>config</I> structure
+accompanied by a linear pool from which all information associated
+with the config and pointed to by the <I>config</I> structure is allocated.
+<P>There can exist up to four different configurations at one time: an active
+one (pointed to by <B>config</B>), configuration we are just switching from
+(<B>old_config</B>), one queued for the next reconfiguration (<B>future_config</B>;
+if there is one and the user wants to reconfigure once again, we just
+free the previous queued config and replace it with the new one) and
+finally a config being parsed (<B>new_config</B>). The stored <B>old_config</B> 
+is also used for undo reconfiguration, which works in a similar way.
+Reconfiguration could also have timeout (using <B>config_timer</B>) and undo
+is automatically called if the new configuration is not confirmed later.
+<P>Loading of new configuration is very simple: just call <B>config_alloc()</B>
+to get a new <I>config</I> structure, then use <B>config_parse()</B> to parse a
+configuration file and fill all fields of the structure
+and finally ask the config manager to switch to the new
+config by calling <B>config_commit()</B>.
+<P>CLI commands are parsed in a very similar way -- there is also a stripped-down
+<I>config</I> structure associated with them and they are lex-ed and parsed by the
+same functions, only a special fake token is prepended before the command
+text to make the parser recognize only the rules corresponding to CLI commands.
+<P>
+<P><HR><H3>Function</H3>
+<P><I>struct config *</I>
+<B>config_alloc</B>
+(<I>byte *</I> <B>name</B>) --     allocate a new configuration
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>byte *</I> <B>name</B><DD><P>name of the config
+</DL>
+<H3>Description</H3>
+<P>This function creates new <I>config</I> structure, attaches a resource
+pool and a linear memory pool to it and makes it available for
+further use. Returns a pointer to the structure.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>config_parse</B>
+(<I>struct config *</I> <B>c</B>) --     parse a configuration
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct config *</I> <B>c</B><DD><P>configuration
+</DL>
+<H3>Description</H3>
+<P><B>config_parse()</B> reads input by calling a hook function pointed to
+by <B>cf_read_hook</B> and parses it according to the configuration
+grammar. It also calls all the preconfig and postconfig hooks
+before, resp. after parsing.
+<H3>Result</H3>
+<P>1 if the config has been parsed successfully, 0 if any
+error has occurred (such as anybody calling <B>cf_error()</B>) and
+the <B>err_msg</B> field has been set to the error message.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>cli_parse</B>
+(<I>struct config *</I> <B>c</B>) --     parse a CLI command
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct config *</I> <B>c</B><DD><P>temporary config structure
+</DL>
+<H3>Description</H3>
+<P><B>cli_parse()</B> is similar to <B>config_parse()</B>, but instead of a configuration,
+it parses a CLI command. See the CLI module for more information.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>config_free</B>
+(<I>struct config *</I> <B>c</B>) --     free a configuration
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct config *</I> <B>c</B><DD><P>configuration to be freed
+</DL>
+<H3>Description</H3>
+<P>This function takes a <I>config</I> structure and frees all resources
+associated with it.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>config_commit</B>
+(<I>struct config *</I> <B>c</B>, <I>int</I> <B>type</B>, <I>int</I> <B>timeout</B>) --     commit a configuration
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct config *</I> <B>c</B><DD><P>new configuration
+<DT><I>int</I> <B>type</B><DD><P>type of reconfiguration (RECONFIG_SOFT or RECONFIG_HARD)
+<DT><I>int</I> <B>timeout</B><DD><P>timeout for undo (or 0 for no timeout)
+</DL>
+<H3>Description</H3>
+<P>When a configuration is parsed and prepared for use, the
+<B>config_commit()</B> function starts the process of reconfiguration.
+It checks whether there is already a reconfiguration in progress
+in which case it just queues the new config for later processing.
+Else it notifies all modules about the new configuration by calling
+their <B>commit()</B> functions which can either accept it immediately
+or call <B>config_add_obstacle()</B> to report that they need some time
+to complete the reconfiguration. After all such obstacles are removed
+using <B>config_del_obstacle()</B>, the old configuration is freed and
+everything runs according to the new one.
+<P>When <B>timeout</B> is nonzero, the undo timer is activated with given
+timeout. The timer is deactivated when <B>config_commit()</B>,
+<B>config_confirm()</B> or <B>config_undo()</B> is called.
+<H3>Result</H3>
+<P><I>CONF_DONE</I> if the configuration has been accepted immediately,
+<I>CONF_PROGRESS</I> if it will take some time to switch to it, <I>CONF_QUEUED</I>
+if it's been queued due to another reconfiguration being in progress now
+or <I>CONF_SHUTDOWN</I> if BIRD is in shutdown mode and no new configurations
+are accepted.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>config_confirm</B>
+(<B>void</B>) --     confirm a commited configuration
+<P>
+<H3>Description</H3>
+<P>
+<P>When the undo timer is activated by <B>config_commit()</B> with nonzero timeout,
+this function can be used to deactivate it and therefore confirm
+the current configuration.
+<H3>Result</H3>
+<P><I>CONF_CONFIRM</I> when the current configuration is confirmed,
+<I>CONF_NONE</I> when there is nothing to confirm (i.e. undo timer is not active).
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>config_undo</B>
+(<B>void</B>) --     undo a configuration
+<P>
+<H3>Description</H3>
+<P>
+<P>Function <B>config_undo()</B> can be used to change the current
+configuration back to stored <I>old_config</I>. If no reconfiguration is
+running, this stored configuration is commited in the same way as a
+new configuration in <B>config_commit()</B>. If there is already a
+reconfiguration in progress and no next reconfiguration is
+scheduled, then the undo is scheduled for later processing as
+usual, but if another reconfiguration is already scheduled, then
+such reconfiguration is removed instead (i.e. undo is applied on
+the last commit that scheduled it).
+<H3>Result</H3>
+<P><I>CONF_DONE</I> if the configuration has been accepted immediately,
+<I>CONF_PROGRESS</I> if it will take some time to switch to it, <I>CONF_QUEUED</I>
+if it's been queued due to another reconfiguration being in progress now,
+<I>CONF_UNQUEUED</I> if a scheduled reconfiguration is removed, <I>CONF_NOTHING</I>
+if there is no relevant configuration to undo (the previous config request
+was <B>config_undo()</B> too)  or <I>CONF_SHUTDOWN</I> if BIRD is in shutdown mode and 
+no new configuration changes  are accepted.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>order_shutdown</B>
+(<B>void</B>) --     order BIRD shutdown
+<P>
+<H3>Description</H3>
+<P>
+<P>This function initiates shutdown of BIRD. It's accomplished by asking
+for switching to an empty configuration.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>cf_error</B>
+(<I>char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     report a configuration error
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>char *</I> <B>msg</B><DD><P>printf-like format string
+<DT><I>...</I> <B>...</B><DD><P>variable arguments
+</DL>
+<H3>Description</H3>
+<P><B>cf_error()</B> can be called during execution of <B>config_parse()</B>, that is
+from the parser, a preconfig hook or a postconfig hook, to report an
+error in the configuration.
+
+
+<HR><H3>Function</H3>
+<P><I>char *</I>
+<B>cfg_strdup</B>
+(<I>char *</I> <B>c</B>) --     copy a string to config memory
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>char *</I> <B>c</B><DD><P>string to copy
+</DL>
+<H3>Description</H3>
+<P><B>cfg_strdup()</B> creates a new copy of the string in the memory
+pool associated with the configuration being currently parsed.
+It's often used when a string literal occurs in the configuration
+and we want to preserve it for further use.
+
+<H2><A NAME="ss3.2">3.2</A> <A HREF="prog.html#toc3.2">Lexical analyzer</A>
+</H2>
+
+<P>
+<P>The lexical analyzer used for configuration files and CLI commands
+is generated using the <CODE>flex</CODE> tool accompanied by a couple of
+functions maintaining the hash tables containing information about
+symbols and keywords.
+<P>Each symbol is represented by a <I>symbol</I> structure containing name
+of the symbol, its lexical scope, symbol class (<I>SYM_PROTO</I> for a
+name of a protocol, <I>SYM_CONSTANT</I> for a constant etc.) and class
+dependent data.  When an unknown symbol is encountered, it's
+automatically added to the symbol table with class <I>SYM_VOID</I>.
+<P>The keyword tables are generated from the grammar templates
+using the <CODE>gen_keywords.m4</CODE> script.
+<P>
+<P><HR><H3>Function</H3>
+<P><I>struct symbol *</I>
+<B>cf_find_symbol</B>
+(<I>byte *</I> <B>c</B>) --     find a symbol by name
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>byte *</I> <B>c</B><DD><P>symbol name
+</DL>
+<H3>Description</H3>
+<P>This functions searches the symbol table for a symbol of given
+name. First it examines the current scope, then the second recent
+one and so on until it either finds the symbol and returns a pointer
+to its <I>symbol</I> structure or reaches the end of the scope chain
+and returns <I>NULL</I> to signify no match.
+
+
+<HR><H3>Function</H3>
+<P><I>struct symbol *</I>
+<B>cf_define_symbol</B>
+(<I>struct symbol *</I> <B>sym</B>, <I>int</I> <B>type</B>, <I>void *</I> <B>def</B>) --     define meaning of a symbol
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct symbol *</I> <B>sym</B><DD><P>symbol to be defined
+<DT><I>int</I> <B>type</B><DD><P>symbol class to assign
+<DT><I>void *</I> <B>def</B><DD><P>class dependent data
+</DL>
+<H3>Description</H3>
+<P>Defines new meaning of a symbol. If the symbol is an undefined
+one (<I>SYM_VOID</I>), it's just re-defined to the new type. If it's defined
+in different scope, a new symbol in current scope is created and the
+meaning is assigned to it. If it's already defined in the current scope,
+an error is reported via <B>cf_error()</B>.
+<H3>Result</H3>
+<P>Pointer to the newly defined symbol. If we are in the top-level
+scope, it's the same <B>sym</B> as passed to the function.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>cf_lex_init</B>
+(<I>int</I> <B>is_cli</B>, <I>struct config *</I> <B>c</B>) --     initialize the lexer
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>int</I> <B>is_cli</B><DD><P>true if we're going to parse CLI command, false for configuration
+<DT><I>struct config *</I> <B>c</B><DD><P>-- undescribed --
+</DL>
+<H3>Description</H3>
+<P><B>cf_lex_init()</B> initializes the lexical analyzer and prepares it for
+parsing of a new input.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>cf_push_scope</B>
+(<I>struct symbol *</I> <B>sym</B>) --     enter new scope
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct symbol *</I> <B>sym</B><DD><P>symbol representing scope name
+</DL>
+<H3>Description</H3>
+<P>If we want to enter a new scope to process declarations inside
+a nested block, we can just call <B>cf_push_scope()</B> to push a new
+scope onto the scope stack which will cause all new symbols to be
+defined in this scope and all existing symbols to be sought for
+in all scopes stored on the stack.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>cf_pop_scope</B>
+(<B>void</B>) --     leave a scope
+<P>
+<H3>Description</H3>
+<P>
+<P><B>cf_pop_scope()</B> pops the topmost scope from the scope stack,
+leaving all its symbols in the symbol table, but making them
+invisible to the rest of the config.
+
+
+<HR><H3>Function</H3>
+<P><I>char *</I>
+<B>cf_symbol_class_name</B>
+(<I>struct symbol *</I> <B>sym</B>) --     get name of a symbol class
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct symbol *</I> <B>sym</B><DD><P>symbol
+</DL>
+<H3>Description</H3>
+<P>This function returns a string representing the class
+of the given symbol.
+
+<H2><A NAME="ss3.3">3.3</A> <A HREF="prog.html#toc3.3">Parser</A>
+</H2>
+
+<P>
+<P>Both the configuration and CLI commands are analyzed using a syntax
+driven parser generated by the <CODE>bison</CODE> tool from a grammar which
+is constructed from information gathered from grammar snippets by
+the <CODE>gen_parser.m4</CODE> script.
+<P>Grammar snippets are files (usually with extension <CODE>.Y</CODE>) contributed
+by various BIRD modules in order to provide information about syntax of their
+configuration and their CLI commands. Each snipped consists of several
+sections, each of them starting with a special keyword: <CODE>CF_HDR</CODE> for
+a list of <CODE>#include</CODE> directives needed by the C code, <CODE>CF_DEFINES</CODE>
+for a list of C declarations, <CODE>CF_DECLS</CODE> for <CODE>bison</CODE> declarations
+including keyword definitions specified as <CODE>CF_KEYWORDS</CODE>, <CODE>CF_GRAMMAR</CODE>
+for the grammar rules, <CODE>CF_CODE</CODE> for auxiliary C code and finally
+<CODE>CF_END</CODE> at the end of the snippet.
+<P>To create references between the snippets, it's possible to define
+multi-part rules by utilizing the <CODE>CF_ADDTO</CODE> macro which adds a new
+alternative to a multi-part rule.
+<P>CLI commands are defined using a <CODE>CF_CLI</CODE> macro. Its parameters are:
+the list of keywords determining the command, the list of parameters,
+help text for the parameters and help text for the command.
+<P>Values of <CODE>enum</CODE> filter types can be defined using <CODE>CF_ENUM</CODE> with
+the following parameters: name of filter type, prefix common for all
+literals of this type and names of all the possible values.
+<P>
+<P>
+<HR>
+<A HREF="prog-4.html">Next</A>
+<A HREF="prog-2.html">Previous</A>
+<A HREF="prog.html#toc3">Contents</A>
+</BODY>
+</HTML>

@@ -1,0 +1,74 @@
+-- This is a DTD, but will be read as -*- sgml -*-   --
+-- ================================================= --
+-- $Id$ 
+
+   This is dtd/catalog for SGML-Tools.
+
+   Initial revision June 23st, 1997, by B. Kreimeier
+
+   $Log$
+   Revision 1.1  2000-05-29 12:05:22  mj
+   Renamed the DTD from linuxdoc to birddoc.
+
+   Pavel, please check whether it builds in your environment as well.
+
+   Revision 1.7  1998/10/13 12:12:09  cg
+   * Clean up catalog file. (CdG)
+
+   Revision 1.6  1998/03/09 21:10:14  cg
+   * Removed sgmltool.dtd. (CdG)
+
+   Revision 1.5  1998/01/08 19:59:54  cg
+   * Add empty line, it gave problems. (CdG)
+
+   Revision 1.4  1997/12/09 20:56:15  cg
+   * Added html32.dtd (with a modified reference to ISOent) and updated
+     catalog accordingly. You can now do sgmlcheck on HTML files. (CdG)
+
+   Revision 1.3  1997/07/09 13:27:12  cg
+   * Completely new DTD setup by Bernd (BK).
+
+
+                                                       --
+-- ================================================= --
+-- Revision Comments                                 --
+
+-- BK/97/06/23: added a header, changed for 0.99.12  --
+-- ================================================= --
+
+DOCTYPE "BIRDDOC"    "birddoc.dtd"
+
+-- Linuxdoc96.dtd, frozen orignal Linuxdoc DTD --
+DOCTYPE "LINUXDOC"    "linuxdoc.dtd"
+PUBLIC "-//LinuxDoc//DTD LinuxDoc 96//EN" linuxdoc96.dtd
+
+-- Linuxdoc97 Strict DTD --
+PUBLIC "-//LinuxDoc//DTD LinuxDoc 97//EN" linuxdoc97.dtd
+
+-- outdated and shared entities --
+ENTITY %common            "common"
+ENTITY %isoent            "isoent"
+
+ENTITY %deprec96          "deprec96"
+
+
+-- for development and debug, internal use only --
+DOCTYPE "QWERTZ"      "qwertz.dtd"
+DOCTYPE "TEST"        "test.dtd"
+
+-- for SGML validation --
+DOCTYPE "HTML"        "html32.dtd"
+PUBLIC "-//W3C//DTD HTML 3.2 Final//EN" html32.dtd
+
+-- obsolete --
+ENTITY %general           "general"
+
+
+-- ================================================= --
+-- end of dtd/catalog                                --
+--
+   Local Variables:
+   mode: sgml
+   End:                                              --
+-- ================================================= --
+

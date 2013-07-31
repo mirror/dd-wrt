@@ -1,0 +1,89 @@
+# Makefile fragments for the BIRD Internet Routing Daemon
+# (c) 1999--2000 Martin Mares <mj@ucw.cz>
+
+srcdir=@srcdir_rel_mf@
+srcdir_abs := $(shell cd $(srcdir) ; pwd)
+objdir=@objdir@
+exedir=@exedir@
+
+protocols=@protocols@
+static-dirs := nest filter $(addprefix proto/,$(protocols))
+static-dir-paths := $(addprefix $(srcdir)/,$(static-dirs))
+dynamic-dirs := lib conf
+dynamic-dir-paths := $(dynamic-dirs)
+client-dirs := client
+client-dir-paths := $(client-dirs)
+doc-dirs := doc
+doc-dir-paths := $(doc-dirs)
+
+all-dirs:=$(static-dirs) $(dynamic-dirs) $(client-dirs) $(doc-dirs)
+clean-dirs:=$(all-dirs) proto sysdep
+
+CPPFLAGS=-I$(root-rel) -I$(srcdir) @CPPFLAGS@
+CFLAGS=$(CPPFLAGS) @CFLAGS@
+LDFLAGS=@LDFLAGS@
+LIBS=@LIBS@
+CLIENT_LIBS=@CLIENT_LIBS@
+CC=@CC@
+M4=@M4@
+BISON=@BISON@
+FLEX=@FLEX@
+RANLIB=@RANLIB@
+INSTALL=@INSTALL@
+INSTALL_PROGRAM=@INSTALL_PROGRAM@
+INSTALL_DATA=@INSTALL_DATA@
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+sbindir=@sbindir@
+sysconfdir=@sysconfdir@
+localstatedir=@localstatedir@
+docdir=@prefix@/doc
+
+ifdef source
+
+objs := $(subst .c,.o,$(source))
+
+ifdef dir-name
+src-path := $(srcdir)/$(dir-name)/
+endif
+
+all:
+	cd $(root-rel) && make
+
+ifdef lib-dest
+
+subdir: $(lib-dest)
+
+$(lib-dest): $(objs)
+	rm -f $@
+	ar rcs $@ $^
+	$(RANLIB) $@
+
+else
+
+subdir: all.o
+
+all.o: $(objs)
+#       $(LD) -r -o $@ $^
+#	Changed to $(CC) because $(LD) has problems with crosscompiling
+	$(CC) -nostdlib -r -o $@ $^
+
+endif
+
+%.o: $(src-path)%.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+
+ifndef source-dep
+source-dep := $(source)
+endif
+
+depend:
+	$(CC) $(CPPFLAGS) -MM $(addprefix $(src-path),$(source-dep)) >depend
+
+ifneq ($(wildcard depend),)
+include depend
+endif
+
+endif

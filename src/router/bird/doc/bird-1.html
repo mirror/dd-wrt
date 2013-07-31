@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 1.0.9">
+ <TITLE>BIRD User's Guide: Introduction</TITLE>
+ <LINK HREF="bird-2.html" REL=next>
+
+ <LINK HREF="bird.html#toc1" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="bird-2.html">Next</A>
+Previous
+<A HREF="bird.html#toc1">Contents</A>
+<HR>
+<H2><A NAME="s1">1.</A> <A HREF="bird.html#toc1">Introduction</A></H2>
+
+<H2><A NAME="ss1.1">1.1</A> <A HREF="bird.html#toc1.1">What is BIRD</A>
+</H2>
+
+<P>
+<A NAME="intro"></A> 
+The name `BIRD' is actually an acronym standing for `BIRD Internet Routing Daemon'.
+Let's take a closer look at the meaning of the name:
+<P>
+<P><EM>BIRD</EM>: Well, we think we have already explained that. It's an acronym standing
+for `BIRD Internet Routing Daemon', you remember, don't you? :-)
+<P>
+<P><EM>Internet Routing</EM>: It's a program (well, a daemon, as you are going to discover in a moment)
+which works as a dynamic router in an Internet type network (that is, in a network running either
+the IPv4 or the IPv6 protocol). Routers are devices which forward packets between interconnected
+networks in order to allow hosts not connected directly to the same local area network to
+communicate with each other. They also communicate with the other routers in the Internet to discover
+the topology of the network which allows them to find optimal (in terms of some metric) rules for
+forwarding of packets (which are called routing tables) and to adapt themselves to the
+changing conditions such as outages of network links, building of new connections and so on. Most of
+these routers are costly dedicated devices running obscure firmware which is hard to configure and
+not open to any changes (on the other hand, their special hardware design allows them to keep up with lots of high-speed network interfaces, better than general-purpose computer does). Fortunately, most operating systems of the UNIX family allow an ordinary 
+computer to act as a router and forward packets belonging to the other hosts, but only according to
+a statically configured table.
+<P>
+<P>A <EM>Routing Daemon</EM> is in UNIX terminology a non-interactive program running on
+background which does the dynamic part of Internet routing, that is it communicates
+with the other routers, calculates routing tables and sends them to the OS kernel
+which does the actual packet forwarding. There already exist other such routing
+daemons: routed (RIP only), GateD (non-free), Zebra
+<A HREF="http://www.zebra.org">http://www.zebra.org</A>
+and MRTD
+<A HREF="http://sourceforge.net/projects/mrt">http://sourceforge.net/projects/mrt</A>, but their capabilities are
+limited and they are relatively hard to configure and maintain.
+<P>
+<P>BIRD is an Internet Routing Daemon designed to avoid all of these shortcomings,
+to support all the routing technology used in the today's Internet or planned to be
+used in near future and to have a clean extensible architecture allowing new routing
+protocols to be incorporated easily. Among other features, BIRD supports:
+<P>
+<UL>
+<LI>both IPv4 and IPv6 protocols</LI>
+<LI>multiple routing tables</LI>
+<LI>the Border Gateway Protocol (BGPv4)</LI>
+<LI>the Routing Information Protocol (RIPv2)</LI>
+<LI>the Open Shortest Path First protocol (OSPFv2, OSPFv3)</LI>
+<LI>the Router Advertisements for IPv6 hosts</LI>
+<LI>a virtual protocol for exchange of routes between different routing tables on a single host</LI>
+<LI>a command-line interface allowing on-line control and inspection
+of status of the daemon</LI>
+<LI>soft reconfiguration (no need to use complex online commands
+to change the configuration, just edit the configuration file
+and notify BIRD to re-read it and it will smoothly switch itself
+to the new configuration, not disturbing routing protocols
+unless they are affected by the configuration changes)</LI>
+<LI>a powerful language for route filtering</LI>
+</UL>
+<P>
+<P>BIRD has been developed at the Faculty of Math and Physics, Charles University, Prague,
+Czech Republic as a student project. It can be freely distributed under the terms of the GNU General
+Public License.
+<P>
+<P>BIRD has been designed to work on all UNIX-like systems. It has
+been developed and tested under Linux 2.0 to 2.6, and then ported to
+FreeBSD, NetBSD and OpenBSD, porting to other systems (even non-UNIX
+ones) should be relatively easy due to its highly modular
+architecture.
+<P>
+<P>BIRD supports either IPv4 or IPv6 protocol, but have to be compiled
+separately for each one. Therefore, a dualstack router would run two
+instances of BIRD (one for IPv4 and one for IPv6), with completely
+separate setups (configuration files, tools ...).
+<P>
+<H2><A NAME="ss1.2">1.2</A> <A HREF="bird.html#toc1.2">Installing BIRD</A>
+</H2>
+
+<P>On a recent UNIX system with GNU development tools (GCC, binutils, m4, make) and Perl, installing BIRD should be as easy as:
+<P>
+<HR>
+<PRE>
+        ./configure
+        make
+        make install
+        vi /usr/local/etc/bird.conf
+        bird
+</PRE>
+<HR>
+<P>
+<P>You can use <CODE>./configure --help</CODE> to get a list of configure
+options. The most important ones are:
+<CODE>--enable-ipv6</CODE> which enables building of an IPv6 version of BIRD,
+<CODE>--with-protocols=</CODE> to produce a slightly smaller BIRD executable by configuring out routing protocols you don't use, and
+<CODE>--prefix=</CODE> to install BIRD to a place different from.
+/usr/local.
+<P>
+<H2><A NAME="ss1.3">1.3</A> <A HREF="bird.html#toc1.3">Running BIRD</A>
+</H2>
+
+<P>You can pass several command-line options to bird:
+<P>
+<DL>
+<DT><CODE>-c <I>config name</I></CODE><DD><P>use given configuration file instead of <I>prefix</I>/etc/bird.conf.
+<P>
+<DT><CODE>-d</CODE><DD><P>enable debug messages and run bird in foreground.
+<P>
+<DT><CODE>-D <I>filename of debug log</I></CODE><DD><P>log debugging information to given file instead of stderr.
+<P>
+<DT><CODE>-p</CODE><DD><P>just parse the config file and exit. Return value is zero if the config file is valid,
+nonzero if there are some errors.
+<P>
+<DT><CODE>-s <I>name of communication socket</I></CODE><DD><P>use given filename for a  socket for communications with the client, default is <I>prefix</I>/var/run/bird.ctl.
+<P>
+<DT><CODE>-u <I>user</I></CODE><DD><P>drop privileges and use that user ID, see the next section for details.
+<P>
+<DT><CODE>-g <I>group</I></CODE><DD><P>use that group ID, see the next section for details.
+</DL>
+<P>
+<P>BIRD writes messages about its work to log files or syslog (according to config).
+<P>
+<H2><A NAME="ss1.4">1.4</A> <A HREF="bird.html#toc1.4">Privileges</A>
+</H2>
+
+<P>BIRD, as a routing daemon, uses several privileged operations (like
+setting routing table and using raw sockets). Traditionally, BIRD is
+executed and runs with root privileges, which may be prone to security
+problems. The recommended way is to use a privilege restriction
+(options <CODE>-u</CODE>, <CODE>-g</CODE>). In that case BIRD is executed with root
+privileges, but it changes its user and group ID to an unprivileged
+ones, while using Linux capabilities to retain just required
+privileges (capabilities CAP_NET_*). Note that the control socket is
+created before the privileges are dropped, but the config file is read
+after that. The privilege restriction is not implemented in BSD port
+of BIRD.
+<P>
+<P>A nonprivileged user (as an argument to <CODE>-u</CODE> options) may be the
+user <CODE>nobody</CODE>, but it is suggested to use a new dedicated user
+account (like <CODE>bird</CODE>). The similar considerations apply for
+the group option, but there is one more condition -- the users
+in the same group can use birdc to control BIRD.
+<P>
+<P>Finally, there is a possibility to use external tools to run BIRD in
+an environment with restricted privileges. This may need some
+configuration, but it is generally easy -- BIRD needs just the
+standard library, privileges to read the config file and create the
+control socket and the CAP_NET_* capabilities.
+<P>
+<HR>
+<A HREF="bird-2.html">Next</A>
+Previous
+<A HREF="bird.html#toc1">Contents</A>
+</BODY>
+</HTML>

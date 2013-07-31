@@ -1,0 +1,2130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 1.0.9">
+ <TITLE>BIRD Programmer's Documentation: Core</TITLE>
+ <LINK HREF="prog-3.html" REL=next>
+ <LINK HREF="prog-1.html" REL=previous>
+ <LINK HREF="prog.html#toc2" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="prog-3.html">Next</A>
+<A HREF="prog-1.html">Previous</A>
+<A HREF="prog.html#toc2">Contents</A>
+<HR>
+<H2><A NAME="s2">2.</A> <A HREF="prog.html#toc2">Core</A></H2>
+
+<H2><A NAME="ss2.1">2.1</A> <A HREF="prog.html#toc2.1">Forwarding Information Base</A>
+</H2>
+
+<P>
+<P>FIB is a data structure designed for storage of routes indexed by their
+network prefixes. It supports insertion, deletion, searching by prefix,
+`routing' (in CIDR sense, that is searching for a longest prefix matching
+a given IP address) and (which makes the structure very tricky to implement)
+asynchronous reading, that is enumerating the contents of a FIB while other
+modules add, modify or remove entries.
+<P>Internally, each FIB is represented as a collection of nodes of type <I>fib_node</I>
+indexed using a sophisticated hashing mechanism.
+We use two-stage hashing where we calculate a 16-bit primary hash key independent
+on hash table size and then we just divide the primary keys modulo table size
+to get a real hash key used for determining the bucket containing the node.
+The lists of nodes in each bucket are sorted according to the primary hash
+key, hence if we keep the total number of buckets to be a power of two,
+re-hashing of the structure keeps the relative order of the nodes.
+<P>To get the asynchronous reading consistent over node deletions, we need to
+keep a list of readers for each node. When a node gets deleted, its readers
+are automatically moved to the next node in the table.
+<P>Basic FIB operations are performed by functions defined by this module,
+enumerating of FIB contents is accomplished by using the <B>FIB_WALK()</B> macro
+or <B>FIB_ITERATE_START()</B> if you want to do it asynchronously.
+<P>
+<P><HR><H3>Function</H3>
+<P><I>void</I>
+<B>fib_init</B>
+(<I>struct fib *</I> <B>f</B>, <I>pool *</I> <B>p</B>, <I>unsigned</I> <B>node_size</B>, <I>unsigned</I> <B>hash_order</B>, <I>fib_init_func</I> <B>init</B>) --     initialize a new FIB
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct fib *</I> <B>f</B><DD><P>the FIB to be initialized (the structure itself being allocated by the caller)
+<DT><I>pool *</I> <B>p</B><DD><P>pool to allocate the nodes in
+<DT><I>unsigned</I> <B>node_size</B><DD><P>node size to be used (each node consists of a standard header <I>fib_node</I>
+followed by user data)
+<DT><I>unsigned</I> <B>hash_order</B><DD><P>initial hash order (a binary logarithm of hash table size), 0 to use default order
+(recommended)
+<DT><I>fib_init_func</I> <B>init</B><DD><P>pointer a function to be called to initialize a newly created node
+</DL>
+<H3>Description</H3>
+<P>This function initializes a newly allocated FIB and prepares it for use.
+
+
+<HR><H3>Function</H3>
+<P><I>void *</I>
+<B>fib_find</B>
+(<I>struct fib *</I> <B>f</B>, <I>ip_addr *</I> <B>a</B>, <I>int</I> <B>len</B>) --     search for FIB node by prefix
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct fib *</I> <B>f</B><DD><P>FIB to search in
+<DT><I>ip_addr *</I> <B>a</B><DD><P>pointer to IP address of the prefix
+<DT><I>int</I> <B>len</B><DD><P>prefix length
+</DL>
+<H3>Description</H3>
+<P>Search for a FIB node corresponding to the given prefix, return
+a pointer to it or <I>NULL</I> if no such node exists.
+
+
+<HR><H3>Function</H3>
+<P><I>void *</I>
+<B>fib_get</B>
+(<I>struct fib *</I> <B>f</B>, <I>ip_addr *</I> <B>a</B>, <I>int</I> <B>len</B>) --     find or create a FIB node
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct fib *</I> <B>f</B><DD><P>FIB to work with
+<DT><I>ip_addr *</I> <B>a</B><DD><P>pointer to IP address of the prefix
+<DT><I>int</I> <B>len</B><DD><P>prefix length
+</DL>
+<H3>Description</H3>
+<P>Search for a FIB node corresponding to the given prefix and
+return a pointer to it. If no such node exists, create it.
+
+
+<HR><H3>Function</H3>
+<P><I>void *</I>
+<B>fib_route</B>
+(<I>struct fib *</I> <B>f</B>, <I>ip_addr</I> <B>a</B>, <I>int</I> <B>len</B>) --     CIDR routing lookup
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct fib *</I> <B>f</B><DD><P>FIB to search in
+<DT><I>ip_addr</I> <B>a</B><DD><P>pointer to IP address of the prefix
+<DT><I>int</I> <B>len</B><DD><P>prefix length
+</DL>
+<H3>Description</H3>
+<P>Search for a FIB node with longest prefix matching the given
+network, that is a node which a CIDR router would use for routing
+that network.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>fib_delete</B>
+(<I>struct fib *</I> <B>f</B>, <I>void *</I> <B>E</B>) --     delete a FIB node
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct fib *</I> <B>f</B><DD><P>FIB to delete from
+<DT><I>void *</I> <B>E</B><DD><P>entry to delete
+</DL>
+<H3>Description</H3>
+<P>This function removes the given entry from the FIB,
+taking care of all the asynchronous readers by shifting
+them to the next node in the canonical reading order.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>fib_free</B>
+(<I>struct fib *</I> <B>f</B>) --     delete a FIB
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct fib *</I> <B>f</B><DD><P>FIB to be deleted
+</DL>
+<H3>Description</H3>
+<P>This function deletes a FIB -- it frees all memory associated
+with it and all its entries.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>fib_check</B>
+(<I>struct fib *</I> <B>f</B>) --     audit a FIB
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct fib *</I> <B>f</B><DD><P>FIB to be checked
+</DL>
+<H3>Description</H3>
+<P>This debugging function audits a FIB by checking its internal consistency.
+Use when you suspect somebody of corrupting innocent data structures.
+
+<H2><A NAME="ss2.2">2.2</A> <A HREF="prog.html#toc2.2">Routing tables</A>
+</H2>
+
+<P>
+<P>Routing tables are probably the most important structures BIRD uses. They
+hold all the information about known networks, the associated routes and
+their attributes.
+<P>There are multiple routing tables (a primary one together with any
+number of secondary ones if requested by the configuration). Each table
+is basically a FIB containing entries describing the individual
+destination networks. For each network (represented by structure <I>net</I>),
+there is a one-way linked list of route entries (<I>rte</I>), the first entry
+on the list being the best one (i.e., the one we currently use
+for routing), the order of the other ones is undetermined.
+<P>The <I>rte</I> contains information specific to the route (preference, protocol
+metrics, time of last modification etc.) and a pointer to a <I>rta</I> structure
+(see the route attribute module for a precise explanation) holding the
+remaining route attributes which are expected to be shared by multiple
+routes in order to conserve memory.
+<P>
+<P><HR><H3>Function</H3>
+<P><I>rte *</I>
+<B>rte_find</B>
+(<I>net *</I> <B>net</B>, <I>struct proto *</I> <B>p</B>) --     find a route
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>net *</I> <B>net</B><DD><P>network node
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol
+</DL>
+<H3>Description</H3>
+<P>The <B>rte_find()</B> function returns a route for destination <B>net</B>
+which belongs has been defined by protocol <B>p</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>rte *</I>
+<B>rte_get_temp</B>
+(<I>rta *</I> <B>a</B>) --     get a temporary <I>rte</I>
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rta *</I> <B>a</B><DD><P>attributes to assign to the new route (a <I>rta</I>; in case it's
+un-cached, <B>rte_update()</B> will create a cached copy automatically)
+</DL>
+<H3>Description</H3>
+<P>Create a temporary <I>rte</I> and bind it with the attributes <B>a</B>.
+Also set route preference to the default preference set for
+the protocol.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rte_announce</B>
+(<I>rtable *</I> <B>tab</B>, <I>unsigned</I> <B>type</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>rte *</I> <B>old</B>, <I>rte *</I> <B>before_old</B>, <I>ea_list *</I> <B>tmpa</B>) --     announce a routing table change
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rtable *</I> <B>tab</B><DD><P>table the route has been added to
+<DT><I>unsigned</I> <B>type</B><DD><P>type of route announcement (RA_OPTIMAL or RA_ANY)
+<DT><I>net *</I> <B>net</B><DD><P>network in question
+<DT><I>rte *</I> <B>new</B><DD><P>the new route to be announced
+<DT><I>rte *</I> <B>old</B><DD><P>the previous route for the same network
+<DT><I>rte *</I> <B>before_old</B><DD><P>-- undescribed --
+<DT><I>ea_list *</I> <B>tmpa</B><DD><P>a list of temporary attributes belonging to the new route
+</DL>
+<H3>Description</H3>
+<P>This function gets a routing table update and announces it
+to all protocols that acccepts given type of route announcement
+and are connected to the same table by their announcement hooks.
+<P>Route announcement of type RA_OPTIMAL si generated when optimal
+route (in routing table <B>tab</B>) changes. In that case <B>old</B> stores the
+old optimal route.
+<P>Route announcement of type RA_ANY si generated when any route (in
+routing table <B>tab</B>) changes In that case <B>old</B> stores the old route
+from the same protocol.
+<P>For each appropriate protocol, we first call its <B>import_control()</B>
+hook which performs basic checks on the route (each protocol has a
+right to veto or force accept of the route before any filter is
+asked) and adds default values of attributes specific to the new
+protocol (metrics, tags etc.).  Then it consults the protocol's
+export filter and if it accepts the route, the <B>rt_notify()</B> hook of
+the protocol gets called.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rte_free</B>
+(<I>rte *</I> <B>e</B>) --     delete a <I>rte</I>
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rte *</I> <B>e</B><DD><P><I>rte</I> to be deleted
+</DL>
+<H3>Description</H3>
+<P><B>rte_free()</B> deletes the given <I>rte</I> from the routing table it's linked to.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rte_update2</B>
+(<I>struct announce_hook *</I> <B>ah</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>struct proto *</I> <B>src</B>) --     enter a new update to a routing table
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct announce_hook *</I> <B>ah</B><DD><P>pointer to table announce hook
+<DT><I>net *</I> <B>net</B><DD><P>network node
+<DT><I>rte *</I> <B>new</B><DD><P>a <I>rte</I> representing the new route or <I>NULL</I> for route removal.
+<DT><I>struct proto *</I> <B>src</B><DD><P>protocol originating the update
+</DL>
+<H3>Description</H3>
+<P>This function is called by the routing protocols whenever they discover
+a new route or wish to update/remove an existing route. The right announcement
+sequence is to build route attributes first (either un-cached with <B>aflags</B> set
+to zero or a cached one using <B>rta_lookup()</B>; in this case please note that
+you need to increase the use count of the attributes yourself by calling
+<B>rta_clone()</B>), call <B>rte_get_temp()</B> to obtain a temporary <I>rte</I>, fill in all
+the appropriate data and finally submit the new <I>rte</I> by calling <B>rte_update()</B>.
+<P><B>src</B> specifies the protocol that originally created the route and the meaning
+of protocol-dependent data of <B>new</B>. If <B>new</B> is not <I>NULL</I>, <B>src</B> have to be the
+same value as <B>new</B>-&gt;attrs-&gt;proto. <B>p</B> specifies the protocol that called
+<B>rte_update()</B>. In most cases it is the same protocol as <B>src</B>. <B>rte_update()</B>
+stores <B>p</B> in <B>new</B>-&gt;sender;
+<P>When <B>rte_update()</B> gets any route, it automatically validates it (checks,
+whether the network and next hop address are valid IP addresses and also
+whether a normal routing protocol doesn't try to smuggle a host or link
+scope route to the table), converts all protocol dependent attributes stored
+in the <I>rte</I> to temporary extended attributes, consults import filters of the
+protocol to see if the route should be accepted and/or its attributes modified,
+stores the temporary attributes back to the <I>rte</I>.
+<P>Now, having a "public" version of the route, we
+automatically find any old route defined by the protocol <B>src</B>
+for network <B>n</B>, replace it by the new one (or removing it if <B>new</B> is <I>NULL</I>),
+recalculate the optimal route for this destination and finally broadcast
+the change (if any) to all routing protocols by calling <B>rte_announce()</B>.
+<P>All memory used for attribute lists and other temporary allocations is taken
+from a special linear pool <B>rte_update_pool</B> and freed when <B>rte_update()</B>
+finishes.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rte_dump</B>
+(<I>rte *</I> <B>e</B>) --     dump a route
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rte *</I> <B>e</B><DD><P><I>rte</I> to be dumped
+</DL>
+<H3>Description</H3>
+<P>This functions dumps contents of a <I>rte</I> to debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rt_dump</B>
+(<I>rtable *</I> <B>t</B>) --     dump a routing table
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rtable *</I> <B>t</B><DD><P>routing table to be dumped
+</DL>
+<H3>Description</H3>
+<P>This function dumps contents of a given routing table to debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rt_dump_all</B>
+(<B>void</B>) --     dump all routing tables
+<P>
+<H3>Description</H3>
+<P>
+<P>This function dumps contents of all routing tables to debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rt_init</B>
+(<B>void</B>) --     initialize routing tables
+<P>
+<H3>Description</H3>
+<P>
+<P>This function is called during BIRD startup. It initializes the
+routing table module.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>rt_prune_loop</B>
+(<B>void</B>) --     prune routing tables
+<P>
+<H3>Description</H3>
+<P>
+<P>The prune loop scans routing tables and removes routes belonging to
+flushing protocols and also stale network entries. Returns 1 when
+all such routes are pruned. It is a part of the protocol flushing
+loop.
+<P>The prune loop runs in two steps. In the first step it prunes just
+the routes with flushing senders (in explicitly marked tables) so
+the route removal is propagated as usual. In the second step, all
+remaining relevant routes are removed. Ideally, there shouldn't be
+any, but it happens when pipe filters are changed.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rt_lock_table</B>
+(<I>rtable *</I> <B>r</B>) --     lock a routing table
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rtable *</I> <B>r</B><DD><P>routing table to be locked
+</DL>
+<H3>Description</H3>
+<P>Lock a routing table, because it's in use by a protocol,
+preventing it from being freed when it gets undefined in a new
+configuration.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rt_unlock_table</B>
+(<I>rtable *</I> <B>r</B>) --     unlock a routing table
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rtable *</I> <B>r</B><DD><P>routing table to be unlocked
+</DL>
+<H3>Description</H3>
+<P>Unlock a routing table formerly locked by <B>rt_lock_table()</B>,
+that is decrease its use count and delete it if it's scheduled
+for deletion by configuration changes.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rt_commit</B>
+(<I>struct config *</I> <B>new</B>, <I>struct config *</I> <B>old</B>) --     commit new routing table configuration
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct config *</I> <B>new</B><DD><P>new configuration
+<DT><I>struct config *</I> <B>old</B><DD><P>original configuration or <I>NULL</I> if it's boot time config
+</DL>
+<H3>Description</H3>
+<P>Scan differences between <B>old</B> and <B>new</B> configuration and modify
+the routing tables according to these changes. If <B>new</B> defines a
+previously unknown table, create it, if it omits a table existing
+in <B>old</B>, schedule it for deletion (it gets deleted when all protocols
+disconnect from it by calling <B>rt_unlock_table()</B>), if it exists
+in both configurations, leave it unchanged.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>rt_feed_baby</B>
+(<I>struct proto *</I> <B>p</B>) --     advertise routes to a new protocol
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol to be fed
+</DL>
+<H3>Description</H3>
+<P>This function performs one pass of advertisement of routes to a newly
+initialized protocol. It's called by the protocol code as long as it
+has something to do. (We avoid transferring all the routes in single
+pass in order not to monopolize CPU time.)
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rt_feed_baby_abort</B>
+(<I>struct proto *</I> <B>p</B>) --     abort protocol feeding
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol
+</DL>
+<H3>Description</H3>
+<P>This function is called by the protocol code when the protocol
+stops or ceases to exist before the last iteration of <B>rt_feed_baby()</B>
+has finished.
+
+
+<HR><H3>Function</H3>
+<P><I>net *</I>
+<B>net_find</B>
+(<I>rtable *</I> <B>tab</B>, <I>ip_addr</I> <B>addr</B>, <I>unsigned</I> <B>len</B>) --     find a network entry
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rtable *</I> <B>tab</B><DD><P>a routing table
+<DT><I>ip_addr</I> <B>addr</B><DD><P>address of the network
+<DT><I>unsigned</I> <B>len</B><DD><P>length of the network prefix
+</DL>
+<H3>Description</H3>
+<P><B>net_find()</B> looks up the given network in routing table <B>tab</B> and
+returns a pointer to its <I>net</I> entry or <I>NULL</I> if no such network
+exists.
+
+
+<HR><H3>Function</H3>
+<P><I>net *</I>
+<B>net_get</B>
+(<I>rtable *</I> <B>tab</B>, <I>ip_addr</I> <B>addr</B>, <I>unsigned</I> <B>len</B>) --     obtain a network entry
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rtable *</I> <B>tab</B><DD><P>a routing table
+<DT><I>ip_addr</I> <B>addr</B><DD><P>address of the network
+<DT><I>unsigned</I> <B>len</B><DD><P>length of the network prefix
+</DL>
+<H3>Description</H3>
+<P><B>net_get()</B> looks up the given network in routing table <B>tab</B> and
+returns a pointer to its <I>net</I> entry. If no such entry exists, it's
+created.
+
+
+<HR><H3>Function</H3>
+<P><I>rte *</I>
+<B>rte_cow</B>
+(<I>rte *</I> <B>r</B>) --     copy a route for writing
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rte *</I> <B>r</B><DD><P>a route entry to be copied
+</DL>
+<H3>Description</H3>
+<P><B>rte_cow()</B> takes a <I>rte</I> and prepares it for modification. The exact action
+taken depends on the flags of the <I>rte</I> -- if it's a temporary entry, it's
+just returned unchanged, else a new temporary entry with the same contents
+is created.
+<P>The primary use of this function is inside the filter machinery -- when
+a filter wants to modify <I>rte</I> contents (to change the preference or to
+attach another set of attributes), it must ensure that the <I>rte</I> is not
+shared with anyone else (and especially that it isn't stored in any routing
+table).
+<H3>Result</H3>
+<P>a pointer to the new writable <I>rte</I>.
+
+<H2><A NAME="ss2.3">2.3</A> <A HREF="prog.html#toc2.3">Route attribute cache</A>
+</H2>
+
+<P>
+<P>Each route entry carries a set of route attributes. Several of them
+vary from route to route, but most attributes are usually common
+for a large number of routes. To conserve memory, we've decided to
+store only the varying ones directly in the <I>rte</I> and hold the rest
+in a special structure called <I>rta</I> which is shared among all the
+<I>rte</I>'s with these attributes.
+<P>Each <I>rta</I> contains all the static attributes of the route (i.e.,
+those which are always present) as structure members and a list of
+dynamic attributes represented by a linked list of <I>ea_list</I>
+structures, each of them consisting of an array of <I>eattr</I>'s containing
+the individual attributes. An attribute can be specified more than once
+in the <I>ea_list</I> chain and in such case the first occurrence overrides
+the others. This semantics is used especially when someone (for example
+a filter) wishes to alter values of several dynamic attributes, but
+it wants to preserve the original attribute lists maintained by
+another module.
+<P>Each <I>eattr</I> contains an attribute identifier (split to protocol ID and
+per-protocol attribute ID), protocol dependent flags, a type code (consisting
+of several bit fields describing attribute characteristics) and either an
+embedded 32-bit value or a pointer to a <I>adata</I> structure holding attribute
+contents.
+<P>There exist two variants of <I>rta</I>'s -- cached and un-cached ones. Un-cached
+<I>rta</I>'s can have arbitrarily complex structure of <I>ea_list</I>'s and they
+can be modified by any module in the route processing chain. Cached
+<I>rta</I>'s have their attribute lists normalized (that means at most one
+<I>ea_list</I> is present and its values are sorted in order to speed up
+searching), they are stored in a hash table to make fast lookup possible
+and they are provided with a use count to allow sharing.
+<P>Routing tables always contain only cached <I>rta</I>'s.
+<P>
+<P><HR><H3>Function</H3>
+<P><I>eattr *</I>
+<B>ea_find</B>
+(<I>ea_list *</I> <B>e</B>, <I>unsigned</I> <B>id</B>) --     find an extended attribute
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>ea_list *</I> <B>e</B><DD><P>attribute list to search in
+<DT><I>unsigned</I> <B>id</B><DD><P>attribute ID to search for
+</DL>
+<H3>Description</H3>
+<P>Given an extended attribute list, <B>ea_find()</B> searches for a first
+occurrence of an attribute with specified ID, returning either a pointer
+to its <I>eattr</I> structure or <I>NULL</I> if no such attribute exists.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>ea_get_int</B>
+(<I>ea_list *</I> <B>e</B>, <I>unsigned</I> <B>id</B>, <I>int</I> <B>def</B>) --     fetch an integer attribute
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>ea_list *</I> <B>e</B><DD><P>attribute list
+<DT><I>unsigned</I> <B>id</B><DD><P>attribute ID
+<DT><I>int</I> <B>def</B><DD><P>default value
+</DL>
+<H3>Description</H3>
+<P>This function is a shortcut for retrieving a value of an integer attribute
+by calling <B>ea_find()</B> to find the attribute, extracting its value or returning
+a provided default if no such attribute is present.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>ea_sort</B>
+(<I>ea_list *</I> <B>e</B>) --     sort an attribute list
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>ea_list *</I> <B>e</B><DD><P>list to be sorted
+</DL>
+<H3>Description</H3>
+<P>This function takes a <I>ea_list</I> chain and sorts the attributes
+within each of its entries.
+<P>If an attribute occurs multiple times in a single <I>ea_list</I>,
+<B>ea_sort()</B> leaves only the first (the only significant) occurrence.
+
+
+<HR><H3>Function</H3>
+<P><I>unsigned</I>
+<B>ea_scan</B>
+(<I>ea_list *</I> <B>e</B>) --     estimate attribute list size
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>ea_list *</I> <B>e</B><DD><P>attribute list
+</DL>
+<H3>Description</H3>
+<P>This function calculates an upper bound of the size of
+a given <I>ea_list</I> after merging with <B>ea_merge()</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>ea_merge</B>
+(<I>ea_list *</I> <B>e</B>, <I>ea_list *</I> <B>t</B>) --     merge segments of an attribute list
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>ea_list *</I> <B>e</B><DD><P>attribute list
+<DT><I>ea_list *</I> <B>t</B><DD><P>buffer to store the result to
+</DL>
+<H3>Description</H3>
+<P>This function takes a possibly multi-segment attribute list
+and merges all of its segments to one.
+<P>The primary use of this function is for <I>ea_list</I> normalization:
+first call <B>ea_scan()</B> to determine how much memory will the result
+take, then allocate a buffer (usually using <B>alloca()</B>), merge the
+segments with <B>ea_merge()</B> and finally sort and prune the result
+by calling <B>ea_sort()</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>ea_same</B>
+(<I>ea_list *</I> <B>x</B>, <I>ea_list *</I> <B>y</B>) --     compare two <I>ea_list</I>'s
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>ea_list *</I> <B>x</B><DD><P>attribute list
+<DT><I>ea_list *</I> <B>y</B><DD><P>attribute list
+</DL>
+<H3>Description</H3>
+<P><B>ea_same()</B> compares two normalized attribute lists <B>x</B> and <B>y</B> and returns
+1 if they contain the same attributes, 0 otherwise.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>ea_show</B>
+(<I>struct cli *</I> <B>c</B>, <I>eattr *</I> <B>e</B>) --     print an <I>eattr</I> to CLI
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct cli *</I> <B>c</B><DD><P>destination CLI
+<DT><I>eattr *</I> <B>e</B><DD><P>attribute to be printed
+</DL>
+<H3>Description</H3>
+<P>This function takes an extended attribute represented by its <I>eattr</I>
+structure and prints it to the CLI according to the type information.
+<P>If the protocol defining the attribute provides its own
+<B>get_attr()</B> hook, it's consulted first.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>ea_dump</B>
+(<I>ea_list *</I> <B>e</B>) --     dump an extended attribute
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>ea_list *</I> <B>e</B><DD><P>attribute to be dumped
+</DL>
+<H3>Description</H3>
+<P><B>ea_dump()</B> dumps contents of the extended attribute given to
+the debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>unsigned int</I>
+<B>ea_hash</B>
+(<I>ea_list *</I> <B>e</B>) --     calculate an <I>ea_list</I> hash key
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>ea_list *</I> <B>e</B><DD><P>attribute list
+</DL>
+<H3>Description</H3>
+<P><B>ea_hash()</B> takes an extended attribute list and calculated a hopefully
+uniformly distributed hash value from its contents.
+
+
+<HR><H3>Function</H3>
+<P><I>ea_list *</I>
+<B>ea_append</B>
+(<I>ea_list *</I> <B>to</B>, <I>ea_list *</I> <B>what</B>) --     concatenate <I>ea_list</I>'s
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>ea_list *</I> <B>to</B><DD><P>destination list (can be <I>NULL</I>)
+<DT><I>ea_list *</I> <B>what</B><DD><P>list to be appended (can be <I>NULL</I>)
+</DL>
+<H3>Description</H3>
+<P>This function appends the <I>ea_list</I> <B>what</B> at the end of
+<I>ea_list</I> <B>to</B> and returns a pointer to the resulting list.
+
+
+<HR><H3>Function</H3>
+<P><I>rta *</I>
+<B>rta_lookup</B>
+(<I>rta *</I> <B>o</B>) --     look up a <I>rta</I> in attribute cache
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rta *</I> <B>o</B><DD><P>a un-cached <I>rta</I>
+</DL>
+<H3>Description</H3>
+<P><B>rta_lookup()</B> gets an un-cached <I>rta</I> structure and returns its cached
+counterpart. It starts with examining the attribute cache to see whether
+there exists a matching entry. If such an entry exists, it's returned and
+its use count is incremented, else a new entry is created with use count
+set to 1.
+<P>The extended attribute lists attached to the <I>rta</I> are automatically
+converted to the normalized form.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rta_dump</B>
+(<I>rta *</I> <B>a</B>) --     dump route attributes
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rta *</I> <B>a</B><DD><P>attribute structure to dump
+</DL>
+<H3>Description</H3>
+<P>This function takes a <I>rta</I> and dumps its contents to the debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rta_dump_all</B>
+(<B>void</B>) --     dump attribute cache
+<P>
+<H3>Description</H3>
+<P>
+<P>This function dumps the whole contents of route attribute cache
+to the debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rta_init</B>
+(<B>void</B>) --     initialize route attribute cache
+<P>
+<H3>Description</H3>
+<P>
+<P>This function is called during initialization of the routing
+table module to set up the internals of the attribute cache.
+
+
+<HR><H3>Function</H3>
+<P><I>rta *</I>
+<B>rta_clone</B>
+(<I>rta *</I> <B>r</B>) --     clone route attributes
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rta *</I> <B>r</B><DD><P>a <I>rta</I> to be cloned
+</DL>
+<H3>Description</H3>
+<P><B>rta_clone()</B> takes a cached <I>rta</I> and returns its identical cached
+copy. Currently it works by just returning the original <I>rta</I> with
+its use count incremented.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rta_free</B>
+(<I>rta *</I> <B>r</B>) --     free route attributes
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rta *</I> <B>r</B><DD><P>a <I>rta</I> to be freed
+</DL>
+<H3>Description</H3>
+<P>If you stop using a <I>rta</I> (for example when deleting a route which uses
+it), you need to call <B>rta_free()</B> to notify the attribute cache the
+attribute is no longer in use and can be freed if you were the last
+user (which <B>rta_free()</B> tests by inspecting the use count).
+
+<P>
+<H2><A NAME="ss2.4">2.4</A> <A HREF="prog.html#toc2.4">Routing protocols</A>
+</H2>
+
+<H3>Introduction</H3>
+
+<P>The routing protocols are the bird's heart and a fine amount of code
+is dedicated to their management and for providing support functions to them.
+(-: Actually, this is the reason why the directory with sources of the core
+code is called <CODE>nest</CODE> :-).
+<P>
+<P>When talking about protocols, one need to distinguish between <EM>protocols</EM>
+and protocol <EM>instances</EM>. A protocol exists exactly once, not depending on whether
+it's configured or not and it can have an arbitrary number of instances corresponding
+to its "incarnations" requested by the configuration file. Each instance is completely
+autonomous, has its own configuration, its own status, its own set of routes and its
+own set of interfaces it works on.
+<P>
+<P>A protocol is represented by a <I>protocol</I> structure containing all the basic
+information (protocol name, default settings and pointers to most of the protocol
+hooks). All these structures are linked in the <B>protocol_list</B> list.
+<P>
+<P>Each instance has its own <I>proto</I> structure describing all its properties: protocol
+type, configuration, a resource pool where all resources belonging to the instance
+live, various protocol attributes (take a look at the declaration of <I>proto</I> in
+<CODE>protocol.h</CODE>), protocol states (see below for what do they mean), connections
+to routing tables, filters attached to the protocol
+and finally a set of pointers to the rest of protocol hooks (they
+are the same for all instances of the protocol, but in order to avoid extra
+indirections when calling the hooks from the fast path, they are stored directly
+in <I>proto</I>). The instance is always linked in both the global instance list
+(<B>proto_list</B>) and a per-status list (either <B>active_proto_list</B> for
+running protocols, <B>initial_proto_list</B> for protocols being initialized or
+<B>flush_proto_list</B> when the protocol is being shut down).
+<P>
+<P>The protocol hooks are described in the next chapter, for more information about
+configuration of protocols, please refer to the configuration chapter and also
+to the description of the <B>proto_commit</B> function.
+<P>
+<H3>Protocol states</H3>
+
+<P>As startup and shutdown of each protocol are complex processes which can be affected
+by lots of external events (user's actions, reconfigurations, behavior of neighboring routers etc.),
+we have decided to supervise them by a pair of simple state machines -- the protocol
+state machine and a core state machine.
+<P>
+<P>The <EM>protocol state machine</EM> corresponds to internal state of the protocol
+and the protocol can alter its state whenever it wants to. There are
+the following states:
+<P>
+<DL>
+<DT><CODE>PS_DOWN</CODE><DD><P>The protocol is down and waits for being woken up by calling its
+start() hook.
+<DT><CODE>PS_START</CODE><DD><P>The protocol is waiting for connection with the rest of the
+network. It's active, it has resources allocated, but it still doesn't want
+any routes since it doesn't know what to do with them.
+<DT><CODE>PS_UP</CODE><DD><P>The protocol is up and running. It communicates with the core,
+delivers routes to tables and wants to hear announcement about route changes.
+<DT><CODE>PS_STOP</CODE><DD><P>The protocol has been shut down (either by being asked by the
+core code to do so or due to having encountered a protocol error).
+</DL>
+<P>
+<P>Unless the protocol is in the <CODE>PS_DOWN</CODE> state, it can decide to change
+its state by calling the <B>proto_notify_state</B> function.
+<P>
+<P>At any time, the core code can ask the protocol to shut itself down by calling its stop() hook.
+<P>
+<P>The <EM>core state machine</EM> takes care of the core view of protocol state.
+The states are traversed according to changes of the protocol state machine, but
+sometimes the transitions are delayed if the core needs to finish some actions
+(for example sending of new routes to the protocol) before proceeding to the
+new state. There are the following core states:
+<P>
+<DL>
+<DT><CODE>FS_HUNGRY</CODE><DD><P>The protocol is down, it doesn't have any routes and
+doesn't want them.
+<DT><CODE>FS_FEEDING</CODE><DD><P>The protocol has reached the <CODE>PS_UP</CODE> state, but
+we are still busy sending the initial set of routes to it.
+<DT><CODE>FS_HAPPY</CODE><DD><P>The protocol is up and has complete routing information.
+<DT><CODE>FS_FLUSHING</CODE><DD><P>The protocol is shutting down (it's in either <CODE>PS_STOP</CODE>
+or <CODE>PS_DOWN</CODE> state) and we're flushing all of its routes from the
+routing tables.
+</DL>
+<P>
+<H3>Functions of the protocol module</H3>
+
+<P>The protocol module provides the following functions:
+<HR><H3>Function</H3>
+<P><I>void *</I>
+<B>proto_new</B>
+(<I>struct proto_config *</I> <B>c</B>, <I>unsigned</I> <B>size</B>) --  create a new protocol instance
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto_config *</I> <B>c</B><DD><P>protocol configuration
+<DT><I>unsigned</I> <B>size</B><DD><P>size of protocol data structure (each protocol instance is represented by
+a structure starting with generic part [struct <I>proto</I>] and continued
+with data specific to the protocol)
+</DL>
+<H3>Description</H3>
+<P>When a new configuration has been read in, the core code starts
+initializing all the protocol instances configured by calling their
+<B>init()</B> hooks with the corresponding instance configuration. The initialization
+code of the protocol is expected to create a new instance according to the
+configuration by calling this function and then modifying the default settings
+to values wanted by the protocol.
+
+
+<HR><H3>Function</H3>
+<P><I>struct announce_hook *</I>
+<B>proto_add_announce_hook</B>
+(<I>struct proto *</I> <B>p</B>, <I>struct rtable *</I> <B>t</B>, <I>struct proto_stats *</I> <B>stats</B>) --  connect protocol to a routing table
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+<DT><I>struct rtable *</I> <B>t</B><DD><P>routing table to connect to
+<DT><I>struct proto_stats *</I> <B>stats</B><DD><P>per-table protocol statistics
+</DL>
+<H3>Description</H3>
+<P>This function creates a connection between the protocol instance <B>p</B>
+and the routing table <B>t</B>, making the protocol hear all changes in
+the table.
+<P>The announce hook is linked in the protocol ahook list and, if the
+protocol accepts routes, also in the table ahook list. Announce
+hooks are allocated from the routing table resource pool, they are
+unlinked from the table ahook list after the protocol went down,
+(in <B>proto_schedule_flush()</B>) and they are automatically freed after the
+protocol is flushed (in <B>proto_fell_down()</B>).
+<P>Unless you want to listen to multiple routing tables (as the Pipe
+protocol does), you needn't to worry about this function since the
+connection to the protocol's primary routing table is initialized
+automatically by the core code.
+
+
+<HR><H3>Function</H3>
+<P><I>struct announce_hook *</I>
+<B>proto_find_announce_hook</B>
+(<I>struct proto *</I> <B>p</B>, <I>struct rtable *</I> <B>t</B>) --  find announce hooks
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+<DT><I>struct rtable *</I> <B>t</B><DD><P>routing table
+</DL>
+<H3>Description</H3>
+<P>Returns pointer to announce hook or NULL
+
+
+<HR><H3>Function</H3>
+<P><I>void *</I>
+<B>proto_config_new</B>
+(<I>struct protocol *</I> <B>pr</B>, <I>unsigned</I> <B>size</B>, <I>int</I> <B>class</B>) --  create a new protocol configuration
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct protocol *</I> <B>pr</B><DD><P>protocol the configuration will belong to
+<DT><I>unsigned</I> <B>size</B><DD><P>size of the structure including generic data
+<DT><I>int</I> <B>class</B><DD><P>SYM_PROTO or SYM_TEMPLATE
+</DL>
+<H3>Description</H3>
+<P>Whenever the configuration file says that a new instance
+of a routing protocol should be created, the parser calls
+<B>proto_config_new()</B> to create a configuration entry for this
+instance (a structure staring with the <I>proto_config</I> header
+containing all the generic items followed by protocol-specific
+ones). Also, the configuration entry gets added to the list
+of protocol instances kept in the configuration.
+<P>The function is also used to create protocol templates (when class
+SYM_TEMPLATE is specified), the only difference is that templates
+are not added to the list of protocol instances and therefore not
+initialized during <B>protos_commit()</B>).
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>proto_copy_config</B>
+(<I>struct proto_config *</I> <B>dest</B>, <I>struct proto_config *</I> <B>src</B>) --  copy a protocol configuration
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto_config *</I> <B>dest</B><DD><P>destination protocol configuration
+<DT><I>struct proto_config *</I> <B>src</B><DD><P>source protocol configuration
+</DL>
+<H3>Description</H3>
+<P>Whenever a new instance of a routing protocol is created from the
+template, <B>proto_copy_config()</B> is called to copy a content of
+the source protocol configuration to the new protocol configuration.
+Name, class and a node in protos list of <B>dest</B> are kept intact.
+<B>copy_config()</B> protocol hook is used to copy protocol-specific data.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>protos_preconfig</B>
+(<I>struct config *</I> <B>c</B>) --  pre-configuration processing
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct config *</I> <B>c</B><DD><P>new configuration
+</DL>
+<H3>Description</H3>
+<P>This function calls the <B>preconfig()</B> hooks of all routing
+protocols available to prepare them for reading of the new
+configuration.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>protos_postconfig</B>
+(<I>struct config *</I> <B>c</B>) --  post-configuration processing
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct config *</I> <B>c</B><DD><P>new configuration
+</DL>
+<H3>Description</H3>
+<P>This function calls the <B>postconfig()</B> hooks of all protocol
+instances specified in configuration <B>c</B>. The hooks are not
+called for protocol templates.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>protos_commit</B>
+(<I>struct config *</I> <B>new</B>, <I>struct config *</I> <B>old</B>, <I>int</I> <B>force_reconfig</B>, <I>int</I> <B>type</B>) --  commit new protocol configuration
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct config *</I> <B>new</B><DD><P>new configuration
+<DT><I>struct config *</I> <B>old</B><DD><P>old configuration or <I>NULL</I> if it's boot time config
+<DT><I>int</I> <B>force_reconfig</B><DD><P>force restart of all protocols (used for example
+when the router ID changes)
+<DT><I>int</I> <B>type</B><DD><P>type of reconfiguration (RECONFIG_SOFT or RECONFIG_HARD)
+</DL>
+<H3>Description</H3>
+<P>Scan differences between <B>old</B> and <B>new</B> configuration and adjust all
+protocol instances to conform to the new configuration.
+<P>When a protocol exists in the new configuration, but it doesn't in the
+original one, it's immediately started. When a collision with the other
+running protocol would arise, the new protocol will be temporarily stopped
+by the locking mechanism.
+<P>When a protocol exists in the old configuration, but it doesn't in the
+new one, it's shut down and deleted after the shutdown completes.
+<P>When a protocol exists in both configurations, the core decides
+whether it's possible to reconfigure it dynamically - it checks all
+the core properties of the protocol (changes in filters are ignored
+if type is RECONFIG_SOFT) and if they match, it asks the
+<B>reconfigure()</B> hook of the protocol to see if the protocol is able
+to switch to the new configuration.  If it isn't possible, the
+protocol is shut down and a new instance is started with the new
+configuration after the shutdown is completed.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>protos_dump_all</B>
+(<B>void</B>) --  dump status of all protocols
+<P>
+<H3>Description</H3>
+<P>
+<P>This function dumps status of all existing protocol instances to the
+debug output. It involves printing of general status information
+such as protocol states, its position on the protocol lists
+and also calling of a <B>dump()</B> hook of the protocol to print
+the internals.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>proto_build</B>
+(<I>struct protocol *</I> <B>p</B>) --  make a single protocol available
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct protocol *</I> <B>p</B><DD><P>the protocol
+</DL>
+<H3>Description</H3>
+<P>After the platform specific initialization code uses <B>protos_build()</B>
+to add all the standard protocols, it should call <B>proto_build()</B> for
+all platform specific protocols to inform the core that they exist.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>protos_build</B>
+(<B>void</B>) --  build a protocol list
+<P>
+<H3>Description</H3>
+<P>
+<P>This function is called during BIRD startup to insert
+all standard protocols to the global protocol list. Insertion
+of platform specific protocols (such as the kernel syncer)
+is in the domain of competence of the platform dependent
+startup code.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>proto_request_feeding</B>
+(<I>struct proto *</I> <B>p</B>) --  request feeding routes to the protocol
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>given protocol 
+</DL>
+<H3>Description</H3>
+<P>Sometimes it is needed to send again all routes to the
+protocol. This is called feeding and can be requested by this
+function. This would cause protocol core state transition
+to FS_FEEDING (during feeding) and when completed, it will
+switch back to FS_HAPPY. This function can be called even
+when feeding is already running, in that case it is restarted.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>proto_notify_limit</B>
+(<I>struct announce_hook *</I> <B>ah</B>, <I>struct proto_limit *</I> <B>l</B>, <I>int</I> <B>dir</B>, <I>u32</I> <B>rt_count</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct announce_hook *</I> <B>ah</B><DD><P>announce hook
+<DT><I>struct proto_limit *</I> <B>l</B><DD><P>limit being hit
+<DT><I>int</I> <B>dir</B><DD><P>limit direction (PLD_*)
+<DT><I>u32</I> <B>rt_count</B><DD><P>the number of routes 
+</DL>
+<H3>Description</H3>
+<P>The function is called by the route processing core when limit <B>l</B>
+is breached. It activates the limit and tooks appropriate action
+according to <B>l</B>-&gt;action.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>proto_notify_state</B>
+(<I>struct proto *</I> <B>p</B>, <I>unsigned</I> <B>ps</B>) --  notify core about protocol state change
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol the state of which has changed
+<DT><I>unsigned</I> <B>ps</B><DD><P>the new status
+</DL>
+<H3>Description</H3>
+<P>Whenever a state of a protocol changes due to some event internal
+to the protocol (i.e., not inside a <B>start()</B> or <B>shutdown()</B> hook),
+it should immediately notify the core about the change by calling
+<B>proto_notify_state()</B> which will write the new state to the <I>proto</I>
+structure and take all the actions necessary to adapt to the new
+state. State change to PS_DOWN immediately frees resources of protocol
+and might execute start callback of protocol; therefore,
+it should be used at tail positions of protocol callbacks.
+
+<H2><A NAME="ss2.5">2.5</A> <A HREF="prog.html#toc2.5">Protocol hooks</A>
+</H2>
+
+<P>
+<P>Each protocol can provide a rich set of hook functions referred to by pointers
+in either the <I>proto</I> or <I>protocol</I> structure. They are called by the core whenever
+it wants the protocol to perform some action or to notify the protocol about
+any change of its environment. All of the hooks can be set to <I>NULL</I> which means
+to ignore the change or to take a default action.
+<P>
+<P><HR><H3>Function</H3>
+<P><I>void</I>
+<B>preconfig</B>
+(<I>struct protocol *</I> <B>p</B>, <I>struct config *</I> <B>c</B>) --     protocol preconfiguration
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct protocol *</I> <B>p</B><DD><P>a routing protocol
+<DT><I>struct config *</I> <B>c</B><DD><P>new configuration
+</DL>
+<H3>Description</H3>
+<P>The <B>preconfig()</B> hook is called before parsing of a new configuration.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>postconfig</B>
+(<I>struct proto_config *</I> <B>c</B>) --     instance post-configuration
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto_config *</I> <B>c</B><DD><P>instance configuration
+</DL>
+<H3>Description</H3>
+<P>The <B>postconfig()</B> hook is called for each configured instance after
+parsing of the new configuration is finished.
+
+
+<HR><H3>Function</H3>
+<P><I>struct proto *</I>
+<B>init</B>
+(<I>struct proto_config *</I> <B>c</B>) --     initialize an instance
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto_config *</I> <B>c</B><DD><P>instance configuration
+</DL>
+<H3>Description</H3>
+<P>The <B>init()</B> hook is called by the core to create a protocol instance
+according to supplied protocol configuration.
+<H3>Result</H3>
+<P>a pointer to the instance created
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>reconfigure</B>
+(<I>struct proto *</I> <B>p</B>, <I>struct proto_config *</I> <B>c</B>) --     request instance reconfiguration
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>an instance
+<DT><I>struct proto_config *</I> <B>c</B><DD><P>new configuration
+</DL>
+<H3>Description</H3>
+<P>The core calls the <B>reconfigure()</B> hook whenever it wants to ask the
+protocol for switching to a new configuration. If the reconfiguration
+is possible, the hook returns 1. Otherwise, it returns 0 and the core
+will shut down the instance and start a new one with the new configuration.
+<P>After the protocol confirms reconfiguration, it must no longer keep any
+references to the old configuration since the memory it's stored in can
+be re-used at any time.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>dump</B>
+(<I>struct proto *</I> <B>p</B>) --     dump protocol state
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>an instance
+</DL>
+<H3>Description</H3>
+<P>This hook dumps the complete state of the instance to the
+debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>dump_attrs</B>
+(<I>rte *</I> <B>e</B>) --     dump protocol-dependent attributes
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rte *</I> <B>e</B><DD><P>a route entry
+</DL>
+<H3>Description</H3>
+<P>This hook dumps all attributes in the <I>rte</I> which belong to this
+protocol to the debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>start</B>
+(<I>struct proto *</I> <B>p</B>) --     request instance startup
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+</DL>
+<H3>Description</H3>
+<P>The <B>start()</B> hook is called by the core when it wishes to start
+the instance. Multitable protocols should lock their tables here.
+<H3>Result</H3>
+<P>new protocol state
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>shutdown</B>
+(<I>struct proto *</I> <B>p</B>) --     request instance shutdown
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+</DL>
+<H3>Description</H3>
+<P>The <B>stop()</B> hook is called by the core when it wishes to shut
+the instance down for some reason.
+<H3>Returns</H3>
+<P>new protocol state
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>cleanup</B>
+(<I>struct proto *</I> <B>p</B>) --     request instance cleanup
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+</DL>
+<H3>Description</H3>
+<P>The <B>cleanup()</B> hook is called by the core when the protocol became
+hungry/down, i.e. all protocol ahooks and routes are flushed.
+Multitable protocols should unlock their tables here.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>get_status</B>
+(<I>struct proto *</I> <B>p</B>, <I>byte *</I> <B>buf</B>) --     get instance status
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+<DT><I>byte *</I> <B>buf</B><DD><P>buffer to be filled with the status string
+</DL>
+<H3>Description</H3>
+<P>This hook is called by the core if it wishes to obtain an brief one-line user friendly
+representation of the status of the instance to be printed by the &lt;cf/show protocols/
+command.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>get_route_info</B>
+(<I>rte *</I> <B>e</B>, <I>byte *</I> <B>buf</B>, <I>ea_list *</I> <B>attrs</B>) --     get route information
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rte *</I> <B>e</B><DD><P>a route entry
+<DT><I>byte *</I> <B>buf</B><DD><P>buffer to be filled with the resulting string
+<DT><I>ea_list *</I> <B>attrs</B><DD><P>extended attributes of the route
+</DL>
+<H3>Description</H3>
+<P>This hook is called to fill the buffer <B>buf</B> with a brief user friendly
+representation of metrics of a route belonging to this protocol.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>get_attr</B>
+(<I>eattr *</I> <B>a</B>, <I>byte *</I> <B>buf</B>, <I>int</I> <B>buflen</B>) --     get attribute information
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>eattr *</I> <B>a</B><DD><P>an extended attribute
+<DT><I>byte *</I> <B>buf</B><DD><P>buffer to be filled with attribute information
+<DT><I>int</I> <B>buflen</B><DD><P>-- undescribed --
+</DL>
+<H3>Description</H3>
+<P>The <B>get_attr()</B> hook is called by the core to obtain a user friendly
+representation of an extended route attribute. It can either leave
+the whole conversion to the core (by returning <I>GA_UNKNOWN</I>), fill
+in only attribute name (and let the core format the attribute value
+automatically according to the type field; by returning <I>GA_NAME</I>)
+or doing the whole conversion (used in case the value requires extra
+care; return <I>GA_FULL</I>).
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>if_notify</B>
+(<I>struct proto *</I> <B>p</B>, <I>unsigned</I> <B>flags</B>, <I>struct iface *</I> <B>i</B>) --     notify instance about interface changes
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+<DT><I>unsigned</I> <B>flags</B><DD><P>interface change flags
+<DT><I>struct iface *</I> <B>i</B><DD><P>the interface in question
+</DL>
+<H3>Description</H3>
+<P>This hook is called whenever any network interface changes its status.
+The change is described by a combination of status bits (<I>IF_CHANGE_xxx</I>)
+in the <B>flags</B> parameter.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>ifa_notify</B>
+(<I>struct proto *</I> <B>p</B>, <I>unsigned</I> <B>flags</B>, <I>struct ifa *</I> <B>a</B>) --     notify instance about interface address changes
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+<DT><I>unsigned</I> <B>flags</B><DD><P>address change flags
+<DT><I>struct ifa *</I> <B>a</B><DD><P>the interface address
+</DL>
+<H3>Description</H3>
+<P>This hook is called to notify the protocol instance about an interface
+acquiring or losing one of its addresses. The change is described by
+a combination of status bits (<I>IF_CHANGE_xxx</I>) in the <B>flags</B> parameter.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rt_notify</B>
+(<I>struct proto *</I> <B>p</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>rte *</I> <B>old</B>, <I>ea_list *</I> <B>attrs</B>) --     notify instance about routing table change
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance
+<DT><I>net *</I> <B>net</B><DD><P>a network entry
+<DT><I>rte *</I> <B>new</B><DD><P>new route for the network
+<DT><I>rte *</I> <B>old</B><DD><P>old route for the network
+<DT><I>ea_list *</I> <B>attrs</B><DD><P>extended attributes associated with the <B>new</B> entry
+</DL>
+<H3>Description</H3>
+<P>The <B>rt_notify()</B> hook is called to inform the protocol instance about
+changes in the connected routing table <B>table</B>, that is a route <B>old</B>
+belonging to network <B>net</B> being replaced by a new route <B>new</B> with
+extended attributes <B>attrs</B>. Either <B>new</B> or <B>old</B> or both can be <I>NULL</I>
+if the corresponding route doesn't exist.
+<P>If the type of route announcement is RA_OPTIMAL, it is an
+announcement of optimal route change, <B>new</B> stores the new optimal
+route and <B>old</B> stores the old optimal route.
+<P>If the type of route announcement is RA_ANY, it is an announcement
+of any route change, <B>new</B> stores the new route and <B>old</B> stores the
+old route from the same protocol.
+<P><B>p</B>-&gt;accept_ra_types specifies which kind of route announcements
+protocol wants to receive.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>neigh_notify</B>
+(<I>neighbor *</I> <B>neigh</B>) --     notify instance about neighbor status change
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>neighbor *</I> <B>neigh</B><DD><P>a neighbor cache entry
+</DL>
+<H3>Description</H3>
+<P>The <B>neigh_notify()</B> hook is called by the neighbor cache whenever
+a neighbor changes its state, that is it gets disconnected or a
+sticky neighbor gets connected.
+
+
+<HR><H3>Function</H3>
+<P><I>ea_list *</I>
+<B>make_tmp_attrs</B>
+(<I>rte *</I> <B>e</B>, <I>struct linpool *</I> <B>pool</B>) --     convert embedded attributes to temporary ones
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rte *</I> <B>e</B><DD><P>route entry
+<DT><I>struct linpool *</I> <B>pool</B><DD><P>linear pool to allocate attribute memory in
+</DL>
+<H3>Description</H3>
+<P>This hook is called by the routing table functions if they need
+to convert the protocol attributes embedded directly in the <I>rte</I>
+to temporary extended attributes in order to distribute them
+to other protocols or to filters. <B>make_tmp_attrs()</B> creates
+an <I>ea_list</I> in the linear pool <B>pool</B>, fills it with values of the
+temporary attributes and returns a pointer to it.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>store_tmp_attrs</B>
+(<I>rte *</I> <B>e</B>, <I>ea_list *</I> <B>attrs</B>) --     convert temporary attributes to embedded ones
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rte *</I> <B>e</B><DD><P>route entry
+<DT><I>ea_list *</I> <B>attrs</B><DD><P>temporary attributes to be converted
+</DL>
+<H3>Description</H3>
+<P>This hook is an exact opposite of <B>make_tmp_attrs()</B> -- it takes
+a list of extended attributes and converts them to attributes
+embedded in the <I>rte</I> corresponding to this protocol.
+<P>You must be prepared for any of the attributes being missing
+from the list and use default values instead.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>import_control</B>
+(<I>struct proto *</I> <B>p</B>, <I>rte **</I> <B>e</B>, <I>ea_list **</I> <B>attrs</B>, <I>struct linpool *</I> <B>pool</B>) --     pre-filtering decisions on route import
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol instance the route is going to be imported to
+<DT><I>rte **</I> <B>e</B><DD><P>the route in question
+<DT><I>ea_list **</I> <B>attrs</B><DD><P>extended attributes of the route
+<DT><I>struct linpool *</I> <B>pool</B><DD><P>linear pool for allocation of all temporary data
+</DL>
+<H3>Description</H3>
+<P>The <B>import_control()</B> hook is called as the first step of a exporting
+a route from a routing table to the protocol instance. It can modify
+route attributes and force acceptance or rejection of the route regardless
+of user-specified filters. See <B>rte_announce()</B> for a complete description
+of the route distribution process.
+<P>The standard use of this hook is to reject routes having originated
+from the same instance and to set default values of the protocol's metrics.
+<H3>Result</H3>
+<P>1 if the route has to be accepted, -1 if rejected and 0 if it
+should be passed to the filters.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>rte_recalculate</B>
+(<I>struct rtable *</I> <B>table</B>, <I>struct network *</I> <B>net</B>, <I>struct rte *</I> <B>new</B>, <I>struct rte *</I> <B>old</B>, <I>struct rte *</I> <B>old_best</B>) --     prepare routes for comparison
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct rtable *</I> <B>table</B><DD><P>a routing table 
+<DT><I>struct network *</I> <B>net</B><DD><P>a network entry
+<DT><I>struct rte *</I> <B>new</B><DD><P>new route for the network
+<DT><I>struct rte *</I> <B>old</B><DD><P>old route for the network
+<DT><I>struct rte *</I> <B>old_best</B><DD><P>old best route for the network (may be NULL)
+</DL>
+<H3>Description</H3>
+<P>This hook is called when a route change (from <B>old</B> to <B>new</B> for a
+<B>net</B> entry) is propagated to a <B>table</B>. It may be used to prepare
+routes for comparison by <B>rte_better()</B> in the best route
+selection. <B>new</B> may or may not be in <B>net</B>-&gt;routes list,
+<B>old</B> is not there.
+<H3>Result</H3>
+<P>1 if the ordering implied by <B>rte_better()</B> changes enough
+that full best route calculation have to be done, 0 otherwise.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>rte_better</B>
+(<I>rte *</I> <B>new</B>, <I>rte *</I> <B>old</B>) --     compare metrics of two routes
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rte *</I> <B>new</B><DD><P>the new route
+<DT><I>rte *</I> <B>old</B><DD><P>the original route
+</DL>
+<H3>Description</H3>
+<P>This hook gets called when the routing table contains two routes
+for the same network which have originated from different instances
+of a single protocol and it wants to select which one is preferred
+over the other one. Protocols usually decide according to route metrics.
+<H3>Result</H3>
+<P>1 if <B>new</B> is better (more preferred) than <B>old</B>, 0 otherwise.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>rte_same</B>
+(<I>rte *</I> <B>e1</B>, <I>rte *</I> <B>e2</B>) --     compare two routes
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rte *</I> <B>e1</B><DD><P>route
+<DT><I>rte *</I> <B>e2</B><DD><P>route
+</DL>
+<H3>Description</H3>
+<P>The <B>rte_same()</B> hook tests whether the routes <B>e1</B> and <B>e2</B> belonging
+to the same protocol instance have identical contents. Contents of
+<I>rta</I>, all the extended attributes and <I>rte</I> preference are checked
+by the core code, no need to take care of them here.
+<H3>Result</H3>
+<P>1 if <B>e1</B> is identical to <B>e2</B>, 0 otherwise.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rte_insert</B>
+(<I>net *</I> <B>n</B>, <I>rte *</I> <B>e</B>) --     notify instance about route insertion
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>net *</I> <B>n</B><DD><P>network
+<DT><I>rte *</I> <B>e</B><DD><P>route
+</DL>
+<H3>Description</H3>
+<P>This hook is called whenever a <I>rte</I> belonging to the instance
+is accepted for insertion to a routing table.
+<P>Please avoid using this function in new protocols.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>rte_remove</B>
+(<I>net *</I> <B>n</B>, <I>rte *</I> <B>e</B>) --     notify instance about route removal
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>net *</I> <B>n</B><DD><P>network
+<DT><I>rte *</I> <B>e</B><DD><P>route
+</DL>
+<H3>Description</H3>
+<P>This hook is called whenever a <I>rte</I> belonging to the instance
+is removed from a routing table.
+<P>Please avoid using this function in new protocols.
+
+<H2><A NAME="ss2.6">2.6</A> <A HREF="prog.html#toc2.6">Interfaces</A>
+</H2>
+
+<P>
+<P>The interface module keeps track of all network interfaces in the
+system and their addresses.
+<P>Each interface is represented by an <I>iface</I> structure which carries
+interface capability flags (<I>IF_MULTIACCESS</I>, <I>IF_BROADCAST</I> etc.),
+MTU, interface name and index and finally a linked list of network
+prefixes assigned to the interface, each one represented by
+struct <I>ifa</I>.
+<P>The interface module keeps a `soft-up' state for each <I>iface</I> which
+is a conjunction of link being up, the interface being of a `sane'
+type and at least one IP address assigned to it.
+<P>
+<P><HR><H3>Function</H3>
+<P><I>void</I>
+<B>ifa_dump</B>
+(<I>struct ifa *</I> <B>a</B>) --     dump interface address
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct ifa *</I> <B>a</B><DD><P>interface address descriptor
+</DL>
+<H3>Description</H3>
+<P>This function dumps contents of an <I>ifa</I> to the debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>if_dump</B>
+(<I>struct iface *</I> <B>i</B>) --     dump interface
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct iface *</I> <B>i</B><DD><P>interface to dump
+</DL>
+<H3>Description</H3>
+<P>This function dumps all information associated with a given
+network interface to the debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>if_dump_all</B>
+(<B>void</B>) --     dump all interfaces
+<P>
+<H3>Description</H3>
+<P>
+<P>This function dumps information about all known network
+interfaces to the debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>if_delete</B>
+(<I>struct iface *</I> <B>old</B>) --     remove interface 
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct iface *</I> <B>old</B><DD><P>interface 
+</DL>
+<H3>Description</H3>
+<P>This function is called by the low-level platform dependent code
+whenever it notices an interface disappears. It is just a shorthand
+for <B>if_update()</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>struct iface *</I>
+<B>if_update</B>
+(<I>struct iface *</I> <B>new</B>) --     update interface status
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct iface *</I> <B>new</B><DD><P>new interface status
+</DL>
+<H3>Description</H3>
+<P><B>if_update()</B> is called by the low-level platform dependent code
+whenever it notices an interface change.
+<P>There exist two types of interface updates -- synchronous and asynchronous
+ones. In the synchronous case, the low-level code calls <B>if_start_update()</B>,
+scans all interfaces reported by the OS, uses <B>if_update()</B> and <B>ifa_update()</B>
+to pass them to the core and then it finishes the update sequence by
+calling <B>if_end_update()</B>. When working asynchronously, the sysdep code
+calls <B>if_update()</B> and <B>ifa_update()</B> whenever it notices a change.
+<P><B>if_update()</B> will automatically notify all other modules about the change.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>if_feed_baby</B>
+(<I>struct proto *</I> <B>p</B>) --     advertise interfaces to a new protocol
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol to feed
+</DL>
+<H3>Description</H3>
+<P>When a new protocol starts, this function sends it a series
+of notifications about all existing interfaces.
+
+
+<HR><H3>Function</H3>
+<P><I>struct iface *</I>
+<B>if_find_by_index</B>
+(<I>unsigned</I> <B>idx</B>) --     find interface by ifindex
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>unsigned</I> <B>idx</B><DD><P>ifindex
+</DL>
+<H3>Description</H3>
+<P>This function finds an <I>iface</I> structure corresponding to an interface
+of the given index <B>idx</B>. Returns a pointer to the structure or <I>NULL</I>
+if no such structure exists.
+
+
+<HR><H3>Function</H3>
+<P><I>struct iface *</I>
+<B>if_find_by_name</B>
+(<I>char *</I> <B>name</B>) --     find interface by name
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>char *</I> <B>name</B><DD><P>interface name
+</DL>
+<H3>Description</H3>
+<P>This function finds an <I>iface</I> structure corresponding to an interface
+of the given name <B>name</B>. Returns a pointer to the structure or <I>NULL</I>
+if no such structure exists.
+
+
+<HR><H3>Function</H3>
+<P><I>struct ifa *</I>
+<B>ifa_update</B>
+(<I>struct ifa *</I> <B>a</B>) --     update interface address
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct ifa *</I> <B>a</B><DD><P>new interface address
+</DL>
+<H3>Description</H3>
+<P>This function adds address information to a network
+interface. It's called by the platform dependent code during
+the interface update process described under <B>if_update()</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>ifa_delete</B>
+(<I>struct ifa *</I> <B>a</B>) --     remove interface address
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct ifa *</I> <B>a</B><DD><P>interface address
+</DL>
+<H3>Description</H3>
+<P>This function removes address information from a network
+interface. It's called by the platform dependent code during
+the interface update process described under <B>if_update()</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>if_init</B>
+(<B>void</B>) --     initialize interface module
+<P>
+<H3>Description</H3>
+<P>
+<P>This function is called during BIRD startup to initialize
+all data structures of the interface module.
+
+<H2><A NAME="ss2.7">2.7</A> <A HREF="prog.html#toc2.7">Neighbor cache</A>
+</H2>
+
+<P>
+<P>Most routing protocols need to associate their internal state data with
+neighboring routers, check whether an address given as the next hop
+attribute of a route is really an address of a directly connected host
+and which interface is it connected through. Also, they often need to
+be notified when a neighbor ceases to exist or when their long awaited
+neighbor becomes connected. The neighbor cache is there to solve all
+these problems.
+<P>The neighbor cache maintains a collection of neighbor entries. Each
+entry represents one IP address corresponding to either our directly
+connected neighbor or our own end of the link (when the scope of the
+address is set to <I>SCOPE_HOST</I>) together with per-neighbor data belonging to a
+single protocol.
+<P>Active entries represent known neighbors and are stored in a hash
+table (to allow fast retrieval based on the IP address of the node) and
+two linked lists: one global and one per-interface (allowing quick
+processing of interface change events). Inactive entries exist only
+when the protocol has explicitly requested it via the <I>NEF_STICKY</I>
+flag because it wishes to be notified when the node will again become
+a neighbor. Such entries are enqueued in a special list which is walked
+whenever an interface changes its state to up.
+<P>When a neighbor event occurs (a neighbor gets disconnected or a sticky
+inactive neighbor becomes connected), the protocol hook <B>neigh_notify()</B>
+is called to advertise the change.
+<P>
+<P><HR><H3>Function</H3>
+<P><I>neighbor *</I>
+<B>neigh_find</B>
+(<I>struct proto *</I> <B>p</B>, <I>ip_addr *</I> <B>a</B>, <I>unsigned</I> <B>flags</B>) --     find or create a neighbor entry.
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct proto *</I> <B>p</B><DD><P>protocol which asks for the entry.
+<DT><I>ip_addr *</I> <B>a</B><DD><P>pointer to IP address of the node to be searched for.
+<DT><I>unsigned</I> <B>flags</B><DD><P>0 or <I>NEF_STICKY</I> if you want to create a sticky entry.
+</DL>
+<H3>Description</H3>
+<P>Search the neighbor cache for a node with given IP address. If
+it's found, a pointer to the neighbor entry is returned. If no
+such entry exists and the node is directly connected on
+one of our active interfaces, a new entry is created and returned
+to the caller with protocol-dependent fields initialized to zero.
+If the node is not connected directly or *<B>a</B> is not a valid unicast
+IP address, <B>neigh_find()</B> returns <I>NULL</I>.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>neigh_dump</B>
+(<I>neighbor *</I> <B>n</B>) --     dump specified neighbor entry.
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>neighbor *</I> <B>n</B><DD><P>the entry to dump
+</DL>
+<H3>Description</H3>
+<P>This functions dumps the contents of a given neighbor entry
+to debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>neigh_dump_all</B>
+(<B>void</B>) --     dump all neighbor entries.
+<P>
+<H3>Description</H3>
+<P>
+<P>This function dumps the contents of the neighbor cache to
+debug output.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>neigh_if_up</B>
+(<I>struct iface *</I> <B>i</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct iface *</I> <B>i</B><DD><P>interface in question
+</DL>
+<H3>Description</H3>
+<P>Tell the neighbor cache that a new interface became up.
+<P>The neighbor cache wakes up all inactive sticky neighbors with
+addresses belonging to prefixes of the interface <B>i</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>neigh_if_down</B>
+(<I>struct iface *</I> <B>i</B>) --     notify neighbor cache about interface down event
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct iface *</I> <B>i</B><DD><P>the interface in question
+</DL>
+<H3>Description</H3>
+<P>Notify the neighbor cache that an interface has ceased to exist.
+<P>It causes all entries belonging to neighbors connected to this interface
+to be flushed.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>neigh_if_link</B>
+(<I>struct iface *</I> <B>i</B>) --     notify neighbor cache about interface link change
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct iface *</I> <B>i</B><DD><P>the interface in question
+</DL>
+<H3>Description</H3>
+<P>Notify the neighbor cache that an interface changed link state.
+All owners of neighbor entries connected to this interface are
+notified.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>neigh_ifa_update</B>
+(<I>struct ifa *</I> <B>a</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct ifa *</I> <B>a</B><DD><P>-- undescribed --
+</DL>
+<H3>Description</H3>
+<P>Tell the neighbor cache that an address was added or removed.
+<P>The neighbor cache wakes up all inactive sticky neighbors with
+addresses belonging to prefixes of the interface belonging to <B>ifa</B>
+and causes all unreachable neighbors to be flushed.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>neigh_prune</B>
+(<B>void</B>) --     prune neighbor cache
+<P>
+<H3>Description</H3>
+<P>
+<P><B>neigh_prune()</B> examines all neighbor entries cached and removes those
+corresponding to inactive protocols. It's called whenever a protocol
+is shut down to get rid of all its heritage.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>neigh_init</B>
+(<I>pool *</I> <B>if_pool</B>) --     initialize the neighbor cache.
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>pool *</I> <B>if_pool</B><DD><P>resource pool to be used for neighbor entries.
+</DL>
+<H3>Description</H3>
+<P>This function is called during BIRD startup to initialize
+the neighbor cache module.
+
+<H2><A NAME="ss2.8">2.8</A> <A HREF="prog.html#toc2.8">Command line interface</A>
+</H2>
+
+<P>
+<P>This module takes care of the BIRD's command-line interface (CLI).
+The CLI exists to provide a way to control BIRD remotely and to inspect
+its status. It uses a very simple textual protocol over a stream
+connection provided by the platform dependent code (on UNIX systems,
+it's a UNIX domain socket).
+<P>Each session of the CLI consists of a sequence of request and replies,
+slightly resembling the FTP and SMTP protocols.
+Requests are commands encoded as a single line of text, replies are
+sequences of lines starting with a four-digit code followed by either
+a space (if it's the last line of the reply) or a minus sign (when the
+reply is going to continue with the next line), the rest of the line
+contains a textual message semantics of which depends on the numeric
+code. If a reply line has the same code as the previous one and it's
+a continuation line, the whole prefix can be replaced by a single
+white space character.
+<P>Reply codes starting with 0 stand for `action successfully completed' messages,
+1 means `table entry', 8 `runtime error' and 9 `syntax error'.
+<P>Each CLI session is internally represented by a <I>cli</I> structure and a
+resource pool containing all resources associated with the connection,
+so that it can be easily freed whenever the connection gets closed, not depending
+on the current state of command processing.
+<P>The CLI commands are declared as a part of the configuration grammar
+by using the <CODE>CF_CLI</CODE> macro. When a command is received, it is processed
+by the same lexical analyzer and parser as used for the configuration, but
+it's switched to a special mode by prepending a fake token to the text,
+so that it uses only the CLI command rules. Then the parser invokes
+an execution routine corresponding to the command, which either constructs
+the whole reply and returns it back or (in case it expects the reply will be long)
+it prints a partial reply and asks the CLI module (using the <B>cont</B> hook)
+to call it again when the output is transferred to the user.
+<P>The <B>this_cli</B> variable points to a <I>cli</I> structure of the session being
+currently parsed, but it's of course available only in command handlers
+not entered using the <B>cont</B> hook.
+<P>TX buffer management works as follows: At cli.tx_buf there is a
+list of TX buffers (struct cli_out), cli.tx_write is the buffer
+currently used by the producer (<B>cli_printf()</B>, <B>cli_alloc_out()</B>) and
+cli.tx_pos is the buffer currently used by the consumer
+(<B>cli_write()</B>, in system dependent code). The producer uses
+cli_out.wpos ptr as the current write position and the consumer
+uses cli_out.outpos ptr as the current read position. When the
+producer produces something, it calls <B>cli_write_trigger()</B>. If there
+is not enough space in the current buffer, the producer allocates
+the new one. When the consumer processes everything in the buffer
+queue, it calls <B>cli_written()</B>, tha frees all buffers (except the
+first one) and schedules cli.event .
+<P>
+<P><HR><H3>Function</H3>
+<P><I>void</I>
+<B>cli_printf</B>
+(<I>cli *</I> <B>c</B>, <I>int</I> <B>code</B>, <I>char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     send reply to a CLI connection
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>cli *</I> <B>c</B><DD><P>CLI connection
+<DT><I>int</I> <B>code</B><DD><P>numeric code of the reply, negative for continuation lines
+<DT><I>char *</I> <B>msg</B><DD><P>a <B>printf()</B>-like formatting string.
+<DT><I>...</I> <B>...</B><DD><P>variable arguments
+</DL>
+<H3>Description</H3>
+<P>This function send a single line of reply to a given CLI connection.
+In works in all aspects like <B>bsprintf()</B> except that it automatically
+prepends the reply line prefix.
+<P>Please note that if the connection can be already busy sending some
+data in which case <B>cli_printf()</B> stores the output to a temporary buffer,
+so please avoid sending a large batch of replies without waiting
+for the buffers to be flushed.
+<P>If you want to write to the current CLI output, you can use the <B>cli_msg()</B>
+macro instead.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>cli_init</B>
+(<B>void</B>) --     initialize the CLI module
+<P>
+<H3>Description</H3>
+<P>
+<P>This function is called during BIRD startup to initialize
+the internal data structures of the CLI module.
+
+<H2><A NAME="ss2.9">2.9</A> <A HREF="prog.html#toc2.9">Object locks</A>
+</H2>
+
+<P>
+<P>The lock module provides a simple mechanism for avoiding conflicts between
+various protocols which would like to use a single physical resource (for
+example a network port). It would be easy to say that such collisions can
+occur only when the user specifies an invalid configuration and therefore
+he deserves to get what he has asked for, but unfortunately they can also
+arise legitimately when the daemon is reconfigured and there exists (although
+for a short time period only) an old protocol instance being shut down and a new one
+willing to start up on the same interface.
+<P>The solution is very simple: when any protocol wishes to use a network port
+or some other non-shareable resource, it asks the core to lock it and it doesn't
+use the resource until it's notified that it has acquired the lock.
+<P>Object locks are represented by <I>object_lock</I> structures which are in turn a kind of
+resource. Lockable resources are uniquely determined by resource type
+(<I>OBJLOCK_UDP</I> for a UDP port etc.), IP address (usually a broadcast or
+multicast address the port is bound to), port number and interface.
+<P>
+<P><HR><H3>Function</H3>
+<P><I>struct object_lock *</I>
+<B>olock_new</B>
+(<I>pool *</I> <B>p</B>) --     create an object lock
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>pool *</I> <B>p</B><DD><P>resource pool to create the lock in.
+</DL>
+<H3>Description</H3>
+<P>The <B>olock_new()</B> function creates a new resource of type <I>object_lock</I>
+and returns a pointer to it. After filling in the structure, the caller
+should call <B>olock_acquire()</B> to do the real locking.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>olock_acquire</B>
+(<I>struct object_lock *</I> <B>l</B>) --     acquire a lock
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct object_lock *</I> <B>l</B><DD><P>the lock to acquire
+</DL>
+<H3>Description</H3>
+<P>This function attempts to acquire exclusive access to the non-shareable
+resource described by the lock <B>l</B>. It returns immediately, but as soon
+as the resource becomes available, it calls the <B>hook()</B> function set up
+by the caller.
+<P>When you want to release the resource, just <B>rfree()</B> the lock.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>olock_init</B>
+(<B>void</B>) --     initialize the object lock mechanism
+<P>
+<H3>Description</H3>
+<P>
+<P>This function is called during BIRD startup. It initializes
+all the internal data structures of the lock module.
+
+<HR>
+<A HREF="prog-3.html">Next</A>
+<A HREF="prog-1.html">Previous</A>
+<A HREF="prog.html#toc2">Contents</A>
+</BODY>
+</HTML>

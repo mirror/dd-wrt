@@ -1,0 +1,91 @@
+<!--
+	BIRD Programmer's Guide: Protocols
+
+	(c) 2000 Martin Mares <mj@ucw.cz>
+-->
+
+<sect>Routing protocols
+
+<sect1>Introduction
+
+<p>The routing protocols are the bird's heart and a fine amount of code
+is dedicated to their management and for providing support functions to them.
+(-: Actually, this is the reason why the directory with sources of the core
+code is called <tt/nest/ :-).
+
+<p>When talking about protocols, one need to distinguish between <em/protocols/
+and protocol <em/instances/. A protocol exists exactly once, not depending on whether
+it's configured or not and it can have an arbitrary number of instances corresponding
+to its "incarnations" requested by the configuration file. Each instance is completely
+autonomous, has its own configuration, its own status, its own set of routes and its
+own set of interfaces it works on.
+
+<p>A protocol is represented by a <struct/protocol/ structure containing all the basic
+information (protocol name, default settings and pointers to most of the protocol
+hooks). All these structures are linked in the <param/protocol_list/ list.
+
+<p>Each instance has its own <struct/proto/ structure describing all its properties: protocol
+type, configuration, a resource pool where all resources belonging to the instance
+live, various protocol attributes (take a look at the declaration of <struct/proto/ in
+<tt/protocol.h/), protocol states (see below for what do they mean), connections
+to routing tables, filters attached to the protocol
+and finally a set of pointers to the rest of protocol hooks (they
+are the same for all instances of the protocol, but in order to avoid extra
+indirections when calling the hooks from the fast path, they are stored directly
+in <struct/proto/). The instance is always linked in both the global instance list
+(<param/proto_list/) and a per-status list (either <param/active_proto_list/ for
+running protocols, <param/initial_proto_list/ for protocols being initialized or
+<param/flush_proto_list/ when the protocol is being shut down).
+
+<p>The protocol hooks are described in the next chapter, for more information about
+configuration of protocols, please refer to the configuration chapter and also
+to the description of the <func/proto_commit/ function.
+
+<sect1>Protocol states
+
+<p>As startup and shutdown of each protocol are complex processes which can be affected
+by lots of external events (user's actions, reconfigurations, behavior of neighboring routers etc.),
+we have decided to supervise them by a pair of simple state machines -- the protocol
+state machine and a core state machine.
+
+<p>The <em/protocol state machine/ corresponds to internal state of the protocol
+and the protocol can alter its state whenever it wants to. There are
+the following states:
+
+<descrip>
+	<tag/PS_DOWN/ The protocol is down and waits for being woken up by calling its
+	start() hook.
+	<tag/PS_START/ The protocol is waiting for connection with the rest of the
+	network. It's active, it has resources allocated, but it still doesn't want
+	any routes since it doesn't know what to do with them.
+	<tag/PS_UP/ The protocol is up and running. It communicates with the core,
+	delivers routes to tables and wants to hear announcement about route changes.
+	<tag/PS_STOP/ The protocol has been shut down (either by being asked by the
+	core code to do so or due to having encountered a protocol error).
+</descrip>
+
+<p>Unless the protocol is in the <tt/PS_DOWN/ state, it can decide to change
+its state by calling the <func/proto_notify_state/ function.
+
+<p>At any time, the core code can ask the protocol to shut itself down by calling its stop() hook.
+
+<p>The <em/core state machine/ takes care of the core view of protocol state.
+The states are traversed according to changes of the protocol state machine, but
+sometimes the transitions are delayed if the core needs to finish some actions
+(for example sending of new routes to the protocol) before proceeding to the
+new state. There are the following core states:
+
+<descrip>
+	<tag/FS_HUNGRY/ The protocol is down, it doesn't have any routes and
+	doesn't want them.
+	<tag/FS_FEEDING/ The protocol has reached the <tt/PS_UP/ state, but
+	we are still busy sending the initial set of routes to it.
+	<tag/FS_HAPPY/ The protocol is up and has complete routing information.
+	<tag/FS_FLUSHING/ The protocol is shutting down (it's in either <tt/PS_STOP/
+	or <tt/PS_DOWN/ state) and we're flushing all of its routes from the
+	routing tables.
+</descrip>
+
+<sect1>Functions of the protocol module
+
+<p>The protocol module provides the following functions:
