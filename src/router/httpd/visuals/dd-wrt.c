@@ -5264,9 +5264,22 @@ void ej_show_defwpower(webs_t wp, int argc, char_t ** argv)
 {
 	switch (getRouterBrand()) {
 	case ROUTER_ASUS_RTN10:
+	case ROUTER_ASUS_RTN10U:
+	case ROUTER_ASUS_RTN10PLUSD1:
 	case ROUTER_ASUS_RTN12:
+	case ROUTER_ASUS_RTN12B:
+	case ROUTER_ASUS_RTN53:	
 	case ROUTER_ASUS_RTN16:
 		websWrite(wp, "17");
+		break;
+	case ROUTER_ASUS_AC66U:
+	case ROUTER_NETGEAR_WNDR4500:
+	case ROUTER_NETGEAR_WNDR4500V2:
+	case ROUTER_NETGEAR_R6300:
+		websWrite(wp, "40");
+		break;
+	case ROUTER_LINKSYS_E4200:
+		websWrite(wp, "100");
 		break;
 #ifndef HAVE_BUFFALO
 	case ROUTER_BUFFALO_WHRG54S:
