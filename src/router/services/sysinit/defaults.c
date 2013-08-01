@@ -299,6 +299,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
 	{"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
 	{"wan_dns", "", 0},	/* x.x.x.x x.x.x.x ... */
+#elif HAVE_SANSFIL
+	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
 	{"wan_proto", "pptp", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
