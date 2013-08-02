@@ -30,8 +30,7 @@
 #include <sys/stat.h>
 #include <services.h>
 
-static int  jffs = 0;
-
+static int jffs = 0;
 
 void start_pptpd(void)
 {
@@ -44,19 +43,19 @@ void start_pptpd(void)
 		return;
 	}
 
-if ((nvram_match("usb_enable", "1")
-	&& nvram_match("usb_storage", "1")
-	&& nvram_match("usb_automnt", "1")
-	&& nvram_match("usb_mntpoint", "jffs"))
-	|| (nvram_match("enable_jffs2", "1")
-	&& nvram_match("jffs_mounted", "1")
-	&& nvram_match("sys_enable_jffs2", "1")))
+	if ((nvram_match("usb_enable", "1")
+	     && nvram_match("usb_storage", "1")
+	     && nvram_match("usb_automnt", "1")
+	     && nvram_match("usb_mntpoint", "jffs"))
+	    || (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1")))
 		jffs = 1;
 
 #ifdef HAVE_PPTP_ACCEL
 	insmod("pptp");
 #endif
-		
+
 	// cprintf("stop vpn modules\n");
 	// stop_vpn_modules ();
 
@@ -74,8 +73,7 @@ if ((nvram_match("usb_enable", "1")
 	fp = fopen("/tmp/pptpd/options.pptpd", "w");
 	if (nvram_match("pptpd_radius", "1")) {
 		cprintf("adding radius plugin\n");
-		fprintf(fp, "plugin radius.so\nplugin radattr.so\n" 
-			"radius-config-file /tmp/pptpd/radius/radiusclient.conf\n");
+		fprintf(fp, "plugin radius.so\nplugin radattr.so\n" "radius-config-file /tmp/pptpd/radius/radiusclient.conf\n");
 	}
 	cprintf("check if wan_wins = zero\n");
 	int nowins = 0;
@@ -88,9 +86,7 @@ if ((nvram_match("usb_enable", "1")
 		nowins = 1;
 
 	cprintf("write config\n");
-	fprintf(fp, "lock\n" "name *\n" "nobsdcomp\n" "nodeflate\n" "auth\n" 
-		"refuse-pap\n" "refuse-eap\n" "refuse-chap\n" "refuse-mschap\n" 
-		"require-mschap-v2\n");
+	fprintf(fp, "lock\n" "name *\n" "nobsdcomp\n" "nodeflate\n" "auth\n" "refuse-pap\n" "refuse-eap\n" "refuse-chap\n" "refuse-mschap\n" "require-mschap-v2\n");
 	if (nvram_match("pptpd_forcemppe", "1"))
 		fprintf(fp, "mppe required,stateless,no40,no56\n");
 	else
@@ -99,9 +95,7 @@ if ((nvram_match("usb_enable", "1")
 		"debug\n" "logfd 2\n"
 		"ms-ignore-domain\n"
 		"chap-secrets /tmp/pptpd/chap-secrets\n"
-		"ip-up-script /tmp/pptpd/ip-up\n" "ip-down-script /tmp/pptpd/ip-down\n" 
-		"proxyarp\n" "ipcp-accept-local\n" "ipcp-accept-remote\n" 
-		"lcp-echo-failure 15\n" "lcp-echo-interval 4\n"
+		"ip-up-script /tmp/pptpd/ip-up\n" "ip-down-script /tmp/pptpd/ip-down\n" "proxyarp\n" "ipcp-accept-local\n" "ipcp-accept-remote\n" "lcp-echo-failure 15\n" "lcp-echo-interval 4\n"
 //              "lcp-echo-adaptive"     //disable interval
 		"mtu %s\n" "mru %s\n", nvram_safe_get("pptpd_mtu"), nvram_safe_get("pptpd_mru"));
 	if (!nowins) {
@@ -150,38 +144,36 @@ if ((nvram_match("usb_enable", "1")
 	if (strlen(nvram_safe_get("pptpd_dns2"))) {
 		fprintf(fp, "ms-dns %s\n", nvram_safe_get("pptpd_dns2"));
 	}
-	//	use jffs/usb for auth scripts if available
+	//      use jffs/usb for auth scripts if available
 #if 0
-	if (jffs == 1) {	
-			fprintf(fp, "auth-up /jffs/etc/pptpd/auth-up.sh\n");
-			fprintf(fp, "auth-down /jffs/etc/pptpd/auth-down.sh\n");
+	if (jffs == 1) {
+		fprintf(fp, "auth-up /jffs/etc/pptpd/auth-up.sh\n");
+		fprintf(fp, "auth-down /jffs/etc/pptpd/auth-down.sh\n");
+		fclose(fp);
+		if ((fp = fopen("/jffs/etc/pptpd/auth-up.sh", "r")) == NULL) {
 			fclose(fp);
-			if ((fp = fopen("/jffs/etc/pptpd/auth-up.sh", "r")) == NULL) {
-				fclose(fp);
-				fp = fopen("/jffs/etc/pptpd/auth-up.sh", "w");
-					fprintf(fp, "#!/bin/sh\n");
-				fclose(fp);
-				chmod("/jffs/etc/pptpd/auth-up.sh", 0700);
-				}
-			if ((fp = fopen("/jffs/etc/pptpd/auth-down.sh", "r")) == NULL) {
-				fclose(fp);		
-				fp = fopen("/jffs/etc/pptpd/auth-down.sh", "w");
-					fprintf(fp, "#!/bin/sh\n");
-				fclose(fp);
-				chmod("/jffs/etc/pptpd/auth-down.sh", 0700);
-			}
+			fp = fopen("/jffs/etc/pptpd/auth-up.sh", "w");
+			fprintf(fp, "#!/bin/sh\n");
+			fclose(fp);
+			chmod("/jffs/etc/pptpd/auth-up.sh", 0700);
 		}
-	else 	    
+		if ((fp = fopen("/jffs/etc/pptpd/auth-down.sh", "r")) == NULL) {
+			fclose(fp);
+			fp = fopen("/jffs/etc/pptpd/auth-down.sh", "w");
+			fprintf(fp, "#!/bin/sh\n");
+			fclose(fp);
+			chmod("/jffs/etc/pptpd/auth-down.sh", 0700);
+		}
+	} else
 #endif
-	    fclose(fp);
-	
-	
+		fclose(fp);
+
 	// Following is all crude and need to be revisited once testing confirms
 	// that it does work
 	// Should be enough for testing..
 	if (nvram_match("pptpd_radius", "1")) {
 		if (nvram_get("pptpd_radserver") != NULL && nvram_get("pptpd_radpass") != NULL) {
-				
+
 			mkdir("/tmp/pptpd/radius", 0744);
 
 			fp = fopen("/tmp/pptpd/radius/radiusclient.conf", "w");
@@ -203,9 +195,8 @@ if ((nvram_match("usb_enable", "1")
 			fprintf(fp, "%s\t%s\n", nvram_get("pptpd_radserver"), nvram_get("pptpd_radpass"));
 			fclose(fp);
 
-		} 
-	} 
-
+		}
+	}
 	// Create pptpd.conf options file for pptpd daemon
 	fp = fopen("/tmp/pptpd/pptpd.conf", "w");
 	if (nvram_match("pptpd_bcrelay", "1"))
