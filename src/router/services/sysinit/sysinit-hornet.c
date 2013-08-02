@@ -127,7 +127,13 @@ void start_sysinit(void)
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
 		fprintf(stderr, "configure eth0 to %s\n", mac);
 		eval("ifconfig", "eth0", "hw", "ether", mac);
-		MAC_ADD(mac);
+		if (copy[0] == copy[6] && copy[1] == copy[7] && copy[2] == copy[8]) {
+			sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
+			fprintf(stderr, "Using second mac for eth1(%s)\n", mac);
+		}
+		else {
+			MAC_ADD(mac);
+		}
 		fprintf(stderr, "configure eth1 to %s\n", mac);
 		eval("ifconfig", "eth1", "hw", "ether", mac);
 #ifndef HAVE_ATH9K
