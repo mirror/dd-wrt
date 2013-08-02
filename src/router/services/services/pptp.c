@@ -151,10 +151,11 @@ if ((nvram_match("usb_enable", "1")
 		fprintf(fp, "ms-dns %s\n", nvram_safe_get("pptpd_dns2"));
 	}
 	//	use jffs/usb for auth scripts if available
+#if 0
 	if (jffs == 1) {	
-//		if (strlen(nvram_safe_get("openvpn_ccddef")) > 0) {	//
 			fprintf(fp, "auth-up /jffs/etc/pptpd/auth-up.sh\n");
 			fprintf(fp, "auth-down /jffs/etc/pptpd/auth-down.sh\n");
+			fclose(fp);
 			if ((fp = fopen("/jffs/etc/pptpd/auth-up.sh", "r")) == NULL) {
 				fclose(fp);
 				fp = fopen("/jffs/etc/pptpd/auth-up.sh", "w");
@@ -170,29 +171,16 @@ if ((nvram_match("usb_enable", "1")
 				chmod("/jffs/etc/pptpd/auth-down.sh", 0700);
 			}
 		}
-//	}
-	else {
-/*		fprintf(fp, "connect /tmp/pptpd/auth-up.sh\n");
-		fprintf(fp, "disconnect /tmp/pptpd/auth-down.sh\n");
-		fp = fopen("/jffs/etc/pptpd/auth-up.sh", "w");
-			fprintf(fp, "#!/bin/sh\n");
-		fclose(fp);
-		fp = fopen("/jffs/etc/pptpd/auth-down.sh", "w");
-			fprintf(fp, "#!/bin/sh\n");
-		fclose(fp);
-		chmod("/tmp/pptpd/auth-up.sh", 0700);
-		chmod("/tmp/pptpd/auth-down.sh", 0700);	*/
-		}
-
+	else 	    
+#endif
+	    fclose(fp);
+	
+	
 	// Following is all crude and need to be revisited once testing confirms
 	// that it does work
 	// Should be enough for testing..
 	if (nvram_match("pptpd_radius", "1")) {
 		if (nvram_get("pptpd_radserver") != NULL && nvram_get("pptpd_radpass") != NULL) {
-			fclose(fp);
-
-//			if (nvram_match("pptpd_radip"), "1")	//use radius for ip's // nvarm var missing :-)
-//				fprintf(fp, "delegate\n");
 				
 			mkdir("/tmp/pptpd/radius", 0744);
 
@@ -215,10 +203,8 @@ if ((nvram_match("usb_enable", "1")
 			fprintf(fp, "%s\t%s\n", nvram_get("pptpd_radserver"), nvram_get("pptpd_radpass"));
 			fclose(fp);
 
-		} else
-			fclose(fp);
-	} else
-		fclose(fp);
+		} 
+	} 
 
 	// Create pptpd.conf options file for pptpd daemon
 	fp = fopen("/tmp/pptpd/pptpd.conf", "w");
