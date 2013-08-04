@@ -100,20 +100,14 @@ void ej_exec_show_subscribers(webs_t wp, int argc, char_t ** argv)
 
 	count = nvram_safe_get("milkfish_ddsubscribersnum");
 	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
-		websWrite(wp, "<tr>\n");
-		websWrite(wp, "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
-		websWrite(wp, "<tr><td>\n");
-		websWrite(wp, "<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "<tr><td>\n<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		show_subscriber_table(wp, "user", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		show_subscriber_table(wp, "pass", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, "\" /></td>\n</tr>\n");
 	}
 	return;
 }
@@ -157,20 +151,14 @@ void ej_exec_show_aliases(webs_t wp, int argc, char_t ** argv)
 
 	count = nvram_safe_get("milkfish_ddaliasesnum");
 	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
-		websWrite(wp, "<tr>\n");
-		websWrite(wp, "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
-		websWrite(wp, "<tr><td>\n");
-		websWrite(wp, "<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "<tr><td>\n<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		show_aliases_table(wp, "user", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input maxlength=\"50\" size=\"50\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input maxlength=\"50\" size=\"50\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		show_aliases_table(wp, "pass", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, "\" /></td>\n</tr>\n");
 	}
 	return;
 }
@@ -223,24 +211,16 @@ void ej_exec_show_registrations(webs_t wp, int argc, char_t ** argv)
 
 	count = nvram_safe_get("milkfish_ddactivenum");
 	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
-		websWrite(wp, "<tr>\n");
-		websWrite(wp, "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
-		websWrite(wp, "<tr><td>\n");
-		websWrite(wp, "<input maxlength=\"20\" size=\"20\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "<tr><td>\n<input maxlength=\"20\" size=\"20\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		show_registrations_table(wp, "user", i);
-		websWrite(wp, "\" readonly=\"readonly\" /></td>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input maxlength=\"50\" size=\"50\" name=\"contact%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "\" readonly=\"readonly\" /></td>\n<td>\n<input maxlength=\"50\" size=\"50\" name=\"contact%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		show_registrations_table(wp, "contact", i);
-		websWrite(wp, "\" readonly=\"readonly\" /></td>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input maxlength=\"50\" size=\"50\" name=\"agent%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "\" readonly=\"readonly\" /></td>\n<td>\n<input maxlength=\"50\" size=\"50\" name=\"agent%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		show_registrations_table(wp, "agent", i);
-		websWrite(wp, "\" readonly=\"readonly\" /></td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, "\" readonly=\"readonly\" /></td>\n</tr>\n");
 	}
 	return;
 }

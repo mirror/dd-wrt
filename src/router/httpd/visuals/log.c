@@ -117,12 +117,8 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 					strcpy(proto_old, proto);
 				}
 
-				websWrite(wp, "<tr height=\"1\">\n");
-				websWrite(wp, "<td>%s</td>\n", src);
-				websWrite(wp, "<td align=\"center\">%s</td>\n", proto);
-				websWrite(wp, "<td align=\"center\">%s</td>\n", servp ? servp->s_name : dpt);
-				websWrite(wp, "<td align=\"center\">%s</td>\n", verdict);
-				websWrite(wp, "</tr>\n");
+				websWrite(wp, "<tr height=\"1\">\n<td>%s</td>\n<td align=\"center\">%s</td>\n<td align=\"center\">%s</td>\n<td align=\"center\">%s</td>\n</tr>\n", src, proto, servp ? servp->s_name : dpt,
+					  verdict);
 			}
 		} else if (!strcmp(type, "outgoing")) {
 			if (!strncmp(in, lan_if, 3) && ((!strncmp(out, "ppp", 3)
@@ -144,13 +140,8 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 					strcpy(dpt_old, dpt);
 				}
 
-				websWrite(wp, "<tr height=\"1\">\n");
-				websWrite(wp, "<td>%s</td>\n", src);
-				websWrite(wp, "<td>%s</td>\n", dst);
-				websWrite(wp, "<td align=\"center\">%s</td>\n", proto);
-				websWrite(wp, "<td>%s</td>\n", servp ? servp->s_name : dpt);
-				websWrite(wp, "<td align=\"center\">%s</td>\n", verdict);
-				websWrite(wp, "</tr>\n");
+				websWrite(wp, "<tr height=\"1\">\n<td>%s</td>\n<td>%s</td>\n<td align=\"center\">%s</td>\n<td>%s</td>\n<td align=\"center\">%s</td>\n</tr>\n", src, dst, proto, servp ? servp->s_name : dpt,
+					  verdict);
 			}
 		} else if (!strcmp(type, "all")) {
 			int dir = 0;
