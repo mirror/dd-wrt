@@ -71,34 +71,22 @@ void ej_show_chaps(webs_t wp, int argc, char_t ** argv)
 
 	count = nvram_safe_get("pppoeserver_chapsnum");
 	if (count == NULL || strlen(count) == 0) {
-		websWrite(wp, "<tr>\n");
-		websWrite(wp, "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	c = atoi(count);
 	if (c <= 0) {
-		websWrite(wp, "<tr>\n");
-		websWrite(wp, "<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, "<tr>\n<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
-		websWrite(wp, "<tr><td>\n");
-		websWrite(wp, "<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "<tr><td>\n<input maxlength=\"30\" size=\"30\" name=\"user%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		show_chaps_table(wp, "user", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input maxlength=\"30\" size=\"30\" name=\"pass%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		show_chaps_table(wp, "pass", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input class=\"num\" maxlength=\"15\" size=\"26\" name=\"ip%d\" value=\"", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input class=\"num\" maxlength=\"15\" size=\"26\" name=\"ip%d\" value=\"", i);
 		show_chaps_table(wp, "ip", i);
-		websWrite(wp, "\" /></td>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+		websWrite(wp, "\" /></td>\n<td>\n<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
 		show_chaps_table(wp, "enable", i);
-		websWrite(wp, " /></td>\n");
-		websWrite(wp, "</tr>\n");
+		websWrite(wp, " /></td>\n</tr>\n");
 	}
 	return;
 }
