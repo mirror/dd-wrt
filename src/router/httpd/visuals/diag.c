@@ -67,12 +67,7 @@ void ej_dump_ping_log(webs_t wp, int argc, char_t ** argv)
 
 			for (i = 0; i < strlen(line) + 1; i++) {
 				if (line[i] == '"') {
-					newline[nc++] = '&';
-					newline[nc++] = 'q';
-					newline[nc++] = 'u';
-					newline[nc++] = 'o';
-					newline[nc++] = 't';
-					newline[nc++] = ';';
+					memcpy(&newline[nc+=6],"&quot;",6);
 				} else
 					newline[nc++] = line[i];
 			}
