@@ -141,11 +141,21 @@ static void detect_wireless_devices(void)
 			loadath9k = 1;
 		if (!strcmp(has_device(path), "0x0032"))
 			loadath9k = 1;
+		if (!strcmp(has_device(path), "0x0033"))
+			loadath9k = 1;
 		if (!strcmp(has_device(path), "0x0034"))
 			loadath9k = 1;
 		if (!strcmp(has_device(path), "0x0035"))
 			loadath9k = 1;
+		if (!strcmp(has_device(path), "0x0036"))
+			loadath9k = 1;
+		if (!strcmp(has_device(path), "0x0037"))
+			loadath9k = 1;
+		if (!strcmp(has_device(path), "0x0038"))
+			loadath9k = 1;
 		if (!strcmp(has_device(path), "0x000b"))
+			loadath9k = 1;
+		if (!strcmp(has_device(path), "0xabcd"))
 			loadath9k = 1;
 		if (!strcmp(has_device(path), "0x001b"))
 			loadlegacy = 1;
