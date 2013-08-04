@@ -1350,7 +1350,7 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 #elif defined(HAVE_SANSFIL)
 	websWrite(wp, "%s", "SANSFIL");
 #elif HAVE_KORENRON
-        websWrite(wp, "\t\t<title>KORENRON (build %s)", SVN_REVISION);
+	websWrite(wp, "\t\t<title>KORENRON (build %s)", SVN_REVISION);
 #else
 	websWrite(wp, "%s", nvram_safe_get("DD_BOARD"));
 #endif
@@ -1609,238 +1609,64 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	int wimaxwifi = 0;
 #endif
 #ifdef HAVE_ERC
-	static char menu_s[8][12][32] = { {
-					   "index.asp", "DDNS.asp", "", "", "",
-					   "", "", "", "", "", "", ""},
-	{
-	 "Wireless_Basic.asp", "WL_WPATable.asp", "", "", "", "", "", "",
-	 "", "", "", ""}, {
-			   "ForwardSpec.asp", "", "", "", "", "", "", "", "",
-			   "", "", ""}, {
-					 "Filters.asp", "", "", "", "", "", "",
-					 "", "", "", "", ""}, {
-							       "Management.asp",
-							       "", "", "", "",
-							       "", "", "", "",
-							       "", "", ""}, {
-									     "",
-									     "",
-									     "",
-									     "",
-									     "",
-									     "",
-									     "",
-									     "",
-									     "",
-									     "",
-									     "",
-									     ""},
-	{
-	 "", "", "", "", "", "", "", "", "", "", "", ""}, {
-							   "", "", "", "", "",
-							   "", "", "", "", "",
-							   "", ""}, {
-								     "", "", "",
-								     "", "", "",
-								     "", "", "",
-								     "", "", ""}
+	static char menu_s[8][12][32] = {
+		{"index.asp", "DDNS.asp", "", "", "", "", "", "", "", "", "", ""},	//
+		{"Wireless_Basic.asp", "WL_WPATable.asp", "", "", "", "", "", "", "", "", "", ""},	//
+		{"ForwardSpec.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"Filters.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"Management.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"", "", "", "", "", "", "", "", "", "", "", ""}	//
 	};
 	/*
 	 * real name is bmenu.menuname[i][j] 
 	 */
-	static char menuname_s[8][13][32] = { {
-					       "setup", "setupbasic",
-					       "setupddns", "", "", "", "", "",
-					       "", "", "", "", ""}, {
-								     "wireless",
-								     "wirelessBasic",
-								     "wirelessSecurity",
-								     "", "", "",
-								     "",
-								     "", "", "",
-								     "", "",
-								     ""}, {
-									   "applications",
-									   "applicationspforwarding",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   ""},
-	{
-	 "accrestriction", "webaccess", "", "", "", "", "", "", "", "",
-	 "", "", ""}, {
-		       "admin", "adminManagement", "", "", "", "", "", "", "",
-		       "", "", "", ""},
-	{
-	 "", "", "", "", "", "", "", "", "", "", "", "", ""}, {
-							       "", "", "", "",
-							       "", "", "", "",
-							       "", "", "", "",
-							       ""}, {
-								     "", "", "",
-								     "", "", "",
-								     "", "", "",
-								     "", "", "",
-								     ""}, {
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   "",
-									   ""}
+	static char menuname_s[8][13][32] = {
+		{"setup", "setupbasic", "setupddns", "", "", "", "", "", "", "", "", "", ""},	//
+		{"wireless", "wirelessBasic", "wirelessSecurity", "", "", "", "", "", "", "", "", "", ""},	//
+		{"applications", "applicationspforwarding", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"admin", "adminManagement", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"", "", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"", "", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"", "", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"", "", "", "", "", "", "", "", "", "", "", "", ""}	//
 	};
 
 #elif HAVE_IPR
 
 #endif
 
-	static char menu_t[8][12][32] = { {
-					   "index.asp", "DDNS.asp",
-					   "WanMAC.asp", "Routing.asp",
-					   "Vlan.asp", "Networking.asp",
-					   "eop-tunnel.asp", "", "", "", "",
-					   ""}, {
-						 "Wireless_Basic.asp",
-						 "SuperChannel.asp",
-						 "WiMAX.asp",
-						 "Wireless_radauth.asp",
-						 "WL_WPATable.asp",
-						 "AOSS.asp", "Wireless_MAC.asp",
-						 "Wireless_Advanced.asp",
-						 "Wireless_WDS.asp", "", "",
-						 ""}, {
-						       "Services.asp",
-						       "FreeRadius.asp",
-						       "PPPoE_Server.asp",
-						       "PPTP.asp", "USB.asp",
-						       "NAS.asp", 
-#ifndef HAVE_SANSFIL
-							"Hotspot.asp",
-#else
-							"",
-#endif
-						       "Nintendo.asp",
-#ifdef HAVE_PRIVOXY
-						       "Milkfish.asp", "Privoxy.asp", "",
-#else
- 						       "Milkfish.asp", "", "",
-#endif  
-						       ""}, {
-							     "Firewall.asp",
-							     "VPN.asp", "", "",
-							     "", "", "", "", "",
-							     "", "", ""},
-	{
-	 "Filters.asp", "", "", "", "", "", "", "", "", "", "", ""}, {
-								      "ForwardSpec.asp",
-								      "Forward.asp",
-								      "Triggering.asp",
-								      "UPnP.asp",
-								      "DMZ.asp",
-								      "QoS.asp",
-								      "P2P.asp",
-								      "", "",
-								      "", "",
-								      ""}, {
-									    "Management.asp",
-									    "Alive.asp",
-									    "Diagnostics.asp",
-									    "Wol.asp",
-									    "Factory_Defaults.asp",
-									    "Upgrade.asp",
-									    "config.asp",
-									    "",
-									    "",
-									    "",
-									    "",
-									    ""},
-	{
-	 "Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp",
-	 "Status_Wireless.asp", "Status_SputnikAPD.asp",
-	 "Status_OpenVPN.asp", "Status_Bandwidth.asp",
-	 "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", "Status_CWMP.asp"}
+	static char menu_t[8][12][32] = {
+		{"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", "", ""},	// 
+		{"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", ""},	//
+		{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "", ""},	//
+		{"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", ""},	//
+		{"Filters.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp", "QoS.asp", "P2P.asp", "", "", "", "", ""},	//
+		{"Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", "", ""},	//
+		{"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp", "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", "Status_CWMP.asp"}	//
 	};
 	/*
 	 * real name is bmenu.menuname[i][j] 
 	 */
 	static char menuname_t[8][13][32] = {
-		{
-		 "setup", "setupbasic", "setupddns", "setupmacclone",
-		 "setuprouting", "setupvlan", "networking",
-		 "setupeop", "", "", "", "", ""}, {
-						   "wireless", "wirelessBasic",
-						   "wirelessSuperchannel",
-						   "wimax", "wirelessRadius",
-						   "wirelessSecurity",
+		{"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting", "setupvlan", "networking", "setupeop", "", "", "", "", ""},	//
+		{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax", "wirelessRadius", "wirelessSecurity",	//
 #ifdef HAVE_WPS
-						   "wirelessAossWPS",
+		 "wirelessAossWPS",
 #else
-						   "wirelessAoss",
+		 "wirelessAoss",
 #endif
-						   "wirelessMac",
-						   "wirelessAdvanced",
-						   "wirelessWds", "", "", ""},
-		{
-		 "services", "servicesServices", "servicesRadius",
-		 "servicesPppoesrv", "servicesPptp",
-		 "servicesUSB", "servicesNAS",
-		 "servicesHotspot", "servicesNintendo",
-#ifdef HAVE_PRIVOXY	 
-		 "servicesMilkfish", "servicesPrivoxy", "", ""}, {
-#else
-		 "servicesMilkfish", "", "", ""}, {  
-#endif
-						   "security", "firwall", "vpn",
-						   "", "", "", "", "", "",
-						   "", "", "", ""}, {
-								     "accrestriction",
-								     "webaccess",
-								     "", "", "",
-								     "", "", "",
-								     "", "", "",
-								     "", ""}, {
-									       "applications",
-									       "applicationspforwarding",
-									       "applicationsprforwarding",
-									       "applicationsptriggering",
-									       "applicationsUpnp",
-									       "applicationsDMZ",
-									       "applicationsQoS",
-									       "applicationsP2P",
-									       "",
-									       "",
-									       "",
-									       "",
-									       ""},
-		{
-		 "admin", "adminManagement", "adminAlive", "adminDiag",
-		 "adminWol", "adminFactory", "adminUpgrade",
-		 "adminBackup", "", "", "", "", ""}, {
-						      "statu", "statuRouter",
-						      "statuInet", "statuLAN",
-						      "statuWLAN",
-						      "statuSputnik",
-						      "statuVPN",
-						      "statuBand",
-						      "statuSysInfo",
-						      "statuActivate",
-						      "statuMyPage",
-						      "statuGpio", 
-						      "statuCWMP"}
+		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},	//
+		{"services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "", ""},	//
+		{"security", "firwall", "vpn", "", "", "", "", "", "", "", "", "", ""},	// 
+		{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", ""},	//
+		{"applications", "applicationspforwarding", "applicationsprforwarding", "applicationsptriggering", "applicationsUpnp", "applicationsDMZ", "applicationsQoS", "applicationsP2P", "", "", "", "", ""},	//
+		{"admin", "adminManagement", "adminAlive", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", ""},	//
+		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP"}	//
 	};
 	static char menu[8][12][32];
 	static char menuname[8][13][32];
@@ -1921,7 +1747,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_WAVESAT
 	wimaxwifi = 1;
 #endif
-	for (i = 0; i < 8; i++) {
+
+#define MAXMENU 8
+#define MAXSUBMENU 12
+
+	for (i = 0; i < MAXMENU; i++) {
 		if (strlen(menu[i][0]) == 0)
 			continue;
 #ifdef HAVE_MADWIFI
@@ -1933,6 +1763,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 			// Corenet
 			i++;
 #endif
+		if (i >= MAXMENU)
+			break;
 //fprintf(stderr,"generate menu %s\n",menu[i][0]);
 		if (!strcmp(menu[i][0], mainmenu)) {
 #ifdef HAVE_MADWIFI
@@ -1944,7 +1776,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "    <div id=\"menuSub\">\n");
 			websWrite(wp, "     <ul id=\"menuSubList\">\n");
 
-			for (j = 0; j < 12; j++) {
+			for (j = 0; j < MAXSUBMENU; j++) {
 #ifdef HAVE_MADWIFI
 				if (!wifi && !strncmp(menu[i][j], "Wireless_Basic.asp", 8))
 					j++;
@@ -2046,6 +1878,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strcmp(menu[i][j], "Upgrade.asp"))
 					j++;
 #endif
+#ifndef HAVE_SANSFIL
+				if (!strcmp(menu[i][j], "Hotspot.asp"))
+					j++;
+#endif
+
 #ifndef HAVE_MILKFISH
 				if (!strcmp(menu[i][j], "Milkfish.asp"))
 					j++;
@@ -2055,8 +1892,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 //                                      j++;
 //#endif
 #ifndef HAVE_PRIVOXY
-                              if (!strcmp(menu[i][j], "Privoxy.asp"))
-                                      j++;
+				if (!strcmp(menu[i][j], "Privoxy.asp"))
+					j++;
 #endif
 //#ifdef HAVE_ESPOD
 //                              if (!strcmp(menu[i][j], "AnchorFree.asp"))
@@ -2110,6 +1947,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strcmp(menu[i][j], "Status_CWMP.asp"))
 					j++;
 #endif
+				if (j >= MAXSUBMENU)
+					break;
 #ifdef HAVE_MADWIFI
 				if (!strcmp(menu[i][j], submenu)
 				    && (strlen(menu[i][j])
