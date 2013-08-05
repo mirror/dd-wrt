@@ -523,7 +523,7 @@ struct sk_buff {
 	__u8			imq_flags:IMQ_F_BITS;
 #endif
 
-#if defined CONFIG_NET_DMA || defined CONFIG_NET_LL_RX_POLL
+#if defined CONFIG_NET_DMA || defined CONFIG_NET_RX_BUSY_POLL
 	union {
 		unsigned int	napi_id;
 		dma_cookie_t	dma_cookie;

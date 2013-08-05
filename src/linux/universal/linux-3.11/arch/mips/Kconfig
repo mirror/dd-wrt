@@ -114,6 +114,7 @@ config AR7
 	select CEVT_R4K
 	select CSRC_R4K
 	select IRQ_CPU
+	select SYS_HAS_CPU_MIPS32_R1
 	select NO_EXCEPT_FILL
 	select SWAP_IO_SPACE
 	select SYS_HAS_CPU_MIPS32_R1
