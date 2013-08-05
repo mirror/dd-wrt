@@ -1161,6 +1161,11 @@ void start_restore_defaults(void)
 		{"wan_ifname2", "eth0", 0},
 		{"wan_ifnames", "eth0", 0},
 		{"wan_default", "eth0", 0},
+#elif HAVE_ONNET
+		{"wan_ifname", "eth0", 0},
+		{"wan_ifname2", "eth0", 0},
+		{"wan_ifnames", "eth0", 0},
+		{"wan_default", "eth0", 0},
 #else
 		{"wan_ifname", "eth1", 0},
 		{"wan_ifname2", "eth1", 0},
