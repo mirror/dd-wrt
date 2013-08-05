@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.11.0-rc2 Kernel Configuration
+# Linux/mips 3.11.0-rc4 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -725,7 +725,7 @@ CONFIG_NET_SCH_FIFO=y
 CONFIG_NETLINK_MMAP=y
 # CONFIG_NETLINK_DIAG is not set
 # CONFIG_NET_MPLS_GSO is not set
-CONFIG_NET_LL_RX_POLL=y
+CONFIG_NET_RX_BUSY_POLL=y
 CONFIG_BQL=y
 
 #
@@ -1395,6 +1395,7 @@ CONFIG_USB_SERIAL_ZTE=m
 # CONFIG_USB_SERIAL_SSU100 is not set
 # CONFIG_USB_SERIAL_QT2 is not set
 # CONFIG_USB_SERIAL_FLASHLOADER is not set
+# CONFIG_USB_SERIAL_SUUNTO is not set
 # CONFIG_USB_SERIAL_DEBUG is not set
 
 #
@@ -1838,7 +1839,6 @@ CONFIG_CRYPTO_HMAC=y
 #
 CONFIG_CRYPTO_CRC32C=y
 # CONFIG_CRYPTO_CRC32 is not set
-# CONFIG_CRYPTO_CRCT10DIF is not set
 # CONFIG_CRYPTO_GHASH is not set
 CONFIG_CRYPTO_MD4=m
 CONFIG_CRYPTO_MD5=y
