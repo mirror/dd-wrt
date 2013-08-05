@@ -162,10 +162,6 @@ void start_sysinit(void)
 	setEthLED(17, "eth1");
 #endif
 #endif
-#ifdef HAVE_HORNET
-	setEthLED(17, "eth0");
-	setEthLED(13, "eth1");
-#endif
 #ifdef HAVE_CARAMBOLA
 	system("swconfig dev switch0 set reset 1");
 	system("swconfig dev switch0 set enable_vlan 1");
