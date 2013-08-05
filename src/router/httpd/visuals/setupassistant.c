@@ -1279,7 +1279,7 @@ void sas_show_security_prefix(webs_t wp, int argc, char_t ** argv, char *prefix,
 	}
 #else
 #ifndef HAVE_RT61
-	if (nvram_selmatch(wp, sta, "sta") || nvram_match(wp, sta, "wet")) {
+	if (nvram_selmatch(wp, sta, "sta") || nvram_match(wp, "wet")) {
 		websWrite(wp, "<option value=\"8021X\" %s>802.1x</option>\n", selmatch(wp, var, "8021X", "selected=\"selected\""));
 		if (!strcmp(nvram_selget(wp, var), "8021X")) {
 			sprintf(spf, "8021X");
