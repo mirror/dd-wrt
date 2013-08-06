@@ -173,8 +173,13 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth1", "2");
 #endif
 #ifdef HAVE_HORNET
+#ifdef HAVE_ONNET
 	setEthLED(13,"eth0");
 	setEthLED(17,"eth1");
+#else
+	setEthLED(17,"eth0");
+	setEthLED(13,"eth1");
+#endif
 #endif
 	struct ifreq ifr;
 	int s;
