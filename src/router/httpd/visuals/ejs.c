@@ -1193,8 +1193,10 @@ void ej_show_languages(webs_t wp, int argc, char_t ** argv)
 			strcpy(buf, PwebsRomPageIndex[i].path);
 			char *mybuf = &buf[strlen("lang_pack/")];
 
-			mybuf[strlen(mybuf) - 3] = 0;	// strip .js
-			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n", mybuf, nvram_match("language", mybuf) ? "selected=\\\"selected\\\"" : "", mybuf);
+			if (strchr(mybuf, (int)'-') == NULL) {
+				mybuf[strlen(mybuf) - 3] = 0;	// strip .js
+				websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");\n", mybuf, nvram_match("language", mybuf) ? "selected=\\\"selected\\\"" : "", mybuf);
+			}
 		}
 		i++;
 	}
@@ -1325,7 +1327,29 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_XIOCOM
 	websWrite(wp, "XWR");
 #else
-#ifdef HAVE_ONNET
+#ifdef HAVE_ONNET_BLANK
+	if (nvram_match("DD_BOARD", "Atheros Hornet")) {
+		websWrite(wp, "9331");
+	} else if (nvram_match("DD_BOARD", "Compex WPE72")) {
+		websWrite(wp, "E72");
+	} else if (nvram_match("DD_BOARD", "ACCTON AC622")) {
+		if (iscpe()) {
+			websWrite(wp, "7240-2");
+		} else {
+			websWrite(wp, "7240-2");
+		}
+	} else if (nvram_match("DD_BOARD", "ACCTON AC722")) {
+		if (iscpe()) {
+			websWrite(wp, "OTAi 7240-5");
+		} else {
+			websWrite(wp, "OTAi 7240-5");
+		}
+	} else if (nvram_match("DD_BOARD", "Compex WP546")) {
+		websWrite(wp, "546");
+	} else {
+		websWrite(wp, "%s", nvram_get("DD_BOARD"));
+	}
+#elif HAVE_ONNET
 	if (nvram_match("DD_BOARD", "Atheros Hornet")) {
 		websWrite(wp, "OTAi 9331");
 	} else if (nvram_match("DD_BOARD", "Compex WPE72")) {
@@ -2034,7 +2058,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 // temp
 #ifdef HAVE_FREECWMP
-	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"lang_pack/freecwmp_english.js\"></script>\n");
+	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"lang_pack/freecwmp-english.js\"></script>\n");
 #endif
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n", style);
 	websWrite(wp, "\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n", style);
