@@ -600,8 +600,6 @@ void __init ar71xx_gpio_init(void)
 		generic_leds_gpio[i].default_state = LEDS_GPIO_DEFSTATE_KEEP;
 	}
 	ar71xx_add_device_leds_gpio(-1,sizeof(generic_leds_gpio)/sizeof(struct gpio_led),generic_leds_gpio);
-#ifdef CONFIG_WR741
-printk(KERN_INFO "fixup WR741 Switch LED's\n");
 #ifdef CONFIG_MACH_HORNET
 	printk(KERN_INFO "disable Hornet LED\n");
 	ar71xx_gpio_function_disable(AR933X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
@@ -610,6 +608,8 @@ printk(KERN_INFO "fixup WR741 Switch LED's\n");
 				     AR933X_GPIO_FUNC_ETH_SWITCH_LED3_EN |
 				     AR933X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 #else
+#ifdef CONFIG_WR741
+printk(KERN_INFO "fixup WR741 Switch LED's\n");
 	ar71xx_gpio_function_disable(AR724X_GPIO_FUNC_ETH_SWITCH_LED0_EN |
 				     AR724X_GPIO_FUNC_ETH_SWITCH_LED1_EN |
 				     AR724X_GPIO_FUNC_ETH_SWITCH_LED2_EN |
@@ -617,7 +617,6 @@ printk(KERN_INFO "fixup WR741 Switch LED's\n");
 				     AR724X_GPIO_FUNC_ETH_SWITCH_LED4_EN);
 
 #endif
-
 #endif
 
 #ifdef CONFIG_MACH_HORNET
