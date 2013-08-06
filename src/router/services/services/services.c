@@ -204,6 +204,7 @@ void start_ipv6(void)
 
 	insmod("ipv6");
 	insmod("tunnel4");
+	insmod("ip_tunnel");
 	insmod("sit");
 	insmod("esp6");
 	insmod("ah6");
