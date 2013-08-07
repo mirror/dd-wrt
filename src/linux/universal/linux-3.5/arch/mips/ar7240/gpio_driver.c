@@ -297,7 +297,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 		.active_low	= 0,
 #endif
 	}, 
-#if defined(CONFIG_MACH_HORNET) && defined(CONFIG_WR741)
+#if defined(CONFIG_MACH_HORNET)
 	{
 		.name		= "generic_17",
 		.gpio		= 17,
