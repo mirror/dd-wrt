@@ -124,6 +124,25 @@ ifeq ($(CONFIG_IAS),y)
 	cp -r ../../private/buffalo/intatstart/www/lang_pack/*.js $(INSTALLDIR)/www/intatstart/lang_pack
 	cp -r ../../private/buffalo/intatstart/kromo/dd-wrt/* $(INSTALLDIR)/www/
 endif
+ifeq ($(CONFIG_FREECWMP),y)
+	mkdir -p $(INSTALLDIR)/jffs/freecwmp
+	mkdir -p $(INSTALLDIR)/etc/config
+	-cp ../../private/buffalo/freecwmp-startscript/zzz_freecwmp.startup $(INSTALLDIR)/etc/config
+	-cp ../../private/buffalo/freecwmp-startscript/zzz_freecwmp.firewall $(INSTALLDIR)/etc/config
+	-cp ../../private/buffalo/freecwmp/Status_CWMP.asp $(INSTALLDIR)/www
+	ln -s ../tmp/freecwmp/bin $(INSTALLDIR)/jffs/bin
+	ln -s ../tmp/freecwmp/etc $(INSTALLDIR)/jffs/etc
+	ln -s ../tmp/freecwmp/lib $(INSTALLDIR)/jffs/lib
+	ln -s ../tmp/freecwmp/sbin $(INSTALLDIR)/jffs/sbin
+	ln -s ../tmp/freecwmp/usr $(INSTALLDIR)/jffs/usr
+	-cp -r ../../private/buffalo/freecwmp/* $(INSTALLDIR)/jffs/freecwmp
+	-rm -Rf $(INSTALLDIR)/jffs/freecwmp/config
+	-rm -Rf $(INSTALLDIR)/jffs/freecwmp/httpd
+	-rm -Rf $(INSTALLDIR)/jffs/freecwmp/Status_CWMP.asp
+	cp -r ../../private/buffalo/freecwmp/config/freecwmp.webconfig $(INSTALLDIR)/etc/config
+	cp -r ../../private/buffalo/freecwmp/config/freecwmp.nvramconfig $(INSTALLDIR)/etc/config
+	cp -r ../../private/buffalo/freecwmp/lang_pack/freecwmp-english.js $(INSTALLDIR)/www/lang_pack
+endif
 endif
 endif
 ifeq ($(CONFIG_SPOTPASS),y)
@@ -389,9 +408,16 @@ ifeq ($(CONFIG_ONNET),y)
 	mkdir $(INSTALLDIR)/www/style/onnet
 	cp onnet/style.css $(INSTALLDIR)/www/style/onnet
 	cp onnet/images/* $(INSTALLDIR)/www/images
-	#cp onnet/About.htm $(INSTALLDIR)/www
 	cp onnet/help/* $(INSTALLDIR)/www/help
+  ifeq ($(CONFIG_ONNET_BLANK),y)
+	cp onnet_blank/help/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
+	cp onnet_blank/images/bg_header.jpg $(INSTALLDIR)/www/images/bg_header.jpg
+	#cp -f maksat/SuperChannel.asp $(INSTALLDIR)/www
+	cp onnet_blank/About.htm $(INSTALLDIR)/www/About.htm
+  else
+	cp onnet/About.htm $(INSTALLDIR)/www
 	cp onnet/help/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
+  endif
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
 	ls -l $(INSTALLDIR)/www/help/
 endif
@@ -832,7 +858,11 @@ else
 ifeq ($(CONFIG_IPR),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/ipr/common/ install
 else
+ifeq ($(CONFIG_ONNET),y)
+	$(MAKE) -C $(SRCBASE)/router/kromo/dd-wrt/onnet/common/ install
+else
 	$(MAKE) -C $(SRCBASE)/router/kromo/common/ install
+endif
 endif
 endif
 endif
