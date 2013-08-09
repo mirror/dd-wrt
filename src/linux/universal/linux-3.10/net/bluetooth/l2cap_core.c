@@ -4240,7 +4240,7 @@ static inline int l2cap_disconnect_rsp(struct l2cap_conn *conn,
 	u16 dcid, scid;
 	struct l2cap_chan *chan;
 
-	if (cmd_len != sizeof(*rsp))
+	if (cmd_len < sizeof(*rsp))
 		return -EPROTO;
 
 	scid = __le16_to_cpu(rsp->scid);
