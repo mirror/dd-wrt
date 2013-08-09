@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.1 Kernel Configuration
+# Linux/arm 3.10.6-rc1 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -300,6 +300,7 @@ CONFIG_CPU_CP15_MMU=y
 # CONFIG_CPU_ICACHE_DISABLE is not set
 # CONFIG_CPU_DCACHE_DISABLE is not set
 # CONFIG_CPU_BPREDICT_DISABLE is not set
+# CONFIG_KUSER_HELPERS is not set
 CONFIG_MIGHT_HAVE_CACHE_L2X0=y
 # CONFIG_CACHE_L2X0 is not set
 # CONFIG_CACHE_L2CC is not set
@@ -414,8 +415,7 @@ CONFIG_VFP=y
 CONFIG_BINFMT_ELF=y
 CONFIG_ARCH_BINFMT_ELF_RANDOMIZE_PIE=y
 CONFIG_BINFMT_SCRIPT=y
-CONFIG_HAVE_AOUT=y
-# CONFIG_BINFMT_AOUT is not set
+# CONFIG_HAVE_AOUT is not set
 # CONFIG_BINFMT_MISC is not set
 # CONFIG_COREDUMP is not set
 
