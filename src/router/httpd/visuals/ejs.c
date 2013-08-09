@@ -1841,11 +1841,6 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// AOSS
 					j++;
 #endif
-#ifndef HAVE_SPOTPASS
-				if (!strcmp(menu[i][j], "Nintendo.asp"))	// jump over
-					// Nintendo
-					j++;
-#endif
 #ifdef HAVE_MADWIFI
 				if (!wifi && !strcmp(menu[i][j], "WL_WPATable.asp"))	// jump 
 					// over 
@@ -1906,7 +1901,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strcmp(menu[i][j], "Hotspot.asp"))
 					j++;
 #endif
-
+#ifndef HAVE_SPOTPASS
+				if (!strcmp(menu[i][j], "Nintendo.asp"))	// jump over
+					// Nintendo
+					j++;
+#endif
 #ifndef HAVE_MILKFISH
 				if (!strcmp(menu[i][j], "Milkfish.asp"))
 					j++;
