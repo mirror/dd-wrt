@@ -1534,6 +1534,7 @@ status_router.sys_up="Uptime";
 status_router.sys_load="Auslastung";
 status_router.legend2="CPU";
 status_router.cpu="CPU-Modell";
+status_router.cores="CPU-Kerne";
 status_router.clock="Taktfrequenz";
 status_router.legend3="Speicher";
 status_router.mem_tot="Insgesamt verfügbar";
