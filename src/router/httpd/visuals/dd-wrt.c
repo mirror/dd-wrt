@@ -59,7 +59,7 @@ static unsigned int type8_clocks[9] = { 200, 300, 400, 500, 600, 632, 650, 662, 
 static unsigned int type9_clocks[7] =	// 1200 seem to be the last value which works stable
 { 600, 800, 1000, 1200, 1400, 1600, 0 };
 
-static unsigned int type10_clocks[7] = { 300, 333, 400, 480, 500, 533, 0};
+static unsigned int type10_clocks[7] = { 300, 333, 400, 480, 500, 533, 0 };
 
 #endif
 
@@ -416,6 +416,18 @@ void ej_show_cpuinfo(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 	websWrite(wp, str);
+}
+
+void ej_show_cpucores(webs_t wp, int argc, char_t ** argv)
+{
+	FILE *fp = popen("cat /proc/cpuinfo|grep processor|wc -l", "rb");
+	int count;
+	fscanf(fp, "%d", &count);
+	fclose(fp);
+	if (!count)
+		count = 1;
+
+	websWrite(wp, "%d", count);
 }
 
 #define ASSOCLIST_TMP	"/tmp/.wl_assoclist"
@@ -5268,7 +5280,7 @@ void ej_show_defwpower(webs_t wp, int argc, char_t ** argv)
 	case ROUTER_ASUS_RTN10PLUSD1:
 	case ROUTER_ASUS_RTN12:
 	case ROUTER_ASUS_RTN12B:
-	case ROUTER_ASUS_RTN53:	
+	case ROUTER_ASUS_RTN53:
 	case ROUTER_ASUS_RTN16:
 		websWrite(wp, "17");
 		break;
@@ -5783,9 +5795,9 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 	getPortMapping(vlanmap);
 
 	for (a = 0; a < 5; a++) {
-		snprintf(portstatus,sizeof(portstatus), "/proc/switch/%s/port/%d/status", ifname, vlanmap[a]);
+		snprintf(portstatus, sizeof(portstatus), "/proc/switch/%s/port/%d/status", ifname, vlanmap[a]);
 		char cstatus[32];
-		memset(cstatus,0,32);
+		memset(cstatus, 0, 32);
 		FILE *fp = fopen(portstatus, "rb");
 		if (fp) {
 			fgets(cstatus, 31, fp);
