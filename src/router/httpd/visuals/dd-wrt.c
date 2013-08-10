@@ -424,7 +424,7 @@ void ej_show_cpucores(webs_t wp, int argc, char_t ** argv)
 	int count,dcount;
 	fscanf(fp, "%d", &count);
 	fclose(fp);
-	FILE *fp = popen("cat /proc/cpuinfo|grep \"compatible processor\"|wc -l", "rb");
+	fp = popen("cat /proc/cpuinfo|grep \"compatible processor\"|wc -l", "rb");
 	fscanf(fp, "%d", &dcount);
 	fclose(fp);
 	count-=dcount;
