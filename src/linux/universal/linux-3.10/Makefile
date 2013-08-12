@@ -1,8 +1,8 @@
 VERSION = 3
 PATCHLEVEL = 10
 SUBLEVEL = 6
-EXTRAVERSION = -rc1
-NAME = Unicycling Gorilla
+EXTRAVERSION =
+NAME = TOSSUG Baby Fish
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
