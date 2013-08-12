@@ -1641,6 +1641,7 @@ config CPU_CAVIUM_OCTEON
 	select WEAK_ORDERING
 	select CPU_SUPPORTS_HIGHMEM
 	select CPU_SUPPORTS_HUGEPAGES
+	select SYS_HAS_DMA_OPS
 	help
 	  The Cavium Octeon processor is a highly integrated chip containing
 	  many ethernet hardware widgets for networking tasks. The processor
@@ -1850,6 +1851,9 @@ config SYS_HAS_CPU_XLR
 	bool
 
 config SYS_HAS_CPU_XLP
+	bool
+
+config SYS_HAS_DMA_OPS
 	bool
 
 #
