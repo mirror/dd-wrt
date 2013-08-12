@@ -577,6 +577,9 @@
 // Netgear WNDR4500 (dual radio, BCM53115 giga switch, BCM4706 @ 600MHz cpu, 2MB serial + 128MB NAND flash / 128MB ram, fccid: Netgear PY311200162) >_64K nvram_<
 #define ROUTER_NETGEAR_R6300 0xb216
 
+// Netgear R6250 Atheros router  BCM47081A0 @ 2x800Mhz cpu, 2MB serial + 128Mn NAND flash / 256MB ram, fccid:  Netgear PY312400219 >_64K nvram_<
+#define ROUTER_NETGEAR_R6250 0xdc16
+
 #define ROUTER_BOARD_WCRGN 0xb31a
 
 // Linksys E2500 (dual radio, BCM5358U cpu, 16MB flash / 64MB ram, fccid: Linksys Q87-E2500) >_60K nvram_<
