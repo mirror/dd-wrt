@@ -3076,6 +3076,12 @@ int internal_getRouterBrand()
 		setRouter("Netgear WNDR4500");
 		return ROUTER_NETGEAR_WNDR4500;
 	}
+	
+	if (nvram_match("boardnum", "679") && nvram_match("boardtype", "0x0646")
+            && nvram_match("boardrev", "0x1110")) { 
+                setRouter("Netgear R6250");
+                return ROUTER_NETGEAR_R6250;
+        }	
 
 	if ((boardnum == 42 || boardnum == 66)
 	    && nvram_match("boardtype", "0x04EF")
@@ -5045,6 +5051,7 @@ int led_control(int type, int act)
 		connected_gpio = 0x101;
 		disconnected_gpio = 0x102;
 		break;
+	case ROUTER_NETGEAR_R6250:
 	case ROUTER_NETGEAR_R6300:
 		usb_gpio = 0x108;	//usb led
 		usb_power = 0x000;	//usb power on/off
