@@ -439,6 +439,9 @@ static void iwl_tx_queue_unmap(struct iwl_trans *trans, int txq_id)
 		q->read_ptr = iwl_queue_inc_wrap(q->read_ptr, q->n_bd);
 	}
 	spin_unlock_bh(&txq->lock);
+
+	/* just in case - this queue may have been stopped */
+	iwl_wake_queue(trans, txq);
 }
 
 /**
