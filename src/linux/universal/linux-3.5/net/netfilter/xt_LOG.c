@@ -727,7 +727,7 @@ static void dump_ipv6_packet(struct sbuff *m,
 	}
 
 	/* Max length: 16 "MARK=0xFFFFFFFF " */
-	if (!recurse && skb->mark)
+	if (recurse && skb->mark)
 		sb_add(m, "MARK=0x%x ", skb->mark);
 }
 

@@ -60,7 +60,7 @@ extern int			addrconf_set_dstaddr(struct net *net,
 
 extern int			ipv6_chk_addr(struct net *net,
 					      const struct in6_addr *addr,
-					      struct net_device *dev,
+					      const struct net_device *dev,
 					      int strict);
 
 #if defined(CONFIG_IPV6_MIP6) || defined(CONFIG_IPV6_MIP6_MODULE)
@@ -81,6 +81,9 @@ extern __weak int			ipv6_dev_get_saddr(struct net *net,
 					       const struct in6_addr *daddr,
 					       unsigned int srcprefs,
 					       struct in6_addr *saddr);
+extern int			__ipv6_get_lladdr(struct inet6_dev *idev,
+						  struct in6_addr *addr,
+						  unsigned char banned_flags);
 extern int			ipv6_get_lladdr(struct net_device *dev,
 						struct in6_addr *addr,
 						unsigned char banned_flags);
