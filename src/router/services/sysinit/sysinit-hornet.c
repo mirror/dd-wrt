@@ -114,7 +114,7 @@ void start_sysinit(void)
 	}
 #else
 	FILE *fp = fopen("/dev/mtdblock/5", "rb");
-	char mac[32];
+	char mac[32], mac2[32];
 	if (fp) {
 		unsigned char buf2[256];
 		fseek(fp, 0, SEEK_SET);
@@ -125,16 +125,28 @@ void start_sysinit(void)
 		for (i = 0; i < 256; i++)
 			copy[i] = buf2[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
-		fprintf(stderr, "configure eth0 to %s\n", mac);
-		eval("ifconfig", "eth0", "hw", "ether", mac);
 		if (!memcmp(&copy[0], &copy[6], 3)) {
-			sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
-			fprintf(stderr, "Using second mac for eth1(%s)\n", mac);
-		} else {
-			MAC_ADD(mac);
+			sprintf(mac2, "%02x:%02x:%02x:%02x:%02x:%02x", copy[6], copy[7], copy[8], copy[9], copy[10], copy[11]);
+			if (copy[5] < copy[11]) {
+				fprintf(stderr, "Using first mac for eth0 (%s)\n", mac);
+				eval("ifconfig", "eth0", "hw", "ether", mac);
+				fprintf(stderr, "Using second mac for eth1 (%s)\n", mac2);
+				eval("ifconfig", "eth1", "hw", "ether", mac2);
+			}
+			else {
+				fprintf(stderr, "Using second mac for eth0 (%s)\n", mac2);
+				eval("ifconfig", "eth0", "hw", "ether", mac2);
+				fprintf(stderr, "Using first mac for eth1 (%s)\n", mac);
+				eval("ifconfig", "eth1", "hw", "ether", mac);
+			}
 		}
-		fprintf(stderr, "configure eth1 to %s\n", mac);
-		eval("ifconfig", "eth1", "hw", "ether", mac);
+		else {
+			fprintf(stderr, "configure eth0 to %s\n", mac);
+			eval("ifconfig", "eth0", "hw", "ether", mac);
+			MAC_ADD(mac);
+			fprintf(stderr, "configure eth1 to %s\n", mac);
+			eval("ifconfig", "eth1", "hw", "ether", mac);
+		}
 #ifndef HAVE_ATH9K
 		MAC_SUB(mac);
 #endif
