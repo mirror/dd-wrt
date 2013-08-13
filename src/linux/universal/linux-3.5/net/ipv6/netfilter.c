@@ -4,6 +4,7 @@
 #include <linux/netfilter.h>
 #include <linux/netfilter_ipv6.h>
 #include <linux/export.h>
+#include <net/addrconf.h>
 #include <net/dst.h>
 #include <net/ipv6.h>
 #include <net/ip6_route.h>
@@ -172,6 +173,10 @@ static __sum16 nf_ip6_checksum_partial(struct sk_buff *skb, unsigned int hook,
 	return csum;
 };
 
+static const struct nf_ipv6_ops ipv6ops = {
+	.chk_addr	= ipv6_chk_addr,
+};
+
 static const struct nf_afinfo nf_ip6_afinfo = {
 	.family			= AF_INET6,
 	.checksum		= nf_ip6_checksum,
@@ -184,6 +189,7 @@ static const struct nf_afinfo nf_ip6_afinfo = {
 
 int __init ipv6_netfilter_init(void)
 {
+	RCU_INIT_POINTER(nf_ipv6_ops, &ipv6ops);
 	return nf_register_afinfo(&nf_ip6_afinfo);
 }
 
@@ -192,5 +198,6 @@ int __init ipv6_netfilter_init(void)
  */
 void ipv6_netfilter_fini(void)
 {
+	RCU_INIT_POINTER(nf_ipv6_ops, NULL);
 	nf_unregister_afinfo(&nf_ip6_afinfo);
 }

@@ -101,6 +101,9 @@ static irqreturn_t aac_src_intr_message(int irq, void *dev_id)
 			struct list_head *entry;
 			int send_it = 0;
 
+			src_writel(dev, MUnit.ODR_C, bellbits);
+			src_readl(dev, MUnit.ODR_C);
+
 			if (dev->sync_fib) {
 				our_interrupt = 1;
 				if (dev->sync_fib->callback)
