@@ -49,11 +49,7 @@ static inline int plat_dma_supported(struct device *dev, u64 mask)
 
 static inline int plat_device_is_coherent(struct device *dev)
 {
-#ifdef CONFIG_DMA_COHERENT
-	return 1;
-#else
 	return coherentio;
-#endif
 }
 
 #endif /* __ASM_MACH_GENERIC_DMA_COHERENCE_H */
