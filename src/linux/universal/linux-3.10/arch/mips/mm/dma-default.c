@@ -22,6 +22,7 @@
 
 #include <dma-coherence.h>
 
+#ifdef CONFIG_DMA_MAYBE_COHERENT
 int coherentio = 0;	/* User defined DMA coherency from command line. */
 EXPORT_SYMBOL_GPL(coherentio);
 int hw_coherentio = 0;	/* Actual hardware supported DMA coherency setting. */
@@ -41,6 +42,7 @@ static int __init setnocoherentio(char *str)
 	return 0;
 }
 early_param("nocoherentio", setnocoherentio);
+#endif
 
 static gfp_t massage_gfp_flags(const struct device *dev, gfp_t gfp)
 {
