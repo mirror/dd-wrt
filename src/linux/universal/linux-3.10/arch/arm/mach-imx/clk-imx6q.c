@@ -547,6 +547,12 @@ int __init mx6q_clocks_init(void)
 	clk_register_clkdev(clk[ahb], "ahb", NULL);
 	clk_register_clkdev(clk[cko1], "cko1", NULL);
 	clk_register_clkdev(clk[arm], NULL, "cpu0");
+	clk_register_clkdev(clk[pcie_axi_sel], "pcie_axi_sel", NULL);
+	clk_register_clkdev(clk[axi], "axi", NULL);
+	clk_register_clkdev(clk[pll6_enet], "pll6_enet", NULL);
+	clk_register_clkdev(clk[pcie_ref], "pcie_ref", NULL);
+	clk_register_clkdev(clk[pcie_ref_125m], "pcie_ref_125m", NULL);
+	clk_register_clkdev(clk[pcie_axi], "pcie_axi", NULL);
 
 	if (imx6q_revision() != IMX_CHIP_REVISION_1_0) {
 		clk_set_parent(clk[ldb_di0_sel], clk[pll5_video_div]);
