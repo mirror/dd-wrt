@@ -790,6 +790,8 @@ config SOC_IMX6Q
 	bool "i.MX6 Quad/DualLite support"
 	select ARCH_HAS_CPUFREQ
 	select ARCH_HAS_OPP
+	select ARCH_HAS_IMX_PCIE
+	select ARCH_SUPPORTS_MSI
 	select ARM_CPU_SUSPEND if PM
 	select ARM_ERRATA_754322
 	select ARM_ERRATA_764369 if SMP
@@ -815,6 +817,10 @@ config SOC_IMX6Q
 
 	help
 	  This enables support for Freescale i.MX6 Quad processor.
+
+config IMX_PCIE
+	bool "PCI Express support"
+	select PCI
 
 endif
 
