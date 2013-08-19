@@ -26,6 +26,7 @@
 #include <linux/of_irq.h>
 #include <linux/of_platform.h>
 #include <linux/opp.h>
+#include <linux/pci.h>
 #include <linux/phy.h>
 #include <linux/reboot.h>
 #include <linux/regmap.h>
@@ -186,6 +187,65 @@ static void __init imx6q_sabresd_init(void)
 	imx6q_sabresd_cko1_setup();
 }
 
+/*
+ * fixup for PEX 8909 bridge to configure GPIO1-7 as output High
+ * as they are used for slots1-7 PERST#
+ */
+static void mx6_ventana_pciesw_early_fixup(struct pci_dev *dev)
+{
+	u32 dw;
+
+	if (!of_machine_is_compatible("gw,ventana"))
+		return;
+
+	if (dev->devfn != 0)
+		return;
+
+	pci_read_config_dword(dev, 0x62c, &dw);
+	dw |= 0xaaa8; // GPIO1-7 outputs
+	pci_write_config_dword(dev, 0x62c, dw);
+
+	pci_read_config_dword(dev, 0x644, &dw);
+	dw |= 0xfe;   // GPIO1-7 output high
+	pci_write_config_dword(dev, 0x644, dw);
+}
+DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8609,
+	mx6_ventana_pciesw_early_fixup);
+
+/*
+ * configure PCIe core clock and PCIe ref clock
+ *
+ * TODO: disable CLK1 output and use CLK2 input from si52147 as PCIe ref
+ */
+static void __init imx6q_ventana_pcie_setup(void)
+{
+	struct clk *axi_sel, *axi, *ref;
+
+	axi_sel = clk_get_sys(NULL, "pcie_axi_sel");
+	axi = clk_get_sys(NULL, "axi");
+	ref = clk_get_sys(NULL, "pcie_ref_125m");
+	if (IS_ERR(axi_sel) || IS_ERR(axi) || IS_ERR(ref)) {
+		pr_err("pcie setup failed - can't get clocks\n");
+		goto put_clk;
+	}
+	clk_set_parent(axi_sel, axi);
+	clk_prepare_enable(ref);
+
+put_clk:
+	if (!IS_ERR(axi_sel))
+		clk_put(axi_sel);
+	if (!IS_ERR(axi))
+		clk_put(axi);
+	if (!IS_ERR(ref))
+		clk_put(ref);
+}
+
+static void __init imx6q_ventana_init(void)
+{
+	imx6q_ventana_pcie_setup();
+	imx6q_sabrelite_cko1_setup();
+}
+
 static void __init imx6q_1588_init(void)
 {
 	struct regmap *gpr;
@@ -204,6 +264,9 @@ static void __init imx6q_usb_init(void)
 
 static void __init imx6q_init_machine(void)
 {
+	if (of_machine_is_compatible("gw,ventana"))
+		imx6q_ventana_init();
+
 	if (of_machine_is_compatible("fsl,imx6q-sabrelite"))
 		imx6q_sabrelite_init();
 	else if (of_machine_is_compatible("fsl,imx6q-sabresd") ||
