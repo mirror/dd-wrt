@@ -442,7 +442,7 @@ CONFIG_ATAGS=y
 CONFIG_ZBOOT_ROM_TEXT=0
 CONFIG_ZBOOT_ROM_BSS=0
 # CONFIG_ARM_APPENDED_DTB is not set
-CONFIG_CMDLINE="console=ttyS0,115200 panic=10 root=/dev/mtdblock3 rootfstype=squashfs,jffs2 noinitrd init=/bin/sh"
+CONFIG_CMDLINE="console=ttymxc1,115200 panic=10 root=/dev/mtdblock3 rootfstype=squashfs,jffs2 noinitrd init=/bin/sh"
 # CONFIG_CMDLINE_FROM_BOOTLOADER is not set
 # CONFIG_CMDLINE_EXTEND is not set
 CONFIG_CMDLINE_FORCE=y
@@ -966,7 +966,7 @@ CONFIG_REGMAP_MMIO=y
 CONFIG_MTD=y
 # CONFIG_MTD_TESTS is not set
 CONFIG_MTD_ROOTFS_ROOT_DEV=y
-# CONFIG_MTD_ROOTFS_SPLIT is not set
+CONFIG_MTD_ROOTFS_SPLIT=y
 # CONFIG_MTD_REDBOOT_PARTS is not set
 # CONFIG_MTD_CMDLINE_PARTS is not set
 # CONFIG_MTD_AFS_PARTS is not set
@@ -1016,7 +1016,7 @@ CONFIG_MTD_CFI_UTIL=y
 # Mapping drivers for chip access
 #
 CONFIG_MTD_COMPLEX_MAPPINGS=y
-CONFIG_MTD_PHYSMAP=y
+# CONFIG_MTD_PHYSMAP is not set
 # CONFIG_MTD_PHYSMAP_COMPAT is not set
 # CONFIG_MTD_PHYSMAP_OF is not set
 # CONFIG_MTD_PCI is not set
@@ -1030,7 +1030,8 @@ CONFIG_MTD_PHYSMAP=y
 #
 # CONFIG_MTD_PMC551 is not set
 # CONFIG_MTD_DATAFLASH is not set
-# CONFIG_MTD_M25P80 is not set
+CONFIG_MTD_M25P80=y
+CONFIG_M25PXX_USE_FAST_READ=y
 # CONFIG_MTD_SST25L is not set
 # CONFIG_MTD_SLRAM is not set
 # CONFIG_MTD_PHRAM is not set
@@ -1054,7 +1055,7 @@ CONFIG_MTD_NAND_IDS=y
 # CONFIG_MTD_NAND_DOCG4 is not set
 # CONFIG_MTD_NAND_CAFE is not set
 # CONFIG_MTD_NAND_NANDSIM is not set
-# CONFIG_MTD_NAND_GPMI_NAND is not set
+CONFIG_MTD_NAND_GPMI_NAND=y
 # CONFIG_MTD_NAND_PLATFORM is not set
 # CONFIG_MTD_ALAUDA is not set
 # CONFIG_MTD_NAND_MXC is not set
