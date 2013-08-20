@@ -64,3 +64,20 @@ void pci_release_bus_of_node(struct pci_bus *bus)
 	of_node_put(bus->dev.of_node);
 	bus->dev.of_node = NULL;
 }
+
+struct device_node * __weak pcibios_get_phb_of_node(struct pci_bus *bus)
+{
+	/* This should only be called for PHBs */
+	if (WARN_ON(bus->self || bus->parent))
+		return NULL;
+
+	/* Look for a node pointer in either the intermediary device we
+	 * create above the root bus or it's own parent. Normally only
+	 * the later is populated.
+	 */
+	if (bus->bridge->of_node)
+		return of_node_get(bus->bridge->of_node);
+	if (bus->bridge->parent && bus->bridge->parent->of_node)
+		return of_node_get(bus->bridge->parent->of_node);
+	return NULL;
+}
