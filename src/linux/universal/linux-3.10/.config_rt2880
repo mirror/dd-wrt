@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.6-rc1 Kernel Configuration
+# Linux/mips 3.10.8-rc1  Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1619,6 +1619,7 @@ CONFIG_CRYPTO_ANSI_CPRNG=m
 # Library routines
 #
 CONFIG_BITREVERSE=y
+CONFIG_GENERIC_PCI_IOMAP=y
 CONFIG_GENERIC_IO=y
 CONFIG_CRC_CCITT=y
 # CONFIG_CRC16 is not set
