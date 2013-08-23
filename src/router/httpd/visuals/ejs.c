@@ -1063,7 +1063,7 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 
 		//src net
 		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"src%d\" value=\"", i);
+		websWrite(wp, "<input class=\"num\" maxlength=\"18\" size=\"18\" name=\"src%d\" value=\"", i);
 		port_forward_spec(wp, "src", i);
 		websWrite(wp, "\" /></td>\n");
 
