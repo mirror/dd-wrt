@@ -323,13 +323,13 @@ static void parse_port_forward(char *wordlist)
 			bzero(buff, sizeof(buff));
 
 			if (flag_dis == 0) {
-				save2file("-A PREROUTING -p tcp -d %s --dport %s " "-j DNAT --to-destination %s\n", wanaddr, port, ip);
+				save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s\n", wanaddr, port, ip);
 
-				snprintf(buff, sizeof(buff), "-A FORWARD -p tcp " "-m tcp -d %s --dport %s -j %s\n", ip, port, log_accept);
+				snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s --dport %s -j %s\n", ip, port, log_accept);
 			} else {
 				if ((!dmzenable)
 				    || (dmzenable && strcmp(ip, nvram_safe_get("dmz_ipaddr")))) {
-					snprintf(buff, sizeof(buff), "-A FORWARD -p tcp " "-m tcp -d %s --sport %s -j %s\n", ip, port, log_drop);
+					snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s --sport %s -j %s\n", ip, port, log_drop);
 				}
 			}
 
@@ -341,13 +341,13 @@ static void parse_port_forward(char *wordlist)
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
 			bzero(buff, sizeof(buff));
 			if (flag_dis == 0) {
-				save2file("-A PREROUTING -p udp -d %s --dport %s " "-j DNAT --to-destination %s\n", wanaddr, port, ip);
+				save2file("-A PREROUTING -p udp -d %s --dport %s -j DNAT --to-destination %s\n", wanaddr, port, ip);
 
-				snprintf(buff, sizeof(buff), "-A FORWARD -p udp " "-m udp -d %s --dport %s -j %s\n", ip, port, log_accept);
+				snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n", ip, port, log_accept);
 			} else {
 				if ((!dmzenable)
 				    || (dmzenable && strcmp(ip, nvram_safe_get("dmz_ipaddr")))) {
-					snprintf(buff, sizeof(buff), "-A FORWARD -p udp " "-m udp -d %s --dport %s -j %s\n", ip, port, log_drop);
+					snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n", ip, port, log_drop);
 
 				}
 			}
