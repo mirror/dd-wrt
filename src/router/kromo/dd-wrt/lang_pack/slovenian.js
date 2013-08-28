@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				Slovenian translation DD-WRT by Eko, last revision: 01.jul.2013, svn 21949	//
+//				Slovenian translation DD-WRT by Eko, last revision: 10.aug.2013, svn 22180	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -1649,6 +1649,7 @@ status_router.sys_load="Povprečna obremenitev";
 status_router.sys_kernel="Verzija jedra";
 status_router.legend2="Procesor";
 status_router.cpu="Model procesorja";
+status_router.cores="Št. jeder";
 status_router.clock="Ura procesorja";
 status_router.legend3="Spomin";
 status_router.mem_tot="Skupaj na voljo";
