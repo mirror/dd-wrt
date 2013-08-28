@@ -333,7 +333,6 @@ void __init l2x0_init(void __iomem *base, u32 aux_val, u32 aux_mask)
 	const char *type;
 
 	l2x0_base = base;
-
 	if (cache_id_part_number_from_dt)
 		cache_id = cache_id_part_number_from_dt;
 	else
@@ -400,7 +399,7 @@ void __init l2x0_init(void __iomem *base, u32 aux_val, u32 aux_mask)
 		/* l2x0 controller is disabled */
 		writel_relaxed(aux, l2x0_base + L2X0_AUX_CTRL);
 
-
+#ifdef CONFIG_ARCH_CNS3XXX
 		/* Tag RAM Control register
 		 * 
 		 * bit[10:8]    - 1 cycle of write accesses latency
@@ -426,7 +425,7 @@ void __init l2x0_init(void __iomem *base, u32 aux_val, u32 aux_mask)
 		data &= 0xfffff888;
 		data |= 0x00000000;
 		writel_relaxed(data, l2x0_base + L2X0_DATA_LATENCY_CTRL);
-
+#endif
 
 		l2x0_inv_all();
 

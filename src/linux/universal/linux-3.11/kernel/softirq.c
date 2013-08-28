@@ -31,12 +31,12 @@
 
 #include <asm/irq.h>
 
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
+//#ifdef CONFIG_BCM47XX
+//#include <typedefs.h>
+//#include <bcmdefs.h>
+//#else
 #define BCMFASTPATH
-#endif
+//#endif
 /*
    - No shared variables, all the data are CPU local.
    - If a softirq needs serialization, let it serialize itself

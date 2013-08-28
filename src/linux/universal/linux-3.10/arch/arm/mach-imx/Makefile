@@ -1,3 +1,4 @@
+ccflags-$(CONFIG_ARCH_MULTIPLATFORM) := -I$(srctree)/$(src)/include
 obj-y := time.o cpu.o system.o irq-common.o
 
 obj-$(CONFIG_SOC_IMX1) += clk-imx1.o mm-imx1.o

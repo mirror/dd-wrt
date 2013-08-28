@@ -830,7 +830,6 @@ int __init gic_of_init(struct device_node *node, struct device_node *parent)
 	void __iomem *dist_base;
 	u32 percpu_offset;
 	int irq;
-
 	if (WARN_ON(!node))
 		return -ENODEV;
 

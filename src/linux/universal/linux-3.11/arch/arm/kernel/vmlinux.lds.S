@@ -112,14 +112,6 @@ SECTIONS
 			ARM_CPU_KEEP(PROC_INFO)
 	}
 
-#if 0
-#ifdef CONFIG_BCM47XX
-	. = ALIGN(32);
-	__fastpath_begin = .;
-	.text.fastpath : { *(.text.fastpath) }
-	__fastpath_end = .;
-#endif
-#endif
 	RO_DATA(PAGE_SIZE)
 
 	. = ALIGN(4);

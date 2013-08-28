@@ -83,6 +83,12 @@
 #define UART_PADDR	IMX_DEBUG_UART_BASE(IMX53)
 #elif defined(CONFIG_DEBUG_IMX6Q_UART)
 #define UART_PADDR	IMX_DEBUG_UART_BASE(IMX6Q)
+
+#define VALUE_TO_STRING(x) #x
+#define VALUE(x) VALUE_TO_STRING(x)
+#define VAR_NAME_VALUE(var) #var "="  VALUE(var)
+#pragma message (VAR_NAME_VALUE(UART_PADDR))
+
 #endif
 
 #endif /* __DEBUG_IMX_UART_H */
