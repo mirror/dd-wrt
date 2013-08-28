@@ -288,6 +288,20 @@ void ej_dumpmeminfo(webs_t wp, int argc, char_t ** argv)
 #endif
 #elif defined(HAVE_PB42) || defined(HAVE_LSX)
 #define FREQLINE 5
+#elif HAVE_VENTANA
+void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+{
+	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
+	if (fp) {
+		int freq;
+		fscanf(fp, "%d", &freq);
+		fclose(fp);
+		websWrite(wp, "%d", freq / 1000);
+	} else {
+		websWrite(wp, "unknown");
+		return;
+	}
+}
 #elif HAVE_X86
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
@@ -421,13 +435,13 @@ void ej_show_cpuinfo(webs_t wp, int argc, char_t ** argv)
 void ej_show_cpucores(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp = popen("cat /proc/cpuinfo|grep processor|wc -l", "rb");
-	int count,dcount;
+	int count, dcount;
 	fscanf(fp, "%d", &count);
 	fclose(fp);
 	fp = popen("cat /proc/cpuinfo|grep \"compatible processor\"|wc -l", "rb");
 	fscanf(fp, "%d", &dcount);
 	fclose(fp);
-	count-=dcount;
+	count -= dcount;
 
 	if (!count)
 		count = 1;
