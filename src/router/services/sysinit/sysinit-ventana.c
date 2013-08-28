@@ -68,6 +68,8 @@ void start_sysinit(void)
 	/*
 	 * Setup console 
 	 */
+	eval("mount", "-o", "remount,rw", "/");
+	eval("mkdir","-p","/usr/local/nvram");
 
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
@@ -81,7 +83,7 @@ void start_sysinit(void)
 
 	fprintf(stderr, "try modules for ethernet adapters\n");
 	nvram_set("intel_eth", "0");
-	insmod("cns3xxx_eth");
+	insmod("sky2");
 	if (detect_ethernet_devices())
 		nvram_set("intel_eth", "1");
 
@@ -99,7 +101,6 @@ void start_sysinit(void)
 	insmod("libata");
 	insmod("libahci");
 	insmod("ahci");
-	insmod("cns3xxx_ahci");
 	/*
 	 * network drivers 
 	 */
