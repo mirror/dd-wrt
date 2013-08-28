@@ -19,6 +19,7 @@
  * globally for multi-platform build to use a fixed virtual address
  * for low-level debug uart port across platforms.
  */
+ 
 #define IMX_IO_P2V(x)	(						\
 			(((x) & 0x80000000) >> 7) |			\
 			(0xf4000000 +					\

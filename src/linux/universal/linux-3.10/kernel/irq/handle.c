@@ -20,12 +20,12 @@
 
 #include "internals.h"
 
-#ifdef CONFIG_BCM47XX
-#include <typedefs.h>
-#include <bcmdefs.h>
-#else
+//#ifdef CONFIG_BCM47XX
+//#include <typedefs.h>
+//#include <bcmdefs.h>
+//#else
 #define BCMFASTPATH
-#endif
+//#endif
 
 /**
  * handle_bad_irq - handle spurious and unhandled irqs
