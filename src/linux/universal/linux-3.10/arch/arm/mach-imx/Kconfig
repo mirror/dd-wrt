@@ -792,6 +792,7 @@ config SOC_IMX6Q
 	select ARCH_HAS_OPP
 	select ARCH_HAS_IMX_PCIE
 	select ARCH_SUPPORTS_MSI
+	select NEED_MACH_IO_H if PCI
 	select ARM_CPU_SUSPEND if PM
 	select ARM_ERRATA_754322
 	select ARM_ERRATA_764369 if SMP
