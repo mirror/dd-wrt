@@ -98,6 +98,7 @@ void svqos_reset_ports(void)
 #ifndef HAVE_DANUBE
 #ifndef HAVE_STORM
 #ifndef HAVE_LAGUNA
+#ifndef HAVE_VENTANA
 #ifndef HAVE_OPENRISC
 #ifndef HAVE_ADM5120
 #ifndef HAVE_TW6600
@@ -141,6 +142,7 @@ void svqos_reset_ports(void)
 #endif
 #endif
 #endif
+#endif
 }
 
 int svqos_set_ports(void)
@@ -157,6 +159,7 @@ int svqos_set_ports(void)
 #ifndef HAVE_SOLO51
 #ifndef HAVE_X86
 #ifndef HAVE_LAGUNA
+#ifndef HAVE_VENTANA
 #ifndef HAVE_TW6600
 #ifndef HAVE_PB42
 #ifndef HAVE_LSX
@@ -187,6 +190,7 @@ int svqos_set_ports(void)
 			writevaproc(lvl, "/proc/switch/eth0/port/%d/prio", loop);
 		}
 	}
+#endif
 #endif
 #endif
 #endif
@@ -811,6 +815,9 @@ void stop_wshaper(void)
 	ret = eval(script_name, "stop", "XX", "vlan1");
 	ret = eval(script_name, "stop", "XX", "vlan2");
 #elif HAVE_LAGUNA
+	ret = eval(script_name, "stop", "XX", "eth0");
+	ret = eval(script_name, "stop", "XX", "eth1");
+#elif HAVE_VENTANA
 	ret = eval(script_name, "stop", "XX", "eth0");
 	ret = eval(script_name, "stop", "XX", "eth1");
 #elif HAVE_MAGICBOX

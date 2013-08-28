@@ -1034,6 +1034,30 @@ int internal_getRouterBrand()
 
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
+#elif HAVE_VENTANA
+	char *filename = "/sys/devices/soc.0/2100000.aips-bus/21a0000.i2c/i2c-0/0-0051/eeprom";	/* bank2=0x100 kernel 3.0 */
+	FILE *file = fopen(filename, "rb");
+	if (!file) {
+	    setRouter("Gateworks Ventana GW54XX");
+	}else{
+	    char gwid[9];
+	    fseek(file, 0x30, SEEK_SET);
+	    fread(&gwid[0], 9, 1, file);
+	    fclose(file);
+	    if (!strncmp(gwid, "GW5400-B", 8)) {
+		setRouter("Gateworks Ventana GW5400-B");
+	    } else if (!strncmp(gwid, "GW5400-C", 8)) {
+		setRouter("Gateworks Ventana GW5400-C");
+	    } else if (!strncmp(gwid, "GW5400-A", 8)) {
+		setRouter("Gateworks Ventana GW5400-A");
+	    } else if (!strncmp(gwid, "GW5410-B", 8)) {
+		setRouter("Gateworks Ventana GW5410-B");
+	    } else if (!strncmp(gwid, "GW5410-C", 8)) {
+		setRouter("Gateworks Ventana GW5410-C");
+	    } else
+		setRouter("Gateworks Ventana GW54XX");
+	}
+	return ROUTER_BOARD_GW2388;
 #elif HAVE_LAGUNA
 	char *filename = "/sys/devices/platform/cns3xxx-i2c.0/i2c-0/0-0050/eeprom";	/* bank2=0x100 kernel 3.0 */
 	FILE *file = fopen(filename, "rb");
