@@ -246,7 +246,7 @@ clnt_sperror (CLIENT * rpch, const char *msg)
 
     case RPC_CANTSEND:
     case RPC_CANTRECV:
-      __glibc_strerror_r (e.re_errno, chrbuf, sizeof chrbuf);
+      strerror_r (e.re_errno, chrbuf, sizeof chrbuf);
       len = sprintf (str, "; errno = %s", chrbuf);
       str += len;
       break;
@@ -336,7 +336,7 @@ clnt_spcreateerror (const char *msg)
       (void) strcpy(cp, " - ");
       cp += strlen(cp);
 
-      __glibc_strerror_r (ce->cf_error.re_errno, chrbuf, sizeof chrbuf);
+      strerror_r (ce->cf_error.re_errno, chrbuf, sizeof chrbuf);
       (void) strcpy(cp, chrbuf);
       cp += strlen(cp);
       break;

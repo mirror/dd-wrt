@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 PROJECT(rpc C)
-ADD_DEFINITIONS(-Os -Wall --std=gnu99 -g3 -I. -include compat.h)
+ADD_DEFINITIONS(-Os -Wall --std=gnu99 -g3 -I. -include rpc/compat.h)
 
 FILE(GLOB SOURCES *.c)
 
