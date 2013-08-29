@@ -62,7 +62,7 @@ void start_sysinit(void)
 	time_t tm = 0;
 
 	if (!nvram_match("disable_watchdog", "1")) {
-		insmod("cns3xxx_wdt");
+		insmod("insmod imx2_wdt");
 		eval("watchdog");
 	}
 	/*
@@ -86,6 +86,16 @@ void start_sysinit(void)
 	insmod("sky2");
 	if (detect_ethernet_devices())
 		nvram_set("intel_eth", "1");
+	insmod("regmap-spi");
+	insmod("regmap-i2c");
+	insmod("snd-compress");
+	insmod("snd-soc-core");
+	insmod("snd-soc-imx-audmux");
+	insmod("snd-soc-imx-pcm");
+	insmod("snd-soc-sgtl5000");
+	insmod("snd-soc-fsl-utils");
+	insmod("snd-soc-fsl-ssi");
+	insmod("snd-soc-imx-sgtl5000");
 
 	//load mmc drivers
 	insmod("mmc_core");
