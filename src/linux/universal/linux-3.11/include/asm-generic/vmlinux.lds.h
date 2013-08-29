@@ -148,8 +148,8 @@
 #ifdef CONFIG_CLKSRC_OF
 #define CLKSRC_OF_TABLES() . = ALIGN(8);				\
 			   VMLINUX_SYMBOL(__clksrc_of_table) = .;	\
-			   *(__clksrc_of_table)				\
-			   *(__clksrc_of_table_end)
+			  KEEP(*(__clksrc_of_table))				\
+			  KEEP(*(__clksrc_of_table_end))
 #else
 #define CLKSRC_OF_TABLES()
 #endif
