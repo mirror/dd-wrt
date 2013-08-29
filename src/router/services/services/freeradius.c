@@ -83,12 +83,14 @@ void start_freeradius(void)
 		return;
 
 #ifndef HAVE_OPENRISC
+#ifndef HAVE_VENTANA
 #if !defined(HAVE_RB600) || defined(HAVE_WDR4900)
 #ifdef HAVE_X86
 	system("mount --bind /usr/local /jffs");
 #else
 	if (!nvram_match("jffs_mounted", "1"))
 		return;		//jffs is a requirement for radius and must be mounted at this point here
+#endif
 #endif
 #endif
 #endif
