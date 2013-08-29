@@ -255,6 +255,10 @@ ifeq ($(ARCHITECTURE),laguna)
 	cp busybox/.config_laguna busybox/.config
 	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 endif
+ifeq ($(ARCHITECTURE),ventana)
+	cp busybox/.config_laguna busybox/.config
+	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
+endif
 ifeq ($(ARCHITECTURE),northstar)
 	cp busybox/.config_laguna busybox/.config
 	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
