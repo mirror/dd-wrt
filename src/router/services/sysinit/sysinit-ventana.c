@@ -62,7 +62,7 @@ void start_sysinit(void)
 	time_t tm = 0;
 
 	if (!nvram_match("disable_watchdog", "1")) {
-		insmod("insmod imx2_wdt");
+		insmod("imx2_wdt");
 		eval("watchdog");
 	}
 	/*
