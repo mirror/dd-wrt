@@ -257,7 +257,6 @@ static struct rpcent *interpret(register struct rpcdata *d)
 
 #if defined(__UCLIBC_HAS_REENTRANT_RPC__)
 
-#include <bits/uClibc_mutex.h>
 __UCLIBC_MUTEX_STATIC(mylock, PTHREAD_MUTEX_INITIALIZER);
 
 

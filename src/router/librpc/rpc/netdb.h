@@ -41,6 +41,8 @@
 #define __need_size_t
 #include <stddef.h>
 
+#include "types.h"
+
 __BEGIN_DECLS
 
 struct rpcent

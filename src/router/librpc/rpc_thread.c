@@ -13,9 +13,6 @@
 
 #ifdef __UCLIBC_HAS_THREADS__
 
-#include <bits/libc-tsd.h>
-#include <bits/libc-lock.h>
-
 /* Variable used in non-threaded applications or for the first thread.  */
 static struct rpc_thread_variables __libc_tsd_RPC_VARS_mem;
 __libc_tsd_define (, RPC_VARS)
@@ -52,16 +49,17 @@ rpc_thread_multi (void)
   __libc_tsd_set (RPC_VARS, &__libc_tsd_RPC_VARS_mem);
 }
 
+__UCLIBC_MUTEX_STATIC(mylock, PTHREAD_MUTEX_INITIALIZER);
 
 struct rpc_thread_variables attribute_hidden *
 __rpc_thread_variables (void)
 {
-	__libc_once_define (static, once);
 	struct rpc_thread_variables *tvp;
 
+	__UCLIBC_MUTEX_LOCK(mylock);
 	tvp = __libc_tsd_get (RPC_VARS);
 	if (tvp == NULL) {
-		__libc_once (once, rpc_thread_multi);
+		rpc_thread_multi();
 		tvp = __libc_tsd_get (RPC_VARS);
 		if (tvp == NULL) {
 			tvp = calloc (1, sizeof *tvp);
@@ -71,6 +69,7 @@ __rpc_thread_variables (void)
 				tvp = __libc_tsd_get (RPC_VARS);
 		}
 	}
+	__UCLIBC_MUTEX_UNLOCK(mylock);
 	return tvp;
 }
 
