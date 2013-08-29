@@ -85,7 +85,6 @@ static char sccsid[] = "@(#)rcmd.c	8.3 (Berkeley) 3/26/94";
 #include <wchar.h>
 #endif
 #include <sys/uio.h>
-#include <bits/uClibc_alloc.h>
 
 
 /* some forward declarations */
