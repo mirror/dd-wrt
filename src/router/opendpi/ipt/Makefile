@@ -11,7 +11,7 @@ all:
 		mkdir ${OPENDPI_SRC}; \
 		cp ${OPENDPI_PATH2}/* ${OPENDPI_SRC} -R; \
 	fi
-	make libxt_opendpi.so
+#	make libxt_opendpi.so
 	rm -r ${OPENDPI_SRC}
 lib%.so: lib%.o
 	$(ARCH)-linux-gcc -shared -o $@ $^;
