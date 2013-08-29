@@ -108,8 +108,8 @@ static int fs_enet_rx_napi(struct napi_struct *napi, int budget)
 		 * Since we have allocated space to hold a complete frame,
 		 * the last indicator should be set.
 		 */
-		if ((sc & BD_ENET_RX_LAST) == 0)
-			dev_warn(fep->dev, "rcv is not +last\n");
+//		if ((sc & BD_ENET_RX_LAST) == 0)
+//			dev_warn(fep->dev, "rcv is not +last\n");
 
 		/*
 		 * Check for errors.
@@ -237,8 +237,8 @@ static int fs_enet_rx_non_napi(struct net_device *dev)
 		 * Since we have allocated space to hold a complete frame,
 		 * the last indicator should be set.
 		 */
-		if ((sc & BD_ENET_RX_LAST) == 0)
-			dev_warn(fep->dev, "rcv is not +last\n");
+//		if ((sc & BD_ENET_RX_LAST) == 0)
+//			dev_warn(fep->dev, "rcv is not +last\n");
 
 		/*
 		 * Check for errors.
