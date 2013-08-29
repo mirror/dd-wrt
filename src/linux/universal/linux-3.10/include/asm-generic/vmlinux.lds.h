@@ -167,7 +167,7 @@
 	. = ALIGN(8);							\
 	VMLINUX_SYMBOL(__irqchip_begin) = .;				\
 	KEEP(*(__irqchip_of_table))		  				\
-	*(__irqchip_of_end)
+	KEEP(*(__irqchip_of_end))
 #else
 #define IRQCHIP_OF_MATCH_TABLE()
 #endif
@@ -176,7 +176,7 @@
 #define CLK_OF_TABLES() . = ALIGN(8);				\
 			VMLINUX_SYMBOL(__clk_of_table) = .;	\
 			KEEP(*(__clk_of_table))			\
-			*(__clk_of_table_end)
+			KEEP(*(__clk_of_table_end))
 #else
 #define CLK_OF_TABLES()
 #endif
