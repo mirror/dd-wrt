@@ -2369,7 +2369,11 @@ void start_drivers(void)
 		insmod("usb-libusual");
 
 		insmod("fsl-mph-dr-of");
-
+		insmod("phy-mxs-usb");
+		insmod("ci_hdrc");
+		insmod("ci13xxx_imx");
+		insmod("usbmisc_imx");
+		
 		if (nvram_match("usb_storage", "1")) {
 			cprintf("loading scsi_mod\n");
 			insmod("scsi_mod");
@@ -2417,6 +2421,15 @@ void start_drivers(void)
 		rmmod("sd_mod");
 		rmmod("scsi_wait_scan");
 		rmmod("scsi_mod");
+
+
+		rmmod("usbmisc_imx");
+		rmmod("ci13xxx_imx");
+		rmmod("ci_hdrc");
+		rmmod("phy-mxs-usb");
+
+
+
 		rmmod("usb-ohci");
 		rmmod("ohci-hcd");
 		rmmod("uhci-hcd");
@@ -2427,6 +2440,7 @@ void start_drivers(void)
 		rmmod("fsl-mph-dr-of");
 		rmmod("usbcore");
 		rmmod("usb-common");
+		
 /* unload filesystems */
 /* xfs */
 		rmmod("xfs");
