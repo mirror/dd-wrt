@@ -33,6 +33,8 @@
 #ifndef _RPC_TYPES_H
 #define _RPC_TYPES_H 1
 
+#include "compat.h"
+
 #ifdef _LIBC
 /* Some adjustments to make the libc source from glibc
  * compile more easily with uClibc... */
