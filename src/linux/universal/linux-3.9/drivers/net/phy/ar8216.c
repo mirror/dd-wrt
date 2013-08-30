@@ -88,8 +88,12 @@ struct ar8xxx_priv {
 	struct switch_dev dev;
 	struct mii_bus *mii_bus;
 	struct phy_device *phy;
+
 	u32 (*read)(struct ar8xxx_priv *priv, int reg);
 	void (*write)(struct ar8xxx_priv *priv, int reg, u32 val);
+
+	int (*get_port_link)(unsigned port);
+
 	const struct net_device_ops *ndo_old;
 	struct net_device_ops ndo;
 	struct mutex reg_mutex;
@@ -120,6 +124,12 @@ struct ar8xxx_priv {
 	u8 vlan_table[AR8X16_MAX_VLANS];
 	u8 vlan_tagged;
 	u16 pvid[AR8X16_MAX_PORTS];
+
+	/* mirroring */
+	bool mirror_rx;
+	bool mirror_tx;
+	int source_port;
+	int monitor_port;
 };
 
 #define MIB_DESC(_s , _o, _n)	\
@@ -474,11 +484,20 @@ ar8216_read_port_link(struct ar8xxx_priv *priv, int port,
 	link->aneg = !!(status & AR8216_PORT_STATUS_LINK_AUTO);
 	if (link->aneg) {
 		link->link = !!(status & AR8216_PORT_STATUS_LINK_UP);
-		if (!link->link)
-			return;
 	} else {
 		link->link = true;
+
+		if (priv->get_port_link) {
+			int err;
+
+			err = priv->get_port_link(port);
+			if (err >= 0)
+				link->link = !!err;
+		}
 	}
+
+	if (!link->link)
+		return;
 
 	link->duplex = !!(status & AR8216_PORT_STATUS_DUPLEX);
 	link->tx_flow = !!(status & AR8216_PORT_STATUS_TXFLOW);
@@ -1052,6 +1071,8 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 	if (!pdata)
 		return -EINVAL;
 
+	priv->get_port_link = pdata->get_port_link;
+
 	data = &priv->chip_data.ar8327;
 
 	data->port0_status = ar8327_get_port_init_status(&pdata->port0_cfg);
@@ -1078,12 +1099,31 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 		priv->write(priv, AR8327_REG_LED_CTRL1, led_cfg->led_ctrl1);
 		priv->write(priv, AR8327_REG_LED_CTRL2, led_cfg->led_ctrl2);
 		priv->write(priv, AR8327_REG_LED_CTRL3, led_cfg->led_ctrl3);
+
+		if (new_pos != pos)
+			new_pos |= AR8327_POWER_ON_STRIP_POWER_ON_SEL;
 	}
 
-	if (new_pos != pos) {
-		new_pos |= AR8327_POWER_ON_STRIP_POWER_ON_SEL;
-		priv->write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
+	if (pdata->sgmii_cfg) {
+		t = pdata->sgmii_cfg->sgmii_ctrl;
+		if (priv->chip_rev == 1)
+			t |= AR8327_SGMII_CTRL_EN_PLL |
+			     AR8327_SGMII_CTRL_EN_RX |
+			     AR8327_SGMII_CTRL_EN_TX;
+		else
+			t &= ~(AR8327_SGMII_CTRL_EN_PLL |
+			       AR8327_SGMII_CTRL_EN_RX |
+			       AR8327_SGMII_CTRL_EN_TX);
+
+		priv->write(priv, AR8327_REG_SGMII_CTRL, t);
+
+		if (pdata->sgmii_cfg->serdes_aen)
+			new_pos &= ~AR8327_POWER_ON_STRIP_SERDES_AEN;
+		else
+			new_pos |= AR8327_POWER_ON_STRIP_SERDES_AEN;
 	}
+
+	priv->write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
 
 	return 0;
 }
@@ -1457,6 +1497,98 @@ ar8xxx_sw_set_ports(struct switch_dev *dev, struct switch_val *val)
 	return 0;
 }
 
+static void
+ar8327_set_mirror_regs(struct ar8xxx_priv *priv)
+{
+	int port;
+ 
+	/* reset all mirror registers */
+	ar8xxx_rmw(priv, AR8327_REG_FWD_CTRL0,
+		   AR8327_FWD_CTRL0_MIRROR_PORT,
+		   (0xF << AR8327_FWD_CTRL0_MIRROR_PORT_S));
+	for (port = 0; port < AR8327_NUM_PORTS; port++) {
+		ar8xxx_rmw(priv, AR8327_REG_PORT_LOOKUP(port),
+			   AR8327_PORT_LOOKUP_ING_MIRROR_EN,
+			   0);
+
+		ar8xxx_rmw(priv, AR8327_REG_PORT_HOL_CTRL1(port),
+			   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN,
+			   0);
+	}
+
+	/* now enable mirroring if necessary */
+	if (priv->source_port >= AR8327_NUM_PORTS ||
+	    priv->monitor_port >= AR8327_NUM_PORTS ||
+	    priv->source_port == priv->monitor_port) {
+		return;
+	}
+
+	ar8xxx_rmw(priv, AR8327_REG_FWD_CTRL0,
+		   AR8327_FWD_CTRL0_MIRROR_PORT,
+		   (priv->monitor_port << AR8327_FWD_CTRL0_MIRROR_PORT_S));
+
+	if (priv->mirror_rx)
+		ar8xxx_rmw(priv, AR8327_REG_PORT_LOOKUP(priv->source_port),
+			   AR8327_PORT_LOOKUP_ING_MIRROR_EN,
+			   AR8327_PORT_LOOKUP_ING_MIRROR_EN);
+
+	if (priv->mirror_tx)
+		ar8xxx_rmw(priv, AR8327_REG_PORT_HOL_CTRL1(priv->source_port),
+			   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN,
+			   AR8327_PORT_HOL_CTRL1_EG_MIRROR_EN);
+}
+
+static void
+ar8216_set_mirror_regs(struct ar8xxx_priv *priv)
+{
+	int port;
+
+	/* reset all mirror registers */
+	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CPUPORT,
+		   AR8216_GLOBAL_CPUPORT_MIRROR_PORT,
+		   (0xF << AR8216_GLOBAL_CPUPORT_MIRROR_PORT_S));
+	for (port = 0; port < AR8216_NUM_PORTS; port++) {
+		ar8xxx_rmw(priv, AR8216_REG_PORT_CTRL(port),
+			   AR8216_PORT_CTRL_MIRROR_RX,
+			   0);
+
+		ar8xxx_rmw(priv, AR8216_REG_PORT_CTRL(port),
+			   AR8216_PORT_CTRL_MIRROR_TX,
+			   0);
+	}
+
+	/* now enable mirroring if necessary */
+	if (priv->source_port >= AR8216_NUM_PORTS ||
+	    priv->monitor_port >= AR8216_NUM_PORTS ||
+	    priv->source_port == priv->monitor_port) {
+		return;
+	}
+
+	ar8xxx_rmw(priv, AR8216_REG_GLOBAL_CPUPORT,
+		   AR8216_GLOBAL_CPUPORT_MIRROR_PORT,
+		   (priv->monitor_port << AR8216_GLOBAL_CPUPORT_MIRROR_PORT_S));
+
+	if (priv->mirror_rx)
+		ar8xxx_rmw(priv, AR8216_REG_PORT_CTRL(priv->source_port),
+			   AR8216_PORT_CTRL_MIRROR_RX,
+			   AR8216_PORT_CTRL_MIRROR_RX);
+
+	if (priv->mirror_tx)
+		ar8xxx_rmw(priv, AR8216_REG_PORT_CTRL(priv->source_port),
+			   AR8216_PORT_CTRL_MIRROR_TX,
+			   AR8216_PORT_CTRL_MIRROR_TX);
+}
+
+static void
+ar8xxx_set_mirror_regs(struct ar8xxx_priv *priv)
+{
+	if (chip_is_ar8327(priv)) {
+		ar8327_set_mirror_regs(priv);
+	} else {
+		ar8216_set_mirror_regs(priv);
+	}
+}
+
 static int
 ar8xxx_sw_hw_apply(struct switch_dev *dev)
 {
@@ -1520,6 +1652,9 @@ ar8xxx_sw_hw_apply(struct switch_dev *dev)
 		priv->chip->setup_port(priv, i, egress, ingress, portmask[i],
 				       pvid);
 	}
+	
+	ar8xxx_set_mirror_regs(priv);
+	
 	mutex_unlock(&priv->reg_mutex);
 	return 0;
 }
@@ -1541,7 +1676,13 @@ ar8xxx_sw_reset_switch(struct switch_dev *dev)
 	for (i = 0; i < dev->ports; i++)
 		priv->chip->init_port(priv, i);
 
+	priv->mirror_rx = false;
+	priv->mirror_tx = false;
+	priv->source_port = 0;
+	priv->monitor_port = 0;
+	
 	priv->chip->init_globals(priv);
+
 	mutex_unlock(&priv->reg_mutex);
 
 	return ar8xxx_sw_hw_apply(dev);
@@ -1573,6 +1714,106 @@ ar8xxx_sw_set_reset_mibs(struct switch_dev *dev,
 unlock:
 	mutex_unlock(&priv->mib_lock);
 	return ret;
+}
+
+static int
+ar8xxx_sw_set_mirror_rx_enable(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	
+	mutex_lock(&priv->reg_mutex);
+	priv->mirror_rx = !!val->value.i;
+	ar8xxx_set_mirror_regs(priv);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int
+ar8xxx_sw_get_mirror_rx_enable(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	val->value.i = priv->mirror_rx;
+	return 0;
+}
+
+static int
+ar8xxx_sw_set_mirror_tx_enable(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+
+	mutex_lock(&priv->reg_mutex);
+	priv->mirror_tx = !!val->value.i;
+	ar8xxx_set_mirror_regs(priv);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int
+ar8xxx_sw_get_mirror_tx_enable(struct switch_dev *dev,
+			       const struct switch_attr *attr,
+			       struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	val->value.i = priv->mirror_tx;
+	return 0;
+}
+
+static int
+ar8xxx_sw_set_mirror_monitor_port(struct switch_dev *dev,
+				  const struct switch_attr *attr,
+				  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	
+	mutex_lock(&priv->reg_mutex);
+	priv->monitor_port = val->value.i;
+	ar8xxx_set_mirror_regs(priv);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int
+ar8xxx_sw_get_mirror_monitor_port(struct switch_dev *dev,
+				  const struct switch_attr *attr,
+				  struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	val->value.i = priv->monitor_port;
+	return 0;
+}
+
+static int
+ar8xxx_sw_set_mirror_source_port(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	
+	mutex_lock(&priv->reg_mutex);
+	priv->source_port = val->value.i;
+	ar8xxx_set_mirror_regs(priv);
+	mutex_unlock(&priv->reg_mutex);
+
+	return 0;
+}
+
+static int
+ar8xxx_sw_get_mirror_source_port(struct switch_dev *dev,
+				 const struct switch_attr *attr,
+				 struct switch_val *val)
+{
+	struct ar8xxx_priv *priv = swdev_to_ar8xxx(dev);
+	val->value.i = priv->source_port;
+	return 0;
 }
 
 static int
@@ -1668,7 +1909,87 @@ static struct switch_attr ar8xxx_sw_attr_globals[] = {
 		.description = "Reset all MIB counters",
 		.set = ar8xxx_sw_set_reset_mibs,
 	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_mirror_rx",
+		.description = "Enable mirroring of RX packets",
+		.set = ar8xxx_sw_set_mirror_rx_enable,
+		.get = ar8xxx_sw_get_mirror_rx_enable,
+		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_mirror_tx",
+		.description = "Enable mirroring of TX packets",
+		.set = ar8xxx_sw_set_mirror_tx_enable,
+		.get = ar8xxx_sw_get_mirror_tx_enable,
+		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "mirror_monitor_port",
+		.description = "Mirror monitor port",
+		.set = ar8xxx_sw_set_mirror_monitor_port,
+		.get = ar8xxx_sw_get_mirror_monitor_port,
+		.max = AR8216_NUM_PORTS - 1 
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "mirror_source_port",
+		.description = "Mirror source port",
+		.set = ar8xxx_sw_set_mirror_source_port,
+		.get = ar8xxx_sw_get_mirror_source_port,
+		.max = AR8216_NUM_PORTS - 1
+ 	},
+};
 
+static struct switch_attr ar8327_sw_attr_globals[] = {
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_vlan",
+		.description = "Enable VLAN mode",
+		.set = ar8xxx_sw_set_vlan,
+		.get = ar8xxx_sw_get_vlan,
+		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_NOVAL,
+		.name = "reset_mibs",
+		.description = "Reset all MIB counters",
+		.set = ar8xxx_sw_set_reset_mibs,
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_mirror_rx",
+		.description = "Enable mirroring of RX packets",
+		.set = ar8xxx_sw_set_mirror_rx_enable,
+		.get = ar8xxx_sw_get_mirror_rx_enable,
+		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "enable_mirror_tx",
+		.description = "Enable mirroring of TX packets",
+		.set = ar8xxx_sw_set_mirror_tx_enable,
+		.get = ar8xxx_sw_get_mirror_tx_enable,
+		.max = 1
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "mirror_monitor_port",
+		.description = "Mirror monitor port",
+		.set = ar8xxx_sw_set_mirror_monitor_port,
+		.get = ar8xxx_sw_get_mirror_monitor_port,
+		.max = AR8327_NUM_PORTS - 1 
+	},
+	{
+		.type = SWITCH_TYPE_INT,
+		.name = "mirror_source_port",
+		.description = "Mirror source port",
+		.set = ar8xxx_sw_set_mirror_source_port,
+		.get = ar8xxx_sw_get_mirror_source_port,
+		.max = AR8327_NUM_PORTS - 1
+ 	},
 };
 
 static struct switch_attr ar8xxx_sw_attr_port[] = {
@@ -1702,6 +2023,28 @@ static const struct switch_dev_ops ar8xxx_sw_ops = {
 	.attr_global = {
 		.attr = ar8xxx_sw_attr_globals,
 		.n_attr = ARRAY_SIZE(ar8xxx_sw_attr_globals),
+	},
+	.attr_port = {
+		.attr = ar8xxx_sw_attr_port,
+		.n_attr = ARRAY_SIZE(ar8xxx_sw_attr_port),
+	},
+	.attr_vlan = {
+		.attr = ar8xxx_sw_attr_vlan,
+		.n_attr = ARRAY_SIZE(ar8xxx_sw_attr_vlan),
+	},
+	.get_port_pvid = ar8xxx_sw_get_pvid,
+	.set_port_pvid = ar8xxx_sw_set_pvid,
+	.get_vlan_ports = ar8xxx_sw_get_ports,
+	.set_vlan_ports = ar8xxx_sw_set_ports,
+	.apply_config = ar8xxx_sw_hw_apply,
+	.reset_switch = ar8xxx_sw_reset_switch,
+	.get_port_link = ar8xxx_sw_get_port_link,
+};
+
+static const struct switch_dev_ops ar8327_sw_ops = {
+	.attr_global = {
+		.attr = ar8327_sw_attr_globals,
+		.n_attr = ARRAY_SIZE(ar8327_sw_attr_globals),
 	},
 	.attr_port = {
 		.attr = ar8xxx_sw_attr_port,
@@ -1900,6 +2243,7 @@ ar8xxx_probe_switch(struct ar8xxx_priv *priv)
 		swdev->name = "Atheros AR8327";
 		swdev->vlans = AR8X16_MAX_VLANS;
 		swdev->ports = AR8327_NUM_PORTS;
+		swdev->ops = &ar8327_sw_ops;
 	} else {
 		swdev->name = "Atheros AR8216";
 		swdev->vlans = AR8216_NUM_VLANS;
@@ -2103,8 +2447,9 @@ ar8xxx_phy_probe(struct phy_device *phydev)
 	if (ret)
 		goto free_priv;
 
-	pr_info("%s: %s switch registered on %s\n",
-		swdev->devname, swdev->name, dev_name(&priv->mii_bus->dev));
+	pr_info("%s: %s rev. %u switch registered on %s\n",
+		swdev->devname, swdev->name, priv->chip_rev,
+		dev_name(&priv->mii_bus->dev));
 
 found:
 	priv->use_count++;
