@@ -71,6 +71,24 @@ static struct ubifs_compressor zlib_compr = {
 };
 #endif
 
+#ifdef CONFIG_UBIFS_FS_XZ
+static DEFINE_MUTEX(xz_enc_mutex);
+static DEFINE_MUTEX(xz_dec_mutex);
+
+static struct ubifs_compressor xz_compr = {
+	.compr_type = UBIFS_COMPR_XZ,
+	.comp_mutex = &xz_enc_mutex,
+	.decomp_mutex = &xz_dec_mutex,
+	.name = "xz",
+	.capi_name = "xz",
+};
+#else
+static struct ubifs_compressor xz_compr = {
+	.compr_type = UBIFS_COMPR_XZ,
+	.name = "xz",
+};
+#endif
+
 /* All UBIFS compressors */
 struct ubifs_compressor *ubifs_compressors[UBIFS_COMPR_TYPES_CNT];
 
@@ -232,9 +250,15 @@ int __init ubifs_compressors_init(void)
 	if (err)
 		goto out_lzo;
 
+	err = compr_init(&xz_compr);
+	if (err)
+		goto out_zlib;
+
 	ubifs_compressors[UBIFS_COMPR_NONE] = &none_compr;
 	return 0;
 
+out_zlib:
+	compr_exit(&zlib_compr);
 out_lzo:
 	compr_exit(&lzo_compr);
 	return err;
@@ -247,4 +271,5 @@ void ubifs_compressors_exit(void)
 {
 	compr_exit(&lzo_compr);
 	compr_exit(&zlib_compr);
+	compr_exit(&xz_compr);
 }

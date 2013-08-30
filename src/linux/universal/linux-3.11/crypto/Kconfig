@@ -1333,6 +1333,13 @@ config CRYPTO_LZ4HC
 	help
 	  This is the LZ4 high compression mode algorithm.
 
+config CRYPTO_XZ
+	tristate "XZ compression algorithm"
+	select CRYPTO_ALGAPI
+	select XZ_DEC
+	help
+	  This is the XZ algorithm. Only decompression is supported for now.
+
 comment "Random Number Generation"
 
 config CRYPTO_ANSI_CPRNG
