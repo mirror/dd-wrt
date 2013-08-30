@@ -209,12 +209,12 @@ static int change_xattr(struct ubifs_info *c, struct inode *host,
 		goto out_free;
 	}
 	inode->i_size = ui->ui_size = size;
-	ui->data_len = size;
 
 	mutex_lock(&host_ui->ui_mutex);
 	host->i_ctime = ubifs_current_time(host);
 	host_ui->xattr_size -= CALC_XATTR_BYTES(ui->data_len);
 	host_ui->xattr_size += CALC_XATTR_BYTES(size);
+	ui->data_len = size;
 
 	/*
 	 * It is important to write the host inode after the xattr inode
