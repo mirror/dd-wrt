@@ -1073,6 +1073,51 @@ static int rtl8367_led_blinkrate_set(struct rtl8366_smi *smi, unsigned int rate)
 	return 0;
 }
 
+#ifdef CONFIG_OF
+static int rtl8367_extif_init_of(struct rtl8366_smi *smi, int id,
+				 const char *name)
+{
+	struct rtl8367_extif_config *cfg;
+	const __be32 *prop;
+	int size;
+	int err;
+
+	prop = of_get_property(smi->parent->of_node, name, &size);
+	if (!prop)
+		return rtl8367_extif_init(smi, id, NULL);
+
+	if (size != (9 * sizeof(*prop))) {
+		dev_err(smi->parent, "%s property is invalid\n", name);
+		return -EINVAL;
+	}
+
+	cfg = kzalloc(sizeof(struct rtl8367_extif_config), GFP_KERNEL);
+	if (!cfg)
+		return -ENOMEM;
+
+	cfg->txdelay = be32_to_cpup(prop++);
+	cfg->rxdelay = be32_to_cpup(prop++);
+	cfg->mode = be32_to_cpup(prop++);
+	cfg->ability.force_mode = be32_to_cpup(prop++);
+	cfg->ability.txpause = be32_to_cpup(prop++);
+	cfg->ability.rxpause = be32_to_cpup(prop++);
+	cfg->ability.link = be32_to_cpup(prop++);
+	cfg->ability.duplex = be32_to_cpup(prop++);
+	cfg->ability.speed = be32_to_cpup(prop++);
+
+	err = rtl8367_extif_init(smi, id, cfg);
+	kfree(cfg);
+
+	return err;
+}
+#else
+static int rtl8367_extif_init_of(struct rtl8366_smi *smi, int id,
+				 const char *name)
+{
+	return -EINVAL;
+}
+#endif
+
 static int rtl8367_setup(struct rtl8366_smi *smi)
 {
 	struct rtl8367_platform_data *pdata;
@@ -1086,13 +1131,23 @@ static int rtl8367_setup(struct rtl8366_smi *smi)
 		return err;
 
 	/* initialize external interfaces */
-	err = rtl8367_extif_init(smi, 0, pdata->extif0_cfg);
-	if (err)
-		return err;
+	if (smi->parent->of_node) {
+		err = rtl8367_extif_init_of(smi, 0, "realtek,extif0");
+		if (err)
+			return err;
 
-	err = rtl8367_extif_init(smi, 1, pdata->extif1_cfg);
-	if (err)
-		return err;
+		err = rtl8367_extif_init_of(smi, 1, "realtek,extif1");
+		if (err)
+			return err;
+	} else {
+		err = rtl8367_extif_init(smi, 0, pdata->extif0_cfg);
+		if (err)
+			return err;
+
+		err = rtl8367_extif_init(smi, 1, pdata->extif1_cfg);
+		if (err)
+			return err;
+	}
 
 	/* set maximum packet length to 1536 bytes */
 	REG_RMW(smi, RTL8367_SWC0_REG, RTL8367_SWC0_MAX_LENGTH_MASK,
@@ -1537,6 +1592,13 @@ static struct switch_attr rtl8367_vlan[] = {
 		.max = 1,
 		.set = NULL,
 		.get = rtl8366_sw_get_vlan_info,
+	}, {
+		.type = SWITCH_TYPE_INT,
+		.name = "fid",
+		.description = "Get/Set vlan FID",
+		.max = RTL8367_FIDMAX,
+		.set = rtl8366_sw_set_vlan_fid,
+		.get = rtl8366_sw_get_vlan_fid,
 	},
 };
 
@@ -1736,10 +1798,10 @@ static void rtl8367_shutdown(struct platform_device *pdev)
 
 #ifdef CONFIG_OF
 static const struct of_device_id rtl8367_match[] = {
-       { .compatible = "rtl8367" },
+       { .compatible = "realtek,rtl8367" },
        {},
 };
-MODULE_DEVICE_TABLE(of, rtl83767_match);
+MODULE_DEVICE_TABLE(of, rtl8367_match);
 #endif
 
 static struct platform_driver rtl8367_driver = {
