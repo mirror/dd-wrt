@@ -1,0 +1,14 @@
+#!/bin/bash
+aclocal
+autoheader
+automake --foreign --copy --add-missing
+touch depcomp		# for older automake
+autoconf
+export CFLAGS='-O2 -Wall -pipe -g'
+echo "CFLAGS=$CFLAGS"
+echo "./configure $@"
+./configure $@ || exit 1
+unset CFLAGS
+#if [ -z "$CVSCOMPILE_NO_MAKE" ]; then
+#  make
+#fi

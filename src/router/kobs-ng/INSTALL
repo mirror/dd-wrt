@@ -1,0 +1,41 @@
+
+			ZEVIO utils installation
+			========================
+
+Requirements
+------------
+
+...
+
+Installation
+------------
+
+For installation you can use these commands:
+
+	./configure
+	make install
+
+If ./configure command complain that alsa-lib package isn't installed,
+please, check if --prefix option is same for alsa-lib and alsa-utils
+package. The configure script from alsa-utils package probably cannot find
+header file asoundlib.h in $prefix/include/alsa directory (usually in
+/usr/include/alsa directory).
+
+Compilation from SVN sources
+---------------------------
+
+You need also GNU packages autoconf and automake installed in your system.
+
+For compilation you can use these commands:
+
+	aclocal
+	autoheader
+	automake --foreign --copy --add-missing
+	autoconf
+	./configure
+	make
+
+The included svncompile script does this job for you.
+
+Note: Some automake packages have missing aclocal program. Use newer version
+      in the case.

@@ -1,0 +1,18 @@
+#
+# The sample configuration file for kobs
+#
+chip_0_device_path=/dev/mtd0
+
+search_exponent = 2
+data_setup_time = 80
+data_hold_time = 60
+address_setup_time = 25
+data_sample_time = 6
+row_address_size = 3
+column_address_size = 2
+
+ncb_version = 3
+
+boot_stream_1_address = 0
+boot_stream_2_address = 0x1500000
+
