@@ -1,7 +1,7 @@
 /*
 *  mtd.c - Dump control structures of the NAND
 *
-*  Copyright 2008-2010 Freescale Semiconductor, Inc.
+*  Copyright 2008-2011 Freescale Semiconductor, Inc.
 *  Copyright (c) 2008 by Embedded Alley Solution Inc.
 *
 *   Author: Pantelis Antoniou <pantelis@embeddedalley.com>
@@ -47,6 +47,12 @@
 #define F_MULTICHIP		0x02
 #define F_AUTO_MULTICHIP	0x04
 
+#define vp(x, ...)	\
+	do {		\
+		if (((x)->flags) & F_VERBOSE)	\
+			printf(__VA_ARGS__);\
+	} while (0)
+
 //------------------------------------------------------------------------------
 // This structure contains configuration information. This information comes
 // primarily from a .kobs file, but may be overidden from the command line or
@@ -76,6 +82,11 @@ struct mtd_config {
 	int ncb_version;
 	int boot_stream_1_address;
 	int boot_stream_2_address;
+
+	/* for rom boot */
+	int stride_size_in_bytes;
+	int search_area_size_in_bytes;
+	int search_area_size_in_pages;
 };
 
 extern const struct mtd_config default_mtd_config;
@@ -128,6 +139,7 @@ struct mtd_part {
  */
 
 struct nfc_geometry {
+	unsigned int  gf_len;
 	unsigned int  ecc_strength;
 	unsigned int  page_size_in_bytes;
 	unsigned int  metadata_size_in_bytes;
@@ -155,19 +167,19 @@ struct mtd_data {
 	struct nfc_geometry  nfc_geometry;
 
 	/* NCBs */
-	BootBlockStruct_t *curr_ncb;
-	BootBlockStruct_t ncb[2];
+	NCB_BootBlockStruct_t *curr_ncb;
+	NCB_BootBlockStruct_t ncb[2];
 	loff_t ncb_ofs[2];
 	int ncb_version;	/* 0, 1, or 3. Negative means error */
 
 	/* LDLBs */
-	BootBlockStruct_t *curr_ldlb;
-	BootBlockStruct_t ldlb[2];
+	NCB_BootBlockStruct_t *curr_ldlb;
+	NCB_BootBlockStruct_t ldlb[2];
 	loff_t ldlb_ofs[2];
 
 	/* DBBTs */
-	BootBlockStruct_t *curr_dbbt;
-	BootBlockStruct_t dbbt[2];
+	NCB_BootBlockStruct_t *curr_dbbt;
+	NCB_BootBlockStruct_t dbbt[2];
 	loff_t dbbt_ofs[2];
 	/* the 2 NANDs */
 	BadBlockTableNand_t *bbtn[2];
@@ -177,11 +189,14 @@ struct mtd_data {
 	 */
 
 	/* i.MX28 FCB */
-	V1_ROM_BootBlockStruct_t  fcb;
+	BCB_ROM_BootBlockStruct_t  fcb;
 
 	/* i.MX28 DBBT */
-	V1_ROM_BootBlockStruct_t  dbbt28;
+	BCB_ROM_BootBlockStruct_t  dbbt28;
+	/* i.MX50 DBBT */
+	BCB_ROM_BootBlockStruct_t  dbbt50;
 
+	void *private;
 };
 
 #define PAGES_PER_STRIDE	64
@@ -196,9 +211,8 @@ enum {
 	ROM_Version_0       =  0, /* e.g., i.MX23 */
 	ROM_Version_1       =  1, /* e.g., i.MX28 */
 	ROM_Version_2       =  2, /* e.g., i.MX53 */
+	ROM_Version_3	    =  3, /* e.g., i.MX50 */
 };
-
-int  rom_version;
 
 static inline int mtd_pages_per_block(struct mtd_data *md)
 {
@@ -259,6 +273,9 @@ int mtd_dump_structure(struct mtd_data *md);
 int v0_rom_mtd_init(struct mtd_data *md, FILE *fp);
 int v1_rom_mtd_init(struct mtd_data *md, FILE *fp);
 int v2_rom_mtd_init(struct mtd_data *md, FILE *fp);
+int v3_rom_mtd_init(struct mtd_data *md, FILE *fp);
+int v4_rom_mtd_init(struct mtd_data *md, FILE *fp);
+
 int mtd_markbad(struct mtd_data *md, int chip, loff_t ofs);
 
 #define UPDATE_NCB	0x01
@@ -268,9 +285,13 @@ int mtd_markbad(struct mtd_data *md, int chip, loff_t ofs);
 #define UPDATE_BS1	0x10
 #define UPDATE_BS(x)	(0x08 << ((x) & 1))
 #define UPDATE_ALL	(UPDATE_NCB | UPDATE_LDLB | UPDATE_DBBT | UPDATE_BS0 | UPDATE_BS1)
+
 int v0_rom_mtd_commit_structures(struct mtd_data *md, FILE *fp, int flags);
 int v1_rom_mtd_commit_structures(struct mtd_data *md, FILE *fp, int flags);
 int v2_rom_mtd_commit_structures(struct mtd_data *md, FILE *fp, int flags);
+int v3_rom_mtd_commit_structures(struct mtd_data *md, FILE *fp, int flags);
+int v4_rom_mtd_commit_structures(struct mtd_data *md, FILE *fp, int flags);
+
 int mtd_set_ecc_mode(struct mtd_data *md, int ecc);
 
 #ifndef ARRAY_SIZE
@@ -281,8 +302,8 @@ void mtd_parse_args(struct mtd_config *cfg, int argc, char **argv);
 void mtd_parse_kobs(struct mtd_config *cfg, const char *name, int verbose);
 void mtd_cfg_dump(struct mtd_config *cfg);
 
-int ncb_get_version(void *ncb_candidate, BootBlockStruct_t **result);
-int ncb_encrypt(BootBlockStruct_t *ncb, void *target, size_t size, int version);
-int fcb_encrypt(V1_ROM_BootBlockStruct_t *fcb, void *target, size_t size, int version);
+int ncb_get_version(void *ncb_candidate, NCB_BootBlockStruct_t **result);
+int ncb_encrypt(NCB_BootBlockStruct_t *ncb, void *target, size_t size, int version);
+int fcb_encrypt(BCB_ROM_BootBlockStruct_t *fcb, void *target, size_t size, int version);
 
 #endif

@@ -2,7 +2,7 @@
  *  cb-dump.c - Dump control structures of the NAND
  *
  *  Copyright (c) 2008 by Embedded Alley Solution Inc.
- *  Copyright (C) 2010 Freescale Semiconductor, Inc.
+ *  Copyright (C) 2010-2012 Freescale Semiconductor, Inc.
  *
  *   Author: Pantelis Antoniou <pantelis@embeddedalley.com>
  *
@@ -47,20 +47,25 @@
 #include <sys/un.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
+#include <sys/sendfile.h>
 
 #include "mtd.h"
+#include "plat_boot_config.h"
 
 #include "config.h"
 #include "version.h"
+#include "autoversion.h"
 #include "bootstream.h"
 
 void usage(void) __attribute__ ((noreturn));
 
+#define VERSION_MAJOR	1
+#define VERSION_MINOR	3
 void usage(void)
 {
-
-	printf("ROM Version %d\n", rom_version);
-
+	printf("kobs-ng version : [ %d.%d ] git hash (%s)\n",
+			VERSION_MAJOR, VERSION_MINOR, git_sha);
+	printf("ROM Version %d\n", plat_config_data->m_u32RomVer);
 	printf(
 	"usage: kobs-ng [COMMAND] [ARGS]\n"
 	"Where [COMMAND] is one of:\n"
@@ -74,6 +79,7 @@ void usage(void)
 	"  init [-v] [KEY] [KOBS] <file> ........... Initialize boot structure &\n"
 	"                                            install bootstreams\n"
 	"    -v .................................... Verbose mode\n"
+	"    -x .................................... Add 1k-padding in the head\n"
 	"    -n .................................... Dry run (don't commit to flash)\n"
 	"    -w .................................... Commit to flash\n"
 	"\n"
@@ -284,7 +290,9 @@ int extract_main(int argc, char **argv)
 			fprintf(stderr, "Unable to read\n");
 			exit(5);
 		}
-		fwrite(buf, sizeof(buf), 1, outfp);
+		r = fwrite(buf, sizeof(buf), 1, outfp);
+		if (sizeof(buf) != 1)
+			fprintf(stderr, "Write to file failed\n");
 
 		start += sizeof(buf);
 		size -= sizeof(buf);
@@ -336,7 +344,10 @@ int extract_main(int argc, char **argv)
 				fprintf(stderr, "ERROR: unable to read tmp file\n");
 				exit(5);
 			}
-			fwrite(buf, 1, chunk, tfp);
+			r = fwrite(buf, 1, chunk, tfp);
+			if (sizeof(buf) != chunk)
+				fprintf(stderr, "Write to file failed\n");
+
 			curr += chunk;
 		}
 
@@ -361,7 +372,9 @@ int extract_main(int argc, char **argv)
 				fprintf(stderr, "ERROR: unable to read tmp file\n");
 				exit(5);
 			}
-			fwrite(buf, 1, chunk, outfp);
+			r = fwrite(buf, 1, chunk, outfp);
+			if (sizeof(buf) != chunk)
+				fprintf(stderr, "Write to file failed\n");
 			curr += chunk;
 		}
 
@@ -419,7 +432,7 @@ static int perform_bootstream_update(struct mtd_data *md, FILE *infp, int image_
 		update |= UPDATE_BS(i);
 	}
 
-	r = v0_rom_mtd_commit_structures(md, infp, UPDATE_LDLB | update);
+	r = plat_config_data->rom_mtd_commit_structures(md, infp, UPDATE_LDLB | update);
 	if (r < 0) {
 		fprintf(stderr, "FAILED to commit structures\n");
 		return -1;
@@ -542,6 +555,35 @@ int update_main(int argc, char **argv)
 	return 0;
 }
 
+static char *tmp_file = ".tmp_kobs_ng";
+static char *padding_1k_in_head(char *file_name)
+{
+	int to, from;
+	int ret;
+	int sz = getpagesize();
+
+	from = open(file_name, O_RDONLY);
+	to = open(tmp_file, O_CREAT | O_RDWR);
+	if (from < 0 || to < 0) {
+		fprintf(stderr, "unable to create a temporary file\n");
+		exit(5);
+	}
+
+	/* Padding 1k in the head. */
+	lseek(to, 1024, SEEK_SET);
+
+	do {
+		/* copy a page each time. */
+		ret = sendfile(to, from, NULL, sz);
+	} while (ret > 0);
+
+	close(to);
+	close(from);
+
+	/* change to the temporary file. */
+	return tmp_file;
+}
+
 int init_main(int argc, char **argv)
 {
 	int i, j, r;
@@ -552,6 +594,7 @@ int init_main(int argc, char **argv)
 	FILE *infp;
 	loff_t ofs;
 	int dryrun;
+	int padding = 0;
 	struct mtd_config cfg;
 	uint8_t key[16];
 	char ascii[20 * 2 + 1];
@@ -597,6 +640,9 @@ int init_main(int argc, char **argv)
 			case 'n':
 				dryrun = 1;
 				break;
+			case 'x':
+				padding = 1;
+				break;
 			case 'd':
 				device_key = 1;	/* use device key */
 				break;
@@ -617,6 +663,19 @@ int init_main(int argc, char **argv)
 
 	if (flags & F_VERBOSE)
 		mtd_cfg_dump(&cfg);
+
+	/*
+	 * We are using the kernel 3.5.7 now.
+	 * The latest uboot does not have the 1k-padding in the head.
+	 * So we have to add the 1k-padding ourselves.
+	 * Note: We only burn the uboot to nand in the kernel 3.5.7.
+	 */
+	if (padding) {
+		infile = padding_1k_in_head(infile);
+
+		if (flags & F_VERBOSE)
+			printf("\t -- We add the 1k-padding to the uboot.\n");
+	}
 
 	infp = fopen(infile, "rb");
 	if (infp == NULL) {
@@ -663,20 +722,10 @@ int init_main(int argc, char **argv)
 			badlist++;
 	}
 
-	switch (rom_version) {
-		case ROM_Version_0:
-			r = v0_rom_mtd_init(md, infp);
-			break;
-		case ROM_Version_1:
-			r = v1_rom_mtd_init(md, infp);
-			break;
-		case ROM_Version_2:
-			r = v2_rom_mtd_init(md, infp);
-			break;
-		default:
-			fprintf(stderr, "Unknown ROM version: %d\n", rom_version);
-			break;
-	}
+	/* keep the file name in the private. */
+	md->private = infile;
+
+	r = plat_config_data->rom_mtd_init(md, infp);
 	if (r < 0) {
 		fprintf(stderr, "mtd_init failed!\n");
 		exit(5);
@@ -686,20 +735,7 @@ int init_main(int argc, char **argv)
 		mtd_dump_structure(md);
 
 	if (!dryrun) {
-		switch (rom_version) {
-			case ROM_Version_0:
-				r = v0_rom_mtd_commit_structures(md, infp, UPDATE_ALL);
-				break;
-			case ROM_Version_1:
-				r = v1_rom_mtd_commit_structures(md, infp, UPDATE_ALL);
-				break;
-			case ROM_Version_2:
-				r = v2_rom_mtd_commit_structures(md, infp, UPDATE_ALL);
-				break;
-			default:
-				fprintf(stderr, "Unknown ROM version: %d\n", rom_version);
-				break;
-		}
+		r = plat_config_data->rom_mtd_commit_structures(md, infp, UPDATE_ALL);
 		if (r < 0) {
 			fprintf(stderr, "FAILED to commit structures\n");
 			exit(5);
@@ -709,6 +745,9 @@ int init_main(int argc, char **argv)
 
 	fclose(infp);
 
+	/* delete the temporary file. */
+	if (padding)
+		remove(infile);
 	return 0;
 }
 
@@ -787,95 +826,18 @@ out:
 	return r;
 }
 
-void discover_boot_rom_version(void)
-{
-	FILE         *cpuinfo;
-	char         line_buffer[100];
-	static char  *banner     = "Hardware\t: Freescale MX";
-	static char  *v0_rom_tag = "23";
-	static char  *v1_rom_tag = "28";
-	static char  *v2_rom_tag = "53";
-
-	//----------------------------------------------------------------------
-	// Attempt to open /proc/cpuinfo.
-	//----------------------------------------------------------------------
-
-	cpuinfo = fopen("/proc/cpuinfo", "r");
-
-	if (!cpuinfo) {
-		fprintf(stderr, "Can't open /proc/cpuinfo to discover Boot ROM version.\n");
-		exit(1);
-	}
-
-	//----------------------------------------------------------------------
-	// Loop over lines from /proc/cpuinfo.
-	//----------------------------------------------------------------------
-
-	for (;;) {
-
-		//--------------------------------------------------------------
-		// Attempt to get the current line.
-		//--------------------------------------------------------------
-
-		if (!fgets(line_buffer, sizeof(line_buffer), cpuinfo)) {
-			break;
-		}
-
-		//--------------------------------------------------------------
-		// Check if the current line contains the information we need.
-		//--------------------------------------------------------------
-
-		if (strncmp(line_buffer, banner, strlen(banner))) {
-			continue;
-		}
-
-		//--------------------------------------------------------------
-		// If control arrives here, we found what we're looking for.
-		// Extract the information we need.
-		//--------------------------------------------------------------
-
-		if (!strncmp(line_buffer + strlen(banner), v0_rom_tag, strlen(v0_rom_tag))) {
-			rom_version = ROM_Version_0;
-			break;
-		}
-		else
-		if (!strncmp(line_buffer + strlen(banner), v1_rom_tag, strlen(v1_rom_tag))) {
-			rom_version = ROM_Version_1;
-			break;
-		}
-		else
-		if (!strncmp(line_buffer + strlen(banner), v2_rom_tag, strlen(v2_rom_tag))) {
-			rom_version = ROM_Version_2;
-			break;
-		}
-
-	}
-
-	//----------------------------------------------------------------------
-	// Close /proc/cpuinfo.
-	//----------------------------------------------------------------------
-
-	fclose(cpuinfo);
-
-	//----------------------------------------------------------------------
-	// Check if we found what we needed.
-	//----------------------------------------------------------------------
-
-	if (rom_version == ROM_Version_Unknown) {
-		fprintf(stderr, "Couldn't discover Boot ROM version\n");
-		exit(1);
-	}
-
-}
-
 int main(int argc, char **argv)
 {
+	int ret;
 
-	discover_boot_rom_version();
+	ret = discover_boot_rom_version();
+	if (ret != 0) {
+		printf("We can not find the right ROM version!\n");
+		exit(1);
+	}
 
 	if (argc < 2)
 		usage();
-
 	argc--;
 	argv++;
 
@@ -897,4 +859,3 @@ int main(int argc, char **argv)
 	/* no arguments == init */
 	return init_main(argc + 1, argv - 1);
 }
-
