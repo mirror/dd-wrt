@@ -255,6 +255,7 @@ include rules/strongswan.mk
 include rules/gmp.mk
 include rules/sqlite.mk
 include rules/privoxy.mk
+include rules/kobs-ng.mk
 
 #
 # Generic rules
