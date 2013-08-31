@@ -139,6 +139,7 @@ top_srcdir = @top_srcdir@
 noinst_HEADERS = version.h
 INCLUDES = -I$(top_srcdir)/include
 all: config.h
+	echo "const char *git_sha = \""`git rev-parse HEAD`"\";" > ../include/autoversion.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
@@ -181,7 +182,7 @@ config.h: stamp-h1
 stamp-h1: $(srcdir)/config.h.in $(top_builddir)/config.status
 	@rm -f stamp-h1
 	cd $(top_builddir) && $(SHELL) ./config.status include/config.h
-$(srcdir)/config.h.in:  $(am__configure_deps) 
+$(srcdir)/config.h.in:  $(am__configure_deps)
 	cd $(top_srcdir) && $(AUTOHEADER)
 	rm -f stamp-h1
 	touch $@

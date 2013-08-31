@@ -88,7 +88,7 @@ static int encode_hamming_code_22_16(void *source_block, size_t source_size,
 	uint8_t ecc[NAND_HC_ECC_SIZEOF_PARITY_BLOCK_IN_BYTES];
 	uint8_t data[NAND_HC_ECC_SIZEOF_DATA_BLOCK_IN_BYTES];
 
-	memset(data, 0, sizeof(data));
+	memset(data, 0, ARRAY_SIZE(data));
 	memcpy(data, source_block, source_size);
 
 	src = (uint16_t *) data;
@@ -145,15 +145,15 @@ static int encode_hamming_code_13_8(void *source_block, size_t source_size,
 	uint8_t data[NAND_HC_ECC_SIZEOF_DATA_BLOCK_IN_BYTES];
 	int i;
 
-	memset(ecc, 0, sizeof(ecc));
-	memset(data, 0, sizeof(data));
+	memset(ecc, 0, ARRAY_SIZE(ecc));
+	memset(data, 0, ARRAY_SIZE(data));
 	memcpy(data, source_block, source_size);
 
 	for (i = 0; i < source_size; i ++)
 		ecc[i] = calculate_parity_13_8(data[i]);
 
-	memcpy((uint8_t*)target_block + 12, data, NAND_HC_ECC_SIZEOF_DATA_BLOCK_IN_BYTES);
-	memcpy((uint8_t*)target_block + 12 + NAND_HC_ECC_SIZEOF_DATA_BLOCK_IN_BYTES,
+	memcpy((uint8_t*)target_block + BCB_MAGIC_OFFSET, data, NAND_HC_ECC_SIZEOF_DATA_BLOCK_IN_BYTES);
+	memcpy((uint8_t*)target_block + BCB_MAGIC_OFFSET + NAND_HC_ECC_SIZEOF_DATA_BLOCK_IN_BYTES,
 			ecc, NAND_HC_ECC_SIZEOF_DATA_BLOCK_IN_BYTES);
 
 	return 0;
@@ -214,7 +214,7 @@ static int lookup_single_error_13_8(uint8_t syndrome)
 	return -ENOENT;
 }
 
-static inline BootBlockStruct_t *ncb_verify_hamming_22_16(void *page)
+static inline NCB_BootBlockStruct_t *ncb_verify_hamming_22_16(void *page)
 {
 	int r;
 	uint16_t* n1 = (uint16_t*)((uint8_t*)page + NAND_HC_ECC_OFFSET_FIRST_DATA_COPY),
@@ -287,10 +287,10 @@ static inline BootBlockStruct_t *ncb_verify_hamming_22_16(void *page)
 		if (bit_to_flip < 16)
 			*data ^= (1 << bit_to_flip);
 	}
-	return r == 0 ? (BootBlockStruct_t*)n : NULL;
+	return r == 0 ? (NCB_BootBlockStruct_t*)n : NULL;
 }
 
-static inline BootBlockStruct_t *ncb_verify_hamming_13_8(void *ncb_page)
+static inline NCB_BootBlockStruct_t *ncb_verify_hamming_13_8(void *ncb_page)
 {
 	int i, bit_to_flip;
 	uint8_t *data, *parity, np, syndrome;
@@ -314,7 +314,7 @@ static inline BootBlockStruct_t *ncb_verify_hamming_13_8(void *ncb_page)
 		if (bit_to_flip < 8)
 			*data ^= (1 << bit_to_flip);
 	}
-	return (BootBlockStruct_t*)(ncb_page + 12);
+	return (NCB_BootBlockStruct_t*)(ncb_page + 12);
 }
 
 /**
@@ -327,12 +327,12 @@ static inline BootBlockStruct_t *ncb_verify_hamming_13_8(void *ncb_page)
  * size:    The size of an entire NAND Flash page (both data and OOB).
  * version: The version number of the NCB.
  */
-int ncb_encrypt(BootBlockStruct_t *ncb, void *target, size_t size, int version)
+int ncb_encrypt(NCB_BootBlockStruct_t *ncb, void *target, size_t size, int version)
 {
 	assert(version == 0 || version == 1 || version == 3);
-	assert(size >= sizeof(BootBlockStruct_t));
+	assert(size >= sizeof(NCB_BootBlockStruct_t));
 
-	memset(target, size, 0);
+	memset(target, 0, size);
 
 	switch (version)
 	{
@@ -360,7 +360,7 @@ int ncb_encrypt(BootBlockStruct_t *ncb, void *target, size_t size, int version)
  * version: The version number of the NCB.
  *
  */
-int fcb_encrypt(V1_ROM_BootBlockStruct_t *fcb, void *target, size_t size, int version)
+int fcb_encrypt(BCB_ROM_BootBlockStruct_t *fcb, void *target, size_t size, int version)
 {
 	uint32_t  accumulator;
 	uint8_t   *p;
@@ -371,13 +371,13 @@ int fcb_encrypt(V1_ROM_BootBlockStruct_t *fcb, void *target, size_t size, int ve
 	//----------------------------------------------------------------------
 
 	assert(version == 1);
-	assert(size >= sizeof(V1_ROM_BootBlockStruct_t));
+	assert(size >= sizeof(BCB_ROM_BootBlockStruct_t));
 
 	//----------------------------------------------------------------------
 	// Clear out the target.
 	//----------------------------------------------------------------------
 
-	memset(target, size, 0);
+	memset(target, 0, size);
 
 	//----------------------------------------------------------------------
 	// Compute the checksum.
@@ -425,16 +425,16 @@ int fcb_encrypt(V1_ROM_BootBlockStruct_t *fcb, void *target, size_t size, int ve
  *
  * returns version of found NCB, or -1 otherwise - try further scanning..
  */
-int ncb_get_version(void *ncb_candidate, BootBlockStruct_t **result)
+int ncb_get_version(void *ncb_candidate, NCB_BootBlockStruct_t **result)
 {
-	BootBlockStruct_t *bbs, *p1, *p2, *p3;
+	NCB_BootBlockStruct_t *bbs, *p1, *p2, *p3;
 
 	assert(result != NULL);
 
 	*result = NULL;
 
 	/* first of all, check version 3 of ncb */
-	bbs = (BootBlockStruct_t*)((uint8_t*)ncb_candidate + 12);
+	bbs = (NCB_BootBlockStruct_t*)((uint8_t*)ncb_candidate + 12);
 	if (bbs->m_u32FingerPrint1 == NCB_FINGERPRINT1 &&
 	    bbs->m_u32FingerPrint2 == NCB_FINGERPRINT2 &&
 	    bbs->m_u32FingerPrint3 == NCB_FINGERPRINT3) {
@@ -453,13 +453,13 @@ int ncb_get_version(void *ncb_candidate, BootBlockStruct_t **result)
 	 * of NCB
 	 */
 
-	p1 = (BootBlockStruct_t*)ncb_candidate /* + NAND_HC_OFFSET_FIRST_DATA_COPY */;
-	p2 = (BootBlockStruct_t*)((uint8_t*)ncb_candidate + NAND_HC_ECC_OFFSET_SECOND_DATA_COPY);
-	p3 = (BootBlockStruct_t*)((uint8_t*)ncb_candidate + NAND_HC_ECC_OFFSET_THIRD_DATA_COPY);
+	p1 = (NCB_BootBlockStruct_t*)ncb_candidate /* + NAND_HC_OFFSET_FIRST_DATA_COPY */;
+	p2 = (NCB_BootBlockStruct_t*)((uint8_t*)ncb_candidate + NAND_HC_ECC_OFFSET_SECOND_DATA_COPY);
+	p3 = (NCB_BootBlockStruct_t*)((uint8_t*)ncb_candidate + NAND_HC_ECC_OFFSET_THIRD_DATA_COPY);
 
-	if (memcmp(p1, p2, sizeof(BootBlockStruct_t)) == 0 ||
-	    memcmp(p1, p3, sizeof(BootBlockStruct_t)) == 0 ||
-	    memcmp(p2, p3, sizeof(BootBlockStruct_t)) == 0) {
+	if (memcmp(p1, p2, sizeof(NCB_BootBlockStruct_t)) == 0 ||
+	    memcmp(p1, p3, sizeof(NCB_BootBlockStruct_t)) == 0 ||
+	    memcmp(p2, p3, sizeof(NCB_BootBlockStruct_t)) == 0) {
 		/*
 		 * we found at least two identical copies of NCB; verify
 		 * against the ECC

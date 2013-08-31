@@ -1,7 +1,7 @@
 /*
  *  bootstream.c - verify and encode NCB
  *
- *  Copyright (C) 2010 Freescale Semiconductor, Inc.
+ *  Copyright (C) 2010-2011 Freescale Semiconductor, Inc.
  *  Copyright (c) 2008 by Embedded Alley Solution Inc.
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -36,6 +36,7 @@
 #include "sha.h"
 #include "aes.h"
 #include "bootstream.h"
+#include "plat_boot_config.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -517,7 +518,7 @@ int bootstream_verify(int flags, FILE *fp, const uint8_t *key, long *end_of_file
 	long pos;
 	int dcp_fd = -1;
 
-	if (rom_version == ROM_Version_2)
+	if (!plat_config_data->m_u32EnBootStreamVerify)
 		return 0;
 
 	/* 1. header */
