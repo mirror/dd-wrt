@@ -222,6 +222,7 @@ obj-$(CONFIG_USBIP) += glib20 usbip
 #obj-$(CONFIG_XTA) += xtables-addons
 obj-$(CONFIG_SNORT) += libnfnetlink libnetfilter_queue libdnet daq pcre snort
 obj-$(CONFIG_LAGUNA) += gsp_updater
+obj-$(CONFIG_VENTANA) += gsp_updater
 obj-$(CONFIG_POLARSSL) += polarssl
 #obj-$(CONFIG_UHTTPD) += cyassl uhttpd pcre lighttpd
 obj-$(CONFIG_MSTP) += mstp
@@ -238,6 +239,7 @@ obj-$(CONFIG_UQMI) += json-c libubox uqmi
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 obj-$(CONFIG_STRONGSWAN) += gmp strongswan sqlite
 obj-$(CONFIG_PRIVOXY) += privoxy
+obj-$(CONFIG_VENTANA) += kobs-ng
 
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 #obj-$(CONFIG_OPROFILE) += oprofile
