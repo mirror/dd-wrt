@@ -1,4 +1,3 @@
-
 include $(TOP)/.config
 
 ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
@@ -208,6 +207,9 @@ CFLAGS += -DHAVE_RT15N
 endif
 ifeq ($(CONFIG_LAGUNA),y)
 CFLAGS += -DHAVE_LAGUNA
+endif
+ifeq ($(CONFIG_VENTANA),y)
+  CFLAGS += -DHAVE_VENTANA
 endif
 ifeq ($(CONFIG_NEPTUNE),y)
 CFLAGS += -DHAVE_NEPTUNE
