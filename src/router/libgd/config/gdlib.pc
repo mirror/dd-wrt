@@ -1,0 +1,11 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: gd
+Description: GD graphics library
+Version: 2.1.0
+Cflags: -I${includedir}
+Libs.private: -lz -lm  -lpng12   
+Libs: -L${libdir} -lgd

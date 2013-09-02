@@ -1,0 +1,58 @@
+## Process this file with automake to produce Makefile.in -*-Makefile-*-
+
+bin_PROGRAMS = gdcmpgif
+check_PROGRAMS = gifanimtest gd_color_map_test
+
+if HAVE_LIBPNG
+bin_PROGRAMS += gdtopng pngtogd webpng
+check_PROGRAMS += circletexttest fontsizetest fontwheeltest gddemo testac
+if HAVE_LIBZ
+bin_PROGRAMS += gdparttopng gd2topng pngtogd2
+check_PROGRAMS += gdtest
+endif
+endif
+
+if HAVE_LIBJPEG
+if !HAVE_LIBPNG
+check_PROGRAMS += fontsizetest fontwheeltest
+endif
+endif
+
+if HAVE_LIBFONTCONFIG
+check_PROGRAMS += fontconfigtest
+endif
+
+if HAVE_LIBFREETYPE
+bin_PROGRAMS += annotate
+check_PROGRAMS += gdtestft testtr
+endif
+
+if HAVE_LIBZ
+bin_PROGRAMS += gd2copypal gd2togif giftogd2
+endif
+
+bin_SCRIPTS = bdftogd
+
+if HAVE_LIBZ
+check_PROGRAMS += gd2time
+endif
+
+EXTRA_DIST = bdftogd demoin.png entities.html entities.tcl CMakeLists.txt config.h.cmake gd_io_stream.cxx gdpp.cxx msinttypes/inttypes.h msinttypes/stdint.h
+
+include_HEADERS = gd.h gdfx.h gd_io.h gdcache.h gdfontg.h gdfontl.h gdfontmb.h gdfonts.h gdfontt.h entities.h gd_color_map.h gd_errors.h gdpp.h
+
+lib_LTLIBRARIES = libgd.la
+
+libgd_la_SOURCES = gd.c gd_color.c gd_color_map.c gd_transform.c gdfx.c gd_security.c gd_gd.c gd_gd2.c gd_io.c gd_io_dp.c gd_gif_in.c    \
+                   gd_gif_out.c gd_io_file.c gd_io_ss.c gd_jpeg.c gd_png.c gd_ss.c gd_topal.c gd_wbmp.c gdcache.c gdfontg.c gdfontl.c    \
+                   gdfontmb.c gdfonts.c gdfontt.c gdft.c gdhelpers.c gdhelpers.h gdkanji.c gdtables.c gdxpm.c jisx0208.h wbmp.c wbmp.h   \
+                   gd_filter.c gd_nnquant.c gd_rotate.c gd_matrix.c gd_interpolation.c gd_crop.c webpimg.c webpimg.h gd_webp.c gd_tiff.c \
+                   gd_tga.c gd_tga.h gd_bmp.c bmp.h gd_color.h gd_nnquant.h gd_tga.h gd_intern.h gd_io_stream.h gd_xbm.c \
+		   gd_color_match.c
+
+libgd_la_LDFLAGS = -version-info $(GDLIB_CURRENT):$(GDLIB_REVISION):$(GDLIB_AGE) -no-undefined
+
+libgd_la_LIBADD = $(LTLIBICONV)
+
+LDADD = libgd.la $(LIBICONV)
+
