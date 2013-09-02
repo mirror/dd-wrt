@@ -1,18 +1,115 @@
-php5-configure:
-	rm -f php5/config.cache
-	cd php5 && './configure' '--host=$(ARCH)-linux' '--program-prefix=' '--program-suffix=' '--prefix=/usr' '--exec-prefix=/usr' '--bindir=/usr/bin' '--datadir=/usr/share' '--includedir=/usr/include' '--infodir=/usr/share/info' '--libdir=/usr/lib' '--libexecdir=/usr/lib' '--localstatedir=/var' '--mandir=/usr/share/man' '--sbindir=/usr/sbin' '--sysconfdir=/etc' '--disable-nls' '--disable-shared' '--disable-static' '--disable-rpath' '--disable-debug' '--without-pear' '--disable-spl' '--with-config-file-path=/etc' '--disable-ipv6' '--enable-magic-quotes' '--enable-memory-limit' '--disable-short-tags' '--disable-ctype' '--disable-dom' '--disable-ftp' '--without-gettext' '--without-iconv' '--disable-xml' '--disable-xmlreader' '--disable-xmlwriter' '--disable-libxml' '--without-libxml-dir' '--disable-mbstring' '--disable-mbregex' '--without-openssl' '--without-sqlite' '--without-sqlite3' '--without-pear' '--disable-phar' '--disable-pdo' '--with-kerberos=no' '--disable-simplexml' '--disable-soap' '--enable-sockets' '--disable-tokenizer' '--without-curl' '--without-gd' '--without-freetype-dir' '--without-xpm-dir' '--without-ttf' '--without-t1lib' '--disable-gd-jis-conv' '--enable-cli' '--enable-cgi' '--enable-fastcgi' '--enable-force-cgi-redirect' '--enable-discard-path' 'CFLAGS=$(COPTS) -DNEED_PRINTF -ldl' 'LDFLAGS=-ldl'
+
+libpng:
+	cd libgd && \
+	CC="$(ARCH)-linux-uclibc-gcc" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/zlib/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -L$(TOP)/zlib -fPIC -v -Wl,--verbose" \
+	$(MAKE) -C libpng
+	
+libpng-clean:
+	cd libgd && \
+	make -C libpng clean
+	
+libpng-configure:
+	cd libgd && \
+	cd libpng &&   ./configure --host=$(ARCH)-linux-uclibc  --disable-shared --enable-static CC=$(ARCH)-linux-uclibc-gcc CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include" CPPFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include" 'LDFLAGS=-L$(TOP)/zlib'	
+
+	
+	
+libgd:
+	CC="$(ARCH)-linux-uclibc-gcc" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT)   -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -lm -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng12 -fPIC -v -Wl,--verbose" \
+	$(MAKE) -C libgd
+	
+libgd-clean:
+	make -C libgd clean
+	
+libgd-configure:
+	cd libgd && ./configure --host=$(ARCH)-linux-uclibc  --without-xpm --without-x --without-tiff --without-freetype --without-fontconfig --without-x --disable-shared --enable-static --with-zlib CC=$(ARCH)-linux-uclibc-gcc CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib" 'LDFLAGS=-L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs'
+
+libgd-install:
+
 
 php5:
-	make -j 4 -C php5
+	CC="$(ARCH)-linux-uclibc-gcc" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/libgd/libpng/.libs -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/zlib -fPIC -v -Wl,--verbose" \
+	$(MAKE) -C php5
+	
+	
+PHP_CONFIGURE_ARGS= \
+	--program-prefix= \
+	--program-suffix= \
+	--prefix=/usr \
+	--exec-prefix=/usr \
+	--bindir=/usr/bin \
+	--datadir=/usr/share \
+	--infodir=/usr/share/info \
+	--includedir=/ \
+	--oldincludedir=/ \
+	--libdir=/usr/lib \
+	--libexecdir=/usr/lib \
+	--localstatedir=/var \
+	--mandir=/usr/share/man \
+	--sbindir=/usr/sbin \
+	--sysconfdir=/etc \
+	--with-iconv-dir="$(TOP)/glib20/libiconv" \
+	--enable-shared \
+	--enable-static \
+	--disable-rpath \
+	--disable-debug \
+	--without-pear \
+	--with-libxml-dir="$(TOP)/libxml2" \
+	--with-config-file-path=/etc \
+	--disable-ipv6 \
+	--disable-short-tags \
+	--disable-ftp \
+	--without-gettext \
+	--disable-mbregex \
+	--without-openssl \
+	--without-pear \
+	--disable-phar \
+	--with-kerberos=no \
+	--disable-soap \
+	--enable-sockets \
+	--disable-tokenizer \
+	--without-freetype-dir \
+	--without-xpm-dir \
+	--without-t1lib \
+	--disable-gd-jis-conv \
+	--enable-cli \
+	--enable-cgi \
+	--enable-zip \
+	--enable-mbstring \
+	--with-gd \
+	--with-zlib \
+	--with-zlib-dir="$(TOP)/zlib"
+	--with-png-dir="$(TOP)/libgd/libpng/.libs"
+	php_cv_cc_rpath="no" \
+	iconv_impl_name="gnu_libiconv" \
+	ac_cv_lib_z_gzgets="yes" \
+	EXTRA_CFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -I$(TOP)/zlib -I$(TOP)/libgd/libpng" \
+	EXTRA_LIBS="-liconv" \
+	EXTRA_LDFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd"
+	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd"
+	
+php5-configure:
+	rm -f php5/config.cache
+	cd php5 && './configure' 'PHP_ICONV_OVERRIDE=$(TOP)/glib20/libiconv' 'ac_cv_lib_png_png_write_image=yes' 'ac_cv_lib_crypt_crypt=yes' 'ac_cv_lib_z_gzgets=yes' 'ac_cv_php_xml2_config_path=$(TOP)/libxml2/xml2-config' '--host=$(ARCH)-linux-uclibc'  $(PHP_CONFIGURE_ARGS) 'CFLAGS=$(COPTS) -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -liconv' 'LDFLAGS=-L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/glib20/libiconv/lib/.libs -liconv'
+
 
 php5-clean:
 	if test -e "php5/Makefile"; then make -C php5 clean; fi
 
 php5-install:
-	install -D php5/sapi/cli/php $(INSTALLDIR)/php5/usr/bin/php
+	install -D php5/sapi/cli/.libs/php $(INSTALLDIR)/php5/usr/bin/php
 	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php
 ifeq ($(CONFIG_PHPCGI),y)
-	install -D php5/sapi/cgi/php-cgi $(INSTALLDIR)/php5/usr/bin/php-cgi
+	install -D php5/sapi/cgi/.libs/php-cgi $(INSTALLDIR)/php5/usr/bin/php-cgi
 	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php-cgi
 	mkdir -p $(INSTALLDIR)/php5/etc
 	printf "short_open_tag=on\ncgi.fix_pathinfo=1\n" >$(INSTALLDIR)/php5/etc/php.ini
