@@ -228,6 +228,7 @@ include rules/l2tpv3tun.mk
 include rules/rt3062.mk
 include rules/usbip.mk
 include rules/glib.mk
+include rules/libxml2.mk
 #include rules/xtables-addons.mk
 #snort
 include rules/libnfnetlink.mk
@@ -256,6 +257,7 @@ include rules/gmp.mk
 include rules/sqlite.mk
 include rules/privoxy.mk
 include rules/kobs-ng.mk
+include rules/lighttpd.mk
 
 #
 # Generic rules
