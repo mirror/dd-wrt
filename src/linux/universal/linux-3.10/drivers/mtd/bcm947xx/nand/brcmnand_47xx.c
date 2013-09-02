@@ -1756,8 +1756,13 @@ struct mtd_partition *init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t 
 
 	if ((bootflags & FLASH_KERNEL_NFLASH) == FLASH_KERNEL_NFLASH) {
 		brcmnand_parts[j].name = "linux";
-		brcmnand_parts[j].offset = 0;
-		brcmnand_parts[j++].size = NFL_BOOT_OS_SIZE;
+		if ((bootflags & FLASH_BOOT_NFLASH) == FLASH_BOOT_NFLASH) {
+			brcmnand_parts[j].offset = NFL_BOOT_SIZE;
+			brcmnand_parts[j++].size = NFL_BOOT_OS_SIZE - NFL_BOOT_SIZE;
+		} else {
+			brcmnand_parts[j].offset = 0;
+			brcmnand_parts[j++].size = NFL_BOOT_OS_SIZE;
+		}			
 		offset += NFL_BOOT_OS_SIZE;
 		size -= NFL_BOOT_OS_SIZE;
 	}
