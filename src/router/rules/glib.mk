@@ -9,7 +9,7 @@ glib20-configure:
 	cd glib20/libffi && ./configure --enable-static --disable-shared --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -fPIC -Drpl_malloc=malloc"
 	$(MAKE) -C glib20/libffi clean all
 
-	cd glib20/libiconv && ./configure --enable-shared --disable-static --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -fPIC -Drpl_malloc=malloc"
+	cd glib20/libiconv && ./configure --enable-shared --enable-static --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -fPIC -Drpl_malloc=malloc"
 	$(MAKE) -C glib20/libiconv clean all
 
 	cd glib20/gettext && ./configure --enable-shared --disable-static --disable-openmp --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -fPIC -Drpl_malloc=malloc"
