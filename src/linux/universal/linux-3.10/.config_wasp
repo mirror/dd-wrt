@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.8-rc1  Kernel Configuration
+# Linux/mips 3.10.10 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1917,6 +1917,7 @@ CONFIG_CRYPTO_DES=y
 CONFIG_CRYPTO_DEFLATE=m
 # CONFIG_CRYPTO_ZLIB is not set
 # CONFIG_CRYPTO_LZO is not set
+# CONFIG_CRYPTO_XZ is not set
 
 #
 # Random Number Generation
