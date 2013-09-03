@@ -38,7 +38,7 @@ php5:
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/libgd/libpng/.libs -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/zlib -fPIC -v -Wl,--verbose" \
-	$(MAKE) -C php5
+	-$(MAKE) -C php5
 	
 	
 PHP_CONFIGURE_ARGS= \
@@ -57,6 +57,7 @@ PHP_CONFIGURE_ARGS= \
 	--mandir=/usr/share/man \
 	--sbindir=/usr/sbin \
 	--sysconfdir=/etc \
+	--with-iconv=shared,"$(TOP)/glib20/libiconv" \
 	--with-iconv-dir="$(TOP)/glib20/libiconv" \
 	--enable-shared \
 	--enable-static \
@@ -87,19 +88,20 @@ PHP_CONFIGURE_ARGS= \
 	--enable-mbstring \
 	--with-gd \
 	--with-zlib \
-	--with-zlib-dir="$(TOP)/zlib"
-	--with-png-dir="$(TOP)/libgd/libpng/.libs"
+	--with-zlib-dir="$(TOP)/zlib" \
+	--with-png-dir="$(TOP)/libgd/libpng/.libs" \
 	php_cv_cc_rpath="no" \
 	iconv_impl_name="gnu_libiconv" \
 	ac_cv_lib_z_gzgets="yes" \
+	PHP_ICONV_H_PATH="$(TOP)/glib20/libiconv/include/iconv.h" \
 	EXTRA_CFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -I$(TOP)/zlib -I$(TOP)/libgd/libpng" \
 	EXTRA_LIBS="-liconv" \
-	EXTRA_LDFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd"
+	EXTRA_LDFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd" \
 	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd"
 	
 php5-configure:
 	rm -f php5/config.cache
-	cd php5 && './configure' 'PHP_ICONV_OVERRIDE=$(TOP)/glib20/libiconv' 'ac_cv_lib_png_png_write_image=yes' 'ac_cv_lib_crypt_crypt=yes' 'ac_cv_lib_z_gzgets=yes' 'ac_cv_php_xml2_config_path=$(TOP)/libxml2/xml2-config' '--host=$(ARCH)-linux-uclibc'  $(PHP_CONFIGURE_ARGS) 'CFLAGS=$(COPTS) -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -liconv' 'LDFLAGS=-L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/glib20/libiconv/lib/.libs -liconv'
+	cd php5 && './configure' 'PHP_ICONV_OVERRIDE=$(TOP)/glib20/libiconv' ICONV_DIR=$(TOP)/glib20/libiconv 'ac_cv_lib_png_png_write_image=yes' 'ac_cv_lib_crypt_crypt=yes' 'ac_cv_lib_z_gzgets=yes' 'ac_cv_php_xml2_config_path=$(TOP)/libxml2/xml2-config' '--host=$(ARCH)-linux-uclibc' '$(PHP_CONFIGURE_ARGS)' 'CFLAGS=$(COPTS) -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -liconv' 'LDFLAGS=-L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/glib20/libiconv/lib/.libs -liconv'
 
 
 php5-clean:
@@ -107,6 +109,7 @@ php5-clean:
 
 php5-install:
 	install -D php5/sapi/cli/.libs/php $(INSTALLDIR)/php5/usr/bin/php
+	install -D php5/libiconv/lib/.libs/libiconv.so.2 $(INSTALLDIR)/php5/usr/lib/libiconv.so.2
 	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php
 ifeq ($(CONFIG_PHPCGI),y)
 	install -D php5/sapi/cgi/.libs/php-cgi $(INSTALLDIR)/php5/usr/bin/php-cgi
