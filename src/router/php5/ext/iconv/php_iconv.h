@@ -35,6 +35,7 @@
 #endif
 
 #ifdef PHP_ATOM_INC
+#undef LIBICONV_PLUG
 #include "ext/iconv/php_have_iconv.h"
 #include "ext/iconv/php_have_libiconv.h"
 #include "ext/iconv/php_iconv_aliased_libiconv.h"
