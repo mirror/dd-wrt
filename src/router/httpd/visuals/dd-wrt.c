@@ -119,20 +119,36 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
-	websWrite(wp, "<select name=\"overclocking\">\n");
-
 	char *oclk = nvram_safe_get("overclocking");
 
 	int cclk = atoi(oclk);
 
 	int i = 0;
-
+	int in_clock_array = 0;
+	
+	//check if cpu clock list contains current clkfreq
 	while (c[i] != 0) {
-		websWrite(wp, "<option value=\"%d\" %s >%d MHz</option>\n", c[i], c[i] == cclk ? "selected=\"selected\"" : "", c[i]);
+		if(c[i]== cclk) {
+			in_clock_array = 1;
+		}
 		i++;
 	}
-	websWrite(wp, "</select>\n</div>\n");
+
+	if(in_clock_array || nvram_get("clkfreq") != NULL) {
+	
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
+		websWrite(wp, "<select name=\"overclocking\">\n");
+	
+		while (c[i] != 0) {
+			websWrite(wp, "<option value=\"%d\" %s >%d MHz</option>\n", c[i], c[i] == cclk ? "selected=\"selected\"" : "", c[i]);
+			i++;
+		}
+		
+		websWrite(wp, "</select>\n</div>\n");
+	} else {
+		websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
+		fprintf(stderr, "CPU frequency list for rev: %d does not contain current clkfreq: %d.", rev, cclk);
+	}
 }
 #endif
 
