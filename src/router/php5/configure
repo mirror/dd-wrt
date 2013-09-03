@@ -45551,7 +45551,8 @@ if test "$PHP_ICONV" != "no"; then
 
 
   found_iconv=no
-  unset ICONV_DIR
+#  unset ICONV_DIR
+  iconv_lib_name=iconv
 
   # Create the directories for a VPATH build:
   $php_shtool mkdir -p ext/iconv
@@ -45603,11 +45604,11 @@ fi
 
 $as_echo "#define HAVE_GICONV_H 1" >>confdefs.h
 
-        ICONV_DIR=$i
+        ICONV_DIR=$PHP_ICONV
         iconv_lib_name=giconv
         break
       elif test -r $i/include/iconv.h; then
-        ICONV_DIR=$i
+        ICONV_DIR=$PHP_ICONV
         iconv_lib_name=iconv
         break
       fi
