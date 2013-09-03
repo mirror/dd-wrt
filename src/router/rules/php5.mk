@@ -34,11 +34,11 @@ libgd-install:
 
 
 php5:
-	CC="$(ARCH)-linux-uclibc-gcc" \
+	-CC="$(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/libgd/libpng/.libs -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/zlib -fPIC -v -Wl,--verbose" \
-	-$(MAKE) -C php5
+	$(MAKE) -C php5
 	
 	
 PHP_CONFIGURE_ARGS= \
