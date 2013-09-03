@@ -6,7 +6,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
 endif
 
 MODULE:=usb
-MODULE_ADV:=usb_adv
+MODULE_ADV:=adv_usb
 
 clean:
 	@true
