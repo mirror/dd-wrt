@@ -302,8 +302,8 @@ if test "$WITH_PCRE" != "no"; then
   AC_PATH_PROG(PCRECONFIG, pcre-config)
 
   if test x"$PCRECONFIG" != x; then
-    PCRE_LIB=`$PCRECONFIG --libs`
-    CPPFLAGS="$CPPFLAGS `$PCRECONFIG --cflags`"
+    PCRE_LIB=
+    CPPFLAGS="$CPPFLAGS "
     AC_DEFINE([HAVE_LIBPCRE], [1], [libpcre])
     AC_DEFINE([HAVE_PCRE_H], [1], [pcre.h])
   else
