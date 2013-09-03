@@ -71,7 +71,8 @@ ifeq ($(CONFIG_TW6600),y)
 endif
 
 
-	cp -a lang_pack $(INSTALLDIR)/www
+	mkdir -p $(INSTALLDIR)/www/lang_pack
+	cp lang_pack/*.js $(INSTALLDIR)/www/lang_pack	
 	rm -f $(INSTALLDIR)/www/lang_pack/arabic.js	
 	
 ifneq ($(CONFIG_LANGUAGE),y)
