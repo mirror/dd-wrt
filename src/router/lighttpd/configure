@@ -14403,8 +14403,8 @@ fi
 
 
   if test x"$PCRECONFIG" != x; then
-    PCRE_LIB=`$PCRECONFIG --libs`
-    CPPFLAGS="$CPPFLAGS `$PCRECONFIG --cflags`"
+    PCRE_LIB=
+    CPPFLAGS="$CPPFLAGS "
 
 $as_echo "#define HAVE_LIBPCRE 1" >>confdefs.h
 
