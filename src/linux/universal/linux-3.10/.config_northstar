@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.8-rc1  Kernel Configuration
+# Linux/arm 3.10.10 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -2215,6 +2215,7 @@ CONFIG_CRYPTO_DES=m
 CONFIG_CRYPTO_DEFLATE=m
 # CONFIG_CRYPTO_ZLIB is not set
 CONFIG_CRYPTO_LZO=m
+# CONFIG_CRYPTO_XZ is not set
 
 #
 # Random Number Generation
