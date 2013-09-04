@@ -3,30 +3,29 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Slava Zanko <slavazanko@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 08:51+0000\n"
-"Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: fi_FI\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-21 08:27+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"Language-Team: Kazakh (http://www.transifex.com/projects/p/mc/language/kk/)\n"
+"Language: kk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
 
 msgid "Warning: cannot load codepages list"
-msgstr "Varoitus: Koodilistaa ei pysty lataamaan"
+msgstr ""
 
 msgid "7-bit ASCII"
-msgstr "7-bittinen ASCII"
+msgstr ""
 
 #, c-format
 msgid "Cannot translate from %s to %s"
-msgstr "Kääntäminen kielestä %s kieleen %s epäonnistui"
+msgstr ""
 
 msgid "Event system already initialized"
 msgstr ""
@@ -54,18 +53,15 @@ msgid ""
 "User: %s\n"
 "Process ID: %d"
 msgstr ""
-"Tiedosto \"%s\" on juuri nyt käsittelyssä.\n"
-"Käyttäjä: %s\n"
-"Prosessin ID: %d"
 
 msgid "File locked"
-msgstr "Tiedosto lukittu"
+msgstr ""
 
 msgid "&Grab lock"
-msgstr "&Lukitse"
+msgstr ""
 
 msgid "&Ignore lock"
-msgstr "&Vapauta"
+msgstr ""
 
 #, c-format
 msgid "Cannot create %s directory"
@@ -93,7 +89,7 @@ msgid ""
 msgstr ""
 
 msgid "Search string not found"
-msgstr "Etsittyä merkkijonoa ei löydy"
+msgstr ""
 
 msgid "Not implemented yet"
 msgstr ""
@@ -103,7 +99,7 @@ msgstr ""
 
 #, c-format
 msgid "Invalid token number %d"
-msgstr "Token %d ei ole validi"
+msgstr ""
 
 msgid "Regular expression error"
 msgstr ""
@@ -125,16 +121,12 @@ msgid ""
 "Unable to load '%s' skin.\n"
 "Default skin has been loaded"
 msgstr ""
-"Teemaa '%s' ei pysty lataamaan.\n"
-"Perusteema asetettu."
 
 #, c-format
 msgid ""
 "Unable to parse '%s' skin.\n"
 "Default skin has been loaded"
 msgstr ""
-"Teemaa '%s' ei pysty käsittelemään.\n"
-"Perusteema asetettu."
 
 #, c-format
 msgid ""
@@ -144,97 +136,97 @@ msgid ""
 msgstr ""
 
 msgid "Function key 1"
-msgstr "Funktio 1"
+msgstr ""
 
 msgid "Function key 2"
-msgstr "Funktio 2"
+msgstr ""
 
 msgid "Function key 3"
-msgstr "Funktio 3"
+msgstr ""
 
 msgid "Function key 4"
-msgstr "Funktio 4"
+msgstr ""
 
 msgid "Function key 5"
-msgstr "Funktio 5"
+msgstr ""
 
 msgid "Function key 6"
-msgstr "Funktio 6"
+msgstr ""
 
 msgid "Function key 7"
-msgstr "Funktio 7"
+msgstr ""
 
 msgid "Function key 8"
-msgstr "Funktio 8"
+msgstr ""
 
 msgid "Function key 9"
-msgstr "Funktio 9"
+msgstr ""
 
 msgid "Function key 10"
-msgstr "Funktio 10"
+msgstr ""
 
 msgid "Function key 11"
-msgstr "Funktio 11"
+msgstr ""
 
 msgid "Function key 12"
-msgstr "Funktio 12"
+msgstr ""
 
 msgid "Function key 13"
-msgstr "Funktio 13"
+msgstr ""
 
 msgid "Function key 14"
-msgstr "Funktio 14"
+msgstr ""
 
 msgid "Function key 15"
-msgstr "Funktio 15"
+msgstr ""
 
 msgid "Function key 16"
-msgstr "Funktio 16"
+msgstr ""
 
 msgid "Function key 17"
-msgstr "Funktio 17"
+msgstr ""
 
 msgid "Function key 18"
-msgstr "Funktio 18"
+msgstr ""
 
 msgid "Function key 19"
-msgstr "Funktio 19"
+msgstr ""
 
 msgid "Function key 20"
-msgstr "Funktio 20"
+msgstr ""
 
 msgid "Backspace key"
-msgstr "Askelpalautin"
+msgstr ""
 
 msgid "End key"
-msgstr "End"
+msgstr ""
 
 msgid "Up arrow key"
-msgstr "Ylänuoli"
+msgstr ""
 
 msgid "Down arrow key"
-msgstr "Alanuoli"
+msgstr ""
 
 msgid "Left arrow key"
-msgstr "Vasen nuoli"
+msgstr ""
 
 msgid "Right arrow key"
-msgstr "Oikea nuoli"
+msgstr ""
 
 msgid "Home key"
-msgstr "Home"
+msgstr ""
 
 msgid "Page Down key"
-msgstr "Page Down"
+msgstr ""
 
 msgid "Page Up key"
-msgstr "Page Up"
+msgstr ""
 
 msgid "Insert key"
-msgstr "Insert"
+msgstr ""
 
 msgid "Delete key"
-msgstr "Delete"
+msgstr ""
 
 msgid "Completion/M-tab"
 msgstr ""
@@ -243,94 +235,94 @@ msgid "Back Tabulation S-tab"
 msgstr ""
 
 msgid "+ on keypad"
-msgstr "+ keypadilla"
+msgstr ""
 
 msgid "- on keypad"
-msgstr "- keypadilla"
+msgstr ""
 
 msgid "Slash on keypad"
-msgstr "Viiva keypadilla"
+msgstr ""
 
 msgid "* on keypad"
-msgstr "* keypadilla"
+msgstr ""
 
 msgid "Escape key"
-msgstr "Esc"
+msgstr ""
 
 msgid "Left arrow keypad"
-msgstr "Vasen nuoli keypadilla"
+msgstr ""
 
 msgid "Right arrow keypad"
-msgstr "Oikea nuoli keypadilla"
+msgstr ""
 
 msgid "Up arrow keypad"
-msgstr "Ylänuoli keypadilla"
+msgstr ""
 
 msgid "Down arrow keypad"
-msgstr "Alanuoli keypadilla"
+msgstr ""
 
 msgid "Home on keypad"
-msgstr "Home keypadilla"
+msgstr ""
 
 msgid "End on keypad"
-msgstr "End keypadilla"
+msgstr ""
 
 msgid "Page Down keypad"
-msgstr "Page Down keypadilla"
+msgstr ""
 
 msgid "Page Up keypad"
-msgstr "Page Up keypadilla"
+msgstr ""
 
 msgid "Insert on keypad"
-msgstr "Insert keypadilla"
+msgstr ""
 
 msgid "Delete on keypad"
-msgstr "Delete keypadilla"
+msgstr ""
 
 msgid "Enter on keypad"
-msgstr "Enter keypadilla"
+msgstr ""
 
 msgid "Function key 21"
-msgstr "Funktio 21"
+msgstr ""
 
 msgid "Function key 22"
-msgstr "Funktio 22"
+msgstr ""
 
 msgid "Function key 23"
-msgstr "Funktio 23"
+msgstr ""
 
 msgid "Function key 24"
-msgstr "Funktio 24"
+msgstr ""
 
 msgid "A1 key"
-msgstr "A1"
+msgstr ""
 
 msgid "C1 key"
-msgstr "C1"
+msgstr ""
 
 msgid "Plus"
-msgstr "Plus"
+msgstr ""
 
 msgid "Minus"
-msgstr "Miinus"
+msgstr ""
 
 msgid "Asterisk"
-msgstr "Tähti"
+msgstr ""
 
 msgid "Dot"
-msgstr "Piste"
+msgstr ""
 
 msgid "Less than"
-msgstr "Vähemmän kuin"
+msgstr ""
 
 msgid "Great than"
-msgstr "Enemmän kuin"
+msgstr ""
 
 msgid "Equal"
-msgstr "Yhtä kuin"
+msgstr ""
 
 msgid "Comma"
-msgstr "Pilkku"
+msgstr ""
 
 msgid "Apostrophe"
 msgstr ""
@@ -339,19 +331,19 @@ msgid "Colon"
 msgstr ""
 
 msgid "Exclamation mark"
-msgstr "Varoitus-merkki"
+msgstr ""
 
 msgid "Question mark"
-msgstr "Kysymysmerkki"
+msgstr ""
 
 msgid "Ampersand"
 msgstr ""
 
 msgid "Dollar sign"
-msgstr "Dollarin merkki"
+msgstr ""
 
 msgid "Quotation mark"
-msgstr "Lainausmerkki"
+msgstr ""
 
 msgid "Percent sign"
 msgstr ""
@@ -366,13 +358,13 @@ msgid "Prime"
 msgstr ""
 
 msgid "Underline"
-msgstr "Alleviivaus"
+msgstr ""
 
 msgid "Understrike"
-msgstr "Yliviivaus"
+msgstr ""
 
 msgid "Pipe"
-msgstr "Putki"
+msgstr ""
 
 msgid "Left parenthesis"
 msgstr ""
@@ -393,35 +385,35 @@ msgid "Right brace"
 msgstr ""
 
 msgid "Enter"
-msgstr "Enter"
+msgstr ""
 
 msgid "Tab key"
-msgstr "Sarkain"
+msgstr ""
 
 msgid "Space key"
-msgstr "Välilyönti"
+msgstr ""
 
 msgid "Slash key"
-msgstr "Kenoviiva"
+msgstr ""
 
 msgid "Backslash key"
-msgstr "Takakenoviiva"
+msgstr ""
 
 msgid "Number sign #"
-msgstr "Risuaita"
+msgstr ""
 
 #. TRANSLATORS: Please translate as in "at sign" (@).
 msgid "At sign"
-msgstr "@"
+msgstr ""
 
 msgid "Ctrl"
-msgstr "Ctrl"
+msgstr ""
 
 msgid "Alt"
-msgstr "Alt"
+msgstr ""
 
 msgid "Shift"
-msgstr "Vaihto"
+msgstr ""
 
 msgid "The TERM environment variable is unset!\n"
 msgstr ""
@@ -431,14 +423,12 @@ msgid ""
 "Screen size %dx%d is not supported.\n"
 "Check the TERM environment variable.\n"
 msgstr ""
-"Näytön koko %dx%d ei ole yhteensopiva.\n"
-"Tarkista TERM.\n"
 
 msgid "Warning"
-msgstr "Varoitus"
+msgstr ""
 
 msgid "Pipe failed"
-msgstr "Virheellinen putki"
+msgstr ""
 
 msgid "Dup failed"
 msgstr ""
@@ -448,47 +438,47 @@ msgstr ""
 
 #, c-format
 msgid "Directory cache expired for %s"
-msgstr "Hakemiston polku yliajoittui %s"
+msgstr ""
 
 msgid "bytes transferred"
 msgstr ""
 
 msgid "Starting linear transfer..."
-msgstr "Aloitetaan lineaarinen transferrointi..."
+msgstr ""
 
 msgid "Getting file"
-msgstr "Tuodaan tiedostoa"
+msgstr ""
 
 msgid "Changes to file lost"
 msgstr ""
 
 #, c-format
 msgid "%s is not a directory\n"
-msgstr "%s ei ole hakemisto\n"
+msgstr ""
 
 #, c-format
 msgid "Directory %s is not owned by you\n"
-msgstr "Et ole kansion %s omistaja\n"
+msgstr ""
 
 #, c-format
 msgid "Cannot set correct permissions for directory %s\n"
-msgstr "Sinulla ei ole oikeuksia kansioon %s\n"
+msgstr ""
 
 #, c-format
 msgid "Cannot create temporary directory %s: %s\n"
-msgstr "Väliaikaishakemiston luonti epäonnistui %s: %s\n"
+msgstr ""
 
 #, c-format
 msgid "Temporary files will be created in %s\n"
-msgstr "Väliaikaistiedostoja ei ole luotu kohteeseen %s\n"
+msgstr ""
 
 #, c-format
 msgid "Temporary files will not be created\n"
-msgstr "Väliaikais tiedosta ei ole luotu\n"
+msgstr ""
 
 #, c-format
 msgid "Press any key to continue..."
-msgstr "Paina mitä tahansa näppäintä jatkaaksesi"
+msgstr ""
 
 msgid "Cannot parse:"
 msgstr ""
@@ -658,7 +648,7 @@ msgstr ""
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
 
@@ -866,7 +856,9 @@ msgid "\"%s\" is not a regular file"
 msgstr ""
 
 #, c-format
-msgid "File \"%s\" is too large"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
 msgstr ""
 
 #, c-format
@@ -1444,7 +1436,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1520,7 +1512,7 @@ msgid "The shell is already running a command"
 msgstr ""
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
+msgid "Type 'exit' to return to the Midnight Commander"
 msgstr ""
 
 msgid "Set &all"
@@ -2063,7 +2055,7 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Symlink `%s' points to:"
+msgid "Symlink '%s' points to:"
 msgstr ""
 
 msgid "Edit symlink"
@@ -2078,7 +2070,7 @@ msgid "edit symlink: %s"
 msgstr ""
 
 #, c-format
-msgid "`%s' is not a symbolic link"
+msgid "'%s' is not a symbolic link"
 msgstr ""
 
 msgid "FTP to machine"
@@ -2181,7 +2173,7 @@ msgid "%o %d %f%m"
 msgstr ""
 
 msgid "file"
-msgstr "tiedosto"
+msgstr ""
 
 msgid "files"
 msgstr ""
@@ -2560,9 +2552,6 @@ msgstr ""
 msgid "Target"
 msgstr ""
 
-msgid "Deleting"
-msgstr ""
-
 msgid "Follow &links"
 msgstr ""
 
@@ -2579,7 +2568,7 @@ msgid "&Background"
 msgstr ""
 
 #, c-format
-msgid "Invalid source pattern `%s'"
+msgid "Invalid source pattern '%s'"
 msgstr ""
 
 msgid "&Chdir"
@@ -2651,7 +2640,6 @@ msgstr ""
 msgid "Finished (ignored %zd directory)"
 msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] ""
-msgstr[1] ""
 
 #, c-format
 msgid "Searching %s"
@@ -2814,7 +2802,6 @@ msgstr ""
 msgid " (%ld block)"
 msgid_plural " (%ld blocks)"
 msgstr[0] ""
-msgstr[1] ""
 
 #, c-format
 msgid "Owner:     %s/%s"
@@ -3046,7 +3033,6 @@ msgstr ""
 msgid "You have %zd opened screen. Quit anyway?"
 msgid_plural "You have %zd opened screens. Quit anyway?"
 msgstr[0] ""
-msgstr[1] ""
 
 msgid "The Midnight Commander"
 msgstr ""
@@ -3193,13 +3179,11 @@ msgstr ""
 msgid "%s byte"
 msgid_plural "%s bytes"
 msgstr[0] ""
-msgstr[1] ""
 
 #, c-format
 msgid "%s in %d file"
 msgid_plural "%s in %d files"
 msgstr[0] ""
-msgstr[1] ""
 
 msgid "Panelize"
 msgstr ""
@@ -3569,7 +3553,7 @@ msgstr ""
 msgid ""
 "Unexpected end of file\n"
 "%s"
-msgstr "Odottaminen päättyminen tiedostossa %s"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3582,25 +3566,24 @@ msgstr ""
 
 #, c-format
 msgid "Warning: cannot open %s directory\n"
-msgstr "Varoitus: Kansion %s avaaminen ei onnistu\n"
+msgstr ""
 
 #, c-format
 msgid "fish: Disconnecting from %s"
-msgstr "fish: Katkaistaan yhteys kohteesta %s"
+msgstr ""
 
 msgid "fish: Waiting for initial line..."
 msgstr ""
 
 msgid "Sorry, we cannot do password authenticated connections for now."
 msgstr ""
-"Sori, mutta emme voi tehdä salasanan authenkaatiota yhteyksille juuri nyt."
 
 #, c-format
 msgid "fish: Password is required for %s"
-msgstr "fish: Salasana pakollinen kohteelle %s"
+msgstr ""
 
 msgid "fish: Sending password..."
-msgstr "fish: Lähetetään salasana..."
+msgstr ""
 
 msgid "fish: Sending initial line..."
 msgstr ""
@@ -3609,124 +3592,124 @@ msgid "fish: Handshaking version..."
 msgstr ""
 
 msgid "fish: Getting host info..."
-msgstr "fish: Haetaan palveluntarjoajan tietoja..."
+msgstr ""
 
 #, c-format
 msgid "fish: Reading directory %s..."
-msgstr "fish: Luetaan kansiota %s..."
+msgstr ""
 
 #, c-format
 msgid "%s: done."
-msgstr "%s: valmis."
+msgstr ""
 
 #, c-format
 msgid "%s: failure"
-msgstr "%s: nyt tuli jokin moka"
+msgstr ""
 
 #, c-format
 msgid "fish: store %s: sending command..."
-msgstr "fish: Säilytä %s: lähettämällä komento ..."
+msgstr ""
 
 msgid "fish: Local read failed, sending zeros"
-msgstr "fish: Paikallisen tiedoston luku epäonnistui, lähetetään nollia"
+msgstr ""
 
 msgid "fish: storing file"
 msgstr ""
 
 msgid "Aborting transfer..."
-msgstr "Keskeytetään transferrointi..."
+msgstr ""
 
 msgid "Error reported after abort."
-msgstr "Virhe raportoitu keskeyttämisen jälkeen."
+msgstr ""
 
 msgid "Aborted transfer would be successful."
-msgstr "Keskeytetty siirto olisi onnistunut."
+msgstr ""
 
 #, c-format
 msgid "ftpfs: Disconnecting from %s"
-msgstr "ftpfs: Yhteys katkaistaan kohteesta %s"
+msgstr ""
 
 #, c-format
 msgid "FTP: Password required for %s"
-msgstr "FTP: Salasana vaaditaan kohteelle %s"
+msgstr ""
 
 msgid "ftpfs: sending login name"
-msgstr "ftpfs: lähetetään kirjautumistietoja"
+msgstr ""
 
 msgid "ftpfs: sending user password"
-msgstr "ftpfs: lähetetään kirjautumistietoja"
+msgstr ""
 
 #, c-format
 msgid "FTP: Account required for user %s"
-msgstr "FTP: Tili vaaditaan käyttäjälle %s"
+msgstr ""
 
 msgid "Account:"
-msgstr "Tili:"
+msgstr ""
 
 msgid "ftpfs: sending user account"
-msgstr "ftpfs: lähetetään tilitietoja"
+msgstr ""
 
 msgid "ftpfs: logged in"
-msgstr "ftpfs: sisäänkirjauduttu"
+msgstr ""
 
 #, c-format
 msgid "ftpfs: Login incorrect for user %s "
-msgstr "ftpfs: Kirjautuminen ei onnistunut käyttäjällä %s"
+msgstr ""
 
 msgid "ftpfs: Invalid host name."
-msgstr "ftpfs: Palveluntarjoajan nimi ei ole validi."
+msgstr ""
 
 #, c-format
 msgid "ftpfs: %s"
-msgstr "ftpfs: %s"
+msgstr ""
 
 #, c-format
 msgid "ftpfs: making connection to %s"
-msgstr "ftpfs: luodaan yhteyttä kohteeseen %s"
+msgstr ""
 
 msgid "ftpfs: connection interrupted by user"
-msgstr "ftpfs: yhteys keskeytetty käyttäjän toimesta"
+msgstr ""
 
 #, c-format
 msgid "ftpfs: connection to server failed: %s"
-msgstr "ftpfs: yhteys palvelimeen epäonnistui: %s"
+msgstr ""
 
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
 msgstr ""
 
 msgid "ftpfs: invalid address family"
-msgstr "ftpfs: Osoiteperhe ei ole validi"
+msgstr ""
 
 #, c-format
 msgid "ftpfs: could not create socket: %s"
 msgstr ""
 
 msgid "ftpfs: could not setup passive mode"
-msgstr "ftpfs: passiivi-tilaan siirtyminen epäonnistui"
+msgstr ""
 
 msgid "ftpfs: aborting transfer."
-msgstr "ftpfs: keskeytetään transferrointi."
+msgstr ""
 
 #, c-format
 msgid "ftpfs: abort error: %s"
-msgstr "ftpfs: keskeyttämisvirhe: %ss"
+msgstr ""
 
 msgid "ftpfs: abort failed"
-msgstr "ftpfs: keskeyttäminen epäonnistui"
+msgstr ""
 
 msgid "ftpfs: CWD failed."
-msgstr "ftpfs: CWD epäonnistui."
+msgstr ""
 
 msgid "ftpfs: couldn't resolve symlink"
-msgstr "ftpfs: symlink, selvittäminen epäonnistui"
+msgstr ""
 
 msgid "Resolving symlink..."
-msgstr "Selvitetään symlink..."
+msgstr ""
 
 #, c-format
 msgid "ftpfs: Reading FTP directory %s... %s%s"
-msgstr "ftpfs: Luetaan FTP-hakemistoa %s... %s%s"
+msgstr ""
 
 msgid "(strict rfc959)"
 msgstr ""
@@ -3754,16 +3737,12 @@ msgid ""
 "Warning: Invalid line in %s:\n"
 "%s\n"
 msgstr ""
-"Varoitus: Invalidi rivi %s:\n"
-"%s\n"
 
 #, c-format
 msgid ""
 "Warning: Invalid flag %c in %s:\n"
 "%s\n"
 msgstr ""
-"Virhe: Virheellinen lippu %c kohteessa %s:\n"
-"%s\n"
 
 #, c-format
 msgid "sftp: an error occurred while reading %s: %s"
@@ -3823,30 +3802,30 @@ msgstr ""
 
 #, c-format
 msgid "reconnect to %s failed"
-msgstr "uudelleenyritys kohteeseen %s epäonnistui"
+msgstr ""
 
 msgid "Authentication failed"
-msgstr "Authenkaatio epäonnistui"
+msgstr ""
 
 #, c-format
 msgid "Error %s creating directory %s"
-msgstr "Virhe %s luotaessa kansiota %s"
+msgstr ""
 
 #, c-format
 msgid "Error %s removing directory %s"
-msgstr "Virhe %s poistaessa hakemistoa %s"
+msgstr ""
 
 #, c-format
 msgid "%s opening remote file %s"
-msgstr "%s avautuva palvelintiedosto %s"
+msgstr ""
 
 #, c-format
 msgid "%s removing remote file %s"
-msgstr "%s poistaa palvelintiedostoa %s"
+msgstr ""
 
 #, c-format
 msgid "%s renaming files\n"
-msgstr "%s uudelleennimeää tiedostoja\n"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3939,6 +3918,17 @@ msgstr ""
 msgid "Invalid value"
 msgstr ""
 
+msgid "File was modified. Save with exit?"
+msgstr ""
+
+msgid "&Cancel quit"
+msgstr ""
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+
 msgid "Cannot spawn child process"
 msgstr ""
 
@@ -4003,17 +3993,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "File was modified. Save with exit?"
-msgstr ""
-
-msgid "&Cancel quit"
-msgstr ""
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-
 msgid "View: "
 msgstr ""
 
@@ -4028,7 +4007,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
 
