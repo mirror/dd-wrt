@@ -3,15 +3,15 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-#   <interlusitana@gmail.com>, 2011.
-# Martijn Dekker <mcdutchie@hotmail.com>, 2012.
+# lusitanus <interlusitana@gmail.com>, 2011
+# Martijn Dekker <mcdutchie@hotmail.com>, 2012
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 08:51+0000\n"
-"Last-Translator: Martijn Dekker <mcdutchie@hotmail.com>\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 08:44+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Interlingua (http://www.transifex.com/projects/p/mc/language/"
 "ia/)\n"
 "Language: ia\n"
@@ -660,12 +660,9 @@ msgstr "Definir le numero de linea initial pro le editor interne"
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
-"\n"
-"Per favor invia reportos de falta (includente le resultato de 'mc -V')\n"
-"como tickets a www.midnight-commander.org\n"
 
 #, c-format
 msgid "GNU Midnight Commander %s\n"
@@ -880,8 +877,10 @@ msgid "\"%s\" is not a regular file"
 msgstr "\"%s\" non es un file regular"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "Le file \"%s\" es multo grande"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1458,7 +1457,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1534,7 +1533,7 @@ msgid "The shell is already running a command"
 msgstr ""
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
+msgid "Type 'exit' to return to the Midnight Commander"
 msgstr ""
 
 msgid "Set &all"
@@ -2077,7 +2076,7 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Symlink `%s' points to:"
+msgid "Symlink '%s' points to:"
 msgstr ""
 
 msgid "Edit symlink"
@@ -2092,7 +2091,7 @@ msgid "edit symlink: %s"
 msgstr ""
 
 #, c-format
-msgid "`%s' is not a symbolic link"
+msgid "'%s' is not a symbolic link"
 msgstr ""
 
 msgid "FTP to machine"
@@ -2574,9 +2573,6 @@ msgstr "Origine"
 msgid "Target"
 msgstr "Destination"
 
-msgid "Deleting"
-msgstr "Deletion..."
-
 msgid "Follow &links"
 msgstr ""
 
@@ -2593,7 +2589,7 @@ msgid "&Background"
 msgstr ""
 
 #, c-format
-msgid "Invalid source pattern `%s'"
+msgid "Invalid source pattern '%s'"
 msgstr ""
 
 msgid "&Chdir"
@@ -3978,6 +3974,19 @@ msgstr "error de Ext2lib"
 msgid "Invalid value"
 msgstr "Valor invalide"
 
+msgid "File was modified. Save with exit?"
+msgstr "Le file ha essite modificate. Salveguardar ante exir?"
+
+msgid "&Cancel quit"
+msgstr ""
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander essera ora claudite.\n"
+"Salveguardar le file modificate?"
+
 msgid "Cannot spawn child process"
 msgstr ""
 
@@ -4042,19 +4051,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "File was modified. Save with exit?"
-msgstr "Le file ha essite modificate. Salveguardar ante exir?"
-
-msgid "&Cancel quit"
-msgstr ""
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"Midnight Commander essera ora claudite.\n"
-"Salveguardar le file modificate?"
-
 msgid "View: "
 msgstr "Vide:"
 
@@ -4067,13 +4063,11 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Impossibile aperir le archivo %s\n"
-"%s"
 
 msgid "Seeking to search result"
 msgstr ""
@@ -4086,3 +4080,6 @@ msgstr "Continuar ab initio?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "Deleting"
+#~ msgstr "Deletion..."

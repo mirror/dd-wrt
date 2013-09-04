@@ -1,6 +1,6 @@
 EXTRA_DIST =
 
-if USE_EDIT
+if USE_INTERNAL_EDIT
 noinst_LTLIBRARIES = libedit.la
 else
 noinst_LTLIBRARIES =
@@ -9,8 +9,9 @@ endif
 libedit_la_SOURCES = \
 	bookmark.c \
 	choosesyntax.c \
-	edit.c edit.h \
 	edit-impl.h \
+	edit.c edit.h \
+	editbuffer.c editbuffer.h \
 	editcmd.c \
 	editcmd_dialogs.c editcmd_dialogs.h \
 	editdraw.c \

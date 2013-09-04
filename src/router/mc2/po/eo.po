@@ -3,13 +3,13 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Keith Bowes <zooplah@gmail.com>, 2011.
+# Keith Bowes <zooplah@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 13:34+0000\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-07 23:58+0000\n"
 "Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
 "Language-Team: Esperanto (http://www.transifex.com/projects/p/mc/language/"
 "eo/)\n"
@@ -695,7 +695,7 @@ msgstr "Agordi komencan lininumeron por la interna tekstoredaktilo"
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
 "\n"
@@ -919,8 +919,12 @@ msgid "\"%s\" is not a regular file"
 msgstr "\"%s\" estas ne normala dosiero"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "Dosiero \"%s\" estas tro granda"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
+"Dosiero \"%s\" estas tro granda.\n"
+"Ĉu senkonsidere malfermi ĝin?"
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1508,8 +1512,8 @@ msgstr ""
 "Afabla tekstoredaktilo\n"
 "verkita por la Midnight Commander."
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
-msgstr "Kopirajto (C) 1996–2012 la Fondaĵo pri liberaj programoj"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgstr "Kopirajto (C) 1996–2013 la Fondaĵo pri liberaj programoj"
 
 msgid "About"
 msgstr "Pri"
@@ -1590,7 +1594,7 @@ msgid "The shell is already running a command"
 msgstr "La ŝelo jam plenumas komandon"
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
+msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Tajpu \"exit\" por reiri al Midnight Commander"
 
 msgid "Set &all"
@@ -1823,22 +1827,22 @@ msgstr "Ordigi laŭ"
 
 #. TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix
 msgid "Confirmation|&Delete"
-msgstr "Confirmation|&Forigi"
+msgstr "&Forigi"
 
 msgid "Confirmation|O&verwrite"
-msgstr "Confirmation|&Anstataŭi"
+msgstr "&Anstataŭi"
 
 msgid "Confirmation|&Execute"
-msgstr "Confirmation|&Plenumi"
+msgstr "&Plenumigi"
 
 msgid "Confirmation|E&xit"
-msgstr "Confirmation|&Eliro"
+msgstr "&Eliri"
 
 msgid "Confirmation|Di&rectory hotlist delete"
-msgstr "Confirmation|&Dosierujo-rapidolista forigo"
+msgstr "&Dosierujo-rapidolistan forigi"
 
 msgid "Confirmation|&History cleanup"
-msgstr "Confirmation|&Historia purigado"
+msgstr "&Historion purigi"
 
 msgid "Confirmation"
 msgstr "Konfirmo"
@@ -2145,8 +2149,8 @@ msgstr ""
 "la flankojn oni ne povis inversigi."
 
 #, c-format
-msgid "Symlink `%s' points to:"
-msgstr "Mola ligilo '%s' almontras al:"
+msgid "Symlink '%s' points to:"
+msgstr "Mola ligilo '%s' alidirektas al:"
 
 msgid "Edit symlink"
 msgstr "Redakti molan ligilon"
@@ -2160,7 +2164,7 @@ msgid "edit symlink: %s"
 msgstr "redakti molan ligilon: %s"
 
 #, c-format
-msgid "`%s' is not a symbolic link"
+msgid "'%s' is not a symbolic link"
 msgstr "'%s' ne estas mola ligilo"
 
 msgid "FTP to machine"
@@ -2729,9 +2733,6 @@ msgstr "Fonto"
 msgid "Target"
 msgstr "Celo"
 
-msgid "Deleting"
-msgstr "Foriganta je"
-
 msgid "Follow &links"
 msgstr "Sekvi &Ligilojn"
 
@@ -2748,7 +2749,7 @@ msgid "&Background"
 msgstr "&Fone"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
+msgid "Invalid source pattern '%s'"
 msgstr "Nevalida celan ŝablonon '%s'"
 
 msgid "&Chdir"
@@ -4171,6 +4172,19 @@ msgstr "Ext2lib: eraro"
 msgid "Invalid value"
 msgstr "Nevalida valoro"
 
+msgid "File was modified. Save with exit?"
+msgstr "Dosiero estis modifita. Ĉu konservi dum eliro?"
+
+msgid "&Cancel quit"
+msgstr "Ne &eliri"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander estas elirinta.\n"
+"Ĉu konservi modifitan dosieron?"
+
 msgid "Cannot spawn child process"
 msgstr "Ne eblas krei idan procezon"
 
@@ -4240,19 +4254,6 @@ msgstr ""
 "Ne eblas konservi dosieron:\n"
 "%s"
 
-msgid "File was modified. Save with exit?"
-msgstr "Dosiero estis modifita. Ĉu konservi dum eliro?"
-
-msgid "&Cancel quit"
-msgstr "Ne &eliri"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"Midnight Commander estas elirinta.\n"
-"Ĉu konservi modifitan dosieron?"
-
 msgid "View: "
 msgstr "Vidi: "
 
@@ -4267,12 +4268,12 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Ne eblas vidi: ne normala dosiero"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Ne eblas malfermi je \"%s\"\n"
+"Ne eblas malfermi je \"%s\" laŭ analiza reĝimo\n"
 "%s"
 
 msgid "Seeking to search result"
@@ -4286,3 +4287,6 @@ msgstr "Ĉu deiri de la komenco?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Ne eblas atingi lokan kopion de /ftp://some.host/editme.txt"
+
+#~ msgid "Deleting"
+#~ msgstr "Foriganta je"

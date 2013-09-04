@@ -2,7 +2,7 @@
    Keyboard support routines.
 
    Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2009, 2010, 2011
+   2005, 2006, 2007, 2009, 2010, 2011, 2013
    The Free Software Foundation, Inc.
 
    Written by:
@@ -10,6 +10,8 @@
    Janne Kukonlehto, 1994, 1995
    Jakub Jelinek, 1995
    Norbert Warmuth, 1997
+   Denys Vlasenko <vda.linux@googlemail.com>, 2013
+   Slava Zanko <slavazanko@gmail.com>, 2013
 
    This file is part of the Midnight Commander.
 
@@ -1129,14 +1131,14 @@ correct_key_code (int code)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-xgetch_second (void)
+getch_with_timeout (unsigned int delay_us)
 {
     fd_set Read_FD_Set;
     int c;
     struct timeval time_out;
 
-    time_out.tv_sec = old_esc_mode_timeout / 1000000;
-    time_out.tv_usec = old_esc_mode_timeout % 1000000;
+    time_out.tv_sec = delay_us / 1000000u;
+    time_out.tv_usec = delay_us % 1000000u;
     tty_nodelay (TRUE);
     FD_ZERO (&Read_FD_Set);
     FD_SET (input_fd, &Read_FD_Set);
@@ -1324,7 +1326,7 @@ init_key (void)
         || (term != NULL
             && (strncmp (term, "iris-ansi", 9) == 0
                 || strncmp (term, "xterm", 5) == 0
-                || strncmp (term, "rxvt", 4) == 0 || strcmp (term, "screen") == 0)))
+                || strncmp (term, "rxvt", 4) == 0 || strncmp (term, "screen", 6) == 0)))
         define_sequences (xterm_key_defines);
 
     /* load some additional keys (e.g. direct Alt-? support) */
@@ -1706,23 +1708,41 @@ define_sequence (int code, const char *seq, int action)
 gboolean
 is_idle (void)
 {
-    int maxfdp;
+    int nfd;
     fd_set select_set;
     struct timeval time_out;
 
     FD_ZERO (&select_set);
     FD_SET (input_fd, &select_set);
-    maxfdp = input_fd;
-#ifdef HAVE_LIBGPM
-    if (mouse_enabled && (use_mouse_p == MOUSE_GPM) && (gpm_fd > 0))
-    {
-        FD_SET (gpm_fd, &select_set);
-        maxfdp = max (maxfdp, gpm_fd);
-    }
-#endif
+    nfd = max (0, input_fd) + 1;
     time_out.tv_sec = 0;
     time_out.tv_usec = 0;
-    return (select (maxfdp + 1, &select_set, 0, 0, &time_out) <= 0);
+#ifdef HAVE_LIBGPM
+    if (mouse_enabled && use_mouse_p == MOUSE_GPM)
+    {
+        if (gpm_fd >= 0)
+        {
+            FD_SET (gpm_fd, &select_set);
+            nfd = max (nfd, gpm_fd + 1);
+        }
+        else
+        {
+            if (mouse_fd >= 0)  /* error indicative */
+            {
+                if (FD_ISSET (mouse_fd, &select_set))
+                    FD_CLR (mouse_fd, &select_set);
+                mouse_fd = gpm_fd;
+            }
+            /* gpm_fd == -2 means under some X terminal */
+            if (gpm_fd == -1)
+            {
+                mouse_enabled = FALSE;
+                use_mouse_p = MOUSE_NONE;
+            }
+        }
+    }
+#endif
+    return (select (nfd, &select_set, 0, 0, &time_out) <= 0);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1745,13 +1765,30 @@ get_key_code (int no_delay)
     if (pending_keys != NULL)
     {
         int d;
+        gboolean bad_seq;
 
         d = *pending_keys++;
-        while (d == ESC_CHAR && *pending_keys != '\0')
+        while (d == ESC_CHAR)
             d = ALT (*pending_keys++);
 
-        if (*pending_keys == '\0')
+        bad_seq = (*pending_keys != ESC_CHAR && *pending_keys != 0);
+        if (*pending_keys == '\0' || bad_seq)
             pending_keys = seq_append = NULL;
+
+        if (bad_seq)
+        {
+            /* This is an unknown ESC sequence.
+             * To prevent interpreting its tail as a random garbage,
+             * eat and discard all buffered and quickly following chars.
+             * Small, but non-zero timeout is needed to reconnect
+             * escape sequence split up by e.g. a serial line.
+             */
+            int paranoia = 20;
+
+            while (getch_with_timeout (old_esc_mode_timeout) >= 0 && --paranoia != 0)
+                ;
+            goto nodelay_try_again;
+        }
 
         if (d > 127 && d < 256 && use_8th_bit_as_meta)
             d = ALT (d & 0x7f);
@@ -1828,49 +1865,12 @@ get_key_code (int no_delay)
             this = keys->child;
         }
     }
+
     while (this != NULL)
     {
         if (c == this->ch)
         {
-            if (this->child)
-            {
-                if (!push_char (c))
-                {
-                    pending_keys = seq_buffer;
-                    goto pend_send;
-                }
-                parent = this;
-                this = this->child;
-                if (parent->action == MCKEY_ESCAPE && old_esc_mode)
-                {
-                    if (no_delay)
-                    {
-                        GET_TIME (esctime);
-                        if (this == NULL)
-                        {
-                            /* Shouldn't happen */
-                            fputs ("Internal error\n", stderr);
-                            exit (EXIT_FAILURE);
-                        }
-                        goto nodelay_try_again;
-                    }
-                    esctime.tv_sec = -1;
-                    c = xgetch_second ();
-                    if (c == -1)
-                    {
-                        pending_keys = seq_append = NULL;
-                        this = NULL;
-                        return ESC_CHAR;
-                    }
-                }
-                else
-                {
-                    if (no_delay)
-                        goto nodelay_try_again;
-                    c = tty_lowlevel_getch ();
-                }
-            }
-            else
+            if (this->child == NULL)
             {
                 /* We got a complete match, return and reset search */
                 int code;
@@ -1880,36 +1880,67 @@ get_key_code (int no_delay)
                 this = NULL;
                 return correct_key_code (code);
             }
-        }
-        else
-        {
-            if (this->next != NULL)
-                this = this->next;
-            else
+            /* No match yet, but it may be a prefix for a valid seq */
+            if (!push_char (c))
             {
-                if ((parent != NULL) && (parent->action == MCKEY_ESCAPE))
-                {
-                    /* Convert escape-digits to F-keys */
-                    if (g_ascii_isdigit (c))
-                        c = KEY_F (c - '0');
-                    else if (c == ' ')
-                        c = ESC_CHAR;
-                    else
-                        c = ALT (c);
-
-                    pending_keys = seq_append = NULL;
-                    this = NULL;
-                    return correct_key_code (c);
-                }
-                /* Did not find a match or {c} was changed in the if above,
-                   so we have to return everything we had skipped
-                 */
-                push_char (c);
                 pending_keys = seq_buffer;
                 goto pend_send;
             }
+            parent = this;
+            this = this->child;
+            if (parent->action == MCKEY_ESCAPE && old_esc_mode)
+            {
+                if (no_delay)
+                {
+                    GET_TIME (esctime);
+                    goto nodelay_try_again;
+                }
+                esctime.tv_sec = -1;
+                c = getch_with_timeout (old_esc_mode_timeout);
+                if (c == -1)
+                {
+                    pending_keys = seq_append = NULL;
+                    this = NULL;
+                    return ESC_CHAR;
+                }
+                continue;
+            }
+            if (no_delay)
+                goto nodelay_try_again;
+            c = tty_lowlevel_getch ();
+            continue;
         }
-    }
+
+        /* c != this->ch. Try other keys with this prefix */
+        if (this->next != NULL)
+        {
+            this = this->next;
+            continue;
+        }
+
+        /* No match found. Is it one of our ESC <key> specials? */
+        if ((parent != NULL) && (parent->action == MCKEY_ESCAPE))
+        {
+            /* Convert escape-digits to F-keys */
+            if (g_ascii_isdigit (c))
+                c = KEY_F (c - '0');
+            else if (c == ' ')
+                c = ESC_CHAR;
+            else
+                c = ALT (c);
+
+            pending_keys = seq_append = NULL;
+            this = NULL;
+            return correct_key_code (c);
+        }
+
+        /* Unknown sequence. Maybe a prefix of a longer one. Save it. */
+        push_char (c);
+        pending_keys = seq_buffer;
+        goto pend_send;
+
+    }                           /* while (this != NULL) */
+
     this = NULL;
     return correct_key_code (c);
 }
@@ -1956,26 +1987,37 @@ tty_get_event (struct Gpm_Event *event, gboolean redo_event, gboolean block)
     /* Repeat if using mouse */
     while (pending_keys == NULL)
     {
-        int maxfdp;
+        int nfd;
         fd_set select_set;
 
         FD_ZERO (&select_set);
         FD_SET (input_fd, &select_set);
-        maxfdp = max (add_selects (&select_set), input_fd);
+        nfd = max (add_selects (&select_set), max (0, input_fd)) + 1;
 
 #ifdef HAVE_LIBGPM
         if (mouse_enabled && (use_mouse_p == MOUSE_GPM))
         {
-            if (gpm_fd < 0)
+            if (gpm_fd >= 0)
             {
-                /* Connection to gpm broken, possibly gpm has died */
-                mouse_enabled = FALSE;
-                use_mouse_p = MOUSE_NONE;
+                FD_SET (gpm_fd, &select_set);
+                nfd = max (nfd, gpm_fd + 1);
+            }
+            else
+            {
+                if (mouse_fd >= 0)      /* error indicative */
+                {
+                    if (FD_ISSET (mouse_fd, &select_set))
+                        FD_CLR (mouse_fd, &select_set);
+                    mouse_fd = gpm_fd;
+                }
+                /* gpm_fd == -2 means under some X terminal */
+                if (gpm_fd == -1)
+                {
+                    mouse_enabled = FALSE;
+                    use_mouse_p = MOUSE_NONE;
+                }
                 break;
             }
-
-            FD_SET (gpm_fd, &select_set);
-            maxfdp = max (maxfdp, gpm_fd);
         }
 #endif
 
@@ -2014,7 +2056,7 @@ tty_get_event (struct Gpm_Event *event, gboolean redo_event, gboolean block)
         }
 
         tty_enable_interrupt_key ();
-        flag = select (maxfdp + 1, &select_set, NULL, NULL, time_addr);
+        flag = select (nfd, &select_set, NULL, NULL, time_addr);
         tty_disable_interrupt_key ();
 
         /* select timed out: it could be for any of the following reasons:
@@ -2038,13 +2080,48 @@ tty_get_event (struct Gpm_Event *event, gboolean redo_event, gboolean block)
         if (FD_ISSET (input_fd, &select_set))
             break;
 #ifdef HAVE_LIBGPM
-        if (mouse_enabled && use_mouse_p == MOUSE_GPM
-            && gpm_fd > 0 && FD_ISSET (gpm_fd, &select_set))
+        if (mouse_enabled && use_mouse_p == MOUSE_GPM)
         {
-            Gpm_GetEvent (&ev);
-            Gpm_FitEvent (&ev);
-            *event = ev;
-            return EV_MOUSE;
+            if (gpm_fd >= 0)
+            {
+                if (FD_ISSET (gpm_fd, &select_set))
+                {
+                    int status;
+
+                    status = Gpm_GetEvent (&ev);
+                    if (status == 1)    /* success */
+                    {
+                        Gpm_FitEvent (&ev);
+                        *event = ev;
+                        return EV_MOUSE;
+                    }
+                    else if (status == 0)       /* connection closed; -1 == error */
+                    {
+                        if (mouse_fd >= 0 && FD_ISSET (mouse_fd, &select_set))
+                            FD_CLR (mouse_fd, &select_set);
+
+                        /* Try to reopen gpm_mouse connection */
+                        disable_mouse ();
+                        enable_mouse ();
+                    }
+                }
+            }
+            else
+            {
+                if (mouse_fd >= 0)      /* error indicative */
+                {
+                    if (FD_ISSET (mouse_fd, &select_set))
+                        FD_CLR (mouse_fd, &select_set);
+                    mouse_fd = gpm_fd;
+                }
+                /* gpm_fd == -2 means under some X terminal */
+                if (gpm_fd == -1)
+                {
+                    mouse_enabled = FALSE;
+                    use_mouse_p = MOUSE_NONE;
+                }
+                break;
+            }
         }
 #endif /* !HAVE_LIBGPM */
     }

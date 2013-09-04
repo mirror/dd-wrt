@@ -266,7 +266,7 @@ select_unselect_cmd (const char *title, const char *history_name, gboolean do_se
 
     for (i = 0; i < current_panel->count; i++)
     {
-        if (strcmp (current_panel->dir.list[i].fname, "..") == 0)
+        if (DIR_IS_DOTDOT (current_panel->dir.list[i].fname))
             continue;
         if (S_ISDIR (current_panel->dir.list[i].st.st_mode) && files_only != 0)
             continue;
@@ -295,20 +295,15 @@ static int
 compare_files (const vfs_path_t * vpath1, const vfs_path_t * vpath2, off_t size)
 {
     int file1, file2;
-    char *name;
     int result = -1;            /* Different by default */
 
     if (size == 0)
         return 0;
 
-    name = vfs_path_to_str (vpath1);
-    file1 = open (name, O_RDONLY);
-    g_free (name);
+    file1 = open (vfs_path_as_str (vpath1), O_RDONLY);
     if (file1 >= 0)
     {
-        name = vfs_path_to_str (vpath2);
-        file2 = open (name, O_RDONLY);
-        g_free (name);
+        file2 = open (vfs_path_as_str (vpath2), O_RDONLY);
         if (file2 >= 0)
         {
 #ifdef HAVE_MMAP
@@ -320,7 +315,7 @@ compare_files (const vfs_path_t * vpath1, const vfs_path_t * vpath2, off_t size)
                 data2 = mmap (0, size, PROT_READ, MAP_FILE | MAP_PRIVATE, file2, 0);
                 if (data2 != (char *) -1)
                 {
-                    rotate_dash ();
+                    rotate_dash (TRUE);
                     result = memcmp (data1, data2, size);
                     munmap (data2, size);
                 }
@@ -330,7 +325,7 @@ compare_files (const vfs_path_t * vpath1, const vfs_path_t * vpath2, off_t size)
             /* Don't have mmap() :( Even more ugly :) */
             char buf1[BUFSIZ], buf2[BUFSIZ];
             int n1, n2;
-            rotate_dash ();
+            rotate_dash (TRUE);
             do
             {
                 while ((n1 = read (file1, buf1, BUFSIZ)) == -1 && errno == EINTR);
@@ -343,6 +338,8 @@ compare_files (const vfs_path_t * vpath1, const vfs_path_t * vpath2, off_t size)
         }
         close (file1);
     }
+    rotate_dash (FALSE);
+
     return result;
 }
 
@@ -795,6 +792,8 @@ do_edit_at_line (const vfs_path_t * what_vpath, gboolean internal, long start_li
     else
 #endif /* USE_INTERNAL_EDIT */
     {
+        (void) internal;
+
         if (editor == NULL)
         {
             editor = getenv ("EDITOR");
@@ -942,7 +941,7 @@ mkdir_cmd (void)
     const char *name = "";
 
     /* If 'on' then automatically fills name with current selected item name */
-    if (auto_fill_mkdir_name && strcmp (selection (current_panel)->fname, "..") != 0)
+    if (auto_fill_mkdir_name && !DIR_IS_DOTDOT (selection (current_panel)->fname))
         name = selection (current_panel)->fname;
 
     dir =
@@ -1235,12 +1234,10 @@ hotlist_cmd (void)
     else
     {
         vfs_path_t *deprecated_vpath;
-        char *cmd, *normalized_target;
+        char *cmd;
 
         deprecated_vpath = vfs_path_from_str_flags (target, VPF_USE_DEPRECATED_PARSER);
-        normalized_target = vfs_path_to_str (deprecated_vpath);
-        cmd = g_strconcat ("cd ", normalized_target, (char *) NULL);
-        g_free (normalized_target);
+        cmd = g_strconcat ("cd ", vfs_path_as_str (deprecated_vpath), (char *) NULL);
         vfs_path_free (deprecated_vpath);
 
         do_cd_command (cmd);
@@ -1378,7 +1375,7 @@ edit_symlink_cmd (void)
         p = selection (current_panel)->fname;
         p_vpath = vfs_path_from_str (p);
 
-        q = g_strdup_printf (_("Symlink `%s\' points to:"), str_trunc (p, 32));
+        q = g_strdup_printf (_("Symlink '%s\' points to:"), str_trunc (p, 32));
 
         i = readlink (p, buffer, MC_MAXPATHLEN - 1);
         if (i > 0)
@@ -1418,7 +1415,7 @@ edit_symlink_cmd (void)
     }
     else
     {
-        message (D_ERROR, MSG_ERROR, _("`%s' is not a symbolic link"),
+        message (D_ERROR, MSG_ERROR, _("'%s' is not a symbolic link"),
                  selection (current_panel)->fname);
     }
 }
@@ -1610,7 +1607,7 @@ smart_dirsize_cmd (void)
     file_entry *entry;
 
     entry = &(panel->dir.list[panel->selected]);
-    if ((S_ISDIR (entry->st.st_mode) && (strcmp (entry->fname, "..") == 0)) || panel->dirs_marked)
+    if ((S_ISDIR (entry->st.st_mode) && DIR_IS_DOTDOT (entry->fname)) || panel->dirs_marked)
         dirsizes_cmd ();
     else
         single_dirsize_cmd ();
@@ -1625,7 +1622,7 @@ single_dirsize_cmd (void)
     file_entry *entry;
 
     entry = &(panel->dir.list[panel->selected]);
-    if (S_ISDIR (entry->st.st_mode) && strcmp (entry->fname, "..") != 0)
+    if (S_ISDIR (entry->st.st_mode) && !DIR_IS_DOTDOT (entry->fname))
     {
         size_t marked = 0;
         uintmax_t total = 0;
@@ -1671,7 +1668,7 @@ dirsizes_cmd (void)
     for (i = 0; i < panel->count; i++)
         if (S_ISDIR (panel->dir.list[i].st.st_mode)
             && ((panel->dirs_marked && panel->dir.list[i].f.marked)
-                || !panel->dirs_marked) && strcmp (panel->dir.list[i].fname, "..") != 0)
+                || !panel->dirs_marked) && !DIR_IS_DOTDOT (panel->dir.list[i].fname))
         {
             vfs_path_t *p;
             size_t marked = 0;

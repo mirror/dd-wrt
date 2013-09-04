@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Slava Zanko <slavazanko@gmail.com>, 2011.
+# Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 08:51+0000\n"
-"Last-Translator: Павал Шаламіцкі <yehekim@gmail.com>\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 08:44+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Belarusian (http://www.transifex.com/projects/p/mc/language/"
 "be/)\n"
 "Language: be\n"
@@ -700,12 +700,9 @@ msgstr "усталяваць нумар пачатковага радку ва �
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
-"\n"
-"Справаздачы пра хібы (разам з вывадам «mc -V») афармляйце\n"
-"ў квіткі на www.midnight-commander.org\n"
 
 #, c-format
 msgid "GNU Midnight Commander %s\n"
@@ -924,8 +921,10 @@ msgid "\"%s\" is not a regular file"
 msgstr "«%s» ня ёсьць звычайным файлам"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "Файл «%s» — завялікі"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1510,7 +1509,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1592,8 +1591,8 @@ msgid "The shell is already running a command"
 msgstr "Абалонка ўжо выконвае загад"
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
-msgstr "Каб вярнуцца ў «Міднайт Камандэр», надрукуйце «exit»."
+msgid "Type 'exit' to return to the Midnight Commander"
+msgstr ""
 
 msgid "Set &all"
 msgstr "Усталяваць ус&е"
@@ -2147,8 +2146,8 @@ msgstr ""
 "гэта не «xterm» і не кансоль «Linux»"
 
 #, c-format
-msgid "Symlink `%s' points to:"
-msgstr "Сымбалічная спасылка «%s» паказвае на:"
+msgid "Symlink '%s' points to:"
+msgstr ""
 
 msgid "Edit symlink"
 msgstr "Рэдаґаваць спасылку"
@@ -2162,8 +2161,8 @@ msgid "edit symlink: %s"
 msgstr "рэдаґаваць спасылку: %s"
 
 #, c-format
-msgid "`%s' is not a symbolic link"
-msgstr "«%s» ня ёсьць сымбалічнаю спасылкаю"
+msgid "'%s' is not a symbolic link"
+msgstr ""
 
 msgid "FTP to machine"
 msgstr "Злучыцца праз FTP"
@@ -2721,9 +2720,6 @@ msgstr "Крыніца"
 msgid "Target"
 msgstr "Прызначэньне"
 
-msgid "Deleting"
-msgstr "Выдаляецца"
-
 msgid "Follow &links"
 msgstr "Ператвараць &спасылкі"
 
@@ -2740,8 +2736,8 @@ msgid "&Background"
 msgstr "На &тле"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
-msgstr "Хібны зыходны ўзор «%s»"
+msgid "Invalid source pattern '%s'"
+msgstr ""
 
 msgid "&Chdir"
 msgstr "Пера&йсьці"
@@ -4169,6 +4165,19 @@ msgstr "Памылка «Ext2lib»"
 msgid "Invalid value"
 msgstr "Хібнае значэньне"
 
+msgid "File was modified. Save with exit?"
+msgstr "Файл зьмяніўся. Ці захаваць і выйсьці?"
+
+msgid "&Cancel quit"
+msgstr "&Не выходзіць"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"«Міднайт Камандэр» заканчвае працаваць.\n"
+"Ці захаваць зьменены файл?"
+
 msgid "Cannot spawn child process"
 msgstr "Немагчыма нарадзіць даччын працэс"
 
@@ -4238,19 +4247,6 @@ msgstr ""
 "Немагчыма захаваць файл:\n"
 "%s"
 
-msgid "File was modified. Save with exit?"
-msgstr "Файл зьмяніўся. Ці захаваць і выйсьці?"
-
-msgid "&Cancel quit"
-msgstr "&Не выходзіць"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"«Міднайт Камандэр» заканчвае працаваць.\n"
-"Ці захаваць зьменены файл?"
-
 msgid "View: "
 msgstr "Праглядаць: "
 
@@ -4265,13 +4261,11 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Немагчыма прагледзець: незвычайны файл"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Немагчыма адчыніць «%s»\n"
-"%s"
 
 msgid "Seeking to search result"
 msgstr "Перайсьці да знойдзенага"
@@ -4284,3 +4278,6 @@ msgstr "Ці працягваць ад пачатку?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "Deleting"
+#~ msgstr "Выдаляецца"

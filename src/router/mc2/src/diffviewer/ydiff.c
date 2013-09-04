@@ -1,11 +1,11 @@
 /*
-   Copyright (C) 2007, 2010, 2011, 2012
+   Copyright (C) 2007, 2010, 2011, 2012, 2013
    The Free Software Foundation, Inc.
 
    Written by:
    Daniel Borca <dborca@yahoo.com>, 2007
-   Slava Zanko <slavazanko@gmail.com>, 2010
-   Andrew Borodin <aborodin@vmail.ru>, 2010, 2012
+   Slava Zanko <slavazanko@gmail.com>, 2010, 2013
+   Andrew Borodin <aborodin@vmail.ru>, 2010, 2012, 2013
    Ilia Maslakov <il.smind@gmail.com>, 2010
 
    This file is part of the Midnight Commander.
@@ -172,7 +172,7 @@ open_temp (void **name)
                  _("Cannot create temporary diff file\n%s"), unix_error_string (errno));
         return -1;
     }
-    *name = vfs_path_to_str (diff_file_name);
+    *name = g_strdup (vfs_path_as_str (diff_file_name));
     vfs_path_free (diff_file_name);
     return fd;
 }
@@ -3450,12 +3450,12 @@ diff_view (const char *file1, const char *file2, const char *label1, const char 
 
     /* Create dialog and widgets, put them on the dialog */
     dview_dlg =
-        create_dlg (FALSE, 0, 0, LINES, COLS, NULL, dview_dialog_callback, NULL,
+        dlg_create (FALSE, 0, 0, LINES, COLS, NULL, dview_dialog_callback, NULL,
                     "[Diff Viewer]", NULL, DLG_WANT_TAB);
 
     dview = g_new0 (WDiff, 1);
     w = WIDGET (dview);
-    init_widget (w, 0, 0, LINES - 1, COLS, dview_callback, dview_event);
+    widget_init (w, 0, 0, LINES - 1, COLS, dview_callback, dview_event);
     widget_want_cursor (w, FALSE);
 
     add_widget (dview_dlg, dview);
@@ -3470,10 +3470,10 @@ diff_view (const char *file1, const char *file2, const char *label1, const char 
      * be aware of it
      */
     if (error == 0)
-        run_dlg (dview_dlg);
+        dlg_run (dview_dlg);
 
     if ((error != 0) || (dview_dlg->state == DLG_CLOSED))
-        destroy_dlg (dview_dlg);
+        dlg_destroy (dview_dlg);
 
     return error == 0 ? 1 : 0;
 }
@@ -3618,21 +3618,11 @@ dview_diff_cmd (const void *f0, const void *f1)
 
             GET_FILE_AND_STAMP (0);
             GET_FILE_AND_STAMP (1);
-            if (real_file0 != NULL && real_file1 != NULL)
-            {
-                char *real_file0_str, *real_file1_str;
-                char *file0_str, *file1_str;
 
-                real_file0_str = vfs_path_to_str (real_file0);
-                real_file1_str = vfs_path_to_str (real_file1);
-                file0_str = vfs_path_to_str (file0);
-                file1_str = vfs_path_to_str (file1);
-                rv = diff_view (real_file0_str, real_file1_str, file0_str, file1_str);
-                g_free (real_file0_str);
-                g_free (real_file1_str);
-                g_free (file0_str);
-                g_free (file1_str);
-            }
+            if (real_file0 != NULL && real_file1 != NULL)
+                rv = diff_view (vfs_path_as_str (real_file0), vfs_path_as_str (real_file1),
+                                vfs_path_as_str (file0), vfs_path_as_str (file1));
+
             UNGET_FILE (1);
             UNGET_FILE (0);
         }

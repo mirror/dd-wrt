@@ -188,7 +188,7 @@ menubar_draw_drop (WMenuBar * menubar)
         column = w->cols - menu->max_entry_len - 5;
 
     tty_setcolor (MENU_ENTRY_COLOR);
-    draw_box (w->owner, w->y + 1, w->x + column, count + 2, menu->max_entry_len + 5, FALSE);
+    tty_draw_box (w->y + 1, w->x + column, count + 2, menu->max_entry_len + 5, FALSE);
 
     for (i = 0; i < count; i++)
         menubar_paint_idx (menubar, i,
@@ -836,16 +836,16 @@ destroy_menu (menu_t * menu)
 /* --------------------------------------------------------------------------------------------- */
 
 WMenuBar *
-menubar_new (int y, int x, int cols, GList * menu)
+menubar_new (int y, int x, int cols, GList * menu, gboolean visible)
 {
     WMenuBar *menubar;
     Widget *w;
 
     menubar = g_new0 (WMenuBar, 1);
     w = WIDGET (menubar);
-    init_widget (w, y, x, 1, cols, menubar_callback, menubar_event);
+    widget_init (w, y, x, 1, cols, menubar_callback, menubar_event);
 
-    menubar->is_visible = TRUE; /* by default */
+    menubar->is_visible = visible;
     widget_want_cursor (w, FALSE);
     menubar_set_menu (menubar, menu);
 

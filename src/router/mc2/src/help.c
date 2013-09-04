@@ -2,7 +2,7 @@
    Hypertext file browser.
 
    Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2011
+   2005, 2006, 2007, 2011, 2013
    The Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -44,7 +44,7 @@
  *  Lazyness/widgeting attack: This file does use the dialog manager
  *  and uses mainly the dialog to achieve the help work.  there is only
  *  one specialized widget and it's only used to forward the mouse messages
- *  to the appropiate routine.
+ *  to the appropriate routine.
  */
 
 
@@ -66,7 +66,6 @@
 #include "lib/widget.h"
 #include "lib/event-types.h"
 
-#include "keybind-defaults.h"
 #include "keybind-defaults.h"
 #include "help.h"
 
@@ -543,7 +542,7 @@ help_show (WDialog * h, const char *paint_start)
                 }
                 break;
             case ' ':
-                /* word delimeter */
+                /* word delimiter */
                 if (painting)
                     help_print_word (h, word, &col, &line, TRUE);
                 break;
@@ -1048,7 +1047,7 @@ mousedispatch_new (int y, int x, int yl, int xl)
     Widget *w;
 
     w = g_new (Widget, 1);
-    init_widget (w, y, x, yl, xl, md_callback, help_event);
+    widget_init (w, y, x, yl, xl, md_callback, help_event);
     return w;
 }
 
@@ -1121,7 +1120,7 @@ help_interactive_display (const gchar * event_group_name, const gchar * event_na
     help_lines = min (LINES - 4, max (2 * LINES / 3, 18));
 
     whelp =
-        create_dlg (TRUE, 0, 0, help_lines + 4, HELP_WINDOW_WIDTH + 4,
+        dlg_create (TRUE, 0, 0, help_lines + 4, HELP_WINDOW_WIDTH + 4,
                     help_colors, help_callback, NULL, "[Help]", _("Help"),
                     DLG_TRYUP | DLG_CENTER | DLG_WANT_TAB);
 
@@ -1155,9 +1154,9 @@ help_interactive_display (const gchar * event_group_name, const gchar * event_na
     buttonbar_set_label (help_bar, 9, "", help_map, NULL);
     buttonbar_set_label (help_bar, 10, Q_ ("ButtonBar|Quit"), help_map, NULL);
 
-    run_dlg (whelp);
+    dlg_run (whelp);
     interactive_display_finish ();
-    destroy_dlg (whelp);
+    dlg_destroy (whelp);
     return TRUE;
 }
 

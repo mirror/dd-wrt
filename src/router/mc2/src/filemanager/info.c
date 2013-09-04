@@ -2,8 +2,12 @@
    Panel managing.
 
    Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2007, 2011
+   2005, 2007, 2011, 2013
    The Free Software Foundation, Inc.
+
+   Written by:
+   Slava Zanko <slavazanko@gmail.com>, 2013
+   Andrew Borodin <aborodin@vmail.ru>, 2013
 
    This file is part of the Midnight Commander.
 
@@ -83,7 +87,7 @@ info_box (WInfo * info)
     tty_set_normal_attrs ();
     tty_setcolor (NORMAL_COLOR);
     widget_erase (w);
-    draw_box (w->owner, w->y, w->x, w->lines, w->cols, FALSE);
+    tty_draw_box (w->y, w->x, w->lines, w->cols, FALSE);
 
     widget_move (w, 0, (w->cols - len - 2) / 2);
     tty_printf (" %s ", title);
@@ -121,13 +125,7 @@ info_show_info (WInfo * info)
     if (get_current_type () != view_listing)
         return;
 
-    {
-        char *cwd_str;
-
-        cwd_str = vfs_path_to_str (current_panel->cwd_vpath);
-        my_statfs (&myfs_stats, cwd_str);
-        g_free (cwd_str);
-    }
+    my_statfs (&myfs_stats, vfs_path_as_str (current_panel->cwd_vpath));
 
     st = current_panel->dir.list[current_panel->selected].st;
 
@@ -277,7 +275,7 @@ info_hook (void *data)
     other_widget = get_panel_widget (get_current_index ());
     if (!other_widget)
         return;
-    if (dlg_overlap (WIDGET (info), other_widget))
+    if (widget_overlapped (WIDGET (info), other_widget))
         return;
 
     info->ready = 1;
@@ -328,7 +326,7 @@ info_new (int y, int x, int lines, int cols)
 
     info = g_new (struct WInfo, 1);
     w = WIDGET (info);
-    init_widget (w, y, x, lines, cols, info_callback, NULL);
+    widget_init (w, y, x, lines, cols, info_callback, NULL);
     /* We do not want the cursor */
     widget_want_cursor (w, FALSE);
 

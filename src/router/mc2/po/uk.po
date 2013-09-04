@@ -3,16 +3,16 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Oleksandr Natalenko <pfactum@gmail.com>, 2011, 2012.
-#   <pingvein@gmail.com>, 2012-2013.
-# Slava Zanko <slavazanko@gmail.com>, 2011.
+# Oleksandr Natalenko <oleksandr@natalenko.name>, 2011, 2012
+# peinguin <pingvein@gmail.com>, 2012-2013
+# Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 08:51+0000\n"
-"Last-Translator: peinguin <pingvein@gmail.com>\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 08:44+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Ukrainian (http://www.transifex.com/projects/p/mc/language/"
 "uk/)\n"
 "Language: uk\n"
@@ -702,12 +702,9 @@ msgstr "Задати номер початкового рядка для ред�
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
-"\n"
-"Створюйте будь-які повідомлення про помилки\n"
-"(включаючи вивід «mc -V») як квитки на сайті www.midnight-commander.org\n"
 
 #, c-format
 msgid "GNU Midnight Commander %s\n"
@@ -924,8 +921,10 @@ msgid "\"%s\" is not a regular file"
 msgstr "«%s» не є звичайним файлом"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "Файл «%s» завеликий"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1512,8 +1511,8 @@ msgstr ""
 "Дружній до користувача редактор тексту\n"
 "написаний для Midnight Commander."
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
-msgstr "Авторські права(C) 1996-2012 за Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Про програму"
@@ -1593,8 +1592,8 @@ msgid "The shell is already running a command"
 msgstr "Інтерпретатор вже виконує команду"
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
-msgstr "Введіть «exit» для повернення в Midnight Commander"
+msgid "Type 'exit' to return to the Midnight Commander"
+msgstr ""
 
 msgid "Set &all"
 msgstr "Вст. &yсі"
@@ -2147,8 +2146,8 @@ msgstr ""
 "Панелі не можна перемкнути. "
 
 #, c-format
-msgid "Symlink `%s' points to:"
-msgstr "Символьне посилання «%s» вказує на:"
+msgid "Symlink '%s' points to:"
+msgstr ""
 
 msgid "Edit symlink"
 msgstr "Редагувати символьне посилання"
@@ -2162,8 +2161,8 @@ msgid "edit symlink: %s"
 msgstr "редагування символьного посилання: %s"
 
 #, c-format
-msgid "`%s' is not a symbolic link"
-msgstr "«%s» — не символьне посилання"
+msgid "'%s' is not a symbolic link"
+msgstr ""
 
 msgid "FTP to machine"
 msgstr "FTP-з’єднання з віддаленою машиною"
@@ -2727,9 +2726,6 @@ msgstr "Джерело"
 msgid "Target"
 msgstr "Ціль"
 
-msgid "Deleting"
-msgstr "Видалення"
-
 msgid "Follow &links"
 msgstr "&Iти за посиланнями"
 
@@ -2746,8 +2742,8 @@ msgid "&Background"
 msgstr "На &фоні"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
-msgstr "Неправильний шаблон джерела «%s»"
+msgid "Invalid source pattern '%s'"
+msgstr ""
 
 msgid "&Chdir"
 msgstr "Пере&хід"
@@ -4177,6 +4173,19 @@ msgstr "Сталася помилка Ext2lib"
 msgid "Invalid value"
 msgstr "Неправильне значення"
 
+msgid "File was modified. Save with exit?"
+msgstr "Файл змінено. Зберегти?"
+
+msgid "&Cancel quit"
+msgstr "&Не виходити"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Виконується вихід із Midnight Commander.\n"
+"Зберегти змінений файл?"
+
 msgid "Cannot spawn child process"
 msgstr "Не вдалося створити процес-нащадок"
 
@@ -4246,19 +4255,6 @@ msgstr ""
 "Не вдалося зберегти файл:\n"
 "%s"
 
-msgid "File was modified. Save with exit?"
-msgstr "Файл змінено. Зберегти?"
-
-msgid "&Cancel quit"
-msgstr "&Не виходити"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"Виконується вихід із Midnight Commander.\n"
-"Зберегти змінений файл?"
-
 msgid "View: "
 msgstr "Перегляд:"
 
@@ -4273,13 +4269,11 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Не вдалося показати: не звичайний файл"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Не вдалося відкрити «%s»\n"
-"%s"
 
 msgid "Seeking to search result"
 msgstr "Виконується перехід до результату пошуку"
@@ -4292,3 +4286,6 @@ msgstr "Почати спочатку?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "Deleting"
+#~ msgstr "Видалення"
