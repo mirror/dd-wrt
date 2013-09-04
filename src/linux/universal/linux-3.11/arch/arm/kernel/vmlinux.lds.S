@@ -154,14 +154,14 @@ SECTIONS
 	 */
 	__vectors_start = .;
 	.vectors 0 : AT(__vectors_start) {
-		*(.vectors)
+		KEEP(*(.vectors))
 	}
 	. = __vectors_start + SIZEOF(.vectors);
 	__vectors_end = .;
 
 	__stubs_start = .;
 	.stubs 0x1000 : AT(__stubs_start) {
-		*(.stubs)
+		KEEP(*(.stubs))
 	}
 	. = __stubs_start + SIZEOF(.stubs);
 	__stubs_end = .;
