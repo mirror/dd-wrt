@@ -9,6 +9,7 @@
    Written by:
    Jakub Jelinek, 1995
    Slava Zanko <slavazanko@gmail.com>, 2013
+   Andrew Borodin <aborodin@vmail.ru>, 2013
 
    This file is part of the Midnight Commander.
 
@@ -212,7 +213,7 @@ filename_completion_function (const char *text, int state, input_complete_t flag
            All entries except "." and ".." match. */
         if (filename_len == 0)
         {
-            if (!strcmp (entry->d_name, ".") || !strcmp (entry->d_name, ".."))
+            if (DIR_IS_DOT (entry->d_name) || DIR_IS_DOTDOT (entry->d_name))
                 continue;
         }
         else
@@ -290,7 +291,7 @@ filename_completion_function (const char *text, int state, input_complete_t flag
         {
             g_string_append (temp, users_dirname);
 
-            /* We need a `/' at the end. */
+            /* We need a '/' at the end. */
             if (temp->str[temp->len - 1] != PATH_SEP)
                 g_string_append_c (temp, PATH_SEP);
         }
@@ -851,7 +852,7 @@ try_complete_commands_prepare (try_complete_automation_state_t * state, char *te
 
         if (ti != text)
         {
-            /* Handle the two character tokens `>&', `<&', and `>|'.
+            /* Handle the two character tokens '>&', '<&', and '>|'.
                We are not in a command position after one of these. */
             this_char = ti[0];
             prev_char = str_get_prev_char (ti)[0];
@@ -1253,14 +1254,14 @@ complete_engine (WInput * in, int what_to_do)
             min_end = end;
             query_height = h;
             query_width = w;
-            query_dlg = create_dlg (TRUE, y, x, query_height, query_width,
+            query_dlg = dlg_create (TRUE, y, x, query_height, query_width,
                                     dialog_colors, query_callback, NULL,
                                     "[Completion]", NULL, DLG_COMPACT);
             query_list = listbox_new (1, 1, h - 2, w - 2, FALSE, NULL);
             add_widget (query_dlg, query_list);
             for (p = in->completions + 1; *p; p++)
                 listbox_add_item (query_list, LISTBOX_APPEND_AT_END, 0, *p, NULL);
-            run_dlg (query_dlg);
+            dlg_run (query_dlg);
             q = NULL;
             if (query_dlg->ret_value == B_ENTER)
             {
@@ -1271,7 +1272,7 @@ complete_engine (WInput * in, int what_to_do)
             if (q || end != min_end)
                 input_free_completions (in);
             i = query_dlg->ret_value;   /* B_USER if user wants to start over again */
-            destroy_dlg (query_dlg);
+            dlg_destroy (query_dlg);
             if (i == B_USER)
                 return 1;
         }
@@ -1339,7 +1340,7 @@ try_complete (char *text, int *lc_start, int *lc_end, input_complete_t flags)
             *lc_start += state.r - state.word;
     }
 
-    /* Starts with `~' and there is no slash in the word, then
+    /* Starts with '~' and there is no slash in the word, then
        try completing this word as a username. */
     if (!matches && *state.word == '~' && (state.flags & INPUT_COMPLETE_USERNAMES)
         && !strchr (state.word, PATH_SEP))

@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Slava Zanko <slavazanko@gmail.com>, 2011.
+# Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 08:51+0000\n"
-"Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 08:44+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Danish (http://www.transifex.com/projects/p/mc/language/da/)\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
@@ -658,12 +658,9 @@ msgstr "Angiv opstartslinjenummer for det interne redigeringsprogram"
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
-"\n"
-"Send venligst fejlrapporter (inklusive uddata for »mc -V«)\n"
-"som billetter (tickets) på www.midnight-commander.org\n"
 
 #, c-format
 msgid "GNU Midnight Commander %s\n"
@@ -880,8 +877,10 @@ msgid "\"%s\" is not a regular file"
 msgstr "»%s« er ikke en regulær fil"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "Fil »%s« er for stor"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1462,7 +1461,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1544,8 +1543,8 @@ msgid "The shell is already running a command"
 msgstr "Skallen kører allerede en kommando"
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
-msgstr "Skriv »exit« for at returnere til Midnight Commander"
+msgid "Type 'exit' to return to the Midnight Commander"
+msgstr ""
 
 msgid "Set &all"
 msgstr "&Sæt alle"
@@ -2100,8 +2099,8 @@ msgstr ""
 "panelerne kan ikke skiftes."
 
 #, c-format
-msgid "Symlink `%s' points to:"
-msgstr "Symbolsk henvisning »%s« peger på:"
+msgid "Symlink '%s' points to:"
+msgstr ""
 
 msgid "Edit symlink"
 msgstr "Rediger symbolsk henvisning"
@@ -2115,8 +2114,8 @@ msgid "edit symlink: %s"
 msgstr "rediger symbolsk henvisning: %s"
 
 #, c-format
-msgid "`%s' is not a symbolic link"
-msgstr "»%s« er ikke en symbolsk henvisning"
+msgid "'%s' is not a symbolic link"
+msgstr ""
 
 msgid "FTP to machine"
 msgstr "FTP til maskine"
@@ -2673,9 +2672,6 @@ msgstr "Kilde"
 msgid "Target"
 msgstr "Mål"
 
-msgid "Deleting"
-msgstr "Sletter"
-
 msgid "Follow &links"
 msgstr "Følg %henvisninger"
 
@@ -2692,8 +2688,8 @@ msgid "&Background"
 msgstr "&Baggrund"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
-msgstr "Ugyldigt kildemønster »%s«"
+msgid "Invalid source pattern '%s'"
+msgstr ""
 
 msgid "&Chdir"
 msgstr "&Skift mappe"
@@ -4102,6 +4098,19 @@ msgstr "Ext2lib-fejl"
 msgid "Invalid value"
 msgstr "Ugyldig værdi"
 
+msgid "File was modified. Save with exit?"
+msgstr "Fil blev ændret. Gem under afslutning?"
+
+msgid "&Cancel quit"
+msgstr "&Afbryd afslut"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander er ved at lukke ned.\n"
+"Gem ændret fil?"
+
 msgid "Cannot spawn child process"
 msgstr "Kan ikke spawn underproces"
 
@@ -4171,19 +4180,6 @@ msgstr ""
 "Kan ikke gemme fil:\n"
 "%s"
 
-msgid "File was modified. Save with exit?"
-msgstr "Fil blev ændret. Gem under afslutning?"
-
-msgid "&Cancel quit"
-msgstr "&Afbryd afslut"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"Midnight Commander er ved at lukke ned.\n"
-"Gem ændret fil?"
-
 msgid "View: "
 msgstr "Vis: "
 
@@ -4198,13 +4194,11 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Kan ikke vise: Ikke en regulær fil"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Kan ikke åbne »%s«\n"
-"%s"
 
 msgid "Seeking to search result"
 msgstr "Går til søgeresultat"
@@ -4217,3 +4211,6 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "Deleting"
+#~ msgstr "Sletter"

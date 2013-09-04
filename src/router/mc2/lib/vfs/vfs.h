@@ -253,7 +253,7 @@ char *vfs_translate_path_n (const char *path);
 
 void vfs_stamp_path (const char *path);
 
-void vfs_release_path (const char *dir);
+void vfs_release_path (const vfs_path_t * vpath);
 
 void vfs_fill_names (fill_names_f);
 
@@ -271,10 +271,6 @@ void vfs_free_handle (int handle);
 
 void vfs_setup_cwd (void);
 char *_vfs_get_cwd (void);
-
-#ifdef HAVE_CHARSET
-vfs_path_t *vfs_change_encoding (vfs_path_t * vpath, const char *encoding);
-#endif
 
 int vfs_preallocate (int dest_desc, off_t src_fsize, off_t dest_fsize);
 

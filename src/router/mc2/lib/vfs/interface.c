@@ -1,11 +1,11 @@
 /*
    Virtual File System: interface functions
 
-   Copyright (C) 2011
+   Copyright (C) 2011, 2013
    The Free Software Foundation, Inc.
 
    Written by:
-   Slava Zanko <slavazanko@gmail.com>, 2011
+   Slava Zanko <slavazanko@gmail.com>, 2011, 2013
 
    This file is part of the Midnight Commander.
 
@@ -840,20 +840,20 @@ mc_tmpdir (void)
 
     canonicalize_pathname (buffer);
 
-    if (lstat (buffer, &st) == 0)
+    /* Try to create directory */
+    if (mkdir (buffer, S_IRWXU) != 0)
     {
-        /* Sanity check for existing directory */
-        if (!S_ISDIR (st.st_mode))
-            error = _("%s is not a directory\n");
-        else if (st.st_uid != getuid ())
-            error = _("Directory %s is not owned by you\n");
-        else if (((st.st_mode & 0777) != 0700) && (chmod (buffer, 0700) != 0))
-            error = _("Cannot set correct permissions for directory %s\n");
-    }
-    else
-    {
-        /* Need to create directory */
-        if (mkdir (buffer, S_IRWXU) != 0)
+        if (errno == EEXIST && lstat (buffer, &st) == 0)
+        {
+            /* Sanity check for existing directory */
+            if (!S_ISDIR (st.st_mode))
+                error = _("%s is not a directory\n");
+            else if (st.st_uid != getuid ())
+                error = _("Directory %s is not owned by you\n");
+            else if (((st.st_mode & 0777) != 0700) && (chmod (buffer, 0700) != 0))
+                error = _("Cannot set correct permissions for directory %s\n");
+        }
+        else
         {
             fprintf (stderr,
                      _("Cannot create temporary directory %s: %s\n"),
@@ -878,16 +878,12 @@ mc_tmpdir (void)
         g_free (fallback_prefix);
         if (test_fd != -1)
         {
-            char *test_fn;
-
-            test_fn = vfs_path_to_str (test_vpath);
             close (test_fd);
-            test_fd = open (test_fn, O_RDONLY);
-            g_free (test_fn);
+            test_fd = open (vfs_path_as_str (test_vpath), O_RDONLY);
             if (test_fd != -1)
             {
                 close (test_fd);
-                unlink (test_fn);
+                unlink (vfs_path_as_str (test_vpath));
                 fallback_ok = TRUE;
             }
         }

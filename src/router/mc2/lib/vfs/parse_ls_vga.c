@@ -1,5 +1,5 @@
 /*
-   Routines for parsing output from the `ls' command.
+   Routines for parsing output from the 'ls' command.
 
    Copyright (C) 1988, 1992, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
    2005, 2006, 2007, 2011
@@ -800,7 +800,7 @@ vfs_parse_ls_lga (const char *p, struct stat * s, char **filename, char **linkna
     if (num_spaces != NULL)
     {
         *num_spaces = column_ptr[idx] - column_ptr[idx - 1] - strlen (columns[idx - 1]);
-        if (strcmp (columns[idx], "..") == 0)
+        if (DIR_IS_DOTDOT (columns[idx]))
             vfs_parce_ls_final_num_spaces = *num_spaces;
     }
 

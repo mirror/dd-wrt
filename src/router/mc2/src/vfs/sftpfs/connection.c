@@ -1,12 +1,12 @@
 /* Virtual File System: SFTP file system.
    The internal functions: connections
 
-   Copyright (C) 2011
+   Copyright (C) 2011, 2013
    The Free Software Foundation, Inc.
 
    Written by:
    Ilia Maslakov <il.smind@gmail.com>, 2011
-   Slava Zanko <slavazanko@gmail.com>, 2011, 2012
+   Slava Zanko <slavazanko@gmail.com>, 2011, 2012, 2013
 
    This file is part of the Midnight Commander.
 
@@ -196,7 +196,7 @@ sftpfs_recognize_auth_types (struct vfs_s_super *super)
  *
  * @param super connection data
  * @param error pointer to the error handler
- * @return TRUE if connection was sucessfully opened, FALSE otherwise
+ * @return TRUE if connection was successfully opened, FALSE otherwise
  */
 
 static gboolean
@@ -249,7 +249,7 @@ sftpfs_open_connection_ssh_agent (struct vfs_s_super *super, GError ** error)
  *
  * @param super connection data
  * @param error pointer to the error handler
- * @return TRUE if connection was sucessfully opened, FALSE otherwise
+ * @return TRUE if connection was successfully opened, FALSE otherwise
  */
 
 static gboolean
@@ -296,7 +296,7 @@ sftpfs_open_connection_ssh_key (struct vfs_s_super *super, GError ** error)
  *
  * @param super connection data
  * @param error pointer to the error handler
- * @return TRUE if connection was sucessfully opened, FALSE otherwise
+ * @return TRUE if connection was successfully opened, FALSE otherwise
  */
 
 static gboolean
@@ -376,7 +376,7 @@ sftpfs_open_connection (struct vfs_s_super *super, GError ** error)
      */
     super_data->socket_handle = sftpfs_open_socket (super, error);
     if (super_data->socket_handle == -1)
-        goto deinit_by_error;
+        return (-1);
 
     /* ... start it up. This will trade welcome banners, exchange keys,
      * and setup crypto, compression, and MAC layers
@@ -385,7 +385,7 @@ sftpfs_open_connection (struct vfs_s_super *super, GError ** error)
     if (rc != 0)
     {
         g_set_error (error, MC_ERROR, -1, _("sftp: Failure establishing SSH session: (%d)"), rc);
-        goto deinit_by_error;
+        return (-1);
     }
 
     /* At this point we havn't yet authenticated.  The first thing to do
@@ -400,21 +400,17 @@ sftpfs_open_connection (struct vfs_s_super *super, GError ** error)
     if (!sftpfs_open_connection_ssh_agent (super, error)
         && !sftpfs_open_connection_ssh_key (super, error)
         && !sftpfs_open_connection_ssh_password (super, error))
-        goto deinit_by_error;
+        return (-1);
 
     super_data->sftp_session = libssh2_sftp_init (super_data->session);
 
     if (super_data->sftp_session == NULL)
-        goto deinit_by_error;
+        return (-1);
 
     /* Since we have not set non-blocking, tell libssh2 we are blocking */
     libssh2_session_set_blocking (super_data->session, 1);
 
     return 0;
-
-  deinit_by_error:
-    sftpfs_close_connection (super, "Shutdown with errors", NULL);
-    return -1;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -437,6 +433,9 @@ sftpfs_close_connection (struct vfs_s_super *super, const char *shutdown_message
     if (super_data == NULL)
         return;
 
+    vfs_path_element_free (super_data->original_connection_info);
+    super_data->original_connection_info = NULL;
+
     if (super_data->agent != NULL)
     {
         libssh2_agent_disconnect (super_data->agent);
@@ -455,8 +454,8 @@ sftpfs_close_connection (struct vfs_s_super *super, const char *shutdown_message
         libssh2_session_disconnect (super_data->session, shutdown_message);
         super_data->session = NULL;
     }
-    if (super_data->fingerprint != NULL)
-        super_data->fingerprint = NULL;
+
+    super_data->fingerprint = NULL;
 
     if (super_data->socket_handle != -1)
     {

@@ -3,15 +3,16 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Rezső Páder <rezso@rezso.net>, 2012-2013.
-# Slava Zanko <slavazanko@gmail.com>, 2011.
+# Rezső Páder <rezso@rezso.net>, 2012-2013
+# Slava Zanko <slavazanko@gmail.com>, 2011
+# Atekka <atekka@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 08:51+0000\n"
-"Last-Translator: Rezső Páder <rezso@rezso.net>\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 08:44+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Hungarian (http://www.transifex.com/projects/p/mc/language/"
 "hu/)\n"
 "Language: hu\n"
@@ -78,7 +79,7 @@ msgstr "HIBA: nem könyvtár:"
 
 #, c-format
 msgid "An error occurred while migrating user settings: %s"
-msgstr ""
+msgstr "Hiba történt a felhasználói adatok migrálásakor: %s"
 
 #, c-format
 msgid ""
@@ -251,7 +252,7 @@ msgid "Completion/M-tab"
 msgstr " Kieg./M-Tab"
 
 msgid "Back Tabulation S-tab"
-msgstr ""
+msgstr "Hátsó Tabulátor S-tab"
 
 msgid "+ on keypad"
 msgstr " + numerikus"
@@ -703,7 +704,7 @@ msgstr "A kezdősor számának megadása a belső szerkesztő számára."
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
 "\n"
@@ -927,8 +928,10 @@ msgid "\"%s\" is not a regular file"
 msgstr "\"%s\": speciális fájl"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "A(z) \"%s\" fájl túl nagy"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1359,7 +1362,7 @@ msgid "C&heck word"
 msgstr "S&zó ellenőrzése"
 
 msgid "Change spelling &language..."
-msgstr ""
+msgstr "Betűzés & nyelv módosítása"
 
 msgid "&Mail..."
 msgstr "&Mail..."
@@ -1449,13 +1452,13 @@ msgid "&Dynamic paragraphing"
 msgstr "&Dinamikus bekezdések"
 
 msgid "Type &writer wrap"
-msgstr ""
+msgstr "Sortörés"
 
 msgid "Wrap mode"
 msgstr "Tördelés"
 
 msgid "Tabulation"
-msgstr ""
+msgstr "Tabulálás"
 
 msgid "&Fake half tabs"
 msgstr "Hamis &fél-tabulátorok"
@@ -1491,7 +1494,7 @@ msgid "Synta&x highlighting"
 msgstr "&Szintaktikus szövegkiemelés"
 
 msgid "C&ursor after inserted block"
-msgstr ""
+msgstr "Kurzor a beillesztett blokk után"
 
 msgid "Pers&istent selection"
 msgstr "Tartós kijelölés"
@@ -1515,8 +1518,8 @@ msgstr ""
 "Felhasználóbarát szövegszerkesztő\n"
 "a Midnight Commander-hez készítve"
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2012 the Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2013 the Free Software Foundation"
 
 msgid "About"
 msgstr "Névjegy"
@@ -1597,7 +1600,7 @@ msgid "The shell is already running a command"
 msgstr "A parancsértelmező már futtat egy parancsot."
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
+msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Írjon \"exit\"-et a Midnight Commanderbe való visszatéréshez."
 
 msgid "Set &all"
@@ -1695,7 +1698,7 @@ msgid "Use internal vie&w"
 msgstr "Saját &fájlmegjelenítő"
 
 msgid "A&sk new file name"
-msgstr ""
+msgstr "Kérj új fájlnevet"
 
 msgid "Auto m&enus"
 msgstr "Men&ü indításkor"
@@ -2151,8 +2154,8 @@ msgstr ""
 "a paneleket nem lehet kikapcsolni."
 
 #, c-format
-msgid "Symlink `%s' points to:"
-msgstr "A(z) \"%s\" szimbolikus link ide mutasson:"
+msgid "Symlink '%s' points to:"
+msgstr "A \"%s\" szimbolikus link ide mutasson:"
 
 msgid "Edit symlink"
 msgstr "Szimb. link módosítása"
@@ -2166,7 +2169,7 @@ msgid "edit symlink: %s"
 msgstr "szimbolikus link módosítása: %s"
 
 #, c-format
-msgid "`%s' is not a symbolic link"
+msgid "'%s' is not a symbolic link"
 msgstr "\"%s\" nem szimbolikus link"
 
 msgid "FTP to machine"
@@ -2669,11 +2672,11 @@ msgstr "A célfájl már létezik!"
 
 #, c-format
 msgid "New     : %s, size %s"
-msgstr ""
+msgstr "Új: %s, mérete: %s"
 
 #, c-format
 msgid "Existing: %s, size %s"
-msgstr ""
+msgstr "Jelenlegi: %s, mérete: %s"
 
 msgid "Overwrite this target?"
 msgstr "Felülírja ezt a fájlt?"
@@ -2737,9 +2740,6 @@ msgstr "Forrás"
 msgid "Target"
 msgstr "Cél"
 
-msgid "Deleting"
-msgstr "Törlés"
-
 msgid "Follow &links"
 msgstr "&Linkek követése"
 
@@ -2756,7 +2756,7 @@ msgid "&Background"
 msgstr "Háttér&ben"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
+msgid "Invalid source pattern '%s'"
 msgstr "Hibás forrás-minta: \"%s\""
 
 msgid "&Chdir"
@@ -3292,7 +3292,7 @@ msgid "sort|e"
 msgstr "sort|k"
 
 msgid "E&xtension"
-msgstr ""
+msgstr "Kiterjesztés"
 
 #. TRANSLATORS: one single character to represent 'size' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3614,6 +3614,12 @@ msgid ""
 "which keys are not marked with OK. Press space on the missing\n"
 "key, or click with the mouse to define it. Move around with Tab."
 msgstr ""
+"Üss le minden billentyűt a felsoroltak közül. Miután ezzel kész vagy, nézd "
+"meg ⏎\n"
+"mely billentyűk lettek nem OKé-ként feltüntetve. Nyomd meg a szóközt a "
+"hiányzó ⏎\n"
+"gombnál, vagy kattints az egérrel hogy definiáld azt. A Tabbal lépkedhetsz "
+"ide-oda."
 
 #, c-format
 msgid ""
@@ -3737,7 +3743,7 @@ msgid "Data directory:"
 msgstr "Adatok könyvtára:"
 
 msgid "File extension handlers:"
-msgstr ""
+msgstr "Fájl kiterjesztés kezelők:"
 
 msgid "VFS plugins and scripts:"
 msgstr "VFS pluginek és scriptek:"
@@ -3995,10 +4001,10 @@ msgstr ""
 
 #, c-format
 msgid "sftp: an error occurred while reading %s: %s"
-msgstr ""
+msgstr "sftp: hiba %s olvasásakor: %s"
 
 msgid "sftp: Unable to get current user name."
-msgstr ""
+msgstr "sftp: A jelenlegi felhasználó nevet nem kaptam meg."
 
 msgid "sftp: Invalid host name."
 msgstr "sftp: Érvénytelen kiszolgálónév."
@@ -4012,7 +4018,7 @@ msgstr "sftp: %s"
 
 #, c-format
 msgid "sftp: making connection to %s"
-msgstr ""
+msgstr "sftp: kapcsolódás %s-hoz/hez"
 
 msgid "sftp: connection interrupted by user"
 msgstr "sftp: a kapcsolatot a felhasználó megszakította"
@@ -4037,10 +4043,10 @@ msgstr "sftp: a jelszó üres."
 
 #, c-format
 msgid "sftp: Failure establishing SSH session: (%d)"
-msgstr ""
+msgstr "stp: Hiba lépett fel az ssh kapcsolat létrehozása közben : (%d)"
 
 msgid "sftp: No file handler data present for reading file"
-msgstr ""
+msgstr "sftp: Nincs jelenleg elérhető fájlkezelő adat a fájl olvasásához"
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"
@@ -4175,6 +4181,19 @@ msgstr "Ext2lib-hiba"
 msgid "Invalid value"
 msgstr "Érvénytelen érték"
 
+msgid "File was modified. Save with exit?"
+msgstr "A fájl módosult. Menti kilépéskor?"
+
+msgid "&Cancel quit"
+msgstr "&Mégsem lép ki"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"A Midnight Commander kilép.\n"
+"Módosított fájl mentése?"
+
 msgid "Cannot spawn child process"
 msgstr "Nem sikerült programot indítani"
 
@@ -4244,19 +4263,6 @@ msgstr ""
 "Az fájl nem menthető:\n"
 "%s"
 
-msgid "File was modified. Save with exit?"
-msgstr "A fájl módosult. Menti kilépéskor?"
-
-msgid "&Cancel quit"
-msgstr "&Mégsem lép ki"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"A Midnight Commander kilép.\n"
-"Módosított fájl mentése?"
-
 msgid "View: "
 msgstr "Megnéz: "
 
@@ -4271,13 +4277,11 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Nem lehet megjeleníteni - speciális fájl."
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"A(z) \"%s\" fájl nem megnyitható \n"
-"%s"
 
 msgid "Seeking to search result"
 msgstr "Találat keresése"
@@ -4290,3 +4294,6 @@ msgstr "Folytatás az elejéről?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Nem sikerült behozni /ftp://some.host/editme.txt helyi másolatát"
+
+#~ msgid "Deleting"
+#~ msgstr "Törlés"

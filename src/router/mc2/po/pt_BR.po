@@ -3,17 +3,17 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Enrico Nicoletto <enrico.BR@gmx.co.uk>, 2013.
-# Rafael Ferreira <rafael.f.f1@gmail.com>, 2012.
-# Slava Zanko <slavazanko@gmail.com>, 2011.
-# Van Der Fran <transifex@vanderland.com>, 2011.
+# Enrico Nicoletto <enrico.BR@gmx.co.uk>, 2013
+# Rafael Ferreira <rafael.f.f1@gmail.com>, 2012
+# Slava Zanko <slavazanko@gmail.com>, 2011
+# Van Der Fran <transifex@vanderland.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 08:51+0000\n"
-"Last-Translator: Enrico Nicoletto <enrico.BR@gmx.co.uk>\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 08:44+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/projects/p/mc/"
 "language/pt_BR/)\n"
 "Language: pt_BR\n"
@@ -662,13 +662,9 @@ msgstr "Definir número da linha inicial para o editor interno"
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
-"\n"
-"Favor enviar relatórios de bug (incluindo as mensagens de output do 'mc -"
-"V')\n"
-"como tickets em www.midnight-commander.org\n"
 
 #, c-format
 msgid "GNU Midnight Commander %s\n"
@@ -883,8 +879,10 @@ msgid "\"%s\" is not a regular file"
 msgstr "\"%s\" não é um arquivo regular"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "Arquivo \"%s\" é muito grande"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1464,7 +1462,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1546,8 +1544,8 @@ msgid "The shell is already running a command"
 msgstr "A shell já está executando um comando"
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
-msgstr "digite 'exit' para retornar ao Midnight commander "
+msgid "Type 'exit' to return to the Midnight Commander"
+msgstr ""
 
 msgid "Set &all"
 msgstr "Configurar &tudo"
@@ -2099,8 +2097,8 @@ msgstr ""
 "Os paines não podem ser ativados."
 
 #, c-format
-msgid "Symlink `%s' points to:"
-msgstr "Symlink \"%s\" aponta para:"
+msgid "Symlink '%s' points to:"
+msgstr ""
 
 msgid "Edit symlink"
 msgstr "Editar symlink"
@@ -2114,8 +2112,8 @@ msgid "edit symlink: %s"
 msgstr "editar symlink: %s"
 
 #, c-format
-msgid "`%s' is not a symbolic link"
-msgstr "\"%s\" não é um link simbólico"
+msgid "'%s' is not a symbolic link"
+msgstr ""
 
 msgid "FTP to machine"
 msgstr "FTP para máquina"
@@ -2664,9 +2662,6 @@ msgstr "Origem"
 msgid "Target"
 msgstr "Destino"
 
-msgid "Deleting"
-msgstr "Apagando"
-
 msgid "Follow &links"
 msgstr ""
 
@@ -2685,8 +2680,8 @@ msgid "&Background"
 msgstr "&Segundo plano"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
-msgstr "Padrão de origem inválido \"%s\""
+msgid "Invalid source pattern '%s'"
+msgstr ""
 
 msgid "&Chdir"
 msgstr "Alterar &Diretório"
@@ -4088,6 +4083,19 @@ msgstr "erro de Ext2lib"
 msgid "Invalid value"
 msgstr ""
 
+msgid "File was modified. Save with exit?"
+msgstr "Arquivo foi modificado. Salvar e sair?"
+
+msgid "&Cancel quit"
+msgstr "&Cancelar saida"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander está sendo finalizado.\n"
+"Salvar arquivo modificado?"
+
 msgid "Cannot spawn child process"
 msgstr ""
 
@@ -4152,19 +4160,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "File was modified. Save with exit?"
-msgstr "Arquivo foi modificado. Salvar e sair?"
-
-msgid "&Cancel quit"
-msgstr "&Cancelar saida"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"Midnight Commander está sendo finalizado.\n"
-"Salvar arquivo modificado?"
-
 msgid "View: "
 msgstr ""
 
@@ -4177,13 +4172,11 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Impossível abrir arquivo %s\n"
-"%s"
 
 msgid "Seeking to search result"
 msgstr ""
@@ -4196,3 +4189,6 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "Deleting"
+#~ msgstr "Apagando"

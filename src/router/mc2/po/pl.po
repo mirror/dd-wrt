@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Piotr Drąg <piotrdrag@gmail.com>, 2011-2013.
-# Slava Zanko <slavazanko@gmail.com>, 2011.
+# Piotr Drąg <piotrdrag@gmail.com>, 2011-2013
+# Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 18:27+0000\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 16:47+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish (http://www.transifex.com/projects/p/mc/language/pl/)\n"
 "Language: pl\n"
@@ -700,7 +700,7 @@ msgstr "Ustawia początkowy numer wiersza dla wewnętrznego edytora"
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
 "\n"
@@ -925,8 +925,12 @@ msgid "\"%s\" is not a regular file"
 msgstr "\"%s\" nie jest zwykłym plikiem"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "Plik \"%s\" jest za duży"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
+"Plik \"%s\" jest za duży.\n"
+"Otworzyć go mimo to?"
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1515,8 +1519,8 @@ msgstr ""
 "Przyjazny dla użytkownika edytor tekstu,\n"
 "napisany dla programu Midnight Commander"
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2012 Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2013 Free Software Foundation"
 
 msgid "About"
 msgstr "O programie"
@@ -1596,7 +1600,7 @@ msgid "The shell is already running a command"
 msgstr "Powłoka wykonuje już polecenie"
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
+msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Wpisanie \"exit\" powróci do programu Midnight Commander"
 
 msgid "Set &all"
@@ -2151,7 +2155,7 @@ msgstr ""
 "na konsoli xterm lub Linux."
 
 #, c-format
-msgid "Symlink `%s' points to:"
+msgid "Symlink '%s' points to:"
 msgstr "Dowiązanie symboliczne \"%s\" wskazuje na:"
 
 msgid "Edit symlink"
@@ -2166,7 +2170,7 @@ msgid "edit symlink: %s"
 msgstr "modyfikacja dowiązania symbolicznego: %s"
 
 #, c-format
-msgid "`%s' is not a symbolic link"
+msgid "'%s' is not a symbolic link"
 msgstr "\"%s\" nie jest dowiązaniem symbolicznym"
 
 msgid "FTP to machine"
@@ -2735,9 +2739,6 @@ msgstr "Źródło"
 msgid "Target"
 msgstr "Cel"
 
-msgid "Deleting"
-msgstr "Usuwanie"
-
 msgid "Follow &links"
 msgstr "Podążanie za &dowiązaniami"
 
@@ -2754,7 +2755,7 @@ msgid "&Background"
 msgstr "&W tle"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
+msgid "Invalid source pattern '%s'"
 msgstr "Nieprawidłowy wzór źródłowy \"%s\""
 
 msgid "&Chdir"
@@ -4183,6 +4184,19 @@ msgstr "Błąd ext2lib"
 msgid "Invalid value"
 msgstr "Nieprawidłowa wartość"
 
+msgid "File was modified. Save with exit?"
+msgstr "Plik został zmodyfikowany. Zapisać przed zakończeniem?"
+
+msgid "&Cancel quit"
+msgstr "N&ie zamykaj"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Program Midnight Commander kończy działanie.\n"
+"Zapisać zmodyfikowany plik?"
+
 msgid "Cannot spawn child process"
 msgstr "Nie można utworzyć procesu potomnego"
 
@@ -4252,19 +4266,6 @@ msgstr ""
 "Nie można zapisać pliku:\n"
 "%s"
 
-msgid "File was modified. Save with exit?"
-msgstr "Plik został zmodyfikowany. Zapisać przed zakończeniem?"
-
-msgid "&Cancel quit"
-msgstr "N&ie zamykaj"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"Program Midnight Commander kończy działanie.\n"
-"Zapisać zmodyfikowany plik?"
-
 msgid "View: "
 msgstr "Podgląd: "
 
@@ -4279,12 +4280,12 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Nie można wyświetlić: nie jest zwykłym plikiem"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Nie można otworzyć \"%s\"\n"
+"Nie można otworzyć \"%s\" w trybie przetwarzania\n"
 "%s"
 
 msgid "Seeking to search result"
@@ -4299,3 +4300,6 @@ msgstr "Kontynuować od początku?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
 "Nie można pobrać lokalnej kopii /ftp://jakiś.komputer/modyfikuj_mnie.txt"
+
+#~ msgid "Deleting"
+#~ msgstr "Usuwanie"

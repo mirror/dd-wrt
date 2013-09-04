@@ -3,18 +3,19 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# David Martin <david.martin@telefonica.net>, 2011-2012.
-# David Martín <david.martin@telefonica.net>, 2011, 2012.
-# David Martín <dmartina@excite.com>, 2011.
-# Ismael Olea <olea@hispafuentes.com>, 2000.
-# Slava Zanko <slavazanko@gmail.com>, 2011.
+# David Martin <david.martin@telefonica.net>, 2011-2013
+# David Martin <dhmartina@yahoo.es>, 2011, 2012
+# David Martin <dhmartina@yahoo.es>, 2013
+# David Martin <dhmartina@yahoo.es>, 2011
+# Ismael Olea <olea@hispafuentes.com>, 2000
+# Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 08:51+0000\n"
-"Last-Translator: David Martin <david.martin@telefonica.net>\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 09:37+0000\n"
+"Last-Translator: David Martin <dhmartina@yahoo.es>\n"
 "Language-Team: Spanish (http://www.transifex.com/projects/p/mc/language/"
 "es/)\n"
 "Language: es\n"
@@ -81,7 +82,7 @@ msgstr "¡FATAL! No es directorio:"
 
 #, c-format
 msgid "An error occurred while migrating user settings: %s"
-msgstr ""
+msgstr "Error en la migración de la configuración personal: %s"
 
 #, c-format
 msgid ""
@@ -703,12 +704,12 @@ msgstr "Línea de comienzo al abrir archivo con editor interno"
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
 "\n"
 "Si detecta algún fallo puede comunicarlo en www.midnight-commander.org\n"
-"incluyendo la descripción obtenida con `mc -V'.\n"
+"incluyendo la descripción obtenida con «mc -V».\n"
 
 #, c-format
 msgid "GNU Midnight Commander %s\n"
@@ -929,8 +930,12 @@ msgid "\"%s\" is not a regular file"
 msgstr "«%s» no es un archivo ordinario"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "El archivo «%s» es demasiado grande"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
+"El archivo «%s» es demasiado grande\n"
+"¿Está seguro de querer abrirlo?"
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1517,8 +1522,8 @@ msgstr ""
 "Un editor de texto amigable\n"
 "para Midnight Commander."
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2012 the Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2013 the Free Software Foundation"
 
 msgid "About"
 msgstr "Acerca de..."
@@ -1599,7 +1604,7 @@ msgid "The shell is already running a command"
 msgstr "El shell ya está ejecutando un comando"
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
+msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Teclee «exit» para regresar a Midnight Commander"
 
 msgid "Set &all"
@@ -1676,7 +1681,7 @@ msgid "Mkdi&r autoname"
 msgstr "proponer nombre m&Kdir"
 
 msgid "&Preallocate space"
-msgstr ""
+msgstr "&Reservar espacio"
 
 msgid "Esc key mode"
 msgstr "Tecla de escape (Esc)"
@@ -1697,7 +1702,7 @@ msgid "Use internal vie&w"
 msgstr "usar &Visor interno"
 
 msgid "A&sk new file name"
-msgstr ""
+msgstr "pedir nombre al editar nuevos"
 
 msgid "Auto m&enus"
 msgstr "auto &Menús"
@@ -1706,7 +1711,7 @@ msgid "&Drop down menus"
 msgstr "menús &Desplegables"
 
 msgid "S&hell patterns"
-msgstr ""
+msgstr "&Patrones «shell»"
 
 msgid "Co&mplete: show all"
 msgstr "completar: mostrar todos"
@@ -2095,7 +2100,7 @@ msgid "Filter command and arguments:"
 msgstr "Orden a ejecutar y argumentos:"
 
 msgid "Edit file"
-msgstr ""
+msgstr "Editar archivo"
 
 msgid "Create a new Directory"
 msgstr "Crear directorio"
@@ -2154,7 +2159,7 @@ msgstr ""
 "Los paneles no pueden ser ocultados."
 
 #, c-format
-msgid "Symlink `%s' points to:"
+msgid "Symlink '%s' points to:"
 msgstr "El enlace simbólico «%s» apunta a:"
 
 msgid "Edit symlink"
@@ -2169,7 +2174,7 @@ msgid "edit symlink: %s"
 msgstr "editar enlace simbólico: %s"
 
 #, c-format
-msgid "`%s' is not a symbolic link"
+msgid "'%s' is not a symbolic link"
 msgstr "«%s» no es un enlace simbólico"
 
 msgid "FTP to machine"
@@ -2631,6 +2636,8 @@ msgid ""
 "%s\n"
 "Directories: %zd, total size: %s"
 msgstr ""
+"%s\n"
+"Directorios: %zd, tamaño total: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "¡Imposible operar sobre «..»!"
@@ -2669,11 +2676,11 @@ msgstr "¡El archivo destino ya existe!"
 
 #, c-format
 msgid "New     : %s, size %s"
-msgstr ""
+msgstr "Nuevo : %s, tamaño %s"
 
 #, c-format
 msgid "Existing: %s, size %s"
-msgstr ""
+msgstr "Actual: %s, tamaño %s"
 
 msgid "Overwrite this target?"
 msgstr "¿Sobrescribir este archivo?"
@@ -2737,9 +2744,6 @@ msgstr "Origen"
 msgid "Target"
 msgstr "Destino"
 
-msgid "Deleting"
-msgstr "Borrando"
-
 msgid "Follow &links"
 msgstr "seguir en&Laces"
 
@@ -2756,7 +2760,7 @@ msgid "&Background"
 msgstr "en 2º plan&O"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
+msgid "Invalid source pattern '%s'"
 msgstr "Patrón fuente incorrecto «%s»"
 
 msgid "&Chdir"
@@ -3330,7 +3334,7 @@ msgid "C&hange time"
 msgstr "fecha cam&Bio"
 
 msgid "Perm"
-msgstr "Perm"
+msgstr "Modo"
 
 msgid "Nl"
 msgstr "Ne"
@@ -3998,7 +4002,7 @@ msgstr ""
 
 #, c-format
 msgid "sftp: an error occurred while reading %s: %s"
-msgstr ""
+msgstr "sftp: Ocurrió un error durante la lectura de «%s»: %s"
 
 msgid "sftp: Unable to get current user name."
 msgstr "sftp: No se pudo obtener el nombre de usuario actual."
@@ -4178,6 +4182,19 @@ msgstr "error Ext2lib"
 msgid "Invalid value"
 msgstr "Posición incorrecta"
 
+msgid "File was modified. Save with exit?"
+msgstr "El archivo fue modificado. ¿Desea guardarlo al salir?"
+
+msgid "&Cancel quit"
+msgstr "&Cancelar salida"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Saliendo de Midnight Commander.\n"
+"¿Desea guardar el archivo modificado?"
+
 msgid "Cannot spawn child process"
 msgstr "Imposible ejecutar el proceso hijo"
 
@@ -4247,19 +4264,6 @@ msgstr ""
 "Imposible guardar el archivo:\n"
 "%s"
 
-msgid "File was modified. Save with exit?"
-msgstr "El archivo fue modificado. ¿Desea guardarlo al salir?"
-
-msgid "&Cancel quit"
-msgstr "&Cancelar salida"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"Saliendo de Midnight Commander.\n"
-"¿Desea guardar el archivo modificado?"
-
 msgid "View: "
 msgstr "Ver:"
 
@@ -4274,12 +4278,12 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Imposible ver: no es un archivo ordinario"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Imposible abrir «%s»\n"
+"Imposible abrir «%s» para analizar\n"
 "%s"
 
 msgid "Seeking to search result"
@@ -4292,4 +4296,7 @@ msgid "Continue from beginning?"
 msgstr "¿Continuar desde el principio?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
-msgstr ""
+msgstr "Imposible obtener una copia local de /ftp://some.host/editme.txt"
+
+#~ msgid "Deleting"
+#~ msgstr "Borrando"

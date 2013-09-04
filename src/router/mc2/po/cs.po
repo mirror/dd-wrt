@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Slava Zanko <slavazanko@gmail.com>, 2011.
+# Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 08:51+0000\n"
-"Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 08:44+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Czech (http://www.transifex.com/projects/p/mc/language/cs/)\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
@@ -658,12 +658,9 @@ msgstr "Nastavit počáteční číslo řádku pro interní editor"
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
-"\n"
-"Závady programu oznamujte (včetně výstupu „mc -V“)\n"
-"pomocí tiketů na www.midnight-commander.org\n"
 
 #, c-format
 msgid "GNU Midnight Commander %s\n"
@@ -880,8 +877,10 @@ msgid "\"%s\" is not a regular file"
 msgstr "„%s“ není normální soubor"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "Soubor „%s“ je příliš velký"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1462,7 +1461,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1544,8 +1543,8 @@ msgid "The shell is already running a command"
 msgstr "Shell už provádí příkaz"
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
-msgstr "Napište „exit“ pro návrat do Midnight Commanderu"
+msgid "Type 'exit' to return to the Midnight Commander"
+msgstr ""
 
 msgid "Set &all"
 msgstr "Nastavit &vše"
@@ -2099,8 +2098,8 @@ msgstr ""
 "panely nelze přepnout."
 
 #, c-format
-msgid "Symlink `%s' points to:"
-msgstr "Symbolický odkaz „%s“ ukazuje na:"
+msgid "Symlink '%s' points to:"
+msgstr ""
 
 msgid "Edit symlink"
 msgstr "Upravit symbolický odkaz"
@@ -2114,8 +2113,8 @@ msgid "edit symlink: %s"
 msgstr "upravte symbolický odkaz: %s"
 
 #, c-format
-msgid "`%s' is not a symbolic link"
-msgstr "„%s“ není symbolický odkaz"
+msgid "'%s' is not a symbolic link"
+msgstr ""
 
 msgid "FTP to machine"
 msgstr "FTP spojení na počítač"
@@ -2671,9 +2670,6 @@ msgstr "Zdroj"
 msgid "Target"
 msgstr "Cíl"
 
-msgid "Deleting"
-msgstr "Maže se"
-
 msgid "Follow &links"
 msgstr "Nás&ledovat odkazy"
 
@@ -2690,8 +2686,8 @@ msgid "&Background"
 msgstr "&Na pozadí"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
-msgstr "Chybný vzor zdroje „%s“"
+msgid "Invalid source pattern '%s'"
+msgstr ""
 
 msgid "&Chdir"
 msgstr "&Chdir"
@@ -4106,6 +4102,19 @@ msgstr "Chyba ext2lib"
 msgid "Invalid value"
 msgstr "Neplatná hodnota"
 
+msgid "File was modified. Save with exit?"
+msgstr "Soubor byl změněn, uložit při odchodu?"
+
+msgid "&Cancel quit"
+msgstr "&Zrušit odchod"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander se ukončuje.\n"
+"Uložit upravený soubor?"
+
 msgid "Cannot spawn child process"
 msgstr "Nelze vytvořit proces potomka"
 
@@ -4175,19 +4184,6 @@ msgstr ""
 "Nemohu uložit soubor:\n"
 "%s"
 
-msgid "File was modified. Save with exit?"
-msgstr "Soubor byl změněn, uložit při odchodu?"
-
-msgid "&Cancel quit"
-msgstr "&Zrušit odchod"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"Midnight Commander se ukončuje.\n"
-"Uložit upravený soubor?"
-
 msgid "View: "
 msgstr "Prohlížet: "
 
@@ -4202,13 +4198,11 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Nelze prohlížet: není to normální soubor"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Nelze otevřít „%s“\n"
-"%s"
 
 msgid "Seeking to search result"
 msgstr "Přesouvá se na pozici výsledku vyhledávání"
@@ -4221,3 +4215,6 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "Deleting"
+#~ msgstr "Maže se"

@@ -1,12 +1,12 @@
 /* Virtual File System: SFTP file system.
    The SSH config parser
 
-   Copyright (C) 2011
+   Copyright (C) 2011, 2013
    The Free Software Foundation, Inc.
 
    Written by:
    Ilia Maslakov <il.smind@gmail.com>, 2011
-   Slava Zanko <slavazanko@gmail.com>, 2011, 2012
+   Slava Zanko <slavazanko@gmail.com>, 2011, 2012, 2013
 
    This file is part of the Midnight Commander.
 
@@ -32,6 +32,7 @@
 #include "lib/global.h"
 
 #include "lib/search.h"
+#include "lib/util.h"           /* tilde_expand() */
 #include "lib/vfs/utilvfs.h"
 
 #include "internal.h"
@@ -120,8 +121,10 @@ sftpfs_correct_file_name (const char *filename)
     vfs_path_t *vpath;
     char *ret_value;
 
-    vpath = vfs_path_from_str (filename);
-    ret_value = vfs_path_to_str (vpath);
+    ret_value = tilde_expand (filename);
+    vpath = vfs_path_from_str (ret_value);
+    g_free (ret_value);
+    ret_value = g_strdup (vfs_path_as_str (vpath));
     vfs_path_free (vpath);
     return ret_value;
 }
@@ -194,7 +197,7 @@ sftpfs_fill_config_entity_from_string (sftpfs_ssh_config_entity_t * config_entit
  * @param config_entity      config entity structure
  * @param vpath_element      path element with host data (hostname, port)
  * @param error              pointer to the error handler
- * @return TRUE if config entity was filled sucessfully, FALSE otherwise
+ * @return TRUE if config entity was filled successfully, FALSE otherwise
  */
 
 static gboolean

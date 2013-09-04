@@ -156,13 +156,10 @@ dnl ############################################################################
 dnl Check for header files
 dnl ############################################################################
 
-AC_CHECK_HEADERS([unistd.h string.h memory.h limits.h malloc.h \
-	utime.h fcntl.h sys/statfs.h sys/vfs.h sys/time.h \
+AC_CHECK_HEADERS([string.h memory.h limits.h malloc.h \
+	utime.h sys/statfs.h sys/vfs.h \
 	sys/select.h sys/ioctl.h stropts.h arpa/inet.h \
-	sys/socket.h sys/sysmacros.h sys/types.h sys/mkdev.h])
-AC_HEADER_MAJOR
-AC_HEADER_TIME
-AC_HEADER_DIRENT
+	sys/socket.h sys/sysmacros.h sys/mkdev.h])
 AC_HEADER_ASSERT
 
 
@@ -170,7 +167,6 @@ dnl ############################################################################
 dnl Check for types
 dnl ############################################################################
 
-AC_C_CONST
 dnl Check largefile before type sizeof checks
 AC_SYS_LARGEFILE
 
@@ -226,15 +222,10 @@ dnl Check for functions
 dnl ############################################################################
 
 AC_CHECK_FUNCS([\
-	isascii \
-	statfs sysconf \
-	tcgetattr tcsetattr \
-	ftruncate \
 	strverscmp \
 	strncasecmp \
 	realpath
 ])
-AC_FUNC_STRCOLL
 
 dnl getpt is a GNU Extension (glibc 2.1.x)
 AC_CHECK_FUNCS(posix_openpt, , [AC_CHECK_FUNCS(getpt)])
@@ -279,8 +270,6 @@ MC_I18N
 dnl ############################################################################
 dnl OS specific flags
 dnl ############################################################################
-
-AC_ISC_POSIX
 
 case $host_os in
 aux*)
@@ -394,7 +383,7 @@ dnl ############################################################################
 dnl MC options
 dnl ############################################################################
 
-MC_WITH_EDIT
+MC_WITH_INTERNAL_EDIT
 
 dnl Diff viewer support.
 AC_ARG_WITH([diff_viewer],
@@ -489,11 +478,14 @@ AC_SUBST(LIBS)
 AM_CONDITIONAL(USE_NLS, [test x"$USE_NLS" = xyes])
 AM_CONDITIONAL(USE_MAINTAINER_MODE, [test x"$USE_MAINTAINER_MODE" = xyes])
 AM_CONDITIONAL(USE_SCREEN_SLANG, [test x"$with_screen" = xslang])
-AM_CONDITIONAL(USE_EDIT, [test x"$use_edit" = xyes ])
+AM_CONDITIONAL(USE_INTERNAL_EDIT, [test x"$use_internal_edit" = xyes ])
 AM_CONDITIONAL(USE_ASPELL, [test x"$enable_aspell" = xyes ])
 AM_CONDITIONAL(USE_DIFF, [test -n "$use_diff"])
 AM_CONDITIONAL(CHARSET, [test -n "$have_charset"])
 AM_CONDITIONAL(CONS_SAVER, [test -n "$cons_saver"])
+dnl Clarify do we really need GModule
+AM_CONDITIONAL([HAVE_GMODULE], [test -n "$g_module_supported" && \
+                                test x"$textmode_x11_support" = x"yes" -o x"$enable_aspell" = x"yes"])
 
 AC_DEFINE_UNQUOTED([MC_CONFIGURE_ARGS], ["$ac_configure_args"], [MC configure arguments])
 

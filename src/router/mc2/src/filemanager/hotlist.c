@@ -2,7 +2,7 @@
    Directory hotlist -- for the Midnight Commander
 
    Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-   2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012
+   2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
    The Free Software Foundation, Inc.
 
    Written by:
@@ -10,7 +10,7 @@
    Janne Kukonlehto, 1995
    Andrej Borsenkow, 1996
    Norbert Warmuth, 1997
-   Andrew Borodin <aborodin@vmail.ru>, 2012
+   Andrew Borodin <aborodin@vmail.ru>, 2012, 2013
 
    Janne did the original Hotlist code, Andrej made the groupable
    hotlist; the move hotlist and revamped the file format and made
@@ -80,14 +80,14 @@
 #define B_REMOVE        (B_USER + 1)
 #define B_NEW_GROUP     (B_USER + 2)
 #define B_NEW_ENTRY     (B_USER + 3)
-#define B_UP_GROUP      (B_USER + 4)
-#define B_INSERT        (B_USER + 5)
-#define B_APPEND        (B_USER + 6)
-#define B_MOVE          (B_USER + 7)
-
+#define B_ENTER_GROUP   (B_USER + 4)
+#define B_UP_GROUP      (B_USER + 5)
+#define B_INSERT        (B_USER + 6)
+#define B_APPEND        (B_USER + 7)
+#define B_MOVE          (B_USER + 8)
 #ifdef ENABLE_VFS
-#define B_FREE_ALL_VFS (B_USER + 8)
-#define B_REFRESH_VFS (B_USER + 9)
+#define B_FREE_ALL_VFS  (B_USER + 9)
+#define B_REFRESH_VFS   (B_USER + 10)
 #endif
 
 #define TKN_GROUP   0
@@ -356,11 +356,11 @@ hotlist_button_callback (WButton * button, int action)
             listbox_get_current (l_hotlist, NULL, (void **) &item);
             init_movelist (item);
             hotlist_state.moving = TRUE;
-            ret = run_dlg (movelist_dlg);
+            ret = dlg_run (movelist_dlg);
             hotlist_state.moving = FALSE;
             listbox_get_current (l_movelist, NULL, (void **) &moveto_item);
             moveto_group = current_group;
-            destroy_dlg (movelist_dlg);
+            dlg_destroy (movelist_dlg);
             current_group = saved;
             if (ret == B_CANCEL)
                 return 0;
@@ -433,6 +433,7 @@ hotlist_button_callback (WButton * button, int action)
         return 0;
 
     case B_ENTER:
+    case B_ENTER_GROUP:
         {
             WListbox *list;
             void *data;
@@ -447,7 +448,7 @@ hotlist_button_callback (WButton * button, int action)
             hlp = (struct hotlist *) data;
 
             if (hlp->type == HL_TYPE_ENTRY)
-                return 1;
+                return (action == B_ENTER ? 1 : 0);
             if (hlp->type != HL_TYPE_DOTDOT)
             {
                 listbox_remove_list (list);
@@ -498,7 +499,6 @@ hotlist_handle_key (WDialog * h, int key)
 
     case '\n':
     case KEY_ENTER:
-    case KEY_RIGHT:
         if (hotlist_button_callback (NULL, B_ENTER) != 0)
         {
             h->ret_value = B_ENTER;
@@ -506,7 +506,14 @@ hotlist_handle_key (WDialog * h, int key)
         }
         return MSG_HANDLED;
 
+    case KEY_RIGHT:
+        /* enter to the group */
+        if (hotlist_state.type == LIST_VFSLIST)
+            return MSG_NOT_HANDLED;
+        return hotlist_button_callback (NULL, B_ENTER_GROUP) == 0 ? MSG_HANDLED : MSG_NOT_HANDLED;
+
     case KEY_LEFT:
+        /* leave the group */
         if (hotlist_state.type == LIST_VFSLIST)
             return MSG_NOT_HANDLED;
         return hotlist_button_callback (NULL, B_UP_GROUP) == 0 ? MSG_HANDLED : MSG_NOT_HANDLED;
@@ -740,7 +747,7 @@ init_hotlist (hotlist_t list_type)
     }
 
     hotlist_dlg =
-        create_dlg (TRUE, 0, 0, lines, cols, dialog_colors, hotlist_callback, NULL, help_node,
+        dlg_create (TRUE, 0, 0, lines, cols, dialog_colors, hotlist_callback, NULL, help_node,
                     title, DLG_CENTER);
 
     y = UY;
@@ -807,7 +814,7 @@ init_movelist (struct hotlist *item)
     hdr = g_strdup_printf (_("Moving %s"), item->label);
 
     movelist_dlg =
-        create_dlg (TRUE, 0, 0, lines, cols, dialog_colors, hotlist_callback, NULL, "[Hotlist]",
+        dlg_create (TRUE, 0, 0, lines, cols, dialog_colors, hotlist_callback, NULL, "[Hotlist]",
                     hdr, DLG_CENTER);
 
     g_free (hdr);
@@ -848,7 +855,7 @@ init_movelist (struct hotlist *item)
 static void
 hotlist_done (void)
 {
-    destroy_dlg (hotlist_dlg);
+    dlg_destroy (hotlist_dlg);
     l_hotlist = NULL;
     if (FALSE)
         update_panels (UP_OPTIMIZE, UP_KEEPSEL);
@@ -880,7 +887,7 @@ add2hotlist (char *label, char *directory, enum HotListType type, listbox_append
 
     listbox_get_current (l_hotlist, NULL, (void **) &current);
 
-    /* Make sure `..' stays at the top of the list. */
+    /* Make sure '..' stays at the top of the list. */
     if ((current != NULL) && (current->type == HL_TYPE_DOTDOT))
         pos = LISTBOX_APPEND_AFTER;
 
@@ -1602,7 +1609,7 @@ hotlist_show (hotlist_t list_type)
     tty_setcolor (SELECTED_COLOR);
 
     hotlist_state.running = TRUE;
-    res = run_dlg (hotlist_dlg);
+    res = dlg_run (hotlist_dlg);
     hotlist_state.running = FALSE;
     save_hotlist ();
 

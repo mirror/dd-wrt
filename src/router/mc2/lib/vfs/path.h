@@ -27,6 +27,7 @@ typedef struct
 {
     gboolean relative;
     GArray *path;
+    char *str;
 } vfs_path_t;
 
 typedef struct
@@ -62,7 +63,6 @@ void vfs_path_remove_element_by_index (vfs_path_t * vpath, int element_index);
 void vfs_path_free (vfs_path_t * path);
 int vfs_path_elements_count (const vfs_path_t * path);
 
-char *vfs_path_to_str (const vfs_path_t * path);
 char *vfs_path_to_str_elements_count (const vfs_path_t * path, int elements_count);
 char *vfs_path_to_str_flags (const vfs_path_t * vpath, int elements_count, vfs_path_flag_t flags);
 vfs_path_t *vfs_path_from_str (const char *path_str);
@@ -83,6 +83,7 @@ struct vfs_class *vfs_prefix_to_class (const char *prefix);
 
 #ifdef HAVE_CHARSET
 gboolean vfs_path_element_need_cleanup_converter (const vfs_path_element_t * element);
+vfs_path_t *vfs_path_change_encoding (vfs_path_t * vpath, const char *encoding);
 #endif
 
 char *vfs_path_serialize (const vfs_path_t * vpath, GError ** error);
@@ -127,5 +128,22 @@ vfs_path_get_last_path_vfs (const vfs_path_t * vpath)
     element = vfs_path_get_by_index (vpath, -1);
     return (element != NULL) ? element->class : NULL;
 }
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Convert vfs_path_t to string representation.
+ *
+ * @param vpath pointer to vfs_path_t object
+ *
+ * @return pointer to constant string
+ */
+
+static inline const char *
+vfs_path_as_str (const vfs_path_t * vpath)
+{
+    return (vpath == NULL ? NULL : vpath->str);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 
 #endif

@@ -153,9 +153,6 @@ OS_Setup (void)
         mc_global.sysconfig_dir = g_strdup (SYSCONFDIR);
 
     mc_global.share_data_dir = g_strdup (DATADIR);
-
-    /* Set up temporary directory */
-    mc_tmpdir ();
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -297,6 +294,9 @@ main (int argc, char *argv[])
     vfs_init ();
     vfs_plugins_init ();
     vfs_setup_work_dir ();
+
+    /* Set up temporary directory after VFS initialization */
+    mc_tmpdir ();
 
     /* do this after vfs initialization due to mc_setctl() call in mc_setup_by_args() */
     if (!mc_setup_by_args (argc, argv, &error))
@@ -469,6 +469,7 @@ main (int argc, char *argv[])
         g_list_free ((GList *) mc_run_param0);
     }
     g_free (mc_run_param1);
+    g_free (saved_other_dir);
 
     mc_config_deinit_config_paths ();
 
