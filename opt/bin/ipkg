@@ -1165,6 +1165,7 @@ shift
 
 ipkg_load_configuration
 mkdir -p /tmp/ipkg
+mkdir -p $IPKG_TMP
 
 case "$cmd" in
 update|upgrade|list|info|status|install_pending)
