@@ -2,13 +2,14 @@
    Panel layout module for the Midnight Commander
 
    Copyright (C) 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2006, 2007, 2009, 2011, 2012
+   2006, 2007, 2009, 2011, 2012, 2013
    The Free Software Foundation, Inc.
 
    Written by:
    Janne Kukonlehto, 1995
    Miguel de Icaza, 1995
-   Andrew Borodin <aborodin@vmail.ru>, 2011, 2012
+   Andrew Borodin <aborodin@vmail.ru>, 2011, 2012, 2013
+   Slava Zanko <slavazanko@gmail.com>, 2013
 
    This file is part of the Midnight Commander.
 
@@ -514,7 +515,7 @@ init_layout (void)
     width = max (l1 * 2 + 7, b);
 
     layout_dlg =
-        create_dlg (TRUE, 0, 0, 15, width, dialog_colors, layout_callback, NULL, "[Layout]",
+        dlg_create (TRUE, 0, 0, 15, width, dialog_colors, layout_callback, NULL, "[Layout]",
                     _("Layout"), DLG_CENTER);
 
 #define XTRACT(i) *check_options[i].variable, check_options[i].text
@@ -607,7 +608,13 @@ restore_into_right_dir_panel (int idx, Widget * from_widget)
     const char *p_name = get_nth_panel_name (idx);
 
     if (last_was_panel)
-        new_widget = panel_new_with_dir (p_name, saved_dir);
+    {
+        vfs_path_t *saved_dir_vpath;
+
+        saved_dir_vpath = vfs_path_from_str (saved_dir);
+        new_widget = panel_new_with_dir (p_name, saved_dir_vpath);
+        vfs_path_free (saved_dir_vpath);
+    }
     else
         new_widget = panel_new (p_name);
 
@@ -639,7 +646,7 @@ layout_box (void)
 
     layout_dlg = init_layout ();
 
-    if (run_dlg (layout_dlg) == B_ENTER)
+    if (dlg_run (layout_dlg) == B_ENTER)
     {
         size_t i;
 
@@ -662,7 +669,7 @@ layout_box (void)
         layout_do_change = TRUE;
     }
 
-    destroy_dlg (layout_dlg);
+    dlg_destroy (layout_dlg);
     if (layout_do_change)
         layout_change ();
 }
@@ -812,14 +819,16 @@ setup_cmdline (void)
 {
     int prompt_len;
     int y;
-    char *tmp_prompt = NULL;
+    char *tmp_prompt = (char *) mc_prompt;
 
 #ifdef ENABLE_SUBSHELL
     if (mc_global.tty.use_subshell)
-        tmp_prompt = strip_ctrl_codes (subshell_prompt->str);
-    if (tmp_prompt == NULL)
+    {
+        tmp_prompt = g_string_free (subshell_prompt, FALSE);
+        (void) strip_ctrl_codes (tmp_prompt);
+    }
 #endif
-        tmp_prompt = (char *) mc_prompt;
+
     prompt_len = str_term_width1 (tmp_prompt);
 
     /* Check for prompts too big */
@@ -829,7 +838,14 @@ setup_cmdline (void)
         tmp_prompt[prompt_len] = '\0';
     }
 
-    mc_prompt = tmp_prompt;
+#ifdef ENABLE_SUBSHELL
+    if (mc_global.tty.use_subshell)
+    {
+        subshell_prompt = g_string_new (tmp_prompt);
+        g_free (tmp_prompt);
+        mc_prompt = subshell_prompt->str;
+    }
+#endif
 
     y = LINES - 1 - mc_global.keybar_visible;
 
@@ -863,21 +879,27 @@ set_hintbar (const char *str)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-rotate_dash (void)
+rotate_dash (gboolean show)
 {
-    static const char rotating_dash[] = "|/-\\";
+    static const char rotating_dash[4] = "|/-\\";
     static size_t pos = 0;
+    Widget *w = WIDGET (midnight_dlg);
 
     if (!nice_rotating_dash || (ok_to_refresh <= 0))
         return;
 
-    if (pos >= sizeof (rotating_dash) - 1)
-        pos = 0;
-    tty_gotoyx (0, COLS - 1);
+    widget_move (w, (menubar_visible != 0) ? 1 : 0, w->cols - 1);
     tty_setcolor (NORMAL_COLOR);
-    tty_print_char (rotating_dash[pos]);
+
+    if (!show)
+        tty_print_alt_char (ACS_URCORNER, FALSE);
+    else
+    {
+        tty_print_char (rotating_dash[pos]);
+        pos = (pos + 1) % sizeof (rotating_dash);
+    }
+
     mc_refresh ();
-    pos++;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1022,7 +1044,7 @@ set_display_type (int num, panel_view_mode_t type)
             dlg_save_history (midnight_dlg);
         }
 
-        dlg_replace_widget (old_widget, new_widget);
+        widget_replace (old_widget, new_widget);
     }
 
     if (type == view_listing)
@@ -1118,9 +1140,9 @@ swap_panels (void)
             panel_re_sort (current_panel);
         }
 
-        if (dlg_widget_active (panels[0].widget))
+        if (widget_is_active (panels[0].widget))
             dlg_select_widget (panels[1].widget);
-        else if (dlg_widget_active (panels[1].widget))
+        else if (widget_is_active (panels[1].widget))
             dlg_select_widget (panels[0].widget);
     }
     else
@@ -1262,7 +1284,7 @@ save_panel_dir (int idx)
 
         g_free (panels[idx].last_saved_dir);    /* last path no needed */
         /* Because path can be nonlocal */
-        panels[idx].last_saved_dir = vfs_path_to_str (w->cwd_vpath);
+        panels[idx].last_saved_dir = g_strdup (vfs_path_as_str (w->cwd_vpath));
     }
 }
 
@@ -1283,7 +1305,12 @@ get_panel_dir_for (const WPanel * widget)
         return g_strdup (".");
 
     if (get_display_type (i) == view_listing)
-        return vfs_path_to_str (((WPanel *) get_panel_widget (i))->cwd_vpath);
+    {
+        vfs_path_t *cwd_vpath;
+
+        cwd_vpath = ((WPanel *) get_panel_widget (i))->cwd_vpath;
+        return g_strdup (vfs_path_as_str (cwd_vpath));
+    }
 
     return g_strdup (panels[i].last_saved_dir);
 }

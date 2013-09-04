@@ -21,7 +21,7 @@
    Jakub Jelinek, 1995, 1996
    Norbert Warmuth, 1997
    Pavel Machek, 1998
-   Slava Zanko, 2009-2012
+   Slava Zanko, 2009, 2010, 2011, 2012, 2013
    Andrew Borodin <aborodin@vmail.ru>, 2009, 2010, 2011, 2012, 2013
 
    This file is part of the Midnight Commander.
@@ -100,34 +100,14 @@
 #else
 #define STRUCT_STATVFS struct statvfs
 #define STATFS statvfs
-/* Return true if statvfs works.  This is false for statvfs on systems
-   with GNU libc on Linux kernels before 2.6.36, which stats all
-   preceding entries in /proc/mounts; that makes df hang if even one
-   of the corresponding file systems is hard-mounted but not available.  */
-#if ! (__linux__ && (__GLIBC__ || __UCLIBC__))
-static int
-statvfs_works (void)
-{
-    return 1;
-}
-#else
-#include <string.h>             /* for strverscmp */
+
+#if __linux__ && (__GLIBC__ || __UCLIBC__)
 #include <sys/utsname.h>
 #include <sys/statfs.h>
 #define STAT_STATFS2_BSIZE 1
-
-static int
-statvfs_works (void)
-{
-    static int statvfs_works_cache = -1;
-    struct utsname name;
-
-    if (statvfs_works_cache < 0)
-        statvfs_works_cache = (uname (&name) == 0 && 0 <= strverscmp (name.release, "2.6.36"));
-    return statvfs_works_cache;
-}
 #endif
 #endif
+
 #else
 #define STATFS statfs
 #define STRUCT_STATVFS struct statfs
@@ -242,8 +222,13 @@ typedef struct
 
     /* Dialog and widgets for the operation progress window */
     WDialog *op_dlg;
-    WLabel *file_string[2];
-    WLabel *file_label[2];
+    /* Source file: label and name */
+    WLabel *src_file_label;
+    WLabel *src_file;
+    /* Target file: label and name */
+    WLabel *tgt_file_label;
+    WLabel *tgt_file;
+
     WGauge *progress_file_gauge;
     WLabel *progress_file_label;
 
@@ -284,6 +269,29 @@ struct
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
+/* Return true if statvfs works.  This is false for statvfs on systems
+   with GNU libc on Linux kernels before 2.6.36, which stats all
+   preceding entries in /proc/mounts; that makes df hang if even one
+   of the corresponding file systems is hard-mounted but not available.  */
+
+#if USE_STATVFS && ! (! STAT_STATVFS && STAT_STATVFS64)
+static int
+statvfs_works (void)
+{
+#if ! (__linux__ && (__GLIBC__ || __UCLIBC__))
+    return 1;
+#else
+    static int statvfs_works_cache = -1;
+    struct utsname name;
+
+    if (statvfs_works_cache < 0)
+        statvfs_works_cache = (uname (&name) == 0 && 0 <= str_verscmp (name.release, "2.6.36"));
+    return statvfs_works_cache;
+}
+#endif
+#endif
+
+/* --------------------------------------------------------------------------------------------- */
 static gboolean
 filegui__check_attrs_on_fs (const char *fs_path)
 {
@@ -539,7 +547,7 @@ overwrite_query_dialog (FileOpContext * ctx, enum OperationMode mode)
 
     /* FIXME - missing help node */
     ui->replace_dlg =
-        create_dlg (TRUE, 0, 0, rd_ylen, rd_xlen, alarm_colors, NULL, NULL, "[Replace]", title,
+        dlg_create (TRUE, 0, 0, rd_ylen, rd_xlen, alarm_colors, NULL, NULL, "[Replace]", title,
                     DLG_CENTER);
 
     /* prompt */
@@ -551,12 +559,12 @@ overwrite_query_dialog (FileOpContext * ctx, enum OperationMode mode)
     add_widget (ui->replace_dlg, hline_new (y++, -1, -1));
 
     /* source date and size */
-    size_trunc_len (fsize_buffer, sizeof (fsize_buffer), ui->s_stat->st_size, -1,
+    size_trunc_len (fsize_buffer, sizeof (fsize_buffer), ui->s_stat->st_size, 0,
                     panels_options.kilobyte_si);
     ADD_RD_LABEL (2, file_date (ui->s_stat->st_mtime), fsize_buffer, y++);
     rd_xlen = max (rd_xlen, label2->cols + 8);
     /* destination date and size */
-    size_trunc_len (fsize_buffer, sizeof (fsize_buffer), ui->d_stat->st_size, -1,
+    size_trunc_len (fsize_buffer, sizeof (fsize_buffer), ui->d_stat->st_size, 0,
                     panels_options.kilobyte_si);
     ADD_RD_LABEL (3, file_date (ui->d_stat->st_mtime), fsize_buffer, y++);
     rd_xlen = max (rd_xlen, label2->cols + 8);
@@ -592,8 +600,8 @@ overwrite_query_dialog (FileOpContext * ctx, enum OperationMode mode)
     label_set_text (LABEL (label1), str_trunc (stripped_name, rd_xlen - 8));
     dlg_set_size (ui->replace_dlg, y + 3, rd_xlen);
     dlg_select_by_id (ui->replace_dlg, yes_id);
-    result = run_dlg (ui->replace_dlg);
-    destroy_dlg (ui->replace_dlg);
+    result = dlg_run (ui->replace_dlg);
+    dlg_destroy (ui->replace_dlg);
 
     g_free (widgets_len);
     g_free (stripped_name_orig);
@@ -732,53 +740,66 @@ file_op_context_create_ui (FileOpContext * ctx, gboolean with_eta,
 
     ui = ctx->ui;
     ui->replace_result = REPLACE_YES;
-    ui->showing_eta = with_eta && ctx->progress_totals_computed;
-    ui->showing_bps = with_eta;
 
     ui->op_dlg =
-        create_dlg (TRUE, 0, 0, dlg_height, dlg_width, dialog_colors, NULL, NULL, NULL,
+        dlg_create (TRUE, 0, 0, dlg_height, dlg_width, dialog_colors, NULL, NULL, NULL,
                     op_names[ctx->operation], DLG_CENTER);
 
-    ui->file_label[0] = label_new (y++, x, "");
-    add_widget (ui->op_dlg, ui->file_label[0]);
-
-    ui->file_string[0] = label_new (y++, x, "");
-    add_widget (ui->op_dlg, ui->file_string[0]);
-
-    ui->file_label[1] = label_new (y++, x, "");
-    add_widget (ui->op_dlg, ui->file_label[1]);
-
-    ui->file_string[1] = label_new (y++, x, "");
-    add_widget (ui->op_dlg, ui->file_string[1]);
-
-    ui->progress_file_gauge = gauge_new (y++, x + 3, dlg_width - (x + 3) * 2, FALSE, 100, 0);
-    if (!classic_progressbar && (current_panel == right_panel))
-        ui->progress_file_gauge->from_left_to_right = FALSE;
-    add_widget_autopos (ui->op_dlg, ui->progress_file_gauge, WPOS_KEEP_TOP | WPOS_KEEP_HORZ, NULL);
-
-    ui->progress_file_label = label_new (y++, x, "");
-    add_widget (ui->op_dlg, ui->progress_file_label);
-
-    if (verbose && dialog_type == FILEGUI_DIALOG_MULTI_ITEM)
+    if (dialog_type != FILEGUI_DIALOG_DELETE_ITEM)
     {
-        ui->total_bytes_label = hline_new (y++, -1, -1);
-        add_widget (ui->op_dlg, ui->total_bytes_label);
+        ui->showing_eta = with_eta && ctx->progress_totals_computed;
+        ui->showing_bps = with_eta;
 
-        if (ctx->progress_totals_computed)
+        ui->src_file_label = label_new (y++, x, "");
+        add_widget (ui->op_dlg, ui->src_file_label);
+
+        ui->src_file = label_new (y++, x, "");
+        add_widget (ui->op_dlg, ui->src_file);
+
+        ui->tgt_file_label = label_new (y++, x, "");
+        add_widget (ui->op_dlg, ui->tgt_file_label);
+
+        ui->tgt_file = label_new (y++, x, "");
+        add_widget (ui->op_dlg, ui->tgt_file);
+
+        ui->progress_file_gauge = gauge_new (y++, x + 3, dlg_width - (x + 3) * 2, FALSE, 100, 0);
+        if (!classic_progressbar && (current_panel == right_panel))
+            ui->progress_file_gauge->from_left_to_right = FALSE;
+        add_widget_autopos (ui->op_dlg, ui->progress_file_gauge, WPOS_KEEP_TOP | WPOS_KEEP_HORZ,
+                            NULL);
+
+        ui->progress_file_label = label_new (y++, x, "");
+        add_widget (ui->op_dlg, ui->progress_file_label);
+
+        if (verbose && dialog_type == FILEGUI_DIALOG_MULTI_ITEM)
         {
-            ui->progress_total_gauge =
-                gauge_new (y++, x + 3, dlg_width - (x + 3) * 2, FALSE, 100, 0);
-            if (!classic_progressbar && (current_panel == right_panel))
-                ui->progress_total_gauge->from_left_to_right = FALSE;
-            add_widget_autopos (ui->op_dlg, ui->progress_total_gauge,
-                                WPOS_KEEP_TOP | WPOS_KEEP_HORZ, NULL);
+            ui->total_bytes_label = hline_new (y++, -1, -1);
+            add_widget (ui->op_dlg, ui->total_bytes_label);
+
+            if (ctx->progress_totals_computed)
+            {
+                ui->progress_total_gauge =
+                    gauge_new (y++, x + 3, dlg_width - (x + 3) * 2, FALSE, 100, 0);
+                if (!classic_progressbar && (current_panel == right_panel))
+                    ui->progress_total_gauge->from_left_to_right = FALSE;
+                add_widget_autopos (ui->op_dlg, ui->progress_total_gauge,
+                                    WPOS_KEEP_TOP | WPOS_KEEP_HORZ, NULL);
+            }
+
+            ui->total_files_processed_label = label_new (y++, x, "");
+            add_widget (ui->op_dlg, ui->total_files_processed_label);
+
+            ui->time_label = label_new (y++, x, "");
+            add_widget (ui->op_dlg, ui->time_label);
         }
+    }
+    else
+    {
+        ui->src_file = label_new (y++, x, "");
+        add_widget (ui->op_dlg, ui->src_file);
 
         ui->total_files_processed_label = label_new (y++, x, "");
         add_widget (ui->op_dlg, ui->total_files_processed_label);
-
-        ui->time_label = label_new (y++, x, "");
-        add_widget (ui->op_dlg, ui->time_label);
     }
 
     add_widget (ui->op_dlg, hline_new (y++, -1, -1));
@@ -830,8 +851,8 @@ file_op_context_create_ui (FileOpContext * ctx, gboolean with_eta,
     dlg_select_widget (progress_buttons[0].w);
 
     /* We will manage the dialog without any help, that's why
-       we have to call init_dlg */
-    init_dlg (ui->op_dlg);
+       we have to call dlg_init */
+    dlg_init (ui->op_dlg);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -844,7 +865,7 @@ file_op_context_destroy_ui (FileOpContext * ctx)
         FileOpContextUI *ui = (FileOpContextUI *) ctx->ui;
 
         dlg_run_done (ui->op_dlg);
-        destroy_dlg (ui->op_dlg);
+        dlg_destroy (ui->op_dlg);
         g_free (ui);
         ctx->ui = NULL;
     }
@@ -1010,14 +1031,14 @@ file_progress_show_source (FileOpContext * ctx, const vfs_path_t * s_vpath)
         char *s;
 
         s = vfs_path_tokens_get (s_vpath, -1, 1);
-        label_set_text (ui->file_label[0], _("Source"));
-        label_set_text (ui->file_string[0], truncFileString (ui->op_dlg, s));
+        label_set_text (ui->src_file_label, _("Source"));
+        label_set_text (ui->src_file, truncFileString (ui->op_dlg, s));
         g_free (s);
     }
     else
     {
-        label_set_text (ui->file_label[0], "");
-        label_set_text (ui->file_string[0], "");
+        label_set_text (ui->src_file_label, "");
+        label_set_text (ui->src_file, "");
     }
 }
 
@@ -1035,24 +1056,21 @@ file_progress_show_target (FileOpContext * ctx, const vfs_path_t * s_vpath)
 
     if (s_vpath != NULL)
     {
-        char *s;
-
-        s = vfs_path_to_str (s_vpath);
-        label_set_text (ui->file_label[1], _("Target"));
-        label_set_text (ui->file_string[1], truncFileStringSecure (ui->op_dlg, s));
-        g_free (s);
+        label_set_text (ui->tgt_file_label, _("Target"));
+        label_set_text (ui->tgt_file,
+                        truncFileStringSecure (ui->op_dlg, vfs_path_as_str (s_vpath)));
     }
     else
     {
-        label_set_text (ui->file_label[1], "");
-        label_set_text (ui->file_string[1], "");
+        label_set_text (ui->tgt_file_label, "");
+        label_set_text (ui->tgt_file, "");
     }
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
 void
-file_progress_show_deleting (FileOpContext * ctx, const char *s)
+file_progress_show_deleting (FileOpContext * ctx, const char *s, size_t * count)
 {
     FileOpContextUI *ui;
 
@@ -1060,8 +1078,10 @@ file_progress_show_deleting (FileOpContext * ctx, const char *s)
         return;
 
     ui = ctx->ui;
-    label_set_text (ui->file_label[0], _("Deleting"));
-    label_set_text (ui->file_label[0], truncFileStringSecure (ui->op_dlg, s));
+    label_set_text (ui->src_file, truncFileStringSecure (ui->op_dlg, s));
+
+    if (count != NULL)
+        (*count)++;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1069,7 +1089,7 @@ file_progress_show_deleting (FileOpContext * ctx, const char *s)
 FileProgressStatus
 file_progress_real_query_replace (FileOpContext * ctx,
                                   enum OperationMode mode, const char *destname,
-                                  struct stat * _s_stat, struct stat * _d_stat)
+                                  struct stat *_s_stat, struct stat *_d_stat)
 {
     FileOpContextUI *ui;
 
@@ -1267,7 +1287,7 @@ file_mask_dialog (FileOpContext * ctx, FileOperation operation,
 
         if (ctx->search_handle == NULL)
         {
-            message (D_ERROR, MSG_ERROR, _("Invalid source pattern `%s'"), source_mask);
+            message (D_ERROR, MSG_ERROR, _("Invalid source pattern '%s'"), source_mask);
             g_free (dest_dir);
             g_free (source_mask);
             goto ask_file_mask;

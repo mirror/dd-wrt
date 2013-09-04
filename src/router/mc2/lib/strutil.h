@@ -4,6 +4,7 @@
 #include "lib/global.h"         /* include glib.h */
 
 #include <sys/types.h>
+#include <inttypes.h>
 #include <string.h>
 #ifdef HAVE_ASSERT_H
 #include <assert.h>             /* assert() */
@@ -85,6 +86,20 @@ typedef enum
     J_CENTER_FIT = 0x13,
     J_CENTER_LEFT_FIT = 0x14
 } align_crt_t;
+
+/* string-to-integer parsing results
+ */
+typedef enum
+{
+    LONGINT_OK = 0,
+
+    /* These two values can be ORed together, to indicate that both errors occurred. */
+    LONGINT_OVERFLOW = 1,
+    LONGINT_INVALID_SUFFIX_CHAR = 2,
+
+    LONGINT_INVALID_SUFFIX_CHAR_WITH_OVERFLOW = (LONGINT_INVALID_SUFFIX_CHAR | LONGINT_OVERFLOW),
+    LONGINT_INVALID = 4
+} strtol_error_t;
 
 /*** structures declarations (and typedefs of structures)*****************************************/
 
@@ -200,7 +215,7 @@ estr_t str_vfs_convert_from (GIConv, const char *, GString *);
  */
 estr_t str_vfs_convert_to (GIConv, const char *, int, GString *);
 
-/* printf functin for str_buffer, append result of printf at the end of buffer
+/* printf function for str_buffer, append result of printf at the end of buffer
  */
 void str_printf (GString *, const char *, ...);
 
@@ -478,8 +493,8 @@ int str_casecmp (const char *t1, const char *t2);
 int str_ncasecmp (const char *t1, const char *t2);
 
 /* return, how many bytes are are same from start in text and prefix
- * both strings are decomposed befor comapring and return value is counted
- * in decomposed form, too. caling with prefix, prefix, you get size in bytes
+ * both strings are decomposed before comparing and return value is counted
+ * in decomposed form, too. calling with prefix, prefix, you get size in bytes
  * of prefix in decomposed form,
  * I
  */
@@ -540,7 +555,13 @@ char *strrstr_skip_count (const char *haystack, const char *needle, size_t skip_
 
 char *str_replace_all (const char *haystack, const char *needle, const char *replacement);
 
+strtol_error_t xstrtoumax (const char *s, char **ptr, int base, uintmax_t * val,
+                           const char *valid_suffixes);
+uintmax_t parse_integer (const char *str, gboolean * invalid);
+
+/* --------------------------------------------------------------------------------------------- */
 /*** inline functions ****************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
 
 static inline void
 str_replace (char *s, char from, char to)
@@ -552,6 +573,7 @@ str_replace (char *s, char from, char to)
     }
 }
 
+/* --------------------------------------------------------------------------------------------- */
 /*
  * strcpy is unsafe on overlapping memory areas, so define memmove-alike
  * string function.
@@ -583,5 +605,7 @@ str_move (char *dest, const char *src)
 
     return (char *) memmove (dest, src, n);
 }
+
+/* --------------------------------------------------------------------------------------------- */
 
 #endif /* MC_STRUTIL_H */

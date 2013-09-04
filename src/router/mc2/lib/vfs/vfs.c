@@ -2,12 +2,13 @@
    Virtual File System switch code
 
    Copyright (C) 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2007, 2011
+   2007, 2011, 2013
    The Free Software Foundation, Inc.
 
    Written by: 1995 Miguel de Icaza
    Jakub Jelinek, 1995
    Pavel Machek, 1998
+   Slava Zanko <slavazanko@gmail.com>, 2013
 
    This file is part of the Midnight Commander.
 
@@ -370,7 +371,7 @@ vfs_translate_path_n (const char *path)
 char *
 vfs_get_current_dir (void)
 {
-    return vfs_path_to_str (current_path);
+    return g_strdup (current_path->str);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -579,45 +580,14 @@ vfs_setup_cwd (void)
 char *
 _vfs_get_cwd (void)
 {
+    const vfs_path_t *current_dir_vpath;
+
     vfs_setup_cwd ();
-    return vfs_path_to_str (vfs_get_raw_current_dir ());
+    current_dir_vpath = vfs_get_raw_current_dir ();
+    return g_strdup (vfs_path_as_str (current_dir_vpath));
 }
 
 /* --------------------------------------------------------------------------------------------- */
-
-#ifdef HAVE_CHARSET
-/**
- * Change encoding for last part (vfs_path_element_t) of vpath
- *
- * @param vpath pointer to path structure
- * encoding name of charset
- *
- * @return pointer to path structure (for use function in anoter functions)
- */
-vfs_path_t *
-vfs_change_encoding (vfs_path_t * vpath, const char *encoding)
-{
-    vfs_path_element_t *path_element;
-
-    path_element = (vfs_path_element_t *) vfs_path_get_by_index (vpath, -1);
-    /* don't add current encoding */
-    if ((path_element->encoding != NULL) && (strcmp (encoding, path_element->encoding) == 0))
-        return vpath;
-
-    g_free (path_element->encoding);
-    path_element->encoding = g_strdup (encoding);
-
-    if (vfs_path_element_need_cleanup_converter (path_element))
-        str_close_conv (path_element->dir.converter);
-
-    path_element->dir.converter = str_crt_conv_from (path_element->encoding);
-
-    return vpath;
-}
-#endif /* HAVE_CHARSET */
-
-/* --------------------------------------------------------------------------------------------- */
-
 /**
  * Preallocate space for file in new place for ensure that file
  * will be fully copied with less fragmentation.

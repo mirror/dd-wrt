@@ -3,15 +3,15 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Panos Bouklis <panos@echidna-band.com>, 2012.
-# Slava Zanko <slavazanko@gmail.com>, 2011.
+# Panos Bouklis <panos@echidna-band.com>, 2012
+# Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 08:51+0000\n"
-"Last-Translator: Panos Bouklis <panos@echidna-band.com>\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 08:44+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Greek (http://www.transifex.com/projects/p/mc/language/el/)\n"
 "Language: el\n"
 "MIME-Version: 1.0\n"
@@ -665,12 +665,9 @@ msgstr ""
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
-"\n"
-"Παρακαλούμε στείλτε τις αναφορές σφαλμάτων (μαζί με την έξοδο του `mc -V')\n"
-"ως tickets στο www.midnight-commander.org\n"
 
 #, c-format
 msgid "GNU Midnight Commander %s\n"
@@ -883,8 +880,10 @@ msgid "\"%s\" is not a regular file"
 msgstr "Το \"%s\" δεν είναι συνηθισμένο αρχείο"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "Το αρχείο \"%s\" είναι πολύ μεγάλο"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1465,7 +1464,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1543,8 +1542,8 @@ msgid "The shell is already running a command"
 msgstr "Το κέλυφος τρέχει ήδη μια εντολή"
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
-msgstr "Πληκτρολογείστε `exit' για να επιστρέψετε στο Midnight Commander"
+msgid "Type 'exit' to return to the Midnight Commander"
+msgstr ""
 
 msgid "Set &all"
 msgstr ""
@@ -2090,7 +2089,7 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Symlink `%s' points to:"
+msgid "Symlink '%s' points to:"
 msgstr ""
 
 msgid "Edit symlink"
@@ -2105,8 +2104,8 @@ msgid "edit symlink: %s"
 msgstr ""
 
 #, c-format
-msgid "`%s' is not a symbolic link"
-msgstr "`%s' δεν είναι συμβολικός δεσμός"
+msgid "'%s' is not a symbolic link"
+msgstr ""
 
 msgid "FTP to machine"
 msgstr "FTP σε μηχάνημα"
@@ -2647,9 +2646,6 @@ msgstr "Πηγή"
 msgid "Target"
 msgstr "Στόχος"
 
-msgid "Deleting"
-msgstr "Γίνεται διαγραφή"
-
 msgid "Follow &links"
 msgstr "Να ακολουθούνται οι &δεσμοί"
 
@@ -2666,7 +2662,7 @@ msgid "&Background"
 msgstr "&Παρασκήνιο"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
+msgid "Invalid source pattern '%s'"
 msgstr ""
 
 msgid "&Chdir"
@@ -4061,6 +4057,19 @@ msgstr "Σφάλμα ext2lib"
 msgid "Invalid value"
 msgstr "Μη έγκυρη τιμή"
 
+msgid "File was modified. Save with exit?"
+msgstr "Το αρχείο τροποποιήθηκε. Αποθήκευση κατά την έξοδο;"
+
+msgid "&Cancel quit"
+msgstr "&Ακύρωση εξόδου"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Το Midnight Commander τερματίζεται.\n"
+"Αποθήκευση τροποποιημένου αρχείου;"
+
 msgid "Cannot spawn child process"
 msgstr ""
 
@@ -4130,19 +4139,6 @@ msgstr ""
 "Αδυναμία αποθήκευσης αρχείου:\n"
 "%s"
 
-msgid "File was modified. Save with exit?"
-msgstr "Το αρχείο τροποποιήθηκε. Αποθήκευση κατά την έξοδο;"
-
-msgid "&Cancel quit"
-msgstr "&Ακύρωση εξόδου"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"Το Midnight Commander τερματίζεται.\n"
-"Αποθήκευση τροποποιημένου αρχείου;"
-
 msgid "View: "
 msgstr "Προβολή:"
 
@@ -4157,13 +4153,11 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Αδυναμία προβολής: ασυνήθιστο αρχείο"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Αδυναμία ανοίγματος \"%s\"\n"
-"%s"
 
 msgid "Seeking to search result"
 msgstr ""
@@ -4176,3 +4170,6 @@ msgstr "Συνέχεια από την αρχή;"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "Deleting"
+#~ msgstr "Γίνεται διαγραφή"

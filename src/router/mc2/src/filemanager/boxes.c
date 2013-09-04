@@ -59,7 +59,7 @@
 #include "lib/util.h"           /* Q_() */
 #include "lib/widget.h"
 
-#include "src/setup.h"          /* For profile_name */
+#include "src/setup.h"
 #include "src/history.h"        /* MC_HISTORY_ESC_TIMEOUT */
 #include "src/execute.h"        /* pause_after_run */
 #ifdef ENABLE_BACKGROUND
@@ -161,7 +161,7 @@ panel_listing_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm,
             Widget *wi;
 
             wi = dlg_find_by_id (h, panel_listing_types_id);
-            if (dlg_widget_active (wi))
+            if (widget_is_active (wi))
             {
                 WInput *in;
 
@@ -172,7 +172,7 @@ panel_listing_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm,
             }
 
             wi = dlg_find_by_id (h, panel_user_format_id);
-            if (dlg_widget_active (wi))
+            if (widget_is_active (wi))
             {
                 h->ret_value = B_USER + 6;
                 dlg_stop (h);
@@ -180,7 +180,7 @@ panel_listing_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm,
             }
 
             wi = dlg_find_by_id (h, mini_user_format_id);
-            if (dlg_widget_active (wi))
+            if (widget_is_active (wi))
             {
                 h->ret_value = B_USER + 7;
                 dlg_stop (h);
@@ -193,10 +193,10 @@ panel_listing_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm,
             Widget *wi;
 
             wi = dlg_find_by_id (h, panel_user_format_id);
-            if (dlg_widget_active (wi))
+            if (widget_is_active (wi))
             {
                 wi = dlg_find_by_id (h, mini_user_format_id);
-                if (dlg_widget_active (wi))
+                if (widget_is_active (wi))
                 {
                     WRadio *r;
 
@@ -301,15 +301,6 @@ tree_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
 
     switch (msg)
     {
-    case MSG_POST_KEY:
-        /* The enter key will be processed by the tree widget */
-        if (parm == '\n')
-        {
-            h->ret_value = B_ENTER;
-            dlg_stop (h);
-        }
-        return MSG_HANDLED;
-
     case MSG_RESIZE:
         {
             Widget *bar;
@@ -929,7 +920,7 @@ tree_box (const char *current_dir)
     (void) current_dir;
 
     /* Create the components */
-    dlg = create_dlg (TRUE, 0, 0, LINES - 9, COLS - 20, dialog_colors, tree_callback, NULL,
+    dlg = dlg_create (TRUE, 0, 0, LINES - 9, COLS - 20, dialog_colors, tree_callback, NULL,
                       "[Directory Tree]", _("Directory tree"), DLG_CENTER);
     wd = WIDGET (dlg);
 
@@ -942,10 +933,14 @@ tree_box (const char *current_dir)
     WIDGET (bar)->x = 0;
     WIDGET (bar)->y = LINES - 1;
 
-    if (run_dlg (dlg) == B_ENTER)
-        val = vfs_path_to_str (tree_selected_name (mytree));
+    if (dlg_run (dlg) == B_ENTER)
+    {
+        const vfs_path_t *selected_name;
+        selected_name = tree_selected_name (mytree);
+        val = g_strdup (vfs_path_as_str (selected_name));
+    }
 
-    destroy_dlg (dlg);
+    dlg_destroy (dlg);
     return val;
 }
 
@@ -1066,41 +1061,31 @@ void
 symlink_dialog (const vfs_path_t * existing_vpath, const vfs_path_t * new_vpath,
                 char **ret_existing, char **ret_new)
 {
-    char *existing;
-    char *new;
+    quick_widget_t quick_widgets[] = {
+        /* *INDENT-OFF* */
+        QUICK_LABELED_INPUT (N_("Existing filename (filename symlink will point to):"),
+                             input_label_above, vfs_path_as_str (existing_vpath), "input-2",
+                             ret_existing, NULL, FALSE, FALSE, INPUT_COMPLETE_FILENAMES),
+        QUICK_SEPARATOR (FALSE),
+        QUICK_LABELED_INPUT (N_("Symbolic link filename:"), input_label_above,
+                             vfs_path_as_str (new_vpath), "input-1",
+                             ret_new, NULL, FALSE, FALSE, INPUT_COMPLETE_FILENAMES),
+        QUICK_BUTTONS_OK_CANCEL,
+        QUICK_END
+        /* *INDENT-ON* */
+    };
 
-    existing = vfs_path_to_str (existing_vpath);
-    new = vfs_path_to_str (new_vpath);
+    quick_dialog_t qdlg = {
+        -1, -1, 64,
+        N_("Symbolic link"), "[File Menu]",
+        quick_widgets, NULL, NULL
+    };
 
+    if (quick_dialog (&qdlg) == B_CANCEL)
     {
-        quick_widget_t quick_widgets[] = {
-            /* *INDENT-OFF* */
-            QUICK_LABELED_INPUT (N_("Existing filename (filename symlink will point to):"),
-                                 input_label_above,
-                                 existing, "input-2", ret_existing, NULL, FALSE, FALSE, INPUT_COMPLETE_FILENAMES),
-            QUICK_SEPARATOR (FALSE),
-            QUICK_LABELED_INPUT (N_("Symbolic link filename:"), input_label_above,
-                                 new, "input-1", ret_new, NULL, FALSE, FALSE, INPUT_COMPLETE_FILENAMES),
-            QUICK_BUTTONS_OK_CANCEL,
-            QUICK_END
-            /* *INDENT-ON* */
-        };
-
-        quick_dialog_t qdlg = {
-            -1, -1, 64,
-            N_("Symbolic link"), "[File Menu]",
-            quick_widgets, NULL, NULL
-        };
-
-        if (quick_dialog (&qdlg) == B_CANCEL)
-        {
-            *ret_new = NULL;
-            *ret_existing = NULL;
-        }
+        *ret_new = NULL;
+        *ret_existing = NULL;
     }
-
-    g_free (existing);
-    g_free (new);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1150,7 +1135,7 @@ jobs_cmd (void)
     x += (int) n_but - 1;
     cols = max (cols, x + 6);
 
-    jobs_dlg = create_dlg (TRUE, 0, 0, lines, cols, dialog_colors, NULL, NULL,
+    jobs_dlg = dlg_create (TRUE, 0, 0, lines, cols, dialog_colors, NULL, NULL,
                            "[Background jobs]", _("Background jobs"), DLG_CENTER);
 
     bg_list = listbox_new (2, 2, lines - 6, cols - 6, FALSE, NULL);
@@ -1168,8 +1153,8 @@ jobs_cmd (void)
         x += job_but[i].len + 1;
     }
 
-    (void) run_dlg (jobs_dlg);
-    destroy_dlg (jobs_dlg);
+    (void) dlg_run (jobs_dlg);
+    dlg_destroy (jobs_dlg);
 }
 #endif /* ENABLE_BACKGROUND */
 

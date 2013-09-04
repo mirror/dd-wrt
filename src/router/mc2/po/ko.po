@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Slava Zanko <slavazanko@gmail.com>, 2011.
+# Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-13 08:51+0000\n"
-"Last-Translator: Slava Zanko <slavazanko@gmail.com>\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 08:44+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Korean (http://www.transifex.com/projects/p/mc/language/ko/)\n"
 "Language: ko\n"
 "MIME-Version: 1.0\n"
@@ -655,7 +655,7 @@ msgstr "내장 편집기를 위한 초기 줄 번호 설정"
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
 
@@ -863,7 +863,9 @@ msgid "\"%s\" is not a regular file"
 msgstr ""
 
 #, c-format
-msgid "File \"%s\" is too large"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
 msgstr ""
 
 #, c-format
@@ -1441,7 +1443,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1517,8 +1519,8 @@ msgid "The shell is already running a command"
 msgstr ""
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
-msgstr "미드나잇 코맨더로 돌아가려면 'exit'을 입력하십시오"
+msgid "Type 'exit' to return to the Midnight Commander"
+msgstr ""
 
 msgid "Set &all"
 msgstr "모두 설정(&A)"
@@ -2060,7 +2062,7 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Symlink `%s' points to:"
+msgid "Symlink '%s' points to:"
 msgstr ""
 
 msgid "Edit symlink"
@@ -2075,8 +2077,8 @@ msgid "edit symlink: %s"
 msgstr ""
 
 #, c-format
-msgid "`%s' is not a symbolic link"
-msgstr "`%s'은(는) 심볼릭링크가 아닙니다"
+msgid "'%s' is not a symbolic link"
+msgstr ""
 
 msgid "FTP to machine"
 msgstr ""
@@ -2557,9 +2559,6 @@ msgstr "원본"
 msgid "Target"
 msgstr "대상"
 
-msgid "Deleting"
-msgstr "지우기"
-
 msgid "Follow &links"
 msgstr ""
 
@@ -2576,8 +2575,8 @@ msgid "&Background"
 msgstr "배경(&B)"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
-msgstr "원본 패턴 `%s'이(가) 잘못되었습니다"
+msgid "Invalid source pattern '%s'"
+msgstr ""
 
 msgid "&Chdir"
 msgstr "디렉터리 이동(&C)"
@@ -3968,6 +3967,17 @@ msgstr ""
 msgid "Invalid value"
 msgstr "잘못된 값"
 
+msgid "File was modified. Save with exit?"
+msgstr ""
+
+msgid "&Cancel quit"
+msgstr "끝내기 취소(&C)"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+
 msgid "Cannot spawn child process"
 msgstr ""
 
@@ -4032,17 +4042,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "File was modified. Save with exit?"
-msgstr ""
-
-msgid "&Cancel quit"
-msgstr "끝내기 취소(&C)"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-
 msgid "View: "
 msgstr ""
 
@@ -4055,13 +4054,11 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr ""
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"%s 아카이브를 열 수 없습니다\n"
-"%s"
 
 msgid "Seeking to search result"
 msgstr "검색 결과 추구"
@@ -4074,3 +4071,6 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "Deleting"
+#~ msgstr "지우기"
