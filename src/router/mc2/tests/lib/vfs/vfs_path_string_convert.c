@@ -182,13 +182,13 @@ START_PARAMETRIZED_TEST (test_from_to_string, test_from_to_string_ds)
     vfs_path_t *vpath;
     size_t vpath_len;
     const vfs_path_element_t *path_element;
-    char *actual_result;
+    const char *actual_result;
 
     vpath = vfs_path_from_str_flags (data->input_string, VPF_USE_DEPRECATED_PARSER);
 
     /* when */
     vpath_len = vfs_path_elements_count (vpath);
-    actual_result = vfs_path_to_str (vpath);
+    actual_result = vfs_path_as_str (vpath);
     path_element = vfs_path_get_by_index (vpath, -1);
 
     /* then */
@@ -197,7 +197,6 @@ START_PARAMETRIZED_TEST (test_from_to_string, test_from_to_string_ds)
     mctest_assert_ptr_eq (path_element->class, data->expected_vfs_class);
     mctest_assert_str_eq (path_element->path, data->expected_element_path);
 
-    g_free (actual_result);
     vfs_path_free (vpath);
 }
 /* *INDENT-OFF* */
@@ -298,14 +297,14 @@ START_TEST (test_vfs_path_encoding_at_end)
 {
     /* given */
     vfs_path_t *vpath;
-    char *result;
+    const char *result;
     const vfs_path_element_t *element;
 
     vpath =
         vfs_path_from_str_flags ("/path/to/file.ext#test1:/#enc:KOI8-R", VPF_USE_DEPRECATED_PARSER);
 
     /* when */
-    result = vfs_path_to_str (vpath);
+    result = vfs_path_as_str (vpath);
     element = vfs_path_get_by_index (vpath, -1);
 
     /* then */
@@ -313,7 +312,6 @@ START_TEST (test_vfs_path_encoding_at_end)
     mctest_assert_not_null (element->encoding);
     mctest_assert_str_eq (result, ETALON_STR);
 
-    g_free (result);
     vfs_path_free (vpath);
 }
 

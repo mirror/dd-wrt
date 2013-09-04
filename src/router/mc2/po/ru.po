@@ -3,23 +3,23 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Alex Tkachenko <alex@bcs.zp.ua>, 1998.
-# and Alex Tkachenko <alex@bcs.zp.ua>, 1998.
-# Andrew V. Samoilov <sav@bcs.zp.ua>, 1999.
-# Evgeny Bulgakov <bgav@netvision.net.il>, 1999.
-# Sergey Panov <sipan@mit.edu>, 1999.
-# Valek Filippov <frob@df.ru>, 2000.
-# Anton Sergeevich Chumak <nightfast@yahoo.co.uk>, 2005.
-# Ilia Maslakov <il.smind@gmail.com>, 2009.
-# Slava Zanko <slavazanko@gmail.com>, 2009, 2011.
-# NaiLi (aka jamesjames) Rootaerc <theism@mail.ru>, 2012.
-# Andrew Borodin <aborodin@vmail.ru>, 2009-2012.
+# Alex Tkachenko <alex@bcs.zp.ua>, 1998
+# and Alex Tkachenko <alex@bcs.zp.ua>, 1998
+# Andrew V. Samoilov <sav@bcs.zp.ua>, 1999
+# Evgeny Bulgakov <bgav@netvision.net.il>, 1999
+# Sergey Panov <sipan@mit.edu>, 1999
+# Valek Filippov <frob@df.ru>, 2000
+# Anton Sergeevich Chumak <nightfast@yahoo.co.uk>, 2005
+# Ilia Maslakov <il.smind@gmail.com>, 2009
+# Slava Zanko <slavazanko@gmail.com>, 2009, 2011
+# NaiLi (aka jamesjames) Rootaerc <theism@mail.ru>, 2012
+# Andrew Borodin <aborodin@vmail.ru>, 2009-2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-12 13:31+0300\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 09:15+0300\n"
 "Last-Translator: Andrew Borodin <aborodin@vmail.ru>\n"
 "Language-Team: Russian (http://www.transifex.com/projects/p/mc/language/"
 "ru/)\n"
@@ -107,7 +107,7 @@ msgid ""
 "Your old settings were migrated from %s\n"
 "to %s\n"
 msgstr ""
-"Ваши старые настройки перемещены из %s\n"
+"Ваши старые настройки перенесены из %s\n"
 "в %s\n"
 
 msgid "Search string not found"
@@ -693,7 +693,6 @@ msgstr ""
 "   yellow, blue, brightblue, magenta, brightmagenta, cyan,\n"
 "   brightcyan, lightgray, white\n"
 "\n"
-"\n"
 "Расширенные цвета, если доступны 256 цветов:\n"
 "   от color16 до color255 или от rgb000 до rgb555 и от gray0 до gray23\n"
 "\n"
@@ -715,7 +714,7 @@ msgstr "Задать начальную строку для встроенног
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
 "\n"
@@ -939,8 +938,12 @@ msgid "\"%s\" is not a regular file"
 msgstr "\"%s\" не является обычным файлом"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "Файл \"%s\" слишком большой"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
+"Файл \"%s\" слишком большой.\n"
+"Всё равно открыть?"
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1195,8 +1198,8 @@ msgid ""
 "Current text was modified without a file save.\n"
 "Continue discards these changes"
 msgstr ""
-"Текущий текст был модифицирован и не сохранен.\n"
-"Продолжение операции приведет к потере изменений."
+"Текущий текст был модифицирован и не сохранён.\n"
+"Продолжение операции приведёт к потере изменений."
 
 msgid "In se&lection"
 msgstr "В в&ыделенном"
@@ -1229,8 +1232,8 @@ msgid ""
 "Current text was modified without a file save.\n"
 "Continue discards these changes."
 msgstr ""
-"Текущий текст был модифицирован и не сохранен.\n"
-"Продолжение операции приведет к потере изменений"
+"Текущий текст был модифицирован и не сохранён.\n"
+"Продолжение операции приведёт к потере изменений"
 
 msgid "NoName"
 msgstr "Без имени"
@@ -1527,8 +1530,8 @@ msgstr ""
 "Текстовый редактор с дружественным интерфейсом пользователя.\n"
 "Создан для Midnight Commander."
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2012 the Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2013 the Free Software Foundation"
 
 msgid "About"
 msgstr "О программе"
@@ -1609,7 +1612,7 @@ msgid "The shell is already running a command"
 msgstr "Интерпретатор занят выполнением команды"
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
+msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Введите exit для возврата в Midnight Commander"
 
 msgid "Set &all"
@@ -1641,7 +1644,7 @@ msgid ""
 "Cannot chmod \"%s\"\n"
 "%s"
 msgstr ""
-"Невозможно изменить доступ \"%s\"\n"
+"Невозможно изменить режим доступа к \"%s\"\n"
 "%s"
 
 #, c-format
@@ -1706,9 +1709,8 @@ msgstr "Встроенный &редактор"
 msgid "Use internal vie&w"
 msgstr "Встро&енный просмотр"
 
-#, fuzzy
 msgid "A&sk new file name"
-msgstr "Введите имя файла:"
+msgstr "Спра&шивать имя нового файла"
 
 msgid "Auto m&enus"
 msgstr "Автоматические &меню"
@@ -2103,11 +2105,10 @@ msgid "Filtered view"
 msgstr "Просмотр вывода команды"
 
 msgid "Filter command and arguments:"
-msgstr "Введите команду и ее аргументы:"
+msgstr "Введите команду и её аргументы:"
 
-#, fuzzy
 msgid "Edit file"
-msgstr "Редактировать файлы"
+msgstr "Редактировать файл"
 
 msgid "Create a new Directory"
 msgstr "Создать новый каталог"
@@ -2166,7 +2167,7 @@ msgstr ""
 "панели не могут быть отключены."
 
 #, c-format
-msgid "Symlink `%s' points to:"
+msgid "Symlink '%s' points to:"
 msgstr "Символическая ссылка %s указывает на:"
 
 msgid "Edit symlink"
@@ -2181,7 +2182,7 @@ msgid "edit symlink: %s"
 msgstr "правка символической ссылки: %s"
 
 #, c-format
-msgid "`%s' is not a symbolic link"
+msgid "'%s' is not a symbolic link"
 msgstr "%s не является символической ссылкой"
 
 msgid "FTP to machine"
@@ -2363,7 +2364,7 @@ msgid ""
 "Delete it recursively?"
 msgstr ""
 "Каталог \"%s\" не пуст.\n"
-"Удалить рекурсивно?"
+"Удалить его со всем содержимым?"
 
 #, c-format
 msgid ""
@@ -2471,7 +2472,7 @@ msgid ""
 "Cannot chmod target file \"%s\"\n"
 "%s"
 msgstr ""
-"Невозможно сменить режим доступа целевого файла \"%s\"\n"
+"Невозможно сменить режим доступа к целевому файлу \"%s\"\n"
 "%s"
 
 #, c-format
@@ -2642,6 +2643,8 @@ msgid ""
 "%s\n"
 "Directories: %zd, total size: %s"
 msgstr ""
+"%s\n"
+"Каталоги: %zd, общий объём: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Эту операцию невозможно выполнить на \"..\"!"
@@ -2748,9 +2751,6 @@ msgstr "Источник"
 msgid "Target"
 msgstr "Приемник"
 
-msgid "Deleting"
-msgstr "Удаляем"
-
 msgid "Follow &links"
 msgstr "&Разыменовывать ссылки"
 
@@ -2767,7 +2767,7 @@ msgid "&Background"
 msgstr "В &фоне"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
+msgid "Invalid source pattern '%s'"
 msgstr "Неправильный образец \"%s\""
 
 msgid "&Chdir"
@@ -3590,10 +3590,10 @@ msgid ""
 "and wait as well."
 msgstr ""
 "Пожалуйста, нажмите клавишу %s\n"
-"и подождите, пока это сообщение пропадет.\n"
+"и подождите, пока это сообщение пропадёт.\n"
 "\n"
-"Затем нажмите ее еще раз, чтобы убедиться,\n"
-"что справа от ее названия появилось \"OK\".\n"
+"Затем нажмите её еще раз, чтобы убедиться,\n"
+"что справа от её названия появилось \"OK\".\n"
 "\n"
 "Если вы хотите прервать обучение, нажмите\n"
 "клавишу Esc и тоже немного подождите."
@@ -3633,7 +3633,7 @@ msgid ""
 msgstr ""
 "Нажмите все перечисленные выше клавиши. После нажатий найдите,\n"
 "какие клавиши не имеют пометки \"OK\". Для обучения клавише выберите\n"
-"ее при помощи Tab или мышкой и нажмите пробел."
+"её при помощи Tab или мышкой и нажмите пробел."
 
 #, c-format
 msgid ""
@@ -3733,7 +3733,7 @@ msgstr "С поддержкой многих кодировок\n"
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
-msgstr "Скомпилирован с библиотекой GLib версии  %d.%d.%d\n"
+msgstr "Скомпилирован с библиотекой GLib версии %d.%d.%d\n"
 
 #, c-format
 msgid "Virtual File Systems:"
@@ -4012,7 +4012,7 @@ msgstr ""
 "Предупреждение: неправильный флаг %c в %s:\n"
 "%s\n"
 
-#, fuzzy, c-format
+#, c-format
 msgid "sftp: an error occurred while reading %s: %s"
 msgstr "sftp: произошла ошибка при чтении %s: %s"
 
@@ -4194,6 +4194,19 @@ msgstr "Сбой Ext2lib"
 msgid "Invalid value"
 msgstr "Неверный адрес"
 
+msgid "File was modified. Save with exit?"
+msgstr "Файл был изменен. Сохранить при выходе?"
+
+msgid "&Cancel quit"
+msgstr "&Прервать выход"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander завершается.\n"
+"Сохранить изменённый файл?"
+
 msgid "Cannot spawn child process"
 msgstr "Невозможно породить дочерний процесс"
 
@@ -4263,19 +4276,6 @@ msgstr ""
 "Невозможно сохранить файл:\n"
 "%s"
 
-msgid "File was modified. Save with exit?"
-msgstr "Файл был изменен. Сохранить при выходе?"
-
-msgid "&Cancel quit"
-msgstr "&Прервать выход"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"Midnight Commander завершается.\n"
-"Сохранить изменённый файл?"
-
 msgid "View: "
 msgstr "Просмотр: "
 
@@ -4290,12 +4290,12 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Просмотр невозможен: необычный файл"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Невозможно открыть \"%s\"\n"
+"Невозможно открыть \"%s\" в режиме фильтра\n"
 "%s"
 
 msgid "Seeking to search result"
@@ -4307,9 +4307,8 @@ msgstr "Поиск закончен"
 msgid "Continue from beginning?"
 msgstr "Продолжить с начала?"
 
-#, fuzzy
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
-msgstr "Невозможно получить локальную копию %s"
+msgstr "Невозможно получить локальную копию /ftp://some.host/editme.txt"
 
-#~ msgid "fish: storing zeros"
-#~ msgstr "fish: запись нулевых данных"
+#~ msgid "Deleting"
+#~ msgstr "Удаляем"

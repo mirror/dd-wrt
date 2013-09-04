@@ -145,7 +145,7 @@ edit_about (void)
         QUICK_LABEL (N_("A user friendly text editor\n"
                         "written for the Midnight Commander."), NULL),
         QUICK_SEPARATOR (FALSE),
-        QUICK_LABEL (N_("Copyright (C) 1996-2012 the Free Software Foundation"), NULL),
+        QUICK_LABEL (N_("Copyright (C) 1996-2013 the Free Software Foundation"), NULL),
         QUICK_START_BUTTONS (TRUE, TRUE),
             QUICK_BUTTON (N_("&OK"), B_ENTER, NULL, NULL),
         QUICK_END
@@ -338,13 +338,9 @@ edit_window_list (const WDialog * h)
             if (e->filename_vpath == NULL)
                 fname = g_strdup_printf ("%c [%s]", e->modified ? '*' : ' ', _("NoName"));
             else
-            {
-                char *fname2;
-
-                fname2 = vfs_path_to_str (e->filename_vpath);
-                fname = g_strdup_printf ("%c%s", e->modified ? '*' : ' ', fname2);
-                g_free (fname2);
-            }
+                fname =
+                    g_strdup_printf ("%c%s", e->modified ? '*' : ' ',
+                                     vfs_path_as_str (e->filename_vpath));
 
             listbox_add_item (listbox->list, LISTBOX_APPEND_AT_END, get_hotkey (i++),
                               str_term_trim (fname, WIDGET (listbox->list)->cols - 2), NULL);
@@ -394,9 +390,11 @@ edit_get_title (const WDialog * h, size_t len)
 
     len -= 4;
 
-    filename = vfs_path_to_str (edit->filename_vpath);
-    if (filename == NULL)
+    if (edit->filename_vpath == NULL)
         filename = g_strdup (_("[NoName]"));
+    else
+        filename = g_strdup (vfs_path_as_str (edit->filename_vpath));
+
     file_label = str_term_trim (filename, len - str_term_width1 (_("Edit: ")));
     g_free (filename);
 
@@ -531,8 +529,10 @@ edit_event (Gpm_Event * event, void *data)
                 edit->prev_col = local.x - edit->start_col - option_line_state_width - 1;
             else
             {
-                long line_len = edit_move_forward3 (edit, edit_bol (edit, edit->curs1), 0,
-                                                    edit_eol (edit, edit->curs1));
+                long line_len;
+
+                line_len = edit_move_forward3 (edit, edit_buffer_get_current_bol (&edit->buffer), 0,
+                                               edit_buffer_get_current_eol (&edit->buffer));
 
                 if (local.x > line_len)
                 {
@@ -554,7 +554,7 @@ edit_event (Gpm_Event * event, void *data)
             else if (local.y < (edit->curs_row + 1))
                 edit_move_up (edit, (edit->curs_row + 1) - local.y, 0);
             else
-                edit_move_to_prev_col (edit, edit_bol (edit, edit->curs1));
+                edit_move_to_prev_col (edit, edit_buffer_get_current_bol (&edit->buffer));
 
             if ((local.type & GPM_DOWN) != 0)
             {
@@ -1211,13 +1211,13 @@ edit_files (const GList * files)
 
     /* Create a new dialog and add it widgets to it */
     edit_dlg =
-        create_dlg (FALSE, 0, 0, LINES, COLS, NULL, edit_dialog_callback, edit_dialog_event,
+        dlg_create (FALSE, 0, 0, LINES, COLS, NULL, edit_dialog_callback, edit_dialog_event,
                     "[Internal File Editor]", NULL, DLG_WANT_TAB);
 
     edit_dlg->get_shortcut = edit_get_shortcut;
     edit_dlg->get_title = edit_get_title;
 
-    menubar = menubar_new (0, 0, COLS, NULL);
+    menubar = menubar_new (0, 0, COLS, NULL, TRUE);
     add_widget (edit_dlg, menubar);
     edit_init_menu (menubar);
 
@@ -1236,10 +1236,10 @@ edit_files (const GList * files)
     }
 
     if (ok)
-        run_dlg (edit_dlg);
+        dlg_run (edit_dlg);
 
     if (!ok || edit_dlg->state == DLG_CLOSED)
-        destroy_dlg (edit_dlg);
+        dlg_destroy (edit_dlg);
 
     return ok;
 }
@@ -1249,7 +1249,7 @@ edit_files (const GList * files)
 char *
 edit_get_file_name (const WEdit * edit)
 {
-    return vfs_path_to_str (edit->filename_vpath);
+    return g_strdup (vfs_path_as_str (edit->filename_vpath));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1285,8 +1285,7 @@ edit_update_screen (WEdit * e)
 
     edit_scroll_screen_over_cursor (e);
     edit_update_curs_col (e);
-
-    edit_status (e, (e->force & REDRAW_COMPLETELY) != 0 && (void *) e == h->current->data);
+    edit_status (e, (void *) e == h->current->data);
 
     /* pop all events for this window for internal handling */
     if (!is_idle ())

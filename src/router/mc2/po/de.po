@@ -3,16 +3,16 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Fabian Affolter <fab@fedoraproject.org>, 2012-2013.
-# Slava Zanko <slavazanko@gmail.com>, 2011.
-# username <my.somewhat.lengthy.loginname@gmail.com>, 2011.
+# Fabian Affolter <fab@fedoraproject.org>, 2012-2013
+# Slava Zanko <slavazanko@gmail.com>, 2011
+# username <my.somewhat.lengthy.loginname@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-17 11:42+0000\n"
-"Last-Translator: Fabian Affolter <fab@fedoraproject.org>\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 08:44+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: German (http://www.transifex.com/projects/p/mc/language/de/)\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -74,7 +74,7 @@ msgid "Cannot create %s directory"
 msgstr "Kann das Verzeichnis %s nicht erstellen"
 
 msgid "FATAL: not a directory:"
-msgstr ""
+msgstr "FATAL: kein Verzeichnis:"
 
 #, c-format
 msgid "An error occurred while migrating user settings: %s"
@@ -110,7 +110,7 @@ msgid "Invalid token number %d"
 msgstr "Ungültige Zeichennummer %d"
 
 msgid "Regular expression error"
-msgstr ""
+msgstr "Fehler im regulären Ausdruck"
 
 msgid "No&rmal"
 msgstr "No&rmal"
@@ -416,7 +416,7 @@ msgstr "Nummer Zeichen #"
 
 #. TRANSLATORS: Please translate as in "at sign" (@).
 msgid "At sign"
-msgstr ""
+msgstr "Prozent-Zeichen"
 
 msgid "Ctrl"
 msgstr "STRG"
@@ -680,12 +680,9 @@ msgstr "Erste Zeilennummer für den internen Editor setzen"
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
-"\n"
-"Bitte senden Sie alle Fehlerberichte (inklusiv der Ausgabe von \"mc -V\")\n"
-"als Ticket an www.midnight-commander.org\n"
 
 #, c-format
 msgid "GNU Midnight Commander %s\n"
@@ -902,8 +899,10 @@ msgid "\"%s\" is not a regular file"
 msgstr "\"%s\" ist keine normale Datei"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "Die Datei \"%s\" ist zu groß"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1226,7 +1225,7 @@ msgid "&Undo"
 msgstr "&Rückgängig"
 
 msgid "&Redo"
-msgstr ""
+msgstr "&Redo"
 
 msgid "&Toggle ins/overw"
 msgstr "E&infügen/Überschreiben"
@@ -1358,19 +1357,19 @@ msgid "&Move"
 msgstr "Verschieben"
 
 msgid "&Resize"
-msgstr ""
+msgstr "&Grösse ändern"
 
 msgid "&Toggle fullscreen"
 msgstr ""
 
 msgid "&Next"
-msgstr ""
+msgstr "&Nächste"
 
 msgid "&Previous"
-msgstr ""
+msgstr "&Vorherige"
 
 msgid "&List..."
-msgstr ""
+msgstr "&Auflisten..."
 
 msgid "&General..."
 msgstr "All&gemein..."
@@ -1409,7 +1408,7 @@ msgid "For&mat"
 msgstr "For&mat"
 
 msgid "&Window"
-msgstr ""
+msgstr "&Fenster"
 
 msgid "&Options"
 msgstr "&Optionen"
@@ -1484,9 +1483,11 @@ msgid ""
 "A user friendly text editor\n"
 "written for the Midnight Commander."
 msgstr ""
+"Ein benutzerfreundlicher Texteditor\n"
+"geschrieben für Midnight Commander."
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
-msgstr ""
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2013 the Free Software Foundation"
 
 msgid "About"
 msgstr "Über"
@@ -1516,22 +1517,22 @@ msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|Menüs"
 
 msgid "&Add word"
-msgstr ""
+msgstr "&Wort hinzufügen"
 
 msgid "Language"
-msgstr ""
+msgstr "Sprache"
 
 msgid "Misspelled"
 msgstr ""
 
 msgid "Check word"
-msgstr ""
+msgstr "Wort prüfen"
 
 msgid "Suggest"
-msgstr ""
+msgstr "Vorschlag"
 
 msgid "Select language"
-msgstr ""
+msgstr "Sprache auswählen"
 
 msgid "Load syntax file"
 msgstr "Lade Syntaxdatei"
@@ -1567,8 +1568,8 @@ msgid "The shell is already running a command"
 msgstr "Die Shell führt bereits einen Befehl aus"
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
-msgstr "Geben Sie 'exit' ein, um zu Midnight Commander zurückzukehren"
+msgid "Type 'exit' to return to the Midnight Commander"
+msgstr ""
 
 msgid "Set &all"
 msgstr "A&lle setzen"
@@ -1629,7 +1630,7 @@ msgid "Alwa&ys"
 msgstr "&Immer"
 
 msgid "File operations"
-msgstr ""
+msgstr "Datei-Operationen"
 
 msgid "&Verbose operation"
 msgstr "Redselige &Vorgänge"
@@ -1820,16 +1821,16 @@ msgid "Confirmation"
 msgstr "Bestätigung"
 
 msgid "&UTF-8 output"
-msgstr ""
+msgstr "&UTF-8-Ausgabe"
 
 msgid "&Full 8 bits output"
-msgstr ""
+msgstr "&Komplette 8 bits-Ausgabe"
 
 msgid "&ISO 8859-1"
-msgstr ""
+msgstr "&ISO 8859-1"
 
 msgid "7 &bits"
-msgstr ""
+msgstr "7 &bits"
 
 msgid "F&ull 8 bits input"
 msgstr "Komplette 8-Bit &Eingabe"
@@ -2121,8 +2122,8 @@ msgstr ""
 "die Panels können nicht ausgetauscht werden."
 
 #, c-format
-msgid "Symlink `%s' points to:"
-msgstr "Symbolischer Link \"%s\" zeigt auf:"
+msgid "Symlink '%s' points to:"
+msgstr ""
 
 msgid "Edit symlink"
 msgstr "Symbolischen Link bearbeiten"
@@ -2136,8 +2137,8 @@ msgid "edit symlink: %s"
 msgstr "symbolischen Link bearbeiten: %s"
 
 #, c-format
-msgid "`%s' is not a symbolic link"
-msgstr "`%s' ist kein symbolischer Link"
+msgid "'%s' is not a symbolic link"
+msgstr ""
 
 msgid "FTP to machine"
 msgstr "FTP zu Server"
@@ -2306,7 +2307,7 @@ msgid "&Abort"
 msgstr "&Abbrechen"
 
 msgid "Ski&p all"
-msgstr ""
+msgstr "Alle übers&pringen"
 
 msgid "&Retry"
 msgstr "Wiede&rholen"
@@ -2695,9 +2696,6 @@ msgstr "Quelle"
 msgid "Target"
 msgstr "Ziel"
 
-msgid "Deleting"
-msgstr "Lösche"
-
 msgid "Follow &links"
 msgstr "&Links folgen"
 
@@ -2705,7 +2703,7 @@ msgid "Preserve &attributes"
 msgstr "Attri&bute sichern"
 
 msgid "Di&ve into subdir if exists"
-msgstr "In Unterverzeichnis ab&tauchen, wenn es existiert"
+msgstr "In Unterverz. legen, wenn existiert"
 
 msgid "&Stable symlinks"
 msgstr ""
@@ -2714,8 +2712,8 @@ msgid "&Background"
 msgstr "Hinter&grund"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
-msgstr "Ungültiges Quell-Pattern '%s'"
+msgid "Invalid source pattern '%s'"
+msgstr ""
 
 msgid "&Chdir"
 msgstr "&Chdir"
@@ -3630,7 +3628,7 @@ msgid "Using the S-Lang library with terminfo database\n"
 msgstr ""
 
 msgid "Using the ncurses library\n"
-msgstr ""
+msgstr "Die ncurses-Bibliothek benutzen\n"
 
 msgid "Using the ncursesw library\n"
 msgstr ""
@@ -3664,7 +3662,7 @@ msgstr "Mit mehrfach Codepage-Unterstützung\n"
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
-msgstr ""
+msgstr "Kompiliert mit GLib %d.%d.%d\n"
 
 #, c-format
 msgid "Virtual File Systems:"
@@ -3675,16 +3673,16 @@ msgid "Data types:"
 msgstr "Datentyp:"
 
 msgid "Root directory:"
-msgstr ""
+msgstr "Wurzel-Verzeichnis:"
 
 msgid "System data"
-msgstr ""
+msgstr "System-Daten"
 
 msgid "Config directory:"
-msgstr ""
+msgstr "Konfigurations-Verzeichnis:"
 
 msgid "Data directory:"
-msgstr ""
+msgstr "Daten-Verzeichnis:"
 
 msgid "File extension handlers:"
 msgstr ""
@@ -3693,10 +3691,10 @@ msgid "VFS plugins and scripts:"
 msgstr ""
 
 msgid "User data"
-msgstr ""
+msgstr "Benutzerdaten"
 
 msgid "Cache directory:"
-msgstr ""
+msgstr "Cache-verzeichnis:"
 
 #, c-format
 msgid ""
@@ -3961,7 +3959,7 @@ msgstr ""
 
 #, c-format
 msgid "sftp: %s"
-msgstr ""
+msgstr "sftp: %s"
 
 #, c-format
 msgid "sftp: making connection to %s"
@@ -4128,6 +4126,19 @@ msgstr "Ext2lib-Fehler"
 msgid "Invalid value"
 msgstr "Ungültiger Wert"
 
+msgid "File was modified. Save with exit?"
+msgstr "Datei wurde geändert. Beim Beenden speichern?"
+
+msgid "&Cancel quit"
+msgstr "Doch nicht beenden"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander wird beendet.\n"
+"Modifizierte Datei speichern?"
+
 msgid "Cannot spawn child process"
 msgstr "Kann Kindprozess nicht hervorbringen"
 
@@ -4197,19 +4208,6 @@ msgstr ""
 "Kann Datei nicht speichern:\n"
 "%s"
 
-msgid "File was modified. Save with exit?"
-msgstr "Datei wurde geändert. Beim Beenden speichern?"
-
-msgid "&Cancel quit"
-msgstr "Doch nicht beenden"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"Midnight Commander wird beendet.\n"
-"Modifizierte Datei speichern?"
-
 msgid "View: "
 msgstr "Ansicht: "
 
@@ -4224,13 +4222,11 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Kann es nicht anzeigen: Keine normale Datei"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Kann \"%s\" nicht öffnen\n"
-"%s"
 
 msgid "Seeking to search result"
 msgstr "Suchergebnis durchsuchen"
@@ -4243,3 +4239,6 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "Deleting"
+#~ msgstr "Lösche"

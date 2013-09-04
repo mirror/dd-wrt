@@ -52,10 +52,10 @@
 
 #include "dir.h"
 #include "midnight.h"           /* current_panel */
+#include "layout.h"             /* rotate_dash() */
 #include "panel.h"              /* WPanel */
 
 #include "panelize.h"
-#include "panel.h"
 
 /*** global variables ****************************************************************************/
 
@@ -171,7 +171,7 @@ init_panelize (void)
     panelize_cols = max (panelize_cols, blen + 4);
 
     panelize_dlg =
-        create_dlg (TRUE, 0, 0, 20, panelize_cols, dialog_colors, panelize_callback, NULL,
+        dlg_create (TRUE, 0, 0, 20, panelize_cols, dialog_colors, panelize_callback, NULL,
                     "[External panelize]", _("External panelize"), DLG_CENTER);
 
     /* add listbox to the dialogs */
@@ -217,7 +217,7 @@ init_panelize (void)
 static void
 panelize_done (void)
 {
-    destroy_dlg (panelize_dlg);
+    dlg_destroy (panelize_dlg);
     repaint_screen ();
 }
 
@@ -367,8 +367,8 @@ do_external_panelize (char *command)
         list->list[next_free].sort_key = NULL;
         list->list[next_free].second_sort_key = NULL;
         next_free++;
-        if (!(next_free & 32))
-            rotate_dash ();
+        if ((next_free & 32) == 0)
+            rotate_dash (TRUE);
     }
 
     current_panel->is_panelized = TRUE;
@@ -377,9 +377,13 @@ do_external_panelize (char *command)
         current_panel->count = next_free;
         if (list->list[0].fname[0] == PATH_SEP)
         {
+            vfs_path_t *vpath_root;
             int ret;
-            panel_set_cwd (current_panel, PATH_SEP_STR);
-            ret = chdir (PATH_SEP_STR);
+
+            vpath_root = vfs_path_from_str (PATH_SEP_STR);
+            panel_set_cwd (current_panel, vpath_root);
+            ret = mc_chdir (vpath_root);
+            vfs_path_free (vpath_root);
             (void) ret;
         }
     }
@@ -392,6 +396,7 @@ do_external_panelize (char *command)
     close_error_pipe (D_NORMAL, NULL);
     try_to_select (current_panel, NULL);
     panel_re_sort (current_panel);
+    rotate_dash (FALSE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -424,10 +429,7 @@ do_panelize_cd (struct WPanel *panel)
 
     for (i = 0; i < panelized_panel.count; i++)
     {
-        if (panelized_same
-            || (panelized_panel.list.list[i].fname[0] == '.'
-                && panelized_panel.list.list[i].fname[1] == '.'
-                && panelized_panel.list.list[i].fname[2] == '\0'))
+        if (panelized_same || DIR_IS_DOTDOT (panelized_panel.list.list[i].fname))
         {
             list->list[i].fnamelen = panelized_panel.list.list[i].fnamelen;
             list->list[i].fname = g_strndup (panelized_panel.list.list[i].fname,
@@ -440,7 +442,7 @@ do_panelize_cd (struct WPanel *panel)
             tmp_vpath =
                 vfs_path_append_new (panelized_panel.root_vpath, panelized_panel.list.list[i].fname,
                                      NULL);
-            list->list[i].fname = vfs_path_to_str (tmp_vpath);
+            list->list[i].fname = g_strdup (vfs_path_as_str (tmp_vpath));
             vfs_path_free (tmp_vpath);
             list->list[i].fnamelen = strlen (list->list[i].fname);
         }
@@ -536,7 +538,7 @@ external_panelize (void)
     /* display file info */
     tty_setcolor (SELECTED_COLOR);
 
-    run_dlg (panelize_dlg);
+    dlg_run (panelize_dlg);
 
     switch (panelize_dlg->ret_value)
     {
@@ -561,7 +563,8 @@ external_panelize (void)
         if (target != NULL && *target)
         {
             char *cmd = g_strdup (target);
-            destroy_dlg (panelize_dlg);
+
+            dlg_destroy (panelize_dlg);
             do_external_panelize (cmd);
             g_free (cmd);
             repaint_screen ();

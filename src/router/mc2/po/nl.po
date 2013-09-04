@@ -3,19 +3,19 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-#   <flipthegreat@hotmail.com>, 2011.
-# Heimen Stoffels <vistausss@gmail.com>, 2013.
-# Richard E. van der Luit <nippur@fedoraproject.org>, 2012-2013.
-# Slava Zanko <slavazanko@gmail.com>, 2011.
-# toniotonba <TonioTonBa@gmail.com>, 2011.
-#   <wannessmet@gmail.com>, 2012.
+# flipthegreat <flipthegreat@hotmail.com>, 2011
+# Heimen Stoffels <vistausss@gmail.com>, 2013
+# Richard E. van der Luit <nippur@fedoraproject.org>, 2012-2013
+# Slava Zanko <slavazanko@gmail.com>, 2011
+# toniotonba <TonioTonBa@gmail.com>, 2011
+# bucovaina78 <wannessmet@gmail.com>, 2012
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-04-02 12:41+0300\n"
-"PO-Revision-Date: 2013-03-31 16:08+0000\n"
-"Last-Translator: Richard E. van der Luit <nippur@fedoraproject.org>\n"
+"POT-Creation-Date: 2013-08-02 22:06+0300\n"
+"PO-Revision-Date: 2013-07-05 08:44+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Dutch (http://www.transifex.com/projects/p/mc/language/nl/)\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
@@ -698,12 +698,9 @@ msgstr "Stel het startnummer in voor de eerste regel in de interne editor"
 
 msgid ""
 "\n"
-"Please send any bug reports (including the output of `mc -V')\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
-"\n"
-"Zend alstublieft fouten en bug rapportages (inclusief de mc-V output) als "
-"ticket op: www.midnight-commander.org\n"
 
 #, c-format
 msgid "GNU Midnight Commander %s\n"
@@ -920,8 +917,10 @@ msgid "\"%s\" is not a regular file"
 msgstr "\"%s\" is geen normaal bestand"
 
 #, c-format
-msgid "File \"%s\" is too large"
-msgstr "Bestand \"%s\" is te groot"
+msgid ""
+"File \"%s\" is too large.\n"
+"Open it anyway?"
+msgstr ""
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1506,8 +1505,8 @@ msgstr ""
 "Eeen gebruikersvriendelijke tekstbewerker\n"
 "geschreven voor de Midnight Commander"
 
-msgid "Copyright (C) 1996-2012 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2012 the Free Software Foundation"
+msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Over"
@@ -1588,8 +1587,8 @@ msgid "The shell is already running a command"
 msgstr "De shell voert al een opdracht uit"
 
 #, c-format
-msgid "Type `exit' to return to the Midnight Commander"
-msgstr "Type 'exit' om terug te keren naar MC"
+msgid "Type 'exit' to return to the Midnight Commander"
+msgstr ""
 
 msgid "Set &all"
 msgstr "Zet &alles"
@@ -2144,8 +2143,8 @@ msgstr ""
 "de vensters kunnen niet geschakeld worden."
 
 #, c-format
-msgid "Symlink `%s' points to:"
-msgstr "Symlink `%s' wijst naar:"
+msgid "Symlink '%s' points to:"
+msgstr ""
 
 msgid "Edit symlink"
 msgstr "Bewerk symlink"
@@ -2159,8 +2158,8 @@ msgid "edit symlink: %s"
 msgstr "symbolische link bewerken: %s"
 
 #, c-format
-msgid "`%s' is not a symbolic link"
-msgstr "'%s' is geen symbolische link"
+msgid "'%s' is not a symbolic link"
+msgstr ""
 
 msgid "FTP to machine"
 msgstr "FTP naar machine"
@@ -2728,9 +2727,6 @@ msgstr "Bron"
 msgid "Target"
 msgstr "Doel"
 
-msgid "Deleting"
-msgstr "Aan het verwijderen"
-
 msgid "Follow &links"
 msgstr "Volg &links"
 
@@ -2747,8 +2743,8 @@ msgid "&Background"
 msgstr "Achter&grond"
 
 #, c-format
-msgid "Invalid source pattern `%s'"
-msgstr "Ongeldig bronpatroon `%s'"
+msgid "Invalid source pattern '%s'"
+msgstr ""
 
 msgid "&Chdir"
 msgstr "&Chdir"
@@ -4167,6 +4163,19 @@ msgstr "Ext2lib fout"
 msgid "Invalid value"
 msgstr "Ongeldige waarde"
 
+msgid "File was modified. Save with exit?"
+msgstr "Bestand is gewijzigd. Opslaan met afsluiten?"
+
+msgid "&Cancel quit"
+msgstr "&Annuleer afsluiten"
+
+msgid ""
+"Midnight Commander is being shut down.\n"
+"Save modified file?"
+msgstr ""
+"Midnight Commander wordt afgesloten. \n"
+"Gewijzigd bestand opslaan??"
+
 msgid "Cannot spawn child process"
 msgstr "Kan geen kindproces opstarten"
 
@@ -4232,19 +4241,6 @@ msgid ""
 "%s"
 msgstr "Kon bestand %s niet opslaan"
 
-msgid "File was modified. Save with exit?"
-msgstr "Bestand is gewijzigd. Opslaan met afsluiten?"
-
-msgid "&Cancel quit"
-msgstr "&Annuleer afsluiten"
-
-msgid ""
-"Midnight Commander is being shut down.\n"
-"Save modified file?"
-msgstr ""
-"Midnight Commander wordt afgesloten. \n"
-"Gewijzigd bestand opslaan??"
-
 msgid "View: "
 msgstr "bekijk :"
 
@@ -4259,13 +4255,11 @@ msgstr ""
 msgid "Cannot view: not a regular file"
 msgstr "Kan het niet bekijken: geen normaal bestand"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
-"Cannot open \"%s\" in magic mode\n"
+"Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
-"Kan bestand %s niet openen\n"
-"%s"
 
 msgid "Seeking to search result"
 msgstr "Op zoek naar zoekresultaat"
@@ -4278,3 +4272,6 @@ msgstr "Doorgaan vanaf het begin?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Kan geen lokale versie van /ftp://some.host/editme.txt ophalen"
+
+#~ msgid "Deleting"
+#~ msgstr "Aan het verwijderen"

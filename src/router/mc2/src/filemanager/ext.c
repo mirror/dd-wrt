@@ -2,12 +2,13 @@
    Extension dependent execution.
 
    Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2007, 2011
+   2005, 2007, 2011, 2013
    The Free Software Foundation, Inc.
 
    Written by:
    Jakub Jelinek, 1995
    Miguel de Icaza, 1994
+   Slava Zanko <slavazanko@gmail.com>, 2013
 
    This file is part of the Midnight Commander.
 
@@ -98,7 +99,20 @@ static gboolean is_cd = FALSE;
 static gboolean written_nonspace = FALSE;
 static gboolean do_local_copy = FALSE;
 
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+exec_cleanup_script (vfs_path_t * script_vpath)
+{
+    if (script_vpath != NULL)
+    {
+        (void) mc_unlink (script_vpath);
+        vfs_path_free (script_vpath);
+    }
+}
+
 /* --------------------------------------------------------------------------------------------- */
 
 static void
@@ -142,6 +156,7 @@ exec_get_file_name (const vfs_path_t * filename_vpath)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
 static char *
 exec_expand_format (char symbol, gboolean is_result_quoted)
 {
@@ -337,8 +352,7 @@ exec_make_shell_string (const char *lc_data, const vfs_path_t * filename_vpath)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-exec_extension_view (char *cmd, const vfs_path_t * filename_vpath, int start_line,
-                     vfs_path_t * temp_file_name_vpath)
+exec_extension_view (void *target, char *cmd, const vfs_path_t * filename_vpath, int start_line)
 {
     int def_hex_mode = mcview_default_hex_mode, changed_hex_mode = 0;
     int def_nroff_flag = mcview_default_nroff_flag, changed_nroff_flag = 0;
@@ -350,16 +364,10 @@ exec_extension_view (char *cmd, const vfs_path_t * filename_vpath, int start_lin
     if (def_nroff_flag != mcview_default_nroff_flag)
         changed_nroff_flag = 1;
 
-    /* If we've written whitespace only, then just load filename
-     * into view
-     */
-    if (written_nonspace)
-    {
+    if (target == NULL)
         mcview_viewer (cmd, filename_vpath, start_line);
-        mc_unlink (temp_file_name_vpath);
-    }
     else
-        mcview_viewer (NULL, filename_vpath, start_line);
+        mcview_load ((mcview_t *) target, cmd, vfs_path_as_str (filename_vpath), start_line);
 
     if (changed_hex_mode && !mcview_altered_hex_mode)
         mcview_default_hex_mode = def_hex_mode;
@@ -397,16 +405,17 @@ exec_extension_cd (void)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static void
-exec_extension (const vfs_path_t * filename_vpath, const char *lc_data, int start_line)
+static vfs_path_t *
+exec_extension (void *target, const vfs_path_t * filename_vpath, const char *lc_data,
+                int start_line)
 {
     char *shell_string, *export_variables;
-    vfs_path_t *temp_file_name_vpath = NULL;
+    vfs_path_t *script_vpath = NULL;
     int cmd_file_fd;
     FILE *cmd_file;
     char *cmd = NULL;
 
-    g_return_if_fail (lc_data != NULL);
+    g_return_val_if_fail (lc_data != NULL, NULL);
 
     pbuffer = NULL;
     localmtime = 0;
@@ -436,7 +445,7 @@ exec_extension (const vfs_path_t * filename_vpath, const char *lc_data, int star
      * Sometimes it's not needed (e.g. for %cd and %view commands),
      * but it's easier to create it anyway.
      */
-    cmd_file_fd = mc_mkstemps (&temp_file_name_vpath, "mcext", SCRIPT_SUFFIX);
+    cmd_file_fd = mc_mkstemps (&script_vpath, "mcext", SCRIPT_SUFFIX);
 
     if (cmd_file_fd == -1)
     {
@@ -464,36 +473,31 @@ exec_extension (const vfs_path_t * filename_vpath, const char *lc_data, int star
      * so we clean up after calling view().
      */
     if (!run_view)
-    {
-        char *file_name;
-
-        file_name = vfs_path_to_str (temp_file_name_vpath);
-        fprintf (cmd_file, "\n/bin/rm -f %s\n", file_name);
-        g_free (file_name);
-    }
+        fprintf (cmd_file, "\n/bin/rm -f %s\n", vfs_path_as_str (script_vpath));
 
     fclose (cmd_file);
 
     if ((run_view && !written_nonspace) || is_cd)
     {
-        mc_unlink (temp_file_name_vpath);
-        vfs_path_free (temp_file_name_vpath);
-        temp_file_name_vpath = NULL;
+        exec_cleanup_script (script_vpath);
+        script_vpath = NULL;
     }
     else
     {
-        char *file_name;
-
-        file_name = vfs_path_to_str (temp_file_name_vpath);
         /* Set executable flag on the command file ... */
-        mc_chmod (temp_file_name_vpath, S_IRWXU);
+        mc_chmod (script_vpath, S_IRWXU);
         /* ... but don't rely on it - run /bin/sh explicitly */
-        cmd = g_strconcat ("/bin/sh ", file_name, (char *) NULL);
-        g_free (file_name);
+        cmd = g_strconcat ("/bin/sh ", vfs_path_as_str (script_vpath), (char *) NULL);
     }
 
     if (run_view)
-        exec_extension_view (cmd, filename_vpath, start_line, temp_file_name_vpath);
+    {
+        /* If we've written whitespace only, then just load filename into view */
+        if (!written_nonspace)
+            exec_extension_view (target, NULL, filename_vpath, start_line);
+        else
+            exec_extension_view (target, cmd, filename_vpath, start_line);
+    }
     else
     {
         shell_execute (cmd, EXECUTE_INTERNAL);
@@ -511,7 +515,7 @@ exec_extension (const vfs_path_t * filename_vpath, const char *lc_data, int star
 
     exec_cleanup_file_name (filename_vpath, TRUE);
   ret:
-    vfs_path_free (temp_file_name_vpath);
+    return script_vpath;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -610,16 +614,16 @@ get_file_encoding_local (const vfs_path_t * filename_vpath, char *buf, int bufle
  * Invoke the "file" command on the file and match its output against PTR.
  * have_type is a flag that is set if we already have tried to determine
  * the type of that file.
- * Return 1 for match, 0 for no match, -1 errors.
+ * Return TRUE for match, FALSE otherwise.
  */
 
 static gboolean
-regex_check_type (const vfs_path_t * filename_vpath, const char *ptr, int *have_type,
-                  gboolean case_insense, GError ** error)
+regex_check_type (const vfs_path_t * filename_vpath, const char *ptr, gboolean case_insense,
+                  gboolean * have_type, GError ** error)
 {
     gboolean found = FALSE;
 
-    /* Following variables are valid if *have_type is 1 */
+    /* Following variables are valid if *have_type is TRUE */
     static char content_string[2048];
 #ifdef HAVE_CHARSET
     static char encoding_id[21];        /* CSISO51INISCYRILLIC -- 20 */
@@ -630,7 +634,7 @@ regex_check_type (const vfs_path_t * filename_vpath, const char *ptr, int *have_
     if (!use_file_to_check_type)
         return FALSE;
 
-    if (*have_type == 0)
+    if (!*have_type)
     {
         vfs_path_t *localfile_vpath;
         const char *realname;   /* name used with "file" */
@@ -640,18 +644,15 @@ regex_check_type (const vfs_path_t * filename_vpath, const char *ptr, int *have_
 #endif /* HAVE_CHARSET */
 
         /* Don't repeate even unsuccessful checks */
-        *have_type = 1;
+        *have_type = TRUE;
 
         localfile_vpath = mc_getlocalcopy (filename_vpath);
         if (localfile_vpath == NULL)
         {
-            char *filename;
-
-            filename = vfs_path_to_str (filename_vpath);
             g_propagate_error (error,
                                g_error_new (MC_ERROR, -1,
-                                            _("Cannot fetch a local copy of %s"), filename));
-            g_free (filename);
+                                            _("Cannot fetch a local copy of %s"),
+                                            vfs_path_as_str (filename_vpath)));
             return FALSE;
         }
 
@@ -678,9 +679,9 @@ regex_check_type (const vfs_path_t * filename_vpath, const char *ptr, int *have_
         }
 #endif /* HAVE_CHARSET */
 
-        mc_ungetlocalcopy (filename_vpath, localfile_vpath, FALSE);
-
         got_data = get_file_type_local (localfile_vpath, content_string, sizeof (content_string));
+
+        mc_ungetlocalcopy (filename_vpath, localfile_vpath, FALSE);
 
         if (got_data > 0)
         {
@@ -756,6 +757,7 @@ flush_extension_file (void)
 /* --------------------------------------------------------------------------------------------- */
 /**
  * The second argument is action, i.e. Open, View or Edit
+ * Use target object to open file in.
  *
  * This function returns:
  *
@@ -768,9 +770,10 @@ flush_extension_file (void)
  */
 
 int
-regex_command (const vfs_path_t * filename_vpath, const char *action)
+regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *action,
+                   vfs_path_t ** script_vpath)
 {
-    char *filename, *p, *q, *r, c;
+    char *p, *q, *r, c;
     size_t file_len;
     gboolean found = FALSE;
     gboolean error_flag = FALSE;
@@ -779,10 +782,13 @@ regex_command (const vfs_path_t * filename_vpath, const char *action)
     int view_at_line_number;
     char *include_target;
     int include_target_len;
-    int have_type = 0;          /* Flag used by regex_check_type() */
+    gboolean have_type = FALSE; /* Flag used by regex_check_type() */
 
     if (filename_vpath == NULL)
         return 0;
+
+    if (script_vpath != NULL)
+        *script_vpath = NULL;
 
     /* Check for the special View:%d parameter */
     if (strncmp (action, "View:", 5) == 0)
@@ -869,7 +875,6 @@ regex_command (const vfs_path_t * filename_vpath, const char *action)
 
     include_target = NULL;
     include_target_len = 0;
-    filename = vfs_path_to_str (filename_vpath);
     file_len = vfs_path_len (filename_vpath);
 
     for (p = data; *p != '\0'; p++)
@@ -917,13 +922,15 @@ regex_command (const vfs_path_t * filename_vpath, const char *action)
                 {
                     search->search_type = MC_SEARCH_T_REGEX;
                     search->is_case_sensitive = !case_insense;
-                    found = mc_search_run (search, filename, 0, file_len, NULL);
+                    found =
+                        mc_search_run (search, vfs_path_as_str (filename_vpath), 0, file_len, NULL);
                     mc_search_free (search);
                 }
             }
             else if (strncmp (p, "directory/", 10) == 0)
             {
-                if (S_ISDIR (mystat.st_mode) && mc_search (p + 10, filename, MC_SEARCH_T_REGEX))
+                if (S_ISDIR (mystat.st_mode)
+                    && mc_search (p + 10, vfs_path_as_str (filename_vpath), MC_SEARCH_T_REGEX))
                     found = TRUE;
             }
             else if (strncmp (p, "shell/", 6) == 0)
@@ -940,12 +947,14 @@ regex_command (const vfs_path_t * filename_vpath, const char *action)
 
                 if (*p == '.' && file_len >= (size_t) (q - p))
                 {
-                    if (cmp_func (p, filename + file_len - (q - p), q - p) == 0)
+                    if (cmp_func
+                        (p, vfs_path_as_str (filename_vpath) + file_len - (q - p), q - p) == 0)
                         found = TRUE;
                 }
                 else
                 {
-                    if ((size_t) (q - p) == file_len && cmp_func (p, filename, q - p) == 0)
+                    if ((size_t) (q - p) == file_len
+                        && cmp_func (p, vfs_path_as_str (filename_vpath), q - p) == 0)
                         found = TRUE;
                 }
             }
@@ -959,7 +968,7 @@ regex_command (const vfs_path_t * filename_vpath, const char *action)
                 if (case_insense)
                     p += 2;
 
-                found = regex_check_type (filename_vpath, p, &have_type, case_insense, &error);
+                found = regex_check_type (filename_vpath, p, case_insense, &have_type, &error);
                 if (error != NULL)
                 {
                     g_error_free (error);
@@ -1022,7 +1031,15 @@ regex_command (const vfs_path_t * filename_vpath, const char *action)
                          */
                         if (p < q)
                         {
-                            exec_extension (filename_vpath, r + 1, view_at_line_number);
+                            vfs_path_t *sv;
+
+                            sv = exec_extension (target, filename_vpath, r + 1,
+                                                 view_at_line_number);
+                            if (script_vpath != NULL)
+                                *script_vpath = sv;
+                            else
+                                exec_cleanup_script (sv);
+
                             ret = 1;
                         }
                         break;
@@ -1034,7 +1051,6 @@ regex_command (const vfs_path_t * filename_vpath, const char *action)
                 break;
         }
     }
-    g_free (filename);
     if (error_flag)
         ret = -1;
     return ret;

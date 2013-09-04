@@ -25,8 +25,9 @@
 
 #include <config.h>
 
-#include "lib/strutil.h"
+#include "lib/global.h"
 #include "lib/strescape.h"
+#include "lib/strutil.h"
 
 /*** global variables ****************************************************************************/
 
@@ -59,7 +60,7 @@ str_ptr_array_join (GPtrArray * str_splints)
 /**
  * Replace all substrings 'needle' in string 'haystack' by 'replacement'.
  * If the 'needle' in the 'haystack' will be escaped by backslash,
- * then this occurence isn't be replaced.
+ * then this occurrence isn't be replaced.
  *
  * @param haystack    string contains substrings for replacement
  * @param needle      string for search

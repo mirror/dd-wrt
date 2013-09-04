@@ -2,8 +2,11 @@
    Directory routines
 
    Copyright (C) 1994, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2006, 2007, 2011
+   2006, 2007, 2011, 2013
    The Free Software Foundation, Inc.
+
+   Written by:
+   Slava Zanko <slavazanko@gmail.com>, 2013
 
    This file is part of the Midnight Commander.
 
@@ -169,9 +172,7 @@ handle_dirent (dir_list * list, const char *fltr, struct dirent *dp,
 {
     vfs_path_t *vpath;
 
-    if (dp->d_name[0] == '.' && dp->d_name[1] == 0)
-        return 0;
-    if (dp->d_name[0] == '.' && dp->d_name[1] == '.' && dp->d_name[2] == 0)
+    if (DIR_IS_DOT (dp->d_name) || DIR_IS_DOTDOT (dp->d_name))
         return 0;
     if (!panels_options.show_dot_files && (dp->d_name[0] == '.'))
         return 0;
@@ -446,7 +447,7 @@ do_sort (dir_list * list, sortfn * sort, int top, gboolean reverse_f, gboolean c
 
     /* If there is an ".." entry the caller must take care to
        ensure that it occupies the first list element. */
-    if (strcmp (list->list[0].fname, "..") == 0)
+    if (DIR_IS_DOTDOT (list->list[0].fname))
         dot_dot_found = 1;
 
     reverse = reverse_f ? -1 : 1;
@@ -507,9 +508,7 @@ handle_path (dir_list * list, const char *path,
 {
     vfs_path_t *vpath;
 
-    if (path[0] == '.' && path[1] == 0)
-        return 0;
-    if (path[0] == '.' && path[1] == '.' && path[2] == 0)
+    if (DIR_IS_DOT (path) || DIR_IS_DOTDOT (path))
         return 0;
 
     vpath = vfs_path_from_str (path);
@@ -554,7 +553,6 @@ do_load_dir (const vfs_path_t * vpath, dir_list * list, sortfn * sort, gboolean 
     int status, link_to_dir, stale_link;
     int next_free = 0;
     struct stat st;
-    char *path;
 
     /* ".." (if any) must be the first entry in the list */
     if (!set_zero_dir (list))
@@ -573,11 +571,14 @@ do_load_dir (const vfs_path_t * vpath, dir_list * list, sortfn * sort, gboolean 
 
     tree_store_start_check (vpath);
 
-    /* Do not add a ".." entry to the root directory */
-    path = vfs_path_to_str (vpath);
-    if ((path[0] == PATH_SEP) && (path[1] == '\0'))
-        next_free--;
-    g_free (path);
+    {
+        const char *vpath_str;
+
+        vpath_str = vfs_path_as_str (vpath);
+        /* Do not add a ".." entry to the root directory */
+        if ((vpath_str[0] == PATH_SEP) && (vpath_str[1] == '\0'))
+            next_free--;
+    }
 
     while ((dp = mc_readdir (dirp)) != NULL)
     {
@@ -599,7 +600,7 @@ do_load_dir (const vfs_path_t * vpath, dir_list * list, sortfn * sort, gboolean 
         next_free++;
 
         if ((next_free & 31) == 0)
-            rotate_dash ();
+            rotate_dash (TRUE);
     }
 
     if (next_free != 0)
@@ -608,6 +609,7 @@ do_load_dir (const vfs_path_t * vpath, dir_list * list, sortfn * sort, gboolean 
   ret:
     mc_closedir (dirp);
     tree_store_end_check ();
+    rotate_dash (FALSE);
     return next_free;
 }
 
@@ -737,8 +739,8 @@ do_reload_dir (const vfs_path_t * vpath, dir_list * list, sortfn * sort, int cou
         list->list[next_free].sort_key = NULL;
         list->list[next_free].second_sort_key = NULL;
         next_free++;
-        if (!(next_free % 16))
-            rotate_dash ();
+        if ((next_free % 16) == 0)
+            rotate_dash (TRUE);
     }
     mc_closedir (dirp);
     tree_store_end_check ();
@@ -748,6 +750,8 @@ do_reload_dir (const vfs_path_t * vpath, dir_list * list, sortfn * sort, int cou
         do_sort (list, sort, next_free - 1, lc_reverse, lc_case_sensitive, exec_ff);
     }
     clean_dir (&dir_copy, count);
+    rotate_dash (FALSE);
+
     return next_free;
 }
 
