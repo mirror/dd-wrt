@@ -4116,6 +4116,9 @@ char *cpustring(void)
 #ifdef HAVE_RB600
 	strcpy(buf, "FreeScale MPC8343");
 	return buf;
+#elif HAVE_VENTANA
+	strcpy(buf, "FreeScale i.MX6 Quad/DualLite");
+	return buf;
 #else
 	FILE *fcpu = fopen("/proc/cpuinfo", "r");
 
