@@ -109,7 +109,7 @@ php5-clean:
 
 php5-install:
 	install -D php5/sapi/cli/.libs/php $(INSTALLDIR)/php5/usr/bin/php
-	install -D php5/libiconv/lib/.libs/libiconv.so.2 $(INSTALLDIR)/php5/usr/lib/libiconv.so.2
+	install -D $(TOP)/glib20/libiconv/lib/.libs/libiconv.so.2 $(INSTALLDIR)/php5/usr/lib/libiconv.so.2
 	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php
 ifeq ($(CONFIG_PHPCGI),y)
 	install -D php5/sapi/cgi/.libs/php-cgi $(INSTALLDIR)/php5/usr/bin/php-cgi
