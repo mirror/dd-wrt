@@ -3074,7 +3074,7 @@ void start_sysinit(void)
 #ifdef HAVE_80211AC
 	if ( nvram_get("et_txq_thresh") == NULL ) {
 		nvram_set("et_txq_thresh","1024");
-		nvram_set("et_dispatch_mode","1");
+//		nvram_set("et_dispatch_mode","1"); 1=better throughput 0=better ping
 	}
 #endif	
 
