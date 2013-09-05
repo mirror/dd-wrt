@@ -31,5 +31,6 @@ lighttpd-clean:
 
 lighttpd-install:
 	install -D lighttpd/src/.libs/lighttpd $(INSTALLDIR)/lighttpd/usr/sbin/lighttpd
+	install -D $(TOP)/pcre/.libs/libpcre.so.0 $(INSTALLDIR)/lighttpd/usr/lib/libpcre.so.0
 	mkdir -p $(INSTALLDIR)/lighttpd/usr/lib/lighttpd ; true
 	cp -av lighttpd/src/.libs/mod_*.so $(INSTALLDIR)/lighttpd/usr/lib/lighttpd/ ; true
