@@ -3,7 +3,7 @@
 #SECS=$1
 
 # create the key and certificate request
-openssl req -new -out cert.csr -config openssl.cnf -keyout privkey.pem -newkey rsa:512 -passout pass:password
+openssl req -new -out cert.csr -config openssl.cnf -keyout privkey.pem -newkey rsa:1024 -passout pass:password
 # remove the passphrase from the key
 openssl rsa -in privkey.pem -out key.pem -passin pass:password
 # convert the certificate request into a signed certificate
