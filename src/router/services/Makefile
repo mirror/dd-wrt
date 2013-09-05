@@ -1239,6 +1239,12 @@ CFLAGS_EXTRA += -DHAVE_PRIVOXY
 OBJS += privoxy.o
 endif
 
+ifeq ($(CONFIG_LIGHTTPD),y)
+	CFLAGS_EXTRA += -DHAVE_LIGHTTPD
+	OBJS += lighttpd.o
+endif
+
+
 ifeq ($(CONFIG_LLTD),y)
 CFLAGS_EXTRA += -DHAVE_LLTD
 OBJS += lltd.o
