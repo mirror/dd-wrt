@@ -133,12 +133,12 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 		}
 		i++;
 	}
-
+	
 	if(in_clock_array || nvram_get("clkfreq") != NULL) {
 	
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
 		websWrite(wp, "<select name=\"overclocking\">\n");
-	
+		i = 0;
 		while (c[i] != 0) {
 			websWrite(wp, "<option value=\"%d\" %s >%d MHz</option>\n", c[i], c[i] == cclk ? "selected=\"selected\"" : "", c[i]);
 			i++;
