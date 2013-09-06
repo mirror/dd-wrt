@@ -1,4 +1,4 @@
-/*
+/*[18~
  * utils.c
  *
  * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
@@ -1018,14 +1018,14 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WZR1750;
 	}
 
-	if (boardnum == 2013013101 && nvram_match("boardtype", "0x0646")
+	if ((boardnum == 2013012401 || boardnum == 2013083001) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "7")) {
 		setRouter("Buffalo WZR-900DHP");
 		return ROUTER_BUFFALO_WZR900DHP;
 	}
 
-	if (boardnum == 2013012401 && nvram_match("boardtype", "0x0646")
+	if ((boardnum == 2013012401 || boardnum == 2013083001) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "3")) {
 		setRouter("Buffalo WZR-600DHP2");
