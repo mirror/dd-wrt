@@ -34,3 +34,5 @@ lighttpd-install:
 	install -D $(TOP)/pcre/.libs/libpcre.so.0 $(INSTALLDIR)/lighttpd/usr/lib/libpcre.so.0
 	mkdir -p $(INSTALLDIR)/lighttpd/usr/lib/lighttpd ; true
 	cp -av lighttpd/src/.libs/mod_*.so $(INSTALLDIR)/lighttpd/usr/lib/lighttpd/ ; true
+	mkdir -p $(INSTALLDIR)/lighttpd/etc ; true
+	install -D lighttpd/configs/lighttpd.conf $(INSTALLDIR)/lighttpd/etc/
