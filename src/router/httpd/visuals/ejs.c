@@ -1326,7 +1326,7 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_XIOCOM
 	websWrite(wp, "XWR");
-#else
+#elif HAVE_ONNET
 #ifdef HAVE_ONNET_BLANK
 	if (nvram_match("DD_BOARD", "Atheros Hornet")) {
 		websWrite(wp, "9331");
@@ -1349,7 +1349,7 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 	} else {
 		websWrite(wp, "%s", nvram_get("DD_BOARD"));
 	}
-#elif HAVE_ONNET
+#else
 	if (nvram_match("DD_BOARD", "Atheros Hornet")) {
 		websWrite(wp, "OTAi 9331");
 	} else if (nvram_match("DD_BOARD", "Compex WPE72")) {
@@ -1371,13 +1371,13 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 	} else {
 		websWrite(wp, "OTAi %s", nvram_get("DD_BOARD"));
 	}
-#elif defined(HAVE_SANSFIL)
+#endif
+#elif HAVE_SANSFIL
 	websWrite(wp, "%s", "SANSFIL");
 #elif HAVE_KORENRON
-	websWrite(wp, "\t\t<title>KORENRON (build %s)", SVN_REVISION);
+	websWrite(wp, "KORENRON %s", nvram_get("DD_BOARD"));
 #else
 	websWrite(wp, "%s", nvram_safe_get("DD_BOARD"));
-#endif
 #endif
 } void ej_get_syskernel(webs_t wp, int argc, char_t ** argv)
 {
