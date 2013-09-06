@@ -20,6 +20,7 @@ void start_lighttpd(void)
 	if (!nvram_match("lighttpd_enable", "1"))
 		return;
 	
+	eval("mkdir", "-p", "/tmp/lighttpd/logs");
 	eval("lighttpd", "-f /etc/lighttpd.conf");
 	syslog(LOG_INFO, "lighttpd : lighttpd started\n");
 	return;
