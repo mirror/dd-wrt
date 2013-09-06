@@ -20,6 +20,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <bcmnvram.h>
+#include <syslog.h>
 //#include <math.h>
 #ifdef HAVE_ATH9K
 #include <glob.h>
@@ -2190,6 +2191,7 @@ void radio_off(int idx)
 		eval("stopservice", "nas");
 	}
 	if (idx != -1) {
+		dd_syslog(LOG_INFO, "radio_timer idx: %d %s\n", idx, get_wl_instance_name(idx));
 		eval("wl", "-i", get_wl_instance_name(idx), "radio", "off");
 
 	} else {
@@ -2201,6 +2203,8 @@ void radio_off(int idx)
 			eval("wl", "-i", get_wl_instance_name(ii), "radio", "off");
 		}
 	}
+	//fix ticket 2991
+	eval("startservice", "nas");
 }
 
 void radio_on(int idx)
@@ -2210,6 +2214,7 @@ void radio_on(int idx)
 	}
 	if (idx != -1) {
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx))
+			dd_syslog(LOG_INFO, "radio_timer idx: %d %s \n", idx, get_wl_instance_name(idx));
 			eval("wl", "-i", get_wl_instance_name(idx), "radio", "on");
 
 	} else {
