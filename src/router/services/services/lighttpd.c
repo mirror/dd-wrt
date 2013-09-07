@@ -21,7 +21,7 @@ void start_lighttpd(void)
 		return;
 	
 	eval("mkdir", "-p", "/tmp/lighttpd/logs");
-	eval("lighttpd", "-f /etc/lighttpd.conf");
+	eval("lighttpd", "-f", "/etc/lighttpd.conf");
 	syslog(LOG_INFO, "lighttpd : lighttpd started\n");
 	return;
 }
