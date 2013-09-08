@@ -416,8 +416,8 @@ dev_nvram_write(struct file *file, const char *buf, size_t count, loff_t *ppos)
 	char tmp[128], *name = tmp, *value;
 	ssize_t ret;
 
-	if (count > sizeof(tmp)) {
-		if (!(name = kmalloc(count,GFP_ATOMIC)))
+	if (count >= sizeof(tmp)) {
+		if (!(name = kmalloc(count + 1,GFP_ATOMIC)))
 			return -ENOMEM;
 	}
 
