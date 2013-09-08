@@ -2783,6 +2783,10 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
         } else {
             pkt = add_to_pktbuf(&ic->packet_buffer, &pkt1,
                                 &ic->packet_buffer_end);
+            if (!pkt) {
+                ret = AVERROR(ENOMEM);
+                goto find_stream_info_err;
+            }
             if ((ret = av_dup_packet(pkt)) < 0)
                 goto find_stream_info_err;
         }
@@ -2855,6 +2859,8 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
 
                 if (!st->info->duration_error)
                     st->info->duration_error = av_mallocz(sizeof(st->info->duration_error[0])*2);
+                if (!st->info->duration_error)
+                    return AVERROR(ENOMEM);
 
 //                 if(st->codec->codec_type == AVMEDIA_TYPE_VIDEO)
 //                     av_log(NULL, AV_LOG_ERROR, "%f\n", dts);
