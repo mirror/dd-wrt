@@ -813,8 +813,8 @@ static ssize_t dev_nvram_write(struct file *file, const char *buf, size_t count,
 	char tmp[100], *name = tmp, *value;
 	ssize_t ret;
 
-	if (count > sizeof(tmp)) {
-		if (!(name = vmalloc(count)))
+	if (count >= sizeof(tmp)) {
+		if (!(name = vmalloc(count + 1)))
 			return -ENOMEM;
 	}
 
