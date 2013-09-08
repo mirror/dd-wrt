@@ -43,14 +43,19 @@ void start_dlna(void)
 		return;
 	mkdir("/tmp/db", 0700);
 	FILE *fp = fopen("/tmp/minidlna.conf", "wb");
-	if (nvram_match("jffs_mounted", "1")) {
+#ifndef HAVE_VENTANA
+	if (nvram_match("jffs_mounted", "1"))
+	{
+#endif
 		mkdir("/jffs/minidlna", 0700);
 		eval("rm", "-f", "/jffs/minidlna/files.db");
 		fprintf(fp, "db_dir=/jffs/minidlna\n");
+#ifndef HAVE_VENTANA
 	} else {
 		mkdir("/tmp/db", 0700);
 		eval("rm", "-f", "/tmp/db/files.db");
 	}
+#endif
 	fprintf(fp, "port=8200\n");
 	fprintf(fp, "network_interface=br0\n");
 	dlna_shares = getdlnashares();
