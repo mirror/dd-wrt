@@ -14,6 +14,12 @@ libpng-clean:
 libpng-configure:
 	cd libgd && \
 	cd libpng &&   ./configure --host=$(ARCH)-linux-uclibc  --disable-shared --enable-static CC=$(ARCH)-linux-uclibc-gcc CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include" CPPFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include" 'LDFLAGS=-L$(TOP)/zlib'	
+	cd libgd && \
+	CC="$(ARCH)-linux-uclibc-gcc" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/zlib/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -L$(TOP)/zlib -fPIC -v -Wl,--verbose" \
+	$(MAKE) -C libpng
 
 	
 	
@@ -29,6 +35,11 @@ libgd-clean:
 	
 libgd-configure:
 	cd libgd && ./configure --host=$(ARCH)-linux-uclibc  --without-xpm --without-x --without-tiff --without-freetype --without-fontconfig --without-x --disable-shared --enable-static --with-zlib CC=$(ARCH)-linux-uclibc-gcc CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib" 'LDFLAGS=-L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs'
+	CC="$(ARCH)-linux-uclibc-gcc" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT)   -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -lm -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng12 -fPIC -v -Wl,--verbose" \
+	$(MAKE) -C libgd
 
 libgd-install:
 
@@ -102,7 +113,7 @@ PHP_CONFIGURE_ARGS= \
 	EXTRA_LDFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd" \
 	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd"
 	
-php5-configure:
+php5-configure: libpng-configure libgd-configure libpng libgd libxml2
 	rm -f php5/config.cache
 	cd php5 && './configure'  '--host=$(ARCH)-linux-uclibc'  $(PHP_CONFIGURE_ARGS) 'CFLAGS=$(COPTS) -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -liconv' 'LDFLAGS=-L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/glib20/libiconv/lib/.libs -liconv'
 
