@@ -10,6 +10,7 @@
  *
  * Copyright (C) Volker Lendecke, 2005
  * Copyright (C) Aravind Srinivasan, 2009
+ * Copyright (C) Guenter Kukkukk, 2013
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +29,11 @@
 
 #include "includes.h"
 #include "smbd/smbd.h"
+
+static int vfs_catia_debug_level = DBGC_VFS;
+
+#undef DBGC_CLASS
+#define DBGC_CLASS vfs_catia_debug_level
 
 #define GLOBAL_SNUM     0xFFFFFFF
 #define MAP_SIZE        0xFF
@@ -295,7 +301,7 @@ static NTSTATUS catia_translate_name(struct vfs_handle_struct *handle,
 {
 	char *name = NULL;
 	char *mapped_name;
-	NTSTATUS ret;
+	NTSTATUS status, ret;
 
 	/*
 	 * Copy the supplied name and free the memory for mapped_name,
@@ -308,12 +314,12 @@ static NTSTATUS catia_translate_name(struct vfs_handle_struct *handle,
 		errno = ENOMEM;
 		return NT_STATUS_NO_MEMORY;
 	}
-	ret = catia_string_replace_allocate(handle->conn, name,
+	status = catia_string_replace_allocate(handle->conn, name,
 			&mapped_name, direction);
 
 	TALLOC_FREE(name);
-	if (!NT_STATUS_IS_OK(ret)) {
-		return ret;
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
 	}
 
 	ret = SMB_VFS_NEXT_TRANSLATE_NAME(handle, mapped_name, direction,
@@ -321,6 +327,8 @@ static NTSTATUS catia_translate_name(struct vfs_handle_struct *handle,
 
 	if (NT_STATUS_EQUAL(ret, NT_STATUS_NONE_MAPPED)) {
 		*pmapped_name = talloc_move(mem_ctx, &mapped_name);
+		/* we need to return the former translation result here */
+		ret = status;
 	} else {
 		TALLOC_FREE(mapped_name);
 	}
@@ -1020,6 +1028,23 @@ static struct vfs_fn_pointers vfs_catia_fns = {
 
 NTSTATUS vfs_catia_init(void)
 {
-        return smb_register_vfs(SMB_VFS_INTERFACE_VERSION, "catia",
+	NTSTATUS ret;
+
+        ret = smb_register_vfs(SMB_VFS_INTERFACE_VERSION, "catia",
 				&vfs_catia_fns);
+	if (!NT_STATUS_IS_OK(ret))
+		return ret;
+
+	vfs_catia_debug_level = debug_add_class("catia");
+	if (vfs_catia_debug_level == -1) {
+		vfs_catia_debug_level = DBGC_VFS;
+		DEBUG(0, ("vfs_catia: Couldn't register custom debugging "
+			  "class!\n"));
+	} else {
+		DEBUG(10, ("vfs_catia: Debug class number of "
+			   "'catia': %d\n", vfs_catia_debug_level));
+	}
+
+	return ret;
+
 }

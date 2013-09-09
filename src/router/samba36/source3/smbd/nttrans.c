@@ -885,13 +885,8 @@ NTSTATUS set_sd(files_struct *fsp, struct security_descriptor *psd,
 
 	/* Ensure we have at least one thing set. */
 	if ((security_info_sent & (SECINFO_OWNER|SECINFO_GROUP|SECINFO_DACL|SECINFO_SACL)) == 0) {
-		if (security_info_sent & SECINFO_LABEL) {
-			/* Only consider SECINFO_LABEL if no other
-			   bits are set. Just like W2K3 we don't
-			   store this. */
-			return NT_STATUS_OK;
-		}
-		return NT_STATUS_INVALID_PARAMETER;
+		/* Just like W2K3 */
+		return NT_STATUS_OK;
 	}
 
 	/* Ensure we have the rights to do this. */
@@ -989,7 +984,19 @@ struct ea_list *read_nttrans_ea_list(TALLOC_CTX *ctx, const char *pdata, size_t 
 		if (next_offset == 0) {
 			break;
 		}
+
+		/* Integer wrap protection for the increment. */
+		if (offset + next_offset < offset) {
+			break;
+		}
+
 		offset += next_offset;
+
+		/* Integer wrap protection for while loop. */
+		if (offset + 4 < offset) {
+			break;
+		}
+
 	}
 
 	return ea_list_head;

@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: pdbedit
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: System Administration tools
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "PDBEDIT" "8" "01/18/2013" "Samba 3\&.6" "System Administration tools"
+.TH "PDBEDIT" "8" "08/12/2013" "Samba 3\&.6" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -38,7 +47,7 @@ There are five main ways to use pdbedit: adding a user account, removing a user 
 .PP
 \-L|\-\-list
 .RS 4
-This option lists all the user accounts present in the users database\&. This option prints a list of user/uid pairs separated by the \':\' character\&.
+This option lists all the user accounts present in the users database\&. This option prints a list of user/uid pairs separated by the \*(Aq:\*(Aq character\&.
 .sp
 Example:
 pdbedit \-L
@@ -128,7 +137,7 @@ in list operations\&.
 .PP
 \-f|\-\-fullname fullname
 .RS 4
-This option can be used while adding or modifying a user account\&. It will specify the user\'s full name\&.
+This option can be used while adding or modifying a user account\&. It will specify the user\*(Aqs full name\&.
 .sp
 Example:
 \-f "Simo Sorce"
@@ -136,7 +145,7 @@ Example:
 .PP
 \-h|\-\-homedir homedir
 .RS 4
-This option can be used while adding or modifying a user account\&. It will specify the user\'s home directory network path\&.
+This option can be used while adding or modifying a user account\&. It will specify the user\*(Aqs home directory network path\&.
 .sp
 Example:
 \-h "\e\e\e\eBERSERKER\e\esorce"
@@ -152,7 +161,7 @@ Example:
 .PP
 \-S|\-\-script script
 .RS 4
-This option can be used while adding or modifying a user account\&. It will specify the user\'s logon script path\&.
+This option can be used while adding or modifying a user account\&. It will specify the user\*(Aqs logon script path\&.
 .sp
 Example:
 \-S "\e\e\e\eBERSERKER\e\enetlogon\e\esorce\&.bat"
@@ -160,40 +169,40 @@ Example:
 .PP
 \-p|\-\-profile profile
 .RS 4
-This option can be used while adding or modifying a user account\&. It will specify the user\'s profile directory\&.
+This option can be used while adding or modifying a user account\&. It will specify the user\*(Aqs profile directory\&.
 .sp
 Example:
 \-p "\e\e\e\eBERSERKER\e\enetlogon"
 .RE
 .PP
-\-M|\'\-\-machine SID\' SID|rid
+\-M|\*(Aq\-\-machine SID\*(Aq SID|rid
 .RS 4
-This option can be used while adding or modifying a machine account\&. It will specify the machines\' new primary group SID (Security Identifier) or rid\&.
+This option can be used while adding or modifying a machine account\&. It will specify the machines\*(Aq new primary group SID (Security Identifier) or rid\&.
 .sp
 Example:
 \-M S\-1\-5\-21\-2447931902\-1787058256\-3961074038\-1201
 .RE
 .PP
-\-U|\'\-\-user SID\' SID|rid
+\-U|\*(Aq\-\-user SID\*(Aq SID|rid
 .RS 4
-This option can be used while adding or modifying a user account\&. It will specify the users\' new SID (Security Identifier) or rid\&.
+This option can be used while adding or modifying a user account\&. It will specify the users\*(Aq new SID (Security Identifier) or rid\&.
 .sp
 Example:
 \-U S\-1\-5\-21\-2447931902\-1787058256\-3961074038\-5004
 .sp
 Example:
-\'\-\-user SID\' S\-1\-5\-21\-2447931902\-1787058256\-3961074038\-5004
+\*(Aq\-\-user SID\*(Aq S\-1\-5\-21\-2447931902\-1787058256\-3961074038\-5004
 .sp
 Example:
 \-U 5004
 .sp
 Example:
-\'\-\-user SID\' 5004
+\*(Aq\-\-user SID\*(Aq 5004
 .RE
 .PP
 \-c|\-\-account\-control account\-control
 .RS 4
-This option can be used while adding or modifying a user account\&. It will specify the users\' account control property\&. Possible flags are listed below\&.
+This option can be used while adding or modifying a user account\&. It will specify the users\*(Aq account control property\&. Possible flags are listed below\&.
 .sp
 
 .sp
@@ -367,7 +376,7 @@ pdbedit does not call the unix password syncronisation script if
 has been set\&. It only updates the data in the Samba user database\&.
 .sp
 If you wish to add a user and synchronise the password that immediately, use
-smbpasswd\'s
+smbpasswd\*(Aqs
 \fB\-a\fR
 option\&.
 .sp .5v
@@ -503,7 +512,7 @@ This option forces all users to change their password upon next login\&.
 .PP
 \-N|\-\-account\-desc description
 .RS 4
-This option can be used while adding or modifying a user account\&. It will specify the user\'s description field\&.
+This option can be used while adding or modifying a user account\&. It will specify the user\*(Aqs description field\&.
 .sp
 Example:
 \-N "test description"
@@ -511,7 +520,7 @@ Example:
 .PP
 \-Z|\-\-logon\-hours\-reset
 .RS 4
-This option can be used while adding or modifying a user account\&. It will reset the user\'s allowed logon hours\&. A user may login at any time afterwards\&.
+This option can be used while adding or modifying a user account\&. It will reset the user\*(Aqs allowed logon hours\&. A user may login at any time afterwards\&.
 .sp
 Example:
 \-Z
@@ -535,7 +544,7 @@ Example:
 .PP
 \-I|\-\-domain
 .RS 4
-This option can be used while adding or modifying a user account\&. It will specify the user\'s domain field\&.
+This option can be used while adding or modifying a user account\&. It will specify the user\*(Aqs domain field\&.
 .sp
 Example:
 \-I "MYDOMAIN"
@@ -546,7 +555,7 @@ Example:
 This option is currently not being used\&.
 .RE
 .PP
-\-h|\-\-help
+\-?|\-\-help
 .RS 4
 Print a summary of command line options\&.
 .RE

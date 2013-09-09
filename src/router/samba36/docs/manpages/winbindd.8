@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: winbindd
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: System Administration tools
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "WINBINDD" "8" "01/18/2013" "Samba 3\&.6" "System Administration tools"
+.TH "WINBINDD" "8" "08/12/2013" "Samba 3\&.6" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -41,7 +50,7 @@ and the
 pam_winbind\&.so
 PAM module, by managing connections to domain controllers\&. In this configuration the
 \m[blue]\fBidmap config * : range\fR\m[]
-parameter is not required\&. (This is known as `netlogon proxy only mode\'\&.)
+parameter is not required\&. (This is known as `netlogon proxy only mode\*(Aq\&.)
 .PP
 The Name Service Switch allows user and system information to be obtained from different databases services such as NIS or DNS\&. The exact behaviour can be configured through the
 /etc/nsswitch\&.conf
@@ -49,7 +58,7 @@ file\&. Users and groups are allocated as they are resolved to a range of user a
 .PP
 The service provided by
 winbindd
-is called `winbind\' and can be used to resolve user and group information from a Windows NT server\&. The service can also provide authentication services via an associated PAM module\&.
+is called `winbind\*(Aq and can be used to resolve user and group information from a Windows NT server\&. The service can also provide authentication services via an associated PAM module\&.
 .PP
 The
 pam_winbind
@@ -151,7 +160,7 @@ under process supervisors such as
 supervise
 and
 svscan
-from Daniel J\&. Bernstein\'s
+from Daniel J\&. Bernstein\*(Aqs
 daemontools
 package, or the AIX process monitor\&.
 .RE
@@ -198,7 +207,7 @@ Base directory name for log/debug files\&. The extension
 will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
 .RE
 .PP
-\-h|\-\-help
+\-?|\-\-help
 .RS 4
 Print a summary of command line options\&.
 .RE
@@ -218,7 +227,7 @@ parameter had been given\&.
 .PP
 \-n
 .RS 4
-Disable caching\&. This means winbindd will always have to wait for a response from the domain controller before it can respond to a client and this thus makes things slower\&. The results will however be more accurate, since results from the cache might not be up\-to\-date\&. This might also temporarily hang winbindd if the DC doesn\'t respond\&.
+Disable caching\&. This means winbindd will always have to wait for a response from the domain controller before it can respond to a client and this thus makes things slower\&. The results will however be more accurate, since results from the cache might not be up\-to\-date\&. This might also temporarily hang winbindd if the DC doesn\*(Aqt respond\&.
 .RE
 .SH "NAME AND ID RESOLUTION"
 .PP
@@ -532,11 +541,11 @@ file are owned by root\&.
 .PP
 $LOCKDIR/winbindd_privileged/pipe
 .RS 4
-The UNIX pipe over which \'privileged\' clients communicate with the
+The UNIX pipe over which \*(Aqprivileged\*(Aq clients communicate with the
 winbindd
 program\&. For security reasons, access to some winbindd functions \- like those needed by the
 ntlm_auth
-utility \- is restricted\&. By default, only users in the \'root\' group will get this access, however the administrator may change the group permissions on $LOCKDIR/winbindd_privileged to allow programs like \'squid\' to use ntlm_auth\&. Note that the winbind client will only attempt to connect to the winbindd daemon if both the
+utility \- is restricted\&. By default, only users in the \*(Aqroot\*(Aq group will get this access, however the administrator may change the group permissions on $LOCKDIR/winbindd_privileged to allow programs like \*(Aqsquid\*(Aq to use ntlm_auth\&. Note that the winbind client will only attempt to connect to the winbindd daemon if both the
 $LOCKDIR/winbindd_privileged
 directory and
 $LOCKDIR/winbindd_privileged/pipe

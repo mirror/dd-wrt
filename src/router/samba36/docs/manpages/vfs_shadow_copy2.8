@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: vfs_shadow_copy2
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: System Administration tools
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "VFS_SHADOW_COPY2" "8" "01/18/2013" "Samba 3\&.6" "System Administration tools"
+.TH "VFS_SHADOW_COPY2" "8" "08/12/2013" "Samba 3\&.6" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -43,7 +52,7 @@ This is a 2nd implementation of a shadow copy module\&. This version has the fol
 .sp -1
 .IP "  1." 4.2
 .\}
-You don\'t need to populate your shares with symlinks to the snapshots\&. This can be very important when you have thousands of shares, or use [homes]\&.
+You don\*(Aqt need to populate your shares with symlinks to the snapshots\&. This can be very important when you have thousands of shares, or use [homes]\&.
 .RE
 .sp
 .RS 4
@@ -54,7 +63,7 @@ You don\'t need to populate your shares with symlinks to the snapshots\&. This c
 .sp -1
 .IP "  2." 4.2
 .\}
-The inode number of the files is altered so it is different from the original\&. This allows the \'restore\' button to work without a sharing violation\&.
+The inode number of the files is altered so it is different from the original\&. This allows the \*(Aqrestore\*(Aq button to work without a sharing violation\&.
 .RE
 .sp
 .RE
@@ -191,7 +200,7 @@ shadow:fixinodes = yes/no
 .RS 4
 If you enable
 shadow:fixinodes
-then this module will modify the apparent inode number of files in the snapshot directories using a hash of the files path\&. This is needed for snapshot systems where the snapshots have the same device:inode number as the original files (such as happens with GPFS snapshots)\&. If you don\'t set this option then the \'restore\' button in the shadow copy UI will fail with a sharing violation\&.
+then this module will modify the apparent inode number of files in the snapshot directories using a hash of the files path\&. This is needed for snapshot systems where the snapshots have the same device:inode number as the original files (such as happens with GPFS snapshots)\&. If you don\*(Aqt set this option then the \*(Aqrestore\*(Aq button in the shadow copy UI will fail with a sharing violation\&.
 .RE
 .SH "EXAMPLES"
 .PP

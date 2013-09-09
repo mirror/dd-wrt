@@ -8799,6 +8799,7 @@ _PUBLIC_ void ndr_print_spoolss_DriverOSVersion(struct ndr_print *ndr, const cha
 		case SPOOLSS_DRIVER_VERSION_NT35: val = "SPOOLSS_DRIVER_VERSION_NT35"; break;
 		case SPOOLSS_DRIVER_VERSION_NT4: val = "SPOOLSS_DRIVER_VERSION_NT4"; break;
 		case SPOOLSS_DRIVER_VERSION_200X: val = "SPOOLSS_DRIVER_VERSION_200X"; break;
+		case SPOOLSS_DRIVER_VERSION_2012: val = "SPOOLSS_DRIVER_VERSION_2012"; break;
 	}
 	ndr_print_enum(ndr, name, "ENUM", val, r);
 }

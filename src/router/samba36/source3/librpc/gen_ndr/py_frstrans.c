@@ -2102,8 +2102,8 @@ void initfrstrans(void)
 	PyModule_AddObject(m, "FRSTRANS_RDC_VERSION", PyInt_FromLong(FRSTRANS_RDC_VERSION));
 	PyModule_AddObject(m, "FRSTRANS_RDC_FILTER_GENERIC", PyInt_FromLong(FRSTRANS_RDC_FILTER_GENERIC));
 	PyModule_AddObject(m, "FRSTRANS_VERSION_REQUEST_SLOW_SYNC", PyInt_FromLong(FRSTRANS_VERSION_REQUEST_SLOW_SYNC));
-	PyModule_AddObject(m, "FRSTRANS_TRANSPORT_SUPPORTS_RDC_SIMILARITY", PyInt_FromLong(FRSTRANS_TRANSPORT_SUPPORTS_RDC_SIMILARITY));
 	PyModule_AddObject(m, "FRSTRANS_RDC_FILTER_MAX", PyInt_FromLong(FRSTRANS_RDC_FILTER_MAX));
+	PyModule_AddObject(m, "FRSTRANS_TRANSPORT_SUPPORTS_RDC_SIMILARITY", PyInt_FromLong(FRSTRANS_TRANSPORT_SUPPORTS_RDC_SIMILARITY));
 	Py_INCREF((PyObject *)(void *)&frstrans_VersionVector_Type);
 	PyModule_AddObject(m, "VersionVector", (PyObject *)(void *)&frstrans_VersionVector_Type);
 	Py_INCREF((PyObject *)(void *)&frstrans_Update_Type);

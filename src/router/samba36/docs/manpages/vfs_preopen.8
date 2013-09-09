@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: vfs_preopen
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: System Administration tools
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "VFS_PREOPEN" "8" "01/18/2013" "Samba 3\&.6" "System Administration tools"
+.TH "VFS_PREOPEN" "8" "08/12/2013" "Samba 3\&.6" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -31,7 +40,7 @@ suite\&.
 .PP
 This module assists applications that want to read numbered files in sequence with very strict latency requirements\&. One area where this happens in video streaming applications that want to read one file per frame\&.
 .PP
-When you use this module, a number of helper processes is started that speculatively open files and read a number of bytes to prime the file system cache, so that later on when the real application\'s request comes along, no disk access is necessary\&.
+When you use this module, a number of helper processes is started that speculatively open files and read a number of bytes to prime the file system cache, so that later on when the real application\*(Aqs request comes along, no disk access is necessary\&.
 .PP
 This module is stackable\&.
 .SH "OPTIONS"
