@@ -7,8 +7,8 @@ libxml2:
 	$(MAKE) -C libxml2
 
 libxml2-install:
-	mkdir -p $(INSTALLDIR)/lighttpd/usr/lib ; true
-	cp -av libxml2/.libs/libxml2.so.* $(INSTALLDIR)/lighttpd/usr/lib/ ; true
+	mkdir -p $(INSTALLDIR)/libxml2/usr/lib ; true
+	cp -av libxml2/.libs/libxml2.so.* $(INSTALLDIR)/libxml2/usr/lib/ ; true
 	
 #	$(STRIP) $(INSTALLDIR)/zabbix/usr/sbin/zabbix_agentd
 
