@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: wbinfo
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: User Commands
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "WBINFO" "1" "01/18/2013" "Samba 3\&.6" "User Commands"
+.TH "WBINFO" "1" "08/12/2013" "Samba 3\&.6" "User Commands"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -98,7 +107,7 @@ Change the password of a user\&. The old and new password will be prompted\&.
 .PP
 \-\-domain \fIname\fR
 .RS 4
-This parameter sets the domain on which any specified operations will performed\&. If special domain name \'\&.\' is used to represent the current domain to which
+This parameter sets the domain on which any specified operations will performed\&. If special domain name \*(Aq\&.\*(Aq is used to represent the current domain to which
 \fBwinbindd\fR(8)
 belongs\&. Currently only the
 \fB\-u\fR, and
@@ -232,7 +241,7 @@ List own domain\&.
 .RS 4
 Check whether
 \fBwinbindd\fR(8)
-is still alive\&. Prints out either \'succeeded\' or \'failed\'\&.
+is still alive\&. Prints out either \*(Aqsucceeded\*(Aq or \*(Aqfailed\*(Aq\&.
 .RE
 .PP
 \-P|\-\-ping\-dc
@@ -346,7 +355,7 @@ then the operation will fail\&.
 Prints the program version number\&.
 .RE
 .PP
-\-h|\-\-help
+\-?|\-\-help
 .RS 4
 Print a summary of command line options\&.
 .RE

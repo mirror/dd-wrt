@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: smbpasswd
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: System Administration tools
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "SMBPASSWD" "8" "01/18/2013" "Samba 3\&.6" "System Administration tools"
+.TH "SMBPASSWD" "8" "08/12/2013" "Samba 3\&.6" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -19,7 +28,7 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-smbpasswd \- change a user\'s SMB password
+smbpasswd \- change a user\*(Aqs SMB password
 .SH "SYNOPSIS"
 .HP \w'\ 'u
 smbpasswd [\-a] [\-c\ <config\ file>] [\-x] [\-d] [\-e] [\-D\ debuglevel] [\-n] [\-r\ <remote\ machine>] [\-R\ <name\ resolve\ order>] [\-m] [\-U\ username[%password]] [\-h] [\-s] [\-w\ pass] [\-W] [\-i] [\-L] [username]
@@ -33,7 +42,7 @@ The smbpasswd program has several different functions, depending on whether it i
 \fIroot\fR
 user or not\&. When run as a normal user it allows the user to change the password used for their SMB sessions on any machines that store SMB passwords\&.
 .PP
-By default (when run with no arguments) it will attempt to change the current user\'s SMB password on the local machine\&. This is similar to the way the
+By default (when run with no arguments) it will attempt to change the current user\*(Aqs SMB password on the local machine\&. This is similar to the way the
 passwd(1)
 program works\&.
 smbpasswd
@@ -82,12 +91,12 @@ This option is only available when running smbpasswd as root\&.
 This option specifies that the username following should be
 \fBdisabled\fR
 in the local smbpasswd file\&. This is done by writing a
-\fB\'D\'\fR
+\fB\*(AqD\*(Aq\fR
 flag into the account control space in the smbpasswd file\&. Once this is done all attempts to authenticate via SMB using this username will fail\&.
 .sp
-If the smbpasswd file is in the \'old\' format (pre\-Samba 2\&.0 format) there is no space in the user\'s password entry to write this information and the command will FAIL\&. See
+If the smbpasswd file is in the \*(Aqold\*(Aq format (pre\-Samba 2\&.0 format) there is no space in the user\*(Aqs password entry to write this information and the command will FAIL\&. See
 \fBsmbpasswd\fR(5)
-for details on the \'old\' and new password file formats\&.
+for details on the \*(Aqold\*(Aq and new password file formats\&.
 .sp
 This option is only available when running smbpasswd as root\&.
 .RE
@@ -98,11 +107,11 @@ This option specifies that the username following should be
 \fBenabled\fR
 in the local smbpasswd file, if the account was previously disabled\&. If the account was not disabled this option has no effect\&. Once the account is enabled then the user will be able to authenticate via SMB once again\&.
 .sp
-If the smbpasswd file is in the \'old\' format, then
+If the smbpasswd file is in the \*(Aqold\*(Aq format, then
 smbpasswd
 will FAIL to enable the account\&. See
 \fBsmbpasswd\fR(5)
-for details on the \'old\' and new password file formats\&.
+for details on the \*(Aqold\*(Aq and new password file formats\&.
 .sp
 This option is only available when running smbpasswd as root\&.
 .RE
@@ -251,7 +260,7 @@ This parameter is only available if Samba has been compiled with LDAP support\&.
 switch is used to specify the password to be used with the
 \m[blue]\fBldap admin dn\fR\m[]\&. Note that the password is stored in the
 secrets\&.tdb
-and is keyed off of the admin\'s DN\&. This means that if the value of
+and is keyed off of the admin\*(Aqs DN\&. This means that if the value of
 \fIldap admin dn\fR
 ever changes, the password will need to be manually updated as well\&.
 .RE
@@ -266,7 +275,7 @@ This parameter is only available if Samba has been compiled with LDAP support\&.
 switch is used to specify the password to be used with the
 \m[blue]\fBldap admin dn\fR\m[]\&. Note that the password is stored in the
 secrets\&.tdb
-and is keyed off of the admin\'s DN\&. This means that if the value of
+and is keyed off of the admin\*(Aqs DN\&. This means that if the value of
 \fIldap admin dn\fR
 ever changes, the password will need to be manually updated as well\&.
 .RE

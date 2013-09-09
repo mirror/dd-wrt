@@ -120,7 +120,8 @@ NTSTATUS make_user_info_map(struct auth_usersupplied_info **user_info,
 	 * This also deals with the client passing in a "" domain */
 
 	if (!is_trusted_domain(domain) &&
-	    !strequal(domain, my_sam_name()))
+	    !strequal(domain, my_sam_name()) &&
+	    !strequal(domain, get_global_sam_name()))
 	{
 		if (lp_map_untrusted_to_domain())
 			domain = my_sam_name();
@@ -901,6 +902,7 @@ static NTSTATUS make_new_session_info_system(TALLOC_CTX *mem_ctx,
 
 NTSTATUS make_serverinfo_from_username(TALLOC_CTX *mem_ctx,
 				       const char *username,
+				       bool use_guest_token,
 				       bool is_guest,
 				       struct auth_serversupplied_info **presult)
 {
@@ -924,7 +926,11 @@ NTSTATUS make_serverinfo_from_username(TALLOC_CTX *mem_ctx,
 	result->nss_token = true;
 	result->guest = is_guest;
 
-	status = create_local_token(result);
+	if (use_guest_token) {
+		status = make_server_info_guest(mem_ctx, &result);
+	} else {
+		status = create_local_token(result);
+	}
 
 	if (!NT_STATUS_IS_OK(status)) {
 		TALLOC_FREE(result);

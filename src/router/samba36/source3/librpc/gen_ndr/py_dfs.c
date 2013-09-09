@@ -4824,8 +4824,8 @@ void initdfs(void)
 	PyModule_AddObject(m, "DFS_MANAGER_VERSION_W2K8", PyInt_FromLong(DFS_MANAGER_VERSION_W2K8));
 	PyModule_AddObject(m, "DFS_INVALID_PRIORITY_CLASS", PyInt_FromLong(DFS_INVALID_PRIORITY_CLASS));
 	PyModule_AddObject(m, "DFS_VOLUME_STATE_AD_BLOB", PyInt_FromLong(DFS_VOLUME_STATE_AD_BLOB));
-	PyModule_AddObject(m, "DFS_STORAGE_STATES", PyInt_FromLong(0xf));
 	PyModule_AddObject(m, "DFS_PROPERTY_FLAG_TARGET_FAILBACK", PyInt_FromLong(DFS_PROPERTY_FLAG_TARGET_FAILBACK));
+	PyModule_AddObject(m, "DFS_STORAGE_STATES", PyInt_FromLong(0xf));
 	PyModule_AddObject(m, "DFS_VOLUME_STATE_ONLINE", PyInt_FromLong(DFS_VOLUME_STATE_ONLINE));
 	PyModule_AddObject(m, "DFS_GLOBAL_LOW_PRIORITY_CLASS", PyInt_FromLong(DFS_GLOBAL_LOW_PRIORITY_CLASS));
 	PyModule_AddObject(m, "DFS_MANAGER_VERSION_W2K", PyInt_FromLong(DFS_MANAGER_VERSION_W2K));

@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: idmap_nss
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: System Administration tools
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "IDMAP_NSS" "8" "01/18/2013" "Samba 3\&.6" "System Administration tools"
+.TH "IDMAP_NSS" "8" "08/12/2013" "Samba 3\&.6" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -19,7 +28,7 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-idmap_nss \- Samba\'s idmap_nss Backend for Winbind
+idmap_nss \- Samba\*(Aqs idmap_nss Backend for Winbind
 .SH "DESCRIPTION"
 .PP
 The idmap_nss plugin provides a means to map Unix users and groups to Windows accounts and obsoletes the "winbind trusted domains only" smb\&.conf option\&. This provides a simple means of ensuring that the SID for a Unix user named jsmith is reported as the one assigned to DOMAIN\ejsmith which is necessary for reporting ACLs on files and printers stored on a Samba member server\&.

@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: smb.conf
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: File Formats and Conventions
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "SMB\&.CONF" "5" "01/18/2013" "Samba 3\&.6" "File Formats and Conventions"
+.TH "SMB\&.CONF" "5" "08/12/2013" "Samba 3\&.6" "File Formats and Conventions"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -147,7 +156,7 @@ The share name is changed from homes to the located username\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-If no path was given, the path is set to the user\'s home directory\&.
+If no path was given, the path is set to the user\*(Aqs home directory\&.
 .RE
 .sp
 .RE
@@ -199,7 +208,7 @@ in the [homes] section will hide the [homes] share but make any auto home direct
 .PP
 This section works like [homes], but for printers\&.
 .PP
-If a [printers] section occurs in the configuration file, users are able to connect to any printer specified in the local host\'s printcap file\&.
+If a [printers] section occurs in the configuration file, users are able to connect to any printer specified in the local host\*(Aqs printcap file\&.
 .PP
 When a connection request is made, the existing sections are scanned\&. If a match is found, it is used\&. If no match is found, but a [homes] section exists, it is used as described above\&. Otherwise, the requested section name is treated as a printer name and the appropriate printcap file is scanned to see if the requested section name is a valid printer share name\&. If a match is found, a new printer share is created by cloning the [printers] section\&.
 .PP
@@ -257,7 +266,7 @@ Typically the path specified is that of a world\-writeable spool directory with 
 .RE
 .\}
 .PP
-All aliases given for a printer in the printcap file are legitimate printer names as far as the server is concerned\&. If your printing subsystem doesn\'t work like that, you will have to set up a pseudo\-printcap\&. This is a file consisting of one or more lines like this:
+All aliases given for a printer in the printcap file are legitimate printer names as far as the server is concerned\&. If your printing subsystem doesn\*(Aqt work like that, you will have to set up a pseudo\-printcap\&. This is a file consisting of one or more lines like this:
 .sp
 .if n \{\
 .RS 4
@@ -532,7 +541,7 @@ option, this value will be the same as %L\&.
 .PP
 %p
 .RS 4
-the path of the service\'s home directory, obtained from your NIS auto\&.map entry\&. The NIS auto\&.map entry is split up as
+the path of the service\*(Aqs home directory, obtained from your NIS auto\&.map entry\&. The NIS auto\&.map entry is split up as
 %N:%p\&.
 .RE
 .PP
@@ -543,7 +552,7 @@ options\&.
 .PP
 Samba supports
 name mangling
-so that DOS and Windows clients can use files that don\'t conform to the 8\&.3 format\&. It can also be set to adjust the case of 8\&.3 format filenames\&.
+so that DOS and Windows clients can use files that don\*(Aqt conform to the 8\&.3 format\&. It can also be set to adjust the case of 8\&.3 format filenames\&.
 .PP
 There are several options that control the way mangling is performed, and they are grouped here rather than listed separately\&. For the defaults look at the output of the testparm program\&.
 .PP
@@ -553,13 +562,13 @@ The options are:
 .PP
 case sensitive = yes/no/auto
 .RS 4
-controls whether filenames are case sensitive\&. If they aren\'t, Samba must do a filename search and match on passed names\&. The default setting of auto allows clients that support case sensitive filenames (Linux CIFSVFS and smbclient 3\&.0\&.5 and above currently) to tell the Samba server on a per\-packet basis that they wish to access the file system in a case\-sensitive manner (to support UNIX case sensitive semantics)\&. No Windows or DOS system supports case\-sensitive filename so setting this option to auto is that same as setting it to no for them\&. Default
+controls whether filenames are case sensitive\&. If they aren\*(Aqt, Samba must do a filename search and match on passed names\&. The default setting of auto allows clients that support case sensitive filenames (Linux CIFSVFS and smbclient 3\&.0\&.5 and above currently) to tell the Samba server on a per\-packet basis that they wish to access the file system in a case\-sensitive manner (to support UNIX case sensitive semantics)\&. No Windows or DOS system supports case\-sensitive filename so setting this option to auto is that same as setting it to no for them\&. Default
 \fIauto\fR\&.
 .RE
 .PP
 default case = upper/lower
 .RS 4
-controls what the default case is for new filenames (ie\&. files that don\'t currently exist in the filesystem)\&. Default
+controls what the default case is for new filenames (ie\&. files that don\*(Aqt currently exist in the filesystem)\&. Default
 \fIlower\fR\&. IMPORTANT NOTE: As part of the optimizations for directories containing large numbers of files, the following special case applies\&. If the options
 \m[blue]\fBcase sensitive = yes\fR\m[],
 \m[blue]\fBpreserve case = No\fR\m[], and
@@ -571,7 +580,7 @@ incoming client filenames, not just new filenames, will be modified\&. See addit
 .PP
 preserve case = yes/no
 .RS 4
-controls whether new files (ie\&. files that don\'t currently exist in the filesystem) are created with the case that the client passes, or if they are forced to be the
+controls whether new files (ie\&. files that don\*(Aqt currently exist in the filesystem) are created with the case that the client passes, or if they are forced to be the
 default
 case\&. Default
 \fIyes\fR\&.
@@ -579,7 +588,7 @@ case\&. Default
 .PP
 short preserve case = yes/no
 .RS 4
-controls if new files (ie\&. files that don\'t currently exist in the filesystem) which conform to 8\&.3 syntax, that is all in upper case and of suitable length, are created upper case, or if they are forced to be the
+controls if new files (ie\&. files that don\*(Aqt currently exist in the filesystem) which conform to 8\&.3 syntax, that is all in upper case and of suitable length, are created upper case, or if they are forced to be the
 default
 case\&. This option can be used with
 preserve case = yes
@@ -604,7 +613,7 @@ and the server is running with share\-level security (\(lqsecurity = share\(rq, 
 .sp -1
 .IP "  1." 4.2
 .\}
-If the client has passed a username/password pair and that username/password pair is validated by the UNIX system\'s password programs, the connection is made as that username\&. This includes the
+If the client has passed a username/password pair and that username/password pair is validated by the UNIX system\*(Aqs password programs, the connection is made as that username\&. This includes the
 \e\eserver\eservice%\fIusername\fR
 method of passing a username\&.
 .RE
@@ -628,7 +637,7 @@ If the client has previously registered a username with the system and now suppl
 .sp -1
 .IP "  3." 4.2
 .\}
-The client\'s NetBIOS name and any previously used usernames are checked against the supplied password\&. If they match, the connection is allowed as the corresponding user\&.
+The client\*(Aqs NetBIOS name and any previously used usernames are checked against the supplied password\&. If they match, the connection is allowed as the corresponding user\&.
 .RE
 .sp
 .RS 4
@@ -654,7 +663,7 @@ If a
 user =
 field is given in the
 smb\&.conf
-file for the service and the client has supplied a password, and that password matches (according to the UNIX system\'s password checking) with one of the usernames from the
+file for the service and the client has supplied a password, and that password matches (according to the UNIX system\*(Aqs password checking) with one of the usernames from the
 user =
 field, the connection is made as the username in the
 user =
@@ -786,9 +795,9 @@ acl check permissions (S)
 .PP
 .RS 4
 This boolean parameter controls what
-\fBsmbd\fR(8)does on receiving a protocol request of "open for delete" from a Windows client\&. If a Windows client doesn\'t have permissions to delete a file then they expect this to be denied at open time\&. POSIX systems normally only detect restrictions on delete by actually attempting to delete the file or directory\&. As Windows clients can (and do) "back out" a delete request by unsetting the "delete on close" bit Samba cannot delete the file immediately on "open for delete" request as we cannot restore such a deleted file\&. With this parameter set to true (the default) then smbd checks the file system permissions directly on "open for delete" and denies the request without actually deleting the file if the file system permissions would seem to deny it\&. This is not perfect, as it\'s possible a user could have deleted a file without Samba being able to check the permissions correctly, but it is close enough to Windows semantics for mostly correct behaviour\&. Samba will correctly check POSIX ACL semantics in this case\&.
+\fBsmbd\fR(8)does on receiving a protocol request of "open for delete" from a Windows client\&. If a Windows client doesn\*(Aqt have permissions to delete a file then they expect this to be denied at open time\&. POSIX systems normally only detect restrictions on delete by actually attempting to delete the file or directory\&. As Windows clients can (and do) "back out" a delete request by unsetting the "delete on close" bit Samba cannot delete the file immediately on "open for delete" request as we cannot restore such a deleted file\&. With this parameter set to true (the default) then smbd checks the file system permissions directly on "open for delete" and denies the request without actually deleting the file if the file system permissions would seem to deny it\&. This is not perfect, as it\*(Aqs possible a user could have deleted a file without Samba being able to check the permissions correctly, but it is close enough to Windows semantics for mostly correct behaviour\&. Samba will correctly check POSIX ACL semantics in this case\&.
 .sp
-If this parameter is set to "false" Samba doesn\'t check permissions on "open for delete" and allows the open\&. If the user doesn\'t have permission to delete the file this will only be discovered at close time, which is too late for the Windows user tools to display an error message to the user\&. The symptom of this is files that appear to have been deleted "magically" re\-appearing on a Windows explorer refresh\&. This is an extremely advanced protocol option which should not need to be changed\&. This parameter was introduced in its final form in 3\&.0\&.21, an earlier version with slightly different semantics was introduced in 3\&.0\&.20\&. That older version is not documented here\&.
+If this parameter is set to "false" Samba doesn\*(Aqt check permissions on "open for delete" and allows the open\&. If the user doesn\*(Aqt have permission to delete the file this will only be discovered at close time, which is too late for the Windows user tools to display an error message to the user\&. The symptom of this is files that appear to have been deleted "magically" re\-appearing on a Windows explorer refresh\&. This is an extremely advanced protocol option which should not need to be changed\&. This parameter was introduced in its final form in 3\&.0\&.21, an earlier version with slightly different semantics was introduced in 3\&.0\&.20\&. That older version is not documented here\&.
 .sp
 Default:
 \fI\fIacl check permissions\fR\fR\fI = \fR\fITrue\fR\fI \fR
@@ -876,7 +885,7 @@ add machine script (G)
 .RS 4
 This is the full pathname to a script that will be run by
 \fBsmbd\fR(8)
-when a machine is added to Samba\'s domain and a Unix account matching the machine\'s name appended with a "$" does not already exist\&.
+when a machine is added to Samba\*(Aqs domain and a Unix account matching the machine\*(Aqs name appended with a "$" does not already exist\&.
 .sp
 This option is very similar to the
 \m[blue]\fBadd user script\fR\m[], and likewise uses the %u substitution for the account name\&. Do not use the %m substitution\&.
@@ -1024,7 +1033,7 @@ will return an ACCESS_DENIED error to the client\&.
 .sp
 The
 \fIaddprinter command\fR
-program can output a single line of text, which Samba will set as the port the new printer is connected to\&. If this line isn\'t output, Samba won\'t reload its printer shares\&.
+program can output a single line of text, which Samba will set as the port the new printer is connected to\&. If this line isn\*(Aqt output, Samba won\*(Aqt reload its printer shares\&.
 .sp
 Default:
 \fI\fIaddprinter command\fR\fR\fI = \fR\fI\fR\fI \fR
@@ -1337,7 +1346,7 @@ This determines how Samba will use its algorithmic mapping from uids/gid to the 
 .sp
 Setting this option to a larger value could be useful to sites transitioning from WinNT and Win2k, as existing user and group rids would otherwise clash with sytem users etc\&.
 .sp
-All UIDs and GIDs must be able to be resolved into SIDs for the correct operation of ACLs on the server\&. As such the algorithmic mapping can\'t be \'turned off\', but pushing it \'out of the way\' should resolve the issues\&. Users and groups can then be assigned \'low\' RIDs in arbitrary\-rid supporting backends\&.
+All UIDs and GIDs must be able to be resolved into SIDs for the correct operation of ACLs on the server\&. As such the algorithmic mapping can\*(Aqt be \*(Aqturned off\*(Aq, but pushing it \*(Aqout of the way\*(Aq should resolve the issues\&. Users and groups can then be assigned \*(Aqlow\*(Aq RIDs in arbitrary\-rid supporting backends\&.
 .sp
 Default:
 \fI\fIalgorithmic rid base\fR\fR\fI = \fR\fI1000\fR\fI \fR
@@ -1508,7 +1517,7 @@ will service name requests on all of these sockets\&. If
 \m[blue]\fBbind interfaces only\fR\m[]
 is set then
 nmbd
-will check the source address of any packets coming in on the broadcast sockets and discard any that don\'t match the broadcast addresses of the interfaces in the
+will check the source address of any packets coming in on the broadcast sockets and discard any that don\*(Aqt match the broadcast addresses of the interfaces in the
 \m[blue]\fBinterfaces\fR\m[]
 parameter list\&. As unicast packets are received on the other sockets it allows
 nmbd
@@ -1549,7 +1558,7 @@ is added to the
 \m[blue]\fBinterfaces\fR\m[]
 parameter list then
 smbpasswd
-will fail to connect in it\'s default mode\&.
+will fail to connect in it\*(Aqs default mode\&.
 smbpasswd
 can be forced to use the primary IP interface of the local host by using its
 \fBsmbpasswd\fR(8)
@@ -1695,7 +1704,7 @@ change notify (S)
 .\" change notify
 .PP
 .RS 4
-This parameter specifies whether Samba should reply to a client\'s file change notify requests\&.
+This parameter specifies whether Samba should reply to a client\*(Aqs file change notify requests\&.
 .sp
 You should never need to change this parameter
 .sp
@@ -1802,7 +1811,7 @@ check password script (G)
 .\" check password script
 .PP
 .RS 4
-The name of a program that can be used to check password complexity\&. The password is sent to the program\'s standard input\&.
+The name of a program that can be used to check password complexity\&. The password is sent to the program\*(Aqs standard input\&.
 .sp
 The program must return 0 on a good password, or any other value if the password is bad\&. In case the password is considered weak (the program does not return 0) the user will be notified and the password change will fail\&.
 .sp
@@ -1895,7 +1904,7 @@ authentication will be disabled\&. This also disables share\-level authenticatio
 If disabled, an NTLM response (and possibly a LANMAN response) will be sent by the client, depending on the value of
 client lanman auth\&.
 .sp
-Note that Windows Vista and later versions already use NTLMv2 by default, and some sites (particularly those following \'best practice\' security polices) only allow NTLMv2 responses, and not the weaker LM or NTLM\&.
+Note that Windows Vista and later versions already use NTLMv2 by default, and some sites (particularly those following \*(Aqbest practice\*(Aq security polices) only allow NTLMv2 responses, and not the weaker LM or NTLM\&.
 .sp
 Default:
 \fI\fIclient ntlmv2 auth\fR\fR\fI = \fR\fIyes\fR\fI \fR
@@ -1958,7 +1967,7 @@ If enabled, Samba can attempt to use Kerberos to contact servers known only by I
 .sp
 If disabled, Samba will use the name used to look up the server when asking the KDC for a ticket\&. This avoids situations where a server may impersonate another, soliciting authentication as one principal while being known on the network as another\&.
 .sp
-Note that Windows XP SP2 and later versions already follow this behaviour, and Windows Vista and later servers no longer supply this \'rfc4178 hint\' principal on the server side\&.
+Note that Windows XP SP2 and later versions already follow this behaviour, and Windows Vista and later servers no longer supply this \*(Aqrfc4178 hint\*(Aq principal on the server side\&.
 .sp
 Default:
 \fI\fIclient use spnego principal\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -2017,7 +2026,7 @@ Default:
 \fI\fIcomment\fR\fR\fI = \fR\fI # No comment\fR\fI \fR
 .sp
 Example:
-\fI\fIcomment\fR\fR\fI = \fR\fIFred\'s Files\fR\fI \fR
+\fI\fIcomment\fR\fR\fI = \fR\fIFred\*(Aqs Files\fR\fI \fR
 .RE
 
 config backend (G)
@@ -2055,7 +2064,7 @@ For this reason, if the name of the config file has changed when the parameters 
 .sp
 This option takes the usual substitutions, which can be very useful\&.
 .sp
-If the config file doesn\'t exist then it won\'t be loaded (allowing you to special case the config files of just a few clients)\&.
+If the config file doesn\*(Aqt exist then it won\*(Aqt be loaded (allowing you to special case the config files of just a few clients)\&.
 .sp
 \fINo default\fR
 .sp
@@ -2067,9 +2076,9 @@ copy (S)
 .\" copy
 .PP
 .RS 4
-This parameter allows you to "clone" service entries\&. The specified service is simply duplicated under the current service\'s name\&. Any parameters specified in the current section will override those in the section being copied\&.
+This parameter allows you to "clone" service entries\&. The specified service is simply duplicated under the current service\*(Aqs name\&. Any parameters specified in the current section will override those in the section being copied\&.
 .sp
-This feature lets you set up a \'template\' service and create similar services easily\&. Note that the service being copied must occur earlier in the configuration file than the service doing the copying\&.
+This feature lets you set up a \*(Aqtemplate\*(Aq service and create similar services easily\&. Note that the service being copied must occur earlier in the configuration file than the service doing the copying\&.
 .sp
 Default:
 \fI\fIcopy\fR\fR\fI = \fR\fI\fR\fI \fR
@@ -2104,7 +2113,7 @@ create mask (S)
 .\" create mask
 .PP
 .RS 4
-When a file is created, the necessary permissions are calculated according to the mapping from DOS modes to UNIX permissions, and the resulting UNIX mode is then bit\-wise \'AND\'ed with this parameter\&. This parameter may be thought of as a bit\-wise MASK for the UNIX modes of a file\&. Any bit
+When a file is created, the necessary permissions are calculated according to the mapping from DOS modes to UNIX permissions, and the resulting UNIX mode is then bit\-wise \*(AqAND\*(Aqed with this parameter\&. This parameter may be thought of as a bit\-wise MASK for the UNIX modes of a file\&. Any bit
 \fInot\fR
 set here will be removed from the modes set on a file when it is created\&.
 .sp
@@ -2114,7 +2123,7 @@ and
 other
 write and execute bits from the UNIX modes\&.
 .sp
-Following this Samba will bit\-wise \'OR\' the UNIX mode created from this parameter with the value of the
+Following this Samba will bit\-wise \*(AqOR\*(Aq the UNIX mode created from this parameter with the value of the
 \m[blue]\fBforce create mode\fR\m[]
 parameter which is set to 000 by default\&.
 .sp
@@ -2245,13 +2254,13 @@ This parameter is only applicable if
 is set to
 \fBcups\fR\&. Its value is a free form string of options passed directly to the cups library\&.
 .sp
-You can pass any generic print option known to CUPS (as listed in the CUPS "Software Users\' Manual")\&. You can also pass any printer specific option (as listed in "lpoptions \-d printername \-l") valid for the target queue\&. Multiple parameters should be space\-delimited name/value pairs according to the PAPI text option ABNF specification\&. Collection values ("name={a=\&.\&.\&. b=\&.\&.\&. c=\&.\&.\&.}") are stored with the curley brackets intact\&.
+You can pass any generic print option known to CUPS (as listed in the CUPS "Software Users\*(Aq Manual")\&. You can also pass any printer specific option (as listed in "lpoptions \-d printername \-l") valid for the target queue\&. Multiple parameters should be space\-delimited name/value pairs according to the PAPI text option ABNF specification\&. Collection values ("name={a=\&.\&.\&. b=\&.\&.\&. c=\&.\&.\&.}") are stored with the curley brackets intact\&.
 .sp
 You should set this parameter to
 \fBraw\fR
 if your CUPS server
 error_log
-file contains messages such as "Unsupported format \'application/octet\-stream\'" when printing from a Windows client through Samba\&. It is no longer necessary to enable system wide raw printing in
+file contains messages such as "Unsupported format \*(Aqapplication/octet\-stream\*(Aq" when printing from a Windows client through Samba\&. It is no longer necessary to enable system wide raw printing in
 /etc/cups/mime\&.{convs,types}\&.
 .sp
 Default:
@@ -2291,7 +2300,7 @@ deadtime (G)
 .RS 4
 The value of the parameter (a decimal integer) represents the number of minutes of inactivity before a connection is considered dead, and it is disconnected\&. The deadtime only takes effect if the number of open files is zero\&.
 .sp
-This is useful to stop a server\'s resources being exhausted by a large number of inactive connections\&.
+This is useful to stop a server\*(Aqs resources being exhausted by a large number of inactive connections\&.
 .sp
 Most clients have an auto\-reconnect feature when a connection is broken so in most cases this parameter should be transparent to users\&.
 .sp
@@ -2434,7 +2443,7 @@ This parameter is only applicable to
 \m[blue]\fBprintable\fR\m[]
 services\&. When smbd is serving Printer Drivers to Windows NT/2k/XP clients, each printer on the Samba server has a Device Mode which defines things such as paper size and orientation and duplex settings\&. The device mode can only correctly be generated by the printer driver itself (which can only be executed on a Win32 platform)\&. Because smbd is unable to execute the driver code to generate the device mode, the default behavior is to set this field to NULL\&.
 .sp
-Most problems with serving printer drivers to Windows NT/2k/XP clients can be traced to a problem with the generated device mode\&. Certain drivers will do things such as crashing the client\'s Explorer\&.exe with a NULL devmode\&. However, other printer drivers can cause the client\'s spooler service (spoolsv\&.exe) to die if the devmode was not created by the driver itself (i\&.e\&. smbd generates a default devmode)\&.
+Most problems with serving printer drivers to Windows NT/2k/XP clients can be traced to a problem with the generated device mode\&. Certain drivers will do things such as crashing the client\*(Aqs Explorer\&.exe with a NULL devmode\&. However, other printer drivers can cause the client\*(Aqs spooler service (spoolsv\&.exe) to die if the devmode was not created by the driver itself (i\&.e\&. smbd generates a default devmode)\&.
 .sp
 This parameter should be used with care and tested with the printer driver in question\&. It is better to leave the device mode to NULL and let the Windows client set the correct values\&. Because drivers do not do this all the time, setting
 default devmode = yes
@@ -2644,7 +2653,7 @@ This is the full pathname to a script that will be run by
 \fBsmbd\fR(8)
 when managing users with remote RPC (NT) tools\&.
 .sp
-This script is called when a remote client removes a user from the server, normally using \'User Manager for Domains\' or
+This script is called when a remote client removes a user from the server, normally using \*(AqUser Manager for Domains\*(Aq or
 rpcclient\&.
 .sp
 This script should delete the given UNIX username\&.
@@ -2727,7 +2736,7 @@ Where the script dfree (which must be made executable) could be:
 .nf
  
 #!/bin/sh
-df $1 | tail \-1 | awk \'{print $(NF\-4),$(NF\-2)}\'
+df $1 | tail \-1 | awk \*(Aq{print $(NF\-4),$(NF\-2)}\*(Aq
 .fi
 .if n \{\
 .RE
@@ -2741,7 +2750,7 @@ or perhaps (on Sys V based systems):
 .nf
  
 #!/bin/sh
-/usr/bin/df \-k $1 | tail \-1 | awk \'{print $3" "$5}\'
+/usr/bin/df \-k $1 | tail \-1 | awk \*(Aq{print $3" "$5}\*(Aq
 .fi
 .if n \{\
 .RE
@@ -2771,13 +2780,13 @@ directory mask (S)
 .RS 4
 This parameter is the octal modes which are used when converting DOS modes to UNIX modes when creating UNIX directories\&.
 .sp
-When a directory is created, the necessary permissions are calculated according to the mapping from DOS modes to UNIX permissions, and the resulting UNIX mode is then bit\-wise \'AND\'ed with this parameter\&. This parameter may be thought of as a bit\-wise MASK for the UNIX modes of a directory\&. Any bit
+When a directory is created, the necessary permissions are calculated according to the mapping from DOS modes to UNIX permissions, and the resulting UNIX mode is then bit\-wise \*(AqAND\*(Aqed with this parameter\&. This parameter may be thought of as a bit\-wise MASK for the UNIX modes of a directory\&. Any bit
 \fInot\fR
 set here will be removed from the modes set on a directory when it is created\&.
 .sp
-The default value of this parameter removes the \'group\' and \'other\' write bits from the UNIX mode, allowing only the user who owns the directory to modify it\&.
+The default value of this parameter removes the \*(Aqgroup\*(Aq and \*(Aqother\*(Aq write bits from the UNIX mode, allowing only the user who owns the directory to modify it\&.
 .sp
-Following this Samba will bit\-wise \'OR\' the UNIX mode created from this parameter with the value of the
+Following this Samba will bit\-wise \*(AqOR\*(Aq the UNIX mode created from this parameter with the value of the
 \m[blue]\fBforce directory mode\fR\m[]
 parameter\&. This parameter is set to 000 by default (i\&.e\&. no extra mode bits are added)\&.
 .sp
@@ -2807,7 +2816,7 @@ directory security mask (S)
 .RS 4
 This parameter controls what UNIX permission bits will be set when a Windows NT client is manipulating the UNIX permission on a directory using the native NT security dialog box\&.
 .sp
-This parameter is applied as a mask (AND\'ed with) to the incoming permission bits, thus resetting any bits not in this mask\&. Make sure not to mix up this parameter with
+This parameter is applied as a mask (AND\*(Aqed with) to the incoming permission bits, thus resetting any bits not in this mask\&. Make sure not to mix up this parameter with
 \m[blue]\fBforce directory security mode\fR\m[], which works similar like this one but uses logical OR instead of AND\&. Essentially, zero bits in this mask are a set of bits that will always be set to zero\&.
 .sp
 Essentially, all bits set to zero in this mask will result in setting to zero the corresponding bits on the file permissions regardless of the previous status of this bits on the file\&.
@@ -2842,7 +2851,7 @@ Enabling this parameter will disable netbios support in Samba\&. Netbios is the 
 \fBNote\fR
 .ps -1
 .br
-Clients that only support netbios won\'t be able to see your samba server when netbios support is disabled\&.
+Clients that only support netbios won\*(Aqt be able to see your samba server when netbios support is disabled\&.
 .sp .5v
 .RE
 Default:
@@ -2853,7 +2862,7 @@ disable spoolss (G)
 .\" disable spoolss
 .PP
 .RS 4
-Enabling this parameter will disable Samba\'s support for the SPOOLSS set of MS\-RPC\'s and will yield identical behavior as Samba 2\&.0\&.x\&. Windows NT/2000 clients will downgrade to using Lanman style printing commands\&. Windows 9x/ME will be unaffected by the parameter\&. However, this will also disable the ability to upload printer drivers to a Samba server via the Windows NT Add Printer Wizard or by using the NT printer properties dialog window\&. It will also disable the capability of Windows NT/2000 clients to download print drivers from the Samba host upon demand\&.
+Enabling this parameter will disable Samba\*(Aqs support for the SPOOLSS set of MS\-RPC\*(Aqs and will yield identical behavior as Samba 2\&.0\&.x\&. Windows NT/2000 clients will downgrade to using Lanman style printing commands\&. Windows 9x/ME will be unaffected by the parameter\&. However, this will also disable the ability to upload printer drivers to a Samba server via the Windows NT Add Printer Wizard or by using the NT printer properties dialog window\&. It will also disable the capability of Windows NT/2000 clients to download print drivers from the Samba host upon demand\&.
 \fIBe very careful about enabling this parameter\&.\fR
 .sp
 Default:
@@ -2957,7 +2966,7 @@ be enabled by default\&.
 When
 \m[blue]\fBdomain logons = Yes\fR\m[]
 the default setting for this parameter is Yes, with the result that Samba will be a PDC\&. If
-\m[blue]\fBdomain master = No\fR\m[], Samba will function as a BDC\&. In general, this parameter should be set to \'No\' only on a BDC\&.
+\m[blue]\fBdomain master = No\fR\m[], Samba will function as a BDC\&. In general, this parameter should be set to \*(AqNo\*(Aq only on a BDC\&.
 .sp
 Default:
 \fI\fIdomain master\fR\fR\fI = \fR\fIauto\fR\fI \fR
@@ -3179,7 +3188,7 @@ NTFS and Windows VFAT file systems keep a create time for all files and director
 .sp
 This option is mainly used as a compatibility option for Visual C++ when used against Samba shares\&. Visual C++ generated makefiles have the object directory as a dependency for each object file, and a make rule to create the directory\&. Also, when NMAKE compares timestamps it uses the creation time when examining a directory\&. Thus the object directory will be created if it does not exist, but once it does exist it will always have an earlier timestamp than the object files it contains\&.
 .sp
-However, Unix time semantics mean that the create time reported by Samba will be updated whenever a file is created or or deleted in the directory\&. NMAKE finds all object files in the object directory\&. The timestamp of the last one built is then compared to the timestamp of the object directory\&. If the directory\'s timestamp if newer, then all object files will be rebuilt\&. Enabling this option ensures directories always predate their contents and an NMAKE build will proceed as expected\&.
+However, Unix time semantics mean that the create time reported by Samba will be updated whenever a file is created or or deleted in the directory\&. NMAKE finds all object files in the object directory\&. The timestamp of the last one built is then compared to the timestamp of the object directory\&. If the directory\*(Aqs timestamp if newer, then all object files will be rebuilt\&. Enabling this option ensures directories always predate their contents and an NMAKE build will proceed as expected\&.
 .sp
 Default:
 \fI\fIfake directory create times\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -3232,11 +3241,11 @@ force create mode (S)
 .RS 4
 This parameter specifies a set of UNIX mode bit permissions that will
 \fIalways\fR
-be set on a file created by Samba\&. This is done by bitwise \'OR\'ing these bits onto the mode bits of a file that is being created\&. The default for this parameter is (in octal) 000\&. The modes in this parameter are bitwise \'OR\'ed onto the file mode after the mask set in the
+be set on a file created by Samba\&. This is done by bitwise \*(AqOR\*(Aqing these bits onto the mode bits of a file that is being created\&. The default for this parameter is (in octal) 000\&. The modes in this parameter are bitwise \*(AqOR\*(Aqed onto the file mode after the mask set in the
 \fIcreate mask\fR
 parameter is applied\&.
 .sp
-The example below would force all newly created files to have read and execute permissions set for \'group\' and \'other\' as well as the read/write/execute bits set for the \'user\'\&.
+The example below would force all newly created files to have read and execute permissions set for \*(Aqgroup\*(Aq and \*(Aqother\*(Aq as well as the read/write/execute bits set for the \*(Aquser\*(Aq\&.
 .sp
 Default:
 \fI\fIforce create mode\fR\fR\fI = \fR\fI000\fR\fI \fR
@@ -3251,11 +3260,11 @@ force directory mode (S)
 .RS 4
 This parameter specifies a set of UNIX mode bit permissions that will
 \fIalways\fR
-be set on a directory created by Samba\&. This is done by bitwise \'OR\'ing these bits onto the mode bits of a directory that is being created\&. The default for this parameter is (in octal) 0000 which will not add any extra permission bits to a created directory\&. This operation is done after the mode mask in the parameter
+be set on a directory created by Samba\&. This is done by bitwise \*(AqOR\*(Aqing these bits onto the mode bits of a directory that is being created\&. The default for this parameter is (in octal) 0000 which will not add any extra permission bits to a created directory\&. This operation is done after the mode mask in the parameter
 \fIdirectory mask\fR
 is applied\&.
 .sp
-The example below would force all created directories to have read and execute permissions set for \'group\' and \'other\' as well as the read/write/execute bits set for the \'user\'\&.
+The example below would force all created directories to have read and execute permissions set for \*(Aqgroup\*(Aq and \*(Aqother\*(Aq as well as the read/write/execute bits set for the \*(Aquser\*(Aq\&.
 .sp
 Default:
 \fI\fIforce directory mode\fR\fR\fI = \fR\fI000\fR\fI \fR
@@ -3270,7 +3279,7 @@ force directory security mode (S)
 .RS 4
 This parameter controls what UNIX permission bits can be modified when a Windows NT client is manipulating the UNIX permission on a directory using the native NT security dialog box\&.
 .sp
-This parameter is applied as a mask (OR\'ed with) to the changed permission bits, thus forcing any bits in this mask that the user may have modified to be on\&. Make sure not to mix up this parameter with
+This parameter is applied as a mask (OR\*(Aqed with) to the changed permission bits, thus forcing any bits in this mask that the user may have modified to be on\&. Make sure not to mix up this parameter with
 \m[blue]\fBdirectory security mask\fR\m[], which works in a similar manner to this one, but uses a logical AND instead of an OR\&.
 .sp
 Essentially, this mask may be treated as a set of bits that, when modifying security on a directory, to will enable (1) any flags that are off (0) but which the mask has set to on (1)\&.
@@ -3312,7 +3321,7 @@ force group (S)
 .RS 4
 This specifies a UNIX group name that will be assigned as the default primary group for all users connecting to this service\&. This is useful for sharing files by ensuring that all access to files on service will use the named group for their permissions checking\&. Thus, by assigning permissions for this group to the files and directories within this service the Samba administrator can restrict or allow sharing of these files\&.
 .sp
-In Samba 2\&.0\&.5 and above this parameter has extended functionality in the following way\&. If the group name listed here has a \'+\' character prepended to it then the current user accessing the share only has the primary group default assigned to this group if they are already assigned as a member of that group\&. This allows an administrator to decide that only users who are already in a particular group will create files with group ownership set to that group\&. This gives a finer granularity of ownership assignment\&. For example, the setting
+In Samba 2\&.0\&.5 and above this parameter has extended functionality in the following way\&. If the group name listed here has a \*(Aq+\*(Aq character prepended to it then the current user accessing the share only has the primary group default assigned to this group if they are already assigned as a member of that group\&. This allows an administrator to decide that only users who are already in a particular group will create files with group ownership set to that group\&. This gives a finer granularity of ownership assignment\&. For example, the setting
 force group = +sys
 means that only users who are already in group sys will have their default primary group assigned to sys when accessing this Samba share\&. All other users will retain their ordinary primary group\&.
 .sp
@@ -3340,12 +3349,12 @@ has two associated names which can be used by the client\&. The first is the sha
 \fIprinter name\fR
 option)\&.
 .sp
-When assigning a new driver to a printer on a remote Windows compatible print server such as Samba, the Windows client will rename the printer to match the driver name just uploaded\&. This can result in confusion for users when multiple printers are bound to the same driver\&. To prevent Samba from allowing the printer\'s printername to differ from the sharename defined in smb\&.conf, set
+When assigning a new driver to a printer on a remote Windows compatible print server such as Samba, the Windows client will rename the printer to match the driver name just uploaded\&. This can result in confusion for users when multiple printers are bound to the same driver\&. To prevent Samba from allowing the printer\*(Aqs printername to differ from the sharename defined in smb\&.conf, set
 \fIforce printername = yes\fR\&.
 .sp
 Be aware that enabling this parameter may affect migrating printers from a Windows server to Samba since Windows has no way to force the sharename and printername to match\&.
 .sp
-It is recommended that this parameter\'s value not be changed once the printer is in use by clients as this could cause a user not be able to delete printer connections from their local Printers folder\&.
+It is recommended that this parameter\*(Aqs value not be changed once the printer is in use by clients as this could cause a user not be able to delete printer connections from their local Printers folder\&.
 .sp
 Default:
 \fI\fIforce printername\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -3357,7 +3366,7 @@ force security mode (S)
 .RS 4
 This parameter controls what UNIX permission bits can be modified when a Windows NT client is manipulating the UNIX permission on a file using the native NT security dialog box\&.
 .sp
-This parameter is applied as a mask (OR\'ed with) to the changed permission bits, thus forcing any bits in this mask that the user may have modified to be on\&. Make sure not to mix up this parameter with
+This parameter is applied as a mask (OR\*(Aqed with) to the changed permission bits, thus forcing any bits in this mask that the user may have modified to be on\&. Make sure not to mix up this parameter with
 \m[blue]\fBsecurity mask\fR\m[], which works similar like this one but uses logical AND instead of OR\&.
 .sp
 Essentially, one bits in this mask may be treated as a set of bits that, when modifying security on a file, the user has always set to be on\&.
@@ -3728,11 +3737,11 @@ hide files (S)
 .\" hide files
 .PP
 .RS 4
-This is a list of files or directories that are not visible but are accessible\&. The DOS \'hidden\' attribute is applied to any files or directories that match\&.
+This is a list of files or directories that are not visible but are accessible\&. The DOS \*(Aqhidden\*(Aq attribute is applied to any files or directories that match\&.
 .sp
-Each entry in the list must be separated by a \'/\', which allows spaces to be included in the entry\&. \'*\' and \'?\' can be used to specify multiple files or directories as in DOS wildcards\&.
+Each entry in the list must be separated by a \*(Aq/\*(Aq, which allows spaces to be included in the entry\&. \*(Aq*\*(Aq and \*(Aq?\*(Aq can be used to specify multiple files or directories as in DOS wildcards\&.
 .sp
-Each entry must be a Unix path, not a DOS path and must not include the Unix directory separator \'/\'\&.
+Each entry must be a Unix path, not a DOS path and must not include the Unix directory separator \*(Aq/\*(Aq\&.
 .sp
 Note that the case sensitivity option is applicable in hiding files\&.
 .sp
@@ -3762,7 +3771,7 @@ hide special files (S)
 .\" hide special files
 .PP
 .RS 4
-This parameter prevents clients from seeing special files such as sockets, devices and fifo\'s in directory listings\&.
+This parameter prevents clients from seeing special files such as sockets, devices and fifo\*(Aqs in directory listings\&.
 .sp
 Default:
 \fI\fIhide special files\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -3799,7 +3808,7 @@ is
 \fBsmbd\fR(8)
 is also acting as a Win95/98
 \fIlogon server\fR
-then this parameter specifies the NIS (or YP) map from which the server for the user\'s home directory should be extracted\&. At present, only the Sun auto\&.home map format is understood\&. The form of the map is:
+then this parameter specifies the NIS (or YP) map from which the server for the user\*(Aqs home directory should be extracted\&. At present, only the Sun auto\&.home map format is understood\&. The form of the map is:
 .sp
 .if n \{\
 .RS 4
@@ -3811,7 +3820,7 @@ username server:/some/file/system
 .RE
 .\}
 .sp
-and the program will extract the servername from before the first \':\'\&. There should probably be a better parsing system that copes with different map formats and also Amd (another automounter) maps\&.
+and the program will extract the servername from before the first \*(Aq:\*(Aq\&. There should probably be a better parsing system that copes with different map formats and also Amd (another automounter) maps\&.
 .if n \{\
 .sp
 .\}
@@ -3988,7 +3997,7 @@ idmap cache time (G)
 .\" idmap cache time
 .PP
 .RS 4
-This parameter specifies the number of seconds that Winbind\'s idmap interface will cache positive SID/uid/gid query results\&.
+This parameter specifies the number of seconds that Winbind\*(Aqs idmap interface will cache positive SID/uid/gid query results\&.
 .sp
 Default:
 \fI\fIidmap cache time\fR\fR\fI = \fR\fI604800 (one week)\fR\fI \fR
@@ -3998,7 +4007,7 @@ idmap config (G)
 .\" idmap config
 .PP
 .RS 4
-ID mapping in Samba is the mapping between Windows SIDs and Unix user and group IDs\&. This is performed by Winbindd with a configurable plugin interface\&. Samba\'s ID mapping is configured by options starting with the
+ID mapping in Samba is the mapping between Windows SIDs and Unix user and group IDs\&. This is performed by Winbindd with a configurable plugin interface\&. Samba\*(Aqs ID mapping is configured by options starting with the
 \m[blue]\fBidmap config\fR\m[]
 prefix\&. An idmap option consists of the
 \m[blue]\fBidmap config\fR\m[]
@@ -4081,7 +4090,7 @@ idmap negative cache time (G)
 .\" idmap negative cache time
 .PP
 .RS 4
-This parameter specifies the number of seconds that Winbind\'s idmap interface will cache negative SID/uid/gid query results\&.
+This parameter specifies the number of seconds that Winbind\*(Aqs idmap interface will cache negative SID/uid/gid query results\&.
 .sp
 Default:
 \fI\fIidmap negative cache time\fR\fR\fI = \fR\fI120\fR\fI \fR
@@ -4156,7 +4165,7 @@ inherit owner (S)
 .RS 4
 The ownership of new files and directories is normally governed by effective uid of the connected user\&. This option allows the Samba administrator to specify that the ownership for new files and directories should be controlled by the ownership of the parent directory\&.
 .sp
-Common scenarios where this behavior is useful is in implementing drop\-boxes where users can create and edit files but not delete them and to ensure that newly create files in a user\'s roaming profile directory are actually owner by the user\&.
+Common scenarios where this behavior is useful is in implementing drop\-boxes where users can create and edit files but not delete them and to ensure that newly create files in a user\*(Aqs roaming profile directory are actually owner by the user\&.
 .sp
 Default:
 \fI\fIinherit owner\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -4276,7 +4285,7 @@ a broadcast/mask pair\&.
 .RE
 The "mask" parameters can either be a bit length (such as 24 for a C class network) or a full netmask in dotted decimal form\&.
 .sp
-The "IP" parameters above can either be a full dotted decimal IP address or a hostname which will be looked up via the OS\'s normal hostname resolution mechanisms\&.
+The "IP" parameters above can either be a full dotted decimal IP address or a hostname which will be looked up via the OS\*(Aqs normal hostname resolution mechanisms\&.
 .sp
 By default Samba enables all active interfaces that are broadcast capable except the loopback adaptor (IP address 127\&.0\&.0\&.1)\&.
 .sp
@@ -4297,13 +4306,13 @@ This is a list of users that should not be allowed to login to this service\&. T
 \fIparanoid\fR
 check to absolutely ensure an improper setting does not breach your security\&.
 .sp
-A name starting with a \'@\' is interpreted as an NIS netgroup first (if your system supports NIS), and then as a UNIX group if the name was not found in the NIS netgroup database\&.
+A name starting with a \*(Aq@\*(Aq is interpreted as an NIS netgroup first (if your system supports NIS), and then as a UNIX group if the name was not found in the NIS netgroup database\&.
 .sp
-A name starting with \'+\' is interpreted only by looking in the UNIX group database via the NSS getgrnam() interface\&. A name starting with \'&\' is interpreted only by looking in the NIS netgroup database (this requires NIS to be working on your system)\&. The characters \'+\' and \'&\' may be used at the start of the name in either order so the value
+A name starting with \*(Aq+\*(Aq is interpreted only by looking in the UNIX group database via the NSS getgrnam() interface\&. A name starting with \*(Aq&\*(Aq is interpreted only by looking in the NIS netgroup database (this requires NIS to be working on your system)\&. The characters \*(Aq+\*(Aq and \*(Aq&\*(Aq may be used at the start of the name in either order so the value
 \fI+&group\fR
 means check the UNIX group database, followed by the NIS netgroup database, and the value
 \fI&+group\fR
-means check the NIS netgroup database, followed by the UNIX group database (the same as the \'@\' prefix)\&.
+means check the NIS netgroup database, followed by the UNIX group database (the same as the \*(Aq@\*(Aq prefix)\&.
 .sp
 The current servicename is substituted for
 \fI%S\fR\&. This is useful in the [homes] section\&.
@@ -4462,13 +4471,13 @@ The LANMAN encrypted response is easily broken, due to its case\-insensitive nat
 .sp
 When this parameter is set to
 no
-this will also result in sambaLMPassword in Samba\'s passdb being blanked after the next password change\&. As a result of that lanman clients won\'t be able to authenticate, even if lanman auth is reenabled later on\&.
+this will also result in sambaLMPassword in Samba\*(Aqs passdb being blanked after the next password change\&. As a result of that lanman clients won\*(Aqt be able to authenticate, even if lanman auth is reenabled later on\&.
 .sp
 Unlike the
 encrypt passwords
 option, this parameter cannot alter client behaviour, and the LANMAN response will still be sent over the network\&. See the
 client lanman auth
-to disable this for Samba\'s clients (such as smbclient)
+to disable this for Samba\*(Aqs clients (such as smbclient)
 .sp
 If this option, and
 ntlm auth
@@ -4538,7 +4547,7 @@ manpage\&. A typical useful value will be
 \fI1\fR
 for tracing function calls\&.
 .sp
-The debug ouput from the LDAP libraries appears with the prefix [LDAP] in Samba\'s logging output\&. The level at which LDAP logging is printed is controlled by the parameter
+The debug ouput from the LDAP libraries appears with the prefix [LDAP] in Samba\*(Aqs logging output\&. The level at which LDAP logging is printed is controlled by the parameter
 \fIldap debug threshold\fR\&.
 .sp
 Default:
@@ -4601,7 +4610,7 @@ This option controls whether to follow LDAP referrals or not when searching for 
 to enable following referrals,
 \fIoff\fR
 to disable this, and
-\fIauto\fR, to use the libldap default settings\&. libldap\'s choice of following referrals or not is set in /etc/openldap/ldap\&.conf with the REFERRALS parameter as documented in ldap\&.conf(5)\&.
+\fIauto\fR, to use the libldap default settings\&. libldap\*(Aqs choice of following referrals or not is set in /etc/openldap/ldap\&.conf with the REFERRALS parameter as documented in ldap\&.conf(5)\&.
 .sp
 Default:
 \fI\fIldap follow referral\fR\fR\fI = \fR\fIauto\fR\fI \fR
@@ -4731,7 +4740,7 @@ ldap replication sleep (G)
 .\" ldap replication sleep
 .PP
 .RS 4
-When Samba is asked to write to a read\-only LDAP replica, we are redirected to talk to the read\-write master server\&. This server then replicates our changes back to the \'local\' server, however the replication might take some seconds, especially over slow links\&. Certain client activities, particularly domain joins, can become confused by the \'success\' that does not immediately change the LDAP back\-end\'s data\&.
+When Samba is asked to write to a read\-only LDAP replica, we are redirected to talk to the read\-write master server\&. This server then replicates our changes back to the \*(Aqlocal\*(Aq server, however the replication might take some seconds, especially over slow links\&. Certain client activities, particularly domain joins, can become confused by the \*(Aqsuccess\*(Aq that does not immediately change the LDAP back\-end\*(Aqs data\&.
 .sp
 This option simply causes Samba to wait a short time, to allow the LDAP server to catch up\&. If you have a particularly high\-latency network, you may wish to time the LDAP replication with a network sniffer, and increase this value accordingly\&. Be aware that no checking is performed that the data has actually replicated\&.
 .sp
@@ -4855,7 +4864,7 @@ ldap ssl ads (G)
 .RS 4
 This option is used to define whether or not Samba should use SSL when connecting to the ldap server using
 \fIads\fR
-methods\&. Rpc methods are not affected by this parameter\&. Please note, that this parameter won\'t have any effect if
+methods\&. Rpc methods are not affected by this parameter\&. Please note, that this parameter won\*(Aqt have any effect if
 \m[blue]\fBldap ssl\fR\m[]
 is set to
 \fIno\fR\&.
@@ -4875,7 +4884,7 @@ ldap ssl (G)
 .RS 4
 This option is used to define whether or not Samba should use SSL when connecting to the ldap server This is
 \fINOT\fR
-related to Samba\'s previous SSL support which was enabled by specifying the
+related to Samba\*(Aqs previous SSL support which was enabled by specifying the
 \-\-with\-ssl
 option to the
 configure
@@ -5078,7 +5087,7 @@ nmbd
 will not attempt to become a local master browser on a subnet and will also lose in all browsing elections\&. By default this value is set to
 \fByes\fR\&. Setting this value to
 \fByes\fR
-doesn\'t mean that Samba will
+doesn\*(Aqt mean that Samba will
 \fIbecome\fR
 the local master browser on a subnet, just that
 nmbd
@@ -5459,7 +5468,7 @@ from a command prompt, for example\&.
 .sp
 This option takes the standard substitutions, allowing you to have separate logon scripts for each user or machine\&.
 .sp
-This parameter can be used with Win9X workstations to ensure that roaming profiles are stored in a subdirectory of the user\'s home directory\&. This is done in the following way:
+This parameter can be used with Win9X workstations to ensure that roaming profiles are stored in a subdirectory of the user\*(Aqs home directory\&. This is done in the following way:
 .sp
 
 logon home = \e\e%N\e%U\eprofile
@@ -5617,7 +5626,7 @@ lppause command (S)
 .RS 4
 This parameter specifies the command to be executed on the server host in order to stop printing or spooling a specific print job\&.
 .sp
-This command should be a program or script which takes a printer name and job number to pause the print job\&. One way of implementing this is by using job priorities, where jobs having a too low priority won\'t be sent to the printer\&.
+This command should be a program or script which takes a printer name and job number to pause the print job\&. One way of implementing this is by using job priorities, where jobs having a too low priority won\*(Aqt be sent to the printer\&.
 .sp
 If a
 \fI%p\fR
@@ -5647,7 +5656,7 @@ command being called too often\&. A separate cache is kept for each variation of
 lpq
 command used by the system, so if you use different
 lpq
-commands for different users then they won\'t share cache information\&.
+commands for different users then they won\*(Aqt share cache information\&.
 .sp
 The cache files are stored in
 /tmp/lpq\&.xxxx
@@ -5899,7 +5908,7 @@ A tilde "~" is appended to the first part of the mangled name, followed by a two
 .sp
 Note that the character to use may be specified using the
 \m[blue]\fBmangling char\fR\m[]
-option, if you don\'t like \'~\'\&.
+option, if you don\*(Aqt like \*(Aq~\*(Aq\&.
 .RE
 .sp
 .RS 4
@@ -5910,7 +5919,7 @@ option, if you don\'t like \'~\'\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-Files whose UNIX name begins with a dot will be presented as DOS hidden files\&. The mangled name will be created as for other filenames, but with the leading dot removed and "___" as its extension regardless of actual original extension (that\'s three underscores)\&.
+Files whose UNIX name begins with a dot will be presented as DOS hidden files\&. The mangled name will be created as for other filenames, but with the leading dot removed and "___" as its extension regardless of actual original extension (that\*(Aqs three underscores)\&.
 .RE
 .sp
 .RE
@@ -5946,7 +5955,7 @@ mangling char (S)
 This controls what character is used as the
 \fImagic\fR
 character in
-\m[blue]\fBname mangling\fR\m[]\&. The default is a \'~\' but this may interfere with some software\&. Use this option to set it to whatever you prefer\&. This is effective only when mangling method is hash\&.
+\m[blue]\fBname mangling\fR\m[]\&. The default is a \*(Aq~\*(Aq but this may interfere with some software\&. Use this option to set it to whatever you prefer\&. This is effective only when mangling method is hash\&.
 .sp
 Default:
 \fI\fImangling char\fR\fR\fI = \fR\fI~\fR\fI \fR
@@ -5974,7 +5983,7 @@ map acl inherit (S)
 .RS 4
 This boolean parameter controls whether
 \fBsmbd\fR(8)
-will attempt to map the \'inherit\' and \'protected\' access control entry flags stored in Windows ACLs into an extended attribute called user\&.SAMBA_PAI\&. This parameter only takes effect if Samba is being run on a platform that supports extended attributes (Linux and IRIX so far) and allows the Windows 2000 ACL editor to correctly use inheritance with the Samba POSIX ACL mapping code\&.
+will attempt to map the \*(Aqinherit\*(Aq and \*(Aqprotected\*(Aq access control entry flags stored in Windows ACLs into an extended attribute called user\&.SAMBA_PAI\&. This parameter only takes effect if Samba is being run on a platform that supports extended attributes (Linux and IRIX so far) and allows the Windows 2000 ACL editor to correctly use inheritance with the Samba POSIX ACL mapping code\&.
 .sp
 Default:
 \fI\fImap acl inherit\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -6111,7 +6120,7 @@ and
 .sp
 This parameter can take four different values, which tell
 \fBsmbd\fR(8)
-what to do with user login requests that don\'t match a valid UNIX user in some way\&.
+what to do with user login requests that don\*(Aqt match a valid UNIX user in some way\&.
 .sp
 The four settings are :
 .sp
@@ -6193,7 +6202,7 @@ map untrusted to domain (G)
 .\" map untrusted to domain
 .PP
 .RS 4
-If a client connects to smbd using an untrusted domain name, such as BOGUS\euser, smbd replaces the BOGUS domain with it\'s SAM name before attempting to authenticate that user\&. In the case where smbd is acting as a PDC this will be DOMAIN\euser\&. In the case where smbd is acting as a domain member server or a standalone server this will be WORKSTATION\euser\&.
+If a client connects to smbd using an untrusted domain name, such as BOGUS\euser, smbd replaces the BOGUS domain with it\*(Aqs SAM name before attempting to authenticate that user\&. In the case where smbd is acting as a PDC this will be DOMAIN\euser\&. In the case where smbd is acting as a domain member server or a standalone server this will be WORKSTATION\euser\&.
 .sp
 In previous versions of Samba (pre 3\&.4), if smbd was acting as a domain member server, the BOGUS domain name would instead be replaced by the primary domain which smbd was a member of\&. In this case authentication would be deferred off to a DC using the credentials DOMAIN\euser\&.
 .sp
@@ -6233,7 +6242,7 @@ This option allows you to put an upper limit on the apparent size of disks\&. If
 Note that this option does not limit the amount of data you can put on the disk\&. In the above case you could still store much more than 100 MB on the disk, but if a client ever asks for the amount of free disk space or the total disk size then the result will be bounded by the amount specified in
 \fImax disk size\fR\&.
 .sp
-This option is primarily useful to work around bugs in some pieces of software that can\'t handle very large disks, particularly disks over 1GB in size\&.
+This option is primarily useful to work around bugs in some pieces of software that can\*(Aqt handle very large disks, particularly disks over 1GB in size\&.
 .sp
 A
 \fImax disk size\fR
@@ -6383,7 +6392,7 @@ version of the protocol\&. Long filename support\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-\fBSMB2\fR: Re\-implementation of the SMB protocol\&. Used by Windows Vista and newer\&. The Samba implementation of SMB2 is currently marked experimental!
+\fBSMB2\fR: Re\-implementation of the SMB protocol\&. Used by Windows Vista and newer\&.
 .RE
 .sp
 .RE
@@ -6447,7 +6456,7 @@ max ttl (G)
 .RS 4
 This option tells
 \fBnmbd\fR(8)
-what the default \'time to live\' of NetBIOS names should be (in seconds) when
+what the default \*(Aqtime to live\*(Aq of NetBIOS names should be (in seconds) when
 nmbd
 is requesting a name using either a broadcast packet or from a WINS server\&. You should never need to change this parameter\&. The default is 3 days\&.
 .sp
@@ -6461,7 +6470,7 @@ max wins ttl (G)
 .RS 4
 This option tells
 \fBsmbd\fR(8)
-when acting as a WINS server (\m[blue]\fBwins support = yes\fR\m[]) what the maximum \'time to live\' of NetBIOS names that
+when acting as a WINS server (\m[blue]\fBwins support = yes\fR\m[]) what the maximum \*(Aqtime to live\*(Aq of NetBIOS names that
 nmbd
 will grant will be (in seconds)\&. You should never need to change this parameter\&. The default is 6 days (518400 seconds)\&.
 .sp
@@ -6496,7 +6505,7 @@ An example is:
 .RS 4
 .\}
 .nf
-message command = csh \-c \'xedit %s;rm %s\' &
+message command = csh \-c \*(Aqxedit %s;rm %s\*(Aq &
 .fi
 .if n \{\
 .RE
@@ -6504,11 +6513,11 @@ message command = csh \-c \'xedit %s;rm %s\' &
 .sp
 This delivers the message using
 xedit, then removes it afterwards\&.
-\fINOTE THAT IT IS VERY IMPORTANT THAT THIS COMMAND RETURN IMMEDIATELY\fR\&. That\'s why I have the \'&\' on the end\&. If it doesn\'t return immediately then your PCs may freeze when sending messages (they should recover after 30 seconds, hopefully)\&.
+\fINOTE THAT IT IS VERY IMPORTANT THAT THIS COMMAND RETURN IMMEDIATELY\fR\&. That\*(Aqs why I have the \*(Aq&\*(Aq on the end\&. If it doesn\*(Aqt return immediately then your PCs may freeze when sending messages (they should recover after 30 seconds, hopefully)\&.
 .sp
 All messages are delivered as the global guest user\&. The command takes the standard substitutions, although
 \fI %u\fR
-won\'t work (\fI%U\fR
+won\*(Aqt work (\fI%U\fR
 may be better in this case)\&.
 .sp
 Apart from the standard substitutions, some additional ones apply\&. In particular:
@@ -6552,19 +6561,19 @@ Apart from the standard substitutions, some additional ones apply\&. In particul
 .RE
 You could make this command send mail, or whatever else takes your fancy\&. Please let us know of any really interesting ideas you have\&.
 .sp
-Here\'s a way of sending the messages as mail to root:
+Here\*(Aqs a way of sending the messages as mail to root:
 .sp
 .if n \{\
 .RS 4
 .\}
 .nf
-message command = /bin/mail \-s \'message from %f on %m\' root < %s; rm %s
+message command = /bin/mail \-s \*(Aqmessage from %f on %m\*(Aq root < %s; rm %s
 .fi
 .if n \{\
 .RE
 .\}
 .sp
-If you don\'t have a message command then the message won\'t be delivered and Samba will tell the sender there was an error\&. Unfortunately WfWg totally ignores the error code and carries on regardless, saying that the message was delivered\&.
+If you don\*(Aqt have a message command then the message won\*(Aqt be delivered and Samba will tell the sender there was an error\&. Unfortunately WfWg totally ignores the error code and carries on regardless, saying that the message was delivered\&.
 .sp
 If you want to silently delete it then try:
 .sp
@@ -6582,7 +6591,7 @@ Default:
 \fI\fImessage command\fR\fR\fI = \fR\fI\fR\fI \fR
 .sp
 Example:
-\fI\fImessage command\fR\fR\fI = \fR\fIcsh \-c \'xedit %s; rm %s\' &\fR\fI \fR
+\fI\fImessage command\fR\fR\fI = \fR\fIcsh \-c \*(Aqxedit %s; rm %s\*(Aq &\fR\fI \fR
 .RE
 
 min print space (S)
@@ -6641,7 +6650,7 @@ min wins ttl (G)
 .RS 4
 This option tells
 \fBnmbd\fR(8)
-when acting as a WINS server (\m[blue]\fBwins support = yes\fR\m[]) what the minimum \'time to live\' of NetBIOS names that
+when acting as a WINS server (\m[blue]\fBwins support = yes\fR\m[]) what the minimum \*(Aqtime to live\*(Aq of NetBIOS names that
 nmbd
 will grant will be (in seconds)\&. You should never need to change this parameter\&. The default is 6 hours (21600 seconds)\&.
 .sp
@@ -6696,7 +6705,7 @@ name cache timeout (G)
 .\" name cache timeout
 .PP
 .RS 4
-Specifies the number of seconds it takes before entries in samba\'s hostname resolve cache time out\&. If the timeout is set to 0\&. the caching is disabled\&.
+Specifies the number of seconds it takes before entries in samba\*(Aqs hostname resolve cache time out\&. If the timeout is set to 0\&. the caching is disabled\&.
 .sp
 Default:
 \fI\fIname cache timeout\fR\fR\fI = \fR\fI660\fR\fI \fR
@@ -6794,7 +6803,7 @@ ncalrpc dir (G)
 This directory will hold a series of named pipes to allow RPC over inter\-process communication\&.
 .sp
 \&.
-	This will allow Samba and other unix processes to interact over DCE/RPC without using TCP/IP\&. Additionally a sub\-directory \'np\' has restricted permissions, and allows a trusted communication channel between Samba processes
+	This will allow Samba and other unix processes to interact over DCE/RPC without using TCP/IP\&. Additionally a sub\-directory \*(Aqnp\*(Aq has restricted permissions, and allows a trusted communication channel between Samba processes
 .sp
 Default:
 \fI\fIncalrpc dir\fR\fR\fI = \fR\fI${prefix}/var/ncalrpc\fR\fI \fR
@@ -6820,7 +6829,7 @@ netbios name (G)
 .\" netbios name
 .PP
 .RS 4
-This sets the NetBIOS name by which a Samba server is known\&. By default it is the same as the first component of the host\'s DNS name\&. If a machine is a browse server or logon server this name (or the first component of the hosts DNS name) will be the name that these services are advertised under\&.
+This sets the NetBIOS name by which a Samba server is known\&. By default it is the same as the first component of the host\*(Aqs DNS name\&. If a machine is a browse server or logon server this name (or the first component of the hosts DNS name) will be the name that these services are advertised under\&.
 .sp
 There is a bug in Samba\-3 that breaks operation of browsing and access to shares if the netbios name is set to the literal name
 PIPE\&. To avoid this problem, do not name your Samba\-3 server
@@ -6847,7 +6856,7 @@ nis homedir (G)
 .\" nis homedir
 .PP
 .RS 4
-Get the home share server from a NIS map\&. For UNIX systems that use an automounter, the user\'s home directory will often be mounted on a workstation on demand from a remote server\&.
+Get the home share server from a NIS map\&. For UNIX systems that use an automounter, the user\*(Aqs home directory will often be mounted on a workstation on demand from a remote server\&.
 .sp
 When the Samba logon server is not the actual home directory server, but is mounting the home directories via NFS then two network hops would be required to access the users home directory if the logon server told the client to use itself as the SMB server for home directories (one over SMB and one over NFS)\&. This can be very slow\&.
 .sp
@@ -6950,7 +6959,7 @@ obey pam restrictions (G)
 .\" obey pam restrictions
 .PP
 .RS 4
-When Samba 3\&.0 is configured to enable PAM support (i\&.e\&. \-\-with\-pam), this parameter will control whether or not Samba should obey PAM\'s account and session management directives\&. The default behavior is to use PAM for clear text authentication only and to ignore any account or session management\&. Note that Samba always ignores PAM for authentication in the case of
+When Samba 3\&.0 is configured to enable PAM support (i\&.e\&. \-\-with\-pam), this parameter will control whether or not Samba should obey PAM\*(Aqs account and session management directives\&. The default behavior is to use PAM for clear text authentication only and to ignore any account or session management\&. Note that Samba always ignores PAM for authentication in the case of
 \m[blue]\fBencrypt passwords = yes\fR\m[]\&. The reason is that PAM modules cannot support the challenge/response authentication mechanism needed in the presence of SMB password encryption\&.
 .sp
 Default:
@@ -6969,7 +6978,7 @@ list and is only really useful in
 \m[blue]\fBsecurity = share\fR\m[]
 level security\&.
 .sp
-Note that this also means Samba won\'t try to deduce usernames from the service name\&. This can be annoying for the [homes] section\&. To get around this you could use
+Note that this also means Samba won\*(Aqt try to deduce usernames from the service name\&. This can be annoying for the [homes] section\&. To get around this you could use
 user = %S
 which means your
 \fIuser\fR
@@ -7097,7 +7106,7 @@ pam password change (G)
 .\" pam password change
 .PP
 .RS 4
-With the addition of better PAM support in Samba 2\&.2, this parameter, it is possible to use PAM\'s password change control flag for Samba\&. If enabled, then PAM will be used for password changes when requested by an SMB client instead of the program listed in
+With the addition of better PAM support in Samba 2\&.2, this parameter, it is possible to use PAM\*(Aqs password change control flag for Samba\&. If enabled, then PAM will be used for password changes when requested by an SMB client instead of the program listed in
 \m[blue]\fBpasswd program\fR\m[]\&. It should be possible to enable this without changing your
 \m[blue]\fBpasswd chat\fR\m[]
 parameter for most setups\&.
@@ -7141,7 +7150,7 @@ passdb backend (G)
 .RS 4
 This option allows the administrator to chose which backend will be used for storing user and possibly group information\&. This allows you to swap between different storage mechanisms without recompile\&.
 .sp
-The parameter value is divided into two parts, the backend\'s name, and a \'location\' string that has meaning only to that particular backed\&. These are separated by a : character\&.
+The parameter value is divided into two parts, the backend\*(Aqs name, and a \*(Aqlocation\*(Aq string that has meaning only to that particular backed\&. These are separated by a : character\&.
 .sp
 Available backends can include:
 .sp
@@ -7221,7 +7230,7 @@ passdb expand explicit (G)
 .\" passdb expand explicit
 .PP
 .RS 4
-This parameter controls whether Samba substitutes %\-macros in the passdb fields if they are explicitly set\&. We used to expand macros here, but this turned out to be a bug because the Windows client can expand a variable %G_osver% in which %G would have been substituted by the user\'s primary group\&.
+This parameter controls whether Samba substitutes %\-macros in the passdb fields if they are explicitly set\&. We used to expand macros here, but this turned out to be a bug because the Windows client can expand a variable %G_osver% in which %G would have been substituted by the user\*(Aqs primary group\&.
 .sp
 Default:
 \fI\fIpassdb expand explicit\fR\fR\fI = \fR\fIno\fR\fI \fR
@@ -7269,7 +7278,7 @@ This string controls the
 \fI"chat"\fR
 conversation that takes places between
 \fBsmbd\fR(8)
-and the local password changing program to change the user\'s password\&. The string describes a sequence of response\-receive pairs that
+and the local password changing program to change the user\*(Aqs password\&. The string describes a sequence of response\-receive pairs that
 \fBsmbd\fR(8)
 uses to determine what to send to the
 \m[blue]\fBpasswd program\fR\m[]
@@ -7282,7 +7291,7 @@ Note that this parameter only is used if the
 parameter is set to
 \fByes\fR\&. This sequence is then called
 \fIAS ROOT\fR
-when the SMB password in the smbpasswd file is being changed, without access to the old password cleartext\&. This means that root must be able to reset the user\'s password without knowing the text of the previous password\&. In the presence of NIS/YP, this means that the
+when the SMB password in the smbpasswd file is being changed, without access to the old password cleartext\&. This means that root must be able to reset the user\*(Aqs password without knowing the text of the previous password\&. In the presence of NIS/YP, this means that the
 \m[blue]\fBpasswd program\fR\m[]
 must be executed on the NIS master\&.
 .sp
@@ -7290,7 +7299,7 @@ The string can contain the macro
 \fI%n\fR
 which is substituted for the new password\&. The old passsword (\fI%o\fR) is only available when
 \m[blue]\fBencrypt passwords\fR\m[]
-has been disabled\&. The chat sequence can also contain the standard macros \en, \er, \et and \es to give line\-feed, carriage\-return, tab and space\&. The chat sequence string can also contain a \'*\' which matches any sequence of characters\&. Double quotes can be used to collect strings with spaces in them into a single string\&.
+has been disabled\&. The chat sequence can also contain the standard macros \en, \er, \et and \es to give line\-feed, carriage\-return, tab and space\&. The chat sequence string can also contain a \*(Aq*\*(Aq which matches any sequence of characters\&. Double quotes can be used to collect strings with spaces in them into a single string\&.
 .sp
 If the send string in any part of the chat sequence is a full stop "\&.", then no string is sent\&. Similarly, if the expect string is a full stop then no string is expected\&.
 .sp
@@ -7398,15 +7407,15 @@ parameter is set to
 or
 \fBads\fR, then this option
 \fIshould not\fR
-be used, as the default \'*\' indicates to Samba to determine the best DC to contact dynamically, just as all other hosts in an AD domain do\&. This allows the domain to be maintained without modification to the smb\&.conf file\&. The cryptograpic protection on the authenticated RPC calls used to verify passwords ensures that this default is safe\&.
+be used, as the default \*(Aq*\*(Aq indicates to Samba to determine the best DC to contact dynamically, just as all other hosts in an AD domain do\&. This allows the domain to be maintained without modification to the smb\&.conf file\&. The cryptograpic protection on the authenticated RPC calls used to verify passwords ensures that this default is safe\&.
 .sp
-\fIIt is strongly recommended that you use the default of \'*\'\fR, however if in your particular environment you have reason to specify a particular DC list, then the list of machines in this option must be a list of names or IP addresses of Domain controllers for the Domain\&. If you use the default of \'*\', or list several hosts in the
+\fIIt is strongly recommended that you use the default of \*(Aq*\*(Aq\fR, however if in your particular environment you have reason to specify a particular DC list, then the list of machines in this option must be a list of names or IP addresses of Domain controllers for the Domain\&. If you use the default of \*(Aq*\*(Aq, or list several hosts in the
 \fIpassword server\fR
 option then
 smbd
 will try each in turn till it finds one that responds\&. This is useful in case your primary server goes down\&.
 .sp
-If the list of servers contains both names/IP\'s and the \'*\' character, the list is treated as a list of preferred domain controllers, but an auto lookup of all remaining DC\'s will be added to the list as well\&. Samba will not attempt to optimize this list by locating the closest DC\&.
+If the list of servers contains both names/IP\*(Aqs and the \*(Aq*\*(Aq character, the list is treated as a list of preferred domain controllers, but an auto lookup of all remaining DC\*(Aqs will be added to the list as well\&. Samba will not attempt to optimize this list by locating the closest DC\&.
 .sp
 If parameter is a name, it is looked up using the parameter
 \m[blue]\fBname resolve order\fR\m[]
@@ -7479,7 +7488,7 @@ The password server must be a machine capable of using the "LM1\&.2X002" or the 
 .IP \(bu 2.3
 .\}
 Using a password server means your UNIX box (running Samba) is only as secure as (a host masqurading as) your password server\&.
-\fIDO NOT CHOOSE A PASSWORD SERVER THAT YOU DON\'T COMPLETELY TRUST\fR\&.
+\fIDO NOT CHOOSE A PASSWORD SERVER THAT YOU DON\*(AqT COMPLETELY TRUST\fR\&.
 .RE
 .sp
 .RS 4
@@ -7530,7 +7539,7 @@ path (S)
 .RS 4
 This parameter specifies a directory to which the user of the service is to be given access\&. In the case of printable services, this is where print data will spool prior to being submitted to the host for printing\&.
 .sp
-For a printable service offering guest access, the service should be readonly and the path should be world\-writeable and have the sticky bit set\&. This is not mandatory of course, but you probably won\'t get the results you expect if you do otherwise\&.
+For a printable service offering guest access, the service should be readonly and the path should be world\-writeable and have the sticky bit set\&. This is not mandatory of course, but you probably won\*(Aqt get the results you expect if you do otherwise\&.
 .sp
 Any occurrences of
 \fI%u\fR
@@ -7629,7 +7638,7 @@ This option specifies a command to be run whenever the service is connected to\&
 An interesting example is to send the users a welcome message every time they log in\&. Maybe a message of the day? Here is an example:
 .sp
 
-preexec = csh \-c \'echo \e"Welcome to %S!\e" | /usr/local/samba/bin/smbclient \-M %m \-I %I\' &
+preexec = csh \-c \*(Aqecho \e"Welcome to %S!\e" | /usr/local/samba/bin/smbclient \-M %m \-I %I\*(Aq &
 .sp
 Of course, this could get annoying after a while :\-)
 .sp
@@ -7818,7 +7827,7 @@ print5|My Printer 5
 .RE
 .\}
 .sp
-where the \'|\' separates aliases of a printer\&. The fact that the second alias has a space in it gives a hint to Samba that it\'s a comment\&.
+where the \*(Aq|\*(Aq separates aliases of a printer\&. The fact that the second alias has a space in it gives a hint to Samba that it\*(Aqs a comment\&.
 .if n \{\
 .sp
 .\}
@@ -7852,7 +7861,7 @@ print command (S)
 .RS 4
 After a print job has finished spooling to a service, this command will be used via a
 system()
-call to process the spool file\&. Typically the command specified will submit the spool file to the host\'s printing subsystem, but there is no requirement that this be the case\&. The server will not remove the spool file, so whatever command you specify should remove the spool file when it has been processed, otherwise you will need to manually remove old spool files\&.
+call to process the spool file\&. Typically the command specified will submit the spool file to the host\*(Aqs printing subsystem, but there is no requirement that this be the case\&. The server will not remove the spool file, so whatever command you specify should remove the spool file when it has been processed, otherwise you will need to manually remove old spool files\&.
 .sp
 The print command is simply a text string\&. It will be used verbatim after macro substitutions have been made:
 .sp
@@ -7888,7 +7897,7 @@ account\&. If this happens then create an alternative guest account that can pri
 \m[blue]\fBguest account\fR\m[]
 in the [global] section\&.
 .sp
-You can form quite complex print commands by realizing that they are just passed to a shell\&. For example the following will log a print job, print the file, then remove it\&. Note that \';\' is the usual separator for command in shell scripts\&.
+You can form quite complex print commands by realizing that they are just passed to a shell\&. For example the following will log a print job, print the file, then remove it\&. Note that \*(Aq;\*(Aq is the usual separator for command in shell scripts\&.
 .sp
 print command = echo Printing %s >> /tmp/print\&.log; lpr \-P %p %s; rm %s
 .sp
@@ -8136,7 +8145,7 @@ An inverted synonym is
 \m[blue]\fBwriteable\fR\m[]\&.
 .sp
 If this parameter is
-\fByes\fR, then users of a service may not create or modify files in the service\'s directory\&.
+\fByes\fR, then users of a service may not create or modify files in the service\*(Aqs directory\&.
 .sp
 Note that a printable service (printable = yes) will
 \fIALWAYS\fR
@@ -8207,7 +8216,7 @@ This option allows you to setup
 \fBnmbd\fR(8)
 to periodically announce itself to arbitrary IP addresses with an arbitrary workgroup name\&.
 .sp
-This is useful if you want your Samba server to appear in a remote workgroup for which the normal browse propagation rules don\'t work\&. The remote workgroup can be anywhere that you can send IP packets to\&.
+This is useful if you want your Samba server to appear in a remote workgroup for which the normal browse propagation rules don\*(Aqt work\&. The remote workgroup can be anywhere that you can send IP packets to\&.
 .sp
 For example:
 .sp
@@ -8243,7 +8252,7 @@ This option allows you to setup
 \fBnmbd\fR(8)
 to periodically request synchronization of browse lists with the master browser of a Samba server that is on a remote segment\&. This option will allow you to gain browse lists for multiple workgroups across routed networks\&. This is done in a manner that does not work with any non\-Samba servers\&.
 .sp
-This is useful if you want your Samba server and all local clients to appear in a remote workgroup for which the normal browse propagation rules don\'t work\&. The remote workgroup can be anywhere that you can send IP packets to\&.
+This is useful if you want your Samba server and all local clients to appear in a remote workgroup for which the normal browse propagation rules don\*(Aqt work\&. The remote workgroup can be anywhere that you can send IP packets to\&.
 .sp
 For example:
 .sp
@@ -8482,7 +8491,7 @@ security mask (S)
 .RS 4
 This parameter controls what UNIX permission bits will be set when a Windows NT client is manipulating the UNIX permission on a file using the native NT security dialog box\&.
 .sp
-This parameter is applied as a mask (AND\'ed with) to the incoming permission bits, thus resetting any bits not in this mask\&. Make sure not to mix up this parameter with
+This parameter is applied as a mask (AND\*(Aqed with) to the incoming permission bits, thus resetting any bits not in this mask\&. Make sure not to mix up this parameter with
 \m[blue]\fBforce security mode\fR\m[], which works in a manner similar to this one but uses a logical OR instead of an AND\&.
 .sp
 Essentially, all bits set to zero in this mask will result in setting to zero the corresponding bits on the file permissions regardless of the previous status of this bits on the file\&.
@@ -8557,7 +8566,7 @@ if set are then applied and may change the UNIX user to use on this connection, 
 \fINote\fR
 that the name of the resource being requested is
 \fInot\fR
-sent to the server until after the server has successfully authenticated the client\&. This is why guest shares don\'t work in user level security without allowing the server to automatically map unknown users into the
+sent to the server until after the server has successfully authenticated the client\&. This is why guest shares don\*(Aqt work in user level security without allowing the server to automatically map unknown users into the
 \m[blue]\fBguest account\fR\m[]\&. See the
 \m[blue]\fBmap to guest\fR\m[]
 parameter for details on doing this\&.
@@ -8578,7 +8587,7 @@ parameter to be set to
 that a valid UNIX user must still exist as well as the account on the Domain Controller to allow Samba to have a valid UNIX account to map file access to\&.
 .sp
 \fINote\fR
-that from the client\'s point of view
+that from the client\*(Aqs point of view
 security = domain
 is the same as
 security = user\&. It only affects how the server deals with the authentication, it does not in any way affect what the client sees\&.
@@ -8586,7 +8595,7 @@ security = user\&. It only affects how the server deals with the authentication,
 \fINote\fR
 that the name of the resource being requested is
 \fInot\fR
-sent to the server until after the server has successfully authenticated the client\&. This is why guest shares don\'t work in user level security without allowing the server to automatically map unknown users into the
+sent to the server until after the server has successfully authenticated the client\&. This is why guest shares don\*(Aqt work in user level security without allowing the server to automatically map unknown users into the
 \m[blue]\fBguest account\fR\m[]\&. See the
 \m[blue]\fBmap to guest\fR\m[]
 parameter for details on doing this\&.
@@ -8746,7 +8755,7 @@ file to check users against\&. See the chapter about the User Database in the Sa
 \fBNote\fR
 .ps -1
 .br
-This mode of operation has significant pitfalls since it is more vulnerable to man\-in\-the\-middle attacks and server impersonation\&. In particular, this mode of operation can cause significant resource consumption on the PDC, as it must maintain an active connection for the duration of the user\'s session\&. Furthermore, if this connection is lost, there is no way to reestablish it, and further authentications to the Samba server may fail (from a single client, till it disconnects)\&.
+This mode of operation has significant pitfalls since it is more vulnerable to man\-in\-the\-middle attacks and server impersonation\&. In particular, this mode of operation can cause significant resource consumption on the PDC, as it must maintain an active connection for the duration of the user\*(Aqs session\&. Furthermore, if this connection is lost, there is no way to reestablish it, and further authentications to the Samba server may fail (from a single client, till it disconnects)\&.
 .sp .5v
 .RE
 .if n \{\
@@ -8777,7 +8786,7 @@ If the client selects NTLMv2 authentication, then this mode of operation
 \fBNote\fR
 .ps -1
 .br
-From the client\'s point of view,
+From the client\*(Aqs point of view,
 security = server
 is the same as
 security = user\&. It only affects how the server deals with the authentication, it does not in any way affect what the client sees\&.
@@ -8801,7 +8810,7 @@ This option is deprecated, and may be removed in future
 \fINote\fR
 that the name of the resource being requested is
 \fInot\fR
-sent to the server until after the server has successfully authenticated the client\&. This is why guest shares don\'t work in user level security without allowing the server to automatically map unknown users into the
+sent to the server until after the server has successfully authenticated the client\&. This is why guest shares don\*(Aqt work in user level security without allowing the server to automatically map unknown users into the
 \m[blue]\fBguest account\fR\m[]\&. See the
 \m[blue]\fBmap to guest\fR\m[]
 parameter for details on doing this\&.
@@ -8840,7 +8849,7 @@ will send the server\-supplied principal sometimes given in the SPNEGO exchange\
 .sp
 If enabled, Samba can attempt to help clients to use Kerberos to contact it, even when known only by IP address or a name not registered with our KDC as a service principal name\&. Kerberos relies on names, so ordinarily cannot function in this situation\&.
 .sp
-If disabled, Samba will send the string not_defined_in_RFC4178@please_ignore as the \'rfc4178 hint\', following the updated RFC and Windows 2008 behaviour in this area\&.
+If disabled, Samba will send the string not_defined_in_RFC4178@please_ignore as the \*(Aqrfc4178 hint\*(Aq, following the updated RFC and Windows 2008 behaviour in this area\&.
 .sp
 Note that Windows XP SP2 and later versions already ignored this value in all circumstances\&.
 .sp
@@ -8948,7 +8957,7 @@ Default:
 \fI\fIset primary group script\fR\fR\fI = \fR\fI\fR\fI \fR
 .sp
 Example:
-\fI\fIset primary group script\fR\fR\fI = \fR\fI/usr/sbin/usermod \-g \'%g\' \'%u\'\fR\fI \fR
+\fI\fIset primary group script\fR\fR\fI = \fR\fI/usr/sbin/usermod \-g \*(Aq%g\*(Aq \*(Aq%u\*(Aq\fR\fI \fR
 .RE
 
 set quota command (G)
@@ -9549,8 +9558,8 @@ SO_RCVLOWAT *
 .sp
 .RE
 Those marked with a
-\fI\'*\'\fR
-take an integer argument\&. The others can optionally take a 1 or 0 argument to enable or disable the option, by default they will be enabled if you don\'t specify 1 or 0\&.
+\fI\*(Aq*\*(Aq\fR
+take an integer argument\&. The others can optionally take a 1 or 0 argument to enable or disable the option, by default they will be enabled if you don\*(Aqt specify 1 or 0\&.
 .sp
 To specify an argument use the syntax SOME_OPTION = VALUE for example
 SO_SNDBUF = 8192\&. Note that you must not have any spaces before or after the = sign\&.
@@ -9633,9 +9642,9 @@ This is a boolean that controls the handling of disk space allocation in the ser
 \fByes\fR
 the server will change from UNIX behaviour of not committing real disk storage blocks when a file is extended to the Windows behaviour of actually forcing the disk system to allocate real storage blocks when a file is created or extended to be a given size\&. In UNIX terminology this means that Samba will stop creating sparse files\&.
 .sp
-This option is really desgined for file systems that support fast allocation of large numbers of blocks such as extent\-based file systems\&. On file systems that don\'t support extents (most notably ext3) this can make Samba slower\&. When you work with large files over >100MB on file systems without extents you may even run into problems with clients running into timeouts\&.
+This option is really desgined for file systems that support fast allocation of large numbers of blocks such as extent\-based file systems\&. On file systems that don\*(Aqt support extents (most notably ext3) this can make Samba slower\&. When you work with large files over >100MB on file systems without extents you may even run into problems with clients running into timeouts\&.
 .sp
-When you have an extent based filesystem it\'s likely that we can make use of unwritten extents which allows Samba to allocate even large amounts of space very fast and you will not see any timeout problems caused by strict allocate\&. With strict allocate in use you will also get much better out of quota messages in case you use quotas\&. Another advantage of activating this setting is that it will help to reduce file fragmentation\&.
+When you have an extent based filesystem it\*(Aqs likely that we can make use of unwritten extents which allows Samba to allocate even large amounts of space very fast and you will not see any timeout problems caused by strict allocate\&. With strict allocate in use you will also get much better out of quota messages in case you use quotas\&. Another advantage of activating this setting is that it will help to reduce file fragmentation\&.
 .sp
 To give you an idea on which filesystems this setting might currently be a good option for you: XFS, ext4, btrfs, ocfs2 on Linux and JFS2 on AIX support unwritten extents\&. On Filesystems that do not support it, preallocation is probably an expensive operation where you will see reduced performance and risk to let clients run into timeouts when creating large files\&. Examples are ext3, ZFS, HFS+ and most others, so be aware if you activate this setting on those filesystems\&.
 .sp
@@ -9686,7 +9695,7 @@ This option defines a list of init scripts that smbd will use for starting and s
 .sp
 The administrator must create a directory name
 svcctl
-in Samba\'s $(libdir) and create symbolic links to the init scripts in
+in Samba\*(Aqs $(libdir) and create symbolic links to the init scripts in
 /etc/init\&.d/\&. The name of the links must match the names given as part of the
 \fIsvcctl list\fR\&.
 .sp
@@ -9703,7 +9712,7 @@ sync always (S)
 .RS 4
 This is a boolean parameter that controls whether writes will always be written to stable storage before the write call returns\&. If this is
 \fBno\fR
-then the server will be guided by the client\'s request in each write call (clients can set a bit indicating that a particular write should be synchronous)\&. If this is
+then the server will be guided by the client\*(Aqs request in each write call (clients can set a bit indicating that a particular write should be synchronous)\&. If this is
 \fByes\fR
 then every write will be followed by a
 fsync()
@@ -9755,9 +9764,9 @@ When filling out the user information for a Windows NT user, the
 \fBwinbindd\fR(8)
 daemon uses this parameter to fill in the home directory for that user\&. If the string
 \fI%D\fR
-is present it is substituted with the user\'s Windows NT domain name\&. If the string
+is present it is substituted with the user\*(Aqs Windows NT domain name\&. If the string
 \fI%U\fR
-is present it is substituted with the user\'s Windows NT user name\&.
+is present it is substituted with the user\*(Aqs Windows NT user name\&.
 .sp
 Default:
 \fI\fItemplate homedir\fR\fR\fI = \fR\fI/home/%D/%U\fR\fI \fR
@@ -9894,7 +9903,7 @@ username level (G)
 .\" username level
 .PP
 .RS 4
-This option helps Samba to try and \'guess\' at the real UNIX username, as many DOS clients send an all\-uppercase username\&. By default Samba tries all lowercase, followed by the username with the first letter capitalized, and fails if the username is not found on the UNIX machine\&.
+This option helps Samba to try and \*(Aqguess\*(Aq at the real UNIX username, as many DOS clients send an all\-uppercase username\&. By default Samba tries all lowercase, followed by the username with the first letter capitalized, and fails if the username is not found on the UNIX machine\&.
 .sp
 If this parameter is set to non\-zero the behavior changes\&. This parameter is a number that specifies the number of uppercase combinations to try while trying to determine the UNIX user name\&. The higher the number the more combinations will be tried, but the slower the discovery of usernames will be\&. Use this parameter when you have strange usernames on your UNIX machine, such as
 \fBAstrangeUser \fR\&.
@@ -9955,13 +9964,13 @@ This option allows you to specify a file containing a mapping of usernames from 
 Please note that for user or share mode security, the username map is applied prior to validating the user credentials\&. Domain member servers (domain or ads) apply the username map after the user has been successfully authenticated by the domain controller and require fully qualified enties in the map table (e\&.g\&. biddle =
 DOMAIN\efoo)\&.
 .sp
-The map file is parsed line by line\&. Each line should contain a single UNIX username on the left then a \'=\' followed by a list of usernames on the right\&. The list of usernames on the right may contain names of the form @group in which case they will match any UNIX username in that group\&. The special client name \'*\' is a wildcard and matches any name\&. Each line of the map file may be up to 1023 characters long\&.
+The map file is parsed line by line\&. Each line should contain a single UNIX username on the left then a \*(Aq=\*(Aq followed by a list of usernames on the right\&. The list of usernames on the right may contain names of the form @group in which case they will match any UNIX username in that group\&. The special client name \*(Aq*\*(Aq is a wildcard and matches any name\&. Each line of the map file may be up to 1023 characters long\&.
 .sp
-The file is processed on each line by taking the supplied username and comparing it with each username on the right hand side of the \'=\' signs\&. If the supplied name matches any of the names on the right hand side then it is replaced with the name on the left\&. Processing then continues with the next line\&.
+The file is processed on each line by taking the supplied username and comparing it with each username on the right hand side of the \*(Aq=\*(Aq signs\&. If the supplied name matches any of the names on the right hand side then it is replaced with the name on the left\&. Processing then continues with the next line\&.
 .sp
-If any line begins with a \'#\' or a \';\' then it is ignored\&.
+If any line begins with a \*(Aq#\*(Aq or a \*(Aq;\*(Aq then it is ignored\&.
 .sp
-If any line begins with an \'!\' then the processing will stop after that line if a mapping was done by the line\&. Otherwise mapping continues with every line being processed\&. Using \'!\' is most useful when you have a wildcard mapping line later in the file\&.
+If any line begins with an \*(Aq!\*(Aq then the processing will stop after that line if a mapping was done by the line\&. Otherwise mapping continues with every line being processed\&. Using \*(Aq!\*(Aq is most useful when you have a wildcard mapping line later in the file\&.
 .sp
 For example to map from the name
 \fBadmin\fR
@@ -10017,7 +10026,7 @@ tridge = "Andrew Tridgell"
 .sp
 would map the windows username "Andrew Tridgell" to the unix username "tridge"\&.
 .sp
-The following example would map mary and fred to the unix user sys, and map the rest to guest\&. Note the use of the \'!\' to tell Samba to stop processing if it gets a match on that line:
+The following example would map mary and fred to the unix user sys, and map the rest to guest\&. Note the use of the \*(Aq!\*(Aq to tell Samba to stop processing if it gets a match on that line:
 .sp
 .if n \{\
 .RS 4
@@ -10041,7 +10050,7 @@ not
 \m[blue]\fBpassword server\fR\m[]
 (if you have one)\&. The password server will receive whatever username the client supplies without modification\&.
 .sp
-Also note that no reverse mapping is done\&. The main effect this has is with printing\&. Users who have been mapped may have trouble deleting print jobs as PrintManager under WfWg will think they don\'t own the print job\&.
+Also note that no reverse mapping is done\&. The main effect this has is with printing\&. Users who have been mapped may have trouble deleting print jobs as PrintManager under WfWg will think they don\*(Aqt own the print job\&.
 .sp
 Samba versions prior to 3\&.0\&.8 would only support reading the fully qualified username (e\&.g\&.:
 DOMAIN\euser) from the username map when performing a kerberos login from a client\&. However, when looking up a map entry for a user authenticated by NTLM[SSP], only the login name would be used for matches\&. This resulted in inconsistent behavior sometimes even on the same server\&.
@@ -10107,11 +10116,11 @@ To restrict a service to a particular set of users you can use the
 \m[blue]\fBvalid users\fR\m[]
 parameter\&.
 .sp
-If any of the usernames begin with a \'@\' then the name will be looked up first in the NIS netgroups list (if Samba is compiled with netgroup support), followed by a lookup in the UNIX groups database and will expand to a list of all users in the group of that name\&.
+If any of the usernames begin with a \*(Aq@\*(Aq then the name will be looked up first in the NIS netgroups list (if Samba is compiled with netgroup support), followed by a lookup in the UNIX groups database and will expand to a list of all users in the group of that name\&.
 .sp
-If any of the usernames begin with a \'+\' then the name will be looked up only in the UNIX groups database and will expand to a list of all users in the group of that name\&.
+If any of the usernames begin with a \*(Aq+\*(Aq then the name will be looked up only in the UNIX groups database and will expand to a list of all users in the group of that name\&.
 .sp
-If any of the usernames begin with a \'&\' then the name will be looked up only in the NIS netgroups database (if Samba is compiled with netgroup support) and will expand to a list of all users in the netgroup group of that name\&.
+If any of the usernames begin with a \*(Aq&\*(Aq then the name will be looked up only in the NIS netgroups database (if Samba is compiled with netgroup support) and will expand to a list of all users in the netgroup group of that name\&.
 .sp
 Note that searching though a groups database can take quite some time, and some clients may time out during the search\&.
 .sp
@@ -10190,7 +10199,7 @@ usershare prefix allow list (G)
 .\" usershare prefix allow list
 .PP
 .RS 4
-This parameter specifies a list of absolute pathnames the root of which are allowed to be exported by user defined share definitions\&. If the pathname to be exported doesn\'t start with one of the strings in this list, the user defined share will not be allowed\&. This allows the Samba administrator to restrict the directories on the system that can be exported by user defined shares\&.
+This parameter specifies a list of absolute pathnames the root of which are allowed to be exported by user defined share definitions\&. If the pathname to be exported doesn\*(Aqt start with one of the strings in this list, the user defined share will not be allowed\&. This allows the Samba administrator to restrict the directories on the system that can be exported by user defined shares\&.
 .sp
 If there is a "usershare prefix deny list" and also a "usershare prefix allow list" the deny list is processed first, followed by the allow list, thus leading to the most restrictive interpretation\&.
 .sp
@@ -10238,7 +10247,7 @@ use sendfile (S)
 If this parameter is
 \fByes\fR, and the
 \fBsendfile()\fR
-system call is supported by the underlying operating system, then some SMB read calls (mainly ReadAndX and ReadRaw) will use the more efficient sendfile system call for files that are exclusively oplocked\&. This may make more efficient use of the system CPU\'s and cause Samba to be faster\&. Samba automatically turns this off for clients that use protocol levels lower than NT LM 0\&.12 and when it detects a client is Windows 9x (using sendfile from Linux will cause these clients to fail)\&.
+system call is supported by the underlying operating system, then some SMB read calls (mainly ReadAndX and ReadRaw) will use the more efficient sendfile system call for files that are exclusively oplocked\&. This may make more efficient use of the system CPU\*(Aqs and cause Samba to be faster\&. Samba automatically turns this off for clients that use protocol levels lower than NT LM 0\&.12 and when it detects a client is Windows 9x (using sendfile from Linux will cause these clients to fail)\&.
 .sp
 Default:
 \fI\fIuse sendfile\fR\fR\fI = \fR\fIfalse\fR\fI \fR
@@ -10291,7 +10300,7 @@ valid users (S)
 .\" valid users
 .PP
 .RS 4
-This is a list of users that should be allowed to login to this service\&. Names starting with \'@\', \'+\' and \'&\' are interpreted using the same rules as described in the
+This is a list of users that should be allowed to login to this service\&. Names starting with \*(Aq@\*(Aq, \*(Aq+\*(Aq and \*(Aq&\*(Aq are interpreted using the same rules as described in the
 \fIinvalid users\fR
 parameter\&.
 .sp
@@ -10325,17 +10334,17 @@ veto files (S)
 .\" veto files
 .PP
 .RS 4
-This is a list of files and directories that are neither visible nor accessible\&. Each entry in the list must be separated by a \'/\', which allows spaces to be included in the entry\&. \'*\' and \'?\' can be used to specify multiple files or directories as in DOS wildcards\&.
+This is a list of files and directories that are neither visible nor accessible\&. Each entry in the list must be separated by a \*(Aq/\*(Aq, which allows spaces to be included in the entry\&. \*(Aq*\*(Aq and \*(Aq?\*(Aq can be used to specify multiple files or directories as in DOS wildcards\&.
 .sp
 Each entry must be a unix path, not a DOS path and must
 \fInot\fR
-include the unix directory separator \'/\'\&.
+include the unix directory separator \*(Aq/\*(Aq\&.
 .sp
 Note that the
 \m[blue]\fBcase sensitive\fR\m[]
 option is applicable in vetoing files\&.
 .sp
-One feature of the veto files parameter that it is important to be aware of is Samba\'s behaviour when trying to delete a directory\&. If a directory that is to be deleted contains nothing but veto files this deletion will
+One feature of the veto files parameter that it is important to be aware of is Samba\*(Aqs behaviour when trying to delete a directory\&. If a directory that is to be deleted contains nothing but veto files this deletion will
 \fIfail\fR
 unless you also set the
 \m[blue]\fBdelete veto files\fR\m[]
@@ -10583,7 +10592,7 @@ winbind nested groups (G)
 .\" winbind nested groups
 .PP
 .RS 4
-If set to yes, this parameter activates the support for nested groups\&. Nested groups are also called local groups or aliases\&. They work like their counterparts in Windows: Nested groups are defined locally on any machine (they are shared between DC\'s through their SAM) and can contain users and global groups from any trusted SAM\&. To be able to use nested groups, you need to run nss_winbind\&.
+If set to yes, this parameter activates the support for nested groups\&. Nested groups are also called local groups or aliases\&. They work like their counterparts in Windows: Nested groups are defined locally on any machine (they are shared between DC\*(Aqs through their SAM) and can contain users and global groups from any trusted SAM\&. To be able to use nested groups, you need to run nss_winbind\&.
 .sp
 Default:
 \fI\fIwinbind nested groups\fR\fR\fI = \fR\fIyes\fR\fI \fR
@@ -10608,7 +10617,7 @@ winbind nss info (G)
 .\" winbind nss info
 .PP
 .RS 4
-This parameter is designed to control how Winbind retrieves Name Service Information to construct a user\'s home directory and login shell\&. Currently the following settings are available:
+This parameter is designed to control how Winbind retrieves Name Service Information to construct a user\*(Aqs home directory and login shell\&. Currently the following settings are available:
 .sp
 .RS 4
 .ie n \{\
@@ -10716,7 +10725,7 @@ modules for UNIX services\&.
 Please note that setting this parameter to + causes problems with group membership at least on glibc systems, as the character + is used as a special character for NIS in /etc/group\&.
 .sp
 Default:
-\fI\fIwinbind separator\fR\fR\fI = \fR\fI\'\e\'\fR\fI \fR
+\fI\fIwinbind separator\fR\fR\fI = \fR\fI\*(Aq\e\*(Aq\fR\fI \fR
 .sp
 Example:
 \fI\fIwinbind separator\fR\fR\fI = \fR\fI+\fR\fI \fR
@@ -10726,7 +10735,7 @@ winbind trusted domains only (G)
 .\" winbind trusted domains only
 .PP
 .RS 4
-This parameter is designed to allow Samba servers that are members of a Samba controlled domain to use UNIX accounts distributed via NIS, rsync, or LDAP as the uid\'s for winbindd users in the hosts primary domain\&. Therefore, the user
+This parameter is designed to allow Samba servers that are members of a Samba controlled domain to use UNIX accounts distributed via NIS, rsync, or LDAP as the uid\*(Aqs for winbindd users in the hosts primary domain\&. Therefore, the user
 DOMAIN\euser1
 would be mapped to the account user1 in /etc/passwd instead of allocating a new uid for him or her\&.
 .sp
@@ -10744,7 +10753,7 @@ winbind use default domain (G)
 .RS 4
 This parameter specifies whether the
 \fBwinbindd\fR(8)
-daemon should operate on users without domain component in their username\&. Users without a domain component are treated as is part of the winbindd server\'s own domain\&. While this does not benefit Windows users, it makes SSH, FTP and e\-mail function in a way much closer to the way they would in a native unix system\&.
+daemon should operate on users without domain component in their username\&. Users without a domain component are treated as is part of the winbindd server\*(Aqs own domain\&. While this does not benefit Windows users, it makes SSH, FTP and e\-mail function in a way much closer to the way they would in a native unix system\&.
 .sp
 This option should be avoided if possible\&. It can cause confusion about responsibilities for a user or group\&. In many situations it is not clear whether winbind or /etc/passwd should be seen as authoritative for a user, likewise for groups\&.
 .sp
@@ -10848,11 +10857,11 @@ wins server (G)
 .RS 4
 This specifies the IP address (or DNS name: IP address for preference) of the WINS server that
 \fBnmbd\fR(8)
-should register with\&. If you have a WINS server on your network then you should set this to the WINS server\'s IP\&.
+should register with\&. If you have a WINS server on your network then you should set this to the WINS server\*(Aqs IP\&.
 .sp
 You should point this at your WINS server if you have a multi\-subnetted network\&.
 .sp
-If you want to work in multiple namespaces, you can give every wins server a \'tag\'\&. For each tag, only one (working) server will be queried for a name\&. The tag should be separated from the ip address by a colon\&.
+If you want to work in multiple namespaces, you can give every wins server a \*(Aqtag\*(Aq\&. For each tag, only one (working) server will be queried for a name\&. The tag should be separated from the ip address by a colon\&.
 .if n \{\
 .sp
 .\}
@@ -10874,7 +10883,7 @@ Default:
 \fI\fIwins server\fR\fR\fI = \fR\fI\fR\fI \fR
 .sp
 Example:
-\fI\fIwins server\fR\fR\fI = \fR\fImary:192\&.9\&.200\&.1 fred:192\&.168\&.3\&.199 mary:192\&.168\&.2\&.61 # For this example when querying a certain name, 192\&.19\&.200\&.1 will be asked first and if that doesn\'t respond 192\&.168\&.2\&.61\&. If either of those doesn\'t know the name 192\&.168\&.3\&.199 will be queried\&.\fR\fI \fR
+\fI\fIwins server\fR\fR\fI = \fR\fImary:192\&.9\&.200\&.1 fred:192\&.168\&.3\&.199 mary:192\&.168\&.2\&.61 # For this example when querying a certain name, 192\&.19\&.200\&.1 will be asked first and if that doesn\*(Aqt respond 192\&.168\&.2\&.61\&. If either of those doesn\*(Aqt know the name 192\&.168\&.3\&.199 will be queried\&.\fR\fI \fR
 .sp
 Example:
 \fI\fIwins server\fR\fR\fI = \fR\fI192\&.9\&.200\&.1 192\&.168\&.2\&.61\fR\fI \fR
@@ -10978,7 +10987,7 @@ write raw (G)
 .\" write raw
 .PP
 .RS 4
-This parameter controls whether or not the server will support raw write SMB\'s when transferring data from clients\&. You should never need to change this parameter\&.
+This parameter controls whether or not the server will support raw write SMB\*(Aqs when transferring data from clients\&. You should never need to change this parameter\&.
 .sp
 Default:
 \fI\fIwrite raw\fR\fR\fI = \fR\fIyes\fR\fI \fR
@@ -11003,7 +11012,7 @@ Example:
 .RE
 .SH "WARNINGS"
 .PP
-Although the configuration file permits service names to contain spaces, your client software may not\&. Spaces will be ignored in comparisons anyway, so it shouldn\'t be a problem \- but be aware of the possibility\&.
+Although the configuration file permits service names to contain spaces, your client software may not\&. Spaces will be ignored in comparisons anyway, so it shouldn\*(Aqt be a problem \- but be aware of the possibility\&.
 .PP
 On a similar note, many clients \- especially DOS clients \- limit service names to eight characters\&.
 \fBsmbd\fR(8)

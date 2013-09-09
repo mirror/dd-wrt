@@ -702,8 +702,8 @@ void initmisc(void)
 	PyModule_AddObject(m, "REG_QWORD", PyInt_FromLong(REG_QWORD));
 	PyModule_AddObject(m, "SEC_CHAN_RODC", PyInt_FromLong(SEC_CHAN_RODC));
 	PyModule_AddObject(m, "REG_LINK", PyInt_FromLong(REG_LINK));
-	PyModule_AddObject(m, "REG_NONE", PyInt_FromLong(REG_NONE));
 	PyModule_AddObject(m, "SEC_CHAN_LOCAL", PyInt_FromLong(SEC_CHAN_LOCAL));
+	PyModule_AddObject(m, "REG_NONE", PyInt_FromLong(REG_NONE));
 	Py_INCREF((PyObject *)(void *)&GUID_Type);
 	PyModule_AddObject(m, "GUID", (PyObject *)(void *)&GUID_Type);
 	Py_INCREF((PyObject *)(void *)&ndr_syntax_id_Type);

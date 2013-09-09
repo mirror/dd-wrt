@@ -1634,6 +1634,9 @@
 /* Define to 1 if you have the `posix_memalign' function. */
 #undef HAVE_POSIX_MEMALIGN
 
+/* Define to 1 if you have the `posix_openpt' function. */
+#undef HAVE_POSIX_OPENPT
+
 /* Whether prctl is available */
 #undef HAVE_PRCTL
 
@@ -3110,6 +3113,11 @@
 
 /* xattr functions have additional options */
 #undef XATTR_ADD_OPT
+
+/* Enable large inode numbers on Mac OS X 10.5.  */
+#ifndef _DARWIN_USE_64_BIT_INODE
+# define _DARWIN_USE_64_BIT_INODE 1
+#endif
 
 /* File offset bits */
 #undef _FILE_OFFSET_BITS
