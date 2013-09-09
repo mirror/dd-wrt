@@ -2,10 +2,10 @@ KRB5LIBS=
 LDAP_LIBS=
 LIBS=-lresolv -ldl -lnetapi -ltdb -ltalloc
 DEVELOPER_CFLAGS=-DDEBUG_PASSWORD -DDEVELOPER -g -Wall -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings
-CCFLAGS=-I../ -L../../../bin  -I../lib/zlib -Os -pipe -mips32r2 -mtune=74kc -mdspr2 -fno-caller-saves -msoft-float -DMAX_DEBUG_LEVEL=-1 -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_DDINOTIFY -g $(FLAGS) -D_SAMBA_BUILD_=3 $(GTK_FLAGS)
-CC=ccache mipsel-linux-uclibc-gcc
+CCFLAGS=-I../ -L../../../bin  -I../lib/zlib -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DMAX_DEBUG_LEVEL=-1 -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_DDINOTIFY -g $(FLAGS) -D_SAMBA_BUILD_=3 $(GTK_FLAGS)
+CC=ccache mips-linux-uclibc-gcc
 PICFLAG=-fPIC
-LDFLAGS= -Os -pipe -mips32r2 -mtune=74kc -mdspr2 -fno-caller-saves -msoft-float -DMAX_DEBUG_LEVEL=-1 -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_DDINOTIFY -L./bin
+LDFLAGS= -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DMAX_DEBUG_LEVEL=-1 -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_DDINOTIFY -L./bin
 DYNEXP=-Wl,--export-dynamic
 NETAPI_LIBS=$(LIBS) $(KRB5LIBS) $(LDAP_LIBS)
 CMDLINE_LIBS=$(NETAPI_LIBS) $(POPT_OBJ)

@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: ntlm_auth
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: User Commands
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "NTLM_AUTH" "1" "01/18/2013" "Samba 3\&.6" "User Commands"
+.TH "NTLM_AUTH" "1" "08/12/2013" "Samba 3\&.6" "User Commands"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -19,7 +28,7 @@
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
 .SH "NAME"
-ntlm_auth \- tool to allow external access to Winbind\'s NTLM authentication function
+ntlm_auth \- tool to allow external access to Winbind\*(Aqs NTLM authentication function
 .SH "SYNOPSIS"
 .HP \w'\ 'u
 ntlm_auth [\-d\ debuglevel] [\-l\ logdir] [\-s\ <smb\ config\ file>]
@@ -54,17 +63,17 @@ Operate as a stdio\-based helper\&. Valid helper protocols are:
 .PP
 squid\-2\&.4\-basic
 .RS 4
-Server\-side helper for use with Squid 2\&.4\'s basic (plaintext) authentication\&.
+Server\-side helper for use with Squid 2\&.4\*(Aqs basic (plaintext) authentication\&.
 .RE
 .PP
 squid\-2\&.5\-basic
 .RS 4
-Server\-side helper for use with Squid 2\&.5\'s basic (plaintext) authentication\&.
+Server\-side helper for use with Squid 2\&.5\*(Aqs basic (plaintext) authentication\&.
 .RE
 .PP
 squid\-2\&.5\-ntlmssp
 .RS 4
-Server\-side helper for use with Squid 2\&.5\'s NTLMSSP authentication\&.
+Server\-side helper for use with Squid 2\&.5\*(Aqs NTLMSSP authentication\&.
 .sp
 Requires access to the directory
 winbindd_privileged
@@ -77,7 +86,7 @@ command\&. (Thus avoiding loss of information in the protocol exchange)\&.
 .PP
 ntlmssp\-client\-1
 .RS 4
-Client\-side helper for use with arbitrary external programs that may wish to use Samba\'s NTLMSSP authentication knowledge\&.
+Client\-side helper for use with arbitrary external programs that may wish to use Samba\*(Aqs NTLMSSP authentication knowledge\&.
 .sp
 This helper is a client, and as such may be run by any user\&. The protocol used is effectively the reverse of the previous protocol\&. A
 YR
@@ -102,7 +111,7 @@ Client\-side helper that implements GSS\-SPNEGO\&. This also uses a protocol sim
 .PP
 ntlm\-server\-1
 .RS 4
-Server\-side helper protocol, intended for use by a RADIUS server or the \'winbind\' plugin for pppd, for the provision of MSCHAP and MSCHAPv2 authentication\&.
+Server\-side helper protocol, intended for use by a RADIUS server or the \*(Aqwinbind\*(Aq plugin for pppd, for the provision of MSCHAP and MSCHAPv2 authentication\&.
 .sp
 This protocol consists of lines in the form:
 Parameter: value
@@ -115,7 +124,7 @@ Currently implemented parameters from the external program to the helper are:
 .PP
 Username
 .RS 4
-The username, expected to be in Samba\'s
+The username, expected to be in Samba\*(Aqs
 \m[blue]\fBunix charset\fR\m[]\&.
 .PP
 Examples:
@@ -128,7 +137,7 @@ Username:: Ym9i
 .PP
 NT\-Domain
 .RS 4
-The user\'s domain, expected to be in Samba\'s
+The user\*(Aqs domain, expected to be in Samba\*(Aqs
 \m[blue]\fBunix charset\fR\m[]\&.
 .PP
 Examples:
@@ -141,7 +150,7 @@ NT\-Domain:: V09SS0dST1VQ
 .PP
 Full\-Username
 .RS 4
-The fully qualified username, expected to be in Samba\'s
+The fully qualified username, expected to be in Samba\*(Aqs
 \m[blue]\fBunix charset\fR\m[]
 and qualified with the
 \m[blue]\fBwinbind separator\fR\m[]\&.
@@ -170,7 +179,7 @@ LANMAN\-Response
 .RS 4
 The 24 byte
 LANMAN Response
-value, calculated from the user\'s password and the supplied
+value, calculated from the user\*(Aqs password and the supplied
 LANMAN Challenge\&. Typically, this is provided over the network by a client wishing to authenticate\&.
 .PP
 Examples:
@@ -183,7 +192,7 @@ NT\-Response
 .RS 4
 The >= 24 byte
 NT Response
-calculated from the user\'s password and the supplied
+calculated from the user\*(Aqs password and the supplied
 LANMAN Challenge\&. Typically, this is provided over the network by a client wishing to authenticate\&.
 .PP
 Examples:
@@ -194,7 +203,7 @@ NT\-Response: 0102030405060708090A0B0C0D0E0F10111213141516171
 .PP
 Password
 .RS 4
-The user\'s password\&. This would be provided by a network client, if the helper is being used in a legacy situation that exposes plaintext passwords in this way\&.
+The user\*(Aqs password\&. This would be provided by a network client, if the helper is being used in a legacy situation that exposes plaintext passwords in this way\&.
 .PP
 Examples:
 .RS 4
@@ -274,7 +283,7 @@ NT or NTLMv2 Response to the challenge (in HEXADECIMAL)
 .PP
 \-\-password=PASSWORD
 .RS 4
-User\'s plaintext password
+User\*(Aqs plaintext password
 .sp
 If not specified on the command line, this is prompted for when required\&.
 .sp
@@ -338,7 +347,7 @@ Base directory name for log/debug files\&. The extension
 will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
 .RE
 .PP
-\-h|\-\-help
+\-?|\-\-help
 .RS 4
 Print a summary of command line options\&.
 .RE
@@ -388,15 +397,15 @@ file\&.
 .RS 4
 .\}
 .nf
-auth_param ntlm program ntlm_auth \-\-helper\-protocol=squid\-2\&.5\-ntlmssp \-\-require\-membership\-of=\'WORKGROUP\eDomain Users\'
-auth_param basic program ntlm_auth \-\-helper\-protocol=squid\-2\&.5\-basic \-\-require\-membership\-of=\'WORKGROUP\eDomain Users\'
+auth_param ntlm program ntlm_auth \-\-helper\-protocol=squid\-2\&.5\-ntlmssp \-\-require\-membership\-of=\*(AqWORKGROUP\eDomain Users\*(Aq
+auth_param basic program ntlm_auth \-\-helper\-protocol=squid\-2\&.5\-basic \-\-require\-membership\-of=\*(AqWORKGROUP\eDomain Users\*(Aq
 .fi
 .if n \{\
 .RE
 .\}
 .SH "TROUBLESHOOTING"
 .PP
-If you\'re experiencing problems with authenticating Internet Explorer running under MS Windows 9X or Millennium Edition against ntlm_auth\'s NTLMSSP authentication helper (\-\-helper\-protocol=squid\-2\&.5\-ntlmssp), then please read
+If you\*(Aqre experiencing problems with authenticating Internet Explorer running under MS Windows 9X or Millennium Edition against ntlm_auth\*(Aqs NTLMSSP authentication helper (\-\-helper\-protocol=squid\-2\&.5\-ntlmssp), then please read
 the Microsoft Knowledge Base article #239869 and follow instructions described there\&.
 .SH "VERSION"
 .PP

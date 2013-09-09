@@ -1489,8 +1489,8 @@ void initdns(void)
 	PyModule_AddObject(m, "DNS_RCODE_NXRRSET", PyInt_FromLong(DNS_RCODE_NXRRSET));
 	PyModule_AddObject(m, "DNS_QTYPE_A", PyInt_FromLong(DNS_QTYPE_A));
 	PyModule_AddObject(m, "DNS_QTYPE_NSEC", PyInt_FromLong(DNS_QTYPE_NSEC));
-	PyModule_AddObject(m, "DNS_QTYPE_SRV", PyInt_FromLong(DNS_QTYPE_SRV));
 	PyModule_AddObject(m, "DNS_QTYPE_DS", PyInt_FromLong(DNS_QTYPE_DS));
+	PyModule_AddObject(m, "DNS_QTYPE_SRV", PyInt_FromLong(DNS_QTYPE_SRV));
 	PyModule_AddObject(m, "DNS_RCODE_REFUSED", PyInt_FromLong(DNS_RCODE_REFUSED));
 	PyModule_AddObject(m, "DNS_RCODE_NOTZONE", PyInt_FromLong(DNS_RCODE_NOTZONE));
 	PyModule_AddObject(m, "DNS_QTYPE_MX", PyInt_FromLong(DNS_QTYPE_MX));

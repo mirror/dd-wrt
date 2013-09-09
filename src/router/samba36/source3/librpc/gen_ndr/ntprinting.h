@@ -22,21 +22,23 @@ struct ntprinting_form {
 }/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
 
 struct ntprinting_driver {
+	uint32_t string_flags;/* [skip] */
 	uint32_t version;
-	const char * name;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * environment;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * driverpath;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * datafile;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * configfile;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * helpfile;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * monitorname;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * defaultdatatype;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char ** dependent_files;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NOTERM|LIBNDR_FLAG_REMAINING)] */
+	const char * name;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * environment;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * driverpath;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * datafile;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * configfile;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * helpfile;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * monitorname;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * defaultdatatype;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char ** dependent_files;/* [flag((ndr_ntprinting_string_flags(r->string_flags)&~LIBNDR_FLAG_STR_NULLTERM)|LIBNDR_FLAG_STR_NOTERM|LIBNDR_FLAG_REMAINING)] */
 }/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
 
 struct ntprinting_devicemode {
-	const char * devicename;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * formname;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
+	uint32_t string_flags;/* [skip] */
+	const char * devicename;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * formname;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
 	uint16_t specversion;
 	uint16_t driverversion;
 	uint16_t size;
@@ -73,13 +75,15 @@ struct ntprinting_devicemode {
 }/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
 
 struct ntprinting_printer_data {
+	uint32_t string_flags;/* [skip] */
 	uint32_t ptr;
-	const char * name;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * name;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
 	uint32_t type;
 	DATA_BLOB data;
 }/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
 
 struct ntprinting_printer_info {
+	uint32_t string_flags;/* [skip] */
 	uint32_t attributes;
 	uint32_t priority;
 	uint32_t default_priority;
@@ -91,17 +95,17 @@ struct ntprinting_printer_info {
 	uint32_t changeid;
 	uint32_t c_setprinter;
 	uint32_t setuptime;
-	const char * servername;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * printername;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * sharename;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * portname;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * drivername;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * comment;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * location;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * sepfile;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * printprocessor;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * datatype;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
-	const char * parameters;/* [flag(LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM)] */
+	const char * servername;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * printername;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * sharename;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * portname;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * drivername;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * comment;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * location;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * sepfile;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * printprocessor;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * datatype;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
+	const char * parameters;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
 }/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
 
 struct ntprinting_printer {

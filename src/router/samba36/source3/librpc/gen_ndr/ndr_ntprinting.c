@@ -79,58 +79,59 @@ _PUBLIC_ enum ndr_err_code ndr_push_ntprinting_driver(struct ndr_push *ndr, int 
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_NOALIGN);
 		if (ndr_flags & NDR_SCALARS) {
 			NDR_CHECK(ndr_push_align(ndr, 4));
+			/* [skip] 'r->string_flags' */
 			NDR_CHECK(ndr_push_uint32(ndr, NDR_SCALARS, r->version));
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->name));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->environment));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->driverpath));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->datafile));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->configfile));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->helpfile));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->monitorname));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->defaultdatatype));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string_array = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NOTERM|LIBNDR_FLAG_REMAINING);
+				ndr_set_flags(&ndr->flags, (ndr_ntprinting_string_flags(r->string_flags)&~LIBNDR_FLAG_STR_NULLTERM)|LIBNDR_FLAG_STR_NOTERM|LIBNDR_FLAG_REMAINING);
 				NDR_CHECK(ndr_push_string_array(ndr, NDR_SCALARS, r->dependent_files));
 				ndr->flags = _flags_save_string_array;
 			}
@@ -150,58 +151,59 @@ _PUBLIC_ enum ndr_err_code ndr_pull_ntprinting_driver(struct ndr_pull *ndr, int 
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_NOALIGN);
 		if (ndr_flags & NDR_SCALARS) {
 			NDR_CHECK(ndr_pull_align(ndr, 4));
+			/* [skip] '&r->string_flags' */
 			NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->version));
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->name));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->environment));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->driverpath));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->datafile));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->configfile));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->helpfile));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->monitorname));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->defaultdatatype));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string_array = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NOTERM|LIBNDR_FLAG_REMAINING);
+				ndr_set_flags(&ndr->flags, (ndr_ntprinting_string_flags(r->string_flags)&~LIBNDR_FLAG_STR_NULLTERM)|LIBNDR_FLAG_STR_NOTERM|LIBNDR_FLAG_REMAINING);
 				NDR_CHECK(ndr_pull_string_array(ndr, NDR_SCALARS, &r->dependent_files));
 				ndr->flags = _flags_save_string_array;
 			}
@@ -222,6 +224,7 @@ _PUBLIC_ void ndr_print_ntprinting_driver(struct ndr_print *ndr, const char *nam
 		uint32_t _flags_save_STRUCT = ndr->flags;
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_NOALIGN);
 		ndr->depth++;
+		ndr_print_uint32(ndr, "string_flags", r->string_flags);
 		ndr_print_uint32(ndr, "version", r->version);
 		ndr_print_string(ndr, "name", r->name);
 		ndr_print_string(ndr, "environment", r->environment);
@@ -244,15 +247,16 @@ _PUBLIC_ enum ndr_err_code ndr_push_ntprinting_devicemode(struct ndr_push *ndr, 
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_NOALIGN);
 		if (ndr_flags & NDR_SCALARS) {
 			NDR_CHECK(ndr_push_align(ndr, 5));
+			/* [skip] 'r->string_flags' */
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->devicename));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->formname));
 				ndr->flags = _flags_save_string;
 			}
@@ -310,15 +314,16 @@ _PUBLIC_ enum ndr_err_code ndr_pull_ntprinting_devicemode(struct ndr_pull *ndr, 
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_NOALIGN);
 		if (ndr_flags & NDR_SCALARS) {
 			NDR_CHECK(ndr_pull_align(ndr, 5));
+			/* [skip] '&r->string_flags' */
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->devicename));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->formname));
 				ndr->flags = _flags_save_string;
 			}
@@ -383,6 +388,7 @@ _PUBLIC_ void ndr_print_ntprinting_devicemode(struct ndr_print *ndr, const char 
 		uint32_t _flags_save_STRUCT = ndr->flags;
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_NOALIGN);
 		ndr->depth++;
+		ndr_print_uint32(ndr, "string_flags", r->string_flags);
 		ndr_print_string(ndr, "devicename", r->devicename);
 		ndr_print_string(ndr, "formname", r->formname);
 		ndr_print_uint16(ndr, "specversion", r->specversion);
@@ -435,10 +441,11 @@ _PUBLIC_ enum ndr_err_code ndr_push_ntprinting_printer_data(struct ndr_push *ndr
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_NOALIGN);
 		if (ndr_flags & NDR_SCALARS) {
 			NDR_CHECK(ndr_push_align(ndr, 4));
+			/* [skip] 'r->string_flags' */
 			NDR_CHECK(ndr_push_uint32(ndr, NDR_SCALARS, r->ptr));
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->name));
 				ndr->flags = _flags_save_string;
 			}
@@ -460,10 +467,11 @@ _PUBLIC_ enum ndr_err_code ndr_pull_ntprinting_printer_data(struct ndr_pull *ndr
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_NOALIGN);
 		if (ndr_flags & NDR_SCALARS) {
 			NDR_CHECK(ndr_pull_align(ndr, 4));
+			/* [skip] '&r->string_flags' */
 			NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->ptr));
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->name));
 				ndr->flags = _flags_save_string;
 			}
@@ -486,6 +494,7 @@ _PUBLIC_ void ndr_print_ntprinting_printer_data(struct ndr_print *ndr, const cha
 		uint32_t _flags_save_STRUCT = ndr->flags;
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_NOALIGN);
 		ndr->depth++;
+		ndr_print_uint32(ndr, "string_flags", r->string_flags);
 		ndr_print_uint32(ndr, "ptr", r->ptr);
 		ndr_print_string(ndr, "name", r->name);
 		ndr_print_uint32(ndr, "type", r->type);
@@ -502,6 +511,7 @@ _PUBLIC_ enum ndr_err_code ndr_push_ntprinting_printer_info(struct ndr_push *ndr
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_NOALIGN);
 		if (ndr_flags & NDR_SCALARS) {
 			NDR_CHECK(ndr_push_align(ndr, 4));
+			/* [skip] 'r->string_flags' */
 			NDR_CHECK(ndr_push_uint32(ndr, NDR_SCALARS, r->attributes));
 			NDR_CHECK(ndr_push_uint32(ndr, NDR_SCALARS, r->priority));
 			NDR_CHECK(ndr_push_uint32(ndr, NDR_SCALARS, r->default_priority));
@@ -515,67 +525,67 @@ _PUBLIC_ enum ndr_err_code ndr_push_ntprinting_printer_info(struct ndr_push *ndr
 			NDR_CHECK(ndr_push_uint32(ndr, NDR_SCALARS, r->setuptime));
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->servername));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->printername));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->sharename));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->portname));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->drivername));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->comment));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->location));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->sepfile));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->printprocessor));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->datatype));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_push_string(ndr, NDR_SCALARS, r->parameters));
 				ndr->flags = _flags_save_string;
 			}
@@ -595,6 +605,7 @@ _PUBLIC_ enum ndr_err_code ndr_pull_ntprinting_printer_info(struct ndr_pull *ndr
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_NOALIGN);
 		if (ndr_flags & NDR_SCALARS) {
 			NDR_CHECK(ndr_pull_align(ndr, 4));
+			/* [skip] '&r->string_flags' */
 			NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->attributes));
 			NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->priority));
 			NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->default_priority));
@@ -608,67 +619,67 @@ _PUBLIC_ enum ndr_err_code ndr_pull_ntprinting_printer_info(struct ndr_pull *ndr
 			NDR_CHECK(ndr_pull_uint32(ndr, NDR_SCALARS, &r->setuptime));
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->servername));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->printername));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->sharename));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->portname));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->drivername));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->comment));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->location));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->sepfile));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->printprocessor));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->datatype));
 				ndr->flags = _flags_save_string;
 			}
 			{
 				uint32_t _flags_save_string = ndr->flags;
-				ndr_set_flags(&ndr->flags, LIBNDR_FLAG_STR_UTF8|LIBNDR_FLAG_STR_NULLTERM);
+				ndr_set_flags(&ndr->flags, ndr_ntprinting_string_flags(r->string_flags));
 				NDR_CHECK(ndr_pull_string(ndr, NDR_SCALARS, &r->parameters));
 				ndr->flags = _flags_save_string;
 			}
@@ -689,6 +700,7 @@ _PUBLIC_ void ndr_print_ntprinting_printer_info(struct ndr_print *ndr, const cha
 		uint32_t _flags_save_STRUCT = ndr->flags;
 		ndr_set_flags(&ndr->flags, LIBNDR_FLAG_NOALIGN);
 		ndr->depth++;
+		ndr_print_uint32(ndr, "string_flags", r->string_flags);
 		ndr_print_uint32(ndr, "attributes", r->attributes);
 		ndr_print_uint32(ndr, "priority", r->priority);
 		ndr_print_uint32(ndr, "default_priority", r->default_priority);

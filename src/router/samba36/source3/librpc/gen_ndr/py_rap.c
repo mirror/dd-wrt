@@ -7938,8 +7938,8 @@ void initrap(void)
 	PyModule_AddObject(m, "RAP_WUserGetGroups", PyInt_FromLong(59));
 	PyModule_AddObject(m, "RAP_WUserPasswordSet3", PyInt_FromLong(275));
 	PyModule_AddObject(m, "RAP_WShareDel_REQ", PyString_FromString("zW"));
-	PyModule_AddObject(m, "RAP_WMessageNameDel", PyInt_FromLong(32));
 	PyModule_AddObject(m, "RAP_WfileEnum", PyInt_FromLong(10));
+	PyModule_AddObject(m, "RAP_WMessageNameDel", PyInt_FromLong(32));
 	PyModule_AddObject(m, "RAP_NetPathCompare", PyInt_FromLong(138));
 	PyModule_AddObject(m, "RAP_WErrorLogRead", PyInt_FromLong(135));
 	PyModule_AddObject(m, "RAP_PARAM_JOBSTATUSSTR", PyInt_FromLong(RAP_PARAM_JOBSTATUSSTR));

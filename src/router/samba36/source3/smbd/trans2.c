@@ -328,6 +328,15 @@ static struct ea_list *get_ea_list_from_file(TALLOC_CTX *mem_ctx, connection_str
 			return NULL;
 		}
 
+		if (listp->ea.value.length == 0) {
+			/*
+			 * We can never return a zero length EA.
+			 * Windows reports the EA's as corrupted.
+			 */
+			TALLOC_FREE(listp);
+			continue;
+		}
+
 		push_ascii_fstring(dos_ea_name, listp->ea.name);
 
 		*pea_total_len +=
@@ -411,6 +420,7 @@ static NTSTATUS fill_ea_chained_buffer(TALLOC_CTX *mem_ctx,
 {
 	uint8_t *p = (uint8_t *)pdata;
 	uint8_t *last_start = NULL;
+	bool store_data = (pdata != NULL);
 
 	*ret_data_size = 0;
 
@@ -422,8 +432,9 @@ static NTSTATUS fill_ea_chained_buffer(TALLOC_CTX *mem_ctx,
 		size_t dos_namelen;
 		fstring dos_ea_name;
 		size_t this_size;
+		size_t pad = 0;
 
-		if (last_start) {
+		if (last_start && store_data) {
 			SIVAL(last_start, 0, PTR_DIFF(p, last_start));
 		}
 		last_start = p;
@@ -440,7 +451,7 @@ static NTSTATUS fill_ea_chained_buffer(TALLOC_CTX *mem_ctx,
 		this_size = 0x08 + dos_namelen + 1 + ea_list->ea.value.length;
 
 		if (ea_list->next) {
-			size_t pad = 4 - (this_size % 4);
+			pad = (4 - (this_size % 4)) % 4;
 			this_size += pad;
 		}
 
@@ -449,12 +460,19 @@ static NTSTATUS fill_ea_chained_buffer(TALLOC_CTX *mem_ctx,
 		}
 
 		/* We know we have room. */
-		SIVAL(p, 0x00, 0); /* next offset */
-		SCVAL(p, 0x04, ea_list->ea.flags);
-		SCVAL(p, 0x05, dos_namelen);
-		SSVAL(p, 0x06, ea_list->ea.value.length);
-		fstrcpy((char *)(p+0x08), dos_ea_name);
-		memcpy(p + 0x08 + dos_namelen + 1, ea_list->ea.value.data, ea_list->ea.value.length);
+		if (store_data) {
+			SIVAL(p, 0x00, 0); /* next offset */
+			SCVAL(p, 0x04, ea_list->ea.flags);
+			SCVAL(p, 0x05, dos_namelen);
+			SSVAL(p, 0x06, ea_list->ea.value.length);
+			fstrcpy((char *)(p+0x08), dos_ea_name);
+			memcpy(p + 0x08 + dos_namelen + 1, ea_list->ea.value.data, ea_list->ea.value.length);
+			if (pad) {
+				memset(p + 0x08 + dos_namelen + 1 + ea_list->ea.value.length,
+					'\0',
+					pad);
+			}
+		}
 
 		total_data_size -= this_size;
 		p += this_size;
@@ -468,13 +486,38 @@ static NTSTATUS fill_ea_chained_buffer(TALLOC_CTX *mem_ctx,
 static unsigned int estimate_ea_size(connection_struct *conn, files_struct *fsp, const char *fname)
 {
 	size_t total_ea_len = 0;
+	struct ea_list *ea_list = NULL;
 	TALLOC_CTX *mem_ctx = NULL;
 
 	if (!lp_ea_support(SNUM(conn))) {
 		return 0;
 	}
 	mem_ctx = talloc_tos();
-	(void)get_ea_list_from_file(mem_ctx, conn, fsp, fname, &total_ea_len);
+	ea_list = get_ea_list_from_file(mem_ctx, conn, fsp, fname, &total_ea_len);
+	if (ea_list == NULL) {
+		return 0;
+	}
+	if(conn->sconn->using_smb2) {
+		NTSTATUS status;
+		unsigned int ret_data_size;
+		/*
+		 * We're going to be using fill_ea_chained_buffer() to
+		 * marshall EA's - this size is significantly larger
+		 * than the SMB1 buffer. Re-calculate the size without
+		 * marshalling.
+		 */
+		status = fill_ea_chained_buffer(mem_ctx,
+						NULL,
+						65535,
+						&ret_data_size,
+						conn,
+						ea_list);
+		if (!NT_STATUS_IS_OK(status)) {
+			ret_data_size = 0;
+		}
+		total_ea_len = ret_data_size;
+	}
+
 	return total_ea_len;
 }
 
@@ -2921,6 +2964,7 @@ NTSTATUS smbd_do_qfsinfo(connection_struct *conn,
 			 uint16_t info_level,
 			 uint16_t flags2,
 			 unsigned int max_data_bytes,
+			 struct smb_filename *fname,
 			 char **ppdata,
 			 int *ret_data_len)
 {
@@ -2929,9 +2973,16 @@ NTSTATUS smbd_do_qfsinfo(connection_struct *conn,
 	const char *vname = volume_label(SNUM(conn));
 	int snum = SNUM(conn);
 	char *fstype = lp_fstype(SNUM(conn));
+	const char *filename = NULL;
 	uint32 additional_flags = 0;
-	struct smb_filename smb_fname_dot;
+	struct smb_filename smb_fname;
 	SMB_STRUCT_STAT st;
+
+	if (fname == NULL || fname->base_name == NULL) {
+		filename = ".";
+	} else {
+		filename = fname->base_name;
+	}
 
 	if (IS_IPC(conn)) {
 		if (info_level != SMB_QUERY_CIFS_UNIX_INFO) {
@@ -2944,15 +2995,15 @@ NTSTATUS smbd_do_qfsinfo(connection_struct *conn,
 
 	DEBUG(3,("smbd_do_qfsinfo: level = %d\n", info_level));
 
-	ZERO_STRUCT(smb_fname_dot);
-	smb_fname_dot.base_name = discard_const_p(char, ".");
+	ZERO_STRUCT(smb_fname);
+	smb_fname.base_name = discard_const_p(char, filename);
 
-	if(SMB_VFS_STAT(conn, &smb_fname_dot) != 0) {
+	if(SMB_VFS_STAT(conn, &smb_fname) != 0) {
 		DEBUG(2,("stat of . failed (%s)\n", strerror(errno)));
 		return map_nt_error_from_unix(errno);
 	}
 
-	st = smb_fname_dot.st;
+	st = smb_fname.st;
 
 	*ppdata = (char *)SMB_REALLOC(
 		*ppdata, max_data_bytes + DIR_ENTRY_SAFETY_MARGIN);
@@ -2969,7 +3020,7 @@ NTSTATUS smbd_do_qfsinfo(connection_struct *conn,
 		{
 			uint64_t dfree,dsize,bsize,block_size,sectors_per_unit,bytes_per_sector;
 			data_len = 18;
-			if (get_dfree_info(conn,".",False,&bsize,&dfree,&dsize) == (uint64_t)-1) {
+			if (get_dfree_info(conn,filename,False,&bsize,&dfree,&dsize) == (uint64_t)-1) {
 				return map_nt_error_from_unix(errno);
 			}
 
@@ -3092,7 +3143,7 @@ cBytesSector=%u, cUnitTotal=%u, cUnitAvail=%d\n", (unsigned int)st.st_ex_dev, (u
 		{
 			uint64_t dfree,dsize,bsize,block_size,sectors_per_unit,bytes_per_sector;
 			data_len = 24;
-			if (get_dfree_info(conn,".",False,&bsize,&dfree,&dsize) == (uint64_t)-1) {
+			if (get_dfree_info(conn,filename,False,&bsize,&dfree,&dsize) == (uint64_t)-1) {
 				return map_nt_error_from_unix(errno);
 			}
 			block_size = lp_block_size(snum);
@@ -3124,7 +3175,7 @@ cBytesSector=%u, cUnitTotal=%u, cUnitAvail=%d\n", (unsigned int)bsize, (unsigned
 		{
 			uint64_t dfree,dsize,bsize,block_size,sectors_per_unit,bytes_per_sector;
 			data_len = 32;
-			if (get_dfree_info(conn,".",False,&bsize,&dfree,&dsize) == (uint64_t)-1) {
+			if (get_dfree_info(conn,filename,False,&bsize,&dfree,&dsize) == (uint64_t)-1) {
 				return map_nt_error_from_unix(errno);
 			}
 			block_size = lp_block_size(snum);
@@ -3317,7 +3368,7 @@ cBytesSector=%u, cUnitTotal=%u, cUnitAvail=%d\n", (unsigned int)bsize, (unsigned
 				return NT_STATUS_INVALID_LEVEL;
 			}
 
-			rc = SMB_VFS_STATVFS(conn, ".", &svfs);
+			rc = SMB_VFS_STATVFS(conn, filename, &svfs);
 
 			if (!rc) {
 				data_len = 56;
@@ -3510,6 +3561,7 @@ static void call_trans2qfsinfo(connection_struct *conn,
 				 info_level,
 				 req->flags2,
 				 max_data_bytes,
+				 NULL,
 				 ppdata, &data_len);
 	if (!NT_STATUS_IS_OK(status)) {
 		reply_nterror(req, status);
@@ -7328,12 +7380,19 @@ static NTSTATUS smb_posix_open(connection_struct *conn,
 			/* File exists open. File not exist create. */
 			create_disp = FILE_OPEN_IF;
 			break;
+		case SMB_O_EXCL:
+			/* O_EXCL on its own without O_CREAT is undefined.
+			   We deliberately ignore it as some versions of
+			   Linux CIFSFS can send a bare O_EXCL on the
+			   wire which other filesystems in the kernel
+			   ignore. See bug 9519 for details. */
+
+			/* Fallthrough. */
+
 		case 0:
 			/* File exists open. File not exist fail. */
 			create_disp = FILE_OPEN;
 			break;
-		case SMB_O_EXCL:
-			/* O_EXCL on its own without O_CREAT is undefined. */
 		default:
 			DEBUG(5,("smb_posix_open: invalid create mode 0x%x\n",
 				(unsigned int)wire_open_mode ));
@@ -7586,8 +7645,8 @@ static NTSTATUS smb_posix_unlink(connection_struct *conn,
 				continue;
 			}
 			/* Fail with sharing violation. */
-			close_file(req, fsp, NORMAL_CLOSE);
 			TALLOC_FREE(lck);
+			close_file(req, fsp, NORMAL_CLOSE);
 			return NT_STATUS_SHARING_VIOLATION;
 		}
 	}
@@ -7601,12 +7660,12 @@ static NTSTATUS smb_posix_unlink(connection_struct *conn,
 						fsp,
 						smb_fname);
 
+	TALLOC_FREE(lck);
+
 	if (!NT_STATUS_IS_OK(status)) {
 		close_file(req, fsp, NORMAL_CLOSE);
-		TALLOC_FREE(lck);
 		return status;
 	}
-	TALLOC_FREE(lck);
 	return close_file(req, fsp, NORMAL_CLOSE);
 }
 

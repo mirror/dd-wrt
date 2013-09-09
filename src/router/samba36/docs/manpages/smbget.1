@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: smbget
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: User Commands
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "SMBGET" "1" "01/18/2013" "Samba 3\&.6" "User Commands"
+.TH "SMBGET" "1" "08/12/2013" "Samba 3\&.6" "User Commands"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -67,7 +76,7 @@ Workgroup to use (optional)
 .PP
 \-n, \-\-nonprompt
 .RS 4
-Don\'t ask anything (non\-interactive)
+Don\*(Aqt ask anything (non\-interactive)
 .RE
 .PP
 \-d, \-\-debuglevel=INT
@@ -126,7 +135,7 @@ Display brief usage message
 .RE
 .SH "SMB URLS"
 .PP
-SMB URL\'s should be specified in the following format:
+SMB URL\*(Aqs should be specified in the following format:
 .PP
 .if n \{\
 .RS 4
@@ -163,7 +172,7 @@ smb://name/ means, if \fIname\fR is a workgroup, all the servers in this workgro
 .RS 4
 .\}
 .nf
-# Recursively download \'src\' directory
+# Recursively download \*(Aqsrc\*(Aq directory
 smbget \-R smb://rhonwyn/jelmer/src
 # Download FreeBSD ISO and enable resuming
 smbget \-r smb://rhonwyn/isos/FreeBSD5\&.1\&.iso

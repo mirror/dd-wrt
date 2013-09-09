@@ -1614,7 +1614,8 @@ enum spoolss_DriverOSVersion
 	SPOOLSS_DRIVER_VERSION_9X=(int)(0),
 	SPOOLSS_DRIVER_VERSION_NT35=(int)(1),
 	SPOOLSS_DRIVER_VERSION_NT4=(int)(2),
-	SPOOLSS_DRIVER_VERSION_200X=(int)(3)
+	SPOOLSS_DRIVER_VERSION_200X=(int)(3),
+	SPOOLSS_DRIVER_VERSION_2012=(int)(4)
 }
 #else
  { __donnot_use_enum_spoolss_DriverOSVersion=0x7FFFFFFF}
@@ -1622,6 +1623,7 @@ enum spoolss_DriverOSVersion
 #define SPOOLSS_DRIVER_VERSION_NT35 ( 1 )
 #define SPOOLSS_DRIVER_VERSION_NT4 ( 2 )
 #define SPOOLSS_DRIVER_VERSION_200X ( 3 )
+#define SPOOLSS_DRIVER_VERSION_2012 ( 4 )
 #endif
 ;
 

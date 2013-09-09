@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: smbpasswd
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: File Formats and Conventions
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "SMBPASSWD" "5" "01/18/2013" "Samba 3\&.6" "File Formats and Conventions"
+.TH "SMBPASSWD" "5" "08/12/2013" "Samba 3\&.6" "File Formats and Conventions"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -34,7 +43,7 @@ smbpasswd is the Samba encrypted password file\&. It contains the username, Unix
 .PP
 The format of the smbpasswd file used by Samba 2\&.2 is very similar to the familiar Unix
 passwd(5)
-file\&. It is an ASCII file containing one line for each user\&. Each field ithin each line is separated from the next by a colon\&. Any entry beginning with \'#\' is ignored\&. The smbpasswd file contains the following information for each user:
+file\&. It is an ASCII file containing one line for each user\&. Each field ithin each line is separated from the next by a colon\&. Any entry beginning with \*(Aq#\*(Aq is ignored\&. The smbpasswd file contains the following information for each user:
 .PP
 name
 .RS 4
@@ -48,7 +57,7 @@ This is the UNIX uid\&. It must match the uid field for the same user entry in t
 .PP
 Lanman Password Hash
 .RS 4
-This is the LANMAN hash of the user\'s password, encoded as 32 hex digits\&. The LANMAN hash is created by DES encrypting a well known string with the user\'s password as the DES key\&. This is the same password used by Windows 95/98 machines\&. Note that this password hash is regarded as weak as it is vulnerable to dictionary attacks and if two users choose the same password this entry will be identical (i\&.e\&. the password is not "salted" as the UNIX password is)\&. If the user has a null password this field will contain the characters "NO PASSWORD" as the start of the hex string\&. If the hex string is equal to 32 \'X\' characters then the user\'s account is marked as
+This is the LANMAN hash of the user\*(Aqs password, encoded as 32 hex digits\&. The LANMAN hash is created by DES encrypting a well known string with the user\*(Aqs password as the DES key\&. This is the same password used by Windows 95/98 machines\&. Note that this password hash is regarded as weak as it is vulnerable to dictionary attacks and if two users choose the same password this entry will be identical (i\&.e\&. the password is not "salted" as the UNIX password is)\&. If the user has a null password this field will contain the characters "NO PASSWORD" as the start of the hex string\&. If the hex string is equal to 32 \*(AqX\*(Aq characters then the user\*(Aqs account is marked as
 \fBdisabled\fR
 and the user will not be able to log onto the Samba server\&.
 .sp
@@ -62,7 +71,7 @@ be made available to anyone but the root user\&. To protect these passwords the 
 .PP
 NT Password Hash
 .RS 4
-This is the Windows NT hash of the user\'s password, encoded as 32 hex digits\&. The Windows NT hash is created by taking the user\'s password as represented in 16\-bit, little\-endian UNICODE and then applying the MD4 (internet rfc1321) hashing algorithm to it\&.
+This is the Windows NT hash of the user\*(Aqs password, encoded as 32 hex digits\&. The Windows NT hash is created by taking the user\*(Aqs password as represented in 16\-bit, little\-endian UNICODE and then applying the MD4 (internet rfc1321) hashing algorithm to it\&.
 .sp
 This password hash is considered more secure than the LANMAN Password Hash as it preserves the case of the password and uses a much higher quality hashing algorithm\&. However, it is still the case that if two users choose the same password this entry will be identical (i\&.e\&. the password is not "salted" as the UNIX password is)\&.
 .sp
@@ -75,7 +84,7 @@ be made available to anyone but the root user\&. To protect these passwords the 
 .PP
 Account Flags
 .RS 4
-This section contains flags that describe the attributes of the users account\&. This field is bracketed by \'[\' and \']\' characters and is always 13 characters in length (including the \'[\' and \']\' characters)\&. The contents of this field may be any of the following characters:
+This section contains flags that describe the attributes of the users account\&. This field is bracketed by \*(Aq[\*(Aq and \*(Aq]\*(Aq characters and is always 13 characters in length (including the \*(Aq[\*(Aq and \*(Aq]\*(Aq characters)\&. The contents of this field may be any of the following characters:
 .sp
 .RS 4
 .ie n \{\
@@ -149,7 +158,7 @@ command\&.
 .PP
 Last Change Time
 .RS 4
-This field consists of the time the account was last modified\&. It consists of the characters \'LCT\-\' (standing for "Last Change Time") followed by a numeric encoding of the UNIX time in seconds since the epoch (1970) that the last change was made\&.
+This field consists of the time the account was last modified\&. It consists of the characters \*(AqLCT\-\*(Aq (standing for "Last Change Time") followed by a numeric encoding of the UNIX time in seconds since the epoch (1970) that the last change was made\&.
 .RE
 .PP
 All other colon separated fields are ignored at this time\&.

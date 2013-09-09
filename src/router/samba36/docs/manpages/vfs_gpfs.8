@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: vfs_gpfs
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: System Administration tools
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "VFS_GPFS" "8" "01/18/2013" "Samba 3\&.6" "System Administration tools"
+.TH "VFS_GPFS" "8" "08/12/2013" "Samba 3\&.6" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -211,7 +220,7 @@ no
 \- do not use
 gpfs_get_realfilename_path()\&. It seems that
 gpfs_get_realfilename_path()
-doesn\'t work on AIX\&.
+doesn\*(Aqt work on AIX\&.
 .RE
 .sp
 .RE
@@ -219,7 +228,7 @@ doesn\'t work on AIX\&.
 .PP
 gpfs:winattr = [ yes | no ]
 .RS 4
-Enable/Disable usage of the windows attributes in GPFS\&. GPFS is able to store windows file attributes e\&.g\&. HIDDEN, READONLY, SYSTEM and others natively\&. That means Samba doesn\'t need to map them to permission bits or extended attributes\&.
+Enable/Disable usage of the windows attributes in GPFS\&. GPFS is able to store windows file attributes e\&.g\&. HIDDEN, READONLY, SYSTEM and others natively\&. That means Samba doesn\*(Aqt need to map them to permission bits or extended attributes\&.
 .sp
 .RS 4
 .ie n \{\
@@ -252,7 +261,7 @@ yes
 .PP
 gpfs:merge_writeappend = [ yes | no ]
 .RS 4
-GPFS ACLs doesn\'t know about the \'APPEND\' right\&. This optionen lets Samba map the \'APPEND\' right to \'WRITE\'\&.
+GPFS ACLs doesn\*(Aqt know about the \*(AqAPPEND\*(Aq right\&. This optionen lets Samba map the \*(AqAPPEND\*(Aq right to \*(AqWRITE\*(Aq\&.
 .sp
 .RS 4
 .ie n \{\
@@ -264,7 +273,7 @@ GPFS ACLs doesn\'t know about the \'APPEND\' right\&. This optionen lets Samba m
 .\}
 
 yes(default)
-\- map \'APPEND\' to \'WRITE\'\&.
+\- map \*(AqAPPEND\*(Aq to \*(AqWRITE\*(Aq\&.
 .RE
 .sp
 .RS 4
@@ -277,7 +286,7 @@ yes(default)
 .\}
 
 no
-\- do not map \'APPEND\' to \'WRITE\'\&.
+\- do not map \*(AqAPPEND\*(Aq to \*(AqWRITE\*(Aq\&.
 .RE
 .sp
 .RE
@@ -285,7 +294,7 @@ no
 .PP
 gpfs:refuse_dacl_protected = [ yes | no ]
 .RS 4
-As GPFS does not support the ACE4_FLAG_NO_PROPAGATE NFSv4 flag (which would be the mapping for the DESC_DACL_PROTECTED flag), the status of this flag is currently silently ignored by Samba\&. That means that if you deselect the "Allow inheritable permissions\&.\&.\&." checkbox in Windows\' ACL dialog and then apply the ACL, the flag will be back immediately\&.
+As GPFS does not support the ACE4_FLAG_NO_PROPAGATE NFSv4 flag (which would be the mapping for the DESC_DACL_PROTECTED flag), the status of this flag is currently silently ignored by Samba\&. That means that if you deselect the "Allow inheritable permissions\&.\&.\&." checkbox in Windows\*(Aq ACL dialog and then apply the ACL, the flag will be back immediately\&.
 .sp
 To make sure that automatic migration with e\&.g\&. robocopy does not lead to ACLs silently (and unintentionally) changed, you can set
 gpfs:refuse_dacl_protected = yes
@@ -392,7 +401,7 @@ reject
 .IP \(bu 2.3
 .\}
 ignore
-\- don\'t include the second matching ACE
+\- don\*(Aqt include the second matching ACE
 .RE
 .sp
 .RS 4

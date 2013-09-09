@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: lmhosts
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: File Formats and Conventions
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "LMHOSTS" "5" "01/18/2013" "Samba 3\&.6" "File Formats and Conventions"
+.TH "LMHOSTS" "5" "08/12/2013" "Samba 3\&.6" "File Formats and Conventions"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -40,7 +49,7 @@ NetBIOS name to IP address mapping file\&. It is very similar to the
 file format, except that the hostname component must correspond to the NetBIOS naming format\&.
 .SH "FILE FORMAT"
 .PP
-It is an ASCII file containing one line for NetBIOS name\&. The two fields on each line are separated from each other by white space\&. Any entry beginning with \'#\' is ignored\&. Each line in the lmhosts file contains the following information:
+It is an ASCII file containing one line for NetBIOS name\&. The two fields on each line are separated from each other by white space\&. Any entry beginning with \*(Aq#\*(Aq is ignored\&. Each line in the lmhosts file contains the following information:
 .sp
 .RS 4
 .ie n \{\
@@ -61,9 +70,9 @@ IP Address \- in dotted decimal format\&.
 .sp -1
 .IP \(bu 2.3
 .\}
-NetBIOS Name \- This name format is a maximum fifteen character host name, with an optional trailing \'#\' character followed by the NetBIOS name type as two hexadecimal digits\&.
+NetBIOS Name \- This name format is a maximum fifteen character host name, with an optional trailing \*(Aq#\*(Aq character followed by the NetBIOS name type as two hexadecimal digits\&.
 .sp
-If the trailing \'#\' is omitted then the given IP address will be returned for all names that match the given name, whatever the NetBIOS name type in the lookup\&.
+If the trailing \*(Aq#\*(Aq is omitted then the given IP address will be returned for all names that match the given name, whatever the NetBIOS name type in the lookup\&.
 .RE
 .sp
 .RE

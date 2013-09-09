@@ -2239,13 +2239,14 @@ void reply_ctemp(struct smb_request *req)
 {
 	connection_struct *conn = req->conn;
 	struct smb_filename *smb_fname = NULL;
+	char *wire_name = NULL;
 	char *fname = NULL;
 	uint32 fattr;
 	files_struct *fsp;
 	int oplock_request;
-	int tmpfd;
 	char *s;
 	NTSTATUS status;
+	int i;
 	TALLOC_CTX *ctx = talloc_tos();
 
 	START_PROFILE(SMBctemp);
@@ -2258,77 +2259,86 @@ void reply_ctemp(struct smb_request *req)
 	fattr = SVAL(req->vwv+0, 0);
 	oplock_request = CORE_OPLOCK_REQUEST(req->inbuf);
 
-	srvstr_get_path_req(ctx, req, &fname, (const char *)req->buf+1,
+	srvstr_get_path_req(ctx, req, &wire_name, (const char *)req->buf+1,
 			    STR_TERMINATE, &status);
 	if (!NT_STATUS_IS_OK(status)) {
 		reply_nterror(req, status);
 		goto out;
 	}
-	if (*fname) {
-		fname = talloc_asprintf(ctx,
-				"%s/TMXXXXXX",
-				fname);
-	} else {
-		fname = talloc_strdup(ctx, "TMXXXXXX");
-	}
 
-	if (!fname) {
-		reply_nterror(req, NT_STATUS_NO_MEMORY);
-		goto out;
-	}
+	for (i = 0; i < 10; i++) {
+		if (*wire_name) {
+			fname = talloc_asprintf(ctx,
+					"%s/TMP%s",
+					wire_name,
+					generate_random_str_list(ctx, 5, "0123456789"));
+		} else {
+			fname = talloc_asprintf(ctx,
+					"TMP%s",
+					generate_random_str_list(ctx, 5, "0123456789"));
+		}
 
-	status = filename_convert(ctx, conn,
+		if (!fname) {
+			reply_nterror(req, NT_STATUS_NO_MEMORY);
+			goto out;
+		}
+
+		status = filename_convert(ctx, conn,
 				req->flags2 & FLAGS2_DFS_PATHNAMES,
 				fname,
 				0,
 				NULL,
 				&smb_fname);
-	if (!NT_STATUS_IS_OK(status)) {
-		if (NT_STATUS_EQUAL(status,NT_STATUS_PATH_NOT_COVERED)) {
-			reply_botherror(req, NT_STATUS_PATH_NOT_COVERED,
+		if (!NT_STATUS_IS_OK(status)) {
+			if (NT_STATUS_EQUAL(status,NT_STATUS_PATH_NOT_COVERED)) {
+				reply_botherror(req, NT_STATUS_PATH_NOT_COVERED,
 					ERRSRV, ERRbadpath);
+				goto out;
+			}
+			reply_nterror(req, status);
 			goto out;
 		}
+
+		/* Create the file. */
+		status = SMB_VFS_CREATE_FILE(
+			conn,                                   /* conn */
+			req,                                    /* req */
+			0,                                      /* root_dir_fid */
+			smb_fname,                              /* fname */
+			FILE_GENERIC_READ | FILE_GENERIC_WRITE, /* access_mask */
+			FILE_SHARE_READ | FILE_SHARE_WRITE,     /* share_access */
+			FILE_CREATE,                            /* create_disposition*/
+			0,                                      /* create_options */
+			fattr,                                  /* file_attributes */
+			oplock_request,                         /* oplock_request */
+			0,                                      /* allocation_size */
+			0,                                      /* private_flags */
+			NULL,                                   /* sd */
+			NULL,                                   /* ea_list */
+			&fsp,                                   /* result */
+			NULL);                                  /* pinfo */
+
+		if (NT_STATUS_EQUAL(status, NT_STATUS_OBJECT_NAME_COLLISION)) {
+			TALLOC_FREE(fname);
+			TALLOC_FREE(smb_fname);
+			continue;
+		}
+
+		if (!NT_STATUS_IS_OK(status)) {
+			if (open_was_deferred(req->mid)) {
+				/* We have re-scheduled this call. */
+				goto out;
+			}
+			reply_openerror(req, status);
+			goto out;
+		}
+
+		break;
+	}
+
+	if (i == 10) {
+		/* Collision after 10 times... */
 		reply_nterror(req, status);
-		goto out;
-	}
-
-	tmpfd = mkstemp(smb_fname->base_name);
-	if (tmpfd == -1) {
-		reply_nterror(req, map_nt_error_from_unix(errno));
-		goto out;
-	}
-
-	SMB_VFS_STAT(conn, smb_fname);
-
-	/* We should fail if file does not exist. */
-	status = SMB_VFS_CREATE_FILE(
-		conn,					/* conn */
-		req,					/* req */
-		0,					/* root_dir_fid */
-		smb_fname,				/* fname */
-		FILE_GENERIC_READ | FILE_GENERIC_WRITE, /* access_mask */
-		FILE_SHARE_READ | FILE_SHARE_WRITE,	/* share_access */
-		FILE_OPEN,				/* create_disposition*/
-		0,					/* create_options */
-		fattr,					/* file_attributes */
-		oplock_request,				/* oplock_request */
-		0,					/* allocation_size */
-		0,					/* private_flags */
-		NULL,					/* sd */
-		NULL,					/* ea_list */
-		&fsp,					/* result */
-		NULL);					/* pinfo */
-
-	/* close fd from mkstemp() */
-	close(tmpfd);
-
-	if (!NT_STATUS_IS_OK(status)) {
-		if (open_was_deferred(req->mid)) {
-			/* We have re-scheduled this call. */
-			goto out;
-		}
-		reply_openerror(req, status);
 		goto out;
 	}
 
@@ -2369,6 +2379,8 @@ void reply_ctemp(struct smb_request *req)
 		    fsp->fh->fd, (unsigned int)smb_fname->st.st_ex_mode));
  out:
 	TALLOC_FREE(smb_fname);
+	TALLOC_FREE(fname);
+	TALLOC_FREE(wire_name);
 	END_PROFILE(SMBctemp);
 	return;
 }
@@ -3136,8 +3148,7 @@ void reply_readbraw(struct smb_request *req)
 
 	START_PROFILE(SMBreadbraw);
 
-	if (srv_is_signing_active(sconn) ||
-	    is_encrypted_packet(req->inbuf)) {
+	if (srv_is_signing_active(sconn) || req->encrypted) {
 		exit_server_cleanly("reply_readbraw: SMB signing/sealing is active - "
 			"raw reads/writes are disallowed.");
 	}
@@ -3530,11 +3541,6 @@ static void send_file_readX(connection_struct *conn, struct smb_request *req,
 	struct lock_struct lock;
 	int saved_errno = 0;
 
-	if(fsp_stat(fsp) == -1) {
-		reply_nterror(req, map_nt_error_from_unix(errno));
-		return;
-	}
-
 	init_strict_lock_struct(fsp, (uint64_t)req->smbpid,
 	    (uint64_t)startpos, (uint64_t)smb_maxcnt, READ_LOCK,
 	    &lock);
@@ -3544,16 +3550,6 @@ static void send_file_readX(connection_struct *conn, struct smb_request *req,
 		return;
 	}
 
-	if (!S_ISREG(fsp->fsp_name->st.st_ex_mode) ||
-			(startpos > fsp->fsp_name->st.st_ex_size)
-			|| (smb_maxcnt > (fsp->fsp_name->st.st_ex_size - startpos))) {
-		/*
-		 * We already know that we would do a short read, so don't
-		 * try the sendfile() path.
-		 */
-		goto nosendfile_read;
-	}
-
 	/*
 	 * We can only use sendfile on a non-chained packet
 	 * but we can use on a non-oplocked file. tridge proved this
@@ -3561,11 +3557,26 @@ static void send_file_readX(connection_struct *conn, struct smb_request *req,
 	 */
 
 	if (!req_is_in_chain(req) &&
-	    !is_encrypted_packet(req->inbuf) && (fsp->base_fsp == NULL) &&
+	    !req->encrypted && (fsp->base_fsp == NULL) &&
 	    (fsp->wcp == NULL) &&
 	    lp_use_sendfile(SNUM(conn), req->sconn->smb1.signing_state) ) {
 		uint8 headerbuf[smb_size + 12 * 2];
 		DATA_BLOB header;
+
+		if(fsp_stat(fsp) == -1) {
+			reply_nterror(req, map_nt_error_from_unix(errno));
+			goto strict_unlock;
+		}
+
+		if (!S_ISREG(fsp->fsp_name->st.st_ex_mode) ||
+		    (startpos > fsp->fsp_name->st.st_ex_size) ||
+		    (smb_maxcnt > (fsp->fsp_name->st.st_ex_size - startpos))) {
+			/*
+			 * We already know that we would do a short read, so don't
+			 * try the sendfile() path.
+			 */
+			goto nosendfile_read;
+		}
 
 		/*
 		 * Set up the packet header before send. We
@@ -3765,8 +3776,7 @@ void reply_read_and_X(struct smb_request *req)
 				return;
 			}
 			/* We currently don't do this on signed or sealed data. */
-			if (srv_is_signing_active(req->sconn) ||
-			    is_encrypted_packet(req->inbuf)) {
+			if (srv_is_signing_active(req->sconn) || req->encrypted) {
 				reply_nterror(req, NT_STATUS_NOT_SUPPORTED);
 				END_PROFILE(SMBreadX);
 				return;
@@ -6194,7 +6204,8 @@ NTSTATUS rename_internals_fsp(connection_struct *conn,
 			  "%s -> %s\n", smb_fname_str_dbg(fsp->fsp_name),
 			  smb_fname_str_dbg(smb_fname_dst)));
 
-		if (!lp_posix_pathnames() &&
+		if (!fsp->is_directory &&
+		    !lp_posix_pathnames() &&
 		    (lp_map_archive(SNUM(conn)) ||
 		    lp_store_dos_attributes(SNUM(conn)))) {
 			/* We must set the archive bit on the newly
