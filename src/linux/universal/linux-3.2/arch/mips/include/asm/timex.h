@@ -35,7 +35,10 @@ typedef unsigned int cycles_t;
 
 static inline cycles_t get_cycles(void)
 {
-	return 0;
+	//use old behaviour for our plattforms in order to avoid possible weak entropy 
+	return read_c0_count();
+	/*http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=efb9ca08b5a2374b29938cdcab417ce4feb14b54*/
+	//return 0;
 }
 
 #endif /* __KERNEL__ */
