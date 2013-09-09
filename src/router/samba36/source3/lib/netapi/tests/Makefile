@@ -2,7 +2,7 @@ KRB5LIBS=
 LDAP_LIBS=
 LIBS=-lresolv -ldl -lnetapi -ltdb -ltalloc
 DEVELOPER_CFLAGS=-DDEBUG_PASSWORD -DDEVELOPER -g -Wall -Wshadow -Wpointer-arith -Wcast-align -Wwrite-strings
-CCFLAGS=-I../ -L../../../bin  -I../lib/zlib -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DMAX_DEBUG_LEVEL=-1 -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_DDINOTIFY -g $(FLAGS) -D_SAMBA_BUILD_=3 $(GTK_FLAGS)
+CCFLAGS=-I../ -L../../../bin  -I../lib/zlib -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DMAX_DEBUG_LEVEL=-1 -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_DDINOTIFY $(FLAGS) -D_SAMBA_BUILD_=3 $(GTK_FLAGS)
 CC=ccache mips-linux-uclibc-gcc
 PICFLAG=-fPIC
 LDFLAGS= -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DMAX_DEBUG_LEVEL=-1 -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_DDINOTIFY -L./bin
