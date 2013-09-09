@@ -1656,6 +1656,24 @@ static void add_child_pid(pid_t pid)
         num_children += 1;
 }
 
+/****************************************************************************
+ Notify smbds of new printcap data
+**************************************************************************/
+static void reload_pcap_change_notify(struct tevent_context *ev,
+				      struct messaging_context *msg_ctx)
+{
+	/*
+	 * Reload the printers first in the background process so that
+	 * newly added printers get default values created in the registry.
+	 *
+	 * This will block the process for some time (~1 sec per printer), but
+	 * it doesn't block smbd's servering clients.
+	 */
+	reload_printers_full(ev, msg_ctx);
+
+	message_send_all(msg_ctx, MSG_PRINTER_PCAP, NULL, 0, NULL);
+}
+
 static bool printer_housekeeping_fn(const struct timeval *now,
 				    void *private_data)
 {
@@ -1677,6 +1695,43 @@ static bool printer_housekeeping_fn(const struct timeval *now,
 
 	return true;
 }
+
+static void printing_sig_term_handler(struct tevent_context *ev,
+				      struct tevent_signal *se,
+				      int signum,
+				      int count,
+				      void *siginfo,
+				      void *private_data)
+{
+	exit_server_cleanly("termination signal");
+}
+
+static void printing_sig_hup_handler(struct tevent_context *ev,
+				  struct tevent_signal *se,
+				  int signum,
+				  int count,
+				  void *siginfo,
+				  void *private_data)
+{
+	struct messaging_context *msg_ctx = talloc_get_type_abort(
+		private_data, struct messaging_context);
+
+	DEBUG(1,("Reloading printers after SIGHUP\n"));
+	pcap_cache_reload(ev, msg_ctx,
+			  &reload_pcap_change_notify);
+}
+
+static void printing_conf_updated(struct messaging_context *msg,
+				  void *private_data,
+				  uint32_t msg_type,
+				  struct server_id server_id,
+				  DATA_BLOB *data)
+{
+	DEBUG(5,("Reloading printers after conf change\n"));
+	pcap_cache_reload(messaging_event_context(msg), msg,
+			  &reload_pcap_change_notify);
+}
+
 
 static pid_t background_lpq_updater_pid = -1;
 
@@ -1713,6 +1768,7 @@ void start_background_queue(struct tevent_context *ev,
 		struct tevent_fd *fde;
 		int ret;
 		NTSTATUS status;
+		struct tevent_signal *se;
 
 		/* Child. */
 		DEBUG(5,("start_background_queue: background LPQ thread started\n"));
@@ -1727,8 +1783,18 @@ void start_background_queue(struct tevent_context *ev,
 			smb_panic("reinit_after_fork() failed");
 		}
 
-		smbd_setup_sig_term_handler();
-		smbd_setup_sig_hup_handler(ev, msg_ctx);
+		se = tevent_add_signal(ev, ev, SIGTERM, 0,
+				       printing_sig_term_handler,
+				       NULL);
+		if (se == NULL) {
+			smb_panic("failed to setup SIGTERM handler");
+		}
+		se = tevent_add_signal(ev, ev, SIGHUP, 0,
+				       printing_sig_hup_handler,
+				       msg_ctx);
+		if (se == NULL) {
+			smb_panic("failed to setup SIGHUP handler");
+		}
 
 		if (!serverid_register(procid_self(),
 				       FLAG_MSG_GENERAL|FLAG_MSG_SMBD
@@ -1742,6 +1808,8 @@ void start_background_queue(struct tevent_context *ev,
 
 		messaging_register(msg_ctx, NULL, MSG_PRINTER_UPDATE,
 				   print_queue_receive);
+		messaging_register(msg_ctx, NULL, MSG_SMB_CONF_UPDATED,
+				   printing_conf_updated);
 
 		fde = tevent_add_fd(ev, ev, pause_pipe[1], TEVENT_FD_READ,
 				    printing_pause_fd_handler,
@@ -1750,6 +1818,11 @@ void start_background_queue(struct tevent_context *ev,
 			DEBUG(0,("tevent_add_fd() failed for pause_pipe\n"));
 			smb_panic("tevent_add_fd() failed for pause_pipe");
 		}
+
+		/* reload on startup to ensure parent smbd is refreshed */
+		pcap_cache_reload(server_event_context(),
+				  smbd_messaging_context(),
+				  &reload_pcap_change_notify);
 
 		if (!(event_add_idle(ev, NULL,
 				     timeval_set(SMBD_HOUSEKEEPING_INTERVAL, 0),

@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: net
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: System Administration tools
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "NET" "8" "01/18/2013" "Samba 3\&.6" "System Administration tools"
+.TH "NET" "8" "08/12/2013" "Samba 3\&.6" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -32,7 +41,7 @@ suite\&.
 The Samba net utility is meant to work just like the net utility available for windows and DOS\&. The first argument should be used to specify the protocol to use when executing a certain command\&. ADS is used for ActiveDirectory, RAP is using for old (Win9x/NT3) clients and RPC can be used for NT4 and Windows 2000\&. If this argument is omitted, net will try to determine it automatically\&. Not all commands are available on all protocols\&.
 .SH "OPTIONS"
 .PP
-\-h|\-\-help
+\-?|\-\-help
 .RS 4
 Print a summary of command line options\&.
 .RE
@@ -152,7 +161,7 @@ Join a domain\&. If the account already exists on the server, and [TYPE] is MEMB
 .PP
 [UPN] (ADS only) set the principalname attribute during the join\&. The default format is host/netbiosname@REALM\&.
 .PP
-[OU] (ADS only) Precreate the computer account in a specific OU\&. The OU string reads from top to bottom without RDNs, and is delimited by a \'/\'\&. Please note that \'\e\' is used for escape by both the shell and ldap, so it may need to be doubled or quadrupled to pass through, and it is not used as a delimiter\&.
+[OU] (ADS only) Precreate the computer account in a specific OU\&. The OU string reads from top to bottom without RDNs, and is delimited by a \*(Aq/\*(Aq\&. Please note that \*(Aq\e\*(Aq is used for escape by both the shell and ldap, so it may need to be doubled or quadrupled to pass through, and it is not used as a delimiter\&.
 .SS "[RPC] OLDJOIN [options]"
 .PP
 Join a domain\&. Use the OLDJOIN option to join the domain using the old style of domain joining \- you need to create a trust account in server manager first\&.
@@ -347,7 +356,7 @@ Give IP address of KDC for the specified
 \fIREALM\fR\&. Defaults to local realm\&.
 .SS "LOOKUP DC [DOMAIN]"
 .PP
-Give IP\'s of Domain Controllers for specified
+Give IP\*(Aqs of Domain Controllers for specified
 \fI DOMAIN\fR\&. Defaults to local domain\&.
 .SS "LOOKUP MASTER DOMAIN"
 .PP
@@ -356,7 +365,7 @@ Give IP of master browser for specified
 or workgroup\&. Defaults to local domain\&.
 .SS "CACHE"
 .PP
-Samba uses a general caching interface called \'gencache\'\&. It can be controlled using \'NET CACHE\'\&.
+Samba uses a general caching interface called \*(Aqgencache\*(Aq\&. It can be controlled using \*(AqNET CACHE\*(Aq\&.
 .PP
 All the timeout parameters support the suffixes:
 .RS 4
@@ -460,7 +469,7 @@ sid \- Full SID in the form of "S\-1\-\&.\&.\&."
 .sp -1
 .IP \(bu 2.3
 .\}
-type \- Type of the group; either \'domain\', \'local\', or \'builtin\'
+type \- Type of the group; either \*(Aqdomain\*(Aq, \*(Aqlocal\*(Aq, or \*(Aqbuiltin\*(Aq
 .RE
 .sp
 .RS 4
@@ -521,7 +530,7 @@ List existing group mapping entries\&.
 net groupmap list [verbose] [ntgroup=string] [sid=SID]
 .SS "MAXRID"
 .PP
-Prints out the highest RID currently in use on the local server (by the active \'passdb backend\')\&.
+Prints out the highest RID currently in use on the local server (by the active \*(Aqpassdb backend\*(Aq)\&.
 .SS "RPC INFO"
 .PP
 Print information about the domain of the remote server, such as domain name, domain sid and number of users and groups\&.
@@ -538,7 +547,7 @@ Add a interdomain trust account for
 \fIDOMAIN\fR\&. This is in fact a Samba account named
 \fIDOMAIN$\fR
 with the account flag
-\fB\'I\'\fR
+\fB\*(AqI\*(Aq\fR
 (interdomain trust account)\&. This is required for incoming trusts to work\&. It makes Samba be a trusted domain of the foreign (trusting) domain\&. Users of the Samba domain will be made available in the foreign domain\&. If the command is used against localhost it has the same effect as
 smbpasswd \-a \-i DOMAIN\&. Please note that both commands expect a appropriate UNIX account\&.
 .SS "RPC TRUSTDOM DEL DOMAIN"
@@ -548,7 +557,7 @@ Remove interdomain trust account for
 smbpasswd \-x DOMAIN$\&.
 .SS "RPC TRUSTDOM ESTABLISH DOMAIN"
 .PP
-Establish a trust relationship to a trusted domain\&. Interdomain account must already be created on the remote PDC\&. This is required for outgoing trusts to work\&. It makes Samba be a trusting domain of a foreign (trusted) domain\&. Users of the foreign domain will be made available in our domain\&. You\'ll need winbind and a working idmap config to make them appear in your system\&.
+Establish a trust relationship to a trusted domain\&. Interdomain account must already be created on the remote PDC\&. This is required for outgoing trusts to work\&. It makes Samba be a trusting domain of a foreign (trusted) domain\&. Users of the foreign domain will be made available in our domain\&. You\*(Aqll need winbind and a working idmap config to make them appear in your system\&.
 .SS "RPC TRUSTDOM REVOKE DOMAIN"
 .PP
 Abandon relationship to trusted domain
@@ -690,10 +699,10 @@ net rpc trust delete \e
 .SS ""
 .SS "RPC RIGHTS"
 .PP
-This subcommand is used to view and manage Samba\'s rights assignments (also referred to as privileges)\&. There are three options currently available:
+This subcommand is used to view and manage Samba\*(Aqs rights assignments (also referred to as privileges)\&. There are three options currently available:
 \fIlist\fR,
 \fIgrant\fR, and
-\fIrevoke\fR\&. More details on Samba\'s privilege model and its use can be found in the Samba\-HOWTO\-Collection\&.
+\fIrevoke\fR\&. More details on Samba\*(Aqs privilege model and its use can be found in the Samba\-HOWTO\-Collection\&.
 .SS "RPC ABORTSHUTDOWN"
 .PP
 Abort the shutdown of a remote server\&.
@@ -761,13 +770,13 @@ Remove specified printer from ADS directory\&.
 Perform a raw LDAP search on a ADS server and dump the results\&. The expression is a standard LDAP search expression, and the attributes are a list of LDAP fields to show in the results\&.
 .PP
 Example:
-\fBnet ads search \'(objectCategory=group)\' sAMAccountName\fR
+\fBnet ads search \*(Aq(objectCategory=group)\*(Aq sAMAccountName\fR
 .SS "ADS DN \fIDN\fR \fI(attributes)\fR"
 .PP
 Perform a raw LDAP search on a ADS server and dump the results\&. The DN standard LDAP DN, and the attributes are a list of LDAP fields to show in the result\&.
 .PP
 Example:
-\fBnet ads dn \'CN=administrator,CN=Users,DC=my,DC=domain\' SAMAccountName\fR
+\fBnet ads dn \*(AqCN=administrator,CN=Users,DC=my,DC=domain\*(Aq SAMAccountName\fR
 .SS "ADS WORKGROUP"
 .PP
 Print out workgroup name for specified kerberos realm\&.
@@ -900,7 +909,7 @@ Try to apply changes, even if they do not apply cleanly\&.
 .PP
 \-T|\-\-test
 .RS 4
-Dry run, show what changes would be made but don\'t touch anything\&.
+Dry run, show what changes would be made but don\*(Aqt touch anything\&.
 .RE
 .PP
 \-l|\-\-lock
@@ -983,14 +992,14 @@ Deletes the user defined share by name\&. The Samba smbd daemon immediately noti
 .PP
 Get info on user defined shares owned by the current user matching the given pattern, or all users\&.
 .PP
-net usershare info on its own dumps out info on the user defined shares that were created by the current user, or restricts them to share names that match the given wildcard pattern (\'*\' matches one or more characters, \'?\' matches only one character)\&. If the \'\-l\' or \'\-\-long\' option is also given, it prints out info on user defined shares created by other users\&.
+net usershare info on its own dumps out info on the user defined shares that were created by the current user, or restricts them to share names that match the given wildcard pattern (\*(Aq*\*(Aq matches one or more characters, \*(Aq?\*(Aq matches only one character)\&. If the \*(Aq\-l\*(Aq or \*(Aq\-\-long\*(Aq option is also given, it prints out info on user defined shares created by other users\&.
 .PP
 The information given about a share looks like: [foobar] path=/home/jeremy comment=testme usershare_acl=Everyone:F guest_ok=n And is a list of the current settings of the user defined share that can be modified by the "net usershare add" command\&.
 .SS "USERSHARE LIST [-l|--long] wildcard sharename"
 .PP
 List all the user defined shares owned by the current user matching the given pattern, or all users\&.
 .PP
-net usershare list on its own list out the names of the user defined shares that were created by the current user, or restricts the list to share names that match the given wildcard pattern (\'*\' matches one or more characters, \'?\' matches only one character)\&. If the \'\-l\' or \'\-\-long\' option is also given, it includes the names of user defined shares created by other users\&.
+net usershare list on its own list out the names of the user defined shares that were created by the current user, or restricts the list to share names that match the given wildcard pattern (\*(Aq*\*(Aq matches one or more characters, \*(Aq?\*(Aq matches only one character)\&. If the \*(Aq\-l\*(Aq or \*(Aq\-\-long\*(Aq option is also given, it includes the names of user defined shares created by other users\&.
 .SS "CONF"
 .PP
 Starting with version 3\&.2\&.0, a Samba server can be configured by data stored in registry\&. This configuration data can be edited with the new "net conf" commands\&.
@@ -1099,7 +1108,7 @@ Set the list of includes for the provided section (global or share) to the given
 Delete the list of includes from the provided section (global or share)\&.
 .SS "REGISTRY"
 .PP
-Manipulate Samba\'s registry\&.
+Manipulate Samba\*(Aqs registry\&.
 .PP
 The registry commands are:
 .RS 4

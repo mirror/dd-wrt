@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: sharesec
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: User Commands
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "SHARESEC" "1" "01/18/2013" "Samba 3\&.6" "User Commands"
+.TH "SHARESEC" "1" "08/12/2013" "Samba 3\&.6" "User Commands"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -73,7 +82,7 @@ Remove ACEs\&.
 Overwrite an existing share permission ACL\&.
 .RE
 .PP
-\-h|\-\-help
+\-?|\-\-help
 .RS 4
 Print a summary of command line options\&.
 .RE
@@ -225,7 +234,7 @@ The following combined permissions can be specified:
 .IP \(bu 2.3
 .\}
 \fIREAD\fR
-\- Equivalent to \'RX\' permissions
+\- Equivalent to \*(AqRX\*(Aq permissions
 .RE
 .sp
 .RS 4
@@ -237,7 +246,7 @@ The following combined permissions can be specified:
 .IP \(bu 2.3
 .\}
 \fICHANGE\fR
-\- Equivalent to \'RXWD\' permissions
+\- Equivalent to \*(AqRXWD\*(Aq permissions
 .RE
 .sp
 .RS 4
@@ -249,7 +258,7 @@ The following combined permissions can be specified:
 .IP \(bu 2.3
 .\}
 \fIFULL\fR
-\- Equivalent to \'RWXDPO\' permissions
+\- Equivalent to \*(AqRWXDPO\*(Aq permissions
 .RE
 .SH "EXIT STATUS"
 .PP
@@ -259,7 +268,7 @@ program sets the exit status depending on the success or otherwise of the operat
 .PP
 If the operation succeeded, sharesec returns and exit status of 0\&. If
 sharesec
-couldn\'t connect to the specified server, or there was an error getting or setting the ACLs, an exit status of 1 is returned\&. If there was an error parsing any command line arguments, an exit status of 2 is returned\&.
+couldn\*(Aqt connect to the specified server, or there was an error getting or setting the ACLs, an exit status of 1 is returned\&. If there was an error parsing any command line arguments, an exit status of 2 is returned\&.
 .SH "EXAMPLES"
 .PP
 Add full access for SID

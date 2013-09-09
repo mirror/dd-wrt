@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: swat
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: System Administration tools
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "SWAT" "8" "01/18/2013" "Samba 3\&.6" "System Administration tools"
+.TH "SWAT" "8" "08/12/2013" "Samba 3\&.6" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -107,7 +116,7 @@ Base directory name for log/debug files\&. The extension
 will be appended (e\&.g\&. log\&.smbclient, log\&.smbd, etc\&.\&.\&.)\&. The log file is never removed by the client\&.
 .RE
 .PP
-\-h|\-\-help
+\-?|\-\-help
 .RS 4
 Print a summary of command line options\&.
 .RE
@@ -174,7 +183,7 @@ Note for NIS/YP and LDAP users \- you may need to rebuild the NIS service maps r
 /etc/services
 file\&.
 .PP
-the choice of port number isn\'t really important except that it should be less than 1024 and not currently used (using a number above 1024 presents an obscure security hole depending on the implementation details of your
+the choice of port number isn\*(Aqt really important except that it should be less than 1024 and not currently used (using a number above 1024 presents an obscure security hole depending on the implementation details of your
 inetd
 daemon)\&.
 .PP
@@ -228,7 +237,7 @@ and
 \fIcopy= \fR
 options\&. If you have a carefully crafted
 smb\&.conf
-then back it up or don\'t use swat!
+then back it up or don\*(Aqt use swat!
 .SH "VERSION"
 .PP
 This man page is correct for version 3 of the Samba suite\&.

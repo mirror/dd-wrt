@@ -1138,8 +1138,8 @@ void initdnsp(void)
 	PyModule_AddObject(m, "DNS_RANK_ROOT_HINT", PyInt_FromLong(DNS_RANK_ROOT_HINT));
 	PyModule_AddObject(m, "DNS_TYPE_RRSIG", PyInt_FromLong(DNS_TYPE_RRSIG));
 	PyModule_AddObject(m, "DNS_TYPE_ALL", PyInt_FromLong(DNS_TYPE_ALL));
-	PyModule_AddObject(m, "DNS_TYPE_TXT", PyInt_FromLong(DNS_TYPE_TXT));
 	PyModule_AddObject(m, "DNS_TYPE_A", PyInt_FromLong(DNS_TYPE_A));
+	PyModule_AddObject(m, "DNS_TYPE_TXT", PyInt_FromLong(DNS_TYPE_TXT));
 	PyModule_AddObject(m, "DNS_TYPE_AFSDB", PyInt_FromLong(DNS_TYPE_AFSDB));
 	PyModule_AddObject(m, "DNS_RANK_NS_GLUE", PyInt_FromLong(DNS_RANK_NS_GLUE));
 	PyModule_AddObject(m, "DNS_RANK_CACHE_NA_AUTHORITY", PyInt_FromLong(DNS_RANK_CACHE_NA_AUTHORITY));

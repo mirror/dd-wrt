@@ -227,6 +227,22 @@ static PyTypeObject ntprinting_form_Type = {
 };
 
 
+static PyObject *py_ntprinting_driver_get_string_flags(PyObject *obj, void *closure)
+{
+	struct ntprinting_driver *object = (struct ntprinting_driver *)py_talloc_get_ptr(obj);
+	PyObject *py_string_flags;
+	py_string_flags = PyInt_FromLong(object->string_flags);
+	return py_string_flags;
+}
+
+static int py_ntprinting_driver_set_string_flags(PyObject *py_obj, PyObject *value, void *closure)
+{
+	struct ntprinting_driver *object = (struct ntprinting_driver *)py_talloc_get_ptr(py_obj);
+	PY_CHECK_TYPE(&PyInt_Type, value, return -1;);
+	object->string_flags = PyInt_AsLong(value);
+	return 0;
+}
+
 static PyObject *py_ntprinting_driver_get_version(PyObject *obj, void *closure)
 {
 	struct ntprinting_driver *object = (struct ntprinting_driver *)py_talloc_get_ptr(obj);
@@ -379,6 +395,7 @@ static int py_ntprinting_driver_set_dependent_files(PyObject *py_obj, PyObject *
 }
 
 static PyGetSetDef py_ntprinting_driver_getsetters[] = {
+	{ discard_const_p(char, "string_flags"), py_ntprinting_driver_get_string_flags, py_ntprinting_driver_set_string_flags },
 	{ discard_const_p(char, "version"), py_ntprinting_driver_get_version, py_ntprinting_driver_set_version },
 	{ discard_const_p(char, "name"), py_ntprinting_driver_get_name, py_ntprinting_driver_set_name },
 	{ discard_const_p(char, "environment"), py_ntprinting_driver_get_environment, py_ntprinting_driver_set_environment },
@@ -459,6 +476,22 @@ static PyTypeObject ntprinting_driver_Type = {
 	.tp_new = py_ntprinting_driver_new,
 };
 
+
+static PyObject *py_ntprinting_devicemode_get_string_flags(PyObject *obj, void *closure)
+{
+	struct ntprinting_devicemode *object = (struct ntprinting_devicemode *)py_talloc_get_ptr(obj);
+	PyObject *py_string_flags;
+	py_string_flags = PyInt_FromLong(object->string_flags);
+	return py_string_flags;
+}
+
+static int py_ntprinting_devicemode_set_string_flags(PyObject *py_obj, PyObject *value, void *closure)
+{
+	struct ntprinting_devicemode *object = (struct ntprinting_devicemode *)py_talloc_get_ptr(py_obj);
+	PY_CHECK_TYPE(&PyInt_Type, value, return -1;);
+	object->string_flags = PyInt_AsLong(value);
+	return 0;
+}
 
 static PyObject *py_ntprinting_devicemode_get_devicename(PyObject *obj, void *closure)
 {
@@ -1029,6 +1062,7 @@ static int py_ntprinting_devicemode_set_nt_dev_private(PyObject *py_obj, PyObjec
 }
 
 static PyGetSetDef py_ntprinting_devicemode_getsetters[] = {
+	{ discard_const_p(char, "string_flags"), py_ntprinting_devicemode_get_string_flags, py_ntprinting_devicemode_set_string_flags },
 	{ discard_const_p(char, "devicename"), py_ntprinting_devicemode_get_devicename, py_ntprinting_devicemode_set_devicename },
 	{ discard_const_p(char, "formname"), py_ntprinting_devicemode_get_formname, py_ntprinting_devicemode_set_formname },
 	{ discard_const_p(char, "specversion"), py_ntprinting_devicemode_get_specversion, py_ntprinting_devicemode_set_specversion },
@@ -1135,6 +1169,22 @@ static PyTypeObject ntprinting_devicemode_Type = {
 };
 
 
+static PyObject *py_ntprinting_printer_data_get_string_flags(PyObject *obj, void *closure)
+{
+	struct ntprinting_printer_data *object = (struct ntprinting_printer_data *)py_talloc_get_ptr(obj);
+	PyObject *py_string_flags;
+	py_string_flags = PyInt_FromLong(object->string_flags);
+	return py_string_flags;
+}
+
+static int py_ntprinting_printer_data_set_string_flags(PyObject *py_obj, PyObject *value, void *closure)
+{
+	struct ntprinting_printer_data *object = (struct ntprinting_printer_data *)py_talloc_get_ptr(py_obj);
+	PY_CHECK_TYPE(&PyInt_Type, value, return -1;);
+	object->string_flags = PyInt_AsLong(value);
+	return 0;
+}
+
 static PyObject *py_ntprinting_printer_data_get_ptr(PyObject *obj, void *closure)
 {
 	struct ntprinting_printer_data *object = (struct ntprinting_printer_data *)py_talloc_get_ptr(obj);
@@ -1198,6 +1248,7 @@ static int py_ntprinting_printer_data_set_data(PyObject *py_obj, PyObject *value
 }
 
 static PyGetSetDef py_ntprinting_printer_data_getsetters[] = {
+	{ discard_const_p(char, "string_flags"), py_ntprinting_printer_data_get_string_flags, py_ntprinting_printer_data_set_string_flags },
 	{ discard_const_p(char, "ptr"), py_ntprinting_printer_data_get_ptr, py_ntprinting_printer_data_set_ptr },
 	{ discard_const_p(char, "name"), py_ntprinting_printer_data_get_name, py_ntprinting_printer_data_set_name },
 	{ discard_const_p(char, "type"), py_ntprinting_printer_data_get_type, py_ntprinting_printer_data_set_type },
@@ -1272,6 +1323,22 @@ static PyTypeObject ntprinting_printer_data_Type = {
 	.tp_new = py_ntprinting_printer_data_new,
 };
 
+
+static PyObject *py_ntprinting_printer_info_get_string_flags(PyObject *obj, void *closure)
+{
+	struct ntprinting_printer_info *object = (struct ntprinting_printer_info *)py_talloc_get_ptr(obj);
+	PyObject *py_string_flags;
+	py_string_flags = PyInt_FromLong(object->string_flags);
+	return py_string_flags;
+}
+
+static int py_ntprinting_printer_info_set_string_flags(PyObject *py_obj, PyObject *value, void *closure)
+{
+	struct ntprinting_printer_info *object = (struct ntprinting_printer_info *)py_talloc_get_ptr(py_obj);
+	PY_CHECK_TYPE(&PyInt_Type, value, return -1;);
+	object->string_flags = PyInt_AsLong(value);
+	return 0;
+}
 
 static PyObject *py_ntprinting_printer_info_get_attributes(PyObject *obj, void *closure)
 {
@@ -1615,6 +1682,7 @@ static int py_ntprinting_printer_info_set_parameters(PyObject *py_obj, PyObject 
 }
 
 static PyGetSetDef py_ntprinting_printer_info_getsetters[] = {
+	{ discard_const_p(char, "string_flags"), py_ntprinting_printer_info_get_string_flags, py_ntprinting_printer_info_set_string_flags },
 	{ discard_const_p(char, "attributes"), py_ntprinting_printer_info_get_attributes, py_ntprinting_printer_info_set_attributes },
 	{ discard_const_p(char, "priority"), py_ntprinting_printer_info_get_priority, py_ntprinting_printer_info_set_priority },
 	{ discard_const_p(char, "default_priority"), py_ntprinting_printer_info_get_default_priority, py_ntprinting_printer_info_set_default_priority },

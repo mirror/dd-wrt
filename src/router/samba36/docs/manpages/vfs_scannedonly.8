@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: vfs_scannedonly
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: System Administration tools
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "VFS_SCANNEDONLY" "8" "01/18/2013" "Samba 3\&.6" "System Administration tools"
+.TH "VFS_SCANNEDONLY" "8" "08/12/2013" "Samba 3\&.6" "System Administration tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -38,7 +47,7 @@ Scannedonly comes in two parts: a samba vfs module and (one or more) daemons\&. 
 \&.scanned:
 file exists, and is newer than the pertinent file\&. If this is the case, the file is shown to the user\&. If this is not the case, the file is not returned in a directory listing (configurable), and cannot be opened (configurable)\&. The Samba vfs module will notify the daemon to scan this file\&.
 .PP
-So what happens for the user in the default configuration\&. The first time a directory is listed, it shows files as \'file is being scanned for viruses, but after the first time all files are shown\&. There is a utility scannedonly_prescan that can help you to prescan all directories\&. When new files are written the daemon is notified immediately after the file is complete\&.
+So what happens for the user in the default configuration\&. The first time a directory is listed, it shows files as \*(Aqfile is being scanned for viruses, but after the first time all files are shown\&. There is a utility scannedonly_prescan that can help you to prescan all directories\&. When new files are written the daemon is notified immediately after the file is complete\&.
 .PP
 If a virus is found by the daemon, a file with a warning message is created in the directory of the user, a warning is sent to the logs, and the file is renamed to have prefix
 \&.virus:\&. Files with the
@@ -74,7 +83,7 @@ When using UDP the host that runs the scanning daemon (this host needs access to
 .PP
 scannedonly:show_special_files = True
 .RS 4
-Whether sockets, devices and fifo\'s (all not scanned for viruses) should be visible to the user
+Whether sockets, devices and fifo\*(Aqs (all not scanned for viruses) should be visible to the user
 .RE
 .PP
 scannedonly:rm_hidden_files_on_rmdir = True

@@ -1,13 +1,22 @@
 '\" t
 .\"     Title: smbclient
 .\"    Author: [see the "AUTHOR" section]
-.\" Generator: DocBook XSL Stylesheets v1.75.2 <http://docbook.sf.net/>
-.\"      Date: 01/18/2013
+.\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
+.\"      Date: 08/12/2013
 .\"    Manual: User Commands
 .\"    Source: Samba 3.6
 .\"  Language: English
 .\"
-.TH "SMBCLIENT" "1" "01/18/2013" "Samba 3\&.6" "User Commands"
+.TH "SMBCLIENT" "1" "08/12/2013" "Samba 3\&.6" "User Commands"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
 .\" -----------------------------------------------------------------
 .\" * set default formatting
 .\" -----------------------------------------------------------------
@@ -32,7 +41,7 @@ This tool is part of the
 suite\&.
 .PP
 smbclient
-is a client that can \'talk\' to an SMB/CIFS server\&. It offers an interface similar to that of the ftp program (see
+is a client that can \*(Aqtalk\*(Aq to an SMB/CIFS server\&. It offers an interface similar to that of the ftp program (see
 \fBftp\fR(1))\&. Operations include things like getting files from the server to the local machine, putting files from the local machine to the server, retrieving directory information from the server and so on\&.
 .SH "OPTIONS"
 .PP
@@ -196,7 +205,7 @@ This parameter sets the maximum protocol version announced by the client\&.
 Make queries to the external server using the machine account of the local server\&.
 .RE
 .PP
-\-h|\-\-help
+\-?|\-\-help
 .RS 4
 Print a summary of command line options\&.
 .RE
@@ -217,7 +226,7 @@ There is no default for this parameter\&. If not supplied, it will be determined
 .RS 4
 This parameter causes the client to write messages to the standard error stream (stderr) rather than to the standard output stream\&.
 .sp
-By default, the client writes messages to standard output \- typically the user\'s tty\&.
+By default, the client writes messages to standard output \- typically the user\*(Aqs tty\&.
 .RE
 .PP
 \-L|\-\-list
@@ -226,7 +235,7 @@ This option allows you to look at what services are available on a server\&. You
 smbclient \-L host
 and a list should appear\&. The
 \fI\-I \fR
-option may be useful if your NetBIOS names don\'t match your TCP/IP DNS host names or if you are trying to reach a host on another network\&.
+option may be useful if your NetBIOS names don\*(Aqt match your TCP/IP DNS host names or if you are trying to reach a host on another network\&.
 .RE
 .PP
 \-b|\-\-send\-buffer buffersize
@@ -491,7 +500,7 @@ flag\&.
 .IP \(bu 2.3
 .\}
 \fIr\fR
-\- Regular expression include or exclude\&. Uses regular expression matching for excluding or excluding files if compiled with HAVE_REGEX_H\&. However this mode can be very slow\&. If not compiled with HAVE_REGEX_H, does a limited wildcard match on \'*\' and \'?\'\&.
+\- Regular expression include or exclude\&. Uses regular expression matching for excluding or excluding files if compiled with HAVE_REGEX_H\&. However this mode can be very slow\&. If not compiled with HAVE_REGEX_H, does a limited wildcard match on \*(Aq*\*(Aq and \*(Aq?\*(Aq\&.
 .RE
 .sp
 .RS 4
@@ -527,12 +536,12 @@ flags\&.
 .RE
 \fITar Long File Names\fR
 .sp
-smbclient\'s tar option now supports long file names both on backup and restore\&. However, the full path name of the file must be less than 1024 bytes\&. Also, when a tar archive is created,
-smbclient\'s tar option places all files in the archive with relative names, not absolute names\&.
+smbclient\*(Aqs tar option now supports long file names both on backup and restore\&. However, the full path name of the file must be less than 1024 bytes\&. Also, when a tar archive is created,
+smbclient\*(Aqs tar option places all files in the archive with relative names, not absolute names\&.
 .sp
 \fITar Filenames\fR
 .sp
-All file names can be given as DOS path names (with \'\e\e\' as the component separator) or as UNIX path names (with \'/\' as the component separator)\&.
+All file names can be given as DOS path names (with \*(Aq\e\e\*(Aq as the component separator) or as UNIX path names (with \*(Aq/\*(Aq as the component separator)\&.
 .sp
 \fIExamples\fR
 .sp
@@ -579,7 +588,7 @@ is implied by
 \fI\-c\fR\&.
 .sp
 This is particularly useful in scripts and for printing stdin to the server, e\&.g\&.
-\-c \'print \-\'\&.
+\-c \*(Aqprint \-\*(Aq\&.
 .RE
 .SH "OPERATIONS"
 .PP
@@ -962,7 +971,7 @@ Blocksize\&. Must be followed by a valid (greater than zero) blocksize\&. Causes
 .PP
 tarmode <full|inc|reset|noreset>
 .RS 4
-Changes tar\'s behavior with regard to archive bits\&. In full mode, tar will back up everything regardless of the archive bit setting (this is the default mode)\&. In incremental mode, tar will only back up files with the archive bit set\&. In reset mode, tar will reset the archive bit on all files it backs up (implies read/write share)\&.
+Changes tar\*(Aqs behavior with regard to archive bits\&. In full mode, tar will back up everything regardless of the archive bit setting (this is the default mode)\&. In incremental mode, tar will only back up files with the archive bit set\&. In reset mode, tar will reset the archive bit on all files it backs up (implies read/write share)\&.
 .RE
 .PP
 unlock <filenum> <hex\-start> <hex\-len>
