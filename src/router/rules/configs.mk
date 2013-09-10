@@ -241,6 +241,7 @@ obj-$(CONFIG_STRONGSWAN) += gmp strongswan sqlite
 obj-$(CONFIG_PRIVOXY) += privoxy
 obj-$(CONFIG_VENTANA) += kobs-ng
 obj-$(CONFIG_OWNCLOUD) += libxml2 lighttpd libgd php5 
+obj-$(CONFIG_TRANSMISSION) += libevent curl transmission
 
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 #obj-$(CONFIG_OPROFILE) += oprofile
