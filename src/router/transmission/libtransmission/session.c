@@ -356,7 +356,7 @@ tr_sessionGetDefaultSettings (tr_variant * d)
   tr_variantDictAddStr  (d, TR_KEY_rpc_password,                    "");
   tr_variantDictAddStr  (d, TR_KEY_rpc_username,                    "");
   tr_variantDictAddStr  (d, TR_KEY_rpc_whitelist,                   TR_DEFAULT_RPC_WHITELIST);
-  tr_variantDictAddBool (d, TR_KEY_rpc_whitelist_enabled,           true);
+  tr_variantDictAddBool (d, TR_KEY_rpc_whitelist_enabled,           false);
   tr_variantDictAddInt  (d, TR_KEY_rpc_port,                        atoi (TR_DEFAULT_RPC_PORT_STR));
   tr_variantDictAddStr  (d, TR_KEY_rpc_url,                         TR_DEFAULT_RPC_URL_STR);
   tr_variantDictAddBool (d, TR_KEY_scrape_paused_torrents_enabled,  true);
