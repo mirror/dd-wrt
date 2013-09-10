@@ -36,5 +36,5 @@ lighttpd-install:
 	mkdir -p $(INSTALLDIR)/lighttpd/usr/lib/lighttpd ; true
 	cp -av lighttpd/src/.libs/mod_*.so $(INSTALLDIR)/lighttpd/usr/lib/lighttpd/ ; true
 	mkdir -p $(INSTALLDIR)/lighttpd/etc ; true
-	install -D lighttpd/configs/lighttpd.conf $(INSTALLDIR)/lighttpd/etc/
+	install -D lighttpd/configs/lighttpd.nvramconfig $(INSTALLDIR)/lighttpd/etc/config/lighttpd.nvramconfig
 	cat $(TOP)/httpd/cert.pem $(TOP)/httpd/key.pem > $(INSTALLDIR)/lighttpd/etc/host.pem ; true
