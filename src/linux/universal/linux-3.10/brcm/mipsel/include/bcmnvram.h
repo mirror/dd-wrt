@@ -178,11 +178,14 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #endif
 #else
 #define NVRAM_SPACE		0x10000
+#define NVRAM_SPACE_256		0x40000
 #endif
 
 #if defined(HAVE_80211AC) || defined(HAVE_NVRAM_64K)
 #undef NVRAM_SPACE
+#undef NVRAM_SPACE_256
 #define NVRAM_SPACE		0x10000
+#define NVRAM_SPACE_256		0x40000
 #endif
 
 /* debug output for NVRAM_SPACE*/
