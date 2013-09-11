@@ -491,7 +491,7 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 		bcm947xx_flash_parts[nparts].name = "boot";
 		bcm947xx_flash_parts[nparts].size = vmlz_off;
 		bcm947xx_flash_parts[nparts].offset = top;
-		bcm947xx_flash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
+//		bcm947xx_flash_parts[nparts].mask_flags =  MTD_WRITEABLE; /* forces on read only */
 		nparts++;
 
 		/* Setup kernel MTD partition */
@@ -587,7 +587,7 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 		bcm947xx_flash_parts[nparts].name = "boot";
 		bcm947xx_flash_parts[nparts].size = bootsz;
 		bcm947xx_flash_parts[nparts].offset = top;
-		bcm947xx_flash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
+//		bcm947xx_flash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
 		offset = bcm947xx_flash_parts[nparts].size;
 		nparts++;
 	}
@@ -794,7 +794,7 @@ init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
 		bcm947xx_nflash_parts[nparts].name = "boot";
 		bcm947xx_nflash_parts[nparts].size = bootsz;
 		bcm947xx_nflash_parts[nparts].offset = top;
-		bcm947xx_nflash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
+//		bcm947xx_nflash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
 		offset = bcm947xx_nflash_parts[nparts].size;
 		nparts++;
 
