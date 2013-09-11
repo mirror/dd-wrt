@@ -635,6 +635,8 @@
 
 #define ROUTER_DLINK_DIR868 0xca1b
 
+#define ROUTER_LINKSYS_EA6500 0xcb0f
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)

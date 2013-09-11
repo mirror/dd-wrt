@@ -2884,6 +2884,18 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC66U;
 	}
 
+	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2")
+	    && nvram_match("boardrev", "0x1100")
+	    && nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0")) {
+		setRouter("Asus RT-AC66U");
+		return ROUTER_ASUS_AC66U;
+	}
+	
+	if (nvram_match("boardnum","${serno}") && nvram_match("boardtype","0xC617") && nvram_match("boardrev","0x1103")) {
+		setRouter("Linksys EA6500");
+		return ROUTER_LINKSYS_EA6500;
+	}
+
 	if (boardnum == 00 && nvram_match("boardtype", "0xf52e")
 	    && nvram_match("boardrev", "0x1204")) {
 		if (nvram_match("product", "WLI-H4-D1300")) {
