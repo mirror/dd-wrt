@@ -1049,8 +1049,8 @@ CONFIG_WL_APSTA="wlconfig_lx_router_apsta"
 CONFIG_WL_AP_ONCHIP_G="wlconfig_lx_router_ap_1chipG"
 CONFIG_WL_STA_ONCHIP_G="wlconfig_lx_router_sta_1chipG"
 CONFIG_WL_HIGH="wlconfig_lx_router_high"
-CONFIG_WL_ALL_PASSIVE_ON=y
-# CONFIG_WL_ALL_PASSIVE_RUNTIME is not set
+# CONFIG_WL_ALL_PASSIVE_ON is not set
+CONFIG_WL_ALL_PASSIVE_RUNTIME=y
 # CONFIG_DPSTA is not set
 # CONFIG_EMF is not set
 # CONFIG_PLC is not set
