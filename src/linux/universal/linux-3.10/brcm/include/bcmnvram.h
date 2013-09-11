@@ -178,6 +178,7 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #endif
 #else
 #define NVRAM_SPACE		0x10000
+#define NVRAM_SPACE_256		0x40000
 #endif
 #define MAX_NVRAM_SPACE		NVRAM_SPACE
 #define ROM_ENVRAM_SPACE	0x1000
