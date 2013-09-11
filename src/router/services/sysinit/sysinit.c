@@ -1776,6 +1776,7 @@ void start_restore_defaults(void)
 	case ROUTER_LINKSYS_E3200:
 	case ROUTER_LINKSYS_E4200:
 	case ROUTER_LINKSYS_EA2700:
+	case ROUTER_LINKSYS_EA6500:
 	case ROUTER_NETGEAR_WNDR4000:
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
@@ -1989,6 +1990,14 @@ void start_restore_defaults(void)
 			nvram_set("vlan1ports", "4 3 2 1 8*");
 			nvram_set("vlan2ports", "0 8");
 		}
+		break;
+	case ROUTER_LINKSYS_EA6500:
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "0 1 2 3 8*");
+			nvram_set("vlan2ports", "4 8");
+		}	
 		break;
 	case ROUTER_WRT610N:
 	case ROUTER_WRT350N:
