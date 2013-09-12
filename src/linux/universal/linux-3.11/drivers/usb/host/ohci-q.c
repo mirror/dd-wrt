@@ -55,8 +55,10 @@ __acquires(ohci->lock)
 		if (ohci_to_hcd(ohci)->self.bandwidth_isoc_reqs == 0) {
 			if (quirk_amdiso(ohci))
 				usb_amd_quirk_pll_enable();
+#ifndef CONFIG_PCI_DISABLE_COMMON_QUIRKS
 			if (quirk_amdprefetch(ohci))
 				sb800_prefetch(dev, 0);
+#endif
 		}
 		break;
 	case PIPE_INTERRUPT:
