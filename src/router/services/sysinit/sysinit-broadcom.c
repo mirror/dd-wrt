@@ -288,7 +288,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_D1800H:
 		insmod("wl");	// load module
 		break;
-	case ROUTER_LINKSYS_EA6500
+	case ROUTER_LINKSYS_EA6500:
 		if (!sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
 		    || startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
 			unsigned char mac[20];
