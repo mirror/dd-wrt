@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.11.0-rc7 Kernel Configuration
+# Linux/arm 3.11.0 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -1158,7 +1158,7 @@ CONFIG_MII=y
 CONFIG_HND=y
 CONFIG_ET=m
 CONFIG_ET_47XX=y
-#CONFIG_ET_ALL_PASSIVE_ON is not set
+# CONFIG_ET_ALL_PASSIVE_ON is not set
 CONFIG_ET_ALL_PASSIVE_RUNTIME=y
 CONFIG_BCM_CTF=m
 # CONFIG_WL_EMULATOR is not set
