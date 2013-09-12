@@ -183,9 +183,13 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 
 #if defined(HAVE_80211AC) || defined(HAVE_NVRAM_64K)
 #undef NVRAM_SPACE
-#undef NVRAM_SPACE_256
 #define NVRAM_SPACE		0x10000
+
+#ifndef CONFIG_ARM
+#undef NVRAM_SPACE_256
 #define NVRAM_SPACE_256		0x40000
+#endif
+
 #endif
 
 /* debug output for NVRAM_SPACE*/
@@ -193,9 +197,7 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #define VALUE(x) VALUE_TO_STRING(x)
 #define VAR_NAME_VALUE(var) #var "="  VALUE(var)
 #pragma message (VAR_NAME_VALUE(NVRAM_SPACE))
-#ifdef NVRAM_SPACE_256
-#pragma message (VAR_NAME_VALUE(NVRAM_SPACE_256))
-#endif
+
 #define MAX_NVRAM_SPACE		NVRAM_SPACE
 #define ROM_ENVRAM_SPACE	0x1000
 #define NVRAM_LZMA_MAGIC	0x4c5a4d41	/* 'LZMA' */
