@@ -692,8 +692,10 @@ static void td_submit_urb (
 		if (ohci_to_hcd(ohci)->self.bandwidth_isoc_reqs == 0) {
 			if (quirk_amdiso(ohci))
 				usb_amd_quirk_pll_disable();
+#ifndef CONFIG_PCI_DISABLE_COMMON_QUIRKS
 			if (quirk_amdprefetch(ohci))
 				sb800_prefetch(dev, 1);
+#endif
 		}
 		periodic = ohci_to_hcd(ohci)->self.bandwidth_isoc_reqs++ == 0
 			&& ohci_to_hcd(ohci)->self.bandwidth_int_reqs == 0;
