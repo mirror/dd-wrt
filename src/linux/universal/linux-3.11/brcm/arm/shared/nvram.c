@@ -26,6 +26,13 @@
 #include <bcmendian.h>
 #include <bcmnvram.h>
 #include <sbsdram.h>
+#include <linux/vmalloc.h>
+
+#ifdef NVRAM_SPACE_256
+extern int NVRAMSIZEREAL;
+#else
+#define NVRAMSIZEREAL NVRAM_SPACE
+#endif
 
 extern struct nvram_tuple *_nvram_realloc(struct nvram_tuple *t, const char *name,
                                           const char *value);
@@ -94,7 +101,7 @@ BCMINITFN(nvram_rehash)(struct nvram_header *header)
 
 	/* Parse and set "name=value\0 ... \0\0" */
 	name = (char *) &header[1];
-	end = (char *) header + NVRAM_SPACE - 2;
+	end = (char *) header + NVRAMSIZEREAL - 2;
 	end[0] = end[1] = '\0';
 	for (; *name; name = value + strlen(value) + 1) {
 		if (!(eq = strchr(name, '=')))
@@ -263,10 +270,10 @@ BCMINITFN(_nvram_commit)(struct nvram_header *header)
 
 	/* Clear data area */
 	ptr = (char *) header + sizeof(struct nvram_header);
-	bzero(ptr, NVRAM_SPACE - sizeof(struct nvram_header));
+	bzero(ptr, NVRAMSIZEREAL - sizeof(struct nvram_header));
 
 	/* Leave space for a double NUL at the end */
-	end = (char *) header + NVRAM_SPACE - 2;
+	end = (char *) header + NVRAMSIZEREAL - 2;
 
 	/* Write out all tuples */
 	for (i = 0; i < ARRAYSIZE(nvram_hash); i++) {
@@ -298,7 +305,7 @@ BCMINITFN(_nvram_init)(void *sih)
 	int ret;
 
 
-	if (!(header = (struct nvram_header *) MALLOC(si_osh(sih), NVRAM_SPACE))) {
+	if (!(header = (struct nvram_header *) vmalloc(NVRAMSIZEREAL))) {
 		printf("nvram_init: out of memory\n");
 		return -12; /* -ENOMEM */
 	}
@@ -307,7 +314,7 @@ BCMINITFN(_nvram_init)(void *sih)
 	    header->magic == NVRAM_MAGIC)
 		nvram_rehash(header);
 
-	MFREE(si_osh(sih), header, NVRAM_SPACE);
+	vfree(header);
 	return ret;
 }
 
