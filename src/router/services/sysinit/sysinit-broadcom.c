@@ -280,13 +280,23 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_NETCORE_NW715P:
 		break;
 	case ROUTER_LINKSYS_EA2700:
-	case ROUTER_LINKSYS_EA6500:
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
 	case ROUTER_NETGEAR_R6250:  
 	case ROUTER_NETGEAR_R6300:
 	case ROUTER_ASUS_AC66U:
 	case ROUTER_D1800H:
+		insmod("wl");	// load module
+		break;
+	case ROUTER_LINKSYS_EA6500
+		if (!sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
+		    || startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
+			unsigned char mac[20];
+			strcpy(mac, nvram_safe_get("et0macaddr"));
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			nvram_set("pci/2/1/macaddr", mac);
+		}
 		insmod("wl");	// load module
 		break;
 	case ROUTER_WRT600N:
