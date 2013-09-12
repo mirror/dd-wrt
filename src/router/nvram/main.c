@@ -26,10 +26,16 @@ static void usage(void)
 	exit(0);
 }
 
+#ifdef NVRAM_SPACE_256
+#define NVRAMSPACE NVRAM_SPACE_256
+#else
+#define NVRAMSPACE NVRAM_SPACE
+#endif
+
 /* NVRAM utility */
 int main(int argc, char **argv)
 {
-	char *name, *value, buf[NVRAM_SPACE];
+	char *name, *value, buf[NVRAMSPACE];
 	int size;
 
 	/* Skip program name */
