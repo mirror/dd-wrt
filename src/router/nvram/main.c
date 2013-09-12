@@ -71,7 +71,7 @@ int main(int argc, char **argv)
 			size =
 			    sizeof(struct nvram_header) + (int)name - (int)buf;
 			fprintf(stderr, "size: %d bytes (%d left)\n", size,
-				NVRAM_SPACE - size);
+				NVRAMSPACE - size);
 		}
 		if (!*argv)
 			break;
