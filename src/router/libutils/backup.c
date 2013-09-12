@@ -197,6 +197,8 @@ static char *filter[] = { "lan_ifnames",
 	"regulation_domain",
 	"regulation_domain_5G",
 	"Ate_power_on_off_ret",
+	"pmon_ver",
+	"sw_version",
 	NULL
 };
 
