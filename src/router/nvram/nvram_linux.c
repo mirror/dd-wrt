@@ -30,6 +30,14 @@
 
 #define PATH_DEV_NVRAM "/dev/nvram"
 
+#ifdef NVRAM_SPACE_256
+#define NVRAMSPACE NVRAM_SPACE_256
+#else
+#define NVRAMSPACE NVRAM_SPACE
+#endif
+
+
+
 /* Globals */
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
@@ -40,7 +48,8 @@ int nvram_init(void *unused)
 		goto err;
 
 	/* Map kernel string buffer into user space */
-	nvram_buf = mmap(NULL, NVRAM_SPACE, PROT_READ, MAP_SHARED, nvram_fd, 0);
+	nvram_buf = mmap(NULL, NVRAMSPACE, PROT_READ, MAP_SHARED, nvram_fd, 0);
+
 	if (nvram_buf == MAP_FAILED) {
 		close(nvram_fd);
 		fprintf(stderr, "nvram_init(): failed\n");
@@ -108,7 +117,7 @@ char *nvram_get(const char *name)
 	/* Get offset into mmap() space */
 	strcpy((char *)off, name);
 #ifndef HAVE_MICRO
-	msync(nvram_buf, NVRAM_SPACE, MS_SYNC);
+	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
 #endif
 
 	count = read(nvram_fd, off, count);
