@@ -4952,6 +4952,9 @@ int led_control(int type, int act)
 		diag_gpio = 0x103;	// power led blink / off to indicate fac.def. 
 //              connected_gpio = 0x103; // white LED2
 		break;
+	case ROUTER_LINKSYS_EA6500:
+		diag_gpio = 0x101;	// white led blink / off to indicate fac.def. 
+		break;
 	case ROUTER_ASUS_WL500G:
 		power_gpio = 0x100;
 		diag_gpio = 0x000;	// power led blink /off to indicate factory
