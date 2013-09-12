@@ -56,6 +56,7 @@ void addEntry(struct linkedlist *list, char *name, char *port, int value)
 				next->port = p;
 				first->next = next;
 				next->prev = first;
+				next->next = NULL;
 				return;
 			}
 			first = first->next;
