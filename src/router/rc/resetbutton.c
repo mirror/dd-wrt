@@ -1056,6 +1056,9 @@ void period_check(int sig)
 	case ROUTER_LINKSYS_E2500:
 		sesgpio = 0x109;	// gpio 9, inversed
 		break;
+	case ROUTER_LINKSYS_EA6500:
+		sesgpio = 0x104;	// gpio 4, inversed
+		break;
 	case ROUTER_D1800H:
 		sesgpio = 0x10a;	// gpio 10, inversed
 		break;
