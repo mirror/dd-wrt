@@ -3437,9 +3437,10 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 
 	// table header
 	websWrite(wp, "	<table id=\"samba_shares\" class=\"table center\" summary=\"samba share table\">\n");
-	websWrite(wp, "		<tr><th colspan=\"5\"><script type=\"text/javascript\">Capture(service.samba3_shares)</script></th></tr>\n");
+	websWrite(wp, "		<tr><th colspan=\"6\"><script type=\"text/javascript\">Capture(service.samba3_shares)</script></th></tr>\n");
 	websWrite(wp, "		<tr>\n");
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_path)</script></th>\n");
+	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_subdir)</script></th>\n");
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_label)</script></th>\n");
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_public)</script></th>\n");
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_access)</script></th>\n");
@@ -3506,7 +3507,10 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 		}
 		websWrite(wp, "				</select></td>\n");
 		websWrite(wp,
-			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"smbshare_label%s\" id=\"smbshare_label%s\" value=\"%s\" style=\"width: 150px;\" onChange=\"updateSambaUserShare(this);\" /></td>\n",
+			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"smbshare_subdir%s\" id=\"smbshare_subdir%s\" value=\"%s\" style=\"width: 150px;\" onChange=\"updateSambaUserShare(this);\" /></td>\n",
+			  number, number, cs->sd);
+		websWrite(wp,
+			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"smbshare_label%s\" id=\"smbshare_label%s\" value=\"%s\" style=\"width: 120px;\" onChange=\"updateSambaUserShare(this);\" /></td>\n",
 			  number, number, cs->label);
 		websWrite(wp,
 			  "				<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"smbshare_public%s\" id=\"smbshare_public%s\" value=\"1\" %s></td>\n",
