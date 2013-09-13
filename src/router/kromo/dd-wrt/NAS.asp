@@ -192,6 +192,7 @@ function checkSambaShares() {
 	
 	var shares = $('samba_shares').childElements()[0].childElements();
 	var mp = '';
+	var sd = '';
 	var label = '';
 	var sublabel = 'samba_shares_row_';
 	var index = 0;
@@ -293,6 +294,7 @@ function addSambaUser() {
 function addSambaUserShare( userIndex, template, share ) {
 	
 	var mp = null;
+	var sd = null;
 	var label = null;
 	var element = null;
 	
@@ -302,6 +304,8 @@ function addSambaUserShare( userIndex, template, share ) {
 		if( element.name ) {
 			if( element.name.substr(0, element.name.length - i.toString().length - 1 ) == 'smbshare_mp' ) {
 				mp = element.value.replace(/^\s+|\s+$/g,"");
+			} else if( element.name.substr(0, element.name.length - i.toString().length - 1 ) == 'smbshare_subdir' ) {
+				sd = element.value.replace(/^\s+|\s+$/g,"");
 			} else if( element.name.substr(0, element.name.length - i.toString().length - 1 ) == 'smbshare_label' ) {
 				label = element.value.replace(/^\s+|\s+$/g,"");
 			}

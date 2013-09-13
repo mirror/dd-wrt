@@ -1568,6 +1568,7 @@ service.samba3_advanced="Advanced"
 service.samba3_custom="Use Custom Configuration";
 service.samba3_shares="Shares";
 service.samba3_share_path="Path";
+service.samba3_share_subdir="Subdir";
 service.samba3_share_label="Name";
 service.samba3_share_public="Public";
 service.samba3_share_access="Access";
