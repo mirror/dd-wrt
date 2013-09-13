@@ -24,12 +24,8 @@
 int main(int argc, char **argv)
 {
 
-	long radiotime0;	// 4 byte int number (24 bits from gui + 1
-
-	// bit for midnight)
-	long radiotime1;	// 4 byte int number (24 bits from gui + 1
-
-	// bit for midnight)
+	long radiotime0;	// 4 byte int number (24 bits from gui + 1 bit for midnight)
+	long radiotime1;	// 4 byte int number (24 bits from gui + 1 bit for midnight)
 
 	int firsttime, needchange;
 
@@ -46,70 +42,15 @@ int main(int argc, char **argv)
 		if (currtime->tm_year > 100)	// ntp time must be set
 		{
 
-			radiotime0 = strtol(nvram_get("radio0_on_time"), NULL, 2);	// convert 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// binary 
-			// string 
-			// to 
-			// long 
-			// int
-			radiotime0 += ((radiotime0 & 1) << 24);	// duplicate 23-24h
-			// bit to the start
-			// to take care of
-			// midnight
-			radiotime0 = (radiotime0 >> (24 - currtime->tm_hour - 1)) & 3;	// get 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// pattern 
-			// only 
-			// (last 
-			// two 
-			// bits)
-			radiotime1 = strtol(nvram_get("radio1_on_time"), NULL, 2);	// convert 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// binary 
-			// string 
-			// to 
-			// long 
-			// int
-			radiotime1 += ((radiotime1 & 1) << 24);	// duplicate 23-24h
-			// bit to the start
-			// to take care of
-			// midnight
-			radiotime1 = (radiotime1 >> (24 - currtime->tm_hour - 1)) & 3;	// get 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// 
-			// pattern 
-			// only 
-			// (last 
-			// two 
-			// bits)
+			radiotime0 = strtol(nvram_get("radio0_on_time"), NULL, 2);	// convert  binary  string  to  long  int
+			radiotime0 += ((radiotime0 & 1) << 24);	// duplicate 23-24h bit to the start to take care of midnight
+			radiotime0 = (radiotime0 >> (24 - currtime->tm_hour - 1)) & 3;	// get pattern only (last two bits)
+			radiotime1 = strtol(nvram_get("radio1_on_time"), NULL, 2); 
+			radiotime1 += ((radiotime1 & 1) << 24);
+			radiotime1 = (radiotime1 >> (24 - currtime->tm_hour - 1)) & 3;
 
 			if (currtime->tm_min != 0)
-				needchange = 1;	// prevet to be executed more than once when
-			// min == 0
+				needchange = 1;	// prevet to be executed more than once when min == 0
 
 			if (firsttime)	// first time change
 			{
@@ -136,20 +77,7 @@ int main(int argc, char **argv)
 			if (nvram_match("radio1_timer_enable", "0"))
 				radiotime1 = 0;
 
-			if (((needchange) && currtime->tm_min == 0) || (firsttime))	// change 
-				// 
-				// 
-				// 
-				// 
-				// 
-				// 
-				// 
-				// when 
-				// min 
-				// = 
-				// 0 
-				// or 
-				// firstime
+			if (((needchange) && currtime->tm_min == 0) || (firsttime)) // change when min = 0  or firstime
 			{
 				switch (radiotime0) {
 				case 0:
@@ -166,8 +94,10 @@ int main(int argc, char **argv)
 					start_service("radio_off_0");
 					break;
 				}
+				
 				switch (radiotime1) {
 				case 0:
+				  
 					break;	// do nothing, radio1 timer disabled
 
 				case 1:	// 01 - turn radio on
@@ -184,21 +114,13 @@ int main(int argc, char **argv)
 				firsttime = 0;
 			}
 
-		} else		// if yr < 100 (=2000) wait 5 min and try
+		} else	// if yr < 100 (=2000) wait 5 min and try
 			// again (if ntp time is maybe set now)
 		{
 			sleep(242);
 		}
 
-		sleep(58);	// loop every 58 s to be sure to catch min == 
-		// 
-		// 
-		// 
-		// 
-		// 
-		// 
-		// 
-		// 0
+		sleep(58);	// loop every 58 s to be sure to catch min == 0
 
 	}
 	while (1);
