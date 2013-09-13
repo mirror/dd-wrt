@@ -954,7 +954,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #ifdef HAVE_ATH9K
 		if (!is_ath9k(prefix))
 // disabled -> not implemented for newer wireless drivers
-#endifc
+#endif
 			websWrite(wp, "<option value=\"radius\" %s>%s</option>\n", selmatch(var, "radius", "selected=\"selected\""), ias_enc_label("radius"));
 #else
 		websWrite(wp, "<option value=\"radius\" %s>RADIUS</option>\n", selmatch(var, "radius", "selected=\"selected\""));
