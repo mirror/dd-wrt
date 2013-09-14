@@ -50,14 +50,14 @@ endif
 include $(PWD)/Makefile.kbuild
 
 all: config
-	$(MAKE) -C $(KERNELPATH) M=$(PWD) PWD=$(PWD) modules
+	$(MAKE) -C $(KERNELPATH) M=$(PWD) CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" PWD=$(PWD) modules
 
 clean:
 	$(RM) compat-autoconf.h*
-	$(MAKE) -C $(KERNELPATH) M=$(PWD) PWD=$(PWD) clean
+	$(MAKE) -C $(KERNELPATH) M=$(PWD) CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" PWD=$(PWD) clean
 
 install: config
-	$(MAKE) -C $(KERNELPATH) M=$(PWD) PWD=$(PWD) INSTALL_MOD_DIR=updates/net/batman-adv/ modules_install
+	$(MAKE) -C $(KERNELPATH) M=$(PWD) CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" PWD=$(PWD) INSTALL_MOD_DIR=updates/net/batman-adv/ modules_install
 	depmod -a
 
 config:
