@@ -278,8 +278,6 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_NETGEAR_WNDR4000:
 	case ROUTER_ASUS_RTN66:
 	case ROUTER_NETCORE_NW715P:
-		break;
-	case ROUTER_LINKSYS_EA2700:
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
 	case ROUTER_NETGEAR_R6250:  
@@ -297,6 +295,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 			MAC_ADD(mac);
 			nvram_set("pci/2/1/macaddr", mac);
 		}
+	case ROUTER_LINKSYS_EA2700:
 		nvram_set("bootpartition","0");
 		insmod("wl");	// load module
 		break;
