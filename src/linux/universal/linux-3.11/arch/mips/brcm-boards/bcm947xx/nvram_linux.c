@@ -89,7 +89,7 @@ extern spinlock_t bcm947xx_sih_lock;
 
 static char nvram_buf_cfe[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
 static int NVRAMSIZE = NVRAM_SPACE;
-static int NVRAMSIZEREAL = NVRAM_SPACE;
+int NVRAMSIZEREAL = NVRAM_SPACE;
 
 #ifdef NFLASH_SUPPORT
 static unsigned char nflash_nvh[NVRAM_SPACE];
@@ -290,7 +290,7 @@ static int early_nvram_init(void)
 					goto found;
 				}
 #ifdef NVRAM_SPACE_256
-			header = (struct nvram_header *)KSEG1ADDR(base + off - (NVRAM_SPACE_256));
+			header = (struct nvram_header *)KSEG1ADDR(base + lim - NVRAM_SPACE_256);
 			if (header->magic == NVRAM_MAGIC)
 				if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
 					printk(KERN_NOTICE "found 256K nvram at %X\n", off - NVRAM_SPACE_60K);
