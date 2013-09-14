@@ -199,8 +199,20 @@ static int early_nvram_init(void)
 			/* Read into the nand_nvram */
 			if ((header = nand_find_nvram(nfl_info, off)) == NULL)
 				continue;
-			if (nvram_calc_crc(header) == (uint8) header->crc_ver_init)
+			if (nvram_calc_crc(header) == (uint8) header->crc_ver_init) {
+				int c;
+				int *sstr = "model_sku=EA2700";
+				int slen = strlen(sstr);
+				char *checkp = (char*)header;
+				for (c=0;c<0x8000-slen;c++) {
+				    if (!memcmp(&checkp[c],sstr,slen)) {
+					    printk(KERN_INFO "detected Linksys EA2700 32KB nvram\n");
+					    NVRAMSIZEREAL = 0x8000;
+					    break;
+					}
+				}
 				goto found;
+			}
 		}
 	} else
 #endif				/* NFLASH_SUPPORT */
