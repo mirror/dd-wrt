@@ -169,10 +169,10 @@ else
 endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage CROSS_COMPILE=$(ARCH)-linux-uclibc- ARCH=powerpc; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=powerpc; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ARCH=powerpc ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=powerpc ; \
 	fi
 
 	cp $(LINUXDIR)/arch/powerpc/boot/cuImage.tl-wdr4900-v1 $(ARCH)-uclibc/cuImage.tl-wdr4900-v1

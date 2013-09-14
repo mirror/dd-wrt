@@ -167,12 +167,8 @@ else
 endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 
-	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) uImage ; \
-	fi
-	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules ; \
-	fi
+	$(MAKE) -j 4 -C $(LINUXDIR) uImage  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	$(MAKE) -j 4 -C $(LINUXDIR) modules  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
 install_headers:
 # important step, required for new kernels
