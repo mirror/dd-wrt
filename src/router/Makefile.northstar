@@ -165,12 +165,22 @@ else
 endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 
-	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) zImage ; \
-	fi
-	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules ; \
-	fi
+	$(MAKE) -j 4 -C $(LINUXDIR) zImage  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	$(MAKE) -j 4 -C $(LINUXDIR) modules  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+
+test_kernel: kernel
+	tools/lzma_4k e $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/vmlinuz.lzma
+	./tools/seama/packimgs -b 64 -o $(ARCH)-uclibc/raw-dir868.img -i $(ARCH)-uclibc/vmlinuz.lzma
+	./tools/seama/seama -i $(ARCH)-uclibc/raw-dir868.img -m dev=/dev/mtdblock/7 -m type=firmware 
+	./tools/seama/seama -s $(ARCH)-uclibc/web-dir868.img -i $(ARCH)-uclibc/raw-dir868.img.seama -m signature=wrgac02_dlob.hans_dir868
+	./tools/seama/seama -d $(ARCH)-uclibc/web-dir868.img
+	cp $(ARCH)-uclibc/web-dir868.img /GruppenLW/releases
+#	dd if=$(ARCH)-uclibc/web-dir868.img of=$(ARCH)-uclibc/webflash-dir868.img skip=48 iflag=skip_bytes 
+#	./tools/trx_n -m 32000000 -o $(ARCH)-uclibc/webflash-dir868.trx $(ARCH)-uclibc/webflash-dir868.img
+
+
+
+
 
 install_headers:
 # important step, required for new kernels
@@ -333,6 +343,14 @@ endif
 	echo -ne '\xde\xad\xc0\xde' >> $(ARCH)-uclibc/dd-wrt.jffs2
 #	./tools/trx -m 32000000 -o $(ARCH)-uclibc/northstar-firmware-jffs2.bin $(ARCH)-uclibc/vmlinuz.lzma $(ARCH)-uclibc/dd-wrt.jffs2
 	./tools/trx -m 32000000 -o $(ARCH)-uclibc/northstar-firmware-squashfs.bin $(ARCH)-uclibc/vmlinuz.lzma $(ARCH)-uclibc/root.fs
+
+	./tools/seama/packimgs -b 64 -o $(ARCH)-uclibc/raw-dir868.img -i $(ARCH)-uclibc/vmlinuz.lzma -i $(ARCH)-uclibc/root.fs
+	./tools/seama/seama -i $(ARCH)-uclibc/raw-dir868.img -m dev=/dev/mtdblock/7 -m type=firmware 
+	./tools/seama/seama -s $(ARCH)-uclibc/web-dir868.img -i $(ARCH)-uclibc/raw-dir868.img.seama -m signature=wrgac02_dlob.hans_dir868
+	./tools/seama/seama -d $(ARCH)-uclibc/web-dir868.img
+	dd if=$(ARCH)-uclibc/web-dir868.img of=$(ARCH)-uclibc/webflash-dir868.img skip=48 iflag=skip_bytes 
+	./tools/trx_n -m 32000000 -o $(ARCH)-uclibc/webflash-dir868.trx $(ARCH)-uclibc/webflash-dir868.img
+	
 	./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC56U,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac56u-firmware.trx
 	./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC67U,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac67u-firmware.trx
 	cp $(ARCH)-uclibc/northstar-firmware-squashfs.bin $(ARCH)-uclibc/buffalo.trx

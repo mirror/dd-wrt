@@ -160,10 +160,10 @@ endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux vmlinux CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 
 	

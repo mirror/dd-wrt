@@ -176,12 +176,9 @@ ifeq ($(CONFIG_IPETH),y)
 	sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config
 endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
-	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
-	fi
-	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
-	fi
+
+	$(MAKE) -j 4 -C $(LINUXDIR) CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	$(MAKE) -j 4 -C $(LINUXDIR) modules  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
 	
 realclean: $(obj-clean)
