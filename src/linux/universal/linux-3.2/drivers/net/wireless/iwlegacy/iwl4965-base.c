@@ -868,13 +868,13 @@ static void iwl4965_irq_tasklet(struct iwl_priv *priv)
 		 * is killed. Hence update the killswitch state here. The
 		 * rfkill handler will care about restarting if needed.
 		 */
-		if (!test_bit(STATUS_ALIVE, &priv->status)) {
-			if (hw_rf_kill)
-				set_bit(STATUS_RF_KILL_HW, &priv->status);
-			else
-				clear_bit(STATUS_RF_KILL_HW, &priv->status);
-			wiphy_rfkill_set_hw_state(priv->hw->wiphy, hw_rf_kill);
+		if (hw_rf_kill) {
+			set_bit(STATUS_RF_KILL_HW, &priv->status);
+		} else {
+			clear_bit(STATUS_RF_KILL_HW, &priv->status);
+			iwl_legacy_force_reset(priv, true);
 		}
+		wiphy_rfkill_set_hw_state(priv->hw->wiphy, hw_rf_kill);
 
 		handled |= CSR_INT_BIT_RF_KILL;
 	}
@@ -1764,6 +1764,9 @@ static void iwl4965_alive_start(struct iwl_priv *priv)
 
 	priv->active_rate = IWL_RATES_MASK;
 
+	iwl_legacy_power_update_mode(priv, true);
+	IWL_DEBUG_INFO(priv, "Updated power mode\n");
+
 	if (iwl_legacy_is_associated_ctx(ctx)) {
 		struct iwl_legacy_rxon_cmd *active_rxon =
 				(struct iwl_legacy_rxon_cmd *)&ctx->active;
@@ -1795,9 +1798,6 @@ static void iwl4965_alive_start(struct iwl_priv *priv)
 
 	IWL_DEBUG_INFO(priv, "ALIVE processing complete.\n");
 	wake_up(&priv->wait_command_queue);
-
-	iwl_legacy_power_update_mode(priv, true);
-	IWL_DEBUG_INFO(priv, "Updated power mode\n");
 
 	return;
 
