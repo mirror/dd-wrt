@@ -445,6 +445,7 @@ void start_sysinit(void)
 
 		}
 	default:
+		nvram_set("bootpartition","0");
 		nvram_default_get("wl_country_code", "US");
 		nvram_default_get("wl0_country_code", "US");
 		nvram_default_get("wl1_country_code", "US");
