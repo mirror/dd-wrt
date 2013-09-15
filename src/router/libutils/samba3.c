@@ -180,7 +180,7 @@ struct samba3_share *getsamba3shares(void)
 				}
 				iterator = json_object_iter_next(entry, iterator);
 			}
-			if (mp[0] != 0 && sd[0] != 0 && label != 0 && access_perms != 0) {
+			if (mp[0] != 0 && label != 0 && access_perms != 0) {
 				current->next = getsamba3share(mp, sd, label, access_perms, public, shareusers);
 				current = current->next;
 			}
