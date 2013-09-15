@@ -55,10 +55,13 @@
 #include <linux/of_net.h>
 #include <linux/pinctrl/consumer.h>
 #include <linux/regulator/consumer.h>
+#include <linux/if_vlan.h>
 
 #include <asm/cacheflush.h>
 
 #include "fec.h"
+
+static void set_multicast_list(struct net_device *ndev);
 
 #if defined(CONFIG_ARM)
 #define FEC_ALIGNMENT	0xf
@@ -90,6 +93,24 @@
 /* Controller has hardware checksum support */
 #define FEC_QUIRK_HAS_CSUM		(1 << 5)
 
+/* Controller has hardware vlan support */
+#define FEC_QUIRK_HAS_VLAN		(1 << 6)
+/* ENET IP errata ERR006358
+ *
+ * If the ready bit in the transmit buffer descriptor (TxBD[R]) is previously
+ * detected as not set during a prior frame transmission, then the
+ * ENET_TDAR[TDAR] bit is cleared at a later time, even if additional TxBDs
+ * were added to the ring and the ENET_TDAR[TDAR] bit is set. This results in
+ * If the ready bit in the transmit buffer descriptor (TxBD[R]) is previously
+ * detected as not set during a prior frame transmission, then the
+ * ENET_TDAR[TDAR] bit is cleared at a later time, even if additional TxBDs
+ * were added to the ring and the ENET_TDAR[TDAR] bit is set. This results in
+ * frames not being transmitted until there is a 0-to-1 transition on
+ * ENET_TDAR[TDAR].
+ */
+#define FEC_QUIRK_ERR006358            (1 << 7)
+
+
 static struct platform_device_id fec_devtype[] = {
 	{
 		/* keep it for coldfire */
@@ -106,8 +127,9 @@ static struct platform_device_id fec_devtype[] = {
 		.driver_data = FEC_QUIRK_ENET_MAC | FEC_QUIRK_SWAP_FRAME,
 	}, {
 		.name = "imx6q-fec",
-		.driver_data = FEC_QUIRK_ENET_MAC | FEC_QUIRK_HAS_GBIT |
-				FEC_QUIRK_HAS_BUFDESC_EX | FEC_QUIRK_HAS_CSUM,
+ 		.driver_data = FEC_QUIRK_ENET_MAC | FEC_QUIRK_HAS_GBIT |
+				FEC_QUIRK_HAS_BUFDESC_EX | FEC_QUIRK_HAS_CSUM |
+				FEC_QUIRK_HAS_VLAN | FEC_QUIRK_ERR006358,
 	}, {
 		.name = "mvf600-fec",
 		.driver_data = FEC_QUIRK_ENET_MAC,
@@ -178,11 +200,11 @@ MODULE_PARM_DESC(macaddr, "FEC Ethernet MAC address");
 #define FEC_DEFAULT_IMASK (FEC_ENET_TXF | FEC_ENET_RXF | FEC_ENET_MII)
 #define FEC_RX_DISABLED_IMASK (FEC_DEFAULT_IMASK & (~FEC_ENET_RXF))
 
-/* The FEC stores dest/src/type, data, and checksum for receive packets.
+/* The FEC stores dest/src/type/vlan, data, and checksum for receive packets.
  */
-#define PKT_MAXBUF_SIZE		1518
+#define PKT_MAXBUF_SIZE		1522
 #define PKT_MINBUF_SIZE		64
-#define PKT_MAXBLR_SIZE		1520
+#define PKT_MAXBLR_SIZE		1536
 
 /* FEC receive acceleration */
 #define FEC_RACC_IPDIS		(1 << 1)
@@ -243,7 +265,7 @@ static void *swap_buffer(void *bufaddr, int len)
 	int i;
 	unsigned int *buf = bufaddr;
 
-	for (i = 0; i < (len + 3) / 4; i++, buf++)
+	for (i = 0; i < DIV_ROUND_UP(len, 4); i++, buf++)
 		*buf = cpu_to_be32(*buf);
 
 	return bufaddr;
@@ -270,15 +292,10 @@ fec_enet_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 	struct fec_enet_private *fep = netdev_priv(ndev);
 	const struct platform_device_id *id_entry =
 				platform_get_device_id(fep->pdev);
-	struct bufdesc *bdp;
+	struct bufdesc *bdp, *bdp_pre;
 	void *bufaddr;
 	unsigned short	status;
 	unsigned int index;
-
-	if (!fep->link) {
-		/* Link is down or auto-negotiation is in progress. */
-		return NETDEV_TX_BUSY;
-	}
 
 	/* Fill in a Tx ring entry */
 	bdp = fep->cur_tx;
@@ -365,6 +382,17 @@ fec_enet_start_xmit(struct sk_buff *skb, struct net_device *ndev)
 				ebdp->cbd_esc |= BD_ENET_TX_PINS;
 		}
 	}
+
+	bdp_pre = fec_enet_get_prevdesc(bdp, fep->bufdesc_ex);
+	if ((id_entry->driver_data & FEC_QUIRK_ERR006358) &&
+	    !(bdp_pre->cbd_sc & BD_ENET_TX_READY)) {
+		fep->delay_work.trig_tx = true;
+		schedule_delayed_work(&(fep->delay_work.delay_work),
+					msecs_to_jiffies(1));
+	}
+
+
+
 	/* If this was the last BD in the ring, start at the beginning again. */
 	if (status & BD_ENET_TX_WRAP)
 		bdp = fep->tx_bd_base;
@@ -471,9 +499,8 @@ fec_restart(struct net_device *ndev, int duplex)
 	/* Clear any outstanding interrupt. */
 	writel(0xffc00000, fep->hwp + FEC_IEVENT);
 
-	/* Reset all multicast.	*/
-	writel(0, fep->hwp + FEC_GRP_HASH_TABLE_HIGH);
-	writel(0, fep->hwp + FEC_GRP_HASH_TABLE_LOW);
+	/* Setup multicast filter. */
+	set_multicast_list(ndev);
 #ifndef CONFIG_M5272
 	writel(0, fep->hwp + FEC_HASH_TABLE_HIGH);
 	writel(0, fep->hwp + FEC_HASH_TABLE_LOW);
@@ -680,6 +707,11 @@ static void fec_enet_work(struct work_struct *work)
 		fec_restart(fep->netdev, fep->full_duplex);
 		netif_wake_queue(fep->netdev);
 	}
+
+	if (fep->delay_work.trig_tx) {
+		fep->delay_work.trig_tx = false;
+		writel(0, fep->hwp + FEC_X_DES_ACTIVE);
+	}
 }
 
 static void
@@ -735,6 +767,7 @@ fec_enet_tx(struct net_device *ndev)
 				ndev->stats.tx_carrier_errors++;
 		} else {
 			ndev->stats.tx_packets++;
+			ndev->stats.tx_bytes += bdp->cbd_datlen;
 		}
 
 		if (unlikely(skb_shinfo(skb)->tx_flags & SKBTX_IN_PROGRESS) &&
@@ -801,6 +834,10 @@ fec_enet_rx(struct net_device *ndev, int budget)
 	__u8 *data;
 	int	pkt_received = 0;
 
+	struct	bufdesc_ex *ebdp = NULL;
+	bool	vlan_packet_rcvd = false;
+	u16	vlan_tag;
+
 #ifdef CONFIG_M532x
 	flush_cache_all();
 #endif
@@ -863,6 +900,25 @@ fec_enet_rx(struct net_device *ndev, int budget)
 		if (id_entry->driver_data & FEC_QUIRK_SWAP_FRAME)
 			swap_buffer(data, pkt_len);
 
+		/* Extract the enhanced buffer descriptor */
+		ebdp = NULL;
+		if (fep->bufdesc_ex)
+			ebdp = (struct bufdesc_ex *)bdp;
+
+		/* If this is a VLAN packet remove the VLAN Tag */
+		vlan_packet_rcvd = false;
+		if ((ndev->features & NETIF_F_HW_VLAN_CTAG_RX) &&
+		    fep->bufdesc_ex && (ebdp->cbd_esc & BD_ENET_RX_VLAN)) {
+			/* Push and remove the vlan tag */
+			struct vlan_hdr *vlan_header =
+					(struct vlan_hdr *) (data + ETH_HLEN);
+			vlan_tag = ntohs(vlan_header->h_vlan_TCI);
+			pkt_len -= VLAN_HLEN;
+
+			vlan_packet_rcvd = true;
+		}
+
+
 		/* This does 16 byte alignment, exactly what we need.
 		 * The packet length includes FCS, but we don't want to
 		 * include that when passing upstream as it messes up
@@ -873,9 +929,18 @@ fec_enet_rx(struct net_device *ndev, int budget)
 		if (unlikely(!skb)) {
 			ndev->stats.rx_dropped++;
 		} else {
+			int payload_offset = (2 * ETH_ALEN);
 			skb_reserve(skb, NET_IP_ALIGN);
 			skb_put(skb, pkt_len - 4);	/* Make room */
-			skb_copy_to_linear_data(skb, data, pkt_len - 4);
+
+			/* Extract the frame data without the VLAN header. */
+			skb_copy_to_linear_data(skb, data, (2 * ETH_ALEN));
+			if (vlan_packet_rcvd)
+				payload_offset = (2 * ETH_ALEN) + VLAN_HLEN;
+			skb_copy_to_linear_data_offset(skb, (2 * ETH_ALEN),
+						       data + payload_offset,
+						       pkt_len - 4 - (2 * ETH_ALEN));
+
 			skb->protocol = eth_type_trans(skb, ndev);
 
 			/* Get receive timestamp from the skb */
@@ -883,8 +948,6 @@ fec_enet_rx(struct net_device *ndev, int budget)
 				struct skb_shared_hwtstamps *shhwtstamps =
 							    skb_hwtstamps(skb);
 				unsigned long flags;
-				struct bufdesc_ex *ebdp =
-					(struct bufdesc_ex *)bdp;
 
 				memset(shhwtstamps, 0, sizeof(*shhwtstamps));
 
@@ -895,9 +958,7 @@ fec_enet_rx(struct net_device *ndev, int budget)
 			}
 
 			if (fep->bufdesc_ex &&
-				(fep->csum_flags & FLAG_RX_CSUM_ENABLED)) {
-				struct bufdesc_ex *ebdp =
-					(struct bufdesc_ex *)bdp;
+			    (fep->csum_flags & FLAG_RX_CSUM_ENABLED)) {
 				if (!(ebdp->cbd_esc & FLAG_RX_CSUM_ERROR)) {
 					/* don't check it */
 					skb->ip_summed = CHECKSUM_UNNECESSARY;
@@ -906,8 +967,13 @@ fec_enet_rx(struct net_device *ndev, int budget)
 				}
 			}
 
-			if (!skb_defer_rx_timestamp(skb))
-				napi_gro_receive(&fep->napi, skb);
+			/* Handle received VLAN packets */
+			if (vlan_packet_rcvd)
+				__vlan_hwaccel_put_tag(skb,
+						       htons(ETH_P_8021Q),
+						       vlan_tag);
+
+			napi_gro_receive(&fep->napi, skb);
 		}
 
 		bdp->cbd_bufaddr = dma_map_single(&fep->pdev->dev, data,
@@ -1446,6 +1512,17 @@ static int fec_enet_set_pauseparam(struct net_device *ndev,
 
 #endif /* !defined(CONFIG_M5272) */
 
+static int fec_enet_nway_reset(struct net_device *dev)
+{
+	struct fec_enet_private *fep = netdev_priv(dev);
+	struct phy_device *phydev = fep->phy_dev;
+
+	if (!phydev)
+		return -ENODEV;
+
+	return genphy_restart_aneg(phydev);
+}
+
 static const struct ethtool_ops fec_enet_ethtool_ops = {
 #if !defined(CONFIG_M5272)
 	.get_pauseparam		= fec_enet_get_pauseparam,
@@ -1456,6 +1533,7 @@ static const struct ethtool_ops fec_enet_ethtool_ops = {
 	.get_drvinfo		= fec_enet_get_drvinfo,
 	.get_link		= ethtool_op_get_link,
 	.get_ts_info		= fec_enet_get_ts_info,
+	.nway_reset		= fec_enet_nway_reset,
 };
 
 static int fec_enet_ioctl(struct net_device *ndev, struct ifreq *rq, int cmd)
@@ -1802,6 +1880,13 @@ static int fec_enet_init(struct net_device *ndev)
 
 	writel(FEC_RX_DISABLED_IMASK, fep->hwp + FEC_IMASK);
 	netif_napi_add(ndev, &fep->napi, fec_enet_rx_napi, FEC_NAPI_WEIGHT);
+
+	if (id_entry->driver_data & FEC_QUIRK_HAS_VLAN) {
+		printk(KERN_INFO "enable hardware vlan support\n");
+		/* enable hw VLAN support */
+		ndev->features |= NETIF_F_HW_VLAN_CTAG_RX;
+		ndev->hw_features |= NETIF_F_HW_VLAN_CTAG_RX;
+	}
 
 	if (id_entry->driver_data & FEC_QUIRK_HAS_CSUM) {
 		/* enable hw accelerator */
