@@ -113,7 +113,6 @@ void getword(FILE * in, char *val) //read a word which is separated by spaces, s
  */
 void send_email(struct linkedlist *list, char *source, int value)
 {
-	char *email_line;
 	char *server = nvram_safe_get("warn_server");
 	char *from = nvram_safe_get("warn_from");
 	char *fromfull = nvram_safe_get("warn_fromfull");
@@ -122,41 +121,42 @@ void send_email(struct linkedlist *list, char *source, int value)
 
 	char *user = nvram_safe_get("warn_user");
 	char *pass = nvram_safe_get("warn_pass");
-	static char subject[4096];
-	sprintf(subject, "user %s reached connection limit\n", source);
-	char *mess=NULL;
-	static char line[1024];
+	
+	FILE *fp;
+	
+	static char command[256];
 
-	int c = sprintf(line, "ip %s has %d open connections\n", source, value);
-	mess = realloc(mess,c+1);
-	strcpy(mess,line);
-	while (1) {
-		if (!strcmp(list->name, source)) {
-			c += sprintf(line,
-				     "%d open connections on port %d\n",
-				     list->value, list->port);
-			mess = realloc(mess,c+1);
-			strcat(mess,line);
+	
+	fp = fopen("/tmp/warn_mail", "w");
+	
+	if( fp != NULL )
+	{
+		fprintf(fp, "From: %s\n", fromfull);
+		fprintf(fp, "Subject: DD-WRT: user %s reached connection limit\n\n", source);
+		fprintf(fp, "ip %s has %d open connections\n", source, value);
+		
+		while (1) {
+			if (!strcmp(list->name, source)) {
+				fprintf(fp, "%d open connections on port %d\n", list->value, list->port);
+			}
+			list = list->next;
+			if (list == NULL)
+			    break;
 		}
-		list = list->next;
-		if (list == NULL)
-			break;
+		fprintf(fp,"\r\n\r\n");
+		
+		if (strlen(user) > 0){
+			sprintf(command, "sendmail -S %s -f %s -au %s -ap %s %s -d %s < /tmp/warn_mail", server, from, user, pass, to, domain);
+		}else{
+			sprintf(command, "sendmail -S %s -f %s  %s -d %s < /tmp/warn_mail", server, from, to, domain);
+		}
+		
+		fclose(fp);
+		
+		system(command);
+		
+		unlink("/tmp/warn_mail");
 	}
-	email_line=malloc(strlen(mess)+1024);
-	
-	if (strlen(user) > 0)
-		sprintf(email_line,
-			"sendmail -S %s -f %s -F \"%s\" -s \"%s\" -u \"%s\" -p \"%s\"  %s -m \"%s\" -d \"%s\"",
-			server, from, fromfull, subject, user, pass, to,
-			mess, domain);
-	else
-		sprintf(email_line,
-			"sendmail -S %s -f %s -F \"%s\" -s \"%s\" %s -m \"%s\" -d \"%s\"",
-			server, from, fromfull, subject, to, mess, domain);
-	
-	system(email_line);
-	free(email_line);
-	free(mess);
 
 }
 
