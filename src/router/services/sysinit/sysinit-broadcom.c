@@ -1108,9 +1108,7 @@ void start_sysinit(void)
 			{"pa2gw2a0", "0xF886", 0},
 			{"pa2gw2a1", "0xF8AA", 0},
 			{"pa2gw2a2", "0xF8A7", 0},
-			{"ccode", "Q1", 0},
 			{"pdetrange2g", "3", 0},
-			{"regrev", "15", 0},
 			{"devid", "0x4332", 0},
 			{"tempthresh", "120", 0},
 			{"mcsbw402gpo", "0x0x88800000", 0},
@@ -1135,7 +1133,6 @@ void start_sysinit(void)
 			{"pa5gw0a1", "0xFE72", 0},
 			{"pa5gw0a2", "0xFE75", 0},
 			{"mcsbw20ul5gmpo", "0x22200000", 0},
-			{"ccode", "Q1", 0},
 			{"extpagain5g", "3", 0},
 			{"pa5glw2a0", "0xFFFF", 0},
 			{"boardflags", "0x90000200", 0},
@@ -1204,7 +1201,6 @@ void start_sysinit(void)
 			{"mcsbw405ghpo", "0x88800000", 0},
 			{"boardflags2", "0x4200000", 0},
 			{"legofdmbw20ul5ghpo", "0x88000000", 0},
-			{"regrev", "15", 0},
 			{"mcs32po", "0x9", 0},
 			{"tssipos5g", "1", 0},
 
@@ -1257,9 +1253,7 @@ void start_sysinit(void)
 			{"pa2gw2a0", "0xFA5C", 0},
 			{"pa2gw2a1", "0xFA22", 0},
 			{"pa2gw2a2", "0xFA7A", 0},
-			{"ccode", "Q1", 0},
 			{"pdetrange2g", "3", 0},
-			{"regrev", "15", 0},
 			{"devid", "0x4332", 0},
 			{"tempthresh", "120", 0},
 			{"mcsbw402gpo", "0xECAAAAAA", 0},
@@ -1284,7 +1278,6 @@ void start_sysinit(void)
 			{"pa5gw0a1", "0xFE7D", 0},
 			{"pa5gw0a2", "0xFE78", 0},
 			{"mcsbw20ul5gmpo", "0x42000000", 0},
-			{"ccode", "Q1", 0},
 			{"extpagain5g", "3", 0},
 			{"pa5glw2a0", "0xF98F", 0},
 			{"boardflags", "0x90000200", 0},
@@ -1353,7 +1346,6 @@ void start_sysinit(void)
 			{"mcsbw405ghpo", "0xECA64200", 0},
 			{"boardflags2", "0x4200000", 0},
 			{"legofdmbw20ul5ghpo", "0xECA64200", 0},
-			{"regrev", "27", 0},
 			{"mcs32po", "0x9", 0},
 			{"tssipos5g", "1", 0},
 
@@ -1406,9 +1398,7 @@ void start_sysinit(void)
 			{"pa2gw2a0", "0xF8A1", 0},
 			{"pa2gw2a1", "0xF8BF", 0},
 			{"pa2gw2a2", "0xF8DA", 0},
-			{"ccode", "EU", 0},
 			{"pdetrange2g", "3", 0},
-			{"regrev", "22", 0},
 			{"devid", "0x4332", 0},
 			{"tempthresh", "120", 0},
 			{"mcsbw402gpo", "0x0x88800000", 0},
@@ -1431,7 +1421,6 @@ void start_sysinit(void)
 			{"subband5gver", "0x4", 0},
 			{"maxp5gb3a1", "0x64", 0},
 			{"maxp5gb3a2", "0x64", 0},
-			{"ccode", "Q1", 0},
 			{"boardflags", "0x10000000", 0},
 			{"rxgainerr5g", "0xffff,0xffff,0xffff,0xffff", 0},
 			{"tworangetssi5g", "0", 0},
@@ -1584,7 +1573,6 @@ void start_sysinit(void)
 			{"rxgains5ghtrelnabypa0", "1", 0},
 			{"rxgains5ghtrelnabypa1", "1", 0},
 			{"rxgains5ghtrelnabypa2", "1", 0},
-			{"regrev", "27", 0},
 			{"sar2g", "18", 0},
 			{"sb20in40hrrpo", "0", 0},
 			{"temps_hysteresis", "15", 0},
@@ -1640,6 +1628,33 @@ void start_sysinit(void)
 			}
 
 		}
+		
+		if (nvram_match("wl0_country_code", "US"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("wl0_country_code", "Q2"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("wl0_country_code", "TW"))
+			set_regulation(0, "TW", "13");
+		else if (nvram_match("wl0_country_code", "CN"))
+			set_regulation(0, "CN", "1");
+		else
+			set_regulation(0, "DE", "0");
+
+		if (nvram_match("wl1_country_code", "US"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("wl1_country_code", "Q2"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("wl1_country_code", "DE"))
+			set_regulation(1, "DE", "0");
+		else if (nvram_match("wl1_country_code", "EU"))
+			set_regulation(1, "DE", "0");
+		else if (nvram_match("wl1_country_code", "TW"))
+			set_regulation(1, "TW", "13");
+		else if (nvram_match("wl1_country_code", "CN"))
+			set_regulation(1, "CN", "1");
+		else
+			set_regulation(1, "US", "0");
+		
 
 		break;
 	case ROUTER_NETCORE_NW715P:
