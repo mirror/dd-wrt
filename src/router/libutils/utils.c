@@ -1014,21 +1014,33 @@ int internal_getRouterBrand()
 	if (boardnum == 00 && nvram_match("boardtype", "0xF646")
 	    && nvram_match("boardrev", "0x1100")
 	    && nvram_match("melco_id", "RD_BB12068")) {
+#ifdef HAVE_BUFFALO
+		setRouter("Buffalo 1750DHP");
+#else
 		setRouter("Buffalo WZR-1750DHP");
+#endif
 		return ROUTER_BUFFALO_WZR1750;
 	}
 
-	if ((boardnum == 2013012401 || boardnum == 2013083001) && nvram_match("boardtype", "0x0646")
+	if ((boardnum == 2013012401 || boardnum == 2013083001 || boardnum == 2013032101) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "7")) {
+#ifdef HAVE_BUFFALO
+		setRouter("WZR-900DHP");
+#else
 		setRouter("Buffalo WZR-900DHP");
+#endif		
 		return ROUTER_BUFFALO_WZR900DHP;
 	}
-
-	if ((boardnum == 2013012401 || boardnum == 2013083001) && nvram_match("boardtype", "0x0646")
+	
+	if ((boardnum == 2013012401 || boardnum == 2013083001 || boardnum == 2013032101) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "3")) {
+#ifdef HAVE_BUFFALO
+		setRouter("WZR-600DHP2");
+#else
 		setRouter("Buffalo WZR-600DHP2");
+#endif
 		return ROUTER_BUFFALO_WZR600DHP2;
 	}
 
