@@ -523,12 +523,18 @@ struct mtd_partition *__init init_mtd_partitions(struct mtd_info *mtd, size_t si
 			cfe_nvrampart.offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 			cfe_nvrampart.size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 		} else {
-
+#ifdef NVRAM_SPACE_256
 		if (nvram_match("boardnum","${serno}") && nvram_match("boardtype","0xC617") && nvram_match("boardrev","0x1103")) {
 			printk(KERN_INFO "Linksys NVRAM Hack\n");
 			nflash_parts[1].offset = size - ROUNDUP(NVRAM_SPACE_256, mtd->erasesize);
 			nflash_parts[1].size = ROUNDUP(NVRAM_SPACE_256, mtd->erasesize);
-		}else{
+
+//			cfe_nvrampart.name = "nvram_cfe";
+//			cfe_nvrampart.offset = size - ROUNDUP(NVRAM_SPACE_256, mtd->erasesize);
+//			cfe_nvrampart.size = ROUNDUP(NVRAM_SPACE_256, mtd->erasesize);
+		}else
+#endif
+		{
 			nflash_parts[1].offset = size - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 			nflash_parts[1].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 		}
