@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: et.c 381881 2013-01-30 06:04:30Z $
+ * $Id: et.c 393340 2013-03-27 06:10:49Z $
  */
 
 #include <stdio.h>
@@ -358,7 +358,7 @@ usage(char *av0)
 		"\tphywr [<phyaddr>] <reg> <val>\n"
 		"\trobord <page> <reg>\n"
 		"\trobowr <page> <reg> <val>\n"
-		"\tswitch_mode <phy> <mode> (mode 0, 1, 2, 3)\n"
+		"\tswitch_mode <phy> <mode> (mode normal=0, auto=1, manual=2, both=3)\n"
 		"\tpktc <0 or 1>\n"
 		"\tpktcbnd <val>\n"
 		,		
