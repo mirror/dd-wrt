@@ -16,7 +16,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: etc.c 381881 2013-01-30 06:04:30Z $
+ * $Id: etc.c 393340 2013-03-27 06:10:49Z $
  */
 
 #include <et_cfg.h>
@@ -563,7 +563,7 @@ etc_watchdog(etc_info_t *etc)
 	robo_info_t *robo = (robo_info_t *)etc->robo;
 #endif
 #if defined(ETROBO) && !defined(_CFE_)
-	static uint32 sleep_timer = PWRSAVE_SLEEP_TIME, wake_timer;
+	static uint32 sleep_timer = PWRSAVE_SLEEP_TIME, wake_timer = 0;
 #endif /* ETROBO && !_CFE_ */
 
 	etc->now++;
@@ -584,10 +584,14 @@ etc_watchdog(etc_info_t *etc)
 		if (ROBO_IS_PWRSAVE_MANUAL(robo)) {
 			if (etc->now == sleep_timer) {
 				robo_power_save_toggle(robo, FALSE);
-				wake_timer = sleep_timer + PWRSAVE_WAKE_TIME;
+				wake_timer = sleep_timer + robo->pwrsave_wake_time;
 			} else if (etc->now == wake_timer) {
 				robo_power_save_toggle(robo, TRUE);
-				sleep_timer = wake_timer + PWRSAVE_SLEEP_TIME;
+				sleep_timer = wake_timer + robo->pwrsave_sleep_time;
+			}
+			else if (etc->now > sleep_timer && etc->now > wake_timer) {
+				/* Power save may be actived after startup */
+				etc->now = sleep_timer - 1;
 			}
 		}
 

@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmrobo.c 363505 2012-10-18 01:58:09Z $
+ * $Id: bcmrobo.c 393355 2013-03-27 07:07:02Z $
  */
 
 
@@ -1104,6 +1104,12 @@ bcm_robo_attach(si_t *sih, void *h, char *vars, miird_f miird, miiwr_f miiwr)
 	 * set the default value in the beginning
 	 */
 	robo->pwrsave_mode_manual = getintvar(robo->vars, "switch_mode_manual");
+	robo->pwrsave_sleep_time = getintvar(robo->vars, "switch_pwrsave_sleep");
+	if (robo->pwrsave_sleep_time == 0)
+		robo->pwrsave_sleep_time = PWRSAVE_SLEEP_TIME;
+	robo->pwrsave_wake_time = getintvar(robo->vars, "switch_pwrsave_wake");
+	if (robo->pwrsave_wake_time == 0)
+		robo->pwrsave_wake_time = PWRSAVE_WAKE_TIME;
 	robo->pwrsave_mode_auto = getintvar(robo->vars, "switch_mode_auto");
 
 	/* Determining what all phys need to be included in
@@ -1933,6 +1939,10 @@ robo_power_save_mode_clear_manual(robo_info_t *robo, int32 phy)
 		val16 = robo->miird(robo->h, phy, REG_MII_CTRL);
 		val16 &= 0xf7ff;
 		robo->miiwr(robo->h, phy, REG_MII_CTRL, val16);
+	} else if (ROBO_IS_BCM5301X(robo->devid)) {
+		robo->ops->read_reg(robo, 0x10+phy, 0x00, &val16, sizeof(val16));
+		val16 &= 0xf7ff;
+		robo->ops->write_reg(robo, 0x10+phy, 0x00, &val16, sizeof(val16));
 	} else if (robo->devid == DEVID5325) {
 		if ((robo->sih->chip == BCM5357_CHIP_ID) ||
 		    (robo->sih->chip == BCM4749_CHIP_ID) ||
@@ -2110,6 +2120,10 @@ robo_power_save_mode_manual(robo_info_t *robo, int32 phy)
 		 */
 		val16 = robo->miird(robo->h, phy, REG_MII_CTRL);
 		robo->miiwr(robo->h, phy, REG_MII_CTRL, val16 | 0x800);
+	} else if (ROBO_IS_BCM5301X(robo->devid)) {
+		robo->ops->read_reg(robo, 0x10+phy, 0x00, &val16, sizeof(val16));
+		val16 |= 0x800;
+		robo->ops->write_reg(robo, 0x10+phy, 0x00, &val16, sizeof(val16));
 	} else  if (robo->devid == DEVID5325) {
 		if ((robo->sih->chip == BCM5357_CHIP_ID) ||
 		    (robo->sih->chip == BCM4749_CHIP_ID)||
