@@ -122,6 +122,11 @@ bgp_nexthop_same (struct nexthop *next1, struct nexthop *next2)
       if (! IPV4_ADDR_SAME (&next1->gate.ipv4, &next2->gate.ipv4))
 	return 0;
       break;
+    case ZEBRA_NEXTHOP_IPV4_IFINDEX:
+      if (! IPV4_ADDR_SAME (&next1->gate.ipv4, &next2->gate.ipv4)
+	  || next1->ifindex != next2->ifindex)
+	return 0;
+      break;
     case ZEBRA_NEXTHOP_IFINDEX:
     case ZEBRA_NEXTHOP_IFNAME:
       if (next1->ifindex != next2->ifindex)
@@ -827,6 +832,10 @@ zlookup_read (void)
 	    case ZEBRA_NEXTHOP_IPV4:
 	      nexthop->gate.ipv4.s_addr = stream_get_ipv4 (s);
 	      break;
+	    case ZEBRA_NEXTHOP_IPV4_IFINDEX:
+	      nexthop->gate.ipv4.s_addr = stream_get_ipv4 (s);
+	      nexthop->ifindex = stream_getl (s);
+	      break;
 	    case ZEBRA_NEXTHOP_IFINDEX:
 	    case ZEBRA_NEXTHOP_IFNAME:
 	      nexthop->ifindex = stream_getl (s);
@@ -1079,14 +1088,20 @@ bgp_import_check (struct prefix *p, u_int32_t *igpmetric,
     {
       nexthop.s_addr = 0;
       nexthop_type = stream_getc (s);
-      if (nexthop_type == ZEBRA_NEXTHOP_IPV4)
+      switch (nexthop_type)
 	{
+	case ZEBRA_NEXTHOP_IPV4:
 	  nexthop.s_addr = stream_get_ipv4 (s);
-	  if (igpnexthop)
-	    *igpnexthop = nexthop;
+	  break;
+	case ZEBRA_NEXTHOP_IPV4_IFINDEX:
+	  nexthop.s_addr = stream_get_ipv4 (s);
+	  /* ifindex */ (void)stream_getl (s);
+	  break;
+	default:
+	  /* do nothing */
+	  break;
 	}
-      else
-	*igpnexthop = nexthop;
+      *igpnexthop = nexthop;
 
       return 1;
     }
@@ -1298,6 +1313,10 @@ show_ip_bgp_scan_tables (struct vty *vty, const char detail)
 	      {
 	      case NEXTHOP_TYPE_IPV4:
 		vty_out (vty, "  gate %s%s", inet_ntop (AF_INET, &bnc->nexthop[i].gate.ipv4, buf, INET6_ADDRSTRLEN), VTY_NEWLINE);
+		break;
+	      case NEXTHOP_TYPE_IPV4_IFINDEX:
+		vty_out (vty, "  gate %s", inet_ntop (AF_INET, &bnc->nexthop[i].gate.ipv4, buf, INET6_ADDRSTRLEN));
+		vty_out (vty, " ifidx %u%s", bnc->nexthop[i].ifindex, VTY_NEWLINE);
 		break;
 	      case NEXTHOP_TYPE_IFINDEX:
 		vty_out (vty, "  ifidx %u%s", bnc->nexthop[i].ifindex, VTY_NEWLINE);
