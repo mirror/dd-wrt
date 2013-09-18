@@ -997,34 +997,90 @@ bcm5301x_usb30_phy_init(void)
 	writel(0x0000009a, ccb_mii_mng_ctrl_addr);
 	OSL_DELAY(2);
 
-	/* PLL30 block */
-	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-	writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
+	if (CHIPID(sih->chip) == BCM4707_CHIP_ID) {
+		/* PLL30 block */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
 
-	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-	writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
 
-	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-	writel(0x587e80e0, ccb_mii_mng_cmd_data_addr);
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x587e80e0, ccb_mii_mng_cmd_data_addr);
 
-	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-	writel(0x580a009c, ccb_mii_mng_cmd_data_addr);
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x580a009c, ccb_mii_mng_cmd_data_addr);
 
-	/* Enable SSC */
-	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-	writel(0x587e8040, ccb_mii_mng_cmd_data_addr);
+		/* Enable SSC */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x587e8040, ccb_mii_mng_cmd_data_addr);
 
-	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-	writel(0x580a21d3, ccb_mii_mng_cmd_data_addr);
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x580a21d3, ccb_mii_mng_cmd_data_addr);
 
-	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
-	writel(0x58061003, ccb_mii_mng_cmd_data_addr);
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x58061003, ccb_mii_mng_cmd_data_addr);
 
-	/* Waiting MII Mgt interface idle */
-	SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		/* Waiting MII Mgt interface idle */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
 
-	/* Deasserting USB3 system reset */
-	writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
+		/* Deasserting USB3 system reset */
+		writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
+	}
+	else if (CHIPID(sih->chip) == BCM53018_CHIP_ID) {
+		/* USB3 PLL Block */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x587e8000, ccb_mii_mng_cmd_data_addr);
+
+		/* Assert Ana_Pllseq start */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x58061000, ccb_mii_mng_cmd_data_addr);
+
+		/* Assert CML Divider ratio to 26 */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x582a6400, ccb_mii_mng_cmd_data_addr);
+
+		/* Asserting PLL Reset */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x582ec000, ccb_mii_mng_cmd_data_addr);
+
+		/* Deaaserting PLL Reset */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x582e8000, ccb_mii_mng_cmd_data_addr);
+
+		/* Waiting MII Mgt interface idle */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+
+		/* Deasserting USB3 system reset */
+		writel(0x00000000, usb3_idm_idm_reset_ctrl_addr);
+
+		/* PLL frequency monitor enable */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x58069000, ccb_mii_mng_cmd_data_addr);
+
+		/* PIPE Block */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x587e8060, ccb_mii_mng_cmd_data_addr);
+
+		/* CMPMAX & CMPMINTH setting */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x580af30d, ccb_mii_mng_cmd_data_addr);
+
+		/* DEGLITCH MIN & MAX setting */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x580e6302, ccb_mii_mng_cmd_data_addr);
+
+		/* TXPMD block */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x587e8040, ccb_mii_mng_cmd_data_addr);
+
+		/* Enabling SSC */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+		writel(0x58061003, ccb_mii_mng_cmd_data_addr);
+
+		/* Waiting MII Mgt interface idle */
+		SPINWAIT((((readl(ccb_mii_mng_ctrl_addr) >> 8) & 1) == 1), 1000);
+	}
 
 	/* Reg unmap */
 	REG_UNMAP((void *)ccb_mii_base);
@@ -1125,6 +1181,13 @@ static int __init allow_gen2_rc(struct soc_pcie_port *port)
 	uint32 vendorid, devid, chipid, chiprev;
 	uint32 val, bar, base;
 	int allow = 1;
+	char *p;
+
+	/* Force GEN1 if specified in NVRAM */
+	if ((p = nvram_get("forcegen1rc")) != NULL && simple_strtoul(p, NULL, 0) == 1) {
+		printk(KERN_NOTICE "Force PCIE RC to GEN1 only\n");
+		return 0;
+	}
 
 	/* Read PCI vendor/device ID's */
 	__raw_writel(0x0, port->reg_base + SOC_PCIE_CFG_ADDR);
@@ -1176,7 +1239,7 @@ bcm5301x_3rd_pcie_init(void)
 	uint32 *ccb_mii_mng_cmd_data_addr;
 
 	/* Check Chip ID */
-	if (CHIPID(sih->chip) != BCM4707_CHIP_ID ||
+	if (!BCM4707_CHIP(CHIPID(sih->chip)) ||
 	    (sih->chippkg != BCM4708_PKG_ID && sih->chippkg != BCM4709_PKG_ID))
 		return;
 

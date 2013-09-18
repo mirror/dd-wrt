@@ -40,7 +40,6 @@ config PLAT_BCM5301X
 	select CACHE_L310 
 	select PCI
 	select PCI_DOMAINS if PCI
-	select HIGHMEM
 	depends on PLAT_MPCORE
 	depends on PLAT_IPROC
 	depends on PLAT_IHOST
