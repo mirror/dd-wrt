@@ -53,10 +53,8 @@ host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = testsig$(EXEEXT) testbuffer$(EXEEXT) \
 	testmemory$(EXEEXT) heavy$(EXEEXT) heavywq$(EXEEXT) \
-	heavythread$(EXEEXT) aspathtest$(EXEEXT) testprivs$(EXEEXT) \
-	teststream$(EXEEXT) testbgpcap$(EXEEXT) ecommtest$(EXEEXT) \
-	testbgpmpattr$(EXEEXT) testchecksum$(EXEEXT) \
-	testbgpmpath$(EXEEXT) tabletest$(EXEEXT)
+	heavythread$(EXEEXT) testprivs$(EXEEXT) teststream$(EXEEXT) \
+	testchecksum$(EXEEXT) tabletest$(EXEEXT) $(am__EXEEXT_1)
 subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(top_srcdir)/depcomp
@@ -71,6 +69,9 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+@BGPD_TRUE@am__EXEEXT_1 = aspathtest$(EXEEXT) testbgpcap$(EXEEXT) \
+@BGPD_TRUE@	ecommtest$(EXEEXT) testbgpmpattr$(EXEEXT) \
+@BGPD_TRUE@	testbgpmpath$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_aspathtest_OBJECTS = aspath_test.$(OBJEXT)
 aspathtest_OBJECTS = $(am_aspathtest_OBJECTS)
@@ -323,6 +324,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CFLAGS = $(PICFLAGS)
 AM_LDFLAGS = $(PILDFLAGS)
+@BGPD_FALSE@TESTS_BGPD = 
+@BGPD_TRUE@TESTS_BGPD = aspathtest testbgpcap ecommtest testbgpmpattr testbgpmpath
 testsig_SOURCES = test-sig.c
 testbuffer_SOURCES = test-buffer.c
 testmemory_SOURCES = test-memory.c

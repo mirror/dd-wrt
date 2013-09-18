@@ -1,5 +1,24 @@
 Note: this file lists major user-visible changes only.
 
+* Changes in Quagga 0.99.22.4
+
+- [ospfd] Protect other implementations from malformed LSAs; see
+  http://www.kb.cert.org/vuls/id/229804 for details.
+
+- [bgpd, zebra]: improve NEXTHOP_IPV4_IFINDEX support (non-security bugfix)
+
+* Changes in Quagga 0.99.22.3
+
+- [ospfd] This release fixes a security issue in OSPF-API.
+
+* Changes in Quagga 0.99.22.2
+
+- This release never existed.
+
+* Changes in Quagga 0.99.22.1
+
+- This release has several non-security bugfixes.
+
 * Changes in Quagga 0.99.22
 
 - [bgpd] The semantics of default-originate route-map have changed.

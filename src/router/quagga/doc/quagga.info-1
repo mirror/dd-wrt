@@ -1,6 +1,6 @@
 This is quagga.info, produced by makeinfo version 4.13 from quagga.texi.
 
-Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
+{No value for `COPYRIGHT_STR'}
 
      Permission is granted to make and distribute verbatim copies of
      this manual provided the copyright notice and this permission
@@ -18,16 +18,16 @@ Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
 INFO-DIR-SECTION Routing Software:
 START-INFO-DIR-ENTRY
-* Quagga: (quagga).		The Quagga Software Routing Suite
+* {No value for `PACKAGE_NAME'}: (quagga).		The Quagga Software Routing Suite
 END-INFO-DIR-ENTRY
 
    This file documents the Quagga Software Routing Suite which manages
 common TCP/IP routing protocols.
 
-   This is Edition 0.99.22, last updated 27 January 2013 of `The Quagga
-Manual', for Quagga Version 0.99.22.
+   This is Edition 0.99.22.4, last updated 4 August 2013 of `The Quagga
+Manual', for {No value for `PACKAGE_NAME'} Version 0.99.22.4.
 
-   Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
+   {No value for `COPYRIGHT_STR'}
 
      Permission is granted to make and distribute verbatim copies of
      this manual provided the copyright notice and this permission
@@ -50,10 +50,10 @@ Quagga
 ******
 
 Quagga is an advanced routing software package that provides a suite of
-TCP/IP based routing protocols.  This is the Manual for Quagga 0.99.22.
-Quagga is a fork of GNU Zebra.
+TCP/IP based routing protocols.  This is the Manual for {No value for
+`PACKAGE_STRING'}. Quagga is a fork of GNU Zebra.
 
-   Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
+   {No value for `COPYRIGHT_STR'}
 
      Permission is granted to make and distribute verbatim copies of
      this manual provided the copyright notice and this permission
@@ -707,7 +707,7 @@ added to `/etc/services' so there is no need to add it. If you specify
 a port number when starting the daemon, these entries may not be needed.
 
    You may need to make changes to the config files in
-`/etc/quagga/*.conf'. *Note Config Commands::.
+`{No value for `INSTALL_PREFIX_ETC'}/*.conf'. *Note Config Commands::.
 
 
 File: quagga.info,  Node: Basic commands,  Next: Zebra,  Prev: Installation,  Up: Top
@@ -752,12 +752,12 @@ it is starting.
 
    Config files are generally found in:
 
-     `/etc/quagga/*.conf'
+     `{No value for `INSTALL_PREFIX_ETC'}/*.conf'
 
    Each of the daemons has its own config file.  For example, zebra's
 default config file name is:
 
-     `/etc/quagga/zebra.conf'
+     `{No value for `INSTALL_PREFIX_ETC'}/zebra.conf'
 
    The daemon name plus `.conf' is the default config file name. You
 can specify a config file using the `-f' or `--config-file' options
@@ -963,7 +963,8 @@ File: quagga.info,  Node: Terminal Mode Commands,  Next: Config Commands,  Up: B
      List all available commands.
 
  -- Command: show version
-     Show the current version of Quagga and its build host information.
+     Show the current version of {No value for `PACKAGE_NAME'} and its
+     build host information.
 
  -- Command: show logging
      Shows the current configuration of the logging system.  This
@@ -979,7 +980,7 @@ File: quagga.info,  Node: Common Invocation Options,  Next: Virtual Terminal Int
 3.3 Common Invocation Options
 =============================
 
-These options apply to all Quagga daemons.
+These options apply to all {No value for `PACKAGE_NAME'} daemons.
 
 `-d'
 `--daemon'
@@ -1002,9 +1003,10 @@ These options apply to all Quagga daemons.
 
      The file name is an run-time option rather than a configure-time
      option so that multiple routing daemons can be run simultaneously.
-     This is useful when using Quagga to implement a routing looking
-     glass.  One machine can be used to collect differing routing views
-     from differing points in the network.
+     This is useful when using {No value for `PACKAGE_NAME'} to
+     implement a routing looking glass.  One machine can be used to
+     collect differing routing views from differing points in the
+     network.
 
 `-A ADDRESS'
 `--vty_addr=ADDRESS'
@@ -1058,8 +1060,8 @@ all.
      Connected to localhost.
      Escape character is '^]'.
 
-     Hello, this is Quagga (version 0.99.22)
-     Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
+     Hello, this is {No value for `PACKAGE_NAME'} (version 0.99.22.4)
+     {No value for `COPYRIGHT_STR'}
 
      User Access Verification
 
@@ -1567,8 +1569,9 @@ File: quagga.info,  Node: Starting and Stopping ripd,  Next: RIP Configuration, 
 ==============================
 
 The default configuration file name of `ripd''s is `ripd.conf'.  When
-invocation `ripd' searches directory /etc/quagga.  If `ripd.conf' is
-not there next search current directory.
+invocation `ripd' searches directory {No value for
+`INSTALL_PREFIX_ETC'}.  If `ripd.conf' is not there next search current
+directory.
 
    RIP uses UDP port 520 to send and receive RIP packets.  So the user
 must have the capability to bind the port, generally this means that
@@ -3170,8 +3173,9 @@ File: quagga.info,  Node: Starting BGP,  Next: BGP router,  Up: BGP
 =================
 
 Default configuration file of `bgpd' is `bgpd.conf'.  `bgpd' searches
-the current directory first then /etc/quagga/bgpd.conf.  All of bgpd's
-command must be configured in `bgpd.conf'.
+the current directory first then {No value for
+`INSTALL_PREFIX_ETC'}/bgpd.conf.  All of bgpd's command must be
+configured in `bgpd.conf'.
 
    `bgpd' specific invocation options are described below.  Common
 options may also be specified (*note Common Invocation Options::).
@@ -5286,10 +5290,10 @@ File: quagga.info,  Node: VTY shell,  Next: Filtering,  Prev: Configuring Quagga
    To use vtysh please specify --enable-vtysh to configure script.  To
 use PAM for authentication use --with-libpam option to configure script.
 
-   vtysh only searches /etc/quagga path for vtysh.conf which is the
-vtysh configuration file.  Vtysh does not search current directory for
-configuration file because the file includes user authentication
-settings.
+   vtysh only searches {No value for `INSTALL_PREFIX_ETC'} path for
+vtysh.conf which is the vtysh configuration file.  Vtysh does not
+search current directory for configuration file because the file
+includes user authentication settings.
 
    Currently, vtysh.conf has only two commands.
 
@@ -5864,11 +5868,7 @@ File: quagga.info,  Node: Router Advertisement,  Up: IPv6 Support
 
      Default: 0
 
-   +
-
  -- Interface Command: ipv6 nd home-agent-lifetime <0-65520>
-     +
-
  -- Interface Command: no ipv6 nd home-agent-lifetime [<0-65520>]
      The value to be placed in Home Agent Option, when Home Agent
      config flag is set, which indicates to hosts Home Agent Lifetime.
