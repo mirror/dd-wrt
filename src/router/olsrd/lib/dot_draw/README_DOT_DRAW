@@ -23,7 +23,7 @@ ABOUT
 
 Note that this code is a quick hack done at the Wizards Of Oz 3
 
-The plugin generates output (over a TCP socket) in the dot format.
+The plugin generates output (over a TCP-IPv4 socket) in the dot format.
 The dot tool generates visual presentations of directed graphs.
 It can be downloaded as part of the GraphViz package from:
 http://www.graphviz.org/
@@ -38,6 +38,8 @@ make install
 
 olsr-topology-view.pl is a simple script to visualize the dotdraw data
 on your computer. You will find some more explanations about the script at
+http://n0rg.org/node1448/OlsrTopologyVisualization/OlsrTopologyVisualization.htm
+or
 http://br1.einfach.org/OlsrTopologyVisualization
 
 - Henning Rogge

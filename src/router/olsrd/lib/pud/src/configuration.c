@@ -1421,11 +1421,6 @@ int setUseLoopback(const char *value, void *data __attribute__ ((unused)),
 unsigned int checkConfig(void) {
 	int retval = true;
 
-	if (!olsr_cnf->smart_gw_active) {
-		pudError(false, "Smart Gateway must be active");
-		retval = false;
-	}
-
 	if (rxNonOlsrInterfaceCount == 0) {
 		pudError(false, "No receive non-OLSR interfaces configured");
 		retval = false;

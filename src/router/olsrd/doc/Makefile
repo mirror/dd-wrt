@@ -56,10 +56,10 @@ clean:
 doc: $(DOX_FILE)
 	@echo "[$@] doc"
 	@echo "  Cleaning up $(OS) outputs..."
-	@rm -fr "$(HTML_OUTPUT)" "$(LATEX_OUTPUT)" "$(PDF_OUTPUT)"
-	@mkdir -p "$(HTML_OUTPUT)"
-	@mkdir -p "$(LATEX_OUTPUT)"
-	@mkdir -p "$(PDF_DIR)"
+	@rm -frv "$(HTML_OUTPUT)" "$(LATEX_OUTPUT)" "$(PDF_OUTPUT)"
+	@mkdir -pv "$(HTML_OUTPUT)"
+	@mkdir -pv "$(LATEX_OUTPUT)"
+	@mkdir -pv "$(PDF_DIR)"
 	@echo "  Generating doxygen configuration..."
 	@sed \
 	  -e "s/__OLSRD_VER__/$(OLSRD_VER)/" \
@@ -72,11 +72,11 @@ doc: $(DOX_FILE)
 	  "$(DOX_FILE)" > "$(TMP_DOX_FILE)"
 	@echo "  Running doxygen to create HTML..."
 	@doxygen "$(TMP_DOX_FILE)"
-	@rm -f "$(TMP_DOX_FILE)"
+	@rm -fv "$(TMP_DOX_FILE)"
 	@echo "  Running latex to create a PDF..."
-	@$(MAKE) -s -C $(LATEX_OUTPUT) all > /dev/null 2>&1
-	@mkdir -p "$(PDF_DIR)"
-	@mv "$(LATEX_OUTPUT)/refman.pdf" "$(PDF_OUTPUT)"
-	@rm -fr "$(LATEX_OUTPUT)"
-	@rmdir --ignore-fail-on-non-empty "$(LATEX_DIR)"
+	@$(MAKE) -s -C $(LATEX_OUTPUT) all
+	@mkdir -pv "$(PDF_DIR)"
+	@mv -v "$(LATEX_OUTPUT)/refman.pdf" "$(PDF_OUTPUT)"
+	@rm -frv "$(LATEX_OUTPUT)"
+	@rmdir -v --ignore-fail-on-non-empty "$(LATEX_DIR)"
 	@echo "  Done"

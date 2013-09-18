@@ -251,20 +251,49 @@ All other parameters will be ignored if SmartGateway is set to "no"
 
     5.2) Client Side
 
-1- SmartGatewayAllowNAT controls whether you want to allow the selection
+1- SmartGatewayUseCount controls the maximum number of gateways that can be
+   in use at any given time. This setting is used to mitigate the effects of
+   breaking connections (due to the selection of a new gateway) on a dynamic
+   network.
+   The default setting is 1.
+2- SmartGatewayTakeDownPercentage determines the take-down percentage for a
+   non-current smart gateway tunnel. If the cost of the current smart gateway
+   tunnel is less than this percentage of the cost of the non-current smart
+   gateway tunnel, then the non-current smart gateway tunnel is taken down
+   because it is then presumed to be 'too expensive'.
+   This setting is only relevant when SmartGatewayUseCount is larger than 1;
+   a value of 0 will result in the tunnels not being taken down proactively.
+   The default setting is 0.
+3- SmartGatewayPolicyRoutingScript controles the policy routing script that is
+   executed during startup and shutdown of olsrd. The script is only executed
+   when SmartGatewayUseCount is set to a value larger than 1. The script must
+   setup policy routing rules such that multi-gateway mode works. A sample
+   script is included.
+   The default setting is 'not set'.
+4- SmartGatewayEgressInterfaces determines the egress interfaces that are part
+   of the multi-gateway setup and therefore only relevant when
+   SmartGatewayUseCount is larger than 1 (in which case it must be explicitly
+   set).
+   The default setting is 'not set'.
+5- SmartGatewayMarkOffsetEgress and SmartGatewayMarkOffsetTunnels determine
+   the ranges of policy routing rule markings that are used in a multi-gateway
+   setup. The ranges are not allowed to overlap. Both settings are only
+   relevant when a multi-gateway setup is used.
+   The default settings are 91 and 101 respectively.
+6- SmartGatewayAllowNAT controls whether you want to allow the selection
    of an outgoing ipv4 gateway with NAT (Network Address Translation).
    The default setting is "yes".
-2- SmartGatewayPeriod determines the period (in milliseconds) on which
+7- SmartGatewayPeriod determines the period (in milliseconds) on which
    a new smart gateway selection is performed.
    The default setting is 10000 milliseconds.
-3- SmartGatewayStableCount determines the number of times the link state
+8- SmartGatewayStableCount determines the number of times the link state
    database must be stable before a new smart gateway is selected.
    The default setting is 6.
-4- SmartGatewayThreshold controls whether you want to allow re-selection
+9- SmartGatewayThreshold controls whether you want to allow re-selection
    of a new outgoing gateway if its routing cost is lower or equal to the
    configured percentage of the routing cost of the current gateway.
    The default setting is 0, which disables it.
-5- SmartGatewayWeightExitLinkUp, SmartGatewayWeightExitLinkDown,
+10-SmartGatewayWeightExitLinkUp, SmartGatewayWeightExitLinkDown,
    SmartGatewayWeightEtx and SmartGatewayDividerEtx control the weighing
    of gateway bandwidth and ETX costs.
 
@@ -331,6 +360,9 @@ All other parameters will be ignored if SmartGateway is set to "no"
    local IPv6 address to use the IPv6 gateway without any kind of address
    translation. The maximum prefix length is 64 bits,
    the default is ::/0 (no prefix).
+5- SmartGatewayAlwaysRemoveServerTunnel can be used to signal that the
+   server tunnel must always be removed on shutdown, irrespective of the
+   interface up/down state during startup.
 
 
     5.4) Architecture & Notes

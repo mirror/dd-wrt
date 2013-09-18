@@ -68,6 +68,7 @@
 
 #include "ipcalc.h"
 #include "olsr.h"
+#include "builddata.h"
 #include "olsr_types.h"
 #include "neighbor_table.h"
 #include "two_hop_neighbor_table.h"

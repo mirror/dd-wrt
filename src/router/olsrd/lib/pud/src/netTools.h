@@ -11,9 +11,10 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <net/if.h>
+#include <netinet/in.h>
 
 
-#ifdef __ANDROID_API__
+#ifdef __ANDROID__
 typedef __in_port_t in_port_t;
 #endif /* __ANDROID_API__ */
 
@@ -56,6 +57,26 @@ static inline void setOlsrSockaddrPort(union olsr_sockaddr * addr, in_port_t por
 		addr->in4.sin_port = port;
 	} else {
 		addr->in6.sin6_port = port;
+	}
+}
+
+/**
+ Set the IP address in an OLSR socket address
+
+ @param addr
+ A pointer to OLSR socket address
+ @param addr
+ A pointer to the IP address (in network byte order)
+ */
+static inline void setOlsrSockaddrAddr(union olsr_sockaddr * addr, void * ip) {
+	if (!addr) {
+		return;
+	}
+
+	if (addr->in.sa_family == AF_INET) {
+		addr->in4.sin_addr = *((struct in_addr *)ip);
+	} else {
+		addr->in6.sin6_addr = *((struct in6_addr *)ip);
 	}
 }
 
