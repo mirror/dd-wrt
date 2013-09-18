@@ -880,7 +880,7 @@ spiflash_init(si_t *sih)
 
 	spiflash.size = spiflash.blocksize * spiflash.numblocks;
 
-	if (CHIPID(sih->chip) == BCM4707_CHIP_ID) {
+	if (BCM4707_CHIP(CHIPID(sih->chip))) {
 		uint32 chip_rev, straps_ctrl;
 		uint32 *srab_base, *dmu_base;
 		/* Get chip revision */
@@ -888,7 +888,7 @@ spiflash_init(si_t *sih)
 		W_REG(osh, (uint32 *)((uint32)srab_base + CHIPCB_SRAB_CMDSTAT_OFFSET), 0x02400001);
 		chip_rev = R_REG(osh, (uint32 *)((uint32)srab_base + CHIPCB_SRAB_RDL_OFFSET)) & 0x3;
 		REG_UNMAP(srab_base);
-		if (chip_rev < 2) {
+		if (CHIPID(sih->chip) == BCM4707_CHIP_ID && chip_rev < 2) {
 			force_3byte_mode = 1;
 		}
 		/* Check 4BYTE_MODE strap */
