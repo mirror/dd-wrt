@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmutils.h 376091 2012-12-21 06:53:20Z $
+ * $Id: bcmutils.h 395988 2013-04-10 15:30:09Z $
  */
 
 #ifndef	_bcmutils_h_
@@ -149,7 +149,16 @@ typedef struct {
 	uint32 queue_capacity; /* the maximum capacity of the queue */
 	uint32 rtsfail;        /* count of rts attempts that failed to receive cts */
 	uint32 acked;          /* count of packets sent (acked) successfully */
+	uint32 txrate_succ;    /* running total of phy rate of packets sent successfully */
+	uint32 txrate_main;    /* running totoal of primary phy rate of all packets */
+	uint32 throughput;     /* actual data transferred successfully */
+	uint32  _logtime;      /* timestamp of last counter clear  */
 } pktq_counters_t;
+
+typedef struct {
+	uint32			_prec_log;
+	pktq_counters_t*	_prec_cnt[PKTQ_MAX_PREC];     /* Counters per queue  */
+} pktq_log_t;
 #endif /* PKTQ_LOG */
 
 
@@ -165,9 +174,7 @@ struct pktq {
 	/* q array must be last since # of elements can be either PKTQ_MAX_PREC or 1 */
 	struct pktq_prec q[PKTQ_MAX_PREC];
 #ifdef PKTQ_LOG
-	pktq_counters_t	_prec_cnt[PKTQ_MAX_PREC];     /* Counters per queue  */
-	pktq_counters_t _prec_bytes[PKTQ_MAX_PREC];   /* Byte count per queue  */
-	uint32 _logtime;                   /* timestamp of last counter clear  */
+	pktq_log_t*      pktqlog;
 #endif
 };
 
