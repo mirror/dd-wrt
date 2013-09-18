@@ -18,7 +18,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: wlioctl.h 390365 2013-03-12 01:48:24Z $
+ * $Id: wlioctl.h 395988 2013-04-10 15:30:09Z $
  */
 
 #ifndef _wlioctl_h_
@@ -4386,6 +4386,16 @@ typedef struct {
 	struct ether_addr ea[WL_IOV_MAC_PARAM_LEN];
 } wl_iov_mac_params_t;
 
+/* This is extra info that follows wl_iov_mac_params_t */
+typedef struct {
+	uint32 addr_info[WL_IOV_MAC_PARAM_LEN];
+} wl_iov_mac_extra_params_t;
+
+/* Combined structure */
+typedef struct {
+	wl_iov_mac_params_t params;
+	wl_iov_mac_extra_params_t extra_params;
+} wl_iov_mac_full_params_t;
 
 /* Parameter block for PKTQ_LOG statistics */
 typedef struct {
@@ -4407,35 +4417,7 @@ typedef struct {
 	uint32 busy;           /* packets droped because of hardware/transmission error */
 	uint32 retry;          /* packets re-sent because they were not received */
 	uint32 ps_retry;       /* packets retried again prior to moving power save mode */
-	uint32 retry_drop;     /* packets finally dropped after retry limit */
-	uint32 max_avail;      /* the high-water mark of the queue capacity for packets -
-	                          goes to zero as queue fills
-	                       */
-	uint32 max_used;       /* the high-water mark of the queue utilisation for packets -
-	                          increases with use ('inverse' of max_avail)
-	                       */
-	uint32 queue_capacity; /* the maximum capacity of the queue */
-} pktq_log_counters_v01_t;
-
-typedef struct {
-	uint32 requested;      /* packets requested to be stored */
-	uint32 stored;         /* packets stored */
-	uint32 saved;          /* packets saved,
-	                          because a lowest priority queue has given away one packet
-	                       */
-	uint32 selfsaved;      /* packets saved,
-	                          because an older packet from the same queue has been dropped
-	                       */
-	uint32 full_dropped;   /* packets dropped,
-	                          because pktq is full with higher precedence packets
-	                       */
-	uint32 dropped;        /* packets dropped because pktq per that precedence is full */
-	uint32 sacrificed;     /* packets dropped,
-	                          in order to save one from a queue of a highest priority
-	                       */
-	uint32 busy;           /* packets droped because of hardware/transmission error */
-	uint32 retry;          /* packets re-sent because they were not received */
-	uint32 ps_retry;       /* packets retried again prior to moving power save mode */
+	uint32 suppress;       /* suppressed packet count */
 	uint32 retry_drop;     /* packets finally dropped after retry limit */
 	uint32 max_avail;      /* the high-water mark of the queue capacity for packets -
 	                          goes to zero as queue fills
@@ -4446,31 +4428,28 @@ typedef struct {
 	uint32 queue_capacity; /* the maximum capacity of the queue */
 	uint32 rtsfail;        /* count of rts attempts that failed to receive cts */
 	uint32 acked;          /* count of packets sent (acked) successfully */
-} pktq_log_counters_v02_t;
+	uint32 txrate_succ;    /* running total of phy rate of packets sent successfully */
+	uint32 txrate_main;    /* running total of phy 'main' rate */
+	uint32 throughput;     /* actual data transferred successfully */
+	uint32 time_delta;     /* time difference since last pktq_stats */
+} pktq_log_counters_v04_t;
 
 #define sacrified sacrificed
 
 typedef struct {
 	uint8                num_prec[WL_IOV_MAC_PARAM_LEN];
-	pktq_log_counters_v01_t  counters[WL_IOV_MAC_PARAM_LEN][WL_IOV_PKTQ_LOG_PRECS];
+	pktq_log_counters_v04_t  counters[WL_IOV_MAC_PARAM_LEN][WL_IOV_PKTQ_LOG_PRECS];
+	uint32               counter_info[WL_IOV_MAC_PARAM_LEN];
+	uint32               pspretend_time_delta[WL_IOV_MAC_PARAM_LEN];
 	char                 headings[1];
-} pktq_log_format_v01_t;
-
-typedef struct {
-	uint8                num_prec[WL_IOV_MAC_PARAM_LEN];
-	pktq_log_counters_v02_t  counters[WL_IOV_MAC_PARAM_LEN][WL_IOV_PKTQ_LOG_PRECS];
-	uint32               throughput[WL_IOV_MAC_PARAM_LEN][WL_IOV_PKTQ_LOG_PRECS];
-	uint32               time_delta;
-	char                 headings[1];
-} pktq_log_format_v02_t;
+} pktq_log_format_v04_t;
 
 
 typedef struct {
 	uint32               version;
 	wl_iov_mac_params_t  params;
 	union {
-		pktq_log_format_v01_t v01;
-		pktq_log_format_v02_t v02;
+		pktq_log_format_v04_t v04;
 	} pktq_log;
 } wl_iov_pktq_log_t;
 
@@ -4794,6 +4773,8 @@ typedef struct assertlog_results {
 #define APCS_BTA		4
 #define APCS_TXDLY		5
 #define APCS_NONACSD	6
+#define APCS_DFS_REENTRY	7
+#define APCS_MAX		8
 
 /* number of ACS record entries */
 #define CHANIM_ACS_RECORD			10
@@ -5478,5 +5459,11 @@ typedef struct intfer_event {
 	scb_intfer_smpl_t stats[WLINTFER_STATS_NSMPLS];
 	scb_intfer_smpl_t hist_stats[WLINTFER_STATS_NSMPLS];
 } intfer_event_t;
+
+typedef struct wlc_dwds_config {
+	uint32		enable;
+	uint32		mode; /* STA/AP interface */
+	struct ether_addr ea;
+} wlc_dwds_config_t;
 
 #endif /* _wlioctl_h_ */
