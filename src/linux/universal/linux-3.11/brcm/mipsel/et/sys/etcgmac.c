@@ -16,7 +16,7 @@
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- * $Id: etcgmac.c 368367 2012-11-13 09:35:32Z $
+ * $Id: etcgmac.c 394331 2013-04-02 03:38:39Z $
  */
 
 #include <et_cfg.h>
@@ -335,7 +335,7 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 
 #ifndef _CFE_
 	/* override dma parameters, corerev 4 dma channel 1,2 and 3 default burstlen is 0. */
-	if (etc->corerev == 4) {
+	if (etc->corerev >= 4) {
 #define DMA_CTL_TX 0
 #define DMA_CTL_RX 1
 

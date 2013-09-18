@@ -341,6 +341,9 @@ module_param(msglevel, uint, 0644);
 static int passivemode = 0;
 module_param(passivemode, int, 0);
 #endif /* ET_ALL_PASSIVE */
+static int txworkq = 0;
+module_param(txworkq, int, 0);
+
 #define ET_TXQ_THRESH	0
 static int et_txq_thresh = ET_TXQ_THRESH;
 module_param(et_txq_thresh, int, 0);
@@ -736,6 +739,9 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		et->txq_task.context = et;
 		MY_INIT_WORK(&et->wd_task.work, (work_func_t)et_watchdog_task);
 		et->wd_task.context = et;
+	} else if (txworkq) {
+		MY_INIT_WORK(&et->txq_task.work, (work_func_t)et_txq_work);
+		et->txq_task.context = et;
 	}
 	et->all_dispatch_mode = (passivemode == 0) ? TRUE : FALSE;
 #endif  /* ET_ALL_PASSIVE */
@@ -935,6 +941,10 @@ et_module_init(void)
 		if (var)
 			passivemode = bcm_strtoul(var, NULL, 0);
 		printf("%s: passivemode set to 0x%x\n", __FUNCTION__, passivemode);
+		var = getvar(NULL, "txworkq");
+		if (var)
+			txworkq = bcm_strtoul(var, NULL, 0);
+		printf("%s: txworkq set to 0x%x\n", __FUNCTION__, txworkq);
 	}
 #endif /* ET_ALL_PASSIVE */
 	{
@@ -1216,7 +1226,7 @@ et_start(struct sk_buff *skb, struct net_device *dev)
 	/* Call in the same context when we are UP and non-passive is enabled */
 	if (ET_ALL_PASSIVE_ENAB(et) || (ET_RTR() && ET_CONFIG_SMP())) {
 		/* In smp non passive mode, schedule tasklet for tx */
-		if (!ET_ALL_PASSIVE_ENAB(et))
+		if (!ET_ALL_PASSIVE_ENAB(et) && txworkq == 0)
 			et_sched_tx_tasklet(et);
 #ifdef ET_ALL_PASSIVE
 		else {
@@ -2197,9 +2207,13 @@ et_dpc(ulong data)
 
 	/* run the tx queue */
 	if (et->etc->txq_state != 0) {
-		if (!ET_ALL_PASSIVE_ENAB(et))
+		if (!ET_ALL_PASSIVE_ENAB(et) && txworkq == 0)
 			et_sendnext(et);
 #ifdef ET_ALL_PASSIVE
+#ifdef CONFIG_SMP
+		else if (txworkq && online_cpus > 1)
+			schedule_work_on(1 - raw_smp_processor_id(), &et->txq_task.work);
+#endif
 		else
 			schedule_work(&et->txq_task.work);
 #endif /* ET_ALL_PASSIVE */
