@@ -65,7 +65,6 @@ zplugin_redistribute(const char *value, void *data __attribute__ ((unused)), set
 int
 zplugin_exportroutes(const char *value, void *data __attribute__ ((unused)), set_plugin_parameter_addon addon __attribute__ ((unused)))
 {
-
   if (!strcmp(value, "only")) {
     olsr_addroute_function = zebra_addroute;
     olsr_delroute_function = zebra_delroute;
@@ -73,11 +72,15 @@ zplugin_exportroutes(const char *value, void *data __attribute__ ((unused)), set
     olsr_delroute6_function = zebra_delroute;
     zebra.options |= OPTION_EXPORT;
   } else if (!strcmp(value, "additional")) {
+    zebra.orig_addroute_function = olsr_addroute_function;
+    zebra.orig_delroute_function = olsr_delroute_function;
+    zebra.orig_addroute6_function = olsr_addroute6_function;
+    zebra.orig_delroute6_function = olsr_delroute6_function;
     olsr_addroute_function = zebra_addroute;
     olsr_delroute_function = zebra_delroute;
     olsr_addroute6_function = zebra_addroute;
     olsr_delroute6_function = zebra_delroute;
-    zebra.options |= OPTION_EXPORT;
+    zebra.options |= OPTION_EXPORT | OPTION_ROUTE_ADDITIONAL;
   }
 
   return 0;

@@ -23,14 +23,9 @@ LoadPlugin "olsrd_dyn_gw.so.0.5"
 {
 }
 
-LoadPlugin "olsrd_httpinfo.so.0.1"
-{
-	PlParam "Net" "0.0.0.0 0.0.0.0"
-	PlParam "port" "1978"
-}
-
 LoadPlugin "olsrd_nameservice.so.0.3"
 {
+    # you should set this to your own node name
 	PlParam "name" "commotion-7814921"
 	PlParam "sighup-pid-file" "/var/run/dnsmasq.pid"
 	PlParam "suffix" ".mesh"
@@ -43,13 +38,21 @@ LoadPlugin "olsrd_p2pd.so.0.1.0"
 	PlParam "UdpDestPort" "224.0.0.251 5353"
 }
 
-LoadPlugin "olsrd_txtinfo.so.0.1"
+LoadPlugin "olsrd_jsoninfo.so.0.0"
 {
-	PlParam "accept" "0.0.0.0"
+#	PlParam "accept" "0.0.0.0"
 }
 
-Interface "wlan0"
+LoadPlugin "olsrd_txtinfo.so.0.1"
 {
+#	PlParam "accept" "0.0.0.0"
+}
+
+InterfaceDefaults
+{
+    # if you using this on Mac OS X, then comment this out because Mac OS X
+    # does weird things with 255.255.255.255. By commenting this out, olsrd
+    # will use the broadcast that's assigned to the network interface
 	Ip4Broadcast 255.255.255.255
 }
 

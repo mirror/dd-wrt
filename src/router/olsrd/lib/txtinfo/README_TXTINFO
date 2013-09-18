@@ -32,6 +32,7 @@ So what commands does the txtinfo plugin accept?
     * Routes: "/route" -> send_what=SIW_ROUTE
     * Topology: "/topo" -> send_what=SIW_TOPO
     * 2-hop neighbors: "/2hop" -> send_what=SIW_2HOP
+    * Version: "/ver" -> send_what=version of olsrd
 
 This is the same as the "/neigh" and "/link" commands combined:
 

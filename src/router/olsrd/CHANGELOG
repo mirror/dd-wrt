@@ -1,8 +1,153 @@
-0.6.5.4 -------------------------------------------------------------------
+0.6.6 -------------------------------------------------------------------
 
-Ferry Huberts (11):
+Bastian Bittorf (3):
+      [hotfix] plugin: httpinfo: in case of an unrecoverable error ("could not
+         initialize HTTP socket") exit for returnvalue != 0
+      plugin: dot_draw: readme: make it clear, that it only opens an
+         IPv4-socket, so a 'telnet ::1 2004' is not possible
+      plugin: dot_draw: readme: replaced a b0rken link
+
+Ferry Huberts (146):
+      Update version after branch of v0.6.5
+      gateway: store current gateway(s) in a struct
+      gateway: lazily allocate the current gateway structs
+      gateway: add path_cost to 'set gateway' interface
+      gateway: add interface to get the gateway costs
+      gateway: simplify by using the new costs interface
+      gateway: add gateway_list.{c,h}
+      gateway: keep track of the active gateways in a list
+      Merge branch 'release-0.6.5'
+      pud: java make target is dependent on library make target
+      Merge branch 'release-0.6.5'
+      Merge branch 'release-0.6.5'
+      json_info: only output smart gateway info on Linux
+      kernel_route: olsr_os_inetgw_tunnel_route can now take the table
+      gateway: let the gateway code determine the tunnel name
+      gateway: remove the worst gateway before adding new one
+      gateway: add SmartGatewayUseCount configuration parameter
+      gateway: use SmartGatewayUseCount setting the the gateway lists
+      gateway: add SmartGatewayEgressInterfaces configuration parameter
+      gateway: add SmartGatewayMarkOffset{Egress,Tunnels} configuration
+         parameters
+      gateway: add SmartGatewayPolicyRoutingScript configuration parameter
+      gateway: initialise a set of fixed tunnel names in/for multi-gateway mode
+      gateway: initialise the egress interface names in/for multi-gateway mode
+      gateway: use fixed tunnel names in/for multi-gateway mode
+      gateway: setup and clear table specific default routes in/for
+         multi-gateway mode
+      gateway: setup/cleanup multi-gateway mode during startup/shutdown of olsrd
+      gateway: introduce and use MULTI_GW_MODE define
+      gateway: enable multi-gateway mode
+      gateway: convert some defines into inline functions
+      kernel_route: olsr_os_inetgw_tunnel_route now needs the table explicitly
+      Merge branch 'multigw'
+      gateway: remove 2 superfluous asserts
+      gateway: add an assert to prevent an 'unused' warning
+      gateway: also adjust the IPv6 gateway list in olsr_update_gateway_entry
+      gateway: fix policy script permissions checking
+      gateway: the gateway policy script really is a bash script
+      gateway: minor indentation fixes in the gateway script
+      gateway: fix copy/paste mistake in setting up the egress rules
+      gateway: remove policy rules before adding them
+      gateway: ignore errors in remove-before-add rule removals
+      Revert "linux: name is required to be non-null in
+         olsr_os_cleanup_iptunnel"
+      gateway: do not show (bogus) errors
+      gateway: cleanup the server tunnel later
+      cfgparser: add SmartGatewayAlwaysRemoveServerTunnel configuration
+         parameter
+      gateway: use SmartGatewayAlwaysRemoveServerTunnel configuration parameter
+      gateway: fix a revert problem
+      gateway: use tnl_(4|6) tunnel names instead of tnl(4|6)_
+      gateway: properly set the egress interface names
+      json_info: do not loop forever on smart gateway egress interfaces
+      pud: the best uplink gateway is the same as the current (smart) gateway
+      pud: there is no hard dependency on smart gateway
+      pud: only forward downlinked messages when the smart gateway system is
+         enabled
+      pud: update documentation about smart gateway changes
+      gateway: fix 2 small typos in a comment
+      Revert "pud: the best uplink gateway is the same as the current (smart)
+         gateway"
+      pud: minor update resulting from the previous revert
+      pud: minor update to getBestUplinkGateway
+      gateway: minor improvement to get_unused_iptunnel_name
+      gateway: update some comments
+      gateway: remove 2 unneeded asserts
+      gateway: use standard macro to loop over the gateway tree in
+         olsr_cleanup_gateways
+      gateway: fix 'eligible' conditions in gw_default_choose_gateway
+      gateway: minor speed improvement in gw_default_choose_gateway
+      android: fix the path of the tunnel node in the /dev tree
+      pud: use the proper __ANDROID__ define
+      gateway: allow advertisement of zero bandwidth
+      gateway: add some comments
+      gateway: also set (update) the gateway when costs have changed
+      gateway: find_interfaceName only works in multi-gateway mode
+      gateway: simplify gw_default_calc_threshold
+      gateway: improve comments of gw_default_weigh_costs a bit
+      gateway: rename some variables to make it more readable
+      gateway: fix stable count dampening in gw_default_timer
+      gateway: do not use bitwise operators for logic conditions
+      gateway: reverse semantics of two variables
+      gateway: always select a new gateway when threshold != 0
+      main: add -pidfile command line option
+      main: fix pidfile compilation on windows
+      Merge branch 'release-0.6.5'
+      make: enable 32/64 bit cross compilation
+      pud: pull in nmealib v1.0.4
+      gateway: remove some 'unused' code from sgw script
+      make: fix typos in 'enable 32/64 bit cross compilation' commit
+      pud: enable 32/64 bit cross compilation for the java build
+      make: ifdef fixups
+      Merge branch 'release-0.6.5'
+      Merge branch 'release-0.6.5'
+      Merge branch 'release-0.6.5'
+      pud: detect the java include directory
+      dyn_gw: remove bogus include
+      make: fix a type in the Linux SUBDIRS assignment
+      make: add dyn_gw, mdns and p2pd to the Android SUBDIRS
+      pud: update nmealib 32/64 cross compilation
+      Revert "pud: update nmealib 32/64 cross compilation"
+      main: fix 2 minor warnings for win64 build on debian squeeze
+      make: only install sgw related files when sgw is supported
+      mdns: fix container_of pointer arith
+      mdns: don't use non-standard ushot type
+      mdns: fix three alignment warnings
+      mdns: supported on Android
+      p2pd: supported on Android
+      make: ensure win32 install respects DESTDIR
+      Merge branch 'release-0.6.5'
+      gateway: work around kernel IPIP module initialisation bug
+      gateway: fix overlap in success/fail IPIP tunnel init
+      doc: make the documentation generation commands a bit more verbose
+      pud: detect the java include directory
+      pud: better detection of java jdk
+      pud: better detection of java jdk
+      gateway: work around kernel IPIP module initialisation bug
+      Merge branch 'release-0.6.5'
+      PUD: nmealib: fix parsing of date in GPRMC
+      pud: nmealib: fixup the previous commit
+      main: use /dev/urandom by default
+      main: use /dev/urandom by default
+      pud: set local loopback for multicast tx
+      pud: set local loopback for multicast tx
+      Merge branch 'release-0.6.5'
+      arprefresh: fix some spelling
+      arprefresh: document the BPF program to make it readable
+      arprefresh: use the ARRAYSIZE macro
+      arprefresh: remove a comment
+      arprefresh: do not process IPv6 packets when in IPv4 mode
+      arprefresh: add a note about VLANs and IPv6
+      remove pthread usage as much as possible
+      Branch v0.6.6
       Remove mercurial ignore file; we use git
       build: ignore builddata.c when hashing sources
+      build: move build data into its own include file
+      gateway: always deal with 64bit scaled path costs
+      gateway: introduce and use removeGatewayFromList function
+      gateway: add SmartGatewayTakeDownPercentage configuration parameter
+      gateway: proactively take down 'expensive' gateways
       release: fix the list of generated files
       release: update some comments
       release: refactor the checkVersionIncrementing function
@@ -12,26 +157,42 @@ Ferry Huberts (11):
       release: also check against the Makefile version when branching
       txtinfo: prevent buffer overflow
       pud: nmealib: _nmea_parse_time not parsing hsec when given "hhmmss" format
+      build: really _ignore_ builddata.c when hashing sources
+      build: only print the md5 hash in hash_source.sh
+      Makefile: fix builddata when building from tarball
+      pud: fix readIPAddress function
 
-Henning Rogge (2):
-      Update version after release of v0.6.5.3
-      Release v0.6.5.4
+Hans-Christoph Steiner (3):
+      GNU/Linux: add service profile for 'ufw' firewall package
+      update Commotion example olsrd.conf to represent current project state
+      dyn_gw/dyn_gw_plain require /proc, remove from default build on non-Linux
 
-0.6.5.3 -------------------------------------------------------------------
-
-Ferry Huberts (5):
-      pud: detect the java include directory
-      pud: better detection of java jdk
-      gateway: work around kernel IPIP module initialisation bug
-      main: use /dev/urandom by default
-      pud: set local loopback for multicast tx
-
-Henning Rogge (2):
+Henning Rogge (7):
+      Fixed debug output of Scheduler polling interval
+      Fix multicast join for IPv6
+      Merge branch 'master' of http://olsr.org/git/olsrd
       Update version after release of v0.6.5.2
-      Release v0.6.5.3
+      Update version after release of v0.6.5.2
+      Fix build break for MinGW compilation on Fedora 19.
+      Release v0.6.6
 
 Ronald in 't Velt (1):
       Fix setsockopt for setting Traffic Class in IPv6
+
+Saverio Proto (3):
+      main: fix the check on inet_pton return value because it returns 1 on
+         success.
+      mDNS: remove from Makefile PTHREAD useless dependency
+      txtinfo: update README file
+
+Scott Kidder (1):
+      jsoninfo: ensure output is wrapped in curly braces.
+
+Vasilis Tsiligiannis (1):
+      olsrd-quagga: Fix memory leak when adding and deleting routes
+
+equinox (1):
+      quagga plugin routes additional
 
 0.6.5.2 -------------------------------------------------------------------
 

@@ -26,8 +26,8 @@ PlParam "Redistribute" "<protocol>"
 	isis, bgp, hsls
 	May be used more then once
 
-PlParam "ExportRoutes" "<only/both>"
-	exports olsr-routes to quagga or to both, quagga and kernel
+PlParam "ExportRoutes" "<only/additional>"
+	exports olsr-routes to quagga only, or to quagga and kernel
 	no routes are exported to quagga (normal behaviour) if not set.
 
 PlParam "LocalPref" "<true/false>"

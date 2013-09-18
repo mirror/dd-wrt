@@ -214,6 +214,7 @@ dlerror(void)
 #define NS_IN6ADDRSZ 16
 #define NS_INT16SZ 2
 
+#ifndef InetNtopA
 static int
 inet_pton4(const char *src, unsigned char *dst)
 {
@@ -486,6 +487,7 @@ inet_ntop(int af, const void *src, char *dst, int size)
     return (NULL);
   }
 }
+#endif
 
 int
 isatty(int fd)

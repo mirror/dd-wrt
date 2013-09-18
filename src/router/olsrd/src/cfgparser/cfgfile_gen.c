@@ -39,6 +39,7 @@
  */
 
 #include "olsrd_conf.h"
+#include "builddata.h"
 #include "../ipcalc.h"
 #include "../net_olsr.h"
 #include "../common/autobuf.h"

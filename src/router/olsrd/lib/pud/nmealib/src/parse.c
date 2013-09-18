@@ -77,6 +77,35 @@ static bool _nmea_parse_time(const char *s, const int len, nmeaTIME *t) {
 }
 
 /**
+ * Parse nmeaTIME (date only, no time) from a string.
+ * The month is adjusted -1 to comply with the nmeaTIME month range of [0, 11].
+ * The year is adjusted +100 for years before 90 to comply with the nmeaTIME
+ * year range of [90, 189].
+ *
+ * @param date the date
+ * @param t a pointer to the nmeaTIME structure in which to store the parsed date
+ * @return true on success, false otherwise
+ */
+static bool _nmea_parse_date(const int date, nmeaTIME *t) {
+	assert(t);
+
+	if ((date < 0) || (date > 999999)) {
+		nmea_error("Parse error: invalid time format in %d", date);
+		return false;
+	}
+
+	t->day = date / 10000;
+	t->mon = (date / 100) % 100;
+	t->mon--;
+	t->year = date % 100;
+	if (t->year < 90) {
+		t->year += 100;
+	}
+
+	return true;
+}
+
+/**
  * Validate the time fields in an nmeaTIME structure.
  * Expects:
  * <pre>
@@ -618,6 +647,7 @@ int nmea_parse_GPGSV(const char *s, const int len, nmeaGPGSV *pack) {
 int nmea_parse_GPRMC(const char *s, const int len, nmeaGPRMC *pack) {
 	int token_count;
 	char time_buff[NMEA_TIMEPARSE_BUF];
+	int date;
 	size_t time_buff_len = 0;
 
 	assert(s);
@@ -629,6 +659,7 @@ int nmea_parse_GPRMC(const char *s, const int len, nmeaGPRMC *pack) {
 	 * Clear before parsing, to be able to detect absent fields
 	 */
 	time_buff[0] = '\0';
+	date = -1;
 	pack->present = 0;
 	pack->utc.year = -1;
 	pack->utc.mon = -1;
@@ -649,30 +680,17 @@ int nmea_parse_GPRMC(const char *s, const int len, nmeaGPRMC *pack) {
 	pack->mode = 0;
 
 	/* parse */
-	token_count = nmea_scanf(s, len, "$GPRMC,%s,%c,%f,%c,%f,%c,%f,%f,%2d%2d%2d,%f,%c,%c*", &time_buff[0], &pack->status,
-			&pack->lat, &pack->ns, &pack->lon, &pack->ew, &pack->speed, &pack->track, &pack->utc.day, &pack->utc.mon,
-			&pack->utc.year, &pack->magvar, &pack->magvar_ew, &pack->mode);
+	token_count = nmea_scanf(s, len, "$GPRMC,%s,%c,%f,%c,%f,%c,%f,%f,%d,%f,%c,%c*", &time_buff[0], &pack->status,
+			&pack->lat, &pack->ns, &pack->lon, &pack->ew, &pack->speed, &pack->track, &date,
+			&pack->magvar, &pack->magvar_ew, &pack->mode);
 
 	/* see that we have enough tokens */
-	if ((token_count != 13) && (token_count != 14)) {
-		nmea_error("GPRMC parse error: need 13 or 14 tokens, got %d in %s", token_count, s);
+	if ((token_count != 11) && (token_count != 12)) {
+		nmea_error("GPRMC parse error: need 11 or 12 tokens, got %d in %s", token_count, s);
 		return 0;
 	}
 
 	/* determine which fields are present and validate them */
-
-	if ((pack->utc.year != -1) && (pack->utc.mon != -1) && (pack->utc.day != -1)) {
-		if (pack->utc.year < 90) {
-			pack->utc.year += 100;
-		}
-		pack->utc.mon -= 1;
-
-		if (!validateDate(&pack->utc)) {
-			return 0;
-		}
-
-		nmea_INFO_set_present(&pack->present, UTCDATE);
-	}
 
 	time_buff_len = strlen(&time_buff[0]);
 	if (time_buff_len) {
@@ -716,6 +734,19 @@ int nmea_parse_GPRMC(const char *s, const int len, nmeaGPRMC *pack) {
 	if (!isnan(pack->track)) {
 		nmea_INFO_set_present(&pack->present, TRACK);
 	}
+
+	if (date != -1) {
+		if (!_nmea_parse_date(date, &pack->utc)) {
+			return 0;
+		}
+
+		if (!validateDate(&pack->utc)) {
+			return 0;
+		}
+
+		nmea_INFO_set_present(&pack->present, UTCDATE);
+	}
+
 	if (!isnan(pack->magvar) && (pack->magvar_ew)) {
 		if (!validateNSEW(&pack->magvar_ew, false)) {
 			return 0;
@@ -723,7 +754,7 @@ int nmea_parse_GPRMC(const char *s, const int len, nmeaGPRMC *pack) {
 
 		nmea_INFO_set_present(&pack->present, MAGVAR);
 	}
-	if (token_count == 13) {
+	if (token_count == 11) {
 		pack->mode = 'A';
 	} else {
 		if (!pack->mode) {

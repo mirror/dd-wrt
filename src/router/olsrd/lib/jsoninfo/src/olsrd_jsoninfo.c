@@ -73,6 +73,7 @@
 
 #include "ipcalc.h"
 #include "olsr.h"
+#include "builddata.h"
 #include "olsr_types.h"
 #include "neighbor_table.h"
 #include "two_hop_neighbor_table.h"
@@ -983,8 +984,30 @@ ipc_print_config(struct autobuf *abuf)
   abuf_json_string(abuf, "lockFile", olsr_cnf->lock_file);
   abuf_json_boolean(abuf, "useNiit", olsr_cnf->use_niit);
 
+#ifdef __linux__
   abuf_json_boolean(abuf, "smartGateway", olsr_cnf->smart_gw_active);
   if (olsr_cnf->smart_gw_active) {
+    abuf_json_boolean(abuf, "smartGatewayAlwaysRemoveServerTunnel", olsr_cnf->smart_gw_always_remove_server_tunnel);
+    abuf_json_int(abuf, "smartGatewayUseCount", olsr_cnf->smart_gw_use_count);
+    abuf_json_string(abuf, "smartGatewayPolicyRoutingScript", olsr_cnf->smart_gw_policyrouting_script);
+    {
+      struct autobuf egressbuf;
+      struct sgw_egress_if * egressif = olsr_cnf->smart_gw_egress_interfaces;
+
+      abuf_init(&egressbuf, (olsr_cnf->smart_gw_egress_interfaces_count * IFNAMSIZ) /* interface names */
+          + (olsr_cnf->smart_gw_egress_interfaces_count - 1) /* commas */);
+      while (egressif) {
+        if (egressbuf.len) {
+          abuf_puts(&egressbuf, ",");
+        }
+        abuf_appendf(&egressbuf, "%s", egressif->name);
+        egressif = egressif->next;
+      }
+      abuf_json_string(abuf, "smartGatewayEgressInterfaces", egressbuf.buf);
+      abuf_free(&egressbuf);
+    }
+    abuf_json_int(abuf, "smartGatewayMarkOffsetEgress", olsr_cnf->smart_gw_mark_offset_egress);
+    abuf_json_int(abuf, "smartGatewayMarkOffsetTunnels", olsr_cnf->smart_gw_mark_offset_tunnels);
     abuf_json_boolean(abuf, "smartGatewayAllowNat", olsr_cnf->smart_gw_allow_nat);
     abuf_json_boolean(abuf, "smartGatewayUplinkNat", olsr_cnf->smart_gw_uplink_nat);
     abuf_json_int(abuf, "smartGatewayPeriod", olsr_cnf->smart_gw_period);
@@ -997,6 +1020,7 @@ ipc_print_config(struct autobuf *abuf)
                      olsr_ip_to_string(&mainaddrbuf, &olsr_cnf->smart_gw_prefix.prefix));
     abuf_json_int(abuf, "smartGatewayPrefixLength", olsr_cnf->smart_gw_prefix.prefix_len);
   }
+#endif /* __linux__ */
 
   abuf_json_string(abuf, "mainIpAddress",
                    olsr_ip_to_string(&mainaddrbuf, &olsr_cnf->main_addr));
@@ -1259,7 +1283,7 @@ send_info(unsigned int send_what, int the_socket)
   abuf_init(&abuf, 32768);
 
  // only add if outputing JSON
-  if (send_what & SIW_ALL) abuf_puts(&abuf, "{\n");
+  if (send_what & SIW_ALL) abuf_json_open_array_entry(&abuf);
 
   if ((send_what & SIW_LINKS) == SIW_LINKS) ipc_print_links(&abuf);
   if ((send_what & SIW_NEIGHBORS) == SIW_NEIGHBORS) ipc_print_neighbors(&abuf);
@@ -1281,7 +1305,7 @@ send_info(unsigned int send_what, int the_socket)
     abuf_json_int(&abuf, "timeSinceStartup", now_times);
     if(*uuid != 0)
       abuf_json_string(&abuf, "uuid", uuid);
-    abuf_puts(&abuf, "}\n");
+    abuf_json_close_array_entry(&abuf);
   }
 
   /* this outputs the olsrd.conf text directly, not JSON */

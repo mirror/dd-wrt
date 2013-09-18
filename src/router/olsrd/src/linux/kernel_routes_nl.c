@@ -466,14 +466,14 @@ void olsr_os_niit_4to6_route(const struct olsr_ip_prefix *dst_v4, bool set) {
   }
 }
 
-void olsr_os_inetgw_tunnel_route(uint32_t if_idx, bool ipv4, bool set) {
+void olsr_os_inetgw_tunnel_route(uint32_t if_idx, bool ipv4, bool set, uint8_t table) {
   const struct olsr_ip_prefix *dst;
 
   assert(olsr_cnf->ip_version == AF_INET6 || ipv4);
 
   dst = ipv4 ? &ipv4_internet_route : &ipv6_internet_route;
 
-  if (olsr_new_netlink_route(ipv4 ? AF_INET : AF_INET6, olsr_cnf->rt_table_tunnel,
+  if (olsr_new_netlink_route(ipv4 ? AF_INET : AF_INET6, table,
       if_idx, RT_METRIC_DEFAULT, olsr_cnf->rt_proto, NULL, NULL, dst, set, false)) {
     olsr_syslog(OLSR_LOG_ERR, ". error while %s inetgw tunnel route to %s for if %d",
         set ? "setting" : "removing", olsr_ip_prefix_to_string(dst), if_idx);
