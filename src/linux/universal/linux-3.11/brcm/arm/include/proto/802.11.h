@@ -15,7 +15,7 @@
  *
  * Fundamental types and constants relating to 802.11
  *
- * $Id: 802.11.h 390056 2013-03-09 01:20:55Z $
+ * $Id: 802.11.h 395543 2013-04-08 13:40:04Z $
  */
 
 #ifndef _802_11_H_
@@ -1649,6 +1649,19 @@ BWL_PRE_PACKED_STRUCT struct dot11_tim_bcast_resp {
 } BWL_POST_PACKED_STRUCT;
 typedef struct dot11_tim_bcast_resp dot11_tim_bcast_resp_t;
 #define DOT11_TIM_BCAST_RESP_LEN		3	/* Fixed length */
+
+/* TIM element */
+BWL_PRE_PACKED_STRUCT struct dot11_tim_ie {
+	uint8 id;			/* 5, DOT11_MNG_TIM_ID	 */
+	uint8 len;			/* 4 - 255 */
+	uint8 dtim_count;		/* DTIM decrementing counter */
+	uint8 dtim_period;		/* DTIM period */
+	uint8 bitmap_control;		/* AID 0 + bitmap offset */
+	uint8 pvb[1];			/* Partial Virtual Bitmap, variable length */
+} BWL_POST_PACKED_STRUCT;
+typedef struct dot11_tim_ie dot11_tim_ie_t;
+#define DOT11_TIM_IE_FIXED_LEN	3	/* Fixed length, without id and len */
+#define DOT11_TIM_IE_FIXED_TOTAL_LEN	5	/* Fixed length, with id and len */
 
 /* TIM Broadcast frame header */
 BWL_PRE_PACKED_STRUCT struct dot11_tim_bcast {
