@@ -291,7 +291,7 @@ bool readULL(const char * parameterName, const char * str, unsigned long long * 
 		setOlsrSockaddrPort(&ip, htons(portDefault));
 	}
 
-	*dst = ip;
+  setOlsrSockaddrAddr(dst, &ip);
 	*dstSet = true;
 	return true;
 }

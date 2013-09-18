@@ -41,7 +41,7 @@ struct olsr_iptunnel_entry {
 int olsr_os_init_iptunnel(const char * name);
 void olsr_os_cleanup_iptunnel(const char * name);
 
-struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target, bool transportV4);
+struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target, bool transportV4, char *name);
 void olsr_os_del_ipip_tunnel(struct olsr_iptunnel_entry *);
 
 #endif /* KERNEL_TUNNEL_H_ */

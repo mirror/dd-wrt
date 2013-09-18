@@ -55,6 +55,7 @@
 #endif /* _WIN32 */
 
 #include "olsr.h"
+#include "builddata.h"
 #include "olsr_cfg.h"
 #include "interfaces.h"
 #include "olsr_protocol.h"
@@ -313,7 +314,7 @@ olsrd_plugin_init(void)
 
   if (http_socket < 0) {
     fprintf(stderr, "(HTTPINFO) could not initialize HTTP socket\n");
-    exit(0);
+    exit(1);
   }
 
   /* Register socket */

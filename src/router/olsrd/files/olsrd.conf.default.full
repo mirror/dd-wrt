@@ -144,6 +144,60 @@
 
 # SmartGateway no
 
+# Signals that the server tunnel must always be removed on shutdown,
+# irrespective of the interface up/down state during startup.
+# (default is "no")
+
+# SmartGatewayAlwaysRemoveServerTunnel no
+
+# Determines the maximum number of gateways that can be in use at any given
+# time. This setting is used to mitigate the effects of breaking connections
+# (due to the selection of a new gateway) on a dynamic network.
+# (default is 1)
+
+# SmartGatewayUseCount 1
+
+# Determines the take-down percentage for a non-current smart gateway tunnel.
+# If the cost of the current smart gateway tunnel is less than this percentage
+# of the cost of the non-current smart gateway tunnel, then the non-current smart
+# gateway tunnel is taken down because it is then presumed to be 'too expensive'.
+# This setting is only relevant when SmartGatewayUseCount is larger than 1;
+# a value of 0 will result in the tunnels not being taken down proactively.
+# (default is 0)
+
+# SmartGatewayTakeDownPercentage 0
+
+# Determines the policy routing script that is executed during startup and
+# shutdown of olsrd. The script is only executed when SmartGatewayUseCount
+# is set to a value larger than 1. The script must setup policy routing
+# rules such that multi-gateway mode works. A sample script is included.
+# (default is not set)
+
+# SmartGatewayPolicyRoutingScript ""
+
+# Determines the egress interfaces that are part of the multi-gateway setup and
+# therefore only relevant when SmartGatewayUseCount is larger than 1 (in which
+# case it must be explicitly set).
+# (default is not set)
+
+# SmartGatewayEgressInterfaces ""
+
+# Determines the offset of the smart gateway egress interfaces mark that are
+# used in the policy routing rules in a multi-gateway setup. Only relevant
+# when a multi-gateway setup is used.
+# (default is 91)
+
+# SmartGatewayMarkOffsetEgress 91
+
+# Determines the offset of the smart gateway tunnel interfaces mark that are
+# used in the policy routing rules in a multi-gateway setup. Only relevant
+# when a multi-gateway setup is used.
+# The ranges [egress offset, egress offset + egress count] and
+# [tunnel offset, tunnel offset + use count] are not allowed to overlap.
+# (default is 101)
+
+# SmartGatewayMarkOffsetTunnels 101
+
 # Allows the selection of a smartgateway with NAT (only for IPv4)
 # (default is "yes")
 

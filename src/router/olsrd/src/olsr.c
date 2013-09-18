@@ -44,6 +44,7 @@
  */
 
 #include "defs.h"
+#include "builddata.h"
 #include "olsr.h"
 #include "link_set.h"
 #include "two_hop_neighbor_table.h"

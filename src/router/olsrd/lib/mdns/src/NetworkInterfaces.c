@@ -285,7 +285,7 @@ CreateRouterElectionSocket(const char *ifName)
 			BmfPError("Could not get ipv4 address of %s interface", ifName);
 			goto bail;
 		}
-		ipv4_addr = ((struct sockaddr_in *)&req.ifr_addr)->sin_addr;
+		ipv4_addr = ((struct sockaddr_in *)(void *) &req.ifr_addr)->sin_addr;
 		mc_settings.imr_interface = ipv4_addr;
 		errno = 0;
 		if (setsockopt(rxSocket, ipProtoSetting, ipAddMembershipSetting,
@@ -380,7 +380,7 @@ static int CreateHelloSocket(const char *ifName) {
 			BmfPError("Could not get ipv4 address of %s interface", ifName);
 			goto bail;
 		}
-		ipv4_addr = ((struct sockaddr_in *)&req.ifr_addr)->sin_addr;
+		ipv4_addr = ((struct sockaddr_in *)(void *) &req.ifr_addr)->sin_addr;
 		address.in4.sin_addr = ipv4_addr;
 		address.in4.sin_family = ipFamilySetting;
 		address.in4.sin_port = ipPort;

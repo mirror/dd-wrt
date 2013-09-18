@@ -56,10 +56,6 @@
 #include "olsr_protocol.h"
 #include "olsr_cfg.h"
 
-extern const char olsrd_version[];
-extern const char build_date[];
-extern const char build_host[];
-
 #ifndef OLSRD_GLOBAL_CONF_FILE
 #define OLSRD_CONF_FILE_NAME	"olsrd.conf"
 #define OLSRD_GLOBAL_CONF_FILE	"/tmp/" OLSRD_CONF_FILE_NAME
