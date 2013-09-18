@@ -732,7 +732,6 @@ struct bgp_nlri
 /* BGP timers default value.  */
 #define BGP_INIT_START_TIMER                     5
 #define BGP_ERROR_START_TIMER                   30
-#define BGP_LARGE_HOLDTIME                     240
 #define BGP_DEFAULT_HOLDTIME                   180
 #define BGP_DEFAULT_KEEPALIVE                   60 
 #define BGP_DEFAULT_ASORIGINATE                 15
