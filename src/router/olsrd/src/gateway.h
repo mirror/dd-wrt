@@ -103,6 +103,14 @@ struct olsr_gw_handler {
     void (*startup)(void);
 
     /**
+     * Called when the costs of a gateway must be determined.
+     *
+     * @param gw the gateway
+     * @return the costs
+     */
+    uint64_t (*getcosts)(struct gateway_entry *gw);
+
+    /**
      * Called when a new gateway must be chosen.
      *
      * @param ipv4 true when an IPv4 gateway must be chosen
@@ -130,6 +138,8 @@ struct olsr_gw_handler {
  */
 
 int olsr_init_gateways(void);
+int olsr_startup_gateways(void);
+void olsr_shutdown_gateways(void);
 void olsr_cleanup_gateways(void);
 void olsr_trigger_inetgw_startup(void);
 #ifndef NODEBUG
@@ -163,7 +173,7 @@ void olsr_trigger_gatewayloss_check(void);
  * Gateway Plugin Functions
  */
 
-bool olsr_set_inet_gateway(union olsr_ip_addr *originator, bool ipv4, bool ipv6);
+bool olsr_set_inet_gateway(union olsr_ip_addr *originator, uint64_t path_cost, bool ipv4, bool ipv6);
 struct gateway_entry *olsr_get_inet_gateway(bool ipv6);
 
 #endif /* GATEWAY_H_ */

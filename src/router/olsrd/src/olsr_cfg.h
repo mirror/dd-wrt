@@ -81,6 +81,11 @@
 #define DEF_MIN_TC_VTIME     0.0
 #define DEF_USE_NIIT         true
 #define DEF_SMART_GW         false
+#define DEF_SMART_GW_ALWAYS_REMOVE_SERVER_TUNNEL  false
+#define DEF_GW_USE_COUNT     1
+#define DEF_GW_TAKEDOWN_PERCENTAGE 25
+#define DEF_GW_MARK_OFFSET_EGRESS   91
+#define DEF_GW_MARK_OFFSET_TUNNELS 101
 #define DEF_GW_PERIOD        10*1000
 #define DEF_GW_STABLE_COUNT  6
 #define DEF_GW_ALLOW_NAT     true
@@ -121,6 +126,11 @@
 #define MIN_LQ_LEVEL         0
 #define MAX_LQ_AGING         1.0
 #define MIN_LQ_AGING         0.01
+
+#define MIN_SMARTGW_USE_COUNT_MIN  1
+#define MAX_SMARTGW_USE_COUNT_MAX  64
+
+#define MAX_SMARTGW_EGRESS_INTERFACE_COUNT_MAX 32
 
 #define MIN_SMARTGW_PERIOD   1*1000
 #define MAX_SMARTGW_PERIOD   320000*1000
@@ -231,6 +241,12 @@ struct plugin_entry {
   struct plugin_entry *next;
 };
 
+struct sgw_egress_if {
+  char *name;
+  uint8_t mark;
+  struct sgw_egress_if *next;
+};
+
 /*
  * The config struct
  */
@@ -276,7 +292,14 @@ struct olsrd_config {
   char *lock_file;
   bool use_niit;
 
-  bool smart_gw_active, smart_gw_allow_nat, smart_gw_uplink_nat;
+  bool smart_gw_active, smart_gw_always_remove_server_tunnel, smart_gw_allow_nat, smart_gw_uplink_nat;
+  uint8_t smart_gw_use_count;
+  uint8_t smart_gw_takedown_percentage;
+  char *smart_gw_policyrouting_script;
+  struct sgw_egress_if * smart_gw_egress_interfaces;
+  uint8_t smart_gw_egress_interfaces_count;
+  uint8_t smart_gw_mark_offset_egress;
+  uint8_t smart_gw_mark_offset_tunnels;
   uint32_t smart_gw_period;
   uint8_t smart_gw_stablecount;
   uint8_t smart_gw_thresh;

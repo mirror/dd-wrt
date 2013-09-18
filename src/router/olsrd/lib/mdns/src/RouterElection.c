@@ -7,7 +7,6 @@
 #include <assert.h>             /* assert() */
 #include <linux/if_ether.h>     /* ETH_P_IP */
 #include <linux/if_packet.h>    /* struct sockaddr_ll, PACKET_MULTICAST */
-//#include <pthread.h> /* pthread_t, pthread_create() */
 #include <signal.h>             /* sigset_t, sigfillset(), sigdelset(), SIGINT */
 #include <netinet/ip.h>         /* struct ip */
 #include <netinet/udp.h>        /* struct udphdr */

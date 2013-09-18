@@ -55,7 +55,7 @@
  * @param member name of node inside struct
  * @return pointer to surrounding struct
  */
-#define container_of(ptr, type, member) ((type *)( (char *)(ptr) - offsetof(type,member) ))
+#define container_of(ptr, type, member) ((type *) (((size_t) ptr) - offsetof(type, member) ))
 
 /**
  * Helper function for NULL safe container_of macro

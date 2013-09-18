@@ -31,7 +31,7 @@ endif
 
 # we expect the version to be like 'v0.5.3-27-g0c2727a' and then strip the 'v',
 # and the '-27-g0c2727a' parts
-VERSION=1.0.3
+VERSION=1.0.4
 
 # protect against no version number
 ifeq ($(strip $(VERSION)),)
@@ -51,4 +51,17 @@ ifeq ($(DEBUG),0)
 CFLAGS+= -O2
 else
 CFLAGS+= -O0
+endif
+
+
+LDFLAGS = -shared -Wl,--warn-common -fPIC
+
+# 32/64 cross compilation
+ifdef M32
+CFLAGS +=	-m32
+LDFLAGS +=	-m32
+endif
+ifdef M64
+CFLAGS +=	-m64
+LDFLAGS +=	-m64
 endif

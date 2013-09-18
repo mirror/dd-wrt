@@ -23,7 +23,7 @@ void olsr_os_cleanup_iptunnel(const char * name __attribute__((unused))) {
 }
 
 struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target __attribute__ ((unused)),
-    bool transportV4 __attribute__ ((unused))) {
+    bool transportV4 __attribute__ ((unused)), char *name) {
   return NULL;
 }
 
@@ -49,7 +49,8 @@ void olsr_os_niit_6to4_route(const struct olsr_ip_prefix *dst_v6 __attribute__ (
 }
 void olsr_os_inetgw_tunnel_route(uint32_t if_idx __attribute__ ((unused)),
     bool ipv4 __attribute__ ((unused)),
-    bool set __attribute__ ((unused))) {
+    bool set __attribute__ ((unused)),
+    uint8_t table __attribute__ ((unused))) {
 }
 
 int olsr_os_policy_rule(int family __attribute__ ((unused)),

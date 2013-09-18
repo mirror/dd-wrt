@@ -47,7 +47,7 @@ lib/$(LIBNAME): $(OBJ)
 ifeq ($(VERBOSE),0)
 	@echo "[LD] $@"
 endif
-	$(MAKECMDPREFIX)$(CC) -shared -Wl,-soname=$(LIBNAME) -o "$@" $(LIBRARIES) $(OBJ)
+	$(MAKECMDPREFIX)$(CC) $(LDFLAGS) -Wl,-soname=$(LIBNAME) -o "$@" $(LIBRARIES) $(OBJ)
 
 build/%.o: src/%.c Makefile Makefile.inc
 ifeq ($(VERBOSE),0)

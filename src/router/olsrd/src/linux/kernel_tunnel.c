@@ -108,7 +108,7 @@ void olsr_os_cleanup_iptunnel(const char * dev) {
 
     olsr_os_del_ipip_tunnel(t);
   }
-  if (!store_iptunnel_state) {
+  if (olsr_cnf->smart_gw_always_remove_server_tunnel || !store_iptunnel_state) {
     olsr_if_set_state(dev, false);
   }
 
@@ -186,37 +186,21 @@ static int os_ip_tunnel(const char *name, void *target) {
 }
 
 /**
- * Dummy for generating an interface name for an olsr ipip tunnel
- * @param target IP destination of the tunnel
- * @param name pointer to output buffer (length IFNAMSIZ)
- */
-static void generate_iptunnel_name(union olsr_ip_addr *target, char *name) {
-  static char PREFIX[] = "tnl_";
-  static uint32_t counter = 0;
-
-  snprintf(name, IFNAMSIZ, "%s%08x", PREFIX,
-      olsr_cnf->ip_version == AF_INET ? target->v4.s_addr : ++counter);
-}
-
-/**
  * demands an ipip tunnel to a certain target. If no tunnel exists it will be created
  * @param target ip address of the target
  * @param transportV4 true if IPv4 traffic is used, false for IPv6 traffic
+ * @param name pointer to name string buffer (length IFNAMSIZ)
  * @return NULL if an error happened, pointer to olsr_iptunnel_entry otherwise
  */
-struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target, bool transportV4 __attribute__ ((unused))) {
+struct olsr_iptunnel_entry *olsr_os_add_ipip_tunnel(union olsr_ip_addr *target, bool transportV4 __attribute__ ((unused)), char *name) {
   struct olsr_iptunnel_entry *t;
 
   assert(olsr_cnf->ip_version == AF_INET6 || transportV4);
 
   t = (struct olsr_iptunnel_entry *)avl_find(&tunnel_tree, target);
   if (t == NULL) {
-    char name[IFNAMSIZ];
     int if_idx;
     struct ipaddr_str buf;
-
-    memset(name, 0, sizeof(name));
-    generate_iptunnel_name(target, name);
 
     if_idx = os_ip_tunnel(name, (olsr_cnf->ip_version == AF_INET) ? (void *) &target->v4.s_addr : (void *) &target->v6);
     if (if_idx == 0) {

@@ -6,15 +6,23 @@ PLUGIN_VER =	1.0.1
 TOPDIR = ../..
 include $(TOPDIR)/Makefile.inc
 
-LIBS +=	$(OS_LIB_PTHREAD)
+SUPPORTED = 0
+ifeq ($(OS),linux)
+SUPPORTED = 1
+endif
+ifeq ($(OS),android)
+SUPPORTED = 1
+endif
 
-# Must be specified along with -lpthread on linux
-CPPFLAGS += $(OS_CFLAG_PTHREAD)
 
-ifneq ($(OS),linux)
+ifeq ($(SUPPORTED),0)
+
+.PHONY: all default_target install clean
+
+all: default_target
 
 default_target install clean:
-	@echo "*** mdns Plugin only supported on Linux, sorry!"
+	@echo "*** $(PLUGIN_NAME) plugin not supported on $(OS), sorry!"
 
 else
 

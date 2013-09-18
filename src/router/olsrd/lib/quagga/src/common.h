@@ -18,10 +18,13 @@
  * ------------------------------------------------------------------------- */
 
 #define OPTION_EXPORT 1
+#define OPTION_ROUTE_ADDITIONAL 2
 
 /* Zebra route types */
 #define ZEBRA_ROUTE_OLSR		11
 #define ZEBRA_ROUTE_MAX			14
+
+#include "process_routes.h"
 
 struct zebra {
   unsigned char status;
@@ -33,6 +36,10 @@ struct zebra {
   char *sockpath;
   unsigned int port;
   unsigned char version;
+  export_route_function orig_addroute_function;
+  export_route_function orig_addroute6_function;
+  export_route_function orig_delroute_function;
+  export_route_function orig_delroute6_function;
 };
 
 extern struct zebra zebra;

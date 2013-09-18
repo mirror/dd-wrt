@@ -28,10 +28,6 @@ static inline unsigned long long gw_speed(struct gateway_entry *gw) {
  * A gateway is better when the sum of its uplink and downlink are greater than
  * the previous best gateway. In case of a tie, the lowest IP address wins.
  *
- * This code is copied from lib/txtinfo/src/olsrd_txtinfo.c, function ipc_print_gateway.
- * It adjusted for best gateway selection but otherwise kept the same as much
- * as possible.
- *
  * @param bestGateway
  * a pointer to the variable in which to store the best gateway
  */
@@ -45,17 +41,9 @@ void getBestUplinkGateway(union olsr_ip_addr * bestGateway) {
 		bool eval6 = false;
 
 		struct tc_entry * tc = olsr_lookup_tc_entry(&gw->originator);
-		if (!tc) {
+		if (!tc || (tc->path_cost == ROUTE_COST_BROKEN) || (!gw->uplink || !gw->downlink)) {
 			/* gateways should not exist without tc entry */
-			continue;
-		}
-
-		if (tc->path_cost == ROUTE_COST_BROKEN) {
 			/* do not consider nodes with an infinite ETX */
-			continue;
-		}
-
-		if (!gw->uplink || !gw->downlink) {
 			/* do not consider nodes without bandwidth or with a uni-directional link */
 			continue;
 		}
