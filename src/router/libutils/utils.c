@@ -4784,6 +4784,38 @@ int led_control(int type, int act)
 		bridge_gpio = 0x101;
 		ses_gpio = 0x102;
 		break;
+	case ROUTER_BUFFALO_WZR900DHP:
+	case ROUTER_BUFFALO_WZR600DHP2:
+		usb_power = 0x009;	// USB 2.0 ehci port
+		usb_power1 = 0x10a;	// USB 3.0 xhci port
+//              wlan0_gpio = 0x028; // wireless orange
+//              wlan1_gpio = 0x029; // wireless blue
+		connected_gpio = 0x02a;	// connected blue
+		sec0_gpio = 0x02b;
+		sec1_gpio = 0x02c;
+		// 0x2b strange led orange
+		// 0x2c strange led blue
+		power_gpio = 0x02e;
+		diag_gpio = 0x02d;
+		diag_gpio_disabled = 0x02e;
+		usb_gpio = 0x02f;
+		break;
+
+	case ROUTER_BUFFALO_WZR1750:
+		usb_power = 0x009;	// USB 2.0 ehci port
+		usb_power1 = 0x10a;	// USB 3.0 xhci port
+//              wlan0_gpio = 0x028; // wireless orange
+//              wlan1_gpio = 0x029; // wireless blue
+		connected_gpio = 0x02a;	// connected blue
+		sec0_gpio = 0x02b;
+		sec1_gpio = 0x02c;
+		// 0x2b strange led orange
+		// 0x2c strange led blue
+		power_gpio = 0x02d;
+		diag_gpio = 0x02e;
+		diag_gpio_disabled = 0x02d;
+		usb_gpio = 0x02f;
+		break;
 #ifndef HAVE_BUFFALO
 #ifdef HAVE_DIR300
 	case ROUTER_BOARD_FONERA:
@@ -5057,38 +5089,6 @@ int led_control(int type, int act)
 		usb_gpio = 0x005;	//usb led green
 		ses_gpio = 0x106;	// WPS led green - inverse
 		ses2_gpio = 0x107;	// WLAN led green - inverse
-		break;
-	case ROUTER_BUFFALO_WZR900DHP:
-	case ROUTER_BUFFALO_WZR600DHP2:
-		usb_power = 0x009;	// USB 2.0 ehci port
-		usb_power1 = 0x10a;	// USB 3.0 xhci port
-//              wlan0_gpio = 0x028; // wireless orange
-//              wlan1_gpio = 0x029; // wireless blue
-		connected_gpio = 0x02a;	// connected blue
-		sec0_gpio = 0x02b;
-		sec1_gpio = 0x02c;
-		// 0x2b strange led orange
-		// 0x2c strange led blue
-		power_gpio = 0x02e;
-		diag_gpio = 0x02d;
-		diag_gpio_disabled = 0x02e;
-		usb_gpio = 0x02f;
-		break;
-
-	case ROUTER_BUFFALO_WZR1750:
-		usb_power = 0x009;	// USB 2.0 ehci port
-		usb_power1 = 0x10a;	// USB 3.0 xhci port
-//              wlan0_gpio = 0x028; // wireless orange
-//              wlan1_gpio = 0x029; // wireless blue
-		connected_gpio = 0x02a;	// connected blue
-		sec0_gpio = 0x02b;
-		sec1_gpio = 0x02c;
-		// 0x2b strange led orange
-		// 0x2c strange led blue
-		power_gpio = 0x02d;
-		diag_gpio = 0x02e;
-		diag_gpio_disabled = 0x02d;
-		usb_gpio = 0x02f;
 		break;
 	case ROUTER_DLINK_DIR868:
 		usb_power = 0x00a;
