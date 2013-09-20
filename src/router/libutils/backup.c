@@ -139,7 +139,8 @@ static char *filter[] = { "lan_ifnames",
 	"wl_pcie_mrrs",
 	"wl_dmatxctl",
 	"wl_dmarxctl",
-	"nvram_version" "product",
+	"nvram_version",
+	"product",
 	"custom_id",
 	"hw_rev",
 	"boardflags",
@@ -219,6 +220,12 @@ static char *filter[] = { "lan_ifnames",
 	"wl1_country_rev",
 	"wl0_country_code",
 	"wl1_country_code",
+	"firmwarename",
+	"wltest",
+	"bootpartition",
+	"bypasscrccheck",
+	"tftpserverip",
+	
 	NULL
 };
 
