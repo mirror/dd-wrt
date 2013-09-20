@@ -252,7 +252,7 @@ void nvram_clear(void)
 		for (i = 0; i < len; i++)
 			if (p[i] == '=')
 				p[i] = 0;
-		if (strncmp(p, "sb/", 3) && strncmp(p, "pci/", 4) && strncmp(p, ":0", 2) && strncmp(p, ":1", 2) && !nvram_critical(p))
+		if (strncmp(p, "sb/", 3) && strncmp(p, "pci/", 4) && strncmp(p, "0:", 2) && strncmp(p, "1:", 2) && !nvram_critical(p))
 			nvram_immed_set(p, NULL);
 		p += len + 1;
 	}
