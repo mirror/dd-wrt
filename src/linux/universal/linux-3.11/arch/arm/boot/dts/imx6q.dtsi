@@ -214,6 +214,30 @@
 							MX6Q_PAD_SD4_DAT0__NAND_DQS      0x00b1
 						>;
 					};
+
+					/* No strobe */
+					pinctrl_gpmi_nand_2: gpmi-nand-2 {
+						fsl,pins = <
+							MX6Q_PAD_NANDF_CLE__NAND_CLE     0xb0b1
+							MX6Q_PAD_NANDF_ALE__NAND_ALE     0xb0b1
+							MX6Q_PAD_NANDF_WP_B__NAND_WP_B   0xb0b1
+							MX6Q_PAD_NANDF_RB0__NAND_READY_B 0xb000
+							MX6Q_PAD_NANDF_CS0__NAND_CE0_B   0xb0b1
+							MX6Q_PAD_NANDF_CS1__NAND_CE1_B   0xb0b1
+							MX6Q_PAD_NANDF_CS2__NAND_CE2_B   0xb0b1
+							MX6Q_PAD_NANDF_CS3__NAND_CE3_B   0xb0b1
+							MX6Q_PAD_SD4_CMD__NAND_RE_B      0xb0b1
+							MX6Q_PAD_SD4_CLK__NAND_WE_B      0xb0b1
+							MX6Q_PAD_NANDF_D0__NAND_DATA00   0xb0b1
+							MX6Q_PAD_NANDF_D1__NAND_DATA01   0xb0b1
+							MX6Q_PAD_NANDF_D2__NAND_DATA02   0xb0b1
+							MX6Q_PAD_NANDF_D3__NAND_DATA03   0xb0b1
+							MX6Q_PAD_NANDF_D4__NAND_DATA04   0xb0b1
+							MX6Q_PAD_NANDF_D5__NAND_DATA05   0xb0b1
+							MX6Q_PAD_NANDF_D6__NAND_DATA06   0xb0b1
+							MX6Q_PAD_NANDF_D7__NAND_DATA07   0xb0b1
+						>;
+					};
 				};
 
 				i2c1 {
@@ -478,12 +502,12 @@
 			};
 		};
 
-		pcie: pcie@01ffc000 {
-			#crtc-cells = <1>;
-			compatible = "fsl,imx6q-pcie", "fsl,pcie";
-			reg = <0x01ffc000 0x4000>;
-			clocks = <&clks 144>, <&clks 189>;
-			clock-names = "pcie_axi", "pcie_ref_125m";
+		sata: sata@02200000 {
+			compatible = "fsl,imx6q-ahci";
+			reg = <0x02200000 0x4000>;
+			interrupts = <0 39 0x04>;
+			clocks =  <&clks 154>, <&clks 187>, <&clks 105>;
+			clock-names = "sata", "sata_ref", "ahb";
 			status = "disabled";
 		};
 

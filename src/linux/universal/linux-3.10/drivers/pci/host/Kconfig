@@ -1,0 +1,13 @@
+menu "PCI host controller drivers"
+	depends on PCI
+
+config PCIE_DW
+	bool
+
+config PCI_IMX6
+	bool "Freescale i.MX6 PCIe controller"
+	depends on SOC_IMX6Q
+	select PCIEPORTBUS
+	select PCIE_DW
+
+endmenu
