@@ -110,7 +110,7 @@ config SATA_AHCI_CNS3XXX
 
 config AHCI_IMX
 	tristate "Freescale i.MX AHCI SATA support"
-	depends on SATA_AHCI_PLATFORM && MFD_SYSCON
+	depends on SATA_AHCI_PLATFORM
 	help
 	  This option enables support for the Freescale i.MX SoC's
 	  onboard AHCI SATA.
