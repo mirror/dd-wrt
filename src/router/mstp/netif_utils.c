@@ -78,6 +78,26 @@ int get_flags(char *ifname)
     return ifr.ifr_flags;
 }
 
+int if_shutdown(char *ifname)
+{
+    struct ifreq ifr;
+
+    memset(&ifr, 0, sizeof(ifr));
+    /* TODO: Let's hope -1 is not a valid flag combination */
+    if(-1 == (ifr.ifr_flags = get_flags(ifname)))
+    {
+        return -1;
+    }
+    ifr.ifr_flags &= ~IFF_UP;
+    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+    if(0 > ioctl(netsock, SIOCSIFFLAGS, &ifr))
+    {
+        ERROR("%s: set if_down flag failed: %m", ifname);
+        return -1;
+    }
+    return 0;
+}
+
 int ethtool_get_speed_duplex(char *ifname, int *speed, int *duplex)
 {
     struct ifreq ifr;
