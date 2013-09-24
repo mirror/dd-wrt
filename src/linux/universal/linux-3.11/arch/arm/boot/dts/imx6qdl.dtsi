@@ -110,6 +110,8 @@
 			arm,data-latency = <4 2 3>;
 		};
 
+#if 0 //ndef CONFIG_IMX_PCIE
+
 		pcie: pcie@0x01000000 {
 			compatible = "fsl,imx6q-pcie", "snps,dw-pcie";
 			reg = <0x01ffc000 0x4000>; /* DBI */
@@ -125,7 +127,7 @@
 			clock-names = "pcie_ref_125m", "sata_ref_100m", "lvds_gate", "pcie_axi";
 			status = "disabled";
 		};
-
+#endif
 		pmu {
 			compatible = "arm,cortex-a9-pmu";
 			interrupts = <0 94 0x04>;

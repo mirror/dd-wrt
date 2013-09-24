@@ -502,6 +502,16 @@
 			};
 		};
 
+#if 1//def CONFIG_IMX_PCIE
+			pcie: pcie@01ffc000 {
+				compatible = "fsl,imx6q-pcie", "fsl,pcie";
+				reg = <0x01ffc000 0x4000>;
+				clocks = <&clks 144>, <&clks 189>;
+				clock-names = "pcie_axi", "pcie_ref_125m";
+				status = "disabled";
+			};
+#endif
+
 		sata: sata@02200000 {
 			compatible = "fsl,imx6q-ahci";
 			reg = <0x02200000 0x4000>;
