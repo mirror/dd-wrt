@@ -178,7 +178,7 @@ static inline void br_ev_handler(uint32_t events, struct epoll_event_handler *h)
 
 int init_bridge_ops(void)
 {
-    if(rtnl_open(&rth, ~RTMGRP_TC) < 0)
+    if(rtnl_open(&rth, RTMGRP_LINK) < 0)
     {
         fprintf(stderr, "Couldn't open rtnl socket for monitoring\n");
         return -1;

@@ -1,0 +1,160 @@
+.\" -*- nroff -*-
+.\" macros
+.de EX \" Begin Example
+.  IP
+.  ft CW
+.  nf
+.  ne \\$1
+..
+.de EE \" End Example
+.  ft P
+.  fi
+.  PP
+..
+.TH MSTPCTL-UTILS-INTERFACES 5 "April 29 2013" "mstpctl-utils" "File formats"
+.SH NAME
+mstpctl-utils-interfaces \- mstpctl-utils extensions for the
+.BR interfaces (5)
+file format
+.SH DESCRIPTION
+/etc/network/interfaces contains network interface configuration
+information for the
+.BR ifup (8)
+and
+.BR ifdown (8)
+commands.
+This manpage describes the mstpctl extensions to the standard
+.BR interfaces (5)
+file format.
+.P
+The main extension is the mstpctl_ports option, with it you describe that the
+interface is a bridge and what ports does it have. Spanning Tree protocol
+parameters can also be specified.
+Currently multiple spanning trees are not supported by this extension (although mstpd/mstpctl supports MSTP without restrictions). This means that all settings here are applied to the CIST tree.
+.P
+We'll see this with an example:
+.EX
+auto br0
+iface br0 inet static
+    address 12.0.0.3
+    netmask 255.255.255.0
+    mstpctl_ports swp1 swp2 swp3
+    mstpctl_stp on
+    mstpctl_maxage 20
+    mstpctl_fdelay 15
+    mstpctl_maxhops 20
+    mstpctl_txholdcount 6
+    mstpctl_forcevers rstp
+    mstpctl_portpathcost swp1=0 swp2=0
+    mstpctl_portadminedge swp1=no swp2=no
+    mstpctl_portautoedge swp1=yes swp2=yes
+    mstpctl_portp2p swp1=no swp2=no
+    mstpctl_portrestrrole swp1=no swp2=no
+    mstpctl_bpduguard swp1=no swp2=no
+    mstpctl_portrestrtcn swp1=no swp2=no
+    mstpctl_treeprio 32768
+    mstpctl_treeportprio swp3=128
+    mstpctl_hello 2
+    mstpctl_portnetwork swp1=no
+
+.EE
+.SH IFACE OPTIONS
+The below interface options for configuring STP parameters on an STP
+enabled bridge can be specified in /etc/network/interfaces.
+.TP
+.BI mstpctl_ports " interface specification"
+this option must exist to specify the bridge and the ports which need
+to be added to the bridge.
+.RS
+.EX
+mstpctl_ports swp1 swp4
+.EE
+.P
+Regular expressions can be used to select a number of interfaces
+.EX
+mstpctl_ports regex (eth|vif).*
+.EE
+This means to evaluate (as in
+.BR egrep (1))
+the expressions that
+follow after "regex" until either the end or a "noregex" statement
+is reached.
+.SS
+.TP
+.BI mstpctl_maxage " time"
+set max message age to \fItime\fP seconds, default is 20.
+.TP
+.BI mstpctl_fdelay " time"
+set bridge forward delay to \fItime\fP seconds, default is 15.
+.TP
+.BI mstpctl_maxhops " max_hops"
+set bridge maximum hops to \fImax_hops\fP, default is 20.
+.TP
+.BI mstpctl_forcevers " mstp|rstp|stp"
+forces the bridge to use specific STP protocol version. mstp is the default.
+.TP
+.BI mstpctl_txholdcount " tx_hold_count"
+set bridge transmit hold count to \fItx_hold_count\fP, default is 6.
+.TP
+.BI mstpctl_treeprio " priority"
+set bridge tree priority, \fIpriority\fP is between 0 and 15. Bridge priority affects bridge id, lowest priority bridge will be the root. Note that traditionally bridge priority is a multiple of 4096 and ranges from 0 to 15*4096 = 61440. mstpd is different - it throws out that useless "multiple of 4096" rule and expresses bridge priority in natural units (0-15). Default is 8.
+.TP
+.BI mstpctl_portpathcost " port cost"
+set path cost for a port, default is 0 (= auto), \fIport\fP is the name of
+the interface to which this setting applies.
+.TP
+.BI mstpctl_portadminedge " port yes|no"
+Enables/disables the admin edge state of the \fIport\fP, default is no.
+.TP
+.BI mstpctl_portautoedge " port yes|no"
+Enables/disables the auto transition to/from edge state of the \fIport\fP,
+default is no.
+.TP
+.BI mstpctl_portp2p " port yes|no|auto"
+Enables/disables the point2point detection mode of the \fIport\fP,
+default is auto.
+.TP
+.BI mstpctl_portrestrrole " port yes|no"
+Enables/disables the restrictions on the \fIport\fP's ability to take root role,
+default is no (i.e. no restrictions on the port's role).
+.TP
+.BI mstpctl_portrestrtcn " port yes|no"
+Enables/disables the restrictions on the \fIport\fP's ability to propagate received topology change notification, default is no (i.e. no restrictions on the TCN propagation).
+.TP
+.BI mstpctl_bpduguard " port yes|no"
+Enables/disables the bpduguard configuration of the \fIport\fP, default is no.
+.TP
+.BI mstpctl_treeportprio " port priority"
+sets the \fIport\fP's priority to \fIpriority\fP. The priority value is a number between 0 and 15. Note that traditionally port priority is a multiple of 16 and ranges from 0 to 15*16 = 240. mstpd is different - it throws out that useless "multiple of 16" rule and expresses port priority in natural units (0-15). Default is 8.
+.TP
+.BI mstpctl_hello " time"
+set hello time to \fItime\fP seconds, default is 2.
+.TP
+.BI mstpctl_ageing " time"
+sets the ethernet (MAC) address ageing \fItime\fP, in seconds. Used only when protocol version is forced to STP, default is 300s. Note that this parameter differs from the other ones: it is only informational parameter. By setting it in the mstpd one do not change the real bridge's Ageing Time; it is supposed to be set as information to the mstpd that real Ageing Time in the real bridge was changed.
+.TP
+.BI mstpctl_portnetwork " port yes|no"
+Enables/disables the bridge assurance capability for a \fIport\fP,
+default is no.
+.TP
+.BI mstpctl_stp " state"
+turn spanning tree protocol on/off, \fIstate\fP values are no/yes,
+default is no.
+.RE
+.SH FILES
+.TP
+.I /etc/network/interfaces
+definitions of network interfaces
+See
+.BR interfaces (5)
+for more information.
+.RE
+.SH AUTHOR
+This manpage was written by Satish Ashok <sashok@cumulusnetworks.com>
+based on \fBbrctl-utils-interfaces\fP(5).
+.SH "SEE ALSO"
+.BR brctl (8),
+.BR interfaces (5),
+.BR ifup (8),
+.BR iwconfig (8),
+.BR run\-parts (8).

@@ -106,9 +106,6 @@ typedef struct
     __be32 ExtRootPathCost;
 } port_priority_vector_t;
 
-/* 17.14 of 802.1D, Table 17-1 */
-#define MIN_COMPAT_HELLO_TIME   1
-
 typedef struct
 {
     __u8 remainingHops;
@@ -390,6 +387,11 @@ typedef struct
     __u8 MaxHops;             /* 13.22.o */
     __u8 Forward_Delay;       /* 13.22.f */
     __u8 Max_Age;             /* 13.22.i */
+    /* The 802.1Q-2005 (13.22.j) says that this parameter is substituted by
+     * the per-port Hello Time, but we still need it for compatibility
+     * with old STP implementations.
+     */
+    __u8 Hello_Time;
     unsigned int Transmit_Hold_Count; /* 13.22.g */
     unsigned int Migrate_Time;        /* 13.22.h */
     unsigned int Ageing_Time;  /* 8.8.3 */
@@ -429,6 +431,8 @@ typedef struct
     unsigned int time_since_topology_change;
     unsigned int topology_change_count;
     bool topology_change;
+    char topology_change_port[IFNAMSIZ];
+    char last_topology_change_port[IFNAMSIZ];
 
     /* State machines */
     PRSSM_states_t PRSSM_state;
@@ -467,8 +471,14 @@ typedef struct
     admin_p2p_t AdminP2P; /* 6.4.3 */
     bool AdminEdgePort; /* 13.22.k */
     bool AutoEdge; /* 13.22.m */
+    bool BpduGuardPort;
+    bool BpduGuardError;
+    bool NetworkPort;
+    bool BaInconsistent;
+    bool dontTxmtBpdu;
 
     unsigned int rapidAgeingWhile;
+    unsigned int brAssuRcvdInfoWhile;
 
     /* State machines */
     PRSM_states_t PRSM_state;
@@ -480,7 +490,15 @@ typedef struct
     bpdu_t rcvdBpduData;
     int rcvdBpduNumOfMstis;
 
+    bool deleted;
+
     sysdep_if_data_t sysdeps;
+    unsigned int num_rx_bpdu;
+    unsigned int num_rx_tcn;
+    unsigned int num_tx_bpdu;
+    unsigned int num_tx_tcn;
+    unsigned int num_trans_fwd;
+    unsigned int num_trans_blk;
 } port_t;
 
 typedef struct
@@ -566,6 +584,7 @@ void MSTP_OUT_set_state(per_tree_port_t *ptp, int new_state);
 void MSTP_OUT_flush_all_fids(per_tree_port_t *ptp);
 void MSTP_OUT_set_ageing_time(port_t *prt, unsigned int ageingTime);
 void MSTP_OUT_tx_bpdu(port_t *prt, bpdu_t *bpdu, int size);
+void MSTP_OUT_shutdown_port(port_t *prt);
 
 /* Structures for communicating with user */
  /* 12.8.1.1 Read CIST Bridge Protocol Parameters */
@@ -575,6 +594,8 @@ typedef struct
     unsigned int time_since_topology_change;
     unsigned int topology_change_count;
     bool topology_change;
+    char topology_change_port[IFNAMSIZ];
+    char last_topology_change_port[IFNAMSIZ];
     bridge_identifier_t designated_root;
     unsigned int root_path_cost;
     port_identifier_t root_port_id;
@@ -587,7 +608,9 @@ typedef struct
     bridge_identifier_t regional_root;
     unsigned int internal_path_cost;
     bool enabled; /* not in standard */
+    unsigned int Ageing_Time;
     __u8 max_hops;
+    __u8 bridge_hello_time;
 } CIST_BridgeStatus;
 
 void MSTP_IN_get_cist_bridge_status(bridge_t *br, CIST_BridgeStatus *status);
@@ -599,6 +622,8 @@ typedef struct
     unsigned int time_since_topology_change;
     unsigned int topology_change_count;
     bool topology_change;
+    char topology_change_port[IFNAMSIZ];
+    char last_topology_change_port[IFNAMSIZ];
     bridge_identifier_t regional_root;
     unsigned int internal_path_cost;
     port_identifier_t root_port_id;
@@ -627,6 +652,12 @@ typedef struct
 
     __u8 max_hops;
     bool set_max_hops;
+
+    __u8 bridge_hello_time;
+    bool set_bridge_hello_time;
+
+    unsigned int bridge_ageing_time;
+    bool set_bridge_ageing_time;
 } CIST_BridgeConfig;
 
 int MSTP_IN_set_cist_bridge_config(bridge_t *br, CIST_BridgeConfig *cfg);
@@ -666,6 +697,16 @@ typedef struct
     __u32 designated_internal_cost; /* from portPriority */
     __u32 admin_internal_port_path_cost; /* not in standard. 0 = auto */
     __u32 internal_port_path_cost; /* not in standard */
+    bool bpdu_guard_port;
+    bool bpdu_guard_error;
+    bool network_port;
+    bool ba_inconsistent;
+    unsigned int num_rx_bpdu;
+    unsigned int num_rx_tcn;
+    unsigned int num_tx_bpdu;
+    unsigned int num_tx_tcn;
+    unsigned int num_trans_fwd;
+    unsigned int num_trans_blk;
 } CIST_PortStatus;
 
 void MSTP_IN_get_cist_port_status(port_t *prt, CIST_PortStatus *status);
@@ -717,6 +758,15 @@ typedef struct
 
     bool restricted_tcn;
     bool set_restricted_tcn;
+
+    bool bpdu_guard_port;
+    bool set_bpdu_guard_port;
+
+    bool network_port;
+    bool set_network_port;
+
+    bool dont_txmt;
+    bool set_dont_txmt;
 } CIST_PortConfig;
 
 int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg);

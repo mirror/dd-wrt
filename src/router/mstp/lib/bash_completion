@@ -1,0 +1,61 @@
+# bash completion for mstpctl                                -*- shell-script -*-
+
+_mstpctl()
+{
+    local cur prev words cword
+    _init_completion || return
+
+    local command=${words[1]}
+
+    case $cword in
+        1)
+            COMPREPLY=( $( compgen -W " addbridge createtree deletetree \
+                delbridge debuglevel portmcheck setmstconfid setvid2fid \
+                setfid2mstid setmaxage setfdelay setmaxhops setforcevers \
+                settxholdcount settreeprio setportpathcost setportadminedge \
+                setportautoedge setportp2p setportrestrrole setportrestrtcn \
+                setbpduguard settreeportprio settreeportcost showbridge \
+                showmstilist showmstconfid showvid2fid showfid2mstid showport \
+                showportdetail showtree showtreeport \
+                sethello setageing setportnetwork" -- "$cur" ) )
+            ;;
+        2)
+            case $command in
+                debuglevel|showall)
+                    ;;
+                *)
+                    COMPREPLY=( $( compgen -W "$( brctl show | \
+                        grep 'yes\|no' | awk '{print $1}')" -- "$cur" ) )
+            esac
+            ;;
+        3)
+            case $command in
+                showport|showportdetail|showtreeport|showportpathcode|\
+                setportadminedge|setportautoedge|setportp2p|\
+                setportrestrrole|setportrestrtcn|portmcheck|\
+                settreeportprio|settreeportcost|setportnetwork)
+                    COMPREPLY=( $( compgen -W "$(for x in \
+                        `ls /sys/class/net/${words[2]}/brif/`; do echo $x; \
+                        done)" -- "$cur" ) )
+                    ;;
+                setforcevers)
+                    COMPREPLY=( $( compgen -W 'mstp rstp stp' -- "$cur" ) )
+                    ;;
+            esac
+            ;;
+        4)
+            case $command in
+                setportadminedge|setportautoedge|\
+                setportrestrrole|setportrestrtcn|setbpduguard|setportnetwork)
+                    COMPREPLY=( $( compgen -W 'yes no' -- "$cur" ) )
+                    ;;
+                setportp2p)
+                    COMPREPLY=( $(compgen -W 'yes no auto' -- "$cur" ) )
+                    ;;
+            esac
+            ;;
+    esac
+} &&
+complete -F _mstpctl -o default mstpctl
+
+# ex: ts=4 sw=4 et filetype=sh

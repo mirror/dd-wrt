@@ -103,6 +103,8 @@ typedef enum {
     PARAM_BRFWDDELAY,
     PARAM_TXHOLDCNT,
     PARAM_MAXHOPS,
+    PARAM_BRHELLO,
+    PARAM_BRAGEING,
     PARAM_FORCEPROTVERS,
     PARAM_TOPCHNGTIME,
     PARAM_TOPCHNGCNT,
@@ -130,6 +132,10 @@ typedef enum {
     PARAM_RESTRTCN,
     PARAM_PORTHELLOTIME,
     PARAM_DISPUTED,
+    PARAM_BPDUGUARDPORT,
+    PARAM_BPDUGUARDERROR,
+    PARAM_NETWORKPORT,
+    PARAM_BA_INCONSISTENT,
 } param_id_t;
 
 typedef struct {
@@ -151,6 +157,8 @@ static const cmd_param_t cist_bridge_params[] = {
     { PARAM_BRFWDDELAY,   "bridge-forward-delay" },
     { PARAM_TXHOLDCNT,    "tx-hold-count" },
     { PARAM_MAXHOPS,      "max-hops" },
+    { PARAM_BRHELLO,      "hello-time" },
+    { PARAM_BRAGEING,     "ageing-time" },
     { PARAM_FORCEPROTVERS,"force-protocol-version" },
     { PARAM_TOPCHNGTIME,  "time-since-topology-change" },
     { PARAM_TOPCHNGCNT,   "topology-change-count" },
@@ -192,6 +200,8 @@ static int do_showbridge(const char *br_name, param_id_t param_id)
             printf("bridge forward delay %hhu\n", s.bridge_forward_delay);
             printf("  tx hold count %-10u ", s.tx_hold_count);
             printf("max hops             %hhu\n", s.max_hops);
+            printf("  hello time    %-10u ", s.bridge_hello_time);
+            printf("ageing time          %u\n", s.Ageing_Time);
             printf("  force protocol version     %s\n",
                    PROTO_VERS_STR(s.protocol_version));
             printf("  time since topology change %u\n",
@@ -200,6 +210,10 @@ static int do_showbridge(const char *br_name, param_id_t param_id)
                    s.topology_change_count);
             printf("  topology change            %s\n",
                    BOOL_STR(s.topology_change));
+            printf("  topology change port       %s\n",
+                   s.topology_change_port);
+            printf("  last topology change port  %s\n",
+                   s.last_topology_change_port);
             break;
         case PARAM_ENABLED:
             printf("%s\n", BOOL_STR(s.enabled));
@@ -242,6 +256,12 @@ static int do_showbridge(const char *br_name, param_id_t param_id)
             break;
         case PARAM_MAXHOPS:
             printf("%hhu\n", s.max_hops);
+            break;
+        case PARAM_BRHELLO:
+            printf("%hhu\n", s.bridge_hello_time);
+            break;
+        case PARAM_BRAGEING:
+            printf("%u\n", s.Ageing_Time);
             break;
         case PARAM_FORCEPROTVERS:
             printf("%s\n", PROTO_VERS_STR(s.protocol_version));
@@ -363,6 +383,8 @@ static int cmd_showtree(int argc, char *const *argv)
     printf("  time since topology change %u\n", s.time_since_topology_change);
     printf("  topology change count      %u\n", s.topology_change_count);
     printf("  topology change            %s\n", BOOL_STR(s.topology_change));
+    printf("  topology change port       %s\n", s.topology_change_port);
+    printf("  last topology change port  %s\n", s.last_topology_change_port);
 
     return 0;
 }
@@ -443,30 +465,34 @@ static int cmd_showtree(int argc, char *const *argv)
     })
 
 static const cmd_param_t cist_port_params[] = {
-    { PARAM_ENABLED,      "enabled" },
-    { PARAM_ROLE,         "role" },
-    { PARAM_STATE,        "state" },
-    { PARAM_PORTID,       "port-id" },
-    { PARAM_EXTPORTCOST,  "external-port-cost" },
-    { PARAM_ADMINEXTCOST, "admin-external-cost" },
-    { PARAM_INTPORTCOST,  "internal-port-cost" },
-    { PARAM_ADMININTCOST, "admin-internal-cost" },
-    { PARAM_DSGNROOT,     "designated-root" },
-    { PARAM_DSGNEXTCOST,  "dsgn-external-cost" },
-    { PARAM_DSGNRROOT,    "dsgn-regional-root" },
-    { PARAM_DSGNINTCOST,  "dsgn-internal-cost" },
-    { PARAM_DSGNBR,       "designated-bridge" },
-    { PARAM_DSGNPORT,     "designated-port" },
-    { PARAM_ADMINEDGEPORT,"admin-edge-port" },
-    { PARAM_AUTOEDGEPORT, "auto-edge-port" },
-    { PARAM_OPEREDGEPORT, "oper-edge-port" },
-    { PARAM_TOPCHNGACK,   "topology-change-ack" },
-    { PARAM_P2P,          "point-to-point" },
-    { PARAM_ADMINP2P,     "admin-point-to-point" },
-    { PARAM_RESTRROLE,    "restricted-role" },
-    { PARAM_RESTRTCN,     "restricted-TCN" },
-    { PARAM_PORTHELLOTIME,"port-hello-time" },
-    { PARAM_DISPUTED,     "disputed" },
+    { PARAM_ENABLED,        "enabled" },
+    { PARAM_ROLE,           "role" },
+    { PARAM_STATE,          "state" },
+    { PARAM_PORTID,         "port-id" },
+    { PARAM_EXTPORTCOST,    "external-port-cost" },
+    { PARAM_ADMINEXTCOST,   "admin-external-cost" },
+    { PARAM_INTPORTCOST,    "internal-port-cost" },
+    { PARAM_ADMININTCOST,   "admin-internal-cost" },
+    { PARAM_DSGNROOT,       "designated-root" },
+    { PARAM_DSGNEXTCOST,    "dsgn-external-cost" },
+    { PARAM_DSGNRROOT,      "dsgn-regional-root" },
+    { PARAM_DSGNINTCOST,    "dsgn-internal-cost" },
+    { PARAM_DSGNBR,         "designated-bridge" },
+    { PARAM_DSGNPORT,       "designated-port" },
+    { PARAM_ADMINEDGEPORT,  "admin-edge-port" },
+    { PARAM_AUTOEDGEPORT,   "auto-edge-port" },
+    { PARAM_OPEREDGEPORT,   "oper-edge-port" },
+    { PARAM_TOPCHNGACK,     "topology-change-ack" },
+    { PARAM_P2P,            "point-to-point" },
+    { PARAM_ADMINP2P,       "admin-point-to-point" },
+    { PARAM_RESTRROLE,      "restricted-role" },
+    { PARAM_RESTRTCN,       "restricted-TCN" },
+    { PARAM_PORTHELLOTIME,  "port-hello-time" },
+    { PARAM_DISPUTED,       "disputed" },
+    { PARAM_BPDUGUARDPORT,  "bpdu-guard-port" },
+    { PARAM_BPDUGUARDERROR, "bpdu-guard-error" },
+    { PARAM_NETWORKPORT,    "network-port" },
+    { PARAM_BA_INCONSISTENT,"ba-inconsistent" },
 };
 
 static int detail = 0;
@@ -534,6 +560,20 @@ static int do_showport(int br_index, const char *bridge_name,
                        BOOL_STR(s.restricted_tcn));
                 printf("  port hello time    %-23hhu ", s.port_hello_time);
                 printf("disputed             %s\n", BOOL_STR(s.disputed));
+                printf("  bpdu guard port    %-23s ",
+                       BOOL_STR(s.bpdu_guard_port));
+                printf("bpdu guard error     %s\n",
+                       BOOL_STR(s.bpdu_guard_error));
+                printf("  network port       %-23s ",
+                       BOOL_STR(s.network_port));
+                printf("BA inconsistent      %s\n",
+                       BOOL_STR(s.ba_inconsistent));
+                printf("  Num TX BPDU        %-23u ", s.num_tx_bpdu);
+                printf("Num TX TCN           %u\n", s.num_tx_tcn);
+                printf("  Num RX BPDU        %-23u ", s.num_rx_bpdu);
+                printf("Num RX TCN           %u\n", s.num_rx_tcn);
+                printf("  Num Transition FWD %-23u ", s.num_trans_fwd);
+                printf("Num Transition BLK   %u\n", s.num_trans_blk);
             }
             else
             {
@@ -621,6 +661,18 @@ static int do_showport(int br_index, const char *bridge_name,
             break;
         case PARAM_DISPUTED:
             printf("%s\n", BOOL_STR(s.disputed));
+            break;
+        case PARAM_BPDUGUARDPORT:
+            printf("%s\n", BOOL_STR(s.bpdu_guard_port));
+            break;
+        case PARAM_BPDUGUARDERROR:
+            printf("%s\n", BOOL_STR(s.bpdu_guard_error));
+            break;
+        case PARAM_NETWORKPORT:
+            printf("%s\n", BOOL_STR(s.network_port));
+            break;
+        case PARAM_BA_INCONSISTENT:
+            printf("%s\n", BOOL_STR(s.ba_inconsistent));
             break;
         default:
             return -2; /* -2 = unknown param */
@@ -925,6 +977,17 @@ static int cmd_setbridgemaxage(int argc, char *const *argv)
     return set_bridge_cfg(bridge_max_age, max_age);
 }
 
+static int cmd_setbridgehello(int argc, char *const *argv)
+{
+    int br_index = get_index(argv[1], "bridge");
+    if(0 > br_index)
+        return br_index;
+    unsigned int hello_time = getuint(argv[2]);
+    if(hello_time > 255)
+        hello_time = 255;
+    return set_bridge_cfg(bridge_hello_time, hello_time);
+}
+
 static int cmd_setbridgefdelay(int argc, char *const *argv)
 {
     int br_index = get_index(argv[1], "bridge");
@@ -963,6 +1026,14 @@ static int cmd_setbridgetxholdcount(int argc, char *const *argv)
     if(0 > br_index)
         return br_index;
     return set_bridge_cfg(tx_hold_count, getuint(argv[2]));
+}
+
+static int cmd_setbridgeageing(int argc, char *const *argv)
+{
+    int br_index = get_index(argv[1], "bridge");
+    if(0 > br_index)
+        return br_index;
+    return set_bridge_cfg(bridge_ageing_time, getuint(argv[2]));
 }
 
 static int cmd_settreeprio(int argc, char *const *argv)
@@ -1045,6 +1116,39 @@ static int cmd_setportrestrtcn(int argc, char *const *argv)
     if(0 > port_index)
         return port_index;
     return set_port_cfg(restricted_tcn, getyesno(argv[3], "yes", "no"));
+}
+
+static int cmd_setportbpduguard(int argc, char *const *argv)
+{
+    int br_index = get_index(argv[1], "bridge");
+    if(0 > br_index)
+        return br_index;
+    int port_index = get_index(argv[2], "port");
+    if(0 > port_index)
+        return port_index;
+    return set_port_cfg(bpdu_guard_port, getyesno(argv[3], "yes", "no"));
+}
+
+static int cmd_setportnetwork(int argc, char *const *argv)
+{
+    int br_index = get_index(argv[1], "bridge");
+    if (0 > br_index)
+        return br_index;
+    int port_index = get_index(argv[2], "port");
+    if (0 > port_index)
+        return port_index;
+    return set_port_cfg(network_port, getyesno(argv[3], "yes", "no"));
+}
+
+static int cmd_setportdonttxmt(int argc, char *const *argv)
+{
+    int br_index = get_index(argv[1], "bridge");
+    if (0 > br_index)
+        return br_index;
+    int port_index = get_index(argv[2], "port");
+    if (0 > port_index)
+        return port_index;
+    return set_port_cfg(dont_txmt, getyesno(argv[3], "yes", "no"));
 }
 
 static int cmd_settreeportprio(int argc, char *const *argv)
@@ -1432,6 +1536,10 @@ static const struct command commands[] =
      "<bridge> <fwd_delay>", "Set bridge forward delay (4-30)"},
     {2, 0, "setmaxhops", cmd_setbridgemaxhops,
      "<bridge> <max_hops>", "Set bridge max hops (6-40)"},
+    {2, 0, "sethello", cmd_setbridgehello,
+     "<bridge> <hello_time>", "Set bridge hello time (1-10)"},
+    {2, 0, "setageing", cmd_setbridgeageing,
+     "<bridge> <ageing_time>", "Set bridge ageing time (10-1000000)"},
     {2, 0, "setforcevers", cmd_setbridgeforcevers,
      "<bridge> {mstp|rstp|stp}", "Force Spanning Tree protocol version"},
     {2, 0, "settxholdcount", cmd_setbridgetxholdcount,
@@ -1461,6 +1569,8 @@ static const struct command commands[] =
      "Restrict port ability to propagate received TCNs"},
     {2, 0, "portmcheck", cmd_portmcheck,
      "<bridge> <port>", "Try to get back from STP to rapid (RSTP/MSTP) mode"},
+    {3, 0, "setbpduguard", cmd_setportbpduguard,
+     "<bridge> <port> {yes|no}", "Set bpdu guard state"},
     /* Set tree port */
     {4, 0, "settreeportprio", cmd_settreeportprio,
      "<bridge> <port> <mstid> <priority>",
@@ -1468,6 +1578,10 @@ static const struct command commands[] =
     {4, 0, "settreeportcost", cmd_settreeportcost,
      "<bridge> <port> <mstid> <cost>",
      "Set port internal path cost for the given MSTI (0 = auto)"},
+    {3, 0, "setportnetwork", cmd_setportnetwork,
+     "<bridge> <port> {yes|no}", "Set port network state"},
+    {3, 0, "setportdonttxmt", cmd_setportdonttxmt,
+     "<bridge> <port> {yes|no}", "Disable/Enable sending BPDU"},
 
     /* Other */
     {1, 0, "debuglevel", cmd_debuglevel, "<level>", "Level of verbosity"},
@@ -1492,7 +1606,8 @@ static void command_helpall(void)
 
     for(i = 0; i < COUNT_OF(commands); ++i)
     {
-        printf("-%s:\n   %-16s %s\n", commands[i].help, commands[i].name,
+        if(strcmp("setportdonttxmt", commands[i].name))
+            printf("-%s:\n   %-16s %s\n", commands[i].help, commands[i].name,
                commands[i].format);
     }
 }
