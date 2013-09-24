@@ -214,8 +214,40 @@ static void mx6_ventana_pciesw_early_fixup(struct pci_dev *dev)
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8609,
 	mx6_ventana_pciesw_early_fixup);
 
+#ifdef CONFIG_IMX_PCIE
+
+static void __init imx6q_ventana_pcie_setup(void)
+{
+	struct clk *axi_sel, *axi, *ref;
+
+	axi_sel = clk_get_sys(NULL, "pcie_axi_sel");
+	axi = clk_get_sys(NULL, "axi");
+	ref = clk_get_sys(NULL, "pcie_ref_125m");
+	if (IS_ERR(axi_sel) || IS_ERR(axi) || IS_ERR(ref)) {
+		pr_err("pcie setup failed - can't get clocks\n");
+		goto put_clk;
+	}
+	clk_set_parent(axi_sel, axi);
+	clk_prepare_enable(ref);
+
+	// create an alias for pcie_clk for driver to use
+	if (clk_add_alias("pcie_clk", NULL, "pcie_axi", NULL))
+		pr_err("could not register alias for pcie_clk\n");
+
+put_clk:
+	if (!IS_ERR(axi_sel))
+		clk_put(axi_sel);
+	if (!IS_ERR(axi))
+		clk_put(axi);
+	if (!IS_ERR(ref))
+		clk_put(ref);
+}
+#endif
 static void __init imx6q_ventana_init(void)
 {
+#ifdef CONFIG_IMX_PCIE
+	imx6q_ventana_pcie_setup();
+#endif
 	imx6q_sabrelite_cko1_setup();
 }
 
