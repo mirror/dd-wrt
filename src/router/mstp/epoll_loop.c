@@ -112,9 +112,25 @@ int epoll_main_loop(void)
         struct timeval tv;
         gettimeofday(&tv, NULL);
         timeout = time_diff(&nexttimeout, &tv);
-        if(timeout < 0)
+        if(timeout < 0 || timeout > 1000)
         {
             run_timeouts();
+            /*
+             * Check if system time has changed.
+             * NOTE: we can not differentiate reliably if system
+             * time has changed or we have spent too much time
+             * inside event handlers and run_timeouts().
+             * Fix: use clock_gettime(CLOCK_MONOTONIC, ) instead of
+             * gettimeofday, if it is available.
+             * If it is not available on given system -
+             * the following is the best we can do.
+             */
+            if(timeout < -4000 || timeout > 1000)
+            {
+                /* Most probably, system time has changed */
+                nexttimeout.tv_usec = tv.tv_usec;
+                nexttimeout.tv_sec = tv.tv_sec + 1;
+            }
             timeout = 0;
         }
 

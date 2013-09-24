@@ -1,5 +1,5 @@
 MODE = devel
-version := 0.02
+version := 0.03
 
 DSOURCES = main.c epoll_loop.c brmon.c bridge_track.c libnetlink.c mstp.c \
            packet.c netif_utils.c ctl_socket_server.c hmac_md5.c driver_deps.c
@@ -35,6 +35,8 @@ install: all
 	install -m 755 mstpd $(INSTALLDIR)/sbin/mstpd
 	install -m 755 mstpctl $(INSTALLDIR)/sbin/mstpctl
 	install -m 755 bridge-stp $(INSTALLDIR)/sbin/bridge-stp
+#	-mkdir -pv $(INSTALLDIR)/lib/mstpctl-utils/
+#	cp -rv lib/* $(INSTALLDIR)/lib/mstpctl-utils/
 
 romfs: all
 	$(ROMFSINST) /sbin/mstpd
