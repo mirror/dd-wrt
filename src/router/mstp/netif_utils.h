@@ -32,6 +32,7 @@ int netsock_init(void);
 
 int get_hwaddr(char *ifname, unsigned char *hwaddr);
 int get_flags(char *ifname);
+int if_shutdown(char *ifname);
 
 int ethtool_get_speed_duplex(char *ifname, int *speed, int *duplex);
 

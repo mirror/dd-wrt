@@ -255,11 +255,9 @@ error_exit:
 
     printout_mesh(br);
 
-    list_del(&prt[1]->br_list);
     MSTP_IN_delete_port(prt[1]);
     if(!MSTP_IN_delete_msti(br, 0xE12))
         goto error_exit;
-    list_del(&prt[3]->br_list);
     MSTP_IN_delete_port(prt[3]);
     if(!MSTP_IN_delete_msti(br, 0x005))
         goto error_exit;

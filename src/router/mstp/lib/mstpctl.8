@@ -1,0 +1,107 @@
+.\"
+.\"	This program is free software; you can redistribute it and/or modify
+.\"	it under the terms of the GNU General Public License as published by
+.\"	the Free Software Foundation; either version 2 of the License, or
+.\"	(at your option) any later version.
+.\"
+.\"	This program is distributed in the hope that it will be useful,
+.\"	but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\"	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\"	GNU General Public License for more details.
+.\"
+.\"	You should have received a copy of the GNU General Public License
+.\"	along with this program; if not, write to the Free Software
+.\"	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+.\"
+.\"
+.TH MSTPCTL 8 "April 29, 2013" "" ""
+.SH NAME
+mstpctl \- mstpd configuration
+.SH SYNOPSIS
+.BR "mstpctl [command]"
+.SH DESCRIPTION
+.B mstpctl
+is used to configure Multiple Spanning Tree daemon (mstpd). MSTPCTL is used for configuring STP parameters on bridges which have user-space STP enabled. Currently, STP is disabled by default on the bridge. To enable user-space STP, configure "brctl stp <bridge> on" while ensuring that /sbin/bridge-stp kernel helper script will return success (0) for this operation.
+
+.SH SPANNING TREE PROTOCOL CONFIGURATION
+
+.IR mstpctl(8)
+can be used for configuring certain spanning tree protocol
+parameters. For an explanation of these parameters, see the IEEE
+802.1D-2004 and 802.1Q-2005(-2011) standards.
+
+.B mstpctl setmaxage <bridge> <max_age>
+sets the <bridge>'s 'maximum age' to <max_age> seconds, default is 20.
+
+.B mstpctl setfdelay <bridge> <time>
+sets the <bridge>'s 'forward delay' to <time> seconds, default is 15.
+
+.B mstpctl setmaxhops <bridge> <max_hops>
+sets the <bridge>'s 'maximum hops' to <max_hops>, default is 20.
+
+.B mstpctl setforcevers <bridge> {mstp|rstp|stp}
+forces the <bridge> to use specific STP protocol version. mstp is the default.
+
+.B mstpctl settxholdcount <bridge> <tx_hold_count>
+sets the <bridge>'s 'transmit hold count' to <tx_hold_count>.
+
+.B mstpctl settreeprio <bridge> <mstid> <priority>
+set <bridge>'s priority for the tree with id = <mstid>, <priority> is between 0 and 15. Bridge priority affects bridge id, lowest priority bridge will be the (regional) root. Note that traditionally bridge priority is a multiple of 4096 and ranges from 0 to 15*4096 = 61440. mstpd is different - it throws out that useless "multiple of 4096" rule and expresses bridge priority in natural units (0-15). Default is 8.
+
+.B mstpctl setportpathcost <bridge> <port> <cost>
+sets the port cost of the <port> in <bridge> to <cost>. Default is 0 (= auto).
+
+.B mstpctl setportadminedge <bridge> <port> {yes|no}
+Enables/disables the admin edge state of the <port> in <bridge>, default is no.
+
+.B mstpctl setportautoedge <bridge> <port> {yes|no}
+Enables/disables the auto transition to/from edge state of the <port> in <bridge>, default is no.
+
+.B mstpctl setportp2p <bridge> <port> {yes|no|auto}
+Enables/disables the point2point detection mode of the <port> in <bridge>, default is auto.
+
+.B mstpctl setportrestrrole <bridge> <port> {yes|no}
+Enables/disables the restrictions on the <port>'s ability to take root role in <bridge>, default is no (i.e. no restrictions on the port's role).
+
+.B mstpctl setportrestrtcn <bridge> <port> {yes|no}
+Enables/disables the restrictions on the <port>'s ability to propagate received topology change notification in <bridge>, default is no (i.e. no restrictions on the TCN propagation).
+
+.B mstpctl setbpduguard <bridge> <port> {yes|no}
+Enables/disables the bpduguard configuration of the <port> in <bridge>, default is no.
+
+.B mstpctl settreeportprio <bridge> <port> <mstid> <priority>
+sets the <port>'s priority in <bridge> to <priority> for the MSTI with id = <mstid>. The priority value is a number between 0 and 15. Note that traditionally port priority is a multiple of 16 and ranges from 0 to 15*16 = 240. mstpd is different - it throws out that useless "multiple of 16" rule and expresses port priority in natural units (0-15). Default is 8.
+
+.B mstpctl sethello <bridge> <time>
+sets the <bridge>'s 'hello time' to <time> seconds, default is 2.
+
+.B mstpctl setageing <bridge> <time>
+sets the ethernet (MAC) address ageing <time>, in seconds, for the <bridge>. Used only when protocol version is forced to STP, default is 300s. Note that this parameter differs from the other ones: it is only informational parameter. By setting it in the mstpd one do not change the real bridge's Ageing Time; it is supposed to be set as information to the mstpd that real Ageing Time in the real bridge was changed.
+
+.B mstpctl setportnetwork <bridge> <port> {yes|no}
+Enables/disables the bridge assurance capability for a <port> in <bridge>,
+default is no.
+
+.SH SPANNING TREE PROTOCOL SHOW COMMANDS
+.B mstpctl showbridge [<bridge>]
+will show information of the <bridge>'s CIST instance. If <bridge> parameter is omitted - shows info for all bridges.
+
+.B mstpctl showport <bridge> [<port>]
+will show short (one-line) information about the <port> of the <bridge>'s CIST instance. If <port> parameters is omitted - shows info for all ports.
+
+.B mstpctl showportdetail <bridge> [<port>]
+will show detailed information about the <port> of the <bridge>'s CIST instance. If <port> parameters is omitted - shows info for all ports.
+
+.B mstpctl showtree <bridge> <mstid>
+will show information of the <bridge>'s MST instance with id = <mstid>.
+
+.B mstpctl showtreeport <bridge> <port> <mstid>
+will show detailed information about the <port> of the <bridge>'s MST instance with id = <mstid>.
+
+.SH SEE ALSO
+.BR brctl(8)
+
+.SH AUTHOR
+The source code for mstpctl was written by Vitalii Demianets
+<vitas@nppfactor.kiev.ua>. This manpage was written by Satish Ashok
+<sashok@cumulusnetworks.com> based on \fBbrctl\fP(8).

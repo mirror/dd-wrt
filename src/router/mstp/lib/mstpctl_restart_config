@@ -1,0 +1,96 @@
+#!/usr/bin/python
+# mstpctl_restart_cfg_gen -
+# On MSTPD restart, readd the bridges which are configured currently.
+# Also, parse the interfaces files to replay MSTPCTL confguration
+# Author: Satish Ashok, <sashok@cumulusnetworks.com>
+#
+
+import os
+import glob
+
+mstpctl_br_cfg      = ['maxage', 'fdelay', 'maxhops', 'txholdcount', \
+                      'forcevers', 'hello', 'ageing']
+mstpctl_br_msti_cfg = ['treeprio']
+mstpctl_prt_cfg      = ['portpathcost', 'portadminedge', 'portautoedge', \
+                        'portp2p', 'portrestrrole', 'portrestrtcn', \
+                        'bpduguard', 'treeportprio', 'treeportcost',
+                        'portnetwork']
+
+#List of bridges which are present currently
+bridge_list = []
+
+# Form a list of bridge interfaces present and add the bridge in
+# mstpd using mstpctl to get mstpd know about the bridge and bridge ports.
+#
+def find_bridges():
+    global bridge_list
+    try:
+        dirList = os.listdir('/sys/class/net/')
+    except:
+        return None
+    for br_name in dirList:
+	# Verify if interface is a bridge
+        br_path = '/sys/class/net/' + br_name + '/bridge'
+        if os.path.exists(br_path) :
+	    # Verify if bridge was in user_stp mode earlier
+            br_stp_file = br_path + '/' + 'stp_state'
+            f = open(br_stp_file)
+            stp_state = f.read()
+            if '2' in stp_state :
+                bridge_list.append(br_name)
+                os.system ("mstpctl addbridge " + br_name)
+            f.close()
+
+# Parse the interfaces file and extract all mstpctl configuration
+# present for bridge ports and replay the commands with the format
+# mstpctl set<command> so that mstpd gets the configuration.
+#
+def parse_config(filename):
+    f = open(filename)
+    intf = ''
+    for line in f:
+        str = line.strip().split(' ')
+        len_str = len(str)
+        if 2 > len_str :
+            continue
+        # Check if the source <file> keyword is present and extract the file
+        if str[0] == 'source' :
+            for sfile in glob.glob(str[1]):
+                parse_config(sfile)
+        if str[0] == 'iface' :
+            intf = str[1]
+        # Check if the interface is present in the bridge_list.
+        # This ensures that we replay configuration only for
+        # the bridges which are present currently.
+        if intf not in bridge_list :
+            continue
+        # Find if mstpctl_ keyword is present
+        if 'mstpctl_' in str[0] :
+            head, temp, mstp_cfg = str[0].partition('mstpctl_')
+            # Replay bridge configuration
+            if mstp_cfg in mstpctl_br_cfg :
+                os.system ("mstpctl set{0} {1} {2}".format(mstp_cfg,intf,str[1]))
+            # Replay Bridge CIST configuration, since MSTP not supported,
+            # hardcode MSTID to 0.
+            elif mstp_cfg in mstpctl_br_msti_cfg :
+                os.system ("mstpctl set{0} {1} 0 {2}".format(mstp_cfg,intf,str[1]))
+            # Replay Bridge port configuration
+            elif mstp_cfg in mstpctl_prt_cfg :
+                i = 1
+                # Find the list of ports present
+                while i < len_str :
+                    # Find the port and configuration
+                    port, temp1, prt_cfg = str[i].partition('=')
+                    # CIST Configuration - hardcode MSTID to 0.
+                    if mstp_cfg == 'treeportprio' or mstp_cfg == 'treeportcost' :
+                        os.system ("mstpctl set{0} {1} {2} 0 {3}"\
+                                    .format(mstp_cfg,intf, port, prt_cfg))
+                    else:
+                        os.system ("mstpctl set{0} {1} {2} {3}"\
+                                    .format(mstp_cfg,intf, port, prt_cfg))
+                    i = i + 1
+    f.close()
+    return
+
+find_bridges()
+parse_config('/etc/network/interfaces')

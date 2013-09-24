@@ -76,64 +76,63 @@ static bridge_t * find_br(int if_index)
 
 static port_t * create_if(bridge_t * br, int if_index)
 {
-    port_t *ifc;
-    TST((ifc = calloc(1, sizeof(*ifc))) != NULL, NULL);
+    port_t *prt;
+    TST((prt = calloc(1, sizeof(*prt))) != NULL, NULL);
 
     /* Init system dependent info */
-    ifc->sysdeps.if_index = if_index;
-    if_indextoname(if_index, ifc->sysdeps.name);
-    get_hwaddr(ifc->sysdeps.name, ifc->sysdeps.macaddr);
+    prt->sysdeps.if_index = if_index;
+    if_indextoname(if_index, prt->sysdeps.name);
+    get_hwaddr(prt->sysdeps.name, prt->sysdeps.macaddr);
 
     int portno;
-    if(0 > (portno = get_bridge_portno(ifc->sysdeps.name)))
+    if(0 > (portno = get_bridge_portno(prt->sysdeps.name)))
     {
-        ERROR("Couldn't get port number for %s", ifc->sysdeps.name);
-        free(ifc);
+        ERROR("Couldn't get port number for %s", prt->sysdeps.name);
+        free(prt);
         return NULL;
     }
     if((0 == portno) || (portno > MAX_PORT_NUMBER))
     {
-        ERROR("Port number for %s is invalid (%d)", ifc->sysdeps.name, portno);
-        free(ifc);
+        ERROR("Port number for %s is invalid (%d)", prt->sysdeps.name, portno);
+        free(prt);
         return NULL;
     }
 
-    INFO("Add iface %s as port#%d to bridge %s", ifc->sysdeps.name,
+    INFO("Add iface %s as port#%d to bridge %s", prt->sysdeps.name,
          portno, br->sysdeps.name);
-    ifc->bridge = br;
-    if(!MSTP_IN_port_create_and_add_tail(ifc, portno))
+    prt->bridge = br;
+    if(!MSTP_IN_port_create_and_add_tail(prt, portno))
     {
-        free(ifc);
+        free(prt);
         return NULL;
     }
 
-    return ifc;
+    return prt;
 }
 
 static port_t * find_if(bridge_t * br, int if_index)
 {
-    port_t *ifc;
-    list_for_each_entry(ifc, &br->ports, br_list)
+    port_t *prt;
+    list_for_each_entry(prt, &br->ports, br_list)
     {
-        if(ifc->sysdeps.if_index == if_index)
-            return ifc;
+        if(prt->sysdeps.if_index == if_index)
+            return prt;
     }
     return NULL;
 }
 
-static inline void delete_if(port_t * ifc)
+static inline void delete_if(port_t *prt)
 {
-    list_del(&ifc->br_list);
-    MSTP_IN_delete_port(ifc);
-    free(ifc);
+    MSTP_IN_delete_port(prt);
+    free(prt);
 }
 
 static inline bool delete_if_byindex(bridge_t * br, int if_index)
 {
-    port_t *ifc;
-    if(!(ifc = find_if(br, if_index)))
+    port_t *prt;
+    if(!(prt = find_if(br, if_index)))
         return false;
-    delete_if(ifc);
+    delete_if(prt);
     return true;
 }
 
@@ -199,66 +198,66 @@ static void set_br_up(bridge_t * br, bool up)
         MSTP_IN_set_bridge_enable(br, br->sysdeps.up);
 }
 
-static void set_if_up(port_t * ifc, bool up)
+static void set_if_up(port_t *prt, bool up)
 {
-    INFO("Port %s : %s", ifc->sysdeps.name, (up ? "up" : "down"));
+    INFO("Port %s : %s", prt->sysdeps.name, (up ? "up" : "down"));
     int speed = -1;
     int duplex = -1;
     bool changed = false;
 
-    if(check_mac_address(ifc->sysdeps.name, ifc->sysdeps.macaddr))
+    if(check_mac_address(prt->sysdeps.name, prt->sysdeps.macaddr))
     {
         /* MAC address changed */
-        if(check_mac_address(ifc->bridge->sysdeps.name,
-           ifc->bridge->sysdeps.macaddr))
+        if(check_mac_address(prt->bridge->sysdeps.name,
+           prt->bridge->sysdeps.macaddr))
         {
             /* Notify bridge address change */
-            MSTP_IN_set_bridge_address(ifc->bridge,
-                                       ifc->bridge->sysdeps.macaddr);
+            MSTP_IN_set_bridge_address(prt->bridge,
+                                       prt->bridge->sysdeps.macaddr);
         }
     }
 
     if(!up)
     { /* Down */
-        if(ifc->sysdeps.up)
+        if(prt->sysdeps.up)
         {
-            ifc->sysdeps.up = false;
+            prt->sysdeps.up = false;
             changed = true;
         }
     }
     else
     { /* Up */
-        int r = ethtool_get_speed_duplex(ifc->sysdeps.name, &speed, &duplex);
+        int r = ethtool_get_speed_duplex(prt->sysdeps.name, &speed, &duplex);
         if((r < 0) || (speed < 0))
             speed = 10;
         if((r < 0) || (duplex < 0))
             duplex = 0; /* Assume half duplex */
 
-        if(speed != ifc->sysdeps.speed)
+        if(speed != prt->sysdeps.speed)
         {
-            ifc->sysdeps.speed = speed;
+            prt->sysdeps.speed = speed;
             changed = true;
         }
-        if(duplex != ifc->sysdeps.duplex)
+        if(duplex != prt->sysdeps.duplex)
         {
-            ifc->sysdeps.duplex = duplex;
+            prt->sysdeps.duplex = duplex;
             changed = true;
         }
-        if(!ifc->sysdeps.up)
+        if(!prt->sysdeps.up)
         {
-            ifc->sysdeps.up = true;
+            prt->sysdeps.up = true;
             changed = true;
         }
     }
     if(changed)
-        MSTP_IN_set_port_enable(ifc, ifc->sysdeps.up, ifc->sysdeps.speed,
-                                ifc->sysdeps.duplex);
+        MSTP_IN_set_port_enable(prt, prt->sysdeps.up, prt->sysdeps.speed,
+                                prt->sysdeps.duplex);
 }
 
 /* br_index == if_index means: interface is bridge master */
 int bridge_notify(int br_index, int if_index, bool newlink, unsigned flags)
 {
-    port_t *ifc;
+    port_t *prt;
     bridge_t *br = NULL, *other_br;
     bool up = !!(flags & IFF_UP);
     bool running = up && (flags & IFF_RUNNING);
@@ -277,7 +276,7 @@ int bridge_notify(int br_index, int if_index, bool newlink, unsigned flags)
 
     if(br)
     {
-        if(!(ifc = find_if(br, if_index)))
+        if(!(prt = find_if(br, if_index)))
         {
             if(!newlink)
             {
@@ -297,9 +296,9 @@ int bridge_notify(int br_index, int if_index, bool newlink, unsigned flags)
                         break;
                     }
             }
-            ifc = create_if(br, if_index);
+            prt = create_if(br, if_index);
         }
-        if(!ifc)
+        if(!prt)
         {
             ERROR("Couldn't create data for interface %d (master %d)",
                   if_index, br_index);
@@ -307,10 +306,10 @@ int bridge_notify(int br_index, int if_index, bool newlink, unsigned flags)
         }
         if(!newlink)
         {
-            delete_if(ifc);
+            delete_if(prt);
             return 0;
         }
-        set_if_up(ifc, running); /* And speed and duplex */
+        set_if_up(prt, running); /* And speed and duplex */
     }
     else
     { /* Interface is not a bridge slave */
@@ -362,22 +361,22 @@ static const __u8 bridge_group_address[ETH_ALEN] =
 
 void bridge_bpdu_rcv(int if_index, const unsigned char *data, int len)
 {
-    port_t *ifc = NULL;
+    port_t *prt = NULL;
     bridge_t *br;
 
     LOG("ifindex %d, len %d", if_index, len);
 
     list_for_each_entry(br, &bridges, list)
     {
-        if((ifc = find_if(br, if_index)))
+        if((prt = find_if(br, if_index)))
             break;
     }
-    if(!ifc)
+    if(!prt)
         return;
 
     /* sanity checks */
-    TST(br == ifc->bridge,);
-    TST(ifc->sysdeps.up,);
+    TST(br == prt->bridge,);
+    TST(prt->sysdeps.up,);
 
     /* Validate Ethernet and LLC header,
      * maybe we can skip this check thanks to Berkeley filter in packet socket?
@@ -396,7 +395,7 @@ void bridge_bpdu_rcv(int if_index, const unsigned char *data, int len)
     TST(l <= ETH_DATA_LEN && l <= len - ETH_HLEN && l >= LLC_PDU_LEN_U, );
     TST(h->d_sap == LLC_SAP_BSPAN && h->s_sap == LLC_SAP_BSPAN && (h->llc_ctrl & 0x3) == LLC_PDU_TYPE_U,);
 
-    MSTP_IN_rx_bpdu(ifc,
+    MSTP_IN_rx_bpdu(prt,
                     /* Don't include LLC header */
                     (bpdu_t *)(data + sizeof(*h)), l - LLC_PDU_LEN_U);
 }
@@ -454,8 +453,8 @@ static int br_set_ageing_time(char *brname, unsigned int ageing_time)
 void MSTP_OUT_set_state(per_tree_port_t *ptp, int new_state)
 {
     char * state_name;
-    port_t *ifc = ptp->port;
-    bridge_t *br = ifc->bridge;
+    port_t *prt = ptp->port;
+    bridge_t *br = prt->bridge;
 
     if(ptp->state == new_state)
         return;
@@ -471,24 +470,26 @@ void MSTP_OUT_set_state(per_tree_port_t *ptp, int new_state)
             break;
         case BR_STATE_FORWARDING:
             state_name = "forwarding";
+            ++(prt->num_trans_fwd);
             break;
         case BR_STATE_BLOCKING:
             state_name = "blocking";
+            ++(prt->num_trans_blk);
             break;
         default:
         case BR_STATE_DISABLED:
             state_name = "disabled";
             break;
     }
-    INFO_MSTINAME(br, ifc, ptp, "entering %s state", state_name);
+    INFO_MSTINAME(br, prt, ptp, "entering %s state", state_name);
 
     /* Translate new CIST state to the kernel bridge code */
     if(0 == ptp->MSTID)
     { /* CIST */
-        if(ifc->sysdeps.up)
+        if(prt->sysdeps.up)
         {
-            if(0 > br_set_state(&rth_state, ifc->sysdeps.if_index, ptp->state))
-                ERROR_PRTNAME(br, ifc, "Couldn't set kernel bridge state %s",
+            if(0 > br_set_state(&rth_state, prt->sysdeps.if_index, ptp->state))
+                ERROR_PRTNAME(br, prt, "Couldn't set kernel bridge state %s",
                               state_name);
         }
     }
@@ -502,18 +503,18 @@ void MSTP_OUT_set_state(per_tree_port_t *ptp, int new_state)
  */
 void MSTP_OUT_flush_all_fids(per_tree_port_t * ptp)
 {
-    port_t *ifc = ptp->port;
-    bridge_t *br = ifc->bridge;
+    port_t *prt = ptp->port;
+    bridge_t *br = prt->bridge;
 
     /* Translate CIST flushing to the kernel bridge code */
     if(0 == ptp->MSTID)
     { /* CIST */
-        if(0 > br_flush_port(ifc->sysdeps.name))
-            ERROR_PRTNAME(br, ifc,
+        if(0 > br_flush_port(prt->sysdeps.name))
+            ERROR_PRTNAME(br, prt,
                           "Couldn't flush kernel bridge forwarding database");
     }
     /* Completion signal MSTP_IN_all_fids_flushed will be called by driver */
-    INFO_MSTINAME(br, ifc, ptp, "Flushing forwarding database");
+    INFO_MSTINAME(br, prt, ptp, "Flushing forwarding database");
     driver_flush_all_fids(ptp);
 }
 
@@ -534,10 +535,10 @@ void MSTP_OUT_set_ageing_time(port_t *prt, unsigned int ageingTime)
         ERROR_BRNAME(br, "Couldn't set new ageing time in kernel bridge");
 }
 
-void MSTP_OUT_tx_bpdu(port_t * ifc, bpdu_t * bpdu, int size)
+void MSTP_OUT_tx_bpdu(port_t *prt, bpdu_t * bpdu, int size)
 {
-    char *bpdu_type;
-    bridge_t *br = ifc->bridge;
+    char *bpdu_type, *tcflag;
+    bridge_t *br = prt->bridge;
 
     switch(bpdu->protocolVersion)
     {
@@ -564,11 +565,26 @@ void MSTP_OUT_tx_bpdu(port_t * ifc, bpdu_t * bpdu, int size)
             bpdu_type = "UnknownProto";
     }
 
-    LOG_PRTNAME(br, ifc, "sending %s BPDU", bpdu_type);
+    ++(prt->num_tx_bpdu);
+    if((protoSTP == bpdu->protocolVersion) && (bpduTypeTCN == bpdu->bpduType))
+    {
+        ++(prt->num_tx_tcn);
+        LOG_PRTNAME(br, prt, "sending %s BPDU", bpdu_type);
+    }
+    else
+    {
+        tcflag = "";
+        if(bpdu->flags & (1 << offsetTc))
+        {
+            ++(prt->num_tx_tcn);
+            tcflag = ", tcFlag";
+        }
+        LOG_PRTNAME(br, prt, "sending %s BPDU%s", bpdu_type, tcflag);
+    }
 
     struct llc_header h;
     memcpy(h.dest_addr, bridge_group_address, ETH_ALEN);
-    memcpy(h.src_addr, ifc->sysdeps.macaddr, ETH_ALEN);
+    memcpy(h.src_addr, prt->sysdeps.macaddr, ETH_ALEN);
     h.len8023 = __cpu_to_be16(size + LLC_PDU_LEN_U);
     h.d_sap = h.s_sap = LLC_SAP_BSPAN;
     h.llc_ctrl = LLC_PDU_TYPE_U;
@@ -579,7 +595,13 @@ void MSTP_OUT_tx_bpdu(port_t * ifc, bpdu_t * bpdu, int size)
         { .iov_base = bpdu, .iov_len = size }
     };
 
-    packet_send(ifc->sysdeps.if_index, iov, 2, sizeof(h) + size);
+    packet_send(prt->sysdeps.if_index, iov, 2, sizeof(h) + size);
+}
+
+void MSTP_OUT_shutdown_port(port_t *prt)
+{
+    if(0 > if_shutdown(prt->sysdeps.name))
+        ERROR_PRTNAME(prt->bridge, prt, "Couldn't shutdown port");
 }
 
 /* User interface commands */
@@ -810,7 +832,7 @@ int CTL_add_bridges(int *br_array, int* *ifaces_lists)
 {
     int i, j, ifcount, brcount = br_array[0];
     bridge_t *br, *other_br;
-    port_t *ifc, *nxt;
+    port_t *prt, *nxt;
     int br_flags, if_flags;
     int *if_array;
     bool found;
@@ -831,19 +853,19 @@ int CTL_add_bridges(int *br_array, int* *ifaces_lists)
         if_array = ifaces_lists[i - 1];
         ifcount = if_array[0];
         /* delete all interfaces which are not in list */
-        list_for_each_entry_safe(ifc, nxt, &br->ports, br_list)
+        list_for_each_entry_safe(prt, nxt, &br->ports, br_list)
         {
             found = false;
             for(j = 1; j <= ifcount; ++j)
             {
-                if(ifc->sysdeps.if_index == if_array[j])
+                if(prt->sysdeps.if_index == if_array[j])
                 {
                     found = true;
                     break;
                 }
             }
             if(!found)
-                delete_if(ifc);
+                delete_if(prt);
         }
         /* add all new interfaces from the list */
         for(j = 1; j <= ifcount; ++j)
@@ -863,14 +885,14 @@ int CTL_add_bridges(int *br_array, int* *ifaces_lists)
                         break;
                     }
             }
-            if(NULL == (ifc = create_if(br, if_array[j])))
+            if(NULL == (prt = create_if(br, if_array[j])))
             {
                 INFO("Couldn't create data for interface %d (master %s)",
                      if_array[j], br->sysdeps.name);
                 continue;
             }
-            if(0 <= (if_flags = get_flags(ifc->sysdeps.name)))
-                set_if_up(ifc, (IFF_UP | IFF_RUNNING) ==
+            if(0 <= (if_flags = get_flags(prt->sysdeps.name)))
+                set_if_up(prt, (IFF_UP | IFF_RUNNING) ==
                                (if_flags & (IFF_UP | IFF_RUNNING))
                          );
         }

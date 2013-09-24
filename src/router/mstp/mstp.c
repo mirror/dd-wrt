@@ -18,7 +18,7 @@
  * ---- Bad IEEE! ----
  * For now I decide: All structures will hold Hello_Time,
  * because in 802.1D they do.
- * Maybe 802.1Q-2011 clarifies this, but I don't have the text.
+ * Besides, it is necessary for compatibility with old STP implementations.
  */
 
 /* 802.1Q-2005 does not define but widely use variable name newInfoXst.
@@ -50,6 +50,7 @@ static void br_state_machines_begin(bridge_t *br);
 static void prt_state_machines_begin(port_t *prt);
 static void tree_state_machines_begin(tree_t *tree);
 static void br_state_machines_run(bridge_t *br);
+static void updtbrAssuRcvdInfoWhile(port_t *prt);
 
 #define FOREACH_PORT_IN_BRIDGE(port, bridge) \
     list_for_each_entry((port), &(bridge)->ports, br_list)
@@ -62,7 +63,11 @@ static void br_state_machines_run(bridge_t *br);
 
 /* 17.20.11 of 802.1D */
 #define rstpVersion(br) ((br)->ForceProtocolVersion >= protoRSTP)
-
+/* Bridge assurance is operational only when NetworkPort type is configured
+ * and the operation status is pointToPoint and version is RSTP/MSTP
+ */
+#define assurancePort(prt) ((prt)->NetworkPort && (prt)->operPointToPointMAC \
+                            && (prt)->sendRSTP)
 /*
  * Recalculate configuration digest. (13.7)
  */
@@ -92,6 +97,74 @@ static __u32 compute_pcost(int speed)
     return MAX_PATH_COST;
 }
 
+static void bridge_default_internal_vars(bridge_t *br)
+{
+    br->uptime = 0;
+}
+
+static void tree_default_internal_vars(tree_t *tree)
+{
+    /* 12.8.1.1.3.(b,c,d) */
+    tree->time_since_topology_change = 0;
+    tree->topology_change_count = 0;
+    tree->topology_change = false; /* since all tcWhile are initialized to 0 */
+    strncpy(tree->topology_change_port, "None", IFNAMSIZ);
+    strncpy(tree->last_topology_change_port, "None", IFNAMSIZ);
+
+    /* The following are initialized in BEGIN state:
+     *  - rootPortId, rootPriority, rootTimes: in Port Role Selection SM
+     */
+}
+
+static void port_default_internal_vars(port_t *prt)
+{
+    prt->infoInternal = false;
+    prt->rcvdInternal = false;
+    prt->rcvdTcAck = false;
+    prt->rcvdTcn = false;
+    assign(prt->rapidAgeingWhile, 0u);
+    assign(prt->brAssuRcvdInfoWhile, 0u);
+    prt->BaInconsistent = false;
+    prt->num_rx_bpdu = 0;
+    prt->num_rx_tcn = 0;
+    prt->num_tx_bpdu = 0;
+    prt->num_tx_tcn = 0;
+    prt->num_trans_fwd = 0;
+    prt->num_trans_blk = 0;
+
+    /* The following are initialized in BEGIN state:
+     * - mdelayWhile. mcheck, sendRSTP: in Port Protocol Migration SM
+     * - helloWhen, newInfo, newInfoMsti, txCount: in Port Transmit SM
+     * - edgeDelayWhile, rcvdBpdu, rcvdRSTP, rcvdSTP : in Port Receive SM
+     * - operEdge: in Bridge Detection SM
+     * - tcAck: in Topology Change SM
+     */
+}
+
+static void ptp_default_internal_vars(per_tree_port_t *ptp)
+{
+    ptp->rcvdTc = false;
+    ptp->tcProp = false;
+    ptp->updtInfo = false;
+    ptp->master = false; /* 13.24.5 */
+    ptp->disputed = false;
+    assign(ptp->rcvdInfo, (port_info_t)0);
+    ptp->mastered = false;
+    memset(&ptp->msgPriority, 0, sizeof(ptp->msgPriority));
+    memset(&ptp->msgTimes, 0, sizeof(ptp->msgTimes));
+
+    /* The following are initialized in BEGIN state:
+     * - rcvdMsg: in Port Receive SM
+     * - fdWhile, rrWhile, rbWhile, role, learn, forward,
+     *   sync, synced, reRoot: in Port Role Transitions SM
+     * - tcWhile, fdbFlush: Topology Change SM
+     * - rcvdInfoWhile, proposed, proposing, agree, agreed,
+     *   infoIs, reselect, selected: Port Information SM
+     * - forwarding, learning: Port State Transition SM
+     * - selectedRole, designatedPriority, designatedTimes: Port Role Selection SM
+     */
+}
+
 static tree_t * create_tree(bridge_t *br, __u8 *macaddr, __be16 MSTID)
 {
     /* Initialize all fields except anchor */
@@ -116,17 +189,10 @@ static tree_t * create_tree(bridge_t *br, __u8 *macaddr, __be16 MSTID)
     assign(tree->BridgeTimes.Forward_Delay, br->Forward_Delay);
     assign(tree->BridgeTimes.Max_Age, br->Max_Age);
     assign(tree->BridgeTimes.Message_Age, (__u8)0);
-    /* 17.14 of 802.1D */
-    assign(tree->BridgeTimes.Hello_Time, (__u8)2);
+    assign(tree->BridgeTimes.Hello_Time, br->Hello_Time);
 
-    /* 12.8.1.1.3.(b,c,d) */
-    tree->time_since_topology_change = 0;
-    tree->topology_change_count = 0;
-    tree->topology_change = false; /* since all tcWhile are initialized to 0 */
+    tree_default_internal_vars(tree);
 
-    /* The following are initialized in BEGIN state:
-     *  - rootPortId, rootPriority, rootTimes: in Port Role Selection SM
-     */
     return tree;
 }
 
@@ -144,12 +210,8 @@ static per_tree_port_t * create_ptp(tree_t *tree, port_t *prt)
     ptp->MSTID = tree->MSTID;
 
     ptp->state = BR_STATE_DISABLED;
-    ptp->rcvdTc = false;
-    ptp->tcProp = false;
-    ptp->updtInfo = false;
     /* 0x80 = default port priority (17.14 of 802.1D) */
     ptp->portId = __constant_cpu_to_be16(0x8000) | prt->port_number;
-    ptp->master = false; /* 13.24.5 */
     assign(ptp->AdminInternalPortPathCost, 0u);
     assign(ptp->InternalPortPathCost, compute_pcost(GET_PORT_SPEED(prt)));
     /* 802.1Q leaves portPriority and portTimes uninitialized */
@@ -158,24 +220,8 @@ static per_tree_port_t * create_ptp(tree_t *tree, port_t *prt)
 
     ptp->calledFromFlushRoutine = false;
 
-    /* The following are initialized in BEGIN state:
-     * - rcvdMsg: in Port Receive SM
-     * - fdWhile, rrWhile, rbWhile, role, learn, forward,
-     *   sync, synced, reRoot: in Port Role Transitions SM
-     * - tcWhile, fdbFlush: Topology Change SM
-     * - rcvdInfoWhile, proposed, proposing, agree, agreed,
-     *   infoIs, reselect, selected: Port Information SM
-     * - forwarding, learning: Port State Transition SM
-     * - selectedRole, designatedPriority, designatedTimes: Port Role Selection SM
-     */
+    ptp_default_internal_vars(ptp);
 
-    /* The following are not initialized (set to zero thanks to calloc):
-     * - disputed
-     * - rcvdInfo
-     * - mastered
-     * - msgPriority
-     * - msgTimes
-     */
     return ptp;
 }
 
@@ -205,8 +251,9 @@ bool MSTP_IN_bridge_create(bridge_t *br, __u8 *macaddr)
     assign(br->Transmit_Hold_Count, 6u); /* 17.14 of 802.1D */
     assign(br->Migrate_Time, 3u); /* 17.14 of 802.1D */
     assign(br->Ageing_Time, 300u);/* 8.8.3 Table 8-3 */
+    assign(br->Hello_Time, (__u8)2);     /* 17.14 of 802.1D */
 
-    br->uptime = 0;
+    bridge_default_internal_vars(br);
 
     /* Create CIST */
     if(!(cist = create_tree(br, macaddr, 0)))
@@ -234,24 +281,18 @@ bool MSTP_IN_port_create_and_add_tail(port_t *prt, __u16 portno)
     prt->AdminP2P = p2pAuto;
     prt->operPointToPointMAC = false;
     prt->portEnabled = false;
-    prt->infoInternal = false;
-    prt->rcvdInternal = false;
-    prt->rcvdTcAck = false;
-    prt->rcvdTcn = false;
     prt->restrictedRole = false; /* 13.25.14 */
     prt->restrictedTcn = false; /* 13.25.15 */
     assign(prt->ExternalPortPathCost, MAX_PATH_COST); /* 13.37.1 */
     prt->AdminEdgePort = false; /* 13.25 */
     prt->AutoEdge = true;       /* 13.25 */
-    assign(prt->rapidAgeingWhile, 0u);
+    prt->BpduGuardPort = false;
+    prt->BpduGuardError = false;
+    prt->NetworkPort = false;
+    prt->dontTxmtBpdu = false;
+    prt->deleted = false;
 
-    /* The following are initialized in BEGIN state:
-     * - mdelayWhile. mcheck, sendRSTP: in Port Protocol Migration SM
-     * - helloWhen, newInfo, newInfoMsti, txCount: in Port Transmit SM
-     * - edgeDelayWhile, rcvdBpdu, rcvdRSTP, rcvdSTP : in Port Receive SM
-     * - operEdge: in Bridge Detection SM
-     * - tcAck: in Topology Change SM
-     */
+    port_default_internal_vars(prt);
 
     /* Create PerTreePort structures for all existing trees */
     FOREACH_TREE_IN_BRIDGE(tree, br)
@@ -287,6 +328,7 @@ void MSTP_IN_delete_port(port_t *prt)
     per_tree_port_t *ptp, *nxt;
     bridge_t *br = prt->bridge;
 
+    prt->deleted = true;
     if(prt->portEnabled)
     {
         prt->portEnabled = false;
@@ -300,6 +342,7 @@ void MSTP_IN_delete_port(port_t *prt)
         free(ptp);
     }
 
+    list_del(&prt->br_list);
     br_state_machines_run(br);
 }
 
@@ -319,7 +362,6 @@ void MSTP_IN_delete_bridge(bridge_t *br)
 
     list_for_each_entry_safe(prt, nxt_prt, &br->ports, br_list)
     {
-        list_del(&prt->br_list);
         MSTP_IN_delete_port(prt);
         free(prt);
     }
@@ -352,9 +394,41 @@ void MSTP_IN_set_bridge_address(bridge_t *br, __u8 *macaddr)
 
 void MSTP_IN_set_bridge_enable(bridge_t *br, bool up)
 {
+    port_t *prt;
+    per_tree_port_t *ptp;
+    tree_t *tree;
+
     if(br->bridgeEnabled == up)
         return;
     br->bridgeEnabled = up;
+
+    /* Reset all internal states and variables,
+     * except those which are user-configurable */
+    bridge_default_internal_vars(br);
+    FOREACH_TREE_IN_BRIDGE(tree, br)
+    {
+        tree_default_internal_vars(tree);
+    }
+    FOREACH_PORT_IN_BRIDGE(prt, br)
+    {
+        /* NOTE: Don't check prt->deleted here, as it is imposible condition */
+        /* NOTE: In the port_default_internal_vars() rapidAgeingWhile will be
+         *  reset, so we should stop rapid ageing procedure here.
+         */
+        if(prt->rapidAgeingWhile)
+        {
+            MSTP_OUT_set_ageing_time(prt, br->Ageing_Time);
+        }
+        port_default_internal_vars(prt);
+        FOREACH_PTP_IN_PORT(ptp, prt)
+        {
+            if(BR_STATE_DISABLED != ptp->state)
+            {
+                MSTP_OUT_set_state(ptp, BR_STATE_DISABLED);
+            }
+            ptp_default_internal_vars(ptp);
+        }
+    }
     br_state_machines_begin(br);
 }
 
@@ -410,7 +484,18 @@ void MSTP_IN_set_port_enable(port_t *prt, bool up, int speed, int duplex)
         if(!prt->portEnabled)
         {
             prt->portEnabled = true;
+            prt->BpduGuardError = false;
+            prt->BaInconsistent = false;
+            prt->num_rx_bpdu = 0;
+            prt->num_rx_tcn = 0;
+            prt->num_tx_bpdu = 0;
+            prt->num_tx_tcn = 0;
             changed = true;
+            /* When port is enabled, initialize bridge assurance timer,
+             * so that enough time is given before port is put in
+             * inconsistent state.
+             */
+            updtbrAssuRcvdInfoWhile(prt);
         }
     }
     else
@@ -447,7 +532,10 @@ void MSTP_IN_one_second(bridge_t *br)
         if(prt->rapidAgeingWhile)
         {
             if((--(prt->rapidAgeingWhile)) == 0)
-                MSTP_OUT_set_ageing_time(prt, br->Ageing_Time);
+            {
+                if(!prt->deleted)
+                    MSTP_OUT_set_ageing_time(prt, br->Ageing_Time);
+            }
         }
     }
 
@@ -474,6 +562,17 @@ void MSTP_IN_rx_bpdu(port_t *prt, bpdu_t *bpdu, int size)
 {
     int mstis_size;
     bridge_t *br = prt->bridge;
+
+    ++(prt->num_rx_bpdu);
+
+    if(prt->BpduGuardPort)
+    {
+        prt->BpduGuardError = true;
+        ERROR_PRTNAME(br, prt,
+                      "Received BPDU on BPDU Guarded Port - Port Down");
+        MSTP_OUT_shutdown_port(prt);
+        return;
+    }
 
     if(!br->bridgeEnabled)
     {
@@ -508,7 +607,9 @@ bpdu_validation_failed:
                 goto bpdu_validation_failed;
             /* Valid Config BPDU */
             bpdu->protocolVersion = protoSTP;
-            LOG_PRTNAME(br, prt, "received Config BPDU");
+            LOG_PRTNAME(br, prt, "received Config BPDU%s",
+                        (bpdu->flags & (1 << offsetTc)) ? ", tcFlag" : ""
+                       );
             break;
         case bpduTypeRST:
             if(protoRSTP == bpdu->protocolVersion)
@@ -517,7 +618,9 @@ bpdu_validation_failed:
                     goto bpdu_validation_failed;
                 /* Valid RST BPDU */
                 /* bpdu->protocolVersion = protoRSTP; */
-                LOG_PRTNAME(br, prt, "received RST BPDU");
+                LOG_PRTNAME(br, prt, "received RST BPDU%s",
+                            (bpdu->flags & (1 << offsetTc)) ? ", tcFlag" : ""
+                           );
                 break;
             }
             if(protoMSTP > bpdu->protocolVersion)
@@ -548,15 +651,35 @@ bpdu_validation_failed:
             bpdu->protocolVersion = protoMSTP;
             prt->rcvdBpduNumOfMstis = mstis_size
                                       / sizeof(msti_configuration_message_t);
-            LOG_PRTNAME(br, prt, "received MST BPDU with %d MSTIs",
-                        prt->rcvdBpduNumOfMstis);
+            LOG_PRTNAME(br, prt, "received MST BPDU%s with %d MSTIs",
+                        (bpdu->flags & (1 << offsetTc)) ? ", tcFlag" : "",
+                        prt->rcvdBpduNumOfMstis
+                       );
             break;
         default:
             goto bpdu_validation_failed;
     }
 
+    if((protoSTP == bpdu->protocolVersion) && (bpduTypeTCN == bpdu->bpduType))
+    {
+        ++(prt->num_rx_tcn);
+    }
+    else
+    {
+        if(bpdu->flags & (1 << offsetTc))
+            ++(prt->num_rx_tcn);
+    }
+
     assign(prt->rcvdBpduData, *bpdu);
     prt->rcvdBpdu = true;
+
+    /* Reset bridge assurance on receipt of valid BPDU */
+    if(prt->BaInconsistent)
+    {
+        prt->BaInconsistent = false;
+        INFO_PRTNAME(br, prt, "Clear Bridge assurance inconsistency");
+    }
+    updtbrAssuRcvdInfoWhile(prt);
 
     br_state_machines_run(br);
 }
@@ -570,6 +693,10 @@ void MSTP_IN_get_cist_bridge_status(bridge_t *br, CIST_BridgeStatus *status)
            cist->time_since_topology_change);
     assign(status->topology_change_count, cist->topology_change_count);
     status->topology_change = cist->topology_change;
+    strncpy(status->topology_change_port, cist->topology_change_port,
+            IFNAMSIZ);
+    strncpy(status->last_topology_change_port, cist->last_topology_change_port,
+            IFNAMSIZ);
     assign(status->designated_root, cist->rootPriority.RootID);
     assign(status->root_path_cost,
            __be32_to_cpu(cist->rootPriority.ExtRootPathCost));
@@ -585,6 +712,8 @@ void MSTP_IN_get_cist_bridge_status(bridge_t *br, CIST_BridgeStatus *status)
     assign(status->tx_hold_count, br->Transmit_Hold_Count);
     status->protocol_version = br->ForceProtocolVersion;
     status->enabled = br->bridgeEnabled;
+    assign(status->bridge_hello_time, br->Hello_Time);
+    assign(status->Ageing_Time, br->Ageing_Time);
 }
 
 /* 12.8.1.2 Read MSTI Bridge Protocol Parameters */
@@ -595,6 +724,10 @@ void MSTP_IN_get_msti_bridge_status(tree_t *tree, MSTI_BridgeStatus *status)
            tree->time_since_topology_change);
     assign(status->topology_change_count, tree->topology_change_count);
     status->topology_change = tree->topology_change;
+    strncpy(status->topology_change_port, tree->topology_change_port,
+            IFNAMSIZ);
+    strncpy(status->last_topology_change_port, tree->last_topology_change_port,
+            IFNAMSIZ);
     assign(status->regional_root, tree->rootPriority.RRootID);
     assign(status->internal_path_cost,
            __be32_to_cpu(tree->rootPriority.IntRootPathCost));
@@ -682,6 +815,25 @@ int MSTP_IN_set_cist_bridge_config(bridge_t *br, CIST_BridgeConfig *cfg)
         }
     }
 
+    if(cfg->set_bridge_hello_time)
+    {
+        if((1 > cfg->bridge_hello_time) || (10 < cfg->bridge_hello_time))
+        {
+            ERROR_BRNAME(br, "Bridge Hello Time must be between 1 and 10");
+            r = -1;
+        }
+    }
+
+    if(cfg->set_bridge_ageing_time)
+    {
+        if((10 > cfg->bridge_ageing_time)||(1000000 < cfg->bridge_ageing_time))
+        {
+            ERROR_BRNAME(br,
+                "Bridge Ageing Time must be between 10 and 1000000 seconds");
+            r = -1;
+        }
+    }
+
     if(r)
         return r;
 
@@ -728,6 +880,27 @@ int MSTP_IN_set_cist_bridge_config(bridge_t *br, CIST_BridgeConfig *cfg)
         }
     }
 
+    if(cfg->set_bridge_hello_time)
+    {
+        if(cfg->bridge_hello_time != br->Hello_Time)
+        {
+            INFO_BRNAME(br, "bridge hello_time new=%hhu, old=%hhu",
+                        cfg->bridge_hello_time, br->Hello_Time);
+            assign(br->Hello_Time, cfg->bridge_hello_time);
+            changed = changedBridgeTimes = true;
+        }
+    }
+
+    if(cfg->set_bridge_ageing_time)
+    {
+        if(cfg->bridge_ageing_time != br->Ageing_Time)
+        {
+            INFO_BRNAME(br, "bridge ageing_time new=%u, old=%u",
+                        cfg->bridge_ageing_time, br->Ageing_Time);
+            assign(br->Ageing_Time, cfg->bridge_ageing_time);
+        }
+    }
+
     /* Thirdly, finalize changes */
     if(changedBridgeTimes)
     {
@@ -736,6 +909,7 @@ int MSTP_IN_set_cist_bridge_config(bridge_t *br, CIST_BridgeConfig *cfg)
             assign(tree->BridgeTimes.remainingHops, br->MaxHops);
             assign(tree->BridgeTimes.Forward_Delay, br->Forward_Delay);
             assign(tree->BridgeTimes.Max_Age, br->Max_Age);
+            assign(tree->BridgeTimes.Hello_Time, br->Hello_Time);
         /* Comment found in rstpd by Srinivas Aji:
          * Do this for any change in BridgeTimes.
          * Otherwise we fail UNH rstp.op_D test 3.2 since when administratively
@@ -746,6 +920,11 @@ int MSTP_IN_set_cist_bridge_config(bridge_t *br, CIST_BridgeConfig *cfg)
             {
                 ptp->selected = false;
                 ptp->reselect = true;
+                /* TODO: change this when Hello_Time will be configurable
+                 *   per-port. For now, copy Bridge's Hello_Time
+                 *   to the port's Hello_Time.
+                 */
+                assign(ptp->portTimes.Hello_Time, br->Hello_Time);
             }
         }
     }
@@ -826,6 +1005,16 @@ void MSTP_IN_get_cist_port_status(port_t *prt, CIST_PortStatus *status)
     assign(status->admin_internal_port_path_cost,
            cist->AdminInternalPortPathCost);
     assign(status->internal_port_path_cost, cist->InternalPortPathCost);
+    status->bpdu_guard_port = prt->BpduGuardPort;
+    status->bpdu_guard_error = prt->BpduGuardError;
+    status->network_port = prt->NetworkPort;
+    status->ba_inconsistent = prt->BaInconsistent;
+    status->num_rx_bpdu = prt->num_rx_bpdu;
+    status->num_rx_tcn = prt->num_rx_tcn;
+    status->num_tx_bpdu = prt->num_tx_bpdu;
+    status->num_tx_tcn = prt->num_tx_tcn;
+    status->num_trans_fwd = prt->num_trans_fwd;
+    status->num_trans_blk = prt->num_trans_blk;
 }
 
 /* 12.8.2.2 Read MSTI Port Parameters */
@@ -855,6 +1044,7 @@ int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg)
     __u32 new_ExternalPathCost;
     bool new_p2p;
     per_tree_port_t *cist;
+    bridge_t *br = prt->bridge;
 
     /* Firstly, validation */
     if(cfg->set_admin_p2p)
@@ -947,6 +1137,42 @@ int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg)
         {
             prt->restrictedTcn = cfg->restricted_tcn;
             changed = true;
+        }
+    }
+
+    if(cfg->set_bpdu_guard_port)
+    {
+        if(prt->BpduGuardPort != cfg->bpdu_guard_port)
+        {
+            prt->BpduGuardPort = cfg->bpdu_guard_port;
+            INFO_PRTNAME(br, prt,"BpduGuardPort new=%d", prt->BpduGuardPort);
+        }
+    }
+
+    if(cfg->set_network_port)
+    {
+        if(prt->NetworkPort != cfg->network_port)
+        {
+            prt->NetworkPort = cfg->network_port;
+            INFO_PRTNAME(br, prt, "NetworkPort new=%d", prt->NetworkPort);
+            /* When Network port config is removed and bridge assurance
+             * inconsistency is set, clear the inconsistency.
+             */
+            if(!prt->NetworkPort && prt->BaInconsistent)
+            {
+                prt->BaInconsistent = false;
+                INFO_PRTNAME(br, prt, "Clear Bridge assurance inconsistency");
+            }
+            changed = true;
+        }
+    }
+
+    if(cfg->set_dont_txmt)
+    {
+        if(prt->dontTxmtBpdu != cfg->dont_txmt)
+        {
+            prt->dontTxmtBpdu = cfg->dont_txmt;
+            INFO_PRTNAME(br, prt, "donttxmt new=%d", prt->dontTxmtBpdu);
         }
     }
 
@@ -1354,7 +1580,7 @@ void MSTP_IN_set_mst_config_id(bridge_t *br, __u16 revision, __u8 *name)
  * If hint_SetToYes == false, some tcWhile in this tree has just became zero,
  *  so we should check all other tcWhile's in this tree.
  */
-static void set_TopologyChange(tree_t *tree, bool hint_SetToYes)
+static void set_TopologyChange(tree_t *tree, bool hint_SetToYes, port_t *port)
 {
     per_tree_port_t *ptp;
     bool prev_tc_not_set = !tree->topology_change;
@@ -1365,6 +1591,9 @@ static void set_TopologyChange(tree_t *tree, bool hint_SetToYes)
         tree->time_since_topology_change = 0;
         if(prev_tc_not_set)
             ++(tree->topology_change_count);
+        strncpy(tree->topology_change_port, tree->last_topology_change_port,
+                IFNAMSIZ);
+        strncpy(tree->last_topology_change_port, port->sysdeps.name, IFNAMSIZ);
         return;
     }
 
@@ -1540,7 +1769,7 @@ static void newTcWhile(per_tree_port_t *ptp)
         per_tree_port_t *cist = GET_CIST_PTP_FROM_PORT(prt);
 
         ptp->tcWhile = cist->portTimes.Hello_Time + 1;
-        set_TopologyChange(tree, true);
+        set_TopologyChange(tree, true, prt);
 
         if(0 == ptp->MSTID)
             prt->newInfo = true;
@@ -1552,7 +1781,7 @@ static void newTcWhile(per_tree_port_t *ptp)
     times_t *times = &tree->rootTimes;
 
     ptp->tcWhile = times->Max_Age + times->Forward_Delay;
-    set_TopologyChange(tree, true);
+    set_TopologyChange(tree, true, prt);
 }
 
 /* 13.26.6 rcvInfo */
@@ -1587,6 +1816,25 @@ static port_info_t rcvInfo(per_tree_port_t *ptp)
                     break;
                 case encodedRoleDesignated:
                     roleIsDesignated = true;
+                    break;
+                case encodedRoleMaster:
+                    /* 802.1D-2004 S9.2.9 P61. The Unknown value of Port Role
+                     * cannot be generated by a valid implementation; however,
+                     * this value is accepted on receipt. roleMaster in MSTP is
+                     * roleUnknown in RSTP.
+                     * NOTE.If the Unknown value of the Port Role parameter is
+                     * received, the state machines will effectively treat the RST
+                     * BPDU as if it were a Configuration BPDU
+                     */
+                    if(protoRSTP == b->protocolVersion)
+                    {
+                        roleIsDesignated = true;
+                        break;
+                    }
+                    else
+                    {
+                        return OtherInfo;
+                    }
                     break;
                 default:
                     return OtherInfo;
@@ -1760,15 +2008,14 @@ static void recordDispute(per_tree_port_t *ptp)
     if(0 == ptp->MSTID)
     { /* CIST */
         prt = ptp->port;
-        /* 802.1Q-2005 is somewhat unclear for the case (!prt->rcvdInternal):
-         *  if we should record dispute for all MSTIs unconditionally
-         *   or only when CIST Learning flag is set in BPDU.
+        /* 802.1Q-2005(-2011) is somewhat unclear for the case
+         *  (!prt->rcvdInternal): if we should record dispute for all MSTIs
+         *  unconditionally or only when CIST Learning flag is set in BPDU.
          * I guess that in this case MSTIs should be in sync with CIST
          * so record dispute for the MSTIs only when the same is done for CIST.
          * Additional supporting argument to this guess is that in
          *  setTcFlags() we do the same.
          * But that is only a guess and I could be wrong here ;)
-         * Maybe 802.1Q-2011 clarifies this, but I don't have the text.
          */
         if(prt->rcvdBpduData.flags & (1 << offsetLearnig))
         {
@@ -1848,10 +2095,18 @@ static void recordProposal(per_tree_port_t *ptp)
 /* 13.26.11 recordTimes */
 static void recordTimes(per_tree_port_t *ptp)
 {
+    /* 802.1Q-2005 and 802.1D-2004 both say that we have to copy
+     *   Hello_Time from msgTimes to portTimes.
+     * 802.1Q-2011, on the other hand, says that Hello_Time should be set
+     *   to the default here.
+     * As we have configurable Hello_Time, I choose the third option:
+     *   preserve the configured Hello_Time, It is in accordance with the
+     *   spirit of 802.1Q-2011, if we allow Hello_Time to be configurable.
+     */
+    __u8 prev_Hello_Time;
+    assign(prev_Hello_Time, ptp->portTimes.Hello_Time);
     assign(ptp->portTimes, ptp->msgTimes);
-
-    if(MIN_COMPAT_HELLO_TIME > ptp->portTimes.Hello_Time)
-        ptp->portTimes.Hello_Time = MIN_COMPAT_HELLO_TIME;
+    assign(ptp->portTimes.Hello_Time, prev_Hello_Time);
 }
 
 /* 13.24.s) + 17.19.7 of 802.1D : fdbFlush */
@@ -1859,7 +2114,7 @@ static void set_fdbFlush(per_tree_port_t *ptp)
 {
     port_t *prt = ptp->port;
 
-    if(prt->operEdge)
+    if(prt->operEdge || prt->deleted)
     {
         ptp->fdbFlush = false;
         return;
@@ -2047,13 +2302,15 @@ static void txConfig(port_t *prt)
     bpdu_t b;
     per_tree_port_t *cist = GET_CIST_PTP_FROM_PORT(prt);
 
+    if(prt->deleted || (roleDisabled == cist->role) || prt->dontTxmtBpdu)
+        return;
+
     b.protocolIdentifier = 0;
     b.protocolVersion = protoSTP;
     b.bpduType = bpduTypeConfig;
     /* Standard says "tcWhile ... for the Port". Which one tcWhile?
      * I guess that this means tcWhile for the CIST.
      * But that is only a guess and I could be wrong here ;)
-     * Maybe 802.1Q-2011 clarifies this, but I don't have the text.
      */
     b.flags = (0 != cist->tcWhile) ? (1 << offsetTc) : 0;
     if(prt->tcAck)
@@ -2094,7 +2351,9 @@ static inline __u8 message_role_from_port_role(per_tree_port_t *ptp)
     }
 }
 
-/* 13.26.20 txMstp */
+/* 802.1Q-2005: 13.26.20 txMstp
+ * 802.1Q-2011: 13.27.27 txRstp
+ */
 static void txMstp(port_t *prt)
 {
     bpdu_t b;
@@ -2104,13 +2363,15 @@ static void txMstp(port_t *prt)
     per_tree_port_t *ptp;
     msti_configuration_message_t *msti_msg;
 
+    if(prt->deleted || (roleDisabled == cist->role) || prt->dontTxmtBpdu)
+        return;
+
     b.protocolIdentifier = 0;
     b.bpduType = bpduTypeRST;
-    /* Standard says "{tcWhile, agree, proposing, role} ... for the Port".
-     * Which one {tcWhile, agree, proposing, role}?
-     * I guess that this means {tcWhile, agree, proposing, role} for the CIST.
+    /* Standard says "{tcWhile, agree, proposing} ... for the Port".
+     * Which one {tcWhile, agree, proposing}?
+     * I guess that this means {tcWhile, agree, proposing} for the CIST.
      * But that is only a guess and I could be wrong here ;)
-     * Maybe 802.1Q-2011 clarifies this, but I don't have the text.
      */
     b.flags = BPDU_FLAGS_ROLE_SET(message_role_from_port_role(cist));
     if(0 != cist->tcWhile)
@@ -2198,6 +2459,10 @@ static void txMstp(port_t *prt)
 static void txTcn(port_t *prt)
 {
     bpdu_t b;
+    per_tree_port_t *cist = GET_CIST_PTP_FROM_PORT(prt);
+
+    if(prt->deleted || (roleDisabled == cist->role) || prt->dontTxmtBpdu)
+        return;
 
     b.protocolIdentifier = 0;
     b.protocolVersion = protoSTP;
@@ -2224,12 +2489,44 @@ static void updtRcvdInfoWhile(per_tree_port_t *ptp)
     unsigned int Max_Age = cist->portTimes.Max_Age;
     unsigned int Hello_Time = cist->portTimes.Hello_Time;
 
+    /* NOTE: 802.1Q-2005(-2011) says that we should use
+     *  "remainingHops ... from the CIST's portTimes parameter"
+     *  As for me this is clear oversight in the standard,
+     *  the remainingHops should be taken form the port's own portTimes,
+     *  not from CIST's. After all, if we don't use port's own
+     *  remainingHops here, they aren't used anywhere at all.
+     *  Besides, there is a scenario which breaks if we use CIST's
+     *  remainingHops here:
+     *   1) Connect two switches (SW1,SW2) with two ports, thus forming a loop
+     *   2) Configure them to be in the same region, with two trees:
+     *      0 (CIST) and 1.
+     *   3) at SW1# mstpctl settreeprio br0 1 4
+     *      SW1 becomes regional root in tree 1
+     *   4) at SW2# mstpctl settreeprio br0 1 14
+     *   5) at SW1# mstpctl settreeprio br0 1 9
+     *
+     *  And now we have the classic "count-to-infinity" problem when the old
+     *  info ("Regional Root is SW1 with priority 4") circulates in the loop,
+     *  because it is better than current info ("Regional Root is SW1 with
+     *  priority 9"). The only way to get rid of that old info is
+     *  to age it out by the means of remainingHops counter.
+     *  In this situation we certainly must use counter from tree 1,
+     *  not CIST's.
+     */
     if((!prt->rcvdInternal && ((Message_Age + 1) <= Max_Age))
-       || (prt->rcvdInternal && (cist->portTimes.remainingHops > 1))
+       || (prt->rcvdInternal && (ptp->portTimes.remainingHops > 1))
       )
         ptp->rcvdInfoWhile = 3 * Hello_Time;
     else
         ptp->rcvdInfoWhile = 0;
+}
+
+static void updtbrAssuRcvdInfoWhile(port_t *prt)
+{
+    per_tree_port_t *cist = GET_CIST_PTP_FROM_PORT(prt);
+    unsigned int Hello_Time = cist->portTimes.Hello_Time;
+
+    prt->brAssuRcvdInfoWhile = 3 * cist->portTimes.Hello_Time;
 }
 
 /* 13.26.24 updtRolesDisabledTree */
@@ -2359,6 +2656,13 @@ static void updtRolesTree(tree_t *tree)
 
         /* e) Set new designatedTimes */
         assign(ptp->designatedTimes, tree->rootTimes);
+        /* Keep the configured Hello_Time for the port.
+         * NOTE: this is in accordance with the spirit of 802.1D-2004.
+         *    Also, this does not contradict 802.1Q-2005(-2011), as in these
+         *    standards both designatedTimes and rootTimes structures
+         *    don't have Hello_Time member.
+         */
+        assign(ptp->designatedTimes.Hello_Time, ptp->portTimes.Hello_Time);
     }
 
     /* syncMaster */
@@ -2508,6 +2812,8 @@ static void PTSM_tick(port_t *prt)
         --(prt->edgeDelayWhile);
     if(prt->txCount)
         --(prt->txCount);
+    if(prt->brAssuRcvdInfoWhile)
+        --(prt->brAssuRcvdInfoWhile);
 
     FOREACH_PTP_IN_PORT(ptp, prt)
     {
@@ -2520,7 +2826,7 @@ static void PTSM_tick(port_t *prt)
         if(ptp->tcWhile)
         {
             if(0 == --(ptp->tcWhile))
-                set_TopologyChange(ptp->tree, false);
+                set_TopologyChange(ptp->tree, false, prt);
         }
         if(ptp->rcvdInfoWhile)
             --(ptp->rcvdInfoWhile);
@@ -2737,7 +3043,9 @@ static bool BDSM_run(port_t *prt, bool dry_run)
     switch(prt->BDSM_state)
     {
         case BDSM_EDGE:
-            if((!prt->portEnabled && !prt->AdminEdgePort) || !prt->operEdge)
+            if(((!prt->portEnabled || !prt->AutoEdge) && !prt->AdminEdgePort)
+               || !prt->operEdge
+              )
             {
                 if(dry_run) /* state change */
                     return true;
@@ -2746,10 +3054,9 @@ static bool BDSM_run(port_t *prt, bool dry_run)
             return false;
         case BDSM_NOT_EDGE:
              cist = GET_CIST_PTP_FROM_PORT(prt);
-            /* NOTE: 802.1Q-2005 is not clear, which of the per-tree
+            /* NOTE: 802.1Q-2005(-2011) is not clear, which of the per-tree
              *  "proposing" flags to use here, or one should combine
-             *  them all for all trees? Maybe 802.1Q-2011 clarifies
-             *  this, but I don't have the text.
+             *  them all for all trees?
              * So, I decide that it will be the "proposing" flag
              *  from CIST tree - it seems like a good bet.
              */
@@ -2924,7 +3231,9 @@ static bool PTSM_run(port_t *prt, bool dry_run)
                 return false;
             if(prt->sendRSTP)
             { /* implement MSTP */
-                if(prt->newInfo || (prt->newInfoMsti && !mstiMasterPort))
+                if(prt->newInfo || (prt->newInfoMsti && !mstiMasterPort)
+                   || assurancePort(prt)
+                  )
                 {
                     if(dry_run) /* state change */
                         return true;
@@ -4121,8 +4430,10 @@ static bool PRTSM_runr(per_tree_port_t *ptp, bool recursive_call, bool dry_run)
                 PRTSM_to_DESIGNATED_PROPOSE(ptp);
                 return false;
             }
+            /* Dont transition to learn/forward when BA inconsistent */
             if(((0 == ptp->fdWhile) || ptp->agreed || prt->operEdge)
                && ((0 == ptp->rrWhile) || !ptp->reRoot) && !ptp->sync
+               && !ptp->port->BaInconsistent
               )
             {
                 if(!ptp->learn)
@@ -4140,9 +4451,11 @@ static bool PRTSM_runr(per_tree_port_t *ptp, bool recursive_call, bool dry_run)
                     return false;
                 }
             }
+            /* Transition to discarding when BA inconsistent */
             if(((ptp->sync && !ptp->synced)
                 || (ptp->reRoot && (0 != ptp->rrWhile))
                 || ptp->disputed
+                || ptp->port->BaInconsistent
                )
                && !prt->operEdge && (ptp->learn || ptp->forward)
               )
@@ -4225,7 +4538,10 @@ static void PSTSM_to_DISCARDING(per_tree_port_t *ptp, bool begin)
     disableForwarding();
     */
     if(BR_STATE_BLOCKING != ptp->state)
-        MSTP_OUT_set_state(ptp, BR_STATE_BLOCKING);
+    {
+        if(!ptp->port->deleted)
+            MSTP_OUT_set_state(ptp, BR_STATE_BLOCKING);
+    }
     ptp->learning = false;
     ptp->forwarding = false;
 
@@ -4239,7 +4555,10 @@ static void PSTSM_to_LEARNING(per_tree_port_t *ptp)
 
     /* enableLearning(); */
     if(BR_STATE_LEARNING != ptp->state)
-        MSTP_OUT_set_state(ptp, BR_STATE_LEARNING);
+    {
+        if(!ptp->port->deleted)
+            MSTP_OUT_set_state(ptp, BR_STATE_LEARNING);
+    }
     ptp->learning = true;
 
     PSTSM_run(ptp, false /* actual run */);
@@ -4251,7 +4570,10 @@ static void PSTSM_to_FORWARDING(per_tree_port_t *ptp)
 
     /* enableForwarding(); */
     if(BR_STATE_FORWARDING != ptp->state)
-        MSTP_OUT_set_state(ptp, BR_STATE_FORWARDING);
+    {
+        if(!ptp->port->deleted)
+            MSTP_OUT_set_state(ptp, BR_STATE_FORWARDING);
+    }
     ptp->forwarding = true;
 
     /* No need to run, no one condition will be met
@@ -4307,7 +4629,7 @@ static void TCSM_to_INACTIVE(per_tree_port_t *ptp, bool begin)
 
     set_fdbFlush(ptp);
     assign(ptp->tcWhile, 0u);
-    set_TopologyChange(ptp->tree, false);
+    set_TopologyChange(ptp->tree, false, ptp->port);
     if(0 == ptp->MSTID) /* CIST */
         ptp->port->tcAck = false;
 
@@ -4403,7 +4725,7 @@ static void TCSM_to_ACKNOWLEDGED(per_tree_port_t *ptp)
     ptp->TCSM_state = TCSM_ACKNOWLEDGED;
 
     assign(ptp->tcWhile, 0u);
-    set_TopologyChange(ptp->tree, false);
+    set_TopologyChange(ptp->tree, false, ptp->port);
     ptp->port->rcvdTcAck = false;
 
     TCSM_run(ptp, false /* actual run */);
@@ -4659,6 +4981,20 @@ static bool __br_state_machines_run(bridge_t *br, bool dry_run)
     port_t *prt;
     per_tree_port_t *ptp;
     tree_t *tree;
+
+    /* Check if bridge assurance timer expires */
+    FOREACH_PORT_IN_BRIDGE(prt, br)
+    {
+        if(prt->portEnabled && assurancePort(prt)
+           && (0 == prt->brAssuRcvdInfoWhile) && !prt->BaInconsistent
+          )
+        {
+            if(dry_run) /* state change */
+                return true;
+            prt->BaInconsistent = true;
+            ERROR_PRTNAME(prt->bridge, prt, "Bridge assurance inconsistent");
+        }
+    }
 
     /* 13.28  Port Receive state machine */
     FOREACH_PORT_IN_BRIDGE(prt, br)
