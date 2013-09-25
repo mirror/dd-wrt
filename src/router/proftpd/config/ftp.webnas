@@ -28,8 +28,8 @@
 				</div>
 			<div id="ftpanon">
 				<div class="setting">
-				<div class="label"><% tran("nas.proftpd_anon_subdir"); %></div>
-					<input maxlength="79" size="35" name="proftpd_anon_subdir" value="<% nvram_get("proftpd_anon_subdir"); %>" />
+				<div class="label"><% tran("nas.proftpd_anon_dir"); %></div>
+					<input maxlength="79" size="35" name="proftpd_anon_dir" value="<% nvram_get("proftpd_anon_dir"); %>" />
 				</div>
 			</div>	
 			<div class="setting">
