@@ -136,7 +136,6 @@ void start_ftpsrv(void)
 
 				}
 				cunext = cu->next;
-				free(cu);
 			}
 			csunext = csu->next;	
 		}
@@ -161,7 +160,7 @@ void start_ftpsrv(void)
 			nvram_safe_get("proftpd_authserverip"),
 			nvram_safe_get("proftpd_authserverport"),
 			nvram_safe_get("proftpd_sharedkey"), nvram_safe_get("proftpd_authserverip"), nvram_safe_get("proftpd_acctserverport"), nvram_safe_get("proftpd_sharedkey"));
-		fprintf(fp, "RadiusUserInfo 0 0 %s /bin/false\n", nvram_safe_get("proftpd_dir"));
+		fprintf(fp, "RadiusUserInfo 0 0 %s /bin/false\n", "/mnt"); //TODO allow to choose dir
 	}
 
 // Anonymous ftp - read only
@@ -171,7 +170,7 @@ void start_ftpsrv(void)
 			"User           ftp\n"
 			"Group          root\n"
 			"UserAlias      anonymous ftp\n"
-			"<Directory *>\n" "  <Limit WRITE>\n" "    DenyAll\n" "  </Limit>\n" "</Directory>\n" "</Anonymous>\n", nvram_safe_get("proftpd_dir"), nvram_safe_get("proftpd_anon_subdir"));
+			"<Directory *>\n" "  <Limit WRITE>\n" "    DenyAll\n" "  </Limit>\n" "</Directory>\n" "</Anonymous>\n", nvram_safe_get("proftpd_anon_dir"));
 	}
 
 	fclose(fp);
