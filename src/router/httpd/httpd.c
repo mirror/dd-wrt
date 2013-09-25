@@ -775,6 +775,7 @@ static void handle_request(void)
 #ifdef HAVE_IAS
 	int ias_startup = atoi(nvram_safe_get("ias_startup"));
 	int ias_detected = 0;
+	char redirect_path[48];
 
 	if (ias_startup > 1) {
 
@@ -787,7 +788,8 @@ static void handle_request(void)
 		    && ias_detected == 0 && nvram_match("ias_startup", "3")) {
 
 			fprintf(stderr, "[HTTP PATH] %s redirect\n", file);
-			send_headers(302, "Found", "Location: http://192.168.11.1/detect.asp", "", 0, NULL);
+			sprintf(redirect_path, "Location: http://%s/detect.asp", nvram_get("lan_ipaddr"));
+			send_headers(302, "Found", redirect_path, "", 0, NULL);
 			return;
 
 		} else if (ias_detected == 1) {
