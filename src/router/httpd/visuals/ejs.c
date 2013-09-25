@@ -1897,7 +1897,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strcmp(menu[i][j], "Upgrade.asp"))
 					j++;
 #endif
-#ifndef HAVE_SANSFIL
+#ifdef HAVE_SANSFIL
 				if (!strcmp(menu[i][j], "Hotspot.asp"))
 					j++;
 #endif
