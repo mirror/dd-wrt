@@ -743,7 +743,7 @@ nas.proftpd_dir="Datei Verzeichnis";
 nas.proftpd_passw="Benutzerpasswort Liste";
 nas.proftpd_writeen="Schreiberlaubnis";
 nas.proftpd_anon="Anonymer Login (Nur-Lesen)";
-nas.proftpd_anon_subdir="Anonymes Basisverzeichnis";
+nas.proftpd_anon_dir="Anonymes Basisverzeichnis";
 nas.samba3_legend="Dateifreigabe";
 nas.samba3="Samba Server";
 // ** DLNA **//
