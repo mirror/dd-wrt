@@ -1125,9 +1125,11 @@ ipkg_remove() {
 ###########
 
 # check for jffs
-if [ "$(nvram get sys_enable_jffs2)" = "0" ]; then
-    echo "please enable jffs first, you can't use IPKG without jffs support"   
-    exit 1 
+
+freespace=`df /jffs | grep dev | awk '{ print $4 }'`
+
+if [[ $freespace -lt 10000 ]]; then
+    echo "INFO: you have limited free space on /jffs, package installation may fail"    
 fi
 # Parse options
 while [ $# -gt 0 ]; do
