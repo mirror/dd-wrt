@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.11.1 Kernel Configuration
+# Linux/arm 3.11.2-rc1 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -1134,6 +1134,7 @@ CONFIG_ATA=m
 CONFIG_SATA_AHCI=m
 CONFIG_SATA_AHCI_PLATFORM=m
 CONFIG_SATA_AHCI_CNS3XXX=y
+# CONFIG_AHCI_IMX is not set
 # CONFIG_SATA_INIC162X is not set
 # CONFIG_SATA_ACARD_AHCI is not set
 # CONFIG_SATA_SIL24 is not set
