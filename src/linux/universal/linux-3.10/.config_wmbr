@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.12 Kernel Configuration
+# Linux/mips 3.10.13-rc1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -358,6 +358,10 @@ CONFIG_PCI_DISABLE_COMMON_QUIRKS=y
 # CONFIG_PCI_IOV is not set
 # CONFIG_PCI_PRI is not set
 # CONFIG_PCI_PASID is not set
+
+#
+# PCI host controller drivers
+#
 # CONFIG_PCIEPORTBUS is not set
 CONFIG_MMU=y
 # CONFIG_PCCARD is not set
