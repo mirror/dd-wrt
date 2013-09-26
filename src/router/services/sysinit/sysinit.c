@@ -727,15 +727,10 @@ static void ses_restore_defaults(void)
 void start_restore_defaults(void)
 {
 #ifdef HAVE_BUFFALO_SA
-	int factory_state = 0;
-	if ((!nvram_get("sv_restore_defaults")
-	     || nvram_default_match("sv_restore_defaults", "0", "0"))
-	    && !nvram_get("os_date")
+	if (nvram_invmatch("sv_restore_defaults", "0")
 	    && (!strcmp(getUEnv("region"), "AP")
 		|| !strcmp(getUEnv("region"), "US")))
-		factory_state = 1;
-	if (factory_state)
-		nvram_set("region", "SA");
+		    nvram_set("region", "SA");
 #endif
 #ifdef HAVE_RB500
 	struct nvram_tuple generic[] = {
@@ -1657,6 +1652,15 @@ void start_restore_defaults(void)
 	{
 		restore_defaults = 1;
 	}
+
+	if (nvram_match("product_name", "INSPECTION")) {
+		nvram_unset("product_name");
+		restore_defaults = 1;
+	}
+	if (nvram_get("router_name") == NULL) {
+		restore_defaults = 1;
+	}
+
 #elif HAVE_GEMTEK
 	linux_overrides = generic;
 	int brand = getRouterBrand();
@@ -1674,8 +1678,9 @@ void start_restore_defaults(void)
 		nvram_unset("product_name");
 		restore_defaults = 1;
 	}
-	if (nvram_get("router_name") == NULL)
+	if (nvram_get("router_name") == NULL) {
 		restore_defaults = 1;
+	}
 
 	if (restore_defaults) {
 		cprintf("Restoring defaults...\n");
@@ -1823,7 +1828,6 @@ void start_restore_defaults(void)
 	case ROUTER_BRCM4702_GENERIC:
 		ds = nvram_safe_get("dhcp_start");
 		if (ds != NULL && strlen(ds) > 3) {
-			fprintf(stderr, "cleaning nvram variables\n");
 			for (t = srouter_defaults; t->name; t++) {
 				nvram_unset(t->name);
 			}
@@ -2311,7 +2315,6 @@ void start_restore_defaults(void)
 		}
 	}
 	if (found == 0 && firststyle[0] != '\0') {
-		fprintf(stderr, "[SET ROUTER STYLE] %s\n", firststyle);
 		nvram_set("router_style", firststyle);
 		if (!restore_defaults) {
 			nvram_commit();
