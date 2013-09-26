@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 3.11.1 Kernel Configuration
+# Linux/i386 3.11.2-rc1 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -1165,6 +1165,7 @@ CONFIG_SATA_PMP=y
 #
 CONFIG_SATA_AHCI=y
 CONFIG_SATA_AHCI_PLATFORM=y
+# CONFIG_AHCI_IMX is not set
 CONFIG_SATA_INIC162X=y
 CONFIG_SATA_ACARD_AHCI=y
 CONFIG_SATA_SIL24=y
