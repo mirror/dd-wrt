@@ -37,8 +37,6 @@
 #define startstop(a) sysprintf("startstop %s",a);
 #define startstop_f(a) sysprintf("startstop_f %s",a);
 
-extern struct nvram_tuple *srouter_defaults;
-
 static void set_term(int fd)
 {
 	struct termios tty;
