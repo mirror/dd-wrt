@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.12 Kernel Configuration
+# Linux/arm 3.10.13-rc1 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -2885,10 +2885,6 @@ CONFIG_HAVE_ARCH_KGDB=y
 # CONFIG_STRICT_DEVMEM is not set
 # CONFIG_ARM_UNWIND is not set
 # CONFIG_DEBUG_USER is not set
-# CONFIG_DEBUG_IMX6Q_UART is not set
-# CONFIG_DEBUG_ICEDCC is not set
-# CONFIG_DEBUG_BRCM_LL is not set
-# CONFIG_DEBUG_SEMIHOSTING is not set
 CONFIG_DEBUG_IMX_UART_PORT=1
 CONFIG_DEBUG_LL_INCLUDE="mach/debug-macro.S"
 CONFIG_UNCOMPRESS_INCLUDE="debug/uncompress.h"
