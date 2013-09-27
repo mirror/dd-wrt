@@ -38,6 +38,7 @@
 #include "session.h"
 #include "locking/proto.h"
 #include "messages.h"
+#include "serverid.h"
 
 #define SMB_MAXPIDS		2048
 static uid_t 		Ucrit_uid = 0;               /* added by OH */
@@ -378,6 +379,12 @@ static int traverse_sessionid(const char *key, struct sessionid *session,
 	}
 
 
+	if (!sessionid_init_readonly()) {
+		fprintf(stderr, "Can't open sessionid.tdb\n");
+		ret = -1;
+		goto done;
+	}
+
 	if (lp_clustering()) {
 		/*
 		 * This implicitly initializes the global ctdbd
@@ -470,6 +477,11 @@ static int traverse_sessionid(const char *key, struct sessionid *session,
 			goto done;
 		}
 
+		if (!serverid_init_readonly(frame)) {
+			d_printf("Can't initialise serverid tdb - exiting\n");
+			ret = 1;
+			goto done;
+		}
 		result = share_mode_forall(print_share_mode, NULL);
 
 		if (result == 0) {
