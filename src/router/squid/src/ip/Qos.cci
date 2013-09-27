@@ -1,0 +1,85 @@
+/* Inline QOS functions */
+#include "comm/Connection.h"
+#include "Debug.h"
+
+int
+Ip::Qos::setSockTos(const Comm::ConnectionPointer &conn, tos_t tos)
+{
+#if defined(IP_TOS)
+    // Bug 3731: FreeBSD produces 'invalid option'
+    // unless we pass it a 32-bit variable storing 8-bits of data.
+    // NP: it is documented as 'int' for all systems, even those like Linux which accept 8-bit char
+    //     so we convert to a int before setting.
+    int bTos = tos;
+    int x = setsockopt(conn->fd, IPPROTO_IP, IP_TOS, &bTos, sizeof(bTos));
+    if (x < 0)
+        debugs(50, 2, "Ip::Qos::setSockTos: setsockopt(IP_TOS) on " << conn << ": " << xstrerror());
+    return x;
+#else
+    debugs(50, DBG_IMPORTANT, "WARNING: setsockopt(IP_TOS) not supported on this platform");
+    return -1;
+#endif
+}
+
+int
+Ip::Qos::setSockNfmark(const Comm::ConnectionPointer &conn, nfmark_t mark)
+{
+#if SO_MARK && USE_LIBCAP
+    int x = setsockopt(conn->fd, SOL_SOCKET, SO_MARK, &mark, sizeof(nfmark_t));
+    if (x < 0)
+        debugs(50, 2, "setSockNfmark: setsockopt(SO_MARK) on " << conn << ": " << xstrerror());
+    return x;
+#elif USE_LIBCAP
+    debugs(50, DBG_IMPORTANT, "WARNING: setsockopt(SO_MARK) not supported on this platform");
+    return -1;
+#else
+    debugs(50, DBG_IMPORTANT, "WARNING: Netfilter marking disabled (netfilter marking requires build with LIBCAP)");
+    return -1;
+#endif
+}
+
+bool
+Ip::Qos::Config::isHitTosActive() const
+{
+    return (tosLocalHit || tosSiblingHit || tosParentHit || tosMiss || preserveMissTos);
+}
+
+bool
+Ip::Qos::Config::isHitNfmarkActive() const
+{
+    return (markLocalHit || markSiblingHit || markParentHit || markMiss || preserveMissMark);
+}
+
+bool
+Ip::Qos::Config::isAclNfmarkActive() const
+{
+    acl_nfmark * nfmarkAcls [] = { nfmarkToServer, nfmarkToClient };
+
+    for (int i=0; i<2; ++i) {
+        while (nfmarkAcls[i]) {
+            acl_nfmark *l = nfmarkAcls[i];
+            if (l->nfmark > 0)
+                return true;
+            nfmarkAcls[i] = l->next;
+        }
+    }
+
+    return false;
+}
+
+bool
+Ip::Qos::Config::isAclTosActive() const
+{
+    acl_tos * tosAcls [] = { tosToServer, tosToClient };
+
+    for (int i=0; i<2; ++i) {
+        while (tosAcls[i]) {
+            acl_tos *l = tosAcls[i];
+            if (l->tos > 0)
+                return true;
+            tosAcls[i] = l->next;
+        }
+    }
+
+    return false;
+}
