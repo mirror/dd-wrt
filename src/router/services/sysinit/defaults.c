@@ -710,7 +710,8 @@ struct nvram_tuple srouter_defaults[] = {
 	/*
 	 * Wireless parameters 
 	 */
-
+	{"wl0_nbw_cap", "1", 0},
+	{"wl1_nbw_cap", "1", 0},
 	{"wl0_nbw", "20", 0},	/* N-BW */
 	{"wl1_nbw", "20", 0},	/* N-BW */
 	{"wl0_bw_cap", "255", 0},	/* N-BW */
@@ -746,7 +747,7 @@ struct nvram_tuple srouter_defaults[] = {
 	/* Default AMPDU regular rate retry limit per-tid setting */
 	{"wl_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
 	{"wl_amsdu", "auto", 0},	/* Default AMSDU setting */
-	{"wl_obss_coex", "1", 0},	/* Default OBSS Coexistence setting - OFF */
+	{"wl_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - 0=OFF 1=ON */
 
 	{"wl0_stbc_tx", "auto", 0},	/* Default STBC TX setting */
 	{"wl0_stbc_rx", "1", 0},	/* Default STBC RX setting */
