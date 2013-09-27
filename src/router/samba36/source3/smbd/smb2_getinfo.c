@@ -148,7 +148,10 @@ static void smbd_smb2_request_getinfo_done(struct tevent_req *subreq)
 		return;
 	}
 
-	if (!NT_STATUS_IS_OK(call_status)) {
+	/* some GetInfo responses set STATUS_BUFFER_OVERFLOW and return partial,
+	   but valid data */
+	if (!(NT_STATUS_IS_OK(call_status) ||
+	      NT_STATUS_EQUAL(call_status, STATUS_BUFFER_OVERFLOW))) {
 		/* Return a specific error with data. */
 		error = smbd_smb2_request_error_ex(req,
 						call_status,
@@ -185,7 +188,7 @@ static void smbd_smb2_request_getinfo_done(struct tevent_req *subreq)
 
 	outdyn = out_output_buffer;
 
-	error = smbd_smb2_request_done(req, outbody, &outdyn);
+	error = smbd_smb2_request_done_ex(req, call_status, outbody, &outdyn, __location__);
 	if (!NT_STATUS_IS_OK(error)) {
 		smbd_server_connection_terminate(req->sconn,
 						 nt_errstr(error));
@@ -270,7 +273,7 @@ static struct tevent_req *smbd_smb2_getinfo_send(TALLOC_CTX *mem_ctx,
 	}
 
 	switch (in_info_type) {
-	case 0x01:/* SMB2_GETINFO_FILE */
+	case SMB2_GETINFO_FILE:
 	{
 		uint16_t file_info_level;
 		char *data = NULL;
@@ -281,6 +284,7 @@ static struct tevent_req *smbd_smb2_getinfo_send(TALLOC_CTX *mem_ctx,
 		struct ea_list *ea_list = NULL;
 		int lock_data_count = 0;
 		char *lock_data = NULL;
+		size_t fixed_portion;
 
 		ZERO_STRUCT(write_time_ts);
 
@@ -368,6 +372,7 @@ static struct tevent_req *smbd_smb2_getinfo_send(TALLOC_CTX *mem_ctx,
 					       lock_data,
 					       STR_UNICODE,
 					       in_output_buffer_length,
+					       &fixed_portion,
 					       &data,
 					       &data_size);
 		if (!NT_STATUS_IS_OK(status)) {
@@ -378,41 +383,10 @@ static struct tevent_req *smbd_smb2_getinfo_send(TALLOC_CTX *mem_ctx,
 			tevent_req_nterror(req, status);
 			return tevent_req_post(req, ev);
 		}
-		if (data_size > 0) {
-			state->out_output_buffer = data_blob_talloc(state,
-								    data,
-								    data_size);
+		if (in_output_buffer_length < fixed_portion) {
 			SAFE_FREE(data);
-			if (tevent_req_nomem(state->out_output_buffer.data, req)) {
-				return tevent_req_post(req, ev);
-			}
-		}
-		SAFE_FREE(data);
-		break;
-	}
-
-	case 0x02:/* SMB2_GETINFO_FS */
-	{
-		uint16_t file_info_level;
-		char *data = NULL;
-		int data_size = 0;
-
-		/* the levels directly map to the passthru levels */
-		file_info_level = in_file_info_class + 1000;
-
-		status = smbd_do_qfsinfo(conn, state,
-					 file_info_level,
-					 STR_UNICODE,
-					 in_output_buffer_length,
-					 fsp->fsp_name,
-					 &data,
-					 &data_size);
-		if (!NT_STATUS_IS_OK(status)) {
-			SAFE_FREE(data);
-			if (NT_STATUS_EQUAL(status, NT_STATUS_INVALID_LEVEL)) {
-				status = NT_STATUS_INVALID_INFO_CLASS;
-			}
-			tevent_req_nterror(req, status);
+			tevent_req_nterror(
+				req, NT_STATUS_INFO_LENGTH_MISMATCH);
 			return tevent_req_post(req, ev);
 		}
 		if (data_size > 0) {
@@ -423,12 +397,70 @@ static struct tevent_req *smbd_smb2_getinfo_send(TALLOC_CTX *mem_ctx,
 			if (tevent_req_nomem(state->out_output_buffer.data, req)) {
 				return tevent_req_post(req, ev);
 			}
+			if (data_size > in_output_buffer_length) {
+				state->out_output_buffer.length =
+					in_output_buffer_length;
+				status = STATUS_BUFFER_OVERFLOW;
+			}
 		}
 		SAFE_FREE(data);
 		break;
 	}
 
-	case 0x03:/* SMB2_GETINFO_SEC */
+	case SMB2_GETINFO_FS:
+	{
+		uint16_t file_info_level;
+		char *data = NULL;
+		int data_size = 0;
+		size_t fixed_portion;
+
+		/* the levels directly map to the passthru levels */
+		file_info_level = in_file_info_class + 1000;
+
+		status = smbd_do_qfsinfo(conn, state,
+					 file_info_level,
+					 STR_UNICODE,
+					 in_output_buffer_length,
+					 &fixed_portion,
+					 fsp->fsp_name,
+					 &data,
+					 &data_size);
+		/* some responses set STATUS_BUFFER_OVERFLOW and return
+		   partial, but valid data */
+		if (!(NT_STATUS_IS_OK(status) ||
+		      NT_STATUS_EQUAL(status, STATUS_BUFFER_OVERFLOW))) {
+			SAFE_FREE(data);
+			if (NT_STATUS_EQUAL(status, NT_STATUS_INVALID_LEVEL)) {
+				status = NT_STATUS_INVALID_INFO_CLASS;
+			}
+			tevent_req_nterror(req, status);
+			return tevent_req_post(req, ev);
+		}
+		if (in_output_buffer_length < fixed_portion) {
+			SAFE_FREE(data);
+			tevent_req_nterror(
+				req, NT_STATUS_INFO_LENGTH_MISMATCH);
+			return tevent_req_post(req, ev);
+		}
+		if (data_size > 0) {
+			state->out_output_buffer = data_blob_talloc(state,
+								    data,
+								    data_size);
+			SAFE_FREE(data);
+			if (tevent_req_nomem(state->out_output_buffer.data, req)) {
+				return tevent_req_post(req, ev);
+			}
+			if (data_size > in_output_buffer_length) {
+				state->out_output_buffer.length =
+					in_output_buffer_length;
+				status = STATUS_BUFFER_OVERFLOW;
+			}
+		}
+		SAFE_FREE(data);
+		break;
+	}
+
+	case SMB2_GETINFO_SECURITY:
 	{
 		uint8_t *p_marshalled_sd = NULL;
 		size_t sd_size = 0;
@@ -485,6 +517,7 @@ static struct tevent_req *smbd_smb2_getinfo_send(TALLOC_CTX *mem_ctx,
 		return tevent_req_post(req, ev);
 	}
 
+	state->status = status;
 	tevent_req_done(req);
 	return tevent_req_post(req, ev);
 }

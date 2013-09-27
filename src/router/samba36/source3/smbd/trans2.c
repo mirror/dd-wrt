@@ -24,6 +24,7 @@
 */
 
 #include "includes.h"
+#include "ntioctl.h"
 #include "system/filesys.h"
 #include "version.h"
 #include "smbd/smbd.h"
@@ -1773,12 +1774,14 @@ static bool smbd_marshall_dir_entry(TALLOC_CTX *ctx,
 		SOFF_T(p,0,allocation_size); p += 8;
 		SIVAL(p,0,mode); p += 4;
 		q = p; p += 4; /* q is placeholder for name length. */
-		{
+		if (mode & FILE_ATTRIBUTE_REPARSE_POINT) {
+			SIVAL(p, 0, IO_REPARSE_TAG_DFS);
+		} else {
 			unsigned int ea_size = estimate_ea_size(conn, NULL,
 								smb_fname->base_name);
 			SIVAL(p,0,ea_size); /* Extended attributes */
-			p += 4;
 		}
+		p += 4;
 		/* Clear the short name buffer. This is
 		 * IMPORTANT as not doing so will trigger
 		 * a Win2k client bug. JRA.
@@ -1950,12 +1953,14 @@ static bool smbd_marshall_dir_entry(TALLOC_CTX *ctx,
 		SOFF_T(p,0,allocation_size); p += 8;
 		SIVAL(p,0,mode); p += 4;
 		q = p; p += 4; /* q is placeholder for name length. */
-		{
+		if (mode & FILE_ATTRIBUTE_REPARSE_POINT) {
+			SIVAL(p, 0, IO_REPARSE_TAG_DFS);
+		} else {
 			unsigned int ea_size = estimate_ea_size(conn, NULL,
 								smb_fname->base_name);
 			SIVAL(p,0,ea_size); /* Extended attributes */
-			p +=4;
 		}
+		p +=4;
 		SIVAL(p,0,0); p += 4; /* Unknown - reserved ? */
 		SBVAL(p,0,file_index); p += 8;
 		len = srvstr_push(base_data, flags2, p,
@@ -1996,12 +2001,14 @@ static bool smbd_marshall_dir_entry(TALLOC_CTX *ctx,
 		SOFF_T(p,0,allocation_size); p += 8;
 		SIVAL(p,0,mode); p += 4;
 		q = p; p += 4; /* q is placeholder for name length */
-		{
+		if (mode & FILE_ATTRIBUTE_REPARSE_POINT) {
+			SIVAL(p, 0, IO_REPARSE_TAG_DFS);
+		} else {
 			unsigned int ea_size = estimate_ea_size(conn, NULL,
 								smb_fname->base_name);
 			SIVAL(p,0,ea_size); /* Extended attributes */
-			p +=4;
 		}
+		p +=4;
 		/* Clear the short name buffer. This is
 		 * IMPORTANT as not doing so will trigger
 		 * a Win2k client bug. JRA.
@@ -2964,6 +2971,7 @@ NTSTATUS smbd_do_qfsinfo(connection_struct *conn,
 			 uint16_t info_level,
 			 uint16_t flags2,
 			 unsigned int max_data_bytes,
+			 size_t *fixed_portion,
 			 struct smb_filename *fname,
 			 char **ppdata,
 			 int *ret_data_len)
@@ -2977,6 +2985,7 @@ NTSTATUS smbd_do_qfsinfo(connection_struct *conn,
 	uint32 additional_flags = 0;
 	struct smb_filename smb_fname;
 	SMB_STRUCT_STAT st;
+	NTSTATUS status = NT_STATUS_OK;
 
 	if (fname == NULL || fname->base_name == NULL) {
 		filename = ".";
@@ -3014,6 +3023,8 @@ NTSTATUS smbd_do_qfsinfo(connection_struct *conn,
 	pdata = *ppdata;
 	memset((char *)pdata,'\0',max_data_bytes + DIR_ENTRY_SAFETY_MARGIN);
 	end_data = pdata + max_data_bytes + DIR_ENTRY_SAFETY_MARGIN - 1;
+
+	*fixed_portion = 0;
 
 	switch (info_level) {
 		case SMB_INFO_ALLOCATION:
@@ -3107,6 +3118,13 @@ cBytesSector=%u, cUnitTotal=%u, cUnitAvail=%d\n", (unsigned int)st.st_ex_dev, (u
 					  STR_UNICODE);
 			SIVAL(pdata,8,len);
 			data_len = 12 + len;
+			if (max_data_bytes >= 16 && data_len > max_data_bytes) {
+				/* the client only requested a portion of the
+				   file system name */
+				data_len = max_data_bytes;
+				status = STATUS_BUFFER_OVERFLOW;
+			}
+			*fixed_portion = 16;
 			break;
 
 		case SMB_QUERY_FS_LABEL_INFO:
@@ -3136,6 +3154,13 @@ cBytesSector=%u, cUnitTotal=%u, cUnitAvail=%d\n", (unsigned int)st.st_ex_dev, (u
 
 			DEBUG(5,("smbd_do_qfsinfo : SMB_QUERY_FS_VOLUME_INFO namelen = %d, vol=%s serv=%s\n",
 				(int)strlen(vname),vname, lp_servicename(snum)));
+			if (max_data_bytes >= 24 && data_len > max_data_bytes) {
+				/* the client only requested a portion of the
+				   volume label */
+				data_len = max_data_bytes;
+				status = STATUS_BUFFER_OVERFLOW;
+			}
+
 			break;
 
 		case SMB_QUERY_FS_SIZE_INFO:
@@ -3168,6 +3193,7 @@ cBytesSector=%u, cUnitTotal=%u, cUnitAvail=%d\n", (unsigned int)bsize, (unsigned
 			SBIG_UINT(pdata,8,dfree);
 			SIVAL(pdata,16,sectors_per_unit);
 			SIVAL(pdata,20,bytes_per_sector);
+			*fixed_portion = 24;
 			break;
 		}
 
@@ -3201,6 +3227,7 @@ cBytesSector=%u, cUnitTotal=%u, cUnitAvail=%d\n", (unsigned int)bsize, (unsigned
 			SBIG_UINT(pdata,16,dfree); /* Actual available allocation units. */
 			SIVAL(pdata,24,sectors_per_unit); /* Sectors per allocation unit. */
 			SIVAL(pdata,28,bytes_per_sector); /* Bytes per sector. */
+			*fixed_portion = 32;
 			break;
 		}
 
@@ -3215,6 +3242,7 @@ cBytesSector=%u, cUnitTotal=%u, cUnitAvail=%d\n", (unsigned int)bsize, (unsigned
 			data_len = 8;
 			SIVAL(pdata,0,FILE_DEVICE_DISK); /* dev type */
 			SIVAL(pdata,4,characteristics);
+			*fixed_portion = 8;
 			break;
 		}
 
@@ -3389,6 +3417,7 @@ cBytesSector=%u, cUnitTotal=%u, cUnitAvail=%d\n", (unsigned int)bsize, (unsigned
 				DEBUG(0,("vfs_statvfs() failed for service [%s]\n",lp_servicename(SNUM(conn))));
 				return NT_STATUS_DOS(ERRSRV, ERRerror);
 			}
+			*fixed_portion = 24;
 			break;
 		}
 
@@ -3519,7 +3548,7 @@ cBytesSector=%u, cUnitTotal=%u, cUnitAvail=%d\n", (unsigned int)bsize, (unsigned
 	}
 
 	*ret_data_len = data_len;
-	return NT_STATUS_OK;
+	return status;
 }
 
 /****************************************************************************
@@ -3535,6 +3564,7 @@ static void call_trans2qfsinfo(connection_struct *conn,
 	char *params = *pparams;
 	uint16_t info_level;
 	int data_len = 0;
+	size_t fixed_portion;
 	NTSTATUS status;
 
 	if (total_params < 2) {
@@ -3561,6 +3591,7 @@ static void call_trans2qfsinfo(connection_struct *conn,
 				 info_level,
 				 req->flags2,
 				 max_data_bytes,
+				 &fixed_portion,
 				 NULL,
 				 ppdata, &data_len);
 	if (!NT_STATUS_IS_OK(status)) {
@@ -4114,6 +4145,10 @@ static NTSTATUS marshall_stream_info(unsigned int num_streams,
 	unsigned int i;
 	unsigned int ofs = 0;
 
+	if (max_data_bytes < 32) {
+		return NT_STATUS_INFO_LENGTH_MISMATCH;
+	}
+
 	for (i = 0; i < num_streams; i++) {
 		unsigned int next_offset;
 		size_t namelen;
@@ -4265,6 +4300,7 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 			       char *lock_data,
 			       uint16_t flags2,
 			       unsigned int max_data_bytes,
+			       size_t *fixed_portion,
 			       char **ppdata,
 			       unsigned int *pdata_size)
 {
@@ -4399,6 +4435,8 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 	   I think this causes us to fail the IFSKIT
 	   BasicFileInformationTest. -tpot */
 	file_index = get_FileIndex(conn, psbuf);
+
+	*fixed_portion = 0;
 
 	switch (info_level) {
 		case SMB_INFO_STANDARD:
@@ -4537,6 +4575,7 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 			DEBUG(5,("write: %s ", ctime(&mtime)));
 			DEBUG(5,("change: %s ", ctime(&c_time)));
 			DEBUG(5,("mode: %x\n", mode));
+			*fixed_portion = data_size;
 			break;
 
 		case SMB_FILE_STANDARD_INFORMATION:
@@ -4550,6 +4589,7 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 			SCVAL(pdata,20,delete_pending?1:0);
 			SCVAL(pdata,21,(mode&FILE_ATTRIBUTE_DIRECTORY)?1:0);
 			SSVAL(pdata,22,0); /* Padding. */
+			*fixed_portion = 24;
 			break;
 
 		case SMB_FILE_EA_INFORMATION:
@@ -4559,6 +4599,7 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 			    estimate_ea_size(conn, fsp,	smb_fname->base_name);
 			DEBUG(10,("smbd_do_qfilepathinfo: SMB_FILE_EA_INFORMATION\n"));
 			data_size = 4;
+			*fixed_portion = 4;
 			SIVAL(pdata,0,ea_size);
 			break;
 		}
@@ -4580,6 +4621,7 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 					  STR_UNICODE);
 			data_size = 4 + len;
 			SIVAL(pdata,0,len);
+			*fixed_portion = 8;
 			break;
 		}
 
@@ -4643,6 +4685,7 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 			SIVAL(pdata,0,len);
 			pdata += 4 + len;
 			data_size = PTR_DIFF(pdata,(*ppdata));
+			*fixed_portion = 10;
 			break;
 		}
 
@@ -4680,6 +4723,7 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 			SIVAL(pdata,0,len);
 			pdata += 4 + len;
 			data_size = PTR_DIFF(pdata,(*ppdata));
+			*fixed_portion = 104;
 			break;
 		}
 		case SMB_FILE_INTERNAL_INFORMATION:
@@ -4687,12 +4731,14 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 			DEBUG(10,("smbd_do_qfilepathinfo: SMB_FILE_INTERNAL_INFORMATION\n"));
 			SBVAL(pdata, 0, file_index);
 			data_size = 8;
+			*fixed_portion = 8;
 			break;
 
 		case SMB_FILE_ACCESS_INFORMATION:
 			DEBUG(10,("smbd_do_qfilepathinfo: SMB_FILE_ACCESS_INFORMATION\n"));
 			SIVAL(pdata, 0, access_mask);
 			data_size = 4;
+			*fixed_portion = 4;
 			break;
 
 		case SMB_FILE_NAME_INFORMATION:
@@ -4710,24 +4756,28 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 			DEBUG(10,("smbd_do_qfilepathinfo: SMB_FILE_DISPOSITION_INFORMATION\n"));
 			data_size = 1;
 			SCVAL(pdata,0,delete_pending);
+			*fixed_portion = 1;
 			break;
 
 		case SMB_FILE_POSITION_INFORMATION:
 			DEBUG(10,("smbd_do_qfilepathinfo: SMB_FILE_POSITION_INFORMATION\n"));
 			data_size = 8;
 			SOFF_T(pdata,0,pos);
+			*fixed_portion = 8;
 			break;
 
 		case SMB_FILE_MODE_INFORMATION:
 			DEBUG(10,("smbd_do_qfilepathinfo: SMB_FILE_MODE_INFORMATION\n"));
 			SIVAL(pdata,0,mode);
 			data_size = 4;
+			*fixed_portion = 4;
 			break;
 
 		case SMB_FILE_ALIGNMENT_INFORMATION:
 			DEBUG(10,("smbd_do_qfilepathinfo: SMB_FILE_ALIGNMENT_INFORMATION\n"));
 			SIVAL(pdata,0,0); /* No alignment needed. */
 			data_size = 4;
+			*fixed_portion = 4;
 			break;
 
 		/*
@@ -4772,6 +4822,8 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 
 			TALLOC_FREE(streams);
 
+			*fixed_portion = 32;
+
 			break;
 		}
 		case SMB_QUERY_COMPRESSION_INFO:
@@ -4781,6 +4833,7 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 			SIVAL(pdata,8,0); /* ??? */
 			SIVAL(pdata,12,0); /* ??? */
 			data_size = 16;
+			*fixed_portion = 16;
 			break;
 
 		case SMB_FILE_NETWORK_OPEN_INFORMATION:
@@ -4794,6 +4847,7 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 			SIVAL(pdata,48,mode);
 			SIVAL(pdata,52,0); /* ??? */
 			data_size = 56;
+			*fixed_portion = 56;
 			break;
 
 		case SMB_FILE_ATTRIBUTE_TAG_INFORMATION:
@@ -4801,6 +4855,7 @@ NTSTATUS smbd_do_qfilepathinfo(connection_struct *conn,
 			SIVAL(pdata,0,mode);
 			SIVAL(pdata,4,0);
 			data_size = 8;
+			*fixed_portion = 8;
 			break;
 
 		/*
@@ -5070,6 +5125,7 @@ static void call_trans2qfilepathinfo(connection_struct *conn,
 	struct ea_list *ea_list = NULL;
 	int lock_data_count = 0;
 	char *lock_data = NULL;
+	size_t fixed_portion;
 	NTSTATUS status = NT_STATUS_OK;
 
 	if (!params) {
@@ -5431,9 +5487,14 @@ total_data=%u (should be %u)\n", (unsigned int)total_data, (unsigned int)IVAL(pd
 				       ea_list,
 				       lock_data_count, lock_data,
 				       req->flags2, max_data_bytes,
+				       &fixed_portion,
 				       ppdata, &data_size);
 	if (!NT_STATUS_IS_OK(status)) {
 		reply_nterror(req, status);
+		return;
+	}
+	if (fixed_portion > max_data_bytes) {
+		reply_nterror(req, NT_STATUS_INFO_LENGTH_MISMATCH);
 		return;
 	}
 
