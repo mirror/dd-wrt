@@ -321,7 +321,6 @@ static NTSTATUS dsgetdcname_cache_fetch(TALLOC_CTX *mem_ctx,
 					const char *domain_name,
 					const struct GUID *domain_guid,
 					uint32_t flags,
-					const char *site_name,
 					struct netr_DsRGetDCNameInfo **info_p)
 {
 	char *key;
@@ -394,7 +393,7 @@ static NTSTATUS dsgetdcname_cached(TALLOC_CTX *mem_ctx,
 	NTSTATUS status;
 
 	status = dsgetdcname_cache_fetch(mem_ctx, domain_name, domain_guid,
-					 flags, site_name, info);
+					 flags, info);
 	if (!NT_STATUS_IS_OK(status)
 	    && !NT_STATUS_EQUAL(status, NT_STATUS_NOT_FOUND)) {
 		DEBUG(10,("dsgetdcname_cached: cache fetch failed with: %s\n",
@@ -1083,12 +1082,10 @@ static bool is_closest_site(struct netr_DsRGetDCNameInfo *info)
 }
 
 /********************************************************************
- dsgetdcname.
-
- This will be the only public function here.
+ Internal dsgetdcname.
 ********************************************************************/
 
-NTSTATUS dsgetdcname(TALLOC_CTX *mem_ctx,
+static NTSTATUS dsgetdcname_internal(TALLOC_CTX *mem_ctx,
 		     struct messaging_context *msg_ctx,
 		     const char *domain_name,
 		     const struct GUID *domain_guid,
@@ -1098,15 +1095,14 @@ NTSTATUS dsgetdcname(TALLOC_CTX *mem_ctx,
 {
 	NTSTATUS status = NT_STATUS_DOMAIN_CONTROLLER_NOT_FOUND;
 	struct netr_DsRGetDCNameInfo *myinfo = NULL;
-	char *query_site = NULL;
 	bool first = true;
 	struct netr_DsRGetDCNameInfo *first_info = NULL;
 
-	DEBUG(10,("dsgetdcname: domain_name: %s, "
+	DEBUG(10,("dsgetdcname_internal: domain_name: %s, "
 		  "domain_guid: %s, site_name: %s, flags: 0x%08x\n",
 		  domain_name,
 		  domain_guid ? GUID_string(mem_ctx, domain_guid) : "(null)",
-		  site_name, flags));
+		  site_name ? site_name : "(null)", flags));
 
 	*info = NULL;
 
@@ -1115,18 +1111,12 @@ NTSTATUS dsgetdcname(TALLOC_CTX *mem_ctx,
 		return NT_STATUS_INVALID_PARAMETER;
 	}
 
-	if ((site_name == NULL) || (site_name[0] == '\0')) {
-		query_site = sitename_fetch(domain_name);
-	} else {
-		query_site = SMB_STRDUP(site_name);
-	}
-
 	if (flags & DS_FORCE_REDISCOVERY) {
 		goto rediscover;
 	}
 
 	status = dsgetdcname_cached(mem_ctx, msg_ctx, domain_name, domain_guid,
-				    flags, query_site, &myinfo);
+				    flags, site_name, &myinfo);
 	if (NT_STATUS_IS_OK(status)) {
 		goto done;
 	}
@@ -1137,12 +1127,10 @@ NTSTATUS dsgetdcname(TALLOC_CTX *mem_ctx,
 
  rediscover:
 	status = dsgetdcname_rediscover(mem_ctx, msg_ctx, domain_name,
-					domain_guid, flags, query_site,
+					domain_guid, flags, site_name,
 					&myinfo);
 
  done:
-	SAFE_FREE(query_site);
-
 	if (!NT_STATUS_IS_OK(status)) {
 		if (!first) {
 			*info = first_info;
@@ -1157,10 +1145,67 @@ NTSTATUS dsgetdcname(TALLOC_CTX *mem_ctx,
 		first = false;
 		first_info = myinfo;
 		/* TODO: may use the next_closest_site here */
-		query_site = SMB_STRDUP(myinfo->client_site_name);
+		site_name = myinfo->client_site_name;
 		goto rediscover;
 	}
 
 	*info = myinfo;
 	return NT_STATUS_OK;
+}
+
+/********************************************************************
+ dsgetdcname.
+
+ This will be the only public function here.
+********************************************************************/
+
+NTSTATUS dsgetdcname(TALLOC_CTX *mem_ctx,
+		     struct messaging_context *msg_ctx,
+		     const char *domain_name,
+		     const struct GUID *domain_guid,
+		     const char *site_name,
+		     uint32_t flags,
+		     struct netr_DsRGetDCNameInfo **info)
+{
+	NTSTATUS status;
+	const char *query_site = NULL;
+	char *ptr_to_free = NULL;
+	bool retry_query_with_null = false;
+
+	if ((site_name == NULL) || (site_name[0] == '\0')) {
+		ptr_to_free = sitename_fetch(domain_name);
+		if (ptr_to_free != NULL) {
+			retry_query_with_null = true;
+		}
+		query_site = ptr_to_free;
+	} else {
+		query_site = site_name;
+	}
+
+	status = dsgetdcname_internal(mem_ctx,
+				msg_ctx,
+				domain_name,
+				domain_guid,
+				query_site,
+				flags,
+				info);
+
+	SAFE_FREE(ptr_to_free);
+
+	if (!NT_STATUS_EQUAL(status, NT_STATUS_DOMAIN_CONTROLLER_NOT_FOUND)) {
+		return status;
+	}
+
+	/* Should we try again with site_name == NULL ? */
+	if (retry_query_with_null) {
+		status = dsgetdcname_internal(mem_ctx,
+					msg_ctx,
+					domain_name,
+					domain_guid,
+					NULL,
+					flags,
+					info);
+	}
+
+	return status;
 }
