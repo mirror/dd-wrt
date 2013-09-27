@@ -4,7 +4,7 @@
 # Use Makfile for building the examples with a libsmbclient
 # installed to /usr/local/samba
 
-CC = ccache mips-linux-uclibc-gcc
+CC = ccache arm-linux-uclibc-gcc
 
 SAMBA_DIR = ../../source3
 SAMBA_INCLUDES = -I$(SAMBA_DIR)/include
@@ -16,10 +16,10 @@ GTK_LIBS  = `gtk-config --libs`
 #GTK_CFLAGS = `pkg-config gtk+-2.0 --cflags`
 #GTK_LIBS = `pkg-config gtk+-2.0 --libs`
 
-CCFLAGS =  -Iinclude -I./include -I. -I. -I./../lib/replace -I./librpc -I./.. -I./../lib/popt  -I../lib/zlib -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DMAX_DEBUG_LEVEL=-1 -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_DDINOTIFY $(FLAGS) -D_SAMBA_BUILD_=3 $(GTK_CFLAGS) $(SAMBA_INCLUDES)
+CCFLAGS =  -Iinclude -I./include -I. -I. -I./../lib/replace -I./librpc -I./.. -I./../lib/popt  -I../lib/zlib -O2 -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -DMAX_DEBUG_LEVEL=-1 -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_DDINOTIFY $(FLAGS) -D_SAMBA_BUILD_=3 $(GTK_CFLAGS) $(SAMBA_INCLUDES)
 
 PICFLAG=-fPIC
-LDFLAGS= $(SAMBA_LIBPATH)  -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DMAX_DEBUG_LEVEL=-1 -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_DDINOTIFY -L./bin
+LDFLAGS= $(SAMBA_LIBPATH)  -O2 -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -DMAX_DEBUG_LEVEL=-1 -ffunction-sections -fdata-sections -Wl,--gc-sections -DHAVE_DDINOTIFY -L./bin
 
 EXTERNAL_LIBS = -lresolv -ldl   
 LIBSMBCLIENT_LIBS = -lwbclient -lsmbclient -ltalloc -ltdb -ldl -lresolv

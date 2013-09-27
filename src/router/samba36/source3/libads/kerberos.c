@@ -856,6 +856,16 @@ bool create_local_private_krb5_conf_for_domain(const char *realm,
 		return false;
 	}
 
+	if (realm == NULL) {
+		DEBUG(0, ("No realm has been specified! Do you really want to "
+			  "join an Active Directory server?\n"));
+		return false;
+	}
+
+	if (domain == NULL || pss == NULL || kdc_name == NULL) {
+		return false;
+	}
+
 	dname = lock_path("smb_krb5");
 	if (!dname) {
 		return false;
