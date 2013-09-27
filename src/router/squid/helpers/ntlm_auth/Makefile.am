@@ -1,0 +1,2 @@
+DIST_SUBDIRS	= fake smb_lm SSPI
+SUBDIRS		= $(NTLM_AUTH_HELPERS)
