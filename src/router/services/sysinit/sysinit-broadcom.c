@@ -1640,21 +1640,16 @@ void start_sysinit(void)
 		else
 			set_regulation(0, "DE", "0");
 
-		if (nvram_match("wl1_country_code", "US"))
+		if (nvram_match("wl1_country_code", "Q2"))
 			set_regulation(1, "US", "0");
-		else if (nvram_match("wl1_country_code", "Q2"))
-			set_regulation(1, "US", "0");
-		else if (nvram_match("wl1_country_code", "DE"))
-			set_regulation(1, "DE", "0");
 		else if (nvram_match("wl1_country_code", "EU"))
-			set_regulation(1, "DE", "0");
+			set_regulation(1, "EU", "13");
 		else if (nvram_match("wl1_country_code", "TW"))
 			set_regulation(1, "TW", "13");
 		else if (nvram_match("wl1_country_code", "CN"))
 			set_regulation(1, "CN", "1");
 		else
-			set_regulation(1, "US", "0");
-		
+			set_regulation(1, "US", "0");		
 
 		break;
 	case ROUTER_NETCORE_NW715P:
@@ -2204,7 +2199,7 @@ void start_sysinit(void)
 		else if (nvram_match("regulation_domain_5G", "Q2"))
 			set_regulation(1, "US", "0");
 		else if (nvram_match("regulation_domain_5G", "EU"))
-			set_regulation(1, "DE", "0");
+			set_regulation(1, "EU", "13");
 		else if (nvram_match("regulation_domain_5G", "TW"))
 			set_regulation(1, "TW", "13");
 		else if (nvram_match("regulation_domain_5G", "CN"))
