@@ -10,6 +10,7 @@
 #include <linux/of_net.h>
 #include <linux/phy.h>
 #include <linux/export.h>
+#include <linux/mtd/mtd.h>
 
 /**
  * It maps 'enum phy_interface_t' found in include/linux/phy.h
@@ -93,3 +94,39 @@ const void *of_get_mac_address(struct device_node *np)
 	return NULL;
 }
 EXPORT_SYMBOL(of_get_mac_address);
+
+int of_get_mac_address_mtd(struct device_node *np, void *mac)
+{
+	struct device_node *mtd_np = NULL;
+	size_t retlen;
+	int size, ret;
+	struct mtd_info *mtd;
+	const char *part;
+	const __be32 *list;
+	phandle phandle;
+
+	list = of_get_property(np, "mtd-mac-address", &size);
+	if (!list || (size != (2 * sizeof(*list))))
+		return -ENOENT;
+
+	phandle = be32_to_cpup(list++);
+	if (phandle)
+		mtd_np = of_find_node_by_phandle(phandle);
+
+	if (!mtd_np)
+		return -ENOENT;
+
+	part = of_get_property(mtd_np, "label", NULL);
+	if (!part)
+		part = mtd_np->name;
+
+	mtd = get_mtd_device_nm(part);
+	if (IS_ERR(mtd))
+		return PTR_ERR(mtd);
+
+	ret = mtd_read(mtd, be32_to_cpup(list), 6, &retlen, (u_char *) mac);
+	put_mtd_device(mtd);
+
+	return ret;
+}
+EXPORT_SYMBOL_GPL(of_get_mac_address_mtd);

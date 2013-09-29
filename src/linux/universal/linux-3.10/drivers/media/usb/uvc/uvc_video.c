@@ -21,6 +21,11 @@
 #include <linux/wait.h>
 #include <linux/atomic.h>
 #include <asm/unaligned.h>
+#include <linux/skbuff.h>
+#include <linux/kobject.h>
+#include <linux/netlink.h>
+#include <linux/kobject.h>
+#include <linux/workqueue.h>
 
 #include <media/v4l2-common.h>
 
@@ -1074,9 +1079,149 @@ static void uvc_video_decode_data(struct uvc_streaming *stream,
 	}
 }
 
+struct bh_priv {
+	unsigned long	seen;
+};
+
+struct bh_event {
+	const char		*name;
+	struct sk_buff		*skb;
+	struct work_struct	work;
+};
+
+#define BH_ERR(fmt, args...) printk(KERN_ERR "%s: " fmt, "webcam", ##args )
+#define BH_DBG(fmt, args...) do {} while (0)
+#define BH_SKB_SIZE     2048
+
+extern u64 uevent_next_seqnum(void);
+static int seen = 0;
+
+static int bh_event_add_var(struct bh_event *event, int argv,
+		const char *format, ...)
+{
+	static char buf[128];
+	char *s;
+	va_list args;
+	int len;
+
+	if (argv)
+		return 0;
+
+	va_start(args, format);
+	len = vsnprintf(buf, sizeof(buf), format, args);
+	va_end(args);
+
+	if (len >= sizeof(buf)) {
+		BH_ERR("buffer size too small\n");
+		WARN_ON(1);
+		return -ENOMEM;
+	}
+
+	s = skb_put(event->skb, len + 1);
+	strcpy(s, buf);
+
+	BH_DBG("added variable '%s'\n", s);
+
+	return 0;
+}
+
+static int motion_hotplug_fill_event(struct bh_event *event)
+{
+	int s = jiffies;
+	int ret;
+
+	if (!seen)
+		seen = jiffies;
+
+	ret = bh_event_add_var(event, 0, "HOME=%s", "/");
+	if (ret)
+		return ret;
+
+	ret = bh_event_add_var(event, 0, "PATH=%s",
+		"/sbin:/bin:/usr/sbin:/usr/bin");
+	if (ret)
+		return ret;
+
+	ret = bh_event_add_var(event, 0, "SUBSYSTEM=usb");
+	if (ret)
+		return ret;
+
+	ret = bh_event_add_var(event, 0, "ACTION=motion");
+	if (ret)
+		return ret;
+
+	ret = bh_event_add_var(event, 0, "SEEN=%d", s - seen);
+	if (ret)
+		return ret;
+	seen = s;
+
+	ret = bh_event_add_var(event, 0, "SEQNUM=%llu", uevent_next_seqnum());
+
+	return ret;
+}
+
+static void motion_hotplug_work(struct work_struct *work)
+{
+	struct bh_event *event = container_of(work, struct bh_event, work);
+	int ret = 0;
+
+	event->skb = alloc_skb(BH_SKB_SIZE, GFP_KERNEL);
+	if (!event->skb)
+		goto out_free_event;
+
+	ret = bh_event_add_var(event, 0, "%s@", "add");
+	if (ret)
+		goto out_free_skb;
+
+	ret = motion_hotplug_fill_event(event);
+	if (ret)
+		goto out_free_skb;
+
+	NETLINK_CB(event->skb).dst_group = 1;
+	broadcast_uevent(event->skb, 0, 1, GFP_KERNEL);
+
+out_free_skb:
+	if (ret) {
+		BH_ERR("work error %d\n", ret);
+		kfree_skb(event->skb);
+	}
+out_free_event:
+	kfree(event);
+}
+
+static int motion_hotplug_create_event(void)
+{
+	struct bh_event *event;
+
+	event = kzalloc(sizeof(*event), GFP_KERNEL);
+	if (!event)
+		return -ENOMEM;
+
+	event->name = "motion";
+
+	INIT_WORK(&event->work, (void *)(void *)motion_hotplug_work);
+	schedule_work(&event->work);
+
+	return 0;
+}
+
+#define MOTION_FLAG_OFFSET	4
 static void uvc_video_decode_end(struct uvc_streaming *stream,
 		struct uvc_buffer *buf, const __u8 *data, int len)
 {
+	if ((stream->dev->quirks & UVC_QUIRK_MOTION) &&
+			(data[len - 2] == 0xff) && (data[len - 1] == 0xd9)) {
+		u8 *mem;
+		buf->state = UVC_BUF_STATE_READY;
+		mem = (u8 *) (buf->mem + MOTION_FLAG_OFFSET);
+		if ( stream->dev->motion ) {
+			stream->dev->motion = 0;
+			motion_hotplug_create_event();
+		} else {
+			*mem &= 0x7f;
+		}
+	}
+
 	/* Mark the buffer as done if the EOF marker is set. */
 	if (data[1] & UVC_STREAM_EOF && buf->bytesused != 0) {
 		uvc_trace(UVC_TRACE_FRAME, "Frame complete (EOF found).\n");
@@ -1477,6 +1622,8 @@ static int uvc_init_video_isoc(struct uvc_streaming *stream,
 	if (npackets == 0)
 		return -ENOMEM;
 
+	if (stream->dev->quirks & UVC_QUIRK_SINGLE_ISO)
+		npackets = 1;
 	size = npackets * psize;
 
 	for (i = 0; i < UVC_URBS; ++i) {

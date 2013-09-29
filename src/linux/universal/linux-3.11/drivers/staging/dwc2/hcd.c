@@ -47,6 +47,7 @@
 #include <linux/io.h>
 #include <linux/slab.h>
 #include <linux/usb.h>
+#include <linux/reset.h>
 
 #include <linux/usb/hcd.h>
 #include <linux/usb/ch11.h>
@@ -2710,6 +2711,8 @@ int dwc2_hcd_init(struct dwc2_hsotg *hsotg, int irq,
 	int retval = -ENOMEM;
 
 	dev_dbg(hsotg->dev, "DWC OTG HCD INIT\n");
+
+	device_reset(hsotg->dev);
 
 	/*
 	 * Attempt to ensure this device is really a DWC_otg Controller.
