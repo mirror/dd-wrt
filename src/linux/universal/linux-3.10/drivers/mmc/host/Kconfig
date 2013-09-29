@@ -262,7 +262,7 @@ config MMC_SDHCI_BCM2835
 
 config MMC_SDHCI_MT7620
 	tristate "SDHCI platform support for the MT7620 SD/MMC Controller"
-	depends on SOC_MT7620
+	depends on SOC_MT7620_OPENWRT
 	depends on MMC_SDHCI_PLTFM
 	select MMC_SDHCI_IO_ACCESSORS
 	help

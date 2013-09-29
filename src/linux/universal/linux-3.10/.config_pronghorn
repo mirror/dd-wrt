@@ -1312,6 +1312,7 @@ CONFIG_I2C_HELPER_AUTO=y
 # CONFIG_I2C_OCORES is not set
 # CONFIG_I2C_PCA_PLATFORM is not set
 # CONFIG_I2C_PXA_PCI is not set
+# CONFIG_I2C_RALINK is not set
 # CONFIG_I2C_SIMTEC is not set
 # CONFIG_I2C_XILINX is not set
 
