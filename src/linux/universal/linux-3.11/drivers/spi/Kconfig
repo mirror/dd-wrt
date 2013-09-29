@@ -388,6 +388,12 @@ config SPI_RSPI
 	help
 	  SPI driver for Renesas RSPI blocks.
 
+config SPI_RT2880
+	tristate "Ralink RT288x SPI Controller"
+	depends on RALINK_OPENWRT
+	help
+	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
+
 config SPI_S3C24XX
 	tristate "Samsung S3C24XX series SPI"
 	depends on ARCH_S3C24XX

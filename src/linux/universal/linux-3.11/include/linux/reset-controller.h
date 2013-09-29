@@ -45,7 +45,23 @@ struct reset_controller_dev {
 	unsigned int nr_resets;
 };
 
+#if defined(CONFIG_RESET_CONTROLLER)
+
 int reset_controller_register(struct reset_controller_dev *rcdev);
 void reset_controller_unregister(struct reset_controller_dev *rcdev);
+
+#else
+
+static inline int reset_controller_register(struct reset_controller_dev *rcdev)
+{
+	return -ENOSYS;
+}
+
+void reset_controller_unregister(struct reset_controller_dev *rcdev)
+{
+
+}
+
+#endif
 
 #endif

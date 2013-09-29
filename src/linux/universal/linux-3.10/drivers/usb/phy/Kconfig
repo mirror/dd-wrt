@@ -210,4 +210,12 @@ config USB_ULPI_VIEWPORT
 	  Provides read/write operations to the ULPI phy register set for
 	  controllers with a viewport register (e.g. Chipidea/ARC controllers).
 
+config RALINK_USBPHY
+	bool "Ralink USB PHY controller Driver"
+	depends on MIPS && RALINK_OPENWRT
+	select USB_OTG_UTILS
+	help
+	  Enable this to support ralink USB phy controller for ralink
+	  SoCs.
+
 endif # USB_PHY

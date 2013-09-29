@@ -29,6 +29,8 @@
 #include <linux/usb.h>
 #include <linux/usb/hcd.h>
 #include <linux/usb/ehci_pdriver.h>
+#include <linux/usb/phy.h>
+#include <linux/usb/otg.h>
 
 #include "ehci.h"
 
@@ -123,6 +125,15 @@ static int ehci_platform_probe(struct platform_device *dev)
 	hcd->rsrc_start = res_mem->start;
 	hcd->rsrc_len = resource_size(res_mem);
 
+#ifdef CONFIG_USB_PHY
+	hcd->phy = devm_usb_get_phy(&dev->dev, USB_PHY_TYPE_USB2);
+	if (!IS_ERR_OR_NULL(hcd->phy)) {
+		otg_set_host(hcd->phy->otg,
+				&hcd->self);
+		usb_phy_init(hcd->phy);
+	}
+#endif
+
 	hcd->regs = devm_ioremap_resource(&dev->dev, res_mem);
 	if (IS_ERR(hcd->regs)) {
 		err = PTR_ERR(hcd->regs);
@@ -155,6 +166,9 @@ static int ehci_platform_remove(struct platform_device *dev)
 
 	if (pdata->power_off)
 		pdata->power_off(dev);
+
+	if (pdata == &ehci_platform_defaults)
+		dev->dev.platform_data = NULL;
 
 	if (pdata == &ehci_platform_defaults)
 		dev->dev.platform_data = NULL;
@@ -203,9 +217,8 @@ static int ehci_platform_resume(struct device *dev)
 #define ehci_platform_resume	NULL
 #endif /* CONFIG_PM */
 
-static const struct of_device_id vt8500_ehci_ids[] = {
-	{ .compatible = "via,vt8500-ehci", },
-	{ .compatible = "wm,prizm-ehci", },
+static const struct of_device_id ralink_ehci_ids[] = {
+	{ .compatible = "ralink,rt3xxx-ehci", },
 	{}
 };
 
@@ -229,7 +242,7 @@ static struct platform_driver ehci_platform_driver = {
 		.owner	= THIS_MODULE,
 		.name	= "ehci-platform",
 		.pm	= &ehci_platform_pm_ops,
-		.of_match_table = vt8500_ehci_ids,
+		.of_match_table = ralink_ehci_ids,
 	}
 };
 

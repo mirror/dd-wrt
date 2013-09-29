@@ -103,7 +103,10 @@ static int of_platform_serial_setup(struct platform_device *ofdev,
 		port->fifosize = prop;
 
 	port->irq = irq_of_parse_and_map(np, 0);
-	port->iotype = UPIO_MEM;
+	if (of_device_is_compatible(np, "ralink,rt2880-uart"))
+		port->iotype = UPIO_AU;
+	else
+		port->iotype = UPIO_MEM;
 	if (of_property_read_u32(np, "reg-io-width", &prop) == 0) {
 		switch (prop) {
 		case 1:

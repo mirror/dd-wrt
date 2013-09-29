@@ -288,7 +288,7 @@ config SERIAL_8250_ACORN
 
 config SERIAL_8250_RT288X
 	bool "Ralink RT288x/RT305x serial port support"
-	depends on SERIAL_8250 != n && (RALINK_DEVICE)
+	depends on SERIAL_8250 != n && (RALINK_DEVICE || SOC_RT288X || SOC_RT305X || SOC_RT3883 || SOC_MT7620)
 	help
 	  If you have a Ralink RT288x/RT305x SoC based board and want to use the
 	  serial port, say Y to this option. The driver can handle up to 2 serial

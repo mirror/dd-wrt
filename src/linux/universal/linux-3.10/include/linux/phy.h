@@ -298,7 +298,7 @@ struct phy_device {
 
 	struct phy_c45_device_ids c45_ids;
 	bool is_c45;
-
+	bool no_auto_carrier_off;
 	enum phy_state state;
 
 	u32 dev_flags;
