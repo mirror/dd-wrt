@@ -23,6 +23,10 @@
 #include <linux/usb/ohci_pdriver.h>
 #include <linux/usb.h>
 #include <linux/usb/hcd.h>
+#include <linux/dma-mapping.h>
+#include <linux/of.h>
+ 
+static struct usb_ohci_pdata ohci_platform_defaults;
 
 #include "ohci.h"
 
@@ -59,14 +63,22 @@ static int ohci_platform_probe(struct platform_device *dev)
 {
 	struct usb_hcd *hcd;
 	struct resource *res_mem;
-	struct usb_ohci_pdata *pdata = dev->dev.platform_data;
+	struct usb_ohci_pdata *pdata;
 	int irq;
 	int err = -ENOMEM;
 
-	if (!pdata) {
-		WARN_ON(1);
-		return -ENODEV;
-	}
+	/*
+	 * use reasonable defaults so platforms don't have to provide these.
+	 * with DT probing on ARM, none of these are set.
+	 */
+	if (!dev->dev.platform_data)
+		dev->dev.platform_data = &ohci_platform_defaults;
+	if (!dev->dev.dma_mask)
+		dev->dev.dma_mask = &dev->dev.coherent_dma_mask;
+	if (!dev->dev.coherent_dma_mask)
+		dev->dev.coherent_dma_mask = DMA_BIT_MASK(32);
+
+	pdata = dev->dev.platform_data;
 
 	if (usb_disabled())
 		return -ENODEV;
@@ -98,6 +110,12 @@ static int ohci_platform_probe(struct platform_device *dev)
 
 	hcd->rsrc_start = res_mem->start;
 	hcd->rsrc_len = resource_size(res_mem);
+
+#ifdef CONFIG_USB_PHY
+	hcd->phy = devm_usb_get_phy(&dev->dev, USB_PHY_TYPE_USB2);
+	if (!IS_ERR_OR_NULL(hcd->phy))
+		usb_phy_init(hcd->phy);
+#endif
 
 	hcd->regs = devm_ioremap_resource(&dev->dev, res_mem);
 	if (IS_ERR(hcd->regs)) {
@@ -131,6 +149,9 @@ static int ohci_platform_remove(struct platform_device *dev)
 
 	if (pdata->power_off)
 		pdata->power_off(dev);
+
+	if (pdata == &ohci_platform_defaults)
+		dev->dev.platform_data = NULL;
 
 	return 0;
 }
@@ -171,6 +192,11 @@ static int ohci_platform_resume(struct device *dev)
 #define ohci_platform_resume	NULL
 #endif /* CONFIG_PM */
 
+static const struct of_device_id ralink_ohci_ids[] = {
+	{ .compatible = "ralink,rt3xxx-ohci", },
+	{}
+};
+
 static const struct platform_device_id ohci_platform_table[] = {
 	{ "ohci-platform", 0 },
 	{ }
@@ -191,6 +217,7 @@ static struct platform_driver ohci_platform_driver = {
 		.owner	= THIS_MODULE,
 		.name	= "ohci-platform",
 		.pm	= &ohci_platform_pm_ops,
+		.of_match_table = of_match_ptr(ralink_ohci_ids),
 	}
 };
 

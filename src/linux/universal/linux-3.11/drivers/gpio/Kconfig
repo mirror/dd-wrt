@@ -219,6 +219,12 @@ config GPIO_SAMSUNG
 	  Legacy GPIO support. Use only for platforms without support for
 	  pinctrl.
 
+config GPIO_RALINK
+	bool "Ralink GPIO Support"
+	depends on RALINK_OPENWRT
+	help
+	  Say yes here to support the Ralink SoC GPIO device
+
 config GPIO_SPEAR_SPICS
 	bool "ST SPEAr13xx SPI Chip Select as GPIO support"
 	depends on PLAT_SPEAR

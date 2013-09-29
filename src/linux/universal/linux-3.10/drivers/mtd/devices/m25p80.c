@@ -926,10 +926,13 @@ static int m25p_probe(struct spi_device *spi)
 	unsigned			i;
 	struct mtd_part_parser_data	ppdata;
 	struct device_node __maybe_unused *np = spi->dev.of_node;
+	const char __maybe_unused	*of_mtd_name = NULL;
 
 #ifdef CONFIG_MTD_OF_PARTS
 	if (!of_device_is_available(np))
 		return -ENODEV;
+	of_property_read_string(spi->dev.of_node,
+					"linux,mtd-name", &of_mtd_name);
 #endif
 
 	/* Platform data helps sort out which chip type we have, as
@@ -1005,6 +1008,8 @@ static int m25p_probe(struct spi_device *spi)
 
 	if (data && data->name)
 		flash->mtd.name = data->name;
+	else if (of_mtd_name)
+		flash->mtd.name = of_mtd_name;
 	else
 		flash->mtd.name = dev_name(&spi->dev);
 

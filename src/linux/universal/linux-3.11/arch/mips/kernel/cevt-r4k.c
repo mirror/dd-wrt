@@ -38,12 +38,6 @@ static int mips_next_event(unsigned long delta,
 
 #endif /* CONFIG_MIPS_MT_SMTC */
 
-void mips_set_clock_mode(enum clock_event_mode mode,
-				struct clock_event_device *evt)
-{
-	/* Nothing to do ...  */
-}
-
 DEFINE_PER_CPU(struct clock_event_device, mips_clockevent_device);
 int cp0_timer_irq_installed;
 
@@ -90,6 +84,32 @@ struct irqaction c0_compare_irqaction = {
 	.name = "timer",
 };
 
+void mips_set_clock_mode(enum clock_event_mode mode,
+				struct clock_event_device *evt)
+{
+	switch (mode) {
+	case CLOCK_EVT_MODE_ONESHOT:
+		if (cp0_timer_irq_installed)
+			break;
+
+		cp0_timer_irq_installed = 1;
+
+		setup_irq(evt->irq, &c0_compare_irqaction);
+		break;
+
+	case CLOCK_EVT_MODE_SHUTDOWN:
+		if (!cp0_timer_irq_installed)
+			break;
+
+		cp0_timer_irq_installed = 0;
+		free_irq(evt->irq, &c0_compare_irqaction);
+		break;
+
+	default:
+		pr_err("Unhandeled mips clock_mode\n");
+		break;
+	}
+}
 
 void mips_event_handler(struct clock_event_device *dev)
 {
@@ -228,13 +248,6 @@ int r4k_clockevent_init(void)
 	if (!gic_present)
 #endif
 	clockevents_register_device(cd);
-
-	if (cp0_timer_irq_installed)
-		return 0;
-
-	cp0_timer_irq_installed = 1;
-
-	setup_irq(irq, &c0_compare_irqaction);
 
 	return 0;
 }
