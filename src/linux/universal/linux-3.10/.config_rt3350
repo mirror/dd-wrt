@@ -32,6 +32,7 @@ CONFIG_MIPS_RALINK=y
 # CONFIG_NXP_STB225 is not set
 # CONFIG_PMC_MSP is not set
 # CONFIG_POWERTV is not set
+# CONFIG_RALINK_OPENWRT is not set
 # CONFIG_SGI_IP22 is not set
 # CONFIG_SGI_IP27 is not set
 # CONFIG_SGI_IP28 is not set
