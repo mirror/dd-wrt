@@ -34,3 +34,6 @@ endif
 ifeq ($(CONFIG_SRS),y)
 DD_CFLAGS += -DHAVE_SRS
 endif
+ifeq ($(CONFIG_CARAMBOLA),y)
+DD_CFLAGS += -DHAVE_CARAMBOLA
+endif
