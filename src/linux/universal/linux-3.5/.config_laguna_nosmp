@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.5.7.16 Kernel Configuration
+# Linux/arm 3.5.7.21 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -308,6 +308,7 @@ CONFIG_CPU_CP15_MMU=y
 # CONFIG_CPU_ICACHE_DISABLE is not set
 # CONFIG_CPU_DCACHE_DISABLE is not set
 # CONFIG_CPU_BPREDICT_DISABLE is not set
+CONFIG_KUSER_HELPERS=y
 CONFIG_MIGHT_HAVE_CACHE_L2X0=y
 # CONFIG_CACHE_L2X0 is not set
 # CONFIG_CACHE_L2CC is not set
