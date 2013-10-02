@@ -24,7 +24,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 8c8df610b8c02d53213033b0dbdcc3464143c2d5 $ */
+/* $Id: 54a12a177d043216f87f21764b85df912aacaf75 $ */
 
 /* Sanity check to ensure that pcre extension needed by this script is available.
  * In the event it is not, print a nice error message indicating that this script will
@@ -601,6 +601,15 @@ if (isset($argc) && $argc > 1) {
 					putenv("TEST_PHP_EXECUTABLE=$php");
 					$environment['TEST_PHP_EXECUTABLE'] = $php;
 					break;
+				case 'P':
+					if(constant('PHP_BINARY')) {
+						$php = PHP_BINARY;
+					} else {
+						break;
+					}
+					putenv("TEST_PHP_EXECUTABLE=$php");
+					$environment['TEST_PHP_EXECUTABLE'] = $php;
+					break;
 				case 'q':
 					putenv('NO_INTERACTION=1');
 					break;
@@ -652,7 +661,7 @@ if (isset($argc) && $argc > 1) {
 					$html_output = is_resource($html_file);
 					break;
 				case '--version':
-					echo '$Id: 8c8df610b8c02d53213033b0dbdcc3464143c2d5 $' . "\n";
+					echo '$Id: 54a12a177d043216f87f21764b85df912aacaf75 $' . "\n";
 					exit(1);
 
 				default:
@@ -689,6 +698,8 @@ Options:
     -m          Test for memory leaks with Valgrind.
 
     -p <php>    Specify PHP executable to run.
+
+    -P          Use PHP_BINARY as PHP executable to run.
 
     -q          Quiet, no user interaction (same as environment NO_INTERACTION).
 

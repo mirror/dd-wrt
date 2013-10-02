@@ -558,6 +558,51 @@ static void zend_rebuild_access_path(zend_cfg *cfg, zend_op_array *op_array, int
 		convert_to_string((v)); \
 	}
 
+static void strip_nop(zend_code_block *block)
+{
+	zend_op *opline = block->start_opline;
+	zend_op *end, *new_end;
+
+	/* remove leading NOPs */
+	while (block->len > 0 && block->start_opline->opcode == ZEND_NOP) {
+		if (block->len == 1) {
+			/* this block is all NOPs, join with following block */
+			if (block->follow_to) {
+				delete_code_block(block);
+			}
+			return;
+		}
+		block->start_opline++;
+		block->start_opline_no++;
+		block->len--;
+	}
+
+	/* strip the inside NOPs */
+	opline = new_end = block->start_opline;
+	end = opline + block->len;
+
+	while (opline < end) {
+		zend_op *src;
+		int len = 0;
+
+		while (opline < end && opline->opcode == ZEND_NOP) {
+			opline++;
+		}
+		src = opline;
+
+		while (opline < end && opline->opcode != ZEND_NOP) {
+			opline++;
+		}
+		len = opline - src;
+
+		/* move up non-NOP opcodes */
+		memmove(new_end, src, len*sizeof(zend_op));
+
+		new_end += len;
+	}
+	block->len = new_end - block->start_opline;
+}
+
 static void zend_optimize_block(zend_code_block *block, zend_op_array *op_array, char *used_ext TSRMLS_DC)
 {
 	zend_op *opline = block->start_opline;
@@ -1168,45 +1213,7 @@ static void zend_optimize_block(zend_code_block *block, zend_op_array *op_array,
 		opline++;
 	}
 
-	/* remove leading NOPs */
-	while (block->len > 0 && block->start_opline->opcode == ZEND_NOP) {
-		if (block->len == 1) {
-			/* this block is all NOPs, join with following block */
-			if (block->follow_to) {
-				delete_code_block(block);
-			}
-			if (op_array->T) {
-				efree(Tsource);
-			}
-			return;
-		}
-		block->start_opline++;
-		block->start_opline_no++;
-		block->len--;
-	}
-
-	/* strip the inside NOPs */
-	opline = block->start_opline;
-	end = opline + block->len;
-	while (opline < end) {
-		if (opline->opcode == ZEND_NOP) {
-			zend_op *nop = opline + 1;
-			int noplen;
-			while (nop < end && nop->opcode == ZEND_NOP) {
-				nop++;
-			}
-			noplen = nop-opline;
-			if (nop < end) {
-				/* move up non-NOP opcodes */
-				memmove(opline, nop, (end-nop)*sizeof(zend_op));
-			} else {
-				/* all NOPs up to the end, do nothing */
-			}
-			block->len -= noplen;
-			end = block->start_opline + block->len;
-		}
-		opline++;
-	}
+	strip_nop(block);
 
 	if (op_array->T) {
 		efree(Tsource);
@@ -1276,11 +1283,15 @@ static void assemble_code_blocks(zend_cfg *cfg, zend_op_array *op_array)
 
 	/* adjust exception jump targets */
 	if (op_array->last_try_catch) {
-		int i;
-		for (i = 0; i< op_array->last_try_catch; i++) {
-			op_array->try_catch_array[i].try_op = cfg->try[i]->start_opline - new_opcodes;
-			op_array->try_catch_array[i].catch_op = cfg->catch[i]->start_opline - new_opcodes;
+		int i, j;
+		for (i = 0, j = 0; i< op_array->last_try_catch; i++) {
+			if (cfg->try[i]->access) {
+				op_array->try_catch_array[j].try_op = cfg->try[i]->start_opline - new_opcodes;
+				op_array->try_catch_array[j].catch_op = cfg->catch[i]->start_opline - new_opcodes;
+				j++;
+			}
 		}
+		op_array->last_try_catch = j;
 		efree(cfg->try);
 		efree(cfg->catch);
 	}
