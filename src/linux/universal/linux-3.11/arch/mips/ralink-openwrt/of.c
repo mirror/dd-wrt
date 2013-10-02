@@ -27,6 +27,9 @@
 __iomem void *rt_sysc_membase;
 __iomem void *rt_memc_membase;
 
+EXPORT_SYMBOL(rt_sysc_membase);
+EXPORT_SYMBOL(rt_memc_membase);
+
 extern struct boot_param_header __dtb_start;
 
 __iomem void *plat_of_remap_node(const char *node)

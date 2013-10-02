@@ -22,7 +22,7 @@
 #include <linux/reset.h>
 #include <linux/platform_device.h>
 
-#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
 
 #define RALINK_PCI_MM_MAP_BASE		0x20000000
 #define RALINK_PCI_IO_MAP_BASE		0x10160000

@@ -29,7 +29,7 @@
 #include <linux/of_net.h>
 #include <linux/of_mdio.h>
 
-#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
 
 #include "ralink_soc_eth.h"
 
@@ -38,8 +38,8 @@
 #include <linux/mii.h>
 
 #include <ralink_regs.h>
-#include <asm/mach-ralink/rt305x.h>
-#include <asm/mach-ralink/rt305x_esw_platform.h>
+#include <asm/mach-ralink-openwrt/rt305x.h>
+#include <asm/mach-ralink-openwrt-openwrt/rt305x_esw_platform.h>
 
 /*
  * HW limitations for this switch:

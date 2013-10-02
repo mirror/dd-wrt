@@ -17,7 +17,7 @@
 
 #include <linux/module.h>
 
-#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
 
 #include "ralink_soc_eth.h"
 
