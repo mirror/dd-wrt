@@ -1,5 +1,204 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+18 Sep 2013, PHP 5.5.4
+
+- Core:
+  . Fixed bug #60598 (cli/apache sapi segfault on objects manipulation).
+    (Laruence)
+  . Improved fputcsv() to allow specifying escape character.
+  . Fixed bug #65490 (Duplicate calls to get lineno & filename for 
+    DTRACE_FUNCTION_*). (Chris Jones)
+  . Fixed bug #65483 (quoted-printable encode stream filter incorrectly encoding
+    spaces). (Michael M Slusarz)
+  . Fixed bug #65470 (Segmentation fault in zend_error() with
+    --enable-dtrace). (Chris Jones, Kris Van Hees)
+  . Fixed bug #65225 (PHP_BINARY incorrectly set). (Patrick Allaert)
+  . Fixed bug #62692 (PHP fails to build with DTrace). (Chris Jones, Kris Van Hees)
+  . Fixed bug #61759 (class_alias() should accept classes with leading
+    backslashes). (Julien)
+  . Fixed bug #46311 (Pointer aliasing issue results in miscompile on gcc4.4).
+    (Nikita Popov)
+
+- cURL:
+  . Fixed bug #65458 (curl memory leak). (Adam)
+
+- Datetime:
+  . Fixed bug #65554 (createFromFormat broken when weekday name is followed
+    by some delimiters). (Valentin Logvinskiy, Stas).
+  . Fixed bug #65564 (stack-buffer-overflow in DateTimeZone stuff caught
+    by AddressSanitizer). (Remi).
+
+- OPCache:
+  . Fixed bug #65561 (Zend Opcache on Solaris 11 x86 needs ZEND_MM_ALIGNMENT=4).
+    (Terry Ellison)
+
+- Openssl:
+  . Fixed bug #64802 (openssl_x509_parse fails to parse subject properly in
+    some cases). (Mark Jones)
+
+- Session:
+  . Fixed bug #65475 (Session ID is not initialized properly when strict session
+    is enabled). (Yasuo)
+  . Fixed bug #51127/#65359 Request #25630/#43980/#54383 (Added php_serialize 
+    session serialize handler that uses plain serialize()). (Yasuo)
+
+- Standard:
+  . Fix issue with return types of password API helper functions. Found via
+    static analysis by cjones. (Anthony Ferrara) 
+
+22 Aug 2013, PHP 5.5.3
+
+- Openssl:
+  . Fixed UMR in fix for CVE-2013-4248.
+
+15 Aug 2013, PHP 5.5.2
+
+- Core:
+  . Fixed bug #65372 (Segfault in gc_zval_possible_root when return reference
+    fails). (Laruence)
+  . Fixed value of FILTER_SANITIZE_FULL_SPECIAL_CHARS constant (previously was
+    erroneously set to FILTER_SANITIZE_SPECIAL_CHARS value). (Andrey
+    avp200681 gmail com).
+  . Fixed bug #65304 (Use of max int in array_sum). (Laruence)
+  . Fixed bug #65291 (get_defined_constants() causes PHP to crash in a very
+    limited case). (Arpad)
+  . Fixed bug #62691 (solaris sed has no -i switch). (Chris Jones)
+  . Fixed bug #61345 (CGI mode - make install don't work). (Michael Heimpold)
+  . Fixed bug #61268 (--enable-dtrace leads make to clobber
+    Zend/zend_dtrace.d) (Chris Jones)
+
+- DOM:
+  . Added flags option to DOMDocument::schemaValidate() and 
+    DOMDocument::schemaValidateSource(). Added LIBXML_SCHEMA_CREATE flag. 
+    (Chris Wright)
+
+- OPcache:
+  . Added opcache.restrict_api configuration directive that may limit
+    usage of OPcache API functions only to particular script(s). (Dmitry)
+  . Added support for glob symbols in blacklist entries (?, *, **).
+    (Terry Elison, Dmitry)
+  . Fixed bug #65338 (Enabling both php_opcache and php_wincache AVs on
+    shutdown). (Dmitry)
+
+- Openssl:
+  . Fixed handling null bytes in subjectAltName (CVE-2013-4248).
+    (Christian Heimes)
+
+- PDO_mysql:
+  . Fixed bug #65299 (pdo mysql parsing errors). (Johannes)
+
+- Pgsql:
+  . Fixed bug #62978 (Disallow possible SQL injections with pg_select()/pg_update()
+    /pg_delete()/pg_insert()). (Yasuo)
+
+- Phar:
+  . Fixed bug #65028 (Phar::buildFromDirectory creates corrupt archives for 
+    some specific contents). (Stas)
+
+- Sessions:
+  . Implemented strict sessions RFC (https://wiki.php.net/rfc/strict_sessions)
+    which protects against session fixation attacks and session collisions.    
+    (CVE-2011-4718). (Yasuo Ohgaki)
+  . Fixed possible buffer overflow under Windows. Note: Not a security fix.
+    (Yasuo)
+  . Changed session.auto_start to PHP_INI_PERDIR. (Yasuo)
+
+- SOAP:
+  . Fixed bug #65018 (SoapHeader problems with SoapServer). (Dmitry)
+
+- SPL:
+  . Fixed bug #65328 (Segfault when getting SplStack object Value). (Laruence)
+  . Added RecursiveTreeIterator setPostfix and getPostifx methods. (Joshua 
+    Thijssen)
+  . Fixed bug #61697 (spl_autoload_functions returns lambda functions 
+    incorrectly). (Laruence)
+
+- Streams:
+  . Fixed bug #65268 (select() implementation uses outdated tick API). (Anatol)
+
+- Pgsql:
+  . Fixed bug #65336 (pg_escape_literal/identifier() scilently returns false).
+    (Yasuo)
+
+18 Jul 2013, PHP 5.5.1
+
+- Core:
+  . Fixed bug #65254 (Exception not catchable when exception thrown in autoload
+    with a namespace). (Laruence)
+  . Fixed bug #65088 (Generated configure script is malformed on OpenBSD).
+    (Adam)
+  . Fixed bug #65108 (is_callable() triggers Fatal Error). 
+    (David Soria Parra, Laruence)
+  . Fixed bug #65035 (yield / exit segfault). (Nikita)
+  . Fixed bug #65161 (Generator + autoload + syntax error = segfault). (Nikita)
+  . hex2bin() raises E_WARNING for invalid hex string. (Yasuo)
+  . Fixed bug #65226 (chroot() does not get enabled). (Anatol)
+
+- OPcache
+  . Fixed bug #64827 (Segfault in zval_mark_grey (zend_gc.c)). (Laruence)
+  . OPcache must be compatible with LiteSpeed SAPI (Dmitry)
+
+- CGI:
+  . Fixed Bug #65143 (Missing php-cgi man page). (Remi)
+
+- CLI server:
+  . Fixed bug #65066 (Cli server not responsive when responding with 422 http
+    status code). (Adam)
+
+- DateTime
+  . Fixed fug #65184 (strftime() returns insufficient-length string under
+    multibyte locales). (Anatol)
+
+- GD
+  . Fixed #65070 (bgcolor does not use the same format as the input image with
+    imagerotate). (Pierre)
+  . Fixed Bug #65060 (imagecreatefrom... crashes with user streams). (Remi)
+  . Fixed Bug #65084 (imagecreatefromjpeg fails with URL). (Remi)
+  . Fix gdImageCreateFromWebpCtx and use same logic to load WebP image
+    that other formats. (Remi)
+
+- Intl:
+  . Add IntlCalendar::setMinimalDaysInFirstWeek()/
+    intlcal_set_minimal_days_in_first_week().
+  . Fixed trailing space in name of constant IntlCalendar::FIELD_FIELD_COUNT.
+  . Fixed bug #62759 (Buggy grapheme_substr() on edge case). (Stas)
+  . Fixed bug #61860 (Offsets may be wrong for grapheme_stri* functions).
+    (Stas)
+
+- OCI8:
+  . Bump PECL package info version check to allow PECL installs with PHP 5.5+
+
+- PDO:
+  . Allowed PDO_OCI to compile with Oracle Database 12c client libraries.
+    (Chris Jones)
+
+- Pgsql
+  . pg_unescape_bytea() raises E_WARNING for invalid inputs. (Yasuo)
+
+- Phar:
+  . Fixed Bug #65142 (Missing phar man page). (Remi)
+
+- Session:
+  . Added optional create_sid() argument to session_set_save_handler(),
+    SessionHandler and new SessionIdInterface. (Leigh, Arpad)
+
+- Sockets:
+  . Implemented FR #63472 (Setting SO_BINDTODEVICE with socket_set_option).
+    (Damjan Cvetko)
+  . Allowed specifying paths in the abstract namespace for the functions
+    socket_bind(), socket_connect() and socket_sendmsg(). (Gustavo)
+  . Fixed bug #65260 (sendmsg() ancillary data construction for SCM_RIGHTS is
+    faulty). (Gustavo)
+
+- SPL:
+  . Fixed bug #65136 (RecursiveDirectoryIterator segfault). (Laruence)
+  . Fixed bug #61828 (Memleak when calling Directory(Recursive)Iterator
+    /Spl(Temp)FileObject ctor twice). (Laruence)
+
+- CGI/FastCGI SAPI:
+  . Added PHP_FCGI_BACKLOG, overrides the default listen backlog. (Arnaud Le
+    Blanc)
+
 20 Jun 2013, PHP 5.5.0
 
 - Core:

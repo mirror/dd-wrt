@@ -16,7 +16,7 @@
   |         Ilia Alshanetsky <ilia@prohost.org>                          |
   +----------------------------------------------------------------------+
 
-  $Id: 141192c67fbee89bd525c4a2e6ffe28e88c7acee $
+  $Id: 98b5c9fd87904d87d07aee85da366d256a2bac4b $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -326,7 +326,7 @@ PHP_MINFO_FUNCTION(enchant)
 #elif defined(HAVE_ENCHANT_BROKER_SET_PARAM)
 	php_info_print_table_row(2, "Libenchant Version", "1.5.0 or later");
 #endif
-	php_info_print_table_row(2, "Revision", "$Id: 141192c67fbee89bd525c4a2e6ffe28e88c7acee $");
+	php_info_print_table_row(2, "Revision", "$Id: 98b5c9fd87904d87d07aee85da366d256a2bac4b $");
 	php_info_print_table_end();
 
 	php_info_print_table_start();
@@ -674,7 +674,7 @@ PHP_FUNCTION(enchant_broker_dict_exists)
 	described/referred to by 'tag'. The ordering is a comma delimited
 	list of provider names. As a special exception, the "*" tag can
 	be used as a language tag to declare a default ordering for any
-	language that does not explictly declare an ordering. */
+	language that does not explicitly declare an ordering. */
 
 PHP_FUNCTION(enchant_broker_set_ordering)
 {
