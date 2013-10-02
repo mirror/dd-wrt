@@ -1015,7 +1015,7 @@ int internal_getRouterBrand()
 	    && nvram_match("boardrev", "0x1100")
 	    && nvram_match("melco_id", "RD_BB12068")) {
 #ifdef HAVE_BUFFALO
-		setRouter("Buffalo 1750DHP");
+		setRouter("WZR-1750DHP");
 #else
 		setRouter("Buffalo WZR-1750DHP");
 #endif
