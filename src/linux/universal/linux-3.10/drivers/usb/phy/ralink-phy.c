@@ -17,7 +17,7 @@
 #include <linux/module.h>
 #include <linux/reset.h>
 
-#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
 
 #define RT_SYSC_REG_SYSCFG1		0x014
 #define RT_SYSC_REG_CLKCFG1		0x030

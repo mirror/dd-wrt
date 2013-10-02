@@ -32,7 +32,7 @@
 #include <linux/of_address.h>
 #include <linux/switch.h>
 
-#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
 
 #include "ralink_soc_eth.h"
 
@@ -41,7 +41,7 @@
 #include <linux/mii.h>
 
 #include <ralink_regs.h>
-#include <asm/mach-ralink/mt7620.h>
+#include <asm/mach-ralink-openwrt/mt7620.h>
 
 #include "ralink_soc_eth.h"
 #include "gsw_mt7620a.h"
