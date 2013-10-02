@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: 37a0cdea1913c59443265561810c6f05c3dfc5e0 $ */
+/* $Id: 7297523aaab210cb891a4b7673bbc301cd087033 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -1654,7 +1654,7 @@ static void php_zip_add_from_pattern(INTERNAL_FUNCTION_PARAMETERS, int type) /* 
 	char *path = NULL;
 	char *remove_path = NULL;
 	char *add_path = NULL;
-	int pattern_len, add_path_len, remove_path_len, path_len = 0;
+	int pattern_len, add_path_len = 0, remove_path_len = 0, path_len = 0;
 	long remove_all_path = 0;
 	long flags = 0;
 	zval *options = NULL;
@@ -2873,7 +2873,7 @@ static PHP_MINFO_FUNCTION(zip)
 	php_info_print_table_start();
 
 	php_info_print_table_row(2, "Zip", "enabled");
-	php_info_print_table_row(2, "Extension Version","$Id: 37a0cdea1913c59443265561810c6f05c3dfc5e0 $");
+	php_info_print_table_row(2, "Extension Version","$Id: 7297523aaab210cb891a4b7673bbc301cd087033 $");
 	php_info_print_table_row(2, "Zip version", PHP_ZIP_VERSION_STRING);
 	php_info_print_table_row(2, "Libzip version", LIBZIP_VERSION);
 

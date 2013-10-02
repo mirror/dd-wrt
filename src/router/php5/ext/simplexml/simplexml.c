@@ -18,7 +18,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: e7c2f298447e6fa1f1866acc40773e9db8e75fcc $ */
+/* $Id: eba46b909103648e33046d39de5d9de73bc28162 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -1070,7 +1070,7 @@ static HashTable * sxe_get_prop_hash(zval *object, int is_debug TSRMLS_DC) /* {{
 	int              namelen;
 	int              test;
 	char 		 use_iter;
-	zval            *iter_data;
+	zval            *iter_data = NULL;
 
 	use_iter = 0;
 
@@ -2652,7 +2652,7 @@ PHP_MINFO_FUNCTION(simplexml)
 {
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Simplexml support", "enabled");
-	php_info_print_table_row(2, "Revision", "$Id: e7c2f298447e6fa1f1866acc40773e9db8e75fcc $");
+	php_info_print_table_row(2, "Revision", "$Id: eba46b909103648e33046d39de5d9de73bc28162 $");
 	php_info_print_table_row(2, "Schema support",
 #ifdef LIBXML_SCHEMAS_ENABLED
 		"enabled");
