@@ -20,7 +20,7 @@
 #include <linux/of_irq.h>
 #include <linux/of_pci.h>
 
-#include <asm/mach-ralink/rt288x.h>
+#include <asm/mach-ralink-openwrt/rt288x.h>
 
 #define RT2880_PCI_BASE		0x00440000
 #define RT288X_CPU_IRQ_PCI	4

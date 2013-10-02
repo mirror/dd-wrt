@@ -28,7 +28,7 @@
 #include <linux/of_i2c.h>
 #include <linux/err.h>
 
-#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
 
 #define REG_CONFIG_REG		0x00
 #define REG_CLKDIV_REG		0x04

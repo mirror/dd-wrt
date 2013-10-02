@@ -30,7 +30,7 @@
 #include <linux/of_mdio.h>
 #include <linux/if_vlan.h>
 
-#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink-openwrt/ralink_regs.h>
 
 #include "ralink_soc_eth.h"
 #include "esw_rt3052.h"

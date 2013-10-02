@@ -16,8 +16,8 @@
 #include <linux/io.h>
 #include <linux/init.h>
 
-#include <asm/mach-ralink/rt288x.h>
-#include <asm/mach-ralink/rt288x_regs.h>
+#include <asm/mach-ralink-openwrt/rt288x.h>
+#include <asm/mach-ralink-openwrt/rt288x_regs.h>
 
 #define RT2880_PCI_MEM_BASE	0x20000000
 #define RT2880_PCI_MEM_SIZE	0x10000000
