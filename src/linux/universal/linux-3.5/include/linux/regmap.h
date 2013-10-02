@@ -14,6 +14,7 @@
  */
 
 #include <linux/list.h>
+#include <linux/err.h>
 
 struct module;
 struct device;
