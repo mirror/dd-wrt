@@ -117,7 +117,11 @@ static void php_info_print_stream_hash(const char *name, HashTable *ht TSRMLS_DC
 			zend_hash_internal_pointer_reset_ex(ht, &pos);
 			while (zend_hash_get_current_key_ex(ht, &key, &len, NULL, 0, &pos) == HASH_KEY_IS_STRING)
 			{
-				php_info_print(key);
+				if (!sapi_module.phpinfo_as_text) {
+					php_info_print_html_esc(key, len-1);
+				} else {
+					php_info_print(key);
+				}
 				zend_hash_move_forward_ex(ht, &pos);
 				if (zend_hash_get_current_key_ex(ht, &key, &len, NULL, 0, &pos) == HASH_KEY_IS_STRING) {
 					php_info_print(", ");
@@ -283,7 +287,7 @@ void php_info_print_style(TSRMLS_D)
 PHPAPI char *php_info_html_esc(char *string TSRMLS_DC)
 {
 	size_t new_len;
-	return php_escape_html_entities(string, strlen(string), &new_len, 0, ENT_QUOTES, NULL TSRMLS_CC);
+	return php_escape_html_entities((unsigned char *) string, strlen(string), &new_len, 0, ENT_QUOTES, NULL TSRMLS_CC);
 }
 /* }}} */
 

@@ -20,7 +20,7 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id: b65ccaa26d9194861c2cb2f3f1c8a29fa2f0a788 $ */
+/* $Id: b1f7484f243ca1baeb64560b43b1927e7279dc80 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -5259,7 +5259,7 @@ ZEND_METHOD(reflection_extension, getVersion)
 /* }}} */
 
 /* {{{ proto public ReflectionFunction[] ReflectionExtension::getFunctions()
-   Returns an array of this extension's fuctions */
+   Returns an array of this extension's functions */
 ZEND_METHOD(reflection_extension, getFunctions)
 {
 	reflection_object *intern;
@@ -6191,7 +6191,7 @@ PHP_MINFO_FUNCTION(reflection) /* {{{ */
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Reflection", "enabled");
 
-	php_info_print_table_row(2, "Version", "$Id: b65ccaa26d9194861c2cb2f3f1c8a29fa2f0a788 $");
+	php_info_print_table_row(2, "Version", "$Id: b1f7484f243ca1baeb64560b43b1927e7279dc80 $");
 
 	php_info_print_table_end();
 } /* }}} */
@@ -6205,7 +6205,7 @@ zend_module_entry reflection_module_entry = { /* {{{ */
 	NULL,
 	NULL,
 	PHP_MINFO(reflection),
-	"$Id: b65ccaa26d9194861c2cb2f3f1c8a29fa2f0a788 $",
+	"$Id: b1f7484f243ca1baeb64560b43b1927e7279dc80 $",
 	STANDARD_MODULE_PROPERTIES
 }; /* }}} */
 
