@@ -1066,3 +1066,99 @@ uint64_t mtd_get_device_size(const struct mtd_info *mtd)
 	return PART(mtd)->master->size;
 }
 EXPORT_SYMBOL_GPL(mtd_get_device_size);
+
+
+
+#ifdef CONFIG_RALINK_OPENWRT
+/*
+ * Flash API: ra_mtd_read, ra_mtd_write
+ * Arguments:
+ *   - num: specific the mtd number
+ *   - to/from: the offset to read from or written to
+ *   - len: length
+ *   - buf: data to be read/written
+ * Returns:
+ *   - return -errno if failed
+ *   - return the number of bytes read/written if successed
+ */
+int ra_mtd_write(int num, loff_t to, size_t len, const u_char *buf)
+{
+	int ret = -1;
+	size_t rdlen, wrlen;
+	struct mtd_info *mtd;
+	struct erase_info ei;
+	u_char *bak = NULL;
+//	printk(KERN_EMERG "writing to partition %d, offset %d, len %d\n",num,to,len);
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+        Flash_SetModeRead();
+#endif
+
+	mtd = get_mtd_device(NULL, num);
+	if (IS_ERR(mtd))
+		return (int)mtd;
+	if (len > mtd->erasesize) {
+		put_mtd_device(mtd);
+		return -E2BIG;
+	}
+
+	bak = kmalloc(mtd->erasesize, GFP_KERNEL);
+	if (bak == NULL) {
+		put_mtd_device(mtd);
+		return -ENOMEM;
+	}
+
+	ret = mtd_read(mtd, 0, mtd->erasesize, &rdlen, bak);
+	if (ret != 0) {
+		put_mtd_device(mtd);
+		kfree(bak);
+		return ret;
+	}
+	if (rdlen != mtd->erasesize)
+		printk(KERN_EMERG "warning: ra_mtd_write: rdlen is not equal to erasesize\n");
+
+	memcpy(bak + to, buf, len);
+
+	ei.mtd = mtd;
+	ei.callback = NULL;
+	ei.addr = 0;
+	ei.len = mtd->erasesize;
+	ei.priv = 0;
+	ret = mtd_erase(mtd, &ei);
+	if (ret != 0) {
+		put_mtd_device(mtd);
+		kfree(bak);
+		return ret;
+	}
+
+	ret = mtd_write(mtd, 0, mtd->erasesize, &wrlen, bak);
+
+	put_mtd_device(mtd);
+	kfree(bak);
+#ifdef CONFIG_RT2880_FLASH_8M
+        /* marklin 20080605 : return read mode for ST */
+        Flash_SetModeRead();
+#endif
+	return ret;
+}
+
+
+int ra_mtd_read(int num,int from, int len, u_char *buf)
+{
+	int ret;
+	size_t rdlen;
+	struct mtd_info *mtd;
+	printk(KERN_INFO "read ralink eeprom from %X with len %X to %p (device %d)\n",from,len,buf,num);
+	mtd = get_mtd_device(NULL, num);
+
+	ret = mtd_read(mtd, from, len, &rdlen, buf);
+	if (rdlen != len)
+		printk(KERN_EMERG "warning: ra_mtd_read: rdlen is not equal to len\n");
+
+	put_mtd_device(mtd);
+	return ret;
+}
+EXPORT_SYMBOL(ra_mtd_read);
+EXPORT_SYMBOL(ra_mtd_write);
+
+#endif
