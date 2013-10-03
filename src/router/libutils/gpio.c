@@ -439,6 +439,16 @@ int get_gpio(int gpio)
 	return _bit.state;
 }
 
+#elif HAVE_MT7620
+void set_gpio(int pin, int value)
+{
+}
+
+int get_gpio(int pin)
+{
+	return 0;
+}
+
 #elif HAVE_RT2880
 #include <linux/mii.h>
 #include <linux/sockios.h>

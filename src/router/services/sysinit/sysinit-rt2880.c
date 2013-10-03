@@ -89,6 +89,66 @@ void start_sysinit(void)
 	nvram_set("wl0_ifname", "ra0");
 	insmod("rt2860v2_ap");
 	insmod("raeth");
+#ifdef HAVE_WHR300HP2
+	insmod("rt2880_wdt");
+/*	system("swconfig dev eth0 set reset 1");
+	system("swconfig dev eth0 set enable_vlan 1");
+	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 6t\"");
+	system("swconfig dev eth0 vlan 2 set ports \"4 6t\"");
+	system("swconfig dev eth0 set apply");*/
+	
+	//LAN/WAN ports as security mode
+	sysprintf("switch reg w 2004 ff0003");
+	sysprintf("switch reg w 2104 ff0003");
+	sysprintf("switch reg w 2204 ff0003");
+	sysprintf("switch reg w 2304 ff0003");
+	sysprintf("switch reg w 2404 ff0003");
+	sysprintf("switch reg w 2504 ff0003");
+	//LAN/WAN ports as transparent port
+	sysprintf("switch reg w 2010 810000c0");
+	sysprintf("switch reg w 2110 810000c0");
+	sysprintf("switch reg w 2210 810000c0");
+	sysprintf("switch reg w 2310 810000c0");	
+	sysprintf("switch reg w 2410 810000c0");
+	sysprintf("switch reg w 2510 810000c0");
+	//set CPU/P7 port as user port
+	sysprintf("switch reg w 2610 81000000");
+	sysprintf("switch reg w 2710 81000000");
+
+	sysprintf("switch reg w 2604 20ff0003");// #port6, Egress VLAN Tag Attribution=tagged
+	sysprintf("switch reg w 2704 20ff0003");// #port7, Egress VLAN Tag Attribution=tagged
+	
+
+	sysprintf("switch reg w 2014 10001");
+	sysprintf("switch reg w 2114 10001");
+	sysprintf("switch reg w 2214 10001");
+	sysprintf("switch reg w 2314 10001");
+	sysprintf("switch reg w 2414 10002");
+	sysprintf("switch reg w 2514 10001");
+	//VLAN member port
+	sysprintf("switch vlan set 0 1 11110111");
+	sysprintf("switch vlan set 1 2 00001011");
+	sysprintf("switch clear");
+	eval("ifconfig", "eth0", "up");
+	
+	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+	eval("vconfig", "add", "eth0", "1");	//LAN
+	eval("vconfig", "add", "eth0", "2");	//WAN
+
+	struct ifreq ifr;
+	int s;
+
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+		char eabuf[32];
+
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);
+		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		close(s);
+	}
+
+#else
+
 #ifdef HAVE_DIR600
 	writeproc("/proc/rt3052/mii/ctrl", "write 0 0 0x3300");
 	writeproc("/proc/rt3052/mii/ctrl", "write 1 0 0x3300");
@@ -318,7 +378,7 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
-
+#endif
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_SES, LED_OFF);
 	led_control(LED_SES2, LED_OFF);
@@ -331,6 +391,10 @@ void start_sysinit(void)
 	sysprintf("gpio enable 0");	// ses fixup
 	sysprintf("gpio enable 10");	// reset fixup
 #endif
+
+	if (!nvram_match("disable_watchdog", "1")) {
+		eval("watchdog");
+	}
 	return;
 }
 

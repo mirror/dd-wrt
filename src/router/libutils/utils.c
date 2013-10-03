@@ -1330,6 +1330,9 @@ int internal_getRouterBrand()
 #elif HAVE_ASUSRTN13U
 	setRouter("Asus RT-N13U");
 	return ROUTER_BOARD_WHRG300N;
+#elif HAVE_WHR300HP2
+	setRouter("Buffalo WHR-300HP2");
+	return ROUTER_WHR300HP2;
 #elif HAVE_F5D8235
 	setRouter("Belkin F5D8235-4 v2");
 	return ROUTER_BOARD_F5D8235;
