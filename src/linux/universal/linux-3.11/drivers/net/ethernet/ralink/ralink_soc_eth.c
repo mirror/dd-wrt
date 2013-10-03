@@ -605,6 +605,58 @@ static void fe_uninit(struct net_device *dev)
 	fe_free_dma(priv);
 }
 
+
+typedef struct rt3052_esw_reg {
+	unsigned int off;
+	unsigned int val;
+} esw_reg;
+
+
+int fe_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
+{
+	esw_reg reg;
+
+#if defined(CONFIG_SOC_RT305X_OPENWRT) 
+#define REG_ESW_MAX			0x16C
+#elif defined (CONFIG_SOC_MT7620_OPENWRT)
+#define REG_ESW_MAX			0x7FFFF
+#else //RT305x, RT3350
+#define REG_ESW_MAX			0xFC
+#endif
+
+
+#define RAETH_ESW_REG_READ		0x89F1
+#define RAETH_ESW_REG_WRITE		0x89F2
+#define RAETH_MII_READ			0x89F3
+#define RAETH_MII_WRITE			0x89F4
+#define RAETH_ESW_INGRESS_RATE		0x89F5
+#define RAETH_ESW_EGRESS_RATE		0x89F6
+#define RAETH_ESW_PHY_DUMP		0x89F7
+#define RALINK_ETH_SW_BASE		0xB0110000
+#define _ESW_REG(x)	(*((volatile u32 *)(RALINK_ETH_SW_BASE + x)))
+	switch (cmd) {
+		case RAETH_ESW_REG_READ:
+			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
+			if (reg.off > REG_ESW_MAX)
+				return -EINVAL;
+			reg.val = _ESW_REG(reg.off);
+			copy_to_user(ifr->ifr_data, &reg, sizeof(reg));
+			break;
+		case RAETH_ESW_REG_WRITE:
+			copy_from_user(&reg, ifr->ifr_data, sizeof(reg));
+			if (reg.off > REG_ESW_MAX)
+				return -EINVAL;
+			_ESW_REG(reg.off) = reg.val;
+			break;
+		default:
+			return -EOPNOTSUPP;
+
+	}
+
+	return 0;
+}
+
+
 static const struct net_device_ops fe_netdev_ops = {
 	.ndo_init		= fe_init,
 	.ndo_uninit		= fe_uninit,
@@ -614,6 +666,7 @@ static const struct net_device_ops fe_netdev_ops = {
 	.ndo_tx_timeout		= fe_tx_timeout,
 	.ndo_set_mac_address	= fe_set_mac_address,
 	.ndo_change_mtu		= eth_change_mtu,
+        .ndo_do_ioctl           = fe_ioctl,
 	.ndo_validate_addr	= eth_validate_addr,
 };
 

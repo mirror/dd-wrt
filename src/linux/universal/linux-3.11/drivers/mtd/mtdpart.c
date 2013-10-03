@@ -832,7 +832,9 @@ static int refresh_rootfs_split(struct mtd_info *mtd)
 }
 #endif /* CONFIG_MTD_ROOTFS_SPLIT */
 
-
+#ifdef CONFIG_MTD_ROOTFS_GEN
+#include <linux/vmalloc.h>
+#endif
 
 /*
  * This function, given a master MTD object and a partition table, creates
@@ -866,7 +868,33 @@ int add_mtd_partitions(struct mtd_info *master,
 		mutex_unlock(&mtd_partitions_mutex);
 
 		add_mtd_device(&slave->mtd);
+#ifdef CONFIG_MTD_ROOTFS_GEN
+		if (!strcmp(parts[i].name, "linux")) {
 
+		char *buf = vmalloc(4096);
+		int offset = slave->offset;
+		int bootsize = slave->offset;
+		printk(KERN_INFO "scan from offset %X\n",bootsize);
+		int nvramsize = master->erasesize;
+			    while((offset + master->erasesize) < master->size)
+			    {
+			    int retlen;
+			    mtd_read(master,offset,4, &retlen, buf);
+			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
+				    {
+				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
+				    	struct mtd_partition part;
+				    	part.name = "rootfs";
+				    	part.offset = offset;
+				    	part.size = (master->size - nvramsize) - offset; 
+				    	add_mtd_partitions(master,&part,1);
+					break;
+				    } 
+			    offset+=4096;
+			    }
+		vfree(buf);		
+		}
+#endif
 		if (!strcmp(parts[i].name, "rootfs")) {
 #ifdef CONFIG_MTD_ROOTFS_ROOT_DEV
 			if (ROOT_DEV == 0) {
