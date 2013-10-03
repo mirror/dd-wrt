@@ -239,6 +239,9 @@ endif
 ifeq ($(CONFIG_DIR615E),y)
   CFLAGS_EXTRA += -DHAVE_DIR615E
 endif
+ifeq ($(CONFIG_WHR300HP2),y)
+  CFLAGS_EXTRA += -DHAVE_WHR300HP2
+endif
 ifeq ($(CONFIG_DIR615I),y)
   CFLAGS_EXTRA += -DHAVE_DIR615I
 endif
@@ -1371,7 +1374,11 @@ vpath %.c sysinit sysinit/switchlib services tools networking utils $(TOP)/share
 
 all: services.so services.a
 ifeq ($(CONFIG_RT2880),y)
+ifeq ($(CONFIG_MT7620),y)
+	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch_gsw.c -DCONFIG_RALINK_MT7620
+else
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c
+endif
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o mii_mgr tools/mii_mgr.c
 endif
 #	$(CC) $(CFLAGS) $(LDFLAGS) -DNEED_PRINTF -DTEST -o tools/site_survey_test tools/site_survey_broadcom.c -lnvram
