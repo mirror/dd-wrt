@@ -56,5 +56,11 @@ obj-$(CONFIG_WL_TI)	+= ti/
 obj-$(CONFIG_MWIFIEX)	+= mwifiex/
 obj-$(CONFIG_BRCMFMAC)	+= brcm80211/
 obj-$(CONFIG_BRCMSMAC)	+= brcm80211/
+ifeq ($(CONFIG_RALINK_DEVICE),y)
 obj-$(CONFIG_RT2860V2_AP)       += rt3352/rt2860v2_ap/
 obj-$(CONFIG_RT2860V2_STA)      += rt3352/rt2860v2_sta/
+endif
+ifeq ($(CONFIG_SOC_MT7620_OPENWRT),y)
+obj-$(CONFIG_RT2860V2_AP)       += rt7620/rt2860v2_ap/
+obj-$(CONFIG_RT2860V2_STA)      += rt7620/rt2860v2_sta/
+endif
