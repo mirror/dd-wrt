@@ -1,11 +1,5 @@
 if RALINK_OPENWRT
 
-config CLKEVT_RT3352
-	bool
-	depends on SOC_RT305X_OPENWRT || SOC_MT7620_OPENWRT
-	default y
-	select CLKSRC_OF
-	select CLKSRC_MMIO
 
 choice
 	prompt "Ralink SoC selection"
@@ -63,5 +57,13 @@ choice
 		depends on SOC_MT7620_OPENWRT
 
 endchoice
+
+config CLKEVT_RT3352
+	prompt "Dynamic Frequeny Selection clocksource"
+	bool
+	depends on SOC_RT305X_OPENWRT || SOC_MT7620_OPENWRT
+	default y
+	select CLKSRC_OF
+	select CLKSRC_MMIO
 
 endif

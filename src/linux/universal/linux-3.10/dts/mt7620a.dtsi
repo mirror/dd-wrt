@@ -162,8 +162,8 @@
 
 			status = "disabled";
 
-			pinctrl-names = "default";
-			pinctrl-0 = <&i2c_pins>;
+/*			pinctrl-names = "default";
+			pinctrl-0 = <&i2c_pins>;*/
 		};
 
 		i2s@a00 {
@@ -191,8 +191,8 @@
 
 			status = "disabled";
 
-			pinctrl-names = "default";
-			pinctrl-0 = <&spi_pins>;
+/*			pinctrl-names = "default";
+			pinctrl-0 = <&spi_pins>;*/
 		};
 
 		uartlite@c00 {
@@ -207,8 +207,8 @@
 
 			reg-shift = <2>;
 
-			pinctrl-names = "default";
-			pinctrl-0 = <&uartlite_pins>;
+/*			pinctrl-names = "default";
+			pinctrl-0 = <&uartlite_pins>;*/
 		};
 
 		systick@d00 {
@@ -339,8 +339,8 @@
 
 			status = "disabled";
 
-			pinctrl-names = "default";
-			pinctrl-0 = <&mdio_pins>;
+/*			pinctrl-names = "default";
+			pinctrl-0 = <&mdio_pins>;*/
 		};
 	};
 
