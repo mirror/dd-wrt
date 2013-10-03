@@ -61,6 +61,7 @@ obj-$(CONFIG_MACH_AR7240)	+= nvram_kernel_x86.o
 else
 obj-$(CONFIG_MACH_AR7240)	+= nvram_kernel.o
 endif
+obj-$(CONFIG_SOC_MT7620_OPENWRT)	+= nvram_kernel.o
 obj-$(CONFIG_MACH_HORNET)	+= nvram_kernel.o
 obj-$(CONFIG_MACH_GW2388)	+= nvram_kernel.o
 obj-$(CONFIG_LANTIQ)		+= nvram_kernel.o

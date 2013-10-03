@@ -33,6 +33,11 @@ config MTD_ROOTFS_SPLIT
 	depends on MTD = "y"
 	default y
 
+config MTD_ROOTFS_GEN
+	bool "Automatically generate 'rootfs' partition for squashfs"
+	depends on MTD = "y" && RALINK_OPENWRT
+	default y
+
 config MTD_REDBOOT_PARTS
 	tristate "RedBoot partition table parsing"
 	---help---
