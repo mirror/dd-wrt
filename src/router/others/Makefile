@@ -34,6 +34,10 @@ install:
 ifdef CONFIG_RT3052
 	install -d $(INSTALLDIR)/etc/wlan
 	install rt2880/RT30*.bin $(INSTALLDIR)/etc/wlan
+	install rt2880/RT33*.bin $(INSTALLDIR)/etc/wlan
+	install rt2880/RT36*.bin $(INSTALLDIR)/etc/wlan
+	install rt2880/RT38*.bin $(INSTALLDIR)/etc/wlan
+	install rt2880/MT76*.BIN $(INSTALLDIR)/etc/wlan
 else
 ifdef CONFIG_RT2880
 	install -d $(INSTALLDIR)/etc/wlan
