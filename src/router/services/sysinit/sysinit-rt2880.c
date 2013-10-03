@@ -91,6 +91,26 @@ void start_sysinit(void)
 	insmod("raeth");
 #ifdef HAVE_WHR300HP2
 	insmod("rt2880_wdt");
+
+
+	FILE *in = fopen("/dev/mtdblock/2", "rb");
+	unsigned char mac[32];
+	if (in != NULL) {
+		fseek(in, 4, SEEK_SET);
+		fread(mac, 6, 1, in);
+		fclose(in);
+		unsigned int copy[6];
+		int i;
+		for (i = 0; i < 6; i++)
+			copy[i] = mac[i] & 0xff;
+		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
+		fprintf(stderr,"configure mac address to %s\n",mac);
+		if (!strcmp(mac, "ff:ff:ff:ff:ff:ff"))
+			eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
+		else
+			eval("ifconfig", "eth0", "hw", "ether", mac);
+	}
+
 /*	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set enable_vlan 1");
 	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 6t\"");
