@@ -43,7 +43,7 @@
 #define RALINK_GPIO_HAS_9524            1
 #elif defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT6855)
 #define RALINK_GPIO_HAS_4524            1
-#elif defined (CONFIG_RALINK_MT7620)
+#elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_SOC_MT7620_OPENWRT)
 #define RALINK_GPIO_HAS_7224            1
 #elif defined (CONFIG_RALINK_MT7621)
 #define RALINK_GPIO_HAS_9532            1
@@ -437,7 +437,7 @@
 //#define RALINK_GPIOMODE_SPI_CS1		0xC00000
 //#define RALINK_GPIOMODE_SUTIF_SHARE	0x10000000
 
-#elif defined (CONFIG_RALINK_MT7620)
+#elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_SOC_MT7620_OPENWRT)
 
 #define RALINK_GPIOMODE_I2C		0x01
 #define RALINK_GPIOMODE_UARTF		0x1C
@@ -479,7 +479,7 @@
 // !! Warning: changing this value may make other features(MDIO, PCI, etc) lose efficacy
 #if defined (CONFIG_RALINK_MT7621) //FIXME
 #define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_I2C | RALINK_GPIOMODE_PA_G) 
-#elif defined (CONFIG_RALINK_MT7620) //FIXME
+#elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_SOC_MT7620_OPENWRT) //FIXME
 #define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_I2C) | (RALINK_GPIOMODE_UARTF)
 #else
 #define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_UARTF)
