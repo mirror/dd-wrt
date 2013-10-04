@@ -154,8 +154,22 @@ kernelsource:
 kernel:
 	# Also build kernel
 ifeq ($(CONFIG_NORTHSTAR_NOSMP),y)
+ifeq ($(CONFIG_BUFFALO),y)
+	cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_600.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+	touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+else
+	cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_default.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+	touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+endif
 	cp $(LINUXDIR)/.config_northstar $(LINUXDIR)/.config
 else
+ifeq ($(CONFIG_BUFFALO),y)
+	cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_1750.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+	touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+else
+	cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_default.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+	touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+endif
 	cp $(LINUXDIR)/.config_northstar_smp $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_EOP_TUNNEL),y)
@@ -353,7 +367,7 @@ endif
 	
 	./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC56U,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac56u-firmware.trx
 	./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC67U,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac67u-firmware.trx
-	cp $(ARCH)-uclibc/northstar-firmware-squashfs.bin $(ARCH)-uclibc/buffalo.trx
+	dd if=$(ARCH)-uclibc/northstar-firmware-squashfs.bin of=$(ARCH)-uclibc/buffalo.trx bs=131072 conv=sync
 	cd $(ARCH)-uclibc && ../tools/bufenc/makefw.sh buffalo
 
 
