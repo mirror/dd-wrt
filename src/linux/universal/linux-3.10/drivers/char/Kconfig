@@ -6,7 +6,7 @@ menu "Character devices"
 
 config RALINK_GPIO
 	bool "Ralink GPIO Support"
-	depends on RAETH
+	depends on RAETH || RALINK_OPENWRT
 	default y
 
 config RALINK_GPIO_LED
