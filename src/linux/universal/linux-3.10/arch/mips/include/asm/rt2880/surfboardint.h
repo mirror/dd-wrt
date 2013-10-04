@@ -31,7 +31,7 @@
 #define SURFBOARDINT_UART1	 8	/* UART Lite */
 #define SURFBOARDINT_UART	 9	/* UART */
 #define SURFBOARDINT_TIMER0	 10	/* timer0 */
-#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT5350)
+#elif defined (CONFIG_RALINK_RT3052) || defined (CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT2883) || defined (CONFIG_RALINK_RT5350) || defined (CONFIG_RALINK_RT6855) || defined (CONFIG_RALINK_MT7620) || defined (CONFIG_RALINK_MT7621) || defined(CONFIG_SOC_MT7620_OPENWRT)
 #define RALINK_CPU_TIMER_IRQ 	 5	/* mips timer */
 #define SURFBOARDINT_GPIO	 6	/* GPIO */
 #define SURFBOARDINT_DMA	 7	/* DMA */
@@ -40,12 +40,16 @@
 #define SURFBOARDINT_I2S 	 10	/* I2S */
 #define SURFBOARDINT_ESW	 17	/* ESW */
 #define SURFBOARDINT_UART1	 12 	/* UART Lite */
+#define SURFBOARDINT_CRYPTO      13     /* CryptoEngine */
+#define SURFBOARDINT_PLC	 24     /* PLC */
 #define SURFBOARDINT_SYSCTL 	 32	/* SYSCTL */
 #define SURFBOARDINT_TIMER0	 33	/* timer0 */
 #define SURFBOARDINT_WDG	 34	/* watch dog */
 #define SURFBOARDINT_ILL_ACC	 35	/* illegal access */
 #define SURFBOARDINT_PCM	 36	/* PCM */
 #define SURFBOARDINT_UART	 37	/* UART */
+#define RALINK_INT_PCIE0         13	/* PCIE0 */
+#define RALINK_INT_PCIE1	 14	/* PCIE1 */
 #elif defined (CONFIG_RALINK_RT3883)
 #define RALINK_CPU_TIMER_IRQ     5      /* mips timer */
 #define SURFBOARDINT_GPIO        6      /* GPIO */
@@ -80,16 +84,21 @@
  * Surfboard registers are memory mapped on 32-bit aligned boundaries and
  * only word access are allowed.
  */
-struct surfboard_ictrl_regs {
-        volatile unsigned long irq0Status;
-        volatile unsigned long irq1Status;
-	long reserved[6];
-	volatile unsigned long intType;
-	long reserved1[3];
-	volatile unsigned long rawStatus;
-	volatile unsigned long intEnable;
-	volatile unsigned long intDisable;
-};
+#if defined (CONFIG_RALINK_MT7621)
+#define RALINK_IRQ0STAT		(RALINK_INTCL_BASE + 0x9C) //IRQ_STAT
+#define RALINK_IRQ1STAT		(RALINK_INTCL_BASE + 0xA0) //FIQ_STAT
+#define RALINK_INTTYPE		(RALINK_INTCL_BASE + 0x6C) //FIQ_SEL
+#define RALINK_INTRAW		(RALINK_INTCL_BASE + 0xA4) //INT_PURE
+#define RALINK_INTENA		(RALINK_INTCL_BASE + 0x80) //IRQ_MASK_SET
+#define RALINK_INTDIS		(RALINK_INTCL_BASE + 0x78) //IRQ_MASK_CLR
+#else
+#define RALINK_IRQ0STAT		(RALINK_INTCL_BASE + 0x0)
+#define RALINK_IRQ1STAT		(RALINK_INTCL_BASE + 0x4)
+#define RALINK_INTTYPE		(RALINK_INTCL_BASE + 0x20)
+#define RALINK_INTRAW		(RALINK_INTCL_BASE + 0x30)
+#define RALINK_INTENA		(RALINK_INTCL_BASE + 0x34)
+#define RALINK_INTDIS		(RALINK_INTCL_BASE + 0x38)
+#endif
 
 /* bobtseng added ++, 2006.3.6. */
 #define read_32bit_cp0_register(source)                         \
