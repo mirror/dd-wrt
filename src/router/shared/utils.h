@@ -637,7 +637,7 @@
 
 #define ROUTER_LINKSYS_EA6500 0xcb13
 
-#define ROUTER_WHR300HP2 0xcc0f
+#define ROUTER_WHR300HP2 0xcc11
 
 #define NVROUTER "DD_BOARD"
 
