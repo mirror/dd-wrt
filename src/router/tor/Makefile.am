@@ -1,0 +1,79 @@
+# Copyright (c) 2001-2004, Roger Dingledine
+# Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson
+# Copyright (c) 2007-2011, The Tor Project, Inc.
+# See LICENSE for licensing information
+
+# "foreign" means we don't follow GNU package layout standards
+# 1.7 means we require automake vesion 1.7
+AUTOMAKE_OPTIONS = foreign 1.7
+
+SUBDIRS = src doc contrib
+
+DIST_SUBDIRS = src doc contrib
+
+EXTRA_DIST = \
+	ChangeLog					\
+	INSTALL						\
+	LICENSE						\
+	Makefile.nmake					\
+	README						\
+	ReleaseNotes					\
+	tor.spec					\
+	tor.spec.in
+
+#install-data-local:
+#	$(INSTALL) -m 755 -d $(LOCALSTATEDIR)/lib/tor
+
+# Allows to override rpmbuild with rpmbuild-md5 from fedora-packager so that
+# building for EL5 won't fail on https://bugzilla.redhat.com/show_bug.cgi?id=490613
+RPMBUILD ?= rpmbuild
+
+# Use automake's dist-gzip target to build the tarball
+dist-rpm: dist-gzip
+	TIMESTAMP=$$(date +"%Y-%m-%d_%H.%M.%S"); 				\
+	RPM_BUILD_DIR=$$(mktemp -d "/tmp/tor-rpm-build-$$TIMESTAMP-XXXX");	\
+	mkdir -p "$$RPM_BUILD_DIR"/{BUILD,RPMS,SOURCES/"tor-$(VERSION)",SPECS,SRPMS}; \
+	cp -fa "$(distdir).tar.gz" "$$RPM_BUILD_DIR"/SOURCES/;			\
+	LIBS=-lrt $(RPMBUILD) -ba --define "_topdir $$RPM_BUILD_DIR" tor.spec; 	\
+	cp -fa "$$RPM_BUILD_DIR"/SRPMS/* .;                           		\
+	cp -fa "$$RPM_BUILD_DIR"/RPMS/* .;                            		\
+	rm -rf "$$RPM_BUILD_DIR";						\
+	echo "RPM build finished";						\
+	#end of dist-rpm
+
+dist: check
+
+doxygen:
+	doxygen && cd doc/doxygen/latex && make
+
+test: all
+	./src/test/test
+
+# Avoid strlcpy.c, strlcat.c, aes.c, OpenBSD_malloc_Linux.c, sha256.c,
+# eventdns.[hc], tinytest*.[ch]
+check-spaces:
+	./contrib/checkSpace.pl -C                    \
+		src/common/*.h			      \
+		src/common/[^asO]*.c		      \
+		src/common/address.c		      \
+		src/or/[^e]*.[ch]		      \
+		src/or/eventdns_tor.h		      \
+		src/test/test*.[ch]		      \
+		src/test/[^t]*.[ch]		      \
+		src/tools/*.[ch]		      \
+		src/tools/tor-fw-helper/*.[ch]
+
+check-docs:
+	./contrib/checkOptionDocs.pl
+
+check-logs:
+	./contrib/checkLogs.pl                        \
+		src/*/*.[ch] | sort -n
+
+version:
+	@echo "Tor @VERSION@"
+	@if test -d "$(top_srcdir)/.git" && test -x "`which git 2>&1;true`"; then \
+	   echo -n "git: " ;\
+	   (cd "$(top_srcdir)" && git rev-parse --short=16 HEAD); \
+	fi
+
