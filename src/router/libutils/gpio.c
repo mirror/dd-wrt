@@ -439,16 +439,6 @@ int get_gpio(int gpio)
 	return _bit.state;
 }
 
-#elif HAVE_MT7620
-void set_gpio(int pin, int value)
-{
-}
-
-int get_gpio(int pin)
-{
-	return 0;
-}
-
 #elif HAVE_RT2880
 #include <linux/mii.h>
 #include <linux/sockios.h>
@@ -459,6 +449,21 @@ int get_gpio(int pin)
 #include <linux/mii.h>
 
 #define GPIO_DEV	"/dev/gpio"
+enum {
+	gpio_in,
+	gpio_out,
+};
+enum {
+#if defined (HAVE_MT7620)
+	gpio2300,
+	gpio3924,
+	gpio7140,
+	gpio72,
+#else
+	gpio2300,
+#endif
+};
+
 #define	RALINK_GPIO_SET_DIR		0x01
 #define RALINK_GPIO_SET_DIR_IN		0x11
 #define RALINK_GPIO_SET_DIR_OUT		0x12
@@ -479,6 +484,19 @@ int get_gpio(int pin)
 #define RALINK_GPIO_REG_IRQ		0x0A
 #define RALINK_GPIO_LED_SET		0x41
 
+#define RALINK_GPIO7140_SET_DIR_IN	0x15
+#define RALINK_GPIO7140_SET_DIR_OUT	0x16
+#define	RALINK_GPIO7140_READ		0x62
+#define	RALINK_GPIO7140_WRITE		0x63
+#define RALINK_GPIO72_SET_DIR_IN	0x17
+#define RALINK_GPIO72_SET_DIR_OUT	0x18
+#define	RALINK_GPIO72_READ		0x72
+#define	RALINK_GPIO72_WRITE		0x73
+#define RALINK_GPIO3924_SET_DIR_IN	0x13
+#define RALINK_GPIO3924_SET_DIR_OUT	0x14
+#define	RALINK_GPIO3924_READ		0x52
+#define	RALINK_GPIO3924_WRITE		0x53
+
 int gpio_set_dir_in(int gpio)
 {
 	int fd;
@@ -488,7 +506,25 @@ int gpio_set_dir_in(int gpio)
 		perror(GPIO_DEV);
 		return -1;
 	}
-	if (ioctl(fd, RALINK_GPIO_SET_DIR_IN, gpio) < 0) {
+	int req;
+	int val;
+#ifdef HAVE_MT7620
+	if (gpio == 72) {
+		req = RALINK_GPIO72_SET_DIR_IN;
+		val = 1 << (gpio - 72);
+	} else if (gpio <= 71 && gpio >= 40) {
+		req = RALINK_GPIO7140_SET_DIR_IN;
+		val = 1 << (gpio - 40);
+	} else if (gpio <= 39 && gpio >= 24) {
+		req = RALINK_GPIO3924_SET_DIR_IN;
+		val = 1 << (gpio - 24);
+	} else
+#endif
+	{
+		req = RALINK_GPIO_SET_DIR_IN;
+		val = 1 << gpio;
+	}
+	if (ioctl(fd, req, val) < 0) {
 		perror("ioctl");
 		close(fd);
 		return -1;
@@ -506,7 +542,25 @@ int gpio_set_dir_out(int gpio)
 		perror(GPIO_DEV);
 		return -1;
 	}
-	if (ioctl(fd, RALINK_GPIO_SET_DIR_OUT, gpio) < 0) {
+	int req;
+	int val;
+#ifdef HAVE_MT7620
+	if (gpio == 72) {
+		req = RALINK_GPIO72_SET_DIR_OUT;
+		val = 1 << (gpio - 72);
+	} else if (gpio <= 71 && gpio >= 40) {
+		req = RALINK_GPIO7140_SET_DIR_OUT;
+		val = 1 << (gpio - 40);
+	} else if (gpio <= 39 && gpio >= 24) {
+		req = RALINK_GPIO3924_SET_DIR_OUT;
+		val = 1 << (gpio - 24);
+	} else
+#endif
+	{
+		req = RALINK_GPIO_SET_DIR_OUT;
+		val = 1 << gpio;
+	}
+	if (ioctl(fd, req, val) < 0) {
 		perror("ioctl");
 		close(fd);
 		return -1;
@@ -517,9 +571,9 @@ int gpio_set_dir_out(int gpio)
 
 #define RALINK_GPIO_DATA_LEN		24
 
-int gpio_read_bit(int idx, int *value)
+int gpio_read_bit(int gpio, int *value)
 {
-	int fd, req;
+	int fd;
 
 	*value = 0;
 	fd = open(GPIO_DEV, O_RDONLY);
@@ -527,45 +581,88 @@ int gpio_read_bit(int idx, int *value)
 		perror(GPIO_DEV);
 		return -1;
 	}
-	if (0L <= idx && idx < RALINK_GPIO_DATA_LEN)
-		req = RALINK_GPIO_READ_BIT | (idx << RALINK_GPIO_DATA_LEN);
-	else {
-		close(fd);
-		printf("gpio_read_bit: index %d out of range\n", idx);
-		return -1;
+	int req;
+	int val;
+#ifdef HAVE_MT7620
+	if (gpio == 72) {
+		req = RALINK_GPIO72_READ;
+		val = 1 << (gpio - 72);
+	} else if (gpio <= 71 && gpio >= 40) {
+		req = RALINK_GPIO7140_READ;
+		val = 1 << (gpio - 40);
+	} else if (gpio <= 39 && gpio >= 24) {
+		req = RALINK_GPIO3924_READ;
+		val = 1 << (gpio - 24);
+	} else
+#endif
+	{
+		req = RALINK_GPIO_READ;
+		val = 1 << gpio;
 	}
+
 	if (ioctl(fd, req, value) < 0) {
 		perror("ioctl");
 		close(fd);
 		return -1;
 	}
 	close(fd);
+	if (*value & val)
+		return 1; 
 	return 0;
 }
 
-int gpio_write_bit(int idx, int value)
+int gpio_write_bit(int gpio, int setvalue)
 {
-	int fd, req;
 
+	int fd;
+	int value;
 	fd = open(GPIO_DEV, O_RDONLY);
 	if (fd < 0) {
 		perror(GPIO_DEV);
 		return -1;
 	}
-	value &= 1;
-	if (0L <= idx && idx < RALINK_GPIO_DATA_LEN)
-		req = RALINK_GPIO_WRITE_BIT | (idx << RALINK_GPIO_DATA_LEN);
-	else {
-		close(fd);
-		printf("gpio_write_bit: index %d out of range\n", idx);
-		return -1;
+	int req;
+	int wreq;
+	int val;
+#ifdef HAVE_MT7620
+	if (gpio == 72) {
+		req = RALINK_GPIO72_READ;
+		wreq = RALINK_GPIO72_WRITE;
+		val = 1 << (gpio - 72);
+
+	} else if (gpio <= 71 && gpio >= 40) {
+		req = RALINK_GPIO7140_READ;
+		wreq = RALINK_GPIO7140_WRITE;
+		val = 1 << (gpio - 40);
+	} else if (gpio <= 39 && gpio >= 24) {
+		req = RALINK_GPIO3924_READ;
+		wreq = RALINK_GPIO3924_WRITE;
+		val = 1 << (gpio - 24);
+	} else
+#endif
+	{
+		req = RALINK_GPIO_READ;
+		wreq = RALINK_GPIO_WRITE;
+		val = 1 << gpio;
 	}
-	if (ioctl(fd, req, value) < 0) {
+
+	if (ioctl(fd, req, &value) < 0) {
 		perror("ioctl");
 		close(fd);
 		return -1;
 	}
 	close(fd);
+	if (setvalue)
+		value |= val;
+	else
+		value &= ~val;
+
+	if (ioctl(fd, wreq, value) < 0) {
+		perror("ioctl");
+		close(fd);
+		return -1;
+	}
+
 	return 0;
 }
 
