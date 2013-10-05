@@ -4630,7 +4630,12 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_WHR300HP2:
 		power_gpio = 0x109;
-		diag_gpio = 0x009;
+		diag_gpio = 0x107;
+		wlan0_gpio = 0x108;
+		sec0_gpio = 0x10a;
+		ses_gpio = 0x10a;
+		connected_gpio = 0x139;
+		disconnected_gpio = 0x13b;
 //		diag_gpio = 0x107;
 //		connected_gpio = 0x109;
 //		ses_gpio = 0x10e;
