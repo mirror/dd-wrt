@@ -253,6 +253,304 @@ long ralink_gpio_ioctl(struct file *file, unsigned int req,
 		printk(KERN_ERR NAME ": gpio led support not built\n");
 #endif
 		break;
+#if defined (RALINK_GPIO_HAS_2722)
+	case RALINK_GPIO2722_SET_DIR:
+		*(volatile u32 *)(RALINK_REG_PIO2722DIR) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO2722_SET_DIR_IN:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO2722DIR));
+		tmp &= ~cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO2722DIR) = tmp;
+		break;
+	case RALINK_GPIO2722_SET_DIR_OUT:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO2722DIR));
+		tmp |= cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO2722DIR) = tmp;
+		break;
+	case RALINK_GPIO2722_READ:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO2722DATA));
+		put_user(tmp, (int __user *)arg);
+		break;
+	case RALINK_GPIO2722_WRITE:
+		*(volatile u32 *)(RALINK_REG_PIO2722DATA) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO2722_SET:
+		*(volatile u32 *)(RALINK_REG_PIO2722SET) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO2722_CLEAR:
+		*(volatile u32 *)(RALINK_REG_PIO2722SET) = cpu_to_le32(arg);
+		break;
+#elif defined (RALINK_GPIO_HAS_9532)
+	case RALINK_GPIO6332_SET_DIR:
+		*(volatile u32 *)(RALINK_REG_PIO6332DIR) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO6332_SET_DIR_IN:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO6332DIR));
+		tmp &= ~cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO6332DIR) = tmp;
+		break;
+	case RALINK_GPIO6332_SET_DIR_OUT:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO6332DIR));
+		tmp |= cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO6332DIR) = tmp;
+		break;
+	case RALINK_GPIO6332_READ:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO6332DATA));
+		put_user(tmp, (int __user *)arg);
+		break;
+	case RALINK_GPIO6332_WRITE:
+		*(volatile u32 *)(RALINK_REG_PIO6332DATA) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO6332_SET:
+		*(volatile u32 *)(RALINK_REG_PIO6332SET) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO6332_CLEAR:
+		*(volatile u32 *)(RALINK_REG_PIO6332SET) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO9564_SET_DIR:
+		*(volatile u32 *)(RALINK_REG_PIO9564DIR) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO9564_SET_DIR_IN:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9564DIR));
+		tmp &= ~cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO9564DIR) = tmp;
+		break;
+	case RALINK_GPIO9564_SET_DIR_OUT:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9564DIR));
+		tmp |= cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO9564DIR) = tmp;
+		break;
+	case RALINK_GPIO9564_READ:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9564DATA));
+		put_user(tmp, (int __user *)arg);
+		break;
+	case RALINK_GPIO9564_WRITE:
+		*(volatile u32 *)(RALINK_REG_PIO9564DATA) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO9564_SET:
+		*(volatile u32 *)(RALINK_REG_PIO9564SET) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO9564_CLEAR:
+		*(volatile u32 *)(RALINK_REG_PIO9564SET) = cpu_to_le32(arg);
+		break;
+#elif defined (RALINK_GPIO_HAS_4524)
+	case RALINK_GPIO3924_SET_DIR:
+		*(volatile u32 *)(RALINK_REG_PIO3924DIR) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO3924_SET_DIR_IN:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DIR));
+		tmp &= ~cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO3924DIR) = tmp;
+		break;
+	case RALINK_GPIO3924_SET_DIR_OUT:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DIR));
+		tmp |= cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO3924DIR) = tmp;
+		break;
+	case RALINK_GPIO3924_READ:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DATA));
+		put_user(tmp, (int __user *)arg);
+		break;
+	case RALINK_GPIO3924_WRITE:
+		*(volatile u32 *)(RALINK_REG_PIO3924DATA) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO3924_SET:
+		*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO3924_CLEAR:
+		*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(arg);
+		break;
+
+	case RALINK_GPIO4540_SET_DIR:
+		*(volatile u32 *)(RALINK_REG_PIO4540DIR) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO4540_SET_DIR_IN:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO4540DIR));
+		tmp &= ~cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO4540DIR) = tmp;
+		break;
+	case RALINK_GPIO4540_SET_DIR_OUT:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO4540DIR));
+		tmp |= cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO4540DIR) = tmp;
+		break;
+	case RALINK_GPIO4540_READ:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO4540DATA));
+		put_user(tmp, (int __user *)arg);
+		break;
+	case RALINK_GPIO4540_WRITE:
+		*(volatile u32 *)(RALINK_REG_PIO4540DATA) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO4540_SET:
+		*(volatile u32 *)(RALINK_REG_PIO4540SET) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO4540_CLEAR:
+		*(volatile u32 *)(RALINK_REG_PIO4540SET) = cpu_to_le32(arg);
+		break;
+#elif defined (RALINK_GPIO_HAS_5124)
+	case RALINK_GPIO3924_SET_DIR:
+		*(volatile u32 *)(RALINK_REG_PIO3924DIR) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO3924_SET_DIR_IN:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DIR));
+		tmp &= ~cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO3924DIR) = tmp;
+		break;
+	case RALINK_GPIO3924_SET_DIR_OUT:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DIR));
+		tmp |= cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO3924DIR) = tmp;
+		break;
+	case RALINK_GPIO3924_READ:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DATA));
+		put_user(tmp, (int __user *)arg);
+		break;
+	case RALINK_GPIO3924_WRITE:
+		*(volatile u32 *)(RALINK_REG_PIO3924DATA) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO3924_SET:
+		*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO3924_CLEAR:
+		*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(arg);
+		break;
+
+	case RALINK_GPIO5140_SET_DIR:
+		*(volatile u32 *)(RALINK_REG_PIO5140DIR) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO5140_SET_DIR_IN:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO5140DIR));
+		tmp &= ~cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO5140DIR) = tmp;
+		break;
+	case RALINK_GPIO5140_SET_DIR_OUT:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO5140DIR));
+		tmp |= cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO5140DIR) = tmp;
+		break;
+	case RALINK_GPIO5140_READ:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO5140DATA));
+		put_user(tmp, (int __user *)arg);
+		break;
+	case RALINK_GPIO5140_WRITE:
+		*(volatile u32 *)(RALINK_REG_PIO5140DATA) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO5140_SET:
+		*(volatile u32 *)(RALINK_REG_PIO5140SET) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO5140_CLEAR:
+		*(volatile u32 *)(RALINK_REG_PIO5140SET) = cpu_to_le32(arg);
+		break;
+#elif defined (RALINK_GPIO_HAS_9524) || defined (RALINK_GPIO_HAS_7224)
+	case RALINK_GPIO3924_SET_DIR:
+		*(volatile u32 *)(RALINK_REG_PIO3924DIR) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO3924_SET_DIR_IN:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DIR));
+		tmp &= ~cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO3924DIR) = tmp;
+		break;
+	case RALINK_GPIO3924_SET_DIR_OUT:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DIR));
+		tmp |= cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO3924DIR) = tmp;
+		break;
+	case RALINK_GPIO3924_READ:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO3924DATA));
+		put_user(tmp, (int __user *)arg);
+		break;
+	case RALINK_GPIO3924_WRITE:
+		*(volatile u32 *)(RALINK_REG_PIO3924DATA) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO3924_SET:
+		*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO3924_CLEAR:
+		*(volatile u32 *)(RALINK_REG_PIO3924SET) = cpu_to_le32(arg);
+		break;
+
+	case RALINK_GPIO7140_SET_DIR:
+		*(volatile u32 *)(RALINK_REG_PIO7140DIR) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO7140_SET_DIR_IN:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO7140DIR));
+		tmp &= ~cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO7140DIR) = tmp;
+		break;
+	case RALINK_GPIO7140_SET_DIR_OUT:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO7140DIR));
+		tmp |= cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO7140DIR) = tmp;
+		break;
+	case RALINK_GPIO7140_READ:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO7140DATA));
+		put_user(tmp, (int __user *)arg);
+		break;
+	case RALINK_GPIO7140_WRITE:
+		*(volatile u32 *)(RALINK_REG_PIO7140DATA) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO7140_SET:
+		*(volatile u32 *)(RALINK_REG_PIO7140SET) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO7140_CLEAR:
+		*(volatile u32 *)(RALINK_REG_PIO7140SET) = cpu_to_le32(arg);
+		break;
+#if defined (RALINK_GPIO_HAS_7224)
+	case RALINK_GPIO72_SET_DIR:
+		*(volatile u32 *)(RALINK_REG_PIO72DIR) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO72_SET_DIR_IN:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO72DIR));
+		tmp &= ~cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO72DIR) = tmp;
+		break;
+	case RALINK_GPIO72_SET_DIR_OUT:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO72DIR));
+		tmp |= cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO72DIR) = tmp;
+		break;
+	case RALINK_GPIO72_READ:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO72DATA));
+		put_user(tmp, (int __user *)arg);
+		break;
+	case RALINK_GPIO72_WRITE:
+		*(volatile u32 *)(RALINK_REG_PIO72DATA) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO72_SET:
+		*(volatile u32 *)(RALINK_REG_PIO72SET) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO72_CLEAR:
+		*(volatile u32 *)(RALINK_REG_PIO72SET) = cpu_to_le32(arg);
+		break;
+#else
+	case RALINK_GPIO9572_SET_DIR:
+		*(volatile u32 *)(RALINK_REG_PIO9572DIR) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO9572_SET_DIR_IN:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9572DIR));
+		tmp &= ~cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO9572DIR) = tmp;
+		break;
+	case RALINK_GPIO9572_SET_DIR_OUT:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9572DIR));
+		tmp |= cpu_to_le32(arg);
+		*(volatile u32 *)(RALINK_REG_PIO9572DIR) = tmp;
+		break;
+	case RALINK_GPIO9572_READ:
+		tmp = le32_to_cpu(*(volatile u32 *)(RALINK_REG_PIO9572DATA));
+		put_user(tmp, (int __user *)arg);
+		break;
+	case RALINK_GPIO9572_WRITE:
+		*(volatile u32 *)(RALINK_REG_PIO9572DATA) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO9572_SET:
+		*(volatile u32 *)(RALINK_REG_PIO9572SET) = cpu_to_le32(arg);
+		break;
+	case RALINK_GPIO9572_CLEAR:
+		*(volatile u32 *)(RALINK_REG_PIO9572SET) = cpu_to_le32(arg);
+		break;
+#endif
+#endif
 	default:
 		return -ENOIOCTLCMD;
 	}
