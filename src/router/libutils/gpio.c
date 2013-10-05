@@ -607,7 +607,9 @@ int gpio_read_bit(int gpio, int *value)
 	}
 	close(fd);
 	if (*value & val)
-		return 1; 
+	    *value = 1;
+	else
+	    *value = 0;
 	return 0;
 }
 
@@ -651,7 +653,6 @@ int gpio_write_bit(int gpio, int setvalue)
 		close(fd);
 		return -1;
 	}
-	close(fd);
 	if (setvalue)
 		value |= val;
 	else
@@ -662,6 +663,7 @@ int gpio_write_bit(int gpio, int setvalue)
 		close(fd);
 		return -1;
 	}
+	close(fd);
 
 	return 0;
 }
