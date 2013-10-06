@@ -6347,7 +6347,7 @@ else
   tor_libevent_dir_found=no
   tor_libevent_any_linkable=no
 
-  for tor_trydir in "$trylibeventdir" "(system)" "$prefix" /usr/local /usr/pkg /opt/libevent; do
+  for tor_trydir in "$trylibeventdir" "(system)" /usr/pkg /opt/libevent; do
     LDFLAGS="$tor_saved_LDFLAGS"
     LIBS="$tor_saved_LIBS -levent $STATIC_LIBEVENT_FLAGS $TOR_LIB_WS32"
     CPPFLAGS="$tor_saved_CPPFLAGS"
@@ -6916,7 +6916,7 @@ else
   tor_openssl_dir_found=no
   tor_openssl_any_linkable=no
 
-  for tor_trydir in "$tryopenssldir" "(system)" "$prefix" /usr/local /usr/pkg /usr/local/openssl /usr/lib/openssl /usr/local/ssl /usr/lib/ssl /usr/local /usr/athena /opt/openssl; do
+  for tor_trydir in "$tryopenssldir" "(system)" /usr/pkg /usr/local/openssl /usr/lib/openssl /usr/local/ssl /usr/lib/ssl /usr/athena /opt/openssl; do
     LDFLAGS="$tor_saved_LDFLAGS"
     LIBS="$tor_saved_LIBS -lssl -lcrypto $TOR_LIB_GDI"
     CPPFLAGS="$tor_saved_CPPFLAGS"
@@ -7234,7 +7234,7 @@ else
   tor_zlib_dir_found=no
   tor_zlib_any_linkable=no
 
-  for tor_trydir in "$tryzlibdir" "(system)" "$prefix" /usr/local /usr/pkg /opt/zlib; do
+  for tor_trydir in "$tryzlibdir" "(system)" /usr/pkg /opt/zlib; do
     LDFLAGS="$tor_saved_LDFLAGS"
     LIBS="$tor_saved_LIBS -lz"
     CPPFLAGS="$tor_saved_CPPFLAGS"
@@ -7941,7 +7941,7 @@ else
   tor_libnatpmp_dir_found=no
   tor_libnatpmp_any_linkable=no
 
-  for tor_trydir in "$trylibnatpmpdir" "(system)" "$prefix" /usr/local /usr/pkg --with-libnatpmp-dir; do
+  for tor_trydir in "$trylibnatpmpdir" "(system)" /usr/pkg --with-libnatpmp-dir; do
     LDFLAGS="$tor_saved_LDFLAGS"
     LIBS="$tor_saved_LIBS -lnatpmp $TOR_LIB_WS32 $TOR_LIB_IPHLPAPI"
     CPPFLAGS="$tor_saved_CPPFLAGS"
@@ -8286,7 +8286,7 @@ else
   tor_libminiupnpc_dir_found=no
   tor_libminiupnpc_any_linkable=no
 
-  for tor_trydir in "$trylibminiupnpcdir" "(system)" "$prefix" /usr/local /usr/pkg /usr/lib/; do
+  for tor_trydir in "$trylibminiupnpcdir" "(system)" /usr/pkg ; do
     LDFLAGS="$tor_saved_LDFLAGS"
     LIBS="$tor_saved_LIBS -lminiupnpc $TOR_LIB_WS32 $TOR_LIB_IPHLPAPI"
     CPPFLAGS="$tor_saved_CPPFLAGS"
@@ -8590,7 +8590,7 @@ else
   tor_libminiupnpc_dir_found=no
   tor_libminiupnpc_any_linkable=no
 
-  for tor_trydir in "$trylibminiupnpcdir" "(system)" "$prefix" /usr/local /usr/pkg /usr/lib/; do
+  for tor_trydir in "$trylibminiupnpcdir" "(system)" /usr/pkg ; do
     LDFLAGS="$tor_saved_LDFLAGS"
     LIBS="$tor_saved_LIBS -lminiupnpc $TOR_LIB_WS32 $TOR_LIB_IPHLPAPI"
     CPPFLAGS="$tor_saved_CPPFLAGS"

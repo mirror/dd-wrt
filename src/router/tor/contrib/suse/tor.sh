@@ -43,7 +43,7 @@ rc_reset
 # Increase open file descriptors a reasonable amount
 ulimit -n 8192
 
-TORCTL=/usr/local/bin/torctl
+TORCTL=/usr/bin/torctl
 
 # torctl will use these environment variables
 TORUSER=_tor
@@ -51,7 +51,7 @@ export TORUSER
 TORGROUP=_tor
 export TORGROUP
 
-TOR_DAEMON_PID_DIR="/usr/local/var/run/tor"
+TOR_DAEMON_PID_DIR="/usr/var/run/tor"
 
 if [ -x /bin/su ] ; then
     SUPROG=/bin/su
