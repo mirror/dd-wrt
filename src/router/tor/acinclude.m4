@@ -145,7 +145,7 @@ AC_CACHE_CHECK([for $1 directory], tor_cv_library_$1_dir, [
   tor_$1_dir_found=no
   tor_$1_any_linkable=no
 
-  for tor_trydir in "$try$1dir" "(system)" "$prefix" /usr/local /usr/pkg $8; do
+  for tor_trydir in "$try$1dir" "(system)" /usr/pkg $8; do
     LDFLAGS="$tor_saved_LDFLAGS"
     LIBS="$tor_saved_LIBS $3"
     CPPFLAGS="$tor_saved_CPPFLAGS"

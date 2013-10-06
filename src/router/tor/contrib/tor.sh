@@ -32,7 +32,7 @@ elif [ -f /etc/init.d/functions ]; then
    . /etc/init.d/functions
 fi
 
-TORCTL=/usr/local/bin/torctl
+TORCTL=/usr/bin/torctl
 
 # torctl will use these environment variables
 TORUSER=_tor

@@ -24,19 +24,19 @@
 EXEC=tor
 #
 # the path to your binary, including options if necessary
-TORBIN="/usr/local/bin/$EXEC"
+TORBIN="/usr/bin/$EXEC"
 #
 # the path to the configuration file
-TORCONF="/usr/local/etc/tor/torrc"
+TORCONF="/usr/etc/tor/torrc"
 #
 # the path to your PID file
-PIDFILE="/usr/local/var/run/tor/tor.pid"
+PIDFILE="/usr/var/run/tor/tor.pid"
 #
 # The path to the log file
-LOGFILE="/usr/local/var/log/tor/tor.log"
+LOGFILE="/usr/var/log/tor/tor.log"
 #
 # The path to the datadirectory
-TORDATA="/usr/local/var/lib/tor"
+TORDATA="/usr/var/lib/tor"
 #
 TORARGS="--pidfile $PIDFILE --log \"notice file $LOGFILE\" --runasdaemon 1"
 TORARGS="$TORARGS --datadirectory $TORDATA"
