@@ -779,6 +779,7 @@ ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),EU-US)
 else
 	tools/bufenc/encryptRC4 WZR-HP-G450H 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzrg450-firmware.enc
 	tools/bufenc/mkfw-new -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "WZR-HP-G450H" "WZR-HP-G450H" "1.75" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzrg450-firmware.enc $(ARCH)-uclibc/wzrg450-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+	tools/bufenc/mkfw -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "BHR-4GRV" "BHR-4GRV" "1.93" "1.04" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/bhr4grv-firmware.enc $(ARCH)-uclibc/bhr4grv-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
 endif
 endif
 endif
@@ -1235,7 +1236,9 @@ ifeq ($(CONFIG_DIR615I),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
 	dd if=$(ARCH)-uclibc/aligned.uimage of=$(ARCH)-uclibc/dir615i1-uimage.bin bs=3801062 conv=sync
+	dd if=$(ARCH)-uclibc/aligned.uimage of=$(ARCH)-uclibc/dir615i3-uimage.bin bs=3801062 conv=sync
 	cat tools/dir615i1.tag >> $(ARCH)-uclibc/dir615i1-uimage.bin
+	cat tools/dir615i3.tag >> $(ARCH)-uclibc/dir615i3-uimage.bin
 endif
 ifeq ($(CONFIG_WRT160NL),y)
 	./tools/wrt160nl/pad $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/aligned.uimage
