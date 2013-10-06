@@ -176,7 +176,7 @@ CONFIG_NVRAM_64K=y
 # Environment
 #
 PLATFORM=mipsel
-LINUXDIR=$(SRCBASE)/linux/universal/linux-3.9
+LINUXDIR=$(SRCBASE)/linux/universal/linux-3.10
 LIBDIR=$(TOOLCHAIN)/lib
 USRLIBDIR=$(TOOLCHAIN)/usr/lib
 

@@ -5,6 +5,9 @@
 #
 # Base Features
 #
+CONFIG_TOR=y
+CONFIG_TRANSMISSION=y
+CONFIG_PRIVOXY=y
 CONFIG_OPENDPI=y
 CONFIG_CPUTEMP=y
 CONFIG_80211AC=y
@@ -196,7 +199,7 @@ CONFIG_LIBCPP=y
 # Environment
 #
 PLATFORM=mipsel
-LINUXDIR=$(SRCBASE)/linux/universal/linux-3.9
+LINUXDIR=$(SRCBASE)/linux/universal/linux-3.10
 LIBDIR=$(TOOLCHAIN)/lib
 USRLIBDIR=$(TOOLCHAIN)/usr/lib
 
