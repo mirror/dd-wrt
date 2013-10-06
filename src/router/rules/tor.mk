@@ -20,7 +20,7 @@ tor-configure: libevent miniupnpc-configure
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib -I$(TOP) -I$(TOP)/miniupnpc -I$(TOP)/openssl/include -I$(TOP)/libevent  -I$(TOP)/libevent/include" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -L$(TOP)/zlib   -L$(TOP)/openssl -L$(TOP)/libevent/.libs -L$(TOP)/miniupnpc" 
 
-tor:
+tor: libevent miniupnpc
 	make -C tor
 
 tor-clean:
