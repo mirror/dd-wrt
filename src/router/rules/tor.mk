@@ -5,12 +5,13 @@ miniupnpc-clean:
 	make -C miniupnpc clean
 
 miniupnpc-configure:
+	make -C miniupnpc
 
 
 miniupnpc-install:
 
 
-tor-configure: libevent miniupnpc
+tor-configure: libevent miniupnpc-configure
 	cd tor && ./configure  --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --with-libminiupnpc-dir=$(TOP)/libminiupnpc --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	--enable-upnp \
 	--disable-asciidoc \
