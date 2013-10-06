@@ -180,7 +180,7 @@ ORPort 9001
 ## won't be able to block all the bridges. Also, websites won't treat you
 ## differently because they won't know you're running Tor. If you can
 ## be a real relay, please do; but if not, be a bridge!
-#BridgeRelay 1
+BridgeRelay 1
 ## By default, Tor will advertise your bridge to users through various
 ## mechanisms like https://bridges.torproject.org/. If you want to run
 ## a private bridge, for example because you'll give out your bridge
