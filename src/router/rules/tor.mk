@@ -27,3 +27,4 @@ tor-clean:
 
 tor-install:
 	make -C tor DESTDIR=$(INSTALLDIR)/tor install
+	cp $(TOP)/tor/config/torrc $(INSTALLDIR)/tor/usr/etc
