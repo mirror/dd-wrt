@@ -27,39 +27,6 @@ curl-configure:
 	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/zlib -L$(TOP)/openssl -lcrypo -lssl" \
 	$(MAKE) -C curl
 
-
-
-libevent:
-	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" \
-	$(MAKE) -C libevent
-
-libevent-install:
-	$(MAKE) -C libevent install DESTDIR=$(INSTALLDIR)/libevent
-	rm -rf $(INSTALLDIR)/libevent/usr/bin
-	rm -rf $(INSTALLDIR)/libevent/usr/include
-	rm -rf $(INSTALLDIR)/libevent/usr/lib/pkgconfig
-	rm -f $(INSTALLDIR)/libevent/usr/lib/*.a
-	rm -f $(INSTALLDIR)/libevent/usr/lib/*.la
-
-
-libevent-clean:
-	$(MAKE) -C libevent clean
-
-libevent-configure:
-	cd libevent && ./configure  --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" 
-	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" \
-	$(MAKE) -C libevent
-
-
-
 transmission: libevent curl
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib  -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/libevent/include" \
