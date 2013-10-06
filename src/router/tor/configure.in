@@ -514,7 +514,7 @@ TOR_SEARCH_LIBRARY(openssl, $tryssldir, [-lssl -lcrypto $TOR_LIB_GDI],
     [#include <openssl/rand.h>],
     [void RAND_add(const void *buf, int num, double entropy);],
     [RAND_add((void*)0,0,0); exit(0);], [],
-    [/usr/local/openssl /usr/lib/openssl /usr/local/ssl /usr/lib/ssl /usr/local /usr/athena /opt/openssl])
+    [/usr/local/openssl /usr/lib/openssl /usr/local/ssl /usr/lib/ssl /usr/athena /opt/openssl])
 
 dnl XXXX check for OPENSSL_VERSION_NUMBER == SSLeay()
 
@@ -606,8 +606,7 @@ if test "$natpmp" = "true"; then
             r = initnatpmp(&natpmp, 0, 0);],
             [printf("initnatpmp() returned %d (%s)\n", r, r?"FAILED":"SUCCESS");
             exit(0);],
-        [--with-libnatpmp-dir],
-        [/usr/lib/])
+        [--with-libnatpmp-dir])
 fi
 
 
@@ -632,8 +631,7 @@ if test "$upnp" = "true"; then
             [void upnpDiscover(int delay, const char * multicastif,
              const char * minissdpdsock, int sameport);],
             [upnpDiscover(1, 0, 0, 0); exit(0);],
-            [--with-libminiupnpc-dir],
-            [/usr/lib/])
+            [--with-libminiupnpc-dir])
     else
         TOR_SEARCH_LIBRARY(libminiupnpc, $trylibminiupnpcdir, [-lminiupnpc $TOR_LIB_WS32 $TOR_LIB_IPHLPAPI],
             [#include <miniupnpc/miniwget.h>
@@ -642,8 +640,7 @@ if test "$upnp" = "true"; then
             [void upnpDiscover(int delay, const char * multicastif,
              const char * minissdpdsock, int sameport, int ipv6, int * error);],
             [upnpDiscover(1, 0, 0, 0, 0, 0); exit(0);],
-            [--with-libminiupnpc-dir],
-            [/usr/lib/])
+            [--with-libminiupnpc-dir])
     fi
 fi
 

@@ -91,7 +91,7 @@
 %endif
 
 %if %{!?_localstatedir:1}%{?_localstatedir:0}
-%define _localstatedir /usr/local/var
+%define _localstatedir /usr/var
 %endif
 
 ## Package information
