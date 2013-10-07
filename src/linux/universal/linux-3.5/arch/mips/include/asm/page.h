@@ -197,6 +197,7 @@ typedef struct { unsigned long pgprot; } pgprot_t;
 
 #ifdef CONFIG_FLATMEM
 
+#ifndef __ASSEMBLY__
 static inline int pfn_valid(unsigned long pfn)
 {
 	/* avoid <linux/mm.h> include hell */
@@ -204,6 +205,7 @@ static inline int pfn_valid(unsigned long pfn)
 
 	return pfn >= ARCH_PFN_OFFSET && pfn < max_mapnr;
 }
+#endif
 
 #elif defined(CONFIG_SPARSEMEM)
 
