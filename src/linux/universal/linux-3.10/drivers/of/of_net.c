@@ -94,6 +94,7 @@ const void *of_get_mac_address(struct device_node *np)
 }
 EXPORT_SYMBOL(of_get_mac_address);
 
+#ifdef CONFIG_MTD
 int of_get_mac_address_mtd(struct device_node *np, void *mac)
 {
 	struct device_node *mtd_np = NULL;
@@ -129,3 +130,4 @@ int of_get_mac_address_mtd(struct device_node *np, void *mac)
 	return ret;
 }
 EXPORT_SYMBOL_GPL(of_get_mac_address_mtd);
+#endif
