@@ -110,7 +110,7 @@ TESTMINIWGETOBJS := $(TESTMINIWGETOBJS) minissdpc.o
 TESTIGDDESCPARSE := $(TESTIGDDESCPARSE) minissdpc.o
 endif
 
-LIBDIR ?= lib
+LIBDIR = lib
 # install directories
 INSTALLPREFIX ?= $(PREFIX)/usr
 INSTALLDIRINC = $(INSTALLPREFIX)/include/miniupnpc
