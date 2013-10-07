@@ -264,7 +264,6 @@ void start_sysinit(void)
 				{"ag1", "0x0", 0},
 				{0, 0, 0}
 			};
-    
 
 			struct nvram_tuple dir868_2_1params[] = {
 				{"sromrev", "11", 0},
@@ -430,13 +429,13 @@ void start_sysinit(void)
 			struct nvram_tuple *t;
 			t = dir868_1_1params;
 			while (t->name) {
-//				fprintf(stderr, "set pci/1/1/%s to %s\n", t->name, t->value);
+//                              fprintf(stderr, "set pci/1/1/%s to %s\n", t->name, t->value);
 				nvram_nset(t->value, "pci/1/1/%s", t->name);
 				t++;
 			}
 			t = dir868_2_1params;
 			while (t->name) {
-//				fprintf(stderr, "set pci/2/1/%s to %s\n", t->name, t->value);
+//                              fprintf(stderr, "set pci/2/1/%s to %s\n", t->name, t->value);
 				nvram_nset(t->value, "pci/2/1/%s", t->name);
 				t++;
 			}
@@ -447,78 +446,78 @@ void start_sysinit(void)
 	case ROUTER_BUFFALO_WZR1750:
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
-	nvram_default_get("wl_country_code", "US");
-	nvram_default_get("wl0_country_code", "US");
-	nvram_default_get("wl1_country_code", "US");
-	nvram_default_get("wl_country_rev", "0");
-	nvram_default_get("wl0_country_rev", "0");
-	nvram_default_get("wl1_country_rev", "0");
-	#ifdef HAVE_BUFFALO
-	char *cname = nvram_safe_get("region");
-	nvram_set("wl0_country_code","Q1");
-	nvram_set("wl0_country_rev","27");
-	nvram_set("wl1_country_code","Q1");
-	nvram_set("wl1_country_rev","27");
-	if (!strcmp(cname,"JP")) {
-	    nvram_set("wl0_country_code","JP");
-	    nvram_set("wl0_country_rev","45");
-	    nvram_set("wl1_country_code","JP");
-	    nvram_set("wl1_country_rev","45");
-	}
+		nvram_default_get("wl_country_code", "US");
+		nvram_default_get("wl0_country_code", "US");
+		nvram_default_get("wl1_country_code", "US");
+		nvram_default_get("wl_country_rev", "0");
+		nvram_default_get("wl0_country_rev", "0");
+		nvram_default_get("wl1_country_rev", "0");
+#ifdef HAVE_BUFFALO
+		char *cname = nvram_safe_get("region");
+		nvram_set("wl0_country_code", "Q1");
+		nvram_set("wl0_country_rev", "27");
+		nvram_set("wl1_country_code", "Q1");
+		nvram_set("wl1_country_rev", "27");
+		if (!strcmp(cname, "JP")) {
+			nvram_set("wl0_country_code", "JP");
+			nvram_set("wl0_country_rev", "45");
+			nvram_set("wl1_country_code", "JP");
+			nvram_set("wl1_country_rev", "45");
+		}
 
-	if (!strcmp(cname,"US")) {
-	    nvram_set("wl0_country_code","Q2");
-	    nvram_set("wl0_country_rev","41");
-	    nvram_set("wl1_country_code","Q2");
-	    nvram_set("wl1_country_rev","41");
-	}
+		if (!strcmp(cname, "US")) {
+			nvram_set("wl0_country_code", "Q2");
+			nvram_set("wl0_country_rev", "41");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
 
-	if (!strcmp(cname,"EU")) {
-	    nvram_set("wl0_country_code","EU");
-	    nvram_set("wl0_country_rev","61");
-	    nvram_set("wl1_country_code","EU");
-	    nvram_set("wl1_country_rev","61");
-	}
+		if (!strcmp(cname, "EU")) {
+			nvram_set("wl0_country_code", "EU");
+			nvram_set("wl0_country_rev", "61");
+			nvram_set("wl1_country_code", "EU");
+			nvram_set("wl1_country_rev", "61");
+		}
 
-	if (!strcmp(cname,"AP")) {
-	    nvram_set("wl0_country_code","CN");
-	    nvram_set("wl0_country_rev","34");
-	    nvram_set("wl1_country_code","Q2");
-	    nvram_set("wl1_country_rev","41");
-	}
+		if (!strcmp(cname, "AP")) {
+			nvram_set("wl0_country_code", "CN");
+			nvram_set("wl0_country_rev", "34");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
 
-	if (!strcmp(cname,"KR")) {
-	    nvram_set("wl0_country_code","KR");
-	    nvram_set("wl0_country_rev","55");
-	    nvram_set("wl1_country_code","Q2");
-	    nvram_set("wl1_country_rev","41");
-	}
+		if (!strcmp(cname, "KR")) {
+			nvram_set("wl0_country_code", "KR");
+			nvram_set("wl0_country_rev", "55");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
 
-	if (!strcmp(cname,"CH")) {
-	    nvram_set("wl0_country_code","CH");
-	    nvram_set("wl0_country_rev","34");
-	    nvram_set("wl1_country_code","Q2");
-	    nvram_set("wl1_country_rev","41");
-	}
+		if (!strcmp(cname, "CH")) {
+			nvram_set("wl0_country_code", "CH");
+			nvram_set("wl0_country_rev", "34");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
 
-	if (!strcmp(cname,"TW")) {
-	    nvram_set("wl0_country_code","TW");
-	    nvram_set("wl0_country_rev","34");
-	    nvram_set("wl1_country_code","Q2");
-	    nvram_set("wl1_country_rev","41");
-	}
+		if (!strcmp(cname, "TW")) {
+			nvram_set("wl0_country_code", "TW");
+			nvram_set("wl0_country_rev", "34");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
 
-	if (!strcmp(cname,"RU")) {
-	    nvram_set("wl0_country_code","RU");
-	    nvram_set("wl0_country_rev","37");
-	    nvram_set("wl1_country_code","Q2");
-	    nvram_set("wl1_country_rev","41");
-	}	
-	#endif
-	break;
-	
+		if (!strcmp(cname, "RU")) {
+			nvram_set("wl0_country_code", "RU");
+			nvram_set("wl0_country_rev", "37");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+#endif
+		break;
+
 	default:
-		nvram_set("bootpartition","0");
+		nvram_set("bootpartition", "0");
 		nvram_default_get("wl_country_code", "US");
 		nvram_default_get("wl0_country_code", "US");
 		nvram_default_get("wl1_country_code", "US");
