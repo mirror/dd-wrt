@@ -7,9 +7,11 @@ miniupnpc-clean:
 miniupnpc-configure:
 	make -C miniupnpc
 
-
 miniupnpc-install:
-
+	make -C miniupnpc install INSTALLPREFIX=$(INSTALLDIR)/miniupnpc/usr 
+	rm -rf $(INSTALLDIR)/miniupnpc/usr/bin
+	rm -rf $(INSTALLDIR)/miniupnpc/usr/include
+	rm -rf $(INSTALLDIR)/miniupnpc/usr/share
 
 tor-configure: libevent miniupnpc-configure
 	cd tor && ./configure  --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --with-libminiupnpc-dir=$(TOP)/libminiupnpc --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
@@ -28,4 +30,4 @@ tor-clean:
 
 tor-install:
 	make -C tor DESTDIR=$(INSTALLDIR)/tor install
-	cp $(TOP)/tor/config/torrc $(INSTALLDIR)/tor/usr/etc/tor
+	install -D tor/config/torrc $(INSTALLDIR)/tor/usr/etc/tor
