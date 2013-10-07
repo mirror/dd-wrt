@@ -580,6 +580,12 @@ static void nat_prerouting(void)
 		save2file("-A PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-port 8118\n", wanaddr);
 	}
 #endif
+#ifdef HAVE_TOR
+	if (nvram_match("tor_transparent", "1") && nvram_match("tor_enable", "1")){
+		save2file("-A PREROUTING -i br0 -p udp --dport 53 -j REDIRECT --to-ports 53\n");
+		save2file("-A PREROUTING -i br0 -p tcp --syn -j REDIRECT --to-ports 9040\n");
+	}
+#endif
 	/*
 	 * Enable remote Web GUI management 
 	 */

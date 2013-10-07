@@ -50,7 +50,7 @@ HCFLAGS  += -fpic -I$(TOP)/services/include -I$(LINUXDIR)/brcm/wl/bcmwifi/includ
 
 OBJS = services.o network.o firewall.o mssid.o wshaper.o ddns.o devinit.o sysinit.o sysinit-$(ARCHITECTURE).o interface.o udhcpc.o mkfiles.o iptable.o defaults.o \
        bridgetools.o igmp.o wpa.o vlantagging.o httpd.o setuserpw.o gpio.o mask.o reset_defaults.o vpn.o cron.o syslog.o redial.o radvd.o	\
-       pppoe.o pptpclient.o l2tp.o hwmon.o ttraff.o radiotimer.o processmonitor.o wland.o radiofunctions.o apserv.o aoss.o processmanager.o utils.o minidlna.o
+       pppoe.o pptpclient.o l2tp.o hwmon.o ttraff.o radiotimer.o processmonitor.o wland.o radiofunctions.o apserv.o aoss.o processmanager.o utils.o minidlna.o tor.o
 
 
 ifeq ($(CONFIG_WHRAG108),y)
@@ -444,6 +444,9 @@ CFLAGS_EXTRA += -DHAVE_DIR825
 endif
 ifeq ($(CONFIG_WDR2543),y)
 CFLAGS_EXTRA += -DHAVE_WDR2543
+endif
+ifeq ($(CONFIG_TOR),y)
+CFLAGS_EXTRA += -DHAVE_TOR
 endif
 ifeq ($(CONFIG_WDR4300),y)
 CFLAGS_EXTRA += -DHAVE_WDR4300
