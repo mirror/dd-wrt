@@ -54,7 +54,7 @@ void start_tor(void)
 	
 	FILE *fp=fopen("/tmp/torrc","wb");
 	fprintf(fp,"Log notice syslog\n");
-	if (nvram_match("tor_relayonly","1");
+	if (nvram_match("tor_relayonly","1"))
 	    fprintf(fp,"SocksPort 0\n");
 	else {
 	    fprintf(fp,"SocksPort 9050\n");
@@ -64,7 +64,7 @@ void start_tor(void)
 //	fprintf(fp,"ControlPort 9051\n");
 	if (nvram_match("tor_relay","1"));
 	    fprintf(fp,"ORPort 9001\n");
-	if (nvram_match("tor_dir","1");
+	if (nvram_match("tor_dir","1"))
 	    fprintf(fp,"DirPort 9030\n");
 	if (nvram_match("tor_bridge","1"))
 	    fprintf(fp,"BridgeRelay 1\n");
