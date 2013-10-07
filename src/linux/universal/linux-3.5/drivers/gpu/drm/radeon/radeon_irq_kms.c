@@ -198,15 +198,17 @@ int radeon_irq_kms_init(struct radeon_device *rdev)
 			dev_info(rdev->dev, "radeon: using MSI.\n");
 		}
 	}
+
+	INIT_WORK(&rdev->hotplug_work, radeon_hotplug_work_func);
+	INIT_WORK(&rdev->audio_work, r600_audio_update_hdmi);
+
 	rdev->irq.installed = true;
 	r = drm_irq_install(rdev->ddev);
 	if (r) {
 		rdev->irq.installed = false;
+		flush_work(&rdev->hotplug_work);
 		return r;
 	}
-
-	INIT_WORK(&rdev->hotplug_work, radeon_hotplug_work_func);
-	INIT_WORK(&rdev->audio_work, r600_audio_update_hdmi);
 
 	DRM_INFO("radeon: irq initialized.\n");
 	return 0;

@@ -411,7 +411,8 @@ static u32 dce6_line_buffer_adjust(struct radeon_device *rdev,
 				   struct drm_display_mode *mode,
 				   struct drm_display_mode *other_mode)
 {
-	u32 tmp;
+	u32 tmp, buffer_alloc, i;
+	u32 pipe_offset = radeon_crtc->crtc_id * 0x20;
 	/*
 	 * Line Buffer Setup
 	 * There are 3 line buffers, each one shared by 2 display controllers.
@@ -426,15 +427,29 @@ static u32 dce6_line_buffer_adjust(struct radeon_device *rdev,
 	 * non-linked crtcs for maximum line buffer allocation.
 	 */
 	if (radeon_crtc->base.enabled && mode) {
-		if (other_mode)
+		if (other_mode) {
 			tmp = 0; /* 1/2 */
-		else
+			buffer_alloc = 1;
+		} else {
 			tmp = 2; /* whole */
-	} else
+			buffer_alloc = 2;
+		}
+	} else {
 		tmp = 0;
+		buffer_alloc = 0;
+	}
 
 	WREG32(DC_LB_MEMORY_SPLIT + radeon_crtc->crtc_offset,
 	       DC_LB_MEMORY_CONFIG(tmp));
+
+	WREG32(PIPE0_DMIF_BUFFER_CONTROL + pipe_offset,
+	       DMIF_BUFFERS_ALLOCATED(buffer_alloc));
+	for (i = 0; i < rdev->usec_timeout; i++) {
+		if (RREG32(PIPE0_DMIF_BUFFER_CONTROL + pipe_offset) &
+		    DMIF_BUFFERS_ALLOCATED_COMPLETED)
+			break;
+		udelay(1);
+	}
 
 	if (radeon_crtc->base.enabled && mode) {
 		switch (tmp) {
@@ -3683,6 +3698,11 @@ static int si_startup(struct radeon_device *rdev)
 	struct radeon_ring *ring;
 	int r;
 
+	/* scratch needs to be initialized before MC */
+	r = r600_vram_scratch_init(rdev);
+	if (r)
+		return r;
+
 	si_mc_program(rdev);
 
 	if (!rdev->me_fw || !rdev->pfp_fw || !rdev->ce_fw ||
@@ -3699,10 +3719,6 @@ static int si_startup(struct radeon_device *rdev)
 		DRM_ERROR("Failed to load MC firmware!\n");
 		return r;
 	}
-
-	r = r600_vram_scratch_init(rdev);
-	if (r)
-		return r;
 
 	r = si_pcie_gart_enable(rdev);
 	if (r)
