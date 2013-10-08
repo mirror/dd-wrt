@@ -225,7 +225,6 @@ static char *filter[] = { "lan_ifnames",
 	"bootpartition",
 	"bypasscrccheck",
 	"tftpserverip",
-	
 	NULL
 };
 

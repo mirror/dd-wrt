@@ -997,7 +997,7 @@ int internal_getRouterBrand()
 	if (boardnum == 00 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1100")
 	    && nvram_match("gpio7", "wps_button")) {
-		setRouter("Asus RT-AC67U");
+		setRouter("Asus RT-AC68U");
 		return ROUTER_ASUS_AC67U;
 	}
 
@@ -1008,6 +1008,11 @@ int internal_getRouterBrand()
 
 	if (nvram_match("productid", "RT-AC67U")) {
 		setRouter("Asus RT-AC67U");
+		return ROUTER_ASUS_AC67U;
+	}
+
+	if (nvram_match("productid", "RT-AC68U")) {
+		setRouter("Asus RT-AC68U");
 		return ROUTER_ASUS_AC67U;
 	}
 
