@@ -130,8 +130,61 @@ void start_sysinit(void)
 	}
 
 	switch (getRouterBrand()) {
-	case ROUTER_ASUS_AC56U:
 	case ROUTER_ASUS_AC67U:
+		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
+			int deadcount = 10;
+			while (deadcount--) {
+				FILE *fp = fopen("/dev/mtdblock1", "rb");
+				if (fp == NULL) {
+					fprintf(stderr, "waiting for mtd devices to get available %d\n", deadcount);
+					sleep(1);
+					continue;
+				}
+				fclose(fp);
+				break;
+			}
+			sleep(1);
+			sysprintf("/sbin/erase nvram");
+			nvram_set("flash_active", "1");	// prevent recommit of value until reboot is done
+			sys_reboot();
+		}
+		set_gpio(4, 0);	// enable all led's which are off by default
+		set_gpio(14, 1);	// usb led
+		set_gpio(1, 1);	// wan
+		set_gpio(2, 0);	// lan
+		set_gpio(3, 0);	// power
+		set_gpio(6, 0);	// wireless 5 ghz
+		set_gpio(0, 1);	// usb 3.0 led           
+		nvram_set("0:maxp2ga0", "106");
+		nvram_set("0:maxp2ga1", "106");
+		nvram_set("0:maxp2ga2", "106");
+		nvram_set("0:cckbw202gpo", "0");
+		nvram_set("0:cckbw20ul2gpo", "0");
+		nvram_set("0:mcsbw202gpo", "0x65320000");
+		nvram_set("0:mcsbw402gpo", "0x65320000");
+		nvram_set("0:dot11agofdmhrbw202gpo", "0x3200");
+		nvram_set("0:ofdmlrbw202gpo", "0");
+		nvram_set("0:sb20in40hrpo", "0");
+		nvram_set("0:sb20in40lrpo", "0");
+		nvram_set("0:dot11agduphrpo", "0");
+		nvram_set("0:dot11agduplrpo", "0");
+
+		nvram_set("1:maxp5ga0", "106,106,106,106");
+		nvram_set("1:maxp5ga1", "106,106,106,106");
+		nvram_set("1:maxp5ga2", "106,106,106,106");
+		nvram_set("1:mcsbw205glpo", "0x65320000");
+		nvram_set("1:mcsbw405glpo", "0x65320000");
+		nvram_set("1:mcsbw805glpo", "0x65320000");
+		nvram_set("1:mcsbw1605glpo", "0");
+		nvram_set("1:mcsbw205gmpo", "0x65320000");
+		nvram_set("1:mcsbw405gmpo", "0x65320000");
+		nvram_set("1:mcsbw805gmpo", "0x65320000");
+		nvram_set("1:mcsbw1605gmpo", "0");
+		nvram_set("1:mcsbw205ghpo", "0x65320000");
+		nvram_set("1:mcsbw405ghpo", "0x65320000");
+		nvram_set("1:mcsbw805ghpo", "0x65320000");
+		nvram_set("1:mcsbw1605ghpo", "0");
+	case ROUTER_ASUS_AC56U:
 		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
 			int deadcount = 10;
 			while (deadcount--) {
