@@ -2290,6 +2290,7 @@ static void filter_table(void)
 		save2file(":advgrp_%d - [0:0]\n", seq);
 	}
 #ifndef HAVE_MICRO
+	if( (nvram_match("limit_telnet", "1")) || (nvram_match("limit_pptp", "1")) || (nvram_match("limit_ssh", "1")) || (nvram_match("limit_ftp", "1")) ){
 		save2file(":logbrute - [0:0]\n");
 		save2file("-A logbrute -m recent --set --name BRUTEFORCE --rsource\n");
 		save2file("-A logbrute -m recent ! --update --seconds 60 --hitcount 4 --name BRUTEFORCE --rsource -j RETURN\n");
@@ -2299,6 +2300,7 @@ static void filter_table(void)
 		    && (nvram_match("log_dropped", "1")))
 			save2file("-A logbrute -j LOG --log-prefix \"[DROP BRUTEFORCE] : \" --log-tcp-options --log-ip-options\n");
 		save2file("-A logbrute -j %s\n", log_drop);
+	}
 #endif
 
 	if (wanactive()) {
