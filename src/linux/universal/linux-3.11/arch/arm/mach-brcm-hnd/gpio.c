@@ -149,6 +149,7 @@ static struct file_operations gpio_fops = {
 extern int iswrt350n;
 extern int iswrt300n11;
 int isac66;
+int isac68;
 int isbuffalo = 0;
 int isdefault = 0;
 static struct class *gpio_class = NULL;
@@ -209,10 +210,10 @@ static int __init gpio_init(void)
 
 	if (nvram_match("model","RT-AC68U")) {
 		printk(KERN_EMERG "Asus-RT-AC68U init\n");
-		isac66 = 1;
+		isac68 = 1;
 	} else if ((boardnum != 24) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1100"))) {
 		printk(KERN_EMERG "Asus-RT-AC68U init\n");
-		isac66 = 1;
+		isac68 = 1;
 	}
 
 	if ((boardnum == 24) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110"))) {
