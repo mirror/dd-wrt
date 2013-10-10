@@ -980,41 +980,6 @@ int internal_getRouterBrand()
 #elif HAVE_NORTHSTAR
 	unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
-	if (boardnum == 24 && nvram_match("boardtype", "0x0646")
-	    && nvram_match("boardrev", "0x1110")
-	    && nvram_match("gpio7", "wps_button")) {
-		setRouter("Dlink-DIR868L");
-		return ROUTER_DLINK_DIR868;
-	}
-
-	if (boardnum == 00 && nvram_match("boardtype", "0x0646")
-	    && nvram_match("boardrev", "0x1100")
-	    && nvram_match("gpio15", "wps_button")) {
-		setRouter("Asus RT-AC56U");
-		return ROUTER_ASUS_AC56U;
-	}
-
-	if (boardnum == 00 && nvram_match("boardtype", "0x0646")
-	    && nvram_match("boardrev", "0x1100")
-	    && nvram_match("gpio7", "wps_button")) {
-		setRouter("Asus RT-AC68U");
-		return ROUTER_ASUS_AC67U;
-	}
-
-	if (nvram_match("productid", "RT-AC56U")) {
-		setRouter("Asus RT-AC56U");
-		return ROUTER_ASUS_AC56U;
-	}
-
-	if (nvram_match("productid", "RT-AC67U")) {
-		setRouter("Asus RT-AC67U");
-		return ROUTER_ASUS_AC67U;
-	}
-
-	if (nvram_match("productid", "RT-AC68U")) {
-		setRouter("Asus RT-AC68U");
-		return ROUTER_ASUS_AC67U;
-	}
 
 	if (boardnum == 00 && nvram_match("boardtype", "0xF646")
 	    && nvram_match("boardrev", "0x1100")
@@ -1048,6 +1013,53 @@ int internal_getRouterBrand()
 #endif
 		return ROUTER_BUFFALO_WZR600DHP2;
 	}
+
+	if (nvram_match("productid", "RT-AC56U")) {
+		setRouter("Asus RT-AC56U");
+		return ROUTER_ASUS_AC56U;
+	}
+
+	if (nvram_match("productid", "RT-AC67U")) {
+		setRouter("Asus RT-AC67U");
+		return ROUTER_ASUS_AC67U;
+	}
+
+	if (nvram_match("odmpid", "RT-AC68R")) {
+		setRouter("Asus RT-AC68R");
+		return ROUTER_ASUS_AC67U;
+	}
+
+	if (nvram_match("productid", "RT-AC68U")) {
+		setRouter("Asus RT-AC68U");
+		return ROUTER_ASUS_AC67U;
+	}
+
+	if (nvram_match("model", "RT-AC68U")) {
+		setRouter("Asus RT-AC68U");
+		return ROUTER_ASUS_AC67U;
+	}
+
+	if (boardnum == 24 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("gpio7", "wps_button")) {
+		setRouter("Dlink-DIR868L");
+		return ROUTER_DLINK_DIR868;
+	}
+
+	if (boardnum == 00 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1100")
+	    && nvram_match("gpio15", "wps_button")) {
+		setRouter("Asus RT-AC56U");
+		return ROUTER_ASUS_AC56U;
+	}
+
+	if (boardnum != 24 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1100")
+	    && nvram_match("gpio7", "wps_button")) {
+		setRouter("Asus RT-AC68U");
+		return ROUTER_ASUS_AC67U;
+	}
+
 
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
