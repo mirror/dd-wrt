@@ -2691,7 +2691,7 @@ static void show_netmode(webs_t wp, char *prefix)
 		websWrite(wp, "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n", nvram_match(wl_net_mode, "na-only") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n", nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
 	}
-	if (has_ac(prefix)) {
+	if (has_ac(prefix) && has_5ghz(prefix)) {
 		websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n", nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 	}
 #else
