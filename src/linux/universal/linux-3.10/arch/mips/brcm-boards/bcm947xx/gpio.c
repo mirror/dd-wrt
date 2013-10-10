@@ -152,6 +152,7 @@ extern int iswrt300n11;
 int isbuffalo=0;
 int isd1800h=0;
 int isac66=0;
+int isac68=0;
 int isdefault=1;
 EXPORT_SYMBOL(isd1800h);
 EXPORT_SYMBOL(isac66);
