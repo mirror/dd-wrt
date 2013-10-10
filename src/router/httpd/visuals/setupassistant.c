@@ -877,7 +877,7 @@ void sas_show_netmode(webs_t wp, char *prefix)
 		websWrite(wp, "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n", nvram_selmatch(wp, wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
 	}
 
-	if (has_ac(prefix)) {
+	if (has_ac(prefix) && has_5ghz(prefix)) {
 		websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n", nvram_selmatch(wp, wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 	}
 #else
