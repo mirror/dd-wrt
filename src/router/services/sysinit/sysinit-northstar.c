@@ -155,6 +155,10 @@ void start_sysinit(void)
 		set_gpio(3, 0);	// power
 		set_gpio(6, 0);	// wireless 5 ghz
 		set_gpio(0, 1);	// usb 3.0 led           
+		nvram_set("0:ledbh10","7");
+		nvram_set("1:ledbh10","7");
+		nvram_set("1:ledbh6", "136");	// fixup 5 ghz led
+		
 		nvram_set("0:maxp2ga0", "106");
 		nvram_set("0:maxp2ga1", "106");
 		nvram_set("0:maxp2ga2", "106");
@@ -184,6 +188,7 @@ void start_sysinit(void)
 		nvram_set("1:mcsbw405ghpo", "0x65320000");
 		nvram_set("1:mcsbw805ghpo", "0x65320000");
 		nvram_set("1:mcsbw1605ghpo", "0");
+	break;
 	case ROUTER_ASUS_AC56U:
 		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
 			int deadcount = 10;
