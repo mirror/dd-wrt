@@ -207,6 +207,14 @@ static int __init gpio_init(void)
 		isac66 = 1;
 	}
 
+	if (nvram_match(model,"RT-AC68U")) {
+		printk(KERN_EMERG "Asus-RT-AC68U init\n");
+		isac66 = 1;
+	} else if ((boardnum != 24) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1100"))) {
+		printk(KERN_EMERG "Asus-RT-AC68U init\n");
+		isac66 = 1;
+	}
+
 	if ((boardnum == 24) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110"))) {
 		printk(KERN_EMERG "DLink DIR-868 init\n");
 		isac66 = 1;
