@@ -3698,6 +3698,7 @@ void set_hc595(uint32 pin, uint32 value)
 static si_t *gpio_sih = NULL;
 extern int isd1800h;
 extern int isac66;
+extern int isac68;
 extern int isbuffalo;
 extern int isdefault;
 //#ifndef USE_LZMA
@@ -3731,6 +3732,11 @@ si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 	    else
 	    set_hc595(1,0);	
 	    return val & mask;
+	}
+
+	if (isac68 && !(mask & 1<<6))
+	{
+	    return si_gpioout(sih,mask,val,priority);
 	}
 
 	if (isac66 && ((mask & (1<<12)) || (mask & (1<<0)) || (mask & (1<<1))  || (mask & (1<<2)) || (mask & (1<<3))))
