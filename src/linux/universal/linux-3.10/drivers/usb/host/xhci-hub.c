@@ -836,7 +836,7 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 
 #ifdef CONFIG_BCM47XX
 			if(usb2mode != 0){
-				xhci_writel(xhci, 0x0, addr);
+				xhci_writel(xhci, 0x0, port_array[wIndex]);
 
 				if(usb2mode == 1){ // 0bc2:a0a1
 					xhci_writel(xhci, 0x0 & ~PORT_PE | PORT_POWER | PORT_LINK_STROBE & ~PORT_PLS_MASK, port_array[wIndex]);
