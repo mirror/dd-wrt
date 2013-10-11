@@ -1236,7 +1236,7 @@ union xhci_trb {
  * It must also be greater than 16.
  */
 #ifdef CONFIG_BCM47XX
-#define TRBS_PER_SEGMENT	128
+#define TRBS_PER_SEGMENT	256
 #else
 #define TRBS_PER_SEGMENT	64
 #endif
