@@ -3141,6 +3141,13 @@ struct nvram_tuple srouter_defaults[] = {
 	{"privoxy_advanced", "0", 0},
 	{"privoxy_transp_enable", "0", 0},
 #endif
+#ifdef HAVE_TOR
+	{"tor_enable", "0", 0},
+	{"tor_relayonly", "0", 0},
+	{"tor_dir", "0", 0},
+	{"tor_bridge", "0", 0},
+	{"tor_transparent", "0", 0},
+#endif
 	{0, 0, 0}
 };
 #else
