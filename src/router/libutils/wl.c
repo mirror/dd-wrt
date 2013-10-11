@@ -470,11 +470,13 @@ int getUptime(char *ifname, unsigned char *mac)
 void radio_off(int idx)
 {
 	eval("iwpriv", "ra0", "set", "RadioOn=0");
+	led_control(LED_WLAN0, LED_OFF);
 }
 
 void radio_on(int idx)
 {
 	eval("iwpriv", "ra0", "set", "RadioOn=1");
+	led_control(LED_WLAN0, LED_ON);
 }
 
 #else
@@ -2104,14 +2106,24 @@ void radio_off(int idx)
 			for (i = 0; i < cc; i++) {
 				radio_on_off_ath9k(i, 0);
 			}
+			led_control(LED_WLAN0, LED_OFF);
+			led_control(LED_WLAN1, LED_OFF);
 		} else {
 			radio_on_off_ath9k(idx, 0);
+			if (idx == 0)
+				led_control(LED_WLAN0, LED_OFF);
+			if (idx == 1)
+				led_control(LED_WLAN1, LED_OFF);
 		}
 	}
 #endif
 	if (idx != -1) {
 		writevaproc("1", "/proc/sys/dev/wifi%d/silent", idx);
 		writevaproc("1", "/proc/sys/dev/wifi%d/ledon", idx);	// switch off led
+		if (idx == 0)
+			led_control(LED_WLAN0, LED_OFF);
+		if (idx == 1)
+			led_control(LED_WLAN1, LED_OFF);
 	} else {
 		int cc = getdevicecount();
 		int i;
@@ -2119,6 +2131,8 @@ void radio_off(int idx)
 			writevaproc("1", "/proc/sys/dev/wifi%d/silent", i);
 			writevaproc("1", "/proc/sys/dev/wifi%d/ledon", i);	// switch off led
 		}
+		led_control(LED_WLAN0, LED_OFF);
+		led_control(LED_WLAN1, LED_OFF);
 	}
 #ifdef HAVE_ATH9K
 #endif
@@ -2137,19 +2151,32 @@ void radio_on(int idx)
 			for (i = 0; i < cc; i++) {
 				radio_on_off_ath9k(i, 1);
 			}
+			led_control(LED_WLAN0, LED_ON);
+			led_control(LED_WLAN1, LED_ON);
 		} else {
 			radio_on_off_ath9k(idx, 1);
+			if (idx == 0)
+				led_control(LED_WLAN0, LED_ON);
+			if (idx == 1)
+				led_control(LED_WLAN1, LED_ON);
 		}
 	}
 #endif
-	if (idx != -1)
+	if (idx != -1) {
+
 		writevaproc("0", "/proc/sys/dev/wifi%d/silent", idx);
-	else {
+		if (idx == 0)
+			led_control(LED_WLAN0, LED_ON);
+		if (idx == 1)
+			led_control(LED_WLAN1, LED_ON);
+	} else {
 		int cc = getdevicecount();
 		int i;
 		for (i = 0; i < cc; i++) {
 			writevaproc("0", "/proc/sys/dev/wifi%d/silent", idx);
 		}
+		led_control(LED_WLAN0, LED_ON);
+		led_control(LED_WLAN1, LED_ON);
 	}
 }
 
@@ -2193,6 +2220,10 @@ void radio_off(int idx)
 	if (idx != -1) {
 		dd_syslog(LOG_INFO, "radio_timer idx: %d %s\n", idx, get_wl_instance_name(idx));
 		eval("wl", "-i", get_wl_instance_name(idx), "radio", "off");
+		if (idx == 0)
+			led_control(LED_WLAN0, LED_OFF);
+		if (idx == 1)
+			led_control(LED_WLAN1, LED_OFF);
 
 	} else {
 
@@ -2202,6 +2233,8 @@ void radio_off(int idx)
 		for (ii = 0; ii < cc; ii++) {
 			eval("wl", "-i", get_wl_instance_name(ii), "radio", "off");
 		}
+		led_control(LED_WLAN0, LED_OFF);
+		led_control(LED_WLAN1, LED_OFF);
 	}
 	//fix ticket 2991
 	eval("startservice", "nas");
@@ -2215,7 +2248,11 @@ void radio_on(int idx)
 	if (idx != -1) {
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx))
 			dd_syslog(LOG_INFO, "radio_timer idx: %d %s \n", idx, get_wl_instance_name(idx));
-			eval("wl", "-i", get_wl_instance_name(idx), "radio", "on");
+		eval("wl", "-i", get_wl_instance_name(idx), "radio", "on");
+		if (idx == 0)
+			led_control(LED_WLAN0, LED_ON);
+		if (idx == 1)
+			led_control(LED_WLAN1, LED_ON);
 
 	} else {
 		int cc = get_wl_instances();
@@ -2225,6 +2262,8 @@ void radio_on(int idx)
 				eval("wl", "-i", get_wl_instance_name(ii), "radio", "on");
 			}
 		}
+		led_control(LED_WLAN0, LED_ON);
+		led_control(LED_WLAN1, LED_ON);
 	}
 	eval("startservice", "nas");
 	eval("startservice", "guest_nas");
