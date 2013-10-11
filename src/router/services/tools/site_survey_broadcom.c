@@ -422,7 +422,7 @@ int site_survey_main(int argc, char *argv[])
 	int ret = 0;
 	while ((count--) > 0)	//scan for max 5 seconds
 	{
-		usleep(500 * 1000);
+		usleep(1000 * 1000);
 
 		bzero(buf, sizeof(buf));
 		scan_res->buflen = sizeof(buf);
