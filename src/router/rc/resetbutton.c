@@ -606,6 +606,7 @@ int getbuttonstate()
 
 static int mode = 0;		/* mode 1 : pushed */
 static int ses_mode = 0;	/* mode 1 : pushed */
+static int wifi_mode = 0;	/* mode 1 : pushed */
 static int count = 0;
 
 #ifdef HAVE_RADIOOFF
@@ -948,7 +949,9 @@ void period_check(int sig)
 	 * 0xff = button disabled / not available 
 	 */
 	int push;
+	int pushwifi;
 	int sesgpio;
+	int wifigpio;
 
 	switch (brand) {
 	case ROUTER_BUFFALO_WHRG54S:
@@ -997,8 +1000,9 @@ void period_check(int sig)
 		sesgpio = 0x104;	// gpio 4, inversed
 		break;
 	case ROUTER_DLINK_DIR868:
-	case ROUTER_ASUS_AC56U:
 	case ROUTER_ASUS_AC67U:
+		wifigpio = 0x10f;
+	case ROUTER_ASUS_AC56U:
 		sesgpio = 0x107;	// gpio 7, inversed
 		break;
 
@@ -1071,10 +1075,12 @@ void period_check(int sig)
 #endif
 	default:
 		sesgpio = 0xfff;	// gpio unknown, disabled
+		wifigpio = 0xfff;	// gpio unknown, disabled
 	}
 #endif
 
 	push = 1 << (sesgpio & 0x0ff);	// calculate push value from ses gpio 
+	pushwifi = 1 << (wifigpio & 0x0ff);	// calculate push value from ses gpio 
 	// 
 	// 
 	// 
@@ -1181,7 +1187,9 @@ void period_check(int sig)
 		runStartup("/tmp/etc/config", ".sesbutton");	// if available
 		if (nvram_match("radiooff_button", "1")) {
 			led_control(LED_SES, LED_FLASH);	// when pressed, blink white
-			if (ses_mode == 1) {
+			switch (ses_mode) {
+
+			case 1:
 				// SES (AOSS) led
 #ifdef HAVE_RADIOOFF
 #ifndef HAVE_BUFFALO
@@ -1195,8 +1203,9 @@ void period_check(int sig)
 #endif
 
 				ses_mode = 0;
+				break;
+			case 2:
 
-			} else if (ses_mode == 0) {
 				// (AOSS) led
 #ifdef HAVE_RADIOOFF
 #ifndef HAVE_BUFFALO
@@ -1210,7 +1219,9 @@ void period_check(int sig)
 #endif
 
 				ses_mode = 1;
+				break;
 			}
+
 		}
 #ifdef HAVE_AOSS
 		else if (nvram_match("radiooff_button", "2")) {
@@ -1218,6 +1229,24 @@ void period_check(int sig)
 		}
 #else
 #endif
+
+	} else if ((wifigpio != 0xfff)
+		   && (((wifigpio & 0x100) == 0 && (val & pushwifi))
+		       || ((wifigpio & 0x100) == 0x100 && !(val & pushwifi)))) {
+		led_control(LED_SES, LED_FLASH);	// when pressed, blink white
+		switch (wifi_mode) {
+		case 1:
+			dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
+			sysprintf("startservice radio_on");
+			wifi_mode = 0;
+			break;
+		case 0:
+			// (AOSS) led
+			dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
+			sysprintf("startservice radio_off");
+			wifi_mode = 1;
+			break;
+		}
 
 	} else {
 
