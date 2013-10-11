@@ -25,6 +25,10 @@
 
 #include "xhci.h"
 
+#ifdef CONFIG_BCM47XX
+extern int usb2mode;
+#endif
+
 #define	PORT_WAKE_BITS	(PORT_WKOC_E | PORT_WKDISC_E | PORT_WKCONN_E)
 #define	PORT_RWC_BITS	(PORT_CSC | PORT_PEC | PORT_WRC | PORT_OCC | \
 			 PORT_RC | PORT_PLC | PORT_PE)
@@ -829,9 +833,22 @@ int xhci_hub_control(struct usb_hcd *hcd, u16 typeReq, u16 wValue,
 			 * However, khubd will ignore the roothub events until
 			 * the roothub is registered.
 			 */
+
+#ifdef CONFIG_BCM47XX
+			if(usb2mode != 0){
+				xhci_writel(xhci, 0x0, addr);
+
+				if(usb2mode == 1){ // 0bc2:a0a1
+					xhci_writel(xhci, 0x0 & ~PORT_PE | PORT_POWER | PORT_LINK_STROBE & ~PORT_PLS_MASK, port_array[wIndex]);
+				}
+			}
+			else{
+				xhci_writel(xhci, temp | PORT_POWER, port_array[wIndex]);
+			}
+#else
 			xhci_writel(xhci, temp | PORT_POWER,
 					port_array[wIndex]);
-
+#endif
 			temp = xhci_readl(xhci, port_array[wIndex]);
 			xhci_dbg(xhci, "set port power, actual port %d status  = 0x%x\n", wIndex, temp);
 
