@@ -5131,6 +5131,8 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_ASUS_AC67U:
 	case ROUTER_ASUS_AC56U:
+		usb_power = 0x009;	//usb power on/off
+		usb_power1 = 0x00a;	//usb power on/off
 		power_gpio = 0x103;
 		usb_gpio = 0x10e;
 		diag_gpio = 0x003;
