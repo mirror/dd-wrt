@@ -55,7 +55,7 @@ void start_tor(void)
 	mkdir("/tmp/tor", 0700);
 	FILE *fp = fopen("/tmp/torrc", "wb");
 	fprintf(fp, "Log notice syslog\n");
-	fprintf(tp, "DataDirectory /tmp/tor\n");
+	fprintf(fp, "DataDirectory /tmp/tor\n");
 	if (nvram_match("tor_relayonly", "1"))
 		fprintf(fp, "SocksPort 0\n");
 	else {
