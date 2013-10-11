@@ -501,6 +501,7 @@ void start_sysinit(void)
 			nvram_set("pci/1/1/vendid", "0x14E4");
 
 		}
+		break;
 	case ROUTER_BUFFALO_WZR1750:
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
