@@ -168,7 +168,7 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	20
 
-#if !defined(CONFIG_BCM80211AC) && !defined(CONFIG_ARM)
+#if !defined(CONFIG_BCM80211AC) && !defined(CONFIG_ARM) && !defined(HAVE_NORTHSTAR)
 #if defined(CONFIG_NVRAM_60K)
 #define NVRAM_SPACE		0xf000
 #elif defined(CONFIG_NVRAM_64K)
@@ -178,7 +178,7 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #endif
 #else
 #define NVRAM_SPACE		0x10000
-#ifndef CONFIG_ARM
+#if !defined(CONFIG_ARM) && !defined(HAVE_NORTHSTAR)
 #define NVRAM_SPACE_256		0x40000
 #endif
 #endif
@@ -187,7 +187,7 @@ uint8 nvram_calc_crc(struct nvram_header * nvh);
 #undef NVRAM_SPACE
 #define NVRAM_SPACE		0x10000
 
-#ifndef CONFIG_ARM
+#if !defined(CONFIG_ARM) && !defined(HAVE_NORTHSTAR)
 #undef NVRAM_SPACE_256
 #define NVRAM_SPACE_256		0x40000
 #endif
