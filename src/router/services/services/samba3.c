@@ -44,6 +44,19 @@ void start_samba3(void)
 	struct samba3_share *samba3shares;
 	int uniqueuserid = 1000;
 	FILE *fp;
+	int fd;
+
+	if ((fd = open("/proc/irq/163/smp_affinity", O_RDWR)) >= 0) {
+		close(fd);
+		if (!nvram_match("samba3_enable", "1")) {	// not set txworkq 
+			writeproc("/proc/irq/163/smp_affinity", "2");
+			writeproc("/proc/irq/169/smp_affinity", "2");
+		} else {
+			writeproc("/proc/irq/163/smp_affinity", "3");
+			writeproc("/proc/irq/169/smp_affinity", "3");
+		}
+	}
+
 	if (!nvram_match("samba3_enable", "1"))
 		return;
 	start_mkfiles();
@@ -184,7 +197,7 @@ void stop_samba3(void)
 	stop_process("nmbd", "nmbd");
 	//samba has changed the way pidfiles are named, thus stop process will not kill smbd and nmbd pidfiles, see pidfile.c in samba 
 	sysprintf("rm -rf %s", "/var/run/*smb.conf.pid");
-	
+
 }
 #endif
 
