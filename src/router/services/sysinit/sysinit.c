@@ -2450,6 +2450,11 @@ void start_drivers(void)
 		rmmod("ehci-platform");
 		rmmod("ehci-hcd");
 		rmmod("fsl-mph-dr-of");
+
+		rmmod("usb-libusual");
+		rmmod("dwc_otg");	// usb
+		rmmod("xhci-hcd");
+
 		rmmod("usbcore");
 		rmmod("usb-common");
 		
