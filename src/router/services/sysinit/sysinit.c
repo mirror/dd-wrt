@@ -2439,7 +2439,11 @@ void start_drivers(void)
 		rmmod("ci13xxx_imx");
 		rmmod("ci_hdrc");
 		rmmod("phy-mxs-usb");
+		rmmod("fsl-mph-dr-of");
 
+		rmmod("usb-libusual");
+		rmmod("dwc_otg");	// usb
+		rmmod("xhci-hcd");
 
 
 		rmmod("usb-ohci");
@@ -2451,9 +2455,6 @@ void start_drivers(void)
 		rmmod("ehci-hcd");
 		rmmod("fsl-mph-dr-of");
 
-		rmmod("usb-libusual");
-		rmmod("dwc_otg");	// usb
-		rmmod("xhci-hcd");
 
 		rmmod("usbcore");
 		rmmod("usb-common");
