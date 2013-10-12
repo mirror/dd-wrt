@@ -52,6 +52,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <cymac.h>
+#include <fcntl.h>
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 

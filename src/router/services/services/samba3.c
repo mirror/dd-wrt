@@ -35,6 +35,7 @@
 #include <shutils.h>
 #include <services.h>
 #include <samba3.h>
+#include <fcntl.h>
 
 void start_samba3(void)
 {
@@ -46,6 +47,7 @@ void start_samba3(void)
 	FILE *fp;
 	int fd;
 
+#ifdef HAVE_NORTHSTAR
 	if ((fd = open("/proc/irq/163/smp_affinity", O_RDWR)) >= 0) {
 		close(fd);
 		if (!nvram_match("samba3_enable", "1")) {	// not set txworkq 
@@ -56,6 +58,7 @@ void start_samba3(void)
 			writeproc("/proc/irq/169/smp_affinity", "3");
 		}
 	}
+#endif
 
 	if (!nvram_match("samba3_enable", "1"))
 		return;
