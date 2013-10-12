@@ -155,10 +155,10 @@ void start_sysinit(void)
 		set_gpio(3, 0);	// power
 		set_gpio(6, 0);	// wireless 5 ghz
 		set_gpio(0, 1);	// usb 3.0 led           
-		nvram_set("0:ledbh10","7");
-		nvram_set("1:ledbh10","7");
+		nvram_set("0:ledbh10", "7");
+		nvram_set("1:ledbh10", "7");
 		nvram_set("1:ledbh6", "136");	// fixup 5 ghz led
-		
+
 		nvram_set("0:maxp2ga0", "106");
 		nvram_set("0:maxp2ga1", "106");
 		nvram_set("0:maxp2ga2", "106");
@@ -188,7 +188,7 @@ void start_sysinit(void)
 		nvram_set("1:mcsbw405ghpo", "0x65320000");
 		nvram_set("1:mcsbw805ghpo", "0x65320000");
 		nvram_set("1:mcsbw1605ghpo", "0");
-	break;
+		break;
 	case ROUTER_ASUS_AC56U:
 		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
 			int deadcount = 10;
@@ -595,9 +595,19 @@ void start_sysinit(void)
 	insmod("switch-core");
 	insmod("switch-robo");
 
-	writeproc("/proc/irq/163/smp_affinity", "2");
-	writeproc("/proc/irq/169/smp_affinity", "2");
-	writeproc("/proc/irq/112/smp_affinity", "2");
+	int fd;
+
+	if ((fd = open("/proc/irq/163/smp_affinity", O_RDWR)) >= 0) {
+		close(fd);
+#ifndef HAVE_SAMBA
+		if (!nvram_match("samba3_enable", "1"))
+#endif
+		{		// not set txworkq 
+			writeproc("/proc/irq/163/smp_affinity", "2");
+			writeproc("/proc/irq/169/smp_affinity", "2");
+		}
+		writeproc("/proc/irq/112/smp_affinity", "2");
+	}
 
 	/*
 	 * network drivers 
