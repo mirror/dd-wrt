@@ -156,6 +156,8 @@ void start_sysinit(void)
 		set_gpio(3, 0);	// power
 		set_gpio(6, 0);	// wireless 5 ghz
 		set_gpio(0, 1);	// usb 3.0 led           
+		set_gpio(7, 1); // fixup ses button
+		set_gpio(15, 1); // fixup wifi button
 		nvram_set("0:ledbh10", "7");
 		nvram_set("1:ledbh10", "7");
 		nvram_set("1:ledbh6", "136");	// fixup 5 ghz led
@@ -215,6 +217,8 @@ void start_sysinit(void)
 		set_gpio(3, 0);	// power
 		set_gpio(6, 0);	// wireless 5 ghz
 		set_gpio(0, 1);	// usb 3.0 led           
+		set_gpio(7, 1); // fixup wifi button
+		set_gpio(15, 1); // fixup ses button
 		nvram_set("1:ledbh6", "136");	// fixup 5 ghz led
 		nvram_unset("1:ledbh10");	// fixup 5 ghz led
 
