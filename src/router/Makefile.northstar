@@ -366,7 +366,7 @@ endif
 	./tools/trx_n -m 32000000 -o $(ARCH)-uclibc/webflash-dir868.trx $(ARCH)-uclibc/webflash-dir868.img
 	
 	./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC56U,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac56u-firmware.trx
-	./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC67U,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac67u-firmware.trx
+#	./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC67U,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac67u-firmware.trx
 	./tools/trx_asus -i $(ARCH)-uclibc/northstar-firmware-squashfs.bin -r RT-AC68U,3.0.0.4,$(ARCH)-uclibc/asus_rt-ac68u-firmware.trx
 	dd if=$(ARCH)-uclibc/northstar-firmware-squashfs.bin of=$(ARCH)-uclibc/buffalo.trx bs=131072 conv=sync
 	cd $(ARCH)-uclibc && ../tools/bufenc/makefw.sh buffalo
