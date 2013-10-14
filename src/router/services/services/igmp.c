@@ -33,22 +33,19 @@ void start_igmp_proxy(void)
 {
 	int ret = 0;
 	pid_t pid;
-	char name[80], *next, *svbuf, *tvnic;
+	char name[80], *next, *svbuf;
 	char *argv[] = { "igmprt", "/tmp/igmpproxy.conf", NULL };
 
 	int ifcount = 0;
-	
-	if (!nvram_match("igmp_enable", "1")) 
-		return;
 
 	FILE *fp = fopen("/tmp/igmpproxy.conf", "wb");
 
-	if (strcmp(nvram_safe_get("tvnicfrom"), "")) {
+	if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
 		fprintf(fp, "phyint %s disabled\n", get_wan_face());
-	} else
+	} else {
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", get_wan_face());
-
+	}
 	if (nvram_match("block_multicast", "0")) {
 		fprintf(fp, "phyint %s downstream  ratelimit 0  threshold 1\n", nvram_safe_get("lan_ifname"));
 		ifcount++;
