@@ -2836,6 +2836,15 @@ void start_nvram(void)
 		free(newip);
 	}
 #endif
+#ifdef HAVE_MULTICAST
+	if (!strcmp(nvram_safe_get("igmp_enable"), "")) {
+		if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1"))
+			nvram_set("igmp_enable", "1");
+		else
+			nvram_set("igmp_enable", "0");
+	}
+       		       
+#endif
 	return;
 }
 
