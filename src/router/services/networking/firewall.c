@@ -1893,6 +1893,7 @@ static void filter_input(void)
 	 * IGMP query from WAN interface 
 	 */
 	save2file("-A INPUT -p igmp -j %s\n", doMultiCast() == 0 ? log_drop : log_accept);
+
 #ifndef HAVE_MICRO
 	/*
 	 * SNMP access from WAN interface 
@@ -2185,13 +2186,32 @@ static void filter_forward(void)
 	/*
 	 * ACCEPT packets for Multicast pass through 
 	 */
-	if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
-		if (doMultiCast() > 0)
+	if (doMultiCast() > 0) {
+		char ifnames[256];
+		char name[80];
+		char *next;
+		
+		insmod("xt_physdev");
+		
+		getIfLists(ifnames, 256);
+		foreach(name, ifnames, next) {
+			if (    nvram_nmatch("1", "%s_bridged", name)
+			    && (strstr(name, "ath") || strstr(name, "wl") || strstr(name, "ra")) )
+			{
+				save2file("-A FORWARD -i %s -p udp --destination %s -m physdev --physdev-out %s -j %s\n",
+						strcmp(nvram_safe_get("tvnicfrom"), "") ? nvram_safe_get("tvnicfrom") : wanface,
+						IP_MULTICAST,
+						name,
+						log_drop);
+			}
+		}
+
+		if (strcmp(nvram_safe_get("tvnicfrom"), "")) 
 			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
-	} else {
-		if (doMultiCast() > 0 && strlen(wanface))
+		else
 			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", wanface, IP_MULTICAST, log_accept);
 	}
+       	
 	/*
 	 * port-forwarding accepting rules 
 	 */

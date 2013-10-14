@@ -3148,6 +3148,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"tor_bridge", "0", 0},
 	{"tor_transparent", "0", 0},
 #endif
+#ifdef HAVE_MULTICAST
+	{"igmp_enable", "0", 0},
+	{"tvnicfrom", "", 0},
+#endif
 	{0, 0, 0}
 };
 #else
