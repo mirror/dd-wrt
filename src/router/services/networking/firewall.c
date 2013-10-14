@@ -2187,6 +2187,7 @@ static void filter_forward(void)
 	 * ACCEPT packets for Multicast pass through 
 	 */
 	if (doMultiCast() > 0) {
+		/*
 		char ifnames[256];
 		char name[80];
 		char *next;
@@ -2205,6 +2206,7 @@ static void filter_forward(void)
 						log_drop);
 			}
 		}
+		*/
 
 		if (strcmp(nvram_safe_get("tvnicfrom"), "")) 
 			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
