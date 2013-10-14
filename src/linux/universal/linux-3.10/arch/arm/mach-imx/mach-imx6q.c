@@ -168,9 +168,13 @@ static void mx6_ventana_pciesw_early_fixup(struct pci_dev *dev)
 	dw |= 0xfe;   // GPIO1-7 output high
 	pci_write_config_dword(dev, 0x644, dw);
 
-	mdelay(1);
+	mdelay(100);
 }
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8609,
+	mx6_ventana_pciesw_early_fixup);
+DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8606,
+	mx6_ventana_pciesw_early_fixup);
+DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8604,
 	mx6_ventana_pciesw_early_fixup);
 
 #ifdef CONFIG_IMX_PCIE
