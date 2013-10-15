@@ -244,6 +244,9 @@ static void buffalo_defaults(int force)
 				if (wpapsk) {
 					nvram_set("wl_wpa_psk", wpapsk);
 					nvram_set("wl0_wpa_psk", wpapsk);
+				}else{
+					nvram_set("wl_wpa_psk", "12345678");
+					nvram_set("wl0_wpa_psk", "12345678");				
 				}
 			}
 			{
@@ -280,6 +283,8 @@ static void buffalo_defaults(int force)
 				char *wpapsk = getUEnv("DEF-p_wireless_eth2_11bg-wpapsk");
 				if (wpapsk)
 					nvram_set("wl1_wpa_psk", wpapsk);
+				else
+					nvram_set("wl1_wpa_psk", "12345678");
 			}
 		}
 		struct ifreq ifr;
