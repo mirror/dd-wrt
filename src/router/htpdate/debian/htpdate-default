@@ -1,0 +1,6 @@
+# Defaults for htpdate initscript
+# sourced by /etc/init.d/htpdate
+# installed at /etc/default/htpdate by the maintainer scripts
+
+# Default options that are passed to htpdate
+DAEMON_OPTS="-D www.linux.org www.freebsd.org"

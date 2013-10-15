@@ -88,6 +88,7 @@ INSTALL_CONF:=install -m0600
 include rules/_cmake.mk
 include rules/matrixssl.mk
 include rules/ntpd.mk
+include rules/htpdate.mk
 include rules/gpsd.mk
 include rules/php5.mk
 include rules/openssl.mk
