@@ -1,0 +1,68 @@
+Htpdate
+-------
+
+The HTTP Time Protocol (HTP) is used to synchronize a computer's time
+with web servers as reference time source. Htpdate will synchronize your
+computer's time by extracting timestamps from HTTP headers found
+in web server responses. Htpdate can be used as a daemon, to keep your
+computer synchronized.
+The accuracy of htpdate is at least -+0.5 seconds (better with multiple
+servers). If this is not good enough for you, try the ntpd package.
+
+Install the htpdate package if you need tools for keeping your system's
+time synchronized via the HTP protocol. Htpdate works also through
+proxy servers.
+
+
+Installation from source
+------------------------
+
+Tested on Linux and FreeBSD only, but should work for most Unix flavors.
+
+	$ tar zxvf htpdate-x.y.z.tar.gz
+		or
+	$ tar jxvf htpdate-x.y.z.tar.bz2
+	$ cd htpdate-X.Y.Z
+	$ make
+	$ make install
+
+An example init script (scripts/htpdate.init) for use in /etc/init.d/
+is included, but not installed automatically. This scripts with run
+htpdate as a daemon.
+
+Another option is to use htpdate in a cronjob and start it periodically
+from cron. For a daily time sync it would look something like this:
+5 3 * * * /usr/bin/htpdate -s www.linux.org www.freebsd.org
+
+
+Installation from RPM
+---------------------
+
+The easiest way to install (Redhat, SuSE, Mandriva etc..)
+
+	$ rpm -Uvh htpdate-x.y.z.i386.rpm
+
+By default the htpdate daemon is activated (with chkconfig).
+If you only want to run htpdate from cron, disable the htpdate service
+with 'chkconfig --del htpdate'.
+
+
+Usage
+-----
+
+Usage: htpdate [-046abdhlqstxD] [-i pid file] [-m minpoll] [-M maxpoll]
+	[-p precision] [-P <proxyserver>[:port]] [-u user[:group]]
+	<host[:port]> ...
+
+	E.g. htpdate -q www.linux.org www.freebsd.org
+
+
+In general, if more web servers are specified, the accuracy will increase.
+
+See manpage for more details.
+
+
+To do
+-----
+
+- I'm open for suggestions :)

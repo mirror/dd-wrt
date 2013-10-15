@@ -1,0 +1,13 @@
+Source: htpdate
+Section: net
+Priority: extra
+Maintainer: Eddy Vervest <eddy@cleVervest.com>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+
+Package: htpdate
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: HTTP based time synchronization tool
+ The HTTP Time Protocol (HTP) is used to synchronize a computer's time with web servers as reference time source. Htpdate will synchronize your computer's time by extracting timestamps from HTTP headers found in web servers responses. Htpdate can be used as a daemon, to keep your computer synchronized. Accuracy of htpdate is usually better than 0.5 seconds (even better with multiple servers). If this is not good enough for you, try the ntpd package.
+ Install the htp package if you need tools for keeping your system's time synchronized via the HTP protocol. Htpdate works also through proxy servers.

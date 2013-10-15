@@ -1,0 +1,24 @@
+#!/bin/sh
+# prerm script for htpdate
+
+set -e
+
+case "$1" in
+	remove|upgrade|deconfigure)
+		if [ -x /etc/init.d/htpdate ]; then
+			/etc/init.d/htpdate stop
+		fi
+	;;
+	failed-upgrade)
+	;;
+	*)
+		echo "prerm called with unknown argument \`$1'" >&2
+		exit 1
+		;;
+esac
+
+#DEBHELPER#
+
+exit 0
+
+# vi:set ts=4:
