@@ -235,6 +235,7 @@ static char *filter[] = { "lan_ifnames",
 	"usb_gpio_reverse",
 	"nvram_space",
 	"pmon_date",
+	"bl_version",
 	NULL
 };
 
