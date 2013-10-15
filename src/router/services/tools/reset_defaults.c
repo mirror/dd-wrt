@@ -95,14 +95,21 @@ static int isCritical(char *name)
 extern void load_defaults(void);
 extern void free_defaults(void);
 
+#ifdef NVRAM_SPACE_256
+#define NVRAMSPACE NVRAM_SPACE_256
+#else
+#define NVRAMSPACE NVRAM_SPACE
+#endif
+
+
 void start_defaults(void)
 {
 	fprintf(stderr, "restore nvram to defaults\n");
-	char *buf = (char *)malloc(NVRAM_SPACE);
+	char *buf = (char *)malloc(NVRAMSPACE);
 	int i;
 	struct nvram_tuple *t;
 
-	nvram_getall(buf, NVRAM_SPACE);
+	nvram_getall(buf, NVRAMSPACE);
 	char *p = buf;
 
 	//clean old values
