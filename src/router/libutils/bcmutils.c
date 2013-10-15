@@ -1820,11 +1820,18 @@ void addAction(char *action)
 
 }
 
+#ifdef NVRAM_SPACE_256
+#define NVRAMSPACE NVRAM_SPACE_256
+#else
+#define NVRAMSPACE NVRAM_SPACE
+#endif
+
+
 int nvram_used(int *space)
 {
-	char *name, buf[NVRAM_SPACE];
+	char *name, buf[NVRAMSPACE];
 
-	*space = NVRAM_SPACE;
+	*space = NVRAMSPACE;
 
 	nvram_getall(buf, sizeof(buf));
 
