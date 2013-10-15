@@ -38,6 +38,13 @@
 #include <shutils.h>
 #include <utils.h>
 
+#ifdef NVRAM_SPACE_256
+#define NVRAMSPACE NVRAM_SPACE_256
+#else
+#define NVRAMSPACE NVRAM_SPACE
+#endif
+
+
 static char *filter[] = { "lan_ifnames",
 	"lan_ifname",
 	"wan_ifnames",
@@ -258,9 +265,9 @@ int nvram_critical(char *name)
 
 void nvram_clear(void)
 {
-	char *buf = (char *)safe_malloc(NVRAM_SPACE);
+	char *buf = (char *)safe_malloc(NVRAMSPACE);
 
-	nvram_getall(buf, NVRAM_SPACE);
+	nvram_getall(buf, NVRAMSPACE);
 	nvram_open();
 	char *p = buf;
 	int i;
@@ -394,13 +401,13 @@ int nvram_backup(char *filename)
 		return -1;
 	}
 #endif
-	char *buf = (char *)safe_malloc(NVRAM_SPACE);
+	char *buf = (char *)safe_malloc(NVRAMSPACE);
 
-	nvram_getall(buf, NVRAM_SPACE);
+	nvram_getall(buf, NVRAMSPACE);
 	char *p = buf;
 	int i;
 
-	for (i = 0; i < NVRAM_SPACE; i++) {
+	for (i = 0; i < NVRAMSPACE; i++) {
 		if (i > 0 && buf[i] == 0 && buf[i - 1] == 0) {
 			break;
 		}
@@ -416,7 +423,7 @@ int nvram_backup(char *filename)
 	fputc(backupcount >> 8, fp);	// low byte
 	//first save all "wl_" prefixed parameters
 	save(fp, p, 1);
-	nvram_getall(buf, NVRAM_SPACE);
+	nvram_getall(buf, NVRAMSPACE);
 	p = buf;
 	//now save anything else (this should prevent problems with backups, since wl0 parameters are getting higher priority now which solves restore problems with wds etc.
 	save(fp, p, 0);
