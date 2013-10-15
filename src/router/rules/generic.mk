@@ -37,3 +37,7 @@ endif
 ifeq ($(CONFIG_CARAMBOLA),y)
 DD_CFLAGS += -DHAVE_CARAMBOLA
 endif
+
+ifeq ($(CONFIG_UDPXY),y)
+DD_CFLAGS += -DHAVE_UDPXY  
+endif

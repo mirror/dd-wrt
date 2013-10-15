@@ -227,6 +227,9 @@ int stop_services_main(int argc, char **argv)
 #ifdef HAVE_MULTICAST
 	handle = stop_service_nofree("igmp_proxy", handle);
 #endif
+#ifdef HAVE_UDPXY
+	handle = stop_service_nofree("udpxy", handle);
+#endif
 #ifdef HAVE_PPPOERELAY
 	handle = stop_service_nofree("pppoerelay", handle);
 #endif
@@ -346,6 +349,9 @@ static void handle_index(void)
 	handle = stop_service_nofree("radio_timer", handle);
 #ifdef HAVE_MULTICAST
 	handle = stop_service_nofree("igmp_proxy", handle);
+#endif
+#ifdef HAVE_UDPXY
+	handle = stop_service_nofree("udpxy", handle);
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	handle = stop_service_nofree("nas", handle);
@@ -759,6 +765,9 @@ static void handle_filters(void)
 #endif
 #ifdef HAVE_MULTICAST
 	handle = startstop_nofree_f("igmp_proxy", handle);
+#endif
+#ifdef HAVE_UDPXY
+	handle = startstop_nofree_f("udpxy", handle);
 #endif
 //      handle = start_service_nofree_f("anchorfreednat", handle);
 //    if( handle )
