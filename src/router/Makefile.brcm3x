@@ -572,7 +572,7 @@ endif
 	gzip -c9 mipsel-uclibc/lzma_vmlinus > mipsel-uclibc/lzma_vmlinuz
 	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3-nandboot.trx $(ARCH)-uclibc/lzma_vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 #	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26.trx $(ARCH)-uclibc/vmlinus.gzip  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
-#	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-AC66U.trx $(ARCH)-uclibc/lzma_vmlinuz -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-AC66U.trx $(ARCH)-uclibc/lzma_vmlinuz -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 ifeq ($(CONFIG_NOAC),y)
 	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 
@@ -728,7 +728,7 @@ endif
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-wndr4500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR4500V2.chk
 
 
-#	cd $(ARCH)-uclibc && ../tools/bufenc/makefw.sh dd-wrt.v24-K26-nandboot
+	cd $(ARCH)-uclibc && ../tools/bufenc/makefw.sh dd-wrt.v24-K26-nandboot
 # end special
 
 #&& rm -f kernel_image.chk rootfs_image.chk dd-wrt.bin.chk
