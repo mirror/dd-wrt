@@ -1722,7 +1722,10 @@ void convert_wl_gmode(char *value, char *prefix)
 			nvram_nset("g", "%s_phytype", prefix);
 		nvram_nset("0", "%s_nreqd", prefix);
 		nvram_nset("0", "%s_bss_opmode_cap_reqd", prefix);
-		nvram_nset("0", "%s_nband", prefix);
+		if (has_2ghz(prefix))
+			nvram_nset("2", "%s_nband", prefix);
+		else
+			nvram_nset("1", "%s_nband", prefix);
 /* bg-mixed */
 	} else if (!strcmp(value, "bg-mixed")) {
 		nvram_nset(value, "%s_net_mode", prefix);
