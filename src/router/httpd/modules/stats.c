@@ -29,6 +29,12 @@ extern int http_post(const char *server, char *buf, size_t count);
 
 #define BUFSPACE 50000
 
+#ifdef NVRAM_SPACE_256
+#define NVRAMSPACE NVRAM_SPACE_256
+#else
+#define NVRAMSPACE NVRAM_SPACE
+#endif
+
 int http_stats(const char *url)
 {
 	char *buf, *s;
@@ -40,13 +46,13 @@ int http_stats(const char *url)
 	};
 	char *contents;
 
-	if (!(buf = safe_malloc(BUFSPACE)))
+	if (!(buf = safe_malloc(NVRAMSPACE)))
 		return errno;
 
 	/*
 	 * Get NVRAM variables 
 	 */
-	nvram_getall(buf, NVRAM_SPACE);
+	nvram_getall(buf, NVRAMSPACE);
 	for (s = buf; *s; s++) {
 		for (cur = secrets; *cur; cur++) {
 			if (!strncmp(s, *cur, strlen(*cur))) {
