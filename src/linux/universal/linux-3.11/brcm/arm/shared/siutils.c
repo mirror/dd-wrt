@@ -3701,38 +3701,46 @@ extern int isac66;
 extern int isac68;
 extern int isbuffalo;
 extern int isdefault;
-//#ifndef USE_LZMA
+#ifndef USE_LZMA
 //#include <linux/printk.h>
-//#endif
+#endif
 /* mask&set gpio output bits */
 uint32
 si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 {
+static int bufmask=0;
 	uint regoff;
 //#ifndef USE_LZMA
 //	printk(KERN_INFO "out2 %X/%d   = %X/%d\n",mask,mask,val,val);
 //#endif
 	if (isdefault)
 	    return si_gpioout(sih,mask,val,priority);
-	
-	if (isbuffalo && (mask&(1<<12)))
-	{
+
+	if (isbuffalo) {
+	    if ((mask&(1<<12))) {
 	    if (val&(1<<12))
+	    {
+		bufmask |= (1<<12);
 		set_hc595(0,1);
-	    else
+	    } else {
+		bufmask &= ~(1<<12);	    
 		set_hc595(0,0);	
+	    }
+	    }
 
-	    return val & mask;
-	}
-
-	if (isbuffalo && (mask&(1<<10)))
-	{
-	    if (val&(1<<10))
-	    set_hc595(1,1);
-	    else
-	    set_hc595(1,0);	
-	    return val & mask;
-	}
+	    if ((mask&(1<<10))) {
+	    if (val&(1<<10)) {
+		bufmask |= (1<<10);
+		set_hc595(1,1);
+	    }else{
+		bufmask &= ~(1<<10);	    
+		set_hc595(1,0);	
+	    }
+	    }
+	
+	if (mask&(1<<10) || (mask&(1<<12)))
+	    return bufmask;
+	} 
 
 	if (isac68 && !(mask & 1<<6))
 	{
@@ -3743,7 +3751,7 @@ si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 	{
 	    return si_gpioout(sih,mask,val,priority);
 	}
-
+	
 	regoff = 0;
 	if (!gpio_sih)
 	{
@@ -3761,7 +3769,10 @@ si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 		val &= mask;
 	}
 	regoff = OFFSETOF(chipcregs_t, gpioout);
-	return (si_corereg(gpio_sih, SI_CC_IDX, regoff, mask, val));
+	if (isbuffalo)
+    	    return (((si_corereg(gpio_sih, SI_CC_IDX, regoff, mask, val) & ~(1<<10)) & ~(1<<12)) | bufmask);
+	else
+    	    return (si_corereg(gpio_sih, SI_CC_IDX, regoff, mask, val));
 }
 uint32
 si_gpioouten2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
@@ -3782,12 +3793,12 @@ si_gpioouten2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 
 	if (isbuffalo && (mask&(1<<12)))
 	{
-	    return val & mask;
+	    return (val & mask);
 	}
 
 	if (isbuffalo && (mask&(1<<10)))
 	{
-	    return val & mask;
+	    return (val & mask);
 	}
 	regoff = 0;
 
