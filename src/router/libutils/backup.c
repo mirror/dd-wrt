@@ -259,8 +259,9 @@ int nvram_critical(char *name)
 		}
 	}
 	if (strncmp(name, "sb/", 3) && strncmp(name, "pci/", 4) && strncmp(name, "0:", 2) && strncmp(name, "1:", 2))
+		return 0;
+	else
 		return 1;
-	return 0;
 }
 
 void nvram_clear(void)
