@@ -221,7 +221,7 @@ realclean: $(obj-clean)
 	-rm -f $(ARCH)-uclibc/*
 
 	
-clean: rc-clean httpd-clean services-clean shared-clean libutils-clean nvram-clean madwifi-clean madwifi_mimo-clean busybox-clean dnsmasq-clean iptables-clean pppd-clean
+clean: rc-clean httpd-clean services-clean shared-clean libutils-clean nvram-clean busybox-clean dnsmasq-clean iptables-clean pppd-clean
 	rm -f .config.old .config.cmd
 	#umount $(TARGETDIR)
 	rm -rf $(INSTALLDIR)
@@ -566,15 +566,15 @@ endif
 	../../tools/process_nvramconfigfile mipsel-uclibc/target/etc/config/*.nvramconfig
 	-./strip_libs.sh $(ARCH)
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/rootfs.squashfs -noappend -root-owned -le
-	$(MAKE) -C compressed clean
-	$(MAKE) -C compressed
-	gzip -c9 compressed/zImage > compressed/zImage.gzip
+#	$(MAKE) -C compressed clean
+#	$(MAKE) -C compressed
+#	gzip -c9 compressed/zImage > compressed/zImage.gzip
 	gzip -c9 mipsel-uclibc/lzma_vmlinus > mipsel-uclibc/lzma_vmlinuz
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26-nandboot.trx $(ARCH)-uclibc/lzma_vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3-nandboot.trx $(ARCH)-uclibc/lzma_vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 #	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26.trx $(ARCH)-uclibc/vmlinus.gzip  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
-	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-AC66U.trx $(ARCH)-uclibc/lzma_vmlinuz -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+#	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-AC66U.trx $(ARCH)-uclibc/lzma_vmlinuz -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 ifeq ($(CONFIG_NOAC),y)
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 
 #	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-AC66U.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz $(ARCH)-uclibc/rootfs.squashfs
 #	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-AC66U.trx $(ARCH)-uclibc/lzma_vmlinuz $(ARCH)-uclibc/rootfs.squashfs
@@ -583,7 +583,7 @@ ifeq ($(CONFIG_NOAC),y)
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.6 RT-N16 1.00 1.05 $(ARCH)-uclibc/vmlinuz
 	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N16.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-N16.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N16
@@ -591,7 +591,7 @@ ifeq ($(CONFIG_NOAC),y)
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.6 RT-N53 1.00 1.05 $(ARCH)-uclibc/vmlinuz
 	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N53.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-N53.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N53
@@ -599,7 +599,7 @@ ifeq ($(CONFIG_NOAC),y)
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.6 RT-N12 1.00 1.05 $(ARCH)-uclibc/vmlinuz
 	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N12.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-N12.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N12
@@ -607,7 +607,7 @@ ifeq ($(CONFIG_NOAC),y)
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 1.6 RT-N12B1 1.00 1.00 $(ARCH)-uclibc/vmlinuz
 	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N12B1.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-N12B1.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N12B1
@@ -615,7 +615,7 @@ ifeq ($(CONFIG_NOAC),y)
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 1.6 RT-N12C1 1.00 1.00 $(ARCH)-uclibc/vmlinuz
 	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N12C1.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-N12C1.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N12C1
@@ -623,7 +623,7 @@ ifeq ($(CONFIG_NOAC),y)
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.8 RT-N10 1.00 1.05 $(ARCH)-uclibc/vmlinuz
 	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N10.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-N10.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N10
@@ -631,7 +631,7 @@ ifeq ($(CONFIG_NOAC),y)
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 1.0 0.8 RT-N10U 1.00 1.05 $(ARCH)-uclibc/vmlinuz
 	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N10U.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-N10U.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N10U
@@ -639,7 +639,7 @@ ifeq ($(CONFIG_NOAC),y)
 	dd if=/dev/zero of=$(ARCH)-uclibc/asusver bs=1 count=4032
 	../../opt/asus/addver $(ARCH)-uclibc/asusver 2.1 1.1 RT-N10+ 1.00 1.00 $(ARCH)-uclibc/vmlinuz
 	cat $(ARCH)-uclibc/rootfs.squashfs $(ARCH)-uclibc/asusver > $(ARCH)-uclibc/rootfs.squashfs-asus
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N10PLUSD1.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-N10PLUSD1.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 4096 $(ARCH)-uclibc/rootfs.squashfs-asus
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 # end Asus RT-N10+ D1
@@ -650,27 +650,27 @@ ifeq ($(CONFIG_NOAC),y)
 # end Asus RT-N66
 
 # Belkin f7d3301-7301 / f7d3302-7302 / f7d4302-8302  / f5d8235v3
-	dd if=$(ARCH)-uclibc/dd-wrt.v24-K26.trx of=$(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd bs=4 count=10000000 skip=1 conv=notrunc
+	dd if=$(ARCH)-uclibc/dd-wrt.v24-K3.trx of=$(ARCH)-uclibc/dd-wrt.v24-K3.notrxhd bs=4 count=10000000 skip=1 conv=notrunc
 	printf '\x22\x03\x10\x20' > $(ARCH)-uclibc/f7d3301.hdr
-	cat $(ARCH)-uclibc/f7d3301.hdr $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K26_f7d3301.bin
+	cat $(ARCH)-uclibc/f7d3301.hdr $(ARCH)-uclibc/dd-wrt.v24-K3.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K3_f7d3301.bin
 	rm -rf $(ARCH)-uclibc/f7d3301.hdr
 	printf '\x28\x09\x09\x20' > $(ARCH)-uclibc/f7d3302.hdr
-	cat $(ARCH)-uclibc/f7d3302.hdr $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K26_f7d3302.bin
+	cat $(ARCH)-uclibc/f7d3302.hdr $(ARCH)-uclibc/dd-wrt.v24-K3.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K3_f7d3302.bin
 	rm -rf $(ARCH)-uclibc/f7d3302.hdr
 	printf '\x06\x10\x09\x20' > $(ARCH)-uclibc/f7d4302.hdr	
-	cat $(ARCH)-uclibc/f7d4302.hdr $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K26_f7d4302.bin
+	cat $(ARCH)-uclibc/f7d4302.hdr $(ARCH)-uclibc/dd-wrt.v24-K3.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K3_f7d4302.bin
 	rm -rf $(ARCH)-uclibc/f5d4302.hdr
 	printf '\x16\x71\x01\x00' > $(ARCH)-uclibc/f5d8235v3.hdr	
-	cat $(ARCH)-uclibc/f5d8235v3.hdr $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K26_f5d8235v3.bin
+	cat $(ARCH)-uclibc/f5d8235v3.hdr $(ARCH)-uclibc/dd-wrt.v24-K3.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K3_f5d8235v3.bin
 	rm -rf $(ARCH)-uclibc/f5d8235v3.hdr
 	rm -rf $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd
 # end Belkin  f7d3301 / f7d3302 / f7d4302 / f5d8235v3
-	../../opt/asus/asustrx-rt66u -p RT-N66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-N66U.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz $(ARCH)-uclibc/rootfs.squashfs
+	../../opt/asus/asustrx-rt66u -p RT-N66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-N66U.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz $(ARCH)-uclibc/rootfs.squashfs
 	rm -f $(ARCH)-uclibc/asusver	
 	rm -f $(ARCH)-uclibc/rootfs.squashfs-asus
 
 # Netgear
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500v2.chk
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2_VC.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500v2_VC.chk
@@ -722,13 +722,13 @@ ifeq ($(CONFIG_NOAC),y)
 #endif
 endif
 	./netgear/lzma e  $(ARCH)-uclibc/vmlinux.bin  $(ARCH)-uclibc/vmlinux_netgear.lzma
-	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_R6300.trx $(ARCH)-uclibc/vmlinux_netgear.lzma  -a 4096 $(ARCH)-uclibc/rootfs.squashfs
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26_R6300.trx -f netgear/emptyfile -b netgear/comp-r6300.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6300.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_R6300.chk 
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26_R6300.trx -f netgear/emptyfile -b netgear/comp-wndr4500.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR4500.chk
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26_R6300.trx -f netgear/emptyfile -b netgear/comp-wndr4500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR4500V2.chk
+	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx $(ARCH)-uclibc/vmlinux_netgear.lzma  -a 4096 $(ARCH)-uclibc/rootfs.squashfs
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-r6300.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6300.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.chk 
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-wndr4500.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR4500.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-wndr4500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR4500V2.chk
 
 
-	cd $(ARCH)-uclibc && ../tools/bufenc/makefw.sh dd-wrt.v24-K26-nandboot
+#	cd $(ARCH)-uclibc && ../tools/bufenc/makefw.sh dd-wrt.v24-K26-nandboot
 # end special
 
 #&& rm -f kernel_image.chk rootfs_image.chk dd-wrt.bin.chk
