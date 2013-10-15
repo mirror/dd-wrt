@@ -527,8 +527,8 @@ void start_sysinit(void)
 		nvram_default_get("wl1_country_rev", "0");
 		nvram_set("0:boardflags2","0x1000");
 		nvram_set("1:boardflags2","0x00001000");
-		nvram_set("0:ledbh12","7");
-		nvram_set("1:ledbh10","7");
+		nvram_set("1:ledbh12","7");
+		nvram_set("0:ledbh10","7");
 		break;
 
 	default:
