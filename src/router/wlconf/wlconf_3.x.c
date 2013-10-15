@@ -1572,6 +1572,10 @@ cprintf("set nband %s\n",name);
 	/* For NPHY use band value from NVRAM */
 	if (WLCONF_PHYTYPE_11N(val)) {
 		str = nvram_get(strcat_r(prefix, "nband", tmp));
+		if (!strcmp(str,"0") && strstr(nvram_safe_get(strcat_r(prefix,"bandlist",tmp)),"b"))
+		    str = "2";
+		if (!strcmp(str,"0") && strstr(nvram_safe_get(strcat_r(prefix,"bandlist",tmp)),"a"))
+		    str = "1";
 		if (str)
 			val = atoi(str);
 		else {
