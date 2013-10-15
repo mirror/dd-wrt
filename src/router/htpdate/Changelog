@@ -1,0 +1,257 @@
+Changes in 1.0.5
+----------------
+
+- Change of e-mail/website
+- Fix for debian build
+
+
+1.0.4
+-----
+- Fixed a memory leak (reported and fixed by Andreas Bohne-Lang) 
+
+
+1.0.3
+-----
+
+- Fixed logic error... 1.0.2 is broken :(
+
+
+1.0.2
+-----
+
+- Fixed a buffer overflow when time offset gets to large
+  https://dev.openwrt.org/cgi-bin/trac.fcgi/ticket/3940
+
+
+1.0.1
+-----
+
+- Added "burst mode" (-b) to enhance accuracy.
+- Extended debug output
+- Removed potential buffer overflows vulnerabilities.
+- Replaced usleep by nanosleep (which is more portable).
+- Included debian package.
+
+
+1.0.0
+-----
+
+- Cleanup/simplified the code.
+- Again a more robust implementation of the "-p" (precision) switch.
+
+
+0.9.3
+-----
+
+- Bug fixes: poll loop could be become close to zero in case of a "connection
+failed". Sleeptime wasn't correct in case all hosts fail.
+- Use more "sane" minsleep and maxsleep values.
+
+
+0.9.2
+-----
+
+- The use of the ntp_adjtime system call is now optional. The clock
+  frequency will be adjusted when using the "-x" switch and the systematic
+  drift will be compensated. Works only in daemon mode.
+
+
+0.9.1
+-----
+
+- Htpdate can drop root privileges and run as a restricted user.
+- Drift calculation starts now after first time correction.
+
+
+0.9.0
+-----
+
+- Mostly code cleanup
+- Changed "char" variables into "int", which should be more efficient
+- Changed the qsort routine, into an insertion sort. Quicksort is
+  kind of overkill for such small lists.
+- Debug mode is allowed in daemon mode.
+
+
+0.8.8
+-----
+
+- Speeded up the poll cycle loop, once a time offset has been detected.
+- Added systematic drift to the syslog logging (daemon only).
+  The "adjtimex_parameters.sh" script may help to reduce the drift of your
+  system clock.
+- Changed "precision" from micro into milliseconds.
+- Changed manpage directory from /usr/man into /usr/share/man.
+- HTTP/1.1 has become the default
+
+
+0.8.7
+-----
+
+- Bug fix: with precision set, the time could only be adjusted
+  negative (slow down).
+- Fixed undesired effects in (rare) cases when using only a few servers.
+- Exit code changed to 1 if no server was found (requested by Supernaut).
+
+
+0.8.6
+-----
+
+- Reintroduction of the "-p" switch. The "precision" determines more accurate
+  when a time adjustment is needed. The implementation of precision is much
+  beter than the one in the past.
+
+
+0.8.5
+-----
+
+- Changed the variable type of "param" from char into int (thanks to
+  Arnaud Mazin). GCC 3.4.x is less forgiving than older versions.
+- Made compare function for qsort more robust (avoiding overflow).
+
+
+0.8.4
+-----
+
+- Finaly added IPv6 support!
+- If you would lose internet connectivity, htpdate would flood the system
+  (CPU and log). A patch submitted by Peter Surda, has been included.
+- Removed -0 switch (HTTP/1.0), since this is the default anyway.
+
+
+0.8.3
+-----
+
+- Fixed that "when" wasn't properly initialized in every poll cycle. This
+  bug fix reduces jitter when system time is close to the correct time.
+- Added missing "-t" switch to the manpage.
+- Added warning message if more than 16 servers are specified.
+- Htpdate double forks now, like a proper daemon :)
+- vim setting are added to the source (set ts=4)
+
+
+0.8.2
+-----
+
+- Fixed a major bug in offset calculation (caused by changing the rtt type
+  from double to unsigned long)
+
+
+0.8.1 (broken)
+--------------
+
+- Correction install paths in Makefile, added uninstall option
+- Added "-t" switch, which disables time sanity checking (requested for
+  devices, like supported by openwrt, which boot/startup at "epoch" time) 
+
+
+0.8.0
+-----
+
+- Lots of code clean up, eg.:
+	- compiles with the -ansi switch (for better portability, but only
+	  tested on Linux and FreeBSD)
+	- Compiles with Tiny C Compiler (tcc) and Intel C compiler (icc)
+	- Restored compatibility with FreeBSD (timezone calculation).
+- A second poll is made if a time offset has been detected.
+- Removed the switches "-t" and "-x". In daemon mode htpdate will only adjust
+  time. With the "-s" switch htpdate will set the time once at startup and
+  after that only smooth adjusts are made.
+- Added "-l" switch, which enables logging to syslog in non-daemon mode.
+  Convinient if htpdate is used from cron.
+- Added "-0" to make an HTTP/1.0 request and "-1" for HTTP/1.1
+
+
+0.7.2
+-----
+
+- Minor bug fix. When running in daemon mode TCP connections weren't cleaned up
+  properly (sockets remained in CLOSE_WAIT status).
+
+
+0.7.1
+-----
+
+- Bug fix. Poll cycle could become very very short (seconds...) in some
+  cases.
+
+
+0.7.0
+-----
+
+- The polling mechanisme has been improved once more :)
+  As of this version polls are also spread within the polling cycle.
+  This way a time offset will be detected earlier, without increasing the
+  polling frequency.
+- Sleeptime isn't writen to syslog anymore, only time adjustments
+- Previous versions of htpdate tried to close a already closed HTTP/1.0
+  session.
+- The rpm version doesn't override the init-script anymore
+
+
+0.6.2
+-----
+
+- Bug fix, time wasn't correct if 'timeavg' was negative...
+
+
+0.6.1
+-----
+
+- Code clean up, use global variable 'timezone'
+
+
+0.6
+---
+
+- New poll schedule mechanisme has been introduced!
+  This results in a better spreading of the polls in time to
+  gain some extra accuracy.
+- Removed the -p (precision) flag, because it has become obsolete with
+  the new poll scheduling mechanisme.
+- Extended 'debug mode' output with round trip time (rtt) information.
+- Sleeptime parameters are no longer in seconds, but in 2^n seconds.
+
+
+0.5
+---
+
+- Added relevant header files, so gcc -Wall compiles without warnings.
+- Added -p switch, to set the precision of htpdate. The polling rate
+  is affected by this switch (high precision -> more frequent polling).
+
+
+0.4
+---
+
+- Spread the individual time polls better, to gain accuracy with
+  a small number of web servers as source
+- Added debug mode, so you can value the quality of the timestamps
+  from web servers
+- Minor correction on HEAD request (removed max-age=0)
+- pid file is created
+- Added htpdate init script
+
+
+0.3
+---
+
+- Run htpdate as a daemon
+	- automatic set/adjust time, based upon offset
+	- automatic poll interval
+- Added manpage
+- Added RPM
+- Minor bug fixes
+
+
+0.2
+---
+
+- Htpdate can set or adjust time smoothly now, without calling external
+  programs
+
+
+0.1
+---
+
+- Initial release. Htpdate extracts the raw timestamp from a webserver.
