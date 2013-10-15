@@ -16,8 +16,7 @@
  * 2 byte router ID number; Eko 4.jul.06
  * 
  * X X X X X X X X R R R P N N N N = 0xXXXX --------------- ----- - -------
- * router num | | gpio num (1111 = f = disable resetbutton) | | | |---
- * resetbutton polarity (0: normal, 1 inversed) | |-------- reserved for
+ * router num | | gpio num (1111 = f = disable resetbutton) | | | |--- resetbutton polarity (0: normal, 1 inversed) | |-------- reserved for
  * future use (maybe USB supp) 
  */
 
@@ -577,8 +576,6 @@
 // Netgear WNDR4500 (dual radio, BCM53115 giga switch, BCM4706 @ 600MHz cpu, 2MB serial + 128MB NAND flash / 128MB ram, fccid: Netgear PY311200162) >_64K nvram_<
 #define ROUTER_NETGEAR_R6300 0xb216
 
-// Netgear R6250 Atheros router  BCM47081A0 @ 2x800Mhz cpu, 2MB serial + 128Mn NAND flash / 256MB ram, fccid:  Netgear PY312400219 >_64K nvram_<
-#define ROUTER_NETGEAR_R6250 0xdc16
 
 #define ROUTER_BOARD_WCRGN 0xb31a
 
@@ -628,7 +625,6 @@
 
 #define ROUTER_LINKSYS_EA2700 0xc715
 
-
 #define ROUTER_NETGEAR_WNDR4500 0xc816
 
 #define ROUTER_NETGEAR_WNDR4500V2 0xc916
@@ -638,6 +634,12 @@
 #define ROUTER_LINKSYS_EA6500 0xcb13
 
 #define ROUTER_WHR300HP2 0xcc11
+
+#define ROUTER_NETGEAR_R6250 0xcd16
+
+#define ROUTER_NETGEAR_R6300V2 0xce16
+
+#define ROUTER_NETGEAR_R7000 0xcf16
 
 #define NVROUTER "DD_BOARD"
 
