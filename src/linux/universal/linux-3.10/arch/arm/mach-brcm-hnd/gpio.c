@@ -221,6 +221,22 @@ static int __init gpio_init(void)
 		isac66 = 1;
 	}
 
+	if ((boardnum == 679) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110"))) {
+		printk(KERN_EMERG "Netgear R6250 init\n");
+		isac66 = 1;
+	}
+
+/*	if ((boardnum == XX) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110"))) {
+                 printk(KERN_EMERG "Netgear R6300 V2 init\n");
+                 isac66 = 1;
+	}
+
+	if ((boardnum == XX) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110"))) {
+		 printk(KERN_EMERG "Netgear R7000 init\n");
+		 isac66 = 1;
+	}
+*/
+
 	gpio_init_flag = 1;
 	return 0;
 }
