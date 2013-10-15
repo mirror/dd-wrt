@@ -3148,6 +3148,13 @@ struct nvram_tuple srouter_defaults[] = {
 	{"tor_bridge", "0", 0},
 	{"tor_transparent", "0", 0},
 #endif
+#ifdef HAVE_UDPXY
+	{"udpxy_enable", "0", 0},
+	{"udpxy_nicfrom", "", 0},
+	{"udpxy_listenif", "", 0},
+	{"udpxy_listenport", "4022", 0},
+#endif
+
 	{0, 0, 0}
 };
 #else

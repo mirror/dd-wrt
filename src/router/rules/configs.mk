@@ -104,6 +104,7 @@ obj-$(CONFIG_ZEROIP) += shat
 obj-$(CONFIG_KAID) += kaid
 obj-$(CONFIG_ROBOCFG) += robocfg
 obj-$(CONFIG_MULTICAST) += igmp-proxy
+obj-$(CONFIG_UDPXY) += udpxy
 obj-$(CONFIG_SKYTRON) += skytron
 obj-$(CONFIG_OPENVPN) += openvpn
 obj-$(CONFIG_OLSRD) += olsrd

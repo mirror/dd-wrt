@@ -2904,6 +2904,10 @@ void start_wan(int status)
 	if (!nvram_match("dtag_vlan8", "1") || nvram_match("wan_vdsl", "0"))
 		stop_igmp_proxy();
 #endif
+#ifdef HAVE_UDPXY
+	if (!nvram_match("udpxy_enable", "1"))
+		stop_udpxy();
+#endif
 
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
@@ -4267,6 +4271,11 @@ void start_wan_done(char *wan_ifname)
 	start_igmp_proxy();
 #endif
 	cprintf("ready\n");
+#ifdef HAVE_UDPXY
+	if (!nvram_match("udpxy_enable", "1"))
+		stop_udpxy();
+	start_udpxy();
+#endif
 //      start_anchorfree();
 //      start_anchorfreednat();
 #ifdef HAVE_MADWIFI
