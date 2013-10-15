@@ -1105,6 +1105,8 @@ void start_lan(void)
 		nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 #ifdef HAVE_MAKSAT
 		PORTSETUPWAN("eth0");
+#elif HAVE_ONNET
+		PORTSETUPWAN("eth0");
 #else
 		PORTSETUPWAN("eth1");
 #endif
