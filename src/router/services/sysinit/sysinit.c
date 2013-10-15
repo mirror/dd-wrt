@@ -292,10 +292,18 @@ static void buffalo_defaults(int force)
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			close(s);
 			unsigned char *edata = (unsigned char *)ifr.ifr_hwaddr.sa_data;
+#if defined(HAVE_BCMMODERN) || defined(HAVE_MT7620)
+			sprintf(eabuf, "BUFFALO-A-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
+#else
 			sprintf(eabuf, "BUFFALO-%02X%02X%02X_A", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
+#endif
 			nvram_set("wl_ssid", eabuf);
 			nvram_set("wl0_ssid", eabuf);
+#if defined(HAVE_BCMMODERN) || defined(HAVE_MT7620)
+			sprintf(eabuf, "BUFFALO-G-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
+#else
 			sprintf(eabuf, "BUFFALO-%02X%02X%02X_G", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
+#endif
 			nvram_set("wl1_ssid", eabuf);
 		}
 
@@ -356,10 +364,71 @@ static void buffalo_defaults(int force)
 			nvram_set("wps_status", "0");
 		else
 			nvram_set("wps_status", "1");
-
 		nvram_set("wl_country_code", region);
+#ifdef HAVE_BCMMODERN
+		nvram_set("wl0_country_code", "Q1");
+		nvram_set("wl0_country_rev", "27");
+		nvram_set("wl1_country_code", "Q1");
+		nvram_set("wl1_country_rev", "27");
+		if (!strcmp(region, "JP")) {
+			nvram_set("wl0_country_code", "JP");
+			nvram_set("wl0_country_rev", "45");
+			nvram_set("wl1_country_code", "JP");
+			nvram_set("wl1_country_rev", "45");
+		}
+
+		if (!strcmp(region, "US")) {
+			nvram_set("wl0_country_code", "Q2");
+			nvram_set("wl0_country_rev", "41");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+
+		if (!strcmp(region, "EU")) {
+			nvram_set("wl0_country_code", "EU");
+			nvram_set("wl0_country_rev", "61");
+			nvram_set("wl1_country_code", "EU");
+			nvram_set("wl1_country_rev", "61");
+		}
+
+		if (!strcmp(region, "AP")) {
+			nvram_set("wl0_country_code", "CN");
+			nvram_set("wl0_country_rev", "34");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+
+		if (!strcmp(region, "KR")) {
+			nvram_set("wl0_country_code", "KR");
+			nvram_set("wl0_country_rev", "55");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+
+		if (!strcmp(region, "CH")) {
+			nvram_set("wl0_country_code", "CH");
+			nvram_set("wl0_country_rev", "34");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+
+		if (!strcmp(region, "TW")) {
+			nvram_set("wl0_country_code", "TW");
+			nvram_set("wl0_country_rev", "34");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+
+		if (!strcmp(region, "RU")) {
+			nvram_set("wl0_country_code", "RU");
+			nvram_set("wl0_country_rev", "37");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+#else
 		nvram_set("wl0_country_code", region);
 		nvram_set("wl1_country_code", region);
+#endif
 		nvram_set("ias_startup", "3");
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
