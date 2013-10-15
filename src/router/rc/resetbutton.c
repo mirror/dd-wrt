@@ -953,7 +953,7 @@ void period_check(int sig)
 	int push;
 	int pushwifi;
 	int sesgpio;
-	int wifigpio;
+	int wifigpio = 0xfff;
 
 	switch (brand) {
 	case ROUTER_BUFFALO_WHRG54S:
