@@ -1893,6 +1893,12 @@ static void filter_input(void)
 	 * IGMP query from WAN interface 
 	 */
 	save2file("-A INPUT -p igmp -j %s\n", doMultiCast() == 0 ? log_drop : log_accept);
+
+#ifdef HAVE_UDPXY
+	if (wanactive() && nvram_match("udpxy_enable", "1"))
+		save2file("-A INPUT -i %s -p upd -d %s -j %s\n", wanface, IP_MULTICAST, log_accept);
+#endif
+
 #ifndef HAVE_MICRO
 	/*
 	 * SNMP access from WAN interface 
