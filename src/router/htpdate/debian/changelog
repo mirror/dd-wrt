@@ -1,0 +1,5 @@
+htpdate (1.0.4) stable; urgency=low
+
+  * Fixed a memory leak
+
+ -- Eddy Vervest <eddy@cleVervest.com>  Mon, 13 Oct 2008 20:20:45 +0200 
