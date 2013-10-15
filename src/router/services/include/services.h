@@ -90,6 +90,12 @@ extern void stop_firewall(void);
 extern void start_igmp_proxy(void);
 extern void stop_igmp_proxy(void);
 #endif
+
+#ifdef HAVE_UDPXY
+extern void start_udpxy(void);
+extern void stop_udpxy(void);
+#endif
+
 #ifdef HAVE_SPUTNIK_APD
 extern void start_sputnik(void);
 extern void stop_sputnik(void);

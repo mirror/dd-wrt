@@ -149,6 +149,7 @@ include rules/bpalogin.mk
 include rules/dropbear.mk
 include rules/iproute2.mk
 include rules/igmp-proxy.mk
+include rules/udpxy.mk
 include rules/parprouted.mk
 
 include rules/hostapd.mk
