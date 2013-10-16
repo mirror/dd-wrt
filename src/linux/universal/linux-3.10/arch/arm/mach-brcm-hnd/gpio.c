@@ -148,8 +148,8 @@ static struct file_operations gpio_fops = {
 
 extern int iswrt350n;
 extern int iswrt300n11;
-int isac66;
-int isac68;
+int isac66 = 0;
+int isac68 = 0;
 int isbuffalo = 0;
 int isdefault = 0;
 static struct class *gpio_class = NULL;
@@ -157,7 +157,7 @@ static struct class *gpio_class = NULL;
 static int __init gpio_init(void)
 {
 	int i;
-
+	printk(KERN_INFO "init gpio code\n");
 	if (!(gpio_sih = si_kattach(SI_OSH)))
 		return -ENODEV;
 
@@ -225,8 +225,8 @@ static int __init gpio_init(void)
 		printk(KERN_EMERG "Netgear R6250 init\n");
 		isac66 = 1;
 	}
-
-/*	if ((boardnum == XX) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110"))) {
+/*
+	if ((boardnum == XX) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110"))) {
                  printk(KERN_EMERG "Netgear R6300 V2 init\n");
                  isac66 = 1;
 	}

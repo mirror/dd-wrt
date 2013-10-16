@@ -240,6 +240,25 @@ void __init board_fixup(struct tag *t, char **cmdline,struct meminfo *mi)
 	mi->nr_banks++;
 }
 
+#ifdef CONFIG_ZONE_DMA
+/*
+ * Adjust the zones if there are restrictions for DMA access.
+ */
+void __init bcm47xx_adjust_zones(unsigned long *size, unsigned long *hole)
+{
+	unsigned long dma_size = SZ_128M >> PAGE_SHIFT;
+
+	if (size[0] <= dma_size)
+		return;
+
+	size[ZONE_NORMAL] = size[0] - dma_size;
+	size[ZONE_DMA] = dma_size;
+	hole[ZONE_NORMAL] = hole[0];
+	hole[ZONE_DMA] = 0;
+}
+#endif /* CONFIG_ZONE_DMA */
+
+
 
 //#if (( (IO_BASE_VA >>18) & 0xfffc) != 0x3c40)
 //#error IO_BASE_VA 
@@ -267,7 +286,9 @@ MACHINE_START(BRCM_NS, "Northstar Prototype")
    .init_machine = board_init,			/* Late archinitcall */
    .atag_offset = CONFIG_BOARD_PARAMS_PHYS,
     .restart	= brcm_reset,
-
+#ifdef CONFIG_ZONE_DMA 
+   .dma_zone_size	= SZ_128M,
+#endif
 MACHINE_END
 
 #ifdef	CONFIG_MACH_BRCM_NS_QT
@@ -283,6 +304,9 @@ MACHINE_START(BRCM_NS_QT, "Northstar Emulation Model")
    .init_machine = board_init,			/* Late archinitcall */
    .atag_offset = CONFIG_BOARD_PARAMS_PHYS,
     .restart	= brcm_reset,
+#ifdef CONFIG_ZONE_DMA 
+   .dma_zone_size	= SZ_128M,
+#endif
 MACHINE_END
 #endif
 
