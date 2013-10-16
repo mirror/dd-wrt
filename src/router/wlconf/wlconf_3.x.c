@@ -1230,6 +1230,7 @@ cprintf("set mssid flags %s\n",name);
 #define MBSS_UC_IDX_MASK		(4 - 1)
 
 cprintf("set local addr %s\n",name);
+//fprintf(stderr, "set local addr %s\n",name);
 	if (!ure_enab) {
 		/* set local bit for our MBSS vif base */
 		if (mbsscap)
@@ -1267,17 +1268,21 @@ cprintf("set local addr %s\n",name);
 	/* Set AP mode */
 	val = (ap || apsta || wds) ? 1 : 0;
 cprintf("set ap flag %s\n",name);
+//fprintf(stderr, "set ap flag %s\n",name);
 	WL_IOCTL(name, WLC_SET_AP, &val, sizeof(val));
 
 cprintf("set apsta flag %s\n",name);
+//fprintf(stderr, "set apsta flag %s\n",name);
 	WL_IOVAR_SETINT(name, "apsta", apsta);
 
 	/* Set mode: WET */
 cprintf("set wet flag %s\n",name);
+//fprintf(stderr, "set wet flag %s\n",name);
 	if (wet)
 		WL_IOCTL(name, WLC_SET_WET, &wet, sizeof(wet));
 
 cprintf("set spoof flag %s\n",name);
+//fprintf(stderr, "set spoof flag %s\n",name);
 	if (mac_spoof) {
 		sta = 1;
 		WL_IOVAR_SETINT(name, "mac_spoof", 1);
@@ -1287,6 +1292,7 @@ cprintf("set spoof flag %s\n",name);
 	 * Use specified time (capped), or mode-specific defaults.
 	 */
 cprintf("set sta retry time %s\n",name);
+//fprintf(stderr, "set sta retry time %s\n",name);
 	if (sta || wet || apsta) {
 		char *sta_retry_time_name = "sta_retry_time";
 		char *assoc_retry_max_name = "assoc_retry_max";
@@ -1309,9 +1315,11 @@ cprintf("set sta retry time %s\n",name);
 	if (wet || sta)
 		val = atoi(nvram_default_get(strcat_r(prefix, "infra", tmp),"1"));
 cprintf("set infra flag %s\n",name);
+//fprintf(stderr, "set infra flag %s\n",name);
 	WL_IOCTL(name, WLC_SET_INFRA, &val, sizeof(val));
 
 cprintf("set maxassoc flag %s\n",name);
+//fprintf(stderr, "set maxassoc flag %s\n",name);
 	/* Set The AP MAX Associations Limit */
 	if (ap | apsta) {
 		max_assoc = val = atoi(nvram_safe_get(strcat_r(prefix, "maxassoc", tmp)));
@@ -1322,6 +1330,7 @@ cprintf("set maxassoc flag %s\n",name);
 		}
 	}
 cprintf("set bsscfg %s\n",name);
+//fprintf(stderr, "set bsscfg %s\n",name);
 
 	for (i = 0; i < bclist->count; i++) {
 		char *subprefix;
@@ -1382,6 +1391,7 @@ cprintf("set bsscfg %s\n",name);
 
 	}
 cprintf("set rxchain pwrsave %s\n",name);
+//fprintf(stderr, "set rxchain pwrsave %s\n",name);
 
 	if (rxchain_pwrsave) {
 		val = atoi(nvram_ifexists_get(strcat_r(prefix, "rxchain_pwrsave_enable", tmp), "1"));
@@ -1397,6 +1407,7 @@ cprintf("set rxchain pwrsave %s\n",name);
 		WL_BSSIOVAR_SETINT(name, "rxchain_pwrsave_stas_assoc_check", bsscfg->idx,
 			val);
 	}
+cprintf("set radio pwrsave %s\n",name);
 cprintf("set radio pwrsave %s\n",name);
 
 	if (radio_pwrsave) {
@@ -1424,6 +1435,7 @@ cprintf("set radio pwrsave %s\n",name);
 
 
 cprintf("get phy type %s\n",name);
+//fprintf(stderr, "get phy type %s\n",name);
 	/* Get current phy type */
 	WL_IOCTL(name, WLC_GET_PHYTYPE, &phytype, sizeof(phytype));
 	snprintf(buf, sizeof(buf), "%s", WLCONF_PHYTYPE2STR(phytype));
@@ -1458,6 +1470,7 @@ cprintf("get phy type %s\n",name);
 	}
 
 cprintf("set reg mode %s\n",name);
+//fprintf(stderr, "set reg mode %s\n",name);
 	/* Setup regulatory mode */
 	strcat_r(prefix, "reg_mode", tmp);
 	if (nvram_default_match(tmp, "off","off"))  {
@@ -1488,6 +1501,7 @@ cprintf("set reg mode %s\n",name);
 		WL_IOCTL(name, WLC_SET_REGULATORY, &val, sizeof(val));
 	}
 cprintf("set maclist %s\n",name);
+//fprintf(stderr, "set maclist %s\n",name);
 
 	/* Set the MAC list */
 	maclist = (struct maclist *) buf;
@@ -1506,6 +1520,7 @@ cprintf("set maclist %s\n",name);
 	WL_IOCTL(name, WLC_SET_MACLIST, buf, sizeof(buf));
 
 cprintf("set macmode %s\n",name);
+//fprintf(stderr, "set macmode %s\n",name);
 	/* Set the MAC list mode */
 	(void) strcat_r(prefix, "macmode", tmp);
 	if (nvram_default_match(tmp, "deny","disabled"))
@@ -1567,14 +1582,15 @@ cprintf("set radio ids %s\n",name);
 
 	/* Set band */
 cprintf("set nband %s\n",name);
+//fprintf(stderr, "set nband %s\n",name);
 	str = nvram_get(strcat_r(prefix, "phytype", tmp));
 	val = str ? WLCONF_STR2PHYTYPE(str[0]) : PHY_TYPE_G;
 	/* For NPHY use band value from NVRAM */
 	if (WLCONF_PHYTYPE_11N(val)) {
 		str = nvram_get(strcat_r(prefix, "nband", tmp));
-		if (!strcmp(str,"0") && strstr(nvram_safe_get(strcat_r(prefix,"bandlist",tmp)),"b"))
+		if (str && !strcmp(str,"0") && strstr(nvram_safe_get(strcat_r(prefix,"bandlist",tmp)),"b"))
 		    str = "2";
-		if (!strcmp(str,"0") && strstr(nvram_safe_get(strcat_r(prefix,"bandlist",tmp)),"a"))
+		if (str && !strcmp(str,"0") && strstr(nvram_safe_get(strcat_r(prefix,"bandlist",tmp)),"a"))
 		    str = "1";
 		if (str)
 			val = atoi(str);
@@ -1657,6 +1673,7 @@ cprintf("get core rev %s\n",name);
 	/* Set channel before setting gmode or rateset */
 	/* Manual Channel Selection - when channel # is not 0 */
 cprintf("set channel %s\n",name);
+//fprintf(stderr, "set channel %s\n",name);
 	val = atoi(nvram_default_get(strcat_r(prefix, "channel", tmp),"0"));
 	if (val && !WLCONF_PHYTYPE_11N(phytype)) {
 		WL_SETINT(name, WLC_SET_CHANNEL, val);
@@ -1683,7 +1700,7 @@ cprintf("set channel %s\n",name);
 		if (nvram_match(strcat_r(prefix, "net_mode", tmp),"b-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"g-only") || nvram_match(strcat_r(prefix, "net_mode", tmp),"a-only") ||  nvram_match(strcat_r(prefix, "net_mode", tmp),"bg-mixed"))
 			val = 20;
 		
-//		fprintf(stderr,"channel %d, val %d\n",channel,val);
+		fprintf(stderr,"channel %d, val %d\n",channel,val);
 		switch (val) {
 		case 80:
 			val = WL_CHANSPEC_BW_80;
@@ -1703,6 +1720,7 @@ cprintf("set channel %s\n",name);
 		}
 		nbw = val;
 
+		//fprintf(stderr,"nbw:%X, nctrlsb:%X, channel:%X\n",nbw,nctrlsb,channel);
 		/* Get Ctrl SB for 40MHz channel */
 		if (nbw == WL_CHANSPEC_BW_80) {
 			/* Get Ctrl SB for 80MHz channel */
