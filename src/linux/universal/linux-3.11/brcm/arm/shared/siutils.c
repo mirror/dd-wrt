@@ -3695,6 +3695,7 @@ void set_hc595(uint32 pin, uint32 value)
 }
 
 
+static int buffalo_mask=0;
 static si_t *gpio_sih = NULL;
 extern int isd1800h;
 extern int isac66;
@@ -3708,7 +3709,6 @@ extern int isdefault;
 uint32
 si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 {
-static int bufmask=0;
 	uint regoff;
 //#ifndef USE_LZMA
 //	printk(KERN_INFO "out2 %X/%d   = %X/%d\n",mask,mask,val,val);
@@ -3717,29 +3717,28 @@ static int bufmask=0;
 	    return si_gpioout(sih,mask,val,priority);
 
 	if (isbuffalo) {
-	    if ((mask&(1<<12))) {
-	    if (val&(1<<12))
-	    {
-		bufmask |= (1<<12);
-		set_hc595(0,1);
-	    } else {
-		bufmask &= ~(1<<12);	    
-		set_hc595(0,0);	
-	    }
-	    }
+		if ((mask&(1<<12))) {
+			if (val&(1<<12)) {
+				buffalo_mask |= (1<<12);
+				set_hc595(0,1);
+			} else {
+				buffalo_mask &= ~(1<<12);	    
+				set_hc595(0,0);	
+			}
+		}
 
-	    if ((mask&(1<<10))) {
-	    if (val&(1<<10)) {
-		bufmask |= (1<<10);
-		set_hc595(1,1);
-	    }else{
-		bufmask &= ~(1<<10);	    
-		set_hc595(1,0);	
-	    }
-	    }
-	
-	if (mask&(1<<10) || (mask&(1<<12)))
-	    return bufmask;
+		if ((mask&(1<<10))) {
+			if (val&(1<<10)) {
+				buffalo_mask |= (1<<10);
+				set_hc595(1,1);
+			} else {
+				buffalo_mask &= ~(1<<10);	    
+				set_hc595(1,0);	
+			}
+		}
+		if ((mask&(1<<10)) || (mask&(1<<12))) {
+			return buffalo_mask;
+		}
 	} 
 
 	if (isac68 && !(mask & 1<<6))
@@ -3769,10 +3768,11 @@ static int bufmask=0;
 		val &= mask;
 	}
 	regoff = OFFSETOF(chipcregs_t, gpioout);
-	if (isbuffalo)
-    	    return (((si_corereg(gpio_sih, SI_CC_IDX, regoff, mask, val) & ~(1<<10)) & ~(1<<12)) | bufmask);
-	else
+	if (isbuffalo) {
+    	    return (((si_corereg(gpio_sih, SI_CC_IDX, regoff, mask, val) & ~(1<<10)) & ~(1<<12)) | buffalo_mask);
+	} else {
     	    return (si_corereg(gpio_sih, SI_CC_IDX, regoff, mask, val));
+    	}
 }
 uint32
 si_gpioouten2(si_t *sih, uint32 mask, uint32 val, uint8 priority)

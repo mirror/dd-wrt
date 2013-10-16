@@ -255,7 +255,22 @@ __v7_pj4b_setup:
 __v7_setup:
 #ifdef CONFIG_PLAT_BCM5301X	
 	@ temporary local stack in RAM, physical address, MMU is off
+#ifdef CONFIG_SPARSEMEM
+	ldr	r0, =(PAGE_OFFSET+SZ_128M)
+	ldr	r1, =__v7_setup_stack
+	cmp	r1, r0
+	bge	1f
+	ldr	r0, =PAGE_OFFSET
+	sub	r12, r1, r0
+	b	2f
+1:
+	sub	r1, r1, r0
+	ldr	r0, =PHYS_OFFSET2
+	add	r12, r1, r0
+2:
+#else
 	ldr	r12, =__virt_to_phys(__v7_setup_stack)
+#endif
 #else
 	adr	r12, __v7_setup_stack
 #endif

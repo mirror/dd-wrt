@@ -1037,6 +1037,7 @@ void __init sanity_check_meminfo(void)
 			       "(!CONFIG_HIGHMEM).\n",
 			       (unsigned long long)bank->start,
 			       (unsigned long long)bank->start + bank->size - 1);
+			printk(KERN_NOTICE "Page offset = %X and vmalloc_min = %X\n",PAGE_OFFSET,vmalloc_min);
 			continue;
 		}
 
