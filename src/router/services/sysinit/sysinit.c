@@ -297,18 +297,10 @@ static void buffalo_defaults(int force)
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			close(s);
 			unsigned char *edata = (unsigned char *)ifr.ifr_hwaddr.sa_data;
-#if defined(HAVE_BCMMODERN) || defined(HAVE_MT7620)
 			sprintf(eabuf, "Buffalo-A-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
-#else
-			sprintf(eabuf, "BUFFALO-%02X%02X%02X_A", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
-#endif
 			nvram_set("wl_ssid", eabuf);
 			nvram_set("wl0_ssid", eabuf);
-#if defined(HAVE_BCMMODERN) || defined(HAVE_MT7620)
 			sprintf(eabuf, "Buffalo-G-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
-#else
-			sprintf(eabuf, "BUFFALO-%02X%02X%02X_G", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
-#endif
 			nvram_set("wl1_ssid", eabuf);
 		}
 
@@ -443,6 +435,35 @@ static void buffalo_defaults(int force)
 	}
 }
 
+#elif HAVE_MT7620
+static void buffalo_defaults(int force)
+{
+		struct ifreq ifr;
+		int s;
+
+		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
+			char eabuf[32];
+
+			strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+			ioctl(s, SIOCGIFHWADDR, &ifr);
+			close(s);
+			unsigned char *edata = (unsigned char *)ifr.ifr_hwaddr.sa_data;
+			sprintf(eabuf, "Buffalo-G-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
+			nvram_set("wl0_ssid", eabuf);
+			sprintf(eabuf, "Buffalo-A-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
+			nvram_set("wl1_ssid", eabuf);
+
+		}
+
+		nvram_set("ias_startup", "3");
+		nvram_unset("http_userpln");
+		nvram_unset("http_pwdpln");
+#ifdef HAVE_SPOTPASS
+		system("startservice spotpass_defaults");
+#endif
+		nvram_commit();
+}
+
 #else
 extern void *getUEnv(char *name);
 static void buffalo_defaults(int force)
@@ -565,6 +586,7 @@ static void buffalo_defaults(int force)
 			nvram_set("ath0_ssid", eabuf);
 			sprintf(eabuf, "BUFFALO-%02X%02X%02X_A", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
 			nvram_set("ath1_ssid", eabuf);
+
 		}
 #else
 		}
