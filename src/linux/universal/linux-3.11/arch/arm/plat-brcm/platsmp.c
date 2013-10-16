@@ -31,6 +31,8 @@
 //#include <mach/hardware.h>
 //#include <mach/smp.h>
 
+//volatile int __cpuinitdata pen_release = -1;
+
 static inline unsigned int get_core_count(void)
 {
 	void __iomem *scu_base = scu_base_addr();

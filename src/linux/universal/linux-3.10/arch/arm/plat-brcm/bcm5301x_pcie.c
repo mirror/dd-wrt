@@ -811,6 +811,13 @@ static void __init soc_pcie_map_init(struct soc_pcie_port * port)
 	__raw_writel(addr | size,
 		port->reg_base + SOC_PCIE_SYS_IARR(1));
 
+#ifdef CONFIG_SPARSEMEM
+	addr = PHYS_OFFSET2 + SZ_128M;
+	__raw_writel(addr | 0x1,
+		port->reg_base + SOC_PCIE_SYS_IMAP2(0));
+	__raw_writel(addr | size,
+		port->reg_base + SOC_PCIE_SYS_IARR(2));
+#endif
 }
 
 /*

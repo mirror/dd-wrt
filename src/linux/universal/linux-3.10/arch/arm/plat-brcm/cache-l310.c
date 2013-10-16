@@ -119,7 +119,7 @@ static void BCMFASTPATH l2x0_clean_range(unsigned long start, unsigned long end)
 	atomic_cache_sync(base);
 }
 
-static void BCMFASTPATH l2x0_flush_range(unsigned long start, unsigned long end)
+static void l2x0_flush_range(unsigned long start, unsigned long end)
 {
 	void __iomem *base = l2x0_base;
 
