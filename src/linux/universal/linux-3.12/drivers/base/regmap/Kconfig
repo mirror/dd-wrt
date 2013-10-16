@@ -1,0 +1,26 @@
+# Generic register map support.  There are no user servicable options here,
+# this is an API intended to be used by other kernel subsystems.  These
+# subsystems should select the appropriate symbols.
+
+config REGMAP
+	select LZO_COMPRESS
+	select LZO_DECOMPRESS
+	select IRQ_DOMAIN if REGMAP_IRQ
+	tristate "Regmap"
+
+config REGMAP_I2C
+	select REGMAP
+	tristate "Regmap I2C"
+
+config REGMAP_SPI
+	select REGMAP
+	depends on SPI_MASTER
+	tristate "Regmap SPI"
+
+config REGMAP_MMIO
+	select REGMAP
+	tristate
+
+config REGMAP_IRQ
+	select REGMAP
+	bool

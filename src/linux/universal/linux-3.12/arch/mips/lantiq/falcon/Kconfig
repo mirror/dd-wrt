@@ -1,0 +1,19 @@
+if SOC_FALCON
+
+menu "MIPS Machine"
+
+config LANTIQ_MACH_EASY98000
+	bool "Easy98000"
+	default y
+
+config LANTIQ_MACH_EASY98020
+	bool "Easy98020"
+	default y
+
+config LANTIQ_MACH_95C3AM1
+	bool "95C3AM1"
+	default y
+
+endmenu
+
+endif
