@@ -959,19 +959,12 @@ void period_check(int sig)
 	case ROUTER_BUFFALO_WHRG54S:
 	case ROUTER_BUFFALO_WZRRSG54:
 	case ROUTER_BUFFALO_WLI_TX4_G54HP:
-	case ROUTER_ASUS_RTN12:
-	case ROUTER_NETGEAR_WNR2000V2:
 		sesgpio = 0x100;	// gpio 0, inversed
 		break;
 	case ROUTER_BUFFALO_WLA2G54C:
-	case ROUTER_ASUS_RTN10:
 		sesgpio = 0x102;	// gpio 2, inversed
 		break;
-	case ROUTER_ASUS_RTN10PLUSD1:
-		sesgpio = 0x114;	// gpio 20, inversed
-		break;
 	case ROUTER_BUFFALO_WBR2G54S:
-	case ROUTER_ASUS_WL700GE:
 		sesgpio = 0x004;	// gpio 4, normal
 		break;
 	case ROUTER_BUFFALO_WZR600DHP2:
@@ -981,7 +974,23 @@ void period_check(int sig)
 	case ROUTER_BUFFALO_WZR1750:
 		sesgpio = 0x10c;	// gpio 12, inversed
 		break;
+	case ROUTER_D1800H:
+		sesgpio = 0x10a;	// gpio 10, inversed
+		break;
 #ifndef HAVE_BUFFALO
+	case ROUTER_ASUS_WL700GE:
+		sesgpio = 0x004;	// gpio 4, normal
+		break;
+	case ROUTER_ASUS_RTN10PLUSD1:
+		sesgpio = 0x114;	// gpio 20, inversed
+		break;
+	case ROUTER_ASUS_RTN10:
+		sesgpio = 0x102;	// gpio 2, inversed
+		break;
+	case ROUTER_ASUS_RTN12:
+	case ROUTER_NETGEAR_WNR2000V2:
+		sesgpio = 0x100;	// gpio 0, inversed
+		break;
 	case ROUTER_LINKSYS_WTR54GS:
 	case ROUTER_NETGEAR_WNDR4000:
 		sesgpio = 0x102;	// gpio 2, inversed
@@ -1074,10 +1083,6 @@ void period_check(int sig)
 	case ROUTER_LINKSYS_EA6500:
 		sesgpio = 0x104;	// gpio 4, inversed
 		break;
-	case ROUTER_D1800H:
-		sesgpio = 0x10a;	// gpio 10, inversed
-		break;
-
 #endif
 	default:
 		sesgpio = 0xfff;	// gpio unknown, disabled
