@@ -250,11 +250,19 @@ static void merge_queues(struct sem_array *sma)
  * Caller must own sem_perm.lock.
  * New simple ops cannot start, because simple ops first check
  * that sem_perm.lock is free.
+ * that a) sem_perm.lock is free and b) complex_count is 0.
  */
 static void sem_wait_array(struct sem_array *sma)
 {
 	int i;
 	struct sem *sem;
+
+	if (sma->complex_count)  {
+		/* The thread that increased sma->complex_count waited on
+		 * all sem->lock locks. Thus we don't need to wait again.
+		 */
+		return;
+	}
 
 	for (i = 0; i < sma->sem_nsems; i++) {
 		sem = sma->sem_base + i;
@@ -367,7 +375,7 @@ static inline void sem_unlock(struct sem_array *sma, int locknum)
 }
 
 /*
- * sem_lock_(check_) routines are called in the paths where the rw_mutex
+ * sem_lock_(check_) routines are called in the paths where the rwsem
  * is not held.
  *
  * The caller holds the RCU read lock.
@@ -466,7 +474,7 @@ static inline void sem_rmid(struct ipc_namespace *ns, struct sem_array *s)
  * @ns: namespace
  * @params: ptr to the structure that contains key, semflg and nsems
  *
- * Called with sem_ids.rw_mutex held (as a writer)
+ * Called with sem_ids.rwsem held (as a writer)
  */
 
 static int newary(struct ipc_namespace *ns, struct ipc_params *params)
@@ -531,7 +539,7 @@ static int newary(struct ipc_namespace *ns, struct ipc_params *params)
 
 
 /*
- * Called with sem_ids.rw_mutex and ipcp locked.
+ * Called with sem_ids.rwsem and ipcp locked.
  */
 static inline int sem_security(struct kern_ipc_perm *ipcp, int semflg)
 {
@@ -542,7 +550,7 @@ static inline int sem_security(struct kern_ipc_perm *ipcp, int semflg)
 }
 
 /*
- * Called with sem_ids.rw_mutex and ipcp locked.
+ * Called with sem_ids.rwsem and ipcp locked.
  */
 static inline int sem_more_checks(struct kern_ipc_perm *ipcp,
 				struct ipc_params *params)
@@ -912,6 +920,24 @@ again:
 }
 
 /**
+ * set_semotime(sma, sops) - set sem_otime
+ * @sma: semaphore array
+ * @sops: operations that modified the array, may be NULL
+ *
+ * sem_otime is replicated to avoid cache line trashing.
+ * This function sets one instance to the current time.
+ */
+static void set_semotime(struct sem_array *sma, struct sembuf *sops)
+{
+	if (sops == NULL) {
+		sma->sem_base[0].sem_otime = get_seconds();
+	} else {
+		sma->sem_base[sops[0].sem_num].sem_otime =
+							get_seconds();
+	}
+}
+
+/**
  * do_smart_update(sma, sops, nsops, otime, pt) - optimized update_queue
  * @sma: semaphore array
  * @sops: operations that were performed
@@ -961,16 +987,9 @@ static void do_smart_update(struct sem_array *sma, struct sembuf *sops, int nsop
 			}
 		}
 	}
-	if (otime) {
-		if (sops == NULL) {
-			sma->sem_base[0].sem_otime = get_seconds();
-		} else {
-			sma->sem_base[sops[0].sem_num].sem_otime =
-								get_seconds();
-		}
-	}
+	if (otime)
+		set_semotime(sma, sops);
 }
-
 
 /* The following counts are associated to each semaphore:
  *   semncnt        number of tasks waiting on semval being nonzero
@@ -1033,8 +1052,8 @@ static int count_semzcnt (struct sem_array * sma, ushort semnum)
 	return semzcnt;
 }
 
-/* Free a semaphore set. freeary() is called with sem_ids.rw_mutex locked
- * as a writer and the spinlock for this semaphore set hold. sem_ids.rw_mutex
+/* Free a semaphore set. freeary() is called with sem_ids.rwsem locked
+ * as a writer and the spinlock for this semaphore set hold. sem_ids.rwsem
  * remains locked on exit.
  */
 static void freeary(struct ipc_namespace *ns, struct kern_ipc_perm *ipcp)
@@ -1154,7 +1173,7 @@ static int semctl_nolock(struct ipc_namespace *ns, int semid,
 		seminfo.semmnu = SEMMNU;
 		seminfo.semmap = SEMMAP;
 		seminfo.semume = SEMUME;
-		down_read(&sem_ids(ns).rw_mutex);
+		down_read(&sem_ids(ns).rwsem);
 		if (cmd == SEM_INFO) {
 			seminfo.semusz = sem_ids(ns).in_use;
 			seminfo.semaem = ns->used_sems;
@@ -1163,7 +1182,7 @@ static int semctl_nolock(struct ipc_namespace *ns, int semid,
 			seminfo.semaem = SEMAEM;
 		}
 		max_id = ipc_get_maxid(&sem_ids(ns));
-		up_read(&sem_ids(ns).rw_mutex);
+		up_read(&sem_ids(ns).rwsem);
 		if (copy_to_user(p, &seminfo, sizeof(struct seminfo))) 
 			return -EFAULT;
 		return (max_id < 0) ? 0: max_id;
@@ -1469,9 +1488,9 @@ copy_semid_from_user(struct semid64_ds *out, void __user *buf, int version)
 }
 
 /*
- * This function handles some semctl commands which require the rw_mutex
+ * This function handles some semctl commands which require the rwsem
  * to be held in write mode.
- * NOTE: no locks must be held, the rw_mutex is taken inside this function.
+ * NOTE: no locks must be held, the rwsem is taken inside this function.
  */
 static int semctl_down(struct ipc_namespace *ns, int semid,
 		       int cmd, int version, void __user *p)
@@ -1486,7 +1505,7 @@ static int semctl_down(struct ipc_namespace *ns, int semid,
 			return -EFAULT;
 	}
 
-	down_write(&sem_ids(ns).rw_mutex);
+	down_write(&sem_ids(ns).rwsem);
 	rcu_read_lock();
 
 	ipcp = ipcctl_pre_down_nolock(ns, &sem_ids(ns), semid, cmd,
@@ -1525,7 +1544,7 @@ out_unlock0:
 out_unlock1:
 	rcu_read_unlock();
 out_up:
-	up_write(&sem_ids(ns).rw_mutex);
+	up_write(&sem_ids(ns).rwsem);
 	return err;
 }
 
@@ -1833,12 +1852,17 @@ SYSCALL_DEFINE4(semtimedop, int, semid, struct sembuf __user *, tsops,
 
 	error = perform_atomic_semop(sma, sops, nsops, un,
 					task_tgid_vnr(current));
-	if (error <= 0) {
-		if (alter && error == 0)
+	if (error == 0) {
+		/* If the operation was successful, then do
+		 * the required updates.
+		 */
+		if (alter)
 			do_smart_update(sma, sops, nsops, 1, &tasks);
-
-		goto out_unlock_free;
+		else
+			set_semotime(sma, sops);
 	}
+	if (error <= 0)
+		goto out_unlock_free;
 
 	/* We need to sleep on this operation, so we put the current
 	 * task into the pending queue and go to sleep.
@@ -2096,6 +2120,14 @@ static int sysvipc_sem_proc_show(struct seq_file *s, void *it)
 	struct user_namespace *user_ns = seq_user_ns(s);
 	struct sem_array *sma = it;
 	time_t sem_otime;
+
+	/*
+	 * The proc interface isn't aware of sem_lock(), it calls
+	 * ipc_lock_object() directly (in sysvipc_find_ipc).
+	 * In order to stay compatible with sem_lock(), we must wait until
+	 * all simple semop() calls have left their critical regions.
+	 */
+	sem_wait_array(sma);
 
 	sem_otime = get_semotime(sma);
 
