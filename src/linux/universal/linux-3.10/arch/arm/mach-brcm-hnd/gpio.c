@@ -230,12 +230,12 @@ static int __init gpio_init(void)
                  printk(KERN_EMERG "Netgear R6300 V2 init\n");
                  isac66 = 1;
 	}
-
-	if ((boardnum == XX) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110"))) {
+*/
+	if ((boardnum == 32) && nvram_match("boardtype", "0x0665") && (nvram_match("boardrev", "0x1301"))) {
 		 printk(KERN_EMERG "Netgear R7000 init\n");
 		 isac66 = 1;
 	}
-*/
+
 
 	gpio_init_flag = 1;
 	return 0;
