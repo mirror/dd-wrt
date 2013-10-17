@@ -498,7 +498,12 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 	    maxsize = 0x200000;
 	    size = maxsize;
 	}
-
+	
+	if (nvram_match("boardnum","32") && nvram_match("boardtype", "0x0665")
+	    && nvram_match("boardrev", "0x1301") ) {
+	    maxsize = 0x200000;
+	    size = maxsize;
+	}
 
 	bootdev = soc_boot_dev((void *)sih);
 	knldev = soc_knl_dev((void *)sih);
