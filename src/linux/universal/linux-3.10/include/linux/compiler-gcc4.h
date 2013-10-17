@@ -75,7 +75,7 @@
  *
  * (asm goto is automatically volatile - the naming reflects this.)
  */
-#if GCC_VERSION <= 40801
+#if GCC_VERSION <= 40802
 # define asm_volatile_goto(x...)	do { asm goto(x); asm (""); } while (0)
 #else
 # define asm_volatile_goto(x...)	do { asm goto(x); } while (0)
