@@ -483,6 +483,10 @@ static int read_extra_header(FFV1Context *f)
     ff_build_rac_states(c, 0.05 * (1LL << 32), 256 - 8);
 
     f->version = get_symbol(c, state, 0);
+    if (f->version < 2) {
+        av_log(f->avctx, AV_LOG_ERROR, "Invalid version in global header\n");
+        return AVERROR_INVALIDDATA;
+    }
     if (f->version > 2) {
         c->bytestream_end -= 4;
         f->minor_version = get_symbol(c, state, 0);
@@ -562,6 +566,7 @@ static int read_header(FFV1Context *f)
     memset(state, 128, sizeof(state));
 
     if (f->version < 2) {
+        int chroma_planes, chroma_h_shift, chroma_v_shift, transparency, colorspace, bits_per_raw_sample;
         unsigned v= get_symbol(c, state, 0);
         if (v >= 2) {
             av_log(f->avctx, AV_LOG_ERROR, "invalid version %d in ver01 header\n", v);
@@ -574,15 +579,32 @@ static int read_header(FFV1Context *f)
                 f->state_transition[i] = get_symbol(c, state, 1) + c->one_state[i];
         }
 
-        f->colorspace = get_symbol(c, state, 0); //YUV cs type
+        colorspace     = get_symbol(c, state, 0); //YUV cs type
+        bits_per_raw_sample = f->version > 0 ? get_symbol(c, state, 0) : f->avctx->bits_per_raw_sample;
+        chroma_planes  = get_rac(c, state);
+        chroma_h_shift = get_symbol(c, state, 0);
+        chroma_v_shift = get_symbol(c, state, 0);
+        transparency   = get_rac(c, state);
 
-        if (f->version > 0)
-            f->avctx->bits_per_raw_sample = get_symbol(c, state, 0);
+        if (f->plane_count) {
+            if (   colorspace    != f->colorspace
+                || bits_per_raw_sample != f->avctx->bits_per_raw_sample
+                || chroma_planes != f->chroma_planes
+                || chroma_h_shift!= f->chroma_h_shift
+                || chroma_v_shift!= f->chroma_v_shift
+                || transparency  != f->transparency) {
+                av_log(f->avctx, AV_LOG_ERROR, "Invalid change of global parameters\n");
+                return AVERROR_INVALIDDATA;
+            }
+        }
 
-        f->chroma_planes  = get_rac(c, state);
-        f->chroma_h_shift = get_symbol(c, state, 0);
-        f->chroma_v_shift = get_symbol(c, state, 0);
-        f->transparency   = get_rac(c, state);
+        f->colorspace     = colorspace;
+        f->avctx->bits_per_raw_sample = bits_per_raw_sample;
+        f->chroma_planes  = chroma_planes;
+        f->chroma_h_shift = chroma_h_shift;
+        f->chroma_v_shift = chroma_v_shift;
+        f->transparency   = transparency;
+
         f->plane_count    = 2 + f->transparency;
     }
 
@@ -600,47 +622,32 @@ static int read_header(FFV1Context *f)
             case 0x11: f->avctx->pix_fmt = AV_PIX_FMT_YUV420P; break;
             case 0x20: f->avctx->pix_fmt = AV_PIX_FMT_YUV411P; break;
             case 0x22: f->avctx->pix_fmt = AV_PIX_FMT_YUV410P; break;
-            default:
-                av_log(f->avctx, AV_LOG_ERROR, "format not supported\n");
-                return AVERROR(ENOSYS);
             }
         } else if (f->avctx->bits_per_raw_sample <= 8 && f->transparency) {
             switch(16*f->chroma_h_shift + f->chroma_v_shift) {
             case 0x00: f->avctx->pix_fmt = AV_PIX_FMT_YUVA444P; break;
             case 0x10: f->avctx->pix_fmt = AV_PIX_FMT_YUVA422P; break;
             case 0x11: f->avctx->pix_fmt = AV_PIX_FMT_YUVA420P; break;
-            default:
-                av_log(f->avctx, AV_LOG_ERROR, "format not supported\n");
-                return AVERROR(ENOSYS);
             }
-        } else if (f->avctx->bits_per_raw_sample == 9) {
+        } else if (f->avctx->bits_per_raw_sample == 9 && !f->transparency) {
             f->packed_at_lsb = 1;
             switch(16 * f->chroma_h_shift + f->chroma_v_shift) {
             case 0x00: f->avctx->pix_fmt = AV_PIX_FMT_YUV444P9; break;
             case 0x10: f->avctx->pix_fmt = AV_PIX_FMT_YUV422P9; break;
             case 0x11: f->avctx->pix_fmt = AV_PIX_FMT_YUV420P9; break;
-            default:
-                av_log(f->avctx, AV_LOG_ERROR, "format not supported\n");
-                return AVERROR(ENOSYS);
             }
-        } else if (f->avctx->bits_per_raw_sample == 10) {
+        } else if (f->avctx->bits_per_raw_sample == 10 && !f->transparency) {
             f->packed_at_lsb = 1;
             switch(16 * f->chroma_h_shift + f->chroma_v_shift) {
             case 0x00: f->avctx->pix_fmt = AV_PIX_FMT_YUV444P10; break;
             case 0x10: f->avctx->pix_fmt = AV_PIX_FMT_YUV422P10; break;
             case 0x11: f->avctx->pix_fmt = AV_PIX_FMT_YUV420P10; break;
-            default:
-                av_log(f->avctx, AV_LOG_ERROR, "format not supported\n");
-                return AVERROR(ENOSYS);
             }
-        } else {
+        } else if (f->avctx->bits_per_raw_sample == 16 && !f->transparency){
             switch(16 * f->chroma_h_shift + f->chroma_v_shift) {
             case 0x00: f->avctx->pix_fmt = AV_PIX_FMT_YUV444P16; break;
             case 0x10: f->avctx->pix_fmt = AV_PIX_FMT_YUV422P16; break;
             case 0x11: f->avctx->pix_fmt = AV_PIX_FMT_YUV420P16; break;
-            default:
-                av_log(f->avctx, AV_LOG_ERROR, "format not supported\n");
-                return AVERROR(ENOSYS);
             }
         }
     } else if (f->colorspace == 1) {
@@ -662,6 +669,10 @@ static int read_header(FFV1Context *f)
         else                 f->avctx->pix_fmt = AV_PIX_FMT_0RGB32;
     } else {
         av_log(f->avctx, AV_LOG_ERROR, "colorspace not supported\n");
+        return AVERROR(ENOSYS);
+    }
+    if (f->avctx->pix_fmt == AV_PIX_FMT_NONE) {
+        av_log(f->avctx, AV_LOG_ERROR, "format not supported\n");
         return AVERROR(ENOSYS);
     }
 
@@ -899,14 +910,54 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
 static int init_thread_copy(AVCodecContext *avctx)
 {
     FFV1Context *f = avctx->priv_data;
+    int i, ret;
 
     f->picture.f      = NULL;
     f->last_picture.f = NULL;
     f->sample_buffer  = NULL;
-    f->quant_table_count = 0;
     f->slice_count = 0;
 
+    for (i = 0; i < f->quant_table_count; i++) {
+        av_assert0(f->version > 1);
+        f->initial_states[i] = av_memdup(f->initial_states[i],
+                                         f->context_count[i] * sizeof(*f->initial_states[i]));
+    }
+
+    f->picture.f      = av_frame_alloc();
+    f->last_picture.f = av_frame_alloc();
+
+    if ((ret = ffv1_init_slice_contexts(f)) < 0)
+        return ret;
+
     return 0;
+}
+
+static void copy_fields(FFV1Context *fsdst, FFV1Context *fssrc, FFV1Context *fsrc)
+{
+    fsdst->version             = fsrc->version;
+    fsdst->minor_version       = fsrc->minor_version;
+    fsdst->chroma_planes       = fsrc->chroma_planes;
+    fsdst->chroma_h_shift      = fsrc->chroma_h_shift;
+    fsdst->chroma_v_shift      = fsrc->chroma_v_shift;
+    fsdst->transparency        = fsrc->transparency;
+    fsdst->plane_count         = fsrc->plane_count;
+    fsdst->ac                  = fsrc->ac;
+    fsdst->colorspace          = fsrc->colorspace;
+
+    fsdst->ec                  = fsrc->ec;
+    fsdst->intra               = fsrc->intra;
+    fsdst->slice_damaged       = fssrc->slice_damaged;
+    fsdst->key_frame_ok        = fsrc->key_frame_ok;
+
+    fsdst->bits_per_raw_sample = fsrc->bits_per_raw_sample;
+    fsdst->packed_at_lsb       = fsrc->packed_at_lsb;
+    fsdst->slice_count         = fsrc->slice_count;
+    if (fsrc->version<3){
+        fsdst->slice_x             = fssrc->slice_x;
+        fsdst->slice_y             = fssrc->slice_y;
+        fsdst->slice_width         = fssrc->slice_width;
+        fsdst->slice_height        = fssrc->slice_height;
+    }
 }
 
 static int update_thread_context(AVCodecContext *dst, const AVCodecContext *src)
@@ -918,35 +969,29 @@ static int update_thread_context(AVCodecContext *dst, const AVCodecContext *src)
     if (dst == src)
         return 0;
 
-    if (!fdst->picture.f) {
+    {
+        FFV1Context bak = *fdst;
         memcpy(fdst, fsrc, sizeof(*fdst));
-
-        for (i = 0; i < fdst->quant_table_count; i++) {
-            fdst->initial_states[i] = av_malloc(fdst->context_count[i] * sizeof(*fdst->initial_states[i]));
-            memcpy(fdst->initial_states[i], fsrc->initial_states[i], fdst->context_count[i] * sizeof(*fdst->initial_states[i]));
+        memcpy(fdst->initial_states, bak.initial_states, sizeof(fdst->initial_states));
+        memcpy(fdst->slice_context,  bak.slice_context , sizeof(fdst->slice_context));
+        fdst->picture      = bak.picture;
+        fdst->last_picture = bak.last_picture;
+        for (i = 0; i<fdst->num_h_slices * fdst->num_v_slices; i++) {
+            FFV1Context *fssrc = fsrc->slice_context[i];
+            FFV1Context *fsdst = fdst->slice_context[i];
+            copy_fields(fsdst, fssrc, fsrc);
         }
-
-        fdst->picture.f      = av_frame_alloc();
-        fdst->last_picture.f = av_frame_alloc();
-
-        if ((ret = ffv1_init_slice_contexts(fdst)) < 0)
-            return ret;
+        av_assert0(!fdst->plane[0].state);
+        av_assert0(!fdst->sample_buffer);
     }
 
     av_assert1(fdst->slice_count == fsrc->slice_count);
 
-    fdst->key_frame_ok = fsrc->key_frame_ok;
 
     ff_thread_release_buffer(dst, &fdst->picture);
     if (fsrc->picture.f->data[0]) {
         if ((ret = ff_thread_ref_frame(&fdst->picture, &fsrc->picture)) < 0)
             return ret;
-    }
-    for (i = 0; i < fdst->slice_count; i++) {
-        FFV1Context *fsdst = fdst->slice_context[i];
-        FFV1Context *fssrc = fsrc->slice_context[i];
-
-        fsdst->slice_damaged = fssrc->slice_damaged;
     }
 
     fdst->fsrc = fsrc;
