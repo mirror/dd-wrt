@@ -131,6 +131,526 @@ void start_sysinit(void)
 	}
 
 	switch (getRouterBrand()) {
+	case ROUTER_NETGEAR_R6250:
+		nvram_set("vlan1hwname", "et0");
+		nvram_set("vlan2hwname", "et0");
+		nvram_set("vlan1ports", "3 2 1 0 5*");
+		nvram_set("vlan2ports", "4 5u");
+		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+		
+		nvram_set("radiooff_button", "1");
+		if (nvram_get("clkfreq")==NULL) //set it only if it doesnt exist
+			nvram_set("clkfreq","800");
+
+		if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
+		    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+		    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
+		    || startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
+			unsigned char mac[20];
+			strcpy(mac, nvram_safe_get("et0macaddr"));
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			nvram_set("pci/1/1/macaddr", mac);
+			MAC_ADD(mac);
+			nvram_set("pci/2/1/macaddr", mac);
+			need_reboot = 1;
+		}
+		struct nvram_tuple r6250_pci_1_1_params[] = {
+			{"pa2gw1a0", "0x18de", 0},
+			{"pa2gw1a1", "0x187a", 0}, 
+			{"ledbh12", "11", 0}, 
+			{"ag0", "2", 0}, 
+			{"ag1", "2", 0}, 
+			{"ag2", "255", 0}, 
+			{"rxchain", "3", 0},
+			{"bw402gpo", "0x1", 0}, 
+			{"pa2gw0a0", "0xfee5", 0}, 
+			{"pa2gw0a1", "0xfebb", 0}, 
+			{"boardflags", "0x80001200", 0}, 
+			{"tempoffset", "0", 0}, 
+			{"ofdm5gpo", "0", 0}, 
+			{"boardvendor", "0x14e4", 0}, 
+			{"triso2g", "4", 0}, 
+			{"sromrev", "8", 0}, 
+			{"extpagain2g", "3", 0}, 
+			{"venid", "0x14e4", 0}, 
+			{"maxp2ga0", "0x66", 0}, 
+			{"maxp2ga1", "0x66", 0}, 
+			{"boardtype", "0x62b", 0}, 
+			{"boardflags2", "0x1800", 0}, 
+			{"tssipos2g", "1", 0}, 
+			{"ofdm2gpo", "0xFEC96422", 0}, 
+			{"ledbh0", "255", 0}, 
+			{"ledbh1", "255", 0}, 
+			{"ledbh2", "255", 0},			 
+			{"ledbh3", "131", 0}, 
+			{"mcs2gpo0", "0x6422", 0}, 
+			{"mcs2gpo1", "0xFEC9", 0}, 
+			{"mcs2gpo2", "0x6422", 0}, 
+			{"mcs2gpo3", "0xFEC9", 0}, 
+			{"mcs2gpo4", "0x6422", 0}, 
+			{"antswctl2g", "0", 0}, 
+			{"mcs2gpo5", "0xFDB9", 0}, 
+			{"mcs2gpo6", "0x6422", 0}, 
+			{"mcs2gpo7", "0xFDB9", 0}, 
+			{"stbc2gpo", "0", 0}, 
+			{"txchain", "3", 0}, 
+			{"elna2g", "2", 0}, 
+			{"ofdm5glpo", "0", 0}, 
+			{"antswitch", "0", 0}, 
+			{"aa2g", "3", 0}, 
+			{"ccd2gpo", "0", 0}, 
+			{"ofdm5ghpo", "0", 0}, 
+			{"leddc", "65535", 0}, 
+			{"pa2gw2a0", "0xfa61", 0}, 
+			{"pa2gw2a1", "0xfa0d", 0}, 
+			{"opo", "68", 0}, 
+			{"ccode", "EU", 0}, 
+			{"pdetrange2g", "3", 0}, 
+			{"regrev", "22", 0}, 
+			{"devid", "0x43a9", 0}, 
+			{"tempthresh", "120", 0}, 
+			{"cck2gpo", "0", 0}, 
+
+			{0, 0, 0}
+		};
+		/*
+		 * set router's extra parameters 
+		 */
+		extra_params = r6250_pci_1_1_params;
+		while (extra_params->name) {
+			nvram_nset(extra_params->value, "pci/1/1/%s",
+				   extra_params->name);
+			extra_params++;
+		}
+
+		
+		struct nvram_tuple r6250_pci_2_1_params[] = {
+			{"rxgains5ghtrisoa0", "15", 0},
+			{"rxgains5ghtrisoa1", "15", 0}, 
+			{"rxgains5ghtrisoa2", "15", 0}, 
+			{"mcslr5gmpo", "0", 0},			 
+			{"txchain", "7", 0}, 
+			{"phycal_tempdelta", "255", 0}, 
+			{"pdgain5g", "10", 0}, 
+			{"subband5gver", "0x4", 0}, 
+			{"ccode", "Q1", 0}, 
+			{"boardflags", "0x10001000", 0}, 
+			{"tworangetssi5g", "0", 0}, 
+			{"rxgains5gtrisoa0", "6", 0}, 
+			{"sb20in40hrpo", "0", 0}, 
+			{"rxgains5gtrisoa1", "6", 0}, 
+			{"rxgains5gtrisoa2", "6", 0}, 
+			{"tempoffset", "255", 0}, 
+			{"mcsbw205gmpo", "0xFDA86420", 0}, 
+			{"noiselvl5ga0", "31,31,31,31", 0}, 
+			{"noiselvl5ga1", "31,31,31,31", 0}, 
+			{"noiselvl5ga2", "31,31,31,31", 0}, 
+			{"xtalfreq", "65535", 0}, 
+			{"tempsense_option", "0x3", 0},
+			{"devid", "0x43a2", 0}, 
+			{"femctrl", "6", 0}, 
+			{"aa5g", "7", 0}, 
+			{"pdoffset80ma0", "256", 0}, 
+			{"pdoffset80ma1", "256", 0}, 
+			{"cckbw20ul2gpo", "0", 0}, 
+			{"pdoffset80ma2", "256", 0}, 
+			{"papdcap5g", "0", 0}, 
+			{"tssiposslope5g", "1", 0}, 
+			{"tempcorrx", "0x3f", 0}, 
+			{"mcslr5glpo", "0", 0}, 
+			{"mcsbw402gpo", "2571386880", 0}, 
+			{"sar5g", "15", 0}, 
+			{"pa5ga0", "0xff6e,0x17ab,0xfd0e,0xffd6,0x1982,0xfd4e,0xff4d,0x1709,0xfd08,0xff87,0x1833,0xfd35", 0}, 
+			{"pa5ga1", "0xff78,0x16af,0xfd1c,0xff3f,0x1605,0xfcfc,0xff4d,0x16a5,0xfd05,0xff9c,0x178d,0xfd80", 0}, 
+			{"rxgains5gmelnagaina0", "7", 0}, 
+			{"pa5ga2", "0xff5e,0x16cb,0xfd2f,0xff82,0x18a3,0xfd1a,0xff75,0x198a,0xfcda,0xff70,0x18c7,0xfd05", 0}, 
+			{"rxgains5gmelnagaina1", "7", 0}, 
+			{"rxgains5gmelnagaina2", "7", 0}, 
+			{"mcslr5ghpo", "0", 0}, 
+			{"rxgainerr5ga0", "63,63,63,63", 0}, 
+			{"mcsbw202gpo", "2571386880", 0}, 
+			{"rxgainerr5ga1", "31,31,31,31", 0}, 
+			{"rxgainerr5ga2", "31,31,31,31", 0}, 
+			{"pcieingress_war", "15", 0}, 
+			{"pdoffset40ma0", "12834", 0}, 
+			{"pdoffset40ma1", "12834", 0}, 
+			{"pdoffset40ma2", "12834", 0}, 
+			{"sb40and80lr5gmpo", "0", 0}, 
+			{"rxgains5gelnagaina0", "3", 0}, 
+			{"rxgains5gelnagaina1", "3", 0}, 
+			{"rxgains5gelnagaina2", "3", 0}, 
+			{"mcsbw205glpo", "0xFCA86400", 0}, 
+			{"measpower1", "0x7f", 0}, 
+			{"sb20in80and160lr5gmpo", "0", 0}, 
+			{"measpower2", "0x7f", 0}, 
+			{"temps_period", "15", 0}, 
+			{"mcsbw805gmpo", "0xFDA86420", 0}, 
+			{"dot11agduplrpo", "0", 0}, 
+			{"mcsbw205ghpo", "0xFDA86420", 0}, 
+			{"measpower", "0x7f", 0}, 
+			{"rxgains5ghelnagaina0", "7", 0}, 
+			{"ofdmlrbw202gpo", "0", 0}, 
+			{"rxgains5ghelnagaina1", "7", 0}, 
+			{"rxgains5ghelnagaina2", "7", 0}, 
+			{"gainctrlsph", "0", 0}, 
+			{"sb40and80hr5gmpo", "0", 0}, 
+			{"sb20in80and160hr5gmpo", "0", 0}, 
+			{"mcsbw1605gmpo", "0", 0}, 
+			{"epagain5g", "0", 0}, 
+			{"mcsbw405gmpo", "0xFDA86420", 0}, 
+			{"cckbw202gpo", "0", 0}, 
+			{"rxchain", "7", 0}, 
+			{"sb40and80lr5glpo", "0", 0}, 
+			{"maxp5ga0", "70,70,94,94", 0}, 
+			{"maxp5ga1", "70,70,94,94", 0}, 
+			{"maxp5ga2", "70,70,94,94", 0}, 
+			{"sb20in80and160lr5glpo", "0", 0}, 
+			{"sb40and80lr5ghpo", "0", 0}, 
+			{"venid", "0x14e4", 0}, 
+			{"mcsbw805glpo", "0xFCA86400", 0}, 
+			{"boardvendor", "0x14e4", 0}, 
+			{"sb20in80and160lr5ghpo", "0", 0}, 
+			{"tempsense_slope", "0xff", 0}, 
+			{"ofdm5glpo", "0", 0}, 
+			{"mcsbw805ghpo", "0xFDA86420", 0}, 
+			{"antswitch", "0", 0}, 
+			{"aga0", "71", 0}, 
+			{"aga1", "133", 0}, 
+			{"rawtempsense", "0x1ff", 0}, 
+			{"aga2", "133", 0}, 
+			{"tempthresh", "255", 0}, 
+			{"dot11agduphrpo", "0", 0}, 
+			{"ofdm5ghpo", "0xB975300", 0}, 
+			{"sb40and80hr5glpo", "0", 0}, 
+			{"sromrev", "11", 0}, 
+			{"sb20in40lrpo", "0", 0}, 
+			{"sb20in80and160hr5glpo", "0", 0}, 
+			{"mcsbw1605glpo", "0", 0}, 
+			{"sb40and80hr5ghpo", "0", 0}, 
+			{"mcsbw405glpo", "0xFCA86400", 0}, 
+			{"dot11agofdmhrbw202gpo", "17408", 0}, 
+			{"rxgains5gmtrisoa0", "15", 0}, 
+			{"sb20in80and160hr5ghpo", "0", 0}, 
+			{"mcsbw1605ghpo", "0", 0}, 
+			{"rxgains5gmtrisoa1", "15", 0}, 
+			{"rxgains5gmtrisoa2", "15", 0}, 
+			{"rxgains5gmtrelnabypa0", "1", 0}, 
+			{"rxgains5gmtrelnabypa1", "1", 0}, 
+			{"rxgains5gmtrelnabypa2", "1", 0}, 
+			{"mcsbw405ghpo", "0xFDA86420", 0}, 
+			{"boardflags2", "0x2", 0}, 
+			{"boardflags3", "0x0", 0}, 
+			{"rxgains5ghtrelnabypa0", "1", 0}, 
+			{"rxgains5ghtrelnabypa1", "1", 0}, 
+			{"rxgains5ghtrelnabypa2", "1", 0}, 
+			{"regrev", "27", 0}, 
+			{"temps_hysteresis", "15", 0}, 
+			{"rxgains5gtrelnabypa0", "1", 0}, 
+			{"rxgains5gtrelnabypa1", "1", 0}, 
+			{"rxgains5gtrelnabypa2", "1", 0}, 
+
+			{0, 0, 0}
+		};
+
+		/*
+		 * set router's extra parameters 
+		 */
+		extra_params = r6250_pci_2_1_params;
+		while (extra_params->name) {
+			nvram_nset(extra_params->value, "pci/2/1/%s",
+				   extra_params->name);
+			extra_params++;
+		}
+		break;
+	case ROUTER_NETGEAR_R7000:
+		nvram_set("vlan1hwname", "et0");
+		nvram_set("vlan2hwname", "et0");
+		nvram_set("vlan1ports", "4 3 2 1 5*");
+		nvram_set("vlan2ports", "0 5u");
+		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+		
+		if (nvram_get("pci/1/1/vendid") == NULL){
+			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
+			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
+			    || startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
+				unsigned char mac[20];
+				strcpy(mac, nvram_safe_get("et0macaddr"));
+				MAC_ADD(mac);
+				MAC_ADD(mac);
+				nvram_set("pci/1/1/macaddr", mac);
+				MAC_ADD(mac);
+				nvram_set("pci/2/1/macaddr", mac);
+				need_reboot = 1;
+			}
+			struct nvram_tuple r7000_pci_1_1_params[] = {
+				{"pa2gw1a0", "0x18de", 0},
+				{"pdoffset2g40ma0","15", 0},                                                                                                                                                                                         
+				{"pdoffset2g40ma1","15"                                                                                                                                                                                         
+				{"pdoffset2g40ma2","15", 0},                                                                                                                                                                                         
+				{"rxgains2gtrisoa0","7", 0},                                                                                                                                                                                         
+				{"rxgains2gtrisoa1","7", 0},                                                                                                                                                                                         
+				{"rxgains2gtrisoa2","7", 0},                                                                                                                                                                                         
+				{"rxgainerr2ga0","63", 0},                                                                                                                                                                                           
+				{"rxgainerr2ga1","31", 0},                                                                                                                                                                                           
+				{"rxgainerr2ga2","31", 0},                                                                                                                                                                                           
+				{"pdoffset2g40mvalid","1", 0},                                                                                                                                                                                       
+				{"agbg0","71", 0},                                                                                                                                                                                                   
+				{"agbg1","1", 0},                                                                                                                                                                                                   
+				{"epagain2g","0", 0},                                                                                                                                                                                                
+				{"agbg2","71", 0},                                                                                                                                                                                                   
+				{"gainctrlsph","0", 0},                                                                                                                                                                                              
+				{"cckbw202gpo","0", 0},                                                                                                                                                                                              
+				{"pdgain2g","14", 0},                                                                                                                                                                                                
+				{"boardflags","0x1000", 0},                                                                                                                                                                                          
+				{"tssifloor2g","0x3ff", 0},                                                                                                                                                                                          
+				{"subband5gver","0x4", 0},                                                                                                                                                                                          
+				{"boardnum","57359", 0},                                                                                                                                                                                             
+				{"dot11agduplrpo","0", 0},                                                                                                                                                                                           
+				{"measpower","0x7f", 0},                                                                                                                                                                                             
+				{"sromrev","11", 0},                                                                                                                                                                                                 
+				{"ofdmlrbw202gpo","0", 0},                                                                                                                                                                                           
+				{"boardrev","0x1150", 0},                                                                                                                                                                                            
+				{"dot11agofdmhrbw202gpo","0xCA86", 0},                                                                                                                                                                               
+				{"rxgains2gtrelnabypa0","1", 0},                                                                                                                                                                                     
+				{"rxgains2gtrelnabypa1","1", 0},                                                                                                                                                                                     
+				{"rpcal2g","0x3ef", 0},                                                                                                                                                                                              
+				{"rxgains2gtrelnabypa2","1", 0},                                                                                                                                                                                     
+				{"maxp2ga0","106", 0},                                                                                                                                                                                               
+				{"maxp2ga1","106", 0},                                                                                                                                                                                               
+				{"maxp2ga2","106", 0},                                                                                                                                                                                               
+				{"boardtype","0x661", 0},                                                                                                                                                                                            
+				{"pa2ga0","0xFF32,0x1C30,0xFCA3", 0},                                                                                                                                                                                
+				{"pa2ga1","0xFF35,0x1BE3,0xFCB0", 0},                                                                                                                                                                                
+				{"pa2ga2","0xFF33,0x1BE1,0xFCB0", 0},                                                                                                                                                                                
+				{"boardflags2","0x100002", 0},                                                                                                                                                                                       
+				{"boardflags3","0x3", 0},                                                                                                                                                                                            
+				{"measpower1","0x7f", 0},                                                                                                                                                                                            
+				{"measpower2","0x7f", 0},                                                                                                                                                                                            
+				{"subvid","0x14e4", 0},                                                                                                                                                                                              
+				{"rxgains2gelnagaina0","3", 0},                                                                                                                                                                                      
+				{"rxgains2gelnagaina1","3", 0},                                                                                                                                                                                      
+				{"rxgains2gelnagaina2","3", 0},                                                                                                                                                                                      
+				{"antswitch","0", 0},                                                                                                                                                                                                
+				{"aa2g","7", 0},                                                                                                                                                                                                     
+				{"sar2g","18", 0},                                                                                                                                                                                                   
+				{"noiselvl2ga0","31", 0},                                                                                                                                                                                            
+				{"noiselvl2ga1","31", 0},                                                                                                                                                                                            
+				{"noiselvl2ga2","31", 0},                                                                                                                                                                                            
+				{"tworangetssi2g","0", 0},                                                                                                                                                                                           
+				{"dot11agduphrpo","0", 0},                                                                                                                                                                                           
+				{"pdoffset80ma0","0", 0},                                                                                                                                                                                            
+				{"pdoffset80ma1","0", 0},                                                                                                                                                                                            
+				{"cckbw20ul2gpo","0", 0},                                                                                                                                                                                            
+				{"pdoffset80ma2","0", 0},                                                                                                                                                                                            
+				{"xtalfreq","65535", 0},                                                                                                                                                                                             
+				{"papdcap2g","0", 0},                                                                                                                                                                                                
+				{"femctrl","3", 0},                                                                                                                                                                                                  
+				{"tssiposslope2g","1", 0},                                                                                                                                                                                           
+				{"ccode","Q2", 0},                                                                                                                                                                                                   
+				{"pdoffset40ma0","0", 0},                                                                                                                                                                                            
+				{"pdoffset40ma1","0", 0},                                                                                                                                                                                            
+				{"pdoffset40ma2","0", 0},                                                                                                                                                                                            
+				{"regrev","53", 0},                                                                                                                                                                                                  
+				{"devid","0x43a1", 0},                                                                                                                                                                                               
+				{"mcsbw402gpo","0xA976A600", 0},                                                                                                                                                                                     
+	//			{"macaddr=04:A1:51:C1:84:42                                                                                                                                                                                  
+				{"mcsbw202gpo","0xA976A600", 0},
+				{0, 0, 0}
+			};
+			/*
+			* set router's extra parameters 
+			*/
+			extra_params = r6250_pci_1_1_params;
+			while (extra_params->name) {
+				nvram_nset(extra_params->value, "pci/1/1/%s",
+					  extra_params->name);
+				extra_params++;
+			}
+
+			
+			struct nvram_tuple r7000_pci_2_1_params[] = {
+				{"rxgains5ghtrisoa0","5", 0},                                                                         
+				{"rxgains5ghtrisoa1","4", 0},                                                                         
+				{"rxgains5ghtrisoa2","4", 0},                                                                         
+				{"mcslr5gmpo","0", 0},                                                                                
+				{"txchain","7", 0},                                                                                   
+				{"phycal_tempdelta","255", 0},                                                                        
+				{"pdgain5g","4", 0},                                                                                  
+				{"tssifloor5g","0x3ff,0x3ff,0x3ff,0x3ff", 0},                                                         
+				{"subband5gver","0x4", 0},                                                                            
+				{"ccode","Q2", 0},                                                                                    
+				{"boardflags","0x30000000", 0},                                                                       
+				{"tworangetssi5g","0", 0},                                                                            
+				{"rxgains5gtrisoa0","7", 0},                                                                          
+				{"sb20in40hrpo","0", 0},                                                                              
+				{"rxgains5gtrisoa1","6", 0},                                                                          
+				{"rxgains5gtrisoa2","5", 0},                                                                          
+				{"tempoffset","255", 0},                                                                              
+				{"mcsbw205gmpo","0xBA768600", 0},                                                                     
+				{"noiselvl5ga0","31,31,31,31", 0},                                                                    
+				{"noiselvl5ga1","31,31,31,31", 0},                                                                    
+				{"noiselvl5ga2","31,31,31,31", 0},                                                                    
+				{"xtalfreq","65535", 0},                                                                              
+				{"tempsense_option","0x3", 0},                                                                        
+				{"devid","0x43a2", 0},                                                                                
+				{"femctrl","3", 0},                                                                                   
+				{"epagain2g","0", 0},                                                                                 
+				{"aa5g","0", 0},                                                                                      
+				{"rxgains2gelnagaina0","0", 0},                                                                       
+				{"rxgains2gelnagaina1","0", 0},                                                                       
+				{"pdoffset80ma0","0", 0},                                                                             
+				{"rxgains2gelnagaina2","0", 0},                                                                       
+				{"pdoffset80ma1","0", 0},                                                                             
+				{"cckbw20ul2gpo","0", 0},                                                                             
+				{"pdoffset80ma2","0", 0},                                                                             
+				{"papdcap5g","0", 0},                                                                                 
+				{"tssiposslope5g","1", 0},                                                                            
+				{"tempcorrx","0x3f", 0},                                                                              
+				{"mcslr5glpo","0", 0},                                                                                
+				{"mcsbw402gpo","0", 0},                                                                               
+				{"pdoffset2g40ma0","15", 0},                                                                          
+				{"sar5g","15", 0},                                                                                    
+				{"pdoffset2g40ma1","15", 0},                                                                          
+				{"pdoffset2g40ma2","15", 0},                                                                          
+	//			{"macaddr","04:A1:51:C1:84:41", 0},                                                                   
+				{"pa5ga0","0xFF4C,0x1808,0xFD1B,0xFF4C,0x18CF,0xFD0C,0xFF4A,0x1920,0xFD08,0xFF4C,0x1949,0xFCF6", 0},  
+				{"pa5ga1","0xFF4A,0x18AC,0xFD0B,0xFF44,0x1904,0xFCFF,0xFF56,0x1A09,0xFCFC,0xFF4F,0x19AB,0xFCEF", 0},  
+				{"rxgains5gmelnagaina0","3", 0},                                                                      
+				{"pa5ga2","0xFF4C,0x1896,0xFD11,0xFF43,0x192D,0xFCF5,0xFF50,0x19EE,0xFCF1,0xFF52,0x19C6,0xFCF1", 0},  
+				{"rxgains5gmelnagaina1","4", 0},                                                                      
+				{"rxgains5gmelnagaina2","4", 0},                                                                      
+				{"mcsbw1605hpo","0", 0},                                                                              
+				{"mcslr5ghpo","0", 0},                                                                                
+				{"rxgainerr5ga0","63,63,63,63", 0},                                                                   
+				{"mcsbw202gpo","0", 0},                                                                               
+				{"rxgainerr5ga1","31,31,31,31", 0},                                                                   
+				{"rxgainerr5ga2","31,31,31,31", 0},                                                                   
+				{"rxgains2gtrisoa0","0", 0},                                                                          
+				{"rxgains2gtrisoa1","0", 0},                                                                          
+				{"pdoffset40ma0","4369", 0},                                                                          
+				{"rxgains2gtrisoa2","0", 0},                                                                          
+				{"pdoffset40ma1","4369", 0},                                                                          
+				{"pdoffset40ma2","4369", 0},                                                                          
+				{"sb40and80lr5gmpo","0", 0},                                                                          
+				{"rxgains5gelnagaina0","4", 0},                                                                       
+				{"rxgains5gelnagaina1","4", 0},                                                                       
+				{"noiselvl2ga0","31", 0},                                                                             
+				{"rxgains5gelnagaina2","4", 0},                                                                      
+				{"noiselvl2ga1","31", 0},                                                                             
+				{"noiselvl2ga2","31", 0},                                                                             
+				{"agbg0","0", 0},                                                                                     
+				{"mcsbw205glpo","BA768600", 0},                                                                       
+				{"agbg1","0", 0},                                                                                     
+				{"agbg2","0", 0},                                                                                     
+				{"measpower1","0x7f", 0},                                                                            
+				{"sb20in80and160lr5gmpo","0", 0},                                                                     
+				{"measpower2","0x7f", 0},                                                                             
+				{"temps_period","15", 0},                                                                             
+				{"mcsbw805gmpo","0xBA768600", 0},                                                                     
+				{"dot11agduplrpo","0", 0},                                                                            
+				{"mcsbw205ghpo","0xBA768600", 0},                                                                     
+				{"measpower","0x7f", 0},                                                                              
+				{"rxgains5ghelnagaina0","3", 0},                                                                      
+				{"ofdmlrbw202gpo","0", 0},                                                                            
+				{"rxgains5ghelnagaina1","3", 0},                                                                      
+				{"rxgains5ghelnagaina2","4", 0},                                                                      
+				{"gainctrlsph","0", 0},                                                                               
+				{"sb40and80hr5gmpo","0", 0},                                                                          
+				{"sb20in80and160hr5gmpo","0", 0},                                                                     
+				{"mcsbw1605gmpo","0", 0},                                                                             
+				{"pa2ga0","0xfe72,0x14c0,0xfac7", 0},                                                                 
+				{"pa2ga1","0xfe80,0x1472,0xfabc", 0},                                                                 
+				{"pa2ga2","0xfe82,0x14bf,0xfad9", 0},                                                                 
+				{"epagain5g","0", 0},                                                                                 
+				{"mcsbw405gmpo","0xBA768600", 0},                                                                     
+				{"rxgainerr2ga0","63", 0},                                                                            
+				{"boardtype","0x621", 0},                                                                             
+				{"rxgainerr2ga1","31", 0},                                                                            
+				{"rxgainerr2ga2","31", 0},                                                                            
+				{"cckbw202gpo","0", 0},                                                                               
+				{"rxchain","7", 0},                                                                                   
+				{"sb40and80lr5glpo","0", 0},                                                                          
+				{"maxp5ga0","106,106,106,106", 0},                                                                    
+				{"maxp5ga1","106,106,106,106", 0},                                                                    
+				{"maxp5ga2","106,106,106,106", 0},                                                                    
+				{"subvid","0x14e4", 0},                                                                               
+				{"sb20in80and160lr5glpo","0", 0},                                                                     
+				{"sb40and80lr5ghpo","0", 0},                                                                          
+				{"mcsbw805glpo","BA768600", 0},                                                                       
+				{"pdgain2g","4", 0},                                                                                  
+				{"sb20in80and160lr5ghpo","0", 0},                                                                     
+				{"tssifloor2g","0x3ff", 0},                                                                           
+				{"tempsense_slope","0xff", 0},                                                                        
+				{"mcsbw805ghpo","0xBA768600", 0},                                                                     
+				{"antswitch","0", 0},                                                                                 
+				{"aga0","0", 0},                                                                                      
+				{"aga1","0", 0},                                                                                      
+				{"rawtempsense","0x1ff", 0},                                                                          
+				{"aga2","0", 0},                                                                                      
+				{"tempthresh","255", 0},                                                                              
+				{"tworangetssi2g","0", 0},                                                                            
+				{"dot11agduphrpo","0", 0},                                                                            
+				{"sb40and80hr5glpo","0", 0},                                                                          
+				{"sromrev","11", 0},                                                                                  
+				{"boardnum","20507", 0},                                                                              
+				{"sb20in40lrpo","0", 0},                                                                              
+				{"rxgains2gtrelnabypa0","0", 0},                                                                      
+				{"rxgains2gtrelnabypa1","0", 0},                                                                      
+				{"sb20in80and160hr5glpo","0", 0},                                                                     
+				{"mcsbw1605glpo","0", 0},                                                                             
+				{"rxgains2gtrelnabypa2","0", 0},                                                                      
+				{"sb40and80hr5ghpo","0", 0},                                                                          
+				{"mcsbw405glpo","BA768600", 0},                                                                       
+				{"rpcal2g","0", 0},                                                                                   
+				{"dot11agofdmhrbw202gpo","0", 0},                                                                     
+				{"aa2g","7", 0},                                                                                      
+				{"boardrev","0x1451", 0},                                                                             
+				{"mcsbw1605ghpo","0", 0},                                                                             
+				{"rxgains5gmtrisoa0","5", 0},                                                                         
+				{"sb20in80and160hr5ghpo","0", 0},                                                                     
+				{"rxgains5gmtrisoa1","4", 0},                                                                         
+				{"rxgains5gmtrisoa2","4", 0},                                                                         
+				{"rxgains5gmtrelnabypa0","1", 0},                                                                     
+				{"vpapdcap2g","0", 0},                                                                                 
+				{"rxgains5gmtrelnabypa1","1", 0},                                                                     
+				{"rxgains5gmtrelnabypa2","1", 0},                                                                     
+				{"mcsbw405ghpo","0xBA768600", 0},                                                                     
+				{"tssiposslope2g","1", 0},                                                                            
+				{"maxp2ga0","76", 0},                                                                                 
+				{"maxp2ga1","76", 0},                                                                                 
+				{"maxp2ga2","76", 0},                                                                                 
+				{"boardflags2","0x300002", 0},                                                                        
+				{"boardflags3","0x0", 0},                                                                             
+				{"rxgains5ghtrelnabypa0","1", 0},                                                                     
+				{"rxgains5ghtrelnabypa1","1", 0},                                                                     
+				{"rxgains5ghtrelnabypa2","1", 0},                                                                     
+				{"regrev","53", 0},                                                                                   
+				{"rpcal5gb0","0x7005", 0},                                                                            
+				{"rpcal5gb1","0x8403", 0},                                                                            
+				{"rpcal5gb2","0x6ff9", 0},                                                                            
+				{"sar2g","18", 0},                                                                                    
+				{"rpcal5gb3","0x8509", 0},                                                                            
+				{"temps_hysteresis","15", 0},
+				{"rxgains5gtrelnabypa0","1", 0},
+				{"rxgains5gtrelnabypa1","1", 0},
+				{"rxgains5gtrelnabypa2","1", 0},
+				{"pdoffset2g40mvalid","1", 0},
+				{0, 0, 0}
+			};
+
+			/*
+			* set router's extra parameters 
+			*/
+			extra_params = r7000_pci_2_1_params;
+			while (extra_params->name) {
+				nvram_nset(extra_params->value, "pci/2/1/%s",
+					  extra_params->name);
+				extra_params++;
+			}
+		}
+		break;
 	case ROUTER_ASUS_AC67U:
 		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
 			int deadcount = 10;
