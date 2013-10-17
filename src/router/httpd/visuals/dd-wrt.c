@@ -623,7 +623,7 @@ void ej_show_paypal(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<input type=\"hidden\" name=\"currency_code\" value=\"EUR\" />");
 	websWrite(wp, "<input type=\"hidden\" name=\"lc\" value=\"en\" />");
 	websWrite(wp, "<input type=\"hidden\" name=\"tax\" value=\"0\" />");
-	websWrite(wp, "<input type=\"image\" src=\"images/paypal.gif\" name=\"submit\" />");
+	websWrite(wp, "<input type=\"image\" src=\"images/paypal.png\" name=\"submit\" />");
 	websWrite(wp, "</form>");
 	//websWrite(wp,
 	//        "<br /><script type=\"text/javascript\">Capture(donate.mb)</script><br />\n");
