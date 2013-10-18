@@ -94,6 +94,7 @@ void start_ftpsrv(void)
 		"UseReverseDNS   off\n"
 		"IdentLookups    off\n"
 		"RootLogin       on\n"
+		"AllowOverwrite  on\n"
 		"<Limit SITE_CHMOD>\n" "  DenyAll\n" "</Limit>\n" "DelayEngine     off\n" "WtmpLog         off\n" "DefaultRoot     ~\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("proftpd_port"));
 
 	samba3shares = getsamba3shares();
@@ -119,7 +120,6 @@ void start_ftpsrv(void)
 			goto nextshare;
 		}
 		fprintf(fp, "<Directory      %s/*>\n", cs->mp);
-		fprintf(fp, "  AllowOverwrite  on\n");
 		fprintf(fp, "   <Limit WRITE>\n");
 		fprintf(fp, "%s", !strcmp(cs->access_perms, "ro") ? "DenyAll\n" : "\n");
 		fprintf(fp, "   </Limit>\n");
