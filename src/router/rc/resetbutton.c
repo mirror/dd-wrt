@@ -1172,8 +1172,6 @@ void period_check(int sig)
 #elif defined(HAVE_WHRHPGN) || defined(HAVE_WZRG300NH) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450)
 					led_control(LED_DIAG, LED_ON);
 #endif
-
-					eval("erase", "nvram");
 #ifdef HAVE_BUFFALO_SA
 					nvram_set("sv_restore_defaults", "1");
 					if (region_sa)
