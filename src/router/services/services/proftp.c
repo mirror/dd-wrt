@@ -95,6 +95,8 @@ void start_ftpsrv(void)
 		"IdentLookups    off\n"
 		"RootLogin       on\n"
 		"AllowOverwrite  on\n"
+		"AllowRetrieveRestart  on\n"
+		"AllowStoreRestart  on\n"
 		"<Limit SITE_CHMOD>\n" "  DenyAll\n" "</Limit>\n" "DelayEngine     off\n" "WtmpLog         off\n" "DefaultRoot     ~\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("proftpd_port"));
 
 	samba3shares = getsamba3shares();
