@@ -38,7 +38,12 @@
 
 				partition@50000 {
 					label = "linux";
-					reg = <0x50000 0x7a0000>;
+					reg = <0x50000 0x5b0000>;
+				};
+
+				partition@600000 {
+					label = "User_CFG";
+					reg = <0x600000 0x100000>;
 				};
 
 				partition@7f0000 {
