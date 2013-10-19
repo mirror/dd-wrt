@@ -766,7 +766,7 @@ void period_check(int sig)
 		if ((fp = fopen(GPIO_FILE, "r"))) {
 #ifdef HAVE_XSCALE
 			fscanf(fp, "%d", &val);
-#else
+#else			
 			if (brand == ROUTER_NETGEAR_WGR614L)	//gpio 7 power led shared with reset button
 			{
 				set_gpio(7, 1);	//disable power led
@@ -1069,7 +1069,7 @@ void period_check(int sig)
 	case ROUTER_NETGEAR_R6300:
 		sesgpio = 0x105;	// gpio 5, inversed
 		break;
-	case Router_NETGEAR_R7000:
+	case ROUTER_NETGEAR_R7000:
 		sesgpio = 0x104;
 		wifigpio = 0x105;
 		break;
