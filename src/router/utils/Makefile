@@ -173,16 +173,19 @@ else
 ifneq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_RT2880),y)
 ifeq ($(CONFIG_BCMMODERN),y)
+ifeq ($(PLATFORM),arm)
+	install -D wl.modern.arm $(INSTALLDIR)/utils/usr/sbin/wl
+else
 	install -D wl.modern $(INSTALLDIR)/utils/usr/sbin/wl
+endif
 	chmod +s $(INSTALLDIR)/utils/usr/sbin/wl
 else
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BCMMODERN),y)
-ifeq ($(CONFIG_PLATFORM),arm)
+ifeq ($(PLATFORM),arm)
 	install -D wl.modern.arm $(INSTALLDIR)/utils/usr/sbin/wl
 else
 	install -D wl.modern $(INSTALLDIR)/utils/usr/sbin/wl
-
 endif
 	chmod +s $(INSTALLDIR)/utils/usr/sbin/wl
 else
