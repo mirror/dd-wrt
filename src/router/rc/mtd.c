@@ -255,6 +255,10 @@ int mtd_write(const char *path, const char *mtd)
 			mtd = "linux2";
 			nvram_set("bootpartition", "0");
 			nvram_commit();
+		}else{
+			mtd = "linux2";
+			nvram_set("bootpartition", "1");
+			nvram_commit();		
 		}
 		break;
 	case ROUTER_NETGEAR_WGR614L:
