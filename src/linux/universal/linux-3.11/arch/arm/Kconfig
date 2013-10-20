@@ -1417,6 +1417,11 @@ config BCM47XX
         bool "Support for Broadcom BCM47XX processors"
         depends on BCM947XX
 
+config FAILSAFE_UPGRADE
+        bool "Failsafe Upgrades"
+        depends on BCM947XX
+        default n
+
 endmenu
 
 menu "Bus support"
