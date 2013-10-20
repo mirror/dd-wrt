@@ -248,6 +248,7 @@ int mtd_write(const char *path, const char *mtd)
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
+	unsigned long trxhd = STORE32_LE(TRX_MAGIC);
 	switch (brand) {
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
@@ -277,7 +278,6 @@ int mtd_write(const char *path, const char *mtd)
 	case ROUTER_BELKIN_F7D3302:
 	case ROUTER_BELKIN_F7D4302:
 	case ROUTER_BELKIN_F5D8235V3:
-		unsigned long trxhd = STORE32_LE(TRX_MAGIC);
 
 		if ((fp = fopen("/dev/mtdblock/1", "rb"))) {
 			fread(&trxhd, 4, 1, fp);
