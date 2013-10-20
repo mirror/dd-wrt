@@ -243,6 +243,8 @@ static char *filter[] = { "lan_ifnames",
 	"nvram_space",
 	"pmon_date",
 	"bl_version",
+	"HW_ver",
+	"ATEMODE",
 	NULL
 };
 
