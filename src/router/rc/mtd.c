@@ -82,16 +82,16 @@ static unsigned long calculate_checksum(int action, char *s, int size);
 #define NETGEAR_CHK_MAGIC			0x5E24232A
 
 struct __attribute__((__packed__)) chk_header {
-	uint32_t 	magic;
-	uint32_t 	header_len;
-	uint8_t  	reserved[8];
-	uint32_t 	kernel_chksum;
-	uint32_t 	rootfs_chksum;
-	uint32_t 	kernel_len;
-	uint32_t 	rootfs_len;
-	uint32_t 	image_chksum;
-	uint32_t 	header_chksum;
-	
+	uint32_t magic;
+	uint32_t header_len;
+	uint8_t reserved[8];
+	uint32_t kernel_chksum;
+	uint32_t rootfs_chksum;
+	uint32_t kernel_len;
+	uint32_t rootfs_len;
+	uint32_t image_chksum;
+	uint32_t header_chksum;
+
 };
 
 /* 
@@ -248,7 +248,16 @@ int mtd_write(const char *path, const char *mtd)
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
-	if (brand == ROUTER_NETGEAR_WGR614L) {
+	switch (brand) {
+	case ROUTER_BUFFALO_WZR900DHP:
+	case ROUTER_BUFFALO_WZR600DHP2:
+		if (nvram_match("bootpartition", "1")) {
+			mtd = "linux2";
+			nvram_set("bootpartition", "0");
+			nvram_commit();
+		}
+		break;
+	case ROUTER_NETGEAR_WGR614L:
 		if ((fp = fopen("/dev/mtdblock/1", "rb")))
 			count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
 		else
@@ -258,18 +267,21 @@ int mtd_write(const char *path, const char *mtd)
 		fseek(fp, trx.offsets[0], SEEK_SET);
 		fread(lzmaloader, WGR614_LZMA_LOADER_SIZE, 1, fp);
 		fclose(fp);
-	}
+		break;
 #ifdef HAVE_BCMMODERN
-	unsigned long trxhd = STORE32_LE(TRX_MAGIC);
+	case ROUTER_BELKIN_F7D3301:
+	case ROUTER_BELKIN_F7D3302:
+	case ROUTER_BELKIN_F7D4302:
+	case ROUTER_BELKIN_F5D8235V3:
+		unsigned long trxhd = STORE32_LE(TRX_MAGIC);
 
-	if (brand == ROUTER_BELKIN_F7D3301 || brand == ROUTER_BELKIN_F7D3302 || brand == ROUTER_BELKIN_F7D4302 || brand == ROUTER_BELKIN_F5D8235V3) {
 		if ((fp = fopen("/dev/mtdblock/1", "rb"))) {
 			fread(&trxhd, 4, 1, fp);
 			fclose(fp);
 		}
-	}
+		break;
 #endif
-
+	}
 	nvram_set("flash_active", "1");
 	sleep(1);
 
@@ -284,20 +296,19 @@ int mtd_write(const char *path, const char *mtd)
 		return -1;
 	memcpy(&trx, &etrx.trx, sizeof(struct trx_header));
 #else
-	  
-	if ((fp = fopen(path, "r"))){
-	  
+
+	if ((fp = fopen(path, "r"))) {
+
 		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
-		
-		if(trx.magic == NETGEAR_CHK_MAGIC)
-		{
+
+		if (trx.magic == NETGEAR_CHK_MAGIC) {
 			fprintf(stderr, "Netgear chk format detected\n");
 			char board_id[18];
 			safe_fread(&trx, 1, sizeof(struct chk_header) - sizeof(struct trx_header), fp);
 			safe_fread(board_id, 1, sizeof(board_id), fp);
-			
+
 			switch (brand) {
-			
+
 			case ROUTER_NETGEAR_WNDR4000:
 				if (strncmp(board_id, "U12H181T00_NETGEAR", sizeof(board_id))) {
 					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H181T00_NETGEAR");
@@ -319,7 +330,7 @@ int mtd_write(const char *path, const char *mtd)
 					return -1;
 				}
 				break;
-			case ROUTER_NETGEAR_R6300: 	
+			case ROUTER_NETGEAR_R6300:
 				if (strncmp(board_id, "U12H218T00_NETGEAR", sizeof(board_id))) {
 					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H218T00_NETGEAR");
 					fclose(fp);
@@ -331,10 +342,10 @@ int mtd_write(const char *path, const char *mtd)
 				fclose(fp);
 				return -1;
 			}
-						
+
 			count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
 		}
-		
+
 	} else {
 		return -1;
 	}
