@@ -56,6 +56,8 @@
 #include <siutils.h>
 #include <hndnand.h>
 #include <nand_core.h>
+#include <bcmnvram.h>
+#include <bcmutils.h>
 
 /*
  * Because the bcm_nflash doesn't consider second chip case,
@@ -1017,11 +1019,23 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 	int offset = 0;
 	struct nand_chip *chip = mtd->priv;
 	struct brcmnand_mtd *brcmnand = chip->priv;
+	int isbufdual=0;
+	uint boardnum = bcm_strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
 	knldev = soc_knl_dev((void *)brcmnand->sih);
 	if (knldev == SOC_KNLDEV_NANDFLASH)
 		offset = NFL_BOOT_OS_SIZE;
 
+	if ((boardnum == 2013012401 || boardnum == 2013083001 || boardnum == 2013032101) && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")) {
+		printk(KERN_EMERG "Buffalo WZR-900DHP dualboot\n");
+		isbufdual = 1;
+	}
+
+	if (nvram_get("bootpartition") && isbufdual) {
+		offset = 0x4800000;
+		size -= 0x100000;
+	}
 	ASSERT(size > offset);
 
 	brcmnand_parts[0].offset = offset;
