@@ -41,7 +41,7 @@
 #include <trxhdr.h>
 #ifdef HNDCTF
 #include <ctf/hndctf.h>
-#endif /* HNDCTF */
+#endif				/* HNDCTF */
 #include <hndsflash.h>
 #ifdef CONFIG_MTD_NFLASH
 #include <hndnand.h>
@@ -64,24 +64,21 @@ ctf_t *kcih = NULL;
 EXPORT_SYMBOL(kcih);
 ctf_attach_t ctf_attach_fn = NULL;
 EXPORT_SYMBOL(ctf_attach_fn);
-#endif /* HNDCTF */
-
-
+#endif				/* HNDCTF */
 
 /* This is the main reference clock 25MHz from external crystal */
 static struct clk clk_ref = {
 	.name = "Refclk",
 	.rate = 25 * 1000000,	/* run-time override */
 	.fixed = 1,
-	.type	= CLK_XTAL,
+	.type = CLK_XTAL,
 };
-
 
 static struct clk_lookup board_clk_lookups[] = {
 	{
-	.con_id		= "refclk",
-	.clk		= &clk_ref,
-	}
+	 .con_id = "refclk",
+	 .clk = &clk_ref,
+	 }
 };
 
 extern int _memsize;
@@ -91,33 +88,31 @@ extern int _memsize;
 
 void printch(int c)
 {
-putc(c);
-flush();
+	putc(c);
+	flush();
 }
 #endif
 void __init board_map_io(void)
 {
-early_printk("board_map_io\n");
+	early_printk("board_map_io\n");
 	/* Install clock sources into the lookup table */
-	clkdev_add_table(board_clk_lookups, 
-			ARRAY_SIZE(board_clk_lookups));
+	clkdev_add_table(board_clk_lookups, ARRAY_SIZE(board_clk_lookups));
 
 	/* Map SoC specific I/O */
-	soc_map_io( &clk_ref );
+	soc_map_io(&clk_ref);
 }
-
 
 void __init board_init_irq(void)
 {
-early_printk("board_init_irq\n");
+	early_printk("board_init_irq\n");
 	soc_init_irq();
-	
+
 	/* serial_setup(sih); */
 }
 
 void board_init_timer(void)
 {
-early_printk("board_init_timer\n");
+	early_printk("board_init_timer\n");
 	soc_init_timer();
 }
 
@@ -134,8 +129,7 @@ static int __init rootfs_mtdblock(void)
 	knldev = soc_knl_dev((void *)sih);
 
 	/* NANDBOOT */
-	if (bootdev == SOC_BOOTDEV_NANDFLASH &&
-	    knldev == SOC_KNLDEV_NANDFLASH) {
+	if (bootdev == SOC_BOOTDEV_NANDFLASH && knldev == SOC_KNLDEV_NANDFLASH) {
 #ifdef CONFIG_FAILSAFE_UPGRADE
 		if (img_boot && simple_strtol(img_boot, NULL, 10))
 			return 5;
@@ -147,8 +141,7 @@ static int __init rootfs_mtdblock(void)
 	}
 
 	/* SFLASH/PFLASH only */
-	if (bootdev != SOC_BOOTDEV_NANDFLASH &&
-	    knldev != SOC_KNLDEV_NANDFLASH) {
+	if (bootdev != SOC_BOOTDEV_NANDFLASH && knldev != SOC_KNLDEV_NANDFLASH) {
 #ifdef CONFIG_FAILSAFE_UPGRADE
 		if (img_boot && simple_strtol(img_boot, NULL, 10))
 			return 4;
@@ -158,7 +151,6 @@ static int __init rootfs_mtdblock(void)
 		return 2;
 #endif
 	}
-
 #ifdef BCMCONFMTD
 	block++;
 #endif
@@ -167,10 +159,10 @@ static int __init rootfs_mtdblock(void)
 		block += 2;
 #endif
 	/* Boot from norflash and kernel in nandflash */
-	return block+3;
+	return block + 3;
 }
 
-#define WATCHDOG_MIN    3000    /* milliseconds */
+#define WATCHDOG_MIN    3000	/* milliseconds */
 extern int panic_timeout;
 extern int panic_on_oops;
 static int watchdog = 0;
@@ -180,10 +172,10 @@ static void __init brcm_setup(void)
 	/* Get global SB handle */
 	sih = si_kattach(SI_OSH);
 
-//	if (strncmp(boot_command_line, "root=/dev/mtdblock", strlen("root=/dev/mtdblock")) == 0)
-//		sprintf(saved_root_name, "/dev/mtdblock%d", rootfs_mtdblock());
+//      if (strncmp(boot_command_line, "root=/dev/mtdblock", strlen("root=/dev/mtdblock")) == 0)
+//              sprintf(saved_root_name, "/dev/mtdblock%d", rootfs_mtdblock());
 	/* Set watchdog interval in ms */
-        watchdog = simple_strtoul(nvram_safe_get("watchdog"), NULL, 0);
+	watchdog = simple_strtoul(nvram_safe_get("watchdog"), NULL, 0);
 
 	/* Ensure at least WATCHDOG_MIN */
 	if ((watchdog > 0) && (watchdog < WATCHDOG_MIN))
@@ -195,11 +187,11 @@ void soc_watchdog(void)
 {
 	if (watchdog > 0)
 		si_watchdog_ms(sih, watchdog);
- }
+}
 
 void __init board_init(void)
 {
-early_printk("board_init\n");
+	early_printk("board_init\n");
 	brcm_setup();
 	/*
 	 * Add common platform devices that do not have board dependent HW
@@ -210,17 +202,16 @@ early_printk("board_init\n");
 	return;
 }
 
-void __init board_fixup(struct tag *t, char **cmdline,struct meminfo *mi)
+void __init board_fixup(struct tag *t, char **cmdline, struct meminfo *mi)
 {
-        early_printk("board_fixup\n" );
-        
-	u32 mem_size, lo_size ;
-        early_printk("board_fixup\n" );
+	early_printk("board_fixup\n");
+
+	u32 mem_size, lo_size;
+	early_printk("board_fixup\n");
 
 	/* Fuxup reference clock rate */
-//	if (desc->nr == MACH_TYPE_BRCM_NS_QT )
-//		clk_ref.rate = 17594;	/* Emulator ref clock rate */
-
+//      if (desc->nr == MACH_TYPE_BRCM_NS_QT )
+//              clk_ref.rate = 17594;   /* Emulator ref clock rate */
 
 	mem_size = _memsize;
 
@@ -256,9 +247,7 @@ void __init bcm47xx_adjust_zones(unsigned long *size, unsigned long *hole)
 	hole[ZONE_NORMAL] = hole[0];
 	hole[ZONE_DMA] = 0;
 }
-#endif /* CONFIG_ZONE_DMA */
-
-
+#endif				/* CONFIG_ZONE_DMA */
 
 //#if (( (IO_BASE_VA >>18) & 0xfffc) != 0x3c40)
 //#error IO_BASE_VA 
@@ -272,60 +261,53 @@ void brcm_reset(char mode, const char *cmd)
 	hnd_cpu_reset(sih);
 }
 
-
 MACHINE_START(BRCM_NS, "Northstar Prototype")
-//   .phys_io = 					/* UART I/O mapping */
-//	IO_BASE_PA,
-//   .io_pg_offst = 				/* for early debug */
-//	(IO_BASE_VA >>18) & 0xfffc,
-    .smp		= smp_ops(brcm_smp_ops),
-   .fixup = board_fixup,			/* Opt. early setup_arch() */
-   .map_io = board_map_io,			/* Opt. from setup_arch() */
-   .init_irq = board_init_irq,			/* main.c after setup_arch() */
-   .init_time  = board_init_timer,			/* main.c after IRQs */
-   .init_machine = board_init,			/* Late archinitcall */
-   .atag_offset = CONFIG_BOARD_PARAMS_PHYS,
-    .restart	= brcm_reset,
-#ifdef CONFIG_ZONE_DMA 
-   .dma_zone_size	= SZ_128M,
+//   .phys_io =                                         /* UART I/O mapping */
+//      IO_BASE_PA,
+//   .io_pg_offst =                             /* for early debug */
+//      (IO_BASE_VA >>18) & 0xfffc,
+    .smp = smp_ops(brcm_smp_ops),.fixup = board_fixup,	/* Opt. early setup_arch() */
+    .map_io = board_map_io,	/* Opt. from setup_arch() */
+    .init_irq = board_init_irq,	/* main.c after setup_arch() */
+    .init_time = board_init_timer,	/* main.c after IRQs */
+    .init_machine = board_init,	/* Late archinitcall */
+    .atag_offset = CONFIG_BOARD_PARAMS_PHYS,.restart = brcm_reset,
+#ifdef CONFIG_ZONE_DMA
+    .dma_zone_size = SZ_128M,
 #endif
-MACHINE_END
-
+    MACHINE_END
 #ifdef	CONFIG_MACH_BRCM_NS_QT
 MACHINE_START(BRCM_NS_QT, "Northstar Emulation Model")
-//   .phys_io = 					/* UART I/O mapping */
-//	IO_BASE_PA,
-//   .io_pg_offst = 				/* for early debug */
-//	(IO_BASE_VA >>18) & 0xfffc,
-   .fixup = board_fixup,			/* Opt. early setup_arch() */
-   .map_io = board_map_io,			/* Opt. from setup_arch() */
-   .init_irq = board_init_irq,			/* main.c after setup_arch() */
-   .init_time  = board_init_timer,			/* main.c after IRQs */
-   .init_machine = board_init,			/* Late archinitcall */
-   .atag_offset = CONFIG_BOARD_PARAMS_PHYS,
-    .restart	= brcm_reset,
-#ifdef CONFIG_ZONE_DMA 
-   .dma_zone_size	= SZ_128M,
+//   .phys_io =                                         /* UART I/O mapping */
+//      IO_BASE_PA,
+//   .io_pg_offst =                             /* for early debug */
+//      (IO_BASE_VA >>18) & 0xfffc,
+.fixup = board_fixup,		/* Opt. early setup_arch() */
+    .map_io = board_map_io,	/* Opt. from setup_arch() */
+    .init_irq = board_init_irq,	/* main.c after setup_arch() */
+    .init_time = board_init_timer,	/* main.c after IRQs */
+    .init_machine = board_init,	/* Late archinitcall */
+    .atag_offset = CONFIG_BOARD_PARAMS_PHYS,.restart = brcm_reset,
+#ifdef CONFIG_ZONE_DMA
+    .dma_zone_size = SZ_128M,
 #endif
-MACHINE_END
+    MACHINE_END
 #endif
-
-
 #ifdef CONFIG_MTD
-
 static spinlock_t *bcm_mtd_lock = NULL;
 
 spinlock_t *partitions_lock_init(void)
 {
 	if (!bcm_mtd_lock) {
-		bcm_mtd_lock = (spinlock_t *)kzalloc(sizeof(spinlock_t), GFP_KERNEL);
+		bcm_mtd_lock = (spinlock_t *) kzalloc(sizeof(spinlock_t), GFP_KERNEL);
 		if (!bcm_mtd_lock)
 			return NULL;
 
-		spin_lock_init( bcm_mtd_lock );
+		spin_lock_init(bcm_mtd_lock);
 	}
 	return bcm_mtd_lock;
 }
+
 EXPORT_SYMBOL(partitions_lock_init);
 
 static struct nand_hw_control *nand_hwcontrol = NULL;
@@ -341,18 +323,19 @@ struct nand_hw_control *nand_hwcontrol_lock_init(void)
 	}
 	return nand_hwcontrol;
 }
+
 EXPORT_SYMBOL(nand_hwcontrol_lock_init);
 
-
 /* Find out prom size */
-static uint32 boot_partition_size(uint32 flash_phys) {
+static uint32 boot_partition_size(uint32 flash_phys)
+{
 	uint32 bootsz, *bisz;
 
 	/* Default is 256K boot partition */
 	bootsz = 256 * 1024;
 
 	/* Do we have a self-describing binary image? */
-	bisz = (uint32 *)(flash_phys + BISZ_OFFSET);
+	bisz = (uint32 *) (flash_phys + BISZ_OFFSET);
 	if (bisz[BISZ_MAGIC_IDX] == BISZ_MAGIC) {
 		int isz = bisz[BISZ_DATAEND_IDX] - bisz[BISZ_TXTST_IDX];
 
@@ -368,7 +351,7 @@ static uint32 boot_partition_size(uint32 flash_phys) {
 	return bootsz;
 }
 
-size_t rootfssize=0;
+size_t rootfssize = 0;
 
 #if defined(BCMCONFMTD)
 #define MTD_PARTS 1
@@ -388,7 +371,8 @@ size_t rootfssize=0;
 /* boot;nvram;kernel;rootfs;empty */
 #define FLASH_PARTS_NUM	(6+MTD_PARTS+PLC_PARTS+FAILSAFE_PARTS)
 
-static struct mtd_partition bcm947xx_flash_parts[FLASH_PARTS_NUM+1] = {{0}};
+static struct mtd_partition bcm947xx_flash_parts[FLASH_PARTS_NUM + 1] = { {0} };
+
 static uint lookup_flash_rootfs_offset(struct mtd_info *mtd, int *trx_off, size_t size)
 {
 	struct romfs_super_block *romfsb;
@@ -399,10 +383,10 @@ static uint lookup_flash_rootfs_offset(struct mtd_info *mtd, int *trx_off, size_
 	int off;
 	size_t len;
 
-	romfsb = (struct romfs_super_block *) buf;
-	cramfsb = (struct cramfs_super *) buf;
-	squashfsb = (void *) buf;
-	trx = (struct trx_header *) buf;
+	romfsb = (struct romfs_super_block *)buf;
+	cramfsb = (struct cramfs_super *)buf;
+	squashfsb = (void *)buf;
+	trx = (struct trx_header *)buf;
 
 	/* Look at every 64 KB boundary */
 	for (off = 0; off < size; off += (64 * 1024)) {
@@ -411,8 +395,7 @@ static uint lookup_flash_rootfs_offset(struct mtd_info *mtd, int *trx_off, size_
 		/*
 		 * Read block 0 to test for romfs and cramfs superblock
 		 */
-		if (mtd_read(mtd, off, sizeof(buf), &len, buf) ||
-		    len != sizeof(buf))
+		if (mtd_read(mtd, off, sizeof(buf), &len, buf) || len != sizeof(buf))
 			continue;
 
 		/* Try looking at TRX header for rootfs offset */
@@ -430,27 +413,20 @@ static uint lookup_flash_rootfs_offset(struct mtd_info *mtd, int *trx_off, size_
 		}
 
 		/* romfs is at block zero too */
-		if (romfsb->word0 == ROMSB_WORD0 &&
-		    romfsb->word1 == ROMSB_WORD1) {
-			printk(KERN_NOTICE
-			       "%s: romfs filesystem found at block %d\n",
-			       mtd->name, off / mtd->erasesize);
+		if (romfsb->word0 == ROMSB_WORD0 && romfsb->word1 == ROMSB_WORD1) {
+			printk(KERN_NOTICE "%s: romfs filesystem found at block %d\n", mtd->name, off / mtd->erasesize);
 			break;
 		}
 
 		/* so is cramfs */
 		if (cramfsb->magic == CRAMFS_MAGIC) {
-			printk(KERN_NOTICE
-			       "%s: cramfs filesystem found at block %d\n",
-			       mtd->name, off / mtd->erasesize);
+			printk(KERN_NOTICE "%s: cramfs filesystem found at block %d\n", mtd->name, off / mtd->erasesize);
 			break;
 		}
 
 		if (squashfsb->s_magic == SQUASHFS_MAGIC) {
 			rootfssize = squashfsb->bytes_used;
-			printk(KERN_NOTICE
-			       "%s: squash filesystem found at block %d\n",
-			       mtd->name, off / mtd->erasesize);
+			printk(KERN_NOTICE "%s: squash filesystem found at block %d\n", mtd->name, off / mtd->erasesize);
 			break;
 		}
 	}
@@ -458,8 +434,7 @@ static uint lookup_flash_rootfs_offset(struct mtd_info *mtd, int *trx_off, size_
 	return off;
 }
 
-struct mtd_partition *
-init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
+struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_info *mtd, size_t size)
 {
 	int bootdev;
 	int knldev;
@@ -469,7 +444,7 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 	uint vmlz_off, knl_size;
 	uint32 top = 0;
 	uint32 bootsz;
-	uint32 maxsize=0;
+	uint32 maxsize = 0;
 #ifdef CONFIG_FAILSAFE_UPGRADE
 	char *img_boot = nvram_get(BOOTPARTITION);
 	char *imag_1st_offset = nvram_get(IMAGE_FIRST_OFFSET);
@@ -481,28 +456,28 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 	/* The image_1st_size and image_2nd_size are necessary if the Flash does not have any
 	 * image
 	 */
+
 	dual_image_on = (img_boot != NULL && imag_1st_offset != NULL && imag_2nd_offset != NULL);
 
 	if (dual_image_on) {
 		image_first_offset = simple_strtol(imag_1st_offset, NULL, 10);
 		image_second_offset = simple_strtol(imag_2nd_offset, NULL, 10);
-		printk("The first offset=%x, 2nd offset=%x\n", image_first_offset,
-			image_second_offset);
+		printk("The first offset=%x, 2nd offset=%x\n", image_first_offset, image_second_offset);
 
 	}
-#endif	/* CONFIG_FAILSAFE_UPGRADE */
-	
-	if (nvram_match("boardnum","24") && nvram_match("boardtype", "0x0646")
+#endif				/* CONFIG_FAILSAFE_UPGRADE */
+
+	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("gpio7", "wps_button")) {
-	    maxsize = 0x200000;
-	    size = maxsize;
+		maxsize = 0x200000;
+		size = maxsize;
 	}
-	
-	if (nvram_match("boardnum","32") && nvram_match("boardtype", "0x0665")
-	    && nvram_match("boardrev", "0x1301") ) {
-	    maxsize = 0x200000;
-	    size = maxsize;
+
+	if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x0665")
+	    && nvram_match("boardrev", "0x1301")) {
+		maxsize = 0x200000;
+		size = maxsize;
 	}
 
 	bootdev = soc_boot_dev((void *)sih);
@@ -510,7 +485,7 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 
 	if (bootdev == SOC_BOOTDEV_NANDFLASH) {
 		/* Do not init MTD partitions on NOR flash when NAND boot */
-		return NULL;	
+		return NULL;
 	}
 
 	if (knldev != SOC_KNLDEV_NANDFLASH) {
@@ -520,14 +495,14 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 		bcm947xx_flash_parts[nparts].name = "boot";
 		bcm947xx_flash_parts[nparts].size = vmlz_off;
 		bcm947xx_flash_parts[nparts].offset = top;
-//		bcm947xx_flash_parts[nparts].mask_flags =  MTD_WRITEABLE; /* forces on read only */
+//              bcm947xx_flash_parts[nparts].mask_flags =  MTD_WRITEABLE; /* forces on read only */
 		nparts++;
 
 		/* Setup kernel MTD partition */
 		bcm947xx_flash_parts[nparts].name = "linux";
 #ifdef CONFIG_FAILSAFE_UPGRADE
 		if (dual_image_on) {
-			bcm947xx_flash_parts[nparts].size = image_second_offset-image_first_offset;
+			bcm947xx_flash_parts[nparts].size = image_second_offset - image_first_offset;
 		} else {
 			bcm947xx_flash_parts[nparts].size = mtd->size - vmlz_off;
 
@@ -538,13 +513,13 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 			bcm947xx_flash_parts[nparts].size -= ROUNDUP(0x1000, mtd->erasesize);
 #endif
 #ifdef BCMCONFMTD
-			bcm947xx_flash_parts[nparts].size -= (mtd->erasesize *4);
+			bcm947xx_flash_parts[nparts].size -= (mtd->erasesize * 4);
 #endif
 		}
 #else
 
 		bcm947xx_flash_parts[nparts].size = mtd->size - vmlz_off;
-		
+
 #ifdef PLC
 		/* Reserve for PLC */
 		bcm947xx_flash_parts[nparts].size -= ROUNDUP(0x1000, mtd->erasesize);
@@ -553,14 +528,14 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 		bcm947xx_flash_parts[nparts].size -= ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 
 #ifdef BCMCONFMTD
-		bcm947xx_flash_parts[nparts].size -= (mtd->erasesize *4);
+		bcm947xx_flash_parts[nparts].size -= (mtd->erasesize * 4);
 #endif
-#endif	/* CONFIG_FAILSAFE_UPGRADE */
+#endif				/* CONFIG_FAILSAFE_UPGRADE */
 		bcm947xx_flash_parts[nparts].offset = vmlz_off;
 		knl_size = bcm947xx_flash_parts[nparts].size;
 		offset = bcm947xx_flash_parts[nparts].offset + knl_size;
-		nparts++; 
-		
+		nparts++;
+
 		/* Setup rootfs MTD partition */
 		bcm947xx_flash_parts[nparts].name = "rootfs";
 		bcm947xx_flash_parts[nparts].offset = rfs_off;
@@ -571,7 +546,7 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 		offs -= bcm947xx_flash_parts[nparts].offset;
 		bcm947xx_flash_parts[nparts].size = offs;
 
-		bcm947xx_flash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
+		bcm947xx_flash_parts[nparts].mask_flags = MTD_WRITEABLE;	/* forces on read only */
 		nparts++;
 #ifdef CONFIG_FAILSAFE_UPGRADE
 		if (dual_image_on) {
@@ -585,7 +560,7 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 			bcm947xx_flash_parts[nparts].size -= ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 
 #ifdef BCMCONFMTD
-			bcm947xx_flash_parts[nparts].size -= (mtd->erasesize *4);
+			bcm947xx_flash_parts[nparts].size -= (mtd->erasesize * 4);
 #endif
 #ifdef PLC
 			/* Reserve for PLC */
@@ -598,25 +573,24 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 
 			/* Setup rootfs MTD partition */
 			bcm947xx_flash_parts[nparts].name = "rootfs2";
-			bcm947xx_flash_parts[nparts].size =
-				knl_size - (rfs_off - image_second_offset);
+			bcm947xx_flash_parts[nparts].size = knl_size - (rfs_off - image_second_offset);
 			bcm947xx_flash_parts[nparts].offset = rfs_off;
 			/* forces on read only */
 			bcm947xx_flash_parts[nparts].mask_flags = MTD_WRITEABLE;
 			nparts++;
 		}
-#endif	/* CONFIG_FAILSAFE_UPGRADE */
+#endif				/* CONFIG_FAILSAFE_UPGRADE */
 
 	} else {
 		bootsz = boot_partition_size(sfl_info->base);
 		printk("Boot partition size = %d(0x%x)\n", bootsz, bootsz);
 		/* Size pmon */
 		if (maxsize)
-		    bootsz = maxsize;
+			bootsz = maxsize;
 		bcm947xx_flash_parts[nparts].name = "boot";
 		bcm947xx_flash_parts[nparts].size = bootsz;
 		bcm947xx_flash_parts[nparts].offset = top;
-//		bcm947xx_flash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
+//              bcm947xx_flash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
 		offset = bcm947xx_flash_parts[nparts].size;
 		nparts++;
 	}
@@ -628,32 +602,30 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 	bcm947xx_flash_parts[nparts].offset = offset;
 	offset = bcm947xx_flash_parts[nparts].offset + bcm947xx_flash_parts[nparts].size;
 	nparts++;
-#endif	/* BCMCONFMTD */
+#endif				/* BCMCONFMTD */
 
 #ifdef PLC
 	/* Setup plc MTD partition */
 	bcm947xx_flash_parts[nparts].name = "plc";
 	bcm947xx_flash_parts[nparts].size = ROUNDUP(0x1000, mtd->erasesize);
-	bcm947xx_flash_parts[nparts].offset =
-		size - (ROUNDUP(NVRAM_SPACE, mtd->erasesize) + ROUNDUP(0x1000, mtd->erasesize));
+	bcm947xx_flash_parts[nparts].offset = size - (ROUNDUP(NVRAM_SPACE, mtd->erasesize) + ROUNDUP(0x1000, mtd->erasesize));
 	nparts++;
 #endif
-	if (rootfssize)
-	{
-	bcm947xx_flash_parts[nparts].name = "ddwrt";
-	bcm947xx_flash_parts[nparts].offset = bcm947xx_flash_parts[2].offset + bcm947xx_flash_parts[2].size;
-	bcm947xx_flash_parts[nparts].offset += (mtd->erasesize - 1);
-	bcm947xx_flash_parts[nparts].offset &= ~(mtd->erasesize - 1);
-	bcm947xx_flash_parts[nparts].size = (size - bcm947xx_flash_parts[nparts].offset) - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
-	nparts++;	
+	if (rootfssize) {
+		bcm947xx_flash_parts[nparts].name = "ddwrt";
+		bcm947xx_flash_parts[nparts].offset = bcm947xx_flash_parts[2].offset + bcm947xx_flash_parts[2].size;
+		bcm947xx_flash_parts[nparts].offset += (mtd->erasesize - 1);
+		bcm947xx_flash_parts[nparts].offset &= ~(mtd->erasesize - 1);
+		bcm947xx_flash_parts[nparts].size = (size - bcm947xx_flash_parts[nparts].offset) - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		nparts++;
 	}
 	/* Setup nvram MTD partition */
 	bcm947xx_flash_parts[nparts].name = "nvram";
 	bcm947xx_flash_parts[nparts].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	if (maxsize)
-	    bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
-	    else
-	    bcm947xx_flash_parts[nparts].offset = size - bcm947xx_flash_parts[nparts].size;
+		bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
+	else
+		bcm947xx_flash_parts[nparts].offset = size - bcm947xx_flash_parts[nparts].size;
 	nparts++;
 
 	return bcm947xx_flash_parts;
@@ -661,14 +633,13 @@ init_mtd_partitions(hndsflash_t *sfl_info, struct mtd_info *mtd, size_t size)
 
 EXPORT_SYMBOL(init_mtd_partitions);
 
-#endif /* CONFIG_MTD_PARTITIONS */
+#endif				/* CONFIG_MTD_PARTITIONS */
 
 #ifdef CONFIG_MTD_NFLASH
 #define NFLASH_PARTS_NUM 7
-static struct mtd_partition bcm947xx_nflash_parts[NFLASH_PARTS_NUM] = {{0}};
+static struct mtd_partition bcm947xx_nflash_parts[NFLASH_PARTS_NUM] = { {0} };
 
-static uint
-lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, size_t size)
+static uint lookup_nflash_rootfs_offset(hndnand_t * nfl, struct mtd_info *mtd, int offset, size_t size)
 {
 	struct romfs_super_block *romfsb;
 	struct cramfs_super *cramfsb;
@@ -687,23 +658,22 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 		return 0;
 	}
 
-	romfsb = (struct romfs_super_block *) buf;
-	cramfsb = (struct cramfs_super *) buf;
-	squashfsb = (void *) buf;
-	squashfsb2 = (void *) &buf[0x60];
-	trx = (struct trx_header *) buf;
+	romfsb = (struct romfs_super_block *)buf;
+	cramfsb = (struct cramfs_super *)buf;
+	squashfsb = (void *)buf;
+	squashfsb2 = (void *)&buf[0x60];
+	trx = (struct trx_header *)buf;
 
 	/* Look at every block boundary till 16MB; higher space is reserved for application data. */
-	
-	rbsize = blocksize = mtd->erasesize;//65536;
 
-	if (nvram_match("boardnum","24") && nvram_match("boardtype", "0x0646")
+	rbsize = blocksize = mtd->erasesize;	//65536;
+
+	if (nvram_match("boardnum", "24") && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("gpio7", "wps_button")) {
 		printk(KERN_INFO "DIR-686L Hack for detecting filesystems\n");
 		blocksize = 65536;
 	}
-
 
 	printk("lookup_nflash_rootfs_offset: offset = 0x%x, 0x%x\n", offset, blocksize);
 	for (off = offset; off < offset + size; off += blocksize) {
@@ -713,8 +683,7 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 			continue;
 		memset(buf, 0xe5, pagesize);
 		if ((ret = hndnand_read(nfl, off, pagesize, buf)) != pagesize) {
-			printk(KERN_NOTICE
-			       "%s: nflash_read return %d\n", mtd->name, ret);
+			printk(KERN_NOTICE "%s: nflash_read return %d\n", mtd->name, ret);
 			continue;
 		}
 
@@ -726,42 +695,33 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 			romfsb = (struct romfs_super_block *)((unsigned char *)romfsb + shift);
 			cramfsb = (struct cramfs_super *)((unsigned char *)cramfsb + shift);
 			squashfsb = (struct squashfs_super_block *)
-				((unsigned char *)squashfsb + shift);
+			    ((unsigned char *)squashfsb + shift);
 			squashfsb2 = NULL;
 			printk(KERN_INFO "found TRX Header on nflash!\n");
 			continue;
 		}
 
 		/* romfs is at block zero too */
-		if (romfsb->word0 == ROMSB_WORD0 &&
-		    romfsb->word1 == ROMSB_WORD1) {
-			printk(KERN_NOTICE
-			       "%s: romfs filesystem found at block %d\n",
-			       mtd->name, off / blocksize);
+		if (romfsb->word0 == ROMSB_WORD0 && romfsb->word1 == ROMSB_WORD1) {
+			printk(KERN_NOTICE "%s: romfs filesystem found at block %d\n", mtd->name, off / blocksize);
 			break;
 		}
 
 		/* so is cramfs */
 		if (cramfsb->magic == CRAMFS_MAGIC) {
-			printk(KERN_NOTICE
-			       "%s: cramfs filesystem found at block %d\n",
-			       mtd->name, off / blocksize);
+			printk(KERN_NOTICE "%s: cramfs filesystem found at block %d\n", mtd->name, off / blocksize);
 			break;
 		}
-		
+
 		if (squashfsb->s_magic == SQUASHFS_MAGIC) {
 			rootfssize = squashfsb->bytes_used;
-			printk(KERN_NOTICE
-			       "%s: squash filesystem with lzma found at block %d\n",
-			       mtd->name, off / blocksize);
+			printk(KERN_NOTICE "%s: squash filesystem with lzma found at block %d\n", mtd->name, off / blocksize);
 			break;
 		}
 		if (squashfsb2 && squashfsb2->s_magic == SQUASHFS_MAGIC) {
 			rootfssize = squashfsb2->bytes_used;
-			off+=0x60;
-			printk(KERN_NOTICE
-			       "%s: squash filesystem with lzma found at block %d\n",
-			       mtd->name, off / blocksize);
+			off += 0x60;
+			printk(KERN_NOTICE "%s: squash filesystem with lzma found at block %d\n", mtd->name, off / blocksize);
 			break;
 		}
 
@@ -773,8 +733,7 @@ lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, int offset, si
 	return shift + off;
 }
 
-struct mtd_partition *
-init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
+struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_info *mtd, size_t size)
 {
 	int bootdev;
 	int knldev;
@@ -794,16 +753,19 @@ init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
 	/* The image_1st_size and image_2nd_size are necessary if the Flash does not have any
 	 * image
 	 */
+	if (imag_1st_offset == NULL)
+		imag_1st_offset = "0x200000";
+	if (imag_2nd_offset == NULL)
+		imag_2nd_offset = "0x2100000";
 	dual_image_on = (img_boot != NULL && imag_1st_offset != NULL && imag_2nd_offset != NULL);
 
 	if (dual_image_on) {
 		image_first_offset = simple_strtol(imag_1st_offset, NULL, 10);
 		image_second_offset = simple_strtol(imag_2nd_offset, NULL, 10);
-		printk("The first offset=%x, 2nd offset=%x\n", image_first_offset,
-			image_second_offset);
+		printk("The first offset=%x, 2nd offset=%x\n", image_first_offset, image_second_offset);
 
 	}
-#endif	/* CONFIG_FAILSAFE_UPGRADE */
+#endif				/* CONFIG_FAILSAFE_UPGRADE */
 
 	bootdev = soc_boot_dev((void *)sih);
 	knldev = soc_knl_dev((void *)sih);
@@ -823,7 +785,7 @@ init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
 		bcm947xx_nflash_parts[nparts].name = "boot";
 		bcm947xx_nflash_parts[nparts].size = bootsz;
 		bcm947xx_nflash_parts[nparts].offset = top;
-//		bcm947xx_nflash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
+//              bcm947xx_nflash_parts[nparts].mask_flags = MTD_WRITEABLE; /* forces on read only */
 		offset = bcm947xx_nflash_parts[nparts].size;
 		nparts++;
 
@@ -838,38 +800,44 @@ init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
 
 	if (knldev == SOC_KNLDEV_NANDFLASH) {
 		/* Setup kernel MTD partition */
-		bcm947xx_nflash_parts[nparts].name = "linux";
 #ifdef CONFIG_FAILSAFE_UPGRADE
 		if (dual_image_on) {
-			bcm947xx_nflash_parts[nparts].size =
-				image_second_offset - image_first_offset;
+			if (!strcmp(img_boot, "1"))
+				bcm947xx_nflash_parts[nparts].name = "linux2";
+			else
+				bcm947xx_nflash_parts[nparts].name = "linux";
+			bcm947xx_nflash_parts[nparts].size = image_second_offset - image_first_offset;
 		} else
 #endif
 		{
-			bcm947xx_nflash_parts[nparts].size =
-				nparts ? (NFL_BOOT_OS_SIZE - NFL_BOOT_SIZE) : NFL_BOOT_OS_SIZE;
+			bcm947xx_nflash_parts[nparts].name = "linux";
+			bcm947xx_nflash_parts[nparts].size = nparts ? (NFL_BOOT_OS_SIZE - NFL_BOOT_SIZE) : NFL_BOOT_OS_SIZE;
 		}
 		bcm947xx_nflash_parts[nparts].offset = offset;
 
-		shift = lookup_nflash_rootfs_offset(nfl, mtd, offset,
-			bcm947xx_nflash_parts[nparts].size);
+		shift = lookup_nflash_rootfs_offset(nfl, mtd, offset, bcm947xx_nflash_parts[nparts].size);
 
 #ifdef CONFIG_FAILSAFE_UPGRADE
 		if (dual_image_on)
 			offset = image_second_offset;
 		else
 #endif
-		offset = NFL_BOOT_OS_SIZE;
+			offset = NFL_BOOT_OS_SIZE;
 		nparts++;
 
 		/* Setup rootfs MTD partition */
-		bcm947xx_nflash_parts[nparts].name = "rootfs";
 #ifdef CONFIG_FAILSAFE_UPGRADE
-		if (dual_image_on)
+		if (dual_image_on) {
+			if (!strcmp(img_boot, "1"))
+				bcm947xx_nflash_parts[nparts].name = "rootfs2";
+			else
+				bcm947xx_nflash_parts[nparts].name = "rootfs";
 			bcm947xx_nflash_parts[nparts].size = image_second_offset - shift;
-		else
+		} else {
 #endif
-		bcm947xx_nflash_parts[nparts].size = NFL_BOOT_OS_SIZE - shift;
+			bcm947xx_nflash_parts[nparts].name = "rootfs";
+			bcm947xx_nflash_parts[nparts].size = NFL_BOOT_OS_SIZE - shift;
+		}
 		bcm947xx_nflash_parts[nparts].offset = shift;
 		bcm947xx_nflash_parts[nparts].mask_flags = MTD_WRITEABLE;
 
@@ -878,35 +846,55 @@ init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size)
 #ifdef CONFIG_FAILSAFE_UPGRADE
 		/* Setup 2nd kernel MTD partition */
 		if (dual_image_on) {
-			bcm947xx_nflash_parts[nparts].name = "linux2";
+			if (!strcmp(img_boot, "1"))
+				bcm947xx_nflash_parts[nparts].name = "linux2";
+			else
+				bcm947xx_nflash_parts[nparts].name = "linux";
+
 			bcm947xx_nflash_parts[nparts].size = NFL_BOOT_OS_SIZE - image_second_offset;
 			bcm947xx_nflash_parts[nparts].offset = image_second_offset;
-			shift = lookup_nflash_rootfs_offset(nfl, mtd, image_second_offset,
-			                                    bcm947xx_nflash_parts[nparts].size);
+			shift = lookup_nflash_rootfs_offset(nfl, mtd, image_second_offset, bcm947xx_nflash_parts[nparts].size);
 			nparts++;
 			/* Setup rootfs MTD partition */
-			bcm947xx_nflash_parts[nparts].name = "rootfs2";
+			if (!strcmp(img_boot, "1"))
+				bcm947xx_nflash_parts[nparts].name = "rootfs2";
+			else
+				bcm947xx_nflash_parts[nparts].name = "rootfs";
+
 			bcm947xx_nflash_parts[nparts].size = NFL_BOOT_OS_SIZE - shift;
 			bcm947xx_nflash_parts[nparts].offset = shift;
 			bcm947xx_nflash_parts[nparts].mask_flags = MTD_WRITEABLE;
+			if (!strcmp(img_boot, "1")) {
+				// now lets swap the crap
+				struct mtd_partition temp;
+				// swap rootfs
+				memcpy(&temp, &bcm947xx_nflash_parts[nparts], sizeof(temp));
+				memcpy(&bcm947xx_nflash_parts[nparts], &bcm947xx_nflash_parts[nparts - 2], sizeof(temp));
+				memcpy(&bcm947xx_nflash_parts[nparts - 2], &temp, sizeof(temp));
+				// swap kernel enty
+				memcpy(&temp, &bcm947xx_nflash_parts[nparts - 1], sizeof(temp));
+				memcpy(&bcm947xx_nflash_parts[nparts - 1], &bcm947xx_nflash_parts[nparts - 3], sizeof(temp));
+				memcpy(&bcm947xx_nflash_parts[nparts - 3], &temp, sizeof(temp));
+
+			}
 			nparts++;
+
 		}
-#endif	/* CONFIG_FAILSAFE_UPGRADE */
+#endif				/* CONFIG_FAILSAFE_UPGRADE */
 
 	}
 #if 0
-	if (rootfssize)
-	{
-	bcm947xx_nflash_parts[nparts].name = "ddwrt";
-	bcm947xx_nflash_parts[nparts].offset = bcm947xx_nflash_parts[3].offset + bcm947xx_nflash_parts[3].size;
-	bcm947xx_nflash_parts[nparts].offset += (mtd->erasesize - 1);
-	bcm947xx_nflash_parts[nparts].offset &= ~(mtd->erasesize - 1);
-	bcm947xx_nflash_parts[nparts].size = (size - bcm947xx_nflash_parts[nparts].offset) - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
-	nparts++;	
+	if (rootfssize) {
+		bcm947xx_nflash_parts[nparts].name = "ddwrt";
+		bcm947xx_nflash_parts[nparts].offset = bcm947xx_nflash_parts[nparts - 1].offset + bcm947xx_nflash_parts[nparts - 1].size;
+		bcm947xx_nflash_parts[nparts].offset += (mtd->erasesize - 1);
+		bcm947xx_nflash_parts[nparts].offset &= ~(mtd->erasesize - 1);
+		bcm947xx_nflash_parts[nparts].size = (size - bcm947xx_nflash_parts[nparts].offset) - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		nparts++;
 	}
 #endif
 	return bcm947xx_nflash_parts;
 }
 
 EXPORT_SYMBOL(init_nflash_mtd_partitions);
-#endif /* CONFIG_MTD_NFLASH */
+#endif				/* CONFIG_MTD_NFLASH */
