@@ -135,12 +135,6 @@ void start_sysinit(void)
 	switch (getRouterBrand()) {
 	case ROUTER_NETGEAR_R6250:
 
-		nvram_set("vlan1hwname", "et0");
-		nvram_set("vlan2hwname", "et0");
-		nvram_set("vlan1ports", "3 2 1 0 5*");
-		nvram_set("vlan2ports", "4 5u");
-		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
-
 		nvram_set("radiooff_button", "1");
 		if (nvram_get("clkfreq") == NULL)	//set it only if it doesnt exist
 			nvram_set("clkfreq", "800");
@@ -640,9 +634,9 @@ void start_sysinit(void)
 				extra_params++;
 			}
 		}
-		eval("gpio", "enable", "4");
-		eval("gpio", "enable", "5");
-		eval("gpio", "enable", "6");
+		set_gpio(4,1);
+		set_gpio(5,1);
+		set_gpio(6,1);
 		break;
 	case ROUTER_ASUS_AC67U:
 		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
@@ -1019,6 +1013,8 @@ void start_sysinit(void)
 			nvram_set("pci/1/1/vendid", "0x14E4");
 
 		}
+		set_gpio(7, 1);	// fixup wifi button
+		set_gpio(15, 1);	// fixup ses button
 		break;
 	case ROUTER_BUFFALO_WZR1750:
 		nvram_default_get("wl_country_code", "US");
