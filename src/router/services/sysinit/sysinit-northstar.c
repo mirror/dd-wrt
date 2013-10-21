@@ -365,9 +365,12 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_R7000:
 		nvram_set("vlan1hwname", "et0");
 		nvram_set("vlan2hwname", "et0");
+		nvram_set("vlan0ports", "");
+		nvram_set("vlan0hwname", "");
 		nvram_set("vlan1ports", "4 3 2 1 5*");
 		nvram_set("vlan2ports", "0 5u");
 		nvram_set("lan_ifnames", "vlan1 eth1 eth2");
+		nvram_set("wan_ifname", "vlan2");
 
 		if (nvram_get("pci/1/1/vendid") == NULL) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
@@ -645,6 +648,8 @@ void start_sysinit(void)
 				extra_params++;
 			}
 		}
+		eval("gpio", "enable", "4");
+		eval("gpio", "enable", "5");
 		eval("gpio", "enable", "6");
 		break;
 	case ROUTER_ASUS_AC67U:
