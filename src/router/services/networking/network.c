@@ -500,7 +500,7 @@ static int wlconf_up(char *name)
 		val = TXPWR_DEFAULT;
 	char pwr[8];
 	sprintf(pwr, "%d", val);
-#if defined(HAVE_BUFFALO) && defined(BCMMODERN)
+#if defined(HAVE_BUFFALO) && defined(HAVE_BCMMODERN)
 	eval("wl", "-i", name, "txpwr1", "-m");
 #else
 	eval("wl", "-i", name, "txpwr1", "-m", "-o", pwr);
