@@ -1029,6 +1029,7 @@ void start_sysinit(void)
 		nvram_default_get("wl1_country_rev", "0");
 		nvram_set("0:ledbh12", "7");
 		nvram_set("1:ledbh10", "7");
+		set_gpio(12, 1);	// fixup ses button
 		break;
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
@@ -1042,6 +1043,7 @@ void start_sysinit(void)
 		nvram_set("1:boardflags2", "0x00001000");
 		nvram_set("0:ledbh12", "7");
 		nvram_set("1:ledbh10", "7");
+		set_gpio(9, 1);	// fixup ses button
 		break;
 
 	default:
