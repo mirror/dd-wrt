@@ -2873,15 +2873,6 @@ static void save_prefix(webs_t wp, char *prefix)
 			else
 				nvram_set("wl1_ssid", wl);
 		}
-#ifdef HAVE_BUFFALO
-		// legal power limit
-		sprintf(n, "%s_txpwr", prefix);
-		char *txpwr = websGetVar(wp, n, NULL);
-		if (atoi(txpwr) > 71)
-			nvram_set(n, "71");
-		else
-			nvram_set(n, txpwr);
-#endif
 	}
 	copytonv(wp, "%s_distance", prefix);
 #ifdef HAVE_MADWIFI
