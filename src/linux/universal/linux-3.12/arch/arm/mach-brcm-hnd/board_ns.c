@@ -761,10 +761,12 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 	/* The image_1st_size and image_2nd_size are necessary if the Flash does not have any
 	 * image
 	 */
+	if (isbufdual) {
 	if (imag_1st_offset == NULL)
 		imag_1st_offset = "0x200000";
 	if (imag_2nd_offset == NULL)
 		imag_2nd_offset = "0x2100000";
+	}
 	dual_image_on = (img_boot != NULL && imag_1st_offset != NULL && imag_2nd_offset != NULL);
 
 	if (dual_image_on) {
