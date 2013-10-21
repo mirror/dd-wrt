@@ -5167,6 +5167,15 @@ int led_control(int type, int act)
 		wlan0_gpio = 0x10b;	// radio led blue
 		break;
 	case ROUTER_NETGEAR_R7000:
+	  	power_gpio = 0x102;	// power led green
+		diag_gpio = 0x103;	// power led orange	
+		connected_gpio = 0x109;	// wan led green
+		//usb_power = 0x015;	// usb enable
+		wlan0_gpio = 0x10d;	// radio 0 
+		wlan1_gpio = 0x10c;	// radio 1 
+		ses_gpio = 0x10e;	//wps led
+		usb_gpio = 0x111;	//usb1 
+		usb_gpio1 = 0x112;	//usb2 
 		break;
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
