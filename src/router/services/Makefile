@@ -291,6 +291,9 @@ ifeq ($(CONFIG_SPOTPASS),y)
 CFLAGS_EXTRA += -DHAVE_SPOTPASS
 OBJS += spotpass.o
 endif
+ifeq ($(CONFIG_BCMMODERN),y)
+CFLAGS_EXTRA += -DHAVE_BCMMODERN
+endif
 ifeq ($(CONFIG_3G),y)
 CFLAGS_EXTRA += -DHAVE_3G
 endif
