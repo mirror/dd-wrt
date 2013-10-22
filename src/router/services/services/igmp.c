@@ -43,6 +43,16 @@ void start_igmp_proxy(void)
 	if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
 		fprintf(fp, "phyint %s disabled\n", get_wan_face());
+#ifdef HAVE_PPTP
+	} else if (nvram_match("wan_proto", "pptp") && nvram_get("tvnicfrom")) {
+		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
+		fprintf(fp, "phyint %s disabled\n", get_wan_face());
+#endif
+#ifdef HAVE_L2TP
+	} else if (nvram_match("wan_proto", "l2tp") && nvram_get("tvnicfrom")) {
+		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
+		fprintf(fp, "phyint %s disabled\n", get_wan_face());
+#endif
 	} else {
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", get_wan_face());
 	}
