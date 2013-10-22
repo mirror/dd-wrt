@@ -1895,8 +1895,8 @@ static void filter_input(void)
 	save2file("-A INPUT -p igmp -j %s\n", doMultiCast() == 0 ? log_drop : log_accept);
 
 #ifdef HAVE_UDPXY
-	if (wanactive() && nvram_match("udpxy_enable", "1"))
-		save2file("-A INPUT -i %s -p upd -d %s -j %s\n", wanface, IP_MULTICAST, log_accept);
+	if (wanactive() && nvram_match("udpxy_enable", "1") && nvram_get("tvnicfrom"))
+		save2file("-A INPUT -i %s -p udp -d %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
 
 #ifndef HAVE_MICRO
@@ -2194,6 +2194,16 @@ static void filter_forward(void)
 	if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
 		if (doMultiCast() > 0)
 			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
+#ifdef HAVE_PPTP
+	} else if (nvram_match("wan_proto", "pptp") && nvram_match("pptp_iptv", "1") && nvram_get("tvnicfrom")) {
+		if (doMultiCast() > 0)
+			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
+#endif
+#ifdef HAVE_L2TP
+	} else if (nvram_match("wan_proto", "l2tp") && nvram_match("l2tp_iptv", "1") && nvram_get("tvnicfrom")) {
+		if (doMultiCast() > 0)
+			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
+#endif
 	} else {
 		if (doMultiCast() > 0 && strlen(wanface))
 			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", wanface, IP_MULTICAST, log_accept);

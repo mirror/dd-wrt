@@ -27,6 +27,11 @@
 		<input class="spaceradio" type="radio" name="l2tp_req_auth" value="no" <% sas_nvram_checked("l2tp_req_auth", "no"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
+        <div class="label"><% tran("idx_l.iptv"); %></div>
+        <input class="spaceradio" type="radio" name="l2tp_iptv" value="1" <% nvram_checked("l2tp_iptv", "1"); %> /><% tran("share.yes"); %>&nbsp;
+        <input class="spaceradio" type="radio" name="l2tp_iptv" value="0" <% nvram_checked("l2tp_iptv", "0"); %> /><% tran("share.no"); %>
+</div>
+<div class="setting">
 	<div class="label"><% tran("idx_h.con_strgy"); %><br />&nbsp;</div>
 	<input class="spaceradio" type="radio" name="ppp_demand" value="1" onclick="ppp_enable_disable(this.form,1)" <% sas_nvram_checked("ppp_demand","1"); %> /><% tran("idx_h.max_idle"); %>&nbsp;<input class="num" size="4" maxlength="4" name="ppp_idletime" onblur="valid_range(this,1,9999,idx_h.max_idle)" value="<% nvram_selget("ppp_idletime"); %>" />&nbsp;<% tran("share.mins"); %><br />
 	<input class="spaceradio" type="radio" name="ppp_demand" value="0" onclick="ppp_enable_disable(this.form,0)" <% sas_nvram_checked("ppp_demand","0"); %> /><% tran("idx_h.alive"); %>&nbsp;<input class="num" size="4" maxlength="4" name="ppp_redialperiod" onblur="valid_range(this,20,180,idx_h.alive)" value="<% nvram_selget("ppp_redialperiod"); %>" />&nbsp;<% tran("share.secs"); %>

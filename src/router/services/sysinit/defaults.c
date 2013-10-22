@@ -1737,6 +1737,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"l2tp_req_chap", "yes", 0},	/* L2TP require chap */
 	{"l2tp_ref_pap", "yes", 0},	/* L2TP refuse pap */
 	{"l2tp_req_auth", "yes", 0},	/* L2TP require authentication */
+	{"l2tp_iptv", "0", 0},
 	{"wan_gateway_buf", "0.0.0.0", 0},	/* save the default gateway for DHCP */
 
 	{"hb_server_ip", "", 0},	/* heartbeat auth server (IP Address) */
@@ -1866,6 +1867,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptpd_radpass", "", 0},
 	{"pptpd_conn", "64", 0},
 	{"pptp_reorder", "0", 0},
+	{"pptp_iptv", "0", 0},
 	{"pptp_extraoptions", "", 0},
 	{"pptpd_mtu", "1436", 0},
 	{"pptpd_mru", "1436", 0},
