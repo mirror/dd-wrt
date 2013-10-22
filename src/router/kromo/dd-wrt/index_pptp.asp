@@ -44,6 +44,11 @@
 	<input class="spaceradio" type="radio" name="pptp_reorder" value="0" <% nvram_checked("pptp_reorder","0"); %> /><% tran("share.disable"); %>
 </div>
 <div class="setting">
+	<div class="label"><% tran("idx_pptp.iptv"); %></div>
+	<input class="spaceradio" type="radio" name="pptp_iptv" value="1" <% nvram_checked("pptp_iptv", "1"); %> /><% tran("share.yes"); %>&nbsp;
+	<input class="spaceradio" type="radio" name="pptp_iptv" value="0" <% nvram_checked("pptp_iptv", "0"); %> /><% tran("share.no"); %>
+</div>
+<div class="setting">
 	<div class="label"><% tran("idx_h.con_strgy"); %><br />&nbsp;</div>
 	<input class="spaceradio" type="radio" name="ppp_demand" value="1" onclick="ppp_enable_disable(this.form,1)" <% nvram_checked("ppp_demand","1"); %> /><% tran("idx_h.max_idle"); %>&nbsp;<input class="num" size="4" maxlength="4" name="ppp_idletime" onblur="valid_range(this,1,9999,idx_h.max_idle)" value="<% nvram_get("ppp_idletime"); %>" />&nbsp;<% tran("share.mins"); %><br />
 	<input class="spaceradio" type="radio" name="ppp_demand" value="0" onclick="ppp_enable_disable(this.form,0)" <% nvram_checked("ppp_demand","0"); %> /><% tran("idx_h.alive"); %>&nbsp;<input class="num" size="4" maxlength="4" name="ppp_redialperiod" onblur="valid_range(this,20,180,idx_h.alive)" value="<% nvram_get("ppp_redialperiod"); %>" />&nbsp;<% tran("share.secs"); %>

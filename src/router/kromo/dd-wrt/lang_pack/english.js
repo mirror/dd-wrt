@@ -928,7 +928,7 @@ idx_l.srv="Gateway (L2TP Server)";
 idx_l.req_chap="Require CHAP";
 idx_l.ref_pap="Refuse PAP";
 idx_l.req_auth="Require Authentication";
-
+idx_l.iptv="Receive IPTV";
 
 // ** index_pppoe.asp **//
 var idx_pppoe=new Object();
@@ -943,7 +943,7 @@ idx_pptp.gateway="Gateway (PPTP Server)";
 //idx_pptp.encrypt="PPTP Encryption"; //should be needed anymore. del soon
 idx_pptp.reorder="Packet Reordering";
 idx_pptp.addopt="Additional PPTP Options";
-
+idx_pptp.iptv="Receive IPTV";
 
 // ** index_static.asp **//
 var idx_static=new Object();
