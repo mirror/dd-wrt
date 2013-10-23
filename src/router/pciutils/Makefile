@@ -1,7 +1,7 @@
 # Makefile for The PCI Utilities
 # (c) 1998--2013 Martin Mares <mj@ucw.cz>
 
-CFLAGS=$(COPTS) -I$(TOP)/zlib -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes
+CFLAGS=$(COPTS) -DNEED_PRINTF -I$(TOP)/zlib -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes
 LDFLAGS=-L$(TOP)/zlib/
 VERSION=3.2.0
 DATE=2013-04-19
