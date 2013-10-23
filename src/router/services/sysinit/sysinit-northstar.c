@@ -372,7 +372,6 @@ void start_sysinit(void)
 				nvram_set("pci/2/1/macaddr", mac);
 			}
 			struct nvram_tuple r7000_pci_1_1_params[] = {
-				{"pa2gw1a0", "0x18de", 0},
 				{"pdoffset2g40ma0", "15", 0},
 				{"pdoffset2g40ma1", "15", 0},
 				{"pdoffset2g40ma2", "15", 0},
@@ -384,7 +383,7 @@ void start_sysinit(void)
 				{"rxgainerr2ga2", "31", 0},
 				{"pdoffset2g40mvalid", "1", 0},
 				{"agbg0", "71", 0},
-				{"agbg1", "1", 0},
+				{"agbg1", "71", 0},
 				{"epagain2g", "0", 0},
 				{"agbg2", "71", 0},
 				{"gainctrlsph", "0", 0},
@@ -634,9 +633,11 @@ void start_sysinit(void)
 				extra_params++;
 			}
 		}
+		//set_gpio(14,0);//wps led off
+		//set_gpio(15,0);//wlan led off
 		set_gpio(4,1);
 		set_gpio(5,1);
-		set_gpio(6,1);
+		set_gpio(6,1); //fix reset button
 		break;
 	case ROUTER_ASUS_AC67U:
 		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
