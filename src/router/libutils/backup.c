@@ -245,6 +245,7 @@ static char *filter[] = { "lan_ifnames",
 	"bl_version",
 	"HW_ver",
 	"ATEMODE",
+	"gpio0",
 	NULL
 };
 
