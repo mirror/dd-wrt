@@ -121,6 +121,13 @@ int getchannels(unsigned int *list, char *ifname)
 	list[8] = 9;
 	list[9] = 10;
 	list[10] = 11;
+#ifdef HAVE_BUFFALO
+	// temporal solution, needs to be done right
+	if (strcmp(nvram_safe_get("region"), "EU"))
+		return 11;
+	else
+#endif
+	{
 	list[11] = 12;
 	list[12] = 13;
 #ifdef BUFFALO_JP
@@ -129,6 +136,7 @@ int getchannels(unsigned int *list, char *ifname)
 #else
 	return 13;
 #endif
+	}
 }
 
 #include <sys/types.h>
