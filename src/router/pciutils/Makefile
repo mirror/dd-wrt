@@ -63,7 +63,8 @@ lib/$(PCILIB): $(PCIINC) force
 force:
 
 lib/config.h lib/config.mk:
-	cd lib && ./configure
+	@true
+#	cd lib && ./configure
 
 lspci: lspci.o ls-vpd.o ls-caps.o ls-ecaps.o ls-kernel.o ls-tree.o ls-map.o common.o lib/$(PCILIB)
 setpci: setpci.o common.o lib/$(PCILIB)
@@ -99,7 +100,7 @@ example.o: example.c $(PCIINC)
 
 clean:
 	rm -f `find . -name "*~" -o -name "*.[oa]" -o -name "\#*\#" -o -name TAGS -o -name core -o -name "*.orig"`
-	rm -f update-pciids lspci setpci example lib/config.* *.[78] pci.ids.* lib/*.pc lib/*.so lib/*.so.*
+	rm -f update-pciids lspci setpci example *.[78] pci.ids.* lib/*.pc lib/*.so lib/*.so.*
 	rm -rf maint/dist
 
 distclean: clean
