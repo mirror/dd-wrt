@@ -633,11 +633,33 @@ void start_sysinit(void)
 				extra_params++;
 			}
 		}
-		//set_gpio(14,0);//wps led off
-		//set_gpio(15,0);//wlan led off
+		set_gpio(15,1);//wlan button led on
 		set_gpio(4,1);
 		set_gpio(5,1);
 		set_gpio(6,1); //fix reset button
+		
+		if (nvram_match("wl0_country_code", "US"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("wl0_country_code", "Q2"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("wl0_country_code", "TW"))
+			set_regulation(0, "TW", "13");
+		else if (nvram_match("wl0_country_code", "CN"))
+			set_regulation(0, "CN", "1");
+		else
+			set_regulation(0, "DE", "0");
+
+		if (nvram_match("wl1_country_code", "Q2"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("wl1_country_code", "EU"))
+			set_regulation(1, "EU", "13");
+		else if (nvram_match("wl1_country_code", "TW"))
+			set_regulation(1, "TW", "13");
+		else if (nvram_match("wl1_country_code", "CN"))
+			set_regulation(1, "CN", "1");
+		else
+			set_regulation(1, "US", "0");	
+		
 		break;
 	case ROUTER_ASUS_AC67U:
 		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
