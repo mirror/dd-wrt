@@ -341,6 +341,13 @@ int mtd_write(const char *path, const char *mtd)
 					return -1;
 				}
 				break;
+			case ROUTER_NETGEAR_R7000:
+				if (strncmp(board_id, "U12H270T00_NETGEAR", sizeof(board_id))) {
+					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H270T00_NETGEAR");
+					fclose(fp);
+					return -1;
+				}
+				break;
 			default:
 				fprintf(stderr, "Error: Flash to OEM for board %s not supported yet\n", board_id);
 				fclose(fp);
