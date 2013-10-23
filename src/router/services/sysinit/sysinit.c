@@ -377,8 +377,8 @@ static void buffalo_defaults(int force)
 		if (!strcmp(region, "US")) {
 			nvram_set("wl0_country_code", "Q2");
 			nvram_set("wl0_country_rev", "41");
-			nvram_set("wl1_country_code", "Q2");
-			nvram_set("wl1_country_rev", "41");
+			nvram_set("wl1_country_code", "Q1");
+			nvram_set("wl1_country_rev", "61");
 		}
 
 		if (!strcmp(region, "EU")) {
