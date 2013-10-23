@@ -1,16 +1,15 @@
 # Makefile for The PCI Utilities
-# (c) 1998--2012 Martin Mares <mj@ucw.cz>
+# (c) 1998--2013 Martin Mares <mj@ucw.cz>
 
+CFLAGS=$(COPTS) -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes
 
-CFLAGS=$(COPTS) -Wall -W -Wno-parentheses -Wstrict-prototypes -Wmissing-prototypes -DNEED_PRINTF
-
-VERSION=3.1.9
-DATE=2012-01-14
+VERSION=3.2.0
+DATE=2013-04-19
 
 # Host OS and release (override if you are cross-compiling)
 HOST=
 RELEASE=
-#CROSS_COMPILE=
+CROSS_COMPILE=$(ARCH)-linux-uclibc-
 
 # Support for compressed pci.ids (yes/no, default: detect)
 ZLIB=
@@ -21,7 +20,11 @@ DNS=
 # Build libpci as a shared library (yes/no; or local for testing; requires GCC)
 SHARED=no
 
+# Use libkmod to resolve kernel modules on Linux (yes/no, default: detect)
+LIBKMOD=
+
 # ABI version suffix in the name of the shared library
+# (as we use proper symbol versioning, this seldom needs changing)
 ABI_VERSION=.3
 
 # Installation directories
@@ -38,11 +41,9 @@ PKGCFDIR=$(LIBDIR)/pkgconfig
 INSTALL=install
 DIRINSTALL=install -d
 STRIP=-s
-#CC=$(CROSS_COMPILE)gcc
-#AR=$(CROSS_COMPILE)ar
-#RANLIB=$(CROSS_COMPILE)ranlib
-ROOT=$(INSTALLDIR)/
-PREFIX=$(INSTALLDIR)/usr
+CC=$(CROSS_COMPILE)gcc
+AR=$(CROSS_COMPILE)ar
+RANLIB=$(CROSS_COMPILE)ranlib
 
 # Base name of the library (overriden on NetBSD, which has its own libpci)
 LIBNAME=libpci
@@ -79,6 +80,9 @@ ls-map.o: ls-map.c $(LSPCIINC)
 setpci.o: setpci.c pciutils.h $(PCIINC)
 common.o: common.c pciutils.h $(PCIINC)
 
+lspci: LDLIBS+=$(LIBKMOD_LIBS)
+ls-kernel.o: CFLAGS+=$(LIBKMOD_CFLAGS)
+
 update-pciids: update-pciids.sh
 	sed <$< >$@ "s@^DEST=.*@DEST=$(IDSDIR)/$(PCI_IDS)@;s@^PCI_COMPRESSED_IDS=.*@PCI_COMPRESSED_IDS=$(PCI_COMPRESSED_IDS)@"
 	chmod +x $@
@@ -101,18 +105,28 @@ clean:
 distclean: clean
 
 install: all
-	$(DIRINSTALL) -m 755 $(ROOT)/sbin $(PREFIX)/share
-	$(INSTALL) -c -m 755 lspci setpci $(ROOT)/sbin
-	if [ ! -f $(PREFIX)/share/pci.ids -o pci.ids -nt $(PREFIX)/share/pci.ids ] ; then \
-		$(INSTALL) -c -m 644 pci.ids $(PREFIX)/share ; \
-	elif [ -f $(PREFIX)/share/pci.ids ] ; then \
-		echo "$(PREFIX)/share/pci.ids is same or newer than the version to be installed, skipping." ; \
-	fi
+# -c is ignored on Linux, but required on FreeBSD
+	$(DIRINSTALL) -m 755 $(DESTDIR)$(SBINDIR) $(DESTDIR)$(IDSDIR) $(DESTDIR)$(MANDIR)/man8 $(DESTDIR)$(MANDIR)/man7
+	$(INSTALL) -c -m 755 $(STRIP) lspci setpci $(DESTDIR)$(SBINDIR)
+	$(INSTALL) -c -m 755 update-pciids $(DESTDIR)$(SBINDIR)
+	$(INSTALL) -c -m 644 $(PCI_IDS) $(DESTDIR)$(IDSDIR)
+	$(INSTALL) -c -m 644 lspci.8 setpci.8 update-pciids.8 $(DESTDIR)$(MANDIR)/man8
+	$(INSTALL) -c -m 644 pcilib.7 $(DESTDIR)$(MANDIR)/man7
+ifeq ($(SHARED),yes)
+	ln -sf $(PCILIB) $(DESTDIR)$(LIBDIR)/$(LIBNAME).so$(ABI_VERSION)
+endif
 
-install-lib: $(PCIINC_INS) lib/$(PCILIB) lib/$(PCILIBPC)
-	$(DIRINSTALL) -m 755 $(DESTDIR)$(INCDIR)/pci $(DESTDIR)$(LIBDIR) $(DESTDIR)$(PKGCFDIR)
-	$(INSTALL) -c -m 644 $(PCIINC_INS) $(DESTDIR)$(INCDIR)/pci
+ifeq ($(SHARED),yes)
+install: install-pcilib
+endif
+
+install-pcilib: lib/$(PCILIB)
+	$(DIRINSTALL) -m 755 $(DESTDIR)$(LIBDIR)
 	$(INSTALL) -c -m 644 lib/$(PCILIB) $(DESTDIR)$(LIBDIR)
+
+install-lib: $(PCIINC_INS) lib/$(PCILIBPC) install-pcilib
+	$(DIRINSTALL) -m 755 $(DESTDIR)$(INCDIR)/pci $(DESTDIR)$(PKGCFDIR)
+	$(INSTALL) -c -m 644 $(PCIINC_INS) $(DESTDIR)$(INCDIR)/pci
 	$(INSTALL) -c -m 644 lib/$(PCILIBPC) $(DESTDIR)$(PKGCFDIR)
 ifeq ($(SHARED),yes)
 	ln -sf $(LIBNAME).so$(ABI_VERSION) $(DESTDIR)$(LIBDIR)/$(LIBNAME).so

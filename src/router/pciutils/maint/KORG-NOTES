@@ -1,0 +1,4 @@
+# Notes for uploading on kernel.org
+gzip -d <pciutils-3.1.10.tar.gz >pciutils-3.1.10.tar
+gpg --armor --detach-sign pciutils-3.1.10.tar -o pciutils-3.1.10.tar.sig
+~/tree/kup/kup put pciutils-3.1.10.tar.gz pciutils-3.1.10.tar.sig /pub/software/utils/pciutils/pciutils-3.1.10.tar.gz
