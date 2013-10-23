@@ -122,12 +122,6 @@ aix_bus_number(char *name)
 
 /* Method entries */
 
-static void
-aix_config(struct pci_access *a)
-{
-  a->method_params[PCI_ACCESS_AIX_DEVICE] = NULL;
-}
-
 static int
 aix_detect(struct pci_access *a)
 {
@@ -207,7 +201,7 @@ aix_scan(struct pci_access *a)
   int bus_number;
   byte busmap[256];
 
-  bzero(busmap, sizeof(busmap));
+  memset(busmap, 0, sizeof(busmap));
   for (i = 0; i < pci_bus_count; i++)
     {
       bus_number = pci_buses[i].bus_number;
@@ -222,8 +216,12 @@ static int
 aix_read(struct pci_dev *d, int pos, byte *buf, int len)
 {
   struct mdio mdio;
-  int fd = aix_bus_open(d->access, d->bus);
+  int fd;
 
+  if (pos + len > 256)
+    return 0;
+
+  fd = aix_bus_open(d->access, d->bus);
   mdio.md_addr = (ulong) pos;
   mdio.md_size = len;
   mdio.md_incr = MV_BYTE;
@@ -232,7 +230,7 @@ aix_read(struct pci_dev *d, int pos, byte *buf, int len)
 
   if (ioctl(fd, MIOPCFGET, &mdio) < 0)
     d->access->error("aix_read: ioctl(MIOPCFGET) failed");
-  
+
   return 1;
 }
 
@@ -240,8 +238,12 @@ static int
 aix_write(struct pci_dev *d, int pos, byte *buf, int len)
 {
   struct mdio mdio;
-  int fd = aix_bus_open(d->access, d->bus);
+  int fd;
 
+  if (pos + len > 256)
+    return 0;
+
+  fd = aix_bus_open(d->access, d->bus);
   mdio.md_addr = (ulong) pos;
   mdio.md_size = len;
   mdio.md_incr = MV_BYTE;
@@ -257,8 +259,9 @@ aix_write(struct pci_dev *d, int pos, byte *buf, int len)
 }
 
 struct pci_methods pm_aix_device = {
-  "AIX-device",
-  aix_config,
+  "aix-device",
+  "AIX /dev/pci[0-n]",
+  NULL,
   aix_detect,
   aix_init,
   aix_cleanup,
@@ -266,6 +269,7 @@ struct pci_methods pm_aix_device = {
   pci_generic_fill_info,
   aix_read,
   aix_write,
+  NULL,                                 /* read_vpd */
   NULL,                                 /* dev_init */
   NULL                                  /* dev_cleanup */
 };

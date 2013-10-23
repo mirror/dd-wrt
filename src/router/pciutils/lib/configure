@@ -1,4 +1,9 @@
 #!/bin/sh
+# Configuration script for the PCI library
+# (c) 1998--2009 Martin Mares <mj@ucw.cz>
+
+LC_ALL=C
+export LC_ALL
 
 echo_n() {
 	if [ -n "$BASH" ]
@@ -9,80 +14,187 @@ echo_n() {
 	fi
 }
 
-echo_n "Configuring libpci for your system..."
-prefix=${1:-/usr}
-version=${2:-0.0}
-sys=Linux
-rel=2.4.32
-if [ "$sys" = "AIX" -a -x /usr/bin/oslevel -a -x /usr/sbin/lsattr ]
-then
-	rel=`/usr/bin/oslevel`
-	proc=`/usr/sbin/lsdev -C -c processor -S available -F name | head -1`
-	cpu=mipsel
-else
-	cpu=mipsel
+if [ -z "$VERSION" -o -z "$IDSDIR" ] ; then
+	echo >&2 "Please run the configure script from the top-level Makefile"
+	exit 1
 fi
-echo " $sys/$cpu $rel"
+
+echo_n "Configuring libpci for your system..."
+if [ -z "$HOST" ] ; then
+	sys=`uname -s`
+	rel=`uname -r`
+	realsys="$sys"
+	if [ "$sys" = "AIX" -a -x /usr/bin/oslevel -a -x /usr/sbin/lsattr ]
+	then
+		rel=`/usr/bin/oslevel`
+		proc=`/usr/sbin/lsdev -C -c processor -S available -F name | head -1`
+		cpu=`/usr/sbin/lsattr -F value -l $proc -a type | sed 's/_.*//'`
+	else
+		cpu=`uname -m | sed 's/^i.86$/i386/;s/^sun4u$/sparc64/;s/^i86pc$/i386/;s/^BePC$/i386/;s/^BeMac$/powerpc/;s/^BeBox$/powerpc/'`
+	fi
+	if [ "$sys" = "GNU/kFreeBSD" -o "$sys" = "DragonFly" ]
+	then
+		sys=freebsd
+	fi
+	if [ "$sys" = "CYGWIN_NT-5.1" -o "$sys" = "CYGWIN_NT-6.0" ]
+	then
+		sys=cygwin
+	fi
+	HOST=${3:-$cpu-$sys}
+fi
+[ -n "$RELEASE" ] && rel="${RELEASE}"
+# CAVEAT: tr on Solaris is a bit weird and the extra [] is otherwise harmless.
+host=`echo $HOST | sed -e 's/^\([^-]*\)-\([^-]*\)-\([^-]*\)-\([^-]*\)$/\1-\3/' -e 's/^\([^-]*\)-\([^-]*\)$/\1--\2/' | tr '[A-Z]' '[a-z]'`
+cpu=`echo $host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\1/'`
+sys=`echo $host | sed 's/^\([^-]*\)-\([^-]*\)-\(.*\)$/\3/'`
+echo " $host $rel $cpu $sys"
 
 c=config.h
-echo >$c "#define ARCH_`echo $cpu | tr 'a-z' 'A-Z'`"
-echo >>$c "#define OS_`echo $sys | tr 'a-z' 'A-Z'`"
+m=config.mk
+echo >$c '#define PCI_CONFIG_H'
+echo >>$c "#define PCI_ARCH_`echo $cpu | tr '[a-z]' '[A-Z]'`"
+echo >>$c "#define PCI_OS_`echo $sys | tr '[a-z]' '[A-Z]'`"
+echo >$m 'WITH_LIBS='
 
 echo_n "Looking for access methods..."
+LIBRESOLV=-lresolv
 
 case $sys in
-	Linux)
-		case $rel in
-			2.[1-9]*|[3-9]*)	echo_n " proc"
-						echo >>$c '#define HAVE_PM_LINUX_PROC'
-						echo >>$c '#define HAVE_LINUX_BYTEORDER_H'
-						echo >>$c '#define PATH_PROC_BUS_PCI "/proc/bus/pci"'
-						ok=1
-						;;
-		esac
+	linux*)
+		echo_n " sysfs proc"
+		echo >>$c '#define PCI_HAVE_PM_LINUX_SYSFS'
+		echo >>$c '#define PCI_HAVE_PM_LINUX_PROC'
+		echo >>$c '#define PCI_HAVE_LINUX_BYTEORDER_H'
+		echo >>$c '#define PCI_PATH_PROC_BUS_PCI "/proc/bus/pci"'
+		echo >>$c '#define PCI_PATH_SYS_BUS_PCI "/sys/bus/pci"'
 		case $cpu in
-				i386)		echo_n " i386-ports"
-						echo >>$c '#define HAVE_PM_INTEL_CONF'
-						ok=1
-						;;
-				alpha|ia64)	echo >>$c '#define HAVE_64BIT_ADDRESS'
-#						echo_n " syscalls"
-#						echo >>$c '#define HAVE_PM_SYSCALLS'
-#						ok=1
-						;;
-				sparc|sparc64)	echo >>$c '#define HAVE_64BIT_ADDRESS'
-						echo >>$c '#define HAVE_LONG_ADDRESS'
-#						echo_n " syscalls"
-#						echo >>$c '#define HAVE_PM_SYSCALLS'
-#						ok=1
+				i?86|x86_64)	echo_n " i386-ports"
+						echo >>$c '#define PCI_HAVE_PM_INTEL_CONF'
 						;;
 		esac
+		echo >>$c '#define PCI_HAVE_64BIT_ADDRESS'
 		;;
-	FreeBSD)
+	sunos)
+		case $cpu in
+				i?86)		echo_n " i386-ports"
+						echo >>$c "#define PCI_HAVE_PM_INTEL_CONF"
+						;;
+				*)
+						echo " The PCI library does not support Solaris for this architecture: $cpu"
+						exit 1
+						;;
+		esac
+		echo >>$c '#define PCI_HAVE_STDINT_H'
+		;;
+	freebsd)
 		echo_n " fbsd-device"
-		echo >>$c '#define HAVE_PM_FBSD_DEVICE'
-		echo >>$c '#define PATH_FBSD_DEVICE "/dev/pci"'
-		ok=1
+		echo >>$c '#define PCI_HAVE_PM_FBSD_DEVICE'
+		echo >>$c '#define PCI_PATH_FBSD_DEVICE "/dev/pci"'
+		if [ "$realsys" != "GNU/kFreeBSD" ] ; then
+			LIBRESOLV=
+		fi
 		;;
-	AIX)
+        openbsd)
+	        echo_n " obsd-device"
+		echo >>$c '#define PCI_HAVE_PM_OBSD_DEVICE'
+		echo >>$c '#define PCI_PATH_OBSD_DEVICE "/dev/pci"'
+		LIBRESOLV=
+		;;
+	aix)
 		echo_n " aix-device"
-		echo >>$c '#define HAVE_PM_AIX_DEVICE'
-		ok=1
+		echo >>$c '#define PCI_HAVE_PM_AIX_DEVICE'
+		echo >>$m 'CFLAGS=-g'
+		echo >>$m 'INSTALL=installbsd'
+		echo >>$m 'DIRINSTALL=mkdir -p'
 		;;
-        *)
-		echo " The PCI library currently supports only Linux, AIX and FreeBSD"
+	netbsd)
+		echo_n " nbsd-libpci"
+		echo >>$c '#define PCI_HAVE_PM_NBSD_LIBPCI'
+		echo >>$c '#define PCI_PATH_NBSD_DEVICE "/dev/pci0"'
+		echo >>$m 'LIBNAME=libpciutils'
+		echo >>$m 'WITH_LIBS+=-lpci'
+		LIBRESOLV=
+		;;
+    	gnu)
+		echo_n " i386-ports"
+		echo >>$c '#define PCI_HAVE_PM_INTEL_CONF'
+		;;
+	cygwin)
+		echo_n " i386-ports"
+		echo >>$c '#define PCI_HAVE_PM_INTEL_CONF'
+		echo >>$m 'WITH_LIBS+=-lioperm'
+		;;
+	beos|haiku)
+		case $cpu in
+				i?86|x86_64)	echo_n " i386-ports"
+						echo >>$c '#define PCI_HAVE_PM_INTEL_CONF'
+						;;
+		esac
+		echo >>$c '#define PCI_HAVE_STDINT_H'
+		;;
+	*)
+		echo " Unfortunately, your OS is not supported by the PCI Library"
 		exit 1
 		;;
 esac
 
-echo >>$c '#define HAVE_PM_DUMP'
+echo >>$c '#define PCI_HAVE_PM_DUMP'
 echo " dump"
-if [ -z "$ok" ] ; then
-	echo "WARNING: No real configuration access method is available."
+
+echo_n "Checking for zlib support... "
+if [ "$ZLIB" = yes -o "$ZLIB" = no ] ; then
+	echo "$ZLIB (set manually)"
+else
+	if [ -f /usr/include/zlib.h -o -f /usr/local/include/zlib.h ] ; then
+		ZLIB=yes
+	else
+		ZLIB=no
+	fi
+	echo "$ZLIB (auto-detected)"
 fi
-echo >>$c "#define PATH_PCI_IDS \"/usr/share/pci.ids\""
-if [ -f header.h ] ; then
-	echo >>$c '#define HAVE_OWN_HEADER_H'
+if [ "$ZLIB" = yes ] ; then
+	echo >>$c '#define PCI_COMPRESSED_IDS'
+	echo >>$c '#define PCI_IDS "pci.ids.gz"'
+	echo >>$m 'LIBZ=-lz'
+	echo >>$m 'WITH_LIBS+=$(LIBZ)'
+else
+	echo >>$c '#define PCI_IDS "pci.ids"'
 fi
-echo >>$c "#define PCILIB_VERSION \"$version\""
-sed '/^#define [^ ]*$/!d;s/^#define \(.*\)/\1=1/' <$c >config.mk
+echo >>$c "#define PCI_PATH_IDS_DIR \"$IDSDIR\""
+
+echo_n "Checking for DNS support... "
+if [ "$DNS" = yes -o "$DNS" = no ] ; then
+	echo "$DNS (set manually)"
+else
+	if [ -f /usr/include/resolv.h ] ; then
+		DNS=yes
+	else
+		DNS=no
+	fi
+	echo "$DNS (auto-detected)"
+fi
+if [ "$DNS" = yes ] ; then
+	echo >>$c "#define PCI_USE_DNS"
+	echo >>$c "#define PCI_ID_DOMAIN \"pci.id.ucw.cz\""
+	echo >>$m "WITH_LIBS+=$LIBRESOLV"
+fi
+
+echo "Checking whether to build a shared library... $SHARED (set manually)"
+if [ "$SHARED" = no ] ; then
+	echo >>$m 'PCILIB=$(LIBNAME).a'
+	echo >>$m 'LDLIBS=$(WITH_LIBS)'
+	echo >>$m 'LIB_LDLIBS='
+else
+	echo >>$m 'PCILIB=$(LIBNAME).so.$(VERSION)'
+	# We link the dependencies _to_ the library, so we do not need explicit deps in .pc
+	echo >>$m 'LDLIBS='
+	echo >>$m 'LIB_LDLIBS=$(WITH_LIBS)'
+	echo >>$c '#define PCI_SHARED_LIB'
+	if [ "$SHARED" = yes ] ; then
+		echo >>$m 'SONAME=-Wl,-soname,$(LIBNAME).so$(ABI_VERSION)'
+	fi
+fi
+echo >>$m 'PCILIBPC=$(LIBNAME).pc'
+
+echo >>$c "#define PCILIB_VERSION \"$VERSION\""
+sed '/"/{s/^#define \([^ ]*\) "\(.*\)"$/\1=\2/;p;d;};s/^#define \(.*\)/\1=1/' <$c >>$m
