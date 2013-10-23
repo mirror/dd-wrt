@@ -1,6 +1,4 @@
 /*
- *	$Id: generic.c,v 1.7 2002/03/30 15:39:25 mj Exp $
- *
  *	The PCI Library -- Generic Direct Access Functions
  *
  *	Copyright (c) 1997--2000 Martin Mares <mj@ucw.cz>
@@ -16,7 +14,7 @@ void
 pci_generic_scan_bus(struct pci_access *a, byte *busmap, int bus)
 {
   int dev, multi, ht;
-  struct pci_dev *t = pci_alloc_dev(a);
+  struct pci_dev *t;
 
   a->debug("Scanning bus %02x for devices...\n", bus);
   if (busmap[bus])
@@ -25,18 +23,19 @@ pci_generic_scan_bus(struct pci_access *a, byte *busmap, int bus)
       return;
     }
   busmap[bus] = 1;
+  t = pci_alloc_dev(a);
   t->bus = bus;
-  for(dev=0; dev<32; dev++)
+  for (dev=0; dev<32; dev++)
     {
       t->dev = dev;
       multi = 0;
-      for(t->func=0; t->func<8; t->func++)
+      for (t->func=0; !t->func || multi && t->func<8; t->func++)
 	{
 	  u32 vd = pci_read_long(t, PCI_VENDOR_ID);
 	  struct pci_dev *d;
 
 	  if (!vd || vd == 0xffffffff)
-	    break;
+	    continue;
 	  ht = pci_read_byte(t, PCI_HEADER_TYPE);
 	  if (!t->func)
 	    multi = ht & 0x80;
@@ -59,12 +58,11 @@ pci_generic_scan_bus(struct pci_access *a, byte *busmap, int bus)
 	      pci_generic_scan_bus(a, busmap, pci_read_byte(t, PCI_SECONDARY_BUS));
 	      break;
 	    default:
-	      a->debug("Device %02x:%02x.%d has unknown header type %02x.\n", d->bus, d->dev, d->func, ht);
+	      a->debug("Device %04x:%02x:%02x.%d has unknown header type %02x.\n", d->domain, d->bus, d->dev, d->func, ht);
 	    }
-	  if (!multi)
-	    break;
 	}
     }
+  pci_free_dev(t);
 }
 
 void
@@ -72,7 +70,7 @@ pci_generic_scan(struct pci_access *a)
 {
   byte busmap[256];
 
-  bzero(busmap, sizeof(busmap));
+  memset(busmap, 0, sizeof(busmap));
   pci_generic_scan_bus(a, busmap, 0);
 }
 
@@ -81,17 +79,21 @@ pci_generic_fill_info(struct pci_dev *d, int flags)
 {
   struct pci_access *a = d->access;
 
+  if ((flags & (PCI_FILL_BASES | PCI_FILL_ROM_BASE)) && d->hdrtype < 0)
+    d->hdrtype = pci_read_byte(d, PCI_HEADER_TYPE) & 0x7f;
   if (flags & PCI_FILL_IDENT)
     {
       d->vendor_id = pci_read_word(d, PCI_VENDOR_ID);
       d->device_id = pci_read_word(d, PCI_DEVICE_ID);
     }
+  if (flags & PCI_FILL_CLASS)
+      d->device_class = pci_read_word(d, PCI_CLASS_DEVICE);
   if (flags & PCI_FILL_IRQ)
     d->irq = pci_read_byte(d, PCI_INTERRUPT_LINE);
   if (flags & PCI_FILL_BASES)
     {
       int cnt = 0, i;
-      bzero(d->base_addr, sizeof(d->base_addr));
+      memset(d->base_addr, 0, sizeof(d->base_addr));
       switch (d->hdrtype)
 	{
 	case PCI_HEADER_TYPE_NORMAL:
@@ -106,41 +108,32 @@ pci_generic_fill_info(struct pci_dev *d, int flags)
 	}
       if (cnt)
 	{
-	  u16 cmd = pci_read_word(d, PCI_COMMAND);
-	  for(i=0; i<cnt; i++)
+	  for (i=0; i<cnt; i++)
 	    {
 	      u32 x = pci_read_long(d, PCI_BASE_ADDRESS_0 + i*4);
 	      if (!x || x == (u32) ~0)
 		continue;
-	      d->base_addr[i] = x;
-	      if (x & PCI_BASE_ADDRESS_SPACE_IO)
+	      if ((x & PCI_BASE_ADDRESS_SPACE) == PCI_BASE_ADDRESS_SPACE_IO)
+		d->base_addr[i] = x;
+	      else
 		{
-		  if (!a->buscentric && !(cmd & PCI_COMMAND_IO))
-		    d->base_addr[i] = 0;
-		}
-	      else if (a->buscentric || (cmd & PCI_COMMAND_MEMORY))
-		{
-		  if ((x & PCI_BASE_ADDRESS_MEM_TYPE_MASK) == PCI_BASE_ADDRESS_MEM_TYPE_64)
+		  if ((x & PCI_BASE_ADDRESS_MEM_TYPE_MASK) != PCI_BASE_ADDRESS_MEM_TYPE_64)
+		    d->base_addr[i] = x;
+		  else if (i >= cnt-1)
+		    a->warning("%04x:%02x:%02x.%d: Invalid 64-bit address seen for BAR %d.", d->domain, d->bus, d->dev, d->func, i);
+		  else
 		    {
-		      if (i >= cnt-1)
-			a->warning("%02x:%02x.%d: Invalid 64-bit address seen.", d->bus, d->dev, d->func);
-		      else
-			{
-			  u32 y = pci_read_long(d, PCI_BASE_ADDRESS_0 + (++i)*4);
-#ifdef HAVE_64BIT_ADDRESS
-			  d->base_addr[i-1] |= ((pciaddr_t) y) << 32;
+		      u32 y = pci_read_long(d, PCI_BASE_ADDRESS_0 + (++i)*4);
+#ifdef PCI_HAVE_64BIT_ADDRESS
+		      d->base_addr[i-1] = x | (((pciaddr_t) y) << 32);
 #else
-			  if (y)
-			    {
-			      a->warning("%02x:%02x.%d 64-bit device address ignored.", d->bus, d->dev, d->func);
-			      d->base_addr[i-1] = 0;
-			    }
+		      if (y)
+			a->warning("%04x:%02x:%02x.%d 64-bit device address ignored.", d->domain, d->bus, d->dev, d->func);
+		      else
+			d->base_addr[i-1] = x;
 #endif
-			}
 		    }
 		}
-	      else
-		d->base_addr[i] = 0;
 	    }
 	}
     }
@@ -159,11 +152,13 @@ pci_generic_fill_info(struct pci_dev *d, int flags)
 	}
       if (reg)
 	{
-	  u32 a = pci_read_long(d, reg);
-	  if (a & PCI_ROM_ADDRESS_ENABLE)
-	    d->rom_base_addr = a;
+	  u32 u = pci_read_long(d, reg);
+	  if (u != 0xffffffff)
+	    d->rom_base_addr = u;
 	}
     }
+  if (flags & (PCI_FILL_CAPS | PCI_FILL_EXT_CAPS))
+    flags |= pci_scan_caps(d, flags);
   return flags & ~PCI_FILL_SIZES;
 }
 

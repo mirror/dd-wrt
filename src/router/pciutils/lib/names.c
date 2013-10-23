@@ -1,338 +1,207 @@
 /*
- *	$Id: names.c,v 1.9 2002/03/30 15:39:25 mj Exp $
- *
  *	The PCI Library -- ID to Name Translation
  *
- *	Copyright (c) 1997--2002 Martin Mares <mj@ucw.cz>
+ *	Copyright (c) 1997--2008 Martin Mares <mj@ucw.cz>
  *
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <errno.h>
 
 #include "internal.h"
+#include "names.h"
 
-struct nl_entry {
-  struct nl_entry *next;
-  word id1, id2, id3, id4;
-  int cat;
-  byte *name;
-};
-
-#define NL_VENDOR 0
-#define NL_DEVICE 1
-#define NL_SUBSYSTEM 2
-#define NL_CLASS 3
-#define NL_SUBCLASS 4
-#define NL_PROGIF 5
-
-#define HASH_SIZE 1024
-
-static inline unsigned int nl_calc_hash(int cat, int id1, int id2, int id3, int id4)
+static char *id_lookup(struct pci_access *a, int flags, int cat, int id1, int id2, int id3, int id4)
 {
-  unsigned int h;
+  char *name;
 
-  h = id1 ^ id2 ^ id3 ^ id4 ^ (cat << 5);
-  h += (h >> 6);
-  return h & (HASH_SIZE-1);
-}
-
-static struct nl_entry *nl_lookup(struct pci_access *a, int num, int cat, int id1, int id2, int id3, int id4)
-{
-  unsigned int h;
-  struct nl_entry *n;
-
-  if (num)
-    return NULL;
-  h = nl_calc_hash(cat, id1, id2, id3, id4);
-  n = a->nl_hash[h];
-  while (n && (n->id1 != id1 || n->id2 != id2 || n->id3 != id3 || n->id4 != id4 || n->cat != cat))
-    n = n->next;
-  return n;
-}
-
-static int nl_add(struct pci_access *a, int cat, int id1, int id2, int id3, int id4, byte *text)
-{
-  unsigned int h = nl_calc_hash(cat, id1, id2, id3, id4);
-  struct nl_entry *n = a->nl_hash[h];
-
-  while (n && (n->id1 != id1 || n->id2 != id2 || n->id3 != id3 || n->id4 != id4 || n->cat != cat))
-    n = n->next;
-  if (n)
-    return 1;
-  n = pci_malloc(a, sizeof(struct nl_entry));
-  n->id1 = id1;
-  n->id2 = id2;
-  n->id3 = id3;
-  n->id4 = id4;
-  n->cat = cat;
-  n->name = text;
-  n->next = a->nl_hash[h];
-  a->nl_hash[h] = n;
-  return 0;
-}
-
-static void
-err_name_list(struct pci_access *a, char *msg)
-{
-  a->error("%s: %s: %s\n", a->id_file_name, msg, strerror(errno));
-}
-
-static void
-parse_name_list(struct pci_access *a)
-{
-  byte *p = a->nl_list;
-  byte *q, *r;
-  int lino = 0;
-  unsigned int id1=0, id2=0, id3=0, id4=0;
-  int cat = -1;
-
-  while (*p)
+  while (!(name = pci_id_lookup(a, flags, cat, id1, id2, id3, id4)))
     {
-      lino++;
-      q = p;
-      while (*p && *p != '\n')
-	p++;
-      if (*p == '\n')
-	*p++ = 0;
-      if (!*q || *q == '#')
-	continue;
-      r = p;
-      while (r > q && r[-1] == ' ')
-	*--r = 0;
-      r = q;
-      while (*q == '\t')
-	q++;
-      if (q == r)
+      if ((flags & PCI_LOOKUP_CACHE) && !a->id_cache_status)
 	{
-	  if (q[0] == 'C' && q[1] == ' ')
+	  if (pci_id_cache_load(a, flags))
+	    continue;
+	}
+      if (flags & PCI_LOOKUP_NETWORK)
+        {
+	  if (name = pci_id_net_lookup(a, cat, id1, id2, id3, id4))
 	    {
-	      if (strlen(q+2) < 3 ||
-		  q[4] != ' ' ||
-		  sscanf(q+2, "%x", &id1) != 1)
-		goto parserr;
-	      cat = NL_CLASS;
+	      pci_id_insert(a, cat, id1, id2, id3, id4, name, SRC_NET);
+	      pci_mfree(name);
+	      pci_id_cache_dirty(a);
 	    }
 	  else
-	    {
-	      if (strlen(q) < 5 ||
-		  q[4] != ' ' ||
-		  sscanf(q, "%x", &id1) != 1)
-		goto parserr;
-	      cat = NL_VENDOR;
-	    }
-	  id2 = id3 = id4 = 0;
-	  q += 4;
+	    pci_id_insert(a, cat, id1, id2, id3, id4, "", SRC_NET);
+	  /* We want to iterate the lookup to get the allocated ID entry from the hash */
+	  continue;
 	}
-      else if (q == r+1) 
-	switch (cat)
-	  {
-	  case NL_VENDOR:
-	  case NL_DEVICE:
-	  case NL_SUBSYSTEM:
-	    if (sscanf(q, "%x", &id2) != 1 || q[4] != ' ')
-	      goto parserr;
-	    q += 5;
-	    cat = NL_DEVICE;
-	    id3 = id4 = 0;
-	    break;
-	  case NL_CLASS:
-	  case NL_SUBCLASS:
-	  case NL_PROGIF:
-	    if (sscanf(q, "%x", &id2) != 1 || q[2] != ' ')
-	      goto parserr;
-	    q += 3;
-	    cat = NL_SUBCLASS;
-	    id3 = id4 = 0;
-	    break;
-	  default:
-	    goto parserr;
-	  }
-      else if (q == r+2)
-	switch (cat)
-	  {
-	  case NL_DEVICE:
-	  case NL_SUBSYSTEM:
-	    if (sscanf(q, "%x%x", &id3, &id4) != 2 || q[9] != ' ')
-	      goto parserr;
-	    q += 10;
-	    cat = NL_SUBSYSTEM;
-	    break;
-	  case NL_CLASS:
-	  case NL_SUBCLASS:
-	  case NL_PROGIF:
-	    if (sscanf(q, "%x", &id3) != 1 || q[2] != ' ')
-	      goto parserr;
-	    q += 3;
-	    cat = NL_PROGIF;
-	    id4 = 0;
-	    break;
-	  default:
-	    goto parserr;
-	  }
-      else
-	goto parserr;
-      while (*q == ' ')
-	q++;
-      if (!*q)
-	goto parserr;
-      if (nl_add(a, cat, id1, id2, id3, id4, q))
-	a->error("%s, line %d: duplicate entry", a->id_file_name, lino);
+      return NULL;
     }
-  return;
-
-parserr:
-  a->error("%s, line %d: parse error", a->id_file_name, lino);
+  return (name[0] ? name : NULL);
 }
 
-static void
-load_name_list(struct pci_access *a)
+static char *
+id_lookup_subsys(struct pci_access *a, int flags, int iv, int id, int isv, int isd)
 {
-  int fd;
-  struct stat st;
+  char *d = NULL;
+  if (iv > 0 && id > 0)						/* Per-device lookup */
+    d = id_lookup(a, flags, ID_SUBSYSTEM, iv, id, isv, isd);
+  if (!d)							/* Generic lookup */
+    d = id_lookup(a, flags, ID_GEN_SUBSYSTEM, isv, isd, 0, 0);
+  if (!d && iv == isv && id == isd)				/* Check for subsystem == device */
+    d = id_lookup(a, flags, ID_DEVICE, iv, id, 0, 0);
+  return d;
+}
 
-  fd = open(a->id_file_name, O_RDONLY);
-  if (fd < 0)
+static char *
+format_name(char *buf, int size, int flags, char *name, char *num, char *unknown)
+{
+  int res;
+  if ((flags & PCI_LOOKUP_NO_NUMBERS) && !name)
+    return NULL;
+  else if (flags & PCI_LOOKUP_NUMERIC)
+    res = snprintf(buf, size, "%s", num);
+  else if (!name)
+    res = snprintf(buf, size, ((flags & PCI_LOOKUP_MIXED) ? "%s [%s]" : "%s %s"), unknown, num);
+  else if (!(flags & PCI_LOOKUP_MIXED))
+    res = snprintf(buf, size, "%s", name);
+  else
+    res = snprintf(buf, size, "%s [%s]", name, num);
+  if (res >= size && size >= 4)
+    buf[size-2] = buf[size-3] = buf[size-4] = '.';
+  else if (res < 0 || res >= size)
+    return "<pci_lookup_name: buffer too small>";
+  return buf;
+}
+
+static char *
+format_name_pair(char *buf, int size, int flags, char *v, char *d, char *num)
+{
+  int res;
+  if ((flags & PCI_LOOKUP_NO_NUMBERS) && (!v || !d))
+    return NULL;
+  if (flags & PCI_LOOKUP_NUMERIC)
+    res = snprintf(buf, size, "%s", num);
+  else if (flags & PCI_LOOKUP_MIXED)
     {
-      a->numeric_ids = 1;
-      return;
+      if (v && d)
+	res = snprintf(buf, size, "%s %s [%s]", v, d, num);
+      else if (!v)
+	res = snprintf(buf, size, "Device [%s]", num);
+      else /* v && !d */
+	res = snprintf(buf, size, "%s Device [%s]", v, num);
     }
-  if (fstat(fd, &st) < 0)
-    err_name_list(a, "stat");
-  a->nl_list = pci_malloc(a, st.st_size + 1);
-  if (read(fd, a->nl_list, st.st_size) != st.st_size)
-    err_name_list(a, "read");
-  a->nl_list[st.st_size] = 0;
-  a->nl_hash = pci_malloc(a, sizeof(struct nl_entry *) * HASH_SIZE);
-  bzero(a->nl_hash, sizeof(struct nl_entry *) * HASH_SIZE);
-  parse_name_list(a);
-  close(fd);
-}
-
-void
-pci_free_name_list(struct pci_access *a)
-{
-  pci_mfree(a->nl_list);
-  a->nl_list = NULL;
-  pci_mfree(a->nl_hash);
-  a->nl_hash = NULL;
+  else
+    {
+      if (v && d)
+	res = snprintf(buf, size, "%s %s", v, d);
+      else if (!v)
+	res = snprintf(buf, size, "Device %s", num);
+      else /* v && !d */
+	res = snprintf(buf, size, "%s Device %s", v, num+5);
+    }
+  if (res >= size && size >= 4)
+    buf[size-2] = buf[size-3] = buf[size-4] = '.';
+  else if (res < 0 || res >= size)
+    return "<pci_lookup_name: buffer too small>";
+  return buf;
 }
 
 char *
-pci_lookup_name(struct pci_access *a, char *buf, int size, int flags, u32 arg1, u32 arg2, u32 arg3, u32 arg4)
+pci_lookup_name(struct pci_access *a, char *buf, int size, int flags, ...)
 {
-  int num = a->numeric_ids;
-  int res;
-  struct nl_entry *n;
+  va_list args;
+  char *v, *d, *cls, *pif;
+  int iv, id, isv, isd, icls, ipif;
+  char numbuf[16], pifbuf[32];
 
-  if (flags & PCI_LOOKUP_NUMERIC)
+  va_start(args, flags);
+
+  flags |= a->id_lookup_mode;
+  if (!(flags & PCI_LOOKUP_NO_NUMBERS))
     {
-      flags &= PCI_LOOKUP_NUMERIC;
-      num = 1;
+      if (a->numeric_ids > 1)
+	flags |= PCI_LOOKUP_MIXED;
+      else if (a->numeric_ids)
+	flags |= PCI_LOOKUP_NUMERIC;
     }
-  if (!a->nl_hash && !num)
-    {
-      load_name_list(a);
-      num = a->numeric_ids;
-    }
-  switch (flags)
+  if (flags & PCI_LOOKUP_MIXED)
+    flags &= ~PCI_LOOKUP_NUMERIC;
+
+  if (!a->id_hash && !(flags & (PCI_LOOKUP_NUMERIC | PCI_LOOKUP_SKIP_LOCAL)) && !a->id_load_failed)
+    pci_load_name_list(a);
+
+  switch (flags & 0xffff)
     {
     case PCI_LOOKUP_VENDOR:
-      if (n = nl_lookup(a, num, NL_VENDOR, arg1, 0, 0, 0))
-	return n->name;
-      else
-	res = snprintf(buf, size, "%04x", arg1);
-      break;
+      iv = va_arg(args, int);
+      sprintf(numbuf, "%04x", iv);
+      return format_name(buf, size, flags, id_lookup(a, flags, ID_VENDOR, iv, 0, 0, 0), numbuf, "Vendor");
     case PCI_LOOKUP_DEVICE:
-      if (n = nl_lookup(a, num, NL_DEVICE, arg1, arg2, 0, 0))
-	return n->name;
-      else
-	res = snprintf(buf, size, "%04x", arg2);
-      break;
+      iv = va_arg(args, int);
+      id = va_arg(args, int);
+      sprintf(numbuf, "%04x", id);
+      return format_name(buf, size, flags, id_lookup(a, flags, ID_DEVICE, iv, id, 0, 0), numbuf, "Device");
     case PCI_LOOKUP_VENDOR | PCI_LOOKUP_DEVICE:
-      if (!num)
-	{
-	  struct nl_entry *e, *e2;
-	  e = nl_lookup(a, 0, NL_VENDOR, arg1, 0, 0, 0);
-	  e2 = nl_lookup(a, 0, NL_DEVICE, arg1, arg2, 0, 0);
-	  if (!e)
-	    res = snprintf(buf, size, "Unknown device %04x:%04x", arg1, arg2);
-	  else if (!e2)
-	    res = snprintf(buf, size, "%s: Unknown device %04x", e->name, arg2);
-	  else
-	    res = snprintf(buf, size, "%s %s", e->name, e2->name);
-	}
-      else
-	res = snprintf(buf, size, "%04x:%04x", arg1, arg2);
-      break;
-    case PCI_LOOKUP_VENDOR | PCI_LOOKUP_SUBSYSTEM:
-      if (n = nl_lookup(a, num, NL_VENDOR, arg3, 0, 0, 0))
-	return n->name;
-      else
-	res = snprintf(buf, size, "%04x", arg2);
-      break;
-    case PCI_LOOKUP_DEVICE | PCI_LOOKUP_SUBSYSTEM:
-      if (n = nl_lookup(a, num, NL_SUBSYSTEM, arg1, arg2, arg3, arg4))
-	return n->name;
-      else if (arg1 == arg3 && arg2 == arg4 && (n = nl_lookup(a, num, NL_DEVICE, arg1, arg2, 0, 0)))
-	return n->name;
-      else
-	res = snprintf(buf, size, "%04x", arg4);
-      break;
+      iv = va_arg(args, int);
+      id = va_arg(args, int);
+      sprintf(numbuf, "%04x:%04x", iv, id);
+      v = id_lookup(a, flags, ID_VENDOR, iv, 0, 0, 0);
+      d = id_lookup(a, flags, ID_DEVICE, iv, id, 0, 0);
+      return format_name_pair(buf, size, flags, v, d, numbuf);
+    case PCI_LOOKUP_SUBSYSTEM | PCI_LOOKUP_VENDOR:
+      isv = va_arg(args, int);
+      sprintf(numbuf, "%04x", isv);
+      v = id_lookup(a, flags, ID_VENDOR, isv, 0, 0, 0);
+      return format_name(buf, size, flags, v, numbuf, "Unknown vendor");
+    case PCI_LOOKUP_SUBSYSTEM | PCI_LOOKUP_DEVICE:
+      iv = va_arg(args, int);
+      id = va_arg(args, int);
+      isv = va_arg(args, int);
+      isd = va_arg(args, int);
+      sprintf(numbuf, "%04x", isd);
+      return format_name(buf, size, flags, id_lookup_subsys(a, flags, iv, id, isv, isd), numbuf, "Device");
     case PCI_LOOKUP_VENDOR | PCI_LOOKUP_DEVICE | PCI_LOOKUP_SUBSYSTEM:
-      if (!num)
-	{
-	  struct nl_entry *e, *e2;
-	  e = nl_lookup(a, 0, NL_VENDOR, arg3, 0, 0, 0);
-	  e2 = nl_lookup(a, 0, NL_SUBSYSTEM, arg1, arg2, arg3, arg4);
-	  if (!e2 && arg1 == arg3 && arg2 == arg4)
-	    /* Cheat for vendors blindly setting subsystem ID same as device ID */
-	    e2 = nl_lookup(a, 0, NL_DEVICE, arg1, arg2, 0, 0);
-	  if (!e)
-	    res = snprintf(buf, size, "Unknown device %04x:%04x", arg3, arg4);
-	  else if (!e2)
-	    res = snprintf(buf, size, "%s: Unknown device %04x", e->name, arg4);
-	  else
-	    res = snprintf(buf, size, "%s %s", e->name, e2->name);
-	}
-      else
-	res = snprintf(buf, size, "%04x:%04x", arg3, arg4);
-      break;
+      iv = va_arg(args, int);
+      id = va_arg(args, int);
+      isv = va_arg(args, int);
+      isd = va_arg(args, int);
+      v = id_lookup(a, flags, ID_VENDOR, isv, 0, 0, 0);
+      d = id_lookup_subsys(a, flags, iv, id, isv, isd);
+      sprintf(numbuf, "%04x:%04x", isv, isd);
+      return format_name_pair(buf, size, flags, v, d, numbuf);
     case PCI_LOOKUP_CLASS:
-      if (n = nl_lookup(a, num, NL_SUBCLASS, arg1 >> 8, arg1 & 0xff, 0, 0))
-	return n->name;
-      else if (n = nl_lookup(a, num, NL_CLASS, arg1, 0, 0, 0))
-	res = snprintf(buf, size, "%s [%04x]", n->name, arg1);
-      else
-	res = snprintf(buf, size, "Class %04x", arg1);
-      break;
+      icls = va_arg(args, int);
+      sprintf(numbuf, "%04x", icls);
+      cls = id_lookup(a, flags, ID_SUBCLASS, icls >> 8, icls & 0xff, 0, 0);
+      if (!cls && (cls = id_lookup(a, flags, ID_CLASS, icls >> 8, 0, 0, 0)))
+	{
+	  if (!(flags & PCI_LOOKUP_NUMERIC)) /* Include full class number */
+	    flags |= PCI_LOOKUP_MIXED;
+	}
+      return format_name(buf, size, flags, cls, numbuf, "Class");
     case PCI_LOOKUP_PROGIF:
-      if (n = nl_lookup(a, num, NL_PROGIF, arg1 >> 8, arg1 & 0xff, arg2, 0))
-	return n->name;
-      if (arg1 == 0x0101)
+      icls = va_arg(args, int);
+      ipif = va_arg(args, int);
+      sprintf(numbuf, "%02x", ipif);
+      pif = id_lookup(a, flags, ID_PROGIF, icls >> 8, icls & 0xff, ipif, 0);
+      if (!pif && icls == 0x0101 && !(ipif & 0x70))
 	{
 	  /* IDE controllers have complex prog-if semantics */
-	  if (arg2 & 0x70)
-	    return NULL;
-	  res = snprintf(buf, size, "%s%s%s%s%s",
-			 (arg2 & 0x80) ? "Master " : "",
-			 (arg2 & 0x08) ? "SecP " : "",
-			 (arg2 & 0x04) ? "SecO " : "",
-			 (arg2 & 0x02) ? "PriP " : "",
-			 (arg2 & 0x01) ? "PriO " : "");
-	  if (res)
-	    buf[--res] = 0;
-	  break;
+	  sprintf(pifbuf, "%s%s%s%s%s",
+		  (ipif & 0x80) ? " Master" : "",
+		  (ipif & 0x08) ? " SecP" : "",
+		  (ipif & 0x04) ? " SecO" : "",
+		  (ipif & 0x02) ? " PriP" : "",
+		  (ipif & 0x01) ? " PriO" : "");
+	  pif = pifbuf;
+	  if (*pif)
+	    pif++;
 	}
-      return NULL;
+      return format_name(buf, size, flags, pif, numbuf, "ProgIf");
     default:
       return "<pci_lookup_name: invalid request>";
     }
-  return (res == size) ? "<too-large>" : buf;
 }
