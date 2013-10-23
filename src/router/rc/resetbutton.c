@@ -1246,6 +1246,7 @@ void period_check(int sig)
 	} else if ((wifigpio != 0xfff)
 		   && (((wifigpio & 0x100) == 0 && (val & pushwifi))
 		       || ((wifigpio & 0x100) == 0x100 && !(val & pushwifi)))) {
+		led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
 		switch (wifi_mode) {
 		case 1:
 			dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
