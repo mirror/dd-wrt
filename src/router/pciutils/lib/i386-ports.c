@@ -1,45 +1,57 @@
 /*
- *	$Id: i386-ports.c,v 1.3 2002/03/30 15:39:25 mj Exp $
- *
  *	The PCI Library -- Direct Configuration access via i386 Ports
  *
- *	Copyright (c) 1997--1999 Martin Mares <mj@ucw.cz>
+ *	Copyright (c) 1997--2006 Martin Mares <mj@ucw.cz>
  *
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
 
-#include <unistd.h>
-
-#ifdef __GLIBC__
-#include <sys/io.h>
-#else
-#include <asm/io.h>
-#endif
+#define _GNU_SOURCE
 
 #include "internal.h"
 
-static int intel_iopl_set = -1;
+#include <unistd.h>
+
+#if defined(PCI_OS_LINUX)
+#include "i386-io-linux.h"
+#elif defined(PCI_OS_GNU)
+#include "i386-io-hurd.h"
+#elif defined(PCI_OS_SUNOS)
+#include "i386-io-sunos.h"
+#elif defined(PCI_OS_WINDOWS)
+#include "i386-io-windows.h"
+#elif defined(PCI_OS_CYGWIN)
+#include "i386-io-cygwin.h"
+#elif defined(PCI_OS_HAIKU)
+#include "i386-io-haiku.h"
+#elif defined(PCI_OS_BEOS)
+#include "i386-io-beos.h"
+#else
+#error Do not know how to access I/O ports on this OS.
+#endif
+
+static int conf12_io_enabled = -1;		/* -1=haven't tried, 0=failed, 1=succeeded */
 
 static int
-intel_setup_io(void)
+conf12_setup_io(struct pci_access *a)
 {
-  if (intel_iopl_set < 0)
-    intel_iopl_set = (iopl(3) < 0) ? 0 : 1;
-  return intel_iopl_set;
+  if (conf12_io_enabled < 0)
+    conf12_io_enabled = intel_setup_io(a);
+  return conf12_io_enabled;
 }
 
 static void
 conf12_init(struct pci_access *a)
 {
-  if (!intel_setup_io())
-    a->error("You need to be root to have access to I/O ports.");
+  if (!conf12_setup_io(a))
+    a->error("No permission to access I/O ports (you probably have to be root).");
 }
 
 static void
-conf12_cleanup(struct pci_access * UNUSED a)
+conf12_cleanup(struct pci_access *a UNUSED)
 {
-  iopl(3);
-  intel_iopl_set = -1;
+  if (conf12_io_enabled > 0)
+    conf12_io_enabled = intel_cleanup_io(a);
 }
 
 /*
@@ -61,7 +73,7 @@ intel_sanity_check(struct pci_access *a, struct pci_methods *m)
   a->debug("...sanity check");
   d.bus = 0;
   d.func = 0;
-  for(d.dev = 0; d.dev < 32; d.dev++)
+  for (d.dev = 0; d.dev < 32; d.dev++)
     {
       u16 class, vendor;
       if (m->read(&d, PCI_CLASS_DEVICE, (byte *) &class, sizeof(class)) &&
@@ -89,7 +101,7 @@ conf1_detect(struct pci_access *a)
   unsigned int tmp;
   int res = 0;
 
-  if (!intel_setup_io())
+  if (!conf12_setup_io(a))
     {
       a->debug("...no I/O permission");
       return 0;
@@ -109,6 +121,10 @@ static int
 conf1_read(struct pci_dev *d, int pos, byte *buf, int len)
 {
   int addr = 0xcfc + (pos&3);
+
+  if (pos >= 256)
+    return 0;
+
   outl(0x80000000 | ((d->bus & 0xff) << 16) | (PCI_DEVFN(d->dev, d->func) << 8) | (pos&~3), 0xcf8);
 
   switch (len)
@@ -132,6 +148,10 @@ static int
 conf1_write(struct pci_dev *d, int pos, byte *buf, int len)
 {
   int addr = 0xcfc + (pos&3);
+
+  if (pos >= 256)
+    return 0;
+
   outl(0x80000000 | ((d->bus & 0xff) << 16) | (PCI_DEVFN(d->dev, d->func) << 8) | (pos&~3), 0xcf8);
 
   switch (len)
@@ -158,7 +178,7 @@ conf1_write(struct pci_dev *d, int pos, byte *buf, int len)
 static int
 conf2_detect(struct pci_access *a)
 {
-  if (!intel_setup_io())
+  if (!conf12_setup_io(a))
     {
       a->debug("...no I/O permission");
       return 0;
@@ -179,6 +199,9 @@ static int
 conf2_read(struct pci_dev *d, int pos, byte *buf, int len)
 {
   int addr = 0xc000 | (d->dev << 8) | pos;
+
+  if (pos >= 256)
+    return 0;
 
   if (d->dev >= 16)
     /* conf2 supports only 16 devices per bus */
@@ -209,6 +232,9 @@ conf2_write(struct pci_dev *d, int pos, byte *buf, int len)
 {
   int addr = 0xc000 | (d->dev << 8) | pos;
 
+  if (pos >= 256)
+    return 0;
+
   if (d->dev >= 16)
     d->access->error("conf2_write: only first 16 devices exist.");
   outb((d->func << 1) | 0xf0, 0xcf8);
@@ -233,7 +259,8 @@ conf2_write(struct pci_dev *d, int pos, byte *buf, int len)
 }
 
 struct pci_methods pm_intel_conf1 = {
-  "Intel-conf1",
+  "intel-conf1",
+  "Raw I/O port access using Intel conf1 interface",
   NULL,					/* config */
   conf1_detect,
   conf12_init,
@@ -242,12 +269,14 @@ struct pci_methods pm_intel_conf1 = {
   pci_generic_fill_info,
   conf1_read,
   conf1_write,
+  NULL,					/* read_vpd */
   NULL,					/* init_dev */
   NULL					/* cleanup_dev */
 };
 
 struct pci_methods pm_intel_conf2 = {
-  "Intel-conf2",
+  "intel-conf2",
+  "Raw I/O port access using Intel conf2 interface",
   NULL,					/* config */
   conf2_detect,
   conf12_init,
@@ -256,6 +285,7 @@ struct pci_methods pm_intel_conf2 = {
   pci_generic_fill_info,
   conf2_read,
   conf2_write,
+  NULL,					/* read_vpd */
   NULL,					/* init_dev */
   NULL					/* cleanup_dev */
 };
