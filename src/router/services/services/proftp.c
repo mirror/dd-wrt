@@ -168,7 +168,7 @@ void start_ftpsrv(void)
 // Anonymous ftp - read only
 	if (nvram_match("proftpd_anon", "1")) {
 		fprintf(fp,
-			"<Anonymous      /%s%s>\n"
+			"<Anonymous      /%s>\n"
 			"User           ftp\n"
 			"Group          root\n"
 			"UserAlias      anonymous ftp\n"
