@@ -28,7 +28,7 @@ LIBKMOD=
 ABI_VERSION=.3
 
 # Installation directories
-PREFIX=/usr/local
+PREFIX=$(TARGETDIR)/usr/sbin
 SBINDIR=$(PREFIX)/sbin
 SHAREDIR=$(PREFIX)/share
 IDSDIR=$(SHAREDIR)
