@@ -4264,6 +4264,7 @@ int led_control(int type, int act)
 	int vpn_gpio = 0x0ff;
 	int ses_gpio = 0x0ff;	// use for SES1 (Linksys), AOSS (Buffalo)
 	int ses2_gpio = 0x0ff;
+	int wlan_gpio = 0x0ff;	// wlan button led R7000
 	int wlan0_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
 	int wlan1_gpio = 0x0ff;	// use this only if wlan led is not controlled by hardware!
 	int usb_gpio = 0x0ff;
@@ -5173,7 +5174,8 @@ int led_control(int type, int act)
 		usb_power = 0x000;	// usb enable
 		wlan0_gpio = 0x10d;	// radio 0 
 		wlan1_gpio = 0x10c;	// radio 1 
-		ses_gpio = 0x10e;	//wps led
+		ses_gpio = 0x10e;	// wps led
+		wlan_gpio= 0x10f;	// wifi button led
 		usb_gpio = 0x111;	//usb1 
 		usb_gpio1 = 0x112;	//usb2 
 		break;
@@ -5301,6 +5303,9 @@ int led_control(int type, int act)
 		break;
 	case LED_SES2:
 		use_gpio = ses2_gpio;
+		break;
+	case LED_WLAN:
+		use_gpio = wlan_gpio;
 		break;
 	case LED_WLAN0:
 		use_gpio = wlan0_gpio;
