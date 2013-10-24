@@ -775,7 +775,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 			if (has_ac(prefix) && has_2ghz(prefix)) {
 				char wl_turboqam[16];
 
-				sprintf(wl_turboqam, "%s_turboqam", prefix);
+				sprintf(wl_turboqam, "%s_turbo_qam", prefix);
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.turboqam)</script></div>\n");
 				websWrite(wp,
