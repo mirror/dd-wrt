@@ -739,7 +739,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 				  nvram_selnmatch(wp, "0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "<option value=\"20\" %s>20 MHz</option>\n", nvram_selnmatch(wp, "20", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "<option value=\"40\" %s>40 MHz</option>\n", nvram_selnmatch(wp, "40", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
-			if (has_ac(prefix)) {
+			if (has_ac(prefix) && has_5ghz(prefix)) {
 				websWrite(wp, "<option value=\"80\" %s>80 MHz</option>\n", nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 
 			}
