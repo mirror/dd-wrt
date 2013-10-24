@@ -2996,6 +2996,7 @@ static void save_prefix(webs_t wp, char *prefix)
 
 #endif
 	copytonv(wp, "%s_closed", prefix);
+	copytonv(wp, "%s_turboqam", prefix);
 
 #ifndef HAVE_MADWIFI
 	char *ifname = "wl0";
