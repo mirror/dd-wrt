@@ -780,10 +780,10 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.turboqam)</script></div>\n");
 				websWrite(wp,
 					  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-					  wl_turboqam, nvram_selmatch(wl_turboqam, "0") ? "checked=\"checked\"" : "");
+					  wl_turboqam, nvram_selmatch(wp, wl_turboqam, "0") ? "checked=\"checked\"" : "");
 				websWrite(wp,
 					  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-					  wl_turboqam, nvram_selmatch(wl_turboqam, "1") ? "checked=\"checked\"" : "");
+					  wl_turboqam, nvram_selmatch(wp, wl_turboqam, "1") ? "checked=\"checked\"" : "");
 				websWrite(wp, "</div>\n");
 
 			}
