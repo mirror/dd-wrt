@@ -487,13 +487,15 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 
 	// check the frequency capabilities;
 	if (has_2ghz(prefix) && has_5ghz(prefix) && has_ac(prefix)) {
-		sprintf(frequencies, " [2.4 GHz /5 GHz/802.11ac]");
+		sprintf(frequencies, " [2.4 GHz/5 GHz/802.11ac]");
 	} else if (has_5ghz(prefix) && has_ac(prefix)) {
 		sprintf(frequencies, " [5 GHz/802.11ac]");
-	} else	if (has_5ghz(prefix) && has_2ghz(prefix)) {
-		sprintf(frequencies, " [2.4/5 GHz]");
+	} else if (has_5ghz(prefix) && has_2ghz(prefix)) {
+		sprintf(frequencies, " [2.4 GHz/5 GHz]");
 	} else if (has_5ghz(prefix)) {
 		sprintf(frequencies, " [5 GHz]");
+	} else if (has_2ghz(prefix) && has_ac(prefix)) {
+		sprintf(frequencies, " [2.4 GHz TurboQAM]");
 	} else if (has_2ghz(prefix)) {
 		sprintf(frequencies, " [2.4 GHz]");
 	} else {
@@ -768,6 +770,25 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "</select>\n");
 				websWrite(wp, "</div>\n");
 			}
+#ifdef HAVE_BCMMODERN
+
+			if (has_ac(prefix) && has_2ghz(prefix)) {
+				char wl_turboqam[16];
+
+				sprintf(wl_turboqam, "%s_turboqam", prefix);
+				websWrite(wp, "<div class=\"setting\">\n");
+				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.turboqam)</script></div>\n");
+				websWrite(wp,
+					  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+					  wl_turboqam, nvram_selmatch(wl_turboqam, "0") ? "checked=\"checked\"" : "");
+				websWrite(wp,
+					  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+					  wl_turboqam, nvram_selmatch(wl_turboqam, "1") ? "checked=\"checked\"" : "");
+				websWrite(wp, "</div>\n");
+
+			}
+#endif
+
 		} else {
 			sas_show_channel(wp, prefix, prefix, 0);
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
