@@ -462,16 +462,18 @@ static int wlconf_up(char *name)
 	}
 #endif
 	int instance = get_wl_instance(name);
-
+	
 	if (instance == -1)
 		return -1;	// no wireless device
+	char prefix[16];
+	sprintf(prefix,"wl%d",instance);
 	if (nvram_nmatch("infra", "wl%d_mode", instance)) {
 		nvram_nset("0", "wl%d_infra", instance);
 	} else {
 		nvram_nset("1", "wl%d_infra", instance);
 	}
 	eval("ifconfig", name, "up");
-	if (has_2ghz(name) && has_ac(name)) {
+	if (has_2ghz(prefix) && has_ac(prefix)) {
 		if (nvram_nmatch("1", "wl%d_turbo_qam", instance))
 			eval("wl", "-i", name, "vht_features", "3");
 		else
