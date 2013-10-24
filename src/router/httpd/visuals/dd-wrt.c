@@ -125,17 +125,17 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 
 	int i = 0;
 	int in_clock_array = 0;
-	
+
 	//check if cpu clock list contains current clkfreq
 	while (c[i] != 0) {
-		if(c[i]== cclk) {
+		if (c[i] == cclk) {
 			in_clock_array = 1;
 		}
 		i++;
 	}
-	
-	if(in_clock_array || nvram_get("clkfreq") != NULL) {
-	
+
+	if (in_clock_array || nvram_get("clkfreq") != NULL) {
+
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
 		websWrite(wp, "<select name=\"overclocking\">\n");
 		i = 0;
@@ -143,7 +143,7 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<option value=\"%d\" %s >%d MHz</option>\n", c[i], c[i] == cclk ? "selected=\"selected\"" : "", c[i]);
 			i++;
 		}
-		
+
 		websWrite(wp, "</select>\n</div>\n");
 	} else {
 		websWrite(wp, "<script type=\"text/javascript\">Capture(management.clock_support)</script>\n</div>\n");
@@ -3360,9 +3360,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	} else if (has_5ghz(prefix) && has_ac(prefix)) {
 		sprintf(frequencies, " [5 GHz/802.11ac]");
 	} else if (has_5ghz(prefix) && has_2ghz(prefix)) {
-		sprintf(frequencies, " [2.4/5 GHz]");
+		sprintf(frequencies, " [2.4 GHz/5 GHz]");
 	} else if (has_5ghz(prefix)) {
 		sprintf(frequencies, " [5 GHz]");
+	} else if (has_2ghz(prefix) && has_ac(prefix)) {
+		sprintf(frequencies, " [2.4 GHz TurboQAM]");
 	} else if (has_2ghz(prefix)) {
 		sprintf(frequencies, " [2.4 GHz]");
 	} else {
@@ -3948,6 +3950,24 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
 		}
+#ifdef HAVE_BCMMODERN
+
+		if (has_ac(prefix) && has_2ghz(prefix)) {
+			char wl_turboqam[16];
+
+			sprintf(wl_turboqam, "%s_turboqam", prefix);
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.turboqam)</script></div>\n");
+			websWrite(wp,
+				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+				  wl_turboqam, nvram_match(wl_turboqam, "0") ? "checked=\"checked\"" : "");
+			websWrite(wp,
+				  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+				  wl_turboqam, nvram_match(wl_turboqam, "1") ? "checked=\"checked\"" : "");
+			websWrite(wp, "</div>\n");
+
+		}
+#endif
 	} else {
 
 		show_channel(wp, prefix, prefix, 0);

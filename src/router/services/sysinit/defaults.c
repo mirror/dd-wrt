@@ -736,6 +736,8 @@ struct nvram_tuple srouter_defaults[] = {
 					 * change it to a radio appropriate default
 					 */
 #ifdef HAVE_BCMMODERN
+	{"wl0_turboqam", "1", 0},	/* RIFS mode advertisement */
+	{"wl1_turboqam", "1", 0},	/* RIFS mode advertisement */
 	{"wl_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
 	{"wl0_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
 	{"wl1_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
