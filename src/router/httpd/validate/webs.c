@@ -2997,7 +2997,7 @@ static void save_prefix(webs_t wp, char *prefix)
 #endif
 	copytonv(wp, "%s_closed", prefix);
 #ifdef HAVE_BCMMODERN
-	if (has_2ghz(nam) && has_ac(prefix))
+	if (has_2ghz(name) && has_ac(prefix))
 		copytonv(wp, "%s_turbo_qam", prefix);
 #endif
 
