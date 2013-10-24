@@ -18,8 +18,8 @@ typedef struct {
 } matrixssl_buf;
 
 #define msslAssert(C)
-//		if (C) ; else {fprintf(stderr, "%s:%d myAssert(%s)\n",\
-//						__FILE__, __LINE__, #C); abort(); }
+//              if (C) ; else {fprintf(stderr, "%s:%d myAssert(%s)\n",\
+//                                              __FILE__, __LINE__, #C); abort(); }
 
 void matrixssl_init(void);
 void matrixssl_new_session(int fp);
