@@ -471,10 +471,12 @@ static int wlconf_up(char *name)
 		nvram_nset("1", "wl%d_infra", instance);
 	}
 	eval("ifconfig", name, "up");
-	if (nvram_nmatch("1","wl%d_turbo_qam",instance))	
-	    eval("wl","-i",name,"vht_features","3");
-	else
-	    eval("wl","-i",name,"vht_features","1");
+	if (has_2ghz(name) && has_ac(name)) {
+		if (nvram_nmatch("1", "wl%d_turbo_qam", instance))
+			eval("wl", "-i", name, "vht_features", "3");
+		else
+			eval("wl", "-i", name, "vht_features", "1");
+	}
 
 	ret = eval("wlconf", name, "up");
 	/*
@@ -3179,33 +3181,33 @@ void start_wan(int status)
 			fclose(fp);
 
 			fp = fopen("/tmp/qmi-connect.sh", "wb");
-			fprintf(fp,"#!/bin/sh\n");
-			fprintf(fp,"REG=0\n");
-			fprintf(fp,"COUNT=3\n");
-			fprintf(fp,"while [ $REG = 0 ]\n");
-			fprintf(fp,"do\n");
-			fprintf(fp,"if [ $COUNT = 0 ]\n");
-			fprintf(fp,"then\n");
-			fprintf(fp," exit\n");
-			fprintf(fp,"fi\n");
-			fprintf(fp,"CLIENTID=`cat /tmp/qmi-clientid`\n");
-			fprintf(fp,"REG=`uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --keep-client-id wds --get-serving-system|grep registered|wc -l`\n");
-			fprintf(fp,"if [ $REG = 0 ]\n");
-			fprintf(fp,"then\n");
-			fprintf(fp,"echo \"not yet registered to the network (${COUNT})\" | logger -t wan_dial\n");
-			fprintf(fp,"fi\n");
-			fprintf(fp,"COUNT=$(($COUNT - 1))\n");
-			fprintf(fp,"sleep 5\n");
-			fprintf(fp,"done\n");
+			fprintf(fp, "#!/bin/sh\n");
+			fprintf(fp, "REG=0\n");
+			fprintf(fp, "COUNT=3\n");
+			fprintf(fp, "while [ $REG = 0 ]\n");
+			fprintf(fp, "do\n");
+			fprintf(fp, "if [ $COUNT = 0 ]\n");
+			fprintf(fp, "then\n");
+			fprintf(fp, " exit\n");
+			fprintf(fp, "fi\n");
+			fprintf(fp, "CLIENTID=`cat /tmp/qmi-clientid`\n");
+			fprintf(fp, "REG=`uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --keep-client-id wds --get-serving-system|grep registered|wc -l`\n");
+			fprintf(fp, "if [ $REG = 0 ]\n");
+			fprintf(fp, "then\n");
+			fprintf(fp, "echo \"not yet registered to the network (${COUNT})\" | logger -t wan_dial\n");
+			fprintf(fp, "fi\n");
+			fprintf(fp, "COUNT=$(($COUNT - 1))\n");
+			fprintf(fp, "sleep 5\n");
+			fprintf(fp, "done\n");
 			if (strlen(nvram_safe_get("ppp_username")) > 0 && strlen(nvram_safe_get("ppp_passwd")) > 0) {
-				fprintf(fp,"uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --username %s --password %s --keep-client-id wds\n",
-				     nvram_safe_get("wan_apn"), nvram_safe_get("ppp_username"), nvram_safe_get("ppp_passwd"));
+				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --username %s --password %s --keep-client-id wds\n",
+					nvram_safe_get("wan_apn"), nvram_safe_get("ppp_username"), nvram_safe_get("ppp_passwd"));
 			} else {
-				fprintf(fp,"uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --keep-client-id wds\n", nvram_safe_get("wan_apn"));
+				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --keep-client-id wds\n", nvram_safe_get("wan_apn"));
 			}
-			fprintf(fp,"ifconfig wwan0 up\n");
-			fprintf(fp,"ln -s /sbin/rc /tmp/udhcpc\n");
-			fprintf(fp,"udhcpc -i wwan0 -p /var/run/udhcpc.pid -s /tmp/udhcpc\n");
+			fprintf(fp, "ifconfig wwan0 up\n");
+			fprintf(fp, "ln -s /sbin/rc /tmp/udhcpc\n");
+			fprintf(fp, "udhcpc -i wwan0 -p /var/run/udhcpc.pid -s /tmp/udhcpc\n");
 			fclose(fp);
 			chmod("/tmp/qmi-connect.sh", 0700);
 			sysprintf("/tmp/qmi-connect.sh &");
@@ -3611,8 +3613,8 @@ void start_wan(int status)
 			fprintf(fp, "persist\n" "lcp-echo-interval 3\n" "lcp-echo-failure 20\n");
 #ifdef HAVE_IPV6
 		if (nvram_match("ipv6_enable", "1"))
-		    	fprintf(fp,"ipv6 ,\n");
-#endif			
+			fprintf(fp, "ipv6 ,\n");
+#endif
 
 		fclose(fp);
 
@@ -3867,17 +3869,19 @@ void start_wan(int status)
 #ifdef HAVE_PPTP
 	else if (strcmp(wan_proto, "pptp") == 0) {
 		if (nvram_match("pptp_iptv", "1"))
-                        nvram_set("tvnicfrom", nvram_safe_get("wan_iface"));
-                else nvram_unset("tvnicfrom");
-		
+			nvram_set("tvnicfrom", nvram_safe_get("wan_iface"));
+		else
+			nvram_unset("tvnicfrom");
+
 		start_pptp(status);
 	}
 #endif
 #ifdef HAVE_L2TP
 	else if (strcmp(wan_proto, "l2tp") == 0) {
-                if (nvram_match("l2tp_iptv", "1"))
+		if (nvram_match("l2tp_iptv", "1"))
 			nvram_set("tvnicfrom", nvram_safe_get("wan_iface"));
-		else nvram_unset("tvnicfrom");
+		else
+			nvram_unset("tvnicfrom");
 
 		if (nvram_match("l2tp_use_dhcp", "1")) {
 			nvram_set("wan_get_dns", "");
