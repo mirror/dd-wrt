@@ -471,6 +471,11 @@ static int wlconf_up(char *name)
 		nvram_nset("1", "wl%d_infra", instance);
 	}
 	eval("ifconfig", name, "up");
+	if (nvram_nmatch("1","wl%d_turbo_qam",instance))	
+	    eval("wl","-i",name,"vht_features","3");
+	else
+	    eval("wl","-i",name,"vht_features","1");
+
 	ret = eval("wlconf", name, "up");
 	/*
 	 * eval("wl","radio","off"); eval("wl","atten","0","0","60");
