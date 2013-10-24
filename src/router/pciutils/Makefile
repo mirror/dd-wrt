@@ -108,6 +108,7 @@ distclean: clean
 install: all
 # -c is ignored on Linux, but required on FreeBSD
 #	$(DIRINSTALL) -m 755 $(DESTDIR)$(SBINDIR) $(DESTDIR)$(IDSDIR) $(DESTDIR)$(MANDIR)/man8 $(DESTDIR)$(MANDIR)/man7
+	$(DIRINSTALL) -m 755 $(DESTDIR)$(SBINDIR)
 	$(INSTALL) -c -m 755 $(STRIP) lspci $(DESTDIR)$(SBINDIR)
 #	$(INSTALL) -c -m 755 update-pciids $(DESTDIR)$(SBINDIR)
 	$(INSTALL) -c -m 644 $(PCI_IDS) $(DESTDIR)$(IDSDIR)
