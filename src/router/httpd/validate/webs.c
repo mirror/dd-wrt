@@ -1913,7 +1913,7 @@ void add_vifs_single(char *prefix, int device)
 #else
 	nvram_set(v2, "maksat_vap");
 #endif
-#elif defined(HAVE_SANSFIL)	 
+#elif defined(HAVE_SANSFIL)
 	nvram_set(v2, "sansfil_vap");
 #elif defined(HAVE_TRIMAX)
 	nvram_set(v2, "m2m_vap");
@@ -2996,7 +2996,10 @@ static void save_prefix(webs_t wp, char *prefix)
 
 #endif
 	copytonv(wp, "%s_closed", prefix);
-	copytonv(wp, "%s_turbo_qam", prefix);
+#ifdef HAVE_BCMMODERN
+	if (has_2ghz(nam) && has_ac(prefix))
+		copytonv(wp, "%s_turbo_qam", prefix);
+#endif
 
 #ifndef HAVE_MADWIFI
 	char *ifname = "wl0";
