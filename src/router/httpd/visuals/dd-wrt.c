@@ -3950,24 +3950,6 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
 		}
-#ifdef HAVE_BCMMODERN
-
-		if (has_ac(prefix) && has_2ghz(prefix)) {
-			char wl_turboqam[16];
-
-			sprintf(wl_turboqam, "%s_turbo_qam", prefix);
-			websWrite(wp, "<div class=\"setting\">\n");
-			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.turboqam)</script></div>\n");
-			websWrite(wp,
-				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-				  wl_turboqam, nvram_match(wl_turboqam, "0") ? "checked=\"checked\"" : "");
-			websWrite(wp,
-				  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-				  wl_turboqam, nvram_match(wl_turboqam, "1") ? "checked=\"checked\"" : "");
-			websWrite(wp, "</div>\n");
-
-		}
-#endif
 	} else {
 
 		show_channel(wp, prefix, prefix, 0);
@@ -3987,6 +3969,25 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 		}
 #endif
 	}
+
+#ifdef HAVE_BCMMODERN
+
+	if (has_ac(prefix) && has_2ghz(prefix)) {
+		char wl_turboqam[16];
+
+		sprintf(wl_turboqam, "%s_turbo_qam", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.turboqam)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  wl_turboqam, nvram_match(wl_turboqam, "1") ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+			  wl_turboqam, nvram_match(wl_turboqam, "0") ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+
+	}
+#endif
 
 	char wl_closed[16];
 
