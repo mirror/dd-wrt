@@ -601,7 +601,7 @@ static void handle_request(void)
 {
 	char *query;
 	char *cur;
-	char *method, *path, *protocol, *authorization, *boundary, *referer, *host, *useragent;
+	char *method, *path, *protocol, *authorization, *boundary, *referer, *host, *useragent, *language;
 	char *cp;
 	char *file = NULL;
 	FILE *exec;
@@ -680,7 +680,12 @@ static void handle_request(void)
 			cp += strspn(cp, " \t");
 			useragent = cp;
 			cur = cp + strlen(cp) + 1;
-		}
+		} else if (strncasecmp(cur, "Accept-Language:", 16) == 0) {
+			cp = &cur[17];
+			cp += strspn(cp, " \t");
+			language = cp;
+			cur = cp + strlen(cp) + 1;
+		} 
 	}
 
 	if (strcasecmp(method, "get") != 0 && strcasecmp(method, "post") != 0) {
@@ -703,8 +708,51 @@ static void handle_request(void)
 	if (nvram_match("no_crossdetect", "1"))
 		nodetect = 1;
 #ifdef HAVE_IAS
-	if (nvram_match("ias_startup", "3") || nvram_match("ias_startup", "2"))
+	if (nvram_match("ias_startup", "3") || nvram_match("ias_startup", "2")) {
 		nodetect = 1;
+		if(language != NULL) {
+			if(strncasecmp(language, "de", 2) == 0) {
+				nvram_set("language", "german");
+			} else if (strncasecmp(language, "es", 2)) {
+				nvram_set("language", "spanish");
+			} else if (strncasecmp(language, "fr", 2)) {
+				nvram_set("language", "french");
+			} else if (strncasecmp(language, "hr", 2)) {
+				nvram_set("language", "croatian");
+			} else if (strncasecmp(language, "hu", 2)) {
+				nvram_set("language", "hungarian");
+			} else if (strncasecmp(language, "nl", 2)) {
+				nvram_set("language", "dutch");
+			} else if (strncasecmp(language, "it", 2)) {
+				nvram_set("language", "italian");
+			} else if (strncasecmp(language, "lv", 2)) {
+				nvram_set("language", "latvian");
+			} else if (strncasecmp(language, "jp", 2)) {
+				nvram_set("language", "japanese");
+			} else if (strncasecmp(language, "pl", 2)) {
+				nvram_set("language", "polish");
+			} else if (strncasecmp(language, "pt", 2)) {
+				nvram_set("language", "portuguese_braz");
+			} else if (strncasecmp(language, "ro", 2)) {
+				nvram_set("language", "romanian");
+			} else if (strncasecmp(language, "ru", 2)) {
+				nvram_set("language", "russian");
+				nvram_set("country", "ru");
+			} else if (strncasecmp(language, "sl", 2)) {
+				nvram_set("language", "slovenian");
+			} else if (strncasecmp(language, "sr", 2)) {
+				nvram_set("language", "serbian");
+			} else if (strncasecmp(language, "sv", 2)) {
+				nvram_set("language", "swedish");
+			} else if (strncasecmp(language, "zh", 2)) {
+				nvram_set("language", "chinese_simplified");
+			} else if (strncasecmp(language, "tr", 2)) {
+				nvram_set("language", "turkish");
+			} else {
+				nvram_set("language", "english");
+			}
+		}
+	}
 #endif
 	if (referer && host && nodetect == 0) {
 		int i;
