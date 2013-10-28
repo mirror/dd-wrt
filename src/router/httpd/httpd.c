@@ -712,44 +712,44 @@ static void handle_request(void)
 		nodetect = 1;
 		if(language != NULL) {
 			if(strncasecmp(language, "de", 2) == 0) {
-				nvram_set("language", "german");
+				nvram_set("langprop", "german");
 			} else if (strncasecmp(language, "es", 2)) {
-				nvram_set("language", "spanish");
+				nvram_set("langprop", "spanish");
 			} else if (strncasecmp(language, "fr", 2)) {
-				nvram_set("language", "french");
+				nvram_set("langprop", "french");
 			} else if (strncasecmp(language, "hr", 2)) {
-				nvram_set("language", "croatian");
+				nvram_set("langprop", "croatian");
 			} else if (strncasecmp(language, "hu", 2)) {
-				nvram_set("language", "hungarian");
+				nvram_set("langprop", "hungarian");
 			} else if (strncasecmp(language, "nl", 2)) {
-				nvram_set("language", "dutch");
+				nvram_set("langprop", "dutch");
 			} else if (strncasecmp(language, "it", 2)) {
-				nvram_set("language", "italian");
+				nvram_set("langprop", "italian");
 			} else if (strncasecmp(language, "lv", 2)) {
-				nvram_set("language", "latvian");
+				nvram_set("langprop", "latvian");
 			} else if (strncasecmp(language, "jp", 2)) {
-				nvram_set("language", "japanese");
+				nvram_set("langprop", "japanese");
 			} else if (strncasecmp(language, "pl", 2)) {
-				nvram_set("language", "polish");
+				nvram_set("langprop", "polish");
 			} else if (strncasecmp(language, "pt", 2)) {
-				nvram_set("language", "portuguese_braz");
+				nvram_set("langprop", "portuguese_braz");
 			} else if (strncasecmp(language, "ro", 2)) {
-				nvram_set("language", "romanian");
+				nvram_set("langprop", "romanian");
 			} else if (strncasecmp(language, "ru", 2)) {
-				nvram_set("language", "russian");
+				nvram_set("langprop", "russian");
 				nvram_set("country", "ru");
 			} else if (strncasecmp(language, "sl", 2)) {
-				nvram_set("language", "slovenian");
+				nvram_set("langprop", "slovenian");
 			} else if (strncasecmp(language, "sr", 2)) {
-				nvram_set("language", "serbian");
+				nvram_set("langprop", "serbian");
 			} else if (strncasecmp(language, "sv", 2)) {
-				nvram_set("language", "swedish");
+				nvram_set("langprop", "swedish");
 			} else if (strncasecmp(language, "zh", 2)) {
-				nvram_set("language", "chinese_simplified");
+				nvram_set("langprop", "chinese_simplified");
 			} else if (strncasecmp(language, "tr", 2)) {
-				nvram_set("language", "turkish");
+				nvram_set("langprop", "turkish");
 			} else {
-				nvram_set("language", "english");
+				nvram_set("langprop", "english");
 			}
 		}
 	}
