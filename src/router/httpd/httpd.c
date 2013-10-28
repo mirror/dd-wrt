@@ -685,7 +685,7 @@ static void handle_request(void)
 			cp += strspn(cp, " \t");
 			language = cp;
 			cur = cp + strlen(cp) + 1;
-		} 
+		}
 	}
 
 	if (strcasecmp(method, "get") != 0 && strcasecmp(method, "post") != 0) {
@@ -710,46 +710,61 @@ static void handle_request(void)
 #ifdef HAVE_IAS
 	if (nvram_match("ias_startup", "3") || nvram_match("ias_startup", "2")) {
 		nodetect = 1;
-		if(language != NULL) {
-			if(strncasecmp(language, "de", 2) == 0) {
-				nvram_set("langprop", "german");
-			} else if (strncasecmp(language, "es", 2)) {
-				nvram_set("langprop", "spanish");
-			} else if (strncasecmp(language, "fr", 2)) {
-				nvram_set("langprop", "french");
-			} else if (strncasecmp(language, "hr", 2)) {
-				nvram_set("langprop", "croatian");
-			} else if (strncasecmp(language, "hu", 2)) {
-				nvram_set("langprop", "hungarian");
-			} else if (strncasecmp(language, "nl", 2)) {
-				nvram_set("langprop", "dutch");
-			} else if (strncasecmp(language, "it", 2)) {
-				nvram_set("langprop", "italian");
-			} else if (strncasecmp(language, "lv", 2)) {
-				nvram_set("langprop", "latvian");
-			} else if (strncasecmp(language, "jp", 2)) {
-				nvram_set("langprop", "japanese");
-			} else if (strncasecmp(language, "pl", 2)) {
-				nvram_set("langprop", "polish");
-			} else if (strncasecmp(language, "pt", 2)) {
-				nvram_set("langprop", "portuguese_braz");
-			} else if (strncasecmp(language, "ro", 2)) {
-				nvram_set("langprop", "romanian");
-			} else if (strncasecmp(language, "ru", 2)) {
-				nvram_set("langprop", "russian");
-				nvram_set("country", "ru");
-			} else if (strncasecmp(language, "sl", 2)) {
-				nvram_set("langprop", "slovenian");
-			} else if (strncasecmp(language, "sr", 2)) {
-				nvram_set("langprop", "serbian");
-			} else if (strncasecmp(language, "sv", 2)) {
-				nvram_set("langprop", "swedish");
-			} else if (strncasecmp(language, "zh", 2)) {
-				nvram_set("langprop", "chinese_simplified");
-			} else if (strncasecmp(language, "tr", 2)) {
-				nvram_set("langprop", "turkish");
-			} else {
-				nvram_set("langprop", "english");
+		typedef struct {
+			char *iso;
+			char *mapping;
+			char *countryext;
+		} ISOMAP;
+
+		struct ISOMAP isomap[] {
+			{
+			"de", "german"},	//
+			{
+			"es", "spanish"},	//
+			{
+			"fr", "french"},	//
+			{
+			"hr", "croatian"},	//
+			{
+			"hu", "hungarian"},	//
+			{
+			"nl", "dutch"},	//
+			{
+			"it", "italian"},	//
+			{
+			"lv", "latvian"},	//
+			{
+			"jp", "japanese"},	//
+			{
+			"pl", "polish"},	//
+			{
+			"pt", "portuguese_braz"},	// 
+			{
+			"ro", "romanian"},	//
+			{
+			"ru", "russian", "ru"},	// 
+			{
+			"sl", "slovenian"},	//
+			{
+			"sr", "serbian"},	//
+			{
+			"sv", "swedish"},	//
+			{
+			"zh", "chinese_simplified"},	//
+			{
+			"tr", "turkish"},	//
+		NULL};
+		if (nvram_match("langprop", "")) {
+			int cnt = 0;
+			nvram_set("langprop", "english");
+			while (isomap[cnt].iso != NULL) {
+				if (strncasecmp(language, isomap[cnt].iso, 2)) {
+					nvram_set("langprop", isomap[cnt].mapping);
+					if (isomap[cnt].countryext)
+						nvtam_set("country", isomap[cnt].countryext);
+					break;
+				}
+				cnt++;
 			}
 		}
 	}
