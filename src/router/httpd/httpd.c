@@ -716,44 +716,45 @@ static void handle_request(void)
 			char *countryext;
 		} ISOMAP;
 
-		struct ISOMAP isomap[] {
+		ISOMAP isomap[] = {
 			{
-			"de", "german"},	//
+			 "de", "german"},	//
 			{
-			"es", "spanish"},	//
+			 "es", "spanish"},	//
 			{
-			"fr", "french"},	//
+			 "fr", "french"},	//
 			{
-			"hr", "croatian"},	//
+			 "hr", "croatian"},	//
 			{
-			"hu", "hungarian"},	//
+			 "hu", "hungarian"},	//
 			{
-			"nl", "dutch"},	//
+			 "nl", "dutch"},	//
 			{
-			"it", "italian"},	//
+			 "it", "italian"},	//
 			{
-			"lv", "latvian"},	//
+			 "lv", "latvian"},	//
 			{
-			"jp", "japanese"},	//
+			 "jp", "japanese"},	//
 			{
-			"pl", "polish"},	//
+			 "pl", "polish"},	//
 			{
-			"pt", "portuguese_braz"},	// 
+			 "pt", "portuguese_braz"},	// 
 			{
-			"ro", "romanian"},	//
+			 "ro", "romanian"},	//
 			{
-			"ru", "russian", "ru"},	// 
+			 "ru", "russian", "ru"},	// 
 			{
-			"sl", "slovenian"},	//
+			 "sl", "slovenian"},	//
 			{
-			"sr", "serbian"},	//
+			 "sr", "serbian"},	//
 			{
-			"sv", "swedish"},	//
+			 "sv", "swedish"},	//
 			{
-			"zh", "chinese_simplified"},	//
+			 "zh", "chinese_simplified"},	//
 			{
-			"tr", "turkish"},	//
-		NULL};
+			 "tr", "turkish"},	//
+			NULL
+		};
 		if (nvram_match("langprop", "")) {
 			int cnt = 0;
 			nvram_set("langprop", "english");
@@ -761,7 +762,7 @@ static void handle_request(void)
 				if (strncasecmp(language, isomap[cnt].iso, 2)) {
 					nvram_set("langprop", isomap[cnt].mapping);
 					if (isomap[cnt].countryext)
-						nvtam_set("country", isomap[cnt].countryext);
+						nvram_set("country", isomap[cnt].countryext);
 					break;
 				}
 				cnt++;
