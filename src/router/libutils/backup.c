@@ -256,6 +256,7 @@ static char *filter[] = { "lan_ifnames",
 	"bl_version",
 	"HW_ver",
 	"pcie_force_gen1",
+	"csromrev",
 	"ATEMODE",
 	NULL
 };

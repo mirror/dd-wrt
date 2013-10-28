@@ -1060,6 +1060,19 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 	
+	if (boardnum == 679 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("sdram_config", "0x0147")) {
+		setRouter("Netgear R6300V2");
+		return ROUTER_NETGEAR_R6300V2;
+	}
+	
+	if (boardnum == 679 && nvram_match("boardtype", "0x0646")
+	    && nvram_match("boardrev", "0x1110")) {
+		setRouter("Netgear R6250");
+		return ROUTER_NETGEAR_R6250;
+	}
+	
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
 	    && nvram_match("boardrev", "0x1301") ) {
 		setRouter("Netgear R7000");
@@ -5166,6 +5179,15 @@ int led_control(int type, int act)
 		//emblem0_gpio = 0x101;   // NETGEAR Emblem l     
 		//emblem1_gpio = 0x109;   // NETGEAR Emblem r
 		wlan0_gpio = 0x10b;	// radio led blue
+		break;
+	case ROUTER_NETGEAR_R6300V2:
+		power_gpio = 0x102;	// power led green
+		diag_gpio = 0x103;	// power led orange
+		//emblem0_gpio = 0x001;	// NETGEAR Emblem	
+		connected_gpio = 0x10f;	// wan led green
+		wlan0_gpio = 0x10b;	// radio 2.4GHz led green
+		usb_gpio = 0x108;	// usb led green
+		//usb_power = 0x015;	// usb enable
 		break;
 	case ROUTER_NETGEAR_R7000:
 	  	power_gpio = 0x102;	// power led green
