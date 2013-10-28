@@ -568,6 +568,7 @@ void start_sysinit(void)
 				extra_params++;
 			}
 		}
+		set_gpio(6,1); //fix reset button
 		break;
 	case ROUTER_NETGEAR_R7000:
 		
@@ -850,6 +851,9 @@ void start_sysinit(void)
 		set_gpio(4,1);
 		set_gpio(5,1);
 		set_gpio(6,1); //fix reset button
+		nvram_set("wl_pcie_mrrs", "128");
+		nvram_set("wl0_pcie_mrrs", "128");
+		nvram_set("wl1_pcie_mrrs", "128");
 		
 		if (nvram_match("wl0_country_code", "US"))
 			set_regulation(0, "US", "0");
