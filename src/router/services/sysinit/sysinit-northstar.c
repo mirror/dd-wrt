@@ -419,7 +419,7 @@ void start_sysinit(void)
 				{"regrev", "12", 0},
 				{"devid", "0x4332", 0},
 				{"tempthresh", "120", 0},
-				{"macaddr", "04:A1:51:10:CF:62", 0},
+			//	{"macaddr", "04:A1:51:10:CF:62", 0},
 				{"mcsbw402gpo", "0xECA86222", 0},
 				{"mcsbw202gpo", "0xCA862222", 0},
 				{0, 0, 0}
@@ -467,7 +467,7 @@ void start_sysinit(void)
 				{"tempcorrx", "0x3f", 0},
 				{"mcslr5glpo", "0", 0},
 				{"sar5g", "15", 0},
-				{"macaddr", "04:A1:51:10:CF:61", 0},
+			//	{"macaddr", "04:A1:51:10:CF:61", 0},
 				{"pa5ga0", "0xFF39,0x1A55,0xFCC7,0xFF50,0x1AD0,0xFCE0,0xFF50,0x1B6F,0xFCD0,0xFF58,0x1BB9,0xFCD0", 0},
 				{"rxgains5gmelnagaina0", "2", 0},
 				{"pa5ga1", "0xFF36,0x1AAD,0xFCBD,0xFF50,0x1AF7,0xFCE0,0xFF50,0x1B5B,0xFCD8,0xFF58,0x1B8F,0xFCD0", 0},
