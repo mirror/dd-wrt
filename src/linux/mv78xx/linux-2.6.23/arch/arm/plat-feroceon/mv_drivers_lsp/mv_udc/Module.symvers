@@ -1,3 +1,0 @@
-0x00000000	usb_gadget_register_driver	drivers/usb/gadget/../../../arch/arm/plat-feroceon/mv_drivers_lsp/mv_udc/mv_udc	EXPORT_SYMBOL
-0x00000000	mv_usb_show	drivers/usb/gadget/../../../arch/arm/plat-feroceon/mv_drivers_lsp/mv_udc/mv_udc	EXPORT_SYMBOL
-0x00000000	usb_gadget_unregister_driver	drivers/usb/gadget/../../../arch/arm/plat-feroceon/mv_drivers_lsp/mv_udc/mv_udc	EXPORT_SYMBOL
