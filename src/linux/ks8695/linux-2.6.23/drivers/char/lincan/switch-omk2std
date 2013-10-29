@@ -1,9 +1,0 @@
-#!/bin/sh
-# This shell script switches LinCAN build system
-# form OMK framework to standard makefiles
-
-#cd lincan-0.x.y-omk
-cp Makefile.std Makefile
-cp utils/Makefile.std utils/Makefile
-cp src/Makefile.std src/Makefile
-touch Standalone.mk
