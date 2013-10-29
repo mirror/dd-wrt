@@ -1,4 +1,0 @@
-include include/asm-generic/Kbuild.asm
-
-unifdef-y += bfin_sport.h
-unifdef-y += fixed_code.h
