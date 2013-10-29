@@ -718,17 +718,17 @@ static void handle_request(void)
 
 		ISOMAP isomap[] = {
 			{
-			 "de", "german"},	//
+			 "de", "german"},		//
 			{
 			 "es", "spanish"},	//
 			{
-			 "fr", "french"},	//
+			 "fr", "french"},		//
 			{
 			 "hr", "croatian"},	//
 			{
 			 "hu", "hungarian"},	//
 			{
-			 "nl", "dutch"},	//
+			 "nl", "dutch"},		//
 			{
 			 "it", "italian"},	//
 			{
@@ -736,13 +736,13 @@ static void handle_request(void)
 			{
 			 "jp", "japanese"},	//
 			{
-			 "pl", "polish"},	//
+			 "pl", "polish"},		//
 			{
 			 "pt", "portuguese_braz"},	// 
 			{
 			 "ro", "romanian"},	//
 			{
-			 "ru", "russian", "ru"},	// 
+			 "ru", "russian", "RU"},	// 
 			{
 			 "sl", "slovenian"},	//
 			{
@@ -755,11 +755,11 @@ static void handle_request(void)
 			 "tr", "turkish"},	//
 			NULL
 		};
-		if (nvram_match("langprop", "")) {
+		if (nvram_match("langprop", "") || nvram_get("langprop") == NULL) {
 			int cnt = 0;
 			nvram_set("langprop", "english");
 			while (isomap[cnt].iso != NULL) {
-				if (strncasecmp(language, isomap[cnt].iso, 2)) {
+				if (strncasecmp(language, isomap[cnt].iso, 2) == 0) {
 					nvram_set("langprop", isomap[cnt].mapping);
 					if (isomap[cnt].countryext)
 						nvram_set("country", isomap[cnt].countryext);
