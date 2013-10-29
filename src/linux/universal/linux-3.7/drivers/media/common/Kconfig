@@ -1,3 +1,0 @@
-source "drivers/media/common/b2c2/Kconfig"
-source "drivers/media/common/saa7146/Kconfig"
-source "drivers/media/common/siano/Kconfig"
