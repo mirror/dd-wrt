@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//      Update (21956 based)               - DD-WRT V24 SP2 by mrc_torres 01/JUL/2013       //
+//      Update (22410 based)               - DD-WRT V24 SP2 by mrc_torres 02/OCT/2013       //
 //      Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr      16/JUN/2006       //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -456,6 +456,7 @@ bmenu.servicesNAS="NAS";
 bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="Proxy SIP";
+bmenu.servicesPrivoxy="Bloqueio de Propaganda";
 //bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
@@ -694,9 +695,9 @@ usb.usb_automnt="Montagem de Drive Automática";
 usb.usb_mntpoint="Ponto de Montagem de Disco";
 usb.usb_runonmount="Nome de Script Run-on-mount";
 usb.usb_diskinfo="Informações do Disco";
-usb.usb_mntjffs="Monte esta Partição em /jffs";
-usb.usb_mntopt="Monte esta Partição em /opt";
-usb.usb_ses_umount="Use o Botão SES para remover drives";
+usb.usb_mntjffs="Montar esta Partição em /jffs";
+usb.usb_mntopt="Montar esta Partição em /opt";
+usb.usb_ses_umount="Usar o Botão SES para remover drives";
 
 // ** NAS.asp **//
 nas.titl="NAS";
@@ -707,7 +708,7 @@ nas.proftpd_dir="Diretório de Arquivos";
 nas.proftpd_passw="Lista de Senhas de Usuários";
 nas.proftpd_writeen="Permitir Gravação";
 nas.proftpd_anon="Login Anônimo (Somente-Leitura)";
-nas.proftpd_anon_subdir="Sub-diretório Home Anônimo";
+nas.proftpd_anon_dir="Diretório Home Anônimo";
 nas.samba3_legend="Compartilhamento de Arquivos";
 nas.samba3="Servidor Samba"; 
 
@@ -715,7 +716,16 @@ nas.samba3="Servidor Samba";
 nas.dlna_legend="Servidor DLNA"; 
 nas.dlna_srv="MiniDLNA"; 
 nas.dlna_thumb="Incluir Arte da Capa";
-nas.dlna_dir="Pasta de Arquivos"; 
+nas.dlna_dir="Pasta de Arquivos";
+ 
+** Privoxy.asp **//
+privoxy.titl="Bloqueio de Propaganda"; 
+privoxy.server="Privoxy"; 
+privoxy.legend="Servidor Proxy de Filtragem"; 
+privoxy.transp="Modo Transparente"; 
+privoxy.custom="Configuração Personalizada"; 
+
+hprivoxy.right2="Habilita o Privoxy e ajusta as configurações de proxy de seus clientes. Endereço IP do Proxy = <b>Endereço IP do Roteador</b> Porta do Proxy = <b>8118</b>"; 
 
 hnas.right2="A fim de compartilhar recursos adicione novos compartilhamentos fornecendo o caminho e o nome do compartilhamento. Defina os usuários que podem acessar o compartilhamento através de ftp ou samba.";
 
@@ -803,7 +813,7 @@ hotspot.wifidog_password="Senha do Servidor HTTP";
 hotspot.wifidog_auth="Suporte Autenticação Servidor HTTP";
 
 //help container 
-hstatus_hots.right1="conup/condown:<br><i>Quando USB ou JFFS são montados em /jffs, scripts de conexão podem ser utilizados em /jffs/etc/chilli/</i><br>Usuários Locais:<br><i>Quando somente usuáios locais forem utilizados configure o IP do Radius primário para 127.0.0.1</i>";
+hstatus_hots.right1="ConUp/ConDown:<br>Quando USB ou JFFS são montados em /jffs, scripts de conexão podem ser utilizados em /jffs/etc/chilli/<br>Usuários Locais:<br>Quando somente usuáios locais forem utilizados configure o IP do Radius primário para 127.0.0.1";
 
 // ** Hotspotsystem **//
 hotspotsys.legend="Hotspot System";
@@ -1372,9 +1382,9 @@ service.vpn_tlscip="Cifra TLS";
 service.vpn_route="Roteamento Baseado em Políticas";
 
 //help container
-hstatus_vpn.right1="Roteamento Baseado em Políticas:<br><i>Adicione IPs/Redes no formato 0.0.0.0/0 para forçar clientes a usar o tunel como gateway padrão. Uma linha por IP/REDE.</i><br>Endereço IP/Máscara de Sub-Rede:<br><i>Deve ser configurado quando se está utilizando o modo DHCP-Proxy e TAP local NÃO está em modo bridged.</i>";
-hstatus_vpn.right2="Configurações Adicionais:<br><i>Para entregar rotas a clientes adicione \'push \"route IP mask gateway\"\', para entregar DNS/WINS adicione \'push \"dhcp-option DNS (ou WINS) IP\"\' à configuração.</i><br>diretório de conexão do cliente:<br><i>Quando USB ou JFFS são montados em /jffs, scripts serão chamados de /jffs/etc/openvpn/ccd/</i>";
-hstatus_vpn.right3="Geral:<br><i>3 métodos de autenticação são suportados: pkcs12 (+dh no servidor), estático e certificados padrão. Habilitar o MSS em apenas um dos lados do link irá fragmentar em ambos.</i>";
+hstatus_vpn.right1="Roteamento Baseado em Políticas:<br>Adicione IPs/Redes no formato 0.0.0.0/0 para forçar clientes a usar o tunel como gateway padrão. Uma linha por IP/REDE.<br>Endereço IP/Máscara de Sub-Rede:<br>Deve ser configurado quando se está utilizando o modo DHCP-Proxy e TAP local NÃO está em modo bridged.";
+hstatus_vpn.right2="Configurações Adicionais:<br>Para entregar rotas a clientes adicione \'push \"route IP mask gateway\"\'. Para entregar DNS/WINS adicione \'push \"dhcp-option DNS (ou WINS) IP\"\' à configuração.<br>Diretório de conexão do cliente:<br>Quando USB ou JFFS estão montados em /jffs, scripts são chamados de /jffs/etc/openvpn/ccd/";
+hstatus_vpn.right3="Geral:<br>Três métodos de autenticação são suportados: pkcs12 (+dh no servidor), estático e certificados padrão. Habilitar o MSS em apenas um dos lados do link irá fragmentar em ambos.";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1493,6 +1503,7 @@ service.samba3_advanced="Avançado"
 service.samba3_custom="Usar Configuração Personalizada";
 service.samba3_shares="Compartilhamentos";
 service.samba3_share_path="Caminho";
+service.samba3_share_subdir="Subdir";
 service.samba3_share_label="Nome";
 service.samba3_share_public="Público";
 service.samba3_share_access="Acesso";
@@ -1580,6 +1591,7 @@ status_router.sys_load="Estimativa de Utilização";
 status_router.sys_kernel="Versão do Kernel";
 status_router.legend2="CPU";
 status_router.cpu="Modelo da CPU";
+status_router.cores="Núcleos da CPU";
 status_router.clock="Clock da CPU";
 status_router.legend3="Memória";
 status_router.mem_tot="Total Disponível";
@@ -2127,7 +2139,7 @@ wl_basic.rate_control="Algorítmo de Controle de Taxa";
 wl_basic.ap83_vap_note="Adicionar mais que três interfaces virtuais irá resultar em baixa performance com alguns dispositivos clientes nessas interfaces virtuais adicionais.";
 
 //help container
-hwl_basic.right2="Se você deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se você deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em><br/><b>Nota :</b> alterando o modo wireless, alguns parâmetros avançados são suscetíveis de serem modificados (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" ou \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="Se você deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se você deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em><br/><b>Nota:</b> alterando o modo wireless, alguns parâmetros avançados são suscetíveis de serem modificados (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" ou \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Escala de Sensibilidade: ";
 hwl_basic.right4="Ajuste do sincronismo ACK. Se desejar desabilitar o sincronismo ACK completamente em firmwares Broadcom use o valor 0. Em firmwares baseados em Atheros, 0 irá ativar o modo de sincronismo ACK automático.";
 hwl_basic.right6="Clique a qualquer momento para habilitar ou desabilitar o sinal do rádio (<em>verde</em> indica acesso Wireless permitido e <em>vermelho</em> indica acesso Wireless bloqueado)";
