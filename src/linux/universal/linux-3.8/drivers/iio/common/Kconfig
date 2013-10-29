@@ -1,5 +1,0 @@
-#
-# IIO common modules
-#
-
-source "drivers/iio/common/hid-sensors/Kconfig"
