@@ -1,19 +1,15 @@
 Summary: Layer 2 Tunnelling Protocol Daemon (RFC 2661)
 Name: xl2tpd
-Version: 1.3.0
+Version: 1.3.1
 Release: 1%{?dist}
 License: GPLv2
 Url: http://www.xelerance.com/software/xl2tpd/
-Group: System Environment/Daemons
+Group: Productivity/Networking/Other
 Source0: http://www.xelerance.com/software/xl2tpd/xl2tpd-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires: ppp >= 2.4.3
-%if %{sles_version} == 0
-BuildRequires: linux-kernel-headers => 2.6.19, libpcap-devel
-%else
-BuildRequires: glibc-devel, libpcap
-%endif
-Obsoletes: l2tpd <= 0.69
+BuildRequires: libpcap-devel
+Obsoletes: l2tpd < 0.69
 Provides: l2tpd = 0.69
 Requires(post): /sbin/chkconfig
 Requires(preun): /sbin/chkconfig
@@ -51,7 +47,6 @@ It was de-facto maintained by Jacco de Leeuw <jacco2@dds.nl> in 2002 and 2003.
 make DFLAGS="$RPM_OPT_FLAGS -g -DDEBUG_PPPD -DDEBUG_CONTROL -DDEBUG_ENTROPY -DTRUST_PPPD_TO_DIE"
 
 %install
-rm -rf %{buildroot}
 make PREFIX=%{_prefix} DESTDIR=%{buildroot} MANDIR=%{buildroot}/%{_mandir} install
 install -p -D -m644 examples/xl2tpd.conf %{buildroot}%{_sysconfdir}/xl2tpd/xl2tpd.conf
 install -p -D -m644 examples/ppp-options.xl2tpd %{buildroot}%{_sysconfdir}/ppp/options.xl2tpd
@@ -68,7 +63,6 @@ rm -rf %{buildroot}
 %post
 %{fillup_and_insserv xl2tpd}
 
-/sbin/chkconfig --add xl2tpd
 # if we migrate from l2tpd to xl2tpd, copy the configs
 if [ -f /etc/l2tpd/l2tpd.conf ]
 then
@@ -98,6 +92,7 @@ exit 0
 %doc doc/README.patents examples/chapsecrets.sample
 %{_sbindir}/rcxl2tpd
 %{_sbindir}/xl2tpd
+%{_sbindir}/xl2tpd-control
 %{_bindir}/pfc
 %{_mandir}/*/*
 %dir %{_sysconfdir}/xl2tpd
