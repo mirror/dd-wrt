@@ -1115,6 +1115,34 @@ int isXR36(char *ifname)	//checks if its usually a emp card (no concrete detecti
 
 }
 
+int isFXXN_PRO(char *ifname)	//checks if its usualla a DBII Networks FxxN-PRO card (no correct detection possible)
+{
+	char cproduct[30];
+	char cvendor[30];
+	char readid[64];
+	int devcount;
+
+	strcpy(readid, ifname);
+	sscanf(readid, "ath%d", &devcount);
+	sprintf(readid, "/sys/class/ieee80211/phy%d/device/subsystem_vendor", devcount);
+	FILE *in = fopen(readid, "rb");
+	if (in) {
+		fscanf(in, "%s\n", cvendor);
+		fclose(in);
+	}
+	sprintf(readid, "/sys/class/ieee80211/phy%d/device/subsystem_device", devcount);
+	in = fopen(readid, "rb");
+        if (in)	{
+		fscanf(in, "%s\n", cproduct);
+		fclose(in);
+	}
+
+	if (!strcmp(cvendor, "0x168c") && !strcmp(cproduct, "0x2096")) { //F36N-PRO / F64N-PRO shares the same id's
+		return 1;
+	}
+	return 0;
+}
+
 int wifi_gettxpower(char *ifname)
 {
 	int poweroffset = 0;
@@ -1174,6 +1202,13 @@ int wifi_gettxpower(char *ifname)
 			poweroffset = 7;
 		if (nvram_nmatch("7", "%s_cardtype", ifname))
 			poweroffset = 10;
+#ifdef HAVE_ATH9K
+	} else if (isFXXN_PRO(ifname)) {
+		if (nvram_nmatch("1", "%s_cardtype", ifname))
+			poweroffset = 5;
+		if (nvram_nmatch("2", "%s_cardtype", ifname))
+			poweroffset = 5;
+#endif
 	} else {
 		int vendor;
 		int devcount;
@@ -1290,6 +1325,16 @@ int wifi_gettxpoweroffset(char *ifname)
 		if (nvram_nmatch("7", "%s_cardtype", ifname))
 			return 10;
 	}
+
+#ifdef HAVE_ATH9K	
+	if (isFXXN_PRO(ifname)) {
+		if (nvram_nmatch("1", "%s_cardtype", ifname))
+			return 5;
+		if (nvram_nmatch("2", "%s_cardtype", ifname))
+			return 5;
+	}
+#endif
+
 	int vendor;
 	int devcount;
 	char readid[64];
@@ -1326,6 +1371,22 @@ int get_wififreq(char *ifname, int freq)
 		if (nvram_nmatch("4", "%s_cardtype", ifname))
 			return freq - 2400;
 	}
+
+#ifdef HAVE_ATH9K
+	if (isFXXN_PRO(ifname)) {
+		if (nvram_nmatch("1", "%s_cardtype", ifname)) {
+			if (freq < 5180 || freq > 5580)
+				return -1;
+			return freq - 1830;
+		}
+		if (nvram_nmatch("2", "%s_cardtype", ifname)) {
+			if (freq < 5180 || freq > 5730)
+				return -1;
+			return freq + 720;
+		}
+	}
+#endif
+
 	char *var = NULL;
 	if (ifname) {
 		char localvar[32];

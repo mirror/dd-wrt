@@ -3381,6 +3381,29 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 #if !defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)
 	// char maxpower[16];
+#ifdef HAVE_ATH9K
+	if (is_ath9k(prefix)) {
+		if(isFXXN_PRO(prefix)) {
+			char wl_cardtype[32];
+			sprintf(wl_cardtype, "%s_cardtype", prefix);
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cardtype)</script></div>\n<select name=\"%s\">\n", wl_cardtype);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+	
+#ifdef HAVE_ONNET
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Athros 2458</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Athros 3336</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Athros 5964</option>\");\n", nvram_default_match(wl_cardtype, "2", "0") ? "selected=\\\"selected\\\"" : "");
+#else
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >DBII F36N-PRO</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >DBII F64N-PRO</option>\");\n", nvram_default_match(wl_cardtype, "2", "0") ? "selected=\\\"selected\\\"" : "");
+#endif
+			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
+		}
+	}
+#endif //HAVE_ATH9K
+
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_MAKSAT
 #ifndef HAVE_DDLINK
@@ -4382,6 +4405,29 @@ if (!strcmp(prefix, "wl1"))
 		  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.if_info)</script></div><textarea name=\"%s\" cols=\"60\" rows=\"3\">%s</textarea></div>\n",
 		  wl_note, nvram_safe_get(wl_note));
 #endif
+
+#ifdef HAVE_ATH9K
+	if (is_ath9k(prefix)) {
+		if(isFXXN_PRO(prefix)) {
+			char wl_cardtype[32];
+			sprintf(wl_cardtype, "%s_cardtype", prefix);
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cardtype)</script></div>\n<select name=\"%s\">\n", wl_cardtype);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+	
+#ifdef HAVE_ONNET
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Athros 2458</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Athros 3336</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Athros 5964</option>\");\n", nvram_default_match(wl_cardtype, "2", "0") ? "selected=\\\"selected\\\"" : "");
+#else
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >DBII F36N-PRO</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >DBII F64N-PRO</option>\");\n", nvram_default_match(wl_cardtype, "2", "0") ? "selected=\\\"selected\\\"" : "");
+#endif
+			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
+		}
+	}
+#endif //HAVE_ATH9K
 
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_MAKSAT
