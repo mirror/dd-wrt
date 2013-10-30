@@ -287,6 +287,15 @@ ifneq ($(CONFIG_DIST),"micro")
 	sed -i 's/\# CONFIG_FEATURE_WGET_TIMEOUT is not set/CONFIG_FEATURE_WGET_TIMEOUT=y/g' busybox/.config
 endif
 
+ifeq ($(CONFIG_BUSYBOX_UDHCPC),y)
+	sed -i 's/\# CONFIG_UDHCPC is not set/CONFIG_UDHCPC=y/g' busybox/.config
+	sed -i 's/\# CONFIG_UDHCP_DEBUG is not set/CONFIG_UDHCP_DEBUG=0/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_UDHCP_RFC3397 is not set/CONFIG_FEATURE_UDHCP_RFC3397=y/g' busybox/.config
+	sed -i 's/CONFIG_UDHCPC_DEFAULT_SCRIPT=""/CONFIG_UDHCPC_DEFAULT_SCRIPT=\"\/tmp\/udhcpc\"/g' busybox/.config
+	sed -i 's/CONFIG_UDHCPC_SLACK_FOR_BUGGY_SERVERS=0/CONFIG_UDHCPC_SLACK_FOR_BUGGY_SERVERS=80/g' busybox/.config
+	sed -i 's/\# CONFIG_IFUPDOWN_UDHCPC_CMD_OPTIONS is not set/CONFIG_IFUPDOWN_UDHCPC_CMD_OPTIONS=""/g' busybox/.config
+endif
+
 ifeq ($(CONFIG_IPV6),y)
 	echo "CONFIG_TRACEROUTE6=y" >> busybox/.config
 	echo "CONFIG_PING6=y" >> busybox/.config
