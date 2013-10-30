@@ -6,7 +6,6 @@
 #define PCI_HAVE_LINUX_BYTEORDER_H
 #define PCI_PATH_PROC_BUS_PCI "/proc/bus/pci"
 #define PCI_PATH_SYS_BUS_PCI "/sys/bus/pci"
-#define PCI_HAVE_PM_INTEL_CONF
 #define PCI_HAVE_64BIT_ADDRESS
 #define PCI_HAVE_PM_DUMP
 #define PCI_IDS "pci.ids"
