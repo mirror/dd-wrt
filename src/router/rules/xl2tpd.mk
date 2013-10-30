@@ -3,7 +3,7 @@ xl2tpd-configure:
 	@true
 
 xl2tpd:
-	$(MAKE) -C xl2tpd CFLAGS="$(COPTS) -O2 -fno-builtin -Wall -DSANITY -DLINUX -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include/ -DUSE_KERNEL -DIP_ALLOCATION -I$(TOP)/libpcap_noring" LDFLAGS+="-L$(TOP)/libpcap_noring"
+	$(MAKE) -C xl2tpd CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -fno-builtin -Wall -DSANITY -DLINUX -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include/ -DUSE_KERNEL -DIP_ALLOCATION -I$(TOP)/libpcap_noring" LDFLAGS+="-L$(TOP)/libpcap_noring"
 
 xl2tpd-clean:
 	$(MAKE) -C xl2tpd clean
