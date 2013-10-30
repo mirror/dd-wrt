@@ -365,10 +365,22 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 		NULL, NULL,
 		NULL, NULL,
 		NULL, NULL,
-		NULL, NULL
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
 	};
 
 	int i = 7;
+
+#ifdef HAVE_BUSYBOX_UDHCPC
+	dhcp_argv[i++] = "-O";
+	dhcp_argv[i++] = "routes";
+	dhcp_argv[i++] = "-O";
+	dhcp_argv[i++] = "msstaticroutes";
+	dhcp_argv[i++] = "-O";
+	dhcp_argv[i++] = "staticroutes";
+#endif
 
 	if (flags)
 		dhcp_argv[i++] = flags;
@@ -4420,8 +4432,11 @@ void start_set_routes(void)
 		} else
 			route_add(ifname, atoi(metric) + 1, ipaddr, gateway, netmask);
 	}
+
 	if (f_exists("/tmp/tvrouting"))
 		system("sh /tmp/tvrouting");
+	if (f_exists("/tmp/udhcpstaticroutes"))
+		system("sh /tmp/udhcpstaticroutes");
 }
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)  && !defined(HAVE_RT61)
