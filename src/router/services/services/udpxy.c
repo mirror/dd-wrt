@@ -39,7 +39,7 @@ void start_udpxy(void)
 	if (!nvram_match("udpxy_enable", "1"))
 		return;
 	
-	nicfrom = nvram_safe_get("udpxy_nicfrom");
+	nicfrom = nvram_safe_get("tvnicfrom");
 	listen_if = nvram_safe_get("udpxy_listenif");
 	listen_port = nvram_safe_get("udpxy_listenport");
 
