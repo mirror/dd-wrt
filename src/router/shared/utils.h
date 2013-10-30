@@ -985,6 +985,7 @@ int getsocket(void);
 void closesocket(void);
 int isEMP(char *ifname);
 int isXR36(char *ifname);
+int isFXXN_PRO(char *ifname);
 char *get3GControlDevice(void);
 int mac80211_get_maxmcs(char *interface);
 int get_ath9k_phy_idx(int idx);
