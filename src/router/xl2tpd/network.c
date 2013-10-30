@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/ioctl.h>
+#include <sys/wait.h>
 #ifndef LINUX
 # include <sys/uio.h>
 #endif
@@ -35,7 +36,6 @@ int server_socket;              /* Server socket */
 #ifdef USE_KERNEL
 int kernel_support;             /* Kernel Support there or not? */
 #endif
-
 
 int init_network (void)
 {
@@ -55,7 +55,9 @@ int init_network (void)
 
     flags = 1;
     setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags));
+#ifdef SO_NO_CHECK
     setsockopt(server_socket, SOL_SOCKET, SO_NO_CHECK, &flags, sizeof(flags));
+#endif
 
     if (bind (server_socket, (struct sockaddr *) &server, sizeof (server)))
     {
@@ -77,11 +79,16 @@ int init_network (void)
      * values.
      */
     arg=1;
-    if(setsockopt(server_socket, IPPROTO_IP, IP_IPSEC_REFINFO,
+    if(setsockopt(server_socket, IPPROTO_IP, gconfig.sarefnum,
 		  &arg, sizeof(arg)) != 0) {
-	    l2tp_log(LOG_CRIT, "setsockopt recvref[%d]: %s\n", IP_IPSEC_REFINFO, strerror(errno));
+	    l2tp_log(LOG_CRIT, "setsockopt recvref[%d]: %s\n", gconfig.sarefnum, strerror(errno));
 
 	    gconfig.ipsecsaref=0;
+    }
+    
+    arg=1;
+    if(setsockopt(server_socket, IPPROTO_IP, IP_PKTINFO, (char*)&arg, sizeof(arg)) != 0) {
+	    l2tp_log(LOG_CRIT, "setsockopt IP_PKTINFO: %s\n", strerror(errno));
     }
 #else
 	l2tp_log(LOG_INFO, "No attempt being made to use IPsec SAref's since we're not on a Linux machine.\n");
@@ -99,7 +106,7 @@ int init_network (void)
         int kernel_fd = socket(AF_PPPOX, SOCK_DGRAM, PX_PROTO_OL2TP);
         if (kernel_fd < 0)
         {
-            l2tp_log (LOG_INFO, "L2TP kernel support not detected.\n");
+            l2tp_log (LOG_INFO, "L2TP kernel support not detected (try modprobing l2tp_ppp and pppol2tp)\n");
             kernel_support = 0;
         }
         else
@@ -264,36 +271,59 @@ void control_xmit (void *b)
 void udp_xmit (struct buffer *buf, struct tunnel *t)
 {
     struct cmsghdr *cmsg;
-    char cbuf[CMSG_SPACE(sizeof (unsigned int))];
+    char cbuf[CMSG_SPACE(sizeof (unsigned int) + sizeof (struct in_pktinfo))];
     unsigned int *refp;
     struct msghdr msgh;
     int err;
     struct iovec iov;
+    struct in_pktinfo *pktinfo;
+    int finallen;
     
     /*
      * OKAY, now send a packet with the right SAref values.
      */
     memset(&msgh, 0, sizeof(struct msghdr));
 
+    cmsg = NULL;
     msgh.msg_control = cbuf;
-    msgh.msg_controllen = 0;
+    msgh.msg_controllen = sizeof(cbuf);
+    finallen = 0;
 
-    if(gconfig.ipsecsaref && t->refhim != IPSEC_SAREF_NULL) {
-	msgh.msg_controllen = sizeof(cbuf);
-
+    if (gconfig.ipsecsaref && t->refhim != IPSEC_SAREF_NULL) {
 	cmsg = CMSG_FIRSTHDR(&msgh);
 	cmsg->cmsg_level = IPPROTO_IP;
-	cmsg->cmsg_type  = IP_IPSEC_REFINFO;
+	cmsg->cmsg_type  = gconfig.sarefnum;
 	cmsg->cmsg_len   = CMSG_LEN(sizeof(unsigned int));
 
 	if(gconfig.debug_network) {
-		l2tp_log(LOG_DEBUG,"sending with saref=%d\n", t->refhim);
+		l2tp_log(LOG_DEBUG,"sending with saref=%d using sarefnum=%d\n", t->refhim, gconfig.sarefnum);
 	}
 	refp = (unsigned int *)CMSG_DATA(cmsg);
 	*refp = t->refhim;
-
-	msgh.msg_controllen = cmsg->cmsg_len;
+	
+	finallen = cmsg->cmsg_len;
     }
+    
+    if (t->my_addr.ipi_addr.s_addr){
+
+	if ( ! cmsg) {
+		cmsg = CMSG_FIRSTHDR(&msgh);		
+	}
+	else {
+		cmsg = CMSG_NXTHDR(&msgh, cmsg);
+	}
+	
+	cmsg->cmsg_level = IPPROTO_IP;
+	cmsg->cmsg_type = IP_PKTINFO;
+	cmsg->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
+
+	pktinfo = (struct in_pktinfo*) CMSG_DATA(cmsg);
+	*pktinfo = t->my_addr;
+	
+	finallen += cmsg->cmsg_len;
+    }
+    
+    msgh.msg_controllen = finallen;
     
     iov.iov_base = buf->start;
     iov.iov_len  = buf->len;
@@ -386,8 +416,9 @@ void network_thread ()
      * We loop forever waiting on either data from the ppp drivers or from
      * our network socket.  Control handling is no longer done here.
      */
-    struct sockaddr_in from, to;
-    unsigned int fromlen, tolen;
+    struct sockaddr_in from;
+    struct in_pktinfo to;
+    unsigned int fromlen;
     int tunnel, call;           /* Tunnel and call */
     int recvsize;               /* Length of data received */
     struct buffer *buf;         /* Payload buffer */
@@ -469,7 +500,6 @@ void network_thread ()
 	    memset(&to,   0, sizeof(to));
 	    
 	    fromlen = sizeof(from);
-	    tolen   = sizeof(to);
 	    
 	    memset(&msgh, 0, sizeof(struct msghdr));
 	    iov.iov_base = buf->start;
@@ -512,23 +542,27 @@ void network_thread ()
 
 	    refme=refhim=0;
 
-	    /* extract IPsec info out */
-	    if(gconfig.ipsecsaref) {
-		    struct cmsghdr *cmsg;
-		    /* Process auxiliary received data in msgh */
-		    for (cmsg = CMSG_FIRSTHDR(&msgh);
-			 cmsg != NULL;
-			 cmsg = CMSG_NXTHDR(&msgh,cmsg)) {
-			    if (cmsg->cmsg_level == IPPROTO_IP
-				&& cmsg->cmsg_type == IP_IPSEC_REFINFO) {
-				    unsigned int *refp;
-				    
-				    refp = (unsigned int *)CMSG_DATA(cmsg);
-				    refme =refp[0];
-				    refhim=refp[1];
-			    }
-		    }
-	    }
+
+		struct cmsghdr *cmsg;
+		/* Process auxiliary received data in msgh */
+		for (cmsg = CMSG_FIRSTHDR(&msgh);
+			cmsg != NULL;
+			cmsg = CMSG_NXTHDR(&msgh,cmsg)) {
+			/* extract destination(our) addr */
+			if (cmsg->cmsg_level == IPPROTO_IP && cmsg->cmsg_type == IP_PKTINFO) {
+				struct in_pktinfo* pktInfo = ((struct in_pktinfo*)CMSG_DATA(cmsg));
+				to = *pktInfo;
+			}
+			/* extract IPsec info out */
+			else if (gconfig.ipsecsaref && cmsg->cmsg_level == IPPROTO_IP
+			&& cmsg->cmsg_type == gconfig.sarefnum) {
+				unsigned int *refp;
+				
+				refp = (unsigned int *)CMSG_DATA(cmsg);
+				refme =refp[0];
+				refhim=refp[1];
+			}
+		}
 
 	    /*
 	     * some logic could be added here to verify that we only
@@ -584,6 +618,10 @@ void network_thread ()
 	    }
 	    else
 	    {
+		if (c->container) {
+			c->container->my_addr = to;
+		}
+
 		buf->peer = from;
 		/* Handle the packet */
 		c->container->chal_us.vector = NULL;
@@ -675,8 +713,8 @@ void network_thread ()
 
 }
 
-int connect_pppol2tp(struct tunnel *t) {
 #ifdef USE_KERNEL
+int connect_pppol2tp(struct tunnel *t) {
         if (kernel_support) {
             int ufd = -1, fd2 = -1;
             int flags;
@@ -695,7 +733,9 @@ int connect_pppol2tp(struct tunnel *t) {
 
             flags=1;
             setsockopt(ufd, SOL_SOCKET, SO_REUSEADDR, &flags, sizeof(flags));
+#ifdef SO_NO_CHECK
             setsockopt(ufd, SOL_SOCKET, SO_NO_CHECK, &flags, sizeof(flags));
+#endif
 
             if (bind (ufd, (struct sockaddr *) &server, sizeof (server)))
             {
@@ -731,17 +771,15 @@ int connect_pppol2tp(struct tunnel *t) {
                      __FUNCTION__);
                 return -EINVAL;
             }
+            memset(&sax, 0, sizeof(sax));
             sax.sa_family = AF_PPPOX;
             sax.sa_protocol = PX_PROTO_OL2TP;
-            sax.pppol2tp.pid = 0;
             sax.pppol2tp.fd = t->udp_fd;
             sax.pppol2tp.addr.sin_addr.s_addr = t->peer.sin_addr.s_addr;
             sax.pppol2tp.addr.sin_port = t->peer.sin_port;
             sax.pppol2tp.addr.sin_family = AF_INET;
             sax.pppol2tp.s_tunnel  = t->ourtid;
-            sax.pppol2tp.s_session = 0;
             sax.pppol2tp.d_tunnel  = t->tid;
-            sax.pppol2tp.d_session = 0;
             if ((connect(fd2, (struct sockaddr *)&sax, sizeof(sax))) < 0) {
                 l2tp_log (LOG_WARNING, "%s: Unable to connect PPPoL2TP socket. %d %s\n",
                      __FUNCTION__, errno, strerror(errno));
@@ -750,6 +788,6 @@ int connect_pppol2tp(struct tunnel *t) {
             }
             t->pppox_fd = fd2;
         }
-#endif
     return 0;
 }
+#endif

@@ -44,8 +44,8 @@ struct ppp_opts
 
 #define IPADDY(a) inet_ntoa(*((struct in_addr *)&(a)))
 
-//#define DEBUG c ? c->debug || t->debug : t->debug
-#define DEBUG 0
+#define DEBUG c ? c->debug || t->debug : t->debug
+
 #ifdef USE_SWAPS_INSTEAD
 #define SWAPS(a) ((((a) & 0xFF) << 8 ) | (((a) >> 8) & 0xFF))
 #ifdef htons
@@ -61,13 +61,7 @@ struct ppp_opts
 #define halt() printf("Halted.\n") ; for(;;)
 
 extern char hostname[];
-
-#ifdef NEED_PRINTF
 extern void l2tp_log (int level, const char *fmt, ...);
-#else
-#define l2tp_log(level,fmt,...) while(0) {}
-#endif
-
 extern struct buffer *new_buf (int);
 extern void udppush_handler (int);
 extern int addfcs (struct buffer *buf);

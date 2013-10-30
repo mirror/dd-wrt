@@ -19,7 +19,7 @@ l2tp tunnels. The default is /etc/l2tpd/l2tp\-secrets.
 
 .TP 
 .B ipsec saref
-Use ipsec Security Association trackinng. When this is enabled, packets
+Use IPsec Security Association trackinng. When this is enabled, packets
 received by xl2tpd should have to extra fields (refme and refhim) which
 allows tracking of multiple clients using the same internal NATed IP
 address, and allows tracking of multiple clients behind the same
@@ -30,6 +30,14 @@ Set this to yes and the system will provide proper SAref values in the
 recvmsg() calls.
 
 Values can be yes or no. The default is no.
+
+.TP 
+.B saref refinfo
+When using IPsec Security Association trackinng, a new setsockopt is used.
+Since this is not (yet?) an official Linux kernel option, we got bumped.
+Openswan upto 2.6.35 for linux kernels up to 2.6.35 used a saref num of 22.
+Linux 3.6.36+ uses 22 for IP_NODEFRAG. We moved our IP_IPSEC_REFINFO to 30.
+If not set, the default is to use 30. For older SAref patched kernels, use 22.
 
 .TP 
 .B listen-addr
@@ -143,6 +151,10 @@ Will report this as the xl2tpd hostname in negociation.
 .B ppp debug
 This will enable the debug for pppd.
 
+.TP
+.B pass peer
+Pass the peer's IP address to pppd as ipparam.  Enabled by default.
+
 .TP 
 .B pppoptfile
 Specify the path for a file which contains pppd configuration parameters
@@ -191,12 +203,14 @@ Set the dns name or ip address of the LNS to connect to.
 
 .TP 
 .B redial
-If set to yes, xl2tpd will attempts to redial if the call get disconected.
+If set to yes, xl2tpd will attempts to redial if the call get
+disconected.  Note that, if enabled, xl2tpd will keep passwords in
+memory: a potental security risk.
 
 .TP 
 .B redial timeout
 Wait X seconds before redial. The redial option must be set to yes
-to use this option.
+to use this option.  Defaults to 30 seconds.
 
 .TP 
 .B max redial 
@@ -208,7 +222,7 @@ Will give up redial tries after X attempts.
 \fB\fR/var/run/xl2tpd/l2tp\-control
 .SH "BUGS"
 
-Please address bugs and comment to xl2tpd\-dev@xelerance.com
+Please address bugs and comment to xl2tpdv@lists.xelerance.com
 .SH "SEE ALSO"
 
 \fB\fRxl2tpd(8)
