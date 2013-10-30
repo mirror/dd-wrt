@@ -50,13 +50,13 @@ struct host
 #define SENSE_DENY 0
 
 #ifndef DEFAULT_AUTH_FILE
-#define DEFAULT_AUTH_FILE "/tmp/xl2tpd/l2tp-secrets"
+#define DEFAULT_AUTH_FILE "/etc/xl2tpd/l2tp-secrets"
 #endif
 #ifndef DEFAULT_CONFIG_FILE
-#define DEFAULT_CONFIG_FILE "/tmp/xl2tpd/xl2tpd.conf"
+#define DEFAULT_CONFIG_FILE "/etc/xl2tpd/xl2tpd.conf"
 #endif
-#define ALT_DEFAULT_AUTH_FILE "/tmp/l2tp-secrets"
-#define ALT_DEFAULT_CONFIG_FILE "/tmp/l2tpd.conf"
+#define ALT_DEFAULT_AUTH_FILE "/etc/l2tpd/l2tp-secrets"
+#define ALT_DEFAULT_CONFIG_FILE "/etc/l2tp/l2tpd.conf"
 #define DEFAULT_PID_FILE "/var/run/xl2tpd.pid"
 
 /* Definition of an LNS */
@@ -95,6 +95,7 @@ struct lns
     int proxyarp;               /* Use proxy-arp? */
     int proxyauth;              /* Allow proxy authentication? */
     int debug;                  /* Debug PPP? */
+    int pass_peer;              /* Pass peer IP to pppd as ipparam? */
     char pppoptfile[STRLEN];    /* File containing PPP options */
     struct tunnel *t;           /* Tunnel of this, if it's ready */
 };
@@ -132,6 +133,7 @@ struct lac
     int rmax;                   /* Maximum # of consecutive redials */
     int rtries;                 /* # of tries so far */
     int rtimeout;               /* Redial every this many # of seconds */
+    int pass_peer;              /* Pass peer IP to pppd as ipparam? */
     char pppoptfile[STRLEN];    /* File containing PPP options */
     int debug;
     struct tunnel *t;           /* Our tunnel */
@@ -157,6 +159,9 @@ struct global
     int debug_tunnel;		/* Print tunnel debugging info? */
     int debug_state;		/* Print FSM debugging info? */
     int ipsecsaref;
+    int sarefnum;		/* Value of IPSEC_REFINFO used by kernel
+				 * (we used to pick 22, but 2.6.36+ took that, so now we pick 30)
+				 * Changed in SAref patch in openswan 2.6.36 for linux 2.6.36+ */
 };
 
 extern struct global gconfig;   /* Global configuration options */

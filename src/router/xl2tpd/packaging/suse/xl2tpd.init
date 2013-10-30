@@ -17,8 +17,8 @@
 #
 ### BEGIN INIT INFO
 # Provides: xl2tpd
-# Required-Start: $syslog
-# Required-Stop:  $syslog
+# Required-Start: $syslog $remote_fs
+# Required-Stop:  $syslog $remote_fs
 # Default-Start:  3 5
 # Default-Stop:   0 1 2 6
 # Short-Description: Start xl2tpd (to provide L2TP VPN's)
