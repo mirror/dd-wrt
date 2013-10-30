@@ -41,7 +41,7 @@ typedef unsigned long long _u64;
 #define CONTROL_PIPE_MESSAGE_SIZE 1024
 
 #define BINARY "xl2tpd"
-#define SERVER_VERSION "xl2tpd-1.3.0"
+#define SERVER_VERSION "xl2tpd-1.3.1"
 #define VENDOR_NAME "xelerance.com"
 #ifndef PPPD
 #define PPPD		"/usr/sbin/pppd"
@@ -172,6 +172,7 @@ struct tunnel
     struct call *self;
     struct lns *lns;            /* LNS that owns us */
     struct lac *lac;            /* LAC that owns us */
+    struct in_pktinfo my_addr;  /* Address of my endpoint */
 };
 
 struct tunnel_list
@@ -208,7 +209,6 @@ extern struct tunnel_list tunnels;
 extern void tunnel_close (struct tunnel *t);
 extern void network_thread ();
 extern int init_network ();
-extern int kernel_support;
 extern int server_socket;
 extern struct tunnel *new_tunnel ();
 extern struct packet_queue xmit_udp;
@@ -222,7 +222,10 @@ extern void control_xmit (void *);
 extern int ppd;
 extern int switch_io;           /* jz */
 extern int control_fd;
-extern int connect_pppol2tp(struct tunnel *t);
+#ifdef USE_KERNEL
+extern int kernel_support;
+extern int connect_pppol2tp (struct tunnel *t);
+#endif
 extern int start_pppd (struct call *c, struct ppp_opts *);
 extern void magic_lac_dial (void *);
 extern int get_entropy (unsigned char *, int);
@@ -239,7 +242,6 @@ extern int get_entropy (unsigned char *, int);
  */
 
 #ifdef USE_KERNEL
-#define __packed			__attribute__((packed))
 #include <net/if.h>
 #include <linux/if_ether.h>
 #include <linux/if_pppox.h>
