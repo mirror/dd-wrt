@@ -131,6 +131,7 @@ include rules/ebtables.mk
 include rules/ntpclient.mk
 include rules/pppoe.mk
 include rules/udhcpd.mk
+include rules/xl2tpd.mk
 include rules/wlconf.mk
 include rules/vlan.mk
 include rules/brcm_nas.mk
