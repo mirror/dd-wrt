@@ -31,6 +31,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/sysinfo.h>
+#include <syslog.h>
 
 #include <bcmnvram.h>
 #include <netconf.h>
@@ -172,16 +173,11 @@ static int bound(void)
 	char *value;
 	static char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
 	int changed = 0;
-	static char *cidr;
 	if (nvram_match("wan_proto", "iphone"))
 		stop_process("ipheth-loop", "IPhone Pairing Daemon");
 
-	cidr = getenv("cidrroute");
-	if (cidr && wan_ifname) {
-		char *callbuffer = malloc(strlen(cidr) + 128);
-		sprintf(callbuffer, "export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh", cidr, wan_ifname);
-		system(callbuffer);
-		free(callbuffer);
+	if (wan_ifname) {
+		system("/etc/cidrroute.sh /tmp/udhcpstaticroutes");
 	}
 
 	if ((value = getenv("ip"))) {
@@ -408,8 +404,6 @@ static int bound_tv(void)
 	ip = safe_getenv("ip");
 	static char *net;
 	net = safe_getenv("subnet");
-	static char *cidr;
-	cidr = safe_getenv("cidrroute");
 	if (ip && net && ifname) {
 		static char bcast[32];
 		strcpy(bcast, ip);
@@ -417,11 +411,8 @@ static int bound_tv(void)
 		nvram_set("tvnicaddr", ip);
 		eval("ifconfig", ifname, ip, "netmask", net, "broadcast", bcast, "multicast");
 	}
-	if (cidr && ifname) {
-		char *callbuffer = malloc(strlen(cidr) + 128);
-		sprintf(callbuffer, "export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh", cidr, ifname);
-		system(callbuffer);
-		free(callbuffer);
+	if (ifname) {
+		system("/etc/cidrroute.sh /tmp/tvrouting");
 	}
 	return 0;
 }
