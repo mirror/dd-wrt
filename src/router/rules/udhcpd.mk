@@ -19,8 +19,14 @@ ifeq ($(CONFIG_UDHCPD),y)
 	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
 	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
 endif
+ifneq ($(CONFIG_BUSYBOX_UDHCPC),y)
 	install -D udhcpc/udhcpc $(INSTALLDIR)/udhcpd/usr/sbin/udhcpc
 	install -m 777 -D udhcpc/scripts/cidrroute.sh $(INSTALLDIR)/udhcpd/etc/cidrroute.sh
+else
+	install -m 777 -D udhcpc/scripts/udhcpcroutes.sh $(INSTALLDIR)/udhcpd/etc/cidrroute.sh
+	#mkdir -p $(INSTALLDIR)/udhcpc/etc/
+	#cd $(INSTALLDIR)/udhcpd/etc/ && ln -sf /tmp/cidrroute.sh cidrroute.sh
+endif
 #ifeq ($(CONFIG_DIST),"micro")
 #	rm -f $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
 #endif
