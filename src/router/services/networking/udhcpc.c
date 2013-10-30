@@ -31,7 +31,6 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/sysinfo.h>
-#include <syslog.h>
 
 #include <bcmnvram.h>
 #include <netconf.h>
@@ -173,13 +172,23 @@ static int bound(void)
 	char *value;
 	static char temp_wan_ipaddr[16], temp_wan_netmask[16], temp_wan_gateway[16];
 	int changed = 0;
+	static char *cidr;
 	if (nvram_match("wan_proto", "iphone"))
 		stop_process("ipheth-loop", "IPhone Pairing Daemon");
 
+#ifdef HAVE_BUSYBOX_UDHCPC
 	if (wan_ifname) {
 		system("/etc/cidrroute.sh /tmp/udhcpstaticroutes");
 	}
-
+#else
+	cidr = getenv("cidrroute");
+	if (cidr && wan_ifname) {
+		char *callbuffer = malloc(strlen(cidr) + 128);
+		sprintf(callbuffer, "export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh", cidr, wan_ifname);
+		system(callbuffer);
+		free(callbuffer);
+	}
+#endif
 	if ((value = getenv("ip"))) {
 		chomp(value);
 		if (nvram_match("wan_proto", "pptp")
@@ -404,6 +413,10 @@ static int bound_tv(void)
 	ip = safe_getenv("ip");
 	static char *net;
 	net = safe_getenv("subnet");
+#ifndef HAVE_BUSYBOX_UDHCPC
+	static char *cidr;
+	cidr = safe_getenv("cidrroute");
+#endif
 	if (ip && net && ifname) {
 		static char bcast[32];
 		strcpy(bcast, ip);
@@ -411,9 +424,18 @@ static int bound_tv(void)
 		nvram_set("tvnicaddr", ip);
 		eval("ifconfig", ifname, ip, "netmask", net, "broadcast", bcast, "multicast");
 	}
+#ifdef HAVE_BUSYBOX_UDHCPC
 	if (ifname) {
 		system("/etc/cidrroute.sh /tmp/tvrouting");
 	}
+#else	
+	if (cidr && ifname) {
+		char *callbuffer = malloc(strlen(cidr) + 128);
+		sprintf(callbuffer, "export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh", cidr, ifname);
+		system(callbuffer);
+		free(callbuffer);
+	}
+#endif
 	return 0;
 }
 
