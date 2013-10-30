@@ -359,6 +359,15 @@ ifeq ($(CONFIG_WDR2543),y)
 else
 	echo "# CONFIG_WDR2543 is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_EHCI),y)
+	sed -i 's/\# CONFIG_USB_EHCI_HCD is not set/CONFIG_USB_EHCI_HCD=m/g' $(LINUXDIR)/.config
+	echo "CONFIG_USB_EHCI_ROOT_HUB_TT=y" >> $(LINUXDIR)/.config
+	echo "CONFIG_USB_EHCI_TT_NEWSCHED=y" >> $(LINUXDIR)/.config
+	echo "CONFIG_USB_EHCI_HCD_PLATFORM=m" >> $(LINUXDIR)/.config
+	echo "# CONFIG_USB_SISUSBVGA is not set" >> $(LINUXDIR)/.config
+	echo "CONFIG_USB_EHCI_AR9130=y" >> $(LINUXDIR)/.config
+	echo "# CONFIG_USB_CHIPIDEA is not set" >> $(LINUXDIR)/.config
+endif
 
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
@@ -1367,6 +1376,8 @@ ifeq ($(CONFIG_WDR4300),y)
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4310-firmware.bin mips-uclibc/tplink-TL-WDR4310-firmware.bin
 	-./tools/tplink/mktplinkfw -B TL-WDR3600 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3600-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3600-firmware.bin mips-uclibc/tplink-TL-WDR3600-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WDR3500 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3500-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3500-firmware.bin mips-uclibc/tplink-TL-WDR3500-firmware.bin
 endif
 
 ifeq ($(CONFIG_WRT400),y)
