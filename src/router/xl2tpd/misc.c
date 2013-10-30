@@ -38,6 +38,7 @@ static int syslog_nesting = 0;
     }                               \
     --syslog_nesting;               \
 } while(0)
+#ifdef NEED_PRINTF
 
 void init_log()
 {
@@ -48,7 +49,6 @@ void init_log()
 	logopen=1;
     }
 }
-
 void l2tp_log (int level, const char *fmt, ...)
 {
     char buf[2048];
@@ -77,7 +77,7 @@ void set_error (struct call *c, int error, const char *fmt, ...)
         c->errormsg[strlen (c->errormsg) - 1] = 0;
     va_end (args);
 }
-
+#endif
 struct buffer *new_buf (int size)
 {
     struct buffer *b = malloc (sizeof (struct buffer));
