@@ -30,8 +30,9 @@ struct lac *laclist;
 struct lns *deflns;
 struct lac *deflac;
 struct global gconfig;
+#ifdef NEED_PRINTF
 char filerr[STRLEN];
-
+#endif
 int parse_config (FILE *);
 struct keyword words[];
 
@@ -74,7 +75,9 @@ int init_config ()
     returnedValue = parse_config (f);
     fclose (f);
     return (returnedValue);
+#ifdef NEED_PRINTF
     filerr[0] = 0;
+#endif
 }
 
 struct lns *new_lns ()
@@ -189,8 +192,10 @@ int set_boolean (char *word, char *value, int *ptr)
 #endif /* ; */
     if ((val = yesno (value)) < 0)
     {
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "%s must be 'yes' or 'no'\n",
                   word);
+#endif
         return -1;
     }
     *ptr = val;
@@ -205,7 +210,9 @@ int set_int (char *word, char *value, int *ptr)
 #endif /* ; */
     if ((val = atoi (value)) < 0)
     {
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "%s must be a number\n", word);
+#endif
         return -1;
     }
     *ptr = val;
@@ -233,8 +240,10 @@ int set_port (char *word, char *value, int context, void *item)
         set_int (word, value, &(((struct global *) item)->port));
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -244,8 +253,10 @@ int set_rtimeout (char *word, char *value, int context, void *item)
 {
     if (atoi (value) < 1)
     {
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr),
                   "rtimeout value must be at least 1\n");
+#endif
         return -1;
     }
     switch (context & ~CONTEXT_DEFAULT)
@@ -258,8 +269,10 @@ int set_rtimeout (char *word, char *value, int context, void *item)
         set_int (word, value, &(((struct lac *) item)->rtimeout));
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -269,8 +282,10 @@ int set_rws (char *word, char *value, int context, void *item)
 {
     if (atoi (value) < -1)
     {
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr),
                   "receive window size must be at least -1\n");
+#endif
         return -1;
     }
     switch (context & ~CONTEXT_DEFAULT)
@@ -283,8 +298,10 @@ int set_rws (char *word, char *value, int context, void *item)
             set_int (word, value, &(((struct lac *) item)->tun_rws));
             if (((struct lac *) item)->tun_rws < 1)
             {
+#ifdef NEED_PRINTF
                 snprintf (filerr, sizeof (filerr),
                           "receive window size for tunnels must be at least 1\n");
+#endif
                 return -1;
             }
         }
@@ -297,15 +314,19 @@ int set_rws (char *word, char *value, int context, void *item)
             set_int (word, value, &(((struct lns *) item)->tun_rws));
             if (((struct lns *) item)->tun_rws < 1)
             {
+#ifdef NEED_PRINTF
                 snprintf (filerr, sizeof (filerr),
                           "receive window size for tunnels must be at least 1\n");
+#endif
                 return -1;
             }
         }
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -315,8 +336,10 @@ int set_speed (char *word, char *value, int context, void *item)
 {
     if (atoi (value) < 1 )
     {
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr),
                   "bps must be greater than zero\n");
+#endif
         return -1;
     }
     switch (context & ~CONTEXT_DEFAULT)
@@ -344,8 +367,10 @@ int set_speed (char *word, char *value, int context, void *item)
 	}
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -355,7 +380,9 @@ int set_rmax (char *word, char *value, int context, void *item)
 {
     if (atoi (value) < 1)
     {
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "rmax value must be at least 1\n");
+#endif
         return -1;
     }
     switch (context & ~CONTEXT_DEFAULT)
@@ -367,8 +394,10 @@ int set_rmax (char *word, char *value, int context, void *item)
         set_int (word, value, &(((struct lac *) item)->rmax));
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -378,8 +407,10 @@ int set_authfile (char *word, char *value, int context, void *item)
 {
     if (!strlen (value))
     {
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr),
                   "no filename specified for authentication\n");
+#endif
         return -1;
     }
     switch (context & ~CONTEXT_DEFAULT)
@@ -393,8 +424,10 @@ int set_authfile (char *word, char *value, int context, void *item)
                  sizeof (((struct global *)item)->authfile));
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -409,8 +442,10 @@ int set_autodial (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -447,8 +482,10 @@ int set_flow (char *word, char *value, int context, void *item)
         }
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -463,8 +500,10 @@ int set_defaultroute (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -485,8 +524,10 @@ int set_authname (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -507,8 +548,10 @@ int set_hostname (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -523,8 +566,10 @@ int set_passwdauth (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -543,8 +588,10 @@ int set_hbit (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -563,8 +610,10 @@ int set_challenge (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -583,8 +632,10 @@ int set_lbit (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -604,8 +655,10 @@ int set_debug (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -624,8 +677,10 @@ int set_pass_peer (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -646,8 +701,10 @@ int set_pppoptfile (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -698,8 +755,10 @@ int set_papchap (char *word, char *value, int context, void *item)
             n->chap_require = result;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -714,8 +773,10 @@ int set_redial (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -731,8 +792,10 @@ int set_accesscontrol (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -748,8 +811,10 @@ int set_userspace (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -765,8 +830,10 @@ int set_debugavp (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -782,8 +849,10 @@ int set_debugnetwork (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -799,8 +868,10 @@ int set_debugpacket (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -816,8 +887,10 @@ int set_debugtunnel (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -833,8 +906,10 @@ int set_debugstate (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -849,8 +924,10 @@ int set_assignip (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -874,8 +951,10 @@ struct iprange *set_range (char *word, char *value, struct iprange *in)
     }
     if (!strlen (value) || (c && !strlen (d)))
     {
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr),
                   "format is '%s <host or ip> - <host or ip>'\n", word);
+#endif
         return NULL;
     }
     ipr = (struct iprange *) malloc (sizeof (struct iprange));
@@ -883,7 +962,9 @@ struct iprange *set_range (char *word, char *value, struct iprange *in)
     hp = gethostbyname (value);
     if (!hp)
     {
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "Unknown host %s\n", value);
+#endif
         free (ipr);
         return NULL;
     }
@@ -915,7 +996,9 @@ struct iprange *set_range (char *word, char *value, struct iprange *in)
         hp = gethostbyname (d);
         if (!hp)
         {
+#ifdef NEED_PRINTF
             snprintf (filerr, sizeof (filerr), "Unknown host %s\n", d);
+#endif
             free (ipr);
             return NULL;
         }
@@ -925,7 +1008,9 @@ struct iprange *set_range (char *word, char *value, struct iprange *in)
         ipr->end = ipr->start;
     if (ntohl (ipr->start) > ntohl (ipr->end))
     {
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "start is greater than end!\n");
+#endif
         free (ipr);
         return NULL;
     }
@@ -953,8 +1038,10 @@ int set_iprange (char *word, char *value, int context, void *item)
     case CONTEXT_LNS:
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     lns->range = set_range (word, value, lns->range);
@@ -975,8 +1062,10 @@ int set_lac (char *word, char *value, int context, void *item)
     case CONTEXT_LNS:
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     lns->lacs = set_range (word, value, lns->lacs);
@@ -998,8 +1087,10 @@ int set_exclusive (char *word, char *value, int context, void *item)
             return -1;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -1011,8 +1102,10 @@ int set_ip (char *word, char *value, unsigned int *addr)
     hp = gethostbyname (value);
     if (!hp)
     {
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "%s: host '%s' not found\n",
                   __FUNCTION__, value);
+#endif
         return -1;
     }
     bcopy (hp->h_addr, addr, sizeof (unsigned int));
@@ -1032,8 +1125,10 @@ int set_listenaddr (char *word, char *value, int context, void *item)
 		return -1;
 	break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -1052,8 +1147,10 @@ int set_localaddr (char *word, char *value, int context, void *item)
         n = (struct lns *) item;
         return set_ip (word, value, &(n->localaddr));
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -1068,8 +1165,10 @@ int set_remoteaddr (char *word, char *value, int context, void *item)
         l = (struct lac *) item;
         return set_ip (word, value, &(l->remoteaddr));
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -1101,7 +1200,9 @@ int set_lns (char *word, char *value, int context, void *item)
         hp = gethostbyname (value);
         if (!hp)
         {
+#ifdef NEED_PRINTF
             snprintf (filerr, sizeof (filerr), "no such host '%s'\n", value);
+#endif
             return -1;
         }
 #endif
@@ -1125,8 +1226,10 @@ int set_lns (char *word, char *value, int context, void *item)
             ipr->port = UDP_LISTEN_PORT;
         break;
     default:
+#ifdef NEED_PRINTF
         snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
                   word);
+#endif
         return -1;
     }
     return 0;
@@ -1158,8 +1261,10 @@ int set_ipsec_saref (char *word, char *value, int context, void *item)
 	    }
 	    break;
     default:
+#ifdef NEED_PRINTF
 	    snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n",
 		      word);
+#endif
 	    return -1;
     }
     return 0;
@@ -1174,7 +1279,9 @@ int set_saref_num (char *word, char *value, int context, void *item)
 		set_int (word, value, &(((struct global *) item)->sarefnum));
 		break;
 	default:
+#ifdef NEED_PRINTF
 		snprintf (filerr, sizeof (filerr), "'%s' not valid in this context\n", word);
+#endif
 		return -1;
 	}
     return 0;
@@ -1223,7 +1330,9 @@ int set_rand_source (char *word, char *value, int context, void *item)
     /* WORKING HERE */
     if (strlen(value) == 0)
     {
+#ifdef NEED_PRINTF
         snprintf(filerr, sizeof (filerr), "no randomness source specified\n");
+#endif
         return -1;
     }
     if (strncmp(value, "egd", 3) == 0)
