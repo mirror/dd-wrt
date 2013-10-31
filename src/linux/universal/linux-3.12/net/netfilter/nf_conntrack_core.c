@@ -1302,7 +1302,7 @@ EXPORT_SYMBOL_GPL(nf_conntrack_flush_report);
 
 void nf_conntrack_flush(void)
 {
-	nf_ct_iterate_cleanup(&init_net, kill_all, NULL);
+	nf_ct_iterate_cleanup(&init_net, kill_all, NULL, 0, 0);
 }
 EXPORT_SYMBOL_GPL(nf_conntrack_flush);
 

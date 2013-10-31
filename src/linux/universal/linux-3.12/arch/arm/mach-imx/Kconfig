@@ -785,9 +785,6 @@ config	SOC_IMX53
 
 config SOC_IMX6Q
 	bool "i.MX6 Quad/DualLite support"
-	select NEED_MACH_IO_H if PCI
-	select ARCH_HAS_IMX_PCIE
-	select ARCH_SUPPORTS_MSI
 	select ARCH_HAS_CPUFREQ
 	select ARCH_HAS_OPP
 	select ARM_ERRATA_754322
@@ -852,10 +849,6 @@ config SOC_VF610
 	  This enable support for Freescale Vybrid VF610 processor.
 
 endif
-
-config IMX_PCIE
-	bool "PCI Express support"
-	select PCI
 
 source "arch/arm/mach-imx/devices/Kconfig"
 

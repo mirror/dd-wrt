@@ -152,8 +152,8 @@
 #ifdef CONFIG_CLKSRC_OF
 #define CLKSRC_OF_TABLES() . = ALIGN(8);				\
 			   VMLINUX_SYMBOL(__clksrc_of_table) = .;	\
-			  KEEP(*(__clksrc_of_table))				\
-			  KEEP(*(__clksrc_of_table_end))
+			   KEEP(*(__clksrc_of_table))			\
+			   KEEP(*(__clksrc_of_table_end))
 #else
 #define CLKSRC_OF_TABLES()
 #endif
@@ -162,7 +162,7 @@
 #define IRQCHIP_OF_MATCH_TABLE()					\
 	. = ALIGN(8);							\
 	VMLINUX_SYMBOL(__irqchip_begin) = .;				\
-	KEEP(*(__irqchip_of_table))		  				\
+	KEEP(*(__irqchip_of_table))	  				\
 	KEEP(*(__irqchip_of_end))
 #else
 #define IRQCHIP_OF_MATCH_TABLE()
@@ -205,7 +205,7 @@
 	LIKELY_PROFILE()		       				\
 	BRANCH_PROFILE()						\
 	TRACE_PRINTKS()							\
-	TRACEPOINT_STR()
+	TRACEPOINT_STR()                                                \
 	*(.data.[a-zA-Z_]*)
 
 /*
@@ -288,7 +288,6 @@
 		KEEP(*(.builtin_fw))					\
 		VMLINUX_SYMBOL(__end_builtin_fw) = .;			\
 	}								\
-									\
 									\
 	TRACEDATA							\
 									\

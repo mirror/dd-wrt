@@ -4811,19 +4811,19 @@ static struct net_device *sky2_init_netdev(struct sky2_hw *hw, unsigned port,
 	 * 2) from internal registers set by bootloader
 	 */
 	iap = NULL;
-#ifdef CONFIG_OF
-	struct device_node *np;
-	np = of_find_node_by_path("/aliases");
-	if (np) {
-		const char *path = of_get_property(np, "sky2", NULL);
-	if (path)
-		np = of_find_node_by_path(path);
-	if (np)
-		path = of_get_mac_address(np);
-	if (path)
-		iap = (unsigned char *) path;
+	if (IS_ENABLED(CONFIG_OF)) {
+		struct device_node *np;
+		np = of_find_node_by_path("/aliases");
+		if (np) {
+			const char *path = of_get_property(np, "sky2", NULL);
+			if (path)
+				np = of_find_node_by_path(path);
+			if (np)
+				path = of_get_mac_address(np);
+			if (path)
+				iap = (unsigned char *) path;
+		}
 	}
-#endif
 
 	/*
 	 * 2) mac registers set by bootloader
