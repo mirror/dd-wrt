@@ -3753,7 +3753,7 @@ try_send:
 			res = bond_dev_queue_xmit(bond, skb, slave->dev);
 			(slave->weight_tokens)--;
 			write_lock(&bond->curr_slave_lock);
-			bond->curr_active_slave = slave->next;
+			bond->curr_active_slave = bond_next_slave(bond, slave);
 			write_unlock(&bond->curr_slave_lock);
 
 			goto out;
@@ -3787,13 +3787,12 @@ static int bond_xmit_duplex_master(struct sk_buff *skb, struct net_device *bond_
 	struct bonding *bond = netdev_priv(bond_dev);
 	struct slave *slave;
 	int count=0;
-	int i;
 	int res = 1;
 
 
 
 
-	bond_for_each_slave(bond, slave, i) {
+	bond_for_each_slave(bond, slave) {
 		if ((count % 2)==1 && IS_UP(slave->dev) &&
 			(slave->link == BOND_LINK_UP) &&
 		    (bond_is_active_slave(slave))) {
@@ -3816,12 +3815,11 @@ static int bond_xmit_duplex_slave(struct sk_buff *skb, struct net_device *bond_d
 	struct bonding *bond = netdev_priv(bond_dev);
 	struct slave *slave;
 	int count=0;
-	int i;
 	int res = 1;
 
 
 
-	bond_for_each_slave(bond, slave, i) {
+	bond_for_each_slave(bond, slave) {
 		if ((count % 2)==0 && IS_UP(slave->dev) &&
 			(slave->link == BOND_LINK_UP) &&
 		    (bond_is_active_slave(slave))) {
