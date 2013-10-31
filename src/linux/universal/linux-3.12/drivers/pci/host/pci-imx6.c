@@ -81,7 +81,7 @@ static int pcie_phy_poll_ack(void __iomem *dbi_base, int exp_val)
 			return 0;
 
 		udelay(1);
-	} while ((wait_counter < max_iterations) && (val != exp_val));
+	} while (wait_counter < max_iterations);
 
 	return -ETIMEDOUT;
 }
@@ -168,7 +168,7 @@ static int pcie_phy_write(void __iomem *dbi_base, int addr, int data)
 	var = data << PCIE_PHY_CTRL_DATA_LOC;
 	writel(var, dbi_base + PCIE_PHY_CTRL);
 
-	/* wait for ack de-assetion */
+	/* wait for ack de-assertion */
 	ret = pcie_phy_poll_ack(dbi_base, 0);
 	if (ret)
 		return ret;
@@ -186,7 +186,7 @@ static int pcie_phy_write(void __iomem *dbi_base, int addr, int data)
 	var = data << PCIE_PHY_CTRL_DATA_LOC;
 	writel(var, dbi_base + PCIE_PHY_CTRL);
 
-	/* wait for ack de-assetion */
+	/* wait for ack de-assertion */
 	ret = pcie_phy_poll_ack(dbi_base, 0);
 	if (ret)
 		return ret;
@@ -316,9 +316,9 @@ static void imx6_pcie_host_init(struct pcie_port *pp)
 			IMX6Q_GPR12_PCIE_CTL_2, 1 << 10);
 
 	while (!dw_pcie_link_up(pp)) {
-		usleep_range(2000, 3000);
+		usleep_range(100, 1000);
 		count++;
-		if (count >= 10) {
+		if (count >= 200) {
 			dev_err(pp->dev, "phy link never came up\n");
 			dev_dbg(pp->dev,
 				"DEBUG_R0: 0x%08x, DEBUG_R1: 0x%08x\n",
@@ -356,8 +356,7 @@ static int imx6_pcie_link_up(struct pcie_port *pp)
 	if (ltssm != 0x0d)
 		return 0;
 
-	dev_err(pp->dev,
-		"transition to gen2 is stuck, reset PHY!\n");
+	dev_err(pp->dev, "transition to gen2 is stuck, reset PHY!\n");
 
 	pcie_phy_read(pp->dbi_base,
 		PHY_RX_OVRD_IN_LO, &temp);
@@ -491,7 +490,7 @@ static int __init imx6_pcie_probe(struct platform_device *pdev)
 	}
 
 	/* Fetch clocks */
-	imx6_pcie->lvds_gate = clk_get(&pdev->dev, "lvds_gate");
+	imx6_pcie->lvds_gate = devm_clk_get(&pdev->dev, "lvds_gate");
 	if (IS_ERR(imx6_pcie->lvds_gate)) {
 		dev_err(&pdev->dev,
 			"lvds_gate clock select missing or invalid\n");
@@ -499,7 +498,7 @@ static int __init imx6_pcie_probe(struct platform_device *pdev)
 		goto err;
 	}
 
-	imx6_pcie->sata_ref_100m = clk_get(&pdev->dev, "sata_ref_100m");
+	imx6_pcie->sata_ref_100m = devm_clk_get(&pdev->dev, "sata_ref_100m");
 	if (IS_ERR(imx6_pcie->sata_ref_100m)) {
 		dev_err(&pdev->dev,
 			"sata_ref_100m clock source missing or invalid\n");
@@ -507,7 +506,7 @@ static int __init imx6_pcie_probe(struct platform_device *pdev)
 		goto err;
 	}
 
-	imx6_pcie->pcie_ref_125m = clk_get(&pdev->dev, "pcie_ref_125m");
+	imx6_pcie->pcie_ref_125m = devm_clk_get(&pdev->dev, "pcie_ref_125m");
 	if (IS_ERR(imx6_pcie->pcie_ref_125m)) {
 		dev_err(&pdev->dev,
 			"pcie_ref_125m clock source missing or invalid\n");
@@ -515,7 +514,7 @@ static int __init imx6_pcie_probe(struct platform_device *pdev)
 		goto err;
 	}
 
-	imx6_pcie->pcie_axi = clk_get(&pdev->dev, "pcie_axi");
+	imx6_pcie->pcie_axi = devm_clk_get(&pdev->dev, "pcie_axi");
 	if (IS_ERR(imx6_pcie->pcie_axi)) {
 		dev_err(&pdev->dev,
 			"pcie_axi clock source missing or invalid\n");
@@ -559,11 +558,11 @@ static struct platform_driver imx6_pcie_driver = {
 
 /* Freescale PCIe driver does not allow module unload */
 
-static int __init imx6_init(void)
+static int __init imx6_pcie_init(void)
 {
 	return platform_driver_probe(&imx6_pcie_driver, imx6_pcie_probe);
 }
-module_init(imx6_init);
+fs_initcall(imx6_pcie_init);
 
 MODULE_AUTHOR("Sean Cross <xobs@kosagi.com>");
 MODULE_DESCRIPTION("Freescale i.MX6 PCIe host controller driver");

@@ -9,15 +9,15 @@ config PCI_MVEBU
 config PCIE_DW
 	bool
 
-config PCI_IMX6
-	bool "Freescale i.MX6 PCIe controller"
-	depends on SOC_IMX6Q
-	select PCIEPORTBUS
-	select PCIE_DW
-
 config PCI_EXYNOS
 	bool "Samsung Exynos PCIe controller"
 	depends on SOC_EXYNOS5440
+	select PCIEPORTBUS
+	select PCIE_DW
+
+config PCI_IMX6
+	bool "Freescale i.MX6 PCIe controller"
+	depends on SOC_IMX6Q
 	select PCIEPORTBUS
 	select PCIE_DW
 

@@ -649,7 +649,7 @@ static struct dentry *rootfs_mount(struct file_system_type *fs_type,
 	if (test_and_set_bit(0, &once))
 		return ERR_PTR(-ENODEV);
 
-	if (IS_ENABLED(CONFIG_TMPFS) && is_tmpfs)
+	if (IS_ENABLED(CONFIG_DEVTMPFS) && is_tmpfs)
 		fill = shmem_fill_super;
 
 	return mount_nodev(fs_type, flags, data, fill);

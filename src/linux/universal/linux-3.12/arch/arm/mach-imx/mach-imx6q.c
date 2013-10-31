@@ -41,16 +41,10 @@
 #include "cpuidle.h"
 #include "hardware.h"
 
-static u32 chip_revision;
-
-int imx6q_revision(void)
-{
-	return chip_revision;
-}
-
 static void __init imx6q_init_revision(void)
 {
 	u32 rev = imx_anatop_get_digprog();
+	u32 chip_revision;
 
 	switch (rev & 0xff) {
 	case 0:
@@ -67,6 +61,7 @@ static void __init imx6q_init_revision(void)
 	}
 
 	mxc_set_cpu_type(rev >> 16 & 0xff);
+	imx_set_soc_revision(chip_revision);
 }
 
 static void imx6q_restart(enum reboot_mode mode, const char *cmd)
@@ -140,6 +135,34 @@ static int ksz9031rn_phy_fixup(struct phy_device *dev)
 	return 0;
 }
 
+/*
+ * fixup for PLX PEX8909 bridge to configure GPIO1-7 as output High
+ * as they are used for slots1-7 PERST#
+ */
+static void ventana_pciesw_early_fixup(struct pci_dev *dev)
+{
+	u32 dw;
+
+	if (!of_machine_is_compatible("gw,ventana"))
+		return;
+
+	if (dev->devfn != 0)
+		return;
+
+	pci_read_config_dword(dev, 0x62c, &dw);
+	dw |= 0xaaa8; // GPIO1-7 outputs
+	pci_write_config_dword(dev, 0x62c, dw);
+
+	pci_read_config_dword(dev, 0x644, &dw);
+	dw |= 0xfe;   // GPIO1-7 output high
+	pci_write_config_dword(dev, 0x644, dw);
+
+	msleep(100);
+}
+DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8609, ventana_pciesw_early_fixup);
+DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8606, ventana_pciesw_early_fixup);
+DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8604, ventana_pciesw_early_fixup);
+
 static int ar8031_phy_fixup(struct phy_device *dev)
 {
 	u16 val;
@@ -177,74 +200,6 @@ static void __init imx6q_enet_phy_init(void)
 	}
 }
 
-/*
- * fixup for PEX 8909 bridge to configure GPIO1-7 as output High
- * as they are used for slots1-7 PERST#
- */
-static void mx6_ventana_pciesw_early_fixup(struct pci_dev *dev)
-{
-	u32 dw;
-
-	if (!of_machine_is_compatible("gw,ventana"))
-		return;
-
-	if (dev->devfn != 0)
-		return;
-
-	pci_read_config_dword(dev, 0x62c, &dw);
-	dw |= 0xaaa8; // GPIO1-7 outputs
-	pci_write_config_dword(dev, 0x62c, dw);
-
-	pci_read_config_dword(dev, 0x644, &dw);
-	dw |= 0xfe;   // GPIO1-7 output high
-	pci_write_config_dword(dev, 0x644, dw);
-
-	mdelay(100);
-}
-DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8609,
-	mx6_ventana_pciesw_early_fixup);
-DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8606,
-	mx6_ventana_pciesw_early_fixup);
-DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8604,
-	mx6_ventana_pciesw_early_fixup);
-
-#ifdef CONFIG_IMX_PCIE
-
-static void __init imx6q_ventana_pcie_setup(void)
-{
-	struct clk *axi_sel, *axi, *ref;
-
-	axi_sel = clk_get_sys(NULL, "pcie_axi_sel");
-	axi = clk_get_sys(NULL, "axi");
-	ref = clk_get_sys(NULL, "pcie_ref_125m");
-	if (IS_ERR(axi_sel) || IS_ERR(axi) || IS_ERR(ref)) {
-		pr_err("pcie setup failed - can't get clocks\n");
-		goto put_clk;
-	}
-	clk_set_parent(axi_sel, axi);
-	clk_prepare_enable(ref);
-
-	// create an alias for pcie_clk for driver to use
-	if (clk_add_alias("pcie_clk", NULL, "pcie_axi", NULL))
-		pr_err("could not register alias for pcie_clk\n");
-
-put_clk:
-	if (!IS_ERR(axi_sel))
-		clk_put(axi_sel);
-	if (!IS_ERR(axi))
-		clk_put(axi);
-	if (!IS_ERR(ref))
-		clk_put(ref);
-}
-#endif
-static void __init imx6q_ventana_init(void)
-{
-#ifdef CONFIG_IMX_PCIE
-	imx6q_ventana_pcie_setup();
-#endif
-	imx6q_sabrelite_cko1_setup();
-}
-
 static void __init imx6q_1588_init(void)
 {
 	struct regmap *gpr;
@@ -261,9 +216,6 @@ static void __init imx6q_1588_init(void)
 
 static void __init imx6q_init_machine(void)
 {
-	if (of_machine_is_compatible("gw,ventana"))
-		imx6q_ventana_init();
-
 	imx6q_enet_phy_init();
 
 	of_platform_populate(NULL, of_default_bus_match_table, NULL, NULL);
@@ -341,7 +293,7 @@ static void __init imx6q_init_late(void)
 	 * WAIT mode is broken on TO 1.0 and 1.1, so there is no point
 	 * to run cpuidle on them.
 	 */
-	if (imx6q_revision() > IMX_CHIP_REVISION_1_1)
+	if (imx_get_soc_revision() > IMX_CHIP_REVISION_1_1)
 		imx6q_cpuidle_init();
 
 	if (IS_ENABLED(CONFIG_ARM_IMX6Q_CPUFREQ)) {
@@ -370,7 +322,7 @@ static void __init imx6q_timer_init(void)
 	of_clk_init(NULL);
 	clocksource_of_init();
 	imx_print_silicon_rev(cpu_is_imx6dl() ? "i.MX6DL" : "i.MX6Q",
-			      imx6q_revision());
+			      imx_get_soc_revision());
 }
 
 static const char *imx6q_dt_compat[] __initdata = {

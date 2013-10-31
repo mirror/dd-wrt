@@ -9,26 +9,18 @@
  * http://www.gnu.org/copyleft/gpl.html
  */
 
-/dts-v1/;
-#include "imx6q.dtsi"
-
 / {
-	model = "Gateworks Ventana GW5400-A";
-	compatible = "gw,imx6q-gw5400-a", "gw,ventana", "fsl,imx6q";
-
 	/* these are used by bootloader for disabling nodes */
 	aliases {
+		can0 = &can1;
 		ethernet0 = &fec;
 		ethernet1 = &eth1;
-		i2c0 = &i2c1;
-		i2c1 = &i2c2;
-		i2c2 = &i2c3;
 		led0 = &led0;
 		led1 = &led1;
 		led2 = &led2;
+		nand = &gpmi;
 		sky2 = &eth1;
 		ssi0 = &ssi1;
-		spi0 = &ecspi1;
 		usb0 = &usbh1;
 		usb1 = &usbotg;
 		usdhc2 = &usdhc3;
@@ -50,7 +42,7 @@
 
 		led1: user2 {
 			label = "user2";
-			gpios = <&gpio4 10 0>; /* 106 -> MX6_PANLEDR */
+			gpios = <&gpio4 7 0>; /* 103 -> MX6_PANLEDR */
 			default-state = "off";
 		};
 
@@ -67,7 +59,7 @@
 
 	pps {
 		compatible = "pps-gpio";
-		gpios = <&gpio1 5 0>;
+		gpios = <&gpio1 26 0>;
 		status = "okay";
 	};
 
@@ -125,22 +117,14 @@
 
 &audmux {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_audmux_1>;
+	pinctrl-0 = <&pinctrl_audmux_1>; /* AUD4<->sgtl5000 */
 	status = "okay";
 };
 
-&ecspi1 {
-	fsl,spi-num-chipselects = <1>;
-	cs-gpios = <&gpio3 19 0>;
+&can1 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_ecspi1_1>;
+	pinctrl-0 = <&pinctrl_flexcan1_1>;
 	status = "okay";
-
-	flash: m25p80@0 {
-		compatible = "sst,w25q256";
-		spi-max-frequency = <30000000>;
-		reg = <0>;
-	};
 };
 
 &fec {
@@ -148,6 +132,12 @@
 	pinctrl-0 = <&pinctrl_enet_1>;
 	phy-mode = "rgmii";
 	phy-reset-gpios = <&gpio1 30 0>;
+	status = "okay";
+};
+
+&gpmi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gpmi_nand_2>;
 	status = "okay";
 };
 
@@ -321,9 +311,9 @@
 	pinctrl-0 = <&pinctrl_i2c3_2>;
 	status = "okay";
 
-	accelerometer: mma8450@1c {
-		compatible = "fsl,mma8450";
-		reg = <0x1c>;
+	accelerometer: fxos8700@1e {
+		compatible = "fsl,fxos8700";
+		reg = <0x1e>;
 	};
 
 	codec: sgtl5000@0a {
@@ -367,13 +357,14 @@
 			fsl,pins = <
 				MX6QDL_PAD_EIM_D22__GPIO3_IO22    0x80000000 /* OTG_PWR_EN */
 				MX6QDL_PAD_EIM_D19__GPIO3_IO19    0x80000000 /* SPINOR_CS0# */
+				MX6QDL_PAD_ENET_RXD1__GPIO1_IO26  0x80000000 /* GPS_PPS */
 				MX6QDL_PAD_ENET_TX_EN__GPIO1_IO28 0x80000000 /* PCIE IRQ */
 				MX6QDL_PAD_ENET_TXD1__GPIO1_IO29  0x80000000 /* PCIE RST */
 				MX6QDL_PAD_GPIO_0__CCM_CLKO1      0x000130b0 /* AUD4_MCK */
-				MX6QDL_PAD_GPIO_5__GPIO1_IO05     0x80000000 /* GPS_PPS */
+				MX6QDL_PAD_GPIO_2__GPIO1_IO02     0x80000000 /* CAN_STBY */
 				MX6QDL_PAD_GPIO_17__GPIO7_IO12    0x80000000 /* TOUCH_IRQ# */
 				MX6QDL_PAD_KEY_COL0__GPIO4_IO06   0x80000000 /* user1 led */
-				MX6QDL_PAD_KEY_COL2__GPIO4_IO10   0x80000000 /* user2 led */
+				MX6QDL_PAD_KEY_ROW0__GPIO4_IO07   0x80000000 /* user2 led */
 				MX6QDL_PAD_KEY_ROW4__GPIO4_IO15   0x80000000 /* user3 led */
 				MX6QDL_PAD_SD1_DAT0__GPIO1_IO16   0x80000000 /* USBHUB_RST# */
 				MX6QDL_PAD_SD1_DAT3__GPIO1_IO21   0x80000000 /* MIPI_DIO */
@@ -384,8 +375,26 @@
 
 &ldb {
 	status = "okay";
-	lvds-channel@0 {
-		crtcs = <&ipu1 0>, <&ipu1 1>, <&ipu2 0>, <&ipu2 1>;
+
+	lvds-channel@1 {
+		fsl,data-mapping = "spwg";
+		fsl,data-width = <18>;
+		status = "okay";
+
+		display-timings {
+			native-mode = <&timing0>;
+			timing0: hsd100pxn1 {
+				clock-frequency = <65000000>;
+				hactive = <1024>;
+				vactive = <768>;
+				hback-porch = <220>;
+				hfront-porch = <40>;
+				vback-porch = <21>;
+				vfront-porch = <7>;
+				hsync-len = <60>;
+				vsync-len = <10>;
+			};
+		};
 	};
 };
 
@@ -399,6 +408,11 @@
 };
 
 &ssi1 {
+	fsl,mode = "i2s-slave";
+	status = "okay";
+};
+
+&ssi2 {
 	fsl,mode = "i2s-slave";
 	status = "okay";
 };
