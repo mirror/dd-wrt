@@ -435,6 +435,10 @@ void start_overclocking(void)
 
 char *enable_dtag_vlan(int enable)
 {
+#ifdef HAVE_WHR300HP2
+	return "eth2";
+#endif
+
 	if (getRouterBrand() != ROUTER_BOARD_ECB9750 && getRouterBrand() != ROUTER_BOARD_TECHNAXX3G) {
 		if (enable) {
 #if !defined(HAVE_AR670W) && !defined(HAVE_BR6574N) && !defined(HAVE_F5D8235)
