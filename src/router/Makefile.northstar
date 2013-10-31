@@ -360,7 +360,7 @@ endif
 	tools/lzma_4k e $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/vmlinuz.lzma
 	echo -ne '\xde\xad\xc0\xde' >> $(ARCH)-uclibc/dd-wrt.jffs2
 #	./tools/trx -m 32000000 -o $(ARCH)-uclibc/northstar-firmware-jffs2.bin $(ARCH)-uclibc/vmlinuz.lzma $(ARCH)-uclibc/dd-wrt.jffs2
-	./tools/trx -m 32000000 -a 131072 -o $(ARCH)-uclibc/northstar-firmware-squashfs.bin $(ARCH)-uclibc/vmlinuz.lzma $(ARCH)-uclibc/root.fs
+	./tools/trx -m 32000000 -o $(ARCH)-uclibc/northstar-firmware-squashfs.bin $(ARCH)-uclibc/vmlinuz.lzma -a 131072 $(ARCH)-uclibc/root.fs
 
 	./tools/seama/packimgs -b 64 -o $(ARCH)-uclibc/raw-dir868.img -i $(ARCH)-uclibc/vmlinuz.lzma -i $(ARCH)-uclibc/root.fs
 	./tools/seama/seama -i $(ARCH)-uclibc/raw-dir868.img -m dev=/dev/mtdblock/7 -m type=firmware 
