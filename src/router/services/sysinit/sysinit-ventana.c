@@ -86,12 +86,16 @@ void start_sysinit(void)
 	insmod("sky2");
 	if (detect_ethernet_devices())
 		nvram_set("intel_eth", "1");
-	insmod("regmap-spi");
+
+
+/*	insmod("regmap-spi");
 	insmod("regmap-i2c");
 	insmod("snd-compress");
+	insmod("snd-pcm-dmaengine");
 	insmod("snd-soc-core");
 	insmod("snd-soc-imx-audmux");
 	insmod("snd-soc-imx-pcm");
+	insmod("imx-pcm-dma");
 	insmod("snd-soc-sgtl5000");
 	insmod("snd-soc-fsl-utils");
 	insmod("snd-soc-fsl-ssi");
@@ -108,9 +112,10 @@ void start_sysinit(void)
 	insmod("scsi_mod");
 	insmod("scsi_wait_scan");
 	insmod("scsi_sd_mod");
+	insmod("sd_mod");
 	insmod("libata");
 	insmod("libahci");
-	insmod("ahci");
+	insmod("ahci");*/
 	/*
 	 * network drivers 
 	 */
