@@ -56,6 +56,8 @@ extern struct cpufreq_driver cns_cpu_freq_driver;
 #include "core.h"
 #include "devices.h"
 
+#define ARRAY_AND_SIZE(x)       (x), ARRAY_SIZE(x)
+
 unsigned int numcpucores=1;
 EXPORT_SYMBOL(numcpucores);
 
@@ -688,10 +690,148 @@ static struct platform_device cns3xxx_watchdog_device = {
 };
 
 
-static struct platform_device laguna_gpio_dev = {
-	.name = "GPIODEV",
-	.id = -1,
+/*
+ * GPS PPS
+ */
+static struct pps_gpio_platform_data laguna_pps_data = {
+	.gpio_pin = 0,
+	.gpio_label = "GPS_PPS",
+	.assert_falling_edge = 0,
+	.capture_clear = 0,
 };
+
+static struct platform_device laguna_pps_device = {
+	.name = "pps-gpio",
+	.id = -1,
+	.dev.platform_data = &laguna_pps_data,
+};
+
+/*
+ * GPIO
+ */
+
+static struct gpio laguna_gpio_gw2391[] = {
+	{   0, GPIOF_IN           , "*GPS_PPS" },
+	{   1, GPIOF_IN           , "*GSC_IRQ#" },
+	{   2, GPIOF_IN           , "*USB_FAULT#" },
+	{   5, GPIOF_OUT_INIT_LOW , "*USB0_PCI_SEL" },
+	{   6, GPIOF_OUT_INIT_HIGH, "*USB_VBUS_EN" },
+	{   7, GPIOF_OUT_INIT_LOW , "*USB1_PCI_SEL" },
+	{   8, GPIOF_OUT_INIT_HIGH, "*PERST#" },
+	{   9, GPIOF_OUT_INIT_LOW , "*FP_SER_EN#" },
+	{ 100, GPIOF_IN           , "*USER_PB#" },
+	{ 103, GPIOF_OUT_INIT_HIGH, "*V5_EN" },
+	{ 108, GPIOF_IN           , "DIO0" },
+	{ 109, GPIOF_IN           , "DIO1" },
+	{ 110, GPIOF_IN           , "DIO2" },
+	{ 111, GPIOF_IN           , "DIO3" },
+	{ 112, GPIOF_IN           , "DIO4" },
+};
+
+static struct gpio laguna_gpio_gw2388[] = {
+	{   0, GPIOF_IN           , "*GPS_PPS" },
+	{   1, GPIOF_IN           , "*GSC_IRQ#" },
+	{   3, GPIOF_IN           , "*USB_FAULT#" },
+	{   6, GPIOF_OUT_INIT_HIGH, "*USB_VBUS_EN" },
+	{   7, GPIOF_OUT_INIT_LOW , "*GSM_SEL0" },
+	{   8, GPIOF_OUT_INIT_LOW , "*GSM_SEL1" },
+	{   9, GPIOF_OUT_INIT_LOW , "*FP_SER_EN" },
+	{ 100, GPIOF_OUT_INIT_HIGH, "*USER_PB#" },
+	{ 108, GPIOF_IN           , "DIO0" },
+	{ 109, GPIOF_IN           , "DIO1" },
+	{ 110, GPIOF_IN           , "DIO2" },
+	{ 111, GPIOF_IN           , "DIO3" },
+	{ 112, GPIOF_IN           , "DIO4" },
+};
+
+static struct gpio laguna_gpio_gw2387[] = {
+	{   0, GPIOF_IN           , "*GPS_PPS" },
+	{   1, GPIOF_IN           , "*GSC_IRQ#" },
+	{   2, GPIOF_IN           , "*USB_FAULT#" },
+	{   5, GPIOF_OUT_INIT_LOW , "*USB_PCI_SEL" },
+	{   6, GPIOF_OUT_INIT_HIGH, "*USB_VBUS_EN" },
+	{   7, GPIOF_OUT_INIT_LOW , "*GSM_SEL0" },
+	{   8, GPIOF_OUT_INIT_LOW , "*GSM_SEL1" },
+	{   9, GPIOF_OUT_INIT_LOW , "*FP_SER_EN" },
+	{ 100, GPIOF_IN           , "*USER_PB#" },
+	{ 103, GPIOF_OUT_INIT_HIGH, "*V5_EN" },
+	{ 108, GPIOF_IN           , "DIO0" },
+	{ 109, GPIOF_IN           , "DIO1" },
+	{ 110, GPIOF_IN           , "DIO2" },
+	{ 111, GPIOF_IN           , "DIO3" },
+	{ 112, GPIOF_IN           , "DIO4" },
+	{ 113, GPIOF_IN           , "DIO5" },
+};
+
+static struct gpio laguna_gpio_gw2385[] = {
+	{   0, GPIOF_IN           , "*GSC_IRQ#" },
+	{   1, GPIOF_OUT_INIT_HIGH, "*USB_HST_VBUS_EN" },
+	{   2, GPIOF_IN           , "*USB_HST_FAULT#" },
+	{   5, GPIOF_IN           , "*USB_OTG_FAULT#" },
+	{   6, GPIOF_OUT_INIT_LOW , "*USB_HST_PCI_SEL" },
+	{   7, GPIOF_OUT_INIT_LOW , "*GSM_SEL0" },
+	{   8, GPIOF_OUT_INIT_LOW , "*GSM_SEL1" },
+	{   9, GPIOF_OUT_INIT_LOW , "*SER_EN" },
+	{  10, GPIOF_IN,            "*USER_PB#" },
+	{  11, GPIOF_OUT_INIT_HIGH, "*PERST#" },
+	{ 100, GPIOF_IN           , "*USER_PB#" },
+	{ 103, GPIOF_OUT_INIT_HIGH, "V5_EN" },
+};
+
+static struct gpio laguna_gpio_gw2384[] = {
+	{   0, GPIOF_IN           , "*GSC_IRQ#" },
+	{   1, GPIOF_OUT_INIT_HIGH, "*USB_HST_VBUS_EN" },
+	{   2, GPIOF_IN           , "*USB_HST_FAULT#" },
+	{   5, GPIOF_IN           , "*USB_OTG_FAULT#" },
+	{   6, GPIOF_OUT_INIT_LOW , "*USB_HST_PCI_SEL" },
+	{   7, GPIOF_OUT_INIT_LOW , "*GSM_SEL0" },
+	{   8, GPIOF_OUT_INIT_LOW , "*GSM_SEL1" },
+	{   9, GPIOF_OUT_INIT_LOW , "*FP_SER_EN" },
+	{  12, GPIOF_OUT_INIT_LOW , "J10_DIOLED0" },
+	{  13, GPIOF_OUT_INIT_HIGH, "*I2CMUX_RST#" },
+	{  14, GPIOF_OUT_INIT_LOW , "J10_DIOLED1" },
+	{  15, GPIOF_OUT_INIT_LOW , "J10_DIOLED2" },
+	{ 100, GPIOF_IN           , "*USER_PB#" },
+	{ 103, GPIOF_OUT_INIT_HIGH, "V5_EN" },
+	{ 108, GPIOF_IN           , "J9_DIOGSC0" },
+};
+
+static struct gpio laguna_gpio_gw2383[] = {
+	{   0, GPIOF_IN           , "*GPS_PPS" },
+	{   1, GPIOF_IN           , "*GSC_IRQ#" },
+	{   2, GPIOF_OUT_INIT_HIGH, "*PCIE_RST#" },
+	{   3, GPIOF_IN           , "GPIO0" },
+	{   8, GPIOF_IN           , "GPIO1" },
+	{ 100, GPIOF_IN           , "DIO0" },
+	{ 101, GPIOF_IN           , "DIO1" },
+	{ 108, GPIOF_IN           , "*USER_PB#" },
+};
+
+static struct gpio laguna_gpio_gw2382[] = {
+	{   0, GPIOF_IN           , "*GPS_PPS" },
+	{   1, GPIOF_IN           , "*GSC_IRQ#" },
+	{   2, GPIOF_OUT_INIT_HIGH, "*PCIE_RST#" },
+	{   3, GPIOF_IN           , "GPIO0" },
+	{   4, GPIOF_IN           , "GPIO1" },
+	{   9, GPIOF_OUT_INIT_HIGH, "*USB_VBUS_EN" },
+	{  10, GPIOF_OUT_INIT_HIGH, "*USB_PCI_SEL#" },
+	{ 100, GPIOF_IN           , "DIO0" },
+	{ 101, GPIOF_IN           , "DIO1" },
+	{ 108, GPIOF_IN           , "*USER_PB#" },
+};
+
+static struct gpio laguna_gpio_gw2380[] = {
+	{   0, GPIOF_IN           , "*GPS_PPS" },
+	{   1, GPIOF_IN           , "*GSC_IRQ#" },
+	{   3, GPIOF_IN           , "GPIO0" },
+	{   8, GPIOF_IN           , "GPIO1" },
+	{ 100, GPIOF_IN           , "DIO0" },
+	{ 101, GPIOF_IN           , "DIO1" },
+	{ 102, GPIOF_IN           , "DIO2" },
+	{ 103, GPIOF_IN           , "DIO3" },
+	{ 108, GPIOF_IN           , "*USER_PB#" },
+};
+
 
 /*
  * Initialization
@@ -736,6 +876,25 @@ static void __init laguna_map_io(void)
 	iotable_init(laguna_io_desc, ARRAY_SIZE(laguna_io_desc));
 
 	laguna_early_serial_setup();
+}
+
+static int laguna_register_gpio(struct gpio *array, size_t num)
+{
+	int i, err, ret;
+
+	ret = 0;
+	for (i = 0; i < num; i++, array++) {
+		const char *label = array->label;
+		if (label[0] == '*')
+			label++;
+		err = gpio_request_one(array->gpio, array->flags, label);
+		if (err)
+			ret = err;
+		else {
+			err = gpio_export(array->gpio, array->label[0] != '*');
+		}
+	}
+	return ret;
 }
 
  
@@ -982,41 +1141,73 @@ static int __init laguna_model_setup(void)
 			platform_device_register(&laguna_spi_controller_device);
 		}
 
+		if (laguna_info.config2_bitmap & GPS_LOAD)
+			platform_device_register(&laguna_pps_device);
+
 		/*
 		 *	Do any model specific setup not known by the bitmap by matching
 		 *  the first 6 characters of the model name
 		 */
 
-		if (strncmp(laguna_info.model, "GW2388", 6) == 0)
+
+		if ( (strncmp(laguna_info.model, "GW2388", 6) == 0)
+		  || (strncmp(laguna_info.model, "GW2389", 6) == 0) )
 		{
+			// configure GPIO's
+			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2388));
+			// configure LED's
 			laguna_gpio_leds_data.num_leds = 2;
-		}
-		else if (strncmp(laguna_info.model, "GW2389", 6) == 0)
-		{
+		} else if (strncmp(laguna_info.model, "GW2387", 6) == 0) {
+			// configure GPIO's
+			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2387));
+			// configure LED's
 			laguna_gpio_leds_data.num_leds = 2;
-		}
-		else if (strncmp(laguna_info.model, "GW2387", 6) == 0)
-		{
-			laguna_gpio_leds_data.num_leds = 2;
-		}
-		else if (strncmp(laguna_info.model, "GW2391", 6) == 0)
-		{
-			laguna_gpio_leds_data.num_leds = 2;
-		}
-		else if (strncmp(laguna_info.model, "GW2380", 6) == 0) {
+		} else if (strncmp(laguna_info.model, "GW2385", 6) == 0) {
+			// configure GPIO's
+			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2385));
+			// configure LED's
+			laguna_gpio_leds[0].gpio = 115;
+			laguna_gpio_leds[1].gpio = 12;
+			laguna_gpio_leds[1].name = "red";
+			laguna_gpio_leds[1].active_low = 0,
+			laguna_gpio_leds[2].gpio = 14;
+			laguna_gpio_leds[2].name = "green";
+			laguna_gpio_leds[2].active_low = 0,
+			laguna_gpio_leds[3].gpio = 15;
+			laguna_gpio_leds[3].name = "blue";
+			laguna_gpio_leds[3].active_low = 0,
+			laguna_gpio_leds_data.num_leds = 4;
+		} else if (strncmp(laguna_info.model, "GW2384", 6) == 0) {
+			// configure GPIO's
+			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2384));
+			// configure LED's
+			laguna_gpio_leds_data.num_leds = 1;
+		} else if (strncmp(laguna_info.model, "GW2383", 6) == 0) {
+			// configure GPIO's
+			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2383));
+			// configure LED's
+			laguna_gpio_leds[0].gpio = 107;
+			laguna_gpio_leds_data.num_leds = 1;
+		} else if (strncmp(laguna_info.model, "GW2382", 6) == 0) {
+			// configure GPIO's
+			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2382));
+			// configure LED's
+			laguna_gpio_leds[0].gpio = 107;
+			laguna_gpio_leds_data.num_leds = 1;
+		} else if (strncmp(laguna_info.model, "GW2380", 6) == 0) {
+			// configure GPIO's
+			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2380));
+			// configure LED's
 			laguna_gpio_leds[0].gpio = 107;
 			laguna_gpio_leds[1].gpio = 106;
 			laguna_gpio_leds_data.num_leds = 2;
+		} else if (strncmp(laguna_info.model, "GW2391", 6) == 0) {
+			// configure GPIO's
+			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2391));
+			// configure LED's
+			laguna_gpio_leds_data.num_leds = 2;
 		}
-		else if (strncmp(laguna_info.model, "GW2382", 6) == 0) {
-			laguna_gpio_leds[0].gpio = 107;
-			laguna_gpio_leds_data.num_leds = 1;
-		}
-		else if (strncmp(laguna_info.model, "GW2384", 6) == 0) {
-			laguna_gpio_leds_data.num_leds = 1;
-		}
-			platform_device_register(&laguna_gpio_leds_device);
-			platform_device_register(&laguna_gpio_dev);
+		platform_device_register(&laguna_gpio_leds_device);
 	} else {
 		// Do some defaults here, not sure what yet
 	}
