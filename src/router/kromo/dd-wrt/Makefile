@@ -679,6 +679,7 @@ endif
 ifeq ($(CONFIG_ANTAIRA),y)
 	cp -f antaira/logo.png $(INSTALLDIR)/www/style
 	cp -f antaira/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
+	cp -f antaira/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
 endif
 
 ifneq ($(CONFIG_USB),y)
