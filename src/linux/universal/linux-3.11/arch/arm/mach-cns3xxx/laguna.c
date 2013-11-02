@@ -19,6 +19,7 @@
 #include <linux/kernel.h>
 #include <linux/compiler.h>
 #include <linux/io.h>
+#include <linux/gpio.h>
 #include <linux/vmalloc.h>
 #include <linux/dma-mapping.h>
 #include <linux/serial_core.h>
@@ -36,6 +37,7 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/flash.h>
 #include <linux/if_ether.h>
+#include <linux/pps-gpio.h>
 #include <linux/export.h>
 #include <linux/module.h>
 #include <asm/setup.h>
