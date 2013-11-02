@@ -398,9 +398,9 @@ void start_sysinit(void)
 				{"boardflags2", "0x4100000", 0},
 				{"tssipos2g", "1", 0},
 				{"ledbh0", "11", 0},
-				{"ledbh1", "11", 0},
-				{"ledbh2", "11", 0},
-				{"ledbh3", "11", 0},
+			//	{"ledbh1", "11", 0},
+				{"ledbh2", "14", 0},
+				{"ledbh3", "1", 0},
 				{"mcs32po", "0x8", 0},
 				{"legofdm40duppo", "0x0", 0},
 				{"antswctl2g", "0", 0},
@@ -569,6 +569,13 @@ void start_sysinit(void)
 			}
 		}
 		set_gpio(6,1); //fix reset button
+		set_gpio(2,1); //fix power led
+		set_gpio(3,0); //fix power led
+		set_gpio(1,1); //logo
+		set_gpio(11,1);
+		set_gpio(4,1); //ses
+		set_gpio(5,1); //wifi
+		nvram_set("pci/1/1/vendid", "0x14E4");
 		break;
 	case ROUTER_NETGEAR_R7000:
 		
@@ -586,6 +593,7 @@ void start_sysinit(void)
 				nvram_set("pci/2/1/macaddr", mac);
 			}
 			struct nvram_tuple r7000_pci_1_1_params[] = {
+				{"ledbh2", "14", 0},
 				{"pdoffset2g40ma0", "15", 0},
 				{"pdoffset2g40ma1", "15", 0},
 				{"pdoffset2g40ma2", "15", 0},
@@ -848,12 +856,15 @@ void start_sysinit(void)
 			}
 		}
 		set_gpio(15,1);//wlan button led on
+		set_gpio(0,0); //usb power
+		set_gpio(2,1);
 		set_gpio(4,1);
 		set_gpio(5,1);
 		set_gpio(6,1); //fix reset button
 		nvram_set("wl_pcie_mrrs", "128");
 		nvram_set("wl0_pcie_mrrs", "128");
 		nvram_set("wl1_pcie_mrrs", "128");
+		nvram_set("pci/1/1/vendid", "0x14E4");
 		
 		if (nvram_match("wl0_country_code", "US"))
 			set_regulation(0, "US", "0");
