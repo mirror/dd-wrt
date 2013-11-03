@@ -257,6 +257,7 @@ ifeq ($(ARCHITECTURE),laguna)
 endif
 ifeq ($(ARCHITECTURE),ventana)
 	cp busybox/.config_laguna busybox/.config
+	sed -i 's/\# CONFIG_UBIUPDATEVOL is not set/CONFIG_UBIUPDATEVOL=y/g' busybox/.config
 	echo "# CONFIG_MKFS_EXT2 is not set" >> busybox/.config
 endif
 ifeq ($(ARCHITECTURE),northstar)
