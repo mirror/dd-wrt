@@ -3,10 +3,16 @@ INSTMODE  = 0755
 INSTOWNER = root
 INSTGROUP = root
 
-all: gsp_updater i2cset
+all: gsp_updater i2cset i2cget i2cdump
 CFLAGS += -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections 
 
 i2cset: i2cset.o util.o i2cbusses.o
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections  $(COPTS) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+i2cget: i2cget.o util.o i2cbusses.o
+	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections  $(COPTS) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+i2cdump: i2cdump.o util.o i2cbusses.o
 	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections  $(COPTS) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 gsp_updater: gsp_updater.o
@@ -18,7 +24,7 @@ test_audio: test_audio.o
 %.o: %.c
 	$(CC) -c $(CFLAGS) $^ -o $@
 
-install: gsp_updater i2cset
+install: gsp_updater i2cset i2cget i2cdump
 	install -d $(INSTDIR)
 	install -m $(INSTMODE) -o $(INSTOWNER) -g $(INSTGROUP) gsp_updater i2cset $(INSTDIR)
 	install -d $(INSTALLDIR)/etc
