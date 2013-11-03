@@ -281,12 +281,13 @@ configs-update:
 	rm -rf $(LINUXDIR)/../linux-3.4
 	rm -rf $(LINUXDIR)/../linux-3.6
 	rm -rf $(LINUXDIR)/../linux-3.7
+	rm -rf $(LINUXDIR)/../linux-3.8
 #	svn update $(LINUXDIR)/../linux-3.3
 #	svn update $(LINUXDIR)/../linux-3.4
 	svn update $(LINUXDIR)/../linux-3.5
 #	svn update $(LINUXDIR)/../linux-3.6
 #	svn update $(LINUXDIR)/../linux-3.7
-	svn update $(LINUXDIR)/../linux-3.8
+#	svn update $(LINUXDIR)/../linux-3.8
 	svn update $(LINUXDIR)/../linux-3.9
 	svn update $(LINUXDIR)/../linux-3.10
 	svn update $(LINUXDIR)/../linux-3.11
