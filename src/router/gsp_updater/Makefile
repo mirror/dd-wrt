@@ -26,7 +26,7 @@ test_audio: test_audio.o
 
 install: gsp_updater i2cset i2cget i2cdump
 	install -d $(INSTDIR)
-	install -m $(INSTMODE) -o $(INSTOWNER) -g $(INSTGROUP) gsp_updater i2cset $(INSTDIR)
+	install -m $(INSTMODE) -o $(INSTOWNER) -g $(INSTGROUP) gsp_updater i2cset i2cget i2cdump $(INSTDIR)
 	install -d $(INSTALLDIR)/etc
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2380_v35.txt $(INSTALLDIR)/etc/gsc_2380_v35.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2382_v35.txt $(INSTALLDIR)/etc/gsc_2382_v35.txt
