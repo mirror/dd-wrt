@@ -69,7 +69,7 @@ void start_sysinit(void)
 	 * Setup console 
 	 */
 	eval("mount", "-o", "remount,rw", "/");
-	eval("mkdir","-p","/usr/local/nvram");
+	eval("mkdir", "-p", "/usr/local/nvram");
 
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));
@@ -86,7 +86,6 @@ void start_sysinit(void)
 	insmod("sky2");
 	if (detect_ethernet_devices())
 		nvram_set("intel_eth", "1");
-
 
 /*	insmod("regmap-spi");
 	insmod("regmap-i2c");
@@ -130,14 +129,15 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
-	eval("ifconfig","eth0","promisc");
-	eval("ifconfig","eth1","promisc");
+	eval("ifconfig", "eth0", "promisc");
+	eval("ifconfig", "eth1", "promisc");
 	/*
 	 * Set a sane date 
 	 */
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 	eval("hwclock", "-s");
+	eval("i2cset", "-f", "-y", "0", "0x20", "0", "0");
 	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2391")
 	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2391"))
 		sysprintf("gsp_updater -f /etc/gsc_2391_v35.txt");
