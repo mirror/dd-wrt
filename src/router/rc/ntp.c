@@ -117,15 +117,7 @@ int do_ntp(void)		// called from ntp_main and
 				tv.tv_sec += dstEntry[dst].dstBias;
 		}
 		settimeofday(&tv, NULL);
-#ifdef HAVE_GATEWORX
-#ifndef HAVE_NOP8670
-		eval("hwclock", "-w");
-#endif
-#endif
-#ifdef HAVE_STORM
-		eval("hwclock", "-w");
-#endif
-#ifdef HAVE_LAGUNA
+#if defined(HAVE_VENTANA) || defined(HAVE_LAGUNA) || defined(HAVE_STORM) || (defined(HAVE_GATEWORX) && !defined(HAVE_NOP8670))
 		eval("hwclock", "-w");
 #endif
 		/* 
