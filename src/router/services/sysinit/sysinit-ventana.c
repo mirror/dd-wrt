@@ -87,17 +87,17 @@ void start_sysinit(void)
 	if (detect_ethernet_devices())
 		nvram_set("intel_eth", "1");
 
-/*	insmod("regmap-spi");
+	insmod("regmap-spi");
 	insmod("regmap-i2c");
 	insmod("snd-compress");
 	insmod("snd-pcm-dmaengine");
 	insmod("snd-soc-core");
+	insmod("snd-soc-sgtl5000");
+	insmod("imx-pcm-dma");
+	insmod("snd-soc-fsl-ssi");
 	insmod("snd-soc-imx-audmux");
 	insmod("snd-soc-imx-pcm");
-	insmod("imx-pcm-dma");
-	insmod("snd-soc-sgtl5000");
 	insmod("snd-soc-fsl-utils");
-	insmod("snd-soc-fsl-ssi");
 	insmod("snd-soc-imx-sgtl5000");
 
 	//load mmc drivers
@@ -137,7 +137,8 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 	eval("hwclock", "-s");
-	eval("i2cset", "-f", "-y", "0", "0x20", "0", "0");
+	eval("i2cset", "-f", "-y", "0", "0x20", "0", "0x0");
+	eval("i2cset", "-f", "-y", "0", "0x20", "11", "0x10");
 	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2391")
 	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2391"))
 		sysprintf("gsp_updater -f /etc/gsc_2391_v35.txt");
