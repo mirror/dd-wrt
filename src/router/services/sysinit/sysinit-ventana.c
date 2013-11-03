@@ -55,6 +55,22 @@
 #include "devices/ethernet.c"
 #include "devices/wireless.c"
 
+void start_sounddrivers(void)
+{
+	insmod("regmap-spi");
+	insmod("regmap-i2c");
+	insmod("snd-compress");
+	insmod("snd-pcm-dmaengine");
+	insmod("snd-soc-core");
+	insmod("snd-soc-sgtl5000");
+	insmod("imx-pcm-dma");
+	insmod("snd-soc-fsl-ssi");
+	insmod("snd-soc-imx-audmux");
+	insmod("snd-soc-imx-pcm");
+	insmod("snd-soc-fsl-utils");
+	insmod("snd-soc-imx-sgtl5000");
+}
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -87,34 +103,6 @@ void start_sysinit(void)
 	if (detect_ethernet_devices())
 		nvram_set("intel_eth", "1");
 
-	insmod("regmap-spi");
-	insmod("regmap-i2c");
-	insmod("snd-compress");
-	insmod("snd-pcm-dmaengine");
-	insmod("snd-soc-core");
-	insmod("snd-soc-sgtl5000");
-	insmod("imx-pcm-dma");
-	insmod("snd-soc-fsl-ssi");
-	insmod("snd-soc-imx-audmux");
-	insmod("snd-soc-imx-pcm");
-	insmod("snd-soc-fsl-utils");
-	insmod("snd-soc-imx-sgtl5000");
-
-	//load mmc drivers
-	insmod("mmc_core");
-	eval("insmod", "sdhci", "debug_quirks=1");	// workaround for mmc detection issue. 
-//      insmod("sdhci");
-	insmod("sdhci-pltfm");
-	insmod("sdhci-cns3xxx");
-	insmod("mmc_block");
-	//sata drivers
-	insmod("scsi_mod");
-	insmod("scsi_wait_scan");
-	insmod("scsi_sd_mod");
-	insmod("sd_mod");
-	insmod("libata");
-	insmod("libahci");
-	insmod("ahci");*/
 	/*
 	 * network drivers 
 	 */
