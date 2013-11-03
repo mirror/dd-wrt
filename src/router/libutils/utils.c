@@ -1102,6 +1102,16 @@ int internal_getRouterBrand()
 		setRouter("Gateworks Ventana GW5410-B");
 	    } else if (!strncmp(gwid, "GW5410-C", 8)) {
 		setRouter("Gateworks Ventana GW5410-C");
+	    } else if (!strncmp(gwid, "GW5100", 6)) {
+		setRouter("Gateworks Ventana GW5100");
+		return ROUTER_BOARD_GW2380;
+	    } else if (!strncmp(gwid, "GW5200", 6)) {
+		setRouter("Gateworks Ventana GW5200");
+		return ROUTER_BOARD_GW2380;
+	    } else if (!strncmp(gwid, "GW5300", 6)) {
+		setRouter("Gateworks Ventana GW5300");
+	    } else if (!strncmp(gwid, "GW5310", 6)) {
+		setRouter("Gateworks Ventana GW5310");
 	    } else
 		setRouter("Gateworks Ventana GW54XX");
 	}
