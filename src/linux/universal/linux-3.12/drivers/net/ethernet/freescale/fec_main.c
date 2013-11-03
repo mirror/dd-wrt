@@ -1261,6 +1261,7 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	char mdio_bus_id[MII_BUS_ID_SIZE];
 	char phy_name[MII_BUS_ID_SIZE + 3];
 	int phy_id;
+	int val;
 	int dev_id = fep->dev_id;
 
 	fep->phy_dev = NULL;
@@ -1312,7 +1313,15 @@ static int fec_enet_mii_probe(struct net_device *ndev)
 	netdev_info(ndev, "Freescale FEC PHY driver [%s] (mii_bus:phy_addr=%s, irq=%d)\n",
 		    fep->phy_dev->drv->name, dev_name(&fep->phy_dev->dev),
 		    fep->phy_dev->irq);
-
+#ifdef CONFIG_SOC_IMX6Q
+// hack for ventana
+		phy_write(phy_dev, 22, 3);
+		val = phy_read(phy_dev, 16);
+		val &= 0xff00;
+		val |= 0x0017;
+		phy_write(phy_dev, 16, val);
+		phy_write(phy_dev, 22, 0);
+#endif
 	return 0;
 }
 
