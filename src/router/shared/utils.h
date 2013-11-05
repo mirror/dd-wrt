@@ -497,12 +497,19 @@
 // Netgear WNR2000 v2 (BCM4716B0 cpu, 4MB serial flash / 32MB ram, fccid: Netgear PY309100105)
 #define ROUTER_NETGEAR_WNR2000V2 0x9711
 
+#ifdef HAVE_VENTANA
+#define ROUTER_BOARD_GW2388 0x9810
+#else
 #define ROUTER_BOARD_GW2388 0x980f
-
+#endif
 // Belkin Share Max F5D8235v3 (BCM53115 giga switch, BCM4718 cpu, 8MB flash / 32MB ram, fccid: Belkin K7SF5D8235V3)
 #define ROUTER_BELKIN_F5D8235V3 0x9916
 
+#ifdef HAVE_VENTANA
+#define ROUTER_BOARD_GW2380 0x9a10
+#else
 #define ROUTER_BOARD_GW2380 0x9a0f
+#endif
 
 // Belkin Share Max F7D3301v1 (BCM53115 giga switch, BCM4718 cpu, 8MB flash / 64MB ram, fccid: Belkin K7SF7D3301V1)
 // Belkin Share Max N300 F7D7301v1  - same
