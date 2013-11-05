@@ -607,9 +607,9 @@ int gpio_read_bit(int gpio, int *value)
 	}
 	close(fd);
 	if (*value & val)
-	    *value = 1;
+		*value = 1;
 	else
-	    *value = 0;
+		*value = 0;
 	return 0;
 }
 
@@ -946,6 +946,70 @@ int get_gpio(int pin)
 	close(fd);
 	return ret;
 
+}
+
+#elif HAVE_VENTANA
+void set_gpio(int pin, int value)
+{
+	char str[32];
+	FILE *fp;
+	switch (pin) {
+	case 102:
+		sysprintf("echo none > /sys/class/leds/user1/trigger");
+		sysprintf("echo %d > /sys/class/leds/user1/brightness", value ? 255 : 0);
+		break;
+	case 103:
+		sysprintf("echo none > /sys/class/leds/user2/trigger");
+		sysprintf("echo %d > /sys/class/leds/user2/brightness", value ? 255 : 0);
+		break;
+	case 111:
+		sysprintf("echo none > /sys/class/leds/user3/trigger");
+		sysprintf("echo %d > /sys/class/leds/user3/brightness", value ? 255 : 0);
+		break;
+	default:
+		sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+	      new_try:;
+		fp = fopen(str, "rb");
+		if (!fp) {
+			sysprintf("echo %d > /sys/class/gpio/export", pin);
+			goto new_try;
+		}
+		fclose(fp);
+		sysprintf("echo out > /sys/class/gpio/gpio%d/direction", pin);
+		fp = fopen(str, "wb");
+		fprintf(fp, "%d", value);
+		fclose(fp);
+		break;
+	}
+}
+
+int get_gpio(int pin)
+{
+
+	char str[32];
+	FILE *fp;
+	int val = 0;
+	switch (pin) {
+	case 102:
+	case 103:
+	case 111:
+		break;
+	default:
+		sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+	      new_try:;
+		fp = fopen(str, "rb");
+		if (!fp) {
+			sysprintf("echo %d > /sys/class/gpio/export", pin);
+			goto new_try;
+		}
+		fclose(fp);
+		sysprintf("echo in > /sys/class/gpio/gpio%d/direction", pin);
+		fp = fopen(str, "rb");
+		int val;
+		fscanf(fp, "%d", &val);
+		fclose(fp);
+	}
+	return val;
 }
 
 #else				//e.g. Broadcom...

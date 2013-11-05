@@ -980,7 +980,6 @@ int internal_getRouterBrand()
 #elif HAVE_NORTHSTAR
 	unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
-
 	if (boardnum == 00 && nvram_match("boardtype", "0xF646")
 	    && nvram_match("boardrev", "0x1100")
 	    && nvram_match("melco_id", "RD_BB12068")) {
@@ -999,10 +998,10 @@ int internal_getRouterBrand()
 		setRouter("WZR-900DHP");
 #else
 		setRouter("Buffalo WZR-900DHP");
-#endif		
+#endif
 		return ROUTER_BUFFALO_WZR900DHP;
 	}
-	
+
 	if ((boardnum == 2013012401 || boardnum == 2013083001 || boardnum == 2013032101) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "3")) {
@@ -1059,26 +1058,25 @@ int internal_getRouterBrand()
 		setRouter("Asus RT-AC68U");
 		return ROUTER_ASUS_AC67U;
 	}
-	
+
 	if (boardnum == 679 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("sdram_config", "0x0147")) {
 		setRouter("Netgear R6300V2");
 		return ROUTER_NETGEAR_R6300V2;
 	}
-	
+
 	if (boardnum == 679 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")) {
 		setRouter("Netgear R6250");
 		return ROUTER_NETGEAR_R6250;
 	}
-	
+
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
-	    && nvram_match("boardrev", "0x1301") ) {
+	    && nvram_match("boardrev", "0x1301")) {
 		setRouter("Netgear R7000");
 		return ROUTER_NETGEAR_R7000;
 	}
-
 
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
@@ -1086,34 +1084,34 @@ int internal_getRouterBrand()
 	char *filename = "/sys/devices/soc.0/2100000.aips-bus/21a0000.i2c/i2c-0/0-0051/eeprom";	/* bank2=0x100 kernel 3.0 */
 	FILE *file = fopen(filename, "rb");
 	if (!file) {
-	    setRouter("Gateworks Ventana GW54XX");
-	}else{
-	    char gwid[9];
-	    fseek(file, 0x30, SEEK_SET);
-	    fread(&gwid[0], 9, 1, file);
-	    fclose(file);
-	    if (!strncmp(gwid, "GW5400-B", 8)) {
-		setRouter("Gateworks Ventana GW5400-B");
-	    } else if (!strncmp(gwid, "GW5400-C", 8)) {
-		setRouter("Gateworks Ventana GW5400-C");
-	    } else if (!strncmp(gwid, "GW5400-A", 8)) {
-		setRouter("Gateworks Ventana GW5400-A");
-	    } else if (!strncmp(gwid, "GW5410-B", 8)) {
-		setRouter("Gateworks Ventana GW5410-B");
-	    } else if (!strncmp(gwid, "GW5410-C", 8)) {
-		setRouter("Gateworks Ventana GW5410-C");
-	    } else if (!strncmp(gwid, "GW5100", 6)) {
-		setRouter("Gateworks Ventana GW5100");
-		return ROUTER_BOARD_GW2380;
-	    } else if (!strncmp(gwid, "GW5200", 6)) {
-		setRouter("Gateworks Ventana GW5200");
-		return ROUTER_BOARD_GW2380;
-	    } else if (!strncmp(gwid, "GW5300", 6)) {
-		setRouter("Gateworks Ventana GW5300");
-	    } else if (!strncmp(gwid, "GW5310", 6)) {
-		setRouter("Gateworks Ventana GW5310");
-	    } else
 		setRouter("Gateworks Ventana GW54XX");
+	} else {
+		char gwid[9];
+		fseek(file, 0x30, SEEK_SET);
+		fread(&gwid[0], 9, 1, file);
+		fclose(file);
+		if (!strncmp(gwid, "GW5400-B", 8)) {
+			setRouter("Gateworks Ventana GW5400-B");
+		} else if (!strncmp(gwid, "GW5400-C", 8)) {
+			setRouter("Gateworks Ventana GW5400-C");
+		} else if (!strncmp(gwid, "GW5400-A", 8)) {
+			setRouter("Gateworks Ventana GW5400-A");
+		} else if (!strncmp(gwid, "GW5410-B", 8)) {
+			setRouter("Gateworks Ventana GW5410-B");
+		} else if (!strncmp(gwid, "GW5410-C", 8)) {
+			setRouter("Gateworks Ventana GW5410-C");
+		} else if (!strncmp(gwid, "GW5100", 6)) {
+			setRouter("Gateworks Ventana GW5100");
+			return ROUTER_BOARD_GW2380;
+		} else if (!strncmp(gwid, "GW5200", 6)) {
+			setRouter("Gateworks Ventana GW5200");
+			return ROUTER_BOARD_GW2380;
+		} else if (!strncmp(gwid, "GW5300", 6)) {
+			setRouter("Gateworks Ventana GW5300");
+		} else if (!strncmp(gwid, "GW5310", 6)) {
+			setRouter("Gateworks Ventana GW5310");
+		} else
+			setRouter("Gateworks Ventana GW54XX");
 	}
 	return ROUTER_BOARD_GW2388;
 #elif HAVE_LAGUNA
@@ -1966,17 +1964,16 @@ int internal_getRouterBrand()
 
 	char *model = getUEnv("product");
 
-
 #ifdef HAVE_BUFFALO
-	if (!strcmp(model,"BHR-4GRV"))
-	    setRouter("BHR-4GRV");
+	if (!strcmp(model, "BHR-4GRV"))
+		setRouter("BHR-4GRV");
 	else
-	    setRouter("WZR-HP-G450H");
+		setRouter("WZR-HP-G450H");
 #else
-	if (!strcmp(model,"BHR-4GRV"))
-	    setRouter("Buffalo BHR-4GRV");
+	if (!strcmp(model, "BHR-4GRV"))
+		setRouter("Buffalo BHR-4GRV");
 	else
-	    setRouter("Buffalo WZR-HP-G450H");
+		setRouter("Buffalo WZR-HP-G450H");
 #endif
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRG300NH
@@ -2954,8 +2951,8 @@ int internal_getRouterBrand()
 		setRouter("Asus RT-AC66U");
 		return ROUTER_ASUS_AC66U;
 	}
-	
-	if (nvram_match("boardnum","${serno}") && nvram_match("boardtype","0xC617") && nvram_match("boardrev","0x1103")) {
+
+	if (nvram_match("boardnum", "${serno}") && nvram_match("boardtype", "0xC617") && nvram_match("boardrev", "0x1103")) {
 		setRouter("Linksys EA6500");
 		return ROUTER_LINKSYS_EA6500;
 	}
@@ -3176,12 +3173,12 @@ int internal_getRouterBrand()
 		setRouter("Netgear WNDR4500");
 		return ROUTER_NETGEAR_WNDR4500;
 	}
-	
+
 	if (nvram_match("boardnum", "679") && nvram_match("boardtype", "0x0646")
-            && nvram_match("boardrev", "0x1110")) { 
-                setRouter("Netgear R6250");
-                return ROUTER_NETGEAR_R6250;
-        }	
+	    && nvram_match("boardrev", "0x1110")) {
+		setRouter("Netgear R6250");
+		return ROUTER_NETGEAR_R6250;
+	}
 
 	if ((boardnum == 42 || boardnum == 66)
 	    && nvram_match("boardtype", "0x04EF")
@@ -4508,7 +4505,14 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_BOARD_GW2388:
 	case ROUTER_BOARD_GW2380:
+#ifdef HAVE_VENTANA
+		power_gpio = 0x066;
+		diag_gpio = 0x06F;
+		connected_gpio = 0x066;
+		disconnected_gpio = 0x067;
+#else
 		connected_gpio = 0x110;	// 16 is mapped to front led
+#endif
 		break;
 	case ROUTER_BOARD_GATEWORX:
 #ifdef HAVE_WG302V1
@@ -4686,9 +4690,9 @@ int led_control(int type, int act)
 		ses_gpio = 0x10a;
 		connected_gpio = 0x139;
 		disconnected_gpio = 0x13b;
-//		diag_gpio = 0x107;
-//		connected_gpio = 0x109;
-//		ses_gpio = 0x10e;
+//              diag_gpio = 0x107;
+//              connected_gpio = 0x109;
+//              ses_gpio = 0x10e;
 		break;
 	case ROUTER_BOARD_WHRG300N:
 		diag_gpio = 0x107;
@@ -4723,9 +4727,9 @@ int led_control(int type, int act)
 		break;
 #elif HAVE_CARAMBOLA
 	case ROUTER_BOARD_WHRHPGN:
-//		usb_power = 0x01a;
-//		usb_gpio = 0x001;
-//		ses_gpio = 0x11b;
+//              usb_power = 0x01a;
+//              usb_gpio = 0x001;
+//              ses_gpio = 0x11b;
 		break;
 #elif HAVE_HORNET
 	case ROUTER_BOARD_WHRHPGN:
@@ -4851,7 +4855,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
-//		usb_power = 0x009;	// USB 2.0 ehci port
+//              usb_power = 0x009;      // USB 2.0 ehci port
 		usb_power1 = 0x10a;	// USB 3.0 xhci port
 //              wlan0_gpio = 0x028; // wireless orange
 //              wlan1_gpio = 0x029; // wireless blue
@@ -5157,7 +5161,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_DLINK_DIR868:
 		usb_power = 0x00a;
-		connected_gpio= 0x103;
+		connected_gpio = 0x103;
 		disconnected_gpio = 0x101;
 		power_gpio = 0x102;
 		diag_gpio = 0x100;
@@ -5176,11 +5180,11 @@ int led_control(int type, int act)
 	case ROUTER_NETGEAR_R6250:
 		power_gpio = 0x102;	// power led green
 		diag_gpio = 0x103;	// power led orange
-		//emblem0_gpio = 0x001;	// NETGEAR Emblem	
+		//emblem0_gpio = 0x001; // NETGEAR Emblem       
 		connected_gpio = 0x10f;	// wan led green
 		wlan0_gpio = 0x10b;	// radio 2.4GHz led green
 		usb_gpio = 0x108;	// usb led green
-		//usb_power = 0x015;	// usb enable
+		//usb_power = 0x015;    // usb enable
 		break;
 	case ROUTER_NETGEAR_R6300:
 		usb_gpio = 0x108;	//usb led
@@ -5196,21 +5200,21 @@ int led_control(int type, int act)
 	case ROUTER_NETGEAR_R6300V2:
 		power_gpio = 0x102;	// power led green
 		diag_gpio = 0x103;	// power led orange
-		//emblem0_gpio = 0x001;	// NETGEAR Emblem	
+		//emblem0_gpio = 0x001; // NETGEAR Emblem       
 		connected_gpio = 0x10f;	// wan led green
 		wlan0_gpio = 0x10b;	// radio 2.4GHz led green
 		usb_gpio = 0x108;	// usb led green
-		//usb_power = 0x015;	// usb enable
+		//usb_power = 0x015;    // usb enable
 		break;
 	case ROUTER_NETGEAR_R7000:
-	  	power_gpio = 0x102;	// power led green
-		diag_gpio = 0x103;	// power led orange	
+		power_gpio = 0x102;	// power led green
+		diag_gpio = 0x103;	// power led orange     
 		connected_gpio = 0x109;	// wan led green
 		usb_power = 0x000;	// usb enable
 		wlan0_gpio = 0x10d;	// radio 0 
 		wlan1_gpio = 0x10c;	// radio 1 
 		ses_gpio = 0x10e;	// wps led
-		wlan_gpio= 0x10f;	// wifi button led
+		wlan_gpio = 0x10f;	// wifi button led
 		usb_gpio = 0x111;	//usb1 
 		usb_gpio1 = 0x112;	//usb2 
 		break;
