@@ -310,6 +310,7 @@ else
 endif
 ifeq ($(CONFIG_USB_ADVANCED),y)
 	echo "CONFIG_HDPARM=y" >> busybox/.config
+	echo "CONFIG_FEATURE_HDPARM_GET_IDENTITY=y" >> busybox/.config
 	echo "CONFIG_BLKID=y" >> busybox/.config
 	echo "CONFIG_FEATURE_BLKID_TYPE=n" >> busybox/.config
 	echo "CONFIG_VOLUMEID=y" >> busybox/.config
@@ -337,6 +338,7 @@ ifeq ($(CONFIG_USB_ADVANCED),y)
 	echo "CONFIG_FEATURE_MKSWAP_UUID=y" >> busybox/.config
 else
 	echo "# CONFIG_HDPARM is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_HDPARM_GET_IDENTITY is not set" >> busybox/.config
 	echo "# CONFIG_BLKID is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_BLKID_TYPE is not set" >> busybox/.config
 	echo "# CONFIG_VOLUMEID is not set" >> busybox/.config
@@ -360,6 +362,7 @@ else
 	echo "# CONFIG_FEATURE_VOLUMEID_SYSV is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_VOLUMEID_OCFS2 is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_VOLUMEID_LINUXRAID is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_MKSWAP_UUID is not set" >> busybox/.config
 endif
 ifeq ($(CONFIG_SWAP),y)
 	echo "CONFIG_MKSWAP=y" >> busybox/.config
