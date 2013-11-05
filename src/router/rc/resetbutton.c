@@ -761,6 +761,10 @@ void period_check(int sig)
 		val = get_gpio(52) << 1;
 	} else if (brand == ROUTER_BOARD_W502U) {
 		val = get_gpio(10) << 10;
+	} else if (brand == ROUTER_BOARD_GW2380) {
+		val = get_gpio(240);
+	} else if (brand == ROUTER_BOARD_GW2388) {
+		val = get_gpio(240);
 	} else {
 
 		if ((fp = fopen(GPIO_FILE, "r"))) {
