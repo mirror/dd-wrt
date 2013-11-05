@@ -856,7 +856,6 @@ void start_sysinit(void)
 			}
 		}
 		set_gpio(15,1);//wlan button led on
-		set_gpio(0,0); //usb power
 		set_gpio(2,1);
 		set_gpio(4,1);
 		set_gpio(5,1);
