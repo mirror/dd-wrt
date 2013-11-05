@@ -169,11 +169,9 @@ else
 ifeq ($(CONFIG_BUFFALO),y)
 	cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_1750.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
 	touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
-	echo "CONFIG_FAILSAFE_UPGRADE=y" >> $(LINUXDIR)/.config
 else
 	cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_default.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
 	touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
-	echo "# CONFIG_FAILSAFE_UPGRADE is not set" >> $(LINUXDIR)/.config
 endif
 endif
 ifeq ($(CONFIG_EOP_TUNNEL),y)
