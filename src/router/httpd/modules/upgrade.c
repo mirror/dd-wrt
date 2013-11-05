@@ -182,10 +182,10 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 		if (i == 0) {	// check code pattern, the first data must
 #ifdef HAVE_BUFFALO
-			ralink_firmware_header fh;
-			memcpy(&fh, buf, sizeof(fh));
+			ralink_firmware_header *fh;
+			fh = (ralink_firmware_header *)buf;
 			char *str;
-			str = (char*)&fh;
+			str = (char*)fh;
 			unsigned char ch, temp;
 			int idx, index;
 			ch = 0xff;
@@ -213,7 +213,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 					goto err;
 				}
 				goto write_data;
-			} else if (!strncmp(fh.magic, "FIRMWARE", 8)) {	// check for "FIRMWARE"
+			} else if (!strncmp(fh->magic, "FIRMWARE", 8)) {	// check for "FIRMWARE"
 				char *write_argv_buf[4];
 				write_argv_buf[0] = "buffalo_flash";
 				write_argv_buf[1] = upload_fifo;
