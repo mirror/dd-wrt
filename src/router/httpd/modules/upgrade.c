@@ -188,7 +188,22 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 					goto err;
 				}
 				goto write_data;
-			} else {
+			} 
+			else if (!memcmp(buf, "\0x44\0xAD\0xAB\0xA2\0xFF\0xB7\0x7A\0xE4", 8)) { // check for "FIRMWARE"
+				char *write_argv_buf[4];
+				write_argv_buf[0] = "buffalo_rt_flash";
+				write_argv_buf[1] = upload_fifo;
+				write_argv_buf[2] = NULL;
+
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
+				    || !(fifo = fopen(upload_fifo, "w"))) {
+					if (!ret)
+						ret = errno;
+					goto err;
+				}
+				goto write_data;
+			} 
+			else {
 				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv, NULL, 0, &pid))
 				    || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
