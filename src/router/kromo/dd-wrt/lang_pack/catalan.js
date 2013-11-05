@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
-lang_charset.set="iso-8859-1";
+lang_charset.set="UTF-8";
 
 share.annex="Tipus d'Annex";
 share.apn="APN";
