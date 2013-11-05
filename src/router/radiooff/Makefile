@@ -5,7 +5,11 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 ifeq ($(CONFIG_BUFFALO),y)
+ifeq ($(CONFIG_AOSS),y)
+MODULE:=radiooff_buffalo_aoss
+else
 MODULE:=radiooff_buffalo
+endif
 else
 MODULE:=radiooff
 endif

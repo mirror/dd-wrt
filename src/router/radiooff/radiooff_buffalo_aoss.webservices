@@ -5,6 +5,10 @@
 		<input class="spaceradio" type="radio" value="1" name="radiooff_button" <% nvram_checked("radiooff_button","1"); %> onclick="show_layer_ext(this, 'idradiooff', true)" />&nbsp;
 	</div>
 	<div class="setting">
+		<div class="label"><% tran("service.radiooff_srv_aoss"); %></div>
+		<input class="spaceradio" type="radio" value="2" name="radiooff_button" <% nvram_checked("radiooff_button","2"); %> onclick="show_layer_ext(this, 'idradiooff', false)" />&nbsp;
+	</div>
+	<div class="setting">
 		<div class="label"><% tran("service.radiooff_srv_disabled"); %></div>
 		<input class="spaceradio" type="radio" value="0" name="radiooff_button" <% nvram_checked("radiooff_button","0"); %> onclick="show_layer_ext(this, 'idradiooff', false)" />&nbsp;
 	</div>
