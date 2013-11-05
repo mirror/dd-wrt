@@ -183,9 +183,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		if (i == 0) {	// check code pattern, the first data must
 #ifdef HAVE_BUFFALO
 			ralink_firmware_header fh;
-			memcpy(fh, buf, sizeof(fh));
-			char *p;
-			p = &fh;
+			memcpy(&fh, buf, sizeof(fh));
+			char *str;
+			str = (char*)&fh;
 			unsigned char ch, temp;
 			int idx, index;
 			ch = 0xff;
