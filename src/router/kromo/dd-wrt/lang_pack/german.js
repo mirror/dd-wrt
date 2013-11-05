@@ -1109,6 +1109,7 @@ management.jffs_clean="JFFS2 löschen";
 management.lang_legend="Sprachauswahl";
 management.lang_srv="Sprache";
 management.lang_bulgarian="Bulgarisch";
+management.lang_catalan="Katalanisch";
 management.lang_chinese_traditional="Chinesisch traditionell";
 management.lang_chinese_simplified="Chinesisch simplified";
 management.lang_croatian="Kroatisch";
