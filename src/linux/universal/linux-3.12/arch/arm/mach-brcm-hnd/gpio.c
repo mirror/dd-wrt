@@ -148,8 +148,8 @@ static struct file_operations gpio_fops = {
 
 extern int iswrt350n;
 extern int iswrt300n11;
-int isac66;
-int isac68;
+int isac66 = 0;
+int isac68 = 0;
 int isbuffalo = 0;
 int isdefault = 0;
 static struct class *gpio_class = NULL;
@@ -157,7 +157,8 @@ static struct class *gpio_class = NULL;
 static int __init gpio_init(void)
 {
 	int i;
-
+	int gpios = 0;
+	printk(KERN_INFO "init gpio code\n");
 	if (!(gpio_sih = si_kattach(SI_OSH)))
 		return -ENODEV;
 
@@ -220,13 +221,22 @@ static int __init gpio_init(void)
 		printk(KERN_EMERG "DLink DIR-868 init\n");
 		isac66 = 1;
 	}
-	
+
 	if ((boardnum == 679) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110"))) {
 		printk(KERN_EMERG "Netgear R6250/R6300v2 init\n");
+		gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11 | 1<<15;
 	}
 
 	if ((boardnum == 32) && nvram_match("boardtype", "0x0665") && (nvram_match("boardrev", "0x1301"))) {
-		 printk(KERN_EMERG "Netgear R7000 init\n");
+		printk(KERN_EMERG "Netgear R7000 init\n");
+		gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11 | 1<<15;
+	}
+
+
+	for (i = 0; i < 16; i++) {
+		if (gpios&1) {
+			si_gpioreserve(gpio_sih, 1 << i, GPIO_APP_PRIORITY);
+		}
 	}
 
 	gpio_init_flag = 1;
