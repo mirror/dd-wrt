@@ -1103,6 +1103,7 @@ management.lang_srv="Language";
 management.lang_bulgarian="Bulgarian";
 management.lang_chinese_traditional="Chinese traditional";
 management.lang_chinese_simplified="Chinese simplified";
+management.lang_catalan="Catalan";
 management.lang_croatian="Croatian";
 management.lang_czech="Czech";
 management.lang_dutch="Dutch";
