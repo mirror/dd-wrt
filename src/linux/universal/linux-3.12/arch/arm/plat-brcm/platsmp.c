@@ -19,7 +19,6 @@
 
 #include <asm/cacheflush.h>
 #include <asm/mach-types.h>
-#include <asm/localtimer.h>
 #include <asm/unified.h>
 #include <asm/smp.h>
 #include <asm/smp_scu.h>
