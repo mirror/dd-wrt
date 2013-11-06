@@ -137,12 +137,6 @@ static int check_pattern(uint8_t *buf, int len, int paglen, struct nand_bbt_desc
 	uint8_t *p = buf;
 
 	end = paglen + td->offs;
-	if (td->options & NAND_BBT_SCANEMPTY) {
-		for (i = 0; i < end; i++) {
-			if (p[i] != 0xff)
-				return -1;
-		}
-	}
 	p += end;
 
 	/* Compare the pattern */
@@ -151,14 +145,6 @@ static int check_pattern(uint8_t *buf, int len, int paglen, struct nand_bbt_desc
 			return -1;
 	}
 
-	if (td->options & NAND_BBT_SCANEMPTY) {
-		p += td->len;
-		end += td->len;
-		for (i = end; i < len; i++) {
-			if (*p++ != 0xff)
-				return -1;
-		}
-	}
 	return 0;
 }
 
@@ -466,15 +452,8 @@ static int brcmnand_create_bbt(struct mtd_info *mtd, uint8_t *buf,
 			len = 1;
 	}
 
-	if (!(bd->options & NAND_BBT_SCANEMPTY)) {
-		/* We need only read few bytes from the OOB area */
-		scanlen = 0;
-		readlen = bd->len;
-	} else {
-		/* Full page content should be read */
-		scanlen = mtd->writesize + mtd->oobsize;
-		readlen = len * mtd->writesize;
-	}
+	scanlen = 0;
+	readlen = bd->len;
 
 	if (chip == -1) {
 		/* Note that numblocks is 2 * (real numblocks) here, see i+=2
@@ -836,7 +815,6 @@ static inline int brcmnand_memory_bbt(struct mtd_info *mtd, struct nand_bbt_desc
 {
 	struct nand_chip *this = mtd->priv;
 
-	bd->options &= ~NAND_BBT_SCANEMPTY;
 	return brcmnand_create_bbt(mtd, this->buffers->databuf, bd, -1);
 }
 
@@ -1195,7 +1173,7 @@ static struct nand_bbt_descr bch4_flashbased = {
 static uint8_t scan_agand_pattern[] = { 0x1C, 0x71, 0xC7, 0x1C, 0x71, 0xC7 };
 
 static struct nand_bbt_descr agand_flashbased = {
-	.options = NAND_BBT_SCANEMPTY | NAND_BBT_SCANALLPAGES,
+	.options = NAND_BBT_SCANALLPAGES,
 	.offs = 0x20,
 	.len = 6,
 	.pattern = scan_agand_pattern
