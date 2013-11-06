@@ -27,7 +27,7 @@ function setMemoryValues(val) {
 function setUptimeValues(val) {
 	setElementContent("uptime_up", val.substring(val.indexOf("up") + 3, val.indexOf("load") - 3));
 	var loadAverage = val.substring(val.indexOf("average") + 9).split(",");
-	setMeterBar("uptime_load", (parseFloat(loadAverage[0]) + parseFloat(loadAverage[1]) + parseFloat(loadAverage[2])) * 33.3, loadAverage.join(","));
+	setMeterBar("uptime_load", (parseFloat(loadAverage[0]) + parseFloat(loadAverage[1]) + parseFloat(loadAverage[2])) / <% show_cpucores(); %> * 33.3, loadAverage.join(","));
 }
 
 function setIpconntrackValues(val) {
