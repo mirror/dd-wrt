@@ -805,6 +805,11 @@ void start_lan(void)
 	writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "0");
 	writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "0");
 	writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "0");
+	
+	// fix list of active client in webif
+	writeproc("/proc/sys/net/ipv4/neigh/default/gc_thresh1", "1");
+	writeproc("/proc/sys/net/ipv4/neigh/default/gc_interval", "120");
+	
 	strcpy(lan_ifname, nvram_safe_get("lan_ifname"));
 	strcpy(wan_ifname, nvram_safe_get("wan_ifname"));
 	strcpy(lan_ifnames, nvram_safe_get("lan_ifnames"));
