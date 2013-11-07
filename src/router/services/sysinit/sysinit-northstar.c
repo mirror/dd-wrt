@@ -808,7 +808,7 @@ void start_sysinit(void)
 				{"mcsbw1605glpo", "0", 0},
 				{"rxgains2gtrelnabypa2", "0", 0},
 				{"sb40and80hr5ghpo", "0", 0},
-				{"mcsbw405glpo", "BA768600", 0},
+				{"mcsbw405glpo", "0xBA768600", 0},
 				{"rpcal2g", "0", 0},
 				{"dot11agofdmhrbw202gpo", "0", 0},
 				{"aa2g", "7", 0},
