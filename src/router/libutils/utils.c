@@ -1061,13 +1061,14 @@ int internal_getRouterBrand()
 
 	if (boardnum == 679 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
-	    && nvram_match("sdram_config", "0x0147")) {
+	    && nvram_match("sdram_refresh", "0x81c")) {
 		setRouter("Netgear R6300V2");
 		return ROUTER_NETGEAR_R6300V2;
 	}
 
 	if (boardnum == 679 && nvram_match("boardtype", "0x0646")
-	    && nvram_match("boardrev", "0x1110")) {
+	    && nvram_match("boardrev", "0x1110")
+	    && nvram_match("sdram_refresh", "0x0000")) {
 		setRouter("Netgear R6250");
 		return ROUTER_NETGEAR_R6250;
 	}
