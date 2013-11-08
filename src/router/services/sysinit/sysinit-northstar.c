@@ -131,6 +131,10 @@ void start_sysinit(void)
 		nvram_set("wait_time", "3");
 		nvram_commit();
 	}
+	
+	if ( nvram_get("et_txq_thresh") == NULL ) {
+		nvram_set("et_txq_thresh","1024");
+	}
 
 	switch (getRouterBrand()) {
 	case ROUTER_NETGEAR_R6250:
