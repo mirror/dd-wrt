@@ -5179,12 +5179,13 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_NETGEAR_R6250:
 		power_gpio = 0x102;	// power led green
-		diag_gpio = 0x103;	// power led orange
+		//diag_gpio = 0x103;	// power led orange
+		diag_gpio = 0x001;	// Netgear logo
 		//emblem0_gpio = 0x001; // NETGEAR Emblem       
-		connected_gpio = 0x10f;	// wan led green
-		wlan0_gpio = 0x10b;	// radio 2.4GHz led green
+		//connected_gpio = 0x10f;	// wan led green
+		wlan0_gpio = 0x10b;	// radio led blue
 		usb_gpio = 0x108;	// usb led green
-		//usb_power = 0x015;    // usb enable
+		usb_power = 0x000;    // usb enable
 		break;
 	case ROUTER_NETGEAR_R6300:
 		usb_gpio = 0x108;	//usb led
@@ -5199,15 +5200,15 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_NETGEAR_R6300V2:
 		power_gpio = 0x102;	// power led green
-		diag_gpio = 0x103;	// power led orange
-		//emblem0_gpio = 0x001; // NETGEAR Emblem       
-		connected_gpio = 0x10f;	// wan led green
-		wlan0_gpio = 0x10b;	// radio 2.4GHz led green
-		usb_gpio = 0x108;	// usb led green
-		//usb_power = 0x015;    // usb enable
+		//diag_gpio = 0x103;	// power led orange
+		diag_gpio = 0x001;	// Netgear logo	
+		//connected_gpio = 0x10f;// wan led green - hw controlled
+		wlan0_gpio = 0x10b;	// radio led blue
+		usb_gpio = 0x108;	// usb led 
+		usb_power = 0x000;	// usb enable
 		break;
 	case ROUTER_NETGEAR_R7000:
-		power_gpio = 0x102;	// power led green
+	  	power_gpio = 0x102;	// power led 
 		diag_gpio = 0x103;	// power led orange     
 		connected_gpio = 0x109;	// wan led green
 		usb_power = 0x000;	// usb enable

@@ -60,8 +60,19 @@ void start_samba3(void)
 	}
 #endif
 
-	if (!nvram_match("samba3_enable", "1"))
+	if (!nvram_match("samba3_enable", "1")){
+		if (nvram_match("txworkq", "1")) {
+			nvram_unset("txworkq");
+			nvram_commit();
+		}
 		return;
+		
+	}
+	
+	if (!nvram_match("txworkq", "1")) {
+		nvram_set("txworkq", "1");
+		nvram_commit();
+	}
 	start_mkfiles();
 	sysprintf("echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
 	mkdir("/var/samba", 0700);
