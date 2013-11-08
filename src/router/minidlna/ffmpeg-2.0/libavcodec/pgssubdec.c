@@ -98,7 +98,7 @@ static av_cold int close_decoder(AVCodecContext *avctx)
 /**
  * Decode the RLE data.
  *
- * The subtitle is stored as an Run Length Encoded image.
+ * The subtitle is stored as a Run Length Encoded image.
  *
  * @param avctx contains the current codec context
  * @param sub pointer to the processed subtitle data
@@ -538,12 +538,12 @@ static const AVClass pgsdec_class = {
 
 AVCodec ff_pgssub_decoder = {
     .name           = "pgssub",
+    .long_name      = NULL_IF_CONFIG_SMALL("HDMV Presentation Graphic Stream subtitles"),
     .type           = AVMEDIA_TYPE_SUBTITLE,
     .id             = AV_CODEC_ID_HDMV_PGS_SUBTITLE,
     .priv_data_size = sizeof(PGSSubContext),
     .init           = init_decoder,
     .close          = close_decoder,
     .decode         = decode,
-    .long_name      = NULL_IF_CONFIG_SMALL("HDMV Presentation Graphic Stream subtitles"),
     .priv_class     = &pgsdec_class,
 };

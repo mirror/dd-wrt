@@ -66,7 +66,7 @@ typedef struct {
 typedef struct WmallDecodeCtx {
     /* generic decoder variables */
     AVCodecContext  *avctx;
-    AVFrame         frame;
+    AVFrame         *frame;
     uint8_t         frame_data[MAX_FRAMESIZE + FF_INPUT_BUFFER_PADDING_SIZE];  ///< compressed frame data
     PutBitContext   pb;                             ///< context for filling the frame_data buffer
 
@@ -178,6 +178,11 @@ static av_cold int decode_init(AVCodecContext *avctx)
     unsigned int channel_mask;
     int i, log2_max_num_subframes;
 
+    if (!avctx->block_align) {
+        av_log(avctx, AV_LOG_ERROR, "block_align is not set\n");
+        return AVERROR(EINVAL);
+    }
+
     s->avctx = avctx;
     init_put_bits(&s->pb, s->frame_data, MAX_FRAMESIZE);
 
@@ -261,8 +266,10 @@ static av_cold int decode_init(AVCodecContext *avctx)
         return AVERROR_PATCHWELCOME;
     }
 
-    avcodec_get_frame_defaults(&s->frame);
-    avctx->coded_frame    = &s->frame;
+    s->frame = av_frame_alloc();
+    if (!s->frame)
+        return AVERROR(ENOMEM);
+
     avctx->channel_layout = channel_mask;
     return 0;
 }
@@ -908,7 +915,7 @@ static int decode_subframe(WmallDecodeCtx *s)
     } else if (!s->cdlms[0][0].order) {
         av_log(s->avctx, AV_LOG_DEBUG,
                "Waiting for seekable tile\n");
-        s->frame.nb_samples = 0;
+        av_frame_unref(s->frame);
         return -1;
     }
 
@@ -1015,15 +1022,15 @@ static int decode_frame(WmallDecodeCtx *s)
     GetBitContext* gb = &s->gb;
     int more_frames = 0, len = 0, i, ret;
 
-    s->frame.nb_samples = s->samples_per_frame;
-    if ((ret = ff_get_buffer(s->avctx, &s->frame, 0)) < 0) {
+    s->frame->nb_samples = s->samples_per_frame;
+    if ((ret = ff_get_buffer(s->avctx, s->frame, 0)) < 0) {
         /* return an error if no frame could be decoded at all */
         s->packet_loss = 1;
         return ret;
     }
     for (i = 0; i < s->num_channels; i++) {
-        s->samples_16[i] = (int16_t *)s->frame.extended_data[i];
-        s->samples_32[i] = (int32_t *)s->frame.extended_data[i];
+        s->samples_16[i] = (int16_t *)s->frame->extended_data[i];
+        s->samples_32[i] = (int32_t *)s->frame->extended_data[i];
     }
 
     /* get frame length */
@@ -1170,14 +1177,18 @@ static int decode_packet(AVCodecContext *avctx, void *data, int *got_frame_ptr,
     int buf_size       = avpkt->size;
     int num_bits_prev_frame, packet_sequence_number, spliced_packet;
 
-    s->frame.nb_samples = 0;
+    s->frame->nb_samples = 0;
 
     if (s->packet_done || s->packet_loss) {
         s->packet_done = 0;
 
-        /* sanity check for the buffer length */
-        if (buf_size < avctx->block_align)
+        if (!buf_size)
             return 0;
+        /* sanity check for the buffer length */
+        if (buf_size < avctx->block_align) {
+            av_log(avctx, AV_LOG_ERROR, "buf size %d invalid\n", buf_size);
+            return AVERROR_INVALIDDATA;
+        }
 
         s->next_packet_start = buf_size - avctx->block_align;
         buf_size             = avctx->block_align;
@@ -1263,8 +1274,8 @@ static int decode_packet(AVCodecContext *avctx, void *data, int *got_frame_ptr,
         save_bits(s, gb, remaining_bits(s, gb), 0);
     }
 
-    *got_frame_ptr   = s->frame.nb_samples > 0;
-    av_frame_move_ref(data, &s->frame);
+    *got_frame_ptr   = s->frame->nb_samples > 0;
+    av_frame_move_ref(data, s->frame);
 
     s->packet_offset = get_bits_count(gb) & 7;
 
@@ -1280,20 +1291,30 @@ static void flush(AVCodecContext *avctx)
     s->frame_offset      = 0;
     s->next_packet_start = 0;
     s->cdlms[0][0].order = 0;
-    s->frame.nb_samples  = 0;
+    s->frame->nb_samples = 0;
     init_put_bits(&s->pb, s->frame_data, MAX_FRAMESIZE);
+}
+
+static av_cold int decode_close(AVCodecContext *avctx)
+{
+    WmallDecodeCtx *s = avctx->priv_data;
+
+    av_frame_free(&s->frame);
+
+    return 0;
 }
 
 AVCodec ff_wmalossless_decoder = {
     .name           = "wmalossless",
+    .long_name      = NULL_IF_CONFIG_SMALL("Windows Media Audio Lossless"),
     .type           = AVMEDIA_TYPE_AUDIO,
     .id             = AV_CODEC_ID_WMALOSSLESS,
     .priv_data_size = sizeof(WmallDecodeCtx),
     .init           = decode_init,
+    .close          = decode_close,
     .decode         = decode_packet,
     .flush          = flush,
     .capabilities   = CODEC_CAP_SUBFRAMES | CODEC_CAP_DR1 | CODEC_CAP_DELAY,
-    .long_name      = NULL_IF_CONFIG_SMALL("Windows Media Audio Lossless"),
     .sample_fmts    = (const enum AVSampleFormat[]) { AV_SAMPLE_FMT_S16P,
                                                       AV_SAMPLE_FMT_S32P,
                                                       AV_SAMPLE_FMT_NONE },

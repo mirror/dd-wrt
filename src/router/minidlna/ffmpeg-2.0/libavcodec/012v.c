@@ -49,6 +49,12 @@ static int zero12v_decode_frame(AVCodecContext *avctx, void *data,
         av_log(avctx, AV_LOG_ERROR, "Width 1 not supported.\n");
         return AVERROR_INVALIDDATA;
     }
+
+    if (   avctx->codec_tag == MKTAG('0', '1', '2', 'v')
+        && avpkt->size % avctx->height == 0
+        && avpkt->size / avctx->height * 3 >= width * 8)
+        stride = avpkt->size / avctx->height;
+
     if (avpkt->size < avctx->height * stride) {
         av_log(avctx, AV_LOG_ERROR, "Packet too small: %d instead of %d\n",
                avpkt->size, avctx->height * stride);
@@ -144,10 +150,10 @@ static int zero12v_decode_frame(AVCodecContext *avctx, void *data,
 
 AVCodec ff_zero12v_decoder = {
     .name           = "012v",
+    .long_name      = NULL_IF_CONFIG_SMALL("Uncompressed 4:2:2 10-bit"),
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_012V,
     .init           = zero12v_decode_init,
     .decode         = zero12v_decode_frame,
     .capabilities   = CODEC_CAP_DR1,
-    .long_name      = NULL_IF_CONFIG_SMALL("Uncompressed 4:2:2 10-bit"),
 };

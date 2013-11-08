@@ -61,6 +61,14 @@
 
 struct SwsContext;
 
+typedef enum SwsDither {
+    SWS_DITHER_NONE = 0,
+    SWS_DITHER_AUTO,
+    SWS_DITHER_BAYER,
+    SWS_DITHER_ED,
+    NB_SWS_DITHER,
+} SwsDither;
+
 typedef int (*SwsFunc)(struct SwsContext *context, const uint8_t *src[],
                        int srcStride[], int srcSliceY, int srcSliceH,
                        uint8_t *dst[], int dstStride[]);
@@ -266,7 +274,7 @@ typedef struct SwsContext {
      * Note that src, dst, srcStride, dstStride will be copied in the
      * sws_scale() wrapper so they can be freely modified here.
      */
-    SwsFunc swScale;
+    SwsFunc swscale;
     int srcW;                     ///< Width  of source      luma/alpha planes.
     int srcH;                     ///< Height of source      luma/alpha planes.
     int dstH;                     ///< Height of destination luma/alpha planes.
@@ -382,6 +390,10 @@ typedef struct SwsContext {
     int dst0Alpha;
     int srcXYZ;
     int dstXYZ;
+    int src_h_chr_pos;
+    int dst_h_chr_pos;
+    int src_v_chr_pos;
+    int dst_v_chr_pos;
     int yuv2rgb_y_offset;
     int yuv2rgb_y_coeff;
     int yuv2rgb_v2r_coeff;
@@ -480,9 +492,12 @@ typedef struct SwsContext {
 #define RGB_GAMMA (2.2f)
     int16_t *xyzgamma;
     int16_t *rgbgamma;
+    int16_t *xyzgammainv;
+    int16_t *rgbgammainv;
     int16_t xyz2rgb_matrix[3][4];
+    int16_t rgb2xyz_matrix[3][4];
 
-    /* function pointers for swScale() */
+    /* function pointers for swscale() */
     yuv2planar1_fn yuv2plane1;
     yuv2planarX_fn yuv2planeX;
     yuv2interleavedX_fn yuv2nv12cX;
@@ -586,6 +601,8 @@ typedef struct SwsContext {
     void (*chrConvertRange)(int16_t *dst1, int16_t *dst2, int width);
 
     int needs_hcscale; ///< Set if there are chroma planes to be converted.
+
+    SwsDither dither;
 } SwsContext;
 //FIXME check init (where 0)
 
@@ -593,17 +610,16 @@ SwsFunc ff_yuv2rgb_get_func_ptr(SwsContext *c);
 int ff_yuv2rgb_c_init_tables(SwsContext *c, const int inv_table[4],
                              int fullRange, int brightness,
                              int contrast, int saturation);
+void ff_yuv2rgb_init_tables_ppc(SwsContext *c, const int inv_table[4],
+                                int brightness, int contrast, int saturation);
 
-void ff_yuv2rgb_init_tables_altivec(SwsContext *c, const int inv_table[4],
-                                    int brightness, int contrast, int saturation);
 void updateMMXDitherTables(SwsContext *c, int dstY, int lumBufIndex, int chrBufIndex,
                            int lastInLumBuf, int lastInChrBuf);
 
-SwsFunc ff_yuv2rgb_init_mmx(SwsContext *c);
+SwsFunc ff_yuv2rgb_init_x86(SwsContext *c);
 SwsFunc ff_yuv2rgb_init_vis(SwsContext *c);
-SwsFunc ff_yuv2rgb_init_altivec(SwsContext *c);
-SwsFunc ff_yuv2rgb_get_func_ptr_bfin(SwsContext *c);
-void ff_bfin_get_unscaled_swscale(SwsContext *c);
+SwsFunc ff_yuv2rgb_init_ppc(SwsContext *c);
+SwsFunc ff_yuv2rgb_init_bfin(SwsContext *c);
 
 #if FF_API_SWS_FORMAT_NAME
 /**
@@ -797,19 +813,26 @@ static av_always_inline int usePal(enum AVPixelFormat pix_fmt)
 
 extern const uint64_t ff_dither4[2];
 extern const uint64_t ff_dither8[2];
-extern const uint8_t dithers[8][8][8];
-extern const uint16_t dither_scale[15][16];
 
+extern const uint8_t ff_dither_2x2_4[3][8];
+extern const uint8_t ff_dither_2x2_8[3][8];
+extern const uint8_t ff_dither_4x4_16[5][8];
+extern const uint8_t ff_dither_8x8_32[9][8];
+extern const uint8_t ff_dither_8x8_73[9][8];
+extern const uint8_t ff_dither_8x8_128[9][8];
+extern const uint8_t ff_dither_8x8_220[9][8];
+
+extern const int32_t ff_yuv2rgb_coeffs[8][4];
 
 extern const AVClass sws_context_class;
 
 /**
- * Set c->swScale to an unscaled converter if one exists for the specific
+ * Set c->swscale to an unscaled converter if one exists for the specific
  * source and destination formats, bit depths, flags, etc.
  */
 void ff_get_unscaled_swscale(SwsContext *c);
-
-void ff_swscale_get_unscaled_altivec(SwsContext *c);
+void ff_get_unscaled_swscale_bfin(SwsContext *c);
+void ff_get_unscaled_swscale_ppc(SwsContext *c);
 
 /**
  * Return function pointer to fastest main scaler path function depending
@@ -826,8 +849,8 @@ void ff_sws_init_output_funcs(SwsContext *c,
                               yuv2packed2_fn *yuv2packed2,
                               yuv2packedX_fn *yuv2packedX,
                               yuv2anyX_fn *yuv2anyX);
-void ff_sws_init_swScale_altivec(SwsContext *c);
-void ff_sws_init_swScale_mmx(SwsContext *c);
+void ff_sws_init_swscale_ppc(SwsContext *c);
+void ff_sws_init_swscale_x86(SwsContext *c);
 
 static inline void fillPlane16(uint8_t *plane, int stride, int width, int height, int y,
                                int alpha, int bits, const int big_endian)

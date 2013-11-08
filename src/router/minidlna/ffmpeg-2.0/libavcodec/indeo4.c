@@ -2,20 +2,20 @@
  * Indeo Video Interactive v4 compatible decoder
  * Copyright (c) 2009-2011 Maxim Poliakovski
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -210,6 +210,7 @@ static int decode_pic_hdr(IVI45DecContext *ctx, AVCodecContext *avctx)
     if (ivi_pic_config_cmp(&pic_conf, &ctx->pic_conf)) {
         if (ff_ivi_init_planes(ctx->planes, &pic_conf)) {
             av_log(avctx, AV_LOG_ERROR, "Couldn't reallocate color planes!\n");
+            ctx->pic_conf.luma_bands = 0;
             return AVERROR(ENOMEM);
         }
 
@@ -283,7 +284,6 @@ static int decode_band_hdr(IVI45DecContext *ctx, IVIBandDesc *band,
 {
     int plane, band_num, indx, transform_id, scan_indx;
     int i;
-    int quant_mat;
 
     plane    = get_bits(&ctx->gb, 2);
     band_num = get_bits(&ctx->gb, 4);
@@ -294,6 +294,7 @@ static int decode_band_hdr(IVI45DecContext *ctx, IVIBandDesc *band,
 
     band->is_empty = get_bits1(&ctx->gb);
     if (!band->is_empty) {
+        int old_blk_size = band->blk_size;
         /* skip header size
          * If header size is not given, header size is 4 bytes. */
         if (get_bits1(&ctx->gb))
@@ -352,30 +353,58 @@ static int decode_band_hdr(IVI45DecContext *ctx, IVIBandDesc *band,
             band->inv_transform = transforms[transform_id].inv_trans;
             band->dc_transform  = transforms[transform_id].dc_trans;
             band->is_2d_trans   = transforms[transform_id].is_2d_trans;
-            band->transform_size= (transform_id < 10) ? 8 : 4;
 
-            scan_indx = get_bits(&ctx->gb, 4);
-            if ((scan_indx>4 && scan_indx<10) != (band->blk_size==4)) {
-                av_log(avctx, AV_LOG_ERROR, "mismatching scan table!\n");
+            if (transform_id < 10)
+                band->transform_size = 8;
+            else
+                band->transform_size = 4;
+
+            if (band->blk_size != band->transform_size) {
+                av_log(avctx, AV_LOG_ERROR, "transform and block size mismatch (%d != %d)\n", band->transform_size, band->blk_size);
                 return AVERROR_INVALIDDATA;
             }
+
+            scan_indx = get_bits(&ctx->gb, 4);
             if (scan_indx == 15) {
                 av_log(avctx, AV_LOG_ERROR, "Custom scan pattern encountered!\n");
                 return AVERROR_INVALIDDATA;
             }
+            if (scan_indx > 4 && scan_indx < 10) {
+                if (band->blk_size != 4) {
+                    av_log(avctx, AV_LOG_ERROR, "mismatching scan table!\n");
+                    return AVERROR_INVALIDDATA;
+                }
+            } else if (band->blk_size != 8) {
+                av_log(avctx, AV_LOG_ERROR, "mismatching scan table!\n");
+                return AVERROR_INVALIDDATA;
+            }
+
             band->scan = scan_index_to_tab[scan_indx];
             band->scan_size = band->blk_size;
 
-            quant_mat = get_bits(&ctx->gb, 5);
-            if (quant_mat == 31) {
-                av_log(avctx, AV_LOG_ERROR, "Custom quant matrix encountered!\n");
+            band->quant_mat = get_bits(&ctx->gb, 5);
+            if (band->quant_mat >= FF_ARRAY_ELEMS(quant_index_to_tab)) {
+
+                if (band->quant_mat == 31)
+                    av_log(avctx, AV_LOG_ERROR,
+                           "Custom quant matrix encountered!\n");
+                else
+                    avpriv_request_sample(avctx, "Quantization matrix %d",
+                                          band->quant_mat);
+                band->quant_mat = -1;
                 return AVERROR_INVALIDDATA;
             }
-            if (quant_mat > 21) {
-                av_log(avctx, AV_LOG_ERROR, "Invalid quant matrix encountered!\n");
+        } else {
+            if (old_blk_size != band->blk_size) {
+                av_log(avctx, AV_LOG_ERROR,
+                       "The band block size does not match the configuration "
+                       "inherited\n");
                 return AVERROR_INVALIDDATA;
             }
-            band->quant_mat = quant_mat;
+            if (band->quant_mat < 0) {
+                av_log(avctx, AV_LOG_ERROR, "Invalid quant_mat inherited\n");
+                return AVERROR_INVALIDDATA;
+            }
         }
         if (quant_index_to_tab[band->quant_mat] > 4 && band->blk_size == 4) {
             av_log(avctx, AV_LOG_ERROR, "Invalid quant matrix for 4x4 block encountered!\n");
@@ -510,8 +539,13 @@ static int decode_mb_info(IVI45DecContext *ctx, IVIBandDesc *band,
                     }
                 }
             } else {
-                if (band->inherit_mv && ref_mb) {
-                    mb->type = ref_mb->type; /* copy mb_type from corresponding reference mb */
+                if (band->inherit_mv) {
+                    /* copy mb_type from corresponding reference mb */
+                    if (!ref_mb) {
+                        av_log(avctx, AV_LOG_ERROR, "ref_mb unavailable\n");
+                        return AVERROR_INVALIDDATA;
+                    }
+                    mb->type = ref_mb->type;
                 } else if (ctx->frame_type == FRAMETYPE_INTRA ||
                            ctx->frame_type == FRAMETYPE_INTRA1) {
                     mb->type = 0; /* mb_type is always INTRA for intra-frames */
@@ -534,15 +568,16 @@ static int decode_mb_info(IVI45DecContext *ctx, IVIBandDesc *band,
                 if (!mb->type) {
                     mb->mv_x = mb->mv_y = 0; /* there is no motion vector in intra-macroblocks */
                 } else {
-                    if (band->inherit_mv && ref_mb) {
-                        /* motion vector inheritance */
-                        if (mv_scale) {
-                            mb->mv_x = ivi_scale_mv(ref_mb->mv_x, mv_scale);
-                            mb->mv_y = ivi_scale_mv(ref_mb->mv_y, mv_scale);
-                        } else {
-                            mb->mv_x = ref_mb->mv_x;
-                            mb->mv_y = ref_mb->mv_y;
-                        }
+                    if (band->inherit_mv) {
+                        if (ref_mb)
+                            /* motion vector inheritance */
+                            if (mv_scale) {
+                                mb->mv_x = ivi_scale_mv(ref_mb->mv_x, mv_scale);
+                                mb->mv_y = ivi_scale_mv(ref_mb->mv_y, mv_scale);
+                            } else {
+                                mb->mv_x = ref_mb->mv_x;
+                                mb->mv_y = ref_mb->mv_y;
+                            }
                     } else {
                         /* decode motion vector deltas */
                         mv_delta = get_vlc2(&ctx->gb, ctx->mb_vlc.tab->table,
@@ -651,12 +686,12 @@ static av_cold int decode_init(AVCodecContext *avctx)
 
 AVCodec ff_indeo4_decoder = {
     .name           = "indeo4",
+    .long_name      = NULL_IF_CONFIG_SMALL("Intel Indeo Video Interactive 4"),
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_INDEO4,
     .priv_data_size = sizeof(IVI45DecContext),
     .init           = decode_init,
     .close          = ff_ivi_decode_close,
     .decode         = ff_ivi_decode_frame,
-    .long_name      = NULL_IF_CONFIG_SMALL("Intel Indeo Video Interactive 4"),
     .capabilities   = CODEC_CAP_DR1,
 };

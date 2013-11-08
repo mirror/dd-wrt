@@ -26,7 +26,7 @@
 #include "common.h"
 #include "pixfmt.h"
 #include "pixdesc.h"
-
+#include "internal.h"
 #include "intreadwrite.h"
 #include "avstring.h"
 
@@ -855,6 +855,7 @@ const AVPixFmtDescriptor av_pix_fmt_descriptors[AV_PIX_FMT_NB] = {
         },
         .flags = AV_PIX_FMT_FLAG_PLANAR | AV_PIX_FMT_FLAG_ALPHA,
     },
+#if FF_API_VDPAU
     [AV_PIX_FMT_VDPAU_H264] = {
         .name = "vdpau_h264",
         .log2_chroma_w = 1,
@@ -891,6 +892,7 @@ const AVPixFmtDescriptor av_pix_fmt_descriptors[AV_PIX_FMT_NB] = {
         .log2_chroma_h = 1,
         .flags = AV_PIX_FMT_FLAG_HWACCEL,
     },
+#endif
     [AV_PIX_FMT_RGB48BE] = {
         .name = "rgb48be",
         .nb_components = 3,
@@ -1735,8 +1737,114 @@ const AVPixFmtDescriptor av_pix_fmt_descriptors[AV_PIX_FMT_NB] = {
        },
         .flags = AV_PIX_FMT_FLAG_BE,
     },
+
+#define BAYER8_DESC_COMMON \
+        .nb_components= 3, \
+        .log2_chroma_w= 0, \
+        .log2_chroma_h= 0, \
+        .comp = {          \
+            {0,0,0,0,1},   \
+            {0,0,0,0,3},   \
+            {0,0,0,0,1},   \
+        },                 \
+
+#define BAYER16_DESC_COMMON \
+        .nb_components= 3, \
+        .log2_chroma_w= 0, \
+        .log2_chroma_h= 0, \
+        .comp = {          \
+            {0,1,0,0, 3},  \
+            {0,1,0,0, 7},  \
+            {0,1,0,0, 3},  \
+        },                 \
+
+    [AV_PIX_FMT_BAYER_BGGR8] = {
+        .name = "bayer_bggr8",
+        BAYER8_DESC_COMMON
+    },
+    [AV_PIX_FMT_BAYER_BGGR16LE] = {
+        .name = "bayer_bggr16le",
+        BAYER16_DESC_COMMON
+    },
+    [AV_PIX_FMT_BAYER_BGGR16BE] = {
+        .name = "bayer_bggr16be",
+        BAYER16_DESC_COMMON
+    },
+    [AV_PIX_FMT_BAYER_RGGB8] = {
+        .name = "bayer_rggb8",
+        BAYER8_DESC_COMMON
+    },
+    [AV_PIX_FMT_BAYER_RGGB16LE] = {
+        .name = "bayer_rggb16le",
+        BAYER16_DESC_COMMON
+    },
+    [AV_PIX_FMT_BAYER_RGGB16BE] = {
+        .name = "bayer_rggb16be",
+        BAYER16_DESC_COMMON
+    },
+    [AV_PIX_FMT_BAYER_GBRG8] = {
+        .name = "bayer_gbrg8",
+        BAYER8_DESC_COMMON
+    },
+    [AV_PIX_FMT_BAYER_GBRG16LE] = {
+        .name = "bayer_gbrg16le",
+        BAYER16_DESC_COMMON
+    },
+    [AV_PIX_FMT_BAYER_GBRG16BE] = {
+        .name = "bayer_gbrg16be",
+        BAYER16_DESC_COMMON
+    },
+    [AV_PIX_FMT_BAYER_GRBG8] = {
+        .name = "bayer_grbg8",
+        BAYER8_DESC_COMMON
+    },
+    [AV_PIX_FMT_BAYER_GRBG16LE] = {
+        .name = "bayer_grbg16le",
+        BAYER16_DESC_COMMON
+    },
+    [AV_PIX_FMT_BAYER_GRBG16BE] = {
+        .name = "bayer_grbg16be",
+        BAYER16_DESC_COMMON
+    },
+    [AV_PIX_FMT_NV16] = {
+        .name = "nv16",
+        .nb_components = 3,
+        .log2_chroma_w = 1,
+        .log2_chroma_h = 0,
+        .comp = {
+            { 0, 0, 1, 0, 7 },        /* Y */
+            { 1, 1, 1, 0, 7 },        /* U */
+            { 1, 1, 2, 0, 7 },        /* V */
+        },
+        .flags = AV_PIX_FMT_FLAG_PLANAR,
+    },
+    [AV_PIX_FMT_NV20LE] = {
+        .name = "nv20le",
+        .nb_components = 3,
+        .log2_chroma_w = 1,
+        .log2_chroma_h = 0,
+        .comp = {
+            { 0, 1, 1, 0, 9 },        /* Y */
+            { 1, 3, 1, 0, 9 },        /* U */
+            { 1, 3, 3, 0, 9 },        /* V */
+        },
+        .flags = AV_PIX_FMT_FLAG_PLANAR,
+    },
+    [AV_PIX_FMT_NV20BE] = {
+        .name = "nv20be",
+        .nb_components = 3,
+        .log2_chroma_w = 1,
+        .log2_chroma_h = 0,
+        .comp = {
+            { 0, 1, 1, 0, 9 },        /* Y */
+            { 1, 3, 1, 0, 9 },        /* U */
+            { 1, 3, 3, 0, 9 },        /* V */
+        },
+        .flags = AV_PIX_FMT_FLAG_PLANAR | AV_PIX_FMT_FLAG_BE,
+    },
 };
 
+FF_DISABLE_DEPRECATION_WARNINGS
 static enum AVPixelFormat get_pix_fmt_internal(const char *name)
 {
     enum AVPixelFormat pix_fmt;
@@ -1854,6 +1962,7 @@ enum AVPixelFormat av_pix_fmt_desc_get_id(const AVPixFmtDescriptor *desc)
 
     return desc - av_pix_fmt_descriptors;
 }
+FF_ENABLE_DEPRECATION_WARNINGS
 
 int av_pix_fmt_get_chroma_sub_sample(enum AVPixelFormat pix_fmt,
                                      int *h_shift, int *v_shift)
@@ -1913,6 +2022,8 @@ void ff_check_pixfmt_descriptors(void){
             } else {
                 av_assert0(8*(c->step_minus1+1) >= c->depth_minus1+1);
             }
+            if (!strncmp(d->name, "bayer_", 6))
+                continue;
             av_read_image_line(tmp, (void*)data, linesize, d, 0, 0, j, 2, 0);
             av_assert0(tmp[0] == 0 && tmp[1] == 0);
             tmp[0] = tmp[1] = (1<<(c->depth_minus1 + 1)) - 1;

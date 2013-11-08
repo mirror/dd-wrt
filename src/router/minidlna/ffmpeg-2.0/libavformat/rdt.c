@@ -98,7 +98,7 @@ ff_rdt_calc_response_and_checksum(char response[41], char chksum[9],
     unsigned char zres[16],
         buf[64] = { 0xa1, 0xe9, 0x14, 0x9d, 0x0e, 0x6b, 0x3b, 0x59 };
 #define XOR_TABLE_SIZE 37
-    const unsigned char xor_table[XOR_TABLE_SIZE] = {
+    static const unsigned char xor_table[XOR_TABLE_SIZE] = {
         0x05, 0x18, 0x74, 0xd0, 0x0d, 0x09, 0x02, 0x53,
         0xc0, 0x01, 0x05, 0x05, 0x67, 0x03, 0x19, 0x70,
         0x08, 0x27, 0x66, 0x10, 0x10, 0x72, 0x08, 0x09,
@@ -419,15 +419,16 @@ rdt_parse_sdp_line (AVFormatContext *s, int st_index,
 
         for (n = 0; n < s->nb_streams; n++)
             if (s->streams[n]->id == stream->id) {
-                int count = s->streams[n]->index + 1;
+                int count = s->streams[n]->index + 1, err;
                 if (first == -1) first = n;
                 if (rdt->nb_rmst < count) {
-                    RMStream **rmst= av_realloc(rdt->rmst, count*sizeof(*rmst));
-                    if (!rmst)
-                        return AVERROR(ENOMEM);
-                    memset(rmst + rdt->nb_rmst, 0,
-                           (count - rdt->nb_rmst) * sizeof(*rmst));
-                    rdt->rmst    = rmst;
+                    if ((err = av_reallocp(&rdt->rmst,
+                                           count * sizeof(*rdt->rmst))) < 0) {
+                        rdt->nb_rmst = 0;
+                        return err;
+                    }
+                    memset(rdt->rmst + rdt->nb_rmst, 0,
+                           (count - rdt->nb_rmst) * sizeof(*rdt->rmst));
                     rdt->nb_rmst = count;
                 }
                 rdt->rmst[s->streams[n]->index] = ff_rm_alloc_rmstream();

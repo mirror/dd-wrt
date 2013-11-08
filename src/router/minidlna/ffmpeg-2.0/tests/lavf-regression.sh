@@ -235,8 +235,8 @@ if [ -n "$do_pam" ] ; then
 do_image_formats pam
 do_image_formats pam "-pix_fmt rgba"
 do_image_formats pam "-pix_fmt gray"
-do_image_formats pam "-pix_fmt gray16be"
-do_image_formats pam "-pix_fmt rgb48be"
+do_image_formats pam "-pix_fmt gray16be" "-pix_fmt gray16be"
+do_image_formats pam "-pix_fmt rgb48be" "-pix_fmt rgb48be"
 do_image_formats pam "-pix_fmt monob"
 fi
 
@@ -247,7 +247,7 @@ fi
 if [ -n "$do_dpx" ] ; then
 do_image_formats dpx
 do_image_formats dpx "-pix_fmt gbrp10le" "-pix_fmt gbrp10le"
-do_image_formats dpx "-pix_fmt gbrp12le"
+do_image_formats dpx "-pix_fmt gbrp12le" "-pix_fmt gbrp12le"
 do_image_formats dpx "-pix_fmt rgb48le"
 do_image_formats dpx "-pix_fmt rgb48le -bits_per_raw_sample 10" "-pix_fmt rgb48le"
 do_image_formats dpx "-pix_fmt rgba64le"

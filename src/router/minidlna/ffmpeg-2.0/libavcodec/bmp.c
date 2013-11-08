@@ -256,7 +256,7 @@ static int bmp_decode_frame(AVCodecContext *avctx,
         buf = buf0 + hsize;
     }
     if (comp == BMP_RLE4 || comp == BMP_RLE8) {
-        if (height < 0) {
+        if (comp == BMP_RLE8 && height < 0) {
             p->data[0]    +=  p->linesize[0] * (avctx->height - 1);
             p->linesize[0] = -p->linesize[0];
         }
@@ -330,9 +330,9 @@ static int bmp_decode_frame(AVCodecContext *avctx,
 
 AVCodec ff_bmp_decoder = {
     .name           = "bmp",
+    .long_name      = NULL_IF_CONFIG_SMALL("BMP (Windows and OS/2 bitmap)"),
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_BMP,
     .decode         = bmp_decode_frame,
     .capabilities   = CODEC_CAP_DR1,
-    .long_name      = NULL_IF_CONFIG_SMALL("BMP (Windows and OS/2 bitmap)"),
 };
