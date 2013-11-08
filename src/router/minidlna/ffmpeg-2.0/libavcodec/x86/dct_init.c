@@ -1,6 +1,4 @@
 /*
- * Copyright (c) 2010 Mans Rullgard <mans@mansr.com>
- *
  * This file is part of FFmpeg.
  *
  * FFmpeg is free software; you can redistribute it and/or
@@ -18,22 +16,24 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include <stdint.h>
-
+#include "config.h"
 #include "libavutil/attributes.h"
-#include "libavutil/arm/cpu.h"
-#include "libavcodec/avcodec.h"
-#include "libavcodec/vp56dsp.h"
+#include "libavutil/cpu.h"
+#include "libavutil/x86/cpu.h"
+#include "libavcodec/dct.h"
 
-void ff_vp6_edge_filter_hor_neon(uint8_t *yuv, int stride, int t);
-void ff_vp6_edge_filter_ver_neon(uint8_t *yuv, int stride, int t);
+void ff_dct32_float_sse(FFTSample *out, const FFTSample *in);
+void ff_dct32_float_sse2(FFTSample *out, const FFTSample *in);
+void ff_dct32_float_avx(FFTSample *out, const FFTSample *in);
 
-av_cold void ff_vp56dsp_init_arm(VP56DSPContext *s, enum AVCodecID codec)
+av_cold void ff_dct_init_x86(DCTContext *s)
 {
     int cpu_flags = av_get_cpu_flags();
 
-    if (codec != AV_CODEC_ID_VP5 && have_neon(cpu_flags)) {
-        s->edge_filter_hor = ff_vp6_edge_filter_hor_neon;
-        s->edge_filter_ver = ff_vp6_edge_filter_ver_neon;
-    }
+    if (EXTERNAL_SSE(cpu_flags))
+        s->dct32 = ff_dct32_float_sse;
+    if (EXTERNAL_SSE2(cpu_flags))
+        s->dct32 = ff_dct32_float_sse2;
+    if (EXTERNAL_AVX(cpu_flags))
+        s->dct32 = ff_dct32_float_avx;
 }
