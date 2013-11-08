@@ -1,7 +1,4 @@
 /*
- * Raw FLAC demuxer
- * Copyright (c) 2001 Fabrice Bellard
- *
  * This file is part of FFmpeg.
  *
  * FFmpeg is free software; you can redistribute it and/or
@@ -19,13 +16,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVFORMAT_FLACDEC_H
-#define AVFORMAT_FLACDEC_H
+#ifndef AVUTIL_PPC_CPU_H
+#define AVUTIL_PPC_CPU_H
 
-#include "avformat.h"
+#include "config.h"
+#include "libavutil/cpu.h"
+#include "libavutil/cpu_internal.h"
 
-#define RETURN_ERROR(code) do { ret = (code); goto fail; } while (0)
+#define PPC_ALTIVEC(flags) CPUEXT(flags, ALTIVEC)
 
-int ff_flac_parse_picture(AVFormatContext *s, uint8_t *buf, int buf_size);
-
-#endif /* AVFORMAT_FLACDEC_H */
+#endif /* AVUTIL_PPC_CPU_H */
