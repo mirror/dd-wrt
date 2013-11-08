@@ -28,6 +28,7 @@
 #include <stdlib.h>
 
 #include "libavutil/common.h"
+#include "libavutil/imgutils.h"
 #include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 #include "internal.h"
@@ -493,7 +494,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
         c->bx = (c->width + c->bw - 1) / c->bw;
         c->by = (c->height+ c->bh - 1) / c->bh;
         if (!c->cur || !c->prev)
-            return -1;
+            return AVERROR(ENOMEM);
         memset(c->cur, 0, avctx->width * avctx->height * (c->bpp / 8));
         memset(c->prev, 0, avctx->width * avctx->height * (c->bpp / 8));
         c->decode_intra= decode_intra;
@@ -509,7 +510,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
 
     if (c->comp == 0) { //Uncompressed data
         if (c->decomp_size < len) {
-            av_log(avctx, AV_LOG_ERROR, "decomp buffer too small\n");
+            av_log(avctx, AV_LOG_ERROR, "Buffer too small\n");
             return AVERROR_INVALIDDATA;
         }
         memcpy(c->decomp_buf, buf, len);
@@ -554,11 +555,8 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame, AVPac
         case ZMBV_FMT_24BPP:
 #endif
         case ZMBV_FMT_32BPP:
-            for (j = 0; j < c->height; j++) {
-                memcpy(out, src, c->stride);
-                src += c->stride;
-                out += frame->linesize[0];
-            }
+            av_image_copy_plane(out, frame->linesize[0], src, c->stride,
+                                c->stride, c->height);
             break;
         default:
             av_log(avctx, AV_LOG_ERROR, "Cannot handle format %i\n", c->fmt);
@@ -624,6 +622,7 @@ static av_cold int decode_end(AVCodecContext *avctx)
 
 AVCodec ff_zmbv_decoder = {
     .name           = "zmbv",
+    .long_name      = NULL_IF_CONFIG_SMALL("Zip Motion Blocks Video"),
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_ZMBV,
     .priv_data_size = sizeof(ZmbvContext),
@@ -631,5 +630,4 @@ AVCodec ff_zmbv_decoder = {
     .close          = decode_end,
     .decode         = decode_frame,
     .capabilities   = CODEC_CAP_DR1,
-    .long_name      = NULL_IF_CONFIG_SMALL("Zip Motion Blocks Video"),
 };

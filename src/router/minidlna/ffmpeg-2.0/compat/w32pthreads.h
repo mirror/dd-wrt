@@ -26,8 +26,8 @@
  * w32threads to pthreads wrapper
  */
 
-#ifndef LIBAV_W32PTHREADS_H
-#define LIBAV_W32PTHREADS_H
+#ifndef FFMPEG_COMPAT_W32PTHREADS_H
+#define FFMPEG_COMPAT_W32PTHREADS_H
 
 /* Build up a pthread-like API using underlying Windows API. Have only static
  * methods so as to not conflict with a potentially linked in pthread-win32
@@ -62,11 +62,18 @@ typedef struct pthread_cond_t {
 } pthread_cond_t;
 
 /* function pointers to conditional variable API on windows 6.0+ kernels */
+#if _WIN32_WINNT < 0x0600
 static void (WINAPI *cond_broadcast)(pthread_cond_t *cond);
 static void (WINAPI *cond_init)(pthread_cond_t *cond);
 static void (WINAPI *cond_signal)(pthread_cond_t *cond);
 static BOOL (WINAPI *cond_wait)(pthread_cond_t *cond, pthread_mutex_t *mutex,
                                 DWORD milliseconds);
+#else
+#define cond_init      InitializeConditionVariable
+#define cond_broadcast WakeAllConditionVariable
+#define cond_signal    WakeConditionVariable
+#define cond_wait      SleepConditionVariableCS
+#endif
 
 static unsigned __stdcall attribute_align_arg win32thread_worker(void *arg)
 {
@@ -268,13 +275,8 @@ static void w32thread_init(void)
         (void*)GetProcAddress(kernel_dll, "WakeConditionVariable");
     cond_wait      =
         (void*)GetProcAddress(kernel_dll, "SleepConditionVariableCS");
-#else
-    cond_init      = InitializeConditionVariable;
-    cond_broadcast = WakeAllConditionVariable;
-    cond_signal    = WakeConditionVariable;
-    cond_wait      = SleepConditionVariableCS;
 #endif
 
 }
 
-#endif /* LIBAV_W32PTHREADS_H */
+#endif /* FFMPEG_COMPAT_W32PTHREADS_H */

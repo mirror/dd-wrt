@@ -58,7 +58,8 @@ Reduce the latency introduced by optional buffering
 @end table
 
 @item seek2any @var{integer} (@emph{input})
-Forces seeking to enable seek to any mode if set to 1. Default is 0.
+Allow seeking to non-keyframes on demuxer level when supported if set to 1.
+Default is 0.
 
 @item analyzeduration @var{integer} (@emph{input})
 Specify how many microseconds are analyzed to probe the input. A
@@ -137,7 +138,8 @@ Also note that this affects only leading negative timestamps, and not
 non-monotonic negative timestamps.
 
 @item skip_initial_bytes @var{integer} (@emph{input})
-Set number initial bytes to skip. Default is 0.
+Set number of bytes to skip before reading header and frames if set to 1.
+Default is 0.
 
 @item correct_ts_overflow @var{integer} (@emph{input})
 Correct single timestamp overflows if set to 1. Default is 1.
@@ -149,6 +151,37 @@ increase performance in some cases.
 @end table
 
 @c man end FORMAT OPTIONS
+
+@anchor{Format stream specifiers}
+@section Format stream specifiers
+
+Format stream specifiers allow selection of one or more streams that
+match specific properties.
+
+Possible forms of stream specifiers are:
+@table @option
+@item @var{stream_index}
+Matches the stream with this index.
+
+@item @var{stream_type}[:@var{stream_index}]
+@var{stream_type} is one of following: 'v' for video, 'a' for audio,
+'s' for subtitle, 'd' for data, and 't' for attachments. If
+@var{stream_index} is given, then it matches the stream number
+@var{stream_index} of this type. Otherwise, it matches all streams of
+this type.
+
+@item p:@var{program_id}[:@var{stream_index}]
+If @var{stream_index} is given, then it matches the stream with number
+@var{stream_index} in the program with the id
+@var{program_id}. Otherwise, it matches all streams in the program.
+
+@item #@var{stream_id}
+Matches the stream by a format-specific ID.
+@end table
+
+The exact semantics of stream specifiers is defined by the
+@code{avformat_match_stream_specifier()} function declared in the
+@file{libavformat/avformat.h} header.
 
 @include demuxers.texi
 @include muxers.texi

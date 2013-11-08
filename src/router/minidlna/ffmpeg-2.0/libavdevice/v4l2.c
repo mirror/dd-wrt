@@ -325,8 +325,8 @@ static void list_standards(AVFormatContext *ctx)
                 return;
             }
         }
-        av_log(ctx, AV_LOG_INFO, "%2d, %16llx, %s\n",
-               standard.index, standard.id, standard.name);
+        av_log(ctx, AV_LOG_INFO, "%2d, %16"PRIx64", %s\n",
+               standard.index, (uint64_t)standard.id, standard.name);
     }
 }
 
@@ -455,6 +455,8 @@ static int init_convert_timestamp(AVFormatContext *ctx, int64_t ts)
         av_log(ctx, AV_LOG_INFO, "Detected monotonic timestamps, converting\n");
         /* microseconds instead of seconds, MHz instead of Hz */
         s->timefilter = ff_timefilter_new(1, period, 1.0E-6);
+        if (!s->timefilter)
+            return AVERROR(ENOMEM);
         s->ts_mode = V4L_TS_CONVERT_READY;
         return 0;
     }
@@ -551,7 +553,9 @@ static int mmap_read_frame(AVFormatContext *ctx, AVPacket *pkt)
         pkt->data     = s->buf_start[buf.index];
         pkt->size     = buf.bytesused;
 #if FF_API_DESTRUCT_PACKET
+FF_DISABLE_DEPRECATION_WARNINGS
         pkt->destruct = dummy_release_buffer;
+FF_ENABLE_DEPRECATION_WARNINGS
 #endif
 
         buf_descriptor = av_malloc(sizeof(struct buff_data));
@@ -685,12 +689,16 @@ static int v4l2_set_parameters(AVFormatContext *s1)
             standard.index = i;
             if (v4l2_ioctl(s->fd, VIDIOC_ENUMSTD, &standard) < 0) {
                 ret = AVERROR(errno);
+                if (ret == AVERROR(EINVAL)) {
+                    tpf = &streamparm.parm.capture.timeperframe;
+                    break;
+                }
                 av_log(s1, AV_LOG_ERROR, "ioctl(VIDIOC_ENUMSTD): %s\n", av_err2str(ret));
                 return ret;
             }
             if (standard.id == s->std_id) {
                 av_log(s1, AV_LOG_DEBUG,
-                       "Current standard: %s, id: %"PRIu64", frameperiod: %d/%d\n",
+                       "Current standard: %s, id: %"PRIx64", frameperiod: %d/%d\n",
                        standard.name, (uint64_t)standard.id, tpf->numerator, tpf->denominator);
                 break;
             }
@@ -843,8 +851,8 @@ static int v4l2_read_header(AVFormatContext *s1)
         return res;
     }
     s->std_id = input.std;
-    av_log(s1, AV_LOG_DEBUG, "Current input_channel: %d, input_name: %s\n",
-           s->channel, input.name);
+    av_log(s1, AV_LOG_DEBUG, "Current input_channel: %d, input_name: %s, input_std: %"PRIx64"\n",
+           s->channel, input.name, (uint64_t)input.std);
 
     if (s->list_format) {
         list_formats(s1, s->fd, s->list_format);

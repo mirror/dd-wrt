@@ -58,9 +58,9 @@ static void apply_delogo(uint8_t *dst, int dst_linesize,
                          uint8_t *src, int src_linesize,
                          int w, int h, AVRational sar,
                          int logo_x, int logo_y, int logo_w, int logo_h,
-                         int band, int show, int direct)
+                         unsigned int band, int show, int direct)
 {
-    int x, y, dist;
+    int x, y;
     uint64_t interp, weightl, weightr, weightt, weightb;
     uint8_t *xdst, *xsrc;
 
@@ -125,7 +125,8 @@ static void apply_delogo(uint8_t *dst, int dst_linesize,
                 x >= logo_x+band && x < logo_x+logo_w-band) {
                 *xdst = interp;
             } else {
-                dist = 0;
+                unsigned dist = 0;
+
                 if      (x < logo_x+band)
                     dist = FFMAX(dist, logo_x-x+band);
                 else if (x >= logo_x+logo_w-band)
@@ -163,7 +164,7 @@ static const AVOption delogo_options[]= {
     { "band", "set delogo area band size", OFFSET(band), AV_OPT_TYPE_INT, { .i64 =  4 },  1, INT_MAX, FLAGS },
     { "t",    "set delogo area band size", OFFSET(band), AV_OPT_TYPE_INT, { .i64 =  4 },  1, INT_MAX, FLAGS },
     { "show", "show delogo area",          OFFSET(show), AV_OPT_TYPE_INT, { .i64 =  0 },  0, 1,       FLAGS },
-    { NULL },
+    { NULL }
 };
 
 AVFILTER_DEFINE_CLASS(delogo);
@@ -261,10 +262,9 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
 
 static const AVFilterPad avfilter_vf_delogo_inputs[] = {
     {
-        .name             = "default",
-        .type             = AVMEDIA_TYPE_VIDEO,
-        .get_video_buffer = ff_null_get_video_buffer,
-        .filter_frame     = filter_frame,
+        .name         = "default",
+        .type         = AVMEDIA_TYPE_VIDEO,
+        .filter_frame = filter_frame,
     },
     { NULL }
 };
@@ -284,8 +284,7 @@ AVFilter avfilter_vf_delogo = {
     .priv_class    = &delogo_class,
     .init          = init,
     .query_formats = query_formats,
-
-    .inputs    = avfilter_vf_delogo_inputs,
-    .outputs   = avfilter_vf_delogo_outputs,
-    .flags     = AVFILTER_FLAG_SUPPORT_TIMELINE_GENERIC,
+    .inputs        = avfilter_vf_delogo_inputs,
+    .outputs       = avfilter_vf_delogo_outputs,
+    .flags         = AVFILTER_FLAG_SUPPORT_TIMELINE_GENERIC,
 };

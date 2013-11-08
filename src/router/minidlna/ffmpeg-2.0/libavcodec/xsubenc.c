@@ -190,7 +190,7 @@ static int xsub_encode(AVCodecContext *avctx, unsigned char *buf,
                         h->rects[0]->w, h->rects[0]->h >> 1))
         return -1;
 
-    // Enforce total height to be be multiple of 2
+    // Enforce total height to be a multiple of 2
     if (h->rects[0]->h & 1) {
         put_xsub_rle(&pb, h->rects[0]->w, PADDING_COLOR);
         avpriv_align_put_bits(&pb);
@@ -211,9 +211,9 @@ static av_cold int xsub_encoder_init(AVCodecContext *avctx)
 
 AVCodec ff_xsub_encoder = {
     .name       = "xsub",
+    .long_name  = NULL_IF_CONFIG_SMALL("DivX subtitles (XSUB)"),
     .type       = AVMEDIA_TYPE_SUBTITLE,
     .id         = AV_CODEC_ID_XSUB,
     .init       = xsub_encoder_init,
     .encode_sub = xsub_encode,
-    .long_name  = NULL_IF_CONFIG_SMALL("DivX subtitles (XSUB)"),
 };

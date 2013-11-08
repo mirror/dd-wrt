@@ -67,8 +67,7 @@ typedef struct Frei0rContext {
 
     char *dl_name;
     char *params;
-    char *size;
-    char *framerate;
+    AVRational framerate;
 
     /* only used by the source */
     int w, h;
@@ -152,7 +151,8 @@ static int set_params(AVFilterContext *ctx, const char *params)
         if (*params) {
             if (!(param = av_get_token(&params, "|")))
                 return AVERROR(ENOMEM);
-            params++;               /* skip ':' */
+            if (*params)
+                params++;               /* skip ':' */
             ret = set_param(ctx, info, i, param);
             av_free(param);
             if (ret < 0)
@@ -413,7 +413,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *in)
 static const AVOption frei0r_options[] = {
     { "filter_name",   NULL, OFFSET(dl_name), AV_OPT_TYPE_STRING, .flags = FLAGS },
     { "filter_params", NULL, OFFSET(params),  AV_OPT_TYPE_STRING, .flags = FLAGS },
-    { NULL },
+    { NULL }
 };
 
 AVFILTER_DEFINE_CLASS(frei0r);
@@ -437,37 +437,23 @@ static const AVFilterPad avfilter_vf_frei0r_outputs[] = {
 };
 
 AVFilter avfilter_vf_frei0r = {
-    .name      = "frei0r",
-    .description = NULL_IF_CONFIG_SMALL("Apply a frei0r effect."),
-
+    .name          = "frei0r",
+    .description   = NULL_IF_CONFIG_SMALL("Apply a frei0r effect."),
     .query_formats = query_formats,
-    .init = filter_init,
-    .uninit = uninit,
-
-    .priv_size = sizeof(Frei0rContext),
-    .priv_class = &frei0r_class,
-
-    .inputs    = avfilter_vf_frei0r_inputs,
-
-    .outputs   = avfilter_vf_frei0r_outputs,
+    .init          = filter_init,
+    .uninit        = uninit,
+    .priv_size     = sizeof(Frei0rContext),
+    .priv_class    = &frei0r_class,
+    .inputs        = avfilter_vf_frei0r_inputs,
+    .outputs       = avfilter_vf_frei0r_outputs,
 };
 
 static av_cold int source_init(AVFilterContext *ctx)
 {
     Frei0rContext *s = ctx->priv;
-    AVRational frame_rate_q;
 
-    if (av_parse_video_size(&s->w, &s->h, s->size) < 0) {
-        av_log(ctx, AV_LOG_ERROR, "Invalid frame size: '%s'\n", s->size);
-        return AVERROR(EINVAL);
-    }
-
-    if (av_parse_video_rate(&frame_rate_q, s->framerate) < 0) {
-        av_log(ctx, AV_LOG_ERROR, "Invalid frame rate: '%s'\n", s->framerate);
-        return AVERROR(EINVAL);
-    }
-    s->time_base.num = frame_rate_q.den;
-    s->time_base.den = frame_rate_q.num;
+    s->time_base.num = s->framerate.den;
+    s->time_base.den = s->framerate.num;
 
     return frei0r_init(ctx, s->dl_name, F0R_PLUGIN_TYPE_SOURCE);
 }
@@ -512,8 +498,8 @@ static int source_request_frame(AVFilterLink *outlink)
 }
 
 static const AVOption frei0r_src_options[] = {
-    { "size",          "Dimensions of the generated video.", OFFSET(size),      AV_OPT_TYPE_STRING, { .str = "" },   .flags = FLAGS },
-    { "framerate",     NULL,                                 OFFSET(framerate), AV_OPT_TYPE_STRING, { .str = "25" }, .flags = FLAGS },
+    { "size",          "Dimensions of the generated video.", OFFSET(w),         AV_OPT_TYPE_IMAGE_SIZE, { .str = "320x240" }, .flags = FLAGS },
+    { "framerate",     NULL,                                 OFFSET(framerate), AV_OPT_TYPE_VIDEO_RATE, { .str = "25" }, .flags = FLAGS },
     { "filter_name",   NULL,                                 OFFSET(dl_name),   AV_OPT_TYPE_STRING,                  .flags = FLAGS },
     { "filter_params", NULL,                                 OFFSET(params),    AV_OPT_TYPE_STRING,                  .flags = FLAGS },
     { NULL },
@@ -532,17 +518,13 @@ static const AVFilterPad avfilter_vsrc_frei0r_src_outputs[] = {
 };
 
 AVFilter avfilter_vsrc_frei0r_src = {
-    .name        = "frei0r_src",
-    .description = NULL_IF_CONFIG_SMALL("Generate a frei0r source."),
-
-    .priv_size = sizeof(Frei0rContext),
-    .priv_class = &frei0r_src_class,
-    .init      = source_init,
-    .uninit    = uninit,
-
+    .name          = "frei0r_src",
+    .description   = NULL_IF_CONFIG_SMALL("Generate a frei0r source."),
+    .priv_size     = sizeof(Frei0rContext),
+    .priv_class    = &frei0r_src_class,
+    .init          = source_init,
+    .uninit        = uninit,
     .query_formats = query_formats,
-
-    .inputs    = NULL,
-
-    .outputs   = avfilter_vsrc_frei0r_src_outputs,
+    .inputs        = NULL,
+    .outputs       = avfilter_vsrc_frei0r_src_outputs,
 };

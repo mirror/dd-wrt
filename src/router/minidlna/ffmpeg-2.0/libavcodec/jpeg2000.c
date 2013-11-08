@@ -215,16 +215,16 @@ int ff_jpeg2000_init_component(Jpeg2000Component *comp,
 
     if (codsty->transform == FF_DWT97) {
         comp->i_data = NULL;
-        comp->f_data = av_malloc_array(csize, sizeof(*comp->f_data));
+        comp->f_data = av_mallocz_array(csize, sizeof(*comp->f_data));
         if (!comp->f_data)
             return AVERROR(ENOMEM);
     } else {
         comp->f_data = NULL;
-        comp->i_data = av_malloc_array(csize, sizeof(*comp->i_data));
+        comp->i_data = av_mallocz_array(csize, sizeof(*comp->i_data));
         if (!comp->i_data)
             return AVERROR(ENOMEM);
     }
-    comp->reslevel = av_malloc_array(codsty->nreslevels, sizeof(*comp->reslevel));
+    comp->reslevel = av_calloc(codsty->nreslevels, sizeof(*comp->reslevel));
     if (!comp->reslevel)
         return AVERROR(ENOMEM);
     /* LOOP on resolution levels */
@@ -507,17 +507,19 @@ void ff_jpeg2000_cleanup(Jpeg2000Component *comp, Jpeg2000CodingStyle *codsty)
         Jpeg2000ResLevel *reslevel = comp->reslevel + reslevelno;
 
         for (bandno = 0; bandno < reslevel->nbands; bandno++) {
-            Jpeg2000Band *band = reslevel->band + bandno;
-            for (precno = 0; precno < reslevel->num_precincts_x * reslevel->num_precincts_y; precno++) {
-                if (band->prec) {
-                    Jpeg2000Prec *prec = band->prec + precno;
-                    av_freep(&prec->zerobits);
-                    av_freep(&prec->cblkincl);
-                    av_freep(&prec->cblk);
+            if (reslevel->band) {
+                Jpeg2000Band *band = reslevel->band + bandno;
+                for (precno = 0; precno < reslevel->num_precincts_x * reslevel->num_precincts_y; precno++) {
+                    if (band->prec) {
+                        Jpeg2000Prec *prec = band->prec + precno;
+                        av_freep(&prec->zerobits);
+                        av_freep(&prec->cblkincl);
+                        av_freep(&prec->cblk);
+                    }
                 }
-            }
 
-            av_freep(&band->prec);
+                av_freep(&band->prec);
+            }
         }
         av_freep(&reslevel->band);
     }

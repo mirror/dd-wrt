@@ -44,14 +44,15 @@ name (which may be shared by other sections), and an unique
 name. See the output of @option{sections}.
 
 Metadata tags stored in the container or in the streams are recognized
-and printed in the corresponding "FORMAT" or "STREAM" section.
+and printed in the corresponding "FORMAT", "STREAM" or "PROGRAM_STREAM"
+section.
 
 @c man end
 
 @chapter Options
 @c man begin OPTIONS
 
-@include avtools-common-opts.texi
+@include fftools-common-opts.texi
 
 @section Main options
 
@@ -112,7 +113,7 @@ ffprobe -show_packets -select_streams v:1 INPUT
 @end example
 
 @item -show_data
-Show payload data, as an hexadecimal and ASCII dump. Coupled with
+Show payload data, as a hexadecimal and ASCII dump. Coupled with
 @option{-show_packets}, it will dump the packets' data. Coupled with
 @option{-show_streams}, it will dump the codec extradata.
 
@@ -209,6 +210,13 @@ multimedia stream.
 Each media stream information is printed within a dedicated section
 with name "STREAM".
 
+@item -show_programs
+Show information about programs and their streams contained in the input
+multimedia stream.
+
+Each media stream information is printed within a dedicated section
+with name "PROGRAM_STREAM".
+
 @item -show_chapters
 Show information about chapters stored in the format.
 
@@ -221,6 +229,70 @@ corresponding stream section.
 @item -count_packets
 Count the number of packets per stream and report it in the
 corresponding stream section.
+
+@item -read_intervals @var{read_intervals}
+
+Read only the specified intervals. @var{read_intervals} must be a
+sequence of interval specifications separated by ",".
+@command{ffprobe} will seek to the interval starting point, and will
+continue reading from that.
+
+Each interval is specified by two optional parts, separated by "%".
+
+The first part specifies the interval start position. It is
+interpreted as an abolute position, or as a relative offset from the
+current position if it is preceded by the "+" character. If this first
+part is not specified, no seeking will be performed when reading this
+interval.
+
+The second part specifies the interval end position. It is interpreted
+as an absolute position, or as a relative offset from the current
+position if it is preceded by the "+" character. If the offset
+specification starts with "#", it is interpreted as the number of
+packets to read (not including the flushing packets) from the interval
+start. If no second part is specified, the program will read until the
+end of the input.
+
+Note that seeking is not accurate, thus the actual interval start
+point may be different from the specified position. Also, when an
+interval duration is specified, the absolute end time will be computed
+by adding the duration to the interval start point found by seeking
+the file, rather than to the specified start value.
+
+The formal syntax is given by:
+@example
+@var{INTERVAL}  ::= [@var{START}|+@var{START_OFFSET}][%[@var{END}|+@var{END_OFFSET}]]
+@var{INTERVALS} ::= @var{INTERVAL}[,@var{INTERVALS}]
+@end example
+
+A few examples follow.
+@itemize
+@item
+Seek to time 10, read packets until 20 seconds after the found seek
+point, then seek to position @code{01:30} (1 minute and thirty
+seconds) and read packets until position @code{01:45}.
+@example
+10%+20,01:30%01:45
+@end example
+
+@item
+Read only 42 packets after seeking to position @code{01:23}:
+@example
+01:23%+#42
+@end example
+
+@item
+Read only the first 20 seconds from the start:
+@example
+%+20
+@end example
+
+@item
+Read from the start until position @code{02:30}:
+@example
+%02:30
+@end example
+@end itemize
 
 @item -show_private_data, -private
 Show private data, that is data depending on the format of the
@@ -279,8 +351,8 @@ keyN=valN
 [/SECTION]
 @end example
 
-Metadata tags are printed as a line in the corresponding FORMAT or
-STREAM section, and are prefixed by the string "TAG:".
+Metadata tags are printed as a line in the corresponding FORMAT, STREAM or
+PROGRAM_STREAM section, and are prefixed by the string "TAG:".
 
 A description of the accepted options follows.
 

@@ -31,9 +31,9 @@ PROJECT_NAME           = FFmpeg
 # This could be handy for archiving the generated documentation or
 # if some version control system is used.
 
-PROJECT_NUMBER         = 2.0.2
+PROJECT_NUMBER         = 2.1
 
-# With the PROJECT_LOGO tag one can specify an logo or icon that is included
+# With the PROJECT_LOGO tag one can specify a logo or icon that is included
 # in the documentation. The maximum height of the logo should not exceed 55
 # pixels and the maximum width should not exceed 200 pixels. Doxygen will
 # copy the logo to the output directory.

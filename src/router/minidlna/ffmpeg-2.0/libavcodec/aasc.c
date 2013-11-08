@@ -107,11 +107,9 @@ static int aasc_decode_frame(AVCodecContext *avctx,
     switch (compr) {
     case 0:
         stride = (avctx->width * psize + psize) & ~psize;
+        if (buf_size < stride * avctx->height)
+            return AVERROR_INVALIDDATA;
         for (i = avctx->height - 1; i >= 0; i--) {
-            if (avctx->width * psize > buf_size) {
-                av_log(avctx, AV_LOG_ERROR, "Next line is beyond buffer bounds\n");
-                break;
-            }
             memcpy(s->frame->data[0] + i * s->frame->linesize[0], buf, avctx->width * psize);
             buf += stride;
             buf_size -= stride;
@@ -153,6 +151,7 @@ static av_cold int aasc_decode_end(AVCodecContext *avctx)
 
 AVCodec ff_aasc_decoder = {
     .name           = "aasc",
+    .long_name      = NULL_IF_CONFIG_SMALL("Autodesk RLE"),
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_AASC,
     .priv_data_size = sizeof(AascContext),
@@ -160,5 +159,4 @@ AVCodec ff_aasc_decoder = {
     .close          = aasc_decode_end,
     .decode         = aasc_decode_frame,
     .capabilities   = CODEC_CAP_DR1,
-    .long_name      = NULL_IF_CONFIG_SMALL("Autodesk RLE"),
 };

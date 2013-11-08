@@ -179,6 +179,7 @@ static int decode_frame(AVCodecContext *avctx,
         avcodec_set_dimensions(avctx, w, h);
     if ((ret = ff_get_buffer(avctx, p, 0)) < 0)
         return ret;
+    p->pict_type = AV_PICTURE_TYPE_I;
 
     if (flags & TGA_TOPTOBOTTOM) {
         dst = p->data[0];
@@ -298,10 +299,10 @@ static int decode_frame(AVCodecContext *avctx,
 
 AVCodec ff_targa_decoder = {
     .name           = "targa",
+    .long_name      = NULL_IF_CONFIG_SMALL("Truevision Targa image"),
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_TARGA,
     .priv_data_size = sizeof(TargaContext),
     .decode         = decode_frame,
     .capabilities   = CODEC_CAP_DR1,
-    .long_name      = NULL_IF_CONFIG_SMALL("Truevision Targa image"),
 };

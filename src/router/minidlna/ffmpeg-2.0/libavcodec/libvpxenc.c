@@ -667,6 +667,9 @@ static int vp8_encode(AVCodecContext *avctx, AVPacket *pkt,
             v_plane = av_malloc(frame->linesize[2] * frame->height);
             memset(v_plane, 0x80, frame->linesize[2] * frame->height);
             rawimg_alpha->planes[VPX_PLANE_V] = v_plane;
+            rawimg_alpha->stride[VPX_PLANE_Y] = frame->linesize[0];
+            rawimg_alpha->stride[VPX_PLANE_U] = frame->linesize[1];
+            rawimg_alpha->stride[VPX_PLANE_V] = frame->linesize[2];
         }
         timestamp                   = frame->pts;
         if (frame->pict_type == AV_PICTURE_TYPE_I)
@@ -776,6 +779,7 @@ static const AVClass class_vp8 = {
 
 AVCodec ff_libvpx_vp8_encoder = {
     .name           = "libvpx",
+    .long_name      = NULL_IF_CONFIG_SMALL("libvpx VP8"),
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_VP8,
     .priv_data_size = sizeof(VP8Context),
@@ -784,7 +788,6 @@ AVCodec ff_libvpx_vp8_encoder = {
     .close          = vp8_free,
     .capabilities   = CODEC_CAP_DELAY | CODEC_CAP_AUTO_THREADS,
     .pix_fmts       = (const enum AVPixelFormat[]){ AV_PIX_FMT_YUV420P, AV_PIX_FMT_YUVA420P, AV_PIX_FMT_NONE },
-    .long_name      = NULL_IF_CONFIG_SMALL("libvpx VP8"),
     .priv_class     = &class_vp8,
     .defaults       = defaults,
 };
@@ -805,6 +808,7 @@ static const AVClass class_vp9 = {
 
 AVCodec ff_libvpx_vp9_encoder = {
     .name           = "libvpx-vp9",
+    .long_name      = NULL_IF_CONFIG_SMALL("libvpx VP9"),
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_VP9,
     .priv_data_size = sizeof(VP8Context),
@@ -813,7 +817,6 @@ AVCodec ff_libvpx_vp9_encoder = {
     .close          = vp8_free,
     .capabilities   = CODEC_CAP_DELAY | CODEC_CAP_AUTO_THREADS | CODEC_CAP_EXPERIMENTAL,
     .pix_fmts       = (const enum AVPixelFormat[]){ AV_PIX_FMT_YUV420P, AV_PIX_FMT_NONE },
-    .long_name      = NULL_IF_CONFIG_SMALL("libvpx VP9"),
     .priv_class     = &class_vp9,
     .defaults       = defaults,
 };

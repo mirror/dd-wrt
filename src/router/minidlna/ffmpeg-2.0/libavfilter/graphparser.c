@@ -89,14 +89,14 @@ static char *parse_link_name(const char **buf, void *log_ctx)
  * @param filt_name the name of the filter to create
  * @param args the arguments provided to the filter during its initialization
  * @param log_ctx the log context to use
- * @return 0 in case of success, a negative AVERROR code otherwise
+ * @return >= 0 in case of success, a negative AVERROR code otherwise
  */
 static int create_filter(AVFilterContext **filt_ctx, AVFilterGraph *ctx, int index,
                          const char *filt_name, const char *args, void *log_ctx)
 {
     AVFilter *filt;
     char inst_name[30];
-    char tmp_args[256];
+    char *tmp_args = NULL;
     int ret;
 
     snprintf(inst_name, sizeof(inst_name), "Parsed_%s_%d", filt_name, index);
@@ -118,8 +118,10 @@ static int create_filter(AVFilterContext **filt_ctx, AVFilterGraph *ctx, int ind
 
     if (!strcmp(filt_name, "scale") && args && !strstr(args, "flags") &&
         ctx->scale_sws_opts) {
-        snprintf(tmp_args, sizeof(tmp_args), "%s:%s",
+        tmp_args = av_asprintf("%s:%s",
                  args, ctx->scale_sws_opts);
+        if (!tmp_args)
+            return AVERROR(ENOMEM);
         args = tmp_args;
     }
 
@@ -130,10 +132,10 @@ static int create_filter(AVFilterContext **filt_ctx, AVFilterGraph *ctx, int ind
         if (args)
             av_log(log_ctx, AV_LOG_ERROR, " with args '%s'", args);
         av_log(log_ctx, AV_LOG_ERROR, "\n");
-        return ret;
     }
 
-    return 0;
+    av_free(tmp_args);
+    return ret;
 }
 
 /**
@@ -150,7 +152,7 @@ static int create_filter(AVFilterContext **filt_ctx, AVFilterGraph *ctx, int ind
  * @param index an index which is assigned to the created filter
  * instance, and which is supposed to be unique for each filter
  * instance added to the filtergraph
- * @return 0 in case of success, a negative AVERROR code otherwise
+ * @return >= 0 in case of success, a negative AVERROR code otherwise
  */
 static int parse_filter(AVFilterContext **filt_ctx, const char **buf, AVFilterGraph *graph,
                         int index, void *log_ctx)
@@ -543,7 +545,7 @@ int avfilter_graph_parse_ptr(AVFilterGraph *graph, const char *filters,
         if ((ret = parse_filter(&filter, &filters, graph, index, log_ctx)) < 0)
             goto end;
 
-        if (filter->input_count == 1 && !curr_inputs && !index) {
+        if (filter->nb_inputs == 1 && !curr_inputs && !index) {
             /* First input pad, assume it is "[in]" if not specified */
             const char *tmp = "[in]";
             if ((ret = parse_inputs(&tmp, &curr_inputs, &open_outputs, log_ctx)) < 0)

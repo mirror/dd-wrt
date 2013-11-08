@@ -27,10 +27,6 @@
 #include "mem.h"
 #include "samplefmt.h"
 
-#define MAKE_ACCESSORS(str, name, type, field) \
-    type av_##name##_get_##field(const str *s) { return s->field; } \
-    void av_##name##_set_##field(str *s, type v) { s->field = v; }
-
 MAKE_ACCESSORS(AVFrame, frame, int64_t, best_effort_timestamp)
 MAKE_ACCESSORS(AVFrame, frame, int64_t, pkt_duration)
 MAKE_ACCESSORS(AVFrame, frame, int64_t, pkt_pos)
@@ -40,6 +36,8 @@ MAKE_ACCESSORS(AVFrame, frame, int,     sample_rate)
 MAKE_ACCESSORS(AVFrame, frame, AVDictionary *, metadata)
 MAKE_ACCESSORS(AVFrame, frame, int,     decode_error_flags)
 MAKE_ACCESSORS(AVFrame, frame, int,     pkt_size)
+MAKE_ACCESSORS(AVFrame, frame, enum AVColorSpace, colorspace)
+MAKE_ACCESSORS(AVFrame, frame, enum AVColorRange, color_range)
 
 #define CHECK_CHANNELS_CONSISTENCY(frame) \
     av_assert2(!(frame)->channel_layout || \
@@ -72,6 +70,22 @@ int8_t *av_frame_get_qp_table(AVFrame *f, int *stride, int *type)
     return f->qp_table_buf->data;
 }
 
+const char *av_get_colorspace_name(enum AVColorSpace val)
+{
+    static const char *name[] = {
+        [AVCOL_SPC_RGB]       = "GBR",
+        [AVCOL_SPC_BT709]     = "bt709",
+        [AVCOL_SPC_FCC]       = "fcc",
+        [AVCOL_SPC_BT470BG]   = "bt470bg",
+        [AVCOL_SPC_SMPTE170M] = "smpte170m",
+        [AVCOL_SPC_SMPTE240M] = "smpte240m",
+        [AVCOL_SPC_YCOCG]     = "YCgCo",
+    };
+    if ((unsigned)val >= FF_ARRAY_ELEMS(name))
+        return NULL;
+    return name[val];
+}
+
 static void get_frame_defaults(AVFrame *frame)
 {
     if (frame->extended_data != frame->data)
@@ -89,6 +103,7 @@ static void get_frame_defaults(AVFrame *frame)
     frame->key_frame           = 1;
     frame->sample_aspect_ratio = (AVRational){ 0, 1 };
     frame->format              = -1; /* unknown */
+    frame->colorspace          = AVCOL_SPC_UNSPECIFIED;
     frame->extended_data       = frame->data;
 }
 
@@ -223,7 +238,7 @@ int av_frame_get_buffer(AVFrame *frame, int align)
 
     if (frame->width > 0 && frame->height > 0)
         return get_video_buffer(frame, align);
-    else if (frame->nb_samples > 0 && frame->channel_layout)
+    else if (frame->nb_samples > 0 && (frame->channel_layout || frame->channels > 0))
         return get_audio_buffer(frame, align);
 
     return AVERROR(EINVAL);
@@ -456,6 +471,8 @@ int av_frame_copy_props(AVFrame *dst, const AVFrame *src)
     dst->coded_picture_number = src->coded_picture_number;
     dst->display_picture_number = src->display_picture_number;
     dst->decode_error_flags  = src->decode_error_flags;
+    dst->colorspace          = src->colorspace;
+    dst->color_range         = src->color_range;
 
     av_dict_copy(&dst->metadata, src->metadata, 0);
 
@@ -557,7 +574,7 @@ AVFrameSideData *av_frame_new_side_data(AVFrame *frame,
     return ret;
 }
 
-AVFrameSideData *av_frame_get_side_data(AVFrame *frame,
+AVFrameSideData *av_frame_get_side_data(const AVFrame *frame,
                                         enum AVFrameSideDataType type)
 {
     int i;
