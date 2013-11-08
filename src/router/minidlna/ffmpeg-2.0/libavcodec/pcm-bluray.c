@@ -1,6 +1,6 @@
 /*
- * LPCM codecs for PCM formats found in MPEG streams
- * Copyright (c) 2009 Christian Schmidt
+ * LPCM codecs for PCM format found in Blu-ray PCM streams
+ * Copyright (c) 2009, 2013 Christian Schmidt
  *
  * This file is part of FFmpeg.
  *
@@ -21,7 +21,7 @@
 
 /**
  * @file
- * PCM codecs for encodings found in MPEG streams (DVD/Blu-ray)
+ * PCM codec for Blu-ray PCM audio tracks
  */
 
 #include "libavutil/channel_layout.h"
@@ -46,7 +46,7 @@
  */
 
 /**
- * Parse the header of a LPCM frame read from a MPEG-TS stream
+ * Parse the header of a LPCM frame read from a Blu-ray MPEG-TS stream
  * @param avctx the codec context
  * @param header pointer to the first four bytes of the data packet
  */
@@ -56,8 +56,9 @@ static int pcm_bluray_parse_header(AVCodecContext *avctx,
     static const uint8_t bits_per_samples[4] = { 0, 16, 20, 24 };
     static const uint32_t channel_layouts[16] = {
         0, AV_CH_LAYOUT_MONO, 0, AV_CH_LAYOUT_STEREO, AV_CH_LAYOUT_SURROUND,
-        AV_CH_LAYOUT_2_1, AV_CH_LAYOUT_4POINT0, AV_CH_LAYOUT_2_2, AV_CH_LAYOUT_5POINT0,
-        AV_CH_LAYOUT_5POINT1, AV_CH_LAYOUT_7POINT0, AV_CH_LAYOUT_7POINT1, 0, 0, 0, 0
+        AV_CH_LAYOUT_2_1, AV_CH_LAYOUT_4POINT0, AV_CH_LAYOUT_2_2,
+        AV_CH_LAYOUT_5POINT0, AV_CH_LAYOUT_5POINT1, AV_CH_LAYOUT_7POINT0,
+        AV_CH_LAYOUT_7POINT1, 0, 0, 0, 0
     };
     static const uint8_t channels[16] = {
         0, 1, 0, 2, 3, 3, 4, 4, 5, 6, 7, 8, 0, 0, 0, 0
@@ -72,10 +73,10 @@ static int pcm_bluray_parse_header(AVCodecContext *avctx,
     avctx->bits_per_coded_sample = bits_per_samples[header[3] >> 6];
     if (!(avctx->bits_per_coded_sample == 16 || avctx->bits_per_coded_sample == 24)) {
         av_log(avctx, AV_LOG_ERROR, "unsupported sample depth (%d)\n", avctx->bits_per_coded_sample);
-        return -1;
+        return AVERROR_INVALIDDATA;
     }
-    avctx->sample_fmt = avctx->bits_per_coded_sample == 16 ? AV_SAMPLE_FMT_S16 :
-                                                             AV_SAMPLE_FMT_S32;
+    avctx->sample_fmt = avctx->bits_per_coded_sample == 16 ? AV_SAMPLE_FMT_S16
+                                                           : AV_SAMPLE_FMT_S32;
     if (avctx->sample_fmt == AV_SAMPLE_FMT_S32)
         avctx->bits_per_raw_sample = avctx->bits_per_coded_sample;
 
@@ -94,7 +95,7 @@ static int pcm_bluray_parse_header(AVCodecContext *avctx,
         avctx->sample_rate = 0;
         av_log(avctx, AV_LOG_ERROR, "reserved sample rate (%d)\n",
                header[2] & 0x0f);
-        return -1;
+        return AVERROR_INVALIDDATA;
     }
 
     /*
@@ -108,7 +109,7 @@ static int pcm_bluray_parse_header(AVCodecContext *avctx,
     if (!avctx->channels) {
         av_log(avctx, AV_LOG_ERROR, "reserved channel configuration (%d)\n",
                channel_layout);
-        return -1;
+        return AVERROR_INVALIDDATA;
     }
 
     avctx->bit_rate = FFALIGN(avctx->channels, 2) * avctx->sample_rate *
@@ -136,11 +137,11 @@ static int pcm_bluray_decode_frame(AVCodecContext *avctx, void *data,
 
     if (buf_size < 4) {
         av_log(avctx, AV_LOG_ERROR, "PCM packet too small\n");
-        return -1;
+        return AVERROR_INVALIDDATA;
     }
 
-    if (pcm_bluray_parse_header(avctx, src))
-        return -1;
+    if ((retval = pcm_bluray_parse_header(avctx, src)))
+        return retval;
     src += 4;
     buf_size -= 4;
 
@@ -148,7 +149,8 @@ static int pcm_bluray_decode_frame(AVCodecContext *avctx, void *data,
 
     /* There's always an even number of channels in the source */
     num_source_channels = FFALIGN(avctx->channels, 2);
-    sample_size = (num_source_channels * (avctx->sample_fmt == AV_SAMPLE_FMT_S16 ? 16 : 24)) >> 3;
+    sample_size = (num_source_channels *
+                   (avctx->sample_fmt == AV_SAMPLE_FMT_S16 ? 16 : 24)) >> 3;
     samples = buf_size / sample_size;
 
     /* get output buffer */
@@ -301,6 +303,7 @@ static int pcm_bluray_decode_frame(AVCodecContext *avctx, void *data,
 
 AVCodec ff_pcm_bluray_decoder = {
     .name           = "pcm_bluray",
+    .long_name      = NULL_IF_CONFIG_SMALL("PCM signed 16|20|24-bit big-endian for Blu-ray media"),
     .type           = AVMEDIA_TYPE_AUDIO,
     .id             = AV_CODEC_ID_PCM_BLURAY,
     .decode         = pcm_bluray_decode_frame,
@@ -308,5 +311,4 @@ AVCodec ff_pcm_bluray_decoder = {
     .sample_fmts    = (const enum AVSampleFormat[]){
         AV_SAMPLE_FMT_S16, AV_SAMPLE_FMT_S32, AV_SAMPLE_FMT_NONE
     },
-    .long_name      = NULL_IF_CONFIG_SMALL("PCM signed 16|20|24-bit big-endian for Blu-ray media"),
 };
