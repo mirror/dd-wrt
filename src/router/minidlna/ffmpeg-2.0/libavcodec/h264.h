@@ -127,7 +127,8 @@ typedef enum {
     SEI_TYPE_PIC_TIMING             = 1,   ///< picture timing
     SEI_TYPE_USER_DATA_ITU_T_T35    = 4,   ///< user data registered by ITU-T Recommendation T.35
     SEI_TYPE_USER_DATA_UNREGISTERED = 5,   ///< unregistered user data
-    SEI_TYPE_RECOVERY_POINT         = 6    ///< recovery point (frame # to decoder sync)
+    SEI_TYPE_RECOVERY_POINT         = 6,   ///< recovery point (frame # to decoder sync)
+    SEI_TYPE_FRAME_PACKING          = 45,  ///< frame packing arrangement
 } SEI_Type;
 
 /**
@@ -144,6 +145,19 @@ typedef enum {
     SEI_PIC_STRUCT_FRAME_DOUBLING    = 7, ///<  7: %frame doubling
     SEI_PIC_STRUCT_FRAME_TRIPLING    = 8  ///<  8: %frame tripling
 } SEI_PicStructType;
+
+/**
+ * frame_packing_arrangement types
+ */
+typedef enum {
+    SEI_FPA_TYPE_CHECKERBOARD        = 0,
+    SEI_FPA_TYPE_INTERLEAVE_COLUMN   = 1,
+    SEI_FPA_TYPE_INTERLEAVE_ROW      = 2,
+    SEI_FPA_TYPE_SIDE_BY_SIDE        = 3,
+    SEI_FPA_TYPE_TOP_BOTTOM          = 4,
+    SEI_FPA_TYPE_INTERLEAVE_TEMPORAL = 5,
+    SEI_FPA_TYPE_2D                  = 6,
+} SEI_FpaType;
 
 /**
  * Sequence parameter set
@@ -233,6 +247,18 @@ typedef struct PPS {
 } PPS;
 
 /**
+ * Frame Packing Arrangement Type
+ */
+typedef struct FPA {
+    int         frame_packing_arrangement_id;
+    int         frame_packing_arrangement_cancel_flag; ///< is previous arrangement canceled, -1 if never received
+    SEI_FpaType frame_packing_arrangement_type;
+    int         frame_packing_arrangement_repetition_period;
+    int         content_interpretation_type;
+    int         quincunx_sampling_flag;
+} FPA;
+
+/**
  * Memory management control operation opcode.
  */
 typedef enum MMCOOpcode {
@@ -280,7 +306,7 @@ typedef struct H264Context {
 
     /* coded dimensions -- 16 * mb w/h */
     int width, height;
-    int linesize, uvlinesize;
+    ptrdiff_t linesize, uvlinesize;
     int chroma_x_shift, chroma_y_shift;
 
     int qscale;
@@ -353,8 +379,8 @@ typedef struct H264Context {
     uint32_t *mb2br_xy;
     int b_stride;       // FIXME use s->b4_stride
 
-    int mb_linesize;    ///< may be equal to s->linesize or s->linesize * 2, for mbaff
-    int mb_uvlinesize;
+    ptrdiff_t mb_linesize;  ///< may be equal to s->linesize or s->linesize * 2, for mbaff
+    ptrdiff_t mb_uvlinesize;
 
     unsigned current_sps_id; ///< id of the current SPS
     SPS sps; ///< current sps
@@ -628,6 +654,8 @@ typedef struct H264Context {
      */
     int valid_recovery_point;
 
+    FPA sei_fpa;
+
     int luma_weight_flag[2];    ///< 7.4.3.2 luma_weight_lX_flag
     int chroma_weight_flag[2];  ///< 7.4.3.2 chroma_weight_lX_flag
 
@@ -774,6 +802,12 @@ void ff_h264_filter_mb(H264Context *h, int mb_x, int mb_y,
  * @param h H.264 context.
  */
 void ff_h264_reset_sei(H264Context *h);
+
+/**
+ * Get stereo_mode string from the h264 frame_packing_arrangement
+ * @param h H.264 context.
+ */
+const char* ff_h264_sei_stereo_mode(H264Context *h);
 
 /*
  * o-o o-o
@@ -977,5 +1011,7 @@ static av_always_inline int get_dct8x8_allowed(H264Context *h)
 
 void ff_h264_draw_horiz_band(H264Context *h, int y, int height);
 int ff_init_poc(H264Context *h, int pic_field_poc[2], int *pic_poc);
+int ff_pred_weight_table(H264Context *h);
+int ff_set_ref_count(H264Context *h);
 
 #endif /* AVCODEC_H264_H */

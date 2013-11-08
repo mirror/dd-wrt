@@ -62,7 +62,7 @@ static const AVOption showwaves_options[] = {
     { "n",    "set how many samples to show in the same point", OFFSET(n), AV_OPT_TYPE_INT, {.i64 = 0}, 0, INT_MAX, FLAGS },
     { "rate", "set video rate", OFFSET(rate), AV_OPT_TYPE_VIDEO_RATE, {.str = "25"}, 0, 0, FLAGS },
     { "r",    "set video rate", OFFSET(rate), AV_OPT_TYPE_VIDEO_RATE, {.str = "25"}, 0, 0, FLAGS },
-    { NULL },
+    { NULL }
 };
 
 AVFILTER_DEFINE_CLASS(showwaves);
@@ -169,7 +169,7 @@ static int filter_frame(AVFilterLink *inlink, AVFrame *insamples)
     AVFrame *outpicref = showwaves->outpicref;
     int linesize = outpicref ? outpicref->linesize[0] : 0;
     int16_t *p = (int16_t *)insamples->data[0];
-    int nb_channels = av_get_channel_layout_nb_channels(insamples->channel_layout);
+    int nb_channels = inlink->channels;
     int i, j, k, h, ret = 0;
     const int n = showwaves->n;
     const int x = 255 / (nb_channels * n); /* multiplication factor, pre-computed to avoid in-loop divisions */
@@ -245,12 +245,12 @@ static const AVFilterPad showwaves_outputs[] = {
 };
 
 AVFilter avfilter_avf_showwaves = {
-    .name           = "showwaves",
-    .description    = NULL_IF_CONFIG_SMALL("Convert input audio to a video output."),
-    .uninit         = uninit,
-    .query_formats  = query_formats,
-    .priv_size      = sizeof(ShowWavesContext),
-    .inputs         = showwaves_inputs,
-    .outputs        = showwaves_outputs,
-    .priv_class     = &showwaves_class,
+    .name          = "showwaves",
+    .description   = NULL_IF_CONFIG_SMALL("Convert input audio to a video output."),
+    .uninit        = uninit,
+    .query_formats = query_formats,
+    .priv_size     = sizeof(ShowWavesContext),
+    .inputs        = showwaves_inputs,
+    .outputs       = showwaves_outputs,
+    .priv_class    = &showwaves_class,
 };

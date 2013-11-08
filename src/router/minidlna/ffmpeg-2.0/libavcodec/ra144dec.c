@@ -89,7 +89,7 @@ static int ra144_decode_frame(AVCodecContext * avctx, void *data,
         return ret;
     samples = (int16_t *)frame->data[0];
 
-    init_get_bits(&gb, buf, FRAME_SIZE * 8);
+    init_get_bits8(&gb, buf, FRAME_SIZE);
 
     for (i = 0; i < LPC_ORDER; i++)
         lpc_refl[i] = ff_lpc_refl_cb[i][get_bits(&gb, sizes[i])];
@@ -127,11 +127,11 @@ static int ra144_decode_frame(AVCodecContext * avctx, void *data,
 
 AVCodec ff_ra_144_decoder = {
     .name           = "real_144",
+    .long_name      = NULL_IF_CONFIG_SMALL("RealAudio 1.0 (14.4K)"),
     .type           = AVMEDIA_TYPE_AUDIO,
     .id             = AV_CODEC_ID_RA_144,
     .priv_data_size = sizeof(RA144Context),
     .init           = ra144_decode_init,
     .decode         = ra144_decode_frame,
     .capabilities   = CODEC_CAP_DR1,
-    .long_name      = NULL_IF_CONFIG_SMALL("RealAudio 1.0 (14.4K)"),
 };

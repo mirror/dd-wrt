@@ -28,7 +28,7 @@ lock(){
 checkout(){
     case "$repo" in
         file:*|/*) src="${repo#file:}"      ;;
-        git:*)     git clone "$repo" "$src" ;;
+        git:*)     git clone --quiet "$repo" "$src" ;;
     esac
 }
 
@@ -46,6 +46,7 @@ configure()(
         --samples="${samples}"                                          \
         --enable-gpl                                                    \
         --enable-memory-poisoning                                       \
+        --enable-avresample                                             \
         ${arch:+--arch=$arch}                                           \
         ${cpu:+--cpu="$cpu"}                                            \
         ${cross_prefix:+--cross-prefix="$cross_prefix"}                 \

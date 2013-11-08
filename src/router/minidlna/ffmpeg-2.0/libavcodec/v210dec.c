@@ -146,6 +146,13 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *got_frame,
         v += pic->linesize[2] / 2 - avctx->width / 2;
     }
 
+    if (avctx->field_order > AV_FIELD_PROGRESSIVE) {
+        /* we have interlaced material flagged in container */
+        pic->interlaced_frame = 1;
+        if (avctx->field_order == AV_FIELD_TT || avctx->field_order == AV_FIELD_TB)
+            pic->top_field_first = 1;
+    }
+
     *got_frame      = 1;
 
     return avpkt->size;
@@ -167,12 +174,12 @@ static const AVClass v210dec_class = {
 
 AVCodec ff_v210_decoder = {
     .name           = "v210",
+    .long_name      = NULL_IF_CONFIG_SMALL("Uncompressed 4:2:2 10-bit"),
     .type           = AVMEDIA_TYPE_VIDEO,
     .id             = AV_CODEC_ID_V210,
     .priv_data_size = sizeof(V210DecContext),
     .init           = decode_init,
     .decode         = decode_frame,
     .capabilities   = CODEC_CAP_DR1,
-    .long_name      = NULL_IF_CONFIG_SMALL("Uncompressed 4:2:2 10-bit"),
     .priv_class     = &v210dec_class,
 };

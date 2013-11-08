@@ -1,20 +1,20 @@
 /*
  * Copyright (c) 2012 Anton Khirnov
  *
- * This file is part of Libav.
+ * This file is part of FFmpeg.
  *
- * Libav is free software; you can redistribute it and/or
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
  *
- * Libav is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with Libav; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -27,7 +27,9 @@
 #include <float.h>
 
 #include "libavformat/avformat.h"
+#include "libavformat/options_table.h"
 #include "libavcodec/avcodec.h"
+#include "libavcodec/options_table.h"
 #include "libavutil/opt.h"
 
 static void print_usage(void)
@@ -96,18 +98,14 @@ static void show_opts(const AVOption *opts, int per_stream)
 
 static void show_format_opts(void)
 {
-#include "libavformat/options_table.h"
-
     printf("@section Format AVOptions\n");
-    show_opts(options, 0);
+    show_opts(avformat_options, 0);
 }
 
 static void show_codec_opts(void)
 {
-#include "libavcodec/options_table.h"
-
     printf("@section Codec AVOptions\n");
-    show_opts(options, 1);
+    show_opts(avcodec_options, 1);
 }
 
 int main(int argc, char **argv)

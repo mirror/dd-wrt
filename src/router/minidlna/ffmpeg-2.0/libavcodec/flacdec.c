@@ -409,9 +409,9 @@ static int decode_frame(FLACContext *s)
     GetBitContext *gb = &s->gb;
     FLACFrameInfo fi;
 
-    if (ff_flac_decode_frame_header(s->avctx, gb, &fi, 0)) {
+    if ((ret = ff_flac_decode_frame_header(s->avctx, gb, &fi, 0)) < 0) {
         av_log(s->avctx, AV_LOG_ERROR, "invalid frame header\n");
-        return AVERROR_INVALIDDATA;
+        return ret;
     }
 
     if (s->channels && fi.channels != s->channels && s->got_streaminfo) {
@@ -435,7 +435,7 @@ static int decode_frame(FLACContext *s)
     } else if (s->bps && fi.bps != s->bps) {
         av_log(s->avctx, AV_LOG_ERROR, "switching bps mid-stream is not "
                                        "supported\n");
-        return -1;
+        return AVERROR_INVALIDDATA;
     }
 
     if (!s->bps) {
@@ -523,9 +523,9 @@ static int flac_decode_frame(AVCodecContext *avctx, void *data,
 
     /* check for inline header */
     if (AV_RB32(buf) == MKBETAG('f','L','a','C')) {
-        if (!s->got_streaminfo && parse_streaminfo(s, buf, buf_size)) {
+        if (!s->got_streaminfo && (ret = parse_streaminfo(s, buf, buf_size))) {
             av_log(s->avctx, AV_LOG_ERROR, "invalid header\n");
-            return AVERROR_INVALIDDATA;
+            return ret;
         }
         return get_metadata_size(buf, buf_size);
     }
@@ -539,7 +539,7 @@ static int flac_decode_frame(AVCodecContext *avctx, void *data,
     }
     bytes_read = get_bits_count(&s->gb)/8;
 
-    if ((s->avctx->err_recognition & AV_EF_CRCCHECK) &&
+    if ((s->avctx->err_recognition & (AV_EF_CRCCHECK|AV_EF_COMPLIANT)) &&
         av_crc(av_crc_get_table(AV_CRC_16_ANSI),
                0, buf, bytes_read)) {
         av_log(s->avctx, AV_LOG_ERROR, "CRC error at PTS %"PRId64"\n", avpkt->pts);
@@ -591,6 +591,7 @@ static av_cold int flac_decode_close(AVCodecContext *avctx)
 
 AVCodec ff_flac_decoder = {
     .name           = "flac",
+    .long_name      = NULL_IF_CONFIG_SMALL("FLAC (Free Lossless Audio Codec)"),
     .type           = AVMEDIA_TYPE_AUDIO,
     .id             = AV_CODEC_ID_FLAC,
     .priv_data_size = sizeof(FLACContext),
@@ -599,7 +600,6 @@ AVCodec ff_flac_decoder = {
     .decode         = flac_decode_frame,
     .init_thread_copy = ONLY_IF_THREADS_ENABLED(init_thread_copy),
     .capabilities   = CODEC_CAP_DR1 | CODEC_CAP_FRAME_THREADS,
-    .long_name      = NULL_IF_CONFIG_SMALL("FLAC (Free Lossless Audio Codec)"),
     .sample_fmts    = (const enum AVSampleFormat[]) { AV_SAMPLE_FMT_S16,
                                                       AV_SAMPLE_FMT_S16P,
                                                       AV_SAMPLE_FMT_S32,
