@@ -260,7 +260,7 @@ ffmpeg -i in.avi -f image2 -frames:v 1 img.jpeg
 @table @option
 @item start_number @var{number}
 Start the sequence from @var{number}. Default value is 1. Must be a
-positive number.
+non-negative number.
 
 @item -update @var{number}
 If @var{number} is nonzero, the filename will always be interpreted as just a
@@ -451,8 +451,8 @@ pair for each track, making it easier to separate tracks.
 
 This option is implicitly set when writing ismv (Smooth Streaming) files.
 @item -movflags faststart
-Run a second pass moving the moov atom on top of the file. This
-operation can take a while, and will not work in various situations such
+Run a second pass moving the index (moov atom) to the beginning of the file.
+This operation can take a while, and will not work in various situations such
 as fragmented output, thus it is not enabled by default.
 @item -movflags rtphint
 Add RTP hinting tracks to the output file.
@@ -522,6 +522,40 @@ Set the service_id (default 0x0001) also known as program in DVB.
 Set the first PID for PMT (default 0x1000, max 0x1f00).
 @item -mpegts_start_pid @var{number}
 Set the first PID for data packets (default 0x0100, max 0x0f00).
+@item -mpegts_m2ts_mode @var{number}
+Enable m2ts mode if set to 1. Default value is -1 which disables m2ts mode.
+@item -muxrate @var{number}
+Set muxrate.
+@item -pes_payload_size @var{number}
+Set minimum PES packet payload in bytes.
+@item -mpegts_flags @var{flags}
+Set flags (see below).
+@item -mpegts_copyts @var{number}
+Preserve original timestamps, if value is set to 1. Default value is -1, which
+results in shifting timestamps so that they start from 0.
+@item -tables_version @var{number}
+Set PAT, PMT and SDT version (default 0, valid values are from 0 to 31, inclusively).
+This option allows updating stream structure so that standard consumer may
+detect the change. To do so, reopen output AVFormatContext (in case of API
+usage) or restart ffmpeg instance, cyclically changing tables_version value:
+@example
+ffmpeg -i source1.ts -codec copy -f mpegts -tables_version 0 udp://1.1.1.1:1111
+ffmpeg -i source2.ts -codec copy -f mpegts -tables_version 1 udp://1.1.1.1:1111
+...
+ffmpeg -i source3.ts -codec copy -f mpegts -tables_version 31 udp://1.1.1.1:1111
+ffmpeg -i source1.ts -codec copy -f mpegts -tables_version 0 udp://1.1.1.1:1111
+ffmpeg -i source2.ts -codec copy -f mpegts -tables_version 1 udp://1.1.1.1:1111
+...
+@end example
+@end table
+
+Option mpegts_flags may take a set of such flags:
+
+@table @option
+@item resend_headers
+Reemit PAT/PMT before writing the next packet.
+@item latm
+Use LATM packetization for AAC.
 @end table
 
 The recognized metadata settings in mpegts muxer are @code{service_provider}
@@ -741,6 +775,10 @@ Reset timestamps at the begin of each segment, so that each segment
 will start with near-zero timestamps. It is meant to ease the playback
 of the generated segments. May not work with some combinations of
 muxers/codecs. It is set to @code{0} by default.
+
+@item initial_offset @var{offset}
+Specify timestamp offset to apply to the output packet timestamps. The
+argument must be a time duration specification, and defaults to 0.
 @end table
 
 @subsection Examples
@@ -814,18 +852,54 @@ leading or trailing spaces or any special character, it must be
 escaped (see the ``Quoting and escaping'' section in the ffmpeg-utils
 manual).
 
-Options can be specified for each slave by prepending them as a list of
+Muxer options can be specified for each slave by prepending them as a list of
 @var{key}=@var{value} pairs separated by ':', between square brackets. If
 the options values contain a special character or the ':' separator, they
 must be escaped; note that this is a second level escaping.
 
-Example: encode something and both archive it in a WebM file and stream it
-as MPEG-TS over UDP (the streams need to be explicitly mapped):
+The following special options are also recognized:
+@table @option
+@item f
+Specify the format name. Useful if it cannot be guessed from the
+output name suffix.
 
+@item bsfs[/@var{spec}]
+Specify a list of bitstream filters to apply to the specified
+output. It is possible to specify to which streams a given bitstream
+filter applies, by appending a stream specifier to the option
+separated by @code{/}. If the stream specifier is not specified, the
+bistream filters will be applied to all streams in the output.
+
+Several bitstream filters can be specified, separated by ",".
+
+@item select
+Select the streams that should be mapped to the slave output,
+specified by a stream specifier. If not specified, this defaults to
+all the input streams.
+@end table
+
+Some examples follow.
+@itemize
+@item
+Encode something and both archive it in a WebM file and stream it
+as MPEG-TS over UDP (the streams need to be explicitly mapped):
 @example
 ffmpeg -i ... -c:v libx264 -c:a mp2 -f tee -map 0:v -map 0:a
   "archive-20121107.mkv|[f=mpegts]udp://10.0.1.255:1234/"
 @end example
+
+@item
+Use @command{ffmpeg} to encode the input, and send the output
+to three different destinations. The @code{dump_extra} bitstream
+filter is used to add extradata information to all the output video
+keyframes packets, as requested by the MPEG-TS format. The select
+option is applied to @file{out.aac} in order to make it contain only
+audio packets.
+@example
+ffmpeg -i ... -map 0 -flags +global_header -c:v libx264 -c:a aac -strict experimental
+       -f tee "[bsfs/v=dump_extra]out.ts|[movflags=+faststart]out.mp4|[select=a]out.aac"
+@end example
+@end itemize
 
 Note: some codecs may need different options depending on the output format;
 the auto-detection of this can not work with the tee muxer. The main example

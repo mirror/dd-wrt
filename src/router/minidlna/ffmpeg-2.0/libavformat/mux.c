@@ -32,6 +32,7 @@
 #include "id3v2.h"
 #include "libavutil/avassert.h"
 #include "libavutil/avstring.h"
+#include "libavutil/internal.h"
 #include "libavutil/mathematics.h"
 #include "libavutil/parseutils.h"
 #include "libavutil/time.h"
@@ -534,10 +535,13 @@ static int write_packet(AVFormatContext *s, AVPacket *pkt)
 
     did_split = av_packet_split_side_data(pkt);
     ret = s->oformat->write_packet(s, pkt);
-    if (s->flush_packets && s->pb && s->pb->error >= 0)
+
+    if (s->flush_packets && s->pb && ret >= 0 && s->flags & AVFMT_FLAG_FLUSH_PACKETS)
         avio_flush(s->pb);
+
     if (did_split)
         av_packet_merge_side_data(pkt);
+
     return ret;
 }
 
@@ -585,7 +589,9 @@ int ff_interleave_add_packet(AVFormatContext *s, AVPacket *pkt,
         return AVERROR(ENOMEM);
     this_pktl->pkt = *pkt;
 #if FF_API_DESTRUCT_PACKET
+FF_DISABLE_DEPRECATION_WARNINGS
     pkt->destruct  = NULL;           // do not free original but only the copy
+FF_ENABLE_DEPRECATION_WARNINGS
 #endif
     pkt->buf       = NULL;
     av_dup_packet(&this_pktl->pkt);  // duplicate the packet if it uses non-allocated memory

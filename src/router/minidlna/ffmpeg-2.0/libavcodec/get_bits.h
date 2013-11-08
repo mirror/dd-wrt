@@ -64,6 +64,7 @@ typedef struct VLC {
     int bits;
     VLC_TYPE (*table)[2]; ///< code, bits
     int table_size, table_allocated;
+    void * volatile init_state;
 } VLC;
 
 typedef struct RL_VLC_ELEM {
@@ -291,7 +292,6 @@ static inline unsigned int show_bits(GetBitContext *s, int n)
 static inline void skip_bits(GetBitContext *s, int n)
 {
     OPEN_READER(re, s);
-    UPDATE_CACHE(re, s);
     LAST_SKIP_BITS(re, s, n);
     CLOSE_READER(re, s);
 }

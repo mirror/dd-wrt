@@ -144,6 +144,19 @@ const AVCodecTag ff_nut_video_tags[] = {
     { AV_CODEC_ID_RAWVIDEO,         MKTAG('Y', '4',   0,  16) },
     { AV_CODEC_ID_RAWVIDEO,         MKTAG(16,    0, '4', 'Y') },
 
+    { AV_CODEC_ID_RAWVIDEO,         MKTAG('G', '3',   0,   8) },
+
+    { AV_CODEC_ID_RAWVIDEO,         MKTAG('G', '3',   0,   9) },
+    { AV_CODEC_ID_RAWVIDEO,         MKTAG( 9,    0, '3', 'G') },
+    { AV_CODEC_ID_RAWVIDEO,         MKTAG('G', '3',   0,  10) },
+    { AV_CODEC_ID_RAWVIDEO,         MKTAG(10,    0, '3', 'G') },
+    { AV_CODEC_ID_RAWVIDEO,         MKTAG('G', '3',   0,  12) },
+    { AV_CODEC_ID_RAWVIDEO,         MKTAG(12,    0, '3', 'G') },
+    { AV_CODEC_ID_RAWVIDEO,         MKTAG('G', '3',   0,  14) },
+    { AV_CODEC_ID_RAWVIDEO,         MKTAG(14,    0, '3', 'G') },
+    { AV_CODEC_ID_RAWVIDEO,         MKTAG('G', '3',   0,  16) },
+    { AV_CODEC_ID_RAWVIDEO,         MKTAG(16,    0, '3', 'G') },
+
     { AV_CODEC_ID_NONE,             0 }
 };
 
@@ -214,10 +227,16 @@ int ff_nut_sp_pts_cmp(const Syncpoint *a, const Syncpoint *b)
     return ((a->ts - b->ts) >> 32) - ((b->ts - a->ts) >> 32);
 }
 
-void ff_nut_add_sp(NUTContext *nut, int64_t pos, int64_t back_ptr, int64_t ts)
+int ff_nut_add_sp(NUTContext *nut, int64_t pos, int64_t back_ptr, int64_t ts)
 {
     Syncpoint *sp           = av_mallocz(sizeof(Syncpoint));
     struct AVTreeNode *node = av_tree_node_alloc();
+
+    if (!sp || !node) {
+        av_freep(&sp);
+        av_freep(&node);
+        return AVERROR(ENOMEM);
+    }
 
     nut->sp_count++;
 
@@ -229,6 +248,8 @@ void ff_nut_add_sp(NUTContext *nut, int64_t pos, int64_t back_ptr, int64_t ts)
         av_free(sp);
         av_free(node);
     }
+
+    return 0;
 }
 
 static int enu_free(void *opaque, void *elem)

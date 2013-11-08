@@ -28,7 +28,6 @@
 #include "avformat.h"
 #include "avio_internal.h"
 #include "internal.h"
-#include "libavutil/opt.h"
 
 typedef struct {
     const AVClass *class;  /**< Class for private options. */
@@ -37,6 +36,7 @@ typedef struct {
     int split_planes;       /**< use independent file for each Y, U, V plane */
     char path[1024];
     int update;
+    int use_strftime;
 } VideoMuxData;
 
 static int write_header(AVFormatContext *s)
@@ -77,6 +77,15 @@ static int write_packet(AVFormatContext *s, AVPacket *pkt)
     if (!img->is_pipe) {
         if (img->update) {
             av_strlcpy(filename, img->path, sizeof(filename));
+        } else if (img->use_strftime) {
+            time_t now0;
+            struct tm *tm;
+            time(&now0);
+            tm = localtime(&now0);
+            if (!strftime(filename, sizeof(filename), img->path, tm)) {
+                av_log(s, AV_LOG_ERROR, "Could not get frame filename with strftime\n");
+                return AVERROR(EINVAL);
+            }
         } else if (av_get_frame_filename(filename, sizeof(filename), img->path, img->img_number) < 0 &&
                    img->img_number > 1) {
             av_log(s, AV_LOG_ERROR,
@@ -132,7 +141,8 @@ static int write_packet(AVFormatContext *s, AVPacket *pkt)
 static const AVOption muxoptions[] = {
     { "updatefirst",  "continuously overwrite one file", OFFSET(update),  AV_OPT_TYPE_INT, { .i64 = 0 }, 0,       1, ENC },
     { "update",       "continuously overwrite one file", OFFSET(update),  AV_OPT_TYPE_INT, { .i64 = 0 }, 0,       1, ENC },
-    { "start_number", "set first number in the sequence", OFFSET(img_number), AV_OPT_TYPE_INT,  { .i64 = 1 }, 1, INT_MAX, ENC },
+    { "start_number", "set first number in the sequence", OFFSET(img_number), AV_OPT_TYPE_INT,  { .i64 = 1 }, 0, INT_MAX, ENC },
+    { "strftime",     "use strftime for filename", OFFSET(use_strftime), AV_OPT_TYPE_INT, { .i64 = 0 }, 0, 1, ENC },
     { NULL },
 };
 
