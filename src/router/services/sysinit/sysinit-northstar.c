@@ -357,6 +357,28 @@ void start_sysinit(void)
 		set_gpio(4,1); //ses
 		set_gpio(5,1); //wifi
 		nvram_set("pci/1/1/vendid", "0x14E4");
+		
+		if (nvram_match("wl0_country_code", "US"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("wl0_country_code", "Q2"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("wl0_country_code", "TW"))
+			set_regulation(0, "TW", "13");
+		else if (nvram_match("wl0_country_code", "CN"))
+			set_regulation(0, "CN", "1");
+		else
+			set_regulation(0, "DE", "0");
+
+		if (nvram_match("wl1_country_code", "Q2"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("wl1_country_code", "EU"))
+			set_regulation(1, "EU", "13");
+		else if (nvram_match("wl1_country_code", "TW"))
+			set_regulation(1, "TW", "13");
+		else if (nvram_match("wl1_country_code", "CN"))
+			set_regulation(1, "CN", "1");
+		else
+			set_regulation(1, "US", "0");	
 
 		break;
 	case ROUTER_NETGEAR_R6300V2:
@@ -581,6 +603,29 @@ void start_sysinit(void)
 		set_gpio(4,1); //ses
 		set_gpio(5,1); //wifi
 		nvram_set("pci/1/1/vendid", "0x14E4");
+		
+		if (nvram_match("wl0_country_code", "US"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("wl0_country_code", "Q2"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("wl0_country_code", "TW"))
+			set_regulation(0, "TW", "13");
+		else if (nvram_match("wl0_country_code", "CN"))
+			set_regulation(0, "CN", "1");
+		else
+			set_regulation(0, "DE", "0");
+
+		if (nvram_match("wl1_country_code", "Q2"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("wl1_country_code", "EU"))
+			set_regulation(1, "EU", "13");
+		else if (nvram_match("wl1_country_code", "TW"))
+			set_regulation(1, "TW", "13");
+		else if (nvram_match("wl1_country_code", "CN"))
+			set_regulation(1, "CN", "1");
+		else
+			set_regulation(1, "US", "0");	
+		
 		break;
 	case ROUTER_NETGEAR_R7000:
 		
