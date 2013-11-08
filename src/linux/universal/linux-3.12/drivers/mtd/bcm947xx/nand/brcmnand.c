@@ -1036,6 +1036,10 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 		offset = 0x4800000;
 		size -= 0x100000;
 	}
+	
+	if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1301")) {
+		offset = 0x2240000;
+	}
 	ASSERT(size > offset);
 
 	brcmnand_parts[0].offset = offset;

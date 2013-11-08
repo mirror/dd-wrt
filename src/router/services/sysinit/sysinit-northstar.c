@@ -353,6 +353,11 @@ void start_sysinit(void)
 				extra_params++;
 			}
 		}
+		set_gpio(6,1); //reset button
+		set_gpio(4,1); //ses
+		set_gpio(5,1); //wifi
+		nvram_set("pci/1/1/vendid", "0x14E4");
+
 		break;
 	case ROUTER_NETGEAR_R6300V2:
 
@@ -568,9 +573,9 @@ void start_sysinit(void)
 				extra_params++;
 			}
 		}
-		set_gpio(6,1); //fix reset button
-		set_gpio(2,1); //fix power led
-		set_gpio(3,0); //fix power led
+		set_gpio(6,1); //reset button
+		set_gpio(2,1); //power led
+		set_gpio(3,0); //power led
 		set_gpio(1,1); //logo
 		set_gpio(11,1);
 		set_gpio(4,1); //ses
@@ -859,7 +864,7 @@ void start_sysinit(void)
 		set_gpio(2,1);
 		set_gpio(4,1);
 		set_gpio(5,1);
-		set_gpio(6,1); //fix reset button
+		set_gpio(6,1); //reset button
 		nvram_set("wl_pcie_mrrs", "128");
 		nvram_set("wl0_pcie_mrrs", "128");
 		nvram_set("wl1_pcie_mrrs", "128");
