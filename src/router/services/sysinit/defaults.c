@@ -759,7 +759,7 @@ struct nvram_tuple srouter_defaults[] = {
 	/* Default AMPDU regular rate retry limit per-tid setting */
 	{"wl0_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
 	{"wl0_amsdu", "auto", 0},	/* Default AMSDU setting */
-	{"wl0_obss_coex", "1", 0},	/* Default OBSS Coexistence setting - OFF */
+	{"wl0_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - OFF */
 	{"wl1_stbc_tx", "auto", 0},	/* Default STBC TX setting */
 	{"wl1_stbc_rx", "1", 0},	/* Default STBC RX setting */
 	{"wl1_ampdu", "auto", 0},	/* Default AMPDU setting */
@@ -768,7 +768,7 @@ struct nvram_tuple srouter_defaults[] = {
 	/* Default AMPDU regular rate retry limit per-tid setting */
 	{"wl1_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
 	{"wl1_amsdu", "auto", 0},	/* Default AMSDU setting */
-	{"wl1_obss_coex", "1", 0},	/* Default OBSS Coexistence setting - OFF */
+	{"wl1_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - OFF */
 	/* Tx Beamforming */
 	{"wl0_txbf_bfr_cap", "0", 0},
 	{"wl0_txbf_bfe_cap", "0", 0},
