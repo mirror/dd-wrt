@@ -358,6 +358,8 @@ void start_sysinit(void)
 			}
 		}
 		set_gpio(6,1); //reset button
+		set_gpio(2,0); //power led
+		set_gpio(3,1); //power led
 		set_gpio(4,1); //ses
 		set_gpio(5,1); //wifi
 		nvram_set("pci/1/1/vendid", "0x14E4");
@@ -600,8 +602,8 @@ void start_sysinit(void)
 			}
 		}
 		set_gpio(6,1); //reset button
-		set_gpio(2,1); //power led
-		set_gpio(3,0); //power led
+		set_gpio(2,0); //power led
+		set_gpio(3,1); //power led
 		set_gpio(1,1); //logo
 		set_gpio(11,1);
 		set_gpio(4,1); //ses
