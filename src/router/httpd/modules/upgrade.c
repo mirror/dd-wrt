@@ -181,6 +181,23 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		}
 
 		if (i == 0) {	// check code pattern, the first data must
+#ifdef HAVE_VENTANA
+		    if (!strncmp(buf, "UBI#", 4)) {	// check for "UBI#"
+				char *write_argv_buf[4];
+				write_argv_buf[0] = "ubiupdatevol";
+				write_argv_buf[1] = "/dev/ubi0";
+				write_argv_buf[2] = upload_fifo;
+				write_argv_buf[3] = NULL;
+				memcpy(buf,&fh,sizeof(fh)); //write back decrypted content
+				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
+				    || !(fifo = fopen(upload_fifo, "w"))) {
+					if (!ret)
+						ret = errno;
+					goto err;
+				}
+				goto write_data;
+		    }
+#endif
 #ifdef HAVE_BUFFALO
 			ralink_firmware_header fh;
 			memcpy(&fh, buf, sizeof(fh));
