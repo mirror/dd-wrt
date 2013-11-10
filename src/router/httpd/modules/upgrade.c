@@ -182,10 +182,11 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 		if (i == 0) {	// check code pattern, the first data must
 #ifdef HAVE_VENTANA
-		    if (!strncmp(buf, "UBI#", 4)) {	// check for "UBI#"
+	//	    if (!strncmp(buf, "UBI#", 4)) 
+		    {	// check for "UBI#"
 				char *write_argv_buf[4];
 				write_argv_buf[0] = "ubiupdatevol";
-				write_argv_buf[1] = "/dev/ubi0";
+				write_argv_buf[1] = "/dev/ubi0_0";
 				write_argv_buf[2] = upload_fifo;
 				write_argv_buf[3] = NULL;
 				memcpy(buf,&fh,sizeof(fh)); //write back decrypted content
