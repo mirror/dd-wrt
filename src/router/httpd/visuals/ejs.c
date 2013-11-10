@@ -1464,6 +1464,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 	char *next, *bnext;
 	char var[80];
 	char eths[256];
+	char eths2[256];
 	static char bword[256];
 	char bufferif[512];
 #ifdef HAVE_ATH9K
@@ -1473,8 +1474,17 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 #endif
 
 	show_bwif(wp, nvram_safe_get("lan_ifname"), "LAN");
-	memset(eths, 0, 256);
-	getIfLists(eths, 256);
+	memset(eths, 0, sizeof(eths));
+	getIfLists(eths, sizeof(eths));
+	//add ppp interfacs
+	memset(eths2, 0, sizeof(eths2));
+	getIfLists(eths2, "ppp");
+	sprinf(eths,"%s %s",eths,eths2);
+	//add tun interfaces
+	memset(eths2, 0, sizeof(eths2));
+	getIfLists(eths2, "tun");
+	sprinf(eths,"%s %s",eths,eths2);
+	
 	memset(bufferif, 0, 256);
 	getIfList(bufferif, "br");
 
