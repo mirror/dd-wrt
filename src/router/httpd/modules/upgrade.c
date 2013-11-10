@@ -182,13 +182,17 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 		if (i == 0) {	// check code pattern, the first data must
 #ifdef HAVE_VENTANA
-	//	    if (!strncmp(buf, "UBI#", 4)) 
+		    if (!strncmp(buf, "UBI#", 4)) 
 		    {	// check for "UBI#"
-				char *write_argv_buf[4];
-				write_argv_buf[0] = "ubiupdatevol";
-				write_argv_buf[1] = "/dev/ubi0_0";
-				write_argv_buf[2] = upload_fifo;
-				write_argv_buf[3] = NULL;
+				char *write_argv_buf[8];
+				write_argv_buf[0] = "mtd";
+				write_argv_buf[1] = "-e";
+				write_argv_buf[2] = "/dev/mtd2";
+				write_argv_buf[3] = "-f";
+				write_argv_buf[4] = "write";
+				write_argv_buf[5] = upload_fifo;
+				write_argv_buf[6] = "rootfs";
+				write_argv_buf[7] = NULL;
 				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
 				    || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
