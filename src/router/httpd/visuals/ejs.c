@@ -1479,11 +1479,11 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 	//add ppp interfacs
 	memset(eths2, 0, sizeof(eths2));
 	getIfList(eths2, "ppp");
-	sprinf(eths,"%s %s",eths,eths2);
+	sprintf(eths,"%s %s",eths,eths2);
 	//add tun interfaces
 	memset(eths2, 0, sizeof(eths2));
 	getIfList(eths2, "tun");
-	sprinf(eths,"%s %s",eths,eths2);
+	sprintf(eths,"%s %s",eths,eths2);
 	
 	memset(bufferif, 0, 256);
 	getIfList(bufferif, "br");
