@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//		Russian reference translation file - DD-WRT V23 SP1 by Yuri Krasilnikov 28/11/2008				//
+//		Russian reference translation file - DD-WRT V23 SP1 by Yuri Krasilnikov 28/11/2008	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -396,15 +396,15 @@ bmenu.sipathoverview="Обзор";
 bmenu.sipathphone="Телефонная книга";
 bmenu.sipathstatus="Статус";
 
-bmenu.admin="Тех.обслуживание";
-bmenu.adminManagement="Управление";
-bmenu.adminAlive="Поддержание жизни";
+bmenu.admin="Тех.обслуж.";
+bmenu.adminManagement="Управл.";
+bmenu.adminAlive="Под. жизни";
 bmenu.adminLog="Журнал";
 bmenu.adminDiag="Команды";
 bmenu.adminWol="WOL";
-bmenu.adminFactory="Заводские установки";
-bmenu.adminUpgrade="Обновление прошивки";
-bmenu.adminBackup="Сохранение конфигурации";
+bmenu.adminFactory="З. установки";
+bmenu.adminUpgrade="Mодернизация";
+bmenu.adminBackup="Резервное коп.";
 
 bmenu.services="Службы";
 bmenu.servicesServices="Службы";
