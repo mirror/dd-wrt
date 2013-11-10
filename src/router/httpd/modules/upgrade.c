@@ -189,7 +189,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				write_argv_buf[1] = "/dev/ubi0_0";
 				write_argv_buf[2] = upload_fifo;
 				write_argv_buf[3] = NULL;
-				memcpy(buf,&fh,sizeof(fh)); //write back decrypted content
 				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
 				    || !(fifo = fopen(upload_fifo, "w"))) {
 					if (!ret)
