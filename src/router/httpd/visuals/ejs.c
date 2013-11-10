@@ -1518,16 +1518,12 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 	}
 
 	if (!nvram_match("wan_proto", "disabled")) {
-#ifdef HAVE_MADWIFI
 		if (getSTA()) {
-			sprintf(name, "%s WAN", live_translate("share.wireless"));
-			show_bwif(wp, get_wan_face(), name);
+			sprintf(name, "%s WAN (%s)", live_translate("share.wireless"),get_wan_face());
 		} else
-			show_bwif(wp, get_wan_face(), "WAN");
-#else
-		if (!getSTA())
-			show_bwif(wp, get_wan_face(), "WAN");
-#endif
+			sprintf(name, "WAN (%s)", get_wan_face());
+
+		show_bwif(wp, get_wan_face(), name);
 
 		if (nvram_match("dtag_vlan8", "1")) {
 			if (getRouterBrand() == ROUTER_WRT600N || getRouterBrand() == ROUTER_WRT610N)
