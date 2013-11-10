@@ -1433,6 +1433,13 @@ int xhci_endpoint_init(struct xhci_hcd *xhci,
 	case USB_SPEED_SUPER:
 		/* dig out max burst from ep companion desc */
 		max_burst = ep->ss_ep_comp.bMaxBurst;
+
+#ifdef CONFIG_BCM47XX
+		if(EP_TYPE(BULK_OUT_EP) == xhci_get_endpoint_type(udev, ep)){
+			printk("force burst = 0.\n");
+			max_packet = 0;
+		}
+#endif
 		break;
 	case USB_SPEED_HIGH:
 		/* Some devices get this wrong */
