@@ -4,9 +4,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define CHILDSOCKNAME "/dev/rvndcldcomsk"
-#define PARENTSOCKNAME "/dev/rvndpntcomsk"
-#define IPTSOCKNAME "/dev/rvndiptcomsk"
+#define CHILDSOCKNAME "/tmp/rvndcldcomsk"
+#define PARENTSOCKNAME "/tmp/rvndpntcomsk"
+#define IPTSOCKNAME "/tmp/rvndiptcomsk"
 
 #define SOCKET_PREFIX	"isock"
 
@@ -24,8 +24,7 @@
 struct rvn {
 	int type;
 	int ready;
-	struct in_addr saddr;
-	struct in6_addr s6addr;
+	struct sockaddr_storage addr;
 	char fqdn[45];
 };
 

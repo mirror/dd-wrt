@@ -16,9 +16,7 @@ serv.c  - TCP/UDP port statistics module
 
 #include "dirs.h"
 #include "deskman.h"
-#include "isdntab.h"
 #include "fltdefs.h"
-#include "fltselect.h"
 #include "packet.h"
 #include "ipfrag.h"
 #include "ifaces.h"
@@ -29,20 +27,17 @@ serv.c  - TCP/UDP port statistics module
 #include "timer.h"
 #include "promisc.h"
 #include "options.h"
-#include "instances.h"
 #include "packet.h"
 #include "logvars.h"
 #include "error.h"
-#include "bar.h"
+#include "counters.h"
+#include "rate.h"
 
 #define SCROLLUP 0
 #define SCROLLDOWN 1
 
 #define LEFT 0
 #define RIGHT 1
-
-extern int exitloop;
-extern int daemonized;
 
 struct serv_spans {
 	int spanbr_in;
@@ -51,19 +46,20 @@ struct serv_spans {
 };
 
 struct portlistent {
-	unsigned int port;
+	in_port_t port;
 	unsigned int protocol;
 	char servname[11];
 	unsigned int idx;
-	unsigned long long count;
-	unsigned long long bcount;
-	unsigned long long icount;
-	unsigned long long ibcount;
-	unsigned long long ocount;
-	unsigned long long obcount;
-	time_t starttime;
-	time_t proto_starttime;
-	struct serv_spans spans;
+	struct proto_counter serv_count;
+	struct proto_counter span;
+
+	struct timeval starttime;
+	struct timeval proto_starttime;
+
+	struct rate rate;
+	struct rate rate_in;
+	struct rate rate_out;
+
 	struct portlistent *prev_entry;
 	struct portlistent *next_entry;
 };
@@ -74,7 +70,7 @@ struct portlist {
 	struct portlistent *firstvisible;
 	struct portlistent *lastvisible;
 	struct portlistent *barptr;
-	int imaxy;
+	unsigned imaxy;
 	unsigned int baridx;
 	unsigned int count;
 	unsigned long bcount;
@@ -95,67 +91,50 @@ static void rotate_serv_log(int s __unused)
 	signal(SIGUSR1, rotate_serv_log);
 }
 
-static void writeutslog(struct portlistent *list, unsigned long nsecs,
-			int units, FILE *fd)
+static void writeutslog(struct portlistent *list, unsigned long nsecs, FILE *fd)
 {
 	char atime[TIME_TARGET_MAX];
 	struct portlistent *ptmp = list;
-	float inrate, outrate, totalrate;
-	time_t now = time(NULL);
+	struct timeval now;
+
+	gettimeofday(&now, NULL);
 
 	genatime(time(NULL), atime);
 
 	fprintf(fd, "\n*** TCP/UDP traffic log, generated %s\n\n", atime);
 
 	while (ptmp != NULL) {
-		if (now - ptmp->proto_starttime < 5)
-			inrate = outrate = totalrate = -1.0;
-		else {
-			if (units == KBITS) {
-				inrate =
-				    (float) (ptmp->ibcount * 8 / 1000) /
-				    (float) (now - ptmp->proto_starttime);
-				outrate =
-				    (float) (ptmp->obcount * 8 / 1000) /
-				    (float) (now - ptmp->proto_starttime);
-				totalrate =
-				    (float) (ptmp->bcount * 8 / 1000) /
-				    (float) (now - ptmp->proto_starttime);
-			} else {
-				inrate =
-				    (float) (ptmp->obcount / 1024) /
-				    (float) (now - ptmp->proto_starttime);
-				outrate =
-				    (float) (ptmp->obcount / 1024) /
-				    (float) (now - ptmp->proto_starttime);
-				totalrate =
-				    (float) (ptmp->obcount / 1024) /
-				    (float) (now - ptmp->proto_starttime);
-			}
-		}
+		unsigned long secs = timeval_diff_msec(&now, &ptmp->proto_starttime) / 1000UL;
+		char bps_string[64];
 
 		if (ptmp->protocol == IPPROTO_TCP)
 			fprintf(fd, "TCP/%s: ", ptmp->servname);
 		else
 			fprintf(fd, "UDP/%s: ", ptmp->servname);
 
-		fprintf(fd, "%llu packets, %llu bytes total", ptmp->count,
-			ptmp->bcount);
+		fprintf(fd, "%llu packets, %llu bytes total",
+			ptmp->serv_count.proto_total.pc_packets,
+			ptmp->serv_count.proto_total.pc_bytes);
 
-		if (totalrate >= 0.0)
-			fprintf(fd, ", %.2f %s", totalrate, dispmode(units));
+		rate_print(ptmp->serv_count.proto_total.pc_bytes / secs,
+			   bps_string, sizeof(bps_string));
+		fprintf(fd, ", %s", bps_string);
 
-		fprintf(fd, "; %llu packets, %llu bytes incoming", ptmp->icount,
-			ptmp->ibcount);
+		fprintf(fd, "; %llu packets, %llu bytes incoming",
+			ptmp->serv_count.proto_in.pc_packets,
+			ptmp->serv_count.proto_in.pc_bytes);
 
-		if (inrate >= 0.0)
-			fprintf(fd, ", %.2f %s", inrate, dispmode(units));
+		rate_print(ptmp->serv_count.proto_in.pc_bytes / secs,
+			   bps_string, sizeof(bps_string));
+		fprintf(fd, ", %s", bps_string);
 
-		fprintf(fd, "; %llu packets, %llu bytes outgoing", ptmp->ocount,
-			ptmp->obcount);
+		fprintf(fd, "; %llu packets, %llu bytes outgoing",
+			ptmp->serv_count.proto_out.pc_packets,
+			ptmp->serv_count.proto_out.pc_bytes);
 
-		if (outrate >= 0.0)
-			fprintf(fd, ", %.2f %s", outrate, dispmode(units));
+		rate_print(ptmp->serv_count.proto_out.pc_bytes / secs,
+			   bps_string, sizeof(bps_string));
+		fprintf(fd, ", %s", bps_string);
 
 		fprintf(fd, "\n\n");
 		ptmp = ptmp->next_entry;
@@ -209,7 +188,7 @@ static void initportlist(struct portlist *list)
 
 static struct portlistent *addtoportlist(struct portlist *list,
 					 unsigned int protocol,
-					 unsigned int port, int servnames)
+					 in_port_t port)
 {
 	struct portlistent *ptemp;
 
@@ -229,23 +208,24 @@ static struct portlistent *addtoportlist(struct portlist *list,
 
 	ptemp->protocol = protocol;
 	ptemp->port = port;	/* This is used in checks later. */
+	rate_alloc(&ptemp->rate, 5);
+	rate_alloc(&ptemp->rate_in, 5);
+	rate_alloc(&ptemp->rate_out, 5);
 
 	/*
 	 * Obtain appropriate service name
 	 */
 
-	servlook(servnames, htons(port), protocol, ptemp->servname, 10);
+	servlook(port, protocol, ptemp->servname, 10);
 
-	ptemp->count = ptemp->bcount = 0;
-	ptemp->icount = ptemp->ibcount = 0;
-	ptemp->ocount = ptemp->obcount = 0;
+	memset(&ptemp->serv_count, 0, sizeof(ptemp->serv_count));
 
 	list->count++;
 	ptemp->idx = list->count;
 
-	ptemp->proto_starttime = time(NULL);
+	gettimeofday(&ptemp->proto_starttime, NULL);
 
-	if (list->count <= LINES - 5)
+	if (list->count <= (unsigned) LINES - 5)
 		list->lastvisible = ptemp;
 
 	wmove(list->borderwin, LINES - 4, 1);
@@ -254,7 +234,7 @@ static struct portlistent *addtoportlist(struct portlist *list,
 	return ptemp;
 }
 
-static int portinlist(struct porttab *table, unsigned int port)
+static int portinlist(struct porttab *table, in_port_t port)
 {
 	struct porttab *ptmp = table;
 
@@ -269,13 +249,13 @@ static int portinlist(struct porttab *table, unsigned int port)
 	return 0;
 }
 
-static int goodport(unsigned int port, struct porttab *table)
+static int goodport(in_port_t port, struct porttab *table)
 {
 	return ((port < 1024) || (portinlist(table, port)));
 }
 
 static struct portlistent *inportlist(struct portlist *list,
-				      unsigned int protocol, unsigned int port)
+				      unsigned int protocol, in_port_t port)
 {
 	struct portlistent *ptmp = list->head;
 
@@ -332,17 +312,17 @@ static void printportent(struct portlist *list, struct portlistent *entry,
 	wprintw(list->win, "/%s          ", entry->servname);
 	wattrset(list->win, highattr);
 	wmove(list->win, target_row, 17 * screen_scale);
-	printlargenum(entry->count, list->win);
+	printlargenum(entry->serv_count.proto_total.pc_packets, list->win);
 	wmove(list->win, target_row, 27 * screen_scale);
-	printlargenum(entry->bcount, list->win);
+	printlargenum(entry->serv_count.proto_total.pc_bytes, list->win);
 	wmove(list->win, target_row, 37 * screen_scale);
-	printlargenum(entry->icount, list->win);
+	printlargenum(entry->serv_count.proto_in.pc_packets, list->win);
 	wmove(list->win, target_row, 47 * screen_scale);
-	printlargenum(entry->ibcount, list->win);
+	printlargenum(entry->serv_count.proto_in.pc_bytes, list->win);
 	wmove(list->win, target_row, 57 * screen_scale);
-	printlargenum(entry->ocount, list->win);
+	printlargenum(entry->serv_count.proto_out.pc_packets, list->win);
 	wmove(list->win, target_row, 67 * screen_scale);
-	printlargenum(entry->obcount, list->win);
+	printlargenum(entry->serv_count.proto_out.pc_bytes, list->win);
 }
 
 static void destroyportlist(struct portlist *list)
@@ -354,6 +334,9 @@ static void destroyportlist(struct portlist *list)
 		ctmp = list->head->next_entry;
 
 	while (ptmp != NULL) {
+		rate_destroy(&ptmp->rate_out);
+		rate_destroy(&ptmp->rate_in);
+		rate_destroy(&ptmp->rate);
 		free(ptmp);
 		ptmp = ctmp;
 
@@ -363,30 +346,28 @@ static void destroyportlist(struct portlist *list)
 }
 
 static void updateportent(struct portlist *list, unsigned int protocol,
-			  unsigned int sport, unsigned int dport, int br,
-			  unsigned int idx, struct porttab *ports,
-			  int servnames)
+			  in_port_t sport, in_port_t dport, int br,
+			  struct porttab *ports)
 {
 	struct portlistent *sport_listent = NULL;
 	struct portlistent *dport_listent = NULL;
+	enum {
+		PORT_INCOMING = 0,
+		PORT_OUTGOING
+	};
 
 	if (goodport(sport, ports)) {
 		sport_listent = inportlist(list, protocol, sport);
 
 		if (!sport_listent)
 			sport_listent =
-				addtoportlist(list, protocol, sport, servnames);
+				addtoportlist(list, protocol, sport);
 
 		if (sport_listent == NULL)
 			return;
 
-		sport_listent->count++;
-		sport_listent->bcount += br;
-		sport_listent->spans.spanbr += br;
-
-		sport_listent->obcount += br;
-		sport_listent->spans.spanbr_out += br;
-		sport_listent->ocount++;
+		update_proto_counter(&sport_listent->serv_count, PORT_OUTGOING, br);
+		update_proto_counter(&sport_listent->span, PORT_OUTGOING, br);
 	}
 
 	if (goodport(dport, ports)) {
@@ -394,26 +375,13 @@ static void updateportent(struct portlist *list, unsigned int protocol,
 
 		if (!dport_listent)
 			dport_listent =
-				addtoportlist(list, protocol, dport, servnames);
+				addtoportlist(list, protocol, dport);
 
 		if (dport_listent == NULL)
 			return;
 
-		if (dport_listent != sport_listent) {
-			dport_listent->count++;
-			dport_listent->bcount += br;
-			dport_listent->spans.spanbr += br;
-		}
-
-		dport_listent->ibcount += br;
-		dport_listent->spans.spanbr_in += br;
-		dport_listent->icount++;
-	}
-	if (sport_listent != NULL || dport_listent != NULL) {
-		if (sport_listent != NULL)
-			printportent(list, sport_listent, idx);
-		if (dport_listent != NULL && dport_listent != sport_listent)
-			printportent(list, dport_listent, idx);
+		update_proto_counter(&dport_listent->serv_count, PORT_INCOMING, br);
+		update_proto_counter(&dport_listent->span, PORT_INCOMING, br);
 	}
 }
 
@@ -474,22 +442,22 @@ static unsigned long long qp_getkey(struct portlistent *entry, int ch)
 		result = entry->port;
 		break;
 	case 'B':
-		result = entry->bcount;
+		result = entry->serv_count.proto_total.pc_bytes;
 		break;
 	case 'O':
-		result = entry->ibcount;
+		result = entry->serv_count.proto_in.pc_bytes;
 		break;
 	case 'M':
-		result = entry->obcount;
+		result = entry->serv_count.proto_out.pc_bytes;
 		break;
 	case 'P':
-		result = entry->count;
+		result = entry->serv_count.proto_total.pc_packets;
 		break;
 	case 'T':
-		result = entry->icount;
+		result = entry->serv_count.proto_in.pc_packets;
 		break;
 	case 'F':
-		result = entry->ocount;
+		result = entry->serv_count.proto_out.pc_packets;
 		break;
 	}
 
@@ -744,73 +712,58 @@ static void show_portsort_keywin(WINDOW ** win, PANEL ** panel)
 	doupdate();
 }
 
-static void update_serv_rates(struct portlist *list, WINDOW * win, int actmode,
-		       int *cleared)
+static void print_serv_rates(struct portlistent *ple, WINDOW *win)
 {
-	float inrate, outrate, totalrate;
-	time_t now = time(NULL);
-
-	if (actmode == KBITS) {
-		inrate =
-		    (float) (list->barptr->spans.spanbr_in * 8 / 1000) /
-		    (float) (now - list->barptr->starttime);
-		outrate =
-		    (float) (list->barptr->spans.spanbr_out * 8 / 1000) /
-		    (float) (now - list->barptr->starttime);
-		totalrate =
-		    (float) (list->barptr->spans.spanbr * 8 / 1000) /
-		    (float) (now - list->barptr->starttime);
-	} else {
-		inrate =
-		    (float) (list->barptr->spans.spanbr_in / 1024) /
-		    (float) (now - list->barptr->starttime);
-		outrate =
-		    (float) (list->barptr->spans.spanbr_out / 1024) /
-		    (float) (now - list->barptr->starttime);
-		totalrate =
-		    (float) (list->barptr->spans.spanbr / 1024) / (float) (now -
-									   list->
-									   barptr->
-									   starttime);
-	}
+	char buf[64];
 
 	wattrset(win, IPSTATLABELATTR);
-	mvwprintw(win, 0, 1,
-		  "Protocol data rates (%s):              in             out            total",
-		  dispmode(actmode));
-	wattrset(win, IPSTATATTR);
-	mvwprintw(win, 0, 31, "%10.2f", inrate);
-	mvwprintw(win, 0, 46, "%10.2f", outrate);
-	mvwprintw(win, 0, 61, "%10.2f", totalrate);
+	mvwprintw(win, 0, 1, "Protocol data rates:");
+	mvwprintw(win, 0, 36, "total");
+	mvwprintw(win, 0, 57, "in");
+	mvwprintw(win, 0, 76, "out");
 
-	memset(&(list->barptr->spans), 0, sizeof(struct serv_spans));
-	list->barptr->starttime = time(NULL);
-	*cleared = 0;
+	wattrset(win, IPSTATATTR);
+	rate_print(rate_get_average(&ple->rate), buf, sizeof(buf));
+	mvwprintw(win, 0, 21, "%s", buf);
+	rate_print(rate_get_average(&ple->rate_in), buf, sizeof(buf));
+	mvwprintw(win, 0, 42, "%s", buf);
+	rate_print(rate_get_average(&ple->rate_out), buf, sizeof(buf));
+	mvwprintw(win, 0, 61, "%s", buf);
+}
+
+static void update_serv_rates(struct portlist *list, unsigned long msecs)
+{
+	/* update rates of all portlistents */
+	for (struct portlistent *ple = list->head; ple != NULL; ple = ple->next_entry) {
+		rate_add_rate(&ple->rate, ple->span.proto_total.pc_bytes, msecs);
+		rate_add_rate(&ple->rate_in, ple->span.proto_in.pc_bytes, msecs);
+		rate_add_rate(&ple->rate_out, ple->span.proto_out.pc_bytes, msecs);
+
+		memset(&ple->span, 0, sizeof(ple->span));
+	}
 }
 
 /*
  * The TCP/UDP service monitor
  */
 
-void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
-	     time_t facilitytime, struct filterstate *ofilter)
+void servmon(char *ifname, time_t facilitytime)
 {
-	int logging = options->logging;
+	int logging = options.logging;
 	int pkt_result;
 
 	int keymode = 0;
 
 	unsigned int idx = 1;
 
-	unsigned int sport = 0;
-	unsigned int dport = 0;
+	in_port_t sport = 0;
+	in_port_t dport = 0;
 
 	struct timeval tv;
+	struct timeval tv_rate;
 	time_t starttime, startlog, timeint;
 	time_t now;
-	unsigned long long unow;
-	time_t updtime = 0;
-	unsigned long long updtime_usec = 0;
+	struct timeval updtime;
 
 	unsigned int tot_br;
 
@@ -818,11 +771,8 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 
 	struct portlist list;
 	struct portlistent *serv_tmp;
-	int statcleared = 0;
 
 	FILE *logfile = NULL;
-
-	struct promisc_states *promisc_list;
 
 	WINDOW *sortwin;
 	PANEL *sortpanel;
@@ -832,35 +782,22 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 
 	char sp_buf[10];
 
-	const int statx = 1;
-
 	int fd;
 
-	/*
-	 * Mark this facility
-	 */
-
-	if (!facility_active(TCPUDPIDFILE, ifname))
-		mark_facility(TCPUDPIDFILE, "TCP/UDP monitor", ifname);
-	else {
-		write_error("TCP/UDP monitor already running on %s", ifname);
-		return;
-	}
+	struct porttab *ports;
 
 	if (!dev_up(ifname)) {
 		err_iface_down();
-		unmark_facility(TCPUDPIDFILE, ifname);
 		return;
 	}
 
-	if ((first_active_facility()) && (options->promisc)) {
-		init_promisc_list(&promisc_list);
-		save_promisc_list(promisc_list);
-		srpromisc(1, promisc_list);
-		destroy_promisc_list(&promisc_list);
-	}
+	loadaddports(&ports);
 
-	adjust_instance_count(PROCCOUNTFILE, 1);
+	LIST_HEAD(promisc);
+	if (options.promisc) {
+		promisc_init(&promisc, ifname);
+		promisc_set_list(&promisc);
+	}
 
 	initportlist(&list);
 	statwin = newwin(1, COLS, LINES - 2, 0);
@@ -875,7 +812,7 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 	sortkeyhelp();
 	stdexitkeyhelp();
 
-	if (options->servnames)
+	if (options.servnames)
 		setservent(1);
 
 	if (logging) {
@@ -902,9 +839,10 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 			 "******** TCP/UDP service monitor started ********");
 	}
 
-	//isdnfd = -1;
 	exitloop = 0;
 	gettimeofday(&tv, NULL);
+	tv_rate = tv;
+	updtime = tv;
 	starttime = startlog = timeint = tv.tv_sec;
 
 	wattrset(statwin, IPSTATATTR);
@@ -927,7 +865,6 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 	while (!exitloop) {
 		gettimeofday(&tv, NULL);
 		now = tv.tv_sec;
-		unow = tv.tv_sec * 1000000ULL + tv.tv_usec;
 
 		if (now - timeint >= 5) {
 			printelapsedtime(starttime, now, LINES - 4, 20,
@@ -936,29 +873,32 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 		}
 		if (logging) {
 			check_rotate_flag(&logfile);
-			if ((now - startlog) >= options->logspan) {
+			if ((now - startlog) >= options.logspan) {
 				writeutslog(list.head, now - starttime,
-					    options->actmode, logfile);
+					    logfile);
 				startlog = now;
 			}
 		}
 
-		if (list.barptr != NULL) {
-			if ((now - list.barptr->starttime) >= 5) {
-				update_serv_rates(&list, statwin,
-						  options->actmode,
-						  &statcleared);
-			}
+		unsigned long rate_msecs = timeval_diff_msec(&tv, &tv_rate);
+		if (rate_msecs >= 1000) {
+			/* update all portlistent rates ... */
+			update_serv_rates(&list, rate_msecs);
+
+			/* ... and print the current one */
+			if (list.barptr != NULL)
+				print_serv_rates(list.barptr, statwin);
+
+			tv_rate = tv;
 		}
 
-		if (((options->updrate != 0)
-		     && (now - updtime >= options->updrate))
-		    || ((options->updrate == 0)
-			&& (unow - updtime_usec >= DEFAULT_UPDATE_DELAY))) {
+		if (screen_update_needed(&tv, &updtime)) {
+			refresh_serv_screen(&list, idx);
+
 			update_panels();
 			doupdate();
-			updtime = now;
-			updtime_usec = unow;
+
+			updtime = tv;
 		}
 
 		if ((facilitytime != 0)
@@ -982,12 +922,7 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 					break;
 
 				serv_tmp = list.barptr;
-				set_barptr((void *) &(list.barptr),
-					   list.barptr->prev_entry,
-					   &(list.barptr->prev_entry->starttime),
-					   &(list.barptr->prev_entry->spans),
-					   sizeof(struct serv_spans),
-					   statwin, &statcleared, statx);
+				list.barptr = list.barptr->prev_entry;
 				printportent(&list, serv_tmp, idx);
 
 				if (list.baridx == 1)
@@ -996,6 +931,8 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 					list.baridx--;
 
 				printportent(&list, list.barptr, idx);
+
+				print_serv_rates(list.barptr, statwin);
 				break;
 			case KEY_DOWN:
 				if (!list.barptr
@@ -1003,12 +940,7 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 					break;
 
 				serv_tmp = list.barptr;
-				set_barptr((void *) &(list.barptr),
-					   list.barptr->next_entry,
-					   &(list.barptr->next_entry->starttime),
-					   &(list.barptr->next_entry->spans),
-					   sizeof(struct serv_spans),
-					   statwin, &statcleared, statx);
+				list.barptr = list.barptr->next_entry;
 				printportent(&list,serv_tmp, idx);
 
 				if (list.baridx == list.imaxy)
@@ -1017,6 +949,8 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 					list.baridx++;
 
 				printportent(&list, list.barptr, idx);
+
+				print_serv_rates(list.barptr, statwin);
 				break;
 			case KEY_PPAGE:
 			case '-':
@@ -1025,15 +959,12 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 
 				pageservwin(&list, SCROLLDOWN, &idx);
 
-				set_barptr((void *) &(list.barptr),
-					   list.lastvisible,
-					   &(list.lastvisible->starttime),
-					   &(list.lastvisible->spans),
-					   sizeof(struct serv_spans),
-					   statwin, &statcleared, statx);
+				list.barptr = list.lastvisible;
 				list.baridx = list.lastvisible->idx - idx + 1;
 
 				refresh_serv_screen(&list, idx);
+
+				print_serv_rates(list.barptr, statwin);
 				break;
 			case KEY_NPAGE:
 			case ' ':
@@ -1042,16 +973,12 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 
 				pageservwin(&list, SCROLLUP, &idx);
 
-				set_barptr((void *) &(list.barptr),
-					   list.firstvisible,
-					   &(list.firstvisible->starttime),
-					   &(list.firstvisible->spans),
-					   sizeof(struct serv_spans),
-					   statwin, &statcleared, statx);
+				list.barptr = list.firstvisible;
 				list.baridx = 1;
 
 				refresh_serv_screen(&list, idx);
 
+				print_serv_rates(list.barptr, statwin);
 				break;
 			case 12:
 			case 'l':
@@ -1078,15 +1005,9 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 			sortportents(&list, &idx, ch);
 			keymode = 0;
 			if (list.barptr != NULL) {
-				set_barptr((void *) &(list.barptr),
-					   list.firstvisible,
-					   &(list.firstvisible->
-					     starttime),
-					   &(list.firstvisible->spans),
-					   sizeof(struct serv_spans),
-					   statwin, &statcleared,
-					   statx);
+				list.barptr = list.firstvisible;
 				list.baridx = 1;
+				print_serv_rates(list.barptr, statwin);
 			}
 			refresh_serv_screen(&list, idx);
 			update_panels();
@@ -1097,49 +1018,42 @@ void servmon(char *ifname, struct porttab *ports, const struct OPTIONS *options,
 		if (pkt.pkt_len <= 0)
 			continue;
 
-		unsigned short ipproto;
-		unsigned short iplen;
-
 		pkt_result =
 			packet_process(&pkt, &tot_br, &sport, &dport,
-				      ofilter,
 				      MATCH_OPPOSITE_USECONFIG,
-				      options->v6inv4asv6);
+				      options.v6inv4asv6);
 
 		if (pkt_result != PACKET_OK)
 			continue;
 
+		unsigned short iplen;
 		switch (pkt.pkt_protocol) {
 		case ETH_P_IP:
-			ipproto = ((struct iphdr *) pkt.pkt_payload)->protocol;
-			iplen =	ntohs(((struct iphdr *) pkt.pkt_payload)->tot_len);
+			iplen =	ntohs(pkt.iphdr->tot_len);
 			break;
 		case ETH_P_IPV6:
-			ipproto = ((struct ip6_hdr *) pkt.pkt_payload)->ip6_nxt;	/* FIXME: extension headers ??? */
-			iplen = ntohs(((struct ip6_hdr *) pkt.pkt_payload)->ip6_plen) + 40;
+			iplen = ntohs(pkt.ip6_hdr->ip6_plen) + 40;
 			break;
 		default:
 			/* unknown link protocol */
 			continue;
 		}
-		switch (ipproto) {
+		__u8 ip_protocol = pkt_ip_protocol(&pkt);
+
+		switch (ip_protocol) {
 		case IPPROTO_TCP:
 		case IPPROTO_UDP:
-			updateportent(&list, ipproto, ntohs(sport),
-				      ntohs(dport), iplen, idx, ports,
-				      options->servnames);
+			updateportent(&list, ip_protocol, sport,
+				      dport, iplen, ports);
 			break;
 		default:
 			/* unknown L4 protocol */
 			continue;
 		}
 		if ((list.barptr == NULL) && (list.head != NULL)) {
-			set_barptr((void *) &(list.barptr), list.head,
-				   &(list.head->starttime),
-				   &(list.head->spans),
-				   sizeof(struct serv_spans), statwin,
-				   &statcleared, statx);
+			list.barptr = list.head;
 			list.baridx = 1;
+			print_serv_rates(list.barptr, statwin);
 		}
 	}
 
@@ -1148,22 +1062,18 @@ err_close:
 err:
 	if (logging) {
 		signal(SIGUSR1, SIG_DFL);
-		writeutslog(list.head, time(NULL) - starttime,
-			    options->actmode, logfile);
+		writeutslog(list.head, time(NULL) - starttime, logfile);
 		writelog(logging, logfile,
 			 "******** TCP/UDP service monitor stopped ********");
 		fclose(logfile);
 	}
-	if (options->servnames)
+	if (options.servnames)
 		endservent();
 
-	if ((options->promisc) && (is_last_instance())) {
-		load_promisc_list(&promisc_list);
-		srpromisc(0, promisc_list);
-		destroy_promisc_list(&promisc_list);
+	if (options.promisc) {
+		promisc_restore_list(&promisc);
+		promisc_destroy(&promisc);
 	}
-
-	adjust_instance_count(PROCCOUNTFILE, -1);
 
 	del_panel(list.panel);
 	delwin(list.win);
@@ -1171,15 +1081,15 @@ err:
 	delwin(list.borderwin);
 	del_panel(statpanel);
 	delwin(statwin);
-	unmark_facility(TCPUDPIDFILE, ifname);
 	update_panels();
 	doupdate();
 	destroyportlist(&list);
+	destroyporttab(ports);
 	pkt_cleanup();
 	strcpy(current_logfile, "");
 }
 
-static void portdlg(unsigned int *port_min, unsigned int *port_max,
+static void portdlg(in_port_t *port_min, in_port_t *port_max,
 		    int *aborted)
 {
 	WINDOW *bw;
@@ -1305,7 +1215,7 @@ static int dup_portentry(struct porttab *table, unsigned int min,
 
 void addmoreports(struct porttab **table)
 {
-	unsigned int port_min, port_max;
+	in_port_t port_min = 0, port_max = 0;
 	int aborted;
 	struct porttab *ptmp;
 
@@ -1439,11 +1349,11 @@ static void delport(struct porttab **table, struct porttab *ptmp)
 void removeaport(struct porttab **table)
 {
 	int aborted;
-	struct porttab *ptmp;
+	struct porttab *ptmp = NULL;
 
 	selectport(table, &ptmp, &aborted);
 
-	if (!aborted) {
+	if (!aborted && ptmp) {
 		delport(table, ptmp);
 		saveportlist(*table);
 	}

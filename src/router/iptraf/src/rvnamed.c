@@ -42,6 +42,7 @@ socket protocol.
 #include <sys/wait.h>
 #include "rvnamed.h"
 #include "dirs.h"
+#include "sockaddr.h"
 
 #define NUM_CACHE_ENTRIES 2048
 #define TIME_TARGET_MAX 30
@@ -49,8 +50,7 @@ socket protocol.
 #define __unused __attribute__((unused))
 
 struct hosts {
-	unsigned long addr;
-	uint8_t addr6[16];
+	struct sockaddr_storage addr;
 	char fqdn[45];
 	int ready;
 };
@@ -88,22 +88,14 @@ static void process_rvn_packet(struct rvn *rvnpacket)
 
 	ccfd = socket(PF_UNIX, SOCK_DGRAM, 0);
 
-	if (rvnpacket->saddr.s_addr != 0)
-		he = gethostbyaddr((char *) &(rvnpacket->saddr),
-				   sizeof(struct in_addr), AF_INET);
-	else
-		he = gethostbyaddr((char *) &(rvnpacket->s6addr),
-				   sizeof(struct in6_addr), AF_INET6);
-
+	he = sockaddr_gethostbyaddr(&rvnpacket->addr);
 	if (he == NULL) {
-		if (rvnpacket->saddr.s_addr != 0)
-			strcpy(rvnpacket->fqdn, inet_ntoa(rvnpacket->saddr));
-		else
-			inet_ntop(AF_INET6, &(rvnpacket->s6addr),
-				  rvnpacket->fqdn, sizeof(rvnpacket->fqdn));
+		sockaddr_ntop(&rvnpacket->addr, rvnpacket->fqdn,
+			      sizeof(rvnpacket->fqdn));
 	} else {
-		memset(rvnpacket->fqdn, 0, 45);
-		strncpy(rvnpacket->fqdn, he->h_name, 44);
+		memset(rvnpacket->fqdn, 0, sizeof(rvnpacket->fqdn));
+		strncpy(rvnpacket->fqdn, he->h_name,
+			sizeof(rvnpacket->fqdn) - 1);
 	}
 
 	ccsa.sun_family = AF_UNIX;
@@ -122,21 +114,10 @@ static void process_rvn_packet(struct rvn *rvnpacket)
 static int name_resolved(struct rvn *rvnpacket, struct hosts *hostlist,
 			 unsigned int lastfree)
 {
-	unsigned int i = 0;
-
-	while (i != lastfree) {
-		if (rvnpacket->saddr.s_addr != 0) {
-			if ((rvnpacket->saddr.s_addr == hostlist[i].addr)
-			    && (hostlist[i].ready == RESOLVED))
-				return i;
-		} else {
-			if (!memcmp
-			    (rvnpacket->s6addr.s6_addr, hostlist[i].addr6,
-			     sizeof(hostlist[i].addr6)))
-				return i;
-		}
-		i++;
-	}
+	for (unsigned int i = 0; i != lastfree; i++)
+		if ((hostlist[i].ready == RESOLVED)
+		    && sockaddr_is_equal(&rvnpacket->addr, &hostlist[i].addr))
+			return i;
 
 	return -1;
 }
@@ -149,17 +130,9 @@ static int name_resolved(struct rvn *rvnpacket, struct hosts *hostlist,
 static int addrstat(struct rvn *rvnpacket, struct hosts *hostlist,
 		    unsigned int lastfree)
 {
-	unsigned int i = 0;
-
-	while (i != lastfree) {
-		if (rvnpacket->saddr.s_addr == hostlist[i].addr)
-			break;
-
-		i++;
-	}
-
-	if (i != lastfree)
-		return hostlist[i].ready;
+	for (unsigned int i = 0; i != lastfree; i++)
+		if (sockaddr_is_equal(&rvnpacket->addr, &hostlist[i].addr))
+			return hostlist[i].ready;
 
 	return NOTRESOLVED;
 }
@@ -208,7 +181,6 @@ int main(void)
 
 	/* Daemonization Sequence */
 
-#ifndef DEBUG
 	switch (fork()) {
 	case -1:
 		exit(1);
@@ -222,7 +194,6 @@ int main(void)
 	int i = chdir("/");
 
 	(void) i;
-#endif
 
 	signal(SIGCHLD, childreap);
 
@@ -309,12 +280,7 @@ int main(void)
 				hi = 0;
 
 				while (hi <= lastfree) {
-					if ((hostlist[hi].addr ==
-					     rvnpacket.saddr.s_addr)
-					    && !memcmp(rvnpacket.s6addr.s6_addr,
-						       hostlist[hi].addr6,
-						       sizeof(hostlist[hi].
-							      addr6)))
+					if (sockaddr_is_equal(&hostlist[hi].addr, &rvnpacket.addr))
 						break;
 					hi++;
 				}
@@ -327,13 +293,9 @@ int main(void)
 					if (hostindex == NUM_CACHE_ENTRIES)
 						hostindex = 0;
 
-					hostlist[hi].addr =
-					    rvnpacket.saddr.s_addr;
-					memcpy(hostlist[hi].addr6,
-					       rvnpacket.s6addr.s6_addr,
-					       sizeof(hostlist[hi].addr6));
+					sockaddr_copy(&hostlist[hi].addr, &rvnpacket.addr);
 				}
-				strncpy(hostlist[hi].fqdn, rvnpacket.fqdn, 44);
+				strncpy(hostlist[hi].fqdn, rvnpacket.fqdn, sizeof(hostlist[hi].fqdn) - 1);
 
 				hostlist[hi].ready = RESOLVED;
 			}
@@ -358,7 +320,6 @@ int main(void)
 					       strlen(fromaddr.sun_path));
 					break;
 				case RVN_QUIT:
-#ifndef DEBUG
 					writervnlog(logfile,
 						    "Received quit instruction");
 					writervnlog(logfile, "Closing sockets");
@@ -376,17 +337,16 @@ int main(void)
 						    "******** rvnamed terminated ********");
 					fclose(logfile);
 					exit(0);
-#endif
 				case RVN_REQUEST:
 					readyidx =
 					    name_resolved(&rvnpacket, hostlist,
 							  lastfree);
 					if (readyidx >= 0) {
 						rvnpacket.type = RVN_REPLY;
-						memset(rvnpacket.fqdn, 0, 45);
+						memset(rvnpacket.fqdn, 0, sizeof(rvnpacket.fqdn));
 						strncpy(rvnpacket.fqdn,
 							hostlist[readyidx].fqdn,
-							44);
+							sizeof(rvnpacket.fqdn)-1);
 						rvnpacket.ready = RESOLVED;
 
 						br = sendto(ifd, &rvnpacket,
@@ -432,26 +392,8 @@ int main(void)
 								 * address is RESOLVING.
 								 *
 								 */
-								hostlist
-								    [hostindex].
-								    addr =
-								    rvnpacket.
-								    saddr.
-								    s_addr;
-								memcpy(hostlist
-								       [hostindex].
-								       addr6,
-								       rvnpacket.
-								       s6addr.
-								       s6_addr,
-								       sizeof
-								       (hostlist
-									[hostindex].
-									addr6));
-								hostlist
-								    [hostindex].
-								    ready =
-								    RESOLVING;
+								sockaddr_copy(&hostlist[hostindex].addr, &rvnpacket.addr);
+								hostlist[hostindex].ready = RESOLVING;
 
 								maxlogged = 0;
 								fr = fork();
@@ -514,21 +456,7 @@ int main(void)
 							}
 						}
 						rvnpacket.type = RVN_REPLY;
-						memset(rvnpacket.fqdn, 0, 45);
-						if (rvnpacket.saddr.s_addr != 0)
-							strcpy(rvnpacket.fqdn,
-							       inet_ntoa
-							       (rvnpacket.
-								saddr));
-						else
-							inet_ntop(AF_INET6,
-								  &rvnpacket.
-								  s6addr,
-								  rvnpacket.
-								  fqdn,
-								  sizeof
-								  (rvnpacket.
-								   fqdn));
+						sockaddr_ntop(&rvnpacket.addr, rvnpacket.fqdn, sizeof(rvnpacket.fqdn));
 						rvnpacket.ready = RESOLVING;
 
 						br = sendto(ifd, &rvnpacket,

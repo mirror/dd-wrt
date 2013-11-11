@@ -38,10 +38,10 @@ struct hostparams {
 	char d_fqdn[45];
 	char s_mask[20];
 	char d_mask[20];
-	unsigned int sport1;
-	unsigned int sport2;
-	unsigned int dport1;
-	unsigned int dport2;
+	in_port_t sport1;
+	in_port_t sport2;
+	in_port_t dport1;
+	in_port_t dport2;
 	int filters[256];
 	char protolist[70];
 	char reverse;

@@ -16,21 +16,26 @@ packet.c - routines to open the raw socket, read socket data and
 #include "fltdefs.h"
 #include "fltselect.h"
 #include "ipfilter.h"
-#include "isdntab.h"
 #include "ifaces.h"
 #include "packet.h"
 #include "ipfrag.h"
 
-/* Reimplement again
- * Removed PPP, LINK_ISDN
- */
+#define pkt_cast_hdrp_l2off_t(hdr, pkt, off)			\
+	do {							\
+		pkt->hdr = (struct hdr *) (pkt->pkt_buf + off);	\
+	} while (0)
 
-extern int daemonized;
+#define pkt_cast_hdrp_l2(hdr, pkt)				\
+	pkt_cast_hdrp_l2off_t(hdr, pkt, 0)
 
-/*
-int isdnfd;
-struct isdntab isdntable;
-*/
+
+#define pkt_cast_hdrp_l3off_t(hdr, pkt, off)				\
+	do {								\
+		pkt->hdr = (struct hdr *) (pkt->pkt_payload + off);	\
+	} while (0)
+
+#define pkt_cast_hdrp_l3(hdr, pkt)					\
+		pkt_cast_hdrp_l3off_t(hdr, pkt, 0)
 
 /* code taken from http://www.faqs.org/rfcs/rfc1071.html. See section 4.1 "C"  */
 static int in_cksum(u_short * addr, int len)
@@ -58,16 +63,10 @@ static int packet_adjust(struct pkt_hdr *pkt)
 	switch (pkt->pkt_hatype) {
 	case ARPHRD_ETHER:
 	case ARPHRD_LOOPBACK:
+		pkt_cast_hdrp_l2(ethhdr, pkt);
 		pkt->pkt_payload = pkt->pkt_buf;
 		pkt->pkt_payload += ETH_HLEN;
 		pkt->pkt_len -= ETH_HLEN;
-		if (pkt->pkt_protocol == ETH_P_8021Q) {
-			/* strip 0x8100 802.1Q VLAN Extended Header  */
-			pkt->pkt_payload += 4;
-			pkt->pkt_len -= 4;
-			/* update network protocol */
-			pkt->pkt_protocol = ntohs(*((unsigned short *) pkt->pkt_payload));
-		}
 		break;
 	case ARPHRD_SLIP:
 	case ARPHRD_CSLIP:
@@ -87,6 +86,7 @@ static int packet_adjust(struct pkt_hdr *pkt)
 		pkt->pkt_len -= 4;
 		break;
 	case ARPHRD_FDDI:
+		pkt_cast_hdrp_l2(fddihdr, pkt);
 		pkt->pkt_payload = pkt->pkt_buf;
 		pkt->pkt_payload += sizeof(struct fddihdr);
 		pkt->pkt_len -= sizeof(struct fddihdr);
@@ -102,6 +102,26 @@ static int packet_adjust(struct pkt_hdr *pkt)
 	return retval;
 }
 
+/* initialize all layer3 protocol pointers (we need to initialize all
+ * of them, because of case we change pkt->pkt_protocol) */
+static void packet_set_l3_hdrp(struct pkt_hdr *pkt)
+{
+	switch (pkt->pkt_protocol) {
+	case ETH_P_IP:
+		pkt_cast_hdrp_l3(iphdr, pkt);
+		pkt->ip6_hdr = NULL;
+		break;
+	case ETH_P_IPV6:
+		pkt->iphdr = NULL;
+		pkt_cast_hdrp_l3(ip6_hdr, pkt);
+		break;
+	default:
+		pkt->iphdr = NULL;
+		pkt->ip6_hdr = NULL;
+		break;
+	}
+}
+
 /* IPTraf input function; reads both keystrokes and network packets. */
 int packet_get(int fd, struct pkt_hdr *pkt, int *ch, WINDOW *win)
 {
@@ -115,24 +135,33 @@ int packet_get(int fd, struct pkt_hdr *pkt, int *ch, WINDOW *win)
 	nfds++;
 
 	/* Monitor stdin only if in interactive, not daemon mode. */
-	if (!daemonized) {
+	if (ch && !daemonized) {
 		pfds[1].fd = 0;
 		pfds[1].events = POLLIN;
 		nfds++;
 	}
 	do {
-		ss = poll(pfds, nfds, DEFAULT_UPDATE_DELAY / 1000);
+		ss = poll(pfds, nfds, DEFAULT_UPDATE_DELAY);
 	} while ((ss == -1) && (errno == EINTR));
 
-	pkt->pkt_len = 0;	/* signalize we have no packet prepared */
+	PACKET_INIT_STRUCT(pkt);
 	if ((ss > 0) && (pfds[0].revents & POLLIN) != 0) {
 		struct sockaddr_ll from;
-		socklen_t fromlen = sizeof(struct sockaddr_ll);
-		ssize_t len;
+		struct iovec iov;
+		struct msghdr msg;
 
-		len = recvfrom(fd, pkt->pkt_buf, pkt->pkt_bufsize,
-			       MSG_TRUNC | MSG_DONTWAIT,
-			       (struct sockaddr *) &from, &fromlen);
+		iov.iov_len = pkt->pkt_bufsize;
+		iov.iov_base = pkt->pkt_buf;
+
+		msg.msg_name = &from;
+		msg.msg_namelen = sizeof(from);
+		msg.msg_iov = &iov;
+		msg.msg_iovlen = 1;
+		msg.msg_control = NULL;
+		msg.msg_controllen = 0;
+		msg.msg_flags = 0;
+
+		ssize_t len = recvmsg(fd, &msg, MSG_TRUNC | MSG_DONTWAIT);
 		if (len > 0) {
 			pkt->pkt_len = len;
 			pkt->pkt_caplen = len;
@@ -147,35 +176,31 @@ int packet_get(int fd, struct pkt_hdr *pkt, int *ch, WINDOW *win)
 			ss = len;
 	}
 
-	*ch = ERR;	/* signalize we have no key ready */
-	if (!daemonized && (ss > 0) && ((pfds[1].revents & POLLIN) != 0))
-		*ch = wgetch(win);
+	if (ch) {
+		*ch = ERR;	/* signalize we have no key ready */
+		if (!daemonized && (ss > 0) && ((pfds[1].revents & POLLIN) != 0))
+			*ch = wgetch(win);
+	}
 
 	return ss;
 }
 
 int packet_process(struct pkt_hdr *pkt, unsigned int *total_br,
-		   unsigned int *sport, unsigned int *dport,
-		   struct filterstate *filter, int match_opposite,
-		   int v6inv4asv6)
+		   in_port_t *sport, in_port_t *dport,
+		   int match_opposite, int v6inv4asv6)
 {
 	/* move packet pointer (pkt->pkt_payload) past data link header */
 	if (packet_adjust(pkt) != 0)
 		return INVALID_PACKET;
 
-again:	if (pkt->pkt_protocol == ETH_P_IP) {
-		struct iphdr *ip;
+again:
+	packet_set_l3_hdrp(pkt);
+	switch (pkt->pkt_protocol) {
+	case ETH_P_IP: {
+		struct iphdr *ip = pkt->iphdr;
 		int hdr_check;
 		register int ip_checksum;
-		register int iphlen;
-		unsigned int f_sport = 0, f_dport = 0;
-
-		/*
-		 * At this point, we're now processing IP packets.  Start by getting
-		 * IP header and length.
-		 */
-		ip = (struct iphdr *) (pkt->pkt_payload);
-		iphlen = ip->ihl * 4;
+		in_port_t f_sport = 0, f_dport = 0;
 
 		/*
 		 * Compute and verify IP header checksum.
@@ -183,14 +208,14 @@ again:	if (pkt->pkt_protocol == ETH_P_IP) {
 
 		ip_checksum = ip->check;
 		ip->check = 0;
-		hdr_check = in_cksum((u_short *) ip, iphlen);
+		hdr_check = in_cksum((u_short *) pkt->iphdr, pkt_iph_len(pkt));
 
 		if ((hdr_check != ip_checksum))
 			return CHECKSUM_ERROR;
 
 		if ((ip->protocol == IPPROTO_TCP || ip->protocol == IPPROTO_UDP)
 		    && (sport != NULL && dport != NULL)) {
-			unsigned int sport_tmp, dport_tmp;
+			in_port_t sport_tmp, dport_tmp;
 
 			/*
 			 * Process TCP/UDP fragments
@@ -217,18 +242,18 @@ again:	if (pkt->pkt_protocol == ETH_P_IP) {
 			} else {
 				struct tcphdr *tcp;
 				struct udphdr *udp;
-				char *ip_payload = (char *) ip + iphlen;
+				char *ip_payload = (char *) ip + pkt_iph_len(pkt);
 
 				switch (ip->protocol) {
 				case IPPROTO_TCP:
 					tcp = (struct tcphdr *) ip_payload;
-					sport_tmp = tcp->source;
-					dport_tmp = tcp->dest;
+					sport_tmp = ntohs(tcp->source);
+					dport_tmp = ntohs(tcp->dest);
 					break;
 				case IPPROTO_UDP:
 					udp = (struct udphdr *) ip_payload;
-					sport_tmp = udp->source;
-					dport_tmp = udp->dest;
+					sport_tmp = ntohs(udp->source);
+					dport_tmp = ntohs(udp->dest);
 					break;
 				default:
 					sport_tmp = 0;
@@ -246,46 +271,44 @@ again:	if (pkt->pkt_protocol == ETH_P_IP) {
 			if (dport != NULL)
 				*dport = dport_tmp;
 
-			/*
-			 * Process IP filter
-			 */
-			f_sport = ntohs(sport_tmp);
-			f_dport = ntohs(dport_tmp);
+			f_sport = sport_tmp;
+			f_dport = dport_tmp;
 		}
-		if ((filter->filtercode != 0)
+		/* Process IP filter */
+		if ((ofilter.filtercode != 0)
 		    &&
 		    (!ipfilter
 		     (ip->saddr, ip->daddr, f_sport, f_dport, ip->protocol,
-		      match_opposite, &(filter->fl))))
+		      match_opposite)))
 			return PACKET_FILTERED;
 		if (v6inv4asv6 && (ip->protocol == IPPROTO_IPV6)) {
 			pkt->pkt_protocol = ETH_P_IPV6;
-			pkt->pkt_payload += iphlen;
-			pkt->pkt_len -= iphlen;
+			pkt->pkt_payload += pkt_iph_len(pkt);
+			pkt->pkt_len -= pkt_iph_len(pkt);
 			goto again;
 		}
-		return PACKET_OK;
-	} else if (pkt->pkt_protocol == ETH_P_IPV6) {
+		break; }
+	case ETH_P_IPV6: {
 		struct tcphdr *tcp;
 		struct udphdr *udp;
-		struct ip6_hdr *ip6 = (struct ip6_hdr *) pkt->pkt_payload;
-		char *ip_payload = (char *) ip6 + 40;
+		struct ip6_hdr *ip6 = pkt->ip6_hdr;
+		char *ip_payload = (char *) ip6 + pkt_iph_len(pkt);
 
 		//TODO: Filter packets
-		switch (ip6->ip6_nxt) {	/* FIXME: extension headers ??? */
+		switch (pkt_ip_protocol(pkt)) {
 		case IPPROTO_TCP:
 			tcp = (struct tcphdr *) ip_payload;
 			if (sport)
-				*sport = tcp->source;
+				*sport = ntohs(tcp->source);
 			if (dport)
-				*dport = tcp->dest;
+				*dport = ntohs(tcp->dest);
 			break;
 		case IPPROTO_UDP:
 			udp = (struct udphdr *) ip_payload;
 			if (sport)
-				*sport = udp->source;
+				*sport = ntohs(udp->source);
 			if (dport)
-				*dport = udp->dest;
+				*dport = ntohs(udp->dest);
 			break;
 		default:
 			if (sport)
@@ -294,9 +317,21 @@ again:	if (pkt->pkt_protocol == ETH_P_IP) {
 				*dport = 0;
 			break;
 		}
-	} else {
+		break; }
+	case ETH_P_8021Q:
+	case ETH_P_QINQ1:	/* ETH_P_QINQx are not officially */
+	case ETH_P_QINQ2:	/* registered IDs */
+	case ETH_P_QINQ3:
+	case ETH_P_8021AD:
+		/* strip 802.1Q/QinQ/802.1ad VLAN header */
+		pkt->pkt_payload += 4;
+		pkt->pkt_len -= 4;
+		/* update network protocol */
+		pkt->pkt_protocol = ntohs(*((unsigned short *) pkt->pkt_payload));
+		goto again;
+	default:
 		/* not IPv4 and not IPv6: apply non-IP packet filter */
-		if (!nonipfilter(filter, pkt->pkt_protocol)) {
+		if (!nonipfilter(pkt->pkt_protocol)) {
 			return PACKET_FILTERED;
 		}
 	}
@@ -305,8 +340,5 @@ again:	if (pkt->pkt_protocol == ETH_P_IP) {
 
 void pkt_cleanup(void)
 {
-	// close(isdnfd);
-	// isdnfd = -1;
 	destroyfraglist();
-	// destroy_isdn_table(&isdntable);
 }

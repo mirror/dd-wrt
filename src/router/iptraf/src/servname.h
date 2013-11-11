@@ -7,7 +7,6 @@ servname.h - function prototype for service lookup
 
 ***/
 
-void servlook(int servnames, unsigned int port, unsigned int protocol,
-	      char *target, int maxlen);
+void servlook(in_port_t port, unsigned int protocol, char *target, int maxlen);
 
 #endif	/* IPTRAF_NG_SERVNAME_H */

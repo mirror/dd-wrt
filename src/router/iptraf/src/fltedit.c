@@ -104,7 +104,6 @@ void savefilter(char *filename, struct filterlist *fl)
 
 		if (bw < 0) {
 			tui_error(ANYKEY_MSG, "Unable to save filter changes");
-			clear_flt_tag();
 			return;
 		}
 		fe = fe->next_entry;
@@ -505,19 +504,11 @@ void definefilter(int *aborted)
 	int pfd;
 	int bw;
 
-	/*
-	 * Lock facility
-	 */
-
-	if (!mark_filter_change())
-		return;
-
 	get_filter_description(ffile.desc, aborted, "");
 
-	if (*aborted) {
-		clear_flt_tag();
+	if (*aborted)
 		return;
-	}
+
 	genname(time(NULL), fntemp);
 
 	pfd =
@@ -526,7 +517,6 @@ void definefilter(int *aborted)
 	if (pfd < 0) {
 		tui_error(ANYKEY_MSG, "Cannot create filter data file");
 		*aborted = 1;
-		clear_flt_tag();
 		return;
 	}
 
@@ -537,7 +527,6 @@ void definefilter(int *aborted)
 
 	if (pfd < 0) {
 		listfileerr(1);
-		clear_flt_tag();
 		return;
 	}
 	strcpy(ffile.filename, fntemp);
@@ -551,8 +540,6 @@ void definefilter(int *aborted)
 	modify_host_parameters(&fl);
 	savefilter(get_path(T_WORKDIR, fntemp), &fl);
 	destroyfilter(&fl);
-
-	clear_flt_tag();
 }
 
 /*
@@ -566,21 +553,15 @@ void editfilter(int *aborted)
 	struct ffnode *ffile;
 	struct filterfileent *ffe;
 
-	if (!mark_filter_change())
-		return;
-
 	if (loadfilterlist(&flist) == 1) {
 		listfileerr(1);
 		destroyfilterlist(flist);
-		clear_flt_tag();
 		return;
 	}
 	pickafilter(flist, &ffile, aborted);
 
-	clear_flt_tag();
 	if ((*aborted)) {
 		destroyfilterlist(flist);
-		clear_flt_tag();
 		return;
 	}
 	ffe = &(ffile->ffe);
@@ -589,7 +570,6 @@ void editfilter(int *aborted)
 
 	if (*aborted) {
 		destroyfilterlist(flist);
-		clear_flt_tag();
 		return;
 	}
 	strncpy(filename, get_path(T_WORKDIR, ffe->filename),
@@ -614,22 +594,17 @@ void delfilter(int *aborted)
 	struct ffnode *fltfile;
 	struct ffnode *fltlist;
 
-	if (!mark_filter_change())
-		return;
-
 	if (loadfilterlist(&fltlist) == 1) {
 		*aborted = 1;
 		listfileerr(1);
 		destroyfilterlist(fltlist);
-		clear_flt_tag();
 		return;
 	}
 	pickafilter(fltlist, &fltfile, aborted);
 
-	if (*aborted) {
-		clear_flt_tag();
+	if (*aborted)
 		return;
-	}
+
 	unlink(get_path(T_WORKDIR, fltfile->ffe.filename));
 
 	if (fltfile->prev_entry == NULL) {
@@ -646,6 +621,5 @@ void delfilter(int *aborted)
 	free(fltfile);
 
 	save_filterlist(fltlist);
-	clear_flt_tag();
 	*aborted = 0;
 }
