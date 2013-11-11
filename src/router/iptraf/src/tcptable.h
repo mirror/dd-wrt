@@ -7,7 +7,18 @@
 
 ***/
 
-#define max(a, b) (( a > b) ? a : b)
+#include "rate.h"
+
+/*
+ * max() macros that also do
+ * strict type-checking.. See the
+ * "unnecessary" pointer comparison.
+ */
+#define max(x, y) ({				\
+	typeof(x) _max1 = (x);			\
+	typeof(y) _max2 = (y);			\
+	(void) (&_max1 == &_max2);		\
+	_max1 > _max2 ? _max1 : _max2; })
 
 #define FLAG_SYN	1
 #define FLAG_RST	2
@@ -20,16 +31,12 @@
 #define ENTRIES_IN_HASH_TABLE	1543
 
 struct tcptableent {
-	struct in_addr saddr;
-	struct in_addr daddr;
-	struct in6_addr s6addr;
-	struct in6_addr d6addr;
+	struct sockaddr_storage saddr;
+	struct sockaddr_storage daddr;
 	char s_fqdn[45];	/* fully-qualified domain names */
 	char d_fqdn[45];
 	int s_fstat;
 	int d_fstat;
-	unsigned int sport;
-	unsigned int dport;
 	char smacaddr[18];
 	char s_sname[11];	/* Service names, maxlen=10 */
 	char d_sname[11];
@@ -49,6 +56,7 @@ struct tcptableent {
 	int inclosed;
 	int half_bracket;
 	unsigned long spanbr;
+	struct rate rate;
 	time_t lastupdate;
 	time_t starttime;
 	time_t conn_starttime;
@@ -87,6 +95,7 @@ struct tcptable {
 	unsigned int count;
 	unsigned int bmaxy;	/* number of lines of the border window */
 	unsigned int imaxy;	/* number of lines inside the border */
+	int ifnamew;		/* interface name width to display */
 	WINDOW *tcpscreen;
 	PANEL *tcppanel;
 	WINDOW *borderwin;
@@ -95,23 +104,23 @@ struct tcptable {
 
 void init_tcp_table(struct tcptable *table);
 
-struct tcptableent *addentry(struct tcptable *table, unsigned long int saddr,
-			     unsigned long int daddr, uint8_t * s6addr,
-			     uint8_t * d6addr, unsigned int sport,
-			     unsigned int dport, int protocol, char *ifname,
-			     int *rev_lookup, int rvnamedon, int servnames);
+struct tcptableent *addentry(struct tcptable *table,
+			     struct sockaddr_storage *saddr,
+			     struct sockaddr_storage *daddr,
+			     int protocol, char *ifname,
+			     int *rev_lookup, int rvnamedon);
 
-struct tcptableent *in_table(struct tcptable *table, unsigned long saddr,
-			     unsigned long daddr, uint8_t * s6addr,
-			     uint8_t * d6addr, unsigned int sport,
-			     unsigned int dport, char *ifname, int logging,
-			     FILE * logfile, struct OPTIONS *opts);
+struct tcptableent *in_table(struct tcptable *table,
+			     struct sockaddr_storage *saddr,
+			     struct sockaddr_storage *daddr,
+			     char *ifname, int logging,
+			     FILE *logfile, time_t timeout);
 
 void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 		 struct tcphdr *transpacket, char *packet, int linkproto,
 		 unsigned long packetlength, unsigned int bcount,
 		 unsigned int fragofs, int logging, int *revlook, int rvnfd,
-		 struct OPTIONS *opts, FILE * logfile);
+		 FILE *logfile);
 
 void addtoclosedlist(struct tcptable *table, struct tcptableent *tableentry);
 
@@ -126,13 +135,12 @@ void refreshtcpwin(struct tcptable *table, unsigned int idx, int mode);
 void destroytcptable(struct tcptable *table);
 
 void flushclosedentries(struct tcptable *table, unsigned long *screen_idx,
-			int logging, FILE * logfile, struct OPTIONS *opts);
+			int logging, FILE *logfile);
 
-void write_timeout_log(int logging, FILE * logfile, struct tcptableent *tcpnode,
-		       struct OPTIONS *opts);
+void write_timeout_log(int logging, FILE *logfile, struct tcptableent *tcpnode);
 
 void writetcplog(int logging, FILE *fd, struct tcptableent *entry,
-		 unsigned int pktlen, int mac, char *message);
+		 unsigned int pktlen, char *message);
 
 void write_tcp_unclosed(int logging, FILE *fd, struct tcptable *table);
 

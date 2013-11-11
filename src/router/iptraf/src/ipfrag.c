@@ -153,8 +153,8 @@ void destroyfraglist(void)
  * monitor or 0 for an error condition.
  */
 
-unsigned int processfragment(struct iphdr *packet, unsigned int *sport,
-			     unsigned int *dport, int *firstin)
+unsigned int processfragment(struct iphdr *packet, in_port_t *sport,
+			     in_port_t *dport, int *firstin)
 {
 	struct fragent *ftmp;
 	struct fragdescent *dtmp;
@@ -190,11 +190,11 @@ unsigned int processfragment(struct iphdr *packet, unsigned int *sport,
 		ftmp->firstin = 1;
 		tpacket = ((char *) (packet)) + (packet->ihl * 4);
 		if (packet->protocol == IPPROTO_TCP) {
-			ftmp->s_port = ((struct tcphdr *) tpacket)->source;
-			ftmp->d_port = ((struct tcphdr *) tpacket)->dest;
+			ftmp->s_port = ntohs(((struct tcphdr *) tpacket)->source);
+			ftmp->d_port = ntohs(((struct tcphdr *) tpacket)->dest);
 		} else if (packet->protocol == IPPROTO_UDP) {
-			ftmp->s_port = ((struct udphdr *) tpacket)->source;
-			ftmp->d_port = ((struct udphdr *) tpacket)->dest;
+			ftmp->s_port = ntohs(((struct udphdr *) tpacket)->source);
+			ftmp->d_port = ntohs(((struct udphdr *) tpacket)->dest);
 		}
 	}
 	while (dtmp != NULL) {

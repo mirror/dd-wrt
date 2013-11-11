@@ -1,6 +1,6 @@
 Summary:        A console-based network monitoring utility
 Name:           iptraf-ng
-Version:        1.1.2.51.gd44d.dirty
+Version:        1.1.4
 Release:        1%{?dist}
 Source0:        https://fedorahosted.org/releases/i/p/iptraf-ng/%{name}-%{version}.tar.gz
 Source1:        iptraf-ng-logrotate.conf

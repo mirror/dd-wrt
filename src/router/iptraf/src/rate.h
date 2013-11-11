@@ -23,12 +23,14 @@ struct rate {
 	unsigned long		sma;	/* simple moving average */
 };
 
-void rate_init(struct rate *rate, unsigned int n);
+void rate_init(struct rate *rate);
+void rate_alloc(struct rate *rate, unsigned int n);
 void rate_destroy(struct rate *rate);
 void rate_add_rate(struct rate *rate, unsigned long bytes,
 		   unsigned long msecs);
 unsigned long rate_get_average(struct rate *rate);
-int rate_print(unsigned long rate, int dispmode, char *buf, unsigned n);
+int rate_print(unsigned long rate, char *buf, unsigned n);
+int rate_print_no_units(unsigned long rate, char *buf, unsigned n);
 int rate_print_pps(unsigned long rate, char *buf, unsigned n);
 
 #endif /* IPTRAF_NG_RATE_H */

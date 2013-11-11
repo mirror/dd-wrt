@@ -14,6 +14,7 @@ deskman.c - desktop management routines
 #include "tui/winops.h"
 
 #include "deskman.h"
+#include "options.h"
 
 /* Attribute variables */
 
@@ -192,6 +193,22 @@ void printlargenum(unsigned long long i, WINDOW * win)
 		wprintw(win, "%8lluG", i / 1000000000ULL);
 	else
 		wprintw(win, "%8lluT", i / 1000000000000ULL);
+}
+
+int screen_update_needed(const struct timeval *now, const struct timeval *last)
+{
+	unsigned long msecs = timeval_diff_msec(now, last);
+	if (options.updrate == 0) {
+		if (msecs >= DEFAULT_UPDATE_DELAY)
+			return 1;
+		else
+			return 0;
+	} else {
+		if (msecs >= (options.updrate * 1000UL))
+			return 1;
+		else
+			return 0;
+	}
 }
 
 void standardcolors(int color)

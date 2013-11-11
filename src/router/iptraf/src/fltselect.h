@@ -17,9 +17,11 @@ struct filterstate {
 	unsigned int arp:1, rarp:1, nonip:1, padding:13;
 };
 
-void config_filters(struct filterstate *filter);
-void loadfilters(struct filterstate *filter);
-void savefilters(struct filterstate *filter);
-int nonipfilter(struct filterstate *filter, unsigned int protocol);
+extern struct filterstate ofilter;
+
+void config_filters(void);
+void loadfilters(void);
+void savefilters(void);
+int nonipfilter(unsigned int protocol);
 
 #endif	/* IPTRAF_NG_FLTSELECT_H */

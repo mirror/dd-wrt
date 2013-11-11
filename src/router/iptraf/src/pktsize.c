@@ -14,8 +14,6 @@ pktsize.c	- the packet size breakdown facility
 #include "attrs.h"
 #include "dirs.h"
 #include "fltdefs.h"
-#include "fltselect.h"
-#include "isdntab.h"
 #include "ifaces.h"
 #include "packet.h"
 #include "deskman.h"
@@ -23,13 +21,9 @@ pktsize.c	- the packet size breakdown facility
 #include "pktsize.h"
 #include "options.h"
 #include "timer.h"
-#include "instances.h"
 #include "log.h"
 #include "logvars.h"
 #include "promisc.h"
-
-extern int exitloop;
-extern int daemonized;
 
 struct ifstat_brackets {
 	unsigned int floor;
@@ -121,7 +115,7 @@ static int initialize_brackets(struct ifstat_brackets *brackets,
 
 static void update_size_distrib(unsigned int length,
 				struct ifstat_brackets *brackets,
-				unsigned int interval, WINDOW *win)
+				unsigned int interval)
 {
 	unsigned int i;
 
@@ -133,17 +127,21 @@ static void update_size_distrib(unsigned int length,
 		i = 19;		/* divisible by 20 */
 
 	brackets[i].count++;
-
-	if (i < 10)
-		wmove(win, i + 5, 23);
-	else
-		wmove(win, (i - 10) + 5, 57);
-
-	wprintw(win, "%8lu", brackets[i].count);
 }
 
-void packet_size_breakdown(struct OPTIONS *options, char *ifname,
-			   time_t facilitytime, struct filterstate *ofilter)
+static void print_size_distrib(struct ifstat_brackets *brackets, WINDOW *win)
+{
+	for (unsigned int i = 0; i <= 19; i++) {
+		if (i < 10)
+			wmove(win, i + 5, 23);
+		else
+			wmove(win, (i - 10) + 5, 57);
+
+		wprintw(win, "%8lu", brackets[i].count);
+	}
+}
+
+void packet_size_breakdown(char *ifname, time_t facilitytime)
 {
 	WINDOW *win;
 	PANEL *panel;
@@ -162,23 +160,12 @@ void packet_size_breakdown(struct OPTIONS *options, char *ifname,
 	struct timeval tv;
 	time_t starttime, startlog, timeint;
 	time_t now;
-	unsigned long long unow;
-	time_t updtime = 0;
-	unsigned long long updtime_usec = 0;
+	struct timeval updtime;
 
-	int logging = options->logging;
+	int logging = options.logging;
 	FILE *logfile = NULL;
 
-	struct promisc_states *promisc_list;
-
 	int fd;
-
-	if (!facility_active(PKTSIZEIDFILE, ifname))
-		mark_facility(PKTSIZEIDFILE, "Packet size breakdown", ifname);
-	else {
-		write_error("Packet sizes already being monitored on %s", ifname);
-		return;
-	}
 
 	if (!dev_up(ifname)) {
 		err_iface_down();
@@ -246,16 +233,14 @@ void packet_size_breakdown(struct OPTIONS *options, char *ifname,
 
 	exitloop = 0;
 	gettimeofday(&tv, NULL);
+	updtime = tv;
 	now = starttime = startlog = timeint = tv.tv_sec;
 
-	if ((first_active_facility()) && (options->promisc)) {
-		init_promisc_list(&promisc_list);
-		save_promisc_list(promisc_list);
-		srpromisc(1, promisc_list);
-		destroy_promisc_list(&promisc_list);
+	LIST_HEAD(promisc);
+	if (options.promisc) {
+		promisc_init(&promisc, ifname);
+		promisc_set_list(&promisc);
 	}
-
-	adjust_instance_count(PROCCOUNTFILE, 1);
 
 	fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if(fd == -1) {
@@ -272,16 +257,14 @@ void packet_size_breakdown(struct OPTIONS *options, char *ifname,
 	do {
 		gettimeofday(&tv, NULL);
 		now = tv.tv_sec;
-		unow = tv.tv_sec * 1000000ULL + tv.tv_usec;
 
-		if (((options->updrate != 0)
-		     && (now - updtime >= options->updrate))
-		    || ((options->updrate == 0)
-			&& (unow - updtime_usec >= DEFAULT_UPDATE_DELAY))) {
+		if (screen_update_needed(&tv, &updtime)) {
+			print_size_distrib(brackets, win);
+
 			update_panels();
 			doupdate();
-			updtime = now;
-			updtime_usec = unow;
+
+			updtime = tv;
 		}
 		if (now - timeint >= 5) {
 			printelapsedtime(starttime, now, LINES - 3, 1,
@@ -290,7 +273,7 @@ void packet_size_breakdown(struct OPTIONS *options, char *ifname,
 		}
 		if (logging) {
 			check_rotate_flag(&logfile);
-			if ((now - startlog >= options->logspan)) {
+			if ((now - startlog) >= options.logspan) {
 				write_size_log(brackets, now - starttime,
 					       ifname, mtu, logfile);
 				startlog = now;
@@ -323,17 +306,17 @@ void packet_size_breakdown(struct OPTIONS *options, char *ifname,
 				exitloop = 1;
 			}
 		}
-		if (pkt.pkt_len > 0) {
-			pkt_result =
-			    packet_process(&pkt, NULL, NULL, NULL,
-					  ofilter,
-					  MATCH_OPPOSITE_USECONFIG, 0);
 
-			if (pkt_result != PACKET_OK)
-				continue;
+		if (pkt.pkt_len <= 0)
+			continue;
 
-			update_size_distrib(pkt.pkt_len, brackets, interval, win);
-		}
+		pkt_result = packet_process(&pkt, NULL, NULL, NULL,
+					    MATCH_OPPOSITE_USECONFIG, 0);
+
+		if (pkt_result != PACKET_OK)
+			continue;
+
+		update_size_distrib(pkt.pkt_len, brackets, interval);
 	} while (!exitloop);
 
 err_close:
@@ -347,19 +330,15 @@ err:
 		fclose(logfile);
 	}
 
-	if ((options->promisc) && (is_last_instance())) {
-		load_promisc_list(&promisc_list);
-		srpromisc(0, promisc_list);
-		destroy_promisc_list(&promisc_list);
+	if (options.promisc) {
+		promisc_restore_list(&promisc);
+		promisc_destroy(&promisc);
 	}
-
-	adjust_instance_count(PROCCOUNTFILE, -1);
 
 	del_panel(panel);
 	delwin(win);
 	del_panel(borderpanel);
 	delwin(borderwin);
 err_unmark:
-	unmark_facility(PKTSIZEIDFILE, ifname);
 	strcpy(current_logfile, "");
 }

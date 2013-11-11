@@ -19,13 +19,13 @@ tcptable.c - table manipulation routines for the IP monitor
 #include "revname.h"
 #include "rvnamed.h"
 #include "servname.h"
+#include "hostmon.h"
+#include "sockaddr.h"
 
 #define MSGSTRING_MAX	320
 
 unsigned int bmaxy = 0;
 unsigned int imaxy = 0;
-
-void convmacaddr(char *addr, char *result);
 
 static void setlabels(WINDOW *win, int mode)
 {
@@ -51,26 +51,47 @@ static void setlabels(WINDOW *win, int mode)
  * The hash function for the TCP hash table
  */
 
-static unsigned int tcp_hash(unsigned long saddr, uint32_t *s6addr,
-			     unsigned int sport, unsigned long daddr,
-			     uint32_t *d6addr, unsigned int dport,
+static unsigned int tcp_hash(struct sockaddr_storage *saddr,
+			     struct sockaddr_storage *daddr,
 			     char *ifname)
 {
 	size_t i;
-	int ifsum = 0;
+	unsigned int ifsum = 0;
 
 	for (i = 0; i <= strlen(ifname) - 1; i++)
 		ifsum += ifname[i];
 
-	if (s6addr != 0 && d6addr != 0) {
-		for (i = 0; i < 4; i++) {
-			saddr ^= s6addr[i];
-			daddr ^= d6addr[i];
-		}
+	switch (saddr->ss_family) {
+	case AF_INET:
+		ifsum += 4 * ((struct sockaddr_in *)saddr)->sin_addr.s_addr;
+		ifsum += 3 * ((struct sockaddr_in *)saddr)->sin_port;
+		break;
+	case AF_INET6: {
+		unsigned int ip6sum = 0;
+		for (i = 0; i < 4; i++)
+			ip6sum ^= ((struct sockaddr_in6 *)saddr)->sin6_addr.s6_addr32[i];
+		ifsum += 4 * ip6sum;
+		ifsum += 3 * ((struct sockaddr_in6 *)saddr)->sin6_port;
+		break; }
+	default:
+		die("%s(): saddr: unknown address family", __FUNCTION__);
 	}
-
-	return ((ifsum + (4 * saddr) + (3 * sport) + (2 * daddr) +
-		 dport) % ENTRIES_IN_HASH_TABLE);
+	switch (daddr->ss_family) {
+	case AF_INET:
+		ifsum += 2 * ((struct sockaddr_in *)daddr)->sin_addr.s_addr;
+		ifsum +=     ((struct sockaddr_in *)daddr)->sin_port;
+		break;
+	case AF_INET6: {
+		unsigned int ip6sum = 0;
+		for (i = 0; i < 4; i++)
+			ip6sum ^= ((struct sockaddr_in6 *)daddr)->sin6_addr.s6_addr32[i];
+		ifsum += 2 * ip6sum;
+		ifsum +=     ((struct sockaddr_in6 *)daddr)->sin6_port;
+		break; }
+	default:
+		die("%s(): daddr: unknown address family", __FUNCTION__);
+	}
+	return (ifsum % ENTRIES_IN_HASH_TABLE);
 }
 
 static void print_tcp_num_entries(struct tcptable *table)
@@ -78,7 +99,6 @@ static void print_tcp_num_entries(struct tcptable *table)
 	mvwprintw(table->borderwin, table->bmaxy - 1, 1, " TCP: %6u entries ",
 		  table->count);
 }
-
 
 void init_tcp_table(struct tcptable *table)
 {
@@ -98,11 +118,16 @@ void init_tcp_table(struct tcptable *table)
 	setlabels(table->borderwin, 0);	/* initially use mode 0 */
 
 	wmove(table->borderwin, 0, 65 * COLS / 80);
-	wprintw(table->borderwin, " Flags ");
-	wmove(table->borderwin, 0, 72 * COLS / 80);
+	wprintw(table->borderwin, " Flag ");
+	wmove(table->borderwin, 0, 70 * COLS / 80);
 	wprintw(table->borderwin, " Iface ");
 	update_panels();
 	doupdate();
+	table->ifnamew = COLS - (70 * COLS / 80) - 3;
+	if (table->ifnamew < 7)
+		table->ifnamew = 7;
+	if (table->ifnamew > IFNAMSIZ)
+		table->ifnamew = IFNAMSIZ;
 
 	table->head = table->tail = NULL;
 	table->firstvisible = table->lastvisible = NULL;
@@ -139,10 +164,7 @@ static void add_tcp_hash_entry(struct tcptable *table, struct tcptableent *entry
 	unsigned int hp;	/* hash position in table */
 	struct tcp_hashentry *ptmp;
 
-	hp = tcp_hash(entry->saddr.s_addr, entry->s6addr.s6_addr32,
-		      entry->sport, entry->daddr.s_addr,
-		      entry->d6addr.s6_addr32, entry->dport, entry->ifname);
-
+	hp = tcp_hash(&entry->saddr, &entry->daddr, entry->ifname);
 	ptmp = xmallocz(sizeof(struct tcp_hashentry));
 	/*
 	 * Add backpointer from screen node to hash node for deletion later
@@ -206,11 +228,11 @@ static void del_tcp_hash_node(struct tcptable *table, struct tcptableent *entry)
  * Add a new entry to the TCP screen table
  */
 
-struct tcptableent *addentry(struct tcptable *table, unsigned long int saddr,
-			     unsigned long int daddr, uint8_t * s6addr,
-			     uint8_t * d6addr, unsigned int sport,
-			     unsigned int dport, int protocol, char *ifname,
-			     int *rev_lookup, int rvnfd, int servnames)
+struct tcptableent *addentry(struct tcptable *table,
+			     struct sockaddr_storage *saddr,
+			     struct sockaddr_storage *daddr,
+			     int protocol, char *ifname,
+			     int *rev_lookup, int rvnfd)
 {
 	struct tcptableent *new_entry;
 	struct closedlist *ctemp;
@@ -256,6 +278,9 @@ struct tcptableent *addentry(struct tcptable *table, unsigned long int saddr,
 		new_entry->reused = new_entry->oth_connection->reused = 0;
 		table->count++;
 
+		rate_alloc(&new_entry->rate, 5);
+		rate_alloc(&new_entry->oth_connection->rate, 5);
+
 		print_tcp_num_entries(table);
 	} else {
 		/*
@@ -294,24 +319,10 @@ struct tcptableent *addentry(struct tcptable *table, unsigned long int saddr,
 	 * Fill in address fields with raw IP addresses
 	 */
 
-	new_entry->saddr.s_addr = new_entry->oth_connection->daddr.s_addr =
-	    saddr;
-	if (s6addr == NULL) {
-		memset(&new_entry->s6addr, 0, 16);
-		memset(&new_entry->oth_connection->d6addr, 0, 16);
-	} else {
-		memcpy(&new_entry->s6addr, s6addr, 16);
-		memcpy(&new_entry->oth_connection->d6addr, s6addr, 16);
-	}
-	new_entry->daddr.s_addr = new_entry->oth_connection->saddr.s_addr =
-	    daddr;
-	if (d6addr == NULL) {
-		memset(&new_entry->d6addr, 0, 16);
-		memset(&new_entry->oth_connection->s6addr, 0, 16);
-	} else {
-		memcpy(&new_entry->d6addr, d6addr, 16);
-		memcpy(&new_entry->oth_connection->s6addr, d6addr, 16);
-	}
+	sockaddr_copy(&new_entry->saddr, saddr);
+	sockaddr_copy(&new_entry->oth_connection->daddr, saddr);
+	sockaddr_copy(&new_entry->daddr, daddr);
+	sockaddr_copy(&new_entry->oth_connection->saddr, daddr);
 	new_entry->protocol = protocol;
 
 	/*
@@ -339,29 +350,19 @@ struct tcptableent *addentry(struct tcptable *table, unsigned long int saddr,
 	memset(new_entry->smacaddr, 0, sizeof(new_entry->smacaddr));
 	memset(new_entry->oth_connection->smacaddr, 0, sizeof(new_entry->oth_connection->smacaddr));
 
-	/*
-	 * Set raw port numbers
-	 */
-
-	new_entry->sport = new_entry->oth_connection->dport = ntohs(sport);
-	new_entry->dport = new_entry->oth_connection->sport = ntohs(dport);
-
 	new_entry->stat = new_entry->oth_connection->stat = 0;
 
 	new_entry->s_fstat =
-	    revname(rev_lookup, &(new_entry->saddr), &new_entry->s6addr,
-		    new_entry->s_fqdn, rvnfd);
+	    revname(rev_lookup, &new_entry->saddr,
+		    new_entry->s_fqdn, sizeof(new_entry->s_fqdn), rvnfd);
 
 	new_entry->d_fstat =
-	    revname(rev_lookup, &(new_entry->daddr), &new_entry->d6addr,
-		    new_entry->d_fqdn, rvnfd);
+	    revname(rev_lookup, &new_entry->daddr,
+		    new_entry->d_fqdn, sizeof(new_entry->d_fqdn), rvnfd);
 
-	/*
-	 * Set port service names (where applicable)
-	 */
-
-	servlook(servnames, sport, IPPROTO_TCP, new_entry->s_sname, 10);
-	servlook(servnames, dport, IPPROTO_TCP, new_entry->d_sname, 10);
+	/* set port service names (where applicable) */
+	servlook(sockaddr_get_port(saddr), IPPROTO_TCP, new_entry->s_sname, 10);
+	servlook(sockaddr_get_port(daddr), IPPROTO_TCP, new_entry->d_sname, 10);
 
 	strcpy(new_entry->oth_connection->s_sname, new_entry->d_sname);
 	strcpy(new_entry->oth_connection->d_sname, new_entry->s_sname);
@@ -386,6 +387,9 @@ struct tcptableent *addentry(struct tcptable *table, unsigned long int saddr,
 	new_entry->spanbr = new_entry->oth_connection->spanbr = 0;
 	new_entry->conn_starttime = new_entry->oth_connection->conn_starttime =
 	    time(NULL);
+
+	rate_init(&new_entry->rate);
+	rate_init(&new_entry->oth_connection->rate);
 
 	/*
 	 * Mark flow rate start time and byte counter for flow computation
@@ -436,76 +440,48 @@ void addtoclosedlist(struct tcptable *table, struct tcptableent *entry)
 
 }
 
-static char *tcplog_flowrate_msg(struct tcptableent *entry,
-				 struct OPTIONS *opts)
+static char *tcplog_flowrate_msg(struct tcptableent *entry, char *buf,
+				 size_t bufsize)
 {
-	char rateunit[10];
-	float rate = 0;
-	static char message[60];
-	time_t interval;
+	time_t interval = time(NULL) - entry->conn_starttime;
 
-	interval = time(NULL) - entry->conn_starttime;
+	char rbuf[64];
+	rate_print(entry->bcount / interval, rbuf, sizeof(rbuf));
 
-	if (opts->actmode == KBITS) {
-		strcpy(rateunit, "kbits/s");
-
-		if (interval > 0)
-			rate =
-			    (float) (entry->bcount * 8 / 1000) /
-			    (float) interval;
-		else
-			rate = (float) (entry->bcount * 8 / 1000);
-	} else {
-		strcpy(rateunit, "kbytes/s");
-
-		if (interval > 0)
-			rate =
-			    (float) (entry->bcount / 1024) / (float) interval;
-		else
-			rate = (float) (entry->bcount / 1024);
-	}
-
-	snprintf(message, 60, "avg flow rate %.2f %s", rate, rateunit);
-	return message;
+	snprintf(buf, bufsize - 1, "avg flow rate %s", rbuf);
+	buf[bufsize - 1] = '\0';
+	return buf;
 }
 
-void write_timeout_log(int logging, FILE * logfile, struct tcptableent *tcpnode,
-		       struct OPTIONS *opts)
+void write_timeout_log(int logging, FILE *logfile, struct tcptableent *tcpnode)
 {
 	char msgstring[MSGSTRING_MAX];
 
 	if (logging) {
+		char flowrate1[64];
+		char flowrate2[64];
 		snprintf(msgstring, MSGSTRING_MAX,
 			 "TCP; Connection %s:%s to %s:%s timed out, %lu packets, %lu bytes, %s; opposite direction %lu packets, %lu bytes, %s",
 			 tcpnode->s_fqdn, tcpnode->s_sname, tcpnode->d_fqdn,
 			 tcpnode->d_sname, tcpnode->pcount, tcpnode->bcount,
-			 tcplog_flowrate_msg(tcpnode, opts),
+			 tcplog_flowrate_msg(tcpnode, flowrate1, sizeof(flowrate1)),
 			 tcpnode->oth_connection->pcount,
 			 tcpnode->oth_connection->bcount,
-			 tcplog_flowrate_msg(tcpnode->oth_connection, opts));
+			 tcplog_flowrate_msg(tcpnode->oth_connection, flowrate2, sizeof(flowrate2)));
 		writelog(logging, logfile, msgstring);
 	}
 }
 
-struct tcptableent *in_table(struct tcptable *table, unsigned long saddr,
-			     unsigned long daddr, uint8_t * s6addr,
-			     uint8_t * d6addr, unsigned int sport,
-			     unsigned int dport, char *ifname, int logging,
-			     FILE * logfile, struct OPTIONS *opts)
+struct tcptableent *in_table(struct tcptable *table,
+			     struct sockaddr_storage *saddr,
+			     struct sockaddr_storage *daddr,
+			     char *ifname, int logging,
+			     FILE *logfile, time_t timeout)
 {
 	struct tcp_hashentry *hashptr;
 	unsigned int hp;
 
 	time_t now;
-	time_t timeout;
-
-	int sfree = 0;
-	int dfree = 0;
-
-	if (opts != NULL)
-		timeout = opts->timeout;
-	else
-		timeout = 0;
 
 	if (table->head == NULL) {
 		return 0;
@@ -514,25 +490,12 @@ struct tcptableent *in_table(struct tcptable *table, unsigned long saddr,
 	 * Determine hash table index for this set of addresses and ports
 	 */
 
-	hp = tcp_hash(saddr, (uint32_t *) s6addr, sport, daddr,
-		      (uint32_t *) d6addr, dport, ifname);
+	hp = tcp_hash(saddr, daddr, ifname);
 	hashptr = table->hash_table[hp];
 
-	if (s6addr == NULL) {
-		s6addr = xmallocz(sizeof(struct in6_addr));
-		sfree = 1;
-	}
-	if (d6addr == NULL) {
-		d6addr = xmallocz(sizeof(struct in6_addr));
-		dfree = 1;
-	}
 	while (hashptr != NULL) {
-		if ((hashptr->tcpnode->saddr.s_addr == saddr)
-		    && (!memcmp(&hashptr->tcpnode->s6addr.s6_addr, s6addr, 16))
-		    && (hashptr->tcpnode->daddr.s_addr == daddr)
-		    && (!memcmp(&hashptr->tcpnode->d6addr.s6_addr, d6addr, 16))
-		    && (hashptr->tcpnode->sport == sport)
-		    && (hashptr->tcpnode->dport == dport)
+		if (sockaddr_is_equal(&hashptr->tcpnode->saddr, saddr)
+		    && sockaddr_is_equal(&hashptr->tcpnode->daddr, daddr)
 		    && (strcmp(hashptr->tcpnode->ifname, ifname) == 0))
 			break;
 
@@ -552,15 +515,10 @@ struct tcptableent *in_table(struct tcptable *table, unsigned long saddr,
 
 			if (logging)
 				write_timeout_log(logging, logfile,
-						  hashptr->tcpnode, opts);
+						  hashptr->tcpnode);
 		}
 		hashptr = hashptr->next_entry;
 	}
-
-	if (sfree)
-		free(s6addr);
-	if (dfree)
-		free(d6addr);
 
 	if (hashptr != NULL) {	/* needed to avoid SIGSEGV */
 		if ((((hashptr->tcpnode->finsent == 2)
@@ -587,22 +545,22 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 		 struct tcphdr *transpacket, char *packet, int linkproto,
 		 unsigned long packetlength, unsigned int bcount,
 		 unsigned int fragofs, int logging, int *revlook, int rvnfd,
-		 struct OPTIONS *opts, FILE * logfile)
+		 FILE *logfile)
 {
 	char msgstring[MSGSTRING_MAX];
 	char newmacaddr[18];
 
 	if (tableentry->s_fstat != RESOLVED) {
 		tableentry->s_fstat =
-		    revname(revlook, &(tableentry->saddr),
-			    &(tableentry->s6addr), tableentry->s_fqdn, rvnfd);
+		    revname(revlook, &tableentry->saddr, tableentry->s_fqdn,
+			    sizeof(tableentry->s_fqdn), rvnfd);
 		strcpy(tableentry->oth_connection->d_fqdn, tableentry->s_fqdn);
 		tableentry->oth_connection->d_fstat = tableentry->s_fstat;
 	}
 	if (tableentry->d_fstat != RESOLVED) {
 		tableentry->d_fstat =
-		    revname(revlook, &(tableentry->daddr),
-			    &(tableentry->d6addr), tableentry->d_fqdn, rvnfd);
+		    revname(revlook, &tableentry->daddr, tableentry->d_fqdn,
+			    sizeof(tableentry->d_fqdn), rvnfd);
 		strcpy(tableentry->oth_connection->s_fqdn, tableentry->d_fqdn);
 		tableentry->oth_connection->s_fstat = tableentry->d_fstat;
 	}
@@ -611,9 +569,11 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 	tableentry->psize = packetlength;
 	tableentry->spanbr += bcount;
 
-	if (opts->mac) {
+	if (options.mac) {
 		memset(newmacaddr, 0, sizeof(newmacaddr));
 
+
+		/* change updateentry to take struct pkt to remove this */
 		if (linkproto == ARPHRD_ETHER) {
 			convmacaddr((char *) (((struct ethhdr *) packet)->
 					      h_source), newmacaddr);
@@ -685,7 +645,7 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 
 			if (logging) {
 				writetcplog(logging, logfile, tableentry,
-					    tableentry->psize, opts->mac,
+					    tableentry->psize,
 					    "FIN acknowleged");
 			}
 		}
@@ -731,13 +691,14 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 			tableentry->finack = ntohl(transpacket->ack_seq);
 		}
 		if (logging) {
+			char flowrate[64];
 			sprintf(msgstring,
 				"FIN sent; %lu packets, %lu bytes, %s",
 				tableentry->pcount, tableentry->bcount,
-				tcplog_flowrate_msg(tableentry, opts));
+				tcplog_flowrate_msg(tableentry, flowrate, sizeof(flowrate)));
 
 			writetcplog(logging, logfile, tableentry,
-				    tableentry->psize, opts->mac, msgstring);
+				    tableentry->psize, msgstring);
 		}
 	}
 	if (transpacket->rst) {
@@ -746,16 +707,17 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 			addtoclosedlist(table, tableentry);
 
 		if (logging) {
+			char flowrate1[64];
+			char flowrate2[64];
 			snprintf(msgstring, MSGSTRING_MAX,
 				 "Connection reset; %lu packets, %lu bytes, %s; opposite direction %lu packets, %lu bytes; %s",
 				 tableentry->pcount, tableentry->bcount,
-				 tcplog_flowrate_msg(tableentry, opts),
+				 tcplog_flowrate_msg(tableentry, flowrate1, sizeof(flowrate1)),
 				 tableentry->oth_connection->pcount,
 				 tableentry->oth_connection->bcount,
-				 tcplog_flowrate_msg(tableentry->oth_connection,
-						     opts));
+				 tcplog_flowrate_msg(tableentry->oth_connection, flowrate2, sizeof(flowrate2)));
 			writetcplog(logging, logfile, tableentry,
-				    tableentry->psize, opts->mac, msgstring);
+				    tableentry->psize, msgstring);
 		}
 	}
 	if (transpacket->psh)
@@ -905,39 +867,23 @@ void printentry(struct tcptable *table, struct tcptableent *tableentry,
 	wattrset(table->tcpscreen, normalattr);
 
 	if (tableentry->finsent == 1)
-		strcpy(stat, "DONE  ");
+		strcpy(stat, "DONE");
 	else if (tableentry->finsent == 2)
-		strcpy(stat, "CLOSED");
+		strcpy(stat, "CLOS");
 	else if (tableentry->stat & FLAG_RST)
-		strcpy(stat, "RESET ");
+		strcpy(stat, "RSET");
 	else {
-		if (tableentry->stat & FLAG_SYN)
-			strcat(stat, "S");
-		else
-			strcat(stat, "-");
-
-		if (tableentry->stat & FLAG_PSH)
-			strcat(stat, "P");
-		else
-			strcat(stat, "-");
-
-		if (tableentry->stat & FLAG_ACK)
-			strcat(stat, "A");
-		else
-			strcat(stat, "-");
-
-		if (tableentry->stat & FLAG_URG)
-			strcat(stat, "U");
-		else
-			strcat(stat, "-");
-
-		strcat(stat, " ");
+		strcat(stat, (tableentry->stat & FLAG_SYN) ? "S" : "-");
+		strcat(stat, (tableentry->stat & FLAG_PSH) ? "P" : "-");
+		strcat(stat, (tableentry->stat & FLAG_ACK) ? "A" : "-");
+		strcat(stat, (tableentry->stat & FLAG_URG) ? "U" : "-");
 	}
 
 	wmove(table->tcpscreen, target_row, 65 * COLS / 80);
-	wprintw(table->tcpscreen, "%s", stat);
-	wmove(table->tcpscreen, target_row, 72 * COLS / 80);
-	wprintw(table->tcpscreen, "%s", tableentry->ifname);
+	wprintw(table->tcpscreen, "%4.4s", stat);
+	wmove(table->tcpscreen, target_row, 70 * COLS / 80);
+	wprintw(table->tcpscreen, "%-*.*s", table->ifnamew, table->ifnamew,
+		tableentry->ifname);
 }
 
 /*
@@ -1008,6 +954,7 @@ void destroytcptable(struct tcptable *table)
 		c_next_entry = table->head->next_entry;
 
 		while (ctemp != NULL) {
+			rate_destroy(&ctemp->rate);
 			free(ctemp);
 			ctemp = c_next_entry;
 
@@ -1058,6 +1005,7 @@ static void destroy_tcp_entry(struct tcptable *table, struct tcptableent *ptmp)
 	else
 		table->tail = ptmp->prev_entry;
 
+	rate_destroy(&ptmp->rate);
 	free(ptmp);
 
 	if (table->head == NULL) {
@@ -1072,7 +1020,7 @@ static void destroy_tcp_entry(struct tcptable *table, struct tcptableent *ptmp)
  */
 
 void flushclosedentries(struct tcptable *table, unsigned long *screen_idx,
-			int logging, FILE * logfile, struct OPTIONS *opts)
+			int logging, FILE *logfile)
 {
 	struct tcptableent *ptmp = table->head;
 	struct tcptableent *ctmp = NULL;
@@ -1084,15 +1032,15 @@ void flushclosedentries(struct tcptable *table, unsigned long *screen_idx,
 		now = time(NULL);
 		lastupdated = (now - ptmp->lastupdate) / 60;
 
-		if ((ptmp->inclosed) || (lastupdated > opts->timeout)) {
+		if ((ptmp->inclosed) || (lastupdated > options.timeout)) {
 			ctmp = ptmp;
 			/*
 			 * Mark and flush timed out TCP entries.
 			 */
-			if (lastupdated > opts->timeout) {
+			if (lastupdated > options.timeout) {
 				if ((!(ptmp->timedout)) && (!(ptmp->inclosed))) {
 					write_timeout_log(logging, logfile,
-							  ptmp, opts);
+							  ptmp);
 					ptmp->timedout =
 					    ptmp->oth_connection->timedout = 1;
 				}
@@ -1194,12 +1142,12 @@ void flushclosedentries(struct tcptable *table, unsigned long *screen_idx,
 }
 
 void writetcplog(int logging, FILE *fd, struct tcptableent *entry,
-		 unsigned int pktlen, int mac, char *message)
+		 unsigned int pktlen, char *message)
 {
 	char msgbuf[MSGSTRING_MAX];
 
 	if (logging) {
-		if (mac) {
+		if (options.mac) {
 			snprintf(msgbuf, MSGSTRING_MAX,
 				 "TCP; %s; %u bytes; from %s:%s to %s:%s (source MAC addr %s); %s",
 				 entry->ifname, pktlen, entry->s_fqdn,

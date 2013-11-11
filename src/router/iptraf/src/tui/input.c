@@ -84,9 +84,7 @@ void tx_getinput(struct FIELDLIST *list, struct FIELD *field, int *exitkey)
 	do {
 		ch = wgetch(list->fieldwin);
 		switch (ch) {
-#ifndef DISABLEBS
 		case KEY_BACKSPACE:
-#endif
 		case 7:
 		case 8:
 		case KEY_DC:
@@ -139,7 +137,7 @@ void tx_fillfields(struct FIELDLIST *list, int *aborted)
 {
 	struct FIELD *field;
 	int exitkey;
-	int exitloop = 0;
+	int endloop = 0;
 
 	field = list->list;
 
@@ -158,15 +156,15 @@ void tx_fillfields(struct FIELDLIST *list, int *aborted)
 		case 13:
 		case 10:
 			*aborted = 0;
-			exitloop = 1;
+			endloop = 1;
 			break;
 		case 27:
 		case 24:
 			*aborted = 1;
-			exitloop = 1;
+			endloop = 1;
 			break;
 		}
-	} while (!exitloop);
+	} while (!endloop);
 
 	curs_set(0);
 }

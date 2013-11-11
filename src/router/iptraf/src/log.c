@@ -23,7 +23,6 @@ log.c - the iptraf logging facility
 int rotate_flag;
 char target_logname[TARGET_LOGNAME_MAX];
 char current_logfile[TARGET_LOGNAME_MAX];
-char graphing_logfile[TARGET_LOGNAME_MAX];
 
 /*
  * Generates a log file based on a template for a particular instance of

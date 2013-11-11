@@ -19,12 +19,22 @@ ipfilter.c - user interface and filter function for all IP packets
 #include "attrs.h"
 #include "fltdefs.h"
 #include "fltmgr.h"
+#include "fltselect.h"
 #include "ipfilter.h"
 #include "fltedit.h"
 #include "getpath.h"
 #include "parseproto.h"
 #include "cidr.h"
 
+static in_port_t parse_port(char *buf)
+{
+	unsigned int value;
+
+	if ((strtoul_ui(buf, 10, &value) == 0) && (value <= 65535))
+		return value;
+	else
+		return 0;
+}
 void gethostparams(struct hostparams *data, char *init_saddr, char *init_smask,
 		   char *init_sport1, char *init_sport2, char *init_daddr,
 		   char *init_dmask, char *init_dport1, char *init_dport2,
@@ -184,12 +194,10 @@ void gethostparams(struct hostparams *data, char *init_saddr, char *init_smask,
 		 * Process Source Port fields
 		 */
 		fieldptr = fieldptr->nextfield;
-		if (strtoul_ui(fieldptr->buf, 10, &data->sport1) == -1)
-			data->sport1 = 0;
+		data->sport1 = parse_port(fieldptr->buf);
 
 		fieldptr = fieldptr->nextfield;
-		if (strtoul_ui(fieldptr->buf, 10, &data->sport2) == -1)
-			data->sport2 = 0;
+		data->sport2 = parse_port(fieldptr->buf);
 
 		/*
 		 * Process Destination Address field
@@ -225,12 +233,10 @@ void gethostparams(struct hostparams *data, char *init_saddr, char *init_smask,
 		 * Process Dedination Port fields
 		 */
 		fieldptr = fieldptr->nextfield;
-		if (strtoul_ui(fieldptr->buf, 10, &data->dport1) == -1)
-			data->dport1 = 0;
+		data->dport1 = parse_port(fieldptr->buf);
 
 		fieldptr = fieldptr->nextfield;
-		if (strtoul_ui(fieldptr->buf, 10, &data->dport2) == -1)
-			data->dport2 = 0;
+		data->dport2 = parse_port(fieldptr->buf);
 
 		/*
 		 * Process IP protocol filter fields
@@ -313,8 +319,7 @@ void gethostparams(struct hostparams *data, char *init_saddr, char *init_smask,
 	doupdate();
 }
 
-void ipfilterselect(struct filterlist *fl, char *filename, int *fltcode,
-		    int *aborted)
+void ipfilterselect(int *aborted)
 {
 	struct MENU menu;
 	int row = 1;
@@ -331,19 +336,19 @@ void ipfilterselect(struct filterlist *fl, char *filename, int *fltcode,
 		case 2:
 			selectfilter(&fflist, aborted);
 			if (!(*aborted)) {
-				memset(filename, 0, FLT_FILENAME_MAX);
-				strncpy(filename,
+				memset(ofilter.filename, 0, FLT_FILENAME_MAX);
+				strncpy(ofilter.filename,
 					get_path(T_WORKDIR, fflist.filename),
 					FLT_FILENAME_MAX - 1);
-				if (!loadfilter(filename, fl, FLT_RESOLVE))
-					*fltcode = 1;
+				if (!loadfilter(ofilter.filename, &ofilter.fl, FLT_RESOLVE))
+					ofilter.filtercode = 1;
 				else
-					*fltcode = 0;
+					ofilter.filtercode = 0;
 			}
 			break;
 		case 3:
-			destroyfilter(fl);
-			*fltcode = 0;
+			destroyfilter(&ofilter.fl);
+			ofilter.filtercode = 0;
 			tx_infobox("IP filter deactivated", ANYKEY_MSG);
 			break;
 		case 4:
@@ -360,74 +365,52 @@ void ipfilterselect(struct filterlist *fl, char *filename, int *fltcode,
 	doupdate();
 }
 
-/*
- * Display/logging filter for other (non-TCP, non-UDP) IP protocols.
- */
-int ipfilter(unsigned long saddr, unsigned long daddr, unsigned int sport,
-	     unsigned int dport, unsigned int protocol, int match_opp_mode,
-	     struct filterlist *fl)
+static int addr_in_net(unsigned long addr, unsigned long net,
+		       unsigned long mask)
 {
-	struct filterent *fe = fl->head;
+	return (addr & mask) == (net & mask);
+}
+
+static int port_in_range(in_port_t port, in_port_t port1, in_port_t port2)
+{
+	if (port2 == 0)
+		return port == port1 || port1 == 0;
+	else
+		return port >= port1 && port <= port2;
+}
+
+/* Display/logging filter for other (non-TCP, non-UDP) IP protocols. */
+int ipfilter(unsigned long saddr, unsigned long daddr, in_port_t sport,
+	     in_port_t dport, unsigned int protocol, int match_opp_mode)
+{
+	struct filterent *fe;
 	int result = 0;
 	int fltexpr1;
 	int fltexpr2;
 
-
-	while (fe != NULL) {
+	for (fe = ofilter.fl.head; fe != NULL; fe = fe->next_entry) {
 		if (protocol == IPPROTO_TCP || protocol == IPPROTO_UDP) {
-			fltexpr1 =
-			    ((saddr & fe->smask) == (fe->saddr & fe->smask)
-			     && (daddr & fe->dmask) == (fe->daddr & fe->dmask))
-			    &&
-			    (((fe->hp.sport2 == 0
-			       && (fe->hp.sport1 == sport
-				   || fe->hp.sport1 == 0))
-			      || (fe->hp.sport2 != 0
-				  && (sport >= fe->hp.sport1
-				      && sport <= fe->hp.sport2)))
-			     &&
-			     ((fe->hp.dport2 == 0
-			       && (fe->hp.dport1 == dport
-				   || fe->hp.dport1 == 0))
-			      || (fe->hp.dport2 != 0
-				  && (dport >= fe->hp.dport1
-				      && dport <= fe->hp.dport2))));
+			fltexpr1 = addr_in_net(saddr, fe->saddr, fe->smask)
+				&& addr_in_net(daddr, fe->daddr, fe->dmask)
+				&& port_in_range(sport, fe->hp.sport1, fe->hp.sport2)
+				&& port_in_range(dport, fe->hp.dport1, fe->hp.dport2);
 
 			if ((protocol == IPPROTO_TCP
 			     && match_opp_mode == MATCH_OPPOSITE_ALWAYS)
 			    || (fe->hp.match_opposite == 'Y'))
-				fltexpr2 =
-				    ((saddr & fe->dmask) ==
-				     (fe->daddr & fe->dmask)
-				     && (daddr & fe->smask) ==
-				     (fe->saddr & fe->smask))
-				    &&
-				    (((fe->hp.dport2 == 0
-				       && (sport == fe->hp.dport1
-					   || fe->hp.dport1 == 0))
-				      || (fe->hp.dport2 != 0
-					  && (sport >= fe->hp.dport1
-					      && sport <= fe->hp.dport2)))
-				     &&
-				     ((fe->hp.sport2 == 0
-				       && (dport == fe->hp.sport1
-					   || fe->hp.sport1 == 0))
-				      || (fe->hp.dport2 != 0
-					  && (dport >= fe->hp.sport1
-					      && dport <= fe->hp.sport2))));
+				fltexpr2 = addr_in_net(saddr, fe->daddr, fe->dmask)
+					&& addr_in_net(daddr, fe->saddr, fe->smask)
+					&& port_in_range(sport, fe->hp.dport1, fe->hp.dport2)
+					&& port_in_range(dport, fe->hp.sport1, fe->hp.sport2);
 			else
 				fltexpr2 = 0;
 		} else {
-			fltexpr1 =
-			    ((saddr & fe->smask) == (fe->saddr & fe->smask))
-			    && ((daddr & fe->dmask) == (fe->daddr & fe->dmask));
+			fltexpr1 = addr_in_net(saddr, fe->saddr, fe->smask)
+				&& addr_in_net(daddr, fe->daddr, fe->dmask);
 
 			if (fe->hp.match_opposite == 'Y') {
-				fltexpr2 =
-				    ((daddr & fe->smask) ==
-				     (fe->saddr & fe->smask))
-				    && ((saddr & fe->dmask) ==
-					(fe->daddr & fe->dmask));
+				fltexpr2 = addr_in_net(saddr, fe->daddr, fe->dmask)
+					&& addr_in_net(daddr, fe->saddr, fe->smask);
 			} else
 				fltexpr2 = 0;
 		}
@@ -444,7 +427,6 @@ int ipfilter(unsigned long saddr, unsigned long daddr, unsigned int sport,
 				return 1;
 			}
 		}
-		fe = fe->next_entry;
 	}
 
 	return 0;

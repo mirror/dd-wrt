@@ -890,26 +890,6 @@ A SLIP interface. <replaceable>n</replaceable> starts from 0.
 </para></listitem>
 </varlistentry>
 <varlistentry>
-<term><filename>ippp<replaceable>n</replaceable></filename></term>
-<listitem><para>
-     A synchronous PPP interface using ISDN.
-<replaceable>n</replaceable> starts from 0.
-</para>
-</listitem>
-</varlistentry>
-<varlistentry>
-<term><filename>isdn<replaceable>n</replaceable</filename></term>
-<listitem><para>
-  ISDN interfaces can be given arbitrary names, but for them to work
-  with IPTraf, they must
-  be named <filename>isdn<replaceable>n</replaceable></filename>.
-  IPTraf supports synchronous PPP
-  (the <filename>ippp<replaceable>n</replaceable></filename>
-  interfaces above), raw IP, and Cisco-HDLC encapsulation.
-</para>
-</listitem>
-</varlistentry>
-<varlistentry>
 <term><filename>plip<replaceable>n</replaceable></filename></term>
 <listitem><para>
      PLIP interfaces. These are point-to-point IP connections using the PC

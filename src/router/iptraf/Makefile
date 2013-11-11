@@ -1,4 +1,4 @@
-# The default target of this Makefile is...
+# The default target of this Makefile is this
 all::
 
 # Define V=1 to have a more verbose compile.
@@ -18,7 +18,7 @@ VERSION-FILE: FORCE
 	@$(SHELL_PATH) ./GEN-VERSION-FILE
 -include VERSION-FILE
 
-CFLAGS = $(COPTS) -I$(TOP)/ncurses/include -Wall -W -std=gnu99
+CFLAGS = -g -O2 -Wall -W -std=gnu99
 LDFLAGS =
 ALL_CFLAGS = $(CPPFLAGS) $(CFLAGS)
 ALL_LDFLAGS = $(LDFLAGS)
@@ -93,7 +93,6 @@ iptraf-h += src/fltmgr.h
 iptraf-h += src/ipfrag.h
 iptraf-h += src/serv.h
 iptraf-h += src/servname.h
-iptraf-h += src/instances.h
 iptraf-h += src/timer.h
 iptraf-h += src/ifaces.h
 iptraf-h += src/error.h
@@ -103,8 +102,6 @@ iptraf-h += src/pktsize.h
 iptraf-h += src/landesc.h
 iptraf-h += src/dirs.h
 iptraf-h += src/getpath.h
-iptraf-h += src/isdntab.h
-iptraf-h += src/bar.h
 iptraf-h += src/options.h
 iptraf-h += src/promisc.h
 iptraf-h += src/parseproto.h
@@ -116,6 +113,8 @@ iptraf-h += src/logvars.h
 iptraf-h += src/list.h
 iptraf-h += src/counters.h
 iptraf-h += src/rate.h
+iptraf-h += src/built-in.h
+iptraf-h += src/sockaddr.h
 
 iptraf-o += src/tui/input.o
 iptraf-o += src/tui/labels.o
@@ -126,7 +125,6 @@ iptraf-o += src/tui/winops.o
 iptraf-o += src/error.o
 iptraf-o += src/log.o
 iptraf-o += src/getpath.o
-iptraf-o += src/bar.o
 iptraf-o += src/parseproto.o
 iptraf-o += src/fltselect.o
 iptraf-o += src/ipfilter.o
@@ -134,12 +132,10 @@ iptraf-o += src/fltmgr.o
 iptraf-o += src/ipfrag.o
 iptraf-o += src/serv.o
 iptraf-o += src/servname.o
-iptraf-o += src/instances.o
 iptraf-o += src/timer.o
 iptraf-o += src/revname.o
 iptraf-o += src/pktsize.o
 iptraf-o += src/landesc.o
-iptraf-o += src/isdntab.o
 iptraf-o += src/options.o
 iptraf-o += src/promisc.o
 iptraf-o += src/ifaces.o
@@ -159,9 +155,13 @@ iptraf-o += src/fltedit.o
 iptraf-o += src/cidr.o
 iptraf-o += src/counters.o
 iptraf-o += src/rate.o
+iptraf-o += src/capture-pkt.o
+iptraf-o += src/sockaddr.o
 
 rvnamed-o += src/rvnamed.o
 rvnamed-o += src/getpath.o
+rvnamed-o += src/sockaddr.o
+rvnamed-o += src/usage.o
 
 -include config.mak.autogen
 -include config.mak
@@ -203,10 +203,67 @@ $(error please set COMPUTE_HEADER_DEPENDENCIES to yes, no, or auto \
 endif
 endif
 
-NCURSES_CFLAGS := -I$(TOP)/ncurses/include
-NCURSES_LDFLAGS := -L$(TOP)/ncurses/lib -lncurses
-ifndef NO_PANEL
-	NCURSES_LDFLAGS += -lpanel
+ifndef NCURSES_LDFLAGS
+ifdef NEEDS_NCURSES5
+	NCURSES_CFLAGS := $(shell ncurses5-config --cflags 2>/dev/null)
+	NCURSES_LDFLAGS := $(shell ncurses5-config --libs 2>/dev/null)
+	ifndef NO_PANEL
+		NCURSES_LDFLAGS += -lpanel
+	endif
+endif
+endif
+
+ifndef NCURSES_LDFLAGS
+ifdef NEEDS_NCURSESW5
+	NCURSES_CFLAGS := $(shell ncursesw5-config --cflags 2>/dev/null)
+	NCURSES_LDFLAGS := $(shell ncursesw5-config --libs 2>/dev/null)
+	ifndef NO_PANEL
+		NCURSES_LDFLAGS += -lpanel
+	endif
+endif
+endif
+
+ifndef NCURSES_LDFLAGS
+ifdef NEEDS_NCURSES6
+	NCURSES_CFLAGS := $(shell ncurses6-config --cflags 2>/dev/null)
+	NCURSES_LDFLAGS := $(shell ncurses6-config --libs 2>/dev/null)
+	ifndef NO_PANEL
+		NCURSES_LDFLAGS += -lpanel
+	endif
+endif
+endif
+
+ifndef NCURSES_LDFLAGS
+ifdef NEEDS_NCURSESW6
+	NCURSES_CFLAGS := $(shell ncursesw6-config --cflags 2>/dev/null)
+	NCURSES_LDFLAGS := $(shell ncursesw6-config --libs 2>/dev/null)
+	ifndef NO_PANEL
+		NCURSES_LDFLAGS += -lpanel
+	endif
+endif
+endif
+
+# try find ncuses by autodetect
+ifndef NCURSES_LDFLAGS
+	ifneq ($(shell ncursesw6-config --libs 2>/dev/null),)
+		NCURSES_CFLAGS := $(shell ncursesw6-config --cflags 2>/dev/null)
+		NCURSES_LDFLAGS := $(shell ncursesw6-config --libs 2>/dev/null)
+	else ifneq ($(shell ncurses6-config --libs 2>/dev/null),)
+		NCURSES_CFLAGS := $(shell ncurses6-config --cflags 2>/dev/null)
+		NCURSES_LDFLAGS := $(shell ncurses6-config --libs 2>/dev/null)
+	else ifneq ($(shell ncursesw5-config --libs 2>/dev/null),)
+		NCURSES_CFLAGS := $(shell ncursesw5-config --cflags 2>/dev/null)
+		NCURSES_LDFLAGS := $(shell ncursesw5-config --libs 2>/dev/null)
+	else ifneq ($(shell ncurses5-config --libs 2>/dev/null),)
+		NCURSES_CFLAGS := $(shell ncurses5-config --cflags 2>/dev/null)
+		NCURSES_LDFLAGS := $(shell ncurses5-config --libs 2>/dev/null)
+	endif
+
+	ifneq ($(NCURSES_LDFLAGS),)
+	ifndef NO_PANEL
+		NCURSES_LDFLAGS += -lpanel
+	endif
+	endif
 endif
 
 QUIET_SUBDIR0  = +$(MAKE) -C # space to separate -C and subdir
@@ -258,7 +315,7 @@ iptraf-ng: $(iptraf-o)
 		$(iptraf-o) $(ALL_LDFLAGS) $(NCURSES_LDFLAGS)
 
 src/deskman.o src/iptraf.o: VERSION-FILE
-src/deskman.o src/iptraf.o: EXTRA_CPPFLAGS = \
+src/deskman.o src/iptraf.o src/capture-pkt.o: EXTRA_CPPFLAGS = \
 	-DIPTRAF_VERSION='"$(IPTRAF_VERSION)"' \
 	-DIPTRAF_NAME='"iptraf-ng"'
 
@@ -373,9 +430,9 @@ install: all
 	@echo $(DESTDIR_SQ)$(man8dir)
 	$(INSTALL) -d -m 755 '$(DESTDIR_SQ)$(sbindir_SQ)'
 	$(INSTALL) $(ALL_PROGRAMS) '$(DESTDIR_SQ)$(sbindir_SQ)'
-#	$(INSTALL) -d -m 755 $(DESTDIR)$(man8dir)
-#	$(INSTALL) -m 644 src/iptraf-ng.8  $(DESTDIR)$(man8dir)
-#	$(INSTALL) -m 644 src/rvnamed-ng.8  $(DESTDIR)$(man8dir)
+	$(INSTALL) -d -m 755 $(DESTDIR)$(man8dir)
+	$(INSTALL) -m 644 src/iptraf-ng.8  $(DESTDIR)$(man8dir)
+	$(INSTALL) -m 644 src/rvnamed-ng.8  $(DESTDIR)$(man8dir)
 
 ### Cleaning rules
 
@@ -391,6 +448,10 @@ clean:
 	$(RM) $(IPTRAF_TARNAME).tar.gz
 	$(RM) config.log config.mak.autogen config.mak.append config.status config.cache
 	$(RM) VERSION-FILE
+
+.PHONY: gtags
+gtags:
+	$(QUIET_GEN) gtags
 
 .PHONY: clean distclean all install FORCE
 

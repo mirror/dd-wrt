@@ -1,31 +1,17 @@
 #ifndef IPTRAF_NG_PROMISC_H
 #define IPTRAF_NG_PROMISC_H
 
-/*
- * promisc.h - definitions for promiscuous state save/recovery
- *
- * Thanks to Holger Friese 
- * <evildead@bs-pc5.et-inf.fho-emden.de> for the base patch.
- * Applied it, but then additional issues came up and I ended up doing more
- * than slight modifications.  struct iflist is becoming way too large for
- * comfort and for something as little as this.
- */
+#include "list.h"
 
-struct promisc_params {
+struct promisc_list {
+	struct list_head list;
 	char ifname[IFNAMSIZ];
-	int saved_state;
-	int state_valid;
 };
 
-struct promisc_states {
-	struct promisc_params params;
-	struct promisc_states *next_entry;
-};
+void promisc_init(struct list_head *promisc, const char *device_name);
+void promisc_destroy(struct list_head *promisc);
 
-void init_promisc_list(struct promisc_states **list);
-void save_promisc_list(struct promisc_states *list);
-void load_promisc_list(struct promisc_states **list);
-void srpromisc(int mode, struct promisc_states *promisc_list);
-void destroy_promisc_list(struct promisc_states **list);
+void promisc_set_list(struct list_head *promisc);
+void promisc_restore_list(struct list_head *promisc);
 
 #endif	/* IPTRAF_NG_PROMISC_H */
