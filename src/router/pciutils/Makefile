@@ -29,7 +29,7 @@ ABI_VERSION=.3
 
 # Installation directories
 PREFIX=$(INSTALLDIR)/usr
-SBINDIR=$(PREFIX)/sbin
+SBINDIR=$(INSTALLDIR)/sbin
 SHAREDIR=$(PREFIX)/share
 IDSDIR=$(SHAREDIR)
 MANDIR:=$(shell if [ -d $(PREFIX)/share/man ] ; then echo $(PREFIX)/share/man ; else echo $(PREFIX)/man ; fi)
