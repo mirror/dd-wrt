@@ -13,9 +13,7 @@ detstats.c	- the interface statistics module
 
 #include "counters.h"
 #include "ifaces.h"
-#include "isdntab.h"
 #include "fltdefs.h"
-#include "fltselect.h"
 #include "packet.h"
 #include "options.h"
 #include "log.h"
@@ -24,7 +22,6 @@ detstats.c	- the interface statistics module
 #include "attrs.h"
 #include "serv.h"
 #include "timer.h"
-#include "instances.h"
 #include "logvars.h"
 #include "promisc.h"
 #include "error.h"
@@ -45,9 +42,6 @@ struct ifcounts {
 	struct proto_counter other;
 };
 
-extern int exitloop;
-extern int daemonized;
-
 /* USR1 log-rotation signal handlers */
 static void rotate_dstat_log(int s __unused)
 {
@@ -56,7 +50,7 @@ static void rotate_dstat_log(int s __unused)
 	signal(SIGUSR1, rotate_dstat_log);
 }
 
-static void writedstatlog(char *ifname, int unit,
+static void writedstatlog(char *ifname,
 		   unsigned long peakactivity, unsigned long peakpps,
 		   unsigned long peakactivity_in, unsigned long peakpps_in,
 		   unsigned long peakactivity_out, unsigned long peakpps_out,
@@ -143,22 +137,22 @@ static void writedstatlog(char *ifname, int unit,
 
 		fprintf(fd, "\nAverage rates:\n");
 
-		rate_print(ts->total.proto_total.pc_bytes / nsecs, unit, bps_string, sizeof(bps_string));
+		rate_print(ts->total.proto_total.pc_bytes / nsecs, bps_string, sizeof(bps_string));
 		rate_print_pps(ts->total.proto_total.pc_packets / nsecs, pps_string, sizeof(pps_string));
 		fprintf(fd, "  Total:\t%s, %s\n", bps_string, pps_string);
-		rate_print(ts->total.proto_in.pc_bytes / nsecs, unit, bps_string, sizeof(bps_string));
+		rate_print(ts->total.proto_in.pc_bytes / nsecs, bps_string, sizeof(bps_string));
 		rate_print_pps(ts->total.proto_in.pc_packets / nsecs, pps_string, sizeof(pps_string));
 		fprintf(fd, "  Incoming:\t%s, %s\n", bps_string, pps_string);
-		rate_print(ts->total.proto_out.pc_bytes / nsecs, unit, bps_string, sizeof(bps_string));
+		rate_print(ts->total.proto_out.pc_bytes / nsecs, bps_string, sizeof(bps_string));
 		rate_print_pps(ts->total.proto_out.pc_packets / nsecs, pps_string, sizeof(pps_string));
 		fprintf(fd, "  Outgoing:\t%s, %s\n", bps_string, pps_string);
-		rate_print(peakactivity, unit, bps_string, sizeof(bps_string));
+		rate_print(peakactivity, bps_string, sizeof(bps_string));
 		rate_print_pps(peakpps, pps_string, sizeof(pps_string));
 		fprintf(fd, "\nPeak total activity: %s, %s\n", bps_string, pps_string);
-		rate_print(peakactivity_in, unit, bps_string, sizeof(bps_string));
+		rate_print(peakactivity_in, bps_string, sizeof(bps_string));
 		rate_print_pps(peakpps_in, pps_string, sizeof(pps_string));
 		fprintf(fd, "Peak incoming rate: %s, %s\n", bps_string, pps_string);
-		rate_print(peakactivity_out, unit, bps_string, sizeof(bps_string));
+		rate_print(peakactivity_out, bps_string, sizeof(bps_string));
 		rate_print_pps(peakpps_out, pps_string, sizeof(pps_string));
 		fprintf(fd, "Peak outgoing rate: %s, %s\n\n", bps_string, pps_string);
 	}
@@ -255,18 +249,13 @@ static void printdetails(struct ifcounts *ifcounts, WINDOW * win)
 /*
  * The detailed interface statistics function
  */
-void detstats(char *iface, const struct OPTIONS *options, time_t facilitytime,
-	      struct filterstate *ofilter)
+void detstats(char *iface, time_t facilitytime)
 {
-	int logging = options->logging;
+	int logging = options.logging;
 
 	WINDOW *statwin;
 	PANEL *statpanel;
 
-	struct iphdr *ipacket = NULL;
-	struct ip6_hdr *ip6packet = NULL;
-
-	int framelen = 0;
 	int pkt_result = 0;
 
 	FILE *logfile = NULL;
@@ -279,13 +268,11 @@ void detstats(char *iface, const struct OPTIONS *options, time_t facilitytime,
 
 	struct timeval tv;
 	struct timeval start_tv;
-	time_t updtime = 0;
-	unsigned long long updtime_usec = 0;
+	struct timeval updtime;
 	time_t starttime;
 	time_t now;
 	time_t statbegin;
 	time_t startlog;
-	unsigned long long unow;
 
 	struct proto_counter span;
 
@@ -303,35 +290,18 @@ void detstats(char *iface, const struct OPTIONS *options, time_t facilitytime,
 	unsigned long peakpps_in = 0;
 	unsigned long peakpps_out = 0;
 
-	struct promisc_states *promisc_list;
 	int fd;
-
-	/*
-	 * Mark this facility
-	 */
-
-	if (!facility_active(DSTATIDFILE, iface))
-		mark_facility(DSTATIDFILE, "detailed interface statistics",
-			      iface);
-	else {
-		write_error("Detailed interface stats already monitoring %s", iface);
-		return;
-	}
 
 	if (!dev_up(iface)) {
 		err_iface_down();
-		unmark_facility(DSTATIDFILE, iface);
 		return;
 	}
 
-	if ((first_active_facility()) && (options->promisc)) {
-		init_promisc_list(&promisc_list);
-		save_promisc_list(promisc_list);
-		srpromisc(1, promisc_list);
-		destroy_promisc_list(&promisc_list);
+	LIST_HEAD(promisc);
+	if (options.promisc) {
+		promisc_init(&promisc, iface);
+		promisc_set_list(&promisc);
 	}
-
-	adjust_instance_count(PROCCOUNTFILE, 1);
 
 	move(LINES - 1, 1);
 	stdexitkeyhelp();
@@ -380,16 +350,17 @@ void detstats(char *iface, const struct OPTIONS *options, time_t facilitytime,
 	doupdate();
 
 	memset(&span, 0, sizeof(span));
-	rate_init(&rate, 5);
-	rate_init(&rate_in, 5);
-	rate_init(&rate_out, 5);
+	rate_alloc(&rate, 5);
+	rate_alloc(&rate_in, 5);
+	rate_alloc(&rate_out, 5);
 
-	rate_init(&pps_rate, 5);
-	rate_init(&pps_rate_in, 5);
-	rate_init(&pps_rate_out, 5);
+	rate_alloc(&pps_rate, 5);
+	rate_alloc(&pps_rate_in, 5);
+	rate_alloc(&pps_rate_out, 5);
 
 	gettimeofday(&tv, NULL);
 	start_tv = tv;
+	updtime = tv;
 	starttime = startlog = statbegin = tv.tv_sec;
 
 	leaveok(statwin, TRUE);
@@ -404,7 +375,6 @@ void detstats(char *iface, const struct OPTIONS *options, time_t facilitytime,
 		goto err_close;
 	}
 
-	//isdnfd = -1;
 	exitloop = 0;
 
 	PACKET_INIT(pkt);
@@ -416,13 +386,11 @@ void detstats(char *iface, const struct OPTIONS *options, time_t facilitytime,
 	while (!exitloop) {
 		gettimeofday(&tv, NULL);
 		now = tv.tv_sec;
-		unow = tv.tv_sec * 1000000ULL + tv.tv_usec;
 
 		if ((now - starttime) >= 1) {
 			char buf[64];
 			unsigned long activity, activity_in, activity_out;
 			unsigned long pps, pps_in, pps_out;
-			int units = options->actmode;
 			unsigned long msecs;
 
 			wattrset(statwin, BOXATTR);
@@ -449,15 +417,15 @@ void detstats(char *iface, const struct OPTIONS *options, time_t facilitytime,
 			start_tv = tv;
 
 			wattrset(statwin, HIGHATTR);
-			rate_print(activity, units, buf, sizeof(buf));
+			rate_print(activity, buf, sizeof(buf));
 			mvwprintw(statwin, 14, 19, "%s", buf);
 			rate_print_pps(pps, buf, sizeof(buf));
 			mvwprintw(statwin, 15, 19, "%s", buf);
-			rate_print(activity_in, units, buf, sizeof(buf));
+			rate_print(activity_in, buf, sizeof(buf));
 			mvwprintw(statwin, 17, 19, "%s", buf);
 			rate_print_pps(pps_in, buf, sizeof(buf));
 			mvwprintw(statwin, 18, 19, "%s", buf);
-			rate_print(activity_out, units, buf, sizeof(buf));
+			rate_print(activity_out, buf, sizeof(buf));
 			mvwprintw(statwin, 20, 19, "%s", buf);
 			rate_print_pps(pps_out, buf, sizeof(buf));
 			mvwprintw(statwin, 21, 19, "%s", buf);
@@ -482,8 +450,8 @@ void detstats(char *iface, const struct OPTIONS *options, time_t facilitytime,
 		}
 		if (logging) {
 			check_rotate_flag(&logfile);
-			if ((now - startlog) >= options->logspan) {
-				writedstatlog(iface, options->actmode,
+			if ((now - startlog) >= options.logspan) {
+				writedstatlog(iface,
 					      peakactivity, peakpps,
 					      peakactivity_in, peakpps_in,
 					      peakactivity_out, peakpps_out,
@@ -494,15 +462,12 @@ void detstats(char *iface, const struct OPTIONS *options, time_t facilitytime,
 			}
 		}
 
-		if (((options->updrate == 0)
-		     && (unow - updtime_usec >= DEFAULT_UPDATE_DELAY))
-		    || ((options->updrate != 0)
-			&& (now - updtime >= options->updrate))) {
+		if (screen_update_needed(&tv, &updtime)) {
 			printdetails(&ifcounts, statwin);
 			update_panels();
 			doupdate();
-			updtime_usec = unow;
-			updtime = now;
+
+			updtime = tv;
 		}
 
 		if ((facilitytime != 0)
@@ -534,71 +499,67 @@ void detstats(char *iface, const struct OPTIONS *options, time_t facilitytime,
 			exitloop = 1;
 			break;
 		}
-		if (pkt.pkt_len > 0) {
-			int outgoing;
-			short ipproto;
+		if (pkt.pkt_len <= 0)
+			continue;
 
-			framelen = pkt.pkt_len;
-			pkt_result =
-			    packet_process(&pkt, NULL, NULL, NULL,
-					  ofilter,
-					  MATCH_OPPOSITE_USECONFIG,
-					  options->v6inv4asv6);
+		int outgoing;
 
-			if (pkt_result != PACKET_OK
-			    && pkt_result != MORE_FRAGMENTS)
-				continue;
+		pkt_result =
+			packet_process(&pkt, NULL, NULL, NULL,
+				       MATCH_OPPOSITE_USECONFIG,
+				       options.v6inv4asv6);
 
-			outgoing = (pkt.pkt_pkttype == PACKET_OUTGOING);
-			update_proto_counter(&ifcounts.total, outgoing, framelen);
-			if (pkt.pkt_pkttype == PACKET_BROADCAST) {
-				update_pkt_counter(&ifcounts.bcast, framelen);
-			}
+		if (pkt_result != PACKET_OK
+		    && pkt_result != MORE_FRAGMENTS)
+			continue;
 
-			update_proto_counter(&span, outgoing, framelen);
+		outgoing = (pkt.pkt_pkttype == PACKET_OUTGOING);
+		update_proto_counter(&ifcounts.total, outgoing, pkt.pkt_len);
+		if (pkt.pkt_pkttype == PACKET_BROADCAST) {
+			update_pkt_counter(&ifcounts.bcast, pkt.pkt_len);
+		}
 
-			/* account network layer protocol */
-			switch(pkt.pkt_protocol) {
-			case ETH_P_IP:
-				if (pkt_result == CHECKSUM_ERROR) {
-					update_pkt_counter(&ifcounts.bad, framelen);
-					continue;
-				}
+		update_proto_counter(&span, outgoing, pkt.pkt_len);
 
-				ipacket = (struct iphdr *) pkt.pkt_payload;
-				iplen = ntohs(ipacket->tot_len);
-				ipproto = ipacket->protocol;
-
-				update_proto_counter(&ifcounts.ipv4, outgoing, iplen);
-				break;
-			case ETH_P_IPV6:
-				ip6packet = (struct ip6_hdr *) pkt.pkt_payload;
-				iplen = ntohs(ip6packet->ip6_plen) + 40;
-				ipproto = ip6packet->ip6_nxt;
-
-				update_proto_counter(&ifcounts.ipv6, outgoing, iplen);
-				break;
-			default:
-				update_proto_counter(&ifcounts.nonip, outgoing, iplen);
+		/* account network layer protocol */
+		switch(pkt.pkt_protocol) {
+		case ETH_P_IP:
+			if (pkt_result == CHECKSUM_ERROR) {
+				update_pkt_counter(&ifcounts.bad, pkt.pkt_len);
 				continue;
 			}
 
-			/* account transport layer protocol */
-			switch (ipproto) {
-			case IPPROTO_TCP:
-				update_proto_counter(&ifcounts.tcp, outgoing, iplen);
-				break;
-			case IPPROTO_UDP:
-				update_proto_counter(&ifcounts.udp, outgoing, iplen);
-				break;
-			case IPPROTO_ICMP:
-			case IPPROTO_ICMPV6:
-				update_proto_counter(&ifcounts.icmp, outgoing, iplen);
-				break;
-			default:
-				update_proto_counter(&ifcounts.other, outgoing, iplen);
-				break;
-			}
+			iplen = ntohs(pkt.iphdr->tot_len);
+
+			update_proto_counter(&ifcounts.ipv4, outgoing, iplen);
+			break;
+		case ETH_P_IPV6:
+			iplen = ntohs(pkt.ip6_hdr->ip6_plen) + 40;
+
+			update_proto_counter(&ifcounts.ipv6, outgoing, iplen);
+			break;
+		default:
+			update_proto_counter(&ifcounts.nonip, outgoing, iplen);
+			continue;
+		}
+
+		__u8 ip_protocol = pkt_ip_protocol(&pkt);
+
+		/* account transport layer protocol */
+		switch (ip_protocol) {
+		case IPPROTO_TCP:
+			update_proto_counter(&ifcounts.tcp, outgoing, iplen);
+			break;
+		case IPPROTO_UDP:
+			update_proto_counter(&ifcounts.udp, outgoing, iplen);
+			break;
+		case IPPROTO_ICMP:
+		case IPPROTO_ICMPV6:
+			update_proto_counter(&ifcounts.icmp, outgoing, iplen);
+			break;
+		default:
+			update_proto_counter(&ifcounts.other, outgoing, iplen);
+			break;
 		}
 	}
 
@@ -614,17 +575,14 @@ err:
 	rate_destroy(&rate_in);
 	rate_destroy(&rate);
 
-	if ((options->promisc) && (is_last_instance())) {
-		load_promisc_list(&promisc_list);
-		srpromisc(0, promisc_list);
-		destroy_promisc_list(&promisc_list);
+	if (options.promisc) {
+		promisc_restore_list(&promisc);
+		promisc_destroy(&promisc);
 	}
-
-	adjust_instance_count(PROCCOUNTFILE, -1);
 
 	if (logging) {
 		signal(SIGUSR1, SIG_DFL);
-		writedstatlog(iface, options->actmode,
+		writedstatlog(iface,
 			      peakactivity, peakpps, peakactivity_in,
 			      peakpps_in, peakactivity_out, peakpps_out,
 			      &ifcounts, time(NULL) - statbegin,
@@ -636,7 +594,6 @@ err:
 
 	del_panel(statpanel);
 	delwin(statwin);
-	unmark_facility(DSTATIDFILE, iface);
 	strcpy(current_logfile, "");
 	pkt_cleanup();
 	update_panels();

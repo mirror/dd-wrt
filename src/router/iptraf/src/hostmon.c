@@ -16,8 +16,6 @@ Discovers LAN hosts and displays packet statistics for them
 #include "dirs.h"
 #include "deskman.h"
 #include "fltdefs.h"
-#include "fltselect.h"
-#include "isdntab.h"		/* needed by packet.h */
 #include "packet.h"
 #include "ifaces.h"
 #include "hostmon.h"
@@ -26,16 +24,13 @@ Discovers LAN hosts and displays packet statistics for them
 #include "timer.h"
 #include "landesc.h"
 #include "options.h"
-#include "instances.h"
 #include "logvars.h"
 #include "promisc.h"
 #include "error.h"
+#include "rate.h"
 
 #define SCROLLUP 0
 #define SCROLLDOWN 1
-
-extern int exitloop;
-extern int daemonized;
 
 struct ethtabent {
 	int type;
@@ -45,15 +40,12 @@ struct ethtabent {
 			unsigned long long inbcount;
 			unsigned long long inippcount;
 			unsigned long inspanbr;
-			unsigned int inpktact;
 			unsigned long long outpcount;
 			unsigned long long outbcount;
 			unsigned long long outippcount;
 			unsigned long outspanbr;
-			unsigned int outpktact;
-			float inrate;
-			float outrate;
-			short past5;
+			struct rate inrate;
+			struct rate outrate;
 		} figs;
 
 		struct {
@@ -79,6 +71,7 @@ struct ethtab {
 	struct ethtabent *lastvisible;
 	unsigned long count;
 	unsigned long entcount;
+	int units;
 	WINDOW *borderwin;
 	PANEL *borderpanel;
 	WINDOW *tabwin;
@@ -96,8 +89,7 @@ static void rotate_lanlog(int s __unused)
 	signal(SIGUSR1, rotate_lanlog);
 }
 
-static void writeethlog(struct ethtabent *list, int unit, unsigned long nsecs,
-			FILE * fd)
+static void writeethlog(struct ethtabent *list, unsigned long nsecs, FILE *fd)
 {
 	char atime[TIME_TARGET_MAX];
 	struct ethtabent *ptmp = list;
@@ -131,26 +123,22 @@ static void writeethlog(struct ethtabent *list, int unit, unsigned long nsecs,
 				ptmp->un.figs.outippcount);
 
 			fprintf(fd, "\tAverage rates: ");
-			if (unit == KBITS)
-				fprintf(fd,
-					"%.2f kbits/s incoming, %.2f kbits/s outgoing\n",
-					(float) (ptmp->un.figs.inbcount * 8 /
-						 1000) / (float) nsecs,
-					(float) (ptmp->un.figs.outbcount * 8 /
-						 1000) / (float) nsecs);
-			else
-				fprintf(fd,
-					"%.2f kbytes/s incoming, %.2f kbytes/s outgoing\n",
-					(float) (ptmp->un.figs.inbcount /
-						 1024) / (float) nsecs,
-					(float) (ptmp->un.figs.outbcount /
-						 1024) / (float) nsecs);
+			char buf_in[32];
+			char buf_out[32];
+			rate_print(ptmp->un.figs.inbcount / nsecs, buf_in, sizeof(buf_in));
+			rate_print(ptmp->un.figs.outbcount / nsecs, buf_out, sizeof(buf_out));
+			fprintf(fd, "%s incoming, %s outgoing\n",
+				buf_in, buf_out);
 
-			if (nsecs > 5)
+			if (nsecs > 5) {
+				rate_print(rate_get_average(&ptmp->un.figs.inrate),
+					   buf_in, sizeof(buf_in));
+				rate_print(rate_get_average(&ptmp->un.figs.outrate),
+					   buf_out, sizeof(buf_out));
 				fprintf(fd,
-					"\tLast 5-second rates: %.2f %s incoming, %.2f %s outgoing\n",
-					ptmp->un.figs.inrate, dispmode(unit),
-					ptmp->un.figs.outrate, dispmode(unit));
+					"\tLast 5-second rates: %s incoming, %s outgoing\n",
+					buf_in, buf_out);
+			}
 		}
 
 		ptmp = ptmp->next_entry;
@@ -160,7 +148,7 @@ static void writeethlog(struct ethtabent *list, int unit, unsigned long nsecs,
 	fflush(fd);
 }
 
-static void initethtab(struct ethtab *table, int unit)
+static void initethtab(struct ethtab *table)
 {
 	table->head = table->tail = NULL;
 	table->firstvisible = table->lastvisible = NULL;
@@ -195,7 +183,7 @@ static void initethtab(struct ethtab *table, int unit)
 	wmove(table->borderwin, LINES - 3, 40);
 
 	wprintw(table->borderwin, " InRate and OutRate are in %s ",
-		dispmode(unit));
+		dispmode(options.actmode));
 
 	wattrset(table->tabwin, STDATTR);
 	tx_colorwin(table->tabwin);
@@ -227,7 +215,7 @@ static struct ethtabent *addethnode(struct ethtab *table)
 	table->count++;
 	ptemp->index = table->count;
 
-	if (table->count <= LINES - 4)
+	if (table->count <= (unsigned) LINES - 4)
 		table->lastvisible = ptemp;
 
 	return ptemp;
@@ -285,13 +273,13 @@ static struct ethtabent *addethentry(struct ethtab *table,
 		return NULL;
 
 	ptemp->type = 1;
-	ptemp->un.figs.inpcount = ptemp->un.figs.inpktact = 0;
-	ptemp->un.figs.outpcount = ptemp->un.figs.outpktact = 0;
+	ptemp->un.figs.inpcount = 0;
+	ptemp->un.figs.outpcount = 0;
 	ptemp->un.figs.inspanbr = ptemp->un.figs.outspanbr = 0;
 	ptemp->un.figs.inippcount = ptemp->un.figs.outippcount = 0;
 	ptemp->un.figs.inbcount = ptemp->un.figs.outbcount = 0;
-	ptemp->un.figs.inrate = ptemp->un.figs.outrate = 0;
-	ptemp->un.figs.past5 = 0;
+	rate_alloc(&ptemp->un.figs.inrate, 5);
+	rate_alloc(&ptemp->un.figs.outrate, 5);
 
 	table->entcount++;
 
@@ -399,6 +387,10 @@ static void destroyethtab(struct ethtab *table)
 		cnext = table->head->next_entry;
 
 	while (ptemp != NULL) {
+		if (ptemp->type == 1) {
+			rate_destroy(&ptemp->un.figs.outrate);
+			rate_destroy(&ptemp->un.figs.inrate);
+		}
 		free(ptemp);
 		ptemp = cnext;
 
@@ -418,16 +410,21 @@ static void hostmonhelp(void)
 static void printrates(struct ethtab *table, unsigned int target_row,
 		       struct ethtabent *ptmp)
 {
-	if (ptmp->un.figs.past5) {
-		wmove(table->tabwin, target_row, 32 * COLS / 80);
-		wprintw(table->tabwin, "%8.1f", ptmp->un.figs.inrate);
-		wmove(table->tabwin, target_row, 69 * COLS / 80);
-		wprintw(table->tabwin, "%8.1f", ptmp->un.figs.outrate);
-	}
+	char buf[32];
+
+	rate_print_no_units(rate_get_average(&ptmp->un.figs.inrate),
+		   buf, sizeof(buf));
+	wmove(table->tabwin, target_row, 32 * COLS / 80);
+	wprintw(table->tabwin, "%s", buf);
+
+	rate_print_no_units(rate_get_average(&ptmp->un.figs.outrate),
+		   buf, sizeof(buf));
+	wmove(table->tabwin, target_row, 69 * COLS / 80);
+	wprintw(table->tabwin, "%s", buf);
 }
 
-static void updateethrates(struct ethtab *table, int unit, time_t starttime,
-			   time_t now, unsigned int idx)
+static void updateethrates(struct ethtab *table, unsigned long msecs,
+			   unsigned int idx)
 {
 	struct ethtabent *ptmp = table->head;
 	unsigned int target_row = 0;
@@ -437,32 +434,18 @@ static void updateethrates(struct ethtab *table, int unit, time_t starttime,
 
 	while (ptmp != NULL) {
 		if (ptmp->type == 1) {
-			ptmp->un.figs.past5 = 1;
-			if (unit == KBITS) {
-				ptmp->un.figs.inrate = ((float)
-							(ptmp->un.figs.
-							 inspanbr * 8 / 1000)) /
-				    ((float) (now - starttime));
-				ptmp->un.figs.outrate = ((float)
-							 (ptmp->un.figs.
-							  outspanbr * 8 /
-							  1000)) /
-				    ((float) (now - starttime));
-			} else {
-				ptmp->un.figs.inrate =
-				    ((float) (ptmp->un.figs.inspanbr / 1024)) /
-				    ((float) (now - starttime));
-				ptmp->un.figs.outrate =
-				    ((float) (ptmp->un.figs.outspanbr / 1024)) /
-				    ((float) (now - starttime));
-			}
+			rate_add_rate(&ptmp->un.figs.inrate, ptmp->un.figs.inspanbr, msecs);
+			ptmp->un.figs.inspanbr = 0;
+
+			rate_add_rate(&ptmp->un.figs.outrate, ptmp->un.figs.outspanbr, msecs);
+			ptmp->un.figs.outspanbr = 0;
+
 			if ((ptmp->index >= idx)
 			    && (ptmp->index <= idx + LINES - 5)) {
 				wattrset(table->tabwin, HIGHATTR);
 				target_row = ptmp->index - idx;
 				printrates(table, target_row, ptmp);
 			}
-			ptmp->un.figs.inspanbr = ptmp->un.figs.outspanbr = 0;
 		}
 		ptmp = ptmp->next_entry;
 	}
@@ -759,10 +742,9 @@ static void sort_hosttab(struct ethtab *list, unsigned int *idx, int command)
  * The LAN station monitor
  */
 
-void hostmon(const struct OPTIONS *options, time_t facilitytime, char *ifptr,
-	     struct filterstate *ofilter)
+void hostmon(time_t facilitytime, char *ifptr)
 {
-	int logging = options->logging;
+	int logging = options.logging;
 	struct ethtab table;
 	struct ethtabent *entry;
 
@@ -775,13 +757,11 @@ void hostmon(const struct OPTIONS *options, time_t facilitytime, char *ifptr,
 	char *ifname = ifptr;
 
 	struct timeval tv;
-	time_t starttime;
+	struct timeval tv_rate;
 	time_t now = 0;
-	unsigned long long unow = 0;
 	time_t statbegin = 0;
 	time_t startlog = 0;
-	time_t updtime = 0;
-	unsigned long long updtime_usec = 0;
+	struct timeval updtime;
 
 	struct eth_desc *list = NULL;
 
@@ -793,41 +773,22 @@ void hostmon(const struct OPTIONS *options, time_t facilitytime, char *ifptr,
 	PANEL *sortpanel;
 	int keymode = 0;
 
-	int instance_id;
-
 	int fd;
 
-	struct promisc_states *promisc_list;
-
-	if (!facility_active(LANMONIDFILE, ifptr))
-		mark_facility(LANMONIDFILE, "LAN monitor", ifptr);
-	else {
-		write_error("LAN station monitor already running on %s",
-			 gen_iface_msg(ifptr));
+	if (ifptr && !dev_up(ifptr)) {
+		err_iface_down();
 		return;
 	}
 
-	if (ifptr != NULL) {
-		if (!dev_up(ifptr)) {
-			err_iface_down();
-			unmark_facility(LANMONIDFILE, ifptr);
-			return;
-		}
+	LIST_HEAD(promisc);
+	if (options.promisc) {
+		promisc_init(&promisc, ifptr);
+		promisc_set_list(&promisc);
 	}
-
-	if ((first_active_facility()) && (options->promisc)) {
-		init_promisc_list(&promisc_list);
-		save_promisc_list(promisc_list);
-		srpromisc(1, promisc_list);
-		destroy_promisc_list(&promisc_list);
-	}
-
-	adjust_instance_count(PROCCOUNTFILE, 1);
-	instance_id = adjust_instance_count(LANMONCOUNTFILE, 1);
 
 	hostmonhelp();
 
-	initethtab(&table, options->actmode);
+	initethtab(&table);
 
 	/* Ethernet description list */
 	struct eth_desc *elist = load_eth_desc(ARPHRD_ETHER);
@@ -838,7 +799,7 @@ void hostmon(const struct OPTIONS *options, time_t facilitytime, char *ifptr,
 	if (logging) {
 		if (strcmp(current_logfile, "") == 0) {
 			strncpy(current_logfile,
-				gen_instance_logname(LANLOG, instance_id), 80);
+				gen_instance_logname(LANLOG, getpid()), 80);
 
 			if (!daemonized)
 				input_logfile(current_logfile, &logging);
@@ -873,38 +834,36 @@ void hostmon(const struct OPTIONS *options, time_t facilitytime, char *ifptr,
 
 	exitloop = 0;
 	gettimeofday(&tv, NULL);
-	starttime = statbegin = startlog = tv.tv_sec;
+	tv_rate = tv;
+	updtime = tv;
+	statbegin = startlog = tv.tv_sec;
 
 	PACKET_INIT(pkt);
 
 	do {
 		gettimeofday(&tv, NULL);
 		now = tv.tv_sec;
-		unow = tv.tv_sec * 1000000ULL + tv.tv_usec;
 
-		if ((now - starttime) >= 5) {
+		unsigned long msecs = timeval_diff_msec(&tv, &tv_rate);
+		if (msecs >= 1000) {
 			printelapsedtime(statbegin, now, LINES - 3, 15,
 					 table.borderwin);
-			updateethrates(&table, options->actmode, starttime, now,
-				       idx);
-			starttime = now;
+			updateethrates(&table, msecs, idx);
+			tv_rate = tv;
 		}
 		if (logging) {
 			check_rotate_flag(&logfile);
-			if ((now - startlog) >= options->logspan) {
-				writeethlog(table.head, options->actmode,
-					    now - statbegin, logfile);
+			if ((now - startlog) >= options.logspan) {
+				writeethlog(table.head, now - statbegin,
+					    logfile);
 				startlog = now;
 			}
 		}
-		if (((options->updrate != 0)
-		     && (now - updtime >= options->updrate))
-		    || ((options->updrate == 0)
-			&& (unow - updtime_usec >= DEFAULT_UPDATE_DELAY))) {
+		if (screen_update_needed(&tv, &updtime)) {
 			update_panels();
 			doupdate();
-			updtime = now;
-			updtime_usec = unow;
+
+			updtime = tv;
 		}
 
 		if ((facilitytime != 0)
@@ -960,97 +919,90 @@ void hostmon(const struct OPTIONS *options, time_t facilitytime, char *ifptr,
 				keymode = 0;
 			}
 		}
-		if (pkt.pkt_len > 0) {
-			char ifnamebuf[IFNAMSIZ];
 
-			pkt_result =
-			    packet_process(&pkt, NULL, NULL, NULL,
-					  ofilter,
-					  MATCH_OPPOSITE_USECONFIG,
-					  0);
+		if (pkt.pkt_len <= 0)
+			continue;
 
-			if (pkt_result != PACKET_OK)
-				continue;
+		char ifnamebuf[IFNAMSIZ];
 
-			if (!ifptr) {
-				/* we're capturing on "All interfaces", */
-				/* so get the name of the interface */
-				/* of this packet */
-				int r = dev_get_ifname(pkt.pkt_ifindex, ifnamebuf);
-				if (r != 0) {
-					write_error("Unable to get interface name");
-					break;	/* can't get interface name, get out! */
-				}
-				ifname = ifnamebuf;
+		pkt_result =
+			packet_process(&pkt, NULL, NULL, NULL,
+				       MATCH_OPPOSITE_USECONFIG,
+				       0);
+
+		if (pkt_result != PACKET_OK)
+			continue;
+
+		if (!ifptr) {
+			/* we're capturing on "All interfaces", */
+			/* so get the name of the interface */
+			/* of this packet */
+			int r = dev_get_ifname(pkt.pkt_ifindex, ifnamebuf);
+			if (r != 0) {
+				write_error("Unable to get interface name");
+				break;	/* can't get interface name, get out! */
 			}
+			ifname = ifnamebuf;
+		}
 
-			/* get HW addresses */
-			switch (pkt.pkt_hatype) {
-			case ARPHRD_ETHER: {
-				struct ethhdr *hdr_eth =
-					(struct ethhdr *)pkt.pkt_buf;
-				memcpy(scratch_saddr, hdr_eth->h_source,
-				       ETH_ALEN);
-				memcpy(scratch_daddr, hdr_eth->h_dest,
-				       ETH_ALEN);
-				list = elist;
-				break; }
-			case ARPHRD_FDDI: {
-				struct fddihdr *hdr_fddi =
-					(struct fddihdr *)pkt.pkt_buf;
-				memcpy(scratch_saddr, hdr_fddi->saddr,
-				       FDDI_K_ALEN);
-				memcpy(scratch_daddr, hdr_fddi->daddr,
-				       FDDI_K_ALEN);
-				list = flist;
-				break; }
-			default:
-				/* unknown link protocol */
-				continue;
-			}
+		/* get HW addresses */
+		switch (pkt.pkt_hatype) {
+		case ARPHRD_ETHER: {
+			memcpy(scratch_saddr, pkt.ethhdr->h_source, ETH_ALEN);
+			memcpy(scratch_daddr, pkt.ethhdr->h_dest, ETH_ALEN);
+			list = elist;
+			break; }
+		case ARPHRD_FDDI: {
+			memcpy(scratch_saddr, pkt.fddihdr->saddr, FDDI_K_ALEN);
+			memcpy(scratch_daddr, pkt.fddihdr->daddr, FDDI_K_ALEN);
+			list = flist;
+			break; }
+		default:
+			/* unknown link protocol */
+			continue;
+		}
 
-			switch(pkt.pkt_protocol) {
-			case ETH_P_IP:
-			case ETH_P_IPV6:
-				is_ip = 1;
-				break;
-			default:
-				is_ip = 0;
-				break;
-			}
+		switch(pkt.pkt_protocol) {
+		case ETH_P_IP:
+		case ETH_P_IPV6:
+			is_ip = 1;
+			break;
+		default:
+			is_ip = 0;
+			break;
+		}
 
-			/* Check source address entry */
-			entry = in_ethtable(&table, pkt.pkt_hatype,
-					scratch_saddr);
+		/* Check source address entry */
+		entry = in_ethtable(&table, pkt.pkt_hatype,
+				    scratch_saddr);
 
-			if (!entry)
-				entry = addethentry(&table, pkt.pkt_hatype,
-						ifname, scratch_saddr, list);
+		if (!entry)
+			entry = addethentry(&table, pkt.pkt_hatype,
+					    ifname, scratch_saddr, list);
 
-			if (entry != NULL) {
-				updateethent(entry, pkt.pkt_len, is_ip, 1);
-				if (!entry->prev_entry->un.desc.printed)
-					printethent(&table, entry->prev_entry,
-						    idx);
+		if (entry != NULL) {
+			updateethent(entry, pkt.pkt_len, is_ip, 1);
+			if (!entry->prev_entry->un.desc.printed)
+				printethent(&table, entry->prev_entry,
+					    idx);
 
-				printethent(&table, entry, idx);
-			}
+			printethent(&table, entry, idx);
+		}
 
-			/* Check destination address entry */
-			entry = in_ethtable(&table, pkt.pkt_hatype,
-					scratch_daddr);
-			if (!entry)
-				entry = addethentry(&table, pkt.pkt_hatype,
-						ifname, scratch_daddr, list);
+		/* Check destination address entry */
+		entry = in_ethtable(&table, pkt.pkt_hatype,
+				    scratch_daddr);
+		if (!entry)
+			entry = addethentry(&table, pkt.pkt_hatype,
+					    ifname, scratch_daddr, list);
 
-			if (entry != NULL) {
-				updateethent(entry, pkt.pkt_len, is_ip, 0);
-				if (!entry->prev_entry->un.desc.printed)
-					printethent(&table, entry->prev_entry,
-						    idx);
+		if (entry != NULL) {
+			updateethent(entry, pkt.pkt_len, is_ip, 0);
+			if (!entry->prev_entry->un.desc.printed)
+				printethent(&table, entry->prev_entry,
+					    idx);
 
-				printethent(&table, entry, idx);
-			}
+			printethent(&table, entry, idx);
 		}
 	} while (!exitloop);
 
@@ -1058,19 +1010,14 @@ err_close:
 	close(fd);
 
 err:
-	if ((options->promisc) && (is_last_instance())) {
-		load_promisc_list(&promisc_list);
-		srpromisc(0, promisc_list);
-		destroy_promisc_list(&promisc_list);
+	if (options.promisc) {
+		promisc_restore_list(&promisc);
+		promisc_destroy(&promisc);
 	}
-
-	adjust_instance_count(PROCCOUNTFILE, -1);
-	adjust_instance_count(LANMONCOUNTFILE, -1);
 
 	if (logging) {
 		signal(SIGUSR1, SIG_DFL);
-		writeethlog(table.head, options->actmode,
-			    time(NULL) - statbegin, logfile);
+		writeethlog(table.head, time(NULL) - statbegin, logfile);
 		writelog(logging, logfile,
 			 "******** LAN traffic monitor stopped ********");
 		fclose(logfile);
@@ -1088,6 +1035,5 @@ err:
 	free_eth_desc(elist);
 	free_eth_desc(flist);
 
-	unmark_facility(LANMONIDFILE, ifptr);
 	strcpy(current_logfile, "");
 }

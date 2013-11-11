@@ -81,7 +81,7 @@ void tx_show_listbox(struct scroll_list *list)
 void tx_operate_listbox(struct scroll_list *list, int *keystroke, int *aborted)
 {
 	int ch;
-	int exitloop = 0;
+	int endloop = 0;
 	int row = 0;
 	char padding[MAX_TEXT_LENGTH];
 	char sp_buf[10];
@@ -98,7 +98,7 @@ void tx_operate_listbox(struct scroll_list *list, int *keystroke, int *aborted)
 	update_panels();
 	doupdate();
 
-	while (!exitloop) {
+	while (!endloop) {
 		snprintf(sp_buf, 9, "%%%zuc",
 			 list->width - strlen(list->textptr->text) - 3);
 		snprintf(padding, MAX_TEXT_LENGTH - 1, sp_buf, ' ');
@@ -145,14 +145,14 @@ void tx_operate_listbox(struct scroll_list *list, int *keystroke, int *aborted)
 			break;
 		case 13:
 			*aborted = 0;
-			exitloop = 1;
+			endloop = 1;
 			break;
 		case 27:
 		case 'x':
 		case 'X':
 		case 24:
 			*aborted = 1;
-			exitloop = 1;
+			endloop = 1;
 		case 12:
 		case 'l':
 		case 'L':

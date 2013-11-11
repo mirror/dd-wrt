@@ -36,16 +36,29 @@
 
 #include <arpa/inet.h>
 
-#include <linux/types.h>
-#include <linux/netdevice.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <linux/if_fddi.h>
-// #include <linux/if_tr.h>
-#include <linux/isdn.h>
+#include <linux/types.h>
 
 #include <linux/if.h>
 #include <linux/if_arp.h>
+
+#ifndef ETH_P_8021AD
+#define ETH_P_8021AD	0x88A8          /* 802.1ad Service VLAN		*/
+#endif
+
+#ifndef ETH_P_QINQ1
+#define ETH_P_QINQ1	0x9100		/* deprecated QinQ VLAN [ NOT AN OFFICIALLY REGISTERED ID ] */
+#endif
+
+#ifndef ETH_P_QINQ2
+#define ETH_P_QINQ2	0x9200		/* deprecated QinQ VLAN [ NOT AN OFFICIALLY REGISTERED ID ] */
+#endif
+
+#ifndef ETH_P_QINQ3
+#define ETH_P_QINQ3	0x9300		/* deprecated QinQ VLAN [ NOT AN OFFICIALLY REGISTERED ID ] */
+#endif
 
 #define debug(...)							\
 	do {								\
@@ -60,8 +73,12 @@
 #define dispmode(mode)				\
 	(((mode) == KBITS) ? "kbps": "kBps")
 
-#define __noreturn __attribute__((noreturn))
-#define __unused __attribute__((unused))
+#define __noreturn	__attribute__((noreturn))
+#define __unused	__attribute__((unused))
+#define __printf(x, y)	__attribute__((format(printf, (x), (y))))
+
+/* screen delay (in msecs) if update rate == 0 */
+#define DEFAULT_UPDATE_DELAY 50
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -85,6 +102,8 @@
 		}							\
 	} while (0)
 
+extern int daemonized;
+extern int exitloop;
 
 extern void *xmalloc(size_t size);
 extern void *xcalloc(size_t nmemb, size_t size);
@@ -94,9 +113,9 @@ extern char *xstrdup(const char *s);
 extern int strtoul_ui(char const *s, int base, unsigned int *result);
 extern int strtol_i(char const *s, int base, int *result);
 
-extern void die(const char *err, ...);
-extern void die_errno(const char *err) __noreturn;
-extern void error(const char *err, ...);
+extern void die(const char *err, ...) __noreturn __printf(1,2);
+extern void die_errno(const char *fmt, ...) __noreturn __printf(1,2);
+extern void error(const char *err, ...) __printf(1,2);
 
 static inline char *skip_whitespace(char *str)
 {

@@ -20,10 +20,8 @@ othptab.h - header file for the non-TCP routines
 #define VSCRL_OFFSET	60	/* Characters to vertically scroll */
 
 struct othptabent {
-	unsigned long int saddr;
-	unsigned long int daddr;
-	struct in6_addr s6addr;
-	struct in6_addr d6addr;
+	struct sockaddr_storage saddr;
+	struct sockaddr_storage daddr;
 	char smacaddr[18];	/* FIXME: use dynamicly allocated space */
 	char dmacaddr[18];
 	unsigned short linkproto;
@@ -84,7 +82,6 @@ struct othptable {
 	int htstat;
 	unsigned int obmaxy;	/* number of lines in the border window */
 	unsigned int oimaxy;	/* number of lines inside the border */
-	int mac;
 	WINDOW *othpwin;
 	PANEL *othppanel;
 	WINDOW *borderwin;
@@ -119,19 +116,18 @@ struct ospfhdr {
 	u_short ospf_authtype;
 };
 
-void init_othp_table(struct othptable *table, int mac);
+void init_othp_table(struct othptable *table);
 
 void process_dest_unreach(struct tcptable *table, char *packet, char *ifname);
 
 struct othptabent *add_othp_entry(struct othptable *table, struct pkt_hdr *pkt,
-				  unsigned long saddr,
-				  unsigned long daddr, struct in6_addr *s6addr,
-				  struct in6_addr *d6addr, int is_ip,
+				  struct sockaddr_storage *saddr,
+				  struct sockaddr_storage *daddr,
+				  int is_ip,
 				  int protocol,
 				  char *packet2,
 				  char *ifname, int *rev_lookup, int rvnamedon,
-				  int logging, FILE * logfile,
-				  int servnames, int fragment);
+				  int logging, FILE *logfile, int fragment);
 
 void printothpentry(struct othptable *table, struct othptabent *entry,
 		    unsigned int screen_idx, int logging, FILE * logfile);

@@ -211,16 +211,6 @@ err:	/* need to preserve errno across call to close() */
 	return ir;
 }
 
-int dev_set_promisc(char *ifname)
-{
-	return dev_set_flags(ifname, IFF_PROMISC);
-}
-
-int dev_clear_promisc(char *ifname)
-{
-	return dev_clear_flags(ifname, IFF_PROMISC);
-}
-
 int dev_get_ifname(int ifindex, char *ifname)
 {
 	int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -247,7 +237,7 @@ int dev_get_ifname(int ifindex, char *ifname)
 	return ir;
 }
 
-int dev_bind_ifindex(const int fd, const int ifindex)
+int dev_bind_ifindex(int fd, const int ifindex)
 {
 	struct sockaddr_ll fromaddr;
 	socklen_t addrlen = sizeof(fromaddr);
@@ -258,25 +248,17 @@ int dev_bind_ifindex(const int fd, const int ifindex)
 	return bind(fd, (struct sockaddr *) &fromaddr, addrlen);
 }
 
-int dev_bind_ifname(const int fd, const char const *ifname)
+int dev_bind_ifname(int fd, const char const *ifname)
 {
 	int ir;
 	struct ifreq ifr;
 
 	strcpy(ifr.ifr_name, ifname);
 	ir = ioctl(fd, SIOCGIFINDEX, &ifr);
-	if(ir != 0)
-		return(ir);
+	if (ir)
+		return ir;
 
 	return dev_bind_ifindex(fd, ifr.ifr_ifindex);
-}
-
-void isdn_iface_check(int *fd, char *ifname)
-{
-	if (*fd == -1) {
-		if (strncmp(ifname, "isdn", 4) == 0)
-			*fd = open("/dev/isdnctrl", O_RDWR);
-	}
 }
 
 char *gen_iface_msg(char *ifptr)
@@ -289,4 +271,20 @@ char *gen_iface_msg(char *ifptr)
 		strncpy(if_msg, ifptr, 20);
 
 	return if_msg;
+}
+
+
+int dev_promisc_flag(const char *dev_name)
+{
+	int flags = dev_get_flags(dev_name);
+	if (flags < 0) {
+		write_error("Unable to obtain interface parameters for %s",
+			    dev_name);
+		return -1;
+	}
+
+	if (flags & IFF_PROMISC)
+		return -1;
+
+	return flags;
 }

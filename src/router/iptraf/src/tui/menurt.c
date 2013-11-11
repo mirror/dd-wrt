@@ -179,7 +179,7 @@ void tx_operatemenu(struct MENU *menu, int *position, int *aborted)
 {
 	struct ITEM *itemptr;
 	int row = *position;
-	int exitloop = 0;
+	int endloop = 0;
 	int ch;
 	char *keyptr;
 
@@ -240,9 +240,9 @@ void tx_operatemenu(struct MENU *menu, int *position, int *aborted)
 			tx_refresh_screen();
 			break;
 		case 13:
-			exitloop = 1;
+			endloop = 1;
 			break;
-			/* case 27: exitloop = 1;*aborted = 1;row=menu->itemcount;break; */
+			/* case 27: endloop = 1;*aborted = 1;row=menu->itemcount;break; */
 		case '^':
 			break;	/* ignore caret key */
 		default:
@@ -250,10 +250,10 @@ void tx_operatemenu(struct MENU *menu, int *position, int *aborted)
 			if ((keyptr != NULL)
 			    && keyptr - menu->shortcuts < menu->itemcount) {
 				row = keyptr - menu->shortcuts + 1;
-				exitloop = 1;
+				endloop = 1;
 			}
 		}
-	} while (!(exitloop));
+	} while (!endloop);
 
 	*position = row;	/* position of executed option is in *position */
 	del_panel(menu->descpanel);

@@ -21,7 +21,6 @@ fltmgr.c - filter list management routines
 #include "dirs.h"
 #include "fltdefs.h"
 #include "fltmgr.h"
-#include "instances.h"
 #include "error.h"
 
 void makestdfiltermenu(struct MENU *menu)
@@ -48,23 +47,6 @@ void makestdfiltermenu(struct MENU *menu)
 void genname(unsigned long n, char *m)
 {
 	sprintf(m, "%lu", n);
-}
-
-int mark_filter_change(void)
-{
-	if (!facility_active(OTHIPFLTIDFILE, ""))
-		mark_facility(OTHIPFLTIDFILE, "IP filter change", "");
-	else {
-		tui_error(ANYKEY_MSG,
-			  "IP protocol data file in use; try again later");
-		return 0;
-	}
-	return 1;
-}
-
-void clear_flt_tag(void)
-{
-	unmark_facility(OTHIPFLTIDFILE, "");
 }
 
 void listfileerr(int code)
@@ -224,16 +206,15 @@ void save_filterlist(struct ffnode *fltlist)
 
 	if (fd < 0) {
 		listfileerr(2);
-		clear_flt_tag();
 		return;
 	}
+
 	fltfile = fltlist;
 	while (fltfile != NULL) {
 		bw = write(fd, &(fltfile->ffe), sizeof(struct filterfileent));
 
 		if (bw < 0) {
 			listfileerr(2);
-			clear_flt_tag();
 			return;
 		}
 		ffntemp = fltfile;
