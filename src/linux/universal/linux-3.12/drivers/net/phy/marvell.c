@@ -384,40 +384,6 @@ static int m88e1510_config_aneg(struct phy_device *phydev)
 
 	return marvell_of_reg_init(phydev);
 }
-static int m88e1510_config_init(struct phy_device *phydev)
-{
-	int val;
-	printk(KERN_INFO "init E1510\n");
-		phy_write(phydev, MDIO_DEVAD_NONE, 22, 0x00ff);
-		phy_write(phydev, MDIO_DEVAD_NONE, 17, 0x214b);
-		phy_write(phydev, MDIO_DEVAD_NONE, 16, 0x2144);
-		phy_write(phydev, MDIO_DEVAD_NONE, 17, 0x0c28);
-		phy_write(phydev, MDIO_DEVAD_NONE, 16, 0x2146);
-		phy_write(phydev, MDIO_DEVAD_NONE, 17, 0xb233);
-		phy_write(phydev, MDIO_DEVAD_NONE, 16, 0x214d);
-		phy_write(phydev, MDIO_DEVAD_NONE, 17, 0xcc0c);
-		phy_write(phydev, MDIO_DEVAD_NONE, 16, 0x2159);
-		phy_write(phydev, MDIO_DEVAD_NONE, 22, 0x00fb);
-		phy_write(phydev, MDIO_DEVAD_NONE,  7, 0xc00d);
-		phy_write(phydev, MDIO_DEVAD_NONE, 22, 0);
-
-	printk(KERN_INFO "init LED registers\n");
-		/* LED configuration (See datasheet section 2.26.4)
-		 * LED[0] (SPD:Amber) R16_3.3:0 to 0111: on-GbE link
-		 * LED[1] (LNK:Green) R16_3.7:4 to 0001: on-link, blink-activity
-		 */
-		phy_write(phydev, MDIO_DEVAD_NONE, 22, 3);
-		val = phy_read(phydev, MDIO_DEVAD_NONE, 16);
-		val &= 0xff00;
-		val |= 0x0017;
-		phy_write(phydev, MDIO_DEVAD_NONE, 16, val);
-		phy_write(phydev, MDIO_DEVAD_NONE, 22, 0);
-
-
-}
-
-
-
 
 static int m88e1116r_config_init(struct phy_device *phydev)
 {
@@ -1055,7 +1021,6 @@ static struct phy_driver marvell_drivers[] = {
 		.name = "Marvell 88E1510",
 		.features = PHY_GBIT_FEATURES,
 		.flags = PHY_HAS_INTERRUPT,
-		.config_init = &m88e1510_config_init,
 		.config_aneg = &m88e1510_config_aneg,
 		.read_status = &marvell_read_status,
 		.ack_interrupt = &marvell_ack_interrupt,
@@ -1064,8 +1029,6 @@ static struct phy_driver marvell_drivers[] = {
 		.driver = { .owner = THIS_MODULE },
 	},
 };
-
-
 
 static int __init marvell_init(void)
 {
