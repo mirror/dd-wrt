@@ -18,7 +18,7 @@ VERSION-FILE: FORCE
 	@$(SHELL_PATH) ./GEN-VERSION-FILE
 -include VERSION-FILE
 
-CFLAGS = -g -O2 -Wall -W -std=gnu99
+CFLAGS = $(COPTS) -Wall -W -std=gnu99
 LDFLAGS =
 ALL_CFLAGS = $(CPPFLAGS) $(CFLAGS)
 ALL_LDFLAGS = $(LDFLAGS)
@@ -38,7 +38,7 @@ pathsep = :
 
 export prefix bindir sharedir sysconfdir gitwebdir localedir
 
-CC = cc
+#CC = cc
 RM = rm -f
 INSTALL = install
 RPMBUILD = rpmbuild
@@ -203,67 +203,10 @@ $(error please set COMPUTE_HEADER_DEPENDENCIES to yes, no, or auto \
 endif
 endif
 
-ifndef NCURSES_LDFLAGS
-ifdef NEEDS_NCURSES5
-	NCURSES_CFLAGS := $(shell ncurses5-config --cflags 2>/dev/null)
-	NCURSES_LDFLAGS := $(shell ncurses5-config --libs 2>/dev/null)
-	ifndef NO_PANEL
-		NCURSES_LDFLAGS += -lpanel
-	endif
-endif
-endif
-
-ifndef NCURSES_LDFLAGS
-ifdef NEEDS_NCURSESW5
-	NCURSES_CFLAGS := $(shell ncursesw5-config --cflags 2>/dev/null)
-	NCURSES_LDFLAGS := $(shell ncursesw5-config --libs 2>/dev/null)
-	ifndef NO_PANEL
-		NCURSES_LDFLAGS += -lpanel
-	endif
-endif
-endif
-
-ifndef NCURSES_LDFLAGS
-ifdef NEEDS_NCURSES6
-	NCURSES_CFLAGS := $(shell ncurses6-config --cflags 2>/dev/null)
-	NCURSES_LDFLAGS := $(shell ncurses6-config --libs 2>/dev/null)
-	ifndef NO_PANEL
-		NCURSES_LDFLAGS += -lpanel
-	endif
-endif
-endif
-
-ifndef NCURSES_LDFLAGS
-ifdef NEEDS_NCURSESW6
-	NCURSES_CFLAGS := $(shell ncursesw6-config --cflags 2>/dev/null)
-	NCURSES_LDFLAGS := $(shell ncursesw6-config --libs 2>/dev/null)
-	ifndef NO_PANEL
-		NCURSES_LDFLAGS += -lpanel
-	endif
-endif
-endif
-
-# try find ncuses by autodetect
-ifndef NCURSES_LDFLAGS
-	ifneq ($(shell ncursesw6-config --libs 2>/dev/null),)
-		NCURSES_CFLAGS := $(shell ncursesw6-config --cflags 2>/dev/null)
-		NCURSES_LDFLAGS := $(shell ncursesw6-config --libs 2>/dev/null)
-	else ifneq ($(shell ncurses6-config --libs 2>/dev/null),)
-		NCURSES_CFLAGS := $(shell ncurses6-config --cflags 2>/dev/null)
-		NCURSES_LDFLAGS := $(shell ncurses6-config --libs 2>/dev/null)
-	else ifneq ($(shell ncursesw5-config --libs 2>/dev/null),)
-		NCURSES_CFLAGS := $(shell ncursesw5-config --cflags 2>/dev/null)
-		NCURSES_LDFLAGS := $(shell ncursesw5-config --libs 2>/dev/null)
-	else ifneq ($(shell ncurses5-config --libs 2>/dev/null),)
-		NCURSES_CFLAGS := $(shell ncurses5-config --cflags 2>/dev/null)
-		NCURSES_LDFLAGS := $(shell ncurses5-config --libs 2>/dev/null)
-	endif
-
-	ifneq ($(NCURSES_LDFLAGS),)
-	ifndef NO_PANEL
-		NCURSES_LDFLAGS += -lpanel
-	endif
-	endif
+NCURSES_CFLAGS := -I$(TOP)/ncurses/include
+NCURSES_LDFLAGS := -L$(TOP)/ncurses/lib -lncurses
+ifndef NO_PANEL
+	NCURSES_LDFLAGS += -lpanel
 endif
 
 QUIET_SUBDIR0  = +$(MAKE) -C # space to separate -C and subdir
@@ -427,12 +370,12 @@ rpm: dist
 
 ### Installation rules
 install: all
-	@echo $(DESTDIR_SQ)$(man8dir)
+#	@echo $(DESTDIR_SQ)$(man8dir)
 	$(INSTALL) -d -m 755 '$(DESTDIR_SQ)$(sbindir_SQ)'
 	$(INSTALL) $(ALL_PROGRAMS) '$(DESTDIR_SQ)$(sbindir_SQ)'
-	$(INSTALL) -d -m 755 $(DESTDIR)$(man8dir)
-	$(INSTALL) -m 644 src/iptraf-ng.8  $(DESTDIR)$(man8dir)
-	$(INSTALL) -m 644 src/rvnamed-ng.8  $(DESTDIR)$(man8dir)
+#	$(INSTALL) -d -m 755 $(DESTDIR)$(man8dir)
+#	$(INSTALL) -m 644 src/iptraf-ng.8  $(DESTDIR)$(man8dir)
+#	$(INSTALL) -m 644 src/rvnamed-ng.8  $(DESTDIR)$(man8dir)
 
 ### Cleaning rules
 
