@@ -16,8 +16,6 @@ itrafmon.c - the IP traffic monitor module
 #include "tcptable.h"
 #include "othptab.h"
 #include "fltdefs.h"
-#include "fltselect.h"
-#include "isdntab.h"
 #include "packet.h"
 #include "ifaces.h"
 #include "promisc.h"
@@ -30,16 +28,12 @@ itrafmon.c - the IP traffic monitor module
 #include "dirs.h"
 #include "timer.h"
 #include "ipfrag.h"
-#include "instances.h"
 #include "logvars.h"
-#include "bar.h"
 #include "itrafmon.h"
+#include "sockaddr.h"
 
 #define SCROLLUP 0
 #define SCROLLDOWN 1
-
-extern int exitloop;
-extern int daemonized;
 
 static void rotate_ipmon_log(int s __unused)
 {
@@ -332,8 +326,7 @@ static unsigned long long qt_getkey(struct tcptableent *entry, int ch)
 static struct tcptableent *qt_partition(struct tcptable *table,
 					struct tcptableent **low,
 					struct tcptableent **high, int ch,
-					struct OPTIONS *opts, int logging,
-					FILE * logfile)
+					int logging, FILE *logfile)
 {
 	struct tcptableent *pivot = *low;
 
@@ -356,8 +349,8 @@ static struct tcptableent *qt_partition(struct tcptable *table,
 			/*
 			 * Might as well check out timed out entries here too.
 			 */
-			if ((opts->timeout > 0)
-			    && ((now - left->lastupdate) / 60 > opts->timeout)
+			if ((options.timeout > 0)
+			    && ((now - left->lastupdate) / 60 > options.timeout)
 			    && (!(left->inclosed))) {
 				left->timedout =
 				    left->oth_connection->timedout = 1;
@@ -365,7 +358,7 @@ static struct tcptableent *qt_partition(struct tcptable *table,
 
 				if (logging)
 					write_timeout_log(logging, logfile,
-							  left, opts);
+							  left);
 			}
 
 			left = left->next_entry->next_entry;
@@ -375,8 +368,8 @@ static struct tcptableent *qt_partition(struct tcptable *table,
 			/*
 			 * Might as well check out timed out entries here too.
 			 */
-			if ((opts->timeout > 0)
-			    && ((now - right->lastupdate) / 60 > opts->timeout)
+			if ((options.timeout > 0)
+			    && ((now - right->lastupdate) / 60 > options.timeout)
 			    && (!(right->inclosed))) {
 				right->timedout =
 				    right->oth_connection->timedout = 1;
@@ -384,7 +377,7 @@ static struct tcptableent *qt_partition(struct tcptable *table,
 
 				if (logging)
 					write_timeout_log(logging, logfile,
-							  right, opts);
+							  right);
 			}
 			right = right->prev_entry->prev_entry;
 		}
@@ -420,8 +413,7 @@ static struct tcptableent *qt_partition(struct tcptable *table,
 static void quicksort_tcp_entries(struct tcptable *table,
 				  struct tcptableent *low,
 				  struct tcptableent *high, int ch,
-				  struct OPTIONS *opts, int logging,
-				  FILE *logfile)
+				  int logging, FILE *logfile)
 {
 	struct tcptableent *pivot;
 
@@ -430,15 +422,15 @@ static void quicksort_tcp_entries(struct tcptable *table,
 
 	if (high->index > low->index) {
 		pivot =
-		    qt_partition(table, &low, &high, ch, opts, logging, logfile);
+		    qt_partition(table, &low, &high, ch, logging, logfile);
 
 		if (pivot->prev_entry != NULL)
 			quicksort_tcp_entries(table, low,
 					      pivot->prev_entry->prev_entry, ch,
-					      opts, logging, logfile);
+					      logging, logfile);
 
 		quicksort_tcp_entries(table, pivot->next_entry->next_entry,
-				      high, ch, opts, logging, logfile);
+				      high, ch, logging, logfile);
 	}
 }
 
@@ -448,8 +440,7 @@ static void quicksort_tcp_entries(struct tcptable *table,
  */
 
 static void sortipents(struct tcptable *table, unsigned long *idx, int ch,
-		       int logging, FILE * logfile,
-		       struct OPTIONS *opts)
+		       int logging, FILE *logfile)
 {
 	struct tcptableent *tcptmp1;
 	unsigned int idxtmp;
@@ -464,7 +455,7 @@ static void sortipents(struct tcptable *table, unsigned long *idx, int ch,
 		return;
 
 	quicksort_tcp_entries(table, table->head, table->tail->prev_entry, ch,
-			      opts, logging, logfile);
+			      logging, logfile);
 
 	update_panels();
 	doupdate();
@@ -491,7 +482,6 @@ static int checkrvnamed(void)
 {
 	pid_t cpid = 0;
 	int cstat;
-	extern int errno;
 
 	indicate("Trying to communicate with reverse lookup server");
 	if (!rvnamedactive()) {
@@ -529,55 +519,47 @@ static int checkrvnamed(void)
 	return 1;
 }
 
-static void update_flowrate(WINDOW * win, struct tcptableent *entry, time_t now,
-		     int *cleared, int mode)
+static void update_flowrate(struct tcptable *table, unsigned long msecs)
 {
-	float rate = 0;
+	struct tcptableent *entry;
+	for (entry = table->head; entry != NULL; entry = entry->next_entry) {
+		rate_add_rate(&entry->rate, entry->spanbr, msecs);
+		entry->spanbr = 0;
+	}
+}
 
+static void print_flowrate(struct tcptableent *entry, WINDOW *win)
+{
 	wattrset(win, IPSTATLABELATTR);
 	mvwprintw(win, 0, COLS * 47 / 80, "TCP flow rate: ");
 	wattrset(win, IPSTATATTR);
-	if (mode == KBITS) {
-		rate =
-		    (float) (entry->spanbr * 8 / 1000) / (float) (now -
-								  entry->
-								  starttime);
-	} else {
-		rate =
-		    (float) (entry->spanbr / 1024) / (float) (now -
-							      entry->starttime);
-	}
-	mvwprintw(win, 0, COLS * 53 / 80 + 13, "%8.2f %s", rate, dispmode(mode));
-	entry->spanbr = 0;
-	*cleared = 0;
+
+	char buf[32];
+	rate_print(rate_get_average(&entry->rate), buf, sizeof(buf));
+	mvwprintw(win, 0, COLS * 52 / 80 + 13, "%s", buf);
 }
 
 /*
  * The IP Traffic Monitor
  */
 
-void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
-	   time_t facilitytime, char *ifptr)
+void ipmon(time_t facilitytime, char *ifptr)
 {
-	int logging = options->logging;
+	int logging = options.logging;
 
-	struct iphdr *ippacket;
-	struct ip6_hdr *ip6packet;
-	unsigned int protocol;
 	unsigned int frag_off;
 	struct tcphdr *transpacket;	/* IP-encapsulated packet */
-	unsigned int sport = 0, dport = 0;	/* TCP/UDP port values */
+	in_port_t sport = 0, dport = 0;	/* TCP/UDP port values */
 	char sp_buf[10];
 
 	unsigned long screen_idx = 1;
 
 	struct timeval tv;
+	struct timeval tv_rate;
 	time_t starttime = 0;
 	time_t now = 0;
 	time_t timeint = 0;
-	time_t updtime = 0;
-	unsigned long long updtime_usec = 0;
-	unsigned long long unow = 0;
+	struct timeval updtime;
 	time_t closedint = 0;
 
 	WINDOW *statwin;
@@ -595,9 +577,6 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 	unsigned long long total_pkts = 0;
 
 	unsigned int br;	/* bytes read.  Differs from readlen */
-
-	/* only when packets fragmented */
-	unsigned int iphlen;
 
 	struct tcptable table;
 	struct tcptableent *tcpentry;
@@ -619,13 +598,9 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 	int keymode = 0;
 	char msgstring[80];
 
-	struct promisc_states *promisc_list;
-
 	int rvnfd = 0;
 
-	int instance_id;
-	int revlook = options->revlook;
-	int statcleared = 0;
+	int revlook = options.revlook;
 	int wasempty = 1;
 
 	const int statx = COLS * 47 / 80;
@@ -634,38 +609,19 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 	 * Mark this instance of the traffic monitor
 	 */
 
-	if (!facility_active(IPMONIDFILE, ifptr))
-		mark_facility(IPMONIDFILE, "IP traffic monitor", ifptr);
-	else {
-		write_error("IP Traffic Monitor already listening on %s", gen_iface_msg(ifptr));
+	if (ifptr && !dev_up(ifptr)) {
+		err_iface_down();
 		return;
 	}
 
-	if (ifptr != NULL) {
-		if (!dev_up(ifptr)) {
-			err_iface_down();
-			unmark_facility(IPMONIDFILE, ifptr);
-			return;
-		}
+	LIST_HEAD(promisc);
+	if (options.promisc) {
+		promisc_init(&promisc, ifptr);
+		promisc_set_list(&promisc);
 	}
-
-	if (options->promisc) {
-		if (first_active_facility()) {
-			init_promisc_list(&promisc_list);
-			save_promisc_list(promisc_list);
-			srpromisc(1, promisc_list);
-		}
-	}
-
-	/*
-	 * Adjust instance counters
-	 */
-
-	adjust_instance_count(PROCCOUNTFILE, 1);
-	instance_id = adjust_instance_count(ITRAFMONCOUNTFILE, 1);
 
 	init_tcp_table(&table);
-	init_othp_table(&othptbl, options->mac);
+	init_othp_table(&othptbl);
 
 	statwin = newwin(1, COLS, LINES - 2, 0);
 	statpanel = new_panel(statwin);
@@ -691,7 +647,7 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 	update_panels();
 	doupdate();
 
-	if (options->servnames)
+	if (options.servnames)
 		setservent(1);
 
 	/*
@@ -704,7 +660,7 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 	if (logging) {
 		if (strcmp(current_logfile, "") == 0) {
 			strncpy(current_logfile,
-				gen_instance_logname(IPMONLOG, instance_id),
+				gen_instance_logname(IPMONLOG, getpid()),
 				80);
 
 			if (!daemonized)
@@ -738,9 +694,10 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 		goto err_close;
 	}
 
-	//isdnfd = -1;
 	exitloop = 0;
 	gettimeofday(&tv, NULL);
+	tv_rate = tv;
+	updtime = tv;
 	starttime = timeint = closedint = tv.tv_sec;
 
 	PACKET_INIT(pkt);
@@ -750,7 +707,6 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 
 		gettimeofday(&tv, NULL);
 		now = tv.tv_sec;
-		unow = tv.tv_sec * 1e+06 + tv.tv_usec;
 
 		/* 
 		 * Print timer at bottom of screen
@@ -766,10 +722,10 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 		 * Automatically clear closed/timed out entries
 		 */
 
-		if ((options->closedint != 0)
-		    && ((now - closedint) / 60 >= options->closedint)) {
+		if ((options.closedint != 0)
+		    && ((now - closedint) / 60 >= options.closedint)) {
 			flushclosedentries(&table, &screen_idx, logging,
-					   logfile, options);
+					   logfile);
 			refreshtcpwin(&table, screen_idx, mode);
 			closedint = now;
 		}
@@ -778,30 +734,28 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 		 * Update screen at configured intervals.
 		 */
 
-		if (((options->updrate != 0)
-		     && (now - updtime >= options->updrate))
-		    || ((options->updrate == 0)
-			&& (unow - updtime_usec >= DEFAULT_UPDATE_DELAY))) {
+		if (screen_update_needed(&tv, &updtime)) {
 			update_panels();
 			doupdate();
-			updtime = now;
-			updtime_usec = unow;
+
+			updtime = tv;
 		}
 
 		/*
 		 * If highlight bar is on some entry, update the flow rate
 		 * indicator after five seconds.
 		 */
-		if (table.barptr != NULL) {
-			if ((now - table.barptr->starttime) >= 5) {
-				update_flowrate(statwin, table.barptr, now,
-						&statcleared, options->actmode);
-				table.barptr->starttime = now;
+		unsigned long rate_msecs = timeval_diff_msec(&tv, &tv_rate);
+		if (rate_msecs > 1000) {
+			update_flowrate(&table, rate_msecs);
+			if (table.barptr != NULL) {
+				print_flowrate(table.barptr, statwin);
+			} else {
+				wattrset(statwin, IPSTATATTR);
+				mvwprintw(statwin, 0, statx,
+					  "No TCP entries              ");
 			}
-		} else {
-			wattrset(statwin, IPSTATATTR);
-			mvwprintw(statwin, 0, statx,
-				  "No TCP entries              ");
+			tv_rate = tv;
 		}
 
 		/*
@@ -844,12 +798,7 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 					break;
 
 				tmptcp = table.barptr;
-				set_barptr((void *) &(table.barptr),
-					   table.barptr->prev_entry,
-					   &(table.barptr->prev_entry->starttime),
-					   &(table.barptr->prev_entry->spanbr),
-					   sizeof(unsigned long),
-					   statwin, &statcleared, statx);
+				table.barptr = table.barptr->prev_entry;
 
 				printentry(&table, tmptcp, screen_idx, mode);
 
@@ -872,12 +821,7 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 					break;
 
 				tmptcp = table.barptr;
-				set_barptr((void*) &(table.barptr),
-					   table.barptr->next_entry,
-					   &(table.barptr->next_entry->starttime),
-					   &(table.barptr->next_entry->spanbr),
-					   sizeof(unsigned long),
-					   statwin, &statcleared, statx);
+				table.barptr = table.barptr->next_entry;
 				printentry(&table, tmptcp, screen_idx,mode);
 
 				if (table.baridx == table.imaxy)
@@ -919,14 +863,9 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 					break;
 
 				pageupperwin(&table, SCROLLDOWN, &screen_idx);
-				set_barptr((void *) &(table.barptr),
-					   table.lastvisible,
-					   &(table.lastvisible->starttime),
-					   &(table.lastvisible->spanbr),
-					   sizeof(unsigned long),
-					   statwin,&statcleared, statx);
-				table.baridx =
-					table.lastvisible->index - screen_idx + 1;
+				table.barptr = table.lastvisible;
+				table.baridx = table.lastvisible->index
+						- screen_idx + 1;
 				refreshtcpwin(&table, screen_idx, mode);
 				break;
 			case KEY_NPAGE:
@@ -941,12 +880,7 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 					break;
 
 				pageupperwin(&table, SCROLLUP, &screen_idx);
-				set_barptr((void *) &(table.barptr),
-					   table.firstvisible,
-					   &(table.firstvisible->starttime),
-					   &(table.firstvisible->spanbr),
-					   sizeof(unsigned long),
-					   statwin, &statcleared, statx);
+				table.barptr = table.firstvisible;
 				table.baridx = 1;
 				refreshtcpwin(&table, screen_idx, mode);
 				break;
@@ -964,7 +898,7 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 				if (curwin)
 					break;
 				mode = (mode + 1) % 3;
-				if ((mode == 1) && (!options->mac))
+				if ((mode == 1) && !options.mac)
 					mode = 2;
 				refreshtcpwin(&table, screen_idx, mode);
 				break;
@@ -979,7 +913,7 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 			case 'c':
 			case 'C':
 				flushclosedentries(&table, &screen_idx, logging,
-						   logfile, options);
+						   logfile);
 				refreshtcpwin(&table, screen_idx, mode);
 				break;
 			case 's':
@@ -1004,15 +938,10 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 			update_panels();
 			doupdate();
 			sortipents(&table, &screen_idx, ch, logging,
-				   logfile, options);
+				   logfile);
 
 			if (table.barptr != NULL) {
-				set_barptr((void *) &(table.barptr),
-					   table.firstvisible,
-					   &(table.firstvisible->starttime),
-					   &(table.firstvisible->spanbr),
-					   sizeof(unsigned long),
-					   statwin, &statcleared, statx);
+				table.barptr = table.firstvisible;
 				table.baridx = 1;
 			}
 			refreshtcpwin(&table, screen_idx, mode);
@@ -1031,8 +960,8 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 
 		pkt_result =
 		    packet_process(&pkt, &br, &sport, &dport,
-				  ofilter, MATCH_OPPOSITE_ALWAYS,
-				  options->v6inv4asv6);
+				  MATCH_OPPOSITE_ALWAYS,
+				  options.v6inv4asv6);
 
 		if (pkt_result != PACKET_OK)
 			continue;
@@ -1049,56 +978,37 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 			ifname = ifnamebuf;
 		}
 
+		struct sockaddr_storage saddr, daddr;
 		switch(pkt.pkt_protocol) {
 		case ETH_P_IP:
-			ippacket = (struct iphdr *) pkt.pkt_payload;
-			iphlen = ippacket->ihl * 4;
-			ip6packet = NULL;
-			protocol = ippacket->protocol;
-			frag_off = ippacket->frag_off;
+			frag_off = pkt.iphdr->frag_off;
+			sockaddr_make_ipv4(&saddr, pkt.iphdr->saddr);
+			sockaddr_make_ipv4(&daddr, pkt.iphdr->daddr);
 			break;
 		case ETH_P_IPV6:
-			ip6packet = (struct ip6_hdr *) pkt.pkt_payload;
-			iphlen = 40;
-			ippacket = NULL;
-			protocol = ip6packet->ip6_nxt;
 			frag_off = 0;
+			sockaddr_make_ipv6(&saddr, &pkt.ip6_hdr->ip6_src);
+			sockaddr_make_ipv6(&daddr, &pkt.ip6_hdr->ip6_dst);
 			break;
 		default:
-			add_othp_entry(&othptbl, &pkt, 0, 0, NULL,
-				       NULL, NOT_IP,
+			add_othp_entry(&othptbl, &pkt, NULL, NULL,
+				       NOT_IP,
 				       pkt.pkt_protocol,
 				       pkt.pkt_payload, ifname, 0,
-				       0, logging, logfile,
-				       options->servnames, 0);
+				       0, logging, logfile, 0);
 			continue;
 		}
 
+		/* only when packets fragmented */
+		__u8 iphlen = pkt_iph_len(&pkt);
 		transpacket = (struct tcphdr *) (pkt.pkt_payload + iphlen);
 
-		if (protocol == IPPROTO_TCP) {
-			if (ippacket != NULL) {
-				tcpentry =
-					in_table(&table,
-						 ippacket->saddr,
-						 ippacket->daddr,
-						 NULL, NULL,
-						 ntohs(sport),
-						 ntohs(dport),
-						 ifname, logging,
-						 logfile, options);
-			} else {
-				tcpentry =
-					in_table(&table, 0, 0,
-					     (uint8_t *) (&ip6packet->
-							  ip6_src.
-							  s6_addr),
-					     (uint8_t *) (&ip6packet->
-							  ip6_dst.
-							  s6_addr),
-					     ntohs(sport), ntohs(dport),
-					     ifname, logging, logfile, options);
-			}
+		__u8 ip_protocol = pkt_ip_protocol(&pkt);
+		if (ip_protocol == IPPROTO_TCP) {
+			sockaddr_set_port(&saddr, sport);
+			sockaddr_set_port(&daddr, dport);
+			tcpentry = in_table(&table, &saddr, &daddr, ifname,
+					    logging, logfile, options.timeout);
 
 			/*
 			 * Add a new entry if it doesn't exist, and,
@@ -1114,45 +1024,17 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 				 * is not yet closed, or if it is a SYN packet.
 				 */
 				wasempty = (table.head == NULL);
-				if (ippacket != NULL)
-					tcpentry =
-						addentry(&table,
-							 (unsigned long) ippacket->saddr,
-							 (unsigned long) ippacket->daddr,
-							 NULL, NULL, sport, dport,
-							 ippacket->protocol,
-							 ifname, &revlook, rvnfd,
-							 options->servnames);
-				else
-					tcpentry =
-						addentry(&table, 0, 0,
-							 (uint8_t *) (&ip6packet->ip6_src.s6_addr),
-							 (uint8_t *) (&ip6packet->ip6_dst.s6_addr),
-							 sport, dport, ip6packet->ip6_nxt,
-							 ifname, &revlook, rvnfd,
-							 options->servnames);
+				tcpentry = addentry(&table, &saddr, &daddr,
+						    pkt_ip_protocol(&pkt),
+						    ifname, &revlook, rvnfd);
 				if (tcpentry != NULL) {
 					printentry(&table, tcpentry->oth_connection, screen_idx,
 						   mode);
 
 					if (wasempty) {
-						set_barptr((void *) &(table.barptr),
-							   table.firstvisible,
-							   &(table.firstvisible->starttime),
-							   &(table.firstvisible->spanbr),
-							   sizeof(unsigned long),
-							   statwin, &statcleared, statx);
+						table.barptr = table.firstvisible;
 						table.baridx = 1;
 					}
-
-					if ((table.barptr == tcpentry)
-					    || (table.barptr == tcpentry->oth_connection))
-						set_barptr((void *) &(table.barptr),
-							   table.barptr,
-							   &(table.barptr->starttime),
-							   &(table.barptr->spanbr),
-							   sizeof(unsigned long), statwin,
-							   &statcleared, statx);
 				}
 			}
 			/*
@@ -1174,17 +1056,17 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 					p_dstat = tcpentry->d_fstat;
 				}
 
-				if (ippacket != NULL)
+				if (pkt.iphdr)
 					updateentry(&table, tcpentry, transpacket,
 						    pkt.pkt_buf, pkt.pkt_hatype,
-						    pkt.pkt_len, br, ippacket->frag_off,
-						    logging, &revlook, rvnfd, options,
+						    pkt.pkt_len, br, pkt.iphdr->frag_off,
+						    logging, &revlook, rvnfd,
 						    logfile);
 				else
 					updateentry(&table, tcpentry, transpacket,
 						    pkt.pkt_buf, pkt.pkt_hatype,
 						    pkt.pkt_len, pkt.pkt_len, 0, logging,
-						    &revlook, rvnfd, options,
+						    &revlook, rvnfd,
 						    logfile);
 				/*
 				 * Log first packet of a TCP connection except if
@@ -1200,8 +1082,7 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 						strcat(msgstring, " (SYN)");
 
 					writetcplog(logging, logfile, tcpentry,
-						    pkt.pkt_len, options->mac,
-						    msgstring);
+						    pkt.pkt_len, msgstring);
 				}
 
 				if ((revlook)
@@ -1236,10 +1117,10 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 					printentry(&table, tcpentry->oth_connection,
 						   screen_idx, mode);
 			}
-		} else if (ippacket != NULL) {
-			fragment =  ((ntohs(ippacket->frag_off) & 0x1fff) != 0);
+		} else if (pkt.iphdr) {
+			fragment =  ((ntohs(pkt.iphdr->frag_off) & 0x1fff) != 0);
 
-			if (ippacket->protocol == IPPROTO_ICMP) {
+			if (pkt_ip_protocol(&pkt) == IPPROTO_ICMP) {
 
 				/*
 				 * Cancel the corresponding TCP entry if an ICMP
@@ -1251,26 +1132,22 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 					process_dest_unreach(&table, (char *) transpacket,
 							     ifname);
 			}
-			add_othp_entry(&othptbl, &pkt, ippacket->saddr,
-				       ippacket->daddr, NULL, NULL, IS_IP,
-				       ippacket->protocol,
-				       (char *) transpacket,
-				       ifname, &revlook, rvnfd,
-				       logging, logfile,
-				       options->servnames, fragment);
+			add_othp_entry(&othptbl, &pkt, &saddr, &daddr,
+				       IS_IP, pkt_ip_protocol(&pkt),
+				       (char *) transpacket, ifname,
+				       &revlook, rvnfd, logging, logfile,
+				       fragment);
 
 		} else {
-			if (ip6packet->ip6_nxt == IPPROTO_ICMPV6
+			if (pkt_ip_protocol(&pkt) == IPPROTO_ICMPV6
 			    && (((struct icmp6_hdr *) transpacket)->icmp6_type == ICMP6_DST_UNREACH))
 				process_dest_unreach(&table, (char *) transpacket,
 						     ifname);
 
-			add_othp_entry(&othptbl, &pkt, 0, 0,
-				       &ip6packet->ip6_src, &ip6packet->ip6_dst,
-				       IS_IP, ip6packet->ip6_nxt,
+			add_othp_entry(&othptbl, &pkt, &saddr, &daddr,
+				       IS_IP, pkt_ip_protocol(&pkt),
 				       (char *) transpacket, ifname,
-				       &revlook, rvnfd,
-				       logging, logfile, options->servnames,
+				       &revlook, rvnfd, logging, logfile,
 				       fragment);
 		}
 	}
@@ -1278,19 +1155,17 @@ void ipmon(struct OPTIONS *options, struct filterstate *ofilter,
 err_close:
 	close(fd);
 err:
-	if (get_instance_count(ITRAFMONCOUNTFILE) <= 1)
-		killrvnamed();
+	killrvnamed();
 
-	if (options->servnames)
+	if (options.servnames)
 		endservent();
 
 	endprotoent();
 	close_rvn_socket(rvnfd);
 
-	if ((options->promisc) && (is_last_instance())) {
-		load_promisc_list(&promisc_list);
-		srpromisc(0, promisc_list);
-		destroy_promisc_list(&promisc_list);
+	if (options.promisc) {
+		promisc_restore_list(&promisc);
+		promisc_destroy(&promisc);
 	}
 
 	attrset(STDATTR);
@@ -1318,8 +1193,4 @@ err:
 		fclose(logfile);
 		strcpy(current_logfile, "");
 	}
-
-	adjust_instance_count(PROCCOUNTFILE, -1);
-	adjust_instance_count(ITRAFMONCOUNTFILE, -1);
-	unmark_facility(IPMONIDFILE, ifptr);
 }

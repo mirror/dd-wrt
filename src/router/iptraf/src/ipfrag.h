@@ -16,9 +16,9 @@ struct fragdescent {
 
 struct fragent {
 	unsigned long s_addr;
-	unsigned int s_port;
+	in_port_t s_port;
 	unsigned long d_addr;
-	unsigned int d_port;
+	in_port_t d_port;
 	unsigned int id;
 	unsigned int protocol;
 	int firstin;
@@ -36,7 +36,7 @@ struct fragfreelistent {
 };
 
 void destroyfraglist(void);
-unsigned int processfragment(struct iphdr *packet, unsigned int *sport,
-			     unsigned int *dport, int *firstin);
+unsigned int processfragment(struct iphdr *packet, in_port_t *sport,
+			     in_port_t *dport, int *firstin);
 
 #endif	/* IPTRAF_NG_IPFRAG_H */

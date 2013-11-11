@@ -12,8 +12,6 @@ error.c - Error-handling subroutines
 #include "log.h"
 #include "tui/msgboxes.h"
 
-extern int daemonized;
-
 void write_error(char *msg, ...)
 {
 	va_list vararg;

@@ -15,9 +15,7 @@ ifstats.c	- the interface statistics module
 #include "tui/winops.h"
 
 #include "ifaces.h"
-#include "isdntab.h"
 #include "fltdefs.h"
-#include "fltselect.h"
 #include "packet.h"
 #include "options.h"
 #include "log.h"
@@ -26,7 +24,6 @@ ifstats.c	- the interface statistics module
 #include "attrs.h"
 #include "serv.h"
 #include "timer.h"
-#include "instances.h"
 #include "logvars.h"
 #include "promisc.h"
 #include "error.h"
@@ -65,9 +62,6 @@ struct iftab {
 	PANEL *statpanel;
 };
 
-extern int exitloop;
-extern int daemonized;
-
 /*
  * USR1 log-rotation signal handlers
  */
@@ -79,8 +73,7 @@ static void rotate_gstat_log(int s __unused)
 	signal(SIGUSR1, rotate_gstat_log);
 }
 
-static void writegstatlog(struct iftab *table, int unit, unsigned long nsecs,
-			  FILE *fd)
+static void writegstatlog(struct iftab *table, unsigned long nsecs, FILE *fd)
 {
 	struct iflist *ptmp = table->head;
 	char atime[TIME_TARGET_MAX];
@@ -99,11 +92,11 @@ static void writegstatlog(struct iftab *table, int unit, unsigned long nsecs,
 		if (nsecs > 5) {
 			char buf[64];
 
-			rate_print(ptmp->br / nsecs, unit, buf, sizeof(buf));
+			rate_print(ptmp->br / nsecs, buf, sizeof(buf));
 			fprintf(fd, ", average activity %s", buf);
-			rate_print(ptmp->peakrate, unit, buf, sizeof(buf));
+			rate_print(ptmp->peakrate, buf, sizeof(buf));
 			fprintf(fd, ", peak activity %s", buf);
-			rate_print(rate_get_average(&ptmp->rate), unit, buf, sizeof(buf));
+			rate_print(rate_get_average(&ptmp->rate), buf, sizeof(buf));
 			fprintf(fd, ", last 5-second average activity %s", buf);
 		}
 		fprintf(fd, "\n");
@@ -181,7 +174,7 @@ static void initiflist(struct iflist **list)
 		struct iflist *itmp = xmallocz(sizeof(struct iflist));
 		strcpy(itmp->ifname, ifname);
 		itmp->ifindex = ifindex;
-		rate_init(&itmp->rate, 5);
+		rate_alloc(&itmp->rate, 5);
 
 		/* make the linked list sorted by ifindex */
 		struct iflist *cur = *list, *last = NULL;
@@ -260,25 +253,37 @@ static void no_ifaces_error(void)
 	write_error("No active interfaces. Check their status or the /proc filesystem");
 }
 
-static void updaterates(struct iftab *table, int unit, unsigned long msecs,
-			unsigned int idx)
+static void updaterates(struct iftab *table, unsigned long msecs)
 {
-	struct iflist *ptmp = table->firstvisible;
+	struct iflist *ptmp = table->head;
 	unsigned long rate;
-	char buf[64];
 
-	wattrset(table->statwin, HIGHATTR);
-	do {
+	while (ptmp != NULL) {
 		rate_add_rate(&ptmp->rate, ptmp->spanbr, msecs);
 		rate = rate_get_average(&ptmp->rate);
-		rate_print(rate, unit, buf, sizeof(buf));
-		wmove(table->statwin, ptmp->index - idx, 63 * COLS / 80);
-		wprintw(table->statwin, "%s", buf);
 
 		if (rate > ptmp->peakrate)
 			ptmp->peakrate = rate;
 
 		ptmp->spanbr = 0;
+		ptmp = ptmp->next_entry;
+	}
+}
+
+static void showrates(struct iftab *table)
+{
+	struct iflist *ptmp = table->firstvisible;
+	unsigned int idx = table->firstvisible->index;
+	unsigned long rate;
+	char buf[64];
+
+	wattrset(table->statwin, HIGHATTR);
+	do {
+		rate = rate_get_average(&ptmp->rate);
+		rate_print(rate, buf, sizeof(buf));
+		wmove(table->statwin, ptmp->index - idx, 63 * COLS / 80);
+		wprintw(table->statwin, "%s", buf);
+
 		ptmp = ptmp->next_entry;
 	} while (ptmp != table->lastvisible->next_entry);
 }
@@ -308,17 +313,15 @@ static void printifentry(struct iflist *ptmp, WINDOW * win, unsigned int idx)
 	wprintw(win, "%7lu", ptmp->badtotal);
 }
 
-static void preparescreen(struct iftab *table)
+static void print_if_entries(struct iftab *table)
 {
-	struct iflist *ptmp = table->head;
+	struct iflist *ptmp = table->firstvisible;
 	unsigned int i = 1;
 
 	unsigned int winht = LINES - 4;
 
-	table->firstvisible = table->head;
-
 	do {
-		printifentry(ptmp, table->statwin, 1);
+		printifentry(ptmp, table->statwin, table->firstvisible->index);
 
 		if (i <= winht)
 			table->lastvisible = ptmp;
@@ -377,8 +380,7 @@ static void initiftab(struct iftab *table)
  * Scrolling routines for the general interface statistics window
  */
 
-static void scrollgstatwin(struct iftab *table, int direction,
-			   unsigned int *idx)
+static void scrollgstatwin(struct iftab *table, int direction)
 {
 	char buf[255];
 
@@ -389,27 +391,27 @@ static void scrollgstatwin(struct iftab *table, int direction,
 			wscrl(table->statwin, 1);
 			table->lastvisible = table->lastvisible->next_entry;
 			table->firstvisible = table->firstvisible->next_entry;
-			(*idx)++;
 			wmove(table->statwin, LINES - 5, 0);
 			scrollok(table->statwin, 0);
 			wprintw(table->statwin, buf, ' ');
 			scrollok(table->statwin, 1);
-			printifentry(table->lastvisible, table->statwin, *idx);
+			printifentry(table->lastvisible, table->statwin,
+				     table->firstvisible->index);
 		}
 	} else {
 		if (table->firstvisible != table->head) {
 			wscrl(table->statwin, -1);
 			table->firstvisible = table->firstvisible->prev_entry;
 			table->lastvisible = table->lastvisible->prev_entry;
-			(*idx)--;
 			wmove(table->statwin, 0, 0);
 			wprintw(table->statwin, buf, ' ');
-			printifentry(table->firstvisible, table->statwin, *idx);
+			printifentry(table->firstvisible, table->statwin,
+				     table->firstvisible->index);
 		}
 	}
 }
 
-static void pagegstatwin(struct iftab *table, int direction, unsigned int *idx)
+static void pagegstatwin(struct iftab *table, int direction)
 {
 	int i = 1;
 
@@ -417,12 +419,12 @@ static void pagegstatwin(struct iftab *table, int direction, unsigned int *idx)
 		while ((i <= LINES - 5)
 		       && (table->lastvisible->next_entry != NULL)) {
 			i++;
-			scrollgstatwin(table, direction, idx);
+			scrollgstatwin(table, direction);
 		}
 	} else {
 		while ((i <= LINES - 5) && (table->firstvisible != table->head)) {
 			i++;
-			scrollgstatwin(table, direction, idx);
+			scrollgstatwin(table, direction);
 		}
 	}
 }
@@ -432,17 +434,14 @@ static void pagegstatwin(struct iftab *table, int direction, unsigned int *idx)
  * The general interface statistics function
  */
 
-void ifstats(const struct OPTIONS *options, struct filterstate *ofilter,
-	     time_t facilitytime)
+void ifstats(time_t facilitytime)
 {
-	int logging = options->logging;
+	int logging = options.logging;
 	struct iftab table;
 
 	int pkt_result = 0;
 
 	struct iflist *ptmp = NULL;
-
-	unsigned int idx = 1;
 
 	FILE *logfile = NULL;
 
@@ -455,37 +454,22 @@ void ifstats(const struct OPTIONS *options, struct filterstate *ofilter,
 	time_t statbegin = 0;
 	time_t now = 0;
 	struct timeval start_tv;
-	unsigned long long unow = 0;
 	time_t startlog = 0;
-	time_t updtime = 0;
-	unsigned long long updtime_usec = 0;
-
-	struct promisc_states *promisc_list;
-
-	if (!facility_active(GSTATIDFILE, ""))
-		mark_facility(GSTATIDFILE, "general interface statistics", "");
-	else {
-		write_error("General interface stats already active in another process");
-		return;
-	}
+	struct timeval updtime;
 
 	initiflist(&(table.head));
-	if (table.head == NULL) {
+	if (!table.head) {
 		no_ifaces_error();
-		unmark_facility(GSTATIDFILE, "");
 		return;
 	}
 
 	initiftab(&table);
 
-	if ((first_active_facility()) && (options->promisc)) {
-		init_promisc_list(&promisc_list);
-		save_promisc_list(promisc_list);
-		srpromisc(1, promisc_list);
-		destroy_promisc_list(&promisc_list);
+	LIST_HEAD(promisc);
+	if (options.promisc) {
+		promisc_init(&promisc, NULL);
+		promisc_set_list(&promisc);
 	}
-
-	adjust_instance_count(PROCCOUNTFILE, 1);
 
 	if (logging) {
 		if (strcmp(current_logfile, "") == 0) {
@@ -510,7 +494,8 @@ void ifstats(const struct OPTIONS *options, struct filterstate *ofilter,
 			 "******** General interface statistics started ********");
 	}
 
-	preparescreen(&table);
+	table.firstvisible = table.head;
+	print_if_entries(&table);
 
 	update_panels();
 	doupdate();
@@ -521,10 +506,10 @@ void ifstats(const struct OPTIONS *options, struct filterstate *ofilter,
 		goto err;
 	}
 
-	//isdnfd = -1;
 	exitloop = 0;
 	gettimeofday(&tv, NULL);
 	start_tv = tv;
+	updtime = tv;
 	starttime = startlog = statbegin = tv.tv_sec;
 
 	PACKET_INIT(pkt);
@@ -532,13 +517,13 @@ void ifstats(const struct OPTIONS *options, struct filterstate *ofilter,
 	while (!exitloop) {
 		gettimeofday(&tv, NULL);
 		now = tv.tv_sec;
-		unow = tv.tv_sec * 1000000ULL + tv.tv_usec;
 
 		if ((now - starttime) >= 1) {
 			unsigned long msecs;
 
 			msecs = timeval_diff_msec(&tv, &start_tv);
-			updaterates(&table, options->actmode, msecs, idx);
+			updaterates(&table, msecs);
+			showrates(&table);
 			printelapsedtime(statbegin, now, LINES - 3, 1,
 					 table.borderwin);
 			starttime = now;
@@ -546,21 +531,19 @@ void ifstats(const struct OPTIONS *options, struct filterstate *ofilter,
 		}
 		if (logging) {
 			check_rotate_flag(&logfile);
-			if ((now - startlog) >= options->logspan) {
-				writegstatlog(&table, options->actmode,
+			if ((now - startlog) >= options.logspan) {
+				writegstatlog(&table,
 					      time(NULL) - statbegin,
 					      logfile);
 				startlog = now;
 			}
 		}
-		if (((options->updrate != 0)
-		     && (now - updtime >= options->updrate))
-		    || ((options->updrate == 0)
-			&& (unow - updtime_usec >= DEFAULT_UPDATE_DELAY))) {
+		if (screen_update_needed(&tv, &updtime)) {
+			print_if_entries(&table);
 			update_panels();
 			doupdate();
-			updtime = now;
-			updtime_usec = unow;
+
+			updtime = tv;
 		}
 
 		if ((facilitytime != 0)
@@ -578,18 +561,18 @@ void ifstats(const struct OPTIONS *options, struct filterstate *ofilter,
 			/* no key ready, do nothing */
 			break;
 		case KEY_UP:
-			scrollgstatwin(&table, SCROLLDOWN, &idx);
+			scrollgstatwin(&table, SCROLLDOWN);
 			break;
 		case KEY_DOWN:
-			scrollgstatwin(&table, SCROLLUP, &idx);
+			scrollgstatwin(&table, SCROLLUP);
 			break;
 		case KEY_PPAGE:
 		case '-':
-			pagegstatwin(&table, SCROLLDOWN, &idx);
+			pagegstatwin(&table, SCROLLDOWN);
 			break;
 		case KEY_NPAGE:
 		case ' ':
-			pagegstatwin(&table, SCROLLUP, &idx);
+			pagegstatwin(&table, SCROLLUP);
 			break;
 		case 12:
 		case 'l':
@@ -609,9 +592,8 @@ void ifstats(const struct OPTIONS *options, struct filterstate *ofilter,
 			continue;
 
 		pkt_result = packet_process(&pkt, NULL, NULL, NULL,
-					   ofilter,
 					   MATCH_OPPOSITE_USECONFIG,
-					   options->v6inv4asv6);
+					   options.v6inv4asv6);
 
 		if (pkt_result != PACKET_OK
 		    && pkt_result != MORE_FRAGMENTS)
@@ -638,18 +620,14 @@ void ifstats(const struct OPTIONS *options, struct filterstate *ofilter,
 		} else {
 			(ptmp->noniptotal)++;
 		}
-		printifentry(ptmp, table.statwin, idx);
 	}
 	close(fd);
 
 err:
-	if ((options->promisc) && (is_last_instance())) {
-		load_promisc_list(&promisc_list);
-		srpromisc(0, promisc_list);
-		destroy_promisc_list(&promisc_list);
+	if (options.promisc) {
+		promisc_restore_list(&promisc);
+		promisc_destroy(&promisc);
 	}
-
-	adjust_instance_count(PROCCOUNTFILE, -1);
 
 	del_panel(table.statpanel);
 	delwin(table.statwin);
@@ -660,15 +638,13 @@ err:
 
 	if (logging) {
 		signal(SIGUSR1, SIG_DFL);
-		writegstatlog(&table, options->actmode,
-			      time(NULL) - statbegin, logfile);
+		writegstatlog(&table, time(NULL) - statbegin, logfile);
 		writelog(logging, logfile,
 			 "******** General interface statistics stopped ********");
 		fclose(logfile);
 	}
 	destroyiflist(table.head);
 	pkt_cleanup();
-	unmark_facility(GSTATIDFILE, "");
 	strcpy(current_logfile, "");
 }
 
@@ -693,7 +669,7 @@ void selectiface(char *ifname, int withall, int *aborted)
 		ptmp = xmalloc(sizeof(struct iflist));
 		strncpy(ptmp->ifname, "All interfaces", sizeof(ptmp->ifname));
 		ptmp->ifindex = 0;
-		rate_init(&ptmp->rate, 5);	/* FIXME: need iflist_entry_init() */
+		rate_alloc(&ptmp->rate, 5);	/* FIXME: need iflist_entry_init() */
 
 		ptmp->prev_entry = NULL;
 		list->prev_entry = ptmp;

@@ -6,9 +6,8 @@ IPTraf
 An IP Network Statistics Utility
 */
 
-#define MAIN_MODULE
-
 #include "iptraf-ng-compat.h"
+#include "built-in.h"
 
 #include "tui/menurt.h"
 #include "tui/winops.h"
@@ -35,7 +34,20 @@ An IP Network Statistics Utility
 #define WITHALL 1
 #define WITHOUTALL 0
 
+#ifndef IPTRAF_PIDFILE
+#define IPTRAF_PIDFILE "/var/run/iptraf-ng.pid"
+#endif
+
 const char *ALLSPEC = "all";
+
+#define CMD(name, h) { .cmd = #name, .fn = cmd_##name, .help = h }
+#define CMD_END() { NULL, NULL, NULL }
+
+struct cmd_struct {
+    const char *cmd;
+    int (*fn)(int, char **);
+    const char *help;
+};
 
 /*
  * Important globals used throughout the
@@ -44,10 +56,6 @@ const char *ALLSPEC = "all";
 int exitloop = 0;
 int daemonized = 0;
 int facility_running = 0;
-int is_first_instance;
-char graphing_filter[80];
-
-extern void about(void);
 
 static void press_enter_to_continue(void)
 {
@@ -120,7 +128,7 @@ static void init_break_menu(struct MENU *break_menu)
  * Get the ball rolling: The program interface routine.
  */
 
-static void program_interface(struct OPTIONS *options)
+static void program_interface(void)
 {
 	struct MENU menu;
 	struct MENU break_menu;
@@ -131,27 +139,14 @@ static void program_interface(struct OPTIONS *options)
 	int aborted;
 	int break_aborted;
 
-	struct filterstate ofilter;
-	struct ffnode *fltfiles;
-
 	char ifname[IFNAMSIZ];
 	char *ifptr = NULL;
-	struct porttab *ports;
 
 	/*
-	 * Load saved filter or graphing filter if specified
+	 * Load saved filter
 	 */
-	if (graphing_logfile[0] != '\0') {
-		loadfilterlist(&fltfiles);
-		memset(&ofilter, 0, sizeof(struct filterstate));
-		loadfilter(pickfilterbyname(fltfiles, graphing_filter),
-			   &(ofilter.fl), FLT_RESOLVE);
-	} else {
-		loadfilters(&ofilter);
-		indicate("");
-	}
-
-	loadaddports(&ports);
+	loadfilters();
+	indicate("");
 
 	tx_initmenu(&menu, 15, 35, (LINES - 16) / 2, (COLS - 35) / 2, BOXATTR,
 		    STDATTR, HIGHATTR, BARSTDATTR, BARHIGHATTR, DESCATTR);
@@ -191,16 +186,16 @@ static void program_interface(struct OPTIONS *options)
 				else
 					ifptr = NULL;
 
-				ipmon(options, &ofilter, 0, ifptr);
+				ipmon(0, ifptr);
 			}
 			break;
 		case 2:
-			ifstats(options, &ofilter, 0);
+			ifstats(0);
 			break;
 		case 3:
 			selectiface(ifname, WITHOUTALL, &aborted);
 			if (!aborted)
-				detstats(ifname, options, 0, &ofilter);
+				detstats(ifname, 0);
 			break;
 		case 4:
 			break_row = 1;
@@ -212,14 +207,12 @@ static void program_interface(struct OPTIONS *options)
 			case 1:
 				selectiface(ifname, WITHOUTALL, &aborted);
 				if (!aborted)
-					packet_size_breakdown(options, ifname,
-							      0, &ofilter);
+					packet_size_breakdown(ifname, 0);
 				break;
 			case 2:
 				selectiface(ifname, WITHOUTALL, &aborted);
 				if (!aborted)
-					servmon(ifname, ports, options, 0,
-						&ofilter);
+					servmon(ifname, 0);
 				break;
 			case 4:
 				break;
@@ -233,16 +226,16 @@ static void program_interface(struct OPTIONS *options)
 					ifptr = ifname;
 				else
 					ifptr = NULL;
-				hostmon(options, 0, ifptr, &ofilter);
+				hostmon(0, ifptr);
 			}
 			break;
 		case 7:
-			config_filters(&ofilter);
-			savefilters(&ofilter);
+			config_filters();
+			savefilters();
 			break;
 		case 9:
-			setoptions(options, &ports);
-			saveoptions(options);
+			setoptions();
+			saveoptions();
 			break;
 		case 11:
 			about();
@@ -254,38 +247,6 @@ static void program_interface(struct OPTIONS *options)
 	} while (!endloop);
 
 	tx_destroymenu(&menu);
-
-	destroyporttab(ports);
-	erase();
-	update_panels();
-	doupdate();
-}
-
-static int first_instance(void)
-{
-	int fd;
-
-	fd = open(IPTIDFILE, O_RDONLY);
-
-	if (fd < 0)
-		return !0;
-	else {
-		close(fd);
-		return 0;
-	}
-}
-
-static void mark_first_instance(void)
-{
-	int fd;
-
-	fd = open(IPTIDFILE, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
-	if (fd < 0) {
-		fprintf(stderr, "\nWarning: unable to tag this process\r\n");
-		press_enter_to_continue();
-		return;
-	}
-	close(fd);
 }
 
 static const char *const iptraf_ng_usage[] = {
@@ -294,7 +255,7 @@ static const char *const iptraf_ng_usage[] = {
 	NULL
 };
 
-static int help_opt, f_opt, g_opt, facilitytime, B_opt, I_opt;
+static int help_opt, f_opt, g_opt, facilitytime, B_opt;
 static char *i_opt, *d_opt, *s_opt, *z_opt, *l_opt, *L_opt;
 
 static struct options iptraf_ng_options[] = {
@@ -326,6 +287,30 @@ static struct options iptraf_ng_options[] = {
 	OPT_END()
 };
 
+static int create_pidfile(void)
+{
+	int fd = open(IPTRAF_PIDFILE, O_WRONLY|O_CREAT, 0644);
+	if (fd < 0) {
+		perror("can not open "IPTRAF_PIDFILE);
+		return -1;
+	}
+
+	if (lockf(fd, F_TLOCK, 0) < 0) {
+		error("The PID file is locked "IPTRAF_PIDFILE". "
+		      "Maybe other iptraf-ng instance is running?can not acquire ");
+		return -1;
+	}
+
+	fcntl(fd, F_SETFD, FD_CLOEXEC);
+
+	char buf[sizeof(long) * 3 + 2];
+	int len = sprintf(buf, "%lu\n", (long) getpid());
+	write(fd, buf, len);
+	ftruncate(fd, len);
+	/* we leak opened+locked fd intentionally */
+	return 0;
+}
+
 static void sanitize_dir(const char *dir)
 {
 	/* Check whether LOCKDIR exists (/var/run is on a tmpfs in Ubuntu) */
@@ -339,16 +324,41 @@ static void sanitize_dir(const char *dir)
 	}
 }
 
+static void handle_internal_command(int argc, char **argv,
+                                    const struct cmd_struct *commands)
+{
+	const char *cmd = argv[0];
+
+	for (const struct cmd_struct *p = commands; p->cmd; ++p)
+	{
+		if (!strcmp(p->cmd, cmd))
+			exit(p->fn(argc, argv));
+	}
+}
+
 int main(int argc, char **argv)
 {
-	struct OPTIONS options;
-	int command = 0;
 	int current_log_interval = 0;
 
-#ifndef ALLOWUSERS
 	if (geteuid() != 0)
 		die("This program can be run only by the system administrator");
-#endif
+
+	const struct cmd_struct commands[] = {
+		CMD(capture, "capture packet"),
+		CMD_END(),
+	};
+
+	/* stupid, but for now needed machinery with argc, args
+	 *
+	 */
+	char **internal_argv = argv;
+	argc--;
+	internal_argv++;
+
+	if (argc > 0)
+		handle_internal_command(argc, internal_argv, commands);
+
+	argc++;
 
 	/*
 	 * Parse command line
@@ -359,21 +369,19 @@ int main(int argc, char **argv)
 	if (help_opt)
 		parse_usage_and_die(iptraf_ng_usage, iptraf_ng_options);
 
-	int status = 0;
+	int command = 0;
 
-	status |= (i_opt) ? (1 << 0) : 0;
-	status |= (d_opt) ? (1 << 1) : 0;
-	status |= (s_opt) ? (1 << 2) : 0;
-	status |= (z_opt) ? (1 << 3) : 0;
-	status |= (l_opt) ? (1 << 4) : 0;
-	status |= (g_opt) ? (1 << 5) : 0;
+	command |= (i_opt) ? (1 << 0) : 0;
+	command |= (d_opt) ? (1 << 1) : 0;
+	command |= (s_opt) ? (1 << 2) : 0;
+	command |= (z_opt) ? (1 << 3) : 0;
+	command |= (l_opt) ? (1 << 4) : 0;
+	command |= (g_opt) ? (1 << 5) : 0;
 
-	if (__builtin_popcount(status) > 1)
+	if (__builtin_popcount(command) > 1)
 		die("only one of -i|-d|-s|-z|-l|-g options must be used");
 
 	strcpy(current_logfile, "");
-	strcpy(graphing_logfile, "");
-	strcpy(graphing_filter, "");
 
 	if (f_opt) {
 		removetags();
@@ -381,7 +389,7 @@ int main(int argc, char **argv)
 	}
 
 	if (B_opt) {
-		if (!status)
+		if (!command)
 			die("one of -i|-d|-s|-z|-l|-g option is missing\n");
 		daemonized = 1;
 		setenv("TERM", "linux", 1);
@@ -411,26 +419,24 @@ int main(int argc, char **argv)
 		current_log_interval = I_opt;
 #endif
 
-	is_first_instance = first_instance();
-
 	if ((getenv("TERM") == NULL) && (!daemonized))
 		die("Your TERM variable is not set.\n"
 		    "Please set it to an appropriate value");
 
-#if 0				/* undocumented feature, will take care of it later */
-	if (graphing_logfile[0] != '\0' && graphing_filter[0] == '\0') {
-		fprintf(stderr, "Specify an IP filter name with -F\n");
-		exit(1);
-	}
-#endif
-	loadoptions(&options);
+	loadoptions();
+
+
+	if (create_pidfile() < 0)
+		goto cleanup;
+
+	int pidfile_created = 1;
 
 	/*
 	 * If a facility is directly invoked from the command line, check for
 	 * a daemonization request
 	 */
 
-	if ((daemonized) && (command != 0)) {
+	if (daemonized && command) {
 		switch (fork()) {
 		case 0:	/* child */
 			setsid();
@@ -439,23 +445,15 @@ int main(int argc, char **argv)
 			freopen("/dev/null", "w", stderr);	/* redirect std error */
 			signal(SIGUSR2, term_usr2_handler);
 
-			if (graphing_logfile[0] != '\0')
-				options.logging = 0;	/* if raw logging is specified */
-			else	/* then standard logging is disabled */
-				options.logging = 1;
+			options.logging = 1;
 			break;
 		case -1:	/* error */
-			die("Fork error, %s cannot run in background", IPTRAF_NAME);
+			error("Fork error, %s cannot run in background", IPTRAF_NAME);
+			goto cleanup;
 		default:	/* parent */
-			exit(0);
+			goto cleanup;
 		}
 	}
-#ifdef SIMDAEMON
-	daemonized = 1;
-	freopen("/dev/null", "w", stdout);	/* redirect std output */
-	freopen("/dev/null", "r", stdin);
-	freopen("/dev/null", "w", stderr);
-#endif
 
 	sanitize_dir(LOCKDIR);
 	sanitize_dir(WORKDIR);
@@ -467,8 +465,6 @@ int main(int argc, char **argv)
 		die("This program requires a screen size of at least 80 columns by 24 lines\n" "Please resize your window");
 	}
 
-	mark_first_instance();
-
 	signal(SIGTSTP, SIG_IGN);
 	signal(SIGINT, SIG_IGN);
 	signal(SIGUSR1, SIG_IGN);
@@ -478,10 +474,7 @@ int main(int argc, char **argv)
 	noecho();
 	nonl();
 	cbreak();
-
-#ifndef DEBUG
 	curs_set(0);
-#endif
 
 	/*
 	 * Set logfilename variable to NULL if -L was specified without an
@@ -503,23 +496,11 @@ int main(int argc, char **argv)
 		}
 	}
 
-	struct filterstate ofilter;
-	struct ffnode *fltfiles;
-	struct porttab *ports;
-
-	loadaddports(&ports);
 	/*
-	 * Load saved filter or graphing filter if specified
+	 * Load saved filter
 	 */
-	if (graphing_logfile[0] != '\0') {
-		loadfilterlist(&fltfiles);
-		memset(&ofilter, 0, sizeof(struct filterstate));
-		loadfilter(pickfilterbyname(fltfiles, graphing_filter),
-			   &(ofilter.fl), FLT_RESOLVE);
-	} else {
-		loadfilters(&ofilter);
-		indicate("");
-	}
+	loadfilters();
+	indicate("");
 
 	/* bad, bad, bad name draw_desktop()
 	 * hide all into tui_top_panel(char *msg)
@@ -530,30 +511,34 @@ int main(int argc, char **argv)
 
 	/* simplify */
 	if (g_opt)
-		ifstats(&options, &ofilter, facilitytime);
+		ifstats(facilitytime);
 	else if (i_opt)
 		if (strcmp(i_opt, "all") == 0)
-			ipmon(&options, &ofilter, facilitytime, NULL);
+			ipmon(facilitytime, NULL);
 		else
-			ipmon(&options, &ofilter, facilitytime, i_opt);
+			ipmon(facilitytime, i_opt);
 	else if (l_opt)
 		if (strcmp(l_opt, "all") == 0)
-			hostmon(&options, facilitytime, NULL, &ofilter);
+			hostmon(facilitytime, NULL);
 		else
-			hostmon(&options, facilitytime, l_opt, &ofilter);
+			hostmon(facilitytime, l_opt);
 	else if (d_opt)
-		detstats(d_opt, &options, facilitytime, &ofilter);
+		detstats(d_opt, facilitytime);
 	else if (s_opt)
-		servmon(s_opt, ports, &options, facilitytime, &ofilter);
+		servmon(s_opt, facilitytime);
 	else if (z_opt)
-		packet_size_breakdown(&options, z_opt, facilitytime, &ofilter);
+		packet_size_breakdown(z_opt, facilitytime);
 	else
-		program_interface(&options);
+		program_interface();
 
+	erase();
+	update_panels();
+	doupdate();
 	endwin();
 
-	if (is_first_instance)
-		unlink(IPTIDFILE);
+cleanup:
+	if (pidfile_created)
+		unlink(IPTRAF_PIDFILE);
 
-	return (0);
+	return 0;
 }

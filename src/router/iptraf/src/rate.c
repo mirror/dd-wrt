@@ -2,17 +2,28 @@
 /* For authors and contributors see the AUTHORS file */
 
 #include "iptraf-ng-compat.h"
+#include "options.h"
 #include "rate.h"
 
-void rate_init(struct rate *rate, unsigned int n)
+void rate_init(struct rate *rate)
+{
+	if (!rate)
+		return;
+
+	rate->index = 0;
+	rate->sma = 0;
+	memset(rate->rates, 0, rate->n * sizeof(rate->rates[0]));
+}
+
+void rate_alloc(struct rate *rate, unsigned int n)
 {
 	if (!rate)
 		return;
 
 	rate->n = n;
-	rate->index = 0;
-	rate->sma = 0;
-	rate->rates = xmallocz(n * sizeof(*rate->rates));
+	rate->rates = xmalloc(n * sizeof(rate->rates[0]));
+
+	rate_init(rate);
 }
 
 void rate_destroy(struct rate *rate)
@@ -56,14 +67,14 @@ unsigned long rate_get_average(struct rate *rate)
 		return 0UL;
 }
 
-int rate_print(unsigned long rate, int dispmode, char *buf, unsigned n)
+int rate_print(unsigned long rate, char *buf, unsigned n)
 {
 	char *suffix[] = { "k", "M", "G", "T", "P", "E", "Z", "Y" };
 	unsigned n_suffix = ARRAY_SIZE(suffix);
 
 	int chars;
 
-	if (dispmode == KBITS) {
+	if (options.actmode == KBITS) {
 		unsigned long tmp = rate;
 		unsigned int i = 0;
 		unsigned long divider = 1000;
@@ -89,6 +100,20 @@ int rate_print(unsigned long rate, int dispmode, char *buf, unsigned n)
 			chars = snprintf(buf, n, "error");
 		else
 			chars = snprintf(buf, n, "%9.2f %sBps", (double)rate / 1024, suffix[i]);
+	}
+	buf[n - 1] = '\0';
+
+	return chars;
+}
+
+int rate_print_no_units(unsigned long rate, char *buf, unsigned n)
+{
+	int chars;
+
+	if (options.actmode == KBITS) {
+		chars = snprintf(buf, n, "%8.1f", (double)rate * 8 / 1000);
+	} else {
+		chars = snprintf(buf, n, "%8.1f", (double)rate / 1024);
 	}
 	buf[n - 1] = '\0';
 

@@ -21,10 +21,11 @@ options.c - implements the configuration section of the utility
 #include "landesc.h"
 #include "promisc.h"
 #include "dirs.h"
-#include "instances.h"
 
 #define ALLOW_ZERO 1
 #define DONT_ALLOW_ZERO 0
+
+struct OPTIONS options;
 
 static void makeoptionmenu(struct MENU *menu)
 {
@@ -88,44 +89,44 @@ static void printoptonoff(unsigned int option, WINDOW * win)
 		wprintw(win, "Off");
 }
 
-static void indicatesetting(int row, struct OPTIONS *options, WINDOW * win)
+static void indicatesetting(int row, WINDOW *win)
 {
 	wmove(win, row, 30);
 	wattrset(win, HIGHATTR);
 
 	switch (row) {
 	case 1:
-		printoptonoff(options->revlook, win);
+		printoptonoff(options.revlook, win);
 		break;
 	case 2:
-		printoptonoff(options->servnames, win);
+		printoptonoff(options.servnames, win);
 		break;
 	case 3:
-		printoptonoff(options->promisc, win);
+		printoptonoff(options.promisc, win);
 		break;
 	case 4:
-		printoptonoff(options->color, win);
+		printoptonoff(options.color, win);
 		break;
 	case 5:
-		printoptonoff(options->logging, win);
+		printoptonoff(options.logging, win);
 		break;
 	case 6:
 		wmove(win, row, 25);
-		if (options->actmode == KBITS)
+		if (options.actmode == KBITS)
 			wprintw(win, " kbits/s");
 		else
 			wprintw(win, "kbytes/s");
 		break;
 	case 7:
-		printoptonoff(options->mac, win);
+		printoptonoff(options.mac, win);
 		break;
 	case 8:
-		printoptonoff(options->v6inv4asv6, win);
+		printoptonoff(options.v6inv4asv6, win);
 	}
 
 }
 
-void saveoptions(struct OPTIONS *options)
+void saveoptions(void)
 {
 	int fd;
 	int bw;
@@ -137,7 +138,7 @@ void saveoptions(struct OPTIONS *options)
 			  CONFIGFILE, strerror(errno));
 		return;
 	}
-	bw = write(fd, options, sizeof(struct OPTIONS));
+	bw = write(fd, &options, sizeof(struct OPTIONS));
 
 	if (bw < 0)
 		tui_error(ANYKEY_MSG, "Unable to write config file");
@@ -145,54 +146,54 @@ void saveoptions(struct OPTIONS *options)
 	close(fd);
 }
 
-static void setdefaultopts(struct OPTIONS *options)
+static void setdefaultopts(void)
 {
-	options->revlook = 0;
-	options->promisc = 0;
-	options->servnames = 0;
-	options->color = 1;
-	options->logging = 0;
-	options->actmode = KBITS;
-	options->mac = 0;
-	options->timeout = 15;
-	options->logspan = 3600;
-	options->updrate = 0;
-	options->closedint = 0;
-	options->v6inv4asv6 = 1;
+	options.revlook = 0;
+	options.promisc = 0;
+	options.servnames = 0;
+	options.color = 1;
+	options.logging = 0;
+	options.actmode = KBITS;
+	options.mac = 0;
+	options.timeout = 15;
+	options.logspan = 3600;
+	options.updrate = 0;
+	options.closedint = 0;
+	options.v6inv4asv6 = 1;
 }
 
-void loadoptions(struct OPTIONS *options)
+void loadoptions(void)
 {
 	int fd;
 
-	setdefaultopts(options);
+	setdefaultopts();
 	fd = open(CONFIGFILE, O_RDONLY);
 
 	if (fd < 0)
 		return;
 
-	read(fd, options, sizeof(struct OPTIONS));
+	read(fd, &options, sizeof(struct OPTIONS));
 
 	close(fd);
 }
 
-static void updatetimes(struct OPTIONS *options, WINDOW *win)
+static void updatetimes(WINDOW *win)
 {
 	wattrset(win, HIGHATTR);
-	mvwprintw(win, 10, 25, "%3u mins", options->timeout);
-	mvwprintw(win, 11, 25, "%3u mins", options->logspan / 60);
-	mvwprintw(win, 12, 25, "%3u secs", options->updrate);
-	mvwprintw(win, 13, 25, "%3u mins", options->closedint);
+	mvwprintw(win, 10, 25, "%3u mins", options.timeout);
+	mvwprintw(win, 11, 25, "%3u mins", options.logspan / 60);
+	mvwprintw(win, 12, 25, "%3u secs", options.updrate);
+	mvwprintw(win, 13, 25, "%3u mins", options.closedint);
 }
 
-static void showoptions(struct OPTIONS *options, WINDOW *win)
+static void showoptions(WINDOW *win)
 {
 	int i;
 
 	for (i = 1; i <= 8; i++)
-		indicatesetting(i, options, win);
+		indicatesetting(i, win);
 
-	updatetimes(options, win);
+	updatetimes(win);
 }
 
 static void settimeout(time_t *value, const char *units, int allow_zero,
@@ -246,7 +247,7 @@ static void settimeout(time_t *value, const char *units, int allow_zero,
 	doupdate();
 }
 
-void setoptions(struct OPTIONS *options, struct porttab **ports)
+void setoptions(void)
 {
 	int row = 1;
 	int trow = 1;		/* row for timer submenu */
@@ -258,12 +259,10 @@ void setoptions(struct OPTIONS *options, struct porttab **ports)
 	WINDOW *statwin;
 	PANEL *statpanel;
 
-	if (!is_first_instance) {
-		tui_error(ANYKEY_MSG,
-			  "Only the first instance of ipraf-ng"
-			  " can configure");
-		return;
-	}
+	struct porttab *ports;
+
+	loadaddports(&ports);
+
 	makeoptionmenu(&menu);
 
 	statwin = newwin(15, 35, (LINES - 19) / 2 - 1, (COLS - 40) / 16 + 40);
@@ -288,7 +287,7 @@ void setoptions(struct OPTIONS *options, struct porttab **ports)
 	mvwprintw(statwin, 11, 2, "Log interval:");
 	mvwprintw(statwin, 12, 2, "Update interval:");
 	mvwprintw(statwin, 13, 2, "Closed/idle persist:");
-	showoptions(options, statwin);
+	showoptions(statwin);
 
 	do {
 		tx_showmenu(&menu);
@@ -296,28 +295,28 @@ void setoptions(struct OPTIONS *options, struct porttab **ports)
 
 		switch (row) {
 		case 1:
-			options->revlook = ~(options->revlook);
+			options.revlook = ~options.revlook;
 			break;
 		case 2:
-			options->servnames = ~(options->servnames);
+			options.servnames = ~options.servnames;
 			break;
 		case 3:
-			options->promisc = ~(options->promisc);
+			options.promisc = ~options.promisc;
 			break;
 		case 4:
-			options->color = ~(options->color);
+			options.color = ~options.color;
 			break;
 		case 5:
-			options->logging = ~(options->logging);
+			options.logging = ~options.logging;
 			break;
 		case 6:
-			options->actmode = ~(options->actmode);
+			options.actmode = ~options.actmode;
 			break;
 		case 7:
-			options->mac = ~(options->mac);
+			options.mac = ~options.mac;
 			break;
 		case 8:
-			options->v6inv4asv6 = ~(options->v6inv4asv6);
+			options.v6inv4asv6 = ~options.v6inv4asv6;
 			break;
 		case 10:
 			maketimermenu(&timermenu);
@@ -328,34 +327,34 @@ void setoptions(struct OPTIONS *options, struct porttab **ports)
 
 				switch (trow) {
 				case 1:
-					settimeout(&(options->timeout),
+					settimeout(&options.timeout,
 						   "minutes", DONT_ALLOW_ZERO,
 						   &aborted);
 					if (!aborted)
-						updatetimes(options, statwin);
+						updatetimes(statwin);
 					break;
 				case 2:
-					settimeout(&(options->logspan),
+					settimeout(&options.logspan,
 						   "minutes", DONT_ALLOW_ZERO,
 						   &aborted);
 					if (!aborted) {
-						options->logspan =
-						    options->logspan * 60;
-						updatetimes(options, statwin);
+						options.logspan =
+						    options.logspan * 60;
+						updatetimes(statwin);
 					}
 					break;
 				case 3:
-					settimeout(&options->updrate, "seconds",
+					settimeout(&options.updrate, "seconds",
 						   ALLOW_ZERO, &aborted);
 					if (!aborted)
-						updatetimes(options, statwin);
+						updatetimes(statwin);
 					break;
 				case 4:
-					settimeout(&options->closedint,
+					settimeout(&options.closedint,
 						   "minutes", ALLOW_ZERO,
 						   &aborted);
 					if (!aborted)
-						updatetimes(options, statwin);
+						updatetimes(statwin);
 					break;
 				}
 			} while (trow != 6);
@@ -365,10 +364,10 @@ void setoptions(struct OPTIONS *options, struct porttab **ports)
 			doupdate();
 			break;
 		case 12:
-			addmoreports(ports);
+			addmoreports(&ports);
 			break;
 		case 13:
-			removeaport(ports);
+			removeaport(&ports);
 			break;
 		case 15:
 			manage_eth_desc(ARPHRD_ETHER);
@@ -378,9 +377,10 @@ void setoptions(struct OPTIONS *options, struct porttab **ports)
 			break;
 		}
 
-		indicatesetting(row, options, statwin);
+		indicatesetting(row, statwin);
 	} while (row != 18);
 
+	destroyporttab(ports);
 	tx_destroymenu(&menu);
 	del_panel(statpanel);
 	delwin(statwin);
