@@ -2619,12 +2619,7 @@ gso:
 		skb->next = nskb->next;
 		nskb->next = NULL;
 
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-		if (!list_empty(&ptype_all) &&
-					!(skb->imq_flags & IMQ_F_ENQUEUE)) 
-#else
 		if (!list_empty(&ptype_all)) 
-#endif
 			dev_queue_xmit_nit(nskb, dev);
 
 #ifdef CONFIG_ETHERNET_PACKET_MANGLE

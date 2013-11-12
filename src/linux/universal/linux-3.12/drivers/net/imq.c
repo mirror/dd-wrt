@@ -131,6 +131,10 @@
  *              - Port to 3.7
  *              - Fix checkpatch.pl warnings
  *
+ *             2013/09/10 - Jussi Kivilinna <jussi.kivilinna@iki.fi>
+ *              - Fixed GSO handling for 3.10, see imq_nf_queue() for comments.
+ *              - Don't copy skb->cb_next when copying or cloning skbuffs.
+ *
  *	       Also, many thanks to pablo Sebastian Greco for making the initial
  *	       patch and to those who helped the testing.
  *
@@ -162,7 +166,7 @@
 #include <net/ip.h>
 #include <net/ipv6.h>
 
-static int imq_nf_queue(struct nf_queue_entry *entry, unsigned int queue_num);
+static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num);
 
 static nf_hookfn imq_nf_hook;
 
@@ -512,16 +516,81 @@ static struct net_device *get_imq_device_by_index(int index)
 	return dev;
 }
 
-static int imq_nf_queue(struct nf_queue_entry *entry, unsigned int queue_num)
+static struct nf_queue_entry *nf_queue_entry_dup(struct nf_queue_entry *e)
 {
+	struct nf_queue_entry *entry = kmemdup(e, e->size, GFP_ATOMIC);
+	if (entry) {
+		if (nf_queue_entry_get_refs(entry))
+			return entry;
+		kfree(entry);
+	}
+	return NULL;
+}
+
+#ifdef CONFIG_BRIDGE_NETFILTER
+/* When called from bridge netfilter, skb->data must point to MAC header
+ * before calling skb_gso_segment(). Else, original MAC header is lost
+ * and segmented skbs will be sent to wrong destination.
+ */
+static void nf_bridge_adjust_skb_data(struct sk_buff *skb)
+{
+	if (skb->nf_bridge)
+		__skb_push(skb, skb->network_header - skb->mac_header);
+}
+
+static void nf_bridge_adjust_segmented_data(struct sk_buff *skb)
+{
+	if (skb->nf_bridge)
+		__skb_pull(skb, skb->network_header - skb->mac_header);
+}
+#else
+#define nf_bridge_adjust_skb_data(s) do {} while (0)
+#define nf_bridge_adjust_segmented_data(s) do {} while (0)
+#endif
+
+static void free_entry(struct nf_queue_entry *entry)
+{
+	nf_queue_entry_release_refs(entry);
+	kfree(entry);
+}
+
+static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev);
+
+static int __imq_nf_queue_gso(struct nf_queue_entry *entry,
+			      struct net_device *dev, struct sk_buff *skb)
+{
+	int ret = -ENOMEM;
+	struct nf_queue_entry *entry_seg;
+
+	nf_bridge_adjust_segmented_data(skb);
+
+	if (skb->next == NULL) { /* last packet, no need to copy entry */
+		struct sk_buff *gso_skb = entry->skb;
+		entry->skb = skb;
+		ret = __imq_nf_queue(entry, dev);
+		if (ret)
+			entry->skb = gso_skb;
+		return ret;
+	}
+
+	skb->next = NULL;
+
+	entry_seg = nf_queue_entry_dup(entry);
+	if (entry_seg) {
+		entry_seg->skb = skb;
+		ret = __imq_nf_queue(entry_seg, dev);
+		if (ret)
+			free_entry(entry_seg);
+	}
+	return ret;
+}
+
+static int imq_nf_queue(struct nf_queue_entry *entry, unsigned queue_num)
+{
+	struct sk_buff *skb, *segs;
 	struct net_device *dev;
-	struct sk_buff *skb_orig, *skb, *skb_shared;
-	struct Qdisc *q;
-	struct netdev_queue *txq;
-	spinlock_t *root_lock;
-	int users, index;
-	int retval = -EINVAL;
-	unsigned int orig_queue_index;
+	unsigned int queued;
+	int index, retval, err;
 
 	index = entry->skb->imq_flags & IMQ_F_IFMASK;
 	if (unlikely(index > numdevs - 1)) {
@@ -529,7 +598,7 @@ static int imq_nf_queue(struct nf_queue_entry *entry, unsigned int queue_num)
 			pr_warn("IMQ: invalid device specified, highest is %u\n",
 				numdevs - 1);
 		retval = -EINVAL;
-		goto out;
+		goto out_no_dev;
 	}
 
 	/* check for imq device by index from cache */
@@ -538,16 +607,86 @@ static int imq_nf_queue(struct nf_queue_entry *entry, unsigned int queue_num)
 		dev = get_imq_device_by_index(index);
 		if (IS_ERR(dev)) {
 			retval = PTR_ERR(dev);
-			goto out;
+			goto out_no_dev;
 		}
 	}
 
 	if (unlikely(!(dev->flags & IFF_UP))) {
 		entry->skb->imq_flags = 0;
-		nf_reinject(entry, NF_ACCEPT);
-		retval = 0;
-		goto out;
+		retval = -ECANCELED;
+		goto out_no_dev;
 	}
+
+	if (!skb_is_gso(entry->skb))
+		return __imq_nf_queue(entry, dev);
+
+	/* Since 3.10.x, GSO handling moved here as result of upstream commit
+	 * a5fedd43d5f6c94c71053a66e4c3d2e35f1731a2 (netfilter: move
+	 * skb_gso_segment into nfnetlink_queue module).
+	 *
+	 * Following code replicates the gso handling from
+	 * 'net/netfilter/nfnetlink_queue_core.c':nfqnl_enqueue_packet().
+	 */
+
+	skb = entry->skb;
+
+	switch (entry->pf) {
+	case NFPROTO_IPV4:
+		skb->protocol = htons(ETH_P_IP);
+		break;
+	case NFPROTO_IPV6:
+		skb->protocol = htons(ETH_P_IPV6);
+		break;
+	}
+
+	nf_bridge_adjust_skb_data(skb);
+	segs = skb_gso_segment(skb, 0);
+	/* Does not use PTR_ERR to limit the number of error codes that can be
+	 * returned by nf_queue.  For instance, callers rely on -ECANCELED to
+	 * mean 'ignore this hook'.
+	 */
+	err = -ENOBUFS;
+	if (IS_ERR(segs))
+		goto out_err;
+	queued = 0;
+	err = 0;
+	do {
+		struct sk_buff *nskb = segs->next;
+		if (nskb && nskb->next)
+			nskb->cb_next = NULL;
+		if (err == 0)
+			err = __imq_nf_queue_gso(entry, dev, segs);
+		if (err == 0)
+			queued++;
+		else
+			kfree_skb(segs);
+		segs = nskb;
+	} while (segs);
+
+	if (queued) {
+		if (err) /* some segments are already queued */
+			free_entry(entry);
+		kfree_skb(skb);
+		return 0;
+	}
+
+out_err:
+	nf_bridge_adjust_segmented_data(skb);
+	retval = err;
+out_no_dev:
+	return retval;
+}
+
+static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
+{
+	struct sk_buff *skb_orig, *skb, *skb_shared;
+	struct Qdisc *q;
+	struct netdev_queue *txq;
+	spinlock_t *root_lock;
+	int users;
+	int retval = -EINVAL;
+	unsigned int orig_queue_index;
+
 	dev->last_rx = jiffies;
 
 	skb = entry->skb;
@@ -561,6 +700,7 @@ static int imq_nf_queue(struct nf_queue_entry *entry, unsigned int queue_num)
 			retval = -ENOMEM;
 			goto out;
 		}
+		skb->cb_next = NULL;
 		entry->skb = skb;
 	}
 
@@ -786,11 +926,13 @@ static int __init imq_init_devs(void)
 
 	return err;
 }
+
 #ifdef CONFIG_ARCH_CNS3XXX
 extern unsigned int numcpucores;
 #else
 static unsigned int numcpucores=1;
 #endif
+
 
 static int __init imq_init_module(void)
 {
@@ -801,7 +943,7 @@ static int __init imq_init_module(void)
 	BUILD_BUG_ON(CONFIG_IMQ_NUM_DEVS < 2);
 	BUILD_BUG_ON(CONFIG_IMQ_NUM_DEVS - 1 > IMQ_F_IFMASK);
 #endif
-       numqueues = numcpucores;
+	numqueues = numcpucores;
 
 	err = imq_init_devs();
 	if (err) {
