@@ -605,7 +605,7 @@ void start_sysinit(void)
 		set_gpio(2,0); //power led
 		set_gpio(3,1); //power led
 		set_gpio(1,1); //logo
-		set_gpio(11,1);
+		set_gpio(0,1);
 		set_gpio(4,1); //ses
 		set_gpio(5,1); //wifi
 		nvram_set("pci/1/1/vendid", "0x14E4");
@@ -649,7 +649,6 @@ void start_sysinit(void)
 				nvram_set("pci/2/1/macaddr", mac);
 			}
 			struct nvram_tuple r7000_pci_1_1_params[] = {
-				{"ledbh2", "14", 0},
 				{"pdoffset2g40ma0", "15", 0},
 				{"pdoffset2g40ma1", "15", 0},
 				{"pdoffset2g40ma2", "15", 0},
@@ -689,7 +688,7 @@ void start_sysinit(void)
 				{"pa2ga1", "0xFF35,0x1BE3,0xFCB0", 0},
 				{"pa2ga2", "0xFF33,0x1BE1,0xFCB0", 0},
 				{"boardflags2", "0x100002", 0},
-				{"boardflags3", "0x3", 0},
+				{"boardflags3", "0x10000003", 0},
 				{"measpower1", "0x7f", 0},
 				{"measpower2", "0x7f", 0},
 				{"subvid", "0x14e4", 0},
@@ -803,7 +802,7 @@ void start_sysinit(void)
 				{"noiselvl2ga1", "31", 0},
 				{"noiselvl2ga2", "31", 0},
 				{"agbg0", "0", 0},
-				{"mcsbw205glpo", "BA768600", 0},
+				{"mcsbw205glpo", "0xBA768600", 0},
 				{"agbg1", "0", 0},
 				{"agbg2", "0", 0},
 				{"measpower1", "0x7f", 0},
@@ -840,7 +839,7 @@ void start_sysinit(void)
 				{"subvid", "0x14e4", 0},
 				{"sb20in80and160lr5glpo", "0", 0},
 				{"sb40and80lr5ghpo", "0", 0},
-				{"mcsbw805glpo", "BA768600", 0},
+				{"mcsbw805glpo", "0xBA768600", 0},
 				{"pdgain2g", "4", 0},
 				{"sb20in80and160lr5ghpo", "0", 0},
 				{"tssifloor2g", "0x3ff", 0},
@@ -875,7 +874,7 @@ void start_sysinit(void)
 				{"rxgains5gmtrisoa1", "4", 0},
 				{"rxgains5gmtrisoa2", "4", 0},
 				{"rxgains5gmtrelnabypa0", "1", 0},
-				{"vpapdcap2g", "0", 0},
+				{"papdcap2g", "0", 0},
 				{"rxgains5gmtrelnabypa1", "1", 0},
 				{"rxgains5gmtrelnabypa2", "1", 0},
 				{"mcsbw405ghpo", "0xBA768600", 0},
@@ -884,7 +883,7 @@ void start_sysinit(void)
 				{"maxp2ga1", "76", 0},
 				{"maxp2ga2", "76", 0},
 				{"boardflags2", "0x300002", 0},
-				{"boardflags3", "0x0", 0},
+				{"boardflags3", "0x10000000", 0},
 				{"rxgains5ghtrelnabypa0", "1", 0},
 				{"rxgains5ghtrelnabypa1", "1", 0},
 				{"rxgains5ghtrelnabypa2", "1", 0},
@@ -912,7 +911,6 @@ void start_sysinit(void)
 			}
 		}
 		set_gpio(15,1);//wlan button led on
-		set_gpio(2,1);
 		set_gpio(4,1);
 		set_gpio(5,1);
 		set_gpio(6,1); //reset button
