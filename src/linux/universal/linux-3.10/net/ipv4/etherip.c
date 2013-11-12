@@ -473,8 +473,7 @@ static int etherip_rcv(struct sk_buff *skb)
 
 	dev = tunnel->dev;
 	secpath_reset(skb);
-	skb_pull(skb, ((unsigned char*)skb->network_header-skb->data) +
-			sizeof(struct iphdr)+ETHERIP_HLEN);
+	skb_pull(skb, ETHERIP_HLEN);
 	skb->dev = dev;
 	skb->pkt_type = PACKET_HOST;
 	skb->protocol = eth_type_trans(skb, tunnel->dev);
