@@ -847,7 +847,8 @@ static void BCMFASTPATH_HOST __copy_skb_header(struct sk_buff *new, const struct
 #endif
 	memcpy(new->cb, old->cb, sizeof(old->cb));
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-	skb_copy_stored_cb(new, old);
+	new->cb_next = NULL;
+	/*skb_copy_stored_cb(new, old);*/
 #endif
 	new->csum		= old->csum;
 	new->local_df		= old->local_df;
