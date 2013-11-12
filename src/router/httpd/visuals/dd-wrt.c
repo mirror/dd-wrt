@@ -459,6 +459,11 @@ void ej_show_cpucores(webs_t wp, int argc, char_t ** argv)
 	fclose(fp);
 	count -= dcount;
 
+	fp = popen("cat /proc/cpuinfo|grep \"Intel(R) processor\"|wc -l", "rb");
+	fscanf(fp, "%d", &dcount);
+	fclose(fp);
+	count -= dcount;
+
 	if (!count)
 		count = 1;
 
