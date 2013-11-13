@@ -1,7 +1,7 @@
 /*
  * rlm_files.c	authorization: Find a user in the "users" file.
  *
- * Version:	$Id$
+ * Version:	$Id: ad8693f877a19189d607f862d2221a939e441b2e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: ad8693f877a19189d607f862d2221a939e441b2e $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

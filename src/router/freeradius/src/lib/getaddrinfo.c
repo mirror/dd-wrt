@@ -8,7 +8,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 62df8424894a0400e8e94984cbbbeba824fad9b8 $")
 
 #include	<freeradius-devel/libradius.h>
 

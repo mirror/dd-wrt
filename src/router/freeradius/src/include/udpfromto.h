@@ -1,12 +1,12 @@
 #ifndef UDPFROMTO_H
 #define UDPFROMTO_H
 /*
- * Version:	$Id$
+ * Version:	$Id: 525df38c64cceff0c48850c49bb4ca5c98c58549 $
  *
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(udpfromtoh, "$Id$")
+RCSIDH(udpfromtoh, "$Id: 525df38c64cceff0c48850c49bb4ca5c98c58549 $")
 
 #include <freeradius-devel/autoconf.h>
 #include <freeradius-devel/libradius.h>

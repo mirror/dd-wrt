@@ -2,7 +2,7 @@
  *  sql_freetds.c
  *  freeradius
  *
- * Version:	$Id$
+ * Version:	$Id: bb044cd2c83ab0bd158ab37b40e8e875290b61ef $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 only, as published by
@@ -21,7 +21,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: bb044cd2c83ab0bd158ab37b40e8e875290b61ef $")
 
 #include <freeradius-devel/radiusd.h>
 

@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id$
+ * Version:     $Id: 252c298c4f81cb8e20b6db035625c3d53a834d6e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 252c298c4f81cb8e20b6db035625c3d53a834d6e $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -328,7 +328,7 @@ static CONF_PARSER home_server_config[] = {
 	{ "max_outstanding", PW_TYPE_INTEGER,
 	  offsetof(home_server,max_outstanding), NULL,   "65536" },
 	{ "require_message_authenticator",  PW_TYPE_BOOLEAN,
-	  offsetof(home_server, message_authenticator), 0, NULL },
+	  offsetof(home_server, message_authenticator), 0, "yes" },
 
 	{ "zombie_period", PW_TYPE_INTEGER,
 	  offsetof(home_server,zombie_period), NULL,   "40" },
@@ -1735,6 +1735,7 @@ int realms_init(CONF_SECTION *config)
 	     cs != NULL;
 	     cs = cf_subsection_find_next(config, cs, "home_server")) {
 		if (!home_server_add(rc, cs)) {
+			cf_log_err(cf_sectiontoitem(cs), "unable to add home_server");
 			free(rc);
 			realms_free();
 			return 0;
@@ -1745,6 +1746,7 @@ int realms_init(CONF_SECTION *config)
 	     cs != NULL;
 	     cs = cf_subsection_find_next(config, cs, "realm")) {
 		if (!realm_add(rc, cs)) {
+			cf_log_err(cf_sectiontoitem(cs), "unable to add realm (check for mismatched \"type\" entry with home servers)");
 			free(rc);
 			realms_free();
 			return 0;

@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id$
+#  $Id: 3ad88cde616ce041f0dcc87858950daafdd3d336 $
 
 #  Write a 'utmp' style file, of which users are currently
 #  logged in, and where they've logged in from.

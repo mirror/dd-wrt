@@ -2,7 +2,7 @@
 #define _EAP_MSCHAPV2_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(eap_mschapv2_h, "$Id$")
+RCSIDH(eap_mschapv2_h, "$Id: cc027bd846d73177644c4e74ca063dcfabecdcdb $")
 
 #include "eap.h"
 

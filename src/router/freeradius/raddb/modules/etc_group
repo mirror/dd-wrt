@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id$
+#  $Id: 614c52b82b3e12fab54313aecb5c1120559781f3 $
 
 #  "passwd" configuration, for the /etc/group file. Adds a Etc-Group-Name
 #  attribute for every group that the user is member of.

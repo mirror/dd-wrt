@@ -8,7 +8,7 @@
 #	http://www.3gpp2.org/Public_html/specs/X.S0011-005-C_v2.0_050708.pdf
 #	http://www.3gpp2.org/public_html/specs/X.S0011-005-C_v3.0_061030.pdf
 #
-#	$Id$
+#	$Id: 0476dac6a2d17cb68a8e4ead8d38794000a56070 $
 #
 VENDOR		3GPP2				5535
 
@@ -133,9 +133,9 @@ ATTRIBUTE	3GPP2-Carrier-ID			142	string
 # More sub-types
 ATTRIBUTE	3GPP2-GMT-Time-Zone-Offset		143	signed
 
-ATTRIBUTE       3GPP2-HA-Request                        168     integer
-ATTRIBUTE       3GPP2-HA-Authorised                     169     integer
-ATTRIBUTE       3GPP2-IP-Ver-Authorised                 172     integer
-ATTRIBUTE       3GPP2-MIPv4-Mesg-Id                     173     string
+ATTRIBUTE	3GPP2-HA-Request			168	integer
+ATTRIBUTE	3GPP2-HA-Authorised			169	integer
+ATTRIBUTE	3GPP2-IP-Ver-Authorised			172	integer
+ATTRIBUTE	3GPP2-MIPv4-Mesg-Id			173	string
 
 END-VENDOR 3GPP2

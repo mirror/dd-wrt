@@ -1,7 +1,7 @@
 /*
  * radmin.c	RADIUS Administration tool.
  *
- * Version:	$Id$
+ * Version:	$Id: 35ab715c903cba4d92949bc7c4a9a6f276af49ca $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 35ab715c903cba4d92949bc7c4a9a6f276af49ca $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/radpaths.h>
@@ -74,6 +74,12 @@ RCSID("$Id$")
  */
 const char *radius_dir = RADDBDIR;
 const char *progname = "radmin";
+const char *radmin_version = "radmin version " RADIUSD_VERSION_STRING
+#ifdef RADIUSD_VERSION_COMMIT
+" (git #" RADIUSD_VERSION_COMMIT ")"
+#endif
+;
+
 
 /*
  *	The rest of this is because the conffile.c, etc. assume
@@ -100,6 +106,8 @@ static int fr_domain_socket(const char *path)
 	size_t len;
 	socklen_t socklen;
         struct sockaddr_un saremote;
+
+	if (!path) return -1;
 
 	len = strlen(path);
 	if (len >= sizeof(saremote.sun_path)) {
@@ -502,7 +510,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!done_license && !quiet) {
-		printf("radmin " RADIUSD_VERSION " - FreeRADIUS Server administration tool.\n");
+		printf("%s - FreeRADIUS Server administration tool.\n", radmin_version);
 		printf("Copyright (C) 2008-2012 The FreeRADIUS server project and contributors.\n");
 		printf("There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A\n");
 		printf("PARTICULAR PURPOSE.\n");

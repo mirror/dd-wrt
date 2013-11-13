@@ -19,7 +19,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: cfac99ac9887f6c1e3a25621f36835e3fedaeac4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -140,6 +140,7 @@ typedef struct {
 	int		is_url;
 	int		chase_referrals;
 	int		rebind;
+	int		expect_password;
 	char           *login;
 	char           *password;
 	char           *filter;
@@ -235,6 +236,8 @@ static const CONF_PARSER module_config[] = {
 	 offsetof(ldap_instance,port), NULL, "389"},
 	{"password", PW_TYPE_STRING_PTR,
 	 offsetof(ldap_instance,password), NULL, ""},
+	{"expect_password", PW_TYPE_BOOLEAN,
+	 offsetof(ldap_instance,expect_password), NULL, "yes"},
 	{"identity", PW_TYPE_STRING_PTR,
 	 offsetof(ldap_instance,login), NULL, ""},
 
@@ -929,6 +932,11 @@ retry:
 		       ldap_err2string(ldap_errno));
 		ldap_msgfree(*result);
 		return (RLM_MODULE_FAIL);
+	case LDAP_OPERATIONS_ERROR:
+		DEBUG("WARNING: Please set 'chase_referrals=yes' and 'rebind=yes'");
+		DEBUG("WARNING: See the ldap module configuration for details");
+		/* FALL-THROUGH */
+
 	default:
 		ldap_get_option(conn->ld, LDAP_OPT_ERROR_NUMBER, &ldap_errno);
 		radlog(L_ERR, "  [%s] ldap_search() failed: %s", inst->xlat_name,
@@ -1029,7 +1037,7 @@ static int ldap_groupcmp(void *instance, REQUEST *req,
 
 	DEBUG("  [%s] Entering ldap_groupcmp()", inst->xlat_name);
 
-	if (check->vp_strvalue == NULL || check->length == 0){
+	if (check->length == 0){
                 DEBUG("rlm_ldap::ldap_groupcmp: Illegal group name");
                 return 1;
         }
@@ -1365,7 +1373,7 @@ static int ldap_authorize(void *instance, REQUEST * request)
 	/*
 	 * Check for valid input, zero length names not permitted
 	 */
-	if (request->username->vp_strvalue == 0) {
+	if (request->username->length == 0) {
 		DEBUG2("zero length username not permitted\n");
 		return RLM_MODULE_INVALID;
 	}
@@ -1783,7 +1791,7 @@ static int ldap_authorize(void *instance, REQUEST * request)
 	*	More warning messages for people who can't be bothered
 	*	to read the documentation.
 	*/
-       if (debug_flag > 1) {
+       if (inst->expect_password && (debug_flag > 1)) {
 	       if (!pairfind(request->config_items, PW_CLEARTEXT_PASSWORD) &&
 		   !pairfind(request->config_items, PW_NT_PASSWORD) &&
 		   !pairfind(request->config_items, PW_USER_PASSWORD) &&
@@ -1808,8 +1816,9 @@ static int ldap_authorize(void *instance, REQUEST * request)
 		RDEBUG("Setting Auth-Type = %s", inst->auth_type);
 	}
 
-	RDEBUG("user %s authorized to use remote access",
-	      request->username->vp_strvalue);
+	if (inst->access_attr)
+		RDEBUG("user %s authorized to use remote access",
+		       request->username->vp_strvalue);
 	ldap_msgfree(result);
 	ldap_release_conn(conn_id,inst);
 

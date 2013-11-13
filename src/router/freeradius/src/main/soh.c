@@ -1,7 +1,7 @@
 /*
  * soh.c contains the interfaces that are called from eap
  *
- * Version:     $Id$
+ * Version:     $Id: c602825f051002e116a4cf50bc4b4d8b622ba5c4 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: c602825f051002e116a4cf50bc4b4d8b622ba5c4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/soh.h>
@@ -585,6 +585,7 @@ int soh_verify(REQUEST *request, VALUE_PAIR *sohvp, const uint8_t *data, unsigne
 					/* FIXME: what to do with the payload? */
 					snprintf(vp->vp_strvalue, sizeof(vp->vp_strvalue), "%08x/%i ?", curr_shid, curr_shid_c);
 				}
+				vp->length = strlen(vp->vp_strvalue);
 				pairadd(&sohvp, vp);
 				break;
 

@@ -1,7 +1,7 @@
 /*
  * auth.c	User authentication.
  *
- * Version:	$Id$
+ * Version:	$Id: fd36a262d76c3c0b515e719f38be293d0876673f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: fd36a262d76c3c0b515e719f38be293d0876673f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -812,10 +812,11 @@ autz_redo:
 	 *	Set the reply to Access-Accept, if it hasn't already
 	 *	been set to something.  (i.e. Access-Challenge)
 	 */
-	if (request->reply->code == 0)
-	  request->reply->code = PW_AUTHENTICATION_ACK;
-
-	if ((module_msg = pairfind(request->packet->vps,PW_MODULE_SUCCESS_MESSAGE)) != NULL){
+	if (request->reply->code == 0) {
+		request->reply->code = PW_AUTHENTICATION_ACK;
+	}
+	
+	if ((module_msg = pairfind(request->packet->vps, PW_MODULE_SUCCESS_MESSAGE)) != NULL){
 		char msg[MAX_STRING_LEN+12];
 
 		snprintf(msg, sizeof(msg), "Login OK (%s)",
@@ -825,10 +826,38 @@ autz_redo:
 		rad_authlog("Login OK", request, 1);
 	}
 
+	return result;
+}
+
+/*
+ *	Run a virtual server auth and postauth
+ *
+ */
+int rad_virtual_server(REQUEST *request)
+{
+	VALUE_PAIR *vp;
+	int result;
+
 	/*
-	 *	Run the modules in the 'post-auth' section.
+	 *	We currently only handle AUTH packets here.
+	 *	This could be expanded to handle other packets as well if required.
 	 */
-	result = rad_postauth(request);
+	rad_assert(request->packet->code == PW_AUTHENTICATION_REQUEST);
+
+	result = rad_authenticate(request);
+
+        if (request->reply->code == PW_AUTHENTICATION_REJECT) {
+                pairdelete(&request->config_items, PW_POST_AUTH_TYPE);
+                vp = radius_pairmake(request, &request->config_items,
+                                     "Post-Auth-Type", "Reject",
+                                     T_OP_SET);
+                if (vp) rad_postauth(request);
+        }
+
+        if (request->reply->code == PW_AUTHENTICATION_ACK) {
+                rad_postauth(request);
+        }
 
 	return result;
 }
+

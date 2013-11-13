@@ -1,7 +1,7 @@
 /*
  * sql_iodbc.c	iODBC support for FreeRadius
  *
- * Version:	$Id$
+ * Version:	$Id: 4451b40053dda01a0fd79d70d0f91c3ef39b743a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 4451b40053dda01a0fd79d70d0f91c3ef39b743a $")
 
 #include <freeradius-devel/radiusd.h>
 

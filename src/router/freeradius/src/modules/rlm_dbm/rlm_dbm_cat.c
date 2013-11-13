@@ -1,7 +1,7 @@
 /*
  * rlm_dbm_cat.c :    List rlm_dbm DBM file
  *
- * Version:     $Id$
+ * Version:     $Id: bdc13d50cf69a520dc7bacb8ced1d942c268e4f0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -100,7 +100,7 @@ int main(int n, char **argv) {
 					break;
 			case 'f':	fname = optarg;
 					break;
-			case 'v':	printf("%s: $Id$\n",progname);
+			case 'v':	printf("%s: $Id: bdc13d50cf69a520dc7bacb8ced1d942c268e4f0 $\n",progname);
 					exit(0);
 					break;
 			default : usage(); exit(1); break;

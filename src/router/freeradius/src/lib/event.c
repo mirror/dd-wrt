@@ -2,7 +2,7 @@
  * event.c	Non-thread-safe event handling, specific to a RADIUS
  *		server.
  *
- * Version:	$Id$
+ * Version:	$Id: 515654599aa668fc1054ed162b513b5df4b9f2a1 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 515654599aa668fc1054ed162b513b5df4b9f2a1 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/heap.h>

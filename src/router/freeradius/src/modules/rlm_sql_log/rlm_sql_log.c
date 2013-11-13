@@ -2,7 +2,7 @@
  *  rlm_sql_log.c	Append the SQL queries in a log file which
  *			is read later by the radsqlrelay program
  *
- *  Version:    $Id$
+ *  Version:    $Id: ffa41a96a67a2522cad05fad6e5ba26489c04d0f $
  *
  *  Author:     Nicolas Baradakis <nicolas.baradakis@cegetel.net>
  *
@@ -25,7 +25,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: ffa41a96a67a2522cad05fad6e5ba26489c04d0f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

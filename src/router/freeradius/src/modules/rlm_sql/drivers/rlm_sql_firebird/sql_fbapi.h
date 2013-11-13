@@ -24,7 +24,7 @@
 #define _SQL_FBAPI_H_
 
 #include <freeradius-devel/ident.h>
-RCSIDH(sql_fbapi_h, "$Id$")
+RCSIDH(sql_fbapi_h, "$Id: dfee7f279bf846cc7bb62c414ffd4b39ca39b86d $")
 
 #include <freeradius-devel/autoconf.h>
 

@@ -10,7 +10,7 @@
 #  add a "fake" attribute to the end of dictionary1, so that you know
 #  which attributes belong to which dictionary...
 #
-#  $Id$
+#  $Id: 3ace68ff8d1d7b8c2107264980e590f62d0e5efa $
 #
 
 $line = 0;

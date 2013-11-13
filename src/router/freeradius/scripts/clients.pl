@@ -7,7 +7,7 @@
 #	If it does exist, it will be over-written.
 #
 #
-#	$Id$
+#	$Id: 819887c6ca2f4f50d2d47474c230908512aa227e $
 #
 if (($#ARGV < 1) || ($#ARGV > 2)) {
     print "Usage: clients.pl clients [naslist] new-clients.conf\n";

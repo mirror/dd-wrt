@@ -25,7 +25,7 @@
 */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 61f3871bfe48422a79e0c8f5e7f6521f017acb8c $")
 
 #include <string.h>
 #include "smblib-priv.h"

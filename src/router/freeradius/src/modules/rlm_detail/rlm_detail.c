@@ -1,7 +1,7 @@
 /*
  * rlm_detail.c	accounting:    Write the "detail" files.
  *
- * Version:	$Id$
+ * Version:	$Id: 712a9d0c9c076c497ed70da1f15ef9bab4da4125 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 712a9d0c9c076c497ed70da1f15ef9bab4da4125 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

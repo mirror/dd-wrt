@@ -25,7 +25,7 @@
 */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(rfcnb_io_h, "$Id$")
+RCSIDH(rfcnb_io_h, "$Id: 5f8963a6d9d00cb35e3baf1af7561ecc8e254496 $")
 
 int RFCNB_Put_Pkt(struct RFCNB_Con *con, struct RFCNB_Pkt *pkt, int len);
 

@@ -4,11 +4,11 @@
 #
 #	Zyxel attributes, of course in the RFC space...
 #
-#	$Id$
+#	$Id: 35b1426a802c14d40e14e361a5e38cc13b3e6433 $
 #
 ##############################################################################
 
-VENDOR Zyxel 890
+VENDOR		Zyxel				890
 BEGIN-VENDOR	Zyxel
 
 ATTRIBUTE	Zyxel-Privilege-AVPair			3	string

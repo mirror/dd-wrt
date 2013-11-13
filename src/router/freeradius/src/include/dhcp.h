@@ -6,7 +6,7 @@
  *		Why DHCP in a RADIUS server?
  *		Why not?
  *
- * Version:	$Id$
+ * Version:	$Id: 5ee38eb93004ec16a76de58189f14f23632b84a4 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * Copyright 2008 Alan DeKok <aland@deployingradius.com>
  */
 #include <freeradius-devel/ident.h>
-RCSIDH(dhcp_h, "$Id$")
+RCSIDH(dhcp_h, "$Id: 5ee38eb93004ec16a76de58189f14f23632b84a4 $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,6 +41,7 @@ int fr_dhcp_send(RADIUS_PACKET *packet);
 int fr_dhcp_add_arp_entry(int fd, const char *interface, VALUE_PAIR *hwvp, VALUE_PAIR *clvp);
 
 int fr_dhcp_encode(RADIUS_PACKET *packet);
+ssize_t fr_dhcp_decode_options(uint8_t *data, size_t len, VALUE_PAIR **head);
 int fr_dhcp_decode(RADIUS_PACKET *packet);
 
 /*

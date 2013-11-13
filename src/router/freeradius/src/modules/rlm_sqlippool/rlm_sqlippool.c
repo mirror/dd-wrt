@@ -1,7 +1,7 @@
 /*
  *  rlm_sqlippool.c     rlm_sqlippool - FreeRADIUS SQL IP Pool Module
  *
- * Version:  $Id$
+ * Version:  $Id: 7d2ae16cb4e64a34d0195024d2943e24b0f11544 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 7d2ae16cb4e64a34d0195024d2943e24b0f11544 $")
 
 #include <freeradius-devel/radiusd.h>
 

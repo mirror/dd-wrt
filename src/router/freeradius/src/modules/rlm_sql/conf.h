@@ -9,7 +9,7 @@
 ***************************************************************************/
 
 #include <freeradius-devel/ident.h>
-RCSIDH(conf_h, "$Id$")
+RCSIDH(conf_h, "$Id: d1faae0cd077d3df7a28b3cf418fc00bdd896fb4 $")
 
 typedef struct sql_config {
 	char   *sql_driver;

@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 2867.
 #	http://www.ietf.org/rfc/rfc2867.txt
 #
-#	$Id$
+#	$Id: 38ef8d990cb0985d1a1ca65de652622d79f435b5 $
 #
 ATTRIBUTE	Acct-Tunnel-Connection			68	string
 ATTRIBUTE	Acct-Tunnel-Packets-Lost		86	integer

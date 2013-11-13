@@ -408,8 +408,6 @@ AC_DEFUN([AC_LIB_READLINE], [
         LIBS="$ORIG_LIBS $TRY_LIB"
         AC_TRY_LINK_FUNC(readline, ac_cv_lib_readline="$TRY_LIB")
         if test -n "$ac_cv_lib_readline"; then
-          LIBREADLINE="$TRY_LIB"
-          AC_SUBST(LIBREADLINE)
           break
         fi
       done
@@ -424,6 +422,7 @@ AC_DEFUN([AC_LIB_READLINE], [
   ])
 
   if test "$ac_cv_lib_readline" != "no"; then
+    LIBREADLINE="$ac_cv_lib_readline"
     AC_DEFINE(HAVE_LIBREADLINE, 1,
               [Define if you have a readline compatible library])
     AC_CHECK_HEADERS(readline.h readline/readline.h)
@@ -438,6 +437,7 @@ AC_DEFUN([AC_LIB_READLINE], [
       AC_CHECK_HEADERS(history.h readline/history.h)
     fi
   fi
+  AC_SUBST(LIBREADLINE)
 ])
 
 AC_INCLUDE(aclocal.m4)

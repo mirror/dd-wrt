@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:	$Id$
+# Version:	$Id: 51987106a93b3e09e448924f60e436df70ff3dc4 $
 #
 
 all:

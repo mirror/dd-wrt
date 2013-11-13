@@ -1,7 +1,7 @@
 /*
  * rlm_logintime.c
  *
- * Version:  $Id$
+ * Version:  $Id: 24c1fe642590422786d3f6cde8bccb8c54e59208 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 24c1fe642590422786d3f6cde8bccb8c54e59208 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

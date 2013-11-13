@@ -1,7 +1,7 @@
 /*
  * command.c	Command socket processing.
  *
- * Version:	$Id$
+ * Version:	$Id: e6c8b322e0266ab670b2cbbace94fcbbd79a4a09 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -305,6 +305,14 @@ static int command_hup(rad_listen_t *listener, int argc, char *argv[])
 		return 1;
 	}
 
+	/*
+	 *	Hack a "main" HUP thingy
+	 */
+	if (strcmp(argv[0], "main.log") == 0) {
+		hup_logfile();
+		return 1;
+	}
+
 	cs = cf_section_find("modules");
 	if (!cs) return 0;
 
@@ -345,6 +353,31 @@ static int command_uptime(rad_listen_t *listener,
 
 	CTIME_R(&fr_start_time, buffer, sizeof(buffer));
 	cprintf(listener, "Up since %s", buffer); /* no \r\n */
+
+	return 1;		/* success */
+}
+
+static int command_show_config(rad_listen_t *listener, int argc, char *argv[])
+{
+	CONF_ITEM *ci;
+	CONF_PAIR *cp;
+	const char *value;
+
+	if (argc != 1) {
+		cprintf(listener, "ERROR: No path was given\n");
+		return 0;
+	}
+
+	ci = cf_reference_item(mainconfig.config, mainconfig.config, argv[0]);
+	if (!ci) return 0;
+
+	if (!cf_item_is_pair(ci)) return 0;
+
+	cp = cf_itemtopair(ci);
+	value = cf_pair_value(cp);
+	if (!value) return 0;
+
+	cprintf(listener, "%s\n", value);
 
 	return 1;		/* success */
 }
@@ -1345,6 +1378,9 @@ static fr_command_table_t command_table_show[] = {
 	{ "client", FR_READ,
 	  "show client <command> - do sub-command of client",
 	  NULL, command_table_show_client },
+	{ "config", FR_READ,
+	  "show config <path> - shows the value of configuration option <path>",
+	  command_show_config, NULL },
 	{ "debug", FR_READ,
 	  "show debug <command> - show debug properties",
 	  NULL, command_table_show_debug },
@@ -1509,7 +1545,7 @@ static int command_print_stats(rad_listen_t *listener, fr_stats_t *stats,
 	cprintf(listener, "\tdup\t\t%u\n", stats->total_dup_requests);
 	cprintf(listener, "\tinvalid\t\t%u\n", stats->total_invalid_requests);
 	cprintf(listener, "\tmalformed\t%u\n", stats->total_malformed_requests);
-	cprintf(listener, "\tbad_signature\t%u\n", stats->total_bad_authenticators);
+	cprintf(listener, "\tbad_authenticator\t%u\n", stats->total_bad_authenticators);
 	cprintf(listener, "\tdropped\t\t%u\n", stats->total_packets_dropped);
 	cprintf(listener, "\tunknown_types\t%u\n", stats->total_unknown_types);
 	
@@ -1857,6 +1893,8 @@ static void command_socket_free(rad_listen_t *this)
 {
 	fr_command_socket_t *sock = this->data;
 
+	if (!sock->copy) return;
+
 	unlink(sock->copy);
 	free(sock->copy);
 	sock->copy = NULL;
@@ -1880,8 +1918,12 @@ static int command_socket_parse(CONF_SECTION *cs, rad_listen_t *this)
 		return -1;
 	}
 
-	sock->copy = NULL;
-	if (sock->path) sock->copy = strdup(sock->path);
+	if (!sock->path) {
+		radlog(L_ERR, "Socket name is requird");
+		return -1;
+	}
+
+	sock->copy = strdup(sock->path);
 
 #if defined(HAVE_GETPEEREID) || defined (SO_PEERCRED)
 	if (sock->uid_name) {

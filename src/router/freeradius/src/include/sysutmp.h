@@ -1,14 +1,14 @@
 /*
  * sysutmp.h	Compatibility stuff for the different UTMP systems.
  *
- * Version:	$Id$
+ * Version:	$Id: 283f94b9a60ce973fac450982555f9e3eb4cb7cc $
  */
 
 #ifndef SYSUTMP_H_INCLUDED
 #define SYSUTMP_H_INCLUDED
 
 #include <freeradius-devel/ident.h>
-RCSIDH(sysutmp_h, "$Id$")
+RCSIDH(sysutmp_h, "$Id: 283f94b9a60ce973fac450982555f9e3eb4cb7cc $")
 
 /*
  *  If we have BOTH utmp.h and utmpx.h, then

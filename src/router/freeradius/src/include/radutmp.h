@@ -1,14 +1,14 @@
 /*
  * radutmp.h	Definitions for the Radius UTMP file.
  *
- * Version:	$Id$
+ * Version:	$Id: 165a6206a615c1195ad8b9cce582c9d6f76af64b $
  */
 
 #ifndef _RADUTMP_H
 #define _RADUTMP_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(radutmp_h, "$Id$")
+RCSIDH(radutmp_h, "$Id: 165a6206a615c1195ad8b9cce582c9d6f76af64b $")
 
 #ifdef __cplusplus
 extern "C" {

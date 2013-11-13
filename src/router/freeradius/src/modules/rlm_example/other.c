@@ -1,7 +1,7 @@
 /*
  * other.c
  *
- * Version:	$Id$
+ * Version:	$Id: 6a2db8eff83096edf84566b513058dace2456162 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 6a2db8eff83096edf84566b513058dace2456162 $")
 
 #include <stdio.h>
 

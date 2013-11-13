@@ -2,7 +2,7 @@
  * rlm_sim_files.c	authorization: Find a SIM user in the "simtriplets"
  *                                     file.
  *
- * Version:	$Id$
+ * Version:	$Id: 5d589c68efe6295e6f672bb55160043e1a9f3378 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@
 
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 5d589c68efe6295e6f672bb55160043e1a9f3378 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>
@@ -209,7 +209,10 @@ static int sim_file_authorize(void *instance, REQUEST *request)
 
 		k = paircreate(ATTRIBUTE_EAP_SIM_KC1 + imsicount, PW_TYPE_OCTETS);
 		k = pairparsevalue(k, kc);
-		rad_assert(k != NULL);
+		if (!k) {
+			DEBUG("ERROR: Syntax error in line %d", lineno);
+			break;
+		}
 		pairadd(reply_pairs, k);
 
 		s = paircreate(ATTRIBUTE_EAP_SIM_SRES1 + imsicount, PW_TYPE_OCTETS);

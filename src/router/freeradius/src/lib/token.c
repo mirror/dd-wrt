@@ -2,7 +2,7 @@
  * token.c	Read the next token from a string.
  *		Yes it's pretty primitive but effective.
  *
- * Version:	$Id$
+ * Version:	$Id: 432a0f8af9896777b921b80059ec601723414a8f $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 432a0f8af9896777b921b80059ec601723414a8f $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/token.h>

@@ -3,7 +3,7 @@
 ## radiusd.conf	-- FreeRADIUS server configuration file.
 ##
 ##	http://www.freeradius.org/
-##	$Id$
+##	$Id: 30644199c1192f35c88a094ad9414d2e17332aa9 $
 ##
 
 ######################################################################

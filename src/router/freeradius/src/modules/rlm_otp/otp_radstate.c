@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 9e60f0024bd6d025435cf8492802d9cf7d4accea $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 9e60f0024bd6d025435cf8492802d9cf7d4accea $")
 
 /* avoid inclusion of these FR headers which conflict w/ OpenSSL */
 #define _FR_MD4_H

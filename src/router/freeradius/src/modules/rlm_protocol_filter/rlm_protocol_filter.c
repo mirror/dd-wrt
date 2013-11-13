@@ -1,7 +1,7 @@
 /*
  * rlm_protocol_filter.c
  *
- * Version:	$Id$
+ * Version:	$Id: 14a3f045aeb86a2d1b7a25a3d954e0e88e697018 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 14a3f045aeb86a2d1b7a25a3d954e0e88e697018 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

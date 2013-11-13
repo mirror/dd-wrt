@@ -1,7 +1,7 @@
 /*
  * rlm_checkval.c
  *
- * Version:	$Id$
+ * Version:	$Id: 384c4835678d9b8eb3f31066a9609abd82d37e9f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 384c4835678d9b8eb3f31066a9609abd82d37e9f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

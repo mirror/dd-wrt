@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:	$Id$
+# Version:	$Id: 43eecaea221e245b1a3235ac39cad3b4f18d0d5e $
 #
 
 TARGET      = rlm_eap_leap

@@ -3,7 +3,7 @@
  *                      before sending reply to the NAS/Server that sent
  *                      it to us.
  *
- * Version:      $Id$
+ * Version:      $Id: a3559fd77d0d4e1f69853ad529a80334c143d414 $
  *
  *   This program is is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License, version 2 if the
@@ -23,7 +23,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: a3559fd77d0d4e1f69853ad529a80334c143d414 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

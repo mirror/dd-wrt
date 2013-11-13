@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 5176.
 #	http://www.ietf.org/rfc/rfc5176.txt
 #
-#	$Id$
+#	$Id: f2165d5144ad892bc09311e0b2ae0dd9750002a6 $
 #
-VALUE	Error-Cause		Invalid-Attribute-Value	407
-VALUE	Error-Cause		Multiple-Session-Selection-Unsupported 508
+VALUE	Error-Cause			Invalid-Attribute-Value	407
+VALUE	Error-Cause			Multiple-Session-Selection-Unsupported 508

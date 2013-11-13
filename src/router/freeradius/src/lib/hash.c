@@ -11,7 +11,7 @@
  *  rather than being able to move 1/2 of the entries in the chain with
  *  one update.
  *
- * Version:	$Id$
+ * Version:	$Id: 20d5ccff4219cb7d62091b3afe2064e7f8577b9e $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -31,7 +31,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 20d5ccff4219cb7d62091b3afe2064e7f8577b9e $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/hash.h>

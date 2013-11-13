@@ -1,7 +1,7 @@
 /*
  * rlm_eap.c  contains handles that are called from modules.
  *
- * Version:     $Id$
+ * Version:     $Id: a4a01f5a7166e09156a8bef3fe56a2f2a223bf26 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: a4a01f5a7166e09156a8bef3fe56a2f2a223bf26 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

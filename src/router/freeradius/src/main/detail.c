@@ -1,7 +1,7 @@
 /*
  * detail.c	Process the detail file
  *
- * Version:	$Id$
+ * Version:	$Id: fe6f4d99bef19584d1d3360569b7bbbc5f17b782 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: fe6f4d99bef19584d1d3360569b7bbbc5f17b782 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

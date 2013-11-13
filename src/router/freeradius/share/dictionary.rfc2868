@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 2868.
 #	http://www.ietf.org/rfc/rfc2868.txt
 #
-#	$Id$
+#	$Id: 0a9377513217832034b345103be300ccab4e5a63 $
 #
 ATTRIBUTE	Tunnel-Type				64	integer	has_tag
 ATTRIBUTE	Tunnel-Medium-Type			65	integer	has_tag

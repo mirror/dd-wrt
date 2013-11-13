@@ -1,5 +1,5 @@
 #
-# $Id$
+# $Id: 7e0a7b8726c7b8635083aae798784ea83e68be3f $
 #
 
 include ../../Make.inc
@@ -19,10 +19,14 @@ INCLUDES	= ../include/autoconf.h ../include/conf.h    \
 CFLAGS		+= -I$(top_builddir)/src
 CFLAGS		+= -DHOSTINFO=\"${HOSTINFO}\"
 CFLAGS		+= -DRADIUSD_VERSION=\"${RADIUSD_VERSION}\"
+CFLAGS		+= -DRADIUSD_VERSION_STRING=\"${RADIUSD_VERSION_STRING}\"
+ifdef RADIUSD_VERSION_COMMIT
+CFLAGS		+= -DRADIUSD_VERSION_COMMIT=\"${RADIUSD_VERSION_COMMIT}\"
+endif
 CFLAGS		+= $(SNMP_INCLUDE)
-CFLAGS		+= $(OPENSSL_INCLUDE)
 VFLAGS		= -DRADIUSD_MAJOR_VERSION=$(RADIUSD_MAJOR_VERSION)
 VFLAGS		+= -DRADIUSD_MINOR_VERSION=$(RADIUSD_MINOR_VERSION)
+VFLAGS		+= -DRADIUSD_INCRM_VERSION=$(RADIUSD_INCRM_VERSION)
 MODULE_LIBS	= $(STATIC_MODULES)
 BINARIES	= radiusd$(EXEEXT) radwho$(EXEEXT) radclient$(EXEEXT) radmin$(EXEEXT) radconf2xml$(EXEEXT)
 
@@ -67,7 +71,7 @@ radiusd$(EXEEXT): $(SERVER_OBJS) $(MODULE_OBJS) $(LIBRADIUS)
 	$(LIBTOOL) --mode=link $(CC) -export-dynamic -dlopen self \
 		$(LDFLAGS) $(LINK_MODE) -o $@ $(SERVER_OBJS)      \
 		$(MODULE_LIBS) $(LIBRADIUS) $(LIBS) $(SNMP_LIBS) \
-		$(LCRYPT) $(PTHREADLIB) $(LIBLTDL) $(OPENSSL_LIBS)
+		$(LCRYPT) $(PTHREADLIB) $(LIBLTDL)
 
 radiusd.lo: radiusd.c  ../include/modules.h ../include/modcall.h ../include/modpriv.h
 	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c radiusd.c
@@ -141,12 +145,12 @@ radmin$(EXEEXT): radmin.lo $(LIBRADIUS) util.lo log.lo conffile.lo
 radconf2xml$(EXEEXT): radconf2xml.lo $(LIBRADIUS) util.lo log.lo conffile.lo
 	$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(LINK_MODE) -o $@ $^ $(LIBS)
 
-dhclient.lo: dhclient.c $(INCLUDES)
-	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c dhclient.c
+dhcpclient.lo: dhcpclient.c $(INCLUDES)
+	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c dhcpclient.c
 
 # Don't install this for now.
-dhclient$(EXEEXT): dhclient.lo $(LIBRADIUS)
-	$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(LINK_MODE) -o dhclient dhclient.lo $(LIBRADIUS) $(LIBS)
+dhcpclient$(EXEEXT): dhcpclient.lo $(LIBRADIUS)
+	$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(LINK_MODE) -o dhcpclient dhcpclient.lo $(LIBRADIUS) $(LIBS)
 
 clean:
 	rm -rf *.o *.so *.lo *~ $(BINARIES) .libs

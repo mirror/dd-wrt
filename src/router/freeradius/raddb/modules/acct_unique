@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id$
+#  $Id: cfd89eb1bf690b605892969ebd922e6885f24fcc $
 
 #
 #  Create a unique accounting session Id.  Many NASes re-use

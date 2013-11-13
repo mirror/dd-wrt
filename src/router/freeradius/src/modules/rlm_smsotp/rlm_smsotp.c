@@ -1,7 +1,7 @@
 /*
  * rlm_smsotp.c
  *
- * Version:	$Id: rlm_smsotp.c,v 0.2 2009/02/03 08:06:44 wofflger Exp $
+ * Version:	$Id: 9bbf20b49b017c33447a3ed520b1e4683b0a245d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: rlm_smsotp.c,v 0.2 2009/02/03 08:06:44 wofflger Exp $")
+RCSID("$Id: 9bbf20b49b017c33447a3ed520b1e4683b0a245d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

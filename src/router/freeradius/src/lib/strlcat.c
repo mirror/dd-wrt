@@ -1,7 +1,7 @@
 /*
  *  strlcat.c	Concatenate strings.
  *
- *  Version:	$Id$
+ *  Version:	$Id: 563a14c474e5a4b24b0ae3df7eed9668b7834e4b $
  *
  */
 
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 563a14c474e5a4b24b0ae3df7eed9668b7834e4b $")
 
 #include <freeradius-devel/autoconf.h>
 
