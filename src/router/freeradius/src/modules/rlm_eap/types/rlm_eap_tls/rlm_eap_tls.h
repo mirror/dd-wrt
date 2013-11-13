@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.h
  *
- * Version:     $Id$
+ * Version:     $Id: ad6fb8952fe28b7b7610a2effb0c8e836cc8f21b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #define _RLM_EAP_TLS_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(rlm_eap_tls_h, "$Id$")
+RCSIDH(rlm_eap_tls_h, "$Id: ad6fb8952fe28b7b7610a2effb0c8e836cc8f21b $")
 
 #include "eap_tls.h"
 
@@ -43,6 +43,7 @@ typedef struct eap_tls_conf {
 	char		*dh_file;
 	char		*rsa_file;
 	char		*make_cert_command;
+	char		*virtual_server;
 	int		rsa_key;
 	int		dh_key;
 	int		rsa_key_length;
@@ -92,7 +93,7 @@ typedef struct eap_tls_conf {
 
 /* This structure gets stored in arg */
 typedef struct _eap_tls_t {
-	EAP_TLS_CONF 	*conf;
+	EAP_TLS_CONF 	conf;
 	SSL_CTX		*ctx;
 #ifdef HAVE_OPENSSL_OCSP_H
 	X509_STORE	*store; /* OCSP Revocation Store */

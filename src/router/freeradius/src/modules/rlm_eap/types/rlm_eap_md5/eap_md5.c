@@ -1,7 +1,7 @@
 /*
  * eap_md5.c  EAP MD5 functionality.
  *
- * Version:     $Id$
+ * Version:     $Id: f87c8dee09850458d777cf95a07eae957557bd32 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: f87c8dee09850458d777cf95a07eae957557bd32 $")
 
 #include <stdio.h>
 #include <stdlib.h>

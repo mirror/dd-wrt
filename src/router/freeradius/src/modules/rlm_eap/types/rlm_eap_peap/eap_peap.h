@@ -1,7 +1,7 @@
 /*
  * eap_peap.h
  *
- * Version:     $Id$
+ * Version:     $Id: 3ad3a33ca652f76629932604e28fcce33bf6dea3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #define _EAP_PEAP_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(eap_peap_h, "$Id$")
+RCSIDH(eap_peap_h, "$Id: 3ad3a33ca652f76629932604e28fcce33bf6dea3 $")
 
 #include "eap_tls.h"
 #include <freeradius-devel/soh.h>

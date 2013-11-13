@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: ba78974d096d738b6f1e05fa9b4b56761cdda5f4 $
  *
  * Postgresql schema for FreeRADIUS
  *

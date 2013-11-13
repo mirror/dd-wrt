@@ -2,7 +2,7 @@
 #	Configuration file for the rlm_attr_filter module.
 #	Please see rlm_attr_filter(5) manpage for more information.
 #
-#	$Id$
+#	$Id: 78ea54e83f4a998797f16a8c564b5c2f32642adc $
 #
 #	This configuration file is used to remove almost all of the
 #	attributes From an Access-Challenge message.  The RFC's say

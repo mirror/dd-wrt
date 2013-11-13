@@ -32,11 +32,11 @@
  * sendfromto	added 18/08/2003, Jan Berkel <jan@sitadelle.com>
  *		Works on Linux and FreeBSD (5.x)
  *
- * Version: $Id$
+ * Version: $Id: a3186d4e889cbb5f55a2484a5162aaa45b743f9d $
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: a3186d4e889cbb5f55a2484a5162aaa45b743f9d $")
 
 #include <freeradius-devel/udpfromto.h>
 

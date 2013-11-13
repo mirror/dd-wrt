@@ -9,7 +9,7 @@
 #define _RLM_SQL_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(rlm_sql_h, "$Id$")
+RCSIDH(rlm_sql_h, "$Id: 07336669d4e221fbb3910496ef5f6b5f505a6396 $")
 
 #ifdef HAVE_PTHREAD_H
 #include        <pthread.h>
@@ -62,10 +62,12 @@ typedef struct rlm_sql_module_t {
 typedef struct sql_inst SQL_INST;
 
 struct sql_inst {
+	SQL_CONFIG	myconfig; /* HACK */
+
 	time_t		connect_after;
 	SQLSOCK		*sqlpool;
 	SQLSOCK		*last_used;
-	SQL_CONFIG	*config;
+	SQL_CONFIG	*config; /* pointer to myconfig (HACK) */
 
 	lt_dlhandle handle;
 	rlm_sql_module_t *module;

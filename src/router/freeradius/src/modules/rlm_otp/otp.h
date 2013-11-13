@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 02e882f7378ad3ed3aed3f6990d98e155a4537e6 $
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #define OTP_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(otp_h, "$Id$")
+RCSIDH(otp_h, "$Id: 02e882f7378ad3ed3aed3f6990d98e155a4537e6 $")
 
 #include <sys/types.h>
 

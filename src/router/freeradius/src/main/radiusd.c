@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id$
+ * Version:	$Id: bb84e829df001f7b97f191f46587d6910857ac80 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: bb84e829df001f7b97f191f46587d6910857ac80 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -65,11 +65,13 @@ int log_stripped_names;
 int debug_flag = 0;
 int check_config = FALSE;
 
-const char *radiusd_version = "FreeRADIUS Version " RADIUSD_VERSION ", for host " HOSTINFO ", built on " __DATE__ " at " __TIME__;
+const char *radiusd_version = "FreeRADIUS Version " RADIUSD_VERSION_STRING
+#ifdef RADIUSD_VERSION_COMMIT
+" (git #" RADIUSD_VERSION_COMMIT ")"
+#endif
+", for host " HOSTINFO ", built on " __DATE__ " at " __TIME__;
 
 pid_t radius_pid;
-
-static int debug_memory = 0;
 
 /*
  *  Configuration items.
@@ -180,6 +182,7 @@ int main(int argc, char *argv[])
 					fprintf(stderr, "radiusd: Failed to open log file %s: %s\n", mainconfig.log_file, strerror(errno));
 					exit(1);
 				}
+				fr_log_fp = fdopen(mainconfig.radlog_fd, "a");
 				break;		  
 
 			case 'i':
@@ -195,7 +198,7 @@ int main(int argc, char *argv[])
 				break;
 
 			case 'm':
-				debug_memory = 1;
+				mainconfig.debug_memory = 1;
 				break;
 
 			case 'p':
@@ -218,9 +221,14 @@ int main(int argc, char *argv[])
 				break;
 
 			case 'v':
+				/* Don't print timestamps */
+				debug_flag += 2;
+				fr_log_fp = stdout;
+				mainconfig.radlog_dest = RADLOG_STDOUT;
+				mainconfig.radlog_fd = STDOUT_FILENO;
+				
 				version();
-				break;
-
+				exit(0);
 			case 'X':
 				spawn_flag = FALSE;
 				dont_fork = TRUE;
@@ -228,8 +236,8 @@ int main(int argc, char *argv[])
 				mainconfig.log_auth = TRUE;
 				mainconfig.log_auth_badpass = TRUE;
 				mainconfig.log_auth_goodpass = TRUE;
-				fr_log_fp = stdout;
 		do_stdout:
+				fr_log_fp = stdout;
 				mainconfig.radlog_dest = RADLOG_STDOUT;
 				mainconfig.radlog_fd = STDOUT_FILENO;
 				break;
@@ -244,20 +252,22 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	/*
+	 *	Mismatch between build time OpenSSL and linked SSL,
+	 *	better to die here than segfault later.
+	 */
+	if (ssl_check_version() < 0) {
+		exit(1);
+	}
+
 	if (flag && (flag != 0x03)) {
 		fprintf(stderr, "radiusd: The options -i and -p cannot be used individually.\n");
 		exit(1);
 	}
 
-	if (debug_flag) {
-		radlog(L_INFO, "%s", radiusd_version);
-		radlog(L_INFO, "Copyright (C) 1999-2012 The FreeRADIUS server project and contributors.\n");
-		radlog(L_INFO, "There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A\n");
-		radlog(L_INFO, "PARTICULAR PURPOSE.\n");
-		radlog(L_INFO, "You may redistribute copies of FreeRADIUS under the terms of the\n");
-		radlog(L_INFO, "GNU General Public License v2.\n");
-		fflush(NULL);
-	}
+	if (debug_flag)
+		version();
+		
 
 	/*  Read the configuration files, BEFORE doing anything else.  */
 	if (read_mainconfig(0) < 0) {
@@ -325,6 +335,10 @@ int main(int argc, char *argv[])
 	} else {
 		setlinebuf(stdout); /* unbuffered output */
 	}
+	
+	/*
+	 *	Now we have logging check that the OpenSSL 
+	 */
 
 	/*
 	 *	Initialize the event pool, including threads.
@@ -355,7 +369,7 @@ int main(int argc, char *argv[])
 	 *	server to die immediately.  Use SIGTERM to shut down
 	 *	the server cleanly in that case.
 	 */
-	if ((debug_memory == 1) || (debug_flag == 0)) {
+	if ((mainconfig.debug_memory == 1) || (debug_flag == 0)) {
 #ifdef HAVE_SIGACTION
 	        act.sa_handler = sig_fatal;
 		sigaction(SIGINT, &act, NULL);
@@ -416,6 +430,7 @@ int main(int argc, char *argv[])
 		rcode = 2;
 	} else {
 		radlog(L_INFO, "Exiting normally.");
+		rcode = 1;
 	}
 
 	/*
@@ -446,17 +461,17 @@ int main(int argc, char *argv[])
 	radius_event_free();
 	
 	/*
-	 *	Free the configuration items.
-	 */
-	free_mainconfig();
-	
-	/*
 	 *	Detach any modules.
 	 */
 	detach_modules();
 	
 	xlat_free();		/* modules may have xlat's */
 
+	/*
+	 *	Free the configuration items.
+	 */
+	free_mainconfig();
+	
 	free(radius_dir);
 		
 #ifdef WIN32
@@ -511,7 +526,7 @@ static void sig_fatal(int sig)
 #ifdef SIGQUIT
 		case SIGQUIT:
 #endif
-			if (debug_memory) {
+			if (mainconfig.debug_memory) {
 				radius_signal_self(RADIUS_SIGNAL_SELF_TERM);
 				break;
 			}

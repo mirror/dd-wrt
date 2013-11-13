@@ -5,7 +5,7 @@
  * packet.h	Structures and prototypes
  *		for packet manipulation
  *
- * Version:	$Id$
+ * Version:	$Id: 9982a5e19e4c2975d1ea01a90b84bf445e085509 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(packet_h, "$Id$")
+RCSIDH(packet_h, "$Id: 9982a5e19e4c2975d1ea01a90b84bf445e085509 $")
 
 #ifdef __cplusplus
 extern "C" {

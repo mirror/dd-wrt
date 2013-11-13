@@ -1,7 +1,7 @@
 /*
  * rlm_wimax.c
  *
- * Version:	$Id$
+ * Version:	$Id: c36169cda61ada99ca661a00424330a9ab40472f $
  *
  * Copyright (C) 2008 Alan DeKok <aland@networkradius.com>
  *
@@ -16,7 +16,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: c36169cda61ada99ca661a00424330a9ab40472f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

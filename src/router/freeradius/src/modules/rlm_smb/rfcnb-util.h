@@ -25,7 +25,7 @@
 */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(rfcnb_util_h, "$Id$")
+RCSIDH(rfcnb_util_h, "$Id: d6e6cc70692d0613710cd82d7655fda82066a14e $")
 
 void RFCNB_CvtPad_Name(char *name1, char *name2);
 

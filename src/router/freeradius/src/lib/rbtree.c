@@ -1,7 +1,7 @@
 /*
  * rbtree.c	Red-black balanced binary trees.
  *
- * Version:	$Id$
+ * Version:	$Id: 056e905f8afe67d8e9bfd395bdb90dab727c8e6c $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 056e905f8afe67d8e9bfd395bdb90dab727c8e6c $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -364,7 +364,7 @@ static void DeleteFixup(rbtree_t *tree, rbnode_t *X, rbnode_t *Parent)
 			}
 		}
 	}
-	X->Color = Black;
+	if (X != NIL) X->Color = Black; /* Avoid cache-dirty on NIL */
 }
 
 /*
@@ -413,7 +413,7 @@ void rbtree_delete(rbtree_t *tree, rbnode_t *Z)
 		Z->Data = Y->Data;
 		Y->Data = NULL;
 
-		if (Y->Color == Black && X != NIL)
+		if (Y->Color == Black)
 			DeleteFixup(tree, X, Parent);
 
 		/*
@@ -439,7 +439,7 @@ void rbtree_delete(rbtree_t *tree, rbnode_t *Z)
 	} else {
 		if (tree->freeNode) tree->freeNode(Y->Data);
 
-		if (Y->Color == Black && X != NIL)
+		if (Y->Color == Black)
 			DeleteFixup(tree, X, Parent);
 
 		free(Y);
@@ -569,12 +569,12 @@ static int WalkNodePostOrder(rbnode_t *X,
 	int rcode;
 
 	if (X->Left != NIL) {
-		rcode = WalkNodeInOrder(X->Left, callback, context);
+		rcode = WalkNodePostOrder(X->Left, callback, context);
 		if (rcode != 0) return rcode;
 	}
 
 	if (X->Right != NIL) {
-		rcode = WalkNodeInOrder(X->Right, callback, context);
+		rcode = WalkNodePostOrder(X->Right, callback, context);
 		if (rcode != 0) return rcode;
 	}
 

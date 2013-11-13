@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:	$Id$
+# Version:	$Id: 9d1a55a7bbc0baaca12272f3bdf08f96777f4db3 $
 #
 
 TARGET		= rlm_mschap

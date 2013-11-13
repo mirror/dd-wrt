@@ -3,7 +3,7 @@
  *		Contains the functions for the "huntgroups" and "hints"
  *		files.
  *
- * Version:     $Id$
+ * Version:     $Id: 74b67381f2968f583e76bb631e59921f799b5cd2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 74b67381f2968f583e76bb631e59921f799b5cd2 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

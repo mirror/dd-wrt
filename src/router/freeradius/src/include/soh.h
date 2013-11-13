@@ -4,7 +4,7 @@
 /*
  * soh.h        Microsoft SoH support
  *
- * Version:     $Id$
+ * Version:     $Id: 27b6ad3cc1a18d18f527d89179f0fbd1e20c08f7 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(soh_h, "$Id$")
+RCSIDH(soh_h, "$Id: 27b6ad3cc1a18d18f527d89179f0fbd1e20c08f7 $")
 
 #ifdef __cplusplus
 extern "C" {

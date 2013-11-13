@@ -3,7 +3,7 @@
  *		authentication: Apple Open Directory authentication
  *		authorization:  enforces ACLs
  *
- * Version:	$Id$
+ * Version:	$Id: a160b810301652d3b4cd2dd787b2cf5efec307fc $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 only, as published by

@@ -5,7 +5,7 @@
 #
 #	See the "realm virtual.example.com" example in "proxy.conf".
 #
-#	$Id$
+#	$Id: d8eff1c615627fdb5ac1d82a67b03f620de3a7a9 $
 #
 ######################################################################
 

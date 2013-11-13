@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:	$Id$
+# Version:	$Id: b30947fc0e45ff1f2aaa2d19462f29db81bddc12 $
 #
 
 TARGET      = rlm_eap_sim

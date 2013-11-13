@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 3580.
 #	http://www.ietf.org/rfc/rfc3580.txt
 #
-#	$Id$
+#	$Id: c297ca5c1e9eefc99e230e34e6e584a9a08547b6 $
 #
 VALUE	Acct-Terminate-Cause		Supplicant-Restart	19
 VALUE	Acct-Terminate-Cause		Reauthentication-Failure 20

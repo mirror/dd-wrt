@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id$
+ * Version:	$Id: da0c16c01ff21557362a028214a9776c0f6c7b24 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: da0c16c01ff21557362a028214a9776c0f6c7b24 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -61,7 +61,10 @@ RCSID("$Id$")
 struct main_config_t mainconfig;
 char *request_log_file = NULL;
 char *debug_condition = NULL;
+
+#ifdef HAVE_GMTIME_R
 extern int log_dates_utc;
+#endif
 
 typedef struct cached_config_t {
 	struct cached_config_t *next;
@@ -190,7 +193,9 @@ static const CONF_PARSER serverdest_config[] = {
 	{ "log", PW_TYPE_SUBSECTION, 0, NULL, (const void *) logdest_config },
 	{ "log_file", PW_TYPE_STRING_PTR, 0, &mainconfig.log_file, NULL },
 	{ "log_destination", PW_TYPE_STRING_PTR, 0, &radlog_dest, NULL },
+#ifdef HAVE_GMTIME_R
 	{ "use_utc", PW_TYPE_BOOLEAN, 0, &log_dates_utc, NULL },
+#endif
 	{ NULL, -1, 0, NULL, NULL }
 };
 
@@ -204,7 +209,9 @@ static const CONF_PARSER log_config_nodest[] = {
 	{ "msg_badpass", PW_TYPE_STRING_PTR, 0, &mainconfig.auth_badpass_msg, NULL},
 	{ "msg_goodpass", PW_TYPE_STRING_PTR, 0, &mainconfig.auth_goodpass_msg, NULL},
 
+#ifdef HAVE_GMTIME_R
 	{ "use_utc", PW_TYPE_BOOLEAN, 0, &log_dates_utc, NULL },
+#endif
 
 	{ NULL, -1, 0, NULL, NULL }
 };
@@ -370,10 +377,13 @@ static size_t xlat_config(void *instance, REQUEST *request,
 	 *  If 'outlen' is too small, then the output is chopped to fit.
 	 */
 	value = cf_pair_value(cp);
-	if (value) {
-		if (outlen > strlen(value)) {
-			outlen = strlen(value) + 1;
-		}
+	if (!value) {
+		out[0] = '\0';
+		return 0;
+	}
+
+	if (outlen > strlen(value)) {
+		outlen = strlen(value) + 1;
 	}
 
 	return func(out, outlen, value);
@@ -897,11 +907,13 @@ int read_mainconfig(int reload)
 
 	DEBUG2("%s: #### Loading Realms and Home Servers ####", mainconfig.name);
 	if (!realms_init(cs)) {
+		DEBUG2("Failed to load realms and home servers\n");
 		return -1;
 	}
 
 	DEBUG2("%s: #### Loading Clients ####", mainconfig.name);
 	if (!clients_parse_section(cs)) {
+		DEBUG2("Failed to load clients\n");
 		return -1;
 	}
 
@@ -987,6 +999,29 @@ int free_mainconfig(void)
 	return 0;
 }
 
+void hup_logfile(void)
+{
+		int fd, old_fd;
+		
+		if (mainconfig.radlog_dest != RADLOG_FILES) return;
+
+ 		fd = open(mainconfig.log_file,
+			  O_WRONLY | O_APPEND | O_CREAT, 0640);
+		if (fd >= 0) {
+			/*
+			 *	Atomic swap. We'd like to keep the old
+			 *	FD around so that callers don't
+			 *	suddenly find the FD closed, and the
+			 *	writes go nowhere.  But that's hard to
+			 *	do.  So... we have the case where a
+			 *	log message *might* be lost on HUP.
+			 */
+			old_fd = mainconfig.radlog_fd;
+			mainconfig.radlog_fd = fd;
+			close(old_fd);
+		}
+}
+
 void hup_mainconfig(void)
 {
 	cached_config_t *cc;
@@ -1027,25 +1062,7 @@ void hup_mainconfig(void)
 	 *	The "open log file" code is here rather than in log.c,
 	 *	because it makes that function MUCH simpler.
 	 */
-	if (mainconfig.radlog_dest == RADLOG_FILES) {
-		int fd, old_fd;
-		
-		fd = open(mainconfig.log_file,
-			  O_WRONLY | O_APPEND | O_CREAT, 0640);
-		if (fd >= 0) {
-			/*
-			 *	Atomic swap. We'd like to keep the old
-			 *	FD around so that callers don't
-			 *	suddenly find the FD closed, and the
-			 *	writes go nowhere.  But that's hard to
-			 *	do.  So... we have the case where a
-			 *	log message *might* be lost on HUP.
-			 */
-			old_fd = mainconfig.radlog_fd;
-			mainconfig.radlog_fd = fd;
-			close(old_fd);
-		}
-	}
+	hup_logfile();
 
 	radlog(L_INFO, "HUP - loading modules");
 

@@ -1,6 +1,6 @@
 #######################################################################
 #
-# $Id$
+# $Id: 05e9930bc09ecc83f71d5cd407f814abf0262f9e $
 #
 #  Each module should have a few common defines at the TOP of the
 # Makefile, and the 'include ../rules.mak'
@@ -101,7 +101,7 @@ build-module: $(TARGET).la
 	done
 
 $(TARGET).la: $(LT_OBJS)
-	$(LIBTOOL) --mode=link $(CC) -release $(RADIUSD_VERSION) \
+	$(LIBTOOL) --mode=link $(CC) -release $(RADIUSD_VERSION_STRING) \
 	-module $(LINK_MODE) $(LDFLAGS) $(RLM_SQL_LDFLAGS) -o $@ \
 	-rpath $(libdir) $^ $(RLM_SQL_LIBS)
 
@@ -147,6 +147,6 @@ install:
 	if [ "x$(TARGET)" != "x" ]; then \
 	    $(LIBTOOL) --mode=install $(INSTALL) -c \
 		$(TARGET).la $(R)$(libdir)/$(TARGET).la || exit $$?; \
-	    rm -f $(R)$(libdir)/$(TARGET)-$(RADIUSD_VERSION).la; \
-	    ln -s $(TARGET).la $(R)$(libdir)/$(TARGET)-$(RADIUSD_VERSION).la || exit $$?; \
+	    rm -f $(R)$(libdir)/$(TARGET)-$(RADIUSD_VERSION_STRING).la; \
+	    ln -s $(TARGET).la $(R)$(libdir)/$(TARGET)-$(RADIUSD_VERSION_STRING).la || exit $$?; \
 	fi

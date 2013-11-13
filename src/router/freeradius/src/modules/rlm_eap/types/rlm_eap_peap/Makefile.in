@@ -1,12 +1,12 @@
 #
-# $Id$
+# $Id: 8521f61ea10d267eca9c5941fcc39b3f874a56ca $
 #
 
 TARGET      = @targetname@
 SRCS        = rlm_eap_peap.c peap.c
 HEADERS     = eap_peap.h ../../eap.h ../../rlm_eap.h
-RLM_CFLAGS  = -I../.. -I../../libeap $(OPENSSL_INCLUDE) @eap_peap_cflags@
-RLM_LIBS    = @eap_peap_ldflags@ ../../libeap/$(LIBPREFIX)freeradius-eap.la $(OPENSSL_LIBS)
+RLM_CFLAGS  = -I../.. -I../../libeap @eap_peap_cflags@
+RLM_LIBS    = @eap_peap_ldflags@ ../../libeap/$(LIBPREFIX)freeradius-eap.la
 RLM_INSTALL =
 
 RLM_DIR=../../

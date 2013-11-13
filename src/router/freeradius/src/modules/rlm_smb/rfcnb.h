@@ -25,7 +25,7 @@
 */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(rfcnb_h, "$Id$")
+RCSIDH(rfcnb_h, "$Id: db00d99c02a2db2bae03d9b3740092f5c1df1471 $")
 
 /* Error responses */
 

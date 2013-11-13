@@ -1,7 +1,7 @@
 /*
  * misc.c	Various miscellaneous functions.
  *
- * Version:	$Id$
+ * Version:	$Id: 507afe0724c229c937cea2db7690213b5c4faf3b $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 507afe0724c229c937cea2db7690213b5c4faf3b $")
 
 #include	<freeradius-devel/libradius.h>
 

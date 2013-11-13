@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 4087381207935d7290a1c5003483071160d39b7a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 4087381207935d7290a1c5003483071160d39b7a $")
 
 #include "extern.h"
 

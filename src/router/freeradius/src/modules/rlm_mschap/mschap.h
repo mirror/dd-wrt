@@ -4,7 +4,7 @@
 #define _MSCHAP_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(mschap_h, "$Id$")
+RCSIDH(mschap_h, "$Id: cdb74b861026431332d3d48656f331a20e0d154b $")
 
 void mschap_ntpwdhash (uint8_t *szHash, const char *szPassword);
 void mschap_challenge_hash( const uint8_t *peer_challenge,

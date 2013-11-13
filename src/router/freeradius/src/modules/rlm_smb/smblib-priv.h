@@ -25,7 +25,7 @@
 */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(smblib_priv_h, "$Id$")
+RCSIDH(smblib_priv_h, "$Id: 34ee24e2906e1b6851223cdab674e5573f10dec6 $")
 
 #include "std-includes.h"
 #include "smblib-common.h"

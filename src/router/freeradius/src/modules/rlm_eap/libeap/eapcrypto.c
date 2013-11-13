@@ -4,7 +4,7 @@
  * The development of the EAP/SIM support was funded by Internet Foundation
  * Austria (http://www.nic.at/ipa).
  *
- * Version:     $Id$
+ * Version:     $Id: 62d54a03489977c6a65e683bd96a2bef39baaab6 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 62d54a03489977c6a65e683bd96a2bef39baaab6 $")
 
 #include <freeradius-devel/autoconf.h>
 

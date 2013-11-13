@@ -30,7 +30,7 @@
 #
 #  Copyright (C) 2006 Alan DeKok <aland@freeradius.org>
 #
-#  $Id$
+#  $Id: eff8b1b2a8b9cbc3477be8b92551c57b0a117ad2 $
 #
 ######################################################################
 

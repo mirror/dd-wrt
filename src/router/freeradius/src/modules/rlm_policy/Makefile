@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:	$Id$
+# Version:	$Id: 808d84ace57c4b532b474fa1fd2dda45f068c7bb $
 #
 
 TARGET		= rlm_policy

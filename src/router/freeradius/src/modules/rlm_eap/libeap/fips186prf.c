@@ -7,7 +7,7 @@
  * This code was written from scratch by Michael Richardson, and it is
  * dual licensed under both GPL and BSD.
  *
- * Version:     $Id$
+ * Version:     $Id: 559754ccaa864e107d2f417377296c07a7746ae2 $
  *
  * GPL notice:
  *
@@ -45,7 +45,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 559754ccaa864e107d2f417377296c07a7746ae2 $")
 
 #include <freeradius-devel/autoconf.h>
 

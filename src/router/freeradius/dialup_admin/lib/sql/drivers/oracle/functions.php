@@ -1,5 +1,5 @@
 <?php
-// $Id$
+// $Id: 194266fc3f3b03cd277d76b74561bc79751d4749 $
 function da_sql_limit($limit,$point,$config)
 {
 	switch($point){

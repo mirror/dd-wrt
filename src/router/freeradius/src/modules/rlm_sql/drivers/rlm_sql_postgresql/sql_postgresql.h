@@ -4,7 +4,7 @@
 #define _SQL_POSTGRESQL_H_
 
 #include <freeradius-devel/ident.h>
-RCSIDH(sql_postgresql_h, "$Id$")
+RCSIDH(sql_postgresql_h, "$Id: c6bac4079568ff8345795ba4d826e8e1e582f06a $")
 
 /**************************************************
 * Error Codes and required information Lookup table

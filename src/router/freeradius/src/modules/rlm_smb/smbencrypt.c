@@ -22,7 +22,7 @@
 */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: e7ba6e3c33dc7f489e881a8f238955f9d18f3cce $")
 
 #include <string.h>
 #ifdef HAVE_SYS_VFS_H

@@ -1,7 +1,7 @@
 #
 #	Scripts to format dictionary files.
 #
-#	$Id$
+#	$Id: ab342b41a9a879fd95f62b8e970f732c0068254b $
 #
 .PHONY: format
 

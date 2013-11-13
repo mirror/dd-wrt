@@ -1,5 +1,5 @@
 #
-# $Id$
+# $Id: af28710f09ff162000a5142f96faa471c83aa005 $
 #
 
 INCLUDE += -I/usr/local/include/

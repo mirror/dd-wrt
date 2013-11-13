@@ -1,7 +1,7 @@
 /*
  * event.c	Server event handling
  *
- * Version:	$Id$
+ * Version:	$Id: ec92fdec3096ae528459251d9f3ae9b2d1438478 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: ec92fdec3096ae528459251d9f3ae9b2d1438478 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -74,7 +74,7 @@ static pthread_mutex_t	proxy_mutex;
 #define PTHREAD_MUTEX_LOCK if (have_children) pthread_mutex_lock
 #define PTHREAD_MUTEX_UNLOCK if (have_children) pthread_mutex_unlock
 
-static pthread_t NO_SUCH_CHILD_PID;
+#define NO_CHILD_THREAD (0)
 #else
 /*
  *	This is easier than ifdef's throughout the code.
@@ -419,7 +419,10 @@ static int insert_into_proxy_hash(REQUEST *request, int retransmit)
 	request->proxy_listener = proxy_listeners[proxy];
 
 	if (!fr_packet_list_insert(proxy_list, &request->proxy)) {
+		fr_packet_list_yank(proxy_list, request->proxy);
 		fr_packet_list_id_free(proxy_list, request->proxy);
+		request->proxy_listener = NULL;
+		request->in_proxy_hash = FALSE;
 		PTHREAD_MUTEX_UNLOCK(&proxy_mutex);
 		RDEBUG2("ERROR: Failed to insert entry into proxy list.");
 		return 0;
@@ -496,7 +499,7 @@ static void wait_for_child_to_die(void *ctx)
 	 */
 	if ((request->child_state == REQUEST_QUEUED) ||
 	    ((request->child_state == REQUEST_RUNNING) &&
-	     (pthread_equal(request->child_pid, NO_SUCH_CHILD_PID) == 0))) {
+	     (request->thread_id == NO_CHILD_THREAD))) {
 
 		/*
 		 *	Cap delay at max_request_time
@@ -1234,9 +1237,9 @@ static void wait_a_bit(void *ctx)
 		 *	the request.
 		 */
 		if (have_children &&
-		    (pthread_equal(request->child_pid, NO_SUCH_CHILD_PID) == 0)) {
-			radlog(L_ERR, "WARNING: Unresponsive child for request %u, in component %s module %s",
-			       request->number,
+		    (request->thread_id == NO_CHILD_THREAD)) {
+			radlog(L_ERR, "WARNING: Unresponsive thread %d for request %u, in component %s module %s",
+			       request->number, request->thread_id,
 			       request->component ? request->component : "<server core>",
 			       request->module ? request->module : "<server core>");
 
@@ -1255,7 +1258,7 @@ static void wait_a_bit(void *ctx)
 	case REQUEST_DONE:
 	done:
 #ifdef HAVE_PTHREAD_H
-		request->child_pid = NO_SUCH_CHILD_PID;
+		request->thread_id = NO_CHILD_THREAD;
 #endif
 
 #ifdef WITH_COA
@@ -1282,7 +1285,7 @@ static void wait_a_bit(void *ctx)
 	case REQUEST_REJECT_DELAY:
 	case REQUEST_CLEANUP_DELAY:
 #ifdef HAVE_PTHREAD_H
-		request->child_pid = NO_SUCH_CHILD_PID;
+		request->thread_id = NO_CHILD_THREAD;
 #endif
 		request_stats_final(request);
 		/* FALL-THROUGH */
@@ -1686,15 +1689,16 @@ static int originated_coa_request(REQUEST *request)
 	 */
 	request->num_proxied_requests = 1;
 	request->num_proxied_responses = 0;
-#ifdef HAVE_PTHREAD_H
-	request->child_pid = NO_SUCH_CHILD_PID;
-#endif
 
 	update_event_timestamp(request->proxy, request->proxy_when.tv_sec);
 
 	request->child_state = REQUEST_PROXIED;
 
 	DEBUG_PACKET(request, request->proxy, 1);
+
+#ifdef HAVE_PTHREAD_H
+	request->thread_id = NO_CHILD_THREAD;
+#endif
 
 	request->proxy_listener->send(request->proxy_listener,
 				      request);
@@ -1719,6 +1723,24 @@ static int process_proxy_reply(REQUEST *request)
 	 *	BEFORE playing games with the attributes.
 	 */
 	vp = pairfind(request->config_items, PW_POST_PROXY_TYPE);
+	
+	/*
+	 *	If we have a proxy_reply, and it was a reject, setup
+	 *	post-proxy-type Reject
+	 */
+	if (!vp && request->proxy_reply &&
+	    request->proxy_reply->code == PW_AUTHENTICATION_REJECT) {
+	    	DICT_VALUE	*dval;
+	
+		dval = dict_valbyname(PW_POST_PROXY_TYPE, "Reject");
+		if (!dval) return 0;
+			
+		vp = radius_paircreate(request, &request->config_items,
+				       PW_POST_PROXY_TYPE, PW_TYPE_INTEGER);
+
+		vp->vp_integer = dval->value;
+	}
+	
 	if (vp) {
 		RDEBUG2("  Found Post-Proxy-Type %s", vp->vp_strvalue);
 		post_proxy_type = vp->vp_integer;
@@ -1774,13 +1796,12 @@ static int process_proxy_reply(REQUEST *request)
 	default:  /* Don't do anything */
 		break;
 	case RLM_MODULE_FAIL:
-		/* FIXME: debug print stuff */
-		request->child_state = REQUEST_DONE;
-		return 0;
-		
 	case RLM_MODULE_HANDLED:
 		/* FIXME: debug print stuff */
 		request->child_state = REQUEST_DONE;
+#ifdef HAVE_PTHREAD_H
+		request->thread_id = NO_CHILD_THREAD;
+#endif
 		return 0;
 	}
 
@@ -1848,6 +1869,9 @@ static int request_pre_handler(REQUEST *request)
 		RDEBUG("%s Dropping packet without response.", fr_strerror());
 		request->reply->offset = -2; /* bad authenticator */
 		request->child_state = REQUEST_DONE;
+#ifdef HAVE_PTHREAD_H
+		request->thread_id = NO_CHILD_THREAD;
+#endif
 		return 0;
 	}
 
@@ -1926,7 +1950,7 @@ static int proxy_request(REQUEST *request)
 	request->num_proxied_requests = 1;
 	request->num_proxied_responses = 0;
 #ifdef HAVE_PTHREAD_H
-	request->child_pid = NO_SUCH_CHILD_PID;
+	request->thread_id = NO_CHILD_THREAD;
 #endif
 	request->child_state = REQUEST_PROXIED;
 
@@ -1963,7 +1987,7 @@ static int proxy_to_virtual_server(REQUEST *request)
 	fake->server = request->home_server->server;
 
 	if (request->proxy->code == PW_AUTHENTICATION_REQUEST) {
-		fun = rad_authenticate;
+		fun = rad_virtual_server;
 
 #ifdef WITH_ACCOUNTING
 	} else if (request->proxy->code == PW_ACCOUNTING_REQUEST) {
@@ -1992,7 +2016,9 @@ static int proxy_to_virtual_server(REQUEST *request)
 
 	ev_request_free(&fake);
 
-	process_proxy_reply(request);
+	if (!process_proxy_reply(request)) {
+		return 0;
+	}
 
 	/*
 	 *	Process it through the normal section again, but ONLY
@@ -2284,15 +2310,14 @@ static void request_post_handler(REQUEST *request)
 	    (request->parent &&
 	     (request->parent->master_state == REQUEST_STOP_PROCESSING))) {
 		RDEBUG2("request %u was cancelled.", request->number);
-#ifdef HAVE_PTHREAD_H
-		request->child_pid = NO_SUCH_CHILD_PID;
-#endif
 		child_state = REQUEST_DONE;
 		goto cleanup;
 	}
 
 	if (request->child_state != REQUEST_RUNNING) {
-		rad_panic("Internal sanity check failed");
+		radlog(L_ERR, "Request %d is unexpectedly in state %d.  Stopping it.",
+		       request->number, request->child_state);
+		return;
 	}
 
 #ifdef WITH_COA
@@ -2328,7 +2353,7 @@ static void request_post_handler(REQUEST *request)
 	    (request->packet->code != PW_STATUS_SERVER)) {
 		int rcode = successfully_proxied_request(request);
 
-		if (rcode == 1) return; /* request is invalid */
+		if (rcode == 1) return; /* "request" is now untouchable */
 
 		/*
 		 *	Failed proxying it (dead home servers, etc.)
@@ -2367,7 +2392,7 @@ static void request_post_handler(REQUEST *request)
 	if (request->packet->dst_port == 0) {
 		/* FIXME: RDEBUG going to the next request */
 #ifdef HAVE_PTHREAD_H
-		request->child_pid = NO_SUCH_CHILD_PID;
+		request->thread_id = NO_CHILD_THREAD;
 #endif
 		request->child_state = REQUEST_DONE;
 		return;
@@ -2380,7 +2405,7 @@ static void request_post_handler(REQUEST *request)
 	vp = paircopy2(request->packet->vps, PW_PROXY_STATE);
 	if (vp) pairadd(&request->reply->vps, vp);
 #endif
-
+	
 	/*
 	 *	Access-Requests get delayed or cached.
 	 */
@@ -2388,34 +2413,36 @@ static void request_post_handler(REQUEST *request)
 	case PW_AUTHENTICATION_REQUEST:
 		gettimeofday(&request->next_when, NULL);
 
-		if (request->reply->code == 0) {
-			/*
-			 *	Check if the lack of response is intentional.
-			 */
-			vp = pairfind(request->config_items,
-				      PW_RESPONSE_PACKET_TYPE);
-			if (!vp) {
-				RDEBUG2("There was no response configured: rejecting request %u",
-				       request->number);
-				request->reply->code = PW_AUTHENTICATION_REJECT;
-
-			} else if (vp->vp_integer == 256) {
+		/*
+		 *	Override the response code if a 
+		 *	control:Response-Packet-Type attribute is present.
+		 */
+		vp = pairfind(request->config_items,
+			      PW_RESPONSE_PACKET_TYPE);      
+		if (vp) {
+			if (vp->vp_integer == 256) {
 				RDEBUG2("Not responding to request %u",
-				       request->number);
+					request->number);
 
 				/*
 				 *	Force cleanup after a long
 				 *	time, so that we don't
 				 *	re-process the packet.
 				 */
+				request->reply->code = 0;
 				request->next_when.tv_sec += request->root->max_request_time;
 				request->next_callback = cleanup_delay;
 				child_state = REQUEST_CLEANUP_DELAY;
-				break;
-			} else {
-				request->reply->code = vp->vp_integer;
-
+				break;	
 			}
+			
+			request->reply->code = vp->vp_integer;
+
+		} else if (request->reply->code == 0) {
+			RDEBUG2("There was no response configured: rejecting "
+				"request %u", request->number);
+				
+			request->reply->code = PW_AUTHENTICATION_REJECT;
 		}
 
 		/*
@@ -2446,12 +2473,17 @@ static void request_post_handler(REQUEST *request)
 				request->next_when = when;
 				request->next_callback = reject_delay;
 #ifdef HAVE_PTHREAD_H
-				request->child_pid = NO_SUCH_CHILD_PID;
+				request->thread_id = NO_CHILD_THREAD;
 #endif
 				request->child_state = REQUEST_REJECT_DELAY;
 				return;
 			}
 		}
+		
+		if (request->reply->code == PW_AUTHENTICATION_ACK) {
+			rad_postauth(request);
+		}
+		
 		/* FALL-THROUGH */
 
 #ifdef WITH_COA
@@ -2556,10 +2588,16 @@ static void request_post_handler(REQUEST *request)
 	rad_assert(child_state >= 0);
 	request->child_state = child_state;
 
-	/*
-	 *	Single threaded mode: update timers now.
-	 */
-	if (!have_children) wait_a_bit(request);
+	if (have_children) {
+#ifdef HAVE_PTHREAD_H
+		request->thread_id = NO_CHILD_THREAD;
+#endif
+	} else {
+		/*
+		 *	Single threaded mode: update timers now.
+		 */
+		wait_a_bit(request);
+	}
 }
 
 
@@ -2935,7 +2973,7 @@ int received_request(rad_listen_t *listener,
 	request->number = request_num_counter++;
 	request->priority = listener->type;
 #ifdef HAVE_PTHREAD_H
-	request->child_pid = NO_SUCH_CHILD_PID;
+	request->thread_id = NO_CHILD_THREAD;
 #endif
 
 	/*
@@ -3562,11 +3600,6 @@ int radius_event_init(CONF_SECTION *cs, int spawn_flag)
 #endif
 
 #ifdef HAVE_PTHREAD_H
-#ifndef __MINGW32__
-	NO_SUCH_CHILD_PID = (pthread_t ) (0);
-#else
-	NO_SUCH_CHILD_PID = pthread_self(); /* not a child thread */
-#endif
 	/*
 	 *	Initialize the threads ONLY if we're spawning, AND
 	 *	we're running normally.
@@ -3604,12 +3637,14 @@ int radius_event_init(CONF_SECTION *cs, int spawn_flag)
 		       strerror(errno));
 		exit(1);
 	}
-	if (fcntl(self_pipe[0], F_SETFL, O_NONBLOCK | FD_CLOEXEC) < 0) {
+	if ((fcntl(self_pipe[0], F_SETFL, O_NONBLOCK) < 0) ||
+	    (fcntl(self_pipe[0], F_SETFD, FD_CLOEXEC) < 0)) {
 		radlog(L_ERR, "radiusd: Error setting internal flags: %s",
 		       strerror(errno));
 		exit(1);
 	}
-	if (fcntl(self_pipe[1], F_SETFL, O_NONBLOCK | FD_CLOEXEC) < 0) {
+	if ((fcntl(self_pipe[1], F_SETFL, O_NONBLOCK) < 0) ||
+	    (fcntl(self_pipe[1], F_SETFD, FD_CLOEXEC) < 0)) {
 		radlog(L_ERR, "radiusd: Error setting internal flags: %s",
 		       strerror(errno));
 		exit(1);
@@ -3738,10 +3773,11 @@ static int proxy_hash_cb(UNUSED void *ctx, void *data)
 void radius_event_free(void)
 {
 	/*
-	 *	FIXME: Stop all threads, or at least check that
-	 *	they're all waiting on the semaphore, and the queues
-	 *	are empty.
+	 *	Stop and join all threads.
 	 */
+#ifdef HAVE_PTHREAD_H
+	thread_pool_stop();
+#endif
 
 #ifdef WITH_PROXY
 	/*

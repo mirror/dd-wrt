@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  $Id$
+#  $Id: ea303bcae5efc4c7070998d1662ca3d316788c89 $
 #
 #  Sample script to add Attribute/Value pairs in the reply sent to
 #  the NAS.

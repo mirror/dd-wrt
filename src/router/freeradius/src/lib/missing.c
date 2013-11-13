@@ -2,7 +2,7 @@
  * missing.c	Replacements for functions that are or can be
  *		missing on some platforms.
  *
- * Version:	$Id$
+ * Version:	$Id: afd0252e033b552ba3b2139af534edf4de201777 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: afd0252e033b552ba3b2139af534edf4de201777 $")
 
 #include	<freeradius-devel/libradius.h>
 

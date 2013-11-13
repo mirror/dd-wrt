@@ -1,7 +1,7 @@
 /*
  * evaluate.c		Evaluate a policy language
  *
- * Version:	$Id$
+ * Version:	$Id: cfaa3f7bdd0be5232a5105d2e926f8632449601f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: cfaa3f7bdd0be5232a5105d2e926f8632449601f $")
 
 #include "rlm_policy.h"
 

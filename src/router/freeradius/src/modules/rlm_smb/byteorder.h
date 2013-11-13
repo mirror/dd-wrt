@@ -26,7 +26,7 @@
 */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(byteorder_h, "$Id$")
+RCSIDH(byteorder_h, "$Id: 5700c2919607f487bff526aa94db4a4c232aa82c $")
 
 #undef CAREFUL_ALIGNMENT
 

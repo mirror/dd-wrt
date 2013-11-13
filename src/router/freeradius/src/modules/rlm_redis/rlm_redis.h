@@ -1,7 +1,7 @@
 /*
  * rlm_redis.h
  *
- * Version:	$Id$
+ * Version:	$Id: 2859efaeb92c0ba304803dc76eb44519bfe0fb84 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #define	RLM_REDIS_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(rlm_redis_h, "$Id$")
+RCSIDH(rlm_redis_h, "$Id: 2859efaeb92c0ba304803dc76eb44519bfe0fb84 $")
 
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>
@@ -71,15 +71,17 @@ typedef struct rlm_redis_t {
 
 	REDISSOCK *(*redis_get_socket)(REDIS_INST * inst);
 	int (*redis_release_socket)(REDIS_INST * inst, REDISSOCK *dissocket);
-        int (*redis_query)(REDISSOCK *dissocket, REDIS_INST *inst, char *query);
+        int (*redis_query)(REDISSOCK *dissocket, REDIS_INST *inst,
+                           const char *query, REQUEST *request);
         int (*redis_finish_query)(REDISSOCK *dissocket);
-        size_t (*redis_escape_func)(char *out, size_t outlen, const char *in);
 
 } rlm_redis_t;
 
 #define MAX_QUERY_LEN			4096
+#define MAX_REDIS_ARGS			16
 
-int rlm_redis_query(REDISSOCK *dissocket, REDIS_INST *inst, char *query);
+int rlm_redis_query(REDISSOCK *dissocket, REDIS_INST *inst, const char *query,
+                    REQUEST *request);
 int rlm_redis_finish_query(REDISSOCK *dissocket);
 
 REDISSOCK * redis_get_socket(REDIS_INST * inst);

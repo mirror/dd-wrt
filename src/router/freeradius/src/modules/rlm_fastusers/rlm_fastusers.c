@@ -2,7 +2,7 @@
  * rlm_fastusers.c	authorization: Find a user in the hashed "users" file.
  *                	accounting:    Do nothing.  Auth module only.
  *
- * Version:	$Id$
+ * Version:	$Id: 1b645aaeb173a4ebcc42efc3c35c026a571af521 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include        <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 1b645aaeb173a4ebcc42efc3c35c026a571af521 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

@@ -20,7 +20,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 11b6ba662fdcdff894b726c444ca8943d1d539c4 $")
 
 #include "sql_fbapi.h"
 

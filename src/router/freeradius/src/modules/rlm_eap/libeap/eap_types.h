@@ -3,7 +3,7 @@
  *
  * most contents moved from modules/rlm_eap/eap.h
  *
- * Version:     $Id$
+ * Version:     $Id: aac473ab35a69f92ccc8476a9139becff0793be6 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 #define _EAP_TYPES_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(eap_types_h, "$Id$")
+RCSIDH(eap_types_h, "$Id: aac473ab35a69f92ccc8476a9139becff0793be6 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

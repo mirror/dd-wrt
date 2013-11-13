@@ -1,7 +1,7 @@
 # -*- text -*-
 # Copyright (C) 2011 The FreeRADIUS Server project and contributors
 #
-# Version:	$Id$
+# Version:	$Id: 6aebda24133fb98214a26639f4fea3754eab65f4 $
 #
 VENDOR		Nomadix				3309
 #
@@ -20,6 +20,9 @@ ATTRIBUTE	Nomadix-Logoff-URL			10	string
 ATTRIBUTE	Nomadix-Net-VLAN			11	integer
 ATTRIBUTE	Nomadix-Config-URL			12	string
 ATTRIBUTE	Nomadix-Goodbye-URL			13	string
+ATTRIBUTE	Nomadix-Group-Policy-Id			19	integer
+ATTRIBUTE	Nomadix-Group-Bw-Max-Up			20	integer
+ATTRIBUTE	Nomadix-Group-Bw-Max-Down		21	integer
 
 VALUE	Nomadix-IP-Upsell		PrivatePool		0
 VALUE	Nomadix-IP-Upsell		PublicPool		1

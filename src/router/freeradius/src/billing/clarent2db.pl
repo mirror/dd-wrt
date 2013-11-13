@@ -12,7 +12,7 @@
 #               appreciate copies of any modifications to the script.
 # URL:          http://www.peternixon.net/code/
 #
-# $Id$
+# $Id: 6076509bfbfd34d074f3122149d3fe2191fe171c $
 
 
 # Modules we use to make things easier

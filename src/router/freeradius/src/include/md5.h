@@ -1,7 +1,7 @@
 /*
  * md5.h        Structures and prototypes for md5.
  *
- * Version:     $Id$
+ * Version:     $Id: fec196e64a6fdc503181d2f495bcc30a7b9aad53 $
  * License:		LGPL, but largely derived from a public domain source.
  *
  */
@@ -10,7 +10,7 @@
 #define _FR_MD5_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(md5_h, "$Id$")
+RCSIDH(md5_h, "$Id: fec196e64a6fdc503181d2f495bcc30a7b9aad53 $")
 
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>

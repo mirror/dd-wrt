@@ -5,7 +5,7 @@
 #
 #	See the README file in this directory for more information.
 #	
-#	$Id$
+#	$Id: de56a19f2f8b0b764c076cd825d8375f9c7e0c85 $
 #
 ######################################################################
 
@@ -51,7 +51,9 @@ dh:
 #  Create a new self-signed CA certificate
 #
 ######################################################################
-ca.key ca.pem: ca.cnf index.txt serial
+ca.key ca.pem: ca.cnf
+	@[ -f index.txt ] || $(MAKE) index.txt
+	@[ -f serial ] || $(MAKE) serial
 	openssl req -new -x509 -keyout ca.key -out ca.pem \
 		-days $(CA_DEFAULT_DAYS) -config ./ca.cnf
 
@@ -81,8 +83,7 @@ server.vrfy: ca.pem
 
 ######################################################################
 #
-#  Create a new client certificate, signed by the the above server
-#  certificate.
+#  Create a new client certificate, signed by the the above CA
 #
 ######################################################################
 client.csr client.key: client.cnf

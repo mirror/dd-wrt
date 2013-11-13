@@ -1,7 +1,7 @@
 /*
  * sql_postgresql.c		Postgresql rlm_sql driver
  *
- * Version:	$Id$
+ * Version:	$Id: dbf3a4683c23b10e1a364a3fb61f54fa7726132d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: dbf3a4683c23b10e1a364a3fb61f54fa7726132d $")
 
 #include <freeradius-devel/radiusd.h>
 
