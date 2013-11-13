@@ -20,14 +20,13 @@ noinst_PROGRAMS =
 ##************************************************************************/
 
 doc_DATA = AUTHORS COPYING NEWS THANKS doc/LZO.FAQ doc/LZO.TXT doc/LZOAPI.TXT
-EXTRA_DIST += BUGS
+EXTRA_DIST += BUGS autoconf/shtool
 
 # hooks for Automake targets
-dist-hook:
-	-rm -rf "./$(distdir)/autoconf/"
-	cp -pR $(srcdir)/B/ $(srcdir)/asm/ $(srcdir)/autoconf/ $(srcdir)/doc/ $(srcdir)/util/ "$(distdir)/"
-	-rm -f `find "./$(distdir)/" -type l -print`
-	-rm -f ./$(distdir)/util/*.dat
+dist-hook: dist-hook-1
+dist-hook-1:
+	cp -pR $(srcdir)/B/ $(srcdir)/asm/ $(srcdir)/doc/ $(srcdir)/util/ "$(distdir)/"
+	-rm -f $(distdir)/util/*.dat
 
 check-local: all-am
 	./lzotest/lzotest -mlzo -n2 -q $(top_srcdir)/COPYING
@@ -56,27 +55,6 @@ test: all
 
 
 ##/***********************************************************************
-##// SUBDIR examples
-##************************************************************************/
-
-noinst_PROGRAMS += examples/dict
-noinst_PROGRAMS += examples/lzopack
-noinst_PROGRAMS += examples/overlap
-noinst_PROGRAMS += examples/precomp
-noinst_PROGRAMS += examples/precomp2
-noinst_PROGRAMS += examples/simple
-
-examples_dict_SOURCES     = examples/dict.c
-examples_lzopack_SOURCES  = examples/lzopack.c
-examples_overlap_SOURCES  = examples/overlap.c
-examples_precomp_SOURCES  = examples/precomp.c
-examples_precomp2_SOURCES = examples/precomp2.c
-examples_simple_SOURCES   = examples/simple.c
-
-EXTRA_DIST += examples/portab.h examples/portab_a.h
-
-
-##/***********************************************************************
 ##// SUBDIR include/lzo
 ##************************************************************************/
 
@@ -86,33 +64,6 @@ pkginclude_HEADERS = \
     include/lzo/lzo1y.h include/lzo/lzo1z.h include/lzo/lzo2a.h \
     include/lzo/lzo_asm.h include/lzo/lzoconf.h include/lzo/lzodefs.h \
     include/lzo/lzoutil.h
-
-
-##/***********************************************************************
-##// SUBDIR minilzo
-##************************************************************************/
-
-noinst_PROGRAMS += minilzo/testmini
-
-minilzo_testmini_SOURCES   = minilzo/testmini.c minilzo/minilzo.c
-minilzo_testmini_SHORTNAME = t
-minilzo_testmini_CPPFLAGS  = -DMINILZO_HAVE_CONFIG_H=1
-minilzo_testmini_CPPFLAGS += -I$(top_srcdir)/include/lzo
-minilzo_testmini_CPPFLAGS += $(AM_CPPFLAGS)
-minilzo_testmini_LDADD     =
-
-EXTRA_DIST += minilzo/Makefile.minilzo minilzo/README.LZO minilzo/minilzo.h
-
-
-##/***********************************************************************
-##// SUBDIR lzotest
-##************************************************************************/
-
-noinst_PROGRAMS += lzotest/lzotest
-
-lzotest_lzotest_SOURCES = lzotest/lzotest.c
-
-EXTRA_DIST += lzotest/asm.h lzotest/db.h lzotest/wrap.h lzotest/wrapmisc.h
 
 
 ##/***********************************************************************
@@ -153,26 +104,60 @@ EXTRA_DIST += \
     src/lzo_dll.ch src/lzo_func.ch src/lzo_mchw.ch src/lzo_ptr.h src/lzo_swd.ch \
     src/miniacc.h src/stats1a.h src/stats1b.h src/stats1c.h
 
-nodist_src_liblzo2_la_SOURCES = $(LZO_ASM_SOURCES)
-src_liblzo2_la_LIBADD         = $(LZO_ASM_OBJECTS)
-if LZO_USE_ASM_i386_src_gas
-LZO_ASM_SOURCES = \
+LZO_ASM_SOURCES_i386_src_gas = \
     asm/i386/src_gas/lzo1c_s1.S asm/i386/src_gas/lzo1c_s2.S \
     asm/i386/src_gas/lzo1f_f1.S asm/i386/src_gas/lzo1f_f2.S \
     asm/i386/src_gas/lzo1x_f1.S asm/i386/src_gas/lzo1x_f2.S \
     asm/i386/src_gas/lzo1x_s1.S asm/i386/src_gas/lzo1x_s2.S \
     asm/i386/src_gas/lzo1y_f1.S asm/i386/src_gas/lzo1y_f2.S \
     asm/i386/src_gas/lzo1y_s1.S asm/i386/src_gas/lzo1y_s2.S
-endif
-if LZO_USE_ASM_i386_obj_elf32
-LZO_ASM_OBJECTS = \
+LZO_ASM_OBJECTS_i386_obj_elf32 = \
     asm/i386/obj/elf32/lzo1c_s1.o asm/i386/obj/elf32/lzo1c_s2.o \
     asm/i386/obj/elf32/lzo1f_f1.o asm/i386/obj/elf32/lzo1f_f2.o \
     asm/i386/obj/elf32/lzo1x_f1.o asm/i386/obj/elf32/lzo1x_f2.o \
     asm/i386/obj/elf32/lzo1x_s1.o asm/i386/obj/elf32/lzo1x_s2.o \
     asm/i386/obj/elf32/lzo1y_f1.o asm/i386/obj/elf32/lzo1y_f2.o \
     asm/i386/obj/elf32/lzo1y_s1.o asm/i386/obj/elf32/lzo1y_s2.o
+if LZO_USE_ASM_i386_src_gas
+LZO_ASM_SOURCES = $(LZO_ASM_SOURCES_i386_src_gas)
 endif
+if LZO_USE_ASM_i386_obj_elf32
+LZO_ASM_OBJECTS = $(LZO_ASM_OBJECTS_i386_obj_elf32)
+endif
+nodist_src_liblzo2_la_SOURCES = $(LZO_ASM_SOURCES)
+src_liblzo2_la_LIBADD         = $(LZO_ASM_OBJECTS)
+
+
+##/***********************************************************************
+##// SUBDIR examples
+##************************************************************************/
+
+noinst_PROGRAMS += examples/dict
+noinst_PROGRAMS += examples/lzopack
+noinst_PROGRAMS += examples/overlap
+noinst_PROGRAMS += examples/precomp
+noinst_PROGRAMS += examples/precomp2
+noinst_PROGRAMS += examples/simple
+
+examples_dict_SOURCES     = examples/dict.c
+examples_lzopack_SOURCES  = examples/lzopack.c
+examples_overlap_SOURCES  = examples/overlap.c
+examples_precomp_SOURCES  = examples/precomp.c
+examples_precomp2_SOURCES = examples/precomp2.c
+examples_simple_SOURCES   = examples/simple.c
+
+EXTRA_DIST += examples/portab.h examples/portab_a.h
+
+
+##/***********************************************************************
+##// SUBDIR lzotest
+##************************************************************************/
+
+noinst_PROGRAMS += lzotest/lzotest
+
+lzotest_lzotest_SOURCES = lzotest/lzotest.c
+
+EXTRA_DIST += lzotest/asm.h lzotest/db.h lzotest/wrap.h lzotest/wrapmisc.h
 
 
 ##/***********************************************************************
@@ -191,5 +176,21 @@ tests_sizes_SOURCES   = tests/sizes.c
 
 tests_promote_LDADD   =
 tests_sizes_LDADD     =
+
+
+##/***********************************************************************
+##// SUBDIR minilzo
+##************************************************************************/
+
+noinst_PROGRAMS += minilzo/testmini
+
+minilzo_testmini_SOURCES   = minilzo/testmini.c minilzo/minilzo.c
+minilzo_testmini_SHORTNAME = t
+minilzo_testmini_CPPFLAGS  = -DMINILZO_HAVE_CONFIG_H=1
+minilzo_testmini_CPPFLAGS += -I$(top_srcdir)/include/lzo
+minilzo_testmini_CPPFLAGS += $(AM_CPPFLAGS)
+minilzo_testmini_LDADD     =
+
+EXTRA_DIST += minilzo/Makefile.minilzo minilzo/README.LZO minilzo/minilzo.h
 
 @MAINT@-include $(top_srcdir)/Makefile.maint
