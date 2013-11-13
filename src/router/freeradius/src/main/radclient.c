@@ -1,7 +1,7 @@
 /*
  * radclient.c	General radius packet debug tool.
  *
- * Version:	$Id$
+ * Version:	$Id: 65c7a5cdb022612051530f8c79133f93b0f00328 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 65c7a5cdb022612051530f8c79133f93b0f00328 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/conf.h>
@@ -85,6 +85,11 @@ typedef struct radclient_t {
 static radclient_t *radclient_head = NULL;
 static radclient_t *radclient_tail = NULL;
 
+const char *radclient_version = "radclient version " RADIUSD_VERSION_STRING
+#ifdef RADIUSD_VERSION_COMMIT
+" (git #" RADIUSD_VERSION_COMMIT ")"
+#endif
+", built on " __DATE__ " at " __TIME__;
 
 static void NEVER_RETURNS usage(void)
 {
@@ -409,7 +414,7 @@ static int filename_walk(void *context, void *data)
 	 *	Read request(s) from the file.
 	 */
 	if (!radclient_init(filename)) {
-		return 1;	/* stop walking */
+		return -1;	/* stop walking */
 	}
 
 	return 0;
@@ -929,7 +934,7 @@ int main(int argc, char **argv)
 			timeout = atof(optarg);
 			break;
 		case 'v':
-			printf("radclient: " RADIUSD_VERSION " built on " __DATE__ " at " __TIME__ "\n");
+			printf(radclient_version);
 			exit(0);
 			break;
 		case 'x':

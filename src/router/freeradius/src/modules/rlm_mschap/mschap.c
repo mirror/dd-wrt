@@ -1,7 +1,7 @@
 /*
  * mschap.c
  *
- * Version:	$Id$
+ * Version:	$Id: 9490a5c6121169cd4eeb70af44076fada9b1d150 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 9490a5c6121169cd4eeb70af44076fada9b1d150 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

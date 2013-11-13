@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id$
+#  $Id: 3e6bf2104f74ffad8866eb69459a94f623601130 $
 
 #
 #  The rlm_sql_log module appends the SQL queries in a log

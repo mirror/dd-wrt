@@ -7,7 +7,7 @@
  *		That, in fact, was again based on the original stuff
  *		from Jeph Blaize <jblaize@kiva.net> done in May 1997.
  *
- * Version:	$Id$
+ * Version:	$Id: d83d90b4e0ac269caf68e1cd3d5b8f46875ad4b8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: d83d90b4e0ac269caf68e1cd3d5b8f46875ad4b8 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

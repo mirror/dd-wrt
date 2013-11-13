@@ -1,7 +1,7 @@
 /*
  * peap.c contains the interfaces that are called from eap
  *
- * Version:     $Id$
+ * Version:     $Id: 821df03332934c2bd8dd2c5d6517a69327b859ce $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 821df03332934c2bd8dd2c5d6517a69327b859ce $")
 
 #include "eap_peap.h"
 
@@ -824,7 +824,7 @@ int eappeap_process(EAP_HANDLER *handler, tls_session_t *tls_session)
 		RDEBUG("Processing SoH request");
 		debug_pair_list(fake->packet->vps);
 		RDEBUG("server %s {", fake->server);
-		rad_authenticate(fake);
+		rad_virtual_server(fake);
 		RDEBUG("} # server %s", fake->server);
 		RDEBUG("Got SoH reply");
 		debug_pair_list(fake->reply->vps);
@@ -1025,7 +1025,7 @@ int eappeap_process(EAP_HANDLER *handler, tls_session_t *tls_session)
 	 *	Call authentication recursively, which will
 	 *	do PAP, CHAP, MS-CHAP, etc.
 	 */
-	rad_authenticate(fake);
+	rad_virtual_server(fake);
 
 	/*
 	 *	Note that we don't do *anything* with the reply

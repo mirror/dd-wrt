@@ -5,7 +5,7 @@
  * libradius.h	Structures and prototypes
  *		for the radius library.
  *
- * Version:	$Id$
+ * Version:	$Id: 9afc841661317061136c2bb50cc3cadf8a696010 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -25,7 +25,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(libradius_h, "$Id$")
+RCSIDH(libradius_h, "$Id: 9afc841661317061136c2bb50cc3cadf8a696010 $")
 
 #include <freeradius-devel/missing.h>
 
@@ -37,6 +37,7 @@ RCSIDH(libradius_h, "$Id$")
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include <freeradius-devel/threads.h>
 #include <freeradius-devel/radius.h>
 #include <freeradius-devel/token.h>
 #include <freeradius-devel/hash.h>
@@ -45,6 +46,18 @@ RCSIDH(libradius_h, "$Id$")
 #if SIZEOF_UNSIGNED_INT != 4
 #error FATAL: sizeof(unsigned int) != 4
 #endif
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+#ifndef TRUE
+/*
+ *	This definition of true as NOT false is definitive. :) Making
+ *	it '1' can cause problems on stupid platforms.  See articles
+ *	on C portability for more information.
+ */
+#define TRUE (!FALSE)
 #endif
 
 /*
@@ -274,14 +287,12 @@ DICT_VENDOR	*dict_vendorbyvalue(int vendor);
 #endif
 
 /* get around diffrent ctime_r styles */
-#ifdef CTIMERSTYLE
-#if CTIMERSTYLE == SOLARISSTYLE
+#if defined(CTIMERSTYLE) && ( CTIMERSTYLE == SOLARISSTYLE)
 #define CTIME_R(a,b,c) ctime_r(a,b,c)
+#define ASCTIME_R(a,b,c) asctime_r(a,b,c)
 #else
 #define CTIME_R(a,b,c) ctime_r(a,b)
-#endif
-#else
-#define CTIME_R(a,b,c) ctime_r(a,b)
+#define ASCTIME_R(a,b,c) asctime_r(a,b)
 #endif
 
 /* md5.c */
@@ -332,6 +343,7 @@ int		rad_chap_encode(RADIUS_PACKET *packet, uint8_t *output,
 VALUE_PAIR	*rad_attr2vp(const RADIUS_PACKET *packet, const RADIUS_PACKET *original,
 			     const char *secret, int attribute, int length,
 			     const uint8_t *data);
+ssize_t		rad_vp2data(const VALUE_PAIR *vp, uint8_t *out, size_t outlen);
 int		rad_vp2attr(const RADIUS_PACKET *packet,
 			    const RADIUS_PACKET *original, const char *secret,
 			    const VALUE_PAIR *vp, uint8_t *ptr);

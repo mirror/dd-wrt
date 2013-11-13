@@ -1,4 +1,4 @@
--- $Id$
+-- $Id: 7d24ed89ccbdac787878e457b013a1088d63498c $
 
 -- create plpgsql language
 CREATE FUNCTION "plpgsql_call_handler" () RETURNS LANGUAGE_HANDLER AS '$libdir/plpgsql' LANGUAGE C;

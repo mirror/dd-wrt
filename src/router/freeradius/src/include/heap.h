@@ -3,7 +3,7 @@
 
 /*
  * heap.h	Structures and prototypes for binary heaps.
- * Version:	$Id$
+ * Version:	$Id: 1f47449adb860e972a0b8a3b802c257e0c0ddca2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(heap_h, "$Id$")
+RCSIDH(heap_h, "$Id: 1f47449adb860e972a0b8a3b802c257e0c0ddca2 $")
 
 #ifdef __cplusplus
 extern "C" {

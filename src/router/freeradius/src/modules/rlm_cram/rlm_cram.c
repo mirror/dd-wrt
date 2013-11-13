@@ -1,7 +1,7 @@
 /*
  * rlm_cram.c
  *
- * Version:	$Id$
+ * Version:	$Id: a535434339349c166b16a25414623663c0eb6a8e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: a535434339349c166b16a25414623663c0eb6a8e $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>

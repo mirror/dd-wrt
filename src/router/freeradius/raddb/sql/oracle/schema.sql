@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: dc274706a9277678e85a7e4d465bbef06783f212 $
  *
  * Oracle schema for FreeRADIUS
  *
@@ -40,7 +40,7 @@ CREATE TABLE radacct (
 );
 
 CREATE UNIUQE INDEX radacct_idx0
-	ON radacct(accuniqueid);
+	ON radacct(acctuniqueid);
 CREATE UNIQUE INDEX radacct_idx1
 	ON radacct(acctsessionid,username,acctstarttime,
 		acctstoptime,nasipaddress,framedipaddress);

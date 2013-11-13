@@ -2,7 +2,7 @@
  *  sql_sqlite.c
  *  freeradius
  *
- * Version:	$Id$
+ * Version:	$Id: d7bd2b992ff95abcf11745d5f021b19552b6c44d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2 only, as published by
@@ -21,7 +21,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: d7bd2b992ff95abcf11745d5f021b19552b6c44d $")
 
 #include <freeradius-devel/radiusd.h>
 

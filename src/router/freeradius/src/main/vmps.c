@@ -1,7 +1,7 @@
 /*
  * vmps.c	Handle VMPS traffic.
  *
- * Version:	$Id$
+ * Version:	$Id: b88b11a189f69f5e76af696896caf6599d14c7c5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: b88b11a189f69f5e76af696896caf6599d14c7c5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

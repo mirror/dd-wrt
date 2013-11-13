@@ -68,7 +68,7 @@ the Auth-Type to EAP when it sees the EAP-Message attribute.
 
   See rlm_eap for details about the attributes used in EAP-sim.
 
-$Id$
+$Id: 4f47a1ce5e78aef6f8a9767ead23e1bb61b44602 $
 
 
 

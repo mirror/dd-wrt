@@ -1,7 +1,7 @@
 /*
  * modules.c	Radius module support.
  *
- * Version:	$Id$
+ * Version:	$Id: 0654d89151aa0ef10bbea55cf46e4343f496962b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 0654d89151aa0ef10bbea55cf46e4343f496962b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -379,6 +379,8 @@ static void module_instance_free(void *data)
 
 	module_instance_free_old(this->cs, this, time(NULL) + 100);
 
+	cf_section_parse_free(this->cs, this->insthandle);
+
 	if (this->entry->module->detach) {
 		(this->entry->module->detach)(this->insthandle);
 	}
@@ -417,7 +419,15 @@ static void module_entry_free(void *data)
 {
 	module_entry_t *this = data;
 
-	lt_dlclose(this->handle);	/* ignore any errors */
+#ifndef NDEBUG
+	/*
+	 *	Don't dlclose() modules if we're doing memory
+	 *	debugging.  This removes the symbols needed by
+	 *	valgrind.
+	 */
+	if (!mainconfig.debug_memory)
+#endif
+	  lt_dlclose(this->handle);	/* ignore any errors */
 	memset(this, 0, sizeof(*this));
 	free(this);
 }

@@ -1,7 +1,7 @@
 /*
  * module.h	Interface to the RADIUS module system.
  *
- * Version:	$Id$
+ * Version:	$Id: 544b1066d1f3671b91d8a96ae9d8a86979ba6b59 $
  *
  */
 
@@ -9,7 +9,7 @@
 #define RADIUS_MODULES_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(modules_h, "$Id$")
+RCSIDH(modules_h, "$Id: 544b1066d1f3671b91d8a96ae9d8a86979ba6b59 $")
 
 #include <freeradius-devel/conffile.h>
 

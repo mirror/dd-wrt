@@ -5,12 +5,12 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id$
+ * Version:	$Id: ffeaab07c0384b9de78e6b87daefbe9661bdc9e6 $
  *
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(realms_h, "$Id$")
+RCSIDH(realms_h, "$Id: ffeaab07c0384b9de78e6b87daefbe9661bdc9e6 $")
 
 #ifdef __cplusplus
 extern "C" {

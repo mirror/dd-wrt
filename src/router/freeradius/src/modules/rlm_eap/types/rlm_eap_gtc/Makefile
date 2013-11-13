@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:	$Id$
+# Version:	$Id: 0faf33b63ceadad1dfdc3df1e414a2ee03f329c5 $
 #
 
 TARGET      = rlm_eap_gtc

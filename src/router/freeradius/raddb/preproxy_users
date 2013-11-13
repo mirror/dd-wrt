@@ -1,7 +1,7 @@
 #
 #  Configuration file for the rlm_files module.
 #
-#  $Id$
+#  $Id: 0f5d15ad8b2e96a4d65808ac949793aab5c1c639 $
 #
 #  This file is similar to the "users" file.  The check items
 #  are compared against the request, but the "reply" items are

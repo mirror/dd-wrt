@@ -4,7 +4,7 @@
 /*
  * token.h	Special tokens.
  *
- * $Id$
+ * $Id: 6d91bde207640e7e5d0087dc3cefc288dcd9801c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(token_h, "$Id$")
+RCSIDH(token_h, "$Id: 6d91bde207640e7e5d0087dc3cefc288dcd9801c $")
 
 #ifdef __cplusplus
 extern "C" {

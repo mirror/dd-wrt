@@ -50,7 +50,7 @@
 */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 409c92024876db1db75b29560c5d97b8998856dc $")
 
 #include <freeradius-devel/autoconf.h>
 #include "snprintf.h"

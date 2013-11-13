@@ -1,7 +1,7 @@
 /*
  * rlm_eap_leap.c    Handles that are called from eap
  *
- * Version:     $Id$
+ * Version:     $Id: b9c03d5f241b6807299a19c86ebbabfeea83c634 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: b9c03d5f241b6807299a19c86ebbabfeea83c634 $")
 
 #include <freeradius-devel/autoconf.h>
 

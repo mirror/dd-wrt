@@ -1,7 +1,7 @@
 /*
  * paircmp.c	Valuepair functions for various attributes
  *
- * Version:	$Id$
+ * Version:	$Id: 4894f02c00d6640a9d6ddceb0c148dcf6592ef5a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 4894f02c00d6640a9d6ddceb0c148dcf6592ef5a $")
 
 #include <freeradius-devel/radiusd.h>
 #include "rlm_expr.h"
@@ -220,7 +220,7 @@ static int genericcmp(void *instance UNUSED,
 		      VALUE_PAIR **reply_pairs UNUSED)
 {
 	if ((check->operator != T_OP_REG_EQ) &&
-	    (check->operator != T_OP_REG_EQ)) {
+	    (check->operator != T_OP_REG_NE)) {
 		int rcode;
 		char name[1024];
 		char value[1024];

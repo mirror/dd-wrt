@@ -3,7 +3,7 @@
  *		accounting:     Functions to write radwtmp file.
  *		Also contains handler for "Group".
  *
- * Version:	$Id$
+ * Version:	$Id: 9caab7a1fe236e896f29a9337c40ade8fe0e424e $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 9caab7a1fe236e896f29a9337c40ade8fe0e424e $")
 
 #include	<freeradius-devel/radiusd.h>
 

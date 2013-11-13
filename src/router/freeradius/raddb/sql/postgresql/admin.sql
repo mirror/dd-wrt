@@ -8,7 +8,7 @@
  *	WARNING: This example file is untested.  Use at your own risk.
  *		 Please send any bug fixes to the mailing list.
  *
- *	$Id$
+ *	$Id: 26d08cae41c788321bdf8fd1b0c41a443b2da6f4 $
  */
 
 /*

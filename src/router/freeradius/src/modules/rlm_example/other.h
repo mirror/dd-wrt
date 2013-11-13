@@ -4,7 +4,7 @@
 #define _OTHER_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(other_h, "$Id$")
+RCSIDH(other_h, "$Id: c41a72698c188b6a4ba09fe2bcf70404146e6d90 $")
 
 /* define the function */
 

@@ -4,7 +4,7 @@
  *		Can also be installed as fingerd on the UNIX
  *		machine RADIUS runs on.
  *
- * Version:	$Id$
+ * Version:	$Id: 703d1f95cbb03144dbff2e919e6d21a3b25e1fb4 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 703d1f95cbb03144dbff2e919e6d21a3b25e1fb4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/sysutmp.h>

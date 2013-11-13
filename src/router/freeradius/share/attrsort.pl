@@ -8,7 +8,7 @@
 #  This is a bit of a hack.  The main purpose is to be able to quickly
 #  "diff" two dictionaries which have significant differences...
 #
-#  $Id$
+#  $Id: 8967259f766b16bc0050edbcff1ec9bf06d2663b $
 #
 
 while (<>) {

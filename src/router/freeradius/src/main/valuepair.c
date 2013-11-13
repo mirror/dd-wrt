@@ -2,7 +2,7 @@
  * valuepair.c	Valuepair functions that are radiusd-specific
  *		and as such do not belong in the library.
  *
- * Version:	$Id$
+ * Version:	$Id: 4852158e6ba44a3c372ecfe690aaaf93f0363b08 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 4852158e6ba44a3c372ecfe690aaaf93f0363b08 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>

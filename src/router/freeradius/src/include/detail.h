@@ -3,12 +3,12 @@
 /*
  *	detail.h	Routines to handle detail files.
  *
- * Version:	$Id$
+ * Version:	$Id: 82c33ac17f446583472d4f474721d5f7e3fd3adf $
  *
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(detail_h, "$Id$")
+RCSIDH(detail_h, "$Id: 82c33ac17f446583472d4f474721d5f7e3fd3adf $")
 
 #ifdef __cplusplus
 extern "C" {

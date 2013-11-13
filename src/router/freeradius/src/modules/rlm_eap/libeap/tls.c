@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id$
+ * Version:     $Id: 88530ac431d632a1a54fe2830945613f20379764 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 88530ac431d632a1a54fe2830945613f20379764 $")
 
 #include "eap_tls.h"
 

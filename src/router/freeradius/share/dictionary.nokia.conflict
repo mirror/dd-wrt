@@ -4,7 +4,7 @@
 #
 #	Nokia dictionary for attributes that conflict with other dictionaries.
 #
-#	$Id$
+#	$Id: 7b3980e7c1f7fee28131201a457005528fcee3ec $
 #
 ##############################################################################
 
@@ -21,7 +21,6 @@
 
 ATTRIBUTE	Nokia-Primary-DNS-Server		135	ipaddr
 ATTRIBUTE	Nokia-Secondary-DNS-Server		136	ipaddr
-
 
 ATTRIBUTE	Nokia-IMSI				224	octets
 ATTRIBUTE	Nokia-Charging-Id			225	integer

@@ -1,7 +1,7 @@
  /*
  * rlm_perl.c
  *
- * Version:    $Id$
+ * Version:    $Id: 6c9cf934011432b6cc61fe5c8cd81fb5ad6edfa9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 6c9cf934011432b6cc61fe5c8cd81fb5ad6edfa9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -151,12 +151,7 @@ static void **rlm_perl_get_handles(pTHX)
 	AV *modules = get_av(dl_modules, FALSE);
 	void **handles;
 
-	if (!librefs) {
-		radlog(L_ERR,
-		   "Could not get @%s for unloading.\n",
-		   dl_librefs);
-		return NULL;
-	}
+	if (!librefs) return NULL;
 
 	if (!(AvFILL(librefs) >= 0)) {
 		return NULL;
@@ -238,8 +233,8 @@ static void rlm_destroy_perl(PerlInterpreter *perl)
 	PERL_SET_CONTEXT(perl);
 
 	handles = rlm_perl_get_handles(aTHX);
+	if (handles) rlm_perl_close_handles(handles);
 	rlm_perl_destruct(perl);
-	rlm_perl_close_handles(handles);
 }
 
 /* Create Key */
@@ -277,14 +272,6 @@ static PerlInterpreter *rlm_perl_clone(PerlInterpreter *perl, pthread_key_t *key
 }
 #endif
 
-static void xs_init(pTHX)
-{
-	char *file = __FILE__;
-
-	/* DynaLoader is a special case */
-	newXS("DynaLoader::boot_DynaLoader", boot_DynaLoader, file);
-
-}
 /*
  *
  * This is wrapper for radlog
@@ -313,6 +300,16 @@ static XS(XS_radiusd_radlog)
        XSRETURN_NO;
 }
 
+static void xs_init(pTHX)
+{
+	char *file = __FILE__;
+
+	/* DynaLoader is a special case */
+	newXS("DynaLoader::boot_DynaLoader", boot_DynaLoader, file);
+
+	newXS("radiusd::radlog",XS_radiusd_radlog, "rlm_perl");
+}
+
 /*
  * The xlat function
  */
@@ -335,15 +332,22 @@ static size_t perl_xlat(void *instance, REQUEST *request, char *fmt, char *out,
 		return 0;
 	}
 
-#ifndef WITH_ITHREADS
-	perl = inst->perl;
-#else
-	perl = rlm_perl_clone(inst->perl,inst->thread_key);
+#ifdef USE_ITHREADS
+	pthread_mutex_lock(&inst->clone_mutex);
+
+	PerlInterpreter *interp;
+
+	interp = rlm_perl_clone(inst->perl,inst->thread_key);
 	{
-	  dTHXa(perl);
+	  dTHXa(interp);
+	  PERL_SET_CONTEXT(interp);
 	}
+
+	pthread_mutex_unlock(&inst->clone_mutex);
+#else
+	PERL_SET_CONTEXT(inst->perl);
 #endif
-	PERL_SET_CONTEXT(perl);
+
 	{
 	dSP;
 	ENTER;SAVETMPS;
@@ -409,12 +413,12 @@ static int perl_instantiate(CONF_SECTION *conf, void **instance)
 	AV		*end_AV;
 
 	char **embed;
-        char **envp = NULL;
+	char **envp = NULL;
 	const char *xlat_name;
 	int exitstatus = 0, argc=0;
 
-        embed = rad_malloc(4 * sizeof(char *));
-        memset(embed, 0, 4 *sizeof(char *));
+	embed = rad_malloc(4 * sizeof(char *));
+	memset(embed, 0, 4 *sizeof(char *));
 	/*
 	 *	Set up a storage area for instance data
 	 */
@@ -430,7 +434,7 @@ static int perl_instantiate(CONF_SECTION *conf, void **instance)
 		free(inst);
 		return -1;
 	}
-	
+
 	/*
 	 *	Create pthread key. This key will be stored in instance
 	 */
@@ -440,7 +444,7 @@ static int perl_instantiate(CONF_SECTION *conf, void **instance)
 
 	inst->thread_key = rad_malloc(sizeof(*inst->thread_key));
 	memset(inst->thread_key,0,sizeof(*inst->thread_key));
-	
+
 	rlm_perl_make_key(inst->thread_key);
 #endif
 	embed[0] = NULL;
@@ -455,7 +459,7 @@ static int perl_instantiate(CONF_SECTION *conf, void **instance)
 		argc = 3;
 	}
 
-        PERL_SYS_INIT3(&argc, &embed, &envp);
+	PERL_SYS_INIT3(&argc, &embed, &envp);
 #ifdef USE_ITHREADS
 	if ((inst->perl = perl_alloc()) == NULL) {
 		radlog(L_DBG, "rlm_perl: No memory for allocating new perl !");
@@ -502,8 +506,6 @@ static int perl_instantiate(CONF_SECTION *conf, void **instance)
 
 	PL_endav = end_AV;
 
-        newXS("radiusd::radlog",XS_radiusd_radlog, "rlm_perl.c");
-
 	rad_reply_hv = newHV();
 	rad_check_hv = newHV();
 	rad_config_hv = newHV();
@@ -512,9 +514,9 @@ static int perl_instantiate(CONF_SECTION *conf, void **instance)
 	rad_request_proxy_reply_hv = newHV();
 
 	rad_reply_hv = get_hv("RAD_REPLY",1);
-        rad_check_hv = get_hv("RAD_CHECK",1);
+	rad_check_hv = get_hv("RAD_CHECK",1);
 	rad_config_hv = get_hv("RAD_CONFIG",1);
-        rad_request_hv = get_hv("RAD_REQUEST",1);
+	rad_request_hv = get_hv("RAD_REQUEST",1);
 	rad_request_proxy_hv = get_hv("RAD_REQUEST_PROXY",1);
 	rad_request_proxy_reply_hv = get_hv("RAD_REQUEST_PROXY_REPLY",1);
 
@@ -539,10 +541,10 @@ static int perl_instantiate(CONF_SECTION *conf, void **instance)
  */
 static void perl_store_vps(VALUE_PAIR *vp, HV *rad_hv)
 {
-        VALUE_PAIR	*nvp, *vpa, *vpn;
+	VALUE_PAIR	*nvp, *vpa, *vpn;
 	AV		*av;
 	char		namebuf[256], *name;
-	char            buffer[1024];
+	char	    buffer[1024];
 	int		attr, len;
 
 	hv_undef(rad_hv);
@@ -593,23 +595,23 @@ static void perl_store_vps(VALUE_PAIR *vp, HV *rad_hv)
  *
  */
 static int pairadd_sv(VALUE_PAIR **vp, char *key, SV *sv, int operator) {
-       char            *val;
+       char	    *val;
        VALUE_PAIR      *vpp;
 
        if (SvOK(sv)) {
-               val = SvPV_nolen(sv);
-               vpp = pairmake(key, val, operator);
-               if (vpp != NULL) {
-                       pairadd(vp, vpp);
-                       radlog(L_DBG,
-                         "rlm_perl: Added pair %s = %s", key, val);
+	       val = SvPV_nolen(sv);
+	       vpp = pairmake(key, val, operator);
+	       if (vpp != NULL) {
+		       pairadd(vp, vpp);
+		       radlog(L_DBG,
+			 "rlm_perl: Added pair %s = %s", key, val);
 		       return 1;
-               } else {
-                       radlog(L_DBG,
-                         "rlm_perl: ERROR: Failed to create pair %s = %s",
-                         key, val);
-               }
-        }
+	       } else {
+		       radlog(L_DBG,
+			 "rlm_perl: ERROR: Failed to create pair %s = %s",
+			 key, val);
+	       }
+	}
        return 0;
 }
 
@@ -627,18 +629,18 @@ static int get_hv_content(HV *my_hv, VALUE_PAIR **vp)
 
        *vp = NULL;
        for (i = hv_iterinit(my_hv); i > 0; i--) {
-               res_sv = hv_iternextsv(my_hv,&key,&key_len);
-               if (SvROK(res_sv) && (SvTYPE(SvRV(res_sv)) == SVt_PVAV)) {
-                       av = (AV*)SvRV(res_sv);
-                       len = av_len(av);
-                       for (j = 0; j <= len; j++) {
-                               av_sv = av_fetch(av, j, 0);
-                               ret = pairadd_sv(vp, key, *av_sv, T_OP_ADD) + ret;
-                       }
-               } else ret = pairadd_sv(vp, key, res_sv, T_OP_EQ) + ret;
-        }
+	       res_sv = hv_iternextsv(my_hv,&key,&key_len);
+	       if (SvROK(res_sv) && (SvTYPE(SvRV(res_sv)) == SVt_PVAV)) {
+		       av = (AV*)SvRV(res_sv);
+		       len = av_len(av);
+		       for (j = 0; j <= len; j++) {
+			       av_sv = av_fetch(av, j, 0);
+			       ret = pairadd_sv(vp, key, *av_sv, T_OP_ADD) + ret;
+		       }
+	       } else ret = pairadd_sv(vp, key, res_sv, T_OP_EQ) + ret;
+	}
 
-        return ret;
+	return ret;
 }
 
 /*
@@ -660,7 +662,7 @@ static int rlmperl_call(void *instance, REQUEST *request, char *function_name)
 	HV		*rad_request_hv;
 	HV		*rad_request_proxy_hv;
 	HV		*rad_request_proxy_reply_hv;
-	
+
 #ifdef USE_ITHREADS
 	pthread_mutex_lock(&inst->clone_mutex);
 
@@ -671,7 +673,7 @@ static int rlmperl_call(void *instance, REQUEST *request, char *function_name)
 	  dTHXa(interp);
 	  PERL_SET_CONTEXT(interp);
 	}
-	
+
 	pthread_mutex_unlock(&inst->clone_mutex);
 #else
 	PERL_SET_CONTEXT(inst->perl);
@@ -835,10 +837,10 @@ static int perl_accounting(void *instance, REQUEST *request)
 
 	if ((pair = pairfind(request->packet->vps, PW_ACCT_STATUS_TYPE)) != NULL) {
 		acctstatustype = pair->vp_integer;
-        } else {
-                radlog(L_ERR, "Invalid Accounting Packet");
-                return RLM_MODULE_INVALID;
-        }
+	} else {
+		radlog(L_ERR, "Invalid Accounting Packet");
+		return RLM_MODULE_INVALID;
+	}
 
 	switch (acctstatustype) {
 
@@ -931,51 +933,51 @@ static int perl_detach(void *instance)
 	/*
 	 *	FIXME: Call this in the destruct function?
 	 */
-		{
+	{
 		dTHXa(handle->clone);
 		PERL_SET_CONTEXT(handle->clone);
 		{
-		dSP; ENTER; SAVETMPS; PUSHMARK(SP);
-		count = call_pv(inst->func_detach, G_SCALAR | G_EVAL );
-		SPAGAIN;
+			dSP; ENTER; SAVETMPS; PUSHMARK(SP);
+			count = call_pv(inst->func_detach, G_SCALAR | G_EVAL );
+			SPAGAIN;
 
-		if (count == 1) {
-			exitstatus = POPi;
-			/*
-			 * FIXME: bug in perl
-			 *
-			 */
-			if (exitstatus >= 100 || exitstatus < 0) {
-				exitstatus = RLM_MODULE_FAIL;
+			if (count == 1) {
+				exitstatus = POPi;
+				/*
+				 * FIXME: bug in perl
+				 *
+				 */
+				if (exitstatus >= 100 || exitstatus < 0) {
+					exitstatus = RLM_MODULE_FAIL;
+				}
 			}
+			PUTBACK;
+			FREETMPS;
+			LEAVE;
 		}
-		PUTBACK;
-		FREETMPS;
-		LEAVE;
-		}
-		}
+	}
 #endif
 
-		if (inst->func_detach) {
-	dTHXa(inst->perl);
-	PERL_SET_CONTEXT(inst->perl);
-	{
-	dSP; ENTER; SAVETMPS;
-	PUSHMARK(SP);
+	if (inst->func_detach) {
+		dTHXa(inst->perl);
+		PERL_SET_CONTEXT(inst->perl);
+		{
+			dSP; ENTER; SAVETMPS;
+			PUSHMARK(SP);
 
-	count = call_pv(inst->func_detach, G_SCALAR | G_EVAL );
-	SPAGAIN;
+			count = call_pv(inst->func_detach, G_SCALAR | G_EVAL );
+			SPAGAIN;
 
-	if (count == 1) {
-		exitstatus = POPi;
-		if (exitstatus >= 100 || exitstatus < 0) {
-			exitstatus = RLM_MODULE_FAIL;
+			if (count == 1) {
+				exitstatus = POPi;
+				if (exitstatus >= 100 || exitstatus < 0) {
+					exitstatus = RLM_MODULE_FAIL;
+				}
+			}
+			PUTBACK;
+			FREETMPS;
+			LEAVE;
 		}
-	}
-	PUTBACK;
-	FREETMPS;
-	LEAVE;
-	}
 	}
 
 	xlat_unregister(inst->xlat_name, perl_xlat, instance);
@@ -989,7 +991,7 @@ static int perl_detach(void *instance)
 	perl_free(inst->perl);
 #endif
 
-        PERL_SYS_TERM();
+	PERL_SYS_TERM();
 	free(inst);
 	return exitstatus;
 }

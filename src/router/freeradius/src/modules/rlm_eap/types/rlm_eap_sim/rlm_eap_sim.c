@@ -4,7 +4,7 @@
  * The development of the EAP/SIM support was funded by Internet Foundation
  * Austria (http://www.nic.at/ipa).
  *
- * Version:     $Id$
+ * Version:     $Id: 87cba647e0cd1e9ba49900c65320bb5c76ceed06 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 87cba647e0cd1e9ba49900c65320bb5c76ceed06 $")
 
 #include <freeradius-devel/autoconf.h>
 
@@ -557,7 +557,8 @@ static int eap_sim_authenticate(void *arg, EAP_HANDLER *handler)
 					 handler->eap_ds->response->type.length);
 
 	if(!success) {
-	  return 0;
+		DEBUG("Failed to decode EAP-SIM");
+		return 0;
 	}
 
 	/* see what kind of message we have gotten */
@@ -572,6 +573,7 @@ static int eap_sim_authenticate(void *arg, EAP_HANDLER *handler)
 	 *	Client error supersedes anything else.
 	 */
 	if (subtype == eapsim_client_error) {
+		DEBUG2("Client says error.  Stopping!");
 		return 0;
 	}
 

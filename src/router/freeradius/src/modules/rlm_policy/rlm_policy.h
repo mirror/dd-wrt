@@ -1,7 +1,7 @@
 /*
  * rlm_policy.h    Header file for policy module
  *
- * Version:     $Id$
+ * Version:     $Id: e5e8e185114f4fbce7c7dca9aae8714d6a033843 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
 #define _RLM_POLICY_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(rlm_policy_h, "$Id$")
+RCSIDH(rlm_policy_h, "$Id: e5e8e185114f4fbce7c7dca9aae8714d6a033843 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

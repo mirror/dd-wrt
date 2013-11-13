@@ -1,7 +1,7 @@
 /*
  * evaluate.c	Evaluate complex conditions
  *
- * Version:	$Id$
+ * Version:	$Id: 1f1620a0971ce0a85d9c83d31ef21ce488af2686 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 1f1620a0971ce0a85d9c83d31ef21ce488af2686 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -77,8 +77,9 @@ static const char *expand_string(char *buffer, size_t sizeof_buffer,
 
 	case T_BACK_QUOTED_STRING:
 		result = radius_exec_program(value, request, 1,
-					     buffer, sizeof_buffer, NULL,
-					     NULL, 0);
+					     buffer, sizeof_buffer,
+					     EXEC_TIMEOUT,
+					     NULL, NULL, 0);
 		if (result != 0) {
 			radlog(L_ERR, "Failed to execute program in string expansion: %s",
 			       value);

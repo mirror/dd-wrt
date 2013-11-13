@@ -3,7 +3,7 @@
 # Python module test
 # Miguel A.L. Paraz <mparaz@mparaz.com>
 #
-# $Id$
+# $Id: 13b7128b299690812f1f9e8d0d3003011e796468 $
 
 import radiusd
 

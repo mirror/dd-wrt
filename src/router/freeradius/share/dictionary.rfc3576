@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 3576.
 #	http://www.ietf.org/rfc/rfc3576.txt
 #
-#	$Id$
+#	$Id: 06068144848cfa67ddf122708792ee235c89308f $
 #
 ATTRIBUTE	Error-Cause				101	integer
 

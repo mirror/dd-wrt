@@ -1,7 +1,7 @@
 /*
  * print.c	Routines to print stuff.
  *
- * Version:	$Id$
+ * Version:	$Id: e6bb49e821eebbe04eaf8cbb4c3c2c2c738e84da $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: e6bb49e821eebbe04eaf8cbb4c3c2c2c738e84da $")
 
 #include	<freeradius-devel/libradius.h>
 

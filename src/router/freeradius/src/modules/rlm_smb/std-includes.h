@@ -24,7 +24,7 @@
 */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(std_includes_h, "$Id$")
+RCSIDH(std_includes_h, "$Id: 15580977241d6f3f8369e1239a2feb4e61bc8d8e $")
 
 #include "config.h"
 

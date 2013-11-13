@@ -1,7 +1,7 @@
 /*
  * radius.h	Constants of the radius protocol.
  *
- * Version:	$Id$
+ * Version:	$Id: ab9343175a2b3e7355bf63a74788b111525276d2 $
  *
  */
 
@@ -236,6 +236,8 @@
 #define PW_CACHE_TTL			1140
 #define PW_CACHE_STATUS_ONLY		1141
 #define PW_CACHE_ENTRY_HITS		1142
+
+#define PW_EAP_SESSION_ID		1146
 
 /*
  *	Integer Translations

@@ -1,7 +1,7 @@
 /*
  * rlm_radutmp.c
  *
- * Version:	$Id$
+ * Version:	$Id: b8717f27d1b8c3afff76843cb4472add6cef2270 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: b8717f27d1b8c3afff76843cb4472add6cef2270 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/radutmp.h>

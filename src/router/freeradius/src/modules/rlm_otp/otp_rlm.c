@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 2de71d281b73c7225f85b4b0ade8e5cffe98d1f5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 2de71d281b73c7225f85b4b0ade8e5cffe98d1f5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

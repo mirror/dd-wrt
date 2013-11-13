@@ -32,7 +32,7 @@
 #	the server will have time to read the detail file, and insert
 #	the data into a long-term SQL database.
 #
-#	$Id$
+#	$Id: 3f64cbb500cdda5014157e4776e871419f0b64df $
 #
 ######################################################################
 

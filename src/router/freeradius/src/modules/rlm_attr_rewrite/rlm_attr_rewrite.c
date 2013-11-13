@@ -1,7 +1,7 @@
 /*
  * rlm_attr_rewrite.c
  *
- * Version:  $Id$
+ * Version:  $Id: de7f5284d809f1d84cf2b685d279534cbaae9f6d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: de7f5284d809f1d84cf2b685d279534cbaae9f6d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

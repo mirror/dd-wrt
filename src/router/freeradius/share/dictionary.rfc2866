@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 2866.
 #	http://www.ietf.org/rfc/rfc2866.txt
 #
-#	$Id$
+#	$Id: 05c4156c6cbc8df9d4a442d4a4e60a81d1c09262 $
 #
 ATTRIBUTE	Acct-Status-Type			40	integer
 ATTRIBUTE	Acct-Delay-Time				41	integer

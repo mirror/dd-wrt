@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 5fad0cb15cadb7a8ad103924b55853127aeba820 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 #define EXTERN_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(extern_h, "$Id$")
+RCSIDH(extern_h, "$Id: 5fad0cb15cadb7a8ad103924b55853127aeba820 $")
 
 #include <freeradius-devel/autoconf.h>
 #include <freeradius-devel/radiusd.h>

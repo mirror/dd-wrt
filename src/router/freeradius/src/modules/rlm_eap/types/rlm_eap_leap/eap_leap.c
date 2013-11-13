@@ -1,7 +1,7 @@
 /*
  * eap_leap.c  EAP LEAP functionality.
  *
- * Version:     $Id$
+ * Version:     $Id: ae953e361125c1cb299393e62e018981d1ce00f3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: ae953e361125c1cb299393e62e018981d1ce00f3 $")
 
 #include <stdio.h>
 #include <stdlib.h>
