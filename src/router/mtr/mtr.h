@@ -60,6 +60,7 @@ typedef struct in_addr ip_t;
 
 extern int enablempls;
 extern int dns;
+extern int show_ips;
 extern int use_dns;
 
 #ifdef __GNUC__
@@ -71,3 +72,6 @@ extern int use_dns;
 #ifndef HAVE_SOCKLEN_T
 typedef int socklen_t; 
 #endif
+
+char *
+trim(char * s);

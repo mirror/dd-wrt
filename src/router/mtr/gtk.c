@@ -26,9 +26,7 @@
 #include <sys/types.h>
 
 #ifndef NO_GTK
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
 #include <sys/types.h>
 #include <gtk/gtk.h>
 
@@ -36,6 +34,7 @@
 #include "net.h"
 #include "dns.h"
 #include "mtr-gtk.h"
+#include "version.h"
 
 #include "img/mtr_icon.xpm"
 #endif
@@ -125,6 +124,7 @@ gint Pause_clicked(UNUSED GtkWidget *Button, UNUSED gpointer data)
 gint About_clicked(UNUSED GtkWidget *Button, UNUSED gpointer data) 
 {
   gchar *authors[] = {
+        "Matt Kimball <mkimball@xmission.com>",
         "Roger Wolff <R.E.Wolff@BitWizard.nl>",
         "Bohdan Vlasyuk <bohdan@cec.vstu.vinnica.ua>",
         "Evgeniy Tretyak <evtr@ukr.net>",
@@ -158,16 +158,18 @@ gint About_clicked(UNUSED GtkWidget *Button, UNUSED gpointer data)
         "Rob Foehl <rwf@loonybin.net>",
         "Mircea Damian",
         "Cougar <cougar@random.ee>",
+        "Travis Cross <tc@traviscross.com>",
         "Brian Casey",
         "Andrew Brown <atatat@atatdot.net>",
         "Bill Bogstad <bogstad@pobox.com> ",
         "Marc Bejarano <marc.bejarano@openwave.com>",
         "Moritz Barsnick <barsnick@gmx.net>",
+        "Thomas Klausner <wiz@NetBSD.org>",
         NULL
     };
   
   gtk_show_about_dialog(GTK_WINDOW(main_window)
-    , "version", VERSION
+    , "version", MTR_VERSION
     , "copyright", "Copyright \xc2\xa9 1997,1998  Matt Kimball"
     , "website", "http://www.bitwizard.nl/mtr/"
     , "authors", authors
@@ -189,9 +191,9 @@ gint About_clicked(UNUSED GtkWidget *Button, UNUSED gpointer data)
  * There is a small problem with the following code:
  * The timeout is canceled and removed in order to ensure that
  * it takes effect (consider what happens if you set the timeout to 999,
- * then try to undo the change); is a better approach possible? -- CMR
+ * then try to undo the change); is a better approach possible?
  *
- * What's the problem with this? (-> "I don't think so)  -- REW
+ * What's the problem with this? (-> "I don't think so)
  */
 
 gint WaitTime_changed(UNUSED GtkAdjustment *Adj, UNUSED GtkWidget *Button) 
@@ -213,7 +215,7 @@ gint Host_activate(GtkWidget *Entry, UNUSED gpointer data)
   if(addr) {
     net_reopen(addr);
     /* If we are "Paused" at this point it is usually because someone
-       entered a non-existing host. Therefore do the go-ahead... --REW */
+       entered a non-existing host. Therefore do the go-ahead... */
     gtk_toggle_button_set_active( GTK_TOGGLE_BUTTON( Pause_Button ) , 0);
   } else {
     int pos = strlen(gtk_entry_get_text( GTK_ENTRY(Entry)));
@@ -308,7 +310,7 @@ enum {
 // architectures, the pointer is 64 bits and the integer only 32. 
 // The compiler warns us of loss of precision. However we know we
 // casted a normal 32-bit integer into this pointer a few microseconds
-// earlier, so it is ok. Nothing to worry about.... -- REW.
+// earlier, so it is ok. Nothing to worry about....
 #define POINTER_TO_INT(p) ((int)(long)(p))
 
 void  float_formatter(GtkTreeViewColumn *tree_column,
@@ -383,16 +385,6 @@ void TreeViewCreate(void)
 
   renderer = gtk_cell_renderer_text_new ();
   g_object_set (G_OBJECT(renderer), "xalign", 1.0, NULL);
-  column = gtk_tree_view_column_new_with_attributes ("Rcv",
-    renderer,
-    "text", 2,
-    "foreground", COL_COLOR,
-    NULL);
-  gtk_tree_view_column_set_resizable(column, TRUE);
-  gtk_tree_view_append_column (GTK_TREE_VIEW(ReportTreeView), column);
-
-  renderer = gtk_cell_renderer_text_new ();
-  g_object_set (G_OBJECT(renderer), "xalign", 1.0, NULL);
   column = gtk_tree_view_column_new_with_attributes ("Snt",
     renderer,
     "text", 3,
@@ -413,6 +405,16 @@ void TreeViewCreate(void)
 
   renderer = gtk_cell_renderer_text_new ();
   g_object_set (G_OBJECT(renderer), "xalign", 1.0, NULL);
+  column = gtk_tree_view_column_new_with_attributes ("Avg",
+    renderer,
+    "text", 6,
+    "foreground", COL_COLOR,
+    NULL);
+  gtk_tree_view_column_set_resizable(column, TRUE);
+  gtk_tree_view_append_column (GTK_TREE_VIEW(ReportTreeView), column);
+  
+  renderer = gtk_cell_renderer_text_new ();
+  g_object_set (G_OBJECT(renderer), "xalign", 1.0, NULL);
   column = gtk_tree_view_column_new_with_attributes ("Best",
     renderer,
     "text", 5,
@@ -421,17 +423,7 @@ void TreeViewCreate(void)
   gtk_tree_view_column_set_resizable(column, TRUE);
   gtk_tree_view_append_column (GTK_TREE_VIEW(ReportTreeView), column);
 
-  renderer = gtk_cell_renderer_text_new ();
-  g_object_set (G_OBJECT(renderer), "xalign", 1.0, NULL);
-  column = gtk_tree_view_column_new_with_attributes ("Avg",
-    renderer,
-    "text", 6,
-    "foreground", COL_COLOR,
-    NULL);
-  gtk_tree_view_column_set_resizable(column, TRUE);
-  gtk_tree_view_append_column (GTK_TREE_VIEW(ReportTreeView), column);
-
-  renderer = gtk_cell_renderer_text_new ();
+    renderer = gtk_cell_renderer_text_new ();
   g_object_set (G_OBJECT(renderer), "xalign", 1.0, NULL);
   column = gtk_tree_view_column_new_with_attributes ("Worst",
     renderer,
@@ -457,16 +449,16 @@ void TreeViewCreate(void)
 void update_tree_row(int row, GtkTreeIter *iter)
 {
   ip_t *addr;
-  char str[256], *name;
+  char str[256]="???", *name=str;
 
   addr = net_addr(row);
-  name = "???";
-  if ( addrcmp( (void *) addr, (void *) &unspec_addr, af ) != 0 ) {
-    name = dns_lookup(addr);
-    if(!name) {
-      sprintf(str, "%s", strlongip( addr ));
-      name = str;
-    }
+  if (addrcmp( (void *) addr, (void *) &unspec_addr, af)) {
+    if ((name = dns_lookup(addr))) {
+      if (show_ips) {
+        snprintf(str, sizeof(str), "%s (%s)", name, strlongip(addr));
+        name = str;
+      }
+    } else name = strlongip(addr);
   }
 
   gtk_list_store_set(ReportStore, iter,
@@ -584,6 +576,7 @@ gint gtk_ping(UNUSED gpointer data)
 {
   gtk_redraw();
   net_send_batch();
+  net_harvest_fds();
   g_source_remove (tag);
   gtk_add_ping_timeout ();
   return TRUE;
@@ -603,6 +596,14 @@ gboolean gtk_dns_data(UNUSED GIOChannel *channel, UNUSED GIOCondition cond, UNUS
   gtk_redraw();
   return TRUE;
 }
+#ifdef ENABLE_IPV6
+gboolean gtk_dns_data6(UNUSED GIOChannel *channel, UNUSED GIOCondition cond, UNUSED gpointer data)
+{
+  dns_ack6();
+  gtk_redraw();
+  return TRUE;
+}
+#endif
 
 
 void gtk_loop(void) 
@@ -613,6 +614,10 @@ void gtk_loop(void)
   
   net_iochannel = g_io_channel_unix_new(net_waitfd());
   g_io_add_watch(net_iochannel, G_IO_IN, gtk_net_data, NULL);
+#ifdef ENABLE_IPV6
+  dns_iochannel = g_io_channel_unix_new(dns_waitfd6());
+  g_io_add_watch(dns_iochannel, G_IO_IN, gtk_dns_data6, NULL);
+#endif
   dns_iochannel = g_io_channel_unix_new(dns_waitfd());
   g_io_add_watch(dns_iochannel, G_IO_IN, gtk_dns_data, NULL);
 

@@ -19,9 +19,12 @@
 #include <netinet/in.h>
 
 /* Don't put a trailing comma in enumeration lists. Some compilers 
-   (notably the one on Irix 5.2) do not like that. -- REW */ 
+   (notably the one on Irix 5.2) do not like that. */ 
 enum { ActionNone,  ActionQuit,  ActionReset,  ActionDisplay, 
        ActionClear, ActionPause, ActionResume, ActionMPLS, ActionDNS, 
+#ifndef NO_IPINFO
+       ActionII, ActionAS,
+#endif
        ActionScrollDown, ActionScrollUp  };
 enum { DisplayReport, DisplayCurses, DisplayGTK, DisplaySplit, 
        DisplayRaw,    DisplayXML,    DisplayCSV, DisplayTXT};
@@ -29,7 +32,7 @@ enum { DisplayReport, DisplayCurses, DisplayGTK, DisplaySplit,
 /*  Prototypes for display.c  */
 void display_detect(int *argc, char ***argv);
 void display_open(void);
-void display_close(void);
+void display_close(time_t now);
 void display_redraw(void);
 void display_rawping(int hostnum, int msec);
 void display_rawhost(int hostnum, ip_t *ip_addr);
