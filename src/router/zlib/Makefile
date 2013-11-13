@@ -16,19 +16,19 @@
 # To install in $HOME instead of /usr/local, use:
 #    make install prefix=$HOME
 
-CC=ccache arm-linux-uclibc-gcc
+CC=ccache $(ARCH)-linux-uclibc-gcc
 
-CFLAGS=-O2 -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -fPIC  -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
+CFLAGS=$(COPTS) -fPIC  -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
 #CFLAGS=-O -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7
 #CFLAGS=-g -DDEBUG
 #CFLAGS=-O3 -Wall -Wwrite-strings -Wpointer-arith -Wconversion \
 #           -Wstrict-prototypes -Wmissing-prototypes
 
-SFLAGS=-O2 -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -fPIC  -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
+SFLAGS=$(COPTS)  -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
 LDFLAGS= 
 TEST_LDFLAGS=-L. libz.a
-LDSHARED=ccache arm-linux-uclibc-gcc
-CPP=ccache arm-linux-uclibc-gcc -E
+LDSHARED=ccache $(ARCH)-linux-uclibc-gcc
+CPP=ccache $(ARCH)-linux-uclibc-gcc -E
 
 STATICLIB=libz.a
 SHAREDLIB=
@@ -36,9 +36,9 @@ SHAREDLIBV=
 SHAREDLIBM=
 LIBS=$(STATICLIB) $(SHAREDLIBV)
 
-AR=arm-linux-uclibc-ar
+AR=$(ARCH)-linux-uclibc-ar
 ARFLAGS=rc
-RANLIB=arm-linux-uclibc-ranlib
+RANLIB=$(ARCH)-linux-uclibc-ranlib
 LDCONFIG=ldconfig
 LDSHAREDLIBC=-lc
 TAR=tar
