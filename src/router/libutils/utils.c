@@ -5186,7 +5186,7 @@ int led_control(int type, int act)
 		//connected_gpio = 0x10f;	// wan led green
 		wlan0_gpio = 0x10b;	// radio led blue
 		usb_gpio = 0x108;	// usb led green
-		usb_power = 0x000;    // usb enable
+		//usb_power = 0x000;    // usb enable
 		break;
 	case ROUTER_NETGEAR_R6300:
 		usb_gpio = 0x108;	//usb led
