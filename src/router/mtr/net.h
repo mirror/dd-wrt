@@ -35,6 +35,7 @@ void net_reset(void);
 void net_close(void);
 int net_waitfd(void);
 void net_process_return(void);
+void net_harvest_fds(void);
 
 int net_max(void);
 int net_min(void);
@@ -62,8 +63,6 @@ void net_end_transit(void);
 
 int calc_deltatime (float WaitTime);
 
-
-/* Added by Brian Casey, December 1997 bcasey@imagiware.com*/
 int net_returned(int at);
 int net_xmit(int at);
 int net_transit(int at);
@@ -80,6 +79,9 @@ void sockaddrtop( struct sockaddr * saddr, char * strptr, size_t len );
 int addrcmp( char * a, char * b, int af );
 void addrcpy( char * a, char * b, int af );
 
+void net_add_fds(fd_set *writefd, int *maxfd);
+void net_process_fds(fd_set *writefd);
+
 #define MAXPATH 8
 #define MaxHost 256
 #define MinSequence 33000
@@ -90,7 +92,7 @@ void addrcpy( char * a, char * b, int af );
 #define MINPACKET 28		/* 20 bytes IP header and 8 bytes ICMP or UDP */
 #define MAXLABELS 8 		/* http://kb.juniper.net/KB2190 (+ 3 just in case) */
 
-/* stuff used by display such as report, curses... --Min */
+/* stuff used by display such as report, curses... */
 #define MAXFLD 20		/* max stats fields to display */
 
 #if defined (__STDC__) && __STDC__
@@ -101,7 +103,7 @@ void addrcpy( char * a, char * b, int af );
 
 
 /* XXX This doesn't really belong in this header file, but as the
-   right c-files include it, it will have to do for now. -- REW */
+   right c-files include it, it will have to do for now. */
 
 /* dynamic field drawing */
 struct fields {

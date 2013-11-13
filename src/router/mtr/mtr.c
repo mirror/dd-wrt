@@ -3,7 +3,7 @@
     Copyright (C) 1997,1998  Matt Kimball
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 2 as 
+    it under the terms of the GNU General Public License version 2 as
     published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
@@ -23,9 +23,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <netinet/in.h>
-#include <sys/socket.h> 
+#include <sys/socket.h>
 #include <unistd.h>
 #include <strings.h>
+#include <time.h>
+#include <errno.h>
+#include <string.h>
+#include <ctype.h>
+#include <assert.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "mtr.h"
 #include "mtr-curses.h"
@@ -34,6 +41,10 @@
 #include "dns.h"
 #include "report.h"
 #include "net.h"
+#ifndef NO_IPINFO
+#include "asn.h"
+#endif
+#include "version.h"
 
 
 #ifdef ENABLE_IPV6
@@ -60,6 +71,7 @@ char *Hostname = NULL;
 char *InterfaceAddress = NULL;
 char  LocalHostname[128];
 int   dns = 1;
+int   show_ips = 0;
 int   enablempls = 0;
 int   cpacketsize = 64;          /* default packet size */
 int   bitpattern = 0;
@@ -73,6 +85,8 @@ int  fstTTL = 1;                /* default start at first hop */
 /*int maxTTL = MaxHost-1;  */     /* max you can go is 255 hops */
 int   maxTTL = 30;              /* inline with traceroute */
                                 /* end ttl window stuff. */
+int remoteport = 80;            /* for TCP tracing */
+int timeout = 10 * 1000000;     /* for TCP tracing */
 
 
 /* default display field(defined by key in net.h) and order */
@@ -101,6 +115,125 @@ struct fields data_fields[MAXFLD] = {
   {'\0', NULL, NULL, NULL, 0, NULL}
 };
 
+typedef struct names {
+  char*                 name;
+  struct names*         next;
+} names_t;
+static names_t *names = NULL;
+
+char *
+trim(char * s) {
+
+  char * p = s;
+  int l = strlen(p);
+
+  while(isspace(p[l-1]) && l) p[--l] = 0;
+  while(*p && isspace(*p) && l) ++p, --l;
+
+  return p;
+}
+
+static void
+append_to_names(const char* progname, const char* item) {
+
+  names_t* name = calloc(1, sizeof(names_t));
+  if (name == NULL) {
+    fprintf(stderr, "%s: memory allocation failure\n", progname);
+    exit(EXIT_FAILURE);
+  }
+  name->name = strdup(item);
+  name->next = names;
+  names = name;
+}
+
+static void
+read_from_file(const char* progname, const char *filename) {
+
+  FILE *in;
+  char line[512];
+
+  if (! filename || strcmp(filename, "-") == 0) {
+    clearerr(stdin);
+    in = stdin;
+  } else {
+    in = fopen(filename, "r");
+    if (! in) {
+      fprintf(stderr, "%s: fopen: %s\n", progname, strerror(errno));
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  while (fgets(line, sizeof(line), in)) {
+    char* name = trim(line);
+    append_to_names(progname, name);
+  }
+
+  if (ferror(in)) {
+    fprintf(stderr, "%s: ferror: %s\n", progname, strerror(errno));
+    exit(EXIT_FAILURE);
+  }
+
+  if (in != stdin) fclose(in);
+}
+
+/*
+ * If the file stream is associated with a regular file, lock the file
+ * in order coordinate writes to a common file from multiple mtr
+ * instances. This is useful if, for example, multiple mtr instances
+ * try to append results to a common file.
+ */
+
+static void
+lock(const char* progname, FILE *f) {
+    int fd;
+    struct stat buf;
+    static struct flock lock;
+
+    assert(f);
+
+    lock.l_type = F_WRLCK;
+    lock.l_start = 0;
+    lock.l_whence = SEEK_END;
+    lock.l_len = 0;
+    lock.l_pid = getpid();
+
+    fd = fileno(f);
+    if ((fstat(fd, &buf) == 0) && S_ISREG(buf.st_mode)) {
+      if (fcntl(fd, F_SETLKW, &lock) == -1) {
+          fprintf(stderr, "%s: fcntl: %s (ignored)\n",
+            progname, strerror(errno));
+      }
+    }
+}
+
+/*
+ * If the file stream is associated with a regular file, unlock the
+ * file (which presumably has previously been locked).
+ */
+
+static void
+unlock(const char* progname, FILE *f) {
+    int fd;
+    struct stat buf;
+    static struct flock lock;
+
+    assert(f);
+
+    lock.l_type = F_UNLCK;
+    lock.l_start = 0;
+    lock.l_whence = SEEK_END;
+    lock.l_len = 0;
+    lock.l_pid = getpid();
+
+    fd = fileno(f);
+    if ((fstat(fd, &buf) == 0) && S_ISREG(buf.st_mode)) {
+      if (fcntl(fd, F_SETLKW, &lock) == -1) {
+          fprintf(stderr, "%s: fcntl: %s (ignored)\n",
+            progname, strerror(errno));
+      }
+    }
+}
+
 
 void init_fld_options (void)
 {
@@ -117,7 +250,7 @@ void init_fld_options (void)
 }
 
 
-void parse_arg (int argc, char **argv) 
+void parse_arg (int argc, char **argv)
 {
   int opt;
   int i;
@@ -131,6 +264,7 @@ void parse_arg (int argc, char **argv)
     { "curses", 0, 0, 't' },
     { "gtk", 0, 0, 'g' },
     { "raw", 0, 0, 'l' },
+    { "csv", 0, 0, 'C' },
     { "split", 0, 0, 'p' },     /* BL */
     				/* maybe above should change to -d 'x' */
 
@@ -140,16 +274,25 @@ void parse_arg (int argc, char **argv)
     { "report-cycles", 1, 0, 'c' },
     { "psize", 1, 0, 's' },	/* changed 'p' to 's' to match ping option
 				   overload psize<0, ->rand(min,max) */
-    { "bitpattern", 1, 0, 'b' },/* overload b>255, ->rand(0,255) */
+    { "bitpattern", 1, 0, 'B' },/* overload b>255, ->rand(0,255) */
     { "tos", 1, 0, 'Q' },	/* typeof service (0,255) */
     { "mpls", 0, 0, 'e' },
     { "no-dns", 0, 0, 'n' },
+    { "show-ips", 0, 0, 'b' },
     { "address", 1, 0, 'a' },
     { "first-ttl", 1, 0, 'f' },	/* -f & -m are borrowed from traceroute */
+    { "filename", 1, 0, 'F' },
     { "max-ttl", 1, 0, 'm' },
     { "udp", 0, 0, 'u' },	/* UDP (default is ICMP) */
+    { "tcp", 0, 0, 'T' },	/* TCP (default is ICMP) */
+    { "port", 1, 0, 'P' },      /* target port number for TCP */
+    { "timeout", 1, 0, 'Z' },   /* timeout for TCP sockets */
     { "inet", 0, 0, '4' },	/* IPv4 only */
     { "inet6", 0, 0, '6' },	/* IPv6 only */
+#ifndef NO_IPINFO
+    { "ipinfo", 1, 0, 'y' },    /* IP info lookup */
+    { "aslookup", 0, 0, 'z' },  /* Do AS lookup (--ipinfo 0) */
+#endif
     { 0, 0, 0, 0 }
   };
 
@@ -157,7 +300,7 @@ void parse_arg (int argc, char **argv)
   while(1) {
     /* added f:m:o: byMin */
     opt = getopt_long(argc, argv,
-		      "vhrwxtglpo:i:c:s:b:Q:ena:f:m:u46", long_options, NULL);
+		      "vhrwxtglCpo:B:i:c:s:Q:ena:f:m:uTP:Zby:z46", long_options, NULL);
     if(opt == -1)
       break;
 
@@ -174,6 +317,7 @@ void parse_arg (int argc, char **argv)
       break;
     case 'w':
       reportwide = 1;
+      DisplayMode = DisplayReport;
       break;
     case 't':
       DisplayMode = DisplayCurses;
@@ -186,6 +330,9 @@ void parse_arg (int argc, char **argv)
       break;
     case 'l':
       DisplayMode = DisplayRaw;
+      break;
+    case 'C':
+      DisplayMode = DisplayCSV;
       break;
     case 'x':
       DisplayMode = DisplayXML;
@@ -213,8 +360,10 @@ void parse_arg (int argc, char **argv)
 	fprintf (stderr, "mtr: wait time must be positive\n");
 	exit (1);
       }
-      if (getuid() != 0 && WaitTime < 1.0)
-	WaitTime = 1.0;
+      if (getuid() != 0 && WaitTime < 1.0) {
+        fprintf (stderr, "non-root users cannot request an interval < 1.0 seconds\r\n");
+	exit (1);
+      }
       break;
     case 'f':
       fstTTL = atoi (optarg);
@@ -224,6 +373,9 @@ void parse_arg (int argc, char **argv)
       if (fstTTL < 1) {                       /* prevent 0 hop */
 	fstTTL = 1;
       }
+      break;
+    case 'F':
+      read_from_file(argv[0], optarg);
       break;
     case 'm':
       maxTTL = atoi (optarg);
@@ -251,7 +403,7 @@ void parse_arg (int argc, char **argv)
       }
       strcpy ((char*)fld_active, optarg);
       break;
-    case 'b':
+    case 'B':
       bitpattern = atoi (optarg);
       if (bitpattern > 255)
 	bitpattern = -1;
@@ -265,7 +417,32 @@ void parse_arg (int argc, char **argv)
       }
       break;
     case 'u':
+      if (mtrtype != IPPROTO_ICMP) {
+        fprintf(stderr, "-u and -T are mutually exclusive.\n");
+        exit(EXIT_FAILURE);
+      }
       mtrtype = IPPROTO_UDP;
+      break;
+    case 'T':
+      if (mtrtype != IPPROTO_ICMP) {
+        fprintf(stderr, "-u and -T are mutually exclusive.\n");
+        exit(EXIT_FAILURE);
+      }
+      mtrtype = IPPROTO_TCP;
+      break;
+    case 'b':
+      show_ips = 1;
+      break;
+    case 'P':
+      remoteport = atoi(optarg);
+      if (remoteport > 65535 || remoteport < 1) {
+        fprintf(stderr, "Illegal port number.\n");
+        exit(EXIT_FAILURE);
+      }
+      break;
+    case 'Z':
+      timeout = atoi(optarg);
+      timeout *= 1000000;
       break;
     case '4':
       af = AF_INET;
@@ -276,6 +453,16 @@ void parse_arg (int argc, char **argv)
       break;
 #else
       fprintf( stderr, "IPv6 not enabled.\n" );
+      break;
+#endif
+#ifndef NO_IPINFO
+    case 'y':
+      ipinfo_no = atoi (optarg);
+      if (ipinfo_no < 0)
+        ipinfo_no = 0;
+      break;
+    case 'z':
+      ipinfo_no = 0;
       break;
 #endif
     }
@@ -291,11 +478,6 @@ void parse_arg (int argc, char **argv)
   if (optind > argc - 1)
     return;
 
-  Hostname = argv[optind++];
-
-  if (argc > optind) {
-    cpacketsize = atoi (argv[optind]);
-  }
 }
 
 
@@ -322,9 +504,8 @@ void parse_mtr_options (char *string)
 }
 
 
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
 {
-  ip_t *            traddr;
   struct hostent *  host                = NULL;
   int               net_preopen_result;
 #ifdef ENABLE_IPV6
@@ -357,16 +538,21 @@ int main(int argc, char **argv)
 
   /* reset the random seed */
   srand (getpid());
-  
+
   display_detect(&argc, &argv);
 
-  /* The field options are now in a static array all together, 
-     but that requires a run-time initialization. -- REW */
+  /* The field options are now in a static array all together,
+     but that requires a run-time initialization. */
   init_fld_options ();
 
   parse_mtr_options (getenv ("MTR_OPTIONS"));
 
   parse_arg (argc, argv);
+
+  while (optind < argc) {
+    char* name = argv[optind++];
+    append_to_names(argv[0], name);
+  }
 
   /* Now that we know mtrtype we can select which socket to use */
   if (net_selectsocket() != 0) {
@@ -375,99 +561,145 @@ int main(int argc, char **argv)
   }
 
   if (PrintVersion) {
-    printf ("mtr " VERSION "\n");
+    printf ("mtr " MTR_VERSION "\n");
     exit(0);
   }
 
   if (PrintHelp) {
-    printf("usage: %s [-hvrwctglspniu46] [--help] [--version] [--report]\n"
+    printf("usage: %s [-hvrwctglspniuT46] [--help] [--version] [--report]\n"
 	   "\t\t[--report-wide] [--report-cycles=COUNT] [--curses] [--gtk]\n"
-           "\t\t[--raw] [--split] [--mpls] [--no-dns] [--address interface]\n" /* BL */
+           "\t\t[--csv|-C] [--raw] [--split] [--mpls] [--no-dns] [--show-ips]\n"
+           "\t\t[--address interface] [--filename=FILE|-F]\n" /* BL */
+#ifndef NO_IPINFO
+           "\t\t[--ipinfo=item_no|-y item_no]\n"
+           "\t\t[--aslookup|-z]\n"
+#endif
            "\t\t[--psize=bytes/-s bytes]\n"            /* ok */
-           "\t\t[--report-wide|-w] [-u]\n"            /* rew */
-	   "\t\t[--interval=SECONDS] HOSTNAME [PACKETSIZE]\n", argv[0]);
+           "\t\t[--report-wide|-w] [-u|-T] [--port=PORT] [--timeout=SECONDS]\n"            /* rew */
+	   "\t\t[--interval=SECONDS] HOSTNAME\n", argv[0]);
     exit(0);
   }
 
-  if (Hostname == NULL) Hostname = "localhost";
+  time_t now = time(NULL);
+  names_t* head = names;
+  while (names != NULL) {
 
-  if (gethostname(LocalHostname, sizeof(LocalHostname))) {
-	strcpy(LocalHostname, "UNKNOWNHOST");
-  }
+    Hostname = names->name;
+    if (Hostname == NULL) Hostname = "localhost";
+    if (gethostname(LocalHostname, sizeof(LocalHostname))) {
+    strcpy(LocalHostname, "UNKNOWNHOST");
+    }
 
-  if (net_preopen_result != 0) {
-    fprintf(stderr, "mtr: Unable to get raw socket.  (Executable not suid?)\n");
-    exit(1);
-  }
+    if (net_preopen_result != 0) {
+      fprintf(stderr, "mtr: Unable to get raw socket.  (Executable not suid?)\n");
+      if ( DisplayMode != DisplayCSV ) exit(EXIT_FAILURE);
+      else {
+        names = names->next;
+        continue;
+      }
+    }
 
 #ifdef ENABLE_IPV6
-  /* gethostbyname2() is deprecated so we'll use getaddrinfo() instead. */
-  bzero( &hints, sizeof hints );
-  hints.ai_family = af;
-  hints.ai_socktype = SOCK_DGRAM;
-  error = getaddrinfo( Hostname, NULL, &hints, &res );
-  if ( error ) {
-    if (error == EAI_SYSTEM)
-       perror ("Failed to resolve host");
-    else
-       fprintf (stderr, "Failed to resolve host: %s\n", gai_strerror(error));
-    exit( EXIT_FAILURE );
-  }
-  /* Convert the first addrinfo into a hostent. */
-  host = &trhost;
-  bzero( host, sizeof trhost );
-  host->h_name = res->ai_canonname;
-  host->h_aliases = NULL;
-  host->h_addrtype = res->ai_family;
-  af = res->ai_family;
-  host->h_length = res->ai_addrlen;
-  host->h_addr_list = alptr;
-  switch ( af ) {
-  case AF_INET:
-    sa4 = (struct sockaddr_in *) res->ai_addr;
-    alptr[0] = (void *) &(sa4->sin_addr);
-    break;
-  case AF_INET6:
-    sa6 = (struct sockaddr_in6 *) res->ai_addr;
-    alptr[0] = (void *) &(sa6->sin6_addr);
-    break;
-  default:
-    fprintf( stderr, "mtr unknown address type\n" );
-    exit( EXIT_FAILURE );
-  }
-  alptr[1] = NULL;
+    /* gethostbyname2() is deprecated so we'll use getaddrinfo() instead. */
+    bzero( &hints, sizeof hints );
+    hints.ai_family = af;
+    hints.ai_socktype = SOCK_DGRAM;
+    error = getaddrinfo( Hostname, NULL, &hints, &res );
+    if ( error ) {
+      if (error == EAI_SYSTEM)
+         perror ("Failed to resolve host");
+      else
+         fprintf (stderr, "Failed to resolve host: %s\n", gai_strerror(error));
+
+      if ( DisplayMode != DisplayCSV ) exit(EXIT_FAILURE);
+      else {
+        names = names->next;
+        continue;
+      }
+    }
+    /* Convert the first addrinfo into a hostent. */
+    host = &trhost;
+    bzero( host, sizeof trhost );
+    host->h_name = res->ai_canonname;
+    host->h_aliases = NULL;
+    host->h_addrtype = res->ai_family;
+    af = res->ai_family;
+    host->h_length = res->ai_addrlen;
+    host->h_addr_list = alptr;
+    switch ( af ) {
+    case AF_INET:
+      sa4 = (struct sockaddr_in *) res->ai_addr;
+      alptr[0] = (void *) &(sa4->sin_addr);
+      break;
+    case AF_INET6:
+      sa6 = (struct sockaddr_in6 *) res->ai_addr;
+      alptr[0] = (void *) &(sa6->sin6_addr);
+      break;
+    default:
+      fprintf( stderr, "mtr unknown address type\n" );
+      if ( DisplayMode != DisplayCSV ) exit(EXIT_FAILURE);
+      else {
+        names = names->next;
+        continue;
+      }
+    }
+    alptr[1] = NULL;
 #else
-    host = gethostbyname(Hostname);
-  if (host == NULL) {
-    herror("mtr gethostbyname");
-    exit(1);
-  }
-  af = host->h_addrtype;
+      host = gethostbyname(Hostname);
+    if (host == NULL) {
+      herror("mtr gethostbyname");
+      if ( DisplayMode != DisplayCSV ) exit(EXIT_FAILURE);
+      else {
+        names = names->next;
+        continue;
+      }
+    }
+    af = host->h_addrtype;
 #endif
 
-  traddr = (ip_t *) host->h_addr;
-  
-  if (net_open(host) != 0) {
-	fprintf(stderr, "mtr: Unable to start net module.\n");
-        exit(1);
+    if (net_open(host) != 0) {
+      fprintf(stderr, "mtr: Unable to start net module.\n");
+      if ( DisplayMode != DisplayCSV ) exit(EXIT_FAILURE);
+      else {
+        names = names->next;
+        continue;
       }
+    }
 
-  if (net_set_interfaceaddress (InterfaceAddress) != 0) {
-    fprintf( stderr, "mtr: Couldn't set interface address.\n" ); 
-    exit( EXIT_FAILURE ); 
+    if (net_set_interfaceaddress (InterfaceAddress) != 0) {
+      fprintf( stderr, "mtr: Couldn't set interface address.\n" );
+      if ( DisplayMode != DisplayCSV ) exit(EXIT_FAILURE);
+      else {
+        names = names->next;
+        continue;
+      }
+    }
+
+    lock(argv[0], stdout);
+      display_open();
+      dns_open();
+
+      display_mode = 0;
+      display_loop();
+
+      net_end_transit();
+      display_close(now);
+    unlock(argv[0], stdout);
+
+    if ( DisplayMode != DisplayCSV ) break;
+    else names = names->next;
+
   }
 
-  display_open();
-  dns_open();
-
-  display_mode = 0;
-  display_loop();
-
-  net_end_transit();
-  display_close();
   net_close();
+
+  while (head != NULL) {
+    names_t* item = head;
+    free(item->name); item->name = NULL;
+    head = head->next;
+    free(item); item = NULL;
+  }
+  head=NULL;
 
   return 0;
 }
-
-

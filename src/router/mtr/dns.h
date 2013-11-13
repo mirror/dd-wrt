@@ -16,14 +16,35 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include <config.h>
 #include <netinet/in.h>
-
+#include <resolv.h>
 
 /*  Prototypes for dns.c  */
 
 void dns_open(void);
 int dns_waitfd(void);
 void dns_ack(void);
+#ifdef ENABLE_IPV6
+int dns_waitfd6(void);
+void dns_ack6(void);
+#ifdef NEED_RES_STATE_EXT
+/* __res_state_ext is missing on many (most?) BSD systems */
+struct __res_state_ext {
+	union res_sockaddr_union nsaddrs[MAXNS];
+	struct sort_list {
+		int     af;
+		union {
+			struct in_addr  ina;
+			struct in6_addr in6a;
+		} addr, mask;
+	} sort_list[MAXRESOLVSORT];
+	char nsuffix[64];
+	char nsuffix2[64];
+};
+#endif
+#endif
+
 void dns_events(double *sinterval);
 char *dns_lookup(ip_t * address);
 char *dns_lookup2(ip_t * address);

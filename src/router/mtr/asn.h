@@ -3,7 +3,7 @@
     Copyright (C) 1997,1998  Matt Kimball
 
     This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License version 2 as 
+    it under the terms of the GNU General Public License version 2 as
     published by the Free Software Foundation.
 
     This program is distributed in the hope that it will be useful,
@@ -16,13 +16,13 @@
     Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
-/*  Prototypes for report.h  */
+extern int ipinfo_no;
+extern int ipinfo_max;
+extern int iiwidth_len;
+extern int iihash;
+void asn_open();
+void asn_close();
+char *fmt_ipinfo(ip_t *addr);
+int get_iiwidth(void);
+int is_printii(void);
 
-void report_open(void);
-void report_close(void);
-void txt_open(void);
-void txt_close(void);
-void xml_open(void);
-void xml_close(void);
-void csv_open(void);
-void csv_close(time_t now);

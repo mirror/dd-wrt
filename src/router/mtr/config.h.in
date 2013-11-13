@@ -1,7 +1,10 @@
-/* config.h.in.  Generated from configure.in by autoheader.  */
+/* config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to enable IPv6 */
 #undef ENABLE_IPV6
+
+/* Define to 1 if you have the <arpa/nameser_compat.h> header file. */
+#undef HAVE_ARPA_NAMESER_COMPAT_H
 
 /* Define to 1 if you have the `attron' function. */
 #undef HAVE_ATTRON
@@ -25,9 +28,6 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the `bind' library (-lbind). */
-#undef HAVE_LIBBIND
-
 /* Define to 1 if you have the `curses' library (-lcurses). */
 #define HAVE_LIBCURSES 1
 
@@ -43,14 +43,14 @@
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
 
-/* Define to 1 if you have the `resolv' library (-lresolv). */
-#undef HAVE_LIBRESOLV
-
 /* Define to 1 if you have the `socket' library (-lsocket). */
 #undef HAVE_LIBSOCKET
 
 /* Define to 1 if you have the `termcap' library (-ltermcap). */
 #undef HAVE_LIBTERMCAP
+
+/* Define to 1 if you have the `tinfo' library (-ltinfo). */
+#undef HAVE_LIBTINFO
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -100,14 +100,23 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define if struct __res_state_ext needs to be defined. */
+#undef NEED_RES_STATE_EXT
+
 /* Define if you don't have the curses libraries available. */
 #undef NO_CURSES
+
+/* Define if you don't have the glib libraries available. */
+#undef NO_GLIB
 
 /* Define if you don't have the GTK+ libraries available. */
 #undef NO_GTK
 
 /* Define if you don't have the herror() function available. */
 #undef NO_HERROR
+
+/* Define to disable ipinfo lookup */
+#undef NO_IPINFO
 
 /* Define if you don't have the strerror() function available. */
 #undef NO_STRERROR
