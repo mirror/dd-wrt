@@ -1,3 +1,12 @@
+0.6.6.1 -------------------------------------------------------------------
+
+Henning Rogge (2):
+      Update version after release of v0.6.6
+      Release v0.6.6.1
+
+Manuel Munz (1):
+      Fix jsoninfo again after a regression which was introduced with
+
 0.6.6 -------------------------------------------------------------------
 
 Bastian Bittorf (3):
