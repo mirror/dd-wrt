@@ -16,19 +16,19 @@
 # To install in $HOME instead of /usr/local, use:
 #    make install prefix=$HOME
 
-CC=ccache $(ARCH)-linux-uclibc-gcc
+CC=ccache arm-linux-uclibc-gcc
 
-CFLAGS=$(COPTS) -fPIC  -D_LARGEFILE64_SOURCE=1
+CFLAGS=-O2 -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -fPIC  -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
 #CFLAGS=-O -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7
 #CFLAGS=-g -DDEBUG
 #CFLAGS=-O3 -Wall -Wwrite-strings -Wpointer-arith -Wconversion \
 #           -Wstrict-prototypes -Wmissing-prototypes
 
-SFLAGS=$(COPTS)  -fPIC -D_LARGEFILE64_SOURCE=1
+SFLAGS=-O2 -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -fPIC  -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN
 LDFLAGS= 
 TEST_LDFLAGS=-L. libz.a
-LDSHARED=ccache $(ARCH)-linux-uclibc-gcc
-CPP=ccache $(ARCH)-linux-uclibc-gcc -E
+LDSHARED=ccache arm-linux-uclibc-gcc
+CPP=ccache arm-linux-uclibc-gcc -E
 
 STATICLIB=libz.a
 SHAREDLIB=
@@ -36,9 +36,9 @@ SHAREDLIBV=
 SHAREDLIBM=
 LIBS=$(STATICLIB) $(SHAREDLIBV)
 
-AR=$(ARCH)-linux-uclibc-ar
+AR=arm-linux-uclibc-ar
 ARFLAGS=rc
-RANLIB=$(ARCH)-linux-uclibc-ranlib
+RANLIB=arm-linux-uclibc-ranlib
 LDCONFIG=ldconfig
 LDSHAREDLIBC=-lc
 TAR=tar
@@ -53,7 +53,6 @@ includedir =${prefix}/include
 mandir =${prefix}/share/man
 man3dir = ${mandir}/man3
 pkgconfigdir = ${libdir}/pkgconfig
-tempfile := $(shell mktemp -u __XXXXXX)
 
 OBJZ = adler32.o crc32.o deflate.o infback.o inffast.o inflate.o inftrees.o trees.o zutil.o
 OBJG = compress.o uncompr.o gzclose.o gzlib.o gzread.o gzwrite.o
@@ -84,32 +83,35 @@ check: test
 test: all teststatic test64
 
 teststatic: static
-	@if echo hello world | ./minigzip | ./minigzip -d && ./example; then \
+	@TMPST=`mktemp fooXXXXXX`; \
+	if echo hello world | ./minigzip | ./minigzip -d && ./example $$TMPST ; then \
 	  echo '		*** zlib test OK ***'; \
 	else \
 	  echo '		*** zlib test FAILED ***'; false; \
-	fi
-	-@rm -f foo.gz
+	fi; \
+	rm -f $$TMPST
 
 testshared: shared
 	@LD_LIBRARY_PATH=`pwd`:$(LD_LIBRARY_PATH) ; export LD_LIBRARY_PATH; \
 	LD_LIBRARYN32_PATH=`pwd`:$(LD_LIBRARYN32_PATH) ; export LD_LIBRARYN32_PATH; \
 	DYLD_LIBRARY_PATH=`pwd`:$(DYLD_LIBRARY_PATH) ; export DYLD_LIBRARY_PATH; \
 	SHLIB_PATH=`pwd`:$(SHLIB_PATH) ; export SHLIB_PATH; \
-	if echo hello world | ./minigzipsh | ./minigzipsh -d && ./examplesh; then \
+	TMPSH=`mktemp fooXXXXXX`; \
+	if echo hello world | ./minigzipsh | ./minigzipsh -d && ./examplesh $$TMPSH; then \
 	  echo '		*** zlib shared test OK ***'; \
 	else \
 	  echo '		*** zlib shared test FAILED ***'; false; \
-	fi
-	-@rm -f foo.gz
+	fi; \
+	rm -f $$TMPSH
 
 test64: all64
-	@if echo hello world | ./minigzip64 | ./minigzip64 -d && ./example64; then \
+	@TMP64=`mktemp fooXXXXXX`; \
+	if echo hello world | ./minigzip64 | ./minigzip64 -d && ./example64 $$TMP64; then \
 	  echo '		*** zlib 64-bit test OK ***'; \
 	else \
 	  echo '		*** zlib 64-bit test FAILED ***'; false; \
-	fi
-	-@rm -f foo.gz
+	fi; \
+	rm -f $$TMP64
 
 infcover.o: test/infcover.c zlib.h zconf.h
 	$(CC) $(CFLAGS) -I. -c -o $@ test/infcover.c
@@ -228,10 +230,11 @@ zlib.3.pdf: zlib.3
 	groff -mandoc -f H -T ps zlib.3 | ps2pdf - zlib.3.pdf
 
 zconf.h.cmakein: zconf.h.in
-	-@echo "/#define ZCONF_H/ a\\\\\n#cmakedefine Z_PREFIX\\\\\n#cmakedefine Z_HAVE_UNISTD_H\n" > $(tempfile)
-	-@sed -f $(tempfile) zconf.h.in > zconf.h.cmakein
-	-@touch -r zconf.h.in zconf.h.cmakein
-	-@rm $(tempfile)
+	-@ TEMPFILE=`mktemp __XXXXXX`; \
+	echo "/#define ZCONF_H/ a\\\\\n#cmakedefine Z_PREFIX\\\\\n#cmakedefine Z_HAVE_UNISTD_H\n" >> $$TEMPFILE &&\
+	sed -f $$TEMPFILE zconf.h.in > zconf.h.cmakein &&\
+	touch -r zconf.h.in zconf.h.cmakein &&\
+	rm $$TEMPFILE
 
 zconf: zconf.h.in
 	cp -p zconf.h.in zconf.h
