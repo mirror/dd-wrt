@@ -136,6 +136,7 @@
 static lzo_voidp xmalloc(lzo_uint len)
 {
     lzo_voidp p;
+    lzo_uint align = (lzo_uint) sizeof(lzo_align_t);
 
     p = (lzo_voidp) lzo_malloc(len > 0 ? len : 1);
     if (p == NULL)
@@ -143,9 +144,9 @@ static lzo_voidp xmalloc(lzo_uint len)
         printf("%s: out of memory\n", progname);
         exit(1);
     }
-    if (__lzo_align_gap(p, (lzo_uint) sizeof(lzo_align_t)) != 0)
+    if (len >= align && __lzo_align_gap(p, align) != 0)
     {
-        printf("%s: C library problem: malloc() returned mis-aligned pointer!\n", progname);
+        printf("%s: C library problem: malloc() returned misaligned pointer!\n", progname);
         exit(1);
     }
     return p;

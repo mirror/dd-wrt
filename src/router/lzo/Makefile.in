@@ -50,9 +50,9 @@ target_triplet = @target@
 noinst_PROGRAMS = examples/dict$(EXEEXT) examples/lzopack$(EXEEXT) \
 	examples/overlap$(EXEEXT) examples/precomp$(EXEEXT) \
 	examples/precomp2$(EXEEXT) examples/simple$(EXEEXT) \
-	minilzo/testmini$(EXEEXT) lzotest/lzotest$(EXEEXT) \
-	tests/align$(EXEEXT) tests/chksum$(EXEEXT) \
-	tests/promote$(EXEEXT) tests/sizes$(EXEEXT)
+	lzotest/lzotest$(EXEEXT) tests/align$(EXEEXT) \
+	tests/chksum$(EXEEXT) tests/promote$(EXEEXT) \
+	tests/sizes$(EXEEXT) minilzo/testmini$(EXEEXT)
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(pkginclude_HEADERS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
@@ -63,7 +63,8 @@ DIST_COMMON = README $(am__configure_deps) $(pkginclude_HEADERS) \
 	autoconf/ltmain.sh autoconf/mdate-sh autoconf/missing \
 	autoconf/mkinstalldirs autoconf/py-compile autoconf/ylwrap
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/autoconf/local.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -117,20 +118,15 @@ am_src_liblzo2_la_OBJECTS = src/lzo1.lo src/lzo1_99.lo src/lzo1a.lo \
 	src/lzo1z_d3.lo src/lzo2a_9x.lo src/lzo2a_d1.lo \
 	src/lzo2a_d2.lo src/lzo_crc.lo src/lzo_init.lo src/lzo_ptr.lo \
 	src/lzo_str.lo src/lzo_util.lo
-@LZO_USE_ASM_i386_src_gas_TRUE@am__objects_1 =  \
-@LZO_USE_ASM_i386_src_gas_TRUE@	asm/i386/src_gas/lzo1c_s1.lo \
-@LZO_USE_ASM_i386_src_gas_TRUE@	asm/i386/src_gas/lzo1c_s2.lo \
-@LZO_USE_ASM_i386_src_gas_TRUE@	asm/i386/src_gas/lzo1f_f1.lo \
-@LZO_USE_ASM_i386_src_gas_TRUE@	asm/i386/src_gas/lzo1f_f2.lo \
-@LZO_USE_ASM_i386_src_gas_TRUE@	asm/i386/src_gas/lzo1x_f1.lo \
-@LZO_USE_ASM_i386_src_gas_TRUE@	asm/i386/src_gas/lzo1x_f2.lo \
-@LZO_USE_ASM_i386_src_gas_TRUE@	asm/i386/src_gas/lzo1x_s1.lo \
-@LZO_USE_ASM_i386_src_gas_TRUE@	asm/i386/src_gas/lzo1x_s2.lo \
-@LZO_USE_ASM_i386_src_gas_TRUE@	asm/i386/src_gas/lzo1y_f1.lo \
-@LZO_USE_ASM_i386_src_gas_TRUE@	asm/i386/src_gas/lzo1y_f2.lo \
-@LZO_USE_ASM_i386_src_gas_TRUE@	asm/i386/src_gas/lzo1y_s1.lo \
-@LZO_USE_ASM_i386_src_gas_TRUE@	asm/i386/src_gas/lzo1y_s2.lo
-nodist_src_liblzo2_la_OBJECTS = $(am__objects_1)
+am__objects_1 = asm/i386/src_gas/lzo1c_s1.lo \
+	asm/i386/src_gas/lzo1c_s2.lo asm/i386/src_gas/lzo1f_f1.lo \
+	asm/i386/src_gas/lzo1f_f2.lo asm/i386/src_gas/lzo1x_f1.lo \
+	asm/i386/src_gas/lzo1x_f2.lo asm/i386/src_gas/lzo1x_s1.lo \
+	asm/i386/src_gas/lzo1x_s2.lo asm/i386/src_gas/lzo1y_f1.lo \
+	asm/i386/src_gas/lzo1y_f2.lo asm/i386/src_gas/lzo1y_s1.lo \
+	asm/i386/src_gas/lzo1y_s2.lo
+@LZO_USE_ASM_i386_src_gas_TRUE@am__objects_2 = $(am__objects_1)
+nodist_src_liblzo2_la_OBJECTS = $(am__objects_2)
 src_liblzo2_la_OBJECTS = $(am_src_liblzo2_la_OBJECTS) \
 	$(nodist_src_liblzo2_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
@@ -370,30 +366,24 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = BUGS examples/portab.h examples/portab_a.h \
-	minilzo/Makefile.minilzo minilzo/README.LZO minilzo/minilzo.h \
-	lzotest/asm.h lzotest/db.h lzotest/wrap.h lzotest/wrapmisc.h \
-	src/compr1b.h src/compr1c.h src/config1.h src/config1a.h \
-	src/config1b.h src/config1c.h src/config1f.h src/config1x.h \
-	src/config1y.h src/config1z.h src/config2a.h src/lzo1_cm.ch \
-	src/lzo1_d.ch src/lzo1a_cm.ch src/lzo1a_cr.ch src/lzo1a_de.h \
-	src/lzo1b_c.ch src/lzo1b_cc.h src/lzo1b_cm.ch src/lzo1b_cr.ch \
-	src/lzo1b_d.ch src/lzo1b_de.h src/lzo1b_r.ch src/lzo1b_sm.ch \
-	src/lzo1b_tm.ch src/lzo1c_cc.h src/lzo1f_d.ch src/lzo1x_c.ch \
-	src/lzo1x_d.ch src/lzo1x_oo.ch src/lzo2a_d.ch src/lzo_conf.h \
-	src/lzo_dict.h src/lzo_dll.ch src/lzo_func.ch src/lzo_mchw.ch \
-	src/lzo_ptr.h src/lzo_swd.ch src/miniacc.h src/stats1a.h \
-	src/stats1b.h src/stats1c.h
+EXTRA_DIST = BUGS autoconf/shtool src/compr1b.h src/compr1c.h \
+	src/config1.h src/config1a.h src/config1b.h src/config1c.h \
+	src/config1f.h src/config1x.h src/config1y.h src/config1z.h \
+	src/config2a.h src/lzo1_cm.ch src/lzo1_d.ch src/lzo1a_cm.ch \
+	src/lzo1a_cr.ch src/lzo1a_de.h src/lzo1b_c.ch src/lzo1b_cc.h \
+	src/lzo1b_cm.ch src/lzo1b_cr.ch src/lzo1b_d.ch src/lzo1b_de.h \
+	src/lzo1b_r.ch src/lzo1b_sm.ch src/lzo1b_tm.ch src/lzo1c_cc.h \
+	src/lzo1f_d.ch src/lzo1x_c.ch src/lzo1x_d.ch src/lzo1x_oo.ch \
+	src/lzo2a_d.ch src/lzo_conf.h src/lzo_dict.h src/lzo_dll.ch \
+	src/lzo_func.ch src/lzo_mchw.ch src/lzo_ptr.h src/lzo_swd.ch \
+	src/miniacc.h src/stats1a.h src/stats1b.h src/stats1c.h \
+	examples/portab.h examples/portab_a.h lzotest/asm.h \
+	lzotest/db.h lzotest/wrap.h lzotest/wrapmisc.h \
+	minilzo/Makefile.minilzo minilzo/README.LZO minilzo/minilzo.h
 INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)
 LDADD = src/liblzo2.la
 lib_LTLIBRARIES = src/liblzo2.la
 doc_DATA = AUTHORS COPYING NEWS THANKS doc/LZO.FAQ doc/LZO.TXT doc/LZOAPI.TXT
-examples_dict_SOURCES = examples/dict.c
-examples_lzopack_SOURCES = examples/lzopack.c
-examples_overlap_SOURCES = examples/overlap.c
-examples_precomp_SOURCES = examples/precomp.c
-examples_precomp2_SOURCES = examples/precomp2.c
-examples_simple_SOURCES = examples/simple.c
 pkginclude_HEADERS = \
     include/lzo/lzo1.h include/lzo/lzo1a.h include/lzo/lzo1b.h \
     include/lzo/lzo1c.h include/lzo/lzo1f.h include/lzo/lzo1x.h \
@@ -401,12 +391,6 @@ pkginclude_HEADERS = \
     include/lzo/lzo_asm.h include/lzo/lzoconf.h include/lzo/lzodefs.h \
     include/lzo/lzoutil.h
 
-minilzo_testmini_SOURCES = minilzo/testmini.c minilzo/minilzo.c
-minilzo_testmini_SHORTNAME = t
-minilzo_testmini_CPPFLAGS = -DMINILZO_HAVE_CONFIG_H=1 \
-	-I$(top_srcdir)/include/lzo $(AM_CPPFLAGS)
-minilzo_testmini_LDADD = 
-lzotest_lzotest_SOURCES = lzotest/lzotest.c
 src_liblzo2_la_LDFLAGS = -version-info 2:0:0 $(AM_LDFLAGS)
 src_liblzo2_la_SOURCES = \
     src/lzo1.c src/lzo1_99.c src/lzo1a.c src/lzo1a_99.c src/lzo1b_1.c \
@@ -426,30 +410,44 @@ src_liblzo2_la_SOURCES = \
     src/lzo2a_d2.c src/lzo_crc.c src/lzo_init.c src/lzo_ptr.c \
     src/lzo_str.c src/lzo_util.c
 
+LZO_ASM_SOURCES_i386_src_gas = \
+    asm/i386/src_gas/lzo1c_s1.S asm/i386/src_gas/lzo1c_s2.S \
+    asm/i386/src_gas/lzo1f_f1.S asm/i386/src_gas/lzo1f_f2.S \
+    asm/i386/src_gas/lzo1x_f1.S asm/i386/src_gas/lzo1x_f2.S \
+    asm/i386/src_gas/lzo1x_s1.S asm/i386/src_gas/lzo1x_s2.S \
+    asm/i386/src_gas/lzo1y_f1.S asm/i386/src_gas/lzo1y_f2.S \
+    asm/i386/src_gas/lzo1y_s1.S asm/i386/src_gas/lzo1y_s2.S
+
+LZO_ASM_OBJECTS_i386_obj_elf32 = \
+    asm/i386/obj/elf32/lzo1c_s1.o asm/i386/obj/elf32/lzo1c_s2.o \
+    asm/i386/obj/elf32/lzo1f_f1.o asm/i386/obj/elf32/lzo1f_f2.o \
+    asm/i386/obj/elf32/lzo1x_f1.o asm/i386/obj/elf32/lzo1x_f2.o \
+    asm/i386/obj/elf32/lzo1x_s1.o asm/i386/obj/elf32/lzo1x_s2.o \
+    asm/i386/obj/elf32/lzo1y_f1.o asm/i386/obj/elf32/lzo1y_f2.o \
+    asm/i386/obj/elf32/lzo1y_s1.o asm/i386/obj/elf32/lzo1y_s2.o
+
+@LZO_USE_ASM_i386_src_gas_TRUE@LZO_ASM_SOURCES = $(LZO_ASM_SOURCES_i386_src_gas)
+@LZO_USE_ASM_i386_obj_elf32_TRUE@LZO_ASM_OBJECTS = $(LZO_ASM_OBJECTS_i386_obj_elf32)
 nodist_src_liblzo2_la_SOURCES = $(LZO_ASM_SOURCES)
 src_liblzo2_la_LIBADD = $(LZO_ASM_OBJECTS)
-@LZO_USE_ASM_i386_src_gas_TRUE@LZO_ASM_SOURCES = \
-@LZO_USE_ASM_i386_src_gas_TRUE@    asm/i386/src_gas/lzo1c_s1.S asm/i386/src_gas/lzo1c_s2.S \
-@LZO_USE_ASM_i386_src_gas_TRUE@    asm/i386/src_gas/lzo1f_f1.S asm/i386/src_gas/lzo1f_f2.S \
-@LZO_USE_ASM_i386_src_gas_TRUE@    asm/i386/src_gas/lzo1x_f1.S asm/i386/src_gas/lzo1x_f2.S \
-@LZO_USE_ASM_i386_src_gas_TRUE@    asm/i386/src_gas/lzo1x_s1.S asm/i386/src_gas/lzo1x_s2.S \
-@LZO_USE_ASM_i386_src_gas_TRUE@    asm/i386/src_gas/lzo1y_f1.S asm/i386/src_gas/lzo1y_f2.S \
-@LZO_USE_ASM_i386_src_gas_TRUE@    asm/i386/src_gas/lzo1y_s1.S asm/i386/src_gas/lzo1y_s2.S
-
-@LZO_USE_ASM_i386_obj_elf32_TRUE@LZO_ASM_OBJECTS = \
-@LZO_USE_ASM_i386_obj_elf32_TRUE@    asm/i386/obj/elf32/lzo1c_s1.o asm/i386/obj/elf32/lzo1c_s2.o \
-@LZO_USE_ASM_i386_obj_elf32_TRUE@    asm/i386/obj/elf32/lzo1f_f1.o asm/i386/obj/elf32/lzo1f_f2.o \
-@LZO_USE_ASM_i386_obj_elf32_TRUE@    asm/i386/obj/elf32/lzo1x_f1.o asm/i386/obj/elf32/lzo1x_f2.o \
-@LZO_USE_ASM_i386_obj_elf32_TRUE@    asm/i386/obj/elf32/lzo1x_s1.o asm/i386/obj/elf32/lzo1x_s2.o \
-@LZO_USE_ASM_i386_obj_elf32_TRUE@    asm/i386/obj/elf32/lzo1y_f1.o asm/i386/obj/elf32/lzo1y_f2.o \
-@LZO_USE_ASM_i386_obj_elf32_TRUE@    asm/i386/obj/elf32/lzo1y_s1.o asm/i386/obj/elf32/lzo1y_s2.o
-
+examples_dict_SOURCES = examples/dict.c
+examples_lzopack_SOURCES = examples/lzopack.c
+examples_overlap_SOURCES = examples/overlap.c
+examples_precomp_SOURCES = examples/precomp.c
+examples_precomp2_SOURCES = examples/precomp2.c
+examples_simple_SOURCES = examples/simple.c
+lzotest_lzotest_SOURCES = lzotest/lzotest.c
 tests_align_SOURCES = tests/align.c
 tests_chksum_SOURCES = tests/chksum.c
 tests_promote_SOURCES = tests/promote.c
 tests_sizes_SOURCES = tests/sizes.c
 tests_promote_LDADD = 
 tests_sizes_LDADD = 
+minilzo_testmini_SOURCES = minilzo/testmini.c minilzo/minilzo.c
+minilzo_testmini_SHORTNAME = t
+minilzo_testmini_CPPFLAGS = -DMINILZO_HAVE_CONFIG_H=1 \
+	-I$(top_srcdir)/include/lzo $(AM_CPPFLAGS)
+minilzo_testmini_LDADD = 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -1495,11 +1493,10 @@ uninstall-am: uninstall-docDATA uninstall-libLTLIBRARIES \
 
 
 # hooks for Automake targets
-dist-hook:
-	-rm -rf "./$(distdir)/autoconf/"
-	cp -pR $(srcdir)/B/ $(srcdir)/asm/ $(srcdir)/autoconf/ $(srcdir)/doc/ $(srcdir)/util/ "$(distdir)/"
-	-rm -f `find "./$(distdir)/" -type l -print`
-	-rm -f ./$(distdir)/util/*.dat
+dist-hook: dist-hook-1
+dist-hook-1:
+	cp -pR $(srcdir)/B/ $(srcdir)/asm/ $(srcdir)/doc/ $(srcdir)/util/ "$(distdir)/"
+	-rm -f $(distdir)/util/*.dat
 
 check-local: all-am
 	./lzotest/lzotest -mlzo -n2 -q $(top_srcdir)/COPYING
