@@ -24,11 +24,16 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <strings.h>
+#include <time.h>
 
 #include "mtr.h"
+#include "version.h"
 #include "report.h"
 #include "net.h"
 #include "dns.h"
+#ifndef NO_IPINFO
+#include "asn.h"
+#endif
 
 #define MAXLOADBAL 5
 
@@ -45,14 +50,44 @@ extern int af;
 extern int reportwide;
 
 
-void report_open(void) 
+char *get_time_string (void) 
 {
+  time_t now; 
+  char *t;
+  now = time (NULL);
+  t = ctime (&now);
+  t [ strlen (t) -1] = 0; // remove the trailing newline
+  return t;
+}
+
+void report_open(void)
+{
+  printf ("Start: %s\n", get_time_string ());
+}
+
+static size_t snprint_addr(char *dst, size_t dst_len, ip_t *addr)
+{
+  if(addrcmp((void *) addr, (void *) &unspec_addr, af)) {
+    struct hostent *host = dns ? addr2host((void *) addr, af) : NULL;
+    if (!host) return snprintf(dst, dst_len, "%s", strlongip(addr));
+    else if (dns && show_ips)
+      return snprintf(dst, dst_len, "%s (%s)", host->h_name, strlongip(addr));
+    else return snprintf(dst, dst_len, "%s", host->h_name);
+  } else return snprintf(dst, dst_len, "%s", "???");
 }
 
 
+#ifndef NO_IPINFO
+void print_mpls(struct mplslen *mpls) {
+  int k;
+  for (k=0; k < mpls->labels; k++)
+    printf("       [MPLS: Lbl %lu Exp %u S %u TTL %u]\n", mpls->label[k], mpls->exp[k], mpls->s[k], mpls->ttl[k]);
+}
+#endif
+
 void report_close(void) 
 {
-  int i, j, k, at, max, z, w;
+  int i, j, at, max, z, w;
   struct mplslen *mpls, *mplss;
   ip_t *addr;
   ip_t *addr2 = NULL;  
@@ -61,7 +96,6 @@ void report_close(void)
   char fmt[16];
   int len=0;
   int len_hosts = 33;
-  struct hostent *host;
 
   if (reportwide)
   {
@@ -70,23 +104,29 @@ void report_close(void)
     max = net_max();
     at  = net_min();
     for (; at < max; at++) {
+      int nlen;
       addr = net_addr(at);
-      if( addrcmp( (void *) addr, (void *) &unspec_addr, af ) != 0 ) {
-        host = dns ? addr2host( (void *) addr, af ) : NULL;
-        if (host != NULL) {
-          strncpy( name, host->h_name, (sizeof name) - 1 );
-          name[ (sizeof name) - 1 ] = '\0'; 
-        } else {
-          snprintf(name, sizeof(name), "%s", strlongip( addr ) );
-        }
-        if (len_hosts < strlen(name)) {
-          len_hosts = strlen(name);
-        }
-      }    
+      if ((nlen = snprint_addr(name, sizeof(name), addr)))
+        if (len_hosts < nlen)
+          len_hosts = nlen;
     }
   }
   
+#ifndef NO_IPINFO
+  int len_tmp = len_hosts;
+  if (ipinfo_no >= 0) {
+    ipinfo_no %= iiwidth_len;
+    if (reportwide) {
+      len_hosts++;    // space
+      len_tmp   += get_iiwidth();
+      if (!ipinfo_no)
+        len_tmp += 2; // align header: AS
+    }
+  }
+  snprintf( fmt, sizeof(fmt), "HOST: %%-%ds", len_tmp);
+#else
   snprintf( fmt, sizeof(fmt), "HOST: %%-%ds", len_hosts);
+#endif
   snprintf(buf, sizeof(buf), fmt, LocalHostname);
   len = reportwide ? strlen(buf) : len_hosts;
   for( i=0; i<MAXFLD; i++ ) {
@@ -104,21 +144,19 @@ void report_close(void)
   for(; at < max; at++) {
     addr = net_addr(at);
     mpls = net_mpls(at);
-    if( addrcmp( (void *) addr, (void *) &unspec_addr, af ) == 0 ) {
-      sprintf(name, "???");
+    snprint_addr(name, sizeof(name), addr);
+
+#ifndef NO_IPINFO
+    if (is_printii()) {
+      snprintf(fmt, sizeof(fmt), " %%2d. %%s%%-%ds", len_hosts);
+      snprintf(buf, sizeof(buf), fmt, at+1, fmt_ipinfo(addr), name);
     } else {
-      host = dns ? addr2host( (void *) addr, af ) : NULL;
-
-      if (host != NULL) {
-        strncpy( name, host->h_name, (sizeof name) - 1 );
-        name[ (sizeof name) - 1 ] = '\0'; 
-      } else {
-        snprintf(name, sizeof(name), "%s", strlongip( addr ) );
-      }
-    }
-
+#endif
     snprintf( fmt, sizeof(fmt), " %%2d.|-- %%-%ds", len_hosts);
     snprintf(buf, sizeof(buf), fmt, at+1, name);
+#ifndef NO_IPINFO
+    }
+#endif
     len = reportwide ? strlen(buf) : len_hosts;  
     for( i=0; i<MAXFLD; i++ ) {
       j = fld_index[fld_active [i]];
@@ -136,10 +174,8 @@ void report_close(void)
     }
     printf("%s\n",buf);
 
-    /* Thales (thales@paponline.net) -- 
-     * This feature show 'loadbalances' on routes 
-     */
-    
+    /* This feature shows 'loadbalances' on routes */
+
     /* z is starting at 1 because addrs[0] is the same that addr */
     for (z = 1; z < MAXPATH ; z++) {
       addr2 = net_addrs(at, z);
@@ -148,7 +184,7 @@ void report_close(void)
       if ((addrcmp ((void *) &unspec_addr, (void *) addr2, af)) == 0)
         break;
       for (w = 0; w < z; w++)
-        /* Thales -- Ok... checking if there are ips repeated on same hop */
+        /* Ok... checking if there are ips repeated on same hop */
         if ((addrcmp ((void *) addr2, (void *) net_addrs (at,w), af)) == 0) {
            found = 1;
            break;
@@ -156,6 +192,17 @@ void report_close(void)
 
       if (!found) {
   
+#ifndef NO_IPINFO
+        if (is_printii()) {
+          if (mpls->labels && z == 1 && enablempls)
+            print_mpls(mpls);
+          snprint_addr(name, sizeof(name), addr2);
+          printf("     %s%s\n", fmt_ipinfo(addr2), name);
+          if (enablempls)
+            print_mpls(mplss);
+        } else {
+#else
+        int k;
         if (mpls->labels && z == 1 && enablempls) {
           for (k=0; k < mpls->labels; k++) {
             printf("    |  |+-- [MPLS: Lbl %lu Exp %u S %u TTL %u]\n", mpls->label[k], mpls->exp[k], mpls->s[k], mpls->ttl[k]);
@@ -173,15 +220,30 @@ void report_close(void)
             printf("    |   +-- [MPLS: Lbl %lu Exp %u S %u TTL %u]\n", mplss->label[k], mplss->exp[k], mplss->s[k], mplss->ttl[k]);
           }
         }
+#endif
+#ifndef NO_IPINFO
+        }
+#endif
       }
     }
 
     /* No multipath */
+#ifndef NO_IPINFO
+    if (is_printii()) {
+      if (mpls->labels && z == 1 && enablempls)
+        print_mpls(mpls);
+    } else {
+#else
     if(mpls->labels && z == 1 && enablempls) {
+      int k;
       for (k=0; k < mpls->labels; k++) {
         printf("    |   +-- [MPLS: Lbl %lu Exp %u S %u TTL %u]\n", mpls->label[k], mpls->exp[k], mpls->s[k], mpls->ttl[k]);
       }
     }
+#endif
+#ifndef NO_IPINFO
+    }
+#endif
   }
 }
 
@@ -208,7 +270,6 @@ void xml_close(void)
   int i, j, at, max;
   ip_t *addr;
   char name[81];
-  struct hostent *host;
 
   printf("<MTR SRC=%s DST=%s", LocalHostname, Hostname);
   printf(" TOS=0x%X", tos);
@@ -228,19 +289,7 @@ void xml_close(void)
   at  = net_min();
   for(; at < max; at++) {
     addr = net_addr(at);
-    
-    if( addrcmp( (void *) addr, (void *) &unspec_addr, af ) == 0 ) {
-      sprintf(name, "???");
-    } else {
-      host = dns ? addr2host( (void *) addr, af ) : NULL;
-
-      if (host != NULL) {
-	 strncpy( name, host->h_name, (sizeof name) - 1 );
-	 name[ (sizeof name) - 1 ] = '\0'; 
-      } else {
-	sprintf(name, "%s", strlongip( addr ) );
-      }
-    }
+    snprint_addr(name, sizeof(name), addr);
 
     printf("    <HUB COUNT=%d HOST=%s>\n", at+1, name);
     for( i=0; i<MAXFLD; i++ ) {
@@ -273,58 +322,34 @@ void csv_open(void)
 {
 }
 
-
-void csv_close(void)
+void csv_close(time_t now)
 {
   int i, j, at, max;
   ip_t *addr;
   char name[81];
-  struct hostent *host;
 
-  /* Caption */
-  printf("<SRC=%s DST=%s", LocalHostname, Hostname);
-  printf(" TOS=0x%X", tos);
-  if(cpacketsize >= 0) {
-    printf(" PSIZE=%d", cpacketsize);
-  } else {
-    printf(" PSIZE=rand(%d-%d)",MINPACKET, -cpacketsize);
-  }
-  if( bitpattern>=0 ) {
-    printf(" BITPATTERN=0x%02X", (unsigned char)(bitpattern));
-  } else {
-    printf(" BITPATTERN=rand(0x00-FF)");
-  }
-  printf(" TESTS=%d>\n", MaxPing);
-
-  /* Header */
-  printf("HUPCOUNT, HOST");
   for( i=0; i<MAXFLD; i++ ) {
       j = fld_index[fld_active[i]];
       if (j < 0) continue; 
-
-      printf( ", %s", data_fields[j].title );
   }
-  printf("\n");
 
   max = net_max();
   at  = net_min();
   for(; at < max; at++) {
     addr = net_addr(at);
-    
-    if( addrcmp( (void *) addr, (void *) &unspec_addr, af ) == 0 ) {
-      sprintf(name, "???");
-    } else {
-      host = dns ? addr2host( (void *) addr, af ) : NULL;
+    snprint_addr(name, sizeof(name), addr);
 
-      if (host != NULL) {
-	 strncpy( name, host->h_name, (sizeof name) - 1 );
-	 name[ (sizeof name) - 1 ] = '\0'; 
-      } else {
-	sprintf(name, "%s", strlongip( addr ) );
-      }
+    int last = net_last(at);
+    if(!ipinfo_no) {
+      char* fmtinfo = fmt_ipinfo(addr);
+      if (fmtinfo != NULL) fmtinfo = trim(fmtinfo);
+      printf("MTR.%s;%lu;%s;%s;%d;%s;%s;%d", MTR_VERSION, now, "OK", Hostname,
+             at+1, name, fmtinfo, last);
+    } else {
+      printf("MTR.%s;%lu;%s;%s;%d;%s;%d", MTR_VERSION, now, "OK", Hostname,
+             at+1, name, last);
     }
 
-    printf("%d, %s", at+1, name);
     for( i=0; i<MAXFLD; i++ ) {
       j = fld_index[fld_active[j]];
       if (j < 0) continue; 

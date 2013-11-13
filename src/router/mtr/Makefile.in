@@ -33,33 +33,38 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 sbin_PROGRAMS = mtr$(EXEEXT)
+@IPINFO_TRUE@am__append_1 = asn.c asn.h
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(top_srcdir)/configure AUTHORS COPYING INSTALL NEWS TODO \
-	config.guess config.sub depcomp install-sh missing \
-	mkinstalldirs
+	$(srcdir)/version.h.in $(top_srcdir)/configure AUTHORS COPYING \
+	NEWS TODO depcomp install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.in
+am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
-mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
+mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = version.h.tmp
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)"
 PROGRAMS = $(sbin_PROGRAMS)
+am__mtr_SOURCES_DIST = mtr.c net.c net.h dns.c dns.h raw.c raw.h \
+	split.c split.h display.c display.h report.c report.h getopt.c \
+	getopt1.c getopt.h select.c select.h mtr-curses.h mtr-gtk.h \
+	asn.c asn.h
+@IPINFO_TRUE@am__objects_1 = asn.$(OBJEXT)
 am_mtr_OBJECTS = mtr.$(OBJEXT) net.$(OBJEXT) dns.$(OBJEXT) \
 	raw.$(OBJEXT) split.$(OBJEXT) display.$(OBJEXT) \
 	report.$(OBJEXT) getopt.$(OBJEXT) getopt1.$(OBJEXT) \
-	select.$(OBJEXT)
-mtr_OBJECTS = $(am_mtr_OBJECTS)
-mtr_LDADD = $(LDADD)
+	select.$(OBJEXT) $(am__objects_1)
+nodist_mtr_OBJECTS =
+mtr_OBJECTS = $(am_mtr_OBJECTS) $(nodist_mtr_OBJECTS)
+am__DEPENDENCIES_1 =
 mtr_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(mtr_LDFLAGS) $(LDFLAGS) -o \
 	$@
-DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
@@ -67,8 +72,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(mtr_SOURCES) $(EXTRA_mtr_SOURCES)
-DIST_SOURCES = $(mtr_SOURCES) $(EXTRA_mtr_SOURCES)
+SOURCES = $(mtr_SOURCES) $(EXTRA_mtr_SOURCES) $(nodist_mtr_SOURCES)
+DIST_SOURCES = $(am__mtr_SOURCES_DIST) $(EXTRA_mtr_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -164,6 +169,8 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GLIB_CFLAGS = @GLIB_CFLAGS@
+GLIB_LIBS = @GLIB_LIBS@
 GREP = @GREP@
 GTK_CFLAGS = @GTK_CFLAGS@
 GTK_LIBS = @GTK_LIBS@
@@ -189,6 +196,9 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
+RESOLV_LIBS = @RESOLV_LIBS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -237,26 +247,23 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = img
 man_MANS = mtr.8
-mtr_SOURCES = mtr.c \
-              net.c net.h \
-              dns.c dns.h \
-              raw.c raw.h \
-              split.c split.h \
-              display.c display.h \
-              report.c report.h \
-              getopt.c getopt1.c getopt.h \
-              select.c select.h \
-              mtr-curses.h \
-              mtr-gtk.h
-
+mtr_SOURCES = mtr.c net.c net.h dns.c dns.h raw.c raw.h split.c \
+	split.h display.c display.h report.c report.h getopt.c \
+	getopt1.c getopt.h select.c select.h mtr-curses.h mtr-gtk.h \
+	$(am__append_1)
+nodist_mtr_SOURCES = version.h
 EXTRA_mtr_SOURCES = curses.c \
                     gtk.c
 
+DEFAULT_INCLUDES = $(GLIB_CFLAGS) -I.
 mtr_DEPENDENCIES = $(GTK_OBJ) $(CURSES_OBJ)
 mtr_LDFLAGS = $(GTK_OBJ) $(CURSES_OBJ)
+mtr_LDADD = $(GLIB_LIBS) $(RESOLV_LIBS)
+CLEANFILES = version.h
+BUILT_SOURCES = version.h
 EXTRA_DIST = SECURITY mtr.8 Makefile Makefile.dist
 DISTCLEANFILES = *~
-all: config.h
+all: $(BUILT_SOURCES) config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
@@ -312,6 +319,8 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
+version.h.tmp: $(top_builddir)/config.status $(srcdir)/version.h.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(sbindir)" || $(MKDIR_P) "$(DESTDIR)$(sbindir)"
@@ -359,6 +368,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/asn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/curses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/display.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dns.Po@am__quote@
@@ -748,14 +758,16 @@ distcleancheck: distclean
 	       $(distcleancheck_listfiles) ; \
 	       exit 1; } >&2
 check-am: all-am
-check: check-recursive
+check: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) check-recursive
 all-am: Makefile $(PROGRAMS) $(MANS) config.h
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
-install: install-recursive
+install: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
 uninstall: uninstall-recursive
@@ -772,6 +784,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -781,6 +794,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-recursive
 
 clean-am: clean-generic clean-sbinPROGRAMS mostlyclean-am
@@ -856,9 +870,9 @@ uninstall-am: uninstall-man uninstall-sbinPROGRAMS
 
 uninstall-man: uninstall-man8
 
-.MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) all \
-	ctags-recursive install-am install-exec-am install-strip \
-	tags-recursive
+.MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) all check \
+	ctags-recursive install install-am install-exec-am \
+	install-strip tags-recursive
 
 .PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
 	all all-am am--refresh check check-am clean clean-generic \
@@ -881,6 +895,15 @@ uninstall-man: uninstall-man8
 
 install-exec-hook: 
 	chmod u+s $(DESTDIR)$(sbindir)/mtr
+
+version.h: version.h.tmp Makefile $(mtr_SOURCES)
+	@cat version.h.tmp > $@; \
+	if [ -d .git ] && [ -n "$$(which git)" ]; then \
+	  xver="+git:$$(git rev-list -n1 --abbrev=8 --abbrev-commit HEAD)"; \
+	  sed \
+	    -e "/#define *MTR_VERSION */{s/\"\([^\"]*\)\"/\"\1$$xver\"/;}" \
+	    version.h.tmp > $@; \
+	fi;
 distclean-local:
 	(sleep 3; cp Makefile.dist Makefile) &
 	rm -f *.orig
