@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* Philippe tells me MacOSX needs this before scoket.h... -- REW */
+/* MacOSX may need this before scoket.h...*/
 #if defined(HAVE_SYS_TYPES_H)
 #include <sys/types.h>
 #else
@@ -63,6 +63,10 @@
 #include "display.h"
 #include "net.h"
 #include "dns.h"
+#ifndef NO_IPINFO
+#include "asn.h"
+#endif
+#include "version.h"
 #endif
 
 #include <time.h>
@@ -77,12 +81,14 @@ extern float WaitTime;
 extern int af;
 extern int mtrtype;
 
+static int __unused_int;
+
 void pwcenter(char *str) 
 {
-  int maxx, maxy;
+  int maxx;
   int cx;
 
-  getmaxyx(stdscr, maxy, maxx);
+  getmaxyx(stdscr, __unused_int, maxx);
   cx = (signed)(maxx - strlen(str)) / 2;
   while(cx-- > 0)
     printw(" ");
@@ -115,12 +121,17 @@ int mtr_curses_keyaction(void)
     return ActionMPLS;
   if (tolower(c) == 'n')
     return ActionDNS;
+#ifndef NO_IPINFO
+  if (tolower(c) == 'y')
+    return ActionII;
+  if (tolower(c) == 'z')
+    return ActionAS;
+#endif
   if (c == '+')
     return ActionScrollDown;
   if (c == '-')
     return ActionScrollUp;
 
-  /* more stuffs added by Min */
   if (tolower(c) == 's') {
     mvprintw(2, 0, "Change Packet Size: %d\n", cpacketsize );
     mvprintw(3, 0, "Size Range: %d-%d, < 0:random.\n", MINPACKET, MAXPACKET);
@@ -215,7 +226,7 @@ int mtr_curses_keyaction(void)
 
     return ActionNone;
   }
-  /* fields to display & their ordering -Min */
+  /* fields to display & their ordering */
   if (tolower(c) == 'o') {
     mvprintw(2, 0, "Fields: %s\n\n", fld_active );
 
@@ -252,6 +263,7 @@ int mtr_curses_keyaction(void)
   if (tolower(c) == 'u') {
     switch ( mtrtype ) {
     case IPPROTO_ICMP:
+    case IPPROTO_TCP:
       mtrtype = IPPROTO_UDP;
       break;
     case IPPROTO_UDP:
@@ -260,13 +272,28 @@ int mtr_curses_keyaction(void)
     }
     return ActionNone;
   }
+  if (tolower(c) == 't') {
+    switch ( mtrtype ) {
+    case IPPROTO_ICMP:
+    case IPPROTO_UDP:
+      mtrtype = IPPROTO_TCP;
+      break;
+    case IPPROTO_TCP:
+      mtrtype = IPPROTO_ICMP;
+      break;
+    }
+    return ActionNone;
+  }
   /* reserve to display help message -Min */
   if (tolower(c) == '?'|| tolower(c) == 'h') {
+    int pressanykey_row = 20;
     mvprintw(2, 0, "Command:\n" );
     printw("  ?|h     help\n" );
+    printw("  p       pause (SPACE to resume)\n" );
     printw("  d       switching display mode\n" );
     printw("  e       toggle MPLS information on/off\n" );
     printw("  n       toggle DNS on/off\n" );
+    printw("  r       reset all counters\n" );
     printw("  o str   set the columns to display, default str='LRS N BAWV'\n" );
     printw("  j       toggle latency(LS NABWV)/jitter(DR AGJMXI) stats\n" );
     printw("  c <n>   report cycle n, default n=infinite\n" );
@@ -276,8 +303,14 @@ int mtr_curses_keyaction(void)
     printw("  s <n>   set the packet size to n or random(n<0)\n" );
     printw("  b <c>   set ping bit pattern to c(0..255) or random(c<0)\n" );
     printw("  Q <t>   set ping packet's TOS to t\n" );
-    printw("  u       switch between ICMP ECHO and UDP datagrams\n\n" );
-    mvprintw(16, 0, " press any key to go back..." );
+    printw("  u       switch between ICMP ECHO and UDP datagrams\n" );
+#ifndef NO_IPINFO
+    printw("  y       switching IP info\n");
+    printw("  z       toggle ASN info on/off\n");
+    pressanykey_row += 2;
+#endif
+    printw("\n");
+    mvprintw(pressanykey_row, 0, " press any key to go back..." );
 
     getch();                  /* get any key */
     return ActionNone;
@@ -293,7 +326,7 @@ void mtr_curses_hosts(int startstat)
   int at;
   struct mplslen *mpls, *mplss;
   ip_t *addr, *addrs;
-  int y, x;
+  int y;
   char *name;
 
   int i, j, k;
@@ -311,18 +344,22 @@ void mtr_curses_hosts(int startstat)
       name = dns_lookup(addr);
       if (! net_up(at))
 	attron(A_BOLD);
+#ifndef NO_IPINFO
+      if (is_printii())
+        printw(fmt_ipinfo(addr));
+#endif
       if(name != NULL) {
-	printw("%s", name);
+        if (show_ips) printw("%s (%s)", name, strlongip(addr));
+        else printw("%s", name);
       } else {
 	printw("%s", strlongip( addr ) );
       }
       attroff(A_BOLD);
 
-      getyx(stdscr, y, x);
+      getyx(stdscr, y, __unused_int);
       move(y, startstat);
 
       /* net_xxx returns times in usecs. Just display millisecs */
-      /* changedByMin */
       hd_len = 0;
       for( i=0; i<MAXFLD; i++ ) {
 	/* Ignore options that don't exist */
@@ -354,7 +391,7 @@ void mtr_curses_hosts(int startstat)
         }
       }
 
-      /* Multi path by Min */
+      /* Multi path */
       for (i=0; i < MAXPATH; i++ ) {
         addrs = net_addrs(at, i);
         mplss = net_mplss(at, i);
@@ -363,10 +400,16 @@ void mtr_curses_hosts(int startstat)
 
         name = dns_lookup(addrs);
         if (! net_up(at)) attron(A_BOLD);
+        printw("\n    ");
+#ifndef NO_IPINFO
+        if (is_printii())
+          printw(fmt_ipinfo(addrs));
+#endif
         if (name != NULL) {
-	  printw("\n    %s", name);
+	  if (show_ips) printw("%s (%s)", name, strlongip(addrs));
+	  else printw("%s", name);
         } else {
-	  printw("\n    %s", strlongip( addrs ) );
+	  printw("%s", strlongip( addrs ) );
         }
         for (k=0; k < mplss->labels && enablempls; k++) {
           printw("\n    [MPLS: Lbl %lu Exp %u S %u TTL %u]", mplss->label[k], mplss->exp[k], mplss->s[k], mplss->ttl[k]);
@@ -383,9 +426,9 @@ void mtr_curses_hosts(int startstat)
   move(2, 0);
 }
 
-
-static double factors[] = { 0.02, 0.05, 0.08, 0.15, 0.33, 0.50, 0.80, 1.00 };
-static int scale[8];
+#define NUM_FACTORS 8
+static double factors[NUM_FACTORS];
+static int scale[NUM_FACTORS];
 static int low_ms, high_ms;
 
 void mtr_gen_scale(void) 
@@ -396,7 +439,7 @@ void mtr_gen_scale(void)
 	low_ms = 1000000;
 	high_ms = -1;
 
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < NUM_FACTORS; i++) {
 		scale[i] = 0;
 	}
 	max = net_max();
@@ -413,19 +456,45 @@ void mtr_gen_scale(void)
 		}
 	}
 	range = high_ms - low_ms;
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < NUM_FACTORS; i++) {
 		scale[i] = low_ms + ((double)range * factors[i]);
 	}
 }
 
 
-static const char* block_map = ".123abc>";
+static char block_map[NUM_FACTORS];
+
+void mtr_curses_init() {
+	int i;
+	int block_split;
+
+	/* Initialize factors to a log scale. */
+	for (i = 0; i < NUM_FACTORS; i++) {
+		factors[i] = ((double)1 / NUM_FACTORS) * (i + 1);
+		factors[i] *= factors[i]; /* Squared. */
+	}
+
+	/* Initialize block_map. */
+	block_split = (NUM_FACTORS - 2) / 2;
+	if (block_split > 9) {
+		block_split = 9;
+	}
+	for (i = 1; i <= block_split; i++) {
+		block_map[i] = '0' + i;
+	}
+	for (i = block_split+1; i < NUM_FACTORS-1; i++) {
+		block_map[i] = 'a' + i - block_split - 1;
+	}
+	block_map[0] = '.';
+	block_map[NUM_FACTORS-1] = '>';
+}
+
 
 void mtr_print_scaled(int ms) 
 {
 	int i;
 
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < NUM_FACTORS; i++) {
 		if (ms <= scale[i]) {
 			printw("%c", block_map[i]);
 			return;
@@ -451,7 +520,7 @@ void mtr_fill_graph(int at, int cols)
 		} else {
 			if (display_mode == 1) {
 				if (saved[i] > scale[6]) {
-					printw("%c", block_map[7]);
+					printw("%c", block_map[NUM_FACTORS-1]);
 				} else {
 					printw(".");
 				}
@@ -465,7 +534,7 @@ void mtr_fill_graph(int at, int cols)
 
 void mtr_curses_graph(int startstat, int cols) 
 {
-	int max, at, y, x;
+	int max, at, y;
 	ip_t * addr;
 	char* name;
 
@@ -482,15 +551,18 @@ void mtr_curses_graph(int startstat, int cols)
 
 		if (! net_up(at))
 			attron(A_BOLD);
-		name = dns_lookup(addr);
-		if (name) {
-			printw("%s", name);
-		} else {
-			printw("%s", strlongip( addr ) );
-		}
+		if (addrcmp((void *) addr, (void *) &unspec_addr, af)) {
+#ifndef NO_IPINFO
+			if (is_printii())
+				printw(fmt_ipinfo(addr));
+#endif
+			name = dns_lookup(addr);
+			printw("%s", name?name:strlongip(addr));
+		} else
+			printw("???");
 		attroff(A_BOLD);
 
-		getyx(stdscr, y, x);
+		getyx(stdscr, y, __unused_int);
 		move(y, startstat);
 
 		printw(" ");
@@ -502,7 +574,7 @@ void mtr_curses_graph(int startstat, int cols)
 
 void mtr_curses_redraw(void)
 {
-  int maxx, maxy;
+  int maxx;
   int startstat;
   int rowstat;
   time_t t;
@@ -514,13 +586,13 @@ void mtr_curses_redraw(void)
   
 
   erase();
-  getmaxyx(stdscr, maxy, maxx);
+  getmaxyx(stdscr, __unused_int, maxx);
 
   rowstat = 5;
 
   move(0, 0);
   attron(A_BOLD);
-  pwcenter("My traceroute  [v" VERSION "]");
+  pwcenter("My traceroute  [v" MTR_VERSION "]");
   attroff(A_BOLD);
 
   mvprintw(1, 0, "%s (%s)", LocalHostname, net_localaddr());
@@ -550,7 +622,6 @@ void mtr_curses_redraw(void)
   attron(A_BOLD); printw("q"); attroff(A_BOLD); printw("uit\n");
   
   if (display_mode == 0) {
-    /* changedByMin */
     for (i=0; i < MAXFLD; i++ ) {
 	j = fld_index[fld_active[i]];
 	if (j < 0) continue;
@@ -569,10 +640,14 @@ void mtr_curses_redraw(void)
     mtr_curses_hosts(maxx-hd_len-1);
 
   } else {
-    /* David Sward, Jan 1999 */
     char msg[80];
-    int max_cols = maxx<=SAVED_PINGS+30 ? maxx-30 : SAVED_PINGS;
-    startstat = 28;
+    int padding = 30;
+#ifndef NO_IPINFO
+    if (is_printii())
+      padding += get_iiwidth();
+#endif
+    int max_cols = maxx<=SAVED_PINGS+padding ? maxx-padding : SAVED_PINGS;
+    startstat = padding - 2;
 
     sprintf(msg, " Last %3d pings", max_cols);
     mvprintw(rowstat - 1, startstat, msg);
@@ -588,7 +663,7 @@ void mtr_curses_redraw(void)
     printw("Scale:");
     attroff(A_BOLD);
     
-    for (i = 0; i < 7; i++) {
+    for (i = 0; i < NUM_FACTORS-1; i++) {
       printw("  %c:%d ms", block_map[i], scale[i]/1000);
     }
   }
@@ -603,6 +678,7 @@ void mtr_curses_open(void)
   raw();
   noecho(); 
 
+  mtr_curses_init();
   mtr_curses_redraw();
 }
 

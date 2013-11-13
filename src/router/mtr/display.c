@@ -29,6 +29,9 @@
 #include "select.h"
 #include "raw.h"
 #include "dns.h"
+#ifndef NO_IPINFO
+#include <asn.h>
+#endif
 
 extern int DisplayMode;
 
@@ -94,8 +97,12 @@ void display_open(void)
     break;
   case DisplayCurses:
     mtr_curses_open();  
+#ifndef NO_IPINFO
+    if (ipinfo_no >= 0)
+        asn_open();
+#endif
     break;
-  case DisplaySplit:            /* BL */
+  case DisplaySplit:
     split_open();
     break;
   case DisplayGTK:
@@ -105,7 +112,7 @@ void display_open(void)
 }
 
 
-void display_close(void)
+void display_close(time_t now)
 {
   switch(DisplayMode) {
   case DisplayReport:
@@ -118,12 +125,16 @@ void display_close(void)
     xml_close();
     break;
   case DisplayCSV:
-    csv_close();
+    csv_close(now);
     break;
   case DisplayCurses:
+#ifndef NO_IPINFO
+    if (ipinfo_no >= 0)
+        asn_close();
+#endif
     mtr_curses_close();
     break;
-  case DisplaySplit:            /* BL */
+  case DisplaySplit:
     split_close();
     break;
   case DisplayGTK:
@@ -141,7 +152,7 @@ void display_redraw(void)
     mtr_curses_redraw();
     break;
 
-  case DisplaySplit:            /* BL */
+  case DisplaySplit:
     split_redraw();
     break;
 
@@ -158,7 +169,7 @@ int display_keyaction(void)
   case DisplayCurses:
     return mtr_curses_keyaction();
 
-  case DisplaySplit:		/* BL */
+  case DisplaySplit:
     return split_keyaction();
 
   case DisplayGTK:
@@ -175,7 +186,7 @@ void display_rawping(int host, int msec)
   case DisplayTXT:
   case DisplayXML:
   case DisplayCSV:
-  case DisplaySplit:            /* BL */
+  case DisplaySplit:
   case DisplayCurses:
   case DisplayGTK:
     break;
@@ -193,7 +204,7 @@ void display_rawhost(int host, ip_t *ip_addr)
   case DisplayTXT:
   case DisplayXML:
   case DisplayCSV:
-  case DisplaySplit:            /* BL */
+  case DisplaySplit:
   case DisplayCurses:
   case DisplayGTK:
     break;
@@ -211,7 +222,7 @@ void display_loop(void)
   case DisplayTXT:
   case DisplayXML:
   case DisplayCSV:
-  case DisplaySplit:            /* BL */
+  case DisplaySplit:
   case DisplayCurses:
   case DisplayRaw:
     select_loop();
@@ -233,7 +244,7 @@ void display_clear(void)
   case DisplayTXT:
   case DisplayXML:
   case DisplayCSV:
-  case DisplaySplit:            /* BL */
+  case DisplaySplit:
   case DisplayRaw:
     break;
 
