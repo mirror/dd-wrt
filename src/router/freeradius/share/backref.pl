@@ -2,7 +2,7 @@
 #
 #  Cross-reference RFC attributes.
 #
-#  $Id$
+#  $Id: 0630022ecff31ad3bd0060b6f5297a478fcf3f87 $
 #
 
 $begin_vendor = 0;

@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id$
+#  $Id: 05561cf37fe71142adc97410daba3ae08a1cb68c $
 
 #  Do server side ip pool management. Should be added in
 #  post-auth and accounting sections.

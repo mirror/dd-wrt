@@ -1,7 +1,7 @@
 /*
  * rlm_caching.c
  *
- * Version:  $Id$
+ * Version:  $Id: 02098153865de6c67c88dd6e7594a98adfd7ef31 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 02098153865de6c67c88dd6e7594a98adfd7ef31 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

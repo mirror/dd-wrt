@@ -1,7 +1,7 @@
 # -*- makefile -*-
 # Make.inc.in
 #
-# Version:	$Id$
+# Version:	$Id: 5464b2e0e75bdfe1c8b1acfb0491b3e82c74e557 $
 #
 
 # Location of files.
@@ -77,7 +77,10 @@ SQL_ODBC_INCLUDE = @ODBC_INCLUDE@
 
 RADIUSD_MAJOR_VERSION	= @RADIUSD_MAJOR_VERSION@
 RADIUSD_MINOR_VERSION	= @RADIUSD_MINOR_VERSION@
+RADIUSD_INCRM_VERSION	= @RADIUSD_INCRM_VERSION@
 RADIUSD_VERSION		= @RADIUSD_VERSION@
+RADIUSD_VERSION_STRING  = @RADIUSD_VERSION_STRING@
+RADIUSD_VERSION_COMMIT  = @RADIUSD_VERSION_COMMIT@
 
 MODULES			= @MODULES@
 HOSTINFO		= @HOSTINFO@
@@ -107,4 +110,8 @@ endif
 ifneq ($(SCAN),)
 CC		:= $(SCAN)/scan-build gcc -DFR_SCAN_BUILD
 LIBTOOL		:= 
+endif
+
+ifeq "$(LIBTOOL)" ""
+$(error Building FreeRADIUS requires libtool)
 endif

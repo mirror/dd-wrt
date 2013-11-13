@@ -1,7 +1,7 @@
 /*
  * rlm_replicate.c
  *
- * Version:	$Id$
+ * Version:	$Id: 893a6389752c96eac279db89d954232aed444e55 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,10 +22,11 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 893a6389752c96eac279db89d954232aed444e55 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
+#include <freeradius-devel/rad_assert.h>
 
 
 static void cleanup(RADIUS_PACKET *packet)
@@ -49,6 +50,7 @@ static int replicate_packet(void *instance, REQUEST *request)
 
 	instance = instance;	/* -Wunused */
 	last = request->config_items;
+	rad_assert(request->proxy == NULL);
 
 	/*
 	 *	Send as many packets as necessary to different
@@ -62,7 +64,8 @@ static int replicate_packet(void *instance, REQUEST *request)
 
 		realm = realm_find2(vp->vp_strvalue);
 		if (!realm) {
-			RDEBUG2("ERROR: Cannot Replicate to unknown realm %s", realm);
+			RDEBUG2("ERROR: Cannot Replicate to unknown realm %s",
+				vp->vp_strvalue);
 			continue;
 		}
 		
@@ -71,10 +74,12 @@ static int replicate_packet(void *instance, REQUEST *request)
 		 */
 		switch (request->packet->code) {
 		default:
+			pool = NULL;
 			RDEBUG2("ERROR: Cannot replicate unknown packet code %d",
 				request->packet->code);
 			cleanup(packet);
-			return RLM_MODULE_FAIL;
+			rcode = RLM_MODULE_FAIL;
+			break;
 		
 		case PW_AUTHENTICATION_REQUEST:
 			pool = realm->auth_pool;
@@ -109,7 +114,10 @@ static int replicate_packet(void *instance, REQUEST *request)
 		
 		if (!packet) {
 			packet = rad_alloc(1);
-			if (!packet) return RLM_MODULE_FAIL;
+			if (!packet) {
+				rcode = RLM_MODULE_FAIL;
+				break;
+			}
 			packet->sockfd = -1;
 			packet->code = request->packet->code;
 			packet->id = fr_rand() & 0xff;
@@ -118,14 +126,16 @@ static int replicate_packet(void *instance, REQUEST *request)
 			if (packet->sockfd < 0) {
 				RDEBUG("ERROR: Failed opening socket: %s", fr_strerror());
 				cleanup(packet);
-				return RLM_MODULE_FAIL;
+				rcode = RLM_MODULE_FAIL;
+				break;
 			}
 
 			packet->vps = paircopy(request->packet->vps);
 			if (!packet->vps) {
 				RDEBUG("ERROR: Out of memory!");
 				cleanup(packet);
-				return RLM_MODULE_FAIL;
+				rcode = RLM_MODULE_FAIL;
+				break;
 			}
 
 			/*
@@ -171,7 +181,8 @@ static int replicate_packet(void *instance, REQUEST *request)
 			RDEBUG("ERROR: Failed replicating packet: %s",
 			       fr_strerror());
 			cleanup(packet);
-			return RLM_MODULE_FAIL;
+			rcode = RLM_MODULE_FAIL;
+			break;
 		}
 
 		/*
@@ -181,6 +192,8 @@ static int replicate_packet(void *instance, REQUEST *request)
 	}
 
 	cleanup(packet);
+	rad_free(&request->proxy);
+
 	return rcode;
 }
 

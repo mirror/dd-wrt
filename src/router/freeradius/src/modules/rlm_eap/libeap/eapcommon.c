@@ -3,7 +3,7 @@
  *
  * code common to clients and to servers.
  *
- * Version:     $Id$
+ * Version:     $Id: b07487e7c2705ada56c99097bf43cb1d8d50ada5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: b07487e7c2705ada56c99097bf43cb1d8d50ada5 $")
 
 #include <freeradius-devel/autoconf.h>
 #include <freeradius-devel/missing.h>

@@ -6,7 +6,7 @@ VALUE	Service-Type			Sip-session		12
 #
 #  http://www.cs.columbia.edu/IRT/cinema/release/radius_notes.html
 #
-#	$Id$
+#	$Id: dcf421e0927a9e9713a145c3011435aa661fccea $
 #
 VENDOR		Columbia-University		11862
 

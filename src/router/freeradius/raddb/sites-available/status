@@ -23,7 +23,7 @@
 #	Similarly, a socket of type "status" will not process
 #	authentication or accounting packets.  This is for security.
 #
-#	$Id$
+#	$Id: 4e4f4179911adf96ca375a860d65903b86becade $
 #
 ######################################################################
 

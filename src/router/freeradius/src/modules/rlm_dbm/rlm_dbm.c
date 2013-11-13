@@ -1,7 +1,7 @@
 /*
  * rlm_dbm.c authorize:    authorize using ndbm database
  *
- * Version:     $Id$
+ * Version:     $Id: ad3ab2ef0bd1ae4182d696a5a2fe3970bfe499c6 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: ad3ab2ef0bd1ae4182d696a5a2fe3970bfe499c6 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

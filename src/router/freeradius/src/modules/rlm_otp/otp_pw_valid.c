@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 4917a86d6033d8cbf5d8bebda6caf2427597943c $
  *
  * Passcode verification function (otpd client) for rlm_otp.
  *
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 4917a86d6033d8cbf5d8bebda6caf2427597943c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

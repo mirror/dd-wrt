@@ -1,7 +1,7 @@
 /*
  * mem.c  Memory allocation, deallocation stuff.
  *
- * Version:     $Id$
+ * Version:     $Id: 5bfb8e61888a30cbd57e8e239c4eb4a4e6a4e7fd $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 5bfb8e61888a30cbd57e8e239c4eb4a4e6a4e7fd $")
 
 #include <stdio.h>
 #include "rlm_eap.h"
@@ -243,16 +243,26 @@ done:
 		      state[4], state[5],
 		      state[6], state[7]);
 
-		DEBUG("WARNING: !! Please read http://wiki.freeradius.org/Certificate_Compatibility");
+		DEBUG("WARNING: !! Please read http://wiki.freeradius.org/guide/Certificate_Compatibility");
 		DEBUG("WARNING: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 	}
 }
 
 void eaptype_free(EAP_TYPES *i)
 {
+	cf_section_parse_free(i->cs, i->type_data);
+
 	if (i->type->detach) (i->type->detach)(i->type_data);
 	i->type_data = NULL;
-	if (i->handle) lt_dlclose(i->handle);
+#ifndef NDEBUG
+	/*
+	 *	Don't dlclose() modules if we're doing memory
+	 *	debugging.  This removes the symbols needed by
+	 *	valgrind.
+	 */
+	if (!mainconfig.debug_memory)
+#endif
+	  if (i->handle) lt_dlclose(i->handle);
 	free(i);
 }
 

@@ -5,12 +5,12 @@
  * missing.h	Replacements for functions that are or can be
  *		missing on some platforms.
  *
- * Version:	$Id$
+ * Version:	$Id: 679d7f2b8bef503dede277b82fd4d891cb50c694 $
  *
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(missing_h, "$Id$")
+RCSIDH(missing_h, "$Id: 679d7f2b8bef503dede277b82fd4d891cb50c694 $")
 
 #include <freeradius-devel/autoconf.h>
 

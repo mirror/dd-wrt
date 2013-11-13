@@ -7,7 +7,7 @@
 #  You'll have to edit the directories to the correct location
 #  for your local system.
 #
-#	$Id$
+#	$Id: e791dffc2687bdb94bfb0516fff8f4f5b4ec3670 $
 #
 
 LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/ssl/lib:/usr/local/radius/lib

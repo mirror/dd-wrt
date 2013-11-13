@@ -1,14 +1,14 @@
 /*
  *  md4c.c	MD4 message-digest algorithm
  *
- *  Version:	$Id$
+ *  Version:	$Id: f9362119a5a2143f333025ede8544702aa9a8adf $
  *
  *  This file is licensed under the LGPL, but is largely derived
  *  from public domain source code.
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: f9362119a5a2143f333025ede8544702aa9a8adf $")
 
 #include <freeradius-devel/autoconf.h>
 

@@ -20,7 +20,7 @@
 #
 #    Written by Miquel van Smoorenburg <miquels@cistron-office.nl>
 #
-#    $Id$
+#    $Id: dbc0f4f5c52fc88d0c5dd8379571892be3c765ed $
 #
 
 use Getopt::Long;

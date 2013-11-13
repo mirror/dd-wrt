@@ -1,7 +1,7 @@
 /*
  * rlm_radutmp.c
  *
- * Version:	$Id$
+ * Version:	$Id: 27739b03c14d5ef42a5392c0543e8f6b407df319 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 27739b03c14d5ef42a5392c0543e8f6b407df319 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/radutmp.h>
@@ -731,7 +731,7 @@ static int radutmp_checksimul(void *instance, REQUEST *request)
 module_t rlm_radutmp = {
 	RLM_MODULE_INIT,
 	"radutmp",
-	RLM_TYPE_CHECK_CONFIG_SAFE | RLM_TYPE_HUP_SAFE,   	/* type */
+	RLM_TYPE_THREAD_UNSAFE | RLM_TYPE_CHECK_CONFIG_SAFE | RLM_TYPE_HUP_SAFE,   	/* type */
 	radutmp_instantiate,          /* instantiation */
 	radutmp_detach,               /* detach */
 	{

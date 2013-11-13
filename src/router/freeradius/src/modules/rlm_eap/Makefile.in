@@ -1,5 +1,5 @@
 #
-# $Id$
+# $Id: c0f132915ec7c86c4b25c6cc9513ab8bf48c862e $
 #
 
 TARGET      = @targetname@
@@ -35,7 +35,7 @@ $(LT_OBJS): $(HEADERS)
 include ../rules.mak
 
 radeapclient$(EXEEXT): radeapclient.lo $(CLIENTLIBS)
-	$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(RLM_LDFLAGS) -o radeapclient$(EXEEXT) radeapclient.lo $(LIBRADIUS) $(CLIENTLIBS) $(LIBS) $(OPENSSL_LIBS)
+	$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(RLM_LDFLAGS) -o radeapclient$(EXEEXT) radeapclient.lo $(LIBRADIUS) $(CLIENTLIBS) $(LIBS)
 
 radeapclient.lo: radeapclient.c $(HEADERS)
 	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) $(RLM_CFLAGS) -c radeapclient.c

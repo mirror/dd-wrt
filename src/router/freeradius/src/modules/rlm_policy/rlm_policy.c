@@ -1,7 +1,7 @@
 /*
  * rlm_policy.c		Implements a policy language
  *
- * Version:	$Id$
+ * Version:	$Id: 3c848d6f026d045e6a37db852d0ebcbf616e6df1 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 3c848d6f026d045e6a37db852d0ebcbf616e6df1 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

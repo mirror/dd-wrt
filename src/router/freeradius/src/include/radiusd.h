@@ -4,7 +4,7 @@
  * radiusd.h	Structures, prototypes and global variables
  *		for the FreeRADIUS server.
  *
- * Version:	$Id$
+ * Version:	$Id: 904920dc235be8c07ce5ad3e34b656eebbc1ea75 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(radiusd_h, "$Id$")
+RCSIDH(radiusd_h, "$Id: 904920dc235be8c07ce5ad3e34b656eebbc1ea75 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -212,7 +212,7 @@ struct auth_req {
 	request_data_t		*data;
 	RADCLIENT		*client;
 #ifdef HAVE_PTHREAD_H
-	pthread_t    		child_pid;
+	int			thread_id;
 #endif
 	time_t			timestamp;
 	unsigned int	       	number; /* internal server number */
@@ -380,6 +380,7 @@ typedef struct main_config_t {
 #ifdef WITH_POST_PROXY_AUTHORIZE
 	int		post_proxy_authorize;
 #endif
+	int		debug_memory;
 } MAIN_CONFIG_T;
 
 #define DEBUG	if(debug_flag)log_debug
@@ -406,6 +407,7 @@ typedef struct main_config_t {
 #define RETRY_DELAY             5
 #define RETRY_COUNT             3
 #define DEAD_TIME               120
+#define EXEC_TIMEOUT	       10
 
 #define L_DBG			1
 #define L_AUTH			2
@@ -414,18 +416,6 @@ typedef struct main_config_t {
 #define L_PROXY			5
 #define L_ACCT			6
 #define L_CONS			128
-
-#ifndef FALSE
-#define FALSE 0
-#endif
-#ifndef TRUE
-/*
- *	This definition of true as NOT false is definitive. :) Making
- *	it '1' can cause problems on stupid platforms.  See articles
- *	on C portability for more information.
- */
-#define TRUE (!FALSE)
-#endif
 
 /* for paircompare_register */
 typedef int (*RAD_COMPARE_FUNC)(void *instance, REQUEST *,VALUE_PAIR *, VALUE_PAIR *, VALUE_PAIR *, VALUE_PAIR **);
@@ -509,7 +499,11 @@ void		*request_data_get(REQUEST *request,
 void		*request_data_reference(REQUEST *request,
 				  void *unique_ptr, int unique_int);
 int		rad_copy_string(char *dst, const char *src);
+int		rad_copy_string_bare(char *dst, const char *src);
 int		rad_copy_variable(char *dst, const char *from);
+int		rad_expand_xlat(REQUEST *request, const char *cmd,
+				int max_argc, const char *argv[], int can_fail,
+				size_t argv_buflen, char *argv_buf);
 
 /* client.c */
 RADCLIENT_LIST	*clients_init(void);
@@ -536,6 +530,8 @@ int		pairlist_read(const char *file, PAIR_LIST **list, int complain);
 void		pairlist_free(PAIR_LIST **);
 
 /* version.c */
+int 		ssl_check_version(void);
+const char	*ssl_version(void);
 void		version(void);
 
 /* log.c */
@@ -561,13 +557,15 @@ void radlog_request(int lvl, int priority, REQUEST *request, const char *msg, ..
 char	*auth_name(char *buf, size_t buflen, REQUEST *request, int do_cli);
 int		rad_authenticate (REQUEST *);
 int		rad_postauth(REQUEST *);
+int		rad_virtual_server(REQUEST *);
 
 /* exec.c */
 int		radius_exec_program(const char *,  REQUEST *, int,
 				    char *user_msg, int msg_len,
+				    int timeout,
 				    VALUE_PAIR *input_pairs,
 				    VALUE_PAIR **output_pairs,
-					int shell_escape);
+				    int shell_escape);
 
 /* timestr.c */
 int		timestr_match(char *, time_t);
@@ -605,6 +603,7 @@ void		xlat_free(void);
 
 /* threads.c */
 extern		int thread_pool_init(CONF_SECTION *cs, int *spawn_flag);
+extern		void thread_pool_stop(void);
 extern		int thread_pool_addrequest(REQUEST *, RAD_REQUEST_FUNP);
 extern		pid_t rad_fork(void);
 extern		pid_t rad_waitpid(pid_t pid, int *status);
@@ -625,6 +624,7 @@ extern struct main_config_t mainconfig;
 int read_mainconfig(int reload);
 int free_mainconfig(void);
 void hup_mainconfig(void);
+void hup_logfile(void);
 void fr_suid_down(void);
 void fr_suid_up(void);
 void fr_suid_down_permanent(void);

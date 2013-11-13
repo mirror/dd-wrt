@@ -4,7 +4,7 @@
 /*
  * event.h	Simple event queue
  *
- * Version:	$Id$
+ * Version:	$Id: a62dc0144f54c46a65637969450765285f4ec3b1 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(event_h, "$Id$")
+RCSIDH(event_h, "$Id: a62dc0144f54c46a65637969450765285f4ec3b1 $")
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,7 +1,7 @@
 /*
  * rlm_eap_ttls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id$
+ * Version:     $Id: fc31fffab2c031662d89c7f1447a0a1769a45ce2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: fc31fffab2c031662d89c7f1447a0a1769a45ce2 $")
 
 #include "eap_ttls.h"
 
@@ -201,8 +201,11 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, SSL *ssl,
 			goto next_attr;
 		}
 
-		if (size > 253) {
-			RDEBUG2("WARNING: diameter2vp skipping long attribute %u, attr");
+		/*
+		 * EAP-Message AVPs can be larger than 253 octets.
+		 */
+		if ((size > 253) && !((VENDOR(attr) == 0) && (attr == PW_EAP_MESSAGE))) {
+			RDEBUG2("WARNING: diameter2vp skipping long attribute %u", attr);
 			goto next_attr;
 		}
 
@@ -231,6 +234,7 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, SSL *ssl,
 		raw:
 				vp = paircreate_raw(vp->attribute,
 						    PW_TYPE_OCTETS, vp);
+				if (size >= 253) size = 253;
 				vp->length = size;
 				memcpy(vp->vp_octets, data, vp->length);
 				break;
@@ -319,6 +323,7 @@ static VALUE_PAIR *diameter2vp(REQUEST *request, SSL *ssl,
 			/* FALL-THROUGH */
 
 		default:
+			if (size >= 253) size = 253;
 			vp->length = size;
 			memcpy(vp->vp_octets, data, vp->length);
 			break;
@@ -1149,7 +1154,7 @@ int eapttls_process(EAP_HANDLER *handler, tls_session_t *tls_session)
 	 *	Call authentication recursively, which will
 	 *	do PAP, CHAP, MS-CHAP, etc.
 	 */
-	rad_authenticate(fake);
+	rad_virtual_server(fake);
 
 	/*
 	 *	Note that we don't do *anything* with the reply

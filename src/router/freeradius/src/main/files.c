@@ -1,7 +1,7 @@
 /*
  * files.c	Read config files into memory.
  *
- * Version:     $Id$
+ * Version:     $Id: e6f75b5233d161ee4ad9cf7ae880e7444c417e3c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: e6f75b5233d161ee4ad9cf7ae880e7444c417e3c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -157,7 +157,7 @@ parse_again:
 						*p = FR_DIR_SEP;
 					}
 					getword(&ptr, p + 1,
-						sizeof(newfile) - 1 - (p - buffer));
+						sizeof(newfile) - 1 - (p - newfile));
 				} else {
 					getword(&ptr, newfile,
 						sizeof(newfile));

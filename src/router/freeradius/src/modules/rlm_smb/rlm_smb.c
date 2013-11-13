@@ -1,7 +1,7 @@
 /*
  * rlm_smb.c
  *
- * Version:	$Id$
+ * Version:	$Id: fdee2e4002c98f5a04519957638182d9249ce7f8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: fdee2e4002c98f5a04519957638182d9249ce7f8 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

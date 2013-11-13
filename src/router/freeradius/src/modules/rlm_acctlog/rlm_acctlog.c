@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 764ef87cb8d5588d928277d211706e00f100cf66 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

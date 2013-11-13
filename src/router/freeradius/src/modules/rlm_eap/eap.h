@@ -1,7 +1,7 @@
 /*
  * eap.h    Header file containing the interfaces for all EAP types.
  *
- * Version:     $Id$
+ * Version:     $Id: 6d845ad77456fb31afe0fb33434422df7cb52f88 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #define _EAP_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(eap_h, "$Id$")
+RCSIDH(eap_h, "$Id: 6d845ad77456fb31afe0fb33434422df7cb52f88 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

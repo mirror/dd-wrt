@@ -2,7 +2,7 @@
 #define _EAP_MD5_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(eap_md5_h, "$Id$")
+RCSIDH(eap_md5_h, "$Id: a7936eb3b9b2ba4668fd0ef342dfa126edbfbdf2 $")
 
 #include "eap.h"
 

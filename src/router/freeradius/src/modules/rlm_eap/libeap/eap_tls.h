@@ -1,7 +1,7 @@
 /*
  * eap_tls.h
  *
- * Version:     $Id$
+ * Version:     $Id: a32f232312a8fdc8282279a568e9c096043b767b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #define _EAP_TLS_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(eap_tls_h, "$Id$")
+RCSIDH(eap_tls_h, "$Id: a32f232312a8fdc8282279a568e9c096043b767b $")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -194,6 +194,7 @@ int 		eaptls_request(EAP_DS *eap_ds, tls_session_t *ssn);
 void            eaptls_gen_mppe_keys(VALUE_PAIR **reply_vps, SSL *s,
 				     const char *prf_label);
 void		eapttls_gen_challenge(SSL *s, uint8_t *buffer, size_t size);
+void		eaptls_gen_eap_key(SSL *s, uint32_t header, VALUE_PAIR **vps);
 
 #define BUFFER_SIZE 1024
 

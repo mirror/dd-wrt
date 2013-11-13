@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id$
+#  $Id: bf047be5c7b48f2f021981a6abf4199d888fc3ee $
 
 # This module loads RADIUS clients as needed, rather than when the server
 # starts.

@@ -160,7 +160,7 @@
 #define LTDL_SHLIB_EXT ".so"
 
 /* Define to the system default library search path. */
-#define LTDL_SYSSEARCHPATH "/lib:/usr/lib:/usr/local/lib64:/usr/local/lib:/usr/lib64/graphviz:/usr/lib64/graphviz/sharp:/usr/lib64/graphviz/java:/usr/lib64/graphviz/perl:/usr/lib64/graphviz/php:/usr/lib64/graphviz/ocaml:/usr/lib64/graphviz/python:/usr/lib64/graphviz/lua:/usr/lib64/graphviz/tcl:/usr/lib64/graphviz/guile:/usr/lib64/graphviz/ruby:/opt/kde3/lib64:/opt/kde3/lib"
+#define LTDL_SYSSEARCHPATH "/lib:/usr/lib:/usr/local/lib64:/usr/local/lib:/usr/lib64/graphviz:/usr/lib64/graphviz/sharp:/usr/lib64/graphviz/java:/usr/lib64/graphviz/perl:/usr/lib64/graphviz/php:/usr/lib64/graphviz/ocaml:/usr/lib64/graphviz/python:/usr/lib64/graphviz/lua:/usr/lib64/graphviz/tcl:/usr/lib64/graphviz/guile:/usr/lib64/graphviz/ruby:/usr/lib64/smokegen"
 
 /* Define if dlsym() requires a leading underscore in symbol names. */
 /* #undef NEED_USCORE */

@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id$
+#  $Id: 5f21e4350f091ed51813865a31b2796c4b487f9f $
 
 #
 #  Execute external programs
@@ -25,4 +25,5 @@ exec {
 	input_pairs = request
 	shell_escape = yes
 	output = none
+	timeout = 10
 }

@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:      $Id$
+# Version:      $Id: ee72f786b28669751a3cd7752f0de1e4c7adeb82 $
 #
 
 include ../../Make.inc
@@ -10,7 +10,7 @@ SRCS		= dict.c filters.c hash.c hmac.c hmacsha1.c isaac.c log.c \
 		  misc.c missing.c md4.c md5.c print.c radius.c rbtree.c \
 		  sha1.c snprintf.c strlcat.c strlcpy.c token.c udpfromto.c \
 		  valuepair.c fifo.c packet.c event.c getaddrinfo.c vqp.c \
-		  heap.c dhcp.c
+		  heap.c dhcp.c base64.c
 
 LT_OBJS		= $(SRCS:.c=.lo)
 

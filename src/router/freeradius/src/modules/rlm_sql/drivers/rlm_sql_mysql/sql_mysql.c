@@ -1,7 +1,7 @@
 /*
  * sql_mysql.c		SQL Module
  *
- * Version:	$Id$
+ * Version:	$Id: 4d8f532e9e1d0beb12b763da04135396fca4259a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 4d8f532e9e1d0beb12b763da04135396fca4259a $")
 
 #include <freeradius-devel/radiusd.h>
 

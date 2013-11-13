@@ -1,7 +1,7 @@
 /*
  * log.c	Logging module.
  *
- * Version:	$Id$
+ * Version:	$Id: ed6baf3e2c7a6e92f49de7335bb9747aea2e7ca2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: ed6baf3e2c7a6e92f49de7335bb9747aea2e7ca2 $")
 
 #include <freeradius-devel/radiusd.h>
 
@@ -96,7 +96,14 @@ int vradlog(int lvl, const char *fmt, va_list ap)
 		time_t timeval;
 
 		timeval = time(NULL);
-		CTIME_R(&timeval, buffer + len, sizeof(buffer) - len - 1);
+#ifdef HAVE_GMTIME_R
+		if (log_dates_utc) {
+			struct tm utc;
+			gmtime_r(&timeval, &utc);
+			asctime_r(&utc, buffer + len);
+		} else
+#endif
+		  CTIME_R(&timeval, buffer + len, sizeof(buffer) - len - 1);
 
 		s = fr_int2str(levels, (lvl & ~L_CONS), ": ");
 
@@ -287,11 +294,13 @@ void radlog_request(int lvl, int priority, REQUEST *request, const char *msg, ..
 		if (log_dates_utc) {
 			struct tm utc;
 			gmtime_r(&timeval, &utc);
-			asctime_r(&utc, buffer + len);
+			ASCTIME_R(&utc, buffer + len, sizeof(buffer) - len - 1);
 		} else
 #endif
+		{
 			CTIME_R(&timeval, buffer + len, sizeof(buffer) - len - 1);
-		
+		}
+
 		s = strrchr(buffer, '\n');
 		if (s) {
 			s[0] = ' ';
@@ -303,7 +312,7 @@ void radlog_request(int lvl, int priority, REQUEST *request, const char *msg, ..
 	}
 	
 	if (request && request->module[0]) {
-		snprintf(buffer + len, sizeof(buffer) + len, "[%s] ", request->module);
+		snprintf(buffer + len, sizeof(buffer) - len, "[%s] ", request->module);
 		len = strlen(buffer);
 	}
 	vsnprintf(buffer + len, sizeof(buffer) - len, msg, ap);
@@ -311,8 +320,10 @@ void radlog_request(int lvl, int priority, REQUEST *request, const char *msg, ..
 	if (!fp) {
 		radlog(lvl, "%s", buffer);
 	} else {
+		if (strlcat(buffer, "\n", sizeof(buffer)) >= sizeof(buffer)) {
+			buffer[sizeof(buffer) - 1] = '\n';
+		}
 		fputs(buffer, fp);
-		fputc('\n', fp);
 		fclose(fp);
 	}
 

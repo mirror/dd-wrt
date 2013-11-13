@@ -2,7 +2,7 @@
  * rlm_sql.c		SQL Module
  * 		Main SQL module file. Most ICRADIUS code is located in sql.c
  *
- * Version:	$Id$
+ * Version:	$Id: 0b85d3308c92d8dec92dffe1bc5eed9f46dd940a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 0b85d3308c92d8dec92dffe1bc5eed9f46dd940a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -815,35 +815,11 @@ static int rlm_sql_detach(void *instance)
 		}
 
 		/*
-		 *	Free up dynamically allocated string pointers.
-		 */
-		for (i = 0; module_config[i].name != NULL; i++) {
-			char **p;
-			if (module_config[i].type != PW_TYPE_STRING_PTR) {
-				continue;
-			}
-
-			/*
-			 *	Treat 'config' as an opaque array of bytes,
-			 *	and take the offset into it.  There's a
-			 *      (char*) pointer at that offset, and we want
-			 *	to point to it.
-			 */
-			p = (char **) (((char *)inst->config) + module_config[i].offset);
-			if (!*p) { /* nothing allocated */
-				continue;
-			}
-			free(*p);
-			*p = NULL;
-		}
-		/*
 		 *	Catch multiple instances of the module.
 		 */
 		if (allowed_chars == inst->config->allowed_chars) {
 			allowed_chars = NULL;
 		}
-		free(inst->config);
-		inst->config = NULL;
 	}
 
 	if (inst->handle) {
@@ -867,9 +843,13 @@ static int rlm_sql_instantiate(CONF_SECTION * conf, void **instance)
 	inst = rad_malloc(sizeof(SQL_INST));
 	memset(inst, 0, sizeof(SQL_INST));
 
-	inst->config = rad_malloc(sizeof(SQL_CONFIG));
-	memset(inst->config, 0, sizeof(SQL_CONFIG));
-
+	/*
+	 *	The server core expects to be able to do
+	 *	cf_section_parse_free(inst).  So this hack is
+	 *	necessary.
+	 */
+	inst->config = &inst->myconfig;
+	
 	/*
 	 *	Export these methods, too.  This avoids RTDL_GLOBAL.
 	 */

@@ -1,7 +1,7 @@
 /*
  * rlm_dbm_parser.c :    Create dbm file from plain text
  *
- * Version:     $Id$
+ * Version:     $Id: 39979fb9b4d8e1c386b83c908d817d140adceff6 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 
 
 char sccsid[] =
-"$Id$ sandy module project\n Copyright 2001 Sandy Service\nCopyright 2001 Koulik Andrei";
+"$Id: 39979fb9b4d8e1c386b83c908d817d140adceff6 $ sandy module project\n Copyright 2001 Sandy Service\nCopyright 2001 Koulik Andrei";
 
 #include <freeradius-devel/radiusd.h>
 #include <fcntl.h>
@@ -320,6 +320,7 @@ int main(int n,char **argv) {
 				break;
 			case 'x':
 				fr_debug_flag++;
+				break;
 			case 'o':
 				ofile = optarg;
 				break;
@@ -327,7 +328,7 @@ int main(int n,char **argv) {
 				print_stat = 0;
 				break;
 			case 'v':
-				printf("%s: $Id$ \n",progname);
+				printf("%s: $Id: 39979fb9b4d8e1c386b83c908d817d140adceff6 $ \n",progname);
 				exit(0);
 			case 'c':
 				oflags = O_CREAT | O_TRUNC | O_RDWR;

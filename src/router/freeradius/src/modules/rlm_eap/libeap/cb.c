@@ -1,7 +1,7 @@
 /*
  * cb.c
  *
- * Version:     $Id$
+ * Version:     $Id: f7a0bebc488f19d3b0c3effbb89e46729cbb9002 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: f7a0bebc488f19d3b0c3effbb89e46729cbb9002 $")
 
 #include "eap_tls.h"
 

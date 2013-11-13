@@ -3,12 +3,12 @@
 /*
  *	vmps.h	Routines to handle VMPS sockets.
  *
- * Version:	$Id$
+ * Version:	$Id: ff4476634eb9a96a8ce1b20cbbd4e58ae35784b7 $
  *
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(vmps_h, "$Id$")
+RCSIDH(vmps_h, "$Id: ff4476634eb9a96a8ce1b20cbbd4e58ae35784b7 $")
 
 #ifdef __cplusplus
 extern "C" {

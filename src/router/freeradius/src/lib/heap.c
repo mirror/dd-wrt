@@ -1,5 +1,5 @@
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 449f13ffd63019ecee153197f57abb79411affb4 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/heap.h>

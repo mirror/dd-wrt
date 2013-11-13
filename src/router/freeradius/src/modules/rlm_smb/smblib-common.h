@@ -25,7 +25,7 @@
 */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(smblib_common_h, "$Id$")
+RCSIDH(smblib_common_h, "$Id: 13751f6124c353eeaaa87240e6a0a93c8d29e256 $")
 
 /* To get the error class we want the first 8 bits */
 /* Because we just grab 4bytes from the SMB header, we have to re-order */

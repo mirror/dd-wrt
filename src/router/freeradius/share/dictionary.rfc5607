@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 5607.
 #	http://www.ietf.org/rfc/rfc5607.txt
 #
-#	$Id$
+#	$Id: 5ec1ad78888ae44a00f4159743b6cc6fc56fb89a $
 #
 
 VALUE	Service-Type			Framed-Management	18

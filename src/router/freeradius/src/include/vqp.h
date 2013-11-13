@@ -4,7 +4,7 @@
 /*
  * vqp.h	Structures and prototypes for Cisco's VLAN Query Protocol
  *
- * Version:	$Id$
+ * Version:	$Id: 9cb96ab0b0beb20af319efa446fc3574d6024bae $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(vqp_h, "$Id$")
+RCSIDH(vqp_h, "$Id: 9cb96ab0b0beb20af319efa446fc3574d6024bae $")
 
 #ifdef __cplusplus
 extern "C" {

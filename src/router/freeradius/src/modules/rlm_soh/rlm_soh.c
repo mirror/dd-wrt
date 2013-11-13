@@ -1,7 +1,7 @@
 /*
  * rlm_soh.c
  *
- * Version:	$Id$
+ * Version:	$Id: 92dd867176e8452003b88e2515e275e63bf91ba3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 92dd867176e8452003b88e2515e275e63bf91ba3 $")
 
 #include        <freeradius-devel/radiusd.h>
 #include        <freeradius-devel/modules.h>

@@ -22,7 +22,7 @@
  *
  */
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 6077f6d2bdc2ebdea6575678e80e255f57215900 $")
 
 #include "tncs_connect.h"
 #include <ltdl.h>

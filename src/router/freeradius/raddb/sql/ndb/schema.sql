@@ -1,5 +1,5 @@
 ###########################################################################
-# $Id$                 #
+# $Id: f292fe4a01bdb366c4ecf1ca0f7b7be18661c6f3 $                 #
 #                                                                         #
 #  schema.sql                       rlm_sql - FreeRADIUS SQL Module       #
 #                                                                         #

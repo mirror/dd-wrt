@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 3162.
 #	http://www.ietf.org/rfc/rfc3162.txt
 #
-#	$Id$
+#	$Id: 9994a564cf64d9e830b437bf1bf651b8c3e361ac $
 #
 ATTRIBUTE	NAS-IPv6-Address			95	ipv6addr
 ATTRIBUTE	Framed-Interface-Id			96	ifid

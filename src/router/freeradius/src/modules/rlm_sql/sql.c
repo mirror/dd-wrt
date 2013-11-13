@@ -2,7 +2,7 @@
  *  sql.c		rlm_sql - FreeRADIUS SQL Module
  *		Main code directly taken from ICRADIUS
  *
- * Version:	$Id$
+ * Version:	$Id: 90f3967cd5cc81d9c1aaae94c71a84f40d9cd17a $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 90f3967cd5cc81d9c1aaae94c71a84f40d9cd17a $")
 
 #include	<freeradius-devel/radiusd.h>
 

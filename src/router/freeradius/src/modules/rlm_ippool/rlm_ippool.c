@@ -1,7 +1,7 @@
 /*
  * rlm_ippool.c
  *
- * Version:  $Id$
+ * Version:  $Id: 127ac7ba188d78844a2c9eae87a089fe63113614 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 127ac7ba188d78844a2c9eae87a089fe63113614 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

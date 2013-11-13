@@ -1,7 +1,7 @@
 /*
  * rlm_pap.c
  *
- * Version:  $Id$
+ * Version:  $Id: b0cbf4086058aa071345ebea380338f57fad04a1 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: b0cbf4086058aa071345ebea380338f57fad04a1 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -224,6 +224,8 @@ static int base64_decode (const char *src, uint8_t *dst)
 
 	num = (length + equals) / 4;
 
+	if (!num || (num > MAX_STRING_LEN)) return 0;
+
 	for (i = 0; i < num - 1; i++) {
 		if (!decode_it(src, dst)) return 0;
 		src += 4;
@@ -266,14 +268,13 @@ static void normify(REQUEST *request, VALUE_PAIR *vp, size_t min_length)
 	 *	Base 64 encoding.  It's at least 4/3 the original size,
 	 *	and we want to avoid division...
 	 */
-	if ((vp->length * 3) >= ((min_length * 4))) {
-		decoded = base64_decode(vp->vp_strvalue, buffer);
-		if (decoded >= min_length) {
-			RDEBUG2("Normalizing %s from base64 encoding", vp->name);
-			memcpy(vp->vp_octets, buffer, decoded);
-			vp->length = decoded;
-			return;
-		}
+	if (((vp->length * 3) >= ((min_length * 4))) &&
+	    ((decoded = base64_decode(vp->vp_strvalue, buffer)) > 0) &&
+	    (decoded >= min_length)) {
+		RDEBUG2("Normalizing %s from base64 encoding", vp->name);
+		memcpy(vp->vp_octets, buffer, decoded);
+		vp->length = decoded;
+		return;
 	}
 
 	/*

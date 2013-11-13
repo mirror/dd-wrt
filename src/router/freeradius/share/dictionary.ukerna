@@ -3,17 +3,17 @@
 #
 #	GSS-EAP VSAs
 #
-#	$Id$
+#	$Id: 70ff9279e2e30d852c404c8517bc4135b133a51f $
 #
 
-VENDOR	UKERNA				25622
+VENDOR		UKERNA				25622
 
-BEGIN-VENDOR UKERNA
+BEGIN-VENDOR	UKERNA
 
-ATTRIBUTE	GSS-Acceptor-Service-Name	128	string
-ATTRIBUTE	GSS-Acceptor-Host-Name		129	string
-ATTRIBUTE	GSS-Acceptor-Service-Specific	130	string
-ATTRIBUTE	GSS-Acceptor-Realm-Name		131	string
-ATTRIBUTE	SAML-AAA-Assertion		132	string
+ATTRIBUTE	GSS-Acceptor-Service-Name		128	string
+ATTRIBUTE	GSS-Acceptor-Host-Name			129	string
+ATTRIBUTE	GSS-Acceptor-Service-Specific		130	string
+ATTRIBUTE	GSS-Acceptor-Realm-Name			131	string
+ATTRIBUTE	SAML-AAA-Assertion			132	string
 
 END-VENDOR UKERNA

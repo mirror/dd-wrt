@@ -1,7 +1,7 @@
 /*
  * stats.c	Internal statistics handling.
  *
- * Version:	$Id$
+ * Version:	$Id: 6b7779ca3e826fa2a68e8b0e0b8dc22cef4d1829 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 6b7779ca3e826fa2a68e8b0e0b8dc22cef4d1829 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -57,6 +57,10 @@ void request_stats_final(REQUEST *request)
 	if ((request->listener->type != RAD_LISTEN_NONE) &&
 	    (request->listener->type != RAD_LISTEN_AUTH) &&
 	    (request->listener->type != RAD_LISTEN_ACCT)) return;
+
+	/* don't count statistic requests */
+	if (request->packet->code == PW_STATUS_SERVER)
+		return;
 
 #undef INC_AUTH
 #define INC_AUTH(_x) radius_auth_stats._x++;request->listener->stats._x++;if (request->client && request->client->auth) request->client->auth->_x++;

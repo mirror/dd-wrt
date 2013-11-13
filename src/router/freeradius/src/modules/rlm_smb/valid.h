@@ -4,7 +4,7 @@
 #define _VALID_H_
 
 #include <freeradius-devel/ident.h>
-RCSIDH(valid_h, "$Id$")
+RCSIDH(valid_h, "$Id: 25c132ef7d76acb6114d17aa5f5bd0b16a4a29a7 $")
 
 /* SMB User verification function */
 

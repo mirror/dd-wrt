@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: 0d9ba6ba421709613e733d2fe40c0303a12eff26 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #define OTP_PW_VALID_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(otp_pw_valid_h, "$Id$")
+RCSIDH(otp_pw_valid_h, "$Id: 0d9ba6ba421709613e733d2fe40c0303a12eff26 $")
 
 #include <pthread.h>
 #include <sys/types.h>

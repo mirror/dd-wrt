@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 5090.
 #	http://www.ietf.org/rfc/rfc5090.txt
 #
-#	$Id$
+#	$Id: 7f783bfeca60a673bcebb74d8037a0f1db1f0cf4 $
 #
 ATTRIBUTE	Digest-Response				103	string
 ATTRIBUTE	Digest-Realm				104	string

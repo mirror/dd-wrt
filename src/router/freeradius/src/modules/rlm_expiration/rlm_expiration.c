@@ -1,7 +1,7 @@
 /*
  * rlm_expiration.c
  *
- * Version:  $Id$
+ * Version:  $Id: ed09c02a1e33bd747693f4d1fce6bada5858145c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: ed09c02a1e33bd747693f4d1fce6bada5858145c $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

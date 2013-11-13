@@ -2,7 +2,7 @@
  * rlm_sqlhpwippool.c
  * Chooses an IPv4 address from pools defined in ASN Netvim
  *
- * Version:	$Id$
+ * Version:	$Id: a8531b713d08be2268e7d2cefa2145113f727ebd $
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -50,7 +50,7 @@
 #define RLM_NETVIM_MAX_ROWS 1000000
 #define RLM_NETVIM_TMP_PREFIX "auth-tmp-"
 
-static const char rcsid[] = "$Id$";
+static const char rcsid[] = "$Id: a8531b713d08be2268e7d2cefa2145113f727ebd $";
 
 typedef struct rlm_sqlhpwippool_t {
 	const char *myname;         /* name of this instance */

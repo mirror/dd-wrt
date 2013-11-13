@@ -1,7 +1,7 @@
 /*
  *  strlcpy.c	Copy strings.
  *
- *  Version:	$Id$
+ *  Version:	$Id: 549f138036e3494d7c18fdd52a153cc6919f15f8 $
  *
  */
 
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 549f138036e3494d7c18fdd52a153cc6919f15f8 $")
 
 #include <freeradius-devel/autoconf.h>
 

@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:	$Id$
+# Version:	$Id: aaf7675ac139ee0274dae8352fe60ccaf426dec8 $
 #
 
 include ../Make.inc

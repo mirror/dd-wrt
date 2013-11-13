@@ -1,7 +1,7 @@
 /*
  * eap_tls.c
  *
- * Version:     $Id$
+ * Version:     $Id: 3e2efbf244262334dcfb71f8fcff353a35b593c0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 3e2efbf244262334dcfb71f8fcff353a35b593c0 $")
 
 #include <freeradius-devel/autoconf.h>
 #include <assert.h>
@@ -223,6 +223,8 @@ int eaptls_success(EAP_HANDLER *handler, int peap_flag)
 		RDEBUG("WARNING: Not adding MPPE keys because there is no PRF label");
 	}
 
+	eaptls_gen_eap_key(tls_session->ssl,
+			   handler->eap_type, &handler->request->reply->vps);
 	return 1;
 }
 

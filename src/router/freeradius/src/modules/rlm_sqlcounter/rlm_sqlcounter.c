@@ -1,7 +1,7 @@
 /*
  * rlm_sqlcounter.c
  *
- * Version:  $Id$
+ * Version:  $Id: 1f4c14641d6d3f621eacda50f8727680cdb3b5e2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 1f4c14641d6d3f621eacda50f8727680cdb3b5e2 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

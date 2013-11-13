@@ -1,7 +1,7 @@
 /*
  * listen.c	Handle socket stuff
  *
- * Version:	$Id$
+ * Version:	$Id: 8202a36b71d90078507725d7e82f62ab2b8c95df $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 8202a36b71d90078507725d7e82f62ab2b8c95df $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>

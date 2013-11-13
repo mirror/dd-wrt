@@ -35,7 +35,7 @@
 #include <poll.h>
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: 572f00e0cb065cc56db61e5a04fe19c1645e1ec8 $")
 
 #include <freeradius-devel/autoconf.h>
 #include <freeradius-devel/libradius.h>

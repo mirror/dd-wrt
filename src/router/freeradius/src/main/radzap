@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#	$Id$
+#	$Id: a30189cadf773d37e710ab3fd4b799b3779ebe47 $
 #
 
 usage() {

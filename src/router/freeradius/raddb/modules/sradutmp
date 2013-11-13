@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id$
+#  $Id: a7700bac6aaa93940c784f1b6df08b61eb77a1a3 $
 
 # "Safe" radutmp - does not contain caller ID, so it can be
 # world-readable, and radwho can work for normal users, without

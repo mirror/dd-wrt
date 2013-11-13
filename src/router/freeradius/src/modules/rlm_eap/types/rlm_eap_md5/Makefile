@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:	$Id$
+# Version:	$Id: b7f60306e1c36c0b3ce817d493c74c1c59a3bc10 $
 #
 
 TARGET      = rlm_eap_md5
