@@ -1,7 +1,7 @@
 /*
  * dhclient.c	General radius packet debug tool.
  *
- * Version:	$Id$
+ * Version:	$Id: a3c756aaa509788c89f3556662c0276b4bcd3632 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id$")
+RCSID("$Id: a3c756aaa509788c89f3556662c0276b4bcd3632 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/conf.h>
@@ -285,7 +285,7 @@ int main(int argc, char **argv)
 			timeout = atof(optarg);
 			break;
 		case 'v':
-			printf("dhclient: $Id$ built on " __DATE__ " at " __TIME__ "\n");
+			printf("dhclient: $Id: a3c756aaa509788c89f3556662c0276b4bcd3632 $ built on " __DATE__ " at " __TIME__ "\n");
 			exit(0);
 			break;
 		case 'x':
