@@ -47,9 +47,13 @@
 #  define do_compress       LZO_CPP_ECONCAT2(DO_COMPRESS,_core)
 #endif
 
-#if defined(UA_GET64)
+#if defined(UA_GET64) && (LZO_ABI_BIG_ENDIAN)
+#  define WANT_lzo_bitops_clz64 1
+#elif defined(UA_GET64) && (LZO_ABI_LITTLE_ENDIAN)
 #  define WANT_lzo_bitops_ctz64 1
-#elif defined(UA_GET32)
+#elif defined(UA_GET32) && (LZO_ABI_BIG_ENDIAN)
+#  define WANT_lzo_bitops_clz32 1
+#elif defined(UA_GET32) && (LZO_ABI_LITTLE_ENDIAN)
 #  define WANT_lzo_bitops_ctz32 1
 #endif
 #include "lzo_func.ch"
@@ -73,7 +77,7 @@ do_compress ( const lzo_bytep in , lzo_uint  in_len,
 
     op = out;
     ip = in;
-    ii = ip - ti;
+    ii = ip;
 
     ip += ti < 4 ? 4 - ti : 0;
     for (;;)
@@ -139,6 +143,7 @@ next:
 
     /* a match */
 
+        ii -= ti; ti = 0;
         {
         register lzo_uint t = pd(ip,ii);
         if (t != 0)
@@ -220,7 +225,14 @@ next:
                     goto m_len_done;
             } while (v == 0);
         }
-#if (LZO_ABI_LITTLE_ENDIAN) && defined(lzo_bitops_ctz64)
+#if (LZO_ABI_BIG_ENDIAN) && defined(lzo_bitops_clz64)
+        m_len += lzo_bitops_clz64(v) / CHAR_BIT;
+#elif (LZO_ABI_BIG_ENDIAN)
+        if ((v >> (64 - CHAR_BIT)) == 0) do {
+            v <<= CHAR_BIT;
+            m_len += 1;
+        } while ((v >> (64 - CHAR_BIT)) == 0);
+#elif (LZO_ABI_LITTLE_ENDIAN) && defined(lzo_bitops_ctz64)
         m_len += lzo_bitops_ctz64(v) / CHAR_BIT;
 #elif (LZO_ABI_LITTLE_ENDIAN)
         if ((v & UCHAR_MAX) == 0) do {
@@ -243,7 +255,14 @@ next:
                     goto m_len_done;
             } while (v == 0);
         }
-#if (LZO_ABI_LITTLE_ENDIAN) && defined(lzo_bitops_ctz32)
+#if (LZO_ABI_BIG_ENDIAN) && defined(lzo_bitops_clz32)
+        m_len += lzo_bitops_clz32(v) / CHAR_BIT;
+#elif (LZO_ABI_BIG_ENDIAN)
+        if ((v >> (32 - CHAR_BIT)) == 0) do {
+            v <<= CHAR_BIT;
+            m_len += 1;
+        } while ((v >> (32 - CHAR_BIT)) == 0);
+#elif (LZO_ABI_LITTLE_ENDIAN) && defined(lzo_bitops_ctz32)
         m_len += lzo_bitops_ctz32(v) / CHAR_BIT;
 #elif (LZO_ABI_LITTLE_ENDIAN)
         if ((v & UCHAR_MAX) == 0) do {
@@ -330,7 +349,7 @@ m_len_done:
     }
 
     *out_len = pd(op, out);
-    return pd(in_end,ii);
+    return pd(in_end,ii-ti);
 }
 
 

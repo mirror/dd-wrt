@@ -37,10 +37,11 @@ This configure script may be copied, distributed and modified under the
 terms of the GNU General Public License; see COPYING for more details.])
 
 AC_PREREQ(2.67)
-AC_INIT([LZO],[2.05],[markus@oberhumer.com],[lzo],[http://www.oberhumer.com/opensource/lzo/])
+AC_INIT([LZO],[2.06],[markus@oberhumer.com],[lzo],[http://www.oberhumer.com/opensource/lzo/])
 AC_MSG_NOTICE([Configuring LZO $PACKAGE_VERSION])
 AC_CONFIG_SRCDIR(src/lzo_init.c)
 AC_CONFIG_AUX_DIR(autoconf)
+m4_include([autoconf/local.m4])
 AC_PREFIX_DEFAULT(/usr/local)
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
