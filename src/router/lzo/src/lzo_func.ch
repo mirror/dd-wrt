@@ -94,7 +94,7 @@ static __lzo_inline unsigned lzo_bitops_ctz64(lzo_uint64 v)
 #define lzo_bitops_ctz64 lzo_bitops_ctz64
 #endif
 
-#elif (LZO_CC_CLANG || (LZO_CC_GNUC >= 0x030400ul) || (LZO_CC_INTELC && (__INTEL_COMPILER >= 1000)) || LZO_CC_LLVM)
+#elif (LZO_CC_CLANG || (LZO_CC_GNUC >= 0x030400ul) || (LZO_CC_INTELC && (__INTEL_COMPILER >= 1000)) || (LZO_CC_LLVM && (!defined(__llvm_tools_version__) || (__llvm_tools_version__+0 >= 0x010500ul))))
 #if !defined(lzo_bitops_clz32) && defined(WANT_lzo_bitops_clz32)
 #define lzo_bitops_clz32(v) ((unsigned) __builtin_clz(v))
 #endif

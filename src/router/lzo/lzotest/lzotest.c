@@ -369,6 +369,8 @@ static mblock_t dict;
 
 static void mb_alloc_extra(mblock_t *mb, lzo_uint len, lzo_uint extra_bottom, lzo_uint extra_top)
 {
+    lzo_uint align = (lzo_uint) sizeof(lzo_align_t);
+
     mb->alloc_ptr = mb->ptr = NULL;
     mb->alloc_len = mb->len = 0;
 
@@ -380,8 +382,8 @@ static void mb_alloc_extra(mblock_t *mb, lzo_uint len, lzo_uint extra_bottom, lz
         fprintf(stderr, "%s: out of memory (wanted %lu bytes)\n", progname, (unsigned long)mb->alloc_len);
         exit(EXIT_MEM);
     }
-    if (__lzo_align_gap(mb->alloc_ptr, (lzo_uint) sizeof(lzo_align_t)) != 0) {
-        fprintf(stderr, "%s: C library problem: malloc() returned mis-aligned pointer!\n", progname);
+    if (mb->alloc_len >= align && __lzo_align_gap(mb->alloc_ptr, align) != 0) {
+        fprintf(stderr, "%s: C library problem: malloc() returned misaligned pointer!\n", progname);
         exit(EXIT_MEM);
     }
 

@@ -2,6 +2,10 @@
 User visible changes for LZO -- a real-time data compression library
 ============================================================================
 
+Changes in 2.06 (12 Aug 2011)
+  * Some minor optimizations for big-endian architectures.
+  * Fixed overly strict malloc() misalignment check in examples.
+
 Changes in 2.05 (23 Apr 2011)
   * Converted the configure system to non-recursive Automake.
   * Applied some overdue speed optimizations for modern x86/x64 architectures
