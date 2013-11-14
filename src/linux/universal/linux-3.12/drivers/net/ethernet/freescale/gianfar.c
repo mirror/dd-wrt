@@ -954,6 +954,7 @@ static void __gfar_detect_errata_83xx(struct gfar_private *priv)
 
 	/* MPC8313 and MPC837x all rev */
 	if ((pvr == 0x80850010 && mod == 0x80b0) ||
+            (pvr == 0x80850020 && mod == 0x80b6 && rev >= 0x0010) ||
 	    (pvr == 0x80861010 && (mod & 0xfff9) == 0x80c0))
 		priv->errata |= GFAR_ERRATA_76;
 

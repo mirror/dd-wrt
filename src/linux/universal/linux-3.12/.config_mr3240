@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.12.0-rc7 Kernel Configuration
+# Linux/mips 3.12.0 Kernel Configuration
 #
 CONFIG_MIPS=y
 

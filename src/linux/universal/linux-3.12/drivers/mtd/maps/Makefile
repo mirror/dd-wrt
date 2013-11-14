@@ -69,7 +69,11 @@ obj-$(CONFIG_SOC_IMX6Q) += nvram_kernel_x86.o
 ifeq ($(CONFIG_TL_WDR4900_V1),y)
 obj-$(CONFIG_PPC)		+= nvram_kernel.o
 else
+ifeq ($(CONFIG_PPC_83xx),y)
+obj-$(CONFIG_PPC)		+= nvram_kernel.o
+else
 obj-$(CONFIG_PPC)		+= nvram_kernel_x86.o
+endif
 endif
 obj-$(CONFIG_RALINK_RT3052)	+= nvram_kernel.o
 obj-$(CONFIG_RALINK_RT3352)	+= nvram_kernel.o
