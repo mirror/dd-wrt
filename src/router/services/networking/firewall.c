@@ -1741,8 +1741,9 @@ static void filter_input(void)
 			save2file("-A INPUT -i %s -p tcp --dport %d -j %s\n", wanface, PPTP_PORT, log_accept);
 		}
 	}
-#endif
-	save2file("-A INPUT -i %s -p udp --sport 67 --dport 68 -j %s\n", wanface, log_accept);
+#endif  
+	if (nvram_match("wan_proto", "dhcp") )
+		save2file("-A INPUT -i %s -p udp --sport 67 --dport 68 -j %s\n", wanface, log_accept);
 	if (nvram_match("pptpd_enable", "1")
 	    || nvram_match("pptpd_client_enable", "1")
 	    || nvram_match("wan_proto", "pptp")) {
