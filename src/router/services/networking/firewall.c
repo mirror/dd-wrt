@@ -1742,14 +1742,15 @@ static void filter_input(void)
 		}
 	}
 #endif
+	save2file("-A INPUT -i %s -p udp --sport 67 --dport 68 -j %s\n", wanface, log_accept);
 	if (nvram_match("pptpd_enable", "1")
 	    || nvram_match("pptpd_client_enable", "1")
 	    || nvram_match("wan_proto", "pptp")) {
 		save2file("-A INPUT -p tcp --dport %d -j %s\n", PPTP_PORT, log_accept);
 		save2file("-A INPUT -p 47 -j %s\n", log_accept);
 		if (nvram_match("pptpd_lockdown", "1")) {
-			save2file("-A INPUT -i %s -p udp --sport 67 --dport 68 -j %s\n", lanface, log_accept);
 			save2file("-A INPUT -i %s -j %s\n", lanface, log_drop);
+			save2file("-A INPUT -i %s -p udp --sport 67 --dport 68 -j %s\n", lanface, log_accept);
 		}
 	}
 #endif
