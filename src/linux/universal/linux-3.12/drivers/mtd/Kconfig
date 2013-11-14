@@ -35,7 +35,7 @@ config MTD_ROOTFS_SPLIT
 
 config MTD_ROOTFS_GEN
 	bool "Automatically generate 'rootfs' partition for squashfs"
-	depends on MTD = "y" && RALINK_OPENWRT
+	depends on MTD = "y" && (RALINK_OPENWRT || PPC32)
 	default y
 
 config MTD_REDBOOT_PARTS
