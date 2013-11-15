@@ -1416,7 +1416,7 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_MAGICBOX;
 #elif HAVE_UNIWIP
 	setRouter("Octagon Systems UNiWiP");
-	return ROUTER_BOARD_WDR4900;
+	return ROUTER_BOARD_UNIWIP;
 #elif HAVE_WDR4900
 	setRouter("TP-Link WDR4900 V1");
 	return ROUTER_BOARD_WDR4900;
