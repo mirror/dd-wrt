@@ -759,6 +759,7 @@ static int split_rootfs_data(struct mtd_info *master, struct mtd_info *rpart, co
 
 	dpart->size = rpart->size - (split_offset - spart->offset);
 	dpart->offset = split_offset;
+	dpart->mask_flags = 0;
 
 	if (dpart == NULL)
 		return 1;
@@ -888,6 +889,7 @@ int add_mtd_partitions(struct mtd_info *master,
 				    	part.name = "rootfs";
 				    	part.offset = offset;
 				    	part.size = (master->size - nvramsize) - offset; 
+				    	part.mask_flags = 0;
 				    	add_mtd_partitions(master,&part,1);
 					break;
 				    } 
