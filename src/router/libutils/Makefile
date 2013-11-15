@@ -227,6 +227,9 @@ endif
 ifeq ($(CONFIG_SNMP),y)
   CFLAGS += -DHAVE_SNMP
 endif
+ifeq ($(CONFIG_UNIWIP),y)
+  CFLAGS += -DHAVE_UNIWIP
+endif
 
 ifeq ($(REGDOMAIN_OVERRIDE),y)
 CFLAGS += -DREGDOMAIN_OVERRIDE
