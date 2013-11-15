@@ -205,7 +205,7 @@ void start_sysinit(void)
 	} else {
 		fclose(in);
 	}
-#else
+#elif !defined(HAVE_UNIWIP)
 	system("swconfig dev switch0 set reset 1");
 	system("swconfig dev switch0 set enable_vlan 1");
 	system("swconfig dev switch0 vlan 1 set ports \"0t 2 3 4 5\"");
