@@ -436,8 +436,71 @@ static void buffalo_defaults(int force)
 }
 
 #elif HAVE_MT7620
+#define getUEnv(name) nvram_get(name)
 static void buffalo_defaults(int force)
 {
+	if (nvram_get("ath0_akm") == NULL || force) {
+		nvram_set("ath0_akm", "disabled");
+	
+		FILE *fp;
+		char script[32] = "/tmp/fdefaults.sh";
+		char config[32] = "/tmp/sysdefaults.txt";
+		char partition[20] = "/dev/mtdblock6";
+		char mountpoint[20] = "/tmp/sysdefaults";
+		char conffile[16] = "mac.dat";
+		
+		fp = fopen(script, "w");
+		if (fp) {
+			fprintf(fp, "#!/bin/sh\n");
+			fprintf(fp, "insmod lzma_compress\n");
+			fprintf(fp, "insmod jffs2\n");
+			fprintf(fp, "mkdir %s\n", mountpoint);
+			fprintf(fp, "mount -t jffs2 %s %s\n", partition, mountpoint);
+			fprintf(fp, "cat %s/%s > %s\n", mountpoint, conffile, config);
+			fclose(fp);
+		}
+		
+		chmod(script, 0755);
+		system(script);
+
+		fp = fopen(config, "r");
+		if (fp) {
+			char line[32];
+			char list[2][30];
+			int i;
+				
+			while (fgets(line, sizeof(line), fp) != NULL) {
+				
+				// make string sscanf ready	
+				for(i = 0; i < sizeof(line); i++) {
+					if(line[i] == '=') {
+						line[i] = ' ';
+						break;
+					}
+				}
+					
+				if (sscanf(line, "%s %s[\n]", list[0], list[1]) != 2)
+					continue;
+				
+				if (!strcmp("Region", list[0]))
+					nvram_set("region", list[1]);
+				
+				if (!strcmp("WIFIFacWPAPSK1", list[0])) {
+					nvram_set("wl0_security_mode", "psk psk2");
+					nvram_set("wl0_akm", "psk psk2");
+					nvram_set("wl0_crypto", "aes");
+					nvram_set("wl0_wpa_psk", list[1]);
+				}
+			}
+			fclose(fp);
+		}
+		
+		// cleanup
+		unlink(script);
+		unlink(config);
+		eval("umount", partition);
+		rmdir(mountpoint);
+			
 		struct ifreq ifr;
 		int s;
 
@@ -462,6 +525,7 @@ static void buffalo_defaults(int force)
 		system("startservice spotpass_defaults");
 #endif
 		nvram_commit();
+	}
 }
 
 #else
