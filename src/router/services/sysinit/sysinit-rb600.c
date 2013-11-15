@@ -87,6 +87,9 @@ void start_sysinit(void)
 	insmod("via-rhine");
 	insmod("tulip");
 #endif
+#ifdef HAVE_UNIWIP
+	insmod("mpc8xxx_wdt");
+#endif
 	struct ifreq ifr;
 	int s;
 
