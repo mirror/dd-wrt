@@ -1012,7 +1012,7 @@ rc: $(OBJS)
 #	$(AR) arc -o $@.a $^
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless
 ifeq ($(CONFIG_MADWIFI),y)
-	$(CC) $(CFLAGS) -o roaming_daemon roaming_daemon.c $(LDFLAGS) ../wireless-tools/libiw.so.29 
+	$(CC) $(CFLAGS) -o roaming_daemon roaming_daemon.c $(LDFLAGS) ../wireless-tools/libiw.so 
 endif
 	$(CC) $(CFLAGS) -o ttraff ttraff.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless
