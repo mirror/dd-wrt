@@ -118,14 +118,10 @@
 
 #define MII_M1116R_CONTROL_REG_MAC	21
 
-#define MII_M1116R_CONTROL_REG_MAC	21
-
 
 MODULE_DESCRIPTION("Marvell PHY driver");
 MODULE_AUTHOR("Andy Fleming");
 MODULE_LICENSE("GPL");
-
-void set_device_name(struct phy_device *);
 
 static int marvell_ack_interrupt(struct phy_device *phydev)
 {
@@ -382,67 +378,6 @@ static int m88e1510_config_aneg(struct phy_device *phydev)
 {
 	int err;
 
-	err = m88e1318_config_aneg(phydev);
-	if (err < 0)
-		return err;
-
-	return marvell_of_reg_init(phydev);
-}
-
-static int m88e1116r_config_init(struct phy_device *phydev)
-{
-	int temp;
-	int err;
-
-	temp = phy_read(phydev, MII_BMCR);
-	temp |= BMCR_RESET;
-	err = phy_write(phydev, MII_BMCR, temp);
-	if (err < 0)
-		return err;
-
-	mdelay(500);
-
-	err = phy_write(phydev, MII_MARVELL_PHY_PAGE, 0);
-	if (err < 0)
-		return err;
-
-	temp = phy_read(phydev, MII_M1011_PHY_SCR);
-	temp |= (7 << 12);	/* max number of gigabit attempts */
-	temp |= (1 << 11);	/* enable downshift */
-	temp |= MII_M1011_PHY_SCR_AUTO_CROSS;
-	err = phy_write(phydev, MII_M1011_PHY_SCR, temp);
-	if (err < 0)
-		return err;
-
-	err = phy_write(phydev, MII_MARVELL_PHY_PAGE, 2);
-	if (err < 0)
-		return err;
-	temp = phy_read(phydev, MII_M1116R_CONTROL_REG_MAC);
-	temp |= (1 << 5);
-	temp |= (1 << 4);
-	err = phy_write(phydev, MII_M1116R_CONTROL_REG_MAC, temp);
-	if (err < 0)
-		return err;
-	err = phy_write(phydev, MII_MARVELL_PHY_PAGE, 0);
-	if (err < 0)
-		return err;
-
-	temp = phy_read(phydev, MII_BMCR);
-	temp |= BMCR_RESET;
-	err = phy_write(phydev, MII_BMCR, temp);
-	if (err < 0)
-		return err;
-
-	mdelay(500);
-
-	return 0;
-}
-
-static int m88e1510_config_aneg(struct phy_device *phydev)
-{
-	int err;
-
-	set_device_name(phydev);
 	err = m88e1318_config_aneg(phydev);
 	if (err < 0)
 		return err;
@@ -847,7 +782,6 @@ static int m88e1121_did_interrupt(struct phy_device *phydev)
 	return 0;
 }
 
-#if 0
 static void m88e1318_get_wol(struct phy_device *phydev, struct ethtool_wolinfo *wol)
 {
 	wol->supported = WAKE_MAGIC;
@@ -948,7 +882,6 @@ static int m88e1318_set_wol(struct phy_device *phydev, struct ethtool_wolinfo *w
 
 	return 0;
 }
-#endif
 
 static struct phy_driver marvell_drivers[] = {
 	{
@@ -1026,8 +959,8 @@ static struct phy_driver marvell_drivers[] = {
 		.ack_interrupt = &marvell_ack_interrupt,
 		.config_intr = &marvell_config_intr,
 		.did_interrupt = &m88e1121_did_interrupt,
-//		.get_wol = &m88e1318_get_wol,
-//		.set_wol = &m88e1318_set_wol,
+		.get_wol = &m88e1318_get_wol,
+		.set_wol = &m88e1318_set_wol,
 		.driver = { .owner = THIS_MODULE },
 	},
 	{
@@ -1095,38 +1028,7 @@ static struct phy_driver marvell_drivers[] = {
 		.did_interrupt = &m88e1121_did_interrupt,
 		.driver = { .owner = THIS_MODULE },
 	},
-	{
-		.phy_id = MARVELL_PHY_ID_88E1116R,
-		.phy_id_mask = MARVELL_PHY_ID_MASK,
-		.name = "Marvell 88E1116R",
-		.features = PHY_GBIT_FEATURES,
-		.flags = PHY_HAS_INTERRUPT,
-		.config_init = &m88e1116r_config_init,
-		.config_aneg = &genphy_config_aneg,
-		.read_status = &genphy_read_status,
-		.ack_interrupt = &marvell_ack_interrupt,
-		.config_intr = &marvell_config_intr,
-		.driver = { .owner = THIS_MODULE },
-	},
-	{
-		.phy_id = MARVELL_PHY_ID_88E1510,
-		.phy_id_mask = MARVELL_PHY_ID_MASK,
-		.name = "Marvell 88E1510",
-		.features = PHY_GBIT_FEATURES,
-		.flags = PHY_HAS_INTERRUPT,
-		.config_aneg = &m88e1510_config_aneg,
-		.read_status = &marvell_read_status,
-		.ack_interrupt = &marvell_ack_interrupt,
-		.config_intr = &marvell_config_intr,
-		.did_interrupt = &m88e1121_did_interrupt,
-		.driver = { .owner = THIS_MODULE },
-	},
 };
-
-void set_device_name(struct phy_device *phydev)
-{
-	phydev->dev.init_name = marvell_drivers[10].name;
-}
 
 static int __init marvell_init(void)
 {
