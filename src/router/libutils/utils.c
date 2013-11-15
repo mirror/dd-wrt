@@ -1,4 +1,4 @@
-/*[18~
+/*
  * utils.c
  *
  * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
@@ -1414,6 +1414,9 @@ int internal_getRouterBrand()
 #elif HAVE_MAGICBOX
 	setRouter("OpenRB PowerPC Board");
 	return ROUTER_BOARD_MAGICBOX;
+#elif HAVE_UNIWIP
+	setRouter("Octagon Systems UNiWiP");
+	return ROUTER_BOARD_WDR4900;
 #elif HAVE_WDR4900
 	setRouter("TP-Link WDR4900 V1");
 	return ROUTER_BOARD_WDR4900;
@@ -4337,6 +4340,10 @@ int led_control(int type, int act)
 //              power_gpio = 0x101;
 #endif
 		break;
+#ifdef HAVE_UNIWIP
+	case ROUTER_BOARD_UNIWIP:
+		break;
+#endif
 #ifdef HAVE_WDR4900
 	case ROUTER_BOARD_WDR4900:
 		diag_gpio = 0x000;
