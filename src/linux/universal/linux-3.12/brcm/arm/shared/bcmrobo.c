@@ -1626,6 +1626,7 @@ bcm_robo_enable_switch(robo_info_t *robo)
 	char *boothwmodel = nvram_get("boot_hw_model");
 	char *boothwver = nvram_get("boot_hw_ver");
 	char *boardnum = nvram_get("boardnum");
+	char *boardrev = nvram_get("boardrev");
 	char *boardtype = nvram_get("boardtype");
 	char *cardbus = nvram_get("cardbus");
 
@@ -1679,27 +1680,15 @@ bcm_robo_enable_switch(robo_info_t *robo)
 		robo_eee_advertise_init(robo);
 	}
 
-	if (boothwmodel != NULL && !strcmp(boothwmodel, "E4200") && boothwver != NULL && !strcmp(boothwver, "1.0")) {
-		printk(KERN_EMERG "E4200 switch LEDs fix\n");
-		/* Taken from cfe */
-		val16 = 0x8008;
-		robo->ops->write_reg(robo, PAGE_CTRL, 0x12, &val16, sizeof(val16));
-		
-		uint phy;
-		for (phy = 0; phy < MAX_NO_PHYS; phy++) {
-			robo->miiwr(robo->h, phy, 0x1c, 0xb8aa);
-			robo->miiwr(robo->h, phy, 0x17, 0x0f04);
-			robo->miiwr(robo->h, phy, 0x15, 0x0088);
-		}
-	}
-
-
-	if (boardnum != NULL && boardtype != NULL && cardbus != NULL)
-	if (!strcmp(boardnum, "42") && !strcmp(boardtype, "0x478") && !strcmp(cardbus, "1") && (!boothwmodel || (strcmp(boothwmodel, "WRT300N") && strcmp(boothwmodel, "WRT610N")))) {
-		printk(KERN_EMERG "Enable WRT350 LED fix\n");
-		/* WAN port LED */
-		val16 = 0x1F;
-		robo->ops->write_reg(robo, PAGE_CTRL, 0x16, &val16, sizeof(val16));    
+	if (boardnum != NULL && boardtype != NULL && boardrev != NULL)
+	if (!strcmp(boardnum, "32") && !strcmp(boardtype, "0x0665") && !strcmp(boardrev, "0x1301") ) {
+		/* WAN port LED fix*/
+		val16 = 0x3000 ;
+		robo->ops->write_reg(robo, PAGE_CTRL, 0x10, &val16, sizeof(val16));
+		val8 = 0x78 ;
+		robo->ops->write_reg(robo, PAGE_CTRL, 0x12, &val8, sizeof(val8)); 
+		val8 = 0x01 ;
+		robo->ops->write_reg(robo, PAGE_CTRL, 0x14, &val8, sizeof(val8)); 
 	}
 
 
