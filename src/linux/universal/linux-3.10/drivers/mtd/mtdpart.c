@@ -722,8 +722,8 @@ static int split_squashfs(struct mtd_info *master, int offset, int *split_offset
 
 	len = sb.bytes_used;
 	len += (offset & 0x000fffff);
-	len +=  (master->erasesize - 1);
-	len &= ~(master->erasesize - 1);
+	len +=  (((master->erasesize<65536)?65536:master->erasesize) - 1);
+	len &= ~(((master->erasesize<65536)?65536:master->erasesize) - 1);
 	len -= (offset & 0x000fffff);
 	*split_offset = offset + len;
 
@@ -757,6 +757,8 @@ static int split_rootfs_data(struct mtd_info *master, struct mtd_info *rpart, co
 	strcpy(dpart->name, ROOTFS_SPLIT_NAME);
 
 	dpart->size = rpart->size - (split_offset - spart->offset);
+	dpart->size /= 65536;
+	dpart->size *= 65536;
 	dpart->offset = split_offset;
 
 	if (dpart == NULL)
