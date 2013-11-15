@@ -417,6 +417,21 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	fprintf(fp, "CountryRegion=5\n");
 	fprintf(fp, "CountryRegionABand=7\n");
 	fprintf(fp, "CountryCode=JP\n");
+#elif HAVE_BUFFALO
+	char *region = nvram_safe_get("region");
+	if(!strcmp(region, "EU")) {
+		fprintf(fp, "CountryRegion=1\n");
+		fprintf(fp, "CountryRegionABand=7\n");
+		fprintf(fp, "CountryCode=DE\n");
+	} else if(!strcmp(region, "AP")) {
+		fprintf(fp, "CountryRegion=1\n");
+		fprintf(fp, "CountryRegionABand=7\n");
+		fprintf(fp, "CountryCode=KR\n");
+	} else { // US
+		fprintf(fp, "CountryRegion=0\n");
+		fprintf(fp, "CountryRegionABand=0\n");
+		fprintf(fp, "CountryCode=US\n");
+	}
 #else
 	fprintf(fp, "CountryRegion=1\n");
 	fprintf(fp, "CountryRegionABand=7\n");
