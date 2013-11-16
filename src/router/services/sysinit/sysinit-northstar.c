@@ -135,6 +135,25 @@ void start_sysinit(void)
 	if ( nvram_get("et_txq_thresh") == NULL ) {
 		nvram_set("et_txq_thresh","1024");
 	}
+	
+	if ( nvram_match("wl_regdomain", "TAIWAN") ) {
+		set_regulation(0, "TW", "13");
+		set_regulation(1, "TW", "13");
+	}
+	else if ( nvram_match("wl_regdomain", "CHINA") ) {
+		set_regulation(0, "CN", "1");
+		set_regulation(1, "CN", "1");
+	}
+	else if ( nvram_match("wl_regdomain", "UNITED_STATES" )
+		|| nvram_match("wl_regdomain", "MEXIKO") 
+		|| nvram_match("wl_regdomain", "CANADA") ) {
+		set_regulation(0, "US", "0");
+		set_regulation(1, "US", "0");
+	}
+	else{
+		set_regulation(0, "DE" , "0");
+		set_regulation(1, "DE" , "0");
+	}
 
 	switch (getRouterBrand()) {
 	case ROUTER_NETGEAR_R6250:
@@ -153,16 +172,16 @@ void start_sysinit(void)
 				nvram_set("pci/2/1/macaddr", mac);
 			}
 			struct nvram_tuple r6250_pci_1_1_params[] = {
-				{"pa2gw1a0", "0x18de", 0},
-				{"pa2gw1a1", "0x187a", 0},
+				{"pa2gw1a0", "0x1870", 0},
+				{"pa2gw1a1", "0x1870", 0},
 				{"ledbh12", "11", 0},
 				{"ag0", "2", 0},
 				{"ag1", "2", 0},
 				{"ag2", "255", 0},
 				{"rxchain", "3", 0},
 				{"bw402gpo", "0x1", 0},
-				{"pa2gw0a0", "0xfee5", 0},
-				{"pa2gw0a1", "0xfebb", 0},
+				{"pa2gw0a0", "0xff15", 0},
+				{"pa2gw0a1", "0xff15", 0},
 				{"boardflags", "0x80001200", 0},
 				{"tempoffset", "0", 0},
 				{"ofdm5gpo", "0", 0},
@@ -174,22 +193,22 @@ void start_sysinit(void)
 				{"maxp2ga0", "0x66", 0},
 				{"maxp2ga1", "0x66", 0},
 				{"boardtype", "0x62b", 0},
-				{"boardflags2", "0x1800", 0},
+				{"boardflags2", "0x9800", 0},
 				{"tssipos2g", "1", 0},
-				{"ofdm2gpo", "0xFEC96422", 0},
+				{"ofdm2gpo", "0xA8640000", 0},
 				{"ledbh0", "255", 0},
 				{"ledbh1", "255", 0},
 				{"ledbh2", "255", 0},
 				{"ledbh3", "131", 0},
-				{"mcs2gpo0", "0x6422", 0},
-				{"mcs2gpo1", "0xFEC9", 0},
-				{"mcs2gpo2", "0x6422", 0},
-				{"mcs2gpo3", "0xFEC9", 0},
-				{"mcs2gpo4", "0x6422", 0},
+				{"mcs2gpo0", "0x4000", 0},
+				{"mcs2gpo1", "0xCA86", 0},
+				{"mcs2gpo2", "0x4000", 0},
+				{"mcs2gpo3", "0xCA86", 0},
+				{"mcs2gpo4", "0x7422", 0},
 				{"antswctl2g", "0", 0},
-				{"mcs2gpo5", "0xFDB9", 0},
-				{"mcs2gpo6", "0x6422", 0},
-				{"mcs2gpo7", "0xFDB9", 0},
+				{"mcs2gpo5", "0xEDB9", 0},
+				{"mcs2gpo6", "0x7422", 0},
+				{"mcs2gpo7", "0xEDB9", 0},
 				{"stbc2gpo", "0", 0},
 				{"txchain", "3", 0},
 				{"elna2g", "2", 0},
@@ -199,8 +218,8 @@ void start_sysinit(void)
 				{"ccd2gpo", "0", 0},
 				{"ofdm5ghpo", "0", 0},
 				{"leddc", "65535", 0},
-				{"pa2gw2a0", "0xfa61", 0},
-				{"pa2gw2a1", "0xfa0d", 0},
+				{"pa2gw2a0", "0xfad3", 0},
+				{"pa2gw2a1", "0xfad3", 0},
 				{"opo", "68", 0},
 				{"ccode", "EU", 0},
 				{"pdetrange2g", "3", 0},
@@ -237,7 +256,7 @@ void start_sysinit(void)
 				{"rxgains5gtrisoa1", "6", 0},
 				{"rxgains5gtrisoa2", "6", 0},
 				{"tempoffset", "255", 0},
-				{"mcsbw205gmpo", "0xFDA86420", 0},
+				{"mcsbw205gmpo", "0xEC200000", 0},
 				{"noiselvl5ga0", "31,31,31,31", 0},
 				{"noiselvl5ga1", "31,31,31,31", 0},
 				{"noiselvl5ga2", "31,31,31,31", 0},
@@ -275,14 +294,14 @@ void start_sysinit(void)
 				{"rxgains5gelnagaina0", "3", 0},
 				{"rxgains5gelnagaina1", "3", 0},
 				{"rxgains5gelnagaina2", "3", 0},
-				{"mcsbw205glpo", "0xFCA86400", 0},
+				{"mcsbw205glpo", "0xEC200000", 0},
 				{"measpower1", "0x7f", 0},
 				{"sb20in80and160lr5gmpo", "0", 0},
 				{"measpower2", "0x7f", 0},
 				{"temps_period", "15", 0},
 				{"mcsbw805gmpo", "0xFDA86420", 0},
 				{"dot11agduplrpo", "0", 0},
-				{"mcsbw205ghpo", "0xFDA86420", 0},
+				{"mcsbw205ghpo", "0xFC652000", 0},
 				{"measpower", "0x7f", 0},
 				{"rxgains5ghelnagaina0", "7", 0},
 				{"ofdmlrbw202gpo", "0", 0},
@@ -293,7 +312,7 @@ void start_sysinit(void)
 				{"sb20in80and160hr5gmpo", "0", 0},
 				{"mcsbw1605gmpo", "0", 0},
 				{"epagain5g", "0", 0},
-				{"mcsbw405gmpo", "0xFDA86420", 0},
+				{"mcsbw405gmpo", "0xEC300000", 0},
 				{"cckbw202gpo", "0", 0},
 				{"rxchain", "7", 0},
 				{"sb40and80lr5glpo", "0", 0},
@@ -323,7 +342,7 @@ void start_sysinit(void)
 				{"sb20in80and160hr5glpo", "0", 0},
 				{"mcsbw1605glpo", "0", 0},
 				{"sb40and80hr5ghpo", "0", 0},
-				{"mcsbw405glpo", "0xFCA86400", 0},
+				{"mcsbw405glpo", "0xEC30000", 0},
 				{"dot11agofdmhrbw202gpo", "17408", 0},
 				{"rxgains5gmtrisoa0", "15", 0},
 				{"sb20in80and160hr5ghpo", "0", 0},
@@ -333,7 +352,7 @@ void start_sysinit(void)
 				{"rxgains5gmtrelnabypa0", "1", 0},
 				{"rxgains5gmtrelnabypa1", "1", 0},
 				{"rxgains5gmtrelnabypa2", "1", 0},
-				{"mcsbw405ghpo", "0xFDA86420", 0},
+				{"mcsbw405ghpo", "0xFC764100", 0},
 				{"boardflags2", "0x2", 0},
 				{"boardflags3", "0x0", 0},
 				{"rxgains5ghtrelnabypa0", "1", 0},
@@ -344,6 +363,13 @@ void start_sysinit(void)
 				{"rxgains5gtrelnabypa0", "1", 0},
 				{"rxgains5gtrelnabypa1", "1", 0},
 				{"rxgains5gtrelnabypa2", "1", 0},
+				{"pa5ga0", "0xff7a,0x16a9,0xfd4b,0xff6e,0x1691,0xfd47,0xff7e,0x17b8,0xfd37,0xff82,0x17fb,0xfd3a", 0},
+				{"pa5ga1", "0xff66,0x1519,0xfd65,0xff72,0x15ff,0xfd56,0xff7f,0x16ee,0xfd4b,0xffad,0x174b,0xfd81", 0},
+				{"pa5ga2", "0xff76,0x168e,0xfd50,0xff75,0x16d0,0xfd4b,0xff86,0x17fe,0xfd39,0xff7e,0x1810,0xfd31", 0},
+				{"maxp5ga0", "72,72,94,94", 0},
+				{"maxp5ga1", "72,72,94,94", 0},
+				{"maxp5ga2", "72,72,94,94", 0},
+				{"rxgains5gmtrelnabypa2" , "1", 0},
 
 				{0, 0, 0}
 			};
@@ -364,30 +390,7 @@ void start_sysinit(void)
 		set_gpio(0,1);
 		set_gpio(4,1); //ses
 		set_gpio(5,1); //wifi
-		nvram_set("pci/1/1/vendid", "0x14E4");
-		
-		
-		if (nvram_match("wl0_country_code", "US"))
-			set_regulation(0, "US", "0");
-		else if (nvram_match("wl0_country_code", "Q2"))
-			set_regulation(0, "US", "0");
-		else if (nvram_match("wl0_country_code", "TW"))
-			set_regulation(0, "TW", "13");
-		else if (nvram_match("wl0_country_code", "CN"))
-			set_regulation(0, "CN", "1");
-		else
-			set_regulation(0, "DE", "0");
-
-		if (nvram_match("wl1_country_code", "Q2"))
-			set_regulation(1, "US", "0");
-		else if (nvram_match("wl1_country_code", "EU"))
-			set_regulation(1, "EU", "13");
-		else if (nvram_match("wl1_country_code", "TW"))
-			set_regulation(1, "TW", "13");
-		else if (nvram_match("wl1_country_code", "CN"))
-			set_regulation(1, "CN", "1");
-		else
-			set_regulation(1, "US", "0");	
+		nvram_set("pci/1/1/vendid", "0x14E4");	
 
 		break;
 	case ROUTER_NETGEAR_R6300V2:
@@ -611,29 +614,7 @@ void start_sysinit(void)
 		set_gpio(0,1);
 		set_gpio(4,1); //ses
 		set_gpio(5,1); //wifi
-		nvram_set("pci/1/1/vendid", "0x14E4");
-		
-		if (nvram_match("wl0_country_code", "US"))
-			set_regulation(0, "US", "0");
-		else if (nvram_match("wl0_country_code", "Q2"))
-			set_regulation(0, "US", "0");
-		else if (nvram_match("wl0_country_code", "TW"))
-			set_regulation(0, "TW", "13");
-		else if (nvram_match("wl0_country_code", "CN"))
-			set_regulation(0, "CN", "1");
-		else
-			set_regulation(0, "DE", "0");
-
-		if (nvram_match("wl1_country_code", "Q2"))
-			set_regulation(1, "US", "0");
-		else if (nvram_match("wl1_country_code", "EU"))
-			set_regulation(1, "EU", "13");
-		else if (nvram_match("wl1_country_code", "TW"))
-			set_regulation(1, "TW", "13");
-		else if (nvram_match("wl1_country_code", "CN"))
-			set_regulation(1, "CN", "1");
-		else
-			set_regulation(1, "US", "0");	
+		nvram_set("pci/1/1/vendid", "0x14E4");	
 		
 		break;
 	case ROUTER_NETGEAR_R7000:
@@ -915,34 +896,13 @@ void start_sysinit(void)
 		}
 		set_gpio(15,1);//wlan button led on
 		set_gpio(4,1);
+		set_gpio(9,1);
 		set_gpio(5,1);
 		set_gpio(6,1); //reset button
 		nvram_set("wl_pcie_mrrs", "128");
 		nvram_set("wl0_pcie_mrrs", "128");
 		nvram_set("wl1_pcie_mrrs", "128");
 		nvram_set("pci/1/1/vendid", "0x14E4");
-		
-		if (nvram_match("wl0_country_code", "US"))
-			set_regulation(0, "US", "0");
-		else if (nvram_match("wl0_country_code", "Q2"))
-			set_regulation(0, "US", "0");
-		else if (nvram_match("wl0_country_code", "TW"))
-			set_regulation(0, "TW", "13");
-		else if (nvram_match("wl0_country_code", "CN"))
-			set_regulation(0, "CN", "1");
-		else
-			set_regulation(0, "DE", "0");
-
-		if (nvram_match("wl1_country_code", "Q2"))
-			set_regulation(1, "US", "0");
-		else if (nvram_match("wl1_country_code", "EU"))
-			set_regulation(1, "EU", "13");
-		else if (nvram_match("wl1_country_code", "TW"))
-			set_regulation(1, "TW", "13");
-		else if (nvram_match("wl1_country_code", "CN"))
-			set_regulation(1, "CN", "1");
-		else
-			set_regulation(1, "US", "0");	
 		
 		break;
 	case ROUTER_ASUS_AC67U:
@@ -1064,33 +1024,6 @@ void start_sysinit(void)
 		nvram_set("1:mcsbw205ghpo", "0xAA864433");
 		nvram_set("1:mcsbw405ghpo", "0xAA864433");
 		nvram_set("1:mcsbw805ghpo", "0xAA864433");
-		// regulatory setup
-
-		if (nvram_match("regulation_domain", "US"))
-			set_regulation(0, "US", "0");
-		else if (nvram_match("regulation_domain", "Q2"))
-			set_regulation(0, "US", "0");
-		else if (nvram_match("regulation_domain", "EU"))
-			set_regulation(0, "DE", "0");
-		else if (nvram_match("regulation_domain", "TW"))
-			set_regulation(0, "TW", "13");
-		else if (nvram_match("regulation_domain", "CN"))
-			set_regulation(0, "CN", "1");
-		else
-			set_regulation(0, "US", "0");
-
-		if (nvram_match("regulation_domain_5G", "US"))
-			set_regulation(1, "US", "0");
-		else if (nvram_match("regulation_domain_5G", "Q2"))
-			set_regulation(1, "US", "0");
-		else if (nvram_match("regulation_domain_5G", "EU"))
-			set_regulation(1, "DE", "0");
-		else if (nvram_match("regulation_domain_5G", "TW"))
-			set_regulation(1, "TW", "13");
-		else if (nvram_match("regulation_domain_5G", "CN"))
-			set_regulation(1, "CN", "1");
-		else
-			set_regulation(1, "US", "0");
 
 		break;
 	case ROUTER_DLINK_DIR868:
@@ -1327,24 +1260,12 @@ void start_sysinit(void)
 		set_gpio(15, 1);	// fixup ses button
 		break;
 	case ROUTER_BUFFALO_WZR1750:
-		nvram_default_get("wl_country_code", "US");
-		nvram_default_get("wl0_country_code", "US");
-		nvram_default_get("wl1_country_code", "US");
-		nvram_default_get("wl_country_rev", "0");
-		nvram_default_get("wl0_country_rev", "0");
-		nvram_default_get("wl1_country_rev", "0");
 		nvram_set("0:ledbh12", "7");
 		nvram_set("1:ledbh10", "7");
 		set_gpio(12, 1);	// fixup ses button
 		break;
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
-		nvram_default_get("wl_country_code", "US");
-		nvram_default_get("wl0_country_code", "US");
-		nvram_default_get("wl1_country_code", "US");
-		nvram_default_get("wl_country_rev", "0");
-		nvram_default_get("wl0_country_rev", "0");
-		nvram_default_get("wl1_country_rev", "0");
 		nvram_set("0:boardflags2", "0x1000");
 		nvram_set("1:boardflags2", "0x00001000");
 		nvram_set("0:ledbh12", "7");
@@ -1354,12 +1275,6 @@ void start_sysinit(void)
 
 	default:
 		nvram_set("bootpartition", "0");
-		nvram_default_get("wl_country_code", "US");
-		nvram_default_get("wl0_country_code", "US");
-		nvram_default_get("wl1_country_code", "US");
-		nvram_default_get("wl_country_rev", "0");
-		nvram_default_get("wl0_country_rev", "0");
-		nvram_default_get("wl1_country_rev", "0");
 
 	}
 

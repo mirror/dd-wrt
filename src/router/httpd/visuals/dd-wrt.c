@@ -4767,6 +4767,19 @@ if (!strcmp(prefix, "wl1"))
 
 void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 {
+#if defined(HAVE_NORTHSTAR)
+	char wl_regdomain[16];
+
+	sprintf(wl_regdomain, "wl_regdomain");
+	websWrite(wp,"<fieldset><br />\<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
+	
+	char *list = getCountryList();
+	showOptions(wp, wl_regdomain, list,nvram_default_get("wl_regdomain", "EUROPE"));
+	
+	websWrite(wp, "</div></fieldset><br />\n");
+
+#endif
+
 #ifdef HAVE_MADWIFI
 	int c = getdevicecount();
 	int i;
