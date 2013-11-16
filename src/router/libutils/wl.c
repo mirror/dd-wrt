@@ -628,7 +628,8 @@ int getchannels(unsigned int *retlist, char *ifname)
 	int count = 0;
 	int i;
 	chanspec_t c = 0, *chanspec;
-	char abbrev[WLC_CNTRY_BUF_SZ] = "";	/* default.. current locale */
+
+	char abbrev[WLC_CNTRY_BUF_SZ] = "";	/* default.. current locale */	
 	wl_uint32_list_t *list;
 
 	memset(buf, 0, WLC_IOCTL_MAXLEN);
@@ -638,10 +639,15 @@ int getchannels(unsigned int *retlist, char *ifname)
 	chanspec = (chanspec_t *) (buf + buflen);
 	*chanspec = c;
 	buflen += (sizeof(chanspec_t));
+	
+#ifdef HAVE_NORTHSTAR
+	strncpy(abbrev, getIsoName(nvram_default_get("wl_regdomain", "EUROPE")), WLC_CNTRY_BUF_SZ);
+#endif
+	strncpy(buf + buflen, abbrev, WLC_CNTRY_BUF_SZ);
 
 	strncpy(buf + buflen, abbrev, WLC_CNTRY_BUF_SZ);
 	buflen += WLC_CNTRY_BUF_SZ;
-
+	
 	list = (wl_uint32_list_t *) (buf + buflen);
 	list->count = WL_NUMCHANSPECS;
 	buflen += sizeof(uint32) * (WL_NUMCHANSPECS + 1);
