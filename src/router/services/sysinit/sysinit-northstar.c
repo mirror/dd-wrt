@@ -145,7 +145,7 @@ void start_sysinit(void)
 		set_regulation(1, "CN", "1");
 	}
 	else if ( nvram_match("wl_regdomain", "UNITED_STATES" )
-		|| nvram_match("wl_regdomain", "MEXIKO") 
+		|| nvram_match("wl_regdomain", "MEXICO") 
 		|| nvram_match("wl_regdomain", "CANADA") ) {
 		set_regulation(0, "US", "0");
 		set_regulation(1, "US", "0");
