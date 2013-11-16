@@ -759,7 +759,7 @@ static void nat_postrouting(void)
 					sprintf(nat, "%s_nat", var);
 					nvram_default_get(nat, "1");
 					if (nvram_match(nat, "1")) {
-						save2file("-A POSTROUTING -s %s0/%d -o %s -j SNAT --to-source %s\n", nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)), wanface, wanaddr);
+						save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s\n", nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)), wanface, wanaddr);
 					}
 
 				}
