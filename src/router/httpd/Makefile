@@ -174,6 +174,9 @@ endif
 ifeq ($(CONFIG_NP25G),y)
 CFLAGS += -DHAVE_NP25G
 endif
+ifeq ($(CONFIG_UNIWIP),y)
+CFLAGS += -DHAVE_UNIWIP
+endif
 ifeq ($(CONFIG_OLSRD),y)
 CFLAGS += -DHAVE_OLSRD
 endif
