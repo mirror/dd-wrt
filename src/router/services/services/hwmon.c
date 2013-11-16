@@ -64,6 +64,9 @@
 #define TEMP_PREFIX "temp"
 #define TEMP2_PREFIX "temp1"
 #define TEMP_MUL 100
+#elif HAVE_UNIWIP
+#define TEMP_PREFIX "temp1"
+#define TEMP_PATH "/sys/bus/i2c/devices/0-0049"
 #else
 #ifdef HAVE_X86
 #define TEMP_PATH "/sys/devices/platform/i2c-1/1-0048"
