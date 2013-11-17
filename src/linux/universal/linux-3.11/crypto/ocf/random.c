@@ -81,7 +81,7 @@ struct random_op {
 
 static int random_proc(void *arg);
 
-static pid_t		randomproc = (pid_t) -1;
+static struct task_struct *randomproc;
 static spinlock_t	random_lock;
 
 /*
@@ -141,9 +141,10 @@ crypto_rregister(
 	spin_lock_irqsave(&random_lock, flags);
 	list_add_tail(&rops->random_list, &random_ops);
 	if (!started) {
-		randomproc = kernel_thread(random_proc, NULL, CLONE_FS|CLONE_FILES);
-		if (randomproc < 0) {
-			ret = randomproc;
+		randomproc = kthread_run(random_proc, NULL, "ocf-random");
+		if (IS_ERR(randomproc)) {
+			ret = PTR_ERR(randomproc);
+			randomproc = NULL;
 			printk("crypto: crypto_rregister cannot start random thread; "
 					"error %d", ret);
 		} else
@@ -172,7 +173,7 @@ crypto_runregister_all(u_int32_t driverid)
 
 	spin_lock_irqsave(&random_lock, flags);
 	if (list_empty(&random_ops) && started)
-		kill_proc(randomproc, SIGKILL, 1);
+		kthread_stop(randomproc);
 	spin_unlock_irqrestore(&random_lock, flags);
 	return(0);
 }
@@ -199,7 +200,6 @@ random_proc(void *arg)
 	spin_unlock_irq(&current->sigmask_lock);
 	sprintf(current->comm, "ocf-random");
 #else
-	daemonize("ocf-random");
 	allow_signal(SIGKILL);
 #endif
 
@@ -230,7 +230,7 @@ random_proc(void *arg)
 	 * have anything to do,  if so exit or we will consume all the CPU
 	 * doing nothing
 	 */
-	while (!list_empty(&random_ops)) {
+	while (!list_empty(&random_ops) && !kthread_should_stop()) {
 		struct random_op	*rops, *tmp;
 
 #ifdef CONFIG_OCF_FIPS
@@ -308,7 +308,7 @@ random_proc(void *arg)
 
 bad_alloc:
 	spin_lock_irq(&random_lock);
-	randomproc = (pid_t) -1;
+	randomproc = NULL;
 	started = 0;
 	spin_unlock_irq(&random_lock);
 

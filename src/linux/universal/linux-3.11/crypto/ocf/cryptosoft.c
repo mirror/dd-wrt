@@ -320,7 +320,7 @@ execute_later(void (fn)(void *), void *arg)
 
 	w = (execute_later_t *) kmalloc(sizeof(execute_later_t), SLAB_ATOMIC);
 	if (w) {
-		memset(w, '\0', sizeof(w));
+		memset(w, '\0', sizeof(*w));
 		w->func = fn;
 		w->arg = arg;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,20)
