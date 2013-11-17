@@ -68,7 +68,7 @@ config OCF_HIFNHIPP
 
 config OCF_TALITOS
 	tristate "talitos (HW crypto engine)"
-	depends on OCF_OCF
+	depends on OCF_OCF && FSL_SOC
 	help
 	  OCF driver for Freescale's security engine (SEC/talitos).
 
