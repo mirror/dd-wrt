@@ -299,7 +299,7 @@ void __init setup_arch(char **cmdline_p)
 		ucache_bsize = icache_bsize = dcache_bsize;
 
 	/* reboot on panic */
-	panic_timeout = 180;
+	panic_timeout = 1;
 
 	if (ppc_md.panic)
 		setup_panic();
