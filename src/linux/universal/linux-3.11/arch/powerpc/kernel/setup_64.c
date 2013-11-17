@@ -574,7 +574,7 @@ void __init setup_arch(char **cmdline_p)
 	icache_bsize = ppc64_caches.iline_size;
 
 	/* reboot on panic */
-	panic_timeout = 180;
+	panic_timeout = 1;
 
 	if (ppc_md.panic)
 		setup_panic();

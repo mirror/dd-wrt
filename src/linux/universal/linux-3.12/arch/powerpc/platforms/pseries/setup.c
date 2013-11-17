@@ -444,7 +444,7 @@ static void pSeries_machine_kexec(struct kimage *image)
 
 static void __init pSeries_setup_arch(void)
 {
-	panic_timeout = 10;
+	panic_timeout = 1;
 
 	/* Discover PIC type and setup ppc_md accordingly */
 	pseries_discover_pic();
