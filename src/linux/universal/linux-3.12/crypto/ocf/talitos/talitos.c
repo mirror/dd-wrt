@@ -125,6 +125,7 @@
 #include <linux/platform_device.h>
 #endif
 
+#include <linux/of.h>
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,19)
 #include <linux/of_platform.h>
 #endif
@@ -154,13 +155,10 @@ static void talitos_init_device(struct talitos_softc *sc);
 static void talitos_reset_device_master(struct talitos_softc *sc);
 static void talitos_reset_device(struct talitos_softc *sc);
 static void talitos_errorprocessing(struct talitos_softc *sc);
-#ifdef CONFIG_PPC_MERGE
-static int talitos_probe(struct of_device *ofdev, const struct of_device_id *match);
-static int talitos_remove(struct of_device *ofdev);
-#else
+#define CONFIG_PPC_MERGE 1
+
 static int talitos_probe(struct platform_device *pdev);
 static int talitos_remove(struct platform_device *pdev);
-#endif
 #ifdef CONFIG_OCF_RANDOMHARVEST
 static int talitos_read_random(void *arg, u_int32_t *buf, int maxwords);
 static void talitos_rng_init(struct talitos_softc *sc);
@@ -1082,7 +1080,7 @@ talitos_reset_device(struct talitos_softc *sc)
 /* Set up the crypto device structure, private data,
  * and anything else we need before we start */
 #ifdef CONFIG_PPC_MERGE
-static int talitos_probe(struct of_device *ofdev, const struct of_device_id *match)
+static int talitos_probe(struct platform_device* dev)
 #else
 static int talitos_probe(struct platform_device *pdev)
 #endif
@@ -1090,8 +1088,8 @@ static int talitos_probe(struct platform_device *pdev)
 	struct talitos_softc *sc = NULL;
 	struct resource *r;
 #ifdef CONFIG_PPC_MERGE
-	struct device *device = &ofdev->dev;
-	struct device_node *np = ofdev->node;
+	struct device *device = &dev->dev;
+	struct device_node *np = dev->dev.of_node;
 	const unsigned int *prop;
 	int err;
 	struct resource res;
@@ -1265,17 +1263,9 @@ out:
 	return -ENOMEM;
 }
 
-#ifdef CONFIG_PPC_MERGE
-static int talitos_remove(struct of_device *ofdev)
-#else
 static int talitos_remove(struct platform_device *pdev)
-#endif
 {
-#ifdef CONFIG_PPC_MERGE
-	struct talitos_softc *sc = dev_get_drvdata(&ofdev->dev);
-#else
 	struct talitos_softc *sc = platform_get_drvdata(pdev);
-#endif
 	int i;
 
 	DPRINTF("%s()\n", __FUNCTION__);
@@ -1302,29 +1292,32 @@ static int talitos_remove(struct platform_device *pdev)
 #ifdef CONFIG_PPC_MERGE
 static struct of_device_id talitos_match[] = {
 	{
-		.type = "crypto",
-		.compatible = "talitos",
+		.compatible = "fsl,sec2.0",
 	},
 	{},
 };
 
 MODULE_DEVICE_TABLE(of, talitos_match);
 
-static struct of_platform_driver talitos_driver = {
-	.name		= DRV_NAME,
-	.match_table	= talitos_match,
+static struct platform_driver talitos_driver = {
+
+	.driver = {
+		.name = DRV_NAME,
+		.owner = THIS_MODULE,
+		.of_match_table = talitos_match,
+	},
 	.probe		= talitos_probe,
 	.remove		= talitos_remove,
 };
 
 static int __init talitos_init(void)
 {
-	return of_register_platform_driver(&talitos_driver);
+	return platform_driver_register(&talitos_driver);
 }
 
 static void __exit talitos_exit(void)
 {
-	of_unregister_platform_driver(&talitos_driver);
+	platform_driver_unregister(&talitos_driver);
 }
 #else
 /* Structure for a platform device driver */
