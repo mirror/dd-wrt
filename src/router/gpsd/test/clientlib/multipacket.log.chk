@@ -1,2 +1,0 @@
-flags: (0x20000000) {POLICY}
-POLICY: watcher=true nmea=false raw=0 scaled=false timing=false, devpath=
