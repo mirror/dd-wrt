@@ -1258,8 +1258,8 @@ OBJS += privoxy.o
 endif
 
 ifeq ($(CONFIG_LIGHTTPD),y)
-	CFLAGS_EXTRA += -DHAVE_LIGHTTPD
-	OBJS += lighttpd.o
+CFLAGS_EXTRA += -DHAVE_LIGHTTPD
+OBJS += lighttpd.o
 endif
 
 
