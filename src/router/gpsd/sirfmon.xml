@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE refentry PUBLIC 
+   "-//OASIS//DTD DocBook XML V4.1.2//EN"
+   "docbook/docbookx.dtd">
+<refentry id='sirfmon.1'>
+<refmeta>
+<refentrytitle>sirfmon</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo class='date'>23 Mar 2005</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>sirfmon</refname>
+<refpurpose>monitor and control a SiRF GPS in binary mode</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+
+<cmdsynopsis>
+  <command>sirfmon</command>  
+      <arg choice='opt'>-h </arg>
+      <arg choice='opt'>-v </arg>
+      <arg>-F <replaceable>control-socket</replaceable></arg>
+      <arg choice='opt'>
+	<group>
+	  <arg choice='plain'>
+            <replaceable>server</replaceable>
+            <group> 
+	      <replaceable>:port</replaceable> 
+              <group><replaceable>:device</replaceable></group>
+            </group>
+          </arg>
+          <arg choice='plain'><replaceable>device</replaceable></arg>
+        </group>
+      </arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para><application>sirfmon</application> is a monitor that watches
+packets coming from a SiRF GPS (the SiRF chipset is the one by far the
+most commonly used in GPS mice and other consumer-grade GPSes, about
+80% of them and rising in early 2005).  This program is primarily
+useful as a diagnostic aid for troubleshooting
+<application>gpsd</application> problems; it deliberately uses decoder
+logic that different from the decoder in the
+<application>gpsd</application> SiRF driver, so behaviors that show up
+in both are unlikely to be due to logic bugs in either.</para>
+
+<para><application>sirfmon</application> accepts an -h option that
+displays a usage message, or a -v option to dump the package
+version and exit.</para>
+
+<para>This program may be run in either of two modes, as a client for
+the <application>gpsd</application> daemon (and its associated control
+socket) or directly connected to a specified serial device.  When run
+with no argument, it attempts to connect to the daemon.  If the
+argument looks like a server:port specification it will also attempt
+to connect to the daemon.  If the argument looks like a bare server
+name it will attempt to connect to a daemon running on the default
+gpsd port on that server.  Only if the device argument contains
+slashes but no colons will it be treated as a serial device for direct
+connection. In direct-connect mode <application>sirfmon</application>
+will hunt for a correct baud rate and lock on to it
+automatically.</para>
+
+<para>The -F option is only valid in client mode; it specifies a
+control socket to which the program should send device control
+strings.  You must specify a valid pathname of a Unix-domain socket on
+your local filesystem.</para>
+
+<para> You will probably need to be root to run this program, as the
+serial devices and control socket it uses are normally
+privileged.</para>
+
+<para>After startup, the top part of the screen reports the contents
+of several especially interesting packet types.  The bottom half of
+the screen is a scrolling hex dump of all packets the GPS is issuing.
+Dump lines beginning &gt;&gt;&gt; represent control packets sent to the
+GPS.</para>
+
+<para>At SiRF firmware level 231, the "UTC" time displayed is not real
+UTC, as it is not leap-second-corrected.  This is due to an inadequacy 
+in the SiRF firmware.</para>
+
+<para>To interpret what you see, you will need a copy of the
+<citetitle>SiRF Binary Protocol Reference Manual</citetitle>.</para>
+
+</refsect1>
+<refsect1 id='commands'><title>COMMANDS</title>
+
+<para>The following comands are available while 
+<application>sirfmon</application> is running:</para>
+
+<variablelist>
+<varlistentry>
+<term>n</term>
+<listitem>
+<para>Switch device to NMEA mode at current speed and exit.</para>
+<para></para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>b</term>
+<listitem>
+<para>Change baud rate.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>c</term>
+<listitem>
+<para>Set (c1) or clear (c0) static navigation. The SiRF documentation
+says <quote>Static navigation is a position filter designed to be used
+with motor vehicles.  When the vehicle's velocity falls below a
+threshold, the position and heading are frozen, and velocity is set to
+zero. This condition will continue until the computed velocity rises
+above 1.2 times the threshold or until the computed position is at
+least a set distance from the frozen place. The threshold velocity and
+set distance may vary with software versions.</quote></para>
+
+<para>Non-static mode is designed for use with road navigation
+software, which often snaps the reported position to the nearest road
+within some uncertainty radius.  You probably want to turn static
+navigation off for pedestrian use, as it is likely to report speed
+zero and position changing in lsrge jumps.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>l</term>
+<listitem>
+<para>Toggle packet logging. If packet logging is on, it will be
+turned off and the log closed.  If it is off, logging to the filename
+following the l will be enabled.  Differs from simply capturing the
+data from the GPS device in that only whole packets are logged.
+The logfile is opened for append, so you can log more than one
+portion of the packet stream and they will be stitched together
+correctly.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>s</term>
+<listitem>
+<para>Send hex bytes to device. Following the 's' you may type hex
+digit pairs; end with a newline.  These will become the payload of a
+SiRF control packet shipped to the device.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>t</term>
+<listitem>
+<para>Toggle navigation-parameter display mode.  Toggles between
+normal display and one that shows selected navigation parameters from
+MID 19, including the Static Navigation bit toggled by the 'c' command.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Ctrl-S</term>
+<listitem>
+<para>Freeze display, suspend scrolling in debug window.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Ctrl-Q</term>
+<listitem>
+<para>Unfreeze display, resume normal operation.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</refsect1>
+<refsect1 id='files'><title>FILES</title>
+
+<variablelist>
+<varlistentry>
+<term><filename>/var/run/gpsd.sock</filename></term>
+<listitem>
+<para>The default location of the control socket.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+</refsect1>
+<refsect1 id='bugs'><title>BUGS AND LIMITATIONS</title>
+
+<para>The logic for hunting the GPS's baud rate is vulnerable to
+various sorts of RS232 flakiness. If it hangs for longer than a few
+seconds, kill the program and restart.</para>
+
+</refsect1>
+<refsect1 id='see_also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gps</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgps</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgpsd</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsprof</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsfake</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsctl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpscat</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+</para>
+</refsect1>
+
+<refsect1 id='maintainer'><title>AUTHOR</title> 
+
+<para>Eric S. Raymond <email>esr@thyrsus.com</email>, based on code
+originally by Rob Janssen, PE1CHL.  This code is part of the gpsd
+toolset; there is a project page for <application>gpsd</application>
+<ulink url="http://gpsd.berlios.de/">here</ulink>.</para>
+</refsect1>
+
+</refentry>
+
