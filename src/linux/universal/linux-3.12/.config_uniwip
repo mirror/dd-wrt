@@ -370,7 +370,7 @@ CONFIG_NEED_PER_CPU_KM=y
 CONFIG_PPC_4K_PAGES=y
 CONFIG_FORCE_MAX_ZONEORDER=11
 CONFIG_CMDLINE_BOOL=y
-CONFIG_CMDLINE="console=ttyS0,115200 root=/dev/mtdblock3 rootfstype=squashfs noinitrd init=/bin/sh"
+CONFIG_CMDLINE="console=ttyS0,115200 root=/dev/mtdblock5 rootfstype=squashfs noinitrd init=/bin/sh"
 CONFIG_EXTRA_TARGETS=""
 # CONFIG_SUSPEND is not set
 # CONFIG_PM_RUNTIME is not set
@@ -2546,14 +2546,15 @@ CONFIG_CRYPTO_DEV_TALITOS=m
 # OCF Configuration
 #
 CONFIG_OCF_OCF=m
-# CONFIG_OCF_RANDOMHARVEST is not set
+CONFIG_OCF_RANDOMHARVEST=y
+# CONFIG_OCF_FIPS is not set
 CONFIG_OCF_CRYPTODEV=m
-# CONFIG_OCF_CRYPTOSOFT is not set
+CONFIG_OCF_CRYPTOSOFT=m
 # CONFIG_OCF_SAFE is not set
 # CONFIG_OCF_IXP4XX is not set
 # CONFIG_OCF_HIFN is not set
 # CONFIG_OCF_HIFNHIPP is not set
-CONFIG_OCF_TALITOS=m
+# CONFIG_OCF_TALITOS is not set
 # CONFIG_OCF_EP80579 is not set
 # CONFIG_OCF_CRYPTOCTEON is not set
 # CONFIG_OCF_KIRKWOOD is not set
