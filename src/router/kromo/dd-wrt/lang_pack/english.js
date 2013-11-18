@@ -461,6 +461,7 @@ bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Adblocking";
+bmenu.servicesLighttpd="Webserver";
 //bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
@@ -757,6 +758,18 @@ privoxy.custom="Custom Configuration";
 
 var hprivoxy=new Object();
 hprivoxy.right2="Enable privoxy and configure your clients proxy settings. Proxy IP = <b>Router IP</b> Proxy Port = <b>8118</b>";
+
+
+//** Lighttpd.asp **//
+var lighttpd=new Object();
+lighttpd.titl="Webserver";
+lighttpd.server="Lighttpd";
+lighttpd.legend="Lighttpd Webserver";
+lighttpd.port="Listen Port";
+lighttpd.custom="Custom Configuration";
+
+var hlighttpd=new Object();
+hlighttpd.right2="Enable lighttpd and set the webserver port where lighttpd will listen for requests.";
 
 var hnas=new Object();
 hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through ftp or samba.";
