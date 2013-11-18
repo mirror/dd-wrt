@@ -1,0 +1,343 @@
+#!/usr/bin/env python
+#
+# This file is Copyright (c) 2010 by the GPSD project
+# BSD terms apply: see the file COPYING in the distribution root for details.
+#
+"""\
+flocktest - shepherd script for the GPSD test flock
+
+usage: flocktest [-c] [-q] [-d subdir] [-k key] -v [-x exclude] [-?]
+
+The -? makes flocktest prints this help and exits.
+
+The -c option dumps flocktest's configuration and exits
+
+The -k mode installs a specified file of ssh public keys on all machines
+
+Otherwise, the remote flockdriver script is executed on each machine.
+
+The -d option passes it a name for the remote test subdirectory
+If you do not specify a subdirectory name, the value of $LOGNAME will be used.
+
+The -q option suppresses CIA notifications
+
+The -v option shows all ssh commands issued, runs flockdriver with -x set
+and causes logs to be echoed even on success.
+
+The -x option specifies a comma-separated list of items that are
+either remote hostnames or architecture tags.  Matching sites are
+excluded.  You may wish to use this to avoid doing remote tests that
+are redundant with your local ones.
+
+Known bug: The -k has no atomicity check.  Running it from two
+flocktest instances concurrently could result in a scrambled keyfile.
+"""
+
+import os, sys, ConfigParser, getopt, socket, threading, commands, time
+
+flockdriver = '''
+#!/bin/sh
+#
+# flockdriver - conduct regression tests as an agent for a remote flocktest
+#
+# This file was generated at %(date)s.  Do not hand-hack.
+
+quiet=no
+while getopts dq opt
+do
+    case $opt in
+        d) subdir=$2; shift; shift ;;
+        q) quiet=yes; shift ;;
+    esac
+done
+
+# Fully qualified domain name of the repo host.  You can hardwire this
+# to make the script faster. The -f option works under Linux and FreeBSD,
+# but not OpenBSD and NetBSD. But under OpenBSD and NetBSD,
+# hostname without options gives the FQDN.
+if hostname -f >/dev/null 2>&1
+then
+    site=`hostname -f`
+else
+    site=`hostname`
+fi
+
+if [ -f "flockdriver.lock" ]
+then
+    logmessage="A test was already running when you initiated this one."
+    cd $subdir
+else
+    echo "Test begins: "`date`
+
+    echo "Site: $site" 
+    echo "Directory: ${PWD}/${subdir}"
+
+    # Check the origin against the repo origin.  If they do not match,
+    # force a re-clone of the repo
+    if [ -d $subdir ]
+    then
+        repo_origin=`(cd $subdir; git config remote.origin.url)`
+        if [ $repo_origin != "%(origin)s" ]
+        then
+            echo "Forced re-clone."
+            rm -fr $subdir
+        fi
+    fi
+    
+    # Set up or update the repo
+    if [ ! -d $subdir ]
+    then
+	git clone %(origin)s $subdir
+	cd $subdir
+    else
+	cd $subdir;
+	git pull
+    fi
+
+    # Scripts in the test directory need to be able to run binaries in same
+    PATH="$PATH:."
+
+    # Perform the test
+    if ( %(regression)s )
+    then
+	logmessage="Regression test succeeded."
+	status=0
+    else
+	logmessage="Regression test failed."
+	status=1
+    fi
+
+    echo "Test ends: "`date`
+fi
+
+# Here is where we abuse CIA to do our notifications for us.
+
+# Addresses for the e-mail
+from="FLOCKDRIVER-NOREPLY@${site}"
+to="cia@cia.navi.cx"
+
+# SMTP client to use
+sendmail="sendmail -t -f ${from}"
+
+# Should include all places sendmail is likely to lurk. 
+PATH="$PATH:/usr/sbin/"
+
+# Identify what just succeeded or failed
+merged=$(git rev-parse HEAD)
+rev=$(git describe ${merged} 2>/dev/null)
+[ -z ${rev} ] && rev=${merged}
+refname=$(git symbolic-ref HEAD 2>/dev/null)
+refname=${refname##refs/heads/}
+
+# And the git version
+gitver=$(git --version)
+gitver=${gitver##* }
+
+if [ $quiet = no ]
+then
+    ${sendmail} << EOM
+Message-ID: <${merged}.${subdir}.blip@%(project)s>
+From: ${from}
+To: ${to}
+Content-type: text/xml
+Subject: DeliverXML
+
+<message>
+  <generator>
+    <name>%(project)s Remote Test Flock Driver</name>
+    <version>${gitver}</version>
+    <url>${origin}/flockdriver</url>
+  </generator>
+  <source>
+    <project>%(project)s</project>
+    <branch>${refname}@${site}</branch>
+  </source>
+  <timestamp>`date`</timestamp>
+  <body>
+    <commit>
+      <author>${subdir}</author>
+      <revision>${rev}</revision>
+      <log>${logmessage}</log>
+    </commit>
+  </body>
+</message>
+EOM
+fi
+
+exit $status
+# End.
+'''
+
+class FlockThread(threading.Thread):
+    def __init__(self, site, command):
+        threading.Thread.__init__(self)
+        self.site = site
+        self.command = command
+    def run(self):
+        (self.status, self.output) = commands.getstatusoutput(self.command)
+
+class TestSite:
+    "Methods for performing tests on a single remote site."
+    def __init__(self, fqdn, config, execute=True):
+        self.fqdn = fqdn
+        self.config = config
+        self.execute = execute
+        self.me = self.config["login"] + "@" + self.fqdn
+    def error(self, msg):
+        "Report an error while executing a remote command."
+        sys.stderr.write("%s: %s\n" % (self.fqdn, msg))
+    def do_remote(self, remote):
+        "Execute a command on a specified remote host."
+        command = "ssh "
+        if "port" in self.config:
+            command += "-p %s " % self.config["port"]
+        command += "%s '%s'" %  (self.me, remote)
+        if self.verbose:
+            print command
+        self.thread =  FlockThread(self, command)
+        self.thread.start()
+    def update_keys(self, filename):
+        "Upload a specified file to replace the remote authorized keys."
+        if 'debian.org' in self.me:
+            self.error("updating keys on debian.org machines makes no sense.")
+            return 1
+        command = "scp '%s' %s:~/.ssh/.authorized_keys" % (os.path.expanduser(filename), self.me)
+        if self.verbose:
+            print command
+        status = os.system(command)
+        if status:
+            self.error("copy with '%s' failed" % command)
+        return status
+    def do_append(self, filename, string):
+        "Append a line to a specified remote file, in foreground."
+        self.do_remote("echo \"%s\" >>%s" % (string.strip(), filename))
+    def do_flockdriver(self, agent, invocation):
+        "Copy flockdriver to the remote site and run it."
+        self.starttime = time.time()
+        if self.config.get("quiet", "no") == "yes":
+            invocation += " -q"
+        uploader = "ssh -p %s %s 'cat >%s'" \
+                       % (self.config.get("port", "22"), self.me, agent)
+        if self.verbose:
+            print uploader
+        ofp = os.popen(uploader, "w")
+        self.config['date'] = time.ctime() 
+        ofp.write(flockdriver % self.config)
+        if ofp.close():
+            print >>sys.stderr, "flocktest: agent upload failed"
+        else:
+            self.do_remote(invocation)
+        self.elapsed = time.time() - self.starttime
+
+class TestFlock:
+    "Methods for performing parallel tests on a flock of remote sites."
+    ssh_options = "no-port-forwarding,no-X11-forwarding," \
+                 "no-agent-forwarding,no-pty "
+    def __init__(self, sitelist, verbose=False):
+        self.sitelist = sitelist
+        self.verbose = verbose
+    def update_remote(self, filename):
+        "Copy a specified file to the remote home on all machines."
+        for site in self.sitelist:
+            site.update_remote(filename)
+    def do_remotes(self, agent, invocation):
+        "Execute a command on all machines in the flock."
+        slaves = []
+        print "== testing at: %s ==" % flock.listdump()
+        starttime = time.time()
+        for site in self.sitelist:
+            site.do_flockdriver(agent, invocation)
+        for site in sites:
+            site.thread.join()
+        failed = 0
+        for site in sites:
+            if site.thread.status:
+                print "== %s test FAILED in %.2f seconds, status %d ==" % (site.fqdn, site.elapsed, site.thread.status)
+                failed += 1
+                print site.thread.output
+            else:
+                print "== %s test succeeded in %.2f seconds ==" % (site.fqdn, site.elapsed)
+                if self.verbose:
+                    print site.thread.output
+        elapsed = time.time() - starttime
+        print "== %d tests completed in %.2f seconds: %d failed ==" % (len(sites), elapsed, failed)
+    def exclude(self, exclusions):
+        "Delete matching sites."
+        self.sitelist = filter(lambda x: x.fqdn not in exclusions and x.config["arch"] not in exclusions, self.sitelist)
+    def update_keys(self, keyfile):
+        "Copy the specified public key file to all sites."
+        for site in self.sitelist:
+            site.update_keys(keyfile)
+    def listdump(self):
+        "Return a dump of the site list."
+        return ", ".join(map(lambda x: x.fqdn, self.sitelist))
+
+if __name__ == '__main__':
+    try:
+        (options, arguments) = getopt.getopt(sys.argv[1:], "cd:kqvx:?")
+    except getopt.GetoptError, msg:
+        print "flocktest: " + str(msg)
+        raise SystemExit, 1
+
+    exclusions = []
+    subdir = None
+    copykeys = None
+    verbose = False
+    dumpconf = False
+    cianotify = True
+    for (switch, val) in options:
+        if  switch == '-c':	# Dump flocktest configuration
+            dumpconf = True
+        elif switch == '-d':	# Set the test subdirectory name
+            subdir = val
+        elif  switch == '-k':	# Install the access keys
+            copykeys = True
+        elif switch == '-q':	# Suppress CIA notifications
+            cianotify = False
+        elif switch == '-v':	# Display build log even when no error
+            verbose = True
+        elif switch == '-x':	# Exclude specified sites or architectures
+            exclusions = map(lambda x: x.strip(), val.split(","))
+        else: # switch == '-?':
+            print __doc__
+            sys.exit(0)
+
+    config = ConfigParser.RawConfigParser()
+    config.read(["flocktest.ini", ".flocktest.ini"])
+    if arguments:
+        config.set("DEFAULT", "origin", arguments[0])
+    if not config.has_option("DEFAULT", "origin"):
+        print >>sys.stderr, "flocktest: repository required."
+        sys.exit(1)
+    sites = []
+    for site in config.sections():
+        newsite = TestSite(site, dict(config.items(site)))
+        newsite.verbose = verbose
+        if newsite.config["status"].lower() == "up":
+            sites.append(newsite)
+    flock = TestFlock(sites, verbose)
+    if exclusions:
+        flock.exclude(exclusions)
+    if dumpconf:
+        config.write(sys.stdout)
+    elif copykeys:
+        keyfile = config.get("DEFAULT", "sshkeys")
+        flock.update_keys(keyfile)
+    else:
+        if not subdir:
+            subdir = os.getenv("LOGNAME")
+        if not subdir:
+            print "flocktest: you don't exist, go away!"
+            sys.exit(1)
+        agent = "flockdriver.%s" % subdir
+        invocation = "sh flockdriver.%s -d %s" % (subdir, subdir,)
+        if not cianotify:
+            invocation += " -q"
+        if verbose > 1:
+            invocation = "sh -x " + invocation
+        flock.do_remotes(agent, invocation)
+
+# The following sets edit modes for GNU EMACS
+# Local Variables:
+# mode:python
+# End:

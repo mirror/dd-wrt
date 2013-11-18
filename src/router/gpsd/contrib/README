@@ -1,0 +1,43 @@
+The following tools are not production-ready. They are included only as
+conveniences, examples or rudimetary starting points for other development
+efforts.
+
+binlog and binreplay are probably only useful for people developing
+drivers for new protocols, when gpsfake does not yet know what to do
+with a log file. These utilities are not particularly clever - they
+merely slurp a tty's output into a file, or spray the contents of a
+file out of a tty.
+
+skyview.php is used to generate pictures of your skyview, and may be
+used to help determine if a given antenna placement is appropriate for
+some purpose. This tool requires about 24hrs worth of "Y" messages and
+outputs an image of accumulated SV position and signal strength. It is
+sometimes entertaining to "see" occulted SVs using multipath. You must
+have the PHP-GD library installed to use this script.
+
+ashctl might be used to reset an uncooperative Ashtech receiver to
+a usable state. For whatever reason sometimes they do not respond to
+a protocol switch command; this spams the receiver with configuration
+commands, and hopefully it listens.
+
+motosend is like ashctl, but for receivers that use the motorola
+protocol (like motorola oncore or rockwell jupiter). it's a little
+buggy with syncing up to the start of a packet, but it'll send control
+strings OK.
+
+maxsats.pl analyzes a collection of "Y" messages and outputs records
+describing periods of excellent visibility (ie. 10 or more PRNs tracked).
+With over 30 SVs on orbit, there are periods where 14 PRNs are above the
+horizon, 13 are tracking, and at least 12 are actually used in a solution.
+
+lla2ecef transforms latitude/longitude/altitude (aka north-east-up or local
+tangential plane) coordinates into the earth-centered-earth-fixed frame. If
+invoked as "ecef2lla" it will transform coordinates in the opposite manner.
+
+webgps.py draws a sky view of the satellites and their tracks using HTML5. It
+needs to run continuously in order to build a history and generate the
+satellite tracks. Your browser must be able to display the <canvas> element to
+display the satellite view properly. webgps.py can be called with the argument
+"c" to run continously, with an integer duration and a unit suffix to run this
+long (units allowed are "s", "m", "h" and "d", e.g. "4h"), or without argument
+to create a snapshot of the current sat view.

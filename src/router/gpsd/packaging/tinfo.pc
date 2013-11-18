@@ -1,0 +1,13 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+major_version=5
+version=5.9.20110404
+
+Name: tinfo
+Description: ncurses 5.9 add-on library
+Version: ${version}
+Requires:
+Libs:  -ltinfo
+Cflags: 

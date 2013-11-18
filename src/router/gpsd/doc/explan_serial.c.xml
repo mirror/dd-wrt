@@ -1,0 +1,105 @@
+<sect1 id="serial.c"><title><filename>serial.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>This provides serial port handling services to the daemon. It handles the tricky task of scanning for and changing port parameters, especially baudrate.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Tue Apr 6 10:17:55 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>void gpsd_tty_init(struct gps_device_t *session)</function></entry>
+  <entry><para>To be called on allocating a device. Mark GPS fd closed
+  and its baud rate unknown.</para><para>If we are supporting
+  <function>ntpd</function> shared memory segments, ensure they are
+  initially unused.</para></entry>
+</row>
+<row>
+  <entry><function>void cfmakeraw(struct termios *termios_p)</function></entry>
+  <entry><para>Workaround for Cygwin, which is missing
+  <function>cfmakeraw()</function>. It is pasted from man page and
+  added in <function>serial.c</function> arbitrarily.</para></entry>
+</row>
+<row>
+  <entry><function>speed_t gpsd_get_speed(struct termios* ttyctl)</function></entry>
+  <entry><para>Calls <function>cfgetospeed()</function> and returns
+  the baud rate, if known. Default otherwise is 115200.</para></entry>
+</row>
+<row>
+  <entry><function>bool gpsd_set_raw(struct gps_device_t *session)</function></entry>
+  <entry><para>Tries to set port to raw mode and returns success or
+  not.</para></entry>
+</row>
+<row>
+  <entry><function>void gpsd_set_speed(struct gps_device_t *session, speed_t speed, unsigned char parity, unsigned int stopbits)</function></entry>
+  <entry><para>Sets the speed, parity and stopbits.</para><para>Lots
+  of black magic fiddling goes on to ensure the port is flushed on the
+  baud rate change and wakeup strings are fired off just in case the
+  device needs prodding into life.</para><para>READ THE CODE AND
+  COMMENTS!!!</para><para>Prior to exit, a call is made to
+  <function>packet_reset()</function> to ensure the packet state
+  machine is initialised.</para></entry>
+</row>
+<row>
+  <entry><function>int gpsd_open(struct gps_device_t *session)</function></entry>
+  <entry><para>Test the device and flag it as R/W if it is a character
+  device, or R/O if it isn't.</para><para>Try to open it in
+  non-blocking and no-control mode.</para><para>If that fails, try
+  again, adding read-only mode. If that also fails, exit with an
+  error.</para><para>On no error, force the saved baudrate if we have
+  a fixed port speed (typically embedded devices). Check if we have a
+  saved baudrate and if so, activate it.</para><para>Preset the packet
+  type to BAD_PACKET.</para><para>Check if the device we have opened
+  is a tty. If it is a tty, read the original terminal
+  parameters.</para><para>Exit with an error code -1 on failure to do
+  so.</para><para>Save the old parameters, set important control
+  flags, then set the speed.</para><para>Finally, return the allocated
+  fd.</para></entry>
+</row>
+<row>
+  <entry><function>bool gpsd_write(struct gps_device_t *session, void const *buf, size_t len)</function></entry>
+  <entry><para>If the device is read-only, simply return
+  0.</para><para>If not, try to write <function>len</function>
+  characters to the device. Waiting until all data has been
+  sent.</para><para>Return the number of bytes written.</para></entry>
+</row>
+<row>
+  <entry><function>bool gpsd_next_hunt_setting(struct gps_device_t *session)</function></entry>
+  <entry><para>Check if we have had SNIFF_RETRIES attempts at current
+  baudrate. If not, return <quote>true</quote>.</para><para>If we have
+  exceeded the limit, reset the counter and see if there are any more
+  rates to try at.</para><para>If no (fixed baudrate or all attempts
+  exhausted), return <quote>false</quote>, otherwise, set the next
+  speed and return <quote>true</quote>.</para></entry>
+</row>
+<row>
+  <entry><function>void gpsd_assert_sync(struct gps_device_t *session)</function></entry>
+  <entry><para>To be called when we want to register that we've synced
+  with a device. We've achieved first sync with the device. Remember
+  the baudrate so we can try it first next time this device is
+  opened.</para></entry>
+</row>
+<row>
+  <entry><function>void gpsd_close(struct gps_device_t *session)</function></entry>
+  <entry><para>If there is an active fd, check if it is a tty
+  device. If it is, force the baudrate to 0 (should terminate the
+  connection and de-assert control lines).</para><para> Set the HUPCL
+  flag in the original data, write the old data to the port, close the
+  fd and clear that fd number from the session data.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

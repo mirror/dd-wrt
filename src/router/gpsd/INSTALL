@@ -1,0 +1,164 @@
+= GPSD Installation Instructions =
+
+Here are the steps for installing GPSD and verifying its performance.
+They assume you have GPSD available as an installable binary package, 
+
+Instructions for building GPSD from source (including cross-building)
+are in the file "build.txt" in the source distribution.
+
+== Check that your GPS is live and you can get data from it ==
+
+Start by making sure you can get data from your GPS, otherwise the later
+steps will be very frustrating.  In this command
+
+      stty -F /dev/ttyXXX ispeed 4800 && cat </dev/ttyXXX
+
+replace ttyXXX with the filename of the port.  This will probably be
+either /dev/ttyUSB0 or /dev/ttyS0.  When you run this command, you
+should see text lines beginning with $ come to stdout (possibly after
+a short initial burst of binary garbage).  If you don't see this, you
+may have OS-level problems with your serial support, but more likely
+have the wrong device.  Look again.
+
+If you have trouble with the preceding step, check your cabling
+first.  Verify that the device is connected and that its power LED
+(if it has one) is lit.
+
+If you seem to have some sort of serial-device problem, check that
+your kernel properly supports the device you are using.  For GPSes
+using an RS-232 port (which is no longer common) you will need
+serial-port support compiled into your kernel.  Various USB-to-serial
+adapter chips found in GPSes require specific drivers.
+
+Under a stock Linux kernel these will all be loaded on demand when
+the USB system sees the appropriate vendor/product ID combinations.
+See build.txt for instructions relating to custom kernels.
+
+== Check that your system configuration will allow GPSD to work ==
+
+Ensure that device permissions will enable gpsd to read from and write
+to GPS devices even after it drops root privileges.  If you are
+running Fedora Core, Ubuntu, or stock Debian you can skip this step,
+as the stock configuration has the right properties.
+
+gpsd requires two things: (1) that GPS devices have group read and
+write enabled, and (2) all of them are have the same group ID as a
+prototypical device, typically /dev/ttyS0 under Linux or /dev/tty00
+under *BSD. It does not actually matter what the owning group is, as
+gpsd will look this up on startup.  Alternatively, (3), you can set a
+fallback group with the gpsd-group option in case the prototype is not
+found: this should be the "dialout" group (or functional equivalent)
+that has write access to serial devices.
+
+Before dropping privileges, gpsd will ensure that it has access to
+devices given to it on the command line by forcing their group read
+and write permissions on.
+
+On a Linux with udev, check the files in /etc/udev/permissions.d to
+ensure that /dev/tty* devices are all created with the same group 
+and with 0660 permissions.
+
+When gpsd drops privileges, its default is to set uid to 'nobody' and
+group to the owning group of the prototype device (the configure
+option gpsd-user=foo will cause gpsd to change to 'foo'
+instead).
+
+If your system has the Linux hotplug facility installed you can skip
+the permission-setting part; the hotplug scripts will force the
+permissions for you.  You still have to make sure all the tty devices
+are in the same group.
+
+== Check your installation prerequisites ==
+
+A minimum build of GPSD can run pretty close to the metal; all it
+absolutely needs is the C runtime support. The test clients and
+various additional features have additional prerequisites:
+
+|==========================================================================
+|pthreads library       | support for PPS timekeeping on serial GPSes
+|DBUS                   | gpsd will issue DBUS notifications 
+|ncurses                | a test client and the GPS monitor depend on this
+|libtinfo5              | shared low-level terminfo library (see below)
+|libusb-1.0.x or later  | better USB device discovery
+|Qt + qmake             | libQgpsmm depends on this
+|python2.6+             | required for various clients and utilities
+|pgtk-2/cairo bindings  | the main test client, xgps, needs this
+|==========================================================================
+
+Some ncurses packages comntain the terminfo library; some break it out
+separately as libtinfo5 or libtinfo.
+
+The Python code in GPSD is actually compatible back to Python 2.4 except that
+you need either the json library module from 2.6 or the functionally
+equivalent simplejson backport.
+
+== Install the package(s) ==
+
+Up-to-date gpsd packages are generally available for Linux
+distributions including Debian and derivatives (including Ubuntu and
+Mint), Fedora and derivatives (including CentOS), openSUSE, PCLinuxOS,
+Mageia, and Slackware.  In the embedded space, CeroWRT carries
+GPSD. The GPSD package in the FreeBSD ports tree is also reliably up
+to date.  Even if your distribution is not on this list, it is quite
+likely GPSD has already been packaged for it.
+
+Whatever distribution you are running, the name of the core GPSD
+package containing the service daemon is almost certainly "gpsd".
+However, many distributions break up GPSD into separate installable
+packages for the core daemon and clients; you should search your
+repository index for anything with gpsd as a prefix.
+
+== How to test the software ==
+
+1. Start gpsd.  You'll need to give it as an argument a path to 
+a serial or USB port with a GPS attached to it.  Your test command
+should look something like this:
+
+       gpsd -D 5 -N -n /dev/ttyUSB0
+
+2. Once gpsd is running, telnet to port 2947. You should see a
+greeting line that's a JSON object describing GPSD's version.
+Now plug in your GPS (or AIS receiver, or RTCM2 receiver).
+
+3. Type '?WATCH={"enable":true,"json"};' to start raw and
+watcher modes.  You should see lines beginning with '{' that are
+JSON objects representing reports from your GPS; these are reports
+in GPSD protocol.
+
+4. Start the xgps or cgps client.  Calling it with no arguments should
+do the right thing.  You should see a display panel with
+position/velocity-time information, and a satellite display.  The
+displays won't look very interesting until the GPS acquires satellite
+lock.
+
+5. Have patience.  If you are cold-starting a new GPS, it may take
+15-20 minutes after it gets a skyview for it to download an ephemeris
+and begin delivering fixes.
+
+6. A FAQ and troubleshooting instructions can be found at the GPSD 
+project site.
+
+== Once you have verified correct operation ==
+
+1. If you installed from a .deb under Debian or a Debian-derived 
+system, you may need to `dpkg-reconfigure -plow gpsd' to enable the
+hotplug magic ("Start gpsd automatically").
+
+2. Check out the list of supported hardware at the Hardware page on
+the GPSD project's website. If your GPS isn't on the list, please send
+us information to add a new line to the table.  Directions are
+included on that page. We can also use updates of the latest version
+number known to work with hardware already supported.
+
+3. GPSD includes a PHP script that you can use to generate a PHP
+status page for your GPS if you wish. (It may not be in the core
+package.)  It will be installed in your HTTP document directory. The
+first time it's invoked, it will generate a file called
+'gpsd_config.inc' in that directory containing configuration
+information; edit to taste.
+
+4. Note for people using gpsd as time source for ntpd: In case you're
+using dhcp3-client to configure your system, make sure you disable
+/etc/dhcp3/dhclient-exit-hooks.d/ntp, as dhclient would restart
+ntpd with an automatically created ntp.conf otherwise - and gpsd
+would not be able to talk with ntpd anymore.

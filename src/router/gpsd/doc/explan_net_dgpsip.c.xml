@@ -1,0 +1,53 @@
+<sect1 id="net_dgpsip.c"><title><filename>dgpsip.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>This file provides the actual services for dgpsip corrections to <function>dgnss.c</function>.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>int dgpsip_open(struct gps_context_t *context, const char *dgpsserver)</function></entry>
+  <entry><para>Tries to open a connection to a dgpsip server. Returns
+  either -1 on failure or the socket number on success. On success, it
+  initializes the connection, sends a <quote>HELO</quote> to the
+  server and stores the type of dgnss service in the context
+  data.</para></entry>
+</row>
+<row>
+  <entry><function>void dgpsip_report(struct gps_device_t *session)</function></entry>
+  <entry><para>If we have not contacted the server and we have at
+  received least 10 fixes, send a report to the server and set the
+  flag, so we don't do it again.</para></entry>
+</row>
+<row>
+  <entry><function>static int srvcmp(const void *s, const void *t)</function></entry>
+  <entry><para>Compare the distance of two servers from our
+  location. Return -ve, 0 or +ve depending if server
+  <function>s</function> is nearer, the same distance away or further
+  away than server <function>t</function>.</para></entry>
+</row>
+<row>
+  <entry><function>void dgpsip_autoconnect(struct gps_context_t *context, double lat, double lon, const char *serverlist)</function></entry>
+  <entry><para>This function takes a list of servers and tries to get
+  a connection to the closest one relative to our location. If no
+  servers are within 1600 km or none are in the list, the dsock value
+  is set to -2 to lock out the function.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

@@ -1,0 +1,9 @@
+#!/bin/sh
+# Extract pure NMEA from an emailed gpsd error log.
+# The output can be fed to gpsfake.
+#
+# This file is Copyright (c) 2010 by the GPSD project
+# BSD terms apply: see the file COPYING in the distribution root for details.
+sed -n -e "/^> */s///" -e "/gpsd: <= GPS: /s///" -e '/^\$/p'
+
+

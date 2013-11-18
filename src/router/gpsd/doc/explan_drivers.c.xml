@@ -1,0 +1,53 @@
+<sect1 id="drivers.c"><title><filename>drivers.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>This is the main driver for NMEA, both plain vanilla and any manufacturer specific variety of NMEA output. This is NOT where manufacturer specific binary matters are handled.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on cde as of Mon Apr 5 21:38:06 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>ssize_t generic_get(struct gps_device_t *session)</function></entry>
+  <entry><para>This is a wrapper to call the real packet getter function, <function>packet_get()</function>.</para></entry>
+</row>
+<row>
+  <entry><function>ssize_t pass_rtcm(struct gps_device_t *session, char *buf, size_t rtcmbytes)</function></entry>
+  <entry><para>This writes the rtcm data to the device.</para></entry>
+</row>
+<row>
+  <entry><function>gps_mask_t nmea_parse_input(struct gps_device_t *session)</function></entry>
+  <entry><para>If the packet is a comment packet, ignore it and return 0.</para><para>If it is one of several binary packets, issue a warning to that effect.</para><para>If the relevant driver exists, switch to that driver and get it to parse the packet. The return value is that of the binary parser.</para><para>If the driver does not exist, ignore the packet and return 0.</para><para>If after all this, it is likely to be an NMEA packet, so try to parse it with the NMEA parser. If that returns a 0 (unsuccessful), then check if it is a trigger packet for one of the triggerable drivers.</para><para>If this succeeds, return 1, otherwise issue an unrecognised packet error.</para><para>Finally checks are made against openBSD's NMEA Line Discipline to make use of timestamping and if ntpd synchronising is active, the time is passed to the ntp daemon.</para></entry>
+</row>
+<row>
+  <entry><function>static void nmea_probe_subtype(struct gps_device_t *session, unsigned int seq)</function></entry>
+  <entry><para>This tries to probe for the NMEA mode of several popular chipsets. Most are detected by a trigger string.</para></entry>
+</row>
+<row>
+  <entry> </entry>
+  <entry><para>Several functions are omitted which are device specific. These are not covered here since they ARE device specific.</para></entry>
+</row>
+<row>
+  <entry><function>static gps_mask_t rtcm104_analyze(struct gps_device_t *session)</function></entry>
+  <entry><para>This function calls <function>rtcm_unpack()</function> to unpack rtcm packets into the session buffer.</para></entry>
+</row>
+<row>
+  <entry> </entry>
+  <entry><para>The last important thing in this code is an array of addresses, one for each compiled-in driver. This address gets us to the <quote>capabilities</quote> table in the bottom of each driver where we find what functions a driver supports and the entry address for each function.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>
