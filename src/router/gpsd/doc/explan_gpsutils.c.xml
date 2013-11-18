@@ -1,0 +1,75 @@
+<sect1 id="gpsuitls.c"><title><filename>gpsutils.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>Code shared between low-level and
+  high-level interfaces. Most of them do exactly what they say on the
+  tin.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>void gps_clear_fix(struct gps_fix_t *fixp)</function></entry>
+  <entry><para>Stuff a fix structure with recognizable out-of-band values.</para></entry>
+</row>
+<row>
+  <entry><function>unsigned int gps_valid_fields(struct gps_fix_t *fixp)</function></entry>
+  <entry><para>Clears certain status flags, depending if the associated fields are invalid.</para></entry>
+</row>
+<row>
+  <entry><function>double timestamp(void)</function></entry>
+  <entry><para>Returns the number of seconds and microseconds since the UNIX Epoch (00:00:00 UTC, January 1, 1970); i.e. a unique value which can be used to timestamp any event.</para></entry>
+</row>
+<row>
+  <entry><function>time_t mkgmtime(register struct tm *t)</function></entry>
+  <entry><para>Convert a struct <function>tm {}</function> (see <function>time.h</function>) to seconds since UNIX Epoch.</para></entry>
+</row>
+<row>
+  <entry><function>double iso8601_to_unix(char *isotime)</function></entry>
+  <entry><para>Convert an ISO8601 UTC string (like 2006-01-25T13:15:22.9) to Unix UTC.</para></entry>
+</row>
+<row>
+  <entry><function>char *unix_to_iso8601(double fixtime, char isotime[], int len)</function></entry>
+  <entry><para>Reverse of the above, no timezone adjustment.</para></entry>
+</row>
+<row>
+  <entry><function>double gpstime_to_unix(int week, double tow)</function></entry>
+  <entry><para>Convert gps time to UNIX time, allowing for the gps week number rollover.</para></entry>
+</row>
+<row>
+  <entry><function>void unix_to_gpstime(double unixtime, int *week, double *tow)</function></entry>
+  <entry><para>Reverse of the above.</para></entry>
+</row>
+<row>
+  <entry><function>static double CalcRad(double lat)</function></entry>
+  <entry><para>Return the earth's radius of curvature in meters at specified latitude.</para></entry>
+</row>
+<row>
+  <entry><function>double earth_distance(double lat1, double lon1, double lat2, double lon2)</function></entry>
+  <entry><para>Return the distance in meters between two points specified in degrees.</para></entry>
+</row>
+<row>
+  <entry><function>static int invert(double mat[4][4], double inverse[4][4])</function></entry>
+  <entry><para>Try and invert an array. If it is possible, fill the inverted array and return a 1. Return a 0 if it is not possible.</para></entry>
+</row>
+<row>
+  <entry><function>gps_mask_t dop(struct gps_data_t *gpsdata)</function></entry>
+  <entry><para>Take a gps data structure and try to calculate the DOP values from the other data in it. Return 0 if it is not possible or update the appropriate DOP fields in the structure and set a mask which tells which fields were updated.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

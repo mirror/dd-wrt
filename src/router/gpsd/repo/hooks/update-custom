@@ -1,0 +1,14 @@
+#
+# Local customizations for git update hook begin here.
+# We'll need a valid absolute path before ciabot.py.
+#
+
+ciabot.py ${refname} $(git rev-list ${oldrev}..${newrev} | tac)
+
+cdto=$(git rev-parse --show-cdup)
+echo "Path to base directory: $cdto"
+echo "Files modified:"
+for filename in `git diff --name-only ${oldrev} ${newrev}`
+do
+    echo "Source path: $filename"
+done

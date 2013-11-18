@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+#
+# sizes -- explore the sizes of static gpsd binaries
+#
+import os
+
+# NMEA variants other than vanilla NMEA
+nmea_variants = [
+  "fv18=no",
+  "mtk3301=no",
+  "tnt=no",
+  "oceanserver=no",
+  "gpsclock=no",
+]
+
+# Binary GPS protocols
+binary_gps = [
+  "oncore=no",
+  "sirf=no",
+  "superstar2=no",
+  "tsip=no",
+  "tripmate=no",
+  "earthmate=no",
+  "itrax=no",
+  "ashtech=no",
+  "navcom=no",
+  "garmin=no",
+  "garmintxt=no",
+  "ubx=no",
+  "geostar=no",
+  "evermore=no",
+]
+
+# Differential correction and AIVDM
+non_gps = [
+  "rtcm104v2=no",
+  "rtcm104v3=no",
+  "ntrip=no",
+  "aivdm=no",
+  ]
+
+# Time service
+time_service = ["ntpshm=no", "pps=no"]
+
+# Debugging and profiling
+debugging = [
+  "timing=no",
+  "clientdebug=no",
+  "oldstyle=no",
+  ]
+
+def sizeit(legend, tag, options):
+    print legend + ":"
+    print "Options:", " ".join(options)
+    os.system("scons -c > /dev/null; rm -fr .scons*")
+    os.system("scons shared=no " + " ".join(options) + " gpsd >/dev/null")
+    os.rename("gpsd", "gpsd-" + tag + "-build")
+    os.rename("gpsd_config.h", "gpsd_config.h-" + tag)
+
+# Main sequence
+os.system("uname -a")
+sizeit("Minimalist build, stripped to NMEA only with shm interface",
+       "minimalist",
+       ["socket_export=no",
+        "control_socket=no",
+        "ipv6=no",
+        "netfeed=no",
+        "passthrough=no",
+        "fixed_port_speed=9600",
+        "limited_max_devices=1",
+        ] + nmea_variants + binary_gps + non_gps + time_service + debugging)
+sizeit("Normal build, configure options defaulted", "normal", [])
+os.system("size gpsd-*-build")
+#os.system("rm gpsd-*-build gpsd.h-*")
+os.system("scons -c > /dev/null; rm -fr .scons*")
+
+#end
+

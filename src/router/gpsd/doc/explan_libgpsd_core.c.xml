@@ -1,0 +1,130 @@
+<sect1 id="libgpsd_core.c"><title><filename>libgpsd_core.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<!-- Not documented: gpsd_ppsmonitor() -->
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>Direct access to GPSes on serial or USB devices.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>int gpsd_switch_driver(struct gps_device_t *session, char* typename)</function></entry>
+  <entry><para>Test if the function is called with the same name as
+  the active driver.</para><para>If it is, test if the driver has a
+  configurator function and is able to be reconfigured. A good result
+  here will call the driver event hook with type 'driver_switch', and
+  return a 0.</para><para>For an entry with a different driver name,
+  scan all available drivers to see if the wanted one is there. An
+  unmatched name exits, returning 0.</para><para>If we got a match,
+  get the baudrate for the device with
+  <function>gpsd_assert_sync()</function>, probe for the subtype if we
+  have one.</para><para>If the device has a configurator and is
+  reconfigurable, trigger the configurator.</para><para>Return a 1 to
+  indicate a device switch.</para></entry>
+</row>
+<row>
+  <entry><function>void gpsd_init(struct gps_device_t *session, struct gps_context_t *context, const char *device)</function></entry>
+  <entry><para>Copy the device name to the session data structure,
+  initialise important data fields and call
+  <function>gpsd_tty_init()</function>,
+  <function>gpsd_zero_satellites()</function> and
+  <function>packet_reset()</function>.</para></entry>
+</row>
+<row>
+  <entry><function>void gpsd_deactivate(struct gps_device_t *session)</function></entry>
+  <entry><para>All actions below, except the last one are conditional
+  on the <function>ntpd</function> interface being compiled
+  in.</para><para>Release the <function>ntpd</function> resources,
+  including the 1PPS resources if they are active.</para><para>If the
+  device has a revert function, trigger it.</para><para>If it has an
+  NMEA mode switcher, invoke it.</para><para>If it has a wrapup
+  routine, invoke it.</para><para>Finally, close the
+  device.</para></entry>
+</row>
+<row>
+  <entry><function>static void *gpsd_ppsmonitor(void *arg)</function></entry>
+  <entry><para>An <function>ioctl()</function> call is made which
+  returns either 0 if the status of the port changed, or an
+  error.</para><para>If we got a change, we read the modem control
+  bits and extract the 1PPS information.</para><para>We check the
+  returned value and see if it has changed recently. A counter of 10
+  unchanged events will disable further testing.</para><para>If we are
+  still hanging in there, we now see if we already have had more than
+  4 good fixes, otherwise we can't trust the 1PPS.</para><para>We then
+  finally test the pulse duration. If it is either a genuine 1PPS or a
+  2Hz square wave, we call
+  <function>ntpshm_pps()</function>.</para><para>Short or long PPS
+  pulses are dropped with an error report.</para></entry>
+</row>
+<row>
+  <entry><function>int gpsd_activate(struct gps_device_t *session, bool reconfigurable)</function></entry>
+  <entry><para>Id tge devicename matches an NTRIP or DGNSS URI, hand
+  off to special code for opening a socket to that source over the
+  network.</para><para>Try and open the device, returning -1 if we
+  fail.</para><para>Probe all possible drivers to see if one
+  recognises the device.</para><para>Set some fundamental data to a
+  clean value.</para><para>Handle the initialisation of NTP and 1PPS
+  functions if needed.</para><para>If we did succeed in probing some
+  device type, try and get the subtype.</para><para>If we need to do
+  so, we now configure the device.</para><para>Finally, signal success
+  by returning the file descriptor given by the device open
+  call.</para></entry>
+</row>
+<row>
+  <entry><function>void gpsd_error_model(struct gps_device_t *session, struct gps_fix_t *fix, struct gps_fix_t *oldfix)</function></entry>
+  <entry><para>Check we have a 2D fix (or better) and if the gps
+  didn't provide an eph value, use the HDOP to calculate one or fail
+  to NAN.</para><para>Do the same with epv/VDOP if we have a 3D or
+  better fix.</para><para>Do the same with
+  epe/PDOP.</para><para>Consider speed error; check if we have two
+  fixes with differing timestamps and use their times and eph values
+  to calculate the speed.</para><para>If we have two valid 3D fixes,
+  we can calculate the climb/sink rate.</para><para>Finally, just
+  before exiting, save this fix as the old fix for the next comparison
+  round.</para></entry>
+</row>
+<row>
+  <entry><function>gps_mask_t gpsd_poll(struct gps_device_t *session)</function></entry>
+  <entry><para>Make a call to <function>gps_clear_fix()</function> to
+  prepare the newdata structure to receive data from an incoming
+  packet.</para><para>Check if we know the device type. If we do,
+  stash the count of of characters we are able to get from
+  it.</para><para>If the read has given a full packet, we can call the
+  subtype probing method, if the device supports it.</para><para>If we
+  don't know the device type, try and figure out what it is, exiting
+  if we can't.</para><para>Make some checks if the device is offline
+  or the packet is incomplete, using the stashed count of characters
+  and the full packet indicator.</para><para>If a full packet is
+  available, we try to get the fix data and update the main data
+  structure. We also compute the DOPs so we can fill them in if they
+  are not included in the gps device output.</para><para>Mopst of the
+  possible driver events are called from somewhere in
+  here.</para></entry>
+</row>
+<row>
+  <entry><function>void gpsd_wrap(struct gps_device_t *session)</function></entry>
+  <entry><para>Simple call to
+  <function>gpsd_deactivate(session)</function>.</para></entry>
+</row>
+<row>
+  <entry><function>void gpsd_zero_satellites(struct gps_data_t *out)</function></entry>
+  <entry><para>Zero the status data for all satellites.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

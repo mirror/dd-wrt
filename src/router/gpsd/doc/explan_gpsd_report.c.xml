@@ -1,0 +1,34 @@
+<sect1 id="gpsd_report.c"><title><filename>report.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>General string output routine for any module to use.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>void gpsd_report(int errlevel UNUSED, const char *fmt, ... )</function></entry>
+  <entry><para>Provides the outputting of strings to stderr for anyone
+  who needs it. Used extensively by many functions to report errors or
+  progress. Responds according to the <function>errlevel</function>
+  argument, which is filled by the DEBUG command line argument, so
+  that the verbosity of output is conditional on the user's wishes at
+  runtime.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

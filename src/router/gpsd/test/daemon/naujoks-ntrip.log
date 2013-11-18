@@ -1,0 +1,14 @@
+# Name: Ntrip caster
+# Description: RTCM2 data returened by an Ntrip caster
+# Submitter: Andre Naujoks <nautsch2@googlemail.com>
+# Date: 2011-02-22
+#
+GET /EPS_NI HTTP/1.1
+User-Agent: NTRIP gpsd/2.96~dev
+Accept: rtk/rtcm, dgps/rtcm
+Authorization: Basic xxxxxxxxxxxxx
+Connection: close
+
+ICY 200 OK
+
+YFh|bk\_dHpa}pK@@@hFXCB`dpivZ}JhbIXpScg^ziyEYc@B@_haQF`~uuWIBxL@@ETbY~i|XToY^{oB`{hoxSk@ls@zA~_NAHZ{BhpV@PDHLIJ`wK|N`}q}Ws@`~gqZ@ZLz[YK@lu]OPImB`XuGB\Ss@}}Q|`lO@hY}zkSfAWCHToEYTh]v^Mg@|Kedn}QLpiEYfqUCskPrcKiA|[fyWC]TSb[Lpa}pK@@@hFXCB`dpivZ~pW]vgO@@@l\XaE@V@@Fzf\}`W^nYm~uuWIJxP@@ETGfAVCBT_[^eoB`{M@PGlq@lseE~A`TAHZ^@}WOL@PDHi@vu_tCq_gq}Wse_AXN@@ZLz~@ftvu]OPlR}_goGB\sd@}}QY_SprY}zkvYFh|GTsf[Ppa}pnW\XCB`A@@OVlZ~wIhbIXpScg^vK@@FzCc@B@zW^nYH@A@JoWIFxW@@ETGfAVCBT_^\P}_DroxSNSL@ZzA~_k@~weaBhpso{wVIJ@`K|N`XNBhLZ`~gqesEAYC@UJbpovR}_gJx}cL~@}}Q|`lO@hY}zkSfyWC]Tsa[{O^BOtWyg|}_[@@OVIeAH@ShbIXU@@@lyg^vnyEYc@B@_haQfR@A@JJhvqGQ@@ETGfAVCBt@X^~oB`{hoxSk@l{\zA~_k@~weaBhpso{{x@Fw_sMM`KbB@}O`~gqZ@ZLz[YC@pu]OPlR}_goGB\SVBBnf`lO@MfBETIfyWCxktZdJpa}pK@@@hFXCB`dpivZ~wlW]vWqScg^vK@@FzCcBB@VhaQfR@A@JJhvvG_@@ETGfAVCBt`\^GP}_DW@PGlTSD@cE~A`TAHZ^@}WOL@PDDGyH`Lr@r_t]B\`~gIP@ZLz[YC@pu]OPlR}_goGB\sd@}}QY_SprY}zkvYFh|GTkc[Spa}HA@B@hjg|}_~piSeAH@vW]vWT@@@lyg^vnyEYcAB@IhaQfw~uPhvrGD@@ETbY~i|XtPZ^goB`{M@PGlq@l{yE~A`q@~weD@}WOio{{]yH`iMM`n]}wBI`~gIuesEAYC@UJbpovR_gfGB\KKBBnC_caY}zkS

@@ -1,0 +1,44 @@
+<sect1 id="gpsd.h"><title><filename>gpsd.h</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Structures:-</entry><entry>Provides fundamental types and structures for the GPS daemon. Only key structures are analysed here. Simple definitions and prototype definitions are ignored.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry spanname='s1' align='left'><para>This file is created at <function>configure</function> time by combining <function>gpsd.h-head</function>, certain configuration options from the auto-generated file <function>gpsd_configure.h</function> and <function>gpsd.h-tail</function>. This file (<function>gpsd.h</function>) should not be edited directly, neither should <function>gpsd.h-head</function>. You should only edit <function>gpsd.h-tail</function> as needed.</para></entry>
+</row>
+<row>
+  <entry><function>struct gps_packet_t {}</function></entry>
+  <entry><para>Provides the data structure used by <function>packet_getter()</function>. 1 per <application>gpsd</application> session.</para></entry>
+</row>
+<row>
+  <entry><function>struct gps_context_t {}</function></entry>
+  <entry><para>Provides context data like number of good fixes seen. 1 per <application>gpsd</application> session.</para></entry>
+</row>
+<row>
+  <entry><function>struct gps_type_t {}</function></entry>
+  <entry><para>This is the method table that every driver uses to communicate with the daemon. It is a table of entry points or externally visible data. 1 per driver type.</para></entry>
+</row>
+<row>
+  <entry><function>struct gps_device_t {}</function></entry>
+  <entry><para>This is the data belonging to a session (global state) and also private storage for the session's associated device driver (if needed). 1 per <application>gpsd</application> session.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

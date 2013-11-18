@@ -1,0 +1,54 @@
+<sect1 id="driver_rtcm1.c"><title><filename>rtcm.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>This is a decoder for the RTCM-104 serial protocol.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>void rtcm2_unpack(struct rtcm2_t *tp, char *buf)</function></entry>
+  <entry><para>Splits RTCM2 raw data into fields.</para></entry>
+</row>
+<row>
+  <entry><function>bool rtcm2_repack(struct rtcm2_t *tp, isgps30bits_t *buf)</function></entry>
+  <entry><para>Packs RTCM2 fields into a raw data stream.</para></entry>
+</row>
+<row>
+  <entry><function>static bool preamble_match(isgps30bits_t *w)</function></entry>
+  <entry><para>Tells if the preamble field in a message is valid or
+  not.</para></entry>
+</row>
+<row>
+  <entry><function>static bool length_check(struct gps_packet_t *lexer)</function></entry>
+  <entry><para>Tells if the message length is valid or not.</para></entry>
+</row>
+<row>
+  <entry><function>enum isgpsstat_t rtcm2_decode(struct gps_packet_t *lexer, unsigned int c)</function></entry>
+  <entry><para>A simple call to <function>isgps_decode()</function>.</para></entry>
+</row>
+<row>
+  <entry><function>void rtcm2_dump(struct rtcm2_t *rtcm2, char buf[], size_t buflen)</function></entry>
+  <entry><para>Dump the contents of a parsed RTCM104v2 message.</para></entry>
+</row>
+<row>
+  <entry><function>void rtcm2_output_magnavox(isgps30bits_t *ip, FILE *fp)</function></entry>
+  <entry><para>Ship an RTCM2 message in the format emitted by Magnavox DGPS receivers.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>
