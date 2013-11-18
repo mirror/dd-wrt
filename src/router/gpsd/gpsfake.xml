@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE refentry PUBLIC 
+   "-//OASIS//DTD DocBook XML V4.1.2//EN"
+   "docbook/docbookx.dtd">
+<refentry id='gpsfake.1'>
+<refmeta>
+<refentrytitle>gpsfake</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo class='date'>12 Feb 2005</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gpsfake</refname>
+<refpurpose>test harness for gpsd, simulating a GPS</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+
+<cmdsynopsis>
+  <command>gpsfake</command>  
+      <arg choice='opt'>-1</arg>
+      <arg choice='opt'>-h</arg>
+      <arg choice='opt'>-b</arg>
+      <arg choice='opt'>-c <replaceable>interval</replaceable></arg>
+      <arg choice='opt'>-i</arg>
+      <arg choice='opt'>-D <replaceable>debuglevel</replaceable></arg>
+      <arg choice='opt'>-l</arg>
+      <arg choice='opt'>-m <replaceable>monitor</replaceable></arg>
+      <arg choice='opt'>-n</arg>
+      <arg choice='opt'>-o <replaceable>options</replaceable></arg>
+      <arg choice='opt'>-p</arg>
+      <arg choice='opt'>-r <replaceable>initcmd</replaceable></arg>
+      <arg choice='opt'>-s <replaceable>speed</replaceable></arg>
+      <arg choice='opt'>-v</arg>
+      <arg choice='plain'><replaceable>logfile</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para><application>gpsfake</application> is a test harness for 
+<application>gpsd</application> and its clients.  It opens a pty
+(pseudo-TTY), launches a <application>gpsd</application> instance that
+thinks the slave side of the pty is its GPS device, and repeatedly
+feeds the contents of a test logfile through the master side to the
+GPS.</para>
+
+<para><application>gpsfake</application> does not require root
+privileges, and can be run concurrently with a production 
+<application>gpsd</application> instance without causing problems.</para>
+
+<para>The logfile may be of NMEA, SiRF packets, TSIP packets, or
+Zodiac packets.  Leading lines beginning with # will be treated as
+comments and ignored.</para>
+
+<para>The <application>gpsd</application> instance is run in
+foreground.  The thread sending fake GPS data to the daemon 
+is run in background.</para>
+
+</refsect1>
+<refsect1 id='options'><title>OPTIONS</title>
+
+<para>With the -1 option, the logfile is interpreted once only rather
+than repeatedly.  This option is intended to facilitate regression
+testing.</para>
+
+<para>The -b option enables a twirling-baton progress indicator
+on standard error.  At termination, it reports elapsed time.</para>
+
+<para>The -c option sets the delay between sentences in
+seconds. Fractional values of seconds are legal.  The default is zero
+(no delay).</para>
+
+<para>The -l option makes the program dump a line or packet number
+just before each sentence is fed to the daemon. If the sentence is
+textual (e.g. NMEA), the text is dumped as well.  If not, the packet
+will be dumped in hexadecimal (except for RTCM packets, which aren't
+dumped at all).  This option is useful for checking that gpsfake is
+getting packet boundaries right.</para>
+
+<para>The -i option is for single-stepping through logfiles.  It dumps
+the line or packet number (and the sentence if the protocol is
+textual) followed by "? ".  Only when the user keys Enter is the line
+actually fed to <application>gpsd</application>.</para>
+
+<para>The -m option specifies a monitor program inside which the
+daemon should be run.  This option is intended to be used with
+<citerefentry><refentrytitle>valgrind</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gdb</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+and similar programs.</para>
+
+<para>The -g option uses the monitor facility to run the gpsd within
+gpsfake under control of gdb.</para>
+
+<para>The -o option specifies options to pass to the daemon.  The -n
+option passes -n to start the daemon reading the GPS without waiting
+for a client (equivalent to -o "-n").  The -D option passes a -D
+option to the daemon: thus -D 4 is shorthand for -o "-D 4".</para>
+
+<para>The -p option dumps the NMEA and GPSD notifications generated
+by the log to standard output.</para>
+
+<para>The -r option specifies an initialization comand to use.  
+The default is "w+r+"; "r=2" might be another interesting value.</para>
+
+<para>The -s option sets the baud rate for the slave tty.  The
+default is 4800.</para>
+
+<para>The -v option enables verbose progress reports to stderr.  It
+is mainly useful for debugging <application>gpsfake</application> itself.</para>
+
+<para>The -h option makes <application>gpsfake</application> print 
+a usage message and exit.</para>
+
+<para>The argument must be the name of a file containing the 
+data to be cycled at the device. <application>gpsfake</application> 
+will print a notification each time it cycles.</para>
+
+</refsect1>
+<refsect1 id='custom'><title>CUSTOM TESTS</title>
+
+<para><application>gpsfake</application> is a trivial wrapper around a
+Python module, also named gpsfake, that can be used to fully script
+sessions involving a <application>gpsd</application> instance, any
+number of client sessions, and any number of fake GPSes feeding the
+daemon instance with data from specified sentence logs.</para>
+
+<para>Source and embedded documentation for this module is shipped with the 
+<application>gpsd</application> development tools.  You can use it to
+torture-test either <application>gpsd</application> itself or any
+<application>gpsd</application>-aware client application.</para>
+
+</refsect1>
+<refsect1 id='see_also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gps</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgps</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgpsd</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsctl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpscat</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsprof</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+</para>
+</refsect1>
+
+<refsect1 id='maintainer'><title>AUTHOR</title> 
+
+<para>Eric S. Raymond <email>esr@thyrsus.com</email>.  There is a
+project page for <application>gpsd</application> <ulink
+url="http://gpsd.berlios.de/">here</ulink>.</para>
+
+</refsect1>
+
+</refentry>
+

@@ -1,0 +1,22 @@
+# Suppress known C library errors in valgrind.
+# This is good under gcc 3.4.2, glibc 2.3.4, using -g and -O2
+{
+   suppress1
+   Memcheck:Cond
+   fun:strlen
+   fun:vsnprintf
+   fun:gpsd_report
+   fun:main
+}
+{
+   suppress2
+   Memcheck:Value8
+   fun:vfprintf
+   fun:vsnprintf
+   fun:gpsd_report
+   fun:sirf_parse
+   fun:sirfbin_parse_input
+   fun:gpsd_poll
+   fun:main
+}
+

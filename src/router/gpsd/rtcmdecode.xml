@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE refentry PUBLIC 
+   "-//OASIS//DTD DocBook XML V4.1.2//EN"
+   "docbook/docbookx.dtd">
+<refentry id='rtcmdecode.1'>
+<refmeta>
+<refentrytitle>rtcmdecode</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo class='date'>13 Jul 2005</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>rtcmdecode</refname>
+<refpurpose>decode RTCM104 streams into a readable format</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+
+<cmdsynopsis>
+  <command>rtcmdecode</command>  
+      <arg choice='opt'>-d</arg>
+      <arg choice='opt'>-e</arg>
+      <arg choice='opt'>-v <replaceable>debuglevel</replaceable></arg>
+      <arg choice='opt'>-V</arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>This tool is a decoder for RTCM-104, an obscure and complicated
+serial protocol used for broadcasting pseudorange corrections from
+differential-GPS reference stations. RTCM-104 is expected on standard
+input; an equivalent, 100%-information-preserving text format is
+written to standard output.</para>
+
+<para>You can use this tool with
+<citerefentry><refentrytitle>nc</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+to examine RTCM feeds from DGPSIP servers or Ntrip broadcasters.</para>
+
+<para>The decoder dump format is described in
+<citerefentry><refentrytitle>rtcm</refentrytitle><manvolnum>5</manvolnum></citerefentry>;
+these lines go to standard output. As well as data the decoder also
+prints decoder status messages to standard error, as necessary.</para>
+
+</refsect1>
+<refsect1 id='options'><title>OPTIONS</title>
+
+<para>The -d option tells the program to decode RTCM-104 presented on
+standard input to a text dump in the format of
+<citerefentry><refentrytitle>rtcm-104</refentrytitle><manvolnum>5</manvolnum></citerefentry> 
+on standard output. This is the default behavior.</para>
+
+<para>The -e option option tells the program to encode a text dump in
+the format of
+<citerefentry><refentrytitle>rtcm-104</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+to standard output.</para>
+
+<para>The -V option directs the program to emit its version number,
+then exit.</para>
+
+<para>The -v option sets a verbosity level.  It is mainly of interest
+to developers.</para>
+
+</refsect1>
+<refsect1 id='standard'><title>APPLICABLE STANDARDS</title>
+
+<para>The applicable standard is
+<citetitle>RTCM Recommended Standards for Differential NAVSTAR GPS
+Service</citetitle> RTCM Paper 194-93/SC 104-STD.</para>
+
+<para>Ordering instructions are accessible from the website of the
+<ulink url='http://www.rtcm.org/'>Radio Technical Commission for
+Maritime Services</ulink> under "Publications".</para>
+
+</refsect1>
+<refsect1 id='bugs'><title>BUGS AND LIMITATIONS</title> 
+
+<para>RTCM-104 represents floating-point quantities as an integer
+multiple of a fixed scale factor.  Editing an RTCM-104 dump can
+produce numbers that are not an integer multiple of the scale factor
+for their field.  If you do this, the value actually packed into 
+binary RTCM-104 will be rounded down to the nearest scale unit, 
+and dumping will show slightly different numbers than those you 
+entered.</para>
+
+<para>The decoder logic is sufficiently convoluted to confuse some
+compiler optimizers, notably in GCC 3.x at -O2, into generating bad
+code.</para>
+
+</refsect1>
+<refsect1 id='see_also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gps</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgps</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgpsd</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsprof</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsfake</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>rtcm-104</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+</para>
+</refsect1>
+<refsect1 id='maintainer'><title>AUTHOR</title> 
+
+<para>Eric S. Raymond <email>esr@thyrsus.com</email>.  This is a
+somewhat hacked version of an RTCM decoder originally written by
+Wolfgang Rupprecht.  There is a project page for
+<application>gpsd</application> <ulink
+url="http://gpsd.berlios.de/">here</ulink>.</para>
+
+</refsect1>
+
+</refentry>
+
