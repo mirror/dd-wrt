@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE refentry PUBLIC 
+   "-//OASIS//DTD DocBook XML V4.1.2//EN"
+   "docbook/docbookx.dtd">
+<refentry id='gpsctl.1'>
+<refmeta>
+<refentrytitle>gpsctl</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo class='date'>29 Oct 2006</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gpsctl</refname>
+<refpurpose>control the modes of a GPS</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+
+<cmdsynopsis>
+  <command>gpsctl</command>  
+      <arg choice='opt'>-h </arg>
+      <group>
+	<arg choice='plain'>-b</arg>
+	<arg choice='plain'>-n</arg>
+      </group>
+      <arg choice='opt'>-f </arg>
+      <arg choice='opt'>-l </arg>
+      <arg choice='opt'>-s <replaceable>speed</replaceable></arg>
+      <arg choice='opt'>-t <replaceable>devicetype</replaceable></arg>
+      <arg choice='opt'>-D <replaceable>debuglevel</replaceable></arg>
+      <arg choice='opt'>-V </arg>
+      <arg choice='opt'><replaceable>serial-port</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para><application>gpsctl</application> can switch a dual-mode GPS
+between NMEA and vendor-binary modes.  It can also be used to set the
+device baudrate.  Note:  Not all devices have these capabilities.</para>
+
+<para>If you have only one GPS attached to your machine, and gpsd is
+running, it is not necessary to specify the device;
+<application>gpsctl</application> does its work through
+<application>gpsd</application>, which will locate it for you.</para>
+
+<para>When <application>gpsd</application> is not running, the device
+specification is required, and you will almost certainly need to be
+running as root in order to have write access to the device.</para>
+
+<para>The program accepts the following options:</para>
+<variablelist remap='TP'>
+
+<varlistentry>
+<term>-b</term>
+<listitem>
+<para>Put GPS into binary mode.  After the GPS resets itself autobaud to 
+the new speed.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-n</term>
+<listitem>
+<para>Put GPS into NMEA mode.  After the GPS resets itself autobaud to 
+its new speed.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-f</term>
+<listitem>
+<para>Force low-level access (not through the daemon).</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-l</term>
+<listitem>
+<para>List the known device types and exit..</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-s</term>
+<listitem>
+<para>Set the baud rate at which the GPS emits packets.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-t</term>
+<listitem>
+<para>Force the device type.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-h</term>
+<listitem>
+<para>Display program usage and exit.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-D</term>
+<listitem>
+<para>Set level of debug messages.</para>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-V</term>
+<listitem>
+<para>Display program version and exit.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para>The argument of the forcing option. <option>-t</option>, should be a
+string which should be contained in exactly one of the known driver
+names; for a list, do <command>gpsctl -l</command>.</para>
+
+<para>Forcing the device type behaves somewhat differently depending 
+on whether this tool, is going through the daemon or not. In high-level
+mode, if the device that daemon selects for you doesn't match the
+driver you specified, <application>gpsctl</application> exits with
+a warning.  (This may be useful in scripts.)</para>
+
+<para>In low-level mode, if the device identifies as a Generic NMEA,
+use the selected driver instead.  This will be useful if you have a
+GPS device of known type that is in NMEA mode and not responding to
+probes.  (This option was originally implemented for talking to
+SiRFStar I chips, which don't respond to the normal SiRF ID
+probe.)</para>
+
+<para>If no options are given, the program will display a message
+identifying the GPS type of the selected device and exit.</para>
+
+</refsect1>
+
+<refsect1 id='see_also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gps</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgps</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgpsd</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsprof</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsfake</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+</para>
+</refsect1>
+
+<refsect1 id='maintainer'><title>AUTHOR</title> 
+
+<para>Eric S. Raymond <email>esr@thyrsus.com</email>.  There is a
+project page for <application>gpsd</application> <ulink
+url="http://gpsd.berlios.de/">here</ulink>.</para>
+</refsect1>
+</refentry>
