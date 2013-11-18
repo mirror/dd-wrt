@@ -89,6 +89,10 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_UNIWIP
 	insmod("mpc8xxx_wdt");
+	insmod("ocf");
+	insmod("cryptodev");
+	insmod("cryptosoft");
+	insmod("talitos");
 #endif
 	struct ifreq ifr;
 	int s;
