@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Very simple wrapper around the DSA version of dchroot
+# on the Debian porter boxes. dchroot only accepts one command
+# as argument, nothing else. This wrapper creates a temporary script
+# which will be executed then.
+
+# This file is Copyright (c) 2010 by the GPSD project
+# BSD terms apply: see the file COPYING in the distribution root for details.
+
+dchroot="$1"
+shift
+command="$1"
+shift
+arguments="$@"
+
+tmpfile=`mktemp $HOME/XXXXXXXXX.tmp`
+cat > $tmpfile << _EOF_
+#!/bin/bash
+
+exec $command $arguments
+_EOF_
+
+chmod 755 $tmpfile
+/usr/bin/dchroot $dchroot $tmpfile
+rm -f $tmpfile
+

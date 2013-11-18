@@ -1,0 +1,22 @@
+<sect1 id="driver_proto.c"><title><filename>driver_proto.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='1'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><para>This is a dummy file to use as a skeleton for writing a new driver. The driver is heavily commented, so refer to the source code.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

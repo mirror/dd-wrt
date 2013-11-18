@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+This file is Copyright (c) 2010 by the GPSD project
+BSD terms apply: see the file COPYING in the distribution root for details.
+-->
+<!DOCTYPE refentry PUBLIC 
+   "-//OASIS//DTD DocBook XML V4.1.2//EN"
+   "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+<refentry id='gps.1'>
+<refentryinfo><date>9 Aug 2004</date></refentryinfo>
+<refmeta>
+<refentrytitle>gps</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo class="source">The GPSD Project</refmiscinfo>
+<refmiscinfo class="manual">GPSD Documentation</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gps</refname>
+<refname>xgps</refname>
+<refname>xgpsspeed</refname>
+<refname>cgps</refname>
+<refname>lcdgps</refname>
+<refname>gegps</refname>
+<refpurpose>test clients for gpsd</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+
+<cmdsynopsis>
+  <command>xgps</command>  
+      <arg choice='opt'>-D <replaceable>debug-level</replaceable></arg>
+      <arg choice='opt'>-h </arg>
+      <arg choice='opt'>-V </arg>
+      <arg choice='opt'>-l <group><arg>d</arg><arg>m</arg><arg>s</arg></group></arg>
+      <arg choice='opt'>-u <group><arg>i</arg><arg>n</arg><arg>m</arg></group></arg>
+      <group>
+	<replaceable>server</replaceable>
+	  <group> 
+	    <replaceable>:port</replaceable> 
+	      <group><replaceable>:device</replaceable></group>
+	  </group>
+      </group>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>xgpsspeed</command>
+      <arg choice='opt'>-D <replaceable>debug-level</replaceable></arg>
+      <arg choice='opt'>-h </arg> 
+      <arg choice='opt'>-V </arg>
+      <arg choice='opt'>--speedunits
+	      <group choice='req'>
+		      <arg>mph</arg><arg>kph</arg><arg>knots</arg>
+              </group>
+      </arg>
+      <group>
+	<replaceable>server</replaceable>
+	  <group> 
+	    <replaceable>:port</replaceable> 
+	      <group><replaceable>:device</replaceable></group>
+	  </group>
+      </group>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>cgps</command>  
+      <arg choice='opt'>-D <replaceable>debug-level</replaceable></arg>
+      <arg choice='opt'>-h </arg>
+      <arg choice='opt'>-V </arg>
+      <arg choice='opt'>-l <group><arg>d</arg><arg>m</arg><arg>s</arg></group></arg>
+      <arg choice='opt'>-m </arg>
+      <arg choice='opt'>-s </arg>
+      <arg choice='opt'>-u <group><arg>i</arg><arg>n</arg><arg>m</arg></group></arg>
+      <group>
+	<replaceable>server</replaceable>
+	  <group> 
+	    <replaceable>:port</replaceable> 
+	      <group><replaceable>:device</replaceable></group>
+	  </group>
+      </group>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>lcdgps</command>  
+      <arg choice='opt'>-h </arg>
+      <arg choice='opt'>-V </arg>
+      <arg choice='opt'>-l <group><arg>d</arg><arg>m</arg><arg>s</arg></group></arg>
+      <arg choice='opt'>-u <group><arg>i</arg><arg>n</arg><arg>m</arg></group></arg>
+      <group>
+	<replaceable>server</replaceable>
+	  <group> 
+	    <replaceable>:port</replaceable> 
+	      <group><replaceable>:device</replaceable></group>
+	  </group>
+      </group>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gpxlogger</command>  
+      <arg choice='opt'>-D <replaceable>debug-level</replaceable></arg>
+      <arg choice='opt'>-d </arg>
+      <arg choice='opt'>-e <replaceable>export-method</replaceable></arg>
+      <arg choice='opt'>-f <replaceable>filename</replaceable></arg>
+      <arg choice='opt'>-l </arg>
+      <arg choice='opt'>-m <replaceable>minmove</replaceable></arg>
+      <arg choice='opt'>-h </arg>
+      <arg choice='opt'>-V </arg>
+      <arg choice='opt'>-i <replaceable>track timeout</replaceable></arg>
+      <group>
+	<replaceable>server</replaceable>
+	  <group> 
+	    <replaceable>:port</replaceable> 
+	      <group><replaceable>:device</replaceable></group>
+	  </group>
+      </group>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gegps</command>
+      <arg choice='opt'>-d <replaceable>directory</replaceable></arg>
+      <arg choice='opt'>-i </arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>These are the demonstration clients shipped with
+<application>gpsd</application>. They have some common options:</para> 
+
+<para>The <option>-h</option> option causes each client to emit a summary of its
+options and then exit.</para>
+
+<para>The <option>-V</option> option causes each client to dump the package
+version and exit.</para>
+
+<para> The <option>-l</option> option, when present, sets the format
+of latitude and longitude reports.  The value 'd' produces decimal
+degrees and is the default.  The value 'm' produces degrees and
+decimal minutes.  The value 's' produces degrees, minutes, and decimal
+seconds.</para>
+
+<para><application>xgps</application>,
+<application>cgps</application>, and <application>lcdgps</application>
+look at variables in the environment to figure out what units they
+should default to using for display &mdash; imperial, nautical, or
+metric.  Here are the variables and values they check:</para>
+
+<screen>
+    GPSD_UNITS one of: 
+              imperial   = miles/feet
+              nautical   = knots/feet
+              metric     = km/meters
+    LC_MEASUREMENT
+	      en_US      = miles/feet
+              C          = miles/feet
+              POSIX      = miles/feet
+              [other]    = km/meters
+    LANG
+	      en_US      = miles/feet
+              C          = miles/feet
+              POSIX      = miles/feet
+              [other]    = km/meters
+</screen>
+<para>These preferences may be overridden by the <option>-u</option>
+option.</para>
+
+<para>Where present, the <option>-u</option> option can be used to set
+the system units for display; follow the keyword with 'i' for
+'imperial' for American units (feet in altitude and error estimates,
+miles per hour in speeds), 'n' for 'nautical' (feet in altitude and
+error estimates, knots in speed) or 'm' for 'metric' (meters in
+altitude and error estimates, kilometers per hour in speeds). </para>
+
+<para> The <option>-D</option> option, when present, sets a debug
+level; it is primarily for use by GPSD developers.  It enables
+various progress messages to standard error.</para>
+
+<para>By default, clients collect data from all compatible devices on
+localhost, using the default GPSD port 2947. An optional argument to any
+client may specify a server to get data from. A colon-separated suffix
+is taken as a port number. If there is a second colon-separated
+suffix, that is taken as a specific device name to be
+watched. However, if the server specification contains square
+brackets, the part inside them is taken as an IPv6 address and
+port/device suffixes are only parsed after the trailing bracket.
+Possible cases look like this:</para>
+
+<variablelist>
+<varlistentry>
+<term>localhost:/dev/ttyS1</term>
+<listitem><para>Look at the default port of localhost, trying both
+IPv4 and IPv6 and watching output from serial device 1.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term>example.com:2317</term>
+<listitem><para>Look at port 2317 on example.com, trying both
+IPv4 and IPv6.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term>71.162.241.5:2317:/dev/ttyS3</term>
+<listitem><para>Look at port 2317 at the specified IPv4 
+address, collecting data from attached serial device 3.</para></listitem>
+</varlistentry>
+<varlistentry>
+<term>[FEDC:BA98:7654:3210:FEDC:BA98:7654:3210]:2317:/dev/ttyS5</term>
+<listitem><para>Look at port 2317 at the specified IPv6 
+address, collecting data from attached serial device 5.</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>Not all clients shipped with GPSD are documented here. See also
+the separate manual pages for
+<citerefentry><refentrytitle>gpspipe</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+and
+<citerefentry><refentrytitle>gpsmon</refentrytitle><manvolnum>1</manvolnum></citerefentry>.</para>
+
+<refsect2><title>xgps</title>
+
+<para><application>xgps</application> is a simple test client for
+<application>gpsd</application> with an X interface. It displays
+current GPS position/time/velocity information and (for GPSes that
+support the feature) the locations of accessible satellites.</para>
+
+<para>In the sky view, satellites are color-coded to indicate quality
+of signal; consult the data display to the left for exact figures in
+dB. Square icons indicate WAAS/EGNOS satellites, circles indicate
+ordinary GPS satellites.  Filled icons were used in the last fix, 
+outline icons were not.</para>
+
+</refsect2>
+<refsect2><title>xgpsspeed</title>
+
+<para><application>xgpsspeed</application> is a speedometer that uses
+position information from the GPS. It accepts an -h option and
+optional argument as for <application>gps</application>, or a -V
+option to dump the package version and exit.</para>
+
+<para>The default display mode resembles a car speedometer.  With the
+option --nautical you get a more elaborate speed and track presentation
+modeled after a marine navigation display.</para>
+
+<para>The -speedunits option can be used to set the speed units for
+display; follow the keyword with knots for nautical miles per hour,
+kph for kilometres per hour, or mph for miles per hour.  The default
+is miles per hour. </para>
+
+<para>In the nautical mode only, --maxspeed sets the maximum on the
+speedometer.</para>
+
+</refsect2>
+<refsect2><title>cgps</title>
+
+<para><application>cgps</application> is a client resembling 
+<application>xgps</application>, but without the pictorial 
+satellite display and able to run on a serial terminal or
+terminal emulator.</para>
+
+<para> The <option>-s</option> option prevents
+<application>cgps</application> from displaying the data coming from
+the daemon. This display can also be toggled with the s
+command.</para>
+
+<para>The <option>-m</option> option will display your magnetic
+heading (as opposed to your true heading).  This is a calculated
+value, not a measured value, and is subject to a potential error of up
+to two degrees in the areas for which the calculation is valid
+(currently Western Europe, Alaska, and Lower 48 in the USA).  The
+formulas used are those found in the Aviation Formulary v1.43.</para>
+
+<para><application>cgps</application> terminates when you send it a
+SIGHUP or SIGINT; given default terminal settings this will happen
+when you type Ctrl-C at it.  It will also terminate on 'q'</para>
+
+</refsect2>
+<refsect2><title>lcdgps</title>
+
+<para>A client that passes <application>gpsd</application> data to
+<application>lcdproc</application>, turning your car computer into a
+very expensive and nearly feature-free GPS receiver.  Currently
+assumes a 4x40 LCD and writes data formatted to fit that size screen.
+Also displays 4- or 6-character Maidenhead grid square output.</para>
+
+</refsect2>
+<refsect2><title>gpxlogger</title>
+
+<para>This program collects fixes from <application>gpsd</application>
+and logs them to standard output in GPX, an XML profile for track 
+logging.</para>
+
+<para>The output may be composed of multiple tracks. A new track is
+created if there's no fix for an interval specified by the
+<option>-i</option> and defaulting to 5 seconds.</para>
+
+<para>The <option>-d</option> option tells
+<application>gpxlogger</application> to run as a daemon in background.
+It requires the <option>-f</option> option, which directs output to a
+specified logfile.</para>
+
+<para>The <option>-m</option> option sets a minimum move distance in
+meters (it may include a fractional decimal part).  Motions shorter
+than this will not be logged.</para>
+
+<para><application>gpxlogger</application> can use any of the 
+export methods that <application>gpsd</application> supports.
+For a list of these methods, use the <option>-l</option>.
+To force the method, give the <option>-e</option> one of
+the colon-terminated method names from the <option>-l</option>
+table.</para>
+
+<para>If D-Bus support is available on the host, GPSD is configured to
+use it, and <command>-e dbus</command> is specified, this program
+listens to DBUS broadcasts from
+<application>gpsd</application> via org.gpsd.fix.</para>
+
+<para>With <command>-e sockets</command>, or if sockets is the method
+defaulted to, you may give a server-port-device specification as
+arguments.</para>
+
+</refsect2>
+<refsect2><title>gegps</title>
+
+<para>This program collects fixes from <application>gpsd</application>
+and feeds them to a running instance of Google Earth for live location 
+tracking.</para>
+
+<para>The <option>-d</option> argument is the location of the Google
+Earth installation directory.  If not specified, it defaults to the
+current directory.</para>
+
+<para>If you have the free (non-subscription) version, start by
+running with the <option>-i</option> option to drop a clue in the
+Google Earth installation directory, as
+'Open_in_Google_Earth_RT_GPS.kml', then open that file in Places (File
+> Open...). Run <application>gpsd</application> in the normal way
+after that.</para>
+
+</refsect2>
+</refsect1>
+<refsect1 id='see_also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgps</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgpsd</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsfake</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsctl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpscat</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsprof</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+<citerefentry><refentrytitle>gpspipe</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+<citerefentry><refentrytitle>gpsmon</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+</para>
+</refsect1>
+
+<refsect1 id='maintainer'><title>AUTHORS</title> 
+
+<para>
+Remco Treffcorn, Derrick Brashear, Russ Nelson &amp; Eric S. Raymond,
+Jeff Francis (cgps). Amaury Jacquot <email>sxpert@sxpert.org</email>
+&amp; Petter Reinholdtsen <email>pere@hungry.com</email> (gpxlogger).
+Chris Kuethe <email>chris.kuethe@gmail.com</email> (gpxlogger), Chen
+Wei <email>weichen302@aol.com</email> (gegps &amp; xgpsspeed), Robin Wittler
+<email>real@the-real.org</email> (xgpsspeed).
+</para>
+
+<para>This manual page by Eric S. Raymond <email>esr@thyrsus.com</email></para>
+
+</refsect1>
+
+</refentry>
+

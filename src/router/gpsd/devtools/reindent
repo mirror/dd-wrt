@@ -1,0 +1,26 @@
+#!/bin/sh 
+# Re-indent the codebase in a uniform style for readability.
+# 
+# This is more or less a failed experiment, kept for the record.
+
+INDENT_OPTIONS = --indent-level4 \
+		--honour-newlines \
+		--dont-break-procedure-type \
+		--cuddle-else \
+		--braces-on-if-line \
+		--case-brace-indentation0 \
+		--brace-indent0 \
+		--no-space-after-casts \
+		--no-space-after-function-call-names \
+		--start-left-side-of-comments \
+		--dont-format-comments
+indent:
+	chmod u+w *maskdump.c
+	indent $(INDENT_OPTIONS) *.c
+	for f in *.c; \
+		do \
+			sed <$${f} >/tmp/reindent$$$$ -e 's/@ \*/@*/' ; \
+			mv /tmp/reindent$$$$ $${f} ; \
+		done
+	chmod u-w *maskdump.c
+	@echo "Diff lines:" `git diff | wc -l`

@@ -1,0 +1,67 @@
+<sect1 id="isgps.c"><title><filename>isgps.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>This contains low level handling
+  for the data transmission format of the satellite downlink and the
+  RTCM2 radio data stream. ESR comments <quote>You are not expected to
+  understand any of this.</quote>. Let's try anyhow.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>static unsigned char parity_array[]</function></entry>
+  <entry><para>An array of parity values to allow fast lookup instead of calculation.</para></entry>
+</row>
+<row>
+  <entry><function>static unsigned int reverse_bits[]</function></entry>
+  <entry><para>An array of conversion values to allow fast lookup instead of calculation.</para></entry>
+</row>
+<row>
+  <entry><function>unsigned int isgps_parity(isgps30bits_t th)</function></entry>
+  <entry><para>Calculate the ISGPS parity for the incoming 30 bit
+  word. This involves lots of masking (with preset values or values
+  searched through <function>parity_array[]</function>) and
+  shifting</para></entry>
+</row>
+<row>
+  <entry><function>void isgps_init(struct gps_packet_t *session)</function></entry>
+  <entry><para>Initialise the ISGPS data for the current session.</para></entry>
+</row>
+<row>
+  <entry><function>enum isgpsstat_t isgps_decode(struct gps_packet_t *session, bool (*preamble_match)(isgps30bits_t *), bool (*length_check)(struct gps_packet_t *), size_t maxlen, unsigned int c)</function></entry>
+  <entry><para>Check the validity of the ISGPS word tag (incoming data
+  <function>unsigned int c</function>) and exit with an error if it is
+  not valid.</para><para>If the session has not already locked with
+  the datastream, loop through the data and try and sync up. If sync
+  is achieved, exit early with an indication of sync, or fall through
+  still marked unsynced.</para><para>If the session is already locked
+  to the datastream, read the data into the session buffer. All the
+  while, take care that the datastream is not corrupted. Any error
+  will result in an early return with an appropriate error code. At
+  the end of this section, return the status of the
+  operations.</para><para>Finally, if the above two sections failed,
+  exit with an error indicating that lock was not
+  achieved.</para></entry>
+</row>
+<row>
+  <entry><function>void isgps_output_magnavox(isgps30bits_t *ip, unsigned int len, FILE *fp)</function></entry>
+  <entry><para>Ship an IS-GPS-200 message to standard output in Magnavox format.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

@@ -1,0 +1,2 @@
+# Test the ability to parse multiple packets on the same line
+{"class":"VERSION","release":"2.90dev","rev":"svn6614","proto_major":3,"proto_minor":1}{"class":"DEVICES","devices":[{"class":"DEVICE","path":"/dev/ttyS0","activated":1259438908.99,"flags":1,"driver":"SiRF binary","native":1,"bps":4800,"parity":"N","stopbits":1,"cycle":1.00}]}{"class":"WATCH","enable":true,"nmea":false,"raw":0,"scaled":false,"timing":false}

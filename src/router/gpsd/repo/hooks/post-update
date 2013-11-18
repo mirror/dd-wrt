@@ -1,0 +1,5 @@
+#!/bin/sh
+#
+# Custom hook for the GPSD project
+
+exec git update-server-info

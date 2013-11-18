@@ -1,0 +1,55 @@
+<sect1 id="pseudonmea.c"><title><filename>libgpsd_core.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<!-- Not documented: nmea_tpv_dump(), nmea_sky_dump() -->
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>Generate pseudo-NMEA corresponding to binary packet reports</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>static double degtodm(double a)</function></entry>
+  <entry><para>Converts a fractional degree value (like 125.3567) into an NMEA field as dddmm.xxx (like 12521.402).</para></entry>
+</row>
+<row>
+  <entry><function>void gpsd_position_fix_dump(struct gps_device_t *session, /char bufp[], size_t len)</function></entry>
+  <entry><para>If possible, create a $GPGGA message (full time, position and fix data) from the fix data, taking care about the validity of subsidiary fields like HDOP and altitude.</para></entry>
+</row>
+<row>
+  <entry><function>static void gpsd_transit_fix_dump(struct gps_device_t *session, char bufp[], size_t len)</function></entry>
+  <entry><para>Create a $GPRMC message (minimum navigation data) from the fix data.</para></entry>
+</row>
+<row>
+  <entry><function>static void gpsd_binary_fix_dump(struct gps_device_t *session, char bufp[], size_t len)</function></entry>
+  <entry><para>Make a call to <function>gpsd_position_fix_dump()</function> and <function>gpsd_transit_fix_dump()</function>.</para></entry>
+</row>
+<row>
+  <entry><function>static void gpsd_binary_satellite_dump(struct gps_device_t *session, char bufp[], size_t len)</function></entry>
+  <entry><para>Create one or more $GPGSV messages from the status data of all satellites we know about.</para></entry>
+</row>
+<row>
+  <entry><function>static void gpsd_binary_quality_dump(struct gps_device_t *session, char bufp[], size_t len)</function></entry>
+  <entry><para>Create a $GPGSA message taking care that if any xDOP is not valid, we substitute a <quote>0.0</quote> value.</para><para>If any of the error estimates is available, generate a $PGRME message again taking care about possibly invalid values.</para></entry>
+</row>
+<row>
+  <entry><function>static void gpsd_binary_dump(struct gps_device_t *session, char bufp[], size_t len)</function></entry>
+  <entry><para>Dump such binary data as we have available; a fix, a quality value and a satellite status block. Each is enabled by the appropriate status bits in the session mask variable.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

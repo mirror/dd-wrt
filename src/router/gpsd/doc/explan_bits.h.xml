@@ -1,0 +1,28 @@
+<sect1 id="bits.h"><title><filename>bits.h</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='1'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><para>This file only contains macros that convert data
+  variables from the native format of the device output (MSB-first or
+  LSB-first) into a standard form for <function>gpsd</function>
+  use. This makes data parsing consistent regardless of the underlying
+  format. If the device driver file makes no deliberate selection, the
+  default is to assume the device emits data in big-endian (network
+  byte) order.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

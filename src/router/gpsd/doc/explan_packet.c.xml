@@ -1,0 +1,91 @@
+<sect1 id="packet.c"><title><filename>packet.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>The packet-sniffing engine for reading data packets from GPS devices.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Tue Apr 6 10:17:55 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>static void nextstate(struct gps_packet_t *lexer, unsigned char c)</function></entry>
+  <entry><para>This is the main packet-sniffer loop. It scans the character
+  against the definitions of all the packet structures known to
+  <application>gpsd</application> and, if possible, sets a new packet
+  state.</para><para>If the state is <quote>xxx_RECOGNIZED</quote>,
+  the packet_parse routine will despatch the packet to the appropriate
+  driver.</para></entry>
+</row>
+<row>
+  <entry><function>static void packet_accept(struct gps_packet_t *lexer, int packet_type)</function></entry>
+  <entry><para>This shifts a packet that has been recognized into the
+  output buffer, provided it is not bigger than the
+  buffer.</para></entry>
+</row>
+<row>
+  <entry><function>static void packet_discard(struct gps_packet_t *lexer)</function></entry>
+  <entry><para>This clears a handled packet out of the input
+  buffer.</para></entry>
+</row>
+<row>
+  <entry><function>static void character_discard(struct gps_packet_t *lexer)</function></entry>
+  <entry><para>This is called if the <function>nextstate()</function>
+  function returns <quote>GROUND_STATE</quote>.</para><para>In this
+  case the character does not match any pattern, so to discard it, the
+  input buffer is shifted back by one character to overwrite the
+  <quote>bad</quote> character.</para></entry>
+</row>
+<row>
+  <entry><function>ssize_t packet_parse(struct gps_packet_t *lexer, size_t fix)</function></entry>
+  <entry><para>Call the <function>nextstate()</function> function to
+  process the available data and set the recognition state
+  correctly.</para><para>When a packet is matched to a driver, call
+  <function>packet_accept()</function> and
+  <function>packet_discard()</function> to handle the packet. If it is
+  not matched, call <function>packet_discard()</function> and set the
+  state to <quote>GROUND_STATE</quote></para><para>Return the number
+  of characters handled.</para></entry>
+</row>
+<row>
+  <entry><function>ssize_t packet_get(int fd, struct gps_packet_t *lexer)</function></entry>
+  <entry><para>Reads raw data from the input port.</para><para>Returns
+  the number of characters read (0 or more) or BAD_PACKET if there was
+  an error in reading.</para><para>Errors
+  <errortype>EAGAIN</errortype> and <errortype>EINTR</errortype> are
+  not classed as failures and cause a return of 0.</para><para>In case
+  of a good read of more than 0 characters, the return value is the
+  output from a call to
+  <function>packet_parse()</function>.</para></entry>
+</row>
+<row>
+  <entry><function>void packet_reset(struct gps_packet_t *lexer)</function></entry>
+  <entry><para>This simply resets the entire packet state machine to
+  the ground state.</para></entry>
+</row>
+<row>
+  <entry><function>void packet_nit(struct gps_packet_t *lexer)</function></entry>
+  <entry><para>Zeros some counters, then resets the entire packet
+  state machine to the ground state.</para></entry>
+</row>
+<row>
+  <entry><function>void packet_pushback(struct gps_packet_t *lexer)</function></entry>
+  <entry><para>This pushes back the last packet from the output buffer
+  to the input buffer, provided doing so would not overflow the input
+  buffer.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

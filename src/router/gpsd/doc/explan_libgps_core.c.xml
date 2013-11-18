@@ -1,0 +1,107 @@
+<sect1 id="gpsdclient.c"><title><filename>libgps_core.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>The client interface library for the <application>gpsd</application> daemon.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code of Mon Apr 5 21:38:06 2010 -0400</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>struct gps_data_t *gps_open(const char *host, const char *port)</function></entry>
+  <entry><para>Open a connection to a gps daemon.</para><para>Try to
+  get a <function>gps_data_t</function> structure. If it fails, return
+  a NULL.</para><para>Test for a specified host and/or port number,
+  using defaults if nothing is specified in the command line
+  invocation.</para><para>Try to connect to the now defined socket; on
+  error, release the resources and return NULL. On success, initialise
+  an internal <structname>struct gps_data_t</structname> and return
+  the pointer to it.</para></entry>
+</row>
+<row>
+  <entry><function>struct gps_data_t *gps_open_r(const char *host, const char *port, struct gps_data_t *gpsdata)</function></entry>
+  <entry><para>Variant of <function>gps_open()</function> for when
+  re-entrancy is required. Initializes storage passed by the
+  caller.</para></entry>
+</row>
+<row>
+  <entry><function>int gps_close(struct gps_data_t *gpsdata)</function></entry>
+  <entry><para>Close the fd associated with the
+  <function>gps_data_t</function> structure and stash the
+  result.</para><para>If there is a device id stored, NULL it and the
+  associated path.</para><para>If the device list has any data in it,
+  free this and mark the number of available devices as
+  invalid.</para><para>Free the <function>gps_data_t</function>
+  structure itself and return the stashed <function>close()</function>
+  result.</para></entry>
+</row>
+<row>
+  <entry><function>static void gps_unpack(char *buf, struct gps_data_t *gpsdata)</function></entry>
+  <entry><para>Keep looping through the data in
+  <function>buf</function> for JSON objects. Each time one is found,
+  analyze it and unpack it into the struct pointed at by gpsdata,
+  setting the gpsdata->set mask appropriately to indicate which data
+  is valid</para><para>This function is intended for GPSD internal use
+  only and should not be considered a stable part oof the
+  API.</para></entry>
+</row>
+<row>
+  <entry><function>int gps_poll(struct gps_data_t *gpsdata)</function></entry>
+  <entry><para>Poll the daemon and if there is no data or an error,
+  return -1.</para><para>If there is something to read, clear the
+  buffer, note the time as the received data time and the online time,
+  then unpack the data.</para><para>If profiling is active, use the
+  received data time, the fix time and the present time to calculate
+  the decode time and the client receipt time.</para></entry>
+</row>
+<row>
+  <entry><function>int gps_send(struct gps_data_t *gpsdata, const char *fmt, ... )</function></entry>
+  <entry><para>Gather up the instructions to a
+  <application>gpsd</application> instance for information to return
+  and write them to the device.</para><para>If the write fails, return
+  -1. This entry point is deprecated in favor of
+  <function>gps_stream()</function></para></entry>
+</row>
+<row>
+  <entry><function>bool gps_waiting(struct gps_data_t *gpsdata)</function></entry>
+  <entry><para>Return a boolean indicating whether input data is waiting on
+  the daemon socket.  Does not block.</para></entry>
+</row>
+<row>
+  <entry><function>int gps_stream(struct gps_data_t *gpsdata, unsigned int, void *d)</function></entry>
+  <entry><para>Set watch and policy flags.  This evaluates the flag mask passed
+  as the second argument, composes a corresponding command in the GPSD
+  write protocol, and ships it to the daemon. </para></entry>
+</row>
+<row>
+  <entry></entry>
+  <entry><para>The following three functions are guarded by an <function>#ifdef</function> so they only compile if it is required to be able to test the library and set up a command line exerciser interface.</para></entry>
+</row>
+<row>
+  <entry><function>static void data_dump(struct gps_data_t *collect, time_t now)</function></entry>
+  <entry><para>A data dumper used when debugging. It outputs data according to the command line input data.</para></entry>
+</row>
+<row>
+  <entry><function>static void dumpline(struct gps_data_t *ud UNUSED, char *buf, size_t ulen UNUSED, int level UNUSED)</function></entry>
+  <entry><para>A simple call to UNIX <function>puts()</function>.</para></entry>
+</row>
+<row>
+  <entry><function>int main(int argc, char *argv[])</function></entry>
+  <entry><para>A simple command line parser and endless loop to exercise the daemon when debugging.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>
