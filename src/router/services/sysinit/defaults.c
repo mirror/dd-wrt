@@ -3158,6 +3158,12 @@ struct nvram_tuple srouter_defaults[] = {
 	{"udpxy_listenif", "", 0},
 	{"udpxy_listenport", "4022", 0},
 #endif
+#ifdef HAVE_LIGHTTPD
+	{"lighttpd_enable", "0", 0},
+	{"lighttpd_port", "81", 0},
+	{"lighttpd_advanced", "0", 0},
+	{"lighttpd_root", "/jffs/www", 0},
+#endif
 
 	{0, 0, 0}
 };
