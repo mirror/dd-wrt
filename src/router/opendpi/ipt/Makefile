@@ -18,4 +18,5 @@ lib%.so: lib%.o
 lib%.o: lib%.c
 	$(ARCH)-linux-gcc ${CFLAGS} -D_INIT=lib$*_init -c -o $@ $<;
 clean:
-	rm -rf libxt_opendpi.so ${OPENDPI_SRC}
+	rm -rf ${OPENDPI_SRC}
+#	rm -rf libxt_opendpi.so ${OPENDPI_SRC}
