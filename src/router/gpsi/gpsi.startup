@@ -20,8 +20,11 @@ if [ x$GPS_NEED_SETUP = x1 ]; then
 	if [ x$BOARD = xCambria ]; then                     
         TTY=/dev/ttyS1
         BAUD=4800
-    elif [ x$BOARD = xLaguna ] ; then
+	elif [ x$BOARD = xLaguna ] ; then
         TTY=/dev/ttyS2
+        BAUD=9600
+	elif [ x$(nvram get DD_BOARD | cut -c1-7) = xOctagon ] ; then
+        TTY=/dev/ttyS1
         BAUD=9600
 	else                  
         TTY=/dev/tts/0
