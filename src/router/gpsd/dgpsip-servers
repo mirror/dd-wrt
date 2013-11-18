@@ -1,0 +1,10 @@
+# Publicly available DGPS correction servers
+# Three fields are: Latitude, longitude, server name[:port]
+# Degree fractional parts are decimal, not mmss.  They can be approximate,
+# as they are only used to find the closest server.
+# Some of the data in this file is from the EUREF project page at
+# http://www.epncb.oma.be/_organisation/projects/euref_IP/
+#
+37.19	-122.39	dgps.wsrcc.com  	# Pt. Blunt, CA USA
+39.14	8.97	glonass.ca.astro.it	# Cagliari, Italy
+50.01	19.92  	gps1.geod.agh.edu.pl	# Krakow, Poland
