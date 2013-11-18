@@ -1,0 +1,99 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# usage: gegps [-i] [-d kmldir]
+#
+# Feed location data from a running GPSD to a Google Earth instance.
+# The -d argument is the location of the Google Earth installation
+# directory.  If not specified, it defaults to the current directory.
+#
+# If you have the free (non-subscription) version, start by running with
+# the -i option to drop a clue in the Google Earth installation directory,
+# as 'Open_in_Google_Earth_RT_GPS.kml', then open that file in Places
+# (File > Open...),
+#
+# The basic recipe is here:
+# http://tjworld.net/wiki/Linux/Ubuntu/GoogleEarthPlusRealTimeGPS
+#
+# This code originally by Jaroslaw Zachwieja and a guy referring
+# to himself/herself as TJ(http://tjworld.net)
+# Modified by Chen Wei <weichen302@aol.com> for use with gpsd
+# Cleaned up and adapted for the GPSD project by Eric S. Raymond.
+
+import sys, os, getopt
+import gps
+
+KML_OPEN_IN_GE = '''\
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.2">
+<NetworkLink>
+	<name>Realtime GPS</name>
+	<open>1</open>
+	<Link>
+		<href>Realtime_GPS.kml</href>
+		<refreshMode>onInterval</refreshMode>
+	</Link>
+</NetworkLink>
+</kml>
+'''
+
+def kmlize(tpv):
+    '''http://code.google.com/apis/kml/documentation/kmlreference.html
+       for official kml document'''
+    latitude =  tpv['lat']
+    longitude = tpv['lon']
+    speed_in =  tpv['speed'] # meter/second
+    speed = speed_in * gps.MPS_TO_KPH # Km/h
+    heading =   int(round(tpv['track'], 0))
+    altitude =  tpv['alt']
+
+    if speed < 1:
+        heading = 0
+
+    return """<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://earth.google.com/kml/2.0">
+<Placemark>
+    <name>%s km/h,heading %s</name>
+    <description>Realtime GPS feeding</description>
+    <LookAt>
+        <longitude>%s</longitude>
+        <latitude>%s</latitude>
+    </LookAt>
+    <Point>
+        <coordinates>%s,%s,%s</coordinates>
+    </Point>
+</Placemark>
+</kml>""" % (speed,heading,longitude,latitude,longitude,latitude,altitude)
+
+
+if __name__ == "__main__":
+    session = gps.gps()
+    session.stream(gps.WATCH_ENABLE)
+
+    kmldir = "."
+    initialize = False
+    (options, arguments) = getopt.getopt(sys.argv[1:], "d:i")
+    for (opt, arg) in options:
+        if opt == '-d':
+            kmldir = arg
+        elif opt == '-i':
+            initialize = True
+
+    if initialize:
+        f = open(os.path.join(kmldir, 'Open_in_Google_Earth_RT_GPS.kml'), 'w')
+        f.write(KML_OPEN_IN_GE)
+        f.close()
+    else:
+        try:
+            while True:
+                report = session.next()
+                if report['class'] == 'TPV':
+                    f = open(os.path.join(kmldir, 'Realtime_GPS.kml'), 'w')
+                    f.write(kmlize(report))
+                    f.close()
+        except StopIteration:
+            pass
+        except KeyboardInterrupt:
+            print 'gegpsd stopped '
+
+# end

@@ -1,0 +1,33 @@
+<sect1 id="libgps.c"><title><filename>libgps.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>The client interface library for the <application>gpsd</application> daemon.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>char *deg_to_str( enum deg_str_type type,  double f)</function></entry>
+  <entry><para>Convert double degrees to a static string and return a pointer to it.</para><para>Makes a simple check on invalid degree values (less than 0 or more than 360) and returns "nan" if found.</para><para>For valid values, it generates the appropriate string according to the string type enumeration, defaulting to DD MM SS.sss</para></entry>
+</row>
+<row>
+  <entry><function>enum unit gpsd_units(void)</function></entry>
+  <entry><para>Simple check of the environment to determine what units are required. If all else fails, use compiled in units.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

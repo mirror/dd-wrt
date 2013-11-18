@@ -1,0 +1,52 @@
+The gpsd test flock is intended to make it easy for GPSD devs to
+verify operation of the software on multiple architectures and operating
+systems.
+
+To add a machine to the flock, do these steps:
+
+1. Create a test-sandbox account. The recommended name is "gpsd".
+
+2. Install git and gpsd's build prerequisites (gcc, Python, autotools, etc.)
+   where the test account can run them.  On a Debian/Ubuntu system you may be
+   able to do this all at once with these commands:
+
+       aptitude install git-core autoconf automake libtool
+       aptitude build-dep gpsd
+
+3. Make sure the account is reachable from the general Internet via ssh.
+
+4. Install the public key of the test-network gatekeeper in 
+   .ssh/authorized_keys.  Presently the test-network gatekeeper is
+   esr@thyrsus.com; it is expected that this role will be held by the
+   GPSD project lead or some delegate.  The key is:
+
+ssh-dss AAAAB3NzaC1kc3MAAACBAPcpYG3nTzwrnZ1Nuz4FlODvnDaoHVaDoVg3jiSax/OJLuLmP+B1RMIMzQyQvbpeVHfMvBk1G+lqpysdUGOjM1ohYIXD479oOUg+Iga4SxrAwMwIiOFF5XhLc3hV2Ibd0N6V9ho8Sz8Kgq4CKj7323bLL+YpfldMhIlLXYDwTVo7AAAAFQCpZm4A5EiQar4+WavFBS1Xy3mJ6wAAAIEA2H33z6KpgRPIV/m5tRX4RmPmtunpC8UpBxj/uEadkaKnbDHLSuyUcflXe2A5xTuYIdFglEkt7ebZ1Gil4f7NuiKbukfQ13jMDWyuS9kDw0gr245kInu22dpfU1ZlCoDmNZSSeRJFkmhfvAim6yXoNpcS/PCaICNPJ1Ww9COYkqoAAACAY4g8mk80LXEpumbEonuDbsFobkz3HiooKgZd+xAGlYEDKpdVlh+bAXHW2R8tHnfYzP5Lq9nGan9i8GSAnw4ETwQ/IfIo7uT1OikyuImYqX2WKoUz5/3i9KOEUy4LWbqSHjIxBw3Y9ZlFYzq3gG/EhnmIuKGlN6Ig1P7B7v0GuXg= esr@snark
+
+5. Append an entry to the flocktest.ini file and push to origin with the commit
+   message "Added new flock site" or something similar.  If you do not
+   have git commit access, mail the entry to the development mailing
+   list.
+
+To gain access to the test network:
+
+1. Email a valid public ssh key to the flock gatekeeper. He will install the
+   key on the test sites.
+
+To use the test network:
+
+1. Call the script 'flocktest', optionally with a -d option to set a
+   test subdirectory.  (You can also set this in a .flockdriver dot file;
+   do "flocktest -?" to see instructions about how to set this up.)
+
+   The local flocktest script will upload an agent script to each
+   machine that will do "autogen.sh && make % make check".  flocktest
+   will only return after all tests are complete, but they will be run
+   in parallel rather than sequentially.
+
+   The success/failure notifications will appear as CIA messages on
+   the #gpsd IRC channel at freenode.  For each failed test, the
+   log will be dumped to standard output.
+
+We have access to some the Debian test machines listed as porterboxes
+at <http://db.debian.org/machines.cgi>.  Adding these to the flock is 
+a work in progress.

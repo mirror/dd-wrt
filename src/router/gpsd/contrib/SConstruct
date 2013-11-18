@@ -1,0 +1,12 @@
+# This is a skeleton makefile to simplify building some of these little
+# utilities. They probably won't be useful to many users, and they probably
+# won't get used on a daily basis, but someone might find them useful for
+# tinkering with their gear.
+
+ashctl = Program("ashctl", ["ashctl.c", "../strl.c"])
+binlog = Program("binlog", "binlog.c")
+binreplay = Program("binreplay", "binreplay.c", parse_flags=['-lutil'])
+lla2ecef = Program("lla2ecef", "lla2ecef.c", parse_flags=['-lm'])
+motosend = Program("motosend", ["motosend.c", "../strl.c"])
+
+Default(ashctl, binlog, binreplay, lla2ecef, motosend)

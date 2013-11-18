@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=${exec_prefix}@libdir@
+includedir=${prefix}/include
+qt_config=lex yacc warn_on uic resources qt release incremental link_prl def_files_disabled exceptions no_mocdepend stl qt_no_framework create_pc create_prl moc thread dll
+
+Name: Qgpsmm
+Description: GPS Daemon communication library - QT binding
+Version: @VERSION@
+Libs: -L${libdir} -lQgpsmm 
+Libs.private: -L/usr/lib  -lQtNetwork -lQtCore -lpthread   
+Cflags:  -I${includedir}
+Requires: QtNetwork

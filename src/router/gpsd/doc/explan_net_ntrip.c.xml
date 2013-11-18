@@ -1,0 +1,74 @@
+<sect1 id="net_ntrip.c"><title><filename>ntrip.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>Gather and dispatch DGNSS data from Ntrip broadcasters.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on codec as of Tue Apr 6 10:17:55 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>static char *ntrip_field_iterate(char *start, char *prev, const char *eol)</function></entry>
+  <entry><para>Extract individual fields from the STR data block using
+  ';' as the separator but handling string-embedded ';' characters
+  correctly.</para></entry>
+</row>
+<row>
+  <entry><function>static void ntrip_str_parse(char *str, size_t len, struct ntrip_stream_t *hold)</function></entry>
+  <entry><para>Break an STR data block down using
+  <function>ntrip_field_iterate()</function> and store the relevant
+  details in an accumulation buffer.</para></entry>
+</row>
+<row>
+  <entry><function>static int ntrip_sourcetable_parse(int fd, char *buf, ssize_t blen, const char *stream, struct ntrip_stream_t *keep)</function></entry>
+  <entry><para>Parse a block of ntrip data by passing the STR data to
+  <function>ntrip_str_parse()</function>.</para><para>Return a 0 on
+  success or -1 on any of the many possible failures.</para></entry>
+</row>
+<row>
+  <entry><function>static int ntrip_stream_probe(const char *caster, const char *port, const char *stream, struct ntrip_stream_t *keep)</function></entry>
+  <entry><para>Send a request to the broadcaster for a block of
+  correction data.</para><para>If successful, return the result of
+  parsing the table. On error return -1.</para></entry>
+</row>
+<row>
+  <entry><function>static int ntrip_auth_encode(const struct ntrip_stream_t *stream, const char *auth, char buf[], size_t size)</function></entry>
+  <entry><para>Check the authorisation of the stream and return 0 if
+  there is none or it is basic. Return -1 in all other
+  cases.</para></entry>
+</row>
+<row>
+  <entry><function>static int ntrip_stream_open(const char *caster, const char *port, const char *auth, struct gps_context_t *context, struct ntrip_stream_t *stream)</function></entry>
+  <entry><para>Check the authorisation of the stream and if
+  successful, try to connect.</para><para>On connection, try to read
+  data and test for various errors.</para><para>On success, return the
+  socket number, on error return -1.</para></entry>
+</row>
+<row>
+  <entry><function>int ntrip_open(struct gps_context_t *context, char *caster)</function></entry>
+  <entry><para>Try to establish a connection to the ntrip server. On
+  success, return the socket number. Signal error with a return of
+  -1.</para></entry>
+</row>
+<row>
+  <entry><function>void ntrip_report(struct gps_device_t *session)</function></entry>
+  <entry><para>If we have not contacted the server already and we have
+  at least 10 fixes, send a report to the server and set the flag, so
+  we don't do it again.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

@@ -1,0 +1,93 @@
+This is a list of developer tools included in the source repository
+but not necessarily shipped in the tarball or binary distributions If you're
+viewing it with Emacs, you can try doing Ctl-C Ctl-t browse through
+the outline headers.  Ctl-C Ctl-a will unfold them again.
+
+== ais.py ==
+
+AIS packet decoder in Python.  Useful as a check on the C code.
+Also, if you have AISHub privileges (see <http://www.aishub.net/>), 
+a command like
+ 
+      nc data.aishub.net 4006 | devtools/ais.py -c -v -t RANGE >AIS.LOG 2>&1"
+
+is a handy way to capture filtered AIS samples; RANGE can be a comma-separated
+list of AIS types. 
+
+== aidvmtable ==
+
+Generate an asciidoc table of the six-bit encoding used in AIVDM packets.
+
+== cycle_analyzer ==
+
+Finds end-of-cycle sentences from GPS output logs.
+
+== dchroot-exec ==
+
+Very simple wrapper around the DSA version of dchroot
+on the Debian porter boxes. dchroot only accepts one command
+as argument, nothing else. This wrapper creates a temporary script
+which will be executed then.
+
+== editcomment ==
+
+Give this a commit-ID specification.  It will edit the associated comment.
+Usual caveats apply; the edited one and all commits after will change IDs,
+and pushing them to a repo with the old commits will wreak havoc.
+Note also that this cavalierly overwrites refs/original.
+
+== fakeserver ==
+
+Analogue of gpsfake. Impersonates a gpsd, spewing specified data to
+clients connecting to localhost:2947
+
+== fakecompare ==
+
+Compare the results from running gpsfake on a logfile between this
+machine and a remote one.  Especially useful when remote and local
+have different word lengths.
+
+== flock* ==
+
+The files prefixed with flock are the scripts, data files, and 
+documentation for the flock-test suite. Read flock-instructions for 
+explanation.
+
+== gpsd-debian-regressions.sh ==
+
+Retrieves the latest build logs from Debian's buildds and extracts a
+list of failed regression tests, sorted by architecture.
+
+== logextract ==
+
+Extract pure NMEA from an emailed gpsd error log. The output can be fed 
+to gpsfake.
+
+== regress-builder ==
+
+This script runs an exhaustive test on combinations of compilation options, 
+looking for ones that break the build.
+
+== regressdiff ==
+
+Walk through a pair of text files looking for where they begin to differ.
+May be useful for comparing logs when regression tests break.
+
+== reindent ==
+
+Try to reindent the code in a uniform style.
+
+== sizes ==
+
+Test-build interesting versions of the daemon and display their sizes.
+
+== striplog ==
+
+Strip leading comment lines from NMEA sentence logs.  gpsfake can do
+this itself now, so this script has a lot of dust on it. 
+
+== tablegen.py ==
+
+Generate most of the code required to support a message type from
+AIVDM message layout tables.  Also, redo their bit offsets to be
+conformant with field lengths.

@@ -1,0 +1,61 @@
+<sect1 id="net_dgnss_dispatch.c"><title><filename>dgnss.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>This file provides the interface to Differential GNSS (Global Navigation Satellite Systems) services.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>bool netgnss_url(char *name)</function></entry>
+  <entry><para>Check if a URL is valid for GNSS/DGPS service.</para></entry>
+</row>
+<row>
+  <entry><function>int netgnss_open(struct gps_context_t *context, char *dgnss_service)</function></entry>
+  <entry><para>Try to open a connection to the nominated service. If
+  the service cannot be opened, the return is -1. The supported
+  services are <function>dgpsip</function> (differential corrections
+  via IP) and <function>ntrip</function> (differential corrections in
+  http form).</para></entry>
+</row>
+<row>
+  <entry><function>int netgnss_poll(struct gps_context_t *context)</function></entry>
+  <entry><para>Try to poll the GNSS service for a correction
+  report. If no socket is active, simply return 0. If a socket is
+  active, on successful read it stores the current timestamp and the
+  report in the context buffer then returns 0. If no data is ready or
+  an error (except <errortype>EAGAIN</errortype>) occurs, drop the
+  connection and return -1.</para></entry>
+</row>
+<row>
+  <entry><function>void netgnss_report(struct gps_device_t *session)</function></entry>
+  <entry><para>Call the <function>dgpsip_report()</function> or
+  <function>ntrip_report()</function> function if either is
+  active.</para></entry>
+</row>
+<row>
+  <entry><function>void netgnss_autoconnect(struct gps_context_t *context, double lat, double lon)</function></entry>
+  <entry><para>Call the <function>autoconnect()</function> function in
+  <function>dgpsip.c</function></para></entry>
+</row>
+<row>
+  <entry><function>void rtcm_relay(struct gps_device_t *session)</function></entry>
+  <entry><para>If there is a DGNSS connection report in the context buffer, pass it to the caller. If the transaction fails, generate an error log, otherwise, update the session timestamp.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

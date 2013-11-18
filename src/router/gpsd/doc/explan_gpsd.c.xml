@@ -1,0 +1,325 @@
+<sect1 id="gpsd.c"><title><filename>gpsd.c</filename></title>
+<informaltable frame='all' pgwide='1'>
+<tgroup cols='2'>
+<colspec colname='c1'></colspec>
+<colspec colname='c2'></colspec>
+<spanspec spanname='s1' namest='c1' nameend='c2'></spanspec>
+
+<!-- Not documented: json_devicelist_dump(), rstrip() -->
+
+<thead>
+<row>
+  <entry>Functions:-</entry><entry>This is the main body of the daemon.</entry>
+</row>
+</thead>
+
+<tfoot>
+<row>
+  <entry spanname='s1' align='left'>Notes based on code as of Mon Apr 5 21:38:06 2010 -0400.</entry>
+</row>
+</tfoot>
+
+<tbody>
+<row>
+  <entry><function>static void onsig(int sig)</function></entry>
+  <entry><para>This is a simple catchall routine to trap wanted
+  signal. Simply store the signal number in a variable to advise the
+  main loop which signal to handle.</para></entry>
+</row>
+<row>
+  <entry><function>static int daemonize(void)</function></entry>
+  <entry><para>Try to <function>fork()</function> a child process. The
+  parent will get a return value of either -1 (on a failure to
+  <function>fork()</function>) or non-zero (the child's PID). The
+  parent routine will use this information to either return -1 or exit
+  with an exit code of 0 (i.e. the parent terminates, leaving the
+  child running).</para><para>The child instance gets a return value
+  of 0 (on an unsuccessful <function>fork()</function> there is no
+  child), so this value is used as the trigger to do the following
+  useful stuff.</para><para>First, the child tries to create a new
+  session, returning -1 if unable to do so. If succesful, it will have
+  inherited the exiting parent's session.</para><para>Next switch to
+  the root directory and try to open <quote>/dev/null</quote>. If that
+  succeeds, force stdin, stdout and stderr to duplicate the fd of
+  <quote>/dev/null</quote>. If the fd being used for the operation is
+  >2, release it.</para><para>Finally, set the flag which indicates
+  the process is in the background and return a value of
+  0.</para></entry>
+</row>
+<row>
+  <entry><function>void gpsd_report(int errlevel, const char *fmt, ... )</function></entry>
+  <entry><para>This code is used for error reporting, but is dependant
+  on SQUELCH_DISABLE so that embedded systems (for example) are not
+  burdened with unnecessary noise. The first thing to check is if the
+  error level offered is high enough to be of interest (controlled by
+  the debug level we are running at).</para><para>If we are
+  interested, the first step is to protect the code with a mutex if we
+  are using the 1PPS input.</para><para>Now we build a message buffer
+  which has a fixed header (<quote>gpsd: </quote>) and the incoming
+  data. The output buffer is prepared (load the start with a NULL) and
+  then the input buffer is scanned, byte-by-byte, up to its
+  terminating NULL. The scanned data is transferred on the fly to the
+  output buffer subject to the following tests:-</para><para>If the
+  character is printable, it passes through unchanged.</para><para>If
+  it is a space and either of the next two bytes is NULL it will also
+  pass through unchanged.</para><para>In any other case, it is copied
+  across as a hexadecimal string like
+  <quote>x09</quote>.</para><para>The completed output buffer is then
+  either sent to the system logger if we are in background mode
+  (daemon) or to the stderr file if we are in foreground
+  mode.</para></entry>
+</row>
+<row>
+  <entry><function>static void usage(void)</function></entry>
+  <entry><para>Simply print a big list of the invocation parameters to
+  the default <application>gpsd</application> port (2947, allocated by
+  IANA).</para></entry>
+</row>
+<row>
+  <entry><function>static int passivesock_af(char *service, char *tcp_or_udp, int qlen)</function></entry>
+  <entry><para>Initialise an Internet socket address structure and
+  preload the family and address fields to accept Internet Protocol
+  and any address.</para><para>Test to see if the incoming service and
+  protocol exist in <function>/etc/services</function>. If they do,
+  store the port number in the structure (massaging byte order as
+  needed); if they don't, exit with a -1.</para><para>Test to see if
+  the protocol is listed in <function>/etc/services</function>,
+  exiting with -1 if it is not.</para><para>Test if the protocol is
+  udp or not, setting the type accordingly.</para><para>Try to open a
+  socket with the accumulated settings, exiting with -1 if it
+  fails.</para><para>Try to set the socket options correctly, again
+  exiting with -1 if it fails.</para><para>Try to bind to the open
+  socket; if it fails exit with -1 as earlier, but give a special
+  warning if the error indicates that <application>gpsd</application>
+  may already be active on the socket.</para><para>If we are using a
+  stream type socket and we are unable to listen to the port we exit
+  with -1.</para><para>The last possibility is a successful set of
+  operations which is signalled by returning the socket fd
+  number.</para></entry>
+</row>
+<row>
+  <entry><function>static int passivesocks(char *service, char *tcp_or_udp, int qlen, int socks[])</function></entry>
+  <entry><para>Open a passive socket for each supported address
+  family; presently the supported families are IPV4 and IPv6. This
+  socket will be used to listen for client command
+  connections. Sockets are left in the final array argument, and the
+  number successfully opened is returned.</para>></entry>
+</row>
+<row>
+  <entry><function>static int filesock(char *filename)</function></entry>
+  <entry><para>Try and open a socket for Local (UNIX) communications
+  in streaming mode. If the open fails, return with a
+  -1.</para><para>If it opens, copy the incoming filename into the
+  socket control structure, bind to the socket and try to listen on
+  it.</para><para>Signal a failure by returning -1 and success by
+  returning the socket fd number.</para></entry>
+</row>
+<row>
+  <entry><function>static void adjust_max_fd(int fd, bool on)</function></entry>
+  <entry><para>If the incoming boolean flag is active, check if the fd
+  number passed is greater than the highest seen so far. If so, save
+  it as the new highest value.</para><para>If the boolean is passive
+  we can take some further action, depending if we are interested in
+  limiting the maximum number of devices and client fds (set by
+  compile time options).</para><para>If we are not limiting ourselves,
+  then we check for the case when we are actually at the highest fd
+  seen so far. In that case, scan through all fds available to the
+  system and store the highest active fd number in our allocation set
+  as the new highest value.</para></entry>
+</row>
+<row>
+  <entry><function>static struct subscriber_t* allocate_client(void)</function></entry>
+  <entry><para>Scan through all the client file descriptors, looking
+  for one which does not have a device allocated to it.</para><para>On
+  a match, exit early, returning this fd.</para><para>If none are
+  available, return a NULL.</para></entry>
+</row>
+<row>
+  <entry><function>static void detach_client(struct subscriber_t *sub)</function></entry>
+  <entry><para>Close the given fd and remove it from our allocation set.</para><para>Make a call to <function>adjust_max_fd()</function> to housekeep the highest fd marker if needed.</para><para>Set important fields in the client's datablock to safe values for the next re-use, then return.</para></entry>
+</row>
+<row>
+  <entry><function>static ssize_t throttled_write(struct subscriber_t *sub, char *buf, ssize_t len)</function></entry>
+  <entry><para>Check if we have a high enough debug level active to warrant printing out the information we are about to send to the client.</para><para>Make the actual <function>write()</function> call and if that was successful, return the counter value from that operation.</para><para>If we have suffered some kind of failure, try to analyse it.</para><para>On a short write, detach the client and return a 0.</para><para>Trap <function>EAGAIN</function> or <function>EINTR</function> and return a 0.</para><para>Trap <function>EBADF</function> or a <function>EWOULDBLOCK</function> where the client has not read data for more than a reasonable amount of time and generate a suitable report.</para><para>For all other errors, generate a general error. In these last several cases, call <function>detach_cient()</function>.</para><para>Finally, return the status (-1 in this case).</para></entry>
+</row>
+<row>
+  <entry><function>static void notify_watchers(struct gps_device_t *device, const char *sentence, ...)</function></entry>
+  <entry><para>For every possible subscriber, check if the subscriber is in watcher mode and is interested in the gps device indicated in the calling parameter <function>gps_device_t</function>.</para><para>If so, send the data via a call to <function>throttled_write()</function>.</para></entry>
+</row>
+<row>
+  <entry><function>static struct gps_device_t *find_device(const char *device_name)</function></entry>
+  <entry><para>For every possible channel, check if the channel is allocated and if the device on the channel is the one passed to us.</para><para>If it is so, exit early and return the channel number.</para><para>If there is no match, return a NULL.</para></entry>
+</row>
+<row>
+  <entry><function>static void deactivate_device(struct gps_device_t *device)</function></entry>
+  <entry><para>Deactivate device, but leave it in the device pool; do
+  not free it.  This means it will be available to be watched on
+  subsequent client opens.</para></entry>
+</row>
+<row>
+  <entry><function>bool open_device(struct gps_device_t *devp)</function></entry>
+  <entry><para>Try to activate the device via a call to
+  <function>gpsd_activate()</function>.</para><para>If this fails
+  return <quote>false</quote>.</para><para>If it succeeds, add the
+  fd to our list of active fds, housekeep the highest fd number
+  and return <quote>true</quote>.</para></entry>
+</row>
+<row>
+  <entry><function>static bool add_device(const char *device_name)</function></entry>
+  <entry><para>Add a device to the pool of those available. If in
+  nowait mode, open it immediately; otherwise initialize it and make
+  it available for future watches, but don't open it yet.</para></entry>
+</row>
+<row>
+  <entry><function>static bool awaken(struct subscriber_t *user, struct gps_device_t *device)</function></entry>
+
+  <entry><para>If the device is not initialized, attempt to open the
+  specified device on behalf of the specified user. If you succeed
+  and the device has an active fd, you're done. If it does not, make a call to
+  <function>gpsd_activate()</function>.</para><para>If this fails,
+  return <quote>false</quote>, if not, add the fd to our list of
+  active fds and housekeep the highest fd.</para><para>Check if the
+  user is in watcher mode but not tied to a specific
+  device.</para></entry>
+</row>
+<row>
+  <entry><function>static char *snarfline(char *p, char **out)</function></entry>
+  <entry><para>Copy the input line into a new buffer stopping at the
+  first non-printable or whitespace character.</para></entry>
+</row>
+<row>
+  <entry><function>static bool privileged_user(struct gps_device_t *device)</function></entry>
+  <entry><para>Scan all subscribers and count all who are connected to
+  the device. If only the one user is connected, return
+  <quote>true</quote>, otherwise return
+  <quote>false</quote>.</para></entry>
+</row>
+<row>
+  <entry><function>static void handle_request(struct subscriber_t* sub, char *buf, const char **after, char *reply, size_t replylen)</function></entry>
+  <entry><para>Perform a single GPSD JSON command. Accept the command
+  response into a reply buffer, and update the after pointer to point
+  just after the parsed JSON object.</para></entry>
+</row>
+<row>
+  <entry><function>static int handle_gpsd_request(struct subscriber_t *sub, const char *buf)
+</function></entry>
+  <entry><para>Parse multiple GPSD JSON commands out of a buffer and
+  perform each. Ship all responses back to the user via
+  <function>throttled_write()</function>.</para></entry>
+</row>
+<row>
+  <entry><function>static void handle_control(int sfd, char *buf)</function></entry>
+  <entry><para>This code is similar in function to
+  <function>handle_gpsd_request()</function> in that it parses user
+  input. It expects the commands to be one per line and despatches
+  them according to the leading character, which is limited to one of
+  '-', '+' or '!'.</para><para>In the first case, the body of the
+  command is assumed to be a device to remove from the search list. If
+  found, it is removed, any clients are advised and <quote>OK</quote>
+  is written to the calling socket fd. If the device is not found
+  <quote>ERROR</quote> is written to the calling socket
+  fd.</para><para>In the second case, the body of the command is
+  assumed to be a device to be used by the daemon. If the device is
+  already known, or does not respond to
+  <function>open_device()</function>, <quote>ERROR</quote> is written
+  to the calling socket fd, otherwise <quote>OK</quote> is
+  written.</para><para>In the third case, the command is assumed to be
+  a device-specific control string in the form
+  <quote>!device_name=control_string</quote>. If the string is
+  ill-formed or the device is not found <quote>ERROR</quote> is
+  written to the calling socket fd. If all is well, the control string
+  is written to the device and <quote>OK</quote> is written to the
+  calling socket fd.</para></entry>
+</row>
+<row>
+  <entry><function>int main(int argc, char *argv[])</function></entry>
+  <entry><para>If the 1PPS function is compiled in, initialise the
+  local mutex structure for use by the program.</para><para>A
+  <function>while()</function> loop reads in any command line
+  arguments which are options and handles the options. Most set an
+  internal variable to control action when running, either to a fixed
+  value or to the associated option's parameter.</para><para>Carry out
+  a series of calls to routines to set things up ready for the main
+  task (e.g. opening a control socket if one is needed). We also take
+  care of tasks such as daemonizing when appropriate. The last piece
+  of preparation is to set the permissions of the default devices
+  correctly if we are daemonizing and are presently running as
+  root.</para><para>Switch to the compiled in user name (typically
+  <quote>nobody</quote>) and the group used by the tty
+  devices.</para><para>Now we clear important data for all the records
+  in the subscriber list.</para><para>Use
+  <function>setjmp()</function> to prepare things for when the daemon
+  terminates.</para><para>Clear the semaphore variable which will
+  contain the signal number if one arrives and set some important
+  signals so they are trapped by the stub handler in
+  <function>onsig()</function>.</para><para>Add the command and RTCM
+  sockets (if active) to the list of active fds, housekeeping the
+  highest fd number and pre-clear the list of control
+  fds.</para><para>Process the remaining parameter on the command line
+  which should be the device name and try to open the specified
+  device.</para><para>Enter the main execution loop, a
+  <function>while()</function> loop which terminates if a signal sets
+  the semaphore variable. What follows will repeat over and over until
+  an external termination happens.</para><para>First we make a working
+  copy of the active fds and then we make a time-limited (1 second
+  time limit) call to <function>select()</function> using the working
+  copy of the fds. This means that when the
+  <function>select()</function> returns, we will either have returned
+  on timeout or because some fd became ready to
+  read.</para><para>First we check if any new clients have come active
+  and (if we have resources) allocate a subscriber slot to it, doing
+  housekeeping such as adding it to the main list of active fds and
+  removing it from the local copy of the list. If RTCM support is
+  compiled in, the last operation is repeated for any new RTCM
+  client. The operation is then repeated for any new control socket
+  clients.</para><para>If we are expecting DGPS reports, make a call
+  to <function>netgnss_poll()</function> and if there are no ready
+  reports, clear the fd from the main and local active fd
+  lists.</para><para>Check if any of the active control sockets has
+  sent one or more commands.</para><para>For every one which has sent
+  commands, make calls to <function>handle_control()</function> to
+  process them and remove the associated fd from the main and control
+  lists of active fds.</para><para>Poll every active gps device and
+  send RTCM data to it (if needed), followed by reading its output (if
+  any). If the device returns an error, disable the device. If it has
+  gone off-line, disable the device.</para><para>If we get here, we
+  have something to handle, so we take care of a device which we know
+  about, but do not have a subtype for.</para><para>We send the
+  available data to all subscribers who are connected to this
+  device. If the data is RTCM information, pass it to all GPS devices
+  that can accept the data.</para><para>Handle any subscribers who are
+  in watcher mode building up an appropriate set of requests, depending
+  on the available data and passing the requests to
+  <function>handle_gpsd_request()</function>.</para><para>If we care
+  about DBUS, send the fix to the DBUS.</para><para><emphasis>Note
+  that this small section of code is presently disabled pending
+  development of the DGNSS function.</emphasis> If DGNSS is available
+  and we have a fix, we poll a DGNSS report via
+  <function>dgnss_autoconnect()</function>.</para><para>Loop round all
+  clients and process active ones. We check for input from them and if
+  the read fails, the client is released with
+  <function>detach_client()</function>. If it succeeds, any data is
+  handled via <function>handle_rtc_request()</function> or
+  <function>handle_gpsd_request()</function>.</para><para>If the
+  transaction fails, the client is released with
+  <function>detach_client()</function>.</para><para>If the client has
+  timed out with no device assigned, it is released with
+  <function>detach_client()</function>.</para><para>If the client has
+  a device, but has timed out on no response (when not in raw or
+  watcher modes) it is released with
+  <function>detach_client()</function>.</para><para>If we are not
+  running in <quote>nowait</quote> mode, we are supposed to go idle
+  after a timeout when there are no clients.</para><para>If a device
+  (with a known type) has no active clients, then we can actually make
+  it idle via <function>gpsd_deactivate()</function>.</para><para>If
+  we reach here, we are out of the endless while loop. We check if the
+  signal was <function>SIGHUP</function> and restart the program if it
+  was. If it is any other signal, we deallocate all channels and wrap
+  up any devices. Finally we check for the existence of a control
+  socket or a pid file and delete them.</para></entry>
+</row>
+</tbody>
+
+</tgroup>
+</informaltable>
+</sect1>

@@ -1,0 +1,13 @@
+These are data logs from various weird GPSes.  Use them to test
+assumptions about NMEA formats and cycle regularities, or as 
+regression-test loads for gpsfake -p.
+
+Structured headers are as follows:
+
+# Name: Product name
+# Chipset: chipset name
+# Firmware: firmware revision level
+# Submitter: who sent it
+# Date: when it was received (ISO8601 yyyy-mm-dd)
+# Location: city, state/province, country, approximate lat/lon
+# Sample-Notes: Notes on how the sample was taken

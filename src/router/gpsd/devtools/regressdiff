@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+#
+# Walk through a pair of textfiles looking for where they begin to differ.
+# May be useful for comparing logs when regression tests break.
+#
+# This file is Copyright (c) 2010 by the GPSD project
+# BSD terms apply: see the file COPYING in the distribution root for details.
+
+import sys
+
+class BufferedFile(file):
+      def __init__(self, name):
+            file.__init__(self, name)
+            self.linebuffer = []
+            self.lineno = 0
+      def readline(self):
+            self.lineno += 1
+            if self.linebuffer:
+                  return self.linebuffer.pop()
+            else:
+                  return file.readline(self)
+      def pushback(self, line):
+            self.lineno -= 1
+            self.linebuffer.append(line)
+      def peek(self):
+            return self.linebuffer[-1]
+
+def eatspan(f1, f2):
+      consumed = 0
+      while True:
+            line1 = f1.readline()
+            line2 = f2.readline()
+            if line1 and line2 and line1 == line2:
+                  consumed += 1
+                  continue
+            f1.pushback(line1)
+            f2.pushback(line2)
+            return consumed
+
+if __name__ == "__main__":
+      f1 = BufferedFile(sys.argv[1])
+      f2 = BufferedFile(sys.argv[2])
+
+      eaten = eatspan(f1, f2)
+      print "First %d lines match" % eaten
+      print `f1.peek()`
+      print `f2.peek()`
