@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE refentry PUBLIC 
+   "-//OASIS//DTD DocBook XML V4.1.2//EN"
+   "docbook/docbookx.dtd">
+<refentry id='gpsflash.1'>
+<refmeta>
+<refentrytitle>gpsflash</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo class='date'>15 Jul 2005</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gpsflash</refname>
+<refpurpose>2-stage firmware loader for GPS chipsets</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+
+<cmdsynopsis>
+  <command>gpsflash</command>  
+      <arg choice='opt'>-n</arg>
+      <arg choice='opt'>-l <replaceable>loader-file</replaceable></arg>
+      <arg choice='plain'>-f <replaceable>firmware-file</replaceable></arg>
+      <arg choice='req'><replaceable>tty</replaceable></arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para>This program is a firmware loader for GPSes connected to your
+host computer via serial or USB port.  Presently it supports only SiRF
+GPSes.  Other GPSes may be supported in the future if the vendors
+cooperate.</para>
+
+<para>For operation, this program requires a flashloader binary (found
+by default in a file named <filename>dlgsp2.bin</filename>) and a
+firmware image. This program first ships a command that tells the GPS 
+a flashloader image will follow, then gives the GPS time to reboot into the
+flashloader. The flashloader then accepts S-records from the serial
+or USB port until it sees a termination record, at which point it
+writes the new firmware into the GPS's non-volatile memory
+and reboots the chip into the new firmware.</para>
+
+<para>There is one required argument, specifying the serial device to
+which the GPS is connected.</para>
+
+<para>The -l option specifies the flashloader binary.  The -f option
+specifies the firmware image file, and is required unless you
+are just probing the GPS (-n option).</para>
+
+<para>If the -n option is specified, the program will probe the
+GPS to try to determine its type and whether the upload is
+compatible, but not actually perform the upload. When this option
+is specified, the -f option is not required.</para>
+
+<para>You will need to obtain your own copy of
+<filename>dlgsp2.bin</filename> and your own firmware image.  The GPSD
+project does not yet have permission to distribute these files, so
+don't ask us for copies.</para>
+
+<para>Depending on your GPS type, this program may or may not attempt
+to check that the flashloader or firmware image is compatible with
+your GPS; in some cases no check is possible.  <emphasis
+role='strong'>EXPERIMENT AT YOUR OWN RISK.</emphasis>
+</para>
+
+<para>This program will only work with firmware images in S-record
+format, which is the form SiRF normally distributes them in.  If you
+get a binary firmware image from somewhere, you can use
+<citerefentry><refentrytitle>objdump</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+from the GNU binutils to convert it to S-records.</para>
+
+<para>Realize that we are not kidding around when we say that this
+could very well break your receiver permanently, and if it does, it's
+no one's fault but your own. For this program to flash your GPS, you must set
+an environment variable called I_READ_THE_WARNING with the value "why
+oh why didn't i take the blue pill".</para>
+
+<para>This program emits progress messages to standard output.</para>
+
+<para>The GPS will be reset to 4800bps NMEA after flash.</para>
+
+</refsect1>
+<refsect1 id='bugs'><title>BUGS AND LIMITAIONS</title>
+
+<warning><para>THIS PROGRAM CAN DESTROY YOUR GPS.  A botched firmware upload
+will turn it into a paperweight.  USE AT YOUR OWN RISK.  Maintainers
+are not responsible for direct or incidental damages.  YOU HAVE BEEN
+WARNED.</para></warning>
+
+</refsect1>
+<refsect1 id='see_also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gps</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgps</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgpsd</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>srec</refentrytitle><manvolnum>5</manvolnum></citerefentry>.
+</para>
+</refsect1>
+
+<refsect1 id='maintainer'><title>AUTHOR</title> 
+
+<para>Chris Kuethe <email>chris.kuethe@gmail.com</email>.  There is a
+project page for <application>gpsd</application> <ulink
+url="http://gpsd.berlios.de/">here</ulink>.</para>
+
+</refsect1>
+
+</refentry>

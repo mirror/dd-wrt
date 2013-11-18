@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE refentry PUBLIC 
+   "-//OASIS//DTD DocBook XML V4.1.2//EN"
+   "docbook/docbookx.dtd">
+<refentry id='gpsprof.1'>
+<refmeta>
+<refentrytitle>gpsprof</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo class='date'>10 Feb 2005</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gpsprof</refname>
+<refpurpose>profile a GPS and gpsd, plotting latency information</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+
+<cmdsynopsis>
+  <command>gpsprof</command>  
+      <arg choice='opt'>-f <replaceable>plot_type</replaceable></arg>
+      <arg choice='opt'>-m <replaceable>threshold</replaceable></arg>
+      <arg choice='opt'>-n <replaceable>packetcount</replaceable></arg>
+      <arg choice='opt'>-s <replaceable>speed</replaceable></arg>
+      <arg choice='opt'>-t <replaceable>title</replaceable></arg>
+      <arg choice='opt'>-h</arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<para><application>gpsprof</application> measures the various
+latencies between a GPS and its client. It emits to standard output a
+GNUPLOT program that draws an illustrative graph. It can also be told
+to emit the raw profile data.  The information it provides can be
+useful for establishing an upper bound on latency, and thus on
+position accuracy of a GPS in motion.</para>
+
+<para><application>gpsprof</application> uses instrumentation built
+into <application>gpsd</application>.</para>
+
+<para>To display the graph, use
+<citerefentry><refentrytitle>gnuplot</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+Thus, for example, to display the default spatial scatter plot, do
+this:
+
+<programlisting>
+gpsprof | gnuplot -persist
+</programlisting>
+</para>
+
+</refsect1>
+<refsect1 id='options'><title>OPTIONS</title>
+
+<para>The -f option sets the plot type. The X axis is samples
+(sentences with timestamps).  The Y axis is normally latency in seconds.
+Currently the following plot types are defined:</para>
+
+<variablelist>
+<varlistentry>
+<term>space</term>
+<listitem>
+<para>Generate a scattergram of fixes and plot a probable-error
+circle.  This data is only meaningful if the GPS is held stationary
+while <application>gpsprof</application> is running. 
+This is the default.</para>
+<para></para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>uninstrumented</term>
+<listitem>
+<para>Plot total latency without instrumentation.  Useful mainly as a
+check that the instrumentation is not producing significant
+distortion.  It only plots times for sentences that contain fixes;
+staircase-like artifacts in the plot are created when elapsed time
+from sentences without fixes is lumped in.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>raw</term>
+<listitem>
+<para>Plot raw data.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>split</term>
+<listitem>
+<para>Each sentence has its RS232 latency time colored differently.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>cycle</term>
+<listitem>
+<para>Report on the set of sentences or packets emitted by the GPS,
+their send intervals, and the basic cycle time. (This report is 
+plain text rather than a gnuplot script.)</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para>The instrumented time plot conveys the following information:</para>
+
+<variablelist>
+<varlistentry>
+<term>RS232 time</term>
+<listitem>
+<para>Minimum time required to send the sentence from the GPS to
+<application>gpsd</application>. This is computed, not measured, 
+and may be an underestimate.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Other line latency</term>
+<listitem>
+<para>The transmission latency between the GPS and 
+<application>gpsd</application> not accounted for by RS232 time.
+Total line latency (the sum of this bar and RS232 time)
+is measured; it begins with the GPS sentence's timestamp and ends with 
+a timestamp that <application>gpsd</application> generates at 
+sentence-reading time, before it is decoded.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>Decode time</term>
+<listitem>
+<para>Elapsed time between sentence reception and the moment that
+<application>gpsd</application> ships the resulting update to
+the profiling client.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>TCP/IP latency</term>
+<listitem>
+<para>Elapsed time between the moment that
+<application>gpsd</application> ships the update to
+the profiling client and the moment it is decoded and timestamped.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para>Because of RS232 buffering effects, the profiler sometimes
+generates reports of ridiculously high latencies right at the
+beginning of a session.  The -m option lets you set a latency threshold, in
+multiples of the cycle time, above which reports are discarded.</para>
+
+<para>The -n option sets the number of packets to sample.  The default
+is 100.</para>
+
+<para>The -s option sets the baud rate.  Note, this will only work if
+the chipset accepts a speed-change command (SiRFstarII and SiRFstarIII
+support this feature).</para>
+
+<para>The -t option sets a text string to be included in the plot
+title.</para>
+
+<para>The -h option makes <application>gpsprof</application> print 
+a usage message and exit.</para>
+
+</refsect1>
+<refsect1 id='bugs'><title>BUGS AND LIMITAIONS</title>
+
+<para>Probably overestimates TCP/IP latency somewhat, as that includes the
+Python interpreter's decode time. A C client would be faster.</para>
+
+</refsect1>
+<refsect1 id='see_also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gps</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgps</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgpsd</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsfake</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsctl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpscat</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gnuplot</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+</para>
+</refsect1>
+
+<refsect1 id='maintainer'><title>AUTHOR</title> 
+
+<para>Eric S. Raymond <email>esr@thyrsus.com</email>.  There is a
+project page for <application>gpsd</application> <ulink
+url="http://gpsd.berlios.de/">here</ulink>.</para>
+
+</refsect1>
+
+</refentry>
+

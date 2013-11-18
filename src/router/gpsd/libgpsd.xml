@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+                   "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+<refentry>
+<refentryinfo><date>14 Aug 2004</date></refentryinfo>
+<refmeta>
+<refentrytitle>3</refentrytitle>
+<manvolnum>3</manvolnum>
+<refmiscinfo class='source'>Linux</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>libgpsd</refname>
+<refpurpose>service library for GPS applications</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+<funcsynopsis>
+<funcsynopsisinfo>
+C:
+
+#include &lt;gpsd.h&gt;
+
+</funcsynopsisinfo>
+
+
+<funcprototype>
+<funcdef>int <function>gpsd_open_dgps</function></funcdef>
+    <paramdef>char * <parameter>dgpsserver</parameter></paramdef>
+</funcprototype>
+<funcprototype>
+<funcdef>void <function>gpsd_init</function></funcdef>
+    <paramdef>struct gps_device_t *<parameter>session</parameter></paramdef>
+    <paramdef>struct * <parameter>gps_context_t *</parameter></paramdef>
+    <paramdef>char * <parameter>device</parameter></paramdef>
+</funcprototype>
+<funcprototype>
+<funcdef>int <function>gpsd_activate</function></funcdef>
+    <paramdef>struct gps_device_t *<parameter>session</parameter></paramdef>
+    <paramdef>bool <parameter>reconfigurable</parameter></paramdef>
+</funcprototype>
+<funcprototype>
+<funcdef>void <function>gpsd_deactivate</function></funcdef>
+    <paramdef>struct gps_device_t * <parameter>session</parameter></paramdef>
+</funcprototype>
+<funcprototype>
+<funcdef>gps_mask_t <function>gpsd_poll</function></funcdef>
+    <paramdef>struct gps_device_t * <parameter>session</parameter></paramdef>
+</funcprototype>
+<funcprototype>
+<funcdef>void <function>gpsd_wrap</function></funcdef>
+    <paramdef>struct gps_device_t * <parameter>session</parameter></paramdef>
+</funcprototype>
+
+<funcprototype>
+<funcdef>void <function>gpsd_report</function></funcdef>
+    <paramdef>int <parameter>d</parameter></paramdef>
+    <paramdef>const char * <parameter>fmt</parameter></paramdef>
+    <paramdef><parameter>...</parameter></paramdef>
+</funcprototype>
+</funcsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+<para><emphasis remap='B'>libgps</emphasis>
+is a service library which supports querying GPS devices; link it with
+the linker option -lgps. There are
+two interfaces supported in it; one high-level interface that
+goes through
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+and is intended for concurrent use by several applications, and one
+low-level interface that speaks directly with the serial or USB device
+to which the GPS is attached.  This page describes the low-level
+interface, which
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+itself uses.  See 
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>3</manvolnum></citerefentry>
+for a description of the high-level interface, which is almost
+certainly what you want.</para>
+
+<para>Calling
+<function>gpsd_init()</function>
+initializes a session structure to hold the data collected by the GPS.</para>
+
+<para>You may optionally specify a DGPS server, either as a string
+containing a server name or a string containining server name followed
+by a colon and a port name or number.  To specify no DGPS, pass the 
+null pointer.</para>
+
+<para>The second argument must be a context structure.  The library 
+will use it for information that need to be shared between sessions; 
+presently this includes the leap-second correction and possibly a
+pointer to a shared-memory segment used to communicate with the
+Network Time Protocol daemon.</para>
+
+<para>After the session structure has been set up, you may modify some
+of its members.</para>
+
+<variablelist>
+<varlistentry>
+<term><structfield>gpsd_device</structfield></term>
+<listitem>
+<para>This member should hold the path name of the device.</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><structfield>baudrate</structfield></term>
+<listitem>
+<para>Communication speed in bits per second.  For NMEA or SiRF devices, the
+library automatically hunts through all plausible baud rates, stopping
+on the one where it sees valid packets.  By setting this field you can
+designate a speed to be tried at the front of the hunt queue</para>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term><structfield>raw_hook</structfield></term>
+<listitem>
+<para>A hook function to be executed on each NMEA
+sentence or as it is read from the GPS.  The data from non-NMEA GPSes like
+the EarthMate will be translated to an NMEA sentence before being
+passed to the hook.  Parameters are a pointer to a gps_data structure
+full of parsed data, the sentence, the length of the sentence, 
+and a rawness level.</para>
+</listitem>
+</varlistentry>
+</variablelist>
+
+<para><function>gpsd_activate()</function>
+initializes the connection to the GPS. 
+<function>gpsd_deactivate()</function>
+closes the connection. These functions are provided so that
+long-running programs can release a connection when there is no
+activity requiring the GPS, and re-acquire it later.</para>
+
+<para><function>gpsd_poll()</function>
+queries the GPS and updates the part of the session structure that
+holds position, speed, GPS signal quality, and other data returned
+by the GPS. It returns a mask describing which fields have changed.</para>
+
+<para><function>gpsd_wrap()</function>
+ends the session, implicitly performing a 
+<function>gpsd_deactivate()</function>.</para>
+
+<para>The calling application must define one additional function:
+<function>gpsd_report()</function>.
+The library will use this to issue ordinary status messages.  Use 
+first argument of 0 for errors, 1 for ordinary status messages,
+and 2 or higher for debugging messages.</para>
+
+<para>The low-level functions do not allocate or free any dynamic 
+storage.  They can thus be used in a long-running application (such as
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+itself) with a guarantee that they won't cause memory leaks.</para>
+
+</refsect1>
+
+<refsect1 id='bugs'><title>BUGS</title>
+
+<para>Writes to the context structure members are not guarded by
+a mutex.</para>
+
+</refsect1>
+
+<refsect1 id='see_also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gps</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgpsd</refentrytitle><manvolnum>3</manvolnum></citerefentry>.
+</para>
+</refsect1>
+
+<refsect1 id='author'><title>AUTHOR</title>
+<para>Eric S. Raymond &lt;esr@thyrsus.com&gt; based partly on earlier work by
+Remco Treffkorn, Derrick Brashear, and Russ Nelson.</para>
+</refsect1>
+</refentry>
+
