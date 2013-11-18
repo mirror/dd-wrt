@@ -1,0 +1,17 @@
+# Hotplug device map for GPSD
+# $Id: gpsd.usermap 3486 2006-09-21 00:58:22Z ckuethe $
+#
+# GPSes don't have their own USB device class.  They're serial-over-USB 
+# devices, so what you see is actually the ID of the serial-over-USB chip.
+# Fortunately, just two of these account for over 80% of consumer-grade 
+# GPS sensors.  The gpsdplug script will tell a running gpsd that it should
+# look at the device that just went active, because it might be a GPS.
+#
+# The Prolific Technology 2303 (commonly in tandem with SiRF chips)
+gpsd.hotplug 0x0003 0x067b 0x2303 0x0000 0x0000 0x00 0x00 0x00 0x00 0x00 0x00 0x00000000
+# FTDI 8U232AM
+gpsd.hotplug 0x0003 0x0403 0x6001 0x0000 0x0000 0x00 0x00 0x00 0x00 0x00 0x00 0x00000000
+# Cypress M8/CY7C64013 (DeLorme uses these)
+gpsd.hotplug 0x0003 0x1163 0x0100 0x0000 0x0000 0x00 0x00 0x00 0x00 0x00 0x00 0x00000000
+# PS-360 OEM (Microsoft GPS sold with Street and Trips 2005)
+gpsd.hotplug 0x0003 0x067b 0xaaa0 0x0000 0x0000 0x00 0x00 0x00 0x00 0x00 0x00 0x00000000

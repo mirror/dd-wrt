@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE refentry PUBLIC 
+   "-//OASIS//DTD DocBook XML V4.1.2//EN"
+   "docbook/docbookx.dtd">
+<refentry id='gps.1'>
+<refmeta>
+<refentrytitle>gps</refentrytitle>
+<manvolnum>1</manvolnum>
+<refmiscinfo class='date'>9 Aug 2004</refmiscinfo>
+</refmeta>
+<refnamediv id='name'>
+<refname>gps</refname>
+<refname>xgps</refname>
+<refname>xgpsspeed</refname>
+<refname>cgps</refname>
+<refname>cgpxlogger</refname>
+<refpurpose>test clients for gpsd</refpurpose>
+</refnamediv>
+<refsynopsisdiv id='synopsis'>
+
+<cmdsynopsis>
+  <command>xgps</command>  
+      <arg choice='opt'><replaceable>X-options</replaceable></arg>
+      <arg choice='opt'>-h </arg>
+      <arg choice='opt'>-j </arg>
+      <arg choice='opt'>-V </arg>
+      <arg choice='opt'>-speedunits <group choice='req'><arg>mph</arg><arg>kph</arg><arg>knots</arg></group></arg>
+      <arg choice='opt'>-altunits <group choice='req'><arg>feet</arg><arg>meters</arg></group></arg>
+      <arg choice='opt'>-l <group><arg>d</arg><arg>m</arg><arg>s</arg></group></arg>
+      <arg choice='opt'>-s <replaceable>smoothing</replaceable></arg>
+      <group>
+	<replaceable>server</replaceable>
+	  <group> 
+	    <replaceable>:port</replaceable> 
+	      <group><replaceable>:device</replaceable></group>
+	  </group>
+      </group>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>xgpsspeed</command> <arg choice='opt'>-rv</arg> 
+      <arg choice='opt'><replaceable>X-options</replaceable></arg>
+      <arg choice='opt'>-h </arg> 
+      <arg choice='opt'>-V </arg> <arg
+      choice='opt'>-nc <replaceable>X-color</replaceable></arg> <arg
+      choice='opt'>-speedunits <group
+      choice='req'><arg>mph</arg><arg>kph</arg><arg>knots</arg></group></arg>
+      <group>
+	<replaceable>server</replaceable>
+	  <group> 
+	    <replaceable>:port</replaceable> 
+	      <group><replaceable>:device</replaceable></group>
+	  </group>
+      </group>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>cgps</command>  
+      <arg choice='opt'>-h </arg>
+      <arg choice='opt'>-j </arg>
+      <arg choice='opt'>-V </arg>
+      <arg choice='opt'>-speedunits <group choice='req'><arg>mph</arg><arg>kph</arg><arg>knots</arg></group></arg>
+      <arg choice='opt'>-altunits <group choice='req'><arg>feet</arg><arg>meters</arg></group></arg>
+      <arg choice='opt'>-l <group><arg>d</arg><arg>m</arg><arg>s</arg></group></arg>
+      <group>
+	<replaceable>server</replaceable>
+	  <group> 
+	    <replaceable>:port</replaceable> 
+	      <group><replaceable>:device</replaceable></group>
+	  </group>
+      </group>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>gpxlogger</command> <arg><replaceable>logfile</replaceable></arg>
+</cmdsynopsis>
+<cmdsynopsis>
+  <command>cgpxlogger</command>  
+      <arg choice='opt'>-s <replaceable>gpsd-server</replaceable></arg>
+      <arg choice='opt'>-p <replaceable>gpsd-port</replaceable></arg>
+      <arg choice='opt'>-i <replaceable>poll-interval</replaceable></arg>
+      <arg choice='opt'>-h </arg>
+</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1 id='description'><title>DESCRIPTION</title>
+
+<refsect2><title>xgps</title>
+
+<para><application>xgps</application> is a simple test client for
+<application>gpsd</application> with an X interface. It displays
+current GPS position/time/velocity information and (for GPSes that
+support the feature) the locations of accessible satellites.</para>
+
+<para>In the sky view, salleties are color-coded to indicate quality
+of signal; consult the data display to the left for exact figures in
+dB. Diamond icons indicate WAAS/EGNOS satellites, circles indicate
+ordinary GPS satellites.  Filled icons were used in the last fix, 
+outline icons were not.</para>
+
+<para><application>xgps</application> accepts an -h option as for
+<application>gpsd</application>, or a -V option to dump the package
+version and exit.</para>
+
+<para>An optional argument may specify a server to get data from; a
+colon-separated suffix is taken as a port number. If there is a second
+colon-separated suffix, that is taken as a device name to be handed
+to the daemon in an F= command.</para>
+
+<para>The <option>-speedunits</option> option can be used to set the
+speed units for display; follow the keyword with knots for nautical
+miles per hour, kph for kilometres per hour, or mph for miles per
+hour.  The default is miles per hour.  This option can also be set as
+the X resource 'speedunits'.</para>
+
+<para>The <option>-altunits</option> option can be used to set the
+altitude units for display; follow the keyword with 'meters' or
+'feet'.  The default is feet.  This option can also be set as the X
+resource 'altunits'.</para>
+
+<para>The <option>-j</option> option tells the daemon to hold fix
+data across cycles, eliminating jitter from NMEA devices that emit
+several partial reports.</para>
+
+<para> The <option>-l</option> option sets the format of latitude and 
+longitude reports.  The value 'd' produces decimal degrees and is the
+default.  The value 'm' produces degrees and decimal minutes.  The
+value 's' produces degrees, minutes, and decimal seconds.</para>
+
+<para>There is a known bug in <application>xgps</application>; it
+assumes the default font size is no more than 18 pixels.  If this
+is not the case, the satellite data display will show fewer than
+12 satellites.</para>
+
+</refsect2>
+<refsect2><title>xgpsspeed</title>
+
+<para><application>xgpsspeed</application> is a speedometer that uses
+position information from the GPS. It accepts an -h option and
+optional argument as for <application>gps</application>, or a -V
+option to dump the package version and exit.  Additionally, it accepts
+-rv (reverse video) and -nc (needle color) options.</para>
+
+<para>The -speedunits option can be used to set the speed units for
+display; follow the keyword with knots for nautical miles per hour,
+kph for kilometres per hour, or mph for miles per hour.  The default
+is miles per hour.   This option can also be set as the X resource 
+'speedunits'.</para>
+
+</refsect2>
+<refsect2><title>cgps</title>
+
+<para><application>cgps</application> is a client resembling 
+<application>xgps</application>, but without the pictorial 
+satellite display and able to run on a serial terminal or
+terminal emulator.</para>
+
+<para> The <option>-s</option> option prevents <application>cgps</application>
+from printing the raw data. This display can also be toggled with the s
+command.</para>
+
+<para>The <option>-j</option> option tells the daemon not to clear
+data at start of cycle, eliminating jitter from NMEA devices that emit
+several partial reports per cycle.</para>
+
+<para>Rather than use X resources to determine which units to use, 
+<application>cgps</application> looks at variables in its environment.
+Here are the variables and values it checks:</para>
+
+<screen>
+    GPSD_UNITS one of: 
+              imperial   = miles/feet
+              nautical   = knots/feet
+              metric     = km/meters
+    LC_MEASUREMENT
+	      en_US      = miles/feet
+              C          = miles/feet
+              POSIX      = miles/feet
+              [other]    = km/meters
+    LANG
+	      en_US      = miles/feet
+              C          = miles/feet
+              POSIX      = miles/feet
+              [other]    = km/meters
+</screen>
+
+<para><application>cgps</application> terminates when you send it a
+SIGHUP or SIGINT; given default terminal settings this will happen
+when you type Ctl-C at it.  It will also terminate on 'q'</para>
+
+<para>The 'j' command toggles whether or not fix data is cleared at
+start of cycle; see
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+for discussion.</para>
+
+</refsect2>
+<refsect2><title>cgpxlogger</title>
+
+<para>This program connects to gpsd, polls for location, and logs
+each fix to standard output in GPX (XML) format.</para>
+
+<para>The program also writes start and end messages to syslog.</para>
+
+</refsect2>
+<refsect2><title>gpxlogger</title>
+
+<para>This program listens to DBUS broadcasts from gpsd (org.gpsd.fix)
+and logs each fix to standard output as they arrive in an XML format.</para>
+
+<para>The output may be composed of multiple tracks. A new track is
+created if there's no fix for 5 seconds.</para>
+
+<para>The program also writes start and end messages to syslog.</para>
+
+</refsect2>
+</refsect1>
+<refsect1 id='see_also'><title>SEE ALSO</title>
+<para>
+<citerefentry><refentrytitle>gpsd</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgps</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>libgpsd</refentrytitle><manvolnum>3</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsfake</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsctl</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpscat</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+<citerefentry><refentrytitle>gpsprof</refentrytitle><manvolnum>1</manvolnum></citerefentry>.
+</para>
+</refsect1>
+
+<refsect1 id='maintainer'><title>AUTHORS</title> 
+
+<para>
+Remco Treffcorn, Derrick Brashear, Russ Nelson &amp; Eric S. Raymond(xgps). 
+Jeff Francis (cgps). Amaury Jacquot <email>sxpert@esitcom.org</email>
+&amp; Petter Reinholdtsen <email>pere@hungry.com</email> (gpxlogger).
+Chris Kuethe <email>chris.kuethe@gmail.com</email> (cgpxlogger).
+</para>
+
+<para>This manual page by Eric S. Raymond <email>esr@thyrsus.com</email>.
+There is a project page, with <application>xgps</application>
+screenshots, at <ulink url="http://gpsd.berlios.de/">berlios.de</ulink>.</para>
+
+</refsect1>
+
+</refentry>
+
