@@ -1,3 +1,4 @@
  "lighttpd_enable"  "Lighttpd Server"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "lighttpd_port"  "Httpd port" "NULL" "FALSE"  "0"
  "lighttpd_root"  "Document root"  "NULL"  "FALSE" "0"
+ "lighttpd_advanced" "Advanced configuration" "NULL" "FALSE" "0"

@@ -1,0 +1,33 @@
+<h2><% tran("lighttpd.legend"); %></h2>
+<fieldset>
+<legend><% tran("lighttpd.server"); %></legend>
+<div class="setting">
+           <div class="label"><% tran("lighttpd.server"); %></div>
+           <input class="spaceradio" type="radio" name="lighttpd_enable" value="1" <% nvram_checked("lighttpd_enable", "1"); %> onclick="show_layer_ext(this, 'lighttpdconfig', true)" /><% tran("share.enable"); %>&nbsp;
+           <input class="spaceradio" type="radio" name="lighttpd_enable" value="0" <% nvram_checked("lighttpd_enable", "0"); %> onclick="show_layer_ext(this, 'lighttpdconfig', false)"/><% tran("share.disable"); %>
+</div>
+<div id="lighttpdconfig">
+  <div class="setting">
+           <div class="label"><% tran("lighttpd.port"); %></div>
+           <input size="5" maxlength="5" class="text" name="lighttpd_port" value="<% nvram_default_get("lighttpd_port", "81"); %>" />
+           
+  </div>
+  <div class="setting">
+             <div class="label"><% tran("lighttpd.custom"); %></div>
+	     <input class="spaceradio" type="radio" name="lighttpd_advanced" value="1" <% nvram_checked("lighttpd_advanced", "1"); %> onclick="show_layer_ext(this, 'lighttpdadvanced', true)"/><% tran("share.enable"); %>&nbsp;
+             <input class="spaceradio" type="radio" name="lighttpd_advanced" value="0" <% nvram_checked("lighttpd_advanced", "0"); %> onclick="show_layer_ext(this, 'lighttpdadvanced', false)"/><% tran("share.disable");%>
+  </div>
+  <div id="lighttpdadvanced">
+	    <div class="setting">
+              <div class="label"><% tran("lighttpd.custom"); %></div>
+              <textarea cols="80" rows="12" id="lighttpd_conf" name="lighttpd_conf"></textarea>
+              <script type="text/javascript">
+              //<![CDATA[
+              var lighttpd_conf = fix_cr( '<% nvram_get("lighttpd_conf"); %>' );
+              document.getElementById("lighttpd_conf").value = lighttpd_conf;
+              //]]>
+              </script>
+	  </div>
+  </div>
+</div>
+</fieldset><br />
