@@ -57,7 +57,6 @@ void set_gpio(int pin, int value)
 	fp = fopen(str, "wb");
 	fprintf(fp, "%d", value);
 	fclose(fp);
-	break;
 }
 
 int get_gpio(int pin)
@@ -76,7 +75,6 @@ int get_gpio(int pin)
 	fclose(fp);
 	sysprintf("echo in > /sys/class/gpio/gpio%d/direction", pin);
 	fp = fopen(str, "rb");
-	int val;
 	fscanf(fp, "%d", &val);
 	fclose(fp);
 	return val;
