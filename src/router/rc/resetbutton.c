@@ -129,9 +129,9 @@ int getbuttonstate()
 int getbuttonstate()
 {
 	int ret = get_gpio(232);
-	if (ret == 0)
+	if (ret == 1)
 		return 0;;
-	return 1;
+	return 0;
 }
 #elif defined(HAVE_WDR4900)
 int getbuttonstate()
