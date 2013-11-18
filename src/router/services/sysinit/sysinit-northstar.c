@@ -63,10 +63,7 @@
 static void set_regulation(int card, char *code, char *rev)
 {
 	char path[32];
-	sprintf(path, "%d:regrev", card);
-	nvram_set(path, rev);
-	sprintf(path, "%d:ccode", card);
-	nvram_set(path, code);
+	
 	sprintf(path, "wl%d_country_rev", card);
 	nvram_set(path, rev);
 	sprintf(path, "wl%d_country_code", card);
@@ -75,6 +72,35 @@ static void set_regulation(int card, char *code, char *rev)
 		nvram_set("wl_country_rev", rev);
 		nvram_set("wl_country_code", code);
 	}
+	
+	switch (getRouterBrand()) {
+		case ROUTER_NETGEAR_R6250:
+		case ROUTER_NETGEAR_R6300V2:
+		case ROUTER_NETGEAR_R7000:
+		case ROUTER_DLINK_DIR868:
+			sprintf(path, "pci/%d/1/regrev", card + 1);
+			nvram_set(path, rev);
+			sprintf(path, "pci/%d/1/ccode", card + 1);
+			nvram_set(path, code); 
+		break;
+		case ROUTER_ASUS_AC56U:
+		case ROUTER_ASUS_AC67U:
+		case ROUTER_BUFFALO_WZR1750:
+		case ROUTER_BUFFALO_WZR600DHP2:
+		case ROUTER_BUFFALO_WZR900DHP:
+			sprintf(path, "%d:regrev", card);
+			nvram_set(path, rev);
+			sprintf(path, "%d:ccode", card);
+			nvram_set(path, code);  
+		break;
+		default:
+			sprintf(path, "%d:regrev", card);
+			nvram_set(path, rev);
+			sprintf(path, "%d:ccode", card);
+			nvram_set(path, code);		  
+	}
+	
+
 }
 
 void start_sysinit(void)
