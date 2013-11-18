@@ -72,6 +72,8 @@ if [ x$BOARD = xCambria ] ; then
 	TTY=/dev/ttyS1
 elif [ x$BOARD = xLaguna ] ; then
 	TTY=/dev/ttyS2
+elif [ x$(nvram get DD_BOARD | cut -c1-7) = xOctagon ] ; then
+        TTY=/dev/ttyS1
 else                  
 	TTY=/dev/tts/0
 fi           
@@ -104,7 +106,7 @@ function getgpstext(pos,extra)
 
 function setnvram(var,val)
 	{
-	system(sprintf("nvram set %s=\"%s\"",var,val))
+	system(sprintf("/usr/sbin/nvram set %s=\"%s\"",var,val))
 	}
 {
 if ($1 == "$GPGGA")
