@@ -4190,7 +4190,13 @@ int sv_valid_hwaddr(char *value)
 char *cpustring(void)
 {
 	static char buf[256];
-#ifdef HAVE_RB600
+#ifdef HAVE_UNIWIP
+	strcpy(buf, "FreeScale MPC8314");
+	return buf;
+#elif HAVE_WDR4900
+	strcpy(buf, "FreeScale P1014");
+	return buf;
+#elif HAVE_RB600
 	strcpy(buf, "FreeScale MPC8343");
 	return buf;
 #elif HAVE_VENTANA
