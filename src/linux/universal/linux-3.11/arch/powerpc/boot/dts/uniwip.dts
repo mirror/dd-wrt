@@ -63,6 +63,14 @@
 			compatible = "fsl,elbc-fcm-nand";
 			reg = <0x0 0x0 0x2000>;
 
+			nandboot@0 {
+				reg = <0x000000 0xe0000>;
+			};
+
+			env@0 {
+				reg = <0x0e0000 0x20000>;
+			};
+
 			boot@100000 {
 				reg = <0x100000 0x70000>;
 			};
