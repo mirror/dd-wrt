@@ -1,0 +1,25 @@
+#!/usr/bin/python
+#
+# striplog -- strip leading lines from logs
+#
+# striplog -1 strips the first line only.
+# striplog with no option strips all leading lines beginning with #
+#
+import getopt, sys
+
+firstline = False
+(options, argumwnts) = getopt.getopt(sys.argv[1:], "1")
+for (switch, val) in options:
+    if (switch == '-1'):
+        firstline = True
+
+if firstline:
+    sys.stdin.readline()
+else:
+    while True:
+        line = sys.stdin.readline()
+        if line[0] != '#':
+            break
+    sys.stdout.write(line)
+
+sys.stdout.write(sys.stdin.read())

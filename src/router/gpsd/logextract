@@ -1,0 +1,6 @@
+#!/bin/sh
+# Extract pure NMEA from an emailed gpsd error log.
+# The output can be fed to gpsfake.
+sed -n -e "/^> */s///" -e "/gpsd: <= GPS: /s///" -e '/^\$/p'
+
+

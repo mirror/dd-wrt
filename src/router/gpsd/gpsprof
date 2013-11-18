@@ -1,0 +1,466 @@
+#!/usr/bin/env python
+#
+# Collect and plot latency-profiling data from a running gpsd.
+# Requires gnuplot.
+#
+import sys, os, time, getopt, tempfile, time, socket, math, copy
+import gps
+
+class Baton:
+    "Ship progress indication to stderr."
+    def __init__(self, prompt, endmsg=None):
+        self.stream = sys.stderr
+        self.stream.write(prompt + "...")
+        if os.isatty(self.stream.fileno()):
+            self.stream.write(" \010")
+        self.stream.flush()
+        self.count = 0
+        self.endmsg = endmsg
+        self.time = time.time()
+        return
+
+    def twirl(self, ch=None):
+        if self.stream is None:
+            return
+        if ch:
+            self.stream.write(ch)
+        elif os.isatty(self.stream.fileno()):
+            self.stream.write("-/|\\"[self.count % 4])
+            self.stream.write("\010")
+        self.count = self.count + 1
+        self.stream.flush()
+        return
+
+    def end(self, msg=None):
+        if msg == None:
+            msg = self.endmsg
+        if self.stream:
+            self.stream.write("...(%2.2f sec) %s.\n" % (time.time() - self.time, msg))
+        return
+
+class spaceplot:
+    "Total times without instrumentation."
+    name = "space"
+    def __init__(self):
+        self.fixes = []
+    def d(self, a, b):
+        return math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
+    def gather(self, session):
+        # Include altitude, not used here, for 3D plot experiments.
+        # Watch out for the NaN value from gps.py.
+        self.fixes.append((session.fix.latitude, session.fix.longitude, session.fix.altitude))
+        return True
+    def header(self, session):
+        res = "# Position uncertainty, %s, %s, %ds cycle\n" % \
+                 (title, session.gps_id, session.cycle)
+        return res
+    def data(self, session):
+        res = ""
+        for i in range(len(self.recentered)):
+            (lat, lon) = self.recentered[i][:2]
+            (raw1, raw2, alt) = self.fixes[i]
+            res += "%f\t%f\t%f\t%f\t%f\n" % (lat, lon, raw1, raw2, alt)
+        return res
+    def plot(self, title, session):
+        if len(self.fixes) == 0:
+            sys.stderr.write("No fixes collected, can't estimate accuracy.")
+            sys.exit(1)
+        else:
+            self.centroid = (sum(map(lambda x:x[0], self.fixes))/len(self.fixes), sum(map(lambda x:x[1], self.fixes))/len(self.fixes))
+            # Sort fixes by distance from centroid
+            self.fixes.sort(lambda x, y: cmp(self.d(self.centroid, x), self.d(self.centroid, y)))
+            # Convert fixes to offsets from centroid in meters
+            self.recentered = map(lambda fix: gps.MeterOffset(self.centroid, fix[:2]), self.fixes)
+        # Compute CEP(50%)
+        cep_meters = gps.EarthDistance(self.centroid[:2], self.fixes[len(self.fixes)/2][:2])
+        alt_sum = 0
+        alt_num = 0
+        lon_max = -9999
+        for i in range(len(self.recentered)):
+            (lat, lon) = self.recentered[i][:2]
+            (raw1, raw2, alt) = self.fixes[i]
+            if not gps.isnan(alt):
+                    alt_sum += alt
+                    alt_num += 1
+            if lon > lon_max :
+                    lon_max = lon
+        if alt_num == 0:
+            alt_avg = gps.NaN
+        else:
+            alt_avg = alt_sum / alt_num
+        if self.centroid[0] < 0:
+            latstring = "%fS" % -self.centroid[0]
+        elif self.centroid[0] == 0:
+            latstring = "0"
+        else:
+            latstring = "%fN" % self.centroid[0]
+        if self.centroid[1] < 0:
+            lonstring = "%fW" % -self.centroid[1]
+        elif self.centroid[1] == 0:
+            lonstring = "0"
+        else:
+            lonstring = "%fE" % self.centroid[1]
+        fmt = "set autoscale\n"
+        fmt += 'set key below\n'
+        fmt += 'set key title "%s"\n' % time.asctime()
+        fmt += 'set size ratio -1\n'
+        fmt += 'set style line 2 pt 1\n'
+        fmt += 'set style line 3 pt 2\n'
+        fmt += 'set xlabel "Meters east from %s"\n' % lonstring
+        fmt += 'set ylabel "Meters north from %s"\n' % latstring
+        fmt += 'set border 15\n'
+        if not gps.isnan(alt_avg):
+            fmt += 'set y2label "Meters Altitude from %f"\n' % alt_avg
+            fmt += 'set ytics nomirror\n'
+            fmt += 'set y2tics\n'
+        fmt += 'cep=%f\n' % self.d((0,0), self.recentered[len(self.fixes)/2])
+        fmt += 'set parametric\n'
+        fmt += 'set trange [0:2*pi]\n'
+        fmt += 'cx(t, r) = sin(t)*r\n'
+        fmt += 'cy(t, r) = cos(t)*r\n'
+        fmt += 'chlen = cep/20\n'
+        fmt += "set arrow from -chlen,0 to chlen,0 nohead\n"
+        fmt += "set arrow from 0,-chlen to 0,chlen nohead\n"
+        fmt += 'plot cx(t, cep),cy(t, cep) title "CEP (50%%) = %f meters",  ' % (cep_meters)
+        fmt += ' "-" using 1:2 with points ls 3 title "%d GPS fixes" ' % (len(self.fixes))
+        if not gps.isnan(alt_avg):
+            fmt += ', "-" using ( %f ):($5 < 100000 ? $5 - %f : 1/0) axes x1y2 with points ls 2 title " %d Altitude fixes, Average = %f" \n' % (lon_max +1, alt_avg, alt_num, alt_avg)
+        else:
+            fmt += "\n"
+        fmt += self.header(session)
+        fmt += self.data(session)
+        if not gps.isnan(alt_avg):
+            fmt += "e\n" + self.data(session)
+        return fmt
+
+class uninstrumented:
+    "Total times without instrumentation."
+    name = "uninstrumented"
+    def __init__(self):
+        self.stats = []
+    def gather(self, session):
+        if session.fix.time:
+            seconds = time.time() - session.fix.time
+            self.stats.append(seconds)
+            return True
+        else:
+            return False
+    def header(self, session):
+        return "# Uninstrumented total latency, %s, %s, %dN%d, cycle %ds\n" % \
+                 (title,
+                  session.gps_id, session.baudrate,
+                  session.stopbits, session.cycle)
+    def data(self, session):
+        res = ""
+        for seconds in self.stats:
+            res += "%2.6lf\n" % seconds
+        return res
+    def plot(self, title, session):
+        fmt = '''
+set autoscale
+set key below
+set key title "Uninstrumented total latency, %s, %s, %dN%d, cycle %ds"
+plot "-" using 0:1 title "Total time" with impulses
+'''
+        res = fmt % (title,
+                      session.gps_id, session.baudrate,
+                      session.stopbits, session.cycle)
+        res += self.header(session)
+        return res + self.data(session)
+
+class rawplot:
+    "All measurement, no deductions."
+    name = "raw"
+    def __init__(self):
+        self.stats = []
+    def gather(self, session):
+        self.stats.append(copy.copy(session.timings))
+        return True
+    def header(self, session):
+        res = "# Raw latency data, %s, %s, %dN%d, cycle %ds\n" % \
+                 (title,
+                  session.gps_id, session.baudrate,
+                  session.stopbits, session.cycle)
+        res += "#"
+        for hn in ("tag", "T1", "E1", "D1", "W", "E2", "T2", "D2"):
+            res += "%8s\t" % hn
+        res += "\n#"
+        for i in range(0, 7):
+            res += "--------\t"
+        return res + "--------\n"
+    def data(self, session):
+        res = ""
+        for timings in self.stats:
+            if timings.sentence_time:
+                e1 = timings.d_xmit_time
+            else:
+                e1 = 0
+            res += "%s\t%2d\t%2.6f\t%2.6f\t%2.6f\t%2.6f\t%2.6f\t%2.6f\t%2.6f\n" \
+                % (timings.sentence_tag,
+                   timings.sentence_length,
+                   e1, 
+                   timings.d_recv_time,
+                   timings.d_decode_time,
+                   timings.poll_time,
+                   timings.emit_time,
+                   timings.c_recv_time,
+                   timings.c_decode_time)
+        return res
+    def plot(self, file, session):
+        fmt = '''
+set autoscale
+set key below
+set key title "Raw latency data, %s, %s, %dN%d, cycle %ds"
+plot \
+     "-" using 0:9 title "D2 = Client decode time" with impulses, \
+     "-" using 0:8 title "T2 =     TCP/IP latency" with impulses, \
+     "-" using 0:7 title "E2 = Daemon encode time" with impulses, \
+     "-" using 0:6 title "W  =     Poll wait time" with impulses, \
+     "-" using 0:5 title "D1 = Daemon decode time" with impulses, \
+     "-" using 0:4 title "T1 =         RS232 time" with impulses, \
+     "-" using 0:3 title "E1 =        GPS latency" with impulses
+'''
+        res = fmt % (title,
+                      session.gps_id, session.baudrate,
+                      session.stopbits, session.cycle)
+        res += self.header(session)
+        for dummy in range(0, 7):
+            res += self.data(session) + "e\n"
+        return res
+
+class splitplot:
+    "Discard base time, use color to indicate different tags."
+    name = "split"
+    sentences = []
+    def __init__(self):
+        self.stats = []
+    def gather(self, session):
+        self.stats.append(copy.copy(session.timings))
+        if session.timings.sentence_tag not in self.sentences:
+            self.sentences.append(session.timings.sentence_tag)
+        return True
+    def header(self, session):
+        res = "# Split latency data, %s, %s, %dN%d, cycle %ds\n#" % \
+                 (title,
+                  session.gps_id, session.baudrate,
+                  session.stopbits, session.cycle)
+        for s in splitplot.sentences:
+            res += "%8s\t" % s
+        for hn in ("T1", "D1", "W", "E2", "T2", "D2", "length"):
+            res += "%8s\t" % hn
+        res += "tag\n# "
+        for s in tuple(splitplot.sentences) + ("T1", "D1", "W", "E2", "T2", "D2", "length"):
+            res += "---------\t"
+        return res + "--------\n"
+    def data(self, session):
+        res = ""
+        for timings in self.stats:
+            if timings.sentence_time:
+                e1 = timings.d_xmit_time
+            else:
+                e1 = 0
+            for s in splitplot.sentences:
+                if s == timings.sentence_tag:
+                    res += "%2.6f\t" % e1
+                else:
+                    res += "-       \t"
+            res += "%2.6f\t%2.6f\t%2.6f\t%2.6f\t%2.6f\t%2.6f\t%8d\t# %s\n" \
+                     % (timings.d_recv_time,
+                        timings.d_decode_time,
+                        timings.poll_time,
+                        timings.emit_time,
+                        timings.c_recv_time,
+                        timings.c_decode_time,
+                        timings.sentence_length,
+                        timings.sentence_tag)
+        return res
+    def plot(self, title, session):
+        fixed = '''
+set autoscale
+set key below
+set key title "Filtered latency data, %s, %s, %dN%d, cycle %ds"
+plot \\
+     "-" using 0:%d title "D2 = Client decode time" with impulses, \\
+     "-" using 0:%d title "T2 = TCP/IP latency" with impulses, \\
+     "-" using 0:%d title "E2 = Daemon encode time" with impulses, \\
+     "-" using 0:%d title "W  = Poll wait time" with impulses, \\
+     "-" using 0:%d title "D1 = Daemon decode time" with impulses, \\
+     "-" using 0:%d title "T1 = RS3232 time" with impulses, \\
+'''
+        sc = len(splitplot.sentences)
+        fmt = fixed % (title,
+                       session.gps_id, session.baudrate,
+                       session.stopbits, session.cycle,
+                       sc+6,
+                       sc+5,
+                       sc+4,
+                       sc+3,
+                       sc+2,
+                       sc+1)
+        for i in range(sc):
+            fmt += '     "-" using 0:%d title "%s" with impulses, \\\n' % \
+                   (i+1, self.sentences[i])
+        res = fmt[:-4] + "\n"
+        res += self.header(session)
+        for dummy in range(sc+6):
+            res += self.data(session) + "e\n"
+        return res
+
+class cycle:
+    "Send-cycle analysis."
+    name = "cycle"
+    def __init__(self):
+        self.stats = []
+    def gather(self, session):
+        self.stats.append(copy.copy(session.timings))
+        return True
+    def plot(self, title, session):
+        msg = ""
+        def roundoff(n):
+            # Round a time to hundredths of a second
+            return round(n*100) / 100.0
+        intervals = {}
+        last_seen = {}
+        for timing in self.stats:
+            # Throw out everything but the leader in each GSV group
+            if timing.sentence_tag[-3:] == "GSV" and last_command[-3:] == "GSV":
+                continue
+            last_command = timing.sentence_tag
+            # Record timings
+            received = timing.d_received()
+            if not timing.sentence_tag in intervals:
+                intervals[timing.sentence_tag] = []
+            if timing.sentence_tag in last_seen:
+                intervals[timing.sentence_tag].append(roundoff(received - last_seen[timing.sentence_tag])) 
+            last_seen[timing.sentence_tag] = received
+
+        # Step three: get command frequencies and the basic send cycle time
+        frequencies = {}
+        for (key, interval_list) in intervals.items():
+            frequencies[key] = {}
+            for interval in interval_list:
+                frequencies[key][interval] = frequencies[key].get(interval, 0) + 1
+        # filter out noise
+        for key in frequencies:
+            distribution = frequencies[key]
+            for interval in distribution.keys():
+                if distribution[interval] < 2:
+                    del distribution[interval]
+        cycles = {}
+        for key in frequencies:
+            distribution = frequencies[key]
+            if len(frequencies[key].values()) == 1:
+                # The value is uniqe after filtering
+                cycles[key] = distribution.keys()[0]
+            else:
+                # Compute the mode
+                maxfreq = 0
+                for (interval, frequency) in distribution.items():
+                    if distribution[interval] > maxfreq:
+                        cycles[key] = interval
+                        maxfreq = distribution[interval]
+        msg += "Cycle report %s, %s, %dN%d, cycle %ds" % \
+                 (title,
+                  session.gps_id, session.baudrate,
+                  session.stopbits, session.cycle)
+        msg += "The sentence set emitted by this GPS is: %s\n" % " ".join(intervals.keys())
+        for key in cycles:
+            if len(frequencies[key].values()) == 1:
+                if cycles[key] == 1:
+                    msg += "%s: is emitted once a second.\n" % key
+                else:
+                    msg += "%s: is emitted once every %d seconds.\n" % (key, cycles[key])
+            else:
+                if cycles[key] == 1:
+                    msg += "%s: is probably emitted once a second.\n" % key
+                else:
+                    msg += "%s: is probably emitted once every %d seconds.\n" % (key, cycles[key])
+        sendcycle = min(*cycles.values())
+        if sendcycle == 1:
+            msg += "Send cycle is once per second.\n"
+        else:
+            msg += "Send cycle is once per %d seconds.\n" % sendcycle
+        return msg
+
+formatters = (spaceplot, uninstrumented, rawplot, splitplot, cycle)
+
+def plotframe(await, fname, speed, threshold, title):
+    "Return a string containing a GNUplot script "
+    if fname:
+        for formatter in formatters:
+            if formatter.name == fname:
+                plotter = formatter()
+                break
+        else:
+            sys.stderr.write("gpsprof: no such formatter.\n")
+            sys.exit(1)
+    try:
+        session = gps.gps()
+    except socket.error:
+        sys.stderr.write("gpsprof: gpsd unreachable.\n")
+        sys.exit(1)
+    try:
+        if speed:
+            session.query("b=%d\n" % speed)
+            if session.baudrate != speed:
+                sys.stderr.write("gpsprof: baud rate change failed.\n")
+        session.query("w+bci\n")
+        if formatter not in (spaceplot, uninstrumented):
+            session.query("z+\n")
+        #session.set_raw_hook(lambda x: sys.stderr.write(`x`+"\n"))
+        baton = Baton("gpsprof: looking for fix", "done")
+        countdown = await
+        basetime = time.time()
+        while countdown > 0:
+            if session.poll() == None:
+                sys.stderr.write("gpsprof: gpsd has vanished.\n")
+                sys.exit(1)
+            baton.twirl()
+            if session.fix.mode <= gps.MODE_NO_FIX:
+                continue
+            if countdown == await:
+                sys.stderr.write("first fix in %.2fsec, gathering samples..." % (time.time()-basetime,))
+            # We can get some funky artifacts at start of session
+            # apparently due to RS232 buffering effects. Ignore
+            # them.
+            if threshold and session.timings.c_decode_time > session.cycle * threshold:
+                continue
+            if plotter.gather(session):
+                countdown -= 1
+        baton.end()
+    finally:
+        session.query("w-z-\n")
+    command = plotter.plot(title, session)
+    del session
+    return command
+
+if __name__ == '__main__':
+    try:
+        (options, arguments) = getopt.getopt(sys.argv[1:], "f:hm:n:s:t:")
+        formatter = "space"
+        raw = False
+        speed = 0
+        title = time.ctime()
+        threshold = 0
+        await = 100
+        for (switch, val) in options:
+            if (switch == '-f'):
+                formatter = val
+            elif (switch == '-m'):
+                threshold = int(val)
+            elif (switch == '-n'):
+                await = int(val)
+            elif (switch == '-s'):
+                speed = int(val)
+            elif (switch == '-t'):
+                title = val
+            elif (switch == '-h'):
+                sys.stderr.write(\
+                    "usage: gpsprof [-h] [-m threshold] [-n samplecount] \n"
+                     + "\t[-f {" + "|".join(map(lambda x: x.name, formatters)) + "}] [-s speed] [-t title]\n")
+                sys.exit(0)
+        sys.stdout.write(plotframe(await,formatter,speed,threshold,title))
+    except KeyboardInterrupt:
+        pass
+
+

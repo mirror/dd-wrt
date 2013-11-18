@@ -1,0 +1,14 @@
+*time*labelString:       Time     
+*latitude*labelString:   Latitude 
+*longitude*labelString:  Longitude
+*altitude*labelString:   Altitude 
+*speed*labelString:      Speed    
+*track*labelString:      Course   
+*epe*labelString:        EPE   
+*eph*labelString:        EPH   
+*epv*labelString:        EPV
+*climb*labelString:      Climb
+*status*labelString: Status   
+!*quit*labelString:       Quit     
+*speedunits:             mph
+*altunits:               feet

@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+#
+# Display GPS output.  Hexify it if necessary.
+#
+import os, sys, termios, select, getopt, curses.ascii
+import gpspacket
+
+NMEA_MAX = 82
+
+def hexdump(str):
+    dmp = ""
+    for (i, ch) in enumerate(str):
+        if curses.ascii.isprint(ord(ch)):
+            dmp += ch
+        elif ch == '\r' and i+1 < len(str) and str[i+1] == '\n':
+            dmp += ch
+        elif ch == '\n' and i-1 >= 0 and str[i-1] == '\r':
+            dmp += ch
+        else:
+            dmp += "\\x%02x" % ord(ch)
+    return dmp
+
+if __name__ == '__main__':
+    buf = ""
+    try:
+        try:
+            (options, arguments) = getopt.getopt(sys.argv[1:], "hps:V")
+        except getopt.GetoptError, msg:
+            print "gpscat: " + str(msg)
+            raise SystemExit, 1
+
+        speed = None
+        parity = None
+        stopbits = None
+        rawmode = True
+        typeflag = False
+        for (switch, val) in options:
+            if switch == '-p':
+                rawmode = False
+            elif switch == '-s':
+                if val[-2] in ('N', 'E', 'O'):
+                    parity = val[-2]
+                    stopbits = int(val[-1])
+                    val = val[:-2]
+                speed = int(val)
+            elif switch == 't':
+                typeflag = True
+                rawmode = False
+            elif switch == '-h':
+                sys.stderr.write("usage: gpscat [-s] serial-port\n")
+                raise SystemExit, 0
+            elif switch == '-V':
+                sys.stderr.write("gpscat at svn revision $Rev: 4103 $\n")
+                raise SystemExit, 0
+
+        tty = os.open(arguments[0], os.O_RDWR)
+        if speed != None:
+            (iflag, oflag, cflag, lflag, ispeed, ospeed, cc) = termios.tcgetattr(tty)
+            try:
+                ispeed = ospeed = eval("termios.B%d" % speed)
+            except AttributeError:
+                sys.stderr.write("gpscat: unknown baud rate %d\n" % speed)
+                raise SystemExit, 1
+            if stopbits:
+                cflag &= ~termios.CSIZE
+                cflag |= (termios.CS8, termios.CS7)[stopbits-1]
+            if parity:
+                if parity == 'N':
+                    iflag &= ~termios.PARENB
+                    iflag &= ~termios.INPCK
+                elif parity == 'O':
+                    iflag |= termios.INPCK
+                    cflag |= termios.PARENB
+                    cflag |= termios.PARODD
+                elif parity == 'E':
+                    iflag |= termios.INPCK
+                    cflag |= termios.PARENB
+                    cflag &= ~termios.PARODD
+            termios.tcsetattr(tty, termios.TCSANOW,
+                         [iflag, oflag, cflag, lflag, ispeed, ospeed, cc])
+
+        poller = select.poll()
+        poller.register(tty, select.POLLIN)
+
+        buf = ""
+        if not rawmode:
+            getter = gpspacket.new()
+        while True:
+            (fd, event) = poller.poll()[0]
+            if fd == tty and event == select.POLLIN:
+                if rawmode:
+                    buf += os.read(tty, NMEA_MAX)
+                    if not buf.endswith("\r"):
+                        sys.stdout.write(hexdump(buf))
+                        buf = ""
+                else:
+                    (type, packet) = getter.get(tty)
+                    if packet == '':
+                        break
+                    if typeflag:
+                        sys.stdout.write(`type` + ": " + hexdump(packet) + "\n")
+                    else:
+                        sys.stdout.write(hexdump(packet) + "\n")
+    except KeyboardInterrupt:
+        if rawmode:
+            sys.stdout.write("\n")
+        raise SystemExit, 0
+
+
+
