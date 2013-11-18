@@ -226,6 +226,9 @@ endif
 ifeq ($(CONFIG_TOR),y)
 CFLAGS += -DHAVE_TOR
 endif
+ifeq ($(CONFIG_UNIWIP),y)
+CFLAGS += -DHAVE_UNIWIP
+endif
 ifeq ($(CONFIG_PPPOATM),y)
 CFLAGS += -DHAVE_PPPOATM
 endif
