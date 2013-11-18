@@ -40,7 +40,50 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#ifdef HAVE_WDR4900
+#ifdef HAVE_UNIWIP
+void set_gpio(int pin, int value)
+{
+	char str[32];
+	FILE *fp;
+	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+      new_try:;
+	fp = fopen(str, "rb");
+	if (!fp) {
+		sysprintf("echo %d > /sys/class/gpio/export", pin);
+		goto new_try;
+	}
+	fclose(fp);
+	sysprintf("echo out > /sys/class/gpio/gpio%d/direction", pin);
+	fp = fopen(str, "wb");
+	fprintf(fp, "%d", value);
+	fclose(fp);
+	break;
+}
+
+int get_gpio(int pin)
+{
+
+	char str[32];
+	FILE *fp;
+	int val = 0;
+	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+      new_try:;
+	fp = fopen(str, "rb");
+	if (!fp) {
+		sysprintf("echo %d > /sys/class/gpio/export", pin);
+		goto new_try;
+	}
+	fclose(fp);
+	sysprintf("echo in > /sys/class/gpio/gpio%d/direction", pin);
+	fp = fopen(str, "rb");
+	int val;
+	fscanf(fp, "%d", &val);
+	fclose(fp);
+	return val;
+
+}
+
+#elif HAVE_WDR4900
 void set_gpio(int gpio, int value)
 {
 	switch (gpio) {
