@@ -125,6 +125,14 @@ int getbuttonstate()
 	return ret;
 #endif
 }
+#elif defined(HAVE_UNIWIP)
+int getbuttonstate()
+{
+	int ret = get_gpio(232);
+	if (ret == 0)
+		return 0;;
+	return 1;
+}
 #elif defined(HAVE_WDR4900)
 int getbuttonstate()
 {
