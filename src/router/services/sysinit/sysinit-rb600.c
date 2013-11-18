@@ -93,6 +93,19 @@ void start_sysinit(void)
 	insmod("cryptodev");
 	insmod("cryptosoft");
 	insmod("talitos");
+	insmod("gpio");
+/* gpios 
+8 = reset
+10 = pci1 
+11 = pci2
+18 = gps ant check
+19 = wireless
+20 = gps ant
+21 = r232 enable
+22 = port reset
+*/
+
+
 #endif
 	struct ifreq ifr;
 	int s;
@@ -114,7 +127,7 @@ void start_sysinit(void)
 			MAC_ADD(macbase);
 		}
 	}
-#ifdef HAVE_WDR4900
+#if defined(HAVE_WDR4900) && !defined(HAVE_UNIWIP)
 	eval("mkdir", "/tmp/firmware");
 	char mtdpath[64];
 	int mtd = getMTD("caldata");
@@ -251,6 +264,8 @@ void start_sysinit(void)
 		fprintf(stderr, "configure vlan2 to %s\n", mac);
 		eval("ifconfig", "vlan2", "hw", "ether", mac);
 	}
+#else
+	set_gpio(244,1); //gps
 #endif
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");
