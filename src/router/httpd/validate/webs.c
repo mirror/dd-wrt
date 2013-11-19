@@ -3115,10 +3115,11 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	}
 #endif
+	
+
 	copytonv(wp, "%s_nbw", prefix);
 	copytonv(wp, "%s_nctrlsb", prefix);
-	copytonv(wp, "wl_regdomain");
-
+	
 	sprintf(n, "%s_channel", prefix);
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1")) {
 		char *wl = websGetVar(wp, n, NULL);
@@ -3144,6 +3145,18 @@ static void save_prefix(webs_t wp, char *prefix)
 	}
 
 	copytonv(wp, n);
+	
+#ifdef HAVE_NORTHSTAR
+	sprintf(n, "wl_regdomain");
+	char *reg = websGetVar(wp, n, NULL);
+	if(reg){
+		if( strcmp( nvram_get("wl_regdomain"), reg) ){
+			setRegulationDomain(reg);
+			system("startservice lan");
+		}
+	}
+#endif
+	copytonv(wp, "wl_regdomain");
 
 }
 

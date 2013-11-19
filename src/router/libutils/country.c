@@ -23,6 +23,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <shutils.h>
+#include <utils.h>
 
 #define YES	1
 #define	NO	0
@@ -650,15 +651,15 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "AFRICA", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "ASIA", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "AUSTRALIA", YES, NO, YES, 7000},
-	{CTRY_ARUBA, ETSI1_WORLD, "Q2", "CANADA", YES, NO, YES, 7000},
+	{CTRY_ARUBA, ETSI1_WORLD, "US", "CANADA", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "CN", "CHINA", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "EUROPE", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "INDIA", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "ISRAEL", YES, NO, YES, 7000},
-	{CTRY_ARUBA, ETSI1_WORLD, "EU", "JAPAN", YES, NO, YES, 7000},
+	{CTRY_ARUBA, ETSI1_WORLD, "JP", "JAPAN", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "KOREA", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "MALAYSIA", YES, NO, YES, 7000},
-	{CTRY_ARUBA, ETSI1_WORLD, "Q2", "MEXICO", YES, NO, YES, 7000},
+	{CTRY_ARUBA, ETSI1_WORLD, "US", "MEXICO", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "MIDDLE_EAST(ALGERIA/SYRIA)", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "MIDDLE_EAST(IRAN/LEBANON/QATAR)", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "MIDDLE_EAST(TURKEY/EGYPT/TUNISIA/KUWAIT)", YES, NO, YES, 7000},
@@ -668,7 +669,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "SINGAPORE", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "SOUTH_AMERICA", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "TW", "TAIWAN", YES, NO, YES, 7000},
-	{CTRY_ARUBA, ETSI1_WORLD, "Q2", "UNITED_STATES", YES, NO, YES, 7000},
+	{CTRY_ARUBA, ETSI1_WORLD, "US", "UNITED_STATES", YES, NO, YES, 7000},
 };
 #endif
 
@@ -720,6 +721,7 @@ char *getIsoName(const char *country)
 //char 
 
 extern void *getUEnv(char *name);
+extern void getRouterBrand();
 
 static int isValidCountry(char *region, char *country)
 {
@@ -795,4 +797,56 @@ char *getCountryList(void)
 		}
 	}
 	return countries;
+}
+
+void setRegulationDomain(char *reg)
+{
+	char ccode[4] = "";
+	char rrev[4] = "";
+	
+	strncpy(ccode, getIsoName(reg), 3);
+	
+	if(!strcmp(ccode, "EU") || !strcmp(ccode, "TW") )
+		strcpy(rrev, "13");
+	else if ( !strcmp(ccode, "CN") ||  !strcmp(ccode, "JP") )
+		strcpy(rrev, "1");
+	else
+		strcpy(rrev, "0");
+
+	//fprintf(stderr, "setRegulationDomain ccode: %s rrev: %s\n", ccode, rrev);
+	
+	nvram_set("wl_country_rev", rrev);
+	nvram_set("wl0_country_rev", rrev);
+	nvram_set("wl1_country_rev", rrev);
+	nvram_set("wl_country_code", ccode);
+	nvram_set("wl0_country_code", ccode);
+	nvram_set("wl1_country_code", ccode);
+
+	switch (getRouterBrand()) {
+		case ROUTER_NETGEAR_R6250:
+		case ROUTER_NETGEAR_R6300V2:
+		case ROUTER_NETGEAR_R7000:
+		case ROUTER_DLINK_DIR868:
+			nvram_set("pci/1/1/regrev", rrev);
+			nvram_set("pci/2/1/regrev", rrev);
+			nvram_set("pci/1/1/ccode",  ccode);
+			nvram_set("pci/2/1/ccode",  ccode);
+		break;
+		case ROUTER_ASUS_AC56U:
+		case ROUTER_ASUS_AC67U:
+		case ROUTER_BUFFALO_WZR1750:
+		case ROUTER_BUFFALO_WZR600DHP2:
+		case ROUTER_BUFFALO_WZR900DHP:
+			nvram_set("0:regrev", rrev);
+			nvram_set("1:regrev", rrev);
+			nvram_set("0:ccode", ccode);
+			nvram_set("1:ccode", ccode); 
+		break;
+		default:
+			nvram_set("0:regrev", rrev);
+			nvram_set("1:regrev", rrev);
+			nvram_set("0:ccode", ccode);
+			nvram_set("1:ccode", ccode);	  
+	}
+  
 }
