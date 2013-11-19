@@ -2391,6 +2391,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ip_conntrack_max", "16384", 0},
 #elif HAVE_NORTHSTAR
 	{"ip_conntrack_max", "32768", 0},
+	{"wl_regdomain", "UNITED_STATES", 0},
+	{"wl0_country_code", "US", 0},
+	{"wl1_country_code", "US", 0},
+	{"wl0_country_rev", "0", 0},
+	{"wl1_country_rev", "0", 0},
 #elif HAVE_LAGUNA
 	{"ip_conntrack_max", "32768", 0},
 #elif HAVE_RB600
