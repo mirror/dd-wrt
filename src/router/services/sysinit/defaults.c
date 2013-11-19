@@ -2396,6 +2396,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl1_country_code", "US", 0},
 	{"wl0_country_rev", "0", 0},
 	{"wl1_country_rev", "0", 0},
+	{"0:ccode", "US",0},
+	{"1:ccode", "US",0},
+	{"0:regrev", "0",0},
+	{"1:regrev", "0",0},
 #elif HAVE_LAGUNA
 	{"ip_conntrack_max", "32768", 0},
 #elif HAVE_RB600
