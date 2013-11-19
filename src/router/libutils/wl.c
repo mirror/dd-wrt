@@ -714,9 +714,9 @@ int getchannels(unsigned int *retlist, char *ifname)
 		c = list->element[i];
 		int cspec = c & 0x700;
 		int cbw = c & 0x3800;
-                fprintf(stderr,"wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
+        //        fprintf(stderr,"wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
 		if ((cbw == mask) && (cspec == spec)) {
-                fprintf(stderr,"take wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
+        //        fprintf(stderr,"take wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
 
 			int channel = getcenterchannel(c);
 
