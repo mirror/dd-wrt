@@ -645,7 +645,6 @@ int getchannels(unsigned int *retlist, char *ifname)
 #endif
 	strncpy(buf + buflen, abbrev, WLC_CNTRY_BUF_SZ);
 
-	strncpy(buf + buflen, abbrev, WLC_CNTRY_BUF_SZ);
 	buflen += WLC_CNTRY_BUF_SZ;
 	
 	list = (wl_uint32_list_t *) (buf + buflen);
