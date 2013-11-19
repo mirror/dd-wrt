@@ -640,9 +640,6 @@ int getchannels(unsigned int *retlist, char *ifname)
 	*chanspec = c;
 	buflen += (sizeof(chanspec_t));
 	
-#ifdef HAVE_NORTHSTAR
-	strncpy(abbrev, getIsoName(nvram_default_get("wl_regdomain", "EUROPE")), WLC_CNTRY_BUF_SZ);
-#endif
 	strncpy(buf + buflen, abbrev, WLC_CNTRY_BUF_SZ);
 
 	buflen += WLC_CNTRY_BUF_SZ;
@@ -717,9 +714,9 @@ int getchannels(unsigned int *retlist, char *ifname)
 		c = list->element[i];
 		int cspec = c & 0x700;
 		int cbw = c & 0x3800;
-//              fprintf(stderr,"wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
+                fprintf(stderr,"wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
 		if ((cbw == mask) && (cspec == spec)) {
-//              fprintf(stderr,"take wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
+                fprintf(stderr,"take wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
 
 			int channel = getcenterchannel(c);
 
