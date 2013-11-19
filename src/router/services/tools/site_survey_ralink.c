@@ -188,7 +188,7 @@ int site_survey_main(int argc, char *argv[])
 		i++;
 	}
 	while (1);
-	fclose(scan);
+	pclose(scan);
 	write_site_survey();
 	open_site_survey();
 	for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].BSSID[0]
