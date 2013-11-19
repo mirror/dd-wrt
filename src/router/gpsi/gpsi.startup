@@ -127,6 +127,8 @@ if ($1 == "$GPGGA")
 
 		setnvram("gps_lat_text",getgpstext($3,$4) )
 		setnvram("gps_lon_text",getgpstext($5,$6) )
+		setnvram("gps_dez_lon",$5)
+		setnvram("gps_dez_lat",$3)
 		if (int($8) == 0)	
 			setnvram("gps_sat","0 position estimated")
 		else
