@@ -3212,7 +3212,7 @@ void start_wan(int status)
 			//set apn and dial
 			fp = popen("/usr/sbin/uqmi -d /dev/cdc-wdm0 --get-client-id wds", "rb");
 			fscanf(fp, "%d", &clientid);
-			fclose(fp);
+			pclose(fp);
 			fp = fopen("/tmp/qmi-clientid", "wb");
 			fprintf(fp, "%d", clientid);
 			fclose(fp);
