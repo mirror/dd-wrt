@@ -44,16 +44,22 @@
 void set_gpio(int pin, int value)
 {
 	char str[32];
+	char strdir[64];
 	FILE *fp;
 	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
       new_try:;
 	fp = fopen(str, "rb");
 	if (!fp) {
-		sysprintf("echo %d > /sys/class/gpio/export", pin);
+		fp = fopen("/sys/class/gpio/export", "wb");
+		fprintf(fp, "%d", pin);
+	      fclose(fp):
 		goto new_try;
 	}
 	fclose(fp);
-	sysprintf("echo out > /sys/class/gpio/gpio%d/direction", pin);
+	fp = fopen(strdir, "wb");
+	fprintf(fp, "out");
+	fclose(fp);
 	fp = fopen(str, "wb");
 	fprintf(fp, "%d", value);
 	fclose(fp);
@@ -63,17 +69,23 @@ int get_gpio(int pin)
 {
 
 	char str[32];
+	char strdir[64];
 	FILE *fp;
 	int val = 0;
 	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
       new_try:;
 	fp = fopen(str, "rb");
 	if (!fp) {
-		sysprintf("echo %d > /sys/class/gpio/export", pin);
+		fp = fopen("/sys/class/gpio/export", "wb");
+		fprintf(fp, "%d", pin);
+	      fclose(fp):
 		goto new_try;
 	}
 	fclose(fp);
-	sysprintf("echo in > /sys/class/gpio/gpio%d/direction", pin);
+	fp = fopen(strdir, "wb");
+	fprintf(fp, "in");
+	fclose(fp);
 	fp = fopen(str, "rb");
 	fscanf(fp, "%d", &val);
 	fclose(fp);
@@ -993,6 +1005,7 @@ int get_gpio(int pin)
 void set_gpio(int pin, int value)
 {
 	char str[32];
+	char strdir[64];
 	FILE *fp;
 	switch (pin) {
 	case 102:
@@ -1009,14 +1022,19 @@ void set_gpio(int pin, int value)
 		break;
 	default:
 		sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+		sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
 	      new_try:;
 		fp = fopen(str, "rb");
 		if (!fp) {
-			sysprintf("echo %d > /sys/class/gpio/export", pin);
+			fp = fopen("/sys/class/gpio/export", "wb");
+			fprintf(fp, "%d", pin);
+		      fclose(fp):
 			goto new_try;
 		}
 		fclose(fp);
-		sysprintf("echo out > /sys/class/gpio/gpio%d/direction", pin);
+		fp = fopen(strdir, "wb");
+		fprintf(fp, "out");
+		fclose(fp);
 		fp = fopen(str, "wb");
 		fprintf(fp, "%d", value);
 		fclose(fp);
@@ -1028,6 +1046,7 @@ int get_gpio(int pin)
 {
 
 	char str[32];
+	char strdir[64];
 	FILE *fp;
 	int val = 0;
 	switch (pin) {
@@ -1037,14 +1056,19 @@ int get_gpio(int pin)
 		break;
 	default:
 		sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
+		sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
 	      new_try:;
 		fp = fopen(str, "rb");
 		if (!fp) {
-			sysprintf("echo %d > /sys/class/gpio/export", pin);
+			fp = fopen("/sys/class/gpio/export", "wb");
+			fprintf(fp, "%d", pin);
+		      fclose(fp):
 			goto new_try;
 		}
 		fclose(fp);
-		sysprintf("echo in > /sys/class/gpio/gpio%d/direction", pin);
+		fp = fopen(strdir, "wb");
+		fprintf(fp, "in");
+		fclose(fp);
 		fp = fopen(str, "rb");
 		int val;
 		fscanf(fp, "%d", &val);
