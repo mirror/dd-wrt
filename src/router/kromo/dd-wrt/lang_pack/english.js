@@ -765,11 +765,12 @@ var lighttpd=new Object();
 lighttpd.titl="Webserver";
 lighttpd.server="Lighttpd";
 lighttpd.legend="Lighttpd Webserver";
-lighttpd.port="Listen Port";
+lighttpd.port="HTTP Port";
+lighttpd.sslport="HTTPS Port";
 lighttpd.custom="Custom Configuration";
 
 var hlighttpd=new Object();
-hlighttpd.right2="Enable lighttpd and set the webserver port where lighttpd will listen for requests.";
+hlighttpd.right2="Enable lighttpd and configure the HTTP/HTTPS ports lighttpd will listen for request. Default webserver root is under /jffs/www where you can place your websites.";
 
 var hnas=new Object();
 hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through ftp or samba.";
