@@ -106,6 +106,6 @@ void ej_getgpslink(webs_t wp, int argc, char_t ** argv)
     if (nvram_invmatch("gps_lat_e","N"))
 	lat_val *= -1;
 
-    websWrite(wp,"<a href=\"https://maps.google.com/maps?q=%f,%f\">Google Maps</a>",lat_val,lon_val);
+    websWrite(wp,"<a href=\"https://maps.google.com/maps?q=%f,%f\" target=\"_blank\">Google Maps</a>",lat_val,lon_val);
 }
 #endif
