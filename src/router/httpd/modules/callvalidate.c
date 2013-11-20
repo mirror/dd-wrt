@@ -72,6 +72,8 @@
 #define SERVICEALT_MODULE "/jffs/usr/lib/validate.so"
 #define VISSERVICEALT_MODULE "/jffs/usr/lib/visuals.so"
 
+
+
 #define cprintf(fmt, args...)
 
 #ifndef cprintf
