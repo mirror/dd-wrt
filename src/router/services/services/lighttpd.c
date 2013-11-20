@@ -23,6 +23,7 @@ void start_lighttpd(void)
 	
 	FILE *fp;
 	eval("mkdir", "-p", "/tmp/lighttpd/logs");
+	eval("mkdir", "-p", nvram_safe_get("lighttpd_root"));
 	
 	fp = fopen("/tmp/lighttpd.conf", "wb");
 	if ( fp !=NULL ){
@@ -68,7 +69,7 @@ void start_lighttpd(void)
 			"\".gz\"   => \"application/x-gzip\",\n"
 			")\n\n"
 			"compress.cache-dir = \"/tmp/lighttpd/cache/compress/\"\n"
-			"compress.filetype   = (\"text/plain\", \"text/html\")\n\r"
+			"compress.filetype   = (\"text/plain\", \"text/html\")\n"
 			"fastcgi.debug       = 0\n"
 			"fastcgi.server = (\n"
 			"\".php\" =>\n"
@@ -85,14 +86,9 @@ void start_lighttpd(void)
 			")\n"
 			")\n\n"
 			"url.access-deny = ( \"~\", \".inc\")\n\n"
-			"$SERVER[\"socket\"] == \":443\" {\n"
+			"$SERVER[\"socket\"] == \":%s\" {\n"
 			"ssl.engine		= \"enable\"\n"
 			"ssl.pemfile		= \"/etc/host.pem\"\n"
-			"}\n\n"
-			"$HTTP[\"scheme\"] == \"http\" {\n"
-			"$HTTP[\"host\"] =~ \".*\" {\n"
-			"url.redirect = (\".*\" => \"https://%%0$0\")\n"
-			"}\n"
 			"}\n\n"
 			"$HTTP[\"url\"] =~ \"^/owncloud/data/\" {\n"
 			"url.access-deny = (\"\")\n"
@@ -104,9 +100,10 @@ void start_lighttpd(void)
 			"auth.backend.plain.userfile    = \"/tmp/lighttpd/lighttpd.user\"\n"
 			"auth.backend.htpasswd.userfile = \"/tmp/lighttpd/lighttpd.htpasswd\"\n"
 			"server.bind           = \"%s\"\n"
-			"server.port           = %d\n"
+			"server.port           = %s\n"
 			"server.document-root  = \"%s\"\n",
-			nvram_safe_get("wan_hostname"), 
+			nvram_safe_get("lighttpd_sslport"),
+			nvram_safe_get("lan_ipaddr"), 
 			nvram_safe_get("lighttpd_port"), 
 			nvram_safe_get("lighttpd_root") );
 	}
