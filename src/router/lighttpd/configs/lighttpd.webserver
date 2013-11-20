@@ -8,6 +8,11 @@
 </div>
 <div id="lighttpdconfig">
   <div class="setting">
+           <div class="label"><% tran("lighttpd.sslport"); %></div>
+           <input size="5" maxlength="5" class="text" name="lighttpd_sslport" value="<% nvram_get("lighttpd_sslport"); %>" />
+           
+  </div>
+  <div class="setting">
            <div class="label"><% tran("lighttpd.port"); %></div>
            <input size="5" maxlength="5" class="text" name="lighttpd_port" value="<% nvram_get("lighttpd_port"); %>" />
            
