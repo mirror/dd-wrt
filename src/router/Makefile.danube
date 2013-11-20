@@ -147,7 +147,7 @@ obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
 #
 
 
-all: build_date clean_target $(obj-y) $(obj-m) $(LINUXDIR)/.config kernel
+all: install_headers build_date clean_target $(obj-y) $(obj-m) $(LINUXDIR)/.config kernel
 
 
 build_date:
@@ -179,6 +179,11 @@ endif
 
 	$(MAKE) -j 4 -C $(LINUXDIR) CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 	$(MAKE) -j 4 -C $(LINUXDIR) modules  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+
+install_headers:
+# important step, required for new kernels
+	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
+	$(MAKE) -C $(LINUXDIR) headers_install ARCH=mips INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
 
 	
 realclean: $(obj-clean)
@@ -423,6 +428,9 @@ ifeq ($(CONFIG_WMBR_G300NH),y)
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
 	tools/bufenc/encryptRC4 WBMR-HP-G300H 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wmbr-firmware.enc
 	tools/bufenc/mkfw-lan -hw_ver=2 -hcrypt="Buffalo" "WBMR-HP-G300H" "WBMR-HP-G300H" "1.74" "3.02" "US-EU-AP-KR-CH-TW-DE-JP" "mlang8" "lan" "" 80002000 80002000 1 $(ARCH)-uclibc/wmbr-firmware.enc $(ARCH)-uclibc/wmbr-firmware_MULTI.enc
+ifeq ($(CONFIG_BUFFALO),y)
+	cp $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wmbr-firmware_MULTI.enc
+endif
 else
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),EU-US)
 #eu-us region
