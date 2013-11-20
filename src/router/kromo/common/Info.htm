@@ -460,6 +460,14 @@ function refresh(F)
 										<span id="gps_lat"><% nvram_get("gps_lat_text"); %></span>&nbsp;
 									</div>
 									<div class="setting">
+										<div class="label"><% tran("status_gpsi.lon"); %></div>
+										<span id="gps_londec"><% getlongitude(); %></span>&nbsp;
+									</div>
+									<div class="setting">
+										<div class="label"><% tran("status_gpsi.lat"); %></div>
+										<span id="gps_latdec"><% getlatidude(); %></span>&nbsp;
+									</div>
+									<div class="setting">
 										<div class="label"><% tran("status_gpsi.alt"); %></div>
 										<span id="gps_alt"><% nvram_get("gps_alt"); %></span>&nbsp;
 									</div>
