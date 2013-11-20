@@ -26,6 +26,10 @@ void ej_getlongitude(webs_t wp, int argc, char_t ** argv)
     strncpy(lon_deg,lon,3);
     strncpy(lon_min1,lon+3,2);
     strcpy(lon_min2,lon+6);
+
+    lon_deg[3]=0;
+    lon_min1[2]=0;
+
     sprintf(lon_min3,"0.%s%s",lon_min1,lon_min2);
     float lon_dec = atof(lon_min3) / .6f;
     float lon_val = atof(lon_deg) + lon_dec;
@@ -49,6 +53,8 @@ void ej_getlatidude(webs_t wp, int argc, char_t ** argv)
     strncpy(lat_deg,lat,2);
     strncpy(lat_min1,lat+2,2);
     strcpy(lat_min2,lat+5);
+    lat_deg[2]=0;
+    lat_min1[2]=0;
     sprintf(lat_min3,"0.%s%s",lat_min1,lat_min2);
     float lat_dec = atof(lat_min3) / .6f;
     float lat_val = atof(lat_deg) + lat_dec;
@@ -58,7 +64,7 @@ void ej_getlatidude(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp,"%f",lat_val);
 	return;
 }
-void ej_gpslink(webs_t wp, int argc, char_t ** argv)
+void ej_getgpslink(webs_t wp, int argc, char_t ** argv)
 {
     char *lon = nvram_safe_get("gps_lon");
     char lon_deg[4];
@@ -72,6 +78,8 @@ void ej_gpslink(webs_t wp, int argc, char_t ** argv)
     strncpy(lon_deg,lon,3);
     strncpy(lon_min1,lon+3,2);
     strcpy(lon_min2,lon+6);
+    lon_deg[3]=0;
+    lon_min1[2]=0;
     sprintf(lon_min3,"0.%s%s",lon_min1,lon_min2);
     float lon_dec = atof(lon_min3) / .6f;
     float lon_val = atof(lon_deg) + lon_dec;
@@ -90,6 +98,8 @@ void ej_gpslink(webs_t wp, int argc, char_t ** argv)
     strncpy(lat_deg,lat,2);
     strncpy(lat_min1,lat+2,2);
     strcpy(lat_min2,lat+5);
+    lat_deg[2]=0;
+    lat_min1[2]=0;
     sprintf(lat_min3,"0.%s%s",lat_min1,lat_min2);
     float lat_dec = atof(lat_min3) / .6f;
     float lat_val = atof(lat_deg) + lat_dec;
