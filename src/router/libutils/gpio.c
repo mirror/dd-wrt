@@ -53,7 +53,7 @@ void set_gpio(int pin, int value)
 	if (!fp) {
 		fp = fopen("/sys/class/gpio/export", "wb");
 		fprintf(fp, "%d", pin);
-	      fclose(fp):
+		fclose(fp);
 		goto new_try;
 	}
 	fclose(fp);
@@ -79,7 +79,7 @@ int get_gpio(int pin)
 	if (!fp) {
 		fp = fopen("/sys/class/gpio/export", "wb");
 		fprintf(fp, "%d", pin);
-	      fclose(fp):
+		fclose(fp);
 		goto new_try;
 	}
 	fclose(fp);
@@ -1028,7 +1028,7 @@ void set_gpio(int pin, int value)
 		if (!fp) {
 			fp = fopen("/sys/class/gpio/export", "wb");
 			fprintf(fp, "%d", pin);
-		      fclose(fp):
+			fclose(fp);
 			goto new_try;
 		}
 		fclose(fp);
@@ -1062,7 +1062,7 @@ int get_gpio(int pin)
 		if (!fp) {
 			fp = fopen("/sys/class/gpio/export", "wb");
 			fprintf(fp, "%d", pin);
-		      fclose(fp):
+			fclose(fp);
 			goto new_try;
 		}
 		fclose(fp);
