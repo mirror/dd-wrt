@@ -832,17 +832,7 @@ void setRegulationDomain(char *reg)
 			nvram_set("pci/1/1/ccode",  ccode);
 			nvram_set("pci/2/1/ccode",  ccode);
 		break;
-		case ROUTER_ASUS_AC56U:
-		case ROUTER_ASUS_AC67U:
-		case ROUTER_BUFFALO_WZR1750:
-		case ROUTER_BUFFALO_WZR600DHP2:
-		case ROUTER_BUFFALO_WZR900DHP:
-			nvram_set("0:regrev", rrev);
-			nvram_set("1:regrev", rrev);
-			nvram_set("0:ccode", ccode);
-			nvram_set("1:ccode", ccode); 
-		break;
-		default:
+			default:
 			nvram_set("0:regrev", rrev);
 			nvram_set("1:regrev", rrev);
 			nvram_set("0:ccode", ccode);
