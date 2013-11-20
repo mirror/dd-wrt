@@ -475,6 +475,10 @@ function refresh(F)
 										<div class="label"><% tran("status_gpsi.sat"); %></div>
 										<span id="gps_sat"><% nvram_get("gps_sat"); %></span>&nbsp;
 									</div>
+									<div class="setting">
+										<div class="label"><% tran("status_gpsi.sat"); %></div>
+										<span id="gps_link"><% getgpslink(); %></span>&nbsp;
+									</div>
 								</fieldset><br />
 					<% ifndef("GPSI", "-->"); %>
 								
