@@ -1070,7 +1070,6 @@ int get_gpio(int pin)
 		fprintf(fp, "in");
 		fclose(fp);
 		fp = fopen(str, "rb");
-		int val;
 		fscanf(fp, "%d", &val);
 		fclose(fp);
 	}
