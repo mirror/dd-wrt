@@ -65,6 +65,8 @@ static void set_regulation(int card, char *code, char *rev)
 	char path[32];
 	
 	sprintf(path, "wl%d_country_rev", card);
+	if (nvram_match(path,""))
+		return;
 	nvram_set(path, rev);
 	sprintf(path, "wl%d_country_code", card);
 	nvram_set(path, code);
@@ -82,16 +84,6 @@ static void set_regulation(int card, char *code, char *rev)
 			nvram_set(path, rev);
 			sprintf(path, "pci/%d/1/ccode", card + 1);
 			nvram_set(path, code); 
-		break;
-		case ROUTER_ASUS_AC56U:
-		case ROUTER_ASUS_AC67U:
-		case ROUTER_BUFFALO_WZR1750:
-		case ROUTER_BUFFALO_WZR600DHP2:
-		case ROUTER_BUFFALO_WZR900DHP:
-			sprintf(path, "%d:regrev", card);
-			nvram_set(path, rev);
-			sprintf(path, "%d:ccode", card);
-			nvram_set(path, code);  
 		break;
 		default:
 			sprintf(path, "%d:regrev", card);
@@ -974,7 +966,34 @@ void start_sysinit(void)
 		nvram_set("1:mcsbw405ghpo", "0x65320000");
 		nvram_set("1:mcsbw805ghpo", "0x65320000");
 		nvram_set("1:mcsbw1605ghpo", "0");
-		break;
+
+		// regulatory setup
+		if (nvram_match("regulation_domain", "US"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("regulation_domain", "Q2"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("regulation_domain", "EU"))
+			set_regulation(0, "DE", "0");
+		else if (nvram_match("regulation_domain", "TW"))
+			set_regulation(0, "TW", "13");
+		else if (nvram_match("regulation_domain", "CN"))
+			set_regulation(0, "CN", "1");
+		else
+			set_regulation(0, "US", "0");
+
+		if (nvram_match("regulation_domain_5G", "US"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("regulation_domain_5G", "Q2"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("regulation_domain_5G", "EU"))
+			set_regulation(1, "DE", "0");
+		else if (nvram_match("regulation_domain_5G", "TW"))
+			set_regulation(1, "TW", "13");
+		else if (nvram_match("regulation_domain_5G", "CN"))
+			set_regulation(1, "CN", "1");
+		else
+			set_regulation(1, "US", "0");
+ 		break;
 	case ROUTER_ASUS_AC56U:
 		nvram_set("clkfreq", "800,666");
 		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
@@ -1031,6 +1050,32 @@ void start_sysinit(void)
 		nvram_set("1:mcsbw205ghpo", "0xAA864433");
 		nvram_set("1:mcsbw405ghpo", "0xAA864433");
 		nvram_set("1:mcsbw805ghpo", "0xAA864433");
+
+		if (nvram_match("regulation_domain", "US"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("regulation_domain", "Q2"))
+			set_regulation(0, "US", "0");
+		else if (nvram_match("regulation_domain", "EU"))
+			set_regulation(0, "DE", "0");
+		else if (nvram_match("regulation_domain", "TW"))
+			set_regulation(0, "TW", "13");
+		else if (nvram_match("regulation_domain", "CN"))
+			set_regulation(0, "CN", "1");
+		else
+			set_regulation(0, "US", "0");
+
+		if (nvram_match("regulation_domain_5G", "US"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("regulation_domain_5G", "Q2"))
+			set_regulation(1, "US", "0");
+		else if (nvram_match("regulation_domain_5G", "EU"))
+			set_regulation(1, "DE", "0");
+		else if (nvram_match("regulation_domain_5G", "TW"))
+			set_regulation(1, "TW", "13");
+		else if (nvram_match("regulation_domain_5G", "CN"))
+			set_regulation(1, "CN", "1");
+		else
+			set_regulation(1, "US", "0");
 
 		break;
 	case ROUTER_DLINK_DIR868:
@@ -1273,6 +1318,68 @@ void start_sysinit(void)
 		break;
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
+#ifdef HAVE_BUFFALO
+		char *cname = nvram_safe_get("region");
+		nvram_set("wl0_country_code", "Q1");
+		nvram_set("wl0_country_rev", "27");
+		nvram_set("wl1_country_code", "Q1");
+		nvram_set("wl1_country_rev", "27");
+		if (!strcmp(cname, "JP")) {
+			nvram_set("wl0_country_code", "JP");
+			nvram_set("wl0_country_rev", "45");
+			nvram_set("wl1_country_code", "JP");
+			nvram_set("wl1_country_rev", "45");
+		}
+
+		if (!strcmp(cname, "US")) {
+			nvram_set("wl0_country_code", "Q2");
+			nvram_set("wl0_country_rev", "41");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+
+		if (!strcmp(cname, "EU")) {
+			nvram_set("wl0_country_code", "EU");
+			nvram_set("wl0_country_rev", "61");
+			nvram_set("wl1_country_code", "EU");
+			nvram_set("wl1_country_rev", "61");
+		}
+
+		if (!strcmp(cname, "AP")) {
+			nvram_set("wl0_country_code", "CN");
+			nvram_set("wl0_country_rev", "34");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+
+		if (!strcmp(cname, "KR")) {
+			nvram_set("wl0_country_code", "KR");
+			nvram_set("wl0_country_rev", "55");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+
+		if (!strcmp(cname, "CH")) {
+			nvram_set("wl0_country_code", "CH");
+			nvram_set("wl0_country_rev", "34");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+
+		if (!strcmp(cname, "TW")) {
+			nvram_set("wl0_country_code", "TW");
+			nvram_set("wl0_country_rev", "34");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+
+		if (!strcmp(cname, "RU")) {
+			nvram_set("wl0_country_code", "RU");
+			nvram_set("wl0_country_rev", "37");
+			nvram_set("wl1_country_code", "Q2");
+			nvram_set("wl1_country_rev", "41");
+		}
+#endif
 		nvram_set("0:boardflags2", "0x1000");
 		nvram_set("1:boardflags2", "0x00001000");
 		nvram_set("0:ledbh12", "7");
