@@ -3695,15 +3695,16 @@ void set_hc595(uint32 pin, uint32 value)
 }
 
 
+static int buffalo_mask=0;
 static si_t *gpio_sih = NULL;
 extern int isd1800h;
 extern int isac66;
 extern int isac68;
 extern int isbuffalo;
 extern int isdefault;
-//#ifndef USE_LZMA
+#ifndef USE_LZMA
 //#include <linux/printk.h>
-//#endif
+#endif
 /* mask&set gpio output bits */
 uint32
 si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
@@ -3714,25 +3715,31 @@ si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 //#endif
 	if (isdefault)
 	    return si_gpioout(sih,mask,val,priority);
-	
-	if (isbuffalo && (mask&(1<<12)))
-	{
-	    if (val&(1<<12))
-		set_hc595(0,1);
-	    else
-		set_hc595(0,0);	
 
-	    return val & mask;
-	}
+	if (isbuffalo) {
+		if ((mask&(1<<12))) {
+			if (val&(1<<12)) {
+				buffalo_mask |= (1<<12);
+				set_hc595(0,1);
+			} else {
+				buffalo_mask &= ~(1<<12);	    
+				set_hc595(0,0);	
+			}
+		}
 
-	if (isbuffalo && (mask&(1<<10)))
-	{
-	    if (val&(1<<10))
-	    set_hc595(1,1);
-	    else
-	    set_hc595(1,0);	
-	    return val & mask;
-	}
+		if ((mask&(1<<10))) {
+			if (val&(1<<10)) {
+				buffalo_mask |= (1<<10);
+				set_hc595(1,1);
+			} else {
+				buffalo_mask &= ~(1<<10);	    
+				set_hc595(1,0);	
+			}
+		}
+		if ((mask&(1<<10)) || (mask&(1<<12))) {
+			return buffalo_mask;
+		}
+	} 
 
 	if (isac68 && !(mask & 1<<6))
 	{
@@ -3743,7 +3750,7 @@ si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 	{
 	    return si_gpioout(sih,mask,val,priority);
 	}
-
+	
 	regoff = 0;
 	if (!gpio_sih)
 	{
@@ -3761,7 +3768,11 @@ si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 		val &= mask;
 	}
 	regoff = OFFSETOF(chipcregs_t, gpioout);
-	return (si_corereg(gpio_sih, SI_CC_IDX, regoff, mask, val));
+	if (isbuffalo) {
+    	    return (((si_corereg(gpio_sih, SI_CC_IDX, regoff, mask, val) & ~(1<<10)) & ~(1<<12)) | buffalo_mask);
+	} else {
+    	    return (si_corereg(gpio_sih, SI_CC_IDX, regoff, mask, val));
+    	}
 }
 uint32
 si_gpioouten2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
@@ -3782,12 +3793,12 @@ si_gpioouten2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 
 	if (isbuffalo && (mask&(1<<12)))
 	{
-	    return val & mask;
+	    return (val & mask);
 	}
 
 	if (isbuffalo && (mask&(1<<10)))
 	{
-	    return val & mask;
+	    return (val & mask);
 	}
 	regoff = 0;
 

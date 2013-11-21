@@ -63,4 +63,5 @@ endif
 ifeq ($(CONFIG_SOC_MT7620_OPENWRT),y)
 obj-$(CONFIG_RT2860V2_AP)       += rt7620/rt2860v2_ap/
 obj-$(CONFIG_RT2860V2_STA)      += rt7620/rt2860v2_sta/
+obj-$(CONFIG_RTPCI_AP)      += rt5592/
 endif
