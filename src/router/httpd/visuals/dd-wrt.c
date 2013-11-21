@@ -1,8 +1,7 @@
-#define VISUALSOURCE 1
 /*
  * dd-wrt.c
  *
- * Copyright (C) 2005 - 2007 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
+ * Copyright (C) 2005 - 2013 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,6 +19,8 @@
  *
  * $Id:
  */
+
+#define VISUALSOURCE 1
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -3388,13 +3389,13 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	// char maxpower[16];
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix)) {
-		if(isFXXN_PRO(prefix)) {
+		if (isFXXN_PRO(prefix)) {
 			char wl_cardtype[32];
 			sprintf(wl_cardtype, "%s_cardtype", prefix);
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cardtype)</script></div>\n<select name=\"%s\">\n", wl_cardtype);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	
+
 #ifdef HAVE_ONNET
 			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Athros 2458</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Athros 3336</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
@@ -3407,7 +3408,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 		}
 	}
-#endif //HAVE_ATH9K
+#endif				//HAVE_ATH9K
 
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_MAKSAT
@@ -4413,13 +4414,13 @@ if (!strcmp(prefix, "wl1"))
 
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix)) {
-		if(isFXXN_PRO(prefix)) {
+		if (isFXXN_PRO(prefix)) {
 			char wl_cardtype[32];
 			sprintf(wl_cardtype, "%s_cardtype", prefix);
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.cardtype)</script></div>\n<select name=\"%s\">\n", wl_cardtype);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	
+
 #ifdef HAVE_ONNET
 			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Athros 2458</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Athros 3336</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
@@ -4432,7 +4433,7 @@ if (!strcmp(prefix, "wl1"))
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 		}
 	}
-#endif //HAVE_ATH9K
+#endif				//HAVE_ATH9K
 
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_MAKSAT
@@ -4771,11 +4772,11 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 	char wl_regdomain[16];
 
 	sprintf(wl_regdomain, "wl_regdomain");
-	websWrite(wp,"<fieldset><br />\<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
-	
+	websWrite(wp, "<fieldset><br />\<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
+
 	char *list = getCountryList();
-	showOptions(wp, wl_regdomain, list,nvram_default_get("wl_regdomain", "EUROPE"));
-	
+	showOptions(wp, wl_regdomain, list, nvram_default_get("wl_regdomain", "EUROPE"));
+
 	websWrite(wp, "</div></fieldset><br />\n");
 
 #endif
