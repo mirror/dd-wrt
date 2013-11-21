@@ -69,10 +69,6 @@ BCFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 CFLAGS = $(BCFLAGS) -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 
-REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
-REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
-REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
-
 ifeq ($(CONFIG_SPECIALEDITION),y)
 CFLAGS += -DHAVE_SPECIALEDITION
 ADDOBJ = special.o
@@ -1176,7 +1172,7 @@ endif
 validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBSOBJS) $(REGOBJS)
 	$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS)
 
-visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o $(VISOBJS) $(REGOBJS2)
+visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o minidlna.o samba3.o $(VISOBJS) $(REGOBJS2)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 	$(CC) --shared -c -o $(NVISOBJS) $(NVISFILES) $(NCFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
