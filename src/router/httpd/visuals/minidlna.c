@@ -27,7 +27,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdarg.h>
-#include <math.h>
 
 #include <broadcom.h>
 #include <cymac.h>
