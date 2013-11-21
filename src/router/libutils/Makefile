@@ -59,10 +59,6 @@ endif
 CFLAGS += $(MIPS16_OPT) 
 
 
-REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
-REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
-REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
-
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -fPIC 
 LDFLAGS += -L.
@@ -119,10 +115,6 @@ ATH9KOBJS += wl_ath9k.o list_sort.o unl.o mac80211info.o mac80211regulatory.o ma
 ATH9KFILES += wl_ath9k.c list_sort.c unl.c mac80211info.c mac80211regulatory.c mac80211autochannel.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
-
-REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
-REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
-REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 
 
 ifeq ($(CONFIG_MADWIFI),y)
