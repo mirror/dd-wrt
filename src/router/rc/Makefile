@@ -49,10 +49,6 @@ OBJS := rc.o servicemanager.o event.o
 #http.o stats.o
 OBJS += watchdog.o services.o mtd_main.o
 
-REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
-REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
-REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
-
 #ifdef $(CONFIG_DIST)
 CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
 #endif
