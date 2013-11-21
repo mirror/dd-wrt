@@ -1,7 +1,7 @@
 /*
  * ARM CA9 (iHost) definitions
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -21,7 +21,7 @@
 #ifndef	_armca9_core_h_
 #define	_armca9_core_h_
 
-#ifndef _LANGUAGE_ASSEMBLY
+#if !defined(_LANGUAGE_ASSEMBLY) && !defined(__ASSEMBLY__)
 
 /* cpp contortions to concatenate w/arg prescan */
 #ifndef PAD
@@ -34,7 +34,7 @@ typedef volatile struct {
 	uint32	PAD[1024];
 } armca9regs_t;
 
-#endif	/* _LANGUAGE_ASSEMBLY */
+#endif	/* !defined(_LANGUAGE_ASSEMBLY) && !defined(__ASSEMBLY__) */
 
 #define IHOST_PROC_CLK_WR_ACCESS			0x19000000
 #define IHOST_PROC_CLK_POLICY_FREQ			0x19000008
