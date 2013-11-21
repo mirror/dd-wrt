@@ -523,7 +523,7 @@ void start_nas_single(char *type, char *prefix)
 
 				if (nvram_nmatch("0", "%s_bridged", iface)) {
 					char *argv[] = { "nas", "-P", pidfile,
-						"-H", "34954", "-i",
+						"-H", "34954", "-l", iface, "-i",
 						iface, mode,
 						"-m",
 						auth_mode, "-r", key,
@@ -567,7 +567,7 @@ void start_nas_single(char *type, char *prefix)
 
 				if (nvram_nmatch("0", "%s_bridged", iface)) {
 					char *argv[] = { "nas", "-P", pidfile,
-						"-H", "34954", "-i",
+						"-H", "34954", "-l", iface, "-i",
 						iface, mode,
 						"-m",
 						auth_mode, "-r", key,
@@ -612,7 +612,7 @@ void start_nas_single(char *type, char *prefix)
 			} else {
 				if (nvram_nmatch("0", "%s_bridged", iface)) {
 					char *argv[] = { "nas", "-P", pidfile,
-						"-H", "34954", "-i",
+						"-H", "34954", "-l", iface, "-i",
 						iface, mode,
 						"-m",
 						auth_mode, "-k", key,
