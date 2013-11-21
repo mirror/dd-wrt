@@ -3915,7 +3915,7 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_L2TP
 	else if (strcmp(wan_proto, "l2tp") == 0) {
-		if (nvram_match("l2tp_iptv", "1"))
+		if (nvram_match("pptp_iptv", "1"))
 			nvram_set("tvnicfrom", nvram_safe_get("wan_iface"));
 		else
 			nvram_unset("tvnicfrom");

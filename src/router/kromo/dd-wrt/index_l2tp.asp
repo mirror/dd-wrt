@@ -50,8 +50,8 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_l.iptv"); %></div>
-	<input class="spaceradio" type="radio" name="l2tp_iptv" value="1" <% nvram_checked("l2tp_iptv", "1"); %> /><% tran("share.yes"); %>&nbsp;
-	<input class="spaceradio" type="radio" name="l2tp_iptv" value="0" <% nvram_checked("l2tp_iptv", "0"); %> /><% tran("share.no"); %>
+	<input class="spaceradio" type="radio" name="pptp_iptv" value="1" <% nvram_checked("l2tp_iptv", "1"); %> /><% tran("share.yes"); %>&nbsp;
+	<input class="spaceradio" type="radio" name="pptp_iptv" value="0" <% nvram_checked("l2tp_iptv", "0"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_h.con_strgy"); %><br />&nbsp;</div>

@@ -703,11 +703,6 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 
 	nvram_set("wan_netmask", wan_netmask);
 
-	if (!strcmp(wan_gateway, "0.0.0.0"))
-		return;
-
-	nvram_set("wan_gateway", wan_gateway);
-
 	if (strcmp(pptp_wan_gateway, "0.0.0.0")) {
 		nvram_set("pptp_wan_gateway", pptp_wan_gateway);
 	}
@@ -715,6 +710,11 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	if (strcmp(l2tp_wan_gateway, "0.0.0.0")) {
 		nvram_set("l2tp_wan_gateway", l2tp_wan_gateway);
 	}
+
+	if (!strcmp(wan_gateway, "0.0.0.0"))
+		return;
+
+	nvram_set("wan_gateway", wan_gateway);
 }
 
 #ifdef HAVE_PORTSETUP
