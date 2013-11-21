@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//      Update (22410 based)               - DD-WRT V24 SP2 by mrc_torres 02/OCT/2013       //
+//      Update (22930 based)               - DD-WRT V24 SP2 by mrc_torres 20/NOV/2013       //
 //      Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr      16/JUN/2006       //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -457,6 +457,7 @@ bmenu.servicesHotspot="Hotspot";
 bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="Proxy SIP";
 bmenu.servicesPrivoxy="Bloqueio de Propaganda";
+bmenu.servicesLighttpd="Servidor Web";
 //bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
@@ -727,6 +728,17 @@ privoxy.custom="Configuração Personalizada";
 
 hprivoxy.right2="Habilita o Privoxy e ajusta as configurações de proxy de seus clientes. Endereço IP do Proxy = <b>Endereço IP do Roteador</b> Porta do Proxy = <b>8118</b>"; 
 
+
+//** Lighttpd.asp **// 
+lighttpd.titl="Servidor Web"; 
+lighttpd.server="Lighttpd"; 
+lighttpd.legend="Servidor Web Lighttpd"; 
+lighttpd.port="Porta HTTP";
+lighttpd.sslport="Porta HTTPS";
+lighttpd.custom="Configuração Personalizada"; 
+ 
+hlighttpd.right2="Habilita o lighttpd e configura as porta HTTP/HTTPS em que o lighttpd ouvirá as solicitações. O diretório raiz padrão do servidor web aonde você pode colocar seus sites é /jffs/www."; 
+
 hnas.right2="A fim de compartilhar recursos adicione novos compartilhamentos fornecendo o caminho e o nome do compartilhamento. Defina os usuários que podem acessar o compartilhamento através de ftp ou samba.";
 
 // ** Hotspot.asp **//
@@ -887,7 +899,7 @@ idx_l.srv="Gateway (Servidor L2TP)";
 idx_l.req_chap="Requerer CHAP";
 idx_l.ref_pap="Recusar PAP";
 idx_l.req_auth="Requerer Autenticação";
-
+idx_l.iptv="Receber IPTV";
 
 // ** index_pppoe.asp **//
 idx_pppoe.use_rp="Usar RP PPPoE";
@@ -1051,6 +1063,7 @@ management.lang_srv="Linguagem";
 management.lang_bulgarian="Búlgaro";
 management.lang_chinese_traditional="Chinês tradicional";
 management.lang_chinese_simplified="Chinês simplificado";
+management.lang_catalan="Catalão";
 management.lang_croatian="Croata";
 management.lang_czech="Tcheco";
 management.lang_dutch="Holandês";
@@ -1061,7 +1074,7 @@ management.lang_french="Francês";
 management.lang_german="Alemão";
 management.lang_turkish="Turco";
 management.lang_italian="Italiano";
-management.lang_brazilian="Português (brasileiro)"; // ??? //
+management.lang_brazilian="Português"; // Portuguese from Portugal? Brazilian language does not exist. //
 management.lang_russian="Russo";
 management.lang_romanian="Romeno";
 management.lang_slovenian="Esloveno";
@@ -1133,10 +1146,10 @@ qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
 qos.legend2="Prioridade dos Serviços";
 qos.prio_m="Manual";
-qos.prio_x="Isento";
+qos.prio_x="Máxima";
 qos.prio_p="Premium";
-qos.prio_e="Express";
-qos.prio_b="Bulk";
+qos.prio_e="Expressa";
+qos.prio_b="Em massa";
 qos.legend3="Prioridade de Máscara de Sub-Rede";
 qos.ipmask="IP/Máscara";
 qos.maxrate_b="Máx kbits";
@@ -2057,6 +2070,7 @@ wl_basic.label4="Canal Wireless";
 wl_basic.label5="Broadcast SSID Wireless";
 wl_basic.label6="Escala de Sensibilidade (Sincronismo ACK)";
 wl_basic.label7="Modo de Transmissão 802.11n";
+wl_basic.turboqam="Suporte a TurboQAM (QAM256)";
 wl_basic.scanlist="ScanList";
 wl_basic.duallink="Dual Link";
 wl_basic.parent="IP Mãe";
