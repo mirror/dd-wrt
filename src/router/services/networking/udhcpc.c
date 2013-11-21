@@ -317,16 +317,16 @@ static int bound(void)
 		nvram_set("wan_gateway_buf", nvram_get("wan_gateway"));
 
 		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip);
-		nvram_set("pptp_server_ip", pptpip);
+		if (strcmp(pptpip, "0.0.0.0"))
+			nvram_set("pptp_server_ip", pptpip);
 
 		// Add the route to the PPTP server on the wan interface for pptp
 		// client to reach it
 		if (nvram_match("wan_gateway", "0.0.0.0")
 		    || nvram_match("wan_netmask", "0.0.0.0"))
-			route_add(wan_ifname, 0, nvram_safe_get("pptp_server_ip"), nvram_safe_get("wan_gateway"), "255.255.255.255");
+			route_add(wan_ifname, 0, nvram_safe_get("pptp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");
 		else
 			route_add(wan_ifname, 0, nvram_safe_get("pptp_server_ip"), nvram_safe_get("wan_gateway"), nvram_safe_get("wan_netmask"));
-
 	}
 #endif
 #ifdef HAVE_L2TP
@@ -353,11 +353,13 @@ static int bound(void)
 		nvram_set("wan_gateway_buf", nvram_get("wan_gateway"));
 
 		getIPFromName(nvram_safe_get("l2tp_server_name"), l2tpip);
+		if (strcmp(l2tpip, "0.0.0.0"))
+			nvram_set("l2tp_server_ip", l2tpip);
 
-		nvram_set("l2tp_server_ip", l2tpip);
-
-		route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway"), "255.255.255.255");
-
+		//route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway"), "255.255.255.255");
+		route_del(wan_ifname, 0, nvram_safe_get("wan_gateway"), NULL, "255.255.255.255");
+		route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");
+		
 		start_firewall();
 		start_l2tp_boot();
 	}
