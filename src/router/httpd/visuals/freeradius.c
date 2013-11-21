@@ -1,10 +1,7 @@
-#ifdef HAVE_FREERADIUS
-
-#define VISUALSOURCE 1
 /*
- * dd-wrt.c
+ * freeradius.c
  *
- * Copyright (C) 2005 - 2007 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
+ * Copyright (C) 2005 - 2013 Sebastian Gottschall <gottschall@dd-wrt.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,6 +19,9 @@
  *
  * $Id:
  */
+#ifdef HAVE_FREERADIUS
+
+#define VISUALSOURCE 1
 
 #include <stdio.h>
 #include <stdlib.h>

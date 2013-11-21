@@ -1,3 +1,24 @@
+/*
+ * ejs.c
+ *
+ * Copyright (C) 2005 - 2013 Sebastian Gottschall <gottschall@dd-wrt.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ * $Id:
+ */
 #define VISUALSOURCE 1
 
 #include <stdio.h>
@@ -1479,12 +1500,12 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 	//add ppp interfacs
 	memset(eths2, 0, sizeof(eths2));
 	getIfList(eths2, "ppp");
-	sprintf(eths,"%s %s",eths,eths2);
+	sprintf(eths, "%s %s", eths, eths2);
 	//add tun interfaces
 	memset(eths2, 0, sizeof(eths2));
 	getIfList(eths2, "tun");
-	sprintf(eths,"%s %s",eths,eths2);
-	
+	sprintf(eths, "%s %s", eths, eths2);
+
 	memset(bufferif, 0, 256);
 	getIfList(bufferif, "br");
 
@@ -1519,7 +1540,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 
 	if (!nvram_match("wan_proto", "disabled")) {
 		if (getSTA()) {
-			sprintf(name, "%s WAN (%s)", live_translate("share.wireless"),get_wan_face());
+			sprintf(name, "%s WAN (%s)", live_translate("share.wireless"), get_wan_face());
 		} else
 			sprintf(name, "WAN (%s)", get_wan_face());
 
@@ -3071,8 +3092,6 @@ int tf_webWriteJS(webs_t wp, const char *s)
 	wfflush(wp);
 	return r;
 }
-
-
 
 #ifdef HAVE_UPNP
 // changed by steve
