@@ -130,6 +130,9 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		wan_netmask = wan_link ? nvram_safe_get("wan_netmask") : nvram_safe_get("wan_netmask");
 		wan_gateway = wan_link ? nvram_safe_get("wan_gateway") : nvram_safe_get("pptp_server_ip");
 	} else if (!strcmp(wan_proto, "pppoe")
+#ifdef HAVE_PPPOEDUAL
+		   || !strcmp(wan_proto, "pppoe_dual")
+#endif
 #ifdef HAVE_PPPOATM
 		   || !strcmp(wan_proto, "pppoa")
 #endif
@@ -161,6 +164,9 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 
 	if (!strcmp(wan_proto, "pppoe")
 	    || !strcmp(wan_proto, "pptp")
+#ifdef HAVE_PPPOEDUAL
+	    || !strcmp(wan_proto, "pppoe_dual")
+#endif
 #ifdef HAVE_3G
 	    || !strcmp(wan_proto, "3g")
 #endif
@@ -272,6 +278,9 @@ void ej_show_status(webs_t wp, int argc, char_t ** argv)
 #endif
 	if (!strcmp(wan_proto, "pppoe")
 	    || !strcmp(wan_proto, "pptp")
+#ifdef HAVE_PPPOEDUAL
+	    || !strcmp(wan_proto, "pppoe_dual")
+#endif
 #ifdef HAVE_3G
 	    || !strcmp(wan_proto, "3g")
 #endif

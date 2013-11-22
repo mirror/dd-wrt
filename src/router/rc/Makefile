@@ -219,6 +219,9 @@ endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 endif
+ifeq ($(CONFIG_PPPOEDUAL),y)
+CFLAGS += -DHAVE_PPPOEDUAL
+endif
 ifeq ($(CONFIG_TOR),y)
 CFLAGS += -DHAVE_TOR
 endif
