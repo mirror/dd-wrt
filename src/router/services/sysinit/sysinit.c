@@ -2585,6 +2585,7 @@ void start_drivers(void)
 		insmod("ci_hdrc");
 		insmod("ci13xxx_imx");
 		insmod("usbmisc_imx");
+		insmod("ci_hdrc_imx");
 		
 		if (nvram_match("usb_storage", "1")) {
 			cprintf("loading scsi_mod\n");
