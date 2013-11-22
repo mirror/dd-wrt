@@ -52,17 +52,25 @@ void set_gpio(int pin, int value)
 	fp = fopen(str, "rb");
 	if (!fp) {
 		fp = fopen("/sys/class/gpio/export", "wb");
-		fprintf(fp, "%d", pin);
-		fclose(fp);
+		if (fp) {
+			fprintf(fp, "%d", pin);
+			fclose(fp);
+		} else {
+			return;	//prevent deadlock
+		}
 		goto new_try;
 	}
 	fclose(fp);
 	fp = fopen(strdir, "wb");
-	fprintf(fp, "out");
-	fclose(fp);
+	if (fp) {
+		fprintf(fp, "out");
+		fclose(fp);
+	}
 	fp = fopen(str, "wb");
-	fprintf(fp, "%d", value);
-	fclose(fp);
+	if (fp) {
+		fprintf(fp, "%d", value);
+		fclose(fp);
+	}
 }
 
 int get_gpio(int pin)
@@ -78,17 +86,25 @@ int get_gpio(int pin)
 	fp = fopen(str, "rb");
 	if (!fp) {
 		fp = fopen("/sys/class/gpio/export", "wb");
-		fprintf(fp, "%d", pin);
-		fclose(fp);
+		if (fp) {
+			fprintf(fp, "%d", pin);
+			fclose(fp);
+		} else {
+			return 0;	// prevent deadlock
+		}
 		goto new_try;
 	}
 	fclose(fp);
 	fp = fopen(strdir, "wb");
-	fprintf(fp, "in");
-	fclose(fp);
+	if (fp) {
+		fprintf(fp, "in");
+		fclose(fp);
+	}
 	fp = fopen(str, "rb");
-	fscanf(fp, "%d", &val);
-	fclose(fp);
+	if (fp) {
+		fscanf(fp, "%d", &val);
+		fclose(fp);
+	}
 	return val;
 
 }
@@ -1027,17 +1043,26 @@ void set_gpio(int pin, int value)
 		fp = fopen(str, "rb");
 		if (!fp) {
 			fp = fopen("/sys/class/gpio/export", "wb");
-			fprintf(fp, "%d", pin);
-			fclose(fp);
+			if (fp) {
+				fprintf(fp, "%d", pin);
+				fclose(fp);
+			} else {
+				return;	// no export available, prevent deadlock
+
+			}
 			goto new_try;
 		}
 		fclose(fp);
 		fp = fopen(strdir, "wb");
-		fprintf(fp, "out");
-		fclose(fp);
+		if (fp) {
+			fprintf(fp, "out");
+			fclose(fp);
+		}
 		fp = fopen(str, "wb");
-		fprintf(fp, "%d", value);
-		fclose(fp);
+		if (fp) {
+			fprintf(fp, "%d", value);
+			fclose(fp);
+		}
 		break;
 	}
 }
@@ -1061,17 +1086,25 @@ int get_gpio(int pin)
 		fp = fopen(str, "rb");
 		if (!fp) {
 			fp = fopen("/sys/class/gpio/export", "wb");
-			fprintf(fp, "%d", pin);
-			fclose(fp);
+			if (fp) {
+				fprintf(fp, "%d", pin);
+				fclose(fp);
+			} else {
+				return 0;	// prevent deadlock
+			}
 			goto new_try;
 		}
 		fclose(fp);
 		fp = fopen(strdir, "wb");
-		fprintf(fp, "in");
-		fclose(fp);
+		if (fp) {
+			fprintf(fp, "in");
+			fclose(fp);
+		}
 		fp = fopen(str, "rb");
-		fscanf(fp, "%d", &val);
-		fclose(fp);
+		if (fp) {
+			fscanf(fp, "%d", &val);
+			fclose(fp);
+		}
 	}
 	return val;
 }
