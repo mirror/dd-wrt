@@ -131,7 +131,7 @@ share.point2point="Point to Point";
 share.nat="NAT";
 share.subnet="Subnet Mask";
 share.unmask="Unmask";
-share.deflt="Default";  //don't use share.default !!!
+share.deflt="Default";  //don't use share.default!!!
 share.all="All";
 share.auto="Auto";
 share.right="Right";
@@ -1561,7 +1561,7 @@ service.hmilkfish_right10="Put your Milkfish community forum password here. Regi
 service.hmilkfish_right12="Enable or disable basic SIP tracing on your router.";
 service.hmilkfish_right14="Local SIP subscribers are locally managed SIP accounts.";
 service.hmilkfish_right16="Local SIP aliases are SIP forwards similar to Email forwards. Can be used to forward alphanumeric-to-numeric phone user accounts or vice versa.";
-service.hmilkfish_right18="Enable or disables dynamic SIP (i.e. Homesip.net service). You will need to set your username and password.";
+service.hmilkfish_right18="Enable or disables dynamic SIP (e.g. Homesip.net service). You will need to set your username and password.";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1643,7 +1643,7 @@ hstatus_lan.right2="This is the router's MAC address, as seen on your local Ethe
 hstatus_lan.right4="This shows the router's IP address as it appears on your local Ethernet network.";
 hstatus_lan.right6="When the router is using a subnet mask, it is shown here.";
 hstatus_lan.right8="If you are using the router as a DHCP server, that will be displayed here.";
-hstatus_lan.right10="By clicking on any MAC address, you will obtain the organizationally unique identifier of the network interface (IEEE Standar\ds OUI database search).";
+hstatus_lan.right10="By clicking on any MAC address, you will obtain the organizationally unique identifier of the network interface (IEEE Standards OUI database search).";
 
 
 // ** Status_Bandwidth.asp **//
@@ -1894,8 +1894,8 @@ wol.pass="SecureOn Password";
 
 //help container
 var hwol=new Object();
-hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
-hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>.";
+hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (e.g. locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
+hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (e.g. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>.";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network.";
 
 
@@ -2167,8 +2167,8 @@ wl_adv.row2="Best Effort";
 wl_adv.row3="Video";
 wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA Parameters (Client to AP)";
-wl_adv.lng="Long"; 					//************* don't use .long ! *************
-wl_adv.shrt="Short"; 				//************* don't use .short ! **************
+wl_adv.lng="Long"; 					//************* don't use .long! *************
+wl_adv.shrt="Short"; 				//************* don't use .short! **************
 
 //help container
 var hwl_adv=new Object();
@@ -2297,7 +2297,7 @@ success.alert3="If you are connected via WLAN, please join the network and then 
 
 // ** Logout.asp  **//
 var logout=new Object();
-logout.message="You have successfully logged out.<br />Thank you for using DD-WRT !";
+logout.message="You have successfully logged out.<br />Thank you for using DD-WRT!";
 
 // ** Setup Assistant **//
 var sas=new Object();

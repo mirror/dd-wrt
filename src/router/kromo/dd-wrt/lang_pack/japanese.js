@@ -114,7 +114,7 @@ share.point2point="Point to Point";
 share.nat="NAT";
 share.subnet="サブネットマスク";
 share.unmask="表示する";
-share.deflt="デフォルト";  //don't use share.default !!!
+share.deflt="デフォルト";  //don't use share.default!!!
 share.all="全て";
 share.auto="自動";
 share.right="右";
@@ -1392,7 +1392,7 @@ service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Re
 service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
 service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
 service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="Enables/Disables Dynamic SIP (i.e. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right18="Enables/Disables Dynamic SIP (e.g. Homesip.net Service) - Username and Password need to be set";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1907,8 +1907,8 @@ wl_adv.row2="AC_BE(通常)";
 wl_adv.row3="AC_VI(優先)";
 wl_adv.row4="AC_VO(最優先)";
 wl_adv.table2="EDCA STA Parameters (クライアント → AP)";
-wl_adv.lng="Long"; 					//************* don't use .long ! *************
-wl_adv.shrt="Short"; 				//************* don't use .short ! **************
+wl_adv.lng="Long"; 					//************* don't use .long! *************
+wl_adv.shrt="Short"; 				//************* don't use .short! **************
 
 //help container
 

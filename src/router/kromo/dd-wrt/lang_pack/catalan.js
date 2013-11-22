@@ -129,7 +129,7 @@ share.point2point="Punt a Punt";
 share.nat="NAT";
 share.subnet="Màscara de Subxarxa";
 share.unmask="Desemmascarar";
-share.deflt="Defecte";  //don't use share.default !!!
+share.deflt="Defecte";  //don't use share.default!!!
 share.all="Tots";
 share.auto="Auto";
 share.right="Dreta";
@@ -1558,7 +1558,7 @@ hstatus_lan.right2="Aquesta es l'adreça MAC del encaminador, com es veu en la v
 hstatus_lan.right4="Aixó mostra l'adreça IP del encaminador com apareix en la vostra xarxa d'Ethernet local.";
 hstatus_lan.right6="Quan el encaminador utilitza una màscara de subxarxa, es mostra aquí.";
 hstatus_lan.right8="Si utilitzeu el encaminador com servidor DHCP, aixó es mostra aquí.";
-hstatus_lan.right10="Per fer clic en qualsevol adreça MAC, obtindràs l'identificador organitzacionalment únic de la interfície de xarxa (Cerca del base de dades OU d'estàndar\ds IEEE).";
+hstatus_lan.right10="Per fer clic en qualsevol adreça MAC, obtindràs l'identificador organitzacionalment únic de la interfície de xarxa (Cerca del base de dades OU d'estàndards IEEE).";
 
 
 // ** Status_Bandwidth.asp **//
@@ -2038,8 +2038,8 @@ wl_adv.row2="Millor Esforç";
 wl_adv.row3="Vídeo";
 wl_adv.row4="Veu";
 wl_adv.table2="Paràmetres STA EDCA (Client a AP)";
-wl_adv.lng="Llarg"; 				//************* don't use .long ! *************
-wl_adv.shrt="Curt"; 				//************* don't use .short ! **************
+wl_adv.lng="Llarg"; 				//************* don't use .long! *************
+wl_adv.shrt="Curt"; 				//************* don't use .short! **************
 
 //help container
 hwl_adv.right2="Podeu triar entre Automàtic o Clau Compartida. L'autenticació de les claus compartides és més segura, però tots els dispositus en la vostra xarxa també han de suportar l'autenticació de Clau Compartida.";
