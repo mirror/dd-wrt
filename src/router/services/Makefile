@@ -152,9 +152,9 @@ ifeq ($(CONFIG_UDHCPD),y)
 CFLAGS_EXTRA += -DHAVE_UDHCPD
 OBJS += udhcpd.o
 endif
-ifeq ($(CONFIG_BUSYBOX_UDHCPC),y)
+#ifeq ($(CONFIG_BUSYBOX_UDHCPC),y)
 CFLAGS_EXTRA += -DHAVE_BUSYBOX_UDHCPC
-endif
+#endif
 
 ifeq ($(CONFIG_WPA_SUPPLICANT),y)
 ifneq ($(CONFIG_MADWIFI),y)
