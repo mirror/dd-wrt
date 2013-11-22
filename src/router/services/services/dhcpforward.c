@@ -98,6 +98,11 @@ void start_dhcpfwd(void)
 			fprintf(fp, "if	ppp0	false	true	true\n");
 		}
 #endif
+#ifdef HAVE_PPPOEDUAL
+		else if (strcmp(wan_proto, "pppoe_dual") == 0) {
+			fprintf(fp, "if	ppp0	false	true	true\n");
+		}
+#endif
 #ifdef HAVE_IPETH
 		else if (strcmp(wan_proto, "iphone") == 0) {
 			fprintf(fp, "if	iph0	false	true	true\n");
