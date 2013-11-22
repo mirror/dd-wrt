@@ -117,7 +117,7 @@ static void makeipup(void)
 		fprintf(fp, "iptables -I INPUT -i $1 -j ACCEPT\n");
 //      if (nvram_match("pppoeserver_clip", "local")) //for radius ip's...to be worked on
 	if (nvram_match("wan_proto", "pppoe")	//only when there is an ppp0 interface
-	    || nvram_match("wan_proto", "pptp"))
+	    || nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "pppoe_dual"))
 		fprintf(fp, "iptables -I FORWARD -i $1 -j ACCEPT\n" "iptables -I FORWARD -o $1 -j ACCEPT\n");
 	fprintf(fp, "addpppoeconnected $PPPD_PID $1 $5 $PEERNAME\n"
 		//"echo \"$PPPD_PID\t$1\t$5\t`date +%%s`\t0\t$PEERNAME\" >> /tmp/pppoe_connected\n"
@@ -142,7 +142,7 @@ static void makeipup(void)
 		"RCVD=`grep $PEERNAME /tmp/pppoe_peer.db | awk '{print $3}'`\n"
 		"CONTIME=$(($CONTIME+$CONNECT_TIME))\n" "SENT=$(($SENT+$BYTES_SENT))\n" "RCVD=$(($RCVD+$BYTES_RCVD))\n" "addpppoetime $PEERNAME $CONTIME $SENT $RCVD\n");
 	if (nvram_match("wan_proto", "pppoe")
-	    || nvram_match("wan_proto", "pptp"))
+	    || nvram_match("wan_proto", "pptp") || nvram_match("wan_proto", "pppoe_dual"))
 		fprintf(fp, "iptables -D FORWARD -i $1 -j ACCEPT\n" "iptables -D FORWARD -o $1 -j ACCEPT\n");
 	if (nvram_match("filter", "on"))	// only needed if firewall is enabled
 		fprintf(fp, "iptables -D INPUT -i $1 -j ACCEPT\n");
@@ -382,7 +382,7 @@ void start_pppoeserver(void)
 			system("/usr/sbin/iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 
 		if (nvram_invmatch("wan_proto", "pppoe")	//if there is no ppp0, reduce rules
-		    || nvram_invmatch("wan_proto", "pptp")) {
+		    && nvram_invmatch("wan_proto", "pptp") && nvram_invmatch("wan_proto", "pppoe_dual")) {
 			sysprintf("/usr/sbin/iptables -I FORWARD -i ppp+ -j ACCEPT");
 			sysprintf("/usr/sbin/iptables -I FORWARD -o ppp+ -j ACCEPT");
 		}
@@ -423,7 +423,7 @@ void stop_pppoeserver(void)
 
 		//system("/usr/sbin/ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP");
 		if (nvram_invmatch("wan_proto", "pppoe")
-		    && nvram_invmatch("wan_proto", "pptp")) {
+		    && nvram_invmatch("wan_proto", "pptp") && nvram_invmatch("wan_proto", "pppoe_dual")) {
 			sysprintf("/usr/sbin/iptables -D FORWARD -i ppp+ -j ACCEPT");
 			sysprintf("/usr/sbin/iptables -D FORWARD -o ppp+ -j ACCEPT");
 		}
