@@ -4423,7 +4423,7 @@ void stop_wan(void)
 	stop_pppoe();
 #endif
 #ifdef HAVE_PPPOEDUAL
-	stop_pppoedual();
+	stop_pppoe_dual();
 #endif
 #ifdef HAVE_L2TP
 	stop_l2tp();
