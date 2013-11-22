@@ -251,7 +251,7 @@ errmsg.err10="La confirmation du mot de passe ne correspond pas. Merci de saisir
 errmsg.err11="Aucun espace n\'est permis dans le mot de passe";
 errmsg.err12="Vous devez saisir une commande à exécuter.";
 errmsg.err13="La mise à jour a échoué.";
-errmsg.err45="Non disponible en HTTPS ! Merci de vous connecter en mode HTTP.";
+errmsg.err45="Non disponible en HTTPS! Merci de vous connecter en mode HTTP.";
 errmsg.err46="Non disponible en HTTPS.";
 
 //common.js error messages
@@ -284,7 +284,7 @@ errmsg.err37="Vous devez saisir un port UDP.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
-errmsg.err38="Merci de saisir une clé partagée !";
+errmsg.err38="Merci de saisir une clé partagée!";
 errmsg.err39="Clé invalide, doit contenir entre 8 et 63 caractères ASCII ou 64 nombres hexadécimaux";
 errmsg.err40="Vous devez saisir une clé pour la Clé ";
 errmsg.err41="Longueur de clé invalide ";
@@ -328,7 +328,7 @@ errmsg.err103=" doit être inférieur à ";
 errmsg.err58="Cliquez pour effacer le bail.";
 
 //Status_Wireless.asp error messages
-errmsg.err59="Non disponible ! Merci d\'activer le réseau sans fil.";
+errmsg.err59="Non disponible! Merci d\'activer le réseau sans fil.";
 
 //Upgrade.asp error messages
 errmsg.err60="Veuillez sélectionner le fichier de mise à jour du routeur.";
@@ -447,7 +447,7 @@ config.h22="Restauration";
 config.legend2="Restaurer les Réglages";
 config.mess2="Veuillez sélectionner un fichier de sauvegarde à restaurer";
 config.mess3="A T T E N T I O N";
-config.mess4="Ne restaurer que des fichiers sauvegardés par cette version de micrologiciel.<br />Ne restaurer pas un fichier qui n'aurait pas été créé par cette interface !";
+config.mess4="Ne restaurer que des fichiers sauvegardés par cette version de micrologiciel.<br />Ne restaurer pas un fichier qui n'aurait pas été créé par cette interface!";
 
 //help container
 hconfig.right2="Vous devriez sauvegarder votre configuration courante au cas où vous auriez besoin de réinitialiser votre routeur à ses paramètres usine.<br /><br />Cliquez sur le bouton <em>\"" + sbutton.backup + "\"</em> pour enregistrer la configuration actuelle.";
@@ -508,7 +508,7 @@ factdef.titl="Paramètres usine";
 factdef.h2="Paramètres usine";
 factdef.legend="Réinitialiser les réglages du routeur";
 factdef.restore="Réinitialiser les paramètres par défaut";
-factdef.mess1="Attention ! Si vous cliquez sur OK, le routeur va réinitialiser les paramètres usine et tous les réglages seront effacés.";
+factdef.mess1="Attention! Si vous cliquez sur OK, le routeur va réinitialiser les paramètres usine et tous les réglages seront effacés.";
 
 //help container
 hfactdef.right1="Cliquez sur <em>Oui</em> pour rétablir les valeurs par défaut de tous les paramètres de configuration, puis cliquez sur <em>\"" + sbutton.save + "\"</em>. Tous les paramètres enregistrés précédemment seront perdus une fois les paramètres usine restaurés. Par défaut, cette fonctionnalité est désactivée.";
@@ -703,11 +703,11 @@ hotspot.wifidog_authsrvpath="Chemin du serveur d'authentification";
 //anchorfree.servicestatus="Etat du service";
 //anchorfree.agreement="Conditions générales de vente";
 //anchorfree.agree="Je suis d'accord et j'accepte";
-//anchorfree.validaddr="champ d'adresse non valide pour être place sur la carte des réseaux sans fil gratuits !";
-//anchorfree.validcity="champ du code poste ou ville invalide pour être place sur la carte des réseaux sans fil gratuits !";
+//anchorfree.validaddr="champ d'adresse non valide pour être place sur la carte des réseaux sans fil gratuits!";
+//anchorfree.validcity="champ du code poste ou ville invalide pour être place sur la carte des réseaux sans fil gratuits!";
 //anchorfree.validcat="Choisissez s'il vous plaît une catégorie publicitaire pour votre Hotspot";
 //anchorfree.validcountry="Choisissez s'il vous plaît un pays pour votre Hotspot";
-//anchorfree.validterms="Vous devez être d'accord avec les conditions générales !";
+//anchorfree.validterms="Vous devez être d'accord avec les conditions générales!";
 //
 //
 //hanchorfree.right1="S'inscrire au réseau publicitaire AnchorFree's Hotspot";
@@ -1386,7 +1386,7 @@ upgrad.resetOff="Pas de réinitialisation";
 upgrad.resetOn="Réinitialisation usine";
 upgrad.file="Sélectionner le fichier de mise à jour";
 upgrad.warning="A T T E N T I O N";
-upgrad.mess1="La mise à jour du Micrologiciel peut prendre quelques minutes.<br />N'éteignez/redémarrez surtout pas votre routeur pendant la mise à jour !";
+upgrad.mess1="La mise à jour du Micrologiciel peut prendre quelques minutes.<br />N'éteignez/redémarrez surtout pas votre routeur pendant la mise à jour!";
 
 //help container
 hupgrad.right2="Cliquez sur le bouton <em>Parcourir...</em> pour sélectionner le Micrologiciel à charger sur le routeur.<br /><br /> Cliquez sur <em>Mettre à jour</em> pour commencer la mise à jour. La mise à jour NE DOIT SURTOUT PAS être interrompue.";
@@ -1676,7 +1676,7 @@ success.alert2="Si l'adresse IP du routeur a changé, veuillez SVP renouveler les
 success.alert3="Si vous êtes connecté au routeur par une connexion sans fil, veuillez SVP vous connecter de nouveau avant de cliquer sur le bouton <em>Continuer</em>.";
 
 // ** Logout.asp  **//
-logout.message="Vous vous êtes déconnecté avec succès.<br />Merci d'avoir utilisé DD-WRT !";
+logout.message="Vous vous êtes déconnecté avec succès.<br />Merci d'avoir utilisé DD-WRT!";
 
 
 // ************		OLD PAGES 		*******************************//

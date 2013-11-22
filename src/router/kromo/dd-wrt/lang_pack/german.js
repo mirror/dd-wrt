@@ -131,7 +131,7 @@ share.point2point="Punkt zu Punkt";
 share.nat="NAT";
 share.subnet="Subnetz-Maske";
 share.unmask="Klartext";
-share.deflt="Std";  //don't use share.default !!!
+share.deflt="Std";  //don't use share.default!!!
 share.all="Alles";
 share.auto="Auto";
 share.right="Rechts";
@@ -1557,7 +1557,7 @@ service.hmilkfish_right10="Dies ist das Milkfish Community Forum Passwort";
 service.hmilkfish_right12="Schaltet die einfache SIP Verfolgung auf ihren Router an oder ab";
 service.hmilkfish_right14="Lokale SIP Teilnehmer sind lokal verwaltete SIP Accounts";
 service.hmilkfish_right16="Lokale SIP Aliase sind SIP Weiterleitungen, ähnlich zu Email Weiterleitungen. Man kann sie z.B. benutzen um alphanumerische Nutzer accounts and Numerische weiterzuleiten oder umgekehrt";
-service.hmilkfish_right18="Schaltet den dynamischen SIP (i.e. Homesip.net) Dienst an oder aus - Benutzername und Passwort müssen angegeben werden";
+service.hmilkfish_right18="Schaltet den dynamischen SIP (e.g. Homesip.net) Dienst an oder aus - Benutzername und Passwort müssen angegeben werden";
 service.hmilkfish_right20="Noch nicht implementiert. Bitte leer lassen.";
 service.hmilkfish_right22="Noch nicht implementiert. Bitte leer lassen.";
 service.hmilkfish_right24="Noch nicht implementiert. Bitte leer lassen.";
@@ -2166,8 +2166,8 @@ wl_adv.row2="Best Effort";
 wl_adv.row3="Video";
 wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA Parameter (Client nach AP)";
-wl_adv.lng="Lang"; 					//************* don't use .long ! *************
-wl_adv.shrt="Kurz"; 				//************* don't use .short ! **************
+wl_adv.lng="Lang"; 					//************* don't use .long! *************
+wl_adv.shrt="Kurz"; 				//************* don't use .short! **************
 
 //help container
 

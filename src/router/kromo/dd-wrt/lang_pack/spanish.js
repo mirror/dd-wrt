@@ -121,7 +121,7 @@ share.point2point="Punto a Punto";
 share.nat="NAT";
 share.subnet="Máscara de Subred";
 share.unmask="Mostrar";
-share.deflt="Por Defecto";  //don't use share.default !!!
+share.deflt="Por Defecto";  //don't use share.default!!!
 share.all="Todos";
 share.auto="Auto";
 share.right="Dcha";
@@ -1593,7 +1593,7 @@ upgrad.info1="Despues de Flashear, resetear a";
 upgrad.resetOff="No Resetear";
 upgrad.resetOn="Valores por Defecto";
 upgrad.file="Por Favor elige el archivo a actualizar";
-upgrad.warning="¡ P E L I G R O !";
+upgrad.warning="¡ P E L I G R O!";
 upgrad.mess1="La actualización del firmware podría tardar varios miutos.<br />¡No quites la corriente ni pulses el botón reset!";
 
 //help container
@@ -1891,8 +1891,8 @@ wl_adv.row2="Mejor Esfuerzo";
 wl_adv.row3="Video";
 wl_adv.row4="Voz";
 wl_adv.table2="Parámetros EDCA STA (Cliente a AP)";
-wl_adv.lng="Largo";				     //************* don't use .long ! *************
-wl_adv.shrt="Corto";			    //************* don't use .short ! **************
+wl_adv.lng="Largo";				     //************* don't use .long! *************
+wl_adv.shrt="Corto";			    //************* don't use .short! **************
     
 //help container
 hwl_adv.right2="Deberías escoger entre <em>Auto</em> ó <em>Clave Compartida</em>. La autenticación por clave compartida es más segura, pero todos los dispositivos en tu red deberán soportar <em>Autenticación por Clave Compartida</em>.";
@@ -2017,7 +2017,7 @@ success.alert2="Si has cambiado la IP de tu router, por favor asegúrate de que p
 success.alert3="Si estás conectado via WLAN, por favor, únete a la red y haz clic en <em>Continuar</em>.";
 
 // ** Logout.asp  **//
-logout.message="Ha cerrado sesión de forma exitosa.<br />¡ Gracias por usar DD-WRT !";
+logout.message="Ha cerrado sesión de forma exitosa.<br />¡ Gracias por usar DD-WRT!";
 
 // ** Setup Assistant **//
 sas.title="Asistente de configuraión";

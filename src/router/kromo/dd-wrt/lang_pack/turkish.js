@@ -121,7 +121,7 @@ share.point2point="Noktadan Noktaya";
 share.nat="NAT";
 share.subnet="Alt Ağ Maskesi";
 share.unmask="Maskeyi Kaldır";
-share.deflt="Varsayılan";  //don't use share.default !!!
+share.deflt="Varsayılan";  //don't use share.default!!!
 share.all="Tümü";
 share.auto="Otomatik";
 share.right="Sağ";
@@ -1957,8 +1957,8 @@ wl_adv.row2="En İyi Girişim";
 wl_adv.row3="Video";
 wl_adv.row4="Ses";
 wl_adv.table2="EDCA STA Parametreleri (İstemci'den AP'ye)";
-wl_adv.lng="Uzun"; 					//************* don't use .long ! *************
-wl_adv.shrt="Kısa"; 				//************* don't use .short ! **************
+wl_adv.lng="Uzun"; 					//************* don't use .long! *************
+wl_adv.shrt="Kısa"; 				//************* don't use .short! **************
 
 //help container
 hwl_adv.right2="Otomatik veya Paylaşılan Anahtar öğesinden seçebilirsiniz. Paylaşılan anahtar kimlik doğrulaması daha güvenlidir ancak ağınızdaki tüm cihazlar Paylaşılan Anahtar kimlik doğrulamasını da desteklemelidir.";
@@ -2079,7 +2079,7 @@ success.alert2="Yönlendirici&#39;s IP adresinizi değiştirdiyseniz, lütfen a�
 success.alert3="WLAN ile bağlanıyorsanız, lütfen ağa katılın ve ardından <em>Devam Et</em> öğesine tıklayın.";
 
 // ** Logout.asp  **//
-logout.message="Oturumu başarıyla kapattınız.<br />DD-WRT'yi kullandığınız için teşekkür ederiz !";
+logout.message="Oturumu başarıyla kapattınız.<br />DD-WRT'yi kullandığınız için teşekkür ederiz!";
 
 // ** Setup Assistant **//
 sas.title="Kurulum Asistanı";
