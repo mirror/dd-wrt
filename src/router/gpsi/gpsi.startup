@@ -41,7 +41,7 @@ if [ "$(nvram get gps_gpsd)" = "1" ]; then
 		GPSDPORT=2947
 		nvram set gps_gpsd_port=2947
 	fi
-	/usr/sbin/gpsd -R -S ${GPSDPORT} ${TTY}
+	/usr/sbin/gpsd -S ${GPSDPORT} ${TTY}
 fi
 
 if [ "$(nvram get gps)" = "1" ]; then
