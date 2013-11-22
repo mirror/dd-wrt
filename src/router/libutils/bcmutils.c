@@ -506,6 +506,9 @@ int dns_to_resolv(void)
 	 */
 	if (dns_list->num_servers == 0 && (nvram_match("wan_proto", "pppoe")
 					   || nvram_match("wan_proto", "pptp")
+#ifdef HAVE_PPPOEDUAL
+					   || nvram_match("wan_proto", "pppoe_dual")
+#endif
 #ifdef HAVE_PPPOATM
 					   || nvram_match("wan_proto", "pppoa")
 #endif
@@ -1058,6 +1061,8 @@ struct mtu_lists mtu_list[] = {
 	{
 	 "pppoe", "576", "1492"},
 #endif
+	{
+	 "pppoe_dual", "576", "1492"},
 	{
 	 "pppoa", "576", "10000"},
 	{

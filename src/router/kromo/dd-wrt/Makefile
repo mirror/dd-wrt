@@ -764,7 +764,7 @@ endif
 ifneq ($(CONFIG_L2TP),y)
 	rm -f $(INSTALLDIR)/www/index_l2tp.asp
 endif
-ifneq ($(CONFIG_PPPOEDUAL),y)
+ifneq ($(CONFIG_PPPOE),y)
 	rm -f $(INSTALLDIR)/www/index_pppoe_dual.asp
 endif
 ifneq ($(CONFIG_PPPOATM),y)

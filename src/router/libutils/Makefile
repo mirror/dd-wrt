@@ -738,6 +738,7 @@ ifeq ($(CONFIG_CA8),y)
 endif
 ifeq ($(CONFIG_PPPOE),y)
   CFLAGS += -DHAVE_PPPOE
+  CFLAGS += -DHAVE_PPPOEDUAL
 endif
 ifeq ($(CONFIG_PPPOATM),y)
   CFLAGS += -DHAVE_PPPOATM
