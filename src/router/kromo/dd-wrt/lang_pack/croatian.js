@@ -1382,7 +1382,7 @@ service.vpnd_dupcn="Dozvoli dvostruki CN";
 service.vpnd_proxy="DHCP-Proxy mode";
 service.vpnd_clcon="Client connect script";
 service.vpnd_ccddef="CCD-Dir DEFAULT file";
-service.vpnd_dhcpbl="Block DHCP accross the tunnel";
+service.vpnd_dhcpbl="Block DHCP across the tunnel";
 service.vpnd_static="Statični Ključ";
 service.vpn_redirgate="Redirect default Gateway";
 service.vpn_legend="OpenVPN Klijent";
@@ -1507,7 +1507,7 @@ service.hmilkfish_right10="Put your Milkfish community forum password here. Regi
 service.hmilkfish_right12="Enable or disable basic SIP tracing on your router.";
 service.hmilkfish_right14="Local SIP subscribers are locally managed SIP accounts.";
 service.hmilkfish_right16="Local SIP aliases are SIP forwards similar to Email forwards. Can be used to forward alphanumeric-to-numeric phone user accounts or vice versa.";
-service.hmilkfish_right18="Enable or disables dynamic SIP (e.g. Homesip.net service). You will need to set your username and password.";
+service.hmilkfish_right18="Enable or disable dynamic SIP (for example Homesip.net service). You will need to set your username and password.";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1598,7 +1598,7 @@ status_band.up="up";
 
 //help container
 
-hstatus_band.svg="Adobe's SVG plugin is required to display bandwidth graphs.";
+hstatus_band.svg="A browser that supports SVG is required to display bandwidth graphs.";
 hstatus_band.right1="Click the label to switch unit (bytes/s or bits/s).";
 hstatus_band.right2="Click the label to choose graph scale type.";
 
@@ -1738,8 +1738,8 @@ trforward.app="Primjena";
 htrforward.right2="Enter the application name of the trigger.";
 htrforward.right4="For each application, list the triggered port number range. Check with the Internet application documentation for the port number(s) needed.";
 htrforward.right6="For each application, list the forwarded port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right8="Enter the starting port number of the Triggered and Forwarded Range.";
-htrforward.right10="Enter the ending port number of the Triggered and Forwarded Range.";
+htrforward.right8="Enter the starting port numbers of the Triggered and Forwarded Ranges.";
+htrforward.right10="Enter the ending port numbers of the Triggered and Forwarded Ranges.";
 
 
 // ** Upgrade.asp **//
@@ -1829,8 +1829,8 @@ wol.pass="SecureOn Zaporka";
 
 //help container
 
-hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (e.g. locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
-hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (e.g. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>.";
+hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (for example locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
+hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (for example 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>.";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network.";
 
 
@@ -2249,7 +2249,7 @@ hsas.routerip="This is the IP-address assigned to the router in your internal ne
 hsas.h_dhcp="DHCP";
 hsas.dhcp="Computers and other networking devices can automatically obtain IP-adresses via DHCP in your local network without requiring manual configuration. In case there is a DHCP-server running in your local network, please disable this option to avoid conflicts.";
 hsas.h_wireless_physical="Wireless Radio Interface";
-hsas.wireless_physical="The interface settings allow you to define the radio behavior of the router. You can define the main operation mode (Access Point, Client or Repeater), change the wireless network name and advanced settings like the channel width. In case you did change the wireless channel width from the 20 MHz standard please take care that your wireless clients do support the channel width and are configured properly.";
+hsas.wireless_physical="The interface settings allow you to define the radio behavior of the router. You can define the main operation mode (Access Point, Client or Repeater), change the wireless network name and change advanced settings like the channel width. In case you did change the wireless channel width from the 20 MHz standard please take care that your wireless clients do support the channel width and are configured properly.";
 hsas.h_wireless_security="Wireless Security";
 hsas.wireless_security="To make it easier for you to configure client devices you can change the wireless network password. Disabling encryption or changing it to WEP is not recommended for security reasons.";
 hsas.h_routername="Router name";

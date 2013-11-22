@@ -1459,7 +1459,7 @@ status_band.up="up";
 
 //help container
 
-hstatus_band.svg="Adobe's SVG plugin is nodig om de bandbreedte grafieken te kunnen bekijken.";
+hstatus_band.svg="A browser that supports SVG is nodig om de bandbreedte grafieken te kunnen bekijken.";
 hstatus_band.right1="Klik op de text \"Weergave\" in de grafiek om te schakelen tussen (bytes/s of bits/s).";
 hstatus_band.right2="Klik op de text \"Autoscale\" in de grafiek om te schakelen tussen (volgen of up)."; 
 

@@ -1285,7 +1285,7 @@ service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Re
 service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
 service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
 service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="Enables/Disables Dynamic SIP (e.g. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right18="Enables/Disables Dynamic SIP (for example Homesip.net Service) - Username and Password need to be set";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1352,7 +1352,7 @@ status_band.up="up";
 
 //help container
 
-hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
+hstatus_band.svg="The A browser that supports SVG is required to display bandwidth graphs.";
 hstatus_band.right1="Click the label to switch unit (bytes/s or bits/s).";
 hstatus_band.right2="Click the label to choose graph scale type.";
 
@@ -1492,8 +1492,8 @@ trforward.app="Application";
 htrforward.right2="Enter the application name of the trigger.";
 htrforward.right4="For each application, list the triggered port number range. Check with the Internet application documentation for the port number(s) needed.";
 htrforward.right6="For each application, list the forwarded port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right8="Enter the starting port number of the Triggered and Forwarded Range.";
-htrforward.right10="Enter the ending port number of the Triggered and Forwarded Range.";
+htrforward.right8="Enter the starting port numbers of the Triggered and Forwarded Ranges.";
+htrforward.right10="Enter the ending port numbers of the Triggered and Forwarded Ranges.";
 
 
 // ** Upgrade.asp **//
@@ -1583,8 +1583,8 @@ wol.pass="SecureOn Password";
 
 //help container
 
-hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (e.g. locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
-hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (e.g. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>";
+hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (for example locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
+hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (for example 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network.";
 
 
@@ -1852,7 +1852,7 @@ success.success_noreboot="Settings are successful.";
 success.success_reboot=success.success_noreboot + "<br />Unit is rebooting now. Please wait a moment...";
 
 success.alert_reset="All configuration settings have been restored to their default values.<br /><br />";
-success.alert1="Please check the followings before connecting again:";
+success.alert1="Please check the following before connecting again:";
 success.alert2="If you have changed your router&#39;s IP address, please note that you must release/renew your client(s) address(s) on the network.";
 success.alert3="If you are connected via WLAN, please join the network and then click <em>Continue</em>.";
 
