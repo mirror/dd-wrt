@@ -1,5 +1,5 @@
 mtr-configure:
-	cd mtr && ./configure --disable-nls --without-glib --without-gtk --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF" --without-gtk ac_cv_lib_resolv_res_mkquery=yes --disable-ipv6 
+	cd mtr && ./configure --disable-nls --without-glib --without-gtk --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS)  -I$(TOP)/ncurses/include -L$(TOP)/ncurses/lib  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF  -lncurses" --without-gtk ac_cv_lib_resolv_res_mkquery=yes --disable-ipv6 
 
 
 
