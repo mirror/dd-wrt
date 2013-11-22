@@ -130,7 +130,7 @@ share.point2point="Ponto-a-Ponto";
 share.nat="NAT";
 share.subnet="Máscara de Sub-Rede";
 share.unmask="Desmascarar";
-share.deflt="Padrão";  //don't use share.default !!!
+share.deflt="Padrão";  //don't use share.default!!!
 share.all="Todas";
 share.auto="Automático";
 share.right="Direita";
@@ -503,7 +503,7 @@ config.mess1="Clique em \"" + sbutton.backup + "\" para baixar o arquivo de back
 config.h22="Restaurar Configurações";
 config.legend2="Restaurar Configurações";
 config.mess2="Por favor, selecione um arquivo para restaurar.";
-config.mess3="A T E N Ç Ã O !!";
+config.mess3="A T E N Ç Ã O!!";
 config.mess4="Faça upload de backups feitos usando este firmware e de um roteador de mesmo modelo.<br />Não utilize nenhum arquivo que não foi criado através desta interface!";
 
 //help container
@@ -1729,7 +1729,7 @@ upgrad.info1="Após atualizar, resetar para";
 upgrad.resetOff="Não resetar";
 upgrad.resetOn="Configurações padrão";
 upgrad.file="Por favor, selecione um arquivo para atualizar";
-upgrad.warning="A T E N Ç Ã O !!";
+upgrad.warning="A T E N Ç Ã O!!";
 upgrad.mess1="A atualização do firmware pode levar alguns minutos.<br />Não desligue o roteador nem pressione o botão de reset!";
 
 //help container
@@ -2052,8 +2052,8 @@ wl_adv.row2="Melhor Esforço";
 wl_adv.row3="Vídeo";
 wl_adv.row4="Voz";
 wl_adv.table2="Parâmetros EDCA Cliente (Cliente para AP)";
-wl_adv.lng="Longo"; 					//************* don't use .long ! *************
-wl_adv.shrt="Curto"; 					//************* don't use .short ! **************
+wl_adv.lng="Longo"; 					//************* don't use .long! *************
+wl_adv.shrt="Curto"; 					//************* don't use .short! **************
 
 //help container
 hwl_adv.right2="Você pode escolher entre Automático ou Chave Compartilhada. A autenticação de Chave Compartilhada é mais segura, mas todos os dispositivos da rede devem suportar esse modo de autenticação.";
@@ -2176,7 +2176,7 @@ success.alert2="Se você alterou o endereço IP do roteador, por favor, note que
 success.alert3="Se você está conectado via WLAN, por favor, associe-se a rede e clique em <em>Continuar</em>.";
 
 // ** Logout.asp  **//
-logout.message="Você foi deslogado com sucesso.<br />Obrigado por usar DD-WRT !";
+logout.message="Você foi deslogado com sucesso.<br />Obrigado por usar DD-WRT!";
 
 // ** Setup Assistant **//
 sas.title="Assistente de Configuração";

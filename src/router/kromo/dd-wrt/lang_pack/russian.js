@@ -108,7 +108,7 @@ share.point2point="Точка-точка";
 share.nat="NAT";
 share.subnet="Маска подсети";
 share.unmask="Не скрывать";
-share.deflt="По умолч.";  //don't use share.default !!!
+share.deflt="По умолч.";  //don't use share.default!!!
 share.all="Все";
 share.auto="Авто";
 share.right="Правая";
@@ -1660,8 +1660,8 @@ wl_adv.row2="Best Effort";
 wl_adv.row3="Video";
 wl_adv.row4="Voice";
 wl_adv.table2="Параметры EDCA STA (от клиента к точке доступа)";
-wl_adv.lng="Long"; 					//************* don't use .long ! *************
-wl_adv.shrt="Short"; 				//************* don't use .short ! **************
+wl_adv.lng="Long"; 					//************* don't use .long! *************
+wl_adv.shrt="Short"; 				//************* don't use .short! **************
 
 //help container
 hwl_adv.right2="Вы можете задать режимы Авто и Общий ключ. Аутентификация на основе общего ключа более надежна, но все устройства в вашей сети должны поддерживать данный режим аутентификации.";
@@ -1759,7 +1759,7 @@ success.alert2="Если вы изменили IP-адрес вашего мар
 success.alert3="Если вы подключаетесь по беспроводной сети, присоединитесь к сети и нажмите <em>Продолжить</em>.";
 
 // ** Logout.asp  **//
-logout.message="Вы отключились от системы.<br />Благодарим вас за использование DD-WRT !";
+logout.message="Вы отключились от системы.<br />Благодарим вас за использование DD-WRT!";
 
 
 // ************		OLD PAGES 		*******************************//

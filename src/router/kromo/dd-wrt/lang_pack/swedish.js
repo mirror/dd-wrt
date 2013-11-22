@@ -114,7 +114,7 @@ share.point2point="Punkt till Punkt";
 share.nat="NAT";
 share.subnet="Subnät Mask";
 share.unmask="Avmaskera";
-share.deflt="Standard";  //don't use share.default !!!
+share.deflt="Standard";  //don't use share.default!!!
 share.all="Alla";
 share.auto="Auto";
 share.right="Höger";
@@ -1831,8 +1831,8 @@ wl_adv.row2="Bästa Kostnad";
 wl_adv.row3="Video";
 wl_adv.row4="Röst";
 wl_adv.table2="EDCA STA Parametrar (Klient till AP)";
-wl_adv.lng="Lång"; 					//************* don't use .long ! *************
-wl_adv.shrt="Kort"; 				//************* don't use .short ! **************
+wl_adv.lng="Lång"; 					//************* don't use .long! *************
+wl_adv.shrt="Kort"; 				//************* don't use .short! **************
 
 //help container
 hwl_adv.right2="Du kan välja mellan Auto eller delad nyckel. Delad nyckel är säkrare, Men då måste alla apparater stödja detta.";
@@ -1944,7 +1944,7 @@ success.alert2="Om du ändrat din router&#39;s IP Adress, så måste du förnya klie
 success.alert3="Om du är kopplad via WLAN, Anslut nätet först sen klicka <em>Fortsätt</em>.";
 
 // ** Logout.asp  **//
-logout.message="Utloggning Lyckades.<br />Tack för att du använder DD-WRT !";
+logout.message="Utloggning Lyckades.<br />Tack för att du använder DD-WRT!";
 
 // ** Setup Assistant **//
 hsas.wan="WAN-porten ansluter routern till internet eller andra nätverk. Om ditt nätverk redan är anslutet till internet samt endast använder routern som en AP ställ in WAN som \"disabled\".";

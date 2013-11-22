@@ -89,7 +89,7 @@ share.point2point="Pont a Ponthoz (P2P)";
 share.nat="NAT";
 share.subnet="Alhálózati maszk";
 share.unmask="Unmask";
-share.deflt="Alapértelmezett";  //don't use share.default !!!
+share.deflt="Alapértelmezett";  //don't use share.default!!!
 share.all="Minden";
 share.auto="Automatikus";
 share.right="Jobb";
@@ -1518,8 +1518,8 @@ wl_adv.row2="Best Effort";
 wl_adv.row3="Videó";
 wl_adv.row4="Hang";
 wl_adv.table2="EDCA STA Parameter (Client nach AP)";
-wl_adv.lng="Hosszú"; 					//************* don't use .long ! *************
-wl_adv.shrt="Rövid"; 				//************* don't use .short ! **************
+wl_adv.lng="Hosszú"; 					//************* don't use .long! *************
+wl_adv.shrt="Rövid"; 				//************* don't use .short! **************
 
 //help container
 
