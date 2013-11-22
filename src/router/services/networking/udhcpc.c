@@ -197,6 +197,9 @@ static int bound(void)
 		else if (nvram_match("wan_proto", "l2tp")
 			 && nvram_match("l2tp_use_dhcp", "1"))
 			strcpy(temp_wan_ipaddr, value);
+		else if (nvram_match("wan_proto", "pppoe_dual")
+			 && nvram_match("pptp_use_dhcp", "1"))
+			strcpy(temp_wan_ipaddr, value);
 		else {
 			if (nvram_invmatch("wan_ipaddr", value))
 				changed = 1;
@@ -210,6 +213,9 @@ static int bound(void)
 			strcpy(temp_wan_netmask, value);
 		else if (nvram_match("wan_proto", "l2tp")
 			 && nvram_match("l2tp_use_dhcp", "1"))
+			strcpy(temp_wan_netmask, value);
+		else if (nvram_match("wan_proto", "pppoe_dual")
+			 && nvram_match("pptp_use_dhcp", "1"))
 			strcpy(temp_wan_netmask, value);
 		else {
 			if (nvram_invmatch("wan_netmask", value))
@@ -257,6 +263,9 @@ static int bound(void)
 		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask", temp_wan_netmask, "up");
 	else if (nvram_match("wan_proto", "l2tp")
 		 && nvram_match("l2tp_use_dhcp", "1"))
+		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask", temp_wan_netmask, "up");
+	else if (nvram_match("wan_proto", "pppoe_dual")
+		 && nvram_match("pptp_use_dhcp", "1"))
 		eval("ifconfig", wan_ifname, temp_wan_ipaddr, "netmask", temp_wan_netmask, "up");
 	else
 		eval("ifconfig", wan_ifname, nvram_safe_get("wan_ipaddr"), "netmask", nvram_safe_get("wan_netmask"), "up");
@@ -362,6 +371,26 @@ static int bound(void)
 		
 		start_firewall();
 		start_l2tp_boot();
+	}
+#endif
+#ifdef HAVE_PPPOEDUAL
+	else if (nvram_match("wan_proto", "pppoe_dual") && nvram_match("pptp_use_dhcp", "1")) {
+		struct dns_lists *dns_list = NULL;
+		int i;
+
+		dns_to_resolv();
+	
+	/*	
+		dns_list = get_dns_list();
+		if (dns_list) {
+			for (i=0; i<dns_list->num_servers; i++)
+				route_add(wan_ifname, 0, dns_list->dns_server[i], nvram_safe_get("wan_gateway"), "255.255.255.255");
+			free(dns_list);
+		}
+	*/
+
+		start_firewall();
+		start_pppoe_dual(BOOT);
 	}
 #endif
 	else {

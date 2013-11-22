@@ -61,6 +61,10 @@ extern void stop_radvd(void);
 extern void start_pptpd(void);
 extern void stop_pptpd(void);
 #endif
+#ifdef HAVE_PPPOEDUAL
+extern void start_pppoe_dual(int status);
+extern void stop_pppoe_dual();
+#endif
 #ifdef HAVE_MMC
 extern void start_mmc(void);
 #endif
