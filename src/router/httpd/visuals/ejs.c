@@ -2201,6 +2201,9 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifdef HAVE_PPPOATM
 		   || !strcmp(wan_proto, "pppoa")
 #endif
+#ifdef HAVE_PPPOEDUAL
+		   || !strcmp(wan_proto, "pppoe_dual")
+#endif
 #ifdef HAVE_3G
 		   || !strcmp(wan_proto, "3g")
 #endif
