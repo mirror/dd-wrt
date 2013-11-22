@@ -123,7 +123,7 @@ share.point2point="Point to Point";
 share.nat="NAT";
 share.subnet="Maska Podsieci";
 share.unmask="Odmaskuj";
-share.deflt="Domyślny";  //don't use share.default !!!
+share.deflt="Domyślny";  //don't use share.default!!!
 share.all="Wszystko";
 share.auto="Auto";
 share.right="Prawo";
@@ -1474,7 +1474,7 @@ service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Re
 service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
 service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
 service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="Enables/Disables Dynamic SIP (i.e. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right18="Enables/Disables Dynamic SIP (e.g. Homesip.net Service) - Username and Password need to be set";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1796,8 +1796,8 @@ wol.pass="SecureOn Password";
 
 //help container
 
-hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
-hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>";
+hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (e.g. locally connected to your router). You can manually wake up hosts by clicking the <em>"+sbutton.wol+"</em> or you can program an automatic schedule wake up thanks to the "+wol.srv+".";
+hwol.right4="MAC Address(es) are entered in the format xx:xx:xx:xx:xx:xx (e.g. 01:23:45:67:89:AB) and must be separated by a <em>SPACE</em>";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network.";
 
 
@@ -2067,8 +2067,8 @@ wl_adv.row2="Best Effort";
 wl_adv.row3="Video";
 wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA Parameters (Client to AP)";
-wl_adv.lng="Long"; 					//************* don't use .long ! *************
-wl_adv.shrt="Short"; 				//************* don't use .short ! **************
+wl_adv.lng="Long"; 					//************* don't use .long! *************
+wl_adv.shrt="Short"; 				//************* don't use .short! **************
 
 //help container
 
@@ -2195,7 +2195,7 @@ success.alert3="If you are connected via WLAN, please join the network and then 
 
 // ** Logout.asp  **//
 
-logout.message="You have successfully logged out.<br />Thank you for using DD-WRT !";
+logout.message="You have successfully logged out.<br />Thank you for using DD-WRT!";
 
 // ** Setup Assistant **//
 

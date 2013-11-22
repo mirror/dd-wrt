@@ -1240,7 +1240,7 @@ service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Re
 service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
 service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
 service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="Enables/Disables Dynamic SIP (i.e. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right18="Enables/Disables Dynamic SIP (e.g. Homesip.net Service) - Username and Password need to be set";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1650,7 +1650,7 @@ wl_adv.row3="Video";
 wl_adv.row4="Voce";
 wl_adv.table2="Parametri EDCA STA (Client verso AP)";
 wl_adv.lng="Lungo"; 
-wl_adv.shrt="Short"; 				//************* don't use .short ! **************
+wl_adv.shrt="Short"; 				//************* don't use .short! **************
 
 //help container
 hwl_adv.right2="Puoi scegliere tra Auto o Chiave Condivisa. L'autenticazione via chiave condivisa è più sicura, ma tutti i dispositivi sulla tua rete devono supportare l'autenticazione a Chiave Condivisa.";
@@ -1743,7 +1743,7 @@ success.alert2="Se hai modificato l'indirizzo IP del router, nota che devi rinno
 success.alert3="Se sei connesso via WLAN, connettiti alla rete e poi clicca su <em>Continua</em>.";
 
 // ** Logout.asp  **//
-logout.message="You have successfully logged out.<br />Thank you for using DD-WRT !";
+logout.message="You have successfully logged out.<br />Thank you for using DD-WRT!";
 
 
 // ************		OLD PAGES 		*******************************//

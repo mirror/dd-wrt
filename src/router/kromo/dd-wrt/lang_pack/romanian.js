@@ -121,7 +121,7 @@ share.point2point="Punct la Punct";
 share.nat="NAT";
 share.subnet="Mască subrețea";
 share.unmask="Afișare";
-share.deflt="Implicit";  //don't use share.default !!!
+share.deflt="Implicit";  //don't use share.default!!!
 share.all="Tot";
 share.auto="Automat";
 share.right="Drept";
@@ -1931,8 +1931,8 @@ wl_adv.row2="Cât se poate de bine";
 wl_adv.row3="Video";
 wl_adv.row4="Voce";
 wl_adv.table2="Parametrii STA EDCA (Client către AP)";
-wl_adv.lng="Lung"; 					//************* don't use .long ! *************
-wl_adv.shrt="Scurt"; 				//************* don't use .short ! **************
+wl_adv.lng="Lung"; 					//************* don't use .long! *************
+wl_adv.shrt="Scurt"; 				//************* don't use .short! **************
 
 //help container
 hwl_adv.right2="Puteți alege între Automat și Cheie partajată. Autentificarea cu cheie partajată este mai sigură, dar toate dispozitivele din rețeaua dumneavoastră trebuie, de asemenea, să fie compatibile cu autentificarea cu Cheie partajată.";
@@ -2055,7 +2055,7 @@ success.alert2="Dacă ați schimbat adresa IP a ruterului, rețineți că trebui
 success.alert3="Dacă sunteți conectat prin WLAN, vă rog să intrați în rețea și apoi să dați clic pe <em>Continuă</em>.";
 
 // ** Logout.asp  **//
-logout.message="Ați ieșit cu succes.<br />Mulțumim că ați folosit DD-WRT !";
+logout.message="Ați ieșit cu succes.<br />Mulțumim că ați folosit DD-WRT!";
 
 // ** Setup Assistant **//
 sas.title="Asistent de instalare";

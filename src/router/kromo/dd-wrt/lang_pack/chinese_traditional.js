@@ -108,7 +108,7 @@ share.point2point="點對點";
 share.nat="網路位址轉換（NAT）";
 share.subnet="子網路遮罩";
 share.unmask="非遮罩";
-share.deflt="預設";  //don't use share.default !!!
+share.deflt="預設";  //don't use share.default!!!
 share.all="全部";
 share.auto="自動";
 share.right="右";
@@ -1287,7 +1287,7 @@ service.hmilkfish_right10="這裡是 Milkfish 論壇 - 註冊後取得的密碼 
 service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
 service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
 service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="開啟/關閉 Dynamic SIP (i.e. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right18="開啟/關閉 Dynamic SIP (e.g. Homesip.net Service) - Username and Password need to be set";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1755,8 +1755,8 @@ wl_adv.row2="Best Effort";
 wl_adv.row3="視訊";
 wl_adv.row4="語音";
 wl_adv.table2="EDCA STA 參數（用戶端到AP）";
-wl_adv.lng="長"; 				//************* don't use .long ! *************
-wl_adv.shrt="短"; 				//************* don't use .short ! **************
+wl_adv.lng="長"; 				//************* don't use .long! *************
+wl_adv.shrt="短"; 				//************* don't use .short! **************
 
 //help container
 //
@@ -1865,7 +1865,7 @@ success.alert3="如果您是通過WLAN連接的,請加入網路並且按 <em>繼
 
 // ** Logout.asp  **//
 //
-logout.message="您已成功登出.<br />感謝您使用 DD-WRT !";
+logout.message="您已成功登出.<br />感謝您使用 DD-WRT!";
 
 
 // **********		OLD PAGES 		*******************************//

@@ -129,7 +129,7 @@ share.point2point="Point to Point";
 share.nat="NAT";
 share.subnet="Подмрежна маска";
 share.unmask="Прикажи";
-share.deflt="Подразумевано";  //don't use share.default !!!
+share.deflt="Подразумевано";  //don't use share.default!!!
 share.all="Све";
 share.auto="Ауто";
 share.right="Десно";
@@ -2011,8 +2011,8 @@ wl_adv.row2="Best Effort";
 wl_adv.row3="Video";
 wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA Parameters (Client to AP)";
-wl_adv.lng="Long"; 					//************* don't use .long ! *************
-wl_adv.shrt="Short"; 				//************* don't use .short ! **************
+wl_adv.lng="Long"; 					//************* don't use .long! *************
+wl_adv.shrt="Short"; 				//************* don't use .short! **************
 
 //help container
 hwl_adv.right2="Можете изабрати Ауто или Дељени Кључ. Аутентификација преко Дељеног Кључа је сигурнија, али онда сви уређаји у вашој мрежи морају подржавати аутетификацију преко Дељеног Кључа.";

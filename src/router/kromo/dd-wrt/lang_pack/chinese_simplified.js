@@ -107,7 +107,7 @@ share.point2point="点对点";
 share.nat="网络地址转换（NAT）";
 share.subnet="子网掩码";
 share.unmask="显示密码";
-share.deflt="预设";  //don't use share.default !!!
+share.deflt="预设";  //don't use share.default!!!
 share.all="全部";
 share.auto="自动";
 share.right="右";
@@ -1456,8 +1456,8 @@ wl_adv.row2="尽力达到";
 wl_adv.row3="视频";
 wl_adv.row4="语音";
 wl_adv.table2="EDCA STA参数（客户端到AP）";
-wl_adv.lng="长"; 					//************* don't use .long ! *************
-wl_adv.shrt="短"; 				//************* don't use .short ! **************
+wl_adv.lng="长"; 					//************* don't use .long! *************
+wl_adv.shrt="短"; 				//************* don't use .short! **************
 
 hwl_adv.right2="您应该在自动或共享秘钥中选择一种。共享秘钥授权更加安全，但您网络中的所有设备都必须支持共享秘钥授权。";
 

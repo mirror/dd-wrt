@@ -131,7 +131,7 @@ share.point2point="Povezava med točkama";
 share.nat="NAT";
 share.subnet="Podmrežna maska";
 share.unmask="Odkrij";
-share.deflt="Privzeto";  //don't use share.default !!!
+share.deflt="Privzeto";  //don't use share.default!!!
 share.all="Vse";
 share.auto="Samodejno";
 share.right="Dasna";
@@ -1533,7 +1533,7 @@ service.hmilkfish_right10="Put your Milkfish community forum password here. Regi
 service.hmilkfish_right12="Enable or disable basic SIP tracing on your router.";
 service.hmilkfish_right14="Local SIP subscribers are locally managed SIP accounts.";
 service.hmilkfish_right16="Local SIP aliases are SIP forwards similar to Email forwards. Can be used to forward alphanumeric-to-numeric phone user accounts or vice versa.";
-service.hmilkfish_right18="Enable or disables dynamic SIP (i.e. Homesip.net service). You will need to set your username and password.";
+service.hmilkfish_right18="Enable or disables dynamic SIP (e.g. Homesip.net service). You will need to set your username and password.";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -2267,7 +2267,7 @@ success.alert3="Če ste povezani brezžično, se morate ponovno povezati v omre�
 
 // ** Logout.asp  **//
 
-logout.message="Uspešno ste se odjavili.<br />Hvala, da uporabljate DD-WRT !";
+logout.message="Uspešno ste se odjavili.<br />Hvala, da uporabljate DD-WRT!";
 
 // ** Setup Assistant **//
 

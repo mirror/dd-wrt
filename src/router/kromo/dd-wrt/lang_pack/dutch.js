@@ -113,7 +113,7 @@ share.point2point="Punt naar Punt";
 share.nat="NAT";
 share.subnet="Subnetmasker";
 share.unmask="Zichtbaar Maken";
-share.deflt="Standaard";  //don't use share.default !!!
+share.deflt="Standaard";  //don't use share.default!!!
 share.all="Alles";
 share.auto="Automatisch";
 share.right="Rechts";
@@ -478,7 +478,7 @@ config.mess1="Klik op de \"" + sbutton.backup + "\" knop om de huidige configura
 config.h22="Herstel Configuratie";
 config.legend2="Herstel Instellingen";
 config.mess2="Selecteer het herstel bestand";
-config.mess3="O P G E L E T !";
+config.mess3="O P G E L E T!";
 config.mess4="Alleen bestanden uploaden die met deze firmware of het zelfde model router zijn gemaakt.<br />Upload geen bestanden die niet gecreëerd zijn door deze interface!";
 
 //help container
@@ -1616,7 +1616,7 @@ upgrad.info1="Na het flashen:";
 upgrad.resetOff="Geen Reset Uitvoeren";
 upgrad.resetOn="Naar de Standaard Instellingen";
 upgrad.file="Selecteer het bestand voor de upgrade";
-upgrad.warning="O P G E L E T !";
+upgrad.warning="O P G E L E T!";
 upgrad.mess1="De Firmware Upgrade kan enkele minuten duren.<br />Zet uw router NIET uit, reset uw router NIET, gedurende dit proces!";
 
 //help container
@@ -1913,8 +1913,8 @@ wl_adv.row2="Naar Beste Kunnen";
 wl_adv.row3="Video";
 wl_adv.row4="Spraak";
 wl_adv.table2="EDCA STA Parameters (Cliënt naar AP)";
-wl_adv.lng="Lang"; 					//************* don't use .long ! *************
-wl_adv.shrt="Kort"; 				//************* don't use .short ! **************
+wl_adv.lng="Lang"; 					//************* don't use .long! *************
+wl_adv.shrt="Kort"; 				//************* don't use .short! **************
 
 //help container
 
@@ -2040,7 +2040,7 @@ success.alert3="Indien u verbonden bent via WLAN, sluit u dan aan bij het netwer
 
 // ******************************************* Logout.asp  *******************************************//
 
-logout.message="U bent met succes uitgelogd.<br />Bedankt voor het gebruik van DD-WRT !";
+logout.message="U bent met succes uitgelogd.<br />Bedankt voor het gebruik van DD-WRT!";
 
 
 // *****************************************************		OLD PAGES 		************************************************************************//
