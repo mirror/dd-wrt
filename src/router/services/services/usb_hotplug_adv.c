@@ -164,8 +164,9 @@ static bool usb_stop_services()
 {
 	eval("stopservice", "cron");
 	eval("stopservice", "samba3");
-	eval("stopservice", "minidlna");
+	eval("stopservice", "dlna");
 	eval("stopservice", "ftpsrv");
+	eval("stopservice", "lighttpd");
 	return 0;
 }
 
@@ -174,8 +175,9 @@ static bool usb_start_services()
 {
 	eval("startservice", "cron");
 	eval("startservice", "samba3");
-	eval("startservice", "minidlna");
+	eval("startservice", "dlna");
 	eval("startservice", "ftpsrv");
+	eval("startservice", "lighttpd");
 	return 0;
 }
 
