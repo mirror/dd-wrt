@@ -101,13 +101,21 @@ int ipup_main(int argc, char **argv)
 
 	nvram_set("pppd_pppifname", wan_ifname);
 
-	if (nvram_match("wan_proto", "pppoe"))
+	if (nvram_match("wan_proto", "pppoe")
+#ifdef HAVE_PPPOEDUAL
+	    || nvram_match("wan_proto", "pppoe_dual")
+#endif
+	   )
 		nvram_set("pppoe_ifname", wan_ifname);
 
 	if (getenv("IPLOCAL")) {
 		value = getenvs("IPLOCAL");
 		ifconfig(wan_ifname, IFUP, value, "255.255.255.255");
-		if (nvram_match("wan_proto", "pppoe")) {
+		if (nvram_match("wan_proto", "pppoe") 
+#ifdef HAVE_PPPOEDUAL
+		    || nvram_match("wan_proto", "pppoe_dual")
+#endif
+		    ) {
 			nvram_set("wan_ipaddr_buf", nvram_safe_get("wan_ipaddr"));	// Store 
 			nvram_set("wan_ipaddr", value);
 			nvram_set("wan_netmask", "255.255.255.255");

@@ -65,6 +65,17 @@ function valid_value(F) {
 		}
 	}
 	
+	if (F.now_proto.value == "pppoe_dual") {
+		pptp_dhcp = "";
+			
+		if (!F.pptp_use_dhcp || F.pptp_use_dhcp.value == "0") {
+			if(pptp_dhcp != "skip" && F.wan_ipaddr_static && !valid_ip(F,"F.wan_ipaddr_static","IP",ZERO_NO|MASK_NO))
+				return false;
+	
+			if(pptp_dhcp != "skip" && F.wan_netmask_static && !valid_mask(F,"F.wan_netmask_static",ZERO_NO|BCST_NO))					return false;
+		}		
+	}
+	
 	if(F.now_proto.value == "pptp" || F.now_proto.value == "l2tp") {
 		if(F.ppp_username.value == "") {
 			alert(errmsg.err0);
