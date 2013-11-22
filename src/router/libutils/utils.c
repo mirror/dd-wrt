@@ -3249,6 +3249,9 @@ int check_wan_link(int num)
 #ifdef HAVE_PPPOE
 	     || nvram_match("wan_proto", "pppoe")
 #endif
+#ifdef HAVE_PPPOEDUAL
+	     || nvram_match("wan_proto", "pppoe_dual")
+#endif
 #ifdef HAVE_PPPOA
 	     || nvram_match("wan_proto", "pppoa")
 #endif
@@ -3399,6 +3402,9 @@ char *get_wan_ipaddr(void)
 	} else if (!strcmp(wan_proto, "pppoe")
 #ifdef HAVE_PPPOATM
 		   || !strcmp(wan_proto, "pppoa")
+#endif
+#ifdef HAVE_PPPOEDUAL
+		   || !strcmp(wan_proto, "pppoe_dual")
 #endif
 #ifdef HAVE_3G
 		   || !strcmp(wan_proto, "3g")
@@ -3851,6 +3857,9 @@ char *get_wan_face(void)
 #endif
 #ifdef HAVE_PPPOATM
 	    || nvram_match("wan_proto", "pppoa")
+#endif
+#ifdef HAVE_PPPOEDUAL
+	    || nvram_match("wan_proto", "pppoe_dual")
 #endif
 	    || nvram_match("wan_proto", "pppoe")) {
 		if (nvram_match("pppd_pppifname", ""))
