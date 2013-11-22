@@ -3041,7 +3041,7 @@ void start_wan(int status)
 		ether_atoe(nvram_safe_get("def_hwaddr"), ifr.ifr_hwaddr.sa_data);
 	} else {
 
-		if (wlifname && (!strcmp(wan_ifname, wlifname) || nvram_match("wan_proto", "l2tp") || nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pptp")))	// sta mode
+		if (wlifname && (!strcmp(wan_ifname, wlifname) || nvram_match("wan_proto", "l2tp") || nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pppoe_dual") || nvram_match("wan_proto", "pptp")))	// sta mode
 		{
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 			int instance = get_wl_instance(wlifname);
@@ -4752,7 +4752,7 @@ void start_hotplug_net(void)
 
 int init_mtu(char *wan_proto)
 {
-	if (strcmp(wan_proto, "pppoe") == 0) {	// 576 < mtu < 1454(linksys japan) |
+	if (strcmp(wan_proto, "pppoe") == 0 || strcmp(wan_proto, "pppoe_dual") == 0) {	// 576 < mtu < 1454(linksys japan) |
 		// 1492(other)
 		if (nvram_match("mtu_enable", "0")) {	// Auto
 			nvram_set("mtu_enable", "1");
