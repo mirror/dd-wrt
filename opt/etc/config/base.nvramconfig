@@ -5,6 +5,7 @@
  "wan_hostname" "WAN Host Name"  "NAME"  "255"  "TRUE" "3"
  "wan_domain"  "WAN Domain Name"  "NAME"  "255"  "TRUE" "3"
  "wan_ipaddr"  "WAN IP Address"  "WANIPADDR"  "FALSE" "3"
+ "wan_ipaddr_static"  "WAN IP Address"  "WANIPADDR"  "FALSE" "3"
  "wan_vlan" "Advanced VLAN Tagging" "CHOICE" "2" "0" "1" "FALSE" "0"
  "wan_vdsl" "DTAG VDSL VLAN Tagging" "CHOICE" "2" "0" "1" "FALSE" "0"
  "dtag_vlan8" "DTAG VDSL VLAN 8 support" "CHOICE" "2" "0" "1" "FALSE" "0"

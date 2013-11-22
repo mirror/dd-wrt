@@ -53,6 +53,11 @@ void start_igmp_proxy(void)
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
 		fprintf(fp, "phyint %s disabled\n", get_wan_face());
 #endif
+#ifdef HAVE_PPPOEDUAL
+	} else if (nvram_match("wan_proto", "pppoe_dual") && nvram_get("tvnicfrom")) {
+		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", nvram_safe_get("tvnicfrom"));
+		fprintf(fp, "phyint %s disabled\n", get_wan_face());
+#endif
 	} else {
 		fprintf(fp, "quickleave\nphyint %s upstream  ratelimit 0  threshold 1\n", get_wan_face());
 	}

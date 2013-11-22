@@ -663,6 +663,7 @@ void validate_hwaddrs(webs_t wp, char *value, struct variable *v)
 void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 {
 	char wan_ipaddr[20], wan_netmask[20], wan_gateway[20], pptp_wan_gateway[20], l2tp_wan_gateway[20];
+	char wan_ipaddr_static[20], wan_netmask_static[20];
 	char *wan_proto = websGetVar(wp, "wan_proto", NULL);
 	char *pptp_use_dhcp = websGetVar(wp, "pptp_use_dhcp", NULL);
 	char *l2tp_use_dhcp = websGetVar(wp, "l2tp_use_dhcp", NULL);
@@ -682,6 +683,9 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	get_merge_ipaddr(wp, "wan_gateway", wan_gateway);
 	get_merge_ipaddr(wp, "pptp_wan_gateway", pptp_wan_gateway);
 	get_merge_ipaddr(wp, "l2tp_wan_gateway", l2tp_wan_gateway);
+	get_merge_ipaddr(wp, "wan_ipaddr_static", wan_ipaddr_static);
+	get_merge_ipaddr(wp, "wan_netmask_static", wan_netmask_static);
+
 	if (!strcmp(wan_proto, "pptp")) {
 		nvram_set("pptp_pass", "0");	// disable pptp passthrough
 	}
@@ -691,17 +695,29 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 		nvram_set("pptp_use_dhcp", "1");
 	} else
 		nvram_set("pptp_use_dhcp", "0");
-
-	if (FALSE == pptp_skip_check && !valid_ipaddr(wp, wan_ipaddr, &which[0]))
-		return;
+	
+	if (strcmp(wan_proto, "pppoe_dual")) { 
+		if (FALSE == pptp_skip_check && !valid_ipaddr(wp, wan_ipaddr, &which[0]))
+			return;
+	} else {
+		if (!valid_ipaddr(wp, wan_ipaddr_static, &which[0]))
+			return;
+	}
 
 	nvram_set("wan_ipaddr_buf", nvram_safe_get("wan_ipaddr"));
 	nvram_set("wan_ipaddr", wan_ipaddr);
+	nvram_set("wan_ipaddr_static", wan_ipaddr_static);
 
-	if (FALSE == pptp_skip_check && !valid_netmask(wp, wan_netmask, &which[1]))
-		return;
+	if (strcmp(wan_proto, "pppoe_dual")) { 
+		if (FALSE == pptp_skip_check && !valid_netmask(wp, wan_netmask, &which[1]))
+			return;
+	} else {
+		if (!valid_netmask(wp, wan_netmask_static, &which[1]))
+			return;
+	}
 
 	nvram_set("wan_netmask", wan_netmask);
+	nvram_set("wan_netmask_static", wan_netmask_static);
 
 	if (strcmp(pptp_wan_gateway, "0.0.0.0")) {
 		nvram_set("pptp_wan_gateway", pptp_wan_gateway);

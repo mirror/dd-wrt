@@ -623,6 +623,9 @@ endif
 ifeq ($(CONFIG_QUAGGA),y)
 CFLAGS += -DHAVE_QUAGGA
 endif
+ifeq ($(CONFIG_PPPOEDUAL),y)
+CFLAGS += -DHAVE_PPPOEDUAL
+endif
 ifeq ($(CONFIG_PPTP),y)
 CFLAGS += -DHAVE_PPTP
 endif

@@ -2950,6 +2950,7 @@ void start_wan(int status)
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan1";
 #endif
+#endif
 #ifdef HAVE_MULTICAST
 	if (!nvram_match("dtag_vlan8", "1") || nvram_match("wan_vdsl", "0"))
 		stop_igmp_proxy();
@@ -2959,7 +2960,6 @@ void start_wan(int status)
 		stop_udpxy();
 #endif
 
-#endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	if (getWET()) {
 		dns_to_resolv();
@@ -2989,6 +2989,10 @@ void start_wan(int status)
 	if (nvram_match("wan_proto", "pppoe"))
 		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
 	else
+#endif
+#ifdef HAVE_PPPOEDUAL
+	if (nvram_match("wan_proto", "pppoe_dual"))
+		strncpy(ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
 #endif
 #ifdef HAVE_L2TP
 	if (nvram_match("wan_proto", "l2tp"))
@@ -3095,6 +3099,11 @@ void start_wan(int status)
 		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
 	} else
 #endif
+#ifdef HAVE_PPPOEDUAL
+	if (nvram_match("wan_proto", "pppoe_dual")) {
+		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
+	} else
+#endif
 #ifdef HAVE_PPTP
 	if (nvram_match("wan_proto", "pptp")) {
 		ifr.ifr_mtu = atoi(getMTU(wan_ifname));	// default ethernet frame size
@@ -3134,6 +3143,11 @@ void start_wan(int status)
 	 * pppoe_wan interface must be up in order to use any pppoe client 
 	 */
 	if (strcmp(wan_proto, "pppoe") == 0)
+		ifconfig(pppoe_wan_ifname, IFUP, NULL, NULL);
+	else
+#endif
+#ifdef HAVE_PPPOEDUAL
+	if (strcmp(wan_proto, "pppoe_dual") == 0)
 		ifconfig(pppoe_wan_ifname, IFUP, NULL, NULL);
 	else
 #endif
@@ -3728,6 +3742,42 @@ void start_wan(int status)
 		}
 	} else
 #endif
+#ifdef HAVE_PPPOEDUAL
+	if (strcmp(wan_proto, "pppoe_dual") == 0) {
+                if (nvram_match("pptp_iptv", "1"))
+			nvram_set("tvnicfrom", nvram_safe_get("wan_iface"));
+		else nvram_unset("tvnicfrom");
+
+		if (nvram_match("pptp_use_dhcp", "1")) {
+			nvram_set("wan_get_dns", "");
+			char *pppoe_dual_ifname = nvram_safe_get("wan_ifname");
+			if (isClient()) {
+				pppoe_dual_ifname = getSTA();
+			}
+
+			start_dhcpc(pppoe_dual_ifname, NULL, NULL, 1);
+		} else {
+			char *wan_iface = nvram_safe_get("wan_iface");
+			struct dns_lists *dns_list = NULL;
+			int i = 0;
+			
+			if (isClient())
+			        wan_iface = getSTA();
+
+			ifconfig(wan_iface, IFUP, nvram_safe_get("wan_ipaddr_static"), nvram_safe_get("wan_netmask_static"));
+			dns_to_resolv();
+			dns_list = get_dns_list();
+			
+			if (dns_list)
+				for (i = 0; i < dns_list->num_servers; i++)
+					route_add(wan_iface, 0, dns_list->dns_server[i], nvram_safe_get("pptp_wan_gateway_static"), "255.255.255.255");
+			route_del(wan_iface, 0, "0.0.0.0", nvram_safe_get("pptp_wan_gateway_static"), "0.0.0.0");
+
+			start_firewall();
+			start_pppoe_dual(status);
+		}
+	} else
+#endif
 #ifdef HAVE_MODEMBRIDGE
 	if ((strcmp(wan_proto, "bridge") == 0)) {
 		stop_atm();
@@ -4151,6 +4201,7 @@ void start_wan_done(char *wan_ifname)
 	start_set_routes();
 	cprintf("routes done\n");
 	if (nvram_match("wan_proto", "pppoe")
+	    || nvram_match("wan_proto", "pppoe_dual")
 	    || nvram_match("wan_proto", "pptp")
 	    || nvram_match("wan_proto", "pppoa")
 	    || nvram_match("wan_proto", "l2tp")
@@ -4370,6 +4421,9 @@ void stop_wan(void)
 	 */
 #ifdef HAVE_PPPOE
 	stop_pppoe();
+#endif
+#ifdef HAVE_PPPOEDUAL
+	stop_pppoedual();
 #endif
 #ifdef HAVE_L2TP
 	stop_l2tp();

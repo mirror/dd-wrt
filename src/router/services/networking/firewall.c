@@ -765,7 +765,12 @@ static void nat_postrouting(void)
 			osl_ifaddr(wan_ifname_tun, &ifaddr);
 			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wan_ifname_tun, inet_ntoa(ifaddr));
 		}
-
+		if (nvram_match("wan_proto", "pppoe_dual")) {
+			struct in_addr ifaddr;
+			osl_ifaddr(wan_ifname_tun, &ifaddr);
+			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wan_ifname_tun, inet_ntoa(ifaddr));
+		}	
+		
 		if (nvram_match("block_loopback", "0")) {
 			save2file("-A POSTROUTING -m mark --mark %s -j MASQUERADE\n", get_NFServiceMark("FORWARD", 1));
 		}
@@ -1770,7 +1775,7 @@ static void filter_input(void)
 			save2file("-A INPUT -i %s -p tcp --dport %d -j %s\n", wanface, PPTP_PORT, log_accept);
 		}
 	}
-#endif  
+#endif
 	if (nvram_match("wan_proto", "dhcp") )
 		save2file("-A INPUT -i %s -p udp --sport 67 --dport 68 -j %s\n", wanface, log_accept);
 	if (nvram_match("pptpd_enable", "1")
@@ -2232,6 +2237,11 @@ static void filter_forward(void)
 #endif
 #ifdef HAVE_L2TP
 	} else if (nvram_match("wan_proto", "l2tp") && nvram_match("pptp_iptv", "1") && nvram_get("tvnicfrom")) {
+		if (doMultiCast() > 0)
+			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
+#endif
+#ifdef HAVE_PPPOEDUAL 
+	} else if (nvram_match("wan_proto", "pppoe_dual") && nvram_match("pptp_iptv", "1") && nvram_get("tvnicfrom")) {
 		if (doMultiCast() > 0)
 			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
