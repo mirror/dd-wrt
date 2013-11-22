@@ -1240,7 +1240,7 @@ service.hmilkfish_right10="Here goes your Milkfish Community Forum Password - Re
 service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
 service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
 service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="Enables/Disables Dynamic SIP (e.g. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right18="Enables/Disables Dynamic SIP (for example Homesip.net Service) - Username and Password need to be set";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1301,7 +1301,7 @@ status_band.follow="follow";
 status_band.up="up";
 
 //help container
-hstatus_band.svg="The Adobe's SVG plugin is required to display bandwidth graphs.";
+hstatus_band.svg="The A browser that supports SVG is required to display bandwidth graphs.";
 hstatus_band.right1="Click the label to switch unit (bytes/s or bits/s).";
 hstatus_band.right2="Click the label to choose graph scale type.";
 

@@ -1287,7 +1287,7 @@ service.hmilkfish_right10="這裡是 Milkfish 論壇 - 註冊後取得的密碼 
 service.hmilkfish_right12="Enables/Disables basic SIP Tracing on your router";
 service.hmilkfish_right14="Local SIP Subscribers are locally managed SIP Accounts";
 service.hmilkfish_right16="Local SIP Aliases are SIP Forwards similar to Email Forwards. Can be used to forward alphanumeric to numeric phone user accounts or vice versa";
-service.hmilkfish_right18="開啟/關閉 Dynamic SIP (e.g. Homesip.net Service) - Username and Password need to be set";
+service.hmilkfish_right18="開啟/關閉 Dynamic SIP (for example Homesip.net Service) - Username and Password need to be set";
 service.hmilkfish_right20="not implemented yet - leave empty";
 service.hmilkfish_right22="not implemented yet - leave empty";
 service.hmilkfish_right24="not implemented yet - leave empty";
@@ -1354,7 +1354,7 @@ status_band.up="up";
 
 //help container
 //
-hstatus_band.svg="顯示頻寬監控,需安裝 Adobe's SVG plugin .";
+hstatus_band.svg="顯示頻寬監控,需安裝 A browser that supports SVG .";
 hstatus_band.right1="按 SWITCH TO 選擇 (bytes/s 或 bits/s).";
 hstatus_band.right2="按 AUTOSCALE 調整顯示範圍.";
 
