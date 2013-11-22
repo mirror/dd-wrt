@@ -104,7 +104,7 @@ void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 			 * Don't show eth1 information for pppoe mode 
 			 */
 			if (!strcmp(line, nvram_safe_get("wan_ifname"))
-			    && nvram_match("wan_proto", "pppoe"))
+			    && (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto", "pppoe_dual")))
 				debug = 1;
 
 			/*
