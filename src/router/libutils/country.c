@@ -716,12 +716,12 @@ char *getIsoName(const char *country)
 	}
 	return 0;
 }
+extern int getRouterBrand(void);
 
 #ifdef HAVE_BUFFALO
 //char 
 
 extern void *getUEnv(char *name);
-extern int getRouterBrand(void);
 
 static int isValidCountry(char *region, char *country)
 {
