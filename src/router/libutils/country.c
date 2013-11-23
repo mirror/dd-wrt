@@ -721,7 +721,7 @@ char *getIsoName(const char *country)
 //char 
 
 extern void *getUEnv(char *name);
-extern void getRouterBrand();
+extern int getRouterBrand(void);
 
 static int isValidCountry(char *region, char *country)
 {
