@@ -1502,7 +1502,11 @@ int main(int argc, char *argv[])
 		gpsd_report(LOG_INF, "client connect on %d\n", ssock);
 
 		client = allocate_client();
-//		client->raw=raw;
+		if (raw > 0 ) {
+			gpsd_report(LOG_INF, "setting initial raw mode %d\n", raw);
+			client->raw=raw;
+			(void)assign_channel(client);
+		}
 		if (client == NULL) {
 		    gpsd_report(LOG_ERROR, "No client subscriber slots available!\n");
 		    (void)close(ssock);
