@@ -59,6 +59,27 @@ void start_chilli(void)
 	int ret = 0;
 	char ssid[128];
 
+#ifdef HAVE_HOTSPOT
+
+	if (nvram_match("chilli_enable", "1")
+	    && nvram_match("chilli_def_enable", "0")
+	    && !nvram_match("hotss_enable", "1")) {
+		nvram_unset("chilli_def_enable");
+		nvram_set("chilli_enable", "0");
+		return;
+	}
+
+	if (!nvram_match("chilli_enable", "1")
+	    && !nvram_match("hotss_enable", "1")) {
+		nvram_unset("chilli_def_enable");
+		return;
+	}
+#else
+	if (!nvram_match("chilli_enable", "1"))
+		return;
+
+#endif
+
 if ((nvram_match("usb_enable", "1")
 	&& nvram_match("usb_storage", "1")
 	&& nvram_match("usb_automnt", "1")
@@ -78,19 +99,6 @@ if ((nvram_match("usb_enable", "1")
 
 #ifdef HAVE_HOTSPOT
 
-	if (nvram_match("chilli_enable", "1")
-	    && nvram_match("chilli_def_enable", "0")
-	    && !nvram_match("hotss_enable", "1")) {
-		nvram_unset("chilli_def_enable");
-		nvram_set("chilli_enable", "0");
-		return;
-	}
-
-	if (!nvram_match("chilli_enable", "1")
-	    && !nvram_match("hotss_enable", "1")) {
-		nvram_unset("chilli_def_enable");
-		return;
-	}
 
 	if (nvram_match("hotss_enable", "1")) {
 		stop_cron();
@@ -112,9 +120,6 @@ if ((nvram_match("usb_enable", "1")
 		chilli_config();
 	}
 #else
-	if (!nvram_match("chilli_enable", "1"))
-		return;
-
 	chilli_config();
 
 #endif
