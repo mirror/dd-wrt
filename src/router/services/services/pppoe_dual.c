@@ -67,7 +67,7 @@
 #include <linux/version.h>
         
 #include <linux/sockios.h>
-#include <linux/ethtool.h>
+//#include <linux/ethtool.h>
 //#include <libbridge.h>
          
 #include <bcmnvram.h>
