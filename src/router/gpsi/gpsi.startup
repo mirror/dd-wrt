@@ -41,7 +41,12 @@ if [ "$(nvram get gps_gpsd)" = "1" ]; then
 		GPSDPORT=2947
 		nvram set gps_gpsd_port=2947
 	fi
+if [ -f /etc/config/gpsi_startraw ]
+then
+	/usr/sbin/gpsd -R -S ${GPSDPORT} ${TTY}
+else
 	/usr/sbin/gpsd -S ${GPSDPORT} ${TTY}
+fi
 fi
 
 if [ "$(nvram get gps)" = "1" ]; then
