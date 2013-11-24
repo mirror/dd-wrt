@@ -319,7 +319,10 @@ nvram_commit(void)
 
 	/* Write partition up to end of data area */
 	offset = nvram_mtd->size - erasesize;
-	i = erasesize - NVRAM_SPACE + ROUNDUP(header->len,nvram_mtd->erasesize);
+	if (nvram->erasesize > NVRAM_SPACE)
+	    i = erasesize - NVRAM_SPACE + ROUNDUP(header->len,NVRAM_SPACE);
+	else
+	    i = erasesize - NVRAM_SPACE + ROUNDUP(header->len,nvram_mtd->erasesize);
 	ret = mtd_write(nvram_mtd, offset, i, &len, buf);
 	if (ret || len != i) {
 		printk("nvram_commit: write error\n");
