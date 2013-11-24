@@ -1145,98 +1145,39 @@ int isFXXN_PRO(char *ifname)	//checks if its usualla a DBII Networks FxxN-PRO ca
 	return 0;
 }
 
+int isSR71E(char *ifname)
+{
+
+	char cproduct[30];
+	char cvendor[30];
+	char readid[64];
+	int devcount;
+
+	strcpy(readid, ifname);
+	sscanf(readid, "ath%d", &devcount);
+	sprintf(readid, "/sys/class/ieee80211/phy%d/device/subsystem_vendor", devcount);
+	FILE *in = fopen(readid, "rb");
+	if (in) {
+		fscanf(in, "%s\n", cvendor);
+		fclose(in);
+	}
+	sprintf(readid, "/sys/class/ieee80211/phy%d/device/subsystem_device", devcount);
+	in = fopen(readid, "rb");
+        if (in)	{
+		fscanf(in, "%s\n", cproduct);
+		fclose(in);
+	}
+
+	if (!strcmp(cvendor, "0x0777") && !strcmp(cproduct, "0x4e05")) { // SR71-E
+		return 1;
+	}
+	return 0;
+
+}
+
 int wifi_gettxpower(char *ifname)
 {
-	int poweroffset = 0;
-
-#ifdef HAVE_ALPHA
-	poweroffset = 10;
-#elif HAVE_EOC1650
-	poweroffset = 0;
-#elif HAVE_BWRG1000
-	poweroffset = 12;	//?? guess
-#elif HAVE_EAP3660
-	poweroffset = 8;
-#elif HAVE_EOC2610
-	poweroffset = 8;
-#elif HAVE_EOC5611
-	poweroffset = 6;	//?? guess
-#elif HAVE_EOC5610
-	poweroffset = 0;	// does not need a offset, internally mapped
-#elif HAVE_NS2
-	poweroffset = 10;
-#elif HAVE_LC2
-	poweroffset = 10;
-#elif HAVE_BS2
-	poweroffset = 0;
-#elif HAVE_PICO2
-	poweroffset = 0;
-#elif HAVE_PICO2HP
-	poweroffset = 10;
-#elif HAVE_MS2
-	poweroffset = 10;
-#elif HAVE_BS2HP
-	poweroffset = 10;
-#elif HAVE_NS5
-	poweroffset = 5;
-#elif HAVE_PICO5
-	poweroffset = 5;
-#elif HAVE_DLM101
-	poweroffset = 5;
-#elif HAVE_NS3
-	poweroffset = 5;
-#elif HAVE_LC5
-	poweroffset = 5;
-#elif HAVE_BS5
-	poweroffset = 5;
-#elif HAVE_LS5
-	poweroffset = 5;
-#else
-
-	if (isEMP(ifname)) {
-		if (nvram_nmatch("2", "%s_cardtype", ifname))
-			poweroffset = 8;
-		if (nvram_nmatch("3", "%s_cardtype", ifname))
-			poweroffset = 8;
-		if (nvram_nmatch("5", "%s_cardtype", ifname))
-			poweroffset = 8;
-		if (nvram_nmatch("6", "%s_cardtype", ifname))
-			poweroffset = 7;
-		if (nvram_nmatch("7", "%s_cardtype", ifname))
-			poweroffset = 10;
-#ifdef HAVE_ATH9K
-	} else if (isFXXN_PRO(ifname)) {
-		if (nvram_nmatch("1", "%s_cardtype", ifname))
-			poweroffset = 5;
-		if (nvram_nmatch("2", "%s_cardtype", ifname))
-			poweroffset = 5;
-#endif
-	} else {
-		int vendor;
-		int devcount;
-		char readid[64];
-
-		strcpy(readid, ifname);
-		sscanf(readid, "ath%d", &devcount);
-		sprintf(readid, "/proc/sys/dev/wifi%d/poweroffset", devcount);
-		FILE *in = fopen(readid, "rb");
-
-		vendor = 0;
-		if (in) {
-			vendor = atoi(fgets(readid, sizeof(readid), in));
-			fclose(in);
-		}
-
-		poweroffset = vendor;
-		if (poweroffset < 0 || poweroffset > 20)
-			poweroffset = 0;
-	}
-#endif
-	char *manpoweroffset;
-	manpoweroffset = nvram_nget("%s_poweroffset", ifname);
-	if (strlen(manpoweroffset)) {
-		poweroffset = atoi(manpoweroffset);
-	}
+	int poweroffset = wifi_gettxpoweroffset(ifname);
 	struct iwreq wrq;
 
 	(void)memset(&wrq, 0, sizeof(struct iwreq));
@@ -1334,6 +1275,8 @@ int wifi_gettxpoweroffset(char *ifname)
 			return 5;
 		if (nvram_nmatch("2", "%s_cardtype", ifname))
 			return 5;
+	} else if (isSR71E(ifname)) {
+			return 6;
 	}
 #endif
 
