@@ -5255,6 +5255,7 @@ int led_control(int type, int act)
 	case ROUTER_ASUS_RTN66:
 	case ROUTER_ASUS_AC66U:
 		power_gpio = 0x10c;
+		diag_gpio = 0x00c;
 		usb_gpio = 0x10f;
 		break;
 	case ROUTER_NETGEAR_WNR2000V2:
