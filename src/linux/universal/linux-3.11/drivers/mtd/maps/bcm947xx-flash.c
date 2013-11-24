@@ -342,6 +342,8 @@ static int erase_write(struct mtd_info *mtd, unsigned long pos, int len, const c
 	return 0;
 }
 
+extern int __init root_dev_setup(char *line);
+
 static int __init find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 {
 	struct trx_header trx, *trx2;
@@ -550,6 +552,8 @@ struct mtd_partition *__init init_mtd_partitions(struct mtd_info *mtd, size_t si
 		nflash_parts[2].size = mtd->erasesize;
 		return nflash_parts;
 	}
+	// in case of nor flash, this small hack is required
+	root_dev_setup("1f02");
 	/* boot loader */
 	bcm947xx_parts[0].offset = 0;
 	bcm947xx_parts[0].size = cfe_size;
