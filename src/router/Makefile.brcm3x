@@ -572,7 +572,7 @@ endif
 	gzip -c9 mipsel-uclibc/lzma_vmlinus > mipsel-uclibc/lzma_vmlinuz
 	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3-nandboot.trx $(ARCH)-uclibc/lzma_vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 #	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26.trx $(ARCH)-uclibc/vmlinus.gzip  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
-	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K26_RT-AC66U.trx $(ARCH)-uclibc/lzma_vmlinuz -a 1024 $(ARCH)-uclibc/rootfs.squashfs
+	../../opt/asus/asustrx-rt66u -p RT-AC66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-AC66U.trx $(ARCH)-uclibc/lzma_vmlinuz -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 ifeq ($(CONFIG_NOAC),y)
 	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz  -a 1024 $(ARCH)-uclibc/rootfs.squashfs
 
@@ -663,7 +663,7 @@ ifeq ($(CONFIG_NOAC),y)
 	printf '\x16\x71\x01\x00' > $(ARCH)-uclibc/f5d8235v3.hdr	
 	cat $(ARCH)-uclibc/f5d8235v3.hdr $(ARCH)-uclibc/dd-wrt.v24-K3.notrxhd > $(ARCH)-uclibc/dd-wrt.v24-K3_f5d8235v3.bin
 	rm -rf $(ARCH)-uclibc/f5d8235v3.hdr
-	rm -rf $(ARCH)-uclibc/dd-wrt.v24-K26.notrxhd
+	rm -rf $(ARCH)-uclibc/dd-wrt.v24-K3.notrxhd
 # end Belkin  f7d3301 / f7d3302 / f7d4302 / f5d8235v3
 	../../opt/asus/asustrx-rt66u -p RT-N66U -v 3.0.0.1 -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_RT-N66U.trx ../../opt/loader-0.02/loader.gz $(ARCH)-uclibc/vmlinuz $(ARCH)-uclibc/rootfs.squashfs
 	rm -f $(ARCH)-uclibc/asusver	
@@ -671,54 +671,54 @@ ifeq ($(CONFIG_NOAC),y)
 
 # Netgear
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
-	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500v2.chk
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2_VC.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
-	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500v2_VC.chk
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500L.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
-	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500L.chk
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr3500U.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
-	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR3500U.chk
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wnr2000v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr2000v2.h && \
-	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNR2000v2.chk
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wndr3400.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr3400.h && \
-	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR3400.chk
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wndr3700v3.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr3700v3.h && \
-	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR3700v3.chk
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wndr3400cvna.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr3400.h && \
-	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR3400_CVNA.chk
-	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K26.trx -f netgear/emptyfile -b netgear/comp-wndr4000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4000.h && \
-	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR4000.chk
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNR3500v2.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wnr3500v2_VC.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNR3500v2_VC.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wnr3500L.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNR3500L.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wnr3500U.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr3500.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNR3500U.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wnr2000v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wnr2000v2.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNR2000v2.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wndr3400.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr3400.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR3400.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wndr3700v3.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr3700v3.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR3700v3.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wndr3400cvna.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr3400.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR3400_CVNA.chk
+	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3.trx -f netgear/emptyfile -b netgear/comp-wndr4000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4000.h && \
+	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR4000.chk
 # end Netgear
 
 # Linksys
-	../../opt/tools/addpattern -4 -p 320N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt320n.bin -g
-	../../opt/tools/addpattern -0 -p N150 -v v3.0.02 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt160nv3.bin -g
-	../../opt/tools/addpattern -4 -p 610N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt610n.bin -g
-	../../opt/tools/addpattern -4 -p 310N -v v2.0.00 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_wrt310n.bin -g
-	../../opt/tools/addpattern -4 -p M010 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_m10.bin -g
-	../../opt/tools/addpattern -4 -p M020 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_m20.bin -g
-	../../opt/tools/addpattern -4 -p E100 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1000v1.bin -g
-	../../opt/tools/addpattern -4 -p E100 -r 2.0.0.0 -v v1.1.1 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1000v2.bin -g
-	../../opt/tools/addpattern -4 -p 1550 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1550.bin -g
-	../../opt/tools/addpattern -4 -p 32XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e2000.bin -g
-	../../opt/tools/addpattern -4 -p E25X -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e2500.bin -g 
-	../../opt/tools/addpattern -4 -p 61XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e3000.bin -g
-	../../opt/tools/addpattern -4 -p 3200 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e3200.bin -g
-	../../opt/tools/addpattern -4 -p 4200 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e4200.bin -g
-	../../opt/tools/addpattern -4 -p E800 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e800.bin -g
-	../../opt/tools/addpattern -4 -p E900 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e900.bin -g
-	../../opt/tools/addpattern -4 -p E120 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1200v1.bin -g
-	../../opt/tools/addpattern -4 -p E122 -r 2.0.0.0 -v v1.1.1 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1200v2.bin -g
-	../../opt/tools/addpattern -4 -p E150 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_e1500.bin -g
+	../../opt/tools/addpattern -4 -p 320N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_wrt320n.bin -g
+	../../opt/tools/addpattern -0 -p N150 -v v3.0.02 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_wrt160nv3.bin -g
+	../../opt/tools/addpattern -4 -p 610N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_wrt610n.bin -g
+	../../opt/tools/addpattern -4 -p 310N -v v2.0.00 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_wrt310n.bin -g
+	../../opt/tools/addpattern -4 -p M010 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_m10.bin -g
+	../../opt/tools/addpattern -4 -p M020 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_m20.bin -g
+	../../opt/tools/addpattern -4 -p E100 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e1000v1.bin -g
+	../../opt/tools/addpattern -4 -p E100 -r 2.0.0.0 -v v1.1.1 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e1000v2.bin -g
+	../../opt/tools/addpattern -4 -p 1550 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e1550.bin -g
+	../../opt/tools/addpattern -4 -p 32XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e2000.bin -g
+	../../opt/tools/addpattern -4 -p E25X -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e2500.bin -g 
+	../../opt/tools/addpattern -4 -p 61XN -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e3000.bin -g
+	../../opt/tools/addpattern -4 -p 3200 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e3200.bin -g
+	../../opt/tools/addpattern -4 -p 4200 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e4200.bin -g
+	../../opt/tools/addpattern -4 -p E800 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e800.bin -g
+	../../opt/tools/addpattern -4 -p E900 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e900.bin -g
+	../../opt/tools/addpattern -4 -p E120 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e1200v1.bin -g
+	../../opt/tools/addpattern -4 -p E122 -r 2.0.0.0 -v v1.1.1 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e1200v2.bin -g
+	../../opt/tools/addpattern -4 -p E150 -v v1.0.99 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_e1500.bin -g
 
 # end Linksys
 
 # special
 #ifeq ($(CONFIG_NVRAM_60K),y)
-	../../opt/tools/addpattern -4 -p NV60 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_nv60k.bin -g
+	../../opt/tools/addpattern -4 -p NV60 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_nv60k.bin -g
 #endif
 #ifeq ($(CONFIG_NVRAM_64K),y)
-	../../opt/tools/addpattern -4 -p NV64 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K26.trx -o $(ARCH)-uclibc/dd-wrt.v24-K26_nv64k.bin -g
+	../../opt/tools/addpattern -4 -p NV64 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_nv64k.bin -g
 #endif
 endif
 	./netgear/lzma e  $(ARCH)-uclibc/vmlinux.bin  $(ARCH)-uclibc/vmlinux_netgear.lzma
@@ -728,7 +728,7 @@ endif
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-wndr4500v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR4500V2.chk
 
 
-	cd $(ARCH)-uclibc && ../tools/bufenc/makefw.sh dd-wrt.v24-K26-nandboot
+	cd $(ARCH)-uclibc && ../tools/bufenc/makefw.sh dd-wrt.v24-K3-nandboot
 # end special
 
 #&& rm -f kernel_image.chk rootfs_image.chk dd-wrt.bin.chk
