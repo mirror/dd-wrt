@@ -70,11 +70,13 @@ void lock(void)
 	int lockwait = 0;
 	while ((in = fopen("/tmp/.nvlock", "rb")) != NULL) {
 		fclose(in);
-		fprintf(stderr, "nvram lock, waiting....\n");
 		lockwait++;
-		if (lockwait == 3)
+		if (lockwait == 30) {
+			fprintf(stderr,"deadlock detected, try to fix it\n");
 			unlink("/tmp/.nvlock");	//something crashed, we fix it
-		sleep(1);
+			break;
+		}
+		usleep(1000);
 	}
 	in = fopen("/tmp/.nvlock", "wb");
 	if (in) {
