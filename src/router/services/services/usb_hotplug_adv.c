@@ -275,9 +275,13 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 	char dev_dir[128];
 	char sym_link[256];
 	char part_file[32];
-
-	int len = strlen(path) - 4;
-	char *dev = &path[len];
+	int len = strlen(path);
+	int i;
+	char *dev = &path[len - 4];
+	for (i = 0; i < len; i++) {	// seek for last occurence
+		if (path[i] == '/')
+			dev = &path[i + 1];
+	}
 
 	if (host == -1) {
 		sprintf(part_file, "/tmp/disk/%s", dev);
