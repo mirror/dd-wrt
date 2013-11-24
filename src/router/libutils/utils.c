@@ -1060,17 +1060,25 @@ int internal_getRouterBrand()
 	}
 
 	if (boardnum == 679 && nvram_match("boardtype", "0x0646")
-	    && nvram_match("boardrev", "0x1110")
-	    && nvram_match("sdram_refresh", "0x81c")) {
-		setRouter("Netgear R6300V2");
-		return ROUTER_NETGEAR_R6300V2;
-	}
-
-	if (boardnum == 679 && nvram_match("boardtype", "0x0646")
-	    && nvram_match("boardrev", "0x1110")
-	    && nvram_match("sdram_refresh", "0x0000")) {
-		setRouter("Netgear R6250");
-		return ROUTER_NETGEAR_R6250;
+	    && nvram_match("boardrev", "0x1110")) {
+		int mtd = getMTD("board_data");
+		char devname[32];
+		sprintf(devname, "/dev/mtdblock/%d", mtd);
+		FILE *model = fopen(devname, "rb");
+		if (model) {
+#define R6300V2 "U12H240T00_NETGEAR"
+			char modelstr[32];
+			fread(modelstr, 1, strlen(R6300V2), model);
+			if (!strncmp(modelstr, R6300V2, strlen(R6300V2))) {
+				setRouter("Netgear R6300V2");
+				fclose(model);
+				return ROUTER_NETGEAR_R6300V2;
+			}else{
+				setRouter("Netgear R6250");
+				fclose(model);
+				return ROUTER_NETGEAR_R6250;
+			}
+		}
 	}
 
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
