@@ -119,7 +119,6 @@ void start_hotplug_block(void)
 	char match[5];
 	char dev[5];
 	char devname[32];
-
 	if (!(devpath = getenv("DEVPATH")))
 		return;
 	if (!(action = getenv("ACTION")))
@@ -129,18 +128,27 @@ void start_hotplug_block(void)
 
 	// e.g. /devices/pci0000:00/0000:00:04.1/usb1/1-1/1-1.2/1-1.2:1.0/host1/target1:0:0/1:0:0:0/block/sda/sda1
 	//sysprintf("echo hotplug_block_block action %s devpath %s >> /tmp/hotplugs", action, devpath);
+	int len;
+	len = strlen(devpath);
+	char *devp = &devpath[len - 4];
+	for (i = 0; i < len; i++) {	// seek for last occurence
+		if (devpath[i] == '/')
+			devp = &devpath[i + 1];
+	}
+	strcpy(part, devp);
+	strcpy(dev, devp);
 
-	int len = strlen(devpath) - 4;
-	strcpy(part, &devpath[len]);
-	strcpy(dev, &devpath[len]);
-	
-	
-	
-	for (c = 97; c < 103; c++) {	//support sda - sdf
+	for (c = 'a'; c < 'f'; c++) {	//support sda - sdf
 		sprintf(dev, "sd%c", c);
-		if (strcmp(part, dev) == 0) 
-			 sysprintf("/usr/sbin/disktype /dev/%s", dev);
-		for (i = 1; i < 7; i++) {	//support up to 6 partitions		 
+		if (strcmp(part, dev) == 0) {
+			sysprintf("/usr/sbin/disktype /dev/%s", dev);
+			sprintf(devname, "/dev/%s", part);
+			if (!strcmp(action, "add"))
+				usb_add_ufd(NULL, 0, devname, 1);
+			if (!strcmp(action, "remove"))
+				usb_unmount(devname);
+		}
+		for (i = 1; i < 7; i++) {	//support up to 6 partitions             
 			sprintf(match, "sd%c%d", c, i);
 			if (strcmp(part, match) == 0) {
 				sprintf(devname, "/dev/%s", part);
@@ -328,8 +336,8 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 		}
 		fclose(fp);
 	}
-	
-	if( !strcmp(fs, "") ){
+
+	if (!strcmp(fs, "")) {
 		sysprintf("echo \"<b>%s</b> not mounted <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "Unsupported Filesystem", dev);
 		return 1;
 	}
@@ -468,9 +476,7 @@ int usb_add_ufd(char *link, int host, char *devpath, int mode)
 	char part_link[128];
 
 	struct dirent *entry;
-	
-	
-	
+
 	sysprintf("mkdir -p /tmp/disk/");
 	usb_stop_services();
 	//create directory to store disktype dumps
