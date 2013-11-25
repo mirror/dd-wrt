@@ -503,7 +503,7 @@ config.mess1="Clique em \"" + sbutton.backup + "\" para baixar o arquivo de back
 config.h22="Restaurar Configurações";
 config.legend2="Restaurar Configurações";
 config.mess2="Por favor, selecione um arquivo para restaurar.";
-config.mess3="A T E N Ç Ã O!!";
+config.mess3="A T E N Ç Ã O !!";
 config.mess4="Faça upload de backups feitos usando este firmware e de um roteador de mesmo modelo.<br />Não utilize nenhum arquivo que não foi criado através desta interface!";
 
 //help container
@@ -1729,7 +1729,7 @@ upgrad.info1="Após atualizar, resetar para";
 upgrad.resetOff="Não resetar";
 upgrad.resetOn="Configurações padrão";
 upgrad.file="Por favor, selecione um arquivo para atualizar";
-upgrad.warning="A T E N Ç Ã O!!";
+upgrad.warning="A T E N Ç Ã O !!";
 upgrad.mess1="A atualização do firmware pode levar alguns minutos.<br />Não desligue o roteador nem pressione o botão de reset!";
 
 //help container
