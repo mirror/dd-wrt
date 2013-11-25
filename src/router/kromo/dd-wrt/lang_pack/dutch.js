@@ -478,7 +478,7 @@ config.mess1="Klik op de \"" + sbutton.backup + "\" knop om de huidige configura
 config.h22="Herstel Configuratie";
 config.legend2="Herstel Instellingen";
 config.mess2="Selecteer het herstel bestand";
-config.mess3="O P G E L E T!";
+config.mess3="O P G E L E T !";
 config.mess4="Alleen bestanden uploaden die met deze firmware of het zelfde model router zijn gemaakt.<br />Upload geen bestanden die niet gecreëerd zijn door deze interface!";
 
 //help container
@@ -1616,7 +1616,7 @@ upgrad.info1="Na het flashen:";
 upgrad.resetOff="Geen Reset Uitvoeren";
 upgrad.resetOn="Naar de Standaard Instellingen";
 upgrad.file="Selecteer het bestand voor de upgrade";
-upgrad.warning="O P G E L E T!";
+upgrad.warning="O P G E L E T !";
 upgrad.mess1="De Firmware Upgrade kan enkele minuten duren.<br />Zet uw router NIET uit, reset uw router NIET, gedurende dit proces!";
 
 //help container
