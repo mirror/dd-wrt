@@ -1593,7 +1593,7 @@ upgrad.info1="Despues de Flashear, resetear a";
 upgrad.resetOff="No Resetear";
 upgrad.resetOn="Valores por Defecto";
 upgrad.file="Por Favor elige el archivo a actualizar";
-upgrad.warning="¡ P E L I G R O!";
+upgrad.warning="¡ P E L I G R O !";
 upgrad.mess1="La actualización del firmware podría tardar varios miutos.<br />¡No quites la corriente ni pulses el botón reset!";
 
 //help container
