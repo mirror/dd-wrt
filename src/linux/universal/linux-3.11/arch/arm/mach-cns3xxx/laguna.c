@@ -708,6 +708,11 @@ static struct platform_device laguna_pps_device = {
 	.dev.platform_data = &laguna_pps_data,
 };
 
+
+static struct platform_device laguna_gpio_dev = {
+	.name = "GPIODEV",
+	.id = -1,
+};
 /*
  * GPIO
  */
@@ -882,6 +887,7 @@ static void __init laguna_map_io(void)
 
 static int laguna_register_gpio(struct gpio *array, size_t num)
 {
+
 	int i, err, ret;
 
 	ret = 0;
@@ -1143,8 +1149,8 @@ static int __init laguna_model_setup(void)
 			platform_device_register(&laguna_spi_controller_device);
 		}
 
-		if (laguna_info.config2_bitmap & GPS_LOAD)
-			platform_device_register(&laguna_pps_device);
+//		if (laguna_info.config2_bitmap & GPS_LOAD)
+//			platform_device_register(&laguna_pps_device);
 
 		/*
 		 *	Do any model specific setup not known by the bitmap by matching
@@ -1156,17 +1162,17 @@ static int __init laguna_model_setup(void)
 		  || (strncmp(laguna_info.model, "GW2389", 6) == 0) )
 		{
 			// configure GPIO's
-			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2388));
+//			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2388));
 			// configure LED's
 			laguna_gpio_leds_data.num_leds = 2;
 		} else if (strncmp(laguna_info.model, "GW2387", 6) == 0) {
 			// configure GPIO's
-			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2387));
+//			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2387));
 			// configure LED's
 			laguna_gpio_leds_data.num_leds = 2;
 		} else if (strncmp(laguna_info.model, "GW2385", 6) == 0) {
 			// configure GPIO's
-			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2385));
+//			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2385));
 			// configure LED's
 			laguna_gpio_leds[0].gpio = 115;
 			laguna_gpio_leds[1].gpio = 12;
@@ -1181,35 +1187,36 @@ static int __init laguna_model_setup(void)
 			laguna_gpio_leds_data.num_leds = 4;
 		} else if (strncmp(laguna_info.model, "GW2384", 6) == 0) {
 			// configure GPIO's
-			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2384));
+//			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2384));
 			// configure LED's
 			laguna_gpio_leds_data.num_leds = 1;
 		} else if (strncmp(laguna_info.model, "GW2383", 6) == 0) {
 			// configure GPIO's
-			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2383));
+//			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2383));
 			// configure LED's
 			laguna_gpio_leds[0].gpio = 107;
 			laguna_gpio_leds_data.num_leds = 1;
 		} else if (strncmp(laguna_info.model, "GW2382", 6) == 0) {
 			// configure GPIO's
-			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2382));
+//			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2382));
 			// configure LED's
 			laguna_gpio_leds[0].gpio = 107;
 			laguna_gpio_leds_data.num_leds = 1;
 		} else if (strncmp(laguna_info.model, "GW2380", 6) == 0) {
 			// configure GPIO's
-			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2380));
+//			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2380));
 			// configure LED's
 			laguna_gpio_leds[0].gpio = 107;
 			laguna_gpio_leds[1].gpio = 106;
 			laguna_gpio_leds_data.num_leds = 2;
 		} else if (strncmp(laguna_info.model, "GW2391", 6) == 0) {
 			// configure GPIO's
-			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2391));
+//			laguna_register_gpio(ARRAY_AND_SIZE(laguna_gpio_gw2391));
 			// configure LED's
 			laguna_gpio_leds_data.num_leds = 2;
 		}
 		platform_device_register(&laguna_gpio_leds_device);
+		platform_device_register(&laguna_gpio_dev);
 	} else {
 		// Do some defaults here, not sure what yet
 	}
