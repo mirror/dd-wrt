@@ -5,7 +5,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-MODULE:=gpsi.startup
+MODULE:=gpsi.startup gpsi.webservices gpsi.nvramconfig
 
 clean:
 	@true
