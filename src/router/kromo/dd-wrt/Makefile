@@ -172,6 +172,12 @@ ifeq ($(CONFIG_ENEO),y)
 	cp eneo/About.htm $(INSTALLDIR)/www
 endif
 
+ifeq ($(CONFIG_OCTAGON),y)
+	mkdir $(INSTALLDIR)/www/style/octagon
+	cp octagon/style.css $(INSTALLDIR)/www/style/octagon
+	cp octagon/images/* $(INSTALLDIR)/www/images
+endif
+
 ifeq ($(CONFIG_CORENET),y)
 	mkdir $(INSTALLDIR)/www/style/corenet
 	cp -a corenet/help $(INSTALLDIR)/www
