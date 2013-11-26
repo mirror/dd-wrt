@@ -47,6 +47,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"nvram_ver", "3", 0},
 #ifdef HAVE_GGEW
 	{"router_style", "blue", 0},
+#elif HAVE_OCTAGON
+	{"router_style", "octagon", 0},
 #elif HAVE_CORENET
 	{"router_style", "corenet", 0},
 #elif HAVE_XIOCOM
