@@ -16,7 +16,7 @@
 {uptime::<% get_uptime(); %>}
 {ipinfo::<% show_wanipinfo(); %>}
 {wan_ipaddr::<% nvram_status_get("wan_ipaddr"); %>}
-{gps_text::<% nvram_get("gps_status_text"); %>}
+{gps_text::<% gps_status(); %>}
 {gps_lat::<% nvram_get("gps_lat_text"); %>}
 {gps_lon::<% nvram_get("gps_lon_text"); %>}
 {gps_alt::<% nvram_get("gps_alt"); %>}
