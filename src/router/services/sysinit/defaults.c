@@ -3173,7 +3173,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"lighttpd_advanced", "0", 0},
 	{"lighttpd_root", "/jffs/www", 0},
 #endif
-
+#ifdef HAVE_GPSI
+	{"gps", "0", 0},
+	{"gps_gpsd", "0", 0},
+	{"gps_gpsd_port", "2947", 0},
+#endif
 	{0, 0, 0}
 };
 #else
