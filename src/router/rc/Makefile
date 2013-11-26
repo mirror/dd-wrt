@@ -4,14 +4,18 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
+ifeq ($(CONFIG_80211AC),y)
+CFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
+endif
+
 ifeq ($(CONFIG_MSSID),y)
 ifeq ($(CONFIG_BUFFALO),y)
-CFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
+CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
 else
-CFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/ 
+CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/ 
 endif
 else
-CFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/ 
+CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/ 
 endif
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include 
 CFLAGS  += $(COPTS)
