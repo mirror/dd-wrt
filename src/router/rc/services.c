@@ -83,6 +83,9 @@ int start_services_main(int argc, char **argv)
 	void *handle = NULL;
 
 	nvram_set("qos_done", "0");
+#ifdef HAVE_GPSI
+	handle = start_service_nofree_f("gps", handle);
+#endif
 #ifdef HAVE_P910ND
 	handle = start_service_nofree_f("printer", handle);
 #endif
@@ -328,6 +331,9 @@ int stop_services_main(int argc, char **argv)
 	handle = stop_service_nofree("openvpnserversys", handle);
 	handle = stop_service_nofree("openvpn", handle);
 #endif
+#ifdef HAVE_GPSI
+	handle = stop_service_nofree("gps", handle);
+#endif
 //    if( handle )
 //      dlclose( handle );
 
@@ -530,6 +536,9 @@ static void handle_hotspot(void)
 static void handle_services(void)
 {
 	void *handle = NULL;
+#ifdef HAVE_GPSI
+	handle = startstop_nofree_f("gps", handle);
+#endif
 #ifdef HAVE_P910ND
 	handle = startstop_nofree_f("printer", handle);
 #endif
