@@ -32,6 +32,22 @@
 #include <broadcom.h>
 #include <cymac.h>
 
+#ifdef HAVE_UNIWIP
+void ej_gps_status(webs_t wp, int argc, char_t ** argv)
+{
+	int antennastate = gpio_get(242);
+	if (antennastate)
+		websWrite(wp, "Antenna Connected");
+	else
+		websWrite(wp, "Antenna Disconnected");
+}
+#else
+void ej_gps_status(webs_t wp, int argc, char_t ** argv)
+{
+	websWrite(wp, "%s", nvram_safe_get("gps_status_text"));
+}
+#endif
+
 void ej_getlongitude(webs_t wp, int argc, char_t ** argv)
 {
 	char *lon = nvram_safe_get("gps_lon");
@@ -129,4 +145,5 @@ void ej_getgpslink(webs_t wp, int argc, char_t ** argv)
 
 	websWrite(wp, "<a href=\"https://maps.google.com/maps?q=%f,%f\" target=\"_blank\">Google Maps</a>", lat_val, lon_val);
 }
+
 #endif
