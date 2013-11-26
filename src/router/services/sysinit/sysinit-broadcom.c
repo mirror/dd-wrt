@@ -59,6 +59,10 @@
 #define sys_restart() eval("event","3","1","1")
 #define sys_reboot() eval("kill -15 -1"); eval("sleep 3"); eval("kill -9 -1"); eval("umount -a -r"); eval("sync"); eval("event","3","1","15")
 
+#ifndef BFL_AFTERBURNER
+#define	BFL_AFTERBURNER		0x0200
+#endif
+
 static void check_brcm_cpu_type(void)
 {
 	FILE *fcpu;
