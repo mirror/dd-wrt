@@ -30,7 +30,15 @@ endif
 	rm -rf $(INSTALLDIR)/quagga/usr/man
 	rm -f $(INSTALLDIR)/quagga/usr/lib/*.a
 	rm -f $(INSTALLDIR)/quagga/usr/lib/*.la
-
+	printf "#!/bin/sh\n" > $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
+	printf "nvram set wk_mode=\"ospf bgp rip router\"\n" >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
+	printf "nvram set zebra_copt=1\n" >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
+	printf "nvram set ospfd_copt=1\n" >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
+	printf "nvram set ripd_copt=1\n"  >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
+	printf "nvram set bgpd_copt=1\n"  >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
+	printf "stopservice zebra\n"      >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
+	printf "startservice zebra\n"     >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
+	chmod 755 $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
 
 quagga-clean:
 ifeq ($(CONFIG_QUAGGA_STABLE),y)
