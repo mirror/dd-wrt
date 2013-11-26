@@ -30,6 +30,7 @@ endif
 	rm -rf $(INSTALLDIR)/quagga/usr/man
 	rm -f $(INSTALLDIR)/quagga/usr/lib/*.a
 	rm -f $(INSTALLDIR)/quagga/usr/lib/*.la
+	mkdir -p $(INSTALLDIR)/quagga/usr/bin
 	printf "#!/bin/sh\n" > $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
 	printf "nvram set wk_mode=\"ospf bgp rip router\"\n" >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
 	printf "nvram set zebra_copt=1\n" >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
