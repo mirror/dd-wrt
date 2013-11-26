@@ -35,15 +35,20 @@ LDFLAGS += -lm
 endif
 endif
 
+ifeq ($(CONFIG_80211AC),y)
+BCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
+HCFLAGS	= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
+endif
+
 COPTS += $(MIPS16_OPT) 
 
-BCFLAGS	= $(COPTS) -I. -I$(TOP)/shared  -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -I$(TOP)/httpd 
+BCFLAGS	 += $(COPTS) -I. -I$(TOP)/shared  -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -I$(TOP)/httpd 
 BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 BCFLAGS  += -fpic -I$(TOP)/services/include
 
 CFLAGS += $(BCFLAGS)
 
-HCFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
+HCFLAGS	 += -I. -I$(TOP)/shared -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ 
 HCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 HCFLAGS  += -fpic -I$(TOP)/services/include -I$(LINUXDIR)/brcm/wl/bcmwifi/include -I$(LINUXDIR)/brcm/shared/bcmwifi/include  -I$(LINUXDIR)/brcm/$(ARCH)/wl/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 
