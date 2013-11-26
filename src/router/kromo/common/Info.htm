@@ -449,7 +449,7 @@ function refresh(F)
 									<legend><% tran("status_gpsi.legend"); %></legend>
 									<div class="setting">
 										<div class="label"><% tran("status_gpsi.status"); %></div>
-										<span id="gps_text"><% nvram_get("gps_status_text"); %></span>&nbsp;
+										<span id="gps_text"><% gps_status(); %></span>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("status_gpsi.lon"); %></div>
