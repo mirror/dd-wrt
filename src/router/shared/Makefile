@@ -11,9 +11,6 @@
 #
 # $Id: Makefile,v 1.10 2005/11/30 11:53:42 seg Exp $
 #
-REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h) 
-REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h) 
-REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h) 
 
 
 include $(TOP)/.config
