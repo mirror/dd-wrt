@@ -36,6 +36,7 @@ endif
 	printf "nvram set ospfd_copt=1\n" >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
 	printf "nvram set ripd_copt=1\n"  >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
 	printf "nvram set bgpd_copt=1\n"  >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
+	printf "nvram commit\n"           >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
 	printf "stopservice zebra\n"      >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
 	printf "startservice zebra\n"     >> $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
 	chmod 755 $(INSTALLDIR)/quagga/usr/bin/vtysh_init.sh
