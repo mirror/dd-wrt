@@ -211,6 +211,9 @@ endif
 ifeq ($(CONFIG_LAGUNA),y)
 CFLAGS += -DHAVE_LAGUNA
 endif
+ifeq ($(CONFIG_GPSI),y)
+CFLAGS += -DHAVE_GPSI
+endif
 ifeq ($(CONFIG_VENTANA),y)
   CFLAGS += -DHAVE_VENTANA
 endif

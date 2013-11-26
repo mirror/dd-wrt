@@ -1,0 +1,27 @@
+
+<fieldset>
+	<legend>GPS</legend>
+	<div class="setting">
+		<div class="label">GPS support</div>
+		<input class="spaceradio" type="radio" name="gps" value="1" <% nvram_checked("gps", "1"); %> onclick="show_layer_ext(this, 'idgps', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="gps" value="0" <% nvram_checked("gps", "0"); %> onclick="show_layer_ext(this, 'idgps', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idgps">
+		<div class="setting">
+		<div class="label">GPSD Daemon</div>
+		<input class="spaceradio" type="radio" name="gps_gpsd" value="1" <% nvram_checked("gps_gpsd", "1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="gps_gpsd" value="0" <% nvram_checked("gps_gpsd", "0"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("share.port"); %></div>
+			<input class="num" maxlength="5" size="5" name="gps_gpsd_port" onblur="valid_range(this,1,65535,'GPSD Port')" value="<% nvram_get("gps_gpsd_port"); %>" />
+			<span class="default">
+			<script type="text/javascript">
+			//<![CDATA[
+			document.write("(" + share.deflt + ": 2947)");
+			//]]>
+			</script></span>
+		</div>
+	</div>
+</fieldset><br />
+
