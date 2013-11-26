@@ -1,0 +1,3 @@
+"gps"  "gps Enable"  "CHOICE"  "2"  "0"  "1"  "FALSE"  "0"
+"gps_gpsd" "gpsd support" "CHOICE" "2" "0" "1" "FALSE" "0"
+"gps_gpsd_port" "gpsd port" "NULL" "TRUE" "0"
