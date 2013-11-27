@@ -4002,6 +4002,21 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 #endif
 	}
 
+
+	char wl_closed[16];
+
+	sprintf(wl_closed, "%s_closed", prefix);
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label5)</script></div>\n");
+	websWrite(wp,
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+		  wl_closed, nvram_match(wl_closed, "0") ? "checked=\"checked\"" : "");
+	websWrite(wp,
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+		  wl_closed, nvram_match(wl_closed, "1") ? "checked=\"checked\"" : "");
+	websWrite(wp, "</div>\n");
+}
+
 #ifdef HAVE_BCMMODERN
 
 	if (has_ac(prefix) && has_2ghz(prefix)) {
@@ -4021,19 +4036,7 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	}
 #endif
 
-	char wl_closed[16];
 
-	sprintf(wl_closed, "%s_closed", prefix);
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label5)</script></div>\n");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  wl_closed, nvram_match(wl_closed, "0") ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-		  wl_closed, nvram_match(wl_closed, "1") ? "checked=\"checked\"" : "");
-	websWrite(wp, "</div>\n");
-}
 #ifdef HAVE_MADWIFI
 	// if (nvram_match (wl_mode, "sta") || nvram_match (wl_mode, "wdssta")
 	// || nvram_match (wl_mode, "wet"))
