@@ -1318,20 +1318,13 @@ _nfs4_opendata_reclaim_to_nfs4_state(struct nfs4_opendata *data)
 	int ret;
 
 	if (!data->rpc_done) {
-		ret = data->rpc_status;
-		goto err;
+		if (data->rpc_status) {
+			ret = data->rpc_status;
+			goto err;
+		}
+		/* cached opens have already been processed */
+		goto update;
 	}
-
-	ret = -ESTALE;
-	if (!(data->f_attr.valid & NFS_ATTR_FATTR_TYPE) ||
-	    !(data->f_attr.valid & NFS_ATTR_FATTR_FILEID) ||
-	    !(data->f_attr.valid & NFS_ATTR_FATTR_CHANGE))
-		goto err;
-
-	ret = -ENOMEM;
-	state = nfs4_get_open_state(inode, data->owner);
-	if (state == NULL)
-		goto err;
 
 	ret = nfs_refresh_inode(inode, &data->f_attr);
 	if (ret)
@@ -1341,8 +1334,10 @@ _nfs4_opendata_reclaim_to_nfs4_state(struct nfs4_opendata *data)
 
 	if (data->o_res.delegation_type != 0)
 		nfs4_opendata_check_deleg(data, state);
+update:
 	update_open_stateid(state, &data->o_res.stateid, NULL,
 			    data->o_arg.fmode);
+	atomic_inc(&state->count);
 
 	return state;
 err:
@@ -4575,7 +4570,7 @@ static int _nfs4_get_security_label(struct inode *inode, void *buf,
 	struct nfs4_label label = {0, 0, buflen, buf};
 
 	u32 bitmask[3] = { 0, 0, FATTR4_WORD2_SECURITY_LABEL };
-	struct nfs4_getattr_arg args = {
+	struct nfs4_getattr_arg arg = {
 		.fh		= NFS_FH(inode),
 		.bitmask	= bitmask,
 	};
@@ -4586,14 +4581,14 @@ static int _nfs4_get_security_label(struct inode *inode, void *buf,
 	};
 	struct rpc_message msg = {
 		.rpc_proc	= &nfs4_procedures[NFSPROC4_CLNT_GETATTR],
-		.rpc_argp	= &args,
+		.rpc_argp	= &arg,
 		.rpc_resp	= &res,
 	};
 	int ret;
 
 	nfs_fattr_init(&fattr);
 
-	ret = rpc_call_sync(server->client, &msg, 0);
+	ret = nfs4_call_sync(server->client, server, &msg, &arg.seq_args, &res.seq_res, 0);
 	if (ret)
 		return ret;
 	if (!(fattr.valid & NFS_ATTR_FATTR_V4_SECURITY_LABEL))
@@ -4630,7 +4625,7 @@ static int _nfs4_do_set_security_label(struct inode *inode,
 	struct iattr sattr = {0};
 	struct nfs_server *server = NFS_SERVER(inode);
 	const u32 bitmask[3] = { 0, 0, FATTR4_WORD2_SECURITY_LABEL };
-	struct nfs_setattrargs args = {
+	struct nfs_setattrargs arg = {
 		.fh             = NFS_FH(inode),
 		.iap            = &sattr,
 		.server		= server,
@@ -4644,14 +4639,14 @@ static int _nfs4_do_set_security_label(struct inode *inode,
 	};
 	struct rpc_message msg = {
 		.rpc_proc       = &nfs4_procedures[NFSPROC4_CLNT_SETATTR],
-		.rpc_argp       = &args,
+		.rpc_argp       = &arg,
 		.rpc_resp       = &res,
 	};
 	int status;
 
-	nfs4_stateid_copy(&args.stateid, &zero_stateid);
+	nfs4_stateid_copy(&arg.stateid, &zero_stateid);
 
-	status = rpc_call_sync(server->client, &msg, 0);
+	status = nfs4_call_sync(server->client, server, &msg, &arg.seq_args, &res.seq_res, 1);
 	if (status)
 		dprintk("%s failed: %d\n", __func__, status);
 
@@ -5106,6 +5101,7 @@ static int _nfs4_proc_getlk(struct nfs4_state *state, int cmd, struct file_lock 
 			status = 0;
 	}
 	request->fl_ops->fl_release_private(request);
+	request->fl_ops = NULL;
 out:
 	return status;
 }
