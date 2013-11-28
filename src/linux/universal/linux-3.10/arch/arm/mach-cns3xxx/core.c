@@ -19,7 +19,7 @@
 #include <asm/mach/irq.h>
 #include <asm/hardware/cache-l2x0.h>
 #include <asm/smp_twd.h>
-#include <asm/gpio.h>
+#include <linux/gpio.h>
 #include <mach/cns3xxx.h>
 #include "core.h"
 
@@ -110,12 +110,14 @@ static int cns3xxx_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, 
 
 static int cns3xxx_gpio_get_value(struct gpio_chip *chip, unsigned gpio)
 {
-	return gpio_get_value(gpio);
+	int value;
+	gpio_line_get(gpio,&value);
+	return value;
 }
 
 static void cns3xxx_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
 {
-	gpio_set_value(gpio, value);
+	gpio_line_set(gpio, value);
 }
 
 
