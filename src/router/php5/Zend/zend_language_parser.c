@@ -1,10 +1,8 @@
+/* A Bison parser, made by GNU Bison 2.6.5.  */
 
-/* A Bison parser, made by GNU Bison 2.4.1.  */
-
-/* Skeleton implementation for Bison's Yacc-like parsers in C
+/* Bison implementation for Yacc-like parsers in C
    
-      Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
-   Free Software Foundation, Inc.
+      Copyright (C) 1984, 1989-1990, 2000-2012 Free Software Foundation, Inc.
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -46,7 +44,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "2.4.1"
+#define YYBISON_VERSION "2.6.5"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -60,8 +58,6 @@
 /* Pull parsers.  */
 #define YYPULL 1
 
-/* Using locations.  */
-#define YYLSP_NEEDED 0
 
 /* Substitute the variable and function names.  */
 #define yyparse         zendparse
@@ -72,9 +68,9 @@
 #define yydebug         zenddebug
 #define yynerrs         zendnerrs
 
-
 /* Copy the first part of user declarations.  */
-
+/* Line 360 of yacc.c  */
+#line 1 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
 
 /*
    +----------------------------------------------------------------------+
@@ -120,12 +116,16 @@ static YYSIZE_T zend_yytnamerr(char*, const char*);
 #define YYSTYPE znode
 
 
+/* Line 360 of yacc.c  */
+#line 121 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.c"
 
-
-/* Enabling traces.  */
-#ifndef YYDEBUG
-# define YYDEBUG 0
-#endif
+# ifndef YY_NULL
+#  if defined __cplusplus && 201103L <= __cplusplus
+#   define YY_NULL nullptr
+#  else
+#   define YY_NULL 0
+#  endif
+# endif
 
 /* Enabling verbose error messages.  */
 #ifdef YYERROR_VERBOSE
@@ -135,13 +135,20 @@ static YYSIZE_T zend_yytnamerr(char*, const char*);
 # define YYERROR_VERBOSE 0
 #endif
 
-/* Enabling the token table.  */
-#ifndef YYTOKEN_TABLE
-# define YYTOKEN_TABLE 0
+/* In a future release of Bison, this section will be replaced
+   by #include "zend_language_parser.h".  */
+#ifndef YY_ZEND_HOME_SEG_DEV_NORTHSTAR_SRC_ROUTER_PHP5_ZEND_ZEND_LANGUAGE_PARSER_H_INCLUDED
+# define YY_ZEND_HOME_SEG_DEV_NORTHSTAR_SRC_ROUTER_PHP5_ZEND_ZEND_LANGUAGE_PARSER_H_INCLUDED
+/* Enabling traces.  */
+#ifndef YYDEBUG
+# define YYDEBUG 0
 #endif
-
+#if YYDEBUG
+extern int zenddebug;
+#endif
 /* "%code requires" blocks.  */
-
+/* Line 376 of yacc.c  */
+#line 50 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
 
 #ifdef ZTS
 # define YYPARSE_PARAM tsrm_ls
@@ -149,7 +156,8 @@ static YYSIZE_T zend_yytnamerr(char*, const char*);
 #endif
 
 
-
+/* Line 376 of yacc.c  */
+#line 161 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.c"
 
 /* Tokens.  */
 #ifndef YYTOKENTYPE
@@ -423,7 +431,6 @@ static YYSIZE_T zend_yytnamerr(char*, const char*);
 
 
 
-
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 typedef int YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
@@ -432,9 +439,26 @@ typedef int YYSTYPE;
 #endif
 
 
+#ifdef YYPARSE_PARAM
+#if defined __STDC__ || defined __cplusplus
+int zendparse (void *YYPARSE_PARAM);
+#else
+int zendparse ();
+#endif
+#else /* ! YYPARSE_PARAM */
+#if defined __STDC__ || defined __cplusplus
+int zendparse (void);
+#else
+int zendparse ();
+#endif
+#endif /* ! YYPARSE_PARAM */
+
+#endif /* !YY_ZEND_HOME_SEG_DEV_NORTHSTAR_SRC_ROUTER_PHP5_ZEND_ZEND_LANGUAGE_PARSER_H_INCLUDED  */
+
 /* Copy the second part of user declarations.  */
 
-
+/* Line 379 of yacc.c  */
+#line 462 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.c"
 
 #ifdef short
 # undef short
@@ -484,27 +508,27 @@ typedef short int yytype_int16;
 #define YYSIZE_MAXIMUM ((YYSIZE_T) -1)
 
 #ifndef YY_
-# if YYENABLE_NLS
+# if defined YYENABLE_NLS && YYENABLE_NLS
 #  if ENABLE_NLS
 #   include <libintl.h> /* INFRINGES ON USER NAME SPACE */
-#   define YY_(msgid) dgettext ("bison-runtime", msgid)
+#   define YY_(Msgid) dgettext ("bison-runtime", Msgid)
 #  endif
 # endif
 # ifndef YY_
-#  define YY_(msgid) msgid
+#  define YY_(Msgid) Msgid
 # endif
 #endif
 
 /* Suppress unused-variable warnings by "using" E.  */
 #if ! defined lint || defined __GNUC__
-# define YYUSE(e) ((void) (e))
+# define YYUSE(E) ((void) (E))
 #else
-# define YYUSE(e) /* empty */
+# define YYUSE(E) /* empty */
 #endif
 
 /* Identity function, used to suppress warnings about constant conditions.  */
 #ifndef lint
-# define YYID(n) (n)
+# define YYID(N) (N)
 #else
 #if (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
@@ -537,11 +561,12 @@ YYID (yyi)
 #    define alloca _alloca
 #   else
 #    define YYSTACK_ALLOC alloca
-#    if ! defined _ALLOCA_H && ! defined _STDLIB_H && (defined __STDC__ || defined __C99__FUNC__ \
+#    if ! defined _ALLOCA_H && ! defined EXIT_SUCCESS && (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
 #     include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
-#     ifndef _STDLIB_H
-#      define _STDLIB_H 1
+      /* Use EXIT_SUCCESS as a witness for stdlib.h.  */
+#     ifndef EXIT_SUCCESS
+#      define EXIT_SUCCESS 0
 #     endif
 #    endif
 #   endif
@@ -564,24 +589,24 @@ YYID (yyi)
 #  ifndef YYSTACK_ALLOC_MAXIMUM
 #   define YYSTACK_ALLOC_MAXIMUM YYSIZE_MAXIMUM
 #  endif
-#  if (defined __cplusplus && ! defined _STDLIB_H \
+#  if (defined __cplusplus && ! defined EXIT_SUCCESS \
        && ! ((defined YYMALLOC || defined malloc) \
 	     && (defined YYFREE || defined free)))
 #   include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
-#   ifndef _STDLIB_H
-#    define _STDLIB_H 1
+#   ifndef EXIT_SUCCESS
+#    define EXIT_SUCCESS 0
 #   endif
 #  endif
 #  ifndef YYMALLOC
 #   define YYMALLOC malloc
-#   if ! defined malloc && ! defined _STDLIB_H && (defined __STDC__ || defined __C99__FUNC__ \
+#   if ! defined malloc && ! defined EXIT_SUCCESS && (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
 void *malloc (YYSIZE_T); /* INFRINGES ON USER NAME SPACE */
 #   endif
 #  endif
 #  ifndef YYFREE
 #   define YYFREE free
-#   if ! defined free && ! defined _STDLIB_H && (defined __STDC__ || defined __C99__FUNC__ \
+#   if ! defined free && ! defined EXIT_SUCCESS && (defined __STDC__ || defined __C99__FUNC__ \
      || defined __cplusplus || defined _MSC_VER)
 void free (void *); /* INFRINGES ON USER NAME SPACE */
 #   endif
@@ -610,23 +635,7 @@ union yyalloc
      ((N) * (sizeof (yytype_int16) + sizeof (YYSTYPE)) \
       + YYSTACK_GAP_MAXIMUM)
 
-/* Copy COUNT objects from FROM to TO.  The source and destination do
-   not overlap.  */
-# ifndef YYCOPY
-#  if defined __GNUC__ && 1 < __GNUC__
-#   define YYCOPY(To, From, Count) \
-      __builtin_memcpy (To, From, (Count) * sizeof (*(From)))
-#  else
-#   define YYCOPY(To, From, Count)		\
-      do					\
-	{					\
-	  YYSIZE_T yyi;				\
-	  for (yyi = 0; yyi < (Count); yyi++)	\
-	    (To)[yyi] = (From)[yyi];		\
-	}					\
-      while (YYID (0))
-#  endif
-# endif
+# define YYCOPY_NEEDED 1
 
 /* Relocate STACK from its old location to the new one.  The
    local variables YYSIZE and YYSTACKSIZE give the old and new number of
@@ -645,6 +654,26 @@ union yyalloc
     while (YYID (0))
 
 #endif
+
+#if defined YYCOPY_NEEDED && YYCOPY_NEEDED
+/* Copy COUNT objects from SRC to DST.  The source and destination do
+   not overlap.  */
+# ifndef YYCOPY
+#  if defined __GNUC__ && 1 < __GNUC__
+#   define YYCOPY(Dst, Src, Count) \
+      __builtin_memcpy (Dst, Src, (Count) * sizeof (*(Src)))
+#  else
+#   define YYCOPY(Dst, Src, Count)              \
+      do                                        \
+        {                                       \
+          YYSIZE_T yyi;                         \
+          for (yyi = 0; yyi < (Count); yyi++)   \
+            (Dst)[yyi] = (Src)[yyi];            \
+        }                                       \
+      while (YYID (0))
+#  endif
+# endif
+#endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  3
@@ -1013,7 +1042,7 @@ static const yytype_uint16 yyrline[] =
 };
 #endif
 
-#if YYDEBUG || YYERROR_VERBOSE || YYTOKEN_TABLE
+#if YYDEBUG || YYERROR_VERBOSE || 0
 /* YYTNAME[SYMBOL-NUM] -- String name of the symbol SYMBOL-NUM.
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
@@ -1138,7 +1167,7 @@ static const char *const yytname[] =
   "non_empty_array_pair_list", "encaps_list", "encaps_var", "$@75",
   "encaps_var_offset", "internal_functions_in_yacc", "isset_variables",
   "$@76", "isset_variable", "class_constant", "static_class_name_scalar",
-  "class_name_scalar", 0
+  "class_name_scalar", YY_NULL
 };
 #endif
 
@@ -1286,8 +1315,8 @@ static const yytype_uint8 yyr2[] =
        1,     1,     3,     3,     3,     3
 };
 
-/* YYDEFACT[STATE-NAME] -- Default rule to reduce with in state
-   STATE-NUM when YYTABLE doesn't specify something else to do.  Zero
+/* YYDEFACT[STATE-NAME] -- Default reduction number in state STATE-NUM.
+   Performed when YYTABLE doesn't specify something else to do.  Zero
    means the default is an error.  */
 static const yytype_uint16 yydefact[] =
 {
@@ -1558,8 +1587,7 @@ static const yytype_int16 yypgoto[] =
 
 /* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
    positive, shift that token.  If negative, reduce the rule which
-   number is the opposite.  If zero, do what YYDEFACT says.
-   If YYTABLE_NINF, syntax error.  */
+   number is the opposite.  If YYTABLE_NINF, syntax error.  */
 #define YYTABLE_NINF -542
 static const yytype_int16 yytable[] =
 {
@@ -2077,6 +2105,12 @@ static const yytype_int16 yytable[] =
      262,   263,   264,   265,   266,   267,   268,   269,   270,   271,
      272,   273,   274,   275,   276,     0,   277
 };
+
+#define yypact_value_is_default(Yystate) \
+  (!!((Yystate) == (-770)))
+
+#define yytable_value_is_error(Yytable_value) \
+  (!!((Yytable_value) == (-542)))
 
 static const yytype_int16 yycheck[] =
 {
@@ -2714,78 +2748,50 @@ static const yytype_uint16 yystos[] =
 
 /* Like YYERROR except do call yyerror.  This remains here temporarily
    to ease the transition to the new meaning of YYERROR, for GCC.
-   Once GCC version 2 has supplanted version 1, this can go.  */
+   Once GCC version 2 has supplanted version 1, this can go.  However,
+   YYFAIL appears to be in use.  Nevertheless, it is formally deprecated
+   in Bison 2.4.2's NEWS entry, where a plan to phase it out is
+   discussed.  */
 
 #define YYFAIL		goto yyerrlab
+#if defined YYFAIL
+  /* This is here to suppress warnings from the GCC cpp's
+     -Wunused-macros.  Normally we don't worry about that warning, but
+     some users do, and we want to make it easy for users to remove
+     YYFAIL uses, which will produce warnings from Bison 2.5.  */
+#endif
 
 #define YYRECOVERING()  (!!yyerrstatus)
 
-#define YYBACKUP(Token, Value)					\
-do								\
-  if (yychar == YYEMPTY && yylen == 1)				\
-    {								\
-      yychar = (Token);						\
-      yylval = (Value);						\
-      yytoken = YYTRANSLATE (yychar);				\
-      YYPOPSTACK (1);						\
-      goto yybackup;						\
-    }								\
-  else								\
-    {								\
+#define YYBACKUP(Token, Value)                                  \
+do                                                              \
+  if (yychar == YYEMPTY)                                        \
+    {                                                           \
+      yychar = (Token);                                         \
+      yylval = (Value);                                         \
+      YYPOPSTACK (yylen);                                       \
+      yystate = *yyssp;                                         \
+      goto yybackup;                                            \
+    }                                                           \
+  else                                                          \
+    {                                                           \
       yyerror (YY_("syntax error: cannot back up")); \
       YYERROR;							\
     }								\
 while (YYID (0))
 
-
+/* Error token number */
 #define YYTERROR	1
 #define YYERRCODE	256
 
 
-/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
-   If N is 0, then set CURRENT to the empty location which ends
-   the previous symbol: RHS[0] (always defined).  */
-
-#define YYRHSLOC(Rhs, K) ((Rhs)[K])
-#ifndef YYLLOC_DEFAULT
-# define YYLLOC_DEFAULT(Current, Rhs, N)				\
-    do									\
-      if (YYID (N))                                                    \
-	{								\
-	  (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;	\
-	  (Current).first_column = YYRHSLOC (Rhs, 1).first_column;	\
-	  (Current).last_line    = YYRHSLOC (Rhs, N).last_line;		\
-	  (Current).last_column  = YYRHSLOC (Rhs, N).last_column;	\
-	}								\
-      else								\
-	{								\
-	  (Current).first_line   = (Current).last_line   =		\
-	    YYRHSLOC (Rhs, 0).last_line;				\
-	  (Current).first_column = (Current).last_column =		\
-	    YYRHSLOC (Rhs, 0).last_column;				\
-	}								\
-    while (YYID (0))
-#endif
-
-
-/* YY_LOCATION_PRINT -- Print the location on the stream.
-   This macro was not mandated originally: define only if we know
-   we won't break user code: when these are the locations we know.  */
-
+/* This macro is provided for backward compatibility. */
 #ifndef YY_LOCATION_PRINT
-# if YYLTYPE_IS_TRIVIAL
-#  define YY_LOCATION_PRINT(File, Loc)			\
-     fprintf (File, "%d.%d-%d.%d",			\
-	      (Loc).first_line, (Loc).first_column,	\
-	      (Loc).last_line,  (Loc).last_column)
-# else
-#  define YY_LOCATION_PRINT(File, Loc) ((void) 0)
-# endif
+# define YY_LOCATION_PRINT(File, Loc) ((void) 0)
 #endif
 
 
 /* YYLEX -- calling `yylex' with the right arguments.  */
-
 #ifdef YYLEX_PARAM
 # define YYLEX yylex (&yylval, YYLEX_PARAM)
 #else
@@ -2835,6 +2841,8 @@ yy_symbol_value_print (yyoutput, yytype, yyvaluep)
     YYSTYPE const * const yyvaluep;
 #endif
 {
+  FILE *yyo = yyoutput;
+  YYUSE (yyo);
   if (!yyvaluep)
     return;
 # ifdef YYPRINT
@@ -2972,7 +2980,6 @@ int yydebug;
 # define YYMAXDEPTH 10000
 #endif
 
-
 
 #if YYERROR_VERBOSE
 
@@ -3075,115 +3082,142 @@ yytnamerr (char *yyres, const char *yystr)
 }
 # endif
 
-/* Copy into YYRESULT an error message about the unexpected token
-   YYCHAR while in state YYSTATE.  Return the number of bytes copied,
-   including the terminating null byte.  If YYRESULT is null, do not
-   copy anything; just return the number of bytes that would be
-   copied.  As a special case, return 0 if an ordinary "syntax error"
-   message will do.  Return YYSIZE_MAXIMUM if overflow occurs during
-   size calculation.  */
-static YYSIZE_T
-yysyntax_error (char *yyresult, int yystate, int yychar)
+/* Copy into *YYMSG, which is of size *YYMSG_ALLOC, an error message
+   about the unexpected token YYTOKEN for the state stack whose top is
+   YYSSP.
+
+   Return 0 if *YYMSG was successfully written.  Return 1 if *YYMSG is
+   not large enough to hold the message.  In that case, also set
+   *YYMSG_ALLOC to the required number of bytes.  Return 2 if the
+   required number of bytes is too large to store.  */
+static int
+yysyntax_error (YYSIZE_T *yymsg_alloc, char **yymsg,
+                yytype_int16 *yyssp, int yytoken)
 {
-  int yyn = yypact[yystate];
+  YYSIZE_T yysize0 = yytnamerr (YY_NULL, yytname[yytoken]);
+  YYSIZE_T yysize = yysize0;
+  YYSIZE_T yysize1;
+  enum { YYERROR_VERBOSE_ARGS_MAXIMUM = 5 };
+  /* Internationalized format string. */
+  const char *yyformat = YY_NULL;
+  /* Arguments of yyformat. */
+  char const *yyarg[YYERROR_VERBOSE_ARGS_MAXIMUM];
+  /* Number of reported tokens (one for the "unexpected", one per
+     "expected"). */
+  int yycount = 0;
 
-  if (! (YYPACT_NINF < yyn && yyn <= YYLAST))
-    return 0;
-  else
+  /* There are many possibilities here to consider:
+     - Assume YYFAIL is not used.  It's too flawed to consider.  See
+       <http://lists.gnu.org/archive/html/bison-patches/2009-12/msg00024.html>
+       for details.  YYERROR is fine as it does not invoke this
+       function.
+     - If this state is a consistent state with a default action, then
+       the only way this function was invoked is if the default action
+       is an error action.  In that case, don't check for expected
+       tokens because there are none.
+     - The only way there can be no lookahead present (in yychar) is if
+       this state is a consistent state with a default action.  Thus,
+       detecting the absence of a lookahead is sufficient to determine
+       that there is no unexpected or expected token to report.  In that
+       case, just report a simple "syntax error".
+     - Don't assume there isn't a lookahead just because this state is a
+       consistent state with a default action.  There might have been a
+       previous inconsistent state, consistent state with a non-default
+       action, or user semantic action that manipulated yychar.
+     - Of course, the expected token list depends on states to have
+       correct lookahead information, and it depends on the parser not
+       to perform extra reductions after fetching a lookahead from the
+       scanner and before detecting a syntax error.  Thus, state merging
+       (from LALR or IELR) and default reductions corrupt the expected
+       token list.  However, the list is correct for canonical LR with
+       one exception: it will still contain any token that will not be
+       accepted due to an error action in a later state.
+  */
+  if (yytoken != YYEMPTY)
     {
-      int yytype = YYTRANSLATE (yychar);
-      YYSIZE_T yysize0 = yytnamerr (0, yytname[yytype]);
-      YYSIZE_T yysize = yysize0;
-      YYSIZE_T yysize1;
-      int yysize_overflow = 0;
-      enum { YYERROR_VERBOSE_ARGS_MAXIMUM = 5 };
-      char const *yyarg[YYERROR_VERBOSE_ARGS_MAXIMUM];
-      int yyx;
+      int yyn = yypact[*yyssp];
+      yyarg[yycount++] = yytname[yytoken];
+      if (!yypact_value_is_default (yyn))
+        {
+          /* Start YYX at -YYN if negative to avoid negative indexes in
+             YYCHECK.  In other words, skip the first -YYN actions for
+             this state because they are default actions.  */
+          int yyxbegin = yyn < 0 ? -yyn : 0;
+          /* Stay within bounds of both yycheck and yytname.  */
+          int yychecklim = YYLAST - yyn + 1;
+          int yyxend = yychecklim < YYNTOKENS ? yychecklim : YYNTOKENS;
+          int yyx;
 
-# if 0
-      /* This is so xgettext sees the translatable formats that are
-	 constructed on the fly.  */
-      YY_("syntax error, unexpected %s");
-      YY_("syntax error, unexpected %s, expecting %s");
-      YY_("syntax error, unexpected %s, expecting %s or %s");
-      YY_("syntax error, unexpected %s, expecting %s or %s or %s");
-      YY_("syntax error, unexpected %s, expecting %s or %s or %s or %s");
-# endif
-      char *yyfmt;
-      char const *yyf;
-      static char const yyunexpected[] = "syntax error, unexpected %s";
-      static char const yyexpecting[] = ", expecting %s";
-      static char const yyor[] = " or %s";
-      char yyformat[sizeof yyunexpected
-		    + sizeof yyexpecting - 1
-		    + ((YYERROR_VERBOSE_ARGS_MAXIMUM - 2)
-		       * (sizeof yyor - 1))];
-      char const *yyprefix = yyexpecting;
-
-      /* Start YYX at -YYN if negative to avoid negative indexes in
-	 YYCHECK.  */
-      int yyxbegin = yyn < 0 ? -yyn : 0;
-
-      /* Stay within bounds of both yycheck and yytname.  */
-      int yychecklim = YYLAST - yyn + 1;
-      int yyxend = yychecklim < YYNTOKENS ? yychecklim : YYNTOKENS;
-      int yycount = 1;
-
-      yyarg[0] = yytname[yytype];
-      yyfmt = yystpcpy (yyformat, yyunexpected);
-
-      for (yyx = yyxbegin; yyx < yyxend; ++yyx)
-	if (yycheck[yyx + yyn] == yyx && yyx != YYTERROR)
-	  {
-	    if (yycount == YYERROR_VERBOSE_ARGS_MAXIMUM)
-	      {
-		yycount = 1;
-		yysize = yysize0;
-		yyformat[sizeof yyunexpected - 1] = '\0';
-		break;
-	      }
-	    yyarg[yycount++] = yytname[yyx];
-	    yysize1 = yysize + yytnamerr (0, yytname[yyx]);
-	    yysize_overflow |= (yysize1 < yysize);
-	    yysize = yysize1;
-	    yyfmt = yystpcpy (yyfmt, yyprefix);
-	    yyprefix = yyor;
-	  }
-
-      yyf = YY_(yyformat);
-      yysize1 = yysize + yystrlen (yyf);
-      yysize_overflow |= (yysize1 < yysize);
-      yysize = yysize1;
-
-      if (yysize_overflow)
-	return YYSIZE_MAXIMUM;
-
-      if (yyresult)
-	{
-	  /* Avoid sprintf, as that infringes on the user's name space.
-	     Don't have undefined behavior even if the translation
-	     produced a string with the wrong number of "%s"s.  */
-	  char *yyp = yyresult;
-	  int yyi = 0;
-	  while ((*yyp = *yyf) != '\0')
-	    {
-	      if (*yyp == '%' && yyf[1] == 's' && yyi < yycount)
-		{
-		  yyp += yytnamerr (yyp, yyarg[yyi++]);
-		  yyf += 2;
-		}
-	      else
-		{
-		  yyp++;
-		  yyf++;
-		}
-	    }
-	}
-      return yysize;
+          for (yyx = yyxbegin; yyx < yyxend; ++yyx)
+            if (yycheck[yyx + yyn] == yyx && yyx != YYTERROR
+                && !yytable_value_is_error (yytable[yyx + yyn]))
+              {
+                if (yycount == YYERROR_VERBOSE_ARGS_MAXIMUM)
+                  {
+                    yycount = 1;
+                    yysize = yysize0;
+                    break;
+                  }
+                yyarg[yycount++] = yytname[yyx];
+                yysize1 = yysize + yytnamerr (YY_NULL, yytname[yyx]);
+                if (! (yysize <= yysize1
+                       && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
+                  return 2;
+                yysize = yysize1;
+              }
+        }
     }
+
+  switch (yycount)
+    {
+# define YYCASE_(N, S)                      \
+      case N:                               \
+        yyformat = S;                       \
+      break
+      YYCASE_(0, YY_("syntax error"));
+      YYCASE_(1, YY_("syntax error, unexpected %s"));
+      YYCASE_(2, YY_("syntax error, unexpected %s, expecting %s"));
+      YYCASE_(3, YY_("syntax error, unexpected %s, expecting %s or %s"));
+      YYCASE_(4, YY_("syntax error, unexpected %s, expecting %s or %s or %s"));
+      YYCASE_(5, YY_("syntax error, unexpected %s, expecting %s or %s or %s or %s"));
+# undef YYCASE_
+    }
+
+  yysize1 = yysize + yystrlen (yyformat);
+  if (! (yysize <= yysize1 && yysize1 <= YYSTACK_ALLOC_MAXIMUM))
+    return 2;
+  yysize = yysize1;
+
+  if (*yymsg_alloc < yysize)
+    {
+      *yymsg_alloc = 2 * yysize;
+      if (! (yysize <= *yymsg_alloc
+             && *yymsg_alloc <= YYSTACK_ALLOC_MAXIMUM))
+        *yymsg_alloc = YYSTACK_ALLOC_MAXIMUM;
+      return 1;
+    }
+
+  /* Avoid sprintf, as that infringes on the user's name space.
+     Don't have undefined behavior even if the translation
+     produced a string with the wrong number of "%s"s.  */
+  {
+    char *yyp = *yymsg;
+    int yyi = 0;
+    while ((*yyp = *yyformat) != '\0')
+      if (*yyp == '%' && yyformat[1] == 's' && yyi < yycount)
+        {
+          yyp += yytnamerr (yyp, yyarg[yyi++]);
+          yyformat += 2;
+        }
+      else
+        {
+          yyp++;
+          yyformat++;
+        }
+  }
+  return 0;
 }
 #endif /* YYERROR_VERBOSE */
-
 
 /*-----------------------------------------------.
 | Release the memory associated to this symbol.  |
@@ -3216,28 +3250,12 @@ yydestruct (yymsg, yytype, yyvaluep)
     }
 }
 
-/* Prevent warnings from -Wmissing-prototypes.  */
-#ifdef YYPARSE_PARAM
-#if defined __STDC__ || defined __cplusplus
-int yyparse (void *YYPARSE_PARAM);
-#else
-int yyparse ();
-#endif
-#else /* ! YYPARSE_PARAM */
-#if defined __STDC__ || defined __cplusplus
-int yyparse (void);
-#else
-int yyparse ();
-#endif
-#endif /* ! YYPARSE_PARAM */
 
 
 
-
-
-/*-------------------------.
-| yyparse or yypush_parse.  |
-`-------------------------*/
+/*----------.
+| yyparse.  |
+`----------*/
 
 #ifdef YYPARSE_PARAM
 #if (defined __STDC__ || defined __C99__FUNC__ \
@@ -3264,8 +3282,31 @@ yyparse ()
 /* The lookahead symbol.  */
 int yychar;
 
+
+#if defined __GNUC__ && 407 <= __GNUC__ * 100 + __GNUC_MINOR__
+/* Suppress an incorrect diagnostic about yylval being uninitialized.  */
+# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN \
+    _Pragma ("GCC diagnostic push") \
+    _Pragma ("GCC diagnostic ignored \"-Wuninitialized\"")\
+    _Pragma ("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
+# define YY_IGNORE_MAYBE_UNINITIALIZED_END \
+    _Pragma ("GCC diagnostic pop")
+#else
+/* Default value used for initialization, for pacifying older GCCs
+   or non-GCC compilers.  */
+static YYSTYPE yyval_default;
+# define YY_INITIAL_VALUE(Value) = Value
+#endif
+#ifndef YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+# define YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
+# define YY_IGNORE_MAYBE_UNINITIALIZED_END
+#endif
+#ifndef YY_INITIAL_VALUE
+# define YY_INITIAL_VALUE(Value) /* Nothing. */
+#endif
+
 /* The semantic value of the lookahead symbol.  */
-YYSTYPE yylval;
+YYSTYPE yylval YY_INITIAL_VALUE(yyval_default);
 
     /* Number of syntax errors so far.  */
     int yynerrs;
@@ -3278,7 +3319,7 @@ YYSTYPE yylval;
        `yyss': related to states.
        `yyvs': related to semantic values.
 
-       Refer to the stacks thru separate pointers, to allow yyoverflow
+       Refer to the stacks through separate pointers, to allow yyoverflow
        to reallocate them elsewhere.  */
 
     /* The state stack.  */
@@ -3296,7 +3337,7 @@ YYSTYPE yylval;
   int yyn;
   int yyresult;
   /* Lookahead token as an internal (translated) token number.  */
-  int yytoken;
+  int yytoken = 0;
   /* The variables used to return semantic value and location from the
      action routines.  */
   YYSTYPE yyval;
@@ -3314,9 +3355,8 @@ YYSTYPE yylval;
      Keep to zero when no symbol should be popped.  */
   int yylen = 0;
 
-  yytoken = 0;
-  yyss = yyssa;
-  yyvs = yyvsa;
+  yyssp = yyss = yyssa;
+  yyvsp = yyvs = yyvsa;
   yystacksize = YYINITDEPTH;
 
   YYDPRINTF ((stderr, "Starting parse\n"));
@@ -3325,14 +3365,6 @@ YYSTYPE yylval;
   yyerrstatus = 0;
   yynerrs = 0;
   yychar = YYEMPTY; /* Cause a token to be read.  */
-
-  /* Initialize stack pointers.
-     Waste one element of value and location stack
-     so that they stay on the same level as the state stack.
-     The wasted elements are never initialized.  */
-  yyssp = yyss;
-  yyvsp = yyvs;
-
   goto yysetstate;
 
 /*------------------------------------------------------------.
@@ -3424,7 +3456,7 @@ yybackup:
 
   /* First try to decide what to do without reference to lookahead token.  */
   yyn = yypact[yystate];
-  if (yyn == YYPACT_NINF)
+  if (yypact_value_is_default (yyn))
     goto yydefault;
 
   /* Not known => get a lookahead token if don't already have one.  */
@@ -3455,8 +3487,8 @@ yybackup:
   yyn = yytable[yyn];
   if (yyn <= 0)
     {
-      if (yyn == 0 || yyn == YYTABLE_NINF)
-	goto yyerrlab;
+      if (yytable_value_is_error (yyn))
+        goto yyerrlab;
       yyn = -yyn;
       goto yyreduce;
     }
@@ -3473,7 +3505,9 @@ yybackup:
   yychar = YYEMPTY;
 
   yystate = yyn;
+  YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
   *++yyvsp = yylval;
+  YY_IGNORE_MAYBE_UNINITIALIZED_END
 
   goto yynewstate;
 
@@ -3510,2436 +3544,2933 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-
+/* Line 1778 of yacc.c  */
+#line 219 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_compilation(TSRMLS_C); }
     break;
 
   case 3:
-
+/* Line 1778 of yacc.c  */
+#line 223 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_extended_info(TSRMLS_C); }
     break;
 
   case 4:
-
+/* Line 1778 of yacc.c  */
+#line 223 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { HANDLE_INTERACTIVE(); }
     break;
 
   case 6:
-
+/* Line 1778 of yacc.c  */
+#line 228 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 7:
-
+/* Line 1778 of yacc.c  */
+#line 229 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_build_namespace_name(&(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 8:
-
+/* Line 1778 of yacc.c  */
+#line 233 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_verify_namespace(TSRMLS_C); }
     break;
 
   case 9:
-
+/* Line 1778 of yacc.c  */
+#line 234 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_verify_namespace(TSRMLS_C); zend_do_early_binding(TSRMLS_C); }
     break;
 
   case 10:
-
+/* Line 1778 of yacc.c  */
+#line 235 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_verify_namespace(TSRMLS_C); zend_do_early_binding(TSRMLS_C); }
     break;
 
   case 11:
-
+/* Line 1778 of yacc.c  */
+#line 236 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_halt_compiler_register(TSRMLS_C); YYACCEPT; }
     break;
 
   case 12:
-
+/* Line 1778 of yacc.c  */
+#line 237 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_namespace(&(yyvsp[(2) - (3)]), 0 TSRMLS_CC); }
     break;
 
   case 13:
-
+/* Line 1778 of yacc.c  */
+#line 238 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_namespace(&(yyvsp[(2) - (3)]), 1 TSRMLS_CC); }
     break;
 
   case 14:
-
+/* Line 1778 of yacc.c  */
+#line 239 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_namespace(TSRMLS_C); }
     break;
 
   case 15:
-
+/* Line 1778 of yacc.c  */
+#line 240 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_namespace(NULL, 1 TSRMLS_CC); }
     break;
 
   case 16:
-
+/* Line 1778 of yacc.c  */
+#line 241 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_namespace(TSRMLS_C); }
     break;
 
   case 17:
-
+/* Line 1778 of yacc.c  */
+#line 242 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_verify_namespace(TSRMLS_C); }
     break;
 
   case 18:
-
+/* Line 1778 of yacc.c  */
+#line 243 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_verify_namespace(TSRMLS_C); }
     break;
 
   case 21:
-
+/* Line 1778 of yacc.c  */
+#line 252 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_use(&(yyvsp[(1) - (1)]), NULL, 0 TSRMLS_CC); }
     break;
 
   case 22:
-
+/* Line 1778 of yacc.c  */
+#line 253 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_use(&(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]), 0 TSRMLS_CC); }
     break;
 
   case 23:
-
+/* Line 1778 of yacc.c  */
+#line 254 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_use(&(yyvsp[(2) - (2)]), NULL, 1 TSRMLS_CC); }
     break;
 
   case 24:
-
+/* Line 1778 of yacc.c  */
+#line 255 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_use(&(yyvsp[(2) - (4)]), &(yyvsp[(4) - (4)]), 1 TSRMLS_CC); }
     break;
 
   case 25:
-
+/* Line 1778 of yacc.c  */
+#line 259 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_declare_constant(&(yyvsp[(3) - (5)]), &(yyvsp[(5) - (5)]) TSRMLS_CC); }
     break;
 
   case 26:
-
+/* Line 1778 of yacc.c  */
+#line 260 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_declare_constant(&(yyvsp[(2) - (4)]), &(yyvsp[(4) - (4)]) TSRMLS_CC); }
     break;
 
   case 27:
-
+/* Line 1778 of yacc.c  */
+#line 264 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_extended_info(TSRMLS_C); }
     break;
 
   case 28:
-
+/* Line 1778 of yacc.c  */
+#line 264 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { HANDLE_INTERACTIVE(); }
     break;
 
   case 33:
-
+/* Line 1778 of yacc.c  */
+#line 273 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_error(E_COMPILE_ERROR, "__HALT_COMPILER() can only be used from the outermost scope"); }
     break;
 
   case 34:
-
+/* Line 1778 of yacc.c  */
+#line 278 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { DO_TICKS(); }
     break;
 
   case 35:
-
+/* Line 1778 of yacc.c  */
+#line 279 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_label(&(yyvsp[(1) - (2)]) TSRMLS_CC); }
     break;
 
   case 37:
-
+/* Line 1778 of yacc.c  */
+#line 284 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_if_cond(&(yyvsp[(2) - (2)]), &(yyvsp[(1) - (2)]) TSRMLS_CC); }
     break;
 
   case 38:
-
+/* Line 1778 of yacc.c  */
+#line 284 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_if_after_statement(&(yyvsp[(1) - (4)]), 1 TSRMLS_CC); }
     break;
 
   case 39:
-
+/* Line 1778 of yacc.c  */
+#line 284 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_if_end(TSRMLS_C); }
     break;
 
   case 40:
-
+/* Line 1778 of yacc.c  */
+#line 285 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_if_cond(&(yyvsp[(2) - (3)]), &(yyvsp[(1) - (3)]) TSRMLS_CC); }
     break;
 
   case 41:
-
+/* Line 1778 of yacc.c  */
+#line 285 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_if_after_statement(&(yyvsp[(1) - (5)]), 1 TSRMLS_CC); }
     break;
 
   case 42:
-
+/* Line 1778 of yacc.c  */
+#line 285 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_if_end(TSRMLS_C); }
     break;
 
   case 43:
-
+/* Line 1778 of yacc.c  */
+#line 286 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyvsp[(1) - (1)]).u.op.opline_num = get_next_op_number(CG(active_op_array)); }
     break;
 
   case 44:
-
+/* Line 1778 of yacc.c  */
+#line 286 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_while_cond(&(yyvsp[(3) - (3)]), &(yyval) TSRMLS_CC); }
     break;
 
   case 45:
-
+/* Line 1778 of yacc.c  */
+#line 286 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_while_end(&(yyvsp[(1) - (5)]), &(yyvsp[(4) - (5)]) TSRMLS_CC); }
     break;
 
   case 46:
-
+/* Line 1778 of yacc.c  */
+#line 287 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyvsp[(1) - (1)]).u.op.opline_num = get_next_op_number(CG(active_op_array));  zend_do_do_while_begin(TSRMLS_C); }
     break;
 
   case 47:
-
+/* Line 1778 of yacc.c  */
+#line 287 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyvsp[(4) - (4)]).u.op.opline_num = get_next_op_number(CG(active_op_array)); }
     break;
 
   case 48:
-
+/* Line 1778 of yacc.c  */
+#line 287 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_do_while_end(&(yyvsp[(1) - (7)]), &(yyvsp[(4) - (7)]), &(yyvsp[(6) - (7)]) TSRMLS_CC); }
     break;
 
   case 49:
-
+/* Line 1778 of yacc.c  */
+#line 291 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_free(&(yyvsp[(3) - (4)]) TSRMLS_CC); (yyvsp[(4) - (4)]).u.op.opline_num = get_next_op_number(CG(active_op_array)); }
     break;
 
   case 50:
-
+/* Line 1778 of yacc.c  */
+#line 293 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_extended_info(TSRMLS_C); zend_do_for_cond(&(yyvsp[(6) - (7)]), &(yyvsp[(7) - (7)]) TSRMLS_CC); }
     break;
 
   case 51:
-
+/* Line 1778 of yacc.c  */
+#line 295 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_free(&(yyvsp[(9) - (10)]) TSRMLS_CC); zend_do_for_before_statement(&(yyvsp[(4) - (10)]), &(yyvsp[(7) - (10)]) TSRMLS_CC); }
     break;
 
   case 52:
-
+/* Line 1778 of yacc.c  */
+#line 296 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_for_end(&(yyvsp[(7) - (12)]) TSRMLS_CC); }
     break;
 
   case 53:
-
+/* Line 1778 of yacc.c  */
+#line 297 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_switch_cond(&(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 54:
-
+/* Line 1778 of yacc.c  */
+#line 297 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_switch_end(&(yyvsp[(4) - (4)]) TSRMLS_CC); }
     break;
 
   case 55:
-
+/* Line 1778 of yacc.c  */
+#line 298 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_brk_cont(ZEND_BRK, NULL TSRMLS_CC); }
     break;
 
   case 56:
-
+/* Line 1778 of yacc.c  */
+#line 299 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_brk_cont(ZEND_BRK, &(yyvsp[(2) - (3)]) TSRMLS_CC); }
     break;
 
   case 57:
-
+/* Line 1778 of yacc.c  */
+#line 300 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_brk_cont(ZEND_CONT, NULL TSRMLS_CC); }
     break;
 
   case 58:
-
+/* Line 1778 of yacc.c  */
+#line 301 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_brk_cont(ZEND_CONT, &(yyvsp[(2) - (3)]) TSRMLS_CC); }
     break;
 
   case 59:
-
+/* Line 1778 of yacc.c  */
+#line 302 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_return(NULL, 0 TSRMLS_CC); }
     break;
 
   case 60:
-
+/* Line 1778 of yacc.c  */
+#line 303 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_return(&(yyvsp[(2) - (3)]), 0 TSRMLS_CC); }
     break;
 
   case 61:
-
+/* Line 1778 of yacc.c  */
+#line 304 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_return(&(yyvsp[(2) - (3)]), 1 TSRMLS_CC); }
     break;
 
   case 62:
-
+/* Line 1778 of yacc.c  */
+#line 305 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_free(&(yyvsp[(1) - (2)]) TSRMLS_CC); }
     break;
 
   case 66:
-
+/* Line 1778 of yacc.c  */
+#line 309 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_echo(&(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 67:
-
+/* Line 1778 of yacc.c  */
+#line 310 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_free(&(yyvsp[(1) - (2)]) TSRMLS_CC); }
     break;
 
   case 69:
-
+/* Line 1778 of yacc.c  */
+#line 313 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_foreach_begin(&(yyvsp[(1) - (4)]), &(yyvsp[(2) - (4)]), &(yyvsp[(3) - (4)]), &(yyvsp[(4) - (4)]), 1 TSRMLS_CC); }
     break;
 
   case 70:
-
+/* Line 1778 of yacc.c  */
+#line 314 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_foreach_cont(&(yyvsp[(1) - (8)]), &(yyvsp[(2) - (8)]), &(yyvsp[(4) - (8)]), &(yyvsp[(6) - (8)]), &(yyvsp[(7) - (8)]) TSRMLS_CC); }
     break;
 
   case 71:
-
+/* Line 1778 of yacc.c  */
+#line 315 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_foreach_end(&(yyvsp[(1) - (10)]), &(yyvsp[(4) - (10)]) TSRMLS_CC); }
     break;
 
   case 72:
-
+/* Line 1778 of yacc.c  */
+#line 317 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_foreach_begin(&(yyvsp[(1) - (4)]), &(yyvsp[(2) - (4)]), &(yyvsp[(3) - (4)]), &(yyvsp[(4) - (4)]), 0 TSRMLS_CC); }
     break;
 
   case 73:
-
+/* Line 1778 of yacc.c  */
+#line 318 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_foreach_cont(&(yyvsp[(1) - (8)]), &(yyvsp[(2) - (8)]), &(yyvsp[(4) - (8)]), &(yyvsp[(6) - (8)]), &(yyvsp[(7) - (8)]) TSRMLS_CC); }
     break;
 
   case 74:
-
+/* Line 1778 of yacc.c  */
+#line 319 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_foreach_end(&(yyvsp[(1) - (10)]), &(yyvsp[(4) - (10)]) TSRMLS_CC); }
     break;
 
   case 75:
-
+/* Line 1778 of yacc.c  */
+#line 320 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyvsp[(1) - (1)]).u.op.opline_num = get_next_op_number(CG(active_op_array)); zend_do_declare_begin(TSRMLS_C); }
     break;
 
   case 76:
-
+/* Line 1778 of yacc.c  */
+#line 320 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_declare_end(&(yyvsp[(1) - (6)]) TSRMLS_CC); }
     break;
 
   case 78:
-
+/* Line 1778 of yacc.c  */
+#line 322 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_try(&(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 79:
-
+/* Line 1778 of yacc.c  */
+#line 323 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_bind_catch(&(yyvsp[(1) - (6)]), &(yyvsp[(6) - (6)]) TSRMLS_CC); }
     break;
 
   case 80:
-
+/* Line 1778 of yacc.c  */
+#line 324 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_finally(&(yyvsp[(1) - (8)]), &(yyvsp[(6) - (8)]), &(yyvsp[(8) - (8)]) TSRMLS_CC); }
     break;
 
   case 81:
-
+/* Line 1778 of yacc.c  */
+#line 325 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_throw(&(yyvsp[(2) - (3)]) TSRMLS_CC); }
     break;
 
   case 82:
-
+/* Line 1778 of yacc.c  */
+#line 326 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_goto(&(yyvsp[(2) - (3)]) TSRMLS_CC); }
     break;
 
   case 83:
-
+/* Line 1778 of yacc.c  */
+#line 330 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_UNUSED; }
     break;
 
   case 84:
-
+/* Line 1778 of yacc.c  */
+#line 331 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_initialize_try_catch_element(&(yyvsp[(1) - (2)]) TSRMLS_CC); }
     break;
 
   case 85:
-
+/* Line 1778 of yacc.c  */
+#line 332 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_first_catch(&(yyvsp[(2) - (4)]) TSRMLS_CC); }
     break;
 
   case 86:
-
+/* Line 1778 of yacc.c  */
+#line 333 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_catch(&(yyvsp[(1) - (7)]), &(yyvsp[(4) - (7)]), &(yyvsp[(6) - (7)]), &(yyvsp[(2) - (7)]) TSRMLS_CC); }
     break;
 
   case 87:
-
+/* Line 1778 of yacc.c  */
+#line 334 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_catch(&(yyvsp[(1) - (11)]) TSRMLS_CC); }
     break;
 
   case 88:
-
+/* Line 1778 of yacc.c  */
+#line 335 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_mark_last_catch(&(yyvsp[(2) - (13)]), &(yyvsp[(13) - (13)]) TSRMLS_CC); (yyval) = (yyvsp[(1) - (13)]);}
     break;
 
   case 89:
-
+/* Line 1778 of yacc.c  */
+#line 338 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_UNUSED; }
     break;
 
   case 90:
-
+/* Line 1778 of yacc.c  */
+#line 339 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_finally(&(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 91:
-
+/* Line 1778 of yacc.c  */
+#line 339 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (5)]); }
     break;
 
   case 92:
-
+/* Line 1778 of yacc.c  */
+#line 343 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 93:
-
+/* Line 1778 of yacc.c  */
+#line 344 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).u.op.opline_num = -1; }
     break;
 
   case 94:
-
+/* Line 1778 of yacc.c  */
+#line 348 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 95:
-
+/* Line 1778 of yacc.c  */
+#line 349 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (2)]); }
     break;
 
   case 96:
-
+/* Line 1778 of yacc.c  */
+#line 353 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).u.op.opline_num = get_next_op_number(CG(active_op_array)); }
     break;
 
   case 97:
-
+/* Line 1778 of yacc.c  */
+#line 353 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_catch(&(yyvsp[(1) - (6)]), &(yyvsp[(3) - (6)]), &(yyvsp[(5) - (6)]), NULL TSRMLS_CC); }
     break;
 
   case 98:
-
+/* Line 1778 of yacc.c  */
+#line 353 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_catch(&(yyvsp[(1) - (10)]) TSRMLS_CC); }
     break;
 
   case 101:
-
+/* Line 1778 of yacc.c  */
+#line 362 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(1) - (1)]), BP_VAR_UNSET, 0 TSRMLS_CC); zend_do_unset(&(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 102:
-
+/* Line 1778 of yacc.c  */
+#line 366 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { DO_TICKS(); }
     break;
 
   case 103:
-
+/* Line 1778 of yacc.c  */
+#line 370 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { DO_TICKS(); }
     break;
 
   case 104:
-
+/* Line 1778 of yacc.c  */
+#line 374 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = ZEND_RETURN_VAL; }
     break;
 
   case 105:
-
+/* Line 1778 of yacc.c  */
+#line 375 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = ZEND_RETURN_REF; }
     break;
 
   case 106:
-
+/* Line 1778 of yacc.c  */
+#line 380 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_function_declaration(&(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]), 0, (yyvsp[(2) - (3)]).op_type, NULL TSRMLS_CC); }
     break;
 
   case 107:
-
+/* Line 1778 of yacc.c  */
+#line 382 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_function_declaration(&(yyvsp[(1) - (10)]) TSRMLS_CC); }
     break;
 
   case 108:
-
+/* Line 1778 of yacc.c  */
+#line 387 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_class_declaration(&(yyvsp[(1) - (3)]), &(yyvsp[(2) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 109:
-
+/* Line 1778 of yacc.c  */
+#line 391 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_class_declaration(&(yyvsp[(1) - (8)]), &(yyvsp[(3) - (8)]) TSRMLS_CC); }
     break;
 
   case 110:
-
+/* Line 1778 of yacc.c  */
+#line 393 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_class_declaration(&(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]), NULL TSRMLS_CC); }
     break;
 
   case 111:
-
+/* Line 1778 of yacc.c  */
+#line 397 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_class_declaration(&(yyvsp[(1) - (7)]), NULL TSRMLS_CC); }
     break;
 
   case 112:
-
+/* Line 1778 of yacc.c  */
+#line 402 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).u.op.opline_num = CG(zend_lineno); (yyval).EA = 0; }
     break;
 
   case 113:
-
+/* Line 1778 of yacc.c  */
+#line 403 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).u.op.opline_num = CG(zend_lineno); (yyval).EA = ZEND_ACC_EXPLICIT_ABSTRACT_CLASS; }
     break;
 
   case 114:
-
+/* Line 1778 of yacc.c  */
+#line 404 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).u.op.opline_num = CG(zend_lineno); (yyval).EA = ZEND_ACC_TRAIT; }
     break;
 
   case 115:
-
+/* Line 1778 of yacc.c  */
+#line 405 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).u.op.opline_num = CG(zend_lineno); (yyval).EA = ZEND_ACC_FINAL_CLASS; }
     break;
 
   case 116:
-
+/* Line 1778 of yacc.c  */
+#line 409 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_UNUSED; }
     break;
 
   case 117:
-
+/* Line 1778 of yacc.c  */
+#line 410 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_class(&(yyval), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 118:
-
+/* Line 1778 of yacc.c  */
+#line 414 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).u.op.opline_num = CG(zend_lineno); (yyval).EA = ZEND_ACC_INTERFACE; }
     break;
 
   case 123:
-
+/* Line 1778 of yacc.c  */
+#line 428 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_implements_interface(&(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 124:
-
+/* Line 1778 of yacc.c  */
+#line 429 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_implements_interface(&(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 125:
-
+/* Line 1778 of yacc.c  */
+#line 433 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_UNUSED; }
     break;
 
   case 126:
-
+/* Line 1778 of yacc.c  */
+#line 434 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (2)]); }
     break;
 
   case 127:
-
+/* Line 1778 of yacc.c  */
+#line 438 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (1)])); (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 128:
-
+/* Line 1778 of yacc.c  */
+#line 439 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(2) - (2)])); (yyval) = (yyvsp[(2) - (2)]);  (yyval).EA |= ZEND_PARSED_REFERENCE_VARIABLE; }
     break;
 
   case 129:
-
+/* Line 1778 of yacc.c  */
+#line 440 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_list_init(TSRMLS_C); }
     break;
 
   case 130:
-
+/* Line 1778 of yacc.c  */
+#line 440 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (5)]); (yyval).EA = ZEND_PARSED_LIST_EXPR; }
     break;
 
   case 137:
-
+/* Line 1778 of yacc.c  */
+#line 462 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_declare_stmt(&(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 138:
-
+/* Line 1778 of yacc.c  */
+#line 463 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_declare_stmt(&(yyvsp[(3) - (5)]), &(yyvsp[(5) - (5)]) TSRMLS_CC); }
     break;
 
   case 139:
-
+/* Line 1778 of yacc.c  */
+#line 468 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (3)]); }
     break;
 
   case 140:
-
+/* Line 1778 of yacc.c  */
+#line 469 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(3) - (4)]); }
     break;
 
   case 141:
-
+/* Line 1778 of yacc.c  */
+#line 470 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (4)]); }
     break;
 
   case 142:
-
+/* Line 1778 of yacc.c  */
+#line 471 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(3) - (5)]); }
     break;
 
   case 143:
-
+/* Line 1778 of yacc.c  */
+#line 476 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_UNUSED; }
     break;
 
   case 144:
-
+/* Line 1778 of yacc.c  */
+#line 477 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_extended_info(TSRMLS_C);  zend_do_case_before_statement(&(yyvsp[(1) - (4)]), &(yyvsp[(2) - (4)]), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 145:
-
+/* Line 1778 of yacc.c  */
+#line 477 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_case_after_statement(&(yyval), &(yyvsp[(2) - (6)]) TSRMLS_CC); (yyval).op_type = IS_CONST; }
     break;
 
   case 146:
-
+/* Line 1778 of yacc.c  */
+#line 478 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_extended_info(TSRMLS_C);  zend_do_default_before_statement(&(yyvsp[(1) - (3)]), &(yyvsp[(2) - (3)]) TSRMLS_CC); }
     break;
 
   case 147:
-
+/* Line 1778 of yacc.c  */
+#line 478 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_case_after_statement(&(yyval), &(yyvsp[(2) - (5)]) TSRMLS_CC); (yyval).op_type = IS_CONST; }
     break;
 
   case 153:
-
+/* Line 1778 of yacc.c  */
+#line 497 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_if_cond(&(yyvsp[(3) - (3)]), &(yyvsp[(2) - (3)]) TSRMLS_CC); }
     break;
 
   case 154:
-
+/* Line 1778 of yacc.c  */
+#line 497 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_if_after_statement(&(yyvsp[(2) - (5)]), 0 TSRMLS_CC); }
     break;
 
   case 156:
-
+/* Line 1778 of yacc.c  */
+#line 503 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_if_cond(&(yyvsp[(3) - (4)]), &(yyvsp[(2) - (4)]) TSRMLS_CC); }
     break;
 
   case 157:
-
+/* Line 1778 of yacc.c  */
+#line 503 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_if_after_statement(&(yyvsp[(2) - (6)]), 0 TSRMLS_CC); }
     break;
 
   case 164:
-
+/* Line 1778 of yacc.c  */
+#line 526 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_UNUSED; (yyval).u.op.num=1; zend_do_receive_arg(ZEND_RECV, &(yyvsp[(2) - (2)]), &(yyval), NULL, &(yyvsp[(1) - (2)]), 0 TSRMLS_CC); }
     break;
 
   case 165:
-
+/* Line 1778 of yacc.c  */
+#line 527 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_UNUSED; (yyval).u.op.num=1; zend_do_receive_arg(ZEND_RECV, &(yyvsp[(3) - (3)]), &(yyval), NULL, &(yyvsp[(1) - (3)]), 1 TSRMLS_CC); }
     break;
 
   case 166:
-
+/* Line 1778 of yacc.c  */
+#line 528 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_UNUSED; (yyval).u.op.num=1; zend_do_receive_arg(ZEND_RECV_INIT, &(yyvsp[(3) - (5)]), &(yyval), &(yyvsp[(5) - (5)]), &(yyvsp[(1) - (5)]), 1 TSRMLS_CC); }
     break;
 
   case 167:
-
+/* Line 1778 of yacc.c  */
+#line 529 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_UNUSED; (yyval).u.op.num=1; zend_do_receive_arg(ZEND_RECV_INIT, &(yyvsp[(2) - (4)]), &(yyval), &(yyvsp[(4) - (4)]), &(yyvsp[(1) - (4)]), 0 TSRMLS_CC); }
     break;
 
   case 168:
-
+/* Line 1778 of yacc.c  */
+#line 530 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval)=(yyvsp[(1) - (4)]); (yyval).u.op.num++; zend_do_receive_arg(ZEND_RECV, &(yyvsp[(4) - (4)]), &(yyval), NULL, &(yyvsp[(3) - (4)]), 0 TSRMLS_CC); }
     break;
 
   case 169:
-
+/* Line 1778 of yacc.c  */
+#line 531 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval)=(yyvsp[(1) - (5)]); (yyval).u.op.num++; zend_do_receive_arg(ZEND_RECV, &(yyvsp[(5) - (5)]), &(yyval), NULL, &(yyvsp[(3) - (5)]), 1 TSRMLS_CC); }
     break;
 
   case 170:
-
+/* Line 1778 of yacc.c  */
+#line 532 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval)=(yyvsp[(1) - (7)]); (yyval).u.op.num++; zend_do_receive_arg(ZEND_RECV_INIT, &(yyvsp[(5) - (7)]), &(yyval), &(yyvsp[(7) - (7)]), &(yyvsp[(3) - (7)]), 1 TSRMLS_CC); }
     break;
 
   case 171:
-
+/* Line 1778 of yacc.c  */
+#line 533 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval)=(yyvsp[(1) - (6)]); (yyval).u.op.num++; zend_do_receive_arg(ZEND_RECV_INIT, &(yyvsp[(4) - (6)]), &(yyval), &(yyvsp[(6) - (6)]), &(yyvsp[(3) - (6)]), 0 TSRMLS_CC); }
     break;
 
   case 172:
-
+/* Line 1778 of yacc.c  */
+#line 538 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_UNUSED; }
     break;
 
   case 173:
-
+/* Line 1778 of yacc.c  */
+#line 539 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_CONST; Z_TYPE((yyval).u.constant)=IS_ARRAY; }
     break;
 
   case 174:
-
+/* Line 1778 of yacc.c  */
+#line 540 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_CONST; Z_TYPE((yyval).u.constant)=IS_CALLABLE; }
     break;
 
   case 175:
-
+/* Line 1778 of yacc.c  */
+#line 541 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 176:
-
+/* Line 1778 of yacc.c  */
+#line 546 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = 0; }
     break;
 
   case 177:
-
+/* Line 1778 of yacc.c  */
+#line 547 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (3)]); }
     break;
 
   case 178:
-
+/* Line 1778 of yacc.c  */
+#line 548 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = 1; zend_do_pass_param(&(yyvsp[(2) - (3)]), ZEND_SEND_VAL, Z_LVAL((yyval).u.constant) TSRMLS_CC); }
     break;
 
   case 179:
-
+/* Line 1778 of yacc.c  */
+#line 553 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = 1;  zend_do_pass_param(&(yyvsp[(1) - (1)]), ZEND_SEND_VAL, Z_LVAL((yyval).u.constant) TSRMLS_CC); }
     break;
 
   case 180:
-
+/* Line 1778 of yacc.c  */
+#line 554 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = 1;  zend_do_pass_param(&(yyvsp[(1) - (1)]), ZEND_SEND_VAR, Z_LVAL((yyval).u.constant) TSRMLS_CC); }
     break;
 
   case 181:
-
+/* Line 1778 of yacc.c  */
+#line 555 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = 1;  zend_do_pass_param(&(yyvsp[(2) - (2)]), ZEND_SEND_REF, Z_LVAL((yyval).u.constant) TSRMLS_CC); }
     break;
 
   case 182:
-
+/* Line 1778 of yacc.c  */
+#line 556 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant)=Z_LVAL((yyvsp[(1) - (3)]).u.constant)+1;  zend_do_pass_param(&(yyvsp[(3) - (3)]), ZEND_SEND_VAL, Z_LVAL((yyval).u.constant) TSRMLS_CC); }
     break;
 
   case 183:
-
+/* Line 1778 of yacc.c  */
+#line 557 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant)=Z_LVAL((yyvsp[(1) - (3)]).u.constant)+1;  zend_do_pass_param(&(yyvsp[(3) - (3)]), ZEND_SEND_VAR, Z_LVAL((yyval).u.constant) TSRMLS_CC); }
     break;
 
   case 184:
-
+/* Line 1778 of yacc.c  */
+#line 558 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant)=Z_LVAL((yyvsp[(1) - (4)]).u.constant)+1;  zend_do_pass_param(&(yyvsp[(4) - (4)]), ZEND_SEND_REF, Z_LVAL((yyval).u.constant) TSRMLS_CC); }
     break;
 
   case 185:
-
+/* Line 1778 of yacc.c  */
+#line 562 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_global_variable(&(yyvsp[(3) - (3)]), NULL, ZEND_FETCH_GLOBAL_LOCK TSRMLS_CC); }
     break;
 
   case 186:
-
+/* Line 1778 of yacc.c  */
+#line 563 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_global_variable(&(yyvsp[(1) - (1)]), NULL, ZEND_FETCH_GLOBAL_LOCK TSRMLS_CC); }
     break;
 
   case 187:
-
+/* Line 1778 of yacc.c  */
+#line 568 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 188:
-
+/* Line 1778 of yacc.c  */
+#line 569 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (2)]); }
     break;
 
   case 189:
-
+/* Line 1778 of yacc.c  */
+#line 570 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(3) - (4)]); }
     break;
 
   case 190:
-
+/* Line 1778 of yacc.c  */
+#line 575 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_static_variable(&(yyvsp[(3) - (3)]), NULL, ZEND_FETCH_STATIC TSRMLS_CC); }
     break;
 
   case 191:
-
+/* Line 1778 of yacc.c  */
+#line 576 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_static_variable(&(yyvsp[(3) - (5)]), &(yyvsp[(5) - (5)]), ZEND_FETCH_STATIC TSRMLS_CC); }
     break;
 
   case 192:
-
+/* Line 1778 of yacc.c  */
+#line 577 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_static_variable(&(yyvsp[(1) - (1)]), NULL, ZEND_FETCH_STATIC TSRMLS_CC); }
     break;
 
   case 193:
-
+/* Line 1778 of yacc.c  */
+#line 578 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_static_variable(&(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]), ZEND_FETCH_STATIC TSRMLS_CC); }
     break;
 
   case 196:
-
+/* Line 1778 of yacc.c  */
+#line 590 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { CG(access_type) = Z_LVAL((yyvsp[(1) - (1)]).u.constant); }
     break;
 
   case 200:
-
+/* Line 1778 of yacc.c  */
+#line 593 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_function_declaration(&(yyvsp[(2) - (4)]), &(yyvsp[(4) - (4)]), 1, (yyvsp[(3) - (4)]).op_type, &(yyvsp[(1) - (4)]) TSRMLS_CC); }
     break;
 
   case 201:
-
+/* Line 1778 of yacc.c  */
+#line 595 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_abstract_method(&(yyvsp[(4) - (9)]), &(yyvsp[(1) - (9)]), &(yyvsp[(9) - (9)]) TSRMLS_CC); zend_do_end_function_declaration(&(yyvsp[(2) - (9)]) TSRMLS_CC); }
     break;
 
   case 203:
-
+/* Line 1778 of yacc.c  */
+#line 603 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_use_trait(&(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 204:
-
+/* Line 1778 of yacc.c  */
+#line 604 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_use_trait(&(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 213:
-
+/* Line 1778 of yacc.c  */
+#line 628 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_add_trait_precedence(&(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 214:
-
+/* Line 1778 of yacc.c  */
+#line 632 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_resolve_class_name(&(yyvsp[(1) - (1)]), ZEND_FETCH_CLASS_GLOBAL, 1 TSRMLS_CC); zend_init_list(&(yyval).u.op.ptr, Z_STRVAL((yyvsp[(1) - (1)]).u.constant) TSRMLS_CC); }
     break;
 
   case 215:
-
+/* Line 1778 of yacc.c  */
+#line 633 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_resolve_class_name(&(yyvsp[(3) - (3)]), ZEND_FETCH_CLASS_GLOBAL, 1 TSRMLS_CC); zend_add_to_list(&(yyvsp[(1) - (3)]).u.op.ptr, Z_STRVAL((yyvsp[(3) - (3)]).u.constant) TSRMLS_CC); (yyval) = (yyvsp[(1) - (3)]); }
     break;
 
   case 216:
-
+/* Line 1778 of yacc.c  */
+#line 637 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_prepare_reference(&(yyval), NULL, &(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 217:
-
+/* Line 1778 of yacc.c  */
+#line 638 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 218:
-
+/* Line 1778 of yacc.c  */
+#line 642 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_prepare_reference(&(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 219:
-
+/* Line 1778 of yacc.c  */
+#line 646 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_add_trait_alias(&(yyvsp[(1) - (4)]), &(yyvsp[(3) - (4)]), &(yyvsp[(4) - (4)]) TSRMLS_CC); }
     break;
 
   case 220:
-
+/* Line 1778 of yacc.c  */
+#line 647 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_add_trait_alias(&(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]), NULL TSRMLS_CC); }
     break;
 
   case 221:
-
+/* Line 1778 of yacc.c  */
+#line 651 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = 0x0; }
     break;
 
   case 222:
-
+/* Line 1778 of yacc.c  */
+#line 652 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 223:
-
+/* Line 1778 of yacc.c  */
+#line 656 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = ZEND_ACC_ABSTRACT; }
     break;
 
   case 224:
-
+/* Line 1778 of yacc.c  */
+#line 657 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = 0;	}
     break;
 
   case 225:
-
+/* Line 1778 of yacc.c  */
+#line 661 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 226:
-
+/* Line 1778 of yacc.c  */
+#line 662 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = ZEND_ACC_PUBLIC; }
     break;
 
   case 227:
-
+/* Line 1778 of yacc.c  */
+#line 666 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = ZEND_ACC_PUBLIC; }
     break;
 
   case 228:
-
+/* Line 1778 of yacc.c  */
+#line 667 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]);  if (!(Z_LVAL((yyval).u.constant) & ZEND_ACC_PPP_MASK)) { Z_LVAL((yyval).u.constant) |= ZEND_ACC_PUBLIC; } }
     break;
 
   case 229:
-
+/* Line 1778 of yacc.c  */
+#line 671 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 230:
-
+/* Line 1778 of yacc.c  */
+#line 672 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = zend_do_verify_access_types(&(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)])); }
     break;
 
   case 231:
-
+/* Line 1778 of yacc.c  */
+#line 676 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = ZEND_ACC_PUBLIC; }
     break;
 
   case 232:
-
+/* Line 1778 of yacc.c  */
+#line 677 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = ZEND_ACC_PROTECTED; }
     break;
 
   case 233:
-
+/* Line 1778 of yacc.c  */
+#line 678 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = ZEND_ACC_PRIVATE; }
     break;
 
   case 234:
-
+/* Line 1778 of yacc.c  */
+#line 679 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = ZEND_ACC_STATIC; }
     break;
 
   case 235:
-
+/* Line 1778 of yacc.c  */
+#line 680 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = ZEND_ACC_ABSTRACT; }
     break;
 
   case 236:
-
+/* Line 1778 of yacc.c  */
+#line 681 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = ZEND_ACC_FINAL; }
     break;
 
   case 237:
-
+/* Line 1778 of yacc.c  */
+#line 685 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_declare_property(&(yyvsp[(3) - (3)]), NULL, CG(access_type) TSRMLS_CC); }
     break;
 
   case 238:
-
+/* Line 1778 of yacc.c  */
+#line 686 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_declare_property(&(yyvsp[(3) - (5)]), &(yyvsp[(5) - (5)]), CG(access_type) TSRMLS_CC); }
     break;
 
   case 239:
-
+/* Line 1778 of yacc.c  */
+#line 687 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_declare_property(&(yyvsp[(1) - (1)]), NULL, CG(access_type) TSRMLS_CC); }
     break;
 
   case 240:
-
+/* Line 1778 of yacc.c  */
+#line 688 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_declare_property(&(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]), CG(access_type) TSRMLS_CC); }
     break;
 
   case 241:
-
+/* Line 1778 of yacc.c  */
+#line 692 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_declare_class_constant(&(yyvsp[(3) - (5)]), &(yyvsp[(5) - (5)]) TSRMLS_CC); }
     break;
 
   case 242:
-
+/* Line 1778 of yacc.c  */
+#line 693 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_declare_class_constant(&(yyvsp[(2) - (4)]), &(yyvsp[(4) - (4)]) TSRMLS_CC); }
     break;
 
   case 243:
-
+/* Line 1778 of yacc.c  */
+#line 697 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_echo(&(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 244:
-
+/* Line 1778 of yacc.c  */
+#line 698 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_echo(&(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 245:
-
+/* Line 1778 of yacc.c  */
+#line 703 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_CONST;  Z_TYPE((yyval).u.constant) = IS_BOOL;  Z_LVAL((yyval).u.constant) = 1; }
     break;
 
   case 246:
-
+/* Line 1778 of yacc.c  */
+#line 704 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 247:
-
+/* Line 1778 of yacc.c  */
+#line 708 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_free(&(yyvsp[(1) - (2)]) TSRMLS_CC); }
     break;
 
   case 248:
-
+/* Line 1778 of yacc.c  */
+#line 708 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(4) - (4)]); }
     break;
 
   case 249:
-
+/* Line 1778 of yacc.c  */
+#line 709 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 250:
-
+/* Line 1778 of yacc.c  */
+#line 713 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).EA = (yyvsp[(2) - (2)]).EA; }
     break;
 
   case 251:
-
+/* Line 1778 of yacc.c  */
+#line 714 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).EA = (yyvsp[(1) - (1)]).EA; }
     break;
 
   case 252:
-
+/* Line 1778 of yacc.c  */
+#line 718 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { fetch_array_dim(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 253:
-
+/* Line 1778 of yacc.c  */
+#line 719 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_pop_object(&(yyvsp[(1) - (3)]) TSRMLS_CC); fetch_array_dim(&(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(2) - (3)]) TSRMLS_CC); }
     break;
 
   case 254:
-
+/* Line 1778 of yacc.c  */
+#line 723 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_push_object(&(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 255:
-
+/* Line 1778 of yacc.c  */
+#line 723 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(3) - (3)]); }
     break;
 
   case 256:
-
+/* Line 1778 of yacc.c  */
+#line 724 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_push_object(&(yyvsp[(1) - (1)]) TSRMLS_CC); (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 257:
-
+/* Line 1778 of yacc.c  */
+#line 725 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 258:
-
+/* Line 1778 of yacc.c  */
+#line 729 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(0) - (0)]); }
     break;
 
   case 259:
-
+/* Line 1778 of yacc.c  */
+#line 730 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_push_object(&(yyvsp[(0) - (0)]) TSRMLS_CC); zend_do_begin_variable_parse(TSRMLS_C); }
     break;
 
   case 260:
-
+/* Line 1778 of yacc.c  */
+#line 731 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_pop_object(&(yyval) TSRMLS_CC); zend_do_end_variable_parse(&(yyvsp[(2) - (2)]), BP_VAR_R, 0 TSRMLS_CC); }
     break;
 
   case 261:
-
+/* Line 1778 of yacc.c  */
+#line 735 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_extended_fcall_begin(TSRMLS_C); zend_do_begin_new_object(&(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 262:
-
+/* Line 1778 of yacc.c  */
+#line 735 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_new_object(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(4) - (4)]) TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C);}
     break;
 
   case 263:
-
+/* Line 1778 of yacc.c  */
+#line 739 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_list_init(TSRMLS_C); }
     break;
 
   case 264:
-
+/* Line 1778 of yacc.c  */
+#line 739 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_list_end(&(yyval), &(yyvsp[(7) - (7)]) TSRMLS_CC); }
     break;
 
   case 265:
-
+/* Line 1778 of yacc.c  */
+#line 740 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (3)])); zend_do_assign(&(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 266:
-
+/* Line 1778 of yacc.c  */
+#line 741 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (4)])); zend_do_end_variable_parse(&(yyvsp[(4) - (4)]), BP_VAR_W, 1 TSRMLS_CC); zend_do_end_variable_parse(&(yyvsp[(1) - (4)]), BP_VAR_W, 0 TSRMLS_CC); zend_do_assign_ref(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(4) - (4)]) TSRMLS_CC); }
     break;
 
   case 267:
-
+/* Line 1778 of yacc.c  */
+#line 742 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_error(E_DEPRECATED, "Assigning the return value of new by reference is deprecated");  zend_check_writable_variable(&(yyvsp[(1) - (5)])); zend_do_extended_fcall_begin(TSRMLS_C); zend_do_begin_new_object(&(yyvsp[(4) - (5)]), &(yyvsp[(5) - (5)]) TSRMLS_CC); }
     break;
 
   case 268:
-
+/* Line 1778 of yacc.c  */
+#line 742 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_new_object(&(yyvsp[(3) - (7)]), &(yyvsp[(4) - (7)]), &(yyvsp[(7) - (7)]) TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C); zend_do_end_variable_parse(&(yyvsp[(1) - (7)]), BP_VAR_W, 0 TSRMLS_CC); (yyvsp[(3) - (7)]).EA = ZEND_PARSED_NEW; zend_do_assign_ref(&(yyval), &(yyvsp[(1) - (7)]), &(yyvsp[(3) - (7)]) TSRMLS_CC); }
     break;
 
   case 269:
-
+/* Line 1778 of yacc.c  */
+#line 743 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_clone(&(yyval), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 270:
-
+/* Line 1778 of yacc.c  */
+#line 744 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (3)])); zend_do_end_variable_parse(&(yyvsp[(1) - (3)]), BP_VAR_RW, 0 TSRMLS_CC); zend_do_binary_assign_op(ZEND_ASSIGN_ADD, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 271:
-
+/* Line 1778 of yacc.c  */
+#line 745 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (3)])); zend_do_end_variable_parse(&(yyvsp[(1) - (3)]), BP_VAR_RW, 0 TSRMLS_CC); zend_do_binary_assign_op(ZEND_ASSIGN_SUB, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 272:
-
+/* Line 1778 of yacc.c  */
+#line 746 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (3)])); zend_do_end_variable_parse(&(yyvsp[(1) - (3)]), BP_VAR_RW, 0 TSRMLS_CC); zend_do_binary_assign_op(ZEND_ASSIGN_MUL, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 273:
-
+/* Line 1778 of yacc.c  */
+#line 747 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (3)])); zend_do_end_variable_parse(&(yyvsp[(1) - (3)]), BP_VAR_RW, 0 TSRMLS_CC); zend_do_binary_assign_op(ZEND_ASSIGN_DIV, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 274:
-
+/* Line 1778 of yacc.c  */
+#line 748 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (3)])); zend_do_end_variable_parse(&(yyvsp[(1) - (3)]), BP_VAR_RW, 0 TSRMLS_CC); zend_do_binary_assign_op(ZEND_ASSIGN_CONCAT, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 275:
-
+/* Line 1778 of yacc.c  */
+#line 749 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (3)])); zend_do_end_variable_parse(&(yyvsp[(1) - (3)]), BP_VAR_RW, 0 TSRMLS_CC); zend_do_binary_assign_op(ZEND_ASSIGN_MOD, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 276:
-
+/* Line 1778 of yacc.c  */
+#line 750 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (3)])); zend_do_end_variable_parse(&(yyvsp[(1) - (3)]), BP_VAR_RW, 0 TSRMLS_CC); zend_do_binary_assign_op(ZEND_ASSIGN_BW_AND, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 277:
-
+/* Line 1778 of yacc.c  */
+#line 751 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (3)])); zend_do_end_variable_parse(&(yyvsp[(1) - (3)]), BP_VAR_RW, 0 TSRMLS_CC); zend_do_binary_assign_op(ZEND_ASSIGN_BW_OR, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 278:
-
+/* Line 1778 of yacc.c  */
+#line 752 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (3)])); zend_do_end_variable_parse(&(yyvsp[(1) - (3)]), BP_VAR_RW, 0 TSRMLS_CC); zend_do_binary_assign_op(ZEND_ASSIGN_BW_XOR, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 279:
-
+/* Line 1778 of yacc.c  */
+#line 753 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (3)])); zend_do_end_variable_parse(&(yyvsp[(1) - (3)]), BP_VAR_RW, 0 TSRMLS_CC); zend_do_binary_assign_op(ZEND_ASSIGN_SL, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 280:
-
+/* Line 1778 of yacc.c  */
+#line 754 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_check_writable_variable(&(yyvsp[(1) - (3)])); zend_do_end_variable_parse(&(yyvsp[(1) - (3)]), BP_VAR_RW, 0 TSRMLS_CC); zend_do_binary_assign_op(ZEND_ASSIGN_SR, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 281:
-
+/* Line 1778 of yacc.c  */
+#line 755 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_post_incdec(&(yyval), &(yyvsp[(1) - (2)]), ZEND_POST_INC TSRMLS_CC); }
     break;
 
   case 282:
-
+/* Line 1778 of yacc.c  */
+#line 756 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_pre_incdec(&(yyval), &(yyvsp[(2) - (2)]), ZEND_PRE_INC TSRMLS_CC); }
     break;
 
   case 283:
-
+/* Line 1778 of yacc.c  */
+#line 757 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_post_incdec(&(yyval), &(yyvsp[(1) - (2)]), ZEND_POST_DEC TSRMLS_CC); }
     break;
 
   case 284:
-
+/* Line 1778 of yacc.c  */
+#line 758 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_pre_incdec(&(yyval), &(yyvsp[(2) - (2)]), ZEND_PRE_DEC TSRMLS_CC); }
     break;
 
   case 285:
-
+/* Line 1778 of yacc.c  */
+#line 759 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_boolean_or_begin(&(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 286:
-
+/* Line 1778 of yacc.c  */
+#line 759 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_boolean_or_end(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(4) - (4)]), &(yyvsp[(2) - (4)]) TSRMLS_CC); }
     break;
 
   case 287:
-
+/* Line 1778 of yacc.c  */
+#line 760 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_boolean_and_begin(&(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 288:
-
+/* Line 1778 of yacc.c  */
+#line 760 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_boolean_and_end(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(4) - (4)]), &(yyvsp[(2) - (4)]) TSRMLS_CC); }
     break;
 
   case 289:
-
+/* Line 1778 of yacc.c  */
+#line 761 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_boolean_or_begin(&(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 290:
-
+/* Line 1778 of yacc.c  */
+#line 761 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_boolean_or_end(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(4) - (4)]), &(yyvsp[(2) - (4)]) TSRMLS_CC); }
     break;
 
   case 291:
-
+/* Line 1778 of yacc.c  */
+#line 762 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_boolean_and_begin(&(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 292:
-
+/* Line 1778 of yacc.c  */
+#line 762 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_boolean_and_end(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(4) - (4)]), &(yyvsp[(2) - (4)]) TSRMLS_CC); }
     break;
 
   case 293:
-
+/* Line 1778 of yacc.c  */
+#line 763 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_BOOL_XOR, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 294:
-
+/* Line 1778 of yacc.c  */
+#line 764 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_BW_OR, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 295:
-
+/* Line 1778 of yacc.c  */
+#line 765 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_BW_AND, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 296:
-
+/* Line 1778 of yacc.c  */
+#line 766 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_BW_XOR, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 297:
-
+/* Line 1778 of yacc.c  */
+#line 767 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_CONCAT, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 298:
-
+/* Line 1778 of yacc.c  */
+#line 768 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_ADD, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 299:
-
+/* Line 1778 of yacc.c  */
+#line 769 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_SUB, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 300:
-
+/* Line 1778 of yacc.c  */
+#line 770 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_MUL, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 301:
-
+/* Line 1778 of yacc.c  */
+#line 771 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_DIV, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 302:
-
+/* Line 1778 of yacc.c  */
+#line 772 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_MOD, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 303:
-
+/* Line 1778 of yacc.c  */
+#line 773 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_SL, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 304:
-
+/* Line 1778 of yacc.c  */
+#line 774 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_SR, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 305:
-
+/* Line 1778 of yacc.c  */
+#line 775 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { ZVAL_LONG(&(yyvsp[(1) - (2)]).u.constant, 0); if ((yyvsp[(2) - (2)]).op_type == IS_CONST) { add_function(&(yyvsp[(2) - (2)]).u.constant, &(yyvsp[(1) - (2)]).u.constant, &(yyvsp[(2) - (2)]).u.constant TSRMLS_CC); (yyval) = (yyvsp[(2) - (2)]); } else { (yyvsp[(1) - (2)]).op_type = IS_CONST; INIT_PZVAL(&(yyvsp[(1) - (2)]).u.constant); zend_do_binary_op(ZEND_ADD, &(yyval), &(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); } }
     break;
 
   case 306:
-
+/* Line 1778 of yacc.c  */
+#line 776 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { ZVAL_LONG(&(yyvsp[(1) - (2)]).u.constant, 0); if ((yyvsp[(2) - (2)]).op_type == IS_CONST) { sub_function(&(yyvsp[(2) - (2)]).u.constant, &(yyvsp[(1) - (2)]).u.constant, &(yyvsp[(2) - (2)]).u.constant TSRMLS_CC); (yyval) = (yyvsp[(2) - (2)]); } else { (yyvsp[(1) - (2)]).op_type = IS_CONST; INIT_PZVAL(&(yyvsp[(1) - (2)]).u.constant); zend_do_binary_op(ZEND_SUB, &(yyval), &(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); } }
     break;
 
   case 307:
-
+/* Line 1778 of yacc.c  */
+#line 777 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_unary_op(ZEND_BOOL_NOT, &(yyval), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 308:
-
+/* Line 1778 of yacc.c  */
+#line 778 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_unary_op(ZEND_BW_NOT, &(yyval), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 309:
-
+/* Line 1778 of yacc.c  */
+#line 779 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_IS_IDENTICAL, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 310:
-
+/* Line 1778 of yacc.c  */
+#line 780 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_IS_NOT_IDENTICAL, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 311:
-
+/* Line 1778 of yacc.c  */
+#line 781 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_IS_EQUAL, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 312:
-
+/* Line 1778 of yacc.c  */
+#line 782 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_IS_NOT_EQUAL, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 313:
-
+/* Line 1778 of yacc.c  */
+#line 783 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_IS_SMALLER, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 314:
-
+/* Line 1778 of yacc.c  */
+#line 784 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_IS_SMALLER_OR_EQUAL, &(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 315:
-
+/* Line 1778 of yacc.c  */
+#line 785 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_IS_SMALLER, &(yyval), &(yyvsp[(3) - (3)]), &(yyvsp[(1) - (3)]) TSRMLS_CC); }
     break;
 
   case 316:
-
+/* Line 1778 of yacc.c  */
+#line 786 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_binary_op(ZEND_IS_SMALLER_OR_EQUAL, &(yyval), &(yyvsp[(3) - (3)]), &(yyvsp[(1) - (3)]) TSRMLS_CC); }
     break;
 
   case 317:
-
+/* Line 1778 of yacc.c  */
+#line 787 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_instanceof(&(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]), 0 TSRMLS_CC); }
     break;
 
   case 318:
-
+/* Line 1778 of yacc.c  */
+#line 788 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 319:
-
+/* Line 1778 of yacc.c  */
+#line 789 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 320:
-
+/* Line 1778 of yacc.c  */
+#line 790 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (3)]); }
     break;
 
   case 321:
-
+/* Line 1778 of yacc.c  */
+#line 790 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(5) - (5)]); }
     break;
 
   case 322:
-
+/* Line 1778 of yacc.c  */
+#line 791 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_qm_op(&(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 323:
-
+/* Line 1778 of yacc.c  */
+#line 792 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_qm_true(&(yyvsp[(4) - (5)]), &(yyvsp[(2) - (5)]), &(yyvsp[(5) - (5)]) TSRMLS_CC); }
     break;
 
   case 324:
-
+/* Line 1778 of yacc.c  */
+#line 793 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_qm_false(&(yyval), &(yyvsp[(7) - (7)]), &(yyvsp[(2) - (7)]), &(yyvsp[(5) - (7)]) TSRMLS_CC); }
     break;
 
   case 325:
-
+/* Line 1778 of yacc.c  */
+#line 794 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_jmp_set(&(yyvsp[(1) - (3)]), &(yyvsp[(2) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 326:
-
+/* Line 1778 of yacc.c  */
+#line 795 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_jmp_set_else(&(yyval), &(yyvsp[(5) - (5)]), &(yyvsp[(2) - (5)]), &(yyvsp[(3) - (5)]) TSRMLS_CC); }
     break;
 
   case 327:
-
+/* Line 1778 of yacc.c  */
+#line 796 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 328:
-
+/* Line 1778 of yacc.c  */
+#line 797 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_cast(&(yyval), &(yyvsp[(2) - (2)]), IS_LONG TSRMLS_CC); }
     break;
 
   case 329:
-
+/* Line 1778 of yacc.c  */
+#line 798 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_cast(&(yyval), &(yyvsp[(2) - (2)]), IS_DOUBLE TSRMLS_CC); }
     break;
 
   case 330:
-
+/* Line 1778 of yacc.c  */
+#line 799 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_cast(&(yyval), &(yyvsp[(2) - (2)]), IS_STRING TSRMLS_CC); }
     break;
 
   case 331:
-
+/* Line 1778 of yacc.c  */
+#line 800 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_cast(&(yyval), &(yyvsp[(2) - (2)]), IS_ARRAY TSRMLS_CC); }
     break;
 
   case 332:
-
+/* Line 1778 of yacc.c  */
+#line 801 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_cast(&(yyval), &(yyvsp[(2) - (2)]), IS_OBJECT TSRMLS_CC); }
     break;
 
   case 333:
-
+/* Line 1778 of yacc.c  */
+#line 802 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_cast(&(yyval), &(yyvsp[(2) - (2)]), IS_BOOL TSRMLS_CC); }
     break;
 
   case 334:
-
+/* Line 1778 of yacc.c  */
+#line 803 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_cast(&(yyval), &(yyvsp[(2) - (2)]), IS_NULL TSRMLS_CC); }
     break;
 
   case 335:
-
+/* Line 1778 of yacc.c  */
+#line 804 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_exit(&(yyval), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 336:
-
+/* Line 1778 of yacc.c  */
+#line 805 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_silence(&(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 337:
-
+/* Line 1778 of yacc.c  */
+#line 805 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_silence(&(yyvsp[(1) - (3)]) TSRMLS_CC); (yyval) = (yyvsp[(3) - (3)]); }
     break;
 
   case 338:
-
+/* Line 1778 of yacc.c  */
+#line 806 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 339:
-
+/* Line 1778 of yacc.c  */
+#line 807 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(1) - (1)]), BP_VAR_R, 0 TSRMLS_CC); }
     break;
 
   case 340:
-
+/* Line 1778 of yacc.c  */
+#line 808 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 341:
-
+/* Line 1778 of yacc.c  */
+#line 809 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_shell_exec(&(yyval), &(yyvsp[(2) - (3)]) TSRMLS_CC); }
     break;
 
   case 342:
-
+/* Line 1778 of yacc.c  */
+#line 810 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_print(&(yyval), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 343:
-
+/* Line 1778 of yacc.c  */
+#line 811 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_yield(&(yyval), NULL, NULL, 0 TSRMLS_CC); }
     break;
 
   case 344:
-
+/* Line 1778 of yacc.c  */
+#line 812 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_lambda_function_declaration(&(yyval), &(yyvsp[(1) - (2)]), (yyvsp[(2) - (2)]).op_type, 0 TSRMLS_CC); }
     break;
 
   case 345:
-
+/* Line 1778 of yacc.c  */
+#line 814 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_function_declaration(&(yyvsp[(1) - (10)]) TSRMLS_CC); (yyval) = (yyvsp[(3) - (10)]); }
     break;
 
   case 346:
-
+/* Line 1778 of yacc.c  */
+#line 815 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_lambda_function_declaration(&(yyval), &(yyvsp[(2) - (3)]), (yyvsp[(3) - (3)]).op_type, 1 TSRMLS_CC); }
     break;
 
   case 347:
-
+/* Line 1778 of yacc.c  */
+#line 817 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_function_declaration(&(yyvsp[(2) - (11)]) TSRMLS_CC); (yyval) = (yyvsp[(4) - (11)]); }
     break;
 
   case 348:
-
+/* Line 1778 of yacc.c  */
+#line 821 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_yield(&(yyval), &(yyvsp[(2) - (2)]), NULL, 0 TSRMLS_CC); }
     break;
 
   case 349:
-
+/* Line 1778 of yacc.c  */
+#line 822 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_yield(&(yyval), &(yyvsp[(2) - (2)]), NULL, 1 TSRMLS_CC); }
     break;
 
   case 350:
-
+/* Line 1778 of yacc.c  */
+#line 823 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_yield(&(yyval), &(yyvsp[(4) - (4)]), &(yyvsp[(2) - (4)]), 0 TSRMLS_CC); }
     break;
 
   case 351:
-
+/* Line 1778 of yacc.c  */
+#line 824 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_yield(&(yyval), &(yyvsp[(4) - (4)]), &(yyvsp[(2) - (4)]), 1 TSRMLS_CC); }
     break;
 
   case 352:
-
+/* Line 1778 of yacc.c  */
+#line 828 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_variable_parse(TSRMLS_C); fetch_array_dim(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 353:
-
+/* Line 1778 of yacc.c  */
+#line 829 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { fetch_array_dim(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 354:
-
+/* Line 1778 of yacc.c  */
+#line 830 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyvsp[(1) - (4)]).EA = 0; zend_do_begin_variable_parse(TSRMLS_C); fetch_array_dim(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 355:
-
+/* Line 1778 of yacc.c  */
+#line 833 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(3) - (4)]); }
     break;
 
   case 356:
-
+/* Line 1778 of yacc.c  */
+#line 834 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (3)]); }
     break;
 
   case 357:
-
+/* Line 1778 of yacc.c  */
+#line 837 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).u.op.opline_num = CG(zend_lineno); }
     break;
 
   case 360:
-
+/* Line 1778 of yacc.c  */
+#line 846 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_lexical_variable(&(yyvsp[(3) - (3)]), 0 TSRMLS_CC); }
     break;
 
   case 361:
-
+/* Line 1778 of yacc.c  */
+#line 847 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_lexical_variable(&(yyvsp[(4) - (4)]), 1 TSRMLS_CC); }
     break;
 
   case 362:
-
+/* Line 1778 of yacc.c  */
+#line 848 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_lexical_variable(&(yyvsp[(1) - (1)]), 0 TSRMLS_CC); }
     break;
 
   case 363:
-
+/* Line 1778 of yacc.c  */
+#line 849 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_lexical_variable(&(yyvsp[(2) - (2)]), 1 TSRMLS_CC); }
     break;
 
   case 364:
-
+/* Line 1778 of yacc.c  */
+#line 853 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).u.op.opline_num = zend_do_begin_function_call(&(yyvsp[(1) - (1)]), 1 TSRMLS_CC); }
     break;
 
   case 365:
-
+/* Line 1778 of yacc.c  */
+#line 854 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_function_call(&(yyvsp[(1) - (3)]), &(yyval), &(yyvsp[(3) - (3)]), 0, (yyvsp[(2) - (3)]).u.op.opline_num TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C); }
     break;
 
   case 366:
-
+/* Line 1778 of yacc.c  */
+#line 855 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyvsp[(1) - (3)]).op_type = IS_CONST; ZVAL_EMPTY_STRING(&(yyvsp[(1) - (3)]).u.constant);  zend_do_build_namespace_name(&(yyvsp[(1) - (3)]), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); (yyval).u.op.opline_num = zend_do_begin_function_call(&(yyvsp[(1) - (3)]), 0 TSRMLS_CC); }
     break;
 
   case 367:
-
+/* Line 1778 of yacc.c  */
+#line 856 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_function_call(&(yyvsp[(1) - (5)]), &(yyval), &(yyvsp[(5) - (5)]), 0, (yyvsp[(4) - (5)]).u.op.opline_num TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C); }
     break;
 
   case 368:
-
+/* Line 1778 of yacc.c  */
+#line 857 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).u.op.opline_num = zend_do_begin_function_call(&(yyvsp[(2) - (2)]), 0 TSRMLS_CC); }
     break;
 
   case 369:
-
+/* Line 1778 of yacc.c  */
+#line 858 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_function_call(&(yyvsp[(2) - (4)]), &(yyval), &(yyvsp[(4) - (4)]), 0, (yyvsp[(3) - (4)]).u.op.opline_num TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C); }
     break;
 
   case 370:
-
+/* Line 1778 of yacc.c  */
+#line 859 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).u.op.opline_num = zend_do_begin_class_member_function_call(&(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 371:
-
+/* Line 1778 of yacc.c  */
+#line 860 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_function_call((yyvsp[(4) - (5)]).u.op.opline_num?NULL:&(yyvsp[(3) - (5)]), &(yyval), &(yyvsp[(5) - (5)]), (yyvsp[(4) - (5)]).u.op.opline_num, (yyvsp[(4) - (5)]).u.op.opline_num TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C);}
     break;
 
   case 372:
-
+/* Line 1778 of yacc.c  */
+#line 861 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(3) - (3)]), BP_VAR_R, 0 TSRMLS_CC); zend_do_begin_class_member_function_call(&(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 373:
-
+/* Line 1778 of yacc.c  */
+#line 862 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_function_call(NULL, &(yyval), &(yyvsp[(5) - (5)]), 1, 1 TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C);}
     break;
 
   case 374:
-
+/* Line 1778 of yacc.c  */
+#line 863 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_class_member_function_call(&(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 375:
-
+/* Line 1778 of yacc.c  */
+#line 864 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_function_call(NULL, &(yyval), &(yyvsp[(5) - (5)]), 1, 1 TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C);}
     break;
 
   case 376:
-
+/* Line 1778 of yacc.c  */
+#line 865 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(3) - (3)]), BP_VAR_R, 0 TSRMLS_CC); zend_do_begin_class_member_function_call(&(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 377:
-
+/* Line 1778 of yacc.c  */
+#line 866 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_function_call(NULL, &(yyval), &(yyvsp[(5) - (5)]), 1, 1 TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C);}
     break;
 
   case 378:
-
+/* Line 1778 of yacc.c  */
+#line 867 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(1) - (1)]), BP_VAR_R, 0 TSRMLS_CC); zend_do_begin_dynamic_function_call(&(yyvsp[(1) - (1)]), 0 TSRMLS_CC); }
     break;
 
   case 379:
-
+/* Line 1778 of yacc.c  */
+#line 868 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_function_call(&(yyvsp[(1) - (3)]), &(yyval), &(yyvsp[(3) - (3)]), 0, 1 TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C);}
     break;
 
   case 380:
-
+/* Line 1778 of yacc.c  */
+#line 872 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_CONST; ZVAL_STRINGL(&(yyval).u.constant, "static", sizeof("static")-1, 1);}
     break;
 
   case 381:
-
+/* Line 1778 of yacc.c  */
+#line 873 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 382:
-
+/* Line 1778 of yacc.c  */
+#line 874 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_CONST; ZVAL_EMPTY_STRING(&(yyval).u.constant);  zend_do_build_namespace_name(&(yyval), &(yyval), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 383:
-
+/* Line 1778 of yacc.c  */
+#line 875 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { char *tmp = estrndup(Z_STRVAL((yyvsp[(2) - (2)]).u.constant), Z_STRLEN((yyvsp[(2) - (2)]).u.constant)+1); memcpy(&(tmp[1]), Z_STRVAL((yyvsp[(2) - (2)]).u.constant), Z_STRLEN((yyvsp[(2) - (2)]).u.constant)+1); tmp[0] = '\\'; efree(Z_STRVAL((yyvsp[(2) - (2)]).u.constant)); Z_STRVAL((yyvsp[(2) - (2)]).u.constant) = tmp; ++Z_STRLEN((yyvsp[(2) - (2)]).u.constant); (yyval) = (yyvsp[(2) - (2)]); }
     break;
 
   case 384:
-
+/* Line 1778 of yacc.c  */
+#line 879 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 385:
-
+/* Line 1778 of yacc.c  */
+#line 880 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_CONST; ZVAL_EMPTY_STRING(&(yyval).u.constant);  zend_do_build_namespace_name(&(yyval), &(yyval), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 386:
-
+/* Line 1778 of yacc.c  */
+#line 881 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { char *tmp = estrndup(Z_STRVAL((yyvsp[(2) - (2)]).u.constant), Z_STRLEN((yyvsp[(2) - (2)]).u.constant)+1); memcpy(&(tmp[1]), Z_STRVAL((yyvsp[(2) - (2)]).u.constant), Z_STRLEN((yyvsp[(2) - (2)]).u.constant)+1); tmp[0] = '\\'; efree(Z_STRVAL((yyvsp[(2) - (2)]).u.constant)); Z_STRVAL((yyvsp[(2) - (2)]).u.constant) = tmp; ++Z_STRLEN((yyvsp[(2) - (2)]).u.constant); (yyval) = (yyvsp[(2) - (2)]); }
     break;
 
   case 387:
-
+/* Line 1778 of yacc.c  */
+#line 887 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_class(&(yyval), &(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 388:
-
+/* Line 1778 of yacc.c  */
+#line 888 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(1) - (1)]), BP_VAR_R, 0 TSRMLS_CC); zend_do_fetch_class(&(yyval), &(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 389:
-
+/* Line 1778 of yacc.c  */
+#line 893 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_push_object(&(yyvsp[(1) - (2)]) TSRMLS_CC); }
     break;
 
   case 390:
-
+/* Line 1778 of yacc.c  */
+#line 894 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_push_object(&(yyvsp[(4) - (4)]) TSRMLS_CC); }
     break;
 
   case 391:
-
+/* Line 1778 of yacc.c  */
+#line 895 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_pop_object(&(yyval) TSRMLS_CC); (yyval).EA = ZEND_PARSED_MEMBER; }
     break;
 
   case 392:
-
+/* Line 1778 of yacc.c  */
+#line 896 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 395:
-
+/* Line 1778 of yacc.c  */
+#line 907 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_push_object(&(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 396:
-
+/* Line 1778 of yacc.c  */
+#line 911 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { memset(&(yyval), 0, sizeof(znode)); (yyval).op_type = IS_UNUSED; }
     break;
 
   case 397:
-
+/* Line 1778 of yacc.c  */
+#line 912 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { memset(&(yyval), 0, sizeof(znode)); (yyval).op_type = IS_UNUSED; }
     break;
 
   case 398:
-
+/* Line 1778 of yacc.c  */
+#line 913 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 399:
-
+/* Line 1778 of yacc.c  */
+#line 917 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { ZVAL_EMPTY_STRING(&(yyval).u.constant); INIT_PZVAL(&(yyval).u.constant); (yyval).op_type = IS_CONST; }
     break;
 
   case 400:
-
+/* Line 1778 of yacc.c  */
+#line 918 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 401:
-
+/* Line 1778 of yacc.c  */
+#line 919 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 402:
-
+/* Line 1778 of yacc.c  */
+#line 924 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = 0; }
     break;
 
   case 403:
-
+/* Line 1778 of yacc.c  */
+#line 925 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 404:
-
+/* Line 1778 of yacc.c  */
+#line 930 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 405:
-
+/* Line 1778 of yacc.c  */
+#line 931 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 406:
-
+/* Line 1778 of yacc.c  */
+#line 932 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 407:
-
+/* Line 1778 of yacc.c  */
+#line 933 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 408:
-
+/* Line 1778 of yacc.c  */
+#line 934 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 409:
-
+/* Line 1778 of yacc.c  */
+#line 935 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 410:
-
+/* Line 1778 of yacc.c  */
+#line 936 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 411:
-
+/* Line 1778 of yacc.c  */
+#line 937 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 412:
-
+/* Line 1778 of yacc.c  */
+#line 938 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 413:
-
+/* Line 1778 of yacc.c  */
+#line 939 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 414:
-
+/* Line 1778 of yacc.c  */
+#line 940 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (3)]); }
     break;
 
   case 415:
-
+/* Line 1778 of yacc.c  */
+#line 941 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { ZVAL_EMPTY_STRING(&(yyval).u.constant); INIT_PZVAL(&(yyval).u.constant); (yyval).op_type = IS_CONST; }
     break;
 
   case 416:
-
+/* Line 1778 of yacc.c  */
+#line 946 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 417:
-
+/* Line 1778 of yacc.c  */
+#line 947 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 418:
-
+/* Line 1778 of yacc.c  */
+#line 948 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_constant(&(yyval), NULL, &(yyvsp[(1) - (1)]), ZEND_CT, 1 TSRMLS_CC); }
     break;
 
   case 419:
-
+/* Line 1778 of yacc.c  */
+#line 949 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_CONST; ZVAL_EMPTY_STRING(&(yyval).u.constant);  zend_do_build_namespace_name(&(yyval), &(yyval), &(yyvsp[(3) - (3)]) TSRMLS_CC); (yyvsp[(3) - (3)]) = (yyval); zend_do_fetch_constant(&(yyval), NULL, &(yyvsp[(3) - (3)]), ZEND_CT, 0 TSRMLS_CC); }
     break;
 
   case 420:
-
+/* Line 1778 of yacc.c  */
+#line 950 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { char *tmp = estrndup(Z_STRVAL((yyvsp[(2) - (2)]).u.constant), Z_STRLEN((yyvsp[(2) - (2)]).u.constant)+1); memcpy(&(tmp[1]), Z_STRVAL((yyvsp[(2) - (2)]).u.constant), Z_STRLEN((yyvsp[(2) - (2)]).u.constant)+1); tmp[0] = '\\'; efree(Z_STRVAL((yyvsp[(2) - (2)]).u.constant)); Z_STRVAL((yyvsp[(2) - (2)]).u.constant) = tmp; ++Z_STRLEN((yyvsp[(2) - (2)]).u.constant); zend_do_fetch_constant(&(yyval), NULL, &(yyvsp[(2) - (2)]), ZEND_CT, 0 TSRMLS_CC); }
     break;
 
   case 421:
-
+/* Line 1778 of yacc.c  */
+#line 951 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { ZVAL_LONG(&(yyvsp[(1) - (2)]).u.constant, 0); add_function(&(yyvsp[(2) - (2)]).u.constant, &(yyvsp[(1) - (2)]).u.constant, &(yyvsp[(2) - (2)]).u.constant TSRMLS_CC); (yyval) = (yyvsp[(2) - (2)]); }
     break;
 
   case 422:
-
+/* Line 1778 of yacc.c  */
+#line 952 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { ZVAL_LONG(&(yyvsp[(1) - (2)]).u.constant, 0); sub_function(&(yyvsp[(2) - (2)]).u.constant, &(yyvsp[(1) - (2)]).u.constant, &(yyvsp[(2) - (2)]).u.constant TSRMLS_CC); (yyval) = (yyvsp[(2) - (2)]); }
     break;
 
   case 423:
-
+/* Line 1778 of yacc.c  */
+#line 953 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(3) - (4)]); Z_TYPE((yyval).u.constant) = IS_CONSTANT_ARRAY; }
     break;
 
   case 424:
-
+/* Line 1778 of yacc.c  */
+#line 954 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (3)]); Z_TYPE((yyval).u.constant) = IS_CONSTANT_ARRAY; }
     break;
 
   case 425:
-
+/* Line 1778 of yacc.c  */
+#line 955 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 426:
-
+/* Line 1778 of yacc.c  */
+#line 956 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 427:
-
+/* Line 1778 of yacc.c  */
+#line 960 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_constant(&(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]), ZEND_CT, 0 TSRMLS_CC); }
     break;
 
   case 428:
-
+/* Line 1778 of yacc.c  */
+#line 964 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 429:
-
+/* Line 1778 of yacc.c  */
+#line 965 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 430:
-
+/* Line 1778 of yacc.c  */
+#line 966 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 431:
-
+/* Line 1778 of yacc.c  */
+#line 967 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_constant(&(yyval), NULL, &(yyvsp[(1) - (1)]), ZEND_RT, 1 TSRMLS_CC); }
     break;
 
   case 432:
-
+/* Line 1778 of yacc.c  */
+#line 968 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_CONST; ZVAL_EMPTY_STRING(&(yyval).u.constant);  zend_do_build_namespace_name(&(yyval), &(yyval), &(yyvsp[(3) - (3)]) TSRMLS_CC); (yyvsp[(3) - (3)]) = (yyval); zend_do_fetch_constant(&(yyval), NULL, &(yyvsp[(3) - (3)]), ZEND_RT, 0 TSRMLS_CC); }
     break;
 
   case 433:
-
+/* Line 1778 of yacc.c  */
+#line 969 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { char *tmp = estrndup(Z_STRVAL((yyvsp[(2) - (2)]).u.constant), Z_STRLEN((yyvsp[(2) - (2)]).u.constant)+1); memcpy(&(tmp[1]), Z_STRVAL((yyvsp[(2) - (2)]).u.constant), Z_STRLEN((yyvsp[(2) - (2)]).u.constant)+1); tmp[0] = '\\'; efree(Z_STRVAL((yyvsp[(2) - (2)]).u.constant)); Z_STRVAL((yyvsp[(2) - (2)]).u.constant) = tmp; ++Z_STRLEN((yyvsp[(2) - (2)]).u.constant); zend_do_fetch_constant(&(yyval), NULL, &(yyvsp[(2) - (2)]), ZEND_RT, 0 TSRMLS_CC); }
     break;
 
   case 434:
-
+/* Line 1778 of yacc.c  */
+#line 970 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 435:
-
+/* Line 1778 of yacc.c  */
+#line 971 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (3)]); }
     break;
 
   case 436:
-
+/* Line 1778 of yacc.c  */
+#line 972 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (3)]); }
     break;
 
   case 437:
-
+/* Line 1778 of yacc.c  */
+#line 973 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { if (Z_TYPE((yyvsp[(1) - (1)]).u.constant) == IS_CONSTANT) {zend_do_fetch_constant(&(yyval), NULL, &(yyvsp[(1) - (1)]), ZEND_RT, 1 TSRMLS_CC);} else {(yyval) = (yyvsp[(1) - (1)]);} }
     break;
 
   case 438:
-
+/* Line 1778 of yacc.c  */
+#line 978 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_CONST; INIT_PZVAL(&(yyval).u.constant); array_init(&(yyval).u.constant); }
     break;
 
   case 439:
-
+/* Line 1778 of yacc.c  */
+#line 979 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (2)]); }
     break;
 
   case 442:
-
+/* Line 1778 of yacc.c  */
+#line 988 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_add_static_array_element(&(yyval), &(yyvsp[(3) - (5)]), &(yyvsp[(5) - (5)])); }
     break;
 
   case 443:
-
+/* Line 1778 of yacc.c  */
+#line 989 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_add_static_array_element(&(yyval), NULL, &(yyvsp[(3) - (3)])); }
     break;
 
   case 444:
-
+/* Line 1778 of yacc.c  */
+#line 990 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_CONST; INIT_PZVAL(&(yyval).u.constant); array_init(&(yyval).u.constant); zend_do_add_static_array_element(&(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)])); }
     break;
 
   case 445:
-
+/* Line 1778 of yacc.c  */
+#line 991 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_CONST; INIT_PZVAL(&(yyval).u.constant); array_init(&(yyval).u.constant); zend_do_add_static_array_element(&(yyval), NULL, &(yyvsp[(1) - (1)])); }
     break;
 
   case 446:
-
+/* Line 1778 of yacc.c  */
+#line 995 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 447:
-
+/* Line 1778 of yacc.c  */
+#line 996 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 448:
-
+/* Line 1778 of yacc.c  */
+#line 1000 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (3)]); }
     break;
 
   case 449:
-
+/* Line 1778 of yacc.c  */
+#line 1001 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (3)]); }
     break;
 
   case 450:
-
+/* Line 1778 of yacc.c  */
+#line 1006 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(1) - (1)]), BP_VAR_R, 0 TSRMLS_CC); (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 451:
-
+/* Line 1778 of yacc.c  */
+#line 1011 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(1) - (1)]), BP_VAR_W, 0 TSRMLS_CC); (yyval) = (yyvsp[(1) - (1)]);
 				  zend_check_writable_variable(&(yyvsp[(1) - (1)])); }
     break;
 
   case 452:
-
+/* Line 1778 of yacc.c  */
+#line 1016 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(1) - (1)]), BP_VAR_RW, 0 TSRMLS_CC); (yyval) = (yyvsp[(1) - (1)]);
 				  zend_check_writable_variable(&(yyvsp[(1) - (1)])); }
     break;
 
   case 453:
-
+/* Line 1778 of yacc.c  */
+#line 1021 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_push_object(&(yyvsp[(1) - (2)]) TSRMLS_CC); }
     break;
 
   case 454:
-
+/* Line 1778 of yacc.c  */
+#line 1022 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_push_object(&(yyvsp[(4) - (4)]) TSRMLS_CC); }
     break;
 
   case 455:
-
+/* Line 1778 of yacc.c  */
+#line 1023 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_pop_object(&(yyval) TSRMLS_CC); (yyval).EA = (yyvsp[(1) - (7)]).EA | ((yyvsp[(7) - (7)]).EA ? (yyvsp[(7) - (7)]).EA : (yyvsp[(6) - (7)]).EA); }
     break;
 
   case 456:
-
+/* Line 1778 of yacc.c  */
+#line 1024 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 457:
-
+/* Line 1778 of yacc.c  */
+#line 1028 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).EA = (yyvsp[(2) - (2)]).EA; }
     break;
 
   case 458:
-
+/* Line 1778 of yacc.c  */
+#line 1029 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).EA = 0; }
     break;
 
   case 459:
-
+/* Line 1778 of yacc.c  */
+#line 1034 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_push_object(&(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 460:
-
+/* Line 1778 of yacc.c  */
+#line 1034 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).EA = (yyvsp[(4) - (4)]).EA; }
     break;
 
   case 461:
-
+/* Line 1778 of yacc.c  */
+#line 1038 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { fetch_array_dim(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 462:
-
+/* Line 1778 of yacc.c  */
+#line 1039 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyvsp[(1) - (4)]).EA = ZEND_PARSED_METHOD_CALL; fetch_array_dim(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 463:
-
+/* Line 1778 of yacc.c  */
+#line 1043 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_pop_object(&(yyval) TSRMLS_CC); zend_do_begin_method_call(&(yyval) TSRMLS_CC); }
     break;
 
   case 464:
-
+/* Line 1778 of yacc.c  */
+#line 1044 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_function_call(&(yyvsp[(1) - (2)]), &(yyval), &(yyvsp[(2) - (2)]), 1, 1 TSRMLS_CC); zend_do_extended_fcall_end(TSRMLS_C); }
     break;
 
   case 465:
-
+/* Line 1778 of yacc.c  */
+#line 1048 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); (yyval).EA = ZEND_PARSED_METHOD_CALL; zend_do_push_object(&(yyval) TSRMLS_CC); }
     break;
 
   case 466:
-
+/* Line 1778 of yacc.c  */
+#line 1049 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); zend_do_push_object(&(yyval) TSRMLS_CC); }
     break;
 
   case 467:
-
+/* Line 1778 of yacc.c  */
+#line 1050 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).EA = ZEND_PARSED_MEMBER; }
     break;
 
   case 468:
-
+/* Line 1778 of yacc.c  */
+#line 1054 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 469:
-
+/* Line 1778 of yacc.c  */
+#line 1055 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_indirect_references(&(yyval), &(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 470:
-
+/* Line 1778 of yacc.c  */
+#line 1059 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(3) - (3)]); zend_do_fetch_static_member(&(yyval), &(yyvsp[(1) - (3)]) TSRMLS_CC); }
     break;
 
   case 471:
-
+/* Line 1778 of yacc.c  */
+#line 1060 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(3) - (3)]); zend_do_fetch_static_member(&(yyval), &(yyvsp[(1) - (3)]) TSRMLS_CC); }
     break;
 
   case 472:
-
+/* Line 1778 of yacc.c  */
+#line 1065 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(1) - (1)]), BP_VAR_R, 0 TSRMLS_CC); (yyval)=(yyvsp[(1) - (1)]);; }
     break;
 
   case 473:
-
+/* Line 1778 of yacc.c  */
+#line 1069 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { fetch_array_dim(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 474:
-
+/* Line 1778 of yacc.c  */
+#line 1070 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_variable_parse(TSRMLS_C); (yyvsp[(1) - (1)]).EA = ZEND_PARSED_FUNCTION_CALL; }
     break;
 
   case 475:
-
+/* Line 1778 of yacc.c  */
+#line 1071 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { fetch_array_dim(&(yyval), &(yyvsp[(1) - (5)]), &(yyvsp[(4) - (5)]) TSRMLS_CC); }
     break;
 
   case 476:
-
+/* Line 1778 of yacc.c  */
+#line 1075 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 477:
-
+/* Line 1778 of yacc.c  */
+#line 1076 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 478:
-
+/* Line 1778 of yacc.c  */
+#line 1077 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_variable_parse(TSRMLS_C); (yyval) = (yyvsp[(1) - (1)]); (yyval).EA = ZEND_PARSED_FUNCTION_CALL; }
     break;
 
   case 479:
-
+/* Line 1778 of yacc.c  */
+#line 1082 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); (yyval).EA = ZEND_PARSED_VARIABLE; }
     break;
 
   case 480:
-
+/* Line 1778 of yacc.c  */
+#line 1083 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_indirect_references(&(yyval), &(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); (yyval).EA = ZEND_PARSED_VARIABLE; }
     break;
 
   case 481:
-
+/* Line 1778 of yacc.c  */
+#line 1084 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); (yyval).EA = ZEND_PARSED_STATIC_MEMBER; }
     break;
 
   case 482:
-
+/* Line 1778 of yacc.c  */
+#line 1088 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { fetch_array_dim(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 483:
-
+/* Line 1778 of yacc.c  */
+#line 1089 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { fetch_string_offset(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 484:
-
+/* Line 1778 of yacc.c  */
+#line 1090 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_variable_parse(TSRMLS_C); fetch_simple_variable(&(yyval), &(yyvsp[(1) - (1)]), 1 TSRMLS_CC); }
     break;
 
   case 485:
-
+/* Line 1778 of yacc.c  */
+#line 1095 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 486:
-
+/* Line 1778 of yacc.c  */
+#line 1096 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(3) - (4)]); }
     break;
 
   case 487:
-
+/* Line 1778 of yacc.c  */
+#line 1100 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval).op_type = IS_UNUSED; }
     break;
 
   case 488:
-
+/* Line 1778 of yacc.c  */
+#line 1101 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 489:
-
+/* Line 1778 of yacc.c  */
+#line 1106 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 490:
-
+/* Line 1778 of yacc.c  */
+#line 1107 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(1) - (1)]), BP_VAR_R, 0 TSRMLS_CC); }
     break;
 
   case 491:
-
+/* Line 1778 of yacc.c  */
+#line 1107 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { znode tmp_znode;  zend_do_pop_object(&tmp_znode TSRMLS_CC);  zend_do_fetch_property(&(yyval), &tmp_znode, &(yyvsp[(1) - (2)]) TSRMLS_CC);}
     break;
 
   case 492:
-
+/* Line 1778 of yacc.c  */
+#line 1111 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { fetch_array_dim(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 493:
-
+/* Line 1778 of yacc.c  */
+#line 1112 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { fetch_string_offset(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 494:
-
+/* Line 1778 of yacc.c  */
+#line 1113 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { znode tmp_znode;  zend_do_pop_object(&tmp_znode TSRMLS_CC);  zend_do_fetch_property(&(yyval), &tmp_znode, &(yyvsp[(1) - (1)]) TSRMLS_CC);}
     break;
 
   case 495:
-
+/* Line 1778 of yacc.c  */
+#line 1117 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 496:
-
+/* Line 1778 of yacc.c  */
+#line 1118 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (3)]); }
     break;
 
   case 497:
-
+/* Line 1778 of yacc.c  */
+#line 1122 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant) = 1; }
     break;
 
   case 498:
-
+/* Line 1778 of yacc.c  */
+#line 1123 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { Z_LVAL((yyval).u.constant)++; }
     break;
 
   case 501:
-
+/* Line 1778 of yacc.c  */
+#line 1133 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_add_list_element(&(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 502:
-
+/* Line 1778 of yacc.c  */
+#line 1134 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_new_list_begin(TSRMLS_C); }
     break;
 
   case 503:
-
+/* Line 1778 of yacc.c  */
+#line 1134 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_new_list_end(TSRMLS_C); }
     break;
 
   case 504:
-
+/* Line 1778 of yacc.c  */
+#line 1135 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_add_list_element(NULL TSRMLS_CC); }
     break;
 
   case 505:
-
+/* Line 1778 of yacc.c  */
+#line 1140 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_init_array(&(yyval), NULL, NULL, 0 TSRMLS_CC); }
     break;
 
   case 506:
-
+/* Line 1778 of yacc.c  */
+#line 1141 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (2)]); }
     break;
 
   case 507:
-
+/* Line 1778 of yacc.c  */
+#line 1145 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_add_array_element(&(yyval), &(yyvsp[(5) - (5)]), &(yyvsp[(3) - (5)]), 0 TSRMLS_CC); }
     break;
 
   case 508:
-
+/* Line 1778 of yacc.c  */
+#line 1146 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_add_array_element(&(yyval), &(yyvsp[(3) - (3)]), NULL, 0 TSRMLS_CC); }
     break;
 
   case 509:
-
+/* Line 1778 of yacc.c  */
+#line 1147 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_init_array(&(yyval), &(yyvsp[(3) - (3)]), &(yyvsp[(1) - (3)]), 0 TSRMLS_CC); }
     break;
 
   case 510:
-
+/* Line 1778 of yacc.c  */
+#line 1148 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_init_array(&(yyval), &(yyvsp[(1) - (1)]), NULL, 0 TSRMLS_CC); }
     break;
 
   case 511:
-
+/* Line 1778 of yacc.c  */
+#line 1149 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_add_array_element(&(yyval), &(yyvsp[(6) - (6)]), &(yyvsp[(3) - (6)]), 1 TSRMLS_CC); }
     break;
 
   case 512:
-
+/* Line 1778 of yacc.c  */
+#line 1150 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_add_array_element(&(yyval), &(yyvsp[(4) - (4)]), NULL, 1 TSRMLS_CC); }
     break;
 
   case 513:
-
+/* Line 1778 of yacc.c  */
+#line 1151 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_init_array(&(yyval), &(yyvsp[(4) - (4)]), &(yyvsp[(1) - (4)]), 1 TSRMLS_CC); }
     break;
 
   case 514:
-
+/* Line 1778 of yacc.c  */
+#line 1152 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_init_array(&(yyval), &(yyvsp[(2) - (2)]), NULL, 1 TSRMLS_CC); }
     break;
 
   case 515:
-
+/* Line 1778 of yacc.c  */
+#line 1156 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(2) - (2)]), BP_VAR_R, 0 TSRMLS_CC);  zend_do_add_variable(&(yyval), &(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 516:
-
+/* Line 1778 of yacc.c  */
+#line 1157 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_add_string(&(yyval), &(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 517:
-
+/* Line 1778 of yacc.c  */
+#line 1158 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_end_variable_parse(&(yyvsp[(1) - (1)]), BP_VAR_R, 0 TSRMLS_CC); zend_do_add_variable(&(yyval), NULL, &(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 518:
-
+/* Line 1778 of yacc.c  */
+#line 1159 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_add_string(&(yyval), NULL, &(yyvsp[(1) - (2)]) TSRMLS_CC); zend_do_end_variable_parse(&(yyvsp[(2) - (2)]), BP_VAR_R, 0 TSRMLS_CC); zend_do_add_variable(&(yyval), &(yyval), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 519:
-
+/* Line 1778 of yacc.c  */
+#line 1165 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_variable_parse(TSRMLS_C); fetch_simple_variable(&(yyval), &(yyvsp[(1) - (1)]), 1 TSRMLS_CC); }
     break;
 
   case 520:
-
+/* Line 1778 of yacc.c  */
+#line 1166 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_variable_parse(TSRMLS_C); }
     break;
 
   case 521:
-
+/* Line 1778 of yacc.c  */
+#line 1166 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { fetch_array_begin(&(yyval), &(yyvsp[(1) - (5)]), &(yyvsp[(4) - (5)]) TSRMLS_CC); }
     break;
 
   case 522:
-
+/* Line 1778 of yacc.c  */
+#line 1167 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_variable_parse(TSRMLS_C); fetch_simple_variable(&(yyvsp[(2) - (3)]), &(yyvsp[(1) - (3)]), 1 TSRMLS_CC); zend_do_fetch_property(&(yyval), &(yyvsp[(2) - (3)]), &(yyvsp[(3) - (3)]) TSRMLS_CC); }
     break;
 
   case 523:
-
+/* Line 1778 of yacc.c  */
+#line 1168 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_variable_parse(TSRMLS_C);  fetch_simple_variable(&(yyval), &(yyvsp[(2) - (3)]), 1 TSRMLS_CC); }
     break;
 
   case 524:
-
+/* Line 1778 of yacc.c  */
+#line 1169 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_begin_variable_parse(TSRMLS_C);  fetch_array_begin(&(yyval), &(yyvsp[(2) - (6)]), &(yyvsp[(4) - (6)]) TSRMLS_CC); }
     break;
 
   case 525:
-
+/* Line 1778 of yacc.c  */
+#line 1170 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(2) - (3)]); }
     break;
 
   case 526:
-
+/* Line 1778 of yacc.c  */
+#line 1175 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 527:
-
+/* Line 1778 of yacc.c  */
+#line 1176 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 528:
-
+/* Line 1778 of yacc.c  */
+#line 1177 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { fetch_simple_variable(&(yyval), &(yyvsp[(1) - (1)]), 1 TSRMLS_CC); }
     break;
 
   case 529:
-
+/* Line 1778 of yacc.c  */
+#line 1182 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(3) - (4)]); }
     break;
 
   case 530:
-
+/* Line 1778 of yacc.c  */
+#line 1183 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_isset_or_isempty(ZEND_ISEMPTY, &(yyval), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 531:
-
+/* Line 1778 of yacc.c  */
+#line 1184 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_unary_op(ZEND_BOOL_NOT, &(yyval), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 532:
-
+/* Line 1778 of yacc.c  */
+#line 1185 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_include_or_eval(ZEND_INCLUDE, &(yyval), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 533:
-
+/* Line 1778 of yacc.c  */
+#line 1186 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_include_or_eval(ZEND_INCLUDE_ONCE, &(yyval), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 534:
-
+/* Line 1778 of yacc.c  */
+#line 1187 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_include_or_eval(ZEND_EVAL, &(yyval), &(yyvsp[(3) - (4)]) TSRMLS_CC); }
     break;
 
   case 535:
-
+/* Line 1778 of yacc.c  */
+#line 1188 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_include_or_eval(ZEND_REQUIRE, &(yyval), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 536:
-
+/* Line 1778 of yacc.c  */
+#line 1189 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_include_or_eval(ZEND_REQUIRE_ONCE, &(yyval), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 537:
-
+/* Line 1778 of yacc.c  */
+#line 1193 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { (yyval) = (yyvsp[(1) - (1)]); }
     break;
 
   case 538:
-
+/* Line 1778 of yacc.c  */
+#line 1194 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_boolean_and_begin(&(yyvsp[(1) - (2)]), &(yyvsp[(2) - (2)]) TSRMLS_CC); }
     break;
 
   case 539:
-
+/* Line 1778 of yacc.c  */
+#line 1194 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_boolean_and_end(&(yyval), &(yyvsp[(1) - (4)]), &(yyvsp[(4) - (4)]), &(yyvsp[(2) - (4)]) TSRMLS_CC); }
     break;
 
   case 540:
-
+/* Line 1778 of yacc.c  */
+#line 1198 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_isset_or_isempty(ZEND_ISSET, &(yyval), &(yyvsp[(1) - (1)]) TSRMLS_CC); }
     break;
 
   case 541:
-
+/* Line 1778 of yacc.c  */
+#line 1199 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_error(E_COMPILE_ERROR, "Cannot use isset() on the result of an expression (you can use \"null !== expression\" instead)"); }
     break;
 
   case 542:
-
+/* Line 1778 of yacc.c  */
+#line 1203 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_constant(&(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]), ZEND_RT, 0 TSRMLS_CC); }
     break;
 
   case 543:
-
+/* Line 1778 of yacc.c  */
+#line 1204 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_fetch_constant(&(yyval), &(yyvsp[(1) - (3)]), &(yyvsp[(3) - (3)]), ZEND_RT, 0 TSRMLS_CC); }
     break;
 
   case 544:
-
+/* Line 1778 of yacc.c  */
+#line 1208 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_resolve_class_name(&(yyval), &(yyvsp[(1) - (3)]), 1 TSRMLS_CC); }
     break;
 
   case 545:
-
+/* Line 1778 of yacc.c  */
+#line 1212 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
     { zend_do_resolve_class_name(&(yyval), &(yyvsp[(1) - (3)]), 0 TSRMLS_CC); }
     break;
 
 
-
+/* Line 1778 of yacc.c  */
+#line 6461 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.c"
       default: break;
     }
+  /* User semantic actions sometimes alter yychar, and that requires
+     that yytoken be updated with the new translation.  We take the
+     approach of translating immediately before every use of yytoken.
+     One alternative is translating here after every semantic action,
+     but that translation would be missed if the semantic action invokes
+     YYABORT, YYACCEPT, or YYERROR immediately after altering yychar or
+     if it invokes YYBACKUP.  In the case of YYABORT or YYACCEPT, an
+     incorrect destructor might then be invoked immediately.  In the
+     case of YYERROR or YYBACKUP, subsequent parser actions might lead
+     to an incorrect destructor call or verbose syntax error message
+     before the lookahead is translated.  */
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
 
   YYPOPSTACK (yylen);
@@ -5967,6 +6498,10 @@ yyreduce:
 | yyerrlab -- here on detecting error |
 `------------------------------------*/
 yyerrlab:
+  /* Make sure we have latest lookahead translation.  See comments at
+     user semantic actions for why this is necessary.  */
+  yytoken = yychar == YYEMPTY ? YYEMPTY : YYTRANSLATE (yychar);
+
   /* If not already recovering from an error, report this error.  */
   if (!yyerrstatus)
     {
@@ -5974,37 +6509,36 @@ yyerrlab:
 #if ! YYERROR_VERBOSE
       yyerror (YY_("syntax error"));
 #else
+# define YYSYNTAX_ERROR yysyntax_error (&yymsg_alloc, &yymsg, \
+                                        yyssp, yytoken)
       {
-	YYSIZE_T yysize = yysyntax_error (0, yystate, yychar);
-	if (yymsg_alloc < yysize && yymsg_alloc < YYSTACK_ALLOC_MAXIMUM)
-	  {
-	    YYSIZE_T yyalloc = 2 * yysize;
-	    if (! (yysize <= yyalloc && yyalloc <= YYSTACK_ALLOC_MAXIMUM))
-	      yyalloc = YYSTACK_ALLOC_MAXIMUM;
-	    if (yymsg != yymsgbuf)
-	      YYSTACK_FREE (yymsg);
-	    yymsg = (char *) YYSTACK_ALLOC (yyalloc);
-	    if (yymsg)
-	      yymsg_alloc = yyalloc;
-	    else
-	      {
-		yymsg = yymsgbuf;
-		yymsg_alloc = sizeof yymsgbuf;
-	      }
-	  }
-
-	if (0 < yysize && yysize <= yymsg_alloc)
-	  {
-	    (void) yysyntax_error (yymsg, yystate, yychar);
-	    yyerror (yymsg);
-	  }
-	else
-	  {
-	    yyerror (YY_("syntax error"));
-	    if (yysize != 0)
-	      goto yyexhaustedlab;
-	  }
+        char const *yymsgp = YY_("syntax error");
+        int yysyntax_error_status;
+        yysyntax_error_status = YYSYNTAX_ERROR;
+        if (yysyntax_error_status == 0)
+          yymsgp = yymsg;
+        else if (yysyntax_error_status == 1)
+          {
+            if (yymsg != yymsgbuf)
+              YYSTACK_FREE (yymsg);
+            yymsg = (char *) YYSTACK_ALLOC (yymsg_alloc);
+            if (!yymsg)
+              {
+                yymsg = yymsgbuf;
+                yymsg_alloc = sizeof yymsgbuf;
+                yysyntax_error_status = 2;
+              }
+            else
+              {
+                yysyntax_error_status = YYSYNTAX_ERROR;
+                yymsgp = yymsg;
+              }
+          }
+        yyerror (yymsgp);
+        if (yysyntax_error_status == 2)
+          goto yyexhaustedlab;
       }
+# undef YYSYNTAX_ERROR
 #endif
     }
 
@@ -6063,7 +6597,7 @@ yyerrlab1:
   for (;;)
     {
       yyn = yypact[yystate];
-      if (yyn != YYPACT_NINF)
+      if (!yypact_value_is_default (yyn))
 	{
 	  yyn += YYTERROR;
 	  if (0 <= yyn && yyn <= YYLAST && yycheck[yyn] == YYTERROR)
@@ -6086,7 +6620,9 @@ yyerrlab1:
       YY_STACK_PRINT (yyss, yyssp);
     }
 
+  YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
   *++yyvsp = yylval;
+  YY_IGNORE_MAYBE_UNINITIALIZED_END
 
 
   /* Shift the error token.  */
@@ -6110,7 +6646,7 @@ yyabortlab:
   yyresult = 1;
   goto yyreturn;
 
-#if !defined(yyoverflow) || YYERROR_VERBOSE
+#if !defined yyoverflow || YYERROR_VERBOSE
 /*-------------------------------------------------.
 | yyexhaustedlab -- memory exhaustion comes here.  |
 `-------------------------------------------------*/
@@ -6122,8 +6658,13 @@ yyexhaustedlab:
 
 yyreturn:
   if (yychar != YYEMPTY)
-     yydestruct ("Cleanup: discarding lookahead",
-		 yytoken, &yylval);
+    {
+      /* Make sure we have latest lookahead translation.  See comments at
+         user semantic actions for why this is necessary.  */
+      yytoken = YYTRANSLATE (yychar);
+      yydestruct ("Cleanup: discarding lookahead",
+                  yytoken, &yylval);
+    }
   /* Do not reclaim the symbols of the rule which action triggered
      this YYABORT or YYACCEPT.  */
   YYPOPSTACK (yylen);
@@ -6147,7 +6688,8 @@ yyreturn:
 }
 
 
-
+/* Line 2041 of yacc.c  */
+#line 1215 "/home/seg/DEV/northstar/src/router/php5/Zend/zend_language_parser.y"
 
 
 /* Copy to YYRES the contents of YYSTR after stripping away unnecessary
@@ -6225,4 +6767,3 @@ static YYSIZE_T zend_yytnamerr(char *yyres, const char *yystr)
  * indent-tabs-mode: t
  * End:
  */
-

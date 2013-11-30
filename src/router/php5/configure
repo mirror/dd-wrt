@@ -3688,7 +3688,7 @@ ac_config_headers="$ac_config_headers main/php_config.h"
 
 PHP_MAJOR_VERSION=5
 PHP_MINOR_VERSION=5
-PHP_RELEASE_VERSION=4
+PHP_RELEASE_VERSION=6
 PHP_EXTRA_VERSION=""
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr $PHP_MAJOR_VERSION \* 10000 + $PHP_MINOR_VERSION \* 100 + $PHP_RELEASE_VERSION`
@@ -5257,7 +5257,7 @@ if ${php_cv_bison_version+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-      bison_version_vars=`bison --version 2> /dev/null | grep 'GNU Bison' | cut -d ' ' -f 4 | $SED -e 's/\./ /' | tr -d a-z`
+      bison_version_vars=`$YACC --version 2> /dev/null | grep 'GNU Bison' | cut -d ' ' -f 4 | $SED -e 's/\./ /g' | tr -d a-z`
       php_cv_bison_version=invalid
       if test -n "$bison_version_vars"; then
         set $bison_version_vars
@@ -47839,9 +47839,9 @@ fi
       as_fn_error $? "Cannot find rfc822.h. Please check your c-client installation." "$LINENO" 5
     fi
 
-    if test ! -r "$IMAP_DIR/c-client/libc-client.a" && -r "$IMAP_DIR/c-client/c-client.a" ; then
+    if test ! -r "$IMAP_DIR/c-client/libc-client.a" && test -r "$IMAP_DIR/c-client/c-client.a" ; then
       ln -s "$IMAP_DIR/c-client/c-client.a" "$IMAP_DIR/c-client/libc-client.a" >/dev/null 2>&1
-    elif test ! -r "$IMAP_DIR/$PHP_LIBDIR/libc-client.a" && -r "$IMAP_DIR/$PHP_LIBDIR/c-client.a"; then
+    elif test ! -r "$IMAP_DIR/$PHP_LIBDIR/libc-client.a" && test -r "$IMAP_DIR/$PHP_LIBDIR/c-client.a"; then
       ln -s "$IMAP_DIR/$PHP_LIBDIR/c-client.a" "$IMAP_DIR/$PHP_LIBDIR/libc-client.a" >/dev/null 2>&1
     fi
 
@@ -52527,6 +52527,57 @@ EOF
     LDAP_DIR=$i
     LDAP_INCDIR=$i/ldap/public
     LDAP_LIBDIR=$i/$PHP_LIBDIR
+  else
+
+        # The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of long int" >&5
+$as_echo_n "checking size of long int... " >&6; }
+if ${ac_cv_sizeof_long_int+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (long int))" "ac_cv_sizeof_long_int"        "$ac_includes_default"; then :
+
+else
+  if test "$ac_cv_type_long_int" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute sizeof (long int)
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_sizeof_long_int=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_long_int" >&5
+$as_echo "$ac_cv_sizeof_long_int" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_LONG_INT $ac_cv_sizeof_long_int
+_ACEOF
+
+
+    if test "$ac_cv_sizeof_long_int" = "4"; then
+      PHP_OCI8_IC_LIBDIR_SUFFIX=""
+    else
+      PHP_OCI8_IC_LIBDIR_SUFFIX=64
+    fi
+    OCISDKRPMINC=`echo "$i" | $SED -e 's!^/usr/lib/oracle/\(.*\)/client\('${PHP_OCI8_IC_LIBDIR_SUFFIX}'\)*/lib/*$!/usr/include/oracle/\1/client\2!'`
+
+        if test -f $OCISDKRPMINC/ldap.h; then
+      LDAP_DIR=$i
+      LDAP_INCDIR=$OCISDKRPMINC
+      LDAP_LIBDIR=$i
+        elif test -f $i/sdk/include/ldap.h; then
+      LDAP_DIR=$i
+      LDAP_INCDIR=$i/sdk/include
+      LDAP_LIBDIR=$i
+    fi
   fi
 
     done
@@ -52544,6 +52595,57 @@ EOF
     LDAP_DIR=$PHP_LDAP
     LDAP_INCDIR=$PHP_LDAP/ldap/public
     LDAP_LIBDIR=$PHP_LDAP/$PHP_LIBDIR
+  else
+
+        # The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of long int" >&5
+$as_echo_n "checking size of long int... " >&6; }
+if ${ac_cv_sizeof_long_int+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (long int))" "ac_cv_sizeof_long_int"        "$ac_includes_default"; then :
+
+else
+  if test "$ac_cv_type_long_int" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute sizeof (long int)
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_sizeof_long_int=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_long_int" >&5
+$as_echo "$ac_cv_sizeof_long_int" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_LONG_INT $ac_cv_sizeof_long_int
+_ACEOF
+
+
+    if test "$ac_cv_sizeof_long_int" = "4"; then
+      PHP_OCI8_IC_LIBDIR_SUFFIX=""
+    else
+      PHP_OCI8_IC_LIBDIR_SUFFIX=64
+    fi
+    OCISDKRPMINC=`echo "$PHP_LDAP" | $SED -e 's!^/usr/lib/oracle/\(.*\)/client\('${PHP_OCI8_IC_LIBDIR_SUFFIX}'\)*/lib/*$!/usr/include/oracle/\1/client\2!'`
+
+        if test -f $OCISDKRPMINC/ldap.h; then
+      LDAP_DIR=$PHP_LDAP
+      LDAP_INCDIR=$OCISDKRPMINC
+      LDAP_LIBDIR=$PHP_LDAP
+        elif test -f $PHP_LDAP/sdk/include/ldap.h; then
+      LDAP_DIR=$PHP_LDAP
+      LDAP_INCDIR=$PHP_LDAP/sdk/include
+      LDAP_LIBDIR=$PHP_LDAP
+    fi
   fi
 
   fi
@@ -54379,6 +54481,216 @@ $as_echo "#define HAVE_NSLDAP 1" >>confdefs.h
 
 
 
+  elif test -f $LDAP_LIBDIR/libclntsh.$SHLIB_SUFFIX_NAME.12.1; then
+
+
+  if test "$ext_shared" = "yes"; then
+    LDAP_SHARED_LIBADD="-lclntsh $LDAP_SHARED_LIBADD"
+    if test -n "$LDAP_LIBDIR"; then
+
+  if test "$LDAP_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$LDAP_LIBDIR" != "/usr/lib"; then
+
+  if test -z "$LDAP_LIBDIR" || echo "$LDAP_LIBDIR" | grep '^/' >/dev/null ; then
+    ai_p=$LDAP_LIBDIR
+  else
+
+    ep_dir=`echo $LDAP_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
+
+    ep_realdir=`(cd "$ep_dir" && pwd)`
+    ai_p="$ep_realdir"/`basename "$LDAP_LIBDIR"`
+  fi
+
+
+      if test "$ext_shared" = "yes"; then
+        LDAP_SHARED_LIBADD="-L$ai_p $LDAP_SHARED_LIBADD"
+        test -n "$ld_runpath_switch" && LDAP_SHARED_LIBADD="$ld_runpath_switch$ai_p $LDAP_SHARED_LIBADD"
+      else
+
+
+
+  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "LIBPATH$unique=set"
+
+    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
+    LDFLAGS="$LDFLAGS -L$ai_p"
+    PHP_RPATHS="$PHP_RPATHS $ai_p"
+
+  fi
+
+
+      fi
+
+  fi
+
+    fi
+  else
+
+
+  if test -n "$LDAP_LIBDIR"; then
+
+  if test "$LDAP_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$LDAP_LIBDIR" != "/usr/lib"; then
+
+  if test -z "$LDAP_LIBDIR" || echo "$LDAP_LIBDIR" | grep '^/' >/dev/null ; then
+    ai_p=$LDAP_LIBDIR
+  else
+
+    ep_dir=`echo $LDAP_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
+
+    ep_realdir=`(cd "$ep_dir" && pwd)`
+    ai_p="$ep_realdir"/`basename "$LDAP_LIBDIR"`
+  fi
+
+
+
+
+
+  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "LIBPATH$unique=set"
+
+    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
+    LDFLAGS="$LDFLAGS -L$ai_p"
+    PHP_RPATHS="$PHP_RPATHS $ai_p"
+
+  fi
+
+
+
+  fi
+
+  fi
+
+
+  case clntsh in
+  c|c_r|pthread*) ;;
+  *)
+      LIBS="-lclntsh $LIBS"
+   ;;
+  esac
+
+
+
+
+  fi
+
+
+
+$as_echo "#define HAVE_ORALDAP 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_ORALDAP_12 1" >>confdefs.h
+
+
+  elif test -f $LDAP_LIBDIR/libclntsh.$SHLIB_SUFFIX_NAME.11.1; then
+
+
+  if test "$ext_shared" = "yes"; then
+    LDAP_SHARED_LIBADD="-lclntsh $LDAP_SHARED_LIBADD"
+    if test -n "$LDAP_LIBDIR"; then
+
+  if test "$LDAP_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$LDAP_LIBDIR" != "/usr/lib"; then
+
+  if test -z "$LDAP_LIBDIR" || echo "$LDAP_LIBDIR" | grep '^/' >/dev/null ; then
+    ai_p=$LDAP_LIBDIR
+  else
+
+    ep_dir=`echo $LDAP_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
+
+    ep_realdir=`(cd "$ep_dir" && pwd)`
+    ai_p="$ep_realdir"/`basename "$LDAP_LIBDIR"`
+  fi
+
+
+      if test "$ext_shared" = "yes"; then
+        LDAP_SHARED_LIBADD="-L$ai_p $LDAP_SHARED_LIBADD"
+        test -n "$ld_runpath_switch" && LDAP_SHARED_LIBADD="$ld_runpath_switch$ai_p $LDAP_SHARED_LIBADD"
+      else
+
+
+
+  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "LIBPATH$unique=set"
+
+    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
+    LDFLAGS="$LDFLAGS -L$ai_p"
+    PHP_RPATHS="$PHP_RPATHS $ai_p"
+
+  fi
+
+
+      fi
+
+  fi
+
+    fi
+  else
+
+
+  if test -n "$LDAP_LIBDIR"; then
+
+  if test "$LDAP_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$LDAP_LIBDIR" != "/usr/lib"; then
+
+  if test -z "$LDAP_LIBDIR" || echo "$LDAP_LIBDIR" | grep '^/' >/dev/null ; then
+    ai_p=$LDAP_LIBDIR
+  else
+
+    ep_dir=`echo $LDAP_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
+
+    ep_realdir=`(cd "$ep_dir" && pwd)`
+    ai_p="$ep_realdir"/`basename "$LDAP_LIBDIR"`
+  fi
+
+
+
+
+
+  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "LIBPATH$unique=set"
+
+    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
+    LDFLAGS="$LDFLAGS -L$ai_p"
+    PHP_RPATHS="$PHP_RPATHS $ai_p"
+
+  fi
+
+
+
+  fi
+
+  fi
+
+
+  case clntsh in
+  c|c_r|pthread*) ;;
+  *)
+      LIBS="-lclntsh $LIBS"
+   ;;
+  esac
+
+
+
+
+  fi
+
+
+
+$as_echo "#define HAVE_ORALDAP 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_ORALDAP_11 1" >>confdefs.h
+
+
   elif test -f $LDAP_LIBDIR/libclntsh.$SHLIB_SUFFIX_NAME; then
 
 
@@ -54480,11 +54792,10 @@ $as_echo "#define HAVE_NSLDAP 1" >>confdefs.h
 
 $as_echo "#define HAVE_ORALDAP 1" >>confdefs.h
 
-    if test -f $LDAP_LIBDIR/libclntsh.$SHLIB_SUFFIX_NAME.10.1; then
 
 $as_echo "#define HAVE_ORALDAP_10 1" >>confdefs.h
 
-    fi
+
   else
     as_fn_error $? "Cannot find ldap libraries in $LDAP_LIBDIR." "$LINENO" 5
   fi
@@ -65157,54 +65468,85 @@ fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $msg" >&5
 $as_echo "$msg" >&6; }
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for known struct flock definition" >&5
-$as_echo_n "checking for known struct flock definition... " >&6; }
-    if test "$cross_compiling" = yes; then :
+flock_type=unknown
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking \"whether flock struct is linux ordered\"" >&5
+$as_echo_n "checking \"whether flock struct is linux ordered\"... " >&6; }
+if test "$cross_compiling" = yes; then :
 
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-#include <fcntl.h>
-#include <stdlib.h>
-
-#ifndef ZEND_WIN32
-extern int lock_file;
-
-# if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || (defined(__APPLE__) && defined(__MACH__)/* Darwin */) || defined(__OpenBSD__) || defined(__NetBSD__)
-#  define FLOCK_STRUCTURE(name, type, whence, start, len) \
-                struct flock name = {start, len, -1, type, whence}
-# elif defined(__svr4__)
-#  define FLOCK_STRUCTURE(name, type, whence, start, len) \
-                struct flock name = {type, whence, start, len}
-# elif defined(__linux__) || defined(__hpux)
-#  define FLOCK_STRUCTURE(name, type, whence, start, len) \
-                struct flock name = {type, whence, start, len, 0}
-# elif defined(_AIX)
-#  if defined(_LARGE_FILES) || defined(__64BIT__)
-#   define FLOCK_STRUCTURE(name, type, whence, start, len) \
-                struct flock name = {type, whence, 0, 0, 0, start, len }
-#  else
-#   define FLOCK_STRUCTURE(name, type, whence, start, len) \
-                struct flock name = {type, whence, start, len}
-#  endif
-# else
-#  error "Don't know how to define struct flock"
-# endif
-#endif
-int main() { return 0; }
+  #include <fcntl.h>
+  struct flock lock = { 1, 2, 3, 4, 5 };
+  int main() {
+    if(lock.l_type == 1 && lock.l_whence == 2 && lock.l_start == 3 && lock.l_len == 4) {
+		return 0;
+    }
+    return 1;
+  }
 
 _ACEOF
 if ac_fn_c_try_run "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: done" >&5
-$as_echo "done" >&6; }
+
+	flock_type=linux
+
+$as_echo "#define HAVE_FLOCK_LINUX /**/" >>confdefs.h
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"yes\"" >&5
+$as_echo "\"yes\"" >&6; }
+
 else
-  as_fn_error $? "Don't know how to define struct flock on this system, set --enable-opcache=no" "$LINENO" 5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"no\"" >&5
+$as_echo "\"no\"" >&6; }
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking \"whether flock struct is BSD ordered\"" >&5
+$as_echo_n "checking \"whether flock struct is BSD ordered\"... " >&6; }
+if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+  #include <fcntl.h>
+  struct flock lock = { 1, 2, 3, 4, 5 };
+  int main() {
+    if(lock.l_start == 1 && lock.l_len == 2 && lock.l_type == 4 && lock.l_whence == 5) {
+		return 0;
+    }
+    return 1;
+  }
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+
+	flock_type=bsd
+
+$as_echo "#define HAVE_FLOCK_BSD /**/" >>confdefs.h
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"yes\"" >&5
+$as_echo "\"yes\"" >&6; }
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"no\"" >&5
+$as_echo "\"no\"" >&6; }
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+
+if test "$flock_type" == "unknown"; then
+	as_fn_error $? "Don't know how to define struct flock on this system, set --enable-opcache=no" "$LINENO" 5
+fi
 
 
   ext_builddir=ext/opcache
@@ -77295,6 +77637,27 @@ but you've either not enabled spl, or have disabled it.
   ac_srcdir=$ext_srcdir
   ac_builddir=$ext_builddir
   test -f "$src" && $SED -e "s#\$(srcdir)#$ac_srcdir#g" -e "s#\$(builddir)#$ac_builddir#g" $src  >> Makefile.fragments
+
+
+
+
+    header_path=ext/phar
+    for header_file in php_phar.h; do
+      hp_hf="$header_path/$header_file"
+
+
+  unique=`echo $hp_hf|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$INSTALLHEADERS$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "INSTALLHEADERS$unique=set"
+
+        INSTALL_HEADERS="$INSTALL_HEADERS $hp_hf"
+
+  fi
+
+    done
+
 
 
 
@@ -102261,7 +102624,7 @@ if ${php_cv_bison_version+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-      bison_version_vars=`bison --version 2> /dev/null | grep 'GNU Bison' | cut -d ' ' -f 4 | $SED -e 's/\./ /' | tr -d a-z`
+      bison_version_vars=`$YACC --version 2> /dev/null | grep 'GNU Bison' | cut -d ' ' -f 4 | $SED -e 's/\./ /g' | tr -d a-z`
       php_cv_bison_version=invalid
       if test -n "$bison_version_vars"; then
         set $bison_version_vars
@@ -103155,7 +103518,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 103160 "configure"
+#line 103523 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -105067,7 +105430,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 105072 "configure"' > conftest.$ac_ext
+  echo '#line 105435 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -106459,7 +106822,7 @@ else
       LDFLAGS="$LDFLAGS -Wl,-exported_symbols_list,conftest.sym"
 
 cat > conftest.$ac_ext <<EOF
-#line 106464 "configure"
+#line 106827 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -106617,11 +106980,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:106622: $lt_compile\"" >&5)
+   (eval echo "\"configure:106985: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:106626: \$? = $ac_status" >&5
+   echo "configure:106989: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -106915,11 +107278,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:106920: $lt_compile\"" >&5)
+   (eval echo "\"configure:107283: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:106924: \$? = $ac_status" >&5
+   echo "configure:107287: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -107019,11 +107382,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:107024: $lt_compile\"" >&5)
+   (eval echo "\"configure:107387: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:107028: \$? = $ac_status" >&5
+   echo "configure:107391: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -107483,7 +107846,7 @@ _LT_EOF
        # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 107488 "configure"
+#line 107851 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -107525,7 +107888,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	 # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 107530 "configure"
+#line 107893 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -109050,7 +109413,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 109055 "configure"
+#line 109418 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -109150,7 +109513,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 109155 "configure"
+#line 109518 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -110215,7 +110578,7 @@ case $host_os in
       # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 110220 "configure"
+#line 110583 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -110258,7 +110621,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	# Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 110263 "configure"
+#line 110626 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -111510,11 +111873,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:111515: $lt_compile\"" >&5)
+   (eval echo "\"configure:111878: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:111519: \$? = $ac_status" >&5
+   echo "configure:111882: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -111614,11 +111977,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:111619: $lt_compile\"" >&5)
+   (eval echo "\"configure:111982: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:111623: \$? = $ac_status" >&5
+   echo "configure:111986: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
