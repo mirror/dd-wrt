@@ -659,6 +659,12 @@
 /* Define to 1 if you have the `flock' function. */
 #undef HAVE_FLOCK
 
+/* Struct flock is BSD-type */
+#undef HAVE_FLOCK_BSD
+
+/* Struct flock is Linux-type */
+#undef HAVE_FLOCK_LINUX
+
 /* Define to 1 if you have the `floorf' function. */
 #undef HAVE_FLOORF
 
@@ -1236,6 +1242,12 @@
 
 /* */
 #undef HAVE_ORALDAP_10
+
+/* */
+#undef HAVE_ORALDAP_11
+
+/* */
+#undef HAVE_ORALDAP_12
 
 /* Whether struct _zend_object_value is packed */
 #undef HAVE_PACKED_OBJECT_VALUE
