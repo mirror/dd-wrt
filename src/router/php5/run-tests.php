@@ -24,7 +24,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 54a12a177d043216f87f21764b85df912aacaf75 $ */
+/* $Id: 7eb445eeb812fa7485608d9765294008f45d426c $ */
 
 /* Sanity check to ensure that pcre extension needed by this script is available.
  * In the event it is not, print a nice error message indicating that this script will
@@ -459,7 +459,7 @@ $pass_options = '';
 $compression = 0;
 $output_file = $CUR_DIR . '/php_test_results_' . date('Ymd_Hi') . '.txt';
 
-if ($compression) {
+if ($compression && in_array("compress.zlib", stream_get_filters())) {
 	$output_file = 'compress.zlib://' . $output_file . '.gz';
 }
 
@@ -661,7 +661,7 @@ if (isset($argc) && $argc > 1) {
 					$html_output = is_resource($html_file);
 					break;
 				case '--version':
-					echo '$Id: 54a12a177d043216f87f21764b85df912aacaf75 $' . "\n";
+					echo '$Id: 7eb445eeb812fa7485608d9765294008f45d426c $' . "\n";
 					exit(1);
 
 				default:
@@ -1546,6 +1546,16 @@ TEST $file
 				}
 			}
 		}
+	}
+	
+	if (!extension_loaded("zlib")
+	&& (	array_key_exists("GZIP_POST", $section_text) 
+		||	array_key_exists("DEFLATE_POST", $section_text))
+	) {
+		$message = "ext/zlib required";
+		show_result('SKIP', $tested, $tested_file, "reason: $message", $temp_filenames);
+		junit_mark_test_as('SKIP', $shortname, $tested, null, "<![CDATA[\n$message\n]]>");
+		return 'SKIPPED';
 	}
 
 	if (@count($section_text['REDIRECTTEST']) == 1) {
