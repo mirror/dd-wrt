@@ -268,6 +268,7 @@ static php_cli_server_ext_mime_type_pair mime_type_map[] = {
 	{ "jpg", "image/jpeg" },
 	{ "jpeg", "image/jpeg" },
 	{ "jpe", "image/jpeg" },
+	{ "pdf", "application/pdf" },
 	{ "png", "image/png" },
 	{ "svg", "image/svg+xml" },
 	{ "txt", "text/plain" },
@@ -1599,6 +1600,7 @@ static int php_cli_server_client_read_request_on_body(php_http_parser *parser, c
 		}
 		client->request.content_len = 0;
 	}
+	client->request.content = perealloc(client->request.content, client->request.content_len + length, 1);
 	memmove(client->request.content + client->request.content_len, at, length);
 	client->request.content_len += length;
 	return 0;
