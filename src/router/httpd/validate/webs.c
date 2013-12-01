@@ -3018,6 +3018,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_multicast", ifname);
 	copytonv(wp, "%s_bridged", ifname);
 	copytonv(wp, "%s_nat", prefix);
+	copytonv(wp, "%s_isolation", prefix);
 
 	char addr[32];
 
@@ -3033,6 +3034,8 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_multicast", prefix);
 	copytonv(wp, "%s_bridged", prefix);
 	copytonv(wp, "%s_nat", prefix);
+	copytonv(wp, "%s_isolation", prefix);
+	
 	char addr[32];
 
 	sprintf(n, "%s_ipaddr", prefix);
