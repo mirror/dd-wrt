@@ -476,6 +476,7 @@ bmenu.statuSysInfo="Sys-Info";
 bmenu.statuActivate="Activate";
 bmenu.statuMyPage="My Page";
 bmenu.statuGpio="GPIO I/O";
+bmenu.statuSyslog="Syslog";
 
 bmenu.setupnetw="Network";
 bmenu.adminman="Management";
@@ -2268,6 +2269,7 @@ wl_basic.if_info="Info (optional)";
 wl_basic.advanced_options="Advanced Options";
 wl_basic.rate_control="Rate Control Algorithm";
 wl_basic.ap83_vap_note="Adding more than three virtual interfaces will lead to lower performance with some specific client devices on these additional virtual interfaces.";
+wl_basic.isolation="Net Isolation";
 
 //help container
 var hwl_basic=new Object();
