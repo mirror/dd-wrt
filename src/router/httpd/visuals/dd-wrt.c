@@ -2817,6 +2817,14 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 		nvram_default_get(natvar, "1");
 		showRadio(wp, "wl_basic.masquerade", natvar);
 	}
+	
+	char isolation[32];
+	if( !strncmp("wl", var, 2) ){
+		sprintf(isolation, "%s_isolation", var);
+		nvram_default_get(isolation, "0");
+		showRadio(wp, "wl_basic.isolation", isolation);
+	}
+	
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
 	char ip[32];
