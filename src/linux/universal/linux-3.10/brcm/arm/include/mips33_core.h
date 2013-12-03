@@ -7,7 +7,7 @@
  * interface. The core revision is stored in the SB ID register in SB
  * configuration space.
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -21,7 +21,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: mips33_core.h 241182 2011-02-17 21:50:03Z $
+ * $Id: mips33_core.h 419467 2013-08-21 09:19:48Z $
  */
 
 #ifndef	_mips33_core_h_

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  *
  * Fundamental constants relating to IP Protocol
  *
- * $Id: bcmip.h 329791 2012-04-26 22:36:58Z $
+ * $Id: bcmip.h 427480 2013-10-03 19:09:47Z $
  */
 
 #ifndef _bcmip_h_
@@ -84,6 +84,15 @@
 #define IPV4_TOS_THROUGHPUT	0x8	/* Best throughput requested */
 #define IPV4_TOS_RELIABILITY	0x4	/* Most reliable delivery requested */
 
+#define IPV4_TOS_ROUTINE        0
+#define IPV4_TOS_PRIORITY       1
+#define IPV4_TOS_IMMEDIATE      2
+#define IPV4_TOS_FLASH          3
+#define IPV4_TOS_FLASHOVERRIDE  4
+#define IPV4_TOS_CRITICAL       5
+#define IPV4_TOS_INETWORK_CTRL  6
+#define IPV4_TOS_NETWORK_CTRL   7
+
 #define IPV4_PROT(ipv4_body)	(((uint8 *)(ipv4_body))[IPV4_PROT_OFFSET])
 
 #define IPV4_FRAG_RESV		0x8000	/* Reserved */
@@ -144,6 +153,13 @@ BWL_PRE_PACKED_STRUCT struct ipv4_hdr {
 	(IP_VER(ip_body) == IP_VER_4 ? IPV4_TOS(ip_body) : \
 	 IP_VER(ip_body) == IP_VER_6 ? IPV6_TRAFFIC_CLASS(ip_body) : 0)
 
+#define IP_DSCP46(ip_body) (IP_TOS46(ip_body) >> IPV4_TOS_DSCP_SHIFT);
+
+/* IPV4 or IPV6 Protocol Classifier or 0 */
+#define IP_PROT46(ip_body) \
+	(IP_VER(ip_body) == IP_VER_4 ? IPV4_PROT(ip_body) : \
+	 IP_VER(ip_body) == IP_VER_6 ? IPV6_PROT(ip_body) : 0)
+
 /* IPV6 extension headers (options) */
 #define IPV6_EXTHDR_HOP		0
 #define IPV6_EXTHDR_ROUTING	43
@@ -200,6 +216,16 @@ ipv6_exthdr_len(uint8 *h, uint8 *proto)
 }
 
 #define IPV4_ISMULTI(a) (((a) & 0xf0000000) == 0xe0000000)
+
+#define IPV4_MCAST_TO_ETHER_MCAST(ipv4, ether) \
+{ \
+	ether[0] = 0x01; \
+	ether[1] = 0x00; \
+	ether[2] = 0x5E; \
+	ether[3] = (ipv4 & 0x7f0000) >> 16; \
+	ether[4] = (ipv4 & 0xff00) >> 8; \
+	ether[5] = (ipv4 & 0xff); \
+}
 
 /* This marks the end of a packed structure section. */
 #include <packed_section_end.h>

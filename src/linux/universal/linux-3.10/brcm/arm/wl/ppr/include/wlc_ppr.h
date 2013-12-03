@@ -2,7 +2,7 @@
  * PHY module Power-per-rate API. Provides interface functions and definitions for opaque
  * ppr structure for use containing regulatory and board limits and tx power targets.
  *
- * Copyright (C) 2012, Broadcom Corporation
+ * Copyright (C) 2013, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;
@@ -28,12 +28,14 @@
 #define PPR_CHSPEC_BW(x) (CHSPEC_IS80(x) ? WL_TX_BW_80 : \
 	(CHSPEC_IS40(x) ? WL_TX_BW_40 : WL_TX_BW_20))
 
-#if !defined(PPR_MAX_TX_CHAINS)
+#ifndef BCMPHYCORENUM
 #define PPR_MAX_TX_CHAINS 3
-#elif (PPR_MAX_TX_CHAINS < 1) || (PPR_MAX_TX_CHAINS > 3)
-#undef PPR_MAX_TX_CHAINS
-#define PPR_MAX_TX_CHAINS 3
-#endif
+#else
+#if (BCMPHYCORENUM < 1) || (BCMPHYCORENUM > 3)
+#error Invalid number of PHY cores
+#endif /* BCMPHYCORENUM < 1 || BCMPHYCORENUM > 3 */
+#define PPR_MAX_TX_CHAINS (BCMPHYCORENUM)
+#endif /* !defined(BCMPHYCORENUM) */
 
 /* Opaque PPR data - it keeps its structure to itself */
 typedef struct ppr ppr_t;
@@ -154,6 +156,13 @@ int ppr_set_same_vht_mcs(ppr_t* pprptr, wl_tx_bw_t bw, wl_tx_nss_t Nss, wl_tx_mo
 /* Ensure no rate limit is greater than the specified maximum */
 uint ppr_apply_max(ppr_t* pprptr, int8 max);
 
+/*
+ * Reduce total transmitted power to level of constraint.
+ * For two chain rates, the per-antenna power must be halved.
+ * For three chain rates, it must be a third of the constraint.
+ */
+uint ppr_apply_constraint_total_tx(ppr_t* pprptr, int8 constraint);
+
 /* Ensure no rate limit is lower than the specified minimum */
 uint ppr_apply_min(ppr_t* pprptr, int8 min);
 
@@ -214,9 +223,6 @@ void ppr_set_cmn_val(ppr_t* pprptr, int8 val);
 /* Make an identical copy of a ppr structure (for ppr_bw==all case) */
 void ppr_copy_struct(ppr_t* pprptr_s, ppr_t* pprptr_d);
 
-/* make an identical copy of a ppr structure inside an WL_TX_BW_ALL type */
-void ppr_copy_struct_to_all(ppr_t* pprptr_s, ppr_t* pprptr_d);
-
 /* Subtract each power from a common value and re-store */
 void ppr_cmn_val_minus(ppr_t* pprptr, int8 val);
 
@@ -256,5 +262,85 @@ void ppr_plus_cmn_val(ppr_t* pprptr, int8 val);
 
 /* Multiply a percentage */
 void ppr_multiply_percentage(ppr_t* pprptr, uint8 val);
+
+
+#ifdef WLTXPWR_CACHE
+
+/**
+ * Usage of the WLTXPWR_CACHE API:
+ * 1. Reserve one or more entries in the cache for a specific chanspec:
+ * 		wlc_phy_txpwr_setup_entry(chanspec1);
+ * 		wlc_phy_txpwr_setup_entry(chanspec2);
+ * 2. Use any of the getter/setter functions. Note that they may return an error on a chanspec
+ *    that was not reserved. For setter functions, for pointer type arguments (e.g. ppr_t), the
+ *    cache maintains a reference to the caller provided object rather than copying it.
+ * 3. Use wlc_phy_txpwr_cache_clear() or wlc_phy_txpwr_cache_invalidate() to get rid of cache
+ *    entries. Note that this clears, amongst others, ppr_t structs.
+ *
+ * For non-BMAC builds, only the cache is allowed to delete the ppr_t object, and the driver code is
+ * not allowed to reuse it for another channel as it can when the cache is not being used.
+ *
+ * For BMAC builds, the cache has to be made to release the stf offsets object to avoid some nasty
+ * race conditions.
+ *
+ * Mike thinks when this is reimplemented for trunk he would consider having a reference count
+ * associated with each object to make this cleaner.
+ *
+ * Note that the functions start with wlc_phy_* despite not residing in the PHY code. This is
+ * probably for historical reasons.
+ */
+
+enum txpwr_cache_info_type {
+	TXPWR_CACHE_STF_OFFSETS,	/* PPR offsets for stf */
+	TXPWR_CACHE_POWER_OFFSETS,	/* PPR offsets for phy */
+	TXPWR_CACHE_NUM_TYPES,	/* How many types of pwr info */
+};
+
+#define TXPWR_STF_PWR_MIN_INVALID 0x80
+#define TXPWR_STF_TARGET_PWR_MIN_INVALID 0x40
+#define TXPWR_STF_TARGET_PWR_NOT_CACHED 0x20
+
+extern ppr_t* wlc_phy_get_cached_pwr(chanspec_t chanspec, uint pwr_type);
+
+extern int wlc_phy_set_cached_pwr(osl_t *osh, chanspec_t chanspec, uint pwr_type, ppr_t* pwrptr);
+
+extern uint8 wlc_phy_get_cached_pwr_max(chanspec_t chanspec, uint core);
+
+extern int wlc_phy_set_cached_pwr_max(chanspec_t chanspec, uint core, uint8 max_pwr);
+
+extern uint8 wlc_phy_get_cached_pwr_min(chanspec_t chanspec, uint core);
+
+extern int wlc_phy_set_cached_pwr_min(chanspec_t chanspec, uint core, uint8 min_pwr);
+
+extern int wlc_phy_get_cached_stf_target_pwr_min(chanspec_t chanspec);
+
+extern int wlc_phy_set_cached_stf_target_pwr_min(chanspec_t chanspec, int min_pwr);
+
+extern int8 wlc_phy_get_cached_txchain_offsets(chanspec_t chanspec, uint core);
+
+extern int wlc_phy_set_cached_txchain_offsets(chanspec_t chanspec, uint core, int8 offset);
+
+extern bool wlc_phy_txpwr_cache_is_cached(chanspec_t chanspec);
+
+extern bool wlc_phy_is_pwr_cached(uint pwr_type, ppr_t* pwrptr);
+
+extern void wlc_phy_uncache_pwr(uint pwr_type, ppr_t* pwrptr);
+
+extern void wlc_phy_uncache_pwr(uint pwr_type, ppr_t* pwrptr);
+
+extern chanspec_t wlc_phy_txpwr_cache_find_other_cached_chanspec(chanspec_t chanspec);
+
+extern void wlc_phy_txpwr_cache_clear(osl_t *osh, chanspec_t chanspec);
+
+extern void wlc_phy_txpwr_cache_invalidate(void);
+
+extern void wlc_phy_txpwr_cache_close(osl_t *osh);
+
+extern int wlc_phy_txpwr_setup_entry(chanspec_t chanspec);
+
+extern bool wlc_phy_get_stf_ppr_cached(chanspec_t chanspec);
+
+extern void wlc_phy_set_stf_ppr_cached(chanspec_t chanspec, bool bcached);
+#endif /* WLTXPWR_CACHE */
 
 #endif	/* _wlc_ppr_h_ */

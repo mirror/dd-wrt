@@ -1,7 +1,7 @@
 /*
  * RoboSwitch setup functions
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcmrobo.h 393340 2013-03-27 06:10:49Z $
+ * $Id: bcmrobo.h 427480 2013-10-03 19:09:47Z $
  */
 
 #ifndef _bcm_robo_h_
@@ -162,6 +162,7 @@ extern void bcm_robo_detach(robo_info_t *robo);
 extern int bcm_robo_enable_device(robo_info_t *robo);
 extern int bcm_robo_config_vlan(robo_info_t *robo, uint8 *mac_addr);
 extern int bcm_robo_enable_switch(robo_info_t *robo);
+extern int bcm_robo_flow_control(robo_info_t *robo, bool set);
 
 #ifdef BCMDBG
 extern void robo_dump_regs(robo_info_t *robo, struct bcmstrbuf *b);
@@ -173,5 +174,11 @@ extern void robo_eee_advertise_init(robo_info_t *robo);
 #ifdef PLC
 extern void robo_plc_hw_init(robo_info_t *robo);
 #endif /* PLC */
+
+#ifdef BCMFA
+extern void robo_fa_aux_init(robo_info_t *robo);
+extern void robo_fa_aux_enable(robo_info_t *robo, bool enable);
+extern void robo_fa_enable(robo_info_t *robo, bool on, bool bhdr);
+#endif
 
 #endif /* _bcm_robo_h_ */
