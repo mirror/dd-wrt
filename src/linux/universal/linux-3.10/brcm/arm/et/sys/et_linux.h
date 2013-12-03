@@ -27,7 +27,7 @@
 #if defined(CONFIG_RAM_SIZE) && (CONFIG_RAM_SIZE <= 16)
 #define NRXBUFPOST      256             /* try to keep this # rbufs posted to the chip */
 #else
-#define NRXBUFPOST      320             /* try to keep this # rbufs posted to the chip */
+#define NRXBUFPOST      511             /* try to keep this # rbufs posted to the chip */
 #endif
 #define	BUFSZ		2048		/* packet data buffer size */
 #define	RXBUFSZ		(BUFSZ - 256)	/* receive buffer size */
