@@ -217,6 +217,9 @@ endif
 ifeq ($(CONFIG_TONZE),y)
 CFLAGS_EXTRA += -DHAVE_TONZE
 endif
+ifeq ($(CONFIG_GPSI),y)
+  CFLAGS_EXTRA += -DHAVE_GPSI
+endif
 ifeq ($(CONFIG_SYSLOG),y)
 CFLAGS_EXTRA += -DHAVE_SYSLOG
 endif
@@ -228,9 +231,6 @@ ifeq ($(CONFIG_DLM101),y)
 endif
 ifeq ($(CONFIG_W502U),y)
   CFLAGS += -DHAVE_W502U
-endif
-ifeq ($(CONFIG_GPSI),y)
-  CFLAGS += -DHAVE_GPSI
 endif
 ifeq ($(CONFIG_UNIWIP),y)
   CFLAGS += -DHAVE_UNIWIP
