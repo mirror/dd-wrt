@@ -1,7 +1,7 @@
 /*
  * Broadcom chipcommon NAND flash interface
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -29,6 +29,7 @@
 #define NFL_VENDOR_SAMSUNG		0xEC
 #define NFL_VENDOR_ESMT			0x92
 #define NFL_VENDOR_MXIC			0xC2
+#define NFL_VENDOR_ZENTEL		0xC8
 
 #define NFL_SECTOR_SIZE			512
 #define NFL_TABLE_END			0xffffffff
@@ -36,6 +37,20 @@
 #define NFL_BOOT_SIZE			0x200000
 #define NFL_BOOT_OS_SIZE		0x2000000
 #define NFL_BBT_SIZE			0x100000
+
+#ifdef __ARM_ARCH_7A__
+#define NFL_BIG_BOOT_SIZE		0x800000	/* 8 MB */
+#define NFL_BIG_BOOT_OS_SIZE		0x2600000	/* 38 MB */
+#define NFL_1M_BLOCK_SIZE		1024		/* KB */
+
+#define nfl_boot_size(nfl)		((((nfl)->blocksize >> 10) >= NFL_1M_BLOCK_SIZE) ? \
+						NFL_BIG_BOOT_SIZE : NFL_BOOT_SIZE)
+#define nfl_boot_os_size(nfl)		((((nfl)->blocksize >> 10) >= NFL_1M_BLOCK_SIZE) ? \
+						NFL_BIG_BOOT_OS_SIZE : NFL_BOOT_OS_SIZE)
+#else
+#define nfl_boot_size(nfl)		NFL_BOOT_SIZE
+#define nfl_boot_os_size(nfl)		NFL_BOOT_OS_SIZE
+#endif /* __ARM_ARCH_7A__ */
 
 #ifndef _CFE_
 /* Command functions  commands */
@@ -58,13 +73,14 @@ struct hndnand {
 	uint oobsize;		/* OOB size per page */
 	uint numblocks;		/* Number of blocks */
 	uint32 type;		/* Type */
-	uint size;		/* Total size in bytes */
-	uint8 id[5];
+	uint size;		/* Total size in Mbytes */
+	uint8 id[8];
 	uint32 base;
 	uint32 phybase;
 
 	uint sectorsize;	/* 512 or 1K */
 	uint sparesize;		/* Spare size per sector */
+	uint eccbytes;		/* ECC code bytes per sector */
 	uint ecclevel0;		/* ECC algorithm for blocks 0 */
 	uint ecclevel;		/* ECC algorithm for blocks other than block 0 */
 	uint32 chipidx;		/* Current active chip index */
@@ -80,12 +96,12 @@ struct hndnand {
 	int (*checkbadb)(hndnand_t *nfl, uint64 offset);
 	int (*markbadb)(hndnand_t *nfl, uint64 offset);
 
-	int (*read_oob)(hndnand_t *nfl, uint64 addr, uint8 *oob);
 #ifndef _CFE_
 	int (*dev_ready)(hndnand_t *nfl);
 	int (*select_chip)(hndnand_t *nfl, int chip);
 	int (*cmdfunc)(hndnand_t *nfl, uint64 addr, int cmd);
 	int (*waitfunc)(hndnand_t *nfl, int *status);
+	int (*read_oob)(hndnand_t *nfl, uint64 addr, uint8 *oob);
 	int (*write_oob)(hndnand_t *nfl, uint64 addr, uint8 *oob);
 	int (*read_page)(hndnand_t *nfl, uint64 addr, uint8 *buf, uint8 *oob, bool ecc,
 		uint32 *herr, uint32 *serr);
@@ -102,13 +118,13 @@ int hndnand_erase(hndnand_t *nfl, uint64 offset);
 int hndnand_checkbadb(hndnand_t *nfl, uint64 offset);
 int hndnand_mark_badb(hndnand_t *nfl, uint64 offset);
 
-int hndnand_read_oob(hndnand_t *nfl, uint64 addr, uint8 *oob);
 #ifndef _CFE_
 int hndnand_dev_ready(hndnand_t *nfl);
 int hndnand_select_chip(hndnand_t *nfl, int chip);
 int hndnand_devcie_width(hndnand_t *nfl, int chip);
 int hndnand_cmdfunc(hndnand_t *nfl, uint64 addr, int cmd);
 int hndnand_waitfunc(hndnand_t *nfl, int *status);
+int hndnand_read_oob(hndnand_t *nfl, uint64 addr, uint8 *oob);
 int hndnand_write_oob(hndnand_t *nfl, uint64 addr, uint8 *oob);
 int hndnand_read_page(hndnand_t *nfl, uint64 addr, uint8 *buf, uint8 *oob, bool ecc,
 	uint32 *herr, uint32 *serr);

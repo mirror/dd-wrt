@@ -1,7 +1,7 @@
 /*
  * RPC module header file
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: bcm_rpc.h 314581 2012-02-13 17:54:04Z $
+ * $Id: bcm_rpc.h 419467 2013-08-21 09:19:48Z $
  */
 
 #ifndef _BCM_RPC_H_
