@@ -1073,7 +1073,7 @@ int internal_getRouterBrand()
 				setRouter("Netgear R6300V2");
 				fclose(model);
 				return ROUTER_NETGEAR_R6300V2;
-			}else{
+			} else {
 				setRouter("Netgear R6250");
 				fclose(model);
 				return ROUTER_NETGEAR_R6250;
@@ -3911,6 +3911,26 @@ char *get_wan_face(void)
 	return localwanface;
 }
 
+int wanChanged(void)
+{
+	FILE *fp = fopen("/tmp/.wanchange", "rb");
+	if (fp) {
+		fclose(fp);
+		unlink("/tmp/.wanchange");
+		return 1;
+	}
+	return 0;
+}
+
+void notifywanChange(void)
+{
+	FILE *fp = fopen("/tmp/.wanchange", "wb");
+	if (fp) {
+		fputs("change", fp);
+		fclose(fp);
+	}
+}
+
 static int _pidof(const char *name, pid_t ** pids)
 {
 	const char *p;
@@ -5210,10 +5230,10 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_NETGEAR_R6250:
 		power_gpio = 0x102;	// power led green
-		//diag_gpio = 0x103;	// power led orange
+		//diag_gpio = 0x103;    // power led orange
 		diag_gpio = 0x001;	// Netgear logo
 		//emblem0_gpio = 0x001; // NETGEAR Emblem       
-		//connected_gpio = 0x10f;	// wan led green
+		//connected_gpio = 0x10f;       // wan led green
 		wlan0_gpio = 0x10b;	// radio led blue
 		usb_gpio = 0x108;	// usb led green
 		//usb_power = 0x000;    // usb enable
@@ -5231,15 +5251,15 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_NETGEAR_R6300V2:
 		power_gpio = 0x102;	// power led green
-		//diag_gpio = 0x103;	// power led orange
-		diag_gpio = 0x101;	// Netgear logo	
-		connected_gpio = 0x10f;// wan led green - hw controlled
+		//diag_gpio = 0x103;    // power led orange
+		diag_gpio = 0x101;	// Netgear logo 
+		connected_gpio = 0x10f;	// wan led green - hw controlled
 		wlan0_gpio = 0x10b;	// radio led blue
 		usb_gpio = 0x108;	// usb led 
-		//usb_power = 0x000;	// usb enable
+		//usb_power = 0x000;    // usb enable
 		break;
 	case ROUTER_NETGEAR_R7000:
-	  	power_gpio = 0x102;	// power led 
+		power_gpio = 0x102;	// power led 
 		diag_gpio = 0x103;	// power led orange     
 		connected_gpio = 0x109;	// wan led green
 		usb_power = 0x000;	// usb enable
