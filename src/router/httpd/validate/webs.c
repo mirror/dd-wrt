@@ -3035,7 +3035,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_bridged", prefix);
 	copytonv(wp, "%s_nat", prefix);
 	copytonv(wp, "%s_isolation", prefix);
-	
+
 	char addr[32];
 
 	sprintf(n, "%s_ipaddr", prefix);
@@ -3055,12 +3055,18 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	copytonv(wp, "%s_ap_isolate", prefix);
 	sprintf(n, "%s_mode", prefix);
-	if (nvram_match(n, "sta")) {
-		char *wl = websGetVar(wp, n, NULL);
+	char *wl_newmode = websGetVar(wp, n, NULL);
+	if (wl_newmode && (nvram_match(n, "sta") || nvram_match(n, "apsta")) && strcmp(wl_newmode, "sta") && strcmp(wl_newmode, "apsta"))
+		notifywanChange();
 
-		if (wl)
-			if ((!strcmp(wl, "ap") || !strcmp(wl, "wdsap")
-			     || !strcmp(wl, "infra") || !strcmp(wl, "wdssta"))
+	if (wl_newmode && nvram_match(n, "ap") && !strcmp(wl_newmode, "sta") || !strcmp(wl_newmode, "apsta"))
+		notifywanChange();
+
+	if (nvram_match(n, "sta")) {
+
+		if (wl_newmode)
+			if ((!strcmp(wl_newmode, "ap") || !strcmp(wl_newmode, "wdsap")
+			     || !strcmp(wl_newmode, "infra") || !strcmp(wl_newmode, "wdssta"))
 			    && nvram_invmatch("wan_proto", "3g")) {
 				nvram_set("wan_proto", "disabled");
 			}
@@ -3118,11 +3124,10 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	}
 #endif
-	
 
 	copytonv(wp, "%s_nbw", prefix);
 	copytonv(wp, "%s_nctrlsb", prefix);
-	
+
 	sprintf(n, "%s_channel", prefix);
 	if (!strcmp(prefix, "wl0") || !strcmp(prefix, "wl1")) {
 		char *wl = websGetVar(wp, n, NULL);
@@ -3148,12 +3153,12 @@ static void save_prefix(webs_t wp, char *prefix)
 	}
 
 	copytonv(wp, n);
-	
+
 #ifdef HAVE_NORTHSTAR
 	sprintf(n, "wl_regdomain");
 	char *reg = websGetVar(wp, n, NULL);
-	if(reg){
-		if( strcmp( nvram_get("wl_regdomain"), reg) ){
+	if (reg) {
+		if (strcmp(nvram_get("wl_regdomain"), reg)) {
 			setRegulationDomain(reg);
 			system("startservice lan");
 		}
@@ -3419,7 +3424,9 @@ char *request_freedns(char *user, char *password)
 	sha1_begin(&context);
 	sha1_hash(un, strlen(un), &context);
 	sha1_end(final, &context);
-	char request[128] = { 0 };
+	char request[128] = {
+		0
+	};
 	int i;
 
 	for (i = 0; i < 20; i++)
@@ -3449,9 +3456,9 @@ void ddns_save_value(webs_t wp)
 {
 	char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf, *url, *force, *wan_ip;
 	struct variable ddns_variables[] = {
-	      {argv:ARGV("0", "1", "2", "3", "4", "5", "6",
-		     "7", "8", "9")},
-	      {argv:ARGV("30")},
+		{
+	      argv:ARGV("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")}, {
+	      argv:							   ARGV("30")},
 	}, *which;
 	char _username[] = "ddns_username_X";
 	char _passwd[] = "ddns_passwd_X";
