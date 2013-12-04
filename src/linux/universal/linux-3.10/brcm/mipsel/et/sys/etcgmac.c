@@ -256,14 +256,18 @@ chipattach(etc_info_t *etc, void *osh, void *regsva)
 	 * Instead, explicitly require the environment var "et<coreunit>phyaddr=<val>".
 	 */
 
-	/* get our phyaddr value */
-	sprintf(name, "et%dphyaddr", etc->coreunit);
-	var = getvar(ch->vars, name);
-	if (var == NULL) {
-		ET_ERROR(("et%d: chipattach: getvar(%s) not found\n", etc->unit, name));
-		goto fail;
+	if (BCM4707_CHIP(CHIPID(ch->sih->chip))) {
+		etc->phyaddr = EPHY_NOREG;
 	}
-	etc->phyaddr = bcm_atoi(var) & EPHY_MASK;
+	else {
+		sprintf(name, "et%dphyaddr", etc->coreunit);
+		var = getvar(ch->vars, name);
+		if (var == NULL) {
+			ET_ERROR(("et%d: chipattach: getvar(%s) not found\n", etc->unit, name));
+			goto fail;
+		}
+		etc->phyaddr = bcm_atoi(var) & EPHY_MASK;
+ 	}
 
 	/* nvram says no phy is present */
 	if (etc->phyaddr == EPHY_NONE) {
@@ -747,7 +751,7 @@ gmac_reset(ch_t *ch)
 
 	cmdcfg &= ~(CC_TE | CC_RE | CC_RPI | CC_TAI | CC_HD | CC_ML |
 	            CC_CFE | CC_RL | CC_RED | CC_PE | CC_TPI | CC_PAD_EN | CC_PF);
-	cmdcfg |= (CC_PROM | CC_NLC | CC_CFE);
+	cmdcfg |= (CC_PROM | CC_NLC | CC_CFE | CC_TPI | CC_AT);
 
 	if (cmdcfg != ocmdcfg)
 		W_REG(ch->osh, &ch->regs->cmdcfg, cmdcfg);
@@ -1008,12 +1012,12 @@ gmac_miiconfig(ch_t *ch)
 	 *          If reset, this selects 125MHz reference clock input.
 	 */
 	if (BCM4707_CHIP(CHIPID(ch->sih->chip))) {
-		if (ch->etc->forcespeed == ET_AUTO) {
+		if (ch->etc->phyaddr == EPHY_NOREG) {
 			si_core_cflags(ch->sih, 0x44, 0x44);
 			gmac_speed(ch, ET_2500FULL);
+			ch->etc->speed = 2500;
+			ch->etc->duplex = 1;
 		}
-		else
-			gmac_speed(ch, ch->etc->forcespeed);
 	} else {
 		uint32 devstatus, mode;
 		gmacregs_t *regs;
@@ -1030,9 +1034,11 @@ gmac_miiconfig(ch_t *ch)
 		 * using mii/rev mii.
 		 */
 		if ((mode == 0) || (mode == 1)) {
-			if (ch->etc->forcespeed == ET_AUTO)
+			if (ch->etc->forcespeed == ET_AUTO) {
 				gmac_speed(ch, ET_100FULL);
-			else
+				ch->etc->speed = 100;
+				ch->etc->duplex = 1;
+			} else
 				gmac_speed(ch, ch->etc->forcespeed);
 		}
 	}
@@ -1098,8 +1104,11 @@ chipinreset:
 		}
 	}
 
-	/* reset core */
-	si_core_reset(ch->sih, flagbits, 0);
+	/* 3GMAC: for BCM4707, only do core reset at chipattach */
+	if (CHIPID(ch->sih->chip) != BCM4707_CHIP_ID) {
+		/* reset core */
+		si_core_reset(ch->sih, flagbits, 0);
+	}
 
 	/* Request Misc PLL for corerev > 2 */
 	if (ch->etc->corerev > 2 && !BCM4707_CHIP(CHIPID(ch->sih->chip))) {
@@ -1303,8 +1312,9 @@ chipinit(ch_t *ch, uint options)
 		chipphyadvertise(ch, etc->phyaddr);
 
 	/* enable the overflow continue feature and disable parity */
-	dma_ctrlflags(ch->di[0], DMA_CTRL_ROC | DMA_CTRL_PEN /* mask */,
-	              DMA_CTRL_ROC /* value */);
+
+	dma_ctrlflags(ch->di[0], DMA_CTRL_ROC | DMA_CTRL_PEN | DMA_CTRL_RXSINGLE /* mask */,
+	              DMA_CTRL_ROC | DMA_CTRL_RXSINGLE /* value */);
 
 	if (options & ET_INIT_FULL) {
 		/* initialize the tx and rx dma channels */
@@ -1630,6 +1640,7 @@ chipstatsupd(ch_t *ch)
 	 *
 	 * Arbitrarily lump the non-specific dma errors as tx errors.
 	 */
+	etc->rxgiants = (ch->di[RX_Q0])->rxgiants;
 	etc->txerror = ch->mib.tx_jabber_pkts + ch->mib.tx_oversize_pkts
 		+ ch->mib.tx_underruns + ch->mib.tx_excessive_cols
 		+ ch->mib.tx_late_cols + etc->txnobuf + etc->dmade
@@ -1638,8 +1649,7 @@ chipstatsupd(ch_t *ch)
 		+ ch->mib.rx_missed_pkts + ch->mib.rx_crc_align_errs
 		+ ch->mib.rx_undersize + ch->mib.rx_crc_errs
 		+ ch->mib.rx_align_errs + ch->mib.rx_symbol_errs
-		+ etc->rxnobuf + etc->rxdmauflo + etc->rxoflo + etc->rxbadlen;
-	etc->rxgiants = (ch->di[RX_Q0])->rxgiants;
+		+ etc->rxnobuf + etc->rxdmauflo + etc->rxoflo + etc->rxbadlen + etc->rxgiants;
 }
 
 static void
