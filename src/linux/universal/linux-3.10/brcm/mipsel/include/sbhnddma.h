@@ -2,7 +2,7 @@
  * Generic Broadcom Home Networking Division (HND) DMA engine HW interface
  * This supports the following chips: BCM42xx, 44xx, 47xx .
  *
- * Copyright (C) 2012, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: sbhnddma.h 345316 2012-07-17 17:46:04Z $
+ * $Id: sbhnddma.h 419467 2013-08-21 09:19:48Z $
  */
 
 #ifndef	_sbhnddma_h_
@@ -333,6 +333,7 @@ typedef volatile struct {
 #define DMA_CTRL_UNFRAMED	(1 << 3)	/* Unframed Rx/Tx data */
 #define DMA_CTRL_USB_BOUNDRY4KB_WAR (1 << 4)
 #define DMA_CTRL_DMA_AVOIDANCE_WAR (1 << 5)	/* DMA avoidance WAR for 4331 */
+#define DMA_CTRL_RXSINGLE	(1 << 6)	/* always single buffer */
 
 /* receive descriptor table pointer */
 #define	D64_RP_LD_MASK		0x00001fff	/* last valid descriptor */

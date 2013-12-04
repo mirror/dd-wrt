@@ -973,6 +973,7 @@ chipstatsupd(struct bcm4xxx *ch)
 	 *
 	 * Arbitrarily lump the non-specific dma errors as tx errors.
 	 */
+	etc->rxgiants = ch->di->rxgiants;
 	etc->txerror = m->tx_jabber_pkts + m->tx_oversize_pkts
 		+ m->tx_underruns + m->tx_excessive_cols
 		+ m->tx_late_cols + etc->txnobuf + etc->dmade
@@ -981,7 +982,7 @@ chipstatsupd(struct bcm4xxx *ch)
 		+ m->rx_missed_pkts + m->rx_crc_align_errs
 		+ m->rx_undersize + m->rx_crc_errs
 		+ m->rx_align_errs + m->rx_symbol_errs
-		+ etc->rxnobuf + etc->rxdmauflo + etc->rxoflo + etc->rxbadlen;
+		+ etc->rxnobuf + etc->rxdmauflo + etc->rxoflo + etc->rxbadlen + etc->rxgiants;
 }
 
 static void
