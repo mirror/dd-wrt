@@ -340,7 +340,8 @@ static void release_stripe(struct stripe_head *sh)
 	unsigned long flags;
 	bool wakeup;
 
-	if (test_and_set_bit(STRIPE_ON_RELEASE_LIST, &sh->state))
+	if (unlikely(!conf->mddev->thread) ||
+		test_and_set_bit(STRIPE_ON_RELEASE_LIST, &sh->state))
 		goto slow_path;
 	wakeup = llist_add(&sh->release_list, &conf->released_stripes);
 	if (wakeup)
@@ -5238,6 +5239,9 @@ raid5_store_group_thread_cnt(struct mddev *mddev, const char *page, size_t len)
 
 	old_groups = conf->worker_groups;
 	old_group_cnt = conf->worker_cnt_per_group;
+
+	if (old_groups)
+		flush_workqueue(raid5_wq);
 
 	conf->worker_groups = NULL;
 	err = alloc_thread_groups(conf, new);
