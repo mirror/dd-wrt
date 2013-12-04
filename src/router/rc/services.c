@@ -969,6 +969,7 @@ static void handle_milkfish(void)
 static void handle_wireless(void)
 {
 	void *handle = NULL;
+	int wanchanged = wanChanged();
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = stop_service_nofree("zebra", handle);
 #endif
@@ -982,7 +983,7 @@ static void handle_wireless(void)
 #ifdef HAVE_MADWIFI
 	handle = stop_service_nofree("stabridge", handle);
 #endif
-	if (getSTA() || getWET()
+	if (getSTA() || getWET() || wanchanged
 #ifdef HAVE_MADWIFI
 	    || getWDSSTA()
 #endif
@@ -1033,7 +1034,7 @@ static void handle_wireless(void)
 #ifdef HAVE_DNSMASQ
 	handle = startstop_nofree_f("dnsmasq", handle);
 #endif
-	if (getSTA() || getWET()
+	if (getSTA() || getWET() || wanchanged
 #ifdef HAVE_MADWIFI
 	    || getWDSSTA()
 #endif
@@ -1059,6 +1060,7 @@ static void handle_wireless(void)
 static void handle_wireless_2(void)
 {
 	void *handle = NULL;
+	int wanchanged = wanChanged();
 
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = stop_service_nofree("zebra", handle);
@@ -1073,7 +1075,7 @@ static void handle_wireless_2(void)
 #ifdef HAVE_MADWIFI
 	handle = stop_service_nofree("stabridge", handle);
 #endif
-	if (getSTA() || getWET()
+	if (getSTA() || getWET() || wanchanged 
 #ifdef HAVE_MADWIFI
 	    || getWDSSTA()
 #endif
@@ -1119,7 +1121,7 @@ static void handle_wireless_2(void)
 	handle = start_service_nofree("guest_nas", handle);
 #endif
 	handle = start_service_nofree_f("radio_timer", handle);
-	if (getSTA() || getWET()
+	if (getSTA() || getWET() || wanchanged
 #ifdef HAVE_MADWIFI
 	    || getWDSSTA()
 #endif
@@ -1133,7 +1135,7 @@ static void handle_wireless_2(void)
 #ifdef HAVE_MADWIFI
 	handle = start_service_nofree_f("hostapdwan", handle);
 #endif
-	if (getSTA() || getWET()
+	if (getSTA() || getWET() || wanchanged
 #ifdef HAVE_MADWIFI
 	    || getWDSSTA()
 #endif

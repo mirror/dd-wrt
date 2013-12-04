@@ -661,6 +661,8 @@ extern char *getBridge(char *ifname);
 extern char *getRealBridge(char *ifname);
 extern char *getSTA(void);
 extern char *getWET(void);
+extern int wanChanged(void);
+extern void notifywanChange(void);
 extern int contains(const char *string, char value);
 extern int getcpurev(void);
 extern int nvram_used(int *space);
