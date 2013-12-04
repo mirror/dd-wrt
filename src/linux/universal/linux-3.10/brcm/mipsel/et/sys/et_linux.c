@@ -32,7 +32,7 @@
 #include <linux/types.h>
 #include <linux/errno.h>
 #include <linux/pci.h>
-#include <linux/mutex.h>
+#include <linux/semaphore.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/netdevice.h>
@@ -172,7 +172,7 @@ typedef struct et_info {
 	ctf_t		*cih;		/* ctf instance handle */
 	ctf_brc_hot_t	*brc_hot;	/* hot bridge cache entry */
 #endif
-	struct mutex mutex;		/* use semaphore to allow sleep */
+	struct semaphore sem;		/* use semaphore to allow sleep */
 	spinlock_t	lock;		/* per-device perimeter lock */
 	spinlock_t	txq_lock;	/* lock for txq protection */
 	spinlock_t	isr_lock;	/* lock for irq reentrancy protection */
@@ -218,7 +218,7 @@ static et_info_t *et_list = NULL;
 #define ET_LOCK(et) \
 do { \
 	if (ET_ALL_PASSIVE_ENAB(et)) \
-		mutex_lock(&(et)->mutex); \
+		down(&(et)->sem); \
 	else \
 		spin_lock_bh(&(et)->lock); \
 } while (0)
@@ -226,7 +226,7 @@ do { \
 #define ET_UNLOCK(et) \
 do { \
 	if (ET_ALL_PASSIVE_ENAB(et)) \
-		mutex_unlock(&(et)->mutex); \
+		up(&(et)->sem); \
 	else \
 		spin_unlock_bh(&(et)->lock); \
 } while (0)
@@ -659,7 +659,7 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		ET_ERROR(("et%d: ioremap() failed\n", unit));
 		goto fail;
 	}
-	mutex_init(&et->mutex);
+	sema_init(&et->sem, 1);
 	spin_lock_init(&et->lock);
 	spin_lock_init(&et->txq_lock);
 	spin_lock_init(&et->isr_lock);
@@ -1836,7 +1836,7 @@ et_get_stats(struct net_device *dev)
 	}
 
 	stats->rx_fifo_errors = etc->rxoflo;
-	stats->rx_over_errors = etc->rxoflo;
+	stats->rx_over_errors = etc->rxgiants;
 	stats->tx_fifo_errors = etc->txuflo;
 
 	if (locked)
@@ -2033,6 +2033,7 @@ et_rxevent(osl_t *osh, et_info_t *et, struct chops *chops, void *ch, int quota)
 	void *p, *h = NULL, *t = NULL;
 	struct sk_buff *skb;
 #ifdef PKTC
+	bool stop_chain = FALSE;
 	pktc_data_t cd[PKTCMC] = {{0}};
 	uint8 *evh, prio;
 	int32 i = 0, cidx = 0;
@@ -2068,7 +2069,7 @@ et_rxevent(osl_t *osh, et_info_t *et, struct chops *chops, void *ch, int quota)
 			chaining = (i < PKTCMC);
 		}
 
-		if (chaining) {
+		if (chaining && !stop_chain) {
 			PKTCENQTAIL(cd[i].chead, cd[i].ctail, p);
 			/* strip off rxhdr */
 			PKTPULL(et->osh, p, HWRXOFF);
@@ -2087,6 +2088,8 @@ et_rxevent(osl_t *osh, et_info_t *et, struct chops *chops, void *ch, int quota)
 			PKTCINCRCNT(cd[i].chead);
 			PKTSETCHAINED(et->osh, p);
 			PKTCADDLEN(cd[i].chead, PKTLEN(et->osh, p));
+                        if (PKTCCNT(cd[i].chead) >= PKTCBND)
+	                        stop_chain = TRUE;
 		} else
 			PKTCENQTAIL(h, t, p);
 #else /* PKTC */
