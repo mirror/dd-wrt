@@ -1969,6 +1969,7 @@ void start_lan(void)
 
 	if (strncmp(lan_ifname, "br0", 3) == 0) {
 		br_add_bridge(lan_ifname);
+		eval("ifconfig", lan_ifname, "promisc");
 		if (nvram_match("lan_stp", "0"))
 			br_set_stp_state(lan_ifname, 0);
 		else
@@ -2232,6 +2233,7 @@ void start_lan(void)
 		 * Bring up interface 
 		 */
 		ifconfig(lan_ifname, IFUP, NULL, NULL);
+		eval("ifconfig", lan_ifname, "promisc");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 		/*
 		 * config wireless i/f 
@@ -2267,6 +2269,7 @@ void start_lan(void)
 
 	char staticlan[32];
 
+	eval("ifconfig", lan_ifname, "promisc");
 	sprintf(staticlan, "%s:0", lan_ifname);
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
 	if (getRouterBrand() != ROUTER_BOARD_FONERA2200 && getRouterBrand() != ROUTER_BOARD_CA8PRO && getRouterBrand() != ROUTER_BOARD_RCAA01)
