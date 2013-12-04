@@ -1329,7 +1329,7 @@ void start_sysinit(void)
 		nvram_set("bootpartition", "0");
 
 	}
-
+	nvram_unset("et1macaddr");
 	insmod("et");
 	//load mmc drivers
 	eval("ifconfig", "eth0", "up");
