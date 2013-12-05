@@ -36,7 +36,7 @@
 void ej_gps_status(webs_t wp, int argc, char_t ** argv)
 {
 	int antennastate = get_gpio(242);
-	if (antennastate)
+	if (!antennastate)
 		websWrite(wp, "Antenna Connected");
 	else
 		websWrite(wp, "Antenna Disconnected");
