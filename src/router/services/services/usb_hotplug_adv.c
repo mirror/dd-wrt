@@ -148,8 +148,29 @@ void start_hotplug_block(void)
 			if (!strcmp(action, "remove"))
 				usb_unmount(devname);
 		}
+		sprintf(dev, "mmcblk%c", c);
+		if (strcmp(part, dev) == 0) {
+			sysprintf("/usr/sbin/disktype /dev/%s", dev);
+			sprintf(devname, "/dev/%s", part);
+			if (!strcmp(action, "add"))
+				usb_add_ufd(NULL, 0, devname, 1);
+			if (!strcmp(action, "remove"))
+				usb_unmount(devname);
+		}
 		for (i = 1; i < 7; i++) {	//support up to 6 partitions             
 			sprintf(match, "sd%c%d", c, i);
+			if (strcmp(part, match) == 0) {
+				sprintf(devname, "/dev/%s", part);
+				//devices may come in unordered so lets do a little trick
+				sysprintf("echo  \"<b>Partition %s:</b>\" >> /tmp/disk/%s", part, part);
+				sysprintf("/usr/sbin/disktype %s >> /tmp/disk/%s", devname, part);
+				if (!strcmp(action, "add"))
+					usb_add_ufd(NULL, 0, devname, 1);
+				if (!strcmp(action, "remove"))
+					usb_unmount(devname);
+
+			}
+			sprintf(match, "mmcblk%c%d", c, i);
 			if (strcmp(part, match) == 0) {
 				sprintf(devname, "/dev/%s", part);
 				//devices may come in unordered so lets do a little trick
