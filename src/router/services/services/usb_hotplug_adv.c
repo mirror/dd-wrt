@@ -116,8 +116,10 @@ void start_hotplug_block(void)
 	int i;
 	int c;
 	char part[5];
-	char match[5];
+	char match[6];
+	char matchmmc[10];
 	char dev[5];
+	char devmmc[9];
 	char devname[32];
 	if (!(devpath = getenv("DEVPATH")))
 		return;
@@ -140,17 +142,9 @@ void start_hotplug_block(void)
 
 	for (c = 'a'; c < 'f'; c++) {	//support sda - sdf
 		sprintf(dev, "sd%c", c);
-		if (strcmp(part, dev) == 0) {
-			sysprintf("/usr/sbin/disktype /dev/%s", dev);
-			sprintf(devname, "/dev/%s", part);
-			if (!strcmp(action, "add"))
-				usb_add_ufd(NULL, 0, devname, 1);
-			if (!strcmp(action, "remove"))
-				usb_unmount(devname);
-		}
-		sprintf(dev, "mmcblk%c", c);
-		if (strcmp(part, dev) == 0) {
-			sysprintf("/usr/sbin/disktype /dev/%s", dev);
+		sprintf(devmmc, "mmcblk%c", c);
+		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0) {
+			sysprintf("/usr/sbin/disktype /dev/%s", part);
 			sprintf(devname, "/dev/%s", part);
 			if (!strcmp(action, "add"))
 				usb_add_ufd(NULL, 0, devname, 1);
@@ -159,19 +153,8 @@ void start_hotplug_block(void)
 		}
 		for (i = 1; i < 7; i++) {	//support up to 6 partitions             
 			sprintf(match, "sd%c%d", c, i);
-			if (strcmp(part, match) == 0) {
-				sprintf(devname, "/dev/%s", part);
-				//devices may come in unordered so lets do a little trick
-				sysprintf("echo  \"<b>Partition %s:</b>\" >> /tmp/disk/%s", part, part);
-				sysprintf("/usr/sbin/disktype %s >> /tmp/disk/%s", devname, part);
-				if (!strcmp(action, "add"))
-					usb_add_ufd(NULL, 0, devname, 1);
-				if (!strcmp(action, "remove"))
-					usb_unmount(devname);
-
-			}
-			sprintf(match, "mmcblk%c%d", c, i);
-			if (strcmp(part, match) == 0) {
+			sprintf(matchmmc, "mmcblk%c%d", c, i);
+			if (strcmp(part, match) == 0 || strcmp(part, matchmmc) == 0) {
 				sprintf(devname, "/dev/%s", part);
 				//devices may come in unordered so lets do a little trick
 				sysprintf("echo  \"<b>Partition %s:</b>\" >> /tmp/disk/%s", part, part);
