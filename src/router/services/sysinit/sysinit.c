@@ -2587,6 +2587,7 @@ void start_drivers(void)
 		insmod("usbmisc_imx");
 		insmod("ci_hdrc_imx");
 		
+		
 		if (nvram_match("usb_storage", "1")) {
 			cprintf("loading scsi_mod\n");
 			insmod("scsi_mod");
@@ -2616,6 +2617,21 @@ void start_drivers(void)
 			eval("usbipd", "-D");
 		}
 #endif
+
+//ahci
+		insmod("libata");
+		insmod("libahci");
+		insmod("ahci");
+		insmod("ahci_imx");
+		insmod("ahci_platforms");
+//mmc
+		insmod("mmc_core");
+		insmod("mmc_block");
+		insmod("sdhci");
+		insmod("sdhci-pltfm");
+		insmod("sdhci-esdhc-imx");
+		
+
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 //   Mounting is done by hotplug event!         
 //              if( nvram_match("usb_automnt", "1") && nvram_match("usb_storage", "1")) {
