@@ -1,1306 +1,1722 @@
-Index: fec.h
+Index: check.diff
 ===================================================================
---- fec.h	(revision 22366)
-+++ fec.h	(working copy)
-@@ -60,6 +60,61 @@
- #define BM_MIIGSK_CFGR_RMII		0x01
- #define BM_MIIGSK_CFGR_FRCONT_10M	0x40
- 
-+#define RMON_T_DROP		0x200 /* Count of frames not cntd correctly */
-+#define RMON_T_PACKETS		0x204 /* RMON TX packet count */
-+#define RMON_T_BC_PKT		0x208 /* RMON TX broadcast pkts */
-+#define RMON_T_MC_PKT		0x20C /* RMON TX multicast pkts */
-+#define RMON_T_CRC_ALIGN	0x210 /* RMON TX pkts with CRC align err */
-+#define RMON_T_UNDERSIZE	0x214 /* RMON TX pkts < 64 bytes, good CRC */
-+#define RMON_T_OVERSIZE		0x218 /* RMON TX pkts > MAX_FL bytes good CRC */
-+#define RMON_T_FRAG		0x21C /* RMON TX pkts < 64 bytes, bad CRC */
-+#define RMON_T_JAB		0x220 /* RMON TX pkts > MAX_FL bytes, bad CRC */
-+#define RMON_T_COL		0x224 /* RMON TX collision count */
-+#define RMON_T_P64		0x228 /* RMON TX 64 byte pkts */
-+#define RMON_T_P65TO127		0x22C /* RMON TX 65 to 127 byte pkts */
-+#define RMON_T_P128TO255	0x230 /* RMON TX 128 to 255 byte pkts */
-+#define RMON_T_P256TO511	0x234 /* RMON TX 256 to 511 byte pkts */
-+#define RMON_T_P512TO1023	0x238 /* RMON TX 512 to 1023 byte pkts */
-+#define RMON_T_P1024TO2047	0x23C /* RMON TX 1024 to 2047 byte pkts */
-+#define RMON_T_P_GTE2048	0x240 /* RMON TX pkts > 2048 bytes */
-+#define RMON_T_OCTETS		0x244 /* RMON TX octets */
-+#define IEEE_T_DROP		0x248 /* Count of frames not counted crtly */
-+#define IEEE_T_FRAME_OK		0x24C /* Frames tx'd OK */
-+#define IEEE_T_1COL		0x250 /* Frames tx'd with single collision */
-+#define IEEE_T_MCOL		0x254 /* Frames tx'd with multiple collision */
-+#define IEEE_T_DEF		0x258 /* Frames tx'd after deferral delay */
-+#define IEEE_T_LCOL		0x25C /* Frames tx'd with late collision */
-+#define IEEE_T_EXCOL		0x260 /* Frames tx'd with excesv collisions */
-+#define IEEE_T_MACERR		0x264 /* Frames tx'd with TX FIFO underrun */
-+#define IEEE_T_CSERR		0x268 /* Frames tx'd with carrier sense err */
-+#define IEEE_T_SQE		0x26C /* Frames tx'd with SQE err */
-+#define IEEE_T_FDXFC		0x270 /* Flow control pause frames tx'd */
-+#define IEEE_T_OCTETS_OK	0x274 /* Octet count for frames tx'd w/o err */
-+#define RMON_R_PACKETS		0x284 /* RMON RX packet count */
-+#define RMON_R_BC_PKT		0x288 /* RMON RX broadcast pkts */
-+#define RMON_R_MC_PKT		0x28C /* RMON RX multicast pkts */
-+#define RMON_R_CRC_ALIGN	0x290 /* RMON RX pkts with CRC alignment err */
-+#define RMON_R_UNDERSIZE	0x294 /* RMON RX pkts < 64 bytes, good CRC */
-+#define RMON_R_OVERSIZE		0x298 /* RMON RX pkts > MAX_FL bytes good CRC */
-+#define RMON_R_FRAG		0x29C /* RMON RX pkts < 64 bytes, bad CRC */
-+#define RMON_R_JAB		0x2A0 /* RMON RX pkts > MAX_FL bytes, bad CRC */
-+#define RMON_R_RESVD_O		0x2A4 /* Reserved */
-+#define RMON_R_P64		0x2A8 /* RMON RX 64 byte pkts */
-+#define RMON_R_P65TO127		0x2AC /* RMON RX 65 to 127 byte pkts */
-+#define RMON_R_P128TO255	0x2B0 /* RMON RX 128 to 255 byte pkts */
-+#define RMON_R_P256TO511	0x2B4 /* RMON RX 256 to 511 byte pkts */
-+#define RMON_R_P512TO1023	0x2B8 /* RMON RX 512 to 1023 byte pkts */
-+#define RMON_R_P1024TO2047	0x2BC /* RMON RX 1024 to 2047 byte pkts */
-+#define RMON_R_P_GTE2048	0x2C0 /* RMON RX pkts > 2048 bytes */
-+#define RMON_R_OCTETS		0x2C4 /* RMON RX octets */
-+#define IEEE_R_DROP		0x2C8 /* Count frames not counted correctly */
-+#define IEEE_R_FRAME_OK		0x2CC /* Frames rx'd OK */
-+#define IEEE_R_CRC		0x2D0 /* Frames rx'd with CRC err */
-+#define IEEE_R_ALIGN		0x2D4 /* Frames rx'd with alignment err */
-+#define IEEE_R_MACERR		0x2D8 /* Receive FIFO overflow count */
-+#define IEEE_R_FDXFC		0x2DC /* Flow control pause frames rx'd */
-+#define IEEE_R_OCTETS_OK	0x2E0 /* Octet cnt for frames rx'd w/o err */
-+
- #else
- 
- #define FEC_ECNTRL		0x000 /* Ethernet control reg */
-@@ -148,6 +203,9 @@
- #define BD_ENET_RX_CL           ((ushort)0x0001)
- #define BD_ENET_RX_STATS        ((ushort)0x013f)        /* All status bits */
- 
-+/* Enhanced buffer descriptor control/status used by Ethernet receive */
-+#define BD_ENET_RX_VLAN         0x00000004
-+
- /* Buffer descriptor control/status used by Ethernet transmit.
- */
- #define BD_ENET_TX_READY        ((ushort)0x8000)
-@@ -201,6 +259,7 @@
- struct fec_enet_delayed_work {
- 	struct delayed_work delay_work;
- 	bool timeout;
-+	bool trig_tx;
- };
- 
- /* The FEC buffer descriptors track the ring buffers.  The rx_bd_base and
-@@ -272,9 +331,10 @@
- 	int hwts_tx_en;
- 	struct timer_list time_keep;
- 	struct fec_enet_delayed_work delay_work;
-+	struct regulator *reg_phy;
- };
- 
--void fec_ptp_init(struct net_device *ndev, struct platform_device *pdev);
-+void fec_ptp_init(struct platform_device *pdev);
- void fec_ptp_start_cyclecounter(struct net_device *ndev);
- int fec_ptp_ioctl(struct net_device *ndev, struct ifreq *ifr, int cmd);
- 
-Index: fec_main.c
-===================================================================
---- fec_main.c	(revision 22366)
-+++ fec_main.c	(working copy)
-@@ -53,13 +53,15 @@
- #include <linux/of_device.h>
- #include <linux/of_gpio.h>
- #include <linux/of_net.h>
--#include <linux/pinctrl/consumer.h>
- #include <linux/regulator/consumer.h>
-+#include <linux/if_vlan.h>
- 
- #include <asm/cacheflush.h>
- 
- #include "fec.h"
- 
-+static void set_multicast_list(struct net_device *ndev);
-+
- #if defined(CONFIG_ARM)
- #define FEC_ALIGNMENT	0xf
- #else
-@@ -89,6 +91,22 @@
- #define FEC_QUIRK_HAS_BUFDESC_EX	(1 << 4)
- /* Controller has hardware checksum support */
- #define FEC_QUIRK_HAS_CSUM		(1 << 5)
-+/* Controller has hardware vlan support */
-+#define FEC_QUIRK_HAS_VLAN		(1 << 6)
-+/* ENET IP errata ERR006358
-+ *
-+ * If the ready bit in the transmit buffer descriptor (TxBD[R]) is previously
-+ * detected as not set during a prior frame transmission, then the
-+ * ENET_TDAR[TDAR] bit is cleared at a later time, even if additional TxBDs
-+ * were added to the ring and the ENET_TDAR[TDAR] bit is set. This results in
-+ * If the ready bit in the transmit buffer descriptor (TxBD[R]) is previously
-+ * detected as not set during a prior frame transmission, then the
-+ * ENET_TDAR[TDAR] bit is cleared at a later time, even if additional TxBDs
-+ * were added to the ring and the ENET_TDAR[TDAR] bit is set. This results in
-+ * frames not being transmitted until there is a 0-to-1 transition on
-+ * ENET_TDAR[TDAR].
-+ */
-+#define FEC_QUIRK_ERR006358            (1 << 7)
- 
- static struct platform_device_id fec_devtype[] = {
- 	{
-@@ -107,7 +125,8 @@
- 	}, {
- 		.name = "imx6q-fec",
- 		.driver_data = FEC_QUIRK_ENET_MAC | FEC_QUIRK_HAS_GBIT |
--				FEC_QUIRK_HAS_BUFDESC_EX | FEC_QUIRK_HAS_CSUM,
-+				FEC_QUIRK_HAS_BUFDESC_EX | FEC_QUIRK_HAS_CSUM |
-+				FEC_QUIRK_HAS_VLAN | FEC_QUIRK_ERR006358,
- 	}, {
- 		.name = "mvf600-fec",
- 		.driver_data = FEC_QUIRK_ENET_MAC,
-@@ -178,11 +197,11 @@
- #define FEC_DEFAULT_IMASK (FEC_ENET_TXF | FEC_ENET_RXF | FEC_ENET_MII)
- #define FEC_RX_DISABLED_IMASK (FEC_DEFAULT_IMASK & (~FEC_ENET_RXF))
- 
--/* The FEC stores dest/src/type, data, and checksum for receive packets.
-+/* The FEC stores dest/src/type/vlan, data, and checksum for receive packets.
-  */
--#define PKT_MAXBUF_SIZE		1518
-+#define PKT_MAXBUF_SIZE		1522
- #define PKT_MINBUF_SIZE		64
--#define PKT_MAXBLR_SIZE		1520
-+#define PKT_MAXBLR_SIZE		1536
- 
- /* FEC receive acceleration */
- #define FEC_RACC_IPDIS		(1 << 1)
-@@ -243,7 +262,7 @@
- 	int i;
- 	unsigned int *buf = bufaddr;
- 
--	for (i = 0; i < (len + 3) / 4; i++, buf++)
-+	for (i = 0; i < DIV_ROUND_UP(len, 4); i++, buf++)
- 		*buf = cpu_to_be32(*buf);
- 
- 	return bufaddr;
-@@ -270,16 +289,11 @@
- 	struct fec_enet_private *fep = netdev_priv(ndev);
- 	const struct platform_device_id *id_entry =
- 				platform_get_device_id(fep->pdev);
--	struct bufdesc *bdp;
-+	struct bufdesc *bdp, *bdp_pre;
- 	void *bufaddr;
- 	unsigned short	status;
- 	unsigned int index;
- 
--	if (!fep->link) {
--		/* Link is down or auto-negotiation is in progress. */
--		return NETDEV_TX_BUSY;
--	}
--
- 	/* Fill in a Tx ring entry */
- 	bdp = fep->cur_tx;
- 
-@@ -365,6 +379,15 @@
- 				ebdp->cbd_esc |= BD_ENET_TX_PINS;
- 		}
- 	}
-+
-+	bdp_pre = fec_enet_get_prevdesc(bdp, fep->bufdesc_ex);
-+	if ((id_entry->driver_data & FEC_QUIRK_ERR006358) &&
-+	    !(bdp_pre->cbd_sc & BD_ENET_TX_READY)) {
-+		fep->delay_work.trig_tx = true;
-+		schedule_delayed_work(&(fep->delay_work.delay_work),
-+					msecs_to_jiffies(1));
-+	}
-+
- 	/* If this was the last BD in the ring, start at the beginning again. */
- 	if (status & BD_ENET_TX_WRAP)
- 		bdp = fep->tx_bd_base;
-@@ -471,9 +494,8 @@
- 	/* Clear any outstanding interrupt. */
- 	writel(0xffc00000, fep->hwp + FEC_IEVENT);
- 
--	/* Reset all multicast.	*/
--	writel(0, fep->hwp + FEC_GRP_HASH_TABLE_HIGH);
--	writel(0, fep->hwp + FEC_GRP_HASH_TABLE_LOW);
-+	/* Setup multicast filter. */
-+	set_multicast_list(ndev);
- #ifndef CONFIG_M5272
- 	writel(0, fep->hwp + FEC_HASH_TABLE_HIGH);
- 	writel(0, fep->hwp + FEC_HASH_TABLE_LOW);
-@@ -609,6 +631,11 @@
- 	if (fep->bufdesc_ex)
- 		ecntl |= (1 << 4);
- 
-+#ifndef CONFIG_M5272
-+	/* Enable the MIB statistic event counters */
-+	writel(0 << 31, fep->hwp + FEC_MIB_CTRLSTAT);
-+#endif
-+
- 	/* And last, enable the transmit and receive processing */
- 	writel(ecntl, fep->hwp + FEC_ECNTRL);
- 	writel(0, fep->hwp + FEC_R_DES_ACTIVE);
-@@ -680,6 +707,11 @@
- 		fec_restart(fep->netdev, fep->full_duplex);
- 		netif_wake_queue(fep->netdev);
- 	}
-+
-+	if (fep->delay_work.trig_tx) {
-+		fep->delay_work.trig_tx = false;
-+		writel(0, fep->hwp + FEC_X_DES_ACTIVE);
-+	}
- }
- 
- static void
-@@ -735,6 +767,7 @@
- 				ndev->stats.tx_carrier_errors++;
- 		} else {
- 			ndev->stats.tx_packets++;
-+			ndev->stats.tx_bytes += bdp->cbd_datlen;
- 		}
- 
- 		if (unlikely(skb_shinfo(skb)->tx_flags & SKBTX_IN_PROGRESS) &&
-@@ -800,6 +833,9 @@
- 	ushort	pkt_len;
- 	__u8 *data;
- 	int	pkt_received = 0;
-+	struct	bufdesc_ex *ebdp = NULL;
-+	bool	vlan_packet_rcvd = false;
-+	u16	vlan_tag;
- 
- #ifdef CONFIG_M532x
- 	flush_cache_all();
-@@ -863,6 +899,24 @@
- 		if (id_entry->driver_data & FEC_QUIRK_SWAP_FRAME)
- 			swap_buffer(data, pkt_len);
- 
-+		/* Extract the enhanced buffer descriptor */
-+		ebdp = NULL;
-+		if (fep->bufdesc_ex)
-+			ebdp = (struct bufdesc_ex *)bdp;
-+
-+		/* If this is a VLAN packet remove the VLAN Tag */
-+		vlan_packet_rcvd = false;
-+		if ((ndev->features & NETIF_F_HW_VLAN_CTAG_RX) &&
-+		    fep->bufdesc_ex && (ebdp->cbd_esc & BD_ENET_RX_VLAN)) {
-+			/* Push and remove the vlan tag */
-+			struct vlan_hdr *vlan_header =
-+					(struct vlan_hdr *) (data + ETH_HLEN);
-+			vlan_tag = ntohs(vlan_header->h_vlan_TCI);
-+			pkt_len -= VLAN_HLEN;
-+
-+			vlan_packet_rcvd = true;
-+		}
-+
- 		/* This does 16 byte alignment, exactly what we need.
- 		 * The packet length includes FCS, but we don't want to
- 		 * include that when passing upstream as it messes up
-@@ -873,9 +927,18 @@
- 		if (unlikely(!skb)) {
- 			ndev->stats.rx_dropped++;
- 		} else {
-+			int payload_offset = (2 * ETH_ALEN);
- 			skb_reserve(skb, NET_IP_ALIGN);
- 			skb_put(skb, pkt_len - 4);	/* Make room */
--			skb_copy_to_linear_data(skb, data, pkt_len - 4);
-+
-+			/* Extract the frame data without the VLAN header. */
-+			skb_copy_to_linear_data(skb, data, (2 * ETH_ALEN));
-+			if (vlan_packet_rcvd)
-+				payload_offset = (2 * ETH_ALEN) + VLAN_HLEN;
-+			skb_copy_to_linear_data_offset(skb, (2 * ETH_ALEN),
-+						       data + payload_offset,
-+						       pkt_len - 4 - (2 * ETH_ALEN));
-+
- 			skb->protocol = eth_type_trans(skb, ndev);
- 
- 			/* Get receive timestamp from the skb */
-@@ -883,8 +946,6 @@
- 				struct skb_shared_hwtstamps *shhwtstamps =
- 							    skb_hwtstamps(skb);
- 				unsigned long flags;
--				struct bufdesc_ex *ebdp =
--					(struct bufdesc_ex *)bdp;
- 
- 				memset(shhwtstamps, 0, sizeof(*shhwtstamps));
- 
-@@ -895,9 +956,7 @@
- 			}
- 
- 			if (fep->bufdesc_ex &&
--				(fep->csum_flags & FLAG_RX_CSUM_ENABLED)) {
--				struct bufdesc_ex *ebdp =
--					(struct bufdesc_ex *)bdp;
-+			    (fep->csum_flags & FLAG_RX_CSUM_ENABLED)) {
- 				if (!(ebdp->cbd_esc & FLAG_RX_CSUM_ERROR)) {
- 					/* don't check it */
- 					skb->ip_summed = CHECKSUM_UNNECESSARY;
-@@ -906,8 +965,13 @@
- 				}
- 			}
- 
--			if (!skb_defer_rx_timestamp(skb))
--				napi_gro_receive(&fep->napi, skb);
-+			/* Handle received VLAN packets */
-+			if (vlan_packet_rcvd)
-+				__vlan_hwaccel_put_tag(skb,
-+						       htons(ETH_P_8021Q),
-+						       vlan_tag);
-+
-+			napi_gro_receive(&fep->napi, skb);
- 		}
- 
- 		bdp->cbd_bufaddr = dma_map_single(&fep->pdev->dev, data,
-@@ -1444,8 +1508,117 @@
- 	return 0;
- }
- 
-+static const struct fec_stat {
-+	char name[ETH_GSTRING_LEN];
-+	u16 offset;
-+} fec_stats[] = {
-+	/* RMON TX */
-+	{ "tx_dropped", RMON_T_DROP },
-+	{ "tx_packets", RMON_T_PACKETS },
-+	{ "tx_broadcast", RMON_T_BC_PKT },
-+	{ "tx_multicast", RMON_T_MC_PKT },
-+	{ "tx_crc_errors", RMON_T_CRC_ALIGN },
-+	{ "tx_undersize", RMON_T_UNDERSIZE },
-+	{ "tx_oversize", RMON_T_OVERSIZE },
-+	{ "tx_fragment", RMON_T_FRAG },
-+	{ "tx_jabber", RMON_T_JAB },
-+	{ "tx_collision", RMON_T_COL },
-+	{ "tx_64byte", RMON_T_P64 },
-+	{ "tx_65to127byte", RMON_T_P65TO127 },
-+	{ "tx_128to255byte", RMON_T_P128TO255 },
-+	{ "tx_256to511byte", RMON_T_P256TO511 },
-+	{ "tx_512to1023byte", RMON_T_P512TO1023 },
-+	{ "tx_1024to2047byte", RMON_T_P1024TO2047 },
-+	{ "tx_GTE2048byte", RMON_T_P_GTE2048 },
-+	{ "tx_octets", RMON_T_OCTETS },
-+
-+	/* IEEE TX */
-+	{ "IEEE_tx_drop", IEEE_T_DROP },
-+	{ "IEEE_tx_frame_ok", IEEE_T_FRAME_OK },
-+	{ "IEEE_tx_1col", IEEE_T_1COL },
-+	{ "IEEE_tx_mcol", IEEE_T_MCOL },
-+	{ "IEEE_tx_def", IEEE_T_DEF },
-+	{ "IEEE_tx_lcol", IEEE_T_LCOL },
-+	{ "IEEE_tx_excol", IEEE_T_EXCOL },
-+	{ "IEEE_tx_macerr", IEEE_T_MACERR },
-+	{ "IEEE_tx_cserr", IEEE_T_CSERR },
-+	{ "IEEE_tx_sqe", IEEE_T_SQE },
-+	{ "IEEE_tx_fdxfc", IEEE_T_FDXFC },
-+	{ "IEEE_tx_octets_ok", IEEE_T_OCTETS_OK },
-+
-+	/* RMON RX */
-+	{ "rx_packets", RMON_R_PACKETS },
-+	{ "rx_broadcast", RMON_R_BC_PKT },
-+	{ "rx_multicast", RMON_R_MC_PKT },
-+	{ "rx_crc_errors", RMON_R_CRC_ALIGN },
-+	{ "rx_undersize", RMON_R_UNDERSIZE },
-+	{ "rx_oversize", RMON_R_OVERSIZE },
-+	{ "rx_fragment", RMON_R_FRAG },
-+	{ "rx_jabber", RMON_R_JAB },
-+	{ "rx_64byte", RMON_R_P64 },
-+	{ "rx_65to127byte", RMON_R_P65TO127 },
-+	{ "rx_128to255byte", RMON_R_P128TO255 },
-+	{ "rx_256to511byte", RMON_R_P256TO511 },
-+	{ "rx_512to1023byte", RMON_R_P512TO1023 },
-+	{ "rx_1024to2047byte", RMON_R_P1024TO2047 },
-+	{ "rx_GTE2048byte", RMON_R_P_GTE2048 },
-+	{ "rx_octets", RMON_R_OCTETS },
-+
-+	/* IEEE RX */
-+	{ "IEEE_rx_drop", IEEE_R_DROP },
-+	{ "IEEE_rx_frame_ok", IEEE_R_FRAME_OK },
-+	{ "IEEE_rx_crc", IEEE_R_CRC },
-+	{ "IEEE_rx_align", IEEE_R_ALIGN },
-+	{ "IEEE_rx_macerr", IEEE_R_MACERR },
-+	{ "IEEE_rx_fdxfc", IEEE_R_FDXFC },
-+	{ "IEEE_rx_octets_ok", IEEE_R_OCTETS_OK },
-+};
-+
-+static void fec_enet_get_ethtool_stats(struct net_device *dev,
-+	struct ethtool_stats *stats, u64 *data)
-+{
-+	struct fec_enet_private *fep = netdev_priv(dev);
-+	int i;
-+
-+	for (i = 0; i < ARRAY_SIZE(fec_stats); i++)
-+		data[i] = readl(fep->hwp + fec_stats[i].offset);
-+}
-+
-+static void fec_enet_get_strings(struct net_device *netdev,
-+	u32 stringset, u8 *data)
-+{
-+	int i;
-+	switch (stringset) {
-+	case ETH_SS_STATS:
-+		for (i = 0; i < ARRAY_SIZE(fec_stats); i++)
-+			memcpy(data + i * ETH_GSTRING_LEN,
-+				fec_stats[i].name, ETH_GSTRING_LEN);
-+		break;
-+	}
-+}
-+
-+static int fec_enet_get_sset_count(struct net_device *dev, int sset)
-+{
-+	switch (sset) {
-+	case ETH_SS_STATS:
-+		return ARRAY_SIZE(fec_stats);
-+	default:
-+		return -EOPNOTSUPP;
-+	}
-+}
- #endif /* !defined(CONFIG_M5272) */
- 
-+static int fec_enet_nway_reset(struct net_device *dev)
-+{
-+	struct fec_enet_private *fep = netdev_priv(dev);
-+	struct phy_device *phydev = fep->phy_dev;
-+
-+	if (!phydev)
-+		return -ENODEV;
-+
-+	return genphy_restart_aneg(phydev);
-+}
-+
- static const struct ethtool_ops fec_enet_ethtool_ops = {
- #if !defined(CONFIG_M5272)
- 	.get_pauseparam		= fec_enet_get_pauseparam,
-@@ -1456,6 +1629,12 @@
- 	.get_drvinfo		= fec_enet_get_drvinfo,
- 	.get_link		= ethtool_op_get_link,
- 	.get_ts_info		= fec_enet_get_ts_info,
-+	.nway_reset		= fec_enet_nway_reset,
-+#ifndef CONFIG_M5272
-+	.get_ethtool_stats	= fec_enet_get_ethtool_stats,
-+	.get_strings		= fec_enet_get_strings,
-+	.get_sset_count		= fec_enet_get_sset_count,
-+#endif
- };
- 
- static int fec_enet_ioctl(struct net_device *ndev, struct ifreq *rq, int cmd)
-@@ -1803,6 +1982,12 @@
- 	writel(FEC_RX_DISABLED_IMASK, fep->hwp + FEC_IMASK);
- 	netif_napi_add(ndev, &fep->napi, fec_enet_rx_napi, FEC_NAPI_WEIGHT);
- 
-+	if (id_entry->driver_data & FEC_QUIRK_HAS_VLAN) {
-+		/* enable hw VLAN support */
-+		ndev->features |= NETIF_F_HW_VLAN_CTAG_RX;
-+		ndev->hw_features |= NETIF_F_HW_VLAN_CTAG_RX;
-+	}
-+
- 	if (id_entry->driver_data & FEC_QUIRK_HAS_CSUM) {
- 		/* enable hw accelerator */
- 		ndev->features |= (NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM
-@@ -1865,8 +2050,6 @@
- 	struct resource *r;
- 	const struct of_device_id *of_id;
- 	static int dev_id;
--	struct pinctrl *pinctrl;
--	struct regulator *reg_phy;
- 
- 	of_id = of_match_device(fec_dt_ids, &pdev->dev);
- 	if (of_id)
-@@ -1893,17 +2076,17 @@
- 		fep->pause_flag |= FEC_PAUSE_FLAG_AUTONEG;
- #endif
- 
--	fep->hwp = devm_request_and_ioremap(&pdev->dev, r);
-+	fep->hwp = devm_ioremap_resource(&pdev->dev, r);
-+	if (IS_ERR(fep->hwp)) {
-+		ret = PTR_ERR(fep->hwp);
-+		goto failed_ioremap;
-+	}
-+
- 	fep->pdev = pdev;
- 	fep->dev_id = dev_id++;
- 
- 	fep->bufdesc_ex = 0;
- 
--	if (!fep->hwp) {
--		ret = -ENOMEM;
--		goto failed_ioremap;
--	}
--
- 	platform_set_drvdata(pdev, ndev);
- 
- 	ret = of_get_phy_mode(pdev->dev.of_node);
-@@ -1917,12 +2100,6 @@
- 		fep->phy_interface = ret;
- 	}
- 
--	pinctrl = devm_pinctrl_get_select_default(&pdev->dev);
--	if (IS_ERR(pinctrl)) {
--		ret = PTR_ERR(pinctrl);
--		goto failed_pin;
--	}
--
- 	fep->clk_ipg = devm_clk_get(&pdev->dev, "ipg");
- 	if (IS_ERR(fep->clk_ipg)) {
- 		ret = PTR_ERR(fep->clk_ipg);
-@@ -1953,20 +2130,22 @@
- 	clk_prepare_enable(fep->clk_enet_out);
- 	clk_prepare_enable(fep->clk_ptp);
- 
--	reg_phy = devm_regulator_get(&pdev->dev, "phy");
--	if (!IS_ERR(reg_phy)) {
--		ret = regulator_enable(reg_phy);
-+	fep->reg_phy = devm_regulator_get(&pdev->dev, "phy");
-+	if (!IS_ERR(fep->reg_phy)) {
-+		ret = regulator_enable(fep->reg_phy);
- 		if (ret) {
- 			dev_err(&pdev->dev,
- 				"Failed to enable phy regulator: %d\n", ret);
- 			goto failed_regulator;
- 		}
-+	} else {
-+		fep->reg_phy = NULL;
- 	}
- 
- 	fec_reset_phy(pdev);
- 
- 	if (fep->bufdesc_ex)
--		fec_ptp_init(ndev, pdev);
-+		fec_ptp_init(pdev);
- 
- 	ret = fec_enet_init(ndev);
- 	if (ret)
-@@ -2010,19 +2189,20 @@
- failed_register:
- 	fec_enet_mii_remove(fep);
- failed_mii_init:
--failed_init:
-+failed_irq:
- 	for (i = 0; i < FEC_IRQ_NUM; i++) {
- 		irq = platform_get_irq(pdev, i);
- 		if (irq > 0)
- 			free_irq(irq, ndev);
- 	}
--failed_irq:
-+failed_init:
-+	if (fep->reg_phy)
-+		regulator_disable(fep->reg_phy);
- failed_regulator:
- 	clk_disable_unprepare(fep->clk_ahb);
- 	clk_disable_unprepare(fep->clk_ipg);
- 	clk_disable_unprepare(fep->clk_enet_out);
- 	clk_disable_unprepare(fep->clk_ptp);
--failed_pin:
- failed_clk:
- failed_ioremap:
- 	free_netdev(ndev);
-@@ -2041,21 +2221,21 @@
- 	unregister_netdev(ndev);
- 	fec_enet_mii_remove(fep);
- 	del_timer_sync(&fep->time_keep);
-+	for (i = 0; i < FEC_IRQ_NUM; i++) {
-+		int irq = platform_get_irq(pdev, i);
-+		if (irq > 0)
-+			free_irq(irq, ndev);
-+	}
-+	if (fep->reg_phy)
-+		regulator_disable(fep->reg_phy);
- 	clk_disable_unprepare(fep->clk_ptp);
- 	if (fep->ptp_clock)
- 		ptp_clock_unregister(fep->ptp_clock);
- 	clk_disable_unprepare(fep->clk_enet_out);
- 	clk_disable_unprepare(fep->clk_ahb);
- 	clk_disable_unprepare(fep->clk_ipg);
--	for (i = 0; i < FEC_IRQ_NUM; i++) {
--		int irq = platform_get_irq(pdev, i);
--		if (irq > 0)
--			free_irq(irq, ndev);
--	}
- 	free_netdev(ndev);
- 
--	platform_set_drvdata(pdev, NULL);
--
- 	return 0;
- }
- 
-@@ -2074,6 +2254,9 @@
- 	clk_disable_unprepare(fep->clk_ahb);
- 	clk_disable_unprepare(fep->clk_ipg);
- 
-+	if (fep->reg_phy)
-+		regulator_disable(fep->reg_phy);
-+
- 	return 0;
- }
- 
-@@ -2082,7 +2265,14 @@
- {
- 	struct net_device *ndev = dev_get_drvdata(dev);
- 	struct fec_enet_private *fep = netdev_priv(ndev);
-+	int ret;
- 
-+	if (fep->reg_phy) {
-+		ret = regulator_enable(fep->reg_phy);
-+		if (ret)
-+			return ret;
-+	}
-+
- 	clk_prepare_enable(fep->clk_enet_out);
- 	clk_prepare_enable(fep->clk_ahb);
- 	clk_prepare_enable(fep->clk_ipg);
-@@ -2111,4 +2301,5 @@
- 
- module_platform_driver(fec_driver);
- 
-+MODULE_ALIAS("platform:"DRIVER_NAME);
- MODULE_LICENSE("GPL");
-Index: fec_mpc52xx.c
-===================================================================
---- fec_mpc52xx.c	(revision 22366)
-+++ fec_mpc52xx.c	(working copy)
-@@ -981,7 +981,7 @@
- 		goto err_node;
- 
- 	/* We're done ! */
--	dev_set_drvdata(&op->dev, ndev);
-+	platform_set_drvdata(op, ndev);
- 	netdev_info(ndev, "%s MAC %pM\n",
- 		    op->dev.of_node->full_name, ndev->dev_addr);
- 
-@@ -1010,7 +1010,7 @@
- 	struct net_device *ndev;
- 	struct mpc52xx_fec_priv *priv;
- 
--	ndev = dev_get_drvdata(&op->dev);
-+	ndev = platform_get_drvdata(op);
- 	priv = netdev_priv(ndev);
- 
- 	unregister_netdev(ndev);
-@@ -1030,14 +1030,13 @@
- 
- 	free_netdev(ndev);
- 
--	dev_set_drvdata(&op->dev, NULL);
- 	return 0;
- }
- 
- #ifdef CONFIG_PM
- static int mpc52xx_fec_of_suspend(struct platform_device *op, pm_message_t state)
- {
--	struct net_device *dev = dev_get_drvdata(&op->dev);
-+	struct net_device *dev = platform_get_drvdata(op);
- 
- 	if (netif_running(dev))
- 		mpc52xx_fec_close(dev);
-@@ -1047,7 +1046,7 @@
- 
- static int mpc52xx_fec_of_resume(struct platform_device *op)
- {
--	struct net_device *dev = dev_get_drvdata(&op->dev);
-+	struct net_device *dev = platform_get_drvdata(op);
- 
- 	mpc52xx_fec_hw_init(dev);
- 	mpc52xx_fec_reset_stats(dev);
-Index: fec_ptp.c
-===================================================================
---- fec_ptp.c	(revision 22366)
-+++ fec_ptp.c	(working copy)
-@@ -347,8 +347,9 @@
-  * cyclecounter init routine and exits.
-  */
- 
--void fec_ptp_init(struct net_device *ndev, struct platform_device *pdev)
-+void fec_ptp_init(struct platform_device *pdev)
- {
-+	struct net_device *ndev = platform_get_drvdata(pdev);
- 	struct fec_enet_private *fep = netdev_priv(ndev);
- 
- 	fep->ptp_caps.owner = THIS_MODULE;
+--- check.diff	(revision 23040)
++++ check.diff	(working copy)
+@@ -1,1306 +0,0 @@
+-Index: fec.h
+-===================================================================
+---- fec.h	(revision 22366)
+-+++ fec.h	(working copy)
+-@@ -60,6 +60,61 @@
+- #define BM_MIIGSK_CFGR_RMII		0x01
+- #define BM_MIIGSK_CFGR_FRCONT_10M	0x40
+- 
+-+#define RMON_T_DROP		0x200 /* Count of frames not cntd correctly */
+-+#define RMON_T_PACKETS		0x204 /* RMON TX packet count */
+-+#define RMON_T_BC_PKT		0x208 /* RMON TX broadcast pkts */
+-+#define RMON_T_MC_PKT		0x20C /* RMON TX multicast pkts */
+-+#define RMON_T_CRC_ALIGN	0x210 /* RMON TX pkts with CRC align err */
+-+#define RMON_T_UNDERSIZE	0x214 /* RMON TX pkts < 64 bytes, good CRC */
+-+#define RMON_T_OVERSIZE		0x218 /* RMON TX pkts > MAX_FL bytes good CRC */
+-+#define RMON_T_FRAG		0x21C /* RMON TX pkts < 64 bytes, bad CRC */
+-+#define RMON_T_JAB		0x220 /* RMON TX pkts > MAX_FL bytes, bad CRC */
+-+#define RMON_T_COL		0x224 /* RMON TX collision count */
+-+#define RMON_T_P64		0x228 /* RMON TX 64 byte pkts */
+-+#define RMON_T_P65TO127		0x22C /* RMON TX 65 to 127 byte pkts */
+-+#define RMON_T_P128TO255	0x230 /* RMON TX 128 to 255 byte pkts */
+-+#define RMON_T_P256TO511	0x234 /* RMON TX 256 to 511 byte pkts */
+-+#define RMON_T_P512TO1023	0x238 /* RMON TX 512 to 1023 byte pkts */
+-+#define RMON_T_P1024TO2047	0x23C /* RMON TX 1024 to 2047 byte pkts */
+-+#define RMON_T_P_GTE2048	0x240 /* RMON TX pkts > 2048 bytes */
+-+#define RMON_T_OCTETS		0x244 /* RMON TX octets */
+-+#define IEEE_T_DROP		0x248 /* Count of frames not counted crtly */
+-+#define IEEE_T_FRAME_OK		0x24C /* Frames tx'd OK */
+-+#define IEEE_T_1COL		0x250 /* Frames tx'd with single collision */
+-+#define IEEE_T_MCOL		0x254 /* Frames tx'd with multiple collision */
+-+#define IEEE_T_DEF		0x258 /* Frames tx'd after deferral delay */
+-+#define IEEE_T_LCOL		0x25C /* Frames tx'd with late collision */
+-+#define IEEE_T_EXCOL		0x260 /* Frames tx'd with excesv collisions */
+-+#define IEEE_T_MACERR		0x264 /* Frames tx'd with TX FIFO underrun */
+-+#define IEEE_T_CSERR		0x268 /* Frames tx'd with carrier sense err */
+-+#define IEEE_T_SQE		0x26C /* Frames tx'd with SQE err */
+-+#define IEEE_T_FDXFC		0x270 /* Flow control pause frames tx'd */
+-+#define IEEE_T_OCTETS_OK	0x274 /* Octet count for frames tx'd w/o err */
+-+#define RMON_R_PACKETS		0x284 /* RMON RX packet count */
+-+#define RMON_R_BC_PKT		0x288 /* RMON RX broadcast pkts */
+-+#define RMON_R_MC_PKT		0x28C /* RMON RX multicast pkts */
+-+#define RMON_R_CRC_ALIGN	0x290 /* RMON RX pkts with CRC alignment err */
+-+#define RMON_R_UNDERSIZE	0x294 /* RMON RX pkts < 64 bytes, good CRC */
+-+#define RMON_R_OVERSIZE		0x298 /* RMON RX pkts > MAX_FL bytes good CRC */
+-+#define RMON_R_FRAG		0x29C /* RMON RX pkts < 64 bytes, bad CRC */
+-+#define RMON_R_JAB		0x2A0 /* RMON RX pkts > MAX_FL bytes, bad CRC */
+-+#define RMON_R_RESVD_O		0x2A4 /* Reserved */
+-+#define RMON_R_P64		0x2A8 /* RMON RX 64 byte pkts */
+-+#define RMON_R_P65TO127		0x2AC /* RMON RX 65 to 127 byte pkts */
+-+#define RMON_R_P128TO255	0x2B0 /* RMON RX 128 to 255 byte pkts */
+-+#define RMON_R_P256TO511	0x2B4 /* RMON RX 256 to 511 byte pkts */
+-+#define RMON_R_P512TO1023	0x2B8 /* RMON RX 512 to 1023 byte pkts */
+-+#define RMON_R_P1024TO2047	0x2BC /* RMON RX 1024 to 2047 byte pkts */
+-+#define RMON_R_P_GTE2048	0x2C0 /* RMON RX pkts > 2048 bytes */
+-+#define RMON_R_OCTETS		0x2C4 /* RMON RX octets */
+-+#define IEEE_R_DROP		0x2C8 /* Count frames not counted correctly */
+-+#define IEEE_R_FRAME_OK		0x2CC /* Frames rx'd OK */
+-+#define IEEE_R_CRC		0x2D0 /* Frames rx'd with CRC err */
+-+#define IEEE_R_ALIGN		0x2D4 /* Frames rx'd with alignment err */
+-+#define IEEE_R_MACERR		0x2D8 /* Receive FIFO overflow count */
+-+#define IEEE_R_FDXFC		0x2DC /* Flow control pause frames rx'd */
+-+#define IEEE_R_OCTETS_OK	0x2E0 /* Octet cnt for frames rx'd w/o err */
+-+
+- #else
+- 
+- #define FEC_ECNTRL		0x000 /* Ethernet control reg */
+-@@ -148,6 +203,9 @@
+- #define BD_ENET_RX_CL           ((ushort)0x0001)
+- #define BD_ENET_RX_STATS        ((ushort)0x013f)        /* All status bits */
+- 
+-+/* Enhanced buffer descriptor control/status used by Ethernet receive */
+-+#define BD_ENET_RX_VLAN         0x00000004
+-+
+- /* Buffer descriptor control/status used by Ethernet transmit.
+- */
+- #define BD_ENET_TX_READY        ((ushort)0x8000)
+-@@ -201,6 +259,7 @@
+- struct fec_enet_delayed_work {
+- 	struct delayed_work delay_work;
+- 	bool timeout;
+-+	bool trig_tx;
+- };
+- 
+- /* The FEC buffer descriptors track the ring buffers.  The rx_bd_base and
+-@@ -272,9 +331,10 @@
+- 	int hwts_tx_en;
+- 	struct timer_list time_keep;
+- 	struct fec_enet_delayed_work delay_work;
+-+	struct regulator *reg_phy;
+- };
+- 
+--void fec_ptp_init(struct net_device *ndev, struct platform_device *pdev);
+-+void fec_ptp_init(struct platform_device *pdev);
+- void fec_ptp_start_cyclecounter(struct net_device *ndev);
+- int fec_ptp_ioctl(struct net_device *ndev, struct ifreq *ifr, int cmd);
+- 
+-Index: fec_main.c
+-===================================================================
+---- fec_main.c	(revision 22366)
+-+++ fec_main.c	(working copy)
+-@@ -53,13 +53,15 @@
+- #include <linux/of_device.h>
+- #include <linux/of_gpio.h>
+- #include <linux/of_net.h>
+--#include <linux/pinctrl/consumer.h>
+- #include <linux/regulator/consumer.h>
+-+#include <linux/if_vlan.h>
+- 
+- #include <asm/cacheflush.h>
+- 
+- #include "fec.h"
+- 
+-+static void set_multicast_list(struct net_device *ndev);
+-+
+- #if defined(CONFIG_ARM)
+- #define FEC_ALIGNMENT	0xf
+- #else
+-@@ -89,6 +91,22 @@
+- #define FEC_QUIRK_HAS_BUFDESC_EX	(1 << 4)
+- /* Controller has hardware checksum support */
+- #define FEC_QUIRK_HAS_CSUM		(1 << 5)
+-+/* Controller has hardware vlan support */
+-+#define FEC_QUIRK_HAS_VLAN		(1 << 6)
+-+/* ENET IP errata ERR006358
+-+ *
+-+ * If the ready bit in the transmit buffer descriptor (TxBD[R]) is previously
+-+ * detected as not set during a prior frame transmission, then the
+-+ * ENET_TDAR[TDAR] bit is cleared at a later time, even if additional TxBDs
+-+ * were added to the ring and the ENET_TDAR[TDAR] bit is set. This results in
+-+ * If the ready bit in the transmit buffer descriptor (TxBD[R]) is previously
+-+ * detected as not set during a prior frame transmission, then the
+-+ * ENET_TDAR[TDAR] bit is cleared at a later time, even if additional TxBDs
+-+ * were added to the ring and the ENET_TDAR[TDAR] bit is set. This results in
+-+ * frames not being transmitted until there is a 0-to-1 transition on
+-+ * ENET_TDAR[TDAR].
+-+ */
+-+#define FEC_QUIRK_ERR006358            (1 << 7)
+- 
+- static struct platform_device_id fec_devtype[] = {
+- 	{
+-@@ -107,7 +125,8 @@
+- 	}, {
+- 		.name = "imx6q-fec",
+- 		.driver_data = FEC_QUIRK_ENET_MAC | FEC_QUIRK_HAS_GBIT |
+--				FEC_QUIRK_HAS_BUFDESC_EX | FEC_QUIRK_HAS_CSUM,
+-+				FEC_QUIRK_HAS_BUFDESC_EX | FEC_QUIRK_HAS_CSUM |
+-+				FEC_QUIRK_HAS_VLAN | FEC_QUIRK_ERR006358,
+- 	}, {
+- 		.name = "mvf600-fec",
+- 		.driver_data = FEC_QUIRK_ENET_MAC,
+-@@ -178,11 +197,11 @@
+- #define FEC_DEFAULT_IMASK (FEC_ENET_TXF | FEC_ENET_RXF | FEC_ENET_MII)
+- #define FEC_RX_DISABLED_IMASK (FEC_DEFAULT_IMASK & (~FEC_ENET_RXF))
+- 
+--/* The FEC stores dest/src/type, data, and checksum for receive packets.
+-+/* The FEC stores dest/src/type/vlan, data, and checksum for receive packets.
+-  */
+--#define PKT_MAXBUF_SIZE		1518
+-+#define PKT_MAXBUF_SIZE		1522
+- #define PKT_MINBUF_SIZE		64
+--#define PKT_MAXBLR_SIZE		1520
+-+#define PKT_MAXBLR_SIZE		1536
+- 
+- /* FEC receive acceleration */
+- #define FEC_RACC_IPDIS		(1 << 1)
+-@@ -243,7 +262,7 @@
+- 	int i;
+- 	unsigned int *buf = bufaddr;
+- 
+--	for (i = 0; i < (len + 3) / 4; i++, buf++)
+-+	for (i = 0; i < DIV_ROUND_UP(len, 4); i++, buf++)
+- 		*buf = cpu_to_be32(*buf);
+- 
+- 	return bufaddr;
+-@@ -270,16 +289,11 @@
+- 	struct fec_enet_private *fep = netdev_priv(ndev);
+- 	const struct platform_device_id *id_entry =
+- 				platform_get_device_id(fep->pdev);
+--	struct bufdesc *bdp;
+-+	struct bufdesc *bdp, *bdp_pre;
+- 	void *bufaddr;
+- 	unsigned short	status;
+- 	unsigned int index;
+- 
+--	if (!fep->link) {
+--		/* Link is down or auto-negotiation is in progress. */
+--		return NETDEV_TX_BUSY;
+--	}
+--
+- 	/* Fill in a Tx ring entry */
+- 	bdp = fep->cur_tx;
+- 
+-@@ -365,6 +379,15 @@
+- 				ebdp->cbd_esc |= BD_ENET_TX_PINS;
+- 		}
+- 	}
+-+
+-+	bdp_pre = fec_enet_get_prevdesc(bdp, fep->bufdesc_ex);
+-+	if ((id_entry->driver_data & FEC_QUIRK_ERR006358) &&
+-+	    !(bdp_pre->cbd_sc & BD_ENET_TX_READY)) {
+-+		fep->delay_work.trig_tx = true;
+-+		schedule_delayed_work(&(fep->delay_work.delay_work),
+-+					msecs_to_jiffies(1));
+-+	}
+-+
+- 	/* If this was the last BD in the ring, start at the beginning again. */
+- 	if (status & BD_ENET_TX_WRAP)
+- 		bdp = fep->tx_bd_base;
+-@@ -471,9 +494,8 @@
+- 	/* Clear any outstanding interrupt. */
+- 	writel(0xffc00000, fep->hwp + FEC_IEVENT);
+- 
+--	/* Reset all multicast.	*/
+--	writel(0, fep->hwp + FEC_GRP_HASH_TABLE_HIGH);
+--	writel(0, fep->hwp + FEC_GRP_HASH_TABLE_LOW);
+-+	/* Setup multicast filter. */
+-+	set_multicast_list(ndev);
+- #ifndef CONFIG_M5272
+- 	writel(0, fep->hwp + FEC_HASH_TABLE_HIGH);
+- 	writel(0, fep->hwp + FEC_HASH_TABLE_LOW);
+-@@ -609,6 +631,11 @@
+- 	if (fep->bufdesc_ex)
+- 		ecntl |= (1 << 4);
+- 
+-+#ifndef CONFIG_M5272
+-+	/* Enable the MIB statistic event counters */
+-+	writel(0 << 31, fep->hwp + FEC_MIB_CTRLSTAT);
+-+#endif
+-+
+- 	/* And last, enable the transmit and receive processing */
+- 	writel(ecntl, fep->hwp + FEC_ECNTRL);
+- 	writel(0, fep->hwp + FEC_R_DES_ACTIVE);
+-@@ -680,6 +707,11 @@
+- 		fec_restart(fep->netdev, fep->full_duplex);
+- 		netif_wake_queue(fep->netdev);
+- 	}
+-+
+-+	if (fep->delay_work.trig_tx) {
+-+		fep->delay_work.trig_tx = false;
+-+		writel(0, fep->hwp + FEC_X_DES_ACTIVE);
+-+	}
+- }
+- 
+- static void
+-@@ -735,6 +767,7 @@
+- 				ndev->stats.tx_carrier_errors++;
+- 		} else {
+- 			ndev->stats.tx_packets++;
+-+			ndev->stats.tx_bytes += bdp->cbd_datlen;
+- 		}
+- 
+- 		if (unlikely(skb_shinfo(skb)->tx_flags & SKBTX_IN_PROGRESS) &&
+-@@ -800,6 +833,9 @@
+- 	ushort	pkt_len;
+- 	__u8 *data;
+- 	int	pkt_received = 0;
+-+	struct	bufdesc_ex *ebdp = NULL;
+-+	bool	vlan_packet_rcvd = false;
+-+	u16	vlan_tag;
+- 
+- #ifdef CONFIG_M532x
+- 	flush_cache_all();
+-@@ -863,6 +899,24 @@
+- 		if (id_entry->driver_data & FEC_QUIRK_SWAP_FRAME)
+- 			swap_buffer(data, pkt_len);
+- 
+-+		/* Extract the enhanced buffer descriptor */
+-+		ebdp = NULL;
+-+		if (fep->bufdesc_ex)
+-+			ebdp = (struct bufdesc_ex *)bdp;
+-+
+-+		/* If this is a VLAN packet remove the VLAN Tag */
+-+		vlan_packet_rcvd = false;
+-+		if ((ndev->features & NETIF_F_HW_VLAN_CTAG_RX) &&
+-+		    fep->bufdesc_ex && (ebdp->cbd_esc & BD_ENET_RX_VLAN)) {
+-+			/* Push and remove the vlan tag */
+-+			struct vlan_hdr *vlan_header =
+-+					(struct vlan_hdr *) (data + ETH_HLEN);
+-+			vlan_tag = ntohs(vlan_header->h_vlan_TCI);
+-+			pkt_len -= VLAN_HLEN;
+-+
+-+			vlan_packet_rcvd = true;
+-+		}
+-+
+- 		/* This does 16 byte alignment, exactly what we need.
+- 		 * The packet length includes FCS, but we don't want to
+- 		 * include that when passing upstream as it messes up
+-@@ -873,9 +927,18 @@
+- 		if (unlikely(!skb)) {
+- 			ndev->stats.rx_dropped++;
+- 		} else {
+-+			int payload_offset = (2 * ETH_ALEN);
+- 			skb_reserve(skb, NET_IP_ALIGN);
+- 			skb_put(skb, pkt_len - 4);	/* Make room */
+--			skb_copy_to_linear_data(skb, data, pkt_len - 4);
+-+
+-+			/* Extract the frame data without the VLAN header. */
+-+			skb_copy_to_linear_data(skb, data, (2 * ETH_ALEN));
+-+			if (vlan_packet_rcvd)
+-+				payload_offset = (2 * ETH_ALEN) + VLAN_HLEN;
+-+			skb_copy_to_linear_data_offset(skb, (2 * ETH_ALEN),
+-+						       data + payload_offset,
+-+						       pkt_len - 4 - (2 * ETH_ALEN));
+-+
+- 			skb->protocol = eth_type_trans(skb, ndev);
+- 
+- 			/* Get receive timestamp from the skb */
+-@@ -883,8 +946,6 @@
+- 				struct skb_shared_hwtstamps *shhwtstamps =
+- 							    skb_hwtstamps(skb);
+- 				unsigned long flags;
+--				struct bufdesc_ex *ebdp =
+--					(struct bufdesc_ex *)bdp;
+- 
+- 				memset(shhwtstamps, 0, sizeof(*shhwtstamps));
+- 
+-@@ -895,9 +956,7 @@
+- 			}
+- 
+- 			if (fep->bufdesc_ex &&
+--				(fep->csum_flags & FLAG_RX_CSUM_ENABLED)) {
+--				struct bufdesc_ex *ebdp =
+--					(struct bufdesc_ex *)bdp;
+-+			    (fep->csum_flags & FLAG_RX_CSUM_ENABLED)) {
+- 				if (!(ebdp->cbd_esc & FLAG_RX_CSUM_ERROR)) {
+- 					/* don't check it */
+- 					skb->ip_summed = CHECKSUM_UNNECESSARY;
+-@@ -906,8 +965,13 @@
+- 				}
+- 			}
+- 
+--			if (!skb_defer_rx_timestamp(skb))
+--				napi_gro_receive(&fep->napi, skb);
+-+			/* Handle received VLAN packets */
+-+			if (vlan_packet_rcvd)
+-+				__vlan_hwaccel_put_tag(skb,
+-+						       htons(ETH_P_8021Q),
+-+						       vlan_tag);
+-+
+-+			napi_gro_receive(&fep->napi, skb);
+- 		}
+- 
+- 		bdp->cbd_bufaddr = dma_map_single(&fep->pdev->dev, data,
+-@@ -1444,8 +1508,117 @@
+- 	return 0;
+- }
+- 
+-+static const struct fec_stat {
+-+	char name[ETH_GSTRING_LEN];
+-+	u16 offset;
+-+} fec_stats[] = {
+-+	/* RMON TX */
+-+	{ "tx_dropped", RMON_T_DROP },
+-+	{ "tx_packets", RMON_T_PACKETS },
+-+	{ "tx_broadcast", RMON_T_BC_PKT },
+-+	{ "tx_multicast", RMON_T_MC_PKT },
+-+	{ "tx_crc_errors", RMON_T_CRC_ALIGN },
+-+	{ "tx_undersize", RMON_T_UNDERSIZE },
+-+	{ "tx_oversize", RMON_T_OVERSIZE },
+-+	{ "tx_fragment", RMON_T_FRAG },
+-+	{ "tx_jabber", RMON_T_JAB },
+-+	{ "tx_collision", RMON_T_COL },
+-+	{ "tx_64byte", RMON_T_P64 },
+-+	{ "tx_65to127byte", RMON_T_P65TO127 },
+-+	{ "tx_128to255byte", RMON_T_P128TO255 },
+-+	{ "tx_256to511byte", RMON_T_P256TO511 },
+-+	{ "tx_512to1023byte", RMON_T_P512TO1023 },
+-+	{ "tx_1024to2047byte", RMON_T_P1024TO2047 },
+-+	{ "tx_GTE2048byte", RMON_T_P_GTE2048 },
+-+	{ "tx_octets", RMON_T_OCTETS },
+-+
+-+	/* IEEE TX */
+-+	{ "IEEE_tx_drop", IEEE_T_DROP },
+-+	{ "IEEE_tx_frame_ok", IEEE_T_FRAME_OK },
+-+	{ "IEEE_tx_1col", IEEE_T_1COL },
+-+	{ "IEEE_tx_mcol", IEEE_T_MCOL },
+-+	{ "IEEE_tx_def", IEEE_T_DEF },
+-+	{ "IEEE_tx_lcol", IEEE_T_LCOL },
+-+	{ "IEEE_tx_excol", IEEE_T_EXCOL },
+-+	{ "IEEE_tx_macerr", IEEE_T_MACERR },
+-+	{ "IEEE_tx_cserr", IEEE_T_CSERR },
+-+	{ "IEEE_tx_sqe", IEEE_T_SQE },
+-+	{ "IEEE_tx_fdxfc", IEEE_T_FDXFC },
+-+	{ "IEEE_tx_octets_ok", IEEE_T_OCTETS_OK },
+-+
+-+	/* RMON RX */
+-+	{ "rx_packets", RMON_R_PACKETS },
+-+	{ "rx_broadcast", RMON_R_BC_PKT },
+-+	{ "rx_multicast", RMON_R_MC_PKT },
+-+	{ "rx_crc_errors", RMON_R_CRC_ALIGN },
+-+	{ "rx_undersize", RMON_R_UNDERSIZE },
+-+	{ "rx_oversize", RMON_R_OVERSIZE },
+-+	{ "rx_fragment", RMON_R_FRAG },
+-+	{ "rx_jabber", RMON_R_JAB },
+-+	{ "rx_64byte", RMON_R_P64 },
+-+	{ "rx_65to127byte", RMON_R_P65TO127 },
+-+	{ "rx_128to255byte", RMON_R_P128TO255 },
+-+	{ "rx_256to511byte", RMON_R_P256TO511 },
+-+	{ "rx_512to1023byte", RMON_R_P512TO1023 },
+-+	{ "rx_1024to2047byte", RMON_R_P1024TO2047 },
+-+	{ "rx_GTE2048byte", RMON_R_P_GTE2048 },
+-+	{ "rx_octets", RMON_R_OCTETS },
+-+
+-+	/* IEEE RX */
+-+	{ "IEEE_rx_drop", IEEE_R_DROP },
+-+	{ "IEEE_rx_frame_ok", IEEE_R_FRAME_OK },
+-+	{ "IEEE_rx_crc", IEEE_R_CRC },
+-+	{ "IEEE_rx_align", IEEE_R_ALIGN },
+-+	{ "IEEE_rx_macerr", IEEE_R_MACERR },
+-+	{ "IEEE_rx_fdxfc", IEEE_R_FDXFC },
+-+	{ "IEEE_rx_octets_ok", IEEE_R_OCTETS_OK },
+-+};
+-+
+-+static void fec_enet_get_ethtool_stats(struct net_device *dev,
+-+	struct ethtool_stats *stats, u64 *data)
+-+{
+-+	struct fec_enet_private *fep = netdev_priv(dev);
+-+	int i;
+-+
+-+	for (i = 0; i < ARRAY_SIZE(fec_stats); i++)
+-+		data[i] = readl(fep->hwp + fec_stats[i].offset);
+-+}
+-+
+-+static void fec_enet_get_strings(struct net_device *netdev,
+-+	u32 stringset, u8 *data)
+-+{
+-+	int i;
+-+	switch (stringset) {
+-+	case ETH_SS_STATS:
+-+		for (i = 0; i < ARRAY_SIZE(fec_stats); i++)
+-+			memcpy(data + i * ETH_GSTRING_LEN,
+-+				fec_stats[i].name, ETH_GSTRING_LEN);
+-+		break;
+-+	}
+-+}
+-+
+-+static int fec_enet_get_sset_count(struct net_device *dev, int sset)
+-+{
+-+	switch (sset) {
+-+	case ETH_SS_STATS:
+-+		return ARRAY_SIZE(fec_stats);
+-+	default:
+-+		return -EOPNOTSUPP;
+-+	}
+-+}
+- #endif /* !defined(CONFIG_M5272) */
+- 
+-+static int fec_enet_nway_reset(struct net_device *dev)
+-+{
+-+	struct fec_enet_private *fep = netdev_priv(dev);
+-+	struct phy_device *phydev = fep->phy_dev;
+-+
+-+	if (!phydev)
+-+		return -ENODEV;
+-+
+-+	return genphy_restart_aneg(phydev);
+-+}
+-+
+- static const struct ethtool_ops fec_enet_ethtool_ops = {
+- #if !defined(CONFIG_M5272)
+- 	.get_pauseparam		= fec_enet_get_pauseparam,
+-@@ -1456,6 +1629,12 @@
+- 	.get_drvinfo		= fec_enet_get_drvinfo,
+- 	.get_link		= ethtool_op_get_link,
+- 	.get_ts_info		= fec_enet_get_ts_info,
+-+	.nway_reset		= fec_enet_nway_reset,
+-+#ifndef CONFIG_M5272
+-+	.get_ethtool_stats	= fec_enet_get_ethtool_stats,
+-+	.get_strings		= fec_enet_get_strings,
+-+	.get_sset_count		= fec_enet_get_sset_count,
+-+#endif
+- };
+- 
+- static int fec_enet_ioctl(struct net_device *ndev, struct ifreq *rq, int cmd)
+-@@ -1803,6 +1982,12 @@
+- 	writel(FEC_RX_DISABLED_IMASK, fep->hwp + FEC_IMASK);
+- 	netif_napi_add(ndev, &fep->napi, fec_enet_rx_napi, FEC_NAPI_WEIGHT);
+- 
+-+	if (id_entry->driver_data & FEC_QUIRK_HAS_VLAN) {
+-+		/* enable hw VLAN support */
+-+		ndev->features |= NETIF_F_HW_VLAN_CTAG_RX;
+-+		ndev->hw_features |= NETIF_F_HW_VLAN_CTAG_RX;
+-+	}
+-+
+- 	if (id_entry->driver_data & FEC_QUIRK_HAS_CSUM) {
+- 		/* enable hw accelerator */
+- 		ndev->features |= (NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM
+-@@ -1865,8 +2050,6 @@
+- 	struct resource *r;
+- 	const struct of_device_id *of_id;
+- 	static int dev_id;
+--	struct pinctrl *pinctrl;
+--	struct regulator *reg_phy;
+- 
+- 	of_id = of_match_device(fec_dt_ids, &pdev->dev);
+- 	if (of_id)
+-@@ -1893,17 +2076,17 @@
+- 		fep->pause_flag |= FEC_PAUSE_FLAG_AUTONEG;
+- #endif
+- 
+--	fep->hwp = devm_request_and_ioremap(&pdev->dev, r);
+-+	fep->hwp = devm_ioremap_resource(&pdev->dev, r);
+-+	if (IS_ERR(fep->hwp)) {
+-+		ret = PTR_ERR(fep->hwp);
+-+		goto failed_ioremap;
+-+	}
+-+
+- 	fep->pdev = pdev;
+- 	fep->dev_id = dev_id++;
+- 
+- 	fep->bufdesc_ex = 0;
+- 
+--	if (!fep->hwp) {
+--		ret = -ENOMEM;
+--		goto failed_ioremap;
+--	}
+--
+- 	platform_set_drvdata(pdev, ndev);
+- 
+- 	ret = of_get_phy_mode(pdev->dev.of_node);
+-@@ -1917,12 +2100,6 @@
+- 		fep->phy_interface = ret;
+- 	}
+- 
+--	pinctrl = devm_pinctrl_get_select_default(&pdev->dev);
+--	if (IS_ERR(pinctrl)) {
+--		ret = PTR_ERR(pinctrl);
+--		goto failed_pin;
+--	}
+--
+- 	fep->clk_ipg = devm_clk_get(&pdev->dev, "ipg");
+- 	if (IS_ERR(fep->clk_ipg)) {
+- 		ret = PTR_ERR(fep->clk_ipg);
+-@@ -1953,20 +2130,22 @@
+- 	clk_prepare_enable(fep->clk_enet_out);
+- 	clk_prepare_enable(fep->clk_ptp);
+- 
+--	reg_phy = devm_regulator_get(&pdev->dev, "phy");
+--	if (!IS_ERR(reg_phy)) {
+--		ret = regulator_enable(reg_phy);
+-+	fep->reg_phy = devm_regulator_get(&pdev->dev, "phy");
+-+	if (!IS_ERR(fep->reg_phy)) {
+-+		ret = regulator_enable(fep->reg_phy);
+- 		if (ret) {
+- 			dev_err(&pdev->dev,
+- 				"Failed to enable phy regulator: %d\n", ret);
+- 			goto failed_regulator;
+- 		}
+-+	} else {
+-+		fep->reg_phy = NULL;
+- 	}
+- 
+- 	fec_reset_phy(pdev);
+- 
+- 	if (fep->bufdesc_ex)
+--		fec_ptp_init(ndev, pdev);
+-+		fec_ptp_init(pdev);
+- 
+- 	ret = fec_enet_init(ndev);
+- 	if (ret)
+-@@ -2010,19 +2189,20 @@
+- failed_register:
+- 	fec_enet_mii_remove(fep);
+- failed_mii_init:
+--failed_init:
+-+failed_irq:
+- 	for (i = 0; i < FEC_IRQ_NUM; i++) {
+- 		irq = platform_get_irq(pdev, i);
+- 		if (irq > 0)
+- 			free_irq(irq, ndev);
+- 	}
+--failed_irq:
+-+failed_init:
+-+	if (fep->reg_phy)
+-+		regulator_disable(fep->reg_phy);
+- failed_regulator:
+- 	clk_disable_unprepare(fep->clk_ahb);
+- 	clk_disable_unprepare(fep->clk_ipg);
+- 	clk_disable_unprepare(fep->clk_enet_out);
+- 	clk_disable_unprepare(fep->clk_ptp);
+--failed_pin:
+- failed_clk:
+- failed_ioremap:
+- 	free_netdev(ndev);
+-@@ -2041,21 +2221,21 @@
+- 	unregister_netdev(ndev);
+- 	fec_enet_mii_remove(fep);
+- 	del_timer_sync(&fep->time_keep);
+-+	for (i = 0; i < FEC_IRQ_NUM; i++) {
+-+		int irq = platform_get_irq(pdev, i);
+-+		if (irq > 0)
+-+			free_irq(irq, ndev);
+-+	}
+-+	if (fep->reg_phy)
+-+		regulator_disable(fep->reg_phy);
+- 	clk_disable_unprepare(fep->clk_ptp);
+- 	if (fep->ptp_clock)
+- 		ptp_clock_unregister(fep->ptp_clock);
+- 	clk_disable_unprepare(fep->clk_enet_out);
+- 	clk_disable_unprepare(fep->clk_ahb);
+- 	clk_disable_unprepare(fep->clk_ipg);
+--	for (i = 0; i < FEC_IRQ_NUM; i++) {
+--		int irq = platform_get_irq(pdev, i);
+--		if (irq > 0)
+--			free_irq(irq, ndev);
+--	}
+- 	free_netdev(ndev);
+- 
+--	platform_set_drvdata(pdev, NULL);
+--
+- 	return 0;
+- }
+- 
+-@@ -2074,6 +2254,9 @@
+- 	clk_disable_unprepare(fep->clk_ahb);
+- 	clk_disable_unprepare(fep->clk_ipg);
+- 
+-+	if (fep->reg_phy)
+-+		regulator_disable(fep->reg_phy);
+-+
+- 	return 0;
+- }
+- 
+-@@ -2082,7 +2265,14 @@
+- {
+- 	struct net_device *ndev = dev_get_drvdata(dev);
+- 	struct fec_enet_private *fep = netdev_priv(ndev);
+-+	int ret;
+- 
+-+	if (fep->reg_phy) {
+-+		ret = regulator_enable(fep->reg_phy);
+-+		if (ret)
+-+			return ret;
+-+	}
+-+
+- 	clk_prepare_enable(fep->clk_enet_out);
+- 	clk_prepare_enable(fep->clk_ahb);
+- 	clk_prepare_enable(fep->clk_ipg);
+-@@ -2111,4 +2301,5 @@
+- 
+- module_platform_driver(fec_driver);
+- 
+-+MODULE_ALIAS("platform:"DRIVER_NAME);
+- MODULE_LICENSE("GPL");
+-Index: fec_mpc52xx.c
+-===================================================================
+---- fec_mpc52xx.c	(revision 22366)
+-+++ fec_mpc52xx.c	(working copy)
+-@@ -981,7 +981,7 @@
+- 		goto err_node;
+- 
+- 	/* We're done ! */
+--	dev_set_drvdata(&op->dev, ndev);
+-+	platform_set_drvdata(op, ndev);
+- 	netdev_info(ndev, "%s MAC %pM\n",
+- 		    op->dev.of_node->full_name, ndev->dev_addr);
+- 
+-@@ -1010,7 +1010,7 @@
+- 	struct net_device *ndev;
+- 	struct mpc52xx_fec_priv *priv;
+- 
+--	ndev = dev_get_drvdata(&op->dev);
+-+	ndev = platform_get_drvdata(op);
+- 	priv = netdev_priv(ndev);
+- 
+- 	unregister_netdev(ndev);
+-@@ -1030,14 +1030,13 @@
+- 
+- 	free_netdev(ndev);
+- 
+--	dev_set_drvdata(&op->dev, NULL);
+- 	return 0;
+- }
+- 
+- #ifdef CONFIG_PM
+- static int mpc52xx_fec_of_suspend(struct platform_device *op, pm_message_t state)
+- {
+--	struct net_device *dev = dev_get_drvdata(&op->dev);
+-+	struct net_device *dev = platform_get_drvdata(op);
+- 
+- 	if (netif_running(dev))
+- 		mpc52xx_fec_close(dev);
+-@@ -1047,7 +1046,7 @@
+- 
+- static int mpc52xx_fec_of_resume(struct platform_device *op)
+- {
+--	struct net_device *dev = dev_get_drvdata(&op->dev);
+-+	struct net_device *dev = platform_get_drvdata(op);
+- 
+- 	mpc52xx_fec_hw_init(dev);
+- 	mpc52xx_fec_reset_stats(dev);
+-Index: fec_ptp.c
+-===================================================================
+---- fec_ptp.c	(revision 22366)
+-+++ fec_ptp.c	(working copy)
+-@@ -347,8 +347,9 @@
+-  * cyclecounter init routine and exits.
+-  */
+- 
+--void fec_ptp_init(struct net_device *ndev, struct platform_device *pdev)
+-+void fec_ptp_init(struct platform_device *pdev)
+- {
+-+	struct net_device *ndev = platform_get_drvdata(pdev);
+- 	struct fec_enet_private *fep = netdev_priv(ndev);
+- 
+- 	fep->ptp_caps.owner = THIS_MODULE;
+-Index: gianfar.c
+-===================================================================
+---- gianfar.c	(revision 22366)
+-+++ gianfar.c	(working copy)
+-@@ -128,11 +128,12 @@
+- static void gfar_set_hash_for_addr(struct net_device *dev, u8 *addr);
+- static void gfar_configure_serdes(struct net_device *dev);
+- static int gfar_poll(struct napi_struct *napi, int budget);
+-+static int gfar_poll_sq(struct napi_struct *napi, int budget);
+- #ifdef CONFIG_NET_POLL_CONTROLLER
+- static void gfar_netpoll(struct net_device *dev);
+- #endif
+- int gfar_clean_rx_ring(struct gfar_priv_rx_q *rx_queue, int rx_work_limit);
+--static int gfar_clean_tx_ring(struct gfar_priv_tx_q *tx_queue);
+-+static void gfar_clean_tx_ring(struct gfar_priv_tx_q *tx_queue);
+- static void gfar_process_frame(struct net_device *dev, struct sk_buff *skb,
+- 			       int amount_pull, struct napi_struct *napi);
+- void gfar_halt(struct net_device *dev);
+-@@ -245,14 +246,13 @@
+- 
+- 	/* Allocate memory for the buffer descriptors */
+- 	vaddr = dma_alloc_coherent(dev,
+--			sizeof(struct txbd8) * priv->total_tx_ring_size +
+--			sizeof(struct rxbd8) * priv->total_rx_ring_size,
+--			&addr, GFP_KERNEL);
+--	if (!vaddr) {
+--		netif_err(priv, ifup, ndev,
+--			  "Could not allocate buffer descriptors!\n");
+-+				   (priv->total_tx_ring_size *
+-+				    sizeof(struct txbd8)) +
+-+				   (priv->total_rx_ring_size *
+-+				    sizeof(struct rxbd8)),
+-+				   &addr, GFP_KERNEL);
+-+	if (!vaddr)
+- 		return -ENOMEM;
+--	}
+- 
+- 	for (i = 0; i < priv->num_tx_queues; i++) {
+- 		tx_queue = priv->tx_queue[i];
+-@@ -342,7 +342,7 @@
+- 	gfar_init_tx_rx_base(priv);
+- 
+- 	/* Configure the coalescing support */
+--	gfar_configure_coalescing(priv, 0xFF, 0xFF);
+-+	gfar_configure_coalescing_all(priv);
+- 
+- 	/* set this when rx hw offload (TOE) functions are being used */
+- 	priv->uses_rxfcb = 0;
+-@@ -691,7 +691,7 @@
+- 	}
+- 
+- 	for (i = 0; i < priv->num_tx_queues; i++)
+--	       priv->tx_queue[i] = NULL;
+-+		priv->tx_queue[i] = NULL;
+- 	for (i = 0; i < priv->num_rx_queues; i++)
+- 		priv->rx_queue[i] = NULL;
+- 
+-@@ -1001,7 +1001,7 @@
+- 	spin_lock_init(&priv->bflock);
+- 	INIT_WORK(&priv->reset_task, gfar_reset_task);
+- 
+--	dev_set_drvdata(&ofdev->dev, priv);
+-+	platform_set_drvdata(ofdev, priv);
+- 	regs = priv->gfargrp[0].regs;
+- 
+- 	gfar_detect_errata(priv);
+-@@ -1039,9 +1039,13 @@
+- 	dev->ethtool_ops = &gfar_ethtool_ops;
+- 
+- 	/* Register for napi ...We are registering NAPI for each grp */
+--	for (i = 0; i < priv->num_grps; i++)
+--		netif_napi_add(dev, &priv->gfargrp[i].napi, gfar_poll,
+-+	if (priv->mode == SQ_SG_MODE)
+-+		netif_napi_add(dev, &priv->gfargrp[0].napi, gfar_poll_sq,
+- 			       GFAR_DEV_WEIGHT);
+-+	else
+-+		for (i = 0; i < priv->num_grps; i++)
+-+			netif_napi_add(dev, &priv->gfargrp[i].napi, gfar_poll,
+-+				       GFAR_DEV_WEIGHT);
+- 
+- 	if (priv->device_flags & FSL_GIANFAR_DEV_HAS_CSUM) {
+- 		dev->hw_features = NETIF_F_IP_CSUM | NETIF_F_SG |
+-@@ -1051,7 +1055,8 @@
+- 	}
+- 
+- 	if (priv->device_flags & FSL_GIANFAR_DEV_HAS_VLAN) {
+--		dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX;
+-+		dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX |
+-+				    NETIF_F_HW_VLAN_CTAG_RX;
+- 		dev->features |= NETIF_F_HW_VLAN_CTAG_RX;
+- 	}
+- 
+-@@ -1240,15 +1245,13 @@
+- 
+- static int gfar_remove(struct platform_device *ofdev)
+- {
+--	struct gfar_private *priv = dev_get_drvdata(&ofdev->dev);
+-+	struct gfar_private *priv = platform_get_drvdata(ofdev);
+- 
+- 	if (priv->phy_node)
+- 		of_node_put(priv->phy_node);
+- 	if (priv->tbi_node)
+- 		of_node_put(priv->tbi_node);
+- 
+--	dev_set_drvdata(&ofdev->dev, NULL);
+--
+- 	unregister_netdev(priv->ndev);
+- 	unmap_group_regs(priv);
+- 	free_gfar_dev(priv);
+-@@ -1817,25 +1820,15 @@
+- 	dev->trans_start = jiffies; /* prevent tx timeout */
+- }
+- 
+--void gfar_configure_coalescing(struct gfar_private *priv,
+-+static void gfar_configure_coalescing(struct gfar_private *priv,
+- 			       unsigned long tx_mask, unsigned long rx_mask)
+- {
+- 	struct gfar __iomem *regs = priv->gfargrp[0].regs;
+- 	u32 __iomem *baddr;
+--	int i = 0;
+- 
+--	/* Backward compatible case ---- even if we enable
+--	 * multiple queues, there's only single reg to program
+--	 */
+--	gfar_write(&regs->txic, 0);
+--	if (likely(priv->tx_queue[0]->txcoalescing))
+--		gfar_write(&regs->txic, priv->tx_queue[0]->txic);
+-+	if (priv->mode == MQ_MG_MODE) {
+-+		int i = 0;
+- 
+--	gfar_write(&regs->rxic, 0);
+--	if (unlikely(priv->rx_queue[0]->rxcoalescing))
+--		gfar_write(&regs->rxic, priv->rx_queue[0]->rxic);
+--
+--	if (priv->mode == MQ_MG_MODE) {
+- 		baddr = &regs->txic0;
+- 		for_each_set_bit(i, &tx_mask, priv->num_tx_queues) {
+- 			gfar_write(baddr + i, 0);
+-@@ -1849,9 +1842,25 @@
+- 			if (likely(priv->rx_queue[i]->rxcoalescing))
+- 				gfar_write(baddr + i, priv->rx_queue[i]->rxic);
+- 		}
+-+	} else {
+-+		/* Backward compatible case -- even if we enable
+-+		 * multiple queues, there's only single reg to program
+-+		 */
+-+		gfar_write(&regs->txic, 0);
+-+		if (likely(priv->tx_queue[0]->txcoalescing))
+-+			gfar_write(&regs->txic, priv->tx_queue[0]->txic);
+-+
+-+		gfar_write(&regs->rxic, 0);
+-+		if (unlikely(priv->rx_queue[0]->rxcoalescing))
+-+			gfar_write(&regs->rxic, priv->rx_queue[0]->rxic);
+- 	}
+- }
+- 
+-+void gfar_configure_coalescing_all(struct gfar_private *priv)
+-+{
+-+	gfar_configure_coalescing(priv, 0xFF, 0xFF);
+-+}
+-+
+- static int register_grp_irqs(struct gfar_priv_grp *grp)
+- {
+- 	struct gfar_private *priv = grp->priv;
+-@@ -1941,7 +1950,7 @@
+- 
+- 	phy_start(priv->phydev);
+- 
+--	gfar_configure_coalescing(priv, 0xFF, 0xFF);
+-+	gfar_configure_coalescing_all(priv);
+- 
+- 	return 0;
+- 
+-@@ -2469,12 +2478,11 @@
+- }
+- 
+- /* Interrupt Handler for Transmit complete */
+--static int gfar_clean_tx_ring(struct gfar_priv_tx_q *tx_queue)
+-+static void gfar_clean_tx_ring(struct gfar_priv_tx_q *tx_queue)
+- {
+- 	struct net_device *dev = tx_queue->dev;
+- 	struct netdev_queue *txq;
+- 	struct gfar_private *priv = netdev_priv(dev);
+--	struct gfar_priv_rx_q *rx_queue = NULL;
+- 	struct txbd8 *bdp, *next = NULL;
+- 	struct txbd8 *lbdp = NULL;
+- 	struct txbd8 *base = tx_queue->tx_bd_base;
+-@@ -2489,7 +2497,6 @@
+- 	u32 lstatus;
+- 	size_t buflen;
+- 
+--	rx_queue = priv->rx_queue[tqi];
+- 	txq = netdev_get_tx_queue(dev, tqi);
+- 	bdp = tx_queue->dirty_tx;
+- 	skb_dirtytx = tx_queue->skb_dirtytx;
+-@@ -2571,8 +2578,6 @@
+- 	tx_queue->dirty_tx = bdp;
+- 
+- 	netdev_tx_completed_queue(txq, howmany, bytes_sent);
+--
+--	return howmany;
+- }
+- 
+- static void gfar_schedule_cleanup(struct gfar_priv_grp *gfargrp)
+-@@ -2694,8 +2699,6 @@
+- 	struct gfar_private *priv = netdev_priv(dev);
+- 	struct rxfcb *fcb = NULL;
+- 
+--	gro_result_t ret;
+--
+- 	/* fcb is at the beginning if exists */
+- 	fcb = (struct rxfcb *)skb->data;
+- 
+-@@ -2725,7 +2728,7 @@
+- 	/* Tell the skb what kind of packet this is */
+- 	skb->protocol = eth_type_trans(skb, dev);
+- 
+--	/* There's need to check for NETIF_F_HW_VLAN_RX here.
+-+	/* There's need to check for NETIF_F_HW_VLAN_CTAG_RX here.
+- 	 * Even if vlan rx accel is disabled, on some chips
+- 	 * RXFCB_VLN is pseudo randomly set.
+- 	 */
+-@@ -2734,10 +2737,8 @@
+- 		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), fcb->vlctl);
+- 
+- 	/* Send the packet up the stack */
+--	ret = napi_gro_receive(napi, skb);
+-+	napi_gro_receive(napi, skb);
+- 
+--	if (unlikely(GRO_DROP == ret))
+--		atomic64_inc(&priv->extra_stats.kernel_dropped);
+- }
+- 
+- /* gfar_clean_rx_ring() -- Processes each frame in the rx ring
+-@@ -2827,6 +2828,48 @@
+- 	return howmany;
+- }
+- 
+-+static int gfar_poll_sq(struct napi_struct *napi, int budget)
+-+{
+-+	struct gfar_priv_grp *gfargrp =
+-+		container_of(napi, struct gfar_priv_grp, napi);
+-+	struct gfar __iomem *regs = gfargrp->regs;
+-+	struct gfar_priv_tx_q *tx_queue = gfargrp->priv->tx_queue[0];
+-+	struct gfar_priv_rx_q *rx_queue = gfargrp->priv->rx_queue[0];
+-+	int work_done = 0;
+-+
+-+	/* Clear IEVENT, so interrupts aren't called again
+-+	 * because of the packets that have already arrived
+-+	 */
+-+	gfar_write(&regs->ievent, IEVENT_RTX_MASK);
+-+
+-+	/* run Tx cleanup to completion */
+-+	if (tx_queue->tx_skbuff[tx_queue->skb_dirtytx])
+-+		gfar_clean_tx_ring(tx_queue);
+-+
+-+	work_done = gfar_clean_rx_ring(rx_queue, budget);
+-+
+-+	if (work_done < budget) {
+-+		napi_complete(napi);
+-+		/* Clear the halt bit in RSTAT */
+-+		gfar_write(&regs->rstat, gfargrp->rstat);
+-+
+-+		gfar_write(&regs->imask, IMASK_DEFAULT);
+-+
+-+		/* If we are coalescing interrupts, update the timer
+-+		 * Otherwise, clear it
+-+		 */
+-+		gfar_write(&regs->txic, 0);
+-+		if (likely(tx_queue->txcoalescing))
+-+			gfar_write(&regs->txic, tx_queue->txic);
+-+
+-+		gfar_write(&regs->rxic, 0);
+-+		if (unlikely(rx_queue->rxcoalescing))
+-+			gfar_write(&regs->rxic, rx_queue->rxic);
+-+	}
+-+
+-+	return work_done;
+-+}
+-+
+- static int gfar_poll(struct napi_struct *napi, int budget)
+- {
+- 	struct gfar_priv_grp *gfargrp =
+-@@ -2835,62 +2878,82 @@
+- 	struct gfar __iomem *regs = gfargrp->regs;
+- 	struct gfar_priv_tx_q *tx_queue = NULL;
+- 	struct gfar_priv_rx_q *rx_queue = NULL;
+--	int rx_cleaned = 0, budget_per_queue = 0, rx_cleaned_per_queue = 0;
+--	int tx_cleaned = 0, i, left_over_budget = budget;
+--	unsigned long serviced_queues = 0;
+--	int num_queues = 0;
+-+	int work_done = 0, work_done_per_q = 0;
+-+	int i, budget_per_q = 0;
+-+	int has_tx_work;
+-+	unsigned long rstat_rxf;
+-+	int num_act_queues;
+- 
+--	num_queues = gfargrp->num_rx_queues;
+--	budget_per_queue = budget/num_queues;
+--
+- 	/* Clear IEVENT, so interrupts aren't called again
+- 	 * because of the packets that have already arrived
+- 	 */
+- 	gfar_write(&regs->ievent, IEVENT_RTX_MASK);
+- 
+--	while (num_queues && left_over_budget) {
+--		budget_per_queue = left_over_budget/num_queues;
+--		left_over_budget = 0;
+-+	rstat_rxf = gfar_read(&regs->rstat) & RSTAT_RXF_MASK;
+- 
+-+	num_act_queues = bitmap_weight(&rstat_rxf, MAX_RX_QS);
+-+	if (num_act_queues)
+-+		budget_per_q = budget/num_act_queues;
+-+
+-+	while (1) {
+-+		has_tx_work = 0;
+-+		for_each_set_bit(i, &gfargrp->tx_bit_map, priv->num_tx_queues) {
+-+			tx_queue = priv->tx_queue[i];
+-+			/* run Tx cleanup to completion */
+-+			if (tx_queue->tx_skbuff[tx_queue->skb_dirtytx]) {
+-+				gfar_clean_tx_ring(tx_queue);
+-+				has_tx_work = 1;
+-+			}
+-+		}
+-+
+- 		for_each_set_bit(i, &gfargrp->rx_bit_map, priv->num_rx_queues) {
+--			if (test_bit(i, &serviced_queues))
+-+			/* skip queue if not active */
+-+			if (!(rstat_rxf & (RSTAT_CLEAR_RXF0 >> i)))
+- 				continue;
+-+
+- 			rx_queue = priv->rx_queue[i];
+--			tx_queue = priv->tx_queue[rx_queue->qindex];
+-+			work_done_per_q =
+-+				gfar_clean_rx_ring(rx_queue, budget_per_q);
+-+			work_done += work_done_per_q;
+- 
+--			tx_cleaned += gfar_clean_tx_ring(tx_queue);
+--			rx_cleaned_per_queue =
+--				gfar_clean_rx_ring(rx_queue, budget_per_queue);
+--			rx_cleaned += rx_cleaned_per_queue;
+--			if (rx_cleaned_per_queue < budget_per_queue) {
+--				left_over_budget = left_over_budget +
+--					(budget_per_queue -
+--					 rx_cleaned_per_queue);
+--				set_bit(i, &serviced_queues);
+--				num_queues--;
+-+			/* finished processing this queue */
+-+			if (work_done_per_q < budget_per_q) {
+-+				/* clear active queue hw indication */
+-+				gfar_write(&regs->rstat,
+-+					   RSTAT_CLEAR_RXF0 >> i);
+-+				rstat_rxf &= ~(RSTAT_CLEAR_RXF0 >> i);
+-+				num_act_queues--;
+-+
+-+				if (!num_act_queues)
+-+					break;
+-+				/* recompute budget per Rx queue */
+-+				budget_per_q =
+-+					(budget - work_done) / num_act_queues;
+- 			}
+- 		}
+--	}
+- 
+--	if (tx_cleaned)
+--		return budget;
+-+		if (work_done >= budget)
+-+			break;
+- 
+--	if (rx_cleaned < budget) {
+--		napi_complete(napi);
+-+		if (!num_act_queues && !has_tx_work) {
+- 
+--		/* Clear the halt bit in RSTAT */
+--		gfar_write(&regs->rstat, gfargrp->rstat);
+-+			napi_complete(napi);
+- 
+--		gfar_write(&regs->imask, IMASK_DEFAULT);
+-+			/* Clear the halt bit in RSTAT */
+-+			gfar_write(&regs->rstat, gfargrp->rstat);
+- 
+--		/* If we are coalescing interrupts, update the timer
+--		 * Otherwise, clear it
+--		 */
+--		gfar_configure_coalescing(priv, gfargrp->rx_bit_map,
+--					  gfargrp->tx_bit_map);
+-+			gfar_write(&regs->imask, IMASK_DEFAULT);
+-+
+-+			/* If we are coalescing interrupts, update the timer
+-+			 * Otherwise, clear it
+-+			 */
+-+			gfar_configure_coalescing(priv, gfargrp->rx_bit_map,
+-+						  gfargrp->tx_bit_map);
+-+			break;
+-+		}
+- 	}
+- 
+--	return rx_cleaned;
+-+	return work_done;
+- }
+- 
+- #ifdef CONFIG_NET_POLL_CONTROLLER
+-Index: gianfar.h
+-===================================================================
+---- gianfar.h	(revision 22366)
+-+++ gianfar.h	(working copy)
+-@@ -291,7 +291,9 @@
+- #define RCTRL_PADDING(x)	((x << 16) & RCTRL_PAL_MASK)
+- 
+- 
+--#define RSTAT_CLEAR_RHALT       0x00800000
+-+#define RSTAT_CLEAR_RHALT	0x00800000
+-+#define RSTAT_CLEAR_RXF0	0x00000080
+-+#define RSTAT_RXF_MASK		0x000000ff
+- 
+- #define TCTRL_IPCSEN		0x00004000
+- #define TCTRL_TUCSEN		0x00002000
+-@@ -627,7 +629,6 @@
+- };
+- 
+- struct gfar_extra_stats {
+--	atomic64_t kernel_dropped;
+- 	atomic64_t rx_large;
+- 	atomic64_t rx_short;
+- 	atomic64_t rx_nonoctet;
+-@@ -1180,8 +1181,7 @@
+- extern void gfar_halt(struct net_device *dev);
+- extern void gfar_phy_test(struct mii_bus *bus, struct phy_device *phydev,
+- 		int enable, u32 regnum, u32 read);
+--extern void gfar_configure_coalescing(struct gfar_private *priv,
+--		unsigned long tx_mask, unsigned long rx_mask);
+-+extern void gfar_configure_coalescing_all(struct gfar_private *priv);
+- void gfar_init_sysfs(struct net_device *dev);
+- int gfar_set_features(struct net_device *dev, netdev_features_t features);
+- extern void gfar_check_rx_parser_mode(struct gfar_private *priv);
+-Index: gianfar_ethtool.c
+-===================================================================
+---- gianfar_ethtool.c	(revision 22366)
+-+++ gianfar_ethtool.c	(working copy)
+-@@ -66,7 +66,6 @@
+- 			  struct ethtool_drvinfo *drvinfo);
+- 
+- static const char stat_gstrings[][ETH_GSTRING_LEN] = {
+--	"rx-dropped-by-kernel",
+- 	"rx-large-frame-errors",
+- 	"rx-short-frame-errors",
+- 	"rx-non-octet-errors",
+-@@ -390,14 +389,14 @@
+- 
+- 	/* Check the bounds of the values */
+- 	if (cvals->rx_coalesce_usecs > GFAR_MAX_COAL_USECS) {
+--		pr_info("Coalescing is limited to %d microseconds\n",
+--			GFAR_MAX_COAL_USECS);
+-+		netdev_info(dev, "Coalescing is limited to %d microseconds\n",
+-+			    GFAR_MAX_COAL_USECS);
+- 		return -EINVAL;
+- 	}
+- 
+- 	if (cvals->rx_max_coalesced_frames > GFAR_MAX_COAL_FRAMES) {
+--		pr_info("Coalescing is limited to %d frames\n",
+--			GFAR_MAX_COAL_FRAMES);
+-+		netdev_info(dev, "Coalescing is limited to %d frames\n",
+-+			    GFAR_MAX_COAL_FRAMES);
+- 		return -EINVAL;
+- 	}
+- 
+-@@ -419,14 +418,14 @@
+- 
+- 	/* Check the bounds of the values */
+- 	if (cvals->tx_coalesce_usecs > GFAR_MAX_COAL_USECS) {
+--		pr_info("Coalescing is limited to %d microseconds\n",
+--			GFAR_MAX_COAL_USECS);
+-+		netdev_info(dev, "Coalescing is limited to %d microseconds\n",
+-+			    GFAR_MAX_COAL_USECS);
+- 		return -EINVAL;
+- 	}
+- 
+- 	if (cvals->tx_max_coalesced_frames > GFAR_MAX_COAL_FRAMES) {
+--		pr_info("Coalescing is limited to %d frames\n",
+--			GFAR_MAX_COAL_FRAMES);
+-+		netdev_info(dev, "Coalescing is limited to %d frames\n",
+-+			    GFAR_MAX_COAL_FRAMES);
+- 		return -EINVAL;
+- 	}
+- 
+-@@ -436,7 +435,7 @@
+- 			gfar_usecs2ticks(priv, cvals->tx_coalesce_usecs));
+- 	}
+- 
+--	gfar_configure_coalescing(priv, 0xFF, 0xFF);
+-+	gfar_configure_coalescing_all(priv);
+- 
+- 	return 0;
+- }
+-@@ -736,7 +735,8 @@
+- 		cmp_rqfpr = RQFPR_IPV6 |RQFPR_UDP;
+- 		break;
+- 	default:
+--		pr_err("Right now this class is not supported\n");
+-+		netdev_err(priv->ndev,
+-+			   "Right now this class is not supported\n");
+- 		ret = 0;
+- 		goto err;
+- 	}
+-@@ -752,7 +752,8 @@
+- 	}
+- 
+- 	if (i == MAX_FILER_IDX + 1) {
+--		pr_err("No parse rule found, can't create hash rules\n");
+-+		netdev_err(priv->ndev,
+-+			   "No parse rule found, can't create hash rules\n");
+- 		ret = 0;
+- 		goto err;
+- 	}
+-@@ -1569,7 +1570,7 @@
+- 	gfar_cluster_filer(tab);
+- 	gfar_optimize_filer_masks(tab);
+- 
+--	pr_debug("\n\tSummary:\n"
+-+	pr_debug("\tSummary:\n"
+- 		 "\tData on hardware: %d\n"
+- 		 "\tCompression rate: %d%%\n",
+- 		 tab->index, 100 - (100 * tab->index) / i);
+-Index: gianfar_ptp.c
+-===================================================================
+---- gianfar_ptp.c	(revision 22366)
+-+++ gianfar_ptp.c	(working copy)
+-@@ -519,7 +519,7 @@
+- 	}
+- 	gfar_phc_index = ptp_clock_index(etsects->clock);
+- 
+--	dev_set_drvdata(&dev->dev, etsects);
+-+	platform_set_drvdata(dev, etsects);
+- 
+- 	return 0;
+- 
+-@@ -537,7 +537,7 @@
+- 
+- static int gianfar_ptp_remove(struct platform_device *dev)
+- {
+--	struct etsects *etsects = dev_get_drvdata(&dev->dev);
+-+	struct etsects *etsects = platform_get_drvdata(dev);
+- 
+- 	gfar_write(&etsects->regs->tmr_temask, 0);
+- 	gfar_write(&etsects->regs->tmr_ctrl,   0);
+-Index: gianfar_sysfs.c
+-===================================================================
+---- gianfar_sysfs.c	(revision 22366)
+-+++ gianfar_sysfs.c	(working copy)
+-@@ -337,5 +337,5 @@
+- 	rc |= device_create_file(&dev->dev, &dev_attr_fifo_starve);
+- 	rc |= device_create_file(&dev->dev, &dev_attr_fifo_starve_off);
+- 	if (rc)
+--		dev_err(&dev->dev, "Error creating gianfar sysfs files.\n");
+-+		dev_err(&dev->dev, "Error creating gianfar sysfs files\n");
+- }
+-Index: ucc_geth.c
+-===================================================================
+---- ucc_geth.c	(revision 22366)
+-+++ ucc_geth.c	(working copy)
+-@@ -3564,7 +3564,7 @@
+- 
+- static int ucc_geth_suspend(struct platform_device *ofdev, pm_message_t state)
+- {
+--	struct net_device *ndev = dev_get_drvdata(&ofdev->dev);
+-+	struct net_device *ndev = platform_get_drvdata(ofdev);
+- 	struct ucc_geth_private *ugeth = netdev_priv(ndev);
+- 
+- 	if (!netif_running(ndev))
+-@@ -3592,7 +3592,7 @@
+- 
+- static int ucc_geth_resume(struct platform_device *ofdev)
+- {
+--	struct net_device *ndev = dev_get_drvdata(&ofdev->dev);
+-+	struct net_device *ndev = platform_get_drvdata(ofdev);
+- 	struct ucc_geth_private *ugeth = netdev_priv(ndev);
+- 	int err;
+- 
+-Index: xgmac_mdio.c
+-===================================================================
+---- xgmac_mdio.c	(revision 22366)
+-+++ xgmac_mdio.c	(working copy)
+-@@ -227,7 +227,7 @@
+- 		goto err_registration;
+- 	}
+- 
+--	dev_set_drvdata(&pdev->dev, bus);
+-+	platform_set_drvdata(pdev, bus);
+- 
+- 	return 0;
+- 
+-@@ -242,7 +242,7 @@
+- 
+- static int xgmac_mdio_remove(struct platform_device *pdev)
+- {
+--	struct mii_bus *bus = dev_get_drvdata(&pdev->dev);
+-+	struct mii_bus *bus = platform_get_drvdata(pdev);
+- 
+- 	mdiobus_unregister(bus);
+- 	iounmap(bus->priv);
 Index: gianfar.c
 ===================================================================
---- gianfar.c	(revision 22366)
+--- gianfar.c	(revision 23040)
 +++ gianfar.c	(working copy)
-@@ -128,11 +128,12 @@
- static void gfar_set_hash_for_addr(struct net_device *dev, u8 *addr);
- static void gfar_configure_serdes(struct net_device *dev);
- static int gfar_poll(struct napi_struct *napi, int budget);
-+static int gfar_poll_sq(struct napi_struct *napi, int budget);
- #ifdef CONFIG_NET_POLL_CONTROLLER
+@@ -134,7 +134,7 @@
  static void gfar_netpoll(struct net_device *dev);
  #endif
  int gfar_clean_rx_ring(struct gfar_priv_rx_q *rx_queue, int rx_work_limit);
--static int gfar_clean_tx_ring(struct gfar_priv_tx_q *tx_queue);
-+static void gfar_clean_tx_ring(struct gfar_priv_tx_q *tx_queue);
+-static void gfar_clean_tx_ring(struct gfar_priv_tx_q *tx_queue);
++static int gfar_clean_tx_ring(struct gfar_priv_tx_q *tx_queue);
  static void gfar_process_frame(struct net_device *dev, struct sk_buff *skb,
  			       int amount_pull, struct napi_struct *napi);
  void gfar_halt(struct net_device *dev);
-@@ -245,14 +246,13 @@
+@@ -247,13 +247,14 @@
  
  	/* Allocate memory for the buffer descriptors */
  	vaddr = dma_alloc_coherent(dev,
--			sizeof(struct txbd8) * priv->total_tx_ring_size +
--			sizeof(struct rxbd8) * priv->total_rx_ring_size,
--			&addr, GFP_KERNEL);
--	if (!vaddr) {
--		netif_err(priv, ifup, ndev,
--			  "Could not allocate buffer descriptors!\n");
-+				   (priv->total_tx_ring_size *
-+				    sizeof(struct txbd8)) +
-+				   (priv->total_rx_ring_size *
-+				    sizeof(struct rxbd8)),
-+				   &addr, GFP_KERNEL);
-+	if (!vaddr)
+-				   (priv->total_tx_ring_size *
+-				    sizeof(struct txbd8)) +
+-				   (priv->total_rx_ring_size *
+-				    sizeof(struct rxbd8)),
+-				   &addr, GFP_KERNEL);
+-	if (!vaddr)
++			sizeof(struct txbd8) * priv->total_tx_ring_size +
++			sizeof(struct rxbd8) * priv->total_rx_ring_size,
++			&addr, GFP_KERNEL);
++	if (!vaddr) {
++		netif_err(priv, ifup, ndev,
++			  "Could not allocate buffer descriptors!\n");
  		return -ENOMEM;
--	}
++	}
  
  	for (i = 0; i < priv->num_tx_queues; i++) {
  		tx_queue = priv->tx_queue[i];
-@@ -342,7 +342,7 @@
+@@ -343,7 +344,7 @@
  	gfar_init_tx_rx_base(priv);
  
  	/* Configure the coalescing support */
--	gfar_configure_coalescing(priv, 0xFF, 0xFF);
-+	gfar_configure_coalescing_all(priv);
+-	gfar_configure_coalescing_all(priv);
++	gfar_configure_coalescing(priv, 0xFF, 0xFF);
  
  	/* set this when rx hw offload (TOE) functions are being used */
  	priv->uses_rxfcb = 0;
-@@ -691,7 +691,7 @@
+@@ -691,7 +692,7 @@
  	}
  
  	for (i = 0; i < priv->num_tx_queues; i++)
--	       priv->tx_queue[i] = NULL;
-+		priv->tx_queue[i] = NULL;
+-		priv->tx_queue[i] = NULL;
++	       priv->tx_queue[i] = NULL;
  	for (i = 0; i < priv->num_rx_queues; i++)
  		priv->rx_queue[i] = NULL;
  
-@@ -1001,7 +1001,7 @@
- 	spin_lock_init(&priv->bflock);
- 	INIT_WORK(&priv->reset_task, gfar_reset_task);
- 
--	dev_set_drvdata(&ofdev->dev, priv);
-+	platform_set_drvdata(ofdev, priv);
- 	regs = priv->gfargrp[0].regs;
- 
- 	gfar_detect_errata(priv);
-@@ -1039,9 +1039,13 @@
- 	dev->ethtool_ops = &gfar_ethtool_ops;
- 
- 	/* Register for napi ...We are registering NAPI for each grp */
--	for (i = 0; i < priv->num_grps; i++)
--		netif_napi_add(dev, &priv->gfargrp[i].napi, gfar_poll,
-+	if (priv->mode == SQ_SG_MODE)
-+		netif_napi_add(dev, &priv->gfargrp[0].napi, gfar_poll_sq,
- 			       GFAR_DEV_WEIGHT);
-+	else
-+		for (i = 0; i < priv->num_grps; i++)
-+			netif_napi_add(dev, &priv->gfargrp[i].napi, gfar_poll,
-+				       GFAR_DEV_WEIGHT);
- 
- 	if (priv->device_flags & FSL_GIANFAR_DEV_HAS_CSUM) {
- 		dev->hw_features = NETIF_F_IP_CSUM | NETIF_F_SG |
-@@ -1051,7 +1055,8 @@
+@@ -1080,8 +1081,7 @@
  	}
  
  	if (priv->device_flags & FSL_GIANFAR_DEV_HAS_VLAN) {
--		dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX;
-+		dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX |
-+				    NETIF_F_HW_VLAN_CTAG_RX;
+-		dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX |
+-				    NETIF_F_HW_VLAN_CTAG_RX;
++		dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX | NETIF_F_HW_VLAN_CTAG_RX;
  		dev->features |= NETIF_F_HW_VLAN_CTAG_RX;
  	}
  
-@@ -1240,15 +1245,13 @@
- 
- static int gfar_remove(struct platform_device *ofdev)
- {
--	struct gfar_private *priv = dev_get_drvdata(&ofdev->dev);
-+	struct gfar_private *priv = platform_get_drvdata(ofdev);
- 
- 	if (priv->phy_node)
- 		of_node_put(priv->phy_node);
- 	if (priv->tbi_node)
- 		of_node_put(priv->tbi_node);
- 
--	dev_set_drvdata(&ofdev->dev, NULL);
--
- 	unregister_netdev(priv->ndev);
- 	unmap_group_regs(priv);
- 	free_gfar_dev(priv);
-@@ -1817,25 +1820,15 @@
+@@ -1845,15 +1845,25 @@
  	dev->trans_start = jiffies; /* prevent tx timeout */
  }
  
--void gfar_configure_coalescing(struct gfar_private *priv,
-+static void gfar_configure_coalescing(struct gfar_private *priv,
+-static void gfar_configure_coalescing(struct gfar_private *priv,
++void gfar_configure_coalescing(struct gfar_private *priv,
  			       unsigned long tx_mask, unsigned long rx_mask)
  {
  	struct gfar __iomem *regs = priv->gfargrp[0].regs;
  	u32 __iomem *baddr;
--	int i = 0;
++	int i = 0;
  
--	/* Backward compatible case ---- even if we enable
--	 * multiple queues, there's only single reg to program
--	 */
--	gfar_write(&regs->txic, 0);
--	if (likely(priv->tx_queue[0]->txcoalescing))
--		gfar_write(&regs->txic, priv->tx_queue[0]->txic);
-+	if (priv->mode == MQ_MG_MODE) {
-+		int i = 0;
- 
--	gfar_write(&regs->rxic, 0);
--	if (unlikely(priv->rx_queue[0]->rxcoalescing))
--		gfar_write(&regs->rxic, priv->rx_queue[0]->rxic);
++	/* Backward compatible case ---- even if we enable
++	 * multiple queues, there's only single reg to program
++	 */
++	gfar_write(&regs->txic, 0);
++	if (likely(priv->tx_queue[0]->txcoalescing))
++		gfar_write(&regs->txic, priv->tx_queue[0]->txic);
++
++	gfar_write(&regs->rxic, 0);
++	if (unlikely(priv->rx_queue[0]->rxcoalescing))
++		gfar_write(&regs->rxic, priv->rx_queue[0]->rxic);
++
+ 	if (priv->mode == MQ_MG_MODE) {
+-		int i = 0;
 -
--	if (priv->mode == MQ_MG_MODE) {
  		baddr = &regs->txic0;
  		for_each_set_bit(i, &tx_mask, priv->num_tx_queues) {
  			gfar_write(baddr + i, 0);
-@@ -1849,9 +1842,25 @@
+@@ -1867,25 +1877,9 @@
  			if (likely(priv->rx_queue[i]->rxcoalescing))
  				gfar_write(baddr + i, priv->rx_queue[i]->rxic);
  		}
-+	} else {
-+		/* Backward compatible case -- even if we enable
-+		 * multiple queues, there's only single reg to program
-+		 */
-+		gfar_write(&regs->txic, 0);
-+		if (likely(priv->tx_queue[0]->txcoalescing))
-+			gfar_write(&regs->txic, priv->tx_queue[0]->txic);
-+
-+		gfar_write(&regs->rxic, 0);
-+		if (unlikely(priv->rx_queue[0]->rxcoalescing))
-+			gfar_write(&regs->rxic, priv->rx_queue[0]->rxic);
+-	} else {
+-		/* Backward compatible case -- even if we enable
+-		 * multiple queues, there's only single reg to program
+-		 */
+-		gfar_write(&regs->txic, 0);
+-		if (likely(priv->tx_queue[0]->txcoalescing))
+-			gfar_write(&regs->txic, priv->tx_queue[0]->txic);
+-
+-		gfar_write(&regs->rxic, 0);
+-		if (unlikely(priv->rx_queue[0]->rxcoalescing))
+-			gfar_write(&regs->rxic, priv->rx_queue[0]->rxic);
  	}
  }
  
-+void gfar_configure_coalescing_all(struct gfar_private *priv)
-+{
-+	gfar_configure_coalescing(priv, 0xFF, 0xFF);
-+}
-+
+-void gfar_configure_coalescing_all(struct gfar_private *priv)
+-{
+-	gfar_configure_coalescing(priv, 0xFF, 0xFF);
+-}
+-
  static int register_grp_irqs(struct gfar_priv_grp *grp)
  {
  	struct gfar_private *priv = grp->priv;
-@@ -1941,7 +1950,7 @@
+@@ -1975,7 +1969,7 @@
  
  	phy_start(priv->phydev);
  
--	gfar_configure_coalescing(priv, 0xFF, 0xFF);
-+	gfar_configure_coalescing_all(priv);
+-	gfar_configure_coalescing_all(priv);
++	gfar_configure_coalescing(priv, 0xFF, 0xFF);
  
  	return 0;
  
-@@ -2469,12 +2478,11 @@
+@@ -2517,11 +2511,12 @@
  }
  
  /* Interrupt Handler for Transmit complete */
--static int gfar_clean_tx_ring(struct gfar_priv_tx_q *tx_queue)
-+static void gfar_clean_tx_ring(struct gfar_priv_tx_q *tx_queue)
+-static void gfar_clean_tx_ring(struct gfar_priv_tx_q *tx_queue)
++static int gfar_clean_tx_ring(struct gfar_priv_tx_q *tx_queue)
  {
  	struct net_device *dev = tx_queue->dev;
  	struct netdev_queue *txq;
  	struct gfar_private *priv = netdev_priv(dev);
--	struct gfar_priv_rx_q *rx_queue = NULL;
++	struct gfar_priv_rx_q *rx_queue = NULL;
  	struct txbd8 *bdp, *next = NULL;
  	struct txbd8 *lbdp = NULL;
  	struct txbd8 *base = tx_queue->tx_bd_base;
-@@ -2489,7 +2497,6 @@
+@@ -2536,6 +2531,7 @@
  	u32 lstatus;
  	size_t buflen;
  
--	rx_queue = priv->rx_queue[tqi];
++	rx_queue = priv->rx_queue[tqi];
  	txq = netdev_get_tx_queue(dev, tqi);
  	bdp = tx_queue->dirty_tx;
  	skb_dirtytx = tx_queue->skb_dirtytx;
-@@ -2571,8 +2578,6 @@
+@@ -2617,6 +2613,8 @@
  	tx_queue->dirty_tx = bdp;
  
  	netdev_tx_completed_queue(txq, howmany, bytes_sent);
--
--	return howmany;
++
++	return howmany;
  }
  
  static void gfar_schedule_cleanup(struct gfar_priv_grp *gfargrp)
-@@ -2694,8 +2699,6 @@
+@@ -2738,6 +2736,8 @@
  	struct gfar_private *priv = netdev_priv(dev);
  	struct rxfcb *fcb = NULL;
  
--	gro_result_t ret;
--
++	gro_result_t ret;
++
  	/* fcb is at the beginning if exists */
  	fcb = (struct rxfcb *)skb->data;
  
-@@ -2725,7 +2728,7 @@
+@@ -2767,7 +2767,7 @@
  	/* Tell the skb what kind of packet this is */
  	skb->protocol = eth_type_trans(skb, dev);
  
--	/* There's need to check for NETIF_F_HW_VLAN_RX here.
-+	/* There's need to check for NETIF_F_HW_VLAN_CTAG_RX here.
+-	/* There's need to check for NETIF_F_HW_VLAN_CTAG_RX here.
++	/* There's need to check for NETIF_F_HW_VLAN_RX here.
  	 * Even if vlan rx accel is disabled, on some chips
  	 * RXFCB_VLN is pseudo randomly set.
  	 */
-@@ -2734,10 +2737,8 @@
+@@ -2776,8 +2776,10 @@
  		__vlan_hwaccel_put_tag(skb, htons(ETH_P_8021Q), fcb->vlctl);
  
  	/* Send the packet up the stack */
--	ret = napi_gro_receive(napi, skb);
-+	napi_gro_receive(napi, skb);
+-	napi_gro_receive(napi, skb);
++	ret = napi_gro_receive(napi, skb);
  
--	if (unlikely(GRO_DROP == ret))
--		atomic64_inc(&priv->extra_stats.kernel_dropped);
++	if (unlikely(GRO_DROP == ret))
++		atomic64_inc(&priv->extra_stats.kernel_dropped);
  }
  
  /* gfar_clean_rx_ring() -- Processes each frame in the rx ring
-@@ -2827,6 +2828,48 @@
- 	return howmany;
- }
- 
-+static int gfar_poll_sq(struct napi_struct *napi, int budget)
-+{
-+	struct gfar_priv_grp *gfargrp =
-+		container_of(napi, struct gfar_priv_grp, napi);
-+	struct gfar __iomem *regs = gfargrp->regs;
-+	struct gfar_priv_tx_q *tx_queue = gfargrp->priv->tx_queue[0];
-+	struct gfar_priv_rx_q *rx_queue = gfargrp->priv->rx_queue[0];
-+	int work_done = 0;
-+
-+	/* Clear IEVENT, so interrupts aren't called again
-+	 * because of the packets that have already arrived
-+	 */
-+	gfar_write(&regs->ievent, IEVENT_RTX_MASK);
-+
-+	/* run Tx cleanup to completion */
-+	if (tx_queue->tx_skbuff[tx_queue->skb_dirtytx])
-+		gfar_clean_tx_ring(tx_queue);
-+
-+	work_done = gfar_clean_rx_ring(rx_queue, budget);
-+
-+	if (work_done < budget) {
-+		napi_complete(napi);
-+		/* Clear the halt bit in RSTAT */
-+		gfar_write(&regs->rstat, gfargrp->rstat);
-+
-+		gfar_write(&regs->imask, IMASK_DEFAULT);
-+
-+		/* If we are coalescing interrupts, update the timer
-+		 * Otherwise, clear it
-+		 */
-+		gfar_write(&regs->txic, 0);
-+		if (likely(tx_queue->txcoalescing))
-+			gfar_write(&regs->txic, tx_queue->txic);
-+
-+		gfar_write(&regs->rxic, 0);
-+		if (unlikely(rx_queue->rxcoalescing))
-+			gfar_write(&regs->rxic, rx_queue->rxic);
-+	}
-+
-+	return work_done;
-+}
-+
- static int gfar_poll(struct napi_struct *napi, int budget)
- {
- 	struct gfar_priv_grp *gfargrp =
-@@ -2835,62 +2878,82 @@
+@@ -2917,53 +2919,47 @@
  	struct gfar __iomem *regs = gfargrp->regs;
  	struct gfar_priv_tx_q *tx_queue = NULL;
  	struct gfar_priv_rx_q *rx_queue = NULL;
--	int rx_cleaned = 0, budget_per_queue = 0, rx_cleaned_per_queue = 0;
--	int tx_cleaned = 0, i, left_over_budget = budget;
--	unsigned long serviced_queues = 0;
--	int num_queues = 0;
-+	int work_done = 0, work_done_per_q = 0;
-+	int i, budget_per_q = 0;
-+	int has_tx_work;
-+	unsigned long rstat_rxf;
-+	int num_act_queues;
+-	int work_done = 0, work_done_per_q = 0;
+-	int i, budget_per_q = 0;
+-	int has_tx_work = 0;
+-	unsigned long rstat_rxf;
+-	int num_act_queues;
++	int rx_cleaned = 0, budget_per_queue = 0, rx_cleaned_per_queue = 0;
++	int tx_cleaned = 0, i, left_over_budget = budget;
++	unsigned long serviced_queues = 0;
++	int num_queues = 0;
  
--	num_queues = gfargrp->num_rx_queues;
--	budget_per_queue = budget/num_queues;
--
++	num_queues = gfargrp->num_rx_queues;
++	budget_per_queue = budget/num_queues;
++
  	/* Clear IEVENT, so interrupts aren't called again
  	 * because of the packets that have already arrived
  	 */
  	gfar_write(&regs->ievent, IEVENT_RTX_MASK);
  
--	while (num_queues && left_over_budget) {
--		budget_per_queue = left_over_budget/num_queues;
--		left_over_budget = 0;
-+	rstat_rxf = gfar_read(&regs->rstat) & RSTAT_RXF_MASK;
+-	rstat_rxf = gfar_read(&regs->rstat) & RSTAT_RXF_MASK;
++	while (num_queues && left_over_budget) {
++		budget_per_queue = left_over_budget/num_queues;
++		left_over_budget = 0;
  
-+	num_act_queues = bitmap_weight(&rstat_rxf, MAX_RX_QS);
-+	if (num_act_queues)
-+		budget_per_q = budget/num_act_queues;
-+
-+	while (1) {
-+		has_tx_work = 0;
-+		for_each_set_bit(i, &gfargrp->tx_bit_map, priv->num_tx_queues) {
-+			tx_queue = priv->tx_queue[i];
-+			/* run Tx cleanup to completion */
-+			if (tx_queue->tx_skbuff[tx_queue->skb_dirtytx]) {
-+				gfar_clean_tx_ring(tx_queue);
-+				has_tx_work = 1;
+-	num_act_queues = bitmap_weight(&rstat_rxf, MAX_RX_QS);
+-	if (num_act_queues)
+-		budget_per_q = budget/num_act_queues;
++		for_each_set_bit(i, &gfargrp->rx_bit_map, priv->num_rx_queues) {
++			if (test_bit(i, &serviced_queues))
++				continue;
++			rx_queue = priv->rx_queue[i];
++			tx_queue = priv->tx_queue[rx_queue->qindex];
+ 
+-	for_each_set_bit(i, &gfargrp->tx_bit_map, priv->num_tx_queues) {
+-		tx_queue = priv->tx_queue[i];
+-		/* run Tx cleanup to completion */
+-		if (tx_queue->tx_skbuff[tx_queue->skb_dirtytx]) {
+-			gfar_clean_tx_ring(tx_queue);
+-			has_tx_work = 1;
++			tx_cleaned += gfar_clean_tx_ring(tx_queue);
++			rx_cleaned_per_queue =
++				gfar_clean_rx_ring(rx_queue, budget_per_queue);
++			rx_cleaned += rx_cleaned_per_queue;
++			if (rx_cleaned_per_queue < budget_per_queue) {
++				left_over_budget = left_over_budget +
++					(budget_per_queue -
++					 rx_cleaned_per_queue);
++				set_bit(i, &serviced_queues);
++				num_queues--;
 +			}
-+		}
-+
- 		for_each_set_bit(i, &gfargrp->rx_bit_map, priv->num_rx_queues) {
--			if (test_bit(i, &serviced_queues))
-+			/* skip queue if not active */
-+			if (!(rstat_rxf & (RSTAT_CLEAR_RXF0 >> i)))
- 				continue;
-+
- 			rx_queue = priv->rx_queue[i];
--			tx_queue = priv->tx_queue[rx_queue->qindex];
-+			work_done_per_q =
-+				gfar_clean_rx_ring(rx_queue, budget_per_q);
-+			work_done += work_done_per_q;
- 
--			tx_cleaned += gfar_clean_tx_ring(tx_queue);
--			rx_cleaned_per_queue =
--				gfar_clean_rx_ring(rx_queue, budget_per_queue);
--			rx_cleaned += rx_cleaned_per_queue;
--			if (rx_cleaned_per_queue < budget_per_queue) {
--				left_over_budget = left_over_budget +
--					(budget_per_queue -
--					 rx_cleaned_per_queue);
--				set_bit(i, &serviced_queues);
--				num_queues--;
-+			/* finished processing this queue */
-+			if (work_done_per_q < budget_per_q) {
-+				/* clear active queue hw indication */
-+				gfar_write(&regs->rstat,
-+					   RSTAT_CLEAR_RXF0 >> i);
-+				rstat_rxf &= ~(RSTAT_CLEAR_RXF0 >> i);
-+				num_act_queues--;
-+
-+				if (!num_act_queues)
-+					break;
-+				/* recompute budget per Rx queue */
-+				budget_per_q =
-+					(budget - work_done) / num_act_queues;
- 			}
  		}
--	}
- 
--	if (tx_cleaned)
--		return budget;
-+		if (work_done >= budget)
-+			break;
- 
--	if (rx_cleaned < budget) {
--		napi_complete(napi);
-+		if (!num_act_queues && !has_tx_work) {
- 
--		/* Clear the halt bit in RSTAT */
--		gfar_write(&regs->rstat, gfargrp->rstat);
-+			napi_complete(napi);
- 
--		gfar_write(&regs->imask, IMASK_DEFAULT);
-+			/* Clear the halt bit in RSTAT */
-+			gfar_write(&regs->rstat, gfargrp->rstat);
- 
--		/* If we are coalescing interrupts, update the timer
--		 * Otherwise, clear it
--		 */
--		gfar_configure_coalescing(priv, gfargrp->rx_bit_map,
--					  gfargrp->tx_bit_map);
-+			gfar_write(&regs->imask, IMASK_DEFAULT);
-+
-+			/* If we are coalescing interrupts, update the timer
-+			 * Otherwise, clear it
-+			 */
-+			gfar_configure_coalescing(priv, gfargrp->rx_bit_map,
-+						  gfargrp->tx_bit_map);
-+			break;
-+		}
  	}
  
--	return rx_cleaned;
-+	return work_done;
+-	for_each_set_bit(i, &gfargrp->rx_bit_map, priv->num_rx_queues) {
+-		/* skip queue if not active */
+-		if (!(rstat_rxf & (RSTAT_CLEAR_RXF0 >> i)))
+-			continue;
++	if (tx_cleaned)
++		return budget;
+ 
+-		rx_queue = priv->rx_queue[i];
+-		work_done_per_q = gfar_clean_rx_ring(rx_queue, budget_per_q);
+-		work_done += work_done_per_q;
+-
+-		/* finished processing this queue */
+-		if (work_done_per_q < budget_per_q) {
+-			/* clear active queue hw indication */
+-			gfar_write(&regs->rstat, RSTAT_CLEAR_RXF0 >> i);
+-			num_act_queues--;
+-
+-			if (!num_act_queues)
+-				break;
+-		}
+-	}
+-
+-	if (!num_act_queues && !has_tx_work) {
++	if (rx_cleaned < budget) {
+ 		napi_complete(napi);
+ 
+ 		/* Clear the halt bit in RSTAT */
+@@ -2978,7 +2974,7 @@
+ 					  gfargrp->tx_bit_map);
+ 	}
+ 
+-	return work_done;
++	return rx_cleaned;
  }
  
  #ifdef CONFIG_NET_POLL_CONTROLLER
 Index: gianfar.h
 ===================================================================
---- gianfar.h	(revision 22366)
+--- gianfar.h	(revision 23040)
 +++ gianfar.h	(working copy)
-@@ -291,7 +291,9 @@
+@@ -295,9 +295,7 @@
  #define RCTRL_PADDING(x)	((x << 16) & RCTRL_PAL_MASK)
  
  
--#define RSTAT_CLEAR_RHALT       0x00800000
-+#define RSTAT_CLEAR_RHALT	0x00800000
-+#define RSTAT_CLEAR_RXF0	0x00000080
-+#define RSTAT_RXF_MASK		0x000000ff
+-#define RSTAT_CLEAR_RHALT	0x00800000
+-#define RSTAT_CLEAR_RXF0	0x00000080
+-#define RSTAT_RXF_MASK		0x000000ff
++#define RSTAT_CLEAR_RHALT       0x00800000
  
  #define TCTRL_IPCSEN		0x00004000
  #define TCTRL_TUCSEN		0x00002000
-@@ -627,7 +629,6 @@
+@@ -633,6 +631,7 @@
  };
  
  struct gfar_extra_stats {
--	atomic64_t kernel_dropped;
++	atomic64_t kernel_dropped;
  	atomic64_t rx_large;
  	atomic64_t rx_short;
  	atomic64_t rx_nonoctet;
-@@ -1180,8 +1181,7 @@
+@@ -1187,7 +1186,8 @@
  extern void gfar_halt(struct net_device *dev);
  extern void gfar_phy_test(struct mii_bus *bus, struct phy_device *phydev,
  		int enable, u32 regnum, u32 read);
--extern void gfar_configure_coalescing(struct gfar_private *priv,
--		unsigned long tx_mask, unsigned long rx_mask);
-+extern void gfar_configure_coalescing_all(struct gfar_private *priv);
+-extern void gfar_configure_coalescing_all(struct gfar_private *priv);
++extern void gfar_configure_coalescing(struct gfar_private *priv,
++		unsigned long tx_mask, unsigned long rx_mask);
  void gfar_init_sysfs(struct net_device *dev);
  int gfar_set_features(struct net_device *dev, netdev_features_t features);
  extern void gfar_check_rx_parser_mode(struct gfar_private *priv);
 Index: gianfar_ethtool.c
 ===================================================================
---- gianfar_ethtool.c	(revision 22366)
+--- gianfar_ethtool.c	(revision 23040)
 +++ gianfar_ethtool.c	(working copy)
-@@ -66,7 +66,6 @@
+@@ -66,6 +66,7 @@
  			  struct ethtool_drvinfo *drvinfo);
  
  static const char stat_gstrings[][ETH_GSTRING_LEN] = {
--	"rx-dropped-by-kernel",
++	"rx-dropped-by-kernel",
  	"rx-large-frame-errors",
  	"rx-short-frame-errors",
  	"rx-non-octet-errors",
-@@ -390,14 +389,14 @@
+@@ -389,14 +390,14 @@
  
  	/* Check the bounds of the values */
  	if (cvals->rx_coalesce_usecs > GFAR_MAX_COAL_USECS) {
--		pr_info("Coalescing is limited to %d microseconds\n",
--			GFAR_MAX_COAL_USECS);
-+		netdev_info(dev, "Coalescing is limited to %d microseconds\n",
-+			    GFAR_MAX_COAL_USECS);
+-		netdev_info(dev, "Coalescing is limited to %d microseconds\n",
+-			    GFAR_MAX_COAL_USECS);
++		pr_info("Coalescing is limited to %d microseconds\n",
++			GFAR_MAX_COAL_USECS);
  		return -EINVAL;
  	}
  
  	if (cvals->rx_max_coalesced_frames > GFAR_MAX_COAL_FRAMES) {
--		pr_info("Coalescing is limited to %d frames\n",
--			GFAR_MAX_COAL_FRAMES);
-+		netdev_info(dev, "Coalescing is limited to %d frames\n",
-+			    GFAR_MAX_COAL_FRAMES);
+-		netdev_info(dev, "Coalescing is limited to %d frames\n",
+-			    GFAR_MAX_COAL_FRAMES);
++		pr_info("Coalescing is limited to %d frames\n",
++			GFAR_MAX_COAL_FRAMES);
  		return -EINVAL;
  	}
  
-@@ -419,14 +418,14 @@
+@@ -418,14 +419,14 @@
  
  	/* Check the bounds of the values */
  	if (cvals->tx_coalesce_usecs > GFAR_MAX_COAL_USECS) {
--		pr_info("Coalescing is limited to %d microseconds\n",
--			GFAR_MAX_COAL_USECS);
-+		netdev_info(dev, "Coalescing is limited to %d microseconds\n",
-+			    GFAR_MAX_COAL_USECS);
+-		netdev_info(dev, "Coalescing is limited to %d microseconds\n",
+-			    GFAR_MAX_COAL_USECS);
++		pr_info("Coalescing is limited to %d microseconds\n",
++			GFAR_MAX_COAL_USECS);
  		return -EINVAL;
  	}
  
  	if (cvals->tx_max_coalesced_frames > GFAR_MAX_COAL_FRAMES) {
--		pr_info("Coalescing is limited to %d frames\n",
--			GFAR_MAX_COAL_FRAMES);
-+		netdev_info(dev, "Coalescing is limited to %d frames\n",
-+			    GFAR_MAX_COAL_FRAMES);
+-		netdev_info(dev, "Coalescing is limited to %d frames\n",
+-			    GFAR_MAX_COAL_FRAMES);
++		pr_info("Coalescing is limited to %d frames\n",
++			GFAR_MAX_COAL_FRAMES);
  		return -EINVAL;
  	}
  
-@@ -436,7 +435,7 @@
+@@ -435,7 +436,7 @@
  			gfar_usecs2ticks(priv, cvals->tx_coalesce_usecs));
  	}
  
--	gfar_configure_coalescing(priv, 0xFF, 0xFF);
-+	gfar_configure_coalescing_all(priv);
+-	gfar_configure_coalescing_all(priv);
++	gfar_configure_coalescing(priv, 0xFF, 0xFF);
  
  	return 0;
  }
-@@ -736,7 +735,8 @@
+@@ -807,8 +808,7 @@
  		cmp_rqfpr = RQFPR_IPV6 |RQFPR_UDP;
  		break;
  	default:
--		pr_err("Right now this class is not supported\n");
-+		netdev_err(priv->ndev,
-+			   "Right now this class is not supported\n");
+-		netdev_err(priv->ndev,
+-			   "Right now this class is not supported\n");
++		pr_err("Right now this class is not supported\n");
  		ret = 0;
  		goto err;
  	}
-@@ -752,7 +752,8 @@
+@@ -824,8 +824,7 @@
  	}
  
  	if (i == MAX_FILER_IDX + 1) {
--		pr_err("No parse rule found, can't create hash rules\n");
-+		netdev_err(priv->ndev,
-+			   "No parse rule found, can't create hash rules\n");
+-		netdev_err(priv->ndev,
+-			   "No parse rule found, can't create hash rules\n");
++		pr_err("No parse rule found, can't create hash rules\n");
  		ret = 0;
  		goto err;
  	}
-@@ -1569,7 +1570,7 @@
+@@ -1642,7 +1641,7 @@
  	gfar_cluster_filer(tab);
  	gfar_optimize_filer_masks(tab);
  
--	pr_debug("\n\tSummary:\n"
-+	pr_debug("\tSummary:\n"
+-	pr_debug("\tSummary:\n"
++	pr_debug("\n\tSummary:\n"
  		 "\tData on hardware: %d\n"
  		 "\tCompression rate: %d%%\n",
  		 tab->index, 100 - (100 * tab->index) / i);
-Index: gianfar_ptp.c
-===================================================================
---- gianfar_ptp.c	(revision 22366)
-+++ gianfar_ptp.c	(working copy)
-@@ -519,7 +519,7 @@
- 	}
- 	gfar_phc_index = ptp_clock_index(etsects->clock);
- 
--	dev_set_drvdata(&dev->dev, etsects);
-+	platform_set_drvdata(dev, etsects);
- 
- 	return 0;
- 
-@@ -537,7 +537,7 @@
- 
- static int gianfar_ptp_remove(struct platform_device *dev)
- {
--	struct etsects *etsects = dev_get_drvdata(&dev->dev);
-+	struct etsects *etsects = platform_get_drvdata(dev);
- 
- 	gfar_write(&etsects->regs->tmr_temask, 0);
- 	gfar_write(&etsects->regs->tmr_ctrl,   0);
 Index: gianfar_sysfs.c
 ===================================================================
---- gianfar_sysfs.c	(revision 22366)
+--- gianfar_sysfs.c	(revision 23040)
 +++ gianfar_sysfs.c	(working copy)
 @@ -337,5 +337,5 @@
  	rc |= device_create_file(&dev->dev, &dev_attr_fifo_starve);
  	rc |= device_create_file(&dev->dev, &dev_attr_fifo_starve_off);
  	if (rc)
--		dev_err(&dev->dev, "Error creating gianfar sysfs files.\n");
-+		dev_err(&dev->dev, "Error creating gianfar sysfs files\n");
+-		dev_err(&dev->dev, "Error creating gianfar sysfs files\n");
++		dev_err(&dev->dev, "Error creating gianfar sysfs files.\n");
  }
-Index: ucc_geth.c
-===================================================================
---- ucc_geth.c	(revision 22366)
-+++ ucc_geth.c	(working copy)
-@@ -3564,7 +3564,7 @@
- 
- static int ucc_geth_suspend(struct platform_device *ofdev, pm_message_t state)
- {
--	struct net_device *ndev = dev_get_drvdata(&ofdev->dev);
-+	struct net_device *ndev = platform_get_drvdata(ofdev);
- 	struct ucc_geth_private *ugeth = netdev_priv(ndev);
- 
- 	if (!netif_running(ndev))
-@@ -3592,7 +3592,7 @@
- 
- static int ucc_geth_resume(struct platform_device *ofdev)
- {
--	struct net_device *ndev = dev_get_drvdata(&ofdev->dev);
-+	struct net_device *ndev = platform_get_drvdata(ofdev);
- 	struct ucc_geth_private *ugeth = netdev_priv(ndev);
- 	int err;
- 
-Index: xgmac_mdio.c
-===================================================================
---- xgmac_mdio.c	(revision 22366)
-+++ xgmac_mdio.c	(working copy)
-@@ -227,7 +227,7 @@
- 		goto err_registration;
- 	}
- 
--	dev_set_drvdata(&pdev->dev, bus);
-+	platform_set_drvdata(pdev, bus);
- 
- 	return 0;
- 
-@@ -242,7 +242,7 @@
- 
- static int xgmac_mdio_remove(struct platform_device *pdev)
- {
--	struct mii_bus *bus = dev_get_drvdata(&pdev->dev);
-+	struct mii_bus *bus = platform_get_drvdata(pdev);
- 
- 	mdiobus_unregister(bus);
- 	iounmap(bus->priv);
