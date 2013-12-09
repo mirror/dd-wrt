@@ -21,6 +21,44 @@
 #include "sysinfo.h"
 #include "stats.h"
 
+/* uclibc and dietlibc do not have this junk -ReneR */ 
+	#if defined (__UCLIBC__) || defined (__dietlibc__) 
+	static int getloadavg (double loadavg[], int nelem) 
+	{ 
+	  int fd; 
+	 
+	  fd = open ("/proc/loadavg", O_RDONLY); 
+	  if (fd < 0) 
+	    return -1; 
+	  else 
+	    { 
+	      char buf[65], *p; 
+	      ssize_t nread; 
+	      int i; 
+	 
+	      nread = read (fd, buf, sizeof buf - 1); 
+	      close (fd); 
+	      if (nread <= 0) 
+	        return -1; 
+	      buf[nread - 1] = '\0'; 
+	 
+	      if (nelem > 3) 
+	        nelem = 3; 
+	      p = buf; 
+	      for (i = 0; i < nelem; ++i) 
+	        { 
+	          char *endp; 
+	          loadavg[i] = strtod (p, &endp); 
+	          if (endp == p) 
+	            return -1; 
+	          p = endp; 
+	        } 
+	 
+	      return i; 
+	    } 
+	} 
+	#endif 
+
 int	SYSTEM_CPU_NUM(const char *cmd, const char *param, unsigned flags, AGENT_RESULT *result)
 {
 	char	tmp[16];
