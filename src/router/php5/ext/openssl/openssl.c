@@ -974,9 +974,9 @@ static EVP_MD * php_openssl_get_evp_md_from_algo(long algo) { /* {{{ */
 		case OPENSSL_ALGO_SHA512:
 			mdtype = (EVP_MD *) EVP_sha512();
 			break;
-		case OPENSSL_ALGO_RMD160:
-			mdtype = (EVP_MD *) EVP_ripemd160();
-			break;
+		//case OPENSSL_ALGO_RMD160:
+		//	mdtype = (EVP_MD *) EVP_ripemd160();
+		//	break;
 #endif
 		default:
 			return NULL;
