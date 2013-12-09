@@ -655,7 +655,7 @@ void start_sysinit(void)
 				{"boardnum", "57359", 0},
 				{"dot11agduplrpo", "0", 0},
 				{"measpower", "0x7f", 0},
-				{"sromrev", "11", 0},
+				{"sromrev", "9", 0},
 				{"ofdmlrbw202gpo", "0", 0},
 				{"boardrev", "0x1150", 0},
 				{"dot11agofdmhrbw202gpo", "0xCA86", 0},
