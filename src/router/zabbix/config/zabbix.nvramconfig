@@ -1,2 +1,0 @@
- "zabbix_enable"  "Zabbix Server"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
- "zabbix_serverip"  "Zabbix Server IP"  "NULL"  "FALSE" "0"
