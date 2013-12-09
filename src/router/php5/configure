@@ -23401,7 +23401,7 @@ fi
 
   found_openssl=no
   unset OPENSSL_INCDIR
-  unset OPENSSL_LIBDIR
+ # unset OPENSSL_LIBDIR
 
     test -z "$PHP_OPENSSL" && PHP_OPENSSL=no
   test -z "$PHP_IMAP_SSL" && PHP_IMAP_SSL=no

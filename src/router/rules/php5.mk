@@ -48,7 +48,7 @@ php5:
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/libgd/libpng/.libs -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/zlib -fPIC -v -Wl,--verbose" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/libgd/libpng/.libs -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/zlib -L$(TOP)/openssl -lcrypto -lssl -ldl -fPIC -v -Wl,--verbose" \
 	$(MAKE) -C php5
 	
 	
@@ -81,8 +81,7 @@ PHP_CONFIGURE_ARGS= \
 	--disable-ftp \
 	--without-gettext \
 	--disable-mbregex \
-	--without-openssl \
-	--without-pear \
+	--with-openssl="$(TOP)/openssl" \
 	--disable-phar \
 	--with-kerberos=no \
 	--disable-soap \
@@ -107,16 +106,25 @@ PHP_CONFIGURE_ARGS= \
 	ac_cv_lib_z_gzgets="yes" \
 	ac_cv_php_xml2_config_path="$(TOP)/libxml2/xml2-config" \
 	ac_cv_lib_z_gzgets="yes" \
+	ac_cv_lib_crypto_X509_free="yes" \
+	ac_cv_lib_ssl_DSA_get_default_method="yes" \
+	ac_cv_func_crypt="yes" \
+	ac_cv_lib_crypto_CRYPTO_free="yes" \
+	ac_cv_lib_ssl_SSL_CTX_set_ssl_version="yes" \
+	ac_cv_glob="yes" \
 	ICONV_DIR="$(TOP)/glib20/libiconv" \
-	EXTRA_CFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -I$(TOP)/zlib -I$(TOP)/libgd/libpng" \
-	EXTRA_LIBS="-liconv" \
-	EXTRA_LDFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd" \
-	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd"
+	OPENSSL_LIBDIR="$(TOP)/openssl" \
+	EXTRA_CFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -I$(TOP)/zlib -I$(TOP)/libgd/libpng -lcrypt -L$(TOP)/openssl -lcrypto -lssl" \
+	EXTRA_LIBS="-liconv " \
+	EXTRA_LDFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/openssl -lcrypto -lssl -lcrypt -ldl" \
+	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/openssl -lcrypto -lssl -lcrypt -ldl"
 	
 php5-configure: libpng-configure libgd-configure libxml2-configure libpng libgd libxml2
 	rm -f php5/config.cache
-	cd php5 && './configure'  '--host=$(ARCH)-linux-uclibc'  $(PHP_CONFIGURE_ARGS) 'CFLAGS=$(COPTS) -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -liconv' 'LDFLAGS=-L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/glib20/libiconv/lib/.libs -liconv'
-
+	cd php5 && './configure'  '--host=$(ARCH)-linux-uclibc'  $(PHP_CONFIGURE_ARGS) \
+	'CFLAGS=$(COPTS) -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -liconv' \
+	'LDFLAGS=-L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/openssl -lcrypto -lssl -lcrypt -ldl'
+	printf "#define HAVE_GLOB 1\n" >>$(TOP)/php5/main/php_config.h
 
 php5-clean:
 	if test -e "php5/Makefile"; then make -C php5 clean; fi
