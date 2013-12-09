@@ -417,7 +417,7 @@ static int	dns_query(const char *cmd, const char *param, unsigned flags, AGENT_R
 	}
 #else	/* not _WINDOWS */
 	res_init();	/* initialize always, settings might have changed */
-
+#if defined(HAVE_RES_MKQUERY) && defined(HAVE_RES_SEND)  
 	if (-1 == (res = res_mkquery(QUERY, zone, C_IN, type, NULL, 0, NULL, buf, sizeof(buf))))
 		return SYSINFO_RET_FAIL;
 
@@ -436,6 +436,11 @@ static int	dns_query(const char *cmd, const char *param, unsigned flags, AGENT_R
 	_res.retry = retry;
 
 	res = res_send(buf, res, answer.buffer, sizeof(answer.buffer));
+#else /* defined(HAVE_RES_QUERY) && defined(HAVE_RES_SEND) */ 
+	        /* retrand and retry are ignored */ 
+	        if (-1 == (res = res_query(zone, C_IN, type, answer.buffer, sizeof(answer.buffer)))) 
+	        return SYSINFO_RET_FAIL; 
+#endif  
 
 	hp = (HEADER *)answer.buffer;
 
