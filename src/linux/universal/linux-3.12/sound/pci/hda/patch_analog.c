@@ -345,6 +345,9 @@ static int patch_ad1986a(struct hda_codec *codec)
 	 */
 	spec->gen.multiout.no_share_stream = 1;
 
+	/* AD1986A can't manage the dynamic pin on/off smoothly */
+	spec->gen.auto_mute_via_amp = 1;
+
 	snd_hda_pick_fixup(codec, ad1986a_fixup_models, ad1986a_fixup_tbl,
 			   ad1986a_fixups);
 	snd_hda_apply_fixup(codec, HDA_FIXUP_ACT_PRE_PROBE);
@@ -961,6 +964,7 @@ static void ad1884_fixup_hp_eapd(struct hda_codec *codec,
 	switch (action) {
 	case HDA_FIXUP_ACT_PRE_PROBE:
 		spec->gen.vmaster_mute.hook = ad1884_vmaster_hp_gpio_hook;
+		spec->gen.own_eapd_ctl = 1;
 		snd_hda_sequence_write_cache(codec, gpio_init_verbs);
 		break;
 	case HDA_FIXUP_ACT_PROBE:
