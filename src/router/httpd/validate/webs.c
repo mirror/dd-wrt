@@ -3059,7 +3059,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (wl_newmode && (nvram_match(n, "sta") || nvram_match(n, "apsta")) && strcmp(wl_newmode, "sta") && strcmp(wl_newmode, "apsta"))
 		notifywanChange();
 
-	if (wl_newmode && nvram_match(n, "ap") && !strcmp(wl_newmode, "sta") || !strcmp(wl_newmode, "apsta"))
+	if (wl_newmode && nvram_match(n, "ap") && ( !strcmp(wl_newmode, "sta") || !strcmp(wl_newmode, "apsta") ) )
 		notifywanChange();
 
 	if (nvram_match(n, "sta")) {
