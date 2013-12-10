@@ -298,6 +298,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 			MAC_ADD(mac);
 			nvram_set("pci/2/1/macaddr", mac);
 		}
+		nvram_set("partialboots","0");
 	case ROUTER_LINKSYS_EA2700:
 		nvram_set("bootpartition","0");
 		insmod("wl");	// load module
