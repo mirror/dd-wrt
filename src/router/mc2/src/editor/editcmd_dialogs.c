@@ -162,11 +162,17 @@ editcmd_dialog_search_show (WEdit * edit)
     edit->last_search_string = search_text;
     mc_search_free (edit->search);
 
-    edit->search = mc_search_new (edit->last_search_string, -1);
+#ifdef HAVE_CHARSET
+    edit->search = mc_search_new (edit->last_search_string, -1, cp_source);
+#else
+    edit->search = mc_search_new (edit->last_search_string, -1, NULL);
+#endif
     if (edit->search != NULL)
     {
         edit->search->search_type = edit_search_options.type;
+#ifdef HAVE_CHARSET
         edit->search->is_all_charsets = edit_search_options.all_codepages;
+#endif
         edit->search->is_case_sensitive = edit_search_options.case_sens;
         edit->search->whole_words = edit_search_options.whole_words;
         edit->search->search_fn = edit_search_cmd_callback;
@@ -413,7 +419,6 @@ editcmd_dialog_select_definition_show (WEdit * edit, char *match_expr, int max_l
     WListbox *def_list;
     int def_dlg_h;              /* dialog height */
     int def_dlg_w;              /* dialog width */
-    char *label_def = NULL;
 
     (void) word_len;
     /* calculate the dialog metrics */
@@ -450,6 +455,8 @@ editcmd_dialog_select_definition_show (WEdit * edit, char *match_expr, int max_l
     /* fill the listbox with the completions */
     for (i = 0; i < num_lines; i++)
     {
+        char *label_def;
+
         label_def =
             g_strdup_printf ("%s -> %s:%ld", def_hash[i].short_define, def_hash[i].filename,
                              def_hash[i].line);

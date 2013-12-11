@@ -167,9 +167,7 @@ edit_load_file_fast (edit_buffer_t * buf, const vfs_path_t * filename_vpath)
     }
 
     ret = (edit_buffer_read_file (buf, file, buf->size) == buf->size);
-    if (ret)
-        buf->lines = edit_buffer_count_lines (buf, 0, buf->size);
-    else
+    if (!ret)
     {
         gchar *errmsg;
 
@@ -188,7 +186,7 @@ edit_load_file_fast (edit_buffer_t * buf, const vfs_path_t * filename_vpath)
 static int
 edit_find_filter (const vfs_path_t * filename_vpath)
 {
-    size_t i, l, e;
+    size_t i, l;
 
     if (filename_vpath == NULL)
         return -1;
@@ -196,6 +194,8 @@ edit_find_filter (const vfs_path_t * filename_vpath)
     l = strlen (vfs_path_as_str (filename_vpath));
     for (i = 0; i < G_N_ELEMENTS (all_filters); i++)
     {
+        size_t e;
+
         e = strlen (all_filters[i].extension);
         if (l > e)
             if (!strcmp (all_filters[i].extension, vfs_path_as_str (filename_vpath) + l - e))
@@ -320,7 +320,7 @@ check_file_access (WEdit * edit, const vfs_path_t * filename_vpath, struct stat 
         g_free (errmsg);
         errmsg = NULL;
 
-        if (act == 1)
+        if (act != 0)
             ret = FALSE;
     }
 
@@ -1338,7 +1338,6 @@ static void
 edit_auto_indent (WEdit * edit)
 {
     off_t p;
-    char c;
 
     p = edit->buffer.curs1;
     /* use the previous line as a template */
@@ -1346,6 +1345,8 @@ edit_auto_indent (WEdit * edit)
     /* copy the leading whitespace of the line */
     while (TRUE)
     {                           /* no range check - the line _is_ \n-terminated */
+        char c;
+
         c = edit_buffer_get_byte (&edit->buffer, p++);
         if (c != ' ' && c != '\t')
             break;
@@ -1421,7 +1422,6 @@ static void
 check_and_wrap_line (WEdit * edit)
 {
     off_t curs;
-    int c;
 
     if (!option_typewriter_wrap)
         return;
@@ -1431,6 +1431,8 @@ check_and_wrap_line (WEdit * edit)
     curs = edit->buffer.curs1;
     while (TRUE)
     {
+        int c;
+
         curs--;
         c = edit_buffer_get_byte (&edit->buffer, curs);
         if (c == '\n' || curs <= 0)
@@ -1463,7 +1465,7 @@ static off_t
 edit_get_bracket (WEdit * edit, gboolean in_screen, unsigned long furthest_bracket_search)
 {
     const char *const b = "{}{[][()(", *p;
-    int i = 1, a, inc = -1, c, d, n = 0;
+    int i = 1, inc = -1, c, d, n = 0;
     unsigned long j = 0;
     off_t q;
 
@@ -1483,6 +1485,8 @@ edit_get_bracket (WEdit * edit, gboolean in_screen, unsigned long furthest_brack
         inc = 1;
     for (q = edit->buffer.curs1 + inc;; q += inc)
     {
+        int a;
+
         /* out of buffer? */
         if (q >= edit->buffer.size || q < 0)
             break;
@@ -3299,7 +3303,7 @@ edit_execute_cmd (WEdit * edit, unsigned long command, int char_for_insertion)
 #ifdef HAVE_CHARSET
         if (char_for_insertion > 255 && !mc_global.utf8_display)
         {
-            unsigned char str[6 + 1];
+            unsigned char str[UTF8_CHAR_LEN + 1];
             size_t i = 0;
             int res;
 
@@ -3313,7 +3317,7 @@ edit_execute_cmd (WEdit * edit, unsigned long command, int char_for_insertion)
             {
                 str[res] = '\0';
             }
-            while (str[i] != 0 && i <= 6)
+            while (i <= UTF8_CHAR_LEN && str[i] != '\0')
             {
                 char_for_insertion = str[i];
                 edit_insert (edit, char_for_insertion);
@@ -3457,14 +3461,14 @@ edit_execute_cmd (WEdit * edit, unsigned long command, int char_for_insertion)
         if (option_auto_para_formatting)
         {
             edit_double_newline (edit);
-            if (option_return_does_auto_indent)
+            if (option_return_does_auto_indent && !bracketed_pasting_in_progress)
                 edit_auto_indent (edit);
             format_paragraph (edit, FALSE);
         }
         else
         {
             edit_insert (edit, '\n');
-            if (option_return_does_auto_indent)
+            if (option_return_does_auto_indent && !bracketed_pasting_in_progress)
                 edit_auto_indent (edit);
         }
         break;

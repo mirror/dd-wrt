@@ -569,6 +569,7 @@ command_completion_function (const char *_text, int state, input_complete_t flag
     };
     char *p, *found;
 
+    /* cppcheck-suppress uninitvar */
     SHOW_C_CTX ("command_completion_function");
 
     if (!(flags & INPUT_COMPLETE_COMMANDS))
@@ -735,8 +736,6 @@ completion_matches (const char *text, CompletionFunction entry_function, input_c
        lowest common denominator.  That then becomes match_list[0]. */
     if (matches)
     {
-        register size_t i = 1;
-        int low = 4096;         /* Count of max-matched characters. */
 
         /* If only one match, just use that. */
         if (matches == 1)
@@ -746,6 +745,8 @@ completion_matches (const char *text, CompletionFunction entry_function, input_c
         }
         else
         {
+            size_t i = 1;
+            int low = 4096;     /* Count of max-matched characters. */
             size_t j;
 
             qsort (match_list + 1, matches, sizeof (char *), match_compare);
@@ -846,12 +847,11 @@ try_complete_commands_prepare (try_complete_automation_state_t * state, char *te
         state->in_command_position++;
     else if (strchr (command_separator_chars, ti[0]) != NULL)
     {
-        int this_char, prev_char;
-
         state->in_command_position++;
-
         if (ti != text)
         {
+            int this_char, prev_char;
+
             /* Handle the two character tokens '>&', '<&', and '>|'.
                We are not in a command position after one of these. */
             this_char = ti[0];
@@ -937,20 +937,21 @@ try_complete_all_possible (try_complete_automation_state_t * state, char *text, 
             {
                 char *const cdpath_ref = g_strdup (getenv ("CDPATH"));
                 char *cdpath = cdpath_ref;
-                char c, *s;
+                char c;
 
-                if (cdpath == NULL)
-                    c = 0;
-                else
-                    c = ':';
+                c = (cdpath == NULL) ? '\0' : ':';
+
                 while (!matches && c == ':')
                 {
+                    char *s;
+
                     s = strchr (cdpath, ':');
+                    /* cppcheck-suppress nullPointer */
                     if (s == NULL)
-                        s = strchr (cdpath, 0);
+                        s = strchr (cdpath, '\0');
                     c = *s;
-                    *s = 0;
-                    if (*cdpath)
+                    *s = '\0';
+                    if (*cdpath != '\0')
                     {
                         state->r = mc_build_filename (cdpath, state->word, NULL);
                         SHOW_C_CTX ("try_complete:filename_subst_2");
@@ -982,12 +983,13 @@ insert_text (WInput * in, char *text, ssize_t size)
     {
         /* Expand the buffer */
         char *narea;
+        Widget *w = WIDGET (in);
 
-        narea = g_try_realloc (in->buffer, in->current_max_size + size + in->field_width);
+        narea = g_try_realloc (in->buffer, in->current_max_size + size + w->cols);
         if (narea != NULL)
         {
             in->buffer = narea;
-            in->current_max_size += size + in->field_width;
+            in->current_max_size += size + w->cols;
         }
     }
     if (strlen (in->buffer) + 1 < (size_t) in->current_max_size)
@@ -1007,7 +1009,6 @@ insert_text (WInput * in, char *text, ssize_t size)
 static cb_ret_t
 query_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
 {
-    static char buff[MB_LEN_MAX] = "";
     static int bl = 0;
 
     WDialog *h = DIALOG (w);
@@ -1083,6 +1084,7 @@ query_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
             }
             else
             {
+                static char buff[MB_LEN_MAX] = "";
                 GList *e;
                 int i;
                 int need_redraw = 0;
@@ -1349,11 +1351,18 @@ try_complete (char *text, int *lc_start, int *lc_end, input_complete_t flags)
         matches = completion_matches (state.word, username_completion_function, state.flags);
     }
 
-    /* And finally if this word is in a command position, then
+    /* If this word is in a command position, then
        complete over possible command names, including aliases, functions,
        and command names. */
     if (matches == NULL)
         matches = try_complete_all_possible (&state, text, lc_start);
+
+    /* And finally if nothing found, try complete directory name */
+    if (matches == NULL)
+    {
+        state.in_command_position = 0;
+        matches = try_complete_all_possible (&state, text, lc_start);
+    }
 
     g_free (state.word);
 

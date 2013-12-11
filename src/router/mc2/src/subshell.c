@@ -184,10 +184,12 @@ static struct termios raw_mode;
 static ssize_t
 write_all (int fd, const void *buf, size_t count)
 {
-    ssize_t ret;
     ssize_t written = 0;
+
     while (count > 0)
     {
+        ssize_t ret;
+
         ret = write (fd, (const unsigned char *) buf + written, count);
         if (ret < 0)
         {
@@ -471,7 +473,6 @@ static gboolean
 feed_subshell (int how, int fail_on_error)
 {
     fd_set read_set;            /* For 'select' */
-    int maxfdp;
     int bytes;                  /* For the return value from 'read' */
     int i;                      /* Loop counter */
 
@@ -485,6 +486,8 @@ feed_subshell (int how, int fail_on_error)
 
     while (TRUE)
     {
+        int maxfdp;
+
         if (!subshell_alive)
             return FALSE;
 
@@ -924,8 +927,6 @@ init_subshell (void)
 int
 invoke_subshell (const char *command, int how, vfs_path_t ** new_dir_vpath)
 {
-    char *pcwd;
-
     /* Make the MC terminal transparent */
     tcsetattr (STDOUT_FILENO, TCSANOW, &raw_mode);
 
@@ -957,11 +958,14 @@ invoke_subshell (const char *command, int how, vfs_path_t ** new_dir_vpath)
 
     feed_subshell (how, FALSE);
 
-    pcwd = vfs_translate_path_n (vfs_path_as_str (current_panel->cwd_vpath));
+    if (new_dir_vpath != NULL && subshell_alive)
+    {
+        const char *pcwd;
 
-    if (new_dir_vpath != NULL && subshell_alive && strcmp (subshell_cwd, pcwd))
-        *new_dir_vpath = vfs_path_from_str (subshell_cwd);      /* Make MC change to the subshell's CWD */
-    g_free (pcwd);
+        pcwd = vfs_translate_path (vfs_path_as_str (current_panel->cwd_vpath));
+        if (strcmp (subshell_cwd, pcwd) != 0)
+            *new_dir_vpath = vfs_path_from_str (subshell_cwd);  /* Make MC change to the subshell's CWD */
+    }
 
     /* Restart the subshell if it has died by SIGHUP, SIGQUIT, etc. */
     while (!subshell_alive && quit == 0 && mc_global.tty.use_subshell)
@@ -1175,9 +1179,9 @@ do_subshell_chdir (const vfs_path_t * vpath, gboolean update_prompt)
 
     if (vpath != NULL)
     {
-        char *translate;
+        const char *translate;
 
-        translate = vfs_translate_path_n (vfs_path_as_str (vpath));
+        translate = vfs_translate_path (vfs_path_as_str (vpath));
         if (translate != NULL)
         {
             GString *temp;
@@ -1185,8 +1189,6 @@ do_subshell_chdir (const vfs_path_t * vpath, gboolean update_prompt)
             temp = subshell_name_quote (translate);
             write_all (mc_global.tty.subshell_pty, temp->str, temp->len);
             g_string_free (temp, TRUE);
-
-            g_free (translate);
         }
         else
         {

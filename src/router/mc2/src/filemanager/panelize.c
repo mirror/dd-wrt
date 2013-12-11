@@ -259,22 +259,17 @@ add2panelize (char *label, char *command)
 static void
 add2panelize_cmd (void)
 {
-    char *label;
-
-    if (pname->buffer && (*pname->buffer))
+    if (pname->buffer != NULL && *pname->buffer != '\0')
     {
+        char *label;
+
         label = input_dialog (_("Add to external panelize"),
                               _("Enter command label:"), MC_HISTORY_FM_PANELIZE_ADD, "",
                               INPUT_COMPLETE_NONE);
-        if (!label)
-            return;
-        if (!*label)
-        {
+        if (label == NULL || *label == '\0')
             g_free (label);
-            return;
-        }
-
-        add2panelize (label, g_strdup (pname->buffer));
+        else
+            add2panelize (label, g_strdup (pname->buffer));
     }
 }
 
@@ -311,8 +306,7 @@ remove_from_panelize (struct panelize *entry)
 static void
 do_external_panelize (char *command)
 {
-    int status, link_to_dir, stale_link;
-    int next_free = 0;
+    int link_to_dir, stale_link;
     struct stat st;
     dir_list *list = &current_panel->dir;
     char line[MC_MAXPATHLEN];
@@ -331,10 +325,9 @@ do_external_panelize (char *command)
 
     panelize_change_root (current_panel->cwd_vpath);
 
-    if (set_zero_dir (list))
-        next_free++;
+    dir_list_init (list);
 
-    while (1)
+    while (TRUE)
     {
         clearerr (external);
         if (fgets (line, MC_MAXPATHLEN, external) == NULL)
@@ -352,45 +345,36 @@ do_external_panelize (char *command)
             name = line + 2;
         else
             name = line;
-        status = handle_path (list, name, &st, next_free, &link_to_dir, &stale_link);
-        if (status == 0)
+
+        if (!handle_path (name, &st, &link_to_dir, &stale_link))
             continue;
-        if (status == -1)
+
+        if (!dir_list_append (list, name, &st, link_to_dir != 0, stale_link != 0))
             break;
-        list->list[next_free].fnamelen = strlen (name);
-        list->list[next_free].fname = g_strndup (name, list->list[next_free].fnamelen);
-        file_mark (current_panel, next_free, 0);
-        list->list[next_free].f.link_to_dir = link_to_dir;
-        list->list[next_free].f.stale_link = stale_link;
-        list->list[next_free].f.dir_size_computed = 0;
-        list->list[next_free].st = st;
-        list->list[next_free].sort_key = NULL;
-        list->list[next_free].second_sort_key = NULL;
-        next_free++;
-        if ((next_free & 32) == 0)
+
+        file_mark (current_panel, list->len - 1, 0);
+
+        if ((list->len & 31) == 0)
             rotate_dash (TRUE);
     }
 
     current_panel->is_panelized = TRUE;
-    if (next_free)
-    {
-        current_panel->count = next_free;
-        if (list->list[0].fname[0] == PATH_SEP)
-        {
-            vfs_path_t *vpath_root;
-            int ret;
 
-            vpath_root = vfs_path_from_str (PATH_SEP_STR);
-            panel_set_cwd (current_panel, vpath_root);
-            ret = mc_chdir (vpath_root);
-            vfs_path_free (vpath_root);
-            (void) ret;
-        }
-    }
-    else
+    if (list->len == 0)
+        dir_list_init (list);
+    else if (list->list[0].fname[0] == PATH_SEP)
     {
-        current_panel->count = set_zero_dir (list) ? 1 : 0;
+        vfs_path_t *vpath_root;
+        int ret;
+
+        vpath_root = vfs_path_from_str (PATH_SEP_STR);
+        panel_set_cwd (current_panel, vpath_root);
+        ret = mc_chdir (vpath_root);
+        vfs_path_free (vpath_root);
+
+        (void) ret;
     }
+
     if (pclose (external) < 0)
         message (D_NORMAL, _("External panelize"), _("Pipe close failed"));
     close_error_pipe (D_NORMAL, NULL);
@@ -402,32 +386,28 @@ do_external_panelize (char *command)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-do_panelize_cd (struct WPanel *panel)
+do_panelize_cd (WPanel * panel)
 {
     int i;
-    dir_list *list = &panel->dir;
+    dir_list *list;
     gboolean panelized_same;
 
-    clean_dir (list, panel->count);
+    dir_list_clean (&panel->dir);
     if (panelized_panel.root_vpath == NULL)
         panelize_change_root (current_panel->cwd_vpath);
 
-    if (panelized_panel.count < 1)
-    {
-        if (set_zero_dir (&panelized_panel.list))
-            panelized_panel.count = 1;
-    }
-    else if (panelized_panel.count >= list->size)
-    {
-        list->list = g_try_realloc (list->list, sizeof (file_entry) * panelized_panel.count);
-        list->size = panelized_panel.count;
-    }
-    panel->count = panelized_panel.count;
+    if (panelized_panel.list.len < 1)
+        dir_list_init (&panelized_panel.list);
+    else if (panelized_panel.list.len > panel->dir.size)
+        dir_list_grow (&panel->dir, panelized_panel.list.len - panel->dir.size);
+
+    list = &panel->dir;
+    list->len = panelized_panel.list.len;
     panel->is_panelized = TRUE;
 
-    panelized_same = (vfs_path_equal (panelized_panel.root_vpath, panel->cwd_vpath));
+    panelized_same = vfs_path_equal (panelized_panel.root_vpath, panel->cwd_vpath);
 
-    for (i = 0; i < panelized_panel.count; i++)
+    for (i = 0; i < panelized_panel.list.len; i++)
     {
         if (panelized_same || DIR_IS_DOTDOT (panelized_panel.list.list[i].fname))
         {
@@ -438,13 +418,15 @@ do_panelize_cd (struct WPanel *panel)
         else
         {
             vfs_path_t *tmp_vpath;
+            const char *fname;
 
             tmp_vpath =
                 vfs_path_append_new (panelized_panel.root_vpath, panelized_panel.list.list[i].fname,
                                      NULL);
-            list->list[i].fname = g_strdup (vfs_path_as_str (tmp_vpath));
+            fname = vfs_path_as_str (tmp_vpath);
+            list->list[i].fnamelen = strlen (fname);
+            list->list[i].fname = g_strndup (fname, list->list[i].fnamelen);
             vfs_path_free (tmp_vpath);
-            list->list[i].fnamelen = strlen (list->list[i].fname);
         }
         list->list[i].f.link_to_dir = panelized_panel.list.list[i].f.link_to_dir;
         list->list[i].f.stale_link = panelized_panel.list.list[i].f.stale_link;
@@ -475,26 +457,23 @@ panelize_change_root (const vfs_path_t * new_root)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-panelize_save_panel (struct WPanel *panel)
+panelize_save_panel (WPanel * panel)
 {
     int i;
     dir_list *list = &panel->dir;
 
     panelize_change_root (current_panel->cwd_vpath);
 
-    if (panelized_panel.count > 0)
-        clean_dir (&panelized_panel.list, panelized_panel.count);
-    if (panel->count < 1)
+    if (panelized_panel.list.len > 0)
+        dir_list_clean (&panelized_panel.list);
+    if (panel->dir.len == 0)
         return;
 
-    panelized_panel.count = panel->count;
-    if (panel->count >= panelized_panel.list.size)
-    {
-        panelized_panel.list.list = g_try_realloc (panelized_panel.list.list,
-                                                   sizeof (file_entry) * panel->count);
-        panelized_panel.list.size = panel->count;
-    }
-    for (i = 0; i < panel->count; i++)
+    if (panel->dir.len > panelized_panel.list.size)
+        dir_list_grow (&panelized_panel.list, panel->dir.len - panelized_panel.list.size);
+    panelized_panel.list.len = panel->dir.len;
+
+    for (i = 0; i < panel->dir.len; i++)
     {
         panelized_panel.list.list[i].fnamelen = list->list[i].fnamelen;
         panelized_panel.list.list[i].fname =
@@ -517,7 +496,7 @@ cd_panelize_cmd (void)
     if (!SELECTED_IS_PANEL)
         set_display_type (MENU_PANEL_IDX, view_listing);
 
-    do_panelize_cd ((struct WPanel *) get_panel_widget (MENU_PANEL_IDX));
+    do_panelize_cd (PANEL (get_panel_widget (MENU_PANEL_IDX)));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -581,17 +560,14 @@ external_panelize (void)
 void
 load_panelize (void)
 {
-    gchar **profile_keys, **keys;
+    char **keys;
     gsize len;
-    GIConv conv;
 
-    conv = str_crt_conv_from ("UTF-8");
-
-    profile_keys = keys = mc_config_get_keys (mc_main_config, panelize_section, &len);
+    keys = mc_config_get_keys (mc_main_config, panelize_section, &len);
 
     add2panelize (g_strdup (_("Other command")), g_strdup (""));
 
-    if (!profile_keys || *profile_keys == NULL)
+    if (keys == NULL || *keys == NULL)
     {
         add2panelize (g_strdup (_("Modified git files")), g_strdup ("git ls-files --modified"));
         add2panelize (g_strdup (_("Find rejects after patching")),
@@ -600,30 +576,37 @@ load_panelize (void)
                       g_strdup ("find . -name \\*.orig -print"));
         add2panelize (g_strdup (_("Find SUID and SGID programs")),
                       g_strdup
-                      ("find . \\( \\( -perm -04000 -a -perm +011 \\) -o \\( -perm -02000 -a -perm +01 \\) \\) -print"));
-        return;
+                      ("find . \\( \\( -perm -04000 -a -perm /011 \\) -o \\( -perm -02000 -a -perm /01 \\) \\) -print"));
     }
-
-    while (*profile_keys)
+    else
     {
-        GString *buffer;
+        GIConv conv;
+        char **profile_keys;
 
-        if (mc_global.utf8_display || conv == INVALID_CONV)
-            buffer = g_string_new (*profile_keys);
-        else
+        conv = str_crt_conv_from ("UTF-8");
+
+        for (profile_keys = keys; *profile_keys != NULL; profile_keys++)
         {
-            buffer = g_string_new ("");
-            if (str_convert (conv, *profile_keys, buffer) == ESTR_FAILURE)
-                g_string_assign (buffer, *profile_keys);
+            GString *buffer;
+
+            if (mc_global.utf8_display || conv == INVALID_CONV)
+                buffer = g_string_new (*profile_keys);
+            else
+            {
+                buffer = g_string_new ("");
+                if (str_convert (conv, *profile_keys, buffer) == ESTR_FAILURE)
+                    g_string_assign (buffer, *profile_keys);
+            }
+
+            add2panelize (g_string_free (buffer, FALSE),
+                          mc_config_get_string (mc_main_config, panelize_section, *profile_keys,
+                                                ""));
         }
 
-        add2panelize (g_string_free (buffer, FALSE),
-                      mc_config_get_string (mc_main_config, panelize_section, *profile_keys, ""));
-        profile_keys++;
+        str_close_conv (conv);
     }
 
     g_strfreev (keys);
-    str_close_conv (conv);
 }
 
 /* --------------------------------------------------------------------------------------------- */
