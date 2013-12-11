@@ -24,8 +24,11 @@ if [ x$GPS_NEED_SETUP = x1 ]; then
         TTY=/dev/ttyS2
         BAUD=9600
 	elif [ x$BOARD = xVentana ] ; then
-        TTY=/dev/ttymxc0
-        BAUD=9600
+        TTY=/dev/ttymxc4
+	    if [ x$(nvram get DD_BOARD | cut -c19-22) = xGW51 ] ; then
+    		TTY=/dev/ttymxc0
+    	    fi
+        BAUD=4800
 	elif [ x$(nvram get DD_BOARD | cut -c1-7) = xOctagon ] ; then
         TTY=/dev/ttyS1
         BAUD=9600
