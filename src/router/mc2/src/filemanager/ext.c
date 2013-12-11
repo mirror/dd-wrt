@@ -625,9 +625,6 @@ regex_check_type (const vfs_path_t * filename_vpath, const char *ptr, gboolean c
 
     /* Following variables are valid if *have_type is TRUE */
     static char content_string[2048];
-#ifdef HAVE_CHARSET
-    static char encoding_id[21];        /* CSISO51INISCYRILLIC -- 20 */
-#endif
     static size_t content_shift = 0;
     static int got_data = 0;
 
@@ -640,6 +637,7 @@ regex_check_type (const vfs_path_t * filename_vpath, const char *ptr, gboolean c
         const char *realname;   /* name used with "file" */
 
 #ifdef HAVE_CHARSET
+        static char encoding_id[21];    /* CSISO51INISCYRILLIC -- 20 */
         int got_encoding_data;
 #endif /* HAVE_CHARSET */
 
@@ -726,7 +724,7 @@ regex_check_type (const vfs_path_t * filename_vpath, const char *ptr, gboolean c
     {
         mc_search_t *search;
 
-        search = mc_search_new (ptr, -1);
+        search = mc_search_new (ptr, -1, DEFAULT_CHARSET);
         if (search != NULL)
         {
             search->search_type = MC_SEARCH_T_REGEX;
@@ -917,7 +915,7 @@ regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *
                 if (case_insense)
                     p += 2;
 
-                search = mc_search_new (p, -1);
+                search = mc_search_new (p, -1, DEFAULT_CHARSET);
                 if (search != NULL)
                 {
                     search->search_type = MC_SEARCH_T_REGEX;
@@ -930,7 +928,8 @@ regex_command_for (void *target, const vfs_path_t * filename_vpath, const char *
             else if (strncmp (p, "directory/", 10) == 0)
             {
                 if (S_ISDIR (mystat.st_mode)
-                    && mc_search (p + 10, vfs_path_as_str (filename_vpath), MC_SEARCH_T_REGEX))
+                    && mc_search (p + 10, DEFAULT_CHARSET, vfs_path_as_str (filename_vpath),
+                                  MC_SEARCH_T_REGEX))
                     found = TRUE;
             }
             else if (strncmp (p, "shell/", 6) == 0)

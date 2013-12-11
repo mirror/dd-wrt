@@ -519,18 +519,17 @@ configure_box (void)
 void
 panel_options_box (void)
 {
-    const char *qsearch_options[] = {
-        N_("Case &insensitive"),
-        N_("Cas&e sensitive"),
-        N_("Use panel sort mo&de")
-    };
-
     int simple_swap;
 
     simple_swap = mc_config_get_bool (mc_main_config, CONFIG_PANELS_SECTION,
                                       "simple_swap", FALSE) ? 1 : 0;
-
     {
+        const char *qsearch_options[] = {
+            N_("Case &insensitive"),
+            N_("Cas&e sensitive"),
+            N_("Use panel sort mo&de")
+        };
+
         quick_widget_t quick_widgets[] = {
             /* *INDENT-OFF* */
             QUICK_START_COLUMNS,
@@ -630,8 +629,8 @@ panel_listing_box (WPanel * panel, char **userp, char **minip, int *use_msformat
 
     {
         int mini_user_status;
-        char *panel_user_format;
-        char *mini_user_format;
+        char *panel_user_format = NULL;
+        char *mini_user_format = NULL;
         const char *cp;
 
         /* Controls whether the array strings have been translated */
@@ -703,17 +702,17 @@ panel_listing_box (WPanel * panel, char **userp, char **minip, int *use_msformat
 /* --------------------------------------------------------------------------------------------- */
 
 const panel_field_t *
-sort_box (panel_sort_info_t * info)
+sort_box (dir_sort_options_t * op, const panel_field_t * sort_field)
 {
     const char **sort_orders_names;
     gsize sort_names_num, i;
     int sort_idx = 0;
-    const panel_field_t *result = info->sort_field;
+    const panel_field_t *result = NULL;
 
     sort_orders_names = panel_get_sortable_fields (&sort_names_num);
 
     for (i = 0; i < sort_names_num; i++)
-        if (strcmp (sort_orders_names[i], _(info->sort_field->title_hotkey)) == 0)
+        if (strcmp (sort_orders_names[i], _(sort_field->title_hotkey)) == 0)
         {
             sort_idx = i;
             break;
@@ -725,9 +724,9 @@ sort_box (panel_sort_info_t * info)
             QUICK_START_COLUMNS,
                 QUICK_RADIO (sort_names_num, sort_orders_names, &sort_idx, NULL),
             QUICK_NEXT_COLUMN,
-                QUICK_CHECKBOX (N_("Executable &first"), &info->exec_first, NULL),
-                QUICK_CHECKBOX (N_("Cas&e sensitive"), &info->case_sensitive, NULL),
-                QUICK_CHECKBOX (N_("&Reverse"), &info->reverse, NULL),
+                QUICK_CHECKBOX (N_("Executable &first"), &op->exec_first, NULL),
+                QUICK_CHECKBOX (N_("Cas&e sensitive"), &op->case_sensitive, NULL),
+                QUICK_CHECKBOX (N_("&Reverse"), &op->reverse, NULL),
             QUICK_STOP_COLUMNS,
             QUICK_BUTTONS_OK_CANCEL,
             QUICK_END
@@ -744,7 +743,7 @@ sort_box (panel_sort_info_t * info)
             result = panel_get_field_by_title_hotkey (sort_orders_names[sort_idx]);
 
         if (result == NULL)
-            result = info->sort_field;
+            result = sort_field;
     }
 
     g_strfreev ((gchar **) sort_orders_names);
@@ -760,13 +759,13 @@ confirm_box (void)
     quick_widget_t quick_widgets[] = {
         /* *INDENT-OFF* */
         /* TRANSLATORS: no need to translate 'Confirmation', it's just a context prefix */
-        QUICK_CHECKBOX (N_("Confirmation|&Delete"), &confirm_delete, NULL),
-        QUICK_CHECKBOX (N_("Confirmation|O&verwrite"), &confirm_overwrite, NULL),
-        QUICK_CHECKBOX (N_("Confirmation|&Execute"), &confirm_execute, NULL),
-        QUICK_CHECKBOX (N_("Confirmation|E&xit"), &confirm_exit, NULL),
-        QUICK_CHECKBOX (N_("Confirmation|Di&rectory hotlist delete"),
+        QUICK_CHECKBOX (Q_("Confirmation|&Delete"), &confirm_delete, NULL),
+        QUICK_CHECKBOX (Q_("Confirmation|O&verwrite"), &confirm_overwrite, NULL),
+        QUICK_CHECKBOX (Q_("Confirmation|&Execute"), &confirm_execute, NULL),
+        QUICK_CHECKBOX (Q_("Confirmation|E&xit"), &confirm_exit, NULL),
+        QUICK_CHECKBOX (Q_("Confirmation|Di&rectory hotlist delete"),
                         &confirm_directory_hotlist_delete, NULL),
-        QUICK_CHECKBOX (N_("Confirmation|&History cleanup"),
+        QUICK_CHECKBOX (Q_("Confirmation|&History cleanup"),
                         &mc_global.widget.confirm_history_cleanup, NULL),
         QUICK_BUTTONS_OK_CANCEL,
         QUICK_END
@@ -1013,6 +1012,7 @@ configure_vfs (void)
 
         if (quick_dialog (&qdlg) != B_CANCEL)
         {
+            /* cppcheck-suppress uninitvar */
             vfs_timeout = atoi (ret_timeout);
             g_free (ret_timeout);
 
@@ -1020,9 +1020,12 @@ configure_vfs (void)
                 vfs_timeout = 10;
 #ifdef ENABLE_VFS_FTP
             g_free (ftpfs_anonymous_passwd);
+            /* cppcheck-suppress uninitvar */
             ftpfs_anonymous_passwd = ret_passwd;
             g_free (ftpfs_proxy_host);
+            /* cppcheck-suppress uninitvar */
             ftpfs_proxy_host = ret_ftp_proxy;
+            /* cppcheck-suppress uninitvar */
             ftpfs_directory_timeout = atoi (ret_directory_timeout);
             g_free (ret_directory_timeout);
 #endif

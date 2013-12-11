@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-08-02 22:06+0300\n"
-"PO-Revision-Date: 2013-07-05 08:44+0000\n"
+"POT-Creation-Date: 2013-11-29 21:46+0300\n"
+"PO-Revision-Date: 2013-11-20 12:28+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Dutch (http://www.transifex.com/projects/p/mc/language/nl/)\n"
 "Language: nl\n"
@@ -701,6 +701,9 @@ msgid ""
 "Please send any bug reports (including the output of 'mc -V')\n"
 "as tickets at www.midnight-commander.org\n"
 msgstr ""
+"\n"
+"Please send any bug reports (including the output of 'mc -V')\n"
+"as tickets at www.midnight-commander.org\n"
 
 #, c-format
 msgid "GNU Midnight Commander %s\n"
@@ -921,6 +924,8 @@ msgid ""
 "File \"%s\" is too large.\n"
 "Open it anyway?"
 msgstr ""
+"Bestand \"%s\" is te groot.\n"
+"Toch openen?"
 
 #, c-format
 msgid "Error reading from pipe: %s"
@@ -1506,7 +1511,7 @@ msgstr ""
 "geschreven voor de Midnight Commander"
 
 msgid "Copyright (C) 1996-2013 the Free Software Foundation"
-msgstr ""
+msgstr "Copyright (C) 1996-2013 the Free Software Foundation"
 
 msgid "About"
 msgstr "Over"
@@ -1588,7 +1593,7 @@ msgstr "De shell voert al een opdracht uit"
 
 #, c-format
 msgid "Type 'exit' to return to the Midnight Commander"
-msgstr ""
+msgstr "Typ 'exit' om naar de Midnight Commander terug te keren"
 
 msgid "Set &all"
 msgstr "Zet &alles"
@@ -2144,7 +2149,7 @@ msgstr ""
 
 #, c-format
 msgid "Symlink '%s' points to:"
-msgstr ""
+msgstr "Symlink '%s' verwijst naar:"
 
 msgid "Edit symlink"
 msgstr "Bewerk symlink"
@@ -2159,7 +2164,7 @@ msgstr "symbolische link bewerken: %s"
 
 #, c-format
 msgid "'%s' is not a symbolic link"
-msgstr ""
+msgstr "'%s' is  geen symbolische link"
 
 msgid "FTP to machine"
 msgstr "FTP naar machine"
@@ -2744,7 +2749,7 @@ msgstr "Achter&grond"
 
 #, c-format
 msgid "Invalid source pattern '%s'"
-msgstr ""
+msgstr "Ongeldig bronpatroon '%s'"
 
 msgid "&Chdir"
 msgstr "&Chdir"
@@ -4260,6 +4265,8 @@ msgid ""
 "Cannot open \"%s\" in parse mode\n"
 "%s"
 msgstr ""
+"Kan \"%s\" niet openen in parsemodus\n"
+"%s"
 
 msgid "Seeking to search result"
 msgstr "Op zoek naar zoekresultaat"
@@ -4272,6 +4279,3 @@ msgstr "Doorgaan vanaf het begin?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Kan geen lokale versie van /ftp://some.host/editme.txt ophalen"
-
-#~ msgid "Deleting"
-#~ msgstr "Aan het verwijderen"

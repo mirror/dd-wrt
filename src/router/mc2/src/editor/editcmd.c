@@ -1177,7 +1177,11 @@ edit_collect_completions (WEdit * edit, off_t word_start, gsize word_len,
     off_t last_byte, start = -1;
     char *current_word;
 
-    srch = mc_search_new (match_expr, -1);
+#ifdef HAVE_CHARSET
+    srch = mc_search_new (match_expr, -1, cp_source);
+#else
+    srch = mc_search_new (match_expr, -1, NULL);
+#endif
     if (srch == NULL)
         return 0;
 
@@ -1562,7 +1566,7 @@ edit_show_numbers_cmd (WDialog * h)
 void
 edit_save_mode_cmd (void)
 {
-    char *str_result;
+    char *str_result = NULL;
 
     const char *str[] = {
         N_("&Quick save"),
@@ -1920,7 +1924,6 @@ edit_load_macro_cmd (WEdit * edit)
     gsize len, values_len;
     const char *section_name = "editor";
     gchar *macros_fname;
-    int hotkey;
 
     (void) edit;
 
@@ -1931,26 +1934,24 @@ edit_load_macro_cmd (WEdit * edit)
     if (macros_config == NULL || macros_list == NULL || macros_list->len != 0)
         return FALSE;
 
-    profile_keys = keys = mc_config_get_keys (macros_config, section_name, &len);
-    while (*profile_keys != NULL)
+    keys = mc_config_get_keys (macros_config, section_name, &len);
+    for (profile_keys = keys; *profile_keys != NULL; profile_keys++)
     {
-        gboolean have_macro;
+        int hotkey;
+        gboolean have_macro = FALSE;
         GArray *macros;
         macros_t macro;
 
         macros = g_array_new (TRUE, FALSE, sizeof (macro_action_t));
-
-        curr_values = values = mc_config_get_string_list (macros_config, section_name,
-                                                          *profile_keys, &values_len);
+        values =
+            mc_config_get_string_list (macros_config, section_name, *profile_keys, &values_len);
         hotkey = lookup_key (*profile_keys, NULL);
-        have_macro = FALSE;
 
-        while (*curr_values != NULL && *curr_values[0] != '\0')
+        for (curr_values = values; *curr_values != NULL && *curr_values[0] != '\0'; curr_values++)
         {
             char **macro_pair = NULL;
 
             macro_pair = g_strsplit (*curr_values, ":", 2);
-
             if (macro_pair != NULL)
             {
                 macro_action_t m_act;
@@ -1984,7 +1985,6 @@ edit_load_macro_cmd (WEdit * edit)
                 g_strfreev (macro_pair);
                 macro_pair = NULL;
             }
-            curr_values++;
         }
         if (have_macro)
         {
@@ -1992,7 +1992,6 @@ edit_load_macro_cmd (WEdit * edit)
             macro.macro = macros;
             g_array_append_val (macros_list, macro);
         }
-        profile_keys++;
         g_strfreev (values);
     }
     g_strfreev (keys);
@@ -2009,8 +2008,6 @@ edit_load_macro_cmd (WEdit * edit)
 gboolean
 edit_save_confirm_cmd (WEdit * edit)
 {
-    char *f = NULL;
-
     if (edit->filename_vpath == NULL)
         return edit_save_as_cmd (edit);
 
@@ -2019,6 +2016,7 @@ edit_save_confirm_cmd (WEdit * edit)
 
     if (edit_confirm_save)
     {
+        char *f;
         gboolean ok;
 
         f = g_strdup_printf (_("Confirm save file: \"%s\""),
@@ -2279,7 +2277,6 @@ void
 edit_block_copy_cmd (WEdit * edit)
 {
     off_t start_mark, end_mark, current = edit->buffer.curs1;
-    long col_delta = 0;
     off_t mark1, mark2;
     long c1, c2;
     off_t size;
@@ -2297,6 +2294,8 @@ edit_block_copy_cmd (WEdit * edit)
 
     if (edit->column_highlight)
     {
+        long col_delta;
+
         col_delta = abs (edit->column2 - edit->column1);
         edit_insert_column_of_text (edit, copy_buf, size, col_delta, &mark1, &mark2, &c1, &c2);
     }
@@ -2510,16 +2509,22 @@ edit_replace_cmd (WEdit * edit, int again)
 
     input2_str = g_string_new (input2);
 
-    if (!edit->search)
+    if (edit->search == NULL)
     {
-        edit->search = mc_search_new (input1, -1);
+#ifdef HAVE_CHARSET
+        edit->search = mc_search_new (input1, -1, cp_source);
+#else
+        edit->search = mc_search_new (input1, -1, NULL);
+#endif
         if (edit->search == NULL)
         {
             edit->search_start = edit->buffer.curs1;
             goto cleanup;
         }
         edit->search->search_type = edit_search_options.type;
+#ifdef HAVE_CHARSET
         edit->search->is_all_charsets = edit_search_options.all_codepages;
+#endif
         edit->search->is_case_sensitive = edit_search_options.case_sens;
         edit->search->whole_words = edit_search_options.whole_words;
         edit->search->search_fn = edit_search_cmd_callback;
@@ -2703,10 +2708,13 @@ edit_search_cmd (WEdit * edit, gboolean again)
             edit->last_search_string = (char *) history->data;
             history->data = NULL;
             history = g_list_first (history);
-            g_list_foreach (history, (GFunc) g_free, NULL);
-            g_list_free (history);
+            g_list_free_full (history, g_free);
 
-            edit->search = mc_search_new (edit->last_search_string, -1);
+#ifdef HAVE_CHARSET
+            edit->search = mc_search_new (edit->last_search_string, -1, cp_source);
+#else
+            edit->search = mc_search_new (edit->last_search_string, -1, NULL);
+#endif
             if (edit->search == NULL)
             {
                 /* if not... then ask for an expression */
@@ -2717,7 +2725,9 @@ edit_search_cmd (WEdit * edit, gboolean again)
             else
             {
                 edit->search->search_type = edit_search_options.type;
+#ifdef HAVE_CHARSET
                 edit->search->is_all_charsets = edit_search_options.all_codepages;
+#endif
                 edit->search->is_case_sensitive = edit_search_options.case_sens;
                 edit->search->whole_words = edit_search_options.whole_words;
                 edit->search->search_fn = edit_search_cmd_callback;
@@ -2746,7 +2756,7 @@ edit_search_cmd (WEdit * edit, gboolean again)
 gboolean
 edit_ok_to_exit (WEdit * edit)
 {
-    char *fname = (char *) N_("[NoName]");
+    const char *fname = N_("[NoName]");
     char *msg;
     int act;
 
@@ -2754,22 +2764,16 @@ edit_ok_to_exit (WEdit * edit)
         return TRUE;
 
     if (edit->filename_vpath != NULL)
-        fname = g_strdup (vfs_path_as_str (edit->filename_vpath));
+        fname = vfs_path_as_str (edit->filename_vpath);
 #ifdef ENABLE_NLS
     else
-        fname = g_strdup (_(fname));
-#else
-    else
-        fname = g_strdup (fname);
+        fname = _(fname);
 #endif
 
     if (!mc_global.midnight_shutdown)
     {
         if (!edit_check_newline (&edit->buffer))
-        {
-            g_free (fname);
             return FALSE;
-        }
 
         query_set_sel (2);
 
@@ -2788,7 +2792,6 @@ edit_ok_to_exit (WEdit * edit)
     }
 
     g_free (msg);
-    g_free (fname);
 
     switch (act)
     {
@@ -3197,9 +3200,9 @@ edit_block_process_cmd (WEdit * edit, int macro_number)
 void
 edit_mail_dialog (WEdit * edit)
 {
-    char *tmail_to;
-    char *tmail_subject;
-    char *tmail_cc;
+    char *tmail_to = NULL;
+    char *tmail_subject = NULL;
+    char *tmail_cc = NULL;
 
     static char *mail_cc_last = 0;
     static char *mail_subject_last = 0;

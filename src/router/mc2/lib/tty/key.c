@@ -12,6 +12,7 @@
    Norbert Warmuth, 1997
    Denys Vlasenko <vda.linux@googlemail.com>, 2013
    Slava Zanko <slavazanko@gmail.com>, 2013
+   Egmont Koblinger <egmont@gmail.com>, 2013
 
    This file is part of the Midnight Commander.
 
@@ -91,6 +92,8 @@ int old_esc_mode = 0;
 /* timeout for old_esc_mode in usec */
 int old_esc_mode_timeout = 1000000;     /* settable via env */
 int use_8th_bit_as_meta = 0;
+
+gboolean bracketed_pasting_in_progress = FALSE;
 
 /* This table is a mapping between names and the constants we use
  * We use this to allow users to define alternate definitions for
@@ -275,6 +278,8 @@ typedef int (*ph_pqc_f) (unsigned short, PhCursorInfo_t *);
 static key_define_t mc_default_keys[] = {
     {ESC_CHAR, ESC_STR, MCKEY_ESCAPE},
     {ESC_CHAR, ESC_STR ESC_STR, MCKEY_NOACTION},
+    {MCKEY_BRACKETED_PASTING_START, ESC_STR "[200~", MCKEY_NOACTION},
+    {MCKEY_BRACKETED_PASTING_END, ESC_STR "[201~", MCKEY_NOACTION},
     {0, NULL, MCKEY_NOACTION},
 };
 
@@ -326,6 +331,7 @@ static key_define_t xterm_key_defines[] = {
     {KEY_M_SHIFT | KEY_M_CTRL | KEY_DOWN, ESC_STR "[1;6B", MCKEY_NOACTION},
     {KEY_M_SHIFT | KEY_M_CTRL | KEY_RIGHT, ESC_STR "[1;6C", MCKEY_NOACTION},
     {KEY_M_SHIFT | KEY_M_CTRL | KEY_LEFT, ESC_STR "[1;6D", MCKEY_NOACTION},
+    {KEY_M_SHIFT | '\t', ESC_STR "[Z", MCKEY_NOACTION},
 
     /* putty */
     {KEY_M_SHIFT | KEY_M_CTRL | KEY_UP, ESC_STR "[[1;6A", MCKEY_NOACTION},
@@ -600,17 +606,16 @@ try_channels (int set_timeout)
 {
     struct timeval time_out;
     static fd_set select_set;
-    struct timeval *timeptr;
-    int v;
-    int maxfdp;
 
     while (1)
     {
+        struct timeval *timeptr = NULL;
+        int maxfdp, v;
+
         FD_ZERO (&select_set);
         FD_SET (input_fd, &select_set); /* Add stdin */
         maxfdp = max (add_selects (&select_set), input_fd);
 
-        timeptr = NULL;
         if (set_timeout)
         {
             time_out.tv_sec = 0;
@@ -861,7 +866,7 @@ get_modifier (void)
 {
     int result = 0;
 #ifdef __QNXNTO__
-    int mod_status, shift_ext_status;
+    int mod_status;
     static int in_photon = 0;
     static int ph_ig = 0;
     PhCursorInfo_t cursor_info;
@@ -916,6 +921,8 @@ get_modifier (void)
        console or xterm */
     if (in_photon == -1)
     {
+        int shift_ext_status;
+
         if (devctl (fileno (stdin), DCMD_CHR_LINESTATUS, &mod_status, sizeof (int), NULL) == -1)
             return 0;
         shift_ext_status = mod_status & 0xffffff00UL;
@@ -1008,18 +1015,11 @@ correct_key_code (int code)
     if (c == KEY_SCANCEL)
         c = '\t';
 
-    /* Convert Shift+Tab and Ctrl+Tab to Back Tab
-     * only if modifiers directly from X11
-     */
-#ifdef HAVE_TEXTMODE_X11_SUPPORT
-    if (x11_window != 0)
-#endif /* HAVE_TEXTMODE_X11_SUPPORT */
+    /* Convert Back Tab to Shift+Tab */
+    if (c == KEY_BTAB)
     {
-        if ((c == '\t') && (mod & (KEY_M_SHIFT | KEY_M_CTRL)))
-        {
-            c = KEY_BTAB;
-            mod = 0;
-        }
+        c = '\t';
+        mod = KEY_M_SHIFT;
     }
 
     /* F0 is the same as F10 for out purposes */
@@ -1472,10 +1472,10 @@ lookup_key (const char *name, char **label)
         return 0;
 
     name = g_strstrip (g_strdup (name));
-    p = lc_keys = g_strsplit_set (name, "-+ ", -1);
+    lc_keys = g_strsplit_set (name, "-+ ", -1);
     g_free ((char *) name);
 
-    while ((p != NULL) && (*p != NULL))
+    for (p = lc_keys; p != NULL && *p != NULL; p++)
     {
         if ((*p)[0] != '\0')
         {
@@ -1496,8 +1496,6 @@ lookup_key (const char *name, char **label)
                 break;
             }
         }
-
-        p++;
     }
 
     g_strfreev (lc_keys);
@@ -1505,7 +1503,6 @@ lookup_key (const char *name, char **label)
     /* output */
     if (k <= 0)
         return 0;
-
 
     if (label != NULL)
     {
@@ -1581,9 +1578,6 @@ lookup_key_by_code (const int keycode)
     /* modifier */
     unsigned int mod = keycode & KEY_M_MASK;
 
-    int use_meta = -1;
-    int use_ctrl = -1;
-    int use_shift = -1;
     int key_idx = -1;
 
     GString *s;
@@ -1597,8 +1591,7 @@ lookup_key_by_code (const int keycode)
         {
             if (lookup_keycode (KEY_M_ALT, &idx))
             {
-                use_meta = idx;
-                g_string_append (s, key_conv_tab_sorted[use_meta]->name);
+                g_string_append (s, key_conv_tab_sorted[idx]->name);
                 g_string_append_c (s, '-');
             }
         }
@@ -1610,8 +1603,7 @@ lookup_key_by_code (const int keycode)
 
             if (lookup_keycode (KEY_M_CTRL, &idx))
             {
-                use_ctrl = idx;
-                g_string_append (s, key_conv_tab_sorted[use_ctrl]->name);
+                g_string_append (s, key_conv_tab_sorted[idx]->name);
                 g_string_append_c (s, '-');
             }
         }
@@ -1619,12 +1611,11 @@ lookup_key_by_code (const int keycode)
         {
             if (lookup_keycode (KEY_M_ALT, &idx))
             {
-                use_shift = idx;
                 if (k < 127)
                     g_string_append_c (s, (gchar) g_ascii_toupper ((gchar) k));
                 else
                 {
-                    g_string_append (s, key_conv_tab_sorted[use_shift]->name);
+                    g_string_append (s, key_conv_tab_sorted[idx]->name);
                     g_string_append_c (s, '-');
                     g_string_append (s, key_conv_tab_sorted[key_idx]->name);
                 }
@@ -1955,7 +1946,6 @@ int
 tty_get_event (struct Gpm_Event *event, gboolean redo_event, gboolean block)
 {
     int c;
-    static int flag = 0;        /* Return value from select */
 #ifdef HAVE_LIBGPM
     static struct Gpm_Event ev; /* Mouse event */
 #endif
@@ -1988,6 +1978,7 @@ tty_get_event (struct Gpm_Event *event, gboolean redo_event, gboolean block)
     while (pending_keys == NULL)
     {
         int nfd;
+        static int flag = 0;    /* Return value from select */
         fd_set select_set;
 
         FD_ZERO (&select_set);
@@ -2145,7 +2136,17 @@ tty_get_event (struct Gpm_Event *event, gboolean redo_event, gboolean block)
     {
         /* Mouse event */
         xmouse_get_event (event, c == MCKEY_EXTENDED_MOUSE);
-        return (event->type != 0) ? EV_MOUSE : EV_NONE;
+        c = (event->type != 0) ? EV_MOUSE : EV_NONE;
+    }
+    else if (c == MCKEY_BRACKETED_PASTING_START)
+    {
+        bracketed_pasting_in_progress = TRUE;
+        c = EV_NONE;
+    }
+    else if (c == MCKEY_BRACKETED_PASTING_END)
+    {
+        bracketed_pasting_in_progress = FALSE;
+        c = EV_NONE;
     }
 
     return c;
@@ -2247,6 +2248,25 @@ application_keypad_mode (void)
         fputs (ESC_STR "=", stdout);
         fflush (stdout);
     }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+enable_bracketed_paste (void)
+{
+    printf (ESC_STR "[?2004h");
+    fflush (stdout);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+disable_bracketed_paste (void)
+{
+    printf (ESC_STR "[?2004l");
+    fflush (stdout);
+    bracketed_pasting_in_progress = FALSE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
