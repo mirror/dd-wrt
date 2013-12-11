@@ -493,7 +493,7 @@ dlg_key_event (WDialog * h, int d_key)
             dlg_one_down (h);
             return;
         }
-        else if (d_key == KEY_BTAB)
+        else if ((d_key & ~(KEY_M_SHIFT | KEY_M_CTRL)) == '\t')
         {
             dlg_one_up (h);
             return;
@@ -520,6 +520,7 @@ dlg_key_event (WDialog * h, int d_key)
     if (handled == MSG_NOT_HANDLED)
         handled = dlg_handle_key (h, d_key);
 
+    (void) handled;
     send_message (h, NULL, MSG_POST_KEY, d_key, NULL);
 }
 
@@ -528,7 +529,6 @@ dlg_key_event (WDialog * h, int d_key)
 static void
 frontend_dlg_run (WDialog * h)
 {
-    int d_key;
     Gpm_Event event;
 
     event.x = -1;
@@ -542,6 +542,8 @@ frontend_dlg_run (WDialog * h)
 
     while (h->state == DLG_ACTIVE)
     {
+        int d_key;
+
         if (mc_global.tty.winch_flag != 0)
             dialog_change_screen_size ();
 
@@ -800,7 +802,7 @@ dlg_create (gboolean modal, int y1, int x1, int lines, int cols,
         g_free (t);
     }
 
-    /* unique name got event group for this dialog */
+    /* unique name of event group for this dialog */
     new_d->event_group = g_strdup_printf ("%s_%p", MCEVENT_GROUP_DIALOG, (void *) new_d);
 
     return new_d;
@@ -1192,11 +1194,13 @@ dlg_init (WDialog * h)
 
     h->state = DLG_ACTIVE;
 
-    /* Select the first widget that takes focus */
+    /* first send MSG_DRAW to dialog itself and all widgets... */
+    dlg_redraw (h);
+
+    /* ...then send MSG_FOCUS to select the first widget that can take focus */
     while (h->current != NULL && !dlg_focus (h))
         h->current = dlg_widget_next (h, h->current);
 
-    dlg_redraw (h);
 
     h->ret_value = 0;
 }
@@ -1262,8 +1266,7 @@ dlg_destroy (WDialog * h)
     /* if some widgets have history, save all history at one moment here */
     dlg_save_history (h);
     dlg_broadcast_msg (h, MSG_DESTROY);
-    g_list_foreach (h->widgets, (GFunc) g_free, NULL);
-    g_list_free (h->widgets);
+    g_list_free_full (h->widgets, g_free);
     mc_event_group_del (h->event_group);
     g_free (h->event_group);
     g_free (h->title);

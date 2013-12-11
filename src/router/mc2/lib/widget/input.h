@@ -52,16 +52,11 @@ typedef struct
     gboolean highlight;         /* there is a selected block */
     int term_first_shown;       /* column of the first shown character */
     size_t current_max_size;    /* maximum length of input line (bytes) */
-    int field_width;            /* width of the editing field */
     gboolean first;             /* is first keystroke? */
     int disable_update;         /* do we want to skip updates? */
     gboolean is_password;       /* is this a password input line? */
-    char *init_text;            /* initial text of input line */
+    gboolean init_from_history; /* init text will be get from history */
     char *buffer;               /* pointer to editing buffer */
-    char *history_name;         /* name of history for loading and saving */
-    GList *history;             /* the history */
-    GList *history_current;     /* current history item */
-    gboolean history_changed;   /* the history has changed */
     gboolean need_push;         /* need to push the current Input on hist? */
     gboolean strip_password;    /* need to strip password before placing string to history */
     char **completions;         /* possible completions array */
@@ -69,6 +64,13 @@ typedef struct
     char charbuf[MB_LEN_MAX];   /* buffer for multibytes characters */
     size_t charpoint;           /* point to end of mulibyte sequence in charbuf */
     WLabel *label;              /* label associated with this input line */
+    struct input_history_t
+    {
+        char *name;             /* name of history for loading and saving */
+        GList *list;            /* the history */
+        GList *current;         /* current history item */
+        gboolean changed;       /* the history has changed */
+    } history;
 } WInput;
 
 /*** global variables defined in .c file *********************************************************/
@@ -85,7 +87,6 @@ WInput *input_new (int y, int x, const int *input_colors,
 /* callbac is public; needed for command line */
 cb_ret_t input_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data);
 const int *input_get_default_colors (void);
-void input_set_origin (WInput * i, int x, int field_width);
 cb_ret_t input_handle_char (WInput * in, int key);
 int input_key_is_in_map (WInput * in, int key);
 void input_assign_text (WInput * in, const char *text);

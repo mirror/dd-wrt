@@ -17,6 +17,7 @@
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
+#define PANEL(x) ((WPanel *)(x))
 #define selection(p) (&(p->dir.list[p->selected]))
 #define DEFAULT_USER_FORMAT "half type name | size | perm"
 
@@ -69,26 +70,17 @@ typedef struct panel_field_struct
     const char *title_hotkey;
     gboolean is_user_choice;
     gboolean use_in_user_format;
-    const char *(*string_fn) (file_entry *, int);
-    sortfn *sort_routine;       /* used by mouse_sort_col() */
+    const char *(*string_fn) (file_entry_t *, int);
+    GCompareFunc sort_routine;  /* used by mouse_sort_col() */
 } panel_field_t;
 
 typedef struct
 {
     dir_list list;
-    int count;
     vfs_path_t *root_vpath;
 } panelized_panel_t;
 
-typedef struct panel_sort_info_struct
-{
-    gboolean reverse;           /* Show listing in reverse? */
-    gboolean case_sensitive;    /* Listing is case sensitive? */
-    gboolean exec_first;        /* Show executable top in list? */
-    const panel_field_t *sort_field;
-} panel_sort_info_t;
-
-typedef struct WPanel
+typedef struct
 {
     Widget widget;
     dir_list dir;               /* Directory contents */
@@ -100,7 +92,6 @@ typedef struct WPanel
     GList *dir_history;         /* directory history */
     GList *dir_history_current; /* pointer to the current history item */
     char *hist_name;            /* directory history name for history file */
-    int count;                  /* Number of files in dir structure */
     int marked;                 /* Count of marked files */
     int dirs_marked;            /* Count of marked directories */
     uintmax_t total;            /* Bytes in marked files */
@@ -110,7 +101,10 @@ typedef struct WPanel
     gboolean is_panelized;      /* Flag: special filelisting, can't reload */
     panel_display_t frame_size; /* half or full frame */
     char *filter;               /* File name filter */
-    panel_sort_info_t sort_info;        /* Sort descriptor */
+
+    /* sort */
+    dir_sort_options_t sort_info;
+    const panel_field_t *sort_field;
 
     int dirty;                  /* Should we redisplay the panel? */
 
@@ -177,7 +171,7 @@ void recalculate_panel_summary (WPanel * panel);
 void file_mark (WPanel * panel, int idx, int val);
 void do_file_mark (WPanel * panel, int idx, int val);
 
-gboolean do_panel_cd (struct WPanel *panel, const vfs_path_t * new_dir_vpath, enum cd_enum cd_type);
+gboolean do_panel_cd (WPanel * panel, const vfs_path_t * new_dir_vpath, enum cd_enum cd_type);
 
 gsize panel_get_num_of_sortable_fields (void);
 const char **panel_get_sortable_fields (gsize *);

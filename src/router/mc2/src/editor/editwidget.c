@@ -1065,6 +1065,15 @@ edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
                     ret = edit_dialog_command_execute (h, command);
             }
 
+            /*
+             * Due to the "end of bracket" escape the editor sees input with is_idle() == false
+             * (expects more characters) and hence doesn't yet refresh the screen, but then
+             * no further characters arrive (there's only an "end of bracket" which is swallowed
+             * by tty_get_event()), so you end up with a screen that's not refreshed after pasting.
+             * So let's trigger an IDLE signal.
+             */
+            if (!is_idle ())
+                widget_want_idle (w, TRUE);
             return ret;
         }
 
@@ -1079,6 +1088,10 @@ edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
     case MSG_END:
         edit_dlg_deinit ();
         return MSG_HANDLED;
+
+    case MSG_IDLE:
+        widget_want_idle (w, FALSE);
+        return send_message (h->current->data, NULL, MSG_IDLE, 0, NULL);
 
     default:
         return dlg_default_callback (w, sender, msg, parm, data);
@@ -1146,6 +1159,10 @@ edit_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
             widget_move (w, y, x);
             return MSG_HANDLED;
         }
+
+    case MSG_IDLE:
+        edit_update_screen (e);
+        return MSG_HANDLED;
 
     case MSG_DESTROY:
         edit_clean (e);

@@ -390,7 +390,7 @@ find_check_regexp (const char *r)
     mc_search_t *search;
     gboolean regexp_ok = FALSE;
 
-    search = mc_search_new (r, -1);
+    search = mc_search_new (r, -1, NULL);
 
     if (search != NULL)
     {
@@ -1187,19 +1187,18 @@ find_ignore_dir_search (const char *dir)
 static void
 find_rotate_dash (const WDialog * h, gboolean show)
 {
-    static const char rotating_dash[4] = "|/-\\";
     static size_t pos = 0;
+    static const char rotating_dash[4] = "|/-\\";
+    const Widget *w = WIDGET (h);
 
-    if (verbose)
-    {
-        const Widget *w = WIDGET (h);
+    if (!verbose)
+        return;
 
-        tty_setcolor (h->color[DLG_COLOR_NORMAL]);
-        widget_move (h, w->lines - 7, w->cols - 4);
-        tty_print_char (show ? rotating_dash[pos] : ' ');
-        pos = (pos + 1) % sizeof (rotating_dash);
-        mc_refresh ();
-    }
+    tty_setcolor (h->color[DLG_COLOR_NORMAL]);
+    widget_move (h, w->lines - 7, w->cols - 4);
+    tty_print_char (show ? rotating_dash[pos] : ' ');
+    pos = (pos + 1) % sizeof (rotating_dash);
+    mc_refresh ();
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1625,19 +1624,23 @@ run_process (void)
 {
     int ret;
 
-    search_content_handle = mc_search_new (content_pattern, -1);
+    search_content_handle = mc_search_new (content_pattern, -1, NULL);
     if (search_content_handle)
     {
         search_content_handle->search_type =
             options.content_regexp ? MC_SEARCH_T_REGEX : MC_SEARCH_T_NORMAL;
         search_content_handle->is_case_sensitive = options.content_case_sens;
         search_content_handle->whole_words = options.content_whole_words;
+#ifdef HAVE_CHARSET
         search_content_handle->is_all_charsets = options.content_all_charsets;
+#endif
     }
-    search_file_handle = mc_search_new (find_pattern, -1);
+    search_file_handle = mc_search_new (find_pattern, -1, NULL);
     search_file_handle->search_type = options.file_pattern ? MC_SEARCH_T_GLOB : MC_SEARCH_T_REGEX;
     search_file_handle->is_case_sensitive = options.file_case_sens;
+#ifdef HAVE_CHARSET
     search_file_handle->is_all_charsets = options.file_all_charsets;
+#endif
     search_file_handle->is_entire_line = options.file_pattern;
 
     resuming = FALSE;
@@ -1698,16 +1701,14 @@ do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
 
     if (return_value == B_PANELIZE && *filename)
     {
-        int status, link_to_dir, stale_link;
-        int next_free = 0;
+        int link_to_dir, stale_link;
         int i;
         struct stat st;
         GList *entry;
         dir_list *list = &current_panel->dir;
         char *name = NULL;
 
-        if (set_zero_dir (list))
-            next_free++;
+        dir_list_init (list);
 
         for (i = 0, entry = find_list->list; entry != NULL; i++, entry = g_list_next (entry))
         {
@@ -1734,46 +1735,45 @@ do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
                     p++;
             }
 
-            status = handle_path (list, p, &st, next_free, &link_to_dir, &stale_link);
-            if (status == 0)
+            if (!handle_path (p, &st, &link_to_dir, &stale_link))
             {
                 g_free (name);
                 continue;
             }
-            if (status == -1)
+            /* Need to grow the *list? */
+            if (list->len == list->size && !dir_list_grow (list, DIR_LIST_RESIZE_STEP))
             {
                 g_free (name);
                 break;
             }
 
             /* don't add files more than once to the panel */
-            if (content_pattern != NULL && next_free > 0
-                && strcmp (list->list[next_free - 1].fname, p) == 0)
+            if (content_pattern != NULL && list->len != 0
+                && strcmp (list->list[list->len - 1].fname, p) == 0)
             {
                 g_free (name);
                 continue;
             }
 
-            if (next_free == 0) /* first turn i.e clean old list */
+            if (list->len == 0) /* first turn i.e clean old list */
                 panel_clean_dir (current_panel);
-            list->list[next_free].fnamelen = strlen (p);
-            list->list[next_free].fname = g_strndup (p, list->list[next_free].fnamelen);
-            list->list[next_free].f.marked = 0;
-            list->list[next_free].f.link_to_dir = link_to_dir;
-            list->list[next_free].f.stale_link = stale_link;
-            list->list[next_free].f.dir_size_computed = 0;
-            list->list[next_free].st = st;
-            list->list[next_free].sort_key = NULL;
-            list->list[next_free].second_sort_key = NULL;
-            next_free++;
+            list->list[list->len].fnamelen = strlen (p);
+            list->list[list->len].fname = g_strndup (p, list->list[list->len].fnamelen);
+            list->list[list->len].f.marked = 0;
+            list->list[list->len].f.link_to_dir = link_to_dir;
+            list->list[list->len].f.stale_link = stale_link;
+            list->list[list->len].f.dir_size_computed = 0;
+            list->list[list->len].st = st;
+            list->list[list->len].sort_key = NULL;
+            list->list[list->len].second_sort_key = NULL;
+            list->len++;
             g_free (name);
-            if ((next_free & 15) == 0)
+            if ((list->len & 15) == 0)
                 rotate_dash (TRUE);
         }
 
-        if (next_free)
+        if (list->len != 0)
         {
-            current_panel->count = next_free;
             current_panel->is_panelized = TRUE;
 
             /* absolute path */
@@ -1809,10 +1809,11 @@ find_file (void)
     char *start_dir = NULL, *pattern = NULL, *content = NULL, *ignore_dirs = NULL;
     ssize_t start_dir_len;
     char *filename = NULL, *dirname = NULL;
-    int v;
 
     while (find_parameters (&start_dir, &start_dir_len, &ignore_dirs, &pattern, &content))
     {
+        int v;
+
         if (pattern[0] == '\0')
             break;              /* nothing search */
 

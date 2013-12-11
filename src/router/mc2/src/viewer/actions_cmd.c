@@ -143,10 +143,13 @@ mcview_continue_search_cmd (mcview_t * view)
         {
             view->last_search_string = (gchar *) g_strdup (history->data);
             history = g_list_first (history);
-            g_list_foreach (history, (GFunc) g_free, NULL);
-            g_list_free (history);
+            g_list_free_full (history, g_free);
 
-            view->search = mc_search_new (view->last_search_string, -1);
+#ifdef HAVE_CHARSET
+            view->search = mc_search_new (view->last_search_string, -1, cp_source);
+#else
+            view->search = mc_search_new (view->last_search_string, -1, NULL);
+#endif
             view->search_nroff_seq = mcview_nroff_seq_new (view);
 
             if (view->search == NULL)
@@ -159,7 +162,9 @@ mcview_continue_search_cmd (mcview_t * view)
             else
             {
                 view->search->search_type = mcview_search_options.type;
+#ifdef HAVE_CHARSET
                 view->search->is_all_charsets = mcview_search_options.all_codepages;
+#endif
                 view->search->is_case_sensitive = mcview_search_options.case_sens;
                 view->search->whole_words = mcview_search_options.whole_words;
                 view->search->search_fn = mcview_search_cmd_callback;
@@ -286,7 +291,6 @@ mcview_load_next_prev_init (mcview_t * view)
     {
         /* get file list from current panel. Update it each time */
         view->dir = &current_panel->dir;
-        view->dir_count = &current_panel->count;
         view->dir_idx = &current_panel->selected;
     }
     else if (view->dir == NULL)
@@ -299,22 +303,21 @@ mcview_load_next_prev_init (mcview_t * view)
         const char *fname;
         size_t fname_len;
         int i;
+        dir_sort_options_t sort_op = { FALSE, TRUE, FALSE };
 
         /* load directory where requested file is */
         view->dir = g_new0 (dir_list, 1);
-        view->dir_count = g_new (int, 1);
         view->dir_idx = g_new (int, 1);
 
-        *view->dir_count = do_load_dir (view->workdir_vpath, view->dir, (sortfn *) sort_name, FALSE,
-                                        TRUE, FALSE, NULL);
+        dir_list_load (view->dir, view->workdir_vpath, (GCompareFunc) sort_name, &sort_op, NULL);
 
         fname = x_basename (vfs_path_as_str (view->filename_vpath));
         fname_len = strlen (fname);
 
         /* search current file in the list */
-        for (i = 0; i != *view->dir_count; i++)
+        for (i = 0; i != view->dir->len; i++)
         {
-            const file_entry *fe = &view->dir->list[i];
+            const file_entry_t *fe = &view->dir->list[i];
 
             if (fname_len == fe->fnamelen && strncmp (fname, fe->fname, fname_len) == 0)
                 break;
@@ -334,8 +337,8 @@ mcview_scan_for_file (mcview_t * view, int direction)
     for (i = *view->dir_idx + direction; i != *view->dir_idx; i += direction)
     {
         if (i < 0)
-            i = *view->dir_count - 1;
-        if (i == *view->dir_count)
+            i = view->dir->len - 1;
+        if (i == view->dir->len)
             i = 0;
         if (!S_ISDIR (view->dir->list[i].st.st_mode))
             break;
@@ -350,7 +353,7 @@ static void
 mcview_load_next_prev (mcview_t * view, int direction)
 {
     dir_list *dir;
-    int *dir_count, *dir_idx;
+    int *dir_idx;
     vfs_path_t *vfile;
     vfs_path_t *ext_script = NULL;
 
@@ -359,10 +362,8 @@ mcview_load_next_prev (mcview_t * view, int direction)
 
     /* reinit view */
     dir = view->dir;
-    dir_count = view->dir_count;
     dir_idx = view->dir_idx;
     view->dir = NULL;
-    view->dir_count = NULL;
     view->dir_idx = NULL;
     vfile = vfs_path_append_new (view->workdir_vpath, dir->list[*dir_idx].fname, (char *) NULL);
     mcview_done (view);
@@ -372,7 +373,6 @@ mcview_load_next_prev (mcview_t * view, int direction)
         mcview_load (view, NULL, vfs_path_as_str (vfile), 0);
     vfs_path_free (vfile);
     view->dir = dir;
-    view->dir_count = dir_count;
     view->dir_idx = dir_idx;
     view->ext_script = ext_script;
 
