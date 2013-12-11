@@ -318,7 +318,7 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 		fclose(fp);
 		websWrite(wp, "%d", freq / 1000);
 	} else {
-		websWrite(wp, "unknown");
+		websWrite(wp, "800");
 		return;
 	}
 }
