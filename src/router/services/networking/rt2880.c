@@ -1406,4 +1406,3 @@ void start_deconfigurewifi(void)
 	deconfigure_wifi();
 }
 #endif
-				eval("ifconfig", "br1", "promisc");
