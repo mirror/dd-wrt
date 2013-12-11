@@ -3435,10 +3435,13 @@ char *request_freedns(char *user, char *password)
 		free(hash);
 		return NULL;
 	}
-	for (i = 0; i < 36; i++)
+	for (i = 0; i < 63 && feof(in) == 0; i++) {
 		hash[i] = getc(in);
+      if (hash[i] == EOF)
+        break;
+    }
 	fclose(in);
-	hash[i++] = 0;
+	hash[i] = 0;
 	return hash;
 }
 
