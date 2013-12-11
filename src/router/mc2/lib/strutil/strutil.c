@@ -370,7 +370,7 @@ str_init_strings (const char *termenc)
         if (str_cnv_not_convert == INVALID_CONV)
         {
             g_free (codeset);
-            codeset = g_strdup ("ASCII");
+            codeset = g_strdup (DEFAULT_CHARSET);
             str_cnv_not_convert = g_iconv_open (codeset, codeset);
         }
     }
@@ -760,7 +760,6 @@ str_msg_term_size (const char *text, int *lines, int *columns)
     char *p, *tmp;
     char *q;
     char c = '\0';
-    int width;
 
     *lines = 1;
     *columns = 0;
@@ -770,6 +769,8 @@ str_msg_term_size (const char *text, int *lines, int *columns)
 
     while (TRUE)
     {
+        int width;
+
         q = strchr (p, '\n');
         if (q != NULL)
         {
