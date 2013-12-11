@@ -613,12 +613,7 @@ static int wlconf_up(char *name)
 	char *vifs = nvram_nget("%s_vifs", ifinst);
 	if (vifs != NULL)
 		foreach(var, vifs, next) {
-			eval("ifconfig", var, "up");
-			//in some occasions vif has no bssid when using repeater mode, thus set it again
-			if (nvram_nmatch("apsta", "wl%d_mode", instance)) {
-				start_config_macs(ifinst);
-			}
-			
+			eval("ifconfig", var, "up");	
 		}
 #endif
 	eval("ifconfig", name, "up");
