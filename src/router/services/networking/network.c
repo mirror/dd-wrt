@@ -474,11 +474,11 @@ static int wlconf_up(char *name)
 	}
 #endif
 	int instance = get_wl_instance(name);
-	
+
 	if (instance == -1)
 		return -1;	// no wireless device
 	char prefix[16];
-	sprintf(prefix,"wl%d",instance);
+	sprintf(prefix, "wl%d", instance);
 	if (nvram_nmatch("infra", "wl%d_mode", instance)) {
 		nvram_nset("0", "wl%d_infra", instance);
 	} else {
@@ -613,7 +613,7 @@ static int wlconf_up(char *name)
 	char *vifs = nvram_nget("%s_vifs", ifinst);
 	if (vifs != NULL)
 		foreach(var, vifs, next) {
-			eval("ifconfig", var, "up");	
+		eval("ifconfig", var, "up");
 		}
 #endif
 	eval("ifconfig", name, "up");
@@ -711,67 +711,16 @@ void reset_hwaddr(char *ifname)
 			char *def = nvram_get("et0macaddr_safe");
 			if (!def)
 				def = nvram_safe_get("lan_hwaddr");
-#ifdef HAVE_RB500
+#if defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_RB600) || defined(HAVE_FONERA) || \
+    defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_SOLO51) || defined(HAVE_WHRAG108) || defined(HAVE_PB42) || \
+    defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_OPENRISC) || defined(HAVE_ADM5120) || defined(HAVE_TW6600) || \
+    defined(HAVE_CA8)
 			nvram_set("et0macaddr", def);
 #endif
 #ifdef HAVE_XSCALE
 #ifndef HAVE_GATEWORX
 			nvram_set("et0macaddr", def);
 #endif
-#endif
-#ifdef HAVE_MAGICBOX
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_LAGUNA
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_VENTANA
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_RB600
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_FONERA
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_RT2880
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_LS2
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_LS5
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_SOLO51
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_WHRAG108
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_PB42
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_LSX
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_DANUBE
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_STORM
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_OPENRISC
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_ADM5120
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_TW6600
-			nvram_set("et0macaddr", def);
-#endif
-#ifdef HAVE_CA8
-			nvram_set("et0macaddr", def);
 #endif
 		}
 	}
@@ -805,11 +754,11 @@ void start_lan(void)
 	writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "0");
 	writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "0");
 	writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "0");
-	
+
 	// fix list of active client in webif
 	writeproc("/proc/sys/net/ipv4/neigh/default/gc_thresh1", "1");
 	writeproc("/proc/sys/net/ipv4/neigh/default/gc_interval", "120");
-	
+
 	strcpy(lan_ifname, nvram_safe_get("lan_ifname"));
 	strcpy(wan_ifname, nvram_safe_get("wan_ifname"));
 	strcpy(lan_ifnames, nvram_safe_get("lan_ifnames"));
@@ -2263,9 +2212,6 @@ void start_lan(void)
 	/*
 	 * Bring up and configure LAN interface 
 	 */
-	reset_hwaddr(lan_ifname);
-	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
-	sysprintf("/sbin/gratarp %s", lan_ifname);
 
 	char staticlan[32];
 
@@ -2322,6 +2268,10 @@ void start_lan(void)
 #ifdef HAVE_WAVESAT
 	configure_wimax();
 #endif
+
+	reset_hwaddr(lan_ifname);
+	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+	sysprintf("/sbin/gratarp %s", lan_ifname);
 
 	cprintf("%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 
@@ -3747,9 +3697,10 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_PPPOEDUAL
 	if (strcmp(wan_proto, "pppoe_dual") == 0) {
-                if (nvram_match("pptp_iptv", "1"))
+		if (nvram_match("pptp_iptv", "1"))
 			nvram_set("tvnicfrom", nvram_safe_get("wan_iface"));
-		else nvram_unset("tvnicfrom");
+		else
+			nvram_unset("tvnicfrom");
 
 		if (nvram_match("pptp_use_dhcp", "1")) {
 			nvram_set("wan_get_dns", "");
@@ -3763,14 +3714,14 @@ void start_wan(int status)
 			char *wan_iface = nvram_safe_get("wan_iface");
 			struct dns_lists *dns_list = NULL;
 			int i = 0;
-			
+
 			if (isClient())
-			        wan_iface = getSTA();
+				wan_iface = getSTA();
 
 			ifconfig(wan_iface, IFUP, nvram_safe_get("wan_ipaddr_static"), nvram_safe_get("wan_netmask_static"));
 			dns_to_resolv();
 			dns_list = get_dns_list();
-			
+
 			if (dns_list)
 				for (i = 0; i < dns_list->num_servers; i++)
 					route_add(wan_iface, 0, dns_list->dns_server[i], nvram_safe_get("pptp_wan_gateway_static"), "255.255.255.255");
