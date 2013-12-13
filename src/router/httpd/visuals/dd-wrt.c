@@ -4046,9 +4046,9 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	if (has_beamforming(prefix)) {
 	
 		char wl_bft[16];
-		sprintf(wl_bft, "%s_txbf_bfr_cap", prefix);
+		sprintf(wl_bft, "%s_txbf", prefix);
 		char wl_bfr[16];
-		sprintf(wl_bfr, "%s_txbf_bfe_cap", prefix);
+		sprintf(wl_bfr, "%s_itxbf", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.bft)</script></div>\n");
 		websWrite(wp,
