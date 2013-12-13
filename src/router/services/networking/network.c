@@ -2479,6 +2479,7 @@ void start_lan(void)
 	/*
 	 * Set QoS mode 
 	 */
+#if 0
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) >= 0) {
 		int i, qos;
 		caddr_t ifrdata;
@@ -2520,6 +2521,7 @@ void start_lan(void)
 		}
 		close(s);
 	}
+#endif
 #undef HAVE_RB500
 #endif
 	/*
