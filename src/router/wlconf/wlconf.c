@@ -1266,7 +1266,65 @@ cprintf("get phy type %s\n",name);
 	(void) strcat_r(prefix, "country_code", tmp);
 	
 #ifdef HAVE_BUFFALO
-	country = BUFFALO_COUNTRY;
+	char *cname = nvram_safe_get("region");
+	country = "Q1/27";
+#ifdef HAVE_600
+	if (!strcmp(cname,"JP"))
+	    country="JP/45";
+	if (!strcmp(cname,"US"))
+	    country="Q2/41";
+	if (!strcmp(cname,"EU"))
+	    country="EU/61";
+	if (!strcmp(cname,"AP") && !strcmp(name,"eth1"))
+	    country="CN/34";
+	if (!strcmp(cname,"AP") && !strcmp(name,"eth2"))
+	    country="Q2/41";
+	if (!strcmp(cname,"KR") && !strcmp(name,"eth1"))
+	    country="KR/55";
+	if (!strcmp(cname,"KR") && !strcmp(name,"eth2"))
+	    country="Q2/41";
+	if (!strcmp(cname,"CH") && !strcmp(name,"eth1"))
+	    country="CN/34";
+	if (!strcmp(cname,"CH") && !strcmp(name,"eth2"))
+	    country="Q2/41";
+	if (!strcmp(cname,"TW") && !strcmp(name,"eth1"))
+	    country="TW/34";
+	if (!strcmp(cname,"TW") && !strcmp(name,"eth2"))
+	    country="Q2/41";
+	if (!strcmp(cname,"RU") && !strcmp(name,"eth1"))
+	    country="TW/34";
+	if (!strcmp(cname,"RU") && !strcmp(name,"eth2"))
+	    country="RU/37";
+
+#else
+	if (!strcmp(cname,"JP"))
+	    country="JP/45";
+	if (!strcmp(cname,"US"))
+	    country="Q2/41";
+	if (!strcmp(cname,"EU"))
+	    country="EU/61";
+	if (!strcmp(cname,"AP") && !strcmp(name,"eth1"))
+	    country="CN/34";
+	if (!strcmp(cname,"AP") && !strcmp(name,"eth2"))
+	    country="Q2/41";
+	if (!strcmp(cname,"KR") && !strcmp(name,"eth1"))
+	    country="KR/55";
+	if (!strcmp(cname,"KR") && !strcmp(name,"eth2"))
+	    country="Q2/41";
+	if (!strcmp(cname,"CH") && !strcmp(name,"eth1"))
+	    country="CN/34";
+	if (!strcmp(cname,"CH") && !strcmp(name,"eth2"))
+	    country="Q2/41";
+	if (!strcmp(cname,"TW") && !strcmp(name,"eth1"))
+	    country="TW/34";
+	if (!strcmp(cname,"TW") && !strcmp(name,"eth2"))
+	    country="Q2/41";
+	if (!strcmp(cname,"RU") && !strcmp(name,"eth1"))
+	    country="TW/34";
+	if (!strcmp(cname,"RU") && !strcmp(name,"eth2"))
+	    country="RU/37";
+#endif
+	    	    
 #elif HAVE_VINT
 	if (nvram_match("wl0_phytype","a"))
 	    country="US";

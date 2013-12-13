@@ -22,6 +22,9 @@ LDFLAGS	+= -L$(TOP)/nvram -lnvram -lwireless -L$(TOP)/libutils -lutils -ffunctio
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO -DBUFFALO_COUNTRY="\"$(CONFIG_COUNTRY)\""
 endif
+ifeq ($(CONFIG_NORTHSTAR_NOSMP),y)
+CFLAGS += -DHAVE_600
+endif
 CFLAGS += $(MIPS16_OPT)
 LDFLAGS += $(MIPS16_OPT)
 ifeq ($(CONFIG_TIEXTRA1),y)
