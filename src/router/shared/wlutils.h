@@ -97,7 +97,7 @@ extern int has_2ghz(char *prefix);
 extern int has_5ghz(char *prefix);
 extern int has_ht40(char *prefix);
 #ifdef HAVE_80211AC
-extern has_beamforming(char *prefix);
+extern int has_beamforming(char *prefix);
 #endif
 
 #define SITE_SURVEY_DB  "/tmp/site_survey"
