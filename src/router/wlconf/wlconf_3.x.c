@@ -967,15 +967,6 @@ static void wlconf_set_txbf(char *name, char *prefix)
 		WL_IOVAR_SETINT(name, "txbf_bfe_cap", txbf_bfe_cap ? 1 : 0);
 	}
 
-	if ((nvram_get("disable_WAR116021")) == NULL) {
-		WL_IOVAR_GET(name, "txbf_rateset", &rs, sizeof(wl_txbf_rateset_t));
-		if (!ret) {
-			rs.txbf_rate_vht[0] &= ~ 0x03;
-			rs.txbf_rate_vht_bcm[0] &= ~ 0x03;
-			WL_IOVAR_SET(name, "txbf_rateset", &rs, sizeof(wl_txbf_rateset_t));
-		}
-	}
-
 }
 
 /* Set up TxBF timer. Called when i/f is up. */
@@ -1039,7 +1030,7 @@ wlconf(char *name)
 	int mbsscap = 0;
 	int wl_ap_build = 0; /* wl compiled with AP capabilities */
 	char cap[WLC_IOCTL_SMLEN];
-	char caps[WLC_IOCTL_SMLEN];
+	char caps[WLC_IOCTL_MEDLEN];
 	int btc_mode;
 	uint32 leddc;
 	uint nbw = WL_CHANSPEC_BW_20;
@@ -1083,7 +1074,7 @@ cprintf("get ifname unit\n");
 	 * so we use "wl_ap_build" to help us know how to configure the driver
 	 */
 cprintf("get caps\n");
-	if (wl_iovar_get(name, "cap", (void *)caps, WLC_IOCTL_SMLEN))
+	if (wl_iovar_get(name, "cap", (void *)caps, sizeof(caps)))
 		return -1;
 
 
@@ -2401,7 +2392,7 @@ wlconf_down(char *name)
 	struct {int bsscfg_idx; int enable;} setbuf;
 	int wl_ap_build = 0; /* 1 = wl compiled with AP capabilities */
 	char cap[WLC_IOCTL_SMLEN];
-	char caps[WLC_IOCTL_SMLEN];
+	char caps[WLC_IOCTL_MEDLEN];
 	char *next;
 	wlc_ssid_t ssid;
 
@@ -2419,7 +2410,7 @@ wlconf_down(char *name)
 	 * can't use the same iovars to configure the wl.
 	 * so we use "wl_ap_build" to help us know how to configure the driver
 	 */
-	if (wl_iovar_get(name, "cap", (void *)caps, WLC_IOCTL_SMLEN))
+	if (wl_iovar_get(name, "cap", (void *)caps, sizeof(caps)))
 		return -1;
 
 	foreach(cap, caps, next) {
