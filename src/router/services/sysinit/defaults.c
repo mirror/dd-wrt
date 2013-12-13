@@ -740,6 +740,11 @@ struct nvram_tuple srouter_defaults[] = {
 					 * change it to a radio appropriate default
 					 */
 #ifdef HAVE_80211AC
+	{"wl0_txbf", "1", 0 },
+	{"wl1_txbf", "1", 0 },
+	{"wl0_itxbf", "1", 0 },
+	{"wl1_itxbf", "1", 0 },
+
 	{"wl0_txbf_bfr_cap", "1", 0 },
 	{"wl0_txbf_bfe_cap", "1", 0 },
 	{"wl1_txbf_bfr_cap", "1", 0 },
