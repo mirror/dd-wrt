@@ -4047,6 +4047,8 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	
 		char wl_bft[16];
 		sprintf(wl_bft, "%s_txbf_bfr_cap", prefix);
+		char wl_bfr[16];
+		sprintf(wl_bfr, "%s_txbf_bfe_cap", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.bft)</script></div>\n");
 		websWrite(wp,
@@ -4057,8 +4059,6 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 			  wl_bft, nvram_match(wl_bft, "0") ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 
-		char wl_bfr[16];
-		sprintf(wl_bfr, "%s_txbf_bfe_cap", prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.bfr)</script></div>\n");
 		websWrite(wp,
