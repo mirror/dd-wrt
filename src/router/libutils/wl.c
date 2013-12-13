@@ -128,13 +128,13 @@ int getchannels(unsigned int *list, char *ifname)
 	else
 #endif
 	{
-	list[11] = 12;
-	list[12] = 13;
+		list[11] = 12;
+		list[12] = 13;
 #ifdef BUFFALO_JP
-	list[13] = 14;
-	return 14;
+		list[13] = 14;
+		return 14;
 #else
-	return 13;
+		return 13;
 #endif
 	}
 }
@@ -619,6 +619,27 @@ static int getcenterchannel(chanspec_t chspec)
 	return channel;
 }
 #endif
+#ifdef HAVE_80211AC
+int has_beamforming(char *prefix)
+{
+	wlc_rev_info_t rev;
+	int c = 0;
+	if (!strcmp(prefix, "wl0"))
+		c = 0;
+	else if (!strcmp(prefix, "wl1"))
+		c = 1;
+
+	char *name = get_wl_instance_name(c);
+	wl_ioctl(name, WLC_GET_REVINFO, &rev, sizeof(rev));
+
+	if (rev.corerev < 40)
+		return 0;	/* TxBF unsupported */
+
+	return 1;
+
+}
+#endif
+
 int getchannels(unsigned int *retlist, char *ifname)
 {
 #ifdef HAVE_80211AC
@@ -629,7 +650,7 @@ int getchannels(unsigned int *retlist, char *ifname)
 	int i;
 	chanspec_t c = 0, *chanspec;
 
-	char abbrev[WLC_CNTRY_BUF_SZ] = "";	/* default.. current locale */	
+	char abbrev[WLC_CNTRY_BUF_SZ] = "";	/* default.. current locale */
 	wl_uint32_list_t *list;
 
 	memset(buf, 0, WLC_IOCTL_MAXLEN);
@@ -639,11 +660,11 @@ int getchannels(unsigned int *retlist, char *ifname)
 	chanspec = (chanspec_t *) (buf + buflen);
 	*chanspec = c;
 	buflen += (sizeof(chanspec_t));
-	
+
 	strncpy(buf + buflen, abbrev, WLC_CNTRY_BUF_SZ);
 
 	buflen += WLC_CNTRY_BUF_SZ;
-	
+
 	list = (wl_uint32_list_t *) (buf + buflen);
 	list->count = WL_NUMCHANSPECS;
 	buflen += sizeof(uint32) * (WL_NUMCHANSPECS + 1);
@@ -714,9 +735,9 @@ int getchannels(unsigned int *retlist, char *ifname)
 		c = list->element[i];
 		int cspec = c & 0x700;
 		int cbw = c & 0x3800;
-        //        fprintf(stderr,"wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
+		//        fprintf(stderr,"wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
 		if ((cbw == mask) && (cspec == spec)) {
-        //        fprintf(stderr,"take wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
+			//        fprintf(stderr,"take wl%d: %X spec %d, cbw %d\n",wl,c,cbw,cspec);
 
 			int channel = getcenterchannel(c);
 
@@ -1134,12 +1155,12 @@ int isFXXN_PRO(char *ifname)	//checks if its usualla a DBII Networks FxxN-PRO ca
 	}
 	sprintf(readid, "/sys/class/ieee80211/phy%d/device/subsystem_device", devcount);
 	in = fopen(readid, "rb");
-        if (in)	{
+	if (in) {
 		fscanf(in, "%s\n", cproduct);
 		fclose(in);
 	}
 
-	if (!strcmp(cvendor, "0x168c") && !strcmp(cproduct, "0x2096")) { //F36N-PRO / F64N-PRO shares the same id's
+	if (!strcmp(cvendor, "0x168c") && !strcmp(cproduct, "0x2096")) {	//F36N-PRO / F64N-PRO shares the same id's
 		return 1;
 	}
 	return 0;
@@ -1163,12 +1184,12 @@ int isSR71E(char *ifname)
 	}
 	sprintf(readid, "/sys/class/ieee80211/phy%d/device/subsystem_device", devcount);
 	in = fopen(readid, "rb");
-        if (in)	{
+	if (in) {
 		fscanf(in, "%s\n", cproduct);
 		fclose(in);
 	}
 
-	if (!strcmp(cvendor, "0x0777") && !strcmp(cproduct, "0x4e05")) { // SR71-E
+	if (!strcmp(cvendor, "0x0777") && !strcmp(cproduct, "0x4e05")) {	// SR71-E
 		return 1;
 	}
 	return 0;
@@ -1268,15 +1289,14 @@ int wifi_gettxpoweroffset(char *ifname)
 		if (nvram_nmatch("7", "%s_cardtype", ifname))
 			return 10;
 	}
-
-#ifdef HAVE_ATH9K	
+#ifdef HAVE_ATH9K
 	if (isFXXN_PRO(ifname)) {
 		if (nvram_nmatch("1", "%s_cardtype", ifname))
 			return 5;
 		if (nvram_nmatch("2", "%s_cardtype", ifname))
 			return 5;
 	} else if (isSR71E(ifname)) {
-			return 6;
+		return 6;
 	}
 #endif
 
@@ -1316,7 +1336,6 @@ int get_wififreq(char *ifname, int freq)
 		if (nvram_nmatch("4", "%s_cardtype", ifname))
 			return freq - 2400;
 	}
-
 #ifdef HAVE_ATH9K
 	if (isFXXN_PRO(ifname)) {
 		if (nvram_nmatch("1", "%s_cardtype", ifname)) {

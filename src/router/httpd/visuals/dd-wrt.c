@@ -4025,7 +4025,7 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	websWrite(wp, "</div>\n");
 }
 
-#ifdef HAVE_BCMMODERN
+#ifdef HAVE_80211AC
 
 	if (has_ac(prefix) && has_2ghz(prefix)) {
 		char wl_turboqam[16];
@@ -4041,6 +4041,34 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 			  wl_turboqam, nvram_match(wl_turboqam, "0") ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 
+	}
+	
+	if (has_beamforming(prefix)) {
+	
+		char wl_bft[16];
+		sprintf(wl_bft, "%s_txbf_bfr_cap", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.bft)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  wl_turboqam, nvram_match(wl_bft, "1") ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+			  wl_turboqam, nvram_match(wl_bft, "0") ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+
+		char wl_bfr[16];
+		sprintf(wl_bfr, "%s_txbf_bfe_cap", prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.bfr)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+			  wl_turboqam, nvram_match(wl_bfr, "1") ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+			  wl_turboqam, nvram_match(wl_bfr, "0") ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+	
 	}
 #endif
 
