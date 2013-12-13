@@ -485,13 +485,31 @@ static int wlconf_up(char *name)
 		nvram_nset("1", "wl%d_infra", instance);
 	}
 	eval("ifconfig", name, "up");
+
+#ifdef HAVE_80211AC
+	if (has_beamforming(prefix)) {
+		if (nvram_nmatch("1", "wl%d_txbf", instance)) {
+			if (instance == 0) {
+				nvram_set("wl0_txbf_bfr_cap", prefix);
+				nvram_set("wl0_txbf_bfe_cap", prefix);
+			} else {
+				nvram_set("wl1_txbf_bfr_cap", prefix);
+				nvram_set("wl1_txbf_bfe_cap", prefix);
+			}
+		}
+		if (nvram_nmatch("1", "wl%d_itxbf", instance))
+			eval("wl", "-i", name, "txbf_imp", "1");
+		else
+			eval("wl", "-i", name, "txbf_imp", "0");
+
+	}
 	if (has_2ghz(prefix) && has_ac(prefix)) {
 		if (nvram_nmatch("1", "wl%d_turbo_qam", instance))
 			eval("wl", "-i", name, "vht_features", "3");
 		else
 			eval("wl", "-i", name, "vht_features", "1");
 	}
-
+#endif
 	ret = eval("wlconf", name, "up");
 	/*
 	 * eval("wl","radio","off"); eval("wl","atten","0","0","60");
@@ -2511,7 +2529,7 @@ void start_lan(void)
 					/*
 					 * currently only need to set QoS to et devices 
 					 */
-#ifndef HAVE_80211AC //http://svn.dd-wrt.com/ticket/2943 
+#ifndef HAVE_80211AC		//http://svn.dd-wrt.com/ticket/2943
 					if (!strncmp(info.driver, "et", 2)) {
 						ifr.ifr_data = (caddr_t) & qos;
 						ioctl(s, SIOCSETCQOS, &ifr);
