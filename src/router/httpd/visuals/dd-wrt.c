@@ -4051,10 +4051,10 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.bft)</script></div>\n");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  wl_turboqam, nvram_match(wl_bft, "1") ? "checked=\"checked\"" : "");
+			  wl_bft, nvram_match(wl_bft, "1") ? "checked=\"checked\"" : "");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-			  wl_turboqam, nvram_match(wl_bft, "0") ? "checked=\"checked\"" : "");
+			  wl_bft, nvram_match(wl_bft, "0") ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 
 		char wl_bfr[16];
@@ -4063,10 +4063,10 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.bfr)</script></div>\n");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  wl_turboqam, nvram_match(wl_bfr, "1") ? "checked=\"checked\"" : "");
+			  wl_bfr, nvram_match(wl_bfr, "1") ? "checked=\"checked\"" : "");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-			  wl_turboqam, nvram_match(wl_bfr, "0") ? "checked=\"checked\"" : "");
+			  wl_bfr, nvram_match(wl_bfr, "0") ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 	
 	}
