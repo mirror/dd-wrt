@@ -2511,10 +2511,12 @@ void start_lan(void)
 					/*
 					 * currently only need to set QoS to et devices 
 					 */
+#ifndef HAVE_80211AC //http://svn.dd-wrt.com/ticket/2943 
 					if (!strncmp(info.driver, "et", 2)) {
 						ifr.ifr_data = (caddr_t) & qos;
 						ioctl(s, SIOCSETCQOS, &ifr);
 					}
+#endif
 				}
 				ifr.ifr_data = ifrdata;
 			}
