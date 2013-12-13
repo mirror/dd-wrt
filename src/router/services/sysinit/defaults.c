@@ -739,13 +739,15 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_txstreams", "0", 0},	/* 802.11n Tx Streams 0, 0 is invalid, WLCONF will
 					 * change it to a radio appropriate default
 					 */
-#ifdef HAVE_BCMMODERN
+#ifdef HAVE_80211AC
 	{"wl0_txbf_bfr_cap", "1", 0 },
 	{"wl0_txbf_bfe_cap", "1", 0 },
 	{"wl1_txbf_bfr_cap", "1", 0 },
 	{"wl1_txbf_bfe_cap", "1", 0 },
 	{"wl0_turbo_qam", "1", 0},	/* RIFS mode advertisement */
 	{"wl1_turbo_qam", "1", 0},	/* RIFS mode advertisement */
+#endif
+#ifdef HAVE_BCMMODERN
 	{"wl_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
 	{"wl0_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
 	{"wl1_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
@@ -778,10 +780,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl1_amsdu", "auto", 0},	/* Default AMSDU setting */
 	{"wl1_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - OFF */
 	/* Tx Beamforming */
-	{"wl0_txbf_bfr_cap", "0", 0},
-	{"wl0_txbf_bfe_cap", "0", 0},
-	{"wl1_txbf_bfr_cap", "0", 0},
-	{"wl1_txbf_bfe_cap", "0", 0},
 #endif
 
 	{"wl0_sta_retry_time", "5", 0},	/* 100% duty cycle for LED on router */
