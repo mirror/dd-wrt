@@ -489,13 +489,11 @@ static int wlconf_up(char *name)
 #ifdef HAVE_80211AC
 	if (has_beamforming(prefix)) {
 		if (nvram_nmatch("1", "wl%d_txbf", instance)) {
-			if (instance == 0) {
-				nvram_set("wl0_txbf_bfr_cap", prefix);
-				nvram_set("wl0_txbf_bfe_cap", prefix);
-			} else {
-				nvram_set("wl1_txbf_bfr_cap", prefix);
-				nvram_set("wl1_txbf_bfe_cap", prefix);
-			}
+			nvram_nset("1", "wl%d_txbf_bfr_cap", instance);
+			nvram_nset("1", "wl%d_txbf_bfe_cap", instance);
+		} else {
+			nvram_nset("0", "wl%d_txbf_bfr_cap", instance);
+			nvram_nset("0", "wl%d_txbf_bfe_cap", instance);
 		}
 		if (nvram_nmatch("1", "wl%d_itxbf", instance))
 			eval("wl", "-i", name, "txbf_imp", "1");
