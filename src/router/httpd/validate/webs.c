@@ -2996,9 +2996,13 @@ static void save_prefix(webs_t wp, char *prefix)
 
 #endif
 	copytonv(wp, "%s_closed", prefix);
-#ifdef HAVE_BCMMODERN
+#ifdef HAVE_80211AC
 	if (has_2ghz(prefix) && has_ac(prefix))
 		copytonv(wp, "%s_turbo_qam", prefix);
+	if (has_beamforming(prefix) {
+		copytonv(wp, "%s_txbf_bfr_cap", prefix);
+		copytonv(wp, "%s_txbf_bfe_cap", prefix);
+	}
 #endif
 
 #ifndef HAVE_MADWIFI
