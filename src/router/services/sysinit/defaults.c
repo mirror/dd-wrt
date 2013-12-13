@@ -740,6 +740,10 @@ struct nvram_tuple srouter_defaults[] = {
 					 * change it to a radio appropriate default
 					 */
 #ifdef HAVE_BCMMODERN
+	{"wl0_txbf_bfr_cap", "1", 0 },
+	{"wl0_txbf_bfe_cap", "1", 0 },
+	{"wl1_txbf_bfr_cap", "1", 0 },
+	{"wl1_txbf_bfe_cap", "1", 0 },
 	{"wl0_turbo_qam", "1", 0},	/* RIFS mode advertisement */
 	{"wl1_turbo_qam", "1", 0},	/* RIFS mode advertisement */
 	{"wl_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
