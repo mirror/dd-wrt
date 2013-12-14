@@ -122,6 +122,7 @@ ifeq ($(CONFIG_FUNCTION_TRACER),y)
 ORIG_CFLAGS := $(KBUILD_CFLAGS)
 KBUILD_CFLAGS = $(subst -pg, , $(ORIG_CFLAGS))
 endif
+KBUILD_CFLAGS_KERNEL := $(patsubst -f%-sections,,$(KBUILD_CFLAGS_KERNEL))
 
 ccflags-y := -fpic -fno-builtin -I$(obj)
 
