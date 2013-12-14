@@ -452,7 +452,9 @@ static int gianfar_ptp_probe(struct platform_device *dev)
 	err = -ENODEV;
 
 	etsects->caps = ptp_gianfar_caps;
-	etsects->cksel = DEFAULT_CKSEL;
+
+	if (get_of_u32(node, "fsl,cksel", &etsects->cksel))
+		etsects->cksel = DEFAULT_CKSEL;
 
 	if (get_of_u32(node, "fsl,tclk-period", &etsects->tclk_period) ||
 	    get_of_u32(node, "fsl,tmr-prsc", &etsects->tmr_prsc) ||
@@ -518,7 +520,7 @@ static int gianfar_ptp_probe(struct platform_device *dev)
 		goto no_clock;
 	}
 	gfar_phc_index = ptp_clock_index(etsects->clock);
-
+	
 	dev_set_drvdata(&dev->dev, etsects);
 
 	return 0;
