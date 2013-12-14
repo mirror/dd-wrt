@@ -180,6 +180,72 @@ endif
 	$(MAKE) -j 4 -C $(LINUXDIR) CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 	$(MAKE) -j 4 -C $(LINUXDIR) modules  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
+	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
+	-$(MAKE) -f Makefile.danube ath9k
+	-$(MAKE) -f Makefile.danube ath9k-install
+	-$(MAKE) -f Makefile.danube madwifi
+	-$(MAKE) -f Makefile.danube madwifi-install
+	-$(MAKE) -f Makefile.danube batman-adv
+	-$(MAKE) -f Makefile.danube batman-adv-install
+	-$(MAKE) -f Makefile.danube opendpi
+	-$(MAKE) -f Makefile.danube opendpi-install
+	-$(MAKE) -f Makefile.danube uniwip-gpio
+	-$(MAKE) -f Makefile.danube uniwip-gpio-install
+
+	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	done
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
+endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
+endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
+endif
+ifneq ($(CONFIG_USB),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/fat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/vfat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/msdos
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/mbcache.ko
+endif
+
+	find $(TARGETDIR)/lib -name \*.ko | \
+		xargs $(ARCH)-linux-nm | \
+		awk '$$1 == "U" { print $$2 } ' | \
+		sort -u > $(LINUXDIR)/mod_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
+	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
+	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
+	( \
+		echo '#define SYMTAB_KEEP \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_KEEP_GPL \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD_GPL \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
+		echo; \
+	) > $(LINUXDIR)/symtab.h
+
+	$(MAKE) -j 4 -C $(LINUXDIR)  EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+
 install_headers:
 # important step, required for new kernels
 	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
@@ -329,6 +395,26 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wl
 endif
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
+endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
+endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
+endif
+ifneq ($(CONFIG_USB),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/fat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/vfat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/msdos
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/mbcache.ko
+endif
 #	mkdir -p $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
 #	cp ../wl/ctmisc/ctmisc.o $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
 	##not used yet
@@ -359,26 +445,6 @@ endif
 #	mkdir $(TARGETDIR)/lib/modules/2.4.32/kernel/fs/mmc ; \
 #	cp mmc/mmc.o $(TARGETDIR)/lib/modules/2.4.32/kernel/fs/mmc ; \
 #	fi ; 
-ifneq ($(CONFIG_SAMBA),y)
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
-endif
-ifneq ($(CONFIG_JFFS2),y)
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
-endif
-ifneq ($(CONFIG_IPV6),y)
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
-endif
-ifneq ($(CONFIG_USB),y)
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/fat
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/vfat
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/msdos
-	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/mbcache.ko
-endif
 
 
 #ifeq ($(CONFIG_MSSID),y)
@@ -415,7 +481,9 @@ endif
 #	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
 	rm -rf $(TARGETDIR)/usr/local
 	mkdir $(TARGETDIR)/usr/local
-	-./strip_libs.sh $(ARCH)
+	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
+	export STRIP="sstrip" && \
+	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	@true
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
 	mkfs.jffs2 --pad --big-endian --squash -e 0x10000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target

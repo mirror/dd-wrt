@@ -231,6 +231,93 @@ endif
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=mips ; \
 	fi
+
+	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
+	-$(MAKE) -f Makefile.rt2880 ath9k
+	-$(MAKE) -f Makefile.rt2880 ath9k-install
+	-$(MAKE) -f Makefile.rt2880 madwifi
+	-$(MAKE) -f Makefile.rt2880 madwifi-install
+	-$(MAKE) -f Makefile.rt2880 batman-adv
+	-$(MAKE) -f Makefile.rt2880 batman-adv-install
+	-$(MAKE) -f Makefile.rt2880 opendpi
+	-$(MAKE) -f Makefile.rt2880 opendpi-install
+	-$(MAKE) -f Makefile.rt2880 uniwip-gpio
+	-$(MAKE) -f Makefile.rt2880 uniwip-gpio-install
+
+	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	done
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
+endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
+endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
+endif
+ifneq ($(CONFIG_BONDING),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/bonding
+endif
+ifneq ($(CONFIG_USBIP),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/staging/usbip
+endif
+ifneq ($(CONFIG_USB),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/fat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/vfat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/msdos
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/mbcache.ko
+endif
+ifneq ($(CONFIG_USB_ADVANCED),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext4
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/btrfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd	
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd2	
+endif
+ifeq ($(CONFIG_3G_ONLY),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs
+endif
+
+
+	find $(TARGETDIR)/lib -name \*.ko | \
+		xargs $(ARCH)-linux-nm | \
+		awk '$$1 == "U" { print $$2 } ' | \
+		sort -u > $(LINUXDIR)/mod_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
+	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
+	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
+	( \
+		echo '#define SYMTAB_KEEP \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_KEEP_GPL \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD_GPL \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
+		echo; \
+	) > $(LINUXDIR)/symtab.h
+
+	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux vmlinux EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=mips ; \
+	fi
 ifeq ($(CONFIG_MT7620),y)
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-mt7620
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a.dts
@@ -429,7 +516,9 @@ endif
 ifeq ($(CONFIG_3G_ONLY),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs
 endif
-	-./strip_libs.sh $(ARCH)
+	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
+	export STRIP="sstrip" && \
+	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -nopad
 ifeq ($(CONFIG_MT7620),y)
 	dd if=mipsel-uclibc/root-mt7620.uimage of=mipsel-uclibc/aligned-mt7620.uimage bs=4096 conv=sync

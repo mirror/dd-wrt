@@ -278,6 +278,103 @@ endif
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
+
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus_old
+
+	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
+	-$(MAKE) -f Makefile.ar531x ath9k
+	-$(MAKE) -f Makefile.ar531x ath9k-install
+	-$(MAKE) -f Makefile.ar531x madwifi
+	-$(MAKE) -f Makefile.ar531x madwifi-install
+	-$(MAKE) -f Makefile.ar531x batman-adv
+	-$(MAKE) -f Makefile.ar531x batman-adv-install
+	-$(MAKE) -f Makefile.ar531x opendpi
+	-$(MAKE) -f Makefile.ar531x opendpi-install
+	-$(MAKE) -f Makefile.ar531x uniwip-gpio
+	-$(MAKE) -f Makefile.ar531x uniwip-gpio-install
+
+	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	done
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nfs
+endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzo
+endif
+ifneq ($(CONFIG_MMC),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
+endif
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
+endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
+endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
+endif
+ifneq ($(CONFIG_BONDING),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/bonding
+endif
+ifneq ($(CONFIG_USBIP),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/staging/usbip
+endif
+ifneq ($(CONFIG_USB),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/fat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/vfat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/msdos
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/mbcache.ko
+endif
+ifneq ($(CONFIG_USB_ADVANCED),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext4
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/btrfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd	
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd2	
+endif
+	find $(TARGETDIR)/lib -name \*.ko | \
+		xargs $(ARCH)-linux-nm | \
+		awk '$$1 == "U" { print $$2 } ' | \
+		sort -u > $(LINUXDIR)/mod_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
+	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
+	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
+	( \
+		echo '#define SYMTAB_KEEP \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_KEEP_GPL \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD_GPL \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
+		echo; \
+	) > $(LINUXDIR)/symtab.h
+
+	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
+	fi
+
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
 	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/whrag108/vmlinux.lzma
 	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/aw6600/vmlinux.lzma
@@ -595,7 +692,9 @@ endif
 ifeq ($(CONFIG_RC),y)
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 endif
-	-./strip_libs.sh $(ARCH)
+	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
+	export STRIP="sstrip" && \
+	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 ifeq ($(CONFIG_WRK54G),y)
 	misc/makeDevs $(ARCH)-uclibc/target	
 endif
