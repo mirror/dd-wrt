@@ -1,0 +1,390 @@
+#
+# Broadcom Linux Router Makefile
+#
+# Copyright 2001-2003, Broadcom Corporation
+# All Rights Reserved.
+#
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+#
+# $Id: Makefile,v 1.2 2005/09/26 11:06:58 seg Exp $
+#
+
+include .config
+ifneq ($(wildcard ../cy_conf.mak),)
+  include ../cy_conf.mak
+endif
+
+#
+# Paths
+#
+OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth auth_db nathelper
+OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
+OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192
+OPENSSL_OPTIONS:= shared no-ec no-err no-fips no-hw no-krb5 no-threads zlib-dynamic
+
+# Source bases
+
+export PLATFORM LINUXDIR LIBDIR USRLIBDIR
+export TOP := $(shell pwd)
+export SRCBASE := $(shell (cd $(TOP)/.. && pwd -P))
+
+
+# Set the HAL directory if you have the HAL sources
+
+# Set the Atheros Rate Control directory if you have the proprietary rate control
+export ATH_RATE=ath_rate/sample
+
+#
+# Cross-compile environment variables
+#
+
+# Build platform
+export BUILD := i386-pc-linux-gnu
+export HOSTCC := gcc
+
+# uClibc wrapper
+export ARCH:=$(PLATFORM)
+ifeq ($(CONFIG_UCLIBC),y)
+export PLATFORM := $(PLATFORM)-uclibc
+endif
+
+#export LINUXDIR := $(SRCBASE)/linux/linux.v24
+ifeq ($(ARCH),mips)
+export LINUXDIR := $(SRCBASE)/linux/brcm63xx/linux-2.6.17
+endif
+#ifeq ($(ARCH),armeb)
+#export LINUXDIR := $(SRCBASE)/linux/xscale/linux-2.6.23
+#endif
+ifeq ($(ARCH),mipsel)
+export LINUXDIR := $(SRCBASE)/kernel/rb500/linux-2.6.17-rc5
+endif
+ifeq ($(ARCH),i386)
+export LINUXDIR := $(SRCBASE)/kernel/wrap/linux-2.6.16.7
+endif
+
+export KERNELRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
+
+#export KERNELRELEASE = $(shell cat $(LINUXDIR)/.kernelrelease 2> /dev/null)
+
+#ifeq ($(PLATFORM),mipsel)
+#export CROSS_COMPILE := mipsel-linux-
+#export CONFIGURE := ./configure mipsel-linux --build=$(BUILD)
+#export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/../mipsel-linux && pwd -P)
+#endif
+
+#ifeq ($(PLATFORM),mipsel-uclibc)
+export CROSS_COMPILE := $(ARCH)-linux-uclibc-
+export CONFIGURE := ./configure $(ARCH)-linux --build=$(BUILD)
+export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && pwd -P)
+#endif
+
+#ifeq ($(CONFIG_BCMWPA2),y)
+#export CFLAGS += -DBCMWPA2 
+#endif
+
+export BASEOPT:=-O2
+#export ARCH:= mipsel
+
+ifeq ($(ARCH),mipsel)
+export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
+endif
+ifeq ($(ARCH),arm)
+export COPTS:=$(BASEOPT) -march=armv4 -pipe -funit-at-a-time -msoft-float -mtune=arm9tdmi -D_FILE_OFFSET_BITS=64 
+endif
+ifeq ($(ARCH),mips)
+export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
+endif
+ifeq ($(ARCH),i386)
+export COPTS:=$(BASEOPT) -pipe -march=i486 -funit-at-a-time 
+endif
+
+export CC := $(CROSS_COMPILE)gcc
+export CXX := $(CROSS_COMPILE)g++
+export AR := $(CROSS_COMPILE)ar
+export AS := $(CROSS_COMPILE)as
+export LD := $(CROSS_COMPILE)ld
+export NM := $(CROSS_COMPILE)nm
+export RANLIB := $(CROSS_COMPILE)ranlib
+export STRIP := $(CROSS_COMPILE)strip
+export SIZE := $(CROSS_COMPILE)size
+
+export CFLAGS := $(COPTS)
+
+#
+# Install and target directories
+#
+
+export PLATFORMDIR := $(TOP)/$(PLATFORM)
+export INSTALLDIR := $(PLATFORMDIR)/install
+export TARGETDIR := $(PLATFORMDIR)/target
+
+ifeq ($(PLATFORM),mipsel)
+obj-y += libcrypto
+endif
+#
+# Configuration
+#
+CONFIG_IPTABLES=y
+
+include rules/configs.mk
+
+obj-clean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-clean)
+obj-install := $(foreach obj,$(obj-y),$(obj)-install)
+obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
+
+all: install_headers build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
+
+build_date:
+	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
+
+
+kernel:
+	# Also build kernel
+	cp $(LINUXDIR)/.config_openrisc $(LINUXDIR)/.config
+ifeq ($(CONFIG_EOP_TUNNEL),y)
+	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config
+endif
+	$(MAKE) -C $(LINUXDIR) oldconfig ARCH=arm 	
+
+	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage ARCH=arm CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
+	fi
+	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules  ARCH=arm CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
+	fi
+	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
+	-$(MAKE) -f Makefile.mpc85xx ath9k
+	-$(MAKE) -f Makefile.mpc85xx ath9k-install
+	-$(MAKE) -f Makefile.mpc85xx madwifi
+	-$(MAKE) -f Makefile.mpc85xx madwifi-install
+	-$(MAKE) -f Makefile.mpc85xx batman-adv
+	-$(MAKE) -f Makefile.mpc85xx batman-adv-install
+	-$(MAKE) -f Makefile.mpc85xx opendpi
+	-$(MAKE) -f Makefile.mpc85xx opendpi-install
+	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio
+	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio-install
+
+	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	done
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
+endif
+
+	find $(TARGETDIR)/lib -name \*.ko | \
+		xargs $(ARCH)-linux-nm | \
+		awk '$$1 == "U" { print $$2 } ' | \
+		sort -u > $(LINUXDIR)/mod_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
+	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
+	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
+	( \
+		echo '#define SYMTAB_KEEP \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_KEEP_GPL \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD_GPL \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
+		echo; \
+	) > $(LINUXDIR)/symtab.h
+
+
+	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage ARCH=arm EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h"  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
+	fi
+
+install_headers:
+# important step, required for new kernels
+	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
+	$(MAKE) -C $(LINUXDIR) headers_install ARCH=arm INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
+
+	
+realclean: $(obj-clean)
+	rm -f .config.old .config.cmd
+	#umount $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+	rm -rf $(TARGETDIR)
+	rm -f $(TARGETDIR)/*
+	-rm -f $(ARCH)-uclibc/*
+
+	
+clean: rc-clean httpd-clean services-clean shared-clean libutils-clean madwifi-clean madwifi_mimo-clean busybox-clean	pppd-clean
+	rm -f .config.old .config.cmd
+	#umount $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+	rm -rf $(TARGETDIR)
+	rm -f $(TARGETDIR)/*
+	-rm -f $(ARCH)-uclibc/*
+
+clean_target:
+	rm -rf $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+
+distclean mrproper: $(obj-distclean) clean_target
+	rm -rf $(INSTALLDIR)
+	$(MAKE) -C $(LINUXDIR) distclean
+	$(MAKE) -C $(LINUXDIR)/arch/mips/bcm947xx/compressed clean
+	#rm -f $(PLATFORMDIR)/zImage $(PLATFORMDIR)/linux.bin
+	$(MAKE) -C config clean
+	rm -f .config $(LINUXDIR)/.config
+	rm -f .config.old .config.cmd
+
+optimize-lib:
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+ifeq ($(CONFIG_LIBDL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+endif
+ifeq ($(CONFIG_LIBRT),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
+endif
+ifeq ($(CONFIG_LIBNSL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
+endif
+ifeq ($(CONFIG_LIBUTIL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+endif
+ifeq ($(CONFIG_LIBCPP),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+endif
+ifeq ($(CONFIG_LIBCRYPT),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+endif
+ifeq ($(CONFIG_LIBM),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+endif
+ifeq ($(CONFIG_LIBRESOLV),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
+endif
+ifeq ($(CONFIG_LIBPTHREAD),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+endif
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+
+ifneq ($(CONFIG_NOOPT),y)
+
+	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
+	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
+	-mkdir -p /tmp/$(ARCHITECTURE)/
+	find $(TARGETDIR) -type f -perm +100 -exec \
+		file -r -N -F '' {} + | \
+		awk ' /executable.*dynamically/ { print $$1 }' > /tmp/$(ARCHITECTURE)/mklibs-progs
+
+	find $(TARGETDIR) -type f -name \*.so\* -exec \
+		file -r -N -F '' {} + | \
+		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
+
+	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
+	mklibs.py -D \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-uClibc.so.0 \
+		--target $(ARCH)-linux-uclibc \
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
+endif
+
+
+install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
+        # Install binaries into target directory
+	install -d $(TARGETDIR)
+	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	done
+	mkdir -p $(ARCH)-uclibc/target/etc/config
+	mkdir -p $(ARCH)-uclibc/target/etc/kaid
+	mkdir -p $(ARCH)-uclibc/target/etc/langpack
+	cp ./opt/bin/ipkg $(ARCH)-uclibc/target/bin
+	cd  $(ARCH)-uclibc/target/lib
+	cp ./opt/etc/preinit $(ARCH)-uclibc/target/etc
+	cp ./opt/etc/postinit $(ARCH)-uclibc/target/etc
+	cp ./opt/etc/ipkg.conf $(ARCH)-uclibc/target/etc
+	cp ./opt/etc/config/* $(ARCH)-uclibc/target/etc/config
+	cp ./opt/usr/lib/smb.conf $(ARCH)-uclibc/target/usr/lib
+	ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb
+	# optimize the crypto library by removing unneeded symbols
+	# Install (and possibly optimize) C library
+	#$(MAKE) -f Makefile.openrisc lib.$(ARCH)-install
+	# optimize the others library by removing unneeded symbols
+	$(MAKE) -f Makefile.openrisc optimize-lib
+	# Install modules into filesystem
+	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
+	fi
+ifeq ($(CONFIG_MADWIFI),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wl
+endif
+ifeq ($(CONFIG_WAVESAT),y)
+	make -f Makefile.openrisc wavesat-install
+endif
+#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+	find $(TARGETDIR) -name "wl_*.o"  | xargs rm -rf
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
+endif
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+        # Prepare filesystem
+        # Make sure mksquashfs-2.0 is used
+	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
+	cd $(TARGETDIR)  &&  find . -iname ".svn" | xargs rm -rf
+	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
+ifneq ($(CONFIG_ERC),y)
+#	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
+	rm -rf $(TARGETDIR)/usr/local
+	mkdir $(TARGETDIR)/usr/local
+endif
+ifeq ($(CONFIG_KAID),y)
+	cp kaid/kaid $(TARGETDIR)/usr/sbin
+endif
+	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
+	export STRIP="sstrip" && \
+	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
+#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
+
+	mkdir -p $(ARCH)-uclibc/target/boot
+	echo "mem=59M root=/dev/hda" > $(ARCH)-uclibc/target/boot/kparam
+	cp $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/target/boot
+	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 128000 -i 65536 -N 65536 -q $(ARCH)-uclibc/disc.img
+	echo "mem=59M root=/dev/sda" > $(ARCH)-uclibc/target/boot/kparam
+	echo "this file just prevents reinstallation" > $(ARCH)-uclibc/target/boot/.installed
+	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 128000 -i 65536 -N 65536 -q $(ARCH)-uclibc/disc_sd.img
+	
+#	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le
+#	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
+#	echo -ne '\xde\xad\xc0\xde' >> $(ARCH)-uclibc/dd-wrt.jffs2
+#	dd if=$(LINUXDIR)/arch/arm/boot/zImage of=$(ARCH)-uclibc/zImage bs=1048576 conv=sync
+#	tools/wili/src/mkfwimage -v WILI-S.WILIBOARD.v5.00.SL3512.wili-core.00000.000000.0000 -o $(ARCH)-uclibc/fwupdate.bin -i tools/wili/wb111-ddwrt.txt
+#	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/zImage
+#	./tools/trx_n -m 30000000 -o $(ARCH)-uclibc/wb111-webflash.bin $(ARCH)-uclibc/zImage
+
+
+
+include rules/all.mk
+
+.PHONY: all clean distclean mrproper install package
+.PHONY: conf mconf oldconf kconf kmconf config menuconfig oldconfig
+.PHONY: dummy fixkc libnet libpcap
+
+
+
