@@ -225,7 +225,7 @@ endif
 		echo; \
 	) > $(LINUXDIR)/symtab.h
 	rm -f $(LINUXDIR)/vmlinux
-	$(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage ARCH=arm EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
+	$(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage ARCH=arm EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
 install_headers:
 # important step, required for new kernels
