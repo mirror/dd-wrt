@@ -174,16 +174,16 @@ endif
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
-	-$(MAKE) -f Makefile.mpc85xx ath9k
-	-$(MAKE) -f Makefile.mpc85xx ath9k-install
-	-$(MAKE) -f Makefile.mpc85xx madwifi
-	-$(MAKE) -f Makefile.mpc85xx madwifi-install
-	-$(MAKE) -f Makefile.mpc85xx batman-adv
-	-$(MAKE) -f Makefile.mpc85xx batman-adv-install
-	-$(MAKE) -f Makefile.mpc85xx opendpi
-	-$(MAKE) -f Makefile.mpc85xx opendpi-install
-	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio
-	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio-install
+	-$(MAKE) -f Makefile.ventana ath9k
+	-$(MAKE) -f Makefile.ventana ath9k-install
+	-$(MAKE) -f Makefile.ventana madwifi
+	-$(MAKE) -f Makefile.ventana madwifi-install
+	-$(MAKE) -f Makefile.ventana batman-adv
+	-$(MAKE) -f Makefile.ventana batman-adv-install
+	-$(MAKE) -f Makefile.ventana opendpi
+	-$(MAKE) -f Makefile.ventana opendpi-install
+	-$(MAKE) -f Makefile.ventana uniwip-gpio
+	-$(MAKE) -f Makefile.ventana uniwip-gpio-install
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
 	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
 	done

@@ -386,16 +386,16 @@ endif
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
-	-$(MAKE) -f Makefile.mpc85xx ath9k
-	-$(MAKE) -f Makefile.mpc85xx ath9k-install
-	-$(MAKE) -f Makefile.mpc85xx madwifi
-	-$(MAKE) -f Makefile.mpc85xx madwifi-install
-	-$(MAKE) -f Makefile.mpc85xx batman-adv
-	-$(MAKE) -f Makefile.mpc85xx batman-adv-install
-	-$(MAKE) -f Makefile.mpc85xx opendpi
-	-$(MAKE) -f Makefile.mpc85xx opendpi-install
-	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio
-	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio-install
+	-$(MAKE) -f Makefile.pb42 ath9k
+	-$(MAKE) -f Makefile.pb42 ath9k-install
+	-$(MAKE) -f Makefile.pb42 madwifi
+	-$(MAKE) -f Makefile.pb42 madwifi-install
+	-$(MAKE) -f Makefile.pb42 batman-adv
+	-$(MAKE) -f Makefile.pb42 batman-adv-install
+	-$(MAKE) -f Makefile.pb42 opendpi
+	-$(MAKE) -f Makefile.pb42 opendpi-install
+	-$(MAKE) -f Makefile.pb42 uniwip-gpio
+	-$(MAKE) -f Makefile.pb42 uniwip-gpio-install
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
 	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
 	done

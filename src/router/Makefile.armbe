@@ -198,20 +198,29 @@ endif
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
-	-$(MAKE) -f Makefile.mpc85xx ath9k
-	-$(MAKE) -f Makefile.mpc85xx ath9k-install
-	-$(MAKE) -f Makefile.mpc85xx madwifi
-	-$(MAKE) -f Makefile.mpc85xx madwifi-install
-	-$(MAKE) -f Makefile.mpc85xx batman-adv
-	-$(MAKE) -f Makefile.mpc85xx batman-adv-install
-	-$(MAKE) -f Makefile.mpc85xx opendpi
-	-$(MAKE) -f Makefile.mpc85xx opendpi-install
-	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio
-	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio-install
+	-$(MAKE) -f Makefile.armeb ath9k
+	-$(MAKE) -f Makefile.armeb ath9k-install
+	-$(MAKE) -f Makefile.armeb madwifi
+	-$(MAKE) -f Makefile.armeb madwifi-install
+	-$(MAKE) -f Makefile.armeb batman-adv
+	-$(MAKE) -f Makefile.armeb batman-adv-install
+	-$(MAKE) -f Makefile.armeb opendpi
+	-$(MAKE) -f Makefile.armeb opendpi-install
+	-$(MAKE) -f Makefile.armeb uniwip-gpio
+	-$(MAKE) -f Makefile.armeb uniwip-gpio-install
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
 	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
 	done
 
+ifeq ($(CONFIG_WP18),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/scsi
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/e1000
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/char
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/sunrpc
+endif
 	find $(TARGETDIR)/lib -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
