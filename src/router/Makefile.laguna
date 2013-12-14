@@ -174,16 +174,16 @@ endif
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
-	-$(MAKE) -f Makefile.mpc85xx ath9k
-	-$(MAKE) -f Makefile.mpc85xx ath9k-install
-	-$(MAKE) -f Makefile.mpc85xx madwifi
-	-$(MAKE) -f Makefile.mpc85xx madwifi-install
-	-$(MAKE) -f Makefile.mpc85xx batman-adv
-	-$(MAKE) -f Makefile.mpc85xx batman-adv-install
-	-$(MAKE) -f Makefile.mpc85xx opendpi
-	-$(MAKE) -f Makefile.mpc85xx opendpi-install
-	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio
-	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio-install
+	-$(MAKE) -f Makefile.laguna ath9k
+	-$(MAKE) -f Makefile.laguna ath9k-install
+	-$(MAKE) -f Makefile.laguna madwifi
+	-$(MAKE) -f Makefile.laguna madwifi-install
+	-$(MAKE) -f Makefile.laguna batman-adv
+	-$(MAKE) -f Makefile.laguna batman-adv-install
+	-$(MAKE) -f Makefile.laguna opendpi
+	-$(MAKE) -f Makefile.laguna opendpi-install
+	-$(MAKE) -f Makefile.laguna uniwip-gpio
+	-$(MAKE) -f Makefile.laguna uniwip-gpio-install
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
 	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
 	done
