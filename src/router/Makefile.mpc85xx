@@ -160,19 +160,59 @@ kernel:
 	# Also build kernel
 	-cp $(LINUXDIR)/.config_wdr4900 $(LINUXDIR)/.config
 #	cp $(LINUXDIR)/zImage $(ARCH)-uclibc/zImage
-
+ifeq ($(CONFIG_UNIWIP),y)
+	-cp $(LINUXDIR)/.config_uniwip $(LINUXDIR)/.config
+endif
 
 ifeq ($(CONFIG_EOP_TUNNEL),y)
 	echo CONFIG_NET_ETHERIP=m >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config
 endif
+
+	rm -f $(LINUXDIR)/symtab.h
+	touch $(LINUXDIR)/symtab.h
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=powerpc; \
 	fi
+
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=powerpc ; \
+	fi
+	
+	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+
+	find $(TARGETDIR)/lib/modules -name \*.ko | \
+		xargs $(ARCH)-linux-nm | \
+		awk '$$1 == "U" { print $$2 } ' | \
+		sort -u > $(LINUXDIR)/mod_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
+	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
+	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
+	( \
+		echo '#define SYMTAB_KEEP \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_KEEP_GPL \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD_GPL \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
+		echo; \
+	) > $(LINUXDIR)/symtab.h
+
+	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h"  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=powerpc; \
 	fi
 
 	cp $(LINUXDIR)/arch/powerpc/boot/cuImage.tl-wdr4900-v1 $(ARCH)-uclibc/cuImage.tl-wdr4900-v1
@@ -187,6 +227,10 @@ install_headers:
 # important step, required for new kernels
 	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
 	$(MAKE) -C $(LINUXDIR) headers_install ARCH=powerpc INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
+
+
+
+kernel_stripping: 
 
 	
 realclean: $(obj-clean)
@@ -221,6 +265,11 @@ distclean mrproper: $(obj-distclean) clean_target
 	$(MAKE) -C config clean
 	rm -f .config $(LINUXDIR)/.config
 	rm -f .config.old .config.cmd
+
+dtc:
+	$(LINUXDIR)/scripts/dtc/dtc -q -I dts -O dtb -o tools/uniwip/uniwip.dtb $(LINUXDIR)/arch/powerpc/boot/dts/uniwip.dts
+
+
 
 optimize-lib:
 #	make -f Makefile.mpc85xx lib.$(ARCH)-install
@@ -431,7 +480,11 @@ endif
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
 #	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 	
-	-./strip_libs.sh $(ARCH)
+	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
+	export STRIP="sstrip" && \
+	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
+
+#	-./strip_libs.sh $(ARCH)
 	#cd $(TARGETDIR)
 #	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
 	rm -rf $(TARGETDIR)/usr/local
@@ -448,6 +501,11 @@ endif
 	-./tools/tplink/mktplinkfw -B TL-WDR4900 -N DD-WRT -V 24 -k $(ARCH)-uclibc/cuImage.tl-wdr4900-v1 -r $(ARCH)-uclibc/root.fs -o powerpc-uclibc/tplink-wdr4900-firmware.bin
 	-./tools/tplink/mktplinkfw -B TL-WDR4900 -N DD-WRT -V 24 -t -k $(ARCH)-uclibc/cuImage.tl-wdr4900-v1 -r $(ARCH)-uclibc/root.fs -o powerpc-uclibc/tplink-wdr4900-firmware-t.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/wdr4900-firmware.bin powerpc-uclibc/tplink-wdr4900-firmware-t.bin	
+ifeq ($(CONFIG_UNIWIP),y)
+	make -f Makefile.mpc85xx dtc
+	./tools/uniwip/uniwipfw.sh
+endif
+
 
 #
 # Configuration rules
