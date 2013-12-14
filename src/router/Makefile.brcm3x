@@ -185,20 +185,65 @@ endif
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
-	-$(MAKE) -f Makefile.mpc85xx ath9k
-	-$(MAKE) -f Makefile.mpc85xx ath9k-install
-	-$(MAKE) -f Makefile.mpc85xx madwifi
-	-$(MAKE) -f Makefile.mpc85xx madwifi-install
-	-$(MAKE) -f Makefile.mpc85xx batman-adv
-	-$(MAKE) -f Makefile.mpc85xx batman-adv-install
-	-$(MAKE) -f Makefile.mpc85xx opendpi
-	-$(MAKE) -f Makefile.mpc85xx opendpi-install
-	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio
-	-$(MAKE) -f Makefile.mpc85xx uniwip-gpio-install
+	-$(MAKE) -f Makefile.brcm3x ath9k
+	-$(MAKE) -f Makefile.brcm3x ath9k-install
+	-$(MAKE) -f Makefile.brcm3x madwifi
+	-$(MAKE) -f Makefile.brcm3x madwifi-install
+	-$(MAKE) -f Makefile.brcm3x batman-adv
+	-$(MAKE) -f Makefile.brcm3x batman-adv-install
+	-$(MAKE) -f Makefile.brcm3x opendpi
+	-$(MAKE) -f Makefile.brcm3x opendpi-install
+	-$(MAKE) -f Makefile.brcm3x uniwip-gpio
+	-$(MAKE) -f Makefile.brcm3x uniwip-gpio-install
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
 	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
 	done
 
+ifneq ($(CONFIG_USB),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/cdrom
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/staging
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/usb/storage
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/scsi
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext2
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fat
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/msdos
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/vfat
+#	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/mbcache.ko
+endif
+ifneq ($(CONFIG_USB_ADVANCED),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/ext4
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/hfsplus
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/btrfs
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd	
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jbd2	
+endif
+ifneq ($(CONFIG_NTFS3G),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/fuse
+endif
+ifneq ($(CONFIG_USB),y)
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/nls
+endif
+endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv6
+endif
+ifneq ($(CONFIG_3G),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/net/usb
+endif
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/cifs
+endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/fs/jffs2
+endif
 	find $(TARGETDIR)/lib -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
