@@ -409,7 +409,7 @@ endif
 			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
 		echo; \
 	) > $(LINUXDIR)/symtab.h
-
+	rm -f $(LINUXDIR)/vmlinux
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
