@@ -184,10 +184,25 @@ endif
 
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
+
+	-$(MAKE) -f Makefile.northstar ath9k
+	-$(MAKE) -f Makefile.northstar ath9k-install
+	-$(MAKE) -f Makefile.northstar madwifi
+	-$(MAKE) -f Makefile.northstar madwifi-install
+	-$(MAKE) -f Makefile.northstar batman-adv
+	-$(MAKE) -f Makefile.northstar batman-adv-install
+	-$(MAKE) -f Makefile.northstar opendpi
+	-$(MAKE) -f Makefile.northstar opendpi-install
+	-$(MAKE) -f Makefile.northstar uniwip-gpio
+	-$(MAKE) -f Makefile.northstar uniwip-gpio-install
+
+	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	done
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
-	find $(TARGETDIR)/lib/modules -name \*.ko | \
+	find $(TARGETDIR)/lib -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
