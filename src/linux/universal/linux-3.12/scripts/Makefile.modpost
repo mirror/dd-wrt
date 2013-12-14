@@ -128,7 +128,6 @@ quiet_cmd_ld_ko_o = LD [M]  $@
 
 $(modules): %.ko :%.o %.mod.o FORCE
 	$(call if_changed,ld_ko_o)
-	export $(if $(CONFIG_KALLSYMS),NO_RENAME=1) STRIP_KMOD="$(srctree)/scripts/strip-kmod.sh" && $(srctree)/scripts/rstrip.sh $@
 	
 targets += $(modules)
 
