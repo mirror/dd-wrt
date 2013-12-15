@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.19 Kernel Configuration
+# Linux/arm 3.10.24 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -2198,7 +2198,6 @@ CONFIG_OCF_IXP4XX=m
 CONFIG_OCF_IXP4XX_SHA1_MD5=y
 # CONFIG_OCF_HIFN is not set
 # CONFIG_OCF_HIFNHIPP is not set
-# CONFIG_OCF_TALITOS is not set
 # CONFIG_OCF_EP80579 is not set
 # CONFIG_OCF_CRYPTOCTEON is not set
 # CONFIG_OCF_KIRKWOOD is not set
