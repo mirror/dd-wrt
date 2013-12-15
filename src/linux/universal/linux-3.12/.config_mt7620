@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.12.0 Kernel Configuration
+# Linux/mips 3.12.5 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1265,18 +1265,10 @@ CONFIG_RTPCI_80211N_DRAFT3=y
 # CONFIG_RTPCI_EXT_CHANNEL_LIST is not set
 # CONFIG_RT3090_AP_INCLUDE is not set
 # CONFIG_RT3593_AP_INCLUDE is not set
-CONFIG_RTPCI_AP_HIGH_POWER=y
-CONFIG_RTPCI_AP_VIDEO_TURBINE=y
-CONFIG_RTPCI_TXBF_SUPPORT=y
 # CONFIG_RT5392_AP_INCLUDE is not set
 CONFIG_RT5592_AP_INCLUDE=y
 CONFIG_RT5592_EP_SUPPORT=y
 # CONFIG_RTPCI_AP_ATE is not set
-# CONFIG_RT3090_AP_ATE is not set
-# CONFIG_RT3593_AP_ATE is not set
-# CONFIG_RT5392_AP_ATE is not set
-# CONFIG_RT5592_AP_ATE is not set
-# CONFIG_RTPCI_AP_QA is not set
 
 #
 # Enable WiMAX (Networking options) to see the WiMAX drivers
