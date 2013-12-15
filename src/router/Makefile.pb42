@@ -388,6 +388,7 @@ endif
 
 	-$(MAKE) -f Makefile.pb42 ath9k
 	-$(MAKE) -f Makefile.pb42 ath9k-install
+	-$(MAKE) -f Makefile.pb42 libutils
 	-$(MAKE) -f Makefile.pb42 madwifi
 	-$(MAKE) -f Makefile.pb42 madwifi-install
 	-$(MAKE) -f Makefile.pb42 batman-adv

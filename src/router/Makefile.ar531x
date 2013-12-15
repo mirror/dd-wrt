@@ -284,6 +284,7 @@ endif
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 	-$(MAKE) -f Makefile.ar531x ath9k
 	-$(MAKE) -f Makefile.ar531x ath9k-install
+	-$(MAKE) -f Makefile.ar531x libutils
 	-$(MAKE) -f Makefile.ar531x madwifi
 	-$(MAKE) -f Makefile.ar531x madwifi-install
 	-$(MAKE) -f Makefile.ar531x batman-adv

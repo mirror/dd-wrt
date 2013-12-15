@@ -187,6 +187,7 @@ endif
 
 	-$(MAKE) -f Makefile.brcm3x ath9k
 	-$(MAKE) -f Makefile.brcm3x ath9k-install
+	-$(MAKE) -f Makefile.brcm3x libutils
 	-$(MAKE) -f Makefile.brcm3x madwifi
 	-$(MAKE) -f Makefile.brcm3x madwifi-install
 	-$(MAKE) -f Makefile.brcm3x batman-adv

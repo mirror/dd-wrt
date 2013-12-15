@@ -176,6 +176,7 @@ endif
 
 	-$(MAKE) -f Makefile.laguna ath9k
 	-$(MAKE) -f Makefile.laguna ath9k-install
+	-$(MAKE) -f Makefile.laguna libutils
 	-$(MAKE) -f Makefile.laguna madwifi
 	-$(MAKE) -f Makefile.laguna madwifi-install
 	-$(MAKE) -f Makefile.laguna batman-adv
