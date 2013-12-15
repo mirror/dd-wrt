@@ -183,6 +183,7 @@ endif
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 	-$(MAKE) -f Makefile.danube ath9k
 	-$(MAKE) -f Makefile.danube ath9k-install
+	-$(MAKE) -f Makefile.danube libutils
 	-$(MAKE) -f Makefile.danube madwifi
 	-$(MAKE) -f Makefile.danube madwifi-install
 	-$(MAKE) -f Makefile.danube batman-adv

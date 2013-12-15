@@ -235,6 +235,7 @@ endif
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 	-$(MAKE) -f Makefile.rt2880 ath9k
 	-$(MAKE) -f Makefile.rt2880 ath9k-install
+	-$(MAKE) -f Makefile.rt2880 libutils
 	-$(MAKE) -f Makefile.rt2880 madwifi
 	-$(MAKE) -f Makefile.rt2880 madwifi-install
 	-$(MAKE) -f Makefile.rt2880 batman-adv
