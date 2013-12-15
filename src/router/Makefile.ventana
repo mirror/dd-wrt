@@ -176,6 +176,7 @@ endif
 
 	-$(MAKE) -f Makefile.ventana ath9k
 	-$(MAKE) -f Makefile.ventana ath9k-install
+	-$(MAKE) -f Makefile.ventana libutils
 	-$(MAKE) -f Makefile.ventana madwifi
 	-$(MAKE) -f Makefile.ventana madwifi-install
 	-$(MAKE) -f Makefile.ventana batman-adv
