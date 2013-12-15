@@ -187,6 +187,7 @@ endif
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 	-$(MAKE) -f Makefile.mpc83xx ath9k
 	-$(MAKE) -f Makefile.mpc83xx ath9k-install
+	-$(MAKE) -f Makefile.mpc83xx libutils
 	-$(MAKE) -f Makefile.mpc83xx madwifi
 	-$(MAKE) -f Makefile.mpc83xx madwifi-install
 	-$(MAKE) -f Makefile.mpc83xx batman-adv

@@ -200,6 +200,7 @@ endif
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 	-$(MAKE) -f Makefile.armeb ath9k
 	-$(MAKE) -f Makefile.armeb ath9k-install
+	-$(MAKE) -f Makefile.armeb libutils
 	-$(MAKE) -f Makefile.armeb madwifi
 	-$(MAKE) -f Makefile.armeb madwifi-install
 	-$(MAKE) -f Makefile.armeb batman-adv

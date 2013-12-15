@@ -1,0 +1,1799 @@
+#
+# Broadcom Linux Router Makefile
+#
+# Copyright 2001-2003, Broadcom Corporation
+# All Rights Reserved.
+#
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+#
+# $Id: Makefile,v 1.2 2005/09/26 11:06:58 seg Exp $
+#
+
+include .config
+ifneq ($(wildcard ../cy_conf.mak),)
+  include ../cy_conf.mak
+endif
+
+#
+# Paths
+#
+SER_MODULES:=sl tm rr maxfwd usrloc registrar dbtext textops nathelper
+SER_MODULE_FILES:=$(foreach module,$(SER_MODULES),ser/modules/$(module)/$(module).so)
+OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192
+OPENSSL_OPTIONS:= shared no-ec no-err no-fips no-hw no-krb5 no-threads zlib-dynamic
+
+# Source bases
+
+export PLATFORM LINUXDIR LIBDIR USRLIBDIR
+export TOP := $(shell pwd)
+export SRCBASE := $(shell (cd $(TOP)/.. && pwd -P))
+
+
+# Set the HAL directory if you have the HAL sources
+
+# Set the Atheros Rate Control directory if you have the proprietary rate control
+export ATH_RATE=ath_rate/sample
+
+#
+# Cross-compile environment variables
+#
+
+# Build platform
+export BUILD := i386-pc-linux-gnu
+export HOSTCC := gcc
+
+# uClibc wrapper
+export ARCHITECTURE:=gateworx
+export ARCH:=$(PLATFORM)
+ifeq ($(CONFIG_UCLIBC),y)
+export PLATFORM := $(PLATFORM)-uclibc
+endif
+
+#export LINUXDIR := $(SRCBASE)/linux/linux.v24
+ifeq ($(ARCH),mips)
+export LINUXDIR := $(SRCBASE)/linux/brcm63xx/linux-2.6.17
+endif
+ifeq ($(ARCH),armeb)
+export LINUXDIR := $(SRCBASE)/linux/xscale/linux-2.6.20
+endif
+ifeq ($(ARCH),mipsel)
+export LINUXDIR := $(SRCBASE)/kernel/rb500/linux-2.6.17-rc5
+endif
+ifeq ($(ARCH),i386)
+export LINUXDIR := $(SRCBASE)/kernel/wrap/linux-2.6.16.7
+endif
+
+export KERNELRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
+
+#export KERNELRELEASE = $(shell cat $(LINUXDIR)/.kernelrelease 2> /dev/null)
+
+#ifeq ($(PLATFORM),mipsel)
+#export CROSS_COMPILE := mipsel-linux-
+#export CONFIGURE := ./configure mipsel-linux --build=$(BUILD)
+#export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/../mipsel-linux && pwd -P)
+#endif
+
+#ifeq ($(PLATFORM),mipsel-uclibc)
+export CROSS_COMPILE := $(ARCH)-linux-uclibc-
+export CONFIGURE := ./configure $(ARCH)-linux --build=$(BUILD)
+export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && pwd -P)
+#endif
+
+#ifeq ($(CONFIG_BCMWPA2),y)
+#export CFLAGS += -DBCMWPA2 
+#endif
+
+export BASEOPT:=-Os
+#export ARCH:= mipsel
+
+ifeq ($(ARCH),mipsel)
+export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
+endif
+ifeq ($(ARCH),armeb)
+export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb
+endif
+ifeq ($(ARCH),mips)
+export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
+endif
+ifeq ($(ARCH),i386)
+export COPTS:=$(BASEOPT) -pipe -march=i486 -funit-at-a-time 
+endif
+
+export CC := $(CROSS_COMPILE)gcc
+export CXX := $(CROSS_COMPILE)g++
+export AR := $(CROSS_COMPILE)ar
+export AS := $(CROSS_COMPILE)as
+export LD := $(CROSS_COMPILE)ld
+export NM := $(CROSS_COMPILE)nm
+export RANLIB := $(CROSS_COMPILE)ranlib
+export STRIP := $(CROSS_COMPILE)strip
+export SIZE := $(CROSS_COMPILE)size
+
+export CFLAGS := $(COPTS)
+
+#
+# Install and target directories
+#
+
+export PLATFORMDIR := $(TOP)/$(PLATFORM)
+export INSTALLDIR := $(PLATFORMDIR)/install
+export TARGETDIR := $(PLATFORMDIR)/target
+
+ifeq ($(PLATFORM),mipsel)
+obj-y += libcrypto
+endif
+#
+# Configuration
+#
+CONFIG_IPTABLES=y
+obj-$(CONFIG_OPENSSL) += openssl
+obj-$(CONFIG_MATRIXSSL) += matrixssl
+obj-$(CONFIG_HTTPD) += httpd
+obj-$(CONFIG_RC) += rc services 
+obj-$(CONFIG_LIBBCM) += libbcm
+obj-$(CONFIG_SHARED) += shared
+obj-$(CONFIG_WWW) += www
+obj-$(CONFIG_GLIBC) += lib.$(ARCH)
+obj-$(CONFIG_UCLIBC) += lib.$(ARCH)
+obj-$(CONFIG_BRIDGE) += bridge
+obj-$(CONFIG_BUSYBOX) += rflow dhcpforwarder net-tools zlib dropbear busybox
+#obj-$(CONFIG_TELNET) += telnetd
+obj-$(CONFIG_DNSMASQ) += dnsmasq
+obj-$(CONFIG_MOXA) += moxa
+obj-$(CONFIG_IPTABLES) += iptables
+obj-$(CONFIG_LIBIPT) += iptables
+obj-$(CONFIG_IPSEC) += ipsec
+obj-$(CONFIG_LIBPCAP) += libpcap
+obj-$(CONFIG_LIBNET) += libnet
+obj-$(CONFIG_TCPDUMP) += tcpdump
+obj-$(CONFIG_KISMETDRONE) += kismet-devel
+obj-$(CONFIG_NETSTATNAT) += netstatnat
+obj-$(CONFIG_SES) += ses
+obj-$(CONFIG_WPA_SUPPLICANT) += wpa_supplicant
+obj-$(CONFIG_HOSTAPD) += hostapd
+obj-$(CONFIG_NETCONF) += netconf
+obj-$(CONFIG_NTP) += ntpclient
+obj-$(CONFIG_NVRAM) += nvram
+obj-$(CONFIG_PPP) += ppp
+# AhMan March 19 2005
+obj-$(CONFIG_PPPOE) += pppoe
+obj-$(CONFIG_UDHCPD) += udhcpd
+obj-$(CONFIG_UPNP) += upnp
+obj-$(CONFIG_MADWIFI) += madwifi
+obj-$(CONFIG_ETC) += etc
+#obj-$(CONFIG_VLAN) += vlan
+obj-$(CONFIG_WIRELESS_TOOLS) += wireless-tools
+obj-$(CONFIG_DROPBEAR_SSHD) += zlib dropbear
+obj-$(CONFIG_IPROUTE2) += iproute2
+obj-$(CONFIG_EBTABLES) += ebtables
+obj-$(CONFIG_PPTPD) += pptpd
+obj-$(CONFIG_PIPSEC) += pipsec
+obj-$(CONFIG_FROTTLE) += frottle
+obj-$(CONFIG_WOL) += wol
+obj-$(CONFIG_SNMP) += snmp
+#obj-$(CONFIG_RADVD) += radvd
+obj-$(CONFIG_RFLOW) += rflow
+obj-$(CONFIG_SPUTNIK_APD) += sputnik
+
+#obj-$(CONFIG_ADM6996) += adm6996
+##################################################################
+CONFIG_OTHERS=y
+#obj-$(CONFIG_ADM6996) += adm6996
+CONFIG_L2TP=y
+obj-$(CONFIG_L2TP) += rp-l2tp
+
+obj-$(CONFIG_CHILLISPOT) += chillispot
+obj-$(CONFIG_DHCPFORWARD) += dhcpforwarder
+obj-$(CONFIG_PARPROUTED) += parprouted
+obj-$(CONFIG_HEARTBEAT) += bpalogin
+obj-$(CONFIG_TFTPD) += tftpd
+obj-$(CONFIG_CRON) += cron
+obj-$(CONFIG_PPTP) += pptp-client
+obj-$(CONFIG_PPPD) += pppd
+obj-$(CONFIG_ZEBRA) += zebra
+obj-$(CONFIG_BIRD) += bird
+obj-$(CONFIG_DDNS) += inadyn
+obj-$(CONFIG_OTHERS) += others
+obj-$(CONFIG_EOU) += eou
+obj-$(CONFIG_SER) += ser
+obj-$(CONFIG_NOCAT) += nocat
+obj-$(CONFIG_RTPPROXY) += rtpproxy
+obj-$(CONFIG_SAMBA) += samba
+obj-$(CONFIG_RADAUTH) += radauth
+#obj-$(CONFIG_MMC) += mmc
+obj-$(CONFIG_ZEROIP) += shat
+obj-$(CONFIG_KAID) += kaid
+obj-$(CONFIG_ROBOCFG) += robocfg
+obj-$(CONFIG_MULTICAST) += igmp-proxy
+obj-$(CONFIG_SKYTRON) += skytron
+obj-$(CONFIG_OPENVPN) += openvpn
+obj-$(CONFIG_OLSRD) += olsrd
+obj-$(CONFIG_FDISK) += fdisk
+obj-$(CONFIG_UTILS) += utils
+
+obj-$(CONFIG_PCIUTILS) += pciutils
+#obj-$(CONFIG_E2FSPROGS) += e2fsprogs
+obj-$(CONFIG_HTTPREDIRECT) += http-redirect
+obj-$(CONFIG_SMTPREDIRECT) += smtp-redirect
+obj-$(CONFIG_SPUTNIK_APD) += sputnik
+obj-$(CONFIG_OVERCLOCKING) += overclocking
+obj-$(CONFIG_PROXYWATCHDOG) += proxywatchdog
+obj-$(CONFIG_JFFS2) += jffs2
+obj-$(CONFIG_LANGUAGE) += language
+obj-$(CONFIG_NETWORKSETTINGS) += networksettings
+obj-$(CONFIG_ROUTERSTYLE) += routerstyle
+obj-$(CONFIG_SCHEDULER) += scheduler
+obj-$(CONFIG_SYSLOG) += syslog
+obj-$(CONFIG_TELNET) += telnet
+obj-$(CONFIG_WDSWATCHDOG) += wdswatchdog
+obj-$(CONFIG_IPV6) += ipv6
+obj-$(CONFIG_CONNTRACK) += conntrack
+obj-$(CONFIG_PHP) += php5
+obj-$(CONFIG_NCURSES) += ncurses
+obj-$(CONFIG_IFTOP) += iftop
+obj-$(CONFIG_IPTRAF) += iptraf
+obj-$(CONFIG_WIFIDOG) += wifidog
+obj-y += hwmon
+obj-$(CONFIG_RSTATS) += rstats
+obj-y += stabridge
+obj-$(CONFIG_EOP_TUNNEL) += eop-tunnel
+obj-$(CONFIG_AIRCRACK) += aircrack-ng
+obj-$(CONFIG_MOXA) += moxa
+obj-$(CONFIG_BONDING) += ifenslave
+obj-$(CONFIG_NSTX) += nstx
+obj-$(CONFIG_SQUID) += squid
+obj-$(CONFIG_IPERF) += iperf
+obj-$(CONFIG_NTPD) += ntpd
+obj-$(CONFIG_GPSD) += gpsd
+
+
+
+obj-clean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-clean)
+obj-install := $(foreach obj,$(obj-y),$(obj)-install)
+obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
+
+#
+# Basic rules
+#
+
+
+all: build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
+
+build_date:
+	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
+
+
+kernel:
+        # Also build kernel
+	# Also build kernel
+	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -C $(LINUXDIR) vmlinux zImage CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	fi
+	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
+	fi
+	#armeb-linux-uclibc-strip --remove-section=.note --remove-section=.comment $(LINUXDIR)/vmlinux
+	#armeb-linux-uclibc-objcopy -O binary $(LINUXDIR)/vmlinux vmlinux.bin 
+	#cmplzma -k -3 $(LINUXDIR)/vmlinux vmlinux.bin $(PLATFORMDIR)/vmlinux.lz
+	
+#	cat $(LINUXDIR)/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/rb500/vmlinux.lzma
+#	make -C lzma-loader/rb500 clean
+#	make -C lzma-loader/rb500 
+#	cp lzma-loader/rb500/lzma.elf $(ARCH)-uclibc/vmlinux
+
+	
+clean: $(obj-clean)
+	rm -f .config.old .config.cmd
+	#umount $(TARGETDIR)
+	rm -rf $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+	rm -f $(ARCH)-uclibc/*
+#	rm -f $(PLATFORMDIR)/linux.trx $(PLATFORMDIR)/vmlinuz $(PLATFORMDIR)/target.squashfs
+
+clean_target:
+	#umount $(TARGETDIR)
+	rm -rf $(TARGETDIR)
+	rm -rf $(INSTALLDIR)
+#	rm -f $(PLATFORMDIR)/linux.trx $(PLATFORMDIR)/vmlinuz $(PLATFORMDIR)/target.squashfs
+
+distclean mrproper: $(obj-distclean) clean_target
+	rm -rf $(INSTALLDIR)
+	$(MAKE) -C $(LINUXDIR) distclean
+	$(MAKE) -C $(LINUXDIR)/arch/mips/bcm947xx/compressed clean
+	#rm -f $(PLATFORMDIR)/zImage $(PLATFORMDIR)/linux.bin
+	$(MAKE) -C config clean
+	rm -f .config $(LINUXDIR)/.config
+	rm -f .config.old .config.cmd
+
+optimize-lib:
+#	../../tools/optimize_lib.sh netconf/ libnetconf.so libnetconf.a libnetconf_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libnetconf.so
+	../../tools/optimize_lib.sh shared/ libshared.so libshared.a libshared_min.so $(TARGETDIR) $(TARGETDIR)/lib/libshared.so
+#	../../tools/optimize_lib.sh lib/ libm.so libm.a libm_min.so $(TARGETDIR) $(TARGETDIR)/lib/libm.so.0
+	../../tools/optimize_lib.sh lib/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
+#	../../tools/optimize_lib.sh services/ services.so services.a services_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/services.so
+#  ../../tools/optimize_lib.sh iptables/ libiptables.so libiptables.a libiptables_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libiptables.so
+
+
+install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
+        # Install binaries into target directory
+	# Install binaries into target directory
+#	make -C viarhine clean
+#	make -C viarhine	
+	#umount -f $(TARGETDIR)
+	#dd if=/dev/zero of=mipsel-uclibc/root.fs bs=1024 count=27392
+	#mke2fs -F -b 1024 mipsel-uclibc/root.fs
+	#mkfs.ext3 -F -b 1024 mipsel-uclibc/root.fs
+	install -d $(TARGETDIR)
+	#mount mipsel-uclibc/root.fs -o loop=/dev/loop1 $(TARGETDIR)
+#	$(ARCH)-linux-strip $(LINUXDIR)/vmlinux -o $(ARCH)-uclibc/vmlinux
+#	cp $(LINUXDIR)/vmlinus mipsel-uclibc/vmlinux
+#	gunzip -c base.img.gz>image.img
+#	../tools/write $(ARCH)-uclibc/vmlinux image.img 16384
+	#dd if=$(LINUXDIR)/vmlinux of=/dev/loop0 bs=512 seek=32
+	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	done
+	mkdir -p $(ARCH)-uclibc/target/etc/config
+	mkdir -p $(ARCH)-uclibc/target/etc/kaid
+	mkdir -p $(ARCH)-uclibc/target/etc/langpack
+	cp ./opt/bin/ipkg $(ARCH)-uclibc/target/bin
+	cd  $(ARCH)-uclibc/target/lib
+#	ln -s libgcc_s.so.1 libgcc_s.so
+#	cd ../../../../../opt
+	cp ./opt/etc/preinit $(ARCH)-uclibc/target/etc
+	cp ./opt/etc/postinit $(ARCH)-uclibc/target/etc
+	cp ./opt/etc/ipkg.conf $(ARCH)-uclibc/target/etc
+	cp ./opt/etc/config/* $(ARCH)-uclibc/target/etc/config
+	cp ./opt/usr/lib/smb.conf $(ARCH)-uclibc/target/usr/lib
+	ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb
+
+	# optimize the crypto library by removing unneeded symbols
+	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
+	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
+	# Install (and possibly optimize) C library
+	$(MAKE) -f Makefile.mik lib.$(ARCH)-install
+	# optimize the others library by removing unneeded symbols
+	$(MAKE) -f Makefile.mik optimize-lib
+	# Install modules into filesystem
+	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
+	fi
+ifeq ($(CONFIG_MADWIFI),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wl
+endif
+#	mkdir -p $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
+#	cp ../wl/ctmisc/ctmisc.o $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
+	##not used yet
+	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
+	#cp ./switch/switch-core.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
+	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
+#	cp ./viarhine/via-rhine.o $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net
+
+	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
+	#cp ./switch/switch-adm.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
+	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
+	#cp ./switch/switch-robo.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
+	
+	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc1/kernel/drivers/net/et
+	#cp ../et/linux/et.o $(TARGETDIR)/lib/modules/2.4.32-rc1/kernel/drivers/net/et
+	
+	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/et.4702
+	#cp ../et.4702/linux/4702et.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/et.4702
+	# robo switch
+	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/robo
+	#cp ../robo/linux/robo.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/robo
+	
+	find $(TARGETDIR) -name "wl_*.o"  | xargs rm -rf
+	# quick n dirty - stuff Nikki's module where it belongs
+	#mkdir $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996
+#	if [ "$(CONFIG_MMC)" = "y" ] ; then \
+#	mkdir $(TARGETDIR)/lib/modules/2.4.32/kernel/fs/mmc ; \
+#	cp mmc/mmc.o $(TARGETDIR)/lib/modules/2.4.32/kernel/fs/mmc ; \
+#	fi ; 
+#ifeq ($(CONFIG_MSSID),y)
+#	cp adm6996.v24/adm6996.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996/adm6996.o
+#else	
+#	cp adm6996/adm6996.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996/adm6996.o
+#endif
+
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+	
+	
+	
+        # Prepare filesystem
+	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
+        # Make sure mksquashfs-2.0 is used
+#	$(MAKE) -C $(LINUXDIR)/scripts/squashfs mksquashfs
+	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
+	cd $(TARGETDIR)  &&  find . -iname ".svn" | xargs rm -rf
+#	cp viarhine/pci-scan.o $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/pci-scan.o
+#	cp -f test/* $(TARGETDIR)/lib/modules/2.4.33-pre1/kernel/drivers/net
+	
+#	mknod $(TARGETDIR)/dev/cfa b 13 0
+#	mknod $(TARGETDIR)/dev/cfa1 b 13 1
+#	mknod $(TARGETDIR)/dev/cfa2 b 13 2
+#	mknod $(TARGETDIR)/dev/cfa3 b 13 3
+#	mknod $(TARGETDIR)/dev/cfa4 b 13 4
+#	umount $(TARGETDIR)
+#find $(TARGETDIR)/lib/modules -name *.ko -exec mipsel-linux-strip --strip-unneeded --remove-section=.comment {} +		
+	#e2fsck -y -f $(ARCH)-uclibc/root.fs
+	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
+	
+	#cd $(TARGETDIR)
+	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
+	rm -rf $(TARGETDIR)/usr/local
+	mkdir $(TARGETDIR)/usr/local
+ifeq ($(CONFIG_KAID),y)
+	cp kaid/kaid $(TARGETDIR)/usr/sbin
+endif
+	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+	./strip_libs.sh $(ARCH)
+
+	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
+#prepare www
+#	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target/www $(ARCH)-uclibc/target/etc/www.fs -noappend -be
+#	rm -rf $(ARCH)-uclibc/target/www
+#	mkdir $(ARCH)-uclibc/target/www
+
+#prepare modules
+#	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target/lib/modules $(ARCH)-uclibc/target/etc/modules.fs -noappend -be
+#	rm -rf $(ARCH)-uclibc/target/lib/modules
+#	mkdir $(ARCH)-uclibc/target/lib/modules
+
+#usr
+#	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target/usr $(ARCH)-uclibc/target/etc/usr.fs -noappend -be
+#	rm -rf $(ARCH)-uclibc/target/usr
+#	mkdir $(ARCH)-uclibc/target/usr
+	
+
+	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
+#	./writebin $(ARCH)-uclibc/dd-wrt.jffs2
+	
+	echo -ne '\xde\xad\xc0\xde' >> $(ARCH)-uclibc/dd-wrt.jffs2
+	wrv-bin lzma-loader/wrv/zLoader $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dd-wrt.bin
+	wrv-bin lzma-loader/wrv/zLoader $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/dd-wrt.jffs2 $(ARCH)-uclibc/dd-wrt-jffs.bin
+	../../tools/write5 $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/gateworx-firmware.raw 2097152
+#	cat $(ARCH)-uclibc/dd-wrt-jffs.bin >> $(ARCH)-uclibc/gateworx-firmware.raw
+	./tools/trx_n -m 12000000 -o $(ARCH)-uclibc/gateworx-firmware-jffs.bin $(ARCH)-uclibc/gateworx-firmware.raw $(ARCH)-uclibc/dd-wrt.jffs2
+	./tools/trx_n -m 12000000 -o $(ARCH)-uclibc/gateworx-firmware-squashfs.bin $(ARCH)-uclibc/gateworx-firmware.raw $(ARCH)-uclibc/root.fs
+#	bcmImageBuilder --output $(PLATFORMDIR)/dd-wrt.img --chip 6348 --board "96348GW-10" --blocksize 64 --cfefile cfe6348.bin --rootfsfile $(PLATFORMDIR)/root.fs --kernelfile $(PLATFORMDIR)/vmlinux.lz
+
+
+#	../tools/write $(ARCH)-uclibc/root.fs image.img 4063232 trunk
+#	../tools/rb500 $(ARCH)-uclibc/vmlinux $(ARCH)-uclibc/root.fs /GruppenLW/rb500_webupgrade.bin
+#	gzip -c9 image.img>/GruppenLW/image.gz
+#endif
+#
+# Configuration rules
+#
+fixkc: $(LINUXDIR)/.config
+	cp $(LINUXDIR)/.config /tmp/config.$$$$ ; \
+  if [ "$(CONFIG_IPSEC_TUNNEL)" = "y" ] ; then \
+    sed -e '/^CONFIG_IPSEC_TUNNEL=.*$$/d' \
+				-e '/^CONFIG_CRYPTO=.*$$/d' \
+        -e '/^CONFIG_CIPHERS=.*$$/d' \
+        -e '/^CONFIG_DIGESTS=.*$$/d' \
+        -e '/^CONFIG_CIPHER_DES=.*$$/d' \
+        -e '/^CONFIG_CIPHER_3DES=.*$$/d' \
+        -e '/^CONFIG_CIPHER_AES=.*$$/d' \
+        -e '/^CONFIG_DIGEST_MD5=.*$$/d' \
+        -e '/^CONFIG_DIGEST_SHA1=.*$$/d' \
+        /tmp/config.$$$$ > /tmp/config.n.$$$$ ; \
+    mv -f /tmp/config.n.$$$$ /tmp/config.$$$$ ; \
+    echo 'CONFIG_IPSEC_TUNNEL=y' >> /tmp/config.$$$$ ; \
+    echo 'CONFIG_CRYPTO=y' >> /tmp/config.$$$$ ; \
+    echo 'CONFIG_DIGESTS=y' >> /tmp/config.$$$$ ; \
+    echo 'CONFIG_CIPHERS=y' >> /tmp/config.$$$$ ; \
+    if [ "$(CONFIG_IPSEC_TUNNEL_MD5)" = "y" ] ; then \
+      echo 'CONFIG_DIGEST_MD5=y' >> /tmp/config.$$$$ ; \
+    fi ; \
+    if [ "$(CONFIG_IPSEC_TUNNEL_SHA1)" = "y" ] ; then \
+      echo 'CONFIG_DIGEST_SHA1=y' >> /tmp/config.$$$$ ; \
+    fi ; \
+    if [ "$(CONFIG_IPSEC_TUNNEL_DES)" = "y" ] ; then \
+      echo 'CONFIG_CIPHER_DES=y' >> /tmp/config.$$$$ ; \
+    fi ; \
+    if [ "$(CONFIG_IPSEC_TUNNEL_3DES)" = "y" ] ; then \
+      echo 'CONFIG_CIPHER_3DES=y' >> /tmp/config.$$$$ ; \
+    fi ; \
+    if [ "$(CONFIG_IPSEC_TUNNEL_AES)" = "y" ] ; then \
+      echo 'CONFIG_CIPHER_AES=y' >> /tmp/config.$$$$ ; \
+    fi ; \
+  fi && mv /tmp/config.$$$$ $(LINUXDIR)/.config
+
+
+conf mconf:
+	$(MAKE) -C config
+	@./config/$@ ./config/Config
+	$(MAKE) fixkc
+        # Also configure kernel
+	$(MAKE) k$@
+
+oldconf: .config
+	$(MAKE) -C config
+	@./config/conf -o ./config/Config
+	$(MAKE) fixkc
+        # Also configure kernel
+	$(MAKE) k$@
+
+kconf:
+	$(MAKE) -C $(LINUXDIR) config
+
+kmconf:
+	$(MAKE) -C $(LINUXDIR) menuconfig
+
+koldconf: $(LINUXDIR)/.config
+	$(MAKE) -C $(LINUXDIR) oldconfig
+
+# Convenience
+config: conf
+
+menuconfig: mconf
+
+oldconfig: oldconf
+
+# Default configurations
+.config:
+	cp config/defconfig $@
+	$(MAKE) oldconfig
+
+$(LINUXDIR)/.config:
+	cp $(LINUXDIR)/arch/mips/defconfig-bcm947xx $@
+
+#
+# Overrides
+#
+
+
+matrixssl:
+	$(MAKE) -C matrixssl/src all
+
+matrixssl-install:
+	echo "nischt"
+#	install -D matrixssl/src/libmatrixssl.so $(INSTALLDIR)/matrixssl/usr/lib/libmatrixssl.so
+#	$(STRIP) $(INSTALLDIR)/matrixssl/usr/lib/libmatrixssl.so
+
+matrixssl-clean:
+	$(MAKE) -C matrixssl/src clean
+
+
+openssl:
+#	cd openssl && ./Configure linux-$(ARCH) $(OPENSSL_NO_CHIPHERS) $(OPENSSL_OPTIONS) 
+	$(MAKE) -C openssl CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc 
+#	$(MAKE) -C openssl CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc
+	$(MAKE) -C openssl build-shared CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc
+	$(MAKE) -C openssl build_apps CC="$(ARCH)-linux-uclibc-gcc -I$(TOP)/zlib" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc
+	
+
+openssl-install:
+	install -D openssl/libcrypto.so.0.9.8 $(INSTALLDIR)/openssl/usr/lib/libcrypto.so.0.9.8
+#	$(STRIP) $(INSTALLDIR)/openssl/usr/lib/libcrypto.so
+	install -D openssl/libssl.so.0.9.8 $(INSTALLDIR)/openssl/usr/lib/libssl.so.0.9.8
+	install -D openssl/apps/openssl $(INSTALLDIR)/openssl/usr/sbin/openssl
+#	$(STRIP) $(INSTALLDIR)/openssl/usr/lib/libssl.so
+	@true
+
+ntpd:
+	cd ntpd && ./configure --host=armeb-linux CFLAGS="$(COPTS)" --prefix=/usr
+	make -j 4  -C ntpd
+
+ntpd-clean:
+	make -j 4  -C ntpd clean
+
+ntpd-install:
+	make -j 4  -C ntpd install DESTDIR=$(INSTALLDIR)/ntpd
+	rm -rf $(INSTALLDIR)/ntpd/usr/man
+	rm -rf $(INSTALLDIR)/ntpd/usr/lib
+
+
+gpsd:
+	cd gpsd && ./configure --host=armeb-linux --disable-fv18 --disable-python --disable-tripmate --disable-earthmate --disable-shared --without-x CFLAGS="$(COPTS) -I../ncurses/include -L../ncurses/lib" --prefix=/usr 
+	make -j 4  -C gpsd
+
+gpsd-clean:
+	make -j 4  -C gpsd clean
+
+gpsd-install:
+	make -j 4  -C gpsd install DESTDIR=$(INSTALLDIR)/gpsd
+	rm -rf $(INSTALLDIR)/gpsd/usr/man
+	rm -rf $(INSTALLDIR)/gpsd/usr/lib
+	rm -rf $(INSTALLDIR)/gpsd/usr/share
+	rm -rf $(INSTALLDIR)/gpsd/usr/lib64
+	rm -rf $(INSTALLDIR)/gpsd/usr/include
+
+openssl-clean:
+	$(MAKE) -C openssl clean
+
+rp-l2tp-install:
+	install -d $(INSTALLDIR)/rp-l2tp/usr/lib/l2tp
+	install rp-l2tp/handlers/*.so $(INSTALLDIR)/rp-l2tp/usr/lib/l2tp
+	$(STRIP) $(INSTALLDIR)/rp-l2tp/usr/lib/l2tp/*.so
+	install -D rp-l2tp/handlers/l2tp-control $(INSTALLDIR)/rp-l2tp/usr/sbin/l2tp-control
+	$(STRIP) $(INSTALLDIR)/rp-l2tp/usr/sbin/l2tp-control
+	install -D rp-l2tp/l2tpd $(INSTALLDIR)/rp-l2tp/usr/sbin/l2tpd
+	$(STRIP) $(INSTALLDIR)/rp-l2tp/usr/sbin/l2tpd
+
+libpcap:
+	$(MAKE) -C libpcap CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) libpcap.so
+	$(MAKE) -C libpcap_noring CC=$(CC) AR=$(AR) RANLIB=$(RANLIB) libpcap.a
+
+libpcap-install:
+	install -d $(INSTALLDIR)/libpcap/usr/lib
+	install libpcap/libpcap.so $(INSTALLDIR)/libpcap/usr/lib
+	$(STRIP) $(INSTALLDIR)/libpcap/usr/lib/libpcap.so
+
+eou: libnet libpcap
+	[ ! -d eou ] || $(MAKE) -C eou
+
+eou-install:
+	[ ! -d eou ] || install -D eou/eou $(INSTALLDIR)/eou/usr/sbin/eou
+	$(STRIP) $(INSTALLDIR)/eou/usr/sbin/eou
+
+ses:
+	[ ! -f ses/Makefile ] || $(MAKE) -C ses
+
+ses-install:
+	install -D ses/ses/ses $(INSTALLDIR)/ses/usr/sbin/ses
+	$(STRIP) $(INSTALLDIR)/ses/usr/sbin/ses
+
+libnet:
+	-mkdir -p libnet/lib
+	$(MAKE) -C libnet CC=$(CC) AR=$(AR) RANLIB=$(RANLIB)
+
+
+httpd: nvram shared hsiab matrixssl www-install
+	$(MAKE) -C httpd
+
+httpd-clean:
+	$(MAKE) -C httpd clean
+
+rc: netconf nvram shared hsiab libnet httpd dnsmasq bird dropbear zlib iproute2 dhcpforwarder pppd
+
+www www-%: eop-tunnel-install
+
+
+ifeq ($(KROMOGUI),y)
+	$(MAKE) -C kromo/$(WEB_PAGE) $* INSTALLDIR=$(INSTALLDIR)/www
+else
+	$(MAKE) -C www/$(WEB_PAGE) $* INSTALLDIR=$(INSTALLDIR)/www
+endif
+
+www-distclean www-clean:
+ifeq ($(KROMOGUI),y)
+	$(MAKE) -C kromo/$(WEB_PAGE) clean
+else
+	$(MAKE) -C www/$(WEB_PAGE) clean
+endif
+
+bridge:
+	$(MAKE) -C bridge brctl/brctl
+bridge:
+	$(MAKE) -C bridge brctl/brctl
+
+bridge-clean:
+	@echo "Cleaning bridge"
+	@if [ -e bridge/libbridge/libbridge.a ]; then\
+		rm bridge/brctl/*.o bridge/libbridge/*.a bridge/libbridge/*.o;\
+	else echo "Nothing to clean";\
+	fi;
+
+bridge-install:
+	install -D bridge/brctl/brctl $(INSTALLDIR)/bridge/usr/sbin/brctl
+	$(STRIP) $(INSTALLDIR)/bridge/usr/sbin/brctl
+
+moxa:
+	make -j 4  -C moxa tools
+
+moxa-clean:
+	make -j 4  -C moxa clean
+
+
+busybox-config: 
+	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
+
+busybox: busybox-config rc net-tools
+ifeq ($(CONFIG_DIST),"micro")
+	cp busybox/.config_micro busybox/.config
+	cd busybox && make oldconfig
+else
+ifeq ($(ARCH),i386)
+	cp busybox/.config_wrap busybox/.config
+endif
+ifeq ($(ARCH),mipsel)
+	cp busybox/.config_rb532 busybox/.config
+endif
+ifeq ($(ARCH),mips)
+	cp busybox/.config_3com busybox/.config
+endif
+ifeq ($(ARCH),armeb)
+	cp busybox/.config_xscale busybox/.config
+endif
+	cd busybox && make oldconfig
+endif
+	
+	make -j 4  -C busybox clean
+	rm -f busybox/busybox
+	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP)
+
+busybox-install:
+	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox install
+
+busybox-clean: busybox-config
+	$(MAKE) -j 4 -C busybox clean
+
+busybox-distclean: busybox-config
+	$(MAKE) -j 4 -C busybox clean
+	$(MAKE) -j 4 -C busybox/scripts/config clean
+	rm -f busybox/.depend busybox/include/config.h busybox.rb500/scripts/mkdep
+
+
+dnsmasq:
+	$(MAKE) -j 4 -C dnsmasq COPTS=-DHAVE_BROKEN_RTC CFLAGS="$(COPTS)"
+
+dnsmasq-install:
+	install -D dnsmasq/contrib/wrt/lease_update.sh $(INSTALLDIR)/dnsmasq/etc/lease_update.sh
+	install -D dnsmasq/src/dnsmasq $(INSTALLDIR)/dnsmasq/usr/sbin/dnsmasq
+
+
+iptables-clean:
+	$(MAKE) -j 4 -C iptables.linksys clean
+	$(MAKE) -j 4 -C iptables clean
+
+iptables:
+	$(MAKE) -j 4 -C iptables.linksys clean
+	$(MAKE) -j 4 -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR)
+
+iptables-devel:
+	$(MAKE) -j 4 -C iptables install-devel LIBDIR=/opt/openwrt/lib/ KERNEL_DIR=$(LINUXDIR)
+
+
+iptables-install:
+ifeq ($(CONFIG_IPTABLES),y)
+#	install -d $(INSTALLDIR)/iptables/usr/lib/iptables
+#	install iptables/extensions/*.so $(INSTALLDIR)/iptables/usr/lib/iptables
+#	$(STRIP) $(INSTALLDIR)/iptables/usr/lib/iptables/*.so
+	install -D iptables/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables
+#	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables
+#	install -D iptables/iptables-restore $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
+#	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
+	ln -sf /usr/sbin/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
+
+        ifeq ($(CONFIG_L7),y)
+	  install -d $(INSTALLDIR)/iptables/etc/l7-protocols
+	  cp -rp l7/* $(INSTALLDIR)/iptables/etc/l7-protocols/
+        endif
+else
+        # So that generic rule does not take precedence
+	@true
+endif
+
+iptables-clean:
+	-$(MAKE) -j 4 -C iptables KERNEL_DIR=$(LINUXDIR) clean
+
+iptables-distclean:
+	-$(MAKE) -j 4 -C iptables KERNEL_DIR=$(LINUXDIR) distclean
+
+netconf: iptables
+	make -j 4  -C iptables.linksys
+	make -j 4  -C netconf
+
+pptpd:
+ifeq ($(CONFIG_PPTPD),y)
+	$(MAKE) -j 4 -C pptpd
+else
+	@true
+endif
+
+pptpd-clean:
+	$(MAKE) -j 4 -C pptpd clean
+
+pptpd-install:
+ifeq ($(CONFIG_PPTPD),y)
+	install -D pptpd/pptpd $(INSTALLDIR)/pptpd/usr/sbin/pptpd
+	install -D pptpd/pptpctrl $(INSTALLDIR)/pptpd/usr/sbin/pptpctrl
+	install -D pptpd/bcrelay $(INSTALLDIR)/pptpd/usr/sbin/bcrelay
+	install -D pptpd/config/pptp.webservices $(INSTALLDIR)/pptpd/etc/config/pptp.webservices
+else
+        # So that generic rule does not take precedence
+	@true
+endif
+
+pipsec:
+ifeq ($(CONFIG_PIPSEC),y)
+	$(MAKE) -j 4 -C pipsec
+else
+	@true
+endif
+
+pipsec-clean:
+	$(MAKE) -j 4 -C pipsec clean
+
+pipsec-install:
+ifeq ($(CONFIG_PIPSEC),y)
+	install -D pipsec/pipsecd $(INSTALLDIR)/pipsec/usr/sbin/pipsecd
+	$(STRIP) $(INSTALLDIR)/pipsec/usr/sbin/pipsecd
+else
+        # So that generic rule does not take precedence
+	@true
+endif
+
+snmp:
+ifeq ($(CONFIG_SNMP),y)
+	cd snmp && rm -f config.cache
+	
+	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --host=$(ARCH) --with-cc=$(ARCH)-linux-uclibc-gcc --with-ar=$(ARCH)-linux-uclibc-ar --with-endianness=big --with-cflags="$(COPTS) -DCAN_USE_SYSCTL=1" --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp --with-out-mib-modules=agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
+#	cd snmp && ./configure  --quiet --prefix=/tmp/snmp --host="$(ARCH)-linux" --with-cc=$(ARCH)-linux-gcc --with-ar=$(ARCH)-linux-ar --with-endianness=big --with-cflags="$(COPTS) -DNETSNMP_CAT_USE_SYSCTL=1" --enable-mini-agent --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp --with-out-mib-modules=agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
+	$(MAKE) -j 4 -C snmp 
+else
+	@true
+endif
+
+snmp-clean:
+	$(MAKE) -j 4 -C snmp clean
+	rm -f $(INSTALLDIR)/etc/snmp
+
+snmp-install:
+ifeq ($(CONFIG_SNMP),y)
+	install -D snmp/agent/snmpd $(INSTALLDIR)/snmp/usr/sbin/snmpd
+	install -D snmp/config/snmp.webservices $(INSTALLDIR)/snmp/etc/config/snmp.webservices
+	$(STRIP) $(INSTALLDIR)/snmp/usr/sbin/snmpd
+	ln -sf /tmp/etc/snmp $(INSTALLDIR)/snmp/etc/snmp
+else
+        # So that generic rule does not take precedence
+	@true
+endif
+
+wifidog:
+	cd wifidog && ./configure --disable-nls --prefix=/usr --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS)"
+	$(MAKE) -j 4 -C wifidog
+
+wifidog-clean:
+	make -j 4  -C wifidog clean
+
+wifidog-install:
+	install -D wifidog/src/wdctl $(INSTALLDIR)/wifidog/usr/sbin/wdctl
+	install -D wifidog/src/wifidog $(INSTALLDIR)/wifidog/usr/sbin/wifidog
+	mkdir -p $(INSTALLDIR)/wifidog/etc/config
+	install -D wifidog/config/*.nvramconfig $(INSTALLDIR)/wifidog/etc/config
+	install -D wifidog/config/*.webhotspot $(INSTALLDIR)/wifidog/etc/config
+
+
+wol:
+	cd wol && ./configure --disable-nls --host=$(ARCH)-linux CC=$(CC) CFLAGS="$(COPTS)"
+	$(MAKE) -j 4 -C wol
+
+wol-clean:
+	$(MAKE) -j 4 -C wol clean
+
+wol-install:
+	install -D wol/src/wol $(INSTALLDIR)/wol/usr/sbin/wol
+	$(STRIP) $(INSTALLDIR)/wol/usr/sbin/wol
+
+dhcpforwarder:
+	cd dhcpforwarder && ./configure --host=$(ARCH)-linux-elf --sysconfdir=/tmp/dhcp-fwd CC=$(ARCH)-linux-uclibc-gcc CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc" 
+	$(MAKE) -j 4 -C dhcpforwarder
+
+dhcpforwarder-install:
+	#install -D dhcpforwarder/dhcp-fwd $(INSTALLDIR)/dhcpforwarder/usr/sbin/dhcp-fwd
+	#$(STRIP) $(INSTALLDIR)/dhcpforwarder/usr/sbin/dhcp-fwd
+	@true
+	
+dhcpforwarder-clean:
+	$(MAKE) -j 4 -C dhcpforwarder clean
+
+rtpproxy:
+	cd rtpproxy && ./configure --host=$(ARCH)-uclibc-linux
+	$(MAKE) -j 4 -C rtpproxy
+
+rtpproxy-install:
+
+	install -D rtpproxy/rtpproxy $(INSTALLDIR)/rtpproxy/usr/bin/rtpproxy
+	
+rtpproxy-clean:
+	$(MAKE) -j 4 -C rtpproxy clean
+
+shat:
+	make -j 4  -C shat/src
+
+shat-install:
+	install -D shat/src/shatd $(INSTALLDIR)/shat/usr/sbin/shatd
+	install -D shat/src/shatc $(INSTALLDIR)/shat/usr/sbin/shatc
+	install -D shat/config/shat.webhotspot $(INSTALLDIR)/shat/etc/config/shat.webhotspot
+	install -D shat/config/shat.nvramconfig $(INSTALLDIR)/shat/etc/config/shat.nvramconfig
+	install -D shat/config/shat.startup $(INSTALLDIR)/shat/etc/config/shat.startup
+
+	
+shat-clean:
+	make -j 4  -C shat/src clean
+
+radauth:
+	$(MAKE) -j 4 -C radauth
+
+radauth-install:
+	install -D radauth/wrt-radauth $(INSTALLDIR)/radauth/usr/sbin/wrt-radauth
+	install -D radauth/radius-client $(INSTALLDIR)/radauth/usr/sbin/radius-client
+	install -D radauth/radiusallow $(INSTALLDIR)/radauth/usr/sbin/radiusallow
+	install -D radauth/radiusdisallow $(INSTALLDIR)/radauth/usr/sbin/radiusdisallow
+	install -D radauth/macupd $(INSTALLDIR)/radauth/usr/sbin/macupd
+	
+radauth-clean:
+	$(MAKE) -j 4 -C radauth clean
+	
+
+samba:
+	$(ARCH)-linux-uclibc-gcc $(COPTS) -DNEED_PRINTF -o samba/cifs/mount.cifs samba/cifs/mount.cifs.c
+
+samba-install:
+	install -D samba/config/sambafs.webconfig $(INSTALLDIR)/samba/etc/config/sambafs.webconfig
+	install -D samba/config/sambafs.startup $(INSTALLDIR)/samba/etc/config/sambafs.startup
+	install -D samba/config/sambafs.nvramconfig $(INSTALLDIR)/samba/etc/config/sambafs.nvramconfig
+	install -D samba/cifs/mount.cifs $(INSTALLDIR)/samba/bin/mount.cifs
+
+
+samba-clean:
+	@true
+#	$(MAKE) -C samba/source clean
+
+mmc:
+	$(MAKE) -j 4 -C mmc
+
+mmc-install:
+	install -D  mmc/mmc.o $(INSTALLDIR)/mmc/lib/modules/2.4.30/kernel/fs/mmc/mmc.o
+	install -D  mmc/config/mmc.webconfig $(INSTALLDIR)/mmc/etc/config/mmc.webconfig
+	install -D  mmc/config/mmc.startup $(INSTALLDIR)/mmc/etc/config/mmc.startup
+	install -D  mmc/config/mmc.nvramconfig $(INSTALLDIR)/mmc/etc/config/mmc.nvramconfig
+
+mmc-clean:
+	$(MAKE) -j 4 -C mmc clean
+
+ser:
+	$(MAKE) -j 4 -C ser modules all utils/gen_ha1/gen_ha1 ARCH=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc CFLAGS="$(COPTS)" extra_defs="-DUSE_PTHREAD_MUTEX "
+
+
+ser-install:
+	install -D ser/openser $(INSTALLDIR)/ser/usr/sbin/openser
+	mkdir -p $(INSTALLDIR)/ser/usr/lib/openser/modules
+	mkdir -p $(INSTALLDIR)/ser/etc/config 
+	cp -a ser/etc/config/* $(INSTALLDIR)/ser/etc/config/
+	cp -a $(SER_MODULE_FILES) $(INSTALLDIR)/ser/usr/lib/openser/modules/
+	install -D ser/scripts/sc $(INSTALLDIR)/ser/usr/sbin/serctl
+	mkdir -p $(INSTALLDIR)/ser/etc/openser
+	install -D ser/etc/milkfish_openser.cfg $(INSTALLDIR)/ser/etc/openser/milkfish_openser.cfg
+	install -d -m0755 $(INSTALLDIR)/ser/etc/openser/dbtext
+	install -m0644 ser/etc/openser/dbtext/aliases $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/aliases.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/grp $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/grp.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/location $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/location.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/subscriber $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/subscriber.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/uri $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/uri.empty $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -m0644 ser/etc/openser/dbtext/version $(INSTALLDIR)/ser/etc/openser/dbtext/
+	install -D ser/etc/ip-up $(INSTALLDIR)/ser/etc/ppp/ip-up
+	install -d -m0755 $(INSTALLDIR)/ser/etc/init.d
+	install -m0755 ser/etc/S37mf_services $(INSTALLDIR)/ser/etc/init.d/
+	install -m0755 ser/etc/S38milkfish_sip_ini $(INSTALLDIR)/ser/etc/init.d/
+	install -m0755 ser/etc/S78milkfish_sip $(INSTALLDIR)/ser/etc/init.d/
+	install -d -m0755 $(INSTALLDIR)/ser/usr/sbin
+	install -m0755 ser/etc/milkfish_services $(INSTALLDIR)/ser/usr/sbin/
+	install -d -m0755 $(INSTALLDIR)/ser/usr/lib
+	install -m0644 ser/etc/milkfish_functions.sh $(INSTALLDIR)/ser/usr/lib/		
+	install -d -m0755 $(INSTALLDIR)/ser/usr/sbin
+	install -m0755 ser/etc/mf_sip_tracer.sh $(INSTALLDIR)/ser/usr/sbin/
+	mv $(INSTALLDIR)/ser/usr/lib/openser/modules/nathelper.so $(INSTALLDIR)/ser/usr/lib/openser/modules/milkfish_nathelper.so
+
+
+
+
+ser-clean:
+	$(MAKE) -j 4 -C ser clean
+	rm -rf $(INSTALLDIR)/ser/*
+	rm -rf $(INSTALLDIR)/www/*
+			
+nocat:
+	cd glib && ./config.sh "$(CC)" "$(COPTS)"
+	make -j 4  -C glib
+	cd nocat && ./configure --with-remote-splash CC="$(ARCH)-linux-uclibc-gcc" CFLAGS="$(COPTS) -I../libghttp " --prefix=/tmp/ --with-glib-prefix=${PWD}/glib-1.2.10-install --disable-glibtest --host=$(ARCH)-linux
+
+	make -j 4  -C nocat
+
+nocat-clean:
+	make -j 4  -C nocat clean
+	
+
+nocat-install:
+	install -D nocat/src/splashd $(INSTALLDIR)/nocat/usr/sbin/splashd
+	$(STRIP) $(INSTALLDIR)/nocat/usr/sbin/splashd
+	mkdir -p ${INSTALLDIR}/nocat/etc
+	ln -sf /tmp/etc/nocat.conf $(INSTALLDIR)/nocat/etc/nocat.conf
+	mkdir -p $(INSTALLDIR)/nocat/usr/libexec
+	cp -r nocat/libexec/iptables $(INSTALLDIR)/nocat/usr/libexec/nocat
+ifeq ($(CONFIG_RAMSKOV),y)
+	install -D nocat/config_redirect/nocat.webhotspot $(INSTALLDIR)/nocat/etc/config/nocat.webhotspot
+	install -D nocat/config_redirect/nocat.nvramconfig $(INSTALLDIR)/nocat/etc/config/nocat.nvramconfig
+	install -D nocat/config_redirect/nocat.startup $(INSTALLDIR)/nocat/etc/config/nocat.startup
+	install -D nocat/config_redirect/nocat.header $(INSTALLDIR)/nocat/etc/config/nocat.header
+	install -D nocat/config_redirect/nocat.footer $(INSTALLDIR)/nocat/etc/config/nocat.footer
+else
+	install -D nocat/config/nocat.webhotspot $(INSTALLDIR)/nocat/etc/config/nocat.webhotspot
+	install -D nocat/config/nocat.nvramconfig $(INSTALLDIR)/nocat/etc/config/nocat.nvramconfig
+	install -D nocat/config/nocat.startup $(INSTALLDIR)/nocat/etc/config/nocat.startup
+endif
+
+http-redirect:
+	@true
+
+http-redirect-clean:
+	@true
+
+http-redirect-install:
+	install -D http-redirect/http-redirect.nvramconfig $(INSTALLDIR)/http-redirect/etc/config/http-redirect.nvramconfig
+	install -D http-redirect/http-redirect.webhotspot $(INSTALLDIR)/http-redirect/etc/config/http-redirect.webhotspot
+	install -D http-redirect/http-redirect.firewall $(INSTALLDIR)/http-redirect/etc/config/http-redirect.firewall
+
+
+smtp-redirect:
+	@true
+
+smtp-redirect-clean:
+	@true
+
+smtp-redirect-install:
+	install -D smtp-redirect/smtp-redirect.nvramconfig $(INSTALLDIR)/smtp-redirect/etc/config/smtp-redirect.nvramconfig
+	install -D smtp-redirect/smtp-redirect.webhotspot $(INSTALLDIR)/smtp-redirect/etc/config/smtp-redirect.webhotspot
+	install -D smtp-redirect/smtp-redirect.firewall $(INSTALLDIR)/smtp-redirect/etc/config/smtp-redirect.firewall
+		
+chillispot:
+	cd chillispot && ./configure --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc"
+	$(MAKE) -j 4 -C chillispot
+
+chillispot-install:
+ifneq ($(CONFIG_FON),y)
+	install -D chillispot/config/chillispot.nvramconfig $(INSTALLDIR)/chillispot/etc/config/chillispot.nvramconfig
+	install -D chillispot/config/chillispot.webhotspot $(INSTALLDIR)/chillispot/etc/config/chillispot.webhotspot
+endif
+ifeq ($(CONFIG_CHILLILOCAL),y)
+	install -D chillispot/config/fon.nvramconfig $(INSTALLDIR)/chillispot/etc/config/fon.nvramconfig
+	install -D chillispot/config/fon.webhotspot $(INSTALLDIR)/chillispot/etc/config/fon.webhotspot
+endif
+	install -D chillispot/src/chilli $(INSTALLDIR)/chillispot/usr/sbin/chilli
+	$(STRIP) $(INSTALLDIR)/chillispot/usr/sbin/chilli
+
+chillispot-clean:
+	$(MAKE) -j 4 -C chillispot clean
+
+frottle:
+ifeq ($(CONFIG_FROTTLE),y)
+	$(MAKE) -j 4 -C frottle LIBDIR=/opt/openwrt/lib/
+else
+	@true
+endif
+
+frottle-clean:
+	$(MAKE) -j 4 -C frottle clean
+
+frottle-install:
+ifeq ($(CONFIG_FROTTLE),y)
+	install -D frottle/frottle $(INSTALLDIR)/frottle/usr/sbin/frottle
+	$(STRIP) $(INSTALLDIR)/frottle/usr/sbin/frottle
+else
+        # So that generic rule does not take precedence
+	@true
+endif
+
+ebtables:
+	$(MAKE) -j 4 -C ebtables static BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) KERNEL_INCLUDES=$(LINUXDIR)/include
+
+ebtables-install:
+ifeq ($(CONFIG_EBTABLES),y)
+	install -D ebtables/ebtables $(INSTALLDIR)/ebtables/usr/sbin/ebtables
+#	install -d $(INSTALLDIR)/ebtables/usr/lib
+#	install ebtables/extensions/*.so $(INSTALLDIR)/ebtables/usr/lib/
+#	install ebtables/*.so $(INSTALLDIR)/ebtables/usr/lib/
+#	$(STRIP) $(INSTALLDIR)/ebtables/usr/sbin/ebtables
+else
+        # So that generic rule does not take precedence
+	@true
+endif
+
+ebtables-clean:
+	-$(MAKE) -j 4 -C ebtables KERNEL_DIR=$(LINUXDIR) clean
+
+
+ntpclient-install:
+	install -D ntpclient/ntpclient $(INSTALLDIR)/ntpclient/usr/sbin/ntpclient
+	$(STRIP) $(INSTALLDIR)/ntpclient/usr/sbin/ntpclient
+
+
+
+# AhMan March 19 2005
+pppoe pppoe-%:
+#	$(MAKE) -C ppp/pppoecd $* INSTALLDIR=$(INSTALLDIR)/ppp
+	@true
+
+ppp:
+	$(MAKE) -j 4 -C rp-pppoe-3.5/src
+ppp-clean:
+	$(MAKE) -j 4 -C rp-pppoe-3.5/src clean
+
+ppp-install:
+#	install -D rp-pppoe-3.5/src/pppoe $(INSTALLDIR)/ppp/usr/sbin/pppoe
+#	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe
+ifeq ($(CONFIG_PPPOERELAY),y)
+	install -D rp-pppoe-3.5/src/pppoe-relay $(INSTALLDIR)/ppp/usr/sbin/pppoe-relay
+	install -D rp-pppoe-3.5/config/pppoe-relay.nvramconfig $(INSTALLDIR)/ppp/etc/config/pppoe-relay.nvramconfig
+	install -D rp-pppoe-3.5/config/pppoe-relay.webservices $(INSTALLDIR)/ppp/etc/config/pppoe-relay.webservices
+else
+	rm -f $(INSTALLDIR)/ppp/usr/sbin/pppoe-relay
+endif
+ifeq ($(CONFIG_PPPOESERVER),y)
+	install -D rp-pppoe-3.5/src/pppoe-server $(INSTALLDIR)/ppp/usr/sbin/pppoe-server
+	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe-server
+else
+	rm -f $(INSTALLDIR)/ppp/usr/sbin/pppoe-server
+endif
+ifeq ($(CONFIG_PPPOESNIFF),y)
+	install -D rp-pppoe-3.5/src/pppoe-sniff $(INSTALLDIR)/ppp/usr/sbin/pppoe-sniff
+	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe-sniff
+else
+	rm -f $(INSTALLDIR)/ppp/usr/sbin/pppoe-sniff
+endif
+
+udhcpd-clean:
+	make -j 4  -C udhcpc clean
+	make -j 4  -C udhcpd clean
+	
+udhcpd: shared nvram
+	make -j 4  -C udhcpc
+	make -j 4  -C udhcpd
+
+udhcpd-install:
+	install -D udhcpd/udhcpd $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
+	install -D udhcpd/dumpleases $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
+	install -D udhcpd/config/dhcpd.webservices $(INSTALLDIR)/udhcpd/etc/config/dhcpd.webservices
+	install -D udhcpd/config/dhcpd.startup $(INSTALLDIR)/udhcpd/etc/config/dhcpd.startup
+	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
+	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
+	install -D udhcpc/udhcpc $(INSTALLDIR)/udhcpd/usr/sbin/udhcpc
+#	cd $(INSTALLDIR)/udhcpd/usr/sbin && ln -sf udhcpd udhcpc
+
+#upnp: netconf nvram shared
+#
+#upnp-distclean: upnp-clean
+#	rm -f $(SRCBASE)/tools/upnp/upnp/linux/libupnp.a
+#
+wlconf: nvram shared
+
+vlan:
+	$(MAKE) -j 4 -C vlan CROSS=$(CROSS_COMPILE) STRIPTOOL=$(STRIP)
+
+vlan-install:
+	$(MAKE) -j 4 -C vlan CROSS=$(CROSS_COMPILE) STRIPTOOL=$(STRIP) INSTALLDIR=$(INSTALLDIR) install
+
+vlan-clean:
+	$(MAKE) -j 4 -C vlan clean
+
+vlan-distclean: vlan-clean
+	rm -f vlan/vconfig
+
+nas nas-clean nas-distclean:
+        # So that generic rule does not take precedence
+	@true
+
+nas-install:
+ifeq ($(CONFIG_MSSID),y)
+	install -D nas/nas $(INSTALLDIR)/nas/usr/sbin/nas
+else
+	install -D nas/nas.v23 $(INSTALLDIR)/nas/usr/sbin/nas
+endif
+	$(STRIP) $(INSTALLDIR)/nas/usr/sbin/nas
+	cd $(INSTALLDIR)/nas/usr/sbin && ln -sf nas nas4not && ln -sf nas nas4wds
+
+########################################################################
+# Below is added by CT
+
+tftpd tftpd-clean tftpd-distclean:
+        # So that generic rule does not take precedence
+	@true
+
+tftpd-install:
+	install -D tftpd/tftpd $(INSTALLDIR)/tftpd/usr/sbin/tftpd
+	$(STRIP) $(INSTALLDIR)/tftpd/usr/sbin/tftpd
+
+cron-install:
+	#install -d $(INSTALLDIR)/cron/etc/cron.d
+	install -D cron/cron $(INSTALLDIR)/cron/usr/sbin/cron
+	$(STRIP) $(INSTALLDIR)/cron/usr/sbin/cron
+
+pptp-client:
+	$(MAKE) -j 4 -C pptp-client
+
+pptp-client-clean:
+	$(MAKE) -j 4 -C pptp-client clean
+
+pptp-client-install:
+ifneq ($(CONFIG_NEWMEDIA),y)
+	install -D pptp-client/pptp $(INSTALLDIR)/pptp-client/usr/sbin/pptp
+	install -D pptp-client/config/pptpd_client.ip-up $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.ip-up
+	install -D pptp-client/config/pptpd_client.ip-down $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.ip-down
+	install -D pptp-client/config/pptpd_client.nvramconfig $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.nvramconfig
+	install -D pptp-client/config/pptpd_client.webservices $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.webservices
+	install -D pptp-client/config/pptpd_client.options $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.options
+	install -D pptp-client/config/pptpd_client.sh $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.sh
+	install -D pptp-client/config/pptpd_client.startup $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.startup
+	install -D pptp-client/config/pptpd_client.vpn $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.vpn
+	install -D pptp-client/pptp $(INSTALLDIR)/pptp-client/usr/sbin/pptp
+else
+	install -D pptp-client/pptp $(INSTALLDIR)/pptp-client/usr/sbin/pptp
+	install -D pptp-client/config2/pptpd_client.ip-up $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.ip-up
+	install -D pptp-client/config2/pptpd_client.ip-down $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.ip-down
+	install -D pptp-client/config2/pptpd_client.nvramconfig $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.nvramconfig
+	install -D pptp-client/config2/pptpd_client.webconfig $(INSTALLDIR)/pptp-client/etc/config/1pptpd_client.webconfig
+	install -D pptp-client/config2/pptpd_client.options $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.options
+	install -D pptp-client/config2/pptpd_client.sh $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.sh
+	install -D pptp-client/config2/pptpd_client.wanup $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.wanup
+	install -D pptp-client/config2/pptpd_client.vpn $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.vpn
+	install -D pptp-client/pptp $(INSTALLDIR)/pptp-client/usr/sbin/pptp
+endif
+
+
+netstatnat:
+	$(MAKE) -j 4 -C netstatnat
+
+netstatnat-clean:
+	$(MAKE) -j 4 -C netstatnat clean
+
+netstatnat-install:
+	install -D netstatnat/netstat-nat $(INSTALLDIR)/netstatnat/usr/sbin/netstat-nat
+	$(STRIP) $(INSTALLDIR)/netstatnat/usr/sbin/netstat-nat
+
+pppd-symlinks:
+	- (cd pppd.new ; \
+	ln -s linux/Makefile.top Makefile ; \
+	ln -s Makefile.linux pppd.new/Makefile ; \
+	ln -s Makefile.linux chat/Makefile ; \
+	ln -s Makefile.linux pppd/plugins/Makefile ; \
+	ln -s Makefile.linux pppd/plugins/radius/Makefile ; \
+	ln -s Makefile.linux pppd/plugins/rp-pppoe/Makefile ; \
+	ln -s Makefile.linux pppd/plugins/pppoatm/Makefile ; \
+	ln -s Makefile.linux pppdump/Makefile ; \
+	ln -s Makefile.linux pppstats/Makefile ; \
+	)
+
+pppd: pppd-symlinks
+	$(MAKE) -j 4 -C pppd.new/pppd
+ifeq ($(CONFIG_PPPSTATS),y)
+	$(MAKE) -j 4 -C pppd.new/pppstats
+endif
+	$(MAKE) -j 4 -C pppd.new/pppd/plugins/rp-pppoe
+ifeq ($(CONFIG_RADIUSPLUGIN),y)
+	$(MAKE) -j 4 -C pppd.new/pppd/plugins/radius
+endif
+#	$(MAKE) -C pppd/pppd/plugins/pppoatm
+
+
+pppd-clean pppd-distclean: pppd-symlinks
+	$(MAKE) -j 4 -C pppd.new/pppd/plugins/rp-pppoe clean
+	$(MAKE) -j 4 -C pppd.new/pppd clean
+
+pppd-install:
+	install -D pppd.new/pppd/pppd $(INSTALLDIR)/pppd/usr/sbin/pppd
+	install -D pppd.new/pppd/plugins/rp-pppoe/rp-pppoe.so $(INSTALLDIR)/pppd/usr/lib/rp-pppoe.so
+ifeq ($(CONFIG_PPPSTATS),y)
+	install -D pppd.new/pppstats/pppstats $(INSTALLDIR)/pppd/usr/sbin/pppstats
+else
+	rm -rf $(INSTALLDIR)/pppd/usr/sbin/pppstats
+endif
+ifeq ($(CONFIG_RADIUSPLUGIN),y)
+	install -D pppd.new/pppd/plugins/radius/radius.so $(INSTALLDIR)/pppd/usr/lib/pppd/radius.so
+	install -D pppd.new/pppd/plugins/radius/radattr.so $(INSTALLDIR)/pppd/usr/lib/pppd/radattr.so
+	install -D pppd.new/pppd/plugins/radius/radrealms.so $(INSTALLDIR)/pppd/usr/lib/pppd/radrealms.so
+	install -d $(INSTALLDIR)/pppd/etc/radiusclient
+	cp pppd.new/pppd/plugins/radius/etc/issue $(INSTALLDIR)/pppd/etc/radiusclient/issue
+	cp pppd.new/pppd/plugins/radius/etc/port-id-map $(INSTALLDIR)/pppd/etc/radiusclient/port-id-map
+	cp pppd.new/pppd/plugins/radius/etc/dictionary $(INSTALLDIR)/pppd/etc/radiusclient/dictionary
+	cp pppd.new/pppd/plugins/radius/etc/dictionary.microsoft $(INSTALLDIR)/pppd/etc/radiusclient/dictionary.microsoft
+	chmod 0644 $(INSTALLDIR)/pppd/etc/radiusclient/*
+else
+	rm -rf $(INSTALLDIR)/pppd/usr/lib/pppd/rad*.so
+	rm -rf $(INSTALLDIR)/pppd/etc/radiusclient
+endif
+#	rm -rf $(INSTALLDIR)/pppd/usr/lib/pppd/rp-pppoe.so
+
+#	$(STRIP) $(INSTALLDIR)/pppd/usr/sbin/pppd
+ifeq ($(CONFIG_PPPSTATS),y)
+	$(STRIP) $(INSTALLDIR)/pppd.new/usr/sbin/pppstats
+endif
+
+ipupdate-install:
+	install -D ipupdate/ez-ipupdate $(INSTALLDIR)/ipupdate/usr/sbin/ez-ipupdate
+	$(STRIP) $(INSTALLDIR)/ipupdate/usr/sbin/ez-ipupdate
+
+inadyn:
+	$(MAKE) -j 4 -C inadyn
+
+inadyn-install:
+	install -D inadyn/bin/linux/inadyn $(INSTALLDIR)/inadyn/usr/sbin/inadyn
+	$(STRIP) $(INSTALLDIR)/inadyn/usr/sbin/inadyn
+
+inadyn-clean:
+	$(MAKE) -j 4 -C inadyn clean
+
+
+zebra:
+ifeq ($(CONFIG_ZEBRA),y)
+	$(MAKE) -j 4 -C quagga CC=$(CC)
+endif
+
+zebra-install:
+ifeq ($(CONFIG_ZEBRA),y)
+	install -D quagga/zebra/zebra $(INSTALLDIR)/zebra/usr/sbin/zebra
+	install -D quagga/ripd/ripd $(INSTALLDIR)/zebra/usr/sbin/ripd
+	install -D quagga/ospfd/ospfd $(INSTALLDIR)/zebra/usr/sbin/ospfd
+	$(STRIP) $(INSTALLDIR)/zebra/usr/sbin/zebra
+	$(STRIP) $(INSTALLDIR)/zebra/usr/sbin/ripd
+	$(STRIP) $(INSTALLDIR)/zebra/usr/sbin/ospfd
+else
+	rm -rf $(INSTALLDIR)/zebra/usr/sbin/zebra
+	rm -rf $(INSTALLDIR)/zebra/usr/sbin/ripd
+	rm -rf $(INSTALLDIR)/zebra/usr/sbin/ospfd
+endif
+
+bird-symlinks:
+	$(MAKE) -j 4 -C bird/obj .dir-stamp
+	mkdir -p bird/obj/conf bird/obj/lib
+	- (cd bird/obj/conf ; \
+	ln -s ../../conf/cf-lex.l cf-lex.l ; \
+	ln -s ../../conf/conf.c conf.c ; \
+	ln -s ../../conf/conf.h conf.h ; \
+	ln -s ../../sysdep/unix/config.Y config.Y ; \
+	ln -s ../../sysdep/unix/krt.Y krt.Y ; \
+	ln -s ../../sysdep/linux/netlink/netlink.Y netlink.Y ; \
+	)
+	- (cd bird/obj/lib ; \
+	ln -s ../../lib/birdlib.h birdlib.h ; \
+	ln -s ../../lib/bitops.c bitops.c ; \
+	ln -s ../../lib/bitops.h bitops.h ; \
+	ln -s ../../lib/checksum.c checksum.c ; \
+	ln -s ../../lib/checksum.h checksum.h ; \
+	ln -s ../../sysdep/unix/endian.h endian.h ; \
+	ln -s ../../lib/event.c event.c ; \
+	ln -s ../../lib/event.h event.h ; \
+	ln -s ../../sysdep/unix/io.c io.c ; \
+	ln -s ../../lib/ip.c ip.c ; \
+	ln -s ../../lib/ip.h ip.h ; \
+	ln -s ../../lib/ipv4.c ipv4.c ; \
+	ln -s ../../lib/ipv4.h ipv4.h ; \
+	ln -s ../../sysdep/unix/krt.c krt.c ; \
+	ln -s ../../sysdep/unix/krt.h krt.h ; \
+	ln -s ../../sysdep/linux/netlink/krt-iface.h krt-iface.h ; \
+	ln -s ../../sysdep/linux/netlink/krt-scan.h krt-scan.h ; \
+	ln -s ../../sysdep/linux/netlink/krt-set.h krt-set.h ; \
+	ln -s ../../lib/lists.c lists.c ; \
+	ln -s ../../lib/lists.h lists.h ; \
+	ln -s ../../sysdep/unix/log.c log.c ; \
+	ln -s ../../sysdep/unix/main.c main.c ; \
+	ln -s ../../lib/md5.c md5.c ; \
+	ln -s ../../lib/md5.h md5.h ; \
+	ln -s ../../lib/mempool.c mempool.c ; \
+	ln -s ../../sysdep/linux/netlink/netlink.c netlink.c ; \
+	ln -s ../../lib/patmatch.c patmatch.c ; \
+	ln -s ../../lib/printf.c printf.c ; \
+	ln -s ../../sysdep/unix/random.c random.c ; \
+	ln -s ../../lib/resource.c resource.c ; \
+	ln -s ../../lib/resource.h resource.h ; \
+	ln -s ../../lib/slab.c slab.c ; \
+	ln -s ../../lib/slists.c slists.c ; \
+	ln -s ../../lib/slists.h slists.h ; \
+	ln -s ../../lib/socket.h socket.h ; \
+	ln -s ../../lib/string.h string.h ; \
+	ln -s ../../sysdep/linux/sysio.h sysio.h ; \
+	ln -s ../../sysdep/unix/timer.h timer.h ; \
+	ln -s ../../lib/unaligned.h unaligned.h ; \
+	ln -s ../../sysdep/unix/unix.h unix.h ; \
+	ln -s ../../lib/xmalloc.c xmalloc.c ; \
+	)
+
+bird: bird-symlinks
+	$(MAKE) -j 4 -C bird
+
+bird-install:
+	@true
+#	install -D bird/bird $(INSTALLDIR)/bird/usr/sbin/bird
+#	$(STRIP) $(INSTALLDIR)/bird/usr/sbin/bird
+
+bird-clean:
+	$(MAKE) -j 4 -C bird clean
+
+bird-distclean:
+	$(MAKE) -j 4 -C bird clean
+	rm -rf bird/obj/nest bird/obj/filter bird/obj/proto
+	rm -f bird/obj/.dir-stamp
+
+shorewall-install:
+	install -D shorewall/common.def     $(INSTALLDIR)/shorewall/usr/sbin/common.def
+	install -D shorewall/firewall       $(INSTALLDIR)/shorewall/usr/sbin/firewall
+	install -D shorewall/functions      $(INSTALLDIR)/shorewall/usr/sbin/functions
+	install -D shorewall/shorewall      $(INSTALLDIR)/shorewall/usr/sbin/shorewall
+	install -D shorewall/shorewall.conf $(INSTALLDIR)/shorewall/usr/sbin/shorewall.conf
+	install -D shorewall/version        $(INSTALLDIR)/shorewall/usr/sbin/version
+
+shorewall-clean:
+	$(MAKE) -j 4 -C shorewall clean
+
+
+bpalogin-install:
+	install -D bpalogin/bpalogin $(INSTALLDIR)/bpalogin/usr/sbin/bpalogin
+	$(STRIP) $(INSTALLDIR)/bpalogin/usr/sbin/bpalogin
+
+dropbear: zlib
+	cd dropbear && ./configure --host=$(ARCH)-linux --disable-lastlog --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-libutil CC=$(ARCH)-linux-uclibc-gcc CFLAGS="-I../zlib $(COPTS) -L../zlib" LDFLAGS="-L../zlib" host_alias=$(ARCH)-linux
+	$(MAKE) -j 4 -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1
+
+dropbear-install:
+	@true
+	install -D dropbear/config/sshd.webservices $(INSTALLDIR)/dropbear/etc/config/sshd.webservices
+#	install -D dropbear/dropbearmulti $(INSTALLDIR)/dropbear/usr/sbin/dropbear
+#	$(STRIP) $(INSTALLDIR)/dropbear/usr/sbin/dropbear
+#	cd $(INSTALLDIR)/dropbear/usr/sbin && ln -sf dropbear dropbearconvert && ln -sf dropbear dropbearkey && ln -sf dropbear dbclient
+#	mkdir -p $(INSTALLDIR)/dropbear/usr/bin
+#	cd $(INSTALLDIR)/dropbear/usr/bin && ln -sf /usr/sbin/dropbear ssh && ln -sf /usr/sbin/dropbear scp
+
+iproute2:
+	$(MAKE) -j 4 -C iproute2 all
+
+iproute2-install:
+	chmod 0644 iproute2/tc/tc
+	install -D iproute2/tc/tc $(INSTALLDIR)/iproute2/usr/sbin/tc
+#	$(STRIP) $(INSTALLDIR)/iproute2/usr/sbin/tc
+	chmod 0644 iproute2/ip/ip
+	install -D iproute2/ip/ip $(INSTALLDIR)/iproute2/usr/sbin/ip
+#	$(STRIP) $(INSTALLDIR)/iproute2/usr/sbin/ip
+ifeq ($(CONFIG_WSHAPER),y)
+	chmod 0644 iproute2/wshaper.htb
+	install -D iproute2/wshaper.htb $(INSTALLDIR)/iproute2/usr/sbin/wshaper
+else
+	@true
+endif
+
+ifeq ($(CONFIG_SVQOS),y)
+	chmod 0644 iproute2/svqos.htb
+	install -D iproute2/svqos.htb $(INSTALLDIR)/iproute2/usr/sbin/svqos
+	chmod 0644 iproute2/svqos.hfsc
+	install -D iproute2/svqos.hfsc $(INSTALLDIR)/iproute2/usr/sbin/svqos2
+else
+	@true
+endif
+
+adm6996:
+ifeq ($(CONFIG_MSSID),y)
+	$(MAKE) -j 4 -C adm6996.v24
+else
+	$(MAKE) -j 4 -C adm6996
+endif
+
+adm6996-install:
+ifeq ($(CONFIG_MSSID),y)
+	install -D adm6996.v24/adm6996.o $(INSTALLDIR)/adm6996/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/adm6996/adm6996.o
+else
+	install -D adm6996/adm6996.o $(INSTALLDIR)/adm6996/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/adm6996/adm6996.o
+endif
+#	$(STRIP) $(INSTALLDIR)/adm6996/lib/adm6996.o
+
+igmp-proxy-clean:
+	make -j 4  -C igmp-proxy clean
+
+igmp-proxy:
+	make -j 4  -C igmp-proxy
+
+
+
+parprouted:
+ifeq ($(CONFIG_PARPROUTED),y)
+	$(MAKE) -j 4 -C parprouted
+else
+	@true
+endif
+
+parprouted-clean:
+	$(MAKE) -j 4 -C parprouted clean
+
+parprouted-install:
+ifeq ($(CONFIG_PARPROUTED),y)
+	install -D parprouted/parprouted $(INSTALLDIR)/parprouted/usr/sbin/parprouted
+	$(STRIP) $(INSTALLDIR)/parprouted/usr/sbin/parprouted
+else
+        # So that generic rule does not take precedence
+	@true
+endif
+
+
+hostapd: 
+#	$(MAKE) -C openssl
+	$(MAKE) -j 4 -C hostapd clean
+	$(MAKE) -j 4 -C wpa_supplicant
+	$(MAKE) -j 4 -C hostapd clean
+	$(MAKE) -j 4 -C hostapd
+
+hostapd-clean:
+	$(MAKE) -j 4 -C hostapd clean
+
+hostapd-install:
+	$(MAKE) -j 4 -C hostapd install
+
+
+wpa_supplicant: 
+ifeq ($(CONFIG_WPA_SUPPLICANT),y)
+#	$(MAKE) -C openssl
+	$(MAKE) -j 4 -C hostapd clean
+	$(MAKE) -j 4 -C wpa_supplicant
+	$(MAKE) -j 4 -C hostapd clean
+	$(MAKE) -j 4 -C hostapd
+else
+	@true
+endif
+
+wpa_supplicant-clean:
+	$(MAKE) -j 4 -C wpa_supplicant clean
+
+wpa_supplicant-install:
+ifeq ($(CONFIG_WPA_SUPPLICANT),y)
+	install -D wpa_supplicant/wpa_supplicant $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_supplicant
+	install -D wpa_supplicant/wpa_passphrase $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_passphrase
+	install -D wpa_supplicant/wpa_cli $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_cli
+	$(STRIP) $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_supplicant
+	$(STRIP) $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_passphrase
+	$(STRIP) $(INSTALLDIR)/wpa_supplicant/usr/sbin/wpa_cli
+else
+	# So that generic rule does not take precedence
+	@true
+endif
+
+ifeq ($(ARCH),mipsel)
+madwifi:
+	make -j 4  -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=mips-le-elf
+	make -j 4  -C madwifi.dev/madwifi.dev/tools TARGET=mips-le-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+
+madwifi-clean:
+	make -j 4  -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=mips-le-elf
+	make -j 4  -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+	make -j 4  -C madwifi/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+	make -j 4  -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mips-le-elf install
+endif
+
+ifeq ($(ARCH),armeb)
+madwifi:
+ifeq ($(CONFIG_BOESE),y)
+	make -j 4  -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=xscale-boese-be-elf  
+	make -j 4  -C madwifi.dev/madwifi.dev/tools CFLAGS="-DBOESE=1 $(COPTS)" TARGET=xscale-boese-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+else
+	make -j 4  -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=xscale-$(MADFLAG)be-elf  
+	make -j 4  -C madwifi.dev/madwifi.dev/tools CFLAGS="$(CONFIG_MADWIFIFLAGS) $(COPTS)" TARGET=xscale-$(MADFLAG)be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin 
+endif
+
+madwifi-clean:
+ifeq ($(CONFIG_BOESE),y)
+	make -j 4  -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=xscale-boese-be-elf
+else
+	make -j 4  -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=xscale-$(MADFLAG)be-elf
+endif
+	make -j 4  -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+	make -j 4  -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+ifeq ($(CONFIG_BOESE),y)
+	make -j 4  -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=xscale-boese-be-elf install
+else
+	make -j 4  -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=xscale-$(MADFLAG)be-elf install
+endif
+endif
+
+ifeq ($(ARCH),mips)
+madwifi:
+	make -j 4  -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-be-elf
+	make -j 4  -C madwifi/madwifi.dev/tools TARGET=mips-le-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+
+madwifi-clean:
+	make -j 4  -C madwifi/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=mipsisa32-be-elf
+	make -j 4  -C madwifi/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+ 
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+	make -j 4  -C madwifi/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install
+	make -j 4  -C madwifi/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mipsisa32-be-elf install
+endif
+
+sputnik:
+	make -j 4  -C sputnik
+
+sputnik-clean:
+	make -j 4  -C sputnik clean
+
+sputnik-install:
+	mkdir -p $(INSTALLDIR)/sputnik/etc/config
+	cp -fpR sputnik/config/* $(INSTALLDIR)/sputnik/etc/config
+#	mkdir -p $(INSTALLDIR)/sputnik/www/images
+#	cp -fpR sputnik/images/* $(INSTALLDIR)/sputnik/www/images
+	install -D sputnik/$(ARCH)/sputnik $(INSTALLDIR)/sputnik/usr/sbin/sputnik
+	install -D sputnik/$(ARCH)/libiksemel.so $(INSTALLDIR)/sputnik/usr/lib/libiksemel.so
+
+openvpn:
+	cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)"
+	make -j 4  -C lzo clean
+	make -j 4  -C lzo
+#	make -j 4  -C openssl
+	#rm -f openssl/*.so*
+ifeq ($(CONFIG_NEWMEDIA),y)
+	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --enable-password-save --enable-management --enable-lzo --enable-small --enable-server CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
+	make -j 4  -C openvpn clean
+else
+	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --disable-management --disable-socks --enable-lzo --enable-small --enable-server --enable-http --enable-password-save CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
+	make -j 4  -C openvpn clean
+endif
+	make -j 4  -C openvpn
+
+openvpn-install:
+	install -D openvpn/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
+ifneq ($(CONFIG_NEWMEDIA),y)	
+	install -D openvpn/config/openvpn.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpn.nvramconfig
+	install -D openvpn/config/openvpn.webservices $(INSTALLDIR)/openvpn/etc/config/openvpn.webservices
+else
+	install -D openvpn/config2/openvpn.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpn.nvramconfig
+	install -D openvpn/config2/openvpn.webservices $(INSTALLDIR)/openvpn/etc/config/openvpn.webservices
+endif
+
+
+net-tools:
+	make -j 4  -C net-tools
+	make -j 4  -C net-tools arp
+	
+
+net-tools-install:
+	@true
+#	install -D net-tools/ifconfig $(INSTALLDIR)/net-tools/sbin/ifconfig
+#	install -D net-tools/arp $(INSTALLDIR)/net-tools/sbin/arp
+
+wireless-tools-clean:
+	make -j 4  -C wireless-tools clean
+
+wireless-tools:
+	make -j 4  -C wireless-tools CC=$(CC) CFLAGS="$(COPTS)" all iwmulticall
+
+wireless-tools-install:
+	make -j 4  -C wireless-tools INSTALL_DIR=$(INSTALLDIR)/wireless-tools/usr/sbin install-bin
+	make -j 4  -C wireless-tools INSTALL_LIB=$(INSTALLDIR)/wireless-tools/lib install-dynamic
+	
+#	mkdir -p $(INSTALLDIR)/wireless-tools
+#	make -C wireless-tools PREFIX="$(INSTALLDIR)/wireless-tools" INSTALL_DIR="$(INSTALLDIR)/wireless-tools/usr/sbin" INSTALL_LIB="$(INSTALLDIR)/usr/lib" install install-iwmulticall
+#	rm -rf $(INSTALLDIR)/wireless-tools/man
+#	rm -rf $(INSTALLDIR)/wireless-tools/include
+
+olsrd-clean:
+	make -j 4  -C olsrd OS=linux uberclean
+
+olsrd:
+	make -j 4  -C olsrd OS=linux
+	make -j 4  -C olsrd OS=linux libs
+
+olsrd-install:
+	install -D olsrd/olsrd $(INSTALLDIR)/olsrd/usr/sbin/olsrd
+	install -D olsrd/lib/dyn_gw/olsrd_dyn_gw.so.0.4 $(INSTALLDIR)/olsrd/usr/lib/olsrd_dyn_gw.so
+	install -D olsrd/lib/httpinfo/olsrd_httpinfo.so.0.1 $(INSTALLDIR)/olsrd/usr/lib/olsrd_httpinfo.so
+
+tcpdump-install:
+	install -D tcpdump/tcpdump $(INSTALLDIR)/tcpdump/usr/sbin/tcpdump
+
+nvram:
+	make -j 4  -C nvram
+
+nvram-install:
+	make -j 4  -C nvram install ARCH=i386 INSTALLDIR=$(INSTALLDIR)/nvram
+
+
+fdisk-clean:
+	make -j 4  -C util-linux/fdisk clean
+
+fdisk:
+	make -j 4  -C util-linux/fdisk
+
+fdisk-install:
+	make -j 4  -C util-linux/fdisk install INSTALLDIR="mkdir -p" SBINDIR=$(INSTALLDIR)/fdisk/sbin INSTALLBIN="install -D"
+
+moxa:
+	make -j 4  -C moxa tools
+
+moxa-clean:
+	make -j 4  -C moxa clean
+
+e2fsprogs:
+	cd e2fsprogs && ./configure --host=$(ARCH)-linux CFLAGS="-Os" CC="$(CROSS_COMPILE)gcc $(COPTS)" --with-gnu-ld --disable-rpath --disable-shared --enable-static --enable-elf-shlibs --enable-dynamic-e2fsck
+	make -j 4  -C e2fsprogs
+
+e2fsprogs-install:
+	mkdir -p $(INSTALLDIR)/e2fsprogs/sbin
+	cp e2fsprogs/misc/mke2fs.static $(INSTALLDIR)/e2fsprogs/sbin/mke2fs
+
+ncurses:
+	cd ncurses && ./configure --host=$(ARCH)-linux-uclibc --with-shared CFLAGS="$(COPTS)" \
+		--enable-echo \
+		--enable-const \
+		--enable-overwrite \
+		--disable-rpath \
+		--without-ada \
+		--without-cxx \
+		--without-cxx-binding \
+		--without-debug \
+		--without-profile \
+		--without-progs \
+		--with-normal \
+		--with-shared \
+		--with-terminfo-dirs=/etc/terminfo \
+		--with-default-terminfo-dir=/etc/terminfo 
+	make -j 4  -C ncurses
+
+ncurses-install:
+	make -j 4  -C ncurses install.libs DESTDIR=$(INSTALLDIR)/ncurses
+	rm -rf $(INSTALLDIR)/ncurses/usr/include
+	rm -f $(INSTALLDIR)/ncurses/usr/lib/*.a
+
+iftop: ncurses
+	cd iftop && ./configure --host=$(ARCH)-linux --with-libpcap="$(TOP)/libpcap_noring" CFLAGS="$(COPTS) -I$(TOP)/libpcap_noring -I$(TOP)/ncurses/include" LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/libpcap_noring" CPPFLAGS="$(COPTS) -I$(TOP)/libpcap_noring -I$(TOP)/ncurses/include"
+	make -j 4  -C iftop
+
+iftop-install:
+	install -D iftop/iftop $(INSTALLDIR)/iftop/usr/sbin/iftop
+
+iptraf:
+	make -j 4  -C iptraf/src
+
+iptraf-clean:
+	make -j 4  -C iptraf/src clean
+
+iptraf-install:
+	make -j 4  -C iptraf/src install
+
+squid:
+	cd squid && ./configure --target=armeb-linux --host=armeb-linux --prefix=/usr
+	make -j 4  -C squid
+
+squid-install:
+	make -j 4  -C squid install DESTDIR=$(INSTALLDIR)/squid	
+
+#pciutils-install:
+#	install -D pciutils/lspci $(INSTALLDIR)/pciutils/sbin/lspci
+#	install -D pciutils/setpci $(INSTALLDIR)/pciutils/sbin/setpci
+#
+# Generic rules
+#
+
+%:
+	[ ! -d $* ] || $(MAKE) -j 4 -C $*  
+
+%-distclean:
+	[ ! -d $* ] || $(MAKE) -j 4  -C $* clean
+
+%-clean:
+	[ ! -d $* ] || $(MAKE) -j 4  -C $* clean
+
+%-install:
+	[ ! -d $* ] || $(MAKE) -j 4  -C $* install INSTALLDIR=$(INSTALLDIR)/$*
+
+$(obj-y) $(obj-n) $(obj-clean) $(obj-install): dummy
+
+.PHONY: all clean distclean mrproper install package
+.PHONY: conf mconf oldconf kconf kmconf config menuconfig oldconfig
+.PHONY: dummy fixkc libnet libpcap
+
+
+

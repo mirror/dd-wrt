@@ -187,6 +187,7 @@ endif
 
 	-$(MAKE) -f Makefile.northstar ath9k
 	-$(MAKE) -f Makefile.northstar ath9k-install
+	-$(MAKE) -f Makefile.northstar libutils
 	-$(MAKE) -f Makefile.northstar madwifi
 	-$(MAKE) -f Makefile.northstar madwifi-install
 	-$(MAKE) -f Makefile.northstar batman-adv
