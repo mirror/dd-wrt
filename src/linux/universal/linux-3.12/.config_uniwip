@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.12.1-rc1 Kernel Configuration
+# Linux/powerpc 3.12.5 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -113,7 +113,6 @@ CONFIG_TICK_CPU_ACCOUNTING=y
 # RCU Subsystem
 #
 CONFIG_TREE_PREEMPT_RCU=y
-# CONFIG_TINY_RCU is not set
 CONFIG_PREEMPT_RCU=y
 CONFIG_RCU_STALL_COMMON=y
 CONFIG_RCU_FANOUT=32
@@ -306,11 +305,6 @@ CONFIG_IPIC=y
 # CPU Frequency scaling
 #
 # CONFIG_CPU_FREQ is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_PERFORMANCE is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_POWERSAVE is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_USERSPACE is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND is not set
-# CONFIG_CPU_FREQ_DEFAULT_GOV_CONSERVATIVE is not set
 
 #
 # CPUIdle driver
