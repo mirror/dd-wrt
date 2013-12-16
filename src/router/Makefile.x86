@@ -167,9 +167,55 @@ endif
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
 	fi
-	#armeb-linux-uclibc-strip --remove-section=.note --remove-section=.comment $(LINUXDIR)/vmlinux
-	#armeb-linux-uclibc-objcopy -O binary $(LINUXDIR)/vmlinux vmlinux.bin 
-	#cmplzma -k -3 $(LINUXDIR)/vmlinux vmlinux.bin $(PLATFORMDIR)/vmlinux.lz
+	rm -rf $(TARGETDIR)/lib/modules
+	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+
+	-$(MAKE) -f Makefile.x86 ath9k
+	-$(MAKE) -f Makefile.x86 ath9k-install
+	-$(MAKE) -f Makefile.x86 libutils
+	-$(MAKE) -f Makefile.x86 madwifi
+	-$(MAKE) -f Makefile.x86 madwifi-install
+	-$(MAKE) -f Makefile.x86 batman-adv
+	-$(MAKE) -f Makefile.x86 batman-adv-install
+	-$(MAKE) -f Makefile.x86 opendpi
+	-$(MAKE) -f Makefile.x86 opendpi-install
+	-$(MAKE) -f Makefile.x86 uniwip-gpio
+	-$(MAKE) -f Makefile.x86 uniwip-gpio-install
+	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
+	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
+	done
+
+	find $(TARGETDIR)/lib -name \*.ko | \
+		xargs $(ARCH)-linux-nm | \
+		awk '$$1 == "U" { print $$2 } ' | \
+		sort -u > $(LINUXDIR)/mod_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
+	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
+	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
+	( \
+		echo '#define SYMTAB_KEEP \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_KEEP_GPL \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD_GPL \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
+		echo; \
+	) > $(LINUXDIR)/symtab.h
+	rm -f $(LINUXDIR)/vmlinux
+	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -j 4 -C $(LINUXDIR) bzImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache i486-linux-uclibc-" ; \
+	fi
 	
 #	cat $(LINUXDIR)/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/rb500/vmlinux.lzma
 #	make -C lzma-loader/rb500 clean
@@ -437,7 +483,9 @@ ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
-	-./strip_libs.sh $(ARCH)
+	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
+	export STRIP="sstrip" && \
+	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 
 	cd grub && ./configure --host=i386-linux --target=i386-linux CC="/xfs/toolchains/staging_dir_i386.4.2.1/bin/i386-linux-gcc" LDFLAGS="-static" CFLAGS="-Os -DNEED_PRINTF"
 	make -C grub clean DESTDIR=$(INSTALLDIR)/grub	
