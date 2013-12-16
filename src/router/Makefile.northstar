@@ -183,7 +183,7 @@ endif
 	$(MAKE) -j 4 -C $(LINUXDIR) modules  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
 	rm -rf $(TARGETDIR)/lib/modules
-	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
+	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 
 	-$(MAKE) -f Makefile.northstar ath9k
 	-$(MAKE) -f Makefile.northstar ath9k-install
