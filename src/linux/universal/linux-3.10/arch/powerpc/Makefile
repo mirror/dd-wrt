@@ -66,6 +66,11 @@ endif
 LDFLAGS_vmlinux-y := -Bstatic
 LDFLAGS_vmlinux-$(CONFIG_RELOCATABLE) := -pie
 LDFLAGS_vmlinux	:= $(LDFLAGS_vmlinux-y)
+LDFLAGS_vmlinux += --gc-sections
+
+ifndef CONFIG_FUNCTION_TRACER
+KBUILD_CFLAGS_KERNEL += -ffunction-sections -fdata-sections
+endif
 
 ifeq ($(CONFIG_PPC64),y)
 ifeq ($(call cc-option-yn,-mcmodel=medium),y)
