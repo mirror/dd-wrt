@@ -1422,31 +1422,33 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 #endif
 #endif
 		/* commonly used protocols, decending */
+/*		save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s\n", seq, log_drop); */
+		save2file("-A advgrp_%d  -p tcp -m layer7 --l7proto ares -j %s\n", seq, log_drop);
+#ifndef HAVE_OPENDPI
 		save2file("-A advgrp_%d -m layer7 --l7proto bt4 -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m layer7 --l7proto bt1 -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m layer7 --l7proto bittorrent -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m layer7 --l7proto bt2 -j %s\n", seq, log_drop);
-/*		save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s\n", seq, log_drop); */
 		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto gnutella -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d  -p tcp -m layer7 --l7proto ares -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m layer7 --l7proto applejuice -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto directconnect -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto soulseek -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto openft -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto fasttrack -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto imesh -j %s\n", seq, log_drop);
+#endif
 		save2file("-A advgrp_%d -m layer7 --l7proto audiogalaxy -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto bearshare -j %s\n", seq, log_drop);
 		/* atm rarly used protocols */
-		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto directconnect -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m layer7 --l7proto edonkey -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto fasttrack -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m layer7 --l7proto freenet -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m layer7 --l7proto gnucleuslan -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m layer7 --l7proto goboogy -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m layer7 --l7proto hotline -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -m layer7 --l7proto imesh -j %s\n", seq, log_drop);
 /*	 	save2file("-A advgrp_%d -m layer7 --l7proto kugoo -j %s\n", seq, log_drop);// xunlei, kugoo, winmx block websurfing */
 		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto mute -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto napster -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto openft -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s\n", seq, log_drop);
-		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto soulseek -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m layer7 --l7proto tesla -j %s\n", seq, log_drop);
 /*		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto winmx -j %s\n", seq, log_drop);
 		save2file("-A advgrp_%d -m layer7 --l7proto xunlei -j %s\n", seq, log_drop); */
