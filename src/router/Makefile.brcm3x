@@ -181,7 +181,7 @@ endif
 	$(MAKE) -j 4 -C $(LINUXDIR) modules  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
 	rm -rf $(TARGETDIR)/lib/modules
-	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
+	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
