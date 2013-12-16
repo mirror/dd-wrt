@@ -41,6 +41,7 @@ static void ipp2p_mt_help(void)
 }
 #define SHORT_HAND_IPP2P 0x1
 static const struct option ipp2p_mt_opts[] = {
+	{.name = "ipp2p", .has_arg = false, .val = '1'},
 	{.name = "edk",   .has_arg = false, .val = '2'},
 	{.name = "dc",    .has_arg = false, .val = '7'},
 	{.name = "gnu",   .has_arg = false, .val = '9'},
