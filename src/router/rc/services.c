@@ -110,6 +110,9 @@ int start_services_main(int argc, char **argv)
 #ifdef HAVE_TOR
 	handle = start_service_nofree_f("tor", handle);
 #endif
+#ifdef HAVE_TRANSMISSION
+	handle = start_service_nofree_f("transmission", handle);
+#endif
 #ifdef HAVE_SYSLOG
 	handle = start_service_nofree_f("syslog", handle);
 #endif
@@ -277,6 +280,9 @@ int stop_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_TOR
 	handle = stop_service_nofree("tor", handle);
+#endif
+#ifdef HAVE_TRANSMISSION
+	handle = stop_service_nofree("transmission", handle);
 #endif
 #ifdef HAVE_PRIVOXY
 	handle = stop_service_nofree("privoxy", handle);
@@ -639,6 +645,9 @@ static void handle_nassrv(void)
 #endif
 #ifdef HAVE_MINIDLNA
 	handle = start_service_nofree_f("dlna", handle);
+#endif
+#ifdef HAVE_TRANSMISSION
+	handle = start_service_nofree_f("transmission", handle);
 #endif
 //    if( handle )
 //      dlclose( handle );
