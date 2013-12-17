@@ -3185,6 +3185,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"gps_gpsd", "0", 0},
 	{"gps_gpsd_port", "2947", 0},
 #endif
+#ifdef TRANSMISSION
+	{"transmission_enable", "0", 0},
+	{"transmission_dir", "/jffs/transmission", 0},
+#endif
 	{0, 0, 0}
 };
 #else
