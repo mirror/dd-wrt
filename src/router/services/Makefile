@@ -1274,6 +1274,10 @@ CFLAGS_EXTRA += -DHAVE_LIGHTTPD
 OBJS += lighttpd.o
 endif
 
+ifeq ($(CONFIG_TRANSMISSION),y)
+CFLAGS_EXTRA += -DHAVE_TRANSMISSION
+OBJS += transmission.o
+endif
 
 ifeq ($(CONFIG_LLTD),y)
 CFLAGS_EXTRA += -DHAVE_LLTD
