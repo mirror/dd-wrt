@@ -749,6 +749,9 @@ nas.dlna_srv="MiniDLNA";
 nas.dlna_thumb="Include Cover Artwork";
 nas.dlna_dir="Files Directory";
 
+var hnas=new Object();
+hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through ftp or samba.";
+
 //** Privoxy.asp **//
 var privoxy=new Object();
 privoxy.titl="Adblocking";
@@ -772,10 +775,6 @@ lighttpd.custom="Custom Configuration";
 
 var hlighttpd=new Object();
 hlighttpd.right2="Enable lighttpd and configure the HTTP/HTTPS ports lighttpd will listen for request. Default webserver root is under /jffs/www where you can place your websites.";
-
-var hnas=new Object();
-hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through ftp or samba.";
-
 
 // ** Hotspot.asp **//
 var hotspot=new Object();
@@ -1600,6 +1599,11 @@ service.dlna_type_images="Images";
 service.zabbix_legend="Zabbix";
 service.zabbix_cl="Client";
 service.zabbix_serverip="Zabbix Server IP";
+
+//TRansmission
+service.transmission_legend="Bittorrent";
+service.transmission_srv="Transmission Daemon";
+service.transmission_dir="Transmission Directory";
 
 // ** eop-tunnel.asp **//
 var eoip=new Object();
