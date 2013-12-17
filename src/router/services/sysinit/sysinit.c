@@ -70,7 +70,7 @@
 
 #define WL_IOCTL(name, cmd, buf, len) (ret = wl_ioctl((name), (cmd), (buf), (len)))
 
-#define TXPWR_MAX 251
+#define TXPWR_MAX 1000
 #define TXPWR_DEFAULT 28
 
 void start_restore_defaults(void);
