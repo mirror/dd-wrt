@@ -477,10 +477,10 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_basic.TXpower"); %%></div>
-									<input class="num" name="%s_txpwr" size="6" maxlength="3" onblur="valid_range(this,1,251,wl_basic.TXpower)" value="<%% nvram_selget("%s_txpwr"); %%>" />
+									<input class="num" name="%s_txpwr" size="6" maxlength="3" onblur="valid_range(this,1,1000,wl_basic.TXpower)" value="<%% nvram_selget("%s_txpwr"); %%>" />
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
-									document.write("(" + share.deflt + ": <%% show_defwpower(); %%>, " + share.range + ": 1 - 251mW)");
+									document.write("(" + share.deflt + ": <%% show_defwpower(); %%>, " + share.range + ": 1 - 1000mW)");
 									//]]>
 									</script></span>
 								</div>

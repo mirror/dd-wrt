@@ -32,7 +32,7 @@
 
 #define WL_IOCTL(name, cmd, buf, len) (wl_ioctl((name), (cmd), (buf), (len)))
 
-#define TXPWR_MAX 251
+#define TXPWR_MAX 1000
 #define TXPWR_DEFAULT 28
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
