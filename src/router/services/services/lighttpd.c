@@ -67,6 +67,7 @@ void start_lighttpd(void)
 			"\".tar.gz\" =>   \"application/x-tgz\",\n"
 			"\".tgz\"  => \"application/x-tgz\",\n"
 			"\".gz\"   => \"application/x-gzip\",\n"
+			"\".css\"   => \"text/css\",\n"
 			")\n\n"
 			"compress.cache-dir = \"/tmp/lighttpd/cache/compress/\"\n"
 			"compress.filetype   = (\"text/plain\", \"text/html\")\n"
@@ -96,6 +97,9 @@ void start_lighttpd(void)
 			"$HTTP[\"url\"] =~ \"^/owncloud($|/)\" {\n"
 			"dir-listing.activate = \"disable\"\n"
 			"}\n\n"
+			"$HTTP[\"url\"] =~ \"^/data/\" {\n"
+			"url.access-deny = (\"\")\n"
+			"}\n\n"
 			"auth.backend                   = \"plain\"\n"
 			"auth.backend.plain.userfile    = \"/tmp/lighttpd/lighttpd.user\"\n"
 			"auth.backend.htpasswd.userfile = \"/tmp/lighttpd/lighttpd.htpasswd\"\n"
@@ -116,7 +120,6 @@ void start_lighttpd(void)
 
 void stop_lighttpd(void)
 {
-	syslog(LOG_INFO, "lighttpd : lighttpd stopped\n");
 	stop_process("lighttpd", "lighttpd");
 }
 #endif
