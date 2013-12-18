@@ -748,12 +748,22 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 	uint shift = 0;
 	uint32 top = 0;
 	uint32 bootsz;
+	uint32 bootossz = NFL_BOOT_OS_SIZE;
 	int isbufdual = 0;
 	uint boardnum = bcm_strtoul(nvram_safe_get("boardnum"), NULL, 0);
 	if ((boardnum == 2013012401 || boardnum == 2013083001 || boardnum == 2013032101) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")) {
 		printk(KERN_EMERG "Buffalo WZR-900DHP dualboot\n");
 		isbufdual = 1;
+		bootossz = 0x4000000;
+	}
+
+	if (boardnum == 1 && nvram_match("boardtype","0xD646") && nvram_match("boardrev","0x1100")) {
+		bootossz = 0x4000000;	
+	}
+
+	if (boardnum == 1 && nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100")) {
+		bootossz = 0x4000000;	
 	}
 
 #ifdef CONFIG_FAILSAFE_UPGRADE
@@ -828,10 +838,7 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 #endif
 		{
 			bcm947xx_nflash_parts[nparts].name = "linux";
-			if (isbufdual)
-				bcm947xx_nflash_parts[nparts].size = nparts ? (0x4000000 - NFL_BOOT_SIZE) : 0x4000000;
-			else
-				bcm947xx_nflash_parts[nparts].size = nparts ? (NFL_BOOT_OS_SIZE - NFL_BOOT_SIZE) : NFL_BOOT_OS_SIZE;
+			bcm947xx_nflash_parts[nparts].size = nparts ? (bootossz - NFL_BOOT_SIZE) : bootossz;
 		}
 		/* fix linux offset for this unit */
 		if (nvram_match("boardnum","679") && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110"))) {
@@ -904,10 +911,7 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 			else
 				bcm947xx_nflash_parts[nparts].name = "linux2";
 
-			if (isbufdual)
-				bcm947xx_nflash_parts[nparts].size = 0x4000000 - image_second_offset;
-			else
-				bcm947xx_nflash_parts[nparts].size = NFL_BOOT_OS_SIZE - image_second_offset;
+			bcm947xx_nflash_parts[nparts].size = bootossz - image_second_offset;
 
 			bcm947xx_nflash_parts[nparts].offset = image_second_offset;
 			shift = lookup_nflash_rootfs_offset(nfl, mtd, image_second_offset, bcm947xx_nflash_parts[nparts].size);
@@ -918,10 +922,7 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 			else
 				bcm947xx_nflash_parts[nparts].name = "rootfs2";
 
-			if (isbufdual)
-				bcm947xx_nflash_parts[nparts].size = 0x4000000 - shift;
-			else
-				bcm947xx_nflash_parts[nparts].size = NFL_BOOT_OS_SIZE - shift;
+			bcm947xx_nflash_parts[nparts].size = bootossz - shift;
 
 			bcm947xx_nflash_parts[nparts].offset = shift;
 			bcm947xx_nflash_parts[nparts].mask_flags = MTD_WRITEABLE;

@@ -1032,6 +1032,16 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 		isbufdual = 1;
 	}
 
+	if (boardnum == 1 && nvram_match("boardtype","0xD646") && nvram_match("boardrev","0x1100")) {
+		offset = 0x4000000;
+		
+	}
+
+	if (boardnum == 1 && nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100")) {
+		offset = 0x4000000;
+		
+	}
+
 	if (nvram_get("bootpartition") && isbufdual) {
 		offset = 0x4800000;
 		size -= 0x100000;
