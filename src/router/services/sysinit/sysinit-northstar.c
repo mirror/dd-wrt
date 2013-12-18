@@ -1311,6 +1311,7 @@ void start_sysinit(void)
 		set_gpio(7, 1);	// fixup wifi button
 		set_gpio(15, 1);	// fixup ses button
 		break;
+	case ROUTER_LINKSYS_EA6500V2:
 	case ROUTER_LINKSYS_EA6900:
 		nvram_set("partialboots", "0");
 		break;
