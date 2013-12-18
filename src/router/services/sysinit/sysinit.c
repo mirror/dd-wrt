@@ -2215,6 +2215,7 @@ void start_restore_defaults(void)
 			nvram_set("vlan2ports", "4 5u");
 		}
 		break;
+	case ROUTER_LINKSYS_EA6900:
 	case ROUTER_ASUS_AC67U:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
 		    || !nvram_get("vlan2ports")
