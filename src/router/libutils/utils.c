@@ -5125,7 +5125,9 @@ int led_control(int type, int act)
 		diag_gpio = 0x101;	// white led blink / off to indicate fac.def. 
 		break;
 	case ROUTER_LINKSYS_EA6900:
-		diag_gpio = 0x101;	// white led blink / off to indicate fac.def. 
+		usb_power = 0x009;	//usb power on/off
+		usb_power1 = 0x00a;	//usb power on/off
+		diag_gpio = 0x106;	// white led blink / off to indicate fac.def. 
 		break;
 	case ROUTER_ASUS_WL500G:
 		power_gpio = 0x100;
@@ -5228,9 +5230,9 @@ int led_control(int type, int act)
 	case ROUTER_ASUS_AC67U:
 	case ROUTER_ASUS_AC56U:
 		wlan1_gpio = 0x106;
+		power_gpio = 0x103;
 		usb_power = 0x009;	//usb power on/off
 		usb_power1 = 0x00a;	//usb power on/off
-		power_gpio = 0x103;
 		usb_gpio = 0x10e;
 		diag_gpio = 0x003;
 		connected_gpio = 0x101;
