@@ -1,0 +1,1 @@
+- cast-256 and rc6 do not work properly on Alpha (64 bit) machines
