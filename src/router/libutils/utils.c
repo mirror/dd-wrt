@@ -1014,7 +1014,11 @@ int internal_getRouterBrand()
 	}
 	
 	if (boardnum == 1 && nvram_match("boardtype","0xD646") && nvram_match("boardrev","0x1100")) {
-		setRouter("Linksys EA6900");
+		if (nvram_match("modelNumber","EA6900"))
+			setRouter("Linksys EA6900");
+		else
+			setRouter("Linksys EA6500 V2");
+
 		return ROUTER_LINKSYS_EA6900;
 	}
 
