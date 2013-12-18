@@ -25,20 +25,20 @@ libpng-configure:
 	
 libgd:
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT)   -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -lm -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng12 -fPIC -v -Wl,--verbose" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -lm -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng12 -L$(TOP)/minidlna/lib -ljpeg -fPIC -v -Wl,--verbose" \
 	$(MAKE) -C libgd
 	
 libgd-clean:
 	make -C libgd clean
 	
 libgd-configure:
-	cd libgd && ./configure --host=$(ARCH)-linux-uclibc  --without-xpm --without-x --without-tiff --without-freetype --without-fontconfig --without-x --disable-shared --enable-static --with-zlib CC="ccache $(ARCH)-linux-uclibc-gcc" CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib" 'LDFLAGS=-L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs'
+	cd libgd && ./configure --host=$(ARCH)-linux-uclibc  --with-jpeg=$(TOP)/minidlna/jpeg-8 --without-xpm --without-x --without-tiff --without-freetype --without-fontconfig --without-x --disable-shared --enable-static --with-zlib CC="ccache $(ARCH)-linux-uclibc-gcc" CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/zlib" 'LDFLAGS=-L$(TOP)/minidlna/lib -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs'
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT)   -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -lm -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng12 -fPIC -v -Wl,--verbose" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -lm -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng12 -L$(TOP)/minidlna/lib -ljpeg -fPIC -v -Wl,--verbose" \
 	$(MAKE) -C libgd
 
 libgd-install:
@@ -46,15 +46,17 @@ libgd-install:
 
 
 libmcrypt:
-	cd libmcrypt && \
-	CC="ccache $(ARCH)-linux-uclibc-gcc" \
+	CC="ccache $(ARCH)-linux-uclibc-gcc"
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/zlib/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -L$(TOP)/zlib -fPIC -v -Wl,--verbose" \
 	$(MAKE) -C libmcrypt
 	
+libmcrypt-install:
+	mkdir -p $(INSTALLDIR)/libmcrypt/usr/lib ; true
+	cp -av libmcrypt/lib/.libs/libmcrypt.so* $(INSTALLDIR)/libmcrypt/usr/lib/ ; true
+
 libmcrypt-clean:
-	cd libmcrypt && \
 	make -C libmcrypt clean
 	
 libmcrypt-configure:
@@ -121,6 +123,7 @@ PHP_CONFIGURE_ARGS= \
 	--with-zlib \
 	--with-zlib-dir="$(TOP)/zlib" \
 	--with-png-dir="$(TOP)/libgd/libpng/.libs" \
+	--with-jpeg-dir="$(TOP)/minidlna/jpeg-8" \
 	--with-mcrypt="$(TOP)/libmcrypt" \
 	php_cv_cc_rpath="no" \
 	iconv_impl_name="gnu_libiconv" \
@@ -145,8 +148,8 @@ PHP_CONFIGURE_ARGS= \
 php5-configure: libpng-configure libgd-configure libxml2-configure libpng libgd libxml2
 	rm -f php5/config.cache
 	cd php5 && './configure'  '--host=$(ARCH)-linux-uclibc'  $(PHP_CONFIGURE_ARGS) \
-	'CFLAGS=$(COPTS) -I$(TOP)/libmcrypt -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -liconv' \
-	'LDFLAGS=-L$(TOP)/libmcrypt/lib/.libs -lmcrypt -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/openssl -lcrypto -lssl -lcrypt -ldl'
+	'CFLAGS=$(COPTS) -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/libmcrypt -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -liconv' \
+	'LDFLAGS=-L$(TOP)/minidlna/lib -ljpeg -L$(TOP)/libmcrypt/lib/.libs -lmcrypt -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/openssl -lcrypto -lssl -lcrypt -ldl'
 	printf "#define HAVE_GLOB 1\n" >>$(TOP)/php5/main/php_config.h
 
 php5-clean:
