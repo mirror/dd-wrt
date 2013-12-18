@@ -1311,6 +1311,9 @@ void start_sysinit(void)
 		set_gpio(7, 1);	// fixup wifi button
 		set_gpio(15, 1);	// fixup ses button
 		break;
+	case ROUTER_LINKSYS_EA6900:
+		nvram_set("partialboots", "0");
+		break;
 	case ROUTER_BUFFALO_WZR1750:
 		nvram_set("0:ledbh12", "7");
 		nvram_set("1:ledbh10", "7");
