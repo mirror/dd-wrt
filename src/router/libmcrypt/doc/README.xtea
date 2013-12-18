@@ -1,0 +1,13 @@
+
+
+The xTEA algorithm may not be right implemented. There are two different
+behaved implementations, because the specification is not clear. I assumed
+that the C code in the specification is right, so in mcrypt xtea behaves
+exactly as the code shown in the specification. The different approach
+is the code in ftp.funet.fi which seems to be more rational than the
+code in the specification. But since there is no indication of the author of
+that code I decided not to adopt this version, and I assumed that the
+C specification is right.
+
+						Nikos
+

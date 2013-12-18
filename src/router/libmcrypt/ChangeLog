@@ -1,0 +1,1531 @@
+2003-03-08 17:30  nmav
+
+	* NEWS, configure.in, lib/Makefile.am:
+
+	mcrypt_symb.c is only generated when needed.  
+
+2003-03-05 17:35  nmav
+
+	* NEWS, configure.in:
+
+	some fixes in configure script. Properly print the enable dynamic
+	loading stuff.  
+
+2003-01-22 19:38  nmav
+
+	* doc/mcrypt.3:
+
+	fix typos in the documentation. Reported by Anil Madhavapeddy
+	<anil@recoil.org> 
+
+2003-01-19 18:44  nmav
+
+	* NEWS, lib/Makefile.am, src/cipher_test.c (utags:
+	libmcrypt_2_5_6):
+
+	corrected bug which made symbols entered twice in symbol table 
+
+2003-01-19 17:48  nmav
+
+	* NEWS, configure.in, lib/win32_comp.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/3-way.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/arcfour.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/blowfish-compat.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/blowfish.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/cast-128.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/cast-256.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/des.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/enigma.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/gost.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/loki97.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/panama.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/rc2.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/rijndael-128.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/rijndael-192.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/rijndael-256.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/safer128.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/safer64.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/saferplus.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/serpent.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/tripledes.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/twofish.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/wake.c (tags: libmcrypt_2_5_6),
+	modules/algorithms/xtea.c (tags: libmcrypt_2_5_6),
+	modules/modes/cbc.c (tags: libmcrypt_2_5_6), modules/modes/cfb.c
+	(tags: libmcrypt_2_5_6), modules/modes/ctr.c (tags:
+	libmcrypt_2_5_6), modules/modes/ecb.c (tags: libmcrypt_2_5_6),
+	modules/modes/ncfb.c (tags: libmcrypt_2_5_6), modules/modes/nofb.c
+	(tags: libmcrypt_2_5_6), modules/modes/ofb.c (tags:
+	libmcrypt_2_5_6), modules/modes/stream.c (tags: libmcrypt_2_5_6):
+
+	Panama is not included by default. Several win32 fixes.  
+
+2003-01-07 07:25  nmav
+
+	* lib/mcrypt_threads.c:
+
+	The mcrypt_mutex_register symbol is always added in the library to
+	prevent compilation problems. Reported by Igor Brezac
+	(igor@ipass.net) 
+
+2002-12-22 17:56  nmav
+
+	* lib/mcrypt_modules.c (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1):
+
+	some fixes for ecb mode to work.  
+
+2002-12-17 14:31  nmav
+
+	* ChangeLog (tags: libmcrypt_2_5_4), NEWS, lib/mcrypt.h.in (tags:
+	libmcrypt_2_5_6, libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4), lib/mcrypt_modules.c (tags: libmcrypt_2_5_4),
+	modules/algorithms/Makefile.am (tags: libmcrypt_2_5_6,
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/modes/Makefile.am (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4):
+
+	Added mcrypt_module_support_dynamic(), and some more fixes to
+	disable dynamic loading.  
+
+2002-12-17 08:32  nmav
+
+	* ChangeLog, NEWS, configure.in, lib/Makefile.am (tags:
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/Makefile.am, modules/modes/Makefile.am:
+
+	ade the default behaviour to include all algorithms into the main
+	library, instead of using dynamic modules. Dynamic loading is
+	disabled by default.  
+
+2002-12-16 09:52  nmav
+
+	* lib/mcrypt_modules.c:
+
+	More checks on input. Suggested by Ilia A.  
+
+2002-12-16 09:50  nmav
+
+	* lib/: mcrypt_extra.c, mcrypt_modules.c:
+
+	Some fixes to prevent buffer overruns. Based on patch by Ilia A.  
+
+2002-12-13 23:03  nmav
+
+	* lib/mcrypt_modules.c:
+
+	corrected check in algorithm loading. The check for the buffer size,
+	was fixed. Reported and patch by Ilia A. <ilia@prohost.org> 
+
+2002-11-11 17:19  nmav
+
+	* modules/algorithms/gost.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4):
+
+	changed the names of some variables in order to compile with k6
+	optimizations (gcc). Suggested by Jens Rehsack <rehsack@liwing.de>.  
+
+2002-10-10 11:40  nmav
+
+	* libmcrypt.spec.in:
+
+	New spec file, by Germano Rizzo <mano@pluto.linux.it> 
+
+2002-10-04 09:25  nmav
+
+	* configure.in:
+
+	more win32 fixes 
+
+2002-10-02 07:25  nmav
+
+	* configure.in:
+
+	corrections in win32 detection.  
+
+2002-10-01 11:26  nmav
+
+	* acconfig.h, configure.in, modules/algorithms/3-way.c (tags:
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/arcfour.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/blowfish-compat.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4), modules/algorithms/blowfish.c
+	(tags: libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/cast-128.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4), modules/algorithms/cast-256.c
+	(tags: libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/des.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4), modules/algorithms/enigma.c
+	(tags: libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/gost.c, modules/algorithms/loki97.c (tags:
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/panama.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4), modules/algorithms/rc2.c
+	(tags: libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/rijndael-128.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/rijndael-192.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/rijndael-256.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4), modules/algorithms/safer128.c
+	(tags: libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/safer64.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/saferplus.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4), modules/algorithms/serpent.c
+	(tags: libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/tripledes.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4), modules/algorithms/twofish.c
+	(tags: libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/algorithms/wake.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4), modules/algorithms/xtea.c
+	(tags: libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/modes/cbc.c (tags: libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4), modules/modes/cfb.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4), modules/modes/ctr.c (tags:
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/modes/ecb.c (tags: libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4), modules/modes/ncfb.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4), modules/modes/nofb.c (tags:
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4),
+	modules/modes/ofb.c (tags: libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4), modules/modes/stream.c (tags: libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4):
+
+	If WIN32 is defined then include an empty main function.  This was
+	added thanks to Stefan Hetzl <shetzl@teleweb.at> 
+
+2002-09-11 07:00  nmav
+
+	* doc/mcrypt.3:
+
+	corrected typos 
+
+2002-09-10 16:13  nmav
+
+	* lib/libmcrypt.m4 (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4):
+
+	updated for autoconf 2.50 
+
+2002-07-06 10:18  nmav
+
+	* NEWS, configure.in, lib/mcrypt.c (tags: libmcrypt_2_5_6,
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4,
+	libmcrypt_2_5_3), lib/mcrypt_extra.c (tags: libmcrypt_2_5_3),
+	lib/mcrypt_internal.h (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4, libmcrypt_2_5_3),
+	lib/mcrypt_modules.c (tags: libmcrypt_2_5_3):
+
+	introduced the use of the const keyword in the exported functions 
+
+2002-06-10 18:35  nmav
+
+	* modules/algorithms/arcfour.c (tags: libmcrypt_2_5_3,
+	libmcrypt_2_5_2):
+
+	corrected arcfour which returned an IV size of 32 bytes.  
+
+2002-05-30 18:20  nmav
+
+	* NEWS, buildconf (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4, libmcrypt_2_5_3,
+	libmcrypt_2_5_2), configure.in:
+
+	added COPYING.LIB 
+
+2002-05-29 15:51  nmav
+
+	* COPYING, COPYING.LIB (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4, libmcrypt_2_5_3,
+	libmcrypt_2_5_2), Makefile.am (tags: libmcrypt_2_5_4,
+	libmcrypt_2_5_3, libmcrypt_2_5_2), THANKS (tags: libmcrypt_2_5_3,
+	libmcrypt_2_5_2):
+
+	Added the COPYING.LIB file.  
+
+2002-05-24 06:15  nmav
+
+	* modules/algorithms/: panama.c, panama.h (tags: libmcrypt_2_5_6,
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4) (utags:
+	libmcrypt_2_5_2, libmcrypt_2_5_3):
+
+	Worked around alignment bug in some compilers.  
+
+2002-05-23 14:31  nmav
+
+	* modules/algorithms/saferplus.c (tags: libmcrypt_2_5_3,
+	libmcrypt_2_5_2):
+
+	Worked around an alignment bug with Solaris Forte 6U2. Pointed out
+	by Phillip Oleson.  
+
+2002-05-17 20:53  nmav
+
+	* configure.in, lib/Makefile.am (tags: libmcrypt_2_5_3,
+	libmcrypt_2_5_2), lib/mcrypt_extra.c:
+
+	Corrected stuff for comma separated algorithms. Do not open
+	directories when not in LTDL mode.  
+
+2002-05-16 20:32  nmav
+
+	* configure.in:
+
+	Updated included algorithms configure parameter to work in OS X. Now
+	accepts and comma separated arguments.  
+
+2002-03-23 15:04  nmav
+
+	* lib/libmcrypt.sym (tags: libmcrypt_2_5_5rc1, libmcrypt_2_5_4,
+	libmcrypt_2_5_3, libmcrypt_2_5_2):
+
+	added missing symbol 
+
+2002-03-11 09:55  nmav
+
+	* configure.in, lib/Makefile.am, modules/algorithms/Makefile.am
+	(tags: libmcrypt_2_5_3, libmcrypt_2_5_2), modules/modes/Makefile.am
+	(tags: libmcrypt_2_5_3, libmcrypt_2_5_2) (utags: libmcrypt_2_5_0):
+
+	last changes for 2.5.0 release 
+
+2002-03-10 14:46  nmav
+
+	* NEWS, doc/mcrypt.3 (tags: libmcrypt_2_5_0), src/Makefile.am
+	(tags: libmcrypt_2_5_6, libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4, libmcrypt_2_5_3, libmcrypt_2_5_2,
+	libmcrypt_2_5_0), src/aes_test.c, src/cipher_test.c (tags:
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4,
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0):
+
+	added test for nCFB, CTR, CFB, nOFB with AES-128.  
+
+2002-03-10 14:45  nmav
+
+	* modules/modes/: cfb.c, ctr.c, ofb.c (utags: libmcrypt_2_5_0,
+	libmcrypt_2_5_2, libmcrypt_2_5_3):
+
+	corrections in CTR mode and cleanups.  
+
+2002-03-10 13:01  nmav
+
+	* modules/modes/ctr.c, src/cipher_test.c:
+
+	better checks for stream modes 
+
+2002-03-10 10:47  nmav
+
+	* Makefile.am, configure.in, libmcrypt.spec, libmcrypt.spec.in
+	(tags: libmcrypt_2_5_0):
+
+	added libmcrypt.spec.in 
+
+2002-03-09 21:48  nmav
+
+	* NEWS, TODO (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4, libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0), doc/mcrypt.3, lib/mcrypt.h.in
+	(tags: libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0),
+	lib/mcrypt_modules.c (tags: libmcrypt_2_5_2, libmcrypt_2_5_0),
+	modules/algorithms/arcfour.c (tags: libmcrypt_2_5_0),
+	modules/algorithms/wake.c (tags: libmcrypt_2_5_3, libmcrypt_2_5_2,
+	libmcrypt_2_5_0), modules/modes/cbc.c (tags: libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0), modules/modes/cfb.c,
+	modules/modes/ctr.c, modules/modes/ecb.c (tags: libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0), modules/modes/ncfb.c (tags:
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0),
+	modules/modes/nofb.c (tags: libmcrypt_2_5_3, libmcrypt_2_5_2,
+	libmcrypt_2_5_0), modules/modes/ofb.c, modules/modes/stream.c
+	(tags: libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0):
+
+	Added mcrypt_enc_get_state() 
+
+2002-03-09 21:27  nmav
+
+	* modules/modes/: ncfb.c, nofb.c:
+
+	nOFB and nCFB now behave like real stream modes 
+
+2002-03-09 20:29  nmav
+
+	* NEWS, README, configure.in, libmcrypt.spec, lib/libdefs.h (tags:
+	libmcrypt_2_5_6, libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4, libmcrypt_2_5_3, libmcrypt_2_5_2,
+	libmcrypt_2_5_0), modules/algorithms/3-way.c (tags:
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0),
+	modules/algorithms/arcfour.c, modules/algorithms/blowfish-compat.c
+	(tags: libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0),
+	modules/algorithms/blowfish.c (tags: libmcrypt_2_5_0),
+	modules/algorithms/cast-128.c (tags: libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0), modules/algorithms/cast-256.c
+	(tags: libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0),
+	modules/algorithms/des.c (tags: libmcrypt_2_5_3, libmcrypt_2_5_2,
+	libmcrypt_2_5_0), modules/algorithms/enigma.c (tags:
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0),
+	modules/algorithms/gost.c (tags: libmcrypt_2_5_3, libmcrypt_2_5_2,
+	libmcrypt_2_5_0), modules/algorithms/loki97.c (tags:
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0),
+	modules/algorithms/panama.c (tags: libmcrypt_2_5_0),
+	modules/algorithms/rc2.c (tags: libmcrypt_2_5_3, libmcrypt_2_5_2,
+	libmcrypt_2_5_0), modules/algorithms/rijndael-128.c (tags:
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0),
+	modules/algorithms/rijndael-192.c (tags: libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0),
+	modules/algorithms/rijndael-256.c (tags: libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0), modules/algorithms/safer128.c
+	(tags: libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0),
+	modules/algorithms/safer64.c (tags: libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0), modules/algorithms/saferplus.c
+	(tags: libmcrypt_2_5_0), modules/algorithms/serpent.c (tags:
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0),
+	modules/algorithms/tripledes.c (tags: libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0), modules/algorithms/twofish.c
+	(tags: libmcrypt_2_5_0), modules/algorithms/wake.c,
+	modules/algorithms/xtea.c (tags: libmcrypt_2_5_3, libmcrypt_2_5_2,
+	libmcrypt_2_5_0), modules/modes/cbc.c, modules/modes/cfb.c,
+	modules/modes/ctr.c, modules/modes/ecb.c, modules/modes/ncfb.c,
+	modules/modes/nofb.c, modules/modes/ofb.c, modules/modes/stream.c:
+
+	Added the --disable-dynamic-loading parameter to the configure
+	script, and instructions for how to build the library for staticaly
+	linking.  
+
+2002-03-09 19:36  nmav
+
+	* libmcrypt.spec:
+
+	added libmcrypt.spec by Germano Rizzo <mano@pluto.linux.it> 
+
+2002-03-09 10:43  nmav
+
+	* NEWS, configure.in, doc/mcrypt.3, lib/mcrypt_modules.h (tags:
+	libmcrypt_2_5_6, libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4, libmcrypt_2_5_3, libmcrypt_2_5_2,
+	libmcrypt_2_5_0), modules/modes/ctr.c, modules/modes/stream.c:
+
+	A block cipher in CTR mode now behaves as a real stream cipher.  
+	(nCFB and nOFB have to be fixed too).  
+
+2002-03-07 12:23  nmav
+
+	* modules/modes/: Makefile.am, ctr.c, ctr.h (tags: libmcrypt_2_5_6,
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4,
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0), ncfb.c, nofb.c:
+
+	Added CTR mode. Fixes in nCFB an nOFB modes.  
+
+2002-03-04 18:39  nmav
+
+	* THANKS:
+
+	added Stefan 
+
+2002-03-03 09:15  nmav
+
+	* modules/algorithms/twofish.c:
+
+	macro moved to inline function 
+
+2002-03-02 10:22  nmav
+
+	* configure.in, lib/Makefile.am, modules/algorithms/Makefile.am,
+	modules/modes/Makefile.am:
+
+	-no-undefined is only added in win32 machines 
+
+2002-02-28 12:59  nmav
+
+	* THANKS, acconfig.h (tags: libmcrypt_2_5_3, libmcrypt_2_5_2,
+	libmcrypt_2_5_0), configure.in, doc/example.c (tags:
+	libmcrypt_2_5_6, libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4, libmcrypt_2_5_3, libmcrypt_2_5_2,
+	libmcrypt_2_5_0), lib/Makefile.am, lib/libdefs.h,
+	modules/algorithms/Makefile.am, modules/algorithms/twofish.c,
+	modules/modes/Makefile.am, modules/modes/cbc.c,
+	modules/modes/cfb.c, modules/modes/ofb.c:
+
+	Added link options for win32 compatibility.  
+
+2002-02-22 22:05  nmav
+
+	* modules/modes/stream.c:
+
+	now has_iv does not return 1. Pointed out by Gustavo Niemeyer
+	<niemeyer@conectiva.com> 
+
+2002-02-13 18:33  nmav
+
+	* modules/modes/: ncfb.c, nofb.c:
+
+	ncfb and nofb can now encrypt and decrypt messages with length !=
+	blocksize. This is only needed for the last bytes.  
+
+2002-02-10 23:15  nmav
+
+	* lib/mcrypt.h.in:
+
+	Added mcrypt_check_version prototype.  
+
+2002-02-01 11:41  nmav
+
+	* lib/mcrypt.c (tags: libmcrypt_2_5_2, libmcrypt_2_5_0):
+
+	corrected nasty bug in internal_init() 
+
+2002-01-31 01:13  nmav
+
+	* lib/: libdefs.h, mcrypt_extra.c (tags: libmcrypt_2_5_0) (utags:
+	libmcrypt_2_4_21):
+
+	corrected a bug with a POSIX_SOURCE_XXX define.  
+
+2002-01-31 01:06  nmav
+
+	* lib/: mcrypt.c, mcrypt_modules.c (utags: libmcrypt_2_4_21):
+
+	minor fixes 
+
+2002-01-31 00:48  nmav
+
+	* lib/mcrypt_modules.c:
+
+	now properly calls lt_dlexit() on dlopen() failure.  
+
+2002-01-24 10:47  nmav
+
+	* lib/: mcrypt_extra.c, mcrypt_modules.c (utags: mcrypt_2_4_20):
+
+	corrected bug in mcrypt_module_open() 
+
+2002-01-05 22:28  nmav
+
+	* lib/libmcrypt.m4 (tags: libmcrypt_2_5_3, libmcrypt_2_5_2,
+	libmcrypt_2_5_0, libmcrypt_2_4_21, mcrypt_2_4_20):
+
+	now removes the temp file 
+
+2002-01-05 13:26  nmav
+
+	* THANKS (tags: libmcrypt_2_4_21, mcrypt_2_4_20), configure.in:
+
+	corrected behaviour in solaris 
+
+2002-01-02 10:03  nmav
+
+	* NEWS:
+
+	released 2.4.19 
+
+2001-12-31 13:06  nmav
+
+	* THANKS:
+
+	added Derick 
+
+2001-12-15 11:27  nmav
+
+	* NEWS, THANKS, configure.in, lib/mcrypt.c (tags: mcrypt_2_4_20),
+	lib/mcrypt_modules.c:
+
+	cleanups in the code. Some fixes too. Patch by Barton C Massey 
+
+2001-11-07 12:04  nmav
+
+	* lib/mcrypt.c:
+
+	corrected memory leak 
+
+2001-09-24 14:09  nmav
+
+	* lib/mcrypt_modules.c (tags: libmcrypt_2_4_17):
+
+	bug fix 
+
+2001-09-18 10:20  nmav
+
+	* configure.in (tags: libmcrypt_2_4_17):
+
+	fixed some bashisms 
+
+2001-09-18 10:19  nmav
+
+	* modules/modes/ofb.c (tags: libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17):
+
+	corrected wrong define 
+
+2001-09-15 09:41  nmav
+
+	* NEWS, THANKS (tags: libmcrypt_2_4_17), lib/mcrypt_extra.c (tags:
+	libmcrypt_2_4_17) (utags: libmcrypt_2_4_16b):
+
+	removed unneeded strdup declaration 
+
+2001-09-11 08:09  nmav
+
+	* NEWS, doc/mcrypt.3 (tags: libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b), lib/mcrypt.h.in (tags:
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b), lib/mcrypt_internal.h (tags: libmcrypt_2_5_2,
+	libmcrypt_2_5_0, libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b), lib/mcrypt_modules.c (tags: libmcrypt_2_4_16b)
+	(utags: libmcrypt_2_4_16):
+
+	rolled back some of the changed 
+
+2001-09-09 09:52  nmav
+
+	* NEWS, doc/mcrypt.3, lib/mcrypt.c, lib/mcrypt.h.in,
+	lib/mcrypt_internal.h, lib/mcrypt_modules.c,
+	modules/algorithms/3-way.c (tags: libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	modules/algorithms/arcfour.c (tags: libmcrypt_2_4_21,
+	mcrypt_2_4_20, libmcrypt_2_4_17, libmcrypt_2_4_16b,
+	libmcrypt_2_4_16), modules/algorithms/blowfish-compat.c (tags:
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/blowfish.c
+	(tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/cast-128.c
+	(tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/cast-256.c
+	(tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/des.c
+	(tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/enigma.c
+	(tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/gost.c
+	(tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/loki97.c
+	(tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/panama.c
+	(tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/rc2.c
+	(tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	modules/algorithms/rijndael-128.c (tags: libmcrypt_2_4_21,
+	mcrypt_2_4_20, libmcrypt_2_4_17, libmcrypt_2_4_16b,
+	libmcrypt_2_4_16), modules/algorithms/rijndael-192.c (tags:
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	modules/algorithms/rijndael-256.c (tags: libmcrypt_2_4_21,
+	mcrypt_2_4_20, libmcrypt_2_4_17, libmcrypt_2_4_16b,
+	libmcrypt_2_4_16), modules/algorithms/safer128.c (tags:
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/safer64.c
+	(tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	modules/algorithms/saferplus.c (tags: libmcrypt_2_4_21,
+	mcrypt_2_4_20, libmcrypt_2_4_17, libmcrypt_2_4_16b,
+	libmcrypt_2_4_16), modules/algorithms/serpent.c (tags:
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	modules/algorithms/tripledes.c (tags: libmcrypt_2_4_21,
+	mcrypt_2_4_20, libmcrypt_2_4_17, libmcrypt_2_4_16b,
+	libmcrypt_2_4_16), modules/algorithms/twofish.c (tags:
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/wake.c
+	(tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/xtea.c
+	(tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/modes/cbc.c (tags:
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16):
+
+	Changed mcrypt_enc_get_supported_key_sizes() behaviour.  (does not
+	return allocated value) 
+
+2001-09-08 18:08  nmav
+
+	* NEWS, TODO (tags: libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	doc/mcrypt.3, lib/mcrypt.h.in, lib/mcrypt_extra.c,
+	lib/mcrypt_internal.h, lib/mcrypt_modules.c,
+	modules/algorithms/3-way.c, modules/algorithms/arcfour.c,
+	modules/algorithms/blowfish-compat.c,
+	modules/algorithms/blowfish.c, modules/algorithms/cast-128.c,
+	modules/algorithms/cast-256.c, modules/algorithms/des.c,
+	modules/algorithms/enigma.c, modules/algorithms/gost.c,
+	modules/algorithms/loki97.c, modules/algorithms/panama.c,
+	modules/algorithms/rc2.c, modules/algorithms/rijndael-128.c,
+	modules/algorithms/rijndael-192.c,
+	modules/algorithms/rijndael-256.c, modules/algorithms/safer128.c,
+	modules/algorithms/safer64.c, modules/algorithms/saferplus.c,
+	modules/algorithms/serpent.c, modules/algorithms/tripledes.c,
+	modules/algorithms/twofish.c, modules/algorithms/wake.c,
+	modules/algorithms/xtea.c, modules/modes/Makefile.am (tags:
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/modes/cbc.c,
+	modules/modes/cfb.c (tags: libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	modules/modes/ecb.c (tags: libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	modules/modes/ncfb.c (tags: libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	modules/modes/ncfb.h (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4, libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0, libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	modules/modes/nofb.c (tags: libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	modules/modes/ofb.c (tags: libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	modules/modes/stream.c (tags: libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16):
+
+	added ncfb mode. Changed get_*_name() functions semantics.  Other
+	cleanups.  
+
+2001-09-07 12:50  nmav
+
+	* src/: Makefile.am (tags: libmcrypt_2_4_21, mcrypt_2_4_20),
+	cipher_test.c (utags: libmcrypt_2_4_16, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b):
+
+	removed dmalloc stuff 
+
+2001-09-07 12:34  nmav
+
+	* configure.in (tags: libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	lib/Makefile.am (tags: libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	lib/libdefs.h (tags: mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), lib/libmcrypt.m4 (tags:
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	lib/mcrypt_extra.c, lib/mcrypt_modules.c, src/Makefile.am,
+	src/cipher_test.c:
+
+	Finished option which allows for static linking modules into the
+	library 
+
+2001-09-02 20:11  nmav
+
+	* NEWS, configure.in, lib/Makefile.am, lib/libdefs.h,
+	lib/mcrypt_extra.c, lib/mcrypt_internal.h, lib/mcrypt_modules.c,
+	modules/algorithms/3-way.c, modules/algorithms/Makefile.am (tags:
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16), modules/algorithms/arcfour.c,
+	modules/algorithms/blowfish-compat.c,
+	modules/algorithms/blowfish.c, modules/algorithms/cast-128.c,
+	modules/algorithms/cast-256.c, modules/algorithms/des.c,
+	modules/algorithms/enigma.c, modules/algorithms/gost.c,
+	modules/algorithms/loki97.c, modules/algorithms/panama.c,
+	modules/algorithms/rc2.c, modules/algorithms/rijndael-128.c,
+	modules/algorithms/rijndael-192.c,
+	modules/algorithms/rijndael-256.c, modules/algorithms/safer128.c,
+	modules/algorithms/safer64.c, modules/algorithms/saferplus.c,
+	modules/algorithms/serpent.c, modules/algorithms/tripledes.c,
+	modules/algorithms/twofish.c, modules/algorithms/wake.c,
+	modules/algorithms/xtea.c, modules/modes/Makefile.am,
+	modules/modes/cbc.c, modules/modes/cfb.c, modules/modes/ecb.c,
+	modules/modes/nofb.c, modules/modes/ofb.c, modules/modes/stream.c:
+
+	added option to include modules into the library 
+
+2001-09-02 14:49  nmav
+
+	* configure.in, lib/Makefile.am, lib/libdefs.h, lib/libmcrypt.m4,
+	lib/libmcrypt.sym (tags: libmcrypt_2_5_0, libmcrypt_2_4_21,
+	mcrypt_2_4_20, libmcrypt_2_4_17, libmcrypt_2_4_16b,
+	libmcrypt_2_4_16), lib/mcrypt_extra.c, lib/mcrypt_internal.h,
+	lib/mcrypt_modules.c:
+
+	changed to support dlpreopening 
+
+2001-07-11 07:34  nmav
+
+	* NEWS, lib/libdefs.h, lib/mcrypt_extra.c:
+
+	corrected bug for solaris 'readdir_r' 
+
+2001-06-09 10:12  nmav
+
+	* acconfig.h (tags: libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16),
+	configure.in, lib/mcrypt_threads.c (tags: libmcrypt_2_4_16b,
+	libmcrypt_2_4_16) (utags: libmcrypt_2_4_15):
+
+	added check for lt_dlmutex_register in the installed version of
+	libltdl.  If it is not found then that capability is disabled.  
+
+2001-06-04 14:42  nmav
+
+	* acconfig.h, configure.in, doc/README.config (tags:
+	libmcrypt_2_5_6, libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4, libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0,
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15),
+	lib/libmcrypt.m4 (tags: libmcrypt_2_4_15), lib/mcrypt_threads.c:
+
+	several fixes 
+
+2001-05-28 08:31  nmav
+
+	* modules/algorithms/panama.c (tags: libmcrypt_2_4_15):
+
+	fixed free() call 
+
+2001-05-21 15:10  nmav
+
+	* lib/Makefile.am, modules/algorithms/Makefile.am,
+	modules/modes/Makefile.am (utags: libmcrypt_2_4_15):
+
+	removed -no-undefined parameters 
+
+2001-05-21 09:34  nmav
+
+	* modules/algorithms/panama.c:
+
+	removed mx* calls.  
+
+2001-05-18 17:11  nmav
+
+	* src/Makefile.am (tags: libmcrypt_2_4_15):
+
+	fixed wrong library linking 
+
+2001-05-18 16:59  nmav
+
+	* src/cipher_test.c (tags: libmcrypt_2_4_15, mcrypt_2_4_13):
+
+	removed dmalloc.h 
+
+2001-05-18 10:54  nmav
+
+	* NEWS (tags: mcrypt_2_4_13), configure.in (tags: mcrypt_2_4_13),
+	doc/Makefile.am (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4, libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0, libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16,
+	libmcrypt_2_4_15, mcrypt_2_4_13), doc/README.threads, doc/mcrypt.3
+	(tags: libmcrypt_2_4_15, mcrypt_2_4_13), lib/mcrypt_extra.c (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13), lib/mcrypt_modules.c (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13), lib/mcrypt_threads.c (tags:
+	mcrypt_2_4_13), lib/xmemory.h (tags: libmcrypt_2_5_6,
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4,
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0,
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13), modules/algorithms/Makefile.am (tags:
+	mcrypt_2_4_13), modules/modes/Makefile.am (tags: mcrypt_2_4_13):
+
+	updated api.  
+
+2001-05-18 07:08  nmav
+
+	* NEWS, configure.in, lib/mcrypt_internal.h (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13):
+
+	updated behaviour when an older libltdl is found in the system 
+
+2001-05-17 20:54  nmav
+
+	* NEWS, TODO (tags: libmcrypt_2_4_15, mcrypt_2_4_13,
+	mcrypt_2_4_12), configure.in, doc/README.config (tags:
+	mcrypt_2_4_13, mcrypt_2_4_12), doc/mcrypt.3, lib/Makefile.am,
+	lib/libdefs.h (tags: libmcrypt_2_4_15, mcrypt_2_4_13,
+	mcrypt_2_4_12), lib/libmcrypt.m4 (tags: mcrypt_2_4_13,
+	mcrypt_2_4_12), lib/libmcrypt.sym (tags: libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12), lib/mcrypt.h.in (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12),
+	modules/algorithms/panama.h (tags: libmcrypt_2_5_0,
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12), src/Makefile.am (tags:
+	mcrypt_2_4_13, mcrypt_2_4_12):
+
+	minor updates 
+
+2001-05-17 19:09  nmav
+
+	* modules/algorithms/: des.c, rijndael-128.c, rijndael-192.c,
+	rijndael-256.c, safer.h (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4, libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0, libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16), safer128.c,
+	safer64.c, tripledes.c (utags: mcrypt_2_4_13, libmcrypt_2_4_15,
+	mcrypt_2_4_12):
+
+	declared all non exported functions as static.  
+
+2001-05-17 18:59  nmav
+
+	* modules/algorithms/panama.c (tags: mcrypt_2_4_13, mcrypt_2_4_12):
+
+	all non exported functions were declared as static 
+
+2001-05-17 18:58  nmav
+
+	* acinclude.m4 (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4, libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0, libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16,
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12), buildconf (tags:
+	libmcrypt_2_5_0, libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12), configure.in, lib/Makefile.am,
+	lib/libdefs.h, lib/mcrypt.c (tags: libmcrypt_2_4_15, mcrypt_2_4_13,
+	mcrypt_2_4_12), lib/mcrypt_extra.c (tags: mcrypt_2_4_12),
+	lib/mcrypt_modules.c (tags: mcrypt_2_4_12), lib/xmemory.c (tags:
+	libmcrypt_2_5_6, libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4, libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0,
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12), lib/xmemory.h (tags: mcrypt_2_4_12),
+	src/Makefile.am, src/cipher_test.c (tags: mcrypt_2_4_12):
+
+	fixes to work with the new libltdl 
+
+2001-05-16 17:54  nmav
+
+	* modules/algorithms/: 3-way.c (tags: libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12), arcfour.c, blowfish-compat.c (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12), blowfish.c (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12), cast-128.c (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12), cast-256.c (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12), des.c, enigma.c,
+	gost.c (tags: libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12),
+	loki97.c, panama.c, rc2.c (tags: libmcrypt_2_4_15, mcrypt_2_4_13,
+	mcrypt_2_4_12), rijndael-128.c, rijndael-192.c, rijndael-256.c,
+	safer128.c, safer64.c, saferplus.c (tags: libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12), serpent.c (tags: libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12), tripledes.c, twofish.c (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12), wake.c, xtea.c
+	(tags: libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12):
+
+	fixed memory leaks 
+
+2001-05-16 12:27  nmav
+
+	* doc/Makefile.am (tags: mcrypt_2_4_12), doc/README.threads (tags:
+	mcrypt_2_4_12), lib/mcrypt_extra.c, lib/mcrypt_internal.h (tags:
+	mcrypt_2_4_12), lib/mcrypt_modules.c:
+
+	updated for new libltdl 
+
+2001-05-16 08:55  nmav
+
+	* configure.in, doc/README.config, lib/Makefile.am,
+	lib/libmcrypt-config.in (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4, libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0, libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16,
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12), lib/libmcrypt.m4,
+	lib/libmcrypt.sym, lib/mcrypt.h, lib/mcrypt.h.in,
+	lib/mcrypt_extra.c:
+
+	added libmcrypt-config so programs that use libmcrypt can be
+	configured easier 
+
+2001-05-14 15:35  nmav
+
+	* README (tags: libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12), doc/mcrypt.3, src/cipher_test.c:
+
+	updated list information 
+
+2001-04-25 09:49  nmav
+
+	* modules/algorithms/enigma.c:
+
+	replaced fprintf with printf 
+
+2001-03-29 18:31  nmav
+
+	* lib/mcrypt_modules.c:
+
+	corrected memory leak at mcrypt_module_close().  
+
+2001-03-29 17:55  nmav
+
+	* lib/mcrypt_modules.c:
+
+	corrected return value of mcrypt_dlopen_ext().  
+
+2001-03-18 09:01  nmav
+
+	* NEWS, configure.in:
+
+	moving to a new bugfix release 
+
+2001-03-11 20:30  nmav
+
+	* modules/algorithms/: blowfish-compat.c, blowfish.c:
+
+	fixed some problems with ltdl 
+
+2001-02-04 08:35  nmav
+
+	* lib/win32_comp.h (tags: libmcrypt_2_5_6, libmcrypt_2_5_5,
+	libmcrypt_2_5_5rc1, libmcrypt_2_5_4, libmcrypt_2_5_3,
+	libmcrypt_2_5_2, libmcrypt_2_5_0, libmcrypt_2_4_21, mcrypt_2_4_20,
+	libmcrypt_2_4_17, libmcrypt_2_4_16b, libmcrypt_2_4_16,
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12):
+
+	fixed different declarations 
+
+2001-02-01 10:36  nmav
+
+	* lib/mcrypt.h (tags: mcrypt_2_4_9):
+
+	various cleanups in mcrypt.h 
+
+2001-02-01 10:34  nmav
+
+	* configure.in (tags: mcrypt_2_4_9), doc/mcrypt.3 (tags:
+	mcrypt_2_4_9), lib/mcrypt.c (tags: mcrypt_2_4_9), lib/mcrypt.h,
+	modules/algorithms/panama.c (tags: mcrypt_2_4_9),
+	modules/modes/cbc.c (tags: libmcrypt_2_4_15, mcrypt_2_4_13,
+	mcrypt_2_4_12, mcrypt_2_4_9), modules/modes/cfb.c (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9),
+	modules/modes/ecb.c (tags: libmcrypt_2_4_15, mcrypt_2_4_13,
+	mcrypt_2_4_12, mcrypt_2_4_9), modules/modes/nofb.c (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9),
+	modules/modes/ofb.c (tags: libmcrypt_2_4_15, mcrypt_2_4_13,
+	mcrypt_2_4_12, mcrypt_2_4_9), modules/modes/stream.c (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9):
+
+	null IV is now handled 
+
+2001-01-23 17:45  nmav
+
+	* NEWS (tags: mcrypt_2_4_9), doc/mcrypt.3, lib/libmcrypt.sym (tags:
+	mcrypt_2_4_9), lib/mcrypt.c:
+
+	added mcrypt_generic_deinit() function 
+
+2001-01-23 17:27  nmav
+
+	* modules/algorithms/arcfour.c (tags: mcrypt_2_4_9):
+
+	corrected a so embarrasing bug in the IV of arcfour 
+
+2001-01-23 12:09  nmav
+
+	* modules/algorithms/rijndael-192.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta):
+
+	corrected return value 
+
+2001-01-23 12:01  nmav
+
+	* modules/algorithms/wake.c:
+
+	updated version number 
+
+2001-01-23 11:51  nmav
+
+	* ChangeLog (tags: libmcrypt-2_4_9-beta), NEWS, README (tags:
+	mcrypt_2_4_9, libmcrypt-2_4_9-beta), THANKS (tags:
+	libmcrypt_2_4_15, mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), TODO (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), doc/README.key (tags: libmcrypt_2_5_6,
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4,
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0,
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9, libmcrypt-2_4_9-beta),
+	doc/mcrypt.3 (tags: libmcrypt-2_4_9-beta), lib/libdefs.h (tags:
+	mcrypt_2_4_9, libmcrypt-2_4_9-beta), lib/mcrypt.c (tags:
+	libmcrypt-2_4_9-beta), lib/mcrypt_extra.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), lib/mcrypt_internal.h (tags:
+	libmcrypt-2_4_9-beta), lib/mcrypt_modules.c (tags:
+	libmcrypt-2_4_9-beta), lib/xmemory.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), modules/algorithms/Makefile.am (tags:
+	mcrypt_2_4_12, mcrypt_2_4_9, libmcrypt-2_4_9-beta),
+	modules/algorithms/blowfish-compat.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), modules/algorithms/blowfish.c (tags:
+	mcrypt_2_4_9, libmcrypt-2_4_9-beta), modules/algorithms/cast-128.c
+	(tags: mcrypt_2_4_9, libmcrypt-2_4_9-beta),
+	modules/algorithms/cast-256.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), modules/algorithms/loki97.c (tags:
+	mcrypt_2_4_9, libmcrypt-2_4_9-beta), modules/algorithms/panama.c
+	(tags: libmcrypt-2_4_9-beta), modules/algorithms/panama.h (tags:
+	mcrypt_2_4_9, libmcrypt-2_4_9-beta), modules/algorithms/rc2.c
+	(tags: mcrypt_2_4_9, libmcrypt-2_4_9-beta),
+	modules/algorithms/rijndael-128.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), modules/algorithms/rijndael-192.c,
+	modules/algorithms/rijndael-256.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), modules/algorithms/rijndael.h (tags:
+	libmcrypt_2_5_6, libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4, libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0,
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9, libmcrypt-2_4_9-beta),
+	modules/algorithms/saferplus.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), modules/algorithms/saferplus.h (tags:
+	libmcrypt_2_5_6, libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4, libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0,
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9, libmcrypt-2_4_9-beta),
+	modules/algorithms/twofish.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), modules/algorithms/twofish.h (tags:
+	libmcrypt_2_5_6, libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4, libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0,
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9, libmcrypt-2_4_9-beta),
+	modules/algorithms/xtea.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), modules/modes/cfb.c (tags:
+	libmcrypt-2_4_9-beta), modules/modes/nofb.c (tags:
+	libmcrypt-2_4_9-beta), modules/modes/ofb.c (tags:
+	libmcrypt-2_4_9-beta), src/cipher_test.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta):
+
+	cleanups and word8 was replaced by byte (hopefully) 
+
+2001-01-23 11:50  nmav
+
+	* lib/libmcrypt.sym:
+
+	added missing function 
+
+2001-01-23 11:49  nmav
+
+	* modules/algorithms/: arcfour-iv.c, arcfour-iv.h:
+
+	removed it! 
+
+2001-01-23 11:49  nmav
+
+	* modules/modes/stream.c (tags: libmcrypt-2_4_9-beta):
+
+	corrected bug that caused wake to fail 
+
+2001-01-23 11:47  nmav
+
+	* modules/algorithms/: wake.c, wake.h (tags: libmcrypt_2_5_6,
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4,
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0,
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9, libmcrypt-2_4_9-beta):
+
+	cleanups and added iv support 
+
+2001-01-23 11:46  nmav
+
+	* lib/: mcrypt_internal.h, mcrypt_modules.c (utags: mcrypt_2_4_9):
+
+	removed unneeded functions 
+
+2001-01-23 11:44  nmav
+
+	* modules/algorithms/: arcfour.c, arcfour.h (tags: libmcrypt_2_5_6,
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4,
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0,
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9) (utags:
+	libmcrypt-2_4_9-beta):
+
+	arcfour now uses IV 
+
+2001-01-23 11:38  nmav
+
+	* modules/algorithms/panama.c:
+
+	added a check in malloc for bigendian machines 
+
+2001-01-22 22:21  nmav
+
+	* src/cipher_test.c:
+
+	updated test. Now fails if algorithm test fail 
+
+2001-01-22 22:19  nmav
+
+	* modules/modes/: cbc.c (tags: libmcrypt-2_4_9-beta), ecb.c (tags:
+	libmcrypt-2_4_9-beta), nofb.c:
+
+	updated internal structure 
+
+2001-01-22 22:18  nmav
+
+	* NEWS, configure.in (tags: libmcrypt-2_4_9-beta):
+
+	updated for release 
+
+2001-01-22 22:16  nmav
+
+	* doc/mcrypt.3:
+
+	updated documentation 
+
+2001-01-22 22:15  nmav
+
+	* lib/: mcrypt.c, mcrypt.h (tags: libmcrypt-2_4_9-beta),
+	mcrypt_internal.h, mcrypt_modules.c:
+
+	changed some internal functions to get return value of
+	mcrypt_set_key 
+
+2001-01-22 22:13  nmav
+
+	* modules/algorithms/: 3-way.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), arcfour-iv.c, blowfish-compat.c, blowfish.c,
+	cast-128.c, cast-256.c, des.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), enigma.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), gost.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), loki97.c, panama.c, rc2.c, rijndael-128.c,
+	rijndael-192.c, rijndael-256.c, safer128.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), safer64.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), saferplus.c, serpent.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), tripledes.c (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), twofish.c, xtea.c:
+
+	return value of mcrypt_set_key is an int 
+
+2001-01-22 22:10  nmav
+
+	* modules/algorithms/wake.c:
+
+	there is something wrong with that algorithm 
+
+2001-01-22 22:09  nmav
+
+	* modules/algorithms/Makefile.am:
+
+	removed wake 
+
+2001-01-22 22:09  nmav
+
+	* modules/algorithms/arcfour.c:
+
+	speedups in the algorithm 
+
+2001-01-22 19:28  nmav
+
+	* lib/mcrypt_modules.c:
+
+	fixed warning 
+
+2001-01-18 00:26  nmav
+
+	* modules/algorithms/Makefile.am:
+
+	removed wake - it fails - i have no time to find why 
+
+2001-01-17 19:37  nmav
+
+	* lib/mcrypt.c:
+
+	added check for longer key sizes 
+
+2001-01-17 19:33  nmav
+
+	* ChangeLog, NEWS, lib/mcrypt.c:
+
+	mcrypt_generic_init() no longer fails if smaller key sizes are used.
+	Pads with zeros.  
+
+2001-01-12 11:51  nmav
+
+	* lib/mcrypt_extra.c:
+
+	fixed mcrypt_readdir(). Bugs pointed out by Jonathan Woolmington 
+	<jwool@ind.tansu.com.au> 
+
+2001-01-09 00:10  nmav
+
+	* README:
+
+	removed unneeded options 
+
+2001-01-08 18:44  nmav
+
+	* modules/algorithms/blowfish-compat.c:
+
+	more fixes 
+
+2001-01-08 18:37  nmav
+
+	* modules/algorithms/blowfish.c:
+
+	fixes in blowfish 
+
+2001-01-07 13:30  nmav
+
+	* NEWS, modules/algorithms/blowfish.c:
+
+	some speedup in the algorithm 
+
+2001-01-07 13:27  nmav
+
+	* modules/algorithms/blowfish.c:
+
+	more fixes in the blowfish 
+
+2001-01-07 13:22  nmav
+
+	* NEWS, configure.in, modules/algorithms/Makefile.am,
+	modules/algorithms/blowfish.c:
+
+	fixed blowfish in order to be compatible with other implementations 
+
+2001-01-03 23:33  nmav
+
+	* NEWS, configure.in:
+
+	more rijndael-256 fixes 
+
+2001-01-03 23:22  nmav
+
+	* configure.in, modules/algorithms/rijndael-256.c:
+
+	corrected bug in rijndael-256. Reported by Sami Farin safari@iki.fi 
+
+2000-12-15 12:11  nmav
+
+	* lib/libdefs.h:
+
+	a change for openbsd 
+
+2000-11-08 23:25  nmav
+
+	* modules/algorithms/blowfish.c:
+
+	corrected bug which made blowfish not to function properly. Thanks
+	goes to Andrew Skalski <askalski@chek.com> 
+
+2000-11-03 22:59  nmav
+
+	* lib/mcrypt_modules.c:
+
+	some strange (very strange) fix 
+
+2000-10-25 18:43  nmav
+
+	* NEWS, doc/mcrypt.3, lib/mcrypt.c:
+
+	added mcrypt_strerror() 
+
+2000-10-20 14:44  nmav
+
+	* configure.in, lib/libdefs.h, lib/win32_comp.h (tags:
+	mcrypt_2_4_9, libmcrypt-2_4_9-beta):
+
+	Changes for win32 
+
+2000-10-19 20:55  nmav
+
+	* .cvsignore, doc/.cvsignore, lib/.cvsignore, modules/.cvsignore,
+	modules/algorithms/.cvsignore, modules/modes/.cvsignore,
+	src/.cvsignore (utags: mcrypt_2_4_20, mcrypt_2_4_9,
+	libmcrypt_2_4_16, mcrypt_2_4_13, libmcrypt_2_4_16b,
+	libmcrypt_2_5_0, libmcrypt_2_5_3, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_5, libmcrypt_2_5_6, libmcrypt_2_4_17,
+	libmcrypt_2_5_2, libmcrypt_2_4_15, mcrypt_2_4_12, libmcrypt_2_4_21,
+	libmcrypt-2_4_9-beta, libmcrypt_2_5_4):
+
+	added cvsignore files 
+
+2000-10-19 18:03  nmav
+
+	* configure.in:
+
+	some fixes(?) 
+
+2000-10-19 17:51  nmav
+
+	* modules/modes/Makefile.in:
+
+	what was that? 
+
+2000-10-19 17:50  nmav
+
+	* configure.in, lib/Makefile.am (tags: mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), lib/mcrypt_modules.c, lib/win32_comp.h,
+	modules/algorithms/Makefile.am, modules/modes/Makefile.am (tags:
+	mcrypt_2_4_12, mcrypt_2_4_9, libmcrypt-2_4_9-beta),
+	modules/modes/Makefile.in:
+
+	Added things needed for libmcrypt to be compiled as a DLL under
+	windows 
+
+2000-10-12 21:06  nmav
+
+	* acconfig.h (tags: mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9,
+	libmcrypt-2_4_9-beta), configure.in, lib/Makefile.am,
+	lib/libdefs.h, lib/mcrypt.c, lib/mcrypt_extra.c,
+	lib/mcrypt_modules.c, lib/swap.c (tags: libmcrypt_2_5_6,
+	libmcrypt_2_5_5, libmcrypt_2_5_5rc1, libmcrypt_2_5_4,
+	libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0,
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9, libmcrypt-2_4_9-beta),
+	lib/win32_comp.c (tags: libmcrypt_2_5_5, libmcrypt_2_5_5rc1,
+	libmcrypt_2_5_4, libmcrypt_2_5_3, libmcrypt_2_5_2, libmcrypt_2_5_0,
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9, libmcrypt-2_4_9-beta),
+	lib/win32_comp.h, modules/algorithms/3-way.c,
+	modules/algorithms/arcfour-iv.c, modules/algorithms/arcfour.c,
+	modules/algorithms/blowfish.c, modules/algorithms/cast-128.c,
+	modules/algorithms/cast-256.c, modules/algorithms/des.c,
+	modules/algorithms/enigma.c, modules/algorithms/gost.c,
+	modules/algorithms/loki97.c, modules/algorithms/panama.c,
+	modules/algorithms/rc2.c, modules/algorithms/rijndael-128.c,
+	modules/algorithms/rijndael-192.c,
+	modules/algorithms/rijndael-256.c, modules/algorithms/safer128.c,
+	modules/algorithms/safer64.c, modules/algorithms/saferplus.c,
+	modules/algorithms/serpent.c, modules/algorithms/tripledes.c,
+	modules/algorithms/twofish.c, modules/algorithms/wake.c,
+	modules/algorithms/xtea.c:
+
+	Added defines and some function emulation needed in WIN32. Thanks
+	goes to Dimitris Souflis (dsouflis@altera.gr) 
+
+2000-10-10 11:54  nmav
+
+	* doc/mcrypt.3:
+
+	updated documentation 
+
+2000-10-07 18:34  nmav
+
+	* doc/mcrypt.3:
+
+	included algorithm description in the documentation 
+
+2000-10-07 18:26  nmav
+
+	* configure.in, lib/libdefs.h, lib/mcrypt_modules.h (tags:
+	libmcrypt_2_4_21, mcrypt_2_4_20, libmcrypt_2_4_17,
+	libmcrypt_2_4_16b, libmcrypt_2_4_16, libmcrypt_2_4_15,
+	mcrypt_2_4_13, mcrypt_2_4_12, mcrypt_2_4_9, libmcrypt-2_4_9-beta),
+	modules/algorithms/3-way.c, modules/algorithms/blowfish.c,
+	modules/algorithms/cast-256.c, modules/algorithms/des.c,
+	modules/algorithms/gost.c, modules/algorithms/loki97.c,
+	modules/algorithms/panama.c, modules/algorithms/rc2.c,
+	modules/algorithms/rijndael-128.c, modules/algorithms/serpent.c,
+	modules/algorithms/tripledes.c, modules/algorithms/twofish.c,
+	modules/algorithms/wake.c, modules/algorithms/xtea.c:
+
+	added support for local swap functions (if available) 
+
+2000-10-02 17:47  nmav
+
+	* modules/algorithms/arcfour.c:
+
+	arcfour algorithm bugfixes 
+
+2000-10-02 17:43  nmav
+
+	* modules/algorithms/: arcfour.c, arcfour.h:
+
+	arcfour implementation was changed 
+
+2000-09-18 09:42  nmav
+
+	* NEWS, configure.in, doc/mcrypt.3, lib/libdefs.h,
+	lib/mcrypt_extra.c, lib/mcrypt_modules.c:
+
+	updates in the -ldl option. Bugfixes.  
+
+2000-09-17 22:10  nmav
+
+	* ChangeLog, acconfig.h, configure.in, lib/libdefs.h,
+	lib/libmcrypt.sym (tags: libmcrypt-2_4_9-beta), lib/mcrypt_extra.c,
+	lib/mcrypt_modules.c, modules/modes/Makefile.in, src/cipher_test.c:
+
+	bugfixes and some minor improvements disable-libltdl mode.  
+
+2000-09-16 02:01  nmav
+
+	* lib/libdefs.h, lib/mcrypt.h, lib/mcrypt_extra.c,
+	lib/mcrypt_internal.h, lib/mcrypt_modules.c,
+	modules/algorithms/3-way.c, modules/algorithms/arcfour-iv.c,
+	modules/algorithms/arcfour.c, modules/algorithms/blowfish.c,
+	modules/algorithms/cast-128.c, modules/algorithms/cast-256.c,
+	modules/algorithms/des.c, modules/algorithms/enigma.c,
+	modules/algorithms/gost.c, modules/algorithms/loki97.c,
+	modules/algorithms/panama.c, modules/algorithms/rc2.c,
+	modules/algorithms/rijndael-128.c,
+	modules/algorithms/rijndael-192.c,
+	modules/algorithms/rijndael-256.c, modules/algorithms/safer128.c,
+	modules/algorithms/safer64.c, modules/algorithms/saferplus.c,
+	modules/algorithms/serpent.c, modules/algorithms/tripledes.c,
+	modules/algorithms/twofish.c, modules/algorithms/wake.c,
+	modules/algorithms/xtea.c, modules/modes/cbc.c,
+	modules/modes/cfb.c, modules/modes/ecb.c, modules/modes/nofb.c,
+	modules/modes/ofb.c, modules/modes/stream.c:
+
+	Added support for -ldl (does not work)... and some other fixes 
+
+2000-09-04 13:02  nmav
+
+	* lib/mcrypt.c, modules/modes/Makefile.in:
+
+	minor changes 
+
+2000-09-04 12:56  nmav
+
+	* doc/mcrypt.3:
+
+	updated and corrected documentation.  
+
+2000-08-04 14:59  nmav
+
+	* buildconf, modules/algorithms/blowfish.c:
+
+	speedups in the blowfish algorithm.  
+
+2000-07-28 07:41  nmav
+
+	* modules/algorithms/rc2.c:
+
+	Removed all references to assert().  
+
+2000-06-12 14:52  nmav
+
+	* modules/algorithms/panama.c:
+
+	removed some c++ style comments 
+
+2000-05-22 13:07  nmav
+
+	* AUTHORS, ChangeLog, COPYING, KNOWN-BUGS, INSTALL, Makefile.am,
+	NEWS, README, THANKS, TODO, acconfig.h, buildconf,
+	changelog-update.sh, configure.in, doc/Makefile.am, doc/README.key,
+	doc/README.xtea, doc/example.c, doc/mcrypt.3, lib/Makefile.am,
+	lib/bzero.c, lib/bzero.h, lib/libdefs.h, lib/mcrypt.c,
+	lib/mcrypt.h, lib/mcrypt_extra.c, lib/mcrypt_modules.h, lib/swap.c,
+	lib/xmemory.c, lib/xmemory.h, lib/libmcrypt.sym,
+	lib/mcrypt_internal.h, lib/mcrypt_modules.c, modules/Makefile.am,
+	modules/algorithms/3-way.c, modules/algorithms/3-way.h,
+	modules/algorithms/Makefile.am, modules/algorithms/blowfish.c,
+	modules/algorithms/blowfish.h, modules/algorithms/cast-128.c,
+	modules/algorithms/cast-128.h,
+	modules/algorithms/cast-128_sboxes.h,
+	modules/algorithms/cast-256.c, modules/algorithms/cast-256.h,
+	modules/algorithms/des.c, modules/algorithms/des.h,
+	modules/algorithms/enigma.c, modules/algorithms/enigma.h,
+	modules/algorithms/gost.c, modules/algorithms/arcfour-iv.c,
+	modules/algorithms/loki97.c, modules/algorithms/loki97.h,
+	modules/algorithms/safer.h, modules/algorithms/arcfour-iv.h,
+	modules/algorithms/rc2.c, modules/algorithms/rc2.h,
+	modules/algorithms/rijndael-128.c,
+	modules/algorithms/rijndael-192.c,
+	modules/algorithms/rijndael-256.c, modules/algorithms/safer128.c,
+	modules/algorithms/safer64.c, modules/algorithms/saferplus.c,
+	modules/algorithms/saferplus.h, modules/algorithms/serpent.c,
+	modules/algorithms/serpent.h, modules/algorithms/tripledes.c,
+	modules/algorithms/tripledes.h, modules/algorithms/rijndael.h,
+	modules/algorithms/twofish.c, modules/algorithms/twofish.h,
+	modules/algorithms/wake.c, modules/algorithms/wake.h,
+	modules/algorithms/xtea.c, modules/algorithms/arcfour.c,
+	modules/algorithms/arcfour.h, modules/algorithms/panama.c,
+	modules/algorithms/panama.h, modules/algorithms/xtea.h,
+	modules/modes/Makefile.am, modules/modes/Makefile.in,
+	modules/modes/cbc.c, modules/modes/cbc.h, modules/modes/cfb.c,
+	modules/modes/cfb.h, modules/modes/ecb.c, modules/modes/ecb.h,
+	modules/modes/nofb.c, modules/modes/nofb.h, modules/modes/ofb.c,
+	modules/modes/ofb.h, modules/modes/stream.c,
+	modules/modes/stream.h, src/Makefile.am, src/cipher_test.c,
+	src/key_test.c, src/mode_test.c:
+
+	Initial revision 
+
