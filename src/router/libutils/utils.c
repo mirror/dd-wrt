@@ -1012,6 +1012,11 @@ int internal_getRouterBrand()
 #endif
 		return ROUTER_BUFFALO_WZR600DHP2;
 	}
+	
+	if (boardnum == 1 && nvram_match("boardtype","0xD646") && nvram_match("boardrev","0x1100")) {
+		setRouter("Linksys EA6900");
+		return ROUTER_LINKSYS_EA6900;
+	}
 
 	if (nvram_match("productid", "RT-AC56U")) {
 		setRouter("Asus RT-AC56U");
@@ -5117,6 +5122,9 @@ int led_control(int type, int act)
 //              connected_gpio = 0x103; // white LED2
 		break;
 	case ROUTER_LINKSYS_EA6500:
+		diag_gpio = 0x101;	// white led blink / off to indicate fac.def. 
+		break;
+	case ROUTER_LINKSYS_EA6900:
 		diag_gpio = 0x101;	// white led blink / off to indicate fac.def. 
 		break;
 	case ROUTER_ASUS_WL500G:
