@@ -1014,12 +1014,15 @@ int internal_getRouterBrand()
 	}
 	
 	if (boardnum == 1 && nvram_match("boardtype","0xD646") && nvram_match("boardrev","0x1100")) {
-		if (nvram_match("modelNumber","EA6900"))
-			setRouter("Linksys EA6900");
-		else
-			setRouter("Linksys EA6500 V2");
+		setRouter("Linksys EA6900");
 
 		return ROUTER_LINKSYS_EA6900;
+	}
+
+	if (boardnum == 1 && nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100")) {
+		setRouter("Linksys EA6500 V2");
+
+		return ROUTER_LINKSYS_EA6500V2;
 	}
 
 	if (nvram_match("productid", "RT-AC56U")) {
@@ -5132,6 +5135,13 @@ int led_control(int type, int act)
 		usb_power = 0x009;	//usb power on/off
 		usb_power1 = 0x00a;	//usb power on/off
 		diag_gpio = 0x106;	// white led blink / off to indicate fac.def. 
+		power_gpio = 0x108;
+		break;
+	case ROUTER_LINKSYS_EA6500V2:
+		usb_power = 0x009;	//usb power on/off
+		usb_power1 = 0x00a;	//usb power on/off
+		diag_gpio = 0x106;	// white led blink / off to indicate fac.def. 
+		power_gpio = 0x108;
 		break;
 	case ROUTER_ASUS_WL500G:
 		power_gpio = 0x100;
