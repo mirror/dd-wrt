@@ -1033,6 +1033,7 @@ void period_check(int sig)
 		sesgpio = 0x104;	// gpio 4, inversed
 		break;
 	case ROUTER_LINKSYS_EA6900:
+	case ROUTER_LINKSYS_EA6500V2:
 		sesgpio = 0x107;	// gpio 7, inversed
 		break;		
 	case ROUTER_DLINK_DIR868:
