@@ -92,6 +92,7 @@ PHP_CONFIGURE_ARGS= \
 	--mandir=/usr/share/man \
 	--sbindir=/usr/sbin \
 	--sysconfdir=/etc \
+	--with-config-file-scan-dir=/jffs/etc \
 	--with-iconv-dir="$(TOP)/glib20/libiconv" \
 	--enable-shared \
 	--enable-static \
@@ -163,4 +164,6 @@ ifeq ($(CONFIG_PHPCGI),y)
 	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php-cgi
 	mkdir -p $(INSTALLDIR)/php5/etc
 	printf "short_open_tag=on\ncgi.fix_pathinfo=1\n" >$(INSTALLDIR)/php5/etc/php.ini
+	printf "post_max_size = 32M\n" >$(INSTALLDIR)/php5/etc/php.ini
+	printf "upload_max_filesize = 32M\n" >$(INSTALLDIR)/php5/etc/php.ini
 endif
