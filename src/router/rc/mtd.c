@@ -252,6 +252,7 @@ int mtd_write(const char *path, const char *mtd)
 	switch (brand) {
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
+	case ROUTER_LINKSYS_EA6900:
 		if (nvram_match("bootpartition", "1")) {
 			mtd = "linux2";
 			nvram_set("bootpartition", "0");

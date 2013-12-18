@@ -1032,6 +1032,9 @@ void period_check(int sig)
 	case ROUTER_ASUS_AC66U:
 		sesgpio = 0x104;	// gpio 4, inversed
 		break;
+	case ROUTER_LINKSYS_EA6900:
+		sesgpio = 0x107;	// gpio 7, inversed
+		break;		
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_ASUS_AC67U:
 		wifigpio = 0x10f;
