@@ -1,0 +1,346 @@
+March 08 2003: (version 2.5.7)
+- The mcrypt_symb.c file is generated only when needed. This should
+  fix some problems in systems with incompatible sed.
+
+January 19 2003: (version 2.5.6)
+- Fixes in win32 detection and DLL building.
+- Fixes for solaris (a symbol was not exported)
+- Corrected bug which made algorithm symbols to be inserted
+  twice in symbol table.
+- panama algorithm was removed
+
+December 22 2002: (version 2.5.5)
+- Better win32 detection and DLL building.
+- Changed some variables names in gost.c to allow compiling
+  with gcc and K6 optimizations.
+- Some buffer overrun checks on input. Patches and suggestions
+  by Ilia A. <ilia@prohost.org>
+- Made the default behaviour to include all algorithms into
+  the main library, instead of using dynamic modules. Dynamic
+  loading is disabled by default. The --enable-dynamic-loading flag
+  can be used in the configure script, to get the old behaviour.
+- Some fixes in ECB mode.
+
+August 16 2002: (version 2.5.3)
+- The const keyword is now used in the exported functions
+- Corrected problem in libltdl's configure script
+
+June 22 2002: (version 2.5.2)
+- Fixed bug in the returned IV size of ARCFOUR
+- Fixed bug in mcrypt_readdir() which prevented the test programs
+  to work.
+
+May 30 2002: (version 2.5.1)
+- Corrected the license. COPYING.LIB (LGPL) is now included
+  instead of COPYING (GPL)
+
+Mar 09th 2002: (version 2.5.0)
+- Several corrections in stream and block cipher modes.
+- Added --disable-dynamic-loading configure option
+- The IV modifications in Arcfour and Wake have been disabled
+  by default.
+- Added CTR mode for block ciphers.
+- Fixes in nCFB and nOFB modes.
+- Added mcrypt_enc_get_state() function.
+- Added test for nCFB, CFB, nOFB and CTR with AES
+
+Feb 14th 2002:
+- nOFB and nCFB modes can now encrypt and decrypt plaintext
+  of size less than block size.
+
+Feb 1st 2002: (version 2.4.22)
+- Corrected nasty bug in init code
+
+Jan 31 2002: (version 2.4.21)
+- Corrected problems in Makefiles
+- Minor bug fixes
+
+Jan 24th 2002: (version 2.4.20)
+- Corrected bug in mcrypt_module_open()
+
+Dec 15th 2001: (version 2.4.19)
+- Cleanups in the code.
+
+Nov 9th 2001: (version 2.4.18)
+- Fixed memory leak
+
+Sep 24th 2001: (version 2.4.17)
+- Corrected bug in mcrypt_module_get_supported_key_size()
+- Removed unneeded strdup declaration.
+- Corrected bug in ofb mode (reported by Phillip Oleson)
+- Corrected some bugs in configure.in (patch by Phillip Oleson)
+
+Sep 8th 2001: (version 2.4.16)
+- Added option to include algorithms and modes into the library 
+  (making possible a static library)
+  eg. './configure --with-included-algos="rijndael-128 twofish cbc ecb"' will add
+  rijndael, twofish with cbc and ecb into the library 
+- Added nCFB mode (experimental)
+- Changed mcrypt_strerror() return value to const.
+
+Jul 12th 2001:
+- Corrected readdir_r() behavior in Solaris
+  (Patch by Andrew Libby <alibby@commnav.com>)
+
+June 9th 2001: (version 2.4.15)
+- Check if the installed libltdl includes lt_dlmutex_register()
+- Fixes in libmcrypt-config script
+
+May 18th 2001: (version 2.4.13)
+- Corrects behaviour when an older libltdl is found in the system.
+- Updated mcrypt_mutex_register()
+
+May 17th 2001: (version 2.4.12)
+- Updated the libltdl library included
+- Several fixes in modules
+- Added scripts to allow easier and faster library version detection
+
+April 30th 2001: (version 2.4.11)
+- Corrected memory leaks in mcrypt_module_close()
+
+March 18th 2001: (version 2.4.10)
+- Corrected bugs in blowfish and blowfish-compat
+
+January 23th 2001: (version 2.4.9-beta)
+- Due to an endianness handling problem Blowfish algorithm was not compatible 
+  with other implementations. Now it has been corrected. If you want
+  to access the old algorithm used use the "blowfish-compat" module.
+- Fixes in mcrypt_list_algorithms() for some systems. Bugs pointed out by 
+  Jonathan Woolmington <jwool@ind.tansu.com.au>
+- Fixes in stream mode.
+- mcrypt_generic_init() no longer fails if smaller key is used. It uses
+  the most appropriate key size of the algorithm and pads with zeros.
+- Fixes in wake algorithm (and support for IV).
+- IV is now used in arcfour (arcfour-iv is now longer used). Speedups in Arcfour.
+- mcrypt_generic_deinit() function added.
+
+January 1st 2001: (version 2.4.8)
+- Corrected bug in rijndael-256 (reported by: Sami Farin <sfarin@ratol.fi>)
+  This makes the algorithm incompatible with previous versions.
+
+October 20th 2000:  (version 2.4.6)
+- Compiles under win32 using cygwin (with -mno-cygwin)
+- Added mcrypt_strerror()
+
+September 18th 2000: (version 2.4.5)
+- Updates in the documentation
+- Libmcrypt can now be used without libltdl (in systems where libdl is present)
+- Added the mcrypt_enc_set_state() function.
+- Speedups in the blowfish algorithm
+
+May 12th, 2000: (version 2.4.4)
+- Added Panama algorithm
+
+April 3rd, 2000: (version 2.4.2)
+- Added missing symbols.
+
+April 2nd, 2000: (version 2.4.1)
+- Bugfixes
+- Internal changes in mode modules
+- Changes in the documentation
+
+March 19th, 2000: (version 2.4.0)
+- Corrected bugs in the extra algorithms.
+- Libmcrypt is now thread safe without need for posix thread locks.
+- Libmcrypt is no longer compatible with 2.2 or 2.3 version.
+- Speedups in the library.
+- The crypt algorithm has changed. In order for it's output to be compatible 
+  with the unix crypt output, the key must be generated using crypt(3).
+  This was made in order to remove the key transformation, which was 
+  included in the algorithm.
+- The crypt algorithm was renamed to enigma.
+- Changed many function's names in order to minimize namespace polution.
+  View the manpage for more information.
+
+March 4th, 2000: (version 2.3.4)
+- Improved POSIX Threads detection by Sascha Schumann
+- Arcfour was renamed to arcfour-iv. The arcfour algorithm now does not
+  support iv (as the original algorithm does).
+- Modes for block algorithms are not limited any more to a 256 bit block size.
+- Mcrypt 2.2 compatibility functions were added.
+- mcrypt_get_algo_key_size(), mcrypt_get_algo_block_size() functions
+  were added.
+
+February 28th, 2000: (version 2.3.3)
+- Some dlsyms were cached causing a 50% increase in speed. 
+
+February 27th, 2000:
+- A slightly modified version of libmcrypt 2.2.4 was released in order
+  for mcrypt 2.5.0 to be able to compile against that series of libmcrypt.
+
+February 22, 2000:
+- mcrypt_is_block_algorithm_mode(), mcrypt_is_block_mode(),
+  mcrypt_is_block_algorithm(), functions were added.
+- Bugfixes in the mcrypt_module_self_test().
+
+February 8th, 2000:
+- Keygen functionality was added to the cvs version of libmhash. 
+  Libmcrypt seems to compile fine.
+
+January 21st, 2000:
+- Locks were added to libltdl calls so libmcrypt is still thread safe.
+
+January 20th, 2000: (version 2.3.0)
+- Tried to include libltdl. Not succesful yet. It compiles but it does
+  not work.
+- keygen functionality was removed. It will be added to libmhash
+  http://schumann.cx/mhash
+
+January 13th, 2000:
+- Changed the sha-1 algorithm implementation
+- mcrypt_get_iv_size now calls the specified mode, not the algorithm
+- arcfour was added.
+
+December 12th, 1999:
+- Included patches by Steve Underwood, to allow an arbitary number of
+  streams of encryption.
+- Thread locking was changed, in order to allow multiple encryption, and avoid
+  dead locks.
+
+December 10th, 1999:
+- Wake algorithm now supports IV.
+
+December 4th, 1999:
+- Changes in modules/modes in order to be thread-safe.
+
+December 2nd, 1999:
+- Bug fixes in the panama and xtea algorithms.
+- The version of the module now can be checked at run-time (check mcrypt.h)
+
+November 30th, 1999:
+- Corrections in the panama algorithm, in order to work fine in big-endian
+   machines.
+
+November 29th, 1999: 
+- encrypt() function crypt.c was renamed to __encrypt() in order to compile 
+   in some systems.
+- version number is included in the modules.
+- mcrypt_list_algorithms(), mcrypt_list_modes() and mcrypt_list_keygen() now
+   check if the file is an mcrypt module (has the _mcrypt_xxx_version function).
+
+November 28th, 1999:
+- MARS was added (as a separate module)
+
+November 26th, 1999:
+- mcrypt_perror(int) function was added. It prints the text of an mcrypt
+   error code.
+- Versioning has been changed. The release is no longer included in the library
+   name.
+- Documentation was updated.
+
+November 25th, 1999:
+- crypt() and setkey() functions for enigma, were renamed to __crypt() and
+   __setkey() to keep some libcs happy.
+- Corrected typo mistakes in twofish.c.
+- Patched wake.c to work in bigendian machines.
+- IDEA, RC4, RC6 which were non-free now are in a separate distribution.
+
+November 24th, 1999:
+- sdes key generation module was corrected. Now it works fine with
+  des(1).
+
+November 20th, 1999:
+- Mcrypt is now modular. Modes, algorithm, and key generation modules, can
+  be loaded dynamically.
+
+November 17th, 1999:
+- PANAMA stream algorithm was added (experimental).
+- WAKE stream algorithm was added (experimental).
+
+November 13th, 1999:
+- Blowfish algorithm was changed, it is now compatible with other implementations.
+- Accessing algorithms is now different. You do not specify TWOFISH_256, to
+  access TWOFISH algorithm with 256 bit key, but TWOFISH with keylength of
+  32 bytes (==256 bits). This is more flexible than the previous API since
+  you can access more keys.
+
+October 16th, 1999:
+- The new API is completed.
+- STREAM mode was added.
+- RC4 was added.
+
+October 15th, 1999:
+- libmcrypt is maintained using CVS.
+- Major changes in the internal of the library. Much cleaner code.
+
+October 14th, 1999:
+- Serpent was added.
+
+October 10th, 1999:
+- Bugfix in sha1.
+
+October 4th, 1999:
+- Bugfixes in rc2 and rc6.
+- rijndael implementation by Mike Scott was added.
+
+September 29th, 1999:
+- Minor bugfixes and optimization in the library. Now it uses less memory.
+
+September 20th, 1999: 
+- Fixes in RC2, RC6 and SAFER+ code, so they work the same way in
+  big-endian and little-endian machines.
+- Porting of SERPENT, MARS and RIJNDAEL is not ready, they do
+  not work right in bigendian machines.
+- Bugfixes in the tests. Tests failed if one or two algorithms failed.
+
+September 19th, 1999
+- SERPENT was added in 128,192,256 key modes.
+
+September 15th, 1999
+- MARS and RIJNDAEL were added in 128,192,256 key modes.
+- RC6 was splitted to RC6_128, RC6_192 and RC6_256 (the old RC6 is equal to RC6_256)
+- RC2 was splitted to RC2_128, RC2_256 and RC2_1024 (the old RC2 is equal to RC2_1024)
+
+September 14th, 1999
+- Twofish code was changed. Now it uses Dr Brian Gladman's code.
+- RC2 code was changed.
+
+June 26th, 1999
+- buffer overflow fixed in lib/mcrypt.c. Pointed out by Don Sutherland <dss@yadda.net>
+
+June 23th, 1999
+- RC2 code was cleared.
+- RC6 was changed according to the specification. It is RC6 32/20/32.
+  RC6, SAFER+, LOKI97 and CAST-256 codes are actually Dr Brian Gladman's
+  code a bit modified for mcrypt.
+- shared library version has changed (at last!)
+
+June 22th, 1999
+- SAFER+, LOKI97 and CAST-256 Added.
+
+June 15th, 1999 - Version 2.2
+- Changes in the xTEA algorithm. Some extra parenthesis made the algorithm
+  differ from the specification. Pointed out by Lars Nordentoft
+  <lntech@post9.tele.dk>. Read the README.xtea for more information.
+
+June 12th, 1999 - Version 2.1.1
+- Changes in the documentation which was inaccurate.
+
+June 11th, 1999 - Version 2.1
+- _mcrypt_ was placed as a prefix to all internal functions so they
+  do not pollute namespace.
+
+May 29th, 1999
+- test suites added
+- Blowfish was divided to blowfish-448, -256, -192, -128.
+- CBC can now accept IV
+- mlock and munlock is used before mallocing and freeing any memory,
+  thus if such capabilities exist the library guarrantees that no
+  password is written in the disk (as swap etc.)
+- gen_key_md5() was added and gen_key() was renamed to gen_key_sha1()
+  gen_key() is still defined to be gen_keysha1().
+
+May 26th, 1999 - Version 2.0
+- Documentation was incorrect and innacurate. Corrected.
+- A #define WORDS_BIGENDIAN 0 was removed from acconfig.h, this
+  was confusing all the library headers, and thus the library was
+  useless.
+- nbit-ofb mode added. n is the blocksize of the algorithm. Still
+  experimental.
+
+May 24th, 1999 - Version 1.93
+- defined get_block_size to be mcrypt_get_block_size so php3.0.8 compiles ok
+
+May 17th, 1999 - Version 1.9
+- gen_key() changed
+- libtool support (based on Sascha Schumann's patches)

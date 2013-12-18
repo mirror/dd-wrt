@@ -1,0 +1,247 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_PREREQ(2.59)
+AC_INIT(lib/mcrypt.c)
+
+LIBMCRYPT_MAJOR_VERSION=2
+LIBMCRYPT_MINOR_VERSION=5
+LIBMCRYPT_MICRO_VERSION=8
+LIBMCRYPT_VERSION=$LIBMCRYPT_MAJOR_VERSION.$LIBMCRYPT_MINOR_VERSION.$LIBMCRYPT_MICRO_VERSION
+
+LIBMCRYPT_MOST_RECENT_INTERFACE=8
+LIBMCRYPT_CURRENT_INTERFACE_IMPLEMENTATION_NUMBER=$LIBMCRYPT_MICRO_VERSION
+LIBMCRYPT_OLDEST_INTERFACE=4
+
+AC_CANONICAL_SYSTEM
+AM_INIT_AUTOMAKE(libmcrypt, $LIBMCRYPT_VERSION)
+AM_CONFIG_HEADER(config.h)
+
+AM_MAINTAINER_MODE
+
+AC_PROG_MAKE_SET
+
+AC_PROG_CXX
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+
+case "$host_os" in
+        *w32*)
+                LDFLAGS="$LDFLAGS -no-undefined"
+                AC_DEFINE( WIN32, 1, [whether win32 environment])
+        ;;
+        *win32*) 
+                LDFLAGS="$LDFLAGS -no-undefined"
+                AC_DEFINE( WIN32, 1, [whether win32 environment])
+        ;;
+        cygwin*) 
+                LDFLAGS="$LDFLAGS -no-undefined"
+                AC_DEFINE( WIN32, 1, [whether win32 environment])
+        ;;
+esac
+
+dnl Checks for programs.
+AC_PROG_INSTALL
+AC_PROG_LN_S
+
+
+opt_maintainer_mode=no
+AC_MSG_CHECKING([whether in maintanance mode])
+AC_ARG_ENABLE(maintainer-mode,
+[  --enable-maintainer-mode enable maintainer mode],
+opt_maintainer_mode=$enableval)
+AC_MSG_RESULT($opt_maintainer_mode)
+
+opt_dmalloc_mode=no
+AC_MSG_CHECKING([whether in dmalloc mode])
+AC_ARG_ENABLE(dmalloc-mode,
+[  --enable-dmalloc-mode enable dmalloc mode],
+opt_dmalloc_mode=$enableval)
+AC_MSG_RESULT($opt_dmalloc_mode)
+
+
+if test x$ac_cv_prog_gcc = xyes; then
+	if test x$opt_maintainer_mode = xyes; then
+	  CFLAGS=" -ggdb3 -O2 -Wall -Wpointer-arith"
+	fi
+
+	if test x$opt_dmalloc_mode = xyes; then
+	  AC_CHECK_LIB( dmalloc, main)
+	  AC_DEFINE(USE_DMALLOC, 1, [dmalloc])
+	fi
+fi
+
+opt_enable_ltdl=no
+AC_MSG_CHECKING([whether to enable dynamic module loading])
+AC_ARG_ENABLE(dynamic-loading,
+[  --enable-dynamic-loading   enable dynamic module loading],
+opt_enable_ltdl=$enableval)
+AC_MSG_RESULT($opt_enable_ltdl)
+
+MCRYPT_MODE_MODULES="cbc cfb ctr ecb ncfb nofb ofb stream"
+MCRYPT_ALGORITHM_MODULES="threeway cast-128 gost rijndael-128 safer-sk64 twofish \
+ arcfour cast-256 loki97 rijndael-192 saferplus wake \
+ blowfish-compat des rijndael-256 serpent xtea \
+ blowfish enigma rc2 safer-sk128 tripledes"
+
+
+if test "x$opt_enable_ltdl" != xno; then
+ touch lib/mcrypt_internal.h
+
+ AC_CHECK_LIB( ltdl, lt_dlmutex_register, AC_DEFINE(DLMUTEX, 1, [dlmutex]))
+
+ dnl AC_LIBLTDL_CONVENIENCE
+ AC_LIBLTDL_INSTALLABLE
+ AC_SUBST(INCLTDL)
+ AC_SUBST(LIBLTDL)
+ LIBLTDL_DIR=libltdl
+ AC_SUBST(LIBLTDL_DIR)
+
+ AC_CONFIG_SUBDIRS(libltdl)
+ AC_DISABLE_STATIC
+
+ AC_DEFINE(USE_LTDL, 1, [use libltdl])
+
+ if test x$LIBLTDL = x; then
+	:
+ else
+	LTLIBS="-lltdl"
+ fi
+ opt_include_algos=no
+
+# create the names of the .la libraries to install
+ for i in $MCRYPT_ALGORITHM_MODULES
+ do \
+  INSTALL_ALGORITHM_MODULES="$INSTALL_ALGORITHM_MODULES $i.la"
+ done
+
+ for i in $MCRYPT_MODE_MODULES
+ do \
+  INSTALL_MODE_MODULES="$INSTALL_MODE_MODULES $i.la"
+ done
+
+ AC_SUBST(INSTALL_ALGORITHM_MODULES)
+ AC_SUBST(INSTALL_MODE_MODULES)
+
+else
+ for i in $MCRYPT_ALGORITHM_MODULES
+ do \
+  NOINSTALL_ALGORITHM_MODULES="$NOINSTALL_ALGORITHM_MODULES $i.la"
+ done
+
+ for i in $MCRYPT_MODE_MODULES
+ do \
+  NOINSTALL_MODE_MODULES="$NOINSTALL_MODE_MODULES $i.la"
+ done
+
+ AC_SUBST(NOINSTALL_ALGORITHM_MODULES)
+ AC_SUBST(NOINSTALL_MODE_MODULES)
+
+ opt_include_algos="$MCRYPT_MODE_MODULES $MCRYPT_ALGORITHM_MODULES"
+ echo "***"
+ echo "*** Dynamic loading has been disabled"
+fi
+
+AC_MSG_CHECKING([which algorithms to include into library])
+AC_ARG_WITH(included-algos,
+[  --with-included-algos=algo1,algo2,... include algorithms/modes into the library],
+touch lib/mcrypt_internal.h
+opt_include_algos=$withval)
+
+if test "x$opt_include_algos" = xyes; then
+	opt_include_algos=""
+fi
+if test "x$opt_include_algos" = xno; then
+	opt_include_algos=""
+fi
+
+
+EXTRA_OBJECTS=""
+ALG=`echo -n $opt_include_algos|sed "s/,/ /g"|sed "s/\n/ /g"`
+for i in $ALG
+do \
+test -f modules/algorithms/$i.c && EXTRA_OBJECTS="$EXTRA_OBJECTS ../modules/algorithms/$i.lo"
+test -f modules/modes/$i.c && EXTRA_OBJECTS="$EXTRA_OBJECTS ../modules/modes/$i.lo"
+done
+
+AC_MSG_RESULT($opt_include_algos)
+
+
+EXTRA_ALGOS=$ALG
+AC_SUBST(EXTRA_ALGOS)
+AC_SUBST(EXTRA_OBJECTS)
+
+AC_SUBST(LIBMCRYPT_MAJOR_VERSION)
+AC_SUBST(LIBMCRYPT_MINOR_VERSION)
+AC_SUBST(LIBMCRYPT_MICRO_VERSION)
+AC_SUBST(LIBMCRYPT_VERSION)
+
+AC_SUBST(LIBMCRYPT_MOST_RECENT_INTERFACE)
+AC_SUBST(LIBMCRYPT_CURRENT_INTERFACE_IMPLEMENTATION_NUMBER)
+AC_SUBST(LIBMCRYPT_OLDEST_INTERFACE)
+
+LT_CURRENT=$LIBMCRYPT_MOST_RECENT_INTERFACE
+LT_REVISION=$LIBMCRYPT_CURRENT_INTERFACE_IMPLEMENTATION_NUMBER
+LT_AGE=`expr $LIBMCRYPT_MOST_RECENT_INTERFACE - $LIBMCRYPT_OLDEST_INTERFACE`
+AC_SUBST(LT_CURRENT)
+AC_SUBST(LT_REVISION)
+AC_SUBST(LT_AGE)
+
+AC_HEADER_DIRENT
+AC_HEADER_STDC
+AC_C_INLINE
+AC_C_CONST
+
+AC_CHECK_HEADERS([argz.h byteswap.h dirent.h dlfcn.h endian.h malloc.h memory.h])
+AC_CHECK_HEADERS([stdlib.h string.h strings.h])
+AC_CHECK_HEADERS([sys/endian.h sys/types.h sys/mman.h])
+AC_CHECK_HEADERS([limits.h unistd.h])
+
+AC_FUNC_CLOSEDIR_VOID
+AC_FUNC_MALLOC
+AC_FUNC_MEMCMP
+AC_FUNC_REALLOC
+
+AC_CHECK_FUNCS([bzero memmove memset mlock readdir_r strchr strdup strrchr])
+AC_CHECK_FUNCS([readdir,,])
+AC_CHECK_FUNCS([bcopy,,])
+
+dnl Checks for libraries.
+AC_C_BIGENDIAN
+AC_CHECK_SIZEOF(unsigned long int, 4)
+AC_CHECK_SIZEOF(unsigned int, 4)
+AC_CHECK_SIZEOF(unsigned short int, 2)
+AC_CHECK_SIZEOF(unsigned char, 1)
+
+AC_LIBTOOL_DLOPEN
+AC_LIBTOOL_WIN32_DLL
+
+
+
+AM_PROG_LIBTOOL
+AC_SUBST(LIBTOOL_DEPS)
+
+
+LIBMCRYPT_LIBS="$LIBS -L${libdir} -lmcrypt $LTLIBS"
+LIBMCRYPT_CFLAGS="-I${includedir}"
+AC_SUBST(LIBMCRYPT_LIBS)
+AC_SUBST(LIBMCRYPT_CFLAGS)
+
+AC_OUTPUT_COMMANDS([
+ chmod +x lib/libmcrypt-config
+])
+
+AC_CONFIG_FILES([Makefile
+		 libmcrypt.spec
+		 lib/Makefile
+		 doc/Makefile
+		 src/Makefile
+		 include/mutils/mcrypt.h
+		 include/Makefile
+		 modules/Makefile
+		 modules/modes/Makefile
+		 modules/algorithms/Makefile
+		 lib/libmcrypt-config])
+AC_OUTPUT
+
