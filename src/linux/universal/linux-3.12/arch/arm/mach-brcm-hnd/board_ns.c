@@ -748,6 +748,7 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 	uint shift = 0;
 	uint32 top = 0;
 	uint32 bootsz;
+	uint32 nvsz = 0;
 	uint32 bootossz = NFL_BOOT_OS_SIZE;
 	int isbufdual = 0;
 	uint boardnum = bcm_strtoul(nvram_safe_get("boardnum"), NULL, 0);
@@ -760,10 +761,12 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 
 	if (boardnum == 1 && nvram_match("boardtype","0xD646") && nvram_match("boardrev","0x1100")) {
 		bootossz = 0x4000000;	
+		nvsz = 0x100000;
 	}
 
 	if (boardnum == 1 && nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100")) {
 		bootossz = 0x4000000;	
+		nvsz = 0x100000;
 	}
 
 #ifdef CONFIG_FAILSAFE_UPGRADE
@@ -818,6 +821,9 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 			offset += 128 * 1024;
 		/* Setup NVRAM MTD partition */
 		bcm947xx_nflash_parts[nparts].name = "nvram";
+		if (nvsz)
+		bcm947xx_nflash_parts[nparts].size = nvsz;
+		else 
 		bcm947xx_nflash_parts[nparts].size = NFL_BOOT_SIZE - offset;
 		bcm947xx_nflash_parts[nparts].offset = offset;
 
