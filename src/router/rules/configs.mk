@@ -144,7 +144,7 @@ obj-$(CONFIG_WDSWATCHDOG) += wdswatchdog
 obj-$(CONFIG_IPV6) += ipv6
 obj-$(CONFIG_CONNTRACK) += conntrack
 obj-$(CONFIG_RADIOOFF) += radiooff
-obj-$(CONFIG_PHP) += libgd libpng libxml2 php5
+obj-$(CONFIG_PHP) += libgd libpng libxml2 libmcrypt php5
 obj-$(CONFIG_NCURSES) += ncurses
 obj-$(CONFIG_IFTOP) += iftop
 obj-$(CONFIG_IPTRAF) += iptraf
@@ -242,7 +242,7 @@ obj-$(CONFIG_MTDUTILS) += mtd-utils
 obj-$(CONFIG_STRONGSWAN) += gmp strongswan sqlite
 obj-$(CONFIG_PRIVOXY) += privoxy
 obj-$(CONFIG_VENTANA) += kobs-ng
-obj-$(CONFIG_OWNCLOUD) += libxml2 lighttpd libgd php5 
+obj-$(CONFIG_WEBSERVER) += glib20 libxml2 libmcrypt lighttpd curl php5 
 obj-$(CONFIG_TRANSMISSION) += libevent curl transmission
 
 obj-$(CONFIG_MTDUTILS) += mtd-utils
