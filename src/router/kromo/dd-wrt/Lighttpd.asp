@@ -15,7 +15,6 @@ var update;
 
 addEvent(window, "load", function() {
 	show_layer_ext(document.setup.lighttpd_enable, 'lighttpdconfig', <% nvram_else_match("lighttpd_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.lighttpd_advanced, 'lighttpdadvanced', <% nvram_else_match("lighttpd_advanced", "1", "1", "0"); %> == 1);
 
 	update = new StatusbarUpdate();
 	update.start();
