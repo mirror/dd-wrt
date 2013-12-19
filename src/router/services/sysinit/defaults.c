@@ -3178,7 +3178,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"lighttpd_enable", "0", 0},
 	{"lighttpd_sslport", "443", 0},
 	{"lighttpd_port", "81", 0},
-	{"lighttpd_advanced", "0", 0},
 	{"lighttpd_root", "/jffs/www", 0},
 #endif
 #ifdef HAVE_GPSI
