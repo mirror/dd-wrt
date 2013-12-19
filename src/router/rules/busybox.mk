@@ -377,6 +377,14 @@ endif
 	echo "# CONFIG_FEATURE_KMSG_SYSLOG is not set" >> busybox/.config
 	echo "CONFIG_SHA3_SMALL=1" >> busybox/.config
 
+ifeq ($(CONFIG_SMP),y)
+	echo "CONFIG_TASKSET=y" >> busybox/.config
+	echo "CONFIG_FEATURE_TASKSET_FANCY=y" >> busybox/.config
+else
+	echo "# CONFIG_TASKSET is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_TASKSET_FANCY is not set" >> busybox/.config
+endif
+
 	cd busybox && make oldconfig
 	
 	$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
