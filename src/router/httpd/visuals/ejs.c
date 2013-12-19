@@ -1945,7 +1945,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strcmp(menu[i][j], "Privoxy.asp"))
 					j++;
 #endif
-#ifndef HAVE_LIGHTTPD
+#ifndef HAVE_WEBSERVER
 				if (!strcmp(menu[i][j], "Lighttpd.asp"))
 					j++;
 #endif
