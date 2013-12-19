@@ -1,5 +1,5 @@
 
-#ifdef HAVE_LIGHTTPD
+#ifdef HAVE_WEBSERVER
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
