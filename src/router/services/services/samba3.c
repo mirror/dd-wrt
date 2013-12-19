@@ -199,8 +199,14 @@ void start_samba3(void)
 		fclose(fp);
 	}
 	chmod("/jffs", 0777);
-	eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
+	
+
+#ifdef HAVE_SMP	
+	eval("/usr/bin/taskset", "0x1", "/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
+#else
 	eval("/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
+#endif
+	eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
 	syslog(LOG_INFO, "Samba3 : samba started\n");
 	return;
 }
