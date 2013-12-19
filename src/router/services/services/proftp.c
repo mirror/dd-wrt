@@ -197,8 +197,11 @@ void start_ftpsrv(void)
 			"<Directory *>\n" "  <Limit WRITE>\n" "    DenyAll\n" "  </Limit>\n" "</Directory>\n" "</Anonymous>\n", nvram_safe_get("proftpd_anon_dir"));
 	}
 	fclose(fp);
-
+#ifdef HAVE_SMP	
+	eval("/usr/bin/taskset", "0x1", "proftpd");
+#else
 	eval("proftpd");
+#endif
 	syslog(LOG_INFO, "Proftpd : proftpd server successfully started\n");
 
 	return;
