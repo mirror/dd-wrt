@@ -33,9 +33,9 @@ export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sect
 endif
 
 openssl:
-	$(MAKE) -j 4 -C openssl build_apps CC="$(CC) -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	$(MAKE) -j 4 -C openssl build-shared CC="$(CC) -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	$(MAKE) -j 4 -C openssl CC="$(CC) -I$(TOP)/zlib -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -j 4 -C openssl build-shared CC="$(CC) -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -j 4 -C openssl build_apps CC="$(CC) -I$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 	rm -f openssl/apps/openssl
 
 openssl-shared: openssl
@@ -76,7 +76,7 @@ OPENSSL_OPTIONS:= no-err no-hw threads zlib-dynamic \
 					no-sse2 no-perlasm -DHAVE_CRYPTODEV
 else
 OPENSSL_OPTIONS:= no-err no-hw threads zlib-dynamic \
-					no-engines no-perlasm
+					no-perlasm
 endif
 
 
