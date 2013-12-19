@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for circuituse.c.
  **/
 
-#ifndef _TOR_CIRCUITUSE_H
-#define _TOR_CIRCUITUSE_H
+#ifndef TOR_CIRCUITUSE_H
+#define TOR_CIRCUITUSE_H
 
 void circuit_expire_building(void);
 void circuit_remove_handled_ports(smartlist_t *needed_ports);
@@ -55,6 +55,7 @@ void circuit_change_purpose(circuit_t *circ, uint8_t new_purpose);
 
 int hostname_in_track_host_exits(const or_options_t *options,
                                  const char *address);
+void mark_circuit_unusable_for_new_conns(origin_circuit_t *circ);
 
 #endif
 

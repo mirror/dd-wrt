@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -11,16 +11,19 @@
  *
  * Right now, we only use this for processing onionskins.
  **/
-
 #include "or.h"
 #include "buffers.h"
+#include "channel.h"
+#include "channeltls.h"
 #include "circuitbuild.h"
 #include "circuitlist.h"
 #include "config.h"
 #include "connection.h"
+#include "connection_or.h"
 #include "cpuworker.h"
 #include "main.h"
 #include "onion.h"
+#include "rephist.h"
 #include "router.h"
 
 /** The maximum number of cpuworker processes we will keep around. */
@@ -29,10 +32,7 @@
 #define MIN_CPUWORKERS 1
 
 /** The tag specifies which circuit this onionskin was from. */
-#define TAG_LEN 10
-/** How many bytes are sent from the cpuworker back to tor? */
-#define LEN_ONION_RESPONSE \
-  (1+TAG_LEN+ONIONSKIN_REPLY_LEN+CPATH_KEY_MATERIAL_LEN)
+#define TAG_LEN 12
 
 /** How many cpuworkers we have running right now. */
 static int num_cpuworkers=0;
@@ -68,21 +68,79 @@ connection_cpu_finished_flushing(connection_t *conn)
 /** Pack global_id and circ_id; set *tag to the result. (See note on
  * cpuworker_main for wire format.) */
 static void
-tag_pack(char *tag, uint64_t conn_id, circid_t circ_id)
+tag_pack(uint8_t *tag, uint64_t chan_id, circid_t circ_id)
 {
   /*XXXX RETHINK THIS WHOLE MESS !!!! !NM NM NM NM*/
-  set_uint64(tag, conn_id);
-  set_uint16(tag+8, circ_id);
+  /*XXXX DOUBLEPLUSTHIS!!!! AS AS AS AS*/
+  set_uint64(tag, chan_id);
+  set_uint32(tag+8, circ_id);
 }
 
 /** Unpack <b>tag</b> into addr, port, and circ_id.
  */
 static void
-tag_unpack(const char *tag, uint64_t *conn_id, circid_t *circ_id)
+tag_unpack(const uint8_t *tag, uint64_t *chan_id, circid_t *circ_id)
 {
-  *conn_id = get_uint64(tag);
-  *circ_id = get_uint16(tag+8);
+  *chan_id = get_uint64(tag);
+  *circ_id = get_uint32(tag+8);
 }
+
+/** Magic numbers to make sure our cpuworker_requests don't grow any
+ * mis-framing bugs. */
+#define CPUWORKER_REQUEST_MAGIC 0xda4afeed
+#define CPUWORKER_REPLY_MAGIC 0x5eedf00d
+
+/** A request sent to a cpuworker. */
+typedef struct cpuworker_request_t {
+  /** Magic number; must be CPUWORKER_REQUEST_MAGIC. */
+  uint32_t magic;
+  /** Opaque tag to identify the job */
+  uint8_t tag[TAG_LEN];
+  /** Task code. Must be one of CPUWORKER_TASK_* */
+  uint8_t task;
+
+  /** Flag: Are we timing this request? */
+  unsigned timed : 1;
+  /** If we're timing this request, when was it sent to the cpuworker? */
+  struct timeval started_at;
+
+  /** A create cell for the cpuworker to process. */
+  create_cell_t create_cell;
+
+  /* Turn the above into a tagged union if needed. */
+} cpuworker_request_t;
+
+/** A reply sent by a cpuworker. */
+typedef struct cpuworker_reply_t {
+  /** Magic number; must be CPUWORKER_REPLY_MAGIC. */
+  uint32_t magic;
+  /** Opaque tag to identify the job; matches the request's tag.*/
+  uint8_t tag[TAG_LEN];
+  /** True iff we got a successful request. */
+  uint8_t success;
+
+  /** Are we timing this request? */
+  unsigned int timed : 1;
+  /** What handshake type was the request? (Used for timing) */
+  uint16_t handshake_type;
+  /** When did we send the request to the cpuworker? */
+  struct timeval started_at;
+  /** Once the cpuworker received the request, how many microseconds did it
+   * take? (This shouldn't overflow; 4 billion micoseconds is over an hour,
+   * and we'll never have an onion handshake that takes so long.) */
+  uint32_t n_usec;
+
+  /** Output of processing a create cell
+   *
+   * @{
+   */
+  /** The created cell to send back. */
+  created_cell_t created_cell;
+  /** The keys to use on this circuit. */
+  uint8_t keys[CPATH_KEY_MATERIAL_LEN];
+  /** Input to use for authenticating introduce1 cells. */
+  uint8_t rend_auth_material[DIGEST_LEN];
+} cpuworker_reply_t;
 
 /** Called when the onion key has changed and we need to spawn new
  * cpuworkers.  Close all currently idle cpuworkers, and mark the last
@@ -122,6 +180,112 @@ connection_cpu_reached_eof(connection_t *conn)
   return 0;
 }
 
+/** Indexed by handshake type: how many onionskins have we processed and
+ * counted of that type? */
+static uint64_t onionskins_n_processed[MAX_ONION_HANDSHAKE_TYPE+1];
+/** Indexed by handshake type, corresponding to the onionskins counted in
+ * onionskins_n_processed: how many microseconds have we spent in cpuworkers
+ * processing that kind of onionskin? */
+static uint64_t onionskins_usec_internal[MAX_ONION_HANDSHAKE_TYPE+1];
+/** Indexed by handshake type, corresponding to onionskins counted in
+ * onionskins_n_processed: how many microseconds have we spent waiting for
+ * cpuworkers to give us answers for that kind of onionskin?
+ */
+static uint64_t onionskins_usec_roundtrip[MAX_ONION_HANDSHAKE_TYPE+1];
+
+/** If any onionskin takes longer than this, we clip them to this
+ * time. (microseconds) */
+#define MAX_BELIEVABLE_ONIONSKIN_DELAY (2*1000*1000)
+
+static tor_weak_rng_t request_sample_rng = TOR_WEAK_RNG_INIT;
+
+/** Return true iff we'd like to measure a handshake of type
+ * <b>onionskin_type</b>. Call only from the main thread. */
+static int
+should_time_request(uint16_t onionskin_type)
+{
+  /* If we've never heard of this type, we shouldn't even be here. */
+  if (onionskin_type > MAX_ONION_HANDSHAKE_TYPE)
+    return 0;
+  /* Measure the first N handshakes of each type, to ensure we have a
+   * sample */
+  if (onionskins_n_processed[onionskin_type] < 4096)
+    return 1;
+  /** Otherwise, measure with P=1/128.  We avoid doing this for every
+   * handshake, since the measurement itself can take a little time. */
+  return tor_weak_random_one_in_n(&request_sample_rng, 128);
+}
+
+/** Return an estimate of how many microseconds we will need for a single
+ * cpuworker to to process <b>n_requests</b> onionskins of type
+ * <b>onionskin_type</b>. */
+uint64_t
+estimated_usec_for_onionskins(uint32_t n_requests, uint16_t onionskin_type)
+{
+  if (onionskin_type > MAX_ONION_HANDSHAKE_TYPE) /* should be impossible */
+    return 1000 * (uint64_t)n_requests;
+  if (PREDICT_UNLIKELY(onionskins_n_processed[onionskin_type] < 100)) {
+    /* Until we have 100 data points, just asssume everything takes 1 msec. */
+    return 1000 * (uint64_t)n_requests;
+  } else {
+    /* This can't overflow: we'll never have more than 500000 onionskins
+     * measured in onionskin_usec_internal, and they won't take anything near
+     * 1 sec each, and we won't have anything like 1 million queued
+     * onionskins.  But that's 5e5 * 1e6 * 1e6, which is still less than
+     * UINT64_MAX. */
+    return (onionskins_usec_internal[onionskin_type] * n_requests) /
+      onionskins_n_processed[onionskin_type];
+  }
+}
+
+/** Compute the absolute and relative overhead of using the cpuworker
+ * framework for onionskins of type <b>onionskin_type</b>.*/
+static int
+get_overhead_for_onionskins(uint32_t *usec_out, double *frac_out,
+                            uint16_t onionskin_type)
+{
+  uint64_t overhead;
+
+  *usec_out = 0;
+  *frac_out = 0.0;
+
+  if (onionskin_type > MAX_ONION_HANDSHAKE_TYPE) /* should be impossible */
+    return -1;
+  if (onionskins_n_processed[onionskin_type] == 0 ||
+      onionskins_usec_internal[onionskin_type] == 0 ||
+      onionskins_usec_roundtrip[onionskin_type] == 0)
+    return -1;
+
+  overhead = onionskins_usec_roundtrip[onionskin_type] -
+    onionskins_usec_internal[onionskin_type];
+
+  *usec_out = (uint32_t)(overhead / onionskins_n_processed[onionskin_type]);
+  *frac_out = U64_TO_DBL(overhead) / onionskins_usec_internal[onionskin_type];
+
+  return 0;
+}
+
+/** If we've measured overhead for onionskins of type <b>onionskin_type</b>,
+ * log it. */
+void
+cpuworker_log_onionskin_overhead(int severity, int onionskin_type,
+                                 const char *onionskin_type_name)
+{
+  uint32_t overhead;
+  double relative_overhead;
+  int r;
+
+  r = get_overhead_for_onionskins(&overhead,  &relative_overhead,
+                                  onionskin_type);
+  if (!overhead || r<0)
+    return;
+
+  log_fn(severity, LD_OR,
+         "%s onionskins have averaged %u usec overhead (%.2f%%) in "
+         "cpuworker code ",
+         onionskin_type_name, (unsigned)overhead, relative_overhead*100);
+}
+
 /** Called when we get data from a cpuworker.  If the answer is not complete,
  * wait for a complete answer. If the answer is complete,
  * process it as appropriate.
@@ -129,12 +293,9 @@ connection_cpu_reached_eof(connection_t *conn)
 int
 connection_cpu_process_inbuf(connection_t *conn)
 {
-  char success;
-  char buf[LEN_ONION_RESPONSE];
-  uint64_t conn_id;
+  uint64_t chan_id;
   circid_t circ_id;
-  connection_t *tmp_conn;
-  or_connection_t *p_conn = NULL;
+  channel_t *p_chan = NULL;
   circuit_t *circ;
 
   tor_assert(conn);
@@ -144,25 +305,51 @@ connection_cpu_process_inbuf(connection_t *conn)
     return 0;
 
   if (conn->state == CPUWORKER_STATE_BUSY_ONION) {
-    if (connection_get_inbuf_len(conn) < LEN_ONION_RESPONSE)
+    cpuworker_reply_t rpl;
+    if (connection_get_inbuf_len(conn) < sizeof(cpuworker_reply_t))
       return 0; /* not yet */
-    tor_assert(connection_get_inbuf_len(conn) == LEN_ONION_RESPONSE);
+    tor_assert(connection_get_inbuf_len(conn) == sizeof(cpuworker_reply_t));
 
-    connection_fetch_from_buf(&success,1,conn);
-    connection_fetch_from_buf(buf,LEN_ONION_RESPONSE-1,conn);
+    connection_fetch_from_buf((void*)&rpl,sizeof(cpuworker_reply_t),conn);
 
+    tor_assert(rpl.magic == CPUWORKER_REPLY_MAGIC);
+
+    if (rpl.timed && rpl.success &&
+        rpl.handshake_type <= MAX_ONION_HANDSHAKE_TYPE) {
+      /* Time how long this request took. The handshake_type check should be
+         needless, but let's leave it in to be safe. */
+      struct timeval tv_end, tv_diff;
+      int64_t usec_roundtrip;
+      tor_gettimeofday(&tv_end);
+      timersub(&tv_end, &rpl.started_at, &tv_diff);
+      usec_roundtrip = ((int64_t)tv_diff.tv_sec)*1000000 + tv_diff.tv_usec;
+      if (usec_roundtrip >= 0 &&
+          usec_roundtrip < MAX_BELIEVABLE_ONIONSKIN_DELAY) {
+        ++onionskins_n_processed[rpl.handshake_type];
+        onionskins_usec_internal[rpl.handshake_type] += rpl.n_usec;
+        onionskins_usec_roundtrip[rpl.handshake_type] += usec_roundtrip;
+        if (onionskins_n_processed[rpl.handshake_type] >= 500000) {
+          /* Scale down every 500000 handshakes.  On a busy server, that's
+           * less impressive than it sounds. */
+          onionskins_n_processed[rpl.handshake_type] /= 2;
+          onionskins_usec_internal[rpl.handshake_type] /= 2;
+          onionskins_usec_roundtrip[rpl.handshake_type] /= 2;
+        }
+      }
+    }
     /* parse out the circ it was talking about */
-    tag_unpack(buf, &conn_id, &circ_id);
+    tag_unpack(rpl.tag, &chan_id, &circ_id);
     circ = NULL;
-    tmp_conn = connection_get_by_global_id(conn_id);
-    if (tmp_conn && !tmp_conn->marked_for_close &&
-        tmp_conn->type == CONN_TYPE_OR)
-      p_conn = TO_OR_CONN(tmp_conn);
+    log_debug(LD_OR,
+              "Unpacking cpuworker reply, chan_id is " U64_FORMAT
+              ", circ_id is %u",
+              U64_PRINTF_ARG(chan_id), (unsigned)circ_id);
+    p_chan = channel_find_by_global_id(chan_id);
 
-    if (p_conn)
-      circ = circuit_get_by_circid_orconn(circ_id, p_conn);
+    if (p_chan)
+      circ = circuit_get_by_circid_channel(circ_id, p_chan);
 
-    if (success == 0) {
+    if (rpl.success == 0) {
       log_debug(LD_OR,
                 "decoding onionskin failed. "
                 "(Old key or bad software.) Closing.");
@@ -180,8 +367,10 @@ connection_cpu_process_inbuf(connection_t *conn)
       goto done_processing;
     }
     tor_assert(! CIRCUIT_IS_ORIGIN(circ));
-    if (onionskin_answer(TO_OR_CIRCUIT(circ), CELL_CREATED, buf+TAG_LEN,
-                         buf+TAG_LEN+ONIONSKIN_REPLY_LEN) < 0) {
+    if (onionskin_answer(TO_OR_CIRCUIT(circ),
+                         &rpl.created_cell,
+                         (const char*)rpl.keys,
+                         rpl.rend_auth_material) < 0) {
       log_warn(LD_OR,"onionskin_answer failed. Closing.");
       circuit_mark_for_close(circ, END_CIRC_REASON_INTERNAL);
       goto done_processing;
@@ -208,32 +397,21 @@ connection_cpu_process_inbuf(connection_t *conn)
  * Read and writes from fdarray[1].  Reads requests, writes answers.
  *
  *   Request format:
- *          Task type           [1 byte, always CPUWORKER_TASK_ONION]
- *          Opaque tag          TAG_LEN
- *          Onionskin challenge ONIONSKIN_CHALLENGE_LEN
+ *          cpuworker_request_t.
  *   Response format:
- *          Success/failure     [1 byte, boolean.]
- *          Opaque tag          TAG_LEN
- *          Onionskin challenge ONIONSKIN_REPLY_LEN
- *          Negotiated keys     KEY_LEN*2+DIGEST_LEN*2
- *
- *  (Note: this _should_ be by addr/port, since we're concerned with specific
- * connections, not with routers (where we'd use identity).)
+ *          cpuworker_reply_t
  */
 static void
 cpuworker_main(void *data)
 {
-  char question[ONIONSKIN_CHALLENGE_LEN];
-  uint8_t question_type;
+  /* For talking to the parent thread/process */
   tor_socket_t *fdarray = data;
   tor_socket_t fd;
 
   /* variables for onion processing */
-  char keys[CPATH_KEY_MATERIAL_LEN];
-  char reply_to_proxy[ONIONSKIN_REPLY_LEN];
-  char buf[LEN_ONION_RESPONSE];
-  char tag[TAG_LEN];
-  crypto_pk_t *onion_key = NULL, *last_onion_key = NULL;
+  server_onion_keys_t onion_keys;
+  cpuworker_request_t req;
+  cpuworker_reply_t rpl;
 
   fd = fdarray[1]; /* this side is ours */
 #ifndef TOR_IS_MULTITHREADED
@@ -244,68 +422,85 @@ cpuworker_main(void *data)
 #endif
   tor_free(data);
 
-  dup_onion_keys(&onion_key, &last_onion_key);
+  setup_server_onion_keys(&onion_keys);
 
   for (;;) {
-    ssize_t r;
-
-    if ((r = recv(fd, (void *)&question_type, 1, 0)) != 1) {
-//      log_fn(LOG_ERR,"read type failed. Exiting.");
-      if (r == 0) {
-        log_info(LD_OR,
-                 "CPU worker exiting because Tor process closed connection "
-                 "(either rotated keys or died).");
-      } else {
-        log_info(LD_OR,
-                 "CPU worker exiting because of error on connection to Tor "
-                 "process.");
-        log_info(LD_OR,"(Error on %d was %s)",
-                 fd, tor_socket_strerror(tor_socket_errno(fd)));
-      }
+    if (read_all(fd, (void *)&req, sizeof(req), 1) != sizeof(req)) {
+      log_info(LD_OR, "read request failed. Exiting.");
       goto end;
     }
-    tor_assert(question_type == CPUWORKER_TASK_ONION);
+    tor_assert(req.magic == CPUWORKER_REQUEST_MAGIC);
 
-    if (read_all(fd, tag, TAG_LEN, 1) != TAG_LEN) {
-      log_err(LD_BUG,"read tag failed. Exiting.");
-      goto end;
-    }
+    memset(&rpl, 0, sizeof(rpl));
 
-    if (read_all(fd, question, ONIONSKIN_CHALLENGE_LEN, 1) !=
-        ONIONSKIN_CHALLENGE_LEN) {
-      log_err(LD_BUG,"read question failed. Exiting.");
-      goto end;
-    }
-
-    if (question_type == CPUWORKER_TASK_ONION) {
-      if (onion_skin_server_handshake(question, onion_key, last_onion_key,
-          reply_to_proxy, keys, CPATH_KEY_MATERIAL_LEN) < 0) {
+    if (req.task == CPUWORKER_TASK_ONION) {
+      const create_cell_t *cc = &req.create_cell;
+      created_cell_t *cell_out = &rpl.created_cell;
+      struct timeval tv_start, tv_end;
+      int n;
+      rpl.timed = req.timed;
+      rpl.started_at = req.started_at;
+      rpl.handshake_type = cc->handshake_type;
+      if (req.timed)
+        tor_gettimeofday(&tv_start);
+      n = onion_skin_server_handshake(cc->handshake_type,
+                                      cc->onionskin, cc->handshake_len,
+                                      &onion_keys,
+                                      cell_out->reply,
+                                      rpl.keys, CPATH_KEY_MATERIAL_LEN,
+                                      rpl.rend_auth_material);
+      if (n < 0) {
         /* failure */
         log_debug(LD_OR,"onion_skin_server_handshake failed.");
-        *buf = 0; /* indicate failure in first byte */
-        memcpy(buf+1,tag,TAG_LEN);
-        /* send all zeros as answer */
-        memset(buf+1+TAG_LEN, 0, LEN_ONION_RESPONSE-(1+TAG_LEN));
+        memset(&rpl, 0, sizeof(rpl));
+        memcpy(rpl.tag, req.tag, TAG_LEN);
+        rpl.success = 0;
       } else {
         /* success */
         log_debug(LD_OR,"onion_skin_server_handshake succeeded.");
-        buf[0] = 1; /* 1 means success */
-        memcpy(buf+1,tag,TAG_LEN);
-        memcpy(buf+1+TAG_LEN,reply_to_proxy,ONIONSKIN_REPLY_LEN);
-        memcpy(buf+1+TAG_LEN+ONIONSKIN_REPLY_LEN,keys,CPATH_KEY_MATERIAL_LEN);
+        memcpy(rpl.tag, req.tag, TAG_LEN);
+        cell_out->handshake_len = n;
+        switch (cc->cell_type) {
+        case CELL_CREATE:
+          cell_out->cell_type = CELL_CREATED; break;
+        case CELL_CREATE2:
+          cell_out->cell_type = CELL_CREATED2; break;
+        case CELL_CREATE_FAST:
+          cell_out->cell_type = CELL_CREATED_FAST; break;
+        default:
+          tor_assert(0);
+          goto end;
+        }
+        rpl.success = 1;
       }
-      if (write_all(fd, buf, LEN_ONION_RESPONSE, 1) != LEN_ONION_RESPONSE) {
+      rpl.magic = CPUWORKER_REPLY_MAGIC;
+      if (req.timed) {
+        struct timeval tv_diff;
+        int64_t usec;
+        tor_gettimeofday(&tv_end);
+        timersub(&tv_end, &tv_start, &tv_diff);
+        usec = ((int64_t)tv_diff.tv_sec)*1000000 + tv_diff.tv_usec;
+        if (usec < 0 || usec > MAX_BELIEVABLE_ONIONSKIN_DELAY)
+          rpl.n_usec = MAX_BELIEVABLE_ONIONSKIN_DELAY;
+        else
+          rpl.n_usec = (uint32_t) usec;
+      }
+      if (write_all(fd, (void*)&rpl, sizeof(rpl), 1) != sizeof(rpl)) {
         log_err(LD_BUG,"writing response buf failed. Exiting.");
         goto end;
       }
       log_debug(LD_OR,"finished writing response.");
+    } else if (req.task == CPUWORKER_TASK_SHUTDOWN) {
+      log_info(LD_OR,"Clean shutdown: exiting");
+      goto end;
     }
+    memwipe(&req, 0, sizeof(req));
+    memwipe(&rpl, 0, sizeof(req));
   }
  end:
-  if (onion_key)
-    crypto_pk_free(onion_key);
-  if (last_onion_key)
-    crypto_pk_free(last_onion_key);
+  memwipe(&req, 0, sizeof(req));
+  memwipe(&rpl, 0, sizeof(req));
+  release_server_onion_keys(&onion_keys);
   tor_close_socket(fd);
   crypto_thread_cleanup();
   spawn_exit();
@@ -342,12 +537,15 @@ spawn_cpuworker(void)
 
   conn = connection_new(CONN_TYPE_CPUWORKER, AF_UNIX);
 
-  set_socket_nonblocking(fd);
-
   /* set up conn so it's got all the data we need to remember */
   conn->s = fd;
   conn->address = tor_strdup("localhost");
   tor_addr_make_unspec(&conn->addr);
+
+  if (set_socket_nonblocking(fd) == -1) {
+    connection_free(conn); /* this closes fd */
+    return -1;
+  }
 
   if (connection_add(conn) < 0) { /* no space, forget it */
     log_warn(LD_NET,"connection_add for cpuworker failed. Giving up.");
@@ -368,6 +566,7 @@ static void
 spawn_enough_cpuworkers(void)
 {
   int num_cpuworkers_needed = get_num_cpus(get_options());
+  int reseed = 0;
 
   if (num_cpuworkers_needed < MIN_CPUWORKERS)
     num_cpuworkers_needed = MIN_CPUWORKERS;
@@ -380,7 +579,11 @@ spawn_enough_cpuworkers(void)
       return;
     }
     num_cpuworkers++;
+    reseed++;
   }
+
+  if (reseed)
+    crypto_seed_weak_rng(&request_sample_rng);
 }
 
 /** Take a pending task from the queue and assign it to 'cpuworker'. */
@@ -388,7 +591,7 @@ static void
 process_pending_task(connection_t *cpuworker)
 {
   or_circuit_t *circ;
-  char *onionskin = NULL;
+  create_cell_t *onionskin = NULL;
 
   tor_assert(cpuworker);
 
@@ -441,12 +644,13 @@ cull_wedged_cpuworkers(void)
  */
 int
 assign_onionskin_to_cpuworker(connection_t *cpuworker,
-                              or_circuit_t *circ, char *onionskin)
+                              or_circuit_t *circ,
+                              create_cell_t *onionskin)
 {
-  char qbuf[1];
-  char tag[TAG_LEN];
+  cpuworker_request_t req;
   time_t now = approx_time();
   static time_t last_culled_cpuworkers = 0;
+  int should_time;
 
   /* Checking for wedged cpuworkers requires a linear search over all
    * connections, so let's do it only once a minute.
@@ -475,26 +679,39 @@ assign_onionskin_to_cpuworker(connection_t *cpuworker,
 
     tor_assert(cpuworker);
 
-    if (!circ->p_conn) {
-      log_info(LD_OR,"circ->p_conn gone. Failing circ.");
+    if (!circ->p_chan) {
+      log_info(LD_OR,"circ->p_chan gone. Failing circ.");
       tor_free(onionskin);
       return -1;
     }
-    tag_pack(tag, circ->p_conn->_base.global_identifier,
+
+    if (connection_or_digest_is_known_relay(circ->p_chan->identity_digest))
+      rep_hist_note_circuit_handshake_completed(onionskin->handshake_type);
+
+    should_time = should_time_request(onionskin->handshake_type);
+    memset(&req, 0, sizeof(req));
+    req.magic = CPUWORKER_REQUEST_MAGIC;
+    tag_pack(req.tag, circ->p_chan->global_identifier,
              circ->p_circ_id);
+    req.timed = should_time;
 
     cpuworker->state = CPUWORKER_STATE_BUSY_ONION;
     /* touch the lastwritten timestamp, since that's how we check to
      * see how long it's been since we asked the question, and sometimes
      * we check before the first call to connection_handle_write(). */
-    cpuworker->timestamp_lastwritten = time(NULL);
+    cpuworker->timestamp_lastwritten = now;
     num_cpuworkers_busy++;
 
-    qbuf[0] = CPUWORKER_TASK_ONION;
-    connection_write_to_buf(qbuf, 1, cpuworker);
-    connection_write_to_buf(tag, sizeof(tag), cpuworker);
-    connection_write_to_buf(onionskin, ONIONSKIN_CHALLENGE_LEN, cpuworker);
+    req.task = CPUWORKER_TASK_ONION;
+    memcpy(&req.create_cell, onionskin, sizeof(create_cell_t));
+
     tor_free(onionskin);
+
+    if (should_time)
+      tor_gettimeofday(&req.started_at);
+
+    connection_write_to_buf((void*)&req, sizeof(req), cpuworker);
+    memwipe(&req, 0, sizeof(req));
   }
   return 0;
 }

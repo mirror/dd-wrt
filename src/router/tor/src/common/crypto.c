@@ -1,7 +1,7 @@
 /* Copyright (c) 2001, Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -57,8 +57,8 @@
 #include "container.h"
 #include "compat.h"
 
-#if OPENSSL_VERSION_NUMBER < OPENSSL_V_SERIES(0,9,7)
-#error "We require OpenSSL >= 0.9.7"
+#if OPENSSL_VERSION_NUMBER < OPENSSL_V_SERIES(0,9,8)
+#error "We require OpenSSL >= 0.9.8"
 #endif
 
 #ifdef ANDROID
@@ -69,31 +69,6 @@
 /** Longest recognized */
 #define MAX_DNS_LABEL_SIZE 63
 
-#if OPENSSL_VERSION_NUMBER < OPENSSL_V_SERIES(0,9,8) && \
-  !defined(RUNNING_DOXYGEN)
-/** @{ */
-/** On OpenSSL versions before 0.9.8, there is no working SHA256
- * implementation, so we use Tom St Denis's nice speedy one, slightly adapted
- * to our needs.  These macros make it usable by us. */
-#define SHA256_CTX sha256_state
-#define SHA256_Init sha256_init
-#define SHA256_Update sha256_process
-#define LTC_ARGCHK(x) tor_assert(x)
-/** @} */
-#include "sha256.c"
-#define SHA256_Final(a,b) sha256_done(b,a)
-
-static unsigned char *
-SHA256(const unsigned char *m, size_t len, unsigned char *d)
-{
-  SHA256_CTX ctx;
-  SHA256_Init(&ctx);
-  SHA256_Update(&ctx, m, len);
-  SHA256_Final(d, &ctx);
-  return d;
-}
-#endif
-
 /** Macro: is k a valid RSA public or private key? */
 #define PUBLIC_KEY_OK(k) ((k) && (k)->key && (k)->key->n)
 /** Macro: is k a valid RSA private key? */
@@ -101,9 +76,9 @@ SHA256(const unsigned char *m, size_t len, unsigned char *d)
 
 #ifdef TOR_IS_MULTITHREADED
 /** A number of preallocated mutexes for use by OpenSSL. */
-static tor_mutex_t **_openssl_mutexes = NULL;
+static tor_mutex_t **openssl_mutexes_ = NULL;
 /** How many mutexes have we allocated for use by OpenSSL? */
-static int _n_openssl_mutexes = 0;
+static int n_openssl_mutexes_ = 0;
 #endif
 
 /** A public key, or a public/private key-pair. */
@@ -138,8 +113,8 @@ crypto_get_rsa_padding_overhead(int padding)
 {
   switch (padding)
     {
-    case RSA_PKCS1_OAEP_PADDING: return 42;
-    case RSA_PKCS1_PADDING: return 11;
+    case RSA_PKCS1_OAEP_PADDING: return PKCS1_OAEP_PADDING_OVERHEAD;
+    case RSA_PKCS1_PADDING: return PKCS1_PADDING_OVERHEAD;
     default: tor_assert(0); return -1;
     }
 }
@@ -158,7 +133,7 @@ crypto_get_rsa_padding(int padding)
 }
 
 /** Boolean: has OpenSSL's crypto been initialized? */
-static int _crypto_global_initialized = 0;
+static int crypto_global_initialized_ = 0;
 
 /** Log all pending crypto errors at level <b>severity</b>.  Use
  * <b>doing</b> to describe our current activities.
@@ -176,10 +151,11 @@ crypto_log_errors(int severity, const char *doing)
     if (!lib) lib = "(null)";
     if (!func) func = "(null)";
     if (doing) {
-      log(severity, LD_CRYPTO, "crypto error while %s: %s (in %s:%s)",
-          doing, msg, lib, func);
+      tor_log(severity, LD_CRYPTO, "crypto error while %s: %s (in %s:%s)",
+              doing, msg, lib, func);
     } else {
-      log(severity, LD_CRYPTO, "crypto error: %s (in %s:%s)", msg, lib, func);
+      tor_log(severity, LD_CRYPTO, "crypto error: %s (in %s:%s)",
+              msg, lib, func);
     }
   }
 }
@@ -193,10 +169,10 @@ log_engine(const char *fn, ENGINE *e)
     const char *name, *id;
     name = ENGINE_get_name(e);
     id = ENGINE_get_id(e);
-    log(LOG_NOTICE, LD_CRYPTO, "Using OpenSSL engine %s [%s] for %s",
+    log_notice(LD_CRYPTO, "Using OpenSSL engine %s [%s] for %s",
         name?name:"?", id?id:"?", fn);
   } else {
-    log(LOG_INFO, LD_CRYPTO, "Using default implementation for %s", fn);
+    log_info(LD_CRYPTO, "Using default implementation for %s", fn);
   }
 }
 #endif
@@ -221,16 +197,60 @@ try_load_engine(const char *path, const char *engine)
 }
 #endif
 
+static char *crypto_openssl_version_str = NULL;
+/* Return a human-readable version of the run-time openssl version number. */
+const char *
+crypto_openssl_get_version_str(void)
+{
+  if (crypto_openssl_version_str == NULL) {
+    const char *raw_version = SSLeay_version(SSLEAY_VERSION);
+    const char *end_of_version = NULL;
+    /* The output should be something like "OpenSSL 1.0.0b 10 May 2012. Let's
+       trim that down. */
+    if (!strcmpstart(raw_version, "OpenSSL ")) {
+      raw_version += strlen("OpenSSL ");
+      end_of_version = strchr(raw_version, ' ');
+    }
+
+    if (end_of_version)
+      crypto_openssl_version_str = tor_strndup(raw_version,
+                                               end_of_version-raw_version);
+    else
+      crypto_openssl_version_str = tor_strdup(raw_version);
+  }
+  return crypto_openssl_version_str;
+}
+
 /** Initialize the crypto library.  Return 0 on success, -1 on failure.
  */
 int
 crypto_global_init(int useAccel, const char *accelName, const char *accelDir)
 {
-  if (!_crypto_global_initialized) {
+  if (!crypto_global_initialized_) {
     ERR_load_crypto_strings();
     OpenSSL_add_all_algorithms();
-    _crypto_global_initialized = 1;
+    crypto_global_initialized_ = 1;
     setup_openssl_threading();
+
+    if (SSLeay() == OPENSSL_VERSION_NUMBER &&
+        !strcmp(SSLeay_version(SSLEAY_VERSION), OPENSSL_VERSION_TEXT)) {
+      log_info(LD_CRYPTO, "OpenSSL version matches version from headers "
+                 "(%lx: %s).", SSLeay(), SSLeay_version(SSLEAY_VERSION));
+    } else {
+      log_warn(LD_CRYPTO, "OpenSSL version from headers does not match the "
+               "version we're running with. If you get weird crashes, that "
+               "might be why. (Compiled with %lx: %s; running with %lx: %s).",
+               (unsigned long)OPENSSL_VERSION_NUMBER, OPENSSL_VERSION_TEXT,
+               SSLeay(), SSLeay_version(SSLEAY_VERSION));
+    }
+
+    if (SSLeay() < OPENSSL_V_SERIES(1,0,0)) {
+      log_notice(LD_CRYPTO,
+                 "Your OpenSSL version seems to be %s. We recommend 1.0.0 "
+                 "or later.",
+                 crypto_openssl_get_version_str());
+    }
+
     if (useAccel > 0) {
 #ifdef DISABLE_ENGINES
       (void)accelName;
@@ -294,7 +314,7 @@ crypto_thread_cleanup(void)
 
 /** used by tortls.c: wrap an RSA* in a crypto_pk_t. */
 crypto_pk_t *
-_crypto_new_pk_from_rsa(RSA *rsa)
+crypto_new_pk_from_rsa_(RSA *rsa)
 {
   crypto_pk_t *env;
   tor_assert(rsa);
@@ -307,7 +327,7 @@ _crypto_new_pk_from_rsa(RSA *rsa)
 /** Helper, used by tor-checkkey.c and tor-gencert.c.  Return the RSA from a
  * crypto_pk_t. */
 RSA *
-_crypto_pk_get_rsa(crypto_pk_t *env)
+crypto_pk_get_rsa_(crypto_pk_t *env)
 {
   return env->key;
 }
@@ -315,7 +335,7 @@ _crypto_pk_get_rsa(crypto_pk_t *env)
 /** used by tortls.c: get an equivalent EVP_PKEY* for a crypto_pk_t.  Iff
  * private is set, include the private-key portion of the key. */
 EVP_PKEY *
-_crypto_pk_get_evp_pkey(crypto_pk_t *env, int private)
+crypto_pk_get_evp_pkey_(crypto_pk_t *env, int private)
 {
   RSA *key = NULL;
   EVP_PKEY *pkey = NULL;
@@ -343,7 +363,7 @@ _crypto_pk_get_evp_pkey(crypto_pk_t *env, int private)
 /** Used by tortls.c: Get the DH* from a crypto_dh_t.
  */
 DH *
-_crypto_dh_get_dh(crypto_dh_t *dh)
+crypto_dh_get_dh_(crypto_dh_t *dh)
 {
   return dh->dh;
 }
@@ -358,7 +378,7 @@ crypto_pk_new(void)
 
   rsa = RSA_new();
   tor_assert(rsa);
-  return _crypto_new_pk_from_rsa(rsa);
+  return crypto_new_pk_from_rsa_(rsa);
 }
 
 /** Release a reference to an asymmetric key; when all the references
@@ -441,11 +461,7 @@ crypto_pk_generate_key_with_bits(crypto_pk_t *env, int bits)
 
   if (env->key)
     RSA_free(env->key);
-#if OPENSSL_VERSION_NUMBER < OPENSSL_V_SERIES(0,9,8)
-  /* In OpenSSL 0.9.7, RSA_generate_key is all we have. */
-  env->key = RSA_generate_key(bits, 65537, NULL, NULL);
-#else
-  /* In OpenSSL 0.9.8, RSA_generate_key is deprecated. */
+
   {
     BIGNUM *e = BN_new();
     RSA *r = NULL;
@@ -466,8 +482,8 @@ crypto_pk_generate_key_with_bits(crypto_pk_t *env, int bits)
       BN_free(e);
     if (r)
       RSA_free(r);
-    }
-#endif
+  }
+
   if (!env->key) {
     crypto_log_errors(LOG_WARN, "generating RSA key");
     return -1;
@@ -711,19 +727,23 @@ crypto_pk_public_exponent_ok(crypto_pk_t *env)
   return BN_is_word(env->key->e, 65537);
 }
 
-/** Compare the public-key components of a and b.  Return -1 if a\<b, 0
- * if a==b, and 1 if a\>b.
+/** Compare the public-key components of a and b.  Return less than 0
+ * if a\<b, 0 if a==b, and greater than 0 if a\>b.  A NULL key is
+ * considered to be less than all non-NULL keys, and equal to itself.
+ *
+ * Note that this may leak information about the keys through timing.
  */
 int
 crypto_pk_cmp_keys(crypto_pk_t *a, crypto_pk_t *b)
 {
   int result;
+  char a_is_non_null = (a != NULL) && (a->key != NULL);
+  char b_is_non_null = (b != NULL) && (b->key != NULL);
+  char an_argument_is_null = !a_is_non_null | !b_is_non_null;
 
-  if (!a || !b)
-    return -1;
-
-  if (!a->key || !b->key)
-    return -1;
+  result = tor_memcmp(&a_is_non_null, &b_is_non_null, sizeof(a_is_non_null));
+  if (an_argument_is_null)
+    return result;
 
   tor_assert(PUBLIC_KEY_OK(a));
   tor_assert(PUBLIC_KEY_OK(b));
@@ -731,6 +751,18 @@ crypto_pk_cmp_keys(crypto_pk_t *a, crypto_pk_t *b)
   if (result)
     return result;
   return BN_cmp((a->key)->e, (b->key)->e);
+}
+
+/** Compare the public-key components of a and b.  Return non-zero iff
+ * a==b.  A NULL key is considered to be distinct from all non-NULL
+ * keys, and equal to itself.
+ *
+ *  Note that this may leak information about the keys through timing.
+ */
+int
+crypto_pk_eq_keys(crypto_pk_t *a, crypto_pk_t *b)
+{
+  return (crypto_pk_cmp_keys(a, b) == 0);
 }
 
 /** Return the size of the public key modulus in <b>env</b>, in bytes. */
@@ -791,7 +823,7 @@ crypto_pk_copy_full(crypto_pk_t *env)
     return NULL;
   }
 
-  return _crypto_new_pk_from_rsa(new_key);
+  return crypto_new_pk_from_rsa_(new_key);
 }
 
 /** Encrypt <b>fromlen</b> bytes from <b>from</b> with the public key
@@ -1158,7 +1190,7 @@ crypto_pk_asn1_decode(const char *str, size_t len)
     crypto_log_errors(LOG_WARN,"decoding public key");
     return NULL;
   }
-  return _crypto_new_pk_from_rsa(rsa);
+  return crypto_new_pk_from_rsa_(rsa);
 }
 
 /** Given a private or public key <b>pk</b>, put a SHA1 hash of the
@@ -1260,23 +1292,6 @@ crypto_pk_get_fingerprint(crypto_pk_t *pk, char *fp_out, int add_space)
     strncpy(fp_out, hexdigest, HEX_DIGEST_LEN+1);
   }
   return 0;
-}
-
-/** Return true iff <b>s</b> is in the correct format for a fingerprint.
- */
-int
-crypto_pk_check_fingerprint_syntax(const char *s)
-{
-  int i;
-  for (i = 0; i < FINGERPRINT_LEN; ++i) {
-    if ((i%5) == 4) {
-      if (!TOR_ISSPACE(s[i])) return 0;
-    } else {
-      if (!TOR_ISXDIGIT(s[i])) return 0;
-    }
-  }
-  if (s[FINGERPRINT_LEN]) return 0;
-  return 1;
 }
 
 /* symmetric crypto */
@@ -1427,7 +1442,7 @@ crypto_digest256(char *digest, const char *m, size_t len,
 int
 crypto_digest_all(digests_t *ds_out, const char *m, size_t len)
 {
-  digest_algorithm_t i;
+  int i;
   tor_assert(ds_out);
   memset(ds_out, 0, sizeof(*ds_out));
   if (crypto_digest(ds_out->d[DIGEST_SHA1], m, len) < 0)
@@ -1474,7 +1489,7 @@ struct crypto_digest_t {
     SHA256_CTX sha2; /**< state for SHA256 */
   } d; /**< State for the digest we're using.  Only one member of the
         * union is usable, depending on the value of <b>algorithm</b>. */
-  digest_algorithm_t algorithm : 8; /**< Which algorithm is in use? */
+  ENUM_BF(digest_algorithm_t) algorithm : 8; /**< Which algorithm is in use? */
 };
 
 /** Allocate and return a new digest object to compute SHA1 digests.
@@ -1599,6 +1614,29 @@ crypto_digest_assign(crypto_digest_t *into,
   memcpy(into,from,sizeof(crypto_digest_t));
 }
 
+/** Given a list of strings in <b>lst</b>, set the <b>len_out</b>-byte digest
+ * at <b>digest_out</b> to the hash of the concatenation of those strings,
+ * plus the optional string <b>append</b>, computed with the algorithm
+ * <b>alg</b>.
+ * <b>out_len</b> must be \<= DIGEST256_LEN. */
+void
+crypto_digest_smartlist(char *digest_out, size_t len_out,
+                        const smartlist_t *lst, const char *append,
+                        digest_algorithm_t alg)
+{
+  crypto_digest_t *d;
+  if (alg == DIGEST_SHA1)
+    d = crypto_digest_new();
+  else
+    d = crypto_digest256_new(alg);
+  SMARTLIST_FOREACH(lst, const char *, cp,
+                    crypto_digest_add_bytes(d, cp, strlen(cp)));
+  if (append)
+    crypto_digest_add_bytes(d, append, strlen(append));
+  crypto_digest_get_digest(d, digest_out, len_out);
+  crypto_digest_free(d);
+}
+
 /** Compute the HMAC-SHA-1 of the <b>msg_len</b> bytes in <b>msg</b>, using
  * the <b>key</b> of length <b>key_len</b>.  Store the DIGEST_LEN-byte result
  * in <b>hmac_out</b>.
@@ -1623,63 +1661,11 @@ crypto_hmac_sha256(char *hmac_out,
                    const char *key, size_t key_len,
                    const char *msg, size_t msg_len)
 {
-#if OPENSSL_VERSION_NUMBER >= OPENSSL_V_SERIES(0,9,8)
   /* If we've got OpenSSL >=0.9.8 we can use its hmac implementation. */
   tor_assert(key_len < INT_MAX);
   tor_assert(msg_len < INT_MAX);
   HMAC(EVP_sha256(), key, (int)key_len, (unsigned char*)msg, (int)msg_len,
        (unsigned char*)hmac_out, NULL);
-#else
-  /* OpenSSL doesn't have an EVP implementation for SHA256. We'll need
-     to do HMAC on our own.
-
-     HMAC isn't so hard: To compute HMAC(key, msg):
-      1. If len(key) > blocksize, key = H(key).
-      2. If len(key) < blocksize, right-pad key up to blocksize with 0 bytes.
-      3. let ipad = key xor 0x363636363636....36
-         let opad = key xor 0x5c5c5c5c5c5c....5c
-         The result is H(opad | H( ipad | msg ) )
-  */
-#define BLOCKSIZE 64
-#define DIGESTSIZE 32
-  uint8_t k[BLOCKSIZE];
-  uint8_t pad[BLOCKSIZE];
-  uint8_t d[DIGESTSIZE];
-  int i;
-  SHA256_CTX st;
-
-  tor_assert(key_len < INT_MAX);
-  tor_assert(msg_len < INT_MAX);
-
-  if (key_len <= BLOCKSIZE) {
-    memset(k, 0, sizeof(k));
-    memcpy(k, key, key_len); /* not time invariant in key_len */
-  } else {
-    SHA256((const uint8_t *)key, key_len, k);
-    memset(k+DIGESTSIZE, 0, sizeof(k)-DIGESTSIZE);
-  }
-  for (i = 0; i < BLOCKSIZE; ++i)
-    pad[i] = k[i] ^ 0x36;
-  SHA256_Init(&st);
-  SHA256_Update(&st, pad, BLOCKSIZE);
-  SHA256_Update(&st, (uint8_t*)msg, msg_len);
-  SHA256_Final(d, &st);
-
-  for (i = 0; i < BLOCKSIZE; ++i)
-    pad[i] = k[i] ^ 0x5c;
-  SHA256_Init(&st);
-  SHA256_Update(&st, pad, BLOCKSIZE);
-  SHA256_Update(&st, d, DIGESTSIZE);
-  SHA256_Final((uint8_t*)hmac_out, &st);
-
-  /* Now clear everything. */
-  memwipe(k, 0, sizeof(k));
-  memwipe(pad, 0, sizeof(pad));
-  memwipe(d, 0, sizeof(d));
-  memwipe(&st, 0, sizeof(st));
-#undef BLOCKSIZE
-#undef DIGESTSIZE
-#endif
 }
 
 /* DH */
@@ -2057,6 +2043,16 @@ crypto_dh_new(int dh_type)
   return NULL;
 }
 
+/** Return a copy of <b>dh</b>, sharing its internal state. */
+crypto_dh_t *
+crypto_dh_dup(const crypto_dh_t *dh)
+{
+  crypto_dh_t *dh_new = tor_malloc_zero(sizeof(crypto_dh_t));
+  dh_new->dh = dh->dh;
+  DH_up_ref(dh->dh);
+  return dh_new;
+}
+
 /** Return the length of the DH key in <b>dh</b>, in bytes.
  */
 int
@@ -2195,8 +2191,8 @@ crypto_dh_compute_secret(int severity, crypto_dh_t *dh,
     goto error;
   }
   secret_len = result;
-  if (crypto_expand_key_material(secret_tmp, secret_len,
-                                 secret_out, secret_bytes_out)<0)
+  if (crypto_expand_key_material_TAP((uint8_t*)secret_tmp, secret_len,
+                                     (uint8_t*)secret_out, secret_bytes_out)<0)
     goto error;
   secret_len = secret_bytes_out;
 
@@ -2222,15 +2218,18 @@ crypto_dh_compute_secret(int severity, crypto_dh_t *dh,
  * <b>key_out</b> by taking the first <b>key_out_len</b> bytes of
  *    H(K | [00]) | H(K | [01]) | ....
  *
+ * This is the key expansion algorithm used in the "TAP" circuit extension
+ * mechanism; it shouldn't be used for new protocols.
+ *
  * Return 0 on success, -1 on failure.
  */
 int
-crypto_expand_key_material(const char *key_in, size_t key_in_len,
-                           char *key_out, size_t key_out_len)
+crypto_expand_key_material_TAP(const uint8_t *key_in, size_t key_in_len,
+                               uint8_t *key_out, size_t key_out_len)
 {
   int i;
-  char *cp, *tmp = tor_malloc(key_in_len+1);
-  char digest[DIGEST_LEN];
+  uint8_t *cp, *tmp = tor_malloc(key_in_len+1);
+  uint8_t digest[DIGEST_LEN];
 
   /* If we try to get more than this amount of key data, we'll repeat blocks.*/
   tor_assert(key_out_len <= DIGEST_LEN*256);
@@ -2239,7 +2238,7 @@ crypto_expand_key_material(const char *key_in, size_t key_in_len,
   for (cp = key_out, i=0; cp < key_out+key_out_len;
        ++i, cp += DIGEST_LEN) {
     tmp[key_in_len] = i;
-    if (crypto_digest(digest, tmp, key_in_len+1))
+    if (crypto_digest((char*)digest, (const char *)tmp, key_in_len+1))
       goto err;
     memcpy(cp, digest, MIN(DIGEST_LEN, key_out_len-(cp-key_out)));
   }
@@ -2253,6 +2252,65 @@ crypto_expand_key_material(const char *key_in, size_t key_in_len,
   tor_free(tmp);
   memwipe(digest, 0, sizeof(digest));
   return -1;
+}
+
+/** Expand some secret key material according to RFC5869, using SHA256 as the
+ * underlying hash.  The <b>key_in_len</b> bytes at <b>key_in</b> are the
+ * secret key material; the <b>salt_in_len</b> bytes at <b>salt_in</b> and the
+ * <b>info_in_len</b> bytes in <b>info_in_len</b> are the algorithm's "salt"
+ * and "info" parameters respectively.  On success, write <b>key_out_len</b>
+ * bytes to <b>key_out</b> and return 0.  On failure, return -1.
+ */
+int
+crypto_expand_key_material_rfc5869_sha256(
+                                    const uint8_t *key_in, size_t key_in_len,
+                                    const uint8_t *salt_in, size_t salt_in_len,
+                                    const uint8_t *info_in, size_t info_in_len,
+                                    uint8_t *key_out, size_t key_out_len)
+{
+  uint8_t prk[DIGEST256_LEN];
+  uint8_t tmp[DIGEST256_LEN + 128 + 1];
+  uint8_t mac[DIGEST256_LEN];
+  int i;
+  uint8_t *outp;
+  size_t tmp_len;
+
+  crypto_hmac_sha256((char*)prk,
+                     (const char*)salt_in, salt_in_len,
+                     (const char*)key_in, key_in_len);
+
+  /* If we try to get more than this amount of key data, we'll repeat blocks.*/
+  tor_assert(key_out_len <= DIGEST256_LEN * 256);
+  tor_assert(info_in_len <= 128);
+  memset(tmp, 0, sizeof(tmp));
+  outp = key_out;
+  i = 1;
+
+  while (key_out_len) {
+    size_t n;
+    if (i > 1) {
+      memcpy(tmp, mac, DIGEST256_LEN);
+      memcpy(tmp+DIGEST256_LEN, info_in, info_in_len);
+      tmp[DIGEST256_LEN+info_in_len] = i;
+      tmp_len = DIGEST256_LEN + info_in_len + 1;
+    } else {
+      memcpy(tmp, info_in, info_in_len);
+      tmp[info_in_len] = i;
+      tmp_len = info_in_len + 1;
+    }
+    crypto_hmac_sha256((char*)mac,
+                       (const char*)prk, DIGEST256_LEN,
+                       (const char*)tmp, tmp_len);
+    n = key_out_len < DIGEST256_LEN ? key_out_len : DIGEST256_LEN;
+    memcpy(outp, mac, n);
+    key_out_len -= n;
+    outp += n;
+    ++i;
+  }
+
+  memwipe(tmp, 0, sizeof(tmp));
+  memwipe(mac, 0, sizeof(mac));
+  return 0;
 }
 
 /** Free a DH key exchange object.
@@ -2282,17 +2340,71 @@ crypto_dh_free(crypto_dh_t *dh)
  * that fd without checking whether it fit in the fd_set.  Thus, if the
  * system has not just been started up, it is unsafe to call */
 #define RAND_POLL_IS_SAFE                       \
-  ((OPENSSL_VERSION_NUMBER >= OPENSSL_V(0,9,7,'j') &&        \
-    OPENSSL_VERSION_NUMBER < OPENSSL_V_SERIES(0,9,8)) ||     \
-   OPENSSL_VERSION_NUMBER >= OPENSSL_V(0,9,8,'c'))
+  (OPENSSL_VERSION_NUMBER >= OPENSSL_V(0,9,8,'c'))
 
 /** Set the seed of the weak RNG to a random value. */
-static void
-seed_weak_rng(void)
+void
+crypto_seed_weak_rng(tor_weak_rng_t *rng)
 {
   unsigned seed;
   crypto_rand((void*)&seed, sizeof(seed));
-  tor_init_weak_random(seed);
+  tor_init_weak_random(rng, seed);
+}
+
+/** Try to get <b>out_len</b> bytes of the strongest entropy we can generate,
+ * storing it into <b>out</b>.
+ */
+int
+crypto_strongest_rand(uint8_t *out, size_t out_len)
+{
+#ifdef _WIN32
+  static int provider_set = 0;
+  static HCRYPTPROV provider;
+#else
+  static const char *filenames[] = {
+    "/dev/srandom", "/dev/urandom", "/dev/random", NULL
+  };
+  int fd, i;
+  size_t n;
+#endif
+
+#ifdef _WIN32
+  if (!provider_set) {
+    if (!CryptAcquireContext(&provider, NULL, NULL, PROV_RSA_FULL,
+                             CRYPT_VERIFYCONTEXT)) {
+      if ((unsigned long)GetLastError() != (unsigned long)NTE_BAD_KEYSET) {
+        log_warn(LD_CRYPTO, "Can't get CryptoAPI provider [1]");
+        return -1;
+      }
+    }
+    provider_set = 1;
+  }
+  if (!CryptGenRandom(provider, out_len, out)) {
+    log_warn(LD_CRYPTO, "Can't get entropy from CryptoAPI.");
+    return -1;
+  }
+
+  return 0;
+#else
+  for (i = 0; filenames[i]; ++i) {
+    fd = open(filenames[i], O_RDONLY, 0);
+    if (fd<0) continue;
+    log_info(LD_CRYPTO, "Reading entropy from \"%s\"", filenames[i]);
+    n = read_all(fd, (char*)out, out_len, 0);
+    close(fd);
+    if (n != out_len) {
+      log_warn(LD_CRYPTO,
+               "Error reading from entropy source (read only %lu bytes).",
+               (unsigned long)n);
+      return -1;
+    }
+
+    return 0;
+  }
+
+  log_warn(LD_CRYPTO, "Cannot get strong entropy: no entropy source found.");
+  return -1;
+#endif
 }
 
 /** Seed OpenSSL's random number generator with bytes from the operating
@@ -2302,72 +2414,29 @@ seed_weak_rng(void)
 int
 crypto_seed_rng(int startup)
 {
-  int rand_poll_status = 0;
-
-  /* local variables */
-#ifdef _WIN32
-  unsigned char buf[ADD_ENTROPY];
-  static int provider_set = 0;
-  static HCRYPTPROV provider;
-#else
-  char buf[ADD_ENTROPY];
-  static const char *filenames[] = {
-    "/dev/srandom", "/dev/urandom", "/dev/random", NULL
-  };
-  int fd, i;
-  size_t n;
-#endif
+  int rand_poll_ok = 0, load_entropy_ok = 0;
+  uint8_t buf[ADD_ENTROPY];
 
   /* OpenSSL has a RAND_poll function that knows about more kinds of
    * entropy than we do.  We'll try calling that, *and* calling our own entropy
    * functions.  If one succeeds, we'll accept the RNG as seeded. */
   if (startup || RAND_POLL_IS_SAFE) {
-    rand_poll_status = RAND_poll();
-    if (rand_poll_status == 0)
+    rand_poll_ok = RAND_poll();
+    if (rand_poll_ok == 0)
       log_warn(LD_CRYPTO, "RAND_poll() failed.");
   }
 
-#ifdef _WIN32
-  if (!provider_set) {
-    if (!CryptAcquireContext(&provider, NULL, NULL, PROV_RSA_FULL,
-                             CRYPT_VERIFYCONTEXT)) {
-      if ((unsigned long)GetLastError() != (unsigned long)NTE_BAD_KEYSET) {
-        log_warn(LD_CRYPTO, "Can't get CryptoAPI provider [1]");
-        return rand_poll_status ? 0 : -1;
-      }
-    }
-    provider_set = 1;
-  }
-  if (!CryptGenRandom(provider, sizeof(buf), buf)) {
-    log_warn(LD_CRYPTO, "Can't get entropy from CryptoAPI.");
-    return rand_poll_status ? 0 : -1;
-  }
-  RAND_seed(buf, sizeof(buf));
-  memwipe(buf, 0, sizeof(buf));
-  seed_weak_rng();
-  return 0;
-#else
-  for (i = 0; filenames[i]; ++i) {
-    fd = open(filenames[i], O_RDONLY, 0);
-    if (fd<0) continue;
-    log_info(LD_CRYPTO, "Seeding RNG from \"%s\"", filenames[i]);
-    n = read_all(fd, buf, sizeof(buf), 0);
-    close(fd);
-    if (n != sizeof(buf)) {
-      log_warn(LD_CRYPTO,
-               "Error reading from entropy source (read only %lu bytes).",
-               (unsigned long)n);
-      return -1;
-    }
-    RAND_seed(buf, (int)sizeof(buf));
-    memwipe(buf, 0, sizeof(buf));
-    seed_weak_rng();
-    return 0;
+  load_entropy_ok = !crypto_strongest_rand(buf, sizeof(buf));
+  if (load_entropy_ok) {
+    RAND_seed(buf, sizeof(buf));
   }
 
-  log_warn(LD_CRYPTO, "Cannot seed RNG -- no entropy source found.");
-  return rand_poll_status ? 0 : -1;
-#endif
+  memwipe(buf, 0, sizeof(buf));
+
+  if (rand_poll_ok || load_entropy_ok)
+    return 0;
+  else
+    return -1;
 }
 
 /** Write <b>n</b> bytes of strong random data to <b>to</b>. Return 0 on
@@ -2517,7 +2586,7 @@ smartlist_shuffle(smartlist_t *sl)
   }
 }
 
-/** Base-64 encode <b>srclen</b> bytes of data from <b>src</b>.  Write
+/** Base64 encode <b>srclen</b> bytes of data from <b>src</b>.  Write
  * the result into <b>dest</b>, if it will fit within <b>destlen</b>
  * bytes.  Return the number of bytes written on success; -1 if
  * destlen is too short, or other failure.
@@ -2576,7 +2645,7 @@ static const uint8_t base64_decode_table[256] = {
   X, X, X, X, X, X, X, X, X, X, X, X, X, X, X, X,
 };
 
-/** Base-64 decode <b>srclen</b> bytes of data from <b>src</b>.  Write
+/** Base64 decode <b>srclen</b> bytes of data from <b>src</b>.  Write
  * the result into <b>dest</b>, if it will fit within <b>destlen</b>
  * bytes.  Return the number of bytes written on success; -1 if
  * destlen is too short, or other failure.
@@ -2683,7 +2752,7 @@ base64_decode(char *dest, size_t destlen, const char *src, size_t srclen)
 #undef SP
 #undef PAD
 
-/** Base-64 encode DIGEST_LINE bytes from <b>digest</b>, remove the trailing =
+/** Base64 encode DIGEST_LINE bytes from <b>digest</b>, remove the trailing =
  * and newline characters, and store the nul-terminated result in the first
  * BASE64_DIGEST_LEN+1 bytes of <b>d64</b>.  */
 int
@@ -2696,7 +2765,7 @@ digest_to_base64(char *d64, const char *digest)
   return 0;
 }
 
-/** Given a base-64 encoded, nul-terminated digest in <b>d64</b> (without
+/** Given a base64 encoded, nul-terminated digest in <b>d64</b> (without
  * trailing newline or = characters), decode it and store the result in the
  * first DIGEST_LEN bytes at <b>digest</b>. */
 int
@@ -2721,7 +2790,7 @@ digest_from_base64(char *digest, const char *d64)
 #endif
 }
 
-/** Base-64 encode DIGEST256_LINE bytes from <b>digest</b>, remove the
+/** Base64 encode DIGEST256_LINE bytes from <b>digest</b>, remove the
  * trailing = and newline characters, and store the nul-terminated result in
  * the first BASE64_DIGEST256_LEN+1 bytes of <b>d64</b>.  */
 int
@@ -2734,7 +2803,7 @@ digest256_to_base64(char *d64, const char *digest)
   return 0;
 }
 
-/** Given a base-64 encoded, nul-terminated digest in <b>d64</b> (without
+/** Given a base64 encoded, nul-terminated digest in <b>d64</b> (without
  * trailing newline or = characters), decode it and store the result in the
  * first DIGEST256_LEN bytes at <b>digest</b>. */
 int
@@ -2759,7 +2828,7 @@ digest256_from_base64(char *digest, const char *d64)
 #endif
 }
 
-/** Implements base32 encoding as in rfc3548.  Limitation: Requires
+/** Implements base32 encoding as in RFC 4648.  Limitation: Requires
  * that srclen*8 is a multiple of 5.
  */
 void
@@ -2784,7 +2853,7 @@ base32_encode(char *dest, size_t destlen, const char *src, size_t srclen)
   dest[i] = '\0';
 }
 
-/** Implements base32 decoding as in rfc3548.  Limitation: Requires
+/** Implements base32 decoding as in RFC 4648.  Limitation: Requires
  * that srclen*5 is a multiple of 8. Returns 0 if successful, -1 otherwise.
  */
 int
@@ -2937,21 +3006,27 @@ memwipe(void *mem, uint8_t byte, size_t sz)
 }
 
 #ifdef TOR_IS_MULTITHREADED
+
+#ifndef OPENSSL_THREADS
+#error OpenSSL has been built without thread support. Tor requires an \
+ OpenSSL library with thread support enabled.
+#endif
+
 /** Helper: OpenSSL uses this callback to manipulate mutexes. */
 static void
-_openssl_locking_cb(int mode, int n, const char *file, int line)
+openssl_locking_cb_(int mode, int n, const char *file, int line)
 {
   (void)file;
   (void)line;
-  if (!_openssl_mutexes)
+  if (!openssl_mutexes_)
     /* This is not a really good  fix for the
      * "release-freed-lock-from-separate-thread-on-shutdown" problem, but
      * it can't hurt. */
     return;
   if (mode & CRYPTO_LOCK)
-    tor_mutex_acquire(_openssl_mutexes[n]);
+    tor_mutex_acquire(openssl_mutexes_[n]);
   else
-    tor_mutex_release(_openssl_mutexes[n]);
+    tor_mutex_release(openssl_mutexes_[n]);
 }
 
 /** OpenSSL helper type: wraps a Tor mutex so that OpenSSL can use it
@@ -2963,7 +3038,7 @@ struct CRYPTO_dynlock_value {
 /** OpenSSL callback function to allocate a lock: see CRYPTO_set_dynlock_*
  * documentation in OpenSSL's docs for more info. */
 static struct CRYPTO_dynlock_value *
-_openssl_dynlock_create_cb(const char *file, int line)
+openssl_dynlock_create_cb_(const char *file, int line)
 {
   struct CRYPTO_dynlock_value *v;
   (void)file;
@@ -2976,7 +3051,7 @@ _openssl_dynlock_create_cb(const char *file, int line)
 /** OpenSSL callback function to acquire or release a lock: see
  * CRYPTO_set_dynlock_* documentation in OpenSSL's docs for more info. */
 static void
-_openssl_dynlock_lock_cb(int mode, struct CRYPTO_dynlock_value *v,
+openssl_dynlock_lock_cb_(int mode, struct CRYPTO_dynlock_value *v,
                          const char *file, int line)
 {
   (void)file;
@@ -2990,7 +3065,7 @@ _openssl_dynlock_lock_cb(int mode, struct CRYPTO_dynlock_value *v,
 /** OpenSSL callback function to free a lock: see CRYPTO_set_dynlock_*
  * documentation in OpenSSL's docs for more info. */
 static void
-_openssl_dynlock_destroy_cb(struct CRYPTO_dynlock_value *v,
+openssl_dynlock_destroy_cb_(struct CRYPTO_dynlock_value *v,
                             const char *file, int line)
 {
   (void)file;
@@ -3007,15 +3082,15 @@ setup_openssl_threading(void)
 {
   int i;
   int n = CRYPTO_num_locks();
-  _n_openssl_mutexes = n;
-  _openssl_mutexes = tor_malloc(n*sizeof(tor_mutex_t *));
+  n_openssl_mutexes_ = n;
+  openssl_mutexes_ = tor_malloc(n*sizeof(tor_mutex_t *));
   for (i=0; i < n; ++i)
-    _openssl_mutexes[i] = tor_mutex_new();
-  CRYPTO_set_locking_callback(_openssl_locking_cb);
+    openssl_mutexes_[i] = tor_mutex_new();
+  CRYPTO_set_locking_callback(openssl_locking_cb_);
   CRYPTO_set_id_callback(tor_get_thread_id);
-  CRYPTO_set_dynlock_create_callback(_openssl_dynlock_create_cb);
-  CRYPTO_set_dynlock_lock_callback(_openssl_dynlock_lock_cb);
-  CRYPTO_set_dynlock_destroy_callback(_openssl_dynlock_destroy_cb);
+  CRYPTO_set_dynlock_create_callback(openssl_dynlock_create_cb_);
+  CRYPTO_set_dynlock_lock_callback(openssl_dynlock_lock_cb_);
+  CRYPTO_set_dynlock_destroy_callback(openssl_dynlock_destroy_cb_);
   return 0;
 }
 #else
@@ -3049,18 +3124,19 @@ crypto_global_cleanup(void)
   CONF_modules_unload(1);
   CRYPTO_cleanup_all_ex_data();
 #ifdef TOR_IS_MULTITHREADED
-  if (_n_openssl_mutexes) {
-    int n = _n_openssl_mutexes;
-    tor_mutex_t **ms = _openssl_mutexes;
+  if (n_openssl_mutexes_) {
+    int n = n_openssl_mutexes_;
+    tor_mutex_t **ms = openssl_mutexes_;
     int i;
-    _openssl_mutexes = NULL;
-    _n_openssl_mutexes = 0;
+    openssl_mutexes_ = NULL;
+    n_openssl_mutexes_ = 0;
     for (i=0;i<n;++i) {
       tor_mutex_free(ms[i]);
     }
     tor_free(ms);
   }
 #endif
+  tor_free(crypto_openssl_version_str);
   return 0;
 }
 

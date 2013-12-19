@@ -2,12 +2,12 @@
 .\"     Title: tor-fw-helper
 .\"    Author: Jacob Appelbaum
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 11/19/2012
-.\"    Manual: \ \&
-.\"    Source: \ \&
+.\"      Date: 11/16/2013
+.\"    Manual: Tor Manual
+.\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR\-FW\-HELPER" "1" "11/19/2012" "\ \&" "\ \&"
+.TH "TOR\-FW\-HELPER" "1" "11/16/2013" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -31,7 +31,7 @@
 tor-fw-helper \- Manage upstream firewall/NAT devices
 .SH "SYNOPSIS"
 .sp
-\fBtor\-fw\-helper\fR [\-h|\-\-help] [\-T|\-\-test] [\-v|\-\-verbose] [\-g|\-\-fetch\-public\-ip] \-i|\-\-internal\-or\-port \fITCP port\fR [\-e|\-\-external\-or\-port \fITCP port\fR] [\-d|\-\-internal\-dir\-port \fITCP port\fR] [\-p|\-\-external\-dir\-port \fITCP port\fR]
+\fBtor\-fw\-helper\fR [\-h|\-\-help] [\-T|\-\-test\-commandline] [\-v|\-\-verbose] [\-g|\-\-fetch\-public\-ip] [\-p \fIexternal port\fR:\fIinternal_port\fR]
 .SH "DESCRIPTION"
 .sp
 \fBtor\-fw\-helper\fR currently supports Apple\(cqs NAT\-PMP protocol and the UPnP standard for TCP port mapping\&. It is written as the reference implementation of tor\-fw\-helper\-spec\&.txt and conforms to that loose plugin API\&. If your network supports either NAT\-PMP or UPnP, tor\-fw\-helper will attempt to automatically map the required TCP ports for Tor\(cqs Or and Dir ports\&.
@@ -42,12 +42,12 @@ tor-fw-helper \- Manage upstream firewall/NAT devices
 Display help text and exit\&.
 .RE
 .PP
-\fB\-v\fR
+\fB\-v\fR or \fB\-\-verbose\fR
 .RS 4
 Display verbose output\&.
 .RE
 .PP
-\fB\-T\fR or \fB\-\-test\fR
+\fB\-T\fR or \fB\-\-test\-commandline\fR
 .RS 4
 Display test information and print the test information in tor\-fw\-helper\&.log
 .RE
@@ -57,32 +57,9 @@ Display test information and print the test information in tor\-fw\-helper\&.log
 Fetch the the public ip address for each supported NAT helper method\&.
 .RE
 .PP
-\fB\-i\fR or \fB\-\-internal\-or\-port\fR \fIport\fR
+\fB\-p\fR or \fB\-\-port\fR \fIexternal_port\fR:\fIinternal_port\fR
 .RS 4
-Inform
-\fBtor\-fw\-helper\fR
-of your internal OR port\&. This is the only required argument\&.
-.RE
-.PP
-\fB\-e\fR or \fB\-\-external\-or\-port\fR \fIport\fR
-.RS 4
-Inform
-\fBtor\-fw\-helper\fR
-of your external OR port\&.
-.RE
-.PP
-\fB\-d\fR or \fB\-\-internal\-dir\-port\fR \fIport\fR
-.RS 4
-Inform
-\fBtor\-fw\-helper\fR
-of your internal Dir port\&.
-.RE
-.PP
-\fB\-p\fR or \fB\-\-external\-dir\-port\fR \fIport\fR
-.RS 4
-Inform
-\fBtor\-fw\-helper\fR
-of your external Dir port\&.
+Forward external_port to internal_port\&. This option can appear more than once\&.
 .RE
 .SH "BUGS"
 .sp

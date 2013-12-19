@@ -2,6 +2,8 @@
 // See LICENSE for licensing information
 // This is an asciidoc file used to generate the manpage/html reference.
 // Learn asciidoc on http://www.methods.co.nz/asciidoc/userguide.html
+:man source:   Tor
+:man manual:   Tor Manual
 tor-fw-helper(1)
 ================
 Jacob Appelbaum
@@ -12,9 +14,8 @@ tor-fw-helper - Manage upstream firewall/NAT devices
 
 SYNOPSIS
 --------
-**tor-fw-helper** [-h|--help] [-T|--test] [-v|--verbose] [-g|--fetch-public-ip]
- -i|--internal-or-port __TCP port__ [-e|--external-or-port _TCP port_]
- [-d|--internal-dir-port _TCP port_] [-p|--external-dir-port _TCP port_]
+**tor-fw-helper** [-h|--help] [-T|--test-commandline] [-v|--verbose] [-g|--fetch-public-ip]
+ [-p __external port__:__internal_port__]
 
 DESCRIPTION
 -----------
@@ -29,28 +30,19 @@ OPTIONS
 **-h** or **--help**::
     Display help text and exit.
 
-**-v**::
+**-v** or **--verbose**::
     Display verbose output.
 
-**-T** or **--test**::
+**-T** or **--test-commandline**::
     Display test information and print the test information in
     tor-fw-helper.log
 
 **-g** or **--fetch-public-ip**::
     Fetch the the public ip address for each supported NAT helper method.
 
-**-i** or **--internal-or-port** __port__::
-    Inform **tor-fw-helper** of your internal OR port. This is the only
-    required argument.
-
-**-e** or **--external-or-port** __port__::
-    Inform **tor-fw-helper** of your external OR port.
-
-**-d** or **--internal-dir-port** __port__::
-    Inform **tor-fw-helper** of your internal Dir port.
-
-**-p** or **--external-dir-port** __port__::
-    Inform **tor-fw-helper** of your external Dir port.
+**-p** or **--port** __external_port__:__internal_port__::
+    Forward external_port to internal_port.  This option can appear
+    more than once.
 
 BUGS
 ----

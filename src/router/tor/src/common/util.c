@@ -1,6 +1,6 @@
 /* Copyright (c) 2003, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -20,7 +20,6 @@
 #define UTIL_PRIVATE
 #include "util.h"
 #include "torlog.h"
-#undef log
 #include "crypto.h"
 #include "torint.h"
 #include "container.h"
@@ -39,8 +38,8 @@
 #endif
 
 /* math.h needs this on Linux */
-#ifndef __USE_ISOC99
-#define __USE_ISOC99 1
+#ifndef _USE_ISOC99_
+#define _USE_ISOC99_ 1
 #endif
 #include <math.h>
 #include <stdlib.h>
@@ -125,7 +124,7 @@
  * ignored otherwise.
  */
 void *
-_tor_malloc(size_t size DMALLOC_PARAMS)
+tor_malloc_(size_t size DMALLOC_PARAMS)
 {
   void *result;
 
@@ -159,7 +158,7 @@ _tor_malloc(size_t size DMALLOC_PARAMS)
  * the process on error.  (Same as calloc(size,1), but never returns NULL.)
  */
 void *
-_tor_malloc_zero(size_t size DMALLOC_PARAMS)
+tor_malloc_zero_(size_t size DMALLOC_PARAMS)
 {
   /* You may ask yourself, "wouldn't it be smart to use calloc instead of
    * malloc+memset?  Perhaps libc's calloc knows some nifty optimization trick
@@ -167,7 +166,7 @@ _tor_malloc_zero(size_t size DMALLOC_PARAMS)
    * we're allocating something very big (it knows if it just got the memory
    * from the OS in a pre-zeroed state).  We don't want to use tor_malloc_zero
    * for big stuff, so we don't bother with calloc. */
-  void *result = _tor_malloc(size DMALLOC_FN_ARGS);
+  void *result = tor_malloc_(size DMALLOC_FN_ARGS);
   memset(result, 0, size);
   return result;
 }
@@ -184,7 +183,7 @@ _tor_malloc_zero(size_t size DMALLOC_PARAMS)
  * smaller than size).  Don't do that then.
  */
 void *
-_tor_calloc(size_t nmemb, size_t size DMALLOC_PARAMS)
+tor_calloc_(size_t nmemb, size_t size DMALLOC_PARAMS)
 {
   /* You may ask yourself, "wouldn't it be smart to use calloc instead of
    * malloc+memset?  Perhaps libc's calloc knows some nifty optimization trick
@@ -197,7 +196,7 @@ _tor_calloc(size_t nmemb, size_t size DMALLOC_PARAMS)
 
   tor_assert(nmemb < max_nmemb);
 
-  result = _tor_malloc_zero((nmemb * size) DMALLOC_FN_ARGS);
+  result = tor_malloc_zero_((nmemb * size) DMALLOC_FN_ARGS);
   return result;
 }
 
@@ -206,7 +205,7 @@ _tor_calloc(size_t nmemb, size_t size DMALLOC_PARAMS)
  * terminate. (Like realloc(ptr,size), but never returns NULL.)
  */
 void *
-_tor_realloc(void *ptr, size_t size DMALLOC_PARAMS)
+tor_realloc_(void *ptr, size_t size DMALLOC_PARAMS)
 {
   void *result;
 
@@ -230,7 +229,7 @@ _tor_realloc(void *ptr, size_t size DMALLOC_PARAMS)
  * NULL.)
  */
 char *
-_tor_strdup(const char *s DMALLOC_PARAMS)
+tor_strdup_(const char *s DMALLOC_PARAMS)
 {
   char *dup;
   tor_assert(s);
@@ -254,12 +253,12 @@ _tor_strdup(const char *s DMALLOC_PARAMS)
  * NULL.)
  */
 char *
-_tor_strndup(const char *s, size_t n DMALLOC_PARAMS)
+tor_strndup_(const char *s, size_t n DMALLOC_PARAMS)
 {
   char *dup;
   tor_assert(s);
   tor_assert(n < SIZE_T_CEILING);
-  dup = _tor_malloc((n+1) DMALLOC_FN_ARGS);
+  dup = tor_malloc_((n+1) DMALLOC_FN_ARGS);
   /* Performance note: Ordinarily we prefer strlcpy to strncpy.  But
    * this function gets called a whole lot, and platform strncpy is
    * much faster than strlcpy when strlen(s) is much longer than n.
@@ -272,53 +271,36 @@ _tor_strndup(const char *s, size_t n DMALLOC_PARAMS)
 /** Allocate a chunk of <b>len</b> bytes, with the same contents as the
  * <b>len</b> bytes starting at <b>mem</b>. */
 void *
-_tor_memdup(const void *mem, size_t len DMALLOC_PARAMS)
+tor_memdup_(const void *mem, size_t len DMALLOC_PARAMS)
 {
   char *dup;
   tor_assert(len < SIZE_T_CEILING);
   tor_assert(mem);
-  dup = _tor_malloc(len DMALLOC_FN_ARGS);
+  dup = tor_malloc_(len DMALLOC_FN_ARGS);
   memcpy(dup, mem, len);
+  return dup;
+}
+
+/** As tor_memdup(), but add an extra 0 byte at the end of the resulting
+ * memory. */
+void *
+tor_memdup_nulterm(const void *mem, size_t len DMALLOC_PARAMS)
+{
+  char *dup;
+  tor_assert(len < SIZE_T_CEILING+1);
+  tor_assert(mem);
+  dup = tor_malloc_(len+1 DMALLOC_FN_ARGS);
+  memcpy(dup, mem, len);
+  dup[len] = '\0';
   return dup;
 }
 
 /** Helper for places that need to take a function pointer to the right
  * spelling of "free()". */
 void
-_tor_free(void *mem)
+tor_free_(void *mem)
 {
   tor_free(mem);
-}
-
-#if defined(HAVE_MALLOC_GOOD_SIZE) && !defined(HAVE_MALLOC_GOOD_SIZE_PROTOTYPE)
-/* Some version of Mac OSX have malloc_good_size in their libc, but not
- * actually defined in malloc/malloc.h.  We detect this and work around it by
- * prototyping.
- */
-extern size_t malloc_good_size(size_t size);
-#endif
-
-/** Allocate and return a chunk of memory of size at least *<b>size</b>, using
- * the same resources we would use to malloc *<b>sizep</b>.  Set *<b>sizep</b>
- * to the number of usable bytes in the chunk of memory. */
-void *
-_tor_malloc_roundup(size_t *sizep DMALLOC_PARAMS)
-{
-#ifdef HAVE_MALLOC_GOOD_SIZE
-  tor_assert(*sizep < SIZE_T_CEILING);
-  *sizep = malloc_good_size(*sizep);
-  return _tor_malloc(*sizep DMALLOC_FN_ARGS);
-#elif 0 && defined(HAVE_MALLOC_USABLE_SIZE) && !defined(USE_DMALLOC)
-  /* Never use malloc_usable_size(); it makes valgrind really unhappy,
-   * and doesn't win much in terms of usable space where it exists. */
-  void *result;
-  tor_assert(*sizep < SIZE_T_CEILING);
-  result = _tor_malloc(*sizep DMALLOC_FN_ARGS);
-  *sizep = malloc_usable_size(result);
-  return result;
-#else
-  return _tor_malloc(*sizep DMALLOC_FN_ARGS);
-#endif
 }
 
 /** Call the platform malloc info function, and dump the results to the log at
@@ -354,8 +336,8 @@ tor_log_mallinfo(int severity)
  * ===== */
 
 /**
- * Returns the natural logarithm of d base 2.  We define this wrapper here so
- * as to make it easier not to conflict with Tor's log() macro.
+ * Returns the natural logarithm of d base e.  We defined this wrapper here so
+ * to avoid conflicts with old versions of tor_log(), which were named log().
  */
 double
 tor_mathlog(double d)
@@ -363,9 +345,9 @@ tor_mathlog(double d)
   return log(d);
 }
 
-/** Return the long integer closest to d.  We define this wrapper here so
- * that not all users of math.h need to use the right incancations to get
- * the c99 functions. */
+/** Return the long integer closest to <b>d</b>. We define this wrapper
+ * here so that not all users of math.h need to use the right incantations
+ * to get the c99 functions. */
 long
 tor_lround(double d)
 {
@@ -375,6 +357,21 @@ tor_lround(double d)
   return (long)rint(d);
 #else
   return (long)(d > 0 ? d + 0.5 : ceil(d - 0.5));
+#endif
+}
+
+/** Return the 64-bit integer closest to d.  We define this wrapper here so
+ * that not all users of math.h need to use the right incantations to get the
+ * c99 functions. */
+int64_t
+tor_llround(double d)
+{
+#if defined(HAVE_LLROUND)
+  return (int64_t)llround(d);
+#elif defined(HAVE_RINT)
+  return (int64_t)rint(d);
+#else
+  return (int64_t)(d > 0 ? d + 0.5 : ceil(d - 0.5));
 #endif
 }
 
@@ -410,12 +407,24 @@ tor_log2(uint64_t u64)
   return r;
 }
 
-/** Return the power of 2 closest to <b>u64</b>. */
+/** Return the power of 2 in range [1,UINT64_MAX] closest to <b>u64</b>.  If
+ * there are two powers of 2 equally close, round down. */
 uint64_t
 round_to_power_of_2(uint64_t u64)
 {
-  int lg2 = tor_log2(u64);
-  uint64_t low = U64_LITERAL(1) << lg2, high = U64_LITERAL(1) << (lg2+1);
+  int lg2;
+  uint64_t low;
+  uint64_t high;
+  if (u64 == 0)
+    return 1;
+
+  lg2 = tor_log2(u64);
+  low = U64_LITERAL(1) << lg2;
+
+  if (lg2 == 63)
+    return low;
+
+  high = U64_LITERAL(1) << (lg2+1);
   if (high - u64 < u64 - low)
     return high;
   else
@@ -653,6 +662,16 @@ fast_memcmpstart(const void *mem, size_t memlen,
   if (memlen < plen)
     return -1;
   return fast_memcmp(mem, prefix, plen);
+}
+
+/** Given a nul-terminated string s, set every character before the nul
+ * to zero. */
+void
+tor_strclear(char *s)
+{
+  while (*s) {
+    *s++ = '\0';
+  }
 }
 
 /** Return a pointer to the first char of s that is not whitespace and
@@ -1013,7 +1032,7 @@ base16_encode(char *dest, size_t destlen, const char *src, size_t srclen)
 
 /** Helper: given a hex digit, return its value, or -1 if it isn't hex. */
 static INLINE int
-_hex_decode_digit(char c)
+hex_decode_digit_(char c)
 {
   switch (c) {
     case '0': return 0;
@@ -1041,7 +1060,7 @@ _hex_decode_digit(char c)
 int
 hex_decode_digit(char c)
 {
-  return _hex_decode_digit(c);
+  return hex_decode_digit_(c);
 }
 
 /** Given a hexadecimal string of <b>srclen</b> bytes in <b>src</b>, decode it
@@ -1059,8 +1078,8 @@ base16_decode(char *dest, size_t destlen, const char *src, size_t srclen)
     return -1;
   end = src+srclen;
   while (src<end) {
-    v1 = _hex_decode_digit(*src);
-    v2 = _hex_decode_digit(*(src+1));
+    v1 = hex_decode_digit_(*src);
+    v2 = hex_decode_digit_(*(src+1));
     if (v1<0||v2<0)
       return -1;
     *(uint8_t*)dest = (v1<<4)|v2;
@@ -1160,129 +1179,20 @@ esc_for_log(const char *s)
 const char *
 escaped(const char *s)
 {
-  static char *_escaped_val = NULL;
-  tor_free(_escaped_val);
+  static char *escaped_val_ = NULL;
+  tor_free(escaped_val_);
 
   if (s)
-    _escaped_val = esc_for_log(s);
+    escaped_val_ = esc_for_log(s);
   else
-    _escaped_val = NULL;
+    escaped_val_ = NULL;
 
-  return _escaped_val;
-}
-
-/** Rudimentary string wrapping code: given a un-wrapped <b>string</b> (no
- * newlines!), break the string into newline-terminated lines of no more than
- * <b>width</b> characters long (not counting newline) and insert them into
- * <b>out</b> in order.  Precede the first line with prefix0, and subsequent
- * lines with prefixRest.
- */
-/* This uses a stupid greedy wrapping algorithm right now:
- *  - For each line:
- *    - Try to fit as much stuff as possible, but break on a space.
- *    - If the first "word" of the line will extend beyond the allowable
- *      width, break the word at the end of the width.
- */
-void
-wrap_string(smartlist_t *out, const char *string, size_t width,
-            const char *prefix0, const char *prefixRest)
-{
-  size_t p0Len, pRestLen, pCurLen;
-  const char *eos, *prefixCur;
-  tor_assert(out);
-  tor_assert(string);
-  tor_assert(width);
-  if (!prefix0)
-    prefix0 = "";
-  if (!prefixRest)
-    prefixRest = "";
-
-  p0Len = strlen(prefix0);
-  pRestLen = strlen(prefixRest);
-  tor_assert(width > p0Len && width > pRestLen);
-  eos = strchr(string, '\0');
-  tor_assert(eos);
-  pCurLen = p0Len;
-  prefixCur = prefix0;
-
-  while ((eos-string)+pCurLen > width) {
-    const char *eol = string + width - pCurLen;
-    while (eol > string && *eol != ' ')
-      --eol;
-    /* eol is now the last space that can fit, or the start of the string. */
-    if (eol > string) {
-      size_t line_len = (eol-string) + pCurLen + 2;
-      char *line = tor_malloc(line_len);
-      memcpy(line, prefixCur, pCurLen);
-      memcpy(line+pCurLen, string, eol-string);
-      line[line_len-2] = '\n';
-      line[line_len-1] = '\0';
-      smartlist_add(out, line);
-      string = eol + 1;
-    } else {
-      size_t line_len = width + 2;
-      char *line = tor_malloc(line_len);
-      memcpy(line, prefixCur, pCurLen);
-      memcpy(line+pCurLen, string, width - pCurLen);
-      line[line_len-2] = '\n';
-      line[line_len-1] = '\0';
-      smartlist_add(out, line);
-      string += width-pCurLen;
-    }
-    prefixCur = prefixRest;
-    pCurLen = pRestLen;
-  }
-
-  if (string < eos) {
-    size_t line_len = (eos-string) + pCurLen + 2;
-    char *line = tor_malloc(line_len);
-    memcpy(line, prefixCur, pCurLen);
-    memcpy(line+pCurLen, string, eos-string);
-    line[line_len-2] = '\n';
-    line[line_len-1] = '\0';
-    smartlist_add(out, line);
-  }
+  return escaped_val_;
 }
 
 /* =====
  * Time
  * ===== */
-
-/**
- * Converts struct timeval to a double value.
- * Preserves microsecond precision, but just barely.
- * Error is approx +/- 0.1 usec when dealing with epoch values.
- */
-double
-tv_to_double(const struct timeval *tv)
-{
-  double conv = tv->tv_sec;
-  conv += tv->tv_usec/1000000.0;
-  return conv;
-}
-
-/**
- * Converts timeval to milliseconds.
- */
-int64_t
-tv_to_msec(const struct timeval *tv)
-{
-  int64_t conv = ((int64_t)tv->tv_sec)*1000L;
-  /* Round ghetto-style */
-  conv += ((int64_t)tv->tv_usec+500)/1000L;
-  return conv;
-}
-
-/**
- * Converts timeval to microseconds.
- */
-int64_t
-tv_to_usec(const struct timeval *tv)
-{
-  int64_t conv = ((int64_t)tv->tv_sec)*1000000L;
-  conv += tv->tv_usec;
-  return conv;
-}
 
 /** Return the number of microseconds elapsed between *start and *end.
  */
@@ -1322,6 +1232,18 @@ tv_mdiff(const struct timeval *start, const struct timeval *end)
   return mdiff;
 }
 
+/**
+ * Converts timeval to milliseconds.
+ */
+int64_t
+tv_to_msec(const struct timeval *tv)
+{
+  int64_t conv = ((int64_t)tv->tv_sec)*1000L;
+  /* Round ghetto-style */
+  conv += ((int64_t)tv->tv_usec+500)/1000L;
+  return conv;
+}
+
 /** Yield true iff <b>y</b> is a leap-year. */
 #define IS_LEAPYEAR(y) (!(y % 4) && ((y % 100) || !(y % 400)))
 /** Helper: Return the number of leap-days between Jan 1, y1 and Jan 1, y2. */
@@ -1336,7 +1258,7 @@ n_leapdays(int y1, int y2)
 static const int days_per_month[] =
   { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-/** Compute a time_t given a struct tm.  The result is given in GMT, and
+/** Compute a time_t given a struct tm.  The result is given in UTC, and
  * does not account for leap seconds.  Return 0 on success, -1 on failure.
  */
 int
@@ -1377,10 +1299,11 @@ static const char *MONTH_NAMES[] =
   { "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
-/** Set <b>buf</b> to the RFC1123 encoding of the GMT value of <b>t</b>.
+/** Set <b>buf</b> to the RFC1123 encoding of the UTC value of <b>t</b>.
  * The buffer must be at least RFC1123_TIME_LEN+1 bytes long.
  *
- * (RFC1123 format is Fri, 29 Sep 2006 15:54:20 GMT)
+ * (RFC1123 format is "Fri, 29 Sep 2006 15:54:20 GMT". Note the "GMT"
+ * rather than "UTC".)
  */
 void
 format_rfc1123_time(char *buf, time_t t)
@@ -1398,8 +1321,11 @@ format_rfc1123_time(char *buf, time_t t)
   memcpy(buf+8, MONTH_NAMES[tm.tm_mon], 3);
 }
 
-/** Parse the RFC1123 encoding of some time (in GMT) from <b>buf</b>,
- * and store the result in *<b>t</b>.
+/** Parse the (a subset of) the RFC1123 encoding of some time (in UTC) from
+ * <b>buf</b>, and store the result in *<b>t</b>.
+ *
+ * Note that we only accept the subset generated by format_rfc1123_time above,
+ * not the full range of formats suggested by RFC 1123.
  *
  * Return 0 on success, -1 on failure.
 */
@@ -1827,6 +1753,10 @@ file_status(const char *fname)
     return FN_DIR;
   else if (st.st_mode & S_IFREG)
     return FN_FILE;
+#ifndef _WIN32
+  else if (st.st_mode & S_IFIFO)
+    return FN_FILE;
+#endif
   else
     return FN_ERROR;
 }
@@ -2257,6 +2187,46 @@ write_bytes_to_new_file(const char *fname, const char *str, size_t len,
                                   (bin?O_BINARY:O_TEXT));
 }
 
+/**
+ * Read the contents of the open file <b>fd</b> presuming it is a FIFO
+ * (or similar) file descriptor for which the size of the file isn't
+ * known ahead of time. Return NULL on failure, and a NUL-terminated
+ * string on success.  On success, set <b>sz_out</b> to the number of
+ * bytes read.
+ */
+char *
+read_file_to_str_until_eof(int fd, size_t max_bytes_to_read, size_t *sz_out)
+{
+  ssize_t r;
+  size_t pos = 0;
+  char *string = NULL;
+  size_t string_max = 0;
+
+  if (max_bytes_to_read+1 >= SIZE_T_CEILING)
+    return NULL;
+
+  do {
+    /* XXXX This "add 1K" approach is a little goofy; if we care about
+     * performance here, we should be doubling.  But in practice we shouldn't
+     * be using this function on big files anyway. */
+    string_max = pos + 1024;
+    if (string_max > max_bytes_to_read)
+      string_max = max_bytes_to_read + 1;
+    string = tor_realloc(string, string_max);
+    r = read(fd, string + pos, string_max - pos - 1);
+    if (r < 0) {
+      tor_free(string);
+      return NULL;
+    }
+
+    pos += r;
+  } while (r > 0 && pos < max_bytes_to_read);
+
+  *sz_out = pos;
+  string[pos] = '\0';
+  return string;
+}
+
 /** Read the contents of <b>filename</b> into a newly allocated
  * string; return the string on success or NULL on failure.
  *
@@ -2305,8 +2275,26 @@ read_file_to_str(const char *filename, int flags, struct stat *stat_out)
     return NULL;
   }
 
-  if ((uint64_t)(statbuf.st_size)+1 >= SIZE_T_CEILING)
+#ifndef _WIN32
+/** When we detect that we're reading from a FIFO, don't read more than
+ * this many bytes.  It's insane overkill for most uses. */
+#define FIFO_READ_MAX (1024*1024)
+  if (S_ISFIFO(statbuf.st_mode)) {
+    size_t sz = 0;
+    string = read_file_to_str_until_eof(fd, FIFO_READ_MAX, &sz);
+    if (string && stat_out) {
+      statbuf.st_size = sz;
+      memcpy(stat_out, &statbuf, sizeof(struct stat));
+    }
+    close(fd);
+    return string;
+  }
+#endif
+
+  if ((uint64_t)(statbuf.st_size)+1 >= SIZE_T_CEILING) {
+    close(fd);
     return NULL;
+  }
 
   string = tor_malloc((size_t)(statbuf.st_size+1));
 
@@ -2466,10 +2454,13 @@ unescape_string(const char *s, char **result, size_t *size_out)
  * key portion and *<b>value_out</b> to a new string holding the value portion
  * of the line, and return a pointer to the start of the next line.  If we run
  * out of data, return a pointer to the end of the string.  If we encounter an
- * error, return NULL.
+ * error, return NULL and set *<b>err_out</b> (if provided) to an error
+ * message.
  */
 const char *
-parse_config_line_from_str(const char *line, char **key_out, char **value_out)
+parse_config_line_from_str_verbose(const char *line, char **key_out,
+                                   char **value_out,
+                                   const char **err_out)
 {
   /* I believe the file format here is supposed to be:
      FILE = (EMPTYLINE | LINE)* (EMPTYLASTLINE | LASTLINE)?
@@ -2543,12 +2534,18 @@ parse_config_line_from_str(const char *line, char **key_out, char **value_out)
 
   /* Find the end of the line. */
   if (*line == '\"') { // XXX No continuation handling is done here
-    if (!(line = unescape_string(line, value_out, NULL)))
-       return NULL;
+    if (!(line = unescape_string(line, value_out, NULL))) {
+      if (err_out)
+        *err_out = "Invalid escape sequence in quoted string";
+      return NULL;
+    }
     while (*line == ' ' || *line == '\t')
       ++line;
-    if (*line && *line != '#' && *line != '\n')
+    if (*line && *line != '#' && *line != '\n') {
+      if (err_out)
+        *err_out = "Excess data after quoted string";
       return NULL;
+    }
   } else {
     /* Look for the end of the line. */
     while (*line && *line != '\n' && (*line != '#' || continuation)) {
@@ -2683,9 +2680,9 @@ digit_to_num(char d)
  * success, store the result in <b>out</b>, advance bufp to the next
  * character, and return 0.  On failure, return -1. */
 static int
-scan_unsigned(const char **bufp, unsigned *out, int width, int base)
+scan_unsigned(const char **bufp, unsigned long *out, int width, int base)
 {
-  unsigned result = 0;
+  unsigned long result = 0;
   int scanned_so_far = 0;
   const int hex = base==16;
   tor_assert(base == 10 || base == 16);
@@ -2697,8 +2694,8 @@ scan_unsigned(const char **bufp, unsigned *out, int width, int base)
   while (**bufp && (hex?TOR_ISXDIGIT(**bufp):TOR_ISDIGIT(**bufp))
          && scanned_so_far < width) {
     int digit = hex?hex_decode_digit(*(*bufp)++):digit_to_num(*(*bufp)++);
-    unsigned new_result = result * base + digit;
-    if (new_result > UINT32_MAX || new_result < result)
+    unsigned long new_result = result * base + digit;
+    if (new_result < result)
       return -1; /* over/underflow. */
     result = new_result;
     ++scanned_so_far;
@@ -2708,6 +2705,89 @@ scan_unsigned(const char **bufp, unsigned *out, int width, int base)
     return -1;
 
   *out = result;
+  return 0;
+}
+
+/** Helper: Read an signed int from *<b>bufp</b> of up to <b>width</b>
+ * characters.  (Handle arbitrary width if <b>width</b> is less than 0.)  On
+ * success, store the result in <b>out</b>, advance bufp to the next
+ * character, and return 0.  On failure, return -1. */
+static int
+scan_signed(const char **bufp, long *out, int width)
+{
+  int neg = 0;
+  unsigned long result = 0;
+
+  if (!bufp || !*bufp || !out)
+    return -1;
+  if (width<0)
+    width=MAX_SCANF_WIDTH;
+
+  if (**bufp == '-') {
+    neg = 1;
+    ++*bufp;
+    --width;
+  }
+
+  if (scan_unsigned(bufp, &result, width, 10) < 0)
+    return -1;
+
+  if (neg) {
+    if (result > ((unsigned long)LONG_MAX) + 1)
+      return -1; /* Underflow */
+    *out = -(long)result;
+  } else {
+    if (result > LONG_MAX)
+      return -1; /* Overflow */
+    *out = (long)result;
+  }
+
+  return 0;
+}
+
+/** Helper: Read a decimal-formatted double from *<b>bufp</b> of up to
+ * <b>width</b> characters.  (Handle arbitrary width if <b>width</b> is less
+ * than 0.)  On success, store the result in <b>out</b>, advance bufp to the
+ * next character, and return 0.  On failure, return -1. */
+static int
+scan_double(const char **bufp, double *out, int width)
+{
+  int neg = 0;
+  double result = 0;
+  int scanned_so_far = 0;
+
+  if (!bufp || !*bufp || !out)
+    return -1;
+  if (width<0)
+    width=MAX_SCANF_WIDTH;
+
+  if (**bufp == '-') {
+    neg = 1;
+    ++*bufp;
+  }
+
+  while (**bufp && TOR_ISDIGIT(**bufp) && scanned_so_far < width) {
+    const int digit = digit_to_num(*(*bufp)++);
+    result = result * 10 + digit;
+    ++scanned_so_far;
+  }
+  if (**bufp == '.') {
+    double fracval = 0, denominator = 1;
+    ++*bufp;
+    ++scanned_so_far;
+    while (**bufp && TOR_ISDIGIT(**bufp) && scanned_so_far < width) {
+      const int digit = digit_to_num(*(*bufp)++);
+      fracval = fracval * 10 + digit;
+      denominator *= 10;
+      ++scanned_so_far;
+    }
+    result += fracval / denominator;
+  }
+
+  if (!scanned_so_far) /* No actual digits scanned */
+    return -1;
+
+  *out = neg ? -result : result;
   return 0;
 }
 
@@ -2747,6 +2827,7 @@ tor_vsscanf(const char *buf, const char *pattern, va_list ap)
       }
     } else {
       int width = -1;
+      int longmod = 0;
       ++pattern;
       if (TOR_ISDIGIT(*pattern)) {
         width = digit_to_num(*pattern++);
@@ -2759,17 +2840,57 @@ tor_vsscanf(const char *buf, const char *pattern, va_list ap)
         if (!width) /* No zero-width things. */
           return -1;
       }
+      if (*pattern == 'l') {
+        longmod = 1;
+        ++pattern;
+      }
       if (*pattern == 'u' || *pattern == 'x') {
-        unsigned *u = va_arg(ap, unsigned *);
+        unsigned long u;
         const int base = (*pattern == 'u') ? 10 : 16;
         if (!*buf)
           return n_matched;
-        if (scan_unsigned(&buf, u, width, base)<0)
+        if (scan_unsigned(&buf, &u, width, base)<0)
           return n_matched;
+        if (longmod) {
+          unsigned long *out = va_arg(ap, unsigned long *);
+          *out = u;
+        } else {
+          unsigned *out = va_arg(ap, unsigned *);
+          if (u > UINT_MAX)
+            return n_matched;
+          *out = (unsigned) u;
+        }
+        ++pattern;
+        ++n_matched;
+      } else if (*pattern == 'f') {
+        double *d = va_arg(ap, double *);
+        if (!longmod)
+          return -1; /* float not supported */
+        if (!*buf)
+          return n_matched;
+        if (scan_double(&buf, d, width)<0)
+          return n_matched;
+        ++pattern;
+        ++n_matched;
+      } else if (*pattern == 'd') {
+        long lng=0;
+        if (scan_signed(&buf, &lng, width)<0)
+          return n_matched;
+        if (longmod) {
+          long *out = va_arg(ap, long *);
+          *out = lng;
+        } else {
+          int *out = va_arg(ap, int *);
+          if (lng < INT_MIN || lng > INT_MAX)
+            return n_matched;
+          *out = (int)lng;
+        }
         ++pattern;
         ++n_matched;
       } else if (*pattern == 's') {
         char *s = va_arg(ap, char *);
+        if (longmod)
+          return -1;
         if (width < 0)
           return -1;
         if (scan_string(&buf, s, width)<0)
@@ -2778,6 +2899,8 @@ tor_vsscanf(const char *buf, const char *pattern, va_list ap)
         ++n_matched;
       } else if (*pattern == 'c') {
         char *ch = va_arg(ap, char *);
+        if (longmod)
+          return -1;
         if (width != -1)
           return -1;
         if (!*buf)
@@ -2788,6 +2911,8 @@ tor_vsscanf(const char *buf, const char *pattern, va_list ap)
       } else if (*pattern == '%') {
         if (*buf != '%')
           return n_matched;
+        if (longmod)
+          return -1;
         ++buf;
         ++pattern;
       } else {
@@ -2801,9 +2926,14 @@ tor_vsscanf(const char *buf, const char *pattern, va_list ap)
 
 /** Minimal sscanf replacement: parse <b>buf</b> according to <b>pattern</b>
  * and store the results in the corresponding argument fields.  Differs from
- * sscanf in that it: Only handles %u, %x, %c and %Ns.  Does not handle
- * arbitrarily long widths. %u and %x do not consume any space.  Is
- * locale-independent.  Returns -1 on malformed patterns.
+ * sscanf in that:
+ * <ul><li>It only handles %u, %lu, %x, %lx, %<NUM>s, %d, %ld, %lf, and %c.
+ *     <li>It only handles decimal inputs for %lf. (12.3, not 1.23e1)
+ *     <li>It does not handle arbitrarily long widths.
+ *     <li>Numbers do not consume any space characters.
+ *     <li>It is locale-independent.
+ *     <li>%u and %x do not consume any space.
+ *     <li>It returns -1 on malformed patterns.</ul>
  *
  * (As with other locale-independent functions, we need this to parse data that
  * is in ASCII without worrying that the C library's locale-handling will make
@@ -3256,10 +3386,10 @@ format_hex_number_for_helper_exit_status(unsigned int x, char *buf,
  * <b>hex_errno</b>.  Called between fork and _exit, so must be signal-handler
  * safe.
  *
- * <b>hex_errno</b> must have at least HEX_ERRNO_SIZE bytes available.
+ * <b>hex_errno</b> must have at least HEX_ERRNO_SIZE+1 bytes available.
  *
  * The format of <b>hex_errno</b> is: "CHILD_STATE/ERRNO\n", left-padded
- * with spaces. Note that there is no trailing \0. CHILD_STATE indicates where
+ * with spaces. CHILD_STATE indicates where
  * in the processs of starting the child process did the failure occur (see
  * CHILD_STATE_* macros for definition), and SAVED_ERRNO is the value of
  * errno when the failure occurred.
@@ -3294,7 +3424,7 @@ format_helper_exit_status(unsigned char child_state, int saved_errno,
    * Count how many chars of space we have left, and keep a pointer into the
    * current point in the buffer.
    */
-  left = HEX_ERRNO_SIZE;
+  left = HEX_ERRNO_SIZE+1;
   cur = hex_errno;
 
   /* Emit child_state */
@@ -3338,8 +3468,8 @@ format_helper_exit_status(unsigned char child_state, int saved_errno,
   left -= written;
   cur += written;
 
-  /* Check that we have enough space left for a newline */
-  if (left <= 0)
+  /* Check that we have enough space left for a newline and a NUL */
+  if (left <= 1)
     goto err;
 
   /* Emit the newline and NUL */
@@ -3594,7 +3724,7 @@ tor_spawn_background(const char *const filename, const char **argv,
      this is used for printing out the error message */
   unsigned char child_state = CHILD_STATE_INIT;
 
-  char hex_errno[HEX_ERRNO_SIZE];
+  char hex_errno[HEX_ERRNO_SIZE + 2]; /* + 1 should be sufficient actually */
 
   static int max_fd = -1;
 
@@ -3630,12 +3760,13 @@ tor_spawn_background(const char *const filename, const char **argv,
   child_state = CHILD_STATE_MAXFD;
 
 #ifdef _SC_OPEN_MAX
-  if (-1 != max_fd) {
+  if (-1 == max_fd) {
     max_fd = (int) sysconf(_SC_OPEN_MAX);
-    if (max_fd == -1)
+    if (max_fd == -1) {
       max_fd = DEFAULT_MAX_FD;
       log_warn(LD_GENERAL,
                "Cannot find maximum file descriptor, assuming %d", max_fd);
+    }
   }
 #else
   max_fd = DEFAULT_MAX_FD;
@@ -3784,10 +3915,17 @@ tor_process_handle_destroy(process_handle_t *process_handle,
 
   if (also_terminate_process) {
     if (tor_terminate_process(process_handle) < 0) {
-      log_notice(LD_GENERAL, "Failed to terminate process with PID '%d'",
-                 tor_process_get_pid(process_handle));
+      const char *errstr =
+#ifdef _WIN32
+        format_win32_error(GetLastError());
+#else
+        strerror(errno);
+#endif
+      log_notice(LD_GENERAL, "Failed to terminate process with "
+                 "PID '%d' ('%s').", tor_process_get_pid(process_handle),
+                 errstr);
     } else {
-      log_info(LD_GENERAL, "Terminated process with PID '%d'",
+      log_info(LD_GENERAL, "Terminated process with PID '%d'.",
                tor_process_get_pid(process_handle));
     }
   }
@@ -4255,7 +4393,70 @@ tor_split_lines(smartlist_t *sl, char *buf, int len)
   return smartlist_len(sl);
 }
 
+/** Return a string corresponding to <b>stream_status</b>. */
+const char *
+stream_status_to_string(enum stream_status stream_status)
+{
+  switch (stream_status) {
+    case IO_STREAM_OKAY:
+      return "okay";
+    case IO_STREAM_EAGAIN:
+      return "temporarily unavailable";
+    case IO_STREAM_TERM:
+      return "terminated";
+    case IO_STREAM_CLOSED:
+      return "closed";
+    default:
+      tor_fragile_assert();
+      return "unknown";
+  }
+}
+
 #ifdef _WIN32
+
+/** Return a smartlist containing lines outputted from
+ *  <b>handle</b>. Return NULL on error, and set
+ *  <b>stream_status_out</b> appropriately. */
+smartlist_t *
+tor_get_lines_from_handle(HANDLE *handle,
+                          enum stream_status *stream_status_out)
+{
+  int pos;
+  char stdout_buf[600] = {0};
+  smartlist_t *lines = NULL;
+
+  tor_assert(stream_status_out);
+
+  *stream_status_out = IO_STREAM_TERM;
+
+  pos = tor_read_all_handle(handle, stdout_buf, sizeof(stdout_buf) - 1, NULL);
+  if (pos < 0) {
+    *stream_status_out = IO_STREAM_TERM;
+    return NULL;
+  }
+  if (pos == 0) {
+    *stream_status_out = IO_STREAM_EAGAIN;
+    return NULL;
+  }
+
+  /* End with a null even if there isn't a \r\n at the end */
+  /* TODO: What if this is a partial line? */
+  stdout_buf[pos] = '\0';
+
+  /* Split up the buffer */
+  lines = smartlist_new();
+  tor_split_lines(lines, stdout_buf, pos);
+
+  /* Currently 'lines' is populated with strings residing on the
+     stack. Replace them with their exact copies on the heap: */
+  SMARTLIST_FOREACH(lines, char *, line,
+                    SMARTLIST_REPLACE_CURRENT(lines, line, tor_strdup(line)));
+
+  *stream_status_out = IO_STREAM_OKAY;
+
+  return lines;
+}
+
 /** Read from stream, and send lines to log at the specified log level.
  * Returns -1 if there is a error reading, and 0 otherwise.
  * If the generated stream is flushed more often than on new lines, or
@@ -4302,6 +4503,33 @@ log_from_handle(HANDLE *pipe, int severity)
 }
 
 #else
+
+/** Return a smartlist containing lines outputted from
+ *  <b>handle</b>. Return NULL on error, and set
+ *  <b>stream_status_out</b> appropriately. */
+smartlist_t *
+tor_get_lines_from_handle(FILE *handle, enum stream_status *stream_status_out)
+{
+  enum stream_status stream_status;
+  char stdout_buf[400];
+  smartlist_t *lines = NULL;
+
+  while (1) {
+    memset(stdout_buf, 0, sizeof(stdout_buf));
+
+    stream_status = get_string_from_pipe(handle,
+                                         stdout_buf, sizeof(stdout_buf) - 1);
+    if (stream_status != IO_STREAM_OKAY)
+      goto done;
+
+    if (!lines) lines = smartlist_new();
+    smartlist_add(lines, tor_strdup(stdout_buf));
+  }
+
+ done:
+  *stream_status_out = stream_status;
+  return lines;
+}
 
 /** Read from stream, and send lines to log at the specified log level.
  * Returns 1 if stream is closed normally, -1 if there is a error reading, and
@@ -4421,9 +4649,130 @@ get_string_from_pipe(FILE *stream, char *buf_out, size_t count)
   return IO_STREAM_TERM;
 }
 
-/* DOCDOC tor_check_port_forwarding */
+/** Parse a <b>line</b> from tor-fw-helper and issue an appropriate
+ *  log message to our user. */
+static void
+handle_fw_helper_line(const char *line)
+{
+  smartlist_t *tokens = smartlist_new();
+  char *message = NULL;
+  char *message_for_log = NULL;
+  const char *external_port = NULL;
+  const char *internal_port = NULL;
+  const char *result = NULL;
+  int port = 0;
+  int success = 0;
+
+  smartlist_split_string(tokens, line, NULL,
+                         SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK, -1);
+
+  if (smartlist_len(tokens) < 5)
+    goto err;
+
+  if (strcmp(smartlist_get(tokens, 0), "tor-fw-helper") ||
+      strcmp(smartlist_get(tokens, 1), "tcp-forward"))
+    goto err;
+
+  external_port = smartlist_get(tokens, 2);
+  internal_port = smartlist_get(tokens, 3);
+  result = smartlist_get(tokens, 4);
+
+  if (smartlist_len(tokens) > 5) {
+    /* If there are more than 5 tokens, they are part of [<message>].
+       Let's use a second smartlist to form the whole message;
+       strncat loops suck. */
+    int i;
+    int message_words_n = smartlist_len(tokens) - 5;
+    smartlist_t *message_sl = smartlist_new();
+    for (i = 0; i < message_words_n; i++)
+      smartlist_add(message_sl, smartlist_get(tokens, 5+i));
+
+    tor_assert(smartlist_len(message_sl) > 0);
+    message = smartlist_join_strings(message_sl, " ", 0, NULL);
+
+    /* wrap the message in log-friendly wrapping */
+    tor_asprintf(&message_for_log, " ('%s')", message);
+
+    smartlist_free(message_sl);
+  }
+
+  port = atoi(external_port);
+  if (port < 1 || port > 65535)
+    goto err;
+
+  port = atoi(internal_port);
+  if (port < 1 || port > 65535)
+    goto err;
+
+  if (!strcmp(result, "SUCCESS"))
+    success = 1;
+  else if (!strcmp(result, "FAIL"))
+    success = 0;
+  else
+    goto err;
+
+  if (!success) {
+    log_warn(LD_GENERAL, "Tor was unable to forward TCP port '%s' to '%s'%s. "
+             "Please make sure that your router supports port "
+             "forwarding protocols (like NAT-PMP). Note that if '%s' is "
+             "your ORPort, your relay will be unable to receive inbound "
+             "traffic.", external_port, internal_port,
+             message_for_log ? message_for_log : "",
+             internal_port);
+  } else {
+    log_info(LD_GENERAL,
+             "Tor successfully forwarded TCP port '%s' to '%s'%s.",
+             external_port, internal_port,
+             message_for_log ? message_for_log : "");
+  }
+
+  goto done;
+
+ err:
+  log_warn(LD_GENERAL, "tor-fw-helper sent us a string we could not "
+           "parse (%s).", line);
+
+ done:
+  SMARTLIST_FOREACH(tokens, char *, cp, tor_free(cp));
+  smartlist_free(tokens);
+  tor_free(message);
+  tor_free(message_for_log);
+}
+
+/** Read what tor-fw-helper has to say in its stdout and handle it
+ *  appropriately */
+static int
+handle_fw_helper_output(process_handle_t *process_handle)
+{
+  smartlist_t *fw_helper_output = NULL;
+  enum stream_status stream_status = 0;
+
+  fw_helper_output =
+    tor_get_lines_from_handle(tor_process_get_stdout_pipe(process_handle),
+                              &stream_status);
+  if (!fw_helper_output) { /* didn't get any output from tor-fw-helper */
+    /* if EAGAIN we should retry in the future */
+    return (stream_status == IO_STREAM_EAGAIN) ? 0 : -1;
+  }
+
+  /* Handle the lines we got: */
+  SMARTLIST_FOREACH_BEGIN(fw_helper_output, char *, line) {
+    handle_fw_helper_line(line);
+    tor_free(line);
+  } SMARTLIST_FOREACH_END(line);
+
+  smartlist_free(fw_helper_output);
+
+  return 0;
+}
+
+/** Spawn tor-fw-helper and ask it to forward the ports in
+ *  <b>ports_to_forward</b>. <b>ports_to_forward</b> contains strings
+ *  of the form "<external port>:<internal port>", which is the format
+ *  that tor-fw-helper expects. */
 void
-tor_check_port_forwarding(const char *filename, int dir_port, int or_port,
+tor_check_port_forwarding(const char *filename,
+                          smartlist_t *ports_to_forward,
                           time_t now)
 {
 /* When fw-helper succeeds, how long do we wait until running it again */
@@ -4437,32 +4786,51 @@ tor_check_port_forwarding(const char *filename, int dir_port, int or_port,
   static process_handle_t *child_handle=NULL;
 
   static time_t time_to_run_helper = 0;
-  int stdout_status, stderr_status, retval;
-  const char *argv[10];
-  char s_dirport[6], s_orport[6];
+  int stderr_status, retval;
+  int stdout_status = 0;
 
   tor_assert(filename);
-
-  /* Set up command line for tor-fw-helper */
-  snprintf(s_dirport, sizeof s_dirport, "%d", dir_port);
-  snprintf(s_orport, sizeof s_orport, "%d", or_port);
-
-  /* TODO: Allow different internal and external ports */
-  argv[0] = filename;
-  argv[1] = "--internal-or-port";
-  argv[2] = s_orport;
-  argv[3] = "--external-or-port";
-  argv[4] = s_orport;
-  argv[5] = "--internal-dir-port";
-  argv[6] = s_dirport;
-  argv[7] = "--external-dir-port";
-  argv[8] = s_dirport;
-  argv[9] = NULL;
 
   /* Start the child, if it is not already running */
   if ((!child_handle || child_handle->status != PROCESS_STATUS_RUNNING) &&
       time_to_run_helper < now) {
-    int status;
+    /*tor-fw-helper cli looks like this: tor_fw_helper -p :5555 -p 4555:1111 */
+    const char **argv; /* cli arguments */
+    int args_n, status;
+    int argv_index = 0; /* index inside 'argv' */
+
+    tor_assert(smartlist_len(ports_to_forward) > 0);
+
+    /* check for overflow during 'argv' allocation:
+       (len(ports_to_forward)*2 + 2)*sizeof(char*) > SIZE_MAX ==
+       len(ports_to_forward) > (((SIZE_MAX/sizeof(char*)) - 2)/2) */
+    if ((size_t) smartlist_len(ports_to_forward) >
+        (((SIZE_MAX/sizeof(char*)) - 2)/2)) {
+      log_warn(LD_GENERAL,
+               "Overflow during argv allocation. This shouldn't happen.");
+      return;
+    }
+    /* check for overflow during 'argv_index' increase:
+       ((len(ports_to_forward)*2 + 2) > INT_MAX) ==
+       len(ports_to_forward) > (INT_MAX - 2)/2 */
+    if (smartlist_len(ports_to_forward) > (INT_MAX - 2)/2) {
+      log_warn(LD_GENERAL,
+               "Overflow during argv_index increase. This shouldn't happen.");
+      return;
+    }
+
+    /* Calculate number of cli arguments: one for the filename, two
+       for each smartlist element (one for "-p" and one for the
+       ports), and one for the final NULL. */
+    args_n = 1 + 2*smartlist_len(ports_to_forward) + 1;
+    argv = tor_malloc_zero(sizeof(char*)*args_n);
+
+    argv[argv_index++] = filename;
+    SMARTLIST_FOREACH_BEGIN(ports_to_forward, const char *, port) {
+      argv[argv_index++] = "-p";
+      argv[argv_index++] = port;
+    } SMARTLIST_FOREACH_END(port);
+    argv[argv_index] = NULL;
 
     /* Assume tor-fw-helper will succeed, start it later*/
     time_to_run_helper = now + TIME_TO_EXEC_FWHELPER_SUCCESS;
@@ -4478,6 +4846,9 @@ tor_check_port_forwarding(const char *filename, int dir_port, int or_port,
 #else
     status = tor_spawn_background(filename, argv, NULL, &child_handle);
 #endif
+
+    tor_free_((void*)argv);
+    argv=NULL;
 
     if (PROCESS_STATUS_ERROR == status) {
       log_warn(LD_GENERAL, "Failed to start port forwarding helper %s",
@@ -4496,16 +4867,17 @@ tor_check_port_forwarding(const char *filename, int dir_port, int or_port,
     /* Read from stdout/stderr and log result */
     retval = 0;
 #ifdef _WIN32
-    stdout_status = log_from_handle(child_handle->stdout_pipe, LOG_INFO);
-    stderr_status = log_from_handle(child_handle->stderr_pipe, LOG_WARN);
-    /* If we got this far (on Windows), the process started */
-    retval = 0;
+    stderr_status = log_from_handle(child_handle->stderr_pipe, LOG_INFO);
 #else
-    stdout_status = log_from_pipe(child_handle->stdout_handle,
-                    LOG_INFO, filename, &retval);
     stderr_status = log_from_pipe(child_handle->stderr_handle,
-                    LOG_WARN, filename, &retval);
+                                  LOG_INFO, filename, &retval);
 #endif
+    if (handle_fw_helper_output(child_handle) < 0) {
+      log_warn(LD_GENERAL, "Failed to handle fw helper output.");
+      stdout_status = -1;
+      retval = -1;
+    }
+
     if (retval) {
       /* There was a problem in the child process */
       time_to_run_helper = now + TIME_TO_EXEC_FWHELPER_FAIL;
@@ -4549,5 +4921,47 @@ tor_check_port_forwarding(const char *filename, int dir_port, int or_port,
          closed stdout/stderr), so maybe we shouldn't start another? */
     }
   }
+}
+
+/** Initialize the insecure RNG <b>rng</b> from a seed value <b>seed</b>. */
+void
+tor_init_weak_random(tor_weak_rng_t *rng, unsigned seed)
+{
+  rng->state = (uint32_t)(seed & 0x7fffffff);
+}
+
+/** Return a randomly chosen value in the range 0..TOR_WEAK_RANDOM_MAX based
+ * on the RNG state of <b>rng</b>.  This entropy will not be cryptographically
+ * strong; do not rely on it for anything an adversary should not be able to
+ * predict. */
+int32_t
+tor_weak_random(tor_weak_rng_t *rng)
+{
+  /* Here's a linear congruential generator. OpenBSD and glibc use these
+   * parameters; they aren't too bad, and should have maximal period over the
+   * range 0..INT32_MAX. We don't want to use the platform rand() or random(),
+   * since some platforms have bad weak RNGs that only return values in the
+   * range 0..INT16_MAX, which just isn't enough. */
+  rng->state = (rng->state * 1103515245 + 12345) & 0x7fffffff;
+  return (int32_t) rng->state;
+}
+
+/** Return a random number in the range [0 , <b>top</b>). {That is, the range
+ * of integers i such that 0 <= i < top.}  Chooses uniformly.  Requires that
+ * top is greater than 0. This randomness is not cryptographically strong; do
+ * not rely on it for anything an adversary should not be able to predict. */
+int32_t
+tor_weak_random_range(tor_weak_rng_t *rng, int32_t top)
+{
+  /* We don't want to just do tor_weak_random() % top, since random() is often
+   * implemented with an LCG whose modulus is a power of 2, and those are
+   * cyclic in their low-order bits. */
+  int divisor, result;
+  tor_assert(top > 0);
+  divisor = TOR_WEAK_RANDOM_MAX / top;
+  do {
+    result = (int32_t)(tor_weak_random(rng) / divisor);
+  } while (result >= top);
+  return result;
 }
 

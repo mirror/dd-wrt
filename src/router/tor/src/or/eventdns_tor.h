@@ -1,5 +1,8 @@
-/* Copyright (c) 2007-2012, The Tor Project, Inc. */
+/* Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
+
+#ifndef TOR_EVENTDNS_TOR_H
+#define TOR_EVENTDNS_TOR_H
 
 #include "orconfig.h"
 #define DNS_USE_OPENSSL_FOR_ID
@@ -17,4 +20,6 @@ typedef unsigned char u_char;
 /* These are for debugging possible memory leaks. */
 #include "util.h"
 #include "compat.h"
+
+#endif
 

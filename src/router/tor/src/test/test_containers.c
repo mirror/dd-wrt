@@ -1,16 +1,17 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
 #include "or.h"
+#include "fp_pair.h"
 #include "test.h"
 
 /** Helper: return a tristate based on comparing the strings in *<b>a</b> and
  * *<b>b</b>. */
 static int
-_compare_strs(const void **a, const void **b)
+compare_strs_(const void **a, const void **b)
 {
   const char *s1 = *a, *s2 = *b;
   return strcmp(s1, s2);
@@ -28,7 +29,7 @@ compare_strs_for_bsearch_(const void *a, const void **b)
 /** Helper: return a tristate based on comparing the strings in *<b>a</b> and
  * *<b>b</b>, excluding a's first character, and ignoring case. */
 static int
-_compare_without_first_ch(const void *a, const void **b)
+compare_without_first_ch_(const void *a, const void **b)
 {
   const char *s1 = a, *s2 = *b;
   return strcasecmp(s1+1, s2);
@@ -66,8 +67,8 @@ test_container_smartlist_basic(void)
   test_eq(4, smartlist_len(sl));
 
   /* test isin. */
-  test_assert(smartlist_isin(sl, (void*)3));
-  test_assert(!smartlist_isin(sl, (void*)99));
+  test_assert(smartlist_contains(sl, (void*)3));
+  test_assert(!smartlist_contains(sl, (void*)99));
 
  done:
   smartlist_free(sl);
@@ -185,7 +186,7 @@ test_container_smartlist_strings(void)
   /* Test swapping, shuffling, and sorting. */
   smartlist_split_string(sl, "the,onion,router,by,arma,and,nickm", ",", 0, 0);
   test_eq(7, smartlist_len(sl));
-  smartlist_sort(sl, _compare_strs);
+  smartlist_sort(sl, compare_strs_);
   cp_alloc = smartlist_join_strings(sl, ",", 0, NULL);
   test_streq(cp_alloc,"and,arma,by,nickm,onion,router,the");
   tor_free(cp_alloc);
@@ -195,37 +196,37 @@ test_container_smartlist_strings(void)
   tor_free(cp_alloc);
   smartlist_shuffle(sl);
   test_eq(7, smartlist_len(sl));
-  test_assert(smartlist_string_isin(sl, "and"));
-  test_assert(smartlist_string_isin(sl, "router"));
-  test_assert(smartlist_string_isin(sl, "by"));
-  test_assert(smartlist_string_isin(sl, "nickm"));
-  test_assert(smartlist_string_isin(sl, "onion"));
-  test_assert(smartlist_string_isin(sl, "arma"));
-  test_assert(smartlist_string_isin(sl, "the"));
+  test_assert(smartlist_contains_string(sl, "and"));
+  test_assert(smartlist_contains_string(sl, "router"));
+  test_assert(smartlist_contains_string(sl, "by"));
+  test_assert(smartlist_contains_string(sl, "nickm"));
+  test_assert(smartlist_contains_string(sl, "onion"));
+  test_assert(smartlist_contains_string(sl, "arma"));
+  test_assert(smartlist_contains_string(sl, "the"));
 
   /* Test bsearch. */
-  smartlist_sort(sl, _compare_strs);
+  smartlist_sort(sl, compare_strs_);
   test_streq("nickm", smartlist_bsearch(sl, "zNicKM",
-                                        _compare_without_first_ch));
-  test_streq("and", smartlist_bsearch(sl, " AND", _compare_without_first_ch));
-  test_eq_ptr(NULL, smartlist_bsearch(sl, " ANz", _compare_without_first_ch));
+                                        compare_without_first_ch_));
+  test_streq("and", smartlist_bsearch(sl, " AND", compare_without_first_ch_));
+  test_eq_ptr(NULL, smartlist_bsearch(sl, " ANz", compare_without_first_ch_));
 
   /* Test bsearch_idx */
   {
     int f;
     smartlist_t *tmp = NULL;
 
-    test_eq(0, smartlist_bsearch_idx(sl," aaa",_compare_without_first_ch,&f));
+    test_eq(0, smartlist_bsearch_idx(sl," aaa",compare_without_first_ch_,&f));
     test_eq(f, 0);
-    test_eq(0, smartlist_bsearch_idx(sl," and",_compare_without_first_ch,&f));
+    test_eq(0, smartlist_bsearch_idx(sl," and",compare_without_first_ch_,&f));
     test_eq(f, 1);
-    test_eq(1, smartlist_bsearch_idx(sl," arm",_compare_without_first_ch,&f));
+    test_eq(1, smartlist_bsearch_idx(sl," arm",compare_without_first_ch_,&f));
     test_eq(f, 0);
-    test_eq(1, smartlist_bsearch_idx(sl," arma",_compare_without_first_ch,&f));
+    test_eq(1, smartlist_bsearch_idx(sl," arma",compare_without_first_ch_,&f));
     test_eq(f, 1);
-    test_eq(2, smartlist_bsearch_idx(sl," armb",_compare_without_first_ch,&f));
+    test_eq(2, smartlist_bsearch_idx(sl," armb",compare_without_first_ch_,&f));
     test_eq(f, 0);
-    test_eq(7, smartlist_bsearch_idx(sl," zzzz",_compare_without_first_ch,&f));
+    test_eq(7, smartlist_bsearch_idx(sl," zzzz",compare_without_first_ch_,&f));
     test_eq(f, 0);
 
     /* Test trivial cases for list of length 0 or 1 */
@@ -266,25 +267,25 @@ test_container_smartlist_strings(void)
   SMARTLIST_FOREACH(sl, char *, cp, tor_free(cp));
   smartlist_clear(sl);
   cp_alloc = smartlist_pop_last(sl);
-  test_eq(cp_alloc, NULL);
+  test_eq_ptr(cp_alloc, NULL);
 
   /* Test uniq() */
   smartlist_split_string(sl,
                      "50,noon,radar,a,man,a,plan,a,canal,panama,radar,noon,50",
                      ",", 0, 0);
-  smartlist_sort(sl, _compare_strs);
-  smartlist_uniq(sl, _compare_strs, _tor_free);
+  smartlist_sort(sl, compare_strs_);
+  smartlist_uniq(sl, compare_strs_, tor_free_);
   cp_alloc = smartlist_join_strings(sl, ",", 0, NULL);
   test_streq(cp_alloc, "50,a,canal,man,noon,panama,plan,radar");
   tor_free(cp_alloc);
 
-  /* Test string_isin and isin_case and num_isin */
-  test_assert(smartlist_string_isin(sl, "noon"));
-  test_assert(!smartlist_string_isin(sl, "noonoon"));
-  test_assert(smartlist_string_isin_case(sl, "nOOn"));
-  test_assert(!smartlist_string_isin_case(sl, "nooNooN"));
-  test_assert(smartlist_string_num_isin(sl, 50));
-  test_assert(!smartlist_string_num_isin(sl, 60));
+  /* Test contains_string, contains_string_case and contains_int_as_string */
+  test_assert(smartlist_contains_string(sl, "noon"));
+  test_assert(!smartlist_contains_string(sl, "noonoon"));
+  test_assert(smartlist_contains_string_case(sl, "nOOn"));
+  test_assert(!smartlist_contains_string_case(sl, "nooNooN"));
+  test_assert(smartlist_contains_int_as_string(sl, 50));
+  test_assert(!smartlist_contains_int_as_string(sl, 60));
 
   /* Test smartlist_choose */
   {
@@ -292,12 +293,12 @@ test_container_smartlist_strings(void)
     int allsame = 1;
     int allin = 1;
     void *first = smartlist_choose(sl);
-    test_assert(smartlist_isin(sl, first));
+    test_assert(smartlist_contains(sl, first));
     for (i = 0; i < 100; ++i) {
       void *second = smartlist_choose(sl);
       if (second != first)
         allsame = 0;
-      if (!smartlist_isin(sl, second))
+      if (!smartlist_contains(sl, second))
         allin = 0;
     }
     test_assert(!allsame);
@@ -365,15 +366,15 @@ test_container_smartlist_overlap(void)
   smartlist_add_all(sl, odds);
   smartlist_intersect(sl, primes);
   test_eq(smartlist_len(sl), 3);
-  test_assert(smartlist_isin(sl, (void*)3));
-  test_assert(smartlist_isin(sl, (void*)5));
-  test_assert(smartlist_isin(sl, (void*)7));
+  test_assert(smartlist_contains(sl, (void*)3));
+  test_assert(smartlist_contains(sl, (void*)5));
+  test_assert(smartlist_contains(sl, (void*)7));
 
   /* subtract */
   smartlist_add_all(sl, primes);
   smartlist_subtract(sl, odds);
   test_eq(smartlist_len(sl), 1);
-  test_assert(smartlist_isin(sl, (void*)2));
+  test_assert(smartlist_contains(sl, (void*)2));
 
  done:
   smartlist_free(odds);
@@ -389,14 +390,14 @@ test_container_smartlist_digests(void)
 {
   smartlist_t *sl = smartlist_new();
 
-  /* digest_isin. */
+  /* contains_digest */
   smartlist_add(sl, tor_memdup("AAAAAAAAAAAAAAAAAAAA", DIGEST_LEN));
   smartlist_add(sl, tor_memdup("\00090AAB2AAAAaasdAAAAA", DIGEST_LEN));
   smartlist_add(sl, tor_memdup("\00090AAB2AAAAaasdAAAAA", DIGEST_LEN));
-  test_eq(0, smartlist_digest_isin(NULL, "AAAAAAAAAAAAAAAAAAAA"));
-  test_assert(smartlist_digest_isin(sl, "AAAAAAAAAAAAAAAAAAAA"));
-  test_assert(smartlist_digest_isin(sl, "\00090AAB2AAAAaasdAAAAA"));
-  test_eq(0, smartlist_digest_isin(sl, "\00090AAB2AAABaasdAAAAA"));
+  test_eq(0, smartlist_contains_digest(NULL, "AAAAAAAAAAAAAAAAAAAA"));
+  test_assert(smartlist_contains_digest(sl, "AAAAAAAAAAAAAAAAAAAA"));
+  test_assert(smartlist_contains_digest(sl, "\00090AAB2AAAAaasdAAAAA"));
+  test_eq(0, smartlist_contains_digest(sl, "\00090AAB2AAABaasdAAAAA"));
 
   /* sort digests */
   smartlist_sort_digests(sl);
@@ -445,11 +446,11 @@ test_container_smartlist_join(void)
   } SMARTLIST_FOREACH_JOIN_END(cp1, cp2);
 
   SMARTLIST_FOREACH(sl3, const char *, cp,
-                    test_assert(smartlist_isin(sl2, cp) &&
-                                !smartlist_string_isin(sl, cp)));
+                    test_assert(smartlist_contains(sl2, cp) &&
+                                !smartlist_contains_string(sl, cp)));
   SMARTLIST_FOREACH(sl4, const char *, cp,
-                    test_assert(smartlist_isin(sl, cp) &&
-                                smartlist_string_isin(sl2, cp)));
+                    test_assert(smartlist_contains(sl, cp) &&
+                                smartlist_contains_string(sl2, cp)));
   joined = smartlist_join_strings(sl3, ",", 0, NULL);
   test_streq(joined, "Anemias,Anemias,Crossbowmen,Work");
   tor_free(joined);
@@ -528,18 +529,18 @@ test_container_digestset(void)
   }
   set = digestset_new(1000);
   SMARTLIST_FOREACH(included, const char *, cp,
-                    if (digestset_isin(set, cp))
+                    if (digestset_contains(set, cp))
                       ok = 0);
   test_assert(ok);
   SMARTLIST_FOREACH(included, const char *, cp,
                     digestset_add(set, cp));
   SMARTLIST_FOREACH(included, const char *, cp,
-                    if (!digestset_isin(set, cp))
+                    if (!digestset_contains(set, cp))
                       ok = 0);
   test_assert(ok);
   for (i = 0; i < 1000; ++i) {
     crypto_rand(d, DIGEST_LEN);
-    if (digestset_isin(set, d))
+    if (digestset_contains(set, d))
       ++false_positives;
   }
   test_assert(false_positives < 50); /* Should be far lower. */
@@ -558,7 +559,7 @@ typedef struct pq_entry_t {
 
 /** Helper: return a tristate based on comparing two pq_entry_t values. */
 static int
-_compare_strings_for_pqueue(const void *p1, const void *p2)
+compare_strings_for_pqueue_(const void *p1, const void *p2)
 {
   const pq_entry_t *e1=p1, *e2=p2;
   return strcmp(e1->val, e2->val);
@@ -588,7 +589,7 @@ test_container_pqueue(void)
 
 #define OK() smartlist_pqueue_assert_ok(sl, cmp, offset)
 
-  cmp = _compare_strings_for_pqueue;
+  cmp = compare_strings_for_pqueue_;
   smartlist_pqueue_add(sl, cmp, offset, &cows);
   smartlist_pqueue_add(sl, cmp, offset, &zebras);
   smartlist_pqueue_add(sl, cmp, offset, &fish);
@@ -677,12 +678,12 @@ test_container_strmap(void)
   test_eq(strmap_size(map), 0);
   test_assert(strmap_isempty(map));
   v = strmap_set(map, "K1", (void*)99);
-  test_eq(v, NULL);
+  test_eq_ptr(v, NULL);
   test_assert(!strmap_isempty(map));
   v = strmap_set(map, "K2", (void*)101);
-  test_eq(v, NULL);
+  test_eq_ptr(v, NULL);
   v = strmap_set(map, "K1", (void*)100);
-  test_eq(v, (void*)99);
+  test_eq_ptr(v, (void*)99);
   test_eq_ptr(strmap_get(map,"K1"), (void*)100);
   test_eq_ptr(strmap_get(map,"K2"), (void*)101);
   test_eq_ptr(strmap_get(map,"K-not-there"), NULL);
@@ -782,6 +783,132 @@ test_container_order_functions(void)
   ;
 }
 
+static void
+test_di_map(void *arg)
+{
+  di_digest256_map_t *map = NULL;
+  const uint8_t key1[] = "In view of the fact that it was ";
+  const uint8_t key2[] = "superficially convincing, being ";
+  const uint8_t key3[] = "properly enciphered in a one-tim";
+  const uint8_t key4[] = "e cipher scheduled for use today";
+  char *v1 = tor_strdup(", it came close to causing a disaster...");
+  char *v2 = tor_strdup("I regret to have to advise you that the mission");
+  char *v3 = tor_strdup("was actually initiated...");
+  /* -- John Brunner, _The Shockwave Rider_ */
+
+  (void)arg;
+
+  /* Try searching on an empty map. */
+  tt_ptr_op(NULL, ==, dimap_search(map, key1, NULL));
+  tt_ptr_op(NULL, ==, dimap_search(map, key2, NULL));
+  tt_ptr_op(v3, ==, dimap_search(map, key2, v3));
+  dimap_free(map, NULL);
+  map = NULL;
+
+  /* Add a single entry. */
+  dimap_add_entry(&map, key1, v1);
+  tt_ptr_op(NULL, ==, dimap_search(map, key2, NULL));
+  tt_ptr_op(v3, ==, dimap_search(map, key2, v3));
+  tt_ptr_op(v1, ==, dimap_search(map, key1, NULL));
+
+  /* Now try it with three entries in the map. */
+  dimap_add_entry(&map, key2, v2);
+  dimap_add_entry(&map, key3, v3);
+  tt_ptr_op(v1, ==, dimap_search(map, key1, NULL));
+  tt_ptr_op(v2, ==, dimap_search(map, key2, NULL));
+  tt_ptr_op(v3, ==, dimap_search(map, key3, NULL));
+  tt_ptr_op(NULL, ==, dimap_search(map, key4, NULL));
+  tt_ptr_op(v1, ==, dimap_search(map, key4, v1));
+
+ done:
+  tor_free(v1);
+  tor_free(v2);
+  tor_free(v3);
+  dimap_free(map, NULL);
+}
+
+/** Run unit tests for fp_pair-to-void* map functions */
+static void
+test_container_fp_pair_map(void)
+{
+  fp_pair_map_t *map;
+  fp_pair_t fp1, fp2, fp3, fp4, fp5, fp6;
+  void *v;
+  fp_pair_map_iter_t *iter;
+  fp_pair_t k;
+
+  map = fp_pair_map_new();
+  test_assert(map);
+  test_eq(fp_pair_map_size(map), 0);
+  test_assert(fp_pair_map_isempty(map));
+
+  memset(fp1.first, 0x11, DIGEST_LEN);
+  memset(fp1.second, 0x12, DIGEST_LEN);
+  memset(fp2.first, 0x21, DIGEST_LEN);
+  memset(fp2.second, 0x22, DIGEST_LEN);
+  memset(fp3.first, 0x31, DIGEST_LEN);
+  memset(fp3.second, 0x32, DIGEST_LEN);
+  memset(fp4.first, 0x41, DIGEST_LEN);
+  memset(fp4.second, 0x42, DIGEST_LEN);
+  memset(fp5.first, 0x51, DIGEST_LEN);
+  memset(fp5.second, 0x52, DIGEST_LEN);
+  memset(fp6.first, 0x61, DIGEST_LEN);
+  memset(fp6.second, 0x62, DIGEST_LEN);
+
+  v = fp_pair_map_set(map, &fp1, (void*)99);
+  test_eq(v, NULL);
+  test_assert(!fp_pair_map_isempty(map));
+  v = fp_pair_map_set(map, &fp2, (void*)101);
+  test_eq(v, NULL);
+  v = fp_pair_map_set(map, &fp1, (void*)100);
+  test_eq(v, (void*)99);
+  test_eq_ptr(fp_pair_map_get(map, &fp1), (void*)100);
+  test_eq_ptr(fp_pair_map_get(map, &fp2), (void*)101);
+  test_eq_ptr(fp_pair_map_get(map, &fp3), NULL);
+  fp_pair_map_assert_ok(map);
+
+  v = fp_pair_map_remove(map, &fp2);
+  fp_pair_map_assert_ok(map);
+  test_eq_ptr(v, (void*)101);
+  test_eq_ptr(fp_pair_map_get(map, &fp2), NULL);
+  test_eq_ptr(fp_pair_map_remove(map, &fp2), NULL);
+
+  fp_pair_map_set(map, &fp2, (void*)101);
+  fp_pair_map_set(map, &fp3, (void*)102);
+  fp_pair_map_set(map, &fp4, (void*)103);
+  test_eq(fp_pair_map_size(map), 4);
+  fp_pair_map_assert_ok(map);
+  fp_pair_map_set(map, &fp5, (void*)104);
+  fp_pair_map_set(map, &fp6, (void*)105);
+  fp_pair_map_assert_ok(map);
+
+  /* Test iterator. */
+  iter = fp_pair_map_iter_init(map);
+  while (!fp_pair_map_iter_done(iter)) {
+    fp_pair_map_iter_get(iter, &k, &v);
+    test_eq_ptr(v, fp_pair_map_get(map, &k));
+
+    if (tor_memeq(&fp2, &k, sizeof(fp2))) {
+      iter = fp_pair_map_iter_next_rmv(map, iter);
+    } else {
+      iter = fp_pair_map_iter_next(map, iter);
+    }
+  }
+
+  /* Make sure we removed fp2, but not the others. */
+  test_eq_ptr(fp_pair_map_get(map, &fp2), NULL);
+  test_eq_ptr(fp_pair_map_get(map, &fp5), (void*)104);
+
+  fp_pair_map_assert_ok(map);
+  /* Clean up after ourselves. */
+  fp_pair_map_free(map, NULL);
+  map = NULL;
+
+ done:
+  if (map)
+    fp_pair_map_free(map, NULL);
+}
+
 #define CONTAINER_LEGACY(name)                                          \
   { #name, legacy_test_helper, 0, &legacy_setup, test_container_ ## name }
 
@@ -796,6 +923,8 @@ struct testcase_t container_tests[] = {
   CONTAINER_LEGACY(strmap),
   CONTAINER_LEGACY(pqueue),
   CONTAINER_LEGACY(order_functions),
+  { "di_map", test_di_map, 0, NULL, NULL },
+  CONTAINER_LEGACY(fp_pair_map),
   END_OF_TESTCASES
 };
 

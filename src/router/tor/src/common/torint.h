@@ -1,6 +1,6 @@
 /* Copyright (c) 2003, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -8,8 +8,8 @@
  * \brief Header file to define uint32_t and friends
  **/
 
-#ifndef _TOR_TORINT_H
-#define _TOR_TORINT_H
+#ifndef TOR_TORINT_H
+#define TOR_TORINT_H
 
 #include "orconfig.h"
 
@@ -214,16 +214,20 @@ typedef int32_t ssize_t;
 #if (SIZEOF_VOID_P > 4 && SIZEOF_VOID_P <= 8)
 #ifndef HAVE_INTPTR_T
 typedef int64_t intptr_t;
+#define SIZEOF_INTPTR_T 8
 #endif
 #ifndef HAVE_UINTPTR_T
 typedef uint64_t uintptr_t;
+#define SIZEOF_UINTPTR_T 8
 #endif
 #elif (SIZEOF_VOID_P > 2 && SIZEOF_VOID_P <= 4)
 #ifndef HAVE_INTPTR_T
 typedef int32_t intptr_t;
+#define SIZEOF_INTPTR_T 4
 #endif
 #ifndef HAVE_UINTPTR_T
 typedef uint32_t uintptr_t;
+#define SIZEOF_UINTPTR_T 4
 #endif
 #else
 #error "void * is either >8 bytes or <= 2.  In either case, I am confused."

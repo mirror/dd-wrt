@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,22 +9,28 @@
  * \brief The actual details of building circuits.
  **/
 
-#define CIRCUIT_PRIVATE
-
 #include "or.h"
+#include "channel.h"
 #include "circuitbuild.h"
 #include "circuitlist.h"
+#include "circuitstats.h"
 #include "circuituse.h"
+#include "command.h"
 #include "config.h"
+#include "confparse.h"
 #include "connection.h"
 #include "connection_edge.h"
 #include "connection_or.h"
 #include "control.h"
 #include "directory.h"
+#include "entrynodes.h"
 #include "main.h"
+#include "microdesc.h"
 #include "networkstatus.h"
 #include "nodelist.h"
 #include "onion.h"
+#include "onion_tap.h"
+#include "onion_fast.h"
 #include "policies.h"
 #include "transports.h"
 #include "relay.h"
@@ -32,1645 +38,55 @@
 #include "router.h"
 #include "routerlist.h"
 #include "routerparse.h"
+#include "routerset.h"
 #include "crypto.h"
-#undef log
-#include <math.h>
+#include "connection_edge.h"
 
 #ifndef MIN
 #define MIN(a,b) ((a)<(b)?(a):(b))
 #endif
 
-#define CBT_BIN_TO_MS(bin) ((bin)*CBT_BIN_WIDTH + (CBT_BIN_WIDTH/2))
-
 /********* START VARIABLES **********/
-/** Global list of circuit build times */
-// XXXX: Add this as a member for entry_guard_t instead of global?
-// Then we could do per-guard statistics, as guards are likely to
-// vary in their own latency. The downside of this is that guards
-// can change frequently, so we'd be building a lot more circuits
-// most likely.
-/* XXXX024 Make this static; add accessor functions. */
-circuit_build_times_t circ_times;
 
 /** A global list of all circuits at this hop. */
 extern circuit_t *global_circuitlist;
 
-/** An entry_guard_t represents our information about a chosen long-term
- * first hop, known as a "helper" node in the literature. We can't just
- * use a node_t, since we want to remember these even when we
- * don't have any directory info. */
-typedef struct {
-  char nickname[MAX_NICKNAME_LEN+1];
-  char identity[DIGEST_LEN];
-  time_t chosen_on_date; /**< Approximately when was this guard added?
-                          * "0" if we don't know. */
-  char *chosen_by_version; /**< What tor version added this guard? NULL
-                            * if we don't know. */
-  unsigned int made_contact : 1; /**< 0 if we have never connected to this
-                                  * router, 1 if we have. */
-  unsigned int can_retry : 1; /**< Should we retry connecting to this entry,
-                               * in spite of having it marked as unreachable?*/
-  unsigned int path_bias_notice : 1; /**< Did we alert the user about path bias
-                                      * for this node already? */
-  unsigned int path_bias_disabled : 1; /**< Have we disabled this node because
-                                        * of path bias issues? */
-  time_t bad_since; /**< 0 if this guard is currently usable, or the time at
-                      * which it was observed to become (according to the
-                      * directory or the user configuration) unusable. */
-  time_t unreachable_since; /**< 0 if we can connect to this guard, or the
-                             * time at which we first noticed we couldn't
-                             * connect to it. */
-  time_t last_attempted; /**< 0 if we can connect to this guard, or the time
-                          * at which we last failed to connect to it. */
-
-  unsigned first_hops; /**< Number of first hops this guard has completed */
-  unsigned circuit_successes; /**< Number of successfully built circuits using
-                               * this guard as first hop. */
-} entry_guard_t;
-
-/** Information about a configured bridge. Currently this just matches the
- * ones in the torrc file, but one day we may be able to learn about new
- * bridges on our own, and remember them in the state file. */
-typedef struct {
-  /** Address of the bridge. */
-  tor_addr_t addr;
-  /** TLS port for the bridge. */
-  uint16_t port;
-  /** Boolean: We are re-parsing our bridge list, and we are going to remove
-   * this one if we don't find it in the list of configured bridges. */
-  unsigned marked_for_removal : 1;
-  /** Expected identity digest, or all zero bytes if we don't know what the
-   * digest should be. */
-  char identity[DIGEST_LEN];
-
-  /** Name of pluggable transport protocol taken from its config line. */
-  char *transport_name;
-
-  /** When should we next try to fetch a descriptor for this bridge? */
-  download_status_t fetch_status;
-} bridge_info_t;
-
-/** A list of our chosen entry guards. */
-static smartlist_t *entry_guards = NULL;
-/** A value of 1 means that the entry_guards list has changed
- * and those changes need to be flushed to disk. */
-static int entry_guards_dirty = 0;
-
-/** If set, we're running the unit tests: we should avoid clobbering
- * our state file or accessing get_options() or get_or_state() */
-static int unit_tests = 0;
-
 /********* END VARIABLES ************/
 
+static channel_t * channel_connect_for_circuit(const tor_addr_t *addr,
+                                               uint16_t port,
+                                               const char *id_digest);
 static int circuit_deliver_create_cell(circuit_t *circ,
-                                       uint8_t cell_type, const char *payload);
+                                       const create_cell_t *create_cell,
+                                       int relayed);
 static int onion_pick_cpath_exit(origin_circuit_t *circ, extend_info_t *exit);
 static crypt_path_t *onion_next_hop_in_cpath(crypt_path_t *cpath);
 static int onion_extend_cpath(origin_circuit_t *circ);
 static int count_acceptable_nodes(smartlist_t *routers);
 static int onion_append_hop(crypt_path_t **head_ptr, extend_info_t *choice);
+static int entry_guard_inc_circ_attempt_count(entry_guard_t *guard);
+static void pathbias_count_build_success(origin_circuit_t *circ);
+static void pathbias_count_successful_close(origin_circuit_t *circ);
+static void pathbias_count_collapse(origin_circuit_t *circ);
+static void pathbias_count_use_failed(origin_circuit_t *circ);
+static void pathbias_measure_use_rate(entry_guard_t *guard);
+static void pathbias_measure_close_rate(entry_guard_t *guard);
+static void pathbias_scale_use_rates(entry_guard_t *guard);
 
-static void entry_guards_changed(void);
-static entry_guard_t *entry_guard_get_by_id_digest(const char *digest);
-
-static void bridge_free(bridge_info_t *bridge);
-
-static int entry_guard_inc_first_hop_count(entry_guard_t *guard);
-static void pathbias_count_success(origin_circuit_t *circ);
-
-/**
- * This function decides if CBT learning should be disabled. It returns
- * true if one or more of the following four conditions are met:
- *
- *  1. If the cbtdisabled consensus parameter is set.
- *  2. If the torrc option LearnCircuitBuildTimeout is false.
- *  3. If we are a directory authority
- *  4. If we fail to write circuit build time history to our state file.
+/** This function tries to get a channel to the specified endpoint,
+ * and then calls command_setup_channel() to give it the right
+ * callbacks.
  */
-static int
-circuit_build_times_disabled(void)
+static channel_t *
+channel_connect_for_circuit(const tor_addr_t *addr, uint16_t port,
+                            const char *id_digest)
 {
-  if (unit_tests) {
-    return 0;
-  } else {
-    int consensus_disabled = networkstatus_get_param(NULL, "cbtdisabled",
-                                                     0, 0, 1);
-    int config_disabled = !get_options()->LearnCircuitBuildTimeout;
-    int dirauth_disabled = get_options()->AuthoritativeDir;
-    int state_disabled = did_last_state_file_write_fail() ? 1 : 0;
+  channel_t *chan;
 
-    if (consensus_disabled || config_disabled || dirauth_disabled ||
-           state_disabled) {
-      log_debug(LD_CIRC,
-               "CircuitBuildTime learning is disabled. "
-               "Consensus=%d, Config=%d, AuthDir=%d, StateFile=%d",
-               consensus_disabled, config_disabled, dirauth_disabled,
-               state_disabled);
-      return 1;
-    } else {
-      log_debug(LD_CIRC,
-                "CircuitBuildTime learning is not disabled. "
-                "Consensus=%d, Config=%d, AuthDir=%d, StateFile=%d",
-                consensus_disabled, config_disabled, dirauth_disabled,
-                state_disabled);
-      return 0;
-    }
-  }
-}
+  chan = channel_connect(addr, port, id_digest);
+  if (chan) command_setup_channel(chan);
 
-/**
- * Retrieve and bounds-check the cbtmaxtimeouts consensus paramter.
- *
- * Effect: When this many timeouts happen in the last 'cbtrecentcount'
- * circuit attempts, the client should discard all of its history and
- * begin learning a fresh timeout value.
- */
-static int32_t
-circuit_build_times_max_timeouts(void)
-{
-  int32_t cbt_maxtimeouts;
-
-  cbt_maxtimeouts = networkstatus_get_param(NULL, "cbtmaxtimeouts",
-                                 CBT_DEFAULT_MAX_RECENT_TIMEOUT_COUNT,
-                                 CBT_MIN_MAX_RECENT_TIMEOUT_COUNT,
-                                 CBT_MAX_MAX_RECENT_TIMEOUT_COUNT);
-
-  if (!(get_options()->LearnCircuitBuildTimeout)) {
-    log_debug(LD_BUG,
-              "circuit_build_times_max_timeouts() called, cbtmaxtimeouts is"
-              " %d",
-              cbt_maxtimeouts);
-  }
-
-  return cbt_maxtimeouts;
-}
-
-/**
- * Retrieve and bounds-check the cbtnummodes consensus paramter.
- *
- * Effect: This value governs how many modes to use in the weighted
- * average calculation of Pareto parameter Xm. A value of 3 introduces
- * some bias (2-5% of CDF) under ideal conditions, but allows for better
- * performance in the event that a client chooses guard nodes of radically
- * different performance characteristics.
- */
-static int32_t
-circuit_build_times_default_num_xm_modes(void)
-{
-  int32_t num = networkstatus_get_param(NULL, "cbtnummodes",
-                                        CBT_DEFAULT_NUM_XM_MODES,
-                                        CBT_MIN_NUM_XM_MODES,
-                                        CBT_MAX_NUM_XM_MODES);
-
-  if (!(get_options()->LearnCircuitBuildTimeout)) {
-    log_debug(LD_BUG,
-              "circuit_build_times_default_num_xm_modes() called, cbtnummodes"
-              " is %d",
-              num);
-  }
-
-  return num;
-}
-
-/**
- * Retrieve and bounds-check the cbtmincircs consensus paramter.
- *
- * Effect: This is the minimum number of circuits to build before
- * computing a timeout.
- */
-static int32_t
-circuit_build_times_min_circs_to_observe(void)
-{
-  int32_t num = networkstatus_get_param(NULL, "cbtmincircs",
-                                        CBT_DEFAULT_MIN_CIRCUITS_TO_OBSERVE,
-                                        CBT_MIN_MIN_CIRCUITS_TO_OBSERVE,
-                                        CBT_MAX_MIN_CIRCUITS_TO_OBSERVE);
-
-  if (!(get_options()->LearnCircuitBuildTimeout)) {
-    log_debug(LD_BUG,
-              "circuit_build_times_min_circs_to_observe() called, cbtmincircs"
-              " is %d",
-              num);
-  }
-
-  return num;
-}
-
-/** Return true iff <b>cbt</b> has recorded enough build times that we
- * want to start acting on the timeout it implies. */
-int
-circuit_build_times_enough_to_compute(circuit_build_times_t *cbt)
-{
-  return cbt->total_build_times >= circuit_build_times_min_circs_to_observe();
-}
-
-/**
- * Retrieve and bounds-check the cbtquantile consensus paramter.
- *
- * Effect: This is the position on the quantile curve to use to set the
- * timeout value. It is a percent (10-99).
- */
-double
-circuit_build_times_quantile_cutoff(void)
-{
-  int32_t num = networkstatus_get_param(NULL, "cbtquantile",
-                                        CBT_DEFAULT_QUANTILE_CUTOFF,
-                                        CBT_MIN_QUANTILE_CUTOFF,
-                                        CBT_MAX_QUANTILE_CUTOFF);
-
-  if (!(get_options()->LearnCircuitBuildTimeout)) {
-    log_debug(LD_BUG,
-              "circuit_build_times_quantile_cutoff() called, cbtquantile"
-              " is %d",
-              num);
-  }
-
-  return num/100.0;
-}
-
-/* DOCDOC circuit_build_times_get_bw_scale */
-int
-circuit_build_times_get_bw_scale(networkstatus_t *ns)
-{
-  return networkstatus_get_param(ns, "bwweightscale",
-                                 BW_WEIGHT_SCALE,
-                                 BW_MIN_WEIGHT_SCALE,
-                                 BW_MAX_WEIGHT_SCALE);
-}
-
-/**
- * Retrieve and bounds-check the cbtclosequantile consensus paramter.
- *
- * Effect: This is the position on the quantile curve to use to set the
- * timeout value to use to actually close circuits. It is a percent
- * (0-99).
- */
-static double
-circuit_build_times_close_quantile(void)
-{
-  int32_t param;
-  /* Cast is safe - circuit_build_times_quantile_cutoff() is capped */
-  int32_t min = (int)tor_lround(100*circuit_build_times_quantile_cutoff());
-  param = networkstatus_get_param(NULL, "cbtclosequantile",
-             CBT_DEFAULT_CLOSE_QUANTILE,
-             CBT_MIN_CLOSE_QUANTILE,
-             CBT_MAX_CLOSE_QUANTILE);
-
-  if (!(get_options()->LearnCircuitBuildTimeout)) {
-    log_debug(LD_BUG,
-              "circuit_build_times_close_quantile() called, cbtclosequantile"
-              " is %d", param);
-  }
-
-  if (param < min) {
-    log_warn(LD_DIR, "Consensus parameter cbtclosequantile is "
-             "too small, raising to %d", min);
-    param = min;
-  }
-  return param / 100.0;
-}
-
-/**
- * Retrieve and bounds-check the cbttestfreq consensus paramter.
- *
- * Effect: Describes how often in seconds to build a test circuit to
- * gather timeout values. Only applies if less than 'cbtmincircs'
- * have been recorded.
- */
-static int32_t
-circuit_build_times_test_frequency(void)
-{
-  int32_t num = networkstatus_get_param(NULL, "cbttestfreq",
-                                        CBT_DEFAULT_TEST_FREQUENCY,
-                                        CBT_MIN_TEST_FREQUENCY,
-                                        CBT_MAX_TEST_FREQUENCY);
-
-  if (!(get_options()->LearnCircuitBuildTimeout)) {
-    log_debug(LD_BUG,
-              "circuit_build_times_test_frequency() called, cbttestfreq is %d",
-              num);
-  }
-
-  return num;
-}
-
-/**
- * Retrieve and bounds-check the cbtmintimeout consensus parameter.
- *
- * Effect: This is the minimum allowed timeout value in milliseconds.
- * The minimum is to prevent rounding to 0 (we only check once
- * per second).
- */
-static int32_t
-circuit_build_times_min_timeout(void)
-{
-  int32_t num = networkstatus_get_param(NULL, "cbtmintimeout",
-                                        CBT_DEFAULT_TIMEOUT_MIN_VALUE,
-                                        CBT_MIN_TIMEOUT_MIN_VALUE,
-                                        CBT_MAX_TIMEOUT_MIN_VALUE);
-
-  if (!(get_options()->LearnCircuitBuildTimeout)) {
-    log_debug(LD_BUG,
-              "circuit_build_times_min_timeout() called, cbtmintimeout is %d",
-              num);
-  }
-
-  return num;
-}
-
-/**
- * Retrieve and bounds-check the cbtinitialtimeout consensus paramter.
- *
- * Effect: This is the timeout value to use before computing a timeout,
- * in milliseconds.
- */
-int32_t
-circuit_build_times_initial_timeout(void)
-{
-  int32_t min = circuit_build_times_min_timeout();
-  int32_t param = networkstatus_get_param(NULL, "cbtinitialtimeout",
-                                          CBT_DEFAULT_TIMEOUT_INITIAL_VALUE,
-                                          CBT_MIN_TIMEOUT_INITIAL_VALUE,
-                                          CBT_MAX_TIMEOUT_INITIAL_VALUE);
-
-  if (!(get_options()->LearnCircuitBuildTimeout)) {
-    log_debug(LD_BUG,
-              "circuit_build_times_initial_timeout() called, "
-              "cbtinitialtimeout is %d",
-              param);
-  }
-
-  if (param < min) {
-    log_warn(LD_DIR, "Consensus parameter cbtinitialtimeout is too small, "
-             "raising to %d", min);
-    param = min;
-  }
-  return param;
-}
-
-/**
- * Retrieve and bounds-check the cbtrecentcount consensus paramter.
- *
- * Effect: This is the number of circuit build times to keep track of
- * for deciding if we hit cbtmaxtimeouts and need to reset our state
- * and learn a new timeout.
- */
-static int32_t
-circuit_build_times_recent_circuit_count(networkstatus_t *ns)
-{
-  int32_t num;
-  num = networkstatus_get_param(ns, "cbtrecentcount",
-                                CBT_DEFAULT_RECENT_CIRCUITS,
-                                CBT_MIN_RECENT_CIRCUITS,
-                                CBT_MAX_RECENT_CIRCUITS);
-
-  if (!(get_options()->LearnCircuitBuildTimeout)) {
-    log_debug(LD_BUG,
-              "circuit_build_times_recent_circuit_count() called, "
-              "cbtrecentcount is %d",
-              num);
-  }
-
-  return num;
-}
-
-/**
- * This function is called when we get a consensus update.
- *
- * It checks to see if we have changed any consensus parameters
- * that require reallocation or discard of previous stats.
- */
-void
-circuit_build_times_new_consensus_params(circuit_build_times_t *cbt,
-                                         networkstatus_t *ns)
-{
-  int32_t num;
-
-  /*
-   * First check if we're doing adaptive timeouts at all; nothing to
-   * update if we aren't.
-   */
-
-  if (!circuit_build_times_disabled()) {
-    num = circuit_build_times_recent_circuit_count(ns);
-
-    if (num > 0) {
-      if (num != cbt->liveness.num_recent_circs) {
-        int8_t *recent_circs;
-        log_notice(LD_CIRC, "The Tor Directory Consensus has changed how many "
-                   "circuits we must track to detect network failures from %d "
-                   "to %d.", cbt->liveness.num_recent_circs, num);
-
-        tor_assert(cbt->liveness.timeouts_after_firsthop ||
-                   cbt->liveness.num_recent_circs == 0);
-
-        /*
-         * Technically this is a circular array that we are reallocating
-         * and memcopying. However, since it only consists of either 1s
-         * or 0s, and is only used in a statistical test to determine when
-         * we should discard our history after a sufficient number of 1's
-         * have been reached, it is fine if order is not preserved or
-         * elements are lost.
-         *
-         * cbtrecentcount should only be changing in cases of severe network
-         * distress anyway, so memory correctness here is paramount over
-         * doing acrobatics to preserve the array.
-         */
-        recent_circs = tor_malloc_zero(sizeof(int8_t)*num);
-        if (cbt->liveness.timeouts_after_firsthop &&
-            cbt->liveness.num_recent_circs > 0) {
-          memcpy(recent_circs, cbt->liveness.timeouts_after_firsthop,
-                 sizeof(int8_t)*MIN(num, cbt->liveness.num_recent_circs));
-        }
-
-        // Adjust the index if it needs it.
-        if (num < cbt->liveness.num_recent_circs) {
-          cbt->liveness.after_firsthop_idx = MIN(num-1,
-                  cbt->liveness.after_firsthop_idx);
-        }
-
-        tor_free(cbt->liveness.timeouts_after_firsthop);
-        cbt->liveness.timeouts_after_firsthop = recent_circs;
-        cbt->liveness.num_recent_circs = num;
-      }
-      /* else no change, nothing to do */
-    } else { /* num == 0 */
-      /*
-       * Weird.  This probably shouldn't happen, so log a warning, but try
-       * to do something sensible anyway.
-       */
-
-      log_warn(LD_CIRC,
-               "The cbtrecentcircs consensus parameter came back zero!  "
-               "This disables adaptive timeouts since we can't keep track of "
-               "any recent circuits.");
-
-      circuit_build_times_free_timeouts(cbt);
-    }
-  } else {
-    /*
-     * Adaptive timeouts are disabled; this might be because of the
-     * LearnCircuitBuildTimes config parameter, and hence permanent, or
-     * the cbtdisabled consensus parameter, so it may be a new condition.
-     * Treat it like getting num == 0 above and free the circuit history
-     * if we have any.
-     */
-
-    circuit_build_times_free_timeouts(cbt);
-  }
-}
-
-/** Make a note that we're running unit tests (rather than running Tor
- * itself), so we avoid clobbering our state file. */
-void
-circuitbuild_running_unit_tests(void)
-{
-  unit_tests = 1;
-}
-
-/**
- * Return the initial default or configured timeout in milliseconds
- */
-static double
-circuit_build_times_get_initial_timeout(void)
-{
-  double timeout;
-
-  /*
-   * Check if we have LearnCircuitBuildTimeout, and if we don't,
-   * always use CircuitBuildTimeout, no questions asked.
-   */
-  if (get_options()->LearnCircuitBuildTimeout) {
-    if (!unit_tests && get_options()->CircuitBuildTimeout) {
-      timeout = get_options()->CircuitBuildTimeout*1000;
-      if (timeout < circuit_build_times_min_timeout()) {
-        log_warn(LD_CIRC, "Config CircuitBuildTimeout too low. Setting to %ds",
-                 circuit_build_times_min_timeout()/1000);
-        timeout = circuit_build_times_min_timeout();
-      }
-    } else {
-      timeout = circuit_build_times_initial_timeout();
-    }
-  } else {
-    timeout = get_options()->CircuitBuildTimeout*1000;
-  }
-
-  return timeout;
-}
-
-/**
- * Reset the build time state.
- *
- * Leave estimated parameters, timeout and network liveness intact
- * for future use.
- */
-void
-circuit_build_times_reset(circuit_build_times_t *cbt)
-{
-  memset(cbt->circuit_build_times, 0, sizeof(cbt->circuit_build_times));
-  cbt->total_build_times = 0;
-  cbt->build_times_idx = 0;
-  cbt->have_computed_timeout = 0;
-}
-
-/**
- * Initialize the buildtimes structure for first use.
- *
- * Sets the initial timeout values based on either the config setting,
- * the consensus param, or the default (CBT_DEFAULT_TIMEOUT_INITIAL_VALUE).
- */
-void
-circuit_build_times_init(circuit_build_times_t *cbt)
-{
-  memset(cbt, 0, sizeof(*cbt));
-  /*
-   * Check if we really are using adaptive timeouts, and don't keep
-   * track of this stuff if not.
-   */
-  if (!circuit_build_times_disabled()) {
-    cbt->liveness.num_recent_circs =
-      circuit_build_times_recent_circuit_count(NULL);
-    cbt->liveness.timeouts_after_firsthop =
-      tor_malloc_zero(sizeof(int8_t)*cbt->liveness.num_recent_circs);
-  } else {
-    cbt->liveness.num_recent_circs = 0;
-    cbt->liveness.timeouts_after_firsthop = NULL;
-  }
-  cbt->close_ms = cbt->timeout_ms = circuit_build_times_get_initial_timeout();
-  control_event_buildtimeout_set(cbt, BUILDTIMEOUT_SET_EVENT_RESET);
-}
-
-/**
- * Free the saved timeouts, if the cbtdisabled consensus parameter got turned
- * on or something.
- */
-
-void
-circuit_build_times_free_timeouts(circuit_build_times_t *cbt)
-{
-  if (!cbt) return;
-
-  if (cbt->liveness.timeouts_after_firsthop) {
-    tor_free(cbt->liveness.timeouts_after_firsthop);
-  }
-
-  cbt->liveness.num_recent_circs = 0;
-}
-
-#if 0
-/**
- * Rewind our build time history by n positions.
- */
-static void
-circuit_build_times_rewind_history(circuit_build_times_t *cbt, int n)
-{
-  int i = 0;
-
-  cbt->build_times_idx -= n;
-  cbt->build_times_idx %= CBT_NCIRCUITS_TO_OBSERVE;
-
-  for (i = 0; i < n; i++) {
-    cbt->circuit_build_times[(i+cbt->build_times_idx)
-                             %CBT_NCIRCUITS_TO_OBSERVE]=0;
-  }
-
-  if (cbt->total_build_times > n) {
-    cbt->total_build_times -= n;
-  } else {
-    cbt->total_build_times = 0;
-  }
-
-  log_info(LD_CIRC,
-          "Rewound history by %d places. Current index: %d. "
-          "Total: %d", n, cbt->build_times_idx, cbt->total_build_times);
-}
-#endif
-
-/**
- * Add a new build time value <b>time</b> to the set of build times. Time
- * units are milliseconds.
- *
- * circuit_build_times <b>cbt</b> is a circular array, so loop around when
- * array is full.
- */
-int
-circuit_build_times_add_time(circuit_build_times_t *cbt, build_time_t time)
-{
-  if (time <= 0 || time > CBT_BUILD_TIME_MAX) {
-    log_warn(LD_BUG, "Circuit build time is too large (%u)."
-                      "This is probably a bug.", time);
-    tor_fragile_assert();
-    return -1;
-  }
-
-  log_debug(LD_CIRC, "Adding circuit build time %u", time);
-
-  cbt->circuit_build_times[cbt->build_times_idx] = time;
-  cbt->build_times_idx = (cbt->build_times_idx + 1) % CBT_NCIRCUITS_TO_OBSERVE;
-  if (cbt->total_build_times < CBT_NCIRCUITS_TO_OBSERVE)
-    cbt->total_build_times++;
-
-  if ((cbt->total_build_times % CBT_SAVE_STATE_EVERY) == 0) {
-    /* Save state every n circuit builds */
-    if (!unit_tests && !get_options()->AvoidDiskWrites)
-      or_state_mark_dirty(get_or_state(), 0);
-  }
-
-  return 0;
-}
-
-/**
- * Return maximum circuit build time
- */
-static build_time_t
-circuit_build_times_max(circuit_build_times_t *cbt)
-{
-  int i = 0;
-  build_time_t max_build_time = 0;
-  for (i = 0; i < CBT_NCIRCUITS_TO_OBSERVE; i++) {
-    if (cbt->circuit_build_times[i] > max_build_time
-            && cbt->circuit_build_times[i] != CBT_BUILD_ABANDONED)
-      max_build_time = cbt->circuit_build_times[i];
-  }
-  return max_build_time;
-}
-
-#if 0
-/** Return minimum circuit build time */
-build_time_t
-circuit_build_times_min(circuit_build_times_t *cbt)
-{
-  int i = 0;
-  build_time_t min_build_time = CBT_BUILD_TIME_MAX;
-  for (i = 0; i < CBT_NCIRCUITS_TO_OBSERVE; i++) {
-    if (cbt->circuit_build_times[i] && /* 0 <-> uninitialized */
-        cbt->circuit_build_times[i] < min_build_time)
-      min_build_time = cbt->circuit_build_times[i];
-  }
-  if (min_build_time == CBT_BUILD_TIME_MAX) {
-    log_warn(LD_CIRC, "No build times less than CBT_BUILD_TIME_MAX!");
-  }
-  return min_build_time;
-}
-#endif
-
-/**
- * Calculate and return a histogram for the set of build times.
- *
- * Returns an allocated array of histrogram bins representing
- * the frequency of index*CBT_BIN_WIDTH millisecond
- * build times. Also outputs the number of bins in nbins.
- *
- * The return value must be freed by the caller.
- */
-static uint32_t *
-circuit_build_times_create_histogram(circuit_build_times_t *cbt,
-                                     build_time_t *nbins)
-{
-  uint32_t *histogram;
-  build_time_t max_build_time = circuit_build_times_max(cbt);
-  int i, c;
-
-  *nbins = 1 + (max_build_time / CBT_BIN_WIDTH);
-  histogram = tor_malloc_zero(*nbins * sizeof(build_time_t));
-
-  // calculate histogram
-  for (i = 0; i < CBT_NCIRCUITS_TO_OBSERVE; i++) {
-    if (cbt->circuit_build_times[i] == 0
-            || cbt->circuit_build_times[i] == CBT_BUILD_ABANDONED)
-      continue; /* 0 <-> uninitialized */
-
-    c = (cbt->circuit_build_times[i] / CBT_BIN_WIDTH);
-    histogram[c]++;
-  }
-
-  return histogram;
-}
-
-/**
- * Return the Pareto start-of-curve parameter Xm.
- *
- * Because we are not a true Pareto curve, we compute this as the
- * weighted average of the N most frequent build time bins. N is either
- * 1 if we don't have enough circuit build time data collected, or
- * determined by the consensus parameter cbtnummodes (default 3).
- */
-static build_time_t
-circuit_build_times_get_xm(circuit_build_times_t *cbt)
-{
-  build_time_t i, nbins;
-  build_time_t *nth_max_bin;
-  int32_t bin_counts=0;
-  build_time_t ret = 0;
-  uint32_t *histogram = circuit_build_times_create_histogram(cbt, &nbins);
-  int n=0;
-  int num_modes = circuit_build_times_default_num_xm_modes();
-
-  tor_assert(nbins > 0);
-  tor_assert(num_modes > 0);
-
-  // Only use one mode if < 1000 buildtimes. Not enough data
-  // for multiple.
-  if (cbt->total_build_times < CBT_NCIRCUITS_TO_OBSERVE)
-    num_modes = 1;
-
-  nth_max_bin = (build_time_t*)tor_malloc_zero(num_modes*sizeof(build_time_t));
-
-  /* Determine the N most common build times */
-  for (i = 0; i < nbins; i++) {
-    if (histogram[i] >= histogram[nth_max_bin[0]]) {
-      nth_max_bin[0] = i;
-    }
-
-    for (n = 1; n < num_modes; n++) {
-      if (histogram[i] >= histogram[nth_max_bin[n]] &&
-           (!histogram[nth_max_bin[n-1]]
-               || histogram[i] < histogram[nth_max_bin[n-1]])) {
-        nth_max_bin[n] = i;
-      }
-    }
-  }
-
-  for (n = 0; n < num_modes; n++) {
-    bin_counts += histogram[nth_max_bin[n]];
-    ret += CBT_BIN_TO_MS(nth_max_bin[n])*histogram[nth_max_bin[n]];
-    log_info(LD_CIRC, "Xm mode #%d: %u %u", n, CBT_BIN_TO_MS(nth_max_bin[n]),
-             histogram[nth_max_bin[n]]);
-  }
-
-  /* The following assert is safe, because we don't get called when we
-   * haven't observed at least CBT_MIN_MIN_CIRCUITS_TO_OBSERVE circuits. */
-  tor_assert(bin_counts > 0);
-
-  ret /= bin_counts;
-  tor_free(histogram);
-  tor_free(nth_max_bin);
-
-  return ret;
-}
-
-/**
- * Output a histogram of current circuit build times to
- * the or_state_t state structure.
- */
-void
-circuit_build_times_update_state(circuit_build_times_t *cbt,
-                                 or_state_t *state)
-{
-  uint32_t *histogram;
-  build_time_t i = 0;
-  build_time_t nbins = 0;
-  config_line_t **next, *line;
-
-  histogram = circuit_build_times_create_histogram(cbt, &nbins);
-  // write to state
-  config_free_lines(state->BuildtimeHistogram);
-  next = &state->BuildtimeHistogram;
-  *next = NULL;
-
-  state->TotalBuildTimes = cbt->total_build_times;
-  state->CircuitBuildAbandonedCount = 0;
-
-  for (i = 0; i < CBT_NCIRCUITS_TO_OBSERVE; i++) {
-    if (cbt->circuit_build_times[i] == CBT_BUILD_ABANDONED)
-      state->CircuitBuildAbandonedCount++;
-  }
-
-  for (i = 0; i < nbins; i++) {
-    // compress the histogram by skipping the blanks
-    if (histogram[i] == 0) continue;
-    *next = line = tor_malloc_zero(sizeof(config_line_t));
-    line->key = tor_strdup("CircuitBuildTimeBin");
-    tor_asprintf(&line->value, "%d %d",
-            CBT_BIN_TO_MS(i), histogram[i]);
-    next = &(line->next);
-  }
-
-  if (!unit_tests) {
-    if (!get_options()->AvoidDiskWrites)
-      or_state_mark_dirty(get_or_state(), 0);
-  }
-
-  tor_free(histogram);
-}
-
-/**
- * Shuffle the build times array.
- *
- * Adapted from http://en.wikipedia.org/wiki/Fisher-Yates_shuffle
- */
-static void
-circuit_build_times_shuffle_and_store_array(circuit_build_times_t *cbt,
-                                            build_time_t *raw_times,
-                                            uint32_t num_times)
-{
-  uint32_t n = num_times;
-  if (num_times > CBT_NCIRCUITS_TO_OBSERVE) {
-    log_notice(LD_CIRC, "The number of circuit times that this Tor version "
-               "uses to calculate build times is less than the number stored "
-               "in your state file. Decreasing the circuit time history from "
-               "%lu to %d.", (unsigned long)num_times,
-               CBT_NCIRCUITS_TO_OBSERVE);
-  }
-
-  if (n > INT_MAX-1) {
-    log_warn(LD_CIRC, "For some insane reasons, you had %lu circuit build "
-             "observations in your state file. That's far too many; probably "
-             "there's a bug here.", (unsigned long)n);
-    n = INT_MAX-1;
-  }
-
-  /* This code can only be run on a compact array */
-  while (n-- > 1) {
-    int k = crypto_rand_int(n + 1); /* 0 <= k <= n. */
-    build_time_t tmp = raw_times[k];
-    raw_times[k] = raw_times[n];
-    raw_times[n] = tmp;
-  }
-
-  /* Since the times are now shuffled, take a random CBT_NCIRCUITS_TO_OBSERVE
-   * subset (ie the first CBT_NCIRCUITS_TO_OBSERVE values) */
-  for (n = 0; n < MIN(num_times, CBT_NCIRCUITS_TO_OBSERVE); n++) {
-    circuit_build_times_add_time(cbt, raw_times[n]);
-  }
-}
-
-/**
- * Filter old synthetic timeouts that were created before the
- * new right-censored Pareto calculation was deployed.
- *
- * Once all clients before 0.2.1.13-alpha are gone, this code
- * will be unused.
- */
-static int
-circuit_build_times_filter_timeouts(circuit_build_times_t *cbt)
-{
-  int num_filtered=0, i=0;
-  double timeout_rate = 0;
-  build_time_t max_timeout = 0;
-
-  timeout_rate = circuit_build_times_timeout_rate(cbt);
-  max_timeout = (build_time_t)cbt->close_ms;
-
-  for (i = 0; i < CBT_NCIRCUITS_TO_OBSERVE; i++) {
-    if (cbt->circuit_build_times[i] > max_timeout) {
-      build_time_t replaced = cbt->circuit_build_times[i];
-      num_filtered++;
-      cbt->circuit_build_times[i] = CBT_BUILD_ABANDONED;
-
-      log_debug(LD_CIRC, "Replaced timeout %d with %d", replaced,
-               cbt->circuit_build_times[i]);
-    }
-  }
-
-  log_info(LD_CIRC,
-           "We had %d timeouts out of %d build times, "
-           "and filtered %d above the max of %u",
-          (int)(cbt->total_build_times*timeout_rate),
-          cbt->total_build_times, num_filtered, max_timeout);
-
-  return num_filtered;
-}
-
-/**
- * Load histogram from <b>state</b>, shuffling the resulting array
- * after we do so. Use this result to estimate parameters and
- * calculate the timeout.
- *
- * Return -1 on error.
- */
-int
-circuit_build_times_parse_state(circuit_build_times_t *cbt,
-                                or_state_t *state)
-{
-  int tot_values = 0;
-  uint32_t loaded_cnt = 0, N = 0;
-  config_line_t *line;
-  unsigned int i;
-  build_time_t *loaded_times;
-  int err = 0;
-  circuit_build_times_init(cbt);
-
-  if (circuit_build_times_disabled()) {
-    return 0;
-  }
-
-  /* build_time_t 0 means uninitialized */
-  loaded_times = tor_malloc_zero(sizeof(build_time_t)*state->TotalBuildTimes);
-
-  for (line = state->BuildtimeHistogram; line; line = line->next) {
-    smartlist_t *args = smartlist_new();
-    smartlist_split_string(args, line->value, " ",
-                           SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK, 0);
-    if (smartlist_len(args) < 2) {
-      log_warn(LD_GENERAL, "Unable to parse circuit build times: "
-                           "Too few arguments to CircuitBuildTime");
-      err = 1;
-      SMARTLIST_FOREACH(args, char*, cp, tor_free(cp));
-      smartlist_free(args);
-      break;
-    } else {
-      const char *ms_str = smartlist_get(args,0);
-      const char *count_str = smartlist_get(args,1);
-      uint32_t count, k;
-      build_time_t ms;
-      int ok;
-      ms = (build_time_t)tor_parse_ulong(ms_str, 0, 0,
-                                         CBT_BUILD_TIME_MAX, &ok, NULL);
-      if (!ok) {
-        log_warn(LD_GENERAL, "Unable to parse circuit build times: "
-                             "Unparsable bin number");
-        err = 1;
-        SMARTLIST_FOREACH(args, char*, cp, tor_free(cp));
-        smartlist_free(args);
-        break;
-      }
-      count = (uint32_t)tor_parse_ulong(count_str, 0, 0,
-                                        UINT32_MAX, &ok, NULL);
-      if (!ok) {
-        log_warn(LD_GENERAL, "Unable to parse circuit build times: "
-                             "Unparsable bin count");
-        err = 1;
-        SMARTLIST_FOREACH(args, char*, cp, tor_free(cp));
-        smartlist_free(args);
-        break;
-      }
-
-      if (loaded_cnt+count+state->CircuitBuildAbandonedCount
-            > state->TotalBuildTimes) {
-        log_warn(LD_CIRC,
-                 "Too many build times in state file. "
-                 "Stopping short before %d",
-                 loaded_cnt+count);
-        SMARTLIST_FOREACH(args, char*, cp, tor_free(cp));
-        smartlist_free(args);
-        break;
-      }
-
-      for (k = 0; k < count; k++) {
-        loaded_times[loaded_cnt++] = ms;
-      }
-      N++;
-      SMARTLIST_FOREACH(args, char*, cp, tor_free(cp));
-      smartlist_free(args);
-    }
-  }
-
-  log_info(LD_CIRC,
-           "Adding %d timeouts.", state->CircuitBuildAbandonedCount);
-  for (i=0; i < state->CircuitBuildAbandonedCount; i++) {
-    loaded_times[loaded_cnt++] = CBT_BUILD_ABANDONED;
-  }
-
-  if (loaded_cnt != state->TotalBuildTimes) {
-    log_warn(LD_CIRC,
-            "Corrupt state file? Build times count mismatch. "
-            "Read %d times, but file says %d", loaded_cnt,
-            state->TotalBuildTimes);
-    err = 1;
-    circuit_build_times_reset(cbt);
-    goto done;
-  }
-
-  circuit_build_times_shuffle_and_store_array(cbt, loaded_times, loaded_cnt);
-
-  /* Verify that we didn't overwrite any indexes */
-  for (i=0; i < CBT_NCIRCUITS_TO_OBSERVE; i++) {
-    if (!cbt->circuit_build_times[i])
-      break;
-    tot_values++;
-  }
-  log_info(LD_CIRC,
-           "Loaded %d/%d values from %d lines in circuit time histogram",
-           tot_values, cbt->total_build_times, N);
-
-  if (cbt->total_build_times != tot_values
-        || cbt->total_build_times > CBT_NCIRCUITS_TO_OBSERVE) {
-    log_warn(LD_CIRC,
-            "Corrupt state file? Shuffled build times mismatch. "
-            "Read %d times, but file says %d", tot_values,
-            state->TotalBuildTimes);
-    err = 1;
-    circuit_build_times_reset(cbt);
-    goto done;
-  }
-
-  circuit_build_times_set_timeout(cbt);
-
-  if (!state->CircuitBuildAbandonedCount && cbt->total_build_times) {
-    circuit_build_times_filter_timeouts(cbt);
-  }
-
- done:
-  tor_free(loaded_times);
-  return err ? -1 : 0;
-}
-
-/**
- * Estimates the Xm and Alpha parameters using
- * http://en.wikipedia.org/wiki/Pareto_distribution#Parameter_estimation
- *
- * The notable difference is that we use mode instead of min to estimate Xm.
- * This is because our distribution is frechet-like. We claim this is
- * an acceptable approximation because we are only concerned with the
- * accuracy of the CDF of the tail.
- */
-int
-circuit_build_times_update_alpha(circuit_build_times_t *cbt)
-{
-  build_time_t *x=cbt->circuit_build_times;
-  double a = 0;
-  int n=0,i=0,abandoned_count=0;
-  build_time_t max_time=0;
-
-  /* http://en.wikipedia.org/wiki/Pareto_distribution#Parameter_estimation */
-  /* We sort of cheat here and make our samples slightly more pareto-like
-   * and less frechet-like. */
-  cbt->Xm = circuit_build_times_get_xm(cbt);
-
-  tor_assert(cbt->Xm > 0);
-
-  for (i=0; i< CBT_NCIRCUITS_TO_OBSERVE; i++) {
-    if (!x[i]) {
-      continue;
-    }
-
-    if (x[i] < cbt->Xm) {
-      a += tor_mathlog(cbt->Xm);
-    } else if (x[i] == CBT_BUILD_ABANDONED) {
-      abandoned_count++;
-    } else {
-      a += tor_mathlog(x[i]);
-      if (x[i] > max_time)
-        max_time = x[i];
-    }
-    n++;
-  }
-
-  /*
-   * We are erring and asserting here because this can only happen
-   * in codepaths other than startup. The startup state parsing code
-   * performs this same check, and resets state if it hits it. If we
-   * hit it at runtime, something serious has gone wrong.
-   */
-  if (n!=cbt->total_build_times) {
-    log_err(LD_CIRC, "Discrepancy in build times count: %d vs %d", n,
-            cbt->total_build_times);
-  }
-  tor_assert(n==cbt->total_build_times);
-
-  if (max_time <= 0) {
-    /* This can happen if Xm is actually the *maximum* value in the set.
-     * It can also happen if we've abandoned every single circuit somehow.
-     * In either case, tell the caller not to compute a new build timeout. */
-    log_warn(LD_BUG,
-             "Could not determine largest build time (%d). "
-             "Xm is %dms and we've abandoned %d out of %d circuits.", max_time,
-             cbt->Xm, abandoned_count, n);
-    return 0;
-  }
-
-  a += abandoned_count*tor_mathlog(max_time);
-
-  a -= n*tor_mathlog(cbt->Xm);
-  // Estimator comes from Eq #4 in:
-  // "Bayesian estimation based on trimmed samples from Pareto populations"
-  // by Arturo J. Fernández. We are right-censored only.
-  a = (n-abandoned_count)/a;
-
-  cbt->alpha = a;
-
-  return 1;
-}
-
-/**
- * This is the Pareto Quantile Function. It calculates the point x
- * in the distribution such that F(x) = quantile (ie quantile*100%
- * of the mass of the density function is below x on the curve).
- *
- * We use it to calculate the timeout and also to generate synthetic
- * values of time for circuits that timeout before completion.
- *
- * See http://en.wikipedia.org/wiki/Quantile_function,
- * http://en.wikipedia.org/wiki/Inverse_transform_sampling and
- * http://en.wikipedia.org/wiki/Pareto_distribution#Generating_a_
- *     random_sample_from_Pareto_distribution
- * That's right. I'll cite wikipedia all day long.
- *
- * Return value is in milliseconds.
- */
-double
-circuit_build_times_calculate_timeout(circuit_build_times_t *cbt,
-                                      double quantile)
-{
-  double ret;
-  tor_assert(quantile >= 0);
-  tor_assert(1.0-quantile > 0);
-  tor_assert(cbt->Xm > 0);
-
-  ret = cbt->Xm/pow(1.0-quantile,1.0/cbt->alpha);
-  if (ret > INT32_MAX) {
-    ret = INT32_MAX;
-  }
-  tor_assert(ret > 0);
-  return ret;
-}
-
-/** Pareto CDF */
-double
-circuit_build_times_cdf(circuit_build_times_t *cbt, double x)
-{
-  double ret;
-  tor_assert(cbt->Xm > 0);
-  ret = 1.0-pow(cbt->Xm/x,cbt->alpha);
-  tor_assert(0 <= ret && ret <= 1.0);
-  return ret;
-}
-
-/**
- * Generate a synthetic time using our distribution parameters.
- *
- * The return value will be within the [q_lo, q_hi) quantile points
- * on the CDF.
- */
-build_time_t
-circuit_build_times_generate_sample(circuit_build_times_t *cbt,
-                                    double q_lo, double q_hi)
-{
-  double randval = crypto_rand_double();
-  build_time_t ret;
-  double u;
-
-  /* Generate between [q_lo, q_hi) */
-  /*XXXX This is what nextafter is supposed to be for; we should use it on the
-   * platforms that support it. */
-  q_hi -= 1.0/(INT32_MAX);
-
-  tor_assert(q_lo >= 0);
-  tor_assert(q_hi < 1);
-  tor_assert(q_lo < q_hi);
-
-  u = q_lo + (q_hi-q_lo)*randval;
-
-  tor_assert(0 <= u && u < 1.0);
-  /* circuit_build_times_calculate_timeout returns <= INT32_MAX */
-  ret = (build_time_t)
-    tor_lround(circuit_build_times_calculate_timeout(cbt, u));
-  tor_assert(ret > 0);
-  return ret;
-}
-
-/**
- * Estimate an initial alpha parameter by solving the quantile
- * function with a quantile point and a specific timeout value.
- */
-void
-circuit_build_times_initial_alpha(circuit_build_times_t *cbt,
-                                  double quantile, double timeout_ms)
-{
-  // Q(u) = Xm/((1-u)^(1/a))
-  // Q(0.8) = Xm/((1-0.8))^(1/a)) = CircBuildTimeout
-  // CircBuildTimeout = Xm/((1-0.8))^(1/a))
-  // CircBuildTimeout = Xm*((1-0.8))^(-1/a))
-  // ln(CircBuildTimeout) = ln(Xm)+ln(((1-0.8)))*(-1/a)
-  // -ln(1-0.8)/(ln(CircBuildTimeout)-ln(Xm))=a
-  tor_assert(quantile >= 0);
-  tor_assert(cbt->Xm > 0);
-  cbt->alpha = tor_mathlog(1.0-quantile)/
-    (tor_mathlog(cbt->Xm)-tor_mathlog(timeout_ms));
-  tor_assert(cbt->alpha > 0);
-}
-
-/**
- * Returns true if we need circuits to be built
- */
-int
-circuit_build_times_needs_circuits(circuit_build_times_t *cbt)
-{
-  /* Return true if < MIN_CIRCUITS_TO_OBSERVE */
-  return !circuit_build_times_enough_to_compute(cbt);
-}
-
-/**
- * Returns true if we should build a timeout test circuit
- * right now.
- */
-int
-circuit_build_times_needs_circuits_now(circuit_build_times_t *cbt)
-{
-  return circuit_build_times_needs_circuits(cbt) &&
-    approx_time()-cbt->last_circ_at > circuit_build_times_test_frequency();
-}
-
-/**
- * Called to indicate that the network showed some signs of liveness,
- * i.e. we received a cell.
- *
- * This is used by circuit_build_times_network_check_live() to decide
- * if we should record the circuit build timeout or not.
- *
- * This function is called every time we receive a cell. Avoid
- * syscalls, events, and other high-intensity work.
- */
-void
-circuit_build_times_network_is_live(circuit_build_times_t *cbt)
-{
-  time_t now = approx_time();
-  if (cbt->liveness.nonlive_timeouts > 0) {
-    log_notice(LD_CIRC,
-               "Tor now sees network activity. Restoring circuit build "
-               "timeout recording. Network was down for %d seconds "
-               "during %d circuit attempts.",
-               (int)(now - cbt->liveness.network_last_live),
-               cbt->liveness.nonlive_timeouts);
-  }
-  cbt->liveness.network_last_live = now;
-  cbt->liveness.nonlive_timeouts = 0;
-}
-
-/**
- * Called to indicate that we completed a circuit. Because this circuit
- * succeeded, it doesn't count as a timeout-after-the-first-hop.
- *
- * This is used by circuit_build_times_network_check_changed() to determine
- * if we had too many recent timeouts and need to reset our learned timeout
- * to something higher.
- */
-void
-circuit_build_times_network_circ_success(circuit_build_times_t *cbt)
-{
-  /* Check for NULLness because we might not be using adaptive timeouts */
-  if (cbt->liveness.timeouts_after_firsthop &&
-      cbt->liveness.num_recent_circs > 0) {
-    cbt->liveness.timeouts_after_firsthop[cbt->liveness.after_firsthop_idx]
-      = 0;
-    cbt->liveness.after_firsthop_idx++;
-    cbt->liveness.after_firsthop_idx %= cbt->liveness.num_recent_circs;
-  }
-}
-
-/**
- * A circuit just timed out. If it failed after the first hop, record it
- * in our history for later deciding if the network speed has changed.
- *
- * This is used by circuit_build_times_network_check_changed() to determine
- * if we had too many recent timeouts and need to reset our learned timeout
- * to something higher.
- */
-static void
-circuit_build_times_network_timeout(circuit_build_times_t *cbt,
-                                    int did_onehop)
-{
-  /* Check for NULLness because we might not be using adaptive timeouts */
-  if (cbt->liveness.timeouts_after_firsthop &&
-      cbt->liveness.num_recent_circs > 0) {
-    if (did_onehop) {
-      cbt->liveness.timeouts_after_firsthop[cbt->liveness.after_firsthop_idx]
-        = 1;
-      cbt->liveness.after_firsthop_idx++;
-      cbt->liveness.after_firsthop_idx %= cbt->liveness.num_recent_circs;
-    }
-  }
-}
-
-/**
- * A circuit was just forcibly closed. If there has been no recent network
- * activity at all, but this circuit was launched back when we thought the
- * network was live, increment the number of "nonlive" circuit timeouts.
- *
- * This is used by circuit_build_times_network_check_live() to decide
- * if we should record the circuit build timeout or not.
- */
-static void
-circuit_build_times_network_close(circuit_build_times_t *cbt,
-                                    int did_onehop, time_t start_time)
-{
-  time_t now = time(NULL);
-  /*
-   * Check if this is a timeout that was for a circuit that spent its
-   * entire existence during a time where we have had no network activity.
-   */
-  if (cbt->liveness.network_last_live < start_time) {
-    if (did_onehop) {
-      char last_live_buf[ISO_TIME_LEN+1];
-      char start_time_buf[ISO_TIME_LEN+1];
-      char now_buf[ISO_TIME_LEN+1];
-      format_local_iso_time(last_live_buf, cbt->liveness.network_last_live);
-      format_local_iso_time(start_time_buf, start_time);
-      format_local_iso_time(now_buf, now);
-      log_warn(LD_BUG,
-               "Circuit somehow completed a hop while the network was "
-               "not live. Network was last live at %s, but circuit launched "
-               "at %s. It's now %s.", last_live_buf, start_time_buf,
-               now_buf);
-    }
-    cbt->liveness.nonlive_timeouts++;
-    if (cbt->liveness.nonlive_timeouts == 1) {
-      log_notice(LD_CIRC,
-                 "Tor has not observed any network activity for the past %d "
-                 "seconds. Disabling circuit build timeout recording.",
-                 (int)(now - cbt->liveness.network_last_live));
-    } else {
-      log_info(LD_CIRC,
-             "Got non-live timeout. Current count is: %d",
-             cbt->liveness.nonlive_timeouts);
-    }
-  }
-}
-
-/**
- * When the network is not live, we do not record circuit build times.
- *
- * The network is considered not live if there has been at least one
- * circuit build that began and ended (had its close_ms measurement
- * period expire) since we last received a cell.
- *
- * Also has the side effect of rewinding the circuit time history
- * in the case of recent liveness changes.
- */
-int
-circuit_build_times_network_check_live(circuit_build_times_t *cbt)
-{
-  if (cbt->liveness.nonlive_timeouts > 0) {
-    return 0;
-  }
-
-  return 1;
-}
-
-/**
- * Returns true if we have seen more than MAX_RECENT_TIMEOUT_COUNT of
- * the past RECENT_CIRCUITS time out after the first hop. Used to detect
- * if the network connection has changed significantly, and if so,
- * resets our circuit build timeout to the default.
- *
- * Also resets the entire timeout history in this case and causes us
- * to restart the process of building test circuits and estimating a
- * new timeout.
- */
-int
-circuit_build_times_network_check_changed(circuit_build_times_t *cbt)
-{
-  int total_build_times = cbt->total_build_times;
-  int timeout_count=0;
-  int i;
-
-  if (cbt->liveness.timeouts_after_firsthop &&
-      cbt->liveness.num_recent_circs > 0) {
-    /* how many of our recent circuits made it to the first hop but then
-     * timed out? */
-    for (i = 0; i < cbt->liveness.num_recent_circs; i++) {
-      timeout_count += cbt->liveness.timeouts_after_firsthop[i];
-    }
-  }
-
-  /* If 80% of our recent circuits are timing out after the first hop,
-   * we need to re-estimate a new initial alpha and timeout. */
-  if (timeout_count < circuit_build_times_max_timeouts()) {
-    return 0;
-  }
-
-  circuit_build_times_reset(cbt);
-  if (cbt->liveness.timeouts_after_firsthop &&
-      cbt->liveness.num_recent_circs > 0) {
-    memset(cbt->liveness.timeouts_after_firsthop, 0,
-            sizeof(*cbt->liveness.timeouts_after_firsthop)*
-            cbt->liveness.num_recent_circs);
-  }
-  cbt->liveness.after_firsthop_idx = 0;
-
-  /* Check to see if this has happened before. If so, double the timeout
-   * to give people on abysmally bad network connections a shot at access */
-  if (cbt->timeout_ms >= circuit_build_times_get_initial_timeout()) {
-    if (cbt->timeout_ms > INT32_MAX/2 || cbt->close_ms > INT32_MAX/2) {
-      log_warn(LD_CIRC, "Insanely large circuit build timeout value. "
-              "(timeout = %fmsec, close = %fmsec)",
-               cbt->timeout_ms, cbt->close_ms);
-    } else {
-      cbt->timeout_ms *= 2;
-      cbt->close_ms *= 2;
-    }
-  } else {
-    cbt->close_ms = cbt->timeout_ms
-                  = circuit_build_times_get_initial_timeout();
-  }
-
-  control_event_buildtimeout_set(cbt, BUILDTIMEOUT_SET_EVENT_RESET);
-
-  log_notice(LD_CIRC,
-            "Your network connection speed appears to have changed. Resetting "
-            "timeout to %lds after %d timeouts and %d buildtimes.",
-            tor_lround(cbt->timeout_ms/1000), timeout_count,
-            total_build_times);
-
-  return 1;
-}
-
-/**
- * Count the number of timeouts in a set of cbt data.
- */
-double
-circuit_build_times_timeout_rate(const circuit_build_times_t *cbt)
-{
-  int i=0,timeouts=0;
-  for (i = 0; i < CBT_NCIRCUITS_TO_OBSERVE; i++) {
-    if (cbt->circuit_build_times[i] >= cbt->timeout_ms) {
-       timeouts++;
-    }
-  }
-
-  if (!cbt->total_build_times)
-    return 0;
-
-  return ((double)timeouts)/cbt->total_build_times;
-}
-
-/**
- * Count the number of closed circuits in a set of cbt data.
- */
-double
-circuit_build_times_close_rate(const circuit_build_times_t *cbt)
-{
-  int i=0,closed=0;
-  for (i = 0; i < CBT_NCIRCUITS_TO_OBSERVE; i++) {
-    if (cbt->circuit_build_times[i] == CBT_BUILD_ABANDONED) {
-       closed++;
-    }
-  }
-
-  if (!cbt->total_build_times)
-    return 0;
-
-  return ((double)closed)/cbt->total_build_times;
-}
-
-/**
- * Store a timeout as a synthetic value.
- *
- * Returns true if the store was successful and we should possibly
- * update our timeout estimate.
- */
-int
-circuit_build_times_count_close(circuit_build_times_t *cbt,
-                                int did_onehop,
-                                time_t start_time)
-{
-  if (circuit_build_times_disabled()) {
-    cbt->close_ms = cbt->timeout_ms
-                  = circuit_build_times_get_initial_timeout();
-    return 0;
-  }
-
-  /* Record this force-close to help determine if the network is dead */
-  circuit_build_times_network_close(cbt, did_onehop, start_time);
-
-  /* Only count timeouts if network is live.. */
-  if (!circuit_build_times_network_check_live(cbt)) {
-    return 0;
-  }
-
-  circuit_build_times_add_time(cbt, CBT_BUILD_ABANDONED);
-  return 1;
-}
-
-/**
- * Update timeout counts to determine if we need to expire
- * our build time history due to excessive timeouts.
- *
- * We do not record any actual time values at this stage;
- * we are only interested in recording the fact that a timeout
- * happened. We record the time values via
- * circuit_build_times_count_close() and circuit_build_times_add_time().
- */
-void
-circuit_build_times_count_timeout(circuit_build_times_t *cbt,
-                                  int did_onehop)
-{
-  if (circuit_build_times_disabled()) {
-    cbt->close_ms = cbt->timeout_ms
-                  = circuit_build_times_get_initial_timeout();
-    return;
-  }
-
-  /* Register the fact that a timeout just occurred. */
-  circuit_build_times_network_timeout(cbt, did_onehop);
-
-  /* If there are a ton of timeouts, we should reset
-   * the circuit build timeout. */
-  circuit_build_times_network_check_changed(cbt);
-}
-
-/**
- * Estimate a new timeout based on history and set our timeout
- * variable accordingly.
- */
-static int
-circuit_build_times_set_timeout_worker(circuit_build_times_t *cbt)
-{
-  build_time_t max_time;
-  if (!circuit_build_times_enough_to_compute(cbt))
-    return 0;
-
-  if (!circuit_build_times_update_alpha(cbt))
-    return 0;
-
-  cbt->timeout_ms = circuit_build_times_calculate_timeout(cbt,
-                                circuit_build_times_quantile_cutoff());
-
-  cbt->close_ms = circuit_build_times_calculate_timeout(cbt,
-                                circuit_build_times_close_quantile());
-
-  max_time = circuit_build_times_max(cbt);
-
-  /* Sometimes really fast guard nodes give us such a steep curve
-   * that this ends up being not that much greater than timeout_ms.
-   * Make it be at least 1 min to handle this case. */
-  cbt->close_ms = MAX(cbt->close_ms, circuit_build_times_initial_timeout());
-
-  if (cbt->timeout_ms > max_time) {
-    log_info(LD_CIRC,
-               "Circuit build timeout of %dms is beyond the maximum build "
-               "time we have ever observed. Capping it to %dms.",
-               (int)cbt->timeout_ms, max_time);
-    cbt->timeout_ms = max_time;
-  }
-
-  if (max_time < INT32_MAX/2 && cbt->close_ms > 2*max_time) {
-    log_info(LD_CIRC,
-               "Circuit build measurement period of %dms is more than twice "
-               "the maximum build time we have ever observed. Capping it to "
-               "%dms.", (int)cbt->close_ms, 2*max_time);
-    cbt->close_ms = 2*max_time;
-  }
-
-  cbt->have_computed_timeout = 1;
-  return 1;
-}
-
-/**
- * Exposed function to compute a new timeout. Dispatches events and
- * also filters out extremely high timeout values.
- */
-void
-circuit_build_times_set_timeout(circuit_build_times_t *cbt)
-{
-  long prev_timeout = tor_lround(cbt->timeout_ms/1000);
-  double timeout_rate;
-
-  /*
-   * Just return if we aren't using adaptive timeouts
-   */
-  if (circuit_build_times_disabled())
-    return;
-
-  if (!circuit_build_times_set_timeout_worker(cbt))
-    return;
-
-  if (cbt->timeout_ms < circuit_build_times_min_timeout()) {
-    log_info(LD_CIRC, "Set buildtimeout to low value %fms. Setting to %dms",
-             cbt->timeout_ms, circuit_build_times_min_timeout());
-    cbt->timeout_ms = circuit_build_times_min_timeout();
-    if (cbt->close_ms < cbt->timeout_ms) {
-      /* This shouldn't happen because of MAX() in timeout_worker above,
-       * but doing it just in case */
-      cbt->close_ms = circuit_build_times_initial_timeout();
-    }
-  }
-
-  control_event_buildtimeout_set(cbt, BUILDTIMEOUT_SET_EVENT_COMPUTED);
-
-  timeout_rate = circuit_build_times_timeout_rate(cbt);
-
-  if (prev_timeout > tor_lround(cbt->timeout_ms/1000)) {
-    log_info(LD_CIRC,
-               "Based on %d circuit times, it looks like we don't need to "
-               "wait so long for circuits to finish. We will now assume a "
-               "circuit is too slow to use after waiting %ld seconds.",
-               cbt->total_build_times,
-               tor_lround(cbt->timeout_ms/1000));
-    log_info(LD_CIRC,
-             "Circuit timeout data: %fms, %fms, Xm: %d, a: %f, r: %f",
-             cbt->timeout_ms, cbt->close_ms, cbt->Xm, cbt->alpha,
-             timeout_rate);
-  } else if (prev_timeout < tor_lround(cbt->timeout_ms/1000)) {
-    log_info(LD_CIRC,
-               "Based on %d circuit times, it looks like we need to wait "
-               "longer for circuits to finish. We will now assume a "
-               "circuit is too slow to use after waiting %ld seconds.",
-               cbt->total_build_times,
-               tor_lround(cbt->timeout_ms/1000));
-    log_info(LD_CIRC,
-             "Circuit timeout data: %fms, %fms, Xm: %d, a: %f, r: %f",
-             cbt->timeout_ms, cbt->close_ms, cbt->Xm, cbt->alpha,
-             timeout_rate);
-  } else {
-    log_info(LD_CIRC,
-             "Set circuit build timeout to %lds (%fms, %fms, Xm: %d, a: %f,"
-             " r: %f) based on %d circuit times",
-             tor_lround(cbt->timeout_ms/1000),
-             cbt->timeout_ms, cbt->close_ms, cbt->Xm, cbt->alpha, timeout_rate,
-             cbt->total_build_times);
-  }
+  return chan;
 }
 
 /** Iterate over values of circ_id, starting from conn-\>next_circ_id,
@@ -1680,28 +96,31 @@ circuit_build_times_set_timeout(circuit_build_times_t *cbt)
  * Return it, or 0 if can't get a unique circ_id.
  */
 static circid_t
-get_unique_circ_id_by_conn(or_connection_t *conn)
+get_unique_circ_id_by_chan(channel_t *chan)
 {
   circid_t test_circ_id;
   circid_t attempts=0;
-  circid_t high_bit;
+  circid_t high_bit, max_range;
 
-  tor_assert(conn);
-  if (conn->circ_id_type == CIRC_ID_TYPE_NEITHER) {
-    log_warn(LD_BUG, "Trying to pick a circuit ID for a connection from "
+  tor_assert(chan);
+
+  if (chan->circ_id_type == CIRC_ID_TYPE_NEITHER) {
+    log_warn(LD_BUG,
+             "Trying to pick a circuit ID for a connection from "
              "a client with no identity.");
     return 0;
   }
-  high_bit = (conn->circ_id_type == CIRC_ID_TYPE_HIGHER) ? 1<<15 : 0;
+  max_range =  (chan->wide_circ_ids) ? (1u<<31) : (1u<<15);
+  high_bit = (chan->circ_id_type == CIRC_ID_TYPE_HIGHER) ? max_range : 0;
   do {
-    /* Sequentially iterate over test_circ_id=1...1<<15-1 until we find a
+    /* Sequentially iterate over test_circ_id=1...max_range until we find a
      * circID such that (high_bit|test_circ_id) is not already used. */
-    test_circ_id = conn->next_circ_id++;
-    if (test_circ_id == 0 || test_circ_id >= 1<<15) {
+    test_circ_id = chan->next_circ_id++;
+    if (test_circ_id == 0 || test_circ_id >= max_range) {
       test_circ_id = 1;
-      conn->next_circ_id = 2;
+      chan->next_circ_id = 2;
     }
-    if (++attempts > 1<<15) {
+    if (++attempts > max_range) {
       /* Make sure we don't loop forever if all circ_id's are used. This
        * matters because it's an external DoS opportunity.
        */
@@ -1709,7 +128,7 @@ get_unique_circ_id_by_conn(or_connection_t *conn)
       return 0;
     }
     test_circ_id |= high_bit;
-  } while (circuit_id_in_use_on_orconn(test_circ_id, conn));
+  } while (circuit_id_in_use_on_channel(test_circ_id, chan));
   return test_circ_id;
 }
 
@@ -1736,8 +155,8 @@ circuit_list_path_impl(origin_circuit_t *circ, int verbose, int verbose_names)
                  circ->build_state->is_internal ? "internal" : "exit",
                  circ->build_state->need_uptime ? " (high-uptime)" : "",
                  circ->build_state->desired_path_len,
-                 circ->_base.state == CIRCUIT_STATE_OPEN ? "" : ", last hop ",
-                 circ->_base.state == CIRCUIT_STATE_OPEN ? "" :
+                 circ->base_.state == CIRCUIT_STATE_OPEN ? "" : ", last hop ",
+                 circ->base_.state == CIRCUIT_STATE_OPEN ? "" :
                  (nickname?nickname:"*unnamed*"));
   }
 
@@ -1888,9 +307,9 @@ onion_populate_cpath(origin_circuit_t *circ)
 origin_circuit_t *
 origin_circuit_init(uint8_t purpose, int flags)
 {
-  /* sets circ->p_circ_id and circ->p_conn */
+  /* sets circ->p_circ_id and circ->p_chan */
   origin_circuit_t *circ = origin_circuit_new();
-  circuit_set_state(TO_CIRCUIT(circ), CIRCUIT_STATE_OR_WAIT);
+  circuit_set_state(TO_CIRCUIT(circ), CIRCUIT_STATE_CHAN_WAIT);
   circ->build_state = tor_malloc_zero(sizeof(cpath_build_state_t));
   circ->build_state->onehop_tunnel =
     ((flags & CIRCLAUNCH_ONEHOP_TUNNEL) ? 1 : 0);
@@ -1900,7 +319,7 @@ origin_circuit_init(uint8_t purpose, int flags)
     ((flags & CIRCLAUNCH_NEED_CAPACITY) ? 1 : 0);
   circ->build_state->is_internal =
     ((flags & CIRCLAUNCH_IS_INTERNAL) ? 1 : 0);
-  circ->_base.purpose = purpose;
+  circ->base_.purpose = purpose;
   return circ;
 }
 
@@ -1942,7 +361,7 @@ int
 circuit_handle_first_hop(origin_circuit_t *circ)
 {
   crypt_path_t *firsthop;
-  or_connection_t *n_conn;
+  channel_t *n_chan;
   int err_reason = 0;
   const char *msg = NULL;
   int should_launch = 0;
@@ -1952,29 +371,30 @@ circuit_handle_first_hop(origin_circuit_t *circ)
   tor_assert(firsthop->extend_info);
 
   /* now see if we're already connected to the first OR in 'route' */
-  log_debug(LD_CIRC,"Looking for firsthop '%s:%u'",
-            fmt_addr(&firsthop->extend_info->addr),
-            firsthop->extend_info->port);
+  log_debug(LD_CIRC,"Looking for firsthop '%s'",
+            fmt_addrport(&firsthop->extend_info->addr,
+                         firsthop->extend_info->port));
 
-  n_conn = connection_or_get_for_extend(firsthop->extend_info->identity_digest,
-                                        &firsthop->extend_info->addr,
-                                        &msg,
-                                        &should_launch);
+  n_chan = channel_get_for_extend(firsthop->extend_info->identity_digest,
+                                  &firsthop->extend_info->addr,
+                                  &msg,
+                                  &should_launch);
 
-  if (!n_conn) {
+  if (!n_chan) {
     /* not currently connected in a useful way. */
     log_info(LD_CIRC, "Next router is %s: %s",
              safe_str_client(extend_info_describe(firsthop->extend_info)),
              msg?msg:"???");
-    circ->_base.n_hop = extend_info_dup(firsthop->extend_info);
+    circ->base_.n_hop = extend_info_dup(firsthop->extend_info);
 
     if (should_launch) {
       if (circ->build_state->onehop_tunnel)
         control_event_bootstrap(BOOTSTRAP_STATUS_CONN_DIR, 0);
-      n_conn = connection_or_connect(&firsthop->extend_info->addr,
-                                     firsthop->extend_info->port,
-                                     firsthop->extend_info->identity_digest);
-      if (!n_conn) { /* connect failed, forget the whole thing */
+      n_chan = channel_connect_for_circuit(
+          &firsthop->extend_info->addr,
+          firsthop->extend_info->port,
+          firsthop->extend_info->identity_digest);
+      if (!n_chan) { /* connect failed, forget the whole thing */
         log_info(LD_CIRC,"connect to firsthop failed. Closing.");
         return -END_CIRC_REASON_CONNECTFAILED;
       }
@@ -1982,13 +402,13 @@ circuit_handle_first_hop(origin_circuit_t *circ)
 
     log_debug(LD_CIRC,"connecting in progress (or finished). Good.");
     /* return success. The onion/circuit/etc will be taken care of
-     * automatically (may already have been) whenever n_conn reaches
+     * automatically (may already have been) whenever n_chan reaches
      * OR_CONN_STATE_OPEN.
      */
     return 0;
   } else { /* it's already open. use it. */
-    tor_assert(!circ->_base.n_hop);
-    circ->_base.n_conn = n_conn;
+    tor_assert(!circ->base_.n_hop);
+    circ->base_.n_chan = n_chan;
     log_debug(LD_CIRC,"Conn open. Delivering first onion skin.");
     if ((err_reason = circuit_send_next_onion_skin(circ)) < 0) {
       log_info(LD_CIRC,"circuit_send_next_onion_skin failed.");
@@ -2004,48 +424,49 @@ circuit_handle_first_hop(origin_circuit_t *circ)
  * Status is 1 if connect succeeded, or 0 if connect failed.
  */
 void
-circuit_n_conn_done(or_connection_t *or_conn, int status)
+circuit_n_chan_done(channel_t *chan, int status)
 {
   smartlist_t *pending_circs;
   int err_reason = 0;
 
-  log_debug(LD_CIRC,"or_conn to %s/%s, status=%d",
-            or_conn->nickname ? or_conn->nickname : "NULL",
-            or_conn->_base.address, status);
+  tor_assert(chan);
+
+  log_debug(LD_CIRC,"chan to %s/%s, status=%d",
+            chan->nickname ? chan->nickname : "NULL",
+            channel_get_canonical_remote_descr(chan), status);
 
   pending_circs = smartlist_new();
-  circuit_get_all_pending_on_or_conn(pending_circs, or_conn);
+  circuit_get_all_pending_on_channel(pending_circs, chan);
 
   SMARTLIST_FOREACH_BEGIN(pending_circs, circuit_t *, circ)
     {
       /* These checks are redundant wrt get_all_pending_on_or_conn, but I'm
        * leaving them in in case it's possible for the status of a circuit to
        * change as we're going down the list. */
-      if (circ->marked_for_close || circ->n_conn || !circ->n_hop ||
-          circ->state != CIRCUIT_STATE_OR_WAIT)
+      if (circ->marked_for_close || circ->n_chan || !circ->n_hop ||
+          circ->state != CIRCUIT_STATE_CHAN_WAIT)
         continue;
 
       if (tor_digest_is_zero(circ->n_hop->identity_digest)) {
         /* Look at addr/port. This is an unkeyed connection. */
-        if (!tor_addr_eq(&circ->n_hop->addr, &or_conn->_base.addr) ||
-            circ->n_hop->port != or_conn->_base.port)
+        if (!channel_matches_extend_info(chan, circ->n_hop))
           continue;
       } else {
         /* We expected a key. See if it's the right one. */
-        if (tor_memneq(or_conn->identity_digest,
+        if (tor_memneq(chan->identity_digest,
                    circ->n_hop->identity_digest, DIGEST_LEN))
           continue;
       }
-      if (!status) { /* or_conn failed; close circ */
-        log_info(LD_CIRC,"or_conn failed. Closing circ.");
-        circuit_mark_for_close(circ, END_CIRC_REASON_OR_CONN_CLOSED);
+      if (!status) { /* chan failed; close circ */
+        log_info(LD_CIRC,"Channel failed; closing circ.");
+        circuit_mark_for_close(circ, END_CIRC_REASON_CHANNEL_CLOSED);
         continue;
       }
       log_debug(LD_CIRC, "Found circ, sending create cell.");
       /* circuit_deliver_create_cell will set n_circ_id and add us to
-       * orconn_circuid_circuit_map, so we don't need to call
-       * set_circid_orconn here. */
-      circ->n_conn = or_conn;
+       * chan_circuid_circuit_map, so we don't need to call
+       * set_circid_chan here. */
+      circ->n_chan = chan;
       extend_info_free(circ->n_hop);
       circ->n_hop = NULL;
 
@@ -2060,14 +481,13 @@ circuit_n_conn_done(or_connection_t *or_conn, int status)
            *     died? */
         }
       } else {
-        /* pull the create cell out of circ->onionskin, and send it */
-        tor_assert(circ->n_conn_onionskin);
-        if (circuit_deliver_create_cell(circ,CELL_CREATE,
-                                        circ->n_conn_onionskin)<0) {
+        /* pull the create cell out of circ->n_chan_create_cell, and send it */
+        tor_assert(circ->n_chan_create_cell);
+        if (circuit_deliver_create_cell(circ, circ->n_chan_create_cell, 1)<0) {
           circuit_mark_for_close(circ, END_CIRC_REASON_RESOURCELIMIT);
           continue;
         }
-        tor_free(circ->n_conn_onionskin);
+        tor_free(circ->n_chan_create_cell);
         circuit_set_state(circ, CIRCUIT_STATE_OPEN);
       }
     }
@@ -2076,44 +496,63 @@ circuit_n_conn_done(or_connection_t *or_conn, int status)
   smartlist_free(pending_circs);
 }
 
-/** Find a new circid that isn't currently in use on the circ->n_conn
+/** Find a new circid that isn't currently in use on the circ->n_chan
  * for the outgoing
- * circuit <b>circ</b>, and deliver a cell of type <b>cell_type</b>
- * (either CELL_CREATE or CELL_CREATE_FAST) with payload <b>payload</b>
- * to this circuit.
- * Return -1 if we failed to find a suitable circid, else return 0.
+ * circuit <b>circ</b>, and deliver the cell <b>create_cell</b> to this
+ * circuit.  If <b>relayed</b> is true, this is a create cell somebody
+ * gave us via an EXTEND cell, so we shouldn't worry if we don't understand
+ * it. Return -1 if we failed to find a suitable circid, else return 0.
  */
 static int
-circuit_deliver_create_cell(circuit_t *circ, uint8_t cell_type,
-                            const char *payload)
+circuit_deliver_create_cell(circuit_t *circ, const create_cell_t *create_cell,
+                            int relayed)
 {
   cell_t cell;
   circid_t id;
+  int r;
 
   tor_assert(circ);
-  tor_assert(circ->n_conn);
-  tor_assert(payload);
-  tor_assert(cell_type == CELL_CREATE || cell_type == CELL_CREATE_FAST);
+  tor_assert(circ->n_chan);
+  tor_assert(create_cell);
+  tor_assert(create_cell->cell_type == CELL_CREATE ||
+             create_cell->cell_type == CELL_CREATE_FAST ||
+             create_cell->cell_type == CELL_CREATE2);
 
-  id = get_unique_circ_id_by_conn(circ->n_conn);
+  id = get_unique_circ_id_by_chan(circ->n_chan);
   if (!id) {
     log_warn(LD_CIRC,"failed to get unique circID.");
     return -1;
   }
-  log_debug(LD_CIRC,"Chosen circID %u.", id);
-  circuit_set_n_circid_orconn(circ, id, circ->n_conn);
+  log_debug(LD_CIRC,"Chosen circID %u.", (unsigned)id);
+  circuit_set_n_circid_chan(circ, id, circ->n_chan);
 
   memset(&cell, 0, sizeof(cell_t));
-  cell.command = cell_type;
+  r = relayed ? create_cell_format_relayed(&cell, create_cell)
+              : create_cell_format(&cell, create_cell);
+  if (r < 0) {
+    log_warn(LD_CIRC,"Couldn't format create cell");
+    return -1;
+  }
   cell.circ_id = circ->n_circ_id;
 
-  memcpy(cell.payload, payload, ONIONSKIN_CHALLENGE_LEN);
-  append_cell_to_circuit_queue(circ, circ->n_conn, &cell,
+  append_cell_to_circuit_queue(circ, circ->n_chan, &cell,
                                CELL_DIRECTION_OUT, 0);
 
   if (CIRCUIT_IS_ORIGIN(circ)) {
+    /* Update began timestamp for circuits starting their first hop */
+    if (TO_ORIGIN_CIRCUIT(circ)->cpath->state == CPATH_STATE_CLOSED) {
+      if (circ->n_chan->state != CHANNEL_STATE_OPEN) {
+        log_warn(LD_CIRC,
+                 "Got first hop for a circuit without an opened channel. "
+                 "State: %s.", channel_state_to_string(circ->n_chan->state));
+        tor_fragile_assert();
+      }
+
+      tor_gettimeofday(&circ->timestamp_began);
+    }
+
     /* mark it so it gets better rate limiting treatment. */
-    circ->n_conn->client_used = time(NULL);
+    channel_timestamp_client(circ->n_chan);
   }
 
   return 0;
@@ -2185,6 +624,73 @@ circuit_timeout_want_to_count_circ(origin_circuit_t *circ)
           && circ->build_state->desired_path_len == DEFAULT_ROUTE_LEN;
 }
 
+#ifdef CURVE25519_ENABLED
+/** Return true if the ntor handshake is enabled in the configuration, or if
+ * it's been set to "auto" in the configuration and it's enabled in the
+ * consensus. */
+static int
+circuits_can_use_ntor(void)
+{
+  const or_options_t *options = get_options();
+  if (options->UseNTorHandshake != -1)
+    return options->UseNTorHandshake;
+  return networkstatus_get_param(NULL, "UseNTorHandshake", 0, 0, 1);
+}
+#endif
+
+/** Decide whether to use a TAP or ntor handshake for connecting to <b>ei</b>
+ * directly, and set *<b>cell_type_out</b> and *<b>handshake_type_out</b>
+ * accordingly. */
+static void
+circuit_pick_create_handshake(uint8_t *cell_type_out,
+                              uint16_t *handshake_type_out,
+                              const extend_info_t *ei)
+{
+#ifdef CURVE25519_ENABLED
+  if (!tor_mem_is_zero((const char*)ei->curve25519_onion_key.public_key,
+                       CURVE25519_PUBKEY_LEN) &&
+      circuits_can_use_ntor()) {
+    *cell_type_out = CELL_CREATE2;
+    *handshake_type_out = ONION_HANDSHAKE_TYPE_NTOR;
+    return;
+  }
+#else
+  (void) ei;
+#endif
+
+  *cell_type_out = CELL_CREATE;
+  *handshake_type_out = ONION_HANDSHAKE_TYPE_TAP;
+}
+
+/** Decide whether to use a TAP or ntor handshake for connecting to <b>ei</b>
+ * directly, and set *<b>handshake_type_out</b> accordingly. Decide whether,
+ * in extending through <b>node</b> to do so, we should use an EXTEND2 or an
+ * EXTEND cell to do so, and set *<b>cell_type_out</b> and
+ * *<b>create_cell_type_out</b> accordingly. */
+static void
+circuit_pick_extend_handshake(uint8_t *cell_type_out,
+                              uint8_t *create_cell_type_out,
+                              uint16_t *handshake_type_out,
+                              const node_t *node_prev,
+                              const extend_info_t *ei)
+{
+  uint8_t t;
+  circuit_pick_create_handshake(&t, handshake_type_out, ei);
+  /* XXXX024 The check for whether the node has a curve25519 key is a bad
+   * proxy for whether it can do extend2 cells; once a version that
+   * handles extend2 cells is out, remove it. */
+  if (node_prev &&
+      *handshake_type_out != ONION_HANDSHAKE_TYPE_TAP &&
+      (node_has_curve25519_onion_key(node_prev) ||
+       (node_prev->rs && node_prev->rs->version_supports_extend2_cells))) {
+    *cell_type_out = RELAY_COMMAND_EXTEND2;
+    *create_cell_type_out = CELL_CREATE2;
+  } else {
+    *cell_type_out = RELAY_COMMAND_EXTEND;
+    *create_cell_type_out = CELL_CREATE;
+  }
+}
+
 /** This is the backbone function for building circuits.
  *
  * If circ's first hop is closed, then we need to build a create
@@ -2200,49 +706,50 @@ circuit_send_next_onion_skin(origin_circuit_t *circ)
 {
   crypt_path_t *hop;
   const node_t *node;
-  char payload[2+4+DIGEST_LEN+ONIONSKIN_CHALLENGE_LEN];
-  char *onionskin;
-  size_t payload_len;
 
   tor_assert(circ);
 
   if (circ->cpath->state == CPATH_STATE_CLOSED) {
+    /* This is the first hop. */
+    create_cell_t cc;
     int fast;
-    uint8_t cell_type;
+    int len;
     log_debug(LD_CIRC,"First skin; sending create cell.");
+    memset(&cc, 0, sizeof(cc));
     if (circ->build_state->onehop_tunnel)
       control_event_bootstrap(BOOTSTRAP_STATUS_ONEHOP_CREATE, 0);
     else
       control_event_bootstrap(BOOTSTRAP_STATUS_CIRCUIT_CREATE, 0);
 
-    node = node_get_by_id(circ->_base.n_conn->identity_digest);
+    node = node_get_by_id(circ->base_.n_chan->identity_digest);
     fast = should_use_create_fast_for_circuit(circ);
     if (!fast) {
       /* We are an OR and we know the right onion key: we should
-       * send an old slow create cell.
+       * send a create cell.
        */
-      cell_type = CELL_CREATE;
-      if (onion_skin_create(circ->cpath->extend_info->onion_key,
-                            &(circ->cpath->dh_handshake_state),
-                            payload) < 0) {
-        log_warn(LD_CIRC,"onion_skin_create (first hop) failed.");
-        return - END_CIRC_REASON_INTERNAL;
-      }
+      circuit_pick_create_handshake(&cc.cell_type, &cc.handshake_type,
+                                    circ->cpath->extend_info);
       note_request("cell: create", 1);
     } else {
       /* We are not an OR, and we're building the first hop of a circuit to a
        * new OR: we can be speedy and use CREATE_FAST to save an RSA operation
        * and a DH operation. */
-      cell_type = CELL_CREATE_FAST;
-      memset(payload, 0, sizeof(payload));
-      crypto_rand((char*) circ->cpath->fast_handshake_state,
-                  sizeof(circ->cpath->fast_handshake_state));
-      memcpy(payload, circ->cpath->fast_handshake_state,
-             sizeof(circ->cpath->fast_handshake_state));
+      cc.cell_type = CELL_CREATE_FAST;
+      cc.handshake_type = ONION_HANDSHAKE_TYPE_FAST;
       note_request("cell: create fast", 1);
     }
 
-    if (circuit_deliver_create_cell(TO_CIRCUIT(circ), cell_type, payload) < 0)
+    len = onion_skin_create(cc.handshake_type,
+                            circ->cpath->extend_info,
+                            &circ->cpath->handshake_state,
+                            cc.onionskin);
+    if (len < 0) {
+      log_warn(LD_CIRC,"onion_skin_create (first hop) failed.");
+      return - END_CIRC_REASON_INTERNAL;
+    }
+    cc.handshake_len = len;
+
+    if (circuit_deliver_create_cell(TO_CIRCUIT(circ), &cc, 0) < 0)
       return - END_CIRC_REASON_RESOURCELIMIT;
 
     circ->cpath->state = CPATH_STATE_AWAITING_KEYS;
@@ -2251,10 +758,13 @@ circuit_send_next_onion_skin(origin_circuit_t *circ)
              fast ? "CREATE_FAST" : "CREATE",
              node ? node_describe(node) : "<unnamed>");
   } else {
+    extend_cell_t ec;
+    int len;
     tor_assert(circ->cpath->state == CPATH_STATE_OPEN);
-    tor_assert(circ->_base.state == CIRCUIT_STATE_BUILDING);
+    tor_assert(circ->base_.state == CIRCUIT_STATE_BUILDING);
     log_debug(LD_CIRC,"starting to send subsequent skin.");
     hop = onion_next_hop_in_cpath(circ->cpath);
+    memset(&ec, 0, sizeof(ec));
     if (!hop) {
       /* done building the circuit. whew. */
       circuit_set_state(TO_CIRCUIT(circ), CIRCUIT_STATE_OPEN);
@@ -2262,7 +772,7 @@ circuit_send_next_onion_skin(origin_circuit_t *circ)
         struct timeval end;
         long timediff;
         tor_gettimeofday(&end);
-        timediff = tv_mdiff(&circ->_base.timestamp_created, &end);
+        timediff = tv_mdiff(&circ->base_.timestamp_began, &end);
 
         /*
          * If the circuit build time is much greater than we would have cut
@@ -2272,8 +782,8 @@ circuit_send_next_onion_skin(origin_circuit_t *circ)
         if (timediff < 0 || timediff > 2*circ_times.close_ms+1000) {
           log_notice(LD_CIRC, "Strange value for circuit build time: %ldmsec. "
                               "Assuming clock jump. Purpose %d (%s)", timediff,
-                     circ->_base.purpose,
-                     circuit_purpose_to_string(circ->_base.purpose));
+                     circ->base_.purpose,
+                     circuit_purpose_to_string(circ->base_.purpose));
         } else if (!circuit_build_times_disabled()) {
           /* Only count circuit times if the network is live */
           if (circuit_build_times_network_check_live(&circ_times)) {
@@ -2281,7 +791,7 @@ circuit_send_next_onion_skin(origin_circuit_t *circ)
             circuit_build_times_set_timeout(&circ_times);
           }
 
-          if (circ->_base.purpose != CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT) {
+          if (circ->base_.purpose != CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT) {
             circuit_build_times_network_circ_success(&circ_times);
           }
         }
@@ -2292,6 +802,10 @@ circuit_send_next_onion_skin(origin_circuit_t *circ)
       if (circ->build_state->onehop_tunnel || circ->has_opened) {
         control_event_bootstrap(BOOTSTRAP_STATUS_REQUESTING_STATUS, 0);
       }
+
+      pathbias_count_build_success(circ);
+      circuit_rep_hist_note_result(circ);
+      circuit_has_opened(circ); /* do other actions as necessary */
 
       if (!can_complete_circuit && !circ->build_state->onehop_tunnel) {
         const or_options_t *options = get_options();
@@ -2309,13 +823,10 @@ circuit_send_next_onion_skin(origin_circuit_t *circ)
         }
       }
 
-      pathbias_count_success(circ);
-      circuit_rep_hist_note_result(circ);
-      circuit_has_opened(circ); /* do other actions as necessary */
-
       /* We're done with measurement circuits here. Just close them */
-      if (circ->_base.purpose == CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT)
+      if (circ->base_.purpose == CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT) {
         circuit_mark_for_close(TO_CIRCUIT(circ), END_CIRC_REASON_FINISHED);
+      }
       return 0;
     }
 
@@ -2324,29 +835,50 @@ circuit_send_next_onion_skin(origin_circuit_t *circ)
       return - END_CIRC_REASON_INTERNAL;
     }
 
-    set_uint32(payload, tor_addr_to_ipv4n(&hop->extend_info->addr));
-    set_uint16(payload+4, htons(hop->extend_info->port));
+    {
+      const node_t *prev_node;
+      prev_node = node_get_by_id(hop->prev->extend_info->identity_digest);
+      circuit_pick_extend_handshake(&ec.cell_type,
+                                    &ec.create_cell.cell_type,
+                                    &ec.create_cell.handshake_type,
+                                    prev_node,
+                                    hop->extend_info);
+    }
 
-    onionskin = payload+2+4;
-    memcpy(payload+2+4+ONIONSKIN_CHALLENGE_LEN,
-           hop->extend_info->identity_digest, DIGEST_LEN);
-    payload_len = 2+4+ONIONSKIN_CHALLENGE_LEN+DIGEST_LEN;
+    tor_addr_copy(&ec.orport_ipv4.addr, &hop->extend_info->addr);
+    ec.orport_ipv4.port = hop->extend_info->port;
+    tor_addr_make_unspec(&ec.orport_ipv6.addr);
+    memcpy(ec.node_id, hop->extend_info->identity_digest, DIGEST_LEN);
 
-    if (onion_skin_create(hop->extend_info->onion_key,
-                          &(hop->dh_handshake_state), onionskin) < 0) {
+    len = onion_skin_create(ec.create_cell.handshake_type,
+                            hop->extend_info,
+                            &hop->handshake_state,
+                            ec.create_cell.onionskin);
+    if (len < 0) {
       log_warn(LD_CIRC,"onion_skin_create failed.");
       return - END_CIRC_REASON_INTERNAL;
     }
+    ec.create_cell.handshake_len = len;
 
     log_info(LD_CIRC,"Sending extend relay cell.");
     note_request("cell: extend", 1);
-    /* send it to hop->prev, because it will transfer
-     * it to a create cell and then send to hop */
-    if (relay_send_command_from_edge(0, TO_CIRCUIT(circ),
-                                     RELAY_COMMAND_EXTEND,
-                                     payload, payload_len, hop->prev) < 0)
-      return 0; /* circuit is closed */
+    {
+      uint8_t command = 0;
+      uint16_t payload_len=0;
+      uint8_t payload[RELAY_PAYLOAD_SIZE];
+      if (extend_cell_format(&command, &payload_len, payload, &ec)<0) {
+        log_warn(LD_CIRC,"Couldn't format extend cell");
+        return -END_CIRC_REASON_INTERNAL;
+      }
 
+      /* send it to hop->prev, because it will transfer
+       * it to a create cell and then send to hop */
+      if (relay_send_command_from_edge(0, TO_CIRCUIT(circ),
+                                       command,
+                                       (char*)payload, payload_len,
+                                       hop->prev) < 0)
+        return 0; /* circuit is closed */
+    }
     hop->state = CPATH_STATE_AWAITING_KEYS;
   }
   return 0;
@@ -2369,7 +901,7 @@ circuit_note_clock_jumped(int seconds_elapsed)
   control_event_client_status(severity, "CIRCUIT_NOT_ESTABLISHED REASON=%s",
                               "CLOCK_JUMPED");
   circuit_mark_all_unused_circs();
-  circuit_expire_all_dirty_circs();
+  circuit_mark_all_dirty_circs_as_unusable();
 }
 
 /** Take the 'extend' <b>cell</b>, pull out addr/port plus the onion
@@ -2383,19 +915,15 @@ circuit_note_clock_jumped(int seconds_elapsed)
 int
 circuit_extend(cell_t *cell, circuit_t *circ)
 {
-  or_connection_t *n_conn;
+  channel_t *n_chan;
   relay_header_t rh;
-  char *onionskin;
-  char *id_digest=NULL;
-  uint32_t n_addr32;
-  uint16_t n_port;
-  tor_addr_t n_addr;
+  extend_cell_t ec;
   const char *msg = NULL;
   int should_launch = 0;
 
-  if (circ->n_conn) {
+  if (circ->n_chan) {
     log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
-           "n_conn already set. Bug/attack. Closing.");
+           "n_chan already set. Bug/attack. Closing.");
     return -1;
   }
   if (circ->n_hop) {
@@ -2412,27 +940,21 @@ circuit_extend(cell_t *cell, circuit_t *circ)
 
   relay_header_unpack(&rh, cell->payload);
 
-  if (rh.length < 4+2+ONIONSKIN_CHALLENGE_LEN+DIGEST_LEN) {
+  if (extend_cell_parse(&ec, rh.command,
+                        cell->payload+RELAY_HEADER_SIZE,
+                        rh.length) < 0) {
     log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
-           "Wrong length %d on extend cell. Closing circuit.",
-           rh.length);
+           "Can't parse extend cell. Closing circuit.");
     return -1;
   }
 
-  n_addr32 = ntohl(get_uint32(cell->payload+RELAY_HEADER_SIZE));
-  n_port = ntohs(get_uint16(cell->payload+RELAY_HEADER_SIZE+4));
-  onionskin = (char*) cell->payload+RELAY_HEADER_SIZE+4+2;
-  id_digest = (char*) cell->payload+RELAY_HEADER_SIZE+4+2+
-    ONIONSKIN_CHALLENGE_LEN;
-  tor_addr_from_ipv4h(&n_addr, n_addr32);
-
-  if (!n_port || !n_addr32) {
+  if (!ec.orport_ipv4.port || tor_addr_is_null(&ec.orport_ipv4.addr)) {
     log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
            "Client asked me to extend to zero destination port or addr.");
     return -1;
   }
 
-  if (tor_addr_is_internal(&n_addr, 0) &&
+  if (tor_addr_is_internal(&ec.orport_ipv4.addr, 0) &&
       !get_options()->ExtendAllowPrivateAddresses) {
     log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
            "Client asked me to extend to a private address");
@@ -2445,7 +967,7 @@ circuit_extend(cell_t *cell, circuit_t *circ)
    * fingerprints -- a) because it opens the user up to a mitm attack,
    * and b) because it lets an attacker force the relay to hold open a
    * new TLS connection for each extend request. */
-  if (tor_digest_is_zero(id_digest)) {
+  if (tor_digest_is_zero((const char*)ec.node_id)) {
     log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
            "Client asked me to extend without specifying an id_digest.");
     return -1;
@@ -2454,55 +976,64 @@ circuit_extend(cell_t *cell, circuit_t *circ)
   /* Next, check if we're being asked to connect to the hop that the
    * extend cell came from. There isn't any reason for that, and it can
    * assist circular-path attacks. */
-  if (tor_memeq(id_digest, TO_OR_CIRCUIT(circ)->p_conn->identity_digest,
-              DIGEST_LEN)) {
+  if (tor_memeq(ec.node_id,
+                TO_OR_CIRCUIT(circ)->p_chan->identity_digest,
+                DIGEST_LEN)) {
     log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
            "Client asked me to extend back to the previous hop.");
     return -1;
   }
 
-  n_conn = connection_or_get_for_extend(id_digest,
-                                        &n_addr,
-                                        &msg,
-                                        &should_launch);
+  n_chan = channel_get_for_extend((const char*)ec.node_id,
+                                  &ec.orport_ipv4.addr,
+                                  &msg,
+                                  &should_launch);
 
-  if (!n_conn) {
-    log_debug(LD_CIRC|LD_OR,"Next router (%s:%d): %s",
-              fmt_addr(&n_addr), (int)n_port, msg?msg:"????");
+  if (!n_chan) {
+    log_debug(LD_CIRC|LD_OR,"Next router (%s): %s",
+              fmt_addrport(&ec.orport_ipv4.addr,ec.orport_ipv4.port),
+              msg?msg:"????");
 
-    circ->n_hop = extend_info_alloc(NULL /*nickname*/,
-                                    id_digest,
-                                    NULL /*onion_key*/,
-                                    &n_addr, n_port);
+    circ->n_hop = extend_info_new(NULL /*nickname*/,
+                                  (const char*)ec.node_id,
+                                  NULL /*onion_key*/,
+                                  NULL /*curve25519_key*/,
+                                  &ec.orport_ipv4.addr,
+                                  ec.orport_ipv4.port);
 
-    circ->n_conn_onionskin = tor_malloc(ONIONSKIN_CHALLENGE_LEN);
-    memcpy(circ->n_conn_onionskin, onionskin, ONIONSKIN_CHALLENGE_LEN);
-    circuit_set_state(circ, CIRCUIT_STATE_OR_WAIT);
+    circ->n_chan_create_cell = tor_memdup(&ec.create_cell,
+                                          sizeof(ec.create_cell));
+
+    circuit_set_state(circ, CIRCUIT_STATE_CHAN_WAIT);
 
     if (should_launch) {
       /* we should try to open a connection */
-      n_conn = connection_or_connect(&n_addr, n_port, id_digest);
-      if (!n_conn) {
-        log_info(LD_CIRC,"Launching n_conn failed. Closing circuit.");
+      n_chan = channel_connect_for_circuit(&ec.orport_ipv4.addr,
+                                           ec.orport_ipv4.port,
+                                           (const char*)ec.node_id);
+      if (!n_chan) {
+        log_info(LD_CIRC,"Launching n_chan failed. Closing circuit.");
         circuit_mark_for_close(circ, END_CIRC_REASON_CONNECTFAILED);
         return 0;
       }
       log_debug(LD_CIRC,"connecting in progress (or finished). Good.");
     }
     /* return success. The onion/circuit/etc will be taken care of
-     * automatically (may already have been) whenever n_conn reaches
+     * automatically (may already have been) whenever n_chan reaches
      * OR_CONN_STATE_OPEN.
      */
     return 0;
   }
 
   tor_assert(!circ->n_hop); /* Connection is already established. */
-  circ->n_conn = n_conn;
-  log_debug(LD_CIRC,"n_conn is %s:%u",
-            n_conn->_base.address,n_conn->_base.port);
+  circ->n_chan = n_chan;
+  log_debug(LD_CIRC,
+            "n_chan is %s",
+            channel_get_canonical_remote_descr(n_chan));
 
-  if (circuit_deliver_create_cell(circ, CELL_CREATE, onionskin) < 0)
+  if (circuit_deliver_create_cell(circ, &ec.create_cell, 1) < 0)
     return -1;
+
   return 0;
 }
 
@@ -2556,12 +1087,12 @@ circuit_init_cpath_crypto(crypt_path_t *cpath, const char *key_data,
   return 0;
 }
 
-/** The minimum number of first hop completions before we start
+/** The minimum number of circuit attempts before we start
   * thinking about warning about path bias and dropping guards */
 static int
 pathbias_get_min_circs(const or_options_t *options)
 {
-#define DFLT_PATH_BIAS_MIN_CIRC 20
+#define DFLT_PATH_BIAS_MIN_CIRC 150
   if (options->PathBiasCircThreshold >= 5)
     return options->PathBiasCircThreshold;
   else
@@ -2570,10 +1101,11 @@ pathbias_get_min_circs(const or_options_t *options)
                                    5, INT32_MAX);
 }
 
+/** The circuit success rate below which we issue a notice */
 static double
 pathbias_get_notice_rate(const or_options_t *options)
 {
-#define DFLT_PATH_BIAS_NOTICE_PCT 40
+#define DFLT_PATH_BIAS_NOTICE_PCT 70
   if (options->PathBiasNoticeRate >= 0.0)
     return options->PathBiasNoticeRate;
   else
@@ -2581,23 +1113,62 @@ pathbias_get_notice_rate(const or_options_t *options)
                                    DFLT_PATH_BIAS_NOTICE_PCT, 0, 100)/100.0;
 }
 
+/* XXXX024 I'd like to have this be static again, but entrynodes.c needs it. */
+/** The circuit success rate below which we issue a warn */
 static double
-pathbias_get_disable_rate(const or_options_t *options)
+pathbias_get_warn_rate(const or_options_t *options)
 {
-// XXX: This needs tuning based on use + experimentation before we set it
-#define DFLT_PATH_BIAS_DISABLE_PCT 0
-  if (options->PathBiasDisableRate >= 0.0)
-    return options->PathBiasDisableRate;
+#define DFLT_PATH_BIAS_WARN_PCT 50
+  if (options->PathBiasWarnRate >= 0.0)
+    return options->PathBiasWarnRate;
   else
-    return networkstatus_get_param(NULL, "pb_disablepct",
-                                   DFLT_PATH_BIAS_DISABLE_PCT, 0, 100)/100.0;
+    return networkstatus_get_param(NULL, "pb_warnpct",
+                                   DFLT_PATH_BIAS_WARN_PCT, 0, 100)/100.0;
 }
 
+/* XXXX024 I'd like to have this be static again, but entrynodes.c needs it. */
+/**
+ * The extreme rate is the rate at which we would drop the guard,
+ * if pb_dropguard is also set. Otherwise we just warn.
+ */
+double
+pathbias_get_extreme_rate(const or_options_t *options)
+{
+#define DFLT_PATH_BIAS_EXTREME_PCT 30
+  if (options->PathBiasExtremeRate >= 0.0)
+    return options->PathBiasExtremeRate;
+  else
+    return networkstatus_get_param(NULL, "pb_extremepct",
+                                   DFLT_PATH_BIAS_EXTREME_PCT, 0, 100)/100.0;
+}
+
+/* XXXX024 I'd like to have this be static again, but entrynodes.c needs it. */
+/**
+ * If 1, we actually disable use of guards that fall below
+ * the extreme_pct.
+ */
+int
+pathbias_get_dropguards(const or_options_t *options)
+{
+#define DFLT_PATH_BIAS_DROP_GUARDS 0
+  if (options->PathBiasDropGuards >= 0)
+    return options->PathBiasDropGuards;
+  else
+    return networkstatus_get_param(NULL, "pb_dropguards",
+                                   DFLT_PATH_BIAS_DROP_GUARDS, 0, 1);
+}
+
+/**
+ * This is the number of circuits at which we scale our
+ * counts by mult_factor/scale_factor. Note, this count is
+ * not exact, as we only perform the scaling in the event
+ * of no integer truncation.
+ */
 static int
 pathbias_get_scale_threshold(const or_options_t *options)
 {
-#define DFLT_PATH_BIAS_SCALE_THRESHOLD 200
-  if (options->PathBiasScaleThreshold >= 2)
+#define DFLT_PATH_BIAS_SCALE_THRESHOLD 300
+  if (options->PathBiasScaleThreshold >= 10)
     return options->PathBiasScaleThreshold;
   else
     return networkstatus_get_param(NULL, "pb_scalecircs",
@@ -2605,45 +1176,200 @@ pathbias_get_scale_threshold(const or_options_t *options)
                                    INT32_MAX);
 }
 
-static int
-pathbias_get_scale_factor(const or_options_t *options)
+/**
+ * Compute the path bias scaling ratio from the consensus
+ * parameters pb_multfactor/pb_scalefactor.
+ *
+ * Returns a value in (0, 1.0] which we multiply our pathbias
+ * counts with to scale them down.
+ */
+static double
+pathbias_get_scale_ratio(const or_options_t *options)
 {
-#define DFLT_PATH_BIAS_SCALE_FACTOR 4
-  if (options->PathBiasScaleFactor >= 1)
-    return options->PathBiasScaleFactor;
-  else
-    return networkstatus_get_param(NULL, "pb_scalefactor",
-                                DFLT_PATH_BIAS_SCALE_THRESHOLD, 1, INT32_MAX);
+  /*
+   * The scale factor is the denominator for our scaling
+   * of circuit counts for our path bias window.
+   *
+   * Note that our use of doubles for the path bias state
+   * file means that powers of 2 work best here.
+   */
+  int denominator = networkstatus_get_param(NULL, "pb_scalefactor",
+                              2, 2, INT32_MAX);
+  (void) options;
+  /**
+   * The mult factor is the numerator for our scaling
+   * of circuit counts for our path bias window. It
+   * allows us to scale by fractions.
+   */
+  return networkstatus_get_param(NULL, "pb_multfactor",
+                              1, 1, denominator)/((double)denominator);
 }
 
-static const char *
+/** The minimum number of circuit usage attempts before we start
+  * thinking about warning about path use bias and dropping guards */
+static int
+pathbias_get_min_use(const or_options_t *options)
+{
+#define DFLT_PATH_BIAS_MIN_USE 20
+  if (options->PathBiasUseThreshold >= 3)
+    return options->PathBiasUseThreshold;
+  else
+    return networkstatus_get_param(NULL, "pb_minuse",
+                                   DFLT_PATH_BIAS_MIN_USE,
+                                   3, INT32_MAX);
+}
+
+/** The circuit use success rate below which we issue a notice */
+static double
+pathbias_get_notice_use_rate(const or_options_t *options)
+{
+#define DFLT_PATH_BIAS_NOTICE_USE_PCT 80
+  if (options->PathBiasNoticeUseRate >= 0.0)
+    return options->PathBiasNoticeUseRate;
+  else
+    return networkstatus_get_param(NULL, "pb_noticeusepct",
+                                   DFLT_PATH_BIAS_NOTICE_USE_PCT,
+                                   0, 100)/100.0;
+}
+
+/**
+ * The extreme use rate is the rate at which we would drop the guard,
+ * if pb_dropguard is also set. Otherwise we just warn.
+ */
+double
+pathbias_get_extreme_use_rate(const or_options_t *options)
+{
+#define DFLT_PATH_BIAS_EXTREME_USE_PCT 60
+  if (options->PathBiasExtremeUseRate >= 0.0)
+    return options->PathBiasExtremeUseRate;
+  else
+    return networkstatus_get_param(NULL, "pb_extremeusepct",
+                                   DFLT_PATH_BIAS_EXTREME_USE_PCT,
+                                   0, 100)/100.0;
+}
+
+/**
+ * This is the number of circuits at which we scale our
+ * use counts by mult_factor/scale_factor. Note, this count is
+ * not exact, as we only perform the scaling in the event
+ * of no integer truncation.
+ */
+static int
+pathbias_get_scale_use_threshold(const or_options_t *options)
+{
+#define DFLT_PATH_BIAS_SCALE_USE_THRESHOLD 100
+  if (options->PathBiasScaleUseThreshold >= 10)
+    return options->PathBiasScaleUseThreshold;
+  else
+    return networkstatus_get_param(NULL, "pb_scaleuse",
+                                   DFLT_PATH_BIAS_SCALE_USE_THRESHOLD,
+                                   10, INT32_MAX);
+}
+
+/**
+ * Convert a Guard's path state to string.
+ */
+const char *
 pathbias_state_to_string(path_state_t state)
 {
   switch (state) {
     case PATH_STATE_NEW_CIRC:
       return "new";
-    case PATH_STATE_DID_FIRST_HOP:
-      return "first hop";
-    case PATH_STATE_SUCCEEDED:
-      return "succeeded";
+    case PATH_STATE_BUILD_ATTEMPTED:
+      return "build attempted";
+    case PATH_STATE_BUILD_SUCCEEDED:
+      return "build succeeded";
+    case PATH_STATE_USE_ATTEMPTED:
+      return "use attempted";
+    case PATH_STATE_USE_SUCCEEDED:
+      return "use succeeded";
+    case PATH_STATE_USE_FAILED:
+      return "use failed";
+    case PATH_STATE_ALREADY_COUNTED:
+      return "already counted";
   }
 
   return "unknown";
 }
 
 /**
- * Check our circuit state to see if this is a successful first hop.
- * If so, record it in the current guard's path bias first_hop count.
- *
- * Also check for several potential error cases for bug #6475.
+ * This function decides if a circuit has progressed far enough to count
+ * as a circuit "attempt". As long as end-to-end tagging is possible,
+ * we assume the adversary will use it over hop-to-hop failure. Therefore,
+ * we only need to account bias for the last hop. This should make us
+ * much more resilient to ambient circuit failure, and also make that
+ * failure easier to measure (we only need to measure Exit failure rates).
  */
 static int
-pathbias_count_first_hop(origin_circuit_t *circ)
+pathbias_is_new_circ_attempt(origin_circuit_t *circ)
 {
-#define FIRST_HOP_NOTICE_INTERVAL (600)
-  static ratelim_t first_hop_notice_limit =
-    RATELIM_INIT(FIRST_HOP_NOTICE_INTERVAL);
+#define N2N_TAGGING_IS_POSSIBLE
+#ifdef N2N_TAGGING_IS_POSSIBLE
+  /* cpath is a circular list. We want circs with more than one hop,
+   * and the second hop must be waiting for keys still (it's just
+   * about to get them). */
+  return circ->cpath &&
+         circ->cpath->next != circ->cpath &&
+         circ->cpath->next->state == CPATH_STATE_AWAITING_KEYS;
+#else
+  /* If tagging attacks are no longer possible, we probably want to
+   * count bias from the first hop. However, one could argue that
+   * timing-based tagging is still more useful than per-hop failure.
+   * In which case, we'd never want to use this.
+   */
+  return circ->cpath &&
+         circ->cpath->state == CPATH_STATE_AWAITING_KEYS;
+#endif
+}
+
+/**
+ * Decide if the path bias code should count a circuit.
+ *
+ * @returns 1 if we should count it, 0 otherwise.
+ */
+static int
+pathbias_should_count(origin_circuit_t *circ)
+{
+#define PATHBIAS_COUNT_INTERVAL (600)
+  static ratelim_t count_limit =
+    RATELIM_INIT(PATHBIAS_COUNT_INTERVAL);
   char *rate_msg = NULL;
+
+  /* We can't do path bias accounting without entry guards.
+   * Testing and controller circuits also have no guards.
+   *
+   * We also don't count server-side rends, because their
+   * endpoint could be chosen maliciously.
+   * Similarly, we can't count client-side intro attempts,
+   * because clients can be manipulated into connecting to
+   * malicious intro points. */
+  if (get_options()->UseEntryGuards == 0 ||
+          circ->base_.purpose == CIRCUIT_PURPOSE_TESTING ||
+          circ->base_.purpose == CIRCUIT_PURPOSE_CONTROLLER ||
+          circ->base_.purpose == CIRCUIT_PURPOSE_S_CONNECT_REND ||
+          circ->base_.purpose == CIRCUIT_PURPOSE_S_REND_JOINED ||
+          (circ->base_.purpose >= CIRCUIT_PURPOSE_C_INTRODUCING &&
+           circ->base_.purpose <= CIRCUIT_PURPOSE_C_INTRODUCE_ACKED)) {
+
+    /* Check to see if the shouldcount result has changed due to a
+     * unexpected purpose change that would affect our results.
+     *
+     * The reason we check the path state too here is because for the
+     * cannibalized versions of these purposes, we count them as successful
+     * before their purpose change.
+     */
+    if (circ->pathbias_shouldcount == PATHBIAS_SHOULDCOUNT_COUNTED
+            && circ->path_state != PATH_STATE_ALREADY_COUNTED) {
+      log_info(LD_BUG,
+               "Circuit %d is now being ignored despite being counted "
+               "in the past. Purpose is %s, path state is %s",
+               circ->global_identifier,
+               circuit_purpose_to_string(circ->base_.purpose),
+               pathbias_state_to_string(circ->path_state));
+    }
+    circ->pathbias_shouldcount = PATHBIAS_SHOULDCOUNT_IGNORED;
+    return 0;
+  }
 
   /* Completely ignore one hop circuits */
   if (circ->build_state->onehop_tunnel ||
@@ -2651,93 +1377,127 @@ pathbias_count_first_hop(origin_circuit_t *circ)
     /* Check for inconsistency */
     if (circ->build_state->desired_path_len != 1 ||
         !circ->build_state->onehop_tunnel) {
-      if ((rate_msg = rate_limit_log(&first_hop_notice_limit,
-              approx_time()))) {
+      if ((rate_msg = rate_limit_log(&count_limit, approx_time()))) {
         log_info(LD_BUG,
                "One-hop circuit has length %d. Path state is %s. "
                "Circuit is a %s currently %s.%s",
                circ->build_state->desired_path_len,
                pathbias_state_to_string(circ->path_state),
-               circuit_purpose_to_string(circ->_base.purpose),
-               circuit_state_to_string(circ->_base.state),
+               circuit_purpose_to_string(circ->base_.purpose),
+               circuit_state_to_string(circ->base_.state),
                rate_msg);
         tor_free(rate_msg);
       }
       tor_fragile_assert();
     }
+
+    /* Check to see if the shouldcount result has changed due to a
+     * unexpected change that would affect our results */
+    if (circ->pathbias_shouldcount == PATHBIAS_SHOULDCOUNT_COUNTED) {
+      log_info(LD_BUG,
+               "One-hop circuit %d is now being ignored despite being counted "
+               "in the past. Purpose is %s, path state is %s",
+               circ->global_identifier,
+               circuit_purpose_to_string(circ->base_.purpose),
+               pathbias_state_to_string(circ->path_state));
+    }
+    circ->pathbias_shouldcount = PATHBIAS_SHOULDCOUNT_IGNORED;
     return 0;
   }
 
-  if (circ->cpath->state == CPATH_STATE_AWAITING_KEYS) {
+  /* Check to see if the shouldcount result has changed due to a
+   * unexpected purpose change that would affect our results */
+  if (circ->pathbias_shouldcount == PATHBIAS_SHOULDCOUNT_IGNORED) {
+      log_info(LD_BUG,
+              "Circuit %d is now being counted despite being ignored "
+              "in the past. Purpose is %s, path state is %s",
+              circ->global_identifier,
+              circuit_purpose_to_string(circ->base_.purpose),
+              pathbias_state_to_string(circ->path_state));
+  }
+  circ->pathbias_shouldcount = PATHBIAS_SHOULDCOUNT_COUNTED;
+
+  return 1;
+}
+
+/**
+ * Check our circuit state to see if this is a successful circuit attempt.
+ * If so, record it in the current guard's path bias circ_attempt count.
+ *
+ * Also check for several potential error cases for bug #6475.
+ */
+static int
+pathbias_count_build_attempt(origin_circuit_t *circ)
+{
+#define CIRC_ATTEMPT_NOTICE_INTERVAL (600)
+  static ratelim_t circ_attempt_notice_limit =
+    RATELIM_INIT(CIRC_ATTEMPT_NOTICE_INTERVAL);
+  char *rate_msg = NULL;
+
+  if (!pathbias_should_count(circ)) {
+    return 0;
+  }
+
+  if (pathbias_is_new_circ_attempt(circ)) {
     /* Help track down the real cause of bug #6475: */
-    if (circ->has_opened && circ->path_state != PATH_STATE_DID_FIRST_HOP) {
-      if ((rate_msg = rate_limit_log(&first_hop_notice_limit,
+    if (circ->has_opened && circ->path_state != PATH_STATE_BUILD_ATTEMPTED) {
+      if ((rate_msg = rate_limit_log(&circ_attempt_notice_limit,
                                      approx_time()))) {
         log_info(LD_BUG,
                 "Opened circuit is in strange path state %s. "
                 "Circuit is a %s currently %s.%s",
                 pathbias_state_to_string(circ->path_state),
-                circuit_purpose_to_string(circ->_base.purpose),
-                circuit_state_to_string(circ->_base.state),
+                circuit_purpose_to_string(circ->base_.purpose),
+                circuit_state_to_string(circ->base_.state),
                 rate_msg);
         tor_free(rate_msg);
       }
     }
 
-    /* Don't count cannibalized circs for path bias */
+    /* Don't re-count cannibalized circs.. */
     if (!circ->has_opened) {
-      entry_guard_t *guard;
+      entry_guard_t *guard = NULL;
 
-      guard = entry_guard_get_by_id_digest(
-              circ->_base.n_conn->identity_digest);
+      if (circ->cpath && circ->cpath->extend_info) {
+        guard = entry_guard_get_by_id_digest(
+                  circ->cpath->extend_info->identity_digest);
+      } else if (circ->base_.n_chan) {
+        guard =
+          entry_guard_get_by_id_digest(circ->base_.n_chan->identity_digest);
+      }
+
       if (guard) {
         if (circ->path_state == PATH_STATE_NEW_CIRC) {
-          circ->path_state = PATH_STATE_DID_FIRST_HOP;
+          circ->path_state = PATH_STATE_BUILD_ATTEMPTED;
 
-          if (entry_guard_inc_first_hop_count(guard) < 0) {
+          if (entry_guard_inc_circ_attempt_count(guard) < 0) {
             /* Bogus guard; we already warned. */
             return -END_CIRC_REASON_TORPROTOCOL;
           }
         } else {
-          if ((rate_msg = rate_limit_log(&first_hop_notice_limit,
+          if ((rate_msg = rate_limit_log(&circ_attempt_notice_limit,
                   approx_time()))) {
             log_info(LD_BUG,
                    "Unopened circuit has strange path state %s. "
                    "Circuit is a %s currently %s.%s",
                    pathbias_state_to_string(circ->path_state),
-                   circuit_purpose_to_string(circ->_base.purpose),
-                   circuit_state_to_string(circ->_base.state),
+                   circuit_purpose_to_string(circ->base_.purpose),
+                   circuit_state_to_string(circ->base_.state),
                    rate_msg);
             tor_free(rate_msg);
           }
         }
       } else {
-        if ((rate_msg = rate_limit_log(&first_hop_notice_limit,
+        if ((rate_msg = rate_limit_log(&circ_attempt_notice_limit,
                 approx_time()))) {
-          log_info(LD_BUG,
+          log_info(LD_CIRC,
               "Unopened circuit has no known guard. "
               "Circuit is a %s currently %s.%s",
-              circuit_purpose_to_string(circ->_base.purpose),
-              circuit_state_to_string(circ->_base.state),
+              circuit_purpose_to_string(circ->base_.purpose),
+              circuit_state_to_string(circ->base_.state),
               rate_msg);
           tor_free(rate_msg);
         }
-      }
-    }
-  } else {
-    /* Help track down the real cause of bug #6475: */
-    if (circ->path_state == PATH_STATE_NEW_CIRC) {
-      if ((rate_msg = rate_limit_log(&first_hop_notice_limit,
-                approx_time()))) {
-        log_info(LD_BUG,
-            "A %s circuit is in cpath state %d (opened: %d). "
-            "Circuit is a %s currently %s.%s",
-            pathbias_state_to_string(circ->path_state),
-            circ->cpath->state, circ->has_opened,
-            circuit_purpose_to_string(circ->_base.purpose),
-            circuit_state_to_string(circ->_base.state),
-            rate_msg);
-        tor_free(rate_msg);
       }
     }
   }
@@ -2753,48 +1513,34 @@ pathbias_count_first_hop(origin_circuit_t *circ)
  * Also check for several potential error cases for bug #6475.
  */
 static void
-pathbias_count_success(origin_circuit_t *circ)
+pathbias_count_build_success(origin_circuit_t *circ)
 {
 #define SUCCESS_NOTICE_INTERVAL (600)
   static ratelim_t success_notice_limit =
     RATELIM_INIT(SUCCESS_NOTICE_INTERVAL);
   char *rate_msg = NULL;
+  entry_guard_t *guard = NULL;
 
-  /* Ignore one hop circuits */
-  if (circ->build_state->onehop_tunnel ||
-      circ->build_state->desired_path_len == 1) {
-    /* Check for consistency */
-    if (circ->build_state->desired_path_len != 1 ||
-        !circ->build_state->onehop_tunnel) {
-      if ((rate_msg = rate_limit_log(&success_notice_limit,
-              approx_time()))) {
-        log_info(LD_BUG,
-               "One-hop circuit has length %d. Path state is %s. "
-               "Circuit is a %s currently %s.%s",
-               circ->build_state->desired_path_len,
-               pathbias_state_to_string(circ->path_state),
-               circuit_purpose_to_string(circ->_base.purpose),
-               circuit_state_to_string(circ->_base.state),
-               rate_msg);
-        tor_free(rate_msg);
-      }
-      tor_fragile_assert();
-    }
+  if (!pathbias_should_count(circ)) {
     return;
   }
 
-  /* Don't count cannibalized/reused circs for path bias */
+  /* Don't count cannibalized/reused circs for path bias
+   * "build" success, since they get counted under "use" success. */
   if (!circ->has_opened) {
-    entry_guard_t *guard =
-      entry_guard_get_by_id_digest(circ->_base.n_conn->identity_digest);
+    if (circ->cpath && circ->cpath->extend_info) {
+      guard = entry_guard_get_by_id_digest(
+                circ->cpath->extend_info->identity_digest);
+    }
 
     if (guard) {
-      if (circ->path_state == PATH_STATE_DID_FIRST_HOP) {
-        circ->path_state = PATH_STATE_SUCCEEDED;
-        guard->circuit_successes++;
+      if (circ->path_state == PATH_STATE_BUILD_ATTEMPTED) {
+        circ->path_state = PATH_STATE_BUILD_SUCCEEDED;
+        guard->circ_successes++;
+        entry_guards_changed();
 
-        log_info(LD_PROTOCOL, "Got success count %u/%u for guard %s=%s",
-                 guard->circuit_successes, guard->first_hops,
+        log_info(LD_CIRC, "Got success count %f/%f for guard %s ($%s)",
+                 guard->circ_successes, guard->circ_attempts,
                  guard->nickname, hex_str(guard->identity, DIGEST_LEN));
       } else {
         if ((rate_msg = rate_limit_log(&success_notice_limit,
@@ -2803,41 +1549,44 @@ pathbias_count_success(origin_circuit_t *circ)
               "Succeeded circuit is in strange path state %s. "
               "Circuit is a %s currently %s.%s",
               pathbias_state_to_string(circ->path_state),
-              circuit_purpose_to_string(circ->_base.purpose),
-              circuit_state_to_string(circ->_base.state),
+              circuit_purpose_to_string(circ->base_.purpose),
+              circuit_state_to_string(circ->base_.state),
               rate_msg);
           tor_free(rate_msg);
         }
       }
 
-      if (guard->first_hops < guard->circuit_successes) {
-        log_info(LD_BUG, "Unexpectedly high circuit_successes (%u/%u) "
-                 "for guard %s=%s",
-                 guard->circuit_successes, guard->first_hops,
+      if (guard->circ_attempts < guard->circ_successes) {
+        log_notice(LD_BUG, "Unexpectedly high successes counts (%f/%f) "
+                 "for guard %s ($%s)",
+                 guard->circ_successes, guard->circ_attempts,
                  guard->nickname, hex_str(guard->identity, DIGEST_LEN));
       }
-    } else {
+    /* In rare cases, CIRCUIT_PURPOSE_TESTING can get converted to
+     * CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT and have no guards here.
+     * No need to log that case. */
+    } else if (circ->base_.purpose != CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT) {
       if ((rate_msg = rate_limit_log(&success_notice_limit,
               approx_time()))) {
-        log_info(LD_BUG,
+        log_info(LD_CIRC,
             "Completed circuit has no known guard. "
             "Circuit is a %s currently %s.%s",
-            circuit_purpose_to_string(circ->_base.purpose),
-            circuit_state_to_string(circ->_base.state),
+            circuit_purpose_to_string(circ->base_.purpose),
+            circuit_state_to_string(circ->base_.state),
             rate_msg);
         tor_free(rate_msg);
       }
     }
   } else {
-    if (circ->path_state != PATH_STATE_SUCCEEDED) {
+    if (circ->path_state < PATH_STATE_BUILD_SUCCEEDED) {
       if ((rate_msg = rate_limit_log(&success_notice_limit,
               approx_time()))) {
         log_info(LD_BUG,
             "Opened circuit is in strange path state %s. "
             "Circuit is a %s currently %s.%s",
             pathbias_state_to_string(circ->path_state),
-            circuit_purpose_to_string(circ->_base.purpose),
-            circuit_state_to_string(circ->_base.state),
+            circuit_purpose_to_string(circ->base_.purpose),
+            circuit_state_to_string(circ->base_.state),
             rate_msg);
         tor_free(rate_msg);
       }
@@ -2845,61 +1594,1012 @@ pathbias_count_success(origin_circuit_t *circ)
   }
 }
 
-/** Increment the number of times we successfully extended a circuit to
- * 'guard', first checking if the failure rate is high enough that we should
- * eliminate the guard.  Return -1 if the guard looks no good; return 0 if the
- * guard looks fine. */
-static int
-entry_guard_inc_first_hop_count(entry_guard_t *guard)
+/**
+ * Record an attempt to use a circuit. Changes the circuit's
+ * path state and update its guard's usage counter.
+ *
+ * Used for path bias usage accounting.
+ */
+void
+pathbias_count_use_attempt(origin_circuit_t *circ)
 {
-  const or_options_t *options = get_options();
+  entry_guard_t *guard;
 
-  entry_guards_changed();
+  if (!pathbias_should_count(circ)) {
+    return;
+  }
 
-  if (guard->first_hops > (unsigned)pathbias_get_min_circs(options)) {
-    /* Note: We rely on the < comparison here to allow us to set a 0
-     * rate and disable the feature entirely. If refactoring, don't
-     * change to <= */
-    if (guard->circuit_successes/((double)guard->first_hops)
-        < pathbias_get_disable_rate(options)) {
+  if (circ->path_state < PATH_STATE_BUILD_SUCCEEDED) {
+    log_notice(LD_BUG,
+        "Used circuit is in strange path state %s. "
+        "Circuit is a %s currently %s.",
+        pathbias_state_to_string(circ->path_state),
+        circuit_purpose_to_string(circ->base_.purpose),
+        circuit_state_to_string(circ->base_.state));
+  } else if (circ->path_state < PATH_STATE_USE_ATTEMPTED) {
+    guard = entry_guard_get_by_id_digest(
+                circ->cpath->extend_info->identity_digest);
+    if (guard) {
+      pathbias_measure_use_rate(guard);
+      pathbias_scale_use_rates(guard);
+      guard->use_attempts++;
+      entry_guards_changed();
 
-      log_info(LD_PROTOCOL,
-               "Extremely low circuit success rate %u/%u for guard %s=%s. "
-               "This might indicate an attack, or a bug.",
-               guard->circuit_successes, guard->first_hops, guard->nickname,
-               hex_str(guard->identity, DIGEST_LEN));
+      log_debug(LD_CIRC,
+               "Marked circuit %d (%f/%f) as used for guard %s ($%s).",
+               circ->global_identifier,
+               guard->use_successes, guard->use_attempts,
+               guard->nickname, hex_str(guard->identity, DIGEST_LEN));
+    }
 
-      guard->path_bias_disabled = 1;
-      guard->bad_since = approx_time();
-      return -1;
-    } else if (guard->circuit_successes/((double)guard->first_hops)
-               < pathbias_get_notice_rate(options)
-               && !guard->path_bias_notice) {
-      guard->path_bias_notice = 1;
-      log_info(LD_PROTOCOL,
-                 "Low circuit success rate %u/%u for guard %s=%s.",
-                 guard->circuit_successes, guard->first_hops, guard->nickname,
-                 hex_str(guard->identity, DIGEST_LEN));
+    circ->path_state = PATH_STATE_USE_ATTEMPTED;
+  } else {
+    /* Harmless but educational log message */
+    log_info(LD_CIRC,
+        "Used circuit %d is already in path state %s. "
+        "Circuit is a %s currently %s.",
+        circ->global_identifier,
+        pathbias_state_to_string(circ->path_state),
+        circuit_purpose_to_string(circ->base_.purpose),
+        circuit_state_to_string(circ->base_.state));
+  }
+
+  return;
+}
+
+/**
+ * Check the circuit's path state is appropriate and mark it as
+ * successfully used. Used for path bias usage accounting.
+ *
+ * We don't actually increment the guard's counters until
+ * pathbias_check_close(), because the circuit can still transition
+ * back to PATH_STATE_USE_ATTEMPTED if a stream fails later (this
+ * is done so we can probe the circuit for liveness at close).
+ */
+void
+pathbias_mark_use_success(origin_circuit_t *circ)
+{
+  if (!pathbias_should_count(circ)) {
+    return;
+  }
+
+  if (circ->path_state < PATH_STATE_USE_ATTEMPTED) {
+    log_notice(LD_BUG,
+        "Used circuit %d is in strange path state %s. "
+        "Circuit is a %s currently %s.",
+        circ->global_identifier,
+        pathbias_state_to_string(circ->path_state),
+        circuit_purpose_to_string(circ->base_.purpose),
+        circuit_state_to_string(circ->base_.state));
+
+    pathbias_count_use_attempt(circ);
+  }
+
+  /* We don't do any accounting at the guard until actual circuit close */
+  circ->path_state = PATH_STATE_USE_SUCCEEDED;
+
+  return;
+}
+
+/**
+ * If a stream ever detatches from a circuit in a retriable way,
+ * we need to mark this circuit as still needing either another
+ * successful stream, or in need of a probe.
+ *
+ * An adversary could let the first stream request succeed (ie the
+ * resolve), but then tag and timeout the remainder (via cell
+ * dropping), forcing them on new circuits.
+ *
+ * Rolling back the state will cause us to probe such circuits, which
+ * should lead to probe failures in the event of such tagging due to
+ * either unrecognized cells coming in while we wait for the probe,
+ * or the cipher state getting out of sync in the case of dropped cells.
+ */
+void
+pathbias_mark_use_rollback(origin_circuit_t *circ)
+{
+  if (circ->path_state == PATH_STATE_USE_SUCCEEDED) {
+    log_info(LD_CIRC,
+             "Rolling back pathbias use state to 'attempted' for detached "
+             "circuit %d", circ->global_identifier);
+    circ->path_state = PATH_STATE_USE_ATTEMPTED;
+  }
+}
+
+/**
+ * Actually count a circuit success towards a guard's usage counters
+ * if the path state is appropriate.
+ */
+static void
+pathbias_count_use_success(origin_circuit_t *circ)
+{
+  entry_guard_t *guard;
+
+  if (!pathbias_should_count(circ)) {
+    return;
+  }
+
+  if (circ->path_state != PATH_STATE_USE_SUCCEEDED) {
+    log_notice(LD_BUG,
+        "Successfully used circuit %d is in strange path state %s. "
+        "Circuit is a %s currently %s.",
+        circ->global_identifier,
+        pathbias_state_to_string(circ->path_state),
+        circuit_purpose_to_string(circ->base_.purpose),
+        circuit_state_to_string(circ->base_.state));
+  } else {
+    guard = entry_guard_get_by_id_digest(
+                circ->cpath->extend_info->identity_digest);
+    if (guard) {
+      guard->use_successes++;
+      entry_guards_changed();
+
+      if (guard->use_attempts < guard->use_successes) {
+        log_notice(LD_BUG, "Unexpectedly high use successes counts (%f/%f) "
+                 "for guard %s=%s",
+                 guard->use_successes, guard->use_attempts,
+                 guard->nickname, hex_str(guard->identity, DIGEST_LEN));
+      }
+
+      log_debug(LD_CIRC,
+                "Marked circuit %d (%f/%f) as used successfully for guard "
+                "%s ($%s).",
+                circ->global_identifier, guard->use_successes,
+                guard->use_attempts, guard->nickname,
+                hex_str(guard->identity, DIGEST_LEN));
     }
   }
 
-  /* If we get a ton of circuits, just scale everything down */
-  if (guard->first_hops > (unsigned)pathbias_get_scale_threshold(options)) {
-    const int scale_factor = pathbias_get_scale_factor(options);
-    guard->first_hops /= scale_factor;
-    guard->circuit_successes /= scale_factor;
+  return;
+}
+
+/**
+ * Send a probe down a circuit that the client attempted to use,
+ * but for which the stream timed out/failed. The probe is a
+ * RELAY_BEGIN cell with a 0.a.b.c destination address, which
+ * the exit will reject and reply back, echoing that address.
+ *
+ * The reason for such probes is because it is possible to bias
+ * a user's paths simply by causing timeouts, and these timeouts
+ * are not possible to differentiate from unresponsive servers.
+ *
+ * The probe is sent at the end of the circuit lifetime for two
+ * reasons: to prevent cryptographic taggers from being able to
+ * drop cells to cause timeouts, and to prevent easy recognition
+ * of probes before any real client traffic happens.
+ *
+ * Returns -1 if we couldn't probe, 0 otherwise.
+ */
+static int
+pathbias_send_usable_probe(circuit_t *circ)
+{
+  /* Based on connection_ap_handshake_send_begin() */
+  char payload[CELL_PAYLOAD_SIZE];
+  int payload_len;
+  origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(circ);
+  crypt_path_t *cpath_layer = NULL;
+  char *probe_nonce = NULL;
+
+  tor_assert(ocirc);
+
+  cpath_layer = ocirc->cpath->prev;
+
+  if (cpath_layer->state != CPATH_STATE_OPEN) {
+    /* This can happen for cannibalized circuits. Their
+     * last hop isn't yet open */
+    log_info(LD_CIRC,
+             "Got pathbias probe request for unopened circuit %d. "
+             "Opened %d, len %d", ocirc->global_identifier,
+             ocirc->has_opened, ocirc->build_state->desired_path_len);
+    return -1;
   }
-  guard->first_hops++;
-  log_info(LD_PROTOCOL, "Got success count %u/%u for guard %s=%s",
-           guard->circuit_successes, guard->first_hops, guard->nickname,
+
+  /* We already went down this road. */
+  if (circ->purpose == CIRCUIT_PURPOSE_PATH_BIAS_TESTING &&
+      ocirc->pathbias_probe_id) {
+    log_info(LD_CIRC,
+             "Got pathbias probe request for circuit %d with "
+             "outstanding probe", ocirc->global_identifier);
+    return -1;
+  }
+
+  /* Can't probe if the channel isn't open */
+  if (circ->n_chan == NULL ||
+      (circ->n_chan->state != CHANNEL_STATE_OPEN
+       && circ->n_chan->state != CHANNEL_STATE_MAINT)) {
+    log_info(LD_CIRC,
+             "Skipping pathbias probe for circuit %d: Channel is not open.",
+             ocirc->global_identifier);
+    return -1;
+  }
+
+  circuit_change_purpose(circ, CIRCUIT_PURPOSE_PATH_BIAS_TESTING);
+
+  /* Update timestamp for when circuit_expire_building() should kill us */
+  tor_gettimeofday(&circ->timestamp_began);
+
+  /* Generate a random address for the nonce */
+  crypto_rand((char*)&ocirc->pathbias_probe_nonce,
+              sizeof(ocirc->pathbias_probe_nonce));
+  ocirc->pathbias_probe_nonce &= 0x00ffffff;
+  probe_nonce = tor_dup_ip(ocirc->pathbias_probe_nonce);
+
+  tor_snprintf(payload,RELAY_PAYLOAD_SIZE, "%s:25", probe_nonce);
+  payload_len = (int)strlen(payload)+1;
+
+  // XXX: need this? Can we assume ipv4 will always be supported?
+  // If not, how do we tell?
+  //if (payload_len <= RELAY_PAYLOAD_SIZE - 4 && edge_conn->begincell_flags) {
+  //  set_uint32(payload + payload_len, htonl(edge_conn->begincell_flags));
+  //  payload_len += 4;
+  //}
+
+  /* Generate+Store stream id, make sure it's non-zero */
+  ocirc->pathbias_probe_id = get_unique_stream_id_by_circ(ocirc);
+
+  if (ocirc->pathbias_probe_id==0) {
+    log_warn(LD_CIRC,
+             "Ran out of stream IDs on circuit %u during "
+             "pathbias probe attempt.", ocirc->global_identifier);
+    tor_free(probe_nonce);
+    return -1;
+  }
+
+  log_info(LD_CIRC,
+           "Sending pathbias testing cell to %s:25 on stream %d for circ %d.",
+           probe_nonce, ocirc->pathbias_probe_id, ocirc->global_identifier);
+  tor_free(probe_nonce);
+
+  /* Send a test relay cell */
+  if (relay_send_command_from_edge(ocirc->pathbias_probe_id, circ,
+                               RELAY_COMMAND_BEGIN, payload,
+                               payload_len, cpath_layer) < 0) {
+    log_notice(LD_CIRC,
+               "Failed to send pathbias probe cell on circuit %d.",
+               ocirc->global_identifier);
+    return -1;
+  }
+
+  /* Mark it freshly dirty so it doesn't get expired in the meantime */
+  circ->timestamp_dirty = time(NULL);
+
+  return 0;
+}
+
+/**
+ * Check the response to a pathbias probe, to ensure the
+ * cell is recognized and the nonce and other probe
+ * characteristics are as expected.
+ *
+ * If the response is valid, return 0. Otherwise return < 0.
+ */
+int
+pathbias_check_probe_response(circuit_t *circ, const cell_t *cell)
+{
+  /* Based on connection_edge_process_relay_cell() */
+  relay_header_t rh;
+  int reason;
+  uint32_t ipv4_host;
+  origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(circ);
+
+  tor_assert(cell);
+  tor_assert(ocirc);
+  tor_assert(circ->purpose == CIRCUIT_PURPOSE_PATH_BIAS_TESTING);
+
+  relay_header_unpack(&rh, cell->payload);
+
+  reason = rh.length > 0 ?
+        get_uint8(cell->payload+RELAY_HEADER_SIZE) : END_STREAM_REASON_MISC;
+
+  if (rh.command == RELAY_COMMAND_END &&
+      reason == END_STREAM_REASON_EXITPOLICY &&
+      ocirc->pathbias_probe_id == rh.stream_id) {
+
+    /* Check length+extract host: It is in network order after the reason code.
+     * See connection_edge_end(). */
+    if (rh.length < 9) { /* reason+ipv4+dns_ttl */
+      log_notice(LD_PROTOCOL,
+             "Short path bias probe response length field (%d).", rh.length);
+      return - END_CIRC_REASON_TORPROTOCOL;
+    }
+
+    ipv4_host = ntohl(get_uint32(cell->payload+RELAY_HEADER_SIZE+1));
+
+    /* Check nonce */
+    if (ipv4_host == ocirc->pathbias_probe_nonce) {
+      pathbias_mark_use_success(ocirc);
+      circuit_mark_for_close(circ, END_CIRC_REASON_FINISHED);
+      log_info(LD_CIRC,
+               "Got valid path bias probe back for circ %d, stream %d.",
+               ocirc->global_identifier, ocirc->pathbias_probe_id);
+      return 0;
+    } else {
+      log_notice(LD_CIRC,
+               "Got strange probe value 0x%x vs 0x%x back for circ %d, "
+               "stream %d.", ipv4_host, ocirc->pathbias_probe_nonce,
+               ocirc->global_identifier, ocirc->pathbias_probe_id);
+      return -1;
+    }
+  }
+  log_info(LD_CIRC,
+             "Got another cell back back on pathbias probe circuit %d: "
+             "Command: %d, Reason: %d, Stream-id: %d",
+             ocirc->global_identifier, rh.command, reason, rh.stream_id);
+  return -1;
+}
+
+/**
+ * Check if a circuit was used and/or closed successfully.
+ *
+ * If we attempted to use the circuit to carry a stream but failed
+ * for whatever reason, or if the circuit mysteriously died before
+ * we could attach any streams, record these two cases.
+ *
+ * If we *have* successfully used the circuit, or it appears to
+ * have been closed by us locally, count it as a success.
+ *
+ * Returns 0 if we're done making decisions with the circ,
+ * or -1 if we want to probe it first.
+ */
+int
+pathbias_check_close(origin_circuit_t *ocirc, int reason)
+{
+  circuit_t *circ = &ocirc->base_;
+
+  if (!pathbias_should_count(ocirc)) {
+    return 0;
+  }
+
+  switch (ocirc->path_state) {
+    /* If the circuit was closed after building, but before use, we need
+     * to ensure we were the ones who tried to close it (and not a remote
+     * actor). */
+    case PATH_STATE_BUILD_SUCCEEDED:
+      if (reason & END_CIRC_REASON_FLAG_REMOTE) {
+        /* Remote circ close reasons on an unused circuit all could be bias */
+        log_info(LD_CIRC,
+            "Circuit %d remote-closed without successful use for reason %d. "
+            "Circuit purpose %d currently %d,%s. Len %d.",
+            ocirc->global_identifier,
+            reason, circ->purpose, ocirc->has_opened,
+            circuit_state_to_string(circ->state),
+            ocirc->build_state->desired_path_len);
+        pathbias_count_collapse(ocirc);
+      } else if ((reason & ~END_CIRC_REASON_FLAG_REMOTE)
+                  == END_CIRC_REASON_CHANNEL_CLOSED &&
+                 circ->n_chan &&
+                 circ->n_chan->reason_for_closing
+                  != CHANNEL_CLOSE_REQUESTED) {
+        /* If we didn't close the channel ourselves, it could be bias */
+        /* XXX: Only count bias if the network is live?
+         * What about clock jumps/suspends? */
+        log_info(LD_CIRC,
+            "Circuit %d's channel closed without successful use for reason "
+            "%d, channel reason %d. Circuit purpose %d currently %d,%s. Len "
+            "%d.", ocirc->global_identifier,
+            reason, circ->n_chan->reason_for_closing,
+            circ->purpose, ocirc->has_opened,
+            circuit_state_to_string(circ->state),
+            ocirc->build_state->desired_path_len);
+        pathbias_count_collapse(ocirc);
+      } else {
+        pathbias_count_successful_close(ocirc);
+      }
+      break;
+
+    /* If we tried to use a circuit but failed, we should probe it to ensure
+     * it has not been tampered with. */
+    case PATH_STATE_USE_ATTEMPTED:
+      /* XXX: Only probe and/or count failure if the network is live?
+       * What about clock jumps/suspends? */
+      if (pathbias_send_usable_probe(circ) == 0)
+        return -1;
+      else
+        pathbias_count_use_failed(ocirc);
+
+      /* Any circuit where there were attempted streams but no successful
+       * streams could be bias */
+      log_info(LD_CIRC,
+            "Circuit %d closed without successful use for reason %d. "
+            "Circuit purpose %d currently %d,%s. Len %d.",
+            ocirc->global_identifier,
+            reason, circ->purpose, ocirc->has_opened,
+            circuit_state_to_string(circ->state),
+            ocirc->build_state->desired_path_len);
+      break;
+
+    case PATH_STATE_USE_SUCCEEDED:
+      pathbias_count_successful_close(ocirc);
+      pathbias_count_use_success(ocirc);
+      break;
+
+    case PATH_STATE_USE_FAILED:
+      pathbias_count_use_failed(ocirc);
+      break;
+
+    case PATH_STATE_NEW_CIRC:
+    case PATH_STATE_BUILD_ATTEMPTED:
+    case PATH_STATE_ALREADY_COUNTED:
+    default:
+      // Other states are uninteresting. No stats to count.
+      break;
+  }
+
+  ocirc->path_state = PATH_STATE_ALREADY_COUNTED;
+
+  return 0;
+}
+
+/**
+ * Count a successfully closed circuit.
+ */
+static void
+pathbias_count_successful_close(origin_circuit_t *circ)
+{
+  entry_guard_t *guard = NULL;
+  if (!pathbias_should_count(circ)) {
+    return;
+  }
+
+  if (circ->cpath && circ->cpath->extend_info) {
+    guard = entry_guard_get_by_id_digest(
+              circ->cpath->extend_info->identity_digest);
+  }
+
+  if (guard) {
+    /* In the long run: circuit_success ~= successful_circuit_close +
+     *                                     circ_failure + stream_failure */
+    guard->successful_circuits_closed++;
+    entry_guards_changed();
+  } else if (circ->base_.purpose != CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT) {
+   /* In rare cases, CIRCUIT_PURPOSE_TESTING can get converted to
+    * CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT and have no guards here.
+    * No need to log that case. */
+    log_info(LD_CIRC,
+        "Successfully closed circuit has no known guard. "
+        "Circuit is a %s currently %s",
+        circuit_purpose_to_string(circ->base_.purpose),
+        circuit_state_to_string(circ->base_.state));
+  }
+}
+
+/**
+ * Count a circuit that fails after it is built, but before it can
+ * carry any traffic.
+ *
+ * This is needed because there are ways to destroy a
+ * circuit after it has successfully completed. Right now, this is
+ * used for purely informational/debugging purposes.
+ */
+static void
+pathbias_count_collapse(origin_circuit_t *circ)
+{
+  entry_guard_t *guard = NULL;
+
+  if (!pathbias_should_count(circ)) {
+    return;
+  }
+
+  if (circ->cpath && circ->cpath->extend_info) {
+    guard = entry_guard_get_by_id_digest(
+              circ->cpath->extend_info->identity_digest);
+  }
+
+  if (guard) {
+    guard->collapsed_circuits++;
+    entry_guards_changed();
+  } else if (circ->base_.purpose != CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT) {
+   /* In rare cases, CIRCUIT_PURPOSE_TESTING can get converted to
+    * CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT and have no guards here.
+    * No need to log that case. */
+    log_info(LD_CIRC,
+        "Destroyed circuit has no known guard. "
+        "Circuit is a %s currently %s",
+        circuit_purpose_to_string(circ->base_.purpose),
+        circuit_state_to_string(circ->base_.state));
+  }
+}
+
+/**
+ * Count a known failed circuit (because we could not probe it).
+ *
+ * This counter is informational.
+ */
+static void
+pathbias_count_use_failed(origin_circuit_t *circ)
+{
+  entry_guard_t *guard = NULL;
+  if (!pathbias_should_count(circ)) {
+    return;
+  }
+
+  if (circ->cpath && circ->cpath->extend_info) {
+    guard = entry_guard_get_by_id_digest(
+              circ->cpath->extend_info->identity_digest);
+  }
+
+  if (guard) {
+    guard->unusable_circuits++;
+    entry_guards_changed();
+  } else if (circ->base_.purpose != CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT) {
+   /* In rare cases, CIRCUIT_PURPOSE_TESTING can get converted to
+    * CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT and have no guards here.
+    * No need to log that case. */
+    /* XXX note cut-and-paste code in this function compared to nearby
+     * functions. Would be nice to refactor. -RD */
+    log_info(LD_CIRC,
+        "Stream-failing circuit has no known guard. "
+        "Circuit is a %s currently %s",
+        circuit_purpose_to_string(circ->base_.purpose),
+        circuit_state_to_string(circ->base_.state));
+  }
+}
+
+/**
+ * Count timeouts for path bias log messages.
+ *
+ * These counts are purely informational.
+ */
+void
+pathbias_count_timeout(origin_circuit_t *circ)
+{
+  entry_guard_t *guard = NULL;
+
+  if (!pathbias_should_count(circ)) {
+    return;
+  }
+
+  /* For hidden service circs, they can actually be used
+   * successfully and then time out later (because
+   * the other side declines to use them). */
+  if (circ->path_state == PATH_STATE_USE_SUCCEEDED) {
+    return;
+  }
+
+  if (circ->cpath && circ->cpath->extend_info) {
+    guard = entry_guard_get_by_id_digest(
+              circ->cpath->extend_info->identity_digest);
+  }
+
+  if (guard) {
+    guard->timeouts++;
+    entry_guards_changed();
+  }
+}
+
+/**
+ * Helper function to count all of the currently opened circuits
+ * for a guard that are in a given path state range. The state
+ * range is inclusive on both ends.
+ */
+static int
+pathbias_count_circs_in_states(entry_guard_t *guard,
+                              path_state_t from,
+                              path_state_t to)
+{
+  circuit_t *circ;
+  int open_circuits = 0;
+
+  /* Count currently open circuits. Give them the benefit of the doubt. */
+  for (circ = global_circuitlist; circ; circ = circ->next) {
+    origin_circuit_t *ocirc = NULL;
+    if (!CIRCUIT_IS_ORIGIN(circ) || /* didn't originate here */
+        circ->marked_for_close) /* already counted */
+      continue;
+
+    ocirc = TO_ORIGIN_CIRCUIT(circ);
+
+    if (!ocirc->cpath || !ocirc->cpath->extend_info)
+      continue;
+
+    if (ocirc->path_state >= from &&
+        ocirc->path_state <= to &&
+        pathbias_should_count(ocirc) &&
+        fast_memeq(guard->identity,
+                   ocirc->cpath->extend_info->identity_digest,
+                   DIGEST_LEN)) {
+      log_debug(LD_CIRC, "Found opened circuit %d in path_state %s",
+                ocirc->global_identifier,
+                pathbias_state_to_string(ocirc->path_state));
+      open_circuits++;
+    }
+  }
+
+  return open_circuits;
+}
+
+/**
+ * Return the number of circuits counted as successfully closed for
+ * this guard.
+ *
+ * Also add in the currently open circuits to give them the benefit
+ * of the doubt.
+ */
+double
+pathbias_get_close_success_count(entry_guard_t *guard)
+{
+  return guard->successful_circuits_closed +
+         pathbias_count_circs_in_states(guard,
+                       PATH_STATE_BUILD_SUCCEEDED,
+                       PATH_STATE_USE_SUCCEEDED);
+}
+
+/**
+ * Return the number of circuits counted as successfully used
+ * this guard.
+ *
+ * Also add in the currently open circuits that we are attempting
+ * to use to give them the benefit of the doubt.
+ */
+double
+pathbias_get_use_success_count(entry_guard_t *guard)
+{
+  return guard->use_successes +
+         pathbias_count_circs_in_states(guard,
+                       PATH_STATE_USE_ATTEMPTED,
+                       PATH_STATE_USE_SUCCEEDED);
+}
+
+/**
+ * Check the path bias use rate against our consensus parameter limits.
+ *
+ * Emits a log message if the use success rates are too low.
+ *
+ * If pathbias_get_dropguards() is set, we also disable the use of
+ * very failure prone guards.
+ */
+static void
+pathbias_measure_use_rate(entry_guard_t *guard)
+{
+  const or_options_t *options = get_options();
+
+  if (guard->use_attempts > pathbias_get_min_use(options)) {
+    /* Note: We rely on the < comparison here to allow us to set a 0
+     * rate and disable the feature entirely. If refactoring, don't
+     * change to <= */
+    if (pathbias_get_use_success_count(guard)/guard->use_attempts
+        < pathbias_get_extreme_use_rate(options)) {
+      /* Dropping is currently disabled by default. */
+      if (pathbias_get_dropguards(options)) {
+        if (!guard->path_bias_disabled) {
+          log_warn(LD_CIRC,
+                 "Your Guard %s ($%s) is failing to carry an extremely large "
+                 "amount of stream on its circuits. "
+                 "To avoid potential route manipulation attacks, Tor has "
+                 "disabled use of this guard. "
+                 "Use counts are %ld/%ld. Success counts are %ld/%ld. "
+                 "%ld circuits completed, %ld were unusable, %ld collapsed, "
+                 "and %ld timed out. "
+                 "For reference, your timeout cutoff is %ld seconds.",
+                 guard->nickname, hex_str(guard->identity, DIGEST_LEN),
+                 tor_lround(pathbias_get_use_success_count(guard)),
+                 tor_lround(guard->use_attempts),
+                 tor_lround(pathbias_get_close_success_count(guard)),
+                 tor_lround(guard->circ_attempts),
+                 tor_lround(guard->circ_successes),
+                 tor_lround(guard->unusable_circuits),
+                 tor_lround(guard->collapsed_circuits),
+                 tor_lround(guard->timeouts),
+                 tor_lround(circ_times.close_ms/1000));
+          guard->path_bias_disabled = 1;
+          guard->bad_since = approx_time();
+          entry_guards_changed();
+          return;
+        }
+      } else if (!guard->path_bias_use_extreme) {
+        guard->path_bias_use_extreme = 1;
+        log_warn(LD_CIRC,
+                 "Your Guard %s ($%s) is failing to carry an extremely large "
+                 "amount of streams on its circuits. "
+                 "This could indicate a route manipulation attack, network "
+                 "overload, bad local network connectivity, or a bug. "
+                 "Use counts are %ld/%ld. Success counts are %ld/%ld. "
+                 "%ld circuits completed, %ld were unusable, %ld collapsed, "
+                 "and %ld timed out. "
+                 "For reference, your timeout cutoff is %ld seconds.",
+                 guard->nickname, hex_str(guard->identity, DIGEST_LEN),
+                 tor_lround(pathbias_get_use_success_count(guard)),
+                 tor_lround(guard->use_attempts),
+                 tor_lround(pathbias_get_close_success_count(guard)),
+                 tor_lround(guard->circ_attempts),
+                 tor_lround(guard->circ_successes),
+                 tor_lround(guard->unusable_circuits),
+                 tor_lround(guard->collapsed_circuits),
+                 tor_lround(guard->timeouts),
+                 tor_lround(circ_times.close_ms/1000));
+      }
+    } else if (pathbias_get_use_success_count(guard)/guard->use_attempts
+               < pathbias_get_notice_use_rate(options)) {
+      if (!guard->path_bias_use_noticed) {
+        guard->path_bias_use_noticed = 1;
+        log_notice(LD_CIRC,
+                 "Your Guard %s ($%s) is failing to carry more streams on its "
+                 "circuits than usual. "
+                 "Most likely this means the Tor network is overloaded "
+                 "or your network connection is poor. "
+                 "Use counts are %ld/%ld. Success counts are %ld/%ld. "
+                 "%ld circuits completed, %ld were unusable, %ld collapsed, "
+                 "and %ld timed out. "
+                 "For reference, your timeout cutoff is %ld seconds.",
+                 guard->nickname, hex_str(guard->identity, DIGEST_LEN),
+                 tor_lround(pathbias_get_use_success_count(guard)),
+                 tor_lround(guard->use_attempts),
+                 tor_lround(pathbias_get_close_success_count(guard)),
+                 tor_lround(guard->circ_attempts),
+                 tor_lround(guard->circ_successes),
+                 tor_lround(guard->unusable_circuits),
+                 tor_lround(guard->collapsed_circuits),
+                 tor_lround(guard->timeouts),
+                 tor_lround(circ_times.close_ms/1000));
+      }
+    }
+  }
+}
+
+/**
+ * Check the path bias circuit close status rates against our consensus
+ * parameter limits.
+ *
+ * Emits a log message if the use success rates are too low.
+ *
+ * If pathbias_get_dropguards() is set, we also disable the use of
+ * very failure prone guards.
+ *
+ * XXX: This function shares similar log messages and checks to
+ * pathbias_measure_use_rate(). It may be possible to combine them
+ * eventually, especially if we can ever remove the need for 3
+ * levels of closure warns (if the overall circuit failure rate
+ * goes down with ntor). One way to do so would be to multiply
+ * the build rate with the use rate to get an idea of the total
+ * fraction of the total network paths the user is able to use.
+ * See ticket #8159.
+ */
+static void
+pathbias_measure_close_rate(entry_guard_t *guard)
+{
+  const or_options_t *options = get_options();
+
+  if (guard->circ_attempts > pathbias_get_min_circs(options)) {
+    /* Note: We rely on the < comparison here to allow us to set a 0
+     * rate and disable the feature entirely. If refactoring, don't
+     * change to <= */
+    if (pathbias_get_close_success_count(guard)/guard->circ_attempts
+        < pathbias_get_extreme_rate(options)) {
+      /* Dropping is currently disabled by default. */
+      if (pathbias_get_dropguards(options)) {
+        if (!guard->path_bias_disabled) {
+          log_warn(LD_CIRC,
+                 "Your Guard %s ($%s) is failing an extremely large "
+                 "amount of circuits. "
+                 "To avoid potential route manipulation attacks, Tor has "
+                 "disabled use of this guard. "
+                 "Success counts are %ld/%ld. Use counts are %ld/%ld. "
+                 "%ld circuits completed, %ld were unusable, %ld collapsed, "
+                 "and %ld timed out. "
+                 "For reference, your timeout cutoff is %ld seconds.",
+                 guard->nickname, hex_str(guard->identity, DIGEST_LEN),
+                 tor_lround(pathbias_get_close_success_count(guard)),
+                 tor_lround(guard->circ_attempts),
+                 tor_lround(pathbias_get_use_success_count(guard)),
+                 tor_lround(guard->use_attempts),
+                 tor_lround(guard->circ_successes),
+                 tor_lround(guard->unusable_circuits),
+                 tor_lround(guard->collapsed_circuits),
+                 tor_lround(guard->timeouts),
+                 tor_lround(circ_times.close_ms/1000));
+          guard->path_bias_disabled = 1;
+          guard->bad_since = approx_time();
+          entry_guards_changed();
+          return;
+        }
+      } else if (!guard->path_bias_extreme) {
+        guard->path_bias_extreme = 1;
+        log_warn(LD_CIRC,
+                 "Your Guard %s ($%s) is failing an extremely large "
+                 "amount of circuits. "
+                 "This could indicate a route manipulation attack, "
+                 "extreme network overload, or a bug. "
+                 "Success counts are %ld/%ld. Use counts are %ld/%ld. "
+                 "%ld circuits completed, %ld were unusable, %ld collapsed, "
+                 "and %ld timed out. "
+                 "For reference, your timeout cutoff is %ld seconds.",
+                 guard->nickname, hex_str(guard->identity, DIGEST_LEN),
+                 tor_lround(pathbias_get_close_success_count(guard)),
+                 tor_lround(guard->circ_attempts),
+                 tor_lround(pathbias_get_use_success_count(guard)),
+                 tor_lround(guard->use_attempts),
+                 tor_lround(guard->circ_successes),
+                 tor_lround(guard->unusable_circuits),
+                 tor_lround(guard->collapsed_circuits),
+                 tor_lround(guard->timeouts),
+                 tor_lround(circ_times.close_ms/1000));
+      }
+    } else if (pathbias_get_close_success_count(guard)/guard->circ_attempts
+                < pathbias_get_warn_rate(options)) {
+      if (!guard->path_bias_warned) {
+        guard->path_bias_warned = 1;
+        log_warn(LD_CIRC,
+                 "Your Guard %s ($%s) is failing a very large "
+                 "amount of circuits. "
+                 "Most likely this means the Tor network is "
+                 "overloaded, but it could also mean an attack against "
+                 "you or potentially the guard itself. "
+                 "Success counts are %ld/%ld. Use counts are %ld/%ld. "
+                 "%ld circuits completed, %ld were unusable, %ld collapsed, "
+                 "and %ld timed out. "
+                 "For reference, your timeout cutoff is %ld seconds.",
+                 guard->nickname, hex_str(guard->identity, DIGEST_LEN),
+                 tor_lround(pathbias_get_close_success_count(guard)),
+                 tor_lround(guard->circ_attempts),
+                 tor_lround(pathbias_get_use_success_count(guard)),
+                 tor_lround(guard->use_attempts),
+                 tor_lround(guard->circ_successes),
+                 tor_lround(guard->unusable_circuits),
+                 tor_lround(guard->collapsed_circuits),
+                 tor_lround(guard->timeouts),
+                 tor_lround(circ_times.close_ms/1000));
+      }
+    } else if (pathbias_get_close_success_count(guard)/guard->circ_attempts
+               < pathbias_get_notice_rate(options)) {
+      if (!guard->path_bias_noticed) {
+        guard->path_bias_noticed = 1;
+        log_notice(LD_CIRC,
+                 "Your Guard %s ($%s) is failing more circuits than "
+                 "usual. "
+                 "Most likely this means the Tor network is overloaded. "
+                 "Success counts are %ld/%ld. Use counts are %ld/%ld. "
+                 "%ld circuits completed, %ld were unusable, %ld collapsed, "
+                 "and %ld timed out. "
+                 "For reference, your timeout cutoff is %ld seconds.",
+                 guard->nickname, hex_str(guard->identity, DIGEST_LEN),
+                 tor_lround(pathbias_get_close_success_count(guard)),
+                 tor_lround(guard->circ_attempts),
+                 tor_lround(pathbias_get_use_success_count(guard)),
+                 tor_lround(guard->use_attempts),
+                 tor_lround(guard->circ_successes),
+                 tor_lround(guard->unusable_circuits),
+                 tor_lround(guard->collapsed_circuits),
+                 tor_lround(guard->timeouts),
+                 tor_lround(circ_times.close_ms/1000));
+      }
+    }
+  }
+}
+
+/**
+ * This function scales the path bias use rates if we have
+ * more data than the scaling threshold. This allows us to
+ * be more sensitive to recent measurements.
+ *
+ * XXX: The attempt count transfer stuff here might be done
+ * better by keeping separate pending counters that get
+ * transfered at circuit close. See ticket #8160.
+ */
+static void
+pathbias_scale_close_rates(entry_guard_t *guard)
+{
+  const or_options_t *options = get_options();
+
+  /* If we get a ton of circuits, just scale everything down */
+  if (guard->circ_attempts > pathbias_get_scale_threshold(options)) {
+    double scale_ratio = pathbias_get_scale_ratio(options);
+    int opened_attempts = pathbias_count_circs_in_states(guard,
+            PATH_STATE_BUILD_ATTEMPTED, PATH_STATE_BUILD_ATTEMPTED);
+    int opened_built = pathbias_count_circs_in_states(guard,
+                        PATH_STATE_BUILD_SUCCEEDED,
+                        PATH_STATE_USE_FAILED);
+    /* Verify that the counts are sane before and after scaling */
+    int counts_are_sane = (guard->circ_attempts >= guard->circ_successes);
+
+    guard->circ_attempts -= (opened_attempts+opened_built);
+    guard->circ_successes -= opened_built;
+
+    guard->circ_attempts *= scale_ratio;
+    guard->circ_successes *= scale_ratio;
+    guard->timeouts *= scale_ratio;
+    guard->successful_circuits_closed *= scale_ratio;
+    guard->collapsed_circuits *= scale_ratio;
+    guard->unusable_circuits *= scale_ratio;
+
+    guard->circ_attempts += (opened_attempts+opened_built);
+    guard->circ_successes += opened_built;
+
+    entry_guards_changed();
+
+    log_info(LD_CIRC,
+             "Scaled pathbias counts to (%f,%f)/%f (%d/%d open) for guard "
+             "%s ($%s)",
+             guard->circ_successes, guard->successful_circuits_closed,
+             guard->circ_attempts, opened_built, opened_attempts,
+             guard->nickname, hex_str(guard->identity, DIGEST_LEN));
+
+    /* Have the counts just become invalid by this scaling attempt? */
+    if (counts_are_sane && guard->circ_attempts < guard->circ_successes) {
+      log_notice(LD_BUG,
+               "Scaling has mangled pathbias counts to %f/%f (%d/%d open) "
+               "for guard %s ($%s)",
+               guard->circ_successes, guard->circ_attempts, opened_built,
+               opened_attempts, guard->nickname,
+               hex_str(guard->identity, DIGEST_LEN));
+    }
+  }
+}
+
+/**
+ * This function scales the path bias circuit close rates if we have
+ * more data than the scaling threshold. This allows us to be more
+ * sensitive to recent measurements.
+ *
+ * XXX: The attempt count transfer stuff here might be done
+ * better by keeping separate pending counters that get
+ * transfered at circuit close. See ticket #8160.
+ */
+void
+pathbias_scale_use_rates(entry_guard_t *guard)
+{
+  const or_options_t *options = get_options();
+
+  /* If we get a ton of circuits, just scale everything down */
+  if (guard->use_attempts > pathbias_get_scale_use_threshold(options)) {
+    double scale_ratio = pathbias_get_scale_ratio(options);
+    int opened_attempts = pathbias_count_circs_in_states(guard,
+            PATH_STATE_USE_ATTEMPTED, PATH_STATE_USE_SUCCEEDED);
+    /* Verify that the counts are sane before and after scaling */
+    int counts_are_sane = (guard->use_attempts >= guard->use_successes);
+
+    guard->use_attempts -= opened_attempts;
+
+    guard->use_attempts *= scale_ratio;
+    guard->use_successes *= scale_ratio;
+
+    guard->use_attempts += opened_attempts;
+
+    log_info(LD_CIRC,
+           "Scaled pathbias use counts to %f/%f (%d open) for guard %s ($%s)",
+           guard->use_successes, guard->use_attempts, opened_attempts,
+           guard->nickname, hex_str(guard->identity, DIGEST_LEN));
+
+    /* Have the counts just become invalid by this scaling attempt? */
+    if (counts_are_sane && guard->use_attempts < guard->use_successes) {
+      log_notice(LD_BUG,
+               "Scaling has mangled pathbias usage counts to %f/%f "
+               "(%d open) for guard %s ($%s)",
+               guard->circ_successes, guard->circ_attempts,
+               opened_attempts, guard->nickname,
+               hex_str(guard->identity, DIGEST_LEN));
+    }
+
+    entry_guards_changed();
+  }
+}
+
+/** Increment the number of times we successfully extended a circuit to
+ * <b>guard</b>, first checking if the failure rate is high enough that
+ * we should eliminate the guard. Return -1 if the guard looks no good;
+ * return 0 if the guard looks fine.
+ */
+static int
+entry_guard_inc_circ_attempt_count(entry_guard_t *guard)
+{
+  entry_guards_changed();
+
+  pathbias_measure_close_rate(guard);
+
+  if (guard->path_bias_disabled)
+    return -1;
+
+  pathbias_scale_close_rates(guard);
+  guard->circ_attempts++;
+
+  log_info(LD_CIRC, "Got success count %f/%f for guard %s ($%s)",
+           guard->circ_successes, guard->circ_attempts, guard->nickname,
            hex_str(guard->identity, DIGEST_LEN));
   return 0;
 }
 
-/** A created or extended cell came back to us on the circuit, and it included
- * <b>reply</b> as its body.  (If <b>reply_type</b> is CELL_CREATED, the body
- * contains (the second DH key, plus KH).  If <b>reply_type</b> is
- * CELL_CREATED_FAST, the body contains a secret y and a hash H(x|y).)
+/** A "created" cell <b>reply</b> came back to us on circuit <b>circ</b>.
+ * (The body of <b>reply</b> varies depending on what sort of handshake
+ * this is.)
  *
  * Calculate the appropriate keys and digests, make sure KH is
  * correct, and initialize this hop of the cpath.
@@ -2907,14 +2607,14 @@ entry_guard_inc_first_hop_count(entry_guard_t *guard)
  * Return - reason if we want to mark circ for close, else return 0.
  */
 int
-circuit_finish_handshake(origin_circuit_t *circ, uint8_t reply_type,
-                         const uint8_t *reply)
+circuit_finish_handshake(origin_circuit_t *circ,
+                         const created_cell_t *reply)
 {
   char keys[CPATH_KEY_MATERIAL_LEN];
   crypt_path_t *hop;
   int rv;
 
-  if ((rv = pathbias_count_first_hop(circ)) < 0)
+  if ((rv = pathbias_count_build_attempt(circ)) < 0)
     return rv;
 
   if (circ->cpath->state == CPATH_STATE_AWAITING_KEYS) {
@@ -2928,39 +2628,25 @@ circuit_finish_handshake(origin_circuit_t *circ, uint8_t reply_type,
   }
   tor_assert(hop->state == CPATH_STATE_AWAITING_KEYS);
 
-  if (reply_type == CELL_CREATED && hop->dh_handshake_state) {
-    if (onion_skin_client_handshake(hop->dh_handshake_state, (char*)reply,keys,
-                                    DIGEST_LEN*2+CIPHER_KEY_LEN*2) < 0) {
+  {
+    if (onion_skin_client_handshake(hop->handshake_state.tag,
+                                    &hop->handshake_state,
+                                    reply->reply, reply->handshake_len,
+                                    (uint8_t*)keys, sizeof(keys),
+                                    (uint8_t*)hop->rend_circ_nonce) < 0) {
       log_warn(LD_CIRC,"onion_skin_client_handshake failed.");
       return -END_CIRC_REASON_TORPROTOCOL;
     }
-    /* Remember hash of g^xy */
-    memcpy(hop->handshake_digest, reply+DH_KEY_LEN, DIGEST_LEN);
-  } else if (reply_type == CELL_CREATED_FAST && !hop->dh_handshake_state) {
-    if (fast_client_handshake(hop->fast_handshake_state, reply,
-                              (uint8_t*)keys,
-                              DIGEST_LEN*2+CIPHER_KEY_LEN*2) < 0) {
-      log_warn(LD_CIRC,"fast_client_handshake failed.");
-      return -END_CIRC_REASON_TORPROTOCOL;
-    }
-    memcpy(hop->handshake_digest, reply+DIGEST_LEN, DIGEST_LEN);
-  } else {
-    log_warn(LD_PROTOCOL,"CREATED cell type did not match CREATE cell type.");
-    return -END_CIRC_REASON_TORPROTOCOL;
   }
 
-  crypto_dh_free(hop->dh_handshake_state); /* don't need it anymore */
-  hop->dh_handshake_state = NULL;
-
-  memset(hop->fast_handshake_state, 0, sizeof(hop->fast_handshake_state));
+  onion_handshake_state_release(&hop->handshake_state);
 
   if (circuit_init_cpath_crypto(hop, keys, 0)<0) {
     return -END_CIRC_REASON_TORPROTOCOL;
   }
 
   hop->state = CPATH_STATE_OPEN;
-  log_info(LD_CIRC,"Finished building %scircuit hop:",
-           (reply_type == CELL_CREATED_FAST) ? "fast " : "");
+  log_info(LD_CIRC,"Finished building circuit hop:");
   circuit_log_path(LOG_INFO,LD_CIRC,circ);
   control_event_circuit_status(circ, CIRC_EVENT_EXTENDED, 0);
 
@@ -2969,12 +2655,12 @@ circuit_finish_handshake(origin_circuit_t *circ, uint8_t reply_type,
 
 /** We received a relay truncated cell on circ.
  *
- * Since we don't ask for truncates currently, getting a truncated
+ * Since we don't send truncates currently, getting a truncated
  * means that a connection broke or an extend failed. For now,
- * just give up: for circ to close, and return 0.
+ * just give up: force circ to close, and return 0.
  */
 int
-circuit_truncated(origin_circuit_t *circ, crypt_path_t *layer)
+circuit_truncated(origin_circuit_t *circ, crypt_path_t *layer, int reason)
 {
 //  crypt_path_t *victim;
 //  connection_t *stream;
@@ -2982,12 +2668,12 @@ circuit_truncated(origin_circuit_t *circ, crypt_path_t *layer)
   tor_assert(circ);
   tor_assert(layer);
 
-  /* XXX Since we don't ask for truncates currently, getting a truncated
+  /* XXX Since we don't send truncates currently, getting a truncated
    *     means that a connection broke or an extend failed. For now,
    *     just give up.
    */
   circuit_mark_for_close(TO_CIRCUIT(circ),
-          END_CIRC_REASON_FLAG_REMOTE|END_CIRC_REASON_OR_CONN_CLOSED);
+          END_CIRC_REASON_FLAG_REMOTE|reason);
   return 0;
 
 #if 0
@@ -3020,23 +2706,25 @@ circuit_truncated(origin_circuit_t *circ, crypt_path_t *layer)
  * cell back.
  */
 int
-onionskin_answer(or_circuit_t *circ, uint8_t cell_type, const char *payload,
-                 const char *keys)
+onionskin_answer(or_circuit_t *circ,
+                 const created_cell_t *created_cell,
+                 const char *keys,
+                 const uint8_t *rend_circ_nonce)
 {
   cell_t cell;
   crypt_path_t *tmp_cpath;
 
+  if (created_cell_format(&cell, created_cell) < 0) {
+    log_warn(LD_BUG,"couldn't format created cell (type=%d, len=%d)",
+             (int)created_cell->cell_type, (int)created_cell->handshake_len);
+    return -1;
+  }
+  cell.circ_id = circ->p_circ_id;
+
   tmp_cpath = tor_malloc_zero(sizeof(crypt_path_t));
   tmp_cpath->magic = CRYPT_PATH_MAGIC;
 
-  memset(&cell, 0, sizeof(cell_t));
-  cell.command = cell_type;
-  cell.circ_id = circ->p_circ_id;
-
   circuit_set_state(TO_CIRCUIT(circ), CIRCUIT_STATE_OPEN);
-
-  memcpy(cell.payload, payload,
-         cell_type == CELL_CREATED ? ONIONSKIN_REPLY_LEN : DIGEST_LEN*2);
 
   log_debug(LD_CIRC,"init digest forward 0x%.8x, backward 0x%.8x.",
             (unsigned int)get_uint32(keys),
@@ -3053,20 +2741,17 @@ onionskin_answer(or_circuit_t *circ, uint8_t cell_type, const char *payload,
   tmp_cpath->magic = 0;
   tor_free(tmp_cpath);
 
-  if (cell_type == CELL_CREATED)
-    memcpy(circ->handshake_digest, cell.payload+DH_KEY_LEN, DIGEST_LEN);
-  else
-    memcpy(circ->handshake_digest, cell.payload+DIGEST_LEN, DIGEST_LEN);
+  memcpy(circ->rend_circ_nonce, rend_circ_nonce, DIGEST_LEN);
 
-  circ->is_first_hop = (cell_type == CELL_CREATED_FAST);
+  circ->is_first_hop = (created_cell->cell_type == CELL_CREATED_FAST);
 
   append_cell_to_circuit_queue(TO_CIRCUIT(circ),
-                               circ->p_conn, &cell, CELL_DIRECTION_IN, 0);
+                               circ->p_chan, &cell, CELL_DIRECTION_IN, 0);
   log_debug(LD_CIRC,"Finished sending '%s' cell.",
             circ->is_first_hop ? "created_fast" : "created");
 
-  if (!is_local_addr(&circ->p_conn->_base.addr) &&
-      !connection_or_nonopen_was_started_here(circ->p_conn)) {
+  if (!channel_is_local(circ->p_chan) &&
+      !channel_is_outgoing(circ->p_chan)) {
     /* record that we could process create cells from a non-local conn
      * that we didn't initiate; presumably this means that create cells
      * can reach us too. */
@@ -3076,15 +2761,18 @@ onionskin_answer(or_circuit_t *circ, uint8_t cell_type, const char *payload,
   return 0;
 }
 
-/** Choose a length for a circuit of purpose <b>purpose</b>.
- * Default length is 3 + the number of endpoints that would give something
- * away. If the routerlist <b>routers</b> doesn't have enough routers
+/** Choose a length for a circuit of purpose <b>purpose</b>: three + the
+ * number of endpoints that would give something away about our destination.
+ *
+ * If the routerlist <b>nodes</b> doesn't have enough routers
  * to handle the desired path length, return as large a path length as
  * is feasible, except if it's less than 2, in which case return -1.
+ * XXX ^^ I think this behavior is a hold-over from back when we had only a
+ *     few relays in the network, and certainly back before guards existed.
+ *     We should very likely get rid of it. -RD
  */
 static int
-new_route_len(uint8_t purpose, extend_info_t *exit,
-              smartlist_t *nodes)
+new_route_len(uint8_t purpose, extend_info_t *exit, smartlist_t *nodes)
 {
   int num_acceptable_routers;
   int routelen;
@@ -3149,7 +2837,7 @@ circuit_all_predicted_ports_handled(time_t now, int *need_uptime,
   enough = (smartlist_len(sl) == 0);
   for (i = 0; i < smartlist_len(sl); ++i) {
     port = smartlist_get(sl, i);
-    if (smartlist_string_num_isin(LongLivedServices, *port))
+    if (smartlist_contains_int_as_string(LongLivedServices, *port))
       *need_uptime = 1;
     tor_free(port);
   }
@@ -3268,7 +2956,7 @@ choose_good_exit_server_general(int need_uptime, int need_capacity)
       n_supported[i] = -1;
       continue;
     }
-    if (routerset_contains_node(options->_ExcludeExitNodesUnion, node)) {
+    if (routerset_contains_node(options->ExcludeExitNodesUnion_, node)) {
       n_supported[i] = -1;
       continue; /* user asked us not to use it, no matter what */
     }
@@ -3285,7 +2973,7 @@ choose_good_exit_server_general(int need_uptime, int need_capacity)
                  * we'll retry later in this function with need_update and
                  * need_capacity set to 0. */
     }
-    if (!(node->is_valid || options->_AllowInvalid & ALLOW_INVALID_EXIT)) {
+    if (!(node->is_valid || options->AllowInvalid_ & ALLOW_INVALID_EXIT)) {
       /* if it's invalid and we don't want it */
       n_supported[i] = -1;
 //      log_fn(LOG_DEBUG,"Skipping node %s (index %d) -- invalid router.",
@@ -3371,7 +3059,7 @@ choose_good_exit_server_general(int need_uptime, int need_capacity)
       }
       log_notice(LD_CIRC, "All routers are down or won't exit%s -- "
                  "choosing a doomed exit at random.",
-                 options->_ExcludeExitNodesUnion ? " or are Excluded" : "");
+                 options->ExcludeExitNodesUnion_ ? " or are Excluded" : "");
     }
     supporting = smartlist_new();
     needed_ports = circuit_get_unhandled_ports(time(NULL));
@@ -3410,7 +3098,7 @@ choose_good_exit_server_general(int need_uptime, int need_capacity)
     log_warn(LD_CIRC,
              "No specified %sexit routers seem to be running: "
              "can't choose an exit.",
-             options->_ExcludeExitNodesUnion ? "non-excluded " : "");
+             options->ExcludeExitNodesUnion_ ? "non-excluded " : "");
   }
   return NULL;
 }
@@ -3438,14 +3126,14 @@ choose_good_exit_server(uint8_t purpose,
 
   switch (purpose) {
     case CIRCUIT_PURPOSE_C_GENERAL:
-      if (options->_AllowInvalid & ALLOW_INVALID_MIDDLE)
+      if (options->AllowInvalid_ & ALLOW_INVALID_MIDDLE)
         flags |= CRN_ALLOW_INVALID;
       if (is_internal) /* pick it like a middle hop */
         return router_choose_random_node(NULL, options->ExcludeNodes, flags);
       else
         return choose_good_exit_server_general(need_uptime,need_capacity);
     case CIRCUIT_PURPOSE_C_ESTABLISH_REND:
-      if (options->_AllowInvalid & ALLOW_INVALID_RENDEZVOUS)
+      if (options->AllowInvalid_ & ALLOW_INVALID_RENDEZVOUS)
         flags |= CRN_ALLOW_INVALID;
       return router_choose_random_node(NULL, options->ExcludeNodes, flags);
   }
@@ -3462,7 +3150,7 @@ warn_if_last_router_excluded(origin_circuit_t *circ, const extend_info_t *exit)
   const or_options_t *options = get_options();
   routerset_t *rs = options->ExcludeNodes;
   const char *description;
-  uint8_t purpose = circ->_base.purpose;
+  uint8_t purpose = circ->base_.purpose;
 
   if (circ->build_state->onehop_tunnel)
     return;
@@ -3482,7 +3170,7 @@ warn_if_last_router_excluded(origin_circuit_t *circ, const extend_info_t *exit)
       if (circ->build_state->is_internal)
         return;
       description = "requested exit node";
-      rs = options->_ExcludeExitNodesUnion;
+      rs = options->ExcludeExitNodesUnion_;
       break;
     case CIRCUIT_PURPOSE_C_INTRODUCING:
     case CIRCUIT_PURPOSE_C_INTRODUCE_ACK_WAIT:
@@ -3499,7 +3187,7 @@ warn_if_last_router_excluded(origin_circuit_t *circ, const extend_info_t *exit)
       description = "chosen rendezvous point";
       break;
     case CIRCUIT_PURPOSE_CONTROLLER:
-      rs = options->_ExcludeExitNodesUnion;
+      rs = options->ExcludeExitNodesUnion_;
       description = "controller-selected circuit target";
       break;
     }
@@ -3541,7 +3229,7 @@ onion_pick_cpath_exit(origin_circuit_t *circ, extend_info_t *exit)
     log_debug(LD_CIRC, "Launching a one-hop circuit for dir tunnel.");
     state->desired_path_len = 1;
   } else {
-    int r = new_route_len(circ->_base.purpose, exit, nodelist_get_list());
+    int r = new_route_len(circ->base_.purpose, exit, nodelist_get_list());
     if (r < 1) /* must be at least 1 */
       return -1;
     state->desired_path_len = r;
@@ -3554,7 +3242,7 @@ onion_pick_cpath_exit(origin_circuit_t *circ, extend_info_t *exit)
     exit = extend_info_dup(exit);
   } else { /* we have to decide one */
     const node_t *node =
-      choose_good_exit_server(circ->_base.purpose, state->need_uptime,
+      choose_good_exit_server(circ->base_.purpose, state->need_uptime,
                               state->need_capacity, state->is_internal);
     if (!node) {
       log_warn(LD_CIRC,"failed to choose an exit server");
@@ -3597,6 +3285,9 @@ circuit_extend_to_new_exit(origin_circuit_t *circ, extend_info_t *exit)
 {
   int err_reason = 0;
   warn_if_last_router_excluded(circ, exit);
+
+  tor_gettimeofday(&circ->base_.timestamp_began);
+
   circuit_append_new_exit(circ, exit);
   circuit_set_state(TO_CIRCUIT(circ), CIRCUIT_STATE_BUILDING);
   if ((err_reason = circuit_send_next_onion_skin(circ))<0) {
@@ -3605,6 +3296,9 @@ circuit_extend_to_new_exit(origin_circuit_t *circ, extend_info_t *exit)
     circuit_mark_for_close(TO_CIRCUIT(circ), -err_reason);
     return -1;
   }
+
+  // XXX: Should cannibalized circuits be dirty or not? Not easy to say..
+
   return 0;
 }
 
@@ -3675,8 +3369,8 @@ choose_good_middle_server(uint8_t purpose,
   smartlist_t *excluded;
   const or_options_t *options = get_options();
   router_crn_flags_t flags = CRN_NEED_DESC;
-  tor_assert(_CIRCUIT_PURPOSE_MIN <= purpose &&
-             purpose <= _CIRCUIT_PURPOSE_MAX);
+  tor_assert(CIRCUIT_PURPOSE_MIN_ <= purpose &&
+             purpose <= CIRCUIT_PURPOSE_MAX_);
 
   log_debug(LD_CIRC, "Contemplating intermediate hop: random choice.");
   excluded = smartlist_new();
@@ -3693,7 +3387,7 @@ choose_good_middle_server(uint8_t purpose,
     flags |= CRN_NEED_UPTIME;
   if (state->need_capacity)
     flags |= CRN_NEED_CAPACITY;
-  if (options->_AllowInvalid & ALLOW_INVALID_MIDDLE)
+  if (options->AllowInvalid_ & ALLOW_INVALID_MIDDLE)
     flags |= CRN_ALLOW_INVALID;
   choice = router_choose_random_node(excluded, options->ExcludeNodes, flags);
   smartlist_free(excluded);
@@ -3708,7 +3402,8 @@ choose_good_middle_server(uint8_t purpose,
  * If <b>state</b> is NULL, we're choosing a router to serve as an entry
  * guard, not for any particular circuit.
  */
-static const node_t *
+/* XXXX024 I'd like to have this be static again, but entrynodes.c needs it. */
+const node_t *
 choose_good_entry_server(uint8_t purpose, cpath_build_state_t *state)
 {
   const node_t *choice;
@@ -3740,8 +3435,9 @@ choose_good_entry_server(uint8_t purpose, cpath_build_state_t *state)
     });
   }
   /* and exclude current entry guards and their families, if applicable */
-  if (options->UseEntryGuards && entry_guards) {
-    SMARTLIST_FOREACH(entry_guards, entry_guard_t *, entry,
+  /*XXXX025 use the using_as_guard flag to accomplish this.*/
+  if (options->UseEntryGuards) {
+    SMARTLIST_FOREACH(get_entry_guards(), const entry_guard_t *, entry,
       {
         if ((node = node_get_by_id(entry->identity))) {
           nodelist_add_node_and_family(excluded, node);
@@ -3755,7 +3451,7 @@ choose_good_entry_server(uint8_t purpose, cpath_build_state_t *state)
     if (state->need_capacity)
       flags |= CRN_NEED_CAPACITY;
   }
-  if (options->_AllowInvalid & ALLOW_INVALID_ENTRY)
+  if (options->AllowInvalid_ & ALLOW_INVALID_ENTRY)
     flags |= CRN_ALLOW_INVALID;
 
   choice = router_choose_random_node(excluded, options->ExcludeNodes, flags);
@@ -3783,7 +3479,7 @@ onion_next_hop_in_cpath(crypt_path_t *cpath)
 static int
 onion_extend_cpath(origin_circuit_t *circ)
 {
-  uint8_t purpose = circ->_base.purpose;
+  uint8_t purpose = circ->base_.purpose;
   cpath_build_state_t *state = circ->build_state;
   int cur_len = circuit_get_cpath_len(circ);
   extend_info_t *info = NULL;
@@ -3802,12 +3498,10 @@ onion_extend_cpath(origin_circuit_t *circ)
   } else if (cur_len == 0) { /* picking first node */
     const node_t *r = choose_good_entry_server(purpose, state);
     if (r) {
-      /* If we're extending to a bridge, use the preferred address
-         rather than the primary, for potentially extending to an IPv6
-         bridge.  */
-      int use_pref_addr = (r->ri != NULL &&
-                           r->ri->purpose == ROUTER_PURPOSE_BRIDGE);
-      info = extend_info_from_node(r, use_pref_addr);
+      /* If we're a client, use the preferred address rather than the
+         primary address, for potentially connecting to an IPv6 OR
+         port. */
+      info = extend_info_from_node(r, server_mode(get_options()) == 0);
       tor_assert(info);
     }
   } else {
@@ -3858,9 +3552,10 @@ onion_append_hop(crypt_path_t **head_ptr, extend_info_t *choice)
 
 /** Allocate a new extend_info object based on the various arguments. */
 extend_info_t *
-extend_info_alloc(const char *nickname, const char *digest,
-                  crypto_pk_t *onion_key,
-                  const tor_addr_t *addr, uint16_t port)
+extend_info_new(const char *nickname, const char *digest,
+                crypto_pk_t *onion_key,
+                const curve25519_public_key_t *curve25519_key,
+                const tor_addr_t *addr, uint16_t port)
 {
   extend_info_t *info = tor_malloc_zero(sizeof(extend_info_t));
   memcpy(info->identity_digest, digest, DIGEST_LEN);
@@ -3868,52 +3563,59 @@ extend_info_alloc(const char *nickname, const char *digest,
     strlcpy(info->nickname, nickname, sizeof(info->nickname));
   if (onion_key)
     info->onion_key = crypto_pk_dup_key(onion_key);
+#ifdef CURVE25519_ENABLED
+  if (curve25519_key)
+    memcpy(&info->curve25519_onion_key, curve25519_key,
+           sizeof(curve25519_public_key_t));
+#else
+  (void)curve25519_key;
+#endif
   tor_addr_copy(&info->addr, addr);
   info->port = port;
   return info;
 }
 
-/** Allocate and return a new extend_info_t that can be used to build
- * a circuit to or through the router <b>r</b>. Use the primary
- * address of the router unless <b>for_direct_connect</b> is true, in
- * which case the preferred address is used instead. */
-extend_info_t *
-extend_info_from_router(const routerinfo_t *r, int for_direct_connect)
-{
-  tor_addr_port_t ap;
-  tor_assert(r);
-
-  if (for_direct_connect)
-    router_get_pref_orport(r, &ap);
-  else
-    router_get_prim_orport(r, &ap);
-  return extend_info_alloc(r->nickname, r->cache_info.identity_digest,
-                           r->onion_pkey, &ap.addr, ap.port);
-}
-
 /** Allocate and return a new extend_info that can be used to build a
  * circuit to or through the node <b>node</b>. Use the primary address
- * of the node unless <b>for_direct_connect</b> is true, in which case
- * the preferred address is used instead. May return NULL if there is
- * not enough info about <b>node</b> to extend to it--for example, if
- * there is no routerinfo_t or microdesc_t.
+ * of the node (i.e. its IPv4 address) unless
+ * <b>for_direct_connect</b> is true, in which case the preferred
+ * address is used instead. May return NULL if there is not enough
+ * info about <b>node</b> to extend to it--for example, if there is no
+ * routerinfo_t or microdesc_t.
  **/
 extend_info_t *
 extend_info_from_node(const node_t *node, int for_direct_connect)
 {
-  if (node->ri) {
-    return extend_info_from_router(node->ri, for_direct_connect);
-  } else if (node->rs && node->md) {
-    tor_addr_t addr;
-    tor_addr_from_ipv4h(&addr, node->rs->addr);
-    return extend_info_alloc(node->rs->nickname,
+  tor_addr_port_t ap;
+
+  if (node->ri == NULL && (node->rs == NULL || node->md == NULL))
+    return NULL;
+
+  if (for_direct_connect)
+    node_get_pref_orport(node, &ap);
+  else
+    node_get_prim_orport(node, &ap);
+
+  log_debug(LD_CIRC, "using %s for %s",
+            fmt_addrport(&ap.addr, ap.port),
+            node->ri ? node->ri->nickname : node->rs->nickname);
+
+  if (node->ri)
+    return extend_info_new(node->ri->nickname,
+                             node->identity,
+                             node->ri->onion_pkey,
+                             node->ri->onion_curve25519_pkey,
+                             &ap.addr,
+                             ap.port);
+  else if (node->rs && node->md)
+    return extend_info_new(node->rs->nickname,
                              node->identity,
                              node->md->onion_pkey,
-                             &addr,
-                             node->rs->or_port);
-  } else {
+                             node->md->onion_curve25519_pkey,
+                             &ap.addr,
+                             ap.port);
+  else
     return NULL;
-  }
 }
 
 /** Release storage held by an extend_info_t struct. */
@@ -3964,2069 +3666,5 @@ build_state_get_exit_nickname(cpath_build_state_t *state)
   if (!state || !state->chosen_exit)
     return NULL;
   return state->chosen_exit->nickname;
-}
-
-/** Check whether the entry guard <b>e</b> is usable, given the directory
- * authorities' opinion about the router (stored in <b>ri</b>) and the user's
- * configuration (in <b>options</b>). Set <b>e</b>-&gt;bad_since
- * accordingly. Return true iff the entry guard's status changes.
- *
- * If it's not usable, set *<b>reason</b> to a static string explaining why.
- */
-static int
-entry_guard_set_status(entry_guard_t *e, const node_t *node,
-                       time_t now, const or_options_t *options,
-                       const char **reason)
-{
-  char buf[HEX_DIGEST_LEN+1];
-  int changed = 0;
-
-  *reason = NULL;
-
-  /* Do we want to mark this guard as bad? */
-  if (!node)
-    *reason = "unlisted";
-  else if (!node->is_running)
-    *reason = "down";
-  else if (options->UseBridges && (!node->ri ||
-                                   node->ri->purpose != ROUTER_PURPOSE_BRIDGE))
-    *reason = "not a bridge";
-  else if (options->UseBridges && !node_is_a_configured_bridge(node))
-    *reason = "not a configured bridge";
-  else if (!options->UseBridges && !node->is_possible_guard &&
-           !routerset_contains_node(options->EntryNodes,node))
-    *reason = "not recommended as a guard";
-  else if (routerset_contains_node(options->ExcludeNodes, node))
-    *reason = "excluded";
-  else if (e->path_bias_disabled)
-    *reason = "path-biased";
-
-  if (*reason && ! e->bad_since) {
-    /* Router is newly bad. */
-    base16_encode(buf, sizeof(buf), e->identity, DIGEST_LEN);
-    log_info(LD_CIRC, "Entry guard %s (%s) is %s: marking as unusable.",
-             e->nickname, buf, *reason);
-
-    e->bad_since = now;
-    control_event_guard(e->nickname, e->identity, "BAD");
-    changed = 1;
-  } else if (!*reason && e->bad_since) {
-    /* There's nothing wrong with the router any more. */
-    base16_encode(buf, sizeof(buf), e->identity, DIGEST_LEN);
-    log_info(LD_CIRC, "Entry guard %s (%s) is no longer unusable: "
-             "marking as ok.", e->nickname, buf);
-
-    e->bad_since = 0;
-    control_event_guard(e->nickname, e->identity, "GOOD");
-    changed = 1;
-  }
-  return changed;
-}
-
-/** Return true iff enough time has passed since we last tried to connect
- * to the unreachable guard <b>e</b> that we're willing to try again. */
-static int
-entry_is_time_to_retry(entry_guard_t *e, time_t now)
-{
-  long diff;
-  if (e->last_attempted < e->unreachable_since)
-    return 1;
-  diff = now - e->unreachable_since;
-  if (diff < 6*60*60)
-    return now > (e->last_attempted + 60*60);
-  else if (diff < 3*24*60*60)
-    return now > (e->last_attempted + 4*60*60);
-  else if (diff < 7*24*60*60)
-    return now > (e->last_attempted + 18*60*60);
-  else
-    return now > (e->last_attempted + 36*60*60);
-}
-
-/** Return the node corresponding to <b>e</b>, if <b>e</b> is
- * working well enough that we are willing to use it as an entry
- * right now. (Else return NULL.) In particular, it must be
- * - Listed as either up or never yet contacted;
- * - Present in the routerlist;
- * - Listed as 'stable' or 'fast' by the current dirserver consensus,
- *   if demanded by <b>need_uptime</b> or <b>need_capacity</b>
- *   (unless it's a configured EntryNode);
- * - Allowed by our current ReachableORAddresses config option; and
- * - Currently thought to be reachable by us (unless <b>assume_reachable</b>
- *   is true).
- *
- * If the answer is no, set *<b>msg</b> to an explanation of why.
- */
-static INLINE const node_t *
-entry_is_live(entry_guard_t *e, int need_uptime, int need_capacity,
-              int assume_reachable, const char **msg)
-{
-  const node_t *node;
-  const or_options_t *options = get_options();
-  tor_assert(msg);
-
-  if (e->path_bias_disabled) {
-    *msg = "path-biased";
-    return NULL;
-  }
-  if (e->bad_since) {
-    *msg = "bad";
-    return NULL;
-  }
-  /* no good if it's unreachable, unless assume_unreachable or can_retry. */
-  if (!assume_reachable && !e->can_retry &&
-      e->unreachable_since && !entry_is_time_to_retry(e, time(NULL))) {
-    *msg = "unreachable";
-    return NULL;
-  }
-  node = node_get_by_id(e->identity);
-  if (!node || !node_has_descriptor(node)) {
-    *msg = "no descriptor";
-    return NULL;
-  }
-  if (get_options()->UseBridges) {
-    if (node_get_purpose(node) != ROUTER_PURPOSE_BRIDGE) {
-      *msg = "not a bridge";
-      return NULL;
-    }
-    if (!node_is_a_configured_bridge(node)) {
-      *msg = "not a configured bridge";
-      return NULL;
-    }
-  } else { /* !get_options()->UseBridges */
-    if (node_get_purpose(node) != ROUTER_PURPOSE_GENERAL) {
-      *msg = "not general-purpose";
-      return NULL;
-    }
-  }
-  if (routerset_contains_node(options->EntryNodes, node)) {
-    /* they asked for it, they get it */
-    need_uptime = need_capacity = 0;
-  }
-  if (node_is_unreliable(node, need_uptime, need_capacity, 0)) {
-    *msg = "not fast/stable";
-    return NULL;
-  }
-  if (!fascist_firewall_allows_node(node)) {
-    *msg = "unreachable by config";
-    return NULL;
-  }
-  return node;
-}
-
-/** Return the number of entry guards that we think are usable. */
-static int
-num_live_entry_guards(void)
-{
-  int n = 0;
-  const char *msg;
-  if (! entry_guards)
-    return 0;
-  SMARTLIST_FOREACH(entry_guards, entry_guard_t *, entry,
-    {
-      if (entry_is_live(entry, 0, 1, 0, &msg))
-        ++n;
-    });
-  return n;
-}
-
-/** If <b>digest</b> matches the identity of any node in the
- * entry_guards list, return that node. Else return NULL. */
-static entry_guard_t *
-entry_guard_get_by_id_digest(const char *digest)
-{
-  SMARTLIST_FOREACH(entry_guards, entry_guard_t *, entry,
-                    if (tor_memeq(digest, entry->identity, DIGEST_LEN))
-                      return entry;
-                   );
-  return NULL;
-}
-
-/** Dump a description of our list of entry guards to the log at level
- * <b>severity</b>. */
-static void
-log_entry_guards(int severity)
-{
-  smartlist_t *elements = smartlist_new();
-  char *s;
-
-  SMARTLIST_FOREACH_BEGIN(entry_guards, entry_guard_t *, e)
-    {
-      const char *msg = NULL;
-      if (entry_is_live(e, 0, 1, 0, &msg))
-        smartlist_add_asprintf(elements, "%s [%s] (up %s)",
-                     e->nickname,
-                     hex_str(e->identity, DIGEST_LEN),
-                     e->made_contact ? "made-contact" : "never-contacted");
-      else
-        smartlist_add_asprintf(elements, "%s [%s] (%s, %s)",
-                     e->nickname,
-                     hex_str(e->identity, DIGEST_LEN),
-                     msg,
-                     e->made_contact ? "made-contact" : "never-contacted");
-    }
-  SMARTLIST_FOREACH_END(e);
-
-  s = smartlist_join_strings(elements, ",", 0, NULL);
-  SMARTLIST_FOREACH(elements, char*, cp, tor_free(cp));
-  smartlist_free(elements);
-  log_fn(severity,LD_CIRC,"%s",s);
-  tor_free(s);
-}
-
-/** Called when one or more guards that we would previously have used for some
- * purpose are no longer in use because a higher-priority guard has become
- * usable again. */
-static void
-control_event_guard_deferred(void)
-{
-  /* XXXX We don't actually have a good way to figure out _how many_ entries
-   * are live for some purpose.  We need an entry_is_even_slightly_live()
-   * function for this to work right.  NumEntryGuards isn't reliable: if we
-   * need guards with weird properties, we can have more than that number
-   * live.
-   **/
-#if 0
-  int n = 0;
-  const char *msg;
-  const or_options_t *options = get_options();
-  if (!entry_guards)
-    return;
-  SMARTLIST_FOREACH(entry_guards, entry_guard_t *, entry,
-    {
-      if (entry_is_live(entry, 0, 1, 0, &msg)) {
-        if (n++ == options->NumEntryGuards) {
-          control_event_guard(entry->nickname, entry->identity, "DEFERRED");
-          return;
-        }
-      }
-    });
-#endif
-}
-
-/** Add a new (preferably stable and fast) router to our
- * entry_guards list. Return a pointer to the router if we succeed,
- * or NULL if we can't find any more suitable entries.
- *
- * If <b>chosen</b> is defined, use that one, and if it's not
- * already in our entry_guards list, put it at the *beginning*.
- * Else, put the one we pick at the end of the list. */
-static const node_t *
-add_an_entry_guard(const node_t *chosen, int reset_status, int prepend)
-{
-  const node_t *node;
-  entry_guard_t *entry;
-
-  if (chosen) {
-    node = chosen;
-    entry = entry_guard_get_by_id_digest(node->identity);
-    if (entry) {
-      if (reset_status) {
-        entry->bad_since = 0;
-        entry->can_retry = 1;
-      }
-      return NULL;
-    }
-  } else {
-    node = choose_good_entry_server(CIRCUIT_PURPOSE_C_GENERAL, NULL);
-    if (!node)
-      return NULL;
-  }
-  entry = tor_malloc_zero(sizeof(entry_guard_t));
-  log_info(LD_CIRC, "Chose %s as new entry guard.",
-           node_describe(node));
-  strlcpy(entry->nickname, node_get_nickname(node), sizeof(entry->nickname));
-  memcpy(entry->identity, node->identity, DIGEST_LEN);
-  /* Choose expiry time smudged over the past month. The goal here
-   * is to a) spread out when Tor clients rotate their guards, so they
-   * don't all select them on the same day, and b) avoid leaving a
-   * precise timestamp in the state file about when we first picked
-   * this guard. For details, see the Jan 2010 or-dev thread. */
-  entry->chosen_on_date = time(NULL) - crypto_rand_int(3600*24*30);
-  entry->chosen_by_version = tor_strdup(VERSION);
-  if (prepend)
-    smartlist_insert(entry_guards, 0, entry);
-  else
-    smartlist_add(entry_guards, entry);
-  control_event_guard(entry->nickname, entry->identity, "NEW");
-  control_event_guard_deferred();
-  log_entry_guards(LOG_INFO);
-  return node;
-}
-
-/** If the use of entry guards is configured, choose more entry guards
- * until we have enough in the list. */
-static void
-pick_entry_guards(const or_options_t *options)
-{
-  int changed = 0;
-
-  tor_assert(entry_guards);
-
-  while (num_live_entry_guards() < options->NumEntryGuards) {
-    if (!add_an_entry_guard(NULL, 0, 0))
-      break;
-    changed = 1;
-  }
-  if (changed)
-    entry_guards_changed();
-}
-
-/** How long (in seconds) do we allow an entry guard to be nonfunctional,
- * unlisted, excluded, or otherwise nonusable before we give up on it? */
-#define ENTRY_GUARD_REMOVE_AFTER (30*24*60*60)
-
-/** Release all storage held by <b>e</b>. */
-static void
-entry_guard_free(entry_guard_t *e)
-{
-  if (!e)
-    return;
-  tor_free(e->chosen_by_version);
-  tor_free(e);
-}
-
-/** Remove any entry guard which was selected by an unknown version of Tor,
- * or which was selected by a version of Tor that's known to select
- * entry guards badly, or which was selected more 2 months ago. */
-/* XXXX The "obsolete guards" and "chosen long ago guards" things should
- * probably be different functions. */
-static int
-remove_obsolete_entry_guards(time_t now)
-{
-  int changed = 0, i;
-
-  for (i = 0; i < smartlist_len(entry_guards); ++i) {
-    entry_guard_t *entry = smartlist_get(entry_guards, i);
-    const char *ver = entry->chosen_by_version;
-    const char *msg = NULL;
-    tor_version_t v;
-    int version_is_bad = 0, date_is_bad = 0;
-    if (!ver) {
-      msg = "does not say what version of Tor it was selected by";
-      version_is_bad = 1;
-    } else if (tor_version_parse(ver, &v)) {
-      msg = "does not seem to be from any recognized version of Tor";
-      version_is_bad = 1;
-    } else {
-      char *tor_ver = NULL;
-      tor_asprintf(&tor_ver, "Tor %s", ver);
-      if ((tor_version_as_new_as(tor_ver, "0.1.0.10-alpha") &&
-           !tor_version_as_new_as(tor_ver, "0.1.2.16-dev")) ||
-          (tor_version_as_new_as(tor_ver, "0.2.0.0-alpha") &&
-           !tor_version_as_new_as(tor_ver, "0.2.0.6-alpha")) ||
-          /* above are bug 440; below are bug 1217 */
-          (tor_version_as_new_as(tor_ver, "0.2.1.3-alpha") &&
-           !tor_version_as_new_as(tor_ver, "0.2.1.23")) ||
-          (tor_version_as_new_as(tor_ver, "0.2.2.0-alpha") &&
-           !tor_version_as_new_as(tor_ver, "0.2.2.7-alpha"))) {
-        msg = "was selected without regard for guard bandwidth";
-        version_is_bad = 1;
-      }
-      tor_free(tor_ver);
-    }
-    if (!version_is_bad && entry->chosen_on_date + 3600*24*60 < now) {
-      /* It's been 2 months since the date listed in our state file. */
-      msg = "was selected several months ago";
-      date_is_bad = 1;
-    }
-
-    if (version_is_bad || date_is_bad) { /* we need to drop it */
-      char dbuf[HEX_DIGEST_LEN+1];
-      tor_assert(msg);
-      base16_encode(dbuf, sizeof(dbuf), entry->identity, DIGEST_LEN);
-      log_fn(version_is_bad ? LOG_NOTICE : LOG_INFO, LD_CIRC,
-             "Entry guard '%s' (%s) %s. (Version=%s.) Replacing it.",
-             entry->nickname, dbuf, msg, ver?escaped(ver):"none");
-      control_event_guard(entry->nickname, entry->identity, "DROPPED");
-      entry_guard_free(entry);
-      smartlist_del_keeporder(entry_guards, i--);
-      log_entry_guards(LOG_INFO);
-      changed = 1;
-    }
-  }
-
-  return changed ? 1 : 0;
-}
-
-/** Remove all entry guards that have been down or unlisted for so
- * long that we don't think they'll come up again. Return 1 if we
- * removed any, or 0 if we did nothing. */
-static int
-remove_dead_entry_guards(time_t now)
-{
-  char dbuf[HEX_DIGEST_LEN+1];
-  char tbuf[ISO_TIME_LEN+1];
-  int i;
-  int changed = 0;
-
-  for (i = 0; i < smartlist_len(entry_guards); ) {
-    entry_guard_t *entry = smartlist_get(entry_guards, i);
-    if (entry->bad_since &&
-        ! entry->path_bias_disabled &&
-        entry->bad_since + ENTRY_GUARD_REMOVE_AFTER < now) {
-
-      base16_encode(dbuf, sizeof(dbuf), entry->identity, DIGEST_LEN);
-      format_local_iso_time(tbuf, entry->bad_since);
-      log_info(LD_CIRC, "Entry guard '%s' (%s) has been down or unlisted "
-               "since %s local time; removing.",
-               entry->nickname, dbuf, tbuf);
-      control_event_guard(entry->nickname, entry->identity, "DROPPED");
-      entry_guard_free(entry);
-      smartlist_del_keeporder(entry_guards, i);
-      log_entry_guards(LOG_INFO);
-      changed = 1;
-    } else
-      ++i;
-  }
-  return changed ? 1 : 0;
-}
-
-/** A new directory or router-status has arrived; update the down/listed
- * status of the entry guards.
- *
- * An entry is 'down' if the directory lists it as nonrunning.
- * An entry is 'unlisted' if the directory doesn't include it.
- *
- * Don't call this on startup; only on a fresh download. Otherwise we'll
- * think that things are unlisted.
- */
-void
-entry_guards_compute_status(const or_options_t *options, time_t now)
-{
-  int changed = 0;
-  digestmap_t *reasons;
-
-  if (! entry_guards)
-    return;
-
-  if (options->EntryNodes) /* reshuffle the entry guard list if needed */
-    entry_nodes_should_be_added();
-
-  reasons = digestmap_new();
-  SMARTLIST_FOREACH_BEGIN(entry_guards, entry_guard_t *, entry)
-    {
-      const node_t *r = node_get_by_id(entry->identity);
-      const char *reason = NULL;
-      if (entry_guard_set_status(entry, r, now, options, &reason))
-        changed = 1;
-
-      if (entry->bad_since)
-        tor_assert(reason);
-      if (reason)
-        digestmap_set(reasons, entry->identity, (char*)reason);
-    }
-  SMARTLIST_FOREACH_END(entry);
-
-  if (remove_dead_entry_guards(now))
-    changed = 1;
-  if (remove_obsolete_entry_guards(now))
-    changed = 1;
-
-  if (changed) {
-    SMARTLIST_FOREACH_BEGIN(entry_guards, entry_guard_t *, entry) {
-      const char *reason = digestmap_get(reasons, entry->identity);
-      const char *live_msg = "";
-      const node_t *r = entry_is_live(entry, 0, 1, 0, &live_msg);
-      log_info(LD_CIRC, "Summary: Entry %s [%s] is %s, %s%s%s, and %s%s.",
-               entry->nickname,
-               hex_str(entry->identity, DIGEST_LEN),
-               entry->unreachable_since ? "unreachable" : "reachable",
-               entry->bad_since ? "unusable" : "usable",
-               reason ? ", ": "",
-               reason ? reason : "",
-               r ? "live" : "not live / ",
-               r ? "" : live_msg);
-    } SMARTLIST_FOREACH_END(entry);
-    log_info(LD_CIRC, "    (%d/%d entry guards are usable/new)",
-             num_live_entry_guards(), smartlist_len(entry_guards));
-    log_entry_guards(LOG_INFO);
-    entry_guards_changed();
-  }
-
-  digestmap_free(reasons, NULL);
-}
-
-/** Called when a connection to an OR with the identity digest <b>digest</b>
- * is established (<b>succeeded</b>==1) or has failed (<b>succeeded</b>==0).
- * If the OR is an entry, change that entry's up/down status.
- * Return 0 normally, or -1 if we want to tear down the new connection.
- *
- * If <b>mark_relay_status</b>, also call router_set_status() on this
- * relay.
- *
- * XXX024 change succeeded and mark_relay_status into 'int flags'.
- */
-int
-entry_guard_register_connect_status(const char *digest, int succeeded,
-                                    int mark_relay_status, time_t now)
-{
-  int changed = 0;
-  int refuse_conn = 0;
-  int first_contact = 0;
-  entry_guard_t *entry = NULL;
-  int idx = -1;
-  char buf[HEX_DIGEST_LEN+1];
-
-  if (! entry_guards)
-    return 0;
-
-  SMARTLIST_FOREACH_BEGIN(entry_guards, entry_guard_t *, e) {
-    tor_assert(e);
-    if (tor_memeq(e->identity, digest, DIGEST_LEN)) {
-      entry = e;
-      idx = e_sl_idx;
-      break;
-    }
-  } SMARTLIST_FOREACH_END(e);
-
-  if (!entry)
-    return 0;
-
-  base16_encode(buf, sizeof(buf), entry->identity, DIGEST_LEN);
-
-  if (succeeded) {
-    if (entry->unreachable_since) {
-      log_info(LD_CIRC, "Entry guard '%s' (%s) is now reachable again. Good.",
-               entry->nickname, buf);
-      entry->can_retry = 0;
-      entry->unreachable_since = 0;
-      entry->last_attempted = now;
-      control_event_guard(entry->nickname, entry->identity, "UP");
-      changed = 1;
-    }
-    if (!entry->made_contact) {
-      entry->made_contact = 1;
-      first_contact = changed = 1;
-    }
-  } else { /* ! succeeded */
-    if (!entry->made_contact) {
-      /* We've never connected to this one. */
-      log_info(LD_CIRC,
-               "Connection to never-contacted entry guard '%s' (%s) failed. "
-               "Removing from the list. %d/%d entry guards usable/new.",
-               entry->nickname, buf,
-               num_live_entry_guards()-1, smartlist_len(entry_guards)-1);
-      control_event_guard(entry->nickname, entry->identity, "DROPPED");
-      entry_guard_free(entry);
-      smartlist_del_keeporder(entry_guards, idx);
-      log_entry_guards(LOG_INFO);
-      changed = 1;
-    } else if (!entry->unreachable_since) {
-      log_info(LD_CIRC, "Unable to connect to entry guard '%s' (%s). "
-               "Marking as unreachable.", entry->nickname, buf);
-      entry->unreachable_since = entry->last_attempted = now;
-      control_event_guard(entry->nickname, entry->identity, "DOWN");
-      changed = 1;
-      entry->can_retry = 0; /* We gave it an early chance; no good. */
-    } else {
-      char tbuf[ISO_TIME_LEN+1];
-      format_iso_time(tbuf, entry->unreachable_since);
-      log_debug(LD_CIRC, "Failed to connect to unreachable entry guard "
-                "'%s' (%s).  It has been unreachable since %s.",
-                entry->nickname, buf, tbuf);
-      entry->last_attempted = now;
-      entry->can_retry = 0; /* We gave it an early chance; no good. */
-    }
-  }
-
-  /* if the caller asked us to, also update the is_running flags for this
-   * relay */
-  if (mark_relay_status)
-    router_set_status(digest, succeeded);
-
-  if (first_contact) {
-    /* We've just added a new long-term entry guard. Perhaps the network just
-     * came back? We should give our earlier entries another try too,
-     * and close this connection so we don't use it before we've given
-     * the others a shot. */
-    SMARTLIST_FOREACH_BEGIN(entry_guards, entry_guard_t *, e) {
-        if (e == entry)
-          break;
-        if (e->made_contact) {
-          const char *msg;
-          const node_t *r = entry_is_live(e, 0, 1, 1, &msg);
-          if (r && e->unreachable_since) {
-            refuse_conn = 1;
-            e->can_retry = 1;
-          }
-        }
-    } SMARTLIST_FOREACH_END(e);
-    if (refuse_conn) {
-      log_info(LD_CIRC,
-               "Connected to new entry guard '%s' (%s). Marking earlier "
-               "entry guards up. %d/%d entry guards usable/new.",
-               entry->nickname, buf,
-               num_live_entry_guards(), smartlist_len(entry_guards));
-      log_entry_guards(LOG_INFO);
-      changed = 1;
-    }
-  }
-
-  if (changed)
-    entry_guards_changed();
-  return refuse_conn ? -1 : 0;
-}
-
-/** When we try to choose an entry guard, should we parse and add
- * config's EntryNodes first? */
-static int should_add_entry_nodes = 0;
-
-/** Called when the value of EntryNodes changes in our configuration. */
-void
-entry_nodes_should_be_added(void)
-{
-  log_info(LD_CIRC, "EntryNodes config option set. Putting configured "
-           "relays at the front of the entry guard list.");
-  should_add_entry_nodes = 1;
-}
-
-/** Adjust the entry guards list so that it only contains entries from
- * EntryNodes, adding new entries from EntryNodes to the list as needed. */
-static void
-entry_guards_set_from_config(const or_options_t *options)
-{
-  smartlist_t *entry_nodes, *worse_entry_nodes, *entry_fps;
-  smartlist_t *old_entry_guards_on_list, *old_entry_guards_not_on_list;
-  tor_assert(entry_guards);
-
-  should_add_entry_nodes = 0;
-
-  if (!options->EntryNodes) {
-    /* It's possible that a controller set EntryNodes, thus making
-     * should_add_entry_nodes set, then cleared it again, all before the
-     * call to choose_random_entry() that triggered us. If so, just return.
-     */
-    return;
-  }
-
-  {
-    char *string = routerset_to_string(options->EntryNodes);
-    log_info(LD_CIRC,"Adding configured EntryNodes '%s'.", string);
-    tor_free(string);
-  }
-
-  entry_nodes = smartlist_new();
-  worse_entry_nodes = smartlist_new();
-  entry_fps = smartlist_new();
-  old_entry_guards_on_list = smartlist_new();
-  old_entry_guards_not_on_list = smartlist_new();
-
-  /* Split entry guards into those on the list and those not. */
-
-  routerset_get_all_nodes(entry_nodes, options->EntryNodes,
-                          options->ExcludeNodes, 0);
-  SMARTLIST_FOREACH(entry_nodes, const node_t *,node,
-                    smartlist_add(entry_fps, (void*)node->identity));
-
-  SMARTLIST_FOREACH(entry_guards, entry_guard_t *, e, {
-    if (smartlist_digest_isin(entry_fps, e->identity))
-      smartlist_add(old_entry_guards_on_list, e);
-    else
-      smartlist_add(old_entry_guards_not_on_list, e);
-  });
-
-  /* Remove all currently configured guard nodes, excluded nodes, unreachable
-   * nodes, or non-Guard nodes from entry_nodes. */
-  SMARTLIST_FOREACH_BEGIN(entry_nodes, const node_t *, node) {
-    if (entry_guard_get_by_id_digest(node->identity)) {
-      SMARTLIST_DEL_CURRENT(entry_nodes, node);
-      continue;
-    } else if (routerset_contains_node(options->ExcludeNodes, node)) {
-      SMARTLIST_DEL_CURRENT(entry_nodes, node);
-      continue;
-    } else if (!fascist_firewall_allows_node(node)) {
-      SMARTLIST_DEL_CURRENT(entry_nodes, node);
-      continue;
-    } else if (! node->is_possible_guard) {
-      smartlist_add(worse_entry_nodes, (node_t*)node);
-      SMARTLIST_DEL_CURRENT(entry_nodes, node);
-    }
-  } SMARTLIST_FOREACH_END(node);
-
-  /* Now build the new entry_guards list. */
-  smartlist_clear(entry_guards);
-  /* First, the previously configured guards that are in EntryNodes. */
-  smartlist_add_all(entry_guards, old_entry_guards_on_list);
-  /* Next, scramble the rest of EntryNodes, putting the guards first. */
-  smartlist_shuffle(entry_nodes);
-  smartlist_shuffle(worse_entry_nodes);
-  smartlist_add_all(entry_nodes, worse_entry_nodes);
-
-  /* Next, the rest of EntryNodes */
-  SMARTLIST_FOREACH_BEGIN(entry_nodes, const node_t *, node) {
-    add_an_entry_guard(node, 0, 0);
-    if (smartlist_len(entry_guards) > options->NumEntryGuards * 10)
-      break;
-  } SMARTLIST_FOREACH_END(node);
-  log_notice(LD_GENERAL, "%d entries in guards", smartlist_len(entry_guards));
-  /* Finally, free the remaining previously configured guards that are not in
-   * EntryNodes. */
-  SMARTLIST_FOREACH(old_entry_guards_not_on_list, entry_guard_t *, e,
-                    entry_guard_free(e));
-
-  smartlist_free(entry_nodes);
-  smartlist_free(worse_entry_nodes);
-  smartlist_free(entry_fps);
-  smartlist_free(old_entry_guards_on_list);
-  smartlist_free(old_entry_guards_not_on_list);
-  entry_guards_changed();
-}
-
-/** Return 0 if we're fine adding arbitrary routers out of the
- * directory to our entry guard list, or return 1 if we have a
- * list already and we must stick to it.
- */
-int
-entry_list_is_constrained(const or_options_t *options)
-{
-  if (options->EntryNodes)
-    return 1;
-  if (options->UseBridges)
-    return 1;
-  return 0;
-}
-
-/** Pick a live (up and listed) entry guard from entry_guards. If
- * <b>state</b> is non-NULL, this is for a specific circuit --
- * make sure not to pick this circuit's exit or any node in the
- * exit's family. If <b>state</b> is NULL, we're looking for a random
- * guard (likely a bridge). */
-const node_t *
-choose_random_entry(cpath_build_state_t *state)
-{
-  const or_options_t *options = get_options();
-  smartlist_t *live_entry_guards = smartlist_new();
-  smartlist_t *exit_family = smartlist_new();
-  const node_t *chosen_exit =
-    state?build_state_get_exit_node(state) : NULL;
-  const node_t *node = NULL;
-  int need_uptime = state ? state->need_uptime : 0;
-  int need_capacity = state ? state->need_capacity : 0;
-  int preferred_min, consider_exit_family = 0;
-
-  if (chosen_exit) {
-    nodelist_add_node_and_family(exit_family, chosen_exit);
-    consider_exit_family = 1;
-  }
-
-  if (!entry_guards)
-    entry_guards = smartlist_new();
-
-  if (should_add_entry_nodes)
-    entry_guards_set_from_config(options);
-
-  if (!entry_list_is_constrained(options) &&
-      smartlist_len(entry_guards) < options->NumEntryGuards)
-    pick_entry_guards(options);
-
- retry:
-  smartlist_clear(live_entry_guards);
-  SMARTLIST_FOREACH_BEGIN(entry_guards, entry_guard_t *, entry) {
-      const char *msg;
-      node = entry_is_live(entry, need_uptime, need_capacity, 0, &msg);
-      if (!node)
-        continue; /* down, no point */
-      if (node == chosen_exit)
-        continue; /* don't pick the same node for entry and exit */
-      if (consider_exit_family && smartlist_isin(exit_family, node))
-        continue; /* avoid relays that are family members of our exit */
-#if 0 /* since EntryNodes is always strict now, this clause is moot */
-      if (options->EntryNodes &&
-          !routerset_contains_node(options->EntryNodes, node)) {
-        /* We've come to the end of our preferred entry nodes. */
-        if (smartlist_len(live_entry_guards))
-          goto choose_and_finish; /* only choose from the ones we like */
-        if (options->StrictNodes) {
-          /* in theory this case should never happen, since
-           * entry_guards_set_from_config() drops unwanted relays */
-          tor_fragile_assert();
-        } else {
-          log_info(LD_CIRC,
-                   "No relays from EntryNodes available. Using others.");
-        }
-      }
-#endif
-      smartlist_add(live_entry_guards, (void*)node);
-      if (!entry->made_contact) {
-        /* Always start with the first not-yet-contacted entry
-         * guard. Otherwise we might add several new ones, pick
-         * the second new one, and now we've expanded our entry
-         * guard list without needing to. */
-        goto choose_and_finish;
-      }
-      if (smartlist_len(live_entry_guards) >= options->NumEntryGuards)
-        goto choose_and_finish; /* we have enough */
-  } SMARTLIST_FOREACH_END(entry);
-
-  if (entry_list_is_constrained(options)) {
-    /* If we prefer the entry nodes we've got, and we have at least
-     * one choice, that's great. Use it. */
-    preferred_min = 1;
-  } else {
-    /* Try to have at least 2 choices available. This way we don't
-     * get stuck with a single live-but-crummy entry and just keep
-     * using him.
-     * (We might get 2 live-but-crummy entry guards, but so be it.) */
-    preferred_min = 2;
-  }
-
-  if (smartlist_len(live_entry_guards) < preferred_min) {
-    if (!entry_list_is_constrained(options)) {
-      /* still no? try adding a new entry then */
-      /* XXX if guard doesn't imply fast and stable, then we need
-       * to tell add_an_entry_guard below what we want, or it might
-       * be a long time til we get it. -RD */
-      node = add_an_entry_guard(NULL, 0, 0);
-      if (node) {
-        entry_guards_changed();
-        /* XXX we start over here in case the new node we added shares
-         * a family with our exit node. There's a chance that we'll just
-         * load up on entry guards here, if the network we're using is
-         * one big family. Perhaps we should teach add_an_entry_guard()
-         * to understand nodes-to-avoid-if-possible? -RD */
-        goto retry;
-      }
-    }
-    if (!node && need_uptime) {
-      need_uptime = 0; /* try without that requirement */
-      goto retry;
-    }
-    if (!node && need_capacity) {
-      /* still no? last attempt, try without requiring capacity */
-      need_capacity = 0;
-      goto retry;
-    }
-#if 0
-    /* Removing this retry logic: if we only allow one exit, and it is in the
-       same family as all our entries, then we are just plain not going to win
-       here. */
-    if (!node && entry_list_is_constrained(options) && consider_exit_family) {
-      /* still no? if we're using bridges or have strictentrynodes
-       * set, and our chosen exit is in the same family as all our
-       * bridges/entry guards, then be flexible about families. */
-      consider_exit_family = 0;
-      goto retry;
-    }
-#endif
-    /* live_entry_guards may be empty below. Oh well, we tried. */
-  }
-
- choose_and_finish:
-  if (entry_list_is_constrained(options)) {
-    /* We need to weight by bandwidth, because our bridges or entryguards
-     * were not already selected proportional to their bandwidth. */
-    node = node_sl_choose_by_bandwidth(live_entry_guards, WEIGHT_FOR_GUARD);
-  } else {
-    /* We choose uniformly at random here, because choose_good_entry_server()
-     * already weights its choices by bandwidth, so we don't want to
-     * *double*-weight our guard selection. */
-    node = smartlist_choose(live_entry_guards);
-  }
-  smartlist_free(live_entry_guards);
-  smartlist_free(exit_family);
-  return node;
-}
-
-/** Parse <b>state</b> and learn about the entry guards it describes.
- * If <b>set</b> is true, and there are no errors, replace the global
- * entry_list with what we find.
- * On success, return 0. On failure, alloc into *<b>msg</b> a string
- * describing the error, and return -1.
- */
-int
-entry_guards_parse_state(or_state_t *state, int set, char **msg)
-{
-  entry_guard_t *node = NULL;
-  smartlist_t *new_entry_guards = smartlist_new();
-  config_line_t *line;
-  time_t now = time(NULL);
-  const char *state_version = state->TorVersion;
-  digestmap_t *added_by = digestmap_new();
-
-  *msg = NULL;
-  for (line = state->EntryGuards; line; line = line->next) {
-    if (!strcasecmp(line->key, "EntryGuard")) {
-      smartlist_t *args = smartlist_new();
-      node = tor_malloc_zero(sizeof(entry_guard_t));
-      /* all entry guards on disk have been contacted */
-      node->made_contact = 1;
-      smartlist_add(new_entry_guards, node);
-      smartlist_split_string(args, line->value, " ",
-                             SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK, 0);
-      if (smartlist_len(args)<2) {
-        *msg = tor_strdup("Unable to parse entry nodes: "
-                          "Too few arguments to EntryGuard");
-      } else if (!is_legal_nickname(smartlist_get(args,0))) {
-        *msg = tor_strdup("Unable to parse entry nodes: "
-                          "Bad nickname for EntryGuard");
-      } else {
-        strlcpy(node->nickname, smartlist_get(args,0), MAX_NICKNAME_LEN+1);
-        if (base16_decode(node->identity, DIGEST_LEN, smartlist_get(args,1),
-                          strlen(smartlist_get(args,1)))<0) {
-          *msg = tor_strdup("Unable to parse entry nodes: "
-                            "Bad hex digest for EntryGuard");
-        }
-      }
-      SMARTLIST_FOREACH(args, char*, cp, tor_free(cp));
-      smartlist_free(args);
-      if (*msg)
-        break;
-    } else if (!strcasecmp(line->key, "EntryGuardDownSince") ||
-               !strcasecmp(line->key, "EntryGuardUnlistedSince")) {
-      time_t when;
-      time_t last_try = 0;
-      if (!node) {
-        *msg = tor_strdup("Unable to parse entry nodes: "
-               "EntryGuardDownSince/UnlistedSince without EntryGuard");
-        break;
-      }
-      if (parse_iso_time(line->value, &when)<0) {
-        *msg = tor_strdup("Unable to parse entry nodes: "
-                          "Bad time in EntryGuardDownSince/UnlistedSince");
-        break;
-      }
-      if (when > now) {
-        /* It's a bad idea to believe info in the future: you can wind
-         * up with timeouts that aren't allowed to happen for years. */
-        continue;
-      }
-      if (strlen(line->value) >= ISO_TIME_LEN+ISO_TIME_LEN+1) {
-        /* ignore failure */
-        (void) parse_iso_time(line->value+ISO_TIME_LEN+1, &last_try);
-      }
-      if (!strcasecmp(line->key, "EntryGuardDownSince")) {
-        node->unreachable_since = when;
-        node->last_attempted = last_try;
-      } else {
-        node->bad_since = when;
-      }
-    } else if (!strcasecmp(line->key, "EntryGuardAddedBy")) {
-      char d[DIGEST_LEN];
-      /* format is digest version date */
-      if (strlen(line->value) < HEX_DIGEST_LEN+1+1+1+ISO_TIME_LEN) {
-        log_warn(LD_BUG, "EntryGuardAddedBy line is not long enough.");
-        continue;
-      }
-      if (base16_decode(d, sizeof(d), line->value, HEX_DIGEST_LEN)<0 ||
-          line->value[HEX_DIGEST_LEN] != ' ') {
-        log_warn(LD_BUG, "EntryGuardAddedBy line %s does not begin with "
-                 "hex digest", escaped(line->value));
-        continue;
-      }
-      digestmap_set(added_by, d, tor_strdup(line->value+HEX_DIGEST_LEN+1));
-    } else if (!strcasecmp(line->key, "EntryGuardPathBias")) {
-      const or_options_t *options = get_options();
-      unsigned hop_cnt, success_cnt;
-
-      if (!node) {
-        *msg = tor_strdup("Unable to parse entry nodes: "
-               "EntryGuardPathBias without EntryGuard");
-        break;
-      }
-
-      if (tor_sscanf(line->value, "%u %u", &success_cnt, &hop_cnt) != 2) {
-        log_warn(LD_GENERAL, "Unable to parse guard path bias info: "
-                 "Misformated EntryGuardPathBias %s", escaped(line->value));
-        continue;
-      }
-
-      node->first_hops = hop_cnt;
-      node->circuit_successes = success_cnt;
-      log_info(LD_GENERAL, "Read %u/%u path bias for node %s",
-               node->circuit_successes, node->first_hops, node->nickname);
-      /* Note: We rely on the < comparison here to allow us to set a 0
-       * rate and disable the feature entirely. If refactoring, don't
-       * change to <= */
-      if (node->circuit_successes/((double)node->first_hops)
-          < pathbias_get_disable_rate(options)) {
-        node->path_bias_disabled = 1;
-        log_info(LD_GENERAL,
-                 "Path bias is too high (%u/%u); disabling node %s",
-                 node->circuit_successes, node->first_hops, node->nickname);
-      }
-
-    } else {
-      log_warn(LD_BUG, "Unexpected key %s", line->key);
-    }
-  }
-
-  SMARTLIST_FOREACH_BEGIN(new_entry_guards, entry_guard_t *, e) {
-     char *sp;
-     char *val = digestmap_get(added_by, e->identity);
-     if (val && (sp = strchr(val, ' '))) {
-       time_t when;
-       *sp++ = '\0';
-       if (parse_iso_time(sp, &when)<0) {
-         log_warn(LD_BUG, "Can't read time %s in EntryGuardAddedBy", sp);
-       } else {
-         e->chosen_by_version = tor_strdup(val);
-         e->chosen_on_date = when;
-       }
-     } else {
-       if (state_version) {
-         e->chosen_by_version = tor_strdup(state_version);
-         e->chosen_on_date = time(NULL) - crypto_rand_int(3600*24*30);
-       }
-     }
-     if (e->path_bias_disabled && !e->bad_since)
-       e->bad_since = time(NULL);
-    }
-  SMARTLIST_FOREACH_END(e);
-
-  if (*msg || !set) {
-    SMARTLIST_FOREACH(new_entry_guards, entry_guard_t *, e,
-                      entry_guard_free(e));
-    smartlist_free(new_entry_guards);
-  } else { /* !err && set */
-    if (entry_guards) {
-      SMARTLIST_FOREACH(entry_guards, entry_guard_t *, e,
-                        entry_guard_free(e));
-      smartlist_free(entry_guards);
-    }
-    entry_guards = new_entry_guards;
-    entry_guards_dirty = 0;
-    /* XXX024 hand new_entry_guards to this func, and move it up a
-     * few lines, so we don't have to re-dirty it */
-    if (remove_obsolete_entry_guards(now))
-      entry_guards_dirty = 1;
-  }
-  digestmap_free(added_by, _tor_free);
-  return *msg ? -1 : 0;
-}
-
-/** Our list of entry guards has changed, or some element of one
- * of our entry guards has changed. Write the changes to disk within
- * the next few minutes.
- */
-static void
-entry_guards_changed(void)
-{
-  time_t when;
-  entry_guards_dirty = 1;
-
-  /* or_state_save() will call entry_guards_update_state(). */
-  when = get_options()->AvoidDiskWrites ? time(NULL) + 3600 : time(NULL)+600;
-  or_state_mark_dirty(get_or_state(), when);
-}
-
-/** If the entry guard info has not changed, do nothing and return.
- * Otherwise, free the EntryGuards piece of <b>state</b> and create
- * a new one out of the global entry_guards list, and then mark
- * <b>state</b> dirty so it will get saved to disk.
- */
-void
-entry_guards_update_state(or_state_t *state)
-{
-  config_line_t **next, *line;
-  if (! entry_guards_dirty)
-    return;
-
-  config_free_lines(state->EntryGuards);
-  next = &state->EntryGuards;
-  *next = NULL;
-  if (!entry_guards)
-    entry_guards = smartlist_new();
-  SMARTLIST_FOREACH_BEGIN(entry_guards, entry_guard_t *, e) {
-      char dbuf[HEX_DIGEST_LEN+1];
-      if (!e->made_contact)
-        continue; /* don't write this one to disk */
-      *next = line = tor_malloc_zero(sizeof(config_line_t));
-      line->key = tor_strdup("EntryGuard");
-      base16_encode(dbuf, sizeof(dbuf), e->identity, DIGEST_LEN);
-      tor_asprintf(&line->value, "%s %s", e->nickname, dbuf);
-      next = &(line->next);
-      if (e->unreachable_since) {
-        *next = line = tor_malloc_zero(sizeof(config_line_t));
-        line->key = tor_strdup("EntryGuardDownSince");
-        line->value = tor_malloc(ISO_TIME_LEN+1+ISO_TIME_LEN+1);
-        format_iso_time(line->value, e->unreachable_since);
-        if (e->last_attempted) {
-          line->value[ISO_TIME_LEN] = ' ';
-          format_iso_time(line->value+ISO_TIME_LEN+1, e->last_attempted);
-        }
-        next = &(line->next);
-      }
-      if (e->bad_since) {
-        *next = line = tor_malloc_zero(sizeof(config_line_t));
-        line->key = tor_strdup("EntryGuardUnlistedSince");
-        line->value = tor_malloc(ISO_TIME_LEN+1);
-        format_iso_time(line->value, e->bad_since);
-        next = &(line->next);
-      }
-      if (e->chosen_on_date && e->chosen_by_version &&
-          !strchr(e->chosen_by_version, ' ')) {
-        char d[HEX_DIGEST_LEN+1];
-        char t[ISO_TIME_LEN+1];
-        *next = line = tor_malloc_zero(sizeof(config_line_t));
-        line->key = tor_strdup("EntryGuardAddedBy");
-        base16_encode(d, sizeof(d), e->identity, DIGEST_LEN);
-        format_iso_time(t, e->chosen_on_date);
-        tor_asprintf(&line->value, "%s %s %s",
-                     d, e->chosen_by_version, t);
-        next = &(line->next);
-      }
-      if (e->first_hops) {
-        *next = line = tor_malloc_zero(sizeof(config_line_t));
-        line->key = tor_strdup("EntryGuardPathBias");
-        tor_asprintf(&line->value, "%u %u",
-                     e->circuit_successes, e->first_hops);
-        next = &(line->next);
-      }
-
-  } SMARTLIST_FOREACH_END(e);
-  if (!get_options()->AvoidDiskWrites)
-    or_state_mark_dirty(get_or_state(), 0);
-  entry_guards_dirty = 0;
-}
-
-/** If <b>question</b> is the string "entry-guards", then dump
- * to *<b>answer</b> a newly allocated string describing all of
- * the nodes in the global entry_guards list. See control-spec.txt
- * for details.
- * For backward compatibility, we also handle the string "helper-nodes".
- * */
-int
-getinfo_helper_entry_guards(control_connection_t *conn,
-                            const char *question, char **answer,
-                            const char **errmsg)
-{
-  (void) conn;
-  (void) errmsg;
-
-  if (!strcmp(question,"entry-guards") ||
-      !strcmp(question,"helper-nodes")) {
-    smartlist_t *sl = smartlist_new();
-    char tbuf[ISO_TIME_LEN+1];
-    char nbuf[MAX_VERBOSE_NICKNAME_LEN+1];
-    if (!entry_guards)
-      entry_guards = smartlist_new();
-    SMARTLIST_FOREACH_BEGIN(entry_guards, entry_guard_t *, e) {
-        const char *status = NULL;
-        time_t when = 0;
-        const node_t *node;
-
-        if (!e->made_contact) {
-          status = "never-connected";
-        } else if (e->bad_since) {
-          when = e->bad_since;
-          status = "unusable";
-        } else {
-          status = "up";
-        }
-
-        node = node_get_by_id(e->identity);
-        if (node) {
-          node_get_verbose_nickname(node, nbuf);
-        } else {
-          nbuf[0] = '$';
-          base16_encode(nbuf+1, sizeof(nbuf)-1, e->identity, DIGEST_LEN);
-          /* e->nickname field is not very reliable if we don't know about
-           * this router any longer; don't include it. */
-        }
-
-        if (when) {
-          format_iso_time(tbuf, when);
-          smartlist_add_asprintf(sl, "%s %s %s\n", nbuf, status, tbuf);
-        } else {
-          smartlist_add_asprintf(sl, "%s %s\n", nbuf, status);
-        }
-    } SMARTLIST_FOREACH_END(e);
-    *answer = smartlist_join_strings(sl, "", 0, NULL);
-    SMARTLIST_FOREACH(sl, char *, c, tor_free(c));
-    smartlist_free(sl);
-  }
-  return 0;
-}
-
-/** A list of configured bridges. Whenever we actually get a descriptor
- * for one, we add it as an entry guard.  Note that the order of bridges
- * in this list does not necessarily correspond to the order of bridges
- * in the torrc. */
-static smartlist_t *bridge_list = NULL;
-
-/** Mark every entry of the bridge list to be removed on our next call to
- * sweep_bridge_list unless it has first been un-marked. */
-void
-mark_bridge_list(void)
-{
-  if (!bridge_list)
-    bridge_list = smartlist_new();
-  SMARTLIST_FOREACH(bridge_list, bridge_info_t *, b,
-                    b->marked_for_removal = 1);
-}
-
-/** Remove every entry of the bridge list that was marked with
- * mark_bridge_list if it has not subsequently been un-marked. */
-void
-sweep_bridge_list(void)
-{
-  if (!bridge_list)
-    bridge_list = smartlist_new();
-  SMARTLIST_FOREACH_BEGIN(bridge_list, bridge_info_t *, b) {
-    if (b->marked_for_removal) {
-      SMARTLIST_DEL_CURRENT(bridge_list, b);
-      bridge_free(b);
-    }
-  } SMARTLIST_FOREACH_END(b);
-}
-
-/** Initialize the bridge list to empty, creating it if needed. */
-static void
-clear_bridge_list(void)
-{
-  if (!bridge_list)
-    bridge_list = smartlist_new();
-  SMARTLIST_FOREACH(bridge_list, bridge_info_t *, b, bridge_free(b));
-  smartlist_clear(bridge_list);
-}
-
-/** Free the bridge <b>bridge</b>. */
-static void
-bridge_free(bridge_info_t *bridge)
-{
-  if (!bridge)
-    return;
-
-  tor_free(bridge->transport_name);
-  tor_free(bridge);
-}
-
-/** A list of pluggable transports found in torrc. */
-static smartlist_t *transport_list = NULL;
-
-/** Mark every entry of the transport list to be removed on our next call to
- * sweep_transport_list unless it has first been un-marked. */
-void
-mark_transport_list(void)
-{
-  if (!transport_list)
-    transport_list = smartlist_new();
-  SMARTLIST_FOREACH(transport_list, transport_t *, t,
-                    t->marked_for_removal = 1);
-}
-
-/** Remove every entry of the transport list that was marked with
- * mark_transport_list if it has not subsequently been un-marked. */
-void
-sweep_transport_list(void)
-{
-  if (!transport_list)
-    transport_list = smartlist_new();
-  SMARTLIST_FOREACH_BEGIN(transport_list, transport_t *, t) {
-    if (t->marked_for_removal) {
-      SMARTLIST_DEL_CURRENT(transport_list, t);
-      transport_free(t);
-    }
-  } SMARTLIST_FOREACH_END(t);
-}
-
-/** Initialize the pluggable transports list to empty, creating it if
- *  needed. */
-void
-clear_transport_list(void)
-{
-  if (!transport_list)
-    transport_list = smartlist_new();
-  SMARTLIST_FOREACH(transport_list, transport_t *, t, transport_free(t));
-  smartlist_clear(transport_list);
-}
-
-/** Free the pluggable transport struct <b>transport</b>. */
-void
-transport_free(transport_t *transport)
-{
-  if (!transport)
-    return;
-
-  tor_free(transport->name);
-  tor_free(transport);
-}
-
-/** Returns the transport in our transport list that has the name <b>name</b>.
- *  Else returns NULL. */
-transport_t *
-transport_get_by_name(const char *name)
-{
-  tor_assert(name);
-
-  if (!transport_list)
-    return NULL;
-
-  SMARTLIST_FOREACH_BEGIN(transport_list, transport_t *, transport) {
-    if (!strcmp(transport->name, name))
-      return transport;
-  } SMARTLIST_FOREACH_END(transport);
-
-  return NULL;
-}
-
-/** Returns a transport_t struct for a transport proxy supporting the
-    protocol <b>name</b> listening at <b>addr</b>:<b>port</b> using
-    SOCKS version <b>socks_ver</b>. */
-transport_t *
-transport_new(const tor_addr_t *addr, uint16_t port,
-                 const char *name, int socks_ver)
-{
-  transport_t *t = tor_malloc_zero(sizeof(transport_t));
-
-  tor_addr_copy(&t->addr, addr);
-  t->port = port;
-  t->name = tor_strdup(name);
-  t->socks_version = socks_ver;
-
-  return t;
-}
-
-/** Resolve any conflicts that the insertion of transport <b>t</b>
- *  might cause.
- *  Return 0 if <b>t</b> is OK and should be registered, 1 if there is
- *  a transport identical to <b>t</b> already registered and -1 if
- *  <b>t</b> cannot be added due to conflicts. */
-static int
-transport_resolve_conflicts(transport_t *t)
-{
-  /* This is how we resolve transport conflicts:
-
-     If there is already a transport with the same name and addrport,
-     we either have duplicate torrc lines OR we are here post-HUP and
-     this transport was here pre-HUP as well. In any case, mark the
-     old transport so that it doesn't get removed and ignore the new
-     one. Our caller has to free the new transport so we return '1' to
-     signify this.
-
-     If there is already a transport with the same name but different
-     addrport:
-     * if it's marked for removal, it means that it either has a lower
-     priority than 't' in torrc (otherwise the mark would have been
-     cleared by the paragraph above), or it doesn't exist at all in
-     the post-HUP torrc. We destroy the old transport and register 't'.
-     * if it's *not* marked for removal, it means that it was newly
-     added in the post-HUP torrc or that it's of higher priority, in
-     this case we ignore 't'. */
-  transport_t *t_tmp = transport_get_by_name(t->name);
-  if (t_tmp) { /* same name */
-    if (tor_addr_eq(&t->addr, &t_tmp->addr) && (t->port == t_tmp->port)) {
-      /* same name *and* addrport */
-      t_tmp->marked_for_removal = 0;
-      return 1;
-    } else { /* same name but different addrport */
-      char *new_transport_addr = tor_strdup(fmt_addr(&t->addr));
-      if (t_tmp->marked_for_removal) { /* marked for removal */
-        log_notice(LD_GENERAL, "You tried to add transport '%s' at '%s:%u' "
-                   "but there was already a transport marked for deletion at "
-                   "'%s:%u'. We deleted the old transport and registered the "
-                   "new one.", t->name, new_transport_addr, t->port,
-                   fmt_addr(&t_tmp->addr), t_tmp->port);
-        smartlist_remove(transport_list, t_tmp);
-        transport_free(t_tmp);
-        tor_free(new_transport_addr);
-      } else { /* *not* marked for removal */
-        log_notice(LD_GENERAL, "You tried to add transport '%s' at '%s:%u' "
-                   "but the same transport already exists at '%s:%u'. "
-                   "Skipping.", t->name, new_transport_addr, t->port,
-                   fmt_addr(&t_tmp->addr), t_tmp->port);
-        tor_free(new_transport_addr);
-        return -1;
-      }
-    }
-  }
-
-  return 0;
-}
-
-/** Add transport <b>t</b> to the internal list of pluggable
- *  transports.
- *  Returns 0 if the transport was added correctly, 1 if the same
- *  transport was already registered (in this case the caller must
- *  free the transport) and -1 if there was an error.  */
-int
-transport_add(transport_t *t)
-{
-  int r;
-  tor_assert(t);
-
-  r = transport_resolve_conflicts(t);
-
-  switch (r) {
-  case 0: /* should register transport */
-    if (!transport_list)
-      transport_list = smartlist_new();
-    smartlist_add(transport_list, t);
-    return 0;
-  default: /* let our caller know the return code */
-    return r;
-  }
-}
-
-/** Remember a new pluggable transport proxy at <b>addr</b>:<b>port</b>.
- *  <b>name</b> is set to the name of the protocol this proxy uses.
- *  <b>socks_ver</b> is set to the SOCKS version of the proxy. */
-int
-transport_add_from_config(const tor_addr_t *addr, uint16_t port,
-                          const char *name, int socks_ver)
-{
-  transport_t *t = transport_new(addr, port, name, socks_ver);
-
-  int r = transport_add(t);
-
-  switch (r) {
-  case -1:
-  default:
-    log_notice(LD_GENERAL, "Could not add transport %s at %s:%u. Skipping.",
-               t->name, fmt_addr(&t->addr), t->port);
-    transport_free(t);
-    return -1;
-  case 1:
-    log_info(LD_GENERAL, "Succesfully registered transport %s at %s:%u.",
-             t->name, fmt_addr(&t->addr), t->port);
-     transport_free(t); /* falling */
-     return 0;
-  case 0:
-    log_info(LD_GENERAL, "Succesfully registered transport %s at %s:%u.",
-             t->name, fmt_addr(&t->addr), t->port);
-    return 0;
-  }
-}
-
-/** Return a bridge pointer if <b>ri</b> is one of our known bridges
- * (either by comparing keys if possible, else by comparing addr/port).
- * Else return NULL. */
-static bridge_info_t *
-get_configured_bridge_by_addr_port_digest(const tor_addr_t *addr,
-                                          uint16_t port,
-                                          const char *digest)
-{
-  if (!bridge_list)
-    return NULL;
-  SMARTLIST_FOREACH_BEGIN(bridge_list, bridge_info_t *, bridge)
-    {
-      if (tor_digest_is_zero(bridge->identity) &&
-          !tor_addr_compare(&bridge->addr, addr, CMP_EXACT) &&
-          bridge->port == port)
-        return bridge;
-      if (digest && tor_memeq(bridge->identity, digest, DIGEST_LEN))
-        return bridge;
-    }
-  SMARTLIST_FOREACH_END(bridge);
-  return NULL;
-}
-
-/** Wrapper around get_configured_bridge_by_addr_port_digest() to look
- * it up via router descriptor <b>ri</b>. */
-static bridge_info_t *
-get_configured_bridge_by_routerinfo(const routerinfo_t *ri)
-{
-  tor_addr_port_t ap;
-
-  router_get_pref_orport(ri, &ap);
-  return get_configured_bridge_by_addr_port_digest(&ap.addr, ap.port,
-                                               ri->cache_info.identity_digest);
-}
-
-/** Return 1 if <b>ri</b> is one of our known bridges, else 0. */
-int
-routerinfo_is_a_configured_bridge(const routerinfo_t *ri)
-{
-  return get_configured_bridge_by_routerinfo(ri) ? 1 : 0;
-}
-
-/** Return 1 if <b>node</b> is one of our configured bridges, else 0. */
-int
-node_is_a_configured_bridge(const node_t *node)
-{
-  int retval = 0;               /* Negative.  */
-  smartlist_t *orports = NULL;
-
-  if (!node)
-    goto out;
-
-  orports = node_get_all_orports(node);
-  if (orports == NULL)
-    goto out;
-
-  SMARTLIST_FOREACH_BEGIN(orports, tor_addr_port_t *, orport) {
-    if (get_configured_bridge_by_addr_port_digest(&orport->addr, orport->port,
-                                                  node->identity) != NULL) {
-      retval = 1;
-      goto out;
-    }
-  } SMARTLIST_FOREACH_END(orport);
-
- out:
-  if (orports != NULL) {
-    SMARTLIST_FOREACH(orports, tor_addr_port_t *, p, tor_free(p));
-    smartlist_free(orports);
-    orports = NULL;
-  }
-  return retval;
-}
-
-/** We made a connection to a router at <b>addr</b>:<b>port</b>
- * without knowing its digest. Its digest turned out to be <b>digest</b>.
- * If it was a bridge, and we still don't know its digest, record it.
- */
-void
-learned_router_identity(const tor_addr_t *addr, uint16_t port,
-                        const char *digest)
-{
-  bridge_info_t *bridge =
-    get_configured_bridge_by_addr_port_digest(addr, port, digest);
-  if (bridge && tor_digest_is_zero(bridge->identity)) {
-    memcpy(bridge->identity, digest, DIGEST_LEN);
-    log_notice(LD_DIR, "Learned fingerprint %s for bridge %s:%d",
-               hex_str(digest, DIGEST_LEN), fmt_addr(addr), port);
-  }
-}
-
-/** Return true if <b>bridge</b> has the same identity digest as
- *  <b>digest</b>. If <b>digest</b> is NULL, it matches
- *  bridges with unspecified identity digests. */
-static int
-bridge_has_digest(const bridge_info_t *bridge, const char *digest)
-{
-  if (digest)
-    return tor_memeq(digest, bridge->identity, DIGEST_LEN);
-  else
-    return tor_digest_is_zero(bridge->identity);
-}
-
-/** We are about to add a new bridge at <b>addr</b>:<b>port</b>, with optional
- * <b>digest</b> and <b>transport_name</b>. Mark for removal any previously
- * existing bridge with the same address and port, and warn the user as
- * appropriate.
- */
-static void
-bridge_resolve_conflicts(const tor_addr_t *addr, uint16_t port,
-                         const char *digest, const char *transport_name)
-{
-  /* Iterate the already-registered bridge list:
-
-     If you find a bridge with the same adress and port, mark it for
-     removal. It doesn't make sense to have two active bridges with
-     the same IP:PORT. If the bridge in question has a different
-     digest or transport than <b>digest</b>/<b>transport_name</b>,
-     it's probably a misconfiguration and we should warn the user.
-  */
-  SMARTLIST_FOREACH_BEGIN(bridge_list, bridge_info_t *, bridge) {
-    if (bridge->marked_for_removal)
-      continue;
-
-    if (tor_addr_eq(&bridge->addr, addr) && (bridge->port == port)) {
-
-      bridge->marked_for_removal = 1;
-
-      if (!bridge_has_digest(bridge, digest) ||
-          strcmp_opt(bridge->transport_name, transport_name)) {
-        /* warn the user */
-        char *bridge_description_new, *bridge_description_old;
-        tor_asprintf(&bridge_description_new, "%s:%u:%s:%s",
-                     fmt_addr(addr), port,
-                     digest ? hex_str(digest, DIGEST_LEN) : "",
-                     transport_name ? transport_name : "");
-        tor_asprintf(&bridge_description_old, "%s:%u:%s:%s",
-                     fmt_addr(&bridge->addr), bridge->port,
-                     tor_digest_is_zero(bridge->identity) ?
-                     "" : hex_str(bridge->identity,DIGEST_LEN),
-                     bridge->transport_name ? bridge->transport_name : "");
-
-        log_warn(LD_GENERAL,"Tried to add bridge '%s', but we found a conflict"
-                 " with the already registered bridge '%s'. We will discard"
-                 " the old bridge and keep '%s'. If this is not what you"
-                 " wanted, please change your configuration file accordingly.",
-                 bridge_description_new, bridge_description_old,
-                 bridge_description_new);
-
-        tor_free(bridge_description_new);
-        tor_free(bridge_description_old);
-      }
-    }
-  } SMARTLIST_FOREACH_END(bridge);
-}
-
-/** Remember a new bridge at <b>addr</b>:<b>port</b>. If <b>digest</b>
- * is set, it tells us the identity key too.  If we already had the
- * bridge in our list, unmark it, and don't actually add anything new.
- * If <b>transport_name</b> is non-NULL - the bridge is associated with a
- * pluggable transport - we assign the transport to the bridge. */
-void
-bridge_add_from_config(const tor_addr_t *addr, uint16_t port,
-                       const char *digest, const char *transport_name)
-{
-  bridge_info_t *b;
-
-  bridge_resolve_conflicts(addr, port, digest, transport_name);
-
-  b = tor_malloc_zero(sizeof(bridge_info_t));
-  tor_addr_copy(&b->addr, addr);
-  b->port = port;
-  if (digest)
-    memcpy(b->identity, digest, DIGEST_LEN);
-  if (transport_name)
-    b->transport_name = tor_strdup(transport_name);
-  b->fetch_status.schedule = DL_SCHED_BRIDGE;
-  if (!bridge_list)
-    bridge_list = smartlist_new();
-
-  smartlist_add(bridge_list, b);
-}
-
-/** Return true iff <b>routerset</b> contains the bridge <b>bridge</b>. */
-static int
-routerset_contains_bridge(const routerset_t *routerset,
-                          const bridge_info_t *bridge)
-{
-  int result;
-  extend_info_t *extinfo;
-  tor_assert(bridge);
-  if (!routerset)
-    return 0;
-
-  extinfo = extend_info_alloc(
-         NULL, bridge->identity, NULL, &bridge->addr, bridge->port);
-  result = routerset_contains_extendinfo(routerset, extinfo);
-  extend_info_free(extinfo);
-  return result;
-}
-
-/** If <b>digest</b> is one of our known bridges, return it. */
-static bridge_info_t *
-find_bridge_by_digest(const char *digest)
-{
-  SMARTLIST_FOREACH(bridge_list, bridge_info_t *, bridge,
-    {
-      if (tor_memeq(bridge->identity, digest, DIGEST_LEN))
-        return bridge;
-    });
-  return NULL;
-}
-
-/* DOCDOC find_transport_name_by_bridge_addrport */
-const char *
-find_transport_name_by_bridge_addrport(const tor_addr_t *addr, uint16_t port)
-{
-  if (!bridge_list)
-    return NULL;
-
-  SMARTLIST_FOREACH_BEGIN(bridge_list, const bridge_info_t *, bridge) {
-    if (tor_addr_eq(&bridge->addr, addr) &&
-        (bridge->port == port))
-      return bridge->transport_name;
-  } SMARTLIST_FOREACH_END(bridge);
-
-  return NULL;
-}
-
-/** If <b>addr</b> and <b>port</b> match the address and port of a
- * bridge of ours that uses pluggable transports, place its transport
- * in <b>transport</b>.
- *
- * Return 0 on success (found a transport, or found a bridge with no
- * transport, or found no bridge); return -1 if we should be using a
- * transport, but the transport could not be found.
- */
-int
-find_transport_by_bridge_addrport(const tor_addr_t *addr, uint16_t port,
-                                  const transport_t **transport)
-{
-  *transport = NULL;
-  if (!bridge_list)
-    return 0;
-
-  SMARTLIST_FOREACH_BEGIN(bridge_list, const bridge_info_t *, bridge) {
-    if (tor_addr_eq(&bridge->addr, addr) &&
-        (bridge->port == port)) { /* bridge matched */
-      if (bridge->transport_name) { /* it also uses pluggable transports */
-        *transport = transport_get_by_name(bridge->transport_name);
-        if (*transport == NULL) { /* it uses pluggable transports, but
-                                     the transport could not be found! */
-          return -1;
-        }
-        return 0;
-      } else { /* bridge matched, but it doesn't use transports. */
-        break;
-      }
-    }
-  } SMARTLIST_FOREACH_END(bridge);
-
-  *transport = NULL;
-  return 0;
-}
-
-/** We need to ask <b>bridge</b> for its server descriptor. */
-static void
-launch_direct_bridge_descriptor_fetch(bridge_info_t *bridge)
-{
-  char *address;
-  const or_options_t *options = get_options();
-
-  if (connection_get_by_type_addr_port_purpose(
-      CONN_TYPE_DIR, &bridge->addr, bridge->port,
-      DIR_PURPOSE_FETCH_SERVERDESC))
-    return; /* it's already on the way */
-
-  if (routerset_contains_bridge(options->ExcludeNodes, bridge)) {
-    download_status_mark_impossible(&bridge->fetch_status);
-    log_warn(LD_APP, "Not using bridge at %s: it is in ExcludeNodes.",
-             safe_str_client(fmt_addr(&bridge->addr)));
-    return;
-  }
-
-  address = tor_dup_addr(&bridge->addr);
-
-  directory_initiate_command(address, &bridge->addr,
-                             bridge->port, 0,
-                             0, /* does not matter */
-                             1, bridge->identity,
-                             DIR_PURPOSE_FETCH_SERVERDESC,
-                             ROUTER_PURPOSE_BRIDGE,
-                             0, "authority.z", NULL, 0, 0);
-  tor_free(address);
-}
-
-/** Fetching the bridge descriptor from the bridge authority returned a
- * "not found". Fall back to trying a direct fetch. */
-void
-retry_bridge_descriptor_fetch_directly(const char *digest)
-{
-  bridge_info_t *bridge = find_bridge_by_digest(digest);
-  if (!bridge)
-    return; /* not found? oh well. */
-
-  launch_direct_bridge_descriptor_fetch(bridge);
-}
-
-/** For each bridge in our list for which we don't currently have a
- * descriptor, fetch a new copy of its descriptor -- either directly
- * from the bridge or via a bridge authority. */
-void
-fetch_bridge_descriptors(const or_options_t *options, time_t now)
-{
-  int num_bridge_auths = get_n_authorities(BRIDGE_DIRINFO);
-  int ask_bridge_directly;
-  int can_use_bridge_authority;
-
-  if (!bridge_list)
-    return;
-
-  /* If we still have unconfigured managed proxies, don't go and
-     connect to a bridge. */
-  if (pt_proxies_configuration_pending())
-    return;
-
-  SMARTLIST_FOREACH_BEGIN(bridge_list, bridge_info_t *, bridge)
-    {
-      if (!download_status_is_ready(&bridge->fetch_status, now,
-                                    IMPOSSIBLE_TO_DOWNLOAD))
-        continue; /* don't bother, no need to retry yet */
-      if (routerset_contains_bridge(options->ExcludeNodes, bridge)) {
-        download_status_mark_impossible(&bridge->fetch_status);
-        log_warn(LD_APP, "Not using bridge at %s: it is in ExcludeNodes.",
-                 safe_str_client(fmt_addr(&bridge->addr)));
-        continue;
-      }
-
-      /* schedule another fetch as if this one will fail, in case it does */
-      download_status_failed(&bridge->fetch_status, 0);
-
-      can_use_bridge_authority = !tor_digest_is_zero(bridge->identity) &&
-                                 num_bridge_auths;
-      ask_bridge_directly = !can_use_bridge_authority ||
-                            !options->UpdateBridgesFromAuthority;
-      log_debug(LD_DIR, "ask_bridge_directly=%d (%d, %d, %d)",
-                ask_bridge_directly, tor_digest_is_zero(bridge->identity),
-                !options->UpdateBridgesFromAuthority, !num_bridge_auths);
-
-      if (ask_bridge_directly &&
-          !fascist_firewall_allows_address_or(&bridge->addr, bridge->port)) {
-        log_notice(LD_DIR, "Bridge at '%s:%d' isn't reachable by our "
-                   "firewall policy. %s.", fmt_addr(&bridge->addr),
-                   bridge->port,
-                   can_use_bridge_authority ?
-                     "Asking bridge authority instead" : "Skipping");
-        if (can_use_bridge_authority)
-          ask_bridge_directly = 0;
-        else
-          continue;
-      }
-
-      if (ask_bridge_directly) {
-        /* we need to ask the bridge itself for its descriptor. */
-        launch_direct_bridge_descriptor_fetch(bridge);
-      } else {
-        /* We have a digest and we want to ask an authority. We could
-         * combine all the requests into one, but that may give more
-         * hints to the bridge authority than we want to give. */
-        char resource[10 + HEX_DIGEST_LEN];
-        memcpy(resource, "fp/", 3);
-        base16_encode(resource+3, HEX_DIGEST_LEN+1,
-                      bridge->identity, DIGEST_LEN);
-        memcpy(resource+3+HEX_DIGEST_LEN, ".z", 3);
-        log_info(LD_DIR, "Fetching bridge info '%s' from bridge authority.",
-                 resource);
-        directory_get_from_dirserver(DIR_PURPOSE_FETCH_SERVERDESC,
-                ROUTER_PURPOSE_BRIDGE, resource, 0);
-      }
-    }
-  SMARTLIST_FOREACH_END(bridge);
-}
-
-/** If our <b>bridge</b> is configured to be a different address than
- * the bridge gives in <b>node</b>, rewrite the routerinfo
- * we received to use the address we meant to use. Now we handle
- * multihomed bridges better.
- */
-static void
-rewrite_node_address_for_bridge(const bridge_info_t *bridge, node_t *node)
-{
-  /* XXXX move this function. */
-  /* XXXX overridden addresses should really live in the node_t, so that the
-   *   routerinfo_t and the microdesc_t can be immutable.  But we can only
-   *   do that safely if we know that no function that connects to an OR
-   *   does so through an address from any source other than node_get_addr().
-   */
-  tor_addr_t addr;
-
-  if (node->ri) {
-    routerinfo_t *ri = node->ri;
-    tor_addr_from_ipv4h(&addr, ri->addr);
-
-    if ((!tor_addr_compare(&bridge->addr, &addr, CMP_EXACT) &&
-         bridge->port == ri->or_port) ||
-        (!tor_addr_compare(&bridge->addr, &ri->ipv6_addr, CMP_EXACT) &&
-         bridge->port == ri->ipv6_orport)) {
-      /* they match, so no need to do anything */
-    } else {
-      if (tor_addr_family(&bridge->addr) == AF_INET) {
-        ri->addr = tor_addr_to_ipv4h(&bridge->addr);
-        tor_free(ri->address);
-        ri->address = tor_dup_ip(ri->addr);
-        ri->or_port = bridge->port;
-        log_info(LD_DIR,
-                 "Adjusted bridge routerinfo for '%s' to match configured "
-                 "address %s:%d.",
-                 ri->nickname, ri->address, ri->or_port);
-      } else if (tor_addr_family(&bridge->addr) == AF_INET6) {
-        tor_addr_copy(&ri->ipv6_addr, &bridge->addr);
-        ri->ipv6_orport = bridge->port;
-        log_info(LD_DIR,
-                 "Adjusted bridge routerinfo for '%s' to match configured "
-                 "address %s:%d.",
-                 ri->nickname, fmt_addr(&ri->ipv6_addr), ri->ipv6_orport);
-      } else {
-        log_err(LD_BUG, "Address family not supported: %d.",
-                tor_addr_family(&bridge->addr));
-        return;
-      }
-    }
-
-    /* Indicate that we prefer connecting to this bridge over the
-       protocol that the bridge address indicates.  Last bridge
-       descriptor handled wins.  */
-    ri->ipv6_preferred = tor_addr_family(&bridge->addr) == AF_INET6;
-
-    /* XXXipv6 we lack support for falling back to another address for
-       the same relay, warn the user */
-    if (!tor_addr_is_null(&ri->ipv6_addr)) {
-      tor_addr_port_t ap;
-      router_get_pref_orport(ri, &ap);
-      log_notice(LD_CONFIG,
-                 "Bridge '%s' has both an IPv4 and an IPv6 address.  "
-                 "Will prefer using its %s address (%s:%d).",
-                 ri->nickname,
-                 ri->ipv6_preferred ? "IPv6" : "IPv4",
-                 fmt_addr(&ap.addr), ap.port);
-    }
-  }
-  if (node->rs) {
-    routerstatus_t *rs = node->rs;
-    tor_addr_from_ipv4h(&addr, rs->addr);
-
-    if (!tor_addr_compare(&bridge->addr, &addr, CMP_EXACT) &&
-        bridge->port == rs->or_port) {
-      /* they match, so no need to do anything */
-    } else {
-      rs->addr = tor_addr_to_ipv4h(&bridge->addr);
-      rs->or_port = bridge->port;
-      log_info(LD_DIR,
-               "Adjusted bridge routerstatus for '%s' to match "
-               "configured address %s:%d.",
-               rs->nickname, fmt_addr(&bridge->addr), rs->or_port);
-    }
-  }
-}
-
-/** We just learned a descriptor for a bridge. See if that
- * digest is in our entry guard list, and add it if not. */
-void
-learned_bridge_descriptor(routerinfo_t *ri, int from_cache)
-{
-  tor_assert(ri);
-  tor_assert(ri->purpose == ROUTER_PURPOSE_BRIDGE);
-  if (get_options()->UseBridges) {
-    int first = !any_bridge_descriptors_known();
-    bridge_info_t *bridge = get_configured_bridge_by_routerinfo(ri);
-    time_t now = time(NULL);
-    router_set_status(ri->cache_info.identity_digest, 1);
-
-    if (bridge) { /* if we actually want to use this one */
-      node_t *node;
-      /* it's here; schedule its re-fetch for a long time from now. */
-      if (!from_cache)
-        download_status_reset(&bridge->fetch_status);
-
-      node = node_get_mutable_by_id(ri->cache_info.identity_digest);
-      tor_assert(node);
-      rewrite_node_address_for_bridge(bridge, node);
-      add_an_entry_guard(node, 1, 1);
-
-      log_notice(LD_DIR, "new bridge descriptor '%s' (%s): %s", ri->nickname,
-                 from_cache ? "cached" : "fresh", router_describe(ri));
-      /* set entry->made_contact so if it goes down we don't drop it from
-       * our entry node list */
-      entry_guard_register_connect_status(ri->cache_info.identity_digest,
-                                          1, 0, now);
-      if (first)
-        routerlist_retry_directory_downloads(now);
-    }
-  }
-}
-
-/** Return 1 if any of our entry guards have descriptors that
- * are marked with purpose 'bridge' and are running. Else return 0.
- *
- * We use this function to decide if we're ready to start building
- * circuits through our bridges, or if we need to wait until the
- * directory "server/authority" requests finish. */
-int
-any_bridge_descriptors_known(void)
-{
-  tor_assert(get_options()->UseBridges);
-  return choose_random_entry(NULL)!=NULL ? 1 : 0;
-}
-
-/** Return 1 if there are any directory conns fetching bridge descriptors
- * that aren't marked for close. We use this to guess if we should tell
- * the controller that we have a problem. */
-int
-any_pending_bridge_descriptor_fetches(void)
-{
-  smartlist_t *conns = get_connection_array();
-  SMARTLIST_FOREACH_BEGIN(conns, connection_t *, conn) {
-    if (conn->type == CONN_TYPE_DIR &&
-        conn->purpose == DIR_PURPOSE_FETCH_SERVERDESC &&
-        TO_DIR_CONN(conn)->router_purpose == ROUTER_PURPOSE_BRIDGE &&
-        !conn->marked_for_close &&
-        conn->linked &&
-        conn->linked_conn && !conn->linked_conn->marked_for_close) {
-      log_debug(LD_DIR, "found one: %s", conn->address);
-      return 1;
-    }
-  } SMARTLIST_FOREACH_END(conn);
-  return 0;
-}
-
-/** Return 1 if we have at least one descriptor for an entry guard
- * (bridge or member of EntryNodes) and all descriptors we know are
- * down. Else return 0. If <b>act</b> is 1, then mark the down guards
- * up; else just observe and report. */
-static int
-entries_retry_helper(const or_options_t *options, int act)
-{
-  const node_t *node;
-  int any_known = 0;
-  int any_running = 0;
-  int need_bridges = options->UseBridges != 0;
-  if (!entry_guards)
-    entry_guards = smartlist_new();
-  SMARTLIST_FOREACH_BEGIN(entry_guards, entry_guard_t *, e) {
-      node = node_get_by_id(e->identity);
-      if (node && node_has_descriptor(node) &&
-          node_is_bridge(node) == need_bridges) {
-        any_known = 1;
-        if (node->is_running)
-          any_running = 1; /* some entry is both known and running */
-        else if (act) {
-          /* Mark all current connections to this OR as unhealthy, since
-           * otherwise there could be one that started 30 seconds
-           * ago, and in 30 seconds it will time out, causing us to mark
-           * the node down and undermine the retry attempt. We mark even
-           * the established conns, since if the network just came back
-           * we'll want to attach circuits to fresh conns. */
-          connection_or_set_bad_connections(node->identity, 1);
-
-          /* mark this entry node for retry */
-          router_set_status(node->identity, 1);
-          e->can_retry = 1;
-          e->bad_since = 0;
-        }
-      }
-  } SMARTLIST_FOREACH_END(e);
-  log_debug(LD_DIR, "%d: any_known %d, any_running %d",
-            act, any_known, any_running);
-  return any_known && !any_running;
-}
-
-/** Do we know any descriptors for our bridges / entrynodes, and are
- * all the ones we have descriptors for down? */
-int
-entries_known_but_down(const or_options_t *options)
-{
-  tor_assert(entry_list_is_constrained(options));
-  return entries_retry_helper(options, 0);
-}
-
-/** Mark all down known bridges / entrynodes up. */
-void
-entries_retry_all(const or_options_t *options)
-{
-  tor_assert(entry_list_is_constrained(options));
-  entries_retry_helper(options, 1);
-}
-
-/** Return true if we've ever had a bridge running a Tor version that can't
- * provide microdescriptors to us. In that case fall back to asking for
- * full descriptors. Eventually all bridges will support microdescriptors
- * and we can take this check out; see bug 4013. */
-int
-any_bridges_dont_support_microdescriptors(void)
-{
-  const node_t *node;
-  static int ever_answered_yes = 0;
-  if (!get_options()->UseBridges || !entry_guards)
-    return 0;
-  if (ever_answered_yes)
-    return 1; /* if we ever answer 'yes', always answer 'yes' */
-  SMARTLIST_FOREACH_BEGIN(entry_guards, entry_guard_t *, e) {
-    node = node_get_by_id(e->identity);
-    if (node && node->ri &&
-        node_is_bridge(node) && node_is_a_configured_bridge(node) &&
-        !tor_version_supports_microdescriptors(node->ri->platform)) {
-      /* This is one of our current bridges, and we know enough about
-       * it to know that it won't be able to answer our microdescriptor
-       * questions. */
-      ever_answered_yes = 1;
-      return 1;
-    }
-  } SMARTLIST_FOREACH_END(e);
-  return 0;
-}
-
-/** Release all storage held by the list of entry guards and related
- * memory structs. */
-void
-entry_guards_free_all(void)
-{
-  if (entry_guards) {
-    SMARTLIST_FOREACH(entry_guards, entry_guard_t *, e,
-                      entry_guard_free(e));
-    smartlist_free(entry_guards);
-    entry_guards = NULL;
-  }
-  clear_bridge_list();
-  clear_transport_list();
-  smartlist_free(bridge_list);
-  smartlist_free(transport_list);
-  bridge_list = NULL;
-  transport_list = NULL;
 }
 

@@ -1,14 +1,18 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
+#include <math.h>
+
 #define DIRSERV_PRIVATE
 #define DIRVOTE_PRIVATE
 #define ROUTER_PRIVATE
+#define ROUTERLIST_PRIVATE
 #define HIBERNATE_PRIVATE
 #include "or.h"
+#include "config.h"
 #include "directory.h"
 #include "dirserv.h"
 #include "dirvote.h"
@@ -70,22 +74,24 @@ test_dir_nicknames(void)
 static void
 test_dir_formats(void)
 {
-  char buf[8192], buf2[8192];
+  char *buf = NULL;
+  char buf2[8192];
   char platform[256];
   char fingerprint[FINGERPRINT_LEN+1];
-  char *pk1_str = NULL, *pk2_str = NULL, *pk3_str = NULL, *cp;
-  size_t pk1_str_len, pk2_str_len, pk3_str_len;
+  char *pk1_str = NULL, *pk2_str = NULL, *cp;
+  size_t pk1_str_len, pk2_str_len;
   routerinfo_t *r1=NULL, *r2=NULL;
-  crypto_pk_t *pk1 = NULL, *pk2 = NULL, *pk3 = NULL;
-  routerinfo_t *rp1 = NULL;
+  crypto_pk_t *pk1 = NULL, *pk2 = NULL;
+  routerinfo_t *rp1 = NULL, *rp2 = NULL;
   addr_policy_t *ex1, *ex2;
   routerlist_t *dir1 = NULL, *dir2 = NULL;
+  or_options_t *options = get_options_mutable();
+  const addr_policy_t *p;
 
   pk1 = pk_generate(0);
   pk2 = pk_generate(1);
-  pk3 = pk_generate(2);
 
-  test_assert(pk1 && pk2 && pk3);
+  test_assert(pk1 && pk2);
 
   hibernate_set_state_for_testing_(HIBERNATE_STATE_LIVE);
 
@@ -125,31 +131,36 @@ test_dir_formats(void)
   r2->or_port = 9005;
   r2->dir_port = 0;
   r2->onion_pkey = crypto_pk_dup_key(pk2);
+  r2->onion_curve25519_pkey = tor_malloc_zero(sizeof(curve25519_public_key_t));
+  curve25519_public_from_base64(r2->onion_curve25519_pkey,
+                                "skyinAnvardNostarsNomoonNowindormistsorsnow");
   r2->identity_pkey = crypto_pk_dup_key(pk1);
   r2->bandwidthrate = r2->bandwidthburst = r2->bandwidthcapacity = 3000;
   r2->exit_policy = smartlist_new();
-  smartlist_add(r2->exit_policy, ex2);
   smartlist_add(r2->exit_policy, ex1);
+  smartlist_add(r2->exit_policy, ex2);
   r2->nickname = tor_strdup("Fred");
 
   test_assert(!crypto_pk_write_public_key_to_string(pk1, &pk1_str,
                                                     &pk1_str_len));
   test_assert(!crypto_pk_write_public_key_to_string(pk2 , &pk2_str,
                                                     &pk2_str_len));
-  test_assert(!crypto_pk_write_public_key_to_string(pk3 , &pk3_str,
-                                                    &pk3_str_len));
 
-  memset(buf, 0, 2048);
-  test_assert(router_dump_router_to_string(buf, 2048, r1, pk2)>0);
+  /* XXXX025 router_dump_to_string should really take this from ri.*/
+  options->ContactInfo = tor_strdup("Magri White "
+                                    "<magri@elsewhere.example.com>");
+  buf = router_dump_router_to_string(r1, pk2);
+  tor_free(options->ContactInfo);
+  test_assert(buf);
 
   strlcpy(buf2, "router Magri 18.244.0.1 9000 0 9003\n"
           "or-address [1:2:3:4::]:9999\n"
           "platform Tor "VERSION" on ", sizeof(buf2));
   strlcat(buf2, get_uname(), sizeof(buf2));
   strlcat(buf2, "\n"
-          "opt protocols Link 1 2 Circuit 1\n"
+          "protocols Link 1 2 Circuit 1\n"
           "published 1970-01-01 00:00:00\n"
-          "opt fingerprint ", sizeof(buf2));
+          "fingerprint ", sizeof(buf2));
   test_assert(!crypto_pk_get_fingerprint(pk2, fingerprint, 1));
   strlcat(buf2, fingerprint, sizeof(buf2));
   strlcat(buf2, "\nuptime 0\n"
@@ -161,14 +172,18 @@ test_dir_formats(void)
   strlcat(buf2, pk1_str, sizeof(buf2));
   strlcat(buf2, "signing-key\n", sizeof(buf2));
   strlcat(buf2, pk2_str, sizeof(buf2));
-  strlcat(buf2, "opt hidden-service-dir\n", sizeof(buf2));
+  strlcat(buf2, "hidden-service-dir\n", sizeof(buf2));
+  strlcat(buf2, "contact Magri White <magri@elsewhere.example.com>\n",
+          sizeof(buf2));
   strlcat(buf2, "reject *:*\nrouter-signature\n", sizeof(buf2));
   buf[strlen(buf2)] = '\0'; /* Don't compare the sig; it's never the same
                              * twice */
 
   test_streq(buf, buf2);
+  tor_free(buf);
 
-  test_assert(router_dump_router_to_string(buf, 2048, r1, pk2)>0);
+  buf = router_dump_router_to_string(r1, pk2);
+  test_assert(buf);
   cp = buf;
   rp1 = router_parse_entry_from_string((const char*)cp,NULL,1,0,NULL);
   test_assert(rp1);
@@ -182,35 +197,67 @@ test_dir_formats(void)
   test_assert(crypto_pk_cmp_keys(rp1->identity_pkey, pk2) == 0);
   //test_assert(rp1->exit_policy == NULL);
 
-#if 0
-  /* XXX Once we have exit policies, test this again. XXX */
-  strlcpy(buf2, "router tor.tor.tor 9005 0 0 3000\n", sizeof(buf2));
+  strlcpy(buf2,
+          "router Fred 1.1.1.1 9005 0 0\n"
+          "platform Tor "VERSION" on ", sizeof(buf2));
+  strlcat(buf2, get_uname(), sizeof(buf2));
+  strlcat(buf2, "\n"
+          "protocols Link 1 2 Circuit 1\n"
+          "published 1970-01-01 00:00:05\n"
+          "fingerprint ", sizeof(buf2));
+  test_assert(!crypto_pk_get_fingerprint(pk1, fingerprint, 1));
+  strlcat(buf2, fingerprint, sizeof(buf2));
+  strlcat(buf2, "\nuptime 0\n"
+          "bandwidth 3000 3000 3000\n", sizeof(buf2));
+  strlcat(buf2, "onion-key\n", sizeof(buf2));
   strlcat(buf2, pk2_str, sizeof(buf2));
   strlcat(buf2, "signing-key\n", sizeof(buf2));
   strlcat(buf2, pk1_str, sizeof(buf2));
-  strlcat(buf2, "accept *:80\nreject 18.*:24\n\n", sizeof(buf2));
-  test_assert(router_dump_router_to_string(buf, 2048, &r2, pk2)>0);
-  test_streq(buf, buf2);
+  strlcat(buf2, "hidden-service-dir\n", sizeof(buf2));
+  strlcat(buf2, "ntor-onion-key "
+          "skyinAnvardNostarsNomoonNowindormistsorsnow=\n", sizeof(buf2));
+  strlcat(buf2, "accept *:80\nreject 18.0.0.0/8:24\n", sizeof(buf2));
+  strlcat(buf2, "router-signature\n", sizeof(buf2));
 
+  buf = router_dump_router_to_string(r2, pk1);
+  buf[strlen(buf2)] = '\0'; /* Don't compare the sig; it's never the same
+                             * twice */
+  test_streq(buf, buf2);
+  tor_free(buf);
+
+  buf = router_dump_router_to_string(r2, pk1);
   cp = buf;
-  rp2 = router_parse_entry_from_string(&cp,1);
+  rp2 = router_parse_entry_from_string((const char*)cp,NULL,1,0,NULL);
   test_assert(rp2);
-  test_streq(rp2->address, r2.address);
-  test_eq(rp2->or_port, r2.or_port);
-  test_eq(rp2->dir_port, r2.dir_port);
-  test_eq(rp2->bandwidth, r2.bandwidth);
+  test_streq(rp2->address, r2->address);
+  test_eq(rp2->or_port, r2->or_port);
+  test_eq(rp2->dir_port, r2->dir_port);
+  test_eq(rp2->bandwidthrate, r2->bandwidthrate);
+  test_eq(rp2->bandwidthburst, r2->bandwidthburst);
+  test_eq(rp2->bandwidthcapacity, r2->bandwidthcapacity);
+  test_memeq(rp2->onion_curve25519_pkey->public_key,
+             r2->onion_curve25519_pkey->public_key,
+             CURVE25519_PUBKEY_LEN);
   test_assert(crypto_pk_cmp_keys(rp2->onion_pkey, pk2) == 0);
   test_assert(crypto_pk_cmp_keys(rp2->identity_pkey, pk1) == 0);
-  test_eq(rp2->exit_policy->policy_type, EXIT_POLICY_ACCEPT);
-  test_streq(rp2->exit_policy->string, "accept *:80");
-  test_streq(rp2->exit_policy->address, "*");
-  test_streq(rp2->exit_policy->port, "80");
-  test_eq(rp2->exit_policy->next->policy_type, EXIT_POLICY_REJECT);
-  test_streq(rp2->exit_policy->next->string, "reject 18.*:24");
-  test_streq(rp2->exit_policy->next->address, "18.*");
-  test_streq(rp2->exit_policy->next->port, "24");
-  test_assert(rp2->exit_policy->next->next == NULL);
 
+  test_eq(smartlist_len(rp2->exit_policy), 2);
+
+  p = smartlist_get(rp2->exit_policy, 0);
+  test_eq(p->policy_type, ADDR_POLICY_ACCEPT);
+  test_assert(tor_addr_is_null(&p->addr));
+  test_eq(p->maskbits, 0);
+  test_eq(p->prt_min, 80);
+  test_eq(p->prt_max, 80);
+
+  p = smartlist_get(rp2->exit_policy, 1);
+  test_eq(p->policy_type, ADDR_POLICY_REJECT);
+  test_assert(tor_addr_eq(&p->addr, &ex2->addr));
+  test_eq(p->maskbits, 8);
+  test_eq(p->prt_min, 24);
+  test_eq(p->prt_max, 24);
+
+#if 0
   /* Okay, now for the directories. */
   {
     fingerprint_list = smartlist_new();
@@ -220,24 +267,6 @@ test_dir_formats(void)
     add_fingerprint_to_dir("Fred", buf, fingerprint_list);
   }
 
-  {
-  char d[DIGEST_LEN];
-  const char *m;
-  /* XXXX NM re-enable. */
-  /* Make sure routers aren't too far in the past any more. */
-  r1->cache_info.published_on = time(NULL);
-  r2->cache_info.published_on = time(NULL)-3*60*60;
-  test_assert(router_dump_router_to_string(buf, 2048, r1, pk2)>0);
-  test_eq(dirserv_add_descriptor(buf,&m,""), ROUTER_ADDED_NOTIFY_GENERATOR);
-  test_assert(router_dump_router_to_string(buf, 2048, r2, pk1)>0);
-  test_eq(dirserv_add_descriptor(buf,&m,""), ROUTER_ADDED_NOTIFY_GENERATOR);
-  get_options()->Nickname = tor_strdup("DirServer");
-  test_assert(!dirserv_dump_directory_to_string(&cp,pk3, 0));
-  crypto_pk_get_digest(pk3, d);
-  test_assert(!router_parse_directory(cp));
-  test_eq(2, smartlist_len(dir1->routers));
-  tor_free(cp);
-  }
 #endif
   dirserv_free_fingerprint_list();
 
@@ -247,12 +276,11 @@ test_dir_formats(void)
   if (r2)
     routerinfo_free(r2);
 
+  tor_free(buf);
   tor_free(pk1_str);
   tor_free(pk2_str);
-  tor_free(pk3_str);
   if (pk1) crypto_pk_free(pk1);
   if (pk2) crypto_pk_free(pk2);
-  if (pk3) crypto_pk_free(pk3);
   if (rp1) routerinfo_free(rp1);
   tor_free(dir1); /* XXXX And more !*/
   tor_free(dir2); /* And more !*/
@@ -422,10 +450,8 @@ test_dir_split_fps(void *testdata)
     "0123456789ABCdef0123456789ABCdef0123456789ABCdef0123456789ABCdef"
 #define B64_1 "/g2v+JEnOJvGdVhpEjEjRVEZPu4"
 #define B64_2 "3q2+75mZmZERERmZmRERERHwC6Q"
-#define B64_3 "sz/wDbM/8A2zP/ANsz/wDbM/8A0"
 #define B64_256_1 "8/Pz8/u7vz8/Pz+7vz8/Pz+7u/Pz8/P7u/Pz8/P7u78"
 #define B64_256_2 "zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMw"
-#define B64_256_3 "ASNFZ4mrze8BI0VniavN7wEjRWeJq83vASNFZ4mrze8"
 
   /* no flags set */
   dir_split_resource_into_fingerprints("A+C+B", sl, NULL, 0);
@@ -525,7 +551,7 @@ test_dir_split_fps(void *testdata)
 }
 
 static void
-test_dir_measured_bw(void)
+test_dir_measured_bw_kb(void)
 {
   measured_bw_line_t mbwl;
   int i;
@@ -581,10 +607,87 @@ test_dir_measured_bw(void)
   for (i = 0; strcmp(lines_pass[i], "end"); i++) {
     //fprintf(stderr, "Testing: %s %d\n", lines_pass[i], TOR_ISSPACE('\n'));
     test_assert(measured_bw_line_parse(&mbwl, lines_pass[i]) == 0);
-    test_assert(mbwl.bw == 1024);
+    test_assert(mbwl.bw_kb == 1024);
     test_assert(strcmp(mbwl.node_hex,
                 "557365204145532d32353620696e73746561642e") == 0);
   }
+
+ done:
+  return;
+}
+
+#define MBWC_INIT_TIME 1000
+
+/** Do the measured bandwidth cache unit test */
+static void
+test_dir_measured_bw_kb_cache(void)
+{
+  /* Initial fake time_t for testing */
+  time_t curr = MBWC_INIT_TIME;
+  /* Some measured_bw_line_ts */
+  measured_bw_line_t mbwl[3];
+  /* For receiving output on cache queries */
+  long bw;
+  time_t as_of;
+
+  /* First, clear the cache and assert that it's empty */
+  dirserv_clear_measured_bw_cache();
+  test_eq(dirserv_get_measured_bw_cache_size(), 0);
+  /*
+   * Set up test mbwls; none of the dirserv_cache_*() functions care about
+   * the node_hex field.
+   */
+  memset(mbwl[0].node_id, 0x01, DIGEST_LEN);
+  mbwl[0].bw_kb = 20;
+  memset(mbwl[1].node_id, 0x02, DIGEST_LEN);
+  mbwl[1].bw_kb = 40;
+  memset(mbwl[2].node_id, 0x03, DIGEST_LEN);
+  mbwl[2].bw_kb = 80;
+  /* Try caching something */
+  dirserv_cache_measured_bw(&(mbwl[0]), curr);
+  test_eq(dirserv_get_measured_bw_cache_size(), 1);
+  /* Okay, let's see if we can retrieve it */
+  test_assert(dirserv_query_measured_bw_cache_kb(mbwl[0].node_id,&bw, &as_of));
+  test_eq(bw, 20);
+  test_eq(as_of, MBWC_INIT_TIME);
+  /* Try retrieving it without some outputs */
+  test_assert(dirserv_query_measured_bw_cache_kb(mbwl[0].node_id,NULL, NULL));
+  test_assert(dirserv_query_measured_bw_cache_kb(mbwl[0].node_id,&bw, NULL));
+  test_eq(bw, 20);
+  test_assert(dirserv_query_measured_bw_cache_kb(mbwl[0].node_id,NULL,&as_of));
+  test_eq(as_of, MBWC_INIT_TIME);
+  /* Now expire it */
+  curr += MAX_MEASUREMENT_AGE + 1;
+  dirserv_expire_measured_bw_cache(curr);
+  /* Check that the cache is empty */
+  test_eq(dirserv_get_measured_bw_cache_size(), 0);
+  /* Check that we can't retrieve it */
+  test_assert(!dirserv_query_measured_bw_cache_kb(mbwl[0].node_id, NULL,NULL));
+  /* Try caching a few things now */
+  dirserv_cache_measured_bw(&(mbwl[0]), curr);
+  test_eq(dirserv_get_measured_bw_cache_size(), 1);
+  curr += MAX_MEASUREMENT_AGE / 4;
+  dirserv_cache_measured_bw(&(mbwl[1]), curr);
+  test_eq(dirserv_get_measured_bw_cache_size(), 2);
+  curr += MAX_MEASUREMENT_AGE / 4;
+  dirserv_cache_measured_bw(&(mbwl[2]), curr);
+  test_eq(dirserv_get_measured_bw_cache_size(), 3);
+  curr += MAX_MEASUREMENT_AGE / 4 + 1;
+  /* Do an expire that's too soon to get any of them */
+  dirserv_expire_measured_bw_cache(curr);
+  test_eq(dirserv_get_measured_bw_cache_size(), 3);
+  /* Push the oldest one off the cliff */
+  curr += MAX_MEASUREMENT_AGE / 4;
+  dirserv_expire_measured_bw_cache(curr);
+  test_eq(dirserv_get_measured_bw_cache_size(), 2);
+  /* And another... */
+  curr += MAX_MEASUREMENT_AGE / 4;
+  dirserv_expire_measured_bw_cache(curr);
+  test_eq(dirserv_get_measured_bw_cache_size(), 1);
+  /* This should empty it out again */
+  curr += MAX_MEASUREMENT_AGE / 4;
+  dirserv_expire_measured_bw_cache(curr);
+  test_eq(dirserv_get_measured_bw_cache_size(), 0);
 
  done:
   return;
@@ -761,6 +864,17 @@ generate_ri_from_rs(const vote_routerstatus_t *vrs)
     strlen(r->cache_info.signed_descriptor_body);
   r->exit_policy = smartlist_new();
   r->cache_info.published_on = ++published + time(NULL);
+  if (rs->has_bandwidth) {
+    /*
+     * Multiply by 1000 because the routerinfo_t and the routerstatus_t
+     * seem to use different units (*sigh*) and because we seem stuck on
+     * icky and perverse decimal kilobytes (*double sigh*) - see
+     * router_get_advertised_bandwidth_capped() of routerlist.c and
+     * routerstatus_format_entry() of dirserv.c.
+     */
+    r->bandwidthrate = rs->bandwidth_kb * 1000;
+    r->bandwidthcapacity = rs->bandwidth_kb * 1000;
+  }
   return r;
 }
 
@@ -781,15 +895,328 @@ get_detached_sigs(networkstatus_t *ns, networkstatus_t *ns2)
   return r;
 }
 
-/** Run unit tests for generating and parsing V3 consensus networkstatus
- * documents. */
+/**
+ * Generate a routerstatus for v3_networkstatus test
+ */
+static vote_routerstatus_t *
+gen_routerstatus_for_v3ns(int idx, time_t now)
+{
+  vote_routerstatus_t *vrs=NULL;
+  routerstatus_t *rs;
+  tor_addr_t addr_ipv6;
+
+  switch (idx) {
+    case 0:
+      /* Generate the first routerstatus. */
+      vrs = tor_malloc_zero(sizeof(vote_routerstatus_t));
+      rs = &vrs->status;
+      vrs->version = tor_strdup("0.1.2.14");
+      rs->published_on = now-1500;
+      strlcpy(rs->nickname, "router2", sizeof(rs->nickname));
+      memset(rs->identity_digest, 3, DIGEST_LEN);
+      memset(rs->descriptor_digest, 78, DIGEST_LEN);
+      rs->addr = 0x99008801;
+      rs->or_port = 443;
+      rs->dir_port = 8000;
+      /* all flags but running cleared */
+      rs->is_flagged_running = 1;
+      break;
+    case 1:
+      /* Generate the second routerstatus. */
+      vrs = tor_malloc_zero(sizeof(vote_routerstatus_t));
+      rs = &vrs->status;
+      vrs->version = tor_strdup("0.2.0.5");
+      rs->published_on = now-1000;
+      strlcpy(rs->nickname, "router1", sizeof(rs->nickname));
+      memset(rs->identity_digest, 5, DIGEST_LEN);
+      memset(rs->descriptor_digest, 77, DIGEST_LEN);
+      rs->addr = 0x99009901;
+      rs->or_port = 443;
+      rs->dir_port = 0;
+      tor_addr_parse(&addr_ipv6, "[1:2:3::4]");
+      tor_addr_copy(&rs->ipv6_addr, &addr_ipv6);
+      rs->ipv6_orport = 4711;
+      rs->is_exit = rs->is_stable = rs->is_fast = rs->is_flagged_running =
+        rs->is_valid = rs->is_v2_dir = rs->is_possible_guard = 1;
+      break;
+    case 2:
+      /* Generate the third routerstatus. */
+      vrs = tor_malloc_zero(sizeof(vote_routerstatus_t));
+      rs = &vrs->status;
+      vrs->version = tor_strdup("0.1.0.3");
+      rs->published_on = now-1000;
+      strlcpy(rs->nickname, "router3", sizeof(rs->nickname));
+      memset(rs->identity_digest, 33, DIGEST_LEN);
+      memset(rs->descriptor_digest, 79, DIGEST_LEN);
+      rs->addr = 0xAA009901;
+      rs->or_port = 400;
+      rs->dir_port = 9999;
+      rs->is_authority = rs->is_exit = rs->is_stable = rs->is_fast =
+        rs->is_flagged_running = rs->is_valid = rs->is_v2_dir =
+        rs->is_possible_guard = 1;
+      break;
+    case 3:
+      /* Generate a fourth routerstatus that is not running. */
+      vrs = tor_malloc_zero(sizeof(vote_routerstatus_t));
+      rs = &vrs->status;
+      vrs->version = tor_strdup("0.1.6.3");
+      rs->published_on = now-1000;
+      strlcpy(rs->nickname, "router4", sizeof(rs->nickname));
+      memset(rs->identity_digest, 34, DIGEST_LEN);
+      memset(rs->descriptor_digest, 47, DIGEST_LEN);
+      rs->addr = 0xC0000203;
+      rs->or_port = 500;
+      rs->dir_port = 1999;
+      /* Running flag (and others) cleared */
+      break;
+    case 4:
+      /* No more for this test; return NULL */
+      vrs = NULL;
+      break;
+    default:
+      /* Shouldn't happen */
+      test_assert(0);
+  }
+  if (vrs) {
+    vrs->microdesc = tor_malloc_zero(sizeof(vote_microdesc_hash_t));
+    tor_asprintf(&vrs->microdesc->microdesc_hash_line,
+                 "m 9,10,11,12,13,14,15,16,17 "
+                 "sha256=xyzajkldsdsajdadlsdjaslsdksdjlsdjsdaskdaaa%d\n",
+                 idx);
+  }
+
+ done:
+  return vrs;
+}
+
+/** Apply tweaks to the vote list for each voter */
+static int
+vote_tweaks_for_v3ns(networkstatus_t *v, int voter, time_t now)
+{
+  vote_routerstatus_t *vrs;
+  const char *msg = NULL;
+
+  test_assert(v);
+  (void)now;
+
+  if (voter == 1) {
+    measured_bw_line_t mbw;
+    memset(mbw.node_id, 33, sizeof(mbw.node_id));
+    mbw.bw_kb = 1024;
+    test_assert(measured_bw_line_apply(&mbw,
+                v->routerstatus_list) == 1);
+  } else if (voter == 2 || voter == 3) {
+    /* Monkey around with the list a bit */
+    vrs = smartlist_get(v->routerstatus_list, 2);
+    smartlist_del_keeporder(v->routerstatus_list, 2);
+    tor_free(vrs->version);
+    tor_free(vrs);
+    vrs = smartlist_get(v->routerstatus_list, 0);
+    vrs->status.is_fast = 1;
+
+    if (voter == 3) {
+      vrs = smartlist_get(v->routerstatus_list, 0);
+      smartlist_del_keeporder(v->routerstatus_list, 0);
+      tor_free(vrs->version);
+      tor_free(vrs);
+      vrs = smartlist_get(v->routerstatus_list, 0);
+      memset(vrs->status.descriptor_digest, (int)'Z', DIGEST_LEN);
+      test_assert(router_add_to_routerlist(
+                  generate_ri_from_rs(vrs), &msg,0,0) >= 0);
+    }
+  }
+
+ done:
+  return 0;
+}
+
+/**
+ * Test a parsed vote_routerstatus_t for v3_networkstatus test
+ */
 static void
-test_dir_v3_networkstatus(void)
+test_vrs_for_v3ns(vote_routerstatus_t *vrs, int voter, time_t now)
+{
+  routerstatus_t *rs;
+  tor_addr_t addr_ipv6;
+
+  test_assert(vrs);
+  rs = &(vrs->status);
+  test_assert(rs);
+
+  /* Split out by digests to test */
+  if (tor_memeq(rs->identity_digest,
+                "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3"
+                "\x3\x3\x3\x3",
+                DIGEST_LEN) &&
+                (voter == 1)) {
+    /* Check the first routerstatus. */
+    test_streq(vrs->version, "0.1.2.14");
+    test_eq(rs->published_on, now-1500);
+    test_streq(rs->nickname, "router2");
+    test_memeq(rs->identity_digest,
+               "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3"
+               "\x3\x3\x3\x3",
+               DIGEST_LEN);
+    test_memeq(rs->descriptor_digest, "NNNNNNNNNNNNNNNNNNNN", DIGEST_LEN);
+    test_eq(rs->addr, 0x99008801);
+    test_eq(rs->or_port, 443);
+    test_eq(rs->dir_port, 8000);
+    test_eq(vrs->flags, U64_LITERAL(16)); // no flags except "running"
+  } else if (tor_memeq(rs->identity_digest,
+                       "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5"
+                       "\x5\x5\x5\x5",
+                       DIGEST_LEN) &&
+                       (voter == 1 || voter == 2)) {
+    test_memeq(rs->identity_digest,
+               "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5"
+               "\x5\x5\x5\x5",
+               DIGEST_LEN);
+
+    if (voter == 1) {
+      /* Check the second routerstatus. */
+      test_streq(vrs->version, "0.2.0.5");
+      test_eq(rs->published_on, now-1000);
+      test_streq(rs->nickname, "router1");
+    }
+    test_memeq(rs->descriptor_digest, "MMMMMMMMMMMMMMMMMMMM", DIGEST_LEN);
+    test_eq(rs->addr, 0x99009901);
+    test_eq(rs->or_port, 443);
+    test_eq(rs->dir_port, 0);
+    tor_addr_parse(&addr_ipv6, "[1:2:3::4]");
+    test_assert(tor_addr_eq(&rs->ipv6_addr, &addr_ipv6));
+    test_eq(rs->ipv6_orport, 4711);
+    if (voter == 1) {
+      test_eq(vrs->flags, U64_LITERAL(254)); // all flags except "authority."
+    } else {
+      /* 1023 - authority(1) - madeofcheese(16) - madeoftin(32) */
+      test_eq(vrs->flags, U64_LITERAL(974));
+    }
+  } else if (tor_memeq(rs->identity_digest,
+                       "\x33\x33\x33\x33\x33\x33\x33\x33\x33\x33"
+                       "\x33\x33\x33\x33\x33\x33\x33\x33\x33\x33",
+                       DIGEST_LEN) &&
+                       (voter == 1 || voter == 2)) {
+    /* Check the measured bandwidth bits */
+    test_assert(vrs->has_measured_bw &&
+                vrs->measured_bw_kb == 1024);
+  } else {
+    /*
+     * Didn't expect this, but the old unit test only checked some of them,
+     * so don't assert.
+     */
+    /* test_assert(0); */
+  }
+
+ done:
+  return;
+}
+
+/**
+ * Test a consensus for v3_networkstatus_test
+ */
+static void
+test_consensus_for_v3ns(networkstatus_t *con, time_t now)
+{
+  (void)now;
+
+  test_assert(con);
+  test_assert(!con->cert);
+  test_eq(2, smartlist_len(con->routerstatus_list));
+  /* There should be two listed routers: one with identity 3, one with
+   * identity 5. */
+
+ done:
+  return;
+}
+
+/**
+ * Test a router list entry for v3_networkstatus test
+ */
+static void
+test_routerstatus_for_v3ns(routerstatus_t *rs, time_t now)
+{
+  tor_addr_t addr_ipv6;
+
+  test_assert(rs);
+
+  /* There should be two listed routers: one with identity 3, one with
+   * identity 5. */
+  /* This one showed up in 2 digests. */
+  if (tor_memeq(rs->identity_digest,
+                "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3"
+                "\x3\x3",
+                DIGEST_LEN)) {
+    test_memeq(rs->identity_digest,
+               "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3",
+               DIGEST_LEN);
+    test_memeq(rs->descriptor_digest, "NNNNNNNNNNNNNNNNNNNN", DIGEST_LEN);
+    test_assert(!rs->is_authority);
+    test_assert(!rs->is_exit);
+    test_assert(!rs->is_fast);
+    test_assert(!rs->is_possible_guard);
+    test_assert(!rs->is_stable);
+    /* (If it wasn't running it wouldn't be here) */
+    test_assert(rs->is_flagged_running);
+    test_assert(!rs->is_v2_dir);
+    test_assert(!rs->is_valid);
+    test_assert(!rs->is_named);
+    /* XXXX check version */
+  } else if (tor_memeq(rs->identity_digest,
+                       "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5"
+                       "\x5\x5\x5\x5",
+                       DIGEST_LEN)) {
+    /* This one showed up in 3 digests. Twice with ID 'M', once with 'Z'.  */
+    test_memeq(rs->identity_digest,
+               "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5",
+               DIGEST_LEN);
+    test_streq(rs->nickname, "router1");
+    test_memeq(rs->descriptor_digest, "MMMMMMMMMMMMMMMMMMMM", DIGEST_LEN);
+    test_eq(rs->published_on, now-1000);
+    test_eq(rs->addr, 0x99009901);
+    test_eq(rs->or_port, 443);
+    test_eq(rs->dir_port, 0);
+    tor_addr_parse(&addr_ipv6, "[1:2:3::4]");
+    test_assert(tor_addr_eq(&rs->ipv6_addr, &addr_ipv6));
+    test_eq(rs->ipv6_orport, 4711);
+    test_assert(!rs->is_authority);
+    test_assert(rs->is_exit);
+    test_assert(rs->is_fast);
+    test_assert(rs->is_possible_guard);
+    test_assert(rs->is_stable);
+    test_assert(rs->is_flagged_running);
+    test_assert(rs->is_v2_dir);
+    test_assert(rs->is_valid);
+    test_assert(!rs->is_named);
+    /* XXXX check version */
+  } else {
+    /* Weren't expecting this... */
+    test_assert(0);
+  }
+
+ done:
+  return;
+}
+
+/** Run a unit tests for generating and parsing networkstatuses, with
+ * the supply test fns. */
+static void
+test_a_networkstatus(
+    vote_routerstatus_t * (*vrs_gen)(int idx, time_t now),
+    int (*vote_tweaks)(networkstatus_t *v, int voter, time_t now),
+    void (*vrs_test)(vote_routerstatus_t *vrs, int voter, time_t now),
+    void (*consensus_test)(networkstatus_t *con, time_t now),
+    void (*rs_test)(routerstatus_t *rs, time_t now))
 {
   authority_cert_t *cert1=NULL, *cert2=NULL, *cert3=NULL;
   crypto_pk_t *sign_skey_1=NULL, *sign_skey_2=NULL, *sign_skey_3=NULL;
   crypto_pk_t *sign_skey_leg1=NULL;
   const char *msg=NULL;
+  /*
+   * Sum the non-zero returns from vote_tweaks() we've seen; if vote_tweaks()
+   * returns non-zero, it changed net_params and we should skip the tests for
+   * that later as they will fail.
+   */
+  int params_tweaked = 0;
 
   time_t now = time(NULL);
   networkstatus_voter_info_t *voter;
@@ -798,6 +1225,7 @@ test_dir_v3_networkstatus(void)
     *con_md=NULL;
   vote_routerstatus_t *vrs;
   routerstatus_t *rs;
+  int idx, n_rs, n_vrs;
   char *v1_text=NULL, *v2_text=NULL, *v3_text=NULL, *consensus_text=NULL, *cp;
   smartlist_t *votes = smartlist_new();
 
@@ -808,6 +1236,10 @@ test_dir_v3_networkstatus(void)
   char *consensus_text_md=NULL;
   networkstatus_t *con2=NULL, *con_md2=NULL, *con3=NULL, *con_md3=NULL;
   ns_detached_signatures_t *dsig1=NULL, *dsig2=NULL;
+
+  test_assert(vrs_gen);
+  test_assert(rs_test);
+  test_assert(vrs_test);
 
   /* Parse certificates and keys. */
   cert1 = authority_cert_parse_from_string(AUTHORITY_CERT_1, NULL);
@@ -866,69 +1298,18 @@ test_dir_v3_networkstatus(void)
   smartlist_split_string(vote->net_params, "circuitwindow=101 foo=990",
                          NULL, 0, 0);
   vote->routerstatus_list = smartlist_new();
-  /* add the first routerstatus. */
-  vrs = tor_malloc_zero(sizeof(vote_routerstatus_t));
-  rs = &vrs->status;
-  vrs->version = tor_strdup("0.1.2.14");
-  rs->published_on = now-1500;
-  strlcpy(rs->nickname, "router2", sizeof(rs->nickname));
-  memset(rs->identity_digest, 3, DIGEST_LEN);
-  memset(rs->descriptor_digest, 78, DIGEST_LEN);
-  rs->addr = 0x99008801;
-  rs->or_port = 443;
-  rs->dir_port = 8000;
-  /* all flags but running cleared */
-  rs->is_flagged_running = 1;
-  smartlist_add(vote->routerstatus_list, vrs);
-  test_assert(router_add_to_routerlist(generate_ri_from_rs(vrs), &msg,0,0)>=0);
-
-  /* add the second routerstatus. */
-  vrs = tor_malloc_zero(sizeof(vote_routerstatus_t));
-  rs = &vrs->status;
-  vrs->version = tor_strdup("0.2.0.5");
-  rs->published_on = now-1000;
-  strlcpy(rs->nickname, "router1", sizeof(rs->nickname));
-  memset(rs->identity_digest, 5, DIGEST_LEN);
-  memset(rs->descriptor_digest, 77, DIGEST_LEN);
-  rs->addr = 0x99009901;
-  rs->or_port = 443;
-  rs->dir_port = 0;
-  rs->is_exit = rs->is_stable = rs->is_fast = rs->is_flagged_running =
-    rs->is_valid = rs->is_v2_dir = rs->is_possible_guard = 1;
-  smartlist_add(vote->routerstatus_list, vrs);
-  test_assert(router_add_to_routerlist(generate_ri_from_rs(vrs), &msg,0,0)>=0);
-
-  /* add the third routerstatus. */
-  vrs = tor_malloc_zero(sizeof(vote_routerstatus_t));
-  rs = &vrs->status;
-  vrs->version = tor_strdup("0.1.0.3");
-  rs->published_on = now-1000;
-  strlcpy(rs->nickname, "router3", sizeof(rs->nickname));
-  memset(rs->identity_digest, 33, DIGEST_LEN);
-  memset(rs->descriptor_digest, 79, DIGEST_LEN);
-  rs->addr = 0xAA009901;
-  rs->or_port = 400;
-  rs->dir_port = 9999;
-  rs->is_authority = rs->is_exit = rs->is_stable = rs->is_fast =
-    rs->is_flagged_running = rs->is_valid = rs->is_v2_dir =
-    rs->is_possible_guard = 1;
-  smartlist_add(vote->routerstatus_list, vrs);
-  test_assert(router_add_to_routerlist(generate_ri_from_rs(vrs), &msg,0,0)>=0);
-
-  /* add a fourth routerstatus that is not running. */
-  vrs = tor_malloc_zero(sizeof(vote_routerstatus_t));
-  rs = &vrs->status;
-  vrs->version = tor_strdup("0.1.6.3");
-  rs->published_on = now-1000;
-  strlcpy(rs->nickname, "router4", sizeof(rs->nickname));
-  memset(rs->identity_digest, 34, DIGEST_LEN);
-  memset(rs->descriptor_digest, 47, DIGEST_LEN);
-  rs->addr = 0xC0000203;
-  rs->or_port = 500;
-  rs->dir_port = 1999;
-  /* Running flag (and others) cleared */
-  smartlist_add(vote->routerstatus_list, vrs);
-  test_assert(router_add_to_routerlist(generate_ri_from_rs(vrs), &msg,0,0)>=0);
+  /* add routerstatuses */
+  idx = 0;
+  do {
+    vrs = vrs_gen(idx, now);
+    if (vrs) {
+      smartlist_add(vote->routerstatus_list, vrs);
+      test_assert(router_add_to_routerlist(generate_ri_from_rs(vrs),
+                                           &msg,0,0)>=0);
+      ++idx;
+    }
+  } while (vrs);
+  n_vrs = idx;
 
   /* dump the vote and try to parse it. */
   v1_text = format_networkstatus_vote(sign_skey_1, vote);
@@ -959,45 +1340,15 @@ test_dir_v3_networkstatus(void)
   cp = smartlist_join_strings(v1->known_flags, ":", 0, NULL);
   test_streq(cp, "Authority:Exit:Fast:Guard:Running:Stable:V2Dir:Valid");
   tor_free(cp);
-  test_eq(smartlist_len(v1->routerstatus_list), 4);
-  /* Check the first routerstatus. */
-  vrs = smartlist_get(v1->routerstatus_list, 0);
-  rs = &vrs->status;
-  test_streq(vrs->version, "0.1.2.14");
-  test_eq(rs->published_on, now-1500);
-  test_streq(rs->nickname, "router2");
-  test_memeq(rs->identity_digest,
-             "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3",
-             DIGEST_LEN);
-  test_memeq(rs->descriptor_digest, "NNNNNNNNNNNNNNNNNNNN", DIGEST_LEN);
-  test_eq(rs->addr, 0x99008801);
-  test_eq(rs->or_port, 443);
-  test_eq(rs->dir_port, 8000);
-  test_eq(vrs->flags, U64_LITERAL(16)); // no flags except "running"
-  /* Check the second routerstatus. */
-  vrs = smartlist_get(v1->routerstatus_list, 1);
-  rs = &vrs->status;
-  test_streq(vrs->version, "0.2.0.5");
-  test_eq(rs->published_on, now-1000);
-  test_streq(rs->nickname, "router1");
-  test_memeq(rs->identity_digest,
-             "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5",
-             DIGEST_LEN);
-  test_memeq(rs->descriptor_digest, "MMMMMMMMMMMMMMMMMMMM", DIGEST_LEN);
-  test_eq(rs->addr, 0x99009901);
-  test_eq(rs->or_port, 443);
-  test_eq(rs->dir_port, 0);
-  test_eq(vrs->flags, U64_LITERAL(254)); // all flags except "authority."
+  test_eq(smartlist_len(v1->routerstatus_list), n_vrs);
 
-  {
-    measured_bw_line_t mbw;
-    memset(mbw.node_id, 33, sizeof(mbw.node_id));
-    mbw.bw = 1024;
-    test_assert(measured_bw_line_apply(&mbw,
-                v1->routerstatus_list) == 1);
-    vrs = smartlist_get(v1->routerstatus_list, 2);
-    test_assert(vrs->status.has_measured_bw &&
-                vrs->status.measured_bw == 1024);
+  if (vote_tweaks) params_tweaked += vote_tweaks(v1, 1, now);
+
+  /* Check the routerstatuses. */
+  for (idx = 0; idx < n_vrs; ++idx) {
+    vrs = smartlist_get(v1->routerstatus_list, idx);
+    test_assert(vrs);
+    vrs_test(vrs, 1, now);
   }
 
   /* Generate second vote. It disagrees on some of the times,
@@ -1022,25 +1373,28 @@ test_dir_v3_networkstatus(void)
   smartlist_add(vote->known_flags, tor_strdup("MadeOfCheese"));
   smartlist_add(vote->known_flags, tor_strdup("MadeOfTin"));
   smartlist_sort_strings(vote->known_flags);
-  vrs = smartlist_get(vote->routerstatus_list, 2);
-  smartlist_del_keeporder(vote->routerstatus_list, 2);
-  tor_free(vrs->version);
-  tor_free(vrs);
-  vrs = smartlist_get(vote->routerstatus_list, 0);
-  vrs->status.is_fast = 1;
-  /* generate and parse. */
+
+  /* generate and parse v2. */
   v2_text = format_networkstatus_vote(sign_skey_2, vote);
   test_assert(v2_text);
   v2 = networkstatus_parse_vote_from_string(v2_text, NULL, NS_TYPE_VOTE);
   test_assert(v2);
+
+  if (vote_tweaks) params_tweaked += vote_tweaks(v2, 2, now);
+
   /* Check that flags come out right.*/
   cp = smartlist_join_strings(v2->known_flags, ":", 0, NULL);
   test_streq(cp, "Authority:Exit:Fast:Guard:MadeOfCheese:MadeOfTin:"
              "Running:Stable:V2Dir:Valid");
   tor_free(cp);
-  vrs = smartlist_get(v2->routerstatus_list, 1);
-  /* 1023 - authority(1) - madeofcheese(16) - madeoftin(32) */
-  test_eq(vrs->flags, U64_LITERAL(974));
+
+  /* Check the routerstatuses. */
+  n_vrs = smartlist_len(v2->routerstatus_list);
+  for (idx = 0; idx < n_vrs; ++idx) {
+    vrs = smartlist_get(v2->routerstatus_list, idx);
+    test_assert(vrs);
+    vrs_test(vrs, 2, now);
+  }
 
   /* Generate the third vote. */
   vote->published = now;
@@ -1063,19 +1417,14 @@ test_dir_v3_networkstatus(void)
   crypto_pk_get_digest(cert3->identity_key, voter->identity_digest);
   /* This one has a legacy id. */
   memset(voter->legacy_id_digest, (int)'A', DIGEST_LEN);
-  vrs = smartlist_get(vote->routerstatus_list, 0);
-  smartlist_del_keeporder(vote->routerstatus_list, 0);
-  tor_free(vrs->version);
-  tor_free(vrs);
-  vrs = smartlist_get(vote->routerstatus_list, 0);
-  memset(vrs->status.descriptor_digest, (int)'Z', DIGEST_LEN);
-  test_assert(router_add_to_routerlist(generate_ri_from_rs(vrs), &msg,0,0)>=0);
 
   v3_text = format_networkstatus_vote(sign_skey_3, vote);
   test_assert(v3_text);
 
   v3 = networkstatus_parse_vote_from_string(v3_text, NULL, NS_TYPE_VOTE);
   test_assert(v3);
+
+  if (vote_tweaks) params_tweaked += vote_tweaks(v3, 3, now);
 
   /* Compute a consensus as voter 3. */
   smartlist_add(votes, v3);
@@ -1119,9 +1468,12 @@ test_dir_v3_networkstatus(void)
   test_streq(cp, "Authority:Exit:Fast:Guard:MadeOfCheese:MadeOfTin:"
              "Running:Stable:V2Dir:Valid");
   tor_free(cp);
-  cp = smartlist_join_strings(con->net_params, ":", 0, NULL);
-  test_streq(cp, "circuitwindow=80:foo=660");
-  tor_free(cp);
+  if (!params_tweaked) {
+    /* Skip this one if vote_tweaks() messed with the param lists */
+    cp = smartlist_join_strings(con->net_params, ":", 0, NULL);
+    test_streq(cp, "circuitwindow=80:foo=660");
+    tor_free(cp);
+  }
 
   test_eq(4, smartlist_len(con->voters)); /*3 voters, 1 legacy key.*/
   /* The voter id digests should be in this order. */
@@ -1136,49 +1488,15 @@ test_dir_v3_networkstatus(void)
   test_same_voter(smartlist_get(con->voters, 3),
                   smartlist_get(v3->voters, 0));
 
-  test_assert(!con->cert);
-  test_eq(2, smartlist_len(con->routerstatus_list));
-  /* There should be two listed routers: one with identity 3, one with
-   * identity 5. */
-  /* This one showed up in 2 digests. */
-  rs = smartlist_get(con->routerstatus_list, 0);
-  test_memeq(rs->identity_digest,
-             "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3",
-             DIGEST_LEN);
-  test_memeq(rs->descriptor_digest, "NNNNNNNNNNNNNNNNNNNN", DIGEST_LEN);
-  test_assert(!rs->is_authority);
-  test_assert(!rs->is_exit);
-  test_assert(!rs->is_fast);
-  test_assert(!rs->is_possible_guard);
-  test_assert(!rs->is_stable);
-  /* (If it wasn't running it wouldn't be here) */
-  test_assert(rs->is_flagged_running);
-  test_assert(!rs->is_v2_dir);
-  test_assert(!rs->is_valid);
-  test_assert(!rs->is_named);
-  /* XXXX check version */
+  consensus_test(con, now);
 
-  rs = smartlist_get(con->routerstatus_list, 1);
-  /* This one showed up in 3 digests. Twice with ID 'M', once with 'Z'.  */
-  test_memeq(rs->identity_digest,
-             "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5",
-             DIGEST_LEN);
-  test_streq(rs->nickname, "router1");
-  test_memeq(rs->descriptor_digest, "MMMMMMMMMMMMMMMMMMMM", DIGEST_LEN);
-  test_eq(rs->published_on, now-1000);
-  test_eq(rs->addr, 0x99009901);
-  test_eq(rs->or_port, 443);
-  test_eq(rs->dir_port, 0);
-  test_assert(!rs->is_authority);
-  test_assert(rs->is_exit);
-  test_assert(rs->is_fast);
-  test_assert(rs->is_possible_guard);
-  test_assert(rs->is_stable);
-  test_assert(rs->is_flagged_running);
-  test_assert(rs->is_v2_dir);
-  test_assert(rs->is_valid);
-  test_assert(!rs->is_named);
-  /* XXXX check version */
+  /* Check the routerstatuses. */
+  n_rs = smartlist_len(con->routerstatus_list);
+  for (idx = 0; idx < n_rs; ++idx) {
+    rs = smartlist_get(con->routerstatus_list, idx);
+    test_assert(rs);
+    rs_test(rs, now);
+  }
 
   /* Check signatures.  the first voter is a pseudo-entry with a legacy key.
    * The second one hasn't signed.  The fourth one has signed: validate it. */
@@ -1381,21 +1699,693 @@ test_dir_v3_networkstatus(void)
     ns_detached_signatures_free(dsig2);
 }
 
+/** Run unit tests for generating and parsing V3 consensus networkstatus
+ * documents. */
+static void
+test_dir_v3_networkstatus(void)
+{
+  test_a_networkstatus(gen_routerstatus_for_v3ns,
+                       vote_tweaks_for_v3ns,
+                       test_vrs_for_v3ns,
+                       test_consensus_for_v3ns,
+                       test_routerstatus_for_v3ns);
+}
+
+static void
+test_dir_scale_bw(void *testdata)
+{
+  double v[8] = { 2.0/3,
+                  7.0,
+                  1.0,
+                  3.0,
+                  1.0/5,
+                  1.0/7,
+                  12.0,
+                  24.0 };
+  u64_dbl_t vals[8];
+  uint64_t total;
+  int i;
+
+  (void) testdata;
+
+  for (i=0; i<8; ++i)
+    vals[i].dbl = v[i];
+
+  scale_array_elements_to_u64(vals, 8, &total);
+
+  tt_int_op((int)total, ==, 48);
+  total = 0;
+  for (i=0; i<8; ++i) {
+    total += vals[i].u64;
+  }
+  tt_assert(total >= (U64_LITERAL(1)<<60));
+  tt_assert(total <= (U64_LITERAL(1)<<62));
+
+  for (i=0; i<8; ++i) {
+    double ratio = ((double)vals[i].u64) / vals[2].u64;
+    tt_double_op(fabs(ratio - v[i]), <, .00001);
+  }
+
+ done:
+  ;
+}
+
+static void
+test_dir_random_weighted(void *testdata)
+{
+  int histogram[10];
+  uint64_t vals[10] = {3,1,2,4,6,0,7,5,8,9}, total=0;
+  u64_dbl_t inp[10];
+  int i, choice;
+  const int n = 50000;
+  double max_sq_error;
+  (void) testdata;
+
+  /* Try a ten-element array with values from 0 through 10. The values are
+   * in a scrambled order to make sure we don't depend on order. */
+  memset(histogram,0,sizeof(histogram));
+  for (i=0; i<10; ++i) {
+    inp[i].u64 = vals[i];
+    total += vals[i];
+  }
+  tt_int_op(total, ==, 45);
+  for (i=0; i<n; ++i) {
+    choice = choose_array_element_by_weight(inp, 10);
+    tt_int_op(choice, >=, 0);
+    tt_int_op(choice, <, 10);
+    histogram[choice]++;
+  }
+
+  /* Now see if we chose things about frequently enough. */
+  max_sq_error = 0;
+  for (i=0; i<10; ++i) {
+    int expected = (int)(n*vals[i]/total);
+    double frac_diff = 0, sq;
+    TT_BLATHER(("  %d : %5d vs %5d\n", (int)vals[i], histogram[i], expected));
+    if (expected)
+      frac_diff = (histogram[i] - expected) / ((double)expected);
+    else
+      tt_int_op(histogram[i], ==, 0);
+
+    sq = frac_diff * frac_diff;
+    if (sq > max_sq_error)
+      max_sq_error = sq;
+  }
+  /* It should almost always be much much less than this.  If you want to
+   * figure out the odds, please feel free. */
+  tt_double_op(max_sq_error, <, .05);
+
+  /* Now try a singleton; do we choose it? */
+  for (i = 0; i < 100; ++i) {
+    choice = choose_array_element_by_weight(inp, 1);
+    tt_int_op(choice, ==, 0);
+  }
+
+  /* Now try an array of zeros.  We should choose randomly. */
+  memset(histogram,0,sizeof(histogram));
+  for (i = 0; i < 5; ++i)
+    inp[i].u64 = 0;
+  for (i = 0; i < n; ++i) {
+    choice = choose_array_element_by_weight(inp, 5);
+    tt_int_op(choice, >=, 0);
+    tt_int_op(choice, <, 5);
+    histogram[choice]++;
+  }
+  /* Now see if we chose things about frequently enough. */
+  max_sq_error = 0;
+  for (i=0; i<5; ++i) {
+    int expected = n/5;
+    double frac_diff = 0, sq;
+    TT_BLATHER(("  %d : %5d vs %5d\n", (int)vals[i], histogram[i], expected));
+    frac_diff = (histogram[i] - expected) / ((double)expected);
+    sq = frac_diff * frac_diff;
+    if (sq > max_sq_error)
+      max_sq_error = sq;
+  }
+  /* It should almost always be much much less than this.  If you want to
+   * figure out the odds, please feel free. */
+  tt_double_op(max_sq_error, <, .05);
+ done:
+  ;
+}
+
+/* Function pointers for test_dir_clip_unmeasured_bw_kb() */
+
+static uint32_t alternate_clip_bw = 0;
+
+/**
+ * Generate a routerstatus for clip_unmeasured_bw_kb test; based on the
+ * v3_networkstatus ones.
+ */
+static vote_routerstatus_t *
+gen_routerstatus_for_umbw(int idx, time_t now)
+{
+  vote_routerstatus_t *vrs = NULL;
+  routerstatus_t *rs;
+  tor_addr_t addr_ipv6;
+  uint32_t max_unmeasured_bw_kb = (alternate_clip_bw > 0) ?
+    alternate_clip_bw : DEFAULT_MAX_UNMEASURED_BW_KB;
+
+  switch (idx) {
+    case 0:
+      /* Generate the first routerstatus. */
+      vrs = tor_malloc_zero(sizeof(vote_routerstatus_t));
+      rs = &vrs->status;
+      vrs->version = tor_strdup("0.1.2.14");
+      rs->published_on = now-1500;
+      strlcpy(rs->nickname, "router2", sizeof(rs->nickname));
+      memset(rs->identity_digest, 3, DIGEST_LEN);
+      memset(rs->descriptor_digest, 78, DIGEST_LEN);
+      rs->addr = 0x99008801;
+      rs->or_port = 443;
+      rs->dir_port = 8000;
+      /* all flags but running cleared */
+      rs->is_flagged_running = 1;
+      /*
+       * This one has measured bandwidth below the clip cutoff, and
+       * so shouldn't be clipped; we'll have to test that it isn't
+       * later.
+       */
+      vrs->has_measured_bw = 1;
+      rs->has_bandwidth = 1;
+      vrs->measured_bw_kb = rs->bandwidth_kb = max_unmeasured_bw_kb / 2;
+      break;
+    case 1:
+      /* Generate the second routerstatus. */
+      vrs = tor_malloc_zero(sizeof(vote_routerstatus_t));
+      rs = &vrs->status;
+      vrs->version = tor_strdup("0.2.0.5");
+      rs->published_on = now-1000;
+      strlcpy(rs->nickname, "router1", sizeof(rs->nickname));
+      memset(rs->identity_digest, 5, DIGEST_LEN);
+      memset(rs->descriptor_digest, 77, DIGEST_LEN);
+      rs->addr = 0x99009901;
+      rs->or_port = 443;
+      rs->dir_port = 0;
+      tor_addr_parse(&addr_ipv6, "[1:2:3::4]");
+      tor_addr_copy(&rs->ipv6_addr, &addr_ipv6);
+      rs->ipv6_orport = 4711;
+      rs->is_exit = rs->is_stable = rs->is_fast = rs->is_flagged_running =
+        rs->is_valid = rs->is_v2_dir = rs->is_possible_guard = 1;
+      /*
+       * This one has measured bandwidth above the clip cutoff, and
+       * so shouldn't be clipped; we'll have to test that it isn't
+       * later.
+       */
+      vrs->has_measured_bw = 1;
+      rs->has_bandwidth = 1;
+      vrs->measured_bw_kb = rs->bandwidth_kb = 2 * max_unmeasured_bw_kb;
+      break;
+    case 2:
+      /* Generate the third routerstatus. */
+      vrs = tor_malloc_zero(sizeof(vote_routerstatus_t));
+      rs = &vrs->status;
+      vrs->version = tor_strdup("0.1.0.3");
+      rs->published_on = now-1000;
+      strlcpy(rs->nickname, "router3", sizeof(rs->nickname));
+      memset(rs->identity_digest, 0x33, DIGEST_LEN);
+      memset(rs->descriptor_digest, 79, DIGEST_LEN);
+      rs->addr = 0xAA009901;
+      rs->or_port = 400;
+      rs->dir_port = 9999;
+      rs->is_authority = rs->is_exit = rs->is_stable = rs->is_fast =
+        rs->is_flagged_running = rs->is_valid = rs->is_v2_dir =
+        rs->is_possible_guard = 1;
+      /*
+       * This one has unmeasured bandwidth above the clip cutoff, and
+       * so should be clipped; we'll have to test that it isn't
+       * later.
+       */
+      vrs->has_measured_bw = 0;
+      rs->has_bandwidth = 1;
+      vrs->measured_bw_kb = 0;
+      rs->bandwidth_kb = 2 * max_unmeasured_bw_kb;
+      break;
+    case 3:
+      /* Generate a fourth routerstatus that is not running. */
+      vrs = tor_malloc_zero(sizeof(vote_routerstatus_t));
+      rs = &vrs->status;
+      vrs->version = tor_strdup("0.1.6.3");
+      rs->published_on = now-1000;
+      strlcpy(rs->nickname, "router4", sizeof(rs->nickname));
+      memset(rs->identity_digest, 0x34, DIGEST_LEN);
+      memset(rs->descriptor_digest, 47, DIGEST_LEN);
+      rs->addr = 0xC0000203;
+      rs->or_port = 500;
+      rs->dir_port = 1999;
+      /* all flags but running cleared */
+      rs->is_flagged_running = 1;
+      /*
+       * This one has unmeasured bandwidth below the clip cutoff, and
+       * so shouldn't be clipped; we'll have to test that it isn't
+       * later.
+       */
+      vrs->has_measured_bw = 0;
+      rs->has_bandwidth = 1;
+      vrs->measured_bw_kb = 0;
+      rs->bandwidth_kb = max_unmeasured_bw_kb / 2;
+      break;
+    case 4:
+      /* No more for this test; return NULL */
+      vrs = NULL;
+      break;
+    default:
+      /* Shouldn't happen */
+      test_assert(0);
+  }
+  if (vrs) {
+    vrs->microdesc = tor_malloc_zero(sizeof(vote_microdesc_hash_t));
+    tor_asprintf(&vrs->microdesc->microdesc_hash_line,
+                 "m 9,10,11,12,13,14,15,16,17 "
+                 "sha256=xyzajkldsdsajdadlsdjaslsdksdjlsdjsdaskdaaa%d\n",
+                 idx);
+  }
+
+ done:
+  return vrs;
+}
+
+/** Apply tweaks to the vote list for each voter; for the umbw test this is
+ * just adding the right consensus methods to let clipping happen */
+static int
+vote_tweaks_for_umbw(networkstatus_t *v, int voter, time_t now)
+{
+  char *maxbw_param = NULL;
+  int rv = 0;
+
+  test_assert(v);
+  (void)voter;
+  (void)now;
+
+  test_assert(v->supported_methods);
+  smartlist_clear(v->supported_methods);
+  /* Method 17 is MIN_METHOD_TO_CLIP_UNMEASURED_BW_KB */
+  smartlist_split_string(v->supported_methods,
+                         "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17",
+                         NULL, 0, -1);
+  /* If we're using a non-default clip bandwidth, add it to net_params */
+  if (alternate_clip_bw > 0) {
+    tor_asprintf(&maxbw_param, "maxunmeasuredbw=%u", alternate_clip_bw);
+    test_assert(maxbw_param);
+    if (maxbw_param) {
+      smartlist_add(v->net_params, maxbw_param);
+      rv = 1;
+    }
+  }
+
+ done:
+  return rv;
+}
+
+/**
+ * Test a parsed vote_routerstatus_t for umbw test.
+ */
+static void
+test_vrs_for_umbw(vote_routerstatus_t *vrs, int voter, time_t now)
+{
+  routerstatus_t *rs;
+  tor_addr_t addr_ipv6;
+  uint32_t max_unmeasured_bw_kb = (alternate_clip_bw > 0) ?
+    alternate_clip_bw : DEFAULT_MAX_UNMEASURED_BW_KB;
+
+  (void)voter;
+  test_assert(vrs);
+  rs = &(vrs->status);
+  test_assert(rs);
+
+  /* Split out by digests to test */
+  if (tor_memeq(rs->identity_digest,
+                "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3"
+                "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3",
+                DIGEST_LEN)) {
+    /*
+     * Check the first routerstatus - measured bandwidth below the clip
+     * cutoff.
+     */
+    test_streq(vrs->version, "0.1.2.14");
+    test_eq(rs->published_on, now-1500);
+    test_streq(rs->nickname, "router2");
+    test_memeq(rs->identity_digest,
+               "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3"
+               "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3",
+               DIGEST_LEN);
+    test_memeq(rs->descriptor_digest, "NNNNNNNNNNNNNNNNNNNN", DIGEST_LEN);
+    test_eq(rs->addr, 0x99008801);
+    test_eq(rs->or_port, 443);
+    test_eq(rs->dir_port, 8000);
+    test_assert(rs->has_bandwidth);
+    test_assert(vrs->has_measured_bw);
+    test_eq(rs->bandwidth_kb, max_unmeasured_bw_kb / 2);
+    test_eq(vrs->measured_bw_kb, max_unmeasured_bw_kb / 2);
+  } else if (tor_memeq(rs->identity_digest,
+                       "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5"
+                       "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5",
+                       DIGEST_LEN)) {
+
+    /*
+     * Check the second routerstatus - measured bandwidth above the clip
+     * cutoff.
+     */
+    test_streq(vrs->version, "0.2.0.5");
+    test_eq(rs->published_on, now-1000);
+    test_streq(rs->nickname, "router1");
+    test_memeq(rs->identity_digest,
+               "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5"
+               "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5",
+               DIGEST_LEN);
+    test_memeq(rs->descriptor_digest, "MMMMMMMMMMMMMMMMMMMM", DIGEST_LEN);
+    test_eq(rs->addr, 0x99009901);
+    test_eq(rs->or_port, 443);
+    test_eq(rs->dir_port, 0);
+    tor_addr_parse(&addr_ipv6, "[1:2:3::4]");
+    test_assert(tor_addr_eq(&rs->ipv6_addr, &addr_ipv6));
+    test_eq(rs->ipv6_orport, 4711);
+    test_assert(rs->has_bandwidth);
+    test_assert(vrs->has_measured_bw);
+    test_eq(rs->bandwidth_kb, max_unmeasured_bw_kb * 2);
+    test_eq(vrs->measured_bw_kb, max_unmeasured_bw_kb * 2);
+  } else if (tor_memeq(rs->identity_digest,
+                       "\x33\x33\x33\x33\x33\x33\x33\x33\x33\x33"
+                       "\x33\x33\x33\x33\x33\x33\x33\x33\x33\x33",
+                       DIGEST_LEN)) {
+    /*
+     * Check the third routerstatus - unmeasured bandwidth above the clip
+     * cutoff; this one should be clipped later on in the consensus, but
+     * appears unclipped in the vote.
+     */
+    test_assert(rs->has_bandwidth);
+    test_assert(!(vrs->has_measured_bw));
+    test_eq(rs->bandwidth_kb, max_unmeasured_bw_kb * 2);
+    test_eq(vrs->measured_bw_kb, 0);
+  } else if (tor_memeq(rs->identity_digest,
+                       "\x34\x34\x34\x34\x34\x34\x34\x34\x34\x34"
+                       "\x34\x34\x34\x34\x34\x34\x34\x34\x34\x34",
+                       DIGEST_LEN)) {
+    /*
+     * Check the fourth routerstatus - unmeasured bandwidth below the clip
+     * cutoff; this one should not be clipped.
+     */
+    test_assert(rs->has_bandwidth);
+    test_assert(!(vrs->has_measured_bw));
+    test_eq(rs->bandwidth_kb, max_unmeasured_bw_kb / 2);
+    test_eq(vrs->measured_bw_kb, 0);
+  } else {
+    test_assert(0);
+  }
+
+ done:
+  return;
+}
+
+/**
+ * Test a consensus for v3_networkstatus_test
+ */
+static void
+test_consensus_for_umbw(networkstatus_t *con, time_t now)
+{
+  (void)now;
+
+  test_assert(con);
+  test_assert(!con->cert);
+  // test_assert(con->consensus_method >= MIN_METHOD_TO_CLIP_UNMEASURED_BW_KB);
+  test_assert(con->consensus_method >= 16);
+  test_eq(4, smartlist_len(con->routerstatus_list));
+  /* There should be four listed routers; all voters saw the same in this */
+
+ done:
+  return;
+}
+
+/**
+ * Test a router list entry for umbw test
+ */
+static void
+test_routerstatus_for_umbw(routerstatus_t *rs, time_t now)
+{
+  tor_addr_t addr_ipv6;
+  uint32_t max_unmeasured_bw_kb = (alternate_clip_bw > 0) ?
+    alternate_clip_bw : DEFAULT_MAX_UNMEASURED_BW_KB;
+
+  test_assert(rs);
+
+  /* There should be four listed routers, as constructed above */
+  if (tor_memeq(rs->identity_digest,
+                "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3"
+                "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3",
+                DIGEST_LEN)) {
+    test_memeq(rs->identity_digest,
+               "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3"
+               "\x3\x3\x3\x3\x3\x3\x3\x3\x3\x3",
+               DIGEST_LEN);
+    test_memeq(rs->descriptor_digest, "NNNNNNNNNNNNNNNNNNNN", DIGEST_LEN);
+    test_assert(!rs->is_authority);
+    test_assert(!rs->is_exit);
+    test_assert(!rs->is_fast);
+    test_assert(!rs->is_possible_guard);
+    test_assert(!rs->is_stable);
+    /* (If it wasn't running it wouldn't be here) */
+    test_assert(rs->is_flagged_running);
+    test_assert(!rs->is_v2_dir);
+    test_assert(!rs->is_valid);
+    test_assert(!rs->is_named);
+    /* This one should have measured bandwidth below the clip cutoff */
+    test_assert(rs->has_bandwidth);
+    test_eq(rs->bandwidth_kb, max_unmeasured_bw_kb / 2);
+    test_assert(!(rs->bw_is_unmeasured));
+  } else if (tor_memeq(rs->identity_digest,
+                       "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5"
+                       "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5",
+                       DIGEST_LEN)) {
+    /* This one showed up in 3 digests. Twice with ID 'M', once with 'Z'.  */
+    test_memeq(rs->identity_digest,
+               "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5"
+               "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5",
+               DIGEST_LEN);
+    test_streq(rs->nickname, "router1");
+    test_memeq(rs->descriptor_digest, "MMMMMMMMMMMMMMMMMMMM", DIGEST_LEN);
+    test_eq(rs->published_on, now-1000);
+    test_eq(rs->addr, 0x99009901);
+    test_eq(rs->or_port, 443);
+    test_eq(rs->dir_port, 0);
+    tor_addr_parse(&addr_ipv6, "[1:2:3::4]");
+    test_assert(tor_addr_eq(&rs->ipv6_addr, &addr_ipv6));
+    test_eq(rs->ipv6_orport, 4711);
+    test_assert(!rs->is_authority);
+    test_assert(rs->is_exit);
+    test_assert(rs->is_fast);
+    test_assert(rs->is_possible_guard);
+    test_assert(rs->is_stable);
+    test_assert(rs->is_flagged_running);
+    test_assert(rs->is_v2_dir);
+    test_assert(rs->is_valid);
+    test_assert(!rs->is_named);
+    /* This one should have measured bandwidth above the clip cutoff */
+    test_assert(rs->has_bandwidth);
+    test_eq(rs->bandwidth_kb, max_unmeasured_bw_kb * 2);
+    test_assert(!(rs->bw_is_unmeasured));
+  } else if (tor_memeq(rs->identity_digest,
+                "\x33\x33\x33\x33\x33\x33\x33\x33\x33\x33"
+                "\x33\x33\x33\x33\x33\x33\x33\x33\x33\x33",
+                DIGEST_LEN)) {
+    /*
+     * This one should have unmeasured bandwidth above the clip cutoff,
+     * and so should be clipped
+     */
+    test_assert(rs->has_bandwidth);
+    test_eq(rs->bandwidth_kb, max_unmeasured_bw_kb);
+    test_assert(rs->bw_is_unmeasured);
+  } else if (tor_memeq(rs->identity_digest,
+                "\x34\x34\x34\x34\x34\x34\x34\x34\x34\x34"
+                "\x34\x34\x34\x34\x34\x34\x34\x34\x34\x34",
+                DIGEST_LEN)) {
+    /*
+     * This one should have unmeasured bandwidth below the clip cutoff,
+     * and so should not be clipped
+     */
+    test_assert(rs->has_bandwidth);
+    test_eq(rs->bandwidth_kb, max_unmeasured_bw_kb / 2);
+    test_assert(rs->bw_is_unmeasured);
+  } else {
+    /* Weren't expecting this... */
+    test_assert(0);
+  }
+
+ done:
+  return;
+}
+
+/**
+ * Compute a consensus involving clipping unmeasured bandwidth with consensus
+ * method 17; this uses the same test_a_networkstatus() function that the
+ * v3_networkstatus test uses.
+ */
+
+static void
+test_dir_clip_unmeasured_bw_kb(void)
+{
+  /* Run the test with the default clip bandwidth */
+  alternate_clip_bw = 0;
+  test_a_networkstatus(gen_routerstatus_for_umbw,
+                       vote_tweaks_for_umbw,
+                       test_vrs_for_umbw,
+                       test_consensus_for_umbw,
+                       test_routerstatus_for_umbw);
+}
+
+/**
+ * This version of test_dir_clip_unmeasured_bw_kb() uses a non-default choice
+ * of clip bandwidth.
+ */
+
+static void
+test_dir_clip_unmeasured_bw_kb_alt(void)
+{
+  /*
+   * Try a different one; this value is chosen so that the below-the-cutoff
+   * unmeasured nodes the test uses, at alternate_clip_bw / 2, will be above
+   * DEFAULT_MAX_UNMEASURED_BW_KB and if the consensus incorrectly uses that
+   * cutoff it will fail the test.
+   */
+  alternate_clip_bw = 3 * DEFAULT_MAX_UNMEASURED_BW_KB;
+  test_a_networkstatus(gen_routerstatus_for_umbw,
+                       vote_tweaks_for_umbw,
+                       test_vrs_for_umbw,
+                       test_consensus_for_umbw,
+                       test_routerstatus_for_umbw);
+}
+
+extern time_t time_of_process_start; /* from main.c */
+
+static void
+test_dir_v2_dir(void *arg)
+{
+  /* Runs in a forked process: acts like a v2 directory just enough to make and
+   * sign a v2 networkstatus opinion */
+
+  cached_dir_t *v2 = NULL;
+  or_options_t *options = get_options_mutable();
+  crypto_pk_t *id_key = pk_generate(4);
+  (void) arg;
+
+  options->ORPort_set = 1; /* So we believe we're a server. */
+  options->DirPort_set = 1;
+  options->Address = tor_strdup("99.99.99.99");
+  options->Nickname = tor_strdup("TestV2Auth");
+  options->ContactInfo = tor_strdup("TestV2Auth <testv2auth@example.com>");
+  {
+    /* Give it a DirPort */
+    smartlist_t *ports = (smartlist_t *)get_configured_ports();
+    port_cfg_t *port = tor_malloc_zero(sizeof(port_cfg_t));
+    port->type = CONN_TYPE_DIR_LISTENER;
+    port->port = 9999;
+    smartlist_add(ports, port);
+  }
+  set_server_identity_key(id_key);
+  set_client_identity_key(id_key);
+
+  /* Add a router. */
+  {
+    was_router_added_t wra;
+    const char *msg = NULL;
+    routerinfo_t *r1 = tor_malloc_zero(sizeof(routerinfo_t));
+    r1->address = tor_strdup("18.244.0.1");
+    r1->addr = 0xc0a80001u; /* 192.168.0.1 */
+    r1->cache_info.published_on = time(NULL)-60;
+    r1->or_port = 9000;
+    r1->dir_port = 9003;
+    tor_addr_parse(&r1->ipv6_addr, "1:2:3:4::");
+    r1->ipv6_orport = 9999;
+    r1->onion_pkey = pk_generate(1);
+    r1->identity_pkey = pk_generate(2);
+    r1->bandwidthrate = 1000;
+    r1->bandwidthburst = 5000;
+    r1->bandwidthcapacity = 10000;
+    r1->exit_policy = NULL;
+    r1->nickname = tor_strdup("Magri");
+    r1->platform = tor_strdup("Tor 0.2.7.7-gamma");
+    r1->cache_info.routerlist_index = -1;
+    r1->cache_info.signed_descriptor_body =
+      router_dump_router_to_string(r1, r1->identity_pkey);
+    r1->cache_info.signed_descriptor_len =
+      strlen(r1->cache_info.signed_descriptor_body);
+    wra = router_add_to_routerlist(r1, &msg, 0, 0);
+    tt_int_op(wra, ==, ROUTER_ADDED_SUCCESSFULLY);
+  }
+
+  /* Prevent call of rep_hist_note_router_unreachable(). */
+  time_of_process_start = time(NULL);
+
+  /* Make a directory so there's somewhere to store the thing */
+#ifdef _WIN32
+  mkdir(get_fname("cached-status"));
+#else
+  mkdir(get_fname("cached-status"), 0700);
+#endif
+
+  v2 = generate_v2_networkstatus_opinion();
+  tt_assert(v2);
+
+ done:
+  crypto_pk_free(id_key);
+  cached_dir_decref(v2);
+}
+
+static void
+test_dir_fmt_control_ns(void *arg)
+{
+  char *s = NULL;
+  routerstatus_t rs;
+  (void)arg;
+
+  memset(&rs, 0, sizeof(rs));
+  rs.published_on = 1364925198;
+  strlcpy(rs.nickname, "TetsuoMilk", sizeof(rs.nickname));
+  memcpy(rs.identity_digest, "Stately, plump Buck ", DIGEST_LEN);
+  memcpy(rs.descriptor_digest, "Mulligan came up fro", DIGEST_LEN);
+  rs.addr = 0x20304050;
+  rs.or_port = 9001;
+  rs.dir_port = 9002;
+  rs.is_exit = 1;
+  rs.is_fast = 1;
+  rs.is_flagged_running = 1;
+  rs.has_bandwidth = 1;
+  rs.bandwidth_kb = 1000;
+
+  s = networkstatus_getinfo_helper_single(&rs);
+  tt_assert(s);
+  tt_str_op(s, ==,
+            "r TetsuoMilk U3RhdGVseSwgcGx1bXAgQnVjayA "
+               "TXVsbGlnYW4gY2FtZSB1cCBmcm8 2013-04-02 17:53:18 "
+               "32.48.64.80 9001 9002\n"
+            "s Exit Fast Running\n"
+            "w Bandwidth=1000\n");
+
+ done:
+  tor_free(s);
+}
+
 #define DIR_LEGACY(name)                                                   \
   { #name, legacy_test_helper, TT_FORK, &legacy_setup, test_dir_ ## name }
 
-#define DIR(name)                               \
-  { #name, test_dir_##name, 0, NULL, NULL }
+#define DIR(name,flags)                              \
+  { #name, test_dir_##name, (flags), NULL, NULL }
 
 struct testcase_t dir_tests[] = {
   DIR_LEGACY(nicknames),
   DIR_LEGACY(formats),
   DIR_LEGACY(versions),
   DIR_LEGACY(fp_pairs),
-  DIR(split_fps),
-  DIR_LEGACY(measured_bw),
+  DIR(split_fps, 0),
+  DIR_LEGACY(measured_bw_kb),
+  DIR_LEGACY(measured_bw_kb_cache),
   DIR_LEGACY(param_voting),
   DIR_LEGACY(v3_networkstatus),
+  DIR(random_weighted, 0),
+  DIR(scale_bw, 0),
+  DIR_LEGACY(clip_unmeasured_bw_kb),
+  DIR_LEGACY(clip_unmeasured_bw_kb_alt),
+  DIR(v2_dir, TT_FORK),
+  DIR(fmt_control_ns, 0),
   END_OF_TESTCASES
 };
 

@@ -1,4 +1,4 @@
-/* Copyright (c) 2007-2012, The Tor Project, Inc. */
+/* Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -89,6 +89,7 @@ evdns_server_callback(struct evdns_server_request *req, void *data_)
       continue;
     switch (req->questions[i]->type) {
       case EVDNS_TYPE_A:
+      case EVDNS_TYPE_AAAA:
       case EVDNS_TYPE_PTR:
         q = req->questions[i];
       default:
@@ -101,7 +102,7 @@ evdns_server_callback(struct evdns_server_request *req, void *data_)
     evdns_server_request_respond(req, DNS_ERR_NOTIMPL);
     return;
   }
-  if (q->type != EVDNS_TYPE_A) {
+  if (q->type != EVDNS_TYPE_A && q->type != EVDNS_TYPE_AAAA) {
     tor_assert(q->type == EVDNS_TYPE_PTR);
   }
 
@@ -125,7 +126,7 @@ evdns_server_callback(struct evdns_server_request *req, void *data_)
   TO_CONN(conn)->port = port;
   TO_CONN(conn)->address = tor_dup_addr(&tor_addr);
 
-  if (q->type == EVDNS_TYPE_A)
+  if (q->type == EVDNS_TYPE_A || q->type == EVDNS_TYPE_AAAA)
     entry_conn->socks_request->command = SOCKS_COMMAND_RESOLVE;
   else
     entry_conn->socks_request->command = SOCKS_COMMAND_RESOLVE_PTR;
@@ -133,7 +134,7 @@ evdns_server_callback(struct evdns_server_request *req, void *data_)
   strlcpy(entry_conn->socks_request->address, q->name,
           sizeof(entry_conn->socks_request->address));
 
-  entry_conn->socks_request->listener_type = listener->_base.type;
+  entry_conn->socks_request->listener_type = listener->base_.type;
   entry_conn->dns_server_request = req;
   entry_conn->isolation_flags = listener->isolation_flags;
   entry_conn->session_group = listener->session_group;
@@ -146,7 +147,7 @@ evdns_server_callback(struct evdns_server_request *req, void *data_)
     return;
   }
 
-  control_event_stream_status(entry_conn, STREAM_EVENT_NEW, 0);
+  control_event_stream_status(entry_conn, STREAM_EVENT_NEW_RESOLVE, 0);
 
   /* Now, unless a controller asked us to leave streams unattached,
   * throw the connection over to get rewritten (which will
@@ -169,7 +170,8 @@ evdns_server_callback(struct evdns_server_request *req, void *data_)
  * response; -1 if we couldn't launch the request.
  */
 int
-dnsserv_launch_request(const char *name, int reverse)
+dnsserv_launch_request(const char *name, int reverse,
+                       control_connection_t *control_conn)
 {
   entry_connection_t *entry_conn;
   edge_connection_t *conn;
@@ -178,7 +180,26 @@ dnsserv_launch_request(const char *name, int reverse)
   /* Make a new dummy AP connection, and attach the request to it. */
   entry_conn = entry_connection_new(CONN_TYPE_AP, AF_INET);
   conn = ENTRY_TO_EDGE_CONN(entry_conn);
-  conn->_base.state = AP_CONN_STATE_RESOLVE_WAIT;
+  conn->base_.state = AP_CONN_STATE_RESOLVE_WAIT;
+
+  tor_addr_copy(&TO_CONN(conn)->addr, &control_conn->base_.addr);
+#ifdef AF_UNIX
+  /*
+   * The control connection can be AF_UNIX and if so tor_dup_addr will
+   * unhelpfully say "<unknown address type>"; say "(Tor_internal)"
+   * instead.
+   */
+  if (control_conn->base_.socket_family == AF_UNIX) {
+    TO_CONN(conn)->port = 0;
+    TO_CONN(conn)->address = tor_strdup("(Tor_internal)");
+  } else {
+    TO_CONN(conn)->port = control_conn->base_.port;
+    TO_CONN(conn)->address = tor_dup_addr(&control_conn->base_.addr);
+  }
+#else
+  TO_CONN(conn)->port = control_conn->base_.port;
+  TO_CONN(conn)->address = tor_dup_addr(&control_conn->base_.addr);
+#endif
 
   if (reverse)
     entry_conn->socks_request->command = SOCKS_COMMAND_RESOLVE_PTR;
@@ -201,6 +222,8 @@ dnsserv_launch_request(const char *name, int reverse)
     connection_free(TO_CONN(conn));
     return -1;
   }
+
+  control_event_stream_status(entry_conn, STREAM_EVENT_NEW_RESOLVE, 0);
 
   /* Now, unless a controller asked us to leave streams unattached,
   * throw the connection over to get rewritten (which will
@@ -289,8 +312,9 @@ dnsserv_resolved(entry_connection_t *conn,
    * or more of the questions in the request); then, call
    * evdns_server_request_respond. */
   if (answer_type == RESOLVED_TYPE_IPV6) {
-    log_info(LD_APP, "Got an IPv6 answer; that's not implemented.");
-    err = DNS_ERR_NOTIMPL;
+    evdns_server_request_add_aaaa_reply(req,
+                                        name,
+                                        1, answer, ttl);
   } else if (answer_type == RESOLVED_TYPE_IPV4 && answer_len == 4 &&
              conn->socks_request->command == SOCKS_COMMAND_RESOLVE) {
     evdns_server_request_add_a_reply(req,

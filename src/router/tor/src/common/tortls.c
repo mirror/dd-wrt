@@ -1,6 +1,6 @@
 /* Copyright (c) 2003, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -58,8 +58,8 @@
 #include "container.h"
 #include <string.h>
 
-#if OPENSSL_VERSION_NUMBER < OPENSSL_V_SERIES(0,9,7)
-#error "We require OpenSSL >= 0.9.7"
+#if OPENSSL_VERSION_NUMBER < OPENSSL_V_SERIES(0,9,8)
+#error "We require OpenSSL >= 0.9.8"
 #endif
 
 /* Enable the "v2" TLS handshake.
@@ -127,7 +127,31 @@ typedef struct tor_tls_context_t {
   crypto_pk_t *auth_key;
 } tor_tls_context_t;
 
+/** Return values for tor_tls_classify_client_ciphers.
+ *
+ * @{
+ */
+/** An error occurred when examining the client ciphers */
+#define CIPHERS_ERR -1
+/** The client cipher list indicates that a v1 handshake was in use. */
+#define CIPHERS_V1 1
+/** The client cipher list indicates that the client is using the v2 or the
+ * v3 handshake, but that it is (probably!) lying about what ciphers it
+ * supports */
+#define CIPHERS_V2 2
+/** The client cipher list indicates that the client is using the v2 or the
+ * v3 handshake, and that it is telling the truth about what ciphers it
+ * supports */
+#define CIPHERS_UNRESTRICTED 3
+/** @} */
+
 #define TOR_TLS_MAGIC 0x71571571
+
+typedef enum {
+    TOR_TLS_ST_HANDSHAKE, TOR_TLS_ST_OPEN, TOR_TLS_ST_GOTCLOSE,
+    TOR_TLS_ST_SENTCLOSE, TOR_TLS_ST_CLOSED, TOR_TLS_ST_RENEGOTIATE,
+    TOR_TLS_ST_BUFFEREVENT
+} tor_tls_state_t;
 
 /** Holds a SSL object and its associated data.  Members are only
  * accessed from within tortls.c.
@@ -138,12 +162,9 @@ struct tor_tls_t {
   SSL *ssl; /**< An OpenSSL SSL object. */
   int socket; /**< The underlying file descriptor for this TLS connection. */
   char *address; /**< An address to log when describing this connection. */
-  enum {
-    TOR_TLS_ST_HANDSHAKE, TOR_TLS_ST_OPEN, TOR_TLS_ST_GOTCLOSE,
-    TOR_TLS_ST_SENTCLOSE, TOR_TLS_ST_CLOSED, TOR_TLS_ST_RENEGOTIATE,
-    TOR_TLS_ST_BUFFEREVENT
-  } state : 3; /**< The current SSL state, depending on which operations have
-                * completed successfully. */
+  ENUM_BF(tor_tls_state_t) state : 3; /**< The current SSL state,
+                                       * depending on which operations
+                                       * have completed successfully. */
   unsigned int isServer:1; /**< True iff this is a server-side connection */
   unsigned int wasV2Handshake:1; /**< True iff the original handshake for
                                   * this connection used the updated version
@@ -152,6 +173,9 @@ struct tor_tls_t {
                                   * one certificate). */
   /** True iff we should call negotiated_callback when we're done reading. */
   unsigned int got_renegotiate:1;
+  /** Return value from tor_tls_classify_client_ciphers, or 0 if we haven't
+   * called that function yet. */
+  int8_t client_cipher_list_type;
   /** Incremented every time we start the server side of a handshake. */
   uint8_t server_handshake_count;
   size_t wantwrite_n; /**< 0 normally, >0 if we returned wantwrite last
@@ -210,14 +234,16 @@ static X509* tor_tls_create_certificate(crypto_pk_t *rsa,
                                         crypto_pk_t *rsa_sign,
                                         const char *cname,
                                         const char *cname_sign,
-                                        unsigned int lifetime);
+                                        unsigned int cert_lifetime);
 
 static int tor_tls_context_init_one(tor_tls_context_t **ppcontext,
                                     crypto_pk_t *identity,
                                     unsigned int key_lifetime,
+                                    unsigned int flags,
                                     int is_client);
 static tor_tls_context_t *tor_tls_context_new(crypto_pk_t *identity,
                                               unsigned int key_lifetime,
+                                              unsigned int flags,
                                               int is_client);
 static int check_cert_lifetime_internal(int severity, const X509 *cert,
                                    int past_tolerance, int future_tolerance);
@@ -234,8 +260,8 @@ static tor_tls_context_t *client_tls_context = NULL;
 static int tls_library_is_initialized = 0;
 
 /* Module-internal error codes. */
-#define _TOR_TLS_SYSCALL    (_MIN_TOR_TLS_ERROR_VAL - 2)
-#define _TOR_TLS_ZERORETURN (_MIN_TOR_TLS_ERROR_VAL - 1)
+#define TOR_TLS_SYSCALL_    (MIN_TOR_TLS_ERROR_VAL_ - 2)
+#define TOR_TLS_ZERORETURN_ (MIN_TOR_TLS_ERROR_VAL_ - 1)
 
 /** Write a description of the current state of <b>tls</b> into the
  * <b>sz</b>-byte buffer at <b>buf</b>. */
@@ -308,11 +334,11 @@ tor_tls_log_one_error(tor_tls_t *tls, unsigned long err,
   if (!lib) lib = "(null)";
   if (!func) func = "(null)";
   if (doing) {
-    log(severity, domain, "TLS error while %s%s%s: %s (in %s:%s:%s)",
+    tor_log(severity, domain, "TLS error while %s%s%s: %s (in %s:%s:%s)",
         doing, addr?" with ":"", addr?addr:"",
         msg, lib, func, state);
   } else {
-    log(severity, domain, "TLS error%s%s: %s (in %s:%s:%s)",
+    tor_log(severity, domain, "TLS error%s%s: %s (in %s:%s:%s)",
         addr?" with ":"", addr?addr:"",
         msg, lib, func, state);
   }
@@ -336,35 +362,19 @@ tls_log_errors(tor_tls_t *tls, int severity, int domain, const char *doing)
 static int
 tor_errno_to_tls_error(int e)
 {
-#if defined(_WIN32)
   switch (e) {
-    case WSAECONNRESET: // most common
+    case SOCK_ERRNO(ECONNRESET): // most common
       return TOR_TLS_ERROR_CONNRESET;
-    case WSAETIMEDOUT:
+    case SOCK_ERRNO(ETIMEDOUT):
       return TOR_TLS_ERROR_TIMEOUT;
-    case WSAENETUNREACH:
-    case WSAEHOSTUNREACH:
+    case SOCK_ERRNO(EHOSTUNREACH):
+    case SOCK_ERRNO(ENETUNREACH):
       return TOR_TLS_ERROR_NO_ROUTE;
-    case WSAECONNREFUSED:
+    case SOCK_ERRNO(ECONNREFUSED):
       return TOR_TLS_ERROR_CONNREFUSED; // least common
     default:
       return TOR_TLS_ERROR_MISC;
   }
-#else
-  switch (e) {
-    case ECONNRESET: // most common
-      return TOR_TLS_ERROR_CONNRESET;
-    case ETIMEDOUT:
-      return TOR_TLS_ERROR_TIMEOUT;
-    case EHOSTUNREACH:
-    case ENETUNREACH:
-      return TOR_TLS_ERROR_NO_ROUTE;
-    case ECONNREFUSED:
-      return TOR_TLS_ERROR_CONNREFUSED; // least common
-    default:
-      return TOR_TLS_ERROR_MISC;
-  }
-#endif
 }
 
 /** Given a TOR_TLS_* error code, return a string equivalent. */
@@ -393,9 +403,9 @@ tor_tls_err_to_string(int err)
 /** Given a TLS object and the result of an SSL_* call, use
  * SSL_get_error to determine whether an error has occurred, and if so
  * which one.  Return one of TOR_TLS_{DONE|WANTREAD|WANTWRITE|ERROR}.
- * If extra&CATCH_SYSCALL is true, return _TOR_TLS_SYSCALL instead of
+ * If extra&CATCH_SYSCALL is true, return TOR_TLS_SYSCALL_ instead of
  * reporting syscall errors.  If extra&CATCH_ZERO is true, return
- * _TOR_TLS_ZERORETURN instead of reporting zero-return errors.
+ * TOR_TLS_ZERORETURN_ instead of reporting zero-return errors.
  *
  * If an error has occurred, log it at level <b>severity</b> and describe the
  * current action as <b>doing</b>.
@@ -415,14 +425,14 @@ tor_tls_get_error(tor_tls_t *tls, int r, int extra,
       return TOR_TLS_WANTWRITE;
     case SSL_ERROR_SYSCALL:
       if (extra&CATCH_SYSCALL)
-        return _TOR_TLS_SYSCALL;
+        return TOR_TLS_SYSCALL_;
       if (r == 0) {
-        log(severity, LD_NET, "TLS error: unexpected close while %s (%s)",
+        tor_log(severity, LD_NET, "TLS error: unexpected close while %s (%s)",
             doing, SSL_state_string_long(tls->ssl));
         tor_error = TOR_TLS_ERROR_IO;
       } else {
         int e = tor_socket_errno(tls->socket);
-        log(severity, LD_NET,
+        tor_log(severity, LD_NET,
             "TLS error: <syscall error while %s> (errno=%d: %s; state=%s)",
             doing, e, tor_socket_strerror(e),
             SSL_state_string_long(tls->ssl));
@@ -432,8 +442,8 @@ tor_tls_get_error(tor_tls_t *tls, int r, int extra,
       return tor_error;
     case SSL_ERROR_ZERO_RETURN:
       if (extra&CATCH_ZERO)
-        return _TOR_TLS_ZERORETURN;
-      log(severity, LD_NET, "TLS connection closed while %s in state %s",
+        return TOR_TLS_ZERORETURN_;
+      tor_log(severity, LD_NET, "TLS connection closed while %s in state %s",
           doing, SSL_state_string_long(tls->ssl));
       tls_log_errors(tls, severity, domain, doing);
       return TOR_TLS_CLOSE;
@@ -478,7 +488,7 @@ tor_tls_init(void)
      * a test of intelligence and determination.
      */
     if (version > OPENSSL_V(0,9,8,'k') && version <= OPENSSL_V(0,9,8,'l')) {
-      log_notice(LD_GENERAL, "OpenSSL %s looks like version 0.9.8l, but "
+      log_info(LD_GENERAL, "OpenSSL %s looks like version 0.9.8l, but "
                  "some vendors have backported renegotiation code from "
                  "0.9.8m without updating the version number. "
                  "I will try SSL3_FLAGS and SSL_OP to enable renegotation.",
@@ -486,12 +496,12 @@ tor_tls_init(void)
       use_unsafe_renegotiation_flag = 1;
       use_unsafe_renegotiation_op = 1;
     } else if (version > OPENSSL_V(0,9,8,'l')) {
-      log_notice(LD_GENERAL, "OpenSSL %s looks like version 0.9.8m or later; "
+      log_info(LD_GENERAL, "OpenSSL %s looks like version 0.9.8m or later; "
                  "I will try SSL_OP to enable renegotiation",
                  SSLeay_version(SSLEAY_VERSION));
       use_unsafe_renegotiation_op = 1;
     } else if (version <= OPENSSL_V(0,9,8,'k')) {
-      log_notice(LD_GENERAL, "OpenSSL %s [%lx] looks like it's older than "
+      log_info(LD_GENERAL, "OpenSSL %s [%lx] looks like it's older than "
                  "0.9.8l, but some vendors have backported 0.9.8l's "
                  "renegotiation code to earlier versions, and some have "
                  "backported the code from 0.9.8m or 0.9.8n.  I'll set both "
@@ -504,6 +514,37 @@ tor_tls_init(void)
       log_info(LD_GENERAL, "OpenSSL %s has version %lx",
                SSLeay_version(SSLEAY_VERSION), version);
     }
+
+#if (SIZEOF_VOID_P >= 8 &&                              \
+     !defined(OPENSSL_NO_EC) &&                         \
+     OPENSSL_VERSION_NUMBER >= OPENSSL_V_SERIES(1,0,1))
+    if (version >= OPENSSL_V_SERIES(1,0,1)) {
+      /* Warn if we could *almost* be running with much faster ECDH.
+         If we're built for a 64-bit target, using OpenSSL 1.0.1, but we
+         don't have one of the built-in __uint128-based speedups, we are
+         just one build operation away from an accelerated handshake.
+
+         (We could be looking at OPENSSL_NO_EC_NISTP_64_GCC_128 instead of
+          doing this test, but that gives compile-time options, not runtime
+          behavior.)
+      */
+      EC_KEY *key = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+      const EC_GROUP *g = key ? EC_KEY_get0_group(key) : NULL;
+      const EC_METHOD *m = g ? EC_GROUP_method_of(g) : NULL;
+      const int warn = (m == EC_GFp_simple_method() ||
+                        m == EC_GFp_mont_method() ||
+                        m == EC_GFp_nist_method());
+      EC_KEY_free(key);
+
+      if (warn)
+        log_notice(LD_GENERAL, "We were built to run on a 64-bit CPU, with "
+                   "OpenSSL 1.0.1 or later, but with a version of OpenSSL "
+                   "that apparently lacks accelerated support for the NIST "
+                   "P-224 and P-256 groups. Building openssl with such "
+                   "support (using the enable-ec_nistp_64_gcc_128 option "
+                   "when configuring it) would make ECDH much faster.");
+    }
+#endif
 
     tor_tls_allocate_tor_tls_object_ex_data_index();
 
@@ -567,9 +608,10 @@ tor_x509_name_new(const char *cname)
 /** Generate and sign an X509 certificate with the public key <b>rsa</b>,
  * signed by the private key <b>rsa_sign</b>.  The commonName of the
  * certificate will be <b>cname</b>; the commonName of the issuer will be
- * <b>cname_sign</b>. The cert will be valid for <b>cert_lifetime</b> seconds
- * starting from now.  Return a certificate on success, NULL on
- * failure.
+ * <b>cname_sign</b>. The cert will be valid for <b>cert_lifetime</b>
+ * seconds, starting from some time in the past.
+ *
+ * Return a certificate on success, NULL on failure.
  */
 static X509 *
 tor_tls_create_certificate(crypto_pk_t *rsa,
@@ -591,15 +633,20 @@ tor_tls_create_certificate(crypto_pk_t *rsa,
 
   tor_tls_init();
 
-  start_time = time(NULL);
+  /* Make sure we're part-way through the certificate lifetime, rather
+   * than having it start right now. Don't choose quite uniformly, since
+   * then we might pick a time where we're about to expire. Lastly, be
+   * sure to start on a day boundary. */
+  start_time = time(NULL) - crypto_rand_int(cert_lifetime) + 2*24*3600;
+  start_time -= start_time % (24*3600);
 
   tor_assert(rsa);
   tor_assert(cname);
   tor_assert(rsa_sign);
   tor_assert(cname_sign);
-  if (!(sign_pkey = _crypto_pk_get_evp_pkey(rsa_sign,1)))
+  if (!(sign_pkey = crypto_pk_get_evp_pkey_(rsa_sign,1)))
     goto error;
-  if (!(pkey = _crypto_pk_get_evp_pkey(rsa,0)))
+  if (!(pkey = crypto_pk_get_evp_pkey_(rsa,0)))
     goto error;
   if (!(x509 = X509_new()))
     goto error;
@@ -657,11 +704,42 @@ tor_tls_create_certificate(crypto_pk_t *rsa,
 #undef SERIAL_NUMBER_SIZE
 }
 
-/** List of ciphers that servers should select from.*/
+/** List of ciphers that servers should select from when the client might be
+ * claiming extra unsupported ciphers in order to avoid fingerprinting.  */
 #define SERVER_CIPHER_LIST                         \
   (TLS1_TXT_DHE_RSA_WITH_AES_256_SHA ":"           \
    TLS1_TXT_DHE_RSA_WITH_AES_128_SHA ":"           \
    SSL3_TXT_EDH_RSA_DES_192_CBC3_SHA)
+
+/** List of ciphers that servers should select from when we actually have
+ * our choice of what cipher to use. */
+const char UNRESTRICTED_SERVER_CIPHER_LIST[] =
+#ifdef TLS1_TXT_ECDHE_RSA_WITH_AES_256_CHC_SHA
+       TLS1_TXT_ECDHE_RSA_WITH_AES_256_CBC_SHA ":"
+#endif
+#ifdef TLS1_TXT_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+       TLS1_TXT_ECDHE_RSA_WITH_AES_256_GCM_SHA384 ":"
+#endif
+#ifdef TLS1_TXT_ECDHE_RSA_WITH_AES_128_SHA256
+       TLS1_TXT_ECDHE_RSA_WITH_AES_128_SHA256 ":"
+#endif
+#ifdef TLS1_TXT_ECDHE_RSA_WITH_AES_128_CBC_SHA
+       TLS1_TXT_ECDHE_RSA_WITH_AES_128_CBC_SHA ":"
+#endif
+#ifdef TLS1_TXT_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+       TLS1_TXT_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+#endif
+//#if TLS1_TXT_ECDHE_RSA_WITH_RC4_128_SHA
+//    TLS1_TXT_ECDHE_RSA_WITH_RC4_128_SHA ":"
+//#endif
+  /* These next two are mandatory. */
+  TLS1_TXT_DHE_RSA_WITH_AES_256_SHA ":"
+  TLS1_TXT_DHE_RSA_WITH_AES_128_SHA ":"
+#ifdef TLS1_TXT_ECDHE_RSA_WITH_DES_192_CBC3_SHA
+       TLS1_TXT_ECDHE_RSA_WITH_DES_192_CBC3_SHA ":"
+#endif
+  SSL3_TXT_EDH_RSA_DES_192_CBC3_SHA;
+
 /* Note: to set up your own private testing network with link crypto
  * disabled, set your Tors' cipher list to
  * (SSL3_TXT_RSA_NULL_SHA).  If you do this, you won't be able to communicate
@@ -754,7 +832,7 @@ tor_cert_new(X509 *x509_cert)
 
   if ((pkey = X509_get_pubkey(x509_cert)) &&
       (rsa = EVP_PKEY_get1_RSA(pkey))) {
-    crypto_pk_t *pk = _crypto_new_pk_from_rsa(rsa);
+    crypto_pk_t *pk = crypto_new_pk_from_rsa_(rsa);
     crypto_pk_get_all_digests(pk, &cert->pkey_digests);
     cert->pkey_digests_set = 1;
     crypto_pk_free(pk);
@@ -778,13 +856,8 @@ tor_cert_decode(const uint8_t *certificate, size_t certificate_len)
   if (certificate_len > INT_MAX)
     return NULL;
 
-#if OPENSSL_VERSION_NUMBER < OPENSSL_V_SERIES(0,9,8)
-  /* This ifdef suppresses a type warning.  Take out this case once everybody
-   * is using OpenSSL 0.9.8 or later. */
-  x509 = d2i_X509(NULL, (unsigned char**)&cp, (int)certificate_len);
-#else
   x509 = d2i_X509(NULL, &cp, (int)certificate_len);
-#endif
+
   if (!x509)
     return NULL; /* Couldn't decode */
   if (cp - certificate != (int)certificate_len) {
@@ -901,7 +974,7 @@ tor_tls_cert_get_key(tor_cert_t *cert)
     EVP_PKEY_free(pkey);
     return NULL;
   }
-  result = _crypto_new_pk_from_rsa(rsa);
+  result = crypto_new_pk_from_rsa_(rsa);
   EVP_PKEY_free(pkey);
   return result;
 }
@@ -1019,17 +1092,20 @@ tor_tls_context_incref(tor_tls_context_t *ctx)
 /** Create new global client and server TLS contexts.
  *
  * If <b>server_identity</b> is NULL, this will not generate a server
- * TLS context. If <b>is_public_server</b> is non-zero, this will use
+ * TLS context. If TOR_TLS_CTX_IS_PUBLIC_SERVER is set in <b>flags</b>, use
  * the same TLS context for incoming and outgoing connections, and
- * ignore <b>client_identity</b>. */
+ * ignore <b>client_identity</b>. If one of TOR_TLS_CTX_USE_ECDHE_P{224,256}
+ * is set in <b>flags</b>, use that ECDHE group if possible; otherwise use
+ * the default ECDHE group. */
 int
-tor_tls_context_init(int is_public_server,
+tor_tls_context_init(unsigned flags,
                      crypto_pk_t *client_identity,
                      crypto_pk_t *server_identity,
                      unsigned int key_lifetime)
 {
   int rv1 = 0;
   int rv2 = 0;
+  const int is_public_server = flags & TOR_TLS_CTX_IS_PUBLIC_SERVER;
 
   if (is_public_server) {
     tor_tls_context_t *new_ctx;
@@ -1039,7 +1115,7 @@ tor_tls_context_init(int is_public_server,
 
     rv1 = tor_tls_context_init_one(&server_tls_context,
                                    server_identity,
-                                   key_lifetime, 0);
+                                   key_lifetime, flags, 0);
 
     if (rv1 >= 0) {
       new_ctx = server_tls_context;
@@ -1056,6 +1132,7 @@ tor_tls_context_init(int is_public_server,
       rv1 = tor_tls_context_init_one(&server_tls_context,
                                      server_identity,
                                      key_lifetime,
+                                     flags,
                                      0);
     } else {
       tor_tls_context_t *old_ctx = server_tls_context;
@@ -1069,6 +1146,7 @@ tor_tls_context_init(int is_public_server,
     rv2 = tor_tls_context_init_one(&client_tls_context,
                                    client_identity,
                                    key_lifetime,
+                                   flags,
                                    1);
   }
 
@@ -1085,10 +1163,12 @@ static int
 tor_tls_context_init_one(tor_tls_context_t **ppcontext,
                          crypto_pk_t *identity,
                          unsigned int key_lifetime,
+                         unsigned int flags,
                          int is_client)
 {
   tor_tls_context_t *new_ctx = tor_tls_context_new(identity,
                                                    key_lifetime,
+                                                   flags,
                                                    is_client);
   tor_tls_context_t *old_ctx = *ppcontext;
 
@@ -1112,7 +1192,7 @@ tor_tls_context_init_one(tor_tls_context_t **ppcontext,
  */
 static tor_tls_context_t *
 tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
-                    int is_client)
+                    unsigned flags, int is_client)
 {
   crypto_pk_t *rsa = NULL, *rsa_auth = NULL;
   EVP_PKEY *pkey = NULL;
@@ -1150,7 +1230,7 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
     authcert = tor_tls_create_certificate(rsa_auth, identity, nickname, nn2,
                                           key_lifetime);
     if (!cert || !idcert || !authcert) {
-      log(LOG_WARN, LD_CRYPTO, "Error creating certificate");
+      log_warn(LD_CRYPTO, "Error creating certificate");
       goto error;
     }
   }
@@ -1189,19 +1269,29 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
    * version.  Once some version of OpenSSL does TLS1.1 and TLS1.2
    * renegotiation properly, we can turn them back on when built with
    * that version. */
+#if OPENSSL_VERSION_NUMBER < OPENSSL_V(1,0,1,'e')
 #ifdef SSL_OP_NO_TLSv1_2
   SSL_CTX_set_options(result->ctx, SSL_OP_NO_TLSv1_2);
 #endif
 #ifdef SSL_OP_NO_TLSv1_1
   SSL_CTX_set_options(result->ctx, SSL_OP_NO_TLSv1_1);
 #endif
+#endif
+
   /* Disable TLS tickets if they're supported.  We never want to use them;
    * using them can make our perfect forward secrecy a little worse, *and*
    * create an opportunity to fingerprint us (since it's unusual to use them
    * with TLS sessions turned off).
+   *
+   * In 0.2.4, clients advertise support for them though, to avoid a TLS
+   * distinguishability vector.  This can give us worse PFS, though, if we
+   * get a server that doesn't set SSL_OP_NO_TICKET.  With luck, there will
+   * be few such servers by the time 0.2.4 is more stable.
    */
 #ifdef SSL_OP_NO_TICKET
-  SSL_CTX_set_options(result->ctx, SSL_OP_NO_TICKET);
+  if (! is_client) {
+    SSL_CTX_set_options(result->ctx, SSL_OP_NO_TICKET);
+  }
 #endif
 
   if (
@@ -1222,6 +1312,7 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
   }
 
   SSL_CTX_set_options(result->ctx, SSL_OP_SINGLE_DH_USE);
+  SSL_CTX_set_options(result->ctx, SSL_OP_SINGLE_ECDH_USE);
 
 #ifdef SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION
   SSL_CTX_set_options(result->ctx,
@@ -1257,7 +1348,7 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
   SSL_CTX_set_session_cache_mode(result->ctx, SSL_SESS_CACHE_OFF);
   if (!is_client) {
     tor_assert(rsa);
-    if (!(pkey = _crypto_pk_get_evp_pkey(rsa,1)))
+    if (!(pkey = crypto_pk_get_evp_pkey_(rsa,1)))
       goto error;
     if (!SSL_CTX_use_PrivateKey(result->ctx, pkey))
       goto error;
@@ -1269,9 +1360,29 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
   {
     crypto_dh_t *dh = crypto_dh_new(DH_TYPE_TLS);
     tor_assert(dh);
-    SSL_CTX_set_tmp_dh(result->ctx, _crypto_dh_get_dh(dh));
+    SSL_CTX_set_tmp_dh(result->ctx, crypto_dh_get_dh_(dh));
     crypto_dh_free(dh);
   }
+#if (!defined(OPENSSL_NO_EC) &&                         \
+     OPENSSL_VERSION_NUMBER >= OPENSSL_V_SERIES(1,0,0))
+  if (! is_client) {
+    int nid;
+    EC_KEY *ec_key;
+    if (flags & TOR_TLS_CTX_USE_ECDHE_P224)
+      nid = NID_secp224r1;
+    else if (flags & TOR_TLS_CTX_USE_ECDHE_P256)
+      nid = NID_X9_62_prime256v1;
+    else
+      nid = NID_X9_62_prime256v1;
+    /* Use P-256 for ECDHE. */
+    ec_key = EC_KEY_new_by_curve_name(nid);
+    if (ec_key != NULL) /*XXXX Handle errors? */
+      SSL_CTX_set_tmp_ecdh(result->ctx, ec_key);
+    EC_KEY_free(ec_key);
+  }
+#else
+  (void)flags;
+#endif
   SSL_CTX_set_verify(result->ctx, SSL_VERIFY_PEER,
                      always_accept_verify_cb);
   /* let us realloc bufs that we're writing from */
@@ -1308,28 +1419,108 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
 }
 
 #ifdef V2_HANDSHAKE_SERVER
-/** Return true iff the cipher list suggested by the client for <b>ssl</b> is
- * a list that indicates that the client knows how to do the v2 TLS connection
- * handshake. */
-static int
-tor_tls_client_is_using_v2_ciphers(const SSL *ssl, const char *address)
+
+/* Here's the old V2 cipher list we sent from 0.2.1.1-alpha up to
+ * 0.2.3.17-beta. If a client is using this list, we can't believe the ciphers
+ * that it claims to support.  We'll prune this list to remove the ciphers
+ * *we* don't recognize. */
+static uint16_t v2_cipher_list[] = {
+  0xc00a, /* TLS1_TXT_ECDHE_ECDSA_WITH_AES_256_CBC_SHA */
+  0xc014, /* TLS1_TXT_ECDHE_RSA_WITH_AES_256_CBC_SHA */
+  0x0039, /* TLS1_TXT_DHE_RSA_WITH_AES_256_SHA */
+  0x0038, /* TLS1_TXT_DHE_DSS_WITH_AES_256_SHA */
+  0xc00f, /* TLS1_TXT_ECDH_RSA_WITH_AES_256_CBC_SHA */
+  0xc005, /* TLS1_TXT_ECDH_ECDSA_WITH_AES_256_CBC_SHA */
+  0x0035, /* TLS1_TXT_RSA_WITH_AES_256_SHA */
+  0xc007, /* TLS1_TXT_ECDHE_ECDSA_WITH_RC4_128_SHA */
+  0xc009, /* TLS1_TXT_ECDHE_ECDSA_WITH_AES_128_CBC_SHA */
+  0xc011, /* TLS1_TXT_ECDHE_RSA_WITH_RC4_128_SHA */
+  0xc013, /* TLS1_TXT_ECDHE_RSA_WITH_AES_128_CBC_SHA */
+  0x0033, /* TLS1_TXT_DHE_RSA_WITH_AES_128_SHA */
+  0x0032, /* TLS1_TXT_DHE_DSS_WITH_AES_128_SHA */
+  0xc00c, /* TLS1_TXT_ECDH_RSA_WITH_RC4_128_SHA */
+  0xc00e, /* TLS1_TXT_ECDH_RSA_WITH_AES_128_CBC_SHA */
+  0xc002, /* TLS1_TXT_ECDH_ECDSA_WITH_RC4_128_SHA */
+  0xc004, /* TLS1_TXT_ECDH_ECDSA_WITH_AES_128_CBC_SHA */
+  0x0004, /* SSL3_TXT_RSA_RC4_128_MD5 */
+  0x0005, /* SSL3_TXT_RSA_RC4_128_SHA */
+  0x002f, /* TLS1_TXT_RSA_WITH_AES_128_SHA */
+  0xc008, /* TLS1_TXT_ECDHE_ECDSA_WITH_DES_192_CBC3_SHA */
+  0xc012, /* TLS1_TXT_ECDHE_RSA_WITH_DES_192_CBC3_SHA */
+  0x0016, /* SSL3_TXT_EDH_RSA_DES_192_CBC3_SHA */
+  0x0013, /* SSL3_TXT_EDH_DSS_DES_192_CBC3_SHA */
+  0xc00d, /* TLS1_TXT_ECDH_RSA_WITH_DES_192_CBC3_SHA */
+  0xc003, /* TLS1_TXT_ECDH_ECDSA_WITH_DES_192_CBC3_SHA */
+  0xfeff, /* SSL3_TXT_RSA_FIPS_WITH_3DES_EDE_CBC_SHA */
+  0x000a, /* SSL3_TXT_RSA_DES_192_CBC3_SHA */
+  0
+};
+/** Have we removed the unrecognized ciphers from v2_cipher_list yet? */
+static int v2_cipher_list_pruned = 0;
+
+/** Remove from v2_cipher_list every cipher that we don't support, so that
+ * comparing v2_cipher_list to a client's cipher list will give a sensible
+ * result. */
+static void
+prune_v2_cipher_list(void)
 {
-  int i;
-  SSL_SESSION *session;
+  uint16_t *inp, *outp;
+  const SSL_METHOD *m = SSLv23_method();
+
+  inp = outp = v2_cipher_list;
+  while (*inp) {
+    unsigned char cipherid[2];
+    const SSL_CIPHER *cipher;
+    /* Is there no better way to do this? */
+    set_uint16(cipherid, htons(*inp));
+    cipher = m->get_cipher_by_char(cipherid);
+    if (cipher) {
+      tor_assert((cipher->id & 0xffff) == *inp);
+      *outp++ = *inp++;
+    } else {
+      inp++;
+    }
+  }
+  *outp = 0;
+
+  v2_cipher_list_pruned = 1;
+}
+
+/* Return the name of the negotiated ciphersuite in use on <b>tls</b> */
+const char *
+tor_tls_get_ciphersuite_name(tor_tls_t *tls)
+{
+  return SSL_get_cipher(tls->ssl);
+}
+
+/** Examine the client cipher list in <b>ssl</b>, and determine what kind of
+ * client it is.  Return one of CIPHERS_ERR, CIPHERS_V1, CIPHERS_V2,
+ * CIPHERS_UNRESTRICTED.
+ **/
+static int
+tor_tls_classify_client_ciphers(const SSL *ssl,
+                                STACK_OF(SSL_CIPHER) *peer_ciphers)
+{
+  int i, res;
+  tor_tls_t *tor_tls;
+  if (PREDICT_UNLIKELY(!v2_cipher_list_pruned))
+    prune_v2_cipher_list();
+
+  tor_tls = tor_tls_get_by_ssl(ssl);
+  if (tor_tls && tor_tls->client_cipher_list_type)
+    return tor_tls->client_cipher_list_type;
+
   /* If we reached this point, we just got a client hello.  See if there is
    * a cipher list. */
-  if (!(session = SSL_get_session((SSL *)ssl))) {
-    log_info(LD_NET, "No session on TLS?");
-    return 0;
-  }
-  if (!session->ciphers) {
+  if (!peer_ciphers) {
     log_info(LD_NET, "No ciphers on session");
-    return 0;
+    res = CIPHERS_ERR;
+    goto done;
   }
   /* Now we need to see if there are any ciphers whose presence means we're
    * dealing with an updated Tor. */
-  for (i = 0; i < sk_SSL_CIPHER_num(session->ciphers); ++i) {
-    SSL_CIPHER *cipher = sk_SSL_CIPHER_value(session->ciphers, i);
+  for (i = 0; i < sk_SSL_CIPHER_num(peer_ciphers); ++i) {
+    SSL_CIPHER *cipher = sk_SSL_CIPHER_value(peer_ciphers, i);
     const char *ciphername = SSL_CIPHER_get_name(cipher);
     if (strcmp(ciphername, TLS1_TXT_DHE_RSA_WITH_AES_128_SHA) &&
         strcmp(ciphername, TLS1_TXT_DHE_RSA_WITH_AES_256_SHA) &&
@@ -1337,27 +1528,110 @@ tor_tls_client_is_using_v2_ciphers(const SSL *ssl, const char *address)
         strcmp(ciphername, "(NONE)")) {
       log_debug(LD_NET, "Got a non-version-1 cipher called '%s'", ciphername);
       // return 1;
-      goto dump_list;
+      goto v2_or_higher;
     }
   }
-  return 0;
- dump_list:
+  res = CIPHERS_V1;
+  goto done;
+ v2_or_higher:
+  {
+    const uint16_t *v2_cipher = v2_cipher_list;
+    for (i = 0; i < sk_SSL_CIPHER_num(peer_ciphers); ++i) {
+      SSL_CIPHER *cipher = sk_SSL_CIPHER_value(peer_ciphers, i);
+      uint16_t id = cipher->id & 0xffff;
+      if (id == 0x00ff) /* extended renegotiation indicator. */
+        continue;
+      if (!id || id != *v2_cipher) {
+        res = CIPHERS_UNRESTRICTED;
+        goto dump_ciphers;
+      }
+      ++v2_cipher;
+    }
+    if (*v2_cipher != 0) {
+      res = CIPHERS_UNRESTRICTED;
+      goto dump_ciphers;
+    }
+    res = CIPHERS_V2;
+  }
+
+ dump_ciphers:
   {
     smartlist_t *elts = smartlist_new();
     char *s;
-    for (i = 0; i < sk_SSL_CIPHER_num(session->ciphers); ++i) {
-      SSL_CIPHER *cipher = sk_SSL_CIPHER_value(session->ciphers, i);
+    for (i = 0; i < sk_SSL_CIPHER_num(peer_ciphers); ++i) {
+      SSL_CIPHER *cipher = sk_SSL_CIPHER_value(peer_ciphers, i);
       const char *ciphername = SSL_CIPHER_get_name(cipher);
       smartlist_add(elts, (char*)ciphername);
     }
     s = smartlist_join_strings(elts, ":", 0, NULL);
-    log_debug(LD_NET, "Got a non-version-1 cipher list from %s.  It is: '%s'",
-              address, s);
+    log_debug(LD_NET, "Got a %s V2/V3 cipher list from %s.  It is: '%s'",
+              (res == CIPHERS_V2) ? "fictitious" : "real", ADDR(tor_tls), s);
     tor_free(s);
     smartlist_free(elts);
   }
-  return 1;
+ done:
+  if (tor_tls)
+    return tor_tls->client_cipher_list_type = res;
+
+  return res;
 }
+
+/** Return true iff the cipher list suggested by the client for <b>ssl</b> is
+ * a list that indicates that the client knows how to do the v2 TLS connection
+ * handshake. */
+static int
+tor_tls_client_is_using_v2_ciphers(const SSL *ssl)
+{
+  SSL_SESSION *session;
+  if (!(session = SSL_get_session((SSL *)ssl))) {
+    log_info(LD_NET, "No session on TLS?");
+    return CIPHERS_ERR;
+  }
+
+  return tor_tls_classify_client_ciphers(ssl, session->ciphers) >= CIPHERS_V2;
+}
+
+#if OPENSSL_VERSION_NUMBER >= OPENSSL_V_SERIES(1,0,0)
+/** Callback to get invoked on a server after we've read the list of ciphers
+ * the client supports, but before we pick our own ciphersuite.
+ *
+ * We can't abuse an info_cb for this, since by the time one of the
+ * client_hello info_cbs is called, we've already picked which ciphersuite to
+ * use.
+ *
+ * Technically, this function is an abuse of this callback, since the point of
+ * a session_secret_cb is to try to set up and/or verify a shared-secret for
+ * authentication on the fly.  But as long as we return 0, we won't actually be
+ * setting up a shared secret, and all will be fine.
+ */
+static int
+tor_tls_session_secret_cb(SSL *ssl, void *secret, int *secret_len,
+                          STACK_OF(SSL_CIPHER) *peer_ciphers,
+                          SSL_CIPHER **cipher, void *arg)
+{
+  (void) secret;
+  (void) secret_len;
+  (void) peer_ciphers;
+  (void) cipher;
+  (void) arg;
+
+  if (tor_tls_classify_client_ciphers(ssl, peer_ciphers) ==
+       CIPHERS_UNRESTRICTED) {
+    SSL_set_cipher_list(ssl, UNRESTRICTED_SERVER_CIPHER_LIST);
+  }
+
+  SSL_set_session_secret_cb(ssl, NULL, NULL);
+
+  return 0;
+}
+static void
+tor_tls_setup_session_secret_cb(tor_tls_t *tls)
+{
+  SSL_set_session_secret_cb(tls->ssl, tor_tls_session_secret_cb, NULL);
+}
+#else
+#define tor_tls_setup_session_secret_cb(tls) STMT_NIL
+#endif
 
 /** Invoked when a TLS state changes: log the change at severity 'debug' */
 static void
@@ -1400,7 +1674,7 @@ tor_tls_server_info_callback(const SSL *ssl, int type, int val)
   }
 
   /* Now check the cipher list. */
-  if (tor_tls_client_is_using_v2_ciphers(ssl, ADDR(tls))) {
+  if (tor_tls_client_is_using_v2_ciphers(ssl)) {
     if (tls->wasV2Handshake)
       return; /* We already turned this stuff off for the first handshake;
                * This is a renegotiation. */
@@ -1625,6 +1899,9 @@ tor_tls_new(int sock, int isServer)
     SSL_set_info_callback(result->ssl, tor_tls_debug_state_callback);
   }
 
+  if (isServer)
+    tor_tls_setup_session_secret_cb(result);
+
   /* Not expected to get called. */
   tls_log_errors(NULL, LOG_WARN, LD_NET, "creating tor_tls_t object");
   return result;
@@ -1721,6 +1998,10 @@ tor_tls_free(tor_tls_t *tls)
   if (!tls)
     return;
   tor_assert(tls->ssl);
+  {
+    size_t r,w;
+    tor_tls_get_n_raw_bytes(tls,&r,&w); /* ensure written_by_tls is updated */
+  }
 #ifdef SSL_set_tlsext_host_name
   SSL_set_tlsext_host_name(tls->ssl, NULL);
 #endif
@@ -1761,7 +2042,7 @@ tor_tls_read(tor_tls_t *tls, char *cp, size_t len)
     return r;
   }
   err = tor_tls_get_error(tls, r, CATCH_ZERO, "reading", LOG_DEBUG, LD_NET);
-  if (err == _TOR_TLS_ZERORETURN || err == TOR_TLS_CLOSE) {
+  if (err == TOR_TLS_ZERORETURN_ || err == TOR_TLS_CLOSE) {
     log_debug(LD_NET,"read returned r=%d; TLS is closed",r);
     tls->state = TOR_TLS_ST_CLOSED;
     return TOR_TLS_CLOSE;
@@ -1771,6 +2052,13 @@ tor_tls_read(tor_tls_t *tls, char *cp, size_t len)
     return err;
   }
 }
+
+/** Total number of bytes that we've used TLS to send.  Used to track TLS
+ * overhead. */
+static uint64_t total_bytes_written_over_tls = 0;
+/** Total number of bytes that TLS has put on the network for us. Used to
+ * track TLS overhead. */
+static uint64_t total_bytes_written_by_tls = 0;
 
 /** Underlying function for TLS writing.  Write up to <b>n</b>
  * characters from <b>cp</b> onto <b>tls</b>.  On success, returns the
@@ -1798,6 +2086,7 @@ tor_tls_write(tor_tls_t *tls, const char *cp, size_t n)
   r = SSL_write(tls->ssl, cp, (int)n);
   err = tor_tls_get_error(tls, r, 0, "writing", LOG_INFO, LD_NET);
   if (err == TOR_TLS_DONE) {
+    total_bytes_written_over_tls += r;
     return r;
   }
   if (err == TOR_TLS_WANTWRITE || err == TOR_TLS_WANTREAD) {
@@ -1866,7 +2155,7 @@ tor_tls_finish_handshake(tor_tls_t *tls)
     /* There doesn't seem to be a clear OpenSSL API to clear mode flags. */
     tls->ssl->mode &= ~SSL_MODE_NO_AUTO_CHAIN;
 #ifdef V2_HANDSHAKE_SERVER
-    if (tor_tls_client_is_using_v2_ciphers(tls->ssl, ADDR(tls))) {
+    if (tor_tls_client_is_using_v2_ciphers(tls->ssl)) {
       /* This check is redundant, but back when we did it in the callback,
        * we might have not been able to look up the tor_tls_t if the code
        * was buggy.  Fixing that. */
@@ -1974,7 +2263,7 @@ tor_tls_shutdown(tor_tls_t *tls)
       } while (r>0);
       err = tor_tls_get_error(tls, r, CATCH_ZERO, "reading to shut down",
                               LOG_INFO, LD_NET);
-      if (err == _TOR_TLS_ZERORETURN) {
+      if (err == TOR_TLS_ZERORETURN_) {
         tls->state = TOR_TLS_ST_GOTCLOSE;
         /* fall through... */
       } else {
@@ -1990,11 +2279,11 @@ tor_tls_shutdown(tor_tls_t *tls)
     }
     err = tor_tls_get_error(tls, r, CATCH_SYSCALL|CATCH_ZERO, "shutting down",
                             LOG_INFO, LD_NET);
-    if (err == _TOR_TLS_SYSCALL) {
+    if (err == TOR_TLS_SYSCALL_) {
       /* The underlying TCP connection closed while we were shutting down. */
       tls->state = TOR_TLS_ST_CLOSED;
       return TOR_TLS_DONE;
-    } else if (err == _TOR_TLS_ZERORETURN) {
+    } else if (err == TOR_TLS_ZERORETURN_) {
       /* The TLS connection says that it sent a shutdown record, but
        * isn't done shutting down yet.  Make sure that this hasn't
        * happened before, then go back to the start of the function
@@ -2002,7 +2291,7 @@ tor_tls_shutdown(tor_tls_t *tls)
        */
       if (tls->state == TOR_TLS_ST_GOTCLOSE ||
          tls->state == TOR_TLS_ST_SENTCLOSE) {
-        log(LOG_WARN, LD_NET,
+        log_warn(LD_NET,
             "TLS returned \"half-closed\" value while already half-closed");
         return TOR_TLS_ERROR_MISC;
       }
@@ -2052,7 +2341,7 @@ log_cert_lifetime(int severity, const X509 *cert, const char *problem)
   struct tm tm;
 
   if (problem)
-    log(severity, LD_GENERAL,
+    tor_log(severity, LD_GENERAL,
         "Certificate %s. Either their clock is set wrong, or your clock "
         "is wrong.",
            problem);
@@ -2075,9 +2364,9 @@ log_cert_lifetime(int severity, const X509 *cert, const char *problem)
   BIO_get_mem_ptr(bio, &buf);
   s2 = tor_strndup(buf->data, buf->length);
 
-  strftime(mytime, 32, "%b %d %H:%M:%S %Y GMT", tor_gmtime_r(&now, &tm));
+  strftime(mytime, 32, "%b %d %H:%M:%S %Y UTC", tor_gmtime_r(&now, &tm));
 
-  log(severity, LD_GENERAL,
+  tor_log(severity, LD_GENERAL,
       "(certificate lifetime runs from %s through %s. Your time is %s.)",
       s1,s2,mytime);
 
@@ -2164,7 +2453,7 @@ tor_tls_verify(int severity, tor_tls_t *tls, crypto_pk_t **identity_key)
   rsa = EVP_PKEY_get1_RSA(id_pkey);
   if (!rsa)
     goto done;
-  *identity_key = _crypto_new_pk_from_rsa(rsa);
+  *identity_key = crypto_new_pk_from_rsa_(rsa);
 
   r = 0;
 
@@ -2287,18 +2576,31 @@ tor_tls_get_n_raw_bytes(tor_tls_t *tls, size_t *n_read, size_t *n_written)
              "r=%lu, last_read=%lu, w=%lu, last_written=%lu",
              r, tls->last_read_count, w, tls->last_write_count);
   }
+  total_bytes_written_by_tls += *n_written;
   tls->last_read_count = r;
   tls->last_write_count = w;
+}
+
+/** Return a ratio of the bytes that TLS has sent to the bytes that we've told
+ * it to send. Used to track whether our TLS records are getting too tiny. */
+double
+tls_get_write_overhead_ratio(void)
+{
+  if (total_bytes_written_over_tls == 0)
+    return 1.0;
+
+  return U64_TO_DBL(total_bytes_written_by_tls) /
+    U64_TO_DBL(total_bytes_written_over_tls);
 }
 
 /** Implement check_no_tls_errors: If there are any pending OpenSSL
  * errors, log an error message. */
 void
-_check_no_tls_errors(const char *fname, int line)
+check_no_tls_errors_(const char *fname, int line)
 {
   if (ERR_peek_error() == 0)
     return;
-  log(LOG_WARN, LD_CRYPTO, "Unhandled OpenSSL errors found at %s:%d: ",
+  log_warn(LD_CRYPTO, "Unhandled OpenSSL errors found at %s:%d: ",
       tor_fix_source_file(fname), line);
   tls_log_errors(NULL, LOG_WARN, LD_NET, NULL);
 }

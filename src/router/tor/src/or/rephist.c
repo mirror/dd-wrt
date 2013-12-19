@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -160,7 +160,7 @@ get_link_history(const char *from_id, const char *to_id)
 
 /** Helper: free storage held by a single link history entry. */
 static void
-_free_link_history(void *val)
+free_link_history_(void *val)
 {
   rephist_total_alloc -= sizeof(link_history_t);
   tor_free(val);
@@ -171,7 +171,7 @@ static void
 free_or_history(void *_hist)
 {
   or_history_t *hist = _hist;
-  digestmap_free(hist->link_history_map, _free_link_history);
+  digestmap_free(hist->link_history_map, free_link_history_);
   rephist_total_alloc -= sizeof(or_history_t);
   rephist_total_num--;
   tor_free(hist);
@@ -310,9 +310,10 @@ rep_hist_note_router_reachable(const char *id, const tor_addr_t *at_addr,
   tor_assert(hist);
   tor_assert((!at_addr && !at_port) || (at_addr && at_port));
 
-  addr_changed = at_addr &&
+  addr_changed = at_addr && !tor_addr_is_null(&hist->last_reached_addr) &&
     tor_addr_compare(at_addr, &hist->last_reached_addr, CMP_EXACT) != 0;
-  port_changed = at_port && at_port != hist->last_reached_port;
+  port_changed = at_port && hist->last_reached_port &&
+                 at_port != hist->last_reached_port;
 
   if (!started_tracking_stability)
     started_tracking_stability = time(NULL);
@@ -420,6 +421,21 @@ rep_hist_note_router_unreachable(const char *id, time_t when)
                "non-Running since %s.", hex_str(id, DIGEST_LEN), tbuf);
     }
   }
+}
+
+/** Mark a router with ID <b>id</b> as non-Running, and retroactively declare
+ * that it has never been running: give it no stability and no WFU. */
+void
+rep_hist_make_router_pessimal(const char *id, time_t when)
+{
+  or_history_t *hist = get_or_history(id);
+  tor_assert(hist);
+
+  rep_hist_note_router_unreachable(id, when);
+  mark_or_down(hist, when, 1);
+
+  hist->weighted_run_length = 0;
+  hist->weighted_uptime = 0;
 }
 
 /** Helper: Discount all old MTBF data, if it is time to do so.  Return
@@ -648,7 +664,7 @@ rep_hist_dump_stats(time_t now, int severity)
 
   rep_history_clean(now - get_options()->RephistTrackTime);
 
-  log(severity, LD_HIST, "--------------- Dumping history information:");
+  tor_log(severity, LD_HIST, "--------------- Dumping history information:");
 
   for (orhist_it = digestmap_iter_init(history_map);
        !digestmap_iter_done(orhist_it);
@@ -673,7 +689,7 @@ rep_hist_dump_stats(time_t now, int severity)
     } else {
       uptime=1.0;
     }
-    log(severity, LD_HIST,
+    tor_log(severity, LD_HIST,
         "OR %s [%s]: %ld/%ld good connections; uptime %ld/%ld sec (%.2f%%); "
         "wmtbf %lu:%02lu:%02lu",
         name1, hexdigest1,
@@ -707,7 +723,7 @@ rep_hist_dump_stats(time_t now, int severity)
         else
           len += ret;
       }
-      log(severity, LD_HIST, "%s", buffer);
+      tor_log(severity, LD_HIST, "%s", buffer);
     }
   }
 }
@@ -1136,7 +1152,7 @@ rep_hist_load_mtbf_data(time_t now)
     wfu_timebuf[0] = '\0';
 
     if (format == 1) {
-      n = sscanf(line, "%40s %ld %lf S=%10s %8s",
+      n = tor_sscanf(line, "%40s %ld %lf S=%10s %8s",
                  hexbuf, &wrl, &trw, mtbf_timebuf, mtbf_timebuf+11);
       if (n != 3 && n != 5) {
         log_warn(LD_HIST, "Couldn't scan line %s", escaped(line));
@@ -1153,7 +1169,7 @@ rep_hist_load_mtbf_data(time_t now)
       wfu_idx = find_next_with(lines, i+1, "+WFU ");
       if (mtbf_idx >= 0) {
         const char *mtbfline = smartlist_get(lines, mtbf_idx);
-        n = sscanf(mtbfline, "+MTBF %lu %lf S=%10s %8s",
+        n = tor_sscanf(mtbfline, "+MTBF %lu %lf S=%10s %8s",
                    &wrl, &trw, mtbf_timebuf, mtbf_timebuf+11);
         if (n == 2 || n == 4) {
           have_mtbf = 1;
@@ -1164,7 +1180,7 @@ rep_hist_load_mtbf_data(time_t now)
       }
       if (wfu_idx >= 0) {
         const char *wfuline = smartlist_get(lines, wfu_idx);
-        n = sscanf(wfuline, "+WFU %lu %lu S=%10s %8s",
+        n = tor_sscanf(wfuline, "+WFU %lu %lu S=%10s %8s",
                    &wt_uptime, &total_wt_time,
                    wfu_timebuf, wfu_timebuf+11);
         if (n == 2 || n == 4) {
@@ -1531,10 +1547,10 @@ rep_hist_get_bandwidth_lines(void)
   const char *desc = NULL;
   size_t len;
 
-  /* opt [dirreq-](read|write)-history yyyy-mm-dd HH:MM:SS (n s) n,n,n... */
+  /* [dirreq-](read|write)-history yyyy-mm-dd HH:MM:SS (n s) n,n,n... */
 /* The n,n,n part above. Largest representation of a uint64_t is 20 chars
  * long, plus the comma. */
-#define MAX_HIST_VALUE_LEN 21*NUM_TOTALS
+#define MAX_HIST_VALUE_LEN (21*NUM_TOTALS)
   len = (67+MAX_HIST_VALUE_LEN)*4;
   buf = tor_malloc_zero(len);
   cp = buf;
@@ -2042,7 +2058,7 @@ note_crypto_pk_op(pk_op_t operation)
 void
 dump_pk_ops(int severity)
 {
-  log(severity, LD_HIST,
+  tor_log(severity, LD_HIST,
       "PK operations: %lu directory objects signed, "
       "%lu directory objects verified, "
       "%lu routerdescs signed, "
@@ -2131,7 +2147,7 @@ rep_hist_exit_stats_term(void)
  * but works fine for sorting an array of port numbers, which is what we use
  * it for. */
 static int
-_compare_int(const void *x, const void *y)
+compare_int_(const void *x, const void *y)
 {
   return (*(int*)x - *(int*)y);
 }
@@ -2218,7 +2234,7 @@ rep_hist_format_exit_stats(time_t now)
   other_streams = total_streams;
   /* Sort the ports; this puts them out of sync with top_bytes, but we
    * won't be using top_bytes again anyway */
-  qsort(top_ports, top_elements, sizeof(int), _compare_int);
+  qsort(top_ports, top_elements, sizeof(int), compare_int_);
   for (j = 0; j < top_elements; j++) {
     cur_port = top_ports[j];
     if (exit_bytes_written[cur_port] > 0) {
@@ -2440,7 +2456,7 @@ rep_hist_buffer_stats_add_circ(circuit_t *circ, time_t end_of_interval)
 /** Sorting helper: return -1, 1, or 0 based on comparison of two
  * circ_buffer_stats_t */
 static int
-_buffer_stats_compare_entries(const void **_a, const void **_b)
+buffer_stats_compare_entries_(const void **_a, const void **_b)
 {
   const circ_buffer_stats_t *a = *_a, *b = *_b;
   if (a->processed_cells < b->processed_cells)
@@ -2505,7 +2521,7 @@ rep_hist_format_buffer_stats(time_t now)
   number_of_circuits = smartlist_len(circuits_for_buffer_stats);
   if (number_of_circuits > 0) {
     smartlist_sort(circuits_for_buffer_stats,
-                   _buffer_stats_compare_entries);
+                   buffer_stats_compare_entries_);
     i = 0;
     SMARTLIST_FOREACH_BEGIN(circuits_for_buffer_stats,
                             circ_buffer_stats_t *, stat)
@@ -2590,7 +2606,7 @@ rep_hist_buffer_stats_write(time_t now)
     goto done; /* Not ready to write */
 
   /* Add open circuits to the history. */
-  for (circ = _circuit_get_global_list(); circ; circ = circ->next) {
+  for (circ = circuit_get_global_list_(); circ; circ = circ->next) {
     rep_hist_buffer_stats_add_circ(circ, now);
   }
 
@@ -2995,6 +3011,47 @@ rep_hist_conn_stats_write(time_t now)
   return start_of_conn_stats_interval + WRITE_STATS_INTERVAL;
 }
 
+/** Internal statistics to track how many requests of each type of
+ * handshake we've received, and how many we've completed. Useful for
+ * seeing trends in cpu load.
+ * @{ */
+static int onion_handshakes_requested[MAX_ONION_HANDSHAKE_TYPE+1] = {0};
+static int onion_handshakes_completed[MAX_ONION_HANDSHAKE_TYPE+1] = {0};
+/**@}*/
+
+/** A new onionskin (using the <b>type</b> handshake) has arrived. */
+void
+rep_hist_note_circuit_handshake_requested(uint16_t type)
+{
+  if (type <= MAX_ONION_HANDSHAKE_TYPE)
+    onion_handshakes_requested[type]++;
+}
+
+/** We've sent an onionskin (using the <b>type</b> handshake) to a
+ * cpuworker. */
+void
+rep_hist_note_circuit_handshake_completed(uint16_t type)
+{
+  if (type <= MAX_ONION_HANDSHAKE_TYPE)
+    onion_handshakes_completed[type]++;
+}
+
+/** Log our onionskin statistics since the last time we were called. */
+void
+rep_hist_log_circuit_handshake_stats(time_t now)
+{
+  (void)now;
+  /* XXX024 maybe quiet this log message before 0.2.4 goes stable for real */
+  log_notice(LD_HIST, "Circuit handshake stats since last time: "
+             "%d/%d TAP, %d/%d NTor.",
+             onion_handshakes_completed[ONION_HANDSHAKE_TYPE_TAP],
+             onion_handshakes_requested[ONION_HANDSHAKE_TYPE_TAP],
+             onion_handshakes_completed[ONION_HANDSHAKE_TYPE_NTOR],
+             onion_handshakes_requested[ONION_HANDSHAKE_TYPE_NTOR]);
+  memset(onion_handshakes_completed, 0, sizeof(onion_handshakes_completed));
+  memset(onion_handshakes_requested, 0, sizeof(onion_handshakes_requested));
+}
+
 /** Free all storage held by the OR/link history caches, by the
  * bandwidth history arrays, by the port history, or by statistics . */
 void
@@ -3003,6 +3060,8 @@ rep_hist_free_all(void)
   digestmap_free(history_map, free_or_history);
   tor_free(read_array);
   tor_free(write_array);
+  tor_free(dir_read_array);
+  tor_free(dir_write_array);
   tor_free(last_stability_doc);
   tor_free(exit_bytes_read);
   tor_free(exit_bytes_written);

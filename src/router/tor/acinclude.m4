@@ -1,8 +1,8 @@
-dnl Helper macros for Tor configure.in
+dnl Helper macros for Tor configure.ac
 dnl Copyright (c) 2001-2004, Roger Dingledine
 dnl Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson
 dnl Copyright (c) 2007-2008, Roger Dingledine, Nick Mathewson
-dnl Copyright (c) 2007-2012, The Tor Project, Inc.
+dnl Copyright (c) 2007-2013, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_DEFUN([TOR_EXTEND_CODEPATH],
