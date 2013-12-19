@@ -1,7 +1,7 @@
 /* Copyright (c) 2001, Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -10,8 +10,8 @@
  * \brief Headers for crypto.c
  **/
 
-#ifndef _TOR_CRYPTO_H
-#define _TOR_CRYPTO_H
+#ifndef TOR_CRYPTO_H
+#define TOR_CRYPTO_H
 
 #include <stdio.h>
 #include "torint.h"
@@ -51,7 +51,7 @@
 /** Length of the output of our message digest. */
 #define DIGEST_LEN 20
 /** Length of the output of our second (improved) message digests.  (For now
- * this is just sha256, but any it can be any other 256-byte digest). */
+ * this is just sha256, but it could be any other 256-bit digest.) */
 #define DIGEST256_LEN 32
 /** Length of our symmetric cipher's keys. */
 #define CIPHER_KEY_LEN 16
@@ -111,6 +111,7 @@ typedef struct crypto_digest_t crypto_digest_t;
 typedef struct crypto_dh_t crypto_dh_t;
 
 /* global state */
+const char * crypto_openssl_get_version_str(void);
 int crypto_global_init(int hardwareAccel,
                        const char *accelName,
                        const char *accelPath);
@@ -147,6 +148,7 @@ int crypto_pk_write_private_key_to_filename(crypto_pk_t *env,
 
 int crypto_pk_check_key(crypto_pk_t *env);
 int crypto_pk_cmp_keys(crypto_pk_t *a, crypto_pk_t *b);
+int crypto_pk_eq_keys(crypto_pk_t *a, crypto_pk_t *b);
 size_t crypto_pk_keysize(crypto_pk_t *env);
 int crypto_pk_num_bits(crypto_pk_t *env);
 crypto_pk_t *crypto_pk_dup_key(crypto_pk_t *orig);
@@ -181,7 +183,6 @@ crypto_pk_t *crypto_pk_asn1_decode(const char *str, size_t len);
 int crypto_pk_get_digest(crypto_pk_t *pk, char *digest_out);
 int crypto_pk_get_all_digests(crypto_pk_t *pk, digests_t *digests_out);
 int crypto_pk_get_fingerprint(crypto_pk_t *pk, char *fp_out,int add_space);
-int crypto_pk_check_fingerprint_syntax(const char *s);
 
 /* symmetric crypto */
 const char *crypto_cipher_get_key(crypto_cipher_t *env);
@@ -204,6 +205,10 @@ int crypto_digest(char *digest, const char *m, size_t len);
 int crypto_digest256(char *digest, const char *m, size_t len,
                      digest_algorithm_t algorithm);
 int crypto_digest_all(digests_t *ds_out, const char *m, size_t len);
+struct smartlist_t;
+void crypto_digest_smartlist(char *digest_out, size_t len_out,
+                             const struct smartlist_t *lst, const char *append,
+                             digest_algorithm_t alg);
 const char *crypto_digest_algorithm_get_name(digest_algorithm_t alg);
 int crypto_digest_algorithm_parse_name(const char *name);
 crypto_digest_t *crypto_digest_new(void);
@@ -228,6 +233,7 @@ void crypto_hmac_sha256(char *hmac_out,
 #define DH_TYPE_REND 2
 #define DH_TYPE_TLS 3
 crypto_dh_t *crypto_dh_new(int dh_type);
+crypto_dh_t *crypto_dh_dup(const crypto_dh_t *dh);
 int crypto_dh_get_bytes(crypto_dh_t *dh);
 int crypto_dh_generate_public(crypto_dh_t *dh);
 int crypto_dh_get_public(crypto_dh_t *dh, char *pubkey_out,
@@ -236,15 +242,25 @@ ssize_t crypto_dh_compute_secret(int severity, crypto_dh_t *dh,
                              const char *pubkey, size_t pubkey_len,
                              char *secret_out, size_t secret_out_len);
 void crypto_dh_free(crypto_dh_t *dh);
-int crypto_expand_key_material(const char *key_in, size_t in_len,
-                               char *key_out, size_t key_out_len);
+
+int crypto_expand_key_material_TAP(const uint8_t *key_in,
+                                   size_t key_in_len,
+                                   uint8_t *key_out, size_t key_out_len);
+int crypto_expand_key_material_rfc5869_sha256(
+                                    const uint8_t *key_in, size_t key_in_len,
+                                    const uint8_t *salt_in, size_t salt_in_len,
+                                    const uint8_t *info_in, size_t info_in_len,
+                                    uint8_t *key_out, size_t key_out_len);
 
 /* random numbers */
 int crypto_seed_rng(int startup);
 int crypto_rand(char *to, size_t n);
+int crypto_strongest_rand(uint8_t *out, size_t out_len);
 int crypto_rand_int(unsigned int max);
 uint64_t crypto_rand_uint64(uint64_t max);
 double crypto_rand_double(void);
+struct tor_weak_rng_t;
+void crypto_seed_weak_rng(struct tor_weak_rng_t *rng);
 
 char *crypto_random_hostname(int min_rand_len, int max_rand_len,
                              const char *prefix, const char *suffix);
@@ -255,7 +271,7 @@ void smartlist_shuffle(struct smartlist_t *sl);
 
 int base64_encode(char *dest, size_t destlen, const char *src, size_t srclen);
 int base64_decode(char *dest, size_t destlen, const char *src, size_t srclen);
-/** Characters that can appear (case-insensitively) in a base-32 encoding. */
+/** Characters that can appear (case-insensitively) in a base32 encoding. */
 #define BASE32_CHARS "abcdefghijklmnopqrstuvwxyz234567"
 void base32_encode(char *dest, size_t destlen, const char *src, size_t srclen);
 int base32_decode(char *dest, size_t destlen, const char *src, size_t srclen);
@@ -280,11 +296,11 @@ void memwipe(void *mem, uint8_t byte, size_t sz);
 struct rsa_st;
 struct evp_pkey_st;
 struct dh_st;
-struct rsa_st *_crypto_pk_get_rsa(crypto_pk_t *env);
-crypto_pk_t *_crypto_new_pk_from_rsa(struct rsa_st *rsa);
-struct evp_pkey_st *_crypto_pk_get_evp_pkey(crypto_pk_t *env,
+struct rsa_st *crypto_pk_get_rsa_(crypto_pk_t *env);
+crypto_pk_t *crypto_new_pk_from_rsa_(struct rsa_st *rsa);
+struct evp_pkey_st *crypto_pk_get_evp_pkey_(crypto_pk_t *env,
                                                 int private);
-struct dh_st *_crypto_dh_get_dh(crypto_dh_t *dh);
+struct dh_st *crypto_dh_get_dh_(crypto_dh_t *dh);
 /* Prototypes for private functions only used by crypto.c and test.c*/
 void add_spaces_to_fp(char *out, size_t outlen, const char *in);
 #endif

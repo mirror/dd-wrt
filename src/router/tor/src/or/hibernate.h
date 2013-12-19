@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for hibernate.c.
  **/
 
-#ifndef _TOR_HIBERNATE_H
-#define _TOR_HIBERNATE_H
+#ifndef TOR_HIBERNATE_H
+#define TOR_HIBERNATE_H
 
 int accounting_parse_options(const or_options_t *options, int validate_only);
 int accounting_is_enabled(const or_options_t *options);

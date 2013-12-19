@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -12,7 +12,10 @@
 
 #define MAIN_PRIVATE
 #include "or.h"
+#include "addressmap.h"
 #include "buffers.h"
+#include "channel.h"
+#include "channeltls.h"
 #include "circuitbuild.h"
 #include "circuitlist.h"
 #include "circuituse.h"
@@ -28,6 +31,7 @@
 #include "dirvote.h"
 #include "dns.h"
 #include "dnsserv.h"
+#include "entrynodes.h"
 #include "geoip.h"
 #include "hibernate.h"
 #include "main.h"
@@ -46,6 +50,7 @@
 #include "router.h"
 #include "routerlist.h"
 #include "routerparse.h"
+#include "statefile.h"
 #include "status.h"
 #ifdef USE_DMALLOC
 #include <dmalloc.h>
@@ -152,10 +157,6 @@ int can_complete_circuit=0;
 #define DESCRIPTOR_FAILURE_RESET_INTERVAL (60*60)
 /** How long do we let a directory connection stall before expiring it? */
 #define DIR_CONN_MAX_STALL (5*60)
-
-/** How long do we let OR connections handshake before we decide that
- * they are obsolete? */
-#define TLS_HANDSHAKE_TIMEOUT (60)
 
 /** Decides our behavior when no logs are configured/before any
  * logs have been configured.  For 0, we log notice to stdout as normal.
@@ -397,6 +398,18 @@ connection_unlink(connection_t *conn)
   if (conn->type == CONN_TYPE_OR) {
     if (!tor_digest_is_zero(TO_OR_CONN(conn)->identity_digest))
       connection_or_remove_from_identity_map(TO_OR_CONN(conn));
+    /* connection_unlink() can only get called if the connection
+     * was already on the closeable list, and it got there by
+     * connection_mark_for_close(), which was called from
+     * connection_or_close_normally() or
+     * connection_or_close_for_error(), so the channel should
+     * already be in CHANNEL_STATE_CLOSING, and then the
+     * connection_about_to_close_connection() goes to
+     * connection_or_about_to_close(), which calls channel_closed()
+     * to notify the channel_t layer, and closed the channel, so
+     * nothing more to do here to deal with the channel associated
+     * with an orconn.
+     */
   }
   connection_free(conn);
 }
@@ -405,7 +418,7 @@ connection_unlink(connection_t *conn)
 void
 add_connection_to_closeable_list(connection_t *conn)
 {
-  tor_assert(!smartlist_isin(closeable_connection_lst, conn));
+  tor_assert(!smartlist_contains(closeable_connection_lst, conn));
   tor_assert(conn->marked_for_close);
   assert_connection_ok(conn, time(NULL));
   smartlist_add(closeable_connection_lst, conn);
@@ -415,14 +428,14 @@ add_connection_to_closeable_list(connection_t *conn)
 int
 connection_is_on_closeable_list(connection_t *conn)
 {
-  return smartlist_isin(closeable_connection_lst, conn);
+  return smartlist_contains(closeable_connection_lst, conn);
 }
 
 /** Return true iff conn is in the current poll array. */
 int
 connection_in_array(connection_t *conn)
 {
-  return smartlist_isin(connection_array, conn);
+  return smartlist_contains(connection_array, conn);
 }
 
 /** Set <b>*array</b> to an array of all connections, and <b>*n</b>
@@ -649,7 +662,7 @@ connection_start_reading_from_linked_conn(connection_t *conn)
       tor_event_base_loopexit(tor_libevent_get_base(), &tv);
     }
   } else {
-    tor_assert(smartlist_isin(active_linked_connection_lst, conn));
+    tor_assert(smartlist_contains(active_linked_connection_lst, conn));
   }
 }
 
@@ -669,7 +682,7 @@ connection_stop_reading_from_linked_conn(connection_t *conn)
      * so let's leave it alone for now. */
     smartlist_remove(active_linked_connection_lst, conn);
   } else {
-    tor_assert(!smartlist_isin(active_linked_connection_lst, conn));
+    tor_assert(!smartlist_contains(active_linked_connection_lst, conn));
   }
 }
 
@@ -796,7 +809,8 @@ conn_close_if_marked(int i)
   }
 #endif
 
-  log_debug(LD_NET,"Cleaning up connection (fd %d).",conn->s);
+  log_debug(LD_NET,"Cleaning up connection (fd "TOR_SOCKET_T_FORMAT").",
+            conn->s);
 
   /* If the connection we are about to close was trying to connect to
   a proxy server and failed, the client won't be able to use that
@@ -953,8 +967,9 @@ directory_info_has_arrived(time_t now, int from_cache)
   const or_options_t *options = get_options();
 
   if (!router_have_minimum_dir_info()) {
-    int quiet = directory_too_idle_to_fetch_descriptors(options, now);
-    log(quiet ? LOG_INFO : LOG_NOTICE, LD_DIR,
+    int quiet = from_cache ||
+                directory_too_idle_to_fetch_descriptors(options, now);
+    tor_log(quiet ? LOG_INFO : LOG_NOTICE, LD_DIR,
         "I learned some more directory information, but not enough to "
         "build a circuit: %s", get_dir_info_status_string());
     update_all_descriptor_downloads(now);
@@ -1044,7 +1059,8 @@ run_connection_housekeeping(int i, time_t now)
   tor_assert(conn->outbuf);
 #endif
 
-  if (or_conn->is_bad_for_new_circs && !or_conn->n_circuits) {
+  if (channel_is_bad_for_new_circs(TLS_CHAN_TO_BASE(or_conn->chan)) &&
+      !connection_or_get_num_circuits(or_conn)) {
     /* It's bad for new circuits, and has no unmarked circuits on it:
      * mark it now. */
     log_info(LD_OR,
@@ -1054,28 +1070,29 @@ run_connection_housekeeping(int i, time_t now)
       connection_or_connect_failed(TO_OR_CONN(conn),
                                    END_OR_CONN_REASON_TIMEOUT,
                                    "Tor gave up on the connection");
-    connection_mark_and_flush(conn);
+    connection_or_close_normally(TO_OR_CONN(conn), 1);
   } else if (!connection_state_is_open(conn)) {
     if (past_keepalive) {
       /* We never managed to actually get this connection open and happy. */
       log_info(LD_OR,"Expiring non-open OR connection to fd %d (%s:%d).",
                (int)conn->s,conn->address, conn->port);
-      connection_mark_for_close(conn);
+      connection_or_close_normally(TO_OR_CONN(conn), 0);
     }
-  } else if (we_are_hibernating() && !or_conn->n_circuits &&
+  } else if (we_are_hibernating() &&
+             !connection_or_get_num_circuits(or_conn) &&
              !connection_get_outbuf_len(conn)) {
     /* We're hibernating, there's no circuits, and nothing to flush.*/
     log_info(LD_OR,"Expiring non-used OR connection to fd %d (%s:%d) "
              "[Hibernating or exiting].",
              (int)conn->s,conn->address, conn->port);
-    connection_mark_and_flush(conn);
-  } else if (!or_conn->n_circuits &&
+    connection_or_close_normally(TO_OR_CONN(conn), 1);
+  } else if (!connection_or_get_num_circuits(or_conn) &&
              now >= or_conn->timestamp_last_added_nonpadding +
                                          IDLE_OR_CONN_TIMEOUT) {
     log_info(LD_OR,"Expiring non-used OR connection to fd %d (%s:%d) "
              "[idle %d].", (int)conn->s,conn->address, conn->port,
              (int)(now - or_conn->timestamp_last_added_nonpadding));
-    connection_mark_for_close(conn);
+    connection_or_close_normally(TO_OR_CONN(conn), 0);
   } else if (
       now >= or_conn->timestamp_lastempty + options->KeepalivePeriod*10 &&
       now >= conn->timestamp_lastwritten + options->KeepalivePeriod*10) {
@@ -1085,7 +1102,7 @@ run_connection_housekeeping(int i, time_t now)
            (int)conn->s, conn->address, conn->port,
            (int)connection_get_outbuf_len(conn),
            (int)(now-conn->timestamp_lastwritten));
-    connection_mark_for_close(conn);
+    connection_or_close_normally(TO_OR_CONN(conn), 0);
   } else if (past_keepalive && !connection_get_outbuf_len(conn)) {
     /* send a padding cell */
     log_fn(LOG_DEBUG,LD_OR,"Sending keepalive to (%s:%d)",
@@ -1108,7 +1125,7 @@ signewnym_impl(time_t now)
     return;
   }
 
-  circuit_expire_all_dirty_circs();
+  circuit_mark_all_dirty_circs_as_unusable();
   addressmap_clear_transient();
   rend_client_purge_state();
   time_of_last_signewnym = now;
@@ -1136,7 +1153,6 @@ run_scheduled_events(time_t now)
   static time_t time_to_check_v3_certificate = 0;
   static time_t time_to_check_listeners = 0;
   static time_t time_to_check_descriptor = 0;
-  static time_t time_to_check_ipaddress = 0;
   static time_t time_to_shrink_memory = 0;
   static time_t time_to_try_getting_descriptors = 0;
   static time_t time_to_reset_descriptor_failures = 0;
@@ -1180,7 +1196,7 @@ run_scheduled_events(time_t now)
    * eventually. */
   if (signewnym_is_pending &&
       time_of_last_signewnym + MAX_SIGNEWNYM_RATE <= now) {
-    log(LOG_INFO, LD_CONTROL, "Honoring delayed NEWNYM request");
+    log_info(LD_CONTROL, "Honoring delayed NEWNYM request");
     signewnym_impl(now);
   }
 
@@ -1337,6 +1353,11 @@ run_scheduled_events(time_t now)
         next_time_to_write_stats_files = next_write;
     }
     time_to_write_stats_files = next_time_to_write_stats_files;
+
+    /* Also commandeer this opportunity to log how our circuit handshake
+     * stats have been doing. */
+    if (public_server_mode(options))
+      rep_hist_log_circuit_handshake_stats(now);
   }
 
   /* 1h. Check whether we should write bridge statistics to disk.
@@ -1382,11 +1403,10 @@ run_scheduled_events(time_t now)
   /** 2. Periodically, we consider force-uploading our descriptor
    * (if we've passed our internal checks). */
 
-/** How often do we check whether part of our router info has changed in a way
- * that would require an upload? */
+/** How often do we check whether part of our router info has changed in a
+ * way that would require an upload? That includes checking whether our IP
+ * address has changed. */
 #define CHECK_DESCRIPTOR_INTERVAL (60)
-/** How often do we (as a router) check whether our IP address has changed? */
-#define CHECK_IPADDRESS_INTERVAL (15*60)
 
   /* 2b. Once per minute, regenerate and upload the descriptor if the old
    * one is inaccurate. */
@@ -1394,10 +1414,7 @@ run_scheduled_events(time_t now)
     static int dirport_reachability_count = 0;
     time_to_check_descriptor = now + CHECK_DESCRIPTOR_INTERVAL;
     check_descriptor_bandwidth_changed(now);
-    if (time_to_check_ipaddress < now) {
-      time_to_check_ipaddress = now + CHECK_IPADDRESS_INTERVAL;
-      check_descriptor_ipaddress_changed(now);
-    }
+    check_descriptor_ipaddress_changed(now);
     mark_my_descriptor_dirty_if_too_old(now);
     consider_publishable_server(0);
     /* also, check religiously for reachability, if it's within the first
@@ -1519,6 +1536,10 @@ run_scheduled_events(time_t now)
    * flush it. */
   or_state_save(now);
 
+  /** 8c. Do channel cleanup just like for connections */
+  channel_run_cleanup();
+  channel_listener_run_cleanup();
+
   /** 9. and if we're a server, check whether our DNS is telling stories to
    * us. */
   if (!net_is_disabled() &&
@@ -1546,11 +1567,15 @@ run_scheduled_events(time_t now)
       options->PortForwarding &&
       is_server) {
 #define PORT_FORWARDING_CHECK_INTERVAL 5
-    /* XXXXX this should take a list of ports, not just two! */
-    tor_check_port_forwarding(options->PortForwardingHelper,
-                              get_primary_dir_port(),
-                              get_primary_or_port(),
-                              now);
+    smartlist_t *ports_to_forward = get_list_of_ports_to_forward();
+    if (ports_to_forward) {
+      tor_check_port_forwarding(options->PortForwardingHelper,
+                                ports_to_forward,
+                                now);
+
+      SMARTLIST_FOREACH(ports_to_forward, char *, cp, tor_free(cp));
+      smartlist_free(ports_to_forward);
+    }
     time_to_check_port_forwarding = now+PORT_FORWARDING_CHECK_INTERVAL;
   }
 
@@ -1561,7 +1586,8 @@ run_scheduled_events(time_t now)
   /** 12. write the heartbeat message */
   if (options->HeartbeatPeriod &&
       time_to_next_heartbeat <= now) {
-    log_heartbeat(now);
+    if (time_to_next_heartbeat) /* don't log the first heartbeat */
+      log_heartbeat(now);
     time_to_next_heartbeat = now+options->HeartbeatPeriod;
   }
 }
@@ -1823,7 +1849,7 @@ do_hup(void)
   /* Rotate away from the old dirty circuits. This has to be done
    * after we've read the new options, but before we start using
    * circuits for directory fetches. */
-  circuit_expire_all_dirty_circs();
+  circuit_mark_all_dirty_circs_as_unusable();
 
   /* retry appropriate downloads */
   router_reset_status_download_failures();
@@ -1860,6 +1886,13 @@ do_main_loop(void)
               "retry instead, set the ServerDNSAllowBrokenResolvConf option.");
     }
   }
+
+#ifdef USE_BUFFEREVENTS
+  log_warn(LD_GENERAL, "Tor was compiled with the --enable-bufferevents "
+           "option. This is still experimental, and might cause strange "
+           "bugs. If you want a more stable Tor, be sure to build without "
+           "--enable-bufferevents.");
+#endif
 
   handle_signals(1);
 
@@ -2053,7 +2086,7 @@ process_signal(uintptr_t sig)
       time_t now = time(NULL);
       if (time_of_last_signewnym + MAX_SIGNEWNYM_RATE > now) {
         signewnym_is_pending = 1;
-        log(LOG_NOTICE, LD_CONTROL,
+        log_notice(LD_CONTROL,
             "Rate limiting NEWNYM request: delaying by %d second(s)",
             (int)(MAX_SIGNEWNYM_RATE+time_of_last_signewnym-now));
       } else {
@@ -2085,7 +2118,7 @@ static void
 dumpmemusage(int severity)
 {
   connection_dump_buffer_mem_stats(severity);
-  log(severity, LD_GENERAL, "In rephist: "U64_FORMAT" used by %d Tors.",
+  tor_log(severity, LD_GENERAL, "In rephist: "U64_FORMAT" used by %d Tors.",
       U64_PRINTF_ARG(rephist_total_alloc), rephist_total_num);
   dump_routerlist_mem_usage(severity);
   dump_cell_pool_usage(severity);
@@ -2103,27 +2136,27 @@ dumpstats(int severity)
   time_t elapsed;
   size_t rbuf_cap, wbuf_cap, rbuf_len, wbuf_len;
 
-  log(severity, LD_GENERAL, "Dumping stats:");
+  tor_log(severity, LD_GENERAL, "Dumping stats:");
 
   SMARTLIST_FOREACH_BEGIN(connection_array, connection_t *, conn) {
     int i = conn_sl_idx;
-    log(severity, LD_GENERAL,
+    tor_log(severity, LD_GENERAL,
         "Conn %d (socket %d) type %d (%s), state %d (%s), created %d secs ago",
         i, (int)conn->s, conn->type, conn_type_to_string(conn->type),
         conn->state, conn_state_to_string(conn->type, conn->state),
         (int)(now - conn->timestamp_created));
     if (!connection_is_listener(conn)) {
-      log(severity,LD_GENERAL,
+      tor_log(severity,LD_GENERAL,
           "Conn %d is to %s:%d.", i,
           safe_str_client(conn->address),
           conn->port);
-      log(severity,LD_GENERAL,
+      tor_log(severity,LD_GENERAL,
           "Conn %d: %d bytes waiting on inbuf (len %d, last read %d secs ago)",
           i,
           (int)connection_get_inbuf_len(conn),
           (int)buf_allocation(conn->inbuf),
           (int)(now - conn->timestamp_lastread));
-      log(severity,LD_GENERAL,
+      tor_log(severity,LD_GENERAL,
           "Conn %d: %d bytes waiting on outbuf "
           "(len %d, last written %d secs ago)",i,
           (int)connection_get_outbuf_len(conn),
@@ -2134,7 +2167,7 @@ dumpstats(int severity)
         if (or_conn->tls) {
           tor_tls_get_buffer_sizes(or_conn->tls, &rbuf_cap, &rbuf_len,
                                    &wbuf_cap, &wbuf_len);
-          log(severity, LD_GENERAL,
+          tor_log(severity, LD_GENERAL,
               "Conn %d: %d/%d bytes used on OpenSSL read buffer; "
               "%d/%d bytes used on write buffer.",
               i, (int)rbuf_len, (int)rbuf_cap, (int)wbuf_len, (int)wbuf_cap);
@@ -2144,7 +2177,11 @@ dumpstats(int severity)
     circuit_dump_by_conn(conn, severity); /* dump info about all the circuits
                                            * using this conn */
   } SMARTLIST_FOREACH_END(conn);
-  log(severity, LD_NET,
+
+  channel_dumpstats(severity);
+  channel_listener_dumpstats(severity);
+
+  tor_log(severity, LD_NET,
       "Cells processed: "U64_FORMAT" padding\n"
       "                 "U64_FORMAT" create\n"
       "                 "U64_FORMAT" created\n"
@@ -2160,13 +2197,16 @@ dumpstats(int severity)
       U64_PRINTF_ARG(stats_n_relay_cells_delivered),
       U64_PRINTF_ARG(stats_n_destroy_cells_processed));
   if (stats_n_data_cells_packaged)
-    log(severity,LD_NET,"Average packaged cell fullness: %2.3f%%",
+    tor_log(severity,LD_NET,"Average packaged cell fullness: %2.3f%%",
         100*(U64_TO_DBL(stats_n_data_bytes_packaged) /
              U64_TO_DBL(stats_n_data_cells_packaged*RELAY_PAYLOAD_SIZE)) );
   if (stats_n_data_cells_received)
-    log(severity,LD_NET,"Average delivered cell fullness: %2.3f%%",
+    tor_log(severity,LD_NET,"Average delivered cell fullness: %2.3f%%",
         100*(U64_TO_DBL(stats_n_data_bytes_received) /
              U64_TO_DBL(stats_n_data_cells_received*RELAY_PAYLOAD_SIZE)) );
+
+  cpuworker_log_onionskin_overhead(severity, ONION_HANDSHAKE_TYPE_TAP, "TAP");
+  cpuworker_log_onionskin_overhead(severity, ONION_HANDSHAKE_TYPE_NTOR,"ntor");
 
   if (now - time_of_process_start >= 0)
     elapsed = now - time_of_process_start;
@@ -2174,19 +2214,19 @@ dumpstats(int severity)
     elapsed = 0;
 
   if (elapsed) {
-    log(severity, LD_NET,
+    tor_log(severity, LD_NET,
         "Average bandwidth: "U64_FORMAT"/%d = %d bytes/sec reading",
         U64_PRINTF_ARG(stats_n_bytes_read),
         (int)elapsed,
         (int) (stats_n_bytes_read/elapsed));
-    log(severity, LD_NET,
+    tor_log(severity, LD_NET,
         "Average bandwidth: "U64_FORMAT"/%d = %d bytes/sec writing",
         U64_PRINTF_ARG(stats_n_bytes_written),
         (int)elapsed,
         (int) (stats_n_bytes_written/elapsed));
   }
 
-  log(severity, LD_NET, "--------------- Dumping memory information:");
+  tor_log(severity, LD_NET, "--------------- Dumping memory information:");
   dumpmemusage(severity);
 
   rep_hist_dump_stats(now,severity);
@@ -2286,6 +2326,9 @@ tor_init(int argc, char *argv[])
       quiet = 1;
     if (!strcmp(argv[i], "--quiet"))
       quiet = 2;
+    /* --version implies --quiet */
+    if (!strcmp(argv[i], "--version"))
+      quiet = 2;
   }
  /* give it somewhere to log to initially */
   switch (quiet) {
@@ -2302,12 +2345,17 @@ tor_init(int argc, char *argv[])
 
   {
     const char *version = get_version();
+    const char *bev_str =
 #ifdef USE_BUFFEREVENTS
-    log_notice(LD_GENERAL, "Tor v%s (with bufferevents) running on %s.",
-                version, get_uname());
+      "(with bufferevents) ";
 #else
-    log_notice(LD_GENERAL, "Tor v%s running on %s.", version, get_uname());
+      "";
 #endif
+    log_notice(LD_GENERAL, "Tor v%s %srunning on %s with Libevent %s "
+               "and OpenSSL %s.", version, bev_str,
+               get_uname(),
+               tor_libevent_get_version_str(),
+               crypto_openssl_get_version_str());
 
     log_notice(LD_GENERAL, "Tor can't help you if you use it wrong! "
                "Learn how to be safe at "
@@ -2319,7 +2367,7 @@ tor_init(int argc, char *argv[])
   }
 
 #ifdef NON_ANONYMOUS_MODE_ENABLED
-  log(LOG_WARN, LD_GENERAL, "This copy of Tor was compiled to run in a "
+  log_warn(LD_GENERAL, "This copy of Tor was compiled to run in a "
       "non-anonymous mode. It will provide NO ANONYMITY.");
 #endif
 
@@ -2346,6 +2394,7 @@ tor_init(int argc, char *argv[])
     log_err(LD_BUG, "Unable to initialize OpenSSL. Exiting.");
     return -1;
   }
+  stream_choice_seed_weak_rng();
 
   return 0;
 }
@@ -2441,6 +2490,8 @@ tor_free_all(int postfork)
   circuit_free_all();
   entry_guards_free_all();
   pt_free_all();
+  channel_tls_free_all();
+  channel_free_all();
   connection_free_all();
   buf_shrink_freelists(1);
   memarea_clear_freelist();
@@ -2448,6 +2499,7 @@ tor_free_all(int postfork)
   microdesc_free_all();
   if (!postfork) {
     config_free_all();
+    or_state_free_all();
     router_free_all();
     policies_free_all();
   }
@@ -2461,6 +2513,10 @@ tor_free_all(int postfork)
   smartlist_free(closeable_connection_lst);
   smartlist_free(active_linked_connection_lst);
   periodic_timer_free(second_timer);
+#ifndef USE_BUFFEREVENTS
+  periodic_timer_free(refill_timer);
+#endif
+
   if (!postfork) {
     release_lockfile();
   }
@@ -2631,7 +2687,7 @@ tor_main(int argc, char *argv[])
   {
     /* Instruct OpenSSL to use our internal wrappers for malloc,
        realloc and free. */
-    int r = CRYPTO_set_mem_ex_functions(_tor_malloc, _tor_realloc, _tor_free);
+    int r = CRYPTO_set_mem_ex_functions(tor_malloc_, tor_realloc_, tor_free_);
     tor_assert(r);
   }
 #endif

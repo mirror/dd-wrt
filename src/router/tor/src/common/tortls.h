@@ -1,10 +1,10 @@
 /* Copyright (c) 2003, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
-#ifndef _TOR_TORTLS_H
-#define _TOR_TORTLS_H
+#ifndef TOR_TORTLS_H
+#define TOR_TORTLS_H
 
 /**
  * \file tortls.h
@@ -21,7 +21,7 @@ typedef struct tor_tls_t tor_tls_t;
 typedef struct tor_cert_t tor_cert_t;
 
 /* Possible return values for most tor_tls_* functions. */
-#define _MIN_TOR_TLS_ERROR_VAL     -9
+#define MIN_TOR_TLS_ERROR_VAL_     -9
 #define TOR_TLS_ERROR_MISC         -9
 /* Rename to unexpected close or something. XXXX */
 #define TOR_TLS_ERROR_IO           -8
@@ -54,7 +54,12 @@ const char *tor_tls_err_to_string(int err);
 void tor_tls_get_state_description(tor_tls_t *tls, char *buf, size_t sz);
 
 void tor_tls_free_all(void);
-int tor_tls_context_init(int is_public_server,
+
+#define TOR_TLS_CTX_IS_PUBLIC_SERVER (1u<<0)
+#define TOR_TLS_CTX_USE_ECDHE_P256   (1u<<1)
+#define TOR_TLS_CTX_USE_ECDHE_P224   (1u<<2)
+
+int tor_tls_context_init(unsigned flags,
                          crypto_pk_t *client_identity,
                          crypto_pk_t *server_identity,
                          unsigned int key_lifetime);
@@ -90,6 +95,8 @@ void tor_tls_get_buffer_sizes(tor_tls_t *tls,
                               size_t *rbuf_capacity, size_t *rbuf_bytes,
                               size_t *wbuf_capacity, size_t *wbuf_bytes);
 
+double tls_get_write_overhead_ratio(void);
+
 int tor_tls_used_v1_handshake(tor_tls_t *tls);
 int tor_tls_received_v3_certificate(tor_tls_t *tls);
 int tor_tls_get_num_server_handshakes(tor_tls_t *tls);
@@ -98,9 +105,9 @@ int tor_tls_get_tlssecrets(tor_tls_t *tls, uint8_t *secrets_out);
 
 /* Log and abort if there are unhandled TLS errors in OpenSSL's error stack.
  */
-#define check_no_tls_errors() _check_no_tls_errors(__FILE__,__LINE__)
+#define check_no_tls_errors() check_no_tls_errors_(__FILE__,__LINE__)
 
-void _check_no_tls_errors(const char *fname, int line);
+void check_no_tls_errors_(const char *fname, int line);
 void tor_tls_log_one_error(tor_tls_t *tls, unsigned long err,
                            int severity, int domain, const char *doing);
 
@@ -129,6 +136,7 @@ int tor_tls_cert_is_valid(int severity,
                           const tor_cert_t *cert,
                           const tor_cert_t *signing_cert,
                           int check_rsa_1024);
+const char *tor_tls_get_ciphersuite_name(tor_tls_t *tls);
 
 #endif
 

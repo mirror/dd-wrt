@@ -1,4 +1,4 @@
-/* Copyright (c) 2007-2012, The Tor Project, Inc. */
+/* Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -21,17 +21,23 @@
 static void clear_geoip_db(void);
 static void init_geoip_countries(void);
 
-/** An entry from the GeoIP file: maps an IP range to a country. */
-typedef struct geoip_entry_t {
+/** An entry from the GeoIP IPv4 file: maps an IPv4 range to a country. */
+typedef struct geoip_ipv4_entry_t {
   uint32_t ip_low; /**< The lowest IP in the range, in host order */
   uint32_t ip_high; /**< The highest IP in the range, in host order */
   intptr_t country; /**< An index into geoip_countries */
-} geoip_entry_t;
+} geoip_ipv4_entry_t;
+
+/** An entry from the GeoIP IPv6 file: maps an IPv6 range to a country. */
+typedef struct geoip_ipv6_entry_t {
+  struct in6_addr ip_low; /**< The lowest IP in the range, in host order */
+  struct in6_addr ip_high; /**< The highest IP in the range, in host order */
+  intptr_t country; /**< An index into geoip_countries */
+} geoip_ipv6_entry_t;
 
 /** A per-country record for GeoIP request history. */
 typedef struct geoip_country_t {
   char countrycode[3];
-  uint32_t n_v2_ns_requests;
   uint32_t n_v3_ns_requests;
 } geoip_country_t;
 
@@ -41,45 +47,48 @@ static smartlist_t *geoip_countries = NULL;
  * The index is encoded in the pointer, and 1 is added so that NULL can mean
  * not found. */
 static strmap_t *country_idxplus1_by_lc_code = NULL;
-/** A list of all known geoip_entry_t, sorted by ip_low. */
-static smartlist_t *geoip_entries = NULL;
+/** Lists of all known geoip_ipv4_entry_t and geoip_ipv6_entry_t, sorted
+ * by their respective ip_low. */
+static smartlist_t *geoip_ipv4_entries = NULL, *geoip_ipv6_entries = NULL;
 
-/** SHA1 digest of the GeoIP file to include in extra-info descriptors. */
+/** SHA1 digest of the GeoIP files to include in extra-info descriptors. */
 static char geoip_digest[DIGEST_LEN];
+static char geoip6_digest[DIGEST_LEN];
 
-/** Return the index of the <b>country</b>'s entry in the GeoIP DB
- * if it is a valid 2-letter country code, otherwise return -1.
- */
+/** Return the index of the <b>country</b>'s entry in the GeoIP
+ * country list if it is a valid 2-letter country code, otherwise
+ * return -1. */
 country_t
 geoip_get_country(const char *country)
 {
-  void *_idxplus1;
+  void *idxplus1_;
   intptr_t idx;
 
-  _idxplus1 = strmap_get_lc(country_idxplus1_by_lc_code, country);
-  if (!_idxplus1)
+  idxplus1_ = strmap_get_lc(country_idxplus1_by_lc_code, country);
+  if (!idxplus1_)
     return -1;
 
-  idx = ((uintptr_t)_idxplus1)-1;
+  idx = ((uintptr_t)idxplus1_)-1;
   return (country_t)idx;
 }
 
-/** Add an entry to the GeoIP table, mapping all IPs between <b>low</b> and
- * <b>high</b>, inclusive, to the 2-letter country code <b>country</b>.
- */
+/** Add an entry to a GeoIP table, mapping all IP addresses between <b>low</b>
+ * and <b>high</b>, inclusive, to the 2-letter country code <b>country</b>. */
 static void
-geoip_add_entry(uint32_t low, uint32_t high, const char *country)
+geoip_add_entry(const tor_addr_t *low, const tor_addr_t *high,
+                const char *country)
 {
   intptr_t idx;
-  geoip_entry_t *ent;
-  void *_idxplus1;
+  void *idxplus1_;
 
-  if (high < low)
+  if (tor_addr_family(low) != tor_addr_family(high))
+    return;
+  if (tor_addr_compare(high, low, CMP_EXACT) < 0)
     return;
 
-  _idxplus1 = strmap_get_lc(country_idxplus1_by_lc_code, country);
+  idxplus1_ = strmap_get_lc(country_idxplus1_by_lc_code, country);
 
-  if (!_idxplus1) {
+  if (!idxplus1_) {
     geoip_country_t *c = tor_malloc_zero(sizeof(geoip_country_t));
     strlcpy(c->countrycode, country, sizeof(c->countrycode));
     tor_strlower(c->countrycode);
@@ -87,54 +96,103 @@ geoip_add_entry(uint32_t low, uint32_t high, const char *country)
     idx = smartlist_len(geoip_countries) - 1;
     strmap_set_lc(country_idxplus1_by_lc_code, country, (void*)(idx+1));
   } else {
-    idx = ((uintptr_t)_idxplus1)-1;
+    idx = ((uintptr_t)idxplus1_)-1;
   }
   {
     geoip_country_t *c = smartlist_get(geoip_countries, idx);
     tor_assert(!strcasecmp(c->countrycode, country));
   }
-  ent = tor_malloc_zero(sizeof(geoip_entry_t));
-  ent->ip_low = low;
-  ent->ip_high = high;
-  ent->country = idx;
-  smartlist_add(geoip_entries, ent);
+
+  if (tor_addr_family(low) == AF_INET) {
+    geoip_ipv4_entry_t *ent = tor_malloc_zero(sizeof(geoip_ipv4_entry_t));
+    ent->ip_low = tor_addr_to_ipv4h(low);
+    ent->ip_high = tor_addr_to_ipv4h(high);
+    ent->country = idx;
+    smartlist_add(geoip_ipv4_entries, ent);
+  } else if (tor_addr_family(low) == AF_INET6) {
+    geoip_ipv6_entry_t *ent = tor_malloc_zero(sizeof(geoip_ipv6_entry_t));
+    ent->ip_low = *tor_addr_to_in6(low);
+    ent->ip_high = *tor_addr_to_in6(high);
+    ent->country = idx;
+    smartlist_add(geoip_ipv6_entries, ent);
+  }
 }
 
-/** Add an entry to the GeoIP table, parsing it from <b>line</b>.  The
- * format is as for geoip_load_file(). */
+/** Add an entry to the GeoIP table indicated by <b>family</b>,
+ * parsing it from <b>line</b>. The format is as for geoip_load_file(). */
 /*private*/ int
-geoip_parse_entry(const char *line)
+geoip_parse_entry(const char *line, sa_family_t family)
 {
-  unsigned int low, high;
-  char b[3];
+  tor_addr_t low_addr, high_addr;
+  char c[3];
+  char *country = NULL;
+
   if (!geoip_countries)
     init_geoip_countries();
-  if (!geoip_entries)
-    geoip_entries = smartlist_new();
+  if (family == AF_INET) {
+    if (!geoip_ipv4_entries)
+      geoip_ipv4_entries = smartlist_new();
+  } else if (family == AF_INET6) {
+    if (!geoip_ipv6_entries)
+      geoip_ipv6_entries = smartlist_new();
+  } else {
+    log_warn(LD_GENERAL, "Unsupported family: %d", family);
+    return -1;
+  }
 
   while (TOR_ISSPACE(*line))
     ++line;
   if (*line == '#')
     return 0;
-  if (tor_sscanf(line,"%u,%u,%2s", &low, &high, b) == 3) {
-    geoip_add_entry(low, high, b);
-    return 0;
-  } else if (tor_sscanf(line,"\"%u\",\"%u\",\"%2s\",", &low, &high, b) == 3) {
-    geoip_add_entry(low, high, b);
-    return 0;
-  } else {
-    log_warn(LD_GENERAL, "Unable to parse line from GEOIP file: %s",
-             escaped(line));
-    return -1;
+
+  if (family == AF_INET) {
+    unsigned int low, high;
+    if (tor_sscanf(line,"%u,%u,%2s", &low, &high, c) == 3 ||
+        tor_sscanf(line,"\"%u\",\"%u\",\"%2s\",", &low, &high, c) == 3) {
+      tor_addr_from_ipv4h(&low_addr, low);
+      tor_addr_from_ipv4h(&high_addr, high);
+    } else
+      goto fail;
+    country = c;
+  } else {                      /* AF_INET6 */
+    char buf[512];
+    char *low_str, *high_str;
+    struct in6_addr low, high;
+    char *strtok_state;
+    strlcpy(buf, line, sizeof(buf));
+    low_str = tor_strtok_r(buf, ",", &strtok_state);
+    if (!low_str)
+      goto fail;
+    high_str = tor_strtok_r(NULL, ",", &strtok_state);
+    if (!high_str)
+      goto fail;
+    country = tor_strtok_r(NULL, "\n", &strtok_state);
+    if (!country)
+      goto fail;
+    if (strlen(country) != 2)
+      goto fail;
+    if (tor_inet_pton(AF_INET6, low_str, &low) <= 0)
+      goto fail;
+    tor_addr_from_in6(&low_addr, &low);
+    if (tor_inet_pton(AF_INET6, high_str, &high) <= 0)
+      goto fail;
+    tor_addr_from_in6(&high_addr, &high);
   }
+  geoip_add_entry(&low_addr, &high_addr, country);
+  return 0;
+
+  fail:
+  log_warn(LD_GENERAL, "Unable to parse line from GEOIP %s file: %s",
+           family == AF_INET ? "IPv4" : "IPv6", escaped(line));
+  return -1;
 }
 
 /** Sorting helper: return -1, 1, or 0 based on comparison of two
- * geoip_entry_t */
+ * geoip_ipv4_entry_t */
 static int
-_geoip_compare_entries(const void **_a, const void **_b)
+geoip_ipv4_compare_entries_(const void **_a, const void **_b)
 {
-  const geoip_entry_t *a = *_a, *b = *_b;
+  const geoip_ipv4_entry_t *a = *_a, *b = *_b;
   if (a->ip_low < b->ip_low)
     return -1;
   else if (a->ip_low > b->ip_low)
@@ -144,16 +202,44 @@ _geoip_compare_entries(const void **_a, const void **_b)
 }
 
 /** bsearch helper: return -1, 1, or 0 based on comparison of an IP (a pointer
- * to a uint32_t in host order) to a geoip_entry_t */
+ * to a uint32_t in host order) to a geoip_ipv4_entry_t */
 static int
-_geoip_compare_key_to_entry(const void *_key, const void **_member)
+geoip_ipv4_compare_key_to_entry_(const void *_key, const void **_member)
 {
   /* No alignment issue here, since _key really is a pointer to uint32_t */
   const uint32_t addr = *(uint32_t *)_key;
-  const geoip_entry_t *entry = *_member;
+  const geoip_ipv4_entry_t *entry = *_member;
   if (addr < entry->ip_low)
     return -1;
   else if (addr > entry->ip_high)
+    return 1;
+  else
+    return 0;
+}
+
+/** Sorting helper: return -1, 1, or 0 based on comparison of two
+ * geoip_ipv6_entry_t */
+static int
+geoip_ipv6_compare_entries_(const void **_a, const void **_b)
+{
+  const geoip_ipv6_entry_t *a = *_a, *b = *_b;
+  return fast_memcmp(a->ip_low.s6_addr, b->ip_low.s6_addr,
+                     sizeof(struct in6_addr));
+}
+
+/** bsearch helper: return -1, 1, or 0 based on comparison of an IPv6
+ * (a pointer to a in6_addr) to a geoip_ipv6_entry_t */
+static int
+geoip_ipv6_compare_key_to_entry_(const void *_key, const void **_member)
+{
+  const struct in6_addr *addr = (struct in6_addr *)_key;
+  const geoip_ipv6_entry_t *entry = *_member;
+
+  if (fast_memcmp(addr->s6_addr, entry->ip_low.s6_addr,
+             sizeof(struct in6_addr)) < 0)
+    return -1;
+  else if (fast_memcmp(addr->s6_addr, entry->ip_high.s6_addr,
+                  sizeof(struct in6_addr)) > 0)
     return 1;
   else
     return 0;
@@ -185,27 +271,35 @@ init_geoip_countries(void)
   strmap_set_lc(country_idxplus1_by_lc_code, "??", (void*)(1));
 }
 
-/** Clear the GeoIP database and reload it from the file
- * <b>filename</b>. Return 0 on success, -1 on failure.
+/** Clear appropriate GeoIP database, based on <b>family</b>, and
+ * reload it from the file <b>filename</b>. Return 0 on success, -1 on
+ * failure.
  *
- * Recognized line formats are:
+ * Recognized line formats for IPv4 are:
  *   INTIPLOW,INTIPHIGH,CC
  * and
  *   "INTIPLOW","INTIPHIGH","CC","CC3","COUNTRY NAME"
  * where INTIPLOW and INTIPHIGH are IPv4 addresses encoded as 4-byte unsigned
  * integers, and CC is a country code.
  *
+ * Recognized line format for IPv6 is:
+ *   IPV6LOW,IPV6HIGH,CC
+ * where IPV6LOW and IPV6HIGH are IPv6 addresses and CC is a country code.
+ *
  * It also recognizes, and skips over, blank lines and lines that start
  * with '#' (comments).
  */
 int
-geoip_load_file(const char *filename, const or_options_t *options)
+geoip_load_file(sa_family_t family, const char *filename)
 {
   FILE *f;
   const char *msg = "";
+  const or_options_t *options = get_options();
   int severity = options_need_geoip_info(options, &msg) ? LOG_WARN : LOG_INFO;
   crypto_digest_t *geoip_digest_env = NULL;
-  clear_geoip_db();
+
+  tor_assert(family == AF_INET || family == AF_INET6);
+
   if (!(f = tor_fopen_cloexec(filename, "r"))) {
     log_fn(severity, LD_GENERAL, "Failed to open GEOIP file %s.  %s",
            filename, msg);
@@ -213,33 +307,51 @@ geoip_load_file(const char *filename, const or_options_t *options)
   }
   if (!geoip_countries)
     init_geoip_countries();
-  if (geoip_entries) {
-    SMARTLIST_FOREACH(geoip_entries, geoip_entry_t *, e, tor_free(e));
-    smartlist_free(geoip_entries);
+
+  if (family == AF_INET) {
+    if (geoip_ipv4_entries) {
+      SMARTLIST_FOREACH(geoip_ipv4_entries, geoip_ipv4_entry_t *, e,
+                        tor_free(e));
+      smartlist_free(geoip_ipv4_entries);
+    }
+    geoip_ipv4_entries = smartlist_new();
+  } else { /* AF_INET6 */
+    if (geoip_ipv6_entries) {
+      SMARTLIST_FOREACH(geoip_ipv6_entries, geoip_ipv6_entry_t *, e,
+                        tor_free(e));
+      smartlist_free(geoip_ipv6_entries);
+    }
+    geoip_ipv6_entries = smartlist_new();
   }
-  geoip_entries = smartlist_new();
   geoip_digest_env = crypto_digest_new();
-  log_notice(LD_GENERAL, "Parsing GEOIP file %s.", filename);
+
+  log_notice(LD_GENERAL, "Parsing GEOIP %s file %s.",
+             (family == AF_INET) ? "IPv4" : "IPv6", filename);
   while (!feof(f)) {
     char buf[512];
     if (fgets(buf, (int)sizeof(buf), f) == NULL)
       break;
     crypto_digest_add_bytes(geoip_digest_env, buf, strlen(buf));
     /* FFFF track full country name. */
-    geoip_parse_entry(buf);
+    geoip_parse_entry(buf, family);
   }
   /*XXXX abort and return -1 if no entries/illformed?*/
   fclose(f);
 
-  smartlist_sort(geoip_entries, _geoip_compare_entries);
-
-  /* Okay, now we need to maybe change our mind about what is in which
-   * country. */
-  refresh_all_country_info();
-
-  /* Remember file digest so that we can include it in our extra-info
-   * descriptors. */
-  crypto_digest_get_digest(geoip_digest_env, geoip_digest, DIGEST_LEN);
+  /* Sort list and remember file digests so that we can include it in
+   * our extra-info descriptors. */
+  if (family == AF_INET) {
+    smartlist_sort(geoip_ipv4_entries, geoip_ipv4_compare_entries_);
+    /* Okay, now we need to maybe change our mind about what is in
+     * which country. We do this for IPv4 only since that's what we
+     * store in node->country. */
+    refresh_all_country_info();
+    crypto_digest_get_digest(geoip_digest_env, geoip_digest, DIGEST_LEN);
+  } else {
+    /* AF_INET6 */
+    smartlist_sort(geoip_ipv6_entries, geoip_ipv6_compare_entries_);
+    crypto_digest_get_digest(geoip_digest_env, geoip6_digest, DIGEST_LEN);
+  }
   crypto_digest_free(geoip_digest_env);
 
   return 0;
@@ -252,12 +364,30 @@ geoip_load_file(const char *filename, const or_options_t *options)
  * geoip_get_country_name().
  */
 int
-geoip_get_country_by_ip(uint32_t ipaddr)
+geoip_get_country_by_ipv4(uint32_t ipaddr)
 {
-  geoip_entry_t *ent;
-  if (!geoip_entries)
+  geoip_ipv4_entry_t *ent;
+  if (!geoip_ipv4_entries)
     return -1;
-  ent = smartlist_bsearch(geoip_entries, &ipaddr, _geoip_compare_key_to_entry);
+  ent = smartlist_bsearch(geoip_ipv4_entries, &ipaddr,
+                          geoip_ipv4_compare_key_to_entry_);
+  return ent ? (int)ent->country : 0;
+}
+
+/** Given an IPv6 address, return a number representing the country to
+ * which that address belongs, -1 for "No geoip information available", or
+ * 0 for the 'unknown country'.  The return value will always be less than
+ * geoip_get_n_countries().  To decode it, call geoip_get_country_name().
+ */
+int
+geoip_get_country_by_ipv6(const struct in6_addr *addr)
+{
+  geoip_ipv6_entry_t *ent;
+
+  if (!geoip_ipv6_entries)
+    return -1;
+  ent = smartlist_bsearch(geoip_ipv6_entries, addr,
+                          geoip_ipv6_compare_key_to_entry_);
   return ent ? (int)ent->country : 0;
 }
 
@@ -269,14 +399,16 @@ geoip_get_country_by_ip(uint32_t ipaddr)
 int
 geoip_get_country_by_addr(const tor_addr_t *addr)
 {
-  if (tor_addr_family(addr) != AF_INET) {
-    /*XXXX IP6 support ipv6 geoip.*/
+  if (tor_addr_family(addr) == AF_INET) {
+    return geoip_get_country_by_ipv4(tor_addr_to_ipv4h(addr));
+  } else if (tor_addr_family(addr) == AF_INET6) {
+    return geoip_get_country_by_ipv6(tor_addr_to_in6(addr));
+  } else {
     return -1;
   }
-  return geoip_get_country_by_ip(tor_addr_to_ipv4h(addr));
 }
 
-/** Return the number of countries recognized by the GeoIP database. */
+/** Return the number of countries recognized by the GeoIP country list. */
 int
 geoip_get_n_countries(void)
 {
@@ -299,18 +431,28 @@ geoip_get_country_name(country_t num)
 
 /** Return true iff we have loaded a GeoIP database.*/
 int
-geoip_is_loaded(void)
+geoip_is_loaded(sa_family_t family)
 {
-  return geoip_countries != NULL && geoip_entries != NULL;
+  tor_assert(family == AF_INET || family == AF_INET6);
+  if (geoip_countries == NULL)
+    return 0;
+  if (family == AF_INET)
+    return geoip_ipv4_entries != NULL;
+  else                          /* AF_INET6 */
+    return geoip_ipv6_entries != NULL;
 }
 
 /** Return the hex-encoded SHA1 digest of the loaded GeoIP file. The
  * result does not need to be deallocated, but will be overwritten by the
  * next call of hex_str(). */
 const char *
-geoip_db_digest(void)
+geoip_db_digest(sa_family_t family)
 {
-  return hex_str(geoip_digest, DIGEST_LEN);
+  tor_assert(family == AF_INET || family == AF_INET6);
+  if (family == AF_INET)
+    return hex_str(geoip_digest, DIGEST_LEN);
+  else                          /* AF_INET6 */
+    return hex_str(geoip6_digest, DIGEST_LEN);
 }
 
 /** Entry in a map from IP address to the last time we've seen an incoming
@@ -372,67 +514,6 @@ client_history_clear(void)
   }
 }
 
-/** How often do we update our estimate which share of v2 and v3 directory
- * requests is sent to us? We could as well trigger updates of shares from
- * network status updates, but that means adding a lot of calls into code
- * that is independent from geoip stats (and keeping them up-to-date). We
- * are perfectly fine with an approximation of 15-minute granularity. */
-#define REQUEST_SHARE_INTERVAL (15 * 60)
-
-/** When did we last determine which share of v2 and v3 directory requests
- * is sent to us? */
-static time_t last_time_determined_shares = 0;
-
-/** Sum of products of v2 shares times the number of seconds for which we
- * consider these shares as valid. */
-static double v2_share_times_seconds;
-
-/** Sum of products of v3 shares times the number of seconds for which we
- * consider these shares as valid. */
-static double v3_share_times_seconds;
-
-/** Number of seconds we are determining v2 and v3 shares. */
-static int share_seconds;
-
-/** Try to determine which fraction of v2 and v3 directory requests aimed at
- * caches will be sent to us at time <b>now</b> and store that value in
- * order to take a mean value later on. */
-static void
-geoip_determine_shares(time_t now)
-{
-  double v2_share = 0.0, v3_share = 0.0;
-  if (router_get_my_share_of_directory_requests(&v2_share, &v3_share) < 0)
-    return;
-  if (last_time_determined_shares) {
-    v2_share_times_seconds += v2_share *
-        ((double) (now - last_time_determined_shares));
-    v3_share_times_seconds += v3_share *
-        ((double) (now - last_time_determined_shares));
-    share_seconds += (int)(now - last_time_determined_shares);
-  }
-  last_time_determined_shares = now;
-}
-
-/** Calculate which fraction of v2 and v3 directory requests aimed at caches
- * have been sent to us since the last call of this function up to time
- * <b>now</b>. Set *<b>v2_share_out</b> and *<b>v3_share_out</b> to the
- * fractions of v2 and v3 protocol shares we expect to have seen. Reset
- * counters afterwards. Return 0 on success, -1 on failure (e.g. when zero
- * seconds have passed since the last call).*/
-static int
-geoip_get_mean_shares(time_t now, double *v2_share_out,
-                         double *v3_share_out)
-{
-  geoip_determine_shares(now);
-  if (!share_seconds)
-    return -1;
-  *v2_share_out = v2_share_times_seconds / ((double) share_seconds);
-  *v3_share_out = v3_share_times_seconds / ((double) share_seconds);
-  v2_share_times_seconds = v3_share_times_seconds = 0.0;
-  share_seconds = 0;
-  return 0;
-}
-
 /** Note that we've seen a client connect from the IP <b>addr</b>
  * at time <b>now</b>. Ignored by all but bridges and directories if
  * configured accordingly. */
@@ -467,29 +548,21 @@ geoip_note_client_seen(geoip_client_action_t action,
   else
     ent->last_seen_in_minutes = 0;
 
-  if (action == GEOIP_CLIENT_NETWORKSTATUS ||
-      action == GEOIP_CLIENT_NETWORKSTATUS_V2) {
+  if (action == GEOIP_CLIENT_NETWORKSTATUS) {
     int country_idx = geoip_get_country_by_addr(addr);
     if (country_idx < 0)
       country_idx = 0; /** unresolved requests are stored at index 0. */
     if (country_idx >= 0 && country_idx < smartlist_len(geoip_countries)) {
       geoip_country_t *country = smartlist_get(geoip_countries, country_idx);
-      if (action == GEOIP_CLIENT_NETWORKSTATUS)
-        ++country->n_v3_ns_requests;
-      else
-        ++country->n_v2_ns_requests;
+      ++country->n_v3_ns_requests;
     }
-
-    /* Periodically determine share of requests that we should see */
-    if (last_time_determined_shares + REQUEST_SHARE_INTERVAL < now)
-      geoip_determine_shares(now);
   }
 }
 
 /** HT_FOREACH helper: remove a clientmap_entry_t from the hashtable if it's
  * older than a certain time. */
 static int
-_remove_old_client_helper(struct clientmap_entry_t *ent, void *_cutoff)
+remove_old_client_helper_(struct clientmap_entry_t *ent, void *_cutoff)
 {
   time_t cutoff = *(time_t*)_cutoff / 60;
   if (ent->last_seen_in_minutes < cutoff) {
@@ -505,40 +578,28 @@ void
 geoip_remove_old_clients(time_t cutoff)
 {
   clientmap_HT_FOREACH_FN(&client_history,
-                          _remove_old_client_helper,
+                          remove_old_client_helper_,
                           &cutoff);
 }
-
-/** How many responses are we giving to clients requesting v2 network
- * statuses? */
-static uint32_t ns_v2_responses[GEOIP_NS_RESPONSE_NUM];
 
 /** How many responses are we giving to clients requesting v3 network
  * statuses? */
 static uint32_t ns_v3_responses[GEOIP_NS_RESPONSE_NUM];
 
-/** Note that we've rejected a client's request for a v2 or v3 network
- * status, encoded in <b>action</b> for reason <b>reason</b> at time
- * <b>now</b>. */
+/** Note that we've rejected a client's request for a v3 network status
+ * for reason <b>reason</b> at time <b>now</b>. */
 void
-geoip_note_ns_response(geoip_client_action_t action,
-                       geoip_ns_response_t response)
+geoip_note_ns_response(geoip_ns_response_t response)
 {
   static int arrays_initialized = 0;
   if (!get_options()->DirReqStatistics)
     return;
   if (!arrays_initialized) {
-    memset(ns_v2_responses, 0, sizeof(ns_v2_responses));
     memset(ns_v3_responses, 0, sizeof(ns_v3_responses));
     arrays_initialized = 1;
   }
-  tor_assert(action == GEOIP_CLIENT_NETWORKSTATUS ||
-             action == GEOIP_CLIENT_NETWORKSTATUS_V2);
   tor_assert(response < GEOIP_NS_RESPONSE_NUM);
-  if (action == GEOIP_CLIENT_NETWORKSTATUS)
-    ns_v3_responses[response]++;
-  else
-    ns_v2_responses[response]++;
+  ns_v3_responses[response]++;
 }
 
 /** Do not mention any country from which fewer than this number of IPs have
@@ -559,10 +620,10 @@ typedef struct c_hist_t {
 } c_hist_t;
 
 /** Sorting helper: return -1, 1, or 0 based on comparison of two
- * geoip_entry_t.  Sort in descending order of total, and then by country
+ * geoip_ipv4_entry_t.  Sort in descending order of total, and then by country
  * code. */
 static int
-_c_hist_compare(const void **_a, const void **_b)
+c_hist_compare_(const void **_a, const void **_b)
 {
   const c_hist_t *a = *_a, *b = *_b;
   if (a->total > b->total)
@@ -578,7 +639,7 @@ _c_hist_compare(const void **_a, const void **_b)
  * failed, the others as still running. */
 #define DIRREQ_TIMEOUT (10*60)
 
-/** Entry in a map from either conn->global_identifier for direct requests
+/** Entry in a map from either chan->global_identifier for direct requests
  * or a unique circuit identifier for tunneled requests to request time,
  * response size, and completion time of a network status request. Used to
  * measure download times of requests to derive average client
@@ -586,14 +647,13 @@ _c_hist_compare(const void **_a, const void **_b)
 typedef struct dirreq_map_entry_t {
   HT_ENTRY(dirreq_map_entry_t) node;
   /** Unique identifier for this network status request; this is either the
-   * conn->global_identifier of the dir conn (direct request) or a new
+   * chan->global_identifier of the dir channel (direct request) or a new
    * locally unique identifier of a circuit (tunneled request). This ID is
    * only unique among other direct or tunneled requests, respectively. */
   uint64_t dirreq_id;
   unsigned int state:3; /**< State of this directory request. */
   unsigned int type:1; /**< Is this a direct or a tunneled request? */
   unsigned int completed:1; /**< Is this request complete? */
-  unsigned int action:2; /**< Is this a v2 or v3 request? */
   /** When did we receive the request and started sending the response? */
   struct timeval request_time;
   size_t response_size; /**< What is the size of the response in bytes? */
@@ -631,7 +691,7 @@ HT_GENERATE(dirreqmap, dirreq_map_entry_t, node, dirreq_map_ent_hash,
  * <b>type</b> and <b>dirreq_id</b> as key parts. If there is
  * already an entry for that key, print out a BUG warning and return. */
 static void
-_dirreq_map_put(dirreq_map_entry_t *entry, dirreq_type_t type,
+dirreq_map_put_(dirreq_map_entry_t *entry, dirreq_type_t type,
                uint64_t dirreq_id)
 {
   dirreq_map_entry_t *old_ent;
@@ -653,7 +713,7 @@ _dirreq_map_put(dirreq_map_entry_t *entry, dirreq_type_t type,
  * using <b>type</b> and <b>dirreq_id</b> as key parts. If there
  * is no such entry, return NULL. */
 static dirreq_map_entry_t *
-_dirreq_map_get(dirreq_type_t type, uint64_t dirreq_id)
+dirreq_map_get_(dirreq_type_t type, uint64_t dirreq_id)
 {
   dirreq_map_entry_t lookup;
   lookup.type = type;
@@ -662,12 +722,11 @@ _dirreq_map_get(dirreq_type_t type, uint64_t dirreq_id)
 }
 
 /** Note that an either direct or tunneled (see <b>type</b>) directory
- * request for a network status with unique ID <b>dirreq_id</b> of size
- * <b>response_size</b> and action <b>action</b> (either v2 or v3) has
- * started. */
+ * request for a v3 network status with unique ID <b>dirreq_id</b> of size
+ * <b>response_size</b> has started. */
 void
 geoip_start_dirreq(uint64_t dirreq_id, size_t response_size,
-                   geoip_client_action_t action, dirreq_type_t type)
+                   dirreq_type_t type)
 {
   dirreq_map_entry_t *ent;
   if (!get_options()->DirReqStatistics)
@@ -676,9 +735,8 @@ geoip_start_dirreq(uint64_t dirreq_id, size_t response_size,
   ent->dirreq_id = dirreq_id;
   tor_gettimeofday(&ent->request_time);
   ent->response_size = response_size;
-  ent->action = action;
   ent->type = type;
-  _dirreq_map_put(ent, type, dirreq_id);
+  dirreq_map_put_(ent, type, dirreq_id);
 }
 
 /** Change the state of the either direct or tunneled (see <b>type</b>)
@@ -694,7 +752,7 @@ geoip_change_dirreq_state(uint64_t dirreq_id, dirreq_type_t type,
   dirreq_map_entry_t *ent;
   if (!get_options()->DirReqStatistics)
     return;
-  ent = _dirreq_map_get(type, dirreq_id);
+  ent = dirreq_map_get_(type, dirreq_id);
   if (!ent)
     return;
   if (new_state == DIRREQ_IS_FOR_NETWORK_STATUS)
@@ -705,7 +763,7 @@ geoip_change_dirreq_state(uint64_t dirreq_id, dirreq_type_t type,
   if ((type == DIRREQ_DIRECT &&
          new_state == DIRREQ_FLUSHING_DIR_CONN_FINISHED) ||
       (type == DIRREQ_TUNNELED &&
-         new_state == DIRREQ_OR_CONN_BUFFER_FLUSHED)) {
+         new_state == DIRREQ_CHANNEL_BUFFER_FLUSHED)) {
     tor_gettimeofday(&ent->completion_time);
     ent->completed = 1;
   }
@@ -717,8 +775,7 @@ geoip_change_dirreq_state(uint64_t dirreq_id, dirreq_type_t type,
  * times by deciles and quartiles. Return NULL if we have not observed
  * requests for long enough. */
 static char *
-geoip_get_dirreq_history(geoip_client_action_t action,
-                           dirreq_type_t type)
+geoip_get_dirreq_history(dirreq_type_t type)
 {
   char *result = NULL;
   smartlist_t *dirreq_completed = NULL;
@@ -728,13 +785,10 @@ geoip_get_dirreq_history(geoip_client_action_t action,
   struct timeval now;
 
   tor_gettimeofday(&now);
-  if (action != GEOIP_CLIENT_NETWORKSTATUS &&
-      action != GEOIP_CLIENT_NETWORKSTATUS_V2)
-    return NULL;
   dirreq_completed = smartlist_new();
   for (ptr = HT_START(dirreqmap, &dirreq_map); ptr; ptr = next) {
     ent = *ptr;
-    if (ent->action != action || ent->type != type) {
+    if (ent->type != type) {
       next = HT_NEXT(dirreqmap, &dirreq_map, ptr);
       continue;
     } else {
@@ -813,27 +867,35 @@ geoip_get_dirreq_history(geoip_client_action_t action,
   return result;
 }
 
-/** Return a newly allocated comma-separated string containing entries for
- * all the countries from which we've seen enough clients connect as a
- * bridge, directory server, or entry guard. The entry format is cc=num
- * where num is the number of IPs we've seen connecting from that country,
- * and cc is a lowercased country code. Returns NULL if we don't want
- * to export geoip data yet. */
-char *
-geoip_get_client_history(geoip_client_action_t action)
+/** Store a newly allocated comma-separated string in
+ * *<a>country_str</a> containing entries for all the countries from
+ * which we've seen enough clients connect as a bridge, directory
+ * server, or entry guard. The entry format is cc=num where num is the
+ * number of IPs we've seen connecting from that country, and cc is a
+ * lowercased country code. *<a>country_str</a> is set to NULL if
+ * we're not ready to export per country data yet.
+ *
+ * Store a newly allocated comma-separated string in <a>ipver_str</a>
+ * containing entries for clients connecting over IPv4 and IPv6. The
+ * format is family=num where num is the nubmer of IPs we've seen
+ * connecting over that protocol family, and family is 'v4' or 'v6'.
+ *
+ * Return 0 on success and -1 if we're missing geoip data. */
+int
+geoip_get_client_history(geoip_client_action_t action,
+                         char **country_str, char **ipver_str)
 {
-  char *result = NULL;
   unsigned granularity = IP_GRANULARITY;
-  smartlist_t *chunks = NULL;
   smartlist_t *entries = NULL;
   int n_countries = geoip_get_n_countries();
   int i;
   clientmap_entry_t **ent;
   unsigned *counts = NULL;
   unsigned total = 0;
+  unsigned ipv4_count = 0, ipv6_count = 0;
 
-  if (!geoip_is_loaded())
-    return NULL;
+  if (!geoip_is_loaded(AF_INET) && !geoip_is_loaded(AF_INET6))
+    return -1;
 
   counts = tor_malloc_zero(sizeof(unsigned)*n_countries);
   HT_FOREACH(ent, clientmap, &client_history) {
@@ -846,10 +908,34 @@ geoip_get_client_history(geoip_client_action_t action)
     tor_assert(0 <= country && country < n_countries);
     ++counts[country];
     ++total;
+    switch (tor_addr_family(&(*ent)->addr)) {
+    case AF_INET:
+      ipv4_count++;
+      break;
+    case AF_INET6:
+      ipv6_count++;
+      break;
+    }
   }
-  /* Don't record anything if we haven't seen enough IPs. */
-  if (total < MIN_IPS_TO_NOTE_ANYTHING)
-    goto done;
+  if (ipver_str) {
+    smartlist_t *chunks = smartlist_new();
+    smartlist_add_asprintf(chunks, "v4=%u",
+                           round_to_next_multiple_of(ipv4_count, granularity));
+    smartlist_add_asprintf(chunks, "v6=%u",
+                           round_to_next_multiple_of(ipv6_count, granularity));
+    *ipver_str = smartlist_join_strings(chunks, ",", 0, NULL);
+    SMARTLIST_FOREACH(chunks, char *, c, tor_free(c));
+    smartlist_free(chunks);
+  }
+
+  /* Don't record per country data if we haven't seen enough IPs. */
+  if (total < MIN_IPS_TO_NOTE_ANYTHING) {
+    tor_free(counts);
+    if (country_str)
+      *country_str = NULL;
+    return 0;
+  }
+
   /* Make a list of c_hist_t */
   entries = smartlist_new();
   for (i = 0; i < n_countries; ++i) {
@@ -868,40 +954,35 @@ geoip_get_client_history(geoip_client_action_t action)
   }
   /* Sort entries. Note that we must do this _AFTER_ rounding, or else
    * the sort order could leak info. */
-  smartlist_sort(entries, _c_hist_compare);
+  smartlist_sort(entries, c_hist_compare_);
 
-  /* Build the result. */
-  chunks = smartlist_new();
-  SMARTLIST_FOREACH(entries, c_hist_t *, ch, {
-      smartlist_add_asprintf(chunks, "%s=%u", ch->country, ch->total);
-  });
-  result = smartlist_join_strings(chunks, ",", 0, NULL);
- done:
-  tor_free(counts);
-  if (chunks) {
+  if (country_str) {
+    smartlist_t *chunks = smartlist_new();
+    SMARTLIST_FOREACH(entries, c_hist_t *, ch, {
+        smartlist_add_asprintf(chunks, "%s=%u", ch->country, ch->total);
+      });
+    *country_str = smartlist_join_strings(chunks, ",", 0, NULL);
     SMARTLIST_FOREACH(chunks, char *, c, tor_free(c));
     smartlist_free(chunks);
   }
-  if (entries) {
-    SMARTLIST_FOREACH(entries, c_hist_t *, c, tor_free(c));
-    smartlist_free(entries);
-  }
-  return result;
+
+  SMARTLIST_FOREACH(entries, c_hist_t *, c, tor_free(c));
+  smartlist_free(entries);
+  tor_free(counts);
+
+  return 0;
 }
 
 /** Return a newly allocated string holding the per-country request history
- * for <b>action</b> in a format suitable for an extra-info document, or NULL
- * on failure. */
+ * for v3 network statuses in a format suitable for an extra-info document,
+ * or NULL on failure. */
 char *
-geoip_get_request_history(geoip_client_action_t action)
+geoip_get_request_history(void)
 {
   smartlist_t *entries, *strings;
   char *result;
   unsigned granularity = IP_GRANULARITY;
 
-  if (action != GEOIP_CLIENT_NETWORKSTATUS &&
-      action != GEOIP_CLIENT_NETWORKSTATUS_V2)
-    return NULL;
   if (!geoip_countries)
     return NULL;
 
@@ -909,8 +990,7 @@ geoip_get_request_history(geoip_client_action_t action)
   SMARTLIST_FOREACH_BEGIN(geoip_countries, geoip_country_t *, c) {
       uint32_t tot = 0;
       c_hist_t *ent;
-      tot = (action == GEOIP_CLIENT_NETWORKSTATUS) ?
-            c->n_v3_ns_requests : c->n_v2_ns_requests;
+      tot = c->n_v3_ns_requests;
       if (!tot)
         continue;
       ent = tor_malloc_zero(sizeof(c_hist_t));
@@ -918,7 +998,7 @@ geoip_get_request_history(geoip_client_action_t action)
       ent->total = round_to_next_multiple_of(tot, granularity);
       smartlist_add(entries, ent);
   } SMARTLIST_FOREACH_END(c);
-  smartlist_sort(entries, _c_hist_compare);
+  smartlist_sort(entries, c_hist_compare_);
 
   strings = smartlist_new();
   SMARTLIST_FOREACH(entries, c_hist_t *, ent, {
@@ -948,14 +1028,13 @@ void
 geoip_reset_dirreq_stats(time_t now)
 {
   SMARTLIST_FOREACH(geoip_countries, geoip_country_t *, c, {
-      c->n_v2_ns_requests = c->n_v3_ns_requests = 0;
+      c->n_v3_ns_requests = 0;
   });
   {
     clientmap_entry_t **ent, **next, *this;
     for (ent = HT_START(clientmap, &client_history); ent != NULL;
          ent = next) {
-      if ((*ent)->action == GEOIP_CLIENT_NETWORKSTATUS ||
-          (*ent)->action == GEOIP_CLIENT_NETWORKSTATUS_V2) {
+      if ((*ent)->action == GEOIP_CLIENT_NETWORKSTATUS) {
         this = *ent;
         next = HT_NEXT_RMV(clientmap, &client_history, ent);
         tor_free(this);
@@ -964,10 +1043,6 @@ geoip_reset_dirreq_stats(time_t now)
       }
     }
   }
-  v2_share_times_seconds = v3_share_times_seconds = 0.0;
-  last_time_determined_shares = 0;
-  share_seconds = 0;
-  memset(ns_v2_responses, 0, sizeof(ns_v2_responses));
   memset(ns_v3_responses, 0, sizeof(ns_v3_responses));
   {
     dirreq_map_entry_t **ent, **next, *this;
@@ -995,12 +1070,9 @@ char *
 geoip_format_dirreq_stats(time_t now)
 {
   char t[ISO_TIME_LEN+1];
-  double v2_share = 0.0, v3_share = 0.0;
   int i;
-  char *v3_ips_string, *v2_ips_string, *v3_reqs_string, *v2_reqs_string,
-       *v2_share_string = NULL, *v3_share_string = NULL,
-       *v3_direct_dl_string, *v2_direct_dl_string,
-       *v3_tunneled_dl_string, *v2_tunneled_dl_string;
+  char *v3_ips_string, *v3_reqs_string, *v3_direct_dl_string,
+       *v3_tunneled_dl_string;
   char *result;
 
   if (!start_of_dirreq_stats_interval)
@@ -1009,89 +1081,45 @@ geoip_format_dirreq_stats(time_t now)
   tor_assert(now >= start_of_dirreq_stats_interval);
 
   format_iso_time(t, now);
-  v2_ips_string = geoip_get_client_history(GEOIP_CLIENT_NETWORKSTATUS_V2);
-  v3_ips_string = geoip_get_client_history(GEOIP_CLIENT_NETWORKSTATUS);
-  v2_reqs_string = geoip_get_request_history(
-                   GEOIP_CLIENT_NETWORKSTATUS_V2);
-  v3_reqs_string = geoip_get_request_history(GEOIP_CLIENT_NETWORKSTATUS);
+  geoip_get_client_history(GEOIP_CLIENT_NETWORKSTATUS, &v3_ips_string, NULL);
+  v3_reqs_string = geoip_get_request_history();
 
 #define RESPONSE_GRANULARITY 8
   for (i = 0; i < GEOIP_NS_RESPONSE_NUM; i++) {
-    ns_v2_responses[i] = round_uint32_to_next_multiple_of(
-                               ns_v2_responses[i], RESPONSE_GRANULARITY);
     ns_v3_responses[i] = round_uint32_to_next_multiple_of(
                                ns_v3_responses[i], RESPONSE_GRANULARITY);
   }
 #undef RESPONSE_GRANULARITY
 
-  if (!geoip_get_mean_shares(now, &v2_share, &v3_share)) {
-    tor_asprintf(&v2_share_string, "dirreq-v2-share %0.2f%%\n",
-                 v2_share*100);
-    tor_asprintf(&v3_share_string, "dirreq-v3-share %0.2f%%\n",
-                 v3_share*100);
-  }
-
-  v2_direct_dl_string = geoip_get_dirreq_history(
-                        GEOIP_CLIENT_NETWORKSTATUS_V2, DIRREQ_DIRECT);
-  v3_direct_dl_string = geoip_get_dirreq_history(
-                        GEOIP_CLIENT_NETWORKSTATUS, DIRREQ_DIRECT);
-
-  v2_tunneled_dl_string = geoip_get_dirreq_history(
-                          GEOIP_CLIENT_NETWORKSTATUS_V2, DIRREQ_TUNNELED);
-  v3_tunneled_dl_string = geoip_get_dirreq_history(
-                          GEOIP_CLIENT_NETWORKSTATUS, DIRREQ_TUNNELED);
+  v3_direct_dl_string = geoip_get_dirreq_history(DIRREQ_DIRECT);
+  v3_tunneled_dl_string = geoip_get_dirreq_history(DIRREQ_TUNNELED);
 
   /* Put everything together into a single string. */
   tor_asprintf(&result, "dirreq-stats-end %s (%d s)\n"
               "dirreq-v3-ips %s\n"
-              "dirreq-v2-ips %s\n"
               "dirreq-v3-reqs %s\n"
-              "dirreq-v2-reqs %s\n"
               "dirreq-v3-resp ok=%u,not-enough-sigs=%u,unavailable=%u,"
                    "not-found=%u,not-modified=%u,busy=%u\n"
-              "dirreq-v2-resp ok=%u,unavailable=%u,"
-                   "not-found=%u,not-modified=%u,busy=%u\n"
-              "%s"
-              "%s"
               "dirreq-v3-direct-dl %s\n"
-              "dirreq-v2-direct-dl %s\n"
-              "dirreq-v3-tunneled-dl %s\n"
-              "dirreq-v2-tunneled-dl %s\n",
+              "dirreq-v3-tunneled-dl %s\n",
               t,
               (unsigned) (now - start_of_dirreq_stats_interval),
               v3_ips_string ? v3_ips_string : "",
-              v2_ips_string ? v2_ips_string : "",
               v3_reqs_string ? v3_reqs_string : "",
-              v2_reqs_string ? v2_reqs_string : "",
               ns_v3_responses[GEOIP_SUCCESS],
               ns_v3_responses[GEOIP_REJECT_NOT_ENOUGH_SIGS],
               ns_v3_responses[GEOIP_REJECT_UNAVAILABLE],
               ns_v3_responses[GEOIP_REJECT_NOT_FOUND],
               ns_v3_responses[GEOIP_REJECT_NOT_MODIFIED],
               ns_v3_responses[GEOIP_REJECT_BUSY],
-              ns_v2_responses[GEOIP_SUCCESS],
-              ns_v2_responses[GEOIP_REJECT_UNAVAILABLE],
-              ns_v2_responses[GEOIP_REJECT_NOT_FOUND],
-              ns_v2_responses[GEOIP_REJECT_NOT_MODIFIED],
-              ns_v2_responses[GEOIP_REJECT_BUSY],
-              v2_share_string ? v2_share_string : "",
-              v3_share_string ? v3_share_string : "",
               v3_direct_dl_string ? v3_direct_dl_string : "",
-              v2_direct_dl_string ? v2_direct_dl_string : "",
-              v3_tunneled_dl_string ? v3_tunneled_dl_string : "",
-              v2_tunneled_dl_string ? v2_tunneled_dl_string : "");
+              v3_tunneled_dl_string ? v3_tunneled_dl_string : "");
 
   /* Free partial strings. */
   tor_free(v3_ips_string);
-  tor_free(v2_ips_string);
   tor_free(v3_reqs_string);
-  tor_free(v2_reqs_string);
-  tor_free(v2_share_string);
-  tor_free(v3_share_string);
   tor_free(v3_direct_dl_string);
-  tor_free(v2_direct_dl_string);
   tor_free(v3_tunneled_dl_string);
-  tor_free(v2_tunneled_dl_string);
 
   return result;
 }
@@ -1216,7 +1244,7 @@ static char *bridge_stats_extrainfo = NULL;
 char *
 geoip_format_bridge_stats(time_t now)
 {
-  char *out = NULL, *data = NULL;
+  char *out = NULL, *country_data = NULL, *ipver_data = NULL;
   long duration = now - start_of_bridge_stats_interval;
   char written[ISO_TIME_LEN+1];
 
@@ -1226,14 +1254,17 @@ geoip_format_bridge_stats(time_t now)
     return NULL; /* Not initialized. */
 
   format_iso_time(written, now);
-  data = geoip_get_client_history(GEOIP_CLIENT_CONNECT);
+  geoip_get_client_history(GEOIP_CLIENT_CONNECT, &country_data, &ipver_data);
 
   tor_asprintf(&out,
                "bridge-stats-end %s (%ld s)\n"
-               "bridge-ips %s\n",
+               "bridge-ips %s\n"
+               "bridge-ip-versions %s\n",
                written, duration,
-               data ? data : "");
-  tor_free(data);
+               country_data ? country_data : "",
+               ipver_data ? ipver_data : "");
+  tor_free(country_data);
+  tor_free(ipver_data);
 
   return out;
 }
@@ -1244,17 +1275,20 @@ geoip_format_bridge_stats(time_t now)
 static char *
 format_bridge_stats_controller(time_t now)
 {
-  char *out = NULL, *data = NULL;
+  char *out = NULL, *country_data = NULL, *ipver_data = NULL;
   char started[ISO_TIME_LEN+1];
   (void) now;
 
   format_iso_time(started, start_of_bridge_stats_interval);
-  data = geoip_get_client_history(GEOIP_CLIENT_CONNECT);
+  geoip_get_client_history(GEOIP_CLIENT_CONNECT, &country_data, &ipver_data);
 
   tor_asprintf(&out,
-               "TimeStarted=\"%s\" CountrySummary=%s",
-               started, data ? data : "");
-  tor_free(data);
+               "TimeStarted=\"%s\" CountrySummary=%s IPVersions=%s",
+               started,
+               country_data ? country_data : "",
+               ipver_data ? ipver_data : "");
+  tor_free(country_data);
+  tor_free(ipver_data);
   return out;
 }
 
@@ -1316,8 +1350,11 @@ load_bridge_stats(time_t now)
 
   fname = get_datadir_fname2("stats", "bridge-stats");
   contents = read_file_to_str(fname, RFTS_IGNORE_MISSING, NULL);
-  if (contents && validate_bridge_stats(contents, now))
+  if (contents && validate_bridge_stats(contents, now)) {
     bridge_stats_extrainfo = contents;
+  } else {
+    tor_free(contents);
+  }
 
   tor_free(fname);
 }
@@ -1381,11 +1418,13 @@ geoip_format_entry_stats(time_t now)
 
   tor_assert(now >= start_of_entry_stats_interval);
 
-  data = geoip_get_client_history(GEOIP_CLIENT_CONNECT);
+  geoip_get_client_history(GEOIP_CLIENT_CONNECT, &data, NULL);
   format_iso_time(t, now);
-  tor_asprintf(&result, "entry-stats-end %s (%u s)\nentry-ips %s\n",
-              t, (unsigned) (now - start_of_entry_stats_interval),
-              data ? data : "");
+  tor_asprintf(&result,
+               "entry-stats-end %s (%u s)\n"
+               "entry-ips %s\n",
+               t, (unsigned) (now - start_of_entry_stats_interval),
+               data ? data : "");
   tor_free(data);
   return result;
 }
@@ -1437,25 +1476,30 @@ getinfo_helper_geoip(control_connection_t *control_conn,
                      const char **errmsg)
 {
   (void)control_conn;
-  if (!geoip_is_loaded()) {
-    *errmsg = "GeoIP data not loaded";
-    return -1;
-  }
   if (!strcmpstart(question, "ip-to-country/")) {
     int c;
-    uint32_t ip;
-    struct in_addr in;
+    sa_family_t family;
+    tor_addr_t addr;
     question += strlen("ip-to-country/");
-    if (tor_inet_aton(question, &in) != 0) {
-      ip = ntohl(in.s_addr);
-      c = geoip_get_country_by_ip(ip);
-      *answer = tor_strdup(geoip_get_country_name(c));
+    family = tor_addr_parse(&addr, question);
+    if (family != AF_INET && family != AF_INET6) {
+      *errmsg = "Invalid address family";
+      return -1;
     }
+    if (!geoip_is_loaded(family)) {
+      *errmsg = "GeoIP data not loaded";
+      return -1;
+    }
+    if (family == AF_INET)
+      c = geoip_get_country_by_ipv4(tor_addr_to_ipv4h(&addr));
+    else                      /* AF_INET6 */
+      c = geoip_get_country_by_ipv6(tor_addr_to_in6(&addr));
+    *answer = tor_strdup(geoip_get_country_name(c));
   }
   return 0;
 }
 
-/** Release all storage held by the GeoIP database. */
+/** Release all storage held by the GeoIP databases and country list. */
 static void
 clear_geoip_db(void)
 {
@@ -1465,13 +1509,20 @@ clear_geoip_db(void)
   }
 
   strmap_free(country_idxplus1_by_lc_code, NULL);
-  if (geoip_entries) {
-    SMARTLIST_FOREACH(geoip_entries, geoip_entry_t *, ent, tor_free(ent));
-    smartlist_free(geoip_entries);
+  if (geoip_ipv4_entries) {
+    SMARTLIST_FOREACH(geoip_ipv4_entries, geoip_ipv4_entry_t *, ent,
+                      tor_free(ent));
+    smartlist_free(geoip_ipv4_entries);
+  }
+  if (geoip_ipv6_entries) {
+    SMARTLIST_FOREACH(geoip_ipv6_entries, geoip_ipv6_entry_t *, ent,
+                      tor_free(ent));
+    smartlist_free(geoip_ipv6_entries);
   }
   geoip_countries = NULL;
   country_idxplus1_by_lc_code = NULL;
-  geoip_entries = NULL;
+  geoip_ipv4_entries = NULL;
+  geoip_ipv6_entries = NULL;
 }
 
 /** Release all storage held in this file. */

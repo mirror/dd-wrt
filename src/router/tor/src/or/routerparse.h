@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,18 +9,19 @@
  * \brief Header file for routerparse.c.
  **/
 
-#ifndef _TOR_ROUTERPARSE_H
-#define _TOR_ROUTERPARSE_H
+#ifndef TOR_ROUTERPARSE_H
+#define TOR_ROUTERPARSE_H
 
 int router_get_router_hash(const char *s, size_t s_len, char *digest);
 int router_get_dir_hash(const char *s, char *digest);
 int router_get_runningrouters_hash(const char *s, char *digest);
 int router_get_networkstatus_v2_hash(const char *s, char *digest);
-int router_get_networkstatus_v3_hash(const char *s, char *digest,
-                                     digest_algorithm_t algorithm);
 int router_get_networkstatus_v3_hashes(const char *s, digests_t *digests);
 int router_get_extrainfo_hash(const char *s, size_t s_len, char *digest);
 #define DIROBJ_MAX_SIG_LEN 256
+char *router_get_dirobj_signature(const char *digest,
+                                  size_t digest_len,
+                                  crypto_pk_t *private_key);
 int router_append_dirobj_signature(char *buf, size_t buf_len,
                                    const char *digest,
                                    size_t digest_len,
@@ -31,8 +32,6 @@ int router_parse_list_from_string(const char **s, const char *eos,
                                   int is_extrainfo,
                                   int allow_annotations,
                                   const char *prepend_annotations);
-int router_parse_runningrouters(const char *str);
-int router_parse_directory(const char *str);
 
 routerinfo_t *router_parse_entry_from_string(const char *s, const char *end,
                                              int cache_copy,
@@ -54,8 +53,9 @@ void assert_addr_policy_ok(smartlist_t *t);
 void dump_distinct_digest_count(int severity);
 
 int compare_routerstatus_entries(const void **_a, const void **_b);
+int compare_vote_routerstatus_entries(const void **_a, const void **_b);
 networkstatus_v2_t *networkstatus_v2_parse_from_string(const char *s);
-int networkstatus_verify_bw_weights(networkstatus_t *ns);
+int networkstatus_verify_bw_weights(networkstatus_t *ns, int);
 networkstatus_t *networkstatus_parse_vote_from_string(const char *s,
                                                  const char **eos_out,
                                                  networkstatus_type_t ns_type);

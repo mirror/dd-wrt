@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for dns.c.
  **/
 
-#ifndef _TOR_DNS_H
-#define _TOR_DNS_H
+#ifndef TOR_DNS_H
+#define TOR_DNS_H
 
 int dns_init(void);
 int has_dns_init_failed(void);
@@ -24,6 +24,7 @@ void dns_cancel_pending_resolve(const char *question);
 int dns_resolve(edge_connection_t *exitconn);
 void dns_launch_correctness_checks(void);
 int dns_seems_to_be_broken(void);
+int dns_seems_to_be_broken_for_ipv6(void);
 void dns_reset_correctness_checks(void);
 void dump_dns_mem_usage(int severity);
 

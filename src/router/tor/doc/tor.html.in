@@ -774,7 +774,7 @@ difficulty tracking the source of the stream.</p></div>
 <div class="sectionbody">
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>-h</strong>, <strong>-help</strong>
+<a id="opt-h"></a> <strong>-h</strong>, <strong>-help</strong>
 </dt>
 <dd>
 <p>
@@ -782,7 +782,7 @@ difficulty tracking the source of the stream.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>-f</strong> <em>FILE</em>
+<a id="opt-f"></a> <strong>-f</strong> <em>FILE</em>
 </dt>
 <dd>
 <p>
@@ -792,7 +792,7 @@ difficulty tracking the source of the stream.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>--defaults-torrc</strong> <em>FILE</em>
+<a id="opt-defaults-torrc"></a> <strong>--defaults-torrc</strong> <em>FILE</em>
 </dt>
 <dd>
 <p>
@@ -803,7 +803,7 @@ difficulty tracking the source of the stream.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>--hash-password</strong>
+<a id="opt-hash-password"></a> <strong>--hash-password</strong>
 </dt>
 <dd>
 <p>
@@ -811,7 +811,7 @@ difficulty tracking the source of the stream.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>--list-fingerprint</strong>
+<a id="opt-list-fingerprint"></a> <strong>--list-fingerprint</strong>
 </dt>
 <dd>
 <p>
@@ -819,7 +819,7 @@ difficulty tracking the source of the stream.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>--verify-config</strong>
+<a id="opt-verify-config"></a> <strong>--verify-config</strong>
 </dt>
 <dd>
 <p>
@@ -827,7 +827,7 @@ difficulty tracking the source of the stream.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>--service install</strong> [<strong>--options</strong> <em>command-line options</em>]
+<a id="opt-serviceinstall"></a> <strong>--service install</strong> [<strong>--options</strong> <em>command-line options</em>]
 </dt>
 <dd>
 <p>
@@ -837,7 +837,7 @@ difficulty tracking the source of the stream.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>--service</strong> <strong>remove</strong>|<strong>start</strong>|<strong>stop</strong>
+<a id="opt-service"></a> <strong>--service</strong> <strong>remove</strong>|<strong>start</strong>|<strong>stop</strong>
 </dt>
 <dd>
 <p>
@@ -845,7 +845,7 @@ difficulty tracking the source of the stream.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>--nt-service</strong>
+<a id="opt-nt-service"></a> <strong>--nt-service</strong>
 </dt>
 <dd>
 <p>
@@ -853,7 +853,7 @@ difficulty tracking the source of the stream.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>--list-torrc-options</strong>
+<a id="opt-list-torrc-options"></a> <strong>--list-torrc-options</strong>
 </dt>
 <dd>
 <p>
@@ -861,7 +861,7 @@ difficulty tracking the source of the stream.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>--version</strong>
+<a id="opt-version"></a> <strong>--version</strong>
 </dt>
 <dd>
 <p>
@@ -869,7 +869,7 @@ difficulty tracking the source of the stream.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>--quiet</strong>|<strong>--hush</strong>
+<a id="opt-quiet"></a> <strong>--quiet</strong>|<strong>--hush</strong>
 </dt>
 <dd>
 <p>
@@ -926,28 +926,28 @@ option name with a forward slash.</p></div>
 <div class="sectionbody">
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>BandwidthRate</strong> <em>N</em> <strong>bytes</strong>|<strong>KB</strong>|<strong>MB</strong>|<strong>GB</strong>
+<a id="BandwidthRate"></a> <strong>BandwidthRate</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>
 </dt>
 <dd>
 <p>
     A token bucket limits the average incoming bandwidth usage on this node to
     the specified number of bytes per second, and the average outgoing
     bandwidth usage to that same value.  If you want to run a relay in the
-    public network, this needs to be <em>at the very least</em> 30 KB (that is,
-    30720 bytes). (Default: 5 MB)
+    public network, this needs to be <em>at the very least</em> 30 KBytes (that is,
+    30720 bytes). (Default: 1 GByte)
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>BandwidthBurst</strong> <em>N</em> <strong>bytes</strong>|<strong>KB</strong>|<strong>MB</strong>|<strong>GB</strong>
+<a id="BandwidthBurst"></a> <strong>BandwidthBurst</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>
 </dt>
 <dd>
 <p>
     Limit the maximum token bucket size (also known as the burst) to the given
-    number of bytes in each direction. (Default: 10 MB)
+    number of bytes in each direction. (Default: 1 GByte)
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>MaxAdvertisedBandwidth</strong> <em>N</em> <strong>bytes</strong>|<strong>KB</strong>|<strong>MB</strong>|<strong>GB</strong>
+<a id="MaxAdvertisedBandwidth"></a> <strong>MaxAdvertisedBandwidth</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>
 </dt>
 <dd>
 <p>
@@ -959,7 +959,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>RelayBandwidthRate</strong> <em>N</em> <strong>bytes</strong>|<strong>KB</strong>|<strong>MB</strong>|<strong>GB</strong>
+<a id="RelayBandwidthRate"></a> <strong>RelayBandwidthRate</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>
 </dt>
 <dd>
 <p>
@@ -971,7 +971,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>RelayBandwidthBurst</strong> <em>N</em> <strong>bytes</strong>|<strong>KB</strong>|<strong>MB</strong>|<strong>GB</strong>
+<a id="RelayBandwidthBurst"></a> <strong>RelayBandwidthBurst</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>
 </dt>
 <dd>
 <p>
@@ -981,7 +981,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>PerConnBWRate</strong> <em>N</em> <strong>bytes</strong>|<strong>KB</strong>|<strong>MB</strong>|<strong>GB</strong>
+<a id="PerConnBWRate"></a> <strong>PerConnBWRate</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>
 </dt>
 <dd>
 <p>
@@ -991,7 +991,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>PerConnBWBurst</strong> <em>N</em> <strong>bytes</strong>|<strong>KB</strong>|<strong>MB</strong>|<strong>GB</strong>
+<a id="PerConnBWBurst"></a> <strong>PerConnBWBurst</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>
 </dt>
 <dd>
 <p>
@@ -1001,7 +1001,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ClientTransportPlugin</strong> <em>transport</em> socks4|socks5 <em>IP</em>:<em>PORT</em>
+<a id="ClientTransportPlugin"></a> <strong>ClientTransportPlugin</strong> <em>transport</em> socks4|socks5 <em>IP</em>:<em>PORT</em>
 </dt>
 <dt class="hdlist1">
 <strong>ClientTransportPlugin</strong> <em>transport</em> exec <em>path-to-binary</em> [options]
@@ -1020,7 +1020,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ServerTransportPlugin</strong> <em>transport</em> exec <em>path-to-binary</em> [options]
+<a id="ServerTransportPlugin"></a> <strong>ServerTransportPlugin</strong> <em>transport</em> exec <em>path-to-binary</em> [options]
 </dt>
 <dd>
 <p>
@@ -1030,7 +1030,17 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ConnLimit</strong> <em>NUM</em>
+<a id="ServerTransportListenAddr"></a> <strong>ServerTransportListenAddr</strong> <em>transport</em> <em>IP</em>:<em>PORT</em>
+</dt>
+<dd>
+<p>
+    When this option is set, Tor will suggest <em>IP</em>:<em>PORT</em> as the
+    listening address of any pluggable transport proxy that tries to
+    launch <em>transport</em>.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="ConnLimit"></a> <strong>ConnLimit</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -1044,7 +1054,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DisableNetwork</strong> <strong>0</strong>|<strong>1</strong>
+<a id="DisableNetwork"></a> <strong>DisableNetwork</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1055,7 +1065,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ConstrainedSockets</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ConstrainedSockets"></a> <strong>ConstrainedSockets</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1081,7 +1091,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ConstrainedSockSize</strong> <em>N</em> <strong>bytes</strong>|<strong>KB</strong>
+<a id="ConstrainedSockSize"></a> <strong>ConstrainedSockSize</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>
 </dt>
 <dd>
 <p>
@@ -1091,7 +1101,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ControlPort</strong> <em>PORT</em>|<strong>auto</strong>
+<a id="ControlPort"></a> <strong>ControlPort</strong> <em>PORT</em>|<strong>auto</strong>
 </dt>
 <dd>
 <p>
@@ -1107,7 +1117,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ControlListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
+<a id="ControlListenAddress"></a> <strong>ControlListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
 </dt>
 <dd>
 <p>
@@ -1120,7 +1130,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ControlSocket</strong> <em>Path</em>
+<a id="ControlSocket"></a> <strong>ControlSocket</strong> <em>Path</em>
 </dt>
 <dd>
 <p>
@@ -1129,7 +1139,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ControlSocketsGroupWritable</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ControlSocketsGroupWritable"></a> <strong>ControlSocketsGroupWritable</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1139,7 +1149,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HashedControlPassword</strong> <em>hashed_password</em>
+<a id="HashedControlPassword"></a> <strong>HashedControlPassword</strong> <em>hashed_password</em>
 </dt>
 <dd>
 <p>
@@ -1151,7 +1161,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>CookieAuthentication</strong> <strong>0</strong>|<strong>1</strong>
+<a id="CookieAuthentication"></a> <strong>CookieAuthentication</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1163,7 +1173,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>CookieAuthFile</strong> <em>Path</em>
+<a id="CookieAuthFile"></a> <strong>CookieAuthFile</strong> <em>Path</em>
 </dt>
 <dd>
 <p>
@@ -1172,7 +1182,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>CookieAuthFileGroupReadable</strong> <strong>0</strong>|<strong>1</strong>|<em>Groupname</em>
+<a id="CookieAuthFileGroupReadable"></a> <strong>CookieAuthFileGroupReadable</strong> <strong>0</strong>|<strong>1</strong>|<em>Groupname</em>
 </dt>
 <dd>
 <p>
@@ -1183,7 +1193,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ControlPortWriteToFile</strong> <em>Path</em>
+<a id="ControlPortWriteToFile"></a> <strong>ControlPortWriteToFile</strong> <em>Path</em>
 </dt>
 <dd>
 <p>
@@ -1193,7 +1203,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ControlPortFileGroupReadable</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ControlPortFileGroupReadable"></a> <strong>ControlPortFileGroupReadable</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1203,7 +1213,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DataDirectory</strong> <em>DIR</em>
+<a id="DataDirectory"></a> <strong>DataDirectory</strong> <em>DIR</em>
 </dt>
 <dd>
 <p>
@@ -1211,7 +1221,17 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DirServer</strong> [<em>nickname</em>] [<strong>flags</strong>] <em>address</em>:<em>port</em> <em>fingerprint</em>
+<a id="FallbackDir"></a> <strong>FallbackDir</strong> <em>address</em>:<em>port</em> orport=<em>port</em> id=<em>fingerprint</em> [weight=<em>num</em>]
+</dt>
+<dd>
+<p>
+    When we&#8217;re unable to connect to any directory cache for directory info
+    (usually because we don&#8217;t know about any yet) we try a FallbackDir.
+    By default, the directory authorities are also FallbackDirs.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DirAuthority"></a> <strong>DirAuthority</strong> [<em>nickname</em>] [<strong>flags</strong>] <em>address</em>:<em>port</em> <em>fingerprint</em>
 </dt>
 <dd>
 <p>
@@ -1227,19 +1247,32 @@ option name with a forward slash.</p></div>
     flag is set, or if the "v1" flag is set and the "no-hs" flag is <strong>not</strong> set.
     Tor will use this authority as a bridge authoritative directory if the
     "bridge" flag is set. If a flag "orport=<strong>port</strong>" is given, Tor will use the
-    given port when opening encrypted tunnels to the dirserver. Lastly, if a
+    given port when opening encrypted tunnels to the dirserver. If a flag
+    "weight=<strong>num</strong>" is given, then the directory server is chosen randomly
+    with probability proportional to that weight (default 1.0). Lastly, if a
     flag "v3ident=<strong>fp</strong>" is given, the dirserver is a v3 directory authority
     whose v3 long-term signing key has the fingerprint <strong>fp</strong>.<br />
 <br />
-    If no <strong>dirserver</strong> line is given, Tor will use the default directory
-    servers. NOTE: this option is intended for setting up a private Tor
+    If no <strong>DirAuthority</strong> line is given, Tor will use the default directory
+    authorities. NOTE: this option is intended for setting up a private Tor
     network with its own directory authorities. If you use it, you will be
     distinguishable from other users, because you won&#8217;t believe the same
     authorities they do.
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DynamicDHGroups</strong> <strong>0</strong>|<strong>1</strong>
+<a id="DirAuthorityFallbackRate"></a> <strong>DirAuthorityFallbackRate</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    When configured to use both directory authorities and fallback
+    directories, the directory authorities also work as fallbacks. They are
+    chosen with their regular weights, multiplied by this number, which
+    should be 1.0 or less. (Default: 1.0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DynamicDHGroups"></a> <strong>DynamicDHGroups</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1250,15 +1283,15 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p><strong>AlternateDirAuthority</strong> [<em>nickname</em>] [<strong>flags</strong>] <em>address</em>:<em>port</em> <em>fingerprint</em><br /></p></div>
-<div class="paragraph"><p><strong>AlternateHSAuthority</strong> [<em>nickname</em>] [<strong>flags</strong>] <em>address</em>:<em>port</em> <em>fingerprint</em><br /></p></div>
+<div class="paragraph"><p><a id="AlternateDirAuthority"></a> <strong>AlternateDirAuthority</strong> [<em>nickname</em>] [<strong>flags</strong>] <em>address</em>:<em>port</em> <em>fingerprint</em><br /></p></div>
+<div class="paragraph"><p><a id="AlternateHSAuthority"></a> <strong>AlternateHSAuthority</strong> [<em>nickname</em>] [<strong>flags</strong>] <em>address</em>:<em>port</em> <em>fingerprint</em><br /></p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>AlternateBridgeAuthority</strong> [<em>nickname</em>] [<strong>flags</strong>] <em>address</em>:<em>port</em> <em> fingerprint</em>
+<a id="AlternateBridgeAuthority"></a> <strong>AlternateBridgeAuthority</strong> [<em>nickname</em>] [<strong>flags</strong>] <em>address</em>:<em>port</em> <em> fingerprint</em>
 </dt>
 <dd>
 <p>
-    These options behave as DirServer, but they replace fewer of the
+    These options behave as DirAuthority, but they replace fewer of the
     default directory authorities. Using
     AlternateDirAuthority replaces the default Tor directory authorities, but
     leaves the default hidden service authorities and bridge authorities in
@@ -1269,7 +1302,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DisableAllSwap</strong> <strong>0</strong>|<strong>1</strong>
+<a id="DisableAllSwap"></a> <strong>DisableAllSwap</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1282,12 +1315,13 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DisableDebuggerAttachment</strong> <strong>0</strong>|<strong>1</strong>
+<a id="DisableDebuggerAttachment"></a> <strong>DisableDebuggerAttachment</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
    If set to 1, Tor will attempt to prevent basic debugging attachment attempts
-   by other processes. It has no impact for users who wish to attach if they
+   by other processes. This may also keep Tor from generating core files if
+   it crashes. It has no impact for users who wish to attach if they
    have CAP_SYS_PTRACE or if they are root.  We believe that this feature
    works on modern Gnu/Linux distributions, and that it may also work on *BSD
    systems (untested).  Some modern Gnu/Linux systems such as Ubuntu have the
@@ -1301,7 +1335,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>FetchDirInfoEarly</strong> <strong>0</strong>|<strong>1</strong>
+<a id="FetchDirInfoEarly"></a> <strong>FetchDirInfoEarly</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1311,7 +1345,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>FetchDirInfoExtraEarly</strong> <strong>0</strong>|<strong>1</strong>
+<a id="FetchDirInfoExtraEarly"></a> <strong>FetchDirInfoExtraEarly</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1322,7 +1356,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>FetchHidServDescriptors</strong> <strong>0</strong>|<strong>1</strong>
+<a id="FetchHidServDescriptors"></a> <strong>FetchHidServDescriptors</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1332,7 +1366,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>FetchServerDescriptors</strong> <strong>0</strong>|<strong>1</strong>
+<a id="FetchServerDescriptors"></a> <strong>FetchServerDescriptors</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1343,7 +1377,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>FetchUselessDescriptors</strong> <strong>0</strong>|<strong>1</strong>
+<a id="FetchUselessDescriptors"></a> <strong>FetchUselessDescriptors</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1355,7 +1389,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HTTPProxy</strong> <em>host</em>[:<em>port</em>]
+<a id="HTTPProxy"></a> <strong>HTTPProxy</strong> <em>host</em>[:<em>port</em>]
 </dt>
 <dd>
 <p>
@@ -1365,7 +1399,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HTTPProxyAuthenticator</strong> <em>username:password</em>
+<a id="HTTPProxyAuthenticator"></a> <strong>HTTPProxyAuthenticator</strong> <em>username:password</em>
 </dt>
 <dd>
 <p>
@@ -1376,7 +1410,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HTTPSProxy</strong> <em>host</em>[:<em>port</em>]
+<a id="HTTPSProxy"></a> <strong>HTTPSProxy</strong> <em>host</em>[:<em>port</em>]
 </dt>
 <dd>
 <p>
@@ -1388,7 +1422,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HTTPSProxyAuthenticator</strong> <em>username:password</em>
+<a id="HTTPSProxyAuthenticator"></a> <strong>HTTPSProxyAuthenticator</strong> <em>username:password</em>
 </dt>
 <dd>
 <p>
@@ -1399,7 +1433,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>Socks4Proxy</strong> <em>host</em>[:<em>port</em>]
+<a id="Socks4Proxy"></a> <strong>Socks4Proxy</strong> <em>host</em>[:<em>port</em>]
 </dt>
 <dd>
 <p>
@@ -1408,7 +1442,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>Socks5Proxy</strong> <em>host</em>[:<em>port</em>]
+<a id="Socks5Proxy"></a> <strong>Socks5Proxy</strong> <em>host</em>[:<em>port</em>]
 </dt>
 <dd>
 <p>
@@ -1417,10 +1451,10 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p><strong>Socks5ProxyUsername</strong> <em>username</em><br /></p></div>
+<div class="paragraph"><p><a id="Socks5ProxyUsername"></a> <strong>Socks5ProxyUsername</strong> <em>username</em><br /></p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>Socks5ProxyPassword</strong> <em>password</em>
+<a id="Socks5ProxyPassword"></a> <strong>Socks5ProxyPassword</strong> <em>password</em>
 </dt>
 <dd>
 <p>
@@ -1430,7 +1464,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>KeepalivePeriod</strong> <em>NUM</em>
+<a id="KeepalivePeriod"></a> <strong>KeepalivePeriod</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -1441,7 +1475,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>Log</strong> <em>minSeverity</em>[-<em>maxSeverity</em>] <strong>stderr</strong>|<strong>stdout</strong>|<strong>syslog</strong>
+<a id="Log"></a> <strong>Log</strong> <em>minSeverity</em>[-<em>maxSeverity</em>] <strong>stderr</strong>|<strong>stdout</strong>|<strong>syslog</strong>
 </dt>
 <dd>
 <p>
@@ -1495,7 +1529,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>LogMessageDomains</strong> <strong>0</strong>|<strong>1</strong>
+<a id="LogMessageDomains"></a> <strong>LogMessageDomains</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1505,18 +1539,20 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>OutboundBindAddress</strong> <em>IP</em>
+<a id="OutboundBindAddress"></a> <strong>OutboundBindAddress</strong> <em>IP</em>
 </dt>
 <dd>
 <p>
     Make all outbound connections originate from the IP address specified. This
     is only useful when you have multiple network interfaces, and you want all
-    of Tor&#8217;s outgoing connections to use a single one.  This setting will be
-    ignored for connections to the loopback addresses (127.0.0.0/8 and ::1).
+    of Tor&#8217;s outgoing connections to use a single one. This option may
+    be used twice, once with an IPv4 address and once with an IPv6 address.
+    This setting will be ignored for connections to the loopback addresses
+    (127.0.0.0/8 and ::1).
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>PidFile</strong> <em>FILE</em>
+<a id="PidFile"></a> <strong>PidFile</strong> <em>FILE</em>
 </dt>
 <dd>
 <p>
@@ -1525,7 +1561,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ProtocolWarnings</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ProtocolWarnings"></a> <strong>ProtocolWarnings</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1535,7 +1571,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>RunAsDaemon</strong> <strong>0</strong>|<strong>1</strong>
+<a id="RunAsDaemon"></a> <strong>RunAsDaemon</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1545,7 +1581,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>LogTimeGranularity</strong> <em>NUM</em>
+<a id="LogTimeGranularity"></a> <strong>LogTimeGranularity</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -1558,7 +1594,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>SafeLogging</strong> <strong>0</strong>|<strong>1</strong>|<strong>relay</strong>
+<a id="SafeLogging"></a> <strong>SafeLogging</strong> <strong>0</strong>|<strong>1</strong>|<strong>relay</strong>
 </dt>
 <dd>
 <p>
@@ -1574,7 +1610,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>User</strong> <em>UID</em>
+<a id="User"></a> <strong>User</strong> <em>UID</em>
 </dt>
 <dd>
 <p>
@@ -1582,7 +1618,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HardwareAccel</strong> <strong>0</strong>|<strong>1</strong>
+<a id="HardwareAccel"></a> <strong>HardwareAccel</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1591,7 +1627,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AccelName</strong> <em>NAME</em>
+<a id="AccelName"></a> <strong>AccelName</strong> <em>NAME</em>
 </dt>
 <dd>
 <p>
@@ -1601,7 +1637,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AccelDir</strong> <em>DIR</em>
+<a id="AccelDir"></a> <strong>AccelDir</strong> <em>DIR</em>
 </dt>
 <dd>
 <p>
@@ -1610,7 +1646,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AvoidDiskWrites</strong> <strong>0</strong>|<strong>1</strong>
+<a id="AvoidDiskWrites"></a> <strong>AvoidDiskWrites</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1620,7 +1656,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>TunnelDirConns</strong> <strong>0</strong>|<strong>1</strong>
+<a id="TunnelDirConns"></a> <strong>TunnelDirConns</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1630,7 +1666,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>PreferTunneledDirConns</strong> <strong>0</strong>|<strong>1</strong>
+<a id="PreferTunneledDirConns"></a> <strong>PreferTunneledDirConns</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1639,7 +1675,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>CircuitPriorityHalflife</strong> <em>NUM1</em>
+<a id="CircuitPriorityHalflife"></a> <strong>CircuitPriorityHalflife</strong> <em>NUM1</em>
 </dt>
 <dd>
 <p>
@@ -1656,7 +1692,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DisableIOCP</strong> <strong>0</strong>|<strong>1</strong>
+<a id="DisableIOCP"></a> <strong>DisableIOCP</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1666,7 +1702,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>UserspaceIOCPBuffers</strong> <strong>0</strong>|<strong>1</strong>
+<a id="UserspaceIOCPBuffers"></a> <strong>UserspaceIOCPBuffers</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1678,7 +1714,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>_UseFilteringSSLBufferevents</strong> <strong>0</strong>|<strong>1</strong>
+<a id="_UseFilteringSSLBufferevents"></a> <strong>_UseFilteringSSLBufferevents</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1691,7 +1727,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>CountPrivateBandwidth</strong> <strong>0</strong>|<strong>1</strong>
+<a id="CountPrivateBandwidth"></a> <strong>CountPrivateBandwidth</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1708,10 +1744,10 @@ option name with a forward slash.</p></div>
 <h2 id="_client_options">CLIENT OPTIONS</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>The following options are useful only for clients (that is, if
-<strong>SocksPort</strong>, <strong>TransPort</strong>, <strong>DNSPort</strong>, or <strong>NATDPort</strong> is non-zero):</p></div>
+<a id="SocksPort"></a> <strong>SocksPort</strong>, <strong>TransPort</strong>, <strong>DNSPort</strong>, or <strong>NATDPort</strong> is non-zero):</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>AllowInvalidNodes</strong> <strong>entry</strong>|<strong>exit</strong>|<strong>middle</strong>|<strong>introduction</strong>|<strong>rendezvous</strong>|<strong>&#8230;</strong>
+<a id="AllowInvalidNodes"></a> <strong>AllowInvalidNodes</strong> <strong>entry</strong>|<strong>exit</strong>|<strong>middle</strong>|<strong>introduction</strong>|<strong>rendezvous</strong>|<strong>&#8230;</strong>
 </dt>
 <dd>
 <p>
@@ -1723,7 +1759,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ExcludeSingleHopRelays</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ExcludeSingleHopRelays"></a> <strong>ExcludeSingleHopRelays</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1737,13 +1773,13 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>Bridge</strong> [<em>transport</em>] <em>IP</em>:<em>ORPort</em> [<em>fingerprint</em>]
+<a id="Bridge"></a> <strong>Bridge</strong> [<em>transport</em>] <em>IP</em>:<em>ORPort</em> [<em>fingerprint</em>]
 </dt>
 <dd>
 <p>
     When set along with UseBridges, instructs Tor to use the relay at
     "IP:ORPort" as a "bridge" relaying into the Tor network. If "fingerprint"
-    is provided (using the same format as for DirServer), we will verify that
+    is provided (using the same format as for DirAuthority), we will verify that
     the relay running at that location has the right fingerprint. We also use
     fingerprint to look up the bridge descriptor at the bridge authority, if
     it&#8217;s provided and if UpdateBridgesFromAuthority is set too. <br />
@@ -1754,7 +1790,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>LearnCircuitBuildTimeout</strong> <strong>0</strong>|<strong>1</strong>
+<a id="LearnCircuitBuildTimeout"></a> <strong>LearnCircuitBuildTimeout</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1762,7 +1798,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>CircuitBuildTimeout</strong> <em>NUM</em>
+<a id="CircuitBuildTimeout"></a> <strong>CircuitBuildTimeout</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -1774,7 +1810,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>CircuitIdleTimeout</strong> <em>NUM</em>
+<a id="CircuitIdleTimeout"></a> <strong>CircuitIdleTimeout</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -1787,7 +1823,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>CircuitStreamTimeout</strong> <em>NUM</em>
+<a id="CircuitStreamTimeout"></a> <strong>CircuitStreamTimeout</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -1798,7 +1834,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ClientOnly</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ClientOnly"></a> <strong>ClientOnly</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1811,7 +1847,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ExcludeNodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
+<a id="ExcludeNodes"></a> <strong>ExcludeNodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -1830,11 +1866,15 @@ option name with a forward slash.</p></div>
     Note also that if you are a relay, this (and the other node selection
     options below) only affects your own circuits that Tor builds for you.
     Clients can still build circuits through you to any node.  Controllers
-    can tell Tor to build circuits through any node.
+    can tell Tor to build circuits through any node.<br />
+<br />
+    Country codes are case-insensitive. The code "{??}" refers to nodes whose
+    country can&#8217;t be identified. No country code, including {??}, works if
+    no GeoIPFile can be loaded. See also the GeoIPExcludeUnknown option below.
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ExcludeExitNodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
+<a id="ExcludeExitNodes"></a> <strong>ExcludeExitNodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -1846,7 +1886,20 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ExitNodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
+<a id="GeoIPExcludeUnknown"></a> <strong>GeoIPExcludeUnknown</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
+</dt>
+<dd>
+<p>
+    If this option is set to <em>auto</em>, then whenever any country code is set in
+    ExcludeNodes or ExcludeExitNodes, all nodes with unknown country ({??} and
+    possibly {A1}) are treated as excluded as well. If this option is set to
+    <em>1</em>, then all unknown countries are treated as excluded in ExcludeNodes
+    and ExcludeExitNodes.  This option has no effect when a GeoIP file isn&#8217;t
+    configured or can&#8217;t be found.  (Default: auto)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="ExitNodes"></a> <strong>ExitNodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -1874,7 +1927,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>EntryNodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
+<a id="EntryNodes"></a> <strong>EntryNodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -1890,7 +1943,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>StrictNodes</strong> <strong>0</strong>|<strong>1</strong>
+<a id="StrictNodes"></a> <strong>StrictNodes</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1907,7 +1960,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>FascistFirewall</strong> <strong>0</strong>|<strong>1</strong>
+<a id="FascistFirewall"></a> <strong>FascistFirewall</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -1920,7 +1973,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>FirewallPorts</strong> <em>PORTS</em>
+<a id="FirewallPorts"></a> <strong>FirewallPorts</strong> <em>PORTS</em>
 </dt>
 <dd>
 <p>
@@ -1930,7 +1983,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ReachableAddresses</strong> <em>ADDR</em>[/<em>MASK</em>][:<em>PORT</em>]&#8230;
+<a id="ReachableAddresses"></a> <strong>ReachableAddresses</strong> <em>ADDR</em>[/<em>MASK</em>][:<em>PORT</em>]&#8230;
 </dt>
 <dd>
 <p>
@@ -1944,7 +1997,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ReachableDirAddresses</strong> <em>ADDR</em>[/<em>MASK</em>][:<em>PORT</em>]&#8230;
+<a id="ReachableDirAddresses"></a> <strong>ReachableDirAddresses</strong> <em>ADDR</em>[/<em>MASK</em>][:<em>PORT</em>]&#8230;
 </dt>
 <dd>
 <p>
@@ -1956,7 +2009,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ReachableORAddresses</strong> <em>ADDR</em>[/<em>MASK</em>][:<em>PORT</em>]&#8230;
+<a id="ReachableORAddresses"></a> <strong>ReachableORAddresses</strong> <em>ADDR</em>[/<em>MASK</em>][:<em>PORT</em>]&#8230;
 </dt>
 <dd>
 <p>
@@ -1974,7 +2027,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HidServAuth</strong> <em>onion-address</em> <em>auth-cookie</em> [<em>service-name</em>]
+<a id="HidServAuth"></a> <strong>HidServAuth</strong> <em>onion-address</em> <em>auth-cookie</em> [<em>service-name</em>]
 </dt>
 <dd>
 <p>
@@ -1989,7 +2042,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>CloseHSClientCircuitsImmediatelyOnTimeout</strong> <strong>0</strong>|<strong>1</strong>
+<a id="CloseHSClientCircuitsImmediatelyOnTimeout"></a> <strong>CloseHSClientCircuitsImmediatelyOnTimeout</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2004,7 +2057,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>CloseHSServiceRendCircuitsImmediatelyOnTimeout</strong> <strong>0</strong>|<strong>1</strong>
+<a id="CloseHSServiceRendCircuitsImmediatelyOnTimeout"></a> <strong>CloseHSServiceRendCircuitsImmediatelyOnTimeout</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2017,7 +2070,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>LongLivedPorts</strong> <em>PORTS</em>
+<a id="LongLivedPorts"></a> <strong>LongLivedPorts</strong> <em>PORTS</em>
 </dt>
 <dd>
 <p>
@@ -2031,7 +2084,7 @@ option name with a forward slash.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>MapAddress</strong> <em>address</em> <em>newaddress</em>
+<a id="MapAddress"></a> <strong>MapAddress</strong> <em>address</em> <em>newaddress</em>
 </dt>
 <dd>
 <p>
@@ -2096,7 +2149,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </ol></div>
 </dd>
 <dt class="hdlist1">
-<strong>NewCircuitPeriod</strong> <em>NUM</em>
+<a id="NewCircuitPeriod"></a> <strong>NewCircuitPeriod</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -2105,7 +2158,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>MaxCircuitDirtiness</strong> <em>NUM</em>
+<a id="MaxCircuitDirtiness"></a> <strong>MaxCircuitDirtiness</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -2116,7 +2169,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>MaxClientCircuitsPending</strong> <em>NUM</em>
+<a id="MaxClientCircuitsPending"></a> <strong>MaxClientCircuitsPending</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -2126,7 +2179,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>NodeFamily</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
+<a id="NodeFamily"></a> <strong>NodeFamily</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -2139,7 +2192,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>EnforceDistinctSubnets</strong> <strong>0</strong>|<strong>1</strong>
+<a id="EnforceDistinctSubnets"></a> <strong>EnforceDistinctSubnets</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2149,7 +2202,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>SOCKSPort</strong> [<em>address</em>:]<em>port</em>|<strong>auto</strong> [<em>isolation flags</em>]
+<a id="SOCKSPort"></a> <strong>SOCKSPort</strong> [<em>address</em>:]<em>port</em>|<strong>auto</strong> [<em>flags</em>] [<em>isolation flags</em>]
 </dt>
 <dd>
 <p>
@@ -2221,13 +2274,70 @@ Using a wildcard to match only part of a string (as in *ample.com) is
         on this port to share circuits with streams from every other
         port with the same session group.  (By default, streams received
         on different SOCKSPorts, TransPorts, etc are always isolated from one
-        another. This option overrides that behavior.)
+        another. This option overrides that behavior.)<br />
 </p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>Other recognized _flags_ for a SOCKSPort are:
+**NoIPv4Traffic**;;
+    Tell exits to not connect to IPv4 addresses in response to SOCKS
+    requests on this connection.
+**IPv6Traffic**;;
+    Tell exits to allow IPv6 addresses in response to SOCKS requests on
+    this connection, so long as SOCKS5 is in use.  (SOCKS4 can't handle
+    IPv6.)
+**PreferIPv6**;;
+    Tells exits that, if a host has both an IPv4 and an IPv6 address,
+    we would prefer to connect to it via IPv6. (IPv4 is the default.) +</tt></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>   NOTE: Although this option allows you to specify an IP address
+   other than localhost, you should do so only with extreme caution.
+   The SOCKS protocol is unencrypted and (as we use it)
+   unauthenticated, so exposing it in this way could leak your
+   information to anybody watching your network, and allow anybody
+   to use your computer as an open proxy.
+**CacheIPv4DNS**;;
+    Tells the client to remember IPv4 DNS answers we receive from exit
+    nodes via this connection. (On by default.)
+**CacheIPv6DNS**;;
+    Tells the client to remember IPv6 DNS answers we receive from exit
+    nodes via this connection.
+**CacheDNS**;;
+    Tells the client to remember all DNS answers we receive from exit
+    nodes via this connection.
+**UseIPv4Cache**;;
+    Tells the client to use any cached IPv4 DNS answers we have when making
+    requests via this connection. (NOTE: This option, along UseIPv6Cache
+    and UseDNSCache, can harm your anonymity, and probably
+    won't help performance as much as you might expect. Use with care!)
+**UseIPv6Cache**;;
+    Tells the client to use any cached IPv6 DNS answers we have when making
+    requests via this connection.
+**UseDNSCache**;;
+    Tells the client to use any cached DNS answers we have when making
+    requests via this connection.
+**PreferIPv6Automap**;;
+    When serving a hostname lookup request on this port that
+    should get automapped (according to AutomapHostsOnResove),
+    if we could return either an IPv4 or an IPv6 answer, prefer
+    an IPv6 answer. (On by default.)
+**PreferSOCKSNoAuth**;;
+    Ordinarily, when an application offers both "username/password
+    authentication" and "no authentication" to Tor via SOCKS5, Tor
+    selects username/password authentication so that IsolateSOCKSAuth can
+    work.  This can confuse some applications, if they offer a
+    username/password combination then get confused when asked for
+    one. You can disable this behavior, so that Tor will select "No
+    authentication" when IsolateSOCKSAuth is disabled, or when this
+    option is set.</tt></pre>
+</div></div>
 </dd>
 </dl></div>
 </dd>
 <dt class="hdlist1">
-<strong>SOCKSListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
+<a id="SOCKSListenAddress"></a> <strong>SOCKSListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
 </dt>
 <dd>
 <p>
@@ -2242,7 +2352,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>SocksPolicy</strong> <em>policy</em>,<em>policy</em>,<em>&#8230;</em>
+<a id="SocksPolicy"></a> <strong>SocksPolicy</strong> <em>policy</em>,<em>policy</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -2252,7 +2362,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>SocksTimeout</strong> <em>NUM</em>
+<a id="SocksTimeout"></a> <strong>SocksTimeout</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -2262,7 +2372,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>TokenBucketRefillInterval</strong> <em>NUM</em> [<strong>msec</strong>|<strong>second</strong>]
+<a id="TokenBucketRefillInterval"></a> <strong>TokenBucketRefillInterval</strong> <em>NUM</em> [<strong>msec</strong>|<strong>second</strong>]
 </dt>
 <dd>
 <p>
@@ -2274,7 +2384,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>TrackHostExits</strong> <em>host</em>,<em>.domain</em>,<em>&#8230;</em>
+<a id="TrackHostExits"></a> <strong>TrackHostExits</strong> <em>host</em>,<em>.domain</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -2291,7 +2401,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>TrackHostExitsExpire</strong> <em>NUM</em>
+<a id="TrackHostExitsExpire"></a> <strong>TrackHostExitsExpire</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -2301,7 +2411,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>UpdateBridgesFromAuthority</strong> <strong>0</strong>|<strong>1</strong>
+<a id="UpdateBridgesFromAuthority"></a> <strong>UpdateBridgesFromAuthority</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2311,7 +2421,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>UseBridges</strong> <strong>0</strong>|<strong>1</strong>
+<a id="UseBridges"></a> <strong>UseBridges</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2321,7 +2431,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>UseEntryGuards</strong> <strong>0</strong>|<strong>1</strong>
+<a id="UseEntryGuards"></a> <strong>UseEntryGuards</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2332,7 +2442,21 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>NumEntryGuards</strong> <em>NUM</em>
+<a id="UseEntryGuardsAsDirectoryGuards"></a> <strong>UseEntryGuardsAsDirectoryGuards</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If this option is set to 1, and UseEntryGuards is also set to 1,
+    we try to use our entry guards as directory
+    guards, and failing that, pick more nodes to act as our directory guards.
+    This helps prevent an adversary from enumerating clients. It&#8217;s only
+    available for clients (non-relay, non-bridge) that aren&#8217;t configured to
+    download any non-default directory material.  It doesn&#8217;t currently
+    do anything when we lack a live consensus. (Default: 1)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="NumEntryGuards"></a> <strong>NumEntryGuards</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -2341,7 +2465,28 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>SafeSocks</strong> <strong>0</strong>|<strong>1</strong>
+<a id="NumDirectoryGuards"></a> <strong>NumDirectoryGuards</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    If UseEntryGuardsAsDirectoryGuards is enabled, we try to make sure we
+    have at least NUM routers to use as directory guards. If this option
+    is set to 0, use the value from NumEntryGuards. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="GuardLifetime"></a> <strong>GuardLifetime</strong>  <em>N</em> <strong>days</strong>|<strong>weeks</strong>|<strong>months</strong>
+</dt>
+<dd>
+<p>
+    If nonzero, and UseEntryGuards is set, minimum time to keep a guard before
+    picking a new one. If zero, we use the GuardLifetime parameter from the
+    consensus directory.  No value here may  be less than 1 month or greater
+    than 5 years; out-of-range values are clamped. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="SafeSocks"></a> <strong>SafeSocks</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2353,7 +2498,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>TestSocks</strong> <strong>0</strong>|<strong>1</strong>
+<a id="TestSocks"></a> <strong>TestSocks</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2365,7 +2510,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>WarnUnsafeSocks</strong> <strong>0</strong>|<strong>1</strong>
+<a id="WarnUnsafeSocks"></a> <strong>WarnUnsafeSocks</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2375,25 +2520,30 @@ Using a wildcard to match only part of a string (as in *ample.com) is
     can leak your location to attackers. (Default: 1)
 </p>
 </dd>
+</dl></div>
+<div class="paragraph"><p><a id="VirtualAddrNetworkIPv4"></a> <strong>VirtualAddrNetworkIPv4</strong> <em>Address</em>/<em>bits</em><br /></p></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>VirtualAddrNetwork</strong> <em>Address</em>/<em>bits</em>
+<a id="VirtualAddrNetworkIPv6"></a> <strong>VirtualAddrNetworkIPv6</strong> [<em>Address</em>]/<em>bits</em>
 </dt>
 <dd>
 <p>
     When Tor needs to assign a virtual (unused) address because of a MAPADDRESS
     command from the controller or the AutomapHostsOnResolve feature, Tor
-    picks an unassigned address from this range. (Default:
-    127.192.0.0/10)<br />
+    picks an unassigned address from this range. (Defaults:
+    127.192.0.0/10 and [FE80::]/10 respectively.)<br />
 <br />
     When providing proxy server service to a network of computers using a tool
-    like dns-proxy-tor, change this address to "10.192.0.0/10" or
-    "172.16.0.0/12". The default <strong>VirtualAddrNetwork</strong> address range on a
-    properly configured machine will route to the loopback interface. For
+    like dns-proxy-tor, change the IPv4 network to "10.192.0.0/10" or
+    "172.16.0.0/12" and change the IPv6 network to "[FC00]/7".
+    The default <strong>VirtualAddrNetwork</strong> address ranges on a
+    properly configured machine will route to the loopback or link-local
+    interface. For
     local use, no change to the default VirtualAddrNetwork setting is needed.
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AllowNonRFC953Hostnames</strong> <strong>0</strong>|<strong>1</strong>
+<a id="AllowNonRFC953Hostnames"></a> <strong>AllowNonRFC953Hostnames</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2404,7 +2554,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AllowDotExit</strong> <strong>0</strong>|<strong>1</strong>
+<a id="AllowDotExit"></a> <strong>AllowDotExit</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2415,7 +2565,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>FastFirstHopPK</strong> <strong>0</strong>|<strong>1</strong>
+<a id="FastFirstHopPK"></a> <strong>FastFirstHopPK</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2430,7 +2580,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>TransPort</strong>  [<em>address</em>:]<em>port</em>|<strong>auto</strong> [<em>isolation flags</em>]
+<a id="TransPort"></a> <strong>TransPort</strong>  [<em>address</em>:]<em>port</em>|<strong>auto</strong> [<em>isolation flags</em>]
 </dt>
 <dd>
 <p>
@@ -2448,7 +2598,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>TransListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
+<a id="TransListenAddress"></a> <strong>TransListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
 </dt>
 <dd>
 <p>
@@ -2462,7 +2612,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>NATDPort</strong> [<em>address</em>:]<em>port</em>|<strong>auto</strong> [<em>isolation flags</em>]
+<a id="NATDPort"></a> <strong>NATDPort</strong> [<em>address</em>:]<em>port</em>|<strong>auto</strong> [<em>isolation flags</em>]
 </dt>
 <dd>
 <p>
@@ -2477,7 +2627,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>NATDListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
+<a id="NATDListenAddress"></a> <strong>NATDListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
 </dt>
 <dd>
 <p>
@@ -2489,7 +2639,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AutomapHostsOnResolve</strong> <strong>0</strong>|<strong>1</strong>
+<a id="AutomapHostsOnResolve"></a> <strong>AutomapHostsOnResolve</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2501,7 +2651,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AutomapHostsSuffixes</strong> <em>SUFFIX</em>,<em>SUFFIX</em>,<em>&#8230;</em>
+<a id="AutomapHostsSuffixes"></a> <strong>AutomapHostsSuffixes</strong> <em>SUFFIX</em>,<em>SUFFIX</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -2510,19 +2660,21 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DNSPort</strong> [<em>address</em>:]<em>port</em>|<strong>auto</strong> [<em>isolation flags</em>]
+<a id="DNSPort"></a> <strong>DNSPort</strong> [<em>address</em>:]<em>port</em>|<strong>auto</strong> [<em>isolation flags</em>]
 </dt>
 <dd>
 <p>
     If non-zero, open this port to listen for UDP DNS requests, and resolve
-    them anonymously.  Set the port to "auto" to have Tor pick a port for
+    them anonymously.  This port only handles A, AAAA, and PTR requests---it
+    doesn&#8217;t handle arbitrary DNS request types. Set the port to "auto" to
+    have Tor pick a port for
     you. This directive can be specified multiple times to bind to multiple
     addresses/ports. See SOCKSPort for an explanation of isolation
     flags. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DNSListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
+<a id="DNSListenAddress"></a> <strong>DNSListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
 </dt>
 <dd>
 <p>
@@ -2534,7 +2686,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ClientDNSRejectInternalAddresses</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ClientDNSRejectInternalAddresses"></a> <strong>ClientDNSRejectInternalAddresses</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2545,7 +2697,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ClientRejectInternalAddresses</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ClientRejectInternalAddresses"></a> <strong>ClientRejectInternalAddresses</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2556,7 +2708,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DownloadExtraInfo</strong> <strong>0</strong>|<strong>1</strong>
+<a id="DownloadExtraInfo"></a> <strong>DownloadExtraInfo</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2567,18 +2719,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>FallbackNetworkstatusFile</strong> <em>FILENAME</em>
-</dt>
-<dd>
-<p>
-    If Tor doesn&#8217;t have a cached networkstatus file, it starts out using this
-    one instead. Even if this file is out of date, Tor can still use it to
-    learn about directory mirrors, so it doesn&#8217;t need to put load on the
-    authorities. (Default: None)
-</p>
-</dd>
-<dt class="hdlist1">
-<strong>WarnPlaintextPorts</strong> <em>port</em>,<em>port</em>,<em>&#8230;</em>
+<a id="WarnPlaintextPorts"></a> <strong>WarnPlaintextPorts</strong> <em>port</em>,<em>port</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -2589,7 +2730,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>RejectPlaintextPorts</strong> <em>port</em>,<em>port</em>,<em>&#8230;</em>
+<a id="RejectPlaintextPorts"></a> <strong>RejectPlaintextPorts</strong> <em>port</em>,<em>port</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -2598,7 +2739,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AllowSingleHopCircuits</strong> <strong>0</strong>|<strong>1</strong>
+<a id="AllowSingleHopCircuits"></a> <strong>AllowSingleHopCircuits</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2608,7 +2749,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>OptimisticData</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
+<a id="OptimisticData"></a> <strong>OptimisticData</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
 </dt>
 <dd>
 <p>
@@ -2622,7 +2763,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>Tor2webMode</strong> <strong>0</strong>|<strong>1</strong>
+<a id="Tor2webMode"></a> <strong>Tor2webMode</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2635,7 +2776,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>UseMicrodescriptors</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
+<a id="UseMicrodescriptors"></a> <strong>UseMicrodescriptors</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
 </dt>
 <dd>
 <p>
@@ -2648,34 +2789,132 @@ Using a wildcard to match only part of a string (as in *ample.com) is
     FetchUselessDescriptors. (Default: auto)
 </p>
 </dd>
+<dt class="hdlist1">
+<a id="UseNTorHandshake"></a> <strong>UseNTorHandshake</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
+</dt>
+<dd>
+<p>
+    The "ntor" circuit-creation handshake is faster and (we think) more
+    secure than the original ("TAP") circuit handshake, but starting to use
+    it too early might make your client stand out. If this option is 0, your
+    Tor client won&#8217;t use the ntor handshake. If it&#8217;s 1, your Tor client
+    will use the ntor handshake to extend circuits through servers that
+    support it. If this option is "auto" (recommended), then your client
+    will use the ntor handshake once enough directory authorities recommend
+    it. (Default: auto)
+</p>
+</dd>
 </dl></div>
-<div class="paragraph"><p><strong>PathBiasCircThreshold</strong> <em>NUM</em><br /></p></div>
-<div class="paragraph"><p><strong>PathBiasNoticeRate</strong> <em>NUM</em><br /></p></div>
-<div class="paragraph"><p><strong>PathBiasDisableRate</strong> <em>NUM</em><br /></p></div>
-<div class="paragraph"><p><strong>PathBiasScaleThreshold</strong> <em>NUM</em><br /></p></div>
+<div class="paragraph"><p><a id="PathBiasCircThreshold"></a> <strong>PathBiasCircThreshold</strong> <em>NUM</em><br /></p></div>
+<div class="paragraph"><p><a id="PathBiasNoticeRate"></a> <strong>PathBiasNoticeRate</strong> <em>NUM</em><br /></p></div>
+<div class="paragraph"><p><a id="PathBiasWarnRate"></a> <strong>PathBiasWarnRate</strong> <em>NUM</em><br /></p></div>
+<div class="paragraph"><p><a id="PathBiasExtremeRate"></a> <strong>PathBiasExtremeRate</strong> <em>NUM</em><br /></p></div>
+<div class="paragraph"><p><a id="PathBiasDropGuards"></a> <strong>PathBiasDropGuards</strong> <em>NUM</em><br /></p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>PathBiasScaleFactor</strong> <em>NUM</em>
+<a id="PathBiasScaleThreshold"></a> <strong>PathBiasScaleThreshold</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
     These options override the default behavior of Tor&#8217;s (<strong>currently
     experimental</strong>) path bias detection algorithm. To try to find broken or
     misbehaving guard nodes, Tor looks for nodes where more than a certain
-    fraction of circuits through that node fail after the first hop.  The
-    PathBiasCircThreshold option controls how many circuits we need to build
-    through a guard before we make these checks.  The PathBiasNoticeRate and
-    PathBiasDisableRate options control what fraction of circuits must
-    succeed through a guard so we won&#8217;t warn about it or disable it,
-    respectively.  When we have seen more than PathBiasScaleThreshold
-    circuits through a guard, we divide our observations by
-    PathBiasScaleFactor, so that new observations don&#8217;t get swamped by old
-    ones.<br />
+    fraction of circuits through that guard fail to get built.
+<br />
+    The PathBiasCircThreshold option controls how many circuits we need to build
+    through a guard before we make these checks.  The PathBiasNoticeRate,
+    PathBiasWarnRate and PathBiasExtremeRate options control what fraction of
+    circuits must succeed through a guard so we won&#8217;t write log messages.
+    If less than PathBiasExtremeRate circuits succeed <strong>and</strong> PathBiasDropGuards
+    is set to 1, we disable use of that guard.<br />
+<br />
+    When we have seen more than PathBiasScaleThreshold
+    circuits through a guard, we scale our observations by 0.5 (governed by
+    the consensus) so that new observations don&#8217;t get swamped by old ones.<br />
 <br />
     By default, or if a negative value is provided for one of these options,
     Tor uses reasonable defaults from the networkstatus consensus document.
-    If no defaults are available there, these options default to 20, .70,
-    0.0, 200, and 4 respectively.
+    If no defaults are available there, these options default to 150, .70,
+    .50, .30, 0, and 300 respectively.
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p><a id="PathBiasUseThreshold"></a> <strong>PathBiasUseThreshold</strong> <em>NUM</em><br /></p></div>
+<div class="paragraph"><p><a id="PathBiasNoticeUseRate"></a> <strong>PathBiasNoticeUseRate</strong> <em>NUM</em><br /></p></div>
+<div class="paragraph"><p><a id="PathBiasExtremeUseRate"></a> <strong>PathBiasExtremeUseRate</strong> <em>NUM</em><br /></p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<a id="PathBiasScaleUseThreshold"></a> <strong>PathBiasScaleUseThreshold</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    Similar to the above options, these options override the default behavior
+    of Tor&#8217;s (<strong>currently experimental</strong>) path use bias detection algorithm.
+<br />
+    Where as the path bias parameters govern thresholds for successfully
+    building circuits, these four path use bias parameters govern thresholds
+    only for circuit usage. Circuits which receive no stream usage
+    are not counted by this detection algorithm. A used circuit is considered
+    successful if it is capable of carrying streams or otherwise receiving
+    well-formed responses to RELAY cells.
+<br />
+    By default, or if a negative value is provided for one of these options,
+    Tor uses reasonable defaults from the networkstatus consensus document.
+    If no defaults are available there, these options default to 20, .80,
+    .60, and 100, respectively.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="ClientUseIPv6"></a> <strong>ClientUseIPv6</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If this option is set to 1, Tor might connect to entry nodes over
+    IPv6. Note that clients configured with an IPv6 address in a
+    <strong>Bridge</strong> line will try connecting over IPv6 even if
+    <strong>ClientUseIPv6</strong> is set to 0. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="ClientPreferIPv6ORPort"></a> <strong>ClientPreferIPv6ORPort</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If this option is set to 1, Tor prefers an OR port with an IPv6
+    address over one with IPv4 if a given entry node has both. Other
+    things may influence the choice. This option breaks a tie to the
+    favor of IPv6. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="PathsNeededToBuildCircuits"></a> <strong>PathsNeededToBuildCircuits</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    Tor clients don&#8217;t build circuits for user traffic until they know
+    about enough of the network so that they could potentially construct
+    enough of the possible paths through the network. If this option
+    is set to a fraction between 0.25 and 0.95, Tor won&#8217;t build circuits
+    until it has enough descriptors or microdescriptors to construct
+    that fraction of possible paths. Note that setting this option too low
+    can make your Tor client less anonymous, and setting it too high can
+    prevent your Tor client from bootstrapping.  If this option is negative,
+    Tor will use a default value chosen by the directory
+    authorities. (Default: -1.)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="Support022HiddenServices"></a> <strong>Support022HiddenServices</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
+</dt>
+<dd>
+<p>
+    Tor hidden services running versions before 0.2.3.x required clients to
+    send timestamps, which can potentially be used to distinguish clients
+    whose view of the current time is skewed. If this option is set to 0, we
+    do not send this timestamp, and hidden services on obsolete Tor versions
+    will not work.  If this option is set to 1, we send the timestamp.  If
+    this optoin is "auto", we take a recommendation from the latest consensus
+    document. (Default: auto)
 </p>
 </dd>
 </dl></div>
@@ -2688,7 +2927,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 is non-zero):</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>Address</strong> <em>address</em>
+<a id="Address"></a> <strong>Address</strong> <em>address</em>
 </dt>
 <dd>
 <p>
@@ -2701,7 +2940,7 @@ is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AllowSingleHopExits</strong> <strong>0</strong>|<strong>1</strong>
+<a id="AllowSingleHopExits"></a> <strong>AllowSingleHopExits</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2713,7 +2952,7 @@ is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AssumeReachable</strong> <strong>0</strong>|<strong>1</strong>
+<a id="AssumeReachable"></a> <strong>AssumeReachable</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2725,7 +2964,7 @@ is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>BridgeRelay</strong> <strong>0</strong>|<strong>1</strong>
+<a id="BridgeRelay"></a> <strong>BridgeRelay</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2736,17 +2975,21 @@ is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ContactInfo</strong> <em>email_address</em>
+<a id="ContactInfo"></a> <strong>ContactInfo</strong> <em>email_address</em>
 </dt>
 <dd>
 <p>
-    Administrative contact information for server. This line might get picked
-    up by spam harvesters, so you may want to obscure the fact that it&#8217;s an
-    email address.
+    Administrative contact information for this relay or bridge. This line
+    can be used to contact you if your relay or bridge is misconfigured or
+    something else goes wrong. Note that we archive and publish all
+    descriptors containing these lines and that Google indexes them, so
+    spammers might also collect them. You may want to obscure the fact
+    that it&#8217;s an email address and/or generate a new address for this
+    purpose.
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ExitPolicy</strong> <em>policy</em>,<em>policy</em>,<em>&#8230;</em>
+<a id="ExitPolicy"></a> <strong>ExitPolicy</strong> <em>policy</em>,<em>policy</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -2798,7 +3041,7 @@ accept *:*</tt></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
-<strong>ExitPolicyRejectPrivate</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ExitPolicyRejectPrivate"></a> <strong>ExitPolicyRejectPrivate</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2808,16 +3051,25 @@ accept *:*</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>MaxOnionsPending</strong> <em>NUM</em>
+<a id="IPv6Exit"></a> <strong>IPv6Exit</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
-    If you have more than this number of onionskins queued for decrypt, reject
-    new ones. (Default: 100)
+    If set, and we are an exit node, allow clients to use us for IPv6
+    traffic. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>MyFamily</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
+<a id="MaxOnionQueueDelay"></a> <strong>MaxOnionQueueDelay</strong> <em>NUM</em> [<strong>msec</strong>|<strong>second</strong>]
+</dt>
+<dd>
+<p>
+    If we have more onionskins queued for processing than we can process in
+    this amount of time, reject new ones. (Default: 1750 msec)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="MyFamily"></a> <strong>MyFamily</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -2828,10 +3080,13 @@ accept *:*</tt></pre>
     same circuit. (Each server only needs to list the other servers in its
     family; it doesn&#8217;t need to list itself, but it won&#8217;t hurt.) Do not list
     any bridge relay as it would compromise its concealment.
+<br />
+    When listing a node, it&#8217;s better to list it by fingerprint than by
+    nickname: fingerprints are more reliable.
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>Nickname</strong> <em>name</em>
+<a id="Nickname"></a> <strong>Nickname</strong> <em>name</em>
 </dt>
 <dd>
 <p>
@@ -2840,7 +3095,7 @@ accept *:*</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>NumCPUs</strong> <em>num</em>
+<a id="NumCPUs"></a> <strong>NumCPUs</strong> <em>num</em>
 </dt>
 <dd>
 <p>
@@ -2850,7 +3105,7 @@ accept *:*</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ORPort</strong> [<em>address</em>:]<em>PORT</em>|<strong>auto</strong> [<em>flags</em>]
+<a id="ORPort"></a> <strong>ORPort</strong> [<em>address</em>:]<em>PORT</em>|<strong>auto</strong> [<em>flags</em>]
 </dt>
 <dd>
 <p>
@@ -2886,7 +3141,7 @@ IPv4Only and IPv6Only are mutually exclusive.</tt></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
-<strong>ORListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
+<a id="ORListenAddress"></a> <strong>ORListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
 </dt>
 <dd>
 <p>
@@ -2902,7 +3157,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
-<strong>PortForwarding</strong> <strong>0</strong>|<strong>1</strong>
+<a id="PortForwarding"></a> <strong>PortForwarding</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -2913,7 +3168,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>PortForwardingHelper</strong> <em>filename</em>|<em>pathname</em>
+<a id="PortForwardingHelper"></a> <strong>PortForwardingHelper</strong> <em>filename</em>|<em>pathname</em>
 </dt>
 <dd>
 <p>
@@ -2924,7 +3179,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>PublishServerDescriptor</strong> <strong>0</strong>|<strong>1</strong>|<strong>v1</strong>|<strong>v2</strong>|<strong>v3</strong>|<strong>bridge</strong>,<strong>&#8230;</strong>
+<a id="PublishServerDescriptor"></a> <strong>PublishServerDescriptor</strong> <strong>0</strong>|<strong>1</strong>|<strong>v1</strong>|<strong>v2</strong>|<strong>v3</strong>|<strong>bridge</strong>,<strong>&#8230;</strong>
 </dt>
 <dd>
 <p>
@@ -2942,39 +3197,49 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ShutdownWaitLength</strong> <em>NUM</em>
+<a id="ShutdownWaitLength"></a> <strong>ShutdownWaitLength</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
     When we get a SIGINT and we&#8217;re a server, we begin shutting down:
     we close listeners and start refusing new circuits. After <strong>NUM</strong>
-    seconds, we exit. If we get a second SIGINT, we exit immedi-
-    ately. (Default: 30 seconds)
+    seconds, we exit. If we get a second SIGINT, we exit immediately.
+    (Default: 30 seconds)
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HeartbeatPeriod</strong>  <em>N</em> <strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
+<a id="SSLKeyLifetime"></a> <strong>SSLKeyLifetime</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
+</dt>
+<dd>
+<p>
+    When creating a link certificate for our outermost SSL handshake,
+    set its lifetime to this amount of time. If set to 0, Tor will choose
+    some reasonable random defaults. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="HeartbeatPeriod"></a> <strong>HeartbeatPeriod</strong>  <em>N</em> <strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
 </dt>
 <dd>
 <p>
     Log a heartbeat message every <strong>HeartbeatPeriod</strong> seconds. This is
-    a log level <em>info</em> message, designed to let you know your Tor
+    a log level <em>notice</em> message, designed to let you know your Tor
     server is still alive and doing useful things. Settings this
     to 0 will disable the heartbeat. (Default: 6 hours)
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AccountingMax</strong> <em>N</em> <strong>bytes</strong>|<strong>KB</strong>|<strong>MB</strong>|<strong>GB</strong>|<strong>TB</strong>
+<a id="AccountingMax"></a> <strong>AccountingMax</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>|<strong>TBytes</strong>
 </dt>
 <dd>
 <p>
     Never send more than the specified number of bytes in a given accounting
     period, or receive more than that number in the period. For example, with
-    AccountingMax set to 1 GB, a server could send 900 MB and receive 800 MB
-    and continue running. It will only hibernate once one of the two reaches 1
-    GB. When the number of bytes gets low, Tor will stop accepting new
-    connections and circuits.  When the number of bytes
-    is exhausted, Tor will hibernate until some
+    AccountingMax set to 1 GByte, a server could send 900 MBytes and
+    receive 800 MBytes and continue running. It will only hibernate once
+    one of the two reaches 1 GByte. When the number of bytes gets low,
+    Tor will stop accepting new connections and circuits.  When the
+    number of bytes is exhausted, Tor will hibernate until some
     time in the next accounting period. To prevent all servers from waking at
     the same time, Tor will also wait until a random point in each period
     before waking up. If you have bandwidth cost issues, enabling hibernation
@@ -2984,7 +3249,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AccountingStart</strong> <strong>day</strong>|<strong>week</strong>|<strong>month</strong> [<em>day</em>] <em>HH:MM</em>
+<a id="AccountingStart"></a> <strong>AccountingStart</strong> <strong>day</strong>|<strong>week</strong>|<strong>month</strong> [<em>day</em>] <em>HH:MM</em>
 </dt>
 <dd>
 <p>
@@ -3000,18 +3265,19 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>RefuseUnknownExits</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
+<a id="RefuseUnknownExits"></a> <strong>RefuseUnknownExits</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
 </dt>
 <dd>
 <p>
     Prevent nodes that don&#8217;t appear in the consensus from exiting using this
     relay.  If the option is 1, we always block exit attempts from such
     nodes; if it&#8217;s 0, we never do, and if the option is "auto", then we do
-    whatever the authorities suggest in the consensus. (Default: auto)
+    whatever the authorities suggest in the consensus (and block if the consensus
+    is quiet on the issue). (Default: auto)
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ServerDNSResolvConfFile</strong> <em>filename</em>
+<a id="ServerDNSResolvConfFile"></a> <strong>ServerDNSResolvConfFile</strong> <em>filename</em>
 </dt>
 <dd>
 <p>
@@ -3023,7 +3289,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ServerDNSAllowBrokenConfig</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ServerDNSAllowBrokenConfig"></a> <strong>ServerDNSAllowBrokenConfig</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3034,7 +3300,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ServerDNSSearchDomains</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ServerDNSSearchDomains"></a> <strong>ServerDNSSearchDomains</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3046,7 +3312,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ServerDNSDetectHijacking</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ServerDNSDetectHijacking"></a> <strong>ServerDNSDetectHijacking</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3058,7 +3324,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ServerDNSTestAddresses</strong> <em>address</em>,<em>address</em>,<em>&#8230;</em>
+<a id="ServerDNSTestAddresses"></a> <strong>ServerDNSTestAddresses</strong> <em>address</em>,<em>address</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -3070,7 +3336,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ServerDNSAllowNonRFC953Hostnames</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ServerDNSAllowNonRFC953Hostnames"></a> <strong>ServerDNSAllowNonRFC953Hostnames</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3082,7 +3348,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>BridgeRecordUsageByCountry</strong> <strong>0</strong>|<strong>1</strong>
+<a id="BridgeRecordUsageByCountry"></a> <strong>BridgeRecordUsageByCountry</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3093,7 +3359,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ServerDNSRandomizeCase</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ServerDNSRandomizeCase"></a> <strong>ServerDNSRandomizeCase</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3106,15 +3372,34 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>GeoIPFile</strong> <em>filename</em>
+<a id="GeoIPFile"></a> <strong>GeoIPFile</strong> <em>filename</em>
 </dt>
 <dd>
 <p>
-    A filename containing GeoIP data, for use with BridgeRecordUsageByCountry.
+    A filename containing IPv4 GeoIP data, for use with by-country statistics.
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>CellStatistics</strong> <strong>0</strong>|<strong>1</strong>
+<a id="GeoIPv6File"></a> <strong>GeoIPv6File</strong> <em>filename</em>
+</dt>
+<dd>
+<p>
+    A filename containing IPv6 GeoIP data, for use with by-country statistics.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TLSECGroup"></a> <strong>TLSECGroup</strong> <strong>P224</strong>|<strong>P256</strong>
+</dt>
+<dd>
+<p>
+    What EC group should we try to use for incoming TLS connections?
+    P224 is faster, but makes us stand out more. Has no effect if
+    we&#8217;re a client, or if our OpenSSL version lacks support for ECDHE.
+    (Default: P256)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="CellStatistics"></a> <strong>CellStatistics</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3123,7 +3408,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DirReqStatistics</strong> <strong>0</strong>|<strong>1</strong>
+<a id="DirReqStatistics"></a> <strong>DirReqStatistics</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3133,7 +3418,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>EntryStatistics</strong> <strong>0</strong>|<strong>1</strong>
+<a id="EntryStatistics"></a> <strong>EntryStatistics</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3142,7 +3427,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ExitPortStatistics</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ExitPortStatistics"></a> <strong>ExitPortStatistics</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3151,7 +3436,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ConnDirectionStatistics</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ConnDirectionStatistics"></a> <strong>ConnDirectionStatistics</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3160,7 +3445,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ExtraInfoStatistics</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ExtraInfoStatistics"></a> <strong>ExtraInfoStatistics</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3170,13 +3455,27 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ExtendAllowPrivateAddresses</strong> <strong>0</strong>|<strong>1</strong>
+<a id="ExtendAllowPrivateAddresses"></a> <strong>ExtendAllowPrivateAddresses</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
     When this option is enabled, Tor routers allow EXTEND request to
     localhost, RFC1918 addresses, and so on. This can create security issues;
     you should probably leave it off. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="MaxMemInCellQueues"></a> <strong>MaxMemInCellQueues</strong>  <em>N</em> <strong>bytes</strong>|<strong>KB</strong>|<strong>MB</strong>|<strong>GB</strong>
+</dt>
+<dd>
+<p>
+    This option configures a threshold above which Tor will assume that it
+    needs to stop queueing cells because it&#8217;s about to run out of memory.
+    If it hits this threshold, it will begin killing circuits until it
+    has recovered at least 10% of this memory.  Do not set this option too
+    low, or your relay may be unreliable under load.  This option only
+    affects circuit queues, so the actual process size will be larger than
+    this. (Default: 8GB)
 </p>
 </dd>
 </dl></div>
@@ -3189,7 +3488,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 if DirPort is non-zero):</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>AuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
+<a id="AuthoritativeDirectory"></a> <strong>AuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3202,7 +3501,7 @@ if DirPort is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DirPortFrontPage</strong> <em>FILENAME</em>
+<a id="DirPortFrontPage"></a> <strong>DirPortFrontPage</strong> <em>FILENAME</em>
 </dt>
 <dd>
 <p>
@@ -3213,7 +3512,7 @@ if DirPort is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>V1AuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
+<a id="V1AuthoritativeDirectory"></a> <strong>V1AuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3223,7 +3522,7 @@ if DirPort is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>V2AuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
+<a id="V2AuthoritativeDirectory"></a> <strong>V2AuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3234,7 +3533,7 @@ if DirPort is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>V3AuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
+<a id="V3AuthoritativeDirectory"></a> <strong>V3AuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3245,7 +3544,7 @@ if DirPort is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>VersioningAuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
+<a id="VersioningAuthoritativeDirectory"></a> <strong>VersioningAuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3257,7 +3556,7 @@ if DirPort is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>NamingAuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
+<a id="NamingAuthoritativeDirectory"></a> <strong>NamingAuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3271,7 +3570,7 @@ if DirPort is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HSAuthoritativeDir</strong> <strong>0</strong>|<strong>1</strong>
+<a id="HSAuthoritativeDir"></a> <strong>HSAuthoritativeDir</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3281,7 +3580,7 @@ if DirPort is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HidServDirectoryV2</strong> <strong>0</strong>|<strong>1</strong>
+<a id="HidServDirectoryV2"></a> <strong>HidServDirectoryV2</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3291,7 +3590,7 @@ if DirPort is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>BridgeAuthoritativeDir</strong> <strong>0</strong>|<strong>1</strong>
+<a id="BridgeAuthoritativeDir"></a> <strong>BridgeAuthoritativeDir</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3301,7 +3600,7 @@ if DirPort is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>MinUptimeHidServDirectoryV2</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
+<a id="MinUptimeHidServDirectoryV2"></a> <strong>MinUptimeHidServDirectoryV2</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
 </dt>
 <dd>
 <p>
@@ -3310,7 +3609,7 @@ if DirPort is non-zero):</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DirPort</strong> [<em>address</em>:]<em>PORT</em>|<strong>auto</strong> [<em>flags</em>]
+<a id="DirPort"></a> <strong>DirPort</strong> [<em>address</em>:]<em>PORT</em>|<strong>auto</strong> [<em>flags</em>]
 </dt>
 <dd>
 <p>
@@ -3324,7 +3623,7 @@ if DirPort is non-zero):</p></div>
 </div></div>
 </dd>
 <dt class="hdlist1">
-<strong>DirListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
+<a id="DirListenAddress"></a> <strong>DirListenAddress</strong> <em>IP</em>[:<em>PORT</em>]
 </dt>
 <dd>
 <p>
@@ -3340,7 +3639,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
-<strong>DirPolicy</strong> <em>policy</em>,<em>policy</em>,<em>&#8230;</em>
+<a id="DirPolicy"></a> <strong>DirPolicy</strong> <em>policy</em>,<em>policy</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -3349,7 +3648,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>FetchV2Networkstatus</strong> <strong>0</strong>|<strong>1</strong>
+<a id="FetchV2Networkstatus"></a> <strong>FetchV2Networkstatus</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3366,7 +3665,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 <div class="sectionbody">
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>RecommendedVersions</strong> <em>STRING</em>
+<a id="RecommendedVersions"></a> <strong>RecommendedVersions</strong> <em>STRING</em>
 </dt>
 <dd>
 <p>
@@ -3378,7 +3677,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>RecommendedClientVersions</strong> <em>STRING</em>
+<a id="RecommendedClientVersions"></a> <strong>RecommendedClientVersions</strong> <em>STRING</em>
 </dt>
 <dd>
 <p>
@@ -3390,7 +3689,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>RecommendedServerVersions</strong> <em>STRING</em>
+<a id="RecommendedServerVersions"></a> <strong>RecommendedServerVersions</strong> <em>STRING</em>
 </dt>
 <dd>
 <p>
@@ -3402,7 +3701,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>ConsensusParams</strong> <em>STRING</em>
+<a id="ConsensusParams"></a> <strong>ConsensusParams</strong> <em>STRING</em>
 </dt>
 <dd>
 <p>
@@ -3411,7 +3710,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>DirAllowPrivateAddresses</strong> <strong>0</strong>|<strong>1</strong>
+<a id="DirAllowPrivateAddresses"></a> <strong>DirAllowPrivateAddresses</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3421,7 +3720,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AuthDirBadDir</strong> <em>AddressPattern&#8230;</em>
+<a id="AuthDirBadDir"></a> <strong>AuthDirBadDir</strong> <em>AddressPattern&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -3431,7 +3730,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AuthDirBadExit</strong> <em>AddressPattern&#8230;</em>
+<a id="AuthDirBadExit"></a> <strong>AuthDirBadExit</strong> <em>AddressPattern&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -3441,7 +3740,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AuthDirInvalid</strong> <em>AddressPattern&#8230;</em>
+<a id="AuthDirInvalid"></a> <strong>AuthDirInvalid</strong> <em>AddressPattern&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -3451,7 +3750,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AuthDirReject</strong> <em>AddressPattern</em>&#8230;
+<a id="AuthDirReject"></a> <strong>AuthDirReject</strong> <em>AddressPattern</em>&#8230;
 </dt>
 <dd>
 <p>
@@ -3462,12 +3761,12 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 </dl></div>
-<div class="paragraph"><p><strong>AuthDirBadDirCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
-<div class="paragraph"><p><strong>AuthDirBadExitCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
-<div class="paragraph"><p><strong>AuthDirInvalidCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
+<div class="paragraph"><p><a id="AuthDirBadDirCCs"></a> <strong>AuthDirBadDirCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
+<div class="paragraph"><p><a id="AuthDirBadExitCCs"></a> <strong>AuthDirBadExitCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
+<div class="paragraph"><p><a id="AuthDirInvalidCCs"></a> <strong>AuthDirInvalidCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>AuthDirRejectCCs</strong> <em>CC</em>,&#8230;
+<a id="AuthDirRejectCCs"></a> <strong>AuthDirRejectCCs</strong> <em>CC</em>,&#8230;
 </dt>
 <dd>
 <p>
@@ -3478,7 +3777,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AuthDirListBadDirs</strong> <strong>0</strong>|<strong>1</strong>
+<a id="AuthDirListBadDirs"></a> <strong>AuthDirListBadDirs</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3490,7 +3789,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AuthDirListBadExits</strong> <strong>0</strong>|<strong>1</strong>
+<a id="AuthDirListBadExits"></a> <strong>AuthDirListBadExits</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3501,7 +3800,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AuthDirRejectUnlisted</strong> <strong>0</strong>|<strong>1</strong>
+<a id="AuthDirRejectUnlisted"></a> <strong>AuthDirRejectUnlisted</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3512,7 +3811,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AuthDirMaxServersPerAddr</strong> <em>NUM</em>
+<a id="AuthDirMaxServersPerAddr"></a> <strong>AuthDirMaxServersPerAddr</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -3522,7 +3821,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AuthDirMaxServersPerAuthAddr</strong> <em>NUM</em>
+<a id="AuthDirMaxServersPerAuthAddr"></a> <strong>AuthDirMaxServersPerAuthAddr</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -3531,27 +3830,27 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AuthDirFastGuarantee</strong> <em>N</em> <strong>bytes</strong>|<strong>KB</strong>|<strong>MB</strong>|<strong>GB</strong>
+<a id="AuthDirFastGuarantee"></a> <strong>AuthDirFastGuarantee</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>
 </dt>
 <dd>
 <p>
     Authoritative directories only. If non-zero, always vote the
     Fast flag for any relay advertising this amount of capacity or
-    more. (Default: 100 KB)
+    more. (Default: 100 KBytes)
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>AuthDirGuardBWGuarantee</strong> <em>N</em> <strong>bytes</strong>|<strong>KB</strong>|<strong>MB</strong>|<strong>GB</strong>
+<a id="AuthDirGuardBWGuarantee"></a> <strong>AuthDirGuardBWGuarantee</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>
 </dt>
 <dd>
 <p>
     Authoritative directories only. If non-zero, this advertised capacity
     or more is always sufficient to satisfy the bandwidth requirement
-    for the Guard flag. (Default: 250 KB)
+    for the Guard flag. (Default: 250 KBytes)
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>BridgePassword</strong> <em>Password</em>
+<a id="BridgePassword"></a> <strong>BridgePassword</strong> <em>Password</em>
 </dt>
 <dd>
 <p>
@@ -3564,7 +3863,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>V3AuthVotingInterval</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
+<a id="V3AuthVotingInterval"></a> <strong>V3AuthVotingInterval</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
 </dt>
 <dd>
 <p>
@@ -3575,7 +3874,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>V3AuthVoteDelay</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
+<a id="V3AuthVoteDelay"></a> <strong>V3AuthVoteDelay</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
 </dt>
 <dd>
 <p>
@@ -3586,7 +3885,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>V3AuthDistDelay</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
+<a id="V3AuthDistDelay"></a> <strong>V3AuthDistDelay</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
 </dt>
 <dd>
 <p>
@@ -3598,7 +3897,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>V3AuthNIntervalsValid</strong> <em>NUM</em>
+<a id="V3AuthNIntervalsValid"></a> <strong>V3AuthNIntervalsValid</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
@@ -3611,7 +3910,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>V3BandwidthsFile</strong> <em>FILENAME</em>
+<a id="V3BandwidthsFile"></a> <strong>V3BandwidthsFile</strong> <em>FILENAME</em>
 </dt>
 <dd>
 <p>
@@ -3621,7 +3920,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>V3AuthUseLegacyKey</strong> <strong>0</strong>|<strong>1</strong>
+<a id="V3AuthUseLegacyKey"></a> <strong>V3AuthUseLegacyKey</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3632,7 +3931,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>RephistTrackTime</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
+<a id="RephistTrackTime"></a> <strong>RephistTrackTime</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
 </dt>
 <dd>
 <p>
@@ -3642,13 +3941,24 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>VoteOnHidServDirectoriesV2</strong> <strong>0</strong>|<strong>1</strong>
+<a id="VoteOnHidServDirectoriesV2"></a> <strong>VoteOnHidServDirectoriesV2</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
     When this option is set in addition to <strong>AuthoritativeDirectory</strong>, Tor
     votes on whether to accept relays as hidden service directories.
     (Default: 1)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="AuthDirHasIPv6Connectivity"></a> <strong>AuthDirHasIPv6Connectivity</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    Authoritative directories only. When set to 0, OR ports with an
+    IPv6 address are being accepted without reachability testing.
+    When set to 1, IPv6 OR ports are being tested just like IPv4 OR
+    ports. (Default: 0)
 </p>
 </dd>
 </dl></div>
@@ -3660,7 +3970,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 <div class="paragraph"><p>The following options are used to configure a hidden service.</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>HiddenServiceDir</strong> <em>DIRECTORY</em>
+<a id="HiddenServiceDir"></a> <strong>HiddenServiceDir</strong> <em>DIRECTORY</em>
 </dt>
 <dd>
 <p>
@@ -3670,7 +3980,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HiddenServicePort</strong> <em>VIRTPORT</em> [<em>TARGET</em>]
+<a id="HiddenServicePort"></a> <strong>HiddenServicePort</strong> <em>VIRTPORT</em> [<em>TARGET</em>]
 </dt>
 <dd>
 <p>
@@ -3685,7 +3995,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>PublishHidServDescriptors</strong> <strong>0</strong>|<strong>1</strong>
+<a id="PublishHidServDescriptors"></a> <strong>PublishHidServDescriptors</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
@@ -3696,7 +4006,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HiddenServiceVersion</strong> <em>version</em>,<em>version</em>,<em>&#8230;</em>
+<a id="HiddenServiceVersion"></a> <strong>HiddenServiceVersion</strong> <em>version</em>,<em>version</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -3705,7 +4015,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>HiddenServiceAuthorizeClient</strong> <em>auth-type</em> <em>client-name</em>,<em>client-name</em>,<em>&#8230;</em>
+<a id="HiddenServiceAuthorizeClient"></a> <strong>HiddenServiceAuthorizeClient</strong> <em>auth-type</em> <em>client-name</em>,<em>client-name</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
@@ -3722,7 +4032,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>RendPostPeriod</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
+<a id="RendPostPeriod"></a> <strong>RendPostPeriod</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
 </dt>
 <dd>
 <p>
@@ -3740,13 +4050,14 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 <div class="paragraph"><p>The following options are used for running a testing Tor network.</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>TestingTorNetwork</strong> <strong>0</strong>|<strong>1</strong>
+<a id="TestingTorNetwork"></a> <strong>TestingTorNetwork</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
     If set to 1, Tor adjusts default values of the configuration options below,
     so that it is easier to set up a testing Tor network. May only be set if
-    non-default set of DirServers is set. Cannot be unset while Tor is running.
+    non-default set of DirAuthorities is set. Cannot be unset while Tor is
+    running.
     (Default: 0)<br />
 </p>
 <div class="literalblock">
@@ -3774,7 +4085,7 @@ TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
-<strong>TestingV3AuthInitialVotingInterval</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
+<a id="TestingV3AuthInitialVotingInterval"></a> <strong>TestingV3AuthInitialVotingInterval</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
 </dt>
 <dd>
 <p>
@@ -3784,27 +4095,27 @@ TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>TestingV3AuthInitialVoteDelay</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
+<a id="TestingV3AuthInitialVoteDelay"></a> <strong>TestingV3AuthInitialVoteDelay</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
 </dt>
 <dd>
 <p>
-    Like TestingV3AuthInitialVoteDelay, but for initial voting interval before
+    Like V3AuthVoteDelay, but for initial voting interval before
     the first consensus has been created. Changing this requires that
     <strong>TestingTorNetwork</strong> is set. (Default: 5 minutes)
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>TestingV3AuthInitialDistDelay</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
+<a id="TestingV3AuthInitialDistDelay"></a> <strong>TestingV3AuthInitialDistDelay</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
 </dt>
 <dd>
 <p>
-    Like TestingV3AuthInitialDistDelay, but for initial voting interval before
+    Like V3AuthDistDelay, but for initial voting interval before
     the first consensus has been created. Changing this requires that
     <strong>TestingTorNetwork</strong> is set. (Default: 5 minutes)
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>TestingAuthDirTimeToLearnReachability</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
+<a id="TestingAuthDirTimeToLearnReachability"></a> <strong>TestingAuthDirTimeToLearnReachability</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
 </dt>
 <dd>
 <p>
@@ -3814,13 +4125,22 @@ TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>TestingEstimatedDescriptorPropagationTime</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
+<a id="TestingEstimatedDescriptorPropagationTime"></a> <strong>TestingEstimatedDescriptorPropagationTime</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
 </dt>
 <dd>
 <p>
     Clients try downloading router descriptors from directory caches after this
     time. Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default:
     10 minutes)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingMinFastFlagThreshold"></a> <strong>TestingMinFastFlagThreshold</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>
+</dt>
+<dd>
+<p>
+    Minimum value for the Fast flag.  Overrides the ordinary minimum taken
+    from the consensus when TestingTorNetwork is set. (Default: 0.)
 </p>
 </dd>
 </dl></div>
@@ -3832,7 +4152,7 @@ TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
 <div class="paragraph"><p>Tor catches the following signals:</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<strong>SIGTERM</strong>
+<a id="SIGTERM"></a> <strong>SIGTERM</strong>
 </dt>
 <dd>
 <p>
@@ -3840,7 +4160,7 @@ TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>SIGINT</strong>
+<a id="SIGINT"></a> <strong>SIGINT</strong>
 </dt>
 <dd>
 <p>
@@ -3850,7 +4170,7 @@ TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>SIGHUP</strong>
+<a id="SIGHUP"></a> <strong>SIGHUP</strong>
 </dt>
 <dd>
 <p>
@@ -3859,7 +4179,7 @@ TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>SIGUSR1</strong>
+<a id="SIGUSR1"></a> <strong>SIGUSR1</strong>
 </dt>
 <dd>
 <p>
@@ -3867,7 +4187,7 @@ TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>SIGUSR2</strong>
+<a id="SIGUSR2"></a> <strong>SIGUSR2</strong>
 </dt>
 <dd>
 <p>
@@ -3876,7 +4196,7 @@ TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>SIGCHLD</strong>
+<a id="SIGCHLD"></a> <strong>SIGCHLD</strong>
 </dt>
 <dd>
 <p>
@@ -3885,7 +4205,7 @@ TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>SIGPIPE</strong>
+<a id="SIGPIPE"></a> <strong>SIGPIPE</strong>
 </dt>
 <dd>
 <p>
@@ -3893,7 +4213,7 @@ TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>SIGXFSZ</strong>
+<a id="SIGXFSZ"></a> <strong>SIGXFSZ</strong>
 </dt>
 <dd>
 <p>
@@ -4107,7 +4427,7 @@ A short history of bandwidth usage, as produced in the router
 <div class="sect1">
 <h2 id="_see_also">SEE ALSO</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><strong>privoxy</strong>(1), <strong>tsocks</strong>(1), <strong>torify</strong>(1)<br /></p></div>
+<div class="paragraph"><p><strong>privoxy</strong>(1), <strong>torsocks</strong>(1), <strong>torify</strong>(1)<br /></p></div>
 <div class="paragraph"><p><strong>https://www.torproject.org/</strong></p></div>
 </div>
 </div>
@@ -4127,7 +4447,7 @@ A short history of bandwidth usage, as produced in the router
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2012-11-19 16:24:38 EST
+Last updated 2013-12-10 17:08:26 EST
 </div>
 </div>
 </body>

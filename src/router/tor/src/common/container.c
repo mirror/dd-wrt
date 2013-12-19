@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -163,7 +163,7 @@ smartlist_string_remove(smartlist_t *sl, const char *element)
 /** Return true iff some element E of sl has E==element.
  */
 int
-smartlist_isin(const smartlist_t *sl, const void *element)
+smartlist_contains(const smartlist_t *sl, const void *element)
 {
   int i;
   for (i=0; i < sl->num_used; i++)
@@ -176,7 +176,7 @@ smartlist_isin(const smartlist_t *sl, const void *element)
  * !strcmp(E,<b>element</b>)
  */
 int
-smartlist_string_isin(const smartlist_t *sl, const char *element)
+smartlist_contains_string(const smartlist_t *sl, const char *element)
 {
   int i;
   if (!sl) return 0;
@@ -203,7 +203,7 @@ smartlist_string_pos(const smartlist_t *sl, const char *element)
  * !strcasecmp(E,<b>element</b>)
  */
 int
-smartlist_string_isin_case(const smartlist_t *sl, const char *element)
+smartlist_contains_string_case(const smartlist_t *sl, const char *element)
 {
   int i;
   if (!sl) return 0;
@@ -217,11 +217,11 @@ smartlist_string_isin_case(const smartlist_t *sl, const char *element)
  * to the decimal encoding of <b>num</b>.
  */
 int
-smartlist_string_num_isin(const smartlist_t *sl, int num)
+smartlist_contains_int_as_string(const smartlist_t *sl, int num)
 {
   char buf[32]; /* long enough for 64-bit int, and then some. */
   tor_snprintf(buf,sizeof(buf),"%d", num);
-  return smartlist_string_isin(sl, buf);
+  return smartlist_contains_string(sl, buf);
 }
 
 /** Return true iff the two lists contain the same strings in the same
@@ -247,7 +247,7 @@ smartlist_strings_eq(const smartlist_t *sl1, const smartlist_t *sl2)
  * tor_memeq(E,<b>element</b>,DIGEST_LEN)
  */
 int
-smartlist_digest_isin(const smartlist_t *sl, const char *element)
+smartlist_contains_digest(const smartlist_t *sl, const char *element)
 {
   int i;
   if (!sl) return 0;
@@ -257,19 +257,19 @@ smartlist_digest_isin(const smartlist_t *sl, const char *element)
   return 0;
 }
 
-/** Return true iff some element E of sl2 has smartlist_isin(sl1,E).
+/** Return true iff some element E of sl2 has smartlist_contains(sl1,E).
  */
 int
 smartlist_overlap(const smartlist_t *sl1, const smartlist_t *sl2)
 {
   int i;
   for (i=0; i < sl2->num_used; i++)
-    if (smartlist_isin(sl1, sl2->list[i]))
+    if (smartlist_contains(sl1, sl2->list[i]))
       return 1;
   return 0;
 }
 
-/** Remove every element E of sl1 such that !smartlist_isin(sl2,E).
+/** Remove every element E of sl1 such that !smartlist_contains(sl2,E).
  * Does not preserve the order of sl1.
  */
 void
@@ -277,13 +277,13 @@ smartlist_intersect(smartlist_t *sl1, const smartlist_t *sl2)
 {
   int i;
   for (i=0; i < sl1->num_used; i++)
-    if (!smartlist_isin(sl2, sl1->list[i])) {
+    if (!smartlist_contains(sl2, sl1->list[i])) {
       sl1->list[i] = sl1->list[--sl1->num_used]; /* swap with the end */
       i--; /* so we process the new i'th element */
     }
 }
 
-/** Remove every element E of sl1 such that smartlist_isin(sl2,E).
+/** Remove every element E of sl1 such that smartlist_contains(sl2,E).
  * Does not preserve the order of sl1.
  */
 void
@@ -571,59 +571,116 @@ smartlist_bsearch_idx(const smartlist_t *sl, const void *key,
                       int (*compare)(const void *key, const void **member),
                       int *found_out)
 {
-  const int len = smartlist_len(sl);
-  int hi, lo, cmp, mid;
+  int hi, lo, cmp, mid, len, diff;
 
+  tor_assert(sl);
+  tor_assert(compare);
+  tor_assert(found_out);
+
+  len = smartlist_len(sl);
+
+  /* Check for the trivial case of a zero-length list */
   if (len == 0) {
     *found_out = 0;
+    /* We already know smartlist_len(sl) is 0 in this case */
     return 0;
-  } else if (len == 1) {
-    cmp = compare(key, (const void **) &sl->list[0]);
-    if (cmp == 0) {
-      *found_out = 1;
-      return 0;
-    } else if (cmp < 0) {
-      *found_out = 0;
-      return 0;
-    } else {
-      *found_out = 0;
-      return 1;
-    }
   }
 
-  hi = smartlist_len(sl) - 1;
+  /* Okay, we have a real search to do */
+  tor_assert(len > 0);
   lo = 0;
+  hi = len - 1;
+
+  /*
+   * These invariants are always true:
+   *
+   * For all i such that 0 <= i < lo, sl[i] < key
+   * For all i such that hi < i <= len, sl[i] > key
+   */
 
   while (lo <= hi) {
-    mid = (lo + hi) / 2;
+    diff = hi - lo;
+    /*
+     * We want mid = (lo + hi) / 2, but that could lead to overflow, so
+     * instead diff = hi - lo (non-negative because of loop condition), and
+     * then hi = lo + diff, mid = (lo + lo + diff) / 2 = lo + (diff / 2).
+     */
+    mid = lo + (diff / 2);
     cmp = compare(key, (const void**) &(sl->list[mid]));
-    if (cmp>0) { /* key > sl[mid] */
-      lo = mid+1;
-    } else if (cmp<0) { /* key < sl[mid] */
-      hi = mid-1;
-    } else { /* key == sl[mid] */
+    if (cmp == 0) {
+      /* sl[mid] == key; we found it */
       *found_out = 1;
       return mid;
-    }
-  }
-  /* lo > hi. */
-  {
-    tor_assert(lo >= 0);
-    if (lo < smartlist_len(sl)) {
-      cmp = compare(key, (const void**) &(sl->list[lo]));
+    } else if (cmp > 0) {
+      /*
+       * key > sl[mid] and an index i such that sl[i] == key must
+       * have i > mid if it exists.
+       */
+
+      /*
+       * Since lo <= mid <= hi, hi can only decrease on each iteration (by
+       * being set to mid - 1) and hi is initially len - 1, mid < len should
+       * always hold, and this is not symmetric with the left end of list
+       * mid > 0 test below.  A key greater than the right end of the list
+       * should eventually lead to lo == hi == mid == len - 1, and then
+       * we set lo to len below and fall out to the same exit we hit for
+       * a key in the middle of the list but not matching.  Thus, we just
+       * assert for consistency here rather than handle a mid == len case.
+       */
+      tor_assert(mid < len);
+      /* Move lo to the element immediately after sl[mid] */
+      lo = mid + 1;
+    } else {
+      /* This should always be true in this case */
       tor_assert(cmp < 0);
-    } else if (smartlist_len(sl)) {
-      cmp = compare(key, (const void**) &(sl->list[smartlist_len(sl)-1]));
-      tor_assert(cmp > 0);
+
+      /*
+       * key < sl[mid] and an index i such that sl[i] == key must
+       * have i < mid if it exists.
+       */
+
+      if (mid > 0) {
+        /* Normal case, move hi to the element immediately before sl[mid] */
+        hi = mid - 1;
+      } else {
+        /* These should always be true in this case */
+        tor_assert(mid == lo);
+        tor_assert(mid == 0);
+        /*
+         * We were at the beginning of the list and concluded that every
+         * element e compares e > key.
+         */
+        *found_out = 0;
+        return 0;
+      }
     }
   }
+
+  /*
+   * lo > hi; we have no element matching key but we have elements falling
+   * on both sides of it.  The lo index points to the first element > key.
+   */
+  tor_assert(lo == hi + 1); /* All other cases should have been handled */
+  tor_assert(lo >= 0);
+  tor_assert(lo <= len);
+  tor_assert(hi >= 0);
+  tor_assert(hi <= len);
+
+  if (lo < len) {
+    cmp = compare(key, (const void **) &(sl->list[lo]));
+    tor_assert(cmp < 0);
+  } else {
+    cmp = compare(key, (const void **) &(sl->list[len-1]));
+    tor_assert(cmp > 0);
+  }
+
   *found_out = 0;
   return lo;
 }
 
 /** Helper: compare two const char **s. */
 static int
-_compare_string_ptrs(const void **_a, const void **_b)
+compare_string_ptrs_(const void **_a, const void **_b)
 {
   return strcmp((const char*)*_a, (const char*)*_b);
 }
@@ -633,14 +690,14 @@ _compare_string_ptrs(const void **_a, const void **_b)
 void
 smartlist_sort_strings(smartlist_t *sl)
 {
-  smartlist_sort(sl, _compare_string_ptrs);
+  smartlist_sort(sl, compare_string_ptrs_);
 }
 
 /** Return the most frequent string in the sorted list <b>sl</b> */
 char *
 smartlist_get_most_frequent_string(smartlist_t *sl)
 {
-  return smartlist_get_most_frequent(sl, _compare_string_ptrs);
+  return smartlist_get_most_frequent(sl, compare_string_ptrs_);
 }
 
 /** Remove duplicate strings from a sorted list, and free them with tor_free().
@@ -648,7 +705,7 @@ smartlist_get_most_frequent_string(smartlist_t *sl)
 void
 smartlist_uniq_strings(smartlist_t *sl)
 {
-  smartlist_uniq(sl, _compare_string_ptrs, _tor_free);
+  smartlist_uniq(sl, compare_string_ptrs_, tor_free_);
 }
 
 /* Heap-based priority queue implementation for O(lg N) insert and remove.
@@ -849,7 +906,7 @@ smartlist_pqueue_assert_ok(smartlist_t *sl,
 
 /** Helper: compare two DIGEST_LEN digests. */
 static int
-_compare_digests(const void **_a, const void **_b)
+compare_digests_(const void **_a, const void **_b)
 {
   return tor_memcmp((const char*)*_a, (const char*)*_b, DIGEST_LEN);
 }
@@ -858,7 +915,7 @@ _compare_digests(const void **_a, const void **_b)
 void
 smartlist_sort_digests(smartlist_t *sl)
 {
-  smartlist_sort(sl, _compare_digests);
+  smartlist_sort(sl, compare_digests_);
 }
 
 /** Remove duplicate digests from a sorted list, and free them with tor_free().
@@ -866,12 +923,12 @@ smartlist_sort_digests(smartlist_t *sl)
 void
 smartlist_uniq_digests(smartlist_t *sl)
 {
-  smartlist_uniq(sl, _compare_digests, _tor_free);
+  smartlist_uniq(sl, compare_digests_, tor_free_);
 }
 
 /** Helper: compare two DIGEST256_LEN digests. */
 static int
-_compare_digests256(const void **_a, const void **_b)
+compare_digests256_(const void **_a, const void **_b)
 {
   return tor_memcmp((const char*)*_a, (const char*)*_b, DIGEST256_LEN);
 }
@@ -880,7 +937,7 @@ _compare_digests256(const void **_a, const void **_b)
 void
 smartlist_sort_digests256(smartlist_t *sl)
 {
-  smartlist_sort(sl, _compare_digests256);
+  smartlist_sort(sl, compare_digests256_);
 }
 
 /** Return the most frequent member of the sorted list of DIGEST256_LEN
@@ -888,7 +945,7 @@ smartlist_sort_digests256(smartlist_t *sl)
 char *
 smartlist_get_most_frequent_digest256(smartlist_t *sl)
 {
-  return smartlist_get_most_frequent(sl, _compare_digests256);
+  return smartlist_get_most_frequent(sl, compare_digests256_);
 }
 
 /** Remove duplicate 256-bit digests from a sorted list, and free them with
@@ -897,7 +954,7 @@ smartlist_get_most_frequent_digest256(smartlist_t *sl)
 void
 smartlist_uniq_digests256(smartlist_t *sl)
 {
-  smartlist_uniq(sl, _compare_digests256, _tor_free);
+  smartlist_uniq(sl, compare_digests256_, tor_free_);
 }
 
 /** Helper: Declare an entry type and a map type to implement a mapping using

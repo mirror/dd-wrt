@@ -1,7 +1,7 @@
 /* Copyright (c) 2001, Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -41,6 +41,7 @@
 #include "aes.h"
 #include "util.h"
 #include "torlog.h"
+#include "di_ops.h"
 
 #ifdef ANDROID
 /* Android's OpenSSL seems to have removed all of its Engine support. */
@@ -134,8 +135,8 @@ int
 evaluate_evp_for_aes(int force_val)
 {
   (void) force_val;
-  log_notice(LD_CRYPTO, "This version of OpenSSL has a known-good EVP "
-             "counter-mode implementation. Using it.");
+  log_info(LD_CRYPTO, "This version of OpenSSL has a known-good EVP "
+           "counter-mode implementation. Using it.");
   return 0;
 }
 int
@@ -212,11 +213,11 @@ evaluate_evp_for_aes(int force_val)
   e = ENGINE_get_cipher_engine(NID_aes_128_ecb);
 
   if (e) {
-    log_notice(LD_CRYPTO, "AES engine \"%s\" found; using EVP_* functions.",
+    log_info(LD_CRYPTO, "AES engine \"%s\" found; using EVP_* functions.",
                ENGINE_get_name(e));
     should_use_EVP = 1;
   } else {
-    log_notice(LD_CRYPTO, "No AES engine found; using AES_* functions.");
+    log_info(LD_CRYPTO, "No AES engine found; using AES_* functions.");
     should_use_EVP = 0;
   }
 #endif
@@ -257,18 +258,18 @@ evaluate_ctr_for_aes(void)
   for (i=0; i<16; ++i)
     AES_ctr128_encrypt(&zero[i], &output[i], 1, &key, ivec, ivec_tmp, &pos);
 
-  if (memcmp(output, encrypt_zero, 16)) {
+  if (fast_memneq(output, encrypt_zero, 16)) {
     /* Counter mode is buggy */
     log_notice(LD_CRYPTO, "This OpenSSL has a buggy version of counter mode; "
                "not using it.");
   } else {
     /* Counter mode is okay */
-    log_notice(LD_CRYPTO, "This OpenSSL has a good implementation of counter "
+    log_info(LD_CRYPTO, "This OpenSSL has a good implementation of counter "
                "mode; using it.");
     should_use_openssl_CTR = 1;
   }
 #else
-  log_notice(LD_CRYPTO, "This version of OpenSSL has a slow implementation of "
+  log_info(LD_CRYPTO, "This version of OpenSSL has a slow implementation of "
              "counter mode; not using it.");
 #endif
   return 0;
@@ -285,7 +286,7 @@ evaluate_ctr_for_aes(void)
  * value of the current counter.
  */
 static INLINE void
-_aes_fill_buf(aes_cnt_cipher_t *cipher)
+aes_fill_buf_(aes_cnt_cipher_t *cipher)
 {
   /* We don't currently use OpenSSL's counter mode implementation because:
    *  1) some versions have known bugs
@@ -340,7 +341,7 @@ aes_set_key(aes_cnt_cipher_t *cipher, const char *key, int key_bits)
     EVP_EncryptInit(&cipher->key.evp, c, (const unsigned char*)key, NULL);
     cipher->using_evp = 1;
   } else {
-    AES_set_encrypt_key((const unsigned char *)key, key_bits, &cipher->key.aes);
+    AES_set_encrypt_key((const unsigned char *)key, key_bits,&cipher->key.aes);
     cipher->using_evp = 0;
   }
 
@@ -360,7 +361,7 @@ aes_set_key(aes_cnt_cipher_t *cipher, const char *key, int key_bits)
     memset(cipher->buf, 0, sizeof(cipher->buf));
   else
 #endif
-    _aes_fill_buf(cipher);
+    aes_fill_buf_(cipher);
 }
 
 /** Release storage held by <b>cipher</b>
@@ -387,9 +388,10 @@ aes_cipher_free(aes_cnt_cipher_t *cipher)
 
 #ifdef CAN_USE_OPENSSL_CTR
 /* Helper function to use EVP with openssl's counter-mode wrapper. */
-static void evp_block128_fn(const uint8_t in[16],
-                            uint8_t out[16],
-                            const void *key)
+static void
+evp_block128_fn(const uint8_t in[16],
+                uint8_t out[16],
+                const void *key)
 {
   EVP_CIPHER_CTX *ctx = (void*)key;
   int inl=16, outl=16;
@@ -429,8 +431,7 @@ aes_crypt(aes_cnt_cipher_t *cipher, const char *input, size_t len,
                          &cipher->pos);
     }
     return;
-  }
-  else
+  } else
 #endif
   {
     int c = cipher->pos;
@@ -453,7 +454,7 @@ aes_crypt(aes_cnt_cipher_t *cipher, const char *input, size_t len,
         UPDATE_CTR_BUF(cipher, 1);
       }
       UPDATE_CTR_BUF(cipher, 0);
-      _aes_fill_buf(cipher);
+      aes_fill_buf_(cipher);
     }
   }
 }
@@ -469,8 +470,7 @@ aes_crypt_inplace(aes_cnt_cipher_t *cipher, char *data, size_t len)
   if (should_use_openssl_CTR) {
     aes_crypt(cipher, data, len, data);
     return;
-  }
-  else
+  } else
 #endif
   {
     int c = cipher->pos;
@@ -493,7 +493,7 @@ aes_crypt_inplace(aes_cnt_cipher_t *cipher, char *data, size_t len)
         UPDATE_CTR_BUF(cipher, 1);
       }
       UPDATE_CTR_BUF(cipher, 0);
-      _aes_fill_buf(cipher);
+      aes_fill_buf_(cipher);
     }
   }
 }
@@ -515,7 +515,8 @@ aes_set_iv(aes_cnt_cipher_t *cipher, const char *iv)
 #ifdef CAN_USE_OPENSSL_CTR
   if (!should_use_openssl_CTR)
 #endif
-    _aes_fill_buf(cipher);
+    aes_fill_buf_(cipher);
 }
 
 #endif
+

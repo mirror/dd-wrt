@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for dirvote.c.
  **/
 
-#ifndef _TOR_DIRVOTE_H
-#define _TOR_DIRVOTE_H
+#ifndef TOR_DIRVOTE_H
+#define TOR_DIRVOTE_H
 
 /** Lowest allowable value for VoteSeconds. */
 #define MIN_VOTE_SECONDS 20
@@ -18,6 +18,50 @@
 #define MIN_DIST_SECONDS 20
 /** Smallest allowable voting interval. */
 #define MIN_VOTE_INTERVAL 300
+
+/** The highest consensus method that we currently support. */
+#define MAX_SUPPORTED_CONSENSUS_METHOD 17
+
+/** Lowest consensus method that contains a 'directory-footer' marker */
+#define MIN_METHOD_FOR_FOOTER 9
+
+/** Lowest consensus method that contains bandwidth weights */
+#define MIN_METHOD_FOR_BW_WEIGHTS 9
+
+/** Lowest consensus method that contains consensus params */
+#define MIN_METHOD_FOR_PARAMS 7
+
+/** Lowest consensus method that generates microdescriptors */
+#define MIN_METHOD_FOR_MICRODESC 8
+
+/** Lowest consensus method that doesn't count bad exits as exits for weight */
+#define MIN_METHOD_TO_CUT_BADEXIT_WEIGHT 11
+
+/** Lowest consensus method that ensures a majority of authorities voted
+  * for a param. */
+#define MIN_METHOD_FOR_MAJORITY_PARAMS 12
+
+/** Lowest consensus method where microdesc consensuses omit any entry
+ * with no microdesc. */
+#define MIN_METHOD_FOR_MANDATORY_MICRODESC 13
+
+/** Lowest consensus method that contains "a" lines. */
+#define MIN_METHOD_FOR_A_LINES 14
+
+/** Lowest consensus method where microdescs may include a "p6" line. */
+#define MIN_METHOD_FOR_P6_LINES 15
+
+/** Lowest consensus method where microdescs may include an onion-key-ntor
+ * line */
+#define MIN_METHOD_FOR_NTOR_KEY 16
+
+/** Lowest consensus method that ensures that authorities output an
+ * Unmeasured=1 flag for unmeasured bandwidths */
+#define MIN_METHOD_TO_CLIP_UNMEASURED_BW 17
+
+/** Default bandwidth to clip unmeasured bandwidths to using method >=
+ * MIN_METHOD_TO_CLIP_UNMEASURED_BW */
+#define DEFAULT_MAX_UNMEASURED_BW_KB 20
 
 void dirvote_free_all(void);
 
@@ -70,9 +114,16 @@ networkstatus_t *
 dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
                                         authority_cert_t *cert);
 
-microdesc_t *dirvote_create_microdescriptor(const routerinfo_t *ri);
+microdesc_t *dirvote_create_microdescriptor(const routerinfo_t *ri,
+                                            int consensus_method);
 ssize_t dirvote_format_microdesc_vote_line(char *out, size_t out_len,
-                                       const microdesc_t *md);
+                                           const microdesc_t *md,
+                                           int consensus_method_low,
+                                           int consensus_method_high);
+vote_microdesc_hash_t *dirvote_format_all_microdesc_vote_lines(
+                                        const routerinfo_t *ri,
+                                        time_t now,
+                                        smartlist_t *microdescriptors_out);
 
 int vote_routerstatus_find_microdesc_hash(char *digest256_out,
                                           const vote_routerstatus_t *vrs,

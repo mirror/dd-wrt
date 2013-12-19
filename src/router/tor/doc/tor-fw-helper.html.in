@@ -751,9 +751,8 @@ tor-fw-helper(1) Manual Page
 <div class="sect1">
 <h2 id="_synopsis">SYNOPSIS</h2>
 <div class="sectionbody">
-<div class="paragraph"><p><strong>tor-fw-helper</strong> [-h|--help] [-T|--test] [-v|--verbose] [-g|--fetch-public-ip]
- -i|--internal-or-port <em>TCP port</em> [-e|--external-or-port <em>TCP port</em>]
- [-d|--internal-dir-port <em>TCP port</em>] [-p|--external-dir-port <em>TCP port</em>]</p></div>
+<div class="paragraph"><p><strong>tor-fw-helper</strong> [-h|--help] [-T|--test-commandline] [-v|--verbose] [-g|--fetch-public-ip]
+ [-p <em>external port</em>:<em>internal_port</em>]</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -779,7 +778,7 @@ map the required TCP ports for Tor&#8217;s Or and Dir ports.<br /></p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>-v</strong>
+<strong>-v</strong> or <strong>--verbose</strong>
 </dt>
 <dd>
 <p>
@@ -787,7 +786,7 @@ map the required TCP ports for Tor&#8217;s Or and Dir ports.<br /></p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>-T</strong> or <strong>--test</strong>
+<strong>-T</strong> or <strong>--test-commandline</strong>
 </dt>
 <dd>
 <p>
@@ -804,36 +803,12 @@ map the required TCP ports for Tor&#8217;s Or and Dir ports.<br /></p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>-i</strong> or <strong>--internal-or-port</strong> <em>port</em>
+<strong>-p</strong> or <strong>--port</strong> <em>external_port</em>:<em>internal_port</em>
 </dt>
 <dd>
 <p>
-    Inform <strong>tor-fw-helper</strong> of your internal OR port. This is the only
-    required argument.
-</p>
-</dd>
-<dt class="hdlist1">
-<strong>-e</strong> or <strong>--external-or-port</strong> <em>port</em>
-</dt>
-<dd>
-<p>
-    Inform <strong>tor-fw-helper</strong> of your external OR port.
-</p>
-</dd>
-<dt class="hdlist1">
-<strong>-d</strong> or <strong>--internal-dir-port</strong> <em>port</em>
-</dt>
-<dd>
-<p>
-    Inform <strong>tor-fw-helper</strong> of your internal Dir port.
-</p>
-</dd>
-<dt class="hdlist1">
-<strong>-p</strong> or <strong>--external-dir-port</strong> <em>port</em>
-</dt>
-<dd>
-<p>
-    Inform <strong>tor-fw-helper</strong> of your external Dir port.
+    Forward external_port to internal_port.  This option can appear
+    more than once.
 </p>
 </dd>
 </dl></div>
@@ -866,7 +841,7 @@ really want to deal with Windows before October 2010 anyway.</p></div>
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2012-11-19 16:24:38 EST
+Last updated 2013-10-09 15:29:52 EDT
 </div>
 </div>
 </body>
