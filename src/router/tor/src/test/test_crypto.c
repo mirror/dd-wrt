@@ -1,13 +1,18 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
 #define CRYPTO_PRIVATE
+#define CRYPTO_CURVE25519_PRIVATE
 #include "or.h"
 #include "test.h"
 #include "aes.h"
+#include "util.h"
+#ifdef CURVE25519_ENABLED
+#include "crypto_curve25519.h"
+#endif
 
 /** Run unit tests for Diffie-Hellman functionality. */
 static void
@@ -119,9 +124,9 @@ test_crypto_aes(void *arg)
   memset(data2, 0, 1024);
   memset(data3, 0, 1024);
   env1 = crypto_cipher_new(NULL);
-  test_neq(env1, 0);
+  test_neq_ptr(env1, 0);
   env2 = crypto_cipher_new(crypto_cipher_get_key(env1));
-  test_neq(env2, 0);
+  test_neq_ptr(env2, 0);
 
   /* Try encrypting 512 chars. */
   crypto_cipher_encrypt(env1, data2, data1, 512);
@@ -152,7 +157,7 @@ test_crypto_aes(void *arg)
 
   memset(data3, 0, 1024);
   env2 = crypto_cipher_new(crypto_cipher_get_key(env1));
-  test_neq(env2, 0);
+  test_neq_ptr(env2, NULL);
   for (j = 0; j < 1024-16; j += 17) {
     crypto_cipher_encrypt(env2, data3+j, data1+j, 17);
   }
@@ -427,6 +432,11 @@ test_crypto_pk(void)
   test_assert(! crypto_pk_read_public_key_from_string(pk2, encoded, size));
   test_eq(0, crypto_pk_cmp_keys(pk1, pk2));
 
+  /* comparison between keys and NULL */
+  tt_int_op(crypto_pk_cmp_keys(NULL, pk1), <, 0);
+  tt_int_op(crypto_pk_cmp_keys(NULL, NULL), ==, 0);
+  tt_int_op(crypto_pk_cmp_keys(pk1, NULL), >, 0);
+
   test_eq(128, crypto_pk_keysize(pk1));
   test_eq(1024, crypto_pk_num_bits(pk1));
   test_eq(128, crypto_pk_keysize(pk2));
@@ -626,22 +636,6 @@ test_crypto_formats(void)
     tor_free(data2);
   }
 
-  /* Check fingerprint */
-  {
-    test_assert(crypto_pk_check_fingerprint_syntax(
-                "ABCD 1234 ABCD 5678 0000 ABCD 1234 ABCD 5678 0000"));
-    test_assert(!crypto_pk_check_fingerprint_syntax(
-                "ABCD 1234 ABCD 5678 0000 ABCD 1234 ABCD 5678 000"));
-    test_assert(!crypto_pk_check_fingerprint_syntax(
-                "ABCD 1234 ABCD 5678 0000 ABCD 1234 ABCD 5678 00000"));
-    test_assert(!crypto_pk_check_fingerprint_syntax(
-                "ABCD 1234 ABCD 5678 0000 ABCD1234 ABCD 5678 0000"));
-    test_assert(!crypto_pk_check_fingerprint_syntax(
-                "ABCD 1234 ABCD 5678 0000 ABCD1234 ABCD 5678 00000"));
-    test_assert(!crypto_pk_check_fingerprint_syntax(
-                "ACD 1234 ABCD 5678 0000 ABCD 1234 ABCD 5678 00000"));
-  }
-
  done:
   tor_free(data1);
   tor_free(data2);
@@ -736,7 +730,7 @@ test_crypto_aes_iv(void *arg)
   /* Decrypt with the wrong key. */
   decrypted_size = crypto_cipher_decrypt_with_iv(key2, decrypted2, 4095,
                                              encrypted1, encrypted_size);
-  test_memneq(plain, decrypted2, encrypted_size);
+  test_memneq(plain, decrypted2, decrypted_size);
   /* Alter the initialization vector. */
   encrypted1[0] += 42;
   decrypted_size = crypto_cipher_decrypt_with_iv(key1, decrypted1, 4095,
@@ -827,6 +821,293 @@ test_crypto_base32_decode(void)
   ;
 }
 
+static void
+test_crypto_kdf_TAP(void *arg)
+{
+  uint8_t key_material[100];
+  int r;
+  char *mem_op_hex_tmp = NULL;
+
+  (void)arg;
+#define EXPAND(s)                                \
+  r = crypto_expand_key_material_TAP(            \
+    (const uint8_t*)(s), strlen(s),              \
+    key_material, 100)
+
+  /* Test vectors generated with a little python script; feel free to write
+   * your own. */
+  memset(key_material, 0, sizeof(key_material));
+  EXPAND("");
+  tt_int_op(r, ==, 0);
+  test_memeq_hex(key_material,
+                 "5ba93c9db0cff93f52b521d7420e43f6eda2784fbf8b4530d8"
+                 "d246dd74ac53a13471bba17941dff7c4ea21bb365bbeeaf5f2"
+                 "c654883e56d11e43c44e9842926af7ca0a8cca12604f945414"
+                 "f07b01e13da42c6cf1de3abfdea9b95f34687cbbe92b9a7383");
+
+  EXPAND("Tor");
+  tt_int_op(r, ==, 0);
+  test_memeq_hex(key_material,
+                 "776c6214fc647aaa5f683c737ee66ec44f03d0372e1cce6922"
+                 "7950f236ddf1e329a7ce7c227903303f525a8c6662426e8034"
+                 "870642a6dabbd41b5d97ec9bf2312ea729992f48f8ea2d0ba8"
+                 "3f45dfda1a80bdc8b80de01b23e3e0ffae099b3e4ccf28dc28");
+
+  EXPAND("AN ALARMING ITEM TO FIND ON A MONTHLY AUTO-DEBIT NOTICE");
+  tt_int_op(r, ==, 0);
+  test_memeq_hex(key_material,
+                 "a340b5d126086c3ab29c2af4179196dbf95e1c72431419d331"
+                 "4844bf8f6afb6098db952b95581fb6c33625709d6f4400b8e7"
+                 "ace18a70579fad83c0982ef73f89395bcc39493ad53a685854"
+                 "daf2ba9b78733b805d9a6824c907ee1dba5ac27a1e466d4d10");
+
+ done:
+  tor_free(mem_op_hex_tmp);
+
+#undef EXPAND
+}
+
+static void
+test_crypto_hkdf_sha256(void *arg)
+{
+  uint8_t key_material[100];
+  const uint8_t salt[] = "ntor-curve25519-sha256-1:key_extract";
+  const size_t salt_len = strlen((char*)salt);
+  const uint8_t m_expand[] = "ntor-curve25519-sha256-1:key_expand";
+  const size_t m_expand_len = strlen((char*)m_expand);
+  int r;
+  char *mem_op_hex_tmp = NULL;
+
+  (void)arg;
+
+#define EXPAND(s) \
+  r = crypto_expand_key_material_rfc5869_sha256( \
+    (const uint8_t*)(s), strlen(s),              \
+    salt, salt_len,                              \
+    m_expand, m_expand_len,                      \
+    key_material, 100)
+
+  /* Test vectors generated with ntor_ref.py */
+  memset(key_material, 0, sizeof(key_material));
+  EXPAND("");
+  tt_int_op(r, ==, 0);
+  test_memeq_hex(key_material,
+                 "d3490ed48b12a48f9547861583573fe3f19aafe3f81dc7fc75"
+                 "eeed96d741b3290f941576c1f9f0b2d463d1ec7ab2c6bf71cd"
+                 "d7f826c6298c00dbfe6711635d7005f0269493edf6046cc7e7"
+                 "dcf6abe0d20c77cf363e8ffe358927817a3d3e73712cee28d8");
+
+  EXPAND("Tor");
+  tt_int_op(r, ==, 0);
+  test_memeq_hex(key_material,
+                 "5521492a85139a8d9107a2d5c0d9c91610d0f95989975ebee6"
+                 "c02a4f8d622a6cfdf9b7c7edd3832e2760ded1eac309b76f8d"
+                 "66c4a3c4d6225429b3a016e3c3d45911152fc87bc2de9630c3"
+                 "961be9fdb9f93197ea8e5977180801926d3321fa21513e59ac");
+
+  EXPAND("AN ALARMING ITEM TO FIND ON YOUR CREDIT-RATING STATEMENT");
+  tt_int_op(r, ==, 0);
+  test_memeq_hex(key_material,
+                 "a2aa9b50da7e481d30463adb8f233ff06e9571a0ca6ab6df0f"
+                 "b206fa34e5bc78d063fc291501beec53b36e5a0e434561200c"
+                 "5f8bd13e0f88b3459600b4dc21d69363e2895321c06184879d"
+                 "94b18f078411be70b767c7fc40679a9440a0c95ea83a23efbf");
+
+ done:
+  tor_free(mem_op_hex_tmp);
+#undef EXPAND
+}
+
+#ifdef CURVE25519_ENABLED
+static void
+test_crypto_curve25519_impl(void *arg)
+{
+  /* adapted from curve25519_donna, which adapted it from test-curve25519
+     version 20050915, by D. J. Bernstein, Public domain. */
+
+  const int randomize_high_bit = (arg != NULL);
+
+#ifdef SLOW_CURVE25519_TEST
+  const int loop_max=10000;
+  const char e1_expected[]    = "4faf81190869fd742a33691b0e0824d5"
+                                "7e0329f4dd2819f5f32d130f1296b500";
+  const char e2k_expected[]   = "05aec13f92286f3a781ccae98995a3b9"
+                                "e0544770bc7de853b38f9100489e3e79";
+  const char e1e2k_expected[] = "cd6e8269104eb5aaee886bd2071fba88"
+                                "bd13861475516bc2cd2b6e005e805064";
+#else
+  const int loop_max=200;
+  const char e1_expected[]    = "bc7112cde03f97ef7008cad1bdc56be3"
+                                "c6a1037d74cceb3712e9206871dcf654";
+  const char e2k_expected[]   = "dd8fa254fb60bdb5142fe05b1f5de44d"
+                                "8e3ee1a63c7d14274ea5d4c67f065467";
+  const char e1e2k_expected[] = "7ddb98bd89025d2347776b33901b3e7e"
+                                "c0ee98cb2257a4545c0cfb2ca3e1812b";
+#endif
+
+  unsigned char e1k[32];
+  unsigned char e2k[32];
+  unsigned char e1e2k[32];
+  unsigned char e2e1k[32];
+  unsigned char e1[32] = {3};
+  unsigned char e2[32] = {5};
+  unsigned char k[32] = {9};
+  int loop, i;
+
+  char *mem_op_hex_tmp = NULL;
+
+  for (loop = 0; loop < loop_max; ++loop) {
+    curve25519_impl(e1k,e1,k);
+    curve25519_impl(e2e1k,e2,e1k);
+    curve25519_impl(e2k,e2,k);
+    if (randomize_high_bit) {
+      /* We require that the high bit of the public key be ignored. So if
+       * we're doing this variant test, we randomize the high bit of e2k, and
+       * make sure that the handshake still works out the same as it would
+       * otherwise. */
+      uint8_t byte;
+      crypto_rand((char*)&byte, 1);
+      e2k[31] |= (byte & 0x80);
+    }
+    curve25519_impl(e1e2k,e1,e2k);
+    test_memeq(e1e2k, e2e1k, 32);
+    if (loop == loop_max-1) {
+      break;
+    }
+    for (i = 0;i < 32;++i) e1[i] ^= e2k[i];
+    for (i = 0;i < 32;++i) e2[i] ^= e1k[i];
+    for (i = 0;i < 32;++i) k[i] ^= e1e2k[i];
+  }
+
+  test_memeq_hex(e1, e1_expected);
+  test_memeq_hex(e2k, e2k_expected);
+  test_memeq_hex(e1e2k, e1e2k_expected);
+
+ done:
+  tor_free(mem_op_hex_tmp);
+}
+
+static void
+test_crypto_curve25519_wrappers(void *arg)
+{
+  curve25519_public_key_t pubkey1, pubkey2;
+  curve25519_secret_key_t seckey1, seckey2;
+
+  uint8_t output1[CURVE25519_OUTPUT_LEN];
+  uint8_t output2[CURVE25519_OUTPUT_LEN];
+  (void)arg;
+
+  /* Test a simple handshake, serializing and deserializing some stuff. */
+  curve25519_secret_key_generate(&seckey1, 0);
+  curve25519_secret_key_generate(&seckey2, 1);
+  curve25519_public_key_generate(&pubkey1, &seckey1);
+  curve25519_public_key_generate(&pubkey2, &seckey2);
+  test_assert(curve25519_public_key_is_ok(&pubkey1));
+  test_assert(curve25519_public_key_is_ok(&pubkey2));
+  curve25519_handshake(output1, &seckey1, &pubkey2);
+  curve25519_handshake(output2, &seckey2, &pubkey1);
+  test_memeq(output1, output2, sizeof(output1));
+
+ done:
+  ;
+}
+
+static void
+test_crypto_curve25519_encode(void *arg)
+{
+  curve25519_secret_key_t seckey;
+  curve25519_public_key_t key1, key2, key3;
+  char buf[64];
+
+  (void)arg;
+
+  curve25519_secret_key_generate(&seckey, 0);
+  curve25519_public_key_generate(&key1, &seckey);
+  tt_int_op(0, ==, curve25519_public_to_base64(buf, &key1));
+  tt_int_op(CURVE25519_BASE64_PADDED_LEN, ==, strlen(buf));
+
+  tt_int_op(0, ==, curve25519_public_from_base64(&key2, buf));
+  test_memeq(key1.public_key, key2.public_key, CURVE25519_PUBKEY_LEN);
+
+  buf[CURVE25519_BASE64_PADDED_LEN - 1] = '\0';
+  tt_int_op(CURVE25519_BASE64_PADDED_LEN-1, ==, strlen(buf));
+  tt_int_op(0, ==, curve25519_public_from_base64(&key3, buf));
+  test_memeq(key1.public_key, key3.public_key, CURVE25519_PUBKEY_LEN);
+
+  /* Now try bogus parses. */
+  strlcpy(buf, "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$=", sizeof(buf));
+  tt_int_op(-1, ==, curve25519_public_from_base64(&key3, buf));
+
+  strlcpy(buf, "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$", sizeof(buf));
+  tt_int_op(-1, ==, curve25519_public_from_base64(&key3, buf));
+
+  strlcpy(buf, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", sizeof(buf));
+  tt_int_op(-1, ==, curve25519_public_from_base64(&key3, buf));
+
+ done:
+  ;
+}
+
+static void
+test_crypto_curve25519_persist(void *arg)
+{
+  curve25519_keypair_t keypair, keypair2;
+  char *fname = tor_strdup(get_fname("curve25519_keypair"));
+  char *tag = NULL;
+  char *content = NULL;
+  const char *cp;
+  struct stat st;
+  size_t taglen;
+
+  (void)arg;
+
+  tt_int_op(0,==,curve25519_keypair_generate(&keypair, 0));
+
+  tt_int_op(0,==,curve25519_keypair_write_to_file(&keypair, fname, "testing"));
+  tt_int_op(0,==,curve25519_keypair_read_from_file(&keypair2, &tag, fname));
+  tt_str_op(tag,==,"testing");
+  tor_free(tag);
+
+  test_memeq(keypair.pubkey.public_key,
+             keypair2.pubkey.public_key,
+             CURVE25519_PUBKEY_LEN);
+  test_memeq(keypair.seckey.secret_key,
+             keypair2.seckey.secret_key,
+             CURVE25519_SECKEY_LEN);
+
+  content = read_file_to_str(fname, RFTS_BIN, &st);
+  tt_assert(content);
+  taglen = strlen("== c25519v1: testing ==");
+  tt_int_op(st.st_size, ==, 32+CURVE25519_PUBKEY_LEN+CURVE25519_SECKEY_LEN);
+  tt_assert(fast_memeq(content, "== c25519v1: testing ==", taglen));
+  tt_assert(tor_mem_is_zero(content+taglen, 32-taglen));
+  cp = content + 32;
+  test_memeq(keypair.seckey.secret_key,
+             cp,
+             CURVE25519_SECKEY_LEN);
+  cp += CURVE25519_SECKEY_LEN;
+  test_memeq(keypair.pubkey.public_key,
+             cp,
+             CURVE25519_SECKEY_LEN);
+
+  tor_free(fname);
+  fname = tor_strdup(get_fname("bogus_keypair"));
+
+  tt_int_op(-1, ==, curve25519_keypair_read_from_file(&keypair2, &tag, fname));
+  tor_free(tag);
+
+  content[69] ^= 0xff;
+  tt_int_op(0, ==, write_bytes_to_file(fname, content, (size_t)st.st_size, 1));
+  tt_int_op(-1, ==, curve25519_keypair_read_from_file(&keypair2, &tag, fname));
+
+ done:
+  tor_free(fname);
+  tor_free(content);
+  tor_free(tag);
+}
+
+#endif
+
 static void *
 pass_data_setup_fn(const struct testcase_t *testcase)
 {
@@ -858,6 +1139,15 @@ struct testcase_t crypto_tests[] = {
   { "aes_iv_AES", test_crypto_aes_iv, TT_FORK, &pass_data, (void*)"aes" },
   { "aes_iv_EVP", test_crypto_aes_iv, TT_FORK, &pass_data, (void*)"evp" },
   CRYPTO_LEGACY(base32_decode),
+  { "kdf_TAP", test_crypto_kdf_TAP, 0, NULL, NULL },
+  { "hkdf_sha256", test_crypto_hkdf_sha256, 0, NULL, NULL },
+#ifdef CURVE25519_ENABLED
+  { "curve25519_impl", test_crypto_curve25519_impl, 0, NULL, NULL },
+  { "curve25519_impl_hibit", test_crypto_curve25519_impl, 0, NULL, (void*)"y"},
+  { "curve25519_wrappers", test_crypto_curve25519_wrappers, 0, NULL, NULL },
+  { "curve25519_encode", test_crypto_curve25519_encode, 0, NULL, NULL },
+  { "curve25519_persist", test_crypto_curve25519_persist, 0, NULL, NULL },
+#endif
   END_OF_TESTCASES
 };
 

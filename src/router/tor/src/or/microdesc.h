@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for microdesc.c.
  **/
 
-#ifndef _TOR_MICRODESC_H
-#define _TOR_MICRODESC_H
+#ifndef TOR_MICRODESC_H
+#define TOR_MICRODESC_H
 
 microdesc_cache_t *get_microdesc_cache(void);
 
@@ -39,7 +39,9 @@ smartlist_t *microdesc_list_missing_digest256(networkstatus_t *ns,
                                               int downloadable_only,
                                               digestmap_t *skip);
 
-void microdesc_free(microdesc_t *md);
+void microdesc_free_(microdesc_t *md, const char *fname, int line);
+#define microdesc_free(md) \
+  microdesc_free_((md), __FILE__, __LINE__)
 void microdesc_free_all(void);
 
 void update_microdesc_downloads(time_t now);

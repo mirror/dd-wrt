@@ -1,4 +1,4 @@
-/* orconfig.h.in.  Generated from configure.in by autoheader.  */
+/* orconfig.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
@@ -9,8 +9,14 @@
 /* tor's configuration directory */
 #undef CONFDIR
 
+/* Defined if we have a curve25519 implementation */
+#undef CURVE25519_ENABLED
+
 /* Enable dmalloc's malloc function check */
 #undef DMALLOC_FUNC_CHECK
+
+/* Define to 1 iff memset(0) sets doubles to 0.0 */
+#undef DOUBLE_0_REP_IS_ZERO_BYTES
 
 /* Defined if we try to use freelists for buffer RAM chunks */
 #undef ENABLE_BUF_FREELISTS
@@ -20,6 +26,9 @@
 
 /* Defined if we will try to use multithreading */
 #undef ENABLE_THREADS
+
+/* Define if enum is always signed */
+#undef ENUM_VALS_ARE_SIGNED
 
 /* Define to nothing if C supports flexible array members, and to 1 if it does
    not. That way, with a declaration like `struct s { int n; double
@@ -44,6 +53,10 @@
 
 /* Define to 1 if you have the <crt_externs.h> header file. */
 #undef HAVE_CRT_EXTERNS_H
+
+/* Define to 1 if you have the <crypto_scalarmult_curve25519.h> header file.
+   */
+#undef HAVE_CRYPTO_SCALARMULT_CURVE25519_H
 
 /* Define to 1 if you have the declaration of `mlockall', and to 0 if you
    don't. */
@@ -160,6 +173,9 @@
 /* Define to 1 if you have the <linux/types.h> header file. */
 #undef HAVE_LINUX_TYPES_H
 
+/* Define to 1 if you have the `llround' function. */
+#undef HAVE_LLROUND
+
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
 
@@ -181,12 +197,6 @@
 /* Define to 1 if you have the `mallinfo' function. */
 #undef HAVE_MALLINFO
 
-/* Define to 1 if you have the `malloc_good_size' function. */
-#undef HAVE_MALLOC_GOOD_SIZE
-
-/* Defined if the prototype for malloc_good_size seems to be present. */
-#undef HAVE_MALLOC_GOOD_SIZE_PROTOTYPE
-
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
@@ -196,9 +206,6 @@
 /* Define to 1 if you have the <malloc_np.h> header file. */
 #undef HAVE_MALLOC_NP_H
 
-/* Define to 1 if you have the `malloc_usable_size' function. */
-#undef HAVE_MALLOC_USABLE_SIZE
-
 /* Define to 1 if you have the `memmem' function. */
 #undef HAVE_MEMMEM
 
@@ -207,6 +214,10 @@
 
 /* Define to 1 if you have the `mlockall' function. */
 #undef HAVE_MLOCKALL
+
+/* Define to 1 if you have the <nacl/crypto_scalarmult_curve25519.h> header
+   file. */
+#undef HAVE_NACL_CRYPTO_SCALARMULT_CURVE25519_H
 
 /* Define to 1 if you have the <netdb.h> header file. */
 #undef HAVE_NETDB_H
@@ -382,6 +393,9 @@
 /* Define to 1 if you have the `_NSGetEnviron' function. */
 #undef HAVE__NSGETENVIRON
 
+/* Define to 1 if you have the `_vscprintf' function. */
+#undef HAVE__VSCPRINTF
+
 /* Defined if we want to keep track of how much of each kind of resource we
    download. */
 #undef INSTRUMENT_DOWNLOADS
@@ -464,6 +478,9 @@
 /* The size of `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
 
+/* The size of `pid_t', as computed by sizeof. */
+#undef SIZEOF_PID_T
+
 /* The size of `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
 
@@ -500,11 +517,18 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* Define to 1 iff time_t is signed */
+/* Define if time_t is signed */
 #undef TIME_T_IS_SIGNED
 
 /* Defined if we're going to use Libevent's buffered IO API */
 #undef USE_BUFFEREVENTS
+
+/* Defined if we should use an internal curve25519_donna{,_c64} implementation
+   */
+#undef USE_CURVE25519_DONNA
+
+/* Defined if we should use a curve25519 from nacl */
+#undef USE_CURVE25519_NACL
 
 /* Debug memory allocation library */
 #undef USE_DMALLOC

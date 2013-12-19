@@ -1,10 +1,10 @@
 /* Copyright (c) 2001-2003, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
-#ifndef _TOR_TEST_H
-#define _TOR_TEST_H
+#ifndef TOR_TEST_H
+#define TOR_TEST_H
 
 /**
  * \file test.h
@@ -64,6 +64,10 @@
   STMT_END
 
 #define test_memeq_hex(expr1, hex) test_mem_op_hex(expr1, ==, hex)
+
+#define tt_double_op(a,op,b)                                            \
+  tt_assert_test_type(a,b,#a" "#op" "#b,double,(val1_ op val2_),"%f",   \
+                      TT_EXIT_TEST_FUNCTION)
 
 const char *get_fname(const char *name);
 crypto_pk_t *pk_generate(int idx);

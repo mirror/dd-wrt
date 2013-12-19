@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /* Ordinarily defined in tor_main.c; this bit is just here to provide one
@@ -32,7 +32,7 @@ const char tor_git_revision[] = "";
 #define CONFIG_PRIVATE
 #define GEOIP_PRIVATE
 #define ROUTER_PRIVATE
-#define CIRCUIT_PRIVATE
+#define CIRCUITSTATS_PRIVATE
 
 /*
  * Linux doesn't provide lround in math.h by default, but mac os does...
@@ -44,7 +44,8 @@ double fabs(double x);
 
 #include "or.h"
 #include "buffers.h"
-#include "circuitbuild.h"
+#include "circuitlist.h"
+#include "circuitstats.h"
 #include "config.h"
 #include "connection_edge.h"
 #include "geoip.h"
@@ -54,9 +55,14 @@ double fabs(double x);
 #include "mempool.h"
 #include "memarea.h"
 #include "onion.h"
+#include "onion_tap.h"
 #include "policies.h"
 #include "rephist.h"
 #include "routerparse.h"
+#ifdef CURVE25519_ENABLED
+#include "crypto_curve25519.h"
+#include "onion_ntor.h"
+#endif
 
 #ifdef USE_DMALLOC
 #include <dmalloc.h>
@@ -84,7 +90,13 @@ setup_directory(void)
 {
   static int is_setup = 0;
   int r;
+  char rnd[256], rnd32[256];
   if (is_setup) return;
+
+/* Due to base32 limitation needs to be a multiple of 5. */
+#define RAND_PATH_BYTES 5
+  crypto_rand(rnd, RAND_PATH_BYTES);
+  base32_encode(rnd32, sizeof(rnd32), rnd, RAND_PATH_BYTES);
 
 #ifdef _WIN32
   {
@@ -94,11 +106,12 @@ setup_directory(void)
     if (!GetTempPathA(sizeof(buf),buf))
       tmp = "c:\\windows\\temp";
     tor_snprintf(temp_dir, sizeof(temp_dir),
-                 "%s\\tor_test_%d", tmp, (int)getpid());
+                 "%s\\tor_test_%d_%s", tmp, (int)getpid(), rnd32);
     r = mkdir(temp_dir);
   }
 #else
-  tor_snprintf(temp_dir, sizeof(temp_dir), "/tmp/tor_test_%d", (int) getpid());
+  tor_snprintf(temp_dir, sizeof(temp_dir), "/tmp/tor_test_%d_%s",
+               (int) getpid(), rnd32);
   r = mkdir(temp_dir, 0700);
 #endif
   if (r) {
@@ -352,7 +365,7 @@ test_socks_5_unsupported_commands(void *ptr)
   test_eq(5, socks->socks_version);
   test_eq(2, socks->replylen);
   test_eq(5, socks->reply[0]);
-  test_eq(0, socks->reply[1]);
+  test_eq(2, socks->reply[1]);
   ADD_DATA(buf, "\x05\x03\x00\x01\x02\x02\x02\x01\x01\x01");
   test_eq(fetch_from_buf_socks(buf, socks, get_options()->TestSocks,
                                get_options()->SafeSocks), -1);
@@ -457,7 +470,7 @@ test_socks_5_no_authenticate(void *ptr)
                                     get_options()->SafeSocks));
   test_eq(5, socks->socks_version);
   test_eq(2, socks->replylen);
-  test_eq(5, socks->reply[0]);
+  test_eq(1, socks->reply[0]);
   test_eq(0, socks->reply[1]);
 
   test_eq(2, socks->usernamelen);
@@ -496,7 +509,7 @@ test_socks_5_authenticate(void *ptr)
                                    get_options()->SafeSocks));
   test_eq(5, socks->socks_version);
   test_eq(2, socks->replylen);
-  test_eq(5, socks->reply[0]);
+  test_eq(1, socks->reply[0]);
   test_eq(0, socks->reply[1]);
 
   test_eq(2, socks->usernamelen);
@@ -536,7 +549,7 @@ test_socks_5_authenticate_with_data(void *ptr)
                                    get_options()->SafeSocks) == 1);
   test_eq(5, socks->socks_version);
   test_eq(2, socks->replylen);
-  test_eq(5, socks->reply[0]);
+  test_eq(1, socks->reply[0]);
   test_eq(0, socks->reply[1]);
 
   test_streq("2.2.2.2", socks->address);
@@ -802,6 +815,18 @@ test_buffers(void)
   buf_free(buf);
   buf = NULL;
 
+  /* Try adding a string too long for any freelist. */
+  {
+    char *cp = tor_malloc_zero(65536);
+    buf = buf_new();
+    write_to_buf(cp, 65536, buf);
+    tor_free(cp);
+
+    tt_int_op(buf_datalen(buf), ==, 65536);
+    buf_free(buf);
+    buf = NULL;
+  }
+
  done:
   if (buf)
     buf_free(buf);
@@ -815,11 +840,11 @@ test_onion_handshake(void)
 {
   /* client-side */
   crypto_dh_t *c_dh = NULL;
-  char c_buf[ONIONSKIN_CHALLENGE_LEN];
+  char c_buf[TAP_ONIONSKIN_CHALLENGE_LEN];
   char c_keys[40];
 
   /* server-side */
-  char s_buf[ONIONSKIN_REPLY_LEN];
+  char s_buf[TAP_ONIONSKIN_REPLY_LEN];
   char s_keys[40];
 
   /* shared */
@@ -828,18 +853,18 @@ test_onion_handshake(void)
   pk = pk_generate(0);
 
   /* client handshake 1. */
-  memset(c_buf, 0, ONIONSKIN_CHALLENGE_LEN);
-  test_assert(! onion_skin_create(pk, &c_dh, c_buf));
+  memset(c_buf, 0, TAP_ONIONSKIN_CHALLENGE_LEN);
+  test_assert(! onion_skin_TAP_create(pk, &c_dh, c_buf));
 
   /* server handshake */
-  memset(s_buf, 0, ONIONSKIN_REPLY_LEN);
+  memset(s_buf, 0, TAP_ONIONSKIN_REPLY_LEN);
   memset(s_keys, 0, 40);
-  test_assert(! onion_skin_server_handshake(c_buf, pk, NULL,
+  test_assert(! onion_skin_TAP_server_handshake(c_buf, pk, NULL,
                                             s_buf, s_keys, 40));
 
   /* client handshake 2 */
   memset(c_keys, 0, 40);
-  test_assert(! onion_skin_client_handshake(c_dh, s_buf, c_keys, 40));
+  test_assert(! onion_skin_TAP_client_handshake(c_dh, s_buf, c_keys, 40));
 
   if (memcmp(c_keys, s_keys, 40)) {
     puts("Aiiiie");
@@ -854,6 +879,103 @@ test_onion_handshake(void)
     crypto_dh_free(c_dh);
   if (pk)
     crypto_pk_free(pk);
+}
+
+#ifdef CURVE25519_ENABLED
+static void
+test_ntor_handshake(void *arg)
+{
+  /* client-side */
+  ntor_handshake_state_t *c_state = NULL;
+  uint8_t c_buf[NTOR_ONIONSKIN_LEN];
+  uint8_t c_keys[400];
+
+  /* server-side */
+  di_digest256_map_t *s_keymap=NULL;
+  curve25519_keypair_t s_keypair;
+  uint8_t s_buf[NTOR_REPLY_LEN];
+  uint8_t s_keys[400];
+
+  /* shared */
+  const curve25519_public_key_t *server_pubkey;
+  uint8_t node_id[20] = "abcdefghijklmnopqrst";
+
+  (void) arg;
+
+  /* Make the server some keys */
+  curve25519_secret_key_generate(&s_keypair.seckey, 0);
+  curve25519_public_key_generate(&s_keypair.pubkey, &s_keypair.seckey);
+  dimap_add_entry(&s_keymap, s_keypair.pubkey.public_key, &s_keypair);
+  server_pubkey = &s_keypair.pubkey;
+
+  /* client handshake 1. */
+  memset(c_buf, 0, NTOR_ONIONSKIN_LEN);
+  tt_int_op(0, ==, onion_skin_ntor_create(node_id, server_pubkey,
+                                          &c_state, c_buf));
+
+  /* server handshake */
+  memset(s_buf, 0, NTOR_REPLY_LEN);
+  memset(s_keys, 0, 40);
+  tt_int_op(0, ==, onion_skin_ntor_server_handshake(c_buf, s_keymap, NULL,
+                                                    node_id,
+                                                    s_buf, s_keys, 400));
+
+  /* client handshake 2 */
+  memset(c_keys, 0, 40);
+  tt_int_op(0, ==, onion_skin_ntor_client_handshake(c_state, s_buf,
+                                                    c_keys, 400));
+
+  test_memeq(c_keys, s_keys, 400);
+  memset(s_buf, 0, 40);
+  test_memneq(c_keys, s_buf, 40);
+
+ done:
+  ntor_handshake_state_free(c_state);
+  dimap_free(s_keymap, NULL);
+}
+#endif
+
+/** Run unit tests for the onion queues. */
+static void
+test_onion_queues(void)
+{
+  uint8_t buf1[TAP_ONIONSKIN_CHALLENGE_LEN] = {0};
+  uint8_t buf2[NTOR_ONIONSKIN_LEN] = {0};
+
+  or_circuit_t *circ1 = or_circuit_new(0, NULL);
+  or_circuit_t *circ2 = or_circuit_new(0, NULL);
+
+  create_cell_t *onionskin = NULL;
+  create_cell_t *create1 = tor_malloc_zero(sizeof(create_cell_t));
+  create_cell_t *create2 = tor_malloc_zero(sizeof(create_cell_t));
+
+  create_cell_init(create1, CELL_CREATE, ONION_HANDSHAKE_TYPE_TAP,
+                   TAP_ONIONSKIN_CHALLENGE_LEN, buf1);
+  create_cell_init(create2, CELL_CREATE, ONION_HANDSHAKE_TYPE_NTOR,
+                   NTOR_ONIONSKIN_LEN, buf2);
+
+  test_eq(0, onion_num_pending(ONION_HANDSHAKE_TYPE_TAP));
+  test_eq(0, onion_pending_add(circ1, create1));
+  test_eq(1, onion_num_pending(ONION_HANDSHAKE_TYPE_TAP));
+
+  test_eq(0, onion_num_pending(ONION_HANDSHAKE_TYPE_NTOR));
+  test_eq(0, onion_pending_add(circ2, create2));
+  test_eq(1, onion_num_pending(ONION_HANDSHAKE_TYPE_NTOR));
+
+  test_eq_ptr(circ2, onion_next_task(&onionskin));
+  test_eq(1, onion_num_pending(ONION_HANDSHAKE_TYPE_TAP));
+  test_eq(0, onion_num_pending(ONION_HANDSHAKE_TYPE_NTOR));
+
+  clear_pending_onions();
+  test_eq(0, onion_num_pending(ONION_HANDSHAKE_TYPE_TAP));
+  test_eq(0, onion_num_pending(ONION_HANDSHAKE_TYPE_NTOR));
+
+ done:
+  ;
+//  circuit_free(circ1);
+//  circuit_free(circ2);
+  /* and free create1 and create2 */
+  /* XXX leaks everything here */
 }
 
 static void
@@ -1044,9 +1166,9 @@ test_policy_summary_helper(const char *policy_str,
   line.value = (char *)policy_str;
   line.next = NULL;
 
-  r = policies_parse_exit_policy(&line, &policy, 0, NULL, 1);
+  r = policies_parse_exit_policy(&line, &policy, 1, 0, NULL, 1);
   test_eq(r, 0);
-  summary = policy_summarize(policy);
+  summary = policy_summarize(policy, AF_INET);
 
   test_assert(summary != NULL);
   test_streq(summary, expected_summary);
@@ -1101,7 +1223,7 @@ test_policies(void)
   test_assert(ADDR_POLICY_REJECTED ==
           compare_tor_addr_to_addr_policy(&tar, 2, policy));
 
-  test_assert(0 == policies_parse_exit_policy(NULL, &policy2, 1, NULL, 1));
+  test_assert(0 == policies_parse_exit_policy(NULL, &policy2, 1, 1, NULL, 1));
   test_assert(policy2);
 
   policy3 = smartlist_new();
@@ -1176,9 +1298,9 @@ test_policies(void)
   test_assert(!cmp_addr_policies(policy2, policy2));
   test_assert(!cmp_addr_policies(NULL, NULL));
 
-  test_assert(!policy_is_reject_star(policy2));
-  test_assert(policy_is_reject_star(policy));
-  test_assert(policy_is_reject_star(NULL));
+  test_assert(!policy_is_reject_star(policy2, AF_INET));
+  test_assert(policy_is_reject_star(policy, AF_INET));
+  test_assert(policy_is_reject_star(NULL, AF_INET));
 
   addr_policy_list_free(policy);
   policy = NULL;
@@ -1188,11 +1310,11 @@ test_policies(void)
   line.key = (char*)"foo";
   line.value = (char*)"accept *:80,reject private:*,reject *:*";
   line.next = NULL;
-  test_assert(0 == policies_parse_exit_policy(&line, &policy, 0, NULL, 1));
+  test_assert(0 == policies_parse_exit_policy(&line, &policy, 1, 0, NULL, 1));
   test_assert(policy);
   //test_streq(policy->string, "accept *:80");
   //test_streq(policy->next->string, "reject *:*");
-  test_eq(smartlist_len(policy), 2);
+  test_eq(smartlist_len(policy), 4);
 
   /* test policy summaries */
   /* check if we properly ignore private IP addresses */
@@ -1354,11 +1476,20 @@ test_rend_fns(void)
   char address2[] = "aaaaaaaaaaaaaaaa.onion";
   char address3[] = "fooaddress.exit";
   char address4[] = "www.torproject.org";
+  char address5[] = "foo.abcdefghijklmnop.onion";
+  char address6[] = "foo.bar.abcdefghijklmnop.onion";
+  char address7[] = ".abcdefghijklmnop.onion";
 
   test_assert(BAD_HOSTNAME == parse_extended_hostname(address1));
   test_assert(ONION_HOSTNAME == parse_extended_hostname(address2));
+  test_streq(address2, "aaaaaaaaaaaaaaaa");
   test_assert(EXIT_HOSTNAME == parse_extended_hostname(address3));
   test_assert(NORMAL_HOSTNAME == parse_extended_hostname(address4));
+  test_assert(ONION_HOSTNAME == parse_extended_hostname(address5));
+  test_streq(address5, "abcdefghijklmnop");
+  test_assert(ONION_HOSTNAME == parse_extended_hostname(address6));
+  test_streq(address6, "abcdefghijklmnop");
+  test_assert(BAD_HOSTNAME == parse_extended_hostname(address7));
 
   pk1 = pk_generate(0);
   pk2 = pk_generate(1);
@@ -1454,66 +1585,43 @@ test_geoip(void)
 {
   int i, j;
   time_t now = 1281533250; /* 2010-08-11 13:27:30 UTC */
-  char *s = NULL;
+  char *s = NULL, *v = NULL;
   const char *bridge_stats_1 =
       "bridge-stats-end 2010-08-12 13:27:30 (86400 s)\n"
-      "bridge-ips zz=24,xy=8\n",
+      "bridge-ips zz=24,xy=8\n"
+      "bridge-ip-versions v4=16,v6=16\n",
   *dirreq_stats_1 =
       "dirreq-stats-end 2010-08-12 13:27:30 (86400 s)\n"
       "dirreq-v3-ips ab=8\n"
-      "dirreq-v2-ips \n"
       "dirreq-v3-reqs ab=8\n"
-      "dirreq-v2-reqs \n"
       "dirreq-v3-resp ok=0,not-enough-sigs=0,unavailable=0,not-found=0,"
           "not-modified=0,busy=0\n"
-      "dirreq-v2-resp ok=0,unavailable=0,not-found=0,not-modified=0,"
-          "busy=0\n"
       "dirreq-v3-direct-dl complete=0,timeout=0,running=0\n"
-      "dirreq-v2-direct-dl complete=0,timeout=0,running=0\n"
-      "dirreq-v3-tunneled-dl complete=0,timeout=0,running=0\n"
-      "dirreq-v2-tunneled-dl complete=0,timeout=0,running=0\n",
+      "dirreq-v3-tunneled-dl complete=0,timeout=0,running=0\n",
   *dirreq_stats_2 =
       "dirreq-stats-end 2010-08-12 13:27:30 (86400 s)\n"
       "dirreq-v3-ips \n"
-      "dirreq-v2-ips \n"
       "dirreq-v3-reqs \n"
-      "dirreq-v2-reqs \n"
       "dirreq-v3-resp ok=0,not-enough-sigs=0,unavailable=0,not-found=0,"
           "not-modified=0,busy=0\n"
-      "dirreq-v2-resp ok=0,unavailable=0,not-found=0,not-modified=0,"
-          "busy=0\n"
       "dirreq-v3-direct-dl complete=0,timeout=0,running=0\n"
-      "dirreq-v2-direct-dl complete=0,timeout=0,running=0\n"
-      "dirreq-v3-tunneled-dl complete=0,timeout=0,running=0\n"
-      "dirreq-v2-tunneled-dl complete=0,timeout=0,running=0\n",
+      "dirreq-v3-tunneled-dl complete=0,timeout=0,running=0\n",
   *dirreq_stats_3 =
       "dirreq-stats-end 2010-08-12 13:27:30 (86400 s)\n"
       "dirreq-v3-ips \n"
-      "dirreq-v2-ips \n"
       "dirreq-v3-reqs \n"
-      "dirreq-v2-reqs \n"
       "dirreq-v3-resp ok=8,not-enough-sigs=0,unavailable=0,not-found=0,"
           "not-modified=0,busy=0\n"
-      "dirreq-v2-resp ok=0,unavailable=0,not-found=0,not-modified=0,"
-          "busy=0\n"
       "dirreq-v3-direct-dl complete=0,timeout=0,running=0\n"
-      "dirreq-v2-direct-dl complete=0,timeout=0,running=0\n"
-      "dirreq-v3-tunneled-dl complete=0,timeout=0,running=0\n"
-      "dirreq-v2-tunneled-dl complete=0,timeout=0,running=0\n",
+      "dirreq-v3-tunneled-dl complete=0,timeout=0,running=0\n",
   *dirreq_stats_4 =
       "dirreq-stats-end 2010-08-12 13:27:30 (86400 s)\n"
       "dirreq-v3-ips \n"
-      "dirreq-v2-ips \n"
       "dirreq-v3-reqs \n"
-      "dirreq-v2-reqs \n"
       "dirreq-v3-resp ok=8,not-enough-sigs=0,unavailable=0,not-found=0,"
           "not-modified=0,busy=0\n"
-      "dirreq-v2-resp ok=0,unavailable=0,not-found=0,not-modified=0,"
-          "busy=0\n"
       "dirreq-v3-direct-dl complete=0,timeout=0,running=0\n"
-      "dirreq-v2-direct-dl complete=0,timeout=0,running=0\n"
-      "dirreq-v3-tunneled-dl complete=0,timeout=0,running=4\n"
-      "dirreq-v2-tunneled-dl complete=0,timeout=0,running=0\n",
+      "dirreq-v3-tunneled-dl complete=0,timeout=0,running=4\n",
   *entry_stats_1 =
       "entry-stats-end 2010-08-12 13:27:30 (86400 s)\n"
       "entry-ips ab=8\n",
@@ -1521,61 +1629,109 @@ test_geoip(void)
       "entry-stats-end 2010-08-12 13:27:30 (86400 s)\n"
       "entry-ips \n";
   tor_addr_t addr;
+  struct in6_addr in6;
 
   /* Populate the DB a bit.  Add these in order, since we can't do the final
    * 'sort' step.  These aren't very good IP addresses, but they're perfectly
    * fine uint32_t values. */
-  test_eq(0, geoip_parse_entry("10,50,AB"));
-  test_eq(0, geoip_parse_entry("52,90,XY"));
-  test_eq(0, geoip_parse_entry("95,100,AB"));
-  test_eq(0, geoip_parse_entry("\"105\",\"140\",\"ZZ\""));
-  test_eq(0, geoip_parse_entry("\"150\",\"190\",\"XY\""));
-  test_eq(0, geoip_parse_entry("\"200\",\"250\",\"AB\""));
+  test_eq(0, geoip_parse_entry("10,50,AB", AF_INET));
+  test_eq(0, geoip_parse_entry("52,90,XY", AF_INET));
+  test_eq(0, geoip_parse_entry("95,100,AB", AF_INET));
+  test_eq(0, geoip_parse_entry("\"105\",\"140\",\"ZZ\"", AF_INET));
+  test_eq(0, geoip_parse_entry("\"150\",\"190\",\"XY\"", AF_INET));
+  test_eq(0, geoip_parse_entry("\"200\",\"250\",\"AB\"", AF_INET));
+
+  /* Populate the IPv6 DB equivalently with fake IPs in the same range */
+  test_eq(0, geoip_parse_entry("::a,::32,AB", AF_INET6));
+  test_eq(0, geoip_parse_entry("::34,::5a,XY", AF_INET6));
+  test_eq(0, geoip_parse_entry("::5f,::64,AB", AF_INET6));
+  test_eq(0, geoip_parse_entry("::69,::8c,ZZ", AF_INET6));
+  test_eq(0, geoip_parse_entry("::96,::be,XY", AF_INET6));
+  test_eq(0, geoip_parse_entry("::c8,::fa,AB", AF_INET6));
 
   /* We should have 4 countries: ??, ab, xy, zz. */
   test_eq(4, geoip_get_n_countries());
+  memset(&in6, 0, sizeof(in6));
+
   /* Make sure that country ID actually works. */
-#define NAMEFOR(x) geoip_get_country_name(geoip_get_country_by_ip(x))
-  test_streq("??", NAMEFOR(3));
-  test_eq(0, geoip_get_country_by_ip(3));
-  test_streq("ab", NAMEFOR(32));
-  test_streq("??", NAMEFOR(5));
-  test_streq("??", NAMEFOR(51));
-  test_streq("xy", NAMEFOR(150));
-  test_streq("xy", NAMEFOR(190));
-  test_streq("??", NAMEFOR(2000));
-#undef NAMEFOR
+#define SET_TEST_IPV6(i) \
+  do {                                                          \
+    set_uint32(in6.s6_addr + 12, htonl((uint32_t) (i)));        \
+  } while (0)
+#define CHECK_COUNTRY(country, val) do {                                \
+    /* test ipv4 country lookup */                                      \
+    test_streq(country,                                                 \
+               geoip_get_country_name(geoip_get_country_by_ipv4(val))); \
+    /* test ipv6 country lookup */                                      \
+    SET_TEST_IPV6(val);                                                 \
+    test_streq(country,                                                 \
+               geoip_get_country_name(geoip_get_country_by_ipv6(&in6))); \
+  } while (0)
+
+  CHECK_COUNTRY("??", 3);
+  CHECK_COUNTRY("ab", 32);
+  CHECK_COUNTRY("??", 5);
+  CHECK_COUNTRY("??", 51);
+  CHECK_COUNTRY("xy", 150);
+  CHECK_COUNTRY("xy", 190);
+  CHECK_COUNTRY("??", 2000);
+
+  test_eq(0, geoip_get_country_by_ipv4(3));
+  SET_TEST_IPV6(3);
+  test_eq(0, geoip_get_country_by_ipv6(&in6));
+
+#undef CHECK_COUNTRY
+
+  /* Record odd numbered fake-IPs using ipv6, even numbered fake-IPs
+   * using ipv4.  Since our fake geoip database is the same between
+   * ipv4 and ipv6, we should get the same result no matter which
+   * address family we pick for each IP. */
+#define SET_TEST_ADDRESS(i) do {                \
+    if ((i) & 1) {                              \
+      SET_TEST_IPV6(i);                         \
+      tor_addr_from_in6(&addr, &in6);           \
+    } else {                                    \
+      tor_addr_from_ipv4h(&addr, (uint32_t) i); \
+    }                                           \
+  } while (0)
 
   get_options_mutable()->BridgeRelay = 1;
   get_options_mutable()->BridgeRecordUsageByCountry = 1;
   /* Put 9 observations in AB... */
   for (i=32; i < 40; ++i) {
-    tor_addr_from_ipv4h(&addr, (uint32_t) i);
+    SET_TEST_ADDRESS(i);
     geoip_note_client_seen(GEOIP_CLIENT_CONNECT, &addr, now-7200);
   }
-  tor_addr_from_ipv4h(&addr, (uint32_t) 225);
+  SET_TEST_ADDRESS(225);
   geoip_note_client_seen(GEOIP_CLIENT_CONNECT, &addr, now-7200);
   /* and 3 observations in XY, several times. */
   for (j=0; j < 10; ++j)
     for (i=52; i < 55; ++i) {
-      tor_addr_from_ipv4h(&addr, (uint32_t) i);
+      SET_TEST_ADDRESS(i);
       geoip_note_client_seen(GEOIP_CLIENT_CONNECT, &addr, now-3600);
     }
   /* and 17 observations in ZZ... */
   for (i=110; i < 127; ++i) {
-    tor_addr_from_ipv4h(&addr, (uint32_t) i);
+    SET_TEST_ADDRESS(i);
     geoip_note_client_seen(GEOIP_CLIENT_CONNECT, &addr, now);
   }
-  s = geoip_get_client_history(GEOIP_CLIENT_CONNECT);
+  geoip_get_client_history(GEOIP_CLIENT_CONNECT, &s, &v);
   test_assert(s);
+  test_assert(v);
   test_streq("zz=24,ab=16,xy=8", s);
+  test_streq("v4=16,v6=16", v);
   tor_free(s);
+  tor_free(v);
 
   /* Now clear out all the AB observations. */
   geoip_remove_old_clients(now-6000);
-  s = geoip_get_client_history(GEOIP_CLIENT_CONNECT);
+  geoip_get_client_history(GEOIP_CLIENT_CONNECT, &s, &v);
   test_assert(s);
+  test_assert(v);
   test_streq("zz=24,xy=8", s);
+  test_streq("v4=16,v6=16", v);
+  tor_free(s);
+  tor_free(v);
 
   /* Start testing bridge statistics by making sure that we don't output
    * bridge stats without initializing them. */
@@ -1586,6 +1742,7 @@ test_geoip(void)
    * the connecting clients added above. */
   geoip_bridge_stats_init(now);
   s = geoip_format_bridge_stats(now + 86400);
+  test_assert(s);
   test_streq(bridge_stats_1, s);
   tor_free(s);
 
@@ -1604,7 +1761,7 @@ test_geoip(void)
 
   /* Start testing dirreq statistics by making sure that we don't collect
    * dirreq stats without initializing them. */
-  tor_addr_from_ipv4h(&addr, (uint32_t) 100);
+  SET_TEST_ADDRESS(100);
   geoip_note_client_seen(GEOIP_CLIENT_NETWORKSTATUS, &addr, now);
   s = geoip_format_dirreq_stats(now + 86400);
   test_assert(!s);
@@ -1612,7 +1769,7 @@ test_geoip(void)
   /* Initialize stats, note one connecting client, and generate the
    * dirreq-stats history string. */
   geoip_dirreq_stats_init(now);
-  tor_addr_from_ipv4h(&addr, (uint32_t) 100);
+  SET_TEST_ADDRESS(100);
   geoip_note_client_seen(GEOIP_CLIENT_NETWORKSTATUS, &addr, now);
   s = geoip_format_dirreq_stats(now + 86400);
   test_streq(dirreq_stats_1, s);
@@ -1621,7 +1778,7 @@ test_geoip(void)
   /* Stop collecting stats, add another connecting client, and ensure we
    * don't generate a history string. */
   geoip_dirreq_stats_term();
-  tor_addr_from_ipv4h(&addr, (uint32_t) 101);
+  SET_TEST_ADDRESS(101);
   geoip_note_client_seen(GEOIP_CLIENT_NETWORKSTATUS, &addr, now);
   s = geoip_format_dirreq_stats(now + 86400);
   test_assert(!s);
@@ -1629,7 +1786,7 @@ test_geoip(void)
   /* Re-start stats, add a connecting client, reset stats, and make sure
    * that we get an all empty history string. */
   geoip_dirreq_stats_init(now);
-  tor_addr_from_ipv4h(&addr, (uint32_t) 100);
+  SET_TEST_ADDRESS(100);
   geoip_note_client_seen(GEOIP_CLIENT_NETWORKSTATUS, &addr, now);
   geoip_reset_dirreq_stats(now);
   s = geoip_format_dirreq_stats(now + 86400);
@@ -1638,14 +1795,13 @@ test_geoip(void)
 
   /* Note a successful network status response and make sure that it
    * appears in the history string. */
-  geoip_note_ns_response(GEOIP_CLIENT_NETWORKSTATUS, GEOIP_SUCCESS);
+  geoip_note_ns_response(GEOIP_SUCCESS);
   s = geoip_format_dirreq_stats(now + 86400);
   test_streq(dirreq_stats_3, s);
   tor_free(s);
 
   /* Start a tunneled directory request. */
-  geoip_start_dirreq((uint64_t) 1, 1024, GEOIP_CLIENT_NETWORKSTATUS,
-                     DIRREQ_TUNNELED);
+  geoip_start_dirreq((uint64_t) 1, 1024, DIRREQ_TUNNELED);
   s = geoip_format_dirreq_stats(now + 86400);
   test_streq(dirreq_stats_4, s);
 
@@ -1657,7 +1813,7 @@ test_geoip(void)
 
   /* Start testing entry statistics by making sure that we don't collect
    * anything without initializing entry stats. */
-  tor_addr_from_ipv4h(&addr, (uint32_t) 100);
+  SET_TEST_ADDRESS(100);
   geoip_note_client_seen(GEOIP_CLIENT_CONNECT, &addr, now);
   s = geoip_format_entry_stats(now + 86400);
   test_assert(!s);
@@ -1665,7 +1821,7 @@ test_geoip(void)
   /* Initialize stats, note one connecting client, and generate the
    * entry-stats history string. */
   geoip_entry_stats_init(now);
-  tor_addr_from_ipv4h(&addr, (uint32_t) 100);
+  SET_TEST_ADDRESS(100);
   geoip_note_client_seen(GEOIP_CLIENT_CONNECT, &addr, now);
   s = geoip_format_entry_stats(now + 86400);
   test_streq(entry_stats_1, s);
@@ -1674,7 +1830,7 @@ test_geoip(void)
   /* Stop collecting stats, add another connecting client, and ensure we
    * don't generate a history string. */
   geoip_entry_stats_term();
-  tor_addr_from_ipv4h(&addr, (uint32_t) 101);
+  SET_TEST_ADDRESS(101);
   geoip_note_client_seen(GEOIP_CLIENT_CONNECT, &addr, now);
   s = geoip_format_entry_stats(now + 86400);
   test_assert(!s);
@@ -1682,12 +1838,15 @@ test_geoip(void)
   /* Re-start stats, add a connecting client, reset stats, and make sure
    * that we get an all empty history string. */
   geoip_entry_stats_init(now);
-  tor_addr_from_ipv4h(&addr, (uint32_t) 100);
+  SET_TEST_ADDRESS(100);
   geoip_note_client_seen(GEOIP_CLIENT_CONNECT, &addr, now);
   geoip_reset_entry_stats(now);
   s = geoip_format_entry_stats(now + 86400);
   test_streq(entry_stats_2, s);
   tor_free(s);
+
+#undef SET_TEST_ADDRESS
+#undef SET_TEST_IPV6
 
   /* Stop collecting entry statistics. */
   geoip_entry_stats_term();
@@ -1695,6 +1854,7 @@ test_geoip(void)
 
  done:
   tor_free(s);
+  tor_free(v);
 }
 
 /** Run unit tests for stats code. */
@@ -1883,11 +2043,6 @@ const struct testcase_setup_t legacy_setup = {
 
 #define ENT(name)                                                       \
   { #name, legacy_test_helper, 0, &legacy_setup, test_ ## name }
-#define SUBENT(group, name)                                             \
-  { #group "_" #name, legacy_test_helper, 0, &legacy_setup,             \
-      test_ ## group ## _ ## name }
-#define DISABLED(name)                                                  \
-  { #name, legacy_test_helper, TT_SKIP, &legacy_setup, test_ ## name }
 #define FORK(name)                                                      \
   { #name, legacy_test_helper, TT_FORK, &legacy_setup, test_ ## name }
 
@@ -1895,6 +2050,10 @@ static struct testcase_t test_array[] = {
   ENT(buffers),
   { "buffer_copy", test_buffer_copy, 0, NULL, NULL },
   ENT(onion_handshake),
+  ENT(onion_queues),
+#ifdef CURVE25519_ENABLED
+  { "ntor_handshake", test_ntor_handshake, 0, NULL, NULL },
+#endif
   ENT(circuit_timeout),
   ENT(policies),
   ENT(rend_fns),
@@ -1929,6 +2088,9 @@ extern struct testcase_t dir_tests[];
 extern struct testcase_t microdesc_tests[];
 extern struct testcase_t pt_tests[];
 extern struct testcase_t config_tests[];
+extern struct testcase_t introduce_tests[];
+extern struct testcase_t replaycache_tests[];
+extern struct testcase_t cell_format_tests[];
 
 static struct testgroup_t testgroups[] = {
   { "", test_array },
@@ -1937,10 +2099,13 @@ static struct testgroup_t testgroups[] = {
   { "crypto/", crypto_tests },
   { "container/", container_tests },
   { "util/", util_tests },
+  { "cellfmt/", cell_format_tests },
   { "dir/", dir_tests },
   { "dir/md/", microdesc_tests },
   { "pt/", pt_tests },
   { "config/", config_tests },
+  { "replaycache/", replaycache_tests },
+  { "introduce/", introduce_tests },
   END_OF_GROUPS
 };
 
@@ -1956,7 +2121,7 @@ main(int c, const char **v)
 
 #ifdef USE_DMALLOC
   {
-    int r = CRYPTO_set_mem_ex_functions(_tor_malloc, _tor_realloc, _tor_free);
+    int r = CRYPTO_set_mem_ex_functions(tor_malloc_, tor_realloc_, tor_free_);
     tor_assert(r);
   }
 #endif
@@ -1994,6 +2159,7 @@ main(int c, const char **v)
     return 1;
   }
   crypto_set_tls_dh_prime(NULL);
+  crypto_seed_rng(1);
   rep_hist_init();
   network_init();
   setup_directory();
@@ -2005,8 +2171,6 @@ main(int c, const char **v)
     tor_free(errmsg);
     return 1;
   }
-
-  crypto_seed_rng(1);
 
   atexit(remove_directory);
 

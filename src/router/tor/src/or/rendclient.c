@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -16,6 +16,7 @@
 #include "connection_edge.h"
 #include "directory.h"
 #include "main.h"
+#include "networkstatus.h"
 #include "nodelist.h"
 #include "relay.h"
 #include "rendclient.h"
@@ -23,6 +24,7 @@
 #include "rephist.h"
 #include "router.h"
 #include "routerlist.h"
+#include "routerset.h"
 
 static extend_info_t *rend_client_get_random_intro_impl(
                           const rend_cache_entry_t *rend_query,
@@ -43,7 +45,7 @@ rend_client_purge_state(void)
 void
 rend_client_introcirc_has_opened(origin_circuit_t *circ)
 {
-  tor_assert(circ->_base.purpose == CIRCUIT_PURPOSE_C_INTRODUCING);
+  tor_assert(circ->base_.purpose == CIRCUIT_PURPOSE_C_INTRODUCING);
   tor_assert(circ->cpath);
 
   log_info(LD_REND,"introcirc is open");
@@ -56,7 +58,7 @@ rend_client_introcirc_has_opened(origin_circuit_t *circ)
 static int
 rend_client_send_establish_rendezvous(origin_circuit_t *circ)
 {
-  tor_assert(circ->_base.purpose == CIRCUIT_PURPOSE_C_ESTABLISH_REND);
+  tor_assert(circ->base_.purpose == CIRCUIT_PURPOSE_C_ESTABLISH_REND);
   tor_assert(circ->rend_data);
   log_info(LD_REND, "Sending an ESTABLISH_RENDEZVOUS cell");
 
@@ -65,6 +67,14 @@ rend_client_send_establish_rendezvous(origin_circuit_t *circ)
     circuit_mark_for_close(TO_CIRCUIT(circ), END_CIRC_REASON_INTERNAL);
     return -1;
   }
+
+  /* Set timestamp_dirty, because circuit_expire_building expects it,
+   * and the rend cookie also means we've used the circ. */
+  circ->base_.timestamp_dirty = time(NULL);
+
+  /* We've attempted to use this circuit. Probe it if we fail */
+  pathbias_count_use_attempt(circ);
+
   if (relay_send_command_from_edge(0, TO_CIRCUIT(circ),
                                    RELAY_COMMAND_ESTABLISH_RENDEZVOUS,
                                    circ->rend_data->rend_cookie,
@@ -99,22 +109,33 @@ rend_client_reextend_intro_circuit(origin_circuit_t *circ)
     circuit_mark_for_close(TO_CIRCUIT(circ), END_CIRC_REASON_INTERNAL);
     return -1;
   }
+  // XXX: should we not re-extend if hs_circ_has_timed_out?
   if (circ->remaining_relay_early_cells) {
     log_info(LD_REND,
-             "Re-extending circ %d, this time to %s.",
-             circ->_base.n_circ_id,
+             "Re-extending circ %u, this time to %s.",
+             (unsigned)circ->base_.n_circ_id,
              safe_str_client(extend_info_describe(extend_info)));
     result = circuit_extend_to_new_exit(circ, extend_info);
   } else {
     log_info(LD_REND,
-             "Closing intro circ %d (out of RELAY_EARLY cells).",
-             circ->_base.n_circ_id);
+             "Closing intro circ %u (out of RELAY_EARLY cells).",
+             (unsigned)circ->base_.n_circ_id);
     circuit_mark_for_close(TO_CIRCUIT(circ), END_CIRC_REASON_FINISHED);
     /* connection_ap_handshake_attach_circuit will launch a new intro circ. */
     result = 0;
   }
   extend_info_free(extend_info);
   return result;
+}
+
+/** Return true iff we should send timestamps in our INTRODUCE1 cells */
+static int
+rend_client_should_send_timestamp(void)
+{
+  if (get_options()->Support022HiddenServices >= 0)
+    return get_options()->Support022HiddenServices;
+
+  return networkstatus_get_param(NULL, "Support022HiddenServices", 1, 0, 1);
 }
 
 /** Called when we're trying to connect an ap conn; sends an INTRODUCE1 cell
@@ -132,9 +153,10 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
   crypt_path_t *cpath;
   off_t dh_offset;
   crypto_pk_t *intro_key = NULL;
+  int status = 0;
 
-  tor_assert(introcirc->_base.purpose == CIRCUIT_PURPOSE_C_INTRODUCING);
-  tor_assert(rendcirc->_base.purpose == CIRCUIT_PURPOSE_C_REND_READY);
+  tor_assert(introcirc->base_.purpose == CIRCUIT_PURPOSE_C_INTRODUCING);
+  tor_assert(rendcirc->base_.purpose == CIRCUIT_PURPOSE_C_REND_READY);
   tor_assert(introcirc->rend_data);
   tor_assert(rendcirc->rend_data);
   tor_assert(!rend_cmp_service_ids(introcirc->rend_data->onion_address,
@@ -161,7 +183,8 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
       }
     }
 
-    return -1;
+    status = -1;
+    goto cleanup;
   }
 
   /* first 20 bytes of payload are the hash of Bob's pk */
@@ -184,13 +207,16 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
              smartlist_len(entry->parsed->intro_nodes));
 
     if (rend_client_reextend_intro_circuit(introcirc)) {
+      status = -2;
       goto perm_err;
     } else {
-      return -1;
+      status = -1;
+      goto cleanup;
     }
   }
   if (crypto_pk_get_digest(intro_key, payload)<0) {
     log_warn(LD_BUG, "Internal error: couldn't hash public key.");
+    status = -2;
     goto perm_err;
   }
 
@@ -200,12 +226,14 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
     cpath = rendcirc->build_state->pending_final_cpath =
       tor_malloc_zero(sizeof(crypt_path_t));
     cpath->magic = CRYPT_PATH_MAGIC;
-    if (!(cpath->dh_handshake_state = crypto_dh_new(DH_TYPE_REND))) {
+    if (!(cpath->rend_dh_handshake_state = crypto_dh_new(DH_TYPE_REND))) {
       log_warn(LD_BUG, "Internal error: couldn't allocate DH.");
+      status = -2;
       goto perm_err;
     }
-    if (crypto_dh_generate_public(cpath->dh_handshake_state)<0) {
+    if (crypto_dh_generate_public(cpath->rend_dh_handshake_state)<0) {
       log_warn(LD_BUG, "Internal error: couldn't generate g^x.");
+      status = -2;
       goto perm_err;
     }
   }
@@ -221,7 +249,14 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
              REND_DESC_COOKIE_LEN);
       v3_shift += 2+REND_DESC_COOKIE_LEN;
     }
-    set_uint32(tmp+v3_shift+1, htonl((uint32_t)time(NULL)));
+    if (rend_client_should_send_timestamp()) {
+      uint32_t now = (uint32_t)time(NULL);
+      now += 300;
+      now -= now % 600;
+      set_uint32(tmp+v3_shift+1, htonl(now));
+    } else {
+      set_uint32(tmp+v3_shift+1, 0);
+    }
     v3_shift += 4;
   } /* if version 2 only write version number */
   else if (entry->parsed->protocols & (1<<2)) {
@@ -253,9 +288,10 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
     dh_offset = MAX_NICKNAME_LEN+1+REND_COOKIE_LEN;
   }
 
-  if (crypto_dh_get_public(cpath->dh_handshake_state, tmp+dh_offset,
+  if (crypto_dh_get_public(cpath->rend_dh_handshake_state, tmp+dh_offset,
                            DH_KEY_LEN)<0) {
     log_warn(LD_BUG, "Internal error: couldn't extract g^x.");
+    status = -2;
     goto perm_err;
   }
 
@@ -269,6 +305,7 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
                                       PK_PKCS1_OAEP_PADDING, 0);
   if (r<0) {
     log_warn(LD_BUG,"Internal error: hybrid pk encrypt failed.");
+    status = -2;
     goto perm_err;
   }
 
@@ -288,7 +325,8 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
                                    introcirc->cpath->prev)<0) {
     /* introcirc is already marked for close. leave rendcirc alone. */
     log_warn(LD_BUG, "Couldn't send INTRODUCE1 cell");
-    return -2;
+    status = -2;
+    goto cleanup;
   }
 
   /* Now, we wait for an ACK or NAK on this circuit. */
@@ -297,14 +335,21 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
   /* Set timestamp_dirty, because circuit_expire_building expects it
    * to specify when a circuit entered the _C_INTRODUCE_ACK_WAIT
    * state. */
-  introcirc->_base.timestamp_dirty = time(NULL);
+  introcirc->base_.timestamp_dirty = time(NULL);
 
-  return 0;
+  pathbias_count_use_attempt(introcirc);
+
+  goto cleanup;
+
  perm_err:
-  if (!introcirc->_base.marked_for_close)
+  if (!introcirc->base_.marked_for_close)
     circuit_mark_for_close(TO_CIRCUIT(introcirc), END_CIRC_REASON_INTERNAL);
   circuit_mark_for_close(TO_CIRCUIT(rendcirc), END_CIRC_REASON_INTERNAL);
-  return -2;
+ cleanup:
+  memwipe(payload, 0, sizeof(payload));
+  memwipe(tmp, 0, sizeof(tmp));
+
+  return status;
 }
 
 /** Called when a rendezvous circuit is open; sends a establish
@@ -312,13 +357,39 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
 void
 rend_client_rendcirc_has_opened(origin_circuit_t *circ)
 {
-  tor_assert(circ->_base.purpose == CIRCUIT_PURPOSE_C_ESTABLISH_REND);
+  tor_assert(circ->base_.purpose == CIRCUIT_PURPOSE_C_ESTABLISH_REND);
 
   log_info(LD_REND,"rendcirc is open");
 
   /* generate a rendezvous cookie, store it in circ */
   if (rend_client_send_establish_rendezvous(circ) < 0) {
     return;
+  }
+}
+
+/**
+ * Called to close other intro circuits we launched in parallel
+ * due to timeout.
+ */
+static void
+rend_client_close_other_intros(const char *onion_address)
+{
+  circuit_t *c;
+  /* abort parallel intro circs, if any */
+  for (c = circuit_get_global_list_(); c; c = c->next) {
+    if ((c->purpose == CIRCUIT_PURPOSE_C_INTRODUCING ||
+        c->purpose == CIRCUIT_PURPOSE_C_INTRODUCE_ACK_WAIT) &&
+        !c->marked_for_close && CIRCUIT_IS_ORIGIN(c)) {
+      origin_circuit_t *oc = TO_ORIGIN_CIRCUIT(c);
+      if (oc->rend_data &&
+          !rend_cmp_service_ids(onion_address,
+                                oc->rend_data->onion_address)) {
+        log_info(LD_REND|LD_CIRC, "Closing introduction circuit %d that we "
+                 "built in parallel (Purpose %d).", oc->global_identifier,
+                 c->purpose);
+        circuit_mark_for_close(c, END_CIRC_REASON_TIMEOUT);
+      }
+    }
   }
 }
 
@@ -331,10 +402,10 @@ rend_client_introduction_acked(origin_circuit_t *circ,
   origin_circuit_t *rendcirc;
   (void) request; // XXXX Use this.
 
-  if (circ->_base.purpose != CIRCUIT_PURPOSE_C_INTRODUCE_ACK_WAIT) {
+  if (circ->base_.purpose != CIRCUIT_PURPOSE_C_INTRODUCE_ACK_WAIT) {
     log_warn(LD_PROTOCOL,
-             "Received REND_INTRODUCE_ACK on unexpected circuit %d.",
-             circ->_base.n_circ_id);
+             "Received REND_INTRODUCE_ACK on unexpected circuit %u.",
+             (unsigned)circ->base_.n_circ_id);
     circuit_mark_for_close(TO_CIRCUIT(circ), END_CIRC_REASON_TORPROTOCOL);
     return -1;
   }
@@ -344,6 +415,10 @@ rend_client_introduction_acked(origin_circuit_t *circ,
   tor_assert(!(circ->build_state->onehop_tunnel));
 #endif
   tor_assert(circ->rend_data);
+
+  /* For path bias: This circuit was used successfully. Valid
+   * nacks and acks count. */
+  pathbias_mark_use_success(circ);
 
   if (request_len == 0) {
     /* It's an ACK; the introduction point relayed our introduction request. */
@@ -361,7 +436,7 @@ rend_client_introduction_acked(origin_circuit_t *circ,
       /* Set timestamp_dirty, because circuit_expire_building expects
        * it to specify when a circuit entered the
        * _C_REND_READY_INTRO_ACKED state. */
-      rendcirc->_base.timestamp_dirty = time(NULL);
+      rendcirc->base_.timestamp_dirty = time(NULL);
     } else {
       log_info(LD_REND,"...Found no rend circ. Dropping on the floor.");
     }
@@ -369,6 +444,9 @@ rend_client_introduction_acked(origin_circuit_t *circ,
     circuit_change_purpose(TO_CIRCUIT(circ),
                            CIRCUIT_PURPOSE_C_INTRODUCE_ACKED);
     circuit_mark_for_close(TO_CIRCUIT(circ), END_CIRC_REASON_FINISHED);
+
+    /* close any other intros launched in parallel */
+    rend_client_close_other_intros(circ->rend_data->onion_address);
   } else {
     /* It's a NAK; the introduction point didn't relay our request. */
     circuit_change_purpose(TO_CIRCUIT(circ), CIRCUIT_PURPOSE_C_INTRODUCING);
@@ -525,7 +603,7 @@ rend_client_purge_last_hid_serv_requests(void)
 
   if (old_last_hid_serv_requests != NULL) {
     log_info(LD_REND, "Purging client last-HS-desc-request-time table");
-    strmap_free(old_last_hid_serv_requests, _tor_free);
+    strmap_free(old_last_hid_serv_requests, tor_free_);
   }
 }
 
@@ -602,7 +680,8 @@ directory_get_from_hs_dir(const char *desc_id, const rend_data_t *rend_query)
   directory_initiate_command_routerstatus_rend(hs_dir,
                                           DIR_PURPOSE_FETCH_RENDDESC_V2,
                                           ROUTER_PURPOSE_GENERAL,
-                                          !tor2web_mode, desc_id_base32,
+                                   tor2web_mode?DIRIND_ONEHOP:DIRIND_ANONYMOUS,
+                                          desc_id_base32,
                                           NULL, 0, 0,
                                           rend_query);
   log_info(LD_REND, "Sending fetch request for v2 descriptor for "
@@ -659,10 +738,17 @@ rend_client_refetch_v2_renddesc(const rend_data_t *rend_query)
                                 time(NULL), chosen_replica) < 0) {
       log_warn(LD_REND, "Internal error: Computing v2 rendezvous "
                         "descriptor ID did not succeed.");
-      return;
+      /*
+       * Hmm, can this write anything to descriptor_id and still fail?
+       * Let's clear it just to be safe.
+       *
+       * From here on, any returns should goto done which clears
+       * descriptor_id so we don't leave key-derived material on the stack.
+       */
+      goto done;
     }
     if (directory_get_from_hs_dir(descriptor_id, rend_query) != 0)
-      return; /* either success or failure, but we're done */
+      goto done; /* either success or failure, but we're done */
   }
   /* If we come here, there are no hidden service directories left. */
   log_info(LD_REND, "Could not pick one of the responsible hidden "
@@ -670,6 +756,10 @@ rend_client_refetch_v2_renddesc(const rend_data_t *rend_query)
                     "we already tried them all unsuccessfully.");
   /* Close pending connections. */
   rend_client_desc_trynow(rend_query->onion_address);
+
+ done:
+  memwipe(descriptor_id, 0, sizeof(descriptor_id));
+
   return;
 }
 
@@ -818,7 +908,7 @@ rend_client_rendezvous_acked(origin_circuit_t *circ, const uint8_t *request,
   (void) request;
   (void) request_len;
   /* we just got an ack for our establish-rendezvous. switch purposes. */
-  if (circ->_base.purpose != CIRCUIT_PURPOSE_C_ESTABLISH_REND) {
+  if (circ->base_.purpose != CIRCUIT_PURPOSE_C_ESTABLISH_REND) {
     log_warn(LD_PROTOCOL,"Got a rendezvous ack when we weren't expecting one. "
              "Closing circ.");
     circuit_mark_for_close(TO_CIRCUIT(circ), END_CIRC_REASON_TORPROTOCOL);
@@ -829,7 +919,14 @@ rend_client_rendezvous_acked(origin_circuit_t *circ, const uint8_t *request,
   circuit_change_purpose(TO_CIRCUIT(circ), CIRCUIT_PURPOSE_C_REND_READY);
   /* Set timestamp_dirty, because circuit_expire_building expects it
    * to specify when a circuit entered the _C_REND_READY state. */
-  circ->_base.timestamp_dirty = time(NULL);
+  circ->base_.timestamp_dirty = time(NULL);
+
+  /* From a path bias point of view, this circuit is now successfully used.
+   * Waiting any longer opens us up to attacks from Bob. He could induce
+   * Alice to attempt to connect to his hidden service and never reply
+   * to her rend requests */
+  pathbias_mark_use_success(circ);
+
   /* XXXX This is a pretty brute-force approach. It'd be better to
    * attach only the connections that are waiting on this circuit, rather
    * than trying to attach them all. See comments bug 743. */
@@ -847,8 +944,8 @@ rend_client_receive_rendezvous(origin_circuit_t *circ, const uint8_t *request,
   crypt_path_t *hop;
   char keys[DIGEST_LEN+CPATH_KEY_MATERIAL_LEN];
 
-  if ((circ->_base.purpose != CIRCUIT_PURPOSE_C_REND_READY &&
-       circ->_base.purpose != CIRCUIT_PURPOSE_C_REND_READY_INTRO_ACKED)
+  if ((circ->base_.purpose != CIRCUIT_PURPOSE_C_REND_READY &&
+       circ->base_.purpose != CIRCUIT_PURPOSE_C_REND_READY_INTRO_ACKED)
       || !circ->build_state->pending_final_cpath) {
     log_warn(LD_PROTOCOL,"Got rendezvous2 cell from hidden service, but not "
              "expecting it. Closing.");
@@ -868,9 +965,9 @@ rend_client_receive_rendezvous(origin_circuit_t *circ, const uint8_t *request,
   tor_assert(circ->build_state);
   tor_assert(circ->build_state->pending_final_cpath);
   hop = circ->build_state->pending_final_cpath;
-  tor_assert(hop->dh_handshake_state);
+  tor_assert(hop->rend_dh_handshake_state);
   if (crypto_dh_compute_secret(LOG_PROTOCOL_WARN,
-                               hop->dh_handshake_state, (char*)request,
+                               hop->rend_dh_handshake_state, (char*)request,
                                DH_KEY_LEN,
                                keys, DIGEST_LEN+CPATH_KEY_MATERIAL_LEN)<0) {
     log_warn(LD_GENERAL, "Couldn't complete DH handshake.");
@@ -886,8 +983,8 @@ rend_client_receive_rendezvous(origin_circuit_t *circ, const uint8_t *request,
     goto err;
   }
 
-  crypto_dh_free(hop->dh_handshake_state);
-  hop->dh_handshake_state = NULL;
+  crypto_dh_free(hop->rend_dh_handshake_state);
+  hop->rend_dh_handshake_state = NULL;
 
   /* All is well. Extend the circuit. */
   circuit_change_purpose(TO_CIRCUIT(circ), CIRCUIT_PURPOSE_C_REND_JOINED);
@@ -1172,11 +1269,11 @@ rend_parse_service_authorization(const or_options_t *options,
   strmap_t *parsed = strmap_new();
   smartlist_t *sl = smartlist_new();
   rend_service_authorization_t *auth = NULL;
+  char descriptor_cookie_tmp[REND_DESC_COOKIE_LEN+2];
+  char descriptor_cookie_base64ext[REND_DESC_COOKIE_LEN_BASE64+2+1];
 
   for (line = options->HidServAuth; line; line = line->next) {
     char *onion_address, *descriptor_cookie;
-    char descriptor_cookie_tmp[REND_DESC_COOKIE_LEN+2];
-    char descriptor_cookie_base64ext[REND_DESC_COOKIE_LEN_BASE64+2+1];
     int auth_type_val = 0;
     auth = NULL;
     SMARTLIST_FOREACH(sl, char *, c, tor_free(c););
@@ -1222,7 +1319,7 @@ rend_parse_service_authorization(const or_options_t *options,
                descriptor_cookie);
       goto err;
     }
-    auth_type_val = (descriptor_cookie_tmp[16] >> 4) + 1;
+    auth_type_val = (((uint8_t)descriptor_cookie_tmp[16]) >> 4) + 1;
     if (auth_type_val < 1 || auth_type_val > 2) {
       log_warn(LD_CONFIG, "Authorization cookie has unknown authorization "
                           "type encoded.");
@@ -1253,6 +1350,8 @@ rend_parse_service_authorization(const or_options_t *options,
   } else {
     strmap_free(parsed, rend_service_authorization_strmap_item_free);
   }
+  memwipe(descriptor_cookie_tmp, 0, sizeof(descriptor_cookie_tmp));
+  memwipe(descriptor_cookie_base64ext, 0, sizeof(descriptor_cookie_base64ext));
   return res;
 }
 

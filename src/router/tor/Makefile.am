@@ -4,22 +4,33 @@
 # See LICENSE for licensing information
 
 # "foreign" means we don't follow GNU package layout standards
-# 1.7 means we require automake vesion 1.7
-AUTOMAKE_OPTIONS = foreign 1.7
+# 1.9 means we require automake vesion 1.9
+AUTOMAKE_OPTIONS = foreign 1.9 subdir-objects
 
-SUBDIRS = src doc contrib
+ACLOCAL_AMFLAGS = -I m4
 
-DIST_SUBDIRS = src doc contrib
+noinst_LIBRARIES=
+EXTRA_DIST=
+noinst_HEADERS=
+bin_PROGRAMS=
+CLEANFILES=
+TESTS=
+noinst_PROGRAMS=
+DISTCLEANFILES=
+bin_SCRIPTS=
+AM_CPPFLAGS=
+include src/include.am
+include doc/include.am
+include contrib/include.am
 
-EXTRA_DIST = \
+
+EXTRA_DIST+= \
 	ChangeLog					\
 	INSTALL						\
 	LICENSE						\
 	Makefile.nmake					\
 	README						\
-	ReleaseNotes					\
-	tor.spec					\
-	tor.spec.in
+	ReleaseNotes
 
 #install-data-local:
 #	$(INSTALL) -m 755 -d $(LOCALSTATEDIR)/lib/tor
@@ -53,13 +64,9 @@ test: all
 # eventdns.[hc], tinytest*.[ch]
 check-spaces:
 	./contrib/checkSpace.pl -C                    \
-		src/common/*.h			      \
-		src/common/[^asO]*.c		      \
-		src/common/address.c		      \
-		src/or/[^e]*.[ch]		      \
-		src/or/eventdns_tor.h		      \
-		src/test/test*.[ch]		      \
-		src/test/[^t]*.[ch]		      \
+		src/common/*.[ch]		      \
+		src/or/*.[ch]			      \
+		src/test/*.[ch]			      \
 		src/tools/*.[ch]		      \
 		src/tools/tor-fw-helper/*.[ch]
 

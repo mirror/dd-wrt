@@ -19,6 +19,25 @@
 # Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson
 # Copyright (c) 2007-2011, The Tor Project, Inc.
 # See LICENSE for licensing information
+
+# We use a two-step process to generate documentation from asciidoc files.
+#
+# First, we use asciidoc/a2x to process the asciidoc files into .1.in and
+# .html.in files (see the asciidoc-helper.sh script). These are the same as
+# the regular .1 and .html files, except that they still have some autoconf
+# variables set in them.
+#
+# Second, we use config.status to turn .1.in files into .1 files and
+# .html.in files into .html files.
+#
+# We do the steps in this order so that we can ship the .*.in files as
+# part of the source distribution, so that people without asciidoc can
+# just use the .1 and .html files.
+
+
+
+
+
 VPATH = @srcdir@
 am__make_dryrun = \
   { \
@@ -55,44 +74,322 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+bin_PROGRAMS = src/or/tor$(EXEEXT) src/tools/tor-resolve$(EXEEXT) \
+	src/tools/tor-gencert$(EXEEXT) $(am__EXEEXT_1)
+TESTS = src/test/test$(EXEEXT)
+noinst_PROGRAMS = src/test/test$(EXEEXT) src/test/test-child$(EXEEXT) \
+	src/test/bench$(EXEEXT) $(am__EXEEXT_2) \
+	src/tools/tor-checkkey$(EXEEXT)
+DIST_COMMON = README $(am__configure_deps) $(noinst_HEADERS) \
+	$(srcdir)/Doxyfile.in $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in $(srcdir)/contrib/include.am \
+	$(srcdir)/contrib/suse/include.am $(srcdir)/doc/include.am \
+	$(srcdir)/orconfig.h.in $(srcdir)/src/common/include.am \
+	$(srcdir)/src/config/include.am $(srcdir)/src/ext/include.am \
+	$(srcdir)/src/include.am $(srcdir)/src/or/include.am \
+	$(srcdir)/src/test/include.am $(srcdir)/src/tools/include.am \
+	$(srcdir)/src/tools/tor-fw-helper/include.am \
+	$(srcdir)/src/win32/include.am $(top_srcdir)/configure \
+	$(top_srcdir)/contrib/suse/tor.sh.in \
+	$(top_srcdir)/contrib/tor.logrotate.in \
+	$(top_srcdir)/contrib/tor.sh.in \
+	$(top_srcdir)/contrib/torctl.in \
+	$(top_srcdir)/contrib/torify.in \
+	$(top_srcdir)/src/config/torrc.sample.in ChangeLog INSTALL \
+	compile config.guess config.sub depcomp install-sh missing
+@BUILD_CURVE25519_DONNA_TRUE@am__append_1 = src/common/libcurve25519_donna.a
+@BUILD_CURVE25519_DONNA_C64_TRUE@@BUILD_CURVE25519_DONNA_FALSE@am__append_2 = src/common/libcurve25519_donna.a
+@CURVE25519_ENABLED_TRUE@am__append_3 = src/test/test-ntor-cl
+@USE_FW_HELPER_TRUE@am__append_4 = src/tools/tor-fw-helper/tor-fw-helper
 subdir = .
-DIST_COMMON = README $(am__configure_deps) $(srcdir)/Doxyfile.in \
-	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/orconfig.h.in $(srcdir)/tor.spec.in \
-	$(top_srcdir)/configure ChangeLog INSTALL compile config.guess \
-	config.sub depcomp install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \
-	$(top_srcdir)/configure.in
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_check_sign.m4 \
+	$(top_srcdir)/acinclude.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = orconfig.h
-CONFIG_CLEAN_FILES = Doxyfile tor.spec
+CONFIG_CLEAN_FILES = Doxyfile contrib/suse/tor.sh \
+	contrib/tor.logrotate contrib/tor.sh contrib/torctl \
+	contrib/torify src/config/torrc.sample
 CONFIG_CLEAN_VPATH_FILES =
-SOURCES =
-DIST_SOURCES =
-RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
-	html-recursive info-recursive install-data-recursive \
-	install-dvi-recursive install-exec-recursive \
-	install-html-recursive install-info-recursive \
-	install-pdf-recursive install-ps-recursive install-recursive \
-	installcheck-recursive installdirs-recursive pdf-recursive \
-	ps-recursive uninstall-recursive
+LIBRARIES = $(noinst_LIBRARIES)
+ARFLAGS = cru
+AM_V_AR = $(am__v_AR_@AM_V@)
+am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
+am__v_AR_0 = @echo "  AR    " $@;
+AM_V_at = $(am__v_at_@AM_V@)
+am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
+am__v_at_0 = @
+src_common_libcurve25519_donna_a_AR = $(AR) $(ARFLAGS)
+src_common_libcurve25519_donna_a_LIBADD =
+am__src_common_libcurve25519_donna_a_SOURCES_DIST =  \
+	src/ext/curve25519_donna/curve25519-donna-c64.c \
+	src/ext/curve25519_donna/curve25519-donna.c
+am__dirstamp = $(am__leading_dot)dirstamp
+@BUILD_CURVE25519_DONNA_C64_TRUE@@BUILD_CURVE25519_DONNA_FALSE@am_src_common_libcurve25519_donna_a_OBJECTS = src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.$(OBJEXT)
+@BUILD_CURVE25519_DONNA_TRUE@am_src_common_libcurve25519_donna_a_OBJECTS = src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.$(OBJEXT)
+src_common_libcurve25519_donna_a_OBJECTS =  \
+	$(am_src_common_libcurve25519_donna_a_OBJECTS)
+src_common_libor_crypto_a_AR = $(AR) $(ARFLAGS)
+src_common_libor_crypto_a_LIBADD =
+am__src_common_libor_crypto_a_SOURCES_DIST = src/common/aes.c \
+	src/common/crypto.c src/common/crypto_format.c \
+	src/common/torgzip.c src/common/tortls.c \
+	src/common/crypto_curve25519.c
+@CURVE25519_ENABLED_TRUE@am__objects_1 = src/common/crypto_curve25519.$(OBJEXT)
+am_src_common_libor_crypto_a_OBJECTS = src/common/aes.$(OBJEXT) \
+	src/common/crypto.$(OBJEXT) src/common/crypto_format.$(OBJEXT) \
+	src/common/torgzip.$(OBJEXT) src/common/tortls.$(OBJEXT) \
+	$(am__objects_1)
+src_common_libor_crypto_a_OBJECTS =  \
+	$(am_src_common_libor_crypto_a_OBJECTS)
+src_common_libor_event_a_AR = $(AR) $(ARFLAGS)
+src_common_libor_event_a_LIBADD =
+am_src_common_libor_event_a_OBJECTS =  \
+	src/common/compat_libevent.$(OBJEXT)
+src_common_libor_event_a_OBJECTS =  \
+	$(am_src_common_libor_event_a_OBJECTS)
+src_common_libor_a_AR = $(AR) $(ARFLAGS)
+src_common_libor_a_LIBADD =
+am__src_common_libor_a_SOURCES_DIST = src/common/address.c \
+	src/common/compat.c src/common/container.c src/common/di_ops.c \
+	src/common/log.c src/common/memarea.c src/common/mempool.c \
+	src/common/procmon.c src/common/util.c \
+	src/common/util_codedigest.c src/ext/OpenBSD_malloc_Linux.c
+@USE_OPENBSD_MALLOC_TRUE@am__objects_2 = src/ext/OpenBSD_malloc_Linux.$(OBJEXT)
+am_src_common_libor_a_OBJECTS = src/common/address.$(OBJEXT) \
+	src/common/compat.$(OBJEXT) src/common/container.$(OBJEXT) \
+	src/common/di_ops.$(OBJEXT) src/common/log.$(OBJEXT) \
+	src/common/memarea.$(OBJEXT) src/common/mempool.$(OBJEXT) \
+	src/common/procmon.$(OBJEXT) src/common/util.$(OBJEXT) \
+	src/common/util_codedigest.$(OBJEXT) $(am__objects_2)
+src_common_libor_a_OBJECTS = $(am_src_common_libor_a_OBJECTS)
+src_or_libtor_a_AR = $(AR) $(ARFLAGS)
+src_or_libtor_a_LIBADD =
+am__src_or_libtor_a_SOURCES_DIST = src/or/addressmap.c \
+	src/or/buffers.c src/or/channel.c src/or/channeltls.c \
+	src/or/circuitbuild.c src/or/circuitlist.c src/or/circuitmux.c \
+	src/or/circuitmux_ewma.c src/or/circuitstats.c \
+	src/or/circuituse.c src/or/command.c src/or/config.c \
+	src/or/confparse.c src/or/connection.c \
+	src/or/connection_edge.c src/or/connection_or.c \
+	src/or/control.c src/or/cpuworker.c src/or/directory.c \
+	src/or/dirserv.c src/or/dirvote.c src/or/dns.c \
+	src/or/dnsserv.c src/or/fp_pair.c src/or/geoip.c \
+	src/or/entrynodes.c src/or/hibernate.c src/or/main.c \
+	src/or/microdesc.c src/or/networkstatus.c src/or/nodelist.c \
+	src/or/onion.c src/or/onion_fast.c src/or/onion_tap.c \
+	src/or/transports.c src/or/policies.c src/or/reasons.c \
+	src/or/relay.c src/or/rendclient.c src/or/rendcommon.c \
+	src/or/rendmid.c src/or/rendservice.c src/or/rephist.c \
+	src/or/replaycache.c src/or/router.c src/or/routerlist.c \
+	src/or/routerparse.c src/or/routerset.c src/or/statefile.c \
+	src/or/status.c src/ext/eventdns.c src/or/ntmain.c \
+	src/or/onion_ntor.c src/or/config_codedigest.c
+@USE_EXTERNAL_EVDNS_FALSE@am__objects_3 = src/ext/eventdns.$(OBJEXT)
+@BUILD_NT_SERVICES_TRUE@am__objects_4 = src/or/ntmain.$(OBJEXT)
+@CURVE25519_ENABLED_TRUE@am__objects_5 = src/or/onion_ntor.$(OBJEXT)
+am_src_or_libtor_a_OBJECTS = src/or/addressmap.$(OBJEXT) \
+	src/or/buffers.$(OBJEXT) src/or/channel.$(OBJEXT) \
+	src/or/channeltls.$(OBJEXT) src/or/circuitbuild.$(OBJEXT) \
+	src/or/circuitlist.$(OBJEXT) src/or/circuitmux.$(OBJEXT) \
+	src/or/circuitmux_ewma.$(OBJEXT) src/or/circuitstats.$(OBJEXT) \
+	src/or/circuituse.$(OBJEXT) src/or/command.$(OBJEXT) \
+	src/or/config.$(OBJEXT) src/or/confparse.$(OBJEXT) \
+	src/or/connection.$(OBJEXT) src/or/connection_edge.$(OBJEXT) \
+	src/or/connection_or.$(OBJEXT) src/or/control.$(OBJEXT) \
+	src/or/cpuworker.$(OBJEXT) src/or/directory.$(OBJEXT) \
+	src/or/dirserv.$(OBJEXT) src/or/dirvote.$(OBJEXT) \
+	src/or/dns.$(OBJEXT) src/or/dnsserv.$(OBJEXT) \
+	src/or/fp_pair.$(OBJEXT) src/or/geoip.$(OBJEXT) \
+	src/or/entrynodes.$(OBJEXT) src/or/hibernate.$(OBJEXT) \
+	src/or/main.$(OBJEXT) src/or/microdesc.$(OBJEXT) \
+	src/or/networkstatus.$(OBJEXT) src/or/nodelist.$(OBJEXT) \
+	src/or/onion.$(OBJEXT) src/or/onion_fast.$(OBJEXT) \
+	src/or/onion_tap.$(OBJEXT) src/or/transports.$(OBJEXT) \
+	src/or/policies.$(OBJEXT) src/or/reasons.$(OBJEXT) \
+	src/or/relay.$(OBJEXT) src/or/rendclient.$(OBJEXT) \
+	src/or/rendcommon.$(OBJEXT) src/or/rendmid.$(OBJEXT) \
+	src/or/rendservice.$(OBJEXT) src/or/rephist.$(OBJEXT) \
+	src/or/replaycache.$(OBJEXT) src/or/router.$(OBJEXT) \
+	src/or/routerlist.$(OBJEXT) src/or/routerparse.$(OBJEXT) \
+	src/or/routerset.$(OBJEXT) src/or/statefile.$(OBJEXT) \
+	src/or/status.$(OBJEXT) $(am__objects_3) $(am__objects_4) \
+	$(am__objects_5) src/or/config_codedigest.$(OBJEXT)
+src_or_libtor_a_OBJECTS = $(am_src_or_libtor_a_OBJECTS)
+@USE_FW_HELPER_TRUE@am__EXEEXT_1 = src/tools/tor-fw-helper/tor-fw-helper$(EXEEXT)
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" \
+	"$(DESTDIR)$(man1dir)" "$(DESTDIR)$(confdir)" \
+	"$(DESTDIR)$(docdir)" "$(DESTDIR)$(tordatadir)"
+@CURVE25519_ENABLED_TRUE@am__EXEEXT_2 =  \
+@CURVE25519_ENABLED_TRUE@	src/test/test-ntor-cl$(EXEEXT)
+PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
+am_src_or_tor_OBJECTS = src/or/tor_main.$(OBJEXT)
+src_or_tor_OBJECTS = $(am_src_or_tor_OBJECTS)
+@BUILD_CURVE25519_DONNA_C64_TRUE@@BUILD_CURVE25519_DONNA_FALSE@am__DEPENDENCIES_1 = src/common/libcurve25519_donna.a
+@BUILD_CURVE25519_DONNA_TRUE@am__DEPENDENCIES_1 =  \
+@BUILD_CURVE25519_DONNA_TRUE@	src/common/libcurve25519_donna.a
+src_or_tor_DEPENDENCIES = src/or/libtor.a src/common/libor.a \
+	src/common/libor-crypto.a $(am__DEPENDENCIES_1) \
+	src/common/libor-event.a
+src_or_tor_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(src_or_tor_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_src_test_bench_OBJECTS = src/test/src_test_bench-bench.$(OBJEXT)
+src_test_bench_OBJECTS = $(am_src_test_bench_OBJECTS)
+src_test_bench_DEPENDENCIES = src/or/libtor.a src/common/libor.a \
+	src/common/libor-crypto.a $(am__DEPENDENCIES_1) \
+	src/common/libor-event.a
+src_test_bench_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(src_test_bench_LDFLAGS) $(LDFLAGS) -o $@
+am_src_test_test_OBJECTS = src/test/src_test_test-test.$(OBJEXT) \
+	src/test/src_test_test-test_addr.$(OBJEXT) \
+	src/test/src_test_test-test_cell_formats.$(OBJEXT) \
+	src/test/src_test_test-test_containers.$(OBJEXT) \
+	src/test/src_test_test-test_crypto.$(OBJEXT) \
+	src/test/src_test_test-test_data.$(OBJEXT) \
+	src/test/src_test_test-test_dir.$(OBJEXT) \
+	src/test/src_test_test-test_introduce.$(OBJEXT) \
+	src/test/src_test_test-test_microdesc.$(OBJEXT) \
+	src/test/src_test_test-test_pt.$(OBJEXT) \
+	src/test/src_test_test-test_replay.$(OBJEXT) \
+	src/test/src_test_test-test_util.$(OBJEXT) \
+	src/test/src_test_test-test_config.$(OBJEXT) \
+	src/ext/src_test_test-tinytest.$(OBJEXT)
+src_test_test_OBJECTS = $(am_src_test_test_OBJECTS)
+src_test_test_DEPENDENCIES = src/or/libtor.a src/common/libor.a \
+	src/common/libor-crypto.a $(am__DEPENDENCIES_1) \
+	src/common/libor-event.a
+src_test_test_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(src_test_test_LDFLAGS) $(LDFLAGS) -o $@
+src_test_test_child_SOURCES = src/test/test-child.c
+src_test_test_child_OBJECTS = src/test/test-child.$(OBJEXT)
+src_test_test_child_LDADD = $(LDADD)
+am__src_test_test_ntor_cl_SOURCES_DIST = src/test/test_ntor_cl.c
+@CURVE25519_ENABLED_TRUE@am_src_test_test_ntor_cl_OBJECTS =  \
+@CURVE25519_ENABLED_TRUE@	src/test/test_ntor_cl.$(OBJEXT)
+src_test_test_ntor_cl_OBJECTS = $(am_src_test_test_ntor_cl_OBJECTS)
+@CURVE25519_ENABLED_TRUE@src_test_test_ntor_cl_DEPENDENCIES =  \
+@CURVE25519_ENABLED_TRUE@	src/or/libtor.a src/common/libor.a \
+@CURVE25519_ENABLED_TRUE@	src/common/libor-crypto.a \
+@CURVE25519_ENABLED_TRUE@	$(am__DEPENDENCIES_1)
+src_test_test_ntor_cl_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(src_test_test_ntor_cl_LDFLAGS) $(LDFLAGS) -o $@
+am_src_tools_tor_checkkey_OBJECTS = src/tools/tor-checkkey.$(OBJEXT)
+src_tools_tor_checkkey_OBJECTS = $(am_src_tools_tor_checkkey_OBJECTS)
+src_tools_tor_checkkey_DEPENDENCIES = src/common/libor.a \
+	src/common/libor-crypto.a $(am__DEPENDENCIES_1)
+src_tools_tor_checkkey_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(src_tools_tor_checkkey_LDFLAGS) $(LDFLAGS) -o $@
+am_src_tools_tor_fw_helper_tor_fw_helper_OBJECTS = src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.$(OBJEXT) \
+	src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.$(OBJEXT) \
+	src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.$(OBJEXT)
+src_tools_tor_fw_helper_tor_fw_helper_OBJECTS =  \
+	$(am_src_tools_tor_fw_helper_tor_fw_helper_OBJECTS)
+am__DEPENDENCIES_2 =
+src_tools_tor_fw_helper_tor_fw_helper_DEPENDENCIES =  \
+	src/common/libor.a $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_2)
+src_tools_tor_fw_helper_tor_fw_helper_LINK = $(CCLD) $(AM_CFLAGS) \
+	$(CFLAGS) $(src_tools_tor_fw_helper_tor_fw_helper_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_src_tools_tor_gencert_OBJECTS = src/tools/tor-gencert.$(OBJEXT)
+src_tools_tor_gencert_OBJECTS = $(am_src_tools_tor_gencert_OBJECTS)
+src_tools_tor_gencert_DEPENDENCIES = src/common/libor.a \
+	src/common/libor-crypto.a $(am__DEPENDENCIES_1)
+src_tools_tor_gencert_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(src_tools_tor_gencert_LDFLAGS) $(LDFLAGS) -o $@
+am_src_tools_tor_resolve_OBJECTS = src/tools/tor-resolve.$(OBJEXT)
+src_tools_tor_resolve_OBJECTS = $(am_src_tools_tor_resolve_OBJECTS)
+src_tools_tor_resolve_DEPENDENCIES = src/common/libor.a
+src_tools_tor_resolve_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(src_tools_tor_resolve_LDFLAGS) $(LDFLAGS) -o $@
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = f=`echo $$p | sed -e 's|^.*/||'`;
+am__install_max = 40
+am__nobase_strip_setup = \
+  srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*|]/\\\\&/g'`
+am__nobase_strip = \
+  for p in $$list; do echo "$$p"; done | sed -e "s|$$srcdirstrip/||"
+am__nobase_list = $(am__nobase_strip_setup); \
+  for p in $$list; do echo "$$p $$p"; done | \
+  sed "s| $$srcdirstrip/| |;"' / .*\//!s/ .*/ ./; s,\( .*\)/[^/]*$$,\1,' | \
+  $(AWK) 'BEGIN { files["."] = "" } { files[$$2] = files[$$2] " " $$1; \
+    if (++n[$$2] == $(am__install_max)) \
+      { print $$2, files[$$2]; n[$$2] = 0; files[$$2] = "" } } \
+    END { for (dir in files) print dir, files[dir] }'
+am__base_list = \
+  sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
+  sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
+am__uninstall_files_from_dir = { \
+  test -z "$$files" \
+    || { test ! -d "$$dir" && test ! -f "$$dir" && test ! -r "$$dir"; } \
+    || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
+         $(am__cd) "$$dir" && rm -f $$files; }; \
+  }
+SCRIPTS = $(bin_SCRIPTS)
+DEFAULT_INCLUDES = -I.@am__isrc@
+depcomp = $(SHELL) $(top_srcdir)/depcomp
+am__depfiles_maybe = depfiles
+am__mv = mv -f
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_@AM_V@)
+am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
+am__v_CC_0 = @echo "  CC    " $@;
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_@AM_V@)
+am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
+am__v_CCLD_0 = @echo "  CCLD  " $@;
+AM_V_GEN = $(am__v_GEN_@AM_V@)
+am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
+am__v_GEN_0 = @echo "  GEN   " $@;
+SOURCES = $(src_common_libcurve25519_donna_a_SOURCES) \
+	$(src_common_libor_crypto_a_SOURCES) \
+	$(src_common_libor_event_a_SOURCES) \
+	$(src_common_libor_a_SOURCES) $(src_or_libtor_a_SOURCES) \
+	$(src_or_tor_SOURCES) $(src_test_bench_SOURCES) \
+	$(src_test_test_SOURCES) src/test/test-child.c \
+	$(src_test_test_ntor_cl_SOURCES) \
+	$(src_tools_tor_checkkey_SOURCES) \
+	$(src_tools_tor_fw_helper_tor_fw_helper_SOURCES) \
+	$(src_tools_tor_gencert_SOURCES) \
+	$(src_tools_tor_resolve_SOURCES)
+DIST_SOURCES = $(am__src_common_libcurve25519_donna_a_SOURCES_DIST) \
+	$(am__src_common_libor_crypto_a_SOURCES_DIST) \
+	$(src_common_libor_event_a_SOURCES) \
+	$(am__src_common_libor_a_SOURCES_DIST) \
+	$(am__src_or_libtor_a_SOURCES_DIST) $(src_or_tor_SOURCES) \
+	$(src_test_bench_SOURCES) $(src_test_test_SOURCES) \
+	src/test/test-child.c \
+	$(am__src_test_test_ntor_cl_SOURCES_DIST) \
+	$(src_tools_tor_checkkey_SOURCES) \
+	$(src_tools_tor_fw_helper_tor_fw_helper_SOURCES) \
+	$(src_tools_tor_gencert_SOURCES) \
+	$(src_tools_tor_resolve_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
-  distclean-recursive maintainer-clean-recursive
-AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
-	$(RECURSIVE_CLEAN_TARGETS:-recursive=) tags TAGS ctags CTAGS \
-	distdir dist dist-all distcheck
+man1dir = $(mandir)/man1
+NROFF = nroff
+MANS = $(nodist_man1_MANS)
+DATA = $(conf_DATA) $(doc_DATA) $(tordata_DATA)
+HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
+am__tty_colors = \
+red=; grn=; lgn=; blu=; std=
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -102,31 +399,6 @@ am__remove_distdir = \
       && rm -rf "$(distdir)" \
       || { sleep 5 && rm -rf "$(distdir)"; }; \
   else :; fi
-am__relativize = \
-  dir0=`pwd`; \
-  sed_first='s,^\([^/]*\)/.*$$,\1,'; \
-  sed_rest='s,^[^/]*/*,,'; \
-  sed_last='s,^.*/\([^/]*\)$$,\1,'; \
-  sed_butlast='s,/*[^/]*$$,,'; \
-  while test -n "$$dir1"; do \
-    first=`echo "$$dir1" | sed -e "$$sed_first"`; \
-    if test "$$first" != "."; then \
-      if test "$$first" = ".."; then \
-        dir2=`echo "$$dir0" | sed -e "$$sed_last"`/"$$dir2"; \
-        dir0=`echo "$$dir0" | sed -e "$$sed_butlast"`; \
-      else \
-        first2=`echo "$$dir2" | sed -e "$$sed_first"`; \
-        if test "$$first2" = "$$first"; then \
-          dir2=`echo "$$dir2" | sed -e "$$sed_rest"`; \
-        else \
-          dir2="../$$dir2"; \
-        fi; \
-        dir0="$$dir0"/"$$first"; \
-      fi; \
-    fi; \
-    dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
-  done; \
-  reldir="$$dir2"
 DIST_ARCHIVES = $(distdir).tar.gz
 GZIP_ENV = --best
 distuninstallcheck_listfiles = find . -type f -print
@@ -136,6 +408,7 @@ distcleancheck_listfiles = find . -type f -print
 A2X = @A2X@
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 ASCIIDOC = @ASCIIDOC@
 AUTOCONF = @AUTOCONF@
@@ -150,6 +423,7 @@ CFLAGS = @CFLAGS@
 CONFDIR = @CONFDIR@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CURVE25519_LIBS = @CURVE25519_LIBS@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
@@ -260,27 +534,359 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # "foreign" means we don't follow GNU package layout standards
-# 1.7 means we require automake vesion 1.7
-AUTOMAKE_OPTIONS = foreign 1.7
-SUBDIRS = src doc contrib
-DIST_SUBDIRS = src doc contrib
-EXTRA_DIST = \
-	ChangeLog					\
-	INSTALL						\
-	LICENSE						\
-	Makefile.nmake					\
-	README						\
-	ReleaseNotes					\
-	tor.spec					\
-	tor.spec.in
+# 1.9 means we require automake vesion 1.9
+AUTOMAKE_OPTIONS = foreign 1.9 subdir-objects
+ACLOCAL_AMFLAGS = -I m4
+noinst_LIBRARIES = src/common/libor.a src/common/libor-crypto.a \
+	src/common/libor-event.a $(am__append_1) $(am__append_2) \
+	src/or/libtor.a
+EXTRA_DIST = src/ext/README src/common/common_sha1.i \
+	src/common/Makefile.nmake src/or/ntmain.c src/or/or_sha1.i \
+	src/or/Makefile.nmake src/win32/orconfig.h src/config/geoip \
+	src/config/geoip6 doc/HACKING doc/asciidoc-helper.sh \
+	$(html_in) $(man_in) $(txt_in) doc/state-contents.txt \
+	contrib/suse/tor.sh contrib/cross.sh contrib/exitlist \
+	contrib/linux-tor-prio.sh contrib/package_nsis-mingw.sh \
+	contrib/rc.subr contrib/tor-ctrl.sh \
+	contrib/tor-exit-notice.html contrib/tor-mingw.nsi.in \
+	contrib/tor.ico contrib/tor.nsi.in contrib/tor.sh \
+	contrib/torctl ChangeLog INSTALL LICENSE Makefile.nmake README \
+	ReleaseNotes
+noinst_HEADERS = $(EXTHEADERS) $(COMMONHEADERS) $(ORHEADERS) \
+	micro-revision.i src/test/test.h \
+	src/tools/tor-fw-helper/tor-fw-helper.h \
+	src/tools/tor-fw-helper/tor-fw-helper-natpmp.h \
+	src/tools/tor-fw-helper/tor-fw-helper-upnp.h
+CLEANFILES = micro-revision.i src/or/micro-revision.i \
+	$(asciidoc_product) config.log
+DISTCLEANFILES = src/common/common_sha1.i $(html_in) $(man_in)
+bin_SCRIPTS = contrib/torify
 
+#CFLAGS  = -Wall -Wpointer-arith -O2
+AM_CPPFLAGS = -I$(srcdir)/src/ext -Isrc/ext -I$(srcdir)/src/common \
+	-Isrc/common -I$(srcdir)/src/or -Isrc/or \
+	-DSHARE_DATADIR="\"$(datadir)\"" \
+	-DLOCALSTATEDIR="\"$(localstatedir)\"" \
+	-DBINDIR="\"$(bindir)\""
+EXTHEADERS = \
+  src/ext/ht.h		\
+  src/ext/eventdns.h	\
+  src/ext/tinytest.h	\
+  src/ext/strlcat.c	\
+  src/ext/strlcpy.c	\
+  src/ext/tinytest_macros.h \
+  src/ext/tor_queue.h
+
+@USE_OPENBSD_MALLOC_FALSE@libor_extra_source = 
+@USE_OPENBSD_MALLOC_TRUE@libor_extra_source = src/ext/OpenBSD_malloc_Linux.c
+@BUILD_CURVE25519_DONNA_C64_TRUE@@BUILD_CURVE25519_DONNA_FALSE@src_common_libcurve25519_donna_a_SOURCES = \
+@BUILD_CURVE25519_DONNA_C64_TRUE@@BUILD_CURVE25519_DONNA_FALSE@	src/ext/curve25519_donna/curve25519-donna-c64.c
+
+@BUILD_CURVE25519_DONNA_TRUE@src_common_libcurve25519_donna_a_SOURCES = \
+@BUILD_CURVE25519_DONNA_TRUE@	src/ext/curve25519_donna/curve25519-donna.c
+
+@BUILD_CURVE25519_DONNA_C64_FALSE@@BUILD_CURVE25519_DONNA_FALSE@LIBDONNA = 
+@BUILD_CURVE25519_DONNA_C64_TRUE@@BUILD_CURVE25519_DONNA_FALSE@LIBDONNA = src/common/libcurve25519_donna.a
+@BUILD_CURVE25519_DONNA_TRUE@LIBDONNA = src/common/libcurve25519_donna.a
+src_common_libcurve25519_donna_a_CFLAGS = 
+@CURVE25519_ENABLED_TRUE@libcrypto_extra_source = src/common/crypto_curve25519.c
+src_common_libor_a_SOURCES = \
+  src/common/address.c					\
+  src/common/compat.c					\
+  src/common/container.c				\
+  src/common/di_ops.c					\
+  src/common/log.c					\
+  src/common/memarea.c					\
+  src/common/mempool.c					\
+  src/common/procmon.c					\
+  src/common/util.c					\
+  src/common/util_codedigest.c				\
+  $(libor_extra_source)
+
+src_common_libor_crypto_a_SOURCES = \
+  src/common/aes.c		\
+  src/common/crypto.c		\
+  src/common/crypto_format.c	\
+  src/common/torgzip.c		\
+  src/common/tortls.c		\
+  $(libcrypto_extra_source)
+
+src_common_libor_event_a_SOURCES = src/common/compat_libevent.c
+COMMONHEADERS = \
+  src/common/address.h				\
+  src/common/aes.h				\
+  src/common/ciphers.inc			\
+  src/common/compat.h				\
+  src/common/compat_libevent.h			\
+  src/common/container.h			\
+  src/common/crypto.h				\
+  src/common/crypto_curve25519.h		\
+  src/common/di_ops.h				\
+  src/common/memarea.h				\
+  src/common/mempool.h				\
+  src/common/procmon.h				\
+  src/common/torgzip.h				\
+  src/common/torint.h				\
+  src/common/torlog.h				\
+  src/common/tortls.h				\
+  src/common/util.h
+
+@BUILD_NT_SERVICES_FALSE@tor_platform_source = 
+@BUILD_NT_SERVICES_TRUE@tor_platform_source = src/or/ntmain.c
+@USE_EXTERNAL_EVDNS_FALSE@evdns_source = src/ext/eventdns.c
+@USE_EXTERNAL_EVDNS_TRUE@evdns_source = 
+@CURVE25519_ENABLED_FALSE@onion_ntor_source = 
+@CURVE25519_ENABLED_TRUE@onion_ntor_source = src/or/onion_ntor.c
+src_or_libtor_a_SOURCES = \
+	src/or/addressmap.c				\
+	src/or/buffers.c				\
+	src/or/channel.c				\
+	src/or/channeltls.c				\
+	src/or/circuitbuild.c				\
+	src/or/circuitlist.c				\
+	src/or/circuitmux.c				\
+	src/or/circuitmux_ewma.c			\
+	src/or/circuitstats.c				\
+	src/or/circuituse.c				\
+	src/or/command.c				\
+	src/or/config.c					\
+	src/or/confparse.c				\
+	src/or/connection.c				\
+	src/or/connection_edge.c			\
+	src/or/connection_or.c				\
+	src/or/control.c				\
+	src/or/cpuworker.c				\
+	src/or/directory.c				\
+	src/or/dirserv.c				\
+	src/or/dirvote.c				\
+	src/or/dns.c					\
+	src/or/dnsserv.c				\
+        src/or/fp_pair.c				\
+	src/or/geoip.c					\
+	src/or/entrynodes.c				\
+	src/or/hibernate.c				\
+	src/or/main.c					\
+	src/or/microdesc.c				\
+	src/or/networkstatus.c				\
+	src/or/nodelist.c				\
+	src/or/onion.c					\
+	src/or/onion_fast.c				\
+	src/or/onion_tap.c				\
+	src/or/transports.c				\
+	src/or/policies.c				\
+	src/or/reasons.c				\
+	src/or/relay.c					\
+	src/or/rendclient.c				\
+	src/or/rendcommon.c				\
+	src/or/rendmid.c				\
+	src/or/rendservice.c				\
+	src/or/rephist.c				\
+	src/or/replaycache.c				\
+	src/or/router.c					\
+	src/or/routerlist.c				\
+	src/or/routerparse.c				\
+	src/or/routerset.c				\
+	src/or/statefile.c				\
+	src/or/status.c					\
+	$(evdns_source)					\
+	$(tor_platform_source)				\
+	$(onion_ntor_source)				\
+	src/or/config_codedigest.c
+
+
+#libtor_a_LIBADD = ../common/libor.a ../common/libor-crypto.a \
+#	../common/libor-event.a
+src_or_tor_SOURCES = src/or/tor_main.c
+
+# -L flags need to go in LDFLAGS. -l flags need to go in LDADD.
+# This seems to matter nowhere but on windows, but I assure you that it
+# matters a lot there, and is quite hard to debug if you forget to do it.
+src_or_tor_LDFLAGS = @TOR_LDFLAGS_zlib@ @TOR_LDFLAGS_openssl@ @TOR_LDFLAGS_libevent@
+src_or_tor_LDADD = src/or/libtor.a src/common/libor.a \
+	src/common/libor-crypto.a $(LIBDONNA) \
+	src/common/libor-event.a \
+	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ @TOR_LIBEVENT_LIBS@ @TOR_OPENSSL_LIBS@ \
+	@TOR_LIB_WS32@ @TOR_LIB_GDI@ @CURVE25519_LIBS@
+
+ORHEADERS = \
+	src/or/addressmap.h				\
+	src/or/buffers.h				\
+	src/or/channel.h				\
+	src/or/channeltls.h				\
+	src/or/circuitbuild.h				\
+	src/or/circuitlist.h				\
+	src/or/circuitmux.h				\
+	src/or/circuitmux_ewma.h			\
+	src/or/circuitstats.h				\
+	src/or/circuituse.h				\
+	src/or/command.h				\
+	src/or/config.h					\
+	src/or/confparse.h				\
+	src/or/connection.h				\
+	src/or/connection_edge.h			\
+	src/or/connection_or.h				\
+	src/or/control.h				\
+	src/or/cpuworker.h				\
+	src/or/directory.h				\
+	src/or/dirserv.h				\
+	src/or/dirvote.h				\
+	src/or/dns.h					\
+	src/or/dnsserv.h				\
+	src/or/eventdns_tor.h				\
+	src/or/fp_pair.h				\
+	src/or/geoip.h					\
+	src/or/entrynodes.h				\
+	src/or/hibernate.h				\
+	src/or/main.h					\
+	src/or/microdesc.h				\
+	src/or/networkstatus.h				\
+	src/or/nodelist.h				\
+	src/or/ntmain.h					\
+	src/or/onion.h					\
+	src/or/onion_fast.h				\
+	src/or/onion_ntor.h				\
+	src/or/onion_tap.h				\
+	src/or/or.h					\
+	src/or/transports.h				\
+	src/or/policies.h				\
+	src/or/reasons.h				\
+	src/or/relay.h					\
+	src/or/rendclient.h				\
+	src/or/rendcommon.h				\
+	src/or/rendmid.h				\
+	src/or/rendservice.h				\
+	src/or/rephist.h				\
+	src/or/replaycache.h				\
+	src/or/router.h					\
+	src/or/routerlist.h				\
+	src/or/routerset.h				\
+	src/or/routerparse.h				\
+	src/or/statefile.h				\
+	src/or/status.h
+
+src_test_AM_CPPFLAGS = -DSHARE_DATADIR="\"$(datadir)\"" \
+        -DLOCALSTATEDIR="\"$(localstatedir)\"" \
+        -DBINDIR="\"$(bindir)\""	       \
+	-I"$(top_srcdir)/src/or" -I"$(top_srcdir)/src/ext"
+
+
+# -L flags need to go in LDFLAGS. -l flags need to go in LDADD.
+# This seems to matter nowhere but on Windows, but I assure you that it
+# matters a lot there, and is quite hard to debug if you forget to do it.
+src_test_test_SOURCES = \
+	src/test/test.c \
+	src/test/test_addr.c \
+	src/test/test_cell_formats.c \
+	src/test/test_containers.c \
+	src/test/test_crypto.c \
+	src/test/test_data.c \
+	src/test/test_dir.c \
+	src/test/test_introduce.c \
+	src/test/test_microdesc.c \
+	src/test/test_pt.c \
+	src/test/test_replay.c \
+	src/test/test_util.c \
+	src/test/test_config.c \
+	src/ext/tinytest.c
+
+src_test_test_CPPFLAGS = $(src_test_AM_CPPFLAGS)
+src_test_bench_SOURCES = \
+	src/test/bench.c
+
+src_test_bench_CPPFLAGS = $(src_test_AM_CPPFLAGS)
+src_test_test_LDFLAGS = @TOR_LDFLAGS_zlib@ @TOR_LDFLAGS_openssl@ \
+        @TOR_LDFLAGS_libevent@
+
+src_test_test_LDADD = src/or/libtor.a src/common/libor.a \
+	src/common/libor-crypto.a $(LIBDONNA) \
+	src/common/libor-event.a \
+	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ @TOR_LIBEVENT_LIBS@ \
+	@TOR_OPENSSL_LIBS@ @TOR_LIB_WS32@ @TOR_LIB_GDI@ @CURVE25519_LIBS@
+
+src_test_bench_LDFLAGS = @TOR_LDFLAGS_zlib@ @TOR_LDFLAGS_openssl@ \
+        @TOR_LDFLAGS_libevent@
+
+src_test_bench_LDADD = src/or/libtor.a src/common/libor.a \
+	src/common/libor-crypto.a $(LIBDONNA) \
+	src/common/libor-event.a \
+	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ @TOR_LIBEVENT_LIBS@ \
+	@TOR_OPENSSL_LIBS@ @TOR_LIB_WS32@ @TOR_LIB_GDI@ @CURVE25519_LIBS@
+
+@CURVE25519_ENABLED_TRUE@src_test_test_ntor_cl_SOURCES = src/test/test_ntor_cl.c
+@CURVE25519_ENABLED_TRUE@src_test_test_ntor_cl_LDFLAGS = @TOR_LDFLAGS_zlib@ @TOR_LDFLAGS_openssl@
+@CURVE25519_ENABLED_TRUE@src_test_test_ntor_cl_LDADD = src/or/libtor.a src/common/libor.a \
+@CURVE25519_ENABLED_TRUE@	src/common/libor-crypto.a $(LIBDONNA) \
+@CURVE25519_ENABLED_TRUE@	@TOR_ZLIB_LIBS@ @TOR_LIB_MATH@ \
+@CURVE25519_ENABLED_TRUE@	@TOR_OPENSSL_LIBS@ @TOR_LIB_WS32@ @TOR_LIB_GDI@ @CURVE25519_LIBS@
+
+@CURVE25519_ENABLED_TRUE@src_test_test_ntor_cl_AM_CPPFLAGS = \
+@CURVE25519_ENABLED_TRUE@	-I"$(top_srcdir)/src/or"
+
+src_tools_tor_resolve_SOURCES = src/tools/tor-resolve.c
+src_tools_tor_resolve_LDFLAGS = 
+src_tools_tor_resolve_LDADD = src/common/libor.a @TOR_LIB_MATH@ @TOR_LIB_WS32@
+src_tools_tor_gencert_SOURCES = src/tools/tor-gencert.c
+src_tools_tor_gencert_LDFLAGS = @TOR_LDFLAGS_zlib@ @TOR_LDFLAGS_openssl@
+src_tools_tor_gencert_LDADD = src/common/libor.a src/common/libor-crypto.a \
+	$(LIBDONNA) \
+        @TOR_LIB_MATH@ @TOR_ZLIB_LIBS@ @TOR_OPENSSL_LIBS@ \
+        @TOR_LIB_WS32@ @TOR_LIB_GDI@ @CURVE25519_LIBS@
+
+src_tools_tor_checkkey_SOURCES = src/tools/tor-checkkey.c
+src_tools_tor_checkkey_LDFLAGS = @TOR_LDFLAGS_zlib@ @TOR_LDFLAGS_openssl@
+src_tools_tor_checkkey_LDADD = src/common/libor.a src/common/libor-crypto.a \
+	$(LIBDONNA) \
+        @TOR_LIB_MATH@ @TOR_ZLIB_LIBS@ @TOR_OPENSSL_LIBS@ \
+        @TOR_LIB_WS32@ @TOR_LIB_GDI@ @CURVE25519_LIBS@
+
+src_tools_tor_fw_helper_tor_fw_helper_SOURCES = \
+	src/tools/tor-fw-helper/tor-fw-helper.c \
+	src/tools/tor-fw-helper/tor-fw-helper-natpmp.c \
+	src/tools/tor-fw-helper/tor-fw-helper-upnp.c
+
+@NAT_PMP_FALSE@nat_pmp_ldflags = 
+@NAT_PMP_TRUE@nat_pmp_ldflags = @TOR_LDFLAGS_libnatpmp@
+@NAT_PMP_FALSE@nat_pmp_ldadd = 
+@NAT_PMP_TRUE@nat_pmp_ldadd = -lnatpmp @TOR_LIB_IPHLPAPI@
+@NAT_PMP_FALSE@nat_pmp_cppflags = 
+@NAT_PMP_TRUE@nat_pmp_cppflags = @TOR_CPPFLAGS_libnatpmp@
+@MINIUPNPC_FALSE@miniupnpc_ldflags = 
+@MINIUPNPC_TRUE@miniupnpc_ldflags = @TOR_LDFLAGS_libminiupnpc@
+@MINIUPNPC_FALSE@miniupnpc_ldadd = 
+@MINIUPNPC_TRUE@miniupnpc_ldadd = -lminiupnpc @TOR_LIB_IPHLPAPI@
+@MINIUPNPC_FALSE@miniupnpc_cppflags = 
+@MINIUPNPC_TRUE@miniupnpc_cppflags = @TOR_CPPFLAGS_libminiupnpc@
+src_tools_tor_fw_helper_tor_fw_helper_LDFLAGS = $(nat_pmp_ldflags) $(miniupnpc_ldflags)
+src_tools_tor_fw_helper_tor_fw_helper_LDADD = src/common/libor.a $(nat_pmp_ldadd) $(miniupnpc_ldadd) -lm @TOR_LIB_WS32@
+src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS = $(nat_pmp_cppflags) $(miniupnpc_cppflags)
+confdir = $(sysconfdir)/tor
+tordatadir = $(datadir)/tor
+# fallback-consensus
+conf_DATA = src/config/torrc.sample
+tordata_DATA = src/config/geoip src/config/geoip6
+regular_mans = doc/tor doc/tor-gencert doc/tor-resolve doc/torify
+all_mans = $(regular_mans) doc/tor-fw-helper
+@USE_ASCIIDOC_FALSE@nodist_man1_MANS = 
+@USE_ASCIIDOC_TRUE@@USE_FW_HELPER_FALSE@nodist_man1_MANS = $(regular_mans:=.1)
+@USE_ASCIIDOC_TRUE@@USE_FW_HELPER_TRUE@nodist_man1_MANS = $(all_mans:=.1)
+@USE_ASCIIDOC_FALSE@doc_DATA = 
+@USE_ASCIIDOC_TRUE@@USE_FW_HELPER_FALSE@doc_DATA = $(regular_mans:=.html)
+@USE_ASCIIDOC_TRUE@@USE_FW_HELPER_TRUE@doc_DATA = $(all_mans:=.html)
+@USE_ASCIIDOC_FALSE@html_in = 
+@USE_ASCIIDOC_TRUE@html_in = $(all_mans:=.html.in)
+@USE_ASCIIDOC_FALSE@man_in = 
+@USE_ASCIIDOC_TRUE@man_in = $(all_mans:=.1.in)
+@USE_ASCIIDOC_FALSE@txt_in = 
+@USE_ASCIIDOC_TRUE@txt_in = $(all_mans:=.1.txt)
+asciidoc_product = $(nodist_man1_MANS) $(doc_DATA)
 all: orconfig.h
-	$(MAKE) $(AM_MAKEFLAGS) all-recursive
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
+.SUFFIXES: .c .o .obj
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/src/include.am $(srcdir)/src/ext/include.am $(srcdir)/src/common/include.am $(srcdir)/src/or/include.am $(srcdir)/src/test/include.am $(srcdir)/src/tools/include.am $(srcdir)/src/tools/tor-fw-helper/include.am $(srcdir)/src/win32/include.am $(srcdir)/src/config/include.am $(srcdir)/doc/include.am $(srcdir)/contrib/include.am $(srcdir)/contrib/suse/include.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -303,6 +909,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
+$(srcdir)/src/include.am $(srcdir)/src/ext/include.am $(srcdir)/src/common/include.am $(srcdir)/src/or/include.am $(srcdir)/src/test/include.am $(srcdir)/src/tools/include.am $(srcdir)/src/tools/tor-fw-helper/include.am $(srcdir)/src/win32/include.am $(srcdir)/src/config/include.am $(srcdir)/doc/include.am $(srcdir)/contrib/include.am $(srcdir)/contrib/suse/include.am:
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -329,78 +936,992 @@ distclean-hdr:
 	-rm -f orconfig.h stamp-h1
 Doxyfile: $(top_builddir)/config.status $(srcdir)/Doxyfile.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
-tor.spec: $(top_builddir)/config.status $(srcdir)/tor.spec.in
+contrib/suse/tor.sh: $(top_builddir)/config.status $(top_srcdir)/contrib/suse/tor.sh.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+contrib/tor.logrotate: $(top_builddir)/config.status $(top_srcdir)/contrib/tor.logrotate.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+contrib/tor.sh: $(top_builddir)/config.status $(top_srcdir)/contrib/tor.sh.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+contrib/torctl: $(top_builddir)/config.status $(top_srcdir)/contrib/torctl.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+contrib/torify: $(top_builddir)/config.status $(top_srcdir)/contrib/torify.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/config/torrc.sample: $(top_builddir)/config.status $(top_srcdir)/src/config/torrc.sample.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 
-# This directory's subdirectories are mostly independent; you can cd
-# into them and run `make' without going through this Makefile.
-# To change the values of `make' variables: instead of editing Makefiles,
-# (1) if the variable is set in `config.status', edit `config.status'
-#     (which will cause the Makefiles to be regenerated when you run `make');
-# (2) otherwise, pass the desired values on the `make' command line.
-$(RECURSIVE_TARGETS):
-	@fail= failcom='exit 1'; \
-	for f in x $$MAKEFLAGS; do \
-	  case $$f in \
-	    *=* | --[!k]*);; \
-	    *k*) failcom='fail=yes';; \
-	  esac; \
-	done; \
-	dot_seen=no; \
-	target=`echo $@ | sed s/-recursive//`; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    dot_seen=yes; \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	  || eval $$failcom; \
-	done; \
-	if test "$$dot_seen" = "no"; then \
-	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
-	fi; test -z "$$fail"
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+src/ext/curve25519_donna/$(am__dirstamp):
+	@$(MKDIR_P) src/ext/curve25519_donna
+	@: > src/ext/curve25519_donna/$(am__dirstamp)
+src/ext/curve25519_donna/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/ext/curve25519_donna/$(DEPDIR)
+	@: > src/ext/curve25519_donna/$(DEPDIR)/$(am__dirstamp)
+src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.$(OBJEXT):  \
+	src/ext/curve25519_donna/$(am__dirstamp) \
+	src/ext/curve25519_donna/$(DEPDIR)/$(am__dirstamp)
+src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.$(OBJEXT):  \
+	src/ext/curve25519_donna/$(am__dirstamp) \
+	src/ext/curve25519_donna/$(DEPDIR)/$(am__dirstamp)
+src/common/$(am__dirstamp):
+	@$(MKDIR_P) src/common
+	@: > src/common/$(am__dirstamp)
+src/common/libcurve25519_donna.a: $(src_common_libcurve25519_donna_a_OBJECTS) $(src_common_libcurve25519_donna_a_DEPENDENCIES) $(EXTRA_src_common_libcurve25519_donna_a_DEPENDENCIES) src/common/$(am__dirstamp)
+	$(AM_V_at)-rm -f src/common/libcurve25519_donna.a
+	$(AM_V_AR)$(src_common_libcurve25519_donna_a_AR) src/common/libcurve25519_donna.a $(src_common_libcurve25519_donna_a_OBJECTS) $(src_common_libcurve25519_donna_a_LIBADD)
+	$(AM_V_at)$(RANLIB) src/common/libcurve25519_donna.a
+src/common/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/common/$(DEPDIR)
+	@: > src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/aes.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/crypto.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/crypto_format.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/torgzip.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/tortls.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/crypto_curve25519.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/libor-crypto.a: $(src_common_libor_crypto_a_OBJECTS) $(src_common_libor_crypto_a_DEPENDENCIES) $(EXTRA_src_common_libor_crypto_a_DEPENDENCIES) src/common/$(am__dirstamp)
+	$(AM_V_at)-rm -f src/common/libor-crypto.a
+	$(AM_V_AR)$(src_common_libor_crypto_a_AR) src/common/libor-crypto.a $(src_common_libor_crypto_a_OBJECTS) $(src_common_libor_crypto_a_LIBADD)
+	$(AM_V_at)$(RANLIB) src/common/libor-crypto.a
+src/common/compat_libevent.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/libor-event.a: $(src_common_libor_event_a_OBJECTS) $(src_common_libor_event_a_DEPENDENCIES) $(EXTRA_src_common_libor_event_a_DEPENDENCIES) src/common/$(am__dirstamp)
+	$(AM_V_at)-rm -f src/common/libor-event.a
+	$(AM_V_AR)$(src_common_libor_event_a_AR) src/common/libor-event.a $(src_common_libor_event_a_OBJECTS) $(src_common_libor_event_a_LIBADD)
+	$(AM_V_at)$(RANLIB) src/common/libor-event.a
+src/common/address.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/compat.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/container.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/di_ops.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/log.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/memarea.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/mempool.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/procmon.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/util.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/common/util_codedigest.$(OBJEXT): src/common/$(am__dirstamp) \
+	src/common/$(DEPDIR)/$(am__dirstamp)
+src/ext/$(am__dirstamp):
+	@$(MKDIR_P) src/ext
+	@: > src/ext/$(am__dirstamp)
+src/ext/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/ext/$(DEPDIR)
+	@: > src/ext/$(DEPDIR)/$(am__dirstamp)
+src/ext/OpenBSD_malloc_Linux.$(OBJEXT): src/ext/$(am__dirstamp) \
+	src/ext/$(DEPDIR)/$(am__dirstamp)
+src/common/libor.a: $(src_common_libor_a_OBJECTS) $(src_common_libor_a_DEPENDENCIES) $(EXTRA_src_common_libor_a_DEPENDENCIES) src/common/$(am__dirstamp)
+	$(AM_V_at)-rm -f src/common/libor.a
+	$(AM_V_AR)$(src_common_libor_a_AR) src/common/libor.a $(src_common_libor_a_OBJECTS) $(src_common_libor_a_LIBADD)
+	$(AM_V_at)$(RANLIB) src/common/libor.a
+src/or/$(am__dirstamp):
+	@$(MKDIR_P) src/or
+	@: > src/or/$(am__dirstamp)
+src/or/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/or/$(DEPDIR)
+	@: > src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/addressmap.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/buffers.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/channel.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/channeltls.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/circuitbuild.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/circuitlist.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/circuitmux.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/circuitmux_ewma.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/circuitstats.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/circuituse.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/command.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/config.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/confparse.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/connection.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/connection_edge.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/connection_or.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/control.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/cpuworker.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/directory.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/dirserv.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/dirvote.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/dns.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/dnsserv.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/fp_pair.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/geoip.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/entrynodes.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/hibernate.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/main.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/microdesc.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/networkstatus.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/nodelist.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/onion.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/onion_fast.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/onion_tap.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/transports.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/policies.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/reasons.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/relay.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/rendclient.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/rendcommon.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/rendmid.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/rendservice.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/rephist.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/replaycache.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/router.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/routerlist.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/routerparse.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/routerset.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/statefile.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/status.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/ext/eventdns.$(OBJEXT): src/ext/$(am__dirstamp) \
+	src/ext/$(DEPDIR)/$(am__dirstamp)
+src/or/ntmain.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/onion_ntor.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/config_codedigest.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/libtor.a: $(src_or_libtor_a_OBJECTS) $(src_or_libtor_a_DEPENDENCIES) $(EXTRA_src_or_libtor_a_DEPENDENCIES) src/or/$(am__dirstamp)
+	$(AM_V_at)-rm -f src/or/libtor.a
+	$(AM_V_AR)$(src_or_libtor_a_AR) src/or/libtor.a $(src_or_libtor_a_OBJECTS) $(src_or_libtor_a_LIBADD)
+	$(AM_V_at)$(RANLIB) src/or/libtor.a
+install-binPROGRAMS: $(bin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(bindir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(bindir)" || exit 1; \
+	fi; \
+	for p in $$list; do echo "$$p $$p"; done | \
+	sed 's/$(EXEEXT)$$//' | \
+	while read p p1; do if test -f $$p; \
+	  then echo "$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n;h' -e 's|.*|.|' \
+	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
+	sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1 } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) files[d] = files[d] " " $$1; \
+	    else { print "f", $$3 "/" $$4, $$1; } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	    test -z "$$files" || { \
+	      echo " $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(bindir)$$dir'"; \
+	      $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(bindir)$$dir" || exit $$?; \
+	    } \
+	; done
 
-$(RECURSIVE_CLEAN_TARGETS):
-	@fail= failcom='exit 1'; \
-	for f in x $$MAKEFLAGS; do \
-	  case $$f in \
-	    *=* | --[!k]*);; \
-	    *k*) failcom='fail=yes';; \
-	  esac; \
-	done; \
-	dot_seen=no; \
-	case "$@" in \
-	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
-	  *) list='$(SUBDIRS)' ;; \
-	esac; \
-	rev=''; for subdir in $$list; do \
-	  if test "$$subdir" = "."; then :; else \
-	    rev="$$subdir $$rev"; \
+uninstall-binPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	  sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
+	      -e 's/$$/$(EXEEXT)/' `; \
+	test -n "$$list" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(bindir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(bindir)" && rm -f $$files
+
+clean-binPROGRAMS:
+	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+
+clean-noinstPROGRAMS:
+	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+src/or/tor_main.$(OBJEXT): src/or/$(am__dirstamp) \
+	src/or/$(DEPDIR)/$(am__dirstamp)
+src/or/tor$(EXEEXT): $(src_or_tor_OBJECTS) $(src_or_tor_DEPENDENCIES) $(EXTRA_src_or_tor_DEPENDENCIES) src/or/$(am__dirstamp)
+	@rm -f src/or/tor$(EXEEXT)
+	$(AM_V_CCLD)$(src_or_tor_LINK) $(src_or_tor_OBJECTS) $(src_or_tor_LDADD) $(LIBS)
+src/test/$(am__dirstamp):
+	@$(MKDIR_P) src/test
+	@: > src/test/$(am__dirstamp)
+src/test/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/test/$(DEPDIR)
+	@: > src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_bench-bench.$(OBJEXT): src/test/$(am__dirstamp) \
+	src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/bench$(EXEEXT): $(src_test_bench_OBJECTS) $(src_test_bench_DEPENDENCIES) $(EXTRA_src_test_bench_DEPENDENCIES) src/test/$(am__dirstamp)
+	@rm -f src/test/bench$(EXEEXT)
+	$(AM_V_CCLD)$(src_test_bench_LINK) $(src_test_bench_OBJECTS) $(src_test_bench_LDADD) $(LIBS)
+src/test/src_test_test-test.$(OBJEXT): src/test/$(am__dirstamp) \
+	src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_test-test_addr.$(OBJEXT): src/test/$(am__dirstamp) \
+	src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_test-test_cell_formats.$(OBJEXT):  \
+	src/test/$(am__dirstamp) src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_test-test_containers.$(OBJEXT):  \
+	src/test/$(am__dirstamp) src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_test-test_crypto.$(OBJEXT):  \
+	src/test/$(am__dirstamp) src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_test-test_data.$(OBJEXT): src/test/$(am__dirstamp) \
+	src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_test-test_dir.$(OBJEXT): src/test/$(am__dirstamp) \
+	src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_test-test_introduce.$(OBJEXT):  \
+	src/test/$(am__dirstamp) src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_test-test_microdesc.$(OBJEXT):  \
+	src/test/$(am__dirstamp) src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_test-test_pt.$(OBJEXT): src/test/$(am__dirstamp) \
+	src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_test-test_replay.$(OBJEXT):  \
+	src/test/$(am__dirstamp) src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_test-test_util.$(OBJEXT): src/test/$(am__dirstamp) \
+	src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/src_test_test-test_config.$(OBJEXT):  \
+	src/test/$(am__dirstamp) src/test/$(DEPDIR)/$(am__dirstamp)
+src/ext/src_test_test-tinytest.$(OBJEXT): src/ext/$(am__dirstamp) \
+	src/ext/$(DEPDIR)/$(am__dirstamp)
+src/test/test$(EXEEXT): $(src_test_test_OBJECTS) $(src_test_test_DEPENDENCIES) $(EXTRA_src_test_test_DEPENDENCIES) src/test/$(am__dirstamp)
+	@rm -f src/test/test$(EXEEXT)
+	$(AM_V_CCLD)$(src_test_test_LINK) $(src_test_test_OBJECTS) $(src_test_test_LDADD) $(LIBS)
+src/test/test-child.$(OBJEXT): src/test/$(am__dirstamp) \
+	src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/test-child$(EXEEXT): $(src_test_test_child_OBJECTS) $(src_test_test_child_DEPENDENCIES) $(EXTRA_src_test_test_child_DEPENDENCIES) src/test/$(am__dirstamp)
+	@rm -f src/test/test-child$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(src_test_test_child_OBJECTS) $(src_test_test_child_LDADD) $(LIBS)
+src/test/test_ntor_cl.$(OBJEXT): src/test/$(am__dirstamp) \
+	src/test/$(DEPDIR)/$(am__dirstamp)
+src/test/test-ntor-cl$(EXEEXT): $(src_test_test_ntor_cl_OBJECTS) $(src_test_test_ntor_cl_DEPENDENCIES) $(EXTRA_src_test_test_ntor_cl_DEPENDENCIES) src/test/$(am__dirstamp)
+	@rm -f src/test/test-ntor-cl$(EXEEXT)
+	$(AM_V_CCLD)$(src_test_test_ntor_cl_LINK) $(src_test_test_ntor_cl_OBJECTS) $(src_test_test_ntor_cl_LDADD) $(LIBS)
+src/tools/$(am__dirstamp):
+	@$(MKDIR_P) src/tools
+	@: > src/tools/$(am__dirstamp)
+src/tools/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/tools/$(DEPDIR)
+	@: > src/tools/$(DEPDIR)/$(am__dirstamp)
+src/tools/tor-checkkey.$(OBJEXT): src/tools/$(am__dirstamp) \
+	src/tools/$(DEPDIR)/$(am__dirstamp)
+src/tools/tor-checkkey$(EXEEXT): $(src_tools_tor_checkkey_OBJECTS) $(src_tools_tor_checkkey_DEPENDENCIES) $(EXTRA_src_tools_tor_checkkey_DEPENDENCIES) src/tools/$(am__dirstamp)
+	@rm -f src/tools/tor-checkkey$(EXEEXT)
+	$(AM_V_CCLD)$(src_tools_tor_checkkey_LINK) $(src_tools_tor_checkkey_OBJECTS) $(src_tools_tor_checkkey_LDADD) $(LIBS)
+src/tools/tor-fw-helper/$(am__dirstamp):
+	@$(MKDIR_P) src/tools/tor-fw-helper
+	@: > src/tools/tor-fw-helper/$(am__dirstamp)
+src/tools/tor-fw-helper/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/tools/tor-fw-helper/$(DEPDIR)
+	@: > src/tools/tor-fw-helper/$(DEPDIR)/$(am__dirstamp)
+src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.$(OBJEXT):  \
+	src/tools/tor-fw-helper/$(am__dirstamp) \
+	src/tools/tor-fw-helper/$(DEPDIR)/$(am__dirstamp)
+src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.$(OBJEXT):  \
+	src/tools/tor-fw-helper/$(am__dirstamp) \
+	src/tools/tor-fw-helper/$(DEPDIR)/$(am__dirstamp)
+src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.$(OBJEXT):  \
+	src/tools/tor-fw-helper/$(am__dirstamp) \
+	src/tools/tor-fw-helper/$(DEPDIR)/$(am__dirstamp)
+src/tools/tor-fw-helper/tor-fw-helper$(EXEEXT): $(src_tools_tor_fw_helper_tor_fw_helper_OBJECTS) $(src_tools_tor_fw_helper_tor_fw_helper_DEPENDENCIES) $(EXTRA_src_tools_tor_fw_helper_tor_fw_helper_DEPENDENCIES) src/tools/tor-fw-helper/$(am__dirstamp)
+	@rm -f src/tools/tor-fw-helper/tor-fw-helper$(EXEEXT)
+	$(AM_V_CCLD)$(src_tools_tor_fw_helper_tor_fw_helper_LINK) $(src_tools_tor_fw_helper_tor_fw_helper_OBJECTS) $(src_tools_tor_fw_helper_tor_fw_helper_LDADD) $(LIBS)
+src/tools/tor-gencert.$(OBJEXT): src/tools/$(am__dirstamp) \
+	src/tools/$(DEPDIR)/$(am__dirstamp)
+src/tools/tor-gencert$(EXEEXT): $(src_tools_tor_gencert_OBJECTS) $(src_tools_tor_gencert_DEPENDENCIES) $(EXTRA_src_tools_tor_gencert_DEPENDENCIES) src/tools/$(am__dirstamp)
+	@rm -f src/tools/tor-gencert$(EXEEXT)
+	$(AM_V_CCLD)$(src_tools_tor_gencert_LINK) $(src_tools_tor_gencert_OBJECTS) $(src_tools_tor_gencert_LDADD) $(LIBS)
+src/tools/tor-resolve.$(OBJEXT): src/tools/$(am__dirstamp) \
+	src/tools/$(DEPDIR)/$(am__dirstamp)
+src/tools/tor-resolve$(EXEEXT): $(src_tools_tor_resolve_OBJECTS) $(src_tools_tor_resolve_DEPENDENCIES) $(EXTRA_src_tools_tor_resolve_DEPENDENCIES) src/tools/$(am__dirstamp)
+	@rm -f src/tools/tor-resolve$(EXEEXT)
+	$(AM_V_CCLD)$(src_tools_tor_resolve_LINK) $(src_tools_tor_resolve_OBJECTS) $(src_tools_tor_resolve_LDADD) $(LIBS)
+install-binSCRIPTS: $(bin_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	@list='$(bin_SCRIPTS)'; test -n "$(bindir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(bindir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(bindir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n' \
+	    -e 'h;s|.*|.|' \
+	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
+	      if (++n[d] == $(am__install_max)) { \
+		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
+	    else { print "f", d "/" $$4, $$1 } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	     test -z "$$files" || { \
+	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(bindir)$$dir'"; \
+	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(bindir)$$dir" || exit $$?; \
+	     } \
+	; done
+
+uninstall-binSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(bin_SCRIPTS)'; test -n "$(bindir)" || exit 0; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	       sed -e 's,.*/,,;$(transform)'`; \
+	dir='$(DESTDIR)$(bindir)'; $(am__uninstall_files_from_dir)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT)
+	-rm -f src/common/address.$(OBJEXT)
+	-rm -f src/common/aes.$(OBJEXT)
+	-rm -f src/common/compat.$(OBJEXT)
+	-rm -f src/common/compat_libevent.$(OBJEXT)
+	-rm -f src/common/container.$(OBJEXT)
+	-rm -f src/common/crypto.$(OBJEXT)
+	-rm -f src/common/crypto_curve25519.$(OBJEXT)
+	-rm -f src/common/crypto_format.$(OBJEXT)
+	-rm -f src/common/di_ops.$(OBJEXT)
+	-rm -f src/common/log.$(OBJEXT)
+	-rm -f src/common/memarea.$(OBJEXT)
+	-rm -f src/common/mempool.$(OBJEXT)
+	-rm -f src/common/procmon.$(OBJEXT)
+	-rm -f src/common/torgzip.$(OBJEXT)
+	-rm -f src/common/tortls.$(OBJEXT)
+	-rm -f src/common/util.$(OBJEXT)
+	-rm -f src/common/util_codedigest.$(OBJEXT)
+	-rm -f src/ext/OpenBSD_malloc_Linux.$(OBJEXT)
+	-rm -f src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.$(OBJEXT)
+	-rm -f src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.$(OBJEXT)
+	-rm -f src/ext/eventdns.$(OBJEXT)
+	-rm -f src/ext/src_test_test-tinytest.$(OBJEXT)
+	-rm -f src/or/addressmap.$(OBJEXT)
+	-rm -f src/or/buffers.$(OBJEXT)
+	-rm -f src/or/channel.$(OBJEXT)
+	-rm -f src/or/channeltls.$(OBJEXT)
+	-rm -f src/or/circuitbuild.$(OBJEXT)
+	-rm -f src/or/circuitlist.$(OBJEXT)
+	-rm -f src/or/circuitmux.$(OBJEXT)
+	-rm -f src/or/circuitmux_ewma.$(OBJEXT)
+	-rm -f src/or/circuitstats.$(OBJEXT)
+	-rm -f src/or/circuituse.$(OBJEXT)
+	-rm -f src/or/command.$(OBJEXT)
+	-rm -f src/or/config.$(OBJEXT)
+	-rm -f src/or/config_codedigest.$(OBJEXT)
+	-rm -f src/or/confparse.$(OBJEXT)
+	-rm -f src/or/connection.$(OBJEXT)
+	-rm -f src/or/connection_edge.$(OBJEXT)
+	-rm -f src/or/connection_or.$(OBJEXT)
+	-rm -f src/or/control.$(OBJEXT)
+	-rm -f src/or/cpuworker.$(OBJEXT)
+	-rm -f src/or/directory.$(OBJEXT)
+	-rm -f src/or/dirserv.$(OBJEXT)
+	-rm -f src/or/dirvote.$(OBJEXT)
+	-rm -f src/or/dns.$(OBJEXT)
+	-rm -f src/or/dnsserv.$(OBJEXT)
+	-rm -f src/or/entrynodes.$(OBJEXT)
+	-rm -f src/or/fp_pair.$(OBJEXT)
+	-rm -f src/or/geoip.$(OBJEXT)
+	-rm -f src/or/hibernate.$(OBJEXT)
+	-rm -f src/or/main.$(OBJEXT)
+	-rm -f src/or/microdesc.$(OBJEXT)
+	-rm -f src/or/networkstatus.$(OBJEXT)
+	-rm -f src/or/nodelist.$(OBJEXT)
+	-rm -f src/or/ntmain.$(OBJEXT)
+	-rm -f src/or/onion.$(OBJEXT)
+	-rm -f src/or/onion_fast.$(OBJEXT)
+	-rm -f src/or/onion_ntor.$(OBJEXT)
+	-rm -f src/or/onion_tap.$(OBJEXT)
+	-rm -f src/or/policies.$(OBJEXT)
+	-rm -f src/or/reasons.$(OBJEXT)
+	-rm -f src/or/relay.$(OBJEXT)
+	-rm -f src/or/rendclient.$(OBJEXT)
+	-rm -f src/or/rendcommon.$(OBJEXT)
+	-rm -f src/or/rendmid.$(OBJEXT)
+	-rm -f src/or/rendservice.$(OBJEXT)
+	-rm -f src/or/rephist.$(OBJEXT)
+	-rm -f src/or/replaycache.$(OBJEXT)
+	-rm -f src/or/router.$(OBJEXT)
+	-rm -f src/or/routerlist.$(OBJEXT)
+	-rm -f src/or/routerparse.$(OBJEXT)
+	-rm -f src/or/routerset.$(OBJEXT)
+	-rm -f src/or/statefile.$(OBJEXT)
+	-rm -f src/or/status.$(OBJEXT)
+	-rm -f src/or/tor_main.$(OBJEXT)
+	-rm -f src/or/transports.$(OBJEXT)
+	-rm -f src/test/src_test_bench-bench.$(OBJEXT)
+	-rm -f src/test/src_test_test-test.$(OBJEXT)
+	-rm -f src/test/src_test_test-test_addr.$(OBJEXT)
+	-rm -f src/test/src_test_test-test_cell_formats.$(OBJEXT)
+	-rm -f src/test/src_test_test-test_config.$(OBJEXT)
+	-rm -f src/test/src_test_test-test_containers.$(OBJEXT)
+	-rm -f src/test/src_test_test-test_crypto.$(OBJEXT)
+	-rm -f src/test/src_test_test-test_data.$(OBJEXT)
+	-rm -f src/test/src_test_test-test_dir.$(OBJEXT)
+	-rm -f src/test/src_test_test-test_introduce.$(OBJEXT)
+	-rm -f src/test/src_test_test-test_microdesc.$(OBJEXT)
+	-rm -f src/test/src_test_test-test_pt.$(OBJEXT)
+	-rm -f src/test/src_test_test-test_replay.$(OBJEXT)
+	-rm -f src/test/src_test_test-test_util.$(OBJEXT)
+	-rm -f src/test/test-child.$(OBJEXT)
+	-rm -f src/test/test_ntor_cl.$(OBJEXT)
+	-rm -f src/tools/tor-checkkey.$(OBJEXT)
+	-rm -f src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.$(OBJEXT)
+	-rm -f src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.$(OBJEXT)
+	-rm -f src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.$(OBJEXT)
+	-rm -f src/tools/tor-gencert.$(OBJEXT)
+	-rm -f src/tools/tor-resolve.$(OBJEXT)
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/address.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/aes.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/compat.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/compat_libevent.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/container.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/crypto.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/crypto_curve25519.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/crypto_format.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/di_ops.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/log.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/memarea.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/mempool.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/procmon.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/torgzip.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/tortls.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/common/$(DEPDIR)/util_codedigest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/ext/$(DEPDIR)/OpenBSD_malloc_Linux.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/ext/$(DEPDIR)/eventdns.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/ext/$(DEPDIR)/src_test_test-tinytest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna-c64.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/addressmap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/buffers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/channel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/channeltls.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/circuitbuild.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/circuitlist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/circuitmux.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/circuitmux_ewma.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/circuitstats.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/circuituse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/command.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/config.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/config_codedigest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/confparse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/connection.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/connection_edge.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/connection_or.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/control.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/cpuworker.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/directory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/dirserv.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/dirvote.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/dns.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/dnsserv.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/entrynodes.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/fp_pair.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/geoip.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/hibernate.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/microdesc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/networkstatus.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/nodelist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/ntmain.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/onion.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/onion_fast.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/onion_ntor.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/onion_tap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/policies.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/reasons.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/relay.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/rendclient.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/rendcommon.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/rendmid.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/rendservice.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/rephist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/replaycache.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/router.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/routerlist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/routerparse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/routerset.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/statefile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/status.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/tor_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/or/$(DEPDIR)/transports.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_bench-bench.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test_addr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test_cell_formats.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test_config.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test_containers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test_crypto.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test_data.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test_dir.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test_introduce.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test_microdesc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test_pt.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test_replay.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/src_test_test-test_util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/test-child.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/test/$(DEPDIR)/test_ntor_cl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/tools/$(DEPDIR)/tor-checkkey.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/tools/$(DEPDIR)/tor-gencert.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/tools/$(DEPDIR)/tor-resolve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.Po@am__quote@
+
+.c.o:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
+
+.c.obj:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.o: src/ext/curve25519_donna/curve25519-donna-c64.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(src_common_libcurve25519_donna_a_CFLAGS) $(CFLAGS) -MT src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.o -MD -MP -MF src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna-c64.Tpo -c -o src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.o `test -f 'src/ext/curve25519_donna/curve25519-donna-c64.c' || echo '$(srcdir)/'`src/ext/curve25519_donna/curve25519-donna-c64.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna-c64.Tpo src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna-c64.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/ext/curve25519_donna/curve25519-donna-c64.c' object='src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(src_common_libcurve25519_donna_a_CFLAGS) $(CFLAGS) -c -o src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.o `test -f 'src/ext/curve25519_donna/curve25519-donna-c64.c' || echo '$(srcdir)/'`src/ext/curve25519_donna/curve25519-donna-c64.c
+
+src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.obj: src/ext/curve25519_donna/curve25519-donna-c64.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(src_common_libcurve25519_donna_a_CFLAGS) $(CFLAGS) -MT src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.obj -MD -MP -MF src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna-c64.Tpo -c -o src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.obj `if test -f 'src/ext/curve25519_donna/curve25519-donna-c64.c'; then $(CYGPATH_W) 'src/ext/curve25519_donna/curve25519-donna-c64.c'; else $(CYGPATH_W) '$(srcdir)/src/ext/curve25519_donna/curve25519-donna-c64.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna-c64.Tpo src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna-c64.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/ext/curve25519_donna/curve25519-donna-c64.c' object='src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(src_common_libcurve25519_donna_a_CFLAGS) $(CFLAGS) -c -o src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna-c64.obj `if test -f 'src/ext/curve25519_donna/curve25519-donna-c64.c'; then $(CYGPATH_W) 'src/ext/curve25519_donna/curve25519-donna-c64.c'; else $(CYGPATH_W) '$(srcdir)/src/ext/curve25519_donna/curve25519-donna-c64.c'; fi`
+
+src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.o: src/ext/curve25519_donna/curve25519-donna.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(src_common_libcurve25519_donna_a_CFLAGS) $(CFLAGS) -MT src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.o -MD -MP -MF src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna.Tpo -c -o src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.o `test -f 'src/ext/curve25519_donna/curve25519-donna.c' || echo '$(srcdir)/'`src/ext/curve25519_donna/curve25519-donna.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna.Tpo src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/ext/curve25519_donna/curve25519-donna.c' object='src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(src_common_libcurve25519_donna_a_CFLAGS) $(CFLAGS) -c -o src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.o `test -f 'src/ext/curve25519_donna/curve25519-donna.c' || echo '$(srcdir)/'`src/ext/curve25519_donna/curve25519-donna.c
+
+src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.obj: src/ext/curve25519_donna/curve25519-donna.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(src_common_libcurve25519_donna_a_CFLAGS) $(CFLAGS) -MT src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.obj -MD -MP -MF src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna.Tpo -c -o src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.obj `if test -f 'src/ext/curve25519_donna/curve25519-donna.c'; then $(CYGPATH_W) 'src/ext/curve25519_donna/curve25519-donna.c'; else $(CYGPATH_W) '$(srcdir)/src/ext/curve25519_donna/curve25519-donna.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna.Tpo src/ext/curve25519_donna/$(DEPDIR)/src_common_libcurve25519_donna_a-curve25519-donna.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/ext/curve25519_donna/curve25519-donna.c' object='src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(src_common_libcurve25519_donna_a_CFLAGS) $(CFLAGS) -c -o src/ext/curve25519_donna/src_common_libcurve25519_donna_a-curve25519-donna.obj `if test -f 'src/ext/curve25519_donna/curve25519-donna.c'; then $(CYGPATH_W) 'src/ext/curve25519_donna/curve25519-donna.c'; else $(CYGPATH_W) '$(srcdir)/src/ext/curve25519_donna/curve25519-donna.c'; fi`
+
+src/test/src_test_bench-bench.o: src/test/bench.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_bench_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_bench-bench.o -MD -MP -MF src/test/$(DEPDIR)/src_test_bench-bench.Tpo -c -o src/test/src_test_bench-bench.o `test -f 'src/test/bench.c' || echo '$(srcdir)/'`src/test/bench.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_bench-bench.Tpo src/test/$(DEPDIR)/src_test_bench-bench.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/bench.c' object='src/test/src_test_bench-bench.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_bench_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_bench-bench.o `test -f 'src/test/bench.c' || echo '$(srcdir)/'`src/test/bench.c
+
+src/test/src_test_bench-bench.obj: src/test/bench.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_bench_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_bench-bench.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_bench-bench.Tpo -c -o src/test/src_test_bench-bench.obj `if test -f 'src/test/bench.c'; then $(CYGPATH_W) 'src/test/bench.c'; else $(CYGPATH_W) '$(srcdir)/src/test/bench.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_bench-bench.Tpo src/test/$(DEPDIR)/src_test_bench-bench.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/bench.c' object='src/test/src_test_bench-bench.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_bench_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_bench-bench.obj `if test -f 'src/test/bench.c'; then $(CYGPATH_W) 'src/test/bench.c'; else $(CYGPATH_W) '$(srcdir)/src/test/bench.c'; fi`
+
+src/test/src_test_test-test.o: src/test/test.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test.Tpo -c -o src/test/src_test_test-test.o `test -f 'src/test/test.c' || echo '$(srcdir)/'`src/test/test.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test.Tpo src/test/$(DEPDIR)/src_test_test-test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test.c' object='src/test/src_test_test-test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test.o `test -f 'src/test/test.c' || echo '$(srcdir)/'`src/test/test.c
+
+src/test/src_test_test-test.obj: src/test/test.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test.Tpo -c -o src/test/src_test_test-test.obj `if test -f 'src/test/test.c'; then $(CYGPATH_W) 'src/test/test.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test.Tpo src/test/$(DEPDIR)/src_test_test-test.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test.c' object='src/test/src_test_test-test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test.obj `if test -f 'src/test/test.c'; then $(CYGPATH_W) 'src/test/test.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test.c'; fi`
+
+src/test/src_test_test-test_addr.o: src/test/test_addr.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_addr.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_addr.Tpo -c -o src/test/src_test_test-test_addr.o `test -f 'src/test/test_addr.c' || echo '$(srcdir)/'`src/test/test_addr.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_addr.Tpo src/test/$(DEPDIR)/src_test_test-test_addr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_addr.c' object='src/test/src_test_test-test_addr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_addr.o `test -f 'src/test/test_addr.c' || echo '$(srcdir)/'`src/test/test_addr.c
+
+src/test/src_test_test-test_addr.obj: src/test/test_addr.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_addr.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_addr.Tpo -c -o src/test/src_test_test-test_addr.obj `if test -f 'src/test/test_addr.c'; then $(CYGPATH_W) 'src/test/test_addr.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_addr.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_addr.Tpo src/test/$(DEPDIR)/src_test_test-test_addr.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_addr.c' object='src/test/src_test_test-test_addr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_addr.obj `if test -f 'src/test/test_addr.c'; then $(CYGPATH_W) 'src/test/test_addr.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_addr.c'; fi`
+
+src/test/src_test_test-test_cell_formats.o: src/test/test_cell_formats.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_cell_formats.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_cell_formats.Tpo -c -o src/test/src_test_test-test_cell_formats.o `test -f 'src/test/test_cell_formats.c' || echo '$(srcdir)/'`src/test/test_cell_formats.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_cell_formats.Tpo src/test/$(DEPDIR)/src_test_test-test_cell_formats.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_cell_formats.c' object='src/test/src_test_test-test_cell_formats.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_cell_formats.o `test -f 'src/test/test_cell_formats.c' || echo '$(srcdir)/'`src/test/test_cell_formats.c
+
+src/test/src_test_test-test_cell_formats.obj: src/test/test_cell_formats.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_cell_formats.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_cell_formats.Tpo -c -o src/test/src_test_test-test_cell_formats.obj `if test -f 'src/test/test_cell_formats.c'; then $(CYGPATH_W) 'src/test/test_cell_formats.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_cell_formats.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_cell_formats.Tpo src/test/$(DEPDIR)/src_test_test-test_cell_formats.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_cell_formats.c' object='src/test/src_test_test-test_cell_formats.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_cell_formats.obj `if test -f 'src/test/test_cell_formats.c'; then $(CYGPATH_W) 'src/test/test_cell_formats.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_cell_formats.c'; fi`
+
+src/test/src_test_test-test_containers.o: src/test/test_containers.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_containers.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_containers.Tpo -c -o src/test/src_test_test-test_containers.o `test -f 'src/test/test_containers.c' || echo '$(srcdir)/'`src/test/test_containers.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_containers.Tpo src/test/$(DEPDIR)/src_test_test-test_containers.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_containers.c' object='src/test/src_test_test-test_containers.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_containers.o `test -f 'src/test/test_containers.c' || echo '$(srcdir)/'`src/test/test_containers.c
+
+src/test/src_test_test-test_containers.obj: src/test/test_containers.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_containers.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_containers.Tpo -c -o src/test/src_test_test-test_containers.obj `if test -f 'src/test/test_containers.c'; then $(CYGPATH_W) 'src/test/test_containers.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_containers.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_containers.Tpo src/test/$(DEPDIR)/src_test_test-test_containers.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_containers.c' object='src/test/src_test_test-test_containers.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_containers.obj `if test -f 'src/test/test_containers.c'; then $(CYGPATH_W) 'src/test/test_containers.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_containers.c'; fi`
+
+src/test/src_test_test-test_crypto.o: src/test/test_crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_crypto.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_crypto.Tpo -c -o src/test/src_test_test-test_crypto.o `test -f 'src/test/test_crypto.c' || echo '$(srcdir)/'`src/test/test_crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_crypto.Tpo src/test/$(DEPDIR)/src_test_test-test_crypto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_crypto.c' object='src/test/src_test_test-test_crypto.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_crypto.o `test -f 'src/test/test_crypto.c' || echo '$(srcdir)/'`src/test/test_crypto.c
+
+src/test/src_test_test-test_crypto.obj: src/test/test_crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_crypto.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_crypto.Tpo -c -o src/test/src_test_test-test_crypto.obj `if test -f 'src/test/test_crypto.c'; then $(CYGPATH_W) 'src/test/test_crypto.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_crypto.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_crypto.Tpo src/test/$(DEPDIR)/src_test_test-test_crypto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_crypto.c' object='src/test/src_test_test-test_crypto.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_crypto.obj `if test -f 'src/test/test_crypto.c'; then $(CYGPATH_W) 'src/test/test_crypto.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_crypto.c'; fi`
+
+src/test/src_test_test-test_data.o: src/test/test_data.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_data.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_data.Tpo -c -o src/test/src_test_test-test_data.o `test -f 'src/test/test_data.c' || echo '$(srcdir)/'`src/test/test_data.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_data.Tpo src/test/$(DEPDIR)/src_test_test-test_data.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_data.c' object='src/test/src_test_test-test_data.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_data.o `test -f 'src/test/test_data.c' || echo '$(srcdir)/'`src/test/test_data.c
+
+src/test/src_test_test-test_data.obj: src/test/test_data.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_data.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_data.Tpo -c -o src/test/src_test_test-test_data.obj `if test -f 'src/test/test_data.c'; then $(CYGPATH_W) 'src/test/test_data.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_data.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_data.Tpo src/test/$(DEPDIR)/src_test_test-test_data.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_data.c' object='src/test/src_test_test-test_data.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_data.obj `if test -f 'src/test/test_data.c'; then $(CYGPATH_W) 'src/test/test_data.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_data.c'; fi`
+
+src/test/src_test_test-test_dir.o: src/test/test_dir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_dir.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_dir.Tpo -c -o src/test/src_test_test-test_dir.o `test -f 'src/test/test_dir.c' || echo '$(srcdir)/'`src/test/test_dir.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_dir.Tpo src/test/$(DEPDIR)/src_test_test-test_dir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_dir.c' object='src/test/src_test_test-test_dir.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_dir.o `test -f 'src/test/test_dir.c' || echo '$(srcdir)/'`src/test/test_dir.c
+
+src/test/src_test_test-test_dir.obj: src/test/test_dir.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_dir.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_dir.Tpo -c -o src/test/src_test_test-test_dir.obj `if test -f 'src/test/test_dir.c'; then $(CYGPATH_W) 'src/test/test_dir.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_dir.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_dir.Tpo src/test/$(DEPDIR)/src_test_test-test_dir.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_dir.c' object='src/test/src_test_test-test_dir.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_dir.obj `if test -f 'src/test/test_dir.c'; then $(CYGPATH_W) 'src/test/test_dir.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_dir.c'; fi`
+
+src/test/src_test_test-test_introduce.o: src/test/test_introduce.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_introduce.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_introduce.Tpo -c -o src/test/src_test_test-test_introduce.o `test -f 'src/test/test_introduce.c' || echo '$(srcdir)/'`src/test/test_introduce.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_introduce.Tpo src/test/$(DEPDIR)/src_test_test-test_introduce.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_introduce.c' object='src/test/src_test_test-test_introduce.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_introduce.o `test -f 'src/test/test_introduce.c' || echo '$(srcdir)/'`src/test/test_introduce.c
+
+src/test/src_test_test-test_introduce.obj: src/test/test_introduce.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_introduce.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_introduce.Tpo -c -o src/test/src_test_test-test_introduce.obj `if test -f 'src/test/test_introduce.c'; then $(CYGPATH_W) 'src/test/test_introduce.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_introduce.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_introduce.Tpo src/test/$(DEPDIR)/src_test_test-test_introduce.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_introduce.c' object='src/test/src_test_test-test_introduce.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_introduce.obj `if test -f 'src/test/test_introduce.c'; then $(CYGPATH_W) 'src/test/test_introduce.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_introduce.c'; fi`
+
+src/test/src_test_test-test_microdesc.o: src/test/test_microdesc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_microdesc.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_microdesc.Tpo -c -o src/test/src_test_test-test_microdesc.o `test -f 'src/test/test_microdesc.c' || echo '$(srcdir)/'`src/test/test_microdesc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_microdesc.Tpo src/test/$(DEPDIR)/src_test_test-test_microdesc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_microdesc.c' object='src/test/src_test_test-test_microdesc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_microdesc.o `test -f 'src/test/test_microdesc.c' || echo '$(srcdir)/'`src/test/test_microdesc.c
+
+src/test/src_test_test-test_microdesc.obj: src/test/test_microdesc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_microdesc.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_microdesc.Tpo -c -o src/test/src_test_test-test_microdesc.obj `if test -f 'src/test/test_microdesc.c'; then $(CYGPATH_W) 'src/test/test_microdesc.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_microdesc.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_microdesc.Tpo src/test/$(DEPDIR)/src_test_test-test_microdesc.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_microdesc.c' object='src/test/src_test_test-test_microdesc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_microdesc.obj `if test -f 'src/test/test_microdesc.c'; then $(CYGPATH_W) 'src/test/test_microdesc.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_microdesc.c'; fi`
+
+src/test/src_test_test-test_pt.o: src/test/test_pt.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_pt.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_pt.Tpo -c -o src/test/src_test_test-test_pt.o `test -f 'src/test/test_pt.c' || echo '$(srcdir)/'`src/test/test_pt.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_pt.Tpo src/test/$(DEPDIR)/src_test_test-test_pt.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_pt.c' object='src/test/src_test_test-test_pt.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_pt.o `test -f 'src/test/test_pt.c' || echo '$(srcdir)/'`src/test/test_pt.c
+
+src/test/src_test_test-test_pt.obj: src/test/test_pt.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_pt.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_pt.Tpo -c -o src/test/src_test_test-test_pt.obj `if test -f 'src/test/test_pt.c'; then $(CYGPATH_W) 'src/test/test_pt.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_pt.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_pt.Tpo src/test/$(DEPDIR)/src_test_test-test_pt.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_pt.c' object='src/test/src_test_test-test_pt.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_pt.obj `if test -f 'src/test/test_pt.c'; then $(CYGPATH_W) 'src/test/test_pt.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_pt.c'; fi`
+
+src/test/src_test_test-test_replay.o: src/test/test_replay.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_replay.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_replay.Tpo -c -o src/test/src_test_test-test_replay.o `test -f 'src/test/test_replay.c' || echo '$(srcdir)/'`src/test/test_replay.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_replay.Tpo src/test/$(DEPDIR)/src_test_test-test_replay.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_replay.c' object='src/test/src_test_test-test_replay.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_replay.o `test -f 'src/test/test_replay.c' || echo '$(srcdir)/'`src/test/test_replay.c
+
+src/test/src_test_test-test_replay.obj: src/test/test_replay.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_replay.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_replay.Tpo -c -o src/test/src_test_test-test_replay.obj `if test -f 'src/test/test_replay.c'; then $(CYGPATH_W) 'src/test/test_replay.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_replay.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_replay.Tpo src/test/$(DEPDIR)/src_test_test-test_replay.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_replay.c' object='src/test/src_test_test-test_replay.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_replay.obj `if test -f 'src/test/test_replay.c'; then $(CYGPATH_W) 'src/test/test_replay.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_replay.c'; fi`
+
+src/test/src_test_test-test_util.o: src/test/test_util.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_util.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_util.Tpo -c -o src/test/src_test_test-test_util.o `test -f 'src/test/test_util.c' || echo '$(srcdir)/'`src/test/test_util.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_util.Tpo src/test/$(DEPDIR)/src_test_test-test_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_util.c' object='src/test/src_test_test-test_util.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_util.o `test -f 'src/test/test_util.c' || echo '$(srcdir)/'`src/test/test_util.c
+
+src/test/src_test_test-test_util.obj: src/test/test_util.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_util.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_util.Tpo -c -o src/test/src_test_test-test_util.obj `if test -f 'src/test/test_util.c'; then $(CYGPATH_W) 'src/test/test_util.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_util.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_util.Tpo src/test/$(DEPDIR)/src_test_test-test_util.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_util.c' object='src/test/src_test_test-test_util.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_util.obj `if test -f 'src/test/test_util.c'; then $(CYGPATH_W) 'src/test/test_util.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_util.c'; fi`
+
+src/test/src_test_test-test_config.o: src/test/test_config.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_config.o -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_config.Tpo -c -o src/test/src_test_test-test_config.o `test -f 'src/test/test_config.c' || echo '$(srcdir)/'`src/test/test_config.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_config.Tpo src/test/$(DEPDIR)/src_test_test-test_config.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_config.c' object='src/test/src_test_test-test_config.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_config.o `test -f 'src/test/test_config.c' || echo '$(srcdir)/'`src/test/test_config.c
+
+src/test/src_test_test-test_config.obj: src/test/test_config.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/test/src_test_test-test_config.obj -MD -MP -MF src/test/$(DEPDIR)/src_test_test-test_config.Tpo -c -o src/test/src_test_test-test_config.obj `if test -f 'src/test/test_config.c'; then $(CYGPATH_W) 'src/test/test_config.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_config.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/test/$(DEPDIR)/src_test_test-test_config.Tpo src/test/$(DEPDIR)/src_test_test-test_config.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/test/test_config.c' object='src/test/src_test_test-test_config.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/test/src_test_test-test_config.obj `if test -f 'src/test/test_config.c'; then $(CYGPATH_W) 'src/test/test_config.c'; else $(CYGPATH_W) '$(srcdir)/src/test/test_config.c'; fi`
+
+src/ext/src_test_test-tinytest.o: src/ext/tinytest.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/ext/src_test_test-tinytest.o -MD -MP -MF src/ext/$(DEPDIR)/src_test_test-tinytest.Tpo -c -o src/ext/src_test_test-tinytest.o `test -f 'src/ext/tinytest.c' || echo '$(srcdir)/'`src/ext/tinytest.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/ext/$(DEPDIR)/src_test_test-tinytest.Tpo src/ext/$(DEPDIR)/src_test_test-tinytest.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/ext/tinytest.c' object='src/ext/src_test_test-tinytest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/ext/src_test_test-tinytest.o `test -f 'src/ext/tinytest.c' || echo '$(srcdir)/'`src/ext/tinytest.c
+
+src/ext/src_test_test-tinytest.obj: src/ext/tinytest.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/ext/src_test_test-tinytest.obj -MD -MP -MF src/ext/$(DEPDIR)/src_test_test-tinytest.Tpo -c -o src/ext/src_test_test-tinytest.obj `if test -f 'src/ext/tinytest.c'; then $(CYGPATH_W) 'src/ext/tinytest.c'; else $(CYGPATH_W) '$(srcdir)/src/ext/tinytest.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/ext/$(DEPDIR)/src_test_test-tinytest.Tpo src/ext/$(DEPDIR)/src_test_test-tinytest.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/ext/tinytest.c' object='src/ext/src_test_test-tinytest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_test_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/ext/src_test_test-tinytest.obj `if test -f 'src/ext/tinytest.c'; then $(CYGPATH_W) 'src/ext/tinytest.c'; else $(CYGPATH_W) '$(srcdir)/src/ext/tinytest.c'; fi`
+
+src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.o: src/tools/tor-fw-helper/tor-fw-helper.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.o -MD -MP -MF src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.Tpo -c -o src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.o `test -f 'src/tools/tor-fw-helper/tor-fw-helper.c' || echo '$(srcdir)/'`src/tools/tor-fw-helper/tor-fw-helper.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.Tpo src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/tools/tor-fw-helper/tor-fw-helper.c' object='src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.o `test -f 'src/tools/tor-fw-helper/tor-fw-helper.c' || echo '$(srcdir)/'`src/tools/tor-fw-helper/tor-fw-helper.c
+
+src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.obj: src/tools/tor-fw-helper/tor-fw-helper.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.obj -MD -MP -MF src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.Tpo -c -o src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.obj `if test -f 'src/tools/tor-fw-helper/tor-fw-helper.c'; then $(CYGPATH_W) 'src/tools/tor-fw-helper/tor-fw-helper.c'; else $(CYGPATH_W) '$(srcdir)/src/tools/tor-fw-helper/tor-fw-helper.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.Tpo src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/tools/tor-fw-helper/tor-fw-helper.c' object='src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper.obj `if test -f 'src/tools/tor-fw-helper/tor-fw-helper.c'; then $(CYGPATH_W) 'src/tools/tor-fw-helper/tor-fw-helper.c'; else $(CYGPATH_W) '$(srcdir)/src/tools/tor-fw-helper/tor-fw-helper.c'; fi`
+
+src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.o: src/tools/tor-fw-helper/tor-fw-helper-natpmp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.o -MD -MP -MF src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.Tpo -c -o src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.o `test -f 'src/tools/tor-fw-helper/tor-fw-helper-natpmp.c' || echo '$(srcdir)/'`src/tools/tor-fw-helper/tor-fw-helper-natpmp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.Tpo src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/tools/tor-fw-helper/tor-fw-helper-natpmp.c' object='src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.o `test -f 'src/tools/tor-fw-helper/tor-fw-helper-natpmp.c' || echo '$(srcdir)/'`src/tools/tor-fw-helper/tor-fw-helper-natpmp.c
+
+src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.obj: src/tools/tor-fw-helper/tor-fw-helper-natpmp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.obj -MD -MP -MF src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.Tpo -c -o src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.obj `if test -f 'src/tools/tor-fw-helper/tor-fw-helper-natpmp.c'; then $(CYGPATH_W) 'src/tools/tor-fw-helper/tor-fw-helper-natpmp.c'; else $(CYGPATH_W) '$(srcdir)/src/tools/tor-fw-helper/tor-fw-helper-natpmp.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.Tpo src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/tools/tor-fw-helper/tor-fw-helper-natpmp.c' object='src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-natpmp.obj `if test -f 'src/tools/tor-fw-helper/tor-fw-helper-natpmp.c'; then $(CYGPATH_W) 'src/tools/tor-fw-helper/tor-fw-helper-natpmp.c'; else $(CYGPATH_W) '$(srcdir)/src/tools/tor-fw-helper/tor-fw-helper-natpmp.c'; fi`
+
+src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.o: src/tools/tor-fw-helper/tor-fw-helper-upnp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.o -MD -MP -MF src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.Tpo -c -o src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.o `test -f 'src/tools/tor-fw-helper/tor-fw-helper-upnp.c' || echo '$(srcdir)/'`src/tools/tor-fw-helper/tor-fw-helper-upnp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.Tpo src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/tools/tor-fw-helper/tor-fw-helper-upnp.c' object='src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.o `test -f 'src/tools/tor-fw-helper/tor-fw-helper-upnp.c' || echo '$(srcdir)/'`src/tools/tor-fw-helper/tor-fw-helper-upnp.c
+
+src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.obj: src/tools/tor-fw-helper/tor-fw-helper-upnp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.obj -MD -MP -MF src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.Tpo -c -o src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.obj `if test -f 'src/tools/tor-fw-helper/tor-fw-helper-upnp.c'; then $(CYGPATH_W) 'src/tools/tor-fw-helper/tor-fw-helper-upnp.c'; else $(CYGPATH_W) '$(srcdir)/src/tools/tor-fw-helper/tor-fw-helper-upnp.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.Tpo src/tools/tor-fw-helper/$(DEPDIR)/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/tools/tor-fw-helper/tor-fw-helper-upnp.c' object='src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_tools_tor_fw_helper_tor_fw_helper_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/tools/tor-fw-helper/src_tools_tor_fw_helper_tor_fw_helper-tor-fw-helper-upnp.obj `if test -f 'src/tools/tor-fw-helper/tor-fw-helper-upnp.c'; then $(CYGPATH_W) 'src/tools/tor-fw-helper/tor-fw-helper-upnp.c'; else $(CYGPATH_W) '$(srcdir)/src/tools/tor-fw-helper/tor-fw-helper-upnp.c'; fi`
+install-man1: $(nodist_man1_MANS)
+	@$(NORMAL_INSTALL)
+	@list1='$(nodist_man1_MANS)'; \
+	list2=''; \
+	test -n "$(man1dir)" \
+	  && test -n "`echo $$list1$$list2`" \
+	  || exit 0; \
+	echo " $(MKDIR_P) '$(DESTDIR)$(man1dir)'"; \
+	$(MKDIR_P) "$(DESTDIR)$(man1dir)" || exit 1; \
+	{ for i in $$list1; do echo "$$i"; done;  \
+	if test -n "$$list2"; then \
+	  for i in $$list2; do echo "$$i"; done \
+	    | sed -n '/\.1[a-z]*$$/p'; \
+	fi; \
+	} | while read p; do \
+	  if test -f $$p; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; echo "$$p"; \
+	done | \
+	sed -e 'n;s,.*/,,;p;h;s,.*\.,,;s,^[^1][0-9a-z]*$$,1,;x' \
+	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,' | \
+	sed 'N;N;s,\n, ,g' | { \
+	list=; while read file base inst; do \
+	  if test "$$base" = "$$inst"; then list="$$list $$file"; else \
+	    echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man1dir)/$$inst'"; \
+	    $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man1dir)/$$inst" || exit $$?; \
 	  fi; \
 	done; \
-	rev="$$rev ."; \
-	target=`echo $@ | sed s/-recursive//`; \
-	for subdir in $$rev; do \
-	  echo "Making $$target in $$subdir"; \
-	  if test "$$subdir" = "."; then \
-	    local_target="$$target-am"; \
-	  else \
-	    local_target="$$target"; \
-	  fi; \
-	  ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
-	  || eval $$failcom; \
-	done && test -z "$$fail"
-tags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
+	for i in $$list; do echo "$$i"; done | $(am__base_list) | \
+	while read files; do \
+	  test -z "$$files" || { \
+	    echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(man1dir)'"; \
+	    $(INSTALL_DATA) $$files "$(DESTDIR)$(man1dir)" || exit $$?; }; \
+	done; }
+
+uninstall-man1:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_man1_MANS)'; test -n "$(man1dir)" || exit 0; \
+	files=`{ for i in $$list; do echo "$$i"; done; \
+	} | sed -e 's,.*/,,;h;s,.*\.,,;s,^[^1][0-9a-z]*$$,1,;x' \
+	      -e 's,\.[0-9a-z]*$$,,;$(transform);G;s,\n,.,'`; \
+	dir='$(DESTDIR)$(man1dir)'; $(am__uninstall_files_from_dir)
+install-confDATA: $(conf_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(conf_DATA)'; test -n "$(confdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(confdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(confdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(confdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(confdir)" || exit $$?; \
 	done
-ctags-recursive:
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  test "$$subdir" = . || ($(am__cd) $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
+
+uninstall-confDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(conf_DATA)'; test -n "$(confdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(confdir)'; $(am__uninstall_files_from_dir)
+install-docDATA: $(doc_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(doc_DATA)'; test -n "$(docdir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(docdir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(docdir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(docdir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(docdir)" || exit $$?; \
 	done
+
+uninstall-docDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(doc_DATA)'; test -n "$(docdir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(docdir)'; $(am__uninstall_files_from_dir)
+install-tordataDATA: $(tordata_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(tordata_DATA)'; test -n "$(tordatadir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(tordatadir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(tordatadir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(tordatadir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(tordatadir)" || exit $$?; \
+	done
+
+uninstall-tordataDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(tordata_DATA)'; test -n "$(tordatadir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(tordatadir)'; $(am__uninstall_files_from_dir)
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -412,23 +1933,10 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS: tags-recursive $(HEADERS) $(SOURCES) orconfig.h.in $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES) orconfig.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	set x; \
 	here=`pwd`; \
-	if ($(ETAGS) --etags-include --version) >/dev/null 2>&1; then \
-	  include_option=--etags-include; \
-	  empty_fix=.; \
-	else \
-	  include_option=--include; \
-	  empty_fix=; \
-	fi; \
-	list='$(SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    test ! -f $$subdir/TAGS || \
-	      set "$$@" "$$include_option=$$here/$$subdir/TAGS"; \
-	  fi; \
-	done; \
 	list='$(SOURCES) $(HEADERS) orconfig.h.in $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -447,7 +1955,7 @@ TAGS: tags-recursive $(HEADERS) $(SOURCES) orconfig.h.in $(TAGS_DEPENDENCIES) \
 	  fi; \
 	fi
 ctags: CTAGS
-CTAGS: ctags-recursive $(HEADERS) $(SOURCES) orconfig.h.in $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES) orconfig.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	list='$(SOURCES) $(HEADERS) orconfig.h.in $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
@@ -467,7 +1975,113 @@ GTAGS:
 distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
+check-TESTS: $(TESTS)
+	@failed=0; all=0; xfail=0; xpass=0; skip=0; \
+	srcdir=$(srcdir); export srcdir; \
+	list=' $(TESTS) '; \
+	$(am__tty_colors); \
+	if test -n "$$list"; then \
+	  for tst in $$list; do \
+	    if test -f ./$$tst; then dir=./; \
+	    elif test -f $$tst; then dir=; \
+	    else dir="$(srcdir)/"; fi; \
+	    if $(TESTS_ENVIRONMENT) $${dir}$$tst; then \
+	      all=`expr $$all + 1`; \
+	      case " $(XFAIL_TESTS) " in \
+	      *[\ \	]$$tst[\ \	]*) \
+		xpass=`expr $$xpass + 1`; \
+		failed=`expr $$failed + 1`; \
+		col=$$red; res=XPASS; \
+	      ;; \
+	      *) \
+		col=$$grn; res=PASS; \
+	      ;; \
+	      esac; \
+	    elif test $$? -ne 77; then \
+	      all=`expr $$all + 1`; \
+	      case " $(XFAIL_TESTS) " in \
+	      *[\ \	]$$tst[\ \	]*) \
+		xfail=`expr $$xfail + 1`; \
+		col=$$lgn; res=XFAIL; \
+	      ;; \
+	      *) \
+		failed=`expr $$failed + 1`; \
+		col=$$red; res=FAIL; \
+	      ;; \
+	      esac; \
+	    else \
+	      skip=`expr $$skip + 1`; \
+	      col=$$blu; res=SKIP; \
+	    fi; \
+	    echo "$${col}$$res$${std}: $$tst"; \
+	  done; \
+	  if test "$$all" -eq 1; then \
+	    tests="test"; \
+	    All=""; \
+	  else \
+	    tests="tests"; \
+	    All="All "; \
+	  fi; \
+	  if test "$$failed" -eq 0; then \
+	    if test "$$xfail" -eq 0; then \
+	      banner="$$All$$all $$tests passed"; \
+	    else \
+	      if test "$$xfail" -eq 1; then failures=failure; else failures=failures; fi; \
+	      banner="$$All$$all $$tests behaved as expected ($$xfail expected $$failures)"; \
+	    fi; \
+	  else \
+	    if test "$$xpass" -eq 0; then \
+	      banner="$$failed of $$all $$tests failed"; \
+	    else \
+	      if test "$$xpass" -eq 1; then passes=pass; else passes=passes; fi; \
+	      banner="$$failed of $$all $$tests did not behave as expected ($$xpass unexpected $$passes)"; \
+	    fi; \
+	  fi; \
+	  dashes="$$banner"; \
+	  skipped=""; \
+	  if test "$$skip" -ne 0; then \
+	    if test "$$skip" -eq 1; then \
+	      skipped="($$skip test was not run)"; \
+	    else \
+	      skipped="($$skip tests were not run)"; \
+	    fi; \
+	    test `echo "$$skipped" | wc -c` -le `echo "$$banner" | wc -c` || \
+	      dashes="$$skipped"; \
+	  fi; \
+	  report=""; \
+	  if test "$$failed" -ne 0 && test -n "$(PACKAGE_BUGREPORT)"; then \
+	    report="Please report to $(PACKAGE_BUGREPORT)"; \
+	    test `echo "$$report" | wc -c` -le `echo "$$banner" | wc -c` || \
+	      dashes="$$report"; \
+	  fi; \
+	  dashes=`echo "$$dashes" | sed s/./=/g`; \
+	  if test "$$failed" -eq 0; then \
+	    col="$$grn"; \
+	  else \
+	    col="$$red"; \
+	  fi; \
+	  echo "$${col}$$dashes$${std}"; \
+	  echo "$${col}$$banner$${std}"; \
+	  test -z "$$skipped" || echo "$${col}$$skipped$${std}"; \
+	  test -z "$$report" || echo "$${col}$$report$${std}"; \
+	  echo "$${col}$$dashes$${std}"; \
+	  test "$$failed" -eq 0; \
+	else :; fi
+
 distdir: $(DISTFILES)
+	@list='$(MANS)'; if test -n "$$list"; then \
+	  list=`for p in $$list; do \
+	    if test -f $$p; then d=; else d="$(srcdir)/"; fi; \
+	    if test -f "$$d$$p"; then echo "$$d$$p"; else :; fi; done`; \
+	  if test -n "$$list" && \
+	    grep 'ab help2man is required to generate this page' $$list >/dev/null; then \
+	    echo "error: found man pages containing the \`missing help2man' replacement text:" >&2; \
+	    grep -l 'ab help2man is required to generate this page' $$list | sed 's/^/         /' >&2; \
+	    echo "       to fix them, install help2man, remove and regenerate the man pages;" >&2; \
+	    echo "       typically \`make maintainer-clean' will remove them" >&2; \
+	    exit 1; \
+	  else :; fi; \
+	else :; fi
 	$(am__remove_distdir)
 	test -d "$(distdir)" || mkdir "$(distdir)"
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -497,31 +2111,6 @@ distdir: $(DISTFILES)
 	    test -f "$(distdir)/$$file" \
 	    || cp -p $$d/$$file "$(distdir)/$$file" \
 	    || exit 1; \
-	  fi; \
-	done
-	@list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
-	  if test "$$subdir" = .; then :; else \
-	    $(am__make_dryrun) \
-	      || test -d "$(distdir)/$$subdir" \
-	      || $(MKDIR_P) "$(distdir)/$$subdir" \
-	      || exit 1; \
-	    dir1=$$subdir; dir2="$(distdir)/$$subdir"; \
-	    $(am__relativize); \
-	    new_distdir=$$reldir; \
-	    dir1=$$subdir; dir2="$(top_distdir)"; \
-	    $(am__relativize); \
-	    new_top_distdir=$$reldir; \
-	    echo " (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir="$$new_top_distdir" distdir="$$new_distdir" \\"; \
-	    echo "     am__remove_distdir=: am__skip_length_check=: am__skip_mode_fix=: distdir)"; \
-	    ($(am__cd) $$subdir && \
-	      $(MAKE) $(AM_MAKEFLAGS) \
-	        top_distdir="$$new_top_distdir" \
-	        distdir="$$new_distdir" \
-		am__remove_distdir=: \
-		am__skip_length_check=: \
-		am__skip_mode_fix=: \
-	        distdir) \
-	      || exit 1; \
 	  fi; \
 	done
 	-test -n "$(am__skip_mode_fix)" \
@@ -655,19 +2244,23 @@ distcleancheck: distclean
 	       $(distcleancheck_listfiles) ; \
 	       exit 1; } >&2
 check-am: all-am
-check: check-recursive
-all-am: Makefile orconfig.h
-installdirs: installdirs-recursive
-installdirs-am:
-install: install-recursive
-install-exec: install-exec-recursive
-install-data: install-data-recursive
-uninstall: uninstall-recursive
+	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
+check: check-am
+all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(SCRIPTS) $(MANS) $(DATA) \
+		$(HEADERS) orconfig.h
+installdirs:
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(confdir)" "$(DESTDIR)$(docdir)" "$(DESTDIR)$(tordatadir)"; do \
+	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
+	done
+install: install-am
+install-exec: install-exec-am
+install-data: install-data-am
+uninstall: uninstall-am
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-recursive
+installcheck: installcheck-am
 install-strip:
 	if test -z '$(STRIP)'; then \
 	  $(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
@@ -681,102 +2274,224 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f src/common/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/common/$(am__dirstamp)
+	-rm -f src/ext/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/ext/$(am__dirstamp)
+	-rm -f src/ext/curve25519_donna/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/ext/curve25519_donna/$(am__dirstamp)
+	-rm -f src/or/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/or/$(am__dirstamp)
+	-rm -f src/test/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/test/$(am__dirstamp)
+	-rm -f src/tools/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/tools/$(am__dirstamp)
+	-rm -f src/tools/tor-fw-helper/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/tools/tor-fw-helper/$(am__dirstamp)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-recursive
+clean: clean-am
 
-clean-am: clean-generic mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-noinstLIBRARIES \
+	clean-noinstPROGRAMS mostlyclean-am
 
-distclean: distclean-recursive
+distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
+	-rm -rf src/common/$(DEPDIR) src/ext/$(DEPDIR) src/ext/curve25519_donna/$(DEPDIR) src/or/$(DEPDIR) src/test/$(DEPDIR) src/tools/$(DEPDIR) src/tools/tor-fw-helper/$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-hdr distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic \
+	distclean-hdr distclean-tags
 
-dvi: dvi-recursive
+dvi: dvi-am
 
 dvi-am:
 
-html: html-recursive
+html: html-am
 
 html-am:
 
-info: info-recursive
+info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-confDATA install-docDATA install-man \
+	install-tordataDATA
 
-install-dvi: install-dvi-recursive
+install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am:
+install-exec-am: install-binPROGRAMS install-binSCRIPTS
 
-install-html: install-html-recursive
+install-html: install-html-am
 
 install-html-am:
 
-install-info: install-info-recursive
+install-info: install-info-am
 
 install-info-am:
 
-install-man:
+install-man: install-man1
 
-install-pdf: install-pdf-recursive
+install-pdf: install-pdf-am
 
 install-pdf-am:
 
-install-ps: install-ps-recursive
+install-ps: install-ps-am
 
 install-ps-am:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-recursive
+maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
+	-rm -rf src/common/$(DEPDIR) src/ext/$(DEPDIR) src/ext/curve25519_donna/$(DEPDIR) src/or/$(DEPDIR) src/test/$(DEPDIR) src/tools/$(DEPDIR) src/tools/tor-fw-helper/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-recursive
+mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic
 
-pdf: pdf-recursive
+pdf: pdf-am
 
 pdf-am:
 
-ps: ps-recursive
+ps: ps-am
 
 ps-am:
 
-uninstall-am:
+uninstall-am: uninstall-binPROGRAMS uninstall-binSCRIPTS \
+	uninstall-confDATA uninstall-docDATA uninstall-man \
+	uninstall-tordataDATA
 
-.MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) all \
-	ctags-recursive install-am install-strip tags-recursive
+uninstall-man: uninstall-man1
 
-.PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
-	all all-am am--refresh check check-am clean clean-generic \
-	ctags ctags-recursive dist dist-all dist-bzip2 dist-gzip \
+.MAKE: all check-am install-am install-strip
+
+.PHONY: CTAGS GTAGS all all-am am--refresh check check-TESTS check-am \
+	clean clean-binPROGRAMS clean-generic clean-noinstLIBRARIES \
+	clean-noinstPROGRAMS ctags dist dist-all dist-bzip2 dist-gzip \
 	dist-lzip dist-lzma dist-shar dist-tarZ dist-xz dist-zip \
-	distcheck distclean distclean-generic distclean-hdr \
-	distclean-tags distcleancheck distdir distuninstallcheck dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am
+	distcheck distclean distclean-compile distclean-generic \
+	distclean-hdr distclean-tags distcleancheck distdir \
+	distuninstallcheck dvi dvi-am html html-am info info-am \
+	install install-am install-binPROGRAMS install-binSCRIPTS \
+	install-confDATA install-data install-data-am install-docDATA \
+	install-dvi install-dvi-am install-exec install-exec-am \
+	install-html install-html-am install-info install-info-am \
+	install-man install-man1 install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip install-tordataDATA installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
+	uninstall-am uninstall-binPROGRAMS uninstall-binSCRIPTS \
+	uninstall-confDATA uninstall-docDATA uninstall-man \
+	uninstall-man1 uninstall-tordataDATA
 
+
+src/common/common_sha1.i: $(libor_SOURCES) $(libor_crypto_a_SOURCES) $(COMMONHEADERS)
+	$(AM_V_GEN)if test "@SHA1SUM@" != none; then \
+	  (cd "$(srcdir)" && "@SHA1SUM@" $(src_common_libor_SOURCES) $(src_common_libor_crypto_a_SOURCES) $(COMMONHEADERS)) | "@SED@" -n 's/^\(.*\)$$/"\1\\n"/p' > $@; \
+	elif test "@OPENSSL@" != none; then \
+	  (cd "$(srcdir)" && "@OPENSSL@" sha1 $(src_common_libor_SOURCES) $(src_Common_libor_crypto_a_SOURCES) $(COMMONHEADERS)) | "@SED@" -n 's/SHA1(\(.*\))= \(.*\)/"\2  \1\\n"/p' > $@; \
+	else \
+	  rm $@; \
+	  touch $@; \
+	fi
+
+src/common/util_codedigest.o: src/common/common_sha1.i
+
+src/or/tor_main.o: micro-revision.i
+
+src/or/config_codedigest.o: src/or/or_sha1.i
+
+micro-revision.i: FORCE
+	@rm -f micro-revision.tmp;				\
+	if test -d "$(top_srcdir)/.git" &&				\
+	  test -x "`which git 2>&1;true`"; then				\
+	  HASH="`cd "$(top_srcdir)" && git rev-parse --short=16 HEAD`";	\
+	  echo \"$$HASH\" > micro-revision.tmp; 			\
+        fi;								\
+	if test ! -f micro-revision.tmp ; then			\
+	  if test ! -f micro-revision.i ; then			\
+	    echo '""' > micro-revision.i;			\
+	  fi;								\
+	elif test ! -f micro-revision.i ||			\
+	  test x"`cat micro-revision.tmp`" != x"`cat micro-revision.i`"; then \
+	  mv micro-revision.tmp micro-revision.i;		\
+	fi; true
+
+src/or/or_sha1.i: $(src_or_tor_SOURCES) $(src_or_libtor_a_SOURCES) $(ORHEADERS)
+	$(AM_V_GEN)if test "@SHA1SUM@" != none; then \
+	  (cd "$(srcdir)" && "@SHA1SUM@" $(src_or_tor_SOURCES) $(src_or_libtor_a_SOURCES) $(ORHEADERS) ) | \
+	  "@SED@" -n 's/^\(.*\)$$/"\1\\n"/p' > src/or/or_sha1.i; \
+	elif test "@OPENSSL@" != none; then \
+	  (cd "$(srcdir)" && "@OPENSSL@" sha1 $(src_or_tor_SOURCES) $(src_or_libtor_a_SOURCES) $(ORHEADERS)) | \
+	  "@SED@" -n 's/SHA1(\(.*\))= \(.*\)/"\2  \1\\n"/p' > src/or/or_sha1.i; \
+	else \
+	  rm src/or/or_sha1.i; \
+	  touch src/or/or_sha1.i; \
+	fi
+
+FORCE:
+# fallback_consensus
+
+# If we don't have it, fake it.
+src_config_fallback-consensus:
+	touch src/config/fallback-consensus
+
+# Generate the html documentation from asciidoc, but don't do
+# machine-specific replacements yet
+$(html_in) :
+	$(AM_V_GEN)$(top_srcdir)/doc/asciidoc-helper.sh html @ASCIIDOC@ $(top_srcdir)/$@
+
+# Generate the manpage from asciidoc, but don't do
+# machine-specific replacements yet
+$(man_in) :
+	$(AM_V_GEN)$(top_srcdir)/doc/asciidoc-helper.sh man @A2X@ $(top_srcdir)/$@
+
+doc/tor.1.in: doc/tor.1.txt
+doc/tor-gencert.1.in: doc/tor-gencert.1.txt
+doc/tor-resolve.1.in: doc/tor-resolve.1.txt
+doc/torify.1.in: doc/torify.1.txt
+doc/tor-fw-helper.1.in: doc/tor-fw-helper.1.txt
+
+doc/tor.html.in: doc/tor.1.txt
+doc/tor-gencert.html.in: doc/tor-gencert.1.txt
+doc/tor-resolve.html.in: doc/tor-resolve.1.txt
+doc/torify.html.in: doc/torify.1.txt
+doc/tor-fw-helper.html.in: doc/tor-fw-helper.1.txt
+
+# use ../config.status to swap all machine-specific magic strings
+# in the asciidoc with their replacements.
+$(asciidoc_product) :
+	$(AM_V_GEN)$(MKDIR_P) $(@D)
+	$(AM_V_at)if test -e $(top_srcdir)/$@.in && ! test -e $@.in ; then \
+		cp $(top_srcdir)/$@.in $@; \
+	fi
+	$(AM_V_at)./config.status -q --file=$@;
+
+doc/tor.html: doc/tor.html.in
+doc/tor-gencert.html: doc/tor-gencert.html.in
+doc/tor-resolve.html: doc/tor-resolve.html.in
+doc/torify.html: doc/torify.html.in
+doc/tor-fw-helper.html: doc/tor-fw-helper.html.in
+
+doc/tor.1: doc/tor.1.in
+doc/tor-gencert.1: doc/tor-gencert.1.in
+doc/tor-resolve.1: doc/tor-resolve.1.in
+doc/torify.1: doc/torify.1.in
+doc/tor-fw-helper.1: doc/tor-fw-helper.1.in
 
 #install-data-local:
 #	$(INSTALL) -m 755 -d $(LOCALSTATEDIR)/lib/tor
@@ -810,13 +2525,9 @@ test: all
 # eventdns.[hc], tinytest*.[ch]
 check-spaces:
 	./contrib/checkSpace.pl -C                    \
-		src/common/*.h			      \
-		src/common/[^asO]*.c		      \
-		src/common/address.c		      \
-		src/or/[^e]*.[ch]		      \
-		src/or/eventdns_tor.h		      \
-		src/test/test*.[ch]		      \
-		src/test/[^t]*.[ch]		      \
+		src/common/*.[ch]		      \
+		src/or/*.[ch]			      \
+		src/test/*.[ch]			      \
 		src/tools/*.[ch]		      \
 		src/tools/tor-fw-helper/*.[ch]
 

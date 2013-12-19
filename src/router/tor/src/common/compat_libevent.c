@@ -1,4 +1,4 @@
-/* Copyright (c) 2009-2012, The Tor Project, Inc. */
+/* Copyright (c) 2009-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -54,7 +54,9 @@ typedef uint32_t le_version_t;
  * it is. */
 #define LE_OTHER V(0,0,99)
 
+#if 0
 static le_version_t tor_get_libevent_version(const char **v_out);
+#endif
 
 #if defined(HAVE_EVENT_SET_LOG_CALLBACK) || defined(RUNNING_DOXYGEN)
 /** A string which, if it appears in a libevent log, should be ignored. */
@@ -74,19 +76,19 @@ libevent_logging_callback(int severity, const char *msg)
   }
   switch (severity) {
     case _EVENT_LOG_DEBUG:
-      log(LOG_DEBUG, LD_NOCB|LD_NET, "Message from libevent: %s", buf);
+      log_debug(LD_NOCB|LD_NET, "Message from libevent: %s", buf);
       break;
     case _EVENT_LOG_MSG:
-      log(LOG_INFO, LD_NOCB|LD_NET, "Message from libevent: %s", buf);
+      log_info(LD_NOCB|LD_NET, "Message from libevent: %s", buf);
       break;
     case _EVENT_LOG_WARN:
-      log(LOG_WARN, LD_NOCB|LD_GENERAL, "Warning from libevent: %s", buf);
+      log_warn(LD_NOCB|LD_GENERAL, "Warning from libevent: %s", buf);
       break;
     case _EVENT_LOG_ERR:
-      log(LOG_ERR, LD_NOCB|LD_GENERAL, "Error from libevent: %s", buf);
+      log_err(LD_NOCB|LD_GENERAL, "Error from libevent: %s", buf);
       break;
     default:
-      log(LOG_WARN, LD_NOCB|LD_GENERAL, "Message [%d] from libevent: %s",
+      log_warn(LD_NOCB|LD_GENERAL, "Message [%d] from libevent: %s",
           severity, buf);
       break;
   }
@@ -185,13 +187,6 @@ tor_libevent_initialize(tor_libevent_cfg *torcfg)
   /* some paths below don't use torcfg, so avoid unused variable warnings */
   (void)torcfg;
 
-#ifdef __APPLE__
-  if (MACOSX_KQUEUE_IS_BROKEN ||
-      tor_get_libevent_version(NULL) < V_OLD(1,1,'b')) {
-    setenv("EVENT_NOKQUEUE","1",1);
-  }
-#endif
-
 #ifdef HAVE_EVENT2_EVENT_H
   {
     int attempts = 0;
@@ -266,13 +261,13 @@ tor_libevent_initialize(tor_libevent_cfg *torcfg)
 #if defined(HAVE_EVENT_GET_VERSION) && defined(HAVE_EVENT_GET_METHOD)
   /* Making this a NOTICE for now so we can link bugs to a libevent versions
    * or methods better. */
-  log(LOG_NOTICE, LD_GENERAL,
+  log_info(LD_GENERAL,
       "Initialized libevent version %s using method %s. Good.",
       event_get_version(), tor_libevent_get_method());
 #else
-  log(LOG_NOTICE, LD_GENERAL,
+  log_notice(LD_GENERAL,
       "Initialized old libevent (version 1.0b or earlier).");
-  log(LOG_WARN, LD_GENERAL,
+  log_warn(LD_GENERAL,
       "You have a *VERY* old version of libevent.  It is likely to be buggy; "
       "please build Tor with a more recent version.");
 #endif
@@ -364,6 +359,7 @@ le_versions_compatibility(le_version_t v)
     return 5;
 }
 
+#if 0
 /** Return the version number of the currently running version of Libevent.
  * See le_version_t for info on the format.
  */
@@ -386,6 +382,7 @@ tor_get_libevent_version(const char **v_out)
     *v_out = v;
   return r;
 }
+#endif
 
 /** Return a string representation of the version of the currently running
  * version of Libevent. */
@@ -407,77 +404,9 @@ void
 tor_check_libevent_version(const char *m, int server,
                            const char **badness_out)
 {
-  int buggy = 0, iffy = 0, slow = 0, thread_unsafe = 0;
-  le_version_t version;
-  const char *v = NULL;
-  const char *badness = NULL;
-  const char *sad_os = "";
-
-  version = tor_get_libevent_version(&v);
-
-  /* It would be better to disable known-buggy methods rather than warning
-   * about them.  But the problem is that with older versions of Libevent,
-   * it's not trivial to get them to change their methods once they're
-   * initialized... and with newer versions of Libevent, they aren't actually
-   * broken.  But we should revisit this if we ever find a post-1.4 version
-   * of Libevent where we need to disable a given method. */
-  if (!strcmp(m, "kqueue")) {
-    if (version < V_OLD(1,1,'b'))
-      buggy = 1;
-  } else if (!strcmp(m, "epoll")) {
-    if (version < V(1,1,0))
-      iffy = 1;
-  } else if (!strcmp(m, "poll")) {
-    if (version < V_OLD(1,0,'e'))
-      buggy = 1;
-    if (version < V(1,1,0))
-      slow = 1;
-  } else if (!strcmp(m, "select")) {
-    if (version < V(1,1,0))
-      slow = 1;
-  } else if (!strcmp(m, "win32")) {
-    if (version < V_OLD(1,1,'b'))
-      buggy = 1;
-  }
-
-  /* Libevent versions before 1.3b do very badly on operating systems with
-   * user-space threading implementations. */
-#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__NetBSD__)
-  if (server && version < V_OLD(1,3,'b')) {
-    thread_unsafe = 1;
-    sad_os = "BSD variants";
-  }
-#elif defined(__APPLE__) || defined(__darwin__)
-  if (server && version < V_OLD(1,3,'b')) {
-    thread_unsafe = 1;
-    sad_os = "Mac OS X";
-  }
-#endif
-
-  if (thread_unsafe) {
-    log(LOG_WARN, LD_GENERAL,
-        "Libevent version %s often crashes when running a Tor server with %s. "
-        "Please use the latest version of libevent (1.3b or later)",v,sad_os);
-    badness = "BROKEN";
-  } else if (buggy) {
-    log(LOG_WARN, LD_GENERAL,
-        "There are serious bugs in using %s with libevent %s. "
-        "Please use the latest version of libevent.", m, v);
-    badness = "BROKEN";
-  } else if (iffy) {
-    log(LOG_WARN, LD_GENERAL,
-        "There are minor bugs in using %s with libevent %s. "
-        "You may want to use the latest version of libevent.", m, v);
-    badness = "BUGGY";
-  } else if (slow && server) {
-    log(LOG_WARN, LD_GENERAL,
-        "libevent %s can be very slow with %s. "
-        "When running a server, please use the latest version of libevent.",
-        v,m);
-    badness = "SLOW";
-  }
-
-  *badness_out = badness;
+  (void) m;
+  (void) server;
+  *badness_out = NULL;
 }
 
 #if defined(LIBEVENT_VERSION)
@@ -511,7 +440,7 @@ tor_check_libevent_header_compatibility(void)
 
     verybad = compat1 != compat2;
 
-    log(verybad ? LOG_WARN : LOG_NOTICE,
+    tor_log(verybad ? LOG_WARN : LOG_NOTICE,
         LD_GENERAL, "We were compiled with headers from version %s "
         "of Libevent, but we're using a Libevent library that says it's "
         "version %s.", HEADER_VERSION, event_get_version());

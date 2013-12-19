@@ -1,7 +1,7 @@
 /* Copyright (c) 2001, Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -131,7 +131,7 @@ static smartlist_t *pending_cb_messages = NULL;
 
 /** What's the lowest log level anybody cares about?  Checking this lets us
  * bail out early from log_debug if we aren't debugging.  */
-int _log_global_min_severity = LOG_NOTICE;
+int log_global_min_severity_ = LOG_NOTICE;
 
 static void delete_log(logfile_t *victim);
 static void close_log(logfile_t *victim);
@@ -140,11 +140,12 @@ static char *domain_to_string(log_domain_mask_t domain,
                              char *buf, size_t buflen);
 static INLINE char *format_msg(char *buf, size_t buf_len,
            log_domain_mask_t domain, int severity, const char *funcname,
+           const char *suffix,
            const char *format, va_list ap, size_t *msg_len_out)
-  CHECK_PRINTF(6,0);
+  CHECK_PRINTF(7,0);
 static void logv(int severity, log_domain_mask_t domain, const char *funcname,
-                 const char *format, va_list ap)
-  CHECK_PRINTF(4,0);
+                 const char *suffix, const char *format, va_list ap)
+  CHECK_PRINTF(5,0);
 
 /** Name of the application: used to generate the message we write at the
  * start of each new log. */
@@ -177,7 +178,7 @@ set_log_time_granularity(int granularity_msec)
  * <b>buf_len</b> character buffer in <b>buf</b>.
  */
 static INLINE size_t
-_log_prefix(char *buf, size_t buf_len, int severity)
+log_prefix_(char *buf, size_t buf_len, int severity)
 {
   time_t t;
   struct timeval now;
@@ -230,7 +231,7 @@ log_tor_version(logfile_t *lf, int reset)
     /* We are resetting, but we aren't at the start of the file; no
      * need to log again. */
     return 0;
-  n = _log_prefix(buf, sizeof(buf), LOG_NOTICE);
+  n = log_prefix_(buf, sizeof(buf), LOG_NOTICE);
   if (appname) {
     tor_snprintf(buf+n, sizeof(buf)-n,
                  "%s opening %slog file.\n", appname, is_new?"new ":"");
@@ -251,6 +252,7 @@ log_tor_version(logfile_t *lf, int reset)
 static INLINE char *
 format_msg(char *buf, size_t buf_len,
            log_domain_mask_t domain, int severity, const char *funcname,
+           const char *suffix,
            const char *format, va_list ap, size_t *msg_len_out)
 {
   size_t n;
@@ -262,7 +264,7 @@ format_msg(char *buf, size_t buf_len,
   buf_len -= 2; /* subtract 2 characters so we have room for \n\0 */
   buf_end = buf+buf_len; /* point *after* the last char we can write to */
 
-  n = _log_prefix(buf, buf_len, severity);
+  n = log_prefix_(buf, buf_len, severity);
   end_of_prefix = buf+n;
 
   if (log_domains_are_logged) {
@@ -312,6 +314,13 @@ format_msg(char *buf, size_t buf_len,
     n = buf_len;
   } else {
     n += r;
+    if (suffix) {
+      size_t suffix_len = strlen(suffix);
+      if (buf_len-n >= suffix_len) {
+        memcpy(buf+n, suffix, suffix_len);
+        n += suffix_len;
+      }
+    }
   }
   buf[n]='\n';
   buf[n+1]='\0';
@@ -325,7 +334,7 @@ format_msg(char *buf, size_t buf_len,
  */
 static void
 logv(int severity, log_domain_mask_t domain, const char *funcname,
-     const char *format, va_list ap)
+     const char *suffix, const char *format, va_list ap)
 {
   char buf[10024];
   size_t msg_len = 0;
@@ -361,8 +370,8 @@ logv(int severity, log_domain_mask_t domain, const char *funcname,
 
     if (!formatted) {
       end_of_prefix =
-        format_msg(buf, sizeof(buf), domain, severity, funcname, format, ap,
-                   &msg_len);
+        format_msg(buf, sizeof(buf), domain, severity, funcname, suffix,
+                   format, ap, &msg_len);
       formatted = 1;
     }
 
@@ -423,10 +432,10 @@ void
 tor_log(int severity, log_domain_mask_t domain, const char *format, ...)
 {
   va_list ap;
-  if (severity > _log_global_min_severity)
+  if (severity > log_global_min_severity_)
     return;
   va_start(ap,format);
-  logv(severity, domain, NULL, format, ap);
+  logv(severity, domain, NULL, NULL, format, ap);
   va_end(ap);
 }
 
@@ -436,89 +445,121 @@ tor_log(int severity, log_domain_mask_t domain, const char *format, ...)
  * variadic macros. All arguments are as for log_fn, except for
  * <b>fn</b>, which is the name of the calling functions. */
 void
-_log_fn(int severity, log_domain_mask_t domain, const char *fn,
+log_fn_(int severity, log_domain_mask_t domain, const char *fn,
         const char *format, ...)
 {
   va_list ap;
-  if (severity > _log_global_min_severity)
+  if (severity > log_global_min_severity_)
     return;
   va_start(ap,format);
-  logv(severity, domain, fn, format, ap);
+  logv(severity, domain, fn, NULL, format, ap);
   va_end(ap);
+}
+void
+log_fn_ratelim_(ratelim_t *ratelim, int severity, log_domain_mask_t domain,
+                const char *fn, const char *format, ...)
+{
+  va_list ap;
+  char *m;
+  if (severity > log_global_min_severity_)
+    return;
+  m = rate_limit_log(ratelim, approx_time());
+  if (m == NULL)
+      return;
+  va_start(ap, format);
+  logv(severity, domain, fn, m, format, ap);
+  va_end(ap);
+  tor_free(m);
 }
 #else
 /** @{ */
 /** Variant implementation of log_fn, log_debug, log_info,... for C compilers
  * without variadic macros.  In this case, the calling function sets
- * _log_fn_function_name to the name of the function, then invokes the
- * appropriate _log_fn, _log_debug, etc. */
-const char *_log_fn_function_name=NULL;
+ * log_fn_function_name_ to the name of the function, then invokes the
+ * appropriate log_fn_, log_debug_, etc. */
+const char *log_fn_function_name_=NULL;
 void
-_log_fn(int severity, log_domain_mask_t domain, const char *format, ...)
+log_fn_(int severity, log_domain_mask_t domain, const char *format, ...)
 {
   va_list ap;
-  if (severity > _log_global_min_severity)
+  if (severity > log_global_min_severity_)
     return;
   va_start(ap,format);
-  logv(severity, domain, _log_fn_function_name, format, ap);
+  logv(severity, domain, log_fn_function_name_, NULL, format, ap);
   va_end(ap);
-  _log_fn_function_name = NULL;
+  log_fn_function_name_ = NULL;
 }
 void
-_log_debug(log_domain_mask_t domain, const char *format, ...)
+log_fn_ratelim_(ratelim_t *ratelim, int severity, log_domain_mask_t domain,
+                const char *format, ...)
+{
+  va_list ap;
+  char *m;
+  if (severity > log_global_min_severity_)
+    return;
+  m = rate_limit_log(ratelim, approx_time());
+  if (m == NULL)
+      return;
+  va_start(ap, format);
+  logv(severity, domain, log_fn_function_name_, m, format, ap);
+  va_end(ap);
+  tor_free(m);
+}
+void
+log_debug_(log_domain_mask_t domain, const char *format, ...)
 {
   va_list ap;
   /* For GCC we do this check in the macro. */
-  if (PREDICT_LIKELY(LOG_DEBUG > _log_global_min_severity))
+  if (PREDICT_LIKELY(LOG_DEBUG > log_global_min_severity_))
     return;
   va_start(ap,format);
-  logv(LOG_DEBUG, domain, _log_fn_function_name, format, ap);
+  logv(LOG_DEBUG, domain, log_fn_function_name_, NULL, format, ap);
   va_end(ap);
-  _log_fn_function_name = NULL;
+  log_fn_function_name_ = NULL;
 }
 void
-_log_info(log_domain_mask_t domain, const char *format, ...)
+log_info_(log_domain_mask_t domain, const char *format, ...)
 {
   va_list ap;
-  if (LOG_INFO > _log_global_min_severity)
+  if (LOG_INFO > log_global_min_severity_)
     return;
   va_start(ap,format);
-  logv(LOG_INFO, domain, _log_fn_function_name, format, ap);
+  logv(LOG_INFO, domain, log_fn_function_name_, NULL, format, ap);
   va_end(ap);
-  _log_fn_function_name = NULL;
+  log_fn_function_name_ = NULL;
 }
 void
-_log_notice(log_domain_mask_t domain, const char *format, ...)
+log_notice_(log_domain_mask_t domain, const char *format, ...)
 {
   va_list ap;
-  if (LOG_NOTICE > _log_global_min_severity)
+  if (LOG_NOTICE > log_global_min_severity_)
     return;
   va_start(ap,format);
-  logv(LOG_NOTICE, domain, _log_fn_function_name, format, ap);
+  logv(LOG_NOTICE, domain, log_fn_function_name_, NULL, format, ap);
   va_end(ap);
-  _log_fn_function_name = NULL;
+  log_fn_function_name_ = NULL;
 }
 void
-_log_warn(log_domain_mask_t domain, const char *format, ...)
+log_warn_(log_domain_mask_t domain, const char *format, ...)
 {
   va_list ap;
-  if (LOG_WARN > _log_global_min_severity)
+  if (LOG_WARN > log_global_min_severity_)
     return;
   va_start(ap,format);
-  logv(LOG_WARN, domain, _log_fn_function_name, format, ap);
+  logv(LOG_WARN, domain, log_fn_function_name_, NULL, format, ap);
   va_end(ap);
-  _log_fn_function_name = NULL;
+  log_fn_function_name_ = NULL;
 }
 void
-_log_err(log_domain_mask_t domain, const char *format, ...)
+log_err_(log_domain_mask_t domain, const char *format, ...)
 {
   va_list ap;
-  if (LOG_ERR > _log_global_min_severity)
+  if (LOG_ERR > log_global_min_severity_)
     return;
   va_start(ap,format);
-  logv(LOG_ERR, domain, _log_fn_function_name, format, ap);
+  logv(LOG_ERR, domain, log_fn_function_name_, NULL, format, ap);
   va_end(ap);
-  _log_fn_function_name = NULL;
+  log_fn_function_name_ = NULL;
 }
 /** @} */
 #endif
@@ -638,7 +679,7 @@ add_stream_log_impl(const log_severity_list_t *severity,
   lf->next = logfiles;
 
   logfiles = lf;
-  _log_global_min_severity = get_min_log_level();
+  log_global_min_severity_ = get_min_log_level();
 }
 
 /** Add a log handler named <b>name</b> to send all messages in <b>severity</b>
@@ -706,7 +747,7 @@ add_callback_log(const log_severity_list_t *severity, log_callback cb)
 
   LOCK_LOGS();
   logfiles = lf;
-  _log_global_min_severity = get_min_log_level();
+  log_global_min_severity_ = get_min_log_level();
   UNLOCK_LOGS();
   return 0;
 }
@@ -726,7 +767,7 @@ change_callback_log_severity(int loglevelMin, int loglevelMax,
       memcpy(lf->severities, &severities, sizeof(severities));
     }
   }
-  _log_global_min_severity = get_min_log_level();
+  log_global_min_severity_ = get_min_log_level();
   UNLOCK_LOGS();
 }
 
@@ -792,7 +833,7 @@ close_temp_logs(void)
     }
   }
 
-  _log_global_min_severity = get_min_log_level();
+  log_global_min_severity_ = get_min_log_level();
   UNLOCK_LOGS();
 }
 
@@ -833,14 +874,16 @@ add_file_log(const log_severity_list_t *severity, const char *filename)
   fd = tor_open_cloexec(filename, O_WRONLY|O_CREAT|O_APPEND, 0644);
   if (fd<0)
     return -1;
-  if (tor_fd_seekend(fd)<0)
+  if (tor_fd_seekend(fd)<0) {
+    close(fd);
     return -1;
+  }
 
   LOCK_LOGS();
   add_stream_log_impl(severity, filename, fd);
   logfiles->needs_close = 1;
   lf = logfiles;
-  _log_global_min_severity = get_min_log_level();
+  log_global_min_severity_ = get_min_log_level();
 
   if (log_tor_version(lf, 0) < 0) {
     delete_log(lf);
@@ -871,7 +914,7 @@ add_syslog_log(const log_severity_list_t *severity)
   LOCK_LOGS();
   lf->next = logfiles;
   logfiles = lf;
-  _log_global_min_severity = get_min_log_level();
+  log_global_min_severity_ = get_min_log_level();
   UNLOCK_LOGS();
   return 0;
 }
@@ -907,7 +950,7 @@ log_level_to_string(int level)
 static const char *domain_list[] = {
   "GENERAL", "CRYPTO", "NET", "CONFIG", "FS", "PROTOCOL", "MM",
   "HTTP", "APP", "CONTROL", "CIRC", "REND", "BUG", "DIR", "DIRSERV",
-  "OR", "EDGE", "ACCT", "HIST", "HANDSHAKE", "HEARTBEAT", NULL
+  "OR", "EDGE", "ACCT", "HIST", "HANDSHAKE", "HEARTBEAT", "CHANNEL", NULL
 };
 
 /** Return a bitmask for the log domain for which <b>domain</b> is the name,
@@ -1106,7 +1149,7 @@ switch_logs_debug(void)
     for (i = LOG_DEBUG; i >= LOG_ERR; --i)
       lf->severities->masks[SEVERITY_MASK_IDX(i)] = ~0u;
   }
-  _log_global_min_severity = get_min_log_level();
+  log_global_min_severity_ = get_min_log_level();
   UNLOCK_LOGS();
 }
 

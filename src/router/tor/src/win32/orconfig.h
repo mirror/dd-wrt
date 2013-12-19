@@ -145,8 +145,14 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 if you have the `_vscprintf' function. */
+#define HAVE__VSCPRINTF 1
+
 /* Define to 1 iff NULL is represented by a 0 in memory. */
 #define NULL_REP_IS_ZERO_BYTES 1
+
+/* Define to 1 iff memset(0) sets doubles to 0.0 */
+#define DOUBLE_0_REP_IS_ZERO_BYTES 1
 
 /* Name of package */
 #define PACKAGE "tor"
@@ -190,6 +196,9 @@
 /* The size of a `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
 
+/* The size of `pid_t', as computed by sizeof. */
+#define SIZEOF_PID_T 0
+
 /* The size of a `short', as computed by sizeof. */
 #define SIZEOF_SHORT 2
 
@@ -232,7 +241,7 @@
 #define USING_TWOS_COMPLEMENT
 
 /* Version number of package */
-#define VERSION "0.2.3.25"
+#define VERSION "0.2.4.19"
 
 
 
@@ -242,3 +251,9 @@
 #define FLEXIBLE_ARRAY_MEMBER 0
 #define HAVE_EVENT2_EVENT_H
 #define SHARE_DATADIR ""
+#define HAVE_EVENT2_DNS_H
+#define HAVE_EVENT_BASE_LOOPEXIT
+#define CURVE25519_ENABLED
+#define USE_CURVE25519_DONNA
+
+#define ENUM_VALS_ARE_SIGNED 1

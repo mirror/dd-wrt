@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -105,7 +105,12 @@ stream_end_reason_to_socks5_response(int reason)
     case END_STREAM_REASON_DESTROY:
       return SOCKS5_GENERAL_ERROR;
     case END_STREAM_REASON_DONE:
-      return SOCKS5_SUCCEEDED;
+      /* Note that 'DONE' usually indicates a successful close from the other
+       * side of the stream... but if we receive it before a connected cell --
+       * that is, before we have sent a SOCKS reply -- that means that the
+       * other side of the circuit closed the connection before telling us it
+       * was complete. */
+      return SOCKS5_CONNECTION_REFUSED;
     case END_STREAM_REASON_TIMEOUT:
       return SOCKS5_TTL_EXPIRED;
     case END_STREAM_REASON_NOROUTE:
@@ -300,8 +305,13 @@ errno_to_orconn_end_reason(int e)
 const char *
 circuit_end_reason_to_control_string(int reason)
 {
-  if (reason >= 0 && reason & END_CIRC_REASON_FLAG_REMOTE)
+  int is_remote = 0;
+
+  if (reason >= 0 && reason & END_CIRC_REASON_FLAG_REMOTE) {
     reason &= ~END_CIRC_REASON_FLAG_REMOTE;
+    is_remote = 1;
+  }
+
   switch (reason) {
     case END_CIRC_AT_ORIGIN:
       /* This shouldn't get passed here; it's a catch-all reason. */
@@ -323,8 +333,8 @@ circuit_end_reason_to_control_string(int reason)
       return "CONNECTFAILED";
     case END_CIRC_REASON_OR_IDENTITY:
       return "OR_IDENTITY";
-    case END_CIRC_REASON_OR_CONN_CLOSED:
-      return "OR_CONN_CLOSED";
+    case END_CIRC_REASON_CHANNEL_CLOSED:
+      return "CHANNEL_CLOSED";
     case END_CIRC_REASON_FINISHED:
       return "FINISHED";
     case END_CIRC_REASON_TIMEOUT:
@@ -338,7 +348,18 @@ circuit_end_reason_to_control_string(int reason)
     case END_CIRC_REASON_MEASUREMENT_EXPIRED:
       return "MEASUREMENT_EXPIRED";
     default:
-      log_warn(LD_BUG, "Unrecognized reason code %d", (int)reason);
+      if (is_remote) {
+        /*
+         * If it's remote, it's not a bug *here*, so don't use LD_BUG, but
+         * do note that the someone we're talking to is speaking the Tor
+         * protocol with a weird accent.
+         */
+        log_warn(LD_PROTOCOL,
+                 "Remote server sent bogus reason code %d", reason);
+      } else {
+        log_warn(LD_BUG,
+                 "Unrecognized reason code %d", reason);
+      }
       return NULL;
   }
 }

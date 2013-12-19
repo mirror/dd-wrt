@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for directory.c.
  **/
 
-#ifndef _TOR_DIRECTORY_H
-#define _TOR_DIRECTORY_H
+#ifndef TOR_DIRECTORY_H
+#define TOR_DIRECTORY_H
 
 int directories_have_accepted_server_descriptor(void);
 void directory_post_to_dirservers(uint8_t dir_purpose, uint8_t router_purpose,
@@ -22,10 +22,24 @@ void directory_get_from_dirserver(uint8_t dir_purpose, uint8_t router_purpose,
 void directory_get_from_all_authorities(uint8_t dir_purpose,
                                         uint8_t router_purpose,
                                         const char *resource);
+
+/** Enumeration of ways to connect to a directory server */
+typedef enum {
+  /** Default: connect over a one-hop Tor circuit but fall back to direct
+   * connection */
+  DIRIND_ONEHOP=0,
+  /** Connect over a multi-hop anonymizing Tor circuit */
+  DIRIND_ANONYMOUS=1,
+  /** Conncet to the DirPort directly */
+  DIRIND_DIRECT_CONN,
+  /** Connect over a multi-hop anonymizing Tor circuit to our dirport */
+  DIRIND_ANON_DIRPORT,
+} dir_indirection_t;
+
 void directory_initiate_command_routerstatus(const routerstatus_t *status,
                                              uint8_t dir_purpose,
                                              uint8_t router_purpose,
-                                             int anonymized_connection,
+                                             dir_indirection_t indirection,
                                              const char *resource,
                                              const char *payload,
                                              size_t payload_len,
@@ -33,7 +47,7 @@ void directory_initiate_command_routerstatus(const routerstatus_t *status,
 void directory_initiate_command_routerstatus_rend(const routerstatus_t *status,
                                                   uint8_t dir_purpose,
                                                   uint8_t router_purpose,
-                                                  int anonymized_connection,
+                                                 dir_indirection_t indirection,
                                                   const char *resource,
                                                   const char *payload,
                                                   size_t payload_len,
@@ -51,10 +65,9 @@ int connection_dir_finished_connecting(dir_connection_t *conn);
 void connection_dir_about_to_close(dir_connection_t *dir_conn);
 void directory_initiate_command(const char *address, const tor_addr_t *addr,
                                 uint16_t or_port, uint16_t dir_port,
-                                int supports_conditional_consensus,
-                                int supports_begindir, const char *digest,
+                                const char *digest,
                                 uint8_t dir_purpose, uint8_t router_purpose,
-                                int anonymized_connection,
+                                dir_indirection_t indirection,
                                 const char *resource,
                                 const char *payload, size_t payload_len,
                                 time_t if_modified_since);

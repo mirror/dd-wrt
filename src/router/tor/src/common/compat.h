@@ -1,10 +1,10 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
-#ifndef _TOR_COMPAT_H
-#define _TOR_COMPAT_H
+#ifndef TOR_COMPAT_H
+#define TOR_COMPAT_H
 
 #include "orconfig.h"
 #include "torint.h"
@@ -53,13 +53,13 @@
 #endif
 
 #include <stdio.h>
+#include <errno.h>
 
 #if defined (WINCE)
 #include <fcntl.h>
 #include <io.h>
 #include <math.h>
 #include <projects.h>
-#define snprintf _snprintf
 /* this is not exported as W .... */
 #define SHGetPathFromIDListW SHGetPathFromIDList
 /* wcecompat has vasprintf */
@@ -72,6 +72,10 @@
 
 #ifndef NULL_REP_IS_ZERO_BYTES
 #error "It seems your platform does not represent NULL as zero. We can't cope."
+#endif
+
+#ifndef DOUBLE_0_REP_IS_ZERO_BYTES
+#error "It seems your platform does not represent 0.0 as zeros. We can't cope."
 #endif
 
 #if 'a'!=97 || 'z'!=122 || 'A'!=65 || ' '!=32
@@ -130,6 +134,16 @@ extern INLINE double U64_TO_DBL(uint64_t x) {
 #else
 #define U64_TO_DBL(x) ((double) (x))
 #define DBL_TO_U64(x) ((uint64_t) (x))
+#endif
+
+#ifdef ENUM_VALS_ARE_SIGNED
+#define ENUM_BF(t) unsigned
+#else
+/** Wrapper for having a bitfield of an enumerated type. Where possible, we
+ * just use the enumerated type (so the compiler can help us and notice
+ * problems), but if enumerated types are unsigned, we must use unsigned,
+ * so that the loss of precision doesn't make large values negative. */
+#define ENUM_BF(t) t
 #endif
 
 /* GCC has several useful attributes. */
@@ -239,6 +253,19 @@ size_t strlcpy(char *dst, const char *src, size_t siz) ATTR_NONNULL((1,2));
 #define I64_FORMAT "%lld"
 #endif
 
+#if (SIZEOF_INTPTR_T == SIZEOF_INT)
+#define INTPTR_T_FORMAT "%d"
+#define INTPTR_PRINTF_ARG(x) ((int)(x))
+#elif (SIZEOF_INTPTR_T == SIZEOF_LONG)
+#define INTPTR_T_FORMAT "%ld"
+#define INTPTR_PRINTF_ARG(x) ((long)(x))
+#elif (SIZEOF_INTPTR_T == 8)
+#define INTPTR_T_FORMAT I64_FORMAT
+#define INTPTR_PRINTF_ARG(x) I64_PRINTF_ARG(x)
+#else
+#error Unknown: SIZEOF_INTPTR_T
+#endif
+
 /** Represents an mmaped file. Allocated via tor_mmap_file; freed with
  * tor_munmap_file. */
 typedef struct tor_mmap_t {
@@ -308,10 +335,10 @@ char *tor_strtok_r_impl(char *str, const char *sep, char **lasts);
 #endif
 
 #ifdef _WIN32
-#define _SHORT_FILE_ (tor_fix_source_file(__FILE__))
+#define SHORT_FILE__ (tor_fix_source_file(__FILE__))
 const char *tor_fix_source_file(const char *fname);
 #else
-#define _SHORT_FILE_ (__FILE__)
+#define SHORT_FILE__ (__FILE__)
 #define tor_fix_source_file(s) (s)
 #endif
 
@@ -384,6 +411,7 @@ tor_lockfile_t *tor_lockfile_lock(const char *filename, int blocking,
 void tor_lockfile_unlock(tor_lockfile_t *lockfile);
 
 off_t tor_fd_getpos(int fd);
+int tor_fd_setpos(int fd, off_t pos);
 int tor_fd_seekend(int fd);
 
 #ifdef _WIN32
@@ -403,11 +431,13 @@ typedef int socklen_t;
  * any inadvertant checks for the socket being <= 0 or > 0 will probably
  * still work. */
 #define tor_socket_t intptr_t
+#define TOR_SOCKET_T_FORMAT INTPTR_T_FORMAT
 #define SOCKET_OK(s) ((SOCKET)(s) != INVALID_SOCKET)
 #define TOR_INVALID_SOCKET INVALID_SOCKET
 #else
 /** Type used for a network socket. */
 #define tor_socket_t int
+#define TOR_SOCKET_T_FORMAT "%d"
 /** Macro: true iff 's' is a possible value for a valid initialized socket. */
 #define SOCKET_OK(s) ((s) >= 0)
 /** Error/uninitialized value for a tor_socket_t. */
@@ -489,7 +519,7 @@ int tor_inet_aton(const char *cp, struct in_addr *addr) ATTR_NONNULL((1,2));
 const char *tor_inet_ntop(int af, const void *src, char *dst, size_t len);
 int tor_inet_pton(int af, const char *src, void *dst);
 int tor_lookup_hostname(const char *name, uint32_t *addr) ATTR_NONNULL((1,2));
-void set_socket_nonblocking(tor_socket_t socket);
+int set_socket_nonblocking(tor_socket_t socket);
 int tor_socketpair(int family, int type, int protocol, tor_socket_t fd[2]);
 int network_init(void);
 
@@ -523,10 +553,15 @@ int tor_socket_errno(tor_socket_t sock);
 const char *tor_socket_strerror(int e);
 #else
 #define SOCK_ERRNO(e) e
+#if EAGAIN == EWOULDBLOCK
 #define ERRNO_IS_EAGAIN(e)           ((e) == EAGAIN)
+#else
+#define ERRNO_IS_EAGAIN(e)           ((e) == EAGAIN || (e) == EWOULDBLOCK)
+#endif
 #define ERRNO_IS_EINPROGRESS(e)      ((e) == EINPROGRESS)
 #define ERRNO_IS_CONN_EINPROGRESS(e) ((e) == EINPROGRESS)
-#define ERRNO_IS_ACCEPT_EAGAIN(e)    ((e) == EAGAIN || (e) == ECONNABORTED)
+#define ERRNO_IS_ACCEPT_EAGAIN(e) \
+  (ERRNO_IS_EAGAIN(e) || (e) == ECONNABORTED)
 #define ERRNO_IS_ACCEPT_RESOURCE_LIMIT(e) \
   ((e) == EMFILE || (e) == ENFILE || (e) == ENOBUFS || (e) == ENOMEM)
 #define ERRNO_IS_EADDRINUSE(e)       ((e) == EADDRINUSE)
@@ -546,11 +581,6 @@ typedef enum {
   SOCKS5_COMMAND_NOT_SUPPORTED      = 0x07,
   SOCKS5_ADDRESS_TYPE_NOT_SUPPORTED = 0x08,
 } socks5_reply_status_t;
-
-/* ===== Insecure rng */
-void tor_init_weak_random(unsigned seed);
-long tor_weak_random(void);
-#define TOR_RAND_MAX (RAND_MAX)
 
 /* ===== OS compatibility */
 const char *get_uname(void);

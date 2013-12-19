@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -59,8 +59,10 @@ typedef struct policy_summary_item_t {
 static const char *private_nets[] = {
   "0.0.0.0/8", "169.254.0.0/16",
   "127.0.0.0/8", "192.168.0.0/16", "10.0.0.0/8", "172.16.0.0/12",
-  // "fc00::/7", "fe80::/10", "fec0::/10", "::/127",
-  NULL };
+  "[::]/8",
+  "[fc00::]/7", "[fe80::]/10", "[fec0::]/10", "[ff00::]/8", "[::]/127",
+  NULL
+};
 
 /** Replace all "private" entries in *<b>policy</b> with their expanded
  * equivalents. */
@@ -87,13 +89,57 @@ policy_expand_private(smartlist_t **policy)
        memcpy(&newpolicy, p, sizeof(addr_policy_t));
        newpolicy.is_private = 0;
        newpolicy.is_canonical = 0;
-       if (tor_addr_parse_mask_ports(private_nets[i], &newpolicy.addr,
+       if (tor_addr_parse_mask_ports(private_nets[i], 0,
+                               &newpolicy.addr,
                                &newpolicy.maskbits, &port_min, &port_max)<0) {
          tor_assert(0);
        }
        smartlist_add(tmp, addr_policy_get_canonical_entry(&newpolicy));
      }
      addr_policy_free(p);
+  } SMARTLIST_FOREACH_END(p);
+
+  smartlist_free(*policy);
+  *policy = tmp;
+}
+
+/** Expand each of the AF_UNSPEC elements in *<b>policy</b> (which indicate
+ * protocol-neutral wildcards) into a pair of wildcard elements: one IPv4-
+ * specific and one IPv6-specific. */
+void
+policy_expand_unspec(smartlist_t **policy)
+{
+  smartlist_t *tmp;
+  if (!*policy)
+    return;
+
+  tmp = smartlist_new();
+  SMARTLIST_FOREACH_BEGIN(*policy, addr_policy_t *, p) {
+    sa_family_t family = tor_addr_family(&p->addr);
+    if (family == AF_INET6 || family == AF_INET || p->is_private) {
+      smartlist_add(tmp, p);
+    } else if (family == AF_UNSPEC) {
+      addr_policy_t newpolicy_ipv4;
+      addr_policy_t newpolicy_ipv6;
+      memcpy(&newpolicy_ipv4, p, sizeof(addr_policy_t));
+      memcpy(&newpolicy_ipv6, p, sizeof(addr_policy_t));
+      newpolicy_ipv4.is_canonical = 0;
+      newpolicy_ipv6.is_canonical = 0;
+      if (p->maskbits != 0) {
+        log_warn(LD_BUG, "AF_UNSPEC policy with maskbits==%d", p->maskbits);
+        newpolicy_ipv4.maskbits = 0;
+        newpolicy_ipv6.maskbits = 0;
+      }
+      tor_addr_from_ipv4h(&newpolicy_ipv4.addr, 0);
+      tor_addr_from_ipv6_bytes(&newpolicy_ipv6.addr,
+                               "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0");
+      smartlist_add(tmp, addr_policy_get_canonical_entry(&newpolicy_ipv4));
+      smartlist_add(tmp, addr_policy_get_canonical_entry(&newpolicy_ipv6));
+      addr_policy_free(p);
+    } else {
+      log_warn(LD_BUG, "Funny-looking address policy with family %d", family);
+      smartlist_add(tmp, p);
+    }
   } SMARTLIST_FOREACH_END(p);
 
   smartlist_free(*policy);
@@ -144,6 +190,7 @@ parse_addr_policy(config_line_t *cfg, smartlist_t **dest,
     addr_policy_list_free(result);
   } else {
     policy_expand_private(&result);
+    policy_expand_unspec(&result);
 
     if (*dest) {
       smartlist_add_all(*dest, result);
@@ -319,11 +366,15 @@ addr_is_in_cc_list(uint32_t addr, const smartlist_t *cc_list)
 {
   country_t country;
   const char *name;
+  tor_addr_t tar;
+
   if (!cc_list)
     return 0;
-  country = geoip_get_country_by_ip(addr);
+  /* XXXXipv6 */
+  tor_addr_from_ipv4h(&tar, addr);
+  country = geoip_get_country_by_addr(&tar);
   name = geoip_get_country_name(country);
-  return smartlist_string_isin_case(cc_list, name);
+  return smartlist_contains_string_case(cc_list, name);
 }
 
 /** Return 1 if <b>addr</b>:<b>port</b> is permitted to publish to our
@@ -386,6 +437,7 @@ validate_addr_policies(const or_options_t *options, char **msg)
   *msg = NULL;
 
   if (policies_parse_exit_policy(options->ExitPolicy, &addr_policy,
+                                 options->IPv6Exit,
                                  options->ExitPolicyRejectPrivate, NULL,
                                  !options->BridgeRelay))
     REJECT("Error in ExitPolicy entry.");
@@ -730,6 +782,10 @@ compare_tor_addr_to_addr_policy(const tor_addr_t *addr, uint16_t port,
 static int
 addr_policy_covers(addr_policy_t *a, addr_policy_t *b)
 {
+  if (tor_addr_family(&a->addr) != tor_addr_family(&b->addr)) {
+    /* You can't cover a different family. */
+    return 0;
+  }
   /* We can ignore accept/reject, since "accept *:80, reject *:80" reduces
    * to "accept *:80". */
   if (a->maskbits > b->maskbits) {
@@ -781,24 +837,54 @@ append_exit_policy_string(smartlist_t **policy, const char *more)
   }
 }
 
+/** Add "reject <b>addr</b>:*" to <b>dest</b>, creating the list as needed. */
+void
+addr_policy_append_reject_addr(smartlist_t **dest, const tor_addr_t *addr)
+{
+  addr_policy_t p, *add;
+  memset(&p, 0, sizeof(p));
+  p.policy_type = ADDR_POLICY_REJECT;
+  p.maskbits = tor_addr_family(addr) == AF_INET6 ? 128 : 32;
+  tor_addr_copy(&p.addr, addr);
+  p.prt_min = 1;
+  p.prt_max = 65535;
+
+  add = addr_policy_get_canonical_entry(&p);
+  if (!*dest)
+    *dest = smartlist_new();
+  smartlist_add(*dest, add);
+}
+
 /** Detect and excise "dead code" from the policy *<b>dest</b>. */
 static void
 exit_policy_remove_redundancies(smartlist_t *dest)
 {
-  addr_policy_t *ap, *tmp, *victim;
+  addr_policy_t *ap, *tmp;
   int i, j;
 
-  /* Step one: find a *:* entry and cut off everything after it. */
-  for (i = 0; i < smartlist_len(dest); ++i) {
-    ap = smartlist_get(dest, i);
-    if (ap->maskbits == 0 && ap->prt_min <= 1 && ap->prt_max >= 65535) {
-      /* This is a catch-all line -- later lines are unreachable. */
-      while (i+1 < smartlist_len(dest)) {
-        victim = smartlist_get(dest, i+1);
-        smartlist_del(dest, i+1);
-        addr_policy_free(victim);
+  /* Step one: kill every ipv4 thing after *4:*, every IPv6 thing after *6:*
+   */
+  {
+    int kill_v4=0, kill_v6=0;
+    for (i = 0; i < smartlist_len(dest); ++i) {
+      sa_family_t family;
+      ap = smartlist_get(dest, i);
+      family = tor_addr_family(&ap->addr);
+      if ((family == AF_INET && kill_v4) ||
+          (family == AF_INET6 && kill_v6)) {
+        smartlist_del_keeporder(dest, i--);
+        addr_policy_free(ap);
+        continue;
       }
-      break;
+
+      if (ap->maskbits == 0 && ap->prt_min <= 1 && ap->prt_max >= 65535) {
+        /* This is a catch-all line -- later lines are unreachable. */
+        if (family == AF_INET) {
+          kill_v4 = 1;
+        } else if (family == AF_INET6) {
+          kill_v6 = 1;
+        }
+      }
     }
   }
 
@@ -813,7 +899,7 @@ exit_policy_remove_redundancies(smartlist_t *dest)
         char p1[POLICY_BUF_LEN], p2[POLICY_BUF_LEN];
         policy_write_item(p1, sizeof(p1), tmp, 0);
         policy_write_item(p2, sizeof(p2), ap, 0);
-        log(LOG_DEBUG, LD_CONFIG, "Removing exit policy %s (%d).  It is made "
+        log_debug(LD_CONFIG, "Removing exit policy %s (%d).  It is made "
             "redundant by %s (%d).", p1, j, p2, i);
         smartlist_del_keeporder(dest, j--);
         addr_policy_free(tmp);
@@ -842,7 +928,7 @@ exit_policy_remove_redundancies(smartlist_t *dest)
           char p1[POLICY_BUF_LEN], p2[POLICY_BUF_LEN];
           policy_write_item(p1, sizeof(p1), ap, 0);
           policy_write_item(p2, sizeof(p2), tmp, 0);
-          log(LOG_DEBUG, LD_CONFIG, "Removing exit policy %s.  It is already "
+          log_debug(LD_CONFIG, "Removing exit policy %s.  It is already "
               "covered by %s.", p1, p2);
           smartlist_del_keeporder(dest, i--);
           addr_policy_free(ap);
@@ -864,12 +950,20 @@ exit_policy_remove_redundancies(smartlist_t *dest)
  * policy afterwards. If <b>rejectprivate</b> is true, prepend
  * "reject private:*" to the policy. Return -1 if we can't parse cfg,
  * else return 0.
+ *
+ * This function is used to parse the exit policy from our torrc. For
+ * the functions used to parse the exit policy from a router descriptor,
+ * see router_add_exit_policy.
  */
 int
 policies_parse_exit_policy(config_line_t *cfg, smartlist_t **dest,
+                           int ipv6_exit,
                            int rejectprivate, const char *local_address,
                            int add_default_policy)
 {
+  if (!ipv6_exit) {
+    append_exit_policy_string(dest, "reject *6:*");
+  }
   if (rejectprivate) {
     append_exit_policy_string(dest, "reject private:*");
     if (local_address) {
@@ -880,10 +974,12 @@ policies_parse_exit_policy(config_line_t *cfg, smartlist_t **dest,
   }
   if (parse_addr_policy(cfg, dest, -1))
     return -1;
-  if (add_default_policy)
+  if (add_default_policy) {
     append_exit_policy_string(dest, DEFAULT_EXIT_POLICY);
-  else
-    append_exit_policy_string(dest, "reject *:*");
+  } else {
+    append_exit_policy_string(dest, "reject *4:*");
+    append_exit_policy_string(dest, "reject *6:*");
+  }
   exit_policy_remove_redundancies(*dest);
 
   return 0;
@@ -894,7 +990,8 @@ policies_parse_exit_policy(config_line_t *cfg, smartlist_t **dest,
 void
 policies_exit_policy_append_reject_star(smartlist_t **dest)
 {
-  append_exit_policy_string(dest, "reject *:*");
+  append_exit_policy_string(dest, "reject *4:*");
+  append_exit_policy_string(dest, "reject *6:*");
 }
 
 /** Replace the exit policy of <b>node</b> with reject *:* */
@@ -970,18 +1067,23 @@ exit_policy_is_general_exit(smartlist_t *policy)
 /** Return false if <b>policy</b> might permit access to some addr:port;
  * otherwise if we are certain it rejects everything, return true. */
 int
-policy_is_reject_star(const smartlist_t *policy)
+policy_is_reject_star(const smartlist_t *policy, sa_family_t family)
 {
   if (!policy) /*XXXX disallow NULL policies? */
     return 1;
-  SMARTLIST_FOREACH(policy, addr_policy_t *, p, {
-    if (p->policy_type == ADDR_POLICY_ACCEPT)
+  SMARTLIST_FOREACH_BEGIN(policy, addr_policy_t *, p) {
+    if (p->policy_type == ADDR_POLICY_ACCEPT &&
+        (tor_addr_family(&p->addr) == family ||
+         tor_addr_family(&p->addr) == AF_UNSPEC)) {
       return 0;
-    else if (p->policy_type == ADDR_POLICY_REJECT &&
-             p->prt_min <= 1 && p->prt_max == 65535 &&
-             p->maskbits == 0)
+    } else if (p->policy_type == ADDR_POLICY_REJECT &&
+               p->prt_min <= 1 && p->prt_max == 65535 &&
+               p->maskbits == 0 &&
+               (tor_addr_family(&p->addr) == family ||
+                tor_addr_family(&p->addr) == AF_UNSPEC)) {
       return 1;
-  });
+    }
+  } SMARTLIST_FOREACH_END(p);
   return 1;
 }
 
@@ -996,20 +1098,28 @@ policy_write_item(char *buf, size_t buflen, addr_policy_t *policy,
   const char *addrpart;
   int result;
   const int is_accept = policy->policy_type == ADDR_POLICY_ACCEPT;
-  const int is_ip6 = tor_addr_family(&policy->addr) == AF_INET6;
+  const sa_family_t family = tor_addr_family(&policy->addr);
+  const int is_ip6 = (family == AF_INET6);
 
   tor_addr_to_str(addrbuf, &policy->addr, sizeof(addrbuf), 1);
 
   /* write accept/reject 1.2.3.4 */
-  if (policy->is_private)
+  if (policy->is_private) {
     addrpart = "private";
-  else if (policy->maskbits == 0)
-    addrpart = "*";
-  else
+  } else if (policy->maskbits == 0) {
+    if (format_for_desc)
+      addrpart = "*";
+    else if (family == AF_INET6)
+      addrpart = "*6";
+    else if (family == AF_INET)
+      addrpart = "*4";
+    else
+      addrpart = "*";
+  } else {
     addrpart = addrbuf;
+  }
 
-  result = tor_snprintf(buf, buflen, "%s%s%s %s",
-                        (is_ip6&&format_for_desc)?"opt ":"",
+  result = tor_snprintf(buf, buflen, "%s%s %s",
                         is_accept ? "accept" : "reject",
                         (is_ip6&&format_for_desc)?"6":"",
                         addrpart);
@@ -1189,8 +1299,8 @@ policy_summary_add_item(smartlist_t *summary, addr_policy_t *p)
      for (i = 0; private_nets[i]; ++i) {
        tor_addr_t addr;
        maskbits_t maskbits;
-       if (tor_addr_parse_mask_ports(private_nets[i], &addr,
-                                  &maskbits, NULL, NULL)<0) {
+       if (tor_addr_parse_mask_ports(private_nets[i], 0, &addr,
+                                     &maskbits, NULL, NULL)<0) {
          tor_assert(0);
        }
        if (tor_addr_compare(&p->addr, &addr, CMP_EXACT) == 0 &&
@@ -1216,7 +1326,7 @@ policy_summary_add_item(smartlist_t *summary, addr_policy_t *p)
  * is an exception to the shorter-representation-wins rule).
  */
 char *
-policy_summarize(smartlist_t *policy)
+policy_summarize(smartlist_t *policy, sa_family_t family)
 {
   smartlist_t *summary = policy_summary_create();
   smartlist_t *accepts, *rejects;
@@ -1228,9 +1338,16 @@ policy_summarize(smartlist_t *policy)
   tor_assert(policy);
 
   /* Create the summary list */
-  SMARTLIST_FOREACH(policy, addr_policy_t *, p, {
+  SMARTLIST_FOREACH_BEGIN(policy, addr_policy_t *, p) {
+    sa_family_t f = tor_addr_family(&p->addr);
+    if (f != AF_INET && f != AF_INET6) {
+      log_warn(LD_BUG, "Weird family when summarizing address policy");
+    }
+    if (f != family)
+      continue;
+    /* XXXX-ipv6 More family work is needed */
     policy_summary_add_item(summary, p);
-  });
+  } SMARTLIST_FOREACH_END(p);
 
   /* Now create two lists of strings, one for accepted and one
    * for rejected ports.  We take care to merge ranges so that
@@ -1517,7 +1634,7 @@ short_policy_is_reject_star(const short_policy_t *policy)
           policy->entries[0].max_port == 65535);
 }
 
-/** Decides whether addr:port is probably or definitely accepted or rejcted by
+/** Decide whether addr:port is probably or definitely accepted or rejected by
  * <b>node</b>.  See compare_tor_addr_to_addr_policy for details on addr/port
  * interpretation. */
 addr_policy_result_t
@@ -1527,16 +1644,29 @@ compare_tor_addr_to_node_policy(const tor_addr_t *addr, uint16_t port,
   if (node->rejects_all)
     return ADDR_POLICY_REJECTED;
 
-  if (node->ri)
+  if (addr && tor_addr_family(addr) == AF_INET6) {
+    const short_policy_t *p = NULL;
+    if (node->ri)
+      p = node->ri->ipv6_exit_policy;
+    else if (node->md)
+      p = node->md->ipv6_exit_policy;
+    if (p)
+      return compare_tor_addr_to_short_policy(addr, port, p);
+    else
+      return ADDR_POLICY_REJECTED;
+  }
+
+  if (node->ri) {
     return compare_tor_addr_to_addr_policy(addr, port, node->ri->exit_policy);
-  else if (node->md) {
+  } else if (node->md) {
     if (node->md->exit_policy == NULL)
       return ADDR_POLICY_REJECTED;
     else
       return compare_tor_addr_to_short_policy(addr, port,
                                               node->md->exit_policy);
-  } else
+  } else {
     return ADDR_POLICY_PROBABLY_REJECTED;
+  }
 }
 
 /** Implementation for GETINFO control command: knows the answer for questions

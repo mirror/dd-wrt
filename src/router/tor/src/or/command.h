@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,11 +9,15 @@
  * \brief Header file for command.c.
  **/
 
-#ifndef _TOR_COMMAND_H
-#define _TOR_COMMAND_H
+#ifndef TOR_COMMAND_H
+#define TOR_COMMAND_H
 
-void command_process_cell(cell_t *cell, or_connection_t *conn);
-void command_process_var_cell(var_cell_t *cell, or_connection_t *conn);
+#include "channel.h"
+
+void command_process_cell(channel_t *chan, cell_t *cell);
+void command_process_var_cell(channel_t *chan, var_cell_t *cell);
+void command_setup_channel(channel_t *chan);
+void command_setup_listener(channel_listener_t *chan_l);
 
 extern uint64_t stats_n_padding_cells_processed;
 extern uint64_t stats_n_create_cells_processed;

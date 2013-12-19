@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for reasons.c.
  **/
 
-#ifndef _TOR_REASONS_H
-#define _TOR_REASONS_H
+#ifndef TOR_REASONS_H
+#define TOR_REASONS_H
 
 const char *stream_end_reason_to_control_string(int reason);
 const char *stream_end_reason_to_string(int reason);

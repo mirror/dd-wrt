@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
@@ -17,6 +17,7 @@
 #ifdef _WIN32
 #include <tchar.h>
 #endif
+#include <math.h>
 
 /* XXXX this is a minimal wrapper to make the unit tests compile with the
  * changed tor_timegm interface. */
@@ -30,6 +31,75 @@ tor_timegm_wrapper(const struct tm *tm)
 }
 
 #define tor_timegm tor_timegm_wrapper
+
+static void
+test_util_read_until_eof_impl(const char *fname, size_t file_len,
+                              size_t read_limit)
+{
+  char *fifo_name = NULL;
+  char *test_str = NULL;
+  char *str = NULL;
+  size_t sz = 9999999;
+  int fd = -1;
+  int r;
+
+  fifo_name = tor_strdup(get_fname(fname));
+  test_str = tor_malloc(file_len);
+  crypto_rand(test_str, file_len);
+
+  r = write_bytes_to_file(fifo_name, test_str, file_len, 1);
+  tt_int_op(r, ==, 0);
+
+  fd = open(fifo_name, O_RDONLY|O_BINARY);
+  tt_int_op(fd, >=, 0);
+  str = read_file_to_str_until_eof(fd, read_limit, &sz);
+  tt_assert(str != NULL);
+
+  if (read_limit < file_len)
+    tt_int_op(sz, ==, read_limit);
+  else
+    tt_int_op(sz, ==, file_len);
+
+  test_mem_op(test_str, ==, str, sz);
+  test_assert(str[sz] == '\0');
+
+ done:
+  unlink(fifo_name);
+  tor_free(fifo_name);
+  tor_free(test_str);
+  tor_free(str);
+  if (fd >= 0)
+    close(fd);
+}
+
+static void
+test_util_read_file_eof_tiny_limit(void *arg)
+{
+  (void)arg;
+  // purposely set limit shorter than what we wrote to the FIFO to
+  // test the maximum, and that it puts the NUL in the right spot
+
+  test_util_read_until_eof_impl("tor_test_fifo_tiny", 5, 4);
+}
+
+static void
+test_util_read_file_eof_two_loops(void *arg)
+{
+  (void)arg;
+  // write more than 1024 bytes to the FIFO to test two passes through
+  // the loop in the method; if the re-alloc size is changed this
+  // should be updated as well.
+
+  test_util_read_until_eof_impl("tor_test_fifo_2k", 2048, 10000);
+}
+
+static void
+test_util_read_file_eof_zero_bytes(void *arg)
+{
+  (void)arg;
+  // zero-byte fifo
+  test_util_read_until_eof_impl("tor_test_fifo_empty", 0, 10000);
+}
 
 static void
 test_util_time(void)
@@ -152,6 +222,7 @@ test_util_time(void)
   test_eq(-1, parse_iso_time("2011-03-30 23:59:62 GMT", &t_res));
   test_eq(-1, parse_iso_time("1969-03-30 23:59:59 GMT", &t_res));
   test_eq(-1, parse_iso_time("2011-00-30 23:59:59 GMT", &t_res));
+  test_eq(-1, parse_iso_time("2147483647-08-29 14:00:00", &t_res));
   test_eq(-1, parse_iso_time("2011-03-30 23:59", &t_res));
 
   /* Test tor_gettimeofday */
@@ -731,7 +802,7 @@ test_util_strmisc(void)
 {
   char buf[1024];
   int i;
-  char *cp;
+  char *cp, *cp_tmp = NULL;
 
   /* Test strl operations */
   test_eq(5, strlcpy(buf, "Hello", 0));
@@ -934,20 +1005,20 @@ test_util_strmisc(void)
   /* Test strndup and memdup */
   {
     const char *s = "abcdefghijklmnopqrstuvwxyz";
-    cp = tor_strndup(s, 30);
-    test_streq(cp, s); /* same string, */
-    test_neq(cp, s); /* but different pointers. */
-    tor_free(cp);
+    cp_tmp = tor_strndup(s, 30);
+    test_streq(cp_tmp, s); /* same string, */
+    test_neq_ptr(cp_tmp, s); /* but different pointers. */
+    tor_free(cp_tmp);
 
-    cp = tor_strndup(s, 5);
-    test_streq(cp, "abcde");
-    tor_free(cp);
+    cp_tmp = tor_strndup(s, 5);
+    test_streq(cp_tmp, "abcde");
+    tor_free(cp_tmp);
 
     s = "a\0b\0c\0d\0e\0";
-    cp = tor_memdup(s,10);
-    test_memeq(cp, s, 10); /* same ram, */
-    test_neq(cp, s); /* but different pointers. */
-    tor_free(cp);
+    cp_tmp = tor_memdup(s,10);
+    test_memeq(cp_tmp, s, 10); /* same ram, */
+    test_neq_ptr(cp_tmp, s); /* but different pointers. */
+    tor_free(cp_tmp);
   }
 
   /* Test str-foo functions */
@@ -981,79 +1052,6 @@ test_util_strmisc(void)
     test_assert(!tor_memstr(haystack, 7, "cadd"));
     test_assert(!tor_memstr(haystack, 7, "fe"));
     test_assert(!tor_memstr(haystack, 7, "ababcade"));
-  }
-
-  /* Test wrap_string */
-  {
-    smartlist_t *sl = smartlist_new();
-    wrap_string(sl,
-                "This is a test of string wrapping functionality: woot. "
-                    "a functionality? w00t w00t...!",
-                10, "", "");
-    cp = smartlist_join_strings(sl, "", 0, NULL);
-    test_streq(cp,
-            "This is a\ntest of\nstring\nwrapping\nfunctional\nity: woot.\n"
-               "a\nfunctional\nity? w00t\nw00t...!\n");
-    tor_free(cp);
-    SMARTLIST_FOREACH(sl, char *, cp, tor_free(cp));
-    smartlist_clear(sl);
-
-    wrap_string(sl, "This is a test of string wrapping functionality: woot.",
-                16, "### ", "# ");
-    cp = smartlist_join_strings(sl, "", 0, NULL);
-    test_streq(cp,
-             "### This is a\n# test of string\n# wrapping\n# functionality:\n"
-             "# woot.\n");
-    tor_free(cp);
-    SMARTLIST_FOREACH(sl, char *, cp, tor_free(cp));
-    smartlist_clear(sl);
-
-    wrap_string(sl, "A test of string wrapping...", 6, "### ", "# ");
-    cp = smartlist_join_strings(sl, "", 0, NULL);
-    test_streq(cp,
-               "### A\n# test\n# of\n# stri\n# ng\n# wrap\n# ping\n# ...\n");
-    tor_free(cp);
-    SMARTLIST_FOREACH(sl, char *, cp, tor_free(cp));
-    smartlist_clear(sl);
-
-    wrap_string(sl, "Wrapping test", 6, "#### ", "# ");
-    cp = smartlist_join_strings(sl, "", 0, NULL);
-    test_streq(cp, "#### W\n# rapp\n# ing\n# test\n");
-    tor_free(cp);
-    SMARTLIST_FOREACH(sl, char *, cp, tor_free(cp));
-    smartlist_clear(sl);
-
-    wrap_string(sl, "Small test", 6, "### ", "#### ");
-    cp = smartlist_join_strings(sl, "", 0, NULL);
-    test_streq(cp, "### Sm\n#### a\n#### l\n#### l\n#### t\n#### e"
-                   "\n#### s\n#### t\n");
-    tor_free(cp);
-    SMARTLIST_FOREACH(sl, char *, cp, tor_free(cp));
-    smartlist_clear(sl);
-
-    wrap_string(sl, "First null", 6, NULL, "> ");
-    cp = smartlist_join_strings(sl, "", 0, NULL);
-    test_streq(cp, "First\n> null\n");
-    tor_free(cp);
-    SMARTLIST_FOREACH(sl, char *, cp, tor_free(cp));
-    smartlist_clear(sl);
-
-    wrap_string(sl, "Second null", 6, "> ", NULL);
-    cp = smartlist_join_strings(sl, "", 0, NULL);
-    test_streq(cp, "> Seco\nnd\nnull\n");
-    tor_free(cp);
-    SMARTLIST_FOREACH(sl, char *, cp, tor_free(cp));
-    smartlist_clear(sl);
-
-    wrap_string(sl, "Both null", 6, NULL, NULL);
-    cp = smartlist_join_strings(sl, "", 0, NULL);
-    test_streq(cp, "Both\nnull\n");
-    tor_free(cp);
-    SMARTLIST_FOREACH(sl, char *, cp, tor_free(cp));
-    smartlist_free(sl);
-
-    /* Can't test prefixes that have the same length as the line width, because
-       the function has an assert */
   }
 
   /* Test hex_str */
@@ -1099,7 +1097,7 @@ test_util_strmisc(void)
   tt_int_op(strcmp_len("blah", "", 0),    ==, 0);
 
  done:
-  ;
+  tor_free(cp_tmp);
 }
 
 static void
@@ -1109,6 +1107,7 @@ test_util_pow2(void)
   test_eq(tor_log2(64), 6);
   test_eq(tor_log2(65), 6);
   test_eq(tor_log2(63), 5);
+  test_eq(tor_log2(0), 0); /* incorrect mathematically, but as specified */
   test_eq(tor_log2(1), 0);
   test_eq(tor_log2(2), 1);
   test_eq(tor_log2(3), 1);
@@ -1123,26 +1122,35 @@ test_util_pow2(void)
   test_eq(round_to_power_of_2(130), 128);
   test_eq(round_to_power_of_2(U64_LITERAL(40000000000000000)),
           U64_LITERAL(1)<<55);
-  test_eq(round_to_power_of_2(0), 2);
+  test_eq(round_to_power_of_2(U64_LITERAL(0xffffffffffffffff)),
+          U64_LITERAL(1)<<63);
+  test_eq(round_to_power_of_2(0), 1);
+  test_eq(round_to_power_of_2(1), 1);
+  test_eq(round_to_power_of_2(2), 2);
+  test_eq(round_to_power_of_2(3), 2);
+  test_eq(round_to_power_of_2(4), 4);
+  test_eq(round_to_power_of_2(5), 4);
+  test_eq(round_to_power_of_2(6), 4);
+  test_eq(round_to_power_of_2(7), 8);
 
  done:
   ;
 }
 
 /** mutex for thread test to stop the threads hitting data at the same time. */
-static tor_mutex_t *_thread_test_mutex = NULL;
+static tor_mutex_t *thread_test_mutex_ = NULL;
 /** mutexes for the thread test to make sure that the threads have to
  * interleave somewhat. */
-static tor_mutex_t *_thread_test_start1 = NULL,
-                   *_thread_test_start2 = NULL;
+static tor_mutex_t *thread_test_start1_ = NULL,
+                   *thread_test_start2_ = NULL;
 /** Shared strmap for the thread test. */
-static strmap_t *_thread_test_strmap = NULL;
+static strmap_t *thread_test_strmap_ = NULL;
 /** The name of thread1 for the thread test */
-static char *_thread1_name = NULL;
+static char *thread1_name_ = NULL;
 /** The name of thread2 for the thread test */
-static char *_thread2_name = NULL;
+static char *thread2_name_ = NULL;
 
-static void _thread_test_func(void* _s) ATTR_NORETURN;
+static void thread_test_func_(void* _s) ATTR_NORETURN;
 
 /** How many iterations have the threads in the unit test run? */
 static int t1_count = 0, t2_count = 0;
@@ -1150,9 +1158,9 @@ static int t1_count = 0, t2_count = 0;
 /** Helper function for threading unit tests: This function runs in a
  * subthread. It grabs its own mutex (start1 or start2) to make sure that it
  * should start, then it repeatedly alters _test_thread_strmap protected by
- * _thread_test_mutex. */
+ * thread_test_mutex_. */
 static void
-_thread_test_func(void* _s)
+thread_test_func_(void* _s)
 {
   char *s = _s;
   int i, *count;
@@ -1160,12 +1168,12 @@ _thread_test_func(void* _s)
   char buf[64];
   char **cp;
   if (!strcmp(s, "thread 1")) {
-    m = _thread_test_start1;
-    cp = &_thread1_name;
+    m = thread_test_start1_;
+    cp = &thread1_name_;
     count = &t1_count;
   } else {
-    m = _thread_test_start2;
-    cp = &_thread2_name;
+    m = thread_test_start2_;
+    cp = &thread2_name_;
     count = &t2_count;
   }
 
@@ -1175,14 +1183,14 @@ _thread_test_func(void* _s)
   tor_mutex_acquire(m);
 
   for (i=0; i<10000; ++i) {
-    tor_mutex_acquire(_thread_test_mutex);
-    strmap_set(_thread_test_strmap, "last to run", *cp);
+    tor_mutex_acquire(thread_test_mutex_);
+    strmap_set(thread_test_strmap_, "last to run", *cp);
     ++*count;
-    tor_mutex_release(_thread_test_mutex);
+    tor_mutex_release(thread_test_mutex_);
   }
-  tor_mutex_acquire(_thread_test_mutex);
-  strmap_set(_thread_test_strmap, s, *cp);
-  tor_mutex_release(_thread_test_mutex);
+  tor_mutex_acquire(thread_test_mutex_);
+  strmap_set(thread_test_strmap_, s, *cp);
+  tor_mutex_release(thread_test_mutex_);
 
   tor_mutex_release(m);
 
@@ -1207,67 +1215,67 @@ test_util_threads(void)
   if (1)
     return;
 #endif
-  _thread_test_mutex = tor_mutex_new();
-  _thread_test_start1 = tor_mutex_new();
-  _thread_test_start2 = tor_mutex_new();
-  _thread_test_strmap = strmap_new();
+  thread_test_mutex_ = tor_mutex_new();
+  thread_test_start1_ = tor_mutex_new();
+  thread_test_start2_ = tor_mutex_new();
+  thread_test_strmap_ = strmap_new();
   s1 = tor_strdup("thread 1");
   s2 = tor_strdup("thread 2");
-  tor_mutex_acquire(_thread_test_start1);
-  tor_mutex_acquire(_thread_test_start2);
-  spawn_func(_thread_test_func, s1);
-  spawn_func(_thread_test_func, s2);
-  tor_mutex_release(_thread_test_start2);
-  tor_mutex_release(_thread_test_start1);
+  tor_mutex_acquire(thread_test_start1_);
+  tor_mutex_acquire(thread_test_start2_);
+  spawn_func(thread_test_func_, s1);
+  spawn_func(thread_test_func_, s2);
+  tor_mutex_release(thread_test_start2_);
+  tor_mutex_release(thread_test_start1_);
   started = time(NULL);
   while (!done) {
-    tor_mutex_acquire(_thread_test_mutex);
-    strmap_assert_ok(_thread_test_strmap);
-    if (strmap_get(_thread_test_strmap, "thread 1") &&
-        strmap_get(_thread_test_strmap, "thread 2")) {
+    tor_mutex_acquire(thread_test_mutex_);
+    strmap_assert_ok(thread_test_strmap_);
+    if (strmap_get(thread_test_strmap_, "thread 1") &&
+        strmap_get(thread_test_strmap_, "thread 2")) {
       done = 1;
     } else if (time(NULL) > started + 150) {
       timedout = done = 1;
     }
-    tor_mutex_release(_thread_test_mutex);
+    tor_mutex_release(thread_test_mutex_);
 #ifndef _WIN32
     /* Prevent the main thread from starving the worker threads. */
     select(0, NULL, NULL, NULL, &tv);
 #endif
   }
-  tor_mutex_acquire(_thread_test_start1);
-  tor_mutex_release(_thread_test_start1);
-  tor_mutex_acquire(_thread_test_start2);
-  tor_mutex_release(_thread_test_start2);
+  tor_mutex_acquire(thread_test_start1_);
+  tor_mutex_release(thread_test_start1_);
+  tor_mutex_acquire(thread_test_start2_);
+  tor_mutex_release(thread_test_start2_);
 
-  tor_mutex_free(_thread_test_mutex);
+  tor_mutex_free(thread_test_mutex_);
 
   if (timedout) {
     printf("\nTimed out: %d %d", t1_count, t2_count);
-    test_assert(strmap_get(_thread_test_strmap, "thread 1"));
-    test_assert(strmap_get(_thread_test_strmap, "thread 2"));
+    test_assert(strmap_get(thread_test_strmap_, "thread 1"));
+    test_assert(strmap_get(thread_test_strmap_, "thread 2"));
     test_assert(!timedout);
   }
 
   /* different thread IDs. */
-  test_assert(strcmp(strmap_get(_thread_test_strmap, "thread 1"),
-                     strmap_get(_thread_test_strmap, "thread 2")));
-  test_assert(!strcmp(strmap_get(_thread_test_strmap, "thread 1"),
-                      strmap_get(_thread_test_strmap, "last to run")) ||
-              !strcmp(strmap_get(_thread_test_strmap, "thread 2"),
-                      strmap_get(_thread_test_strmap, "last to run")));
+  test_assert(strcmp(strmap_get(thread_test_strmap_, "thread 1"),
+                     strmap_get(thread_test_strmap_, "thread 2")));
+  test_assert(!strcmp(strmap_get(thread_test_strmap_, "thread 1"),
+                      strmap_get(thread_test_strmap_, "last to run")) ||
+              !strcmp(strmap_get(thread_test_strmap_, "thread 2"),
+                      strmap_get(thread_test_strmap_, "last to run")));
 
  done:
   tor_free(s1);
   tor_free(s2);
-  tor_free(_thread1_name);
-  tor_free(_thread2_name);
-  if (_thread_test_strmap)
-    strmap_free(_thread_test_strmap, NULL);
-  if (_thread_test_start1)
-    tor_mutex_free(_thread_test_start1);
-  if (_thread_test_start2)
-    tor_mutex_free(_thread_test_start2);
+  tor_free(thread1_name_);
+  tor_free(thread2_name_);
+  if (thread_test_strmap_)
+    strmap_free(thread_test_strmap_, NULL);
+  if (thread_test_start1_)
+    tor_mutex_free(thread_test_start1_);
+  if (thread_test_start2_)
+    tor_mutex_free(thread_test_start2_);
 }
 
 /** Run unit tests for compression functions */
@@ -1416,7 +1424,7 @@ test_util_mmap(void)
   /* Now a zero-length file. */
   write_str_to_file(fname1, "", 1);
   mapping = tor_mmap_file(fname1);
-  test_eq(mapping, NULL);
+  test_eq_ptr(mapping, NULL);
   test_eq(ERANGE, errno);
   unlink(fname1);
 
@@ -1474,12 +1482,28 @@ test_util_control_formats(void)
   tor_free(out);
 }
 
+#define test_feq(value1,value2) do {                               \
+    double v1 = (value1), v2=(value2);                             \
+    double tf_diff = v1-v2;                                        \
+    double tf_tolerance = ((v1+v2)/2.0)/1e8;                       \
+    if (tf_diff<0) tf_diff=-tf_diff;                               \
+    if (tf_tolerance<0) tf_tolerance=-tf_tolerance;                \
+    if (tf_diff<tf_tolerance) {                                    \
+      TT_BLATHER(("%s ~~ %s: %f ~~ %f",#value1,#value2,v1,v2));  \
+    } else {                                                       \
+      TT_FAIL(("%s ~~ %s: %f != %f",#value1,#value2,v1,v2)); \
+    }                                                              \
+  } while (0)
+
 static void
 test_util_sscanf(void)
 {
   unsigned u1, u2, u3;
   char s1[20], s2[10], s3[10], ch;
   int r;
+  long lng1,lng2;
+  int int1, int2;
+  double d1,d2,d3,d4;
 
   /* Simple tests (malformed patterns, literal matching, ...) */
   test_eq(-1, tor_sscanf("123", "%i", &r)); /* %i is not supported */
@@ -1608,6 +1632,65 @@ test_util_sscanf(void)
   test_eq(4, tor_sscanf("1.2.3 foobar", "%u.%u.%u%c", &u1, &u2, &u3, &ch));
   test_eq(' ', ch);
 
+  r = tor_sscanf("12345 -67890 -1", "%d %ld %d", &int1, &lng1, &int2);
+  test_eq(r,3);
+  test_eq(int1, 12345);
+  test_eq(lng1, -67890);
+  test_eq(int2, -1);
+
+#if SIZEOF_INT == 4
+  r = tor_sscanf("-2147483648. 2147483647.", "%d. %d.", &int1, &int2);
+  test_eq(r,2);
+  test_eq(int1, -2147483647-1);
+  test_eq(int2, 2147483647);
+
+  r = tor_sscanf("-2147483679.", "%d.", &int1);
+  test_eq(r,0);
+
+  r = tor_sscanf("2147483678.", "%d.", &int1);
+  test_eq(r,0);
+#elif SIZEOF_INT == 8
+  r = tor_sscanf("-9223372036854775808. 9223372036854775807.",
+                 "%d. %d.", &int1, &int2);
+  test_eq(r,2);
+  test_eq(int1, -9223372036854775807-1);
+  test_eq(int2, 9223372036854775807);
+
+  r = tor_sscanf("-9223372036854775809.", "%d.", &int1);
+  test_eq(r,0);
+
+  r = tor_sscanf("9223372036854775808.", "%d.", &int1);
+  test_eq(r,0);
+#endif
+
+#if SIZEOF_LONG == 4
+  r = tor_sscanf("-2147483648. 2147483647.", "%ld. %ld.", &lng1, &lng2);
+  test_eq(r,2);
+  test_eq(lng1, -2147483647 - 1);
+  test_eq(lng2, 2147483647);
+#elif SIZEOF_LONG == 8
+  r = tor_sscanf("-9223372036854775808. 9223372036854775807.",
+                 "%ld. %ld.", &lng1, &lng2);
+  test_eq(r,2);
+  test_eq(lng1, -9223372036854775807L - 1);
+  test_eq(lng2, 9223372036854775807L);
+
+  r = tor_sscanf("-9223372036854775808. 9223372036854775808.",
+                 "%ld. %ld.", &lng1, &lng2);
+  test_eq(r,1);
+  r = tor_sscanf("-9223372036854775809. 9223372036854775808.",
+                 "%ld. %ld.", &lng1, &lng2);
+  test_eq(r,0);
+#endif
+
+  r = tor_sscanf("123.456 .000007 -900123123.2000787 00003.2",
+                 "%lf %lf %lf %lf", &d1,&d2,&d3,&d4);
+  test_eq(r,4);
+  test_feq(d1, 123.456);
+  test_feq(d2, .000007);
+  test_feq(d3, -900123123.2000787);
+  test_feq(d4, 3.2);
+
  done:
   ;
 }
@@ -1735,7 +1818,7 @@ test_util_memarea(void)
   /* Make sure we don't overalign. */
   p1 = memarea_alloc(area, 1);
   p2 = memarea_alloc(area, 1);
-  test_eq(p1+sizeof(void*), p2);
+  test_eq_ptr(p1+sizeof(void*), p2);
   {
     malloced_ptr = tor_malloc(64);
     test_assert(!memarea_owns_ptr(area, malloced_ptr));
@@ -1780,7 +1863,7 @@ test_util_memarea(void)
 
   memarea_clear(area);
   p1 = memarea_alloc(area, 1);
-  test_eq(p1, p1_orig);
+  test_eq_ptr(p1, p1_orig);
   memarea_clear(area);
 
   /* Check for running over an area's size. */
@@ -2061,13 +2144,13 @@ test_util_listdir(void *ptr)
   dir_contents = tor_listdir(dirname);
   test_assert(dir_contents);
   /* make sure that each filename is listed. */
-  test_assert(smartlist_string_isin_case(dir_contents, "hopscotch"));
-  test_assert(smartlist_string_isin_case(dir_contents, "mumblety-peg"));
-  test_assert(smartlist_string_isin_case(dir_contents, ".hidden-file"));
-  test_assert(smartlist_string_isin_case(dir_contents, "some-directory"));
+  test_assert(smartlist_contains_string_case(dir_contents, "hopscotch"));
+  test_assert(smartlist_contains_string_case(dir_contents, "mumblety-peg"));
+  test_assert(smartlist_contains_string_case(dir_contents, ".hidden-file"));
+  test_assert(smartlist_contains_string_case(dir_contents, "some-directory"));
 
-  test_assert(!smartlist_string_isin(dir_contents, "."));
-  test_assert(!smartlist_string_isin(dir_contents, ".."));
+  test_assert(!smartlist_contains_string(dir_contents, "."));
+  test_assert(!smartlist_contains_string(dir_contents, ".."));
 
  done:
   tor_free(fname1);
@@ -2136,7 +2219,7 @@ test_util_load_win_lib(void *ptr)
   tt_assert(h);
  done:
   if (h)
-    CloseHandle(h);
+    FreeLibrary(h);
 }
 #endif
 
@@ -2169,6 +2252,7 @@ test_util_exit_status(void *ptr)
   n = format_helper_exit_status(0xFF, -0x80000000, hex_errno);
   test_streq("FF/-80000000\n", hex_errno);
   test_eq(n, strlen(hex_errno));
+  test_eq(n, HEX_ERRNO_SIZE);
 
   clear_hex_errno(hex_errno);
   n = format_helper_exit_status(0x7F, 0, hex_errno);
@@ -2557,7 +2641,7 @@ test_util_join_win_cmdline(void *ptr)
   };
 
   int i;
-  char *joined_argv;
+  char *joined_argv = NULL;
 
   (void)ptr;
 
@@ -2569,7 +2653,7 @@ test_util_join_win_cmdline(void *ptr)
   }
 
  done:
-  ;
+  tor_free(joined_argv);
 }
 
 #define MAX_SPLIT_LINE_COUNT 4
@@ -2688,6 +2772,16 @@ test_util_di_ops(void)
     test_eq(eq1, cmp1 == 0);
     test_eq(neq1, !eq1);
   }
+
+  tt_int_op(1, ==, safe_mem_is_zero("", 0));
+  tt_int_op(1, ==, safe_mem_is_zero("", 1));
+  tt_int_op(0, ==, safe_mem_is_zero("a", 1));
+  tt_int_op(0, ==, safe_mem_is_zero("a", 2));
+  tt_int_op(0, ==, safe_mem_is_zero("\0a", 2));
+  tt_int_op(1, ==, safe_mem_is_zero("\0\0a", 2));
+  tt_int_op(1, ==, safe_mem_is_zero("\0\0\0\0\0\0\0\0", 8));
+  tt_int_op(1, ==, safe_mem_is_zero("\0\0\0\0\0\0\0\0a", 8));
+  tt_int_op(0, ==, safe_mem_is_zero("\0\0\0\0\0\0\0\0a", 9));
 
  done:
   ;
@@ -3044,7 +3138,7 @@ test_util_set_env_var_in_sl(void *ptr)
   SMARTLIST_FOREACH(new_env_vars, char *, env_var,
                     set_environment_variable_in_smartlist(merged_env_vars,
                                                           env_var,
-                                                          _tor_free,
+                                                          tor_free_,
                                                           1));
 
   smartlist_sort_strings(merged_env_vars);
@@ -3074,6 +3168,48 @@ test_util_set_env_var_in_sl(void *ptr)
 
   SMARTLIST_FOREACH(expected_resulting_env_vars, char *, x, tor_free(x));
   smartlist_free(expected_resulting_env_vars);
+}
+
+static void
+test_util_weak_random(void *arg)
+{
+  int i, j, n[16];
+  tor_weak_rng_t rng;
+  (void) arg;
+
+  tor_init_weak_random(&rng, (unsigned)time(NULL));
+
+  for (i = 1; i <= 256; ++i) {
+    for (j=0;j<100;++j) {
+      int r = tor_weak_random_range(&rng, i);
+      tt_int_op(0, <=, r);
+      tt_int_op(r, <, i);
+    }
+  }
+
+  memset(n,0,sizeof(n));
+  for (j=0;j<8192;++j) {
+    n[tor_weak_random_range(&rng, 16)]++;
+  }
+
+  for (i=0;i<16;++i)
+    tt_int_op(n[i], >, 0);
+ done:
+  ;
+}
+
+static void
+test_util_mathlog(void *arg)
+{
+  double d;
+  (void) arg;
+
+  d = tor_mathlog(2.718281828);
+  tt_double_op(fabs(d - 1.0), <, .000001);
+  d = tor_mathlog(10);
+  tt_double_op(fabs(d - 2.30258509), <, .000001);
+ done:
+  ;
 }
 
 #define UTIL_LEGACY(name)                                               \
@@ -3129,6 +3265,11 @@ struct testcase_t util_tests[] = {
   UTIL_TEST(envnames, 0),
   UTIL_TEST(make_environment, 0),
   UTIL_TEST(set_env_var_in_sl, 0),
+  UTIL_TEST(read_file_eof_tiny_limit, 0),
+  UTIL_TEST(read_file_eof_two_loops, 0),
+  UTIL_TEST(read_file_eof_zero_bytes, 0),
+  UTIL_TEST(mathlog, 0),
+  UTIL_TEST(weak_random, 0),
   END_OF_TESTCASES
 };
 
