@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for router.c.
  **/
 
-#ifndef _TOR_ROUTER_H
-#define _TOR_ROUTER_H
+#ifndef TOR_ROUTER_H
+#define TOR_ROUTER_H
 
 crypto_pk_t *get_onion_key(void);
 time_t get_onion_key_set_at(void);
@@ -29,6 +29,11 @@ void rotate_onion_key(void);
 crypto_pk_t *init_key_from_file(const char *fname, int generate,
                                     int severity);
 void v3_authority_check_key_expiry(void);
+
+#ifdef CURVE25519_ENABLED
+di_digest256_map_t *construct_ntor_key_map(void);
+void ntor_key_map_free(di_digest256_map_t *map);
+#endif
 
 int router_initialize_tls_context(void);
 int init_keys(void);
@@ -53,8 +58,11 @@ int authdir_mode_publishes_statuses(const or_options_t *options);
 int authdir_mode_tests_reachability(const or_options_t *options);
 int authdir_mode_bridge(const or_options_t *options);
 
-uint16_t router_get_active_listener_port_by_type(int listener_type);
+uint16_t router_get_active_listener_port_by_type_af(int listener_type,
+                                                    sa_family_t family);
 uint16_t router_get_advertised_or_port(const or_options_t *options);
+uint16_t router_get_advertised_or_port_by_af(const or_options_t *options,
+                                             sa_family_t family);
 uint16_t router_get_advertised_dir_port(const or_options_t *options,
                                         uint16_t dirport);
 
@@ -72,20 +80,21 @@ void check_descriptor_bandwidth_changed(time_t now);
 void check_descriptor_ipaddress_changed(time_t now);
 void router_new_address_suggestion(const char *suggestion,
                                    const dir_connection_t *d_conn);
-int router_compare_to_my_exit_policy(edge_connection_t *conn);
+int router_compare_to_my_exit_policy(const tor_addr_t *addr, uint16_t port);
 int router_my_exit_policy_is_reject_star(void);
 const routerinfo_t *router_get_my_routerinfo(void);
 extrainfo_t *router_get_my_extrainfo(void);
 const char *router_get_my_descriptor(void);
 const char *router_get_descriptor_gen_reason(void);
 int router_digest_is_me(const char *digest);
+const uint8_t *router_get_my_id_digest(void);
 int router_extrainfo_digest_is_me(const char *digest);
 int router_is_me(const routerinfo_t *router);
 int router_fingerprint_is_me(const char *fp);
 int router_pick_published_address(const or_options_t *options, uint32_t *addr);
 int router_rebuild_descriptor(int force);
-int router_dump_router_to_string(char *s, size_t maxlen, routerinfo_t *router,
-                                 crypto_pk_t *ident_key);
+char *router_dump_router_to_string(routerinfo_t *router,
+                                   crypto_pk_t *ident_key);
 void router_get_prim_orport(const routerinfo_t *router,
                             tor_addr_port_t *addr_port_out);
 void router_get_pref_orport(const routerinfo_t *router,
@@ -93,6 +102,9 @@ void router_get_pref_orport(const routerinfo_t *router,
 void router_get_pref_ipv6_orport(const routerinfo_t *router,
                                  tor_addr_port_t *addr_port_out);
 int router_ipv6_preferred(const routerinfo_t *router);
+int router_has_addr(const routerinfo_t *router, const tor_addr_t *addr);
+int router_has_orport(const routerinfo_t *router,
+                      const tor_addr_port_t *orport);
 int extrainfo_dump_to_string(char **s, extrainfo_t *extrainfo,
                              crypto_pk_t *ident_key);
 int is_legal_nickname(const char *s);
@@ -123,14 +135,14 @@ const char *routerstatus_describe(const routerstatus_t *ri);
 const char *extend_info_describe(const extend_info_t *ei);
 
 void router_get_verbose_nickname(char *buf, const routerinfo_t *router);
-void routerstatus_get_verbose_nickname(char *buf,
-                                       const routerstatus_t *router);
 void router_reset_warnings(void);
 void router_reset_reachability(void);
 void router_free_all(void);
 
 const char *router_purpose_to_string(uint8_t p);
 uint8_t router_purpose_from_string(const char *s);
+
+smartlist_t *router_get_all_orports(const routerinfo_t *ri);
 
 #ifdef ROUTER_PRIVATE
 /* Used only by router.c and test.c */

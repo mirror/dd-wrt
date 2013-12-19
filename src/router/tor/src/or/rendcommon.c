@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -439,7 +439,7 @@ rend_intro_point_free(rend_intro_point_t *intro)
   crypto_pk_free(intro->intro_key);
 
   if (intro->accepted_intro_rsa_parts != NULL) {
-    digestmap_free(intro->accepted_intro_rsa_parts, _tor_free);
+    replaycache_free(intro->accepted_intro_rsa_parts);
   }
 
   tor_free(intro);
@@ -800,7 +800,7 @@ rend_cache_entry_free(rend_cache_entry_t *e)
 /** Helper: deallocate a rend_cache_entry_t.  (Used with strmap_free(), which
  * requires a function pointer whose argument is void*). */
 static void
-_rend_cache_entry_free(void *p)
+rend_cache_entry_free_(void *p)
 {
   rend_cache_entry_free(p);
 }
@@ -809,8 +809,8 @@ _rend_cache_entry_free(void *p)
 void
 rend_cache_free_all(void)
 {
-  strmap_free(rend_cache, _rend_cache_entry_free);
-  digestmap_free(rend_cache_v2_dir, _rend_cache_entry_free);
+  strmap_free(rend_cache, rend_cache_entry_free_);
+  digestmap_free(rend_cache_v2_dir, rend_cache_entry_free_);
   rend_cache = NULL;
   rend_cache_v2_dir = NULL;
 }
@@ -844,7 +844,7 @@ rend_cache_purge(void)
 {
   if (rend_cache) {
     log_info(LD_REND, "Purging client/v0-HS-authority HS descriptor cache");
-    strmap_free(rend_cache, _rend_cache_entry_free);
+    strmap_free(rend_cache, rend_cache_entry_free_);
   }
   rend_cache = strmap_new();
 }
@@ -954,7 +954,7 @@ rend_cache_lookup_entry(const char *query, int version, rend_cache_entry_t **e)
   return 1;
 }
 
-/** <b>query</b> is a base-32'ed service id. If it's malformed, return -1.
+/** <b>query</b> is a base32'ed service id. If it's malformed, return -1.
  * Else look it up.
  *   - If it is found, point *desc to it, and write its length into
  *     *desc_len, and return 1.
@@ -1001,6 +1001,10 @@ rend_cache_lookup_v2_desc_as_dir(const char *desc_id, const char **desc)
   }
   return 0;
 }
+
+/* Do not allow more than this many introduction points in a hidden service
+ * descriptor */
+#define MAX_INTRO_POINTS 10
 
 /** Parse *desc, calculate its service id, and store it in the cache.
  * If we have a newer v0 descriptor with the same ID, ignore this one.
@@ -1069,6 +1073,16 @@ rend_cache_store(const char *desc, size_t desc_len, int published,
              safe_str_client(query));
     rend_service_descriptor_free(parsed);
     return -1;
+  }
+  if (parsed->intro_nodes &&
+      smartlist_len(parsed->intro_nodes) > MAX_INTRO_POINTS) {
+    log_warn(LD_REND, "Found too many introduction points on a hidden "
+             "service descriptor for %s. This is probably a (misguided) "
+             "attempt to improve reliability, but it could also be an "
+             "attempt to do a guard enumeration attack. Rejecting.",
+             safe_str_client(query));
+    rend_service_descriptor_free(parsed);
+    return -2;
   }
   tor_snprintf(key, sizeof(key), "0%s", query);
   e = (rend_cache_entry_t*) strmap_get_lc(rend_cache, key);
@@ -1288,6 +1302,7 @@ rend_cache_store_v2_desc_as_client(const char *desc,
   }
   /* Decode/decrypt introduction points. */
   if (intro_content) {
+    int n_intro_points;
     if (rend_query->auth_type != REND_NO_AUTH &&
         !tor_mem_is_zero(rend_query->descriptor_cookie,
                          sizeof(rend_query->descriptor_cookie))) {
@@ -1308,11 +1323,20 @@ rend_cache_store_v2_desc_as_client(const char *desc,
         intro_size = ipos_decrypted_size;
       }
     }
-    if (rend_parse_introduction_points(parsed, intro_content,
-                                       intro_size) <= 0) {
+    n_intro_points = rend_parse_introduction_points(parsed, intro_content,
+                                                    intro_size);
+    if (n_intro_points <= 0) {
       log_warn(LD_REND, "Failed to parse introduction points. Either the "
                "service has published a corrupt descriptor or you have "
                "provided invalid authorization data.");
+      retval = -2;
+      goto err;
+    } else if (n_intro_points > MAX_INTRO_POINTS) {
+      log_warn(LD_REND, "Found too many introduction points on a hidden "
+               "service descriptor for %s. This is probably a (misguided) "
+               "attempt to improve reliability, but it could also be an "
+               "attempt to do a guard enumeration attack. Rejecting.",
+               safe_str_client(rend_query->onion_address));
       retval = -2;
       goto err;
     }
@@ -1450,13 +1474,6 @@ rend_process_relay_cell(circuit_t *circ, const crypt_path_t *layer_hint,
   if (r == -2)
     log_info(LD_PROTOCOL, "Dropping cell (type %d) for wrong circuit type.",
              command);
-}
-
-/** Return the number of entries in our rendezvous descriptor cache. */
-int
-rend_cache_size(void)
-{
-  return strmap_size(rend_cache);
 }
 
 /** Allocate and return a new rend_data_t with the same

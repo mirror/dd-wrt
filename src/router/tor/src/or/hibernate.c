@@ -1,5 +1,5 @@
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -23,12 +23,15 @@ hibernating, phase 2:
 
 #define HIBERNATE_PRIVATE
 #include "or.h"
+#include "channel.h"
+#include "channeltls.h"
 #include "config.h"
 #include "connection.h"
 #include "connection_edge.h"
 #include "hibernate.h"
 #include "main.h"
 #include "router.h"
+#include "statefile.h"
 
 extern long stats_n_seconds_working; /* published uptime */
 
@@ -503,10 +506,6 @@ accounting_run_housekeeping(time_t now)
   }
 }
 
-/** When we have no idea how fast we are, how long do we assume it will take
- * us to exhaust our bandwidth? */
-#define GUESS_TIME_TO_USE_BANDWIDTH (24*60*60)
-
 /** Based on our interval and our estimated bandwidth, choose a
  * deterministic (but random-ish) time to wake up. */
 static void
@@ -845,7 +844,13 @@ hibernate_go_dormant(time_t now)
     if (conn->type == CONN_TYPE_AP) /* send socks failure if needed */
       connection_mark_unattached_ap(TO_ENTRY_CONN(conn),
                                     END_STREAM_REASON_HIBERNATING);
-    else
+    else if (conn->type == CONN_TYPE_OR) {
+      if (TO_OR_CONN(conn)->chan) {
+        channel_mark_for_close(TLS_CHAN_TO_BASE(TO_OR_CONN(conn)->chan));
+      } else {
+         connection_mark_for_close(conn);
+      }
+    } else
       connection_mark_for_close(conn);
   }
 
@@ -881,12 +886,12 @@ hibernate_end_time_elapsed(time_t now)
       /* We weren't sleeping before; we should sleep now. */
       log_notice(LD_ACCT,
                  "Accounting period ended. Commencing hibernation until "
-                 "%s GMT", buf);
+                 "%s UTC", buf);
       hibernate_go_dormant(now);
     } else {
       log_notice(LD_ACCT,
              "Accounting period ended. This period, we will hibernate"
-             " until %s GMT",buf);
+             " until %s UTC",buf);
     }
   }
 }

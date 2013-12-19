@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -26,6 +26,22 @@ int tor_memeq(const void *a, const void *b, size_t sz);
 #define fast_memcmp(a,b,c) (memcmp((a),(b),(c)))
 #define fast_memeq(a,b,c)  (0==memcmp((a),(b),(c)))
 #define fast_memneq(a,b,c) (0!=memcmp((a),(b),(c)))
+
+int safe_mem_is_zero(const void *mem, size_t sz);
+
+/** A type for a map from DIGEST256_LEN-byte blobs to void*, such that
+ * data lookups take an amount of time proportional only to the size
+ * of the map, and not to the position or presence of the item in the map.
+ *
+ * Not efficient for large maps! */
+typedef struct di_digest256_map_t di_digest256_map_t;
+typedef void (*dimap_free_fn)(void *);
+
+void dimap_free(di_digest256_map_t *map, dimap_free_fn free_fn);
+void dimap_add_entry(di_digest256_map_t **map,
+                     const uint8_t *key, void *val);
+void *dimap_search(const di_digest256_map_t *map, const uint8_t *key,
+                   void *dflt_val);
 
 #endif
 

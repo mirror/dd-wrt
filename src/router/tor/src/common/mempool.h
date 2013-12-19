@@ -1,4 +1,4 @@
-/* Copyright (c) 2007-2012, The Tor Project, Inc. */
+/* Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -6,8 +6,8 @@
  * \brief Headers for mempool.c
  **/
 
-#ifndef _TOR_MEMPOOL_H
-#define _TOR_MEMPOOL_H
+#ifndef TOR_MEMPOOL_H
+#define TOR_MEMPOOL_H
 
 /** A memory pool is a context in which a large number of fixed-sized
 * objects can be allocated efficiently.  See mempool.c for implementation
@@ -21,6 +21,8 @@ void mp_pool_clean(mp_pool_t *pool, int n_to_keep, int keep_recently_used);
 void mp_pool_destroy(mp_pool_t *pool);
 void mp_pool_assert_ok(mp_pool_t *pool);
 void mp_pool_log_status(mp_pool_t *pool, int severity);
+
+#define MP_POOL_ITEM_OVERHEAD (sizeof(void*))
 
 #define MEMPOOL_STATS
 

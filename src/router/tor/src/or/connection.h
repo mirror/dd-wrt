@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for connection.c.
  **/
 
-#ifndef _TOR_CONNECTION_H
-#define _TOR_CONNECTION_H
+#ifndef TOR_CONNECTION_H
+#define TOR_CONNECTION_H
 
 /* XXXX For buf_datalen in inline function */
 #include "buffers.h"
@@ -31,25 +31,57 @@ void connection_free(connection_t *conn);
 void connection_free_all(void);
 void connection_about_to_close_connection(connection_t *conn);
 void connection_close_immediate(connection_t *conn);
-void _connection_mark_for_close(connection_t *conn,int line, const char *file);
+void connection_mark_for_close_(connection_t *conn,
+                                int line, const char *file);
+void connection_mark_for_close_internal_(connection_t *conn,
+                                         int line, const char *file);
 
 #define connection_mark_for_close(c) \
-  _connection_mark_for_close((c), __LINE__, _SHORT_FILE_)
+  connection_mark_for_close_((c), __LINE__, SHORT_FILE__)
+#define connection_mark_for_close_internal(c) \
+  connection_mark_for_close_internal_((c), __LINE__, SHORT_FILE__)
+
+/**
+ * Mark 'c' for close, but try to hold it open until all the data is written.
+ * Use the _internal versions of connection_mark_for_close; this should be
+ * called when you either are sure that if this is an or_connection_t the
+ * controlling channel has been notified (e.g. with
+ * connection_or_notify_error()), or you actually are the
+ * connection_or_close_for_error() or connection_or_close_normally function.
+ * For all other cases, use connection_mark_and_flush() instead, which
+ * checks for or_connection_t properly, instead.  See below.
+ */
+#define connection_mark_and_flush_internal_(c,line,file)                  \
+  do {                                                                    \
+    connection_t *tmp_conn_ = (c);                                        \
+    connection_mark_for_close_internal_(tmp_conn_, (line), (file));       \
+    tmp_conn_->hold_open_until_flushed = 1;                               \
+    IF_HAS_BUFFEREVENT(tmp_conn_,                                         \
+                       connection_start_writing(tmp_conn_));              \
+  } while (0)
+
+#define connection_mark_and_flush_internal(c)            \
+  connection_mark_and_flush_internal_((c), __LINE__, SHORT_FILE__)
 
 /**
  * Mark 'c' for close, but try to hold it open until all the data is written.
  */
-#define _connection_mark_and_flush(c,line,file)                         \
-  do {                                                                  \
-    connection_t *tmp_conn_ = (c);                                      \
-    _connection_mark_for_close(tmp_conn_, (line), (file));              \
-    tmp_conn_->hold_open_until_flushed = 1;                             \
-    IF_HAS_BUFFEREVENT(tmp_conn_,                                       \
-                       connection_start_writing(tmp_conn_));            \
+#define connection_mark_and_flush_(c,line,file)                           \
+  do {                                                                    \
+    connection_t *tmp_conn_ = (c);                                        \
+    if (tmp_conn_->type == CONN_TYPE_OR) {                                \
+      log_warn(LD_CHANNEL | LD_BUG,                                       \
+               "Something tried to close (and flush) an or_connection_t"  \
+               " without going through channels at %s:%d",                \
+               file, line);                                               \
+      connection_or_close_for_error(TO_OR_CONN(tmp_conn_), 1);            \
+    } else {                                                              \
+      connection_mark_and_flush_internal_(c, line, file);                 \
+    }                                                                     \
   } while (0)
 
 #define connection_mark_and_flush(c)            \
-  _connection_mark_and_flush((c), __LINE__, _SHORT_FILE_)
+  connection_mark_and_flush_((c), __LINE__, SHORT_FILE__)
 
 void connection_expire_held_open(void);
 
@@ -90,7 +122,7 @@ int connection_outbuf_too_full(connection_t *conn);
 int connection_handle_write(connection_t *conn, int force);
 int connection_flush(connection_t *conn);
 
-void _connection_write_to_buf_impl(const char *string, size_t len,
+void connection_write_to_buf_impl_(const char *string, size_t len,
                                    connection_t *conn, int zlib);
 /* DOCDOC connection_write_to_buf */
 static void connection_write_to_buf(const char *string, size_t len,
@@ -101,13 +133,13 @@ static void connection_write_to_buf_zlib(const char *string, size_t len,
 static INLINE void
 connection_write_to_buf(const char *string, size_t len, connection_t *conn)
 {
-  _connection_write_to_buf_impl(string, len, conn, 0);
+  connection_write_to_buf_impl_(string, len, conn, 0);
 }
 static INLINE void
 connection_write_to_buf_zlib(const char *string, size_t len,
                              dir_connection_t *conn, int done)
 {
-  _connection_write_to_buf_impl(string, len, TO_CONN(conn), done ? -1 : 1);
+  connection_write_to_buf_impl_(string, len, TO_CONN(conn), done ? -1 : 1);
 }
 
 /* DOCDOC connection_get_inbuf_len */

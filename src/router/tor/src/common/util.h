@@ -1,6 +1,6 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -8,8 +8,8 @@
  * \brief Headers for util.c
  **/
 
-#ifndef _TOR_UTIL_H
-#define _TOR_UTIL_H
+#ifndef TOR_UTIL_H
+#define TOR_UTIL_H
 
 #include "orconfig.h"
 #include "torint.h"
@@ -49,9 +49,9 @@
 #define tor_assert(expr) STMT_BEGIN                                     \
     if (PREDICT_UNLIKELY(!(expr))) {                                    \
       log_err(LD_BUG, "%s:%d: %s: Assertion %s failed; aborting.",      \
-          _SHORT_FILE_, __LINE__, __func__, #expr);                     \
+          SHORT_FILE__, __LINE__, __func__, #expr);                     \
       fprintf(stderr,"%s:%d %s: Assertion %s failed; aborting.\n",      \
-              _SHORT_FILE_, __LINE__, __func__, #expr);                 \
+              SHORT_FILE__, __LINE__, __func__, #expr);                 \
       abort();                                                          \
     } STMT_END
 
@@ -62,7 +62,7 @@
  * to calls. */
 #ifdef USE_DMALLOC
 #define DMALLOC_PARAMS , const char *file, const int line
-#define DMALLOC_ARGS , _SHORT_FILE_, __LINE__
+#define DMALLOC_ARGS , SHORT_FILE__, __LINE__
 #else
 #define DMALLOC_PARAMS
 #define DMALLOC_ARGS
@@ -74,23 +74,24 @@
 #define tor_fragile_assert()
 
 /* Memory management */
-void *_tor_malloc(size_t size DMALLOC_PARAMS) ATTR_MALLOC;
-void *_tor_malloc_zero(size_t size DMALLOC_PARAMS) ATTR_MALLOC;
-void *_tor_malloc_roundup(size_t *size DMALLOC_PARAMS) ATTR_MALLOC;
-void *_tor_calloc(size_t nmemb, size_t size DMALLOC_PARAMS) ATTR_MALLOC;
-void *_tor_realloc(void *ptr, size_t size DMALLOC_PARAMS);
-char *_tor_strdup(const char *s DMALLOC_PARAMS) ATTR_MALLOC ATTR_NONNULL((1));
-char *_tor_strndup(const char *s, size_t n DMALLOC_PARAMS)
+void *tor_malloc_(size_t size DMALLOC_PARAMS) ATTR_MALLOC;
+void *tor_malloc_zero_(size_t size DMALLOC_PARAMS) ATTR_MALLOC;
+void *tor_calloc_(size_t nmemb, size_t size DMALLOC_PARAMS) ATTR_MALLOC;
+void *tor_realloc_(void *ptr, size_t size DMALLOC_PARAMS);
+char *tor_strdup_(const char *s DMALLOC_PARAMS) ATTR_MALLOC ATTR_NONNULL((1));
+char *tor_strndup_(const char *s, size_t n DMALLOC_PARAMS)
   ATTR_MALLOC ATTR_NONNULL((1));
-void *_tor_memdup(const void *mem, size_t len DMALLOC_PARAMS)
+void *tor_memdup_(const void *mem, size_t len DMALLOC_PARAMS)
   ATTR_MALLOC ATTR_NONNULL((1));
-void _tor_free(void *mem);
+void *tor_memdup_nulterm_(const void *mem, size_t len DMALLOC_PARAMS)
+  ATTR_MALLOC ATTR_NONNULL((1));
+void tor_free_(void *mem);
 #ifdef USE_DMALLOC
 extern int dmalloc_free(const char *file, const int line, void *pnt,
                         const int func_id);
 #define tor_free(p) STMT_BEGIN \
     if (PREDICT_LIKELY((p)!=NULL)) {                \
-      dmalloc_free(_SHORT_FILE_, __LINE__, (p), 0); \
+      dmalloc_free(SHORT_FILE__, __LINE__, (p), 0); \
       (p)=NULL;                                     \
     }                                               \
   STMT_END
@@ -100,7 +101,7 @@ extern int dmalloc_free(const char *file, const int line, void *pnt,
  * and it sets the pointer value to NULL after freeing it.
  *
  * This is a macro.  If you need a function pointer to release memory from
- * tor_malloc(), use _tor_free().
+ * tor_malloc(), use tor_free_().
  */
 #define tor_free(p) STMT_BEGIN                                 \
     if (PREDICT_LIKELY((p)!=NULL)) {                           \
@@ -110,14 +111,14 @@ extern int dmalloc_free(const char *file, const int line, void *pnt,
   STMT_END
 #endif
 
-#define tor_malloc(size)       _tor_malloc(size DMALLOC_ARGS)
-#define tor_malloc_zero(size)  _tor_malloc_zero(size DMALLOC_ARGS)
-#define tor_calloc(nmemb,size) _tor_calloc(nmemb, size DMALLOC_ARGS)
-#define tor_malloc_roundup(szp) _tor_malloc_roundup(szp DMALLOC_ARGS)
-#define tor_realloc(ptr, size) _tor_realloc(ptr, size DMALLOC_ARGS)
-#define tor_strdup(s)          _tor_strdup(s DMALLOC_ARGS)
-#define tor_strndup(s, n)      _tor_strndup(s, n DMALLOC_ARGS)
-#define tor_memdup(s, n)       _tor_memdup(s, n DMALLOC_ARGS)
+#define tor_malloc(size)       tor_malloc_(size DMALLOC_ARGS)
+#define tor_malloc_zero(size)  tor_malloc_zero_(size DMALLOC_ARGS)
+#define tor_calloc(nmemb,size) tor_calloc_(nmemb, size DMALLOC_ARGS)
+#define tor_realloc(ptr, size) tor_realloc_(ptr, size DMALLOC_ARGS)
+#define tor_strdup(s)          tor_strdup_(s DMALLOC_ARGS)
+#define tor_strndup(s, n)      tor_strndup_(s, n DMALLOC_ARGS)
+#define tor_memdup(s, n)       tor_memdup_(s, n DMALLOC_ARGS)
+#define tor_memdup_nulterm(s, n)       tor_memdup_nulterm_(s, n DMALLOC_ARGS)
 
 void tor_log_mallinfo(int severity);
 
@@ -161,6 +162,7 @@ void tor_log_mallinfo(int severity);
 /* Math functions */
 double tor_mathlog(double d) ATTR_CONST;
 long tor_lround(double d) ATTR_CONST;
+int64_t tor_llround(double d) ATTR_CONST;
 int tor_log2(uint64_t u64) ATTR_CONST;
 uint64_t round_to_power_of_2(uint64_t u64);
 unsigned round_to_next_multiple_of(unsigned number, unsigned divisor);
@@ -172,6 +174,17 @@ int n_bits_set_u8(uint8_t v);
  * and positive <b>b</b>.  Works on integer types only. Not defined if a+b can
  * overflow. */
 #define CEIL_DIV(a,b) (((a)+(b)-1)/(b))
+
+/* Return <b>v</b> if it's between <b>min</b> and <b>max</b>.  Otherwise
+ * return <b>min</b> if <b>v</b> is smaller than <b>min</b>, or <b>max</b> if
+ * <b>b</b> is larger than <b>max</b>.
+ *
+ * Requires that <b>min</b> is no more than <b>max</b>. May evaluate any of
+ * its arguments more than once! */
+#define CLAMP(min,v,max)                        \
+  ( ((v) < (min)) ? (min) :                     \
+    ((v) > (max)) ? (max) :                     \
+    (v) )
 
 /* String manipulation */
 
@@ -188,6 +201,7 @@ int strcasecmpstart(const char *s1, const char *s2) ATTR_NONNULL((1,2));
 int strcmpend(const char *s1, const char *s2) ATTR_NONNULL((1,2));
 int strcasecmpend(const char *s1, const char *s2) ATTR_NONNULL((1,2));
 int fast_memcmpstart(const void *mem, size_t memlen, const char *prefix);
+void tor_strclear(char *s);
 
 void tor_strstrip(char *s, const char *strip) ATTR_NONNULL((1,2));
 long tor_parse_long(const char *s, int base, long min,
@@ -215,8 +229,6 @@ int tor_digest256_is_zero(const char *digest);
 char *esc_for_log(const char *string) ATTR_MALLOC;
 const char *escaped(const char *string);
 struct smartlist_t;
-void wrap_string(struct smartlist_t *out, const char *string, size_t width,
-                 const char *prefix0, const char *prefixRest);
 int tor_vsscanf(const char *buf, const char *pattern, va_list ap)
 #ifdef __GNUC__
   __attribute__((format(scanf, 2, 0)))
@@ -239,11 +251,9 @@ void base16_encode(char *dest, size_t destlen, const char *src, size_t srclen);
 int base16_decode(char *dest, size_t destlen, const char *src, size_t srclen);
 
 /* Time helpers */
-double tv_to_double(const struct timeval *tv);
-int64_t tv_to_msec(const struct timeval *tv);
-int64_t tv_to_usec(const struct timeval *tv);
 long tv_udiff(const struct timeval *start, const struct timeval *end);
 long tv_mdiff(const struct timeval *start, const struct timeval *end);
+int64_t tv_to_msec(const struct timeval *tv);
 int tor_timegm(const struct tm *tm, time_t *time_out);
 #define RFC1123_TIME_LEN 29
 void format_rfc1123_time(char *buf, time_t t);
@@ -283,6 +293,15 @@ void update_approx_time(time_t now);
       }
     }
    </pre>
+
+   As a convenience wrapper for logging, you can replace the above with:
+   <pre>
+   if (possibly_very_frequent_event()) {
+     static ratelim_t warning_limit = RATELIM_INIT(300);
+     log_fn_ratelim(&warning_limit, LOG_WARN, LD_GENERAL,
+                    "The event occurred!");
+   }
+   </pre>
  */
 typedef struct ratelim_t {
   int rate;
@@ -305,6 +324,8 @@ enum stream_status {
   IO_STREAM_TERM,
   IO_STREAM_CLOSED
 };
+
+const char *stream_status_to_string(enum stream_status stream_status);
 
 enum stream_status get_string_from_pipe(FILE *stream, char *buf, size_t count);
 
@@ -360,8 +381,14 @@ struct stat;
 #endif
 char *read_file_to_str(const char *filename, int flags, struct stat *stat_out)
   ATTR_MALLOC;
-const char *parse_config_line_from_str(const char *line,
-                                       char **key_out, char **value_out);
+char *read_file_to_str_until_eof(int fd, size_t max_bytes_to_read,
+                                 size_t *sz_out)
+  ATTR_MALLOC;
+const char *parse_config_line_from_str_verbose(const char *line,
+                                       char **key_out, char **value_out,
+                                       const char **err_out);
+#define parse_config_line_from_str(line,key_out,value_out) \
+  parse_config_line_from_str_verbose((line),(key_out),(value_out),NULL)
 char *expand_filename(const char *filename);
 struct smartlist_t *tor_listdir(const char *dirname);
 int path_is_relative(const char *filename);
@@ -373,7 +400,8 @@ void write_pidfile(char *filename);
 
 /* Port forwarding */
 void tor_check_port_forwarding(const char *filename,
-                               int dir_port, int or_port, time_t now);
+                               struct smartlist_t *ports_to_forward,
+                               time_t now);
 
 typedef struct process_handle_t process_handle_t;
 typedef struct process_environment_t process_environment_t;
@@ -464,9 +492,33 @@ HANDLE tor_process_get_stdout_pipe(process_handle_t *process_handle);
 FILE *tor_process_get_stdout_pipe(process_handle_t *process_handle);
 #endif
 
+#ifdef _WIN32
+struct smartlist_t *
+tor_get_lines_from_handle(HANDLE *handle,
+                          enum stream_status *stream_status);
+#else
+struct smartlist_t *
+tor_get_lines_from_handle(FILE *handle,
+                          enum stream_status *stream_status);
+#endif
+
 int tor_terminate_process(process_handle_t *process_handle);
 void tor_process_handle_destroy(process_handle_t *process_handle,
                                 int also_terminate_process);
+
+/* ===== Insecure rng */
+typedef struct tor_weak_rng_t {
+  uint32_t state;
+} tor_weak_rng_t;
+
+#define TOR_WEAK_RNG_INIT {383745623}
+#define TOR_WEAK_RANDOM_MAX (INT_MAX)
+void tor_init_weak_random(tor_weak_rng_t *weak_rng, unsigned seed);
+int32_t tor_weak_random(tor_weak_rng_t *weak_rng);
+int32_t tor_weak_random_range(tor_weak_rng_t *rng, int32_t top);
+/** Randomly return true according to <b>rng</b> with probability 1 in
+ * <b>n</b> */
+#define tor_weak_random_one_in_n(rng, n) (0==tor_weak_random_range((rng),(n)))
 
 #ifdef UTIL_PRIVATE
 /* Prototypes for private functions only used by util.c (and unit tests) */

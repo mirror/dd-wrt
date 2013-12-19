@@ -1,11 +1,13 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
+#define ADDRESSMAP_PRIVATE
 #include "orconfig.h"
 #include "or.h"
 #include "test.h"
+#include "addressmap.h"
 
 static void
 test_addr_basic(void)
@@ -38,7 +40,7 @@ test_addr_basic(void)
   tor_free(cp);
   u32 = 3;
   test_assert(!addr_port_lookup(LOG_WARN, "localhost", NULL, &u32, &u16));
-  test_eq(cp, NULL);
+  test_eq_ptr(cp, NULL);
   test_eq(u32, 0x7f000001u);
   test_eq(u16, 0);
   tor_free(cp);
@@ -70,7 +72,7 @@ test_addr_basic(void)
   ;
 }
 
-#define _test_op_ip6(a,op,b,e1,e2)                               \
+#define test_op_ip6_(a,op,b,e1,e2)                               \
   STMT_BEGIN                                                     \
   tt_assert_test_fmt_type(a,b,e1" "#op" "e2,struct in6_addr*,    \
     (memcmp(val1_->s6_addr, val2_->s6_addr, 16) op 0),           \
@@ -93,7 +95,7 @@ test_addr_basic(void)
 #define test_pton6_same(a,b) STMT_BEGIN                \
      test_eq(tor_inet_pton(AF_INET6, a, &a1), 1);      \
      test_eq(tor_inet_pton(AF_INET6, b, &a2), 1);      \
-     _test_op_ip6(&a1,==,&a2,#a,#b);                   \
+     test_op_ip6_(&a1,==,&a2,#a,#b);                   \
   STMT_END
 
 /** Helper: Assert that <b>a</b> is recognized as a bad IPv6 address by
@@ -108,7 +110,7 @@ test_addr_basic(void)
     test_eq(tor_inet_pton(AF_INET6, a, &a1), 1);                        \
     test_streq(tor_inet_ntop(AF_INET6, &a1, buf, sizeof(buf)), b);      \
     test_eq(tor_inet_pton(AF_INET6, b, &a2), 1);                        \
-    _test_op_ip6(&a1, ==, &a2, a, b);                                   \
+    test_op_ip6_(&a1, ==, &a2, a, b);                                   \
   STMT_END
 
 /** Helper: assert that <b>a</b> parses by tor_inet_pton() into a address that
@@ -159,7 +161,8 @@ test_addr_basic(void)
  * as <b>pt1..pt2</b>. */
 #define test_addr_mask_ports_parse(xx, f, ip1, ip2, ip3, ip4, mm, pt1, pt2) \
   STMT_BEGIN                                                                \
-    test_eq(tor_addr_parse_mask_ports(xx, &t1, &mask, &port1, &port2), f);  \
+    test_eq(tor_addr_parse_mask_ports(xx, 0, &t1, &mask, &port1, &port2),   \
+            f);                                                             \
     p1=tor_inet_ntop(AF_INET6, &t1.addr.in6_addr, bug, sizeof(bug));        \
     test_eq(htonl(ip1), tor_addr_to_in6_addr32(&t1)[0]);            \
     test_eq(htonl(ip2), tor_addr_to_in6_addr32(&t1)[1]);            \
@@ -401,11 +404,11 @@ test_addr_ip6_helpers(void)
   test_addr_compare("0::2:2:1", <, "0::ffff:0.3.2.1");
   test_addr_compare("0::ffff:0.3.2.1", >, "0::0:0:0");
   test_addr_compare("0::ffff:5.2.2.1", <, "::ffff:6.0.0.0"); /* XXXX wrong. */
-  tor_addr_parse_mask_ports("[::ffff:2.3.4.5]", &t1, NULL, NULL, NULL);
-  tor_addr_parse_mask_ports("2.3.4.5", &t2, NULL, NULL, NULL);
+  tor_addr_parse_mask_ports("[::ffff:2.3.4.5]", 0, &t1, NULL, NULL, NULL);
+  tor_addr_parse_mask_ports("2.3.4.5", 0, &t2, NULL, NULL, NULL);
   test_assert(tor_addr_compare(&t1, &t2, CMP_SEMANTIC) == 0);
-  tor_addr_parse_mask_ports("[::ffff:2.3.4.4]", &t1, NULL, NULL, NULL);
-  tor_addr_parse_mask_ports("2.3.4.5", &t2, NULL, NULL, NULL);
+  tor_addr_parse_mask_ports("[::ffff:2.3.4.4]", 0, &t1, NULL, NULL, NULL);
+  tor_addr_parse_mask_ports("2.3.4.5", 0, &t2, NULL, NULL, NULL);
   test_assert(tor_addr_compare(&t1, &t2, CMP_SEMANTIC) < 0);
 
   /* test compare_masked */
@@ -568,6 +571,7 @@ test_addr_ip6_helpers(void)
     test_streq(rbuf, addr_PTR);
   }
 
+  /* XXXX turn this into a separate function; it's not all IPv6. */
   /* test tor_addr_parse_mask_ports */
   test_addr_mask_ports_parse("[::f]/17:47-95", AF_INET6,
                              0, 0, 0, 0x0000000f, 17, 47, 95);
@@ -581,27 +585,123 @@ test_addr_ip6_helpers(void)
                              0xabcd0002, 0, 0, 0x044a0000, 128, 2, 65000);
 
   test_streq(p1, "abcd:2::44a:0");
-  r=tor_addr_parse_mask_ports("[fefef::]/112", &t1, NULL, NULL, NULL);
+  /* Try some long addresses. */
+  r=tor_addr_parse_mask_ports("[ffff:1111:1111:1111:1111:1111:1111:1111]",
+                              0, &t1, NULL, NULL, NULL);
+  test_assert(r == AF_INET6);
+  r=tor_addr_parse_mask_ports("[ffff:1111:1111:1111:1111:1111:1111:11111]",
+                              0, &t1, NULL, NULL, NULL);
   test_assert(r == -1);
-  r=tor_addr_parse_mask_ports("efef::/112", &t1, NULL, NULL, NULL);
+  r=tor_addr_parse_mask_ports("[ffff:1111:1111:1111:1111:1111:1111:1111:1]",
+                              0, &t1, NULL, NULL, NULL);
   test_assert(r == -1);
-  r=tor_addr_parse_mask_ports("[f:f:f:f:f:f:f:f::]", &t1, NULL, NULL, NULL);
+  r=tor_addr_parse_mask_ports(
+         "[ffff:1111:1111:1111:1111:1111:1111:ffff:"
+         "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:"
+         "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:"
+         "ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff]",
+         0, &t1, NULL, NULL, NULL);
   test_assert(r == -1);
-  r=tor_addr_parse_mask_ports("[::f:f:f:f:f:f:f:f]", &t1, NULL, NULL, NULL);
+  /* Try some failing cases. */
+  r=tor_addr_parse_mask_ports("[fefef::]/112", 0, &t1, NULL, NULL, NULL);
   test_assert(r == -1);
-  r=tor_addr_parse_mask_ports("[f:f:f:f:f:f:f:f:f]", &t1, NULL, NULL, NULL);
+  r=tor_addr_parse_mask_ports("[fefe::/112", 0, &t1, NULL, NULL, NULL);
+  test_assert(r == -1);
+  r=tor_addr_parse_mask_ports("[fefe::", 0, &t1, NULL, NULL, NULL);
+  test_assert(r == -1);
+  r=tor_addr_parse_mask_ports("[fefe::X]", 0, &t1, NULL, NULL, NULL);
+  test_assert(r == -1);
+  r=tor_addr_parse_mask_ports("efef::/112", 0, &t1, NULL, NULL, NULL);
+  test_assert(r == -1);
+  r=tor_addr_parse_mask_ports("[f:f:f:f:f:f:f:f::]",0,&t1, NULL, NULL, NULL);
+  test_assert(r == -1);
+  r=tor_addr_parse_mask_ports("[::f:f:f:f:f:f:f:f]",0,&t1, NULL, NULL, NULL);
+  test_assert(r == -1);
+  r=tor_addr_parse_mask_ports("[f:f:f:f:f:f:f:f:f]",0,&t1, NULL, NULL, NULL);
+  test_assert(r == -1);
+  r=tor_addr_parse_mask_ports("[f:f:f:f:f::]/fred",0,&t1,&mask, NULL, NULL);
+  test_assert(r == -1);
+  r=tor_addr_parse_mask_ports("[f:f:f:f:f::]/255.255.0.0",
+                              0,&t1, NULL, NULL, NULL);
+  test_assert(r == -1);
+  /* This one will get rejected because it isn't a pure prefix. */
+  r=tor_addr_parse_mask_ports("1.1.2.3/255.255.64.0",0,&t1, &mask,NULL,NULL);
   test_assert(r == -1);
   /* Test for V4-mapped address with mask < 96.  (arguably not valid) */
-  r=tor_addr_parse_mask_ports("[::ffff:1.1.2.2/33]", &t1, &mask, NULL, NULL);
+  r=tor_addr_parse_mask_ports("[::ffff:1.1.2.2/33]",0,&t1, &mask, NULL, NULL);
   test_assert(r == -1);
-  r=tor_addr_parse_mask_ports("1.1.2.2/33", &t1, &mask, NULL, NULL);
+  r=tor_addr_parse_mask_ports("1.1.2.2/33",0,&t1, &mask, NULL, NULL);
   test_assert(r == -1);
-  r=tor_addr_parse_mask_ports("1.1.2.2/31", &t1, &mask, NULL, NULL);
+  /* Try extended wildcard addresses with out TAPMP_EXTENDED_STAR*/
+  r=tor_addr_parse_mask_ports("*4",0,&t1, &mask, NULL, NULL);
+  test_assert(r == -1);
+  r=tor_addr_parse_mask_ports("*6",0,&t1, &mask, NULL, NULL);
+  test_assert(r == -1);
+#if 0
+  /* Try a mask with a wildcard. */
+  r=tor_addr_parse_mask_ports("*/16",0,&t1, &mask, NULL, NULL);
+  test_assert(r == -1);
+  r=tor_addr_parse_mask_ports("*4/16",TAPMP_EXTENDED_STAR,
+                              &t1, &mask, NULL, NULL);
+  test_assert(r == -1);
+  r=tor_addr_parse_mask_ports("*6/30",TAPMP_EXTENDED_STAR,
+                              &t1, &mask, NULL, NULL);
+  test_assert(r == -1);
+#endif
+  /* Basic mask tests*/
+  r=tor_addr_parse_mask_ports("1.1.2.2/31",0,&t1, &mask, NULL, NULL);
   test_assert(r == AF_INET);
-  r=tor_addr_parse_mask_ports("[efef::]/112", &t1, &mask, &port1, &port2);
+  tt_int_op(mask,==,31);
+  tt_int_op(tor_addr_family(&t1),==,AF_INET);
+  tt_int_op(tor_addr_to_ipv4h(&t1),==,0x01010202);
+  r=tor_addr_parse_mask_ports("3.4.16.032:1-2",0,&t1, &mask, &port1, &port2);
+  test_assert(r == AF_INET);
+  tt_int_op(mask,==,32);
+  tt_int_op(tor_addr_family(&t1),==,AF_INET);
+  tt_int_op(tor_addr_to_ipv4h(&t1),==,0x03041020);
+  test_assert(port1 == 1);
+  test_assert(port2 == 2);
+  r=tor_addr_parse_mask_ports("1.1.2.3/255.255.128.0",0,&t1, &mask,NULL,NULL);
+  test_assert(r == AF_INET);
+  tt_int_op(mask,==,17);
+  tt_int_op(tor_addr_family(&t1),==,AF_INET);
+  tt_int_op(tor_addr_to_ipv4h(&t1),==,0x01010203);
+  r=tor_addr_parse_mask_ports("[efef::]/112",0,&t1, &mask, &port1, &port2);
   test_assert(r == AF_INET6);
   test_assert(port1 == 1);
   test_assert(port2 == 65535);
+  /* Try regular wildcard behavior without TAPMP_EXTENDED_STAR */
+  r=tor_addr_parse_mask_ports("*:80-443",0,&t1,&mask,&port1,&port2);
+  tt_int_op(r,==,AF_INET); /* Old users of this always get inet */
+  tt_int_op(tor_addr_family(&t1),==,AF_INET);
+  tt_int_op(tor_addr_to_ipv4h(&t1),==,0);
+  tt_int_op(mask,==,0);
+  tt_int_op(port1,==,80);
+  tt_int_op(port2,==,443);
+  /* Now try wildcards *with* TAPMP_EXTENDED_STAR */
+  r=tor_addr_parse_mask_ports("*:8000-9000",TAPMP_EXTENDED_STAR,
+                              &t1,&mask,&port1,&port2);
+  tt_int_op(r,==,AF_UNSPEC);
+  tt_int_op(tor_addr_family(&t1),==,AF_UNSPEC);
+  tt_int_op(mask,==,0);
+  tt_int_op(port1,==,8000);
+  tt_int_op(port2,==,9000);
+  r=tor_addr_parse_mask_ports("*4:6667",TAPMP_EXTENDED_STAR,
+                              &t1,&mask,&port1,&port2);
+  tt_int_op(r,==,AF_INET);
+  tt_int_op(tor_addr_family(&t1),==,AF_INET);
+  tt_int_op(tor_addr_to_ipv4h(&t1),==,0);
+  tt_int_op(mask,==,0);
+  tt_int_op(port1,==,6667);
+  tt_int_op(port2,==,6667);
+  r=tor_addr_parse_mask_ports("*6",TAPMP_EXTENDED_STAR,
+                              &t1,&mask,&port1,&port2);
+  tt_int_op(r,==,AF_INET6);
+  tt_int_op(tor_addr_family(&t1),==,AF_INET6);
+  tt_assert(tor_mem_is_zero((const char*)tor_addr_to_in6_addr32(&t1), 16));
+  tt_int_op(mask,==,0);
+  tt_int_op(port1,==,1);
+  tt_int_op(port2,==,65535);
 
   /* make sure inet address lengths >= max */
   test_assert(INET_NTOA_BUF_LEN >= sizeof("255.255.255.255"));
@@ -623,12 +723,170 @@ test_addr_ip6_helpers(void)
   ;
 }
 
+/** Test tor_addr_port_parse(). */
+static void
+test_addr_parse(void)
+{
+  int r;
+  tor_addr_t addr;
+  char buf[TOR_ADDR_BUF_LEN];
+  uint16_t port = 0;
+
+  /* Correct call. */
+  r= tor_addr_port_parse(LOG_DEBUG,
+                         "192.0.2.1:1234",
+                         &addr, &port);
+  test_assert(r == 0);
+  tor_addr_to_str(buf, &addr, sizeof(buf), 0);
+  test_streq(buf, "192.0.2.1");
+  test_eq(port, 1234);
+
+  /* Domain name. */
+  r= tor_addr_port_parse(LOG_DEBUG,
+                         "torproject.org:1234",
+                         &addr, &port);
+  test_assert(r == -1);
+
+  /* Only IP. */
+  r= tor_addr_port_parse(LOG_DEBUG,
+                         "192.0.2.2",
+                         &addr, &port);
+  test_assert(r == -1);
+
+  /* Bad port. */
+  r= tor_addr_port_parse(LOG_DEBUG,
+                         "192.0.2.2:66666",
+                         &addr, &port);
+  test_assert(r == -1);
+
+  /* Only domain name */
+  r= tor_addr_port_parse(LOG_DEBUG,
+                         "torproject.org",
+                         &addr, &port);
+  test_assert(r == -1);
+
+  /* Bad IP address */
+  r= tor_addr_port_parse(LOG_DEBUG,
+                         "192.0.2:1234",
+                         &addr, &port);
+  test_assert(r == -1);
+
+ done:
+  ;
+}
+
+static void
+update_difference(int ipv6, uint8_t *d,
+                  const tor_addr_t *a, const tor_addr_t *b)
+{
+  const int n_bytes = ipv6 ? 16 : 4;
+  uint8_t a_tmp[4], b_tmp[4];
+  const uint8_t *ba, *bb;
+  int i;
+
+  if (ipv6) {
+    ba = tor_addr_to_in6_addr8(a);
+    bb = tor_addr_to_in6_addr8(b);
+  } else {
+    set_uint32(a_tmp, tor_addr_to_ipv4n(a));
+    set_uint32(b_tmp, tor_addr_to_ipv4n(b));
+    ba = a_tmp; bb = b_tmp;
+  }
+
+  for (i = 0; i < n_bytes; ++i) {
+    d[i] |= ba[i] ^ bb[i];
+  }
+}
+
+static void
+test_virtaddrmap(void *data)
+{
+  /* Let's start with a bunch of random addresses. */
+  int ipv6, bits, iter, b;
+  virtual_addr_conf_t cfg[2];
+  uint8_t bytes[16];
+
+  (void)data;
+
+  tor_addr_parse(&cfg[0].addr, "64.65.0.0");
+  tor_addr_parse(&cfg[1].addr, "3491:c0c0::");
+
+  for (ipv6 = 0; ipv6 <= 1; ++ipv6) {
+    for (bits = 0; bits < 18; ++bits) {
+      tor_addr_t last_a;
+      cfg[ipv6].bits = bits;
+      memset(bytes, 0, sizeof(bytes));
+      tor_addr_copy(&last_a, &cfg[ipv6].addr);
+      /* Generate 128 addresses with each addr/bits combination. */
+      for (iter = 0; iter < 128; ++iter) {
+        tor_addr_t a;
+
+        get_random_virtual_addr(&cfg[ipv6], &a);
+        //printf("%s\n", fmt_addr(&a));
+        /* Make sure that the first b bits match the configured network */
+        tt_int_op(0, ==, tor_addr_compare_masked(&a, &cfg[ipv6].addr,
+                                                 bits, CMP_EXACT));
+
+        /* And track which bits have been different between pairs of
+         * addresses */
+        update_difference(ipv6, bytes, &last_a, &a);
+      }
+
+      /* Now make sure all but the first 'bits' bits of bytes are true */
+      for (b = bits+1; b < (ipv6?128:32); ++b) {
+        tt_assert(1 & (bytes[b/8] >> (7-(b&7))));
+      }
+    }
+  }
+
+ done:
+  ;
+}
+
+static void
+test_addr_is_loopback(void *data)
+{
+  static const struct loopback_item {
+    const char *name;
+    int is_loopback;
+  } loopback_items[] = {
+    { "::1", 1 },
+    { "127.0.0.1", 1 },
+    { "127.99.100.101", 1 },
+    { "128.99.100.101", 0 },
+    { "8.8.8.8", 0 },
+    { "0.0.0.0", 0 },
+    { "::2", 0 },
+    { "::", 0 },
+    { "::1.0.0.0", 0 },
+    { NULL, 0 }
+  };
+
+  int i;
+  tor_addr_t addr;
+  (void)data;
+
+  for (i=0; loopback_items[i].name; ++i) {
+    tt_int_op(tor_addr_parse(&addr, loopback_items[i].name), >=, 0);
+    tt_int_op(tor_addr_is_loopback(&addr), ==, loopback_items[i].is_loopback);
+  }
+
+  tor_addr_make_unspec(&addr);
+  tt_int_op(tor_addr_is_loopback(&addr), ==, 0);
+
+ done:
+  ;
+}
+
 #define ADDR_LEGACY(name)                                               \
   { #name, legacy_test_helper, 0, &legacy_setup, test_addr_ ## name }
 
 struct testcase_t addr_tests[] = {
   ADDR_LEGACY(basic),
   ADDR_LEGACY(ip6_helpers),
+  ADDR_LEGACY(parse),
+  { "virtaddr", test_virtaddrmap, 0, NULL, NULL },
+  { "is_loopback", test_addr_is_loopback, 0, NULL, NULL },
   END_OF_TESTCASES
 };
 

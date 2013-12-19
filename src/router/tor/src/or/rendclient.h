@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for rendclient.c.
  **/
 
-#ifndef _TOR_RENDCLIENT_H
-#define _TOR_RENDCLIENT_H
+#ifndef TOR_RENDCLIENT_H
+#define TOR_RENDCLIENT_H
 
 void rend_client_purge_state(void);
 

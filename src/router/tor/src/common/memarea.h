@@ -1,9 +1,9 @@
-/* Copyright (c) 2008-2012, The Tor Project, Inc. */
+/* Copyright (c) 2008-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 /* Tor dependencies */
 
-#ifndef _TOR_MEMAREA_H
-#define _TOR_MEMAREA_H
+#ifndef TOR_MEMAREA_H
+#define TOR_MEMAREA_H
 
 typedef struct memarea_t memarea_t;
 

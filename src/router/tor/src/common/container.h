@@ -1,10 +1,10 @@
 /* Copyright (c) 2003-2004, Roger Dingledine
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
-#ifndef _TOR_CONTAINER_H
-#define _TOR_CONTAINER_H
+#ifndef TOR_CONTAINER_H
+#define TOR_CONTAINER_H
 
 #include "util.h"
 
@@ -35,13 +35,13 @@ void smartlist_remove(smartlist_t *sl, const void *element);
 void *smartlist_pop_last(smartlist_t *sl);
 void smartlist_reverse(smartlist_t *sl);
 void smartlist_string_remove(smartlist_t *sl, const char *element);
-int smartlist_isin(const smartlist_t *sl, const void *element);
-int smartlist_string_isin(const smartlist_t *sl, const char *element);
+int smartlist_contains(const smartlist_t *sl, const void *element);
+int smartlist_contains_string(const smartlist_t *sl, const char *element);
 int smartlist_string_pos(const smartlist_t *, const char *elt);
-int smartlist_string_isin_case(const smartlist_t *sl, const char *element);
-int smartlist_string_num_isin(const smartlist_t *sl, int num);
+int smartlist_contains_string_case(const smartlist_t *sl, const char *element);
+int smartlist_contains_int_as_string(const smartlist_t *sl, int num);
 int smartlist_strings_eq(const smartlist_t *sl1, const smartlist_t *sl2);
-int smartlist_digest_isin(const smartlist_t *sl, const char *element);
+int smartlist_contains_digest(const smartlist_t *sl, const char *element);
 int smartlist_overlap(const smartlist_t *sl1, const smartlist_t *sl2);
 void smartlist_intersect(smartlist_t *sl1, const smartlist_t *sl2);
 void smartlist_subtract(smartlist_t *sl1, const smartlist_t *sl2);
@@ -623,7 +623,7 @@ digestset_add(digestset_t *set, const char *digest)
 /** If <b>digest</b> is in <b>set</b>, return nonzero.  Otherwise,
  * <em>probably</em> return zero. */
 static INLINE int
-digestset_isin(const digestset_t *set, const char *digest)
+digestset_contains(const digestset_t *set, const char *digest)
 {
   const uint32_t *p = (const uint32_t *)digest;
   const uint32_t d1 = p[0] + (p[1]>>16);
@@ -674,11 +674,6 @@ static INLINE int32_t
 median_int32(int32_t *array, int n_elements)
 {
   return find_nth_int32(array, n_elements, (n_elements-1)/2);
-}
-static INLINE long
-median_long(long *array, int n_elements)
-{
-  return find_nth_long(array, n_elements, (n_elements-1)/2);
 }
 
 #endif

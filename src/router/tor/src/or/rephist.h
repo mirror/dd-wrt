@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for rephist.c.
  **/
 
-#ifndef _TOR_REPHIST_H
-#define _TOR_REPHIST_H
+#ifndef TOR_REPHIST_H
+#define TOR_REPHIST_H
 
 void rep_hist_init(void);
 void rep_hist_note_connect_failed(const char* nickname, time_t when);
@@ -23,6 +23,8 @@ void rep_hist_note_extend_failed(const char *from_name, const char *to_name);
 void rep_hist_dump_stats(time_t now, int severity);
 void rep_hist_note_bytes_read(size_t num_bytes, time_t when);
 void rep_hist_note_bytes_written(size_t num_bytes, time_t when);
+
+void rep_hist_make_router_pessimal(const char *id, time_t when);
 
 void rep_hist_note_dir_bytes_read(size_t num_bytes, time_t when);
 void rep_hist_note_dir_bytes_written(size_t num_bytes, time_t when);
@@ -62,8 +64,6 @@ int rep_hist_circbuilding_dormant(time_t now);
 void note_crypto_pk_op(pk_op_t operation);
 void dump_pk_ops(int severity);
 
-void rep_hist_free_all(void);
-
 void rep_hist_exit_stats_init(time_t now);
 void rep_hist_reset_exit_stats(time_t now);
 void rep_hist_exit_stats_term(void);
@@ -95,6 +95,12 @@ void rep_hist_reset_conn_stats(time_t now);
 char *rep_hist_format_conn_stats(time_t now);
 time_t rep_hist_conn_stats_write(time_t now);
 void rep_hist_conn_stats_term(void);
+
+void rep_hist_note_circuit_handshake_requested(uint16_t type);
+void rep_hist_note_circuit_handshake_completed(uint16_t type);
+void rep_hist_log_circuit_handshake_stats(time_t now);
+
+void rep_hist_free_all(void);
 
 #endif
 

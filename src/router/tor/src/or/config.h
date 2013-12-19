@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for config.c.
  **/
 
-#ifndef _TOR_CONFIG_H
-#define _TOR_CONFIG_H
+#ifndef TOR_CONFIG_H
+#define TOR_CONFIG_H
 
 const char *get_dirportfrontpage(void);
 const or_options_t *get_options(void);
@@ -23,13 +23,13 @@ const char *escaped_safe_str_client(const char *address);
 const char *escaped_safe_str(const char *address);
 const char *get_version(void);
 const char *get_short_version(void);
-
-int config_get_lines(const char *string, config_line_t **result, int extended);
-void config_free_lines(config_line_t *front);
 setopt_err_t options_trial_assign(config_line_t *list, int use_defaults,
                                   int clear_first, char **msg);
+
+uint32_t get_last_resolved_addr(void);
 int resolve_my_address(int warn_severity, const or_options_t *options,
-                       uint32_t *addr, char **hostname_out);
+                       uint32_t *addr_out,
+                       const char **method_out, char **hostname_out);
 int is_local_addr(const tor_addr_t *addr);
 void options_init(or_options_t *options);
 char *options_dump(const or_options_t *options, int minimal);
@@ -61,10 +61,6 @@ char *options_get_datadir_fname2_suffix(const or_options_t *options,
 
 int get_num_cpus(const or_options_t *options);
 
-or_state_t *get_or_state(void);
-int did_last_state_file_write_fail(void);
-int or_state_save(time_t now);
-
 const smartlist_t *get_configured_ports(void);
 int get_first_advertised_port_by_type_af(int listener_type,
                                          int address_family);
@@ -78,9 +74,7 @@ char *get_first_listener_addrport_string(int listener_type);
 int options_need_geoip_info(const or_options_t *options,
                             const char **reason_out);
 
-void save_transport_to_state(const char *transport_name,
-                             const tor_addr_t *addr, uint16_t port);
-char *get_stored_bindaddr_for_server_transport(const char *transport);
+smartlist_t *get_list_of_ports_to_forward(void);
 
 int getinfo_helper_config(control_connection_t *conn,
                           const char *question, char **answer,
@@ -89,6 +83,8 @@ int getinfo_helper_config(control_connection_t *conn,
 const char *tor_get_digests(void);
 uint32_t get_effective_bwrate(const or_options_t *options);
 uint32_t get_effective_bwburst(const or_options_t *options);
+
+char *get_transport_bindaddr_from_config(const char *transport);
 
 #ifdef CONFIG_PRIVATE
 /* Used only by config.c and test.c */

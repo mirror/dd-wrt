@@ -1,4 +1,4 @@
-/* Copyright (c) 2008-2012, The Tor Project, Inc. */
+/* Copyright (c) 2008-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /** \file memarea.c
@@ -77,7 +77,7 @@ typedef struct memarea_chunk_t {
                    * full. */
   union {
     char mem[1]; /**< Memory space in this chunk.  */
-    void *_void_for_alignment; /**< Dummy; used to make sure mem is aligned. */
+    void *void_for_alignment_; /**< Dummy; used to make sure mem is aligned. */
   } u;
 } memarea_chunk_t;
 
@@ -118,7 +118,7 @@ alloc_chunk(size_t sz, int freelist_ok)
     size_t chunk_size = freelist_ok ? CHUNK_SIZE : sz;
     memarea_chunk_t *res;
     chunk_size += SENTINEL_LEN;
-    res = tor_malloc_roundup(&chunk_size);
+    res = tor_malloc(chunk_size);
     res->next_chunk = NULL;
     res->mem_size = chunk_size - CHUNK_HEADER_SIZE - SENTINEL_LEN;
     res->next_mem = res->u.mem;

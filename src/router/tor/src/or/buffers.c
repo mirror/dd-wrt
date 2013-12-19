@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -12,6 +12,7 @@
  **/
 #define BUFFERS_PRIVATE
 #include "or.h"
+#include "addressmap.h"
 #include "buffers.h"
 #include "config.h"
 #include "connection_edge.h"
@@ -147,7 +148,8 @@ static INLINE chunk_freelist_t *
 get_freelist(size_t alloc)
 {
   int i;
-  for (i=0; freelists[i].alloc_size <= alloc; ++i) {
+  for (i=0; (freelists[i].alloc_size <= alloc &&
+             freelists[i].alloc_size); ++i ) {
     if (freelists[i].alloc_size == alloc) {
       return &freelists[i];
     }
@@ -192,8 +194,6 @@ chunk_new_with_alloc_size(size_t alloc)
       freelist->lowest_length = freelist->cur_length;
     ++freelist->n_hit;
   } else {
-    /* XXXX take advantage of tor_malloc_roundup, once we know how that
-     * affects freelists. */
     if (freelist)
       ++freelist->n_alloc;
     else
@@ -216,7 +216,7 @@ static INLINE chunk_t *
 chunk_new_with_alloc_size(size_t alloc)
 {
   chunk_t *ch;
-  ch = tor_malloc_roundup(&alloc);
+  ch = tor_malloc(alloc);
   ch->next = NULL;
   ch->datalen = 0;
   ch->memlen = CHUNK_SIZE_WITH_ALLOC(alloc);
@@ -336,11 +336,11 @@ buf_dump_freelist_sizes(int severity)
 {
 #ifdef ENABLE_BUF_FREELISTS
   int i;
-  log(severity, LD_MM, "====== Buffer freelists:");
+  tor_log(severity, LD_MM, "====== Buffer freelists:");
   for (i = 0; freelists[i].alloc_size; ++i) {
     uint64_t total = ((uint64_t)freelists[i].cur_length) *
       freelists[i].alloc_size;
-    log(severity, LD_MM,
+    tor_log(severity, LD_MM,
         U64_FORMAT" bytes in %d %d-byte chunks ["U64_FORMAT
         " misses; "U64_FORMAT" frees; "U64_FORMAT" hits]",
         U64_PRINTF_ARG(total),
@@ -349,7 +349,7 @@ buf_dump_freelist_sizes(int severity)
         U64_PRINTF_ARG(freelists[i].n_free),
         U64_PRINTF_ARG(freelists[i].n_hit));
   }
-  log(severity, LD_MM, U64_FORMAT" allocations in non-freelist sizes",
+  tor_log(severity, LD_MM, U64_FORMAT" allocations in non-freelist sizes",
       U64_PRINTF_ARG(n_freelist_miss));
 #else
   (void)severity;
@@ -1046,28 +1046,34 @@ cell_command_is_var_length(uint8_t command, int linkproto)
 int
 fetch_var_cell_from_buf(buf_t *buf, var_cell_t **out, int linkproto)
 {
-  char hdr[VAR_CELL_HEADER_SIZE];
+  char hdr[VAR_CELL_MAX_HEADER_SIZE];
   var_cell_t *result;
   uint8_t command;
   uint16_t length;
+  const int wide_circ_ids = linkproto >= MIN_LINK_PROTO_FOR_WIDE_CIRC_IDS;
+  const int circ_id_len = get_circ_id_size(wide_circ_ids);
+  const unsigned header_len = get_var_cell_header_size(wide_circ_ids);
   check();
   *out = NULL;
-  if (buf->datalen < VAR_CELL_HEADER_SIZE)
+  if (buf->datalen < header_len)
     return 0;
-  peek_from_buf(hdr, sizeof(hdr), buf);
+  peek_from_buf(hdr, header_len, buf);
 
-  command = get_uint8(hdr+2);
+  command = get_uint8(hdr + circ_id_len);
   if (!(cell_command_is_var_length(command, linkproto)))
     return 0;
 
-  length = ntohs(get_uint16(hdr+3));
-  if (buf->datalen < (size_t)(VAR_CELL_HEADER_SIZE+length))
+  length = ntohs(get_uint16(hdr + circ_id_len + 1));
+  if (buf->datalen < (size_t)(header_len+length))
     return 1;
   result = var_cell_new(length);
   result->command = command;
-  result->circ_id = ntohs(get_uint16(hdr));
+  if (wide_circ_ids)
+    result->circ_id = ntohl(get_uint32(hdr));
+  else
+    result->circ_id = ntohs(get_uint16(hdr));
 
-  buf_remove_from_front(buf, VAR_CELL_HEADER_SIZE);
+  buf_remove_from_front(buf, header_len);
   peek_from_buf((char*) result->payload, length, buf);
   buf_remove_from_front(buf, length);
   check();
@@ -1126,30 +1132,36 @@ fetch_var_cell_from_evbuffer(struct evbuffer *buf, var_cell_t **out,
   uint16_t cell_length;
   var_cell_t *cell;
   int result = 0;
+  const int wide_circ_ids = linkproto >= MIN_LINK_PROTO_FOR_WIDE_CIRC_IDS;
+  const int circ_id_len = get_circ_id_size(wide_circ_ids);
+  const unsigned header_len = get_var_cell_header_size(wide_circ_ids);
 
   *out = NULL;
   buf_len = evbuffer_get_length(buf);
-  if (buf_len < VAR_CELL_HEADER_SIZE)
+  if (buf_len < header_len)
     return 0;
 
-  n = inspect_evbuffer(buf, &hdr, VAR_CELL_HEADER_SIZE, &free_hdr, NULL);
-  tor_assert(n >= VAR_CELL_HEADER_SIZE);
+  n = inspect_evbuffer(buf, &hdr, header_len, &free_hdr, NULL);
+  tor_assert(n >= header_len);
 
-  command = get_uint8(hdr+2);
+  command = get_uint8(hdr + circ_id_len);
   if (!(cell_command_is_var_length(command, linkproto))) {
     goto done;
   }
 
-  cell_length = ntohs(get_uint16(hdr+3));
-  if (buf_len < (size_t)(VAR_CELL_HEADER_SIZE+cell_length)) {
+  cell_length = ntohs(get_uint16(hdr + circ_id_len + 1));
+  if (buf_len < (size_t)(header_len+cell_length)) {
     result = 1; /* Not all here yet. */
     goto done;
   }
 
   cell = var_cell_new(cell_length);
   cell->command = command;
-  cell->circ_id = ntohs(get_uint16(hdr));
-  evbuffer_drain(buf, VAR_CELL_HEADER_SIZE);
+  if (wide_circ_ids)
+    cell->circ_id = ntohl(get_uint32(hdr));
+  else
+    cell->circ_id = ntohs(get_uint16(hdr));
+  evbuffer_drain(buf, header_len);
   evbuffer_remove(buf, cell->payload, cell_length);
   *out = cell;
   result = 1;
@@ -1506,22 +1518,19 @@ log_unsafe_socks_warning(int socks_protocol, const char *address,
   static ratelim_t socks_ratelim = RATELIM_INIT(SOCKS_WARN_INTERVAL);
 
   const or_options_t *options = get_options();
-  char *m = NULL;
   if (! options->WarnUnsafeSocks)
     return;
-  if (safe_socks || (m = rate_limit_log(&socks_ratelim, approx_time()))) {
-    log_warn(LD_APP,
+  if (safe_socks) {
+    log_fn_ratelim(&socks_ratelim, LOG_WARN, LD_APP,
              "Your application (using socks%d to port %d) is giving "
              "Tor only an IP address. Applications that do DNS resolves "
              "themselves may leak information. Consider using Socks4A "
              "(e.g. via privoxy or socat) instead. For more information, "
              "please see https://wiki.torproject.org/TheOnionRouter/"
-             "TorFAQ#SOCKSAndDNS.%s%s",
+             "TorFAQ#SOCKSAndDNS.%s",
              socks_protocol,
              (int)port,
-             safe_socks ? " Rejecting." : "",
-             m ? m : "");
-    tor_free(m);
+             safe_socks ? " Rejecting." : "");
   }
   control_event_client_status(LOG_WARN,
                               "DANGEROUS_SOCKS PROTOCOL=SOCKS%d ADDRESS=%s:%d",
@@ -1742,7 +1751,7 @@ parse_socks(const char *data, size_t datalen, socks_request_t *req,
         return 0;
       }
       req->replylen = 2; /* 2 bytes of response */
-      req->reply[0] = 5;
+      req->reply[0] = 1; /* authversion == 1 */
       req->reply[1] = 0; /* authentication successful */
       log_debug(LD_APP,
                "socks5: Accepted username/password without checking.");
@@ -1773,6 +1782,7 @@ parse_socks(const char *data, size_t datalen, socks_request_t *req,
 
       if (req->socks_version != 5) { /* we need to negotiate a method */
         unsigned char nummethods = (unsigned char)*(data+1);
+        int have_user_pass, have_no_auth;
         int r=0;
         tor_assert(!req->socks_version);
         if (datalen < 2u+nummethods) {
@@ -1783,18 +1793,20 @@ parse_socks(const char *data, size_t datalen, socks_request_t *req,
           return -1;
         req->replylen = 2; /* 2 bytes of response */
         req->reply[0] = 5; /* socks5 reply */
-        if (memchr(data+2, SOCKS_NO_AUTH, nummethods)) {
-          req->reply[1] = SOCKS_NO_AUTH; /* tell client to use "none" auth
-                                            method */
-          req->socks_version = 5; /* remember we've already negotiated auth */
-          log_debug(LD_APP,"socks5: accepted method 0 (no authentication)");
-          r=0;
-        } else if (memchr(data+2, SOCKS_USER_PASS, nummethods)) {
+        have_user_pass = (memchr(data+2, SOCKS_USER_PASS, nummethods) !=NULL);
+        have_no_auth   = (memchr(data+2, SOCKS_NO_AUTH,   nummethods) !=NULL);
+        if (have_user_pass && !(have_no_auth && req->socks_prefer_no_auth)) {
           req->auth_type = SOCKS_USER_PASS;
           req->reply[1] = SOCKS_USER_PASS; /* tell client to use "user/pass"
                                               auth method */
           req->socks_version = 5; /* remember we've already negotiated auth */
           log_debug(LD_APP,"socks5: accepted method 2 (username/password)");
+          r=0;
+        } else if (have_no_auth) {
+          req->reply[1] = SOCKS_NO_AUTH; /* tell client to use "none" auth
+                                            method */
+          req->socks_version = 5; /* remember we've already negotiated auth */
+          log_debug(LD_APP,"socks5: accepted method 0 (no authentication)");
           r=0;
         } else {
           log_warn(LD_APP,

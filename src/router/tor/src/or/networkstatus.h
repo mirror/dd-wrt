@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2012, The Tor Project, Inc. */
+ * Copyright (c) 2007-2013, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,8 +9,8 @@
  * \brief Header file for networkstatus.c.
  **/
 
-#ifndef _TOR_NETWORKSTATUS_H
-#define _TOR_NETWORKSTATUS_H
+#ifndef TOR_NETWORKSTATUS_H
+#define TOR_NETWORKSTATUS_H
 
 /** How old do we allow a v2 network-status to get before removing it
  * completely? */
@@ -38,6 +38,8 @@ int router_set_networkstatus_v2(const char *s, time_t arrived_at,
 void networkstatus_v2_list_clean(time_t now);
 int compare_digest_to_routerstatus_entry(const void *_key,
                                          const void **_member);
+int compare_digest_to_vote_routerstatus_entry(const void *_key,
+                                              const void **_member);
 const routerstatus_t *networkstatus_v2_find_entry(networkstatus_v2_t *ns,
                                          const char *digest);
 const routerstatus_t *networkstatus_vote_find_entry(networkstatus_t *ns,
@@ -71,7 +73,8 @@ int should_delay_dir_fetches(const or_options_t *options);
 void update_networkstatus_downloads(time_t now);
 void update_certificate_downloads(time_t now);
 int consensus_is_waiting_for_certs(void);
-networkstatus_v2_t *networkstatus_v2_get_by_digest(const char *digest);
+int client_would_use_router(const routerstatus_t *rs, time_t now,
+                            const or_options_t *options);
 networkstatus_t *networkstatus_get_latest_consensus(void);
 networkstatus_t *networkstatus_get_latest_consensus_by_flavor(
                                                   consensus_flavor_t f);
@@ -110,6 +113,7 @@ int networkstatus_parse_flavor_name(const char *flavname);
 void document_signature_free(document_signature_t *sig);
 document_signature_t *document_signature_dup(const document_signature_t *sig);
 void networkstatus_free_all(void);
+int networkstatus_get_weight_scale_param(networkstatus_t *ns);
 
 #endif
 
