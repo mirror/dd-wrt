@@ -1364,7 +1364,8 @@ void start_sysinit(void)
 				{"tssipos2g", "1", 0},
 				{"txchain", "7", 0},
 				{"venid", "0x14E4", 0},
-				{"xtalfreq", "20000", 0}
+				{"xtalfreq", "20000", 0},
+				{0, 0, 0}
 			};
 
 			struct nvram_tuple ea6500v2_2_1params[] = {
@@ -1475,7 +1476,8 @@ void start_sysinit(void)
 				{"tworangetssi5g", "0", 0},
 				{"txchain", "7", 0},
 				{"venid", "0x14E4", 0},
-				{"xtalfreq", "40000", 0}
+				{"xtalfreq", "40000", 0},
+				{0, 0, 0},
 			};
 
 			struct nvram_tuple *t;
@@ -1564,7 +1566,8 @@ void start_sysinit(void)
 				{"tworangetssi2g", "0", 0},
 				{"txchain", "7", 0},
 				{"venid", "0x14E4", 0},
-				{"xtalfreq", "40000", 0}
+				{"xtalfreq", "40000", 0},
+				{0, 0, 0}
 			};
 
 			struct nvram_tuple ea6900_2_1params[] = {
@@ -1672,7 +1675,8 @@ void start_sysinit(void)
 				{"tworangetssi5g", "0", 0},
 				{"txchain", "7", 0},
 				{"venid", "0x14E4", 0},
-				{"xtalfreq", "40000", 0}
+				{"xtalfreq", "40000", 0},
+				{0, 0, 0}
 			};
 
 			struct nvram_tuple *t;
