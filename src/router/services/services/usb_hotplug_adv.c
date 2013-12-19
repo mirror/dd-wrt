@@ -179,6 +179,7 @@ static bool usb_stop_services()
 	eval("stopservice", "dlna");
 	eval("stopservice", "ftpsrv");
 	eval("stopservice", "lighttpd");
+	eval("stopservice", "transmission");
 	return 0;
 }
 
@@ -190,6 +191,7 @@ static bool usb_start_services()
 	eval("startservice", "dlna");
 	eval("startservice", "ftpsrv");
 	eval("startservice", "lighttpd");
+	eval("startservice", "transmission");
 	return 0;
 }
 
