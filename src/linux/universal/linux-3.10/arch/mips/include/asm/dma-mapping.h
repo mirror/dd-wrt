@@ -37,19 +37,24 @@ static inline struct dma_map_ops *get_dma_ops(struct device *dev)
 }
 
 /*
+ * The affected CPUs below in 'cpu_needs_post_dma_flush()' can
+ * speculatively fill random cachelines with stale data at any time,
+ * requiring an extra flush post-DMA.
+ *
  * Warning on the terminology - Linux calls an uncached area coherent;
  * MIPS terminology calls memory areas with hardware maintained coherency
  * coherent.
  */
 
-static inline int cpu_is_noncoherent_r10000(struct device *dev)
+static inline int cpu_needs_post_dma_flush(struct device *dev)
 {
 #ifndef CONFIG_SYS_HAS_CPU_R10000
 	return 0;
 #endif
 	return !plat_device_is_coherent(dev) &&
 	       (current_cpu_type() == CPU_R10000 ||
-	       current_cpu_type() == CPU_R12000);
+		current_cpu_type() == CPU_R12000 ||
+		current_cpu_type() == CPU_BMIPS5000);
 }
 
 static inline struct page *dma_addr_to_page(struct device *dev,
@@ -104,7 +109,7 @@ static inline void dma_unmap_single_attrs(struct device *dev, dma_addr_t addr,
 	if (ops) {
 		ops->unmap_page(dev, addr, size, dir, attrs);
 	} else {
-		if (cpu_is_noncoherent_r10000(dev))
+		if (cpu_needs_post_dma_flush(dev))
 			__dma_sync(dma_addr_to_page(dev, addr),
 				   addr & ~PAGE_MASK, size, dir);
 
@@ -195,7 +200,7 @@ static inline void dma_unmap_page(struct device *dev, dma_addr_t addr,
 	if (ops) {
 		ops->unmap_page(dev, addr, size, dir, NULL);
 	} else {
-		if (cpu_is_noncoherent_r10000(dev))
+		if (cpu_needs_post_dma_flush(dev))
 			__dma_sync(dma_addr_to_page(dev, addr),
 				   addr & ~PAGE_MASK, size, dir);
 
@@ -213,7 +218,7 @@ static inline void dma_sync_single_for_cpu(struct device *dev, dma_addr_t addr,
 	BUG_ON(!valid_dma_direction(dir));
 	if (ops)
 		ops->sync_single_for_cpu(dev, addr, size, dir);
-	else if (cpu_is_noncoherent_r10000(dev))
+	else if (cpu_needs_post_dma_flush(dev))
 		__dma_sync(dma_addr_to_page(dev, addr),
 			   addr & ~PAGE_MASK, size, dir);
 	debug_dma_sync_single_for_cpu(dev, addr, size, dir);
@@ -245,7 +250,7 @@ static inline void dma_sync_single_range_for_cpu(struct device *dev,
 	BUG_ON(!valid_dma_direction(dir));
 	if (ops)
 		ops->sync_single_for_cpu(dev, addr + offset, size, dir);
-	else if (cpu_is_noncoherent_r10000(dev))
+	else if (cpu_needs_post_dma_flush(dev))
 		__dma_sync(dma_addr_to_page(dev, addr + offset),
 			   (addr + offset) & ~PAGE_MASK, size, dir);
 	debug_dma_sync_single_range_for_cpu(dev, addr, offset, size, dir);
@@ -279,7 +284,7 @@ dma_sync_sg_for_cpu(struct device *dev, struct scatterlist *sg,
 	BUG_ON(!valid_dma_direction(dir));
 	if (ops)
 		ops->sync_sg_for_cpu(dev, sg, nelems, dir);
-	else if (cpu_is_noncoherent_r10000(dev)) {
+	else if (cpu_needs_post_dma_flush(dev)) {
 		for_each_sg(sg, s, nelems, i)
 			__dma_sync(sg_page(s), s->offset, s->length, dir);
 	}
