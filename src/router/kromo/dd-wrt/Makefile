@@ -694,6 +694,10 @@ ifneq ($(CONFIG_USB),y)
 	rm -f $(INSTALLDIR)/www/help/HUSB.asp
 endif
 
+ifneq ($(CONFIG_WEBSERVER),y)
+	rm -f $(INSTALLDIR)/www/Lighttpd.asp
+endif
+
 ifneq ($(CONFIG_FTP),y)
 ifneq ($(CONFIG_SAMBASRV),y)
 	rm -f $(INSTALLDIR)/www/NAS.asp
