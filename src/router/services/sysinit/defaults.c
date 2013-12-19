@@ -3164,6 +3164,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"tor_enable", "0", 0},
 	{"tor_relayonly", "0", 0},
 	{"tor_dir", "0", 0},
+	{"tor_relay", "0", 0},
 	{"tor_bridge", "0", 0},
 	{"tor_transparent", "0", 0},
 #endif
