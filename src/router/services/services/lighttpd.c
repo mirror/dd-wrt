@@ -113,7 +113,15 @@ void start_lighttpd(void)
 	}
 	
 	fclose(fp);
-	eval("lighttpd", "-f", "/tmp/lighttpd.conf");
+	
+	fp = fopen("/jffs/etc/lighttpd.conf", "r"); //test if custom config is available
+	if ( fp !=NULL ){
+		eval("lighttpd", "-f", "/jffs/etc/lighttpd.conf");
+		fclose(fp);
+	}else{
+		eval("lighttpd", "-f", "/tmp/lighttpd.conf");
+	}
+	
 	syslog(LOG_INFO, "lighttpd : lighttpd started\n");
 	return;
 }
