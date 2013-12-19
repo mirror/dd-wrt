@@ -2,4 +2,3 @@
  "lighttpd_sslport"  "Https port" "NULL" "FALSE"  "0"
  "lighttpd_port"  "Httpd port" "NULL" "FALSE"  "0"
  "lighttpd_root"  "Document root"  "NULL"  "FALSE" "0"
- "lighttpd_advanced" "Advanced configuration" "NULL" "FALSE" "0"
