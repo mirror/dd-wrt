@@ -198,17 +198,17 @@ endif
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
-	-$(MAKE) -f Makefile.armeb ath9k
-	-$(MAKE) -f Makefile.armeb ath9k-install
-	-$(MAKE) -f Makefile.armeb libutils
-	-$(MAKE) -f Makefile.armeb madwifi
-	-$(MAKE) -f Makefile.armeb madwifi-install
-	-$(MAKE) -f Makefile.armeb batman-adv
-	-$(MAKE) -f Makefile.armeb batman-adv-install
-	-$(MAKE) -f Makefile.armeb opendpi
-	-$(MAKE) -f Makefile.armeb opendpi-install
-	-$(MAKE) -f Makefile.armeb uniwip-gpio
-	-$(MAKE) -f Makefile.armeb uniwip-gpio-install
+	-$(MAKE) -f Makefile.armbe ath9k
+	-$(MAKE) -f Makefile.armbe ath9k-install
+	-$(MAKE) -f Makefile.armbe libutils
+	-$(MAKE) -f Makefile.armbe madwifi
+	-$(MAKE) -f Makefile.armbe madwifi-install
+	-$(MAKE) -f Makefile.armbe batman-adv
+	-$(MAKE) -f Makefile.armbe batman-adv-install
+	-$(MAKE) -f Makefile.armbe opendpi
+	-$(MAKE) -f Makefile.armbe opendpi-install
+	-$(MAKE) -f Makefile.armbe uniwip-gpio
+	-$(MAKE) -f Makefile.armbe uniwip-gpio-install
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
 	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
 	done
