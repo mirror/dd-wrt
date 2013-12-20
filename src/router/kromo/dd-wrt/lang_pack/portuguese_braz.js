@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//      Update (22930 based)               - DD-WRT V24 SP2 by mrc_torres 20/NOV/2013       //
+//      Update (23143 based)               - DD-WRT V24 SP2 by mrc_torres 19/DEC/2013       //
 //      Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr      16/JUN/2006       //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -718,8 +718,10 @@ nas.dlna_legend="Servidor DLNA";
 nas.dlna_srv="MiniDLNA"; 
 nas.dlna_thumb="Incluir Arte da Capa";
 nas.dlna_dir="Pasta de Arquivos";
- 
-** Privoxy.asp **//
+
+hnas.right2="A fim de compartilhar recursos adicione novos compartilhamentos fornecendo o caminho e o nome do compartilhamento. Defina os usuários que podem acessar o compartilhamento através de ftp ou samba.";
+
+//** Privoxy.asp **//
 privoxy.titl="Bloqueio de Propaganda"; 
 privoxy.server="Privoxy"; 
 privoxy.legend="Servidor Proxy de Filtragem"; 
@@ -738,8 +740,6 @@ lighttpd.sslport="Porta HTTPS";
 lighttpd.custom="Configuração Personalizada"; 
  
 hlighttpd.right2="Habilita o lighttpd e configura as porta HTTP/HTTPS em que o lighttpd ouvirá as solicitações. O diretório raiz padrão do servidor web aonde você pode colocar seus sites é /jffs/www."; 
-
-hnas.right2="A fim de compartilhar recursos adicione novos compartilhamentos fornecendo o caminho e o nome do compartilhamento. Defina os usuários que podem acessar o compartilhamento através de ftp ou samba.";
 
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
@@ -1232,7 +1232,7 @@ route.static_ip="Endereço IP da LAN de Destino";
 
 //help container
 hroute.right2="Se o roteador está hospedando sua conexão à Internet, selecione o modo <em>Gateway</em>. Se existir algum outro roteador na sua rede, selecione o modo <em>Router</em>.";
-hroute.right4="Este é o número único da rota, você pode definir até 50 rotas.";
+hroute.right4="Este é o número único da rota; você pode definir até 50 rotas.";
 hroute.right6="Insira o nome que deseja associar a esta rota.";
 hroute.right8="Este é o host remoto ao qual você gostaria de atribuir a rota estática.";
 hroute.right10="Determina o host e a porção de rede a qual pertence a rota.";
@@ -1533,6 +1533,11 @@ service.zabbix_legend="Zabbix";
 service.zabbix_cl="Cliente";
 service.zabbix_serverip="Endereço IP do servidor Zabbix";
 
+// Transmission 
+service.transmission_legend="Bittorrent"; 
+service.transmission_srv="Daemon Transmission"; 
+service.transmission_dir="Diretório Transmission"; 
+
 // ** eop-tunnel.asp **//
 eoip.titl="Túnel EoIP";
 eoip.tunnel="Túnel";
@@ -1588,7 +1593,7 @@ status_band.follow="acompanhar";
 status_band.up="elevar";
 
 //help container
-hstatus_band.svg="O plugin Adobe SVG é requerido para visualizar os gráficos de largura de banda.";
+hstatus_band.svg="Um navegador que suporte SVG é requerido para visualizar os gráficos de largura de banda.";
 hstatus_band.right1="Clique no rótulo para alternar a unidade (bytes/s ou bits/s).";
 hstatus_band.right2="Clique no rótulo para escolhar o tipo de escala do gráfico.";
 
@@ -1717,8 +1722,8 @@ trforward.app="Aplicação";
 htrforward.right2="Insira o nome do aplicativo para o disparo (trigger).";
 htrforward.right4="Liste a faixa de portas engatilhadas para cada aplicação. Confira com a documentação do aplicativo quais os números das portas necessárias.";
 htrforward.right6="Liste a faixa de portas encaminhadas para cada aplicação. Confira com a documentação do aplicativo quais os números das portas necessárias.";
-htrforward.right8="Insira o número inicial da porta para a Faixa de Portas Engatilhadas ou Encaminhadas.";
-htrforward.right10="Insira o número final da porta para a Faixa de Portas Engatilhadas ou Encaminhadas.";
+htrforward.right8="Insira os números das portas iniciais para a Faixa de Portas Engatilhadas ou Encaminhadas.";
+htrforward.right10="Insira o números das portas finais para a Faixa de Portas Engatilhadas ou Encaminhadas.";
 
 
 // ** Upgrade.asp **//
@@ -2085,6 +2090,8 @@ wl_basic.adhoc="Adhoc";
 wl_basic.wdssta="Estação WDS";
 wl_basic.wdsap="AP WDS";
 wl_basic.mixed="Misto";
+wl_basic.bft="Beamforming Explícito"; 
+wl_basic.bfr="Beamforming Implícito"; 
 wl_basic.greenfield="Greenfield";
 wl_basic.preamble="Preâmbulo Curto";
 wl_basic.clientRelaydDefaultGwMode="Modo GW Padrão";
@@ -2151,6 +2158,7 @@ wl_basic.if_info="Info (opcional)";
 wl_basic.advanced_options="Opções Avançadas";
 wl_basic.rate_control="Algorítmo de Controle de Taxa";
 wl_basic.ap83_vap_note="Adicionar mais que três interfaces virtuais irá resultar em baixa performance com alguns dispositivos clientes nessas interfaces virtuais adicionais.";
+wl_basic.isolation="Isolamento da Rede"; 
 
 //help container
 hwl_basic.right2="Se você deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se você deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em><br/><b>Nota:</b> alterando o modo wireless, alguns parâmetros avançados são suscetíveis de serem modificados (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" ou \"" + wl_adv.label5 + "\").";
@@ -2171,7 +2179,7 @@ success.success_noreboot="Configurações efetuadas com sucesso.";
 success.success_reboot=success.success_noreboot + "<br />A unidade está reiniciando. Por favor, aguarde um momento...";
 
 success.alert_reset="Todos os parâmetros de configuração foram restaurados para os valores padrão.<br /><br />";
-success.alert1="Por favor, verifique os seguintes ítens antes de conectar novamente:";
+success.alert1="Por favor, verifique o seguinte item antes de conectar novamente:";
 success.alert2="Se você alterou o endereço IP do roteador, por favor, note que você deve liberar/renovar o(s) endereço(s) do(s) cliente(s) na rede.";
 success.alert3="Se você está conectado via WLAN, por favor, associe-se a rede e clique em <em>Continuar</em>.";
 
