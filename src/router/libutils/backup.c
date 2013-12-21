@@ -279,7 +279,7 @@ int nvram_critical(char *name)
 			return 1;
 		}
 	}
-	if (strncmp(name, "sb/", 3) && strncmp(name, "pci/", 4) && strncmp(name, "0:", 2) && strncmp(name, "1:", 2))
+	if (strncmp(name, "sb/", 3) && strncmp(name, "pci/", 4) && strncmp(name, "0:", 2) && strncmp(name, "1:", 2) && strncmp(name, "2:", 2))
 		return 0;
 	else
 		return 1;
