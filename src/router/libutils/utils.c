@@ -5263,7 +5263,7 @@ int led_control(int type, int act)
 		// gpio !3 = power somthing
 		// gpio !8 = usb led
 		// 
-		usb_gio = 0x108;
+		usb_gpio = 0x108;
 		diag_gpio = 0x103;
 		wlan0_gpio = 0x101;
 		wlan1_gpio = 0x102; 
