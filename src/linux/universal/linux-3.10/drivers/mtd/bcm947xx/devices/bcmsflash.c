@@ -228,6 +228,7 @@ bcmsflash_mtd_init(void)
 	hndsflash_t *info;
 	struct mtd_partition *parts;
 	int i;
+	uint boardnum = bcm_strtoul(nvram_safe_get("boardnum"), NULL, 0);
 
 	memset(&bcmsflash, 0, sizeof(struct bcmsflash_mtd));
 
@@ -244,6 +245,9 @@ bcmsflash_mtd_init(void)
 		ret = -ENODEV;
 		goto fail;
 	}
+	if (boardnum == 1234)
+	    info->size = 8*1024*1024;  // truncate to 8 MB
+
 	bcmsflash.sfl = info;
 
 	/* Setup region info */

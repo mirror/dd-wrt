@@ -433,6 +433,7 @@ static uint lookup_flash_rootfs_offset(struct mtd_info *mtd, int *trx_off, size_
 
 	return off;
 }
+extern int __init root_dev_setup(char *line);
 
 struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_info *mtd, size_t size)
 {
@@ -496,6 +497,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 
 	if (knldev != SOC_KNLDEV_NANDFLASH) {
 		rfs_off = lookup_flash_rootfs_offset(mtd, &vmlz_off, size);
+		root_dev_setup("1f02");
 
 		/* Size pmon */
 		bcm947xx_flash_parts[nparts].name = "boot";
