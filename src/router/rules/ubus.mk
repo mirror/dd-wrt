@@ -4,7 +4,7 @@ PKG_INSTALL:=1
 
 MAKE_FLAGS+=VERBOSE=0
 
-EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib -DNEED_PRINTF
+EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(MIPS16_OPT) -DNEED_PRINTF
 EXTRA_LDFLAGS=-L$(TOP)/libubox/
 
 ubus-configure: 

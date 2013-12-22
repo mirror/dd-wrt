@@ -8,14 +8,14 @@ export ac_cv_func_posix_getgrgid_r=no
 export GLIB_CFLAGS=-I$(TOP)/glib20/libglib/glib
 
 mc-configure: ncurses
-	cd mc2/slang && ./configure --host=$(ARCH)-uclibc-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -I$(TOP)/zlib -L$(TOP)/zlib" --enable-shared \
+	cd mc2/slang && ./configure --host=$(ARCH)-uclibc-linux CC="ccache $(CC)" CFLAGS="$(COPTS)  $(MIPS16_OPT) -I$(TOP)/zlib -L$(TOP)/zlib" --enable-shared \
 		--enable-static \
 		--enable-debug=no 
 	make -C mc2/slang clean
 	make -C mc2/slang
 
 	cd mc2 && ./configure --host=$(ARCH)-uclibc-linux CC="ccache $(CC)" \
-		CFLAGS="$(COPTS) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/mc2/slang/src" \
+		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/mc2/slang/src" \
 		LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -lncurses" \
 		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib" \
 		GLIB_LIBS="-L$(TOP)/glib20/libglib/glib/.libs -lglib-2.0" \

@@ -22,7 +22,7 @@ CONFIGURE_ARGS+= \
         --with-zlib
 
 lighttpd-configure: pcre-configure pcre openssl
-	cd lighttpd && ./configure --host=$(ARCH)-linux CC="ccache $(CC)" $(CONFIGURE_ARGS) CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) -I$(TOP)/pcre -I$(TOP)/zlib" CPPFLAGS="$(COPTS)" LDFLAGS="-L$(TOP)/pcre/.libs -lpthread -lpcre -L$(TOP)/zlib $(LDFLAGS) -lz"
+	cd lighttpd && ./configure --host=$(ARCH)-linux CC="ccache $(CC)" $(CONFIGURE_ARGS) CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/pcre -I$(TOP)/zlib" CPPFLAGS="$(COPTS) $(MIPS16_OPT)" LDFLAGS="-L$(TOP)/pcre/.libs -lpthread -lpcre -L$(TOP)/zlib $(LDFLAGS) -lz"
 
 lighttpd: openssl
 	make -C lighttpd 
