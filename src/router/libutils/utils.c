@@ -4560,7 +4560,6 @@ int led_control(int type, int act)
 		ses_gpio = 0x100;
 #endif
 #ifdef HAVE_WR842V2
-		diag_gpio = 0x10f;
 		connected_gpio = 0x10e;
 		usb_power = 0x004;
 		usb_gpio = 0x10f;
