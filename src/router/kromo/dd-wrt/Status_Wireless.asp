@@ -204,10 +204,6 @@ addEvent(window, "unload", function() {
 								</div>
 								<% show_acktiming(); %>
 								<% getencryptionstatus(); %>
-								<div class="setting">
-									<div class="label"><% tran("status_wireless.pptp"); %></div>
-									<% nvram_else_match("pptpd_connected", "1", "<script type="text/javascript">Capture(share.connected)</script>", "<script type="text/javascript">Capture(share.disconnected)</script>"); %>&nbsp;
-								</div>
 							</fieldset><br />
 							
 							<fieldset>
