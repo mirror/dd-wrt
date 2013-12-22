@@ -2838,6 +2838,9 @@ void start_wan(int status)
 #elif HAVE_WA7510
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth1";
+#elif HAVE_DIR615I
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_WR741
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
