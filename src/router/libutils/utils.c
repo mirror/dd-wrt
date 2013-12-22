@@ -4563,6 +4563,7 @@ int led_control(int type, int act)
 		diag_gpio = 0x10f;
 		connected_gpio = 0x10e;
 		usb_power = 0x004;
+		usb_gpio = 0x10f;
 #elif HAVE_WR841V8
 		diag_gpio = 0x10f;
 		connected_gpio = 0x10e;
