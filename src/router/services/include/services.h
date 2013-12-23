@@ -37,6 +37,11 @@ extern void stop_pptp(void);
 extern void start_syslog(void);
 extern void stop_syslog(void);
 
+#ifdef HAVE_TOR
+extern void start_tor(void);
+extern void stop_tor(void);
+#endif
+
 extern void start_process_monitor(void);
 extern void stop_process_monitor(void);
 
