@@ -63,6 +63,7 @@ void start_tor(void)
 		fprintf(fp, "SocksPort %s:9050\n", nvram_safe_get("lan_ipaddr"));
 	}
 	fprintf(fp, "RunAsDaemon 1\n");
+	fprintf(fp, "Address %s\n",get_wan_ipaddr());
 //      fprintf(fp,"ControlPort 9051\n");
 	if (nvram_match("tor_relay", "1"))
 		fprintf(fp, "ORPort 9001\n");
