@@ -328,11 +328,9 @@ static void parse_port_forward(char *wordlist)
 			if (flag_dis == 0) {
 				save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s\n", wanaddr, port, ip);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-				if (!strcmp(wan_proto, "pptp") ||
-				    !strcmp(wan_proto, "l2tp") ||
-				    !strcmp(wan_proto, "pppoe_dual") ) 
+				if (!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp") || !strcmp(wan_proto, "pppoe_dual"))
 					save2file("-A PREROUTING -i %s -p tcp -d %s --dport %s -j DNAT --to-destination %s\n", nvram_safe_get("wan_ifname"), wanaddr, port, ip);
-#endif 
+#endif
 				snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s --dport %s -j %s\n", ip, port, log_accept);
 			} else {
 				if ((!dmzenable)
@@ -351,11 +349,9 @@ static void parse_port_forward(char *wordlist)
 			if (flag_dis == 0) {
 				save2file("-A PREROUTING -p udp -d %s --dport %s -j DNAT --to-destination %s\n", wanaddr, port, ip);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-				if (!strcmp(wan_proto, "pptp") ||
-				    !strcmp(wan_proto, "l2tp") ||
-				    !strcmp(wan_proto, "pppoe_dual") )
+				if (!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp") || !strcmp(wan_proto, "pppoe_dual"))
 					save2file("-A PREROUTING -i %s -p udp -d %s --dport %s -j DNAT --to-destination %s\n", nvram_safe_get("wan_ifname"), wanaddr, port, ip);
-#endif 
+#endif
 				snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n", ip, port, log_accept);
 			} else {
 				if ((!dmzenable)
@@ -509,20 +505,16 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 	if (src && strlen(src) > 0) {
 		save2file("-A PREROUTING -p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", proto, proto, src, wanaddr, from, ip, to);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-		if (!strcmp(wan_proto, "pptp") ||
-		    !strcmp(wan_proto, "l2tp") ||
-		    !strcmp(wan_proto, "pppoe_dual") ) 
+		if (!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp") || !strcmp(wan_proto, "pppoe_dual"))
 			save2file("-A PREROUTING -i %s -p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", nvram_safe_get("wan_ifname"), proto, proto, src, wanaddr, from, ip, to);
-#endif        
+#endif
 		snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
 	} else {
 		save2file("-A PREROUTING -p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", proto, proto, wanaddr, from, ip, to);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-		if (!strcmp(wan_proto, "pptp") ||
-		    !strcmp(wan_proto, "l2tp") ||
-		    !strcmp(wan_proto, "pppoe_dual") ) 
+		if (!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp") || !strcmp(wan_proto, "pppoe_dual"))
 			save2file("-A PREROUTING -i %s -p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", nvram_safe_get("wan_ifname"), proto, proto, wanaddr, from, ip, to);
-#endif  
+#endif
 		snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -d %s --dport %s -j %s\n", proto, proto, ip, to, log_accept);
 	}
 	count += strlen(buff) + 1;
@@ -602,15 +594,15 @@ static void nat_prerouting(void)
 	if (!strcmp(remote_ip_any, "1") || !strncmp(remote_ip, "0.0.0.0", 7))
 		remote_any = 1;
 	/*
-	* Block ads on all http requests
-	*/	
+	 * Block ads on all http requests
+	 */
 #ifdef HAVE_PRIVOXY
-	if (nvram_match("privoxy_transp_enable", "1") && nvram_match("privoxy_enable", "1")){
+	if (nvram_match("privoxy_transp_enable", "1") && nvram_match("privoxy_enable", "1")) {
 		save2file("-A PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-port 8118\n", wanaddr);
 	}
 #endif
 #ifdef HAVE_TOR
-	if (nvram_match("tor_transparent", "1") && nvram_match("tor_enable", "1")){
+	if (nvram_match("tor_transparent", "1") && nvram_match("tor_enable", "1")) {
 		save2file("-A PREROUTING -i br0 -p udp --dport 53 -j REDIRECT --to-ports 53\n");
 		save2file("-A PREROUTING -i br0 -p tcp --syn -j REDIRECT --to-ports 9040\n");
 	}
@@ -675,7 +667,6 @@ static void nat_prerouting(void)
 	 * ICMP packets are always redirected to INPUT chains 
 	 */
 	save2file("-A PREROUTING -p icmp -d %s -j DNAT --to-destination %s\n", wanaddr, nvram_safe_get("lan_ipaddr"));
-	
 
 #ifdef HAVE_TFTP
 	/*
@@ -769,8 +760,8 @@ static void nat_postrouting(void)
 			struct in_addr ifaddr;
 			osl_ifaddr(wan_ifname_tun, &ifaddr);
 			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wan_ifname_tun, inet_ntoa(ifaddr));
-		}	
-		
+		}
+
 		if (nvram_match("block_loopback", "0")) {
 			save2file("-A POSTROUTING -m mark --mark %s -j MASQUERADE\n", get_NFServiceMark("FORWARD", 1));
 		}
@@ -1778,7 +1769,7 @@ static void filter_input(void)
 		}
 	}
 #endif
-	if (nvram_match("wan_proto", "dhcp") )
+	if (nvram_match("wan_proto", "dhcp"))
 		save2file("-A INPUT -i %s -p udp --sport 67 --dport 68 -j %s\n", wanface, log_accept);
 	if (nvram_match("pptpd_enable", "1")
 	    || nvram_match("pptpd_client_enable", "1")
@@ -1818,11 +1809,11 @@ static void filter_input(void)
 	    && nvram_match("openvpn_switch", "1")) {
 		save2file("-A INPUT -p %s --dport %s -j %s\n", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", nvram_safe_get("openvpn_port"), log_accept);
 		if (nvram_match("openvpn_tuntap", "tun")) {
-//			if (strlen(nvram_safe_get("openvpn_ccddef")) = 0) {
-				save2file("-A INPUT -i %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), log_accept);
-				save2file("-A FORWARD -i %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), log_accept);
-				save2file("-A FORWARD -o %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), log_accept);
-//			}
+//                      if (strlen(nvram_safe_get("openvpn_ccddef")) = 0) {
+			save2file("-A INPUT -i %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), log_accept);
+			save2file("-A FORWARD -i %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), log_accept);
+			save2file("-A FORWARD -o %s2 -j %s\n", nvram_safe_get("openvpn_tuntap"), log_accept);
+//                      }
 		}
 	}
 #endif
@@ -1895,7 +1886,7 @@ static void filter_input(void)
 	if (remotessh) {
 
 		if (nvram_match("limit_ssh", "1"))
-			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j logbrute\n", wanface, nvram_safe_get("lan_ipaddr") , nvram_safe_get("sshd_port"));
+			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j logbrute\n", wanface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"));
 	}
 #endif
 	/*
@@ -1918,7 +1909,7 @@ static void filter_input(void)
 	}
 #endif
 	if (remotetelnet) {
-			save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), log_accept);
+		save2file("-A INPUT -i %s -p tcp -d %s --dport 23 -j %s\n", wanface, nvram_safe_get("lan_ipaddr"), log_accept);
 	}
 #endif
 	/*
@@ -1966,7 +1957,14 @@ static void filter_input(void)
 		save2file("-A INPUT -p tcp -i %s --dport 5500 -j %s\n", wanface, log_accept);
 	}
 #endif
-
+#ifdef HAVE_TOR
+	if (nvram_match("tor_enable", "1")) {
+		if (nvram_match("tor_relay", "1"))
+			save2file("-A INPUT -p tcp -i %s --dport 9001 -j %s\n", wanface, log_accept);
+		if (nvram_match("tor_dir", "1"))
+			save2file("-A INPUT -p tcp -i %s --dport 9030 -j %s\n", wanface, log_accept);
+	}
+#endif
 	/*
 	 * Ident request backs by telnet or IRC server 
 	 */
@@ -2001,7 +1999,7 @@ static void filter_input(void)
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_isolation", var)) {
-			  	save2file("-A INPUT -i %s -p udp --dport 67 -j %s\n", var, log_accept);
+				save2file("-A INPUT -i %s -p udp --dport 67 -j %s\n", var, log_accept);
 				save2file("-A INPUT -i %s -p udp --dport 53 -j %s\n", var, log_accept);
 				save2file("-A INPUT -i %s -p tcp --dport 53 -j %s\n", var, log_accept);
 				save2file("-A INPUT -i %s -m state --state NEW -j %s\n", var, log_drop);
@@ -2050,30 +2048,27 @@ static void filter_forward(void)
 	char var[80];
 
 	char vifs[256];		// 
-	
-	int i=0;
+
+	int i = 0;
 	int filter_host_url = 0;
-	
-	
-	while( i<15 && filter_host_url == 0)
-	{
-	  i++;
-	  
-	  filter_web_hosts = nvram_nget("filter_web_host%d", i);
-	  filter_web_urls  = nvram_nget("filter_web_url%d", i);
-	  
-	  if (filter_web_hosts && strcmp(filter_web_hosts, "") || filter_web_urls && strcmp(filter_web_urls, "")) {
-		filter_host_url = 1;
-	  }
+
+	while (i < 15 && filter_host_url == 0) {
+		i++;
+
+		filter_web_hosts = nvram_nget("filter_web_host%d", i);
+		filter_web_urls = nvram_nget("filter_web_url%d", i);
+
+		if (filter_web_hosts && strcmp(filter_web_hosts, "") || filter_web_urls && strcmp(filter_web_urls, "")) {
+			filter_host_url = 1;
+		}
 	}
-	
-	
+
 	/*
 	 * If webfilter is not used we can put this rule on top in order to increase WAN<->LAN throughput
 	 */
-	if(!filter_host_url)
+	if (!filter_host_url)
 		save2file("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s\n", log_accept);
-	
+
 	if (nvram_match("dtag_vlan8", "1") && nvram_match("wan_vdsl", "1")) {
 		save2file("-A FORWARD -i %s -j %s\n", nvram_safe_get("tvnicfrom"), log_accept);
 		save2file("-A FORWARD -o %s -j %s\n", nvram_safe_get("tvnicfrom"), log_accept);
@@ -2113,7 +2108,7 @@ static void filter_forward(void)
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */
 	save2file("-A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
-	
+
 	/*
 	 * Filter Web application 
 	 */
@@ -2129,7 +2124,7 @@ static void filter_forward(void)
 	/*
 	 * If webfilter is used this rule must be evaluated after webstr rule
 	 */
-	if(filter_host_url)
+	if (filter_host_url)
 		save2file("-A FORWARD -m state --state RELATED,ESTABLISHED -j %s\n", log_accept);
 
 	/*
@@ -2142,7 +2137,6 @@ static void filter_forward(void)
 	 */
 	if (nvram_match("pptpd_lockdown", "1"))
 		save2file("-A FORWARD -i %s -j %s\n", lanface, log_drop);
-
 
 	/*
 	 * Filter by destination ports "filter_port" if firewall on 
@@ -2250,7 +2244,7 @@ static void filter_forward(void)
 		if (doMultiCast() > 0)
 			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
-#ifdef HAVE_PPPOEDUAL 
+#ifdef HAVE_PPPOEDUAL
 	} else if (nvram_match("wan_proto", "pppoe_dual") && nvram_match("pptp_iptv", "1") && nvram_get("tvnicfrom")) {
 		if (doMultiCast() > 0)
 			save2file("-A FORWARD -i %s -p udp --destination %s -j %s\n", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
@@ -2357,7 +2351,7 @@ static void filter_table(void)
 		save2file(":advgrp_%d - [0:0]\n", seq);
 	}
 #ifndef HAVE_MICRO
-	if( (nvram_match("limit_telnet", "1")) || (nvram_match("limit_pptp", "1")) || (nvram_match("limit_ssh", "1")) || (nvram_match("limit_ftp", "1")) ){
+	if ((nvram_match("limit_telnet", "1")) || (nvram_match("limit_pptp", "1")) || (nvram_match("limit_ssh", "1")) || (nvram_match("limit_ftp", "1"))) {
 		save2file(":logbrute - [0:0]\n");
 		save2file("-A logbrute -m recent --set --name BRUTEFORCE --rsource\n");
 		save2file("-A logbrute -m recent ! --update --seconds 60 --hitcount 4 --name BRUTEFORCE --rsource -j RETURN\n");
@@ -2522,7 +2516,7 @@ void start_firewall(void)
 	 * Improve WAN<->LAN Performance on K26
 	 */
 	system("echo 120 > /proc/sys/net/core/netdev_max_backlog");
-#endif	
+#endif
 	/*
 	 * Block obviously spoofed IP addresses 
 	 */
