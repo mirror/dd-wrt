@@ -4343,6 +4343,11 @@ void start_wan_done(char *wan_ifname)
 	start_sputnik();
 #endif
 
+#ifdef HAVE_TOR
+	stop_tor();
+	start_tor();
+#endif
+
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
