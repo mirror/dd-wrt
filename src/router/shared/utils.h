@@ -658,6 +658,9 @@
 
 #define ROUTER_TRENDNET_TEW811 0xd41b
 
+#define ROUTER_LINKSYS_EA6700 0xd51b
+
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
