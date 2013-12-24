@@ -132,7 +132,10 @@ cifs_fattr_to_inode(struct inode *inode, struct cifs_fattr *fattr)
 	inode->i_mtime = fattr->cf_mtime;
 	inode->i_ctime = fattr->cf_ctime;
 	inode->i_rdev = fattr->cf_rdev;
-	set_nlink(inode, fattr->cf_nlink);
+	if(fattr->cf_cifsattrs & ATTR_DIRECTORY)
+          set_nlink(inode, 2);
+        else
+          set_nlink(inode, fattr->cf_nlink);
 	inode->i_uid = fattr->cf_uid;
 	inode->i_gid = fattr->cf_gid;
 
