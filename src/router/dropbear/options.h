@@ -141,7 +141,7 @@ much traffic. */
 /* ECDSA is significantly faster than RSA or DSS. Compiling in ECC
  * code (either ECDSA or ECDH) increases binary size - around 30kB
  * on x86-64 */
-#define DROPBEAR_ECDSA
+//#define DROPBEAR_ECDSA
 
 /* Generate hostkeys as-needed when the first connection using that key type occurs.
    This avoids the need to otherwise run "dropbearkey" and avoids some problems
@@ -153,11 +153,11 @@ much traffic. */
 /* Enable Curve25519 for key exchange. This is another elliptic
  * curve method with good security properties. Increases binary size
  * by ~8kB on x86-64 */
-#define DROPBEAR_CURVE25519
+//#define DROPBEAR_CURVE25519
 
 /* Enable elliptic curve Diffie Hellman key exchange, see note about
  * ECDSA above */
-#define DROPBEAR_ECDH
+//#define DROPBEAR_ECDH
 
 /* Control the memory/performance/compression tradeoff for zlib.
  * Set windowBits=8 for least memory usage, see your system's
