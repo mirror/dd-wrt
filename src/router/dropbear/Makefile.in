@@ -17,16 +17,18 @@ LTC=libtomcrypt/libtomcrypt.a
 LTM=libtommath/libtommath.a
 
 ifeq (@BUNDLED_LIBTOM@, 1)
-LIBTOM_DEPS=$(LTC) $(LTM)
-CFLAGS+=-I$(srcdir)/libtomcrypt/src/headers/ 
-LIBS+=$(LTC) $(LTM)
+LIBTOM_DEPS=$(LTC) $(LTM) 
+CFLAGS+=-I$(srcdir)/libtomcrypt/src/headers/
+LIBS+=$(LTC) $(LTM) 
 endif
 
 COMMONOBJS=dbutil.o buffer.o \
 		dss.o bignum.o \
-		signkey.o rsa.o random.o \
+		signkey.o rsa.o dbrandom.o \
 		queue.o \
-		atomicio.o compat.o  fake-rfc2553.o 
+		atomicio.o compat.o fake-rfc2553.o \
+		ltc_prng.o ecc.o ecdsa.o crypto_desc.o \
+		gensignkey.o gendss.o genrsa.o
 
 SVROBJS=svr-kex.o svr-auth.o sshpty.o \
 		svr-authpasswd.o svr-authpubkey.o svr-authpubkeyoptions.o svr-session.o svr-service.o \
@@ -41,20 +43,20 @@ CLIOBJS=cli-main.o cli-auth.o cli-authpasswd.o cli-kex.o \
 CLISVROBJS=common-session.o packet.o common-algo.o common-kex.o \
 			common-channel.o common-chansession.o termcodes.o loginrec.o \
 			tcp-accept.o listener.o process-packet.o \
-			common-runopts.o circbuffer.o
+			common-runopts.o circbuffer.o curve25519-donna.o
 
-KEYOBJS=dropbearkey.o gendss.o genrsa.o
+KEYOBJS=dropbearkey.o
 
 CONVERTOBJS=dropbearconvert.o keyimport.o
 
 SCPOBJS=scp.o progressmeter.o atomicio.o scpmisc.o compat.o
 
 HEADERS=options.h dbutil.h session.h packet.h algo.h ssh.h buffer.h kex.h \
-		dss.h bignum.h signkey.h rsa.h random.h service.h auth.h \
+		dss.h bignum.h signkey.h rsa.h dbrandom.h service.h auth.h \
 		debug.h channel.h chansession.h config.h queue.h sshpty.h \
 		termcodes.h gendss.h genrsa.h runopts.h includes.h \
 		loginrec.h atomicio.h x11fwd.h agentfwd.h tcpfwd.h compat.h \
-		listener.h fake-rfc2553.h
+		listener.h fake-rfc2553.h ecc.h ecdsa.h
 
 dropbearobjs=$(COMMONOBJS) $(CLISVROBJS) $(SVROBJS) @CRYPTLIB@ 
 dbclientobjs=$(COMMONOBJS) $(CLISVROBJS) $(CLIOBJS)
@@ -185,7 +187,7 @@ link%:
 	-ln -s dropbearmulti$(EXEEXT) $*$(EXEEXT)
 
 $(LTC): options.h
-	cd libtomcrypt && $(MAKE) clean && $(MAKE)
+	cd libtomcrypt && $(MAKE)
 
 $(LTM): options.h
 	cd libtommath && $(MAKE)

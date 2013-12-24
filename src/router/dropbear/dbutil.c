@@ -56,6 +56,10 @@
 
 #define MAX_FMT 100
 
+#ifndef IPV6_TCLASS
+#define IPV6_TCLASS            67
+#endif
+
 static void generic_dropbear_exit(int exitcode, const char* format, 
 		va_list param) ATTRIB_NORETURN;
 static void generic_dropbear_log(int priority, const char* format, 
@@ -177,31 +181,48 @@ void dropbear_trace2(const char* format, ...) {
 }
 #endif /* DEBUG_TRACE */
 
-#ifndef IPV6_TCLASS 
-#define IPV6_TCLASS		67
-#endif
-static void set_sock_priority(int sock) {
-
+void set_sock_nodelay(int sock) {
 	int val;
 
 	/* disable nagle */
 	val = 1;
 	setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void*)&val, sizeof(val));
+}
+
+void set_sock_priority(int sock, enum dropbear_prio prio) {
+
+	int iptos_val = 0, so_prio_val = 0, rc;
 
 	/* set the TOS bit for either ipv4 or ipv6 */
 #ifdef IPTOS_LOWDELAY
-	val = IPTOS_LOWDELAY;
+	if (prio == DROPBEAR_PRIO_LOWDELAY) {
+		iptos_val = IPTOS_LOWDELAY;
+	} else if (prio == DROPBEAR_PRIO_BULK) {
+		iptos_val = IPTOS_THROUGHPUT;
+	}
 #if defined(IPPROTO_IPV6) && defined(IPV6_TCLASS)
-	setsockopt(sock, IPPROTO_IPV6, IPV6_TCLASS, (void*)&val, sizeof(val));
+	rc = setsockopt(sock, IPPROTO_IPV6, IPV6_TCLASS, (void*)&iptos_val, sizeof(iptos_val));
+	if (rc < 0) {
+		TRACE(("Couldn't set IPV6_TCLASS (%s)", strerror(errno)));
+	}
 #endif
-	setsockopt(sock, IPPROTO_IP, IP_TOS, (void*)&val, sizeof(val));
+	rc = setsockopt(sock, IPPROTO_IP, IP_TOS, (void*)&iptos_val, sizeof(iptos_val));
+	if (rc < 0) {
+		TRACE(("Couldn't set IP_TOS (%s)", strerror(errno)));
+	}
 #endif
 
 #ifdef SO_PRIORITY
-	/* linux specific, sets QoS class.
-	 * 6 looks to be optimal for interactive traffic (see tc-prio(8) ). */
-	val = 6;
-	setsockopt(sock, SOL_SOCKET, SO_PRIORITY, (void*) &val, sizeof(val));
+	if (prio == DROPBEAR_PRIO_LOWDELAY) {
+		so_prio_val = TC_PRIO_INTERACTIVE;
+	} else if (prio == DROPBEAR_PRIO_BULK) {
+		so_prio_val = TC_PRIO_BULK;
+	}
+	/* linux specific, sets QoS class. see tc-prio(8) */
+	rc = setsockopt(sock, SOL_SOCKET, SO_PRIORITY, (void*) &so_prio_val, sizeof(so_prio_val));
+	if (rc < 0)
+		dropbear_log(LOG_WARNING, "Couldn't set SO_PRIORITY (%s)",
+				strerror(errno));
 #endif
 
 }
@@ -293,7 +314,7 @@ int dropbear_listen(const char* address, const char* port,
 		}
 #endif
 
-		set_sock_priority(sock);
+		set_sock_nodelay(sock);
 
 		if (bind(sock, res->ai_addr, res->ai_addrlen) < 0) {
 			err = errno;
@@ -432,7 +453,7 @@ int connect_remote(const char* remotehost, const char* remoteport,
 		TRACE(("Error connecting: %s", strerror(err)))
 	} else {
 		/* Success */
-		set_sock_priority(sock);
+		set_sock_nodelay(sock);
 	}
 
 	freeaddrinfo(res0);
@@ -678,6 +699,14 @@ void printhex(const char * label, const unsigned char * buf, int len) {
 	}
 	fprintf(stderr, "\n");
 }
+
+void printmpint(const char *label, mp_int *mp) {
+	buffer *buf = buf_new(1000);
+	buf_putmpint(buf, mp);
+	printhex(label, buf->data, buf->len);
+	buf_free(buf);
+
+}
 #endif
 
 /* Strip all control characters from text (a null-terminated string), except
@@ -876,14 +905,17 @@ void disallow_core() {
 
 /* Returns DROPBEAR_SUCCESS or DROPBEAR_FAILURE, with the result in *val */
 int m_str_to_uint(const char* str, unsigned int *val) {
+	unsigned long l;
 	errno = 0;
-	*val = strtoul(str, NULL, 10);
+	l = strtoul(str, NULL, 10);
 	/* The c99 spec doesn't actually seem to define EINVAL, but most platforms
 	 * I've looked at mention it in their manpage */
-	if ((*val == 0 && errno == EINVAL)
-		|| (*val == ULONG_MAX && errno == ERANGE)) {
+	if ((l == 0 && errno == EINVAL)
+		|| (l == ULONG_MAX && errno == ERANGE)
+		|| (l > UINT_MAX)) {
 		return DROPBEAR_FAILURE;
 	} else {
+		*val = l;
 		return DROPBEAR_SUCCESS;
 	}
 }
