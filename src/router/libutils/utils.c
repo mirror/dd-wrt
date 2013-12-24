@@ -4561,7 +4561,7 @@ int led_control(int type, int act)
 #endif
 #ifdef HAVE_WR842V2
 		connected_gpio = 0x10e;
-		usb_power = 0x004;
+		usb_power = 0x204;
 		usb_gpio = 0x10f;
 #elif HAVE_WR841V8
 		diag_gpio = 0x10f;
@@ -5482,12 +5482,17 @@ int led_control(int type, int act)
 		gpio_value = use_gpio & 0x0ff;
 		enable = (use_gpio & 0x100) == 0 ? 1 : 0;
 		disable = (use_gpio & 0x100) == 0 ? 0 : 1;
+		int setin = (use_gpio &0x200) == 0 ? 0 : 1;
 		switch (act) {
 		case LED_ON:
 			set_gpio(gpio_value, enable);
+			if (setin)
+			    get_gpio(gpio_value);
 			break;
 		case LED_OFF:
 			set_gpio(gpio_value, disable);
+			if (setin)
+			    get_gpio(gpio_value);
 			break;
 		case LED_FLASH:	// will lit the led for 1 sec.
 			set_gpio(gpio_value, enable);
