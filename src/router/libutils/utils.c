@@ -5491,8 +5491,6 @@ int led_control(int type, int act)
 			break;
 		case LED_OFF:
 			set_gpio(gpio_value, disable);
-			if (setin)
-			    get_gpio(gpio_value);
 			break;
 		case LED_FLASH:	// will lit the led for 1 sec.
 			set_gpio(gpio_value, enable);
