@@ -1039,7 +1039,8 @@ static void compute_pkt_fields(AVFormatContext *s, AVStream *st,
     if((s->flags & AVFMT_FLAG_IGNDTS) && pkt->pts != AV_NOPTS_VALUE)
         pkt->dts= AV_NOPTS_VALUE;
 
-    if (st->codec->codec_id != AV_CODEC_ID_H264 && pc && pc->pict_type == AV_PICTURE_TYPE_B)
+    if (pc && pc->pict_type == AV_PICTURE_TYPE_B
+        && !st->codec->has_b_frames)
         //FIXME Set low_delay = 0 when has_b_frames = 1
         st->codec->has_b_frames = 1;
 
@@ -2863,9 +2864,10 @@ int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
                 goto find_stream_info_err;
         }
 
-        read_size += pkt->size;
-
         st = ic->streams[pkt->stream_index];
+        if (!(st->disposition & AV_DISPOSITION_ATTACHED_PIC))
+            read_size += pkt->size;
+
         if (pkt->dts != AV_NOPTS_VALUE && st->codec_info_nb_frames > 1) {
             /* check for non-increasing dts */
             if (st->info->fps_last_dts != AV_NOPTS_VALUE &&
