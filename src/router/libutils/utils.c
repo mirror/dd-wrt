@@ -1013,14 +1013,14 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WZR600DHP2;
 	}
 	
-	if (boardnum == 1 && nvram_match("boardtype","0xD646") && nvram_match("boardrev","0x1100")) {
+	if (boardnum == 1 && nvram_match("boardtype","0xD646") && nvram_match("boardrev","0x1100") && nvram_match("0:devid","0x43A1")) {
 		setRouter("Linksys EA6900");
 
 		return ROUTER_LINKSYS_EA6900;
 	}
 
 
-	if (boardnum == 1 && nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100") && nvram_match("0:devid","0x43A1")) {
+	if (boardnum == 1 && nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100")) {
 		setRouter("Linksys EA6500 V2");
 
 		return ROUTER_LINKSYS_EA6500V2;
