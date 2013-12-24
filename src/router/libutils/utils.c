@@ -1019,10 +1019,17 @@ int internal_getRouterBrand()
 		return ROUTER_LINKSYS_EA6900;
 	}
 
-	if (boardnum == 1 && nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100")) {
+
+	if (boardnum == 1 && nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100") && nvram_match("0:devid","0x43A1")) {
 		setRouter("Linksys EA6500 V2");
 
 		return ROUTER_LINKSYS_EA6500V2;
+	}
+
+	if (boardnum == 1 && nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100") && nvram_match("0:devid","0x4332")) {
+		setRouter("Linksys EA6700");
+
+		return ROUTER_LINKSYS_EA6700;
 	}
 
 	if (nvram_match("productid", "RT-AC56U")) {
@@ -4561,7 +4568,7 @@ int led_control(int type, int act)
 #endif
 #ifdef HAVE_WR842V2
 		connected_gpio = 0x10e;
-		usb_power = 0x204;
+		usb_power = 0x004;
 		usb_gpio = 0x10f;
 #elif HAVE_WR841V8
 		diag_gpio = 0x10f;
@@ -5162,6 +5169,7 @@ int led_control(int type, int act)
 		diag_gpio = 0x101;	// white led blink / off to indicate fac.def. 
 		break;
 	case ROUTER_LINKSYS_EA6500V2:
+	case ROUTER_LINKSYS_EA6700:
 	case ROUTER_LINKSYS_EA6900:
 		usb_power = 0x009;	//usb power on/off
 		usb_power1 = 0x00a;	//usb power on/off
@@ -5482,12 +5490,9 @@ int led_control(int type, int act)
 		gpio_value = use_gpio & 0x0ff;
 		enable = (use_gpio & 0x100) == 0 ? 1 : 0;
 		disable = (use_gpio & 0x100) == 0 ? 0 : 1;
-		int setin = (use_gpio &0x200) == 0 ? 0 : 1;
 		switch (act) {
 		case LED_ON:
 			set_gpio(gpio_value, enable);
-			if (setin)
-			    get_gpio(gpio_value);
 			break;
 		case LED_OFF:
 			set_gpio(gpio_value, disable);
