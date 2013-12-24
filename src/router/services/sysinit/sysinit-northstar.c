@@ -1366,7 +1366,6 @@ void start_sysinit(void)
 				{"venid", "0x14E4", 0},
 				{"xtalfreq", "20000", 0},
 				{0, 0, 0}
-				{0, 0, 0}
 			};
 
 			struct nvram_tuple ea6700_2_1params[] = {
@@ -1478,7 +1477,6 @@ void start_sysinit(void)
 				{"txchain", "7", 0},
 				{"venid", "0x14E4", 0},
 				{"xtalfreq", "40000", 0},
-				{0, 0, 0},
 				{0, 0, 0}
 			};
 
