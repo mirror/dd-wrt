@@ -135,7 +135,7 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 		i++;
 	}
 
-	if (in_clock_array || nvram_get("clkfreq") != NULL) {
+	if (in_clock_array && nvram_get("clkfreq") != NULL) {
 
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(management.clock_frq)</script></div>\n");
 		websWrite(wp, "<select name=\"overclocking\">\n");
