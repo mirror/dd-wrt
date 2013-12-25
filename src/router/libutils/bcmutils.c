@@ -86,8 +86,6 @@ int getcpurev(void)
 				return 29;
 			if (strstr(cpurev, "BCM3302 V1.10"))	// BCM4785 (BCM3302 V1.10)
 				return 110;
-			if (strstr(cpurev, "MIPS 74K V4.0"))	// BCM4718 (Broadcom BCM4716 chip rev 1)
-				return 40;
 			if (strstr(cpurev, "MIPS 74K V4.9"))	// BCM4716B0 (Broadcom BCMB83A chip rev 0)
 				return 50;	// BCM5356B0 (Broadcom BCM5356 chip rev 1) 
 			if (strstr(cpurev, "MIPS 74K V4.0"))	// BCM4716B0 (Broadcom BCMB83A chip rev 0)
