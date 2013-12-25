@@ -44,6 +44,8 @@
 
 #define MAX_WORD_RETRIES 3
 
+#define MANUFACTURER_SAMSUNG	0x00EC
+
 #define SST49LF004B	        0x0060
 #define SST49LF040B	        0x0050
 #define SST49LF008A		0x005a
