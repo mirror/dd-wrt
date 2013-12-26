@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.12.5 Kernel Configuration
+# Linux/powerpc 3.12.6 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -112,7 +112,6 @@ CONFIG_TICK_CPU_ACCOUNTING=y
 #
 # RCU Subsystem
 #
-# CONFIG_TREE_PREEMPT_RCU is not set
 CONFIG_TINY_RCU=y
 # CONFIG_PREEMPT_RCU is not set
 # CONFIG_RCU_STALL_COMMON is not set

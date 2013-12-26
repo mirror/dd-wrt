@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.12.5 Kernel Configuration
+# Linux/mips 3.12.6 Kernel Configuration
 #
 CONFIG_MIPS=y
 
