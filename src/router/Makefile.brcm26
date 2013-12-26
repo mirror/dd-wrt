@@ -169,8 +169,8 @@ endif
 #	cp $(LINUXDIR)/.config_register $(LINUXDIR)/.config
 #endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
-	$(MAKE) -j 4 -C $(LINUXDIR) vmlinux CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
-	$(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	$(MAKE) -j 4 -C $(LINUXDIR) vmlinux
+	$(MAKE) -j 4 -C $(LINUXDIR) modules
 	$(ARCH)-linux-objcopy -O binary $(strip-flags) -g $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
 	cat $(ARCH)-uclibc/vmlinus | lzma e -si -so -eos -lc2 -lp2 -pb2 -d25 > lzma-loader/broadcom/vmlinux.lzma
 	make -C lzma-loader/broadcom clean
