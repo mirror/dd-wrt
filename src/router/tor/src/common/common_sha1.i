@@ -1,5 +1,5 @@
 "6df0654a8a4ec4df3dd8091424d2fbb4d795dc0b  src/common/aes.c\n"
-"48dd91d36656559ccafbad27946d68b16406bf6b  src/common/crypto.c\n"
+"2e4e078d95ba5772913d20915096388de95c9458  src/common/crypto.c\n"
 "e690691451ae42afdaff915313ead860b1d021d0  src/common/crypto_format.c\n"
 "02c1744d1e1db0967595bc6bd2d69432692d082f  src/common/torgzip.c\n"
 "affb838c4670191cd5e021953f7876687b494166  src/common/tortls.c\n"
