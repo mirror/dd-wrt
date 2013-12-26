@@ -255,6 +255,9 @@ endif
 ifeq ($(CONFIG_DIR615I),y)
 	cp $(LINUXDIR)/.config_dir615i $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WR842V2),y)
+	cp $(LINUXDIR)/.config_wr842v2 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_TG2521),y)
 	cp $(LINUXDIR)/.config_tg2521 $(LINUXDIR)/.config
 endif
@@ -434,6 +437,9 @@ ifneq ($(CONFIG_USB),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/msdos
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/mbcache.ko
+endif
+ifneq ($(CONFIG_UQMI),y)
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/usb/qmi_wwan.ko
 endif
 ifeq ($(CONFIG_3G_ONLY),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls
@@ -1469,6 +1475,10 @@ endif
 ifeq ($(CONFIG_WR841V8),y)
 	-./tools/tplink/mktplinkfw -B TL-WR841NDv8 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv8-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv8-firmware.bin mips-uclibc/tplink-WR841NDv8-firmware.bin
+endif
+ifeq ($(CONFIG_WR842V2),y)
+	-./tools/tplink/mktplinkfw -B TL-WR842NDv2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR842NDv2-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR842NDv2-firmware.bin mips-uclibc/tplink-WR842NDv2-firmware.bin
 endif
 ifeq ($(CONFIG_WDR2543),y)
 	-./tools/tplink/mktplinkfw -B TL-WDR2543 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR2543-firmware.bin -v 3.13.99
