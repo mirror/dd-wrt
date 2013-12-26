@@ -1397,6 +1397,9 @@ endif
 ifeq ($(CONFIG_ADMTEKNESTEDVLAN),y)
   CFLAGS_EXTRA += -DHAVE_ADMTEKNESTEDVLAN
 endif
+ifeq ($(CONFIG_SMP),y)
+  CFLAGS_EXTRA += -DHAVE_SMP
+endif
 
 include $(TOP)/rules/generic.mk
 CFLAGS_EXTRA += $(DD_CFLAGS)
