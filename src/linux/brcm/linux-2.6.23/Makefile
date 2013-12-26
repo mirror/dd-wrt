@@ -181,7 +181,7 @@ SUBARCH := mips
 
 
 ARCH		= $(SUBARCH)
-CROSS_COMPILE	= /xfs/toolchains/toolchain-mipsel_gcc4.1.2/bin/mipsel-linux-uclibc-
+CROSS_COMPILE	= ccache /xfs/toolchains/toolchain-mipsel_gcc4.1.2/bin/mipsel-linux-uclibc-
 #CROSS_COMPILE	= mipsel-linux-uclibc-
 
 # Architecture as present in compile.h
