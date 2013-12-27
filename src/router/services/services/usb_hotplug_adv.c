@@ -433,7 +433,7 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 
 	/* avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram everything else can be used for fs cache */
 #ifdef HAVE_80211AC
-	system("echo 16284 > /proc/sys/vm/min_free_kbytes");
+	system("echo 16384 > /proc/sys/vm/min_free_kbytes");
 #else
 	system("echo 4096 > /proc/sys/vm/min_free_kbytes");
 #endif
