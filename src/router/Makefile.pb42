@@ -255,6 +255,9 @@ endif
 ifeq ($(CONFIG_DIR615I),y)
 	cp $(LINUXDIR)/.config_dir615i $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_UBNTTI),y)
+	cp $(LINUXDIR)/.config_dir615i $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_WR842V2),y)
 	cp $(LINUXDIR)/.config_wr842v2 $(LINUXDIR)/.config
 endif
@@ -1043,6 +1046,13 @@ ifeq ($(CONFIG_UBNTM),y)
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ar7420-firmware.bin $(ARCH)-uclibc/aligned.uimage
 	tools/ubnt/src/mkfwimage -v XM.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntm-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 	tools/ubnt/src/mkfwimage -v BZ.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+endif
+
+ifeq ($(CONFIG_UBNTTI),y)
+	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
+	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
+	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ar9344-firmware.bin $(ARCH)-uclibc/aligned.uimage
+	tools/ubnt/src/mkfwimage -v TI.ar934x.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntti-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 endif
 ifeq ($(CONFIG_JJAP93),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
