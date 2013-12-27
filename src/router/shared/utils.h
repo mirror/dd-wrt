@@ -660,6 +660,8 @@
 
 #define ROUTER_LINKSYS_EA6700 0xd51b
 
+#define ROUTER_BOARD_TI 0xd60f
+
 
 #define NVROUTER "DD_BOARD"
 

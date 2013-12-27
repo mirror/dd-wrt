@@ -1768,6 +1768,8 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "1");
 	nvram_default_get("ath0_txantenna", "1");
 	return ROUTER_BOARD_NS5M;
+#elif HAVE_UBNTTI
+	return ROUTER_BOARD_TI;
 #elif HAVE_UBNTM
 	typedef struct UBNTDEV {
 		char *devicename;	// device name 
@@ -1798,15 +1800,15 @@ int internal_getRouterBrand()
 		{"Ubiquiti Rocket M2", 0xe112, "3", "3", ROUTER_BOARD_R2M, 0, 10},	//
 		{"Ubiquiti Rocket M2", 0xe1b2, "3", "3", ROUTER_BOARD_R2M, 0, 10},	//
 		{"Ubiquiti Rocket M2", 0xe1c2, "3", "3", ROUTER_BOARD_R2M, 0, 10},	//
-		{"Ubiquiti Rocket M2 Titanium", 0xe1d2, "3", "3", ROUTER_BOARD_R2M, 0, 10},	// Titanium
+		{"Ubiquiti Rocket M2 Titanium", 0xe1d2, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
 		{"Ubiquiti Rocket M5", 0xe105, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Rocket M5", 0xe1b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Rocket M5", 0xe8b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Rocket M5", 0xe1c5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Airbeam 5", 0xe1e5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
-		{"Ubiquiti Rocket M5 Titanium", 0xe1d5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	// Titanium
-		{"Ubiquiti Bullet M2 Titanium", 0xe2d2, "3", "3", ROUTER_BOARD_R2M, 0, 10},	// Titanium
-		{"Ubiquiti Bullet M5 Titanium", 0xe2d5, "3", "3", ROUTER_BOARD_R2M, 0, 10},	// Titanium
+		{"Ubiquiti Rocket M5 Titanium", 0xe1d5, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{"Ubiquiti Bullet M2 Titanium", 0xe2d2, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{"Ubiquiti Bullet M5 Titanium", 0xe2d5, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
 		{"Ubiquiti Rocket M3", 0xe1c3, "3", "3", ROUTER_BOARD_R5M, M35, 10},	//
 		{"Ubiquiti Rocket M3", 0xe1e3, "3", "3", ROUTER_BOARD_R5M, M35, 10},	//
 		{"Ubiquiti Rocket M5 X3", 0xe3b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
