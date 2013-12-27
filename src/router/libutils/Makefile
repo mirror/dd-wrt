@@ -844,6 +844,9 @@ endif
 ifeq ($(CONFIG_UBNTM),y)
 CFLAGS += -DHAVE_UBNTM
 endif
+ifeq ($(CONFIG_UBNTTI),y)
+CFLAGS += -DHAVE_UBNTTI
+endif
 ifeq ($(CONFIG_WHRHPGN),y)
 CFLAGS += -DHAVE_WHRHPGN
 endif
