@@ -5323,7 +5323,7 @@ int led_control(int type, int act)
 		power_gpio = 0x102;	// power led green
 		//diag_gpio = 0x103;    // power led orange
 		diag_gpio = 0x101;	// Netgear logo 
-		connected_gpio = 0x10f;	// wan led green - hw controlled
+		connected_gpio = 0x10a;	// wan led green - hw controlled
 		wlan0_gpio = 0x10b;	// radio led blue
 		usb_gpio = 0x108;	// usb led 
 		//usb_power = 0x000;    // usb enable
