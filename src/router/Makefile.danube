@@ -183,6 +183,8 @@ endif
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 	-$(MAKE) -f Makefile.danube rt3062
 	-$(MAKE) -f Makefile.danube rt3062-install
+	-$(MAKE) -f Makefile.danube rt2860
+	-$(MAKE) -f Makefile.danube rt2860-install
 	-$(MAKE) -f Makefile.danube ath9k
 	-$(MAKE) -f Makefile.danube ath9k-install
 	-$(MAKE) -f Makefile.danube libutils
