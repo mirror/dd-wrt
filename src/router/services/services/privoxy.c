@@ -28,8 +28,8 @@ void start_privoxy(void)
 	
 	char *wan = get_wan_ipaddr();
 	if (nvram_match("privoxy_transp_enable", "1")) {
-		sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-port %s:8118", wan,nvram_safe_get("lan_ipaddr"));
-		sysprintf("iptables -t nat -I PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-port %s:8118", wan,nvram_safe_get("lan_ipaddr"));
+		sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-ports 8118", wan);
+		sysprintf("iptables -t nat -I PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-ports 8118", wan);
 		mode = 1;
 	}
 
@@ -67,7 +67,7 @@ void start_privoxy(void)
 void stop_privoxy(void)
 {
 	char *wan = get_wan_ipaddr();
-	sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-port %s:8118", wan, nvram_safe_get("lan_ipaddr"));
+	sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-port 8118", wan);
 	stop_process("privoxy", "privoxy");
 }
 #endif
