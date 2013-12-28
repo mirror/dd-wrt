@@ -159,7 +159,7 @@ strip-flags	= $(addprefix --remove-section=,$(drop-sections))
 kernel:
         # Also build kernel
 	# Also build kernel
-	cp $(LINUXDIR)/.config_danube $(LINUXDIR)/.config
+	-cp $(LINUXDIR)/.config_danube $(LINUXDIR)/.config
 ifeq ($(CONFIG_VF803),y)
 	cp $(LINUXDIR)/.config_803 $(LINUXDIR)/.config
 endif
@@ -181,6 +181,8 @@ endif
 	$(MAKE) -j 4 -C $(LINUXDIR) modules  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
+	-$(MAKE) -f Makefile.danube rt3062
+	-$(MAKE) -f Makefile.danube rt3062-install
 	-$(MAKE) -f Makefile.danube ath9k
 	-$(MAKE) -f Makefile.danube ath9k-install
 	-$(MAKE) -f Makefile.danube libutils
@@ -244,8 +246,8 @@ endif
 			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
 		echo; \
 	) > $(LINUXDIR)/symtab.h
-
-	$(MAKE) -j 4 -C $(LINUXDIR)  EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	rm -f $(LINUXDIR)/vmlinux
+	$(MAKE) -j 4 -C $(LINUXDIR) vmlinux EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
 install_headers:
 # important step, required for new kernels
@@ -287,44 +289,39 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
-	make -f Makefile.danube lib.$(ARCH)-install
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
-		"$(ARCH)-uclibc/target/lib/libc.so.0" \
-		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
-
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt_pic.a}" \
-		"$(ARCH)-uclibc/target/lib/libcrypt.so.0" \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
-		-Wl,-soname=libcrypt.so.0
-
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libm.so}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libm_pic.a}" \
-		"$(ARCH)-uclibc/target/lib/libm.so.0" \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
-		-Wl,-soname=libm.so.0 
-
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread_so.a}" \
-		"$(ARCH)-uclibc/target/lib/libpthread.so.0" \
-		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
-		-Wl,-soname=libpthread.so.0
-
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
-
+ifeq ($(CONFIG_LIBDL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+endif
+ifeq ($(CONFIG_LIBRT),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
+endif
+ifeq ($(CONFIG_LIBNSL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
+endif
+ifeq ($(CONFIG_LIBUTIL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+endif
+ifeq ($(CONFIG_LIBCPP),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+endif
+ifeq ($(CONFIG_LIBCRYPT),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+endif
+ifeq ($(CONFIG_LIBM),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+endif
+ifeq ($(CONFIG_LIBRESOLV),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
+endif
+ifeq ($(CONFIG_LIBPTHREAD),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+endif
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
 
 ifneq ($(CONFIG_NOOPT),y)
+
 	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
 	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
 	-mkdir -p /tmp/$(ARCHITECTURE)/
@@ -347,10 +344,11 @@ ifneq ($(CONFIG_NOOPT),y)
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
 	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
 endif
-	rm -f $(TARGETDIR)/lib/*.a
-	rm -f $(TARGETDIR)/lib/*.map
-#	cp lib.$(ARCH)/libresolv.so.0 $(TARGETDIR)/lib
-#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+
+install_headers:
+# important step, required for new kernels
+	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
+	$(MAKE) -C $(LINUXDIR) headers_install ARCH=mips INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
 
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
