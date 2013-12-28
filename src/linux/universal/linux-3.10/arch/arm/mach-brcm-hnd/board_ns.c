@@ -761,12 +761,12 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 		bootossz = 0x4000000;
 	}
 
-	if (boardnum == 1 && nvram_match("boardtype","0xD646") && nvram_match("boardrev","0x1100")) {
+	if ((boardnum == 1 || nvram_get("boardnum") == NULL) nvram_match("boardtype","0xD646") && nvram_match("boardrev","0x1100")) {
 		bootossz = 0x4000000;	
 		nvsz = 0x100000;
 	}
 
-	if (boardnum == 1 && nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100")) {
+	if ((boardnum == 1 || nvram_get("boardnum") == NULL) && nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100")) {
 		bootossz = 0x4000000;	
 		nvsz = 0x100000;
 	}
