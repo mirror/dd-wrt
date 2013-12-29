@@ -28,8 +28,8 @@ void start_privoxy(void)
 	
 	char *wan = get_wan_ipaddr();
 	if (nvram_match("privoxy_transp_enable", "1")) {
-		sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-ports 8118", wan);
-		sysprintf("iptables -t nat -I PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-ports 8118", wan);
+		sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wan, ip);
+		sysprintf("iptables -t nat -I PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wan, ip);
 		mode = 1;
 	}
 
