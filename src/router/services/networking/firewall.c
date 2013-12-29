@@ -598,7 +598,7 @@ static void nat_prerouting(void)
 	 */
 #ifdef HAVE_PRIVOXY
 	if (nvram_match("privoxy_transp_enable", "1") && nvram_match("privoxy_enable", "1")) {
-		save2file("-A PREROUTING -p tcp -d ! %s --dport 80 -j REDIRECT --to-ports 8118\n", wanaddr);
+		save2file("-A PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118\n", wanaddr, nvram_safe_get("lan_ipaddr"));
 	}
 #endif
 #ifdef HAVE_TOR
