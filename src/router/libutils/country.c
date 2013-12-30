@@ -808,8 +808,10 @@ void setRegulationDomain(char *reg)
 	
 	if(!strcmp(ccode, "EU") || !strcmp(ccode, "TW") )
 		strcpy(rrev, "13");
-	else if ( !strcmp(ccode, "CN") ||  !strcmp(ccode, "JP") )
-		strcpy(rrev, "1");
+	else if ( !strcmp(ccode, "CN") )
+		strcpy(rrev, "41");
+	else if ( !strcmp(ccode, "JP") )
+		strcpy(rrev, "45");
 	else
 		strcpy(rrev, "0");
 
