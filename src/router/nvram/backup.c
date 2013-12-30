@@ -35,8 +35,8 @@
 #include <typedefs.h>
 //#include <netconf.h>
 #include <bcmnvram.h>
-#include <shutils.h>
-#include <utils.h>
+//#include <shutils.h>
+//#include <utils.h>
 
 #ifdef NVRAM_SPACE_256
 #define NVRAMSPACE NVRAM_SPACE_256
@@ -400,14 +400,6 @@ int nvram_restore(char *filename)
 		return -2;
 	}
 
-	if (nvram_ver == NULL) {
-		nvram_set("http_passwd", zencrypt(nvram_safe_get("http_passwd")));
-		nvram_set("http_username", zencrypt(nvram_safe_get("http_username")));
-		if (nvram_get("newhttp_passwd") != NULL) {
-			nvram_set("newhttp_passwd", zencrypt(nvram_safe_get("newhttp_passwd")));
-			nvram_set("newhttp_username", zencrypt(nvram_safe_get("newhttp_username")));
-		}
-	}
 	nvram_commit();
 
 	return 0;

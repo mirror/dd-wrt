@@ -66,6 +66,9 @@ endif
 ifeq ($(CONFIG_WHRAG108),y)
 CFLAGS += -DHAVE_WHRAG108
 endif
+ifeq ($(CONFIG_NORTHSTAR),y)
+CFLAGS += -DHAVE_NORTHSTAR
+endif
 ifeq ($(CONFIG_TW6600),y)
 CFLAGS += -DHAVE_TW6600
 endif
@@ -149,32 +152,32 @@ clean:
 	rm -f *.o *.a *.so nvram
 
 ifeq ($(ARCH),i386)
-libnvram.so: nvram_linux.o nvram_convert.o
+libnvram.so: nvram_linux.o nvram_convert.o backup.o
 	$(CC) $(CFLAGS) -shared -o $@ $^
 	$(AR) cr libnvram.a $^
 endif
 ifeq ($(ARCH),armeb)
-libnvram.so: nvram_linux.o nvram_convert.o
+libnvram.so: nvram_linux.o nvram_convert.o backup.o
 	$(CC) $(CFLAGS) -shared -o $@ $^
 	$(AR) cr libnvram.a $^
 endif
 ifeq ($(ARCH),arm)
-libnvram.so: nvram_linux.o nvram_convert.o
+libnvram.so: nvram_linux.o nvram_convert.o backup.o
 	$(CC) $(CFLAGS) -shared -o $@ $^
 	$(AR) cr libnvram.a $^
 endif
 ifeq ($(ARCH),powerpc)
-libnvram.so: nvram_linux.o nvram_convert.o
+libnvram.so: nvram_linux.o nvram_convert.o backup.o
 	$(CC) $(CFLAGS) -shared -o $@ $^
 	$(AR) cr libnvram.a $^
 endif
 ifeq ($(ARCH),mips)
-libnvram.so: nvram_linux.o nvram_convert.o
+libnvram.so: nvram_linux.o nvram_convert.o backup.o
 	$(CC) $(CFLAGS) -shared -o $@ $^
 	$(AR) cr libnvram.a $^
 endif
 ifeq ($(ARCH),mipsel)
-libnvram.so: nvram_linux.o nvram_convert.o
+libnvram.so: nvram_linux.o nvram_convert.o backup.o
 	$(CC) $(CFLAGS) -shared -o $@ $^
 	$(AR) cr libnvram.a $^
 endif
