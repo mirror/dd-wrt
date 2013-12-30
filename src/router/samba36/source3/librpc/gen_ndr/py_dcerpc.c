@@ -6100,6 +6100,7 @@ void initdcerpc(void)
 	PyModule_AddObject(m, "DCERPC_PFC_FLAG_MAYBE", PyInt_FromLong(0x40));
 	PyModule_AddObject(m, "DCERPC_FAULT_NDR", PyInt_FromLong(0x000006f7));
 	PyModule_AddObject(m, "RTS_FLAG_IN_CHANNEL", PyInt_FromLong(RTS_FLAG_IN_CHANNEL));
+	PyModule_AddObject(m, "DCERPC_CALL_ID_OFFSET", PyInt_FromLong(12));
 	PyModule_AddObject(m, "DCERPC_NCA_S_UNUSED_1C00001E", PyInt_FromLong(DCERPC_NCA_S_UNUSED_1C00001E));
 	PyModule_AddObject(m, "DCERPC_PKT_ALTER_RESP", PyInt_FromLong(DCERPC_PKT_ALTER_RESP));
 	PyModule_AddObject(m, "DCERPC_PKT_PING", PyInt_FromLong(DCERPC_PKT_PING));
