@@ -1744,7 +1744,7 @@ WERROR _spoolss_OpenPrinterEx(struct pipes_struct *p,
 
 	result = open_printer_hnd(p, r->out.handle, r->in.printername, 0);
 	if (!W_ERROR_IS_OK(result)) {
-		DEBUG(0,("_spoolss_OpenPrinterEx: Cannot open a printer handle "
+		DEBUG(3,("_spoolss_OpenPrinterEx: Cannot open a printer handle "
 			"for printer %s\n", r->in.printername));
 		ZERO_STRUCTP(r->out.handle);
 		return result;
@@ -5769,7 +5769,13 @@ WERROR _spoolss_StartDocPrinter(struct pipes_struct *p,
 	 */
 
 	if (info_1->datatype) {
-		if (strcmp(info_1->datatype, "RAW") != 0) {
+		/*
+		 * The v4 driver model used in Windows 8 declares print jobs
+		 * intended to bypass the XPS processing layer by setting
+		 * datatype to "XPS_PASS" instead of "RAW".
+		 */
+                if ((strcmp(info_1->datatype, "RAW") != 0)
+                 && (strcmp(info_1->datatype, "XPS_PASS") != 0)) {
 			*r->out.job_id = 0;
 			return WERR_INVALID_DATATYPE;
 		}

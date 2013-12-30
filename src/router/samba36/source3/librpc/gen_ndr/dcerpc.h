@@ -41,6 +41,7 @@
 #define DCERPC_DREP_OFFSET	( 4 )
 #define DCERPC_FRAG_LEN_OFFSET	( 8 )
 #define DCERPC_AUTH_LEN_OFFSET	( 10 )
+#define DCERPC_CALL_ID_OFFSET	( 12 )
 #define DCERPC_DREP_LE	( 0x10 )
 struct dcerpc_ctx_list {
 	uint16_t context_id;
