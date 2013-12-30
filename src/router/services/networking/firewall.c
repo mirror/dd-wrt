@@ -794,8 +794,9 @@ static void nat_postrouting(void)
 			writeproc("/proc/sys/net/ipv4/conf/br0/loop", "1");
 
 	} else {
-//		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
-
+#ifndef HAVE_NORTHSTAR
+		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
+#endif
 		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
 //              eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "CT","--notrack");      //this speeds up networking alot on slow systems 
 		if (strlen(wanface) > 0 && wanactive())
