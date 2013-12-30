@@ -66,7 +66,7 @@ OBJS := utils.o
 ifeq ($(CONFIG_RT2880),y)
 OBJS += utils.o crypt.save des.save md5.save
 endif
-OBJS += shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o backup.o
+OBJS += shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o
 WOBJS := wl.o wl_macfuncs.o
 
 #defaults.o
