@@ -235,6 +235,7 @@ struct get_complete_frag_state {
 	struct event_context *ev;
 	struct rpc_pipe_client *cli;
 	uint16_t frag_len;
+	uint32_t call_id;
 	DATA_BLOB *pdu;
 };
 
@@ -244,6 +245,7 @@ static void get_complete_frag_got_rest(struct tevent_req *subreq);
 static struct tevent_req *get_complete_frag_send(TALLOC_CTX *mem_ctx,
 						 struct event_context *ev,
 						 struct rpc_pipe_client *cli,
+						 uint32_t call_id,
 						 DATA_BLOB *pdu)
 {
 	struct tevent_req *req, *subreq;
@@ -259,6 +261,7 @@ static struct tevent_req *get_complete_frag_send(TALLOC_CTX *mem_ctx,
 	state->ev = ev;
 	state->cli = cli;
 	state->frag_len = RPC_HEADER_LEN;
+	state->call_id = call_id;
 	state->pdu = pdu;
 
 	received = pdu->length;
@@ -281,6 +284,15 @@ static struct tevent_req *get_complete_frag_send(TALLOC_CTX *mem_ctx,
 	}
 
 	state->frag_len = dcerpc_get_frag_length(pdu);
+	if (state->frag_len < RPC_HEADER_LEN) {
+		tevent_req_nterror(req, NT_STATUS_RPC_PROTOCOL_ERROR);
+		return tevent_req_post(req, ev);
+	}
+
+	if (state->call_id != dcerpc_get_call_id(pdu)) {
+		tevent_req_nterror(req, NT_STATUS_RPC_PROTOCOL_ERROR);
+		return tevent_req_post(req, ev);
+	}
 
 	/*
 	 * Ensure we have frag_len bytes of data.
@@ -329,6 +341,15 @@ static void get_complete_frag_got_header(struct tevent_req *subreq)
 	}
 
 	state->frag_len = dcerpc_get_frag_length(state->pdu);
+	if (state->frag_len < RPC_HEADER_LEN) {
+		tevent_req_nterror(req, NT_STATUS_RPC_PROTOCOL_ERROR);
+		return;
+	}
+
+	if (state->call_id != dcerpc_get_call_id(state->pdu)) {
+		tevent_req_nterror(req, NT_STATUS_RPC_PROTOCOL_ERROR);
+		return;
+	}
 
 	if (!data_blob_realloc(NULL, state->pdu, state->frag_len)) {
 		tevent_req_nterror(req, NT_STATUS_NO_MEMORY);
@@ -690,6 +711,7 @@ struct rpc_api_pipe_state {
 	struct event_context *ev;
 	struct rpc_pipe_client *cli;
 	uint8_t expected_pkt_type;
+	uint32_t call_id;
 
 	DATA_BLOB incoming_frag;
 	struct ncacn_packet *pkt;
@@ -708,7 +730,8 @@ static struct tevent_req *rpc_api_pipe_send(TALLOC_CTX *mem_ctx,
 					    struct event_context *ev,
 					    struct rpc_pipe_client *cli,
 					    DATA_BLOB *data, /* Outgoing PDU */
-					    uint8_t expected_pkt_type)
+					    uint8_t expected_pkt_type,
+					    uint32_t call_id)
 {
 	struct tevent_req *req, *subreq;
 	struct rpc_api_pipe_state *state;
@@ -722,6 +745,7 @@ static struct tevent_req *rpc_api_pipe_send(TALLOC_CTX *mem_ctx,
 	state->ev = ev;
 	state->cli = cli;
 	state->expected_pkt_type = expected_pkt_type;
+	state->call_id = call_id;
 	state->incoming_frag = data_blob_null;
 	state->reply_pdu = data_blob_null;
 	state->reply_pdu_offset = 0;
@@ -821,6 +845,7 @@ static void rpc_api_pipe_trans_done(struct tevent_req *subreq)
 
 	/* Ensure we have enough data for a pdu. */
 	subreq = get_complete_frag_send(state, state->ev, state->cli,
+					state->call_id,
 					&state->incoming_frag);
 	if (tevent_req_nomem(subreq, req)) {
 		return;
@@ -940,6 +965,7 @@ static void rpc_api_pipe_got_pdu(struct tevent_req *subreq)
 	}
 
 	subreq = get_complete_frag_send(state, state->ev, state->cli,
+					state->call_id,
 					&state->incoming_frag);
 	if (tevent_req_nomem(subreq, req)) {
 		return;
@@ -1292,7 +1318,8 @@ struct tevent_req *rpc_api_pipe_req_send(TALLOC_CTX *mem_ctx,
 	if (is_last_frag) {
 		subreq = rpc_api_pipe_send(state, ev, state->cli,
 					   &state->rpc_out,
-					   DCERPC_PKT_RESPONSE);
+					   DCERPC_PKT_RESPONSE,
+					   state->call_id);
 		if (subreq == NULL) {
 			goto fail;
 		}
@@ -1428,7 +1455,8 @@ static void rpc_api_pipe_req_write_done(struct tevent_req *subreq)
 	if (is_last_frag) {
 		subreq = rpc_api_pipe_send(state, state->ev, state->cli,
 					   &state->rpc_out,
-					   DCERPC_PKT_RESPONSE);
+					   DCERPC_PKT_RESPONSE,
+					   state->call_id);
 		if (tevent_req_nomem(subreq, req)) {
 			return;
 		}
@@ -1667,7 +1695,7 @@ struct tevent_req *rpc_pipe_bind_send(TALLOC_CTX *mem_ctx,
 	}
 
 	subreq = rpc_api_pipe_send(state, ev, cli, &state->rpc_out,
-				   DCERPC_PKT_BIND_ACK);
+				   DCERPC_PKT_BIND_ACK, state->rpc_call_id);
 	if (subreq == NULL) {
 		goto fail;
 	}
@@ -1865,7 +1893,8 @@ static NTSTATUS rpc_bind_next_send(struct tevent_req *req,
 	}
 
 	subreq = rpc_api_pipe_send(state, state->ev, state->cli,
-				   &state->rpc_out, DCERPC_PKT_ALTER_RESP);
+				   &state->rpc_out, DCERPC_PKT_ALTER_RESP,
+				   state->rpc_call_id);
 	if (subreq == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
@@ -1897,7 +1926,8 @@ static NTSTATUS rpc_bind_finish_send(struct tevent_req *req,
 	}
 
 	subreq = rpc_api_pipe_send(state, state->ev, state->cli,
-				   &state->rpc_out, DCERPC_PKT_AUTH3);
+				   &state->rpc_out, DCERPC_PKT_AUTH3,
+				   state->rpc_call_id);
 	if (subreq == NULL) {
 		return NT_STATUS_NO_MEMORY;
 	}
