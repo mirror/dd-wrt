@@ -288,7 +288,7 @@ int nvram_critical(char *name)
 
 void nvram_clear(void)
 {
-	char *buf = (char *)safe_malloc(NVRAMSPACE);
+	char *buf = (char *)malloc(NVRAMSPACE);
 
 	nvram_getall(buf, NVRAMSPACE);
 	nvram_open();
@@ -369,7 +369,7 @@ int nvram_restore(char *filename)
 			unsigned char c = 0;
 
 			fread((char *)&c, 1, 1, fp);
-			char *name = (char *)safe_malloc(c + 1);
+			char *name = (char *)malloc(c + 1);
 
 			fread(name, c, 1, fp);
 			name[c] = 0;
@@ -380,7 +380,7 @@ int nvram_restore(char *filename)
 			fread((char *)&b, 1, 1, fp);
 			l += ((unsigned int)b << 8);
 
-			char *value = (char *)safe_malloc(l + 1);
+			char *value = (char *)malloc(l + 1);
 
 			fread(value, l, 1, fp);
 			len -= (l + 2);
@@ -416,7 +416,7 @@ int nvram_backup(char *filename)
 		return -1;
 	}
 #endif
-	char *buf = (char *)safe_malloc(NVRAMSPACE);
+	char *buf = (char *)malloc(NVRAMSPACE);
 
 	nvram_getall(buf, NVRAMSPACE);
 	char *p = buf;
