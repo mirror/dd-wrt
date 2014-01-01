@@ -802,43 +802,63 @@ char *getCountryList(void)
 void setRegulationDomain(char *reg)
 {
 	char ccode[4] = "";
-	char rrev[4] = "";
+	char ccode0[4] = "";
+	char ccode1[4] = "";
+	
+	char rrev0[4] = "";
+	char rrev1[4] = "";
 	
 	strncpy(ccode, getIsoName(reg), 3);
 	
-	if(!strcmp(ccode, "EU") || !strcmp(ccode, "TW") )
-		strcpy(rrev, "13");
-	else if ( !strcmp(ccode, "CN") )
-		strcpy(rrev, "41");
-	else if ( !strcmp(ccode, "JP") )
-		strcpy(rrev, "45");
-	else
-		strcpy(rrev, "0");
+	if(!strcmp(ccode, "EU") || !strcmp(ccode, "TW") ){
+		strcpy(ccode0, "DE");
+		strcpy(rrev0, "0");
+		strcpy(ccode1, "EU");
+		strcpy(rrev1, "61");
+	} else if ( !strcmp(ccode, "CN") ){
+		strcpy(ccode0, "CN");
+		strcpy(rrev0, "34");
+		strcpy(ccode1, "Q2");
+		strcpy(rrev1, "41");
+	} else if ( !strcmp(ccode, "JP") ){
+		strcpy(ccode0, "JP");
+		strcpy(rrev0, "45");
+		strcpy(ccode1, "JP");
+		strcpy(rrev1, "45");
+	} else{
+		strcpy(ccode0, "Q1");
+		strcpy(rrev0, "27");
+		strcpy(ccode1, "Q2");
+		strcpy(rrev1, "41");
+	}
 
 	//fprintf(stderr, "setRegulationDomain ccode: %s rrev: %s\n", ccode, rrev);
 	
-	nvram_set("wl_country_rev", rrev);
-	nvram_set("wl0_country_rev", rrev);
-	nvram_set("wl1_country_rev", rrev);
-	nvram_set("wl_country_code", ccode);
-	nvram_set("wl0_country_code", ccode);
-	nvram_set("wl1_country_code", ccode);
+	nvram_set("wl_country_rev", rrev0);
+	nvram_set("wl0_country_rev", rrev0);
+	nvram_set("wl1_country_rev", rrev1);
+	nvram_set("wl_country_code", ccode0);
+	nvram_set("wl0_country_code", ccode0);
+	nvram_set("wl1_country_code", ccode1);
 
 	switch (getRouterBrand()) {
 		case ROUTER_NETGEAR_R6250:
 		case ROUTER_NETGEAR_R6300V2:
 		case ROUTER_NETGEAR_R7000:
 		case ROUTER_DLINK_DIR868:
-			nvram_set("pci/1/1/regrev", rrev);
-			nvram_set("pci/2/1/regrev", rrev);
-			nvram_set("pci/1/1/ccode",  ccode);
-			nvram_set("pci/2/1/ccode",  ccode);
+		case ROUTER_LINKSYS_EA6500V2:
+		case ROUTER_LINKSYS_EA6700:
+		case ROUTER_LINKSYS_EA6900:
+			nvram_set("pci/1/1/regrev", rrev0);
+			nvram_set("pci/2/1/regrev", rrev1);
+			nvram_set("pci/1/1/ccode",  ccode0);
+			nvram_set("pci/2/1/ccode",  ccode1);
 		break;
 			default:
-			nvram_set("0:regrev", rrev);
-			nvram_set("1:regrev", rrev);
-			nvram_set("0:ccode", ccode);
-			nvram_set("1:ccode", ccode);	  
+			nvram_set("0:regrev", rrev0);
+			nvram_set("1:regrev", rrev1);
+			nvram_set("0:ccode", ccode0);
+			nvram_set("1:ccode", ccode1);	  
 	}
   
 }
