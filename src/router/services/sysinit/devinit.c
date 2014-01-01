@@ -101,9 +101,7 @@ void start_devinit(void)
 	 */
 	mount("proc", "/proc", "proc", MS_MGC_VAL, NULL);
 	mount("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
-#ifdef HAVE_ATH9K
 	mount("debugfs", "/sys/kernel/debug", "debugfs", MS_MGC_VAL, NULL);
-#endif
 	cprintf("sysinit() tmp\n");
 	/*
 	 * /tmp 
