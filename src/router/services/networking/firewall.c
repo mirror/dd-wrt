@@ -603,8 +603,8 @@ static void nat_prerouting(void)
 #endif
 #ifdef HAVE_TOR
 	if (nvram_match("tor_transparent", "1") && nvram_match("tor_enable", "1")) {
-		save2file("-A PREROUTING -i br0 -p udp --dport 53 -j REDIRECT --to-ports 53\n");
-		save2file("-A PREROUTING -i br0 -p tcp --syn -j REDIRECT --to-ports 9040\n");
+		save2file("-A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:53\n", nvram_safe_get("lan_ipaddr"));
+		save2file("-A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040\n", nvram_safe_get("lan_ipaddr"));
 	}
 #endif
 	/*
