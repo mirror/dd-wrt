@@ -78,8 +78,8 @@ void start_tor(void)
 		fprintf(fp, "DNSPort 53\n");
 		fprintf(fp, "TransListenAddress %s\n", nvram_safe_get("lan_ipaddr"));
 		fprintf(fp, "DNSListenAddress %s\n", nvram_safe_get("lan_ipaddr"));
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j REDIRECT --to-ports 53");
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j REDIRECT --to-ports 9040");
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:53",nvram_safe_get("lan_ipaddr"));
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040",nvram_safe_get("lan_ipaddr"));
 
 	}
 
