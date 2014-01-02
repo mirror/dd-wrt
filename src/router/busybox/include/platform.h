@@ -208,6 +208,7 @@ typedef int      bb__aliased_int      FIX_ALIASING;
 typedef long     bb__aliased_long     FIX_ALIASING;
 typedef uint16_t bb__aliased_uint16_t FIX_ALIASING;
 typedef uint32_t bb__aliased_uint32_t FIX_ALIASING;
+typedef uint64_t bb__aliased_uint64_t FIX_ALIASING;
 
 /* NB: unaligned parameter should be a pointer, aligned one -
  * a lvalue. This makes it more likely to not swap them by mistake
@@ -263,6 +264,12 @@ typedef unsigned smalluint;
 
 #define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
 
+#ifdef __UCLIBC__
+# define UCLIBC_VERSION KERNEL_VERSION(__UCLIBC_MAJOR__, __UCLIBC_MINOR__, __UCLIBC_SUBLEVEL__)
+#else
+# define UCLIBC_VERSION 0
+#endif
+
 
 /* ---- Miscellaneous --------------------------------------- */
 
@@ -305,8 +312,9 @@ typedef unsigned smalluint;
  * for a mmu-less system.
  */
 #if ENABLE_NOMMU || \
-    (defined __UCLIBC__ && __UCLIBC_MAJOR__ >= 0 && __UCLIBC_MINOR__ >= 9 && \
-    __UCLIBC_SUBLEVEL__ > 28 && !defined __ARCH_USE_MMU__)
+    (defined __UCLIBC__ && \
+     UCLIBC_VERSION > KERNEL_VERSION(0, 9, 28) && \
+     !defined __ARCH_USE_MMU__)
 # define BB_MMU 0
 # define USE_FOR_NOMMU(...) __VA_ARGS__
 # define USE_FOR_MMU(...)
@@ -373,13 +381,8 @@ typedef unsigned smalluint;
 #define HAVE_NET_ETHERNET_H 1
 #define HAVE_SYS_STATFS_H 1
 
-#if defined(__UCLIBC_MAJOR__)
-# if __UCLIBC_MAJOR__ == 0 \
-  && (   __UCLIBC_MINOR__ < 9 \
-     || (__UCLIBC_MINOR__ == 9 && __UCLIBC_SUBLEVEL__ < 32) \
-     )
-#  undef HAVE_STRVERSCMP
-# endif
+#if defined(__UCLIBC__) && UCLIBC_VERSION < KERNEL_VERSION(0, 9, 32)
+# undef HAVE_STRVERSCMP
 #endif
 
 #if defined(__dietlibc__)
@@ -431,7 +434,7 @@ typedef unsigned smalluint;
 # undef HAVE_UNLOCKED_LINE_OPS
 #endif
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 # undef HAVE_STRCHRNUL
 #endif
 

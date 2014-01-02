@@ -62,6 +62,7 @@ const struct dhcp_optflag dhcp_optflags[] = {
 	{ OPTION_U16                              , 0x84 }, /* DHCP_VLAN_ID       */
 	{ OPTION_U8                               , 0x85 }, /* DHCP_VLAN_PRIORITY */
 #endif
+	{ OPTION_STRING                           , 0xd1 }, /* DHCP_PXE_CONF_FILE */
 	{ OPTION_6RD                              , 0xd4 }, /* DHCP_6RD           */
 	{ OPTION_STATIC_ROUTES | OPTION_LIST      , 0xf9 }, /* DHCP_MS_STATIC_ROUTES */
 	{ OPTION_STRING                           , 0xfc }, /* DHCP_WPAD          */
@@ -128,6 +129,7 @@ const char dhcp_option_strings[] ALIGN1 =
 	"vlanid" "\0"      /* DHCP_VLAN_ID        */
 	"vlanpriority" "\0"/* DHCP_VLAN_PRIORITY  */
 #endif
+	"pxeconffile" "\0" /* DHCP_PXE_CONF_FILE  */
 	"ip6rd" "\0"       /* DHCP_6RD            */
 	"msstaticroutes""\0"/* DHCP_MS_STATIC_ROUTES */
 	"wpad" "\0"        /* DHCP_WPAD           */
@@ -371,20 +373,23 @@ static NOINLINE void attach_option(
 		char *buffer,
 		int length)
 {
-	struct option_set *existing, *new, **curr;
-	char *allocated = NULL;
+	struct option_set *existing;
+	char *allocated;
+
+	allocated = allocate_tempopt_if_needed(optflag, buffer, &length);
+#if ENABLE_FEATURE_UDHCP_RFC3397
+	if ((optflag->flags & OPTION_TYPE_MASK) == OPTION_DNS_STRING) {
+		/* reuse buffer and length for RFC1035-formatted string */
+		allocated = buffer = (char *)dname_enc(NULL, 0, buffer, &length);
+	}
+#endif
 
 	existing = udhcp_find_option(*opt_list, optflag->code);
 	if (!existing) {
-		log2("Attaching option %02x to list", optflag->code);
-		allocated = allocate_tempopt_if_needed(optflag, buffer, &length);
-#if ENABLE_FEATURE_UDHCP_RFC3397
-		if ((optflag->flags & OPTION_TYPE_MASK) == OPTION_DNS_STRING) {
-			/* reuse buffer and length for RFC1035-formatted string */
-			allocated = buffer = (char *)dname_enc(NULL, 0, buffer, &length);
-		}
-#endif
+		struct option_set *new, **curr;
+
 		/* make a new option */
+		log2("Attaching option %02x to list", optflag->code);
 		new = xmalloc(sizeof(*new));
 		new->data = xmalloc(length + OPT_DATA);
 		new->data[OPT_CODE] = optflag->code;
@@ -405,14 +410,7 @@ static NOINLINE void attach_option(
 
 		/* add it to an existing option */
 		log2("Attaching option %02x to existing member of list", optflag->code);
-		allocated = allocate_tempopt_if_needed(optflag, buffer, &length);
 		old_len = existing->data[OPT_LEN];
-#if ENABLE_FEATURE_UDHCP_RFC3397
-		if ((optflag->flags & OPTION_TYPE_MASK) == OPTION_DNS_STRING) {
-			/* reuse buffer and length for RFC1035-formatted string */
-			allocated = buffer = (char *)dname_enc(existing->data + OPT_DATA, old_len, buffer, &length);
-		}
-#endif
 		if (old_len + length < 255) {
 			/* actually 255 is ok too, but adding a space can overlow it */
 
@@ -424,7 +422,7 @@ static NOINLINE void attach_option(
 				existing->data[OPT_DATA + old_len] = ' ';
 				old_len++;
 			}
-			memcpy(existing->data + OPT_DATA + old_len, buffer, length);
+			memcpy(existing->data + OPT_DATA + old_len, (allocated ? allocated : buffer), length);
 			existing->data[OPT_LEN] = old_len + length;
 		} /* else, ignore the data, we could put this in a second option in the future */
 	} /* else, ignore the new data */

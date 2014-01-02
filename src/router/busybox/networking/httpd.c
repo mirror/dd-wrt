@@ -1104,18 +1104,31 @@ static NOINLINE void cgi_io_loop_and_exit(int fromCgi_rd, int toCgi_wr, int post
 
 	/* NB: breaking out of this loop jumps to log_and_exit() */
 	out_cnt = 0;
+	pfd[FROM_CGI].fd = fromCgi_rd;
+	pfd[FROM_CGI].events = POLLIN;
+	pfd[TO_CGI].fd = toCgi_wr;
 	while (1) {
-		memset(pfd, 0, sizeof(pfd));
+		/* Note: even pfd[0].events == 0 won't prevent
+		 * revents == POLLHUP|POLLERR reports from closed stdin.
+		 * Setting fd to -1 works: */
+		pfd[0].fd = -1;
+		pfd[0].events = POLLIN;
+		pfd[0].revents = 0; /* probably not needed, paranoia */
 
-		pfd[FROM_CGI].fd = fromCgi_rd;
-		pfd[FROM_CGI].events = POLLIN;
+		/* We always poll this fd, thus kernel always sets revents: */
+		/*pfd[FROM_CGI].events = POLLIN; - moved out of loop */
+		/*pfd[FROM_CGI].revents = 0; - not needed */
 
-		if (toCgi_wr) {
-			pfd[TO_CGI].fd = toCgi_wr;
-			if (hdr_cnt > 0) {
-				pfd[TO_CGI].events = POLLOUT;
-			} else if (post_len > 0) {
-				pfd[0].events = POLLIN;
+		/* gcc-4.8.0 still doesnt fill two shorts with one insn :( */
+		/* http://gcc.gnu.org/bugzilla/show_bug.cgi?id=47059 */
+		/* hopefully one day it will... */
+		pfd[TO_CGI].events = POLLOUT;
+		pfd[TO_CGI].revents = 0; /* needed! */
+
+		if (toCgi_wr && hdr_cnt <= 0) {
+			if (post_len > 0) {
+				/* Expect more POST data from network */
+				pfd[0].fd = 0;
 			} else {
 				/* post_len <= 0 && hdr_cnt <= 0:
 				 * no more POST data to CGI,
@@ -1127,7 +1140,7 @@ static NOINLINE void cgi_io_loop_and_exit(int fromCgi_rd, int toCgi_wr, int post
 		}
 
 		/* Now wait on the set of sockets */
-		count = safe_poll(pfd, toCgi_wr ? TO_CGI+1 : FROM_CGI+1, -1);
+		count = safe_poll(pfd, hdr_cnt > 0 ? TO_CGI+1 : FROM_CGI+1, -1);
 		if (count <= 0) {
 #if 0
 			if (safe_waitpid(pid, &status, WNOHANG) <= 0) {
@@ -1144,7 +1157,7 @@ static NOINLINE void cgi_io_loop_and_exit(int fromCgi_rd, int toCgi_wr, int post
 		}
 
 		if (pfd[TO_CGI].revents) {
-			/* hdr_cnt > 0 here due to the way pfd[TO_CGI].events set */
+			/* hdr_cnt > 0 here due to the way poll() called */
 			/* Have data from peer and can write to CGI */
 			count = safe_write(toCgi_wr, hdr_ptr, hdr_cnt);
 			/* Doesn't happen, we dont use nonblocking IO here
@@ -1709,8 +1722,8 @@ static int pam_talker(int num_msg,
 			s = userinfo->pw;
 			break;
 		case PAM_ERROR_MSG:
-        	case PAM_TEXT_INFO:
-        		s = "";
+		case PAM_TEXT_INFO:
+			s = "";
 			break;
 		default:
 			free(response);
@@ -1964,7 +1977,9 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 		send_headers_and_exit(HTTP_BAD_REQUEST);
 
 	/* Determine type of request (GET/POST) */
-	urlp = strpbrk(iobuf, " \t");
+	// rfc2616: method and URI is separated by exactly one space
+	//urlp = strpbrk(iobuf, " \t"); - no, tab isn't allowed
+	urlp = strchr(iobuf, ' ');
 	if (urlp == NULL)
 		send_headers_and_exit(HTTP_BAD_REQUEST);
 	*urlp++ = '\0';
@@ -1982,7 +1997,8 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 	if (strcasecmp(iobuf, request_GET) != 0)
 		send_headers_and_exit(HTTP_NOT_IMPLEMENTED);
 #endif
-	urlp = skip_whitespace(urlp);
+	// rfc2616: method and URI is separated by exactly one space
+	//urlp = skip_whitespace(urlp); - should not be necessary
 	if (urlp[0] != '/')
 		send_headers_and_exit(HTTP_BAD_REQUEST);
 

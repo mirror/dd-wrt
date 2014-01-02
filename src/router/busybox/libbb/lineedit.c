@@ -38,6 +38,14 @@
  * and the \] escape to signal the end of such a sequence. Example:
  *
  * PS1='\[\033[01;32m\]\u@\h\[\033[01;34m\] \w \$\[\033[00m\] '
+ *
+ * Unicode in PS1 is not fully supported: prompt length calulation is wrong,
+ * resulting in line wrap problems with long (multi-line) input.
+ *
+ * Multi-line PS1 (e.g. PS1="\n[\w]\n$ ") has problems with history
+ * browsing: up/down arrows result in scrolling.
+ * It stems from simplistic "cmdedit_y = cmdedit_prmt_len / cmdedit_termw"
+ * calculation of how many lines the prompt takes.
  */
 #include "libbb.h"
 #include "unicode.h"
@@ -133,9 +141,6 @@ struct lineedit_statics {
 	CHAR_T *command_ps;
 
 	const char *cmdedit_prompt;
-#if ENABLE_FEATURE_EDITING_FANCY_PROMPT
-	int num_ok_lines; /* = 1; */
-#endif
 
 #if ENABLE_USERNAME_OR_HOMEDIR
 	char *user_buf;
@@ -172,7 +177,6 @@ extern struct lineedit_statics *const lineedit_ptr_to_statics;
 #define command_len      (S.command_len     )
 #define command_ps       (S.command_ps      )
 #define cmdedit_prompt   (S.cmdedit_prompt  )
-#define num_ok_lines     (S.num_ok_lines    )
 #define user_buf         (S.user_buf        )
 #define home_pwd_buf     (S.home_pwd_buf    )
 #define matches          (S.matches         )
@@ -185,8 +189,8 @@ extern struct lineedit_statics *const lineedit_ptr_to_statics;
 	(*(struct lineedit_statics**)&lineedit_ptr_to_statics) = xzalloc(sizeof(S)); \
 	barrier(); \
 	cmdedit_termw = 80; \
-	IF_FEATURE_EDITING_FANCY_PROMPT(num_ok_lines = 1;) \
 	IF_USERNAME_OR_HOMEDIR(home_pwd_buf = (char*)null_str;) \
+	IF_FEATURE_EDITING_VI(delptr = delbuf;) \
 } while (0)
 
 static void deinit_S(void)
@@ -1258,7 +1262,7 @@ line_input_t* FAST_FUNC new_line_input_t(int flags)
 
 #if MAX_HISTORY > 0
 
-unsigned size_from_HISTFILESIZE(const char *hp)
+unsigned FAST_FUNC size_from_HISTFILESIZE(const char *hp)
 {
 	int size = MAX_HISTORY;
 	if (hp) {
@@ -1311,6 +1315,17 @@ static int get_next_history(void)
 	}
 	beep();
 	return 0;
+}
+
+/* Lists command history. Used by shell 'history' builtins */
+void FAST_FUNC show_history(const line_input_t *st)
+{
+	int i;
+
+	if (!st)
+		return;
+	for (i = 0; i < st->cnt_history; i++)
+		printf("%4d %s\n", i, st->history[i]);
 }
 
 # if ENABLE_FEATURE_EDITING_SAVEHISTORY
@@ -1531,7 +1546,6 @@ static void remember_in_history(char *str)
 # if ENABLE_FEATURE_EDITING_SAVEHISTORY && !ENABLE_FEATURE_EDITING_SAVE_ON_EXIT
 	save_history(str);
 # endif
-	IF_FEATURE_EDITING_FANCY_PROMPT(num_ok_lines++;)
 }
 
 #else /* MAX_HISTORY == 0 */
@@ -1753,43 +1767,84 @@ static void ask_terminal(void)
 #define ask_terminal() ((void)0)
 #endif
 
+/* Called just once at read_line_input() init time */
 #if !ENABLE_FEATURE_EDITING_FANCY_PROMPT
 static void parse_and_put_prompt(const char *prmt_ptr)
 {
+	const char *p;
 	cmdedit_prompt = prmt_ptr;
-	cmdedit_prmt_len = strlen(prmt_ptr);
+	p = strrchr(prmt_ptr, '\n');
+	cmdedit_prmt_len = unicode_strwidth(p ? p+1 : prmt_ptr);
 	put_prompt();
 }
 #else
 static void parse_and_put_prompt(const char *prmt_ptr)
 {
-	int prmt_len = 0;
-	size_t cur_prmt_len = 0;
-	char flg_not_length = '[';
+	int prmt_size = 0;
 	char *prmt_mem_ptr = xzalloc(1);
-	char *cwd_buf = xrealloc_getcwd_or_warn(NULL);
+# if ENABLE_USERNAME_OR_HOMEDIR
+	char *cwd_buf = NULL;
+# endif
+	char flg_not_length = '[';
 	char cbuf[2];
-	char c;
-	char *pbuf;
 
-	cmdedit_prmt_len = 0;
-
-	if (!cwd_buf) {
-		cwd_buf = (char *)bb_msg_unknown;
-	}
+	/*cmdedit_prmt_len = 0; - already is */
 
 	cbuf[1] = '\0'; /* never changes */
 
 	while (*prmt_ptr) {
+		char timebuf[sizeof("HH:MM:SS")];
 		char *free_me = NULL;
+		char *pbuf;
+		char c;
 
 		pbuf = cbuf;
 		c = *prmt_ptr++;
 		if (c == '\\') {
-			const char *cp = prmt_ptr;
+			const char *cp;
 			int l;
-
-			c = bb_process_escape_sequence(&prmt_ptr);
+/*
+ * Supported via bb_process_escape_sequence:
+ * \a	ASCII bell character (07)
+ * \e	ASCII escape character (033)
+ * \n	newline
+ * \r	carriage return
+ * \\	backslash
+ * \nnn	char with octal code nnn
+ * Supported:
+ * \$	if the effective UID is 0, a #, otherwise a $
+ * \w	current working directory, with $HOME abbreviated with a tilde
+ *	Note: we do not support $PROMPT_DIRTRIM=n feature
+ * \W	basename of the current working directory, with $HOME abbreviated with a tilde
+ * \h	hostname up to the first '.'
+ * \H	hostname
+ * \u	username
+ * \[	begin a sequence of non-printing characters
+ * \]	end a sequence of non-printing characters
+ * \T	current time in 12-hour HH:MM:SS format
+ * \@	current time in 12-hour am/pm format
+ * \A	current time in 24-hour HH:MM format
+ * \t	current time in 24-hour HH:MM:SS format
+ *	(all of the above work as \A)
+ * Not supported:
+ * \!	history number of this command
+ * \#	command number of this command
+ * \j	number of jobs currently managed by the shell
+ * \l	basename of the shell's terminal device name
+ * \s	name of the shell, the basename of $0 (the portion following the final slash)
+ * \V	release of bash, version + patch level (e.g., 2.00.0)
+ * \d	date in "Weekday Month Date" format (e.g., "Tue May 26")
+ * \D{format}
+ *	format is passed to strftime(3).
+ *	An empty format results in a locale-specific time representation.
+ *	The braces are required.
+ * Mishandled by bb_process_escape_sequence:
+ * \v	version of bash (e.g., 2.00)
+ */
+			cp = prmt_ptr;
+			c = *cp;
+			if (c != 't') /* don't treat \t as tab */
+				c = bb_process_escape_sequence(&prmt_ptr);
 			if (prmt_ptr == cp) {
 				if (*cp == '\0')
 					break;
@@ -1801,39 +1856,54 @@ static void parse_and_put_prompt(const char *prmt_ptr)
 					pbuf = user_buf ? user_buf : (char*)"";
 					break;
 # endif
+				case 'H':
 				case 'h':
 					pbuf = free_me = safe_gethostname();
-					*strchrnul(pbuf, '.') = '\0';
+					if (c == 'h')
+						strchrnul(pbuf, '.')[0] = '\0';
 					break;
 				case '$':
 					c = (geteuid() == 0 ? '#' : '$');
 					break;
+				case 'T': /* 12-hour HH:MM:SS format */
+				case '@': /* 12-hour am/pm format */
+				case 'A': /* 24-hour HH:MM format */
+				case 't': /* 24-hour HH:MM:SS format */
+					/* We show all of them as 24-hour HH:MM */
+					strftime_HHMMSS(timebuf, sizeof(timebuf), NULL)[-3] = '\0';
+					pbuf = timebuf;
+					break;
 # if ENABLE_USERNAME_OR_HOMEDIR
-				case 'w':
-					/* /home/user[/something] -> ~[/something] */
-					pbuf = cwd_buf;
-					l = strlen(home_pwd_buf);
-					if (l != 0
-					 && strncmp(home_pwd_buf, cwd_buf, l) == 0
-					 && (cwd_buf[l]=='/' || cwd_buf[l]=='\0')
-					 && strlen(cwd_buf + l) < PATH_MAX
-					) {
-						pbuf = free_me = xasprintf("~%s", cwd_buf + l);
+				case 'w': /* current dir */
+				case 'W': /* basename of cur dir */
+					if (!cwd_buf) {
+						cwd_buf = xrealloc_getcwd_or_warn(NULL);
+						if (!cwd_buf)
+							cwd_buf = (char *)bb_msg_unknown;
+						else {
+							/* /home/user[/something] -> ~[/something] */
+							l = strlen(home_pwd_buf);
+							if (l != 0
+							 && strncmp(home_pwd_buf, cwd_buf, l) == 0
+							 && (cwd_buf[l] == '/' || cwd_buf[l] == '\0')
+							) {
+								cwd_buf[0] = '~';
+								overlapping_strcpy(cwd_buf + 1, cwd_buf + l);
+							}
+						}
 					}
+					pbuf = cwd_buf;
+					if (c == 'w')
+						break;
+					cp = strrchr(pbuf, '/');
+					if (cp)
+						pbuf = (char*)cp + 1;
 					break;
 # endif
-				case 'W':
-					pbuf = cwd_buf;
-					cp = strrchr(pbuf, '/');
-					if (cp != NULL && cp != pbuf)
-						pbuf += (cp-pbuf) + 1;
-					break;
-				case '!':
-					pbuf = free_me = xasprintf("%d", num_ok_lines);
-					break;
-				case 'e': case 'E':     /* \e \E = \033 */
-					c = '\033';
-					break;
+// bb_process_escape_sequence does this now:
+//				case 'e': case 'E':     /* \e \E = \033 */
+//					c = '\033';
+//					break;
 				case 'x': case 'X': {
 					char buf2[4];
 					for (l = 0; l < 3;) {
@@ -1855,7 +1925,8 @@ static void parse_and_put_prompt(const char *prmt_ptr)
 				}
 				case '[': case ']':
 					if (c == flg_not_length) {
-						flg_not_length = (flg_not_length == '[' ? ']' : '[');
+						/* Toggle '['/']' hex 5b/5d */
+						flg_not_length ^= 6;
 						continue;
 					}
 					break;
@@ -1863,16 +1934,29 @@ static void parse_and_put_prompt(const char *prmt_ptr)
 			} /* if */
 		} /* if */
 		cbuf[0] = c;
-		cur_prmt_len = strlen(pbuf);
-		prmt_len += cur_prmt_len;
-		if (flg_not_length != ']')
-			cmdedit_prmt_len += cur_prmt_len;
-		prmt_mem_ptr = strcat(xrealloc(prmt_mem_ptr, prmt_len+1), pbuf);
+		{
+			int n = strlen(pbuf);
+			prmt_size += n;
+			if (c == '\n')
+				cmdedit_prmt_len = 0;
+			else if (flg_not_length != ']') {
+#if 0 /*ENABLE_UNICODE_SUPPORT*/
+/* Won't work, pbuf is one BYTE string here instead of an one Unicode char string. */
+/* FIXME */
+				cmdedit_prmt_len += unicode_strwidth(pbuf);
+#else
+				cmdedit_prmt_len += n;
+#endif
+			}
+		}
+		prmt_mem_ptr = strcat(xrealloc(prmt_mem_ptr, prmt_size+1), pbuf);
 		free(free_me);
 	} /* while */
 
+# if ENABLE_USERNAME_OR_HOMEDIR
 	if (cwd_buf != (char *)bb_msg_unknown)
 		free(cwd_buf);
+# endif
 	cmdedit_prompt = prmt_mem_ptr;
 	put_prompt();
 }
@@ -1934,7 +2018,15 @@ static int lineedit_read_key(char *read_key_buffer, int timeout)
 			S.sent_ESC_br6n = 0;
 			if (cursor == 0) { /* otherwise it may be bogus */
 				int col = ((ic >> 32) & 0x7fff) - 1;
-				if (col > cmdedit_prmt_len) {
+				/*
+				 * Is col > cmdedit_prmt_len?
+				 * If yes (terminal says cursor is farther to the right
+				 * of where we think it should be),
+				 * the prompt wasn't printed starting at col 1,
+				 * there was additional text before it.
+				 */
+				if ((int)(col - cmdedit_prmt_len) > 0) {
+					/* Fix our understanding of current x position */
 					cmdedit_x += (col - cmdedit_prmt_len);
 					while (cmdedit_x >= cmdedit_termw) {
 						cmdedit_x -= cmdedit_termw;
@@ -2025,6 +2117,7 @@ static int32_t reverse_i_search(void)
 	char read_key_buffer[KEYCODE_BUFFER_SIZE];
 	const char *matched_history_line;
 	const char *saved_prompt;
+	unsigned saved_prmt_len;
 	int32_t ic;
 
 	matched_history_line = NULL;
@@ -2033,6 +2126,7 @@ static int32_t reverse_i_search(void)
 
 	/* Save and replace the prompt */
 	saved_prompt = cmdedit_prompt;
+	saved_prmt_len = cmdedit_prmt_len;
 	goto set_prompt;
 
 	while (1) {
@@ -2108,7 +2202,7 @@ static int32_t reverse_i_search(void)
 					free((char*)cmdedit_prompt);
  set_prompt:
 					cmdedit_prompt = xasprintf("(reverse-i-search)'%s': ", match_buf);
-					cmdedit_prmt_len = strlen(cmdedit_prompt);
+					cmdedit_prmt_len = unicode_strwidth(cmdedit_prompt);
 					goto do_redraw;
 				}
 			}
@@ -2130,7 +2224,7 @@ static int32_t reverse_i_search(void)
 
 	free((char*)cmdedit_prompt);
 	cmdedit_prompt = saved_prompt;
-	cmdedit_prmt_len = strlen(cmdedit_prompt);
+	cmdedit_prmt_len = saved_prmt_len;
 	redraw(cmdedit_y, command_len - cursor);
 
 	return ic;
@@ -2698,8 +2792,9 @@ int FAST_FUNC read_line_input(line_input_t *st, const char *prompt, char *comman
 	free(command_ps);
 #endif
 
-	if (command_len > 0)
+	if (command_len > 0) {
 		remember_in_history(command);
+	}
 
 	if (break_out > 0) {
 		command[command_len++] = '\n';
