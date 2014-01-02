@@ -62,16 +62,17 @@ struct globals {
 	const char *curfile;      /* Name of current file being transferred */
 	bb_progress_t pmt;
 #endif
-        char *dir_prefix;
+	char *dir_prefix;
 #if ENABLE_FEATURE_WGET_LONG_OPTIONS
-        char *post_data;
-        char *extra_headers;
+	char *post_data;
+	char *extra_headers;
 #endif
-        char *fname_out;        /* where to direct output (-O) */
-        const char *proxy_flag; /* Use proxies if env vars are set */
-        const char *user_agent; /* "User-Agent" header field */
+	char *fname_out;        /* where to direct output (-O) */
+	const char *proxy_flag; /* Use proxies if env vars are set */
+	const char *user_agent; /* "User-Agent" header field */
 #if ENABLE_FEATURE_WGET_TIMEOUT
 	unsigned timeout_seconds;
+	bool connecting;
 #endif
 	int output_fd;
 	int o_flags;
@@ -86,8 +87,10 @@ struct globals {
 } FIX_ALIASING;
 #define G (*ptr_to_globals)
 #define INIT_G() do { \
-        SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
-	IF_FEATURE_WGET_TIMEOUT(G.timeout_seconds = 900;) \
+	SET_PTR_TO_GLOBALS(xzalloc(sizeof(G))); \
+} while (0)
+#define FINI_G() do { \
+	FREE_PTR_TO_GLOBALS(); \
 } while (0)
 
 
@@ -195,13 +198,27 @@ static char* sanitize_string(char *s)
 	return s;
 }
 
+#if ENABLE_FEATURE_WGET_TIMEOUT
+static void alarm_handler(int sig UNUSED_PARAM)
+{
+	/* This is theoretically unsafe (uses stdio and malloc in signal handler) */
+	if (G.connecting)
+		bb_error_msg_and_die("download timed out");
+}
+#endif
+
 static FILE *open_socket(len_and_sockaddr *lsa)
 {
+	int fd;
 	FILE *fp;
+
+	IF_FEATURE_WGET_TIMEOUT(alarm(G.timeout_seconds); G.connecting = 1;)
+	fd = xconnect_stream(lsa);
+	IF_FEATURE_WGET_TIMEOUT(G.connecting = 0;)
 
 	/* glibc 2.4 seems to try seeking on it - ??! */
 	/* hopefully it understands what ESPIPE means... */
-	fp = fdopen(xconnect_stream(lsa), "r+");
+	fp = fdopen(fd, "r+");
 	if (fp == NULL)
 		bb_perror_msg_and_die(bb_msg_memory_exhausted);
 
@@ -209,6 +226,7 @@ static FILE *open_socket(len_and_sockaddr *lsa)
 }
 
 /* Returns '\n' if it was seen, else '\0'. Trims at first '\r' or '\n' */
+/* FIXME: does not respect FEATURE_WGET_TIMEOUT and -T N: */
 static char fgets_and_trim(FILE *fp)
 {
 	char c;
@@ -256,14 +274,21 @@ static void parse_url(const char *src_url, struct host_info *h)
 	free(h->allocated);
 	h->allocated = url = xstrdup(src_url);
 
-	if (strncmp(url, "http://", 7) == 0) {
-		h->port = bb_lookup_port("http", "tcp", 80);
-		h->host = url + 7;
-		h->is_ftp = 0;
-	} else if (strncmp(url, "ftp://", 6) == 0) {
+	if (strncmp(url, "ftp://", 6) == 0) {
 		h->port = bb_lookup_port("ftp", "tcp", 21);
 		h->host = url + 6;
 		h->is_ftp = 1;
+	} else
+	if (strncmp(url, "http://", 7) == 0) {
+		h->host = url + 7;
+ http:
+		h->port = bb_lookup_port("http", "tcp", 80);
+		h->is_ftp = 0;
+	} else
+	if (!strstr(url, "//")) {
+		// GNU wget is user-friendly and falls back to http://
+		h->host = url;
+		goto http;
 	} else
 		bb_error_msg_and_die("not an http or ftp url: %s", sanitize_string(url));
 
@@ -328,8 +353,16 @@ static char *gethdr(FILE *fp)
 		return NULL;
 
 	/* convert the header name to lower case */
-	for (s = G.wget_buf; isalnum(*s) || *s == '-' || *s == '.'; ++s) {
-		/* tolower for "A-Z", no-op for "0-9a-z-." */
+	for (s = G.wget_buf; isalnum(*s) || *s == '-' || *s == '.' || *s == '_'; ++s) {
+		/*
+		 * No-op for 20-3f and 60-7f. "0-9a-z-." are in these ranges.
+		 * 40-5f range ("@A-Z[\]^_") maps to 60-7f.
+		 * "A-Z" maps to "a-z".
+		 * "@[\]" can't occur in header names.
+		 * "^_" maps to "~,DEL" (which is wrong).
+		 * "^" was never seen yet, "_" was seen from web.archive.org
+		 * (x-archive-orig-x_commoncrawl_Signature: HEXSTRING).
+		 */
 		*s |= 0x20;
 	}
 
@@ -934,7 +967,10 @@ int wget_main(int argc UNUSED_PARAM, char **argv)
 
 	INIT_G();
 
-	IF_FEATURE_WGET_TIMEOUT(G.timeout_seconds = 900;)
+#if ENABLE_FEATURE_WGET_TIMEOUT
+	G.timeout_seconds = 900;
+	signal(SIGALRM, alarm_handler);
+#endif
 	G.proxy_flag = "on";   /* use proxies if env vars are set */
 	G.user_agent = "Wget"; /* "User-Agent" header field */
 
@@ -984,6 +1020,11 @@ int wget_main(int argc UNUSED_PARAM, char **argv)
 
 	if (G.output_fd >= 0)
 		xclose(G.output_fd);
+
+#if ENABLE_FEATURE_CLEAN_UP && ENABLE_FEATURE_WGET_LONG_OPTIONS
+	free(G.extra_headers);
+#endif
+	FINI_G();
 
 	return EXIT_SUCCESS;
 }

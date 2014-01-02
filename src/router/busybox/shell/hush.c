@@ -850,6 +850,9 @@ static int builtin_jobs(char **argv) FAST_FUNC;
 #if ENABLE_HUSH_HELP
 static int builtin_help(char **argv) FAST_FUNC;
 #endif
+#if MAX_HISTORY && ENABLE_FEATURE_EDITING
+static int builtin_history(char **argv) FAST_FUNC;
+#endif
 #if ENABLE_HUSH_LOCAL
 static int builtin_local(char **argv) FAST_FUNC;
 #endif
@@ -918,6 +921,9 @@ static const struct built_in_command bltins1[] = {
 #endif
 #if ENABLE_HUSH_HELP
 	BLTIN("help"     , builtin_help    , NULL),
+#endif
+#if MAX_HISTORY && ENABLE_FEATURE_EDITING
+	BLTIN("history"  , builtin_history , "Show command history"),
 #endif
 #if ENABLE_HUSH_JOB
 	BLTIN("jobs"     , builtin_jobs    , "List jobs"),
@@ -1304,7 +1310,7 @@ static void restore_G_args(save_arg_t *sv, char **argv)
  * backgrounds (i.e. stops) or kills all members of currently running
  * pipe.
  *
- * Wait builtin in interruptible by signals for which user trap is set
+ * Wait builtin is interruptible by signals for which user trap is set
  * or by SIGINT in interactive shell.
  *
  * Trap handlers will execute even within trap handlers. (right?)
@@ -1383,7 +1389,7 @@ static void restore_G_args(save_arg_t *sv, char **argv)
  * are set to '' (ignore) are NOT reset to defaults. We do the same.
  *
  * Problem: the above approach makes it unwieldy to catch signals while
- * we are in read builtin, of while we read commands from stdin:
+ * we are in read builtin, or while we read commands from stdin:
  * masked signals are not visible!
  *
  * New implementation
@@ -1392,7 +1398,7 @@ static void restore_G_args(save_arg_t *sv, char **argv)
  * for them - a bit like emulating kernel pending signal mask in userspace.
  * We are interested in: signals which need to have special handling
  * as described above, and all signals which have traps set.
- * Signals are rocorded in pending_set.
+ * Signals are recorded in pending_set.
  * After each pipe execution, we extract any pending signals
  * and act on them.
  *
@@ -2038,7 +2044,10 @@ static void get_user_input(struct in_str *i)
 		 * _during_ shell execution, not only if it was set when
 		 * shell was started. Therefore, re-check LANG every time:
 		 */
-		reinit_unicode(get_local_var_value("LANG"));
+		const char *s = get_local_var_value("LC_ALL");
+		if (!s) s = get_local_var_value("LC_CTYPE");
+		if (!s) s = get_local_var_value("LANG");
+		reinit_unicode(s);
 
 		G.flag_SIGINT = 0;
 		/* buglet: SIGINT will not make new prompt to appear _at once_,
@@ -7354,7 +7363,7 @@ static int run_list(struct pipe *pi)
 				 * and we should not execute CMD */
 				debug_printf_exec("skipped cmd because of || or &&\n");
 				last_followup = pi->followup;
-				continue;
+				goto dont_check_jobs_but_continue;
 			}
 		}
 		last_followup = pi->followup;
@@ -7493,8 +7502,10 @@ static int run_list(struct pipe *pi)
 							G.flag_break_continue = 0;
 						/* else: e.g. "continue 2" should *break* once, *then* continue */
 					} /* else: "while... do... { we are here (innermost list is not a loop!) };...done" */
-					if (G.depth_break_continue != 0 || fbc == BC_BREAK)
-						goto check_jobs_and_break;
+					if (G.depth_break_continue != 0 || fbc == BC_BREAK) {
+						checkjobs(NULL);
+						break;
+					}
 					/* "continue": simulate end of loop */
 					rword = RES_DONE;
 					continue;
@@ -7502,7 +7513,6 @@ static int run_list(struct pipe *pi)
 #endif
 #if ENABLE_HUSH_FUNCTIONS
 				if (G.flag_return_in_progress == 1) {
-					/* same as "goto check_jobs_and_break" */
 					checkjobs(NULL);
 					break;
 				}
@@ -7544,6 +7554,9 @@ static int run_list(struct pipe *pi)
 		if (rword == RES_IF || rword == RES_ELIF)
 			cond_code = rcode;
 #endif
+ check_jobs_and_continue:
+		checkjobs(NULL);
+ dont_check_jobs_but_continue: ;
 #if ENABLE_HUSH_LOOPS
 		/* Beware of "while false; true; do ..."! */
 		if (pi->next
@@ -7555,22 +7568,17 @@ static int run_list(struct pipe *pi)
 					/* "while false; do...done" - exitcode 0 */
 					G.last_exitcode = rcode = EXIT_SUCCESS;
 					debug_printf_exec(": while expr is false: breaking (exitcode:EXIT_SUCCESS)\n");
-					goto check_jobs_and_break;
+					break;
 				}
 			}
 			if (rword == RES_UNTIL) {
 				if (!rcode) {
 					debug_printf_exec(": until expr is true: breaking\n");
- check_jobs_and_break:
-					checkjobs(NULL);
 					break;
 				}
 			}
 		}
 #endif
-
- check_jobs_and_continue:
-		checkjobs(NULL);
 	} /* for (pi) */
 
 #if ENABLE_HUSH_JOB
@@ -8628,6 +8636,14 @@ static int FAST_FUNC builtin_help(char **argv UNUSED_PARAM)
 }
 #endif
 
+#if MAX_HISTORY && ENABLE_FEATURE_EDITING
+static int FAST_FUNC builtin_history(char **argv UNUSED_PARAM)
+{
+	show_history(G.line_input_state);
+	return EXIT_SUCCESS;
+}
+#endif
+
 #if ENABLE_HUSH_JOB
 static int FAST_FUNC builtin_jobs(char **argv UNUSED_PARAM)
 {
@@ -8880,6 +8896,9 @@ static int FAST_FUNC builtin_source(char **argv)
 	free(arg_path);
 	if (!input) {
 		/* bb_perror_msg("%s", *argv); - done by fopen_or_warn */
+		/* POSIX: non-interactive shell should abort here,
+		 * not merely fail. So far no one complained :)
+		 */
 		return EXIT_FAILURE;
 	}
 	close_on_exec_on(fileno(input));
@@ -8889,12 +8908,14 @@ static int FAST_FUNC builtin_source(char **argv)
 	/* "we are inside sourced file, ok to use return" */
 	G.flag_return_in_progress = -1;
 #endif
-	save_and_replace_G_args(&sv, argv);
+	if (argv[1])
+		save_and_replace_G_args(&sv, argv);
 
 	parse_and_run_file(input);
 	fclose(input);
 
-	restore_G_args(&sv, argv);
+	if (argv[1])
+		restore_G_args(&sv, argv);
 #if ENABLE_HUSH_FUNCTIONS
 	G.flag_return_in_progress = sv_flg;
 #endif

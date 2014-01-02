@@ -294,7 +294,7 @@ static void get_jiffy_counts(void)
 	 * they are used to calculate per process CPU% */
 	prev_jif = cur_jif;
 	if (read_cpu_jiffy(fp, &cur_jif) < 4)
-		bb_error_msg_and_die("can't read /proc/stat");
+		bb_error_msg_and_die("can't read '%s'", "/proc/stat");
 
 #if !ENABLE_FEATURE_TOP_SMP_CPU
 	fclose(fp);
@@ -677,7 +677,7 @@ static NOINLINE void display_process_list(int lines_rem, int scr_width)
 		if (s->vsz >= 100000)
 			sprintf(vsz_str_buf, "%6ldm", s->vsz/1024);
 		else
-			sprintf(vsz_str_buf, "%7ld", s->vsz);
+			sprintf(vsz_str_buf, "%7lu", s->vsz);
 		/* PID PPID USER STAT VSZ %VSZ [%CPU] COMMAND */
 		col = snprintf(line_buf, scr_width,
 				"\n" "%5u%6u %-8.8s %s%s" FMT
@@ -847,8 +847,7 @@ static void display_topmem_header(int scr_width, int *lines_rem_p)
 static void ulltoa6_and_space(unsigned long long ul, char buf[6])
 {
 	/* see http://en.wikipedia.org/wiki/Tera */
-	smart_ulltoa5(ul, buf, " mgtpezy");
-	buf[5] = ' ';
+	smart_ulltoa5(ul, buf, " mgtpezy")[0] = ' ';
 }
 
 static NOINLINE void display_topmem_process_list(int lines_rem, int scr_width)
