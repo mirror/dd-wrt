@@ -9,15 +9,26 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-
 /* For reference see
  * http://www.pkware.com/company/standards/appnote/
  * http://www.info-zip.org/pub/infozip/doc/appnote-iz-latest.zip
- */
-
-/* TODO
+ *
+ * TODO
  * Zip64 + other methods
  */
+
+//config:config UNZIP
+//config:	bool "unzip"
+//config:	default y
+//config:	help
+//config:	  unzip will list or extract files from a ZIP archive,
+//config:	  commonly found on DOS/WIN systems. The default behavior
+//config:	  (with no options) is to extract the archive into the
+//config:	  current directory. Use the `-d' option to extract to a
+//config:	  directory of your choice.
+
+//applet:IF_UNZIP(APPLET(unzip, BB_DIR_USR_BIN, BB_SUID_DROP))
+//kbuild:lib-$(CONFIG_UNZIP) += unzip.o
 
 //usage:#define unzip_trivial_usage
 //usage:       "[-lnopq] FILE[.zip] [FILE]... [-x FILE...] [-d DIR]"
@@ -163,7 +174,17 @@ enum { zip_fd = 3 };
 
 #if ENABLE_DESKTOP
 
-#define PEEK_FROM_END 16384
+/* Seen in the wild:
+ * Self-extracting PRO2K3XP_32.exe contains 19078464 byte zip archive,
+ * where CDE was nearly 48 kbytes before EOF.
+ * (Surprisingly, it also apparently has *another* CDE structure
+ * closer to the end, with bogus cdf_offset).
+ * To make extraction work, bumped PEEK_FROM_END from 16k to 64k.
+ */
+#define PEEK_FROM_END (64*1024)
+
+/* This value means that we failed to find CDF */
+#define BAD_CDF_OFFSET ((uint32_t)0xffffffff)
 
 /* NB: does not preserve file position! */
 static uint32_t find_cdf_offset(void)
@@ -180,6 +201,7 @@ static uint32_t find_cdf_offset(void)
 	xlseek(zip_fd, end, SEEK_SET);
 	full_read(zip_fd, buf, PEEK_FROM_END);
 
+	cde_header.formatted.cdf_offset = BAD_CDF_OFFSET;
 	p = buf;
 	while (p <= buf + PEEK_FROM_END - CDE_HEADER_LEN - 4) {
 		if (*p != 'P') {
@@ -195,11 +217,17 @@ static uint32_t find_cdf_offset(void)
 		/* we found CDE! */
 		memcpy(cde_header.raw, p + 1, CDE_HEADER_LEN);
 		FIX_ENDIANNESS_CDE(cde_header);
-		free(buf);
-		return cde_header.formatted.cdf_offset;
+		/*
+		 * I've seen .ZIP files with seemingly valid CDEs
+		 * where cdf_offset points past EOF - ??
+		 * Ignore such CDEs:
+		 */
+		if (cde_header.formatted.cdf_offset < end + (p - buf))
+			break;
+		cde_header.formatted.cdf_offset = BAD_CDF_OFFSET;
 	}
-	//free(buf);
-	bb_error_msg_and_die("can't find file table");
+	free(buf);
+	return cde_header.formatted.cdf_offset;
 };
 
 static uint32_t read_next_cdf(uint32_t cdf_offset, cdf_header_t *cdf_ptr)
@@ -211,13 +239,15 @@ static uint32_t read_next_cdf(uint32_t cdf_offset, cdf_header_t *cdf_ptr)
 	if (!cdf_offset)
 		cdf_offset = find_cdf_offset();
 
-	xlseek(zip_fd, cdf_offset + 4, SEEK_SET);
-	xread(zip_fd, cdf_ptr->raw, CDF_HEADER_LEN);
-	FIX_ENDIANNESS_CDF(*cdf_ptr);
-	cdf_offset += 4 + CDF_HEADER_LEN
-		+ cdf_ptr->formatted.file_name_length
-		+ cdf_ptr->formatted.extra_field_length
-		+ cdf_ptr->formatted.file_comment_length;
+	if (cdf_offset != BAD_CDF_OFFSET) {
+		xlseek(zip_fd, cdf_offset + 4, SEEK_SET);
+		xread(zip_fd, cdf_ptr->raw, CDF_HEADER_LEN);
+		FIX_ENDIANNESS_CDF(*cdf_ptr);
+		cdf_offset += 4 + CDF_HEADER_LEN
+			+ cdf_ptr->formatted.file_name_length
+			+ cdf_ptr->formatted.extra_field_length
+			+ cdf_ptr->formatted.file_comment_length;
+	}
 
 	xlseek(zip_fd, org, SEEK_SET);
 	return cdf_offset;
@@ -226,8 +256,9 @@ static uint32_t read_next_cdf(uint32_t cdf_offset, cdf_header_t *cdf_ptr)
 
 static void unzip_skip(off_t skip)
 {
-	if (lseek(zip_fd, skip, SEEK_CUR) == (off_t)-1)
-		bb_copyfd_exact_size(zip_fd, -1, skip);
+	if (skip != 0)
+		if (lseek(zip_fd, skip, SEEK_CUR) == (off_t)-1)
+			bb_copyfd_exact_size(zip_fd, -1, skip);
 }
 
 static void unzip_create_leading_dirs(const char *fn)
@@ -267,6 +298,14 @@ static void unzip_extract(zip_header_t *zip_header, int dst_fd)
 	}
 }
 
+static void my_fgets80(char *buf80)
+{
+	fflush_all();
+	if (!fgets(buf80, 80, stdin)) {
+		bb_perror_msg_and_die("can't read standard input");
+	}
+}
+
 int unzip_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int unzip_main(int argc, char **argv)
 {
@@ -291,7 +330,7 @@ int unzip_main(int argc, char **argv)
 	llist_t *zreject = NULL;
 	char *base_dir = NULL;
 	int i, opt;
-	char key_buf[80];
+	char key_buf[80]; /* must match size used by my_fgets80 */
 	struct stat stat_buf;
 
 /* -q, -l and -v: UnZip 5.52 of 28 February 2005, by Info-ZIP:
@@ -520,20 +559,30 @@ int unzip_main(int argc, char **argv)
 			bb_error_msg_and_die("zip flag 1 (encryption) is not supported");
 		}
 
-		{
+		if (cdf_offset != BAD_CDF_OFFSET) {
 			cdf_header_t cdf_header;
 			cdf_offset = read_next_cdf(cdf_offset, &cdf_header);
+			/*
+			 * Note: cdf_offset can become BAD_CDF_OFFSET after the above call.
+			 */
 			if (zip_header.formatted.zip_flags & SWAP_LE16(0x0008)) {
 				/* 0x0008 - streaming. [u]cmpsize can be reliably gotten
-				 * only from Central Directory. See unzip_doc.txt */
+				 * only from Central Directory. See unzip_doc.txt
+				 */
 				zip_header.formatted.crc32    = cdf_header.formatted.crc32;
 				zip_header.formatted.cmpsize  = cdf_header.formatted.cmpsize;
 				zip_header.formatted.ucmpsize = cdf_header.formatted.ucmpsize;
 			}
 			if ((cdf_header.formatted.version_made_by >> 8) == 3) {
-				/* this archive is created on Unix */
+				/* This archive is created on Unix */
 				dir_mode = file_mode = (cdf_header.formatted.external_file_attributes >> 16);
 			}
+		}
+		if (cdf_offset == BAD_CDF_OFFSET
+		 && (zip_header.formatted.zip_flags & SWAP_LE16(0x0008))
+		) {
+			/* If it's a streaming zip, we _require_ CDF */
+			bb_error_msg_and_die("can't find file table");
 		}
 #endif
 
@@ -624,10 +673,7 @@ int unzip_main(int argc, char **argv)
 							i = 'y';
 						} else {
 							printf("replace %s? [y]es, [n]o, [A]ll, [N]one, [r]ename: ", dst_fn);
-							fflush_all();
-							if (!fgets(key_buf, sizeof(key_buf), stdin)) {
-								bb_perror_msg_and_die("can't read input");
-							}
+							my_fgets80(key_buf);
 							i = key_buf[0];
 						}
 					} else { /* File is not regular file */
@@ -668,9 +714,7 @@ int unzip_main(int argc, char **argv)
 		case 'r':
 			/* Prompt for new name */
 			printf("new name: ");
-			if (!fgets(key_buf, sizeof(key_buf), stdin)) {
-				bb_perror_msg_and_die("can't read input");
-			}
+			my_fgets80(key_buf);
 			free(dst_fn);
 			dst_fn = xstrdup(key_buf);
 			chomp(dst_fn);

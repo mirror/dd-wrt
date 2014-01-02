@@ -8,6 +8,12 @@
 
 #include "libbb.h"
 
+/* some systems (eg Hurd) does not have MAXSYMLINKS definition,
+ * set it to some reasonable value if it isn't defined */
+#ifndef MAXSYMLINKS
+# define MAXSYMLINKS 20
+#endif
+
 /*
  * NOTE: This function returns a malloced char* that you will have to free
  * yourself.
@@ -102,7 +108,8 @@ char* FAST_FUNC xmalloc_readlink_or_warn(const char *path)
 
 char* FAST_FUNC xmalloc_realpath(const char *path)
 {
-#if defined(__GLIBC__) && !defined(__UCLIBC__)
+#if defined(__GLIBC__) || \
+    (defined(__UCLIBC__) && UCLIBC_VERSION >= KERNEL_VERSION(0, 9, 31))
 	/* glibc provides a non-standard extension */
 	/* new: POSIX.1-2008 specifies this behavior as well */
 	return realpath(path, NULL);

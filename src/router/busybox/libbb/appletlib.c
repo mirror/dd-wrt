@@ -29,7 +29,7 @@
 #include "busybox.h"
 
 #if !(defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) \
-        || defined(__APPLE__) \
+    || defined(__APPLE__) \
     )
 # include <malloc.h> /* for mallopt */
 #endif
@@ -753,7 +753,7 @@ void FAST_FUNC run_applet_no_and_exit(int applet_no, char **argv)
 //TODO: just compare applet_no with APPLET_NO_test
 		if (!ENABLE_TEST || strcmp(applet_name, "test") != 0) {
 			/* If you want "foo --help" to return 0: */
-			/*xfunc_error_retval = 0;*/
+			xfunc_error_retval = 0;
 			bb_show_usage();
 		}
 	}

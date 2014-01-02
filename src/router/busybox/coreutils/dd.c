@@ -30,10 +30,10 @@
 //usage:     "\n	conv=noerror	Continue after read errors"
 //usage:     "\n	conv=sync	Pad blocks with zeros"
 //usage:     "\n	conv=fsync	Physically write data out before finishing"
+//usage:     "\n	conv=swab	Swap every pair of bytes"
 //usage:	)
 //usage:     "\n"
-//usage:     "\nNumbers may be suffixed by c (x1), w (x2), b (x512), kD (x1000), k (x1024),"
-//usage:     "\nMD (x1000000), M (x1048576), GD (x1000000000) or G (x1073741824)"
+//usage:     "\nN may be suffixed by c (1), w (2), b (512), kD (1000), k (1024), MD, M, GD, G"
 //usage:
 //usage:#define dd_example_usage
 //usage:       "$ dd if=/dev/zero of=/dev/ram1 bs=1M count=4\n"
@@ -151,13 +151,14 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 	enum {
 		/* Must be in the same order as OP_conv_XXX! */
 		/* (see "flags |= (1 << what)" below) */
-		FLAG_NOTRUNC = 1 << 0,
-		FLAG_SYNC    = 1 << 1,
-		FLAG_NOERROR = 1 << 2,
-		FLAG_FSYNC   = 1 << 3,
+		FLAG_NOTRUNC = (1 << 0) * ENABLE_FEATURE_DD_IBS_OBS,
+		FLAG_SYNC    = (1 << 1) * ENABLE_FEATURE_DD_IBS_OBS,
+		FLAG_NOERROR = (1 << 2) * ENABLE_FEATURE_DD_IBS_OBS,
+		FLAG_FSYNC   = (1 << 3) * ENABLE_FEATURE_DD_IBS_OBS,
+		FLAG_SWAB    = (1 << 4) * ENABLE_FEATURE_DD_IBS_OBS,
 		/* end of conv flags */
-		FLAG_TWOBUFS = 1 << 4,
-		FLAG_COUNT   = 1 << 5,
+		FLAG_TWOBUFS = (1 << 5) * ENABLE_FEATURE_DD_IBS_OBS,
+		FLAG_COUNT   = 1 << 6,
 	};
 	static const char keywords[] ALIGN1 =
 		"bs\0""count\0""seek\0""skip\0""if\0""of\0"
@@ -167,7 +168,7 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 		;
 #if ENABLE_FEATURE_DD_IBS_OBS
 	static const char conv_words[] ALIGN1 =
-		"notrunc\0""sync\0""noerror\0""fsync\0";
+		"notrunc\0""sync\0""noerror\0""fsync\0""swab\0";
 #endif
 	enum {
 		OP_bs = 0,
@@ -185,11 +186,11 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 		OP_conv_sync,
 		OP_conv_noerror,
 		OP_conv_fsync,
+		OP_conv_swab,
 	/* Unimplemented conv=XXX: */
 	//nocreat       do not create the output file
 	//excl          fail if the output file already exists
 	//fdatasync     physically write output file data before finishing
-	//swab          swap every pair of input bytes
 	//lcase         change upper case to lower case
 	//ucase         change lower case to upper case
 	//block         pad newline-terminated records with spaces to cbs-size
@@ -197,22 +198,33 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 	//ascii         from EBCDIC to ASCII
 	//ebcdic        from ASCII to EBCDIC
 	//ibm           from ASCII to alternate EBCDIC
+	/* Partially implemented: */
+	//swab          swap every pair of input bytes: will abort on non-even reads
 #endif
 	};
-	int exitcode = EXIT_FAILURE;
-	size_t ibs = 512, obs = 512;
-	ssize_t n, w;
-	char *ibuf, *obuf;
-	/* And these are all zeroed at once! */
+	smallint exitcode = EXIT_FAILURE;
+	int i;
+	size_t ibs = 512;
+	char *ibuf;
+#if ENABLE_FEATURE_DD_IBS_OBS
+	size_t obs = 512;
+	char *obuf;
+#else
+# define obs  ibs
+# define obuf ibuf
+#endif
+	/* These are all zeroed at once! */
 	struct {
 		int flags;
 		size_t oc;
+		ssize_t prev_read_size; /* for detecting swab failure */
 		off_t count;
 		off_t seek, skip;
 		const char *infile, *outfile;
 	} Z;
 #define flags   (Z.flags  )
 #define oc      (Z.oc     )
+#define prev_read_size (Z.prev_read_size)
 #define count   (Z.count  )
 #define seek    (Z.seek   )
 #define skip    (Z.skip   )
@@ -223,10 +235,10 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 	INIT_G();
 	//fflush_all(); - is this needed because of NOEXEC?
 
-	for (n = 1; argv[n]; n++) {
+	for (i = 1; argv[i]; i++) {
 		int what;
 		char *val;
-		char *arg = argv[n];
+		char *arg = argv[i];
 
 #if ENABLE_DESKTOP
 		/* "dd --". NB: coreutils 6.9 will complain if they see
@@ -255,6 +267,7 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 		}
 		if (what == OP_conv) {
 			while (1) {
+				int n;
 				/* find ',', replace them with NUL so we can use val for
 				 * index_in_strings() without copying.
 				 * We rely on val being non-null, else strchr would fault.
@@ -262,20 +275,21 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 				arg = strchr(val, ',');
 				if (arg)
 					*arg = '\0';
-				what = index_in_strings(conv_words, val);
-				if (what < 0)
+				n = index_in_strings(conv_words, val);
+				if (n < 0)
 					bb_error_msg_and_die(bb_msg_invalid_arg, val, "conv");
-				flags |= (1 << what);
+				flags |= (1 << n);
 				if (!arg) /* no ',' left, so this was the last specifier */
 					break;
 				/* *arg = ','; - to preserve ps listing? */
 				val = arg + 1; /* skip this keyword and ',' */
 			}
-			continue; /* we trashed 'what', can't fall through */
+			/*continue;*/
 		}
 #endif
 		if (what == OP_bs) {
-			ibs = obs = xatoul_range_sfx(val, 1, ((size_t)-1L)/2, dd_suffixes);
+			ibs = xatoul_range_sfx(val, 1, ((size_t)-1L)/2, dd_suffixes);
+			obs = ibs;
 			/*continue;*/
 		}
 		/* These can be large: */
@@ -300,14 +314,17 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 			outfile = val;
 			/*continue;*/
 		}
-	} /* end of "for (argv[n])" */
+	} /* end of "for (argv[i])" */
 
 //XXX:FIXME for huge ibs or obs, malloc'ing them isn't the brightest idea ever
-	ibuf = obuf = xmalloc(ibs);
+	ibuf = xmalloc(ibs);
+	obuf = ibuf;
+#if ENABLE_FEATURE_DD_IBS_OBS
 	if (ibs != obs) {
 		flags |= FLAG_TWOBUFS;
 		obuf = xmalloc(obs);
 	}
+#endif
 
 #if ENABLE_FEATURE_DD_SIGNAL_HANDLING
 	signal_SA_RESTART_empty_mask(SIGUSR1, dd_output_status);
@@ -316,12 +333,12 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 	G.begin_time_us = monotonic_us();
 #endif
 
-	if (infile != NULL)
+	if (infile) {
 		xmove_fd(xopen(infile, O_RDONLY), ifd);
-	else {
+	} else {
 		infile = bb_msg_standard_input;
 	}
-	if (outfile != NULL) {
+	if (outfile) {
 		int oflag = O_WRONLY | O_CREAT;
 
 		if (!seek && !(flags & FLAG_NOTRUNC))
@@ -346,13 +363,13 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 	}
 	if (skip) {
 		if (lseek(ifd, skip * ibs, SEEK_CUR) < 0) {
-			while (skip-- > 0) {
-				n = safe_read(ifd, ibuf, ibs);
+			do {
+				ssize_t n = safe_read(ifd, ibuf, ibs);
 				if (n < 0)
 					goto die_infile;
 				if (n == 0)
 					break;
-			}
+			} while (--skip != 0);
 		}
 	}
 	if (seek) {
@@ -361,6 +378,8 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 	while (!(flags & FLAG_COUNT) || (G.in_full + G.in_part != count)) {
+		ssize_t n;
+
 		n = safe_read(ifd, ibuf, ibs);
 		if (n == 0)
 			break;
@@ -374,6 +393,27 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 			/* conv=noerror,sync writes NULs,
 			 * conv=noerror just ignores input bad blocks */
 			n = 0;
+		}
+		if (flags & FLAG_SWAB) {
+			uint16_t *p16;
+			ssize_t n2;
+
+			/* Our code allows only last read to be odd-sized */
+			if (prev_read_size & 1)
+				bb_error_msg_and_die("can't swab %lu byte buffer",
+						(unsigned long)prev_read_size);
+			prev_read_size = n;
+
+			/* If n is odd, last byte is not swapped:
+			 *  echo -n "qwe" | dd conv=swab
+			 * prints "wqe".
+			 */
+			p16 = (void*) ibuf;
+			n2 = (n >> 1);
+			while (--n2 >= 0) {
+				*p16 = bswap_16(*p16);
+				p16++;
+			}
 		}
 		if ((size_t)n == ibs)
 			G.in_full++;
@@ -401,8 +441,10 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 					oc = 0;
 				}
 			}
-		} else if (write_and_stats(ibuf, n, obs, outfile))
-			goto out_status;
+		} else {
+			if (write_and_stats(ibuf, n, obs, outfile))
+				goto out_status;
+		}
 
 		if (flags & FLAG_FSYNC) {
 			if (fsync(ofd) < 0)
@@ -411,9 +453,8 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 	if (ENABLE_FEATURE_DD_IBS_OBS && oc) {
-		w = full_write_or_warn(obuf, oc, outfile);
-		if (w < 0) goto out_status;
-		if (w > 0) G.out_part++;
+		if (write_and_stats(obuf, oc, obs, outfile))
+			goto out_status;
 	}
 	if (close(ifd) < 0) {
  die_infile:
