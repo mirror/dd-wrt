@@ -224,6 +224,15 @@ VISOBJS += freecwmp.o
 endif
 endif
 
+ifeq ($(CONFIG_FREECWMP),y)
+CFLAGS += -DHAVE_FREECWMP
+VISOBJS += freecwmp.o
+endif
+
+ifeq ($(CONFIG_UNFY),y)
+CLFAGS += -DHAVE_UNFY
+endif
+
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
 OBJS += upgrade_rb500.o
