@@ -6274,17 +6274,17 @@ void getPortMapping(int *vlanmap)
 			vlanmap[2] = 1;
 			vlanmap[3] = 2;
 			vlanmap[4] = 3;
-		} else if ( nvram_match("vlan1ports", "3 2 1 0 5*") && nvram_match("boardnum", "679") ) { //R6300V2
-			vlanmap[1] = 0;
-			vlanmap[2] = 1;
-			vlanmap[3] = 2;
-			vlanmap[4] = 3; 
-		} else		// nvram_match ("vlan1ports", "3 2 1 0 5*")
-		{
+		} else {// nvram_match ("vlan1ports", "3 2 1 0 5*")
 			vlanmap[1] = 3;
 			vlanmap[2] = 2;
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
+		}
+		if ( nvram_match("vlan1ports", "0 1 2 3 5*") && nvram_match("boardnum", "679") ) { //R6300V2
+			vlanmap[1] = 3;
+			vlanmap[2] = 2;
+			vlanmap[3] = 1;
+			vlanmap[4] = 0; 
 		}
 
 	} else if (nvram_match("vlan2ports", "0 5u")) {
