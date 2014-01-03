@@ -145,7 +145,7 @@ ifeq ($(CONFIG_FREECWMP),y)
 	ln -s ../tmp/freecwmp/lib $(INSTALLDIR)/jffs/lib
 	ln -s ../tmp/freecwmp/sbin $(INSTALLDIR)/jffs/sbin
 	ln -s ../tmp/freecwmp/usr $(INSTALLDIR)/jffs/usr
-	-cp -r ../../private/buffalo/freecwmp/* $(INSTALLDIR)/jffs/freecwmp
+	-cp -r ../../private/freecwmp/* $(INSTALLDIR)/jffs/freecwmp
 	ln -sf /jffs/freecwmp/usr/sbin/freecwmpd-set-dhcp-option.sh $(INSTALLDIR)/etc/udhcpc_vendorspecific
 	-rm -Rf $(INSTALLDIR)/jffs/freecwmp/config
 	-rm -Rf $(INSTALLDIR)/jffs/freecwmp/httpd
