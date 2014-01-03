@@ -6257,6 +6257,12 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
 		}
+		if (nvram_match("vlan1ports", "0 1 2 3 8*") && nvram_match("boardnum", "4536") ) { // WNDR4500/WNDR4500V2/R6300V1
+			vlanmap[1] = 3;
+			vlanmap[2] = 2;
+			vlanmap[3] = 1;
+			vlanmap[4] = 0;
+		}
 	} else if (nvram_match("vlan1ports", "4 8")) {
 		vlanmap[0] = 4;
 		vlanmap[5] = 8;
