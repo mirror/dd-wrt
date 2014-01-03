@@ -112,6 +112,8 @@ ifneq ($(CONFIG_SPOTPASS),y)
 	cp buffalo/favicon.ico $(INSTALLDIR)/www/images
 	cp buffalo/images/* $(INSTALLDIR)/www/images
 	cp buffalo/help/* $(INSTALLDIR)/www/help
+endif
+endif
 ifeq ($(CONFIG_IAS),y)
 	mkdir $(INSTALLDIR)/www/intatstart
 	mkdir $(INSTALLDIR)/www/intatstart/css
@@ -125,32 +127,58 @@ ifeq ($(CONFIG_IAS),y)
 	cp -r ../../private/buffalo/intatstart/www/lang_pack/*.js $(INSTALLDIR)/www/intatstart/lang_pack
 	cp -r ../../private/buffalo/intatstart/kromo/dd-wrt/* $(INSTALLDIR)/www/
 endif
+ifeq ($(CONFIG_SPOTPASS),y)
+	mkdir $(INSTALLDIR)/www/style/nintendo
+	cp nintendo/style.css $(INSTALLDIR)/www/style/nintendo
+	cp buffalo/favicon.ico $(INSTALLDIR)/www/images
+	cp nintendo/images/* $(INSTALLDIR)/www/images
+endif
+
 ifeq ($(CONFIG_FREECWMP),y)
 	mkdir -p $(INSTALLDIR)/jffs/freecwmp
 	mkdir -p $(INSTALLDIR)/etc/config
-	-cp ../../private/buffalo/freecwmp-startscript/zzz_freecwmp.startup $(INSTALLDIR)/etc/config
-	-cp ../../private/buffalo/freecwmp-startscript/zzz_freecwmp.firewall $(INSTALLDIR)/etc/config
-	-cp ../../private/buffalo/freecwmp/Status_CWMP.asp $(INSTALLDIR)/www
+	-cp ../../private/freecwmp-startscript/zzz_freecwmp.startup $(INSTALLDIR)/etc/config
+	-cp ../../private/freecwmp-startscript/zzz_freecwmp.firewall $(INSTALLDIR)/etc/config
+	-cp ../../private/freecwmp/Status_CWMP.asp $(INSTALLDIR)/www
 	ln -s ../tmp/freecwmp/bin $(INSTALLDIR)/jffs/bin
 	ln -s ../tmp/freecwmp/etc $(INSTALLDIR)/jffs/etc
 	ln -s ../tmp/freecwmp/lib $(INSTALLDIR)/jffs/lib
 	ln -s ../tmp/freecwmp/sbin $(INSTALLDIR)/jffs/sbin
 	ln -s ../tmp/freecwmp/usr $(INSTALLDIR)/jffs/usr
 	-cp -r ../../private/buffalo/freecwmp/* $(INSTALLDIR)/jffs/freecwmp
+	ln -sf /jffs/freecwmp/usr/sbin/freecwmpd-set-dhcp-option.sh $(INSTALLDIR)/etc/udhcpc_vendorspecific
 	-rm -Rf $(INSTALLDIR)/jffs/freecwmp/config
 	-rm -Rf $(INSTALLDIR)/jffs/freecwmp/httpd
 	-rm -Rf $(INSTALLDIR)/jffs/freecwmp/Status_CWMP.asp
-	cp -r ../../private/buffalo/freecwmp/config/freecwmp.webconfig $(INSTALLDIR)/etc/config
-	cp -r ../../private/buffalo/freecwmp/config/freecwmp.nvramconfig $(INSTALLDIR)/etc/config
-	cp -r ../../private/buffalo/freecwmp/lang_pack/freecwmp-english.js $(INSTALLDIR)/www/lang_pack
+	cp -r ../../private/freecwmp/config/freecwmp.webconfig $(INSTALLDIR)/etc/config
+	cp -r ../../private/freecwmp/config/freecwmp.nvramconfig $(INSTALLDIR)/etc/config
+	cp -r ../../private/freecwmp/lang_pack/freecwmp-english.js $(INSTALLDIR)/www/lang_pack
+	mkdir -p $(INSTALLDIR)/usr/lib
+	ln -sf /jffs/usr/lib/valgrind $(INSTALLDIR)/usr/lib/
 endif
-endif
-endif
-ifeq ($(CONFIG_SPOTPASS),y)
-	mkdir $(INSTALLDIR)/www/style/nintendo
-	cp nintendo/style.css $(INSTALLDIR)/www/style/nintendo
+
+ifeq ($(CONFIG_UNFY),y)
+	mkdir $(INSTALLDIR)/www/style/buffalo
+	cp buffalo/style.css $(INSTALLDIR)/www/style/buffalo
 	cp buffalo/favicon.ico $(INSTALLDIR)/www/images
-	cp nintendo/images/* $(INSTALLDIR)/www/images
+	cp buffalo/images/* $(INSTALLDIR)/www/images
+	cp buffalo/help/* $(INSTALLDIR)/www/help
+endif
+
+ifeq ($(CONFIG_IDEXX),y)
+	mkdir $(INSTALLDIR)/www/style/buffalo
+	cp buffalo/style.css $(INSTALLDIR)/www/style/buffalo
+	cp buffalo/favicon.ico $(INSTALLDIR)/www/images
+	cp buffalo/images/* $(INSTALLDIR)/www/images
+	cp buffalo/help/* $(INSTALLDIR)/www/help
+endif
+
+ifeq ($(CONFIG_AXTEL),y)
+	mkdir $(INSTALLDIR)/www/style/buffalo
+	cp buffalo/style.css $(INSTALLDIR)/www/style/buffalo
+	cp buffalo/favicon.ico $(INSTALLDIR)/www/images
+	cp buffalo/images/* $(INSTALLDIR)/www/images
+	cp buffalo/help/* $(INSTALLDIR)/www/help
 endif
 
 ifeq ($(CONFIG_IPR),y)
@@ -188,6 +216,11 @@ ifeq ($(CONFIG_CORENET),y)
 #	cp ../bisi/*.asp $(INSTALLDIR)/www
 	cp -f corenet/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
 endif
+
+ifdef ($(CONFIG_SEN),y)
+	cp -fr sen/default/* $(INSTALLDIR)/
+endif
+
 ifeq ($(CONFIG_XIOCOM),y)
 	mkdir $(INSTALLDIR)/www/style/xiocom
 	cp xiocom/style.css $(INSTALLDIR)/www/style/xiocom
