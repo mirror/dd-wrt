@@ -1,0 +1,7 @@
+
+header-y +=
+
+generic-y += clkdev.h
+generic-y += trace_clock.h
+generic-y += xor.h
+generic-y += preempt.h
