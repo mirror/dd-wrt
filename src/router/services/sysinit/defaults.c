@@ -1,5 +1,4 @@
 /*
-/*
  * defaults.c
  *
  * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
@@ -97,6 +96,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_style", "onnet", 0},
 #elif HAVE_KORENRON
 	{"router_style", "korenron", 0},
+#elif HAVE_UNFY
+	{"router_style", "unfy", 0},
+#elif HAVE_IDEXX
+	{"router_style", "idexx", 0},
 #else
 	{"router_style", "elegant", 0},
 #endif
@@ -111,7 +114,11 @@ struct nvram_tuple srouter_defaults[] = {
 	/*
 	 * Miscellaneous parameters 
 	 */
+#ifdef HAVE_IDEXX
+	{"timer_interval", "30", 0},	/* Timer interval in seconds */
+#else
 	{"timer_interval", "3600", 0},	/* Timer interval in seconds */
+#endif
 #ifdef BUFFALO_JP
 	{"daylight_time", "1", 0},	/* japan has no summertime option */
 	{"time_zone", "+09", 0},	/* Time zone (GNU TZ format) */
@@ -184,6 +191,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"lan_proto", "static", 0},	/* [static|dhcp] */
 #elif HAVE_IPR
 	{"lan_proto", "static", 0},	/* [static|dhcp] */
+#elif HAVE_UNFY
+	{"lan_proto", "static", 0},	/* [static|dhcp] */
 #else
 	{"lan_proto", "dhcp", 0},	/* [static|dhcp] */
 #endif
@@ -197,6 +206,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
 #endif
 	{"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
+#elif HAVE_IDEXX
+	{"lan_ipaddr", "192.168.222.1", 0}, 	/* LAN ip address */
 #elif HAVE_BUFFALO
 #ifdef BUFFALO_EU
 	{"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
@@ -301,6 +312,13 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
 	{"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
 	{"wan_dns", "", 0},	/* x.x.x.x x.x.x.x ... */
+#elif HAVE_IDEXX
+	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
+
+	{"wan_ipaddr", "0.0.0.0", 0},	/* WAN IP address */
+	{"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
+	{"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
+	{"wan_dns", "208.67.222.222 8.8.8.8 209.244.0.3", 0},	/* x.x.x.x x.x.x.x ... */
 #elif HAVE_SANSFIL
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
@@ -605,10 +623,15 @@ struct nvram_tuple srouter_defaults[] = {
 	// 
 	// 
 	// */
+#ifdef HAVE_IDEXX
+	{"dhcp_num", "199", 0},	/* Number of DHCP Users *//* Add */
+#else
 	{"dhcp_num", "50", 0},	/* Number of DHCP Users *//* Add */
-
+#endif
 #ifdef HAVE_SKYTRON
 	{"dhcp_lease", "10", 0},	/* LAN lease time in minutes */
+#elif HAVE_IDEXX
+	{"dhcp_lease", "5760", 0},	/* LAN lease time in minutes */
 #else
 	{"dhcp_lease", "1440", 0},	/* LAN lease time in minutes */
 #endif
@@ -646,6 +669,9 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"http_passwd", "bJxJZz5DYRGxI", 0},	/* Password */
 #endif
+//#elif HAVE_IDEXX
+//	{"http_passwd", "$1$L2oVrnvc$iOo92PtyNQjd9JhMWnhZN/", 0},
+//	{"http_username", "$1$9wWnpX1Q$1fobI1HcfeXewVtWCnhxh.", 0},	/* Password */
 #elif HAVE_IAS
 	{"http_passwd", "$1$LJZEFe0/$yHSTW.W0nkBqSkWfcUnww.", 0},
 #elif HAVE_CORENET
@@ -663,6 +689,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"http_passwd", "$1$E1quEPpk$d.nw/cqhR1qsi.ECGT5ed0", 0},	/* HTTP password) */
 #elif HAVE_KORENRON
 	{"http_passwd", "$1$9thN/f9/$nnZ35gSQvAaV0EPh.WJs8.", 0},	/* HTTP password */
+#elif HAVE_UNFY
+	{"http_passwd", "$1$HHwZAUaN$Xj8iAs4882IkDVfBzO9GI1", 0},	/* Password */
 #else
 	{"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
 #endif
@@ -671,7 +699,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"remote_ip", "0.0.0.0 0", 0},	/* allowed remote ip range */
 	{"http_wanport", "8080", 0},	/* WAN port to listen on */
 	{"http_lanport", "80", 0},	/* LAN port to listen on */
-#ifdef HAVE_IPR
+#if defined(HAVE_IPR) || defined(HAVE_UNFY)
 #ifdef HAVE_HTTPS
 	{"https_enable", "1", 0},	/* HTTPS server enable/disable */
 	{"http_enable", "0", 0},	/* HTTP server enable/disable */
@@ -928,14 +956,23 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_KORENRON)
         {"wl0_ssid", "WBR2000", 0},      /* Service set ID (network name) */
         {"ath0_ssid", "WBR2000", 0},     /* Service set ID (network name) */
+#elif HAVE_IDEXX
+	{"wl0_ssid", "IDEXXw1", 0},	/* Service set ID (network name) */
+	{"ath0_ssid", "IDEXXw1", 0},	/* Service set ID (network name) */
+	{"wl1_ssid", "IDEXXw2", 0},	/* Service set ID (network name) */
+	{"ath1_ssid", "IDEXXw2", 0},	/* Service set ID (network name) */
 #else
 #ifndef HAVE_BUFFALO
 	{"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
+	{"ath0_wpa_psk", "IDEXXwlan1234", 0},	/* ath0 encryption key */
 #endif
 #endif
 
 #endif
+#ifdef HAVE_IDEXX
+	{"ath0.1_ssid", "LabStation Guest", 0},	/* Service set ID (network name) */
+#else
 	{"ath0.1_ssid", "", 0},	/* Service set ID (network name) */
 	{"ath0.2_ssid", "", 0},	/* Service set ID (network name) */
 	{"ath0.3_ssid", "", 0},	/* Service set ID (network name) */
@@ -951,6 +988,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0.1_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
 	{"ath0.2_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
 	{"ath0.3_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+#endif
 #else
 #ifndef HAVE_BUFFALO
 	{"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
@@ -979,6 +1017,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_radio", "1", 0},	/* Enable (1) or disable (0) radio */
 #else
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
+#ifdef HAVE_IDEXX
+	{"ath1_closed", "1", 0},	/* Closed (hidden) network */
+#else
 	{"ath0_radio", "1", 0},	/* Enable (1) or disable (0) radio */
 	{"ath0_closed", "0", 0},	/* Closed (hidden) network */
 	{"ath1_radio", "1", 0},	/* Enable (1) or disable (0) radio */
@@ -991,6 +1032,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath4_closed", "0", 0},	/* Closed (hidden) network */
 	{"ath5_radio", "1", 0},	/* Enable (1) or disable (0) radio */
 	{"ath5_closed", "0", 0},	/* Closed (hidden) network */
+#endif
 #else
 	{"wl_radio", "1", 0},	/* Enable (1) or disable (0) radio */
 	{"wl0_radio", "1", 0},	/* Enable (1) or disable (0) radio */
@@ -1575,6 +1617,25 @@ struct nvram_tuple srouter_defaults[] = {
 	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
 #endif
+#elif HAVE_IDEXX
+	{"filter", "on", 0},	/* Firewall Protection [on|off] */
+	{"block_wan", "1", 0},	/* Block WAN Request [1|0] */
+	{"block_ident", "1", 0},	/* Block IDENT passthrough [1|0] */
+	{"block_proxy", "0", 0},	/* Block Proxy [1|0] */
+	{"block_java", "0", 0},	/* Block Java [1|0] */
+	{"block_activex", "0", 0},	/* Block ActiveX [1|0] */
+	{"block_cookie", "0", 0},	/* Block Cookie [1|0] */
+	{"block_multicast", "0", 0},	/* Multicast Pass Through [1|0] */
+	{"block_loopback", "0", 0},	/* Block NAT loopback [1|0] */
+	{"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
+	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
+	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
+#ifndef HAVE_MICRO
+//      {"limit_http", "0", 0}, /* Impede DDoS/Brutforce [1|0] */
+	{"limit_ssh", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_telnet", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+	{"limit_pptp", "0", 0},	/* Impede DDoS/Brutforce [1|0] */
+#endif
 #else
 	{"filter", "on", 0},	/* Firewall Protection [on|off] */
 	{"block_wan", "1", 0},	/* Block WAN Request [1|0] */
@@ -1655,6 +1716,12 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_ESR6650
 	{"wk_mode", "gateway", 0},	/* Network mode [gateway|router] */
 #elif HAVE_HORNET
+	{"wk_mode", "gateway", 0},	/* Network mode [gateway|router] */
+#else
+	{"wk_mode", "router", 0},	/* Network mode [gateway|router] */
+#endif				// HAVE_ESR6650
+#elif HAVE_ONNET
+#ifdef HAVE_HORNET
 	{"wk_mode", "gateway", 0},	/* Network mode [gateway|router] */
 #else
 	{"wk_mode", "router", 0},	/* Network mode [gateway|router] */
@@ -1893,6 +1960,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"telnetd_enable", "0", 0},
 #elif HAVE_GGEW
 	{"telnetd_enable", "0", 0},
+#elif HAVE_UNFY
+	{"telnetd_enable", "0", 0},
 #elif HAVE_WRK54G
 	{"telnetd_enable", "0", 0},
 #elif defined(HAVE_ADM5120) && !defined(HAVE_WP54G)
@@ -1968,6 +2037,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_MAKSAT
 	{"sshd_enable", "1", 0},
 #elif HAVE_TMK
+	{"sshd_enable", "1", 0},
+#elif HAVE_UNFY
 	{"sshd_enable", "1", 0},
 #else
 	{"sshd_enable", "0", 0},
@@ -2356,9 +2427,14 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 	{"ipv6_enable", "0", 0},
 	{"ipv6_enable0", "0", 0},
+#ifdef HAVE_UNFY
+	{"enable_jffs2", "1", 0},
+	{"clean_jffs2", "1", 0},
+#else
 	{"enable_jffs2", "0", 0},
 	{"clean_jffs2", "0", 0},
 	{"sys_enable_jffs2", "0", 0},
+#endif
 #ifdef HAVE_KAID
 	{"kaid_enable", "0", 0},
 	{"kaid_macs", "", 0},
@@ -2574,11 +2650,17 @@ struct nvram_tuple srouter_defaults[] = {
 	{"dhcp_dnsmasq", "0", 0},
 	// #elif HAVE_ADM5120
 	// {"dhcp_dnsmasq", "0", 0},
+#elif HAVE_IDEXX
+	{"dhcp_dnsmasq", "0", 0},
 #else
 	{"dhcp_dnsmasq", "1", 0},
 #endif
 	{"dns_dnsmasq", "1", 0},
+#ifdef HAVE_IDEXX
+	{"auth_dnsmasq", "0", 0},
+#else
 	{"auth_dnsmasq", "1", 0},
+#endif
 #ifdef HAVE_GGEW
 	{"ral", "217.113.177.185 172.16.0.0/28", 0},
 	{"pptp_use_dhcp", "1", 0},	/* pptp will use dhcp to obtain ip address, netmask and gateway */
@@ -2996,7 +3078,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"usb_mntpoint", "mnt", 0},
 	{"usb_runonmount", "", 0},
 #endif
+#ifdef HAVE_UNFY
+	{"ttraff_enable", "0", 0},
+#else
 	{"ttraff_enable", "1", 0},
+#endif
 	{"ttraff_iface", "", 0},
 #ifdef HAVE_PPPOESERVER
 	{"pppoeserver_enabled", "0", 0},
@@ -3139,21 +3225,32 @@ struct nvram_tuple srouter_defaults[] = {
 	{"usb_ip", "0", 0},
 #endif
 #ifdef HAVE_FREECWMP
+#ifdef HAVE_ETISALAT
 	{"freecwmp_enable", "1", 0},
 	{"freecwmp_acs_username", "softathome", 0},
 	{"freecwmp_acs_password", "softathome", 0},
 	{"freecwmp_acs_hostname", "86.96.241.17", 0},
 	{"freecwmp_acs_port", "7547", 0},
-	{"freecwmp_acs_path", "/ACSserver/ACS", 0},
+	{"freecwmp_acs_path", "/ACS-server/ACS", 0},
 	{"freecwmp_acs_periodic_enable", "1", 0},
 	{"freecwmp_acs_periodic_interval", "172800", 0},
 	{"freecwmp_local_port", "51005", 0},
 	{"freecwmp_local_auth_enable", "1", 0},
 	{"freecwmp_local_username", "softathome", 0},
 	{"freecwmp_local_password", "softathome", 0},
+#elif HAVE_AXTEL
+	
+#else
+	{"freecwmp_enable", "0", 0},
+	{"freecwmp_local_auth_enable", "0", 0},
+#endif
+	{"freecwmp_bootevents", "bootstrap EmptyKey", 0},
 #endif
 #ifdef HAVE_ZABBIX
 	{"zabbix_enable", "0", 0},
+#endif
+#ifdef HAVE_UNFY
+	{"gpiovpn", "-13", 0},
 #endif
 #ifdef HAVE_PRIVOXY
 	{"privoxy_enable", "0", 0},
