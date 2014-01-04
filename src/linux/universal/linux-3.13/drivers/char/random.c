@@ -909,9 +909,6 @@ void random_input_words(__u32 *buf, size_t wordcount, int ent_count)
         mix_pool_bytes(&input_pool, buf, wordcount*4, NULL);
 
         credit_entropy_bits(&input_pool, ent_count);
-
-        DEBUG_ENT("crediting %d bits => %d\n",
-                  ent_count, input_pool.entropy_count);
 	/*
 	 * Wake up waiting processes if we have enough
 	 * entropy.
@@ -939,10 +936,6 @@ int random_input_wait(void)
 
 	/* likely we got woken up due to a signal */
 	if (count <= 0) count = random_read_wakeup_thresh;
-
-	DEBUG_ENT("requesting %d bits from input_wait()er %d<%d\n",
-		count,
-		input_pool.entropy_count, random_write_wakeup_thresh);
 
 	return count;
 }

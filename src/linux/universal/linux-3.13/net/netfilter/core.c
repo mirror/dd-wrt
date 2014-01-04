@@ -193,6 +193,7 @@ next_hook:
 			ret = -EPERM;
 	} else if ((verdict & NF_VERDICT_MASK) == NF_QUEUE ||
 		   (verdict & NF_VERDICT_MASK) == NF_IMQ_QUEUE) {
+
 		int err = nf_queue(skb, elem, pf, hook, indev, outdev, okfn,
 			       verdict >> NF_VERDICT_QBITS,
 			       verdict & NF_VERDICT_MASK);

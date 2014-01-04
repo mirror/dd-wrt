@@ -785,7 +785,7 @@ out:
 	return retval;
 }
 
-static unsigned int imq_nf_hook(unsigned int hook, struct sk_buff *pskb,
+static unsigned int imq_nf_hook(const struct nf_hook_ops *ops, struct sk_buff *pskb,
 				const struct net_device *indev,
 				const struct net_device *outdev,
 				int (*okfn)(struct sk_buff *))
