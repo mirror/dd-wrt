@@ -3680,6 +3680,7 @@ static int bond_xmit_weighted_rr(struct sk_buff *skb, struct net_device *bond_de
 	int i;
 	int res = 1;
 	int were_weight_tokens_recharged = 0;
+	struct list_head *iter;
 
 
 
@@ -3692,7 +3693,7 @@ static int bond_xmit_weighted_rr(struct sk_buff *skb, struct net_device *bond_de
 	}
 
 try_send:
-	bond_for_each_slave_from(bond, slave, i, start_at) {
+	bond_for_each_slave(bond, slave, iter) {
 		if (IS_UP(slave->dev) &&
 		    (slave->weight_tokens > 0) &&
 			(slave->link == BOND_LINK_UP) &&
@@ -3701,7 +3702,7 @@ try_send:
 			res = bond_dev_queue_xmit(bond, skb, slave->dev);
 			(slave->weight_tokens)--;
 			write_lock(&bond->curr_slave_lock);
-			bond->curr_active_slave = bond_next_slave(bond, slave);
+			bond->curr_active_slave = slave;
 			write_unlock(&bond->curr_slave_lock);
 
 			goto out;
@@ -3713,7 +3714,7 @@ try_send:
 		slave = start_at = bond->curr_active_slave;
 		read_unlock(&bond->curr_slave_lock);
 
-		bond_for_each_slave_from(bond, slave, i, start_at) {
+		bond_for_each_slave(bond, slave, iter) {
 			slave->weight_tokens = slave->weight;
 		}
 
@@ -3736,11 +3737,12 @@ static int bond_xmit_duplex_master(struct sk_buff *skb, struct net_device *bond_
 	struct slave *slave;
 	int count=0;
 	int res = 1;
+	struct list_head *iter;
 
 
 
 
-	bond_for_each_slave(bond, slave) {
+	bond_for_each_slave(bond, slave, iter) {
 		if ((count % 2)==1 && IS_UP(slave->dev) &&
 			(slave->link == BOND_LINK_UP) &&
 		    (bond_is_active_slave(slave))) {
@@ -3764,10 +3766,11 @@ static int bond_xmit_duplex_slave(struct sk_buff *skb, struct net_device *bond_d
 	struct slave *slave;
 	int count=0;
 	int res = 1;
+	struct list_head *iter;
 
 
 
-	bond_for_each_slave(bond, slave) {
+	bond_for_each_slave(bond, slave, iter) {
 		if ((count % 2)==0 && IS_UP(slave->dev) &&
 			(slave->link == BOND_LINK_UP) &&
 		    (bond_is_active_slave(slave))) {

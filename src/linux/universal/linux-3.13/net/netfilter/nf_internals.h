@@ -23,7 +23,7 @@ unsigned int nf_iterate(struct list_head *head, struct sk_buff *skb,
 int nf_queue(struct sk_buff *skb, struct nf_hook_ops *elem, u_int8_t pf,
 	     unsigned int hook, struct net_device *indev,
 	     struct net_device *outdev, int (*okfn)(struct sk_buff *),
-	     unsigned int queuenum);
+	     unsigned int queuenum, unsigned int queuetype);
 int __init netfilter_queue_init(void);
 
 /* nf_log.c */
