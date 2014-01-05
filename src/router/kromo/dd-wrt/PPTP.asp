@@ -285,6 +285,17 @@ addEvent(window, "unload", function() {
 			<input size="27" id="pptpd_client_srvpass" name="pptpd_client_srvpass" type="password" value="<% nvram_get("pptpd_client_srvpass"); %>" />
 			<input type="checkbox" name="_wl_unmask" value="0" onclick="setElementMask('pptpd_client_srvpass', this.checked)" />&nbsp;<% tran("share.unmask"); %>
 		</div>
+		<div class="setting">		
+			<div class="label"><% tran("idx_pptp.addopt"); %></div>
+			<textarea cols="60" rows="2" id="pptpd_client_options" name="pptpd_client_options"></textarea>
+			<script type="text/javascript">
+			//<![CDATA[
+				var pptpd_client_options = fix_cr( '<% nvram_get("pptpd_client_options"); %>' );
+				document.getElementById("pptpd_client_options").value = pptpd_client_options;
+			//]]>
+			</script>
+		</div>
+
 	</div>
 </fieldset><br />
 							<% show_modules(".webvpn"); %>
