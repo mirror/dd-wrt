@@ -638,6 +638,9 @@ int __init ar7240_platform_init(void)
 	}
 	ap91_pci_init(ee, mac);
 #endif
+#if defined(CONFIG_WZRG450NH) && !defined(CONFIG_WZRG300NH2)
+	ap91_set_tx_gain_buffalo();
+#endif
 return ret;
 }
 #if defined(CONFIG_MTD_NAND_ATH)
