@@ -12,6 +12,7 @@ case "$6" in
   if [ "$(/usr/sbin/nvram get pptpd_client_nat)" = "1" ]; then
       /usr/sbin/iptables -t nat -A POSTROUTING -o $1 -j MASQUERADE
   fi
+  cat /proc/net/ip_conntrack_flush  
   ;;
  *)
 esac
