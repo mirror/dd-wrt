@@ -120,7 +120,7 @@ addEvent(window, "load", function() {
 				case '':
 				case '*nvram':
 				case '/jffs/':
-				case '/tmp/smbshare/':
+				case '/tmp/mnt/smbshare/':
 				rstats_select = path_input;
 				break;
 			}

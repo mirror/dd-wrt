@@ -415,7 +415,7 @@ function refresh(F)
 											<div class="label">CIFS</div>
 											<script type="text/javascript">
 											//<![CDATA[
-											<% statfs("/tmp/smbshare", "samba"); %>
+											<% statfs("/tmp/mnt/smbshare", "samba"); %>
 											document.write( ((<% nvram_get("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.used) + ' / ' + scaleSize(samba.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 											//]]>
 											</script>
