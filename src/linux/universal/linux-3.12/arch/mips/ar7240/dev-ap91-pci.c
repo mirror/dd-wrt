@@ -54,6 +54,11 @@ __init void ap91_pci_setup_wmac_gpio(u32 mask, u32 val)
 	wmac_data.gpio_val = val;
 }
 
+__init void ap91_set_tx_gain_buffalo(void)
+{
+	wmac_data.tx_gain_buffalo = true;
+}
+
 int __init pcibios_init(void);
 
 void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr)

@@ -14,6 +14,7 @@
 void ap91_pci_init(u8 *cal_data, u8 *mac_addr) __init;
 void ap91_pci_setup_wmac_led_pin(int pin) __init;
 void ap91_pci_setup_wmac_gpio(u32 mask, u32 val) __init;
+void ap91_set_tx_gain_buffalo(void)
 
 #endif /* _AR71XX_DEV_AP91_PCI_H */
 
