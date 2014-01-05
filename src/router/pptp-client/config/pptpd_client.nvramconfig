@@ -1,6 +1,7 @@
  "pptpd_client_enable"   "PPTPD Client Enable"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "pptpd_client_nat"   "PPTPD Client Nat"   "CHOICE" "2" "0" "1"  "FALSE" "0"
  "pptpd_client_srvip"  "PPTPD Client SrvIP" "NULL" "FALSE" "0"
+ "pptpd_client_options"  "PPTPD Client Options" "NULL" "FALSE" "0"
  "pptpd_client_srvsub"  "PPTPD Client SrvSub" "MERGEIPADDRS" "FALSE" "0"
  "pptpd_client_srvsubmsk"  "PPTPD Client SrvSubMsk" "MERGEIPADDRS" "FALSE" "0"
  "pptpd_client_srvuser"  "PPTPD Client SrvUser" "NULL" "FALSE" "0"
