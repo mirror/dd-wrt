@@ -32,6 +32,7 @@ struct ath9k_platform_data {
 
 	bool endian_check;
 	bool is_clk_25mhz;
+	bool tx_gain_buffalo;
 	bool disable_2ghz;
 	bool disable_5ghz;
 	int (*get_mac_revision)(void);
