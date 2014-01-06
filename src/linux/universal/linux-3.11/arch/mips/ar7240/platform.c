@@ -311,6 +311,7 @@ static struct mdio_board_info wdr4300_mdio0_info[] = {
 };
 
 extern void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr);
+extern void ap91_set_tx_gain_buffalo(void);
 void ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr) __init;
 
 #if !defined(CONFIG_MACH_HORNET) && !defined(CONFIG_WASP_SUPPORT)
