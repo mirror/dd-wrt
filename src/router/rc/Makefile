@@ -239,6 +239,9 @@ endif
 ifeq ($(CONFIG_PRIVOXY),y)
 CFLAGS += -DHAVE_PRIVOXY
 endif
+ifeq ($(CONFIG_ZABBIX),y)
+CFLAGS += -DHAVE_ZABBIX
+endif
 ifeq ($(CONFIG_WMBR_G300NH),y)
 CFLAGS += -DHAVE_WMBR_G300NH
 endif
