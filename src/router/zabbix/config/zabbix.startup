@@ -2,10 +2,15 @@
 
 grep -q zabbix /etc/passwd || echo "zabbix:*:65533:65533:zabbix:/var:/bin/false" >> /etc/passwd
 
+if [ "$(nvram get wan_hostname)" = "" ]; then
+HOST="$(nvram get DD_BOARD)"
+else
+HOST="$(nvram get wan_hostname)"
+fi
+
 if [ "$(nvram get zabbix_enable)" = "1" ]; then
 
 SRVIP="$(nvram get zabbix_serverip)"
-HOST="$(nvram get wan_hostname)"
 IP="$(nvram get lan_ipaddr)"
 
 ZABBIX_CONF=$( cat <<EOF
