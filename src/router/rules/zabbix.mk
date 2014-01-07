@@ -10,6 +10,7 @@ zabbix-install:
 	install -D zabbix/config/zabbix.nvramconfig $(INSTALLDIR)/zabbix/etc/config/zabbix.nvramconfig
 	install -D zabbix/config/zabbix.startup $(INSTALLDIR)/zabbix/etc/config/zabbix.startup
 	install -D zabbix/config/zabbix.webservices $(INSTALLDIR)/zabbix/etc/config/zabbix.webservices
+	install -D zabbix/config/zbx_template.xml $(INSTALLDIR)/zabbix/etc/zabbix_template.xml
 	install -D zabbix/scripts/wclients $(INSTALLDIR)/zabbix/usr/sbin/wclients
 	install -D zabbix/scripts/clients $(INSTALLDIR)/zabbix/usr/sbin/clients
 	install -D zabbix/scripts/topcpu $(INSTALLDIR)/zabbix/usr/sbin/topcpu
