@@ -620,6 +620,9 @@ static void handle_services(void)
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
+#ifdef HAVE_ZABBIX
+	handle = startstop_nofree_f("zabbix", handle);
+#endif 
 //      handle = start_service_nofree_f("anchorfreednat", handle);
 //    if( handle )
 //      dlclose( handle );
