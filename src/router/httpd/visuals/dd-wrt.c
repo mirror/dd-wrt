@@ -3923,8 +3923,9 @@ if (!is_ath11n(prefix))
 
 websWrite(wp, "<div class=\"setting\">\n");
 websWrite(wp,
-	  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
-	  wl_ssid, nvram_safe_get(wl_ssid));
+	  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", wl_ssid);
+tf_webWriteESCNV(wl_ssid);
+websWrite(wp, "\" /></div>\n");
 
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_BUFFALO
