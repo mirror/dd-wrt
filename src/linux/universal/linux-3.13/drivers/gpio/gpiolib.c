@@ -1950,7 +1950,7 @@ int gpiod_get_raw_value(const struct gpio_desc *desc)
 		return 0;
 	/* Should be using gpio_get_value_cansleep() */
 	WARN_ON(desc->chip->can_sleep);
-	return _gpiod_get_raw_value(desc);
+	return !!_gpiod_get_raw_value(desc);
 }
 EXPORT_SYMBOL_GPL(gpiod_get_raw_value);
 
@@ -2038,6 +2038,7 @@ static void _gpiod_set_raw_value(struct gpio_desc *desc, int value)
 {
 	struct gpio_chip	*chip;
 
+	value = !!value;
 	chip = desc->chip;
 	trace_gpio_value(desc_to_gpio(desc), 0, value);
 	if (test_bit(FLAG_OPEN_DRAIN, &desc->flags))
@@ -2194,7 +2195,7 @@ int gpiod_get_raw_value_cansleep(const struct gpio_desc *desc)
 	might_sleep_if(extra_checks);
 	if (!desc)
 		return 0;
-	return _gpiod_get_raw_value(desc);
+	return !!_gpiod_get_raw_value(desc);
 }
 EXPORT_SYMBOL_GPL(gpiod_get_raw_value_cansleep);
 
@@ -2215,7 +2216,7 @@ int gpiod_get_value_cansleep(const struct gpio_desc *desc)
 	if (!desc)
 		return 0;
 
-	value = _gpiod_get_raw_value(desc);
+	value = !!_gpiod_get_raw_value(desc);
 	if (test_bit(FLAG_ACTIVE_LOW, &desc->flags))
 		value = !value;
 
@@ -2238,7 +2239,7 @@ void gpiod_set_raw_value_cansleep(struct gpio_desc *desc, int value)
 	might_sleep_if(extra_checks);
 	if (!desc)
 		return;
-	_gpiod_set_raw_value(desc, value);
+	_gpiod_set_raw_value(desc, !!value);
 }
 EXPORT_SYMBOL_GPL(gpiod_set_raw_value_cansleep);
 
@@ -2257,7 +2258,7 @@ void gpiod_set_value_cansleep(struct gpio_desc *desc, int value)
 	might_sleep_if(extra_checks);
 	if (!desc)
 		return;
-
+	value = (value != 0);
 	if (test_bit(FLAG_ACTIVE_LOW, &desc->flags))
 		value = !value;
 	_gpiod_set_raw_value(desc, value);
