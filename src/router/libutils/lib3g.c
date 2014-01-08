@@ -109,7 +109,6 @@ static int scanFor(int Vendor, int Product)
 void checkreset(char *tty)
 {
 	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/reset.comgt", tty);
-#ifdef HAVE_CAMBRIA
 	FILE *check = NULL;
 	int count = 0;
 	sleep(1);
@@ -119,10 +118,20 @@ void checkreset(char *tty)
 	}
 	if (check)
 		fclose(check);
-	else
+	else {
 		fprintf(stderr, "reset error\n");
+		#ifdef HAVE_UNIWIP
+		rmmod("fsl-mph-dr-of");			
+		sleep(1);
+		insmod("fsl-mph-dr-of");			
+		sleep(5);
+		#endif
+	}
 	fprintf(stderr, "wakeup card\n");
 	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/wakeup.comgt", tty);
+#ifdef HAVE_UNIWIP
+	sleep(10);		//give extra delay for registering
+#else
 	sleep(5);		//give extra delay for registering
 #endif
 }
