@@ -2002,6 +2002,7 @@ static void filter_input(void)
 				save2file("-A INPUT -i %s -p udp --dport 53 -j %s\n", var, log_accept);
 				save2file("-A INPUT -i %s -p tcp --dport 53 -j %s\n", var, log_accept);
 				save2file("-A INPUT -i %s -m state --state NEW -j %s\n", var, log_drop);
+				save2file("-A FORWARD -i br0 -o %s -m state --state NEW -j %s\n", var, log_drop);
 
 			}
 			if (nvram_nmatch("0", "%s_bridged", var)) {
