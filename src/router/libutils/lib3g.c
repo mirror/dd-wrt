@@ -108,10 +108,10 @@ static int scanFor(int Vendor, int Product)
 
 void checkreset(char *tty)
 {
+	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/reset.comgt", tty);
 #ifdef HAVE_CAMBRIA
 	FILE *check = NULL;
 	int count = 0;
-	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/reset.comgt", tty);
 	sleep(1);
 	while (!(check = fopen(tty, "rb")) && count < 10) {
 		sleep(1);
