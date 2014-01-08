@@ -327,7 +327,11 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 
 			}
 		}
-		websWrite(wp, "%d", ci.hw_channel);
+		if (nvram_nmatch("40", "%s_nbw", prefix)) {
+			websWrite(wp, "%d", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? ci.hw_channel - 2 : ci.hw_channel + 2);
+		}else{
+			websWrite(wp, "%d", ci.hw_channel);
+		}
 	} else
 		// websWrite (wp, "unknown");
 		websWrite(wp, "%s", live_translate("share.unknown"));
