@@ -1101,24 +1101,13 @@ EXPORT_SYMBOL_GPL(unregister_switch);
 static int __init
 swconfig_init(void)
 {
-	int i, err;
+	int err;
 
 	INIT_LIST_HEAD(&swdevs);
-	err = genl_register_family(&switch_fam);
+	err = genl_register_family_with_ops(&switch_fam,swconfig_ops);
 	if (err)
 		return err;
-
-	for (i = 0; i < ARRAY_SIZE(swconfig_ops); i++) {
-		err = genl_register_ops(&switch_fam, &swconfig_ops[i]);
-		if (err)
-			goto unregister;
-	}
-
 	return 0;
-
-unregister:
-	genl_unregister_family(&switch_fam);
-	return err;
 }
 
 static void __exit
