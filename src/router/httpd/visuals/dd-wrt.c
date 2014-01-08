@@ -3009,7 +3009,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #if !defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div>\n");
 
-		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n", var, nvram_safe_get(ssid));
+		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", var);
+		tf_webWriteESCNV(wp, ssid);
+		websWrite(wp, "\" /></div>\n");
 
 #ifdef HAVE_MADWIFI
 //      sprintf( wl_chanshift, "%s_chanshift", var );
@@ -3071,7 +3073,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div>\n");
 
-		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n", var, nvram_safe_get(ssid));
+		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", var);
+		tf_webWriteESCNV(wp, ssid);
+		websWrite(wp, "\" /></div>\n");
 // broadcast wireless ssid
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label5)</script></div>");
@@ -3210,9 +3214,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div>\n");
-			//fprintf(stderr, "[GUESTPORT] %s\n", ssid);
-			//fprintf(stderr, "[GUESTPORT] %s\n",nvram_safe_get(ssid));
-			websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n", var, nvram_safe_get(ssid));
+			websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", var);
+			tf_webWriteESCNV(wp, ssid);
+			websWrite(wp, "\" /></div>\n");
 
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label5)</script></div>");
