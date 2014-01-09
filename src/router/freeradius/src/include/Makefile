@@ -1,13 +1,13 @@
 #
 # Makefile
 #
-# Version:	$Id: d666f3ae5873780eaed389c5cbabe1b5cba0a22f $
+# Version:	$Id: 0439d37dd5217f3c2b281f8402684253983f4e6d $
 #
 
 HEADERS	= autoconf.h conf.h conffile.h detail.h dhcp.h event.h hash.h heap.h \
 	ident.h libradius.h md4.h md5.h missing.h modcall.h modules.h \
 	packet.h rad_assert.h radius.h radiusd.h radpaths.h \
-	radutmp.h realms.h sha1.h stats.h sysutmp.h token.h \
+	radutmp.h realms.h sha1.h stats.h sysutmp.h threads.h token.h \
 	udpfromto.h vmps.h vqp.h base64.h
 
 include ../../Make.inc

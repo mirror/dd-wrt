@@ -1,7 +1,7 @@
 /*
  * event.c	Server event handling
  *
- * Version:	$Id: ec92fdec3096ae528459251d9f3ae9b2d1438478 $
+ * Version:	$Id: 537530cf70c025d6bf501005cf7c68d0512cea7b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: ec92fdec3096ae528459251d9f3ae9b2d1438478 $")
+RCSID("$Id: 537530cf70c025d6bf501005cf7c68d0512cea7b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -155,6 +155,14 @@ static void ev_request_free(REQUEST **prequest)
 	if (!prequest || !*prequest) return;
 
 	request = *prequest;
+
+#ifdef HAVE_PTHREAD_H
+	/*
+	 *	We can only free a request if there's no child thread
+	 *	using it.
+	 */
+	rad_assert(request->thread_id == NO_CHILD_THREAD);
+#endif
 
 #ifdef WITH_COA
 	if (request->coa) {
@@ -490,7 +498,10 @@ static void wait_for_child_to_die(void *ctx)
 	REQUEST *request = ctx;
 
 	rad_assert(request->magic == REQUEST_MAGIC);
-	remove_from_request_hash(request);
+
+	if (request->in_request_hash) {
+		remove_from_request_hash(request);
+	}
 
 	/*
 	 *	If it's still queued (waiting for a thread to pick it
@@ -498,6 +509,7 @@ static void wait_for_child_to_die(void *ctx)
 	 *	handling it, THEN delay some more.
 	 */
 	if ((request->child_state == REQUEST_QUEUED) ||
+	    (request->thread_id != NO_CHILD_THREAD) ||
 	    ((request->child_state == REQUEST_RUNNING) &&
 	     (request->thread_id == NO_CHILD_THREAD))) {
 
@@ -527,6 +539,9 @@ static void wait_for_child_to_die(void *ctx)
 		return;
 	}
 #endif
+
+	rad_assert(request->child_state == REQUEST_DONE);
+	rad_assert(request->thread_id == NO_CHILD_THREAD);
 
 	ev_request_free(&request);
 }
@@ -1733,12 +1748,11 @@ static int process_proxy_reply(REQUEST *request)
 	    	DICT_VALUE	*dval;
 	
 		dval = dict_valbyname(PW_POST_PROXY_TYPE, "Reject");
-		if (!dval) return 0;
-			
-		vp = radius_paircreate(request, &request->config_items,
-				       PW_POST_PROXY_TYPE, PW_TYPE_INTEGER);
-
-		vp->vp_integer = dval->value;
+		if (dval) {
+			vp = radius_paircreate(request, &request->config_items,
+					       PW_POST_PROXY_TYPE, PW_TYPE_INTEGER);
+			vp->vp_integer = dval->value;
+		}
 	}
 	
 	if (vp) {
@@ -1798,10 +1812,10 @@ static int process_proxy_reply(REQUEST *request)
 	case RLM_MODULE_FAIL:
 	case RLM_MODULE_HANDLED:
 		/* FIXME: debug print stuff */
-		request->child_state = REQUEST_DONE;
 #ifdef HAVE_PTHREAD_H
 		request->thread_id = NO_CHILD_THREAD;
 #endif
+		request->child_state = REQUEST_DONE;
 		return 0;
 	}
 
@@ -1868,10 +1882,10 @@ static int request_pre_handler(REQUEST *request)
 	if (rcode < 0) {
 		RDEBUG("%s Dropping packet without response.", fr_strerror());
 		request->reply->offset = -2; /* bad authenticator */
-		request->child_state = REQUEST_DONE;
 #ifdef HAVE_PTHREAD_H
 		request->thread_id = NO_CHILD_THREAD;
 #endif
+		request->child_state = REQUEST_DONE;
 		return 0;
 	}
 
@@ -2367,7 +2381,9 @@ static void request_post_handler(REQUEST *request)
 		 *	the post handler.
 		 */
 		if ((rcode < 0) && setup_post_proxy_fail(request)) {
-			request_pre_handler(request);
+			if (!request_pre_handler(request)) {
+				return;
+			}
 		}
 
 		/*
@@ -2586,13 +2602,15 @@ static void request_post_handler(REQUEST *request)
 
 	RDEBUG2("Finished request %u.", request->number);
 	rad_assert(child_state >= 0);
-	request->child_state = child_state;
 
 	if (have_children) {
 #ifdef HAVE_PTHREAD_H
 		request->thread_id = NO_CHILD_THREAD;
 #endif
+		request->child_state = child_state;
 	} else {
+		request->child_state = child_state;
+
 		/*
 		 *	Single threaded mode: update timers now.
 		 */
