@@ -1,7 +1,7 @@
 /*
  *  rlm_sqlippool.c     rlm_sqlippool - FreeRADIUS SQL IP Pool Module
  *
- * Version:  $Id: 7d2ae16cb4e64a34d0195024d2943e24b0f11544 $
+ * Version:  $Id: 350ff1810ed5c6455191223c5a09794723d8978b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 7d2ae16cb4e64a34d0195024d2943e24b0f11544 $")
+RCSID("$Id: 350ff1810ed5c6455191223c5a09794723d8978b $")
 
 #include <freeradius-devel/radiusd.h>
 
@@ -49,6 +49,7 @@ typedef struct rlm_sqlippool_t {
 	   information in there
 	*/
 				/* Allocation sequence */
+	time_t last_clear;	/* so we only do it once a second */
 	char *allocate_begin;	/* SQL query to begin */
 	char *allocate_clear;	/* SQL query to clear an IP */
 	char *allocate_find;	/* SQL query to find an unused IP */
@@ -538,6 +539,7 @@ static int sqlippool_postauth(void *instance, REQUEST * request)
 	VALUE_PAIR * vp;
 	SQLSOCK * sqlsocket;
 	fr_ipaddr_t ipaddr;
+	time_t now;
 	char    logstr[MAX_STRING_LEN];
 	char sqlusername[MAX_STRING_LEN];
 
@@ -572,15 +574,39 @@ static int sqlippool_postauth(void *instance, REQUEST * request)
 	}
 
 	/*
+	 *	Limit the number of clears we do.  There are minor
+	 *	race conditions for the check, but so what.  The
+	 *	actual work is protected by a transaction.  The idea
+	 *	here is that if we're allocating 100 IPs a second,
+	 *	we're only do 1 CLEAR per second.
+	 */
+	now = time(NULL);
+	if (data->last_clear < now) {
+		data->last_clear = now;
+
+		/*
+		 * BEGIN
+		 */
+		sqlippool_command(data->allocate_begin, sqlsocket, data, request,
+				  (char *) NULL, 0);
+
+		/*
+		 * CLEAR
+		 */
+		sqlippool_command(data->allocate_clear, sqlsocket, data, request,
+				  (char *) NULL, 0);
+
+		/*
+		 * COMMIT
+		 */
+		sqlippool_command(data->allocate_commit, sqlsocket, data, request,
+				  (char *) NULL, 0);
+	}
+
+	/*
 	 * BEGIN
 	 */
 	sqlippool_command(data->allocate_begin, sqlsocket, data, request,
-			  (char *) NULL, 0);
-
-	/*
-	 * CLEAR
-	 */
-	sqlippool_command(data->allocate_clear, sqlsocket, data, request,
 			  (char *) NULL, 0);
 
 	/*

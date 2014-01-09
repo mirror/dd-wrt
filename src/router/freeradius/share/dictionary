@@ -1,7 +1,7 @@
 # -*- text -*-
 # Copyright (C) 2011 The FreeRADIUS Server project and contributors
 #
-# Version $Id: 4271f694947417d96f3435fffad7cb5722a15ab1 $
+# Version $Id: 62879b65926814f61b7c419cb7aab578ea6a3eaa $
 #
 #	DO NOT EDIT THE FILES IN THIS DIRECTORY
 #
@@ -106,6 +106,7 @@ $INCLUDE dictionary.acme
 $INCLUDE dictionary.airespace
 $INCLUDE dictionary.alcatel
 $INCLUDE dictionary.alcatel.sr
+$INCLUDE dictionary.alcatel-lucent.aaa
 $INCLUDE dictionary.alteon
 $INCLUDE dictionary.alvarion
 $INCLUDE dictionary.apc
@@ -137,6 +138,7 @@ $INCLUDE dictionary.dante
 $INCLUDE dictionary.dhcp
 $INCLUDE dictionary.dlink
 $INCLUDE dictionary.digium
+$INCLUDE dictionary.efficientip
 $INCLUDE dictionary.eltex
 $INCLUDE dictionary.epygi
 $INCLUDE dictionary.erx

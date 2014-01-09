@@ -1,7 +1,7 @@
 /*
  * rlm_pap.c
  *
- * Version:  $Id: b0cbf4086058aa071345ebea380338f57fad04a1 $
+ * Version:  $Id: 8ef2152df423e227697a76700c95a838775e6fe5 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: b0cbf4086058aa071345ebea380338f57fad04a1 $")
+RCSID("$Id: 8ef2152df423e227697a76700c95a838775e6fe5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -350,7 +350,10 @@ static int pap_authorize(void *instance, REQUEST *request)
 					goto redo;
 				}
 
-				RDEBUG("Failed to decode Password-With-Header = \"%s\"", vp->vp_strvalue);
+				RDEBUG("No {...} in Password-With-Header = \"%s\", re-writing to Cleartext-Password", vp->vp_strvalue);
+				radius_pairmake(request, &request->config_items,
+						"Cleartext-Password",
+						vp->vp_strvalue, T_OP_SET);
 				break;
 			}
 

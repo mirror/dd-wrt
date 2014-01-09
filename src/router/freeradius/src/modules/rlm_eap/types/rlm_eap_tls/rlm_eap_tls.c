@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 4f226ab941dfc01e59cc38140b5d3d4461daa288 $
+ * Version:     $Id: 27db07d7272e9e0d3dfd7c356f867daa049226a2 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 4f226ab941dfc01e59cc38140b5d3d4461daa288 $")
+RCSID("$Id: 27db07d7272e9e0d3dfd7c356f867daa049226a2 $")
 
 #include <freeradius-devel/autoconf.h>
 
@@ -758,7 +758,7 @@ static int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 				if (*p == ' ') *p = '-';
 			}
 
-			vp = pairmake(attribute, issuer, T_OP_ADD);
+			vp = pairmake(attribute, value, T_OP_ADD);
 			if (vp) {
 				pairadd(&handler->certs, vp);
 				debug_pair_list(vp);
@@ -996,13 +996,6 @@ static SSL_CTX *init_tls_ctx(EAP_TLS_CONF *conf)
 	int verify_mode = SSL_VERIFY_NONE;
 	int ctx_options = 0;
 	int type;
-
-	/*
-	 *	Add all the default ciphers and message digests
-	 *	Create our context.
-	 */
-	SSL_library_init();
-	SSL_load_error_strings();
 
 	/*
 	 *	Bug fix
