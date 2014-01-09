@@ -1,7 +1,7 @@
 /*
  * version.c	Print version number and exit.
  *
- * Version:	$Id: 9aaa8e33260148779fba17738da5a48457ab5274 $
+ * Version:	$Id: e08ca8cb53f96237a5893e5e2fb69e36c4f63d40 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 9aaa8e33260148779fba17738da5a48457ab5274 $")
+RCSID("$Id: e08ca8cb53f96237a5893e5e2fb69e36c4f63d40 $")
 
 #include <freeradius-devel/radiusd.h>
 
@@ -44,6 +44,13 @@ static long ssl_built = OPENSSL_VERSION_NUMBER;
 int ssl_check_version(void)
 {
 	long ssl_linked;
+
+	/*
+	 *	Initialize the library before calling any library
+	 *	functions.
+	 */
+	SSL_library_init();
+	SSL_load_error_strings();
 
 	ssl_linked = SSLeay();
 
