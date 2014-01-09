@@ -120,12 +120,12 @@ void checkreset(char *tty)
 		fclose(check);
 	else {
 		fprintf(stderr, "reset error\n");
-		#ifdef HAVE_UNIWIP
-		rmmod("fsl-mph-dr-of");			
+#ifdef HAVE_UNIWIP
+		rmmod("fsl-mph-dr-of");
 		sleep(1);
-		insmod("fsl-mph-dr-of");			
+		insmod("fsl-mph-dr-of");
 		sleep(5);
-		#endif
+#endif
 	}
 	fprintf(stderr, "wakeup card\n");
 	sysprintf("comgt -d /dev/usb/tts/%s -s /etc/comgt/wakeup.comgt", tty);
@@ -216,14 +216,11 @@ static void modeswitch_sierra(int needreset, int devicecount)
 	out = fopen("/tmp/usb_modeswitch.conf", "wb");
 	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
-	fprintf(out,
-		"TargetProductList=\"0017,0018,0019,0020,0021,0022,0024,0026,0027,0028,0112,0120,0218,0220,0224,6802,6803,6804,6805,6808,6809,6812,6813,6815,6816,6820,6821,6822,6832,6833,6834,6835,6838,6839,683a,683b,683c,683d,683e,6850,6851,6852,6853,6855,6856,6859,685a,6880,6890,6893,68a3,68aa,9011,9012\"\n");
 	fprintf(out, "SierraMode=1\n");
-	fprintf(out, "CheckSuccess=10\n");
 	fclose(out);
 	system("usb_modeswitch -I -c /tmp/usb_modeswitch.conf");
 
-	sleep(2);
+	sleep(5);		// give Sierra additional time
 }
 
 static void modeswitch_huawei_std(int needreset, int devicecount)
@@ -271,7 +268,7 @@ static void modeswitch_zte_other(int needreset, int devicecount)
 {
 	system("usb_modeswitch -v 0x19d2 -p 0x0166 -I -M 55534243123456782400000080000685000000240000000000000000000000");
 	system("usb_modeswitch -v 0x19d2 -p 0x0266 -I -M 55534243123456782400000080000685000000240000000000000000000000");
-	system("usb_modeswitch -v 0x19d2 -p 0x1514 -I -M 5553424348c4758600000000000010ff000000000000000000000000000000");	// = modeswitch_onda
+	system("usb_modeswitch -v 0x19d2 -p 0x1514 -I -M 5553424348c4758600000000000010ff000000000000000000000000000000");	//modeswitch_onda ?
 	system("usb_modeswitch -v 0x19d2 -p 0xfff5 -I -M 5553424312345678c00000008000069f030000000000000000000000000000");
 	system("usb_modeswitch -v 0x19d2 -p 0xfff6 -I -M 5553424312345678c00000008000069f030000000000000000000000000000");
 
@@ -460,8 +457,12 @@ static struct DEVICES devicelist[] = {
 	{0x0af0, 0xd357, NULL, "hso", "hso", 0, &modeswitch_expose_all, "Option GI1505"},	//usb
 
 //Olivetti
+	{0x0b3c, 0xc000, "option", "0", "0", 2, NULL, "Olivetti Olicard 100"},	//
+	{0x0b3c, 0xc001, "option", "0", "0", 2 | GENERIC, NULL, "Olivetti Olicard 120"},	//
+	{0x0b3c, 0xc002, "option", "0", "0", 2 | GENERIC, NULL, "Olivetti Olicard 140"},	//
 	{0x0b3c, 0xc003, "option", "0", "4", 2, NULL, "Olivetti Olicard 145"},	//
-	{0x0b3c, 0xc004, "option", "0", "4", 2, NULL, "Olivetti Olicard 155"},	//
+	{0x0b3c, 0xc004, "option", "0", "4", 2 | GENERIC, NULL, "Olivetti Olicard 155"},	//
+	{0x0b3c, 0xc005, "option", "0", "0", 2, NULL, "Olivetti Olicard 200"},	//
 	{0x0b3c, 0xc700, "option", "0", "0", 0, &modeswitch_std_eject, "Olivetti Olicard 100 (cdrom)"},	//
 	{0x0b3c, 0xf000, "option", "0", "0", 0, &modeswitch_alcatel, "Olivetti Olicards (cdrom)"},	//
 
@@ -700,6 +701,9 @@ static struct DEVICES devicelist[] = {
 	{0x1410, 0x7042, "option", "0", "0", 2, NULL, "Novatel Ovation MC545/MC547 (modem)"},	//
 	{0x1410, 0xb001, "option", "1", "0", 2 | QMI, NULL, "Novatel MC551/USB551L (modem)"},	//
 
+//UBIQUAM
+	{0x1529, 0x3100, "option", "0", "0", 2 | ACM, NULL, "UBIQUAM U-100/105/200/300/520"},	//
+
 //AnyDATA
 	{0x16d5, 0x6202, "option", "2", "0", 2, NULL, "AnyData ADU-620UW"},	//
 	{0x16d5, 0x6501, "option", "1", "0", 2, NULL, "AnyData ADU-300A"},	//
@@ -714,7 +718,7 @@ static struct DEVICES devicelist[] = {
 	{0x16d8, 0x6008, "option", "2", "1", 0, NULL, "Franklin U301"},	//
 	{0x16d8, 0x6280, "option", "2", "1", 0, &modeswitch_cmotech, "Cmotech CHU-628s"},	//
 	{0x16d8, 0x6281, "option", "0", "0", 0 | GENERIC, &modeswitch_cmotech, "Cmotech CHU-628s"},	//
-	{0x16d8, 0x6522, "option", "2", "0", 0 | GENERIC, NULL, "Cmotech CDU-650"},	//      
+	{0x16d8, 0x6522, "option", "2", "0", 0 | GENERIC, NULL, "Cmotech CDU-650"},	//
 	{0x16d8, 0x6533, "option", "0", "0", 0 | ACM, NULL, "Cmotech CNM-650"},	//
 	{0x16d8, 0x6803, "option", "1", "0", 0 | GENERIC, &modeswitch_cmotech, "Cmotech CDU-680"},	//
 	{0x16d8, 0x6804, "option", "2", "1", 0 | GENERIC, &modeswitch_cmotech, "Cmotech CDU-685A"},	//
@@ -730,11 +734,15 @@ static struct DEVICES devicelist[] = {
 	{0x19d2, 0x0015, "option", "2", "0", 2, NULL, "ONDA MT505UP/ZTE (modem)"},	//
 	{0x19d2, 0x0016, "option", "1", "2", 2, NULL, "ONDA MF110/ZTE (modem)"},	//
 	{0x19d2, 0x0017, "option", "1", "2", 2 | QMI, NULL, "ONDA MT505UP/ZTE (modem)"},	//
+	{0x19d2, 0x0018, "option", "1", "2", 2, NULL, "ONDA MSA110UP/ZTE (modem)"},	//
 	{0x19d2, 0x0019, "option", "1", "2", 2 | QMI, NULL, "ONDA MT689DC/ZTE (modem)"},	//
 	{0x19d2, 0x0022, "option", "1", "3", 2, NULL, "ZTE K2525 (modem)"},	//
+	{0x19d2, 0x0025, "option", "4", "2", 2, NULL, "ZTE MF628 (modem)"},	//
 	{0x19d2, 0x0026, "option", "0", "0", 2, &modeswitch_std_eject, "ZTE AC581 (cdrom)"},	//
 	{0x19d2, 0x0031, "option", "1", "2", 2, NULL, "ZTE MF110/MF112/MF626 (Variant) (modem)"},	//
+	{0x19d2, 0x0033, "option", "1", "4", 2, NULL, "ZTE MF636 (modem)"},	//
 	{0x19d2, 0x0037, "option", "2", "2", 2, NULL, "ONDA MT505UP/ZTE (modem)"},	//
+	{0x19d2, 0x0039, "option", "1", "3", 2, NULL, "ZTE MF100 (modem)"},	//
 	{0x19d2, 0x0040, "option", "0", "0", 2, &modeswitch_std_eject, "ZTE K2525 (cdrom)"},	//
 	{0x19d2, 0x0052, "option", "1", "2", 2 | QMI, NULL, "ONDA MT505UP/ZTE (modem)"},	//
 	{0x19d2, 0x0053, "option", "0", "0", 2, &modeswitch_std_eject, "ZTE MF110 (Variant) (modem)"},	//
@@ -866,11 +874,12 @@ static struct DEVICES devicelist[] = {
 	{0x1bbb, 0x0012, "option", "2", "2", 2 | GENERIC, NULL, "Alcatel X085C (modem)"},	//
 	{0x1bbb, 0x0017, "option", "4", "4", 2, NULL, "Alcatel X220L (Variant), X500D (modem)"},	//
 	{0x1bbb, 0x0052, "option", "4", "4", 2, NULL, "Alcatel X220L (Variant), (modem)"},	//
-	{0x1bbb, 0x00ca, "option", "0", "0", 2 | GENERIC, NULL, "Alcatel X080C (Variant), (modem)"},	//
+	{0x1bbb, 0x00b7, "option", "0", "4", 2, NULL, "Alcatel X600 (modem)"},	//
+	{0x1bbb, 0x00ca, "option", "0", "0", 2 | GENERIC, NULL, "Alcatel X080C (modem)"},	//
 	{0x1bbb, 0x011e, "option", "1", "2", 2 | QMI, NULL, "Alcatel L100V, (modem)"},	//
 	{0x1bbb, 0xf000, "option", "0", "0", 2, &modeswitch_alcatel, "Alcatel X060S/X070S/X080S/X200/X220L/X500D(cdrom)"},	//
-	{0x1bbb, 0xf017, "option", "0", "0", 2, &modeswitch_alcatel, "Alcatel X220D(cdrom)"},	//
-	{0x1bbb, 0xf052, "option", "0", "0", 2, &modeswitch_alcatel, "Alcatel X220L(cdrom)"},	//
+	{0x1bbb, 0xf017, "option", "0", "0", 2, &modeswitch_alcatel, "Alcatel X220D (cdrom)"},	//
+	{0x1bbb, 0xf052, "option", "0", "0", 2, &modeswitch_alcatel, "Alcatel X220L (cdrom)"},	//
 
 //OMEGA TECHNOLOGY
 	{0x1c9e, 0x1001, "option", "0", "0", 2, &modeswitch_alcatel, "Alcatel X020 & X030 (cdrom)"},	//
