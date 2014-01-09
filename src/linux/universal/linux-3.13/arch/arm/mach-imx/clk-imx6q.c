@@ -211,18 +211,6 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
 	clk[lvds1_gate] = imx_clk_gate("lvds1_gate", "dummy", base + 0x160, 10);
 	clk[lvds2_gate] = imx_clk_gate("lvds2_gate", "dummy", base + 0x160, 11);
 
-	clk[lvds1_sel] = imx_clk_mux("lvds1_sel", base + 0x160, 0, 5, lvds_sels, ARRAY_SIZE(lvds_sels));
-	clk[lvds2_sel] = imx_clk_mux("lvds2_sel", base + 0x160, 5, 5, lvds_sels, ARRAY_SIZE(lvds_sels));
-
-	/*
-	 * lvds1_gate and lvds2_gate are pseudo-gates.  Both can be
-	 * independently configured as clock inputs or outputs.  We treat
-	 * the "output_enable" bit as a gate, even though it's really just
-	 * enabling clock output.
-	 */
-	clk[lvds1_gate] = imx_clk_gate("lvds1_gate", "dummy", base + 0x160, 10);
-	clk[lvds2_gate] = imx_clk_gate("lvds2_gate", "dummy", base + 0x160, 11);
-
 	/*                                name              parent_name        reg       idx */
 	clk[pll2_pfd0_352m] = imx_clk_pfd("pll2_pfd0_352m", "pll2_bus",     base + 0x100, 0);
 	clk[pll2_pfd1_594m] = imx_clk_pfd("pll2_pfd1_594m", "pll2_bus",     base + 0x100, 1);
@@ -486,10 +474,6 @@ static void __init imx6q_clocks_init(struct device_node *ccm_node)
 		ret = clk_set_parent(clk[cko], clk[cko2]);
 	if (ret)
 		pr_warn("failed to set up CLKO: %d\n", ret);
-
-	/* All existing boards with PCIe use LVDS1 */
-	if (IS_ENABLED(CONFIG_PCI_IMX6))
-		clk_set_parent(clk[lvds1_sel], clk[sata_ref]);
 
 	/* All existing boards with PCIe use LVDS1 */
 	if (IS_ENABLED(CONFIG_PCI_IMX6))
