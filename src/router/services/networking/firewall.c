@@ -2002,8 +2002,6 @@ static void filter_input(void)
 				save2file("-A INPUT -i %s -p udp --dport 53 -j %s\n", var, log_accept);
 				save2file("-A INPUT -i %s -p tcp --dport 53 -j %s\n", var, log_accept);
 				save2file("-A INPUT -i %s -m state --state NEW -j %s\n", var, log_drop);
-				save2file("-A FORWARD -i br0 -o %s -m state --state NEW -j %s\n", var, log_drop);
-
 			}
 			if (nvram_nmatch("0", "%s_bridged", var)) {
 				save2file("-A INPUT -i %s -j %s\n", var, log_accept);
@@ -2275,6 +2273,18 @@ static void filter_forward(void)
 	if (dmzenable)
 		save2file("-A FORWARD -o %s -d %s%s -j %s\n", lanface, lan_cclass, nvram_safe_get("dmz_ipaddr"), log_accept);
 
+	getIfLists(vifs, 256);
+
+	foreach(var, vifs, next) {
+		if (strcmp(get_wan_face(), var)
+		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+			if (nvram_nmatch("1", "%s_isolation", var)) {
+				save2file("-I FORWARD -i %s -d %s/%s -m state --state NEW -j %s\n", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_drop);
+				save2file("-A FORWARD -i br0 -o %s -m state --state NEW -j %s\n", var, log_drop);
+			}
+		}	  
+	}
+	
 	/*
 	 * Accept new connections 
 	 */
