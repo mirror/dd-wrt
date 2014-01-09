@@ -4819,7 +4819,8 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 	char wl_regdomain[16];
 
 	sprintf(wl_regdomain, "wl_regdomain");
-	websWrite(wp, "<fieldset><br />\<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
+	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.country_settings)</script></h2>");
+	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></legend><div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.regdom)</script></div>\n");
 
 	char *list = getCountryList();
 	showOptions(wp, wl_regdomain, list, nvram_default_get("wl_regdomain", "EUROPE"));
