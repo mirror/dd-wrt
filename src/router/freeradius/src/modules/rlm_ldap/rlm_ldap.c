@@ -19,7 +19,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: cfac99ac9887f6c1e3a25621f36835e3fedaeac4 $")
+RCSID("$Id: 481a680f4231941e4f73e13a8e5c90e8dc6a80a4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -253,7 +253,7 @@ static const CONF_PARSER module_config[] = {
 	/* allow server unlimited time for search (server-side limit) */
 	{"timelimit", PW_TYPE_INTEGER,
 	 offsetof(ldap_instance,timelimit), NULL, "20"},
-	/* how many times the connection can be used before being re-established */	
+	/* how many times the connection can be used before being re-established */
 	{"max_uses", PW_TYPE_INTEGER,
 	 offsetof(ldap_instance,max_uses), NULL, "0"},
 
@@ -284,7 +284,7 @@ static const CONF_PARSER module_config[] = {
 	 *	DN's and filters.
 	 */
 	{"basedn", PW_TYPE_STRING_PTR,
-	 offsetof(ldap_instance,basedn), NULL, "o=notexist"},
+	 offsetof(ldap_instance,basedn), NULL, NULL},
 	{"filter", PW_TYPE_STRING_PTR,
 	 offsetof(ldap_instance,filter), NULL, "(uid=%u)"},
 	{"base_filter", PW_TYPE_STRING_PTR,
@@ -402,7 +402,7 @@ static inline int ldap_get_conn(LDAP_CONN *conns,LDAP_CONN **ret,
 }
 
 static inline void ldap_release_conn(int i, ldap_instance *inst)
-				     
+
 {
 	LDAP_CONN *conns = inst->conns;
 
@@ -411,7 +411,7 @@ static inline void ldap_release_conn(int i, ldap_instance *inst)
 		if (conns[i].ld){
 			DEBUG("  [%s] ldap_release_conn: Hit max usage limit, closing Id: %d", inst->xlat_name, i);
 			ldap_unbind_s(conns[i].ld);
-			
+
 			conns[i].ld = NULL;
 		}
 		conns[i].bound = 0;
@@ -423,7 +423,7 @@ static inline void ldap_release_conn(int i, ldap_instance *inst)
 
 #ifdef NOVELL
 static inline void ldap_release_apc_conn(int i, ldap_instance *inst)
-				     
+
 {
 	LDAP_CONN *conns = inst->apc_conns;
 
@@ -890,7 +890,7 @@ retry:
 
 	tv.tv_sec = inst->timeout;
 	tv.tv_usec = 0;
-	DEBUG2("  [%s] performing search in %s, with filter %s", inst->xlat_name, 
+	DEBUG2("  [%s] performing search in %s, with filter %s", inst->xlat_name,
 	       search_basedn ? search_basedn : "(null)" , filter);
 	switch (ldap_search_st(conn->ld, search_basedn, scope, filter,
 			       attrs, 0, &tv, result)) {
@@ -1033,6 +1033,7 @@ static int ldap_groupcmp(void *instance, REQUEST *req,
 	VALUE_PAIR	*vp_user_dn;
 	VALUE_PAIR      **request_pairs;
 
+	basedn[0] = '\0';
 	request_pairs = &req->config_items;
 
 	DEBUG("  [%s] Entering ldap_groupcmp()", inst->xlat_name);
@@ -1047,7 +1048,7 @@ static int ldap_groupcmp(void *instance, REQUEST *req,
                 return 1;
         }
 
-        if (!radius_xlat(basedn, sizeof(basedn), inst->basedn, req, ldap_escape_func)) {
+        if (inst->basedn && !radius_xlat(basedn, sizeof(basedn), inst->basedn, req, ldap_escape_func)) {
                 DEBUG("rlm_ldap::ldap_groupcmp: unable to create basedn.");
                 return 1;
         }
@@ -1362,6 +1363,8 @@ static int ldap_authorize(void *instance, REQUEST * request)
 	int		conn_id = -1;
 	int		added_known_password = 0;
 
+	basedn[0] = '\0';
+
 	if (!request->username){
 		RDEBUG2("Attribute \"User-Name\" is required for authorization.\n");
 		return RLM_MODULE_NOOP;
@@ -1386,8 +1389,8 @@ static int ldap_authorize(void *instance, REQUEST * request)
 		return RLM_MODULE_INVALID;
 	}
 
-	if (!radius_xlat(basedn, sizeof(basedn), inst->basedn,
-			 request, ldap_escape_func)) {
+	if (inst->basedn && !radius_xlat(basedn, sizeof(basedn), inst->basedn,
+					 request, ldap_escape_func)) {
 		radlog(L_ERR, "  [%s] unable to create basedn.\n", inst->xlat_name);
 		return RLM_MODULE_INVALID;
 	}
@@ -1786,7 +1789,7 @@ static int ldap_authorize(void *instance, REQUEST * request)
 
 		return RLM_MODULE_REJECT;
 	}
-       
+
        /*
 	*	More warning messages for people who can't be bothered
 	*	to read the documentation.
@@ -1849,6 +1852,7 @@ static int ldap_authenticate(void *instance, REQUEST * request)
 #ifdef NOVELL
 	char		*err = NULL;
 #endif
+	basedn[0] = '\0';
 
 	/*
 	 * Ensure that we're being passed a plain-text password, and not
@@ -1903,8 +1907,8 @@ static int ldap_authenticate(void *instance, REQUEST * request)
 			return RLM_MODULE_INVALID;
 		}
 
-		if (!radius_xlat(basedn, sizeof(basedn), inst->basedn,
-		 		request, ldap_escape_func)) {
+		if (inst->basedn && !radius_xlat(basedn, sizeof(basedn), inst->basedn,
+						 request, ldap_escape_func)) {
 			radlog(L_ERR, "  [%s] unable to create basedn.\n", inst->xlat_name);
 			return RLM_MODULE_INVALID;
 		}
@@ -2317,7 +2321,7 @@ static LDAP *ldap_connect(void *instance, const char *dn, const char *password,
 		if (inst->chase_referrals) {
 			rc=ldap_set_option(ld, LDAP_OPT_REFERRALS,
 					   LDAP_OPT_ON);
-			
+
 #if LDAP_SET_REBIND_PROC_ARGS == 3
 			if (inst->rebind == 1) {
 				ldap_set_rebind_proc(ld, ldap_rebind,
@@ -2395,7 +2399,7 @@ static LDAP *ldap_connect(void *instance, const char *dn, const char *password,
 			ldap_get_option(ld, LDAP_OPT_ERROR_NUMBER, &ldap_errno);
 			radlog(L_ERR, "  [%s] could not set "
 			       "LDAP_OPT_X_TLS_CACERTFILE option to %s: %s",
-			       inst->xlat_name, 
+			       inst->xlat_name,
 			       inst->tls_cacertfile,
 			       ldap_err2string(ldap_errno));
 		}
@@ -2410,7 +2414,7 @@ static LDAP *ldap_connect(void *instance, const char *dn, const char *password,
 			ldap_get_option(ld, LDAP_OPT_ERROR_NUMBER, &ldap_errno);
 			radlog(L_ERR, "  [%s] could not set "
 			       "LDAP_OPT_X_TLS_CACERTDIR option to %s: %s",
-			       inst->xlat_name, 
+			       inst->xlat_name,
 			       inst->tls_cacertdir,
 			       ldap_err2string(ldap_errno));
 		}
@@ -2426,9 +2430,9 @@ static LDAP *ldap_connect(void *instance, const char *dn, const char *password,
 	if (ldap_int_tls_config(NULL, LDAP_OPT_X_TLS_REQUIRE_CERT,
 				(inst->tls_require_cert)) != LDAP_OPT_SUCCESS) {
 		ldap_get_option(ld, LDAP_OPT_ERROR_NUMBER, &ldap_errno);
-		radlog(L_ERR, "  [%s] could not set ", 
+		radlog(L_ERR, "  [%s] could not set ",
 		       "LDAP_OPT_X_TLS_REQUIRE_CERT option to %s: %s",
-		       inst->xlat_name, 
+		       inst->xlat_name,
 		       inst->tls_require_cert,
 		       ldap_err2string(ldap_errno));
 	}
@@ -2443,7 +2447,7 @@ static LDAP *ldap_connect(void *instance, const char *dn, const char *password,
 			ldap_get_option(ld, LDAP_OPT_ERROR_NUMBER, &ldap_errno);
 			radlog(L_ERR, "  [%s] could not set "
 			       "LDAP_OPT_X_TLS_CERTFILE option to %s: %s",
-			       inst->xlat_name, 
+			       inst->xlat_name,
 			       inst->tls_certfile,
 			       ldap_err2string(ldap_errno));
 		}
@@ -2459,7 +2463,7 @@ static LDAP *ldap_connect(void *instance, const char *dn, const char *password,
 			ldap_get_option(ld, LDAP_OPT_ERROR_NUMBER, &ldap_errno);
 			radlog(L_ERR, "  [%s] could not set "
 			       "LDAP_OPT_X_TLS_KEYFILE option to %s: %s",
-			       inst->xlat_name, 
+			       inst->xlat_name,
 			       inst->tls_keyfile, ldap_err2string(ldap_errno));
 		}
 	}
