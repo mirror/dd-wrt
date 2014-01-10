@@ -111,14 +111,6 @@ choice
 	config DEBUG_CNS3XXX
 		bool "Kernel Kernel low-level debugging on Cavium Networks CNS3xxx"
 		depends on ARCH_CNS3XXX
-		select DEBUG_UART_PL01X
-		help
-		  Say Y here if you want the debug print routines to direct
-                  their output to the CNS3xxx UART0.
-
-	config DEBUG_CNS3XXX
-		bool "Kernel Kernel low-level debugging on Cavium Networks CNS3xxx"
-		depends on ARCH_CNS3XXX
 		help
 		  Say Y here if you want the debug print routines to direct
                   their output to the CNS3xxx UART0.
@@ -945,7 +937,6 @@ config DEBUG_LL_INCLUDE
 	default "debug/pl01x.S" if DEBUG_LL_UART_PL01X || DEBUG_UART_PL01X
 	default "debug/exynos.S" if DEBUG_EXYNOS_UART
 	default "debug/efm32.S" if DEBUG_LL_UART_EFM32
-	default "debug/cns3xxx.S" if DEBUG_CNS3XXX
 	default "debug/northstar.S" if DEBUG_BRCM_LL
 	default "debug/icedcc.S" if DEBUG_ICEDCC
 	default "debug/imx.S" if DEBUG_IMX1_UART || \
