@@ -334,10 +334,8 @@ static void *timer_list_next(struct seq_file *file, void *v, loff_t *offset)
 	return move_iter(iter, 1);
 }
 
-static void timer_list_stop(struct seq_file *file, void *v)
+static void timer_list_stop(struct seq_file *seq, void *v)
 {
-	struct timer_list_iter *iter = file->private;
-	iter->cpu = cpumask_next(iter->cpu, cpu_online_mask);
 }
 
 static const struct seq_operations timer_list_sops = {
