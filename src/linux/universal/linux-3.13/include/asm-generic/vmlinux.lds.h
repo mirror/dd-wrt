@@ -206,7 +206,6 @@
 	BRANCH_PROFILE()						\
 	TRACE_PRINTKS()							\
 	TRACEPOINT_STR()                                                \
-	*(.data.[a-zA-Z_]*)
 
 /*
  * Data section helpers
