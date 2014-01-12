@@ -202,12 +202,30 @@ void start_samba3(void)
 	
 
 #ifdef HAVE_SMP	
-	eval("/usr/bin/taskset", "0x1", "/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
+	eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
 #else
 	eval("/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
 #endif
 	eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
+	if (pidof("nmbd") > 0) {
+	}else{
+		eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
+	}
 	syslog(LOG_INFO, "Samba3 : samba started\n");
+	
+	char *lan_ifname = nvram_safe_get("lan_ifname");
+	char *lan_ipaddr = nvram_safe_get("lan_ipaddr");
+	
+	
+	sysprintf("iptables -t raw -A PREROUTING -i %s -d %s -p tcp --dport 137:139 -j NOTRACK", lan_ifname, lan_ipaddr);
+	sysprintf("iptables -t raw -A PREROUTING -i %s -d %s -p tcp --dport 445 -j NOTRACK", lan_ifname, lan_ipaddr);
+	sysprintf("iptables -t raw -A PREROUTING -i %s -d %s -p udp --dport 137:139 -j NOTRACK", lan_ifname, lan_ipaddr);
+	sysprintf("iptables -t raw -A PREROUTING -i %s -d %s -p udp --dport 445 -j NOTRACK", lan_ifname, lan_ipaddr);
+	sysprintf("iptables -t raw -A OUTPUT -p tcp --sport 137:139 -j NOTRACK");
+	sysprintf("iptables -t raw -A OUTPUT -p tcp --sport 445 -j NOTRACK");
+	sysprintf("iptables -t raw -A OUTPUT -p udp --sport 137:139 -j NOTRACK");
+	sysprintf("iptables -t raw -A OUTPUT -p udp --sport 445 -j NOTRACK");
+	
 	return;
 }
 
