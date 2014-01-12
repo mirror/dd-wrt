@@ -235,6 +235,19 @@ void stop_samba3(void)
 	stop_process("nmbd", "nmbd");
 	//samba has changed the way pidfiles are named, thus stop process will not kill smbd and nmbd pidfiles, see pidfile.c in samba 
 	sysprintf("rm -rf %s", "/var/run/*smb.conf.pid");
+	
+	char *lan_ifname = nvram_safe_get("lan_ifname");
+	char *lan_ipaddr = nvram_safe_get("lan_ipaddr");
+	
+	
+	sysprintf("iptables -t raw -D PREROUTING -i %s -d %s -p tcp --dport 137:139 -j NOTRACK", lan_ifname, lan_ipaddr);
+	sysprintf("iptables -t raw -D PREROUTING -i %s -d %s -p tcp --dport 445 -j NOTRACK", lan_ifname, lan_ipaddr);
+	sysprintf("iptables -t raw -D PREROUTING -i %s -d %s -p udp --dport 137:139 -j NOTRACK", lan_ifname, lan_ipaddr);
+	sysprintf("iptables -t raw -D PREROUTING -i %s -d %s -p udp --dport 445 -j NOTRACK", lan_ifname, lan_ipaddr);
+	sysprintf("iptables -t raw -D OUTPUT -p tcp --sport 137:139 -j NOTRACK");
+	sysprintf("iptables -t raw -D OUTPUT -p tcp --sport 445 -j NOTRACK");
+	sysprintf("iptables -t raw -D OUTPUT -p udp --sport 137:139 -j NOTRACK");
+	sysprintf("iptables -t raw -D OUTPUT -p udp --sport 445 -j NOTRACK");
 
 }
 #endif
