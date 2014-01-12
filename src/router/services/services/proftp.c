@@ -198,7 +198,7 @@ void start_ftpsrv(void)
 	}
 	fclose(fp);
 #ifdef HAVE_SMP	
-	eval("/usr/bin/taskset", "0x1", "proftpd");
+	eval("/usr/bin/taskset", "0x2", "proftpd");
 #else
 	eval("proftpd");
 #endif
