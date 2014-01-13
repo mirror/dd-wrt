@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.25 Kernel Configuration
+# Linux/arm 3.10.26 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -71,8 +71,8 @@ CONFIG_HIGH_RES_TIMERS=y
 #
 # CPU/Task time and stats accounting
 #
-# CONFIG_TICK_CPU_ACCOUNTING is not set
-CONFIG_IRQ_TIME_ACCOUNTING=y
+CONFIG_TICK_CPU_ACCOUNTING=y
+# CONFIG_IRQ_TIME_ACCOUNTING is not set
 CONFIG_BSD_PROCESS_ACCT=y
 # CONFIG_BSD_PROCESS_ACCT_V3 is not set
 # CONFIG_TASKSTATS is not set
@@ -883,7 +883,6 @@ CONFIG_RFKILL=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
-CONFIG_DDTB=y
 CONFIG_HAVE_BPF_JIT=y
 
 #
