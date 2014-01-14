@@ -92,6 +92,24 @@ char *getRADev(char *prefix)
 		ifname = "ra6";
 	if (!strcmp(prefix, "wl0.7"))
 		ifname = "ra7";
+
+	if (!strcmp(prefix, "wl1"))
+		ifname = "ra8";
+	if (!strcmp(prefix, "wl1.1"))
+		ifname = "ra9";
+	if (!strcmp(prefix, "wl1.2"))
+		ifname = "ra10";
+	if (!strcmp(prefix, "wl1.3"))
+		ifname = "ra11";
+	if (!strcmp(prefix, "wl1.4"))
+		ifname = "ra12";
+	if (!strcmp(prefix, "wl1.5"))
+		ifname = "ra13";
+	if (!strcmp(prefix, "wl1.6"))
+		ifname = "ra14";
+	if (!strcmp(prefix, "wl1.7"))
+		ifname = "ra15";
+
 	if (ifname)
 		return ifname;
 	else
@@ -221,10 +239,10 @@ int get_radiostate(char *ifname)
 {
 	if (nvram_nmatch("disabled", "%s_net_mode", ifname))
 		return 0;
-	if (!strcmp(ifname,"wl0")
-	    ifname = "ra0";
-	if (!strcmp(ifname,"wl1")
-	    ifname = "ra1";
+	if (!strcmp(ifname, "wl0"))
+		ifname = "ra0";
+	if (!strcmp(ifname, "wl1"))
+		ifname = "ra8";
 	struct ifreq ifr;
 	int skfd = getsocket();
 
@@ -320,12 +338,15 @@ STAINFO *getRaStaInfo(char *ifname)
 		return NULL;
 	}
 	char *ifn = "ra0";
-	if (!strcmp(ifname,"wl1"))
-	    ifn = "ra1";
+	if (!strcmp(ifname, "wl1"))
+		ifn = "ra8";
 
 	if (nvram_nmatch("apsta", "%s_mode", ifname)
-	    || nvram_nmatch("apstawet", "%s_mode", ifname))
+	    || nvram_nmatch("apstawet", "%s_mode", ifname)) {
 		ifn = "apcli0";
+		if (!strcmp(ifname, "wl1"))
+			ifn = "apcli1";
+	}
 
 	int s;
 
@@ -386,7 +407,7 @@ int getassoclist(char *ifname, unsigned char *list)
 			ignore = 1;
 		}
 		(void)memset(&iwr, 0, sizeof(struct iwreq));
-		(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+		(void)strncpy(iwr.ifr_name, getRADev(ifname), sizeof(iwr.ifr_name));
 
 		iwr.u.data.pointer = (caddr_t) & table;
 		if (ioctl(s, RTPRIV_IOCTL_GET_MAC_TABLE, &iwr) < 0) {
@@ -483,20 +504,19 @@ int getUptime(char *ifname, unsigned char *mac)
 
 void radio_off(int idx)
 {
-	if (idx==0)
-	eval("iwpriv", "ra0", "set", "RadioOn=0");
-	else 
-	eval("iwpriv", "ra1", "set", "RadioOn=0");
+	if (idx == 0)
+		eval("iwpriv", "ra0", "set", "RadioOn=0");
+	else
+		eval("iwpriv", "ra8", "set", "RadioOn=0");
 	led_control(LED_WLAN0, LED_OFF);
 }
 
 void radio_on(int idx)
 {
-{
-	if (idx==0)
-	eval("iwpriv", "ra0", "set", "RadioOn=1");
-	else 
-	eval("iwpriv", "ra1", "set", "RadioOn=1");
+	if (idx == 0)
+		eval("iwpriv", "ra0", "set", "RadioOn=1");
+	else
+		eval("iwpriv", "ra8", "set", "RadioOn=1");
 	led_control(LED_WLAN0, LED_ON);
 }
 
@@ -911,7 +931,6 @@ int getwdslist(char *name, unsigned char *list)
 
 	return (ret);
 }
-
 #if !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 int getNoise(char *ifname, unsigned char *macname)
 {

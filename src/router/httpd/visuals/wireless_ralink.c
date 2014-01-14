@@ -210,11 +210,11 @@ static void TxRxRateFor11n(HTTRANSMIT_SETTING * HTSetting, double *fLastTxRxRate
 
 extern int OidQueryInformation(unsigned long OidQueryCode, int socket_id, char *DeviceName, void *ptr, unsigned long PtrLength);
 
-static void DisplayLastTxRxRateFor11n(int s, int nID, double *fLastTxRxRate)
+static void DisplayLastTxRxRateFor11n(ifname, int s, int nID, double *fLastTxRxRate)
 {
 	unsigned long lHTSetting;
 	HTTRANSMIT_SETTING HTSetting;
-	OidQueryInformation(nID, s, "ra0", &lHTSetting, sizeof(lHTSetting));
+	OidQueryInformation(nID, s, ifname, &lHTSetting, sizeof(lHTSetting));
 	memset(&HTSetting, 0x00, sizeof(HTSetting));
 	memcpy(&HTSetting, &lHTSetting, sizeof(HTSetting));
 	TxRxRateFor11n(&HTSetting, fLastTxRxRate);
@@ -304,9 +304,30 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		double rate = 1;
 		char rx[32];
 		char tx[32];
-		DisplayLastTxRxRateFor11n(s, RT_OID_802_11_QUERY_LAST_RX_RATE, &rate);
+		DisplayLastTxRxRateFor11n(getRADev("wl0"),s, RT_OID_802_11_QUERY_LAST_RX_RATE, &rate);
 		snprintf(rx, 8, "%.1f", rate);
-		DisplayLastTxRxRateFor11n(s, RT_OID_802_11_QUERY_LAST_TX_RATE, &rate);
+		DisplayLastTxRxRateFor11n(getRADev("wl0"), s, RT_OID_802_11_QUERY_LAST_TX_RATE, &rate);
+		snprintf(tx, 8, "%.1f", rate);
+
+		qual /= 10;
+		strcpy(mac, ieee80211_ntoa(sta->mac));
+		websWrite(wp, "'%s','%s','N/A','%s','%s','%d','%d','%d','%d'", mac, sta->ifname, tx, rx, sta->rssi, sta->noise, (sta->rssi - (sta->noise)), qual);
+		free(sta);
+
+	}
+
+	sta = getRaStaInfo("wl1");
+
+	if (sta) {
+		char mac[32];
+
+		int qual = sta->rssi * 124 + 11600;
+		double rate = 1;
+		char rx[32];
+		char tx[32];
+		DisplayLastTxRxRateFor11n(getRADev("wl1"),s, RT_OID_802_11_QUERY_LAST_RX_RATE, &rate);
+		snprintf(rx, 8, "%.1f", rate);
+		DisplayLastTxRxRateFor11n(getRADev("wl1"), s, RT_OID_802_11_QUERY_LAST_TX_RATE, &rate);
 		snprintf(tx, 8, "%.1f", rate);
 
 		qual /= 10;
@@ -324,7 +345,6 @@ extern char *getiflist(void);
 
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 {
-	char devs[32];
 	int i;
 	int cnt = 0;
 	char turbo[32];
@@ -339,9 +359,9 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 #endif
-	sprintf(devs, "ra0");
 	t = 1;
-	cnt = ej_active_wireless_if(wp, argc, argv, "ra0", cnt, t, macmask);
+	cnt = ej_active_wireless_if(wp, argc, argv, getRADev("wl0"), cnt, t, macmask);
+	cnt = ej_active_wireless_if(wp, argc, argv, getRADev("wl1"), cnt, t, macmask);
 
 }
 
@@ -354,13 +374,13 @@ extern float wifi_getrate(char *ifname);
 void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 {
 	char mode[32];
-	int state = get_radiostate("wl0");
+	int state = get_radiostate(nvram_safe_get("wifi_display"));
 
 	if (state == 0 || state == -1) {
 		websWrite(wp, "%s", live_translate("share.disabled"));
 		return;
 	}
-	float rate = wifi_getrate("ra0");
+	float rate = wifi_getrate(getRADev(nvram_safe_get("wifi_display")));
 	char scale;
 	int divisor;
 
@@ -395,10 +415,10 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 {
-	int channel = wifi_getchannel("ra0");
+	int channel = wifi_getchannel(getRADev(nvram_safe_get("wifi_display")));
 
 	if (channel > 0 && channel < 1000) {
-		websWrite(wp, "%d (%d MHz)", channel, wifi_getfreq("ra0"));
+		websWrite(wp, "%d (%d MHz)", channel, wifi_getfreq(getRADev(nvram_safe_get("wifi_display"))));
 	} else
 		// websWrite (wp, "unknown");
 		websWrite(wp, "%s", live_translate("share.unknown"));

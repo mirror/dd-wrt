@@ -4122,7 +4122,7 @@ showRadio(wp, "wl_basic.mtikie", power);
 
 showbridgesettings(wp, prefix, 1, 1);
 #elif HAVE_RT2880
-showbridgesettings(wp, "ra0", 1, 1);
+showbridgesettings(wp, getRADev(prefix), 1, 1);
 #else
 if (!strcmp(prefix, "wl0"))
 	showbridgesettings(wp, get_wl_instance_name(0), 1, 1);
@@ -4795,7 +4795,7 @@ if (!strcmp(prefix, "wl1"))
 
 	showbridgesettings(wp, prefix, 1, 1);
 #elif HAVE_RT2880
-	showbridgesettings(wp, "ra0", 1, 1);
+	showbridgesettings(wp, getRADev(prefix), 1, 1);
 #else
 	if (!strcmp(prefix, "wl0"))
 		showbridgesettings(wp, get_wl_instance_name(0), 1, 1);
@@ -6724,7 +6724,7 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_MADWIFI
 	char *ifname = nvram_safe_get("wifi_display");
 #elif HAVE_RT2880
-	char *ifname = "ra0";
+	char *ifname = getRADev(nvram_safe_get("wifi_display"));
 #else
 	char name[32];
 	sprintf(name, "%s_ifname", nvram_safe_get("wifi_display"));
