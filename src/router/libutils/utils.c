@@ -3799,13 +3799,21 @@ char *getSTA()
 
 	for (i = 0; i < c; i++) {
 		if (nvram_nmatch("sta", "wl%d_mode", i)) {
-			if (!nvram_nmatch("disabled", "wl%d_net_mode", i))
+			if (!nvram_nmatch("disabled", "wl%d_net_mode", i)) {
+			    if (i==0)
 				return "ra0";
+			    else
+				return "ra1";
+			}
 		}
 
 		if (nvram_nmatch("apsta", "wl%d_mode", i)) {
-			if (!nvram_nmatch("disabled", "wl%d_net_mode", i))
+			if (!nvram_nmatch("disabled", "wl%d_net_mode", i)) {
+			    if (i==0)
 				return "apcli0";
+			    else
+				return "apcli1";
+			}
 		}
 
 	}
@@ -3820,11 +3828,17 @@ char *getWET()
 	for (i = 0; i < c; i++) {
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", i)
 		    && nvram_nmatch("wet", "wl%d_mode", i))
-			return "ra0";
+			    if (i==0)
+				return "ra0";
+			    else
+				return "ra1";
 
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", i)
 		    && nvram_nmatch("apstawet", "wl%d_mode", i))
-			return "apcli0";
+			    if (i==0)
+				return "apcli0";
+			    else
+				return "apcli1";
 
 	}
 	return NULL;
