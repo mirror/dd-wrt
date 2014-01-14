@@ -1447,19 +1447,19 @@ void start_lan(void)
 	{
 		if (getSTA() || getWET()
 		    || CANBRIDGE()) {
-			nvram_setz(lan_ifnames, "eth2 ra0");
+			nvram_setz(lan_ifnames, "eth2 ra0 ra8");
 			PORTSETUPWAN("");
 		} else {
-			nvram_setz(lan_ifnames, "eth2 ra0");
+			nvram_setz(lan_ifnames, "eth2 ra0 ra8");
 			PORTSETUPWAN("eth2");
 		}
 	} else {
 		if (getSTA() || getWET()
 		    || CANBRIDGE()) {
-			nvram_setz(lan_ifnames, "vlan1 vlan2 ra0");
+			nvram_setz(lan_ifnames, "vlan1 vlan2 ra0 ra8");
 			PORTSETUPWAN("");
 		} else {
-			nvram_setz(lan_ifnames, "vlan1 vlan2 ra0");
+			nvram_setz(lan_ifnames, "vlan1 vlan2 ra0 ra8");
 			PORTSETUPWAN("vlan2");
 		}
 	}

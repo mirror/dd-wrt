@@ -2781,7 +2781,7 @@ void ej_radio_on(webs_t wp, int argc, char_t ** argv)
 	}
 #elif HAVE_RT2880
 
-	int state = get_radiostate("wl0");
+	int state = get_radiostate(nvram_safe_get("wifi_display"));
 
 	switch (state) {
 	case 1:
@@ -2837,7 +2837,7 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 	}
 #elif HAVE_RT2880
 
-	int state = get_radiostate("wl0");
+	int state = get_radiostate(nvram_safe_get("wifi_display"));
 
 	switch (state) {
 	case 1:

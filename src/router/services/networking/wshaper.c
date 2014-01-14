@@ -896,7 +896,9 @@ void stop_wshaper(void)
 	ret = eval(script_name, "stop", "XX", "vlan1");
 	ret = eval(script_name, "stop", "XX", "vlan2");
 	ret = eval(script_name, "stop", "XX", "ra0");
+	ret = eval(script_name, "stop", "XX", "ra8");
 	ret = eval(script_name, "stop", "XX", "apcli0");
+	ret = eval(script_name, "stop", "XX", "apcli1");
 #elif HAVE_FONERA
 	ret = eval(script_name, "stop", "XX", "eth0");
 	ret = eval(script_name, "stop", "XX", "vlan0");
