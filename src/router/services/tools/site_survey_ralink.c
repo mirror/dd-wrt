@@ -116,14 +116,24 @@ int site_survey_main(int argc, char *argv[])
 	int len;
 
 	memset(site_survey_lists, sizeof(site_survey_lists), 0);
+	FILE *scan = NULL;
+	if (!strcmp("wifi_display","wl0")) {
 	if (nvram_match("wl0_mode", "ap")
 	    || nvram_match("wl0_mode", "apsta")) {
 		eval("iwpriv", "ra0", "set", "SiteSurvey=1");	// only in ap mode
 		sleep(4);	//wait 4 seconds per spec
 	}
 
-	FILE *scan = popen("iwpriv ra0 get_site_survey", "rb");
+	scan = popen("iwpriv ra0 get_site_survey", "rb");
+	}else {
+	if (nvram_match("wl1_mode", "ap")
+	    || nvram_match("wl1_mode", "apsta")) {
+		eval("iwpriv", "ra1", "set", "SiteSurvey=1");	// only in ap mode
+		sleep(4);	//wait 4 seconds per spec
+	}
 
+	scan = popen("iwpriv ra1 get_site_survey", "rb");	
+	}
 	skipline(scan);
 	skipline(scan);
 //      fscanf(scan, "%s %s", b1, b2);  // skip first line

@@ -426,8 +426,7 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		iface = ifname;
 		sysprintf("wl_atheros -i %s %s > %s", iface, ASSOCLIST_CMD, ASSOCLIST_TMP);
 #elif HAVE_RT2880
-		iface = nvram_safe_get("wl0_ifname");
-		sysprintf("wl_rt2880 -i %s %s > %s", iface, ASSOCLIST_CMD, ASSOCLIST_TMP);
+		sysprintf("wl_rt2880 -i %s %s > %s", ifname, ASSOCLIST_CMD, ASSOCLIST_TMP);
 #else
 		if (!strcmp(ifname, "wl0"))
 			iface = get_wl_instance_name(0);
