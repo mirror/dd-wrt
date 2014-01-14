@@ -221,10 +221,14 @@ int get_radiostate(char *ifname)
 {
 	if (nvram_nmatch("disabled", "%s_net_mode", ifname))
 		return 0;
+	if (!strcmp(ifname,"wl0")
+	    ifname = "ra0";
+	if (!strcmp(ifname,"wl1")
+	    ifname = "ra1";
 	struct ifreq ifr;
 	int skfd = getsocket();
 
-	strncpy(ifr.ifr_name, "ra0", sizeof(ifr.ifr_name));
+	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
 	if (ioctl(skfd, SIOCGIFFLAGS, &ifr) < 0) {
 		closesocket();
 		return -1;
@@ -316,6 +320,8 @@ STAINFO *getRaStaInfo(char *ifname)
 		return NULL;
 	}
 	char *ifn = "ra0";
+	if (!strcmp(ifname,"wl1"))
+	    ifn = "ra1";
 
 	if (nvram_nmatch("apsta", "%s_mode", ifname)
 	    || nvram_nmatch("apstawet", "%s_mode", ifname))
@@ -338,7 +344,7 @@ STAINFO *getRaStaInfo(char *ifname)
 		unsigned char lNoise;	// this value is (ULONG) in Ndis driver (NOTICE!!!)
 
 		OidQueryInformation(RT_OID_802_11_RSSI, s, ifn, &RSSI, sizeof(RSSI));
-		OidQueryInformation(RT_OID_802_11_QUERY_NOISE_LEVEL, s, "ra0", &lNoise, sizeof(lNoise));
+		OidQueryInformation(RT_OID_802_11_QUERY_NOISE_LEVEL, s, ifn, &lNoise, sizeof(lNoise));
 		nNoiseDbm = lNoise;
 		nNoiseDbm -= 143;
 
@@ -477,13 +483,20 @@ int getUptime(char *ifname, unsigned char *mac)
 
 void radio_off(int idx)
 {
+	if (idx==0)
 	eval("iwpriv", "ra0", "set", "RadioOn=0");
+	else 
+	eval("iwpriv", "ra1", "set", "RadioOn=0");
 	led_control(LED_WLAN0, LED_OFF);
 }
 
 void radio_on(int idx)
 {
+{
+	if (idx==0)
 	eval("iwpriv", "ra0", "set", "RadioOn=1");
+	else 
+	eval("iwpriv", "ra1", "set", "RadioOn=1");
 	led_control(LED_WLAN0, LED_ON);
 }
 
