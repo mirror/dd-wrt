@@ -67,3 +67,4 @@ CONNTRACK_UDP_TIMEOUTS=$(nvram get ip_conntrack_udp_timeouts)
 /bin/echo $CONNTRACK_MAX > /proc/sys/net/ipv4/netfilter/ip_conntrack_max
 /bin/echo $CONNTRACK_TCP_TIMEOUTS > /proc/sys/net/ipv4/netfilter/ip_conntrack_tcp_timeout_established
 /bin/echo $CONNTRACK_UDP_TIMEOUTS > /proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout_stream
+/usr/bin/expr $CONNTRACK_TCP_TIMEOUTS / 2 > /proc/sys/net/ipv4/tcp_keepalive_time
