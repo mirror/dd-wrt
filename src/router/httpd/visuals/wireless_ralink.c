@@ -210,7 +210,7 @@ static void TxRxRateFor11n(HTTRANSMIT_SETTING * HTSetting, double *fLastTxRxRate
 
 extern int OidQueryInformation(unsigned long OidQueryCode, int socket_id, char *DeviceName, void *ptr, unsigned long PtrLength);
 
-static void DisplayLastTxRxRateFor11n(ifname, int s, int nID, double *fLastTxRxRate)
+static void DisplayLastTxRxRateFor11n(char *ifname, int s, int nID, double *fLastTxRxRate)
 {
 	unsigned long lHTSetting;
 	HTTRANSMIT_SETTING HTSetting;
