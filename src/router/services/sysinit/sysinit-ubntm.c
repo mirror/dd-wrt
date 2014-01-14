@@ -52,6 +52,7 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 #include "devices/wireless.c"
+#include "devices/ethtools.c"
 
 void start_sysinit(void)
 {

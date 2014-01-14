@@ -52,19 +52,7 @@
 #include <linux/sockios.h>
 #include <linux/mii.h>
 #include "devices/wireless.c"
-
-static void setSwitchLED(int gpio, int portmask)
-{
-	sysprintf("echo switch0 > /sys/class/leds/generic_%d/trigger", gpio);
-	sysprintf("echo 0x%x > /sys/class/leds/generic_%d/port_mask", portmask, gpio);
-}
-
-static void setEthLED(int gpio, char *eth)
-{
-	sysprintf("echo netdev > /sys/class/leds/generic_%d/trigger", gpio);
-	sysprintf("echo %s > /sys/class/leds/generic_%d/device_name", eth, gpio);
-	sysprintf("echo \"link tx rx\" > /sys/class/leds/generic_%d/mode", gpio);
-}
+#include "devices/ethtools.c"
 
 void start_sysinit(void)
 {
