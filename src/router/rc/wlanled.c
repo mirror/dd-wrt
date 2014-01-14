@@ -57,6 +57,7 @@ struct led {
 	struct list_head list;
 	int signal_min;
 	int last_val;
+	bool inversed;
 	char name[];
 };
 
@@ -90,7 +91,7 @@ static void add_interface(const char *ifname)
 	list_add_tail(&iface->list, &interfaces);
 }
 
-static bool add_led(const char *name)
+static bool add_led(const char *name,bool inversed)
 {
 	struct led *led;
 	const char *c;
@@ -121,6 +122,7 @@ static bool add_led(const char *name)
 
 	led->signal_min = min;
 	led->last_val = -1;
+	led->inversed = inversed;
 	list_add_tail(&led->list, &leds);
 
 	return true;
@@ -208,7 +210,7 @@ static void process_leds(void)
 			continue;
 
 		led->last_val = val;
-		led_set_val(led, val);
+		led_set_val(led, abs(led->inversed - val));
 	}
 }
 
@@ -251,6 +253,7 @@ static int usage(const char *progname)
 		"Options:\n"
 		"  -i <pattern>			Pattern for interfaces (if not specified, use all interfaces)\n"
 		"  -l <name>:<thresh>		Add a led with name <name> and minimum signal strength <thresh>\n"
+		"  -L <name>:<thresh>		Add a inversed led with name <name> and minimum signal strength <thresh>\n"
 		"  -d <delay>			Set polling delay (default: %d)\n" "\n", progname, DEFAULT_POLL_DELAY);
 	return 1;
 }
@@ -274,13 +277,17 @@ int main(int argc, char **argv)
 {
 	int ch;
 
-	while ((ch = getopt(argc, argv, "i:l:")) != -1) {
+	while ((ch = getopt(argc, argv, "i:l:L:")) != -1) {
 		switch (ch) {
 		case 'i':
 			add_interface(optarg);
 			break;
 		case 'l':
-			if (!add_led(optarg))
+			if (!add_led(optarg,0))
+				return usage(argv[0]);
+			break;
+		case 'L':
+			if (!add_led(optarg,1))
 				return usage(argv[0]);
 			break;
 		case 'd':
