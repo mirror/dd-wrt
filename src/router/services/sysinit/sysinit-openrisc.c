@@ -112,9 +112,9 @@ static void install_sdcard(void)
 	eval("umount", "/tmp/install");
 	eval("sync");
 	fprintf(stderr, "signal installation complete\n");
-	eval("gpio", "enable", "4");
+	set_gpio(4,1);
 	sleep(1);
-	eval("gpio", "disable", "4");
+	set_gpio(4,0);
 }
 
 void start_sysinit(void)

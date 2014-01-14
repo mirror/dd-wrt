@@ -140,7 +140,7 @@ void start_sysinit(void)
 		ioctl(s, SIOCSIFHWADDR, &ifr);
 		close(s);
 	}
-	eval("gpio", "enable", "1");
+	set_gpio(1,1);
 #ifdef HAVE_RTG32
 	writeproc("/proc/sys/dev/wifi0/ledpin", "7");
 	writeproc("/proc/sys/dev/wifi0/softled", "1");
