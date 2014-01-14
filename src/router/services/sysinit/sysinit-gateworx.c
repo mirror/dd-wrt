@@ -452,8 +452,8 @@ void start_sysinit(void)
 	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350")) {
 		insmod("8250_gw2350");
 	}
-	eval("gpio", "disable", "26");
-	eval("gpio", "disable", "27");
+	set_gpio(26,0);
+	set_gpio(27,0);
 	nvram_set("gpio26", "0");
 	nvram_set("gpio27", "0");
 #endif

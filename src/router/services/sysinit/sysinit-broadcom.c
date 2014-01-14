@@ -1812,7 +1812,7 @@ void start_sysinit(void)
 
 	case ROUTER_ASUS_RTN12:
 		basic_params = vlan_0_1;
-		eval("gpio", "enable", "0");
+		set_gpio(0,1);
 		if (!nvram_match("ledbh0", "0")
 		    || !nvram_match("ledbh1", "0")) {
 			nvram_set("ledbh0", "0");
@@ -1980,7 +1980,7 @@ void start_sysinit(void)
 			set_regulation(1, "US", "0");
 
 		nvram_set("pci/2/1/ledbh13", "136");
-		eval("gpio", "disable", "13");
+		set_gpio(13,0);
 		break;
 
 	case ROUTER_D1800H:
@@ -2240,7 +2240,7 @@ void start_sysinit(void)
 		nvram_set("wan_ifname", "eth1");
 		nvram_set("wl0_ifname", "eth2");
 		nvram_set("wl1_ifname", "eth3");
-		eval("gpio", "disable", "7");
+		set_gpio(7,0);
 
 		if (nvram_get("pci/1/1/macaddr") == NULL || nvram_get("pci/1/3/macaddr") == NULL) {
 			unsigned char mac[20];
@@ -2424,7 +2424,7 @@ void start_sysinit(void)
 		nvram_set("wl0_ifname", "eth2");
 		nvram_set("wan_ifname", "eth0");	// WAN to nonexist. iface.
 		nvram_set("port_swap", "1");
-		eval("gpio", "disable", "7");
+		set_gpio(7,0);
 		if (nvram_match("wan_to_lan", "yes") && nvram_invmatch("wan_proto", "disabled"))	// = 
 			// 
 			// no 
@@ -2643,12 +2643,12 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_LINKSYS_WTR54GS:
-		eval("gpio", "enable", "3");	// prevent reboot loop on
+		set_gpio(3,1); //prevent reboot loop
 		// reset
 		break;
 
-	case ROUTER_WAP54G_V3:
-		eval("gpio", "enable", "0");	// reset gpio 0 for reset
+	case ROUTER_WAP54G_V3:		
+		set_gpio(0,1);	// reset gpio 0 for reset
 		// button 
 		// nvram_set ("vlan0ports", "1 5*");
 		// nvram_set ("vlan1ports", "4 5");
@@ -2746,7 +2746,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_MOTOROLA_V1:
-		eval("gpio", "disable", "7");
+		set_gpio(7,0);
 		break;
 
 	case ROUTER_WRT54G_V8:
@@ -2754,7 +2754,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_ASUS_WL700GE:
-		eval("gpio", "enable", "3");	// POWER-enable, turns on power to HDD and switch leds
+		set_gpio(3,1);	// POWER-enable, turns on power to HDD and switch leds
 		break;
 	}
 
