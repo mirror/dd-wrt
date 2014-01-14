@@ -249,8 +249,8 @@ void start_sysinit(void)
 	led_control(LED_WLAN0, LED_OFF);
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
-	system2("gpio disable 1");
-	system2("gpio disable 18");
+	set_gpio(1,0);
+	set_gpio(18,0);
 
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set enable_vlan 0");
