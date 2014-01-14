@@ -37,6 +37,10 @@ main (int argc, char *argv[])
   int i;
   for (i = 1; i < argc; i++)
     {
+      if (!strcmp (argv[i], "-i"))
+        {
+	    ifname = argv[i + 1];    
+        }
       if (!strcmp (argv[i], "assoclist"))
 	{
 	    showinterface (ifname);
