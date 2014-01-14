@@ -210,7 +210,7 @@ static void process_leds(void)
 			continue;
 
 		led->last_val = val;
-		led_set_val(led, abs(led->inversed - val));
+		led_set_val(led, led->inversed?!val:val);
 	}
 }
 
