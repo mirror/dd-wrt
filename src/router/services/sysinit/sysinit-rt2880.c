@@ -408,8 +408,8 @@ void start_sysinit(void)
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
 #ifdef HAVE_WCRGN
-	sysprintf("gpio enable 0");	// ses fixup
-	sysprintf("gpio enable 10");	// reset fixup
+	set_gpio(0,1);
+	set_gpio(10,1);
 #endif
 
 	if (!nvram_match("disable_watchdog", "1")) {
