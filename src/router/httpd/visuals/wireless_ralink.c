@@ -304,7 +304,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		double rate = 1;
 		char rx[32];
 		char tx[32];
-		DisplayLastTxRxRateFor11n(getRADev("wl0"),s, RT_OID_802_11_QUERY_LAST_RX_RATE, &rate);
+		DisplayLastTxRxRateFor11n(getRADev("wl0"), s, RT_OID_802_11_QUERY_LAST_RX_RATE, &rate);
 		snprintf(rx, 8, "%.1f", rate);
 		DisplayLastTxRxRateFor11n(getRADev("wl0"), s, RT_OID_802_11_QUERY_LAST_TX_RATE, &rate);
 		snprintf(tx, 8, "%.1f", rate);
@@ -325,7 +325,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		double rate = 1;
 		char rx[32];
 		char tx[32];
-		DisplayLastTxRxRateFor11n(getRADev("wl1"),s, RT_OID_802_11_QUERY_LAST_RX_RATE, &rate);
+		DisplayLastTxRxRateFor11n(getRADev("wl1"), s, RT_OID_802_11_QUERY_LAST_RX_RATE, &rate);
 		snprintf(rx, 8, "%.1f", rate);
 		DisplayLastTxRxRateFor11n(getRADev("wl1"), s, RT_OID_802_11_QUERY_LAST_TX_RATE, &rate);
 		snprintf(tx, 8, "%.1f", rate);
