@@ -33,7 +33,6 @@ extern int http_post(const char *server, char *buf, size_t count);
 #define NVRAMSPACE NVRAM_SPACE
 #endif
 
-
 #define BUFSPACE 50000
 
 int http_stats(const char *url)
