@@ -35,6 +35,7 @@ do
 	    echo COPY $i
 	    cp $i .config
 	    echo CONFIG_DIR615I=y >> .config
+	    echo CONFIG_WPE72=y >> .config
 	    echo CONFIG_WA901=y >> .config
 	    echo CONFIG_WDR4300=y >> .config
 	    echo CONFIG_WDR2543=y >> .config
@@ -43,6 +44,7 @@ do
 	    echo CONFIG_NVRAM_60K=y >> .config
 	    make oldconfig ARCH=mips
 	    sed -i 's/\CONFIG_WR841V8=y/ /g' .config	    
+	    sed -i 's/\CONFIG_WPE72=y/ /g' .config	    
 	    sed -i 's/\CONFIG_DIR615I=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WA901=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WDR4300=y/ /g' .config	    
