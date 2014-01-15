@@ -452,7 +452,6 @@ void configure_wifi(int idx)	// madwifi implementation for atheros based
 	eval("ifconfig", "wds8", "down");
 	eval("ifconfig", "wds9", "down");
 	eval("ifconfig", "apcli0", "down");
-	} else {
 	eval("ifconfig", "ra8", "down");
 	eval("ifconfig", "ra9", "down");
 	eval("ifconfig", "ra10", "down");
@@ -472,16 +471,11 @@ void configure_wifi(int idx)	// madwifi implementation for atheros based
 	eval("ifconfig", "wds18", "down");
 	eval("ifconfig", "wds19", "down");
 	eval("ifconfig", "apcli1", "down");
-	
-	
-	}
-	if (idx==0) {
+    	rmmod("RTPCI_ap");
 	rmmod("rt2860v2_ap");
 	rmmod("rt2860v2_sta");
 	rmmod("rt3062ap");
 	rmmod("rt2860ap");
-	} else {
-	rmmod("RTPCI_ap");
 	}
 	if (nvram_nmatch( "disabled","wl%d_net_mode",idx))
 		return;
@@ -492,6 +486,9 @@ void configure_wifi(int idx)	// madwifi implementation for atheros based
 	FILE *fp = fopen(cname, "wb");	// config file for driver (don't ask me, its really the worst config thing i have seen)
 
 	fprintf(fp, "Default\n");
+	if (idx==1)
+	    fprintf(fp, "E2pAccessMode=2\n");
+
 #ifdef BUFFALO_JP
 	fprintf(fp, "CountryRegion=5\n");
 	fprintf(fp, "CountryRegionABand=7\n");
@@ -1248,6 +1245,7 @@ if (idx==0) {
 		nvram_set(vathmac, vmacaddr);
 		setupSupplicant(dev);
 	} else {
+		if (idx==0) {
 #if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)
 		if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 			sysprintf("insmod rt2860v2_ap mac=%s", nvram_safe_get("def_whwaddr"));
@@ -1268,7 +1266,10 @@ if (idx==0) {
 		} else {
 			insmod("rt2860v2_ap");
 		}
-#endif
+#endif		
+		} else {
+			insmod("RTPCI_ap");
+		}
 
 		char dev[32];
 		sprintf(dev,"wl%d",idx);
