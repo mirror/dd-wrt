@@ -379,7 +379,7 @@ void start_radius(void)
 
 	prefix = "wl1";
 
-	strcpy(ifname, "ra8");
+	strcpy(ifname, "ba0");
 
 	if (nvram_nmatch("1", "%s_radauth", prefix)
 	    && nvram_nmatch("ap", "%s_mode", prefix)) {
@@ -452,14 +452,14 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	eval("ifconfig", "wds8", "down");
 	eval("ifconfig", "wds9", "down");
 	eval("ifconfig", "apcli0", "down");
-	eval("ifconfig", "ra8", "down");
-	eval("ifconfig", "ra9", "down");
-	eval("ifconfig", "ra10", "down");
-	eval("ifconfig", "ra11", "down");
-	eval("ifconfig", "ra12", "down");
-	eval("ifconfig", "ra13", "down");
-	eval("ifconfig", "ra14", "down");
-	eval("ifconfig", "ra15", "down");
+	eval("ifconfig", "ba0", "down");
+	eval("ifconfig", "ba1", "down");
+	eval("ifconfig", "ba2", "down");
+	eval("ifconfig", "ba3", "down");
+	eval("ifconfig", "ba4", "down");
+	eval("ifconfig", "ba5", "down");
+	eval("ifconfig", "ba6", "down");
+	eval("ifconfig", "ba7", "down");
 	eval("ifconfig", "wds10", "down");
 	eval("ifconfig", "wds11", "down");
 	eval("ifconfig", "wds12", "down");
@@ -655,9 +655,9 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		strcat(eapifname, getBridge("ra0"));
 	}else{
 	if (nvram_nmatch("0", "ra%d_bridged", idx+8))
-		strcat(eapifname, "ra8");
+		strcat(eapifname, "ba0");
 	else
-		strcat(eapifname, getBridge("ra8"));
+		strcat(eapifname, getBridge("ba0"));
 	
 	}		
 	if (nvram_nmatch("wep","wl%d_akm", idx)) {

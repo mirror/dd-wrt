@@ -94,21 +94,21 @@ char *getRADev(char *prefix)
 		ifname = "ra7";
 
 	if (!strcmp(prefix, "wl1"))
-		ifname = "ra8";
+		ifname = "ba0";
 	if (!strcmp(prefix, "wl1.1"))
-		ifname = "ra9";
+		ifname = "ba1";
 	if (!strcmp(prefix, "wl1.2"))
-		ifname = "ra10";
+		ifname = "ba2";
 	if (!strcmp(prefix, "wl1.3"))
-		ifname = "ra11";
+		ifname = "ba3";
 	if (!strcmp(prefix, "wl1.4"))
-		ifname = "ra12";
+		ifname = "ba4";
 	if (!strcmp(prefix, "wl1.5"))
-		ifname = "ra13";
+		ifname = "ba5";
 	if (!strcmp(prefix, "wl1.6"))
-		ifname = "ra14";
+		ifname = "ba6";
 	if (!strcmp(prefix, "wl1.7"))
-		ifname = "ra15";
+		ifname = "ba7";
 
 	if (ifname)
 		return ifname;
@@ -242,7 +242,7 @@ int get_radiostate(char *ifname)
 	if (!strcmp(ifname, "wl0"))
 		ifname = "ra0";
 	if (!strcmp(ifname, "wl1"))
-		ifname = "ra8";
+		ifname = "ba0";
 	struct ifreq ifr;
 	int skfd = getsocket();
 
@@ -339,7 +339,7 @@ STAINFO *getRaStaInfo(char *ifname)
 	}
 	char *ifn = "ra0";
 	if (!strcmp(ifname, "wl1"))
-		ifn = "ra8";
+		ifn = "ba0";
 
 	if (nvram_nmatch("apsta", "%s_mode", ifname)
 	    || nvram_nmatch("apstawet", "%s_mode", ifname)) {
@@ -507,7 +507,7 @@ void radio_off(int idx)
 	if (idx == 0)
 		eval("iwpriv", "ra0", "set", "RadioOn=0");
 	else
-		eval("iwpriv", "ra8", "set", "RadioOn=0");
+		eval("iwpriv", "ba0", "set", "RadioOn=0");
 	led_control(LED_WLAN0, LED_OFF);
 }
 
@@ -516,7 +516,7 @@ void radio_on(int idx)
 	if (idx == 0)
 		eval("iwpriv", "ra0", "set", "RadioOn=1");
 	else
-		eval("iwpriv", "ra8", "set", "RadioOn=1");
+		eval("iwpriv", "ba0", "set", "RadioOn=1");
 	led_control(LED_WLAN0, LED_ON);
 }
 
