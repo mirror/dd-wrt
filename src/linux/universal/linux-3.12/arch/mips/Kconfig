@@ -916,6 +916,11 @@ config DIR615E
     depends on MACH_AR7240
     default n
 
+config WPE72
+    bool "WPE72 support?"
+    depends on MACH_AR7240
+    default n
+
 
 config WR741
     bool "wr741 wireless mac?"
