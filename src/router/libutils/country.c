@@ -716,6 +716,7 @@ char *getIsoName(const char *country)
 	}
 	return 0;
 }
+
 extern int getRouterBrand(void);
 
 #ifdef HAVE_BUFFALO
@@ -763,8 +764,7 @@ char *getCountryList(void)
 			sprintf(country, "%s", allCountries[i].isoName);
 			if (isValidCountry(region, country)) {
 #elif HAVE_WIKINGS
-			if (nvram_safe_get("wkregdomain") == NULL 
-			    || !strcmp(nvram_safe_get("wkregdomain"), allCountries[i].isoName)
+			if (nvram_safe_get("wkregdomain") == NULL || !strcmp(nvram_safe_get("wkregdomain"), allCountries[i].isoName)
 			    || !strcmp(nvram_safe_get("wkregdomain"), "")) {
 #endif
 				count += strlen(allCountries[i].name) + 1;
@@ -782,8 +782,7 @@ char *getCountryList(void)
 			sprintf(country, "%s", allCountries[i].isoName);
 			if (isValidCountry(region, country)) {
 #elif HAVE_WIKINGS
-			if (nvram_safe_get("wkregdomain") == NULL 
-			    || !strcmp(nvram_safe_get("wkregdomain"), allCountries[i].isoName)
+			if (nvram_safe_get("wkregdomain") == NULL || !strcmp(nvram_safe_get("wkregdomain"), allCountries[i].isoName)
 			    || !strcmp(nvram_safe_get("wkregdomain"), "")) {
 #endif
 				strcat(countries, allCountries[i].name);
@@ -804,28 +803,28 @@ void setRegulationDomain(char *reg)
 	char ccode[4] = "";
 	char ccode0[4] = "";
 	char ccode1[4] = "";
-	
+
 	char rrev0[4] = "";
 	char rrev1[4] = "";
-	
+
 	strncpy(ccode, getIsoName(reg), 3);
-	
-	if(!strcmp(ccode, "EU") || !strcmp(ccode, "TW") ){
+
+	if (!strcmp(ccode, "EU") || !strcmp(ccode, "TW")) {
 		strcpy(ccode0, "DE");
 		strcpy(rrev0, "0");
 		strcpy(ccode1, "EU");
 		strcpy(rrev1, "61");
-	} else if ( !strcmp(ccode, "CN") ){
+	} else if (!strcmp(ccode, "CN")) {
 		strcpy(ccode0, "CN");
 		strcpy(rrev0, "34");
 		strcpy(ccode1, "Q2");
 		strcpy(rrev1, "41");
-	} else if ( !strcmp(ccode, "JP") ){
+	} else if (!strcmp(ccode, "JP")) {
 		strcpy(ccode0, "JP");
 		strcpy(rrev0, "45");
 		strcpy(ccode1, "JP");
 		strcpy(rrev1, "45");
-	} else{
+	} else {
 		strcpy(ccode0, "Q1");
 		strcpy(rrev0, "27");
 		strcpy(ccode1, "Q2");
@@ -833,7 +832,7 @@ void setRegulationDomain(char *reg)
 	}
 
 	//fprintf(stderr, "setRegulationDomain ccode: %s rrev: %s\n", ccode, rrev);
-	
+
 	nvram_set("wl_country_rev", rrev0);
 	nvram_set("wl0_country_rev", rrev0);
 	nvram_set("wl1_country_rev", rrev1);
@@ -842,23 +841,23 @@ void setRegulationDomain(char *reg)
 	nvram_set("wl1_country_code", ccode1);
 
 	switch (getRouterBrand()) {
-		case ROUTER_NETGEAR_R6250:
-		case ROUTER_NETGEAR_R6300V2:
-		case ROUTER_NETGEAR_R7000:
-		case ROUTER_DLINK_DIR868:
-		case ROUTER_LINKSYS_EA6500V2:
-		case ROUTER_LINKSYS_EA6700:
-		case ROUTER_LINKSYS_EA6900:
-			nvram_set("pci/1/1/regrev", rrev0);
-			nvram_set("pci/2/1/regrev", rrev1);
-			nvram_set("pci/1/1/ccode",  ccode0);
-			nvram_set("pci/2/1/ccode",  ccode1);
+	case ROUTER_NETGEAR_R6250:
+	case ROUTER_NETGEAR_R6300V2:
+	case ROUTER_NETGEAR_R7000:
+	case ROUTER_DLINK_DIR868:
+	case ROUTER_LINKSYS_EA6500V2:
+	case ROUTER_LINKSYS_EA6700:
+	case ROUTER_LINKSYS_EA6900:
+		nvram_set("pci/1/1/regrev", rrev0);
+		nvram_set("pci/2/1/regrev", rrev1);
+		nvram_set("pci/1/1/ccode", ccode0);
+		nvram_set("pci/2/1/ccode", ccode1);
 		break;
-			default:
-			nvram_set("0:regrev", rrev0);
-			nvram_set("1:regrev", rrev1);
-			nvram_set("0:ccode", ccode0);
-			nvram_set("1:ccode", ccode1);	  
+	default:
+		nvram_set("0:regrev", rrev0);
+		nvram_set("1:regrev", rrev1);
+		nvram_set("0:ccode", ccode0);
+		nvram_set("1:ccode", ccode1);
 	}
-  
+
 }
