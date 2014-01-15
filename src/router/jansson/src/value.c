@@ -22,7 +22,7 @@
 static JSON_INLINE int t_isnan(double x) { return x != x; }
 //#endif
 //#ifndef isinf
-static JSON_INLINE int t_isinf(double x) { return !isnan(x) && isnan(x - x); }
+static JSON_INLINE int t_isinf(double x) { return !t_isnan(x) && t_isnan(x - x); }
 //#endif
 
 static JSON_INLINE void json_init(json_t *json, json_type type)
