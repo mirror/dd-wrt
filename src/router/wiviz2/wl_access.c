@@ -43,7 +43,7 @@
 
 char *get_monitor(void)
 {
-return "ra0";
+return getRADev(nvram_safe_get("wifi_display"));
 }
 
 #else
