@@ -230,7 +230,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 	struct iwreq iwr;
 	int ignore = 0;
 
-	if (!ifexists(ifname)) {
+	if (!ifexists(getRADev(ifname))) {
 		printf("IOCTL_STA_INFO ifresolv %s failed!\n", ifname);
 		return cnt;
 	}
