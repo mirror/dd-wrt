@@ -255,8 +255,10 @@ ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
 endif
 ifneq ($(CONFIG_JFFS2),y)
+ifneq ($(CONFIG_MT7620),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
+endif
 endif
 ifneq ($(CONFIG_IPV6),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
@@ -484,8 +486,10 @@ ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
 endif
 ifneq ($(CONFIG_JFFS2),y)
+ifneq ($(CONFIG_MT7620),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
+endif
 endif
 ifneq ($(CONFIG_IPV6),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
@@ -526,6 +530,21 @@ ifeq ($(CONFIG_MT7620),y)
 	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7620.uimage
 	cp mipsel-uclibc/aligned-mt7620.uimage mipsel-uclibc/firmware_WHR-300HP2.ram
 	./tools/trx_n -m 30000000 -a 1 -o mipsel-uclibc/mt7620-webflash.bin mipsel-uclibc/firmware_WHR-300HP2.ram
+	cp tools/CRC_tool $(ARCH)-uclibc
+	cp tools/conf.txt $(ARCH)-uclibc
+	cp $(ARCH)-uclibc/aligned-mt7620.uimage $(ARCH)-uclibc/aligned-mt7620.uimage-300-jp
+	-cd $(ARCH)-uclibc && ./CRC_tool aligned-mt7620.uimage-300-jp WRTR-297GN && cd ..
+	cp $(ARCH)-uclibc/aligned-mt7620.uimage $(ARCH)-uclibc/aligned-mt7620.uimage-300-us
+	-cd $(ARCH)-uclibc && ./CRC_tool aligned-mt7620.uimage-300-us WRTR-297GN_US && cd ..
+	cp $(ARCH)-uclibc/aligned-mt7620.uimage $(ARCH)-uclibc/aligned-mt7620.uimage-300-eu
+	-cd $(ARCH)-uclibc && ./CRC_tool aligned-mt7620.uimage-300-eu WRTR-297GN_EU && cd ..
+
+	cp $(ARCH)-uclibc/aligned-mt7620.uimage $(ARCH)-uclibc/aligned-mt7620.uimage-600-jp
+	-cd $(ARCH)-uclibc && ./CRC_tool aligned-mt7620.uimage-600-jp WRTR-296N && cd ..
+	cp $(ARCH)-uclibc/aligned-mt7620.uimage $(ARCH)-uclibc/aligned-mt7620.uimage-600-us
+	-cd $(ARCH)-uclibc && ./CRC_tool aligned-mt7620.uimage-600-us WRTR-296N_US && cd ..
+	cp $(ARCH)-uclibc/aligned-mt7620.uimage $(ARCH)-uclibc/aligned-mt7620.uimage-600-eu
+	-cd $(ARCH)-uclibc && ./CRC_tool aligned-mt7620.uimage-600-eu WRTR-296N_EU && cd ..
 endif
 
 
