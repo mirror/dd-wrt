@@ -664,7 +664,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		else
 			strcat(eapifname, getBridge("ra0"));
 	} else {
-		if (nvram_nmatch("0", "ra%d_bridged", idx + 8))
+		if (nvram_nmatch("0", "ba%d_bridged", idx))
 			strcat(eapifname, "ba0");
 		else
 			strcat(eapifname, getBridge("ba0"));
@@ -710,15 +710,11 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		strcat(radius_port, "1812");
 		strcat(radius_key, "ralink");
 	}
-	if (nvram_nmatch("psk2", "wl%d_akm", idx)) {
+	if (nvram_nmatch("psk2", "wl%d_akm", idx) || nvram_nmatch("psk", "wl%d_akm", idx) || nvram_nmatch("psk psk2", "wl%d_akm", idx)) {
 		if (isSTA(idx))
 			fprintf(fp, "WPAPSK=%s\n", nvram_nget("wl%d_wpa_psk", idx));
 		else
 			fprintf(fp, "WPAPSK1=%s\n", nvram_nget("wl%d_wpa_psk", idx));
-		if (nvram_nmatch("infra", "wl%d_mode", idx))
-			strcat(authmode, "WPANONE");
-		else
-			strcat(authmode, "WPA2PSK");
 		strcat(radius_server, "0.0.0.0");
 		strcat(radius_port, "1812");
 		strcat(radius_key, "ralink");
@@ -730,18 +726,16 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		if (nvram_nmatch("tkip+aes", "wl%d_crypto", idx))
 			strcat(encryptype, "TKIPAES");
 	}
-	if (nvram_nmatch("psk psk2", "wl%d_akm", idx)) {
+	if (nvram_nmatch("wpa", "wl%d_akm", idx) || nvram_nmatch("wpa2", "wl%d_akm", idx) || nvram_nmatch("wpa wpa2", "wl%d_akm", idx)) {
+		startradius[idx] = 1;
 		if (isSTA(idx))
 			fprintf(fp, "WPAPSK=%s\n", nvram_nget("wl%d_wpa_psk", idx));
 		else
-			fprintf(fp, "WPAPSK1=%s\n", nvram_nget("wl%d_wpa_psk", idx));
-		if (nvram_nmatch("infra", "wl%d_mode", idx))
-			strcat(authmode, "WPANONE");
-		else
-			strcat(authmode, "WPAPSKWPA2PSK");
-		strcat(radius_server, "0.0.0.0");
-		strcat(radius_port, "1812");
-		strcat(radius_key, "ralink");
+			fprintf(fp, "WPAPSK1=\n");
+		strcat(authmode, "WPA");
+		strcat(radius_server, nvram_nget("wl%d_radius_ipaddr", idx));
+		strcat(radius_port, nvram_nget("wl%d_radius_port", idx));
+		strcat(radius_key, nvram_nget("wl%d_radius_key", idx));
 		strcat(x80211, "0");
 		if (nvram_nmatch("tkip", "wl%d_crypto", idx))
 			strcat(encryptype, "TKIP");
@@ -751,79 +745,22 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			strcat(encryptype, "TKIPAES");
 	}
 
-	if (nvram_nmatch("psk", "wl%d_akm", idx)) {
-		if (isSTA(idx))
-			fprintf(fp, "WPAPSK=%s\n", nvram_nget("wl%d_wpa_psk", idx));
-		else
-			fprintf(fp, "WPAPSK1=%s\n", nvram_nget("wl%d_wpa_psk", idx));
-		if (nvram_nmatch("infra", "wl%d_mode", idx))
-			strcat(authmode, "WPANONE");
-		else
+	if (nvram_nmatch("infra", "wl%d_mode", idx)) {
+		strcat(authmode, "WPANONE");
+	} else {
+
+		if (nvram_nmatch("wpa", "wl%d_akm", idx))
+			strcat(authmode, "WPA");
+		if (nvram_nmatch("wpa2", "wl%d_akm", idx))
+			strcat(authmode, "WPA2");
+		if (nvram_nmatch("wpa wpa2", "wl%d_akm", idx))
+			strcat(authmode, "WPA1WPA2");
+		if (nvram_nmatch("psk2", "wl%d_akm", idx))
+			strcat(authmode, "WPA2PSK");
+		if (nvram_nmatch("psk", "wl%d_akm", idx))
 			strcat(authmode, "WPAPSK");
-		strcat(radius_server, "0.0.0.0");
-		strcat(radius_port, "1812");
-		strcat(radius_key, "ralink");
-		strcat(x80211, "0");
-		if (nvram_nmatch("tkip", "wl%d_crypto", idx))
-			strcat(encryptype, "TKIP");
-		if (nvram_nmatch("aes", "wl%d_crypto", idx))
-			strcat(encryptype, "AES");
-		if (nvram_nmatch("tkip+aes", "wl%d_crypto", idx))
-			strcat(encryptype, "TKIPAES");
-	}
-	if (nvram_nmatch("wpa", "wl%d_akm", idx)) {
-		startradius[idx] = 1;
-		if (isSTA(idx))
-			fprintf(fp, "WPAPSK=%s\n", nvram_nget("wl%d_wpa_psk", idx));
-		else
-			fprintf(fp, "WPAPSK1=\n");
-		strcat(authmode, "WPA");
-		strcat(radius_server, nvram_nget("wl%d_radius_ipaddr", idx));
-		strcat(radius_port, nvram_nget("wl%d_radius_port", idx));
-		strcat(radius_key, nvram_nget("wl%d_radius_key", idx));
-		strcat(x80211, "0");
-		if (nvram_nmatch("tkip", "wl%d_crypto", idx))
-			strcat(encryptype, "TKIP");
-		if (nvram_nmatch("aes", "wl%d_crypto", idx))
-			strcat(encryptype, "AES");
-		if (nvram_nmatch("tkip+aes", "wl%d_crypto", idx))
-			strcat(encryptype, "TKIPAES");
-	}
-	if (nvram_nmatch("wpa2", "wl%d_akm", idx)) {
-		startradius[idx] = 1;
-		if (isSTA(idx))
-			fprintf(fp, "WPAPSK=%s\n", nvram_nget("wl%d_wpa_psk", idx));
-		else
-			fprintf(fp, "WPAPSK1=\n");
-		strcat(authmode, "WPA");
-		strcat(radius_server, nvram_nget("wl%d_radius_ipaddr", idx));
-		strcat(radius_port, nvram_nget("wl%d_radius_port", idx));
-		strcat(radius_key, nvram_nget("wl%d_radius_key", idx));
-		strcat(x80211, "0");
-		if (nvram_nmatch("tkip", "wl%d_crypto", idx))
-			strcat(encryptype, "TKIP");
-		if (nvram_nmatch("aes", "wl%d_crypto", idx))
-			strcat(encryptype, "AES");
-		if (nvram_nmatch("tkip+aes", "wl%d_crypto", idx))
-			strcat(encryptype, "TKIPAES");
-	}
-	if (nvram_nmatch("wpa wpa2", "wl%d_akm", idx)) {
-		startradius[idx] = 1;
-		if (isSTA(idx))
-			fprintf(fp, "WPAPSK=%s\n", nvram_nget("wl%d_wpa_psk", idx));
-		else
-			fprintf(fp, "WPAPSK1=\n");
-		strcat(authmode, "WPA1WPA2");
-		strcat(radius_server, nvram_nget("wl%d_radius_ipaddr", idx));
-		strcat(radius_port, nvram_nget("wl%d_radius_port", idx));
-		strcat(radius_key, nvram_nget("wl%d_radius_key", idx));
-		strcat(x80211, "0");
-		if (nvram_nmatch("tkip", "wl%d_crypto", idx))
-			strcat(encryptype, "TKIP");
-		if (nvram_nmatch("aes", "wl%d_crypto", idx))
-			strcat(encryptype, "AES");
-		if (nvram_nmatch("tkip+aes", "wl%d_crypto", idx))
-			strcat(encryptype, "TKIPAES");
+		if (nvram_nmatch("psk psk2", "wl%d_akm", idx))
+			strcat(authmode, "WPAPSKWPA2PSK");
 	}
 	if (nvram_nmatch("radius", "wl%d_akm", idx)) {
 		startradius[idx] = 1;
@@ -877,93 +814,45 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			fprintf(fp, "Key3Str%d=%s\n", count, nvram_nget("%s_key3", var));
 			fprintf(fp, "Key4Str%d=%s\n", count, nvram_nget("%s_key4", var));
 		}
-		if (nvram_nmatch("psk", "%s_akm", var)) {
+		if (nvram_nmatch("psk", "%s_akm", var) || nvram_nmatch("psk psk2", "%s_akm", var) || nvram_nmatch("psk2", "%s_akm", var)) {
 			sprintf(radius_server, "%s;0.0.0.0", radius_server);
 			sprintf(radius_port, "%s;1812", radius_port);
 			sprintf(radius_key, "%s;ralink", radius_key);
 			strcat(x80211, ";0");
 			fprintf(fp, "WPAPSK%d=%s\n", count, nvram_nget("%s_wpa_psk", var));
+			if (nvram_nmatch("tkip", "%s_crypto", var))
+				strcat(encryptype, ";TKIP");
+			if (nvram_nmatch("aes", "%s_crypto", var))
+				strcat(encryptype, ";AES");
+			if (nvram_nmatch("tkip+aes", "%s_crypto", var))
+				strcat(encryptype, ";TKIPAES");
+		}
+		if (nvram_nmatch("wpa", "%s_akm", var) || nvram_nmatch("wpa2", "%s_akm", var) || nvram_nmatch("wpa wpa2", "%s_akm", var)) {
+			startradius[idx] = 1;
+			fprintf(fp, "WPAPSK%d=\n", count);
+			sprintf(radius_server, "%s;%s", radius_server, nvram_nget("%s_radius_ipaddr", var));
+			sprintf(radius_port, "%s;%s", radius_port, nvram_nget("%s_radius_port", var));
+			sprintf(radius_key, "%s;%s", radius_key, nvram_nget("%s_radius_key", var));
+			strcat(x80211, ";0");
+			if (nvram_nmatch("tkip", "%s_crypto", var))
+				strcat(encryptype, ";TKIP");
+			if (nvram_nmatch("aes", "%s_crypto", var))
+				strcat(encryptype, ";AES");
+			if (nvram_nmatch("tkip+aes", "%s_crypto", var))
+				strcat(encryptype, ";TKIPAES");
+		}
+		if (nvram_nmatch("psk", "%s_akm", var))
 			strcat(authmode, ";WPAPSK");
-			if (nvram_nmatch("tkip", "%s_crypto", var))
-				strcat(encryptype, ";TKIP");
-			if (nvram_nmatch("aes", "%s_crypto", var))
-				strcat(encryptype, ";AES");
-			if (nvram_nmatch("tkip+aes", "%s_crypto", var))
-				strcat(encryptype, ";TKIPAES");
-		}
-		if (nvram_nmatch("psk psk2", "%s_akm", var)) {
-			sprintf(radius_server, "%s;0.0.0.0", radius_server);
-			sprintf(radius_port, "%s;1812", radius_port);
-			sprintf(radius_key, "%s;ralink", radius_key);
-			strcat(x80211, ";0");
-			fprintf(fp, "WPAPSK%d=%s\n", count, nvram_nget("%s_wpa_psk", var));
+		if (nvram_nmatch("psk2", "%s_akm", var))
+			strcat(authmode, ";WPAPSK2");
+		if (nvram_nmatch("psk psk2", "%s_akm", var))
 			strcat(authmode, ";WPAPSKWPA2PSK");
-			if (nvram_nmatch("tkip", "%s_crypto", var))
-				strcat(encryptype, ";TKIP");
-			if (nvram_nmatch("aes", "%s_crypto", var))
-				strcat(encryptype, ";AES");
-			if (nvram_nmatch("tkip+aes", "%s_crypto", var))
-				strcat(encryptype, ";TKIPAES");
-		}
-		if (nvram_nmatch("psk2", "%s_akm", var)) {
-			sprintf(radius_server, "%s;0.0.0.0", radius_server);
-			sprintf(radius_port, "%s;1812", radius_port);
-			sprintf(radius_key, "%s;ralink", radius_key);
-			strcat(x80211, ";0");
-			fprintf(fp, "WPAPSK%d=%s\n", count, nvram_nget("%s_wpa_psk", var));
-			strcat(authmode, ";WPA2PSK");
-			if (nvram_nmatch("tkip", "%s_crypto", var))
-				strcat(encryptype, ";TKIP");
-			if (nvram_nmatch("aes", "%s_crypto", var))
-				strcat(encryptype, ";AES");
-			if (nvram_nmatch("tkip+aes", "%s_crypto", var))
-				strcat(encryptype, ";TKIPAES");
-		}
-		if (nvram_nmatch("wpa", "%s_akm", var)) {
-			startradius[idx] = 1;
-			fprintf(fp, "WPAPSK%d=\n", count);
+		if (nvram_nmatch("wpa", "%s_akm", var))
 			strcat(authmode, ";WPA");
-			sprintf(radius_server, "%s;%s", radius_server, nvram_nget("%s_radius_ipaddr", var));
-			sprintf(radius_port, "%s;%s", radius_port, nvram_nget("%s_radius_port", var));
-			sprintf(radius_key, "%s;%s", radius_key, nvram_nget("%s_radius_key", var));
-			strcat(x80211, ";0");
-			if (nvram_nmatch("tkip", "%s_crypto", var))
-				strcat(encryptype, ";TKIP");
-			if (nvram_nmatch("aes", "%s_crypto", var))
-				strcat(encryptype, ";AES");
-			if (nvram_nmatch("tkip+aes", "%s_crypto", var))
-				strcat(encryptype, ";TKIPAES");
-		}
-		if (nvram_nmatch("wpa2", "%s_akm", var)) {
-			startradius[idx] = 1;
-			fprintf(fp, "WPAPSK%d=\n", count);
+		if (nvram_nmatch("wpa2", "%s_akm", var))
 			strcat(authmode, ";WPA2");
-			sprintf(radius_server, "%s;%s", radius_server, nvram_nget("%s_radius_ipaddr", var));
-			sprintf(radius_port, "%s;%s", radius_port, nvram_nget("%s_radius_port", var));
-			sprintf(radius_key, "%s;%s", radius_key, nvram_nget("%s_radius_key", var));
-			strcat(x80211, ";0");
-			if (nvram_nmatch("tkip", "%s_crypto", var))
-				strcat(encryptype, ";TKIP");
-			if (nvram_nmatch("aes", "%s_crypto", var))
-				strcat(encryptype, ";AES");
-			if (nvram_nmatch("tkip+aes", "%s_crypto", var))
-				strcat(encryptype, ";TKIPAES");
-		}
-		if (nvram_nmatch("wpa wpa2", "%s_akm", var)) {
-			startradius[idx] = 1;
-			fprintf(fp, "WPAPSK%d=\n", count);
+		if (nvram_nmatch("wpa wpa2", "%s_akm", var))
 			strcat(authmode, ";WPA1WPA2");
-			sprintf(radius_server, "%s;%s", radius_server, nvram_nget("%s_radius_ipaddr", var));
-			sprintf(radius_port, "%s;%s", radius_port, nvram_nget("%s_radius_port", var));
-			sprintf(radius_key, "%s;%s", radius_key, nvram_nget("%s_radius_key", var));
-			strcat(x80211, ";0");
-			if (nvram_nmatch("tkip", "%s_crypto", var))
-				strcat(encryptype, ";TKIP");
-			if (nvram_nmatch("aes", "%s_crypto", var))
-				strcat(encryptype, ";AES");
-			if (nvram_nmatch("tkip+aes", "%s_crypto", var))
-				strcat(encryptype, ";TKIPAES");
-		}
 		if (nvram_nmatch("radius", "%s_akm", var)) {
 			startradius[idx] = 1;
 			fprintf(fp, "WPAPSK%d=\n", count);
