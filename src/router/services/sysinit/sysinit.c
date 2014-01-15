@@ -441,6 +441,7 @@ static void buffalo_defaults(int force)
 {
 	if (nvram_get("ath0_akm") == NULL || force) {
 		nvram_set("ath0_akm", "disabled");
+		nvram_set("ath1_akm", "disabled");
 	
 		FILE *fp;
 		char script[32] = "/tmp/fdefaults.sh";
@@ -490,6 +491,11 @@ static void buffalo_defaults(int force)
 					nvram_set("wl0_akm", "psk psk2");
 					nvram_set("wl0_crypto", "aes");
 					nvram_set("wl0_wpa_psk", list[1]);
+
+					nvram_set("wl1_security_mode", "psk psk2");
+					nvram_set("wl1_akm", "psk psk2");
+					nvram_set("wl1_crypto", "aes");
+					nvram_set("wl1_wpa_psk", list[1]);
 				}
 			}
 			fclose(fp);
