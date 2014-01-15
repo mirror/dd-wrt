@@ -941,7 +941,7 @@ void start_restore_defaults(void)
 #elif HAVE_RT2880
 	struct nvram_tuple generic[] = {
 		{"lan_ifname", "br0", 0},
-		{"lan_ifnames", "vlan1 vlan2 ra0",
+		{"lan_ifnames", "vlan1 vlan2 ra0 ba0",
 		 0},
 		{"wan_ifname2", "vlan2", 0},
 		{"wan_ifname", "vlan2", 0},
