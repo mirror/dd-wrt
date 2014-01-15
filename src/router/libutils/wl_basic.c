@@ -12,17 +12,17 @@
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *get_wl_instance_name(int instance)
 {
-	if (instance==0)
-	    return "ra0";
+	if (instance == 0)
+		return "ra0";
 	return "ba0";
 }
 
 int get_wl_instances(void)
 {
-	FILE *fp = fopen("/sys/bus/pci/devices/0000:01:00.0/device","rb");
+	FILE *fp = fopen("/sys/bus/pci/devices/0000:01:00.0/device", "rb");
 	if (fp) {
-	    fclose(fp);
-	    return 2;
+		fclose(fp);
+		return 2;
 	}
 	return 1;
 }

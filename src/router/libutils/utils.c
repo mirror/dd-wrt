@@ -1012,21 +1012,20 @@ int internal_getRouterBrand()
 #endif
 		return ROUTER_BUFFALO_WZR600DHP2;
 	}
-	
-	if (nvram_match("boardtype","0xD646") && nvram_match("boardrev","0x1100") && nvram_match("0:devid","0x43A1")) {
+
+	if (nvram_match("boardtype", "0xD646") && nvram_match("boardrev", "0x1100") && nvram_match("0:devid", "0x43A1")) {
 		setRouter("Linksys EA6900");
 
 		return ROUTER_LINKSYS_EA6900;
 	}
 
-
-	if (nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100") && nvram_match("0:devid","0x4332")) {
+	if (nvram_match("boardtype", "0xF646") && nvram_match("boardrev", "0x1100") && nvram_match("0:devid", "0x4332")) {
 		setRouter("Linksys EA6700");
 
 		return ROUTER_LINKSYS_EA6700;
 	}
 
-	if (nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100")) {
+	if (nvram_match("boardtype", "0xF646") && nvram_match("boardrev", "0x1100")) {
 		setRouter("Linksys EA6500 V2");
 
 		return ROUTER_LINKSYS_EA6500V2;
@@ -1427,6 +1426,12 @@ int internal_getRouterBrand()
 	setRouter("Asus RT-N13U");
 	return ROUTER_BOARD_WHRG300N;
 #elif HAVE_WHR300HP2
+	FILE *fp = fopen("/sys/bus/pci/devices/0000:01:00.0/device", "rb");
+	if (fp) {
+		fclose(fp);
+		setRouter("Buffalo WHR-600D");
+		return ROUTER_WHR300HP2;
+	}
 	setRouter("Buffalo WHR-300HP2");
 	return ROUTER_WHR300HP2;
 #elif HAVE_F5D8235
@@ -3800,19 +3805,19 @@ char *getSTA()
 	for (i = 0; i < c; i++) {
 		if (nvram_nmatch("sta", "wl%d_mode", i)) {
 			if (!nvram_nmatch("disabled", "wl%d_net_mode", i)) {
-			    if (i==0)
-				return "ra0";
-			    else
-				return "ba0";
+				if (i == 0)
+					return "ra0";
+				else
+					return "ba0";
 			}
 		}
 
 		if (nvram_nmatch("apsta", "wl%d_mode", i)) {
 			if (!nvram_nmatch("disabled", "wl%d_net_mode", i)) {
-			    if (i==0)
-				return "apcli0";
-			    else
-				return "apcli1";
+				if (i == 0)
+					return "apcli0";
+				else
+					return "apcli1";
 			}
 		}
 
@@ -3828,16 +3833,16 @@ char *getWET()
 	for (i = 0; i < c; i++) {
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", i)
 		    && nvram_nmatch("wet", "wl%d_mode", i))
-			    if (i==0)
+			if (i == 0)
 				return "ra0";
-			    else
+			else
 				return "ba0";
 
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", i)
 		    && nvram_nmatch("apstawet", "wl%d_mode", i))
-			    if (i==0)
+			if (i == 0)
 				return "apcli0";
-			    else
+			else
 				return "apcli1";
 
 	}
@@ -5299,7 +5304,7 @@ int led_control(int type, int act)
 		usb_gpio = 0x108;
 		diag_gpio = 0x103;
 		wlan0_gpio = 0x101;
-		wlan1_gpio = 0x102; 
+		wlan1_gpio = 0x102;
 
 	case ROUTER_ASUS_AC67U:
 	case ROUTER_ASUS_AC56U:
@@ -6222,11 +6227,11 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 2;
 			vlanmap[4] = 3;
 		}
-		if (nvram_match("vlan1ports", "4 3 2 1 5*") && nvram_match("boardnum", "32") ) {//R7000
+		if (nvram_match("vlan1ports", "4 3 2 1 5*") && nvram_match("boardnum", "32")) {	//R7000
 			vlanmap[1] = 1;
 			vlanmap[2] = 2;
 			vlanmap[3] = 3;
-			vlanmap[4] = 4;	
+			vlanmap[4] = 4;
 		}
 	} else if (nvram_match("vlan1ports", "4 5")) {
 		vlanmap[0] = 4;
@@ -6271,7 +6276,7 @@ void getPortMapping(int *vlanmap)
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
 		}
-		if (nvram_match("vlan1ports", "0 1 2 3 8*") && nvram_match("boardnum", "4536") ) { // WNDR4500/WNDR4500V2/R6300V1
+		if (nvram_match("vlan1ports", "0 1 2 3 8*") && nvram_match("boardnum", "4536")) {	// WNDR4500/WNDR4500V2/R6300V1
 			vlanmap[1] = 3;
 			vlanmap[2] = 2;
 			vlanmap[3] = 1;
@@ -6294,17 +6299,17 @@ void getPortMapping(int *vlanmap)
 			vlanmap[2] = 1;
 			vlanmap[3] = 2;
 			vlanmap[4] = 3;
-		} else {// nvram_match ("vlan1ports", "3 2 1 0 5*")
+		} else {	// nvram_match ("vlan1ports", "3 2 1 0 5*")
 			vlanmap[1] = 3;
 			vlanmap[2] = 2;
 			vlanmap[3] = 1;
 			vlanmap[4] = 0;
 		}
-		if ( nvram_match("vlan1ports", "0 1 2 3 5*") && nvram_match("boardnum", "679") ) { //R6300V2
+		if (nvram_match("vlan1ports", "0 1 2 3 5*") && nvram_match("boardnum", "679")) {	//R6300V2
 			vlanmap[1] = 3;
 			vlanmap[2] = 2;
 			vlanmap[3] = 1;
-			vlanmap[4] = 0; 
+			vlanmap[4] = 0;
 		}
 
 	} else if (nvram_match("vlan2ports", "0 5u")) {
