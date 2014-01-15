@@ -675,7 +675,7 @@ int main(int argc, char *argv[])
 
 			case 'i': 
 				// Assign the wireless interface when support multiple cards
-				sprintf(prefix_name, "%s%02d_", prefix_name, ((int)strtol(optarg, 0, 10) - 1));
+				sprintf(prefix_name, "%s", optarg);
 			    break;
 
 			case 'h':	
