@@ -3803,7 +3803,7 @@ char *getSTA()
 			    if (i==0)
 				return "ra0";
 			    else
-				return "ra8";
+				return "ba0";
 			}
 		}
 
@@ -3831,7 +3831,7 @@ char *getWET()
 			    if (i==0)
 				return "ra0";
 			    else
-				return "ra8";
+				return "ba0";
 
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", i)
 		    && nvram_nmatch("apstawet", "wl%d_mode", i))

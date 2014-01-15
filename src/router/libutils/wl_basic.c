@@ -14,7 +14,7 @@ char *get_wl_instance_name(int instance)
 {
 	if (instance==0)
 	    return "ra0";
-	return "ra8";
+	return "ba0";
 }
 
 int get_wl_instances(void)
