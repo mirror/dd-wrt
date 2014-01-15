@@ -1501,7 +1501,7 @@ void start_configurewifi(void)
 	    configure_wifi(1);
 }
 
-void configurewifi(void)
+void configure_wifi(void)
 {
 	configure_wifi_single(0);
 	if (get_wl_instances()==2)
