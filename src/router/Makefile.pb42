@@ -373,7 +373,7 @@ ifeq ($(CONFIG_EHCI),y)
 	echo "# CONFIG_USB_SISUSBVGA is not set" >> $(LINUXDIR)/.config
 	echo "CONFIG_USB_EHCI_AR9130=y" >> $(LINUXDIR)/.config
 	echo "# CONFIG_USB_CHIPIDEA is not set" >> $(LINUXDIR)/.config
-	echo "# CONFIG_SIERRA_NET is not set" >> $(LINUXDIR)/.config
+	echo "# CONFIG_USB_SIERRA_NET is not set" >> $(LINUXDIR)/.config
 	echo "# CONFIG_USB_NET_INT51X1 is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_WPE72),y)
