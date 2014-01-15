@@ -1040,7 +1040,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0.1_closed", "0", 0},	/* Closed (hidden) network */
 	{"wl0.2_closed", "0", 0},	/* Closed (hidden) network */
 	{"wl0.3_closed", "0", 0},	/* Closed (hidden) network */
-
+#ifdef HAVE_RT2880
+	{"wl1_radio", "1", 0},	/* Enable (1) or disable (0) radio */
+	{"wl1_closed", "0", 0},	/* Closed (hidden) network */
+#endif
 #endif
 
 #endif
@@ -1067,6 +1070,7 @@ struct nvram_tuple srouter_defaults[] = {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_ATH9K)
 	{"wl_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 	{"wl0_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
+	{"wl1_mode", "ap", 0},	/* AP mode (ap|sta|wet|infra) */
 #else
 #ifdef HAVE_DDLAN
 	{"wl_mode", "sta", 0},	/* AP mode (ap|sta|wet|infra) */
