@@ -118,42 +118,60 @@ char *getRADev(char *prefix)
 
 int has_5ghz(char *prefix)
 {
-	return 0;
+	if (!strcmp(prefix, "wl0"))
+		return 0;
+	return 1;
 }
 
 int has_2ghz(char *prefix)
 {
-	return 1;
+	if (!strcmp(prefix, "wl0"))
+		return 1;
+	return 0;
 }
 
 int getchannels(unsigned int *list, char *ifname)
 {
-	list[0] = 1;
-	list[1] = 2;
-	list[2] = 3;
-	list[3] = 4;
-	list[4] = 5;
-	list[5] = 6;
-	list[6] = 7;
-	list[7] = 8;
-	list[8] = 9;
-	list[9] = 10;
-	list[10] = 11;
+	if (!strcmp(ifname, "wl0")) {
+		list[0] = 1;
+		list[1] = 2;
+		list[2] = 3;
+		list[3] = 4;
+		list[4] = 5;
+		list[5] = 6;
+		list[6] = 7;
+		list[7] = 8;
+		list[8] = 9;
+		list[9] = 10;
+		list[10] = 11;
 #ifdef HAVE_BUFFALO
-	// temporal solution, needs to be done right
-	if (strcmp(nvram_safe_get("region"), "EU"))
-		return 11;
-	else
+		// temporal solution, needs to be done right
+		if (strcmp(nvram_safe_get("region"), "EU"))
+			return 11;
+		else
 #endif
-	{
-		list[11] = 12;
-		list[12] = 13;
+		{
+			list[11] = 12;
+			list[12] = 13;
 #ifdef BUFFALO_JP
-		list[13] = 14;
-		return 14;
+			list[13] = 14;
+			return 14;
 #else
-		return 13;
+			return 13;
 #endif
+		}
+	} else {
+		int i;
+		int cnt = 0;
+		for (i = 0; i < 8; i++)
+			list[cnt++] = 36 + (i * 4);
+
+		for (i = 0; i < 11; i++)
+			list[cnt++] = 100 + (i * 4);
+
+		for (i = 0; i < 7; i++)
+			list[cnt++] = 149 + (i * 4);
+		return cnt;
 	}
 }
 
