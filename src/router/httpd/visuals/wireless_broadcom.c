@@ -329,7 +329,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 		}
 		if (nvram_nmatch("40", "%s_nbw", prefix)) {
 			websWrite(wp, "%d", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? ci.hw_channel - 2 : ci.hw_channel + 2);
-		}else{
+		} else {
 			websWrite(wp, "%d", ci.hw_channel);
 		}
 	} else
