@@ -154,7 +154,11 @@ void channelHopper(wiviz_cfg * cfg) {
 	continue;
    }
 #elif HAVE_RT2880
+    if (nvram_match("wifi_display","wl0")) 
     sysprintf("iwpriv ra0 set Channel=%d",nc);
+    else
+    sysprintf("iwpriv ba0 set Channel=%d",nc);
+    
 #else
     char tmp[32];
     sprintf( tmp, "%s_ifname", nvram_safe_get( "wifi_display" ) );
