@@ -244,7 +244,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		return cnt;
 	}
 	(void)memset(&iwr, 0, sizeof(struct iwreq));
-	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	(void)strncpy(iwr.ifr_name, getRADev(ifname), sizeof(iwr.ifr_name));
 
 	iwr.u.data.pointer = (caddr_t) & table;
 	iwr.u.data.length = sizeof(table);
@@ -292,10 +292,10 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 				snprintf(rx, 8, "%.1f", rate);
 
 				websWrite(wp,
-					  "'%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, ifname, UPTIME(table.Entry[i].ConnectedTime), tx, rx, table.Entry[i].AvgRssi0, -95, (table.Entry[i].AvgRssi0 - (-95)), qual);
+					  "'%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, getRADev(ifname), UPTIME(table.Entry[i].ConnectedTime), tx, rx, table.Entry[i].AvgRssi0, -95, (table.Entry[i].AvgRssi0 - (-95)), qual);
 			}
 		}
-	STAINFO *sta = getRaStaInfo("wl0");
+	STAINFO *sta = getRaStaInfo(ifname);
 
 	if (sta) {
 		char mac[32];
@@ -304,30 +304,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		double rate = 1;
 		char rx[32];
 		char tx[32];
-		DisplayLastTxRxRateFor11n(getRADev("wl0"), s, RT_OID_802_11_QUERY_LAST_RX_RATE, &rate);
+		DisplayLastTxRxRateFor11n(getRADev(ifname), s, RT_OID_802_11_QUERY_LAST_RX_RATE, &rate);
 		snprintf(rx, 8, "%.1f", rate);
-		DisplayLastTxRxRateFor11n(getRADev("wl0"), s, RT_OID_802_11_QUERY_LAST_TX_RATE, &rate);
-		snprintf(tx, 8, "%.1f", rate);
-
-		qual /= 10;
-		strcpy(mac, ieee80211_ntoa(sta->mac));
-		websWrite(wp, "'%s','%s','N/A','%s','%s','%d','%d','%d','%d'", mac, sta->ifname, tx, rx, sta->rssi, sta->noise, (sta->rssi - (sta->noise)), qual);
-		free(sta);
-
-	}
-
-	sta = getRaStaInfo("wl1");
-
-	if (sta) {
-		char mac[32];
-
-		int qual = sta->rssi * 124 + 11600;
-		double rate = 1;
-		char rx[32];
-		char tx[32];
-		DisplayLastTxRxRateFor11n(getRADev("wl1"), s, RT_OID_802_11_QUERY_LAST_RX_RATE, &rate);
-		snprintf(rx, 8, "%.1f", rate);
-		DisplayLastTxRxRateFor11n(getRADev("wl1"), s, RT_OID_802_11_QUERY_LAST_TX_RATE, &rate);
+		DisplayLastTxRxRateFor11n(getRADev(ifname), s, RT_OID_802_11_QUERY_LAST_TX_RATE, &rate);
 		snprintf(tx, 8, "%.1f", rate);
 
 		qual /= 10;
@@ -360,8 +339,8 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 	t = 1;
-	cnt = ej_active_wireless_if(wp, argc, argv, getRADev("wl0"), cnt, t, macmask);
-	cnt = ej_active_wireless_if(wp, argc, argv, getRADev("wl1"), cnt, t, macmask);
+	cnt = ej_active_wireless_if(wp, argc, argv, "wl0", cnt, t, macmask);
+	cnt = ej_active_wireless_if(wp, argc, argv, "wl1", cnt, t, macmask);
 
 }
 
