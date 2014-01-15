@@ -2773,20 +2773,6 @@ void start_firewall(void)
 	}
 #endif
 
-	char *lan_ifname = nvram_safe_get("lan_ifname");
-	char *lan_ipaddr = nvram_safe_get("lan_ipaddr");
-	
-	if(nvram_match("samba3_enable", "1") ){
-		sysprintf("iptables -t raw -A PREROUTING -i %s -d %s -p tcp --dport 137:139 -j NOTRACK", lan_ifname, lan_ipaddr);
-		sysprintf("iptables -t raw -A PREROUTING -i %s -d %s -p tcp --dport 445 -j NOTRACK", lan_ifname, lan_ipaddr);
-		sysprintf("iptables -t raw -A PREROUTING -i %s -d %s -p udp --dport 137:139 -j NOTRACK", lan_ifname, lan_ipaddr);
-		sysprintf("iptables -t raw -A PREROUTING -i %s -d %s -p udp --dport 445 -j NOTRACK", lan_ifname, lan_ipaddr);
-		sysprintf("iptables -t raw -A OUTPUT -p tcp --sport 137:139 -j NOTRACK");
-		sysprintf("iptables -t raw -A OUTPUT -p tcp --sport 445 -j NOTRACK");
-		sysprintf("iptables -t raw -A OUTPUT -p udp --sport 137:139 -j NOTRACK");
-		sysprintf("iptables -t raw -A OUTPUT -p udp --sport 445 -j NOTRACK");
-	}
-
 	cprintf("ready");
 
 	cprintf("done\n");
