@@ -1829,7 +1829,6 @@ void addAction(char *action)
 #define NVRAMSPACE NVRAM_SPACE
 #endif
 
-
 int nvram_used(int *space)
 {
 	char *name, buf[NVRAMSPACE];
