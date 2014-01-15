@@ -416,7 +416,7 @@ static int isSTA(int idx)
 }
 
 static int startradius = 0;
-void configure_wifi(int idx)	// madwifi implementation for atheros based
+void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 				// cards
 {
 	char var[64];
@@ -1499,6 +1499,13 @@ void start_configurewifi(void)
 	configure_wifi(0);
 	if (get_wl_instances()==2)
 	    configure_wifi(1);
+}
+
+void configurewifi(void)
+{
+	configure_wifi_single(0);
+	if (get_wl_instances()==2)
+	    configure_wifi_single(1);
 }
 
 void start_deconfigurewifi(void)
