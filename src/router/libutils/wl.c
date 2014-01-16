@@ -132,7 +132,7 @@ int has_2ghz(char *prefix)
 
 int getchannels(unsigned int *list, char *ifname)
 {
-	if (!strcmp(ifname, "wl0")) {
+	if (!strcmp(ifname, "ra0")) {
 		list[0] = 1;
 		list[1] = 2;
 		list[2] = 3;
