@@ -1254,9 +1254,9 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			char dev[32];
 			char *hwaddr;
 			sprintf(dev, "wl%d", idx);
-			sprintf(wdsvarname, "%s_wds%d_enable", dev, ((11 + (10 * idx)) - s));
+			sprintf(wdsvarname, "%s_wds%d_enable", dev, (11 - s));
 			sprintf(wdsdevname, "%s_wds%d_if", dev, (11 - s));
-			sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, ((11 + (10 * idx)) - s));
+			sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, (11 - s));
 			wdsdev = nvram_safe_get(wdsdevname);
 			if (strlen(wdsdev) == 0)
 				continue;
