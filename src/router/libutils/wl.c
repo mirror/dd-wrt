@@ -144,25 +144,50 @@ int getchannels(unsigned int *list, char *ifname)
 		list[8] = 9;
 		list[9] = 10;
 		list[10] = 11;
+		list[11] = 12;
+		list[12] = 13;
+		list[13] = 14;
 #ifdef HAVE_BUFFALO
 		// temporal solution, needs to be done right
-		if (strcmp(nvram_safe_get("region"), "EU"))
+		if (nvram_match("region", "EU"))
 			return 11;
-		else
-#endif
-		{
-			list[11] = 12;
-			list[12] = 13;
-#ifdef BUFFALO_JP
-			list[13] = 14;
-			return 14;
-#else
+		else if (nvram_match("region", "RU"))
+			return 11;
+		else if (nvram_match("region", "US"))
+			return 11;
+		else if (nvram_match("region", "JP"))
 			return 13;
+		else
+			return 11;
+#else
+		return 14;
 #endif
-		}
 	} else {
 		int i;
 		int cnt = 0;
+#ifdef HAVE_BUFFALO
+		if (nvram_match("region", "EU")) {
+			for (i = 0; i < 4; i++)
+				list[cnt++] = 36 + (i * 4);
+		} else if (nvram_match("region", "RU")) {
+			for (i = 0; i < 4; i++)
+				list[cnt++] = 36 + (i * 4);
+		} else if (nvram_match("region", "US")) {
+			for (i = 0; i < 4; i++)
+				list[cnt++] = 36 + (i * 4);
+			for (i = 0; i < 5; i++)
+				list[cnt++] = 149 + (i * 4);
+		} else if (nvram_match("region", "JP")) {
+			for (i = 0; i < 8; i++)
+				list[cnt++] = 36 + (i * 4);
+			for (i = 0; i < 11; i++)
+				list[cnt++] = 100 + (i * 4);
+		} else {
+			for (i = 0; i < 4; i++)
+				list[cnt++] = 36 + (i * 4);
+		}
+
+#else
 		for (i = 0; i < 8; i++)
 			list[cnt++] = 36 + (i * 4);
 
@@ -171,6 +196,7 @@ int getchannels(unsigned int *list, char *ifname)
 
 		for (i = 0; i < 7; i++)
 			list[cnt++] = 149 + (i * 4);
+#endif
 		return cnt;
 	}
 }
