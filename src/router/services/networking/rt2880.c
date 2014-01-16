@@ -1007,8 +1007,8 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	fprintf(fp, "DtimPeriod=%s\n", nvram_nget("wl%d_dtim", idx));
 	fprintf(fp, "TxPower=%s\n", nvram_nget("wl%d_txpwr", idx));	// warning. percentage this time
 	fprintf(fp, "DisableOLBC=0\n");	//what is this?
-	fprintf(fp, "BGProtection=%s\n", nvram_nmatch("auto", "wl0_gmode_protection", idx) ? "0" : "2");
-	fprintf(fp, "TXPreamble=%s\n", nvram_nmatch("long", "wl0_plcphdr", idx) ? "0" : "1");
+	fprintf(fp, "BGProtection=%s\n", nvram_nmatch("auto", "wl%d_gmode_protection", idx) ? "0" : "2");
+	fprintf(fp, "TXPreamble=%s\n", nvram_nmatch("long", "wl%d_plcphdr", idx) ? "0" : "1");
 	fprintf(fp, "RTSThreshold=%s\n", nvram_nget("wl%d_rts", idx));
 	fprintf(fp, "FragThreshold=%s\n", nvram_nget("wl%d_frag", idx));
 	fprintf(fp, "TxBurst=%s\n", nvram_nmatch("on", "wl%d_frameburst", idx) ? "0" : "1");
@@ -1251,9 +1251,9 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			char wdsdevname[32] = { 0 };
 			char wdsmacname[32] = { 0 };
 			char *wdsdev;
-			char *dev = "wl0";
+			char dev[32];
 			char *hwaddr;
-
+			sprintf(dev,"wl%d",idx);
 			sprintf(wdsvarname, "%s_wds%d_enable", dev, ((11 + (10 * idx)) - s));
 			sprintf(wdsdevname, "%s_wds%d_if", dev, (11 - s));
 			sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, ((11 + (10 * idx)) - s));
