@@ -551,6 +551,12 @@ int main(int argc, char **argv)
 	fprintf(fp, "SANSFIL %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #elif HAVE_KORENRON
         fprintf(fp, "KORENRON %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#elif HAVE_ONNET
+#ifdef HAVE_ONNET_BLANK
+        fprintf(fp, "Enterprise AP %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#else
+        fprintf(fp, "OTAi %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#endif
 #else
 #ifdef DIST
 	if (strlen(DIST) > 0)

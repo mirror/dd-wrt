@@ -21,6 +21,14 @@ endif
 ifdef CONFIG_KORENRON
  MOTD_ADD:=.korenron
 endif
+ifdef CONFIG_ONNET
+ifdef CONFIG_ONNET_BLANK
+ MOTD_ADD:=.onnet_blank
+else
+ MOTD_ADD:=.onnet
+endif
+endif
+
 install:
 	install -d $(INSTALLDIR)/etc
 	install -d $(INSTALLDIR)/etc/init.d
