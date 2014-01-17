@@ -379,7 +379,10 @@ endif
 ifeq ($(CONFIG_WPE72),y)
 	sed -i 's/\# CONFIG_LEDS_TRIGGER_NETDEV is not set/CONFIG_LEDS_TRIGGER_NETDEV=y/g' $(LINUXDIR)/.config
 	echo "CONFIG_WPE72=y" >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_WPE72 is not set" >> $(LINUXDIR)/.config
 endif
+
 
 	rm -f $(LINUXDIR)/symtab.h
 	touch $(LINUXDIR)/symtab.h
