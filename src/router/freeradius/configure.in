@@ -153,7 +153,7 @@ fi
 AC_SUBST(LTDL_SUBDIRS)
 
 dnl set this shit so it doesn't force CFLAGS...
-LTCFLAGS=" "
+#LTCFLAGS=
 
 dnl use system-wide libtool, if it exists
 AC_ARG_WITH(system-libtool,
