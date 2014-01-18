@@ -4,7 +4,7 @@ freeradius-configure: openssl
 	sys_lib_search_path_spec="$(ARCH)-uclibc" \
 	MYSQL_CONFIG="no" \
 	ac_cv_lib_readline=no \
-	./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include " LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" --enable-shared \
+	./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include " LTCFLAGS="$(COPTS) $(MIPS16_OPT)" LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" --enable-shared \
 	--program-prefix="" \
 	--program-suffix="" \
 	--prefix=/usr \

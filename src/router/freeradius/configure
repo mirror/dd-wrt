@@ -5294,7 +5294,6 @@ fi
 
 
 
-LTCFLAGS=" "
 
 # Check whether --enable-shared was given.
 if test "${enable_shared+set}" = set; then :
