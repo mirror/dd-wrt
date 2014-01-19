@@ -57,6 +57,7 @@ static UPNP_ADVERTISE InternetGatewayDevice_advertise [] =
 
 
 extern char xml_InternetGatewayDevice[];
+extern char xml_InternetGatewayDevice_real[];
 extern char xml_x_lanhostconfigmanagement[];
 extern char xml_x_layer3forwarding[];
 extern char xml_x_wancommoninterfaceconfig[];
@@ -64,7 +65,7 @@ extern char xml_x_wanipconnection[];
 
 static UPNP_DESCRIPTION InternetGatewayDevice_description [] =
 {
-	{"/InternetGatewayDevice.xml",              xml_InternetGatewayDevice},
+	{"/InternetGatewayDevice.xml",              xml_InternetGatewayDevice_real},
 	{"/x_lanhostconfigmanagement.xml",          xml_x_lanhostconfigmanagement},
 	{"/x_layer3forwarding.xml",                 xml_x_layer3forwarding},
 	{"/x_wancommoninterfaceconfig.xml",         xml_x_wancommoninterfaceconfig},
