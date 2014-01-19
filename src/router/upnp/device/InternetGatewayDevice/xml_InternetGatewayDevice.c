@@ -153,4 +153,4 @@ char xml_InternetGatewayDevice[] =
 	"</root>\r\n"
 	"\r\n";
 
-extern char xml_InternetGatewayDevice_real[sizeof(xml_InternetGatewayDevice)+128];
+char xml_InternetGatewayDevice_real[sizeof(xml_InternetGatewayDevice)+128];
