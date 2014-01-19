@@ -40,9 +40,9 @@ statevar_DHCPServerConfigurable
 	char name[32];
 
 	/* Get dhcp server nv name */
-	if (ifid == 0)
-		strcpy(name, "dhcp_enable");
-	else
+	if (ifid == 0) {
+		return nvram_match("lan_proto","dhcp") ? 1 : 0;
+	} else
 		sprintf(name, "dhcp%d_enable", ifid);
 
 	/* Get value */
@@ -145,7 +145,7 @@ statevar_DNSServers
 	char *dns, *p, *next;
 
 	/* Get DNS list */
-	if (nvram_match ("dns_dnsmasq", "1")) {
+	if (nvram_match ("dnsmasq_enable", "1")) {
 		strcpy(name, "lan_ipaddr");
 	}
 	else {
