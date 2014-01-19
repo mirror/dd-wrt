@@ -113,6 +113,9 @@ upnp_ifinit(UPNP_CONTEXT *context, char *idxname)
 	return ifp;
 }
 
+extern char xml_InternetGatewayDevice[];
+extern char xml_InternetGatewayDevice_real[];
+
 /* UPnP module initialization */
 int
 upnp_init(UPNP_CONTEXT *context)
@@ -122,8 +125,11 @@ upnp_init(UPNP_CONTEXT *context)
 	int	i;
 
 	char ifname_list[256];
+	
+	
 	char *name, *p, *next;
 
+	sprintf(xml_InternetGatewayDevice_real,xml_InternetGatewayDevice,nvram_safe_get("DD_BOARD"),nvram_safe_get("router_name"),nvram_safe_get("DD_BOARD"));
 	/* Clear flag */
 	upnp_flag = 0;
 

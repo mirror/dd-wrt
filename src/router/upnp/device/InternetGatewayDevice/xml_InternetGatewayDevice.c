@@ -45,8 +45,8 @@ char xml_InternetGatewayDevice[] =
 	"\t\t<friendlyName>Buffalo WZR-HP-G450H</friendlyName>\r\n"
 	"\t\t<modelName>Buffalo WZR-HP-G450H</modelName>\r\n"
 #else
-	"\t\t<friendlyName>DD-WRT Router</friendlyName>\r\n"
-	"\t\t<modelName>router</modelName>\r\n"
+	"\t\t<friendlyName>%s:%s</friendlyName>\r\n"
+	"\t\t<modelName>%s</modelName>\r\n"
 #endif
 	"\t\t<modelNumber>V24</modelNumber>\r\n"
 	"\t\t<serialNumber>0000001</serialNumber>\r\n"
@@ -55,8 +55,8 @@ char xml_InternetGatewayDevice[] =
 	"\t\t<manufacturer>DD-WRT</manufacturer>\r\n"
 	"\t\t<manufacturerURL>http://www.dd-wrt.com</manufacturerURL>\r\n"
 	"\t\t<modelDescription>Gateway</modelDescription>\r\n"
-	"\t\t<friendlyName>DD-WRT Router</friendlyName>\r\n"
-	"\t\t<modelName>router</modelName>\r\n"
+	"\t\t<friendlyName>%s:%s</friendlyName>\r\n"
+	"\t\t<modelName>%s</modelName>\r\n"
 	"\t\t<modelNumber>V24</modelNumber>\r\n"
 	"\t\t<serialNumber>0000001</serialNumber>\r\n"
 	"\t\t<modelURL>http://www.dd-wrt.com</modelURL>\r\n"
@@ -152,3 +152,5 @@ char xml_InternetGatewayDevice[] =
 	"\t</device>\r\n"
 	"</root>\r\n"
 	"\r\n";
+
+extern char xml_InternetGatewayDevice_real[sizeof(xml_InternetGatewayDevice)+128];
