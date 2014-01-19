@@ -79,13 +79,13 @@ char xml_InternetGatewayDevice[] =
 	"\t\t\t\t<manufacturerURL>http://www.buffalo.jp</manufacturerURL>\r\n"
 	"\t\t\t\t<modelDescription>Gateway</modelDescription>\r\n"
 	"\t\t\t\t<modelName>router</modelName>\r\n"
-	"\t\t\t\t<modelURL>http://www.dd-wrt.com</modelURL>\r\n"
+	"\t\t\t\t<modelURL>http://www.buffalo.jp</modelURL>\r\n"
 #else
 	"\t\t\t\t<manufacturer>DD-WRT</manufacturer>\r\n"
 	"\t\t\t\t<manufacturerURL>http://www.dd-wrt.com</manufacturerURL>\r\n"
 	"\t\t\t\t<modelDescription>Gateway</modelDescription>\r\n"
 	"\t\t\t\t<modelName>router</modelName>\r\n"
-	"\t\t\t\t<modelURL>http://www.buffalo.jp</modelURL>\r\n"
+	"\t\t\t\t<modelURL>http://www.dd-wrt.com</modelURL>\r\n"
 #endif
 	"\t\t\t\t<UDN>uuid:e1f05c9d-3034-4e4c-af82-17cdfbdcc077</UDN>\r\n"
 	"\t\t\t\t<serviceList>\r\n"
