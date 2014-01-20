@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.13.0-rc6 Kernel Configuration
+# Linux/mips 3.13.0 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -54,6 +54,7 @@ CONFIG_MIPS=y
 CONFIG_MACH_AR7240=y
 # CONFIG_AR7240_DEFAULT_GPIO is not set
 # CONFIG_DIR615E is not set
+ 
 # CONFIG_AR7240_EMULATION is not set
 CONFIG_WASP_SUPPORT=y
  
