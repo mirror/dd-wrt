@@ -54,6 +54,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_style", "xiocom", 0},
 #elif HAVE_IMMERSIVE
 	{"router_style", "immersive", 0},
+#elif HAVE_HDWIF
+	{"router_style", "hdwifi", 0},
 #elif HAVE_DDLAN
 	{"router_style", "blue", 0},
 #elif HAVE_CESAR
@@ -913,6 +915,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_ssid", "imm", 0},
 	{"ath1_ssid", "imm_1", 0},
 	{"ath2_ssid", "imm_2", 0},
+#elif defined(HAVE_HDWIFI)
+	{"ath0_ssid", "hdwifi1", 0},
+	{"ath1_ssid", "hdwifi2", 0},
+	{"ath2_ssid", "hdwifi3", 0},
+	{"ath3_ssid", "hdwifi4", 0},
 #elif defined(HAVE_ONNET_BLANK)
 	{"ath0_ssid", "Enterprise WIFI", 0},
 	{"ath1_ssid", "Enterprise WIFI_1", 0},
@@ -1196,6 +1203,10 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_rxantenna", "3", 0},
 	{"ath0_txantenna", "3", 0},
 #elif HAVE_IMMERSIVE
+	{"ath0_channel", "2412", 0},
+	{"ath1_channel", "2437", 0},
+	{"ath2_channel", "2462", 0},
+#elif HAVE_HDWIFI
 	{"ath0_channel", "2412", 0},
 	{"ath1_channel", "2437", 0},
 	{"ath2_channel", "2462", 0},
@@ -1489,6 +1500,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_name", "ESPOD", 0},
 #elif  HAVE_IMMERSIVE
 	{"router_name", "IMMERSIVE", 0},
+#elif  HAVE_HDWIFI
+	{"router_name", "HDWIFI", 0},
 #elif  HAVE_NEXTMEDIA
 	{"router_name", "NEXTMEDIA", 0},
 #elif  HAVE_ONNET_BLANK
