@@ -244,6 +244,7 @@ obj-$(CONFIG_PRIVOXY) += privoxy
 obj-$(CONFIG_VENTANA) += kobs-ng
 obj-$(CONFIG_WEBSERVER) += glib20 libxml2 libmcrypt lighttpd curl php5 
 obj-$(CONFIG_TRANSMISSION) += libevent curl transmission
+obj-$(CONFIG_UNIWIP) += uniwip_gpio
 
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 #obj-$(CONFIG_OPROFILE) += oprofile
@@ -282,16 +283,12 @@ configs-update:
 	rm -rf $(LINUXDIR)/../linux-3.6
 	rm -rf $(LINUXDIR)/../linux-3.7
 	rm -rf $(LINUXDIR)/../linux-3.8
-#	svn update $(LINUXDIR)/../linux-3.3
-#	svn update $(LINUXDIR)/../linux-3.4
 	svn update $(LINUXDIR)/../linux-3.5
-#	svn update $(LINUXDIR)/../linux-3.6
-#	svn update $(LINUXDIR)/../linux-3.7
-#	svn update $(LINUXDIR)/../linux-3.8
 	svn update $(LINUXDIR)/../linux-3.9
 	svn update $(LINUXDIR)/../linux-3.10
 	svn update $(LINUXDIR)/../linux-3.11
 	svn update $(LINUXDIR)/../linux-3.12
+	svn update $(LINUXDIR)/../linux-3.13
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR)
 
