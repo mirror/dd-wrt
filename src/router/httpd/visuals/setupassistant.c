@@ -138,14 +138,6 @@ static int sas_nvram_default_match(webs_t wp, char *var, char *match, char *def)
 
 void ej_sas_nvram_checked(webs_t wp, int argc, char_t ** argv)
 {
-
-#ifdef FASTWEB
-	if (argc < 2) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
-
 	if (nvram_selmatch(wp, argv[0], argv[1])) {
 		websWrite(wp, "checked=\"checked\"");
 	}
@@ -158,12 +150,6 @@ void ej_sas_make_time_list(webs_t wp, int argc, char_t ** argv)
 	int i, st, en;
 	char ic[16];
 
-#ifndef FASTWEB
-	if (argc < 3) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 
 	st = atoi(argv[1]);
 	en = atoi(argv[2]);
@@ -185,12 +171,6 @@ void ej_sas_make_time_list(webs_t wp, int argc, char_t ** argv)
 void ej_sas_nvram_else_match(webs_t wp, int argc, char_t ** argv)
 {
 
-#ifndef FASTWEB
-	if (argc < 4) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 	if (nvram_selmatch(wp, argv[0], argv[1])) {
 		websWrite(wp, argv[2]);
 	} else {
@@ -372,60 +352,13 @@ char *sas_get_single_ip(webs_t wp, char *label, int position)
 
 void ej_sas_get_single_ip(webs_t wp, int argc, char_t ** argv)
 {
-/*	char *c;
-	char name[32];
-*/
-#ifndef FASTWEB
-	if (argc < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
-
 	websWrite(wp, sas_get_single_ip(wp, argv[0], atoi(argv[1])));
-/*	if (nvram_match("gozila_action", "1")) {
-		sprintf(name, "%s_%i", argv[0], atoi(argv[1]));
-		websWrite(wp, GOZILA_GET(wp, name));
-		return;
-	}
-	c = nvram_selget(wp, argv[0]);
-	if (c) {
-		if (!strcmp(c, PPP_PSEUDO_IP) || !strcmp(c, PPP_PSEUDO_GW))
-			c = "0.0.0.0";
-		else if (!strcmp(c, PPP_PSEUDO_NM))
-			c = "255.255.255.0";
-
-		websWrite(wp, "%d", get_single_ip(c, atoi(argv[1])));
-	} else
-		websWrite(wp, "0");
-*/
 	return;
 }
 
 void ej_sas_get_single_nm(webs_t wp, int argc, char_t ** argv)
 {
-/*	char *c;
-	char name[32];
-*/
-#ifndef FASTWEB
-	if (argc < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 	websWrite(wp, sas_get_single_ip(wp, argv[0], atoi(argv[1])));
-/*	if (nvram_match("gozila_action", "1")) {
-		sprintf(name, "%s_%i", argv[0], atoi(argv[1]));
-		websWrite(wp, GOZILA_GET(wp, name));
-		return;
-	}
-	c = nvram_safe_get(argv[0]);
-	if (c) {
-		websWrite(wp, "%d", get_single_ip(c, atoi(argv[1])));
-	} else
-		websWrite(wp, "0");
-
-	return;*/
 }
 
 char *sas_get_dns_ip(webs_t wp, char *label, int entry, int position)
@@ -465,12 +398,6 @@ char *sas_get_dns_ip(webs_t wp, char *label, int entry, int position)
  */
 void ej_sas_get_dns_ip(webs_t wp, int argc, char_t ** argv)
 {
-#ifndef FASTWEB
-	if (argc < 3) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 	websWrite(wp, "%s", sas_get_dns_ip(wp, argv[0], atoi(argv[1]), atoi(argv[2])));
 }
 
@@ -1641,14 +1568,7 @@ void sas_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix, cha
 	fprintf(stderr, "[security prefix] %s\n", security_prefix);
 	sprintf(var, "%s_security_mode", prefix);
 	cprintf("show wpa setting\n");
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%s", &type);
-#else
-	if (ejArgs(argc, argv, "%s", &type) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 	rep(var, '.', 'X');
 	security_mode = GOZILA_GET(wp, var);
 	if (security_mode == NULL)

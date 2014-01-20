@@ -191,14 +191,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	int t;
 	int macmask;
 	int gotassocs = 0;
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%d", &macmask);
-#else
-	if (ejArgs(argc, argv, "%d", &macmask) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 	for (i = 0; i < c; i++) {
 		sprintf(devs, "ath%d", i);
 		sprintf(turbo, "%s_channelbw", devs);

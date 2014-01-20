@@ -485,14 +485,7 @@ void ej_show_wds_subnet(webs_t wp, int argc, char_t ** argv)
 	int index = -1;
 	char *interface;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%d %s", &index, &interface);
-#else
-	if (ejArgs(argc, argv, "%d %s", &index, &interface) < 2) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 	char br1[32];
 
 	sprintf(br1, "%s_br1_enable", interface);
@@ -5467,14 +5460,7 @@ void ej_showbridgesettings(webs_t wp, int argc, char_t ** argv)
 	char *interface;
 	int mcast;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%s %d", &interface, &mcast);
-#else
-	if (ejArgs(argc, argv, "%s %d", &interface, &mcast) < 2) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 	showbridgesettings(wp, interface, mcast, 0);
 }
 
@@ -5485,14 +5471,7 @@ void ej_get_wds_ip(webs_t wp, int argc, char_t ** argv)
 
 	char *interface;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%d %d %s", &wds_idx, &ip_idx, &interface);
-#else
-	if (ejArgs(argc, argv, "%d %d %s", &wds_idx, &ip_idx, &interface) < 3) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 	if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
 		return;
 	else if (ip_idx < 0 || ip_idx > 3)
@@ -5519,14 +5498,7 @@ void ej_get_wds_netmask(webs_t wp, int argc, char_t ** argv)
 
 	char *interface;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%d %d %s", &wds_idx, &nm_idx, &interface);
-#else
-	if (ejArgs(argc, argv, "%d %d %s", &wds_idx, &nm_idx, &interface) < 3) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 
 	if (wds_idx < 1 || wds_idx > 6)
 		return;
@@ -5554,14 +5526,7 @@ void ej_get_wds_gw(webs_t wp, int argc, char_t ** argv)
 
 	char *interface;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%d %d %s", &wds_idx, &gw_idx, &interface);
-#else
-	if (ejArgs(argc, argv, "%d %d %s", &wds_idx, &gw_idx, &interface) < 3) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 
 	if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
 		return;
@@ -5589,14 +5554,7 @@ void ej_get_br1_ip(webs_t wp, int argc, char_t ** argv)
 
 	char *interface;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%d %s", &ip_idx, &interface);
-#else
-	if (ejArgs(argc, argv, "%d %s", &ip_idx, &interface) < 2) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 	if (ip_idx < 0 || ip_idx > 3)
 		return;
 	char br1[32];
@@ -5621,14 +5579,7 @@ void ej_get_br1_netmask(webs_t wp, int argc, char_t ** argv)
 
 	char *interface;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%d %s", &nm_idx, &interface);
-#else
-	if (ejArgs(argc, argv, "%d %s", &nm_idx, &interface) < 2) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 	if (nm_idx < 0 || nm_idx > 3)
 		return;
 	char nms[32];
@@ -5711,14 +5662,7 @@ void ej_get_wdsp2p(webs_t wp, int argc, char_t ** argv)
 	char nvramvar[32] = { 0 };
 	char *interface;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%d %s", &index, &interface);
-#else
-	if (ejArgs(argc, argv, "%d %s", &index, &interface) < 2) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 	char wlwds[32];
 
 	sprintf(wlwds, "%s_wds1_enable", interface);
@@ -5774,14 +5718,7 @@ void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 	int mac, which;
 	int dofree = 0;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%d", &which);
-#else
-	if (ejArgs(argc, argv, "%d", &which) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 
 	if (nvram_match("def_whwaddr", "00:00:00:00:00:00")) {
 		// if (strlen (nvram_safe_get ("il0macaddr")) == 0)
@@ -6623,14 +6560,7 @@ void ej_gethostnamebyip(webs_t wp, int argc, char_t ** argv)
 	char buf[200];
 	char *argument;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%s", &argument);
-#else
-	if (ejArgs(argc, argv, "%s", &argument) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 
 	if (argc == 1) {
 		getHostName(buf, argument);
@@ -6808,14 +6738,7 @@ void ej_bandwidth(webs_t wp, int argc, char_t ** argv)
 	int sig;
 	char *argument;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%s", &argument);
-#else
-	if (ejArgs(argc, argv, "%s", &argument) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 
 	if (argc == 1) {
 		if (strcmp(argument, "speed") == 0) {

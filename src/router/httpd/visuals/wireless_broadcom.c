@@ -365,14 +365,7 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, in
 	char desc[30];
 	int macmask;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%d", &macmask);
-#else
-	if (ejArgs(argc, argv, "%d", &macmask) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return cnt;
-	}
-#endif
 	unlink(WDS_RSSI_TMP);
 
 	mode = nvram_nget("wl%d_mode", instance);

@@ -42,14 +42,7 @@ void ej_sputnik_apd_status(webs_t wp, int argc, char_t ** argv)
 	char *key;
 	FILE *fh;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%s", &key);
-#else
-	if (ejArgs(argc, argv, "%s", &key) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 
 	if ((fh = fopen("/var/run/apd.status", "r"))) {
 		char s[128];
