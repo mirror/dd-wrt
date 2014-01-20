@@ -75,7 +75,9 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_REGISTER
 	if (isregistered() && !isregistered_real()) {
 		websWrite(wp, "Click here to ACTIVATE %d Hour Trial", getTrialCount());
-	} else {
+	} else
+#endif
+	{
 #ifdef HAVE_WIKINGS
 #ifdef HAVE_SUB3
 #define V "ExcelMed"
@@ -113,7 +115,7 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "Build date %s", date);
 		} else {
 			websWrite(wp, "HDWIFI r%s (%s)", SVN_REVISION, date);
-		}
+		A}
 #elif HAVE_IPR
 		websWrite(wp, "IPR-CP v1.0 (%s)", SVN_REVISION);
 #elif HAVE_ONNET_BLANK
@@ -148,50 +150,6 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #endif
 	}
-
-#else
-#ifdef HAVE_WIKINGS
-#ifdef HAVE_SUB3
-#define V "ExcelMed"
-#elif HAVE_SUB6
-#define V "ExcelMin"
-#else
-#define V "Excellent"
-#endif
-	websWrite(wp, "Excel Networks (%s series) V 2.10", V);
-#undef V
-#elif HAVE_ESPOD
-#ifdef HAVE_SUB3
-#define V "A600"
-#elif HAVE_SUB6
-#define V "A1000"
-#else
-#define V "MIMO"
-#endif
-	if (argc == 2) {
-		websWrite(wp, "ESPOD v1.0611 (%s) / ESPOD %s Series", date, V);
-	} else {
-		websWrite(wp, "ESPOD v1.0611 (%s)</a><div>\");document.write(\"<div class=\\\"info\\\">Device: ESPOD %s Series<a>", date, V);
-	}
-#undef V
-#elif HAVE_CARLSONWIRELESS
-	websWrite(wp, "Carlson Wireless v1.0 (%s)", SVN_REVISION);
-#elif HAVE_IMMERSIVE
-	if (argc == 2) {
-		websWrite(wp, "Build date %s", date);
-	} else {
-		websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
-	}
-#elif HAVE_HDWIFI
-	if (argc == 2) {
-		websWrite(wp, "Build date %s", date);
-	} else {
-		websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
-	}
-#else
-	websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
-#endif
-#endif
 #endif
 }
 #endif
