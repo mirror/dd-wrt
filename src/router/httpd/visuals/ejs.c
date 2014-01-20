@@ -177,7 +177,6 @@ void ej_prefix_ip_get(webs_t wp, int argc, char_t ** argv)
 void ej_nvram_get(webs_t wp, int argc, char_t ** argv)
 {
 
-
 #if COUNTRY == JAPAN
 	websWrite(wp, "%s", nvram_safe_get(argv[0]));
 #else
@@ -273,7 +272,6 @@ void ej_webs_get(webs_t wp, int argc, char_t ** argv)
 {
 	char *value;
 
-
 	value = websGetVar(wp, argv[0], NULL);
 
 	if (value)
@@ -290,7 +288,6 @@ void ej_webs_get(webs_t wp, int argc, char_t ** argv)
 void ej_get_single_ip(webs_t wp, int argc, char_t ** argv)
 {
 	char *c;
-
 
 	c = nvram_safe_get(argv[0]);
 	if (c) {
@@ -309,7 +306,6 @@ void ej_get_single_ip(webs_t wp, int argc, char_t ** argv)
 void ej_get_single_nm(webs_t wp, int argc, char_t ** argv)
 {
 	char *c;
-
 
 	c = nvram_safe_get(argv[0]);
 	if (c) {
@@ -342,7 +338,6 @@ void ej_get_single_mac(webs_t wp, int argc, char_t ** argv)
 {
 	char *c;
 	int mac;
-
 
 	c = nvram_safe_get(argv[0]);
 	if (c) {
@@ -392,7 +387,6 @@ void ej_nvram_else_selmatch(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 
-
 	type = GOZILA_GET(wp, argv[0]);
 
 	if (!type) {
@@ -414,7 +408,6 @@ void ej_selchecked(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 
-
 	type = websGetVar(wp, argv[0], "0");
 
 	if (type) {
@@ -428,7 +421,6 @@ void ej_selchecked(webs_t wp, int argc, char_t ** argv)
 void ej_else_selmatch(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
-
 
 	type = websGetVar(wp, argv[0], NULL);
 
@@ -452,7 +444,6 @@ void ej_else_selmatch(webs_t wp, int argc, char_t ** argv)
  */
 void ej_nvram_else_match(webs_t wp, int argc, char_t ** argv)
 {
-
 
 	if (nvram_match(argv[0], argv[1]))
 		websWrite(wp, argv[2]);
@@ -666,7 +657,6 @@ void ej_ifndef(webs_t wp, int argc, char_t ** argv)
  */
 void ej_nvram_match(webs_t wp, int argc, char_t ** argv)
 {
-
 
 	if (nvram_match(argv[0], argv[1]))
 		websWrite(wp, argv[2]);
@@ -1243,13 +1233,15 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 #else
 	websWrite(wp, "%s", nvram_safe_get("DD_BOARD"));
 #endif
-} 
+}
+
 void ej_get_syskernel(webs_t wp, int argc, char_t ** argv)
 {
 	struct utsname name;
 	uname(&name);
 	websWrite(wp, "%s %s %s %s", name.sysname, name.release, name.version, name.machine);
-} 
+}
+
 void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
@@ -2105,7 +2097,7 @@ void ej_getrebootflags(webs_t wp, int argc, char_t ** argv)
 #else
 	websWrite(wp, "0");
 #endif
-} 
+}
 
 void ej_tran(webs_t wp, int argc, char_t ** argv)
 {
@@ -2120,7 +2112,7 @@ void ej_tran(webs_t wp, int argc, char_t ** argv)
  * <% nvram_checked("wan_proto", "dhcp"); %> produces: checked="checked"
  * <% nvram_checked_js("wan_proto", "dhcp"); %> produces: checked=\"checked\"
  * <% nvram_checked("wan_proto", "static"); %> does not produce
- */ 
+ */
 
 void ej_nvram_checked(webs_t wp, int argc, char_t ** argv)
 {
