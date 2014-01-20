@@ -68,13 +68,7 @@ void ej_get_clone_mac(webs_t wp, int argc, char_t ** argv)
 	int mac, which;
 	int dofree = 0;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%d", &which);
-#else
-	if (ejArgs(argc, argv, "%d", &which) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-	}
-#endif
 
 	if (nvram_match("clone_wan_mac", "1"))
 		c = nvram_safe_get("http_client_mac");
