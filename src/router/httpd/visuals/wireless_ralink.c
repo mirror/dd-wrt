@@ -330,14 +330,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	int t;
 	int macmask;
 
-#ifdef FASTWEB
 	ejArgs(argc, argv, "%d", &macmask);
-#else
-	if (ejArgs(argc, argv, "%d", &macmask) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-#endif
 	t = 1;
 	cnt = ej_active_wireless_if(wp, argc, argv, "wl0", cnt, t, macmask);
 	cnt = ej_active_wireless_if(wp, argc, argv, "wl1", cnt, t, macmask);
