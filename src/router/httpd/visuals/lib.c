@@ -56,7 +56,7 @@ void ej_compile_time(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 {
-#if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE)
+#if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE) || defined(HAVE_HDWIFI)
 	char *p;
 	char string[32], date[16];
 	sprintf(string, CYBERTAN_VERSION);
@@ -107,6 +107,12 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "Build date %s", date);
 		} else {
 			websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
+		}
+#elif HAVE_HDWIFI
+		if (argc == 2) {
+			websWrite(wp, "Build date %s", date);
+		} else {
+			websWrite(wp, "HDWIFI r%s (%s)", SVN_REVISION, date);
 		}
 #elif HAVE_IPR
 		websWrite(wp, "IPR-CP v1.0 (%s)", SVN_REVISION);
@@ -176,8 +182,13 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 	} else {
 		websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
 	}
+#elif HAVE_HDWIFI
+	if (argc == 2) {
+		websWrite(wp, "Build date %s", date);
+	} else {
+		websWrite(wp, "SUPPORT %s (%s)", SVN_REVISION, date);
+	}
 #else
-
 	websWrite(wp, "%s%s %s%s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #endif
 #endif
