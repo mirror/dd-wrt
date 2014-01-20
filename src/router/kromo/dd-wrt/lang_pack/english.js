@@ -2344,6 +2344,7 @@ ias.title="Setup";
 ias.card_info="Setup Card";
 ias.edit_note="Click on any information in the Setup Card to edit it.";
 ias.assistant="Run Setup Assistant";
+ias.assistant_iptv="Run IPTV Setup";
 ias.print_setup_card="Print Setup Card";
 ias.print_guest_card="Print Guest Card";
 ias.apply_changes="Apply Changes";
