@@ -531,6 +531,9 @@ endif
 ifeq ($(CONFIG_IMMERSIVE),y)
   CFLAGS += -DHAVE_IMMERSIVE
 endif
+ifeq ($(CONFIG_HDWIFI),y)
+  CFLAGS += -DHAVE_HDWIFI
+endif
 ifeq ($(CONFIG_IPR),y)
   CFLAGS += -DHAVE_IPR
 endif
@@ -1012,10 +1015,6 @@ endif
 
 ifeq ($(CONFIG_BKM),y)
 CFLAGS += -DHAVE_BKM
-endif
-
-ifeq ($(CONFIG_IMMERSIVE),y)
-CFLAGS += -DHAVE_IMMERSIVE
 endif
 
 ifeq ($(CONFIG_NOTRIAL),y)

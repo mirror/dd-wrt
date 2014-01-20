@@ -417,6 +417,9 @@ endif
 ifeq ($(CONFIG_KORENRON),y)
 CFLAGS += -DHAVE_KORENRON
 endif
+ifeq ($(CONFIG_HDWIFI),y)
+CFLAGS += -DHAVE_HDWIFI
+endif
 ifeq ($(CONFIG_STATUS_GPIO),y)
 CFLAGS += -DHAVE_STATUS_GPIO
 endif
