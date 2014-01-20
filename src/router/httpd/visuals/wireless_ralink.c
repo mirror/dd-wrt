@@ -292,7 +292,8 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 				snprintf(rx, 8, "%.1f", rate);
 
 				websWrite(wp,
-					  "'%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, getRADev(ifname), UPTIME(table.Entry[i].ConnectedTime), tx, rx, table.Entry[i].AvgRssi0, -95, (table.Entry[i].AvgRssi0 - (-95)), qual);
+					  "'%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, getRADev(ifname), UPTIME(table.Entry[i].ConnectedTime), tx, rx, table.Entry[i].AvgRssi0, -95,
+					  (table.Entry[i].AvgRssi0 - (-95)), qual);
 			}
 		}
 	STAINFO *sta = getRaStaInfo(ifname);

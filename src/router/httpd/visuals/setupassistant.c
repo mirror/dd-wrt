@@ -150,7 +150,6 @@ void ej_sas_make_time_list(webs_t wp, int argc, char_t ** argv)
 	int i, st, en;
 	char ic[16];
 
-
 	st = atoi(argv[1]);
 	en = atoi(argv[2]);
 
