@@ -23,9 +23,9 @@ install: all
 	install macping $(INSTALLDIR)/usr/bin/
 	install mactelnet $(INSTALLDIR)/usr/bin/
 	install -d $(INSTALLDIR)/usr/sbin
-	install -o root mactelnetd $(DESTDIR)/usr/sbin/
+	install -o root mactelnetd $(INSTALLDIR)/usr/sbin/
 	install -d $(INSTALLDIR)/etc
-	install -m 600 -o root config/mactelnetd.users $(DESTDIR)/etc/
+	install -m 600 -o root config/mactelnetd.users $(INSTALLDIR)/etc/
 
 install-docs:
 	install -d $(DESTDIR)/usr/share/man/man1/
