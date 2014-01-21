@@ -245,6 +245,7 @@ obj-$(CONFIG_VENTANA) += kobs-ng
 obj-$(CONFIG_WEBSERVER) += glib20 libxml2 libmcrypt lighttpd curl php5 
 obj-$(CONFIG_TRANSMISSION) += libevent curl transmission
 obj-$(CONFIG_UNIWIP) += uniwip_gpio
+obj-$(CONFIG_MACTELNET) += mactelnet
 
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 #obj-$(CONFIG_OPROFILE) += oprofile
