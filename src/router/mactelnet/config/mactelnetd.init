@@ -1,0 +1,21 @@
+# mactelnetd - MAC-Telnet server
+#
+# The MAC-Telnet server provides telnet access via MAC addresses.
+#
+# Ubuntu upstart config:
+
+description	"MAC-Telnet server"
+
+start on filesystem
+stop on runlevel [!2345]
+
+respawn
+respawn limit 10 5
+umask 022
+
+pre-start script
+    test -O /etc/mactelnetd.users || { stop; exit 0; }
+    test -x /usr/sbin/mactelnetd || { stop; exit 0; }
+end script
+
+exec /usr/sbin/mactelnetd -f

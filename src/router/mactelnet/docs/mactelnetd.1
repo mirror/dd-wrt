@@ -1,0 +1,38 @@
+.TH MACTELNETD 1 "February 27, 2011"
+.SH NAME
+mactelnetd \- Telnet daemon for MAC-address connections
+.SH SYNOPSIS
+.B mactelnetd
+.RI [ options ]
+.SH DESCRIPTION
+This daemon listens for telnet connections from Mikrotik RouterOS devices or mactelnet clients
+on the same physical network. It also announces it's hostname via the MNDP protocol every minute.
+.SH OPTIONS
+These programs follow the usual GNU command line syntax.
+A summary of options is included below.
+.TP
+.B \-n
+Do not use broadcast packets. A tad less insecure.
+This means that ethernet packets will have the mac-address of the client as the packet
+destination, instead of using the ethernet broadcast address.
+.TP
+.B \-h
+Show summary of options.
+.TP
+.B \-v
+Show version of program.
+.SH FILES
+.TP
+.B /etc/mactelnetd.users
+This file contains a line separated list of users that will have
+access to your machine. Usernames and passwords are separated
+by colon. This file is read each time a user connects.
+.SH SEE ALSO
+.BR mndp (1),
+.BR mactelnet (1),
+.BR macping (1).
+.SH AUTHOR
+mactelnetd was written by Håkon Nessjøen <haakon.nessjoen@gmail.com>.
+.PP
+This manual page was written by Håkon Nessjøen <haakon.nessjoen@gmail.com>,
+for the Debian project (and may be used by others).
