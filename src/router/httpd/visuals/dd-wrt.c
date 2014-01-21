@@ -6613,22 +6613,13 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 	char *ifname = nvram_safe_get(name);
 #endif
 	struct dev_info {
-		// unsigned long rx_bytes;
-		unsigned long rx_pks;
-		unsigned long rx_errs;
-		unsigned long rx_drops;
-		// unsigned long rx_fifo;
-		// unsigned long rx_frame;
-		// unsigned long rx_com;
-		// unsigned long rx_mcast;
-		// unsigned long tx_bytes;
-		unsigned long tx_pks;
-		unsigned long tx_errs;
-		unsigned long tx_drops;
-		// unsigned long tx_fifo;
-		unsigned long tx_colls;
-		// unsigned long tx_carr;
-		// unsigned long tx_com;
+		unsigned long long int rx_pks;
+		unsigned long long int  rx_errs;
+		unsigned long long int  rx_drops;
+		unsigned long long int  tx_pks;
+		unsigned long long int  tx_errs;
+		unsigned long long int  tx_drops;
+		unsigned long long int  tx_colls;
 	} info;
 
 	info.rx_pks = info.rx_errs = info.rx_drops = 0;
@@ -6675,7 +6666,7 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 				 * &info.tx_colls, &info.tx_carr, &info.tx_com); 
 				 */
 				sscanf(line + ifl + 1,
-				       "%*ld %ld %ld %ld %*ld %*ld %*ld %*ld %*ld %ld %ld %ld %*ld %ld %*ld %*ld",
+				       "%*llu %llu %llu %llu %*llu %*llu %*llu %*llu %*llu %llu %llu %llu %*llu %llu %*llu %*llu",
 				       &info.rx_pks, &info.rx_errs, &info.rx_drops, &info.tx_pks, &info.tx_errs, &info.tx_drops, &info.tx_colls);
 			}
 
@@ -6683,11 +6674,11 @@ void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)
 		fclose(fp);
 	}
 
-	websWrite(wp, "SWRXgoodPacket=%ld;", info.rx_pks);
-	websWrite(wp, "SWRXerrorPacket=%ld;", info.rx_errs + info.rx_drops);
+	websWrite(wp, "SWRXgoodPacket=%llu;", info.rx_pks);
+	websWrite(wp, "SWRXerrorPacket=%llu;", info.rx_errs + info.rx_drops);
 
-	websWrite(wp, "SWTXgoodPacket=%ld;", info.tx_pks);
-	websWrite(wp, "SWTXerrorPacket=%ld;", info.tx_errs + info.tx_drops + info.tx_colls);
+	websWrite(wp, "SWTXgoodPacket=%llu;", info.tx_pks);
+	websWrite(wp, "SWTXerrorPacket=%llu;", info.tx_errs + info.tx_drops + info.tx_colls);
 
 	return;
 }
