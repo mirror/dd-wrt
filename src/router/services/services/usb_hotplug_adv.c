@@ -240,6 +240,12 @@ static bool usb_load_modules(char *fs)
 		insmod("lzo_decompress");
 		insmod("btrfs");
 	}
+	if (!strcmp(fs, "hfs")) {
+		insmod("hfs");
+	}
+	if (!strcmp(fs, "hfsplus")) {
+		insmod("hfsplus");
+	}
 #endif
 	if (!strcmp(fs, "vfat")) {
 		insmod("nls_base");
@@ -333,6 +339,12 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 					usb_load_modules(fs);
 				} else if (strstr(line, "Btrfs")) {
 					fs = "btrfs";
+					usb_load_modules(fs);
+				} else if (strstr(line, "HFS Plus")) {
+					fs = "hfsplus";
+					usb_load_modules(fs);
+				} else if (strstr(line, "HFS")) {
+					fs = "hfs";
 					usb_load_modules(fs);
 				}
 #ifdef HAVE_NTFS3G
