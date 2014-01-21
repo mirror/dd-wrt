@@ -19,7 +19,7 @@
 #include <linux/serial_8250.h>
 #include <linux/slab.h>
 #include <linux/i2c.h>
-#include <linux/i2c/at24.h>
+#include <linux/platform_data/at24.h>
 #include <linux/delay.h>
 #include <linux/spi/spi_gpio_old.h>
 
