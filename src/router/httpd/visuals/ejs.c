@@ -1247,7 +1247,7 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 	char *type;
 	static char wanface[32];
 	char line[256];
-	unsigned long rcvd, sent, megcounti, megcounto;
+	unsigned long long rcvd, sent, megcounti, megcounto;
 	FILE *in;
 	int ifl;
 
@@ -1277,7 +1277,7 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 				ifl++;
 			line[ifl] = 0;
 
-			sscanf(line + ifl + 1, "%lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld %lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld", &rcvd, &sent);
+			sscanf(line + ifl + 1, "%llu %*llu %*llu %*llu %*llu %*llu %*llu %*llu %llu %*llu %*llu %*llu %*llu %*llu %*llu %*llu", &rcvd, &sent);
 		}
 	}
 
@@ -1288,16 +1288,16 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 
 	if ((in = fopen("/tmp/.megc", "r")) != NULL) {
 		fgets(line, sizeof(line), in);
-		sscanf(line, "%lu:%lu", &megcounti, &megcounto);
+		sscanf(line, "%llu:%llu", &megcounti, &megcounto);
 		rcvd += megcounti;
 		sent += megcounto;
 		fclose(in);
 	}
 
 	if (!strcmp(type, "in")) {
-		websWrite(wp, "%lu", rcvd);	// output in MBytes
+		websWrite(wp, "%llu", rcvd);	// output in MBytes
 	} else if (!strcmp(type, "out")) {
-		websWrite(wp, "%lu", sent);
+		websWrite(wp, "%llu", sent);
 	}
 	return;
 }
