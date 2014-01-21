@@ -1,0 +1,12 @@
+# Users file for MAC-Telnetd
+#
+####################################################################
+# WARNING: This file has passwords written in plain-text.          #
+#          Make sure this file is owned and only readable by root. #
+####################################################################
+#
+# Each line consists of a username and a password seperated by :.
+# Usernames must be existing users from passwd.
+#
+# Format:
+#username:password

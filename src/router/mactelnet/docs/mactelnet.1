@@ -1,0 +1,55 @@
+.TH MACTELNET 1 "February 27, 2011"
+.SH NAME
+mactelnet \- A tool for telneting via MAC addresses
+.SH SYNOPSIS
+.B mactelnet
+.RI [ options ] " " < MAC-Address | hostname >
+.SH DESCRIPTION
+This tool enables you to telnet other RouterOS or MAC-Telnetd enabled
+devices. You can connect to either a hostname or a MAC address.
+If specified, the hostname (identity) will be looked up via MNDP discovery.
+.SH OPTIONS
+These programs follow the usual GNU command line syntax.
+A summary of options is included below.
+.TP
+.B \-l
+This will discover RouterOS or MAC-Telnetd enabled devices. It will
+list the MAC-address software version, and uptime of every device
+or machine it discovers. To exit the discovery, use
+.B Control + C
+\.
+.TP
+.B \-n
+Do not use broadcast packets. A tad less insecure but requires root privileges.
+This means that ethernet packets will have the specified mac-address as the packet
+destination, instead of using the ethernet broadcast address.
+.TP
+.B \-t
+Amount of seconds to wait for a response on each interface. If you have several network interfaces, this is the timeout value per interface.
+.TP
+.B \-u
+Specify username. Without this option, you will need to enter the username in a interactive prompt.
+.TP
+.B \-p
+Specify password. Without this option, you will need to enter the password in a interactive prompt.
+.TP
+.B \-a
+Specify the path of the autologin configuration file. The default path for this file is ~/.mactelnet. The format for this file is standard INI file layout.
+.TP
+.B \-A
+Do not use the autologin configuration file. Interactively ask for username and password.
+.TP
+.B \-h
+Show summary of options.
+.TP
+.B \-v
+Show version of program.
+.SH SEE ALSO
+.BR mndp (1),
+.BR mactelnetd (1),
+.BR macping (1).
+.SH AUTHOR
+mactelnet was written by Håkon Nessjøen <haakon.nessjoen@gmail.com>.
+.PP
+This manual page was written by Håkon Nessjøen <haakon.nessjoen@gmail.com>,
+for the Debian project (and may be used by others).
