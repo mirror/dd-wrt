@@ -41,7 +41,7 @@ void remove_oldest_entry(int cur_month, int cur_year)
 	return;
 }
 
-void write_to_nvram(int day, int month, int year, unsigned long rcvd, unsigned long sent)
+void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsigned long long sent)
 {
 	char *next;
 	char var[80];
@@ -52,8 +52,8 @@ void write_to_nvram(int day, int month, int year, unsigned long rcvd, unsigned l
 	int i = 1, d = 1;
 	unsigned int days = daysformonth(month, year);
 //      fprintf(stderr,"days %d, month %d, year %d\n",days,month,year);
-	unsigned long old_rcvd;
-	unsigned long old_sent;
+	unsigned long long old_rcvd;
+	unsigned long long old_sent;
 	char *tdata;
 
 	buffer = (char *)malloc(2048);
@@ -82,16 +82,16 @@ void write_to_nvram(int day, int month, int year, unsigned long rcvd, unsigned l
 	foreach(var, tdata, next) {
 		if (i == day) {
 			if (strstr(var, "[")) {	//check and correct faulty entries
-				sprintf(temp, "%lu:%lu ", rcvd, sent);
+				sprintf(temp, "%llu:%llu ", rcvd, sent);
 			} else {	//value OK
-				sscanf(var, "%lu:%lu", &old_rcvd, &old_sent);
-				sprintf(temp, "%lu:%lu ", old_rcvd + rcvd, old_sent + sent);
+				sscanf(var, "%llu:%llu", &old_rcvd, &old_sent);
+				sprintf(temp, "%llu:%llu ", old_rcvd + rcvd, old_sent + sent);
 			}
 			strcat(buffer, temp);
 		} else if (i == (days + 1))	//make new monthly total
 		{
-			sscanf(var, "[%lu:%lu]", &old_rcvd, &old_sent);
-			sprintf(temp, "[%lu:%lu] ", old_rcvd + rcvd, old_sent + sent);
+			sscanf(var, "[%llu:%llu]", &old_rcvd, &old_sent);
+			sprintf(temp, "[%llu:%llu] ", old_rcvd + rcvd, old_sent + sent);
 			strcat(buffer, temp);
 			i++;
 			break;
@@ -139,16 +139,16 @@ int main(int argc, char **argv)
 	 */
 	static char wanface[32];
 	char line[256];
-	unsigned long in_dev = 0;
-	unsigned long out_dev = 0;
-	unsigned long in_diff = 0;
-	unsigned long out_diff = 0;
-	unsigned long in_dev_last = 0;
-	unsigned long out_dev_last = 0;
+	unsigned long long in_dev = 0;
+	unsigned long long out_dev = 0;
+	unsigned long long in_diff = 0;
+	unsigned long long out_diff = 0;
+	unsigned long long in_dev_last = 0;
+	unsigned long long out_dev_last = 0;
 	int gotbase = 0;
-	unsigned long megcounti, megcounto;
-	unsigned long megi = 0;
-	unsigned long mego = 0;
+	unsigned long long megcounti, megcounto;
+	unsigned long long megi = 0;
+	unsigned long long mego = 0;
 	int needcommit = 0;
 	int commited = 0;
 	int day, month, year;
@@ -186,7 +186,7 @@ int main(int argc, char **argv)
 						ifl++;
 					line[ifl] = 0;
 
-					sscanf(line + ifl + 1, "%lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld %lu %*ld %*ld %*ld %*ld %*ld %*ld %*ld", &in_dev, &out_dev);
+					sscanf(line + ifl + 1, "%llu %*llu %*llu %*llu %*llu %*llu %*llu %*llu %llu %*llu %*llu %*llu %*llu %*llu %*llu %*llu", &in_dev, &out_dev);
 				}
 			}
 
@@ -258,11 +258,11 @@ int main(int argc, char **argv)
 			megcounto = 0;
 			if ((in = fopen("/tmp/.megc", "r")) != NULL) {
 				fgets(line, sizeof(line), in);
-				sscanf(line, "%lu:%lu", &megcounti, &megcounto);
+				sscanf(line, "%llu:%llu", &megcounti, &megcounto);
 				fclose(in);
 			}
 			in = fopen("/tmp/.megc", "w");
-			sprintf(line, "%lu:%lu", megcounti + megi, megcounto + mego);
+			sprintf(line, "%llu:%llu", megcounti + megi, megcounto + mego);
 			fputs(line, in);
 			fclose(in);
 			megi = 0;
