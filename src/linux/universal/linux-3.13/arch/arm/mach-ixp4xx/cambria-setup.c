@@ -17,7 +17,7 @@
 #include <linux/device.h>
 #include <linux/i2c.h>
 #include <linux/i2c-gpio.h>
-#include <linux/i2c/at24.h>
+#include <linux/platform_data/at24.h>
 #include <linux/serial.h>
 #include <linux/tty.h>
 #include <linux/serial_8250.h>
