@@ -1,0 +1,41 @@
+.TH MACPING 1 "February 27, 2011"
+.SH NAME
+macping \- A tool for pinging other RouterOS or mactelnetd devices
+.SH SYNOPSIS
+.B mactelnet
+.RI [ options ] " " < MAC-Address | hostname >
+.SH DESCRIPTION
+This tool enables you to ping other RouterOS or MAC-Telnetd enabled
+devices. You can ping either a hostname or a MAC address.
+If specified, the hostname (identity) will be looked up via MNDP discovery.
+.SH OPTIONS
+These programs follow the usual GNU command line syntax.
+A summary of options is included below.
+.TP
+.B \-f
+Fast mode, do not wait before sending next ping request. The next ping will be sent immediately when the last ping is received. This cannot be used with
+.B -c 0
+\.
+.TP
+.B \-s
+Specify the amount of bytes to send in each ping packet, up to ~1400 bytes.
+.TP
+.B \-c
+Number of packets to send before exiting. A value of 
+.B 0
+means unlimited packets and the tool must be exited with Control + C.
+.TP
+.B \-h
+Show summary of options.
+.TP
+.B \-v
+Show version of program.
+.SH SEE ALSO
+.BR mndp (1),
+.BR mactelnet (1),
+.BR mactelnetd (1).
+.SH AUTHOR
+macping was written by Håkon Nessjøen <haakon.nessjoen@gmail.com>.
+.PP
+This manual page was written by Håkon Nessjøen <haakon.nessjoen@gmail.com>,
+for the Debian project (and may be used by others).
