@@ -590,15 +590,35 @@ static void nat_prerouting(void)
 	char *remote_ip_any = nvram_default_get("remote_ip_any", "1");
 	char *remote_ip = nvram_default_get("remote_ip", "0.0.0.0 0");
 	int remote_any = 0;
-
+	
+	char vifs[256];
+	
 	if (!strcmp(remote_ip_any, "1") || !strncmp(remote_ip, "0.0.0.0", 7))
 		remote_any = 1;
+	
+
+	getIfLists(vifs, 256);
+
 	/*
 	 * Block ads on all http requests
 	 */
 #ifdef HAVE_PRIVOXY
 	if (nvram_match("privoxy_transp_enable", "1") && nvram_match("privoxy_enable", "1")) {
+
+		getIfLists(vifs, 256);
+		char vif_ip[32];
+		foreach(var, vifs, next) {
+			if (strcmp(get_wan_face(), var)
+			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+				if (nvram_nmatch("1", "%s_isolation", var)) {
+					save2file("-A PREROUTING -i %s -d %s/%s -j RETURN\n", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+					sprintf(vif_ip, "%s_ipaddr", var);
+					save2file("-A PREROUTING -i %s -d %s -j RETURN\n", var, nvram_safe_get(vif_ip));
+				}
+			}
+		}
 		save2file("-A PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118\n", wanaddr, nvram_safe_get("lan_ipaddr"));
+		
 	}
 #endif
 #ifdef HAVE_TOR
@@ -2282,6 +2302,10 @@ static void filter_forward(void)
 			if (nvram_nmatch("1", "%s_isolation", var)) {
 				save2file("-I FORWARD -i %s -d %s/%s -m state --state NEW -j %s\n", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_drop);
 				save2file("-A FORWARD -i br0 -o %s -m state --state NEW -j %s\n", var, log_drop);
+				if ( nvram_nmatch("1","privoxy_transp_enable") )
+				{
+					 save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s\n", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_accept);
+				}
 			}
 		}	  
 	}
