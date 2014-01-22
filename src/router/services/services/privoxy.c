@@ -21,7 +21,11 @@ void start_privoxy(void)
 		return;
 
 	int mode = 0;
+	char *next;
+	char var[80];
+	char vifs[256];
 	char *ip = nvram_safe_get("lan_ipaddr");
+	char *mask = nvram_safe_get("lan_netmask");
 
 	sysprintf("grep -q nobody /etc/passwd || echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
 	mkdir("/var/log/privoxy", 0777);
@@ -31,6 +35,20 @@ void start_privoxy(void)
 		sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wan, ip);
 		sysprintf("iptables -t nat -I PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wan, ip);
 		mode = 1;
+		getIfLists(vifs, 256);
+		char vif_ip[32];
+		foreach(var, vifs, next) {
+		  if (strcmp(get_wan_face(), var)
+		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+			if (nvram_nmatch("1", "%s_isolation", var)) {
+				sysprintf("iptables -t nat -D PREROUTING -i %s -d %s/%s -j RETURN", var, ip, mask);
+				sysprintf("iptables -t nat -I PREROUTING -i %s -d %s/%s -j RETURN", var, ip, mask);
+				sprintf(vif_ip, "%s_ipaddr", var);
+				sysprintf("iptables -t nat -D PREROUTING -i %s -d %s -j RETURN", var, nvram_safe_get(vif_ip));
+				sysprintf("iptables -t nat -I PREROUTING -i %s -d %s -j RETURN", var, nvram_safe_get(vif_ip));
+			}
+		  }
+		}
 	}
 
 	FILE *fp = fopen("/tmp/privoxy.conf", "wb");
@@ -68,7 +86,25 @@ void stop_privoxy(void)
 {
 	char *ip = nvram_safe_get("lan_ipaddr");
 	char *wan = get_wan_ipaddr();
+	char *mask = nvram_safe_get("lan_netmask");
+	char *next;
+	char var[80];
+	char vifs[256];
+	
 	sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wan, ip);
+	
+	getIfLists(vifs, 256);
+	char vif_ip[32];
+	foreach(var, vifs, next) {
+		  if (strcmp(get_wan_face(), var)
+		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+			if (nvram_nmatch("1", "%s_isolation", var)) {
+				sysprintf("iptables -t nat -D PREROUTING -i %s -d %s/%s -j RETURN", var, ip, mask);
+				sprintf(vif_ip, "%s_ipaddr", var);
+				sysprintf("iptables -t nat -D PREROUTING -i %s -d %s -j RETURN", var, nvram_safe_get(vif_ip));
+			}
+		  }
+	}
 	stop_process("privoxy", "privoxy");
 }
 #endif
