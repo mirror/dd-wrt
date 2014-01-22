@@ -208,6 +208,7 @@ obj-$(CONFIG_SNOOP) += snoop
 obj-$(CONFIG_AOSS) += aoss
 obj-$(CONFIG_AOSS2) += aoss2 json-c libubox ubus
 obj-$(CONFIG_AP_SERV) += ap-serv
+obj-$(CONFIG_TOLAPAI) += tolapai
 obj-$(CONFIG_BUFFALO) += buffalo_flash
 #obj-$(CONFIG_RELAYD) += relayd
 obj-$(CONFIG_ATH9K) += ath9k 
@@ -246,6 +247,7 @@ obj-$(CONFIG_WEBSERVER) += glib20 libxml2 libmcrypt lighttpd curl php5
 obj-$(CONFIG_TRANSMISSION) += libevent curl transmission
 obj-$(CONFIG_UNIWIP) += uniwip_gpio
 obj-$(CONFIG_MACTELNET) += mactelnet
+obj-$(CONFIG_FIRMWARES) += firmwares
 
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 #obj-$(CONFIG_OPROFILE) += oprofile
