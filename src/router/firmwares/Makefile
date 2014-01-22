@@ -7,6 +7,6 @@ all:
 
 install:
 	mkdir -p $(INSTALLDIR)$(FIRMWAREDIR)
-	cp -r * $(INSTALLDIR)$(FIRMWAREDIR)
-	rm -f $(INSTALLDIR)/usbdux/*dux $(INSTALLDIR)/*/*.asm
-	rm $(INSTALLDIR)$(FIRMWAREDIR)/{WHENCE,LICENSE.*,LICENCE.*}
+	cp -r rtl_nic $(INSTALLDIR)$(FIRMWAREDIR)
+	-rm -f $(INSTALLDIR)/usbdux/*dux $(INSTALLDIR)/*/*.asm
+	-rm $(INSTALLDIR)$(FIRMWAREDIR)/{WHENCE,LICENSE.*,LICENCE.*}
