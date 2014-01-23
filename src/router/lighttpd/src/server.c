@@ -314,6 +314,9 @@ static void server_free(server *srv) {
 			buffer_free(s->ssl_verifyclient_username);
 #ifdef USE_OPENSSL
 			SSL_CTX_free(s->ssl_ctx);
+			EVP_PKEY_free(s->ssl_pemfile_pkey);
+			X509_free(s->ssl_pemfile_x509);
+			if (NULL != s->ssl_ca_file_cert_names) sk_X509_NAME_pop_free(s->ssl_ca_file_cert_names, X509_NAME_free);
 #endif
 			free(s);
 		}
@@ -817,8 +820,14 @@ int main (int argc, char **argv) {
 		 * to /etc/group
 		 * */
 		if (NULL != grp) {
-			setgid(grp->gr_gid);
-			setgroups(0, NULL);
+			if (-1 == setgid(grp->gr_gid)) {
+				log_error_write(srv, __FILE__, __LINE__, "ss", "setgid failed: ", strerror(errno));
+				return -1;
+			}
+			if (-1 == setgroups(0, NULL)) {
+				log_error_write(srv, __FILE__, __LINE__, "ss", "setgroups failed: ", strerror(errno));
+				return -1;
+			}
 			if (srv->srvconf.username->used) {
 				initgroups(srv->srvconf.username->ptr, grp->gr_gid);
 			}
@@ -841,7 +850,10 @@ int main (int argc, char **argv) {
 #ifdef HAVE_PWD_H
 		/* drop root privs */
 		if (NULL != pwd) {
-			setuid(pwd->pw_uid);
+			if (-1 == setuid(pwd->pw_uid)) {
+				log_error_write(srv, __FILE__, __LINE__, "ss", "setuid failed: ", strerror(errno));
+				return -1;
+			}
 		}
 #endif
 #if defined(HAVE_SYS_PRCTL_H) && defined(PR_SET_DUMPABLE)
@@ -937,6 +949,51 @@ int main (int argc, char **argv) {
 	if (srv->srvconf.dont_daemonize == 0) daemonize();
 #endif
 
+
+#ifdef HAVE_SIGACTION
+	memset(&act, 0, sizeof(act));
+	act.sa_handler = SIG_IGN;
+	sigaction(SIGPIPE, &act, NULL);
+	sigaction(SIGUSR1, &act, NULL);
+# if defined(SA_SIGINFO)
+	act.sa_sigaction = sigaction_handler;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = SA_SIGINFO;
+# else
+	act.sa_handler = signal_handler;
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+# endif
+	sigaction(SIGINT,  &act, NULL);
+	sigaction(SIGTERM, &act, NULL);
+	sigaction(SIGHUP,  &act, NULL);
+	sigaction(SIGALRM, &act, NULL);
+	sigaction(SIGCHLD, &act, NULL);
+
+#elif defined(HAVE_SIGNAL)
+	/* ignore the SIGPIPE from sendfile() */
+	signal(SIGPIPE, SIG_IGN);
+	signal(SIGUSR1, SIG_IGN);
+	signal(SIGALRM, signal_handler);
+	signal(SIGTERM, signal_handler);
+	signal(SIGHUP,  signal_handler);
+	signal(SIGCHLD,  signal_handler);
+	signal(SIGINT,  signal_handler);
+#endif
+
+#ifdef USE_ALARM
+	signal(SIGALRM, signal_handler);
+
+	/* setup periodic timer (1 second) */
+	if (setitimer(ITIMER_REAL, &interval, NULL)) {
+		log_error_write(srv, __FILE__, __LINE__, "s", "setting timer failed");
+		return -1;
+	}
+
+	getitimer(ITIMER_REAL, &interval);
+#endif
+
+
 	srv->gid = getgid();
 	srv->uid = getuid();
 
@@ -1010,51 +1067,6 @@ int main (int argc, char **argv) {
 		return -1;
 	}
 
-
-
-
-#ifdef HAVE_SIGACTION
-	memset(&act, 0, sizeof(act));
-	act.sa_handler = SIG_IGN;
-	sigaction(SIGPIPE, &act, NULL);
-	sigaction(SIGUSR1, &act, NULL);
-# if defined(SA_SIGINFO)
-	act.sa_sigaction = sigaction_handler;
-	sigemptyset(&act.sa_mask);
-	act.sa_flags = SA_SIGINFO;
-# else
-	act.sa_handler = signal_handler;
-	sigemptyset(&act.sa_mask);
-	act.sa_flags = 0;
-# endif
-	sigaction(SIGINT,  &act, NULL);
-	sigaction(SIGTERM, &act, NULL);
-	sigaction(SIGHUP,  &act, NULL);
-	sigaction(SIGALRM, &act, NULL);
-	sigaction(SIGCHLD, &act, NULL);
-
-#elif defined(HAVE_SIGNAL)
-	/* ignore the SIGPIPE from sendfile() */
-	signal(SIGPIPE, SIG_IGN);
-	signal(SIGUSR1, SIG_IGN);
-	signal(SIGALRM, signal_handler);
-	signal(SIGTERM, signal_handler);
-	signal(SIGHUP,  signal_handler);
-	signal(SIGCHLD,  signal_handler);
-	signal(SIGINT,  signal_handler);
-#endif
-
-#ifdef USE_ALARM
-	signal(SIGALRM, signal_handler);
-
-	/* setup periodic timer (1 second) */
-	if (setitimer(ITIMER_REAL, &interval, NULL)) {
-		log_error_write(srv, __FILE__, __LINE__, "s", "setting timer failed");
-		return -1;
-	}
-
-	getitimer(ITIMER_REAL, &interval);
-#endif
 
 #ifdef HAVE_FORK
 	/* start watcher and workers */
@@ -1170,18 +1182,17 @@ int main (int argc, char **argv) {
 #ifdef HAVE_FAM_H
 	/* setup FAM */
 	if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_FAM) {
-		if (0 != FAMOpen2(srv->stat_cache->fam, "lighttpd")) {
+		if (0 != FAMOpen2(&srv->stat_cache->fam, "lighttpd")) {
 			log_error_write(srv, __FILE__, __LINE__, "s",
 					 "could not open a fam connection, dieing.");
 			return -1;
 		}
 #ifdef HAVE_FAMNOEXISTS
-		FAMNoExists(srv->stat_cache->fam);
+		FAMNoExists(&srv->stat_cache->fam);
 #endif
 
-		srv->stat_cache->fam_fcce_ndx = -1;
-		fdevent_register(srv->ev, FAMCONNECTION_GETFD(srv->stat_cache->fam), stat_cache_handle_fdevent, NULL);
-		fdevent_event_set(srv->ev, &(srv->stat_cache->fam_fcce_ndx), FAMCONNECTION_GETFD(srv->stat_cache->fam), FDEVENT_IN);
+		fdevent_register(srv->ev, FAMCONNECTION_GETFD(&srv->stat_cache->fam), stat_cache_handle_fdevent, NULL);
+		fdevent_event_set(srv->ev, &(srv->stat_cache->fam_fcce_ndx), FAMCONNECTION_GETFD(&srv->stat_cache->fam), FDEVENT_IN);
 	}
 #endif
 

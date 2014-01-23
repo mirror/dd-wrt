@@ -1,14 +1,24 @@
 dnl                                               -*- Autoconf -*-
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.57)
-AC_INIT([lighttpd], [1.4.32], [contact@lighttpd.net])
+AC_INIT([lighttpd], [1.4.34], [contact@lighttpd.net])
 AC_CONFIG_SRCDIR([src/server.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CANONICAL_TARGET
 
-AM_INIT_AUTOMAKE([-Wall -Wportability -Wno-override foreign dist-bzip2 tar-ustar])
+dnl HOW FUCKING BROKEN IS AUTOMAKE...
+dnl serial-tests is not recognized before 1.12, and required for serial tests with 1.13, sane version checks "impossible"
+dnl if you don't use the default (symlinked) automake on your box, set AUTOMAKE to the path you're using
+m4_define([serial_tests], [
+    m4_esyscmd([case `${AUTOMAKE:-automake} --version | head -n 1` in
+      *1.11.*|*1.10.*|*1.9.*);;
+      *) echo serial-tests;;
+      esac])
+])
+
+AM_INIT_AUTOMAKE([-Wall -Wno-portability -Wno-override foreign dist-bzip2 tar-ustar] serial_tests)
 
 dnl enable with --enable-silent-rules or make V=0 (needs automake >= 1.11)
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
@@ -457,21 +467,21 @@ if test "$WITH_LUA" != "no"; then
  if test "$WITH_LUA" = "yes"; then
   WITH_LUA=lua
  fi
- PKG_CHECK_MODULES(LUA, $WITH_LUA >= 5.1, [
-   AC_DEFINE([HAVE_LUA], [1], [liblua])
-   AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
- ],[
- dnl for debian based systems
+ dnl first check for lua5.1 (debian and others), then lua-5.1 (freebsd), then $WITH_LUA (defaults to lua)
+ dnl check "lua" last now that lua5.2 is out
  PKG_CHECK_MODULES(LUA, lua5.1 >= 5.1, [
-   AC_DEFINE([HAVE_LUA], [1], [liblua])
-   AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
+  AC_DEFINE([HAVE_LUA], [1], [liblua])
+  AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
  ],[
- dnl for freebsd
- PKG_CHECK_MODULES(LUA, lua-5.1 >= 5.1, [
+  PKG_CHECK_MODULES(LUA, lua-5.1 >= 5.1, [
    AC_DEFINE([HAVE_LUA], [1], [liblua])
    AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
- ])
- ])
+  ],[
+   PKG_CHECK_MODULES(LUA, $WITH_LUA >= 5.1, [
+    AC_DEFINE([HAVE_LUA], [1], [liblua])
+    AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
+   ])
+  ])
  ])
 
  AC_SUBST(LUA_CFLAGS)

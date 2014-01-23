@@ -1,77 +1,74 @@
 crc32.o: crc32.c crc32.h ../config.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/sys/types.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/features.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/uClibc_config.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/sys/cdefs.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/types.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/wordsize.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/include/stddef.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/typesizes.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/pthreadtypes.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/endian.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/endian.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/byteswap.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/byteswap.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/byteswap-common.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/sgidefs.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/time.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/sys/select.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/select.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/sigset.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/time.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/sys/sysmacros.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/include/stdint.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/stdint.h \
- /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/wchar.h
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/types.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/features.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_config.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/cdefs.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/types.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/wordsize.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/include/stddef.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/typesizes.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/pthreadtypes.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/endian.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/endian.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/byteswap.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/byteswap.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/byteswap-common.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/time.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/select.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/select.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/sigset.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/time.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/sysmacros.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/include/stdint.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/stdint.h \
+ /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/wchar.h
 
 crc32.h:
 
 ../config.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/sys/types.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/types.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/features.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/features.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/uClibc_config.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/uClibc_config.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/sys/cdefs.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/cdefs.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/types.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/types.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/wordsize.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/wordsize.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/include/stddef.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/include/stddef.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/typesizes.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/typesizes.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/pthreadtypes.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/pthreadtypes.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/endian.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/endian.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/endian.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/endian.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/byteswap.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/byteswap.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/byteswap.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/byteswap.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/byteswap-common.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/byteswap-common.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/sgidefs.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/time.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/time.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/select.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/sys/select.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/select.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/select.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/sigset.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/sigset.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/time.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/time.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/sys/sysmacros.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/sys/sysmacros.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/include/stdint.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/include/stdint.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/stdint.h:
 
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/stdint.h:
-
-/home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/../lib64/gcc/mipsel-openwrt-linux-uclibc/4.7.3/../../../../mipsel-openwrt-linux-uclibc/sys-include/bits/wchar.h:
+/home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/../lib64/gcc/arm-openwrt-linux-uclibcgnueabi/4.7.3/../../../../arm-openwrt-linux-uclibcgnueabi/sys-include/bits/wchar.h:

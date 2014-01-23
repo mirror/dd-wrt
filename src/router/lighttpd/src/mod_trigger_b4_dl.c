@@ -143,7 +143,7 @@ SETDEFAULTS_FUNC(mod_trigger_b4_dl_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s;
@@ -437,7 +437,7 @@ URIHANDLER_FUNC(mod_trigger_b4_dl_uri_handler) {
 				return HANDLER_FINISHED;
 			}
 
-			last_hit = *(time_t *)(val.dptr);
+			memcpy(&last_hit, val.dptr, sizeof(time_t));
 
 			free(val.dptr);
 
@@ -555,7 +555,7 @@ TRIGGER_FUNC(mod_trigger_b4_dl_handle_trigger) {
 
 			val = gdbm_fetch(s->db, key);
 
-			last_hit = *(time_t *)(val.dptr);
+			memcpy(&last_hit, val.dptr, sizeof(time_t));
 
 			free(val.dptr);
 
