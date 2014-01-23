@@ -4,7 +4,7 @@
 ## Makefile for OpenSSL
 ##
 
-VERSION=1.0.1e
+VERSION=1.0.1f
 MAJOR=1
 MINOR=0.1
 SHLIB_VERSION_NUMBER=1.0.0
@@ -12,9 +12,9 @@ SHLIB_VERSION_HISTORY=
 SHLIB_MAJOR=1
 SHLIB_MINOR=0.0
 SHLIB_EXT=.so.$(SHLIB_MAJOR).$(SHLIB_MINOR)
-PLATFORM=linux-openwrt
-OPTIONS=--prefix=/usr --openssldir=/etc/ssl -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT enable-threads enable-zlib-dynamic no-aes192 no-ans1 no-camellia no-ec no-ec_nistp_64_gcc_128 no-ecdh no-ecdsa no-engines no-err no-gmp no-gost no-hw no-idea no-jpake no-krb5 no-md2 no-mdc2 no-perlasm no-rc5 no-rfc3779 no-ripemd no-rmd160 no-sctp no-sha0 no-shared no-smime no-store static-engine
-CONFIGURE_ARGS=linux-openwrt --prefix=/usr --openssldir=/etc/ssl -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime no-rmd160 no-aes192 no-ripemd no-camellia no-ans1 no-krb5 no-ec no-err no-hw threads zlib-dynamic no-engines no-perlasm
+PLATFORM=linux-i386
+OPTIONS=--prefix=/usr --openssldir=/etc/ssl -O2 -pipe -march=i486 -mtune=i486 -fno-caller-saves -D_FILE_OFFSET_BITS=64 -ffunction-sections -fdata-sections -Wl,--gc-sections -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT enable-threads enable-zlib-dynamic no-aes192 no-ans1 no-ec_nistp_64_gcc_128 no-err no-gmp no-hw no-idea no-jpake no-krb5 no-md2 no-mdc2 no-perlasm no-rc5 no-rfc3779 no-ripemd no-rmd160 no-sctp no-sha0 no-shared no-smime no-store static-engine
+CONFIGURE_ARGS=linux-i386 --prefix=/usr --openssldir=/etc/ssl -O2 -pipe -march=i486 -mtune=i486 -fno-caller-saves -D_FILE_OFFSET_BITS=64 -ffunction-sections -fdata-sections -Wl,--gc-sections -DNDEBUG -ldl -DOPENSSL_SMALL_FOOTPRINT no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime no-rmd160 no-aes192 no-ripemd no-ans1 no-krb5 no-err no-hw threads zlib-dynamic no-perlasm
 SHLIB_TARGET=linux-shared
 
 # HERE indicates where this Makefile lives.  This can be used to indicate
@@ -59,15 +59,15 @@ OPENSSLDIR=/etc/ssl
 # equal 4.
 # PKCS1_CHECK - pkcs1 tests.
 
-CC= ccache mips-linux-uclibc-gcc
-CFLAG= -DZLIB_SHARED -DZLIB -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -Os -pipe -mips32r2 -mtune=mips32r2 -msoft-float -fno-caller-saves -mno-branch-likely -DASMAES512 -ffunction-sections -fdata-sections -DNDEBUG -DOPENSSL_SMALL_FOOTPRINT -DOPENSSL_NO_ERR -DTERMIO $(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall
-DEPFLAG= -DOPENSSL_NO_AES192 -DOPENSSL_NO_ANS1 -DOPENSSL_NO_CAMELLIA -DOPENSSL_NO_EC -DOPENSSL_NO_EC_NISTP_64_GCC_128 -DOPENSSL_NO_ECDH -DOPENSSL_NO_ECDSA -DOPENSSL_NO_ENGINES -DOPENSSL_NO_GMP -DOPENSSL_NO_GOST -DOPENSSL_NO_IDEA -DOPENSSL_NO_JPAKE -DOPENSSL_NO_MD2 -DOPENSSL_NO_MDC2 -DOPENSSL_NO_PERLASM -DOPENSSL_NO_RC5 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_RIPEMD -DOPENSSL_NO_RMD160 -DOPENSSL_NO_SCTP -DOPENSSL_NO_SHA0 -DOPENSSL_NO_SMIME -DOPENSSL_NO_STORE
+CC= ccache i486-linux-uclibc-gcc
+CFLAG= -DZLIB_SHARED -DZLIB -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -O2 -pipe -march=i486 -mtune=i486 -fno-caller-saves -D_FILE_OFFSET_BITS=64 -ffunction-sections -fdata-sections -DNDEBUG -DOPENSSL_SMALL_FOOTPRINT -DOPENSSL_NO_ERR -DTERMIO $(OPENWRT_OPTIMIZATION_FLAGS) -fomit-frame-pointer -Wall -DOPENSSL_BN_ASM_PART_WORDS -DOPENSSL_IA32_SSE2 -DOPENSSL_BN_ASM_MONT -DOPENSSL_BN_ASM_GF2m -DSHA1_ASM -DSHA256_ASM -DSHA512_ASM -DMD5_ASM -DRMD160_ASM -DAES_ASM -DVPAES_ASM -DWHIRLPOOL_ASM -DGHASH_ASM
+DEPFLAG= -DOPENSSL_NO_AES192 -DOPENSSL_NO_ANS1 -DOPENSSL_NO_EC_NISTP_64_GCC_128 -DOPENSSL_NO_GMP -DOPENSSL_NO_IDEA -DOPENSSL_NO_JPAKE -DOPENSSL_NO_MD2 -DOPENSSL_NO_MDC2 -DOPENSSL_NO_PERLASM -DOPENSSL_NO_RC5 -DOPENSSL_NO_RFC3779 -DOPENSSL_NO_RIPEMD -DOPENSSL_NO_RMD160 -DOPENSSL_NO_SCTP -DOPENSSL_NO_SHA0 -DOPENSSL_NO_SMIME -DOPENSSL_NO_STORE
 PEX_LIBS= 
 EX_LIBS= -Wl,--gc-sections -ldl -ldl
 EXE_EXT= 
 ARFLAGS= 
-AR= mips-linux-uclibc-ar $(ARFLAGS) r
-RANLIB= mips-linux-uclibc-ranlib
+AR= i486-linux-uclibc-ar $(ARFLAGS) r
+RANLIB= i486-linux-uclibc-ranlib
 NM= nm
 PERL= /usr/bin/perl
 TAR= tar
@@ -88,22 +88,22 @@ ASFLAG=$(CFLAG)
 PROCESSOR= 
 
 # CPUID module collects small commonly used assembler snippets
-CPUID_OBJ= mem_clr.o
-BN_ASM= bn_asm.o
-DES_ENC= des_enc.o fcrypt_b.o
-AES_ENC= aes_core.o aes_cbc.o
-BF_ENC= bf_enc.o
-CAST_ENC= c_enc.o
-RC4_ENC= rc4_enc.o rc4_skey.o
-RC5_ENC= rc5_enc.o
-MD5_ASM_OBJ= 
-SHA1_ASM_OBJ= 
-RMD160_ASM_OBJ= 
-WP_ASM_OBJ= wp_block.o
-CMLL_ENC= camellia.o cmll_misc.o cmll_cbc.o
-MODES_ASM_OBJ= 
+CPUID_OBJ= x86cpuid.o
+BN_ASM= bn-586.o co-586.o x86-mont.o x86-gf2m.o
+DES_ENC= des-586.o crypt586.o
+AES_ENC= aes-586.o vpaes-x86.o aesni-x86.o aes_core.o
+BF_ENC= bf-586.o
+CAST_ENC= cast-586.o
+RC4_ENC= rc4-586.o
+RC5_ENC= rc5-586.o
+MD5_ASM_OBJ= md5-586.o
+SHA1_ASM_OBJ= sha1-586.o sha256-586.o sha512-586.o
+RMD160_ASM_OBJ= rmd-586.o
+WP_ASM_OBJ= wp_block.o wp-mmx.o
+CMLL_ENC= cmll-x86.o
+MODES_ASM_OBJ= ghash-x86.o
 ENGINES_ASM_OBJ= 
-PERLASM_SCHEME= void
+PERLASM_SCHEME= elf
 
 # KRB5 stuff
 KRB5_INCLUDES=
@@ -138,15 +138,15 @@ FIPSCANLIB=
 BASEADDR=0xFB00000
 
 DIRS=   crypto ssl engines apps test tools
-ENGDIRS= 
+ENGDIRS= ccgost
 SHLIBDIRS= crypto ssl
 
 # dirs in crypto to build
 SDIRS=  \
 	objects \
 	md4 md5 sha hmac whrlpool \
-	des aes rc2 rc4 bf cast seed modes \
-	bn rsa dsa dh dso engine \
+	des aes rc2 rc4 bf cast camellia seed modes \
+	bn ec rsa dsa ecdsa dh ecdh dso engine \
 	buffer bio stack lhash rand err \
 	evp asn1 pem x509 x509v3 conf txt_db pkcs7 pkcs12 comp ocsp ui krb5 \
 	cms pqueue ts srp cmac
@@ -304,7 +304,8 @@ libcrypto$(SHLIB_EXT): libcrypto.a fips_premain_dso$(EXE_EXT)
 			FIPSLD_CC="$(CC)"; CC=$(FIPSDIR)/bin/fipsld; \
 			export CC FIPSLD_CC FIPSLD_LIBCRYPTO; \
 		fi; \
-		$(MAKE) -e SHLIBDIRS=crypto build-shared; \
+		$(MAKE) -e SHLIBDIRS=crypto  CC=$${CC:-$(CC)} build-shared; \
+		touch -c fips_premain_dso$(EXE_EXT); \
 	else \
 		echo "There's no support for shared libraries on this platform" >&2; \
 		exit 1; \
