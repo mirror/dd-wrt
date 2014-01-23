@@ -11,29 +11,11 @@
 #ifndef OPENSSL_NO_ANS1
 # define OPENSSL_NO_ANS1
 #endif
-#ifndef OPENSSL_NO_CAMELLIA
-# define OPENSSL_NO_CAMELLIA
-#endif
-#ifndef OPENSSL_NO_EC
-# define OPENSSL_NO_EC
-#endif
 #ifndef OPENSSL_NO_EC_NISTP_64_GCC_128
 # define OPENSSL_NO_EC_NISTP_64_GCC_128
 #endif
-#ifndef OPENSSL_NO_ECDH
-# define OPENSSL_NO_ECDH
-#endif
-#ifndef OPENSSL_NO_ECDSA
-# define OPENSSL_NO_ECDSA
-#endif
-#ifndef OPENSSL_NO_ENGINES
-# define OPENSSL_NO_ENGINES
-#endif
 #ifndef OPENSSL_NO_GMP
 # define OPENSSL_NO_GMP
-#endif
-#ifndef OPENSSL_NO_GOST
-# define OPENSSL_NO_GOST
 #endif
 #ifndef OPENSSL_NO_IDEA
 # define OPENSSL_NO_IDEA
@@ -104,29 +86,11 @@
 # if defined(OPENSSL_NO_ANS1) && !defined(NO_ANS1)
 #  define NO_ANS1
 # endif
-# if defined(OPENSSL_NO_CAMELLIA) && !defined(NO_CAMELLIA)
-#  define NO_CAMELLIA
-# endif
-# if defined(OPENSSL_NO_EC) && !defined(NO_EC)
-#  define NO_EC
-# endif
 # if defined(OPENSSL_NO_EC_NISTP_64_GCC_128) && !defined(NO_EC_NISTP_64_GCC_128)
 #  define NO_EC_NISTP_64_GCC_128
 # endif
-# if defined(OPENSSL_NO_ECDH) && !defined(NO_ECDH)
-#  define NO_ECDH
-# endif
-# if defined(OPENSSL_NO_ECDSA) && !defined(NO_ECDSA)
-#  define NO_ECDSA
-# endif
-# if defined(OPENSSL_NO_ENGINES) && !defined(NO_ENGINES)
-#  define NO_ENGINES
-# endif
 # if defined(OPENSSL_NO_GMP) && !defined(NO_GMP)
 #  define NO_GMP
-# endif
-# if defined(OPENSSL_NO_GOST) && !defined(NO_GOST)
-#  define NO_GOST
 # endif
 # if defined(OPENSSL_NO_IDEA) && !defined(NO_IDEA)
 #  define NO_IDEA
