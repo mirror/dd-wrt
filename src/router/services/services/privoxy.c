@@ -72,8 +72,7 @@ void start_privoxy(void)
 			"accept-intercepted-requests %d\n" 
 			"split-large-forms 0\n" 
 			"keep-alive-timeout 5\n" 
-			"socket-timeout 300\n" 
-			"max-client-connections 64\n" 
+			"socket-timeout 300\n"  
 			"handle-as-empty-doc-returns-ok 1\n", ip, mode);
 	}
 	fclose(fp);
