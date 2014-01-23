@@ -103,7 +103,7 @@ SETDEFAULTS_FUNC(mod_magnet_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s;
@@ -446,6 +446,7 @@ typedef struct {
 		MAGNET_ENV_PHYICAL_PATH,
 		MAGNET_ENV_PHYICAL_REL_PATH,
 		MAGNET_ENV_PHYICAL_DOC_ROOT,
+		MAGNET_ENV_PHYICAL_BASEDIR,
 
 		MAGNET_ENV_URI_PATH,
 		MAGNET_ENV_URI_PATH_RAW,
@@ -466,6 +467,7 @@ static const magnet_env_t magnet_env[] = {
 	{ "physical.path", MAGNET_ENV_PHYICAL_PATH },
 	{ "physical.rel-path", MAGNET_ENV_PHYICAL_REL_PATH },
 	{ "physical.doc-root", MAGNET_ENV_PHYICAL_DOC_ROOT },
+	{ "physical.basedir", MAGNET_ENV_PHYICAL_BASEDIR },
 
 	{ "uri.path", MAGNET_ENV_URI_PATH },
 	{ "uri.path-raw", MAGNET_ENV_URI_PATH_RAW },
@@ -497,6 +499,7 @@ static buffer *magnet_env_get_buffer_by_id(server *srv, connection *con, int id)
 	case MAGNET_ENV_PHYICAL_PATH: dest = con->physical.path; break;
 	case MAGNET_ENV_PHYICAL_REL_PATH: dest = con->physical.rel_path; break;
 	case MAGNET_ENV_PHYICAL_DOC_ROOT: dest = con->physical.doc_root; break;
+	case MAGNET_ENV_PHYICAL_BASEDIR: dest = con->physical.basedir; break;
 
 	case MAGNET_ENV_URI_PATH: dest = con->uri.path; break;
 	case MAGNET_ENV_URI_PATH_RAW: dest = con->uri.path_raw; break;

@@ -242,7 +242,7 @@ SETDEFAULTS_FUNC(mod_rewrite_set_defaults) {
 	if (!p) return HANDLER_ERROR;
 
 	/* 0 */
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 #else
 	UNUSED(p_d);
 #endif
@@ -295,8 +295,6 @@ static int mod_rewrite_patch_connection(server *srv, connection *con, plugin_dat
 	for (i = 1; i < srv->config_context->used; i++) {
 		data_config *dc = (data_config *)srv->config_context->data[i];
 		s = p->config_storage[i];
-
-		if (COMP_HTTP_URL == dc->comp) continue;
 
 		/* condition didn't match */
 		if (!config_check_cond(srv, con, dc)) continue;

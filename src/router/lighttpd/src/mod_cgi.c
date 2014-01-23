@@ -157,7 +157,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s;
@@ -918,16 +918,9 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, buffer *
 			);
 		cgi_env_add(&env, CONST_STR_LEN("REMOTE_PORT"), buf, strlen(buf));
 
-		if (!buffer_is_empty(con->authed_user)) {
-			cgi_env_add(&env, CONST_STR_LEN("REMOTE_USER"),
-				    CONST_BUF_LEN(con->authed_user));
+		if (buffer_is_equal_caseless_string(con->uri.scheme, CONST_STR_LEN("https"))) {
+			cgi_env_add(&env, CONST_STR_LEN("HTTPS"), CONST_STR_LEN("on"));
 		}
-
-#ifdef USE_OPENSSL
-	if (srv_sock->is_ssl) {
-		cgi_env_add(&env, CONST_STR_LEN("HTTPS"), CONST_STR_LEN("on"));
-	}
-#endif
 
 		/* request.content_length < SSIZE_MAX, see request.c */
 		LI_ltostr(buf, con->request.content_length);

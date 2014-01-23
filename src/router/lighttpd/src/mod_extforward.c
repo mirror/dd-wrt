@@ -11,6 +11,7 @@
 #include "config.h"
 #endif
 
+#include <assert.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -164,7 +165,7 @@ SETDEFAULTS_FUNC(mod_extforward_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s;
@@ -303,11 +304,14 @@ static const char *last_not_in_array(array *a, plugin_data *p)
 	return NULL;
 }
 
-static struct addrinfo *ipstr_to_sockaddr(server *srv, const char *host) {
-	struct addrinfo hints, *res0;
+#ifdef HAVE_IPV6
+static void ipstr_to_sockaddr(server *srv, const char *host, sock_addr *sock) {
+	struct addrinfo hints, *addrlist = NULL;
 	int result;
 
 	memset(&hints, 0, sizeof(hints));
+	sock->plain.sa_family = AF_UNSPEC;
+
 #ifndef AI_NUMERICSERV
 	/**
 	  * quoting $ man getaddrinfo
@@ -321,22 +325,31 @@ static struct addrinfo *ipstr_to_sockaddr(server *srv, const char *host) {
 	hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
 
 	errno = 0;
-	result = getaddrinfo(host, NULL, &hints, &res0);
+	result = getaddrinfo(host, NULL, &hints, &addrlist);
 
 	if (result != 0) {
 		log_error_write(srv, __FILE__, __LINE__, "SSSs(S)",
-			"could not resolve hostname ", host, " because ", gai_strerror(result), strerror(errno));
-
-		return NULL;
-	} else if (res0 == NULL) {
+			"could not parse ip address ", host, " because ", gai_strerror(result), strerror(errno));
+	} else if (addrlist == NULL) {
 		log_error_write(srv, __FILE__, __LINE__, "SSS",
-			"Problem in resolving hostname ", host, ": succeeded, but no information returned");
+			"Problem in parsing ip address ", host, ": succeeded, but no information returned");
+	} else switch (addrlist->ai_family) {
+	case AF_INET:
+		memcpy(&sock->ipv4, addrlist->ai_addr, sizeof(sock->ipv4));
+		assert(AF_INET == sock->plain.sa_family);
+		break;
+	case AF_INET6:
+		memcpy(&sock->ipv6, addrlist->ai_addr, sizeof(sock->ipv6));
+		assert(AF_INET6 == sock->plain.sa_family);
+		break;
+	default:
+		log_error_write(srv, __FILE__, __LINE__, "SSS",
+			"Problem in parsing ip address ", host, ": succeeded, but unknown family");
 	}
 
-	return res0;
+	freeaddrinfo(addrlist);
 }
-
-
+#endif
 
 static void clean_cond_cache(server *srv, connection *con) {
 	config_cond_cache_reset_item(srv, con, COMP_HTTP_REMOTE_IP);
@@ -347,7 +360,6 @@ URIHANDLER_FUNC(mod_extforward_uri_handler) {
 	data_string *forwarded = NULL;
 #ifdef HAVE_IPV6
 	char b2[INET6_ADDRSTRLEN + 1];
-	struct addrinfo *addrlist = NULL;
 #endif
 	const char *dst_addr_str = NULL;
 	array *forward_array = NULL;
@@ -411,34 +423,22 @@ URIHANDLER_FUNC(mod_extforward_uri_handler) {
 
 	if (real_remote_addr != NULL) { /* parsed */
 		sock_addr sock;
-		struct addrinfo *addrs_left;
-		server_socket *srv_sock = con->srv_socket;
 		data_string *forwarded_proto = (data_string *)array_get_element(con->request.headers, "X-Forwarded-Proto");
 
-		if (forwarded_proto && !strcmp(forwarded_proto->value->ptr, "https")) {
-			srv_sock->is_proxy_ssl = 1;
-		} else {
-			srv_sock->is_proxy_ssl = 0;
+		if (NULL != forwarded_proto) {
+			if (buffer_is_equal_caseless_string(forwarded_proto->value, CONST_STR_LEN("https"))) {
+				buffer_copy_string_len(con->uri.scheme, CONST_STR_LEN("https"));
+			} else if (buffer_is_equal_caseless_string(forwarded_proto->value, CONST_STR_LEN("http"))) {
+				buffer_copy_string_len(con->uri.scheme, CONST_STR_LEN("http"));
+			}
 		}
 
 		if (con->conf.log_request_handling) {
- 			log_error_write(srv, __FILE__, __LINE__, "ss", "using address:", real_remote_addr);
+			log_error_write(srv, __FILE__, __LINE__, "ss", "using address:", real_remote_addr);
 		}
 #ifdef HAVE_IPV6
-		addrlist = ipstr_to_sockaddr(srv, real_remote_addr);
-		sock.plain.sa_family = AF_UNSPEC;
-		for (addrs_left = addrlist; addrs_left != NULL; addrs_left = addrs_left -> ai_next) {
-			sock.plain.sa_family = addrs_left->ai_family;
-			if (sock.plain.sa_family == AF_INET) {
-				sock.ipv4.sin_addr = ((struct sockaddr_in*)addrs_left->ai_addr)->sin_addr;
-				break;
-			} else if (sock.plain.sa_family == AF_INET6) {
-				sock.ipv6.sin6_addr = ((struct sockaddr_in6*)addrs_left->ai_addr)->sin6_addr;
-				break;
-			}
-		}
+		ipstr_to_sockaddr(srv, real_remote_addr, &sock);
 #else
-		UNUSED(addrs_left);
 		sock.ipv4.sin_addr.s_addr = inet_addr(real_remote_addr);
 		sock.plain.sa_family = (sock.ipv4.sin_addr.s_addr == 0xFFFFFFFF) ? AF_UNSPEC : AF_INET;
 #endif
@@ -464,9 +464,6 @@ URIHANDLER_FUNC(mod_extforward_uri_handler) {
 			/* Now, clean the conf_cond cache, because we may have changed the results of tests */
 			clean_cond_cache(srv, con);
 		}
-#ifdef HAVE_IPV6
-		if (addrlist != NULL ) freeaddrinfo(addrlist);
-#endif
 	}
 	array_free(forward_array);
 

@@ -123,11 +123,8 @@ int http_response_redirect_to_directory(server *srv, connection *con) {
 
 	o = buffer_init();
 
-	if (con->conf.is_ssl) {
-		buffer_copy_string_len(o, CONST_STR_LEN("https://"));
-	} else {
-		buffer_copy_string_len(o, CONST_STR_LEN("http://"));
-	}
+	buffer_copy_string_buffer(o, con->uri.scheme);
+	buffer_append_string_len(o, CONST_STR_LEN("://"));
 	if (con->uri.authority->used) {
 		buffer_append_string_buffer(o, con->uri.authority);
 	} else {
@@ -193,10 +190,15 @@ int http_response_redirect_to_directory(server *srv, connection *con) {
 			return -1;
 		}
 
-		if (!((con->conf.is_ssl == 0 && srv->srvconf.port == 80) ||
-		      (con->conf.is_ssl == 1 && srv->srvconf.port == 443))) {
-			buffer_append_string_len(o, CONST_STR_LEN(":"));
-			buffer_append_long(o, srv->srvconf.port);
+		{
+			unsigned short default_port = 80;
+			if (buffer_is_equal_caseless_string(con->uri.scheme, CONST_STR_LEN("https"))) {
+				default_port = 443;
+			}
+			if (default_port != srv->srvconf.port) {
+				buffer_append_string_len(o, CONST_STR_LEN(":"));
+				buffer_append_long(o, srv->srvconf.port);
+			}
 		}
 	}
 	buffer_append_string_buffer(o, con->uri.path);
@@ -245,6 +247,7 @@ buffer * strftime_cache_get(server *srv, time_t last_mod) {
 
 
 int http_response_handle_cachable(server *srv, connection *con, buffer *mtime) {
+	UNUSED(srv);
 	/*
 	 * 14.26 If-None-Match
 	 *    [...]
@@ -261,68 +264,17 @@ int http_response_handle_cachable(server *srv, connection *con, buffer *mtime) {
 			if (con->request.http_method == HTTP_METHOD_GET ||
 			    con->request.http_method == HTTP_METHOD_HEAD) {
 
-				/* check if etag + last-modified */
-				if (con->request.http_if_modified_since) {
-					size_t used_len;
-					char *semicolon;
-
-					if (NULL == (semicolon = strchr(con->request.http_if_modified_since, ';'))) {
-						used_len = strlen(con->request.http_if_modified_since);
-					} else {
-						used_len = semicolon - con->request.http_if_modified_since;
-					}
-
-					if (0 == strncmp(con->request.http_if_modified_since, mtime->ptr, used_len)) {
-						if ('\0' == mtime->ptr[used_len]) con->http_status = 304;
-						return HANDLER_FINISHED;
-					} else {
-						char buf[sizeof("Sat, 23 Jul 2005 21:20:01 GMT")];
-						time_t t_header, t_file;
-						struct tm tm;
-
-						/* check if we can safely copy the string */
-						if (used_len >= sizeof(buf)) {
-							log_error_write(srv, __FILE__, __LINE__, "ssdd",
-									"DEBUG: Last-Modified check failed as the received timestamp was too long:",
-									con->request.http_if_modified_since, used_len, sizeof(buf) - 1);
-
-							con->http_status = 412;
-							con->mode = DIRECT;
-							return HANDLER_FINISHED;
-						}
-
-
-						strncpy(buf, con->request.http_if_modified_since, used_len);
-						buf[used_len] = '\0';
-
-						if (NULL == strptime(buf, "%a, %d %b %Y %H:%M:%S GMT", &tm)) {
-							con->http_status = 412;
-							con->mode = DIRECT;
-							return HANDLER_FINISHED;
-						}
-						tm.tm_isdst = 0;
-						t_header = mktime(&tm);
-
-						strptime(mtime->ptr, "%a, %d %b %Y %H:%M:%S GMT", &tm);
-						tm.tm_isdst = 0;
-						t_file = mktime(&tm);
-
-						if (t_file > t_header) return HANDLER_GO_ON;
-
-						con->http_status = 304;
-						return HANDLER_FINISHED;
-					}
-				} else {
-					con->http_status = 304;
-					return HANDLER_FINISHED;
-				}
+				con->http_status = 304;
+				return HANDLER_FINISHED;
 			} else {
 				con->http_status = 412;
 				con->mode = DIRECT;
 				return HANDLER_FINISHED;
 			}
 		}
-	} else if (con->request.http_if_modified_since) {
+	} else if (con->request.http_if_modified_since &&
+	           (con->request.http_method == HTTP_METHOD_GET ||
+	            con->request.http_method == HTTP_METHOD_HEAD)) {
 		size_t used_len;
 		char *semicolon;
 

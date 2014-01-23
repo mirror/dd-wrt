@@ -1610,7 +1610,7 @@ esac
  AC_MSG_RESULT([${lt_sysroot:-no}])
 _LT_DECL([], [lt_sysroot], [0], [The root where to search for ]dnl
 [dependent libraries, and in which our libraries should be installed.])])
-m4trace:m4/libtool.m4:1502: -1- AC_DEFUN([_LT_COMPILER_OPTION], [m4_require([_LT_FILEUTILS_DEFAULTS])dnl
+m4trace:m4/libtool.m4:1515: -1- AC_DEFUN([_LT_COMPILER_OPTION], [m4_require([_LT_FILEUTILS_DEFAULTS])dnl
 m4_require([_LT_DECL_SED])dnl
 AC_CACHE_CHECK([$1], [$2],
   [$2=no
@@ -1649,11 +1649,11 @@ else
     m4_if([$6], , :, [$6])
 fi
 ])
-m4trace:m4/libtool.m4:1544: -1- AU_DEFUN([AC_LIBTOOL_COMPILER_OPTION], [m4_if($#, 0, [_LT_COMPILER_OPTION], [_LT_COMPILER_OPTION($@)])])
-m4trace:m4/libtool.m4:1544: -1- AC_DEFUN([AC_LIBTOOL_COMPILER_OPTION], [AC_DIAGNOSE([obsolete], [The macro `AC_LIBTOOL_COMPILER_OPTION' is obsolete.
+m4trace:m4/libtool.m4:1557: -1- AU_DEFUN([AC_LIBTOOL_COMPILER_OPTION], [m4_if($#, 0, [_LT_COMPILER_OPTION], [_LT_COMPILER_OPTION($@)])])
+m4trace:m4/libtool.m4:1557: -1- AC_DEFUN([AC_LIBTOOL_COMPILER_OPTION], [AC_DIAGNOSE([obsolete], [The macro `AC_LIBTOOL_COMPILER_OPTION' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [_LT_COMPILER_OPTION], [_LT_COMPILER_OPTION($@)])])
-m4trace:m4/libtool.m4:1553: -1- AC_DEFUN([_LT_LINKER_OPTION], [m4_require([_LT_FILEUTILS_DEFAULTS])dnl
+m4trace:m4/libtool.m4:1566: -1- AC_DEFUN([_LT_LINKER_OPTION], [m4_require([_LT_FILEUTILS_DEFAULTS])dnl
 m4_require([_LT_DECL_SED])dnl
 AC_CACHE_CHECK([$1], [$2],
   [$2=no
@@ -1685,11 +1685,11 @@ else
     m4_if([$5], , :, [$5])
 fi
 ])
-m4trace:m4/libtool.m4:1588: -1- AU_DEFUN([AC_LIBTOOL_LINKER_OPTION], [m4_if($#, 0, [_LT_LINKER_OPTION], [_LT_LINKER_OPTION($@)])])
-m4trace:m4/libtool.m4:1588: -1- AC_DEFUN([AC_LIBTOOL_LINKER_OPTION], [AC_DIAGNOSE([obsolete], [The macro `AC_LIBTOOL_LINKER_OPTION' is obsolete.
+m4trace:m4/libtool.m4:1601: -1- AU_DEFUN([AC_LIBTOOL_LINKER_OPTION], [m4_if($#, 0, [_LT_LINKER_OPTION], [_LT_LINKER_OPTION($@)])])
+m4trace:m4/libtool.m4:1601: -1- AC_DEFUN([AC_LIBTOOL_LINKER_OPTION], [AC_DIAGNOSE([obsolete], [The macro `AC_LIBTOOL_LINKER_OPTION' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [_LT_LINKER_OPTION], [_LT_LINKER_OPTION($@)])])
-m4trace:m4/libtool.m4:1595: -1- AC_DEFUN([LT_CMD_MAX_LEN], [AC_REQUIRE([AC_CANONICAL_HOST])dnl
+m4trace:m4/libtool.m4:1608: -1- AC_DEFUN([LT_CMD_MAX_LEN], [AC_REQUIRE([AC_CANONICAL_HOST])dnl
 # find the maximum length of command line arguments
 AC_MSG_CHECKING([the maximum length of command line arguments])
 AC_CACHE_VAL([lt_cv_sys_max_cmd_len], [dnl
@@ -1784,7 +1784,8 @@ AC_CACHE_VAL([lt_cv_sys_max_cmd_len], [dnl
     ;;
   *)
     lt_cv_sys_max_cmd_len=`(getconf ARG_MAX) 2> /dev/null`
-    if test -n "$lt_cv_sys_max_cmd_len"; then
+    if test -n "$lt_cv_sys_max_cmd_len" && \
+	test undefined != "$lt_cv_sys_max_cmd_len"; then
       lt_cv_sys_max_cmd_len=`expr $lt_cv_sys_max_cmd_len \/ 4`
       lt_cv_sys_max_cmd_len=`expr $lt_cv_sys_max_cmd_len \* 3`
     else
@@ -1824,11 +1825,11 @@ max_cmd_len=$lt_cv_sys_max_cmd_len
 _LT_DECL([], [max_cmd_len], [0],
     [What is the maximum length of a command?])
 ])
-m4trace:m4/libtool.m4:1733: -1- AU_DEFUN([AC_LIBTOOL_SYS_MAX_CMD_LEN], [m4_if($#, 0, [LT_CMD_MAX_LEN], [LT_CMD_MAX_LEN($@)])])
-m4trace:m4/libtool.m4:1733: -1- AC_DEFUN([AC_LIBTOOL_SYS_MAX_CMD_LEN], [AC_DIAGNOSE([obsolete], [The macro `AC_LIBTOOL_SYS_MAX_CMD_LEN' is obsolete.
+m4trace:m4/libtool.m4:1747: -1- AU_DEFUN([AC_LIBTOOL_SYS_MAX_CMD_LEN], [m4_if($#, 0, [LT_CMD_MAX_LEN], [LT_CMD_MAX_LEN($@)])])
+m4trace:m4/libtool.m4:1747: -1- AC_DEFUN([AC_LIBTOOL_SYS_MAX_CMD_LEN], [AC_DIAGNOSE([obsolete], [The macro `AC_LIBTOOL_SYS_MAX_CMD_LEN' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [LT_CMD_MAX_LEN], [LT_CMD_MAX_LEN($@)])])
-m4trace:m4/libtool.m4:1844: -1- AC_DEFUN([LT_SYS_DLOPEN_SELF], [m4_require([_LT_HEADER_DLFCN])dnl
+m4trace:m4/libtool.m4:1858: -1- AC_DEFUN([LT_SYS_DLOPEN_SELF], [m4_require([_LT_HEADER_DLFCN])dnl
 if test "x$enable_dlopen" != xyes; then
   enable_dlopen=unknown
   enable_dlopen_self=unknown
@@ -1942,11 +1943,11 @@ _LT_DECL([dlopen_self], [enable_dlopen_self], [0],
 _LT_DECL([dlopen_self_static], [enable_dlopen_self_static], [0],
 	 [Whether dlopen of statically linked programs is supported])
 ])
-m4trace:m4/libtool.m4:1961: -1- AU_DEFUN([AC_LIBTOOL_DLOPEN_SELF], [m4_if($#, 0, [LT_SYS_DLOPEN_SELF], [LT_SYS_DLOPEN_SELF($@)])])
-m4trace:m4/libtool.m4:1961: -1- AC_DEFUN([AC_LIBTOOL_DLOPEN_SELF], [AC_DIAGNOSE([obsolete], [The macro `AC_LIBTOOL_DLOPEN_SELF' is obsolete.
+m4trace:m4/libtool.m4:1975: -1- AU_DEFUN([AC_LIBTOOL_DLOPEN_SELF], [m4_if($#, 0, [LT_SYS_DLOPEN_SELF], [LT_SYS_DLOPEN_SELF($@)])])
+m4trace:m4/libtool.m4:1975: -1- AC_DEFUN([AC_LIBTOOL_DLOPEN_SELF], [AC_DIAGNOSE([obsolete], [The macro `AC_LIBTOOL_DLOPEN_SELF' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [LT_SYS_DLOPEN_SELF], [LT_SYS_DLOPEN_SELF($@)])])
-m4trace:m4/libtool.m4:2930: -1- AC_DEFUN([_LT_PATH_TOOL_PREFIX], [m4_require([_LT_DECL_EGREP])dnl
+m4trace:m4/libtool.m4:2945: -1- AC_DEFUN([_LT_PATH_TOOL_PREFIX], [m4_require([_LT_DECL_EGREP])dnl
 AC_MSG_CHECKING([for $1])
 AC_CACHE_VAL(lt_cv_path_MAGIC_CMD,
 [case $MAGIC_CMD in
@@ -2005,11 +2006,11 @@ fi
 _LT_DECL([], [MAGIC_CMD], [0],
 	 [Used to examine libraries when file_magic_cmd begins with "file"])dnl
 ])
-m4trace:m4/libtool.m4:2992: -1- AU_DEFUN([AC_PATH_TOOL_PREFIX], [m4_if($#, 0, [_LT_PATH_TOOL_PREFIX], [_LT_PATH_TOOL_PREFIX($@)])])
-m4trace:m4/libtool.m4:2992: -1- AC_DEFUN([AC_PATH_TOOL_PREFIX], [AC_DIAGNOSE([obsolete], [The macro `AC_PATH_TOOL_PREFIX' is obsolete.
+m4trace:m4/libtool.m4:3007: -1- AU_DEFUN([AC_PATH_TOOL_PREFIX], [m4_if($#, 0, [_LT_PATH_TOOL_PREFIX], [_LT_PATH_TOOL_PREFIX($@)])])
+m4trace:m4/libtool.m4:3007: -1- AC_DEFUN([AC_PATH_TOOL_PREFIX], [AC_DIAGNOSE([obsolete], [The macro `AC_PATH_TOOL_PREFIX' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [_LT_PATH_TOOL_PREFIX], [_LT_PATH_TOOL_PREFIX($@)])])
-m4trace:m4/libtool.m4:3015: -1- AC_DEFUN([LT_PATH_LD], [AC_REQUIRE([AC_PROG_CC])dnl
+m4trace:m4/libtool.m4:3030: -1- AC_DEFUN([LT_PATH_LD], [AC_REQUIRE([AC_PROG_CC])dnl
 AC_REQUIRE([AC_CANONICAL_HOST])dnl
 AC_REQUIRE([AC_CANONICAL_BUILD])dnl
 m4_require([_LT_DECL_SED])dnl
@@ -2095,15 +2096,15 @@ AC_SUBST([LD])
 
 _LT_TAGDECL([], [LD], [1], [The linker used to build libraries])
 ])
-m4trace:m4/libtool.m4:3104: -1- AU_DEFUN([AM_PROG_LD], [m4_if($#, 0, [LT_PATH_LD], [LT_PATH_LD($@)])])
-m4trace:m4/libtool.m4:3104: -1- AC_DEFUN([AM_PROG_LD], [AC_DIAGNOSE([obsolete], [The macro `AM_PROG_LD' is obsolete.
+m4trace:m4/libtool.m4:3119: -1- AU_DEFUN([AM_PROG_LD], [m4_if($#, 0, [LT_PATH_LD], [LT_PATH_LD($@)])])
+m4trace:m4/libtool.m4:3119: -1- AC_DEFUN([AM_PROG_LD], [AC_DIAGNOSE([obsolete], [The macro `AM_PROG_LD' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [LT_PATH_LD], [LT_PATH_LD($@)])])
-m4trace:m4/libtool.m4:3105: -1- AU_DEFUN([AC_PROG_LD], [m4_if($#, 0, [LT_PATH_LD], [LT_PATH_LD($@)])])
-m4trace:m4/libtool.m4:3105: -1- AC_DEFUN([AC_PROG_LD], [AC_DIAGNOSE([obsolete], [The macro `AC_PROG_LD' is obsolete.
+m4trace:m4/libtool.m4:3120: -1- AU_DEFUN([AC_PROG_LD], [m4_if($#, 0, [LT_PATH_LD], [LT_PATH_LD($@)])])
+m4trace:m4/libtool.m4:3120: -1- AC_DEFUN([AC_PROG_LD], [AC_DIAGNOSE([obsolete], [The macro `AC_PROG_LD' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [LT_PATH_LD], [LT_PATH_LD($@)])])
-m4trace:m4/libtool.m4:3399: -1- AC_DEFUN([LT_PATH_NM], [AC_REQUIRE([AC_PROG_CC])dnl
+m4trace:m4/libtool.m4:3410: -1- AC_DEFUN([LT_PATH_NM], [AC_REQUIRE([AC_PROG_CC])dnl
 AC_CACHE_CHECK([for BSD- or MS-compatible name lister (nm)], lt_cv_path_NM,
 [if test -n "$NM"; then
   # Let the user override the test.
@@ -2190,15 +2191,15 @@ AC_CACHE_CHECK([the name lister ($NM) interface], [lt_cv_nm_interface],
   fi
   rm -f conftest*])
 ])
-m4trace:m4/libtool.m4:3489: -1- AU_DEFUN([AM_PROG_NM], [m4_if($#, 0, [LT_PATH_NM], [LT_PATH_NM($@)])])
-m4trace:m4/libtool.m4:3489: -1- AC_DEFUN([AM_PROG_NM], [AC_DIAGNOSE([obsolete], [The macro `AM_PROG_NM' is obsolete.
+m4trace:m4/libtool.m4:3500: -1- AU_DEFUN([AM_PROG_NM], [m4_if($#, 0, [LT_PATH_NM], [LT_PATH_NM($@)])])
+m4trace:m4/libtool.m4:3500: -1- AC_DEFUN([AM_PROG_NM], [AC_DIAGNOSE([obsolete], [The macro `AM_PROG_NM' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [LT_PATH_NM], [LT_PATH_NM($@)])])
-m4trace:m4/libtool.m4:3490: -1- AU_DEFUN([AC_PROG_NM], [m4_if($#, 0, [LT_PATH_NM], [LT_PATH_NM($@)])])
-m4trace:m4/libtool.m4:3490: -1- AC_DEFUN([AC_PROG_NM], [AC_DIAGNOSE([obsolete], [The macro `AC_PROG_NM' is obsolete.
+m4trace:m4/libtool.m4:3501: -1- AU_DEFUN([AC_PROG_NM], [m4_if($#, 0, [LT_PATH_NM], [LT_PATH_NM($@)])])
+m4trace:m4/libtool.m4:3501: -1- AC_DEFUN([AC_PROG_NM], [AC_DIAGNOSE([obsolete], [The macro `AC_PROG_NM' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [LT_PATH_NM], [LT_PATH_NM($@)])])
-m4trace:m4/libtool.m4:3560: -1- AC_DEFUN([LT_LIB_M], [AC_REQUIRE([AC_CANONICAL_HOST])dnl
+m4trace:m4/libtool.m4:3571: -1- AC_DEFUN([LT_LIB_M], [AC_REQUIRE([AC_CANONICAL_HOST])dnl
 LIBM=
 case $host in
 *-*-beos* | *-*-cegcc* | *-*-cygwin* | *-*-haiku* | *-*-pw32* | *-*-darwin*)
@@ -2214,30 +2215,30 @@ case $host in
 esac
 AC_SUBST([LIBM])
 ])
-m4trace:m4/libtool.m4:3579: -1- AU_DEFUN([AC_CHECK_LIBM], [m4_if($#, 0, [LT_LIB_M], [LT_LIB_M($@)])])
-m4trace:m4/libtool.m4:3579: -1- AC_DEFUN([AC_CHECK_LIBM], [AC_DIAGNOSE([obsolete], [The macro `AC_CHECK_LIBM' is obsolete.
+m4trace:m4/libtool.m4:3590: -1- AU_DEFUN([AC_CHECK_LIBM], [m4_if($#, 0, [LT_LIB_M], [LT_LIB_M($@)])])
+m4trace:m4/libtool.m4:3590: -1- AC_DEFUN([AC_CHECK_LIBM], [AC_DIAGNOSE([obsolete], [The macro `AC_CHECK_LIBM' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [LT_LIB_M], [LT_LIB_M($@)])])
-m4trace:m4/libtool.m4:7622: -1- AC_DEFUN([LT_PROG_GCJ], [m4_ifdef([AC_PROG_GCJ], [AC_PROG_GCJ],
+m4trace:m4/libtool.m4:7637: -1- AC_DEFUN([LT_PROG_GCJ], [m4_ifdef([AC_PROG_GCJ], [AC_PROG_GCJ],
   [m4_ifdef([A][M_PROG_GCJ], [A][M_PROG_GCJ],
     [AC_CHECK_TOOL(GCJ, gcj,)
       test "x${GCJFLAGS+set}" = xset || GCJFLAGS="-g -O2"
       AC_SUBST(GCJFLAGS)])])[]dnl
 ])
-m4trace:m4/libtool.m4:7631: -1- AU_DEFUN([LT_AC_PROG_GCJ], [m4_if($#, 0, [LT_PROG_GCJ], [LT_PROG_GCJ($@)])])
-m4trace:m4/libtool.m4:7631: -1- AC_DEFUN([LT_AC_PROG_GCJ], [AC_DIAGNOSE([obsolete], [The macro `LT_AC_PROG_GCJ' is obsolete.
+m4trace:m4/libtool.m4:7646: -1- AU_DEFUN([LT_AC_PROG_GCJ], [m4_if($#, 0, [LT_PROG_GCJ], [LT_PROG_GCJ($@)])])
+m4trace:m4/libtool.m4:7646: -1- AC_DEFUN([LT_AC_PROG_GCJ], [AC_DIAGNOSE([obsolete], [The macro `LT_AC_PROG_GCJ' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [LT_PROG_GCJ], [LT_PROG_GCJ($@)])])
-m4trace:m4/libtool.m4:7638: -1- AC_DEFUN([LT_PROG_GO], [AC_CHECK_TOOL(GOC, gccgo,)
+m4trace:m4/libtool.m4:7653: -1- AC_DEFUN([LT_PROG_GO], [AC_CHECK_TOOL(GOC, gccgo,)
 ])
-m4trace:m4/libtool.m4:7645: -1- AC_DEFUN([LT_PROG_RC], [AC_CHECK_TOOL(RC, windres,)
+m4trace:m4/libtool.m4:7660: -1- AC_DEFUN([LT_PROG_RC], [AC_CHECK_TOOL(RC, windres,)
 ])
-m4trace:m4/libtool.m4:7650: -1- AU_DEFUN([LT_AC_PROG_RC], [m4_if($#, 0, [LT_PROG_RC], [LT_PROG_RC($@)])])
-m4trace:m4/libtool.m4:7650: -1- AC_DEFUN([LT_AC_PROG_RC], [AC_DIAGNOSE([obsolete], [The macro `LT_AC_PROG_RC' is obsolete.
+m4trace:m4/libtool.m4:7665: -1- AU_DEFUN([LT_AC_PROG_RC], [m4_if($#, 0, [LT_PROG_RC], [LT_PROG_RC($@)])])
+m4trace:m4/libtool.m4:7665: -1- AC_DEFUN([LT_AC_PROG_RC], [AC_DIAGNOSE([obsolete], [The macro `LT_AC_PROG_RC' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [LT_PROG_RC], [LT_PROG_RC($@)])])
-m4trace:m4/libtool.m4:7770: -1- AU_DEFUN([LT_AC_PROG_SED], [m4_if($#, 0, [AC_PROG_SED], [AC_PROG_SED($@)])])
-m4trace:m4/libtool.m4:7770: -1- AC_DEFUN([LT_AC_PROG_SED], [AC_DIAGNOSE([obsolete], [The macro `LT_AC_PROG_SED' is obsolete.
+m4trace:m4/libtool.m4:7785: -1- AU_DEFUN([LT_AC_PROG_SED], [m4_if($#, 0, [AC_PROG_SED], [AC_PROG_SED($@)])])
+m4trace:m4/libtool.m4:7785: -1- AC_DEFUN([LT_AC_PROG_SED], [AC_DIAGNOSE([obsolete], [The macro `LT_AC_PROG_SED' is obsolete.
 You should run autoupdate.])dnl
 m4_if($#, 0, [AC_PROG_SED], [AC_PROG_SED($@)])])
 m4trace:m4/ltoptions.m4:14: -1- AC_DEFUN([LTOPTIONS_VERSION], [m4_if([1])])
@@ -2447,72 +2448,80 @@ m4trace:configure.ac:9: -1- m4_pattern_allow([^target$])
 m4trace:configure.ac:9: -1- m4_pattern_allow([^target_cpu$])
 m4trace:configure.ac:9: -1- m4_pattern_allow([^target_vendor$])
 m4trace:configure.ac:9: -1- m4_pattern_allow([^target_os$])
-m4trace:configure.ac:11: -1- AM_INIT_AUTOMAKE([-Wall -Wportability -Wno-override foreign dist-bzip2 tar-ustar])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^AM_[A-Z]+FLAGS$])
-m4trace:configure.ac:11: -1- AM_SET_CURRENT_AUTOMAKE_VERSION
-m4trace:configure.ac:11: -1- AM_AUTOMAKE_VERSION([1.12.1])
-m4trace:configure.ac:11: -1- _AM_AUTOCONF_VERSION([2.69])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^INSTALL_PROGRAM$])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^INSTALL_SCRIPT$])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^INSTALL_DATA$])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^am__isrc$])
-m4trace:configure.ac:11: -1- _AM_SUBST_NOTMAKE([am__isrc])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^CYGPATH_W$])
-m4trace:configure.ac:11: -1- _AM_SET_OPTIONS([-Wall -Wportability -Wno-override foreign dist-bzip2 tar-ustar])
-m4trace:configure.ac:11: -1- _AM_SET_OPTION([-Wall])
-m4trace:configure.ac:11: -2- _AM_MANGLE_OPTION([-Wall])
-m4trace:configure.ac:11: -1- _AM_SET_OPTION([-Wportability])
-m4trace:configure.ac:11: -2- _AM_MANGLE_OPTION([-Wportability])
-m4trace:configure.ac:11: -1- _AM_SET_OPTION([-Wno-override])
-m4trace:configure.ac:11: -2- _AM_MANGLE_OPTION([-Wno-override])
-m4trace:configure.ac:11: -1- _AM_SET_OPTION([foreign])
-m4trace:configure.ac:11: -2- _AM_MANGLE_OPTION([foreign])
-m4trace:configure.ac:11: -1- _AM_SET_OPTION([dist-bzip2])
-m4trace:configure.ac:11: -2- _AM_MANGLE_OPTION([dist-bzip2])
-m4trace:configure.ac:11: -1- _AM_SET_OPTION([tar-ustar])
-m4trace:configure.ac:11: -2- _AM_MANGLE_OPTION([tar-ustar])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^PACKAGE$])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^VERSION$])
-m4trace:configure.ac:11: -1- _AM_IF_OPTION([no-define], [], [AC_DEFINE_UNQUOTED([PACKAGE], ["$PACKAGE"], [Name of package])
+m4trace:configure.ac:21: -1- AM_INIT_AUTOMAKE([-Wall -Wno-portability -Wno-override foreign dist-bzip2 tar-ustar 
+    serial-tests
+
+])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^AM_[A-Z]+FLAGS$])
+m4trace:configure.ac:21: -1- AM_SET_CURRENT_AUTOMAKE_VERSION
+m4trace:configure.ac:21: -1- AM_AUTOMAKE_VERSION([1.12.1])
+m4trace:configure.ac:21: -1- _AM_AUTOCONF_VERSION([2.69])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^INSTALL_PROGRAM$])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^INSTALL_SCRIPT$])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^INSTALL_DATA$])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^am__isrc$])
+m4trace:configure.ac:21: -1- _AM_SUBST_NOTMAKE([am__isrc])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^CYGPATH_W$])
+m4trace:configure.ac:21: -1- _AM_SET_OPTIONS([-Wall -Wno-portability -Wno-override foreign dist-bzip2 tar-ustar 
+    serial-tests
+
+])
+m4trace:configure.ac:21: -1- _AM_SET_OPTION([-Wall])
+m4trace:configure.ac:21: -2- _AM_MANGLE_OPTION([-Wall])
+m4trace:configure.ac:21: -1- _AM_SET_OPTION([-Wno-portability])
+m4trace:configure.ac:21: -2- _AM_MANGLE_OPTION([-Wno-portability])
+m4trace:configure.ac:21: -1- _AM_SET_OPTION([-Wno-override])
+m4trace:configure.ac:21: -2- _AM_MANGLE_OPTION([-Wno-override])
+m4trace:configure.ac:21: -1- _AM_SET_OPTION([foreign])
+m4trace:configure.ac:21: -2- _AM_MANGLE_OPTION([foreign])
+m4trace:configure.ac:21: -1- _AM_SET_OPTION([dist-bzip2])
+m4trace:configure.ac:21: -2- _AM_MANGLE_OPTION([dist-bzip2])
+m4trace:configure.ac:21: -1- _AM_SET_OPTION([tar-ustar])
+m4trace:configure.ac:21: -2- _AM_MANGLE_OPTION([tar-ustar])
+m4trace:configure.ac:21: -1- _AM_SET_OPTION([serial-tests])
+m4trace:configure.ac:21: -2- _AM_MANGLE_OPTION([serial-tests])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^PACKAGE$])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^VERSION$])
+m4trace:configure.ac:21: -1- _AM_IF_OPTION([no-define], [], [AC_DEFINE_UNQUOTED([PACKAGE], ["$PACKAGE"], [Name of package])
  AC_DEFINE_UNQUOTED([VERSION], ["$VERSION"], [Version number of package])])
-m4trace:configure.ac:11: -2- _AM_MANGLE_OPTION([no-define])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^PACKAGE$])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^VERSION$])
-m4trace:configure.ac:11: -1- AM_SANITY_CHECK
-m4trace:configure.ac:11: -1- AM_MISSING_PROG([ACLOCAL], [aclocal-${am__api_version}])
-m4trace:configure.ac:11: -1- AM_MISSING_HAS_RUN
-m4trace:configure.ac:11: -1- AM_AUX_DIR_EXPAND
-m4trace:configure.ac:11: -1- m4_pattern_allow([^ACLOCAL$])
-m4trace:configure.ac:11: -1- AM_MISSING_PROG([AUTOCONF], [autoconf])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^AUTOCONF$])
-m4trace:configure.ac:11: -1- AM_MISSING_PROG([AUTOMAKE], [automake-${am__api_version}])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^AUTOMAKE$])
-m4trace:configure.ac:11: -1- AM_MISSING_PROG([AUTOHEADER], [autoheader])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^AUTOHEADER$])
-m4trace:configure.ac:11: -1- AM_MISSING_PROG([MAKEINFO], [makeinfo])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^MAKEINFO$])
-m4trace:configure.ac:11: -1- AM_PROG_INSTALL_SH
-m4trace:configure.ac:11: -1- m4_pattern_allow([^install_sh$])
-m4trace:configure.ac:11: -1- AM_PROG_INSTALL_STRIP
-m4trace:configure.ac:11: -1- m4_pattern_allow([^STRIP$])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^INSTALL_STRIP_PROGRAM$])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^MKDIR_P$])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^mkdir_p$])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^AWK$])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^SET_MAKE$])
-m4trace:configure.ac:11: -1- AM_SET_LEADING_DOT
-m4trace:configure.ac:11: -1- m4_pattern_allow([^am__leading_dot$])
-m4trace:configure.ac:11: -1- _AM_IF_OPTION([tar-ustar], [_AM_PROG_TAR([ustar])], [_AM_IF_OPTION([tar-pax], [_AM_PROG_TAR([pax])],
+m4trace:configure.ac:21: -2- _AM_MANGLE_OPTION([no-define])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^PACKAGE$])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^VERSION$])
+m4trace:configure.ac:21: -1- AM_SANITY_CHECK
+m4trace:configure.ac:21: -1- AM_MISSING_PROG([ACLOCAL], [aclocal-${am__api_version}])
+m4trace:configure.ac:21: -1- AM_MISSING_HAS_RUN
+m4trace:configure.ac:21: -1- AM_AUX_DIR_EXPAND
+m4trace:configure.ac:21: -1- m4_pattern_allow([^ACLOCAL$])
+m4trace:configure.ac:21: -1- AM_MISSING_PROG([AUTOCONF], [autoconf])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^AUTOCONF$])
+m4trace:configure.ac:21: -1- AM_MISSING_PROG([AUTOMAKE], [automake-${am__api_version}])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^AUTOMAKE$])
+m4trace:configure.ac:21: -1- AM_MISSING_PROG([AUTOHEADER], [autoheader])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^AUTOHEADER$])
+m4trace:configure.ac:21: -1- AM_MISSING_PROG([MAKEINFO], [makeinfo])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^MAKEINFO$])
+m4trace:configure.ac:21: -1- AM_PROG_INSTALL_SH
+m4trace:configure.ac:21: -1- m4_pattern_allow([^install_sh$])
+m4trace:configure.ac:21: -1- AM_PROG_INSTALL_STRIP
+m4trace:configure.ac:21: -1- m4_pattern_allow([^STRIP$])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^INSTALL_STRIP_PROGRAM$])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^MKDIR_P$])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^mkdir_p$])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^AWK$])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^SET_MAKE$])
+m4trace:configure.ac:21: -1- AM_SET_LEADING_DOT
+m4trace:configure.ac:21: -1- m4_pattern_allow([^am__leading_dot$])
+m4trace:configure.ac:21: -1- _AM_IF_OPTION([tar-ustar], [_AM_PROG_TAR([ustar])], [_AM_IF_OPTION([tar-pax], [_AM_PROG_TAR([pax])],
 			     [_AM_PROG_TAR([v7])])])
-m4trace:configure.ac:11: -2- _AM_MANGLE_OPTION([tar-ustar])
-m4trace:configure.ac:11: -1- _AM_PROG_TAR([ustar])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^AMTAR$])
-m4trace:configure.ac:11: -1- AM_RUN_LOG([$_am_tar --version])
-m4trace:configure.ac:11: -1- AM_RUN_LOG([tardir=conftest.dir && eval $am__tar_ >conftest.tar])
-m4trace:configure.ac:11: -1- AM_RUN_LOG([$am__untar <conftest.tar])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^am__tar$])
-m4trace:configure.ac:11: -1- m4_pattern_allow([^am__untar$])
-m4trace:configure.ac:11: -1- _AM_IF_OPTION([no-dependencies], [], [AC_PROVIDE_IFELSE([AC_PROG_CC],
+m4trace:configure.ac:21: -2- _AM_MANGLE_OPTION([tar-ustar])
+m4trace:configure.ac:21: -1- _AM_PROG_TAR([ustar])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^AMTAR$])
+m4trace:configure.ac:21: -1- AM_RUN_LOG([$_am_tar --version])
+m4trace:configure.ac:21: -1- AM_RUN_LOG([tardir=conftest.dir && eval $am__tar_ >conftest.tar])
+m4trace:configure.ac:21: -1- AM_RUN_LOG([$am__untar <conftest.tar])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^am__tar$])
+m4trace:configure.ac:21: -1- m4_pattern_allow([^am__untar$])
+m4trace:configure.ac:21: -1- _AM_IF_OPTION([no-dependencies], [], [AC_PROVIDE_IFELSE([AC_PROG_CC],
 		  [_AM_DEPENDENCIES([CC])],
 		  [m4_define([AC_PROG_CC],
 			     m4_defn([AC_PROG_CC])[_AM_DEPENDENCIES([CC])])])dnl
@@ -2532,196 +2541,196 @@ m4_ifdef([AC_PROG_OBJCXX],
 		  [m4_define([AC_PROG_OBJCXX],
 			     m4_defn([AC_PROG_OBJCXX])[_AM_DEPENDENCIES([OBJCXX])])])])dnl
 ])
-m4trace:configure.ac:11: -2- _AM_MANGLE_OPTION([no-dependencies])
-m4trace:configure.ac:11: -1- _AM_IF_OPTION([silent-rules], [AC_REQUIRE([AM_SILENT_RULES])])
-m4trace:configure.ac:11: -2- _AM_MANGLE_OPTION([silent-rules])
-m4trace:configure.ac:14: -1- AM_SILENT_RULES
-m4trace:configure.ac:14: -1- m4_pattern_allow([^AM_V$])
-m4trace:configure.ac:14: -1- AM_SUBST_NOTMAKE([AM_V])
-m4trace:configure.ac:14: -1- _AM_SUBST_NOTMAKE([AM_V])
-m4trace:configure.ac:14: -1- m4_pattern_allow([^AM_DEFAULT_V$])
-m4trace:configure.ac:14: -1- AM_SUBST_NOTMAKE([AM_DEFAULT_V])
-m4trace:configure.ac:14: -1- _AM_SUBST_NOTMAKE([AM_DEFAULT_V])
-m4trace:configure.ac:14: -1- m4_pattern_allow([^AM_DEFAULT_VERBOSITY$])
-m4trace:configure.ac:14: -1- m4_pattern_allow([^AM_BACKSLASH$])
-m4trace:configure.ac:14: -1- _AM_SUBST_NOTMAKE([AM_BACKSLASH])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^CC$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^CFLAGS$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^LDFLAGS$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^LIBS$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^CPPFLAGS$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^CC$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^CC$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^CC$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^CC$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^ac_ct_CC$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^EXEEXT$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^OBJEXT$])
-m4trace:configure.ac:17: -1- _AM_DEPENDENCIES([CC])
-m4trace:configure.ac:17: -1- AM_SET_DEPDIR
-m4trace:configure.ac:17: -1- m4_pattern_allow([^DEPDIR$])
-m4trace:configure.ac:17: -1- AM_OUTPUT_DEPENDENCY_COMMANDS
-m4trace:configure.ac:17: -1- AM_MAKE_INCLUDE
-m4trace:configure.ac:17: -1- m4_pattern_allow([^am__include$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^am__quote$])
-m4trace:configure.ac:17: -1- AM_DEP_TRACK
-m4trace:configure.ac:17: -1- AM_CONDITIONAL([AMDEP], [test "x$enable_dependency_tracking" != xno])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^AMDEP_TRUE$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^AMDEP_FALSE$])
-m4trace:configure.ac:17: -1- _AM_SUBST_NOTMAKE([AMDEP_TRUE])
-m4trace:configure.ac:17: -1- _AM_SUBST_NOTMAKE([AMDEP_FALSE])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^AMDEPBACKSLASH$])
-m4trace:configure.ac:17: -1- _AM_SUBST_NOTMAKE([AMDEPBACKSLASH])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^am__nodep$])
-m4trace:configure.ac:17: -1- _AM_SUBST_NOTMAKE([am__nodep])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^CCDEPMODE$])
-m4trace:configure.ac:17: -1- AM_CONDITIONAL([am__fastdepCC], [
+m4trace:configure.ac:21: -2- _AM_MANGLE_OPTION([no-dependencies])
+m4trace:configure.ac:21: -1- _AM_IF_OPTION([silent-rules], [AC_REQUIRE([AM_SILENT_RULES])])
+m4trace:configure.ac:21: -2- _AM_MANGLE_OPTION([silent-rules])
+m4trace:configure.ac:24: -1- AM_SILENT_RULES
+m4trace:configure.ac:24: -1- m4_pattern_allow([^AM_V$])
+m4trace:configure.ac:24: -1- AM_SUBST_NOTMAKE([AM_V])
+m4trace:configure.ac:24: -1- _AM_SUBST_NOTMAKE([AM_V])
+m4trace:configure.ac:24: -1- m4_pattern_allow([^AM_DEFAULT_V$])
+m4trace:configure.ac:24: -1- AM_SUBST_NOTMAKE([AM_DEFAULT_V])
+m4trace:configure.ac:24: -1- _AM_SUBST_NOTMAKE([AM_DEFAULT_V])
+m4trace:configure.ac:24: -1- m4_pattern_allow([^AM_DEFAULT_VERBOSITY$])
+m4trace:configure.ac:24: -1- m4_pattern_allow([^AM_BACKSLASH$])
+m4trace:configure.ac:24: -1- _AM_SUBST_NOTMAKE([AM_BACKSLASH])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^CC$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^CFLAGS$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^LDFLAGS$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^LIBS$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^CPPFLAGS$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^CC$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^CC$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^CC$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^CC$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^ac_ct_CC$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^EXEEXT$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^OBJEXT$])
+m4trace:configure.ac:27: -1- _AM_DEPENDENCIES([CC])
+m4trace:configure.ac:27: -1- AM_SET_DEPDIR
+m4trace:configure.ac:27: -1- m4_pattern_allow([^DEPDIR$])
+m4trace:configure.ac:27: -1- AM_OUTPUT_DEPENDENCY_COMMANDS
+m4trace:configure.ac:27: -1- AM_MAKE_INCLUDE
+m4trace:configure.ac:27: -1- m4_pattern_allow([^am__include$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^am__quote$])
+m4trace:configure.ac:27: -1- AM_DEP_TRACK
+m4trace:configure.ac:27: -1- AM_CONDITIONAL([AMDEP], [test "x$enable_dependency_tracking" != xno])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^AMDEP_TRUE$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^AMDEP_FALSE$])
+m4trace:configure.ac:27: -1- _AM_SUBST_NOTMAKE([AMDEP_TRUE])
+m4trace:configure.ac:27: -1- _AM_SUBST_NOTMAKE([AMDEP_FALSE])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^AMDEPBACKSLASH$])
+m4trace:configure.ac:27: -1- _AM_SUBST_NOTMAKE([AMDEPBACKSLASH])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^am__nodep$])
+m4trace:configure.ac:27: -1- _AM_SUBST_NOTMAKE([am__nodep])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^CCDEPMODE$])
+m4trace:configure.ac:27: -1- AM_CONDITIONAL([am__fastdepCC], [
   test "x$enable_dependency_tracking" != xno \
   && test "$am_cv_CC_dependencies_compiler_type" = gcc3])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^am__fastdepCC_TRUE$])
-m4trace:configure.ac:17: -1- m4_pattern_allow([^am__fastdepCC_FALSE$])
-m4trace:configure.ac:17: -1- _AM_SUBST_NOTMAKE([am__fastdepCC_TRUE])
-m4trace:configure.ac:17: -1- _AM_SUBST_NOTMAKE([am__fastdepCC_FALSE])
-m4trace:configure.ac:18: -1- AM_PROG_CC_C_O
-m4trace:configure.ac:18: -1- m4_pattern_allow([^NO_MINUS_C_MINUS_O$])
-m4trace:configure.ac:19: -1- AC_PROG_LD
-m4trace:configure.ac:19: -1- _m4_warn([obsolete], [The macro `AC_PROG_LD' is obsolete.
-You should run autoupdate.], [m4/libtool.m4:3105: AC_PROG_LD is expanded from...
-configure.ac:19: the top level])
-m4trace:configure.ac:19: -1- LT_PATH_LD
-m4trace:configure.ac:19: -1- m4_pattern_allow([^SED$])
-m4trace:configure.ac:19: -1- AC_PROG_EGREP
-m4trace:configure.ac:19: -1- m4_pattern_allow([^GREP$])
-m4trace:configure.ac:19: -1- m4_pattern_allow([^EGREP$])
-m4trace:configure.ac:19: -1- m4_pattern_allow([^FGREP$])
-m4trace:configure.ac:19: -1- m4_pattern_allow([^GREP$])
-m4trace:configure.ac:19: -1- _LT_PROG_ECHO_BACKSLASH
-m4trace:configure.ac:19: -1- m4_pattern_allow([^LD$])
-m4trace:configure.ac:21: -1- m4_pattern_allow([^AWK$])
-m4trace:configure.ac:22: -1- m4_pattern_allow([^CPP$])
-m4trace:configure.ac:22: -1- m4_pattern_allow([^CPPFLAGS$])
-m4trace:configure.ac:22: -1- m4_pattern_allow([^CPP$])
-m4trace:configure.ac:24: -1- m4_pattern_allow([^LN_S$])
-m4trace:configure.ac:25: -1- m4_pattern_allow([^SET_MAKE$])
-m4trace:configure.ac:29: -1- m4_pattern_allow([^STDC_HEADERS$])
-m4trace:configure.ac:29: -1- m4_pattern_allow([^_POSIX_SOURCE$])
-m4trace:configure.ac:29: -1- m4_pattern_allow([^_POSIX_1_SOURCE$])
-m4trace:configure.ac:29: -1- m4_pattern_allow([^_MINIX$])
-m4trace:configure.ac:29: -1- m4_pattern_allow([^__EXTENSIONS__$])
-m4trace:configure.ac:29: -1- m4_pattern_allow([^_ALL_SOURCE$])
-m4trace:configure.ac:29: -1- m4_pattern_allow([^_GNU_SOURCE$])
-m4trace:configure.ac:29: -1- m4_pattern_allow([^_POSIX_PTHREAD_SEMANTICS$])
-m4trace:configure.ac:29: -1- m4_pattern_allow([^_TANDEM_SOURCE$])
-m4trace:configure.ac:31: -1- AM_PROG_AR
-m4trace:configure.ac:31: -1- m4_pattern_allow([^AR$])
-m4trace:configure.ac:31: -1- m4_pattern_allow([^ac_ct_AR$])
-m4trace:configure.ac:31: -1- m4_pattern_allow([^AR$])
-m4trace:configure.ac:34: -1- _m4_warn([obsolete], [The macro `AC_AIX' is obsolete.
+m4trace:configure.ac:27: -1- m4_pattern_allow([^am__fastdepCC_TRUE$])
+m4trace:configure.ac:27: -1- m4_pattern_allow([^am__fastdepCC_FALSE$])
+m4trace:configure.ac:27: -1- _AM_SUBST_NOTMAKE([am__fastdepCC_TRUE])
+m4trace:configure.ac:27: -1- _AM_SUBST_NOTMAKE([am__fastdepCC_FALSE])
+m4trace:configure.ac:28: -1- AM_PROG_CC_C_O
+m4trace:configure.ac:28: -1- m4_pattern_allow([^NO_MINUS_C_MINUS_O$])
+m4trace:configure.ac:29: -1- AC_PROG_LD
+m4trace:configure.ac:29: -1- _m4_warn([obsolete], [The macro `AC_PROG_LD' is obsolete.
+You should run autoupdate.], [m4/libtool.m4:3120: AC_PROG_LD is expanded from...
+configure.ac:29: the top level])
+m4trace:configure.ac:29: -1- LT_PATH_LD
+m4trace:configure.ac:29: -1- m4_pattern_allow([^SED$])
+m4trace:configure.ac:29: -1- AC_PROG_EGREP
+m4trace:configure.ac:29: -1- m4_pattern_allow([^GREP$])
+m4trace:configure.ac:29: -1- m4_pattern_allow([^EGREP$])
+m4trace:configure.ac:29: -1- m4_pattern_allow([^FGREP$])
+m4trace:configure.ac:29: -1- m4_pattern_allow([^GREP$])
+m4trace:configure.ac:29: -1- _LT_PROG_ECHO_BACKSLASH
+m4trace:configure.ac:29: -1- m4_pattern_allow([^LD$])
+m4trace:configure.ac:31: -1- m4_pattern_allow([^AWK$])
+m4trace:configure.ac:32: -1- m4_pattern_allow([^CPP$])
+m4trace:configure.ac:32: -1- m4_pattern_allow([^CPPFLAGS$])
+m4trace:configure.ac:32: -1- m4_pattern_allow([^CPP$])
+m4trace:configure.ac:34: -1- m4_pattern_allow([^LN_S$])
+m4trace:configure.ac:35: -1- m4_pattern_allow([^SET_MAKE$])
+m4trace:configure.ac:39: -1- m4_pattern_allow([^STDC_HEADERS$])
+m4trace:configure.ac:39: -1- m4_pattern_allow([^_POSIX_SOURCE$])
+m4trace:configure.ac:39: -1- m4_pattern_allow([^_POSIX_1_SOURCE$])
+m4trace:configure.ac:39: -1- m4_pattern_allow([^_MINIX$])
+m4trace:configure.ac:39: -1- m4_pattern_allow([^__EXTENSIONS__$])
+m4trace:configure.ac:39: -1- m4_pattern_allow([^_ALL_SOURCE$])
+m4trace:configure.ac:39: -1- m4_pattern_allow([^_GNU_SOURCE$])
+m4trace:configure.ac:39: -1- m4_pattern_allow([^_POSIX_PTHREAD_SEMANTICS$])
+m4trace:configure.ac:39: -1- m4_pattern_allow([^_TANDEM_SOURCE$])
+m4trace:configure.ac:41: -1- AM_PROG_AR
+m4trace:configure.ac:41: -1- m4_pattern_allow([^AR$])
+m4trace:configure.ac:41: -1- m4_pattern_allow([^ac_ct_AR$])
+m4trace:configure.ac:41: -1- m4_pattern_allow([^AR$])
+m4trace:configure.ac:44: -1- _m4_warn([obsolete], [The macro `AC_AIX' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/specific.m4:436: AC_AIX is expanded from...
-configure.ac:34: the top level])
-m4trace:configure.ac:35: -1- _m4_warn([obsolete], [The macro `AC_ISC_POSIX' is obsolete.
+configure.ac:44: the top level])
+m4trace:configure.ac:45: -1- _m4_warn([obsolete], [The macro `AC_ISC_POSIX' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/specific.m4:446: AC_ISC_POSIX is expanded from...
-configure.ac:35: the top level])
-m4trace:configure.ac:36: -1- _m4_warn([obsolete], [The macro `AC_MINIX' is obsolete.
+configure.ac:45: the top level])
+m4trace:configure.ac:46: -1- _m4_warn([obsolete], [The macro `AC_MINIX' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/specific.m4:441: AC_MINIX is expanded from...
-configure.ac:36: the top level])
-m4trace:configure.ac:43: -1- AM_CONDITIONAL([NO_RDYNAMIC], [test x$NO_RDYNAMIC = xyes])
-m4trace:configure.ac:43: -1- m4_pattern_allow([^NO_RDYNAMIC_TRUE$])
-m4trace:configure.ac:43: -1- m4_pattern_allow([^NO_RDYNAMIC_FALSE$])
-m4trace:configure.ac:43: -1- _AM_SUBST_NOTMAKE([NO_RDYNAMIC_TRUE])
-m4trace:configure.ac:43: -1- _AM_SUBST_NOTMAKE([NO_RDYNAMIC_FALSE])
-m4trace:configure.ac:48: -1- AC_DISABLE_STATIC
-m4trace:configure.ac:49: -1- AC_ENABLE_SHARED
-m4trace:configure.ac:51: -1- AC_LIBTOOL_DLOPEN
-m4trace:configure.ac:51: -1- _m4_warn([obsolete], [The macro `AC_LIBTOOL_DLOPEN' is obsolete.
+configure.ac:46: the top level])
+m4trace:configure.ac:53: -1- AM_CONDITIONAL([NO_RDYNAMIC], [test x$NO_RDYNAMIC = xyes])
+m4trace:configure.ac:53: -1- m4_pattern_allow([^NO_RDYNAMIC_TRUE$])
+m4trace:configure.ac:53: -1- m4_pattern_allow([^NO_RDYNAMIC_FALSE$])
+m4trace:configure.ac:53: -1- _AM_SUBST_NOTMAKE([NO_RDYNAMIC_TRUE])
+m4trace:configure.ac:53: -1- _AM_SUBST_NOTMAKE([NO_RDYNAMIC_FALSE])
+m4trace:configure.ac:58: -1- AC_DISABLE_STATIC
+m4trace:configure.ac:59: -1- AC_ENABLE_SHARED
+m4trace:configure.ac:61: -1- AC_LIBTOOL_DLOPEN
+m4trace:configure.ac:61: -1- _m4_warn([obsolete], [The macro `AC_LIBTOOL_DLOPEN' is obsolete.
 You should run autoupdate.], [m4/ltoptions.m4:111: AC_LIBTOOL_DLOPEN is expanded from...
-configure.ac:51: the top level])
-m4trace:configure.ac:51: -1- _m4_warn([obsolete], [AC_LIBTOOL_DLOPEN: Remove this warning and the call to _LT_SET_OPTION when you
+configure.ac:61: the top level])
+m4trace:configure.ac:61: -1- _m4_warn([obsolete], [AC_LIBTOOL_DLOPEN: Remove this warning and the call to _LT_SET_OPTION when you
 put the `dlopen' option into LT_INIT's first parameter.], [m4/ltoptions.m4:111: AC_LIBTOOL_DLOPEN is expanded from...
-configure.ac:51: the top level])
-m4trace:configure.ac:52: -1- AC_PROG_LIBTOOL
-m4trace:configure.ac:52: -1- _m4_warn([obsolete], [The macro `AC_PROG_LIBTOOL' is obsolete.
+configure.ac:61: the top level])
+m4trace:configure.ac:62: -1- AC_PROG_LIBTOOL
+m4trace:configure.ac:62: -1- _m4_warn([obsolete], [The macro `AC_PROG_LIBTOOL' is obsolete.
 You should run autoupdate.], [m4/libtool.m4:107: AC_PROG_LIBTOOL is expanded from...
-configure.ac:52: the top level])
-m4trace:configure.ac:52: -1- LT_INIT
-m4trace:configure.ac:52: -1- m4_pattern_forbid([^_?LT_[A-Z_]+$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^(_LT_EOF|LT_DLGLOBAL|LT_DLLAZY_OR_NOW|LT_MULTI_MODULE)$])
-m4trace:configure.ac:52: -1- LTOPTIONS_VERSION
-m4trace:configure.ac:52: -1- LTSUGAR_VERSION
-m4trace:configure.ac:52: -1- LTVERSION_VERSION
-m4trace:configure.ac:52: -1- LTOBSOLETE_VERSION
-m4trace:configure.ac:52: -1- _LT_PROG_LTMAIN
-m4trace:configure.ac:52: -1- m4_pattern_allow([^LIBTOOL$])
-m4trace:configure.ac:52: -1- _LT_PREPARE_SED_QUOTE_VARS
-m4trace:configure.ac:52: -1- LT_PATH_NM
-m4trace:configure.ac:52: -1- m4_pattern_allow([^DUMPBIN$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^ac_ct_DUMPBIN$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^DUMPBIN$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^NM$])
-m4trace:configure.ac:52: -1- LT_CMD_MAX_LEN
-m4trace:configure.ac:52: -1- m4_pattern_allow([^OBJDUMP$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^OBJDUMP$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^DLLTOOL$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^DLLTOOL$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^AR$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^ac_ct_AR$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^STRIP$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^RANLIB$])
-m4trace:configure.ac:52: -1- _LT_WITH_SYSROOT
-m4trace:configure.ac:52: -1- m4_pattern_allow([LT_OBJDIR])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^LT_OBJDIR$])
-m4trace:configure.ac:52: -1- _LT_CC_BASENAME([$compiler])
-m4trace:configure.ac:52: -1- _LT_PATH_TOOL_PREFIX([${ac_tool_prefix}file], [/usr/bin$PATH_SEPARATOR$PATH])
-m4trace:configure.ac:52: -1- _LT_PATH_TOOL_PREFIX([file], [/usr/bin$PATH_SEPARATOR$PATH])
-m4trace:configure.ac:52: -1- LT_SUPPORTED_TAG([CC])
-m4trace:configure.ac:52: -1- _LT_COMPILER_BOILERPLATE
-m4trace:configure.ac:52: -1- _LT_LINKER_BOILERPLATE
-m4trace:configure.ac:52: -1- _LT_COMPILER_OPTION([if $compiler supports -fno-rtti -fno-exceptions], [lt_cv_prog_compiler_rtti_exceptions], [-fno-rtti -fno-exceptions], [], [_LT_TAGVAR(lt_prog_compiler_no_builtin_flag, )="$_LT_TAGVAR(lt_prog_compiler_no_builtin_flag, ) -fno-rtti -fno-exceptions"])
-m4trace:configure.ac:52: -1- _LT_COMPILER_OPTION([if $compiler PIC flag $_LT_TAGVAR(lt_prog_compiler_pic, ) works], [_LT_TAGVAR(lt_cv_prog_compiler_pic_works, )], [$_LT_TAGVAR(lt_prog_compiler_pic, )@&t@m4_if([],[],[ -DPIC],[m4_if([],[CXX],[ -DPIC],[])])], [], [case $_LT_TAGVAR(lt_prog_compiler_pic, ) in
+configure.ac:62: the top level])
+m4trace:configure.ac:62: -1- LT_INIT
+m4trace:configure.ac:62: -1- m4_pattern_forbid([^_?LT_[A-Z_]+$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^(_LT_EOF|LT_DLGLOBAL|LT_DLLAZY_OR_NOW|LT_MULTI_MODULE)$])
+m4trace:configure.ac:62: -1- LTOPTIONS_VERSION
+m4trace:configure.ac:62: -1- LTSUGAR_VERSION
+m4trace:configure.ac:62: -1- LTVERSION_VERSION
+m4trace:configure.ac:62: -1- LTOBSOLETE_VERSION
+m4trace:configure.ac:62: -1- _LT_PROG_LTMAIN
+m4trace:configure.ac:62: -1- m4_pattern_allow([^LIBTOOL$])
+m4trace:configure.ac:62: -1- _LT_PREPARE_SED_QUOTE_VARS
+m4trace:configure.ac:62: -1- LT_PATH_NM
+m4trace:configure.ac:62: -1- m4_pattern_allow([^DUMPBIN$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^ac_ct_DUMPBIN$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^DUMPBIN$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^NM$])
+m4trace:configure.ac:62: -1- LT_CMD_MAX_LEN
+m4trace:configure.ac:62: -1- m4_pattern_allow([^OBJDUMP$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^OBJDUMP$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^DLLTOOL$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^DLLTOOL$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^AR$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^ac_ct_AR$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^STRIP$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^RANLIB$])
+m4trace:configure.ac:62: -1- _LT_WITH_SYSROOT
+m4trace:configure.ac:62: -1- m4_pattern_allow([LT_OBJDIR])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^LT_OBJDIR$])
+m4trace:configure.ac:62: -1- _LT_CC_BASENAME([$compiler])
+m4trace:configure.ac:62: -1- _LT_PATH_TOOL_PREFIX([${ac_tool_prefix}file], [/usr/bin$PATH_SEPARATOR$PATH])
+m4trace:configure.ac:62: -1- _LT_PATH_TOOL_PREFIX([file], [/usr/bin$PATH_SEPARATOR$PATH])
+m4trace:configure.ac:62: -1- LT_SUPPORTED_TAG([CC])
+m4trace:configure.ac:62: -1- _LT_COMPILER_BOILERPLATE
+m4trace:configure.ac:62: -1- _LT_LINKER_BOILERPLATE
+m4trace:configure.ac:62: -1- _LT_COMPILER_OPTION([if $compiler supports -fno-rtti -fno-exceptions], [lt_cv_prog_compiler_rtti_exceptions], [-fno-rtti -fno-exceptions], [], [_LT_TAGVAR(lt_prog_compiler_no_builtin_flag, )="$_LT_TAGVAR(lt_prog_compiler_no_builtin_flag, ) -fno-rtti -fno-exceptions"])
+m4trace:configure.ac:62: -1- _LT_COMPILER_OPTION([if $compiler PIC flag $_LT_TAGVAR(lt_prog_compiler_pic, ) works], [_LT_TAGVAR(lt_cv_prog_compiler_pic_works, )], [$_LT_TAGVAR(lt_prog_compiler_pic, )@&t@m4_if([],[],[ -DPIC],[m4_if([],[CXX],[ -DPIC],[])])], [], [case $_LT_TAGVAR(lt_prog_compiler_pic, ) in
      "" | " "*) ;;
      *) _LT_TAGVAR(lt_prog_compiler_pic, )=" $_LT_TAGVAR(lt_prog_compiler_pic, )" ;;
      esac], [_LT_TAGVAR(lt_prog_compiler_pic, )=
      _LT_TAGVAR(lt_prog_compiler_can_build_shared, )=no])
-m4trace:configure.ac:52: -1- _LT_LINKER_OPTION([if $compiler static flag $lt_tmp_static_flag works], [lt_cv_prog_compiler_static_works], [$lt_tmp_static_flag], [], [_LT_TAGVAR(lt_prog_compiler_static, )=])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^MANIFEST_TOOL$])
-m4trace:configure.ac:52: -1- _LT_REQUIRED_DARWIN_CHECKS
-m4trace:configure.ac:52: -1- m4_pattern_allow([^DSYMUTIL$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^NMEDIT$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^LIPO$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^OTOOL$])
-m4trace:configure.ac:52: -1- m4_pattern_allow([^OTOOL64$])
-m4trace:configure.ac:52: -1- _LT_LINKER_OPTION([if $CC understands -b], [lt_cv_prog_compiler__b], [-b], [_LT_TAGVAR(archive_cmds, )='$CC -b ${wl}+h ${wl}$soname ${wl}+b ${wl}$install_libdir -o $lib $libobjs $deplibs $compiler_flags'], [_LT_TAGVAR(archive_cmds, )='$LD -b +h $soname +b $install_libdir -o $lib $libobjs $deplibs $linker_flags'])
-m4trace:configure.ac:52: -1- LT_SYS_DLOPEN_SELF
-m4trace:configure.ac:52: -1- m4_pattern_allow([^HAVE_DLFCN_H$])
-m4trace:configure.ac:58: -1- m4_pattern_allow([^STDC_HEADERS$])
-m4trace:configure.ac:59: -1- m4_pattern_allow([^HAVE_SYS_WAIT_H$])
-m4trace:configure.ac:67: -1- m4_pattern_allow([^const$])
-m4trace:configure.ac:69: -1- m4_pattern_allow([^__CHAR_UNSIGNED__$])
-m4trace:configure.ac:70: -1- m4_pattern_allow([^off_t$])
-m4trace:configure.ac:71: -1- m4_pattern_allow([^pid_t$])
-m4trace:configure.ac:72: -1- m4_pattern_allow([^size_t$])
-m4trace:configure.ac:74: -1- m4_pattern_allow([^HAVE_STRUCT_TM_GMTOFF$])
-m4trace:configure.ac:75: -1- m4_pattern_allow([^HAVE_STRUCT_SOCKADDR_STORAGE$])
-m4trace:configure.ac:76: -1- m4_pattern_allow([^HAVE_SOCKLEN_T$])
-m4trace:configure.ac:80: -1- m4_pattern_allow([^HAVE_VFORK_H$])
-m4trace:configure.ac:80: -1- m4_pattern_allow([^HAVE_WORKING_VFORK$])
-m4trace:configure.ac:80: -1- m4_pattern_allow([^vfork$])
-m4trace:configure.ac:80: -1- m4_pattern_allow([^HAVE_WORKING_FORK$])
-m4trace:configure.ac:84: -1- _m4_warn([obsolete], [The macro `AC_TYPE_SIGNAL' is obsolete.
+m4trace:configure.ac:62: -1- _LT_LINKER_OPTION([if $compiler static flag $lt_tmp_static_flag works], [lt_cv_prog_compiler_static_works], [$lt_tmp_static_flag], [], [_LT_TAGVAR(lt_prog_compiler_static, )=])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^MANIFEST_TOOL$])
+m4trace:configure.ac:62: -1- _LT_REQUIRED_DARWIN_CHECKS
+m4trace:configure.ac:62: -1- m4_pattern_allow([^DSYMUTIL$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^NMEDIT$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^LIPO$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^OTOOL$])
+m4trace:configure.ac:62: -1- m4_pattern_allow([^OTOOL64$])
+m4trace:configure.ac:62: -1- _LT_LINKER_OPTION([if $CC understands -b], [lt_cv_prog_compiler__b], [-b], [_LT_TAGVAR(archive_cmds, )='$CC -b ${wl}+h ${wl}$soname ${wl}+b ${wl}$install_libdir -o $lib $libobjs $deplibs $compiler_flags'], [_LT_TAGVAR(archive_cmds, )='$LD -b +h $soname +b $install_libdir -o $lib $libobjs $deplibs $linker_flags'])
+m4trace:configure.ac:62: -1- LT_SYS_DLOPEN_SELF
+m4trace:configure.ac:62: -1- m4_pattern_allow([^HAVE_DLFCN_H$])
+m4trace:configure.ac:68: -1- m4_pattern_allow([^STDC_HEADERS$])
+m4trace:configure.ac:69: -1- m4_pattern_allow([^HAVE_SYS_WAIT_H$])
+m4trace:configure.ac:77: -1- m4_pattern_allow([^const$])
+m4trace:configure.ac:79: -1- m4_pattern_allow([^__CHAR_UNSIGNED__$])
+m4trace:configure.ac:80: -1- m4_pattern_allow([^off_t$])
+m4trace:configure.ac:81: -1- m4_pattern_allow([^pid_t$])
+m4trace:configure.ac:82: -1- m4_pattern_allow([^size_t$])
+m4trace:configure.ac:84: -1- m4_pattern_allow([^HAVE_STRUCT_TM_GMTOFF$])
+m4trace:configure.ac:85: -1- m4_pattern_allow([^HAVE_STRUCT_SOCKADDR_STORAGE$])
+m4trace:configure.ac:86: -1- m4_pattern_allow([^HAVE_SOCKLEN_T$])
+m4trace:configure.ac:90: -1- m4_pattern_allow([^HAVE_VFORK_H$])
+m4trace:configure.ac:90: -1- m4_pattern_allow([^HAVE_WORKING_VFORK$])
+m4trace:configure.ac:90: -1- m4_pattern_allow([^vfork$])
+m4trace:configure.ac:90: -1- m4_pattern_allow([^HAVE_WORKING_FORK$])
+m4trace:configure.ac:94: -1- _m4_warn([obsolete], [The macro `AC_TYPE_SIGNAL' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/types.m4:746: AC_TYPE_SIGNAL is expanded from...
-configure.ac:84: the top level])
-m4trace:configure.ac:84: -1- m4_pattern_allow([^RETSIGTYPE$])
-m4trace:configure.ac:85: -1- m4_pattern_allow([^LSTAT_FOLLOWS_SLASHED_SYMLINK$])
-m4trace:configure.ac:85: -1- m4_pattern_allow([^LIB@&t@OBJS$])
-m4trace:configure.ac:85: -1- m4_pattern_allow([^LIB@&t@OBJS$])
-m4trace:configure.ac:85: -1- m4_pattern_allow([^HAVE_STAT_EMPTY_STRING_BUG$])
-m4trace:configure.ac:86: -1- m4_pattern_allow([^HAVE_STRFTIME$])
-m4trace:configure.ac:86: -1- m4_pattern_allow([^HAVE_STRFTIME$])
-m4trace:configure.ac:90: -1- m4_pattern_allow([^PKG_CONFIG$])
-m4trace:configure.ac:96: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+configure.ac:94: the top level])
+m4trace:configure.ac:94: -1- m4_pattern_allow([^RETSIGTYPE$])
+m4trace:configure.ac:95: -1- m4_pattern_allow([^LSTAT_FOLLOWS_SLASHED_SYMLINK$])
+m4trace:configure.ac:95: -1- m4_pattern_allow([^LIB@&t@OBJS$])
+m4trace:configure.ac:95: -1- m4_pattern_allow([^LIB@&t@OBJS$])
+m4trace:configure.ac:95: -1- m4_pattern_allow([^HAVE_STAT_EMPTY_STRING_BUG$])
+m4trace:configure.ac:96: -1- m4_pattern_allow([^HAVE_STRFTIME$])
+m4trace:configure.ac:96: -1- m4_pattern_allow([^HAVE_STRFTIME$])
+m4trace:configure.ac:100: -1- m4_pattern_allow([^PKG_CONFIG$])
+m4trace:configure.ac:106: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:96: the top level])
-m4trace:configure.ac:103: -1- PKG_CHECK_MODULES([LIBEV], [libev], [], [
+configure.ac:106: the top level])
+m4trace:configure.ac:113: -1- PKG_CHECK_MODULES([LIBEV], [libev], [], [
 		dnl no pkg-config for libev, searching manually:
 
 		if test "$WITH_LIBEV" != "yes"; then
@@ -2741,340 +2750,336 @@ m4trace:configure.ac:103: -1- PKG_CHECK_MODULES([LIBEV], [libev], [], [
 			)
 		fi
 	])
-m4trace:configure.ac:103: -1- PKG_PROG_PKG_CONFIG
-m4trace:configure.ac:103: -1- m4_pattern_forbid([^_?PKG_[A-Z_]+$])
-m4trace:configure.ac:103: -1- m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
-m4trace:configure.ac:103: -1- m4_pattern_allow([^PKG_CONFIG_(DISABLE_UNINSTALLED|TOP_BUILD_DIR|DEBUG_SPEW)$])
-m4trace:configure.ac:103: -1- m4_pattern_allow([^PKG_CONFIG$])
-m4trace:configure.ac:103: -1- m4_pattern_allow([^PKG_CONFIG_PATH$])
-m4trace:configure.ac:103: -1- m4_pattern_allow([^PKG_CONFIG_LIBDIR$])
-m4trace:configure.ac:103: -1- m4_pattern_allow([^PKG_CONFIG$])
-m4trace:configure.ac:103: -1- m4_pattern_allow([^LIBEV_CFLAGS$])
-m4trace:configure.ac:103: -1- m4_pattern_allow([^LIBEV_LIBS$])
-m4trace:configure.ac:103: -1- PKG_CHECK_EXISTS([libev], [pkg_cv_[]LIBEV_CFLAGS=`$PKG_CONFIG --[]cflags "libev" 2>/dev/null`
+m4trace:configure.ac:113: -1- PKG_PROG_PKG_CONFIG
+m4trace:configure.ac:113: -1- m4_pattern_forbid([^_?PKG_[A-Z_]+$])
+m4trace:configure.ac:113: -1- m4_pattern_allow([^PKG_CONFIG(_(PATH|LIBDIR|SYSROOT_DIR|ALLOW_SYSTEM_(CFLAGS|LIBS)))?$])
+m4trace:configure.ac:113: -1- m4_pattern_allow([^PKG_CONFIG_(DISABLE_UNINSTALLED|TOP_BUILD_DIR|DEBUG_SPEW)$])
+m4trace:configure.ac:113: -1- m4_pattern_allow([^PKG_CONFIG$])
+m4trace:configure.ac:113: -1- m4_pattern_allow([^PKG_CONFIG_PATH$])
+m4trace:configure.ac:113: -1- m4_pattern_allow([^PKG_CONFIG_LIBDIR$])
+m4trace:configure.ac:113: -1- m4_pattern_allow([^PKG_CONFIG$])
+m4trace:configure.ac:113: -1- m4_pattern_allow([^LIBEV_CFLAGS$])
+m4trace:configure.ac:113: -1- m4_pattern_allow([^LIBEV_LIBS$])
+m4trace:configure.ac:113: -1- PKG_CHECK_EXISTS([libev], [pkg_cv_[]LIBEV_CFLAGS=`$PKG_CONFIG --[]cflags "libev" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:103: -1- PKG_CHECK_EXISTS([libev], [pkg_cv_[]LIBEV_LIBS=`$PKG_CONFIG --[]libs "libev" 2>/dev/null`
+m4trace:configure.ac:113: -1- PKG_CHECK_EXISTS([libev], [pkg_cv_[]LIBEV_LIBS=`$PKG_CONFIG --[]libs "libev" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:103: -1- _PKG_SHORT_ERRORS_SUPPORTED
-m4trace:configure.ac:103: -1- m4_pattern_allow([^HAVE_EV_H$])
-m4trace:configure.ac:103: -1- m4_pattern_allow([^HAVE_EV_H$])
-m4trace:configure.ac:124: -1- m4_pattern_allow([^HAVE_LIBEV$])
-m4trace:configure.ac:127: -1- m4_pattern_allow([^LIBEV_CFLAGS$])
-m4trace:configure.ac:128: -1- m4_pattern_allow([^LIBEV_LIBS$])
-m4trace:configure.ac:136: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+m4trace:configure.ac:113: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:113: -1- m4_pattern_allow([^HAVE_EV_H$])
+m4trace:configure.ac:113: -1- m4_pattern_allow([^HAVE_EV_H$])
+m4trace:configure.ac:134: -1- m4_pattern_allow([^HAVE_LIBEV$])
+m4trace:configure.ac:137: -1- m4_pattern_allow([^LIBEV_CFLAGS$])
+m4trace:configure.ac:138: -1- m4_pattern_allow([^LIBEV_LIBS$])
+m4trace:configure.ac:146: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:136: the top level])
-m4trace:configure.ac:142: -1- m4_pattern_allow([^MYSQL_CONFIG$])
-m4trace:configure.ac:172: -1- m4_pattern_allow([^HAVE_MYSQL$])
-m4trace:configure.ac:177: -1- m4_pattern_allow([^MYSQL_LIBS$])
-m4trace:configure.ac:178: -1- m4_pattern_allow([^MYSQL_INCLUDE$])
-m4trace:configure.ac:182: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+configure.ac:146: the top level])
+m4trace:configure.ac:152: -1- m4_pattern_allow([^MYSQL_CONFIG$])
+m4trace:configure.ac:182: -1- m4_pattern_allow([^HAVE_MYSQL$])
+m4trace:configure.ac:187: -1- m4_pattern_allow([^MYSQL_LIBS$])
+m4trace:configure.ac:188: -1- m4_pattern_allow([^MYSQL_INCLUDE$])
+m4trace:configure.ac:192: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:182: the top level])
-m4trace:configure.ac:186: -1- m4_pattern_allow([^HAVE_LDAP_H$])
-m4trace:configure.ac:186: -1- m4_pattern_allow([^HAVE_LIBLDAP$])
-m4trace:configure.ac:186: -1- m4_pattern_allow([^HAVE_LDAP_H$])
-m4trace:configure.ac:186: -1- m4_pattern_allow([^LDAP_DEPRECATED$])
-m4trace:configure.ac:194: -1- m4_pattern_allow([^LDAP_LIB$])
-m4trace:configure.ac:195: -1- m4_pattern_allow([^HAVE_LBER_H$])
-m4trace:configure.ac:195: -1- m4_pattern_allow([^HAVE_LIBLBER$])
-m4trace:configure.ac:195: -1- m4_pattern_allow([^HAVE_LBER_H$])
-m4trace:configure.ac:202: -1- m4_pattern_allow([^LBER_LIB$])
-m4trace:configure.ac:207: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+configure.ac:192: the top level])
+m4trace:configure.ac:196: -1- m4_pattern_allow([^HAVE_LDAP_H$])
+m4trace:configure.ac:196: -1- m4_pattern_allow([^HAVE_LIBLDAP$])
+m4trace:configure.ac:196: -1- m4_pattern_allow([^HAVE_LDAP_H$])
+m4trace:configure.ac:196: -1- m4_pattern_allow([^LDAP_DEPRECATED$])
+m4trace:configure.ac:204: -1- m4_pattern_allow([^LDAP_LIB$])
+m4trace:configure.ac:205: -1- m4_pattern_allow([^HAVE_LBER_H$])
+m4trace:configure.ac:205: -1- m4_pattern_allow([^HAVE_LIBLBER$])
+m4trace:configure.ac:205: -1- m4_pattern_allow([^HAVE_LBER_H$])
+m4trace:configure.ac:212: -1- m4_pattern_allow([^LBER_LIB$])
+m4trace:configure.ac:217: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:207: the top level])
-m4trace:configure.ac:211: -1- m4_pattern_allow([^HAVE_ATTR_ATTRIBUTES_H$])
-m4trace:configure.ac:211: -1- m4_pattern_allow([^HAVE_XATTR$])
-m4trace:configure.ac:211: -1- m4_pattern_allow([^HAVE_ATTR_ATTRIBUTES_H$])
-m4trace:configure.ac:218: -1- m4_pattern_allow([^ATTR_LIB$])
-m4trace:configure.ac:227: -1- m4_pattern_allow([^HAVE_DLFCN_H$])
-m4trace:configure.ac:227: -1- m4_pattern_allow([^HAVE_LIBDL$])
-m4trace:configure.ac:227: -1- m4_pattern_allow([^HAVE_DLFCN_H$])
-m4trace:configure.ac:238: -1- m4_pattern_allow([^DL_LIB$])
-m4trace:configure.ac:242: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
-You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:242: the top level])
-m4trace:configure.ac:246: -1- m4_pattern_allow([^HAVE_VALGRIND_VALGRIND_H$])
+configure.ac:217: the top level])
+m4trace:configure.ac:221: -1- m4_pattern_allow([^HAVE_ATTR_ATTRIBUTES_H$])
+m4trace:configure.ac:221: -1- m4_pattern_allow([^HAVE_XATTR$])
+m4trace:configure.ac:221: -1- m4_pattern_allow([^HAVE_ATTR_ATTRIBUTES_H$])
+m4trace:configure.ac:228: -1- m4_pattern_allow([^ATTR_LIB$])
+m4trace:configure.ac:237: -1- m4_pattern_allow([^HAVE_DLFCN_H$])
+m4trace:configure.ac:237: -1- m4_pattern_allow([^HAVE_LIBDL$])
+m4trace:configure.ac:237: -1- m4_pattern_allow([^HAVE_DLFCN_H$])
+m4trace:configure.ac:248: -1- m4_pattern_allow([^DL_LIB$])
 m4trace:configure.ac:252: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
 configure.ac:252: the top level])
-m4trace:configure.ac:267: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+m4trace:configure.ac:256: -1- m4_pattern_allow([^HAVE_VALGRIND_VALGRIND_H$])
+m4trace:configure.ac:262: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:267: the top level])
-m4trace:configure.ac:272: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
-You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:272: the top level])
+configure.ac:262: the top level])
 m4trace:configure.ac:277: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
 configure.ac:277: the top level])
-m4trace:configure.ac:286: -1- m4_pattern_allow([^HAVE_OPENSSL_SSL_H$])
-m4trace:configure.ac:288: -1- m4_pattern_allow([^HAVE_LIBSSL$])
-m4trace:configure.ac:293: -1- m4_pattern_allow([^SSL_LIB$])
-m4trace:configure.ac:297: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+m4trace:configure.ac:282: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:297: the top level])
-m4trace:configure.ac:302: -1- m4_pattern_allow([^PCRECONFIG$])
-m4trace:configure.ac:307: -1- m4_pattern_allow([^HAVE_LIBPCRE$])
-m4trace:configure.ac:308: -1- m4_pattern_allow([^HAVE_PCRE_H$])
-m4trace:configure.ac:314: -1- m4_pattern_allow([^PCRE_LIB$])
-m4trace:configure.ac:317: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+configure.ac:282: the top level])
+m4trace:configure.ac:287: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:317: the top level])
-m4trace:configure.ac:322: -1- m4_pattern_allow([^HAVE_ZLIB_H$])
-m4trace:configure.ac:322: -1- m4_pattern_allow([^HAVE_LIBZ$])
-m4trace:configure.ac:322: -1- m4_pattern_allow([^HAVE_ZLIB_H$])
-m4trace:configure.ac:333: -1- m4_pattern_allow([^Z_LIB$])
-m4trace:configure.ac:336: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+configure.ac:287: the top level])
+m4trace:configure.ac:296: -1- m4_pattern_allow([^HAVE_OPENSSL_SSL_H$])
+m4trace:configure.ac:298: -1- m4_pattern_allow([^HAVE_LIBSSL$])
+m4trace:configure.ac:303: -1- m4_pattern_allow([^SSL_LIB$])
+m4trace:configure.ac:307: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:336: the top level])
-m4trace:configure.ac:341: -1- m4_pattern_allow([^HAVE_BZLIB_H$])
-m4trace:configure.ac:341: -1- m4_pattern_allow([^HAVE_LIBBZ2$])
-m4trace:configure.ac:341: -1- m4_pattern_allow([^HAVE_BZLIB_H$])
-m4trace:configure.ac:352: -1- m4_pattern_allow([^BZ_LIB$])
-m4trace:configure.ac:356: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+configure.ac:307: the top level])
+m4trace:configure.ac:312: -1- m4_pattern_allow([^PCRECONFIG$])
+m4trace:configure.ac:317: -1- m4_pattern_allow([^HAVE_LIBPCRE$])
+m4trace:configure.ac:318: -1- m4_pattern_allow([^HAVE_PCRE_H$])
+m4trace:configure.ac:324: -1- m4_pattern_allow([^PCRE_LIB$])
+m4trace:configure.ac:327: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:356: the top level])
-m4trace:configure.ac:361: -1- m4_pattern_allow([^HAVE_FAM_H$])
-m4trace:configure.ac:361: -1- m4_pattern_allow([^HAVE_LIBFAM$])
-m4trace:configure.ac:361: -1- m4_pattern_allow([^HAVE_FAM_H$])
-m4trace:configure.ac:369: -1- PKG_CHECK_MODULES([FAM], [gamin >= 0.1.0], [
+configure.ac:327: the top level])
+m4trace:configure.ac:332: -1- m4_pattern_allow([^HAVE_ZLIB_H$])
+m4trace:configure.ac:332: -1- m4_pattern_allow([^HAVE_LIBZ$])
+m4trace:configure.ac:332: -1- m4_pattern_allow([^HAVE_ZLIB_H$])
+m4trace:configure.ac:343: -1- m4_pattern_allow([^Z_LIB$])
+m4trace:configure.ac:346: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
+configure.ac:346: the top level])
+m4trace:configure.ac:351: -1- m4_pattern_allow([^HAVE_BZLIB_H$])
+m4trace:configure.ac:351: -1- m4_pattern_allow([^HAVE_LIBBZ2$])
+m4trace:configure.ac:351: -1- m4_pattern_allow([^HAVE_BZLIB_H$])
+m4trace:configure.ac:362: -1- m4_pattern_allow([^BZ_LIB$])
+m4trace:configure.ac:366: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
+configure.ac:366: the top level])
+m4trace:configure.ac:371: -1- m4_pattern_allow([^HAVE_FAM_H$])
+m4trace:configure.ac:371: -1- m4_pattern_allow([^HAVE_LIBFAM$])
+m4trace:configure.ac:371: -1- m4_pattern_allow([^HAVE_FAM_H$])
+m4trace:configure.ac:379: -1- PKG_CHECK_MODULES([FAM], [gamin >= 0.1.0], [
       AC_DEFINE([HAVE_LIBFAM], [1], [libfam])
       AC_DEFINE([HAVE_FAM_H], [1], [fam.h])
     ])
-m4trace:configure.ac:369: -1- m4_pattern_allow([^FAM_CFLAGS$])
-m4trace:configure.ac:369: -1- m4_pattern_allow([^FAM_LIBS$])
-m4trace:configure.ac:369: -1- PKG_CHECK_EXISTS([gamin >= 0.1.0], [pkg_cv_[]FAM_CFLAGS=`$PKG_CONFIG --[]cflags "gamin >= 0.1.0" 2>/dev/null`
+m4trace:configure.ac:379: -1- m4_pattern_allow([^FAM_CFLAGS$])
+m4trace:configure.ac:379: -1- m4_pattern_allow([^FAM_LIBS$])
+m4trace:configure.ac:379: -1- PKG_CHECK_EXISTS([gamin >= 0.1.0], [pkg_cv_[]FAM_CFLAGS=`$PKG_CONFIG --[]cflags "gamin >= 0.1.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:369: -1- PKG_CHECK_EXISTS([gamin >= 0.1.0], [pkg_cv_[]FAM_LIBS=`$PKG_CONFIG --[]libs "gamin >= 0.1.0" 2>/dev/null`
+m4trace:configure.ac:379: -1- PKG_CHECK_EXISTS([gamin >= 0.1.0], [pkg_cv_[]FAM_LIBS=`$PKG_CONFIG --[]libs "gamin >= 0.1.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:369: -1- _PKG_SHORT_ERRORS_SUPPORTED
-m4trace:configure.ac:369: -1- m4_pattern_allow([^HAVE_LIBFAM$])
-m4trace:configure.ac:369: -1- m4_pattern_allow([^HAVE_FAM_H$])
-m4trace:configure.ac:376: -1- m4_pattern_allow([^HAVE_FAMNOEXISTS$])
-m4trace:configure.ac:385: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+m4trace:configure.ac:379: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:379: -1- m4_pattern_allow([^HAVE_LIBFAM$])
+m4trace:configure.ac:379: -1- m4_pattern_allow([^HAVE_FAM_H$])
+m4trace:configure.ac:386: -1- m4_pattern_allow([^HAVE_FAMNOEXISTS$])
+m4trace:configure.ac:395: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:385: the top level])
-m4trace:configure.ac:390: -1- PKG_CHECK_MODULES([XML], [libxml-2.0], [
+configure.ac:395: the top level])
+m4trace:configure.ac:400: -1- PKG_CHECK_MODULES([XML], [libxml-2.0], [
     AC_DEFINE([HAVE_LIBXML2], [1], [libxml2])
     AC_DEFINE([HAVE_LIBXML_H], [1], [libxml.h])
  ])
-m4trace:configure.ac:390: -1- m4_pattern_allow([^XML_CFLAGS$])
-m4trace:configure.ac:390: -1- m4_pattern_allow([^XML_LIBS$])
-m4trace:configure.ac:390: -1- PKG_CHECK_EXISTS([libxml-2.0], [pkg_cv_[]XML_CFLAGS=`$PKG_CONFIG --[]cflags "libxml-2.0" 2>/dev/null`
+m4trace:configure.ac:400: -1- m4_pattern_allow([^XML_CFLAGS$])
+m4trace:configure.ac:400: -1- m4_pattern_allow([^XML_LIBS$])
+m4trace:configure.ac:400: -1- PKG_CHECK_EXISTS([libxml-2.0], [pkg_cv_[]XML_CFLAGS=`$PKG_CONFIG --[]cflags "libxml-2.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:390: -1- PKG_CHECK_EXISTS([libxml-2.0], [pkg_cv_[]XML_LIBS=`$PKG_CONFIG --[]libs "libxml-2.0" 2>/dev/null`
+m4trace:configure.ac:400: -1- PKG_CHECK_EXISTS([libxml-2.0], [pkg_cv_[]XML_LIBS=`$PKG_CONFIG --[]libs "libxml-2.0" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:390: -1- _PKG_SHORT_ERRORS_SUPPORTED
-m4trace:configure.ac:390: -1- m4_pattern_allow([^HAVE_LIBXML2$])
-m4trace:configure.ac:390: -1- m4_pattern_allow([^HAVE_LIBXML_H$])
-m4trace:configure.ac:394: -1- PKG_CHECK_MODULES([SQLITE], [sqlite3], [
+m4trace:configure.ac:400: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:400: -1- m4_pattern_allow([^HAVE_LIBXML2$])
+m4trace:configure.ac:400: -1- m4_pattern_allow([^HAVE_LIBXML_H$])
+m4trace:configure.ac:404: -1- PKG_CHECK_MODULES([SQLITE], [sqlite3], [
     AC_DEFINE([HAVE_SQLITE3], [1], [libsqlite3])
     AC_DEFINE([HAVE_SQLITE3_H], [1], [sqlite3.h])
  ])
-m4trace:configure.ac:394: -1- m4_pattern_allow([^SQLITE_CFLAGS$])
-m4trace:configure.ac:394: -1- m4_pattern_allow([^SQLITE_LIBS$])
-m4trace:configure.ac:394: -1- PKG_CHECK_EXISTS([sqlite3], [pkg_cv_[]SQLITE_CFLAGS=`$PKG_CONFIG --[]cflags "sqlite3" 2>/dev/null`
+m4trace:configure.ac:404: -1- m4_pattern_allow([^SQLITE_CFLAGS$])
+m4trace:configure.ac:404: -1- m4_pattern_allow([^SQLITE_LIBS$])
+m4trace:configure.ac:404: -1- PKG_CHECK_EXISTS([sqlite3], [pkg_cv_[]SQLITE_CFLAGS=`$PKG_CONFIG --[]cflags "sqlite3" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:394: -1- PKG_CHECK_EXISTS([sqlite3], [pkg_cv_[]SQLITE_LIBS=`$PKG_CONFIG --[]libs "sqlite3" 2>/dev/null`
+m4trace:configure.ac:404: -1- PKG_CHECK_EXISTS([sqlite3], [pkg_cv_[]SQLITE_LIBS=`$PKG_CONFIG --[]libs "sqlite3" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:394: -1- _PKG_SHORT_ERRORS_SUPPORTED
-m4trace:configure.ac:394: -1- m4_pattern_allow([^HAVE_SQLITE3$])
-m4trace:configure.ac:394: -1- m4_pattern_allow([^HAVE_SQLITE3_H$])
-m4trace:configure.ac:400: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+m4trace:configure.ac:404: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:404: -1- m4_pattern_allow([^HAVE_SQLITE3$])
+m4trace:configure.ac:404: -1- m4_pattern_allow([^HAVE_SQLITE3_H$])
+m4trace:configure.ac:410: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:400: the top level])
-m4trace:configure.ac:405: -1- m4_pattern_allow([^HAVE_UUID_UUID_H$])
-m4trace:configure.ac:405: -1- m4_pattern_allow([^HAVE_UUID$])
-m4trace:configure.ac:405: -1- m4_pattern_allow([^HAVE_UUID_H$])
-m4trace:configure.ac:415: -1- m4_pattern_allow([^UUID_LIBS$])
-m4trace:configure.ac:419: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+configure.ac:410: the top level])
+m4trace:configure.ac:415: -1- m4_pattern_allow([^HAVE_UUID_UUID_H$])
+m4trace:configure.ac:415: -1- m4_pattern_allow([^HAVE_UUID$])
+m4trace:configure.ac:415: -1- m4_pattern_allow([^HAVE_UUID_H$])
+m4trace:configure.ac:425: -1- m4_pattern_allow([^UUID_LIBS$])
+m4trace:configure.ac:429: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:419: the top level])
-m4trace:configure.ac:424: -1- m4_pattern_allow([^HAVE_GDBM_H$])
-m4trace:configure.ac:424: -1- m4_pattern_allow([^HAVE_GDBM$])
-m4trace:configure.ac:424: -1- m4_pattern_allow([^HAVE_GDBM_H$])
-m4trace:configure.ac:431: -1- m4_pattern_allow([^GDBM_LIB$])
-m4trace:configure.ac:436: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+configure.ac:429: the top level])
+m4trace:configure.ac:434: -1- m4_pattern_allow([^HAVE_GDBM_H$])
+m4trace:configure.ac:434: -1- m4_pattern_allow([^HAVE_GDBM$])
+m4trace:configure.ac:434: -1- m4_pattern_allow([^HAVE_GDBM_H$])
+m4trace:configure.ac:441: -1- m4_pattern_allow([^GDBM_LIB$])
+m4trace:configure.ac:446: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:436: the top level])
-m4trace:configure.ac:440: -1- m4_pattern_allow([^HAVE_MEMCACHE_H$])
-m4trace:configure.ac:440: -1- m4_pattern_allow([^HAVE_MEMCACHE$])
-m4trace:configure.ac:440: -1- m4_pattern_allow([^HAVE_MEMCACHE_H$])
-m4trace:configure.ac:447: -1- m4_pattern_allow([^MEMCACHE_LIB$])
-m4trace:configure.ac:452: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+configure.ac:446: the top level])
+m4trace:configure.ac:450: -1- m4_pattern_allow([^HAVE_MEMCACHE_H$])
+m4trace:configure.ac:450: -1- m4_pattern_allow([^HAVE_MEMCACHE$])
+m4trace:configure.ac:450: -1- m4_pattern_allow([^HAVE_MEMCACHE_H$])
+m4trace:configure.ac:457: -1- m4_pattern_allow([^MEMCACHE_LIB$])
+m4trace:configure.ac:462: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:452: the top level])
-m4trace:configure.ac:460: -1- PKG_CHECK_MODULES([LUA], [$WITH_LUA >= 5.1], [
-   AC_DEFINE([HAVE_LUA], [1], [liblua])
-   AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
+configure.ac:462: the top level])
+m4trace:configure.ac:472: -1- PKG_CHECK_MODULES([LUA], [lua5.1 >= 5.1], [
+  AC_DEFINE([HAVE_LUA], [1], [liblua])
+  AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
  ], [
- dnl for debian based systems
- PKG_CHECK_MODULES(LUA, lua5.1 >= 5.1, [
+  PKG_CHECK_MODULES(LUA, lua-5.1 >= 5.1, [
    AC_DEFINE([HAVE_LUA], [1], [liblua])
    AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
- ],[
- dnl for freebsd
- PKG_CHECK_MODULES(LUA, lua-5.1 >= 5.1, [
+  ],[
+   PKG_CHECK_MODULES(LUA, $WITH_LUA >= 5.1, [
+    AC_DEFINE([HAVE_LUA], [1], [liblua])
+    AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
+   ])
+  ])
+ ])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_CFLAGS$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_LIBS$])
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([lua5.1 >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "lua5.1 >= 5.1" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([lua5.1 >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "lua5.1 >= 5.1" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
+m4trace:configure.ac:472: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:472: -1- PKG_CHECK_MODULES([LUA], [lua-5.1 >= 5.1], [
    AC_DEFINE([HAVE_LUA], [1], [liblua])
    AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
- ])
- ])
- ])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_CFLAGS$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_LIBS$])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([$WITH_LUA >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "$WITH_LUA >= 5.1" 2>/dev/null`
+  ], [
+   PKG_CHECK_MODULES(LUA, $WITH_LUA >= 5.1, [
+    AC_DEFINE([HAVE_LUA], [1], [liblua])
+    AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
+   ])
+  ])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_CFLAGS$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_LIBS$])
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([lua-5.1 >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "lua-5.1 >= 5.1" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([$WITH_LUA >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "$WITH_LUA >= 5.1" 2>/dev/null`
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([lua-5.1 >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "lua-5.1 >= 5.1" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- _PKG_SHORT_ERRORS_SUPPORTED
-m4trace:configure.ac:460: -1- PKG_CHECK_MODULES([LUA], [lua5.1 >= 5.1], [
+m4trace:configure.ac:472: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:472: -1- PKG_CHECK_MODULES([LUA], [$WITH_LUA >= 5.1], [
+    AC_DEFINE([HAVE_LUA], [1], [liblua])
+    AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
+   ])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_CFLAGS$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_LIBS$])
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([$WITH_LUA >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "$WITH_LUA >= 5.1" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([$WITH_LUA >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "$WITH_LUA >= 5.1" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
+m4trace:configure.ac:472: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA_H$])
+m4trace:configure.ac:472: -1- PKG_CHECK_MODULES([LUA], [$WITH_LUA >= 5.1], [
+    AC_DEFINE([HAVE_LUA], [1], [liblua])
+    AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
+   ])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_CFLAGS$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_LIBS$])
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([$WITH_LUA >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "$WITH_LUA >= 5.1" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([$WITH_LUA >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "$WITH_LUA >= 5.1" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
+m4trace:configure.ac:472: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA_H$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA_H$])
+m4trace:configure.ac:472: -1- PKG_CHECK_MODULES([LUA], [lua-5.1 >= 5.1], [
    AC_DEFINE([HAVE_LUA], [1], [liblua])
    AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
- ], [
- dnl for freebsd
- PKG_CHECK_MODULES(LUA, lua-5.1 >= 5.1, [
-   AC_DEFINE([HAVE_LUA], [1], [liblua])
-   AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
- ])
- ])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_CFLAGS$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_LIBS$])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([lua5.1 >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "lua5.1 >= 5.1" 2>/dev/null`
+  ], [
+   PKG_CHECK_MODULES(LUA, $WITH_LUA >= 5.1, [
+    AC_DEFINE([HAVE_LUA], [1], [liblua])
+    AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
+   ])
+  ])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_CFLAGS$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_LIBS$])
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([lua-5.1 >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "lua-5.1 >= 5.1" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([lua5.1 >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "lua5.1 >= 5.1" 2>/dev/null`
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([lua-5.1 >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "lua-5.1 >= 5.1" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- _PKG_SHORT_ERRORS_SUPPORTED
-m4trace:configure.ac:460: -1- PKG_CHECK_MODULES([LUA], [lua-5.1 >= 5.1], [
-   AC_DEFINE([HAVE_LUA], [1], [liblua])
-   AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
- ])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_CFLAGS$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_LIBS$])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([lua-5.1 >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "lua-5.1 >= 5.1" 2>/dev/null`
+m4trace:configure.ac:472: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:472: -1- PKG_CHECK_MODULES([LUA], [$WITH_LUA >= 5.1], [
+    AC_DEFINE([HAVE_LUA], [1], [liblua])
+    AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
+   ])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_CFLAGS$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_LIBS$])
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([$WITH_LUA >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "$WITH_LUA >= 5.1" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([lua-5.1 >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "lua-5.1 >= 5.1" 2>/dev/null`
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([$WITH_LUA >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "$WITH_LUA >= 5.1" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- _PKG_SHORT_ERRORS_SUPPORTED
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA_H$])
-m4trace:configure.ac:460: -1- PKG_CHECK_MODULES([LUA], [lua-5.1 >= 5.1], [
-   AC_DEFINE([HAVE_LUA], [1], [liblua])
-   AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
- ])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_CFLAGS$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_LIBS$])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([lua-5.1 >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "lua-5.1 >= 5.1" 2>/dev/null`
+m4trace:configure.ac:472: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA_H$])
+m4trace:configure.ac:472: -1- PKG_CHECK_MODULES([LUA], [$WITH_LUA >= 5.1], [
+    AC_DEFINE([HAVE_LUA], [1], [liblua])
+    AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
+   ])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_CFLAGS$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^LUA_LIBS$])
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([$WITH_LUA >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "$WITH_LUA >= 5.1" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([lua-5.1 >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "lua-5.1 >= 5.1" 2>/dev/null`
+m4trace:configure.ac:472: -1- PKG_CHECK_EXISTS([$WITH_LUA >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "$WITH_LUA >= 5.1" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- _PKG_SHORT_ERRORS_SUPPORTED
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA_H$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA_H$])
-m4trace:configure.ac:460: -1- PKG_CHECK_MODULES([LUA], [lua5.1 >= 5.1], [
-   AC_DEFINE([HAVE_LUA], [1], [liblua])
-   AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
- ], [
- dnl for freebsd
- PKG_CHECK_MODULES(LUA, lua-5.1 >= 5.1, [
-   AC_DEFINE([HAVE_LUA], [1], [liblua])
-   AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
- ])
- ])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_CFLAGS$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_LIBS$])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([lua5.1 >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "lua5.1 >= 5.1" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([lua5.1 >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "lua5.1 >= 5.1" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- _PKG_SHORT_ERRORS_SUPPORTED
-m4trace:configure.ac:460: -1- PKG_CHECK_MODULES([LUA], [lua-5.1 >= 5.1], [
-   AC_DEFINE([HAVE_LUA], [1], [liblua])
-   AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
- ])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_CFLAGS$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_LIBS$])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([lua-5.1 >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "lua-5.1 >= 5.1" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([lua-5.1 >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "lua-5.1 >= 5.1" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- _PKG_SHORT_ERRORS_SUPPORTED
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA_H$])
-m4trace:configure.ac:460: -1- PKG_CHECK_MODULES([LUA], [lua-5.1 >= 5.1], [
-   AC_DEFINE([HAVE_LUA], [1], [liblua])
-   AC_DEFINE([HAVE_LUA_H], [1], [lua.h])
- ])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_CFLAGS$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^LUA_LIBS$])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([lua-5.1 >= 5.1], [pkg_cv_[]LUA_CFLAGS=`$PKG_CONFIG --[]cflags "lua-5.1 >= 5.1" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- PKG_CHECK_EXISTS([lua-5.1 >= 5.1], [pkg_cv_[]LUA_LIBS=`$PKG_CONFIG --[]libs "lua-5.1 >= 5.1" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes ], [pkg_failed=yes])
-m4trace:configure.ac:460: -1- _PKG_SHORT_ERRORS_SUPPORTED
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA_H$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA_H$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA$])
-m4trace:configure.ac:460: -1- m4_pattern_allow([^HAVE_LUA_H$])
-m4trace:configure.ac:477: -1- m4_pattern_allow([^LUA_CFLAGS$])
-m4trace:configure.ac:478: -1- m4_pattern_allow([^LUA_LIBS$])
-m4trace:configure.ac:482: -1- m4_pattern_allow([^HAVE_CRYPT_H$])
-m4trace:configure.ac:482: -1- m4_pattern_allow([^HAVE_CRYPT_H$])
-m4trace:configure.ac:482: -1- m4_pattern_allow([^HAVE_LIBCRYPT$])
-m4trace:configure.ac:493: -1- m4_pattern_allow([^CRYPT_LIB$])
-m4trace:configure.ac:496: -1- m4_pattern_allow([^HAVE_SENDFILEV$])
-m4trace:configure.ac:503: -1- m4_pattern_allow([^SENDFILE_LIB$])
-m4trace:configure.ac:518: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+m4trace:configure.ac:472: -1- _PKG_SHORT_ERRORS_SUPPORTED
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA_H$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA_H$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA$])
+m4trace:configure.ac:472: -1- m4_pattern_allow([^HAVE_LUA_H$])
+m4trace:configure.ac:487: -1- m4_pattern_allow([^LUA_CFLAGS$])
+m4trace:configure.ac:488: -1- m4_pattern_allow([^LUA_LIBS$])
+m4trace:configure.ac:492: -1- m4_pattern_allow([^HAVE_CRYPT_H$])
+m4trace:configure.ac:492: -1- m4_pattern_allow([^HAVE_CRYPT_H$])
+m4trace:configure.ac:492: -1- m4_pattern_allow([^HAVE_LIBCRYPT$])
+m4trace:configure.ac:503: -1- m4_pattern_allow([^CRYPT_LIB$])
+m4trace:configure.ac:506: -1- m4_pattern_allow([^HAVE_SENDFILEV$])
+m4trace:configure.ac:513: -1- m4_pattern_allow([^SENDFILE_LIB$])
+m4trace:configure.ac:528: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:518: the top level])
-m4trace:configure.ac:527: -1- m4_pattern_allow([^SIZEOF_LONG$])
-m4trace:configure.ac:528: -1- m4_pattern_allow([^SIZEOF_OFF_T$])
-m4trace:configure.ac:534: -1- _m4_warn([obsolete], [The macro `AC_TRY_RUN' is obsolete.
+configure.ac:528: the top level])
+m4trace:configure.ac:537: -1- m4_pattern_allow([^SIZEOF_LONG$])
+m4trace:configure.ac:538: -1- m4_pattern_allow([^SIZEOF_OFF_T$])
+m4trace:configure.ac:544: -1- _m4_warn([obsolete], [The macro `AC_TRY_RUN' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:2764: AC_TRY_RUN is expanded from...
-configure.ac:534: the top level])
-m4trace:configure.ac:534: -1- _m4_warn([cross], [AC_RUN_IFELSE called without default to allow cross compiling], [../../lib/autoconf/general.m4:2748: AC_RUN_IFELSE is expanded from...
+configure.ac:544: the top level])
+m4trace:configure.ac:544: -1- _m4_warn([cross], [AC_RUN_IFELSE called without default to allow cross compiling], [../../lib/autoconf/general.m4:2748: AC_RUN_IFELSE is expanded from...
 ../../lib/autoconf/general.m4:2764: AC_TRY_RUN is expanded from...
-configure.ac:534: the top level])
-m4trace:configure.ac:534: -1- m4_pattern_allow([^HAVE_SENDFILE_BROKEN$])
-m4trace:configure.ac:549: -1- m4_pattern_allow([^HAVE_SENDFILE_BROKEN$])
-m4trace:configure.ac:556: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+configure.ac:544: the top level])
+m4trace:configure.ac:544: -1- m4_pattern_allow([^HAVE_SENDFILE_BROKEN$])
+m4trace:configure.ac:559: -1- m4_pattern_allow([^HAVE_SENDFILE_BROKEN$])
+m4trace:configure.ac:566: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:556: the top level])
-m4trace:configure.ac:564: -1- _m4_warn([obsolete], [The macro `AC_TRY_LINK' is obsolete.
+configure.ac:566: the top level])
+m4trace:configure.ac:574: -1- _m4_warn([obsolete], [The macro `AC_TRY_LINK' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:2687: AC_TRY_LINK is expanded from...
 ../../lib/m4sugar/m4sh.m4:639: AS_IF is expanded from...
 ../../lib/autoconf/general.m4:2031: AC_CACHE_VAL is expanded from...
 ../../lib/autoconf/general.m4:2052: AC_CACHE_CHECK is expanded from...
-configure.ac:564: the top level])
-m4trace:configure.ac:571: -1- m4_pattern_allow([^HAVE_IPV6$])
-m4trace:configure.ac:579: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+configure.ac:574: the top level])
+m4trace:configure.ac:581: -1- m4_pattern_allow([^HAVE_IPV6$])
+m4trace:configure.ac:589: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:579: the top level])
-m4trace:configure.ac:587: -1- m4_pattern_allow([^ENABLE_MMAP$])
-m4trace:configure.ac:591: -1- AM_CONDITIONAL([CROSS_COMPILING], [test "x$cross_compiling" = xyes])
-m4trace:configure.ac:591: -1- m4_pattern_allow([^CROSS_COMPILING_TRUE$])
-m4trace:configure.ac:591: -1- m4_pattern_allow([^CROSS_COMPILING_FALSE$])
-m4trace:configure.ac:591: -1- _AM_SUBST_NOTMAKE([CROSS_COMPILING_TRUE])
-m4trace:configure.ac:591: -1- _AM_SUBST_NOTMAKE([CROSS_COMPILING_FALSE])
-m4trace:configure.ac:601: -1- AM_CONDITIONAL([CHECK_WITH_FASTCGI], [test "x$fastcgi_found" = xyes])
-m4trace:configure.ac:601: -1- m4_pattern_allow([^CHECK_WITH_FASTCGI_TRUE$])
-m4trace:configure.ac:601: -1- m4_pattern_allow([^CHECK_WITH_FASTCGI_FALSE$])
-m4trace:configure.ac:601: -1- _AM_SUBST_NOTMAKE([CHECK_WITH_FASTCGI_TRUE])
-m4trace:configure.ac:601: -1- _AM_SUBST_NOTMAKE([CHECK_WITH_FASTCGI_FALSE])
-m4trace:configure.ac:610: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
+configure.ac:589: the top level])
+m4trace:configure.ac:597: -1- m4_pattern_allow([^ENABLE_MMAP$])
+m4trace:configure.ac:601: -1- AM_CONDITIONAL([CROSS_COMPILING], [test "x$cross_compiling" = xyes])
+m4trace:configure.ac:601: -1- m4_pattern_allow([^CROSS_COMPILING_TRUE$])
+m4trace:configure.ac:601: -1- m4_pattern_allow([^CROSS_COMPILING_FALSE$])
+m4trace:configure.ac:601: -1- _AM_SUBST_NOTMAKE([CROSS_COMPILING_TRUE])
+m4trace:configure.ac:601: -1- _AM_SUBST_NOTMAKE([CROSS_COMPILING_FALSE])
+m4trace:configure.ac:611: -1- AM_CONDITIONAL([CHECK_WITH_FASTCGI], [test "x$fastcgi_found" = xyes])
+m4trace:configure.ac:611: -1- m4_pattern_allow([^CHECK_WITH_FASTCGI_TRUE$])
+m4trace:configure.ac:611: -1- m4_pattern_allow([^CHECK_WITH_FASTCGI_FALSE$])
+m4trace:configure.ac:611: -1- _AM_SUBST_NOTMAKE([CHECK_WITH_FASTCGI_TRUE])
+m4trace:configure.ac:611: -1- _AM_SUBST_NOTMAKE([CHECK_WITH_FASTCGI_FALSE])
+m4trace:configure.ac:620: -2- _m4_warn([obsolete], [The macro `AC_HELP_STRING' is obsolete.
 You should run autoupdate.], [../../lib/autoconf/general.m4:207: AC_HELP_STRING is expanded from...
-configure.ac:610: the top level])
-m4trace:configure.ac:623: -1- m4_pattern_allow([^LIGHTTPD_VERSION_ID$])
-m4trace:configure.ac:642: -1- m4_pattern_allow([^LIB@&t@OBJS$])
-m4trace:configure.ac:642: -1- m4_pattern_allow([^LTLIBOBJS$])
-m4trace:configure.ac:642: -1- AM_CONDITIONAL([am__EXEEXT], [test -n "$EXEEXT"])
-m4trace:configure.ac:642: -1- m4_pattern_allow([^am__EXEEXT_TRUE$])
-m4trace:configure.ac:642: -1- m4_pattern_allow([^am__EXEEXT_FALSE$])
-m4trace:configure.ac:642: -1- _AM_SUBST_NOTMAKE([am__EXEEXT_TRUE])
-m4trace:configure.ac:642: -1- _AM_SUBST_NOTMAKE([am__EXEEXT_FALSE])
-m4trace:configure.ac:642: -1- _AC_AM_CONFIG_HEADER_HOOK(["$ac_file"])
-m4trace:configure.ac:642: -1- _AM_OUTPUT_DEPENDENCY_COMMANDS
-m4trace:configure.ac:642: -1- _LT_PROG_LTMAIN
+configure.ac:620: the top level])
+m4trace:configure.ac:633: -1- m4_pattern_allow([^LIGHTTPD_VERSION_ID$])
+m4trace:configure.ac:652: -1- m4_pattern_allow([^LIB@&t@OBJS$])
+m4trace:configure.ac:652: -1- m4_pattern_allow([^LTLIBOBJS$])
+m4trace:configure.ac:652: -1- AM_CONDITIONAL([am__EXEEXT], [test -n "$EXEEXT"])
+m4trace:configure.ac:652: -1- m4_pattern_allow([^am__EXEEXT_TRUE$])
+m4trace:configure.ac:652: -1- m4_pattern_allow([^am__EXEEXT_FALSE$])
+m4trace:configure.ac:652: -1- _AM_SUBST_NOTMAKE([am__EXEEXT_TRUE])
+m4trace:configure.ac:652: -1- _AM_SUBST_NOTMAKE([am__EXEEXT_FALSE])
+m4trace:configure.ac:652: -1- _AC_AM_CONFIG_HEADER_HOOK(["$ac_file"])
+m4trace:configure.ac:652: -1- _AM_OUTPUT_DEPENDENCY_COMMANDS
+m4trace:configure.ac:652: -1- _LT_PROG_LTMAIN

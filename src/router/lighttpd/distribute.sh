@@ -1,7 +1,7 @@
 #!/bin/sh
 PACKAGE=lighttpd
-VERSION=1.4.32
-NAME=lighttpd-1.4.32
+VERSION=1.4.34
+NAME=lighttpd-1.4.34
 
 DISTDIR="/home/jan/wwwroot/servers/www.lighttpd.net/pages/download/"
 RPMS="/home/jan/rpmbuild/RPMS/i386/${NAME}-1.i386.rpm \

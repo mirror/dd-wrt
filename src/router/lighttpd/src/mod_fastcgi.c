@@ -1169,7 +1169,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 		{ NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 	};
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s;
@@ -1275,6 +1275,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 					}
 
 					host = fastcgi_host_init();
+					buffer_reset(fcgi_mode);
 
 					buffer_copy_string_buffer(host->id, da_host->key);
 
@@ -1915,10 +1916,6 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 	s = inet_ntop_cache_get_ip(srv, &(con->dst_addr));
 	FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("REMOTE_ADDR"), s, strlen(s)),con)
 
-	if (!buffer_is_empty(con->authed_user)) {
-		FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("REMOTE_USER"), CONST_BUF_LEN(con->authed_user)),con)
-	}
-
 	if (con->request.content_length > 0 && host->mode != FCGI_AUTHORIZER) {
 		/* CGI-SPEC 6.1.2 and FastCGI spec 6.3 */
 
@@ -2031,7 +2028,7 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 	s = get_http_version_name(con->request.http_version);
 	FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("SERVER_PROTOCOL"), s, strlen(s)),con)
 
-    if (srv_sock->is_ssl || srv_sock->is_proxy_ssl) {
+	if (buffer_is_equal_caseless_string(con->uri.scheme, CONST_STR_LEN("https"))) {
 		FCGI_ENV_ADD_CHECK(fcgi_env_add(p->fcgi_env, CONST_STR_LEN("HTTPS"), CONST_STR_LEN("on")),con)
 	}
 
@@ -2673,8 +2670,8 @@ static int fcgi_demux_response(server *srv, handler_ctx *hctx) {
 		case FCGI_STDERR:
 			if (packet.len == 0) break;
 
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-					"FastCGI-stderr:", packet.b);
+			log_error_write_multiline_buffer(srv, __FILE__, __LINE__, packet.b, "s",
+					"FastCGI-stderr:");
 
 			break;
 		case FCGI_END_REQUEST:
@@ -3177,8 +3174,6 @@ SUBREQUEST_FUNC(mod_fastcgi_handle_subrequest) {
 	/* ok, create the request */
 	switch(fcgi_write_request(srv, hctx)) {
 	case HANDLER_ERROR:
-		host = hctx->host;
-
 		if (hctx->state == FCGI_STATE_INIT ||
 		    hctx->state == FCGI_STATE_CONNECT_DELAYED) {
 			fcgi_restart_dead_procs(srv, p, host);
