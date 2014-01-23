@@ -29,6 +29,10 @@
 
 #include "md5.h"
 
+#ifdef USE_OPENSSL
+#include <openssl/sha.h>
+#endif
+
 #define HASHLEN 16
 #define HASHHEXLEN 32
 typedef unsigned char HASH[HASHLEN];
@@ -87,7 +91,8 @@ static const short base64_reverse_table[256] = {
 
 static unsigned char * base64_decode(buffer *out, const char *in) {
 	unsigned char *result;
-	int ch, j = 0, k;
+	unsigned int j = 0; /* current output character (position) that is decoded. can contain partial result */
+	unsigned int group = 0; /* how many base64 digits in the current group were decoded already. each group has up to 4 digits */
 	size_t i;
 
 	size_t in_len = strlen(in);
@@ -96,51 +101,64 @@ static unsigned char * base64_decode(buffer *out, const char *in) {
 
 	result = (unsigned char *)out->ptr;
 
-	ch = in[0];
 	/* run through the whole string, converting as we go */
 	for (i = 0; i < in_len; i++) {
-		ch = (unsigned char) in[i];
+		unsigned char c = (unsigned char) in[i];
+		short ch;
 
-		if (ch == '\0') break;
+		if (c == '\0') break;
 
-		if (ch == base64_pad) break;
+		if (c == base64_pad) {
+			/* pad character can only come after 2 base64 digits in a group */
+			if (group < 2) return NULL;
+			break;
+		}
 
-		ch = base64_reverse_table[ch];
-		if (ch < 0) continue;
+		ch = base64_reverse_table[c];
+		if (ch < 0) continue; /* skip invalid characters */
 
-		switch(i % 4) {
+		switch(group) {
 		case 0:
 			result[j] = ch << 2;
+			group = 1;
 			break;
 		case 1:
 			result[j++] |= ch >> 4;
 			result[j] = (ch & 0x0f) << 4;
+			group = 2;
 			break;
 		case 2:
 			result[j++] |= ch >>2;
 			result[j] = (ch & 0x03) << 6;
+			group = 3;
 			break;
 		case 3:
 			result[j++] |= ch;
+			group = 0;
 			break;
 		}
 	}
-	k = j;
-	/* mop things up if we ended on a boundary */
-	if (ch == base64_pad) {
-		switch(i % 4) {
-		case 0:
-		case 1:
-			return NULL;
-		case 2:
-			k++;
-		case 3:
-			result[k++] = 0;
-		}
-	}
-	result[k] = '\0';
 
-	out->used = k;
+	switch(group) {
+	case 0:
+		/* ended on boundary */
+		break;
+	case 1:
+		/* need at least 2 base64 digits per group */
+		return NULL;
+	case 2:
+		/* have 2 base64 digits in last group => one real octect, two zeroes padded */
+	case 3:
+		/* have 3 base64 digits in last group => two real octects, one zero padded */
+
+		/* for both cases the current index already is on the first zero padded octet
+		 * - check it really is zero (overlapping bits) */
+		if (0 != result[j]) return NULL;
+		break;
+	}
+
+	result[j] = '\0';
+	out->used = j;
 
 	return result;
 }
@@ -304,31 +322,13 @@ static int http_auth_get_password(server *srv, mod_auth_plugin_data *p, buffer *
 	return ret;
 }
 
-static int http_auth_match_rules(server *srv, mod_auth_plugin_data *p, const char *url, const char *username, const char *group, const char *host) {
+int http_auth_match_rules(server *srv, array *req, const char *username, const char *group, const char *host) {
 	const char *r = NULL, *rules = NULL;
-	size_t i;
 	int username_len;
 	data_string *require;
-	array *req;
 
 	UNUSED(group);
 	UNUSED(host);
-
-	/* check what has to be match to fullfil the request */
-	/* search auth-directives for path */
-	for (i = 0; i < p->conf.auth_require->used; i++) {
-		if (p->conf.auth_require->data[i]->key->used == 0) continue;
-
-		if (0 == strncmp(url, p->conf.auth_require->data[i]->key->ptr, p->conf.auth_require->data[i]->key->used - 1)) {
-			break;
-		}
-	}
-
-	if (i == p->conf.auth_require->used) {
-		return -1;
-	}
-
-	req = ((data_array *)(p->conf.auth_require->data[i]))->value;
 
 	require = (data_string *)array_get_element(req, "require");
 
@@ -599,6 +599,35 @@ static void apr_md5_encode(const char *pw, const char *salt, char *result, size_
     apr_cpystrn(result, passwd, nbytes - 1);
 }
 
+#ifdef USE_OPENSSL
+static void apr_sha_encode(const char *pw, char *result, size_t nbytes) {
+	static const unsigned char base64_data[65] =
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	unsigned char digest[21]; /* multiple of 3 for base64 encoding */
+	int i;
+
+	memset(result, 0, nbytes);
+
+	/* need 5 bytes for "{SHA}", 28 for base64 (3 bytes -> 4 bytes) of SHA1 (20 bytes), 1 terminating */
+	if (nbytes < 5 + 28 + 1) return;
+
+	SHA1((const unsigned char*) pw, strlen(pw), digest);
+	digest[20] = 0;
+
+	strcpy(result, "{SHA}");
+	result = result + 5;
+	for (i = 0; i < 21; i += 3) {
+		unsigned int v = (digest[i] << 16) | (digest[i+1] << 8) | digest[i+2];
+		result[3] = base64_data[v & 0x3f]; v >>= 6;
+		result[2] = base64_data[v & 0x3f]; v >>= 6;
+		result[1] = base64_data[v & 0x3f]; v >>= 6;
+		result[0] = base64_data[v & 0x3f];
+		result += 4;
+	}
+	result[-1] = '='; /* last digest character was already end of string, pad it */
+	*result = '\0';
+}
+#endif
 
 /**
  *
@@ -643,58 +672,30 @@ static int http_auth_basic_password_compare(server *srv, mod_auth_plugin_data *p
 			 */
 			apr_md5_encode(pw, password->ptr, sample, sizeof(sample));
 			return (strcmp(sample, password->ptr) == 0) ? 0 : 1;
+#ifdef USE_OPENSSL
+		} else if (0 == strncmp(password->ptr, "{SHA}", 5)) {
+			apr_sha_encode(pw, sample, sizeof(sample));
+			return (strcmp(sample, password->ptr) == 0) ? 0 : 1;
+#endif
 		} else {
 #ifdef HAVE_CRYPT
-		char salt[32];
-		char *crypted;
-		size_t salt_len = 0;
-		/*
-		 * htpasswd format
-		 *
-		 * user:crypted password
-		 */
+			char *crypted;
 
-		/*
-		 *  Algorithm      Salt
-		 *  CRYPT_STD_DES   2-character (Default)
-		 *  CRYPT_EXT_DES   9-character
-		 *  CRYPT_MD5       12-character beginning with $1$
-		 *  CRYPT_BLOWFISH  16-character beginning with $2$
-		 */
-
-		if (password->used < 13 + 1) {
-			return -1;
-		}
-
-		if (password->used == 13 + 1) {
-			/* a simple DES password is 2 + 11 characters */
-			salt_len = 2;
-		} else if (password->ptr[0] == '$' && password->ptr[2] == '$') {
-			char *dollar = NULL;
-
-			if (NULL == (dollar = strchr(password->ptr + 3, '$'))) {
+			/* a simple DES password is 2 + 11 characters. everything else should be longer. */
+			if (password->used < 13 + 1) {
 				return -1;
 			}
 
-			salt_len = dollar - password->ptr;
-		}
+			if (0 == (crypted = crypt(pw, password->ptr))) {
+				/* crypt failed. */
+				return -1;
+			}
 
-		if (salt_len > sizeof(salt) - 1) {
-			return -1;
-		}
-
-		strncpy(salt, password->ptr, salt_len);
-
-		salt[salt_len] = '\0';
-
-		crypted = crypt(pw, salt);
-
-		if (0 == strcmp(password->ptr, crypted)) {
-			return 0;
-		}
-
+			if (0 == strcmp(password->ptr, crypted)) {
+				return 0;
+			}
 #endif
-	}
+		}
 	} else if (p->conf.auth_backend == AUTH_BACKEND_PLAIN) {
 		if (0 == strcmp(password->ptr, pw)) {
 			return 0;
@@ -763,8 +764,9 @@ static int http_auth_basic_password_compare(server *srv, mod_auth_plugin_data *p
 				if (auth_ldap_init(srv, p->anon_conf) != HANDLER_GO_ON)
 					return -1;
 
-				if (p->anon_conf->ldap == NULL ||
-				    LDAP_SUCCESS != (ret = ldap_search_s(p->anon_conf->ldap, p->conf.auth_ldap_basedn->ptr, LDAP_SCOPE_SUBTREE, p->ldap_filter->ptr, attrs, 0, &lm))) {
+				if (NULL == p->anon_conf->ldap) return -1;
+
+				if (LDAP_SUCCESS != (ret = ldap_search_s(p->anon_conf->ldap, p->conf.auth_ldap_basedn->ptr, LDAP_SCOPE_SUBTREE, p->ldap_filter->ptr, attrs, 0, &lm))) {
 					log_error_write(srv, __FILE__, __LINE__, "sssb",
 							"ldap:", ldap_err2string(ret), "filter:", p->ldap_filter);
 					return -1;
@@ -836,7 +838,7 @@ static int http_auth_basic_password_compare(server *srv, mod_auth_plugin_data *p
 	return -1;
 }
 
-int http_auth_basic_check(server *srv, connection *con, mod_auth_plugin_data *p, array *req, buffer *url, const char *realm_str) {
+int http_auth_basic_check(server *srv, connection *con, mod_auth_plugin_data *p, array *req, const char *realm_str) {
 	buffer *username, *password;
 	char *pw;
 
@@ -891,7 +893,7 @@ int http_auth_basic_check(server *srv, connection *con, mod_auth_plugin_data *p,
 	}
 
 	/* value is our allow-rules */
-	if (http_auth_match_rules(srv, p, url->ptr, username->ptr, NULL, NULL)) {
+	if (http_auth_match_rules(srv, req, username->ptr, NULL, NULL)) {
 		buffer_free(username);
 		buffer_free(password);
 
@@ -915,7 +917,8 @@ typedef struct {
 	char **ptr;
 } digest_kv;
 
-int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p, array *req, buffer *url, const char *realm_str) {
+/* return values: -1: error/bad request, 0: failed, 1: success */
+int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p, array *req, const char *realm_str) {
 	char a1[256];
 	char a2[256];
 
@@ -1052,6 +1055,14 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 		return -1;
 	}
 
+	if (qop && strcasecmp(qop, "auth-int") == 0) {
+		log_error_write(srv, __FILE__, __LINE__, "s",
+				"digest: qop=auth-int not supported");
+
+		buffer_free(b);
+		return -1;
+	}
+
 	m = get_http_method_name(con->request.http_method);
 
 	/* password-string == HA1 */
@@ -1112,10 +1123,13 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 	li_MD5_Update(&Md5Ctx, (unsigned char *)m, strlen(m));
 	li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
 	li_MD5_Update(&Md5Ctx, (unsigned char *)uri, strlen(uri));
+	/* qop=auth-int not supported, already checked above */
+/*
 	if (qop && strcasecmp(qop, "auth-int") == 0) {
 		li_MD5_Update(&Md5Ctx, (unsigned char *)":", 1);
-		li_MD5_Update(&Md5Ctx, (unsigned char *)"", HASHHEXLEN);
+		li_MD5_Update(&Md5Ctx, (unsigned char *) [body checksum], HASHHEXLEN);
 	}
+*/
 	li_MD5_Final(HA2, &Md5Ctx);
 	CvtHex(HA2, HA2Hex);
 
@@ -1153,7 +1167,7 @@ int http_auth_digest_check(server *srv, connection *con, mod_auth_plugin_data *p
 	}
 
 	/* value is our allow-rules */
-	if (http_auth_match_rules(srv, p, url->ptr, username, NULL, NULL)) {
+	if (http_auth_match_rules(srv, req, username, NULL, NULL)) {
 		buffer_free(b);
 
 		log_error_write(srv, __FILE__, __LINE__, "s",

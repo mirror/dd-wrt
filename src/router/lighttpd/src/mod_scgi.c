@@ -925,7 +925,7 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 		{ NULL,                          NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 	};
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s;
@@ -1542,12 +1542,6 @@ static int scgi_create_env(server *srv, handler_ctx *hctx) {
 	s = inet_ntop_cache_get_ip(srv, &(con->dst_addr));
 	scgi_env_add(p->scgi_env, CONST_STR_LEN("REMOTE_ADDR"), s, strlen(s));
 
-	if (!buffer_is_empty(con->authed_user)) {
-		scgi_env_add(p->scgi_env, CONST_STR_LEN("REMOTE_USER"),
-			     CONST_BUF_LEN(con->authed_user));
-	}
-
-
 	/*
 	 * SCRIPT_NAME, PATH_INFO and PATH_TRANSLATED according to
 	 * http://cgi-spec.golux.com/draft-coar-cgi-v11-03-clean.html
@@ -1614,7 +1608,7 @@ static int scgi_create_env(server *srv, handler_ctx *hctx) {
 	scgi_env_add(p->scgi_env, CONST_STR_LEN("SERVER_PROTOCOL"), s, strlen(s));
 
 #ifdef USE_OPENSSL
-	if (srv_sock->is_ssl) {
+	if (buffer_is_equal_caseless_string(con->uri.scheme, CONST_STR_LEN("https"))) {
 		scgi_env_add(p->scgi_env, CONST_STR_LEN("HTTPS"), CONST_STR_LEN("on"));
 	}
 #endif
@@ -2813,7 +2807,7 @@ static handler_t scgi_check_extension(server *srv, connection *con, void *p_d, i
 
 			if (con->conf.log_request_handling) {
 				log_error_write(srv, __FILE__, __LINE__, "s",
-				"handling it in mod_fastcgi");
+				"handling it in mod_scgi");
 			}
 
 			/* the prefix is the SCRIPT_NAME,
@@ -2871,7 +2865,7 @@ static handler_t scgi_check_extension(server *srv, connection *con, void *p_d, i
 		con->mode = p->id;
 
 		if (con->conf.log_request_handling) {
-			log_error_write(srv, __FILE__, __LINE__, "s", "handling it in mod_fastcgi");
+			log_error_write(srv, __FILE__, __LINE__, "s", "handling it in mod_scgi");
 		}
 	}
 

@@ -222,7 +222,6 @@ typedef struct {
 
 #ifdef HAVE_FAM_H
 	int    dir_version;
-	int    dir_ndx;
 #endif
 
 	buffer *content_type;
@@ -235,7 +234,7 @@ typedef struct {
 #ifdef HAVE_FAM_H
 	splay_tree *dirs; /* the nodes of the tree are fam_dir_entry */
 
-	FAMConnection *fam;
+	FAMConnection fam;
 	int    fam_fcce_ndx;
 #endif
 	buffer *hash_key;  /* temp-store for the hash-key */
@@ -278,6 +277,7 @@ typedef struct {
 	buffer *ssl_dh_file;
 	buffer *ssl_ec_curve;
 	unsigned short ssl_honor_cipher_order; /* determine SSL cipher in server-preferred order, not client-order */
+	unsigned short ssl_empty_fragments; /* whether to not set SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS */
 	unsigned short ssl_use_sslv2;
 	unsigned short ssl_use_sslv3;
 	unsigned short ssl_verifyclient;
@@ -289,7 +289,7 @@ typedef struct {
 
 	unsigned short use_ipv6, set_v6only; /* set_v6only is only a temporary option */
 	unsigned short defer_accept;
-	unsigned short is_ssl;
+	unsigned short ssl_enabled; /* only interesting for setting up listening sockets. don't use at runtime */
 	unsigned short allow_http11;
 	unsigned short etag_use_inode;
 	unsigned short etag_use_mtime;
@@ -319,7 +319,11 @@ typedef struct {
 	off_t *global_bytes_per_second_cnt_ptr; /*  */
 
 #ifdef USE_OPENSSL
-	SSL_CTX *ssl_ctx;
+	SSL_CTX *ssl_ctx; /* not patched */
+	/* SNI per host: with COMP_SERVER_SOCKET, COMP_HTTP_SCHEME, COMP_HTTP_HOST */
+	EVP_PKEY *ssl_pemfile_pkey;
+	X509 *ssl_pemfile_x509;
+	STACK_OF(X509_NAME) *ssl_ca_file_cert_names;
 #endif
 } specific_config;
 
@@ -410,7 +414,6 @@ typedef struct {
 
 	size_t header_len;
 
-	buffer *authed_user;
 	array  *environment; /* used to pass lighttpd internal stuff to the FastCGI/CGI apps, setenv does that */
 
 	/* response */
@@ -432,7 +435,7 @@ typedef struct {
 	int error_handler_saved_status;
 	int in_error_handler;
 
-	void *srv_socket;   /* reference to the server-socket (typecast to server_socket) */
+	struct server_socket *srv_socket;   /* reference to the server-socket */
 
 #ifdef USE_OPENSSL
 	SSL *ssl;
@@ -525,19 +528,11 @@ typedef struct {
 	unsigned short reject_expect_100_with_417;
 } server_config;
 
-typedef struct {
+typedef struct server_socket {
 	sock_addr addr;
 	int       fd;
 	int       fde_ndx;
 
-	buffer *ssl_pemfile;
-	buffer *ssl_ca_file;
-	buffer *ssl_cipher_list;
-	buffer *ssl_dh_file;
-	buffer *ssl_ec_curve;
-	unsigned short ssl_use_sslv2;
-	unsigned short ssl_use_sslv3;
-	unsigned short use_ipv6;
 	unsigned short is_ssl;
 
 	buffer *srv_token;
@@ -545,7 +540,6 @@ typedef struct {
 #ifdef USE_OPENSSL
 	SSL_CTX *ssl_ctx;
 #endif
-       unsigned short is_proxy_ssl;
 } server_socket;
 
 typedef struct {

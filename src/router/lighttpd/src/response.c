@@ -169,11 +169,19 @@ static void https_add_ssl_entries(connection *con) {
 			envds->value,
 			(const char *)xe->value->data, xe->value->length
 		);
-		/* pick one of the exported values as "authed user", for example
+		/* pick one of the exported values as "REMOTE_USER", for example
 		 * ssl.verifyclient.username   = "SSL_CLIENT_S_DN_UID" or "SSL_CLIENT_S_DN_emailAddress"
 		 */
 		if (buffer_is_equal(con->conf.ssl_verifyclient_username, envds->key)) {
-			buffer_copy_string_buffer(con->authed_user, envds->value);
+			data_string *ds;
+			if (NULL == (ds = (data_string *)array_get_element(con->environment, "REMOTE_USER"))) {
+				if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
+					ds = data_string_init();
+				}
+				buffer_copy_string(ds->key, "REMOTE_USER");
+				array_insert_unique(con->environment, (data_unset *)ds);
+			}
+			buffer_copy_string_buffer(ds->value, envds->value);
 		}
 		array_insert_unique(con->environment, (data_unset *)envds);
 	}
@@ -264,7 +272,8 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		 *
 		 */
 
-		if (con->conf.is_ssl) {
+		/* initial scheme value. can be overwritten for example by mod_extforward later */
+		if (con->srv_socket->is_ssl) {
 			buffer_copy_string_len(con->uri.scheme, CONST_STR_LEN("https"));
 		} else {
 			buffer_copy_string_len(con->uri.scheme, CONST_STR_LEN("http"));
@@ -296,13 +305,44 @@ handler_t http_response_prepare(server *srv, connection *con) {
 			buffer_copy_string_buffer(con->uri.path_raw, con->request.uri);
 		}
 
+		/* decode url to path
+		 *
+		 * - decode url-encodings  (e.g. %20 -> ' ')
+		 * - remove path-modifiers (e.g. /../)
+		 */
+
+		if (con->request.http_method == HTTP_METHOD_OPTIONS &&
+		    con->uri.path_raw->ptr[0] == '*' && con->uri.path_raw->ptr[1] == '\0') {
+			/* OPTIONS * ... */
+			buffer_copy_string_buffer(con->uri.path, con->uri.path_raw);
+		} else {
+			buffer_copy_string_buffer(srv->tmp_buf, con->uri.path_raw);
+			buffer_urldecode_path(srv->tmp_buf);
+			buffer_path_simplify(con->uri.path, srv->tmp_buf);
+		}
+
+		config_patch_connection(srv, con, COMP_HTTP_URL); /* HTTPurl */
+		config_patch_connection(srv, con, COMP_HTTP_QUERY_STRING); /* HTTPqs */
+
+#ifdef USE_OPENSSL
+		if (con->srv_socket->is_ssl && con->conf.ssl_verifyclient) {
+			https_add_ssl_entries(con);
+		}
+#endif
+
+		/* do we have to downgrade to 1.0 ? */
+		if (!con->conf.allow_http11) {
+			con->request.http_version = HTTP_VERSION_1_0;
+		}
+
 		if (con->conf.log_request_handling) {
 			log_error_write(srv, __FILE__, __LINE__,  "s",  "-- splitting Request-URI");
-			log_error_write(srv, __FILE__, __LINE__,  "sb", "Request-URI  : ", con->request.uri);
-			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-scheme   : ", con->uri.scheme);
-			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-authority: ", con->uri.authority);
-			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-path     : ", con->uri.path_raw);
-			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-query    : ", con->uri.query);
+			log_error_write(srv, __FILE__, __LINE__,  "sb", "Request-URI     : ", con->request.uri);
+			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-scheme      : ", con->uri.scheme);
+			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-authority   : ", con->uri.authority);
+			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-path (raw)  : ", con->uri.path_raw);
+			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-path (clean): ", con->uri.path);
+			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-query       : ", con->uri.query);
 		}
 
 
@@ -327,35 +367,6 @@ handler_t http_response_prepare(server *srv, connection *con) {
 			break;
 		}
 
-		/* build filename
-		 *
-		 * - decode url-encodings  (e.g. %20 -> ' ')
-		 * - remove path-modifiers (e.g. /../)
-		 */
-
-
-
-		if (con->request.http_method == HTTP_METHOD_OPTIONS &&
-		    con->uri.path_raw->ptr[0] == '*' && con->uri.path_raw->ptr[1] == '\0') {
-			/* OPTIONS * ... */
-			buffer_copy_string_buffer(con->uri.path, con->uri.path_raw);
-		} else {
-			buffer_copy_string_buffer(srv->tmp_buf, con->uri.path_raw);
-			buffer_urldecode_path(srv->tmp_buf);
-			buffer_path_simplify(con->uri.path, srv->tmp_buf);
-		}
-
-		if (con->conf.log_request_handling) {
-			log_error_write(srv, __FILE__, __LINE__,  "s",  "-- sanatising URI");
-			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI-path     : ", con->uri.path);
-		}
-
-#ifdef USE_OPENSSL
-		if (con->conf.is_ssl && con->conf.ssl_verifyclient) {
-			https_add_ssl_entries(con);
-		}
-#endif
-
 		/**
 		 *
 		 * call plugins
@@ -363,14 +374,6 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		 * - based on the clean URL
 		 *
 		 */
-
-		config_patch_connection(srv, con, COMP_HTTP_URL); /* HTTPurl */
-		config_patch_connection(srv, con, COMP_HTTP_QUERY_STRING); /* HTTPqs */
-
-		/* do we have to downgrade to 1.0 ? */
-		if (!con->conf.allow_http11) {
-			con->request.http_version = HTTP_VERSION_1_0;
-		}
 
 		switch(r = plugins_call_handle_uri_clean(srv, con)) {
 		case HANDLER_GO_ON:
@@ -507,9 +510,9 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		 *
 		 */
 
+		buffer_copy_string_buffer(con->physical.basedir, con->physical.doc_root);
 		buffer_copy_string_buffer(con->physical.path, con->physical.doc_root);
 		BUFFER_APPEND_SLASH(con->physical.path);
-		buffer_copy_string_buffer(con->physical.basedir, con->physical.path);
 		if (con->physical.rel_path->used &&
 		    con->physical.rel_path->ptr[0] == '/') {
 			buffer_append_string_len(con->physical.path, con->physical.rel_path->ptr + 1, con->physical.rel_path->used - 2);
@@ -540,6 +543,7 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		if (con->conf.log_request_handling) {
 			log_error_write(srv, __FILE__, __LINE__,  "s",  "-- logical -> physical");
 			log_error_write(srv, __FILE__, __LINE__,  "sb", "Doc-Root     :", con->physical.doc_root);
+			log_error_write(srv, __FILE__, __LINE__,  "sb", "Basedir      :", con->physical.basedir);
 			log_error_write(srv, __FILE__, __LINE__,  "sb", "Rel-Path     :", con->physical.rel_path);
 			log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
 		}

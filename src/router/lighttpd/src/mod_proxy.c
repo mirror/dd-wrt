@@ -194,7 +194,7 @@ SETDEFAULTS_FUNC(mod_proxy_set_defaults) {
 		{ NULL,                        NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 	};
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s;
@@ -463,7 +463,7 @@ static int proxy_create_env(server *srv, handler_ctx *hctx) {
 	    !buffer_is_empty(con->request.http_host)) {
 		proxy_set_header(con, "X-Host", con->request.http_host->ptr);
 	}
-	proxy_set_header(con, "X-Forwarded-Proto", con->conf.is_ssl ? "https" : "http");
+	proxy_set_header(con, "X-Forwarded-Proto", con->uri.scheme->ptr);
 
 	/* request header */
 	for (i = 0; i < con->request.headers->used; i++) {

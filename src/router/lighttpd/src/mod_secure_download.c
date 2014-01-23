@@ -97,7 +97,7 @@ SETDEFAULTS_FUNC(mod_secdownload_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s;
@@ -276,6 +276,7 @@ URIHANDLER_FUNC(mod_secdownload_uri_handler) {
 	 */
 
 	buffer_copy_string_buffer(con->physical.doc_root, p->conf.doc_root);
+	buffer_copy_string_buffer(con->physical.basedir, p->conf.doc_root);
 	buffer_copy_string(con->physical.rel_path, rel_uri);
 	buffer_copy_string_buffer(con->physical.path, con->physical.doc_root);
 	buffer_append_string_buffer(con->physical.path, con->physical.rel_path);

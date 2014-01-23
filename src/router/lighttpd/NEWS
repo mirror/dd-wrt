@@ -3,7 +3,54 @@
 NEWS
 ====
 
-- 1.4.32 -
+- 1.4.34
+  * [mod_auth] explicitly link ssl for SHA1 (fixes #2517)
+  * [mod_extforward] fix compilation without IPv6, (not) using undefined var (fixes #2515, thx mm)
+  * [ssl] fix SNI handling; only use key+cert from SNI specific config (fixes #2525, CVE-2013-4508)
+  * [doc] update ssl.cipher-list recommendation
+  * [stat-cache] FAM: fix use after free (CVE-2013-4560)
+  * [stat-cache] fix FAM cleanup/fdevent handling
+  * [core] check success of setuid,setgid,setgroups (CVE-2013-4559)
+  * [ssl] fix regression from CVE-2013-4508 (client-cert sessions were broken)
+  * maintain physical.basedir (the "acting" doc-root as prefix of physical.path) in more places
+  * [core] decode URL before rewrite, enabling it to work in $HTTP["url"] conditionals (fixes #2526)
+  * [auto* build] remove -no-undefined from linker flags, as we actually link modules with undefined symbols (fixes #2533)
+  * [mod_mysql_vhost] fix memory leak on config init (#2530)
+  * [mod_webdav] fix fd leak found with parfait (fixes #2530, thx kukackajiri)
+
+- 1.4.33 - 2013-09-27
+  * mod_fastcgi: fix mix up of "mode" => "authorizer" in other fastcgi configs (fixes #2465, thx peex)
+  * fix handling of If-Modified-Since if If-None-Match is present (don't return 412 for date parsing errors);
+    follow current draft for HTTP/1.1, which tells us to ignore If-Modified-Since if we have matching etags.
+  * [mod_fastcgi,log] support multi line logging (fixes #2252)
+  * call ERR_clear_error only for ssl connections in CON_STATE_ERROR
+  * reject non ASCII characters in HTTP header names
+  * [mod_auth] use crypt() on encrypted password instead of extracting salt first (fixes #2483)
+  * [mod_auth] add htpasswd -s (SHA1) support if openssl is used (needs openssl for SHA1). This doesn't use any salt, md5 with salt is probably better.
+  * [mod_auth] fix base64_decode (#2484)
+  * fix some bugs found with canalyze (fixes #2484, thx Zhenbo Xu)
+  * fix undefined stuff found with clang
+  * [cmake] Use TARGET_LINK_LIBRARIES instead of LINK_FLAGS for library dependencies, also add -Wl,--as-needed to extra warnings (fixes #2448)
+  * [mod_auth] fix invalid read in digest qop=auth-int handling (fixes #2478)
+  * [auto* build] simplify autogen.sh, handle automake 1.13 test running (fixes #2490)
+  * [mod_userdir] add userdir.active option, "enabled" by default
+  * [core] return 501 Not Implemented in static file mode for all methods except GET/POST/HEAD/OPTIONS
+  * [core] recognize more http methods to forward to backends (fixes #2346)
+  * [ssl] use DH only if openssl supports it (fixes #2479)
+  * [network] use constants available at compile time for maximum number of chunks for writev instead of calling sysconf (fixes #2470)
+  * [ssl] Fix $HTTP["scheme"] conditional, could be "http" for ssl connections if the ssl $SERVER["socket"] conditional was nested (fixes #2501)
+  * [ssl] accept ssl renegotiations if they are not disabled (fixes #2491)
+  * [ssl] add option ssl.empty-fragments, defaulting to disabled (fixes #2492)
+  * [auth] put REMOTE_USER into cgi environment, making it accessible to lua via lighty.req_env (fixes #2495)
+  * [auth] new method "extern" to use already present REMOTE_USER (from magnet, ssl, ...) (fixes #2436)
+  * [core] remove requirement that default doc-root has to exist, there are reasonable scenarios not requiring static files at all
+  * [core] check whether server.chroot exists
+  * [mod_simple_vhost] fix cache; skip module if simple-vhost.server-root is empty (thx rm for reporting)
+  * [mod_accesslog] add accesslog.syslog-level option (fixes #2480)
+  * [core] allow files to be used as document-root (fixes #2475)
+  * [core] set signal handlers before forking child processes in modules/plugins_call_set_defaults (fixes #2502)
+
+- 1.4.32 - 2012-11-21
   * Code cleanup with clang/sparse (fixes #2437, thx kibi)
   * Ignore EPIPE/ECONNRESET after SSL_shutdown
   * Handle ENAMETOOLONG, return 404 Not Found (fixes #2396, thx dererkazo)
