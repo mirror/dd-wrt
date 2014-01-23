@@ -124,16 +124,17 @@ typedef struct {
 
 typedef struct {
 	buffer *access_logfile;
-	buffer *format;
-	unsigned short use_syslog;
-
-
 	int    log_access_fd;
+	buffer *access_logbuffer; /* each logfile has a separate buffer */
+
+	unsigned short use_syslog; /* syslog has global buffer */
+	unsigned short syslog_level;
+
+	buffer *format;
+
 	time_t last_generated_accesslog_ts;
 	time_t *last_generated_accesslog_ts_ptr;
 
-
-	buffer *access_logbuffer;
 	buffer *ts_accesslog_str;
 	buffer *ts_accesslog_fmt_str;
 	unsigned short append_tz_offset;
@@ -146,12 +147,15 @@ typedef struct {
 
 	plugin_config **config_storage;
 	plugin_config conf;
+
+	buffer *syslog_logbuffer; /* syslog has global buffer. no caching, always written directly */
 } plugin_data;
 
 INIT_FUNC(mod_accesslog_init) {
 	plugin_data *p;
 
 	p = calloc(1, sizeof(*p));
+	p->syslog_logbuffer = buffer_init();
 
 	return p;
 }
@@ -413,13 +417,7 @@ FREE_FUNC(mod_accesslog_free) {
 			if (!s) continue;
 
 			if (s->access_logbuffer->used) {
-				if (s->use_syslog) {
-# ifdef HAVE_SYSLOG_H
-					if (s->access_logbuffer->used > 2) {
-						syslog(LOG_INFO, "%*s", (int) s->access_logbuffer->used - 2, s->access_logbuffer->ptr);
-					}
-# endif
-				} else if (s->log_access_fd != -1) {
+				if (s->log_access_fd != -1) {
 					write(s->log_access_fd, s->access_logbuffer->ptr, s->access_logbuffer->used - 1);
 				}
 			}
@@ -448,6 +446,7 @@ FREE_FUNC(mod_accesslog_free) {
 		free(p->config_storage);
 	}
 
+	if (p->syslog_logbuffer) buffer_free(p->syslog_logbuffer);
 	free(p);
 
 	return HANDLER_GO_ON;
@@ -461,12 +460,13 @@ SETDEFAULTS_FUNC(log_access_open) {
 		{ "accesslog.filename",             NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
 		{ "accesslog.use-syslog",           NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },
 		{ "accesslog.format",               NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },
+		{ "accesslog.syslog-level",         NULL, T_CONFIG_SHORT, T_CONFIG_SCOPE_CONNECTION },
 		{ NULL,                             NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
 	};
 
 	if (!p) return HANDLER_ERROR;
 
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s;
@@ -480,11 +480,13 @@ SETDEFAULTS_FUNC(log_access_open) {
 		s->log_access_fd = -1;
 		s->last_generated_accesslog_ts = 0;
 		s->last_generated_accesslog_ts_ptr = &(s->last_generated_accesslog_ts);
+		s->syslog_level = LOG_INFO;
 
 
 		cv[0].destination = s->access_logfile;
 		cv[1].destination = &(s->use_syslog);
 		cv[2].destination = s->format;
+		cv[3].destination = &(s->syslog_level);
 
 		p->config_storage[i] = s;
 
@@ -590,14 +592,7 @@ SIGHUP_FUNC(log_access_cycle) {
 		plugin_config *s = p->config_storage[i];
 
 		if (s->access_logbuffer->used) {
-			if (s->use_syslog) {
-#ifdef HAVE_SYSLOG_H
-				if (s->access_logbuffer->used > 2) {
-					/* syslog appends a \n on its own */
-					syslog(LOG_INFO, "%*s", (int) s->access_logbuffer->used - 2, s->access_logbuffer->ptr);
-				}
-#endif
-			} else if (s->log_access_fd != -1) {
+			if (s->log_access_fd != -1) {
 				write(s->log_access_fd, s->access_logbuffer->ptr, s->access_logbuffer->used - 1);
 			}
 
@@ -642,6 +637,7 @@ static int mod_accesslog_patch_connection(server *srv, connection *con, plugin_d
 	PATCH(append_tz_offset);
 	PATCH(parsed_format);
 	PATCH(use_syslog);
+	PATCH(syslog_level);
 
 	/* skip the first, the global context */
 	for (i = 1; i < srv->config_context->used; i++) {
@@ -668,7 +664,8 @@ static int mod_accesslog_patch_connection(server *srv, connection *con, plugin_d
 				PATCH(append_tz_offset);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("accesslog.use-syslog"))) {
 				PATCH(use_syslog);
-				PATCH(access_logbuffer);
+			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("accesslog.syslog-level"))) {
+				PATCH(syslog_level);
 			}
 		}
 	}
@@ -690,7 +687,12 @@ REQUESTDONE_FUNC(log_access_write) {
 	/* No output device, nothing to do */
 	if (!p->conf.use_syslog && p->conf.log_access_fd == -1) return HANDLER_GO_ON;
 
-	b = p->conf.access_logbuffer;
+	if (p->conf.use_syslog) {
+		b = p->syslog_logbuffer;
+	} else {
+		b = p->conf.access_logbuffer;
+	}
+
 	if (b->used == 0) {
 		buffer_copy_string_len(b, CONST_STR_LEN(""));
 	}
@@ -765,8 +767,8 @@ REQUESTDONE_FUNC(log_access_write) {
 				buffer_append_string_len(b, CONST_STR_LEN("-"));
 				break;
 			case FORMAT_REMOTE_USER:
-				if (con->authed_user->used > 1) {
-					buffer_append_string_buffer(b, con->authed_user);
+				if (NULL != (ds = (data_string *)array_get_element(con->environment, "REMOTE_USER")) && ds->value->used > 1) {
+					accesslog_append_escaped(b, ds->value);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
 				}
@@ -911,7 +913,7 @@ REQUESTDONE_FUNC(log_access_write) {
 #ifdef HAVE_SYSLOG_H
 			if (b->used > 2) {
 				/* syslog appends a \n on its own */
-				syslog(LOG_INFO, "%*s", (int) b->used - 2, b->ptr);
+				syslog(p->conf.syslog_level, "%*s", (int) b->used - 2, b->ptr);
 			}
 #endif
 		} else if (p->conf.log_access_fd != -1) {

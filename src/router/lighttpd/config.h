@@ -387,7 +387,7 @@
 /* #undef LDAP_DEPRECATED */
 
 /* lighttpd-version-id */
-#define LIGHTTPD_VERSION_ID (1 << 16 | 4 << 8 | 32)
+#define LIGHTTPD_VERSION_ID (1 << 16 | 4 << 8 | 34)
 
 /* Define to 1 if `lstat' dereferences a symlink specified with a trailing
    slash. */
@@ -410,7 +410,7 @@
 #define PACKAGE_NAME "lighttpd"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "lighttpd 1.4.32"
+#define PACKAGE_STRING "lighttpd 1.4.34"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "lighttpd"
@@ -419,7 +419,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.4.32"
+#define PACKAGE_VERSION "1.4.34"
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #define RETSIGTYPE void
@@ -456,7 +456,7 @@
 
 
 /* Version number of package */
-#define VERSION "1.4.32"
+#define VERSION "1.4.34"
 
 /* Define to 1 if on MINIX. */
 /* #undef _MINIX */

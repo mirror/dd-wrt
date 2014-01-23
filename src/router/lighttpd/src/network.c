@@ -25,7 +25,9 @@
 # include <openssl/ssl.h>
 # include <openssl/err.h>
 # include <openssl/rand.h>
-# include <openssl/dh.h>
+# ifndef OPENSSL_NO_DH
+#  include <openssl/dh.h>
+# endif
 # include <openssl/bn.h>
 
 # if OPENSSL_VERSION_NUMBER >= 0x0090800fL
@@ -42,8 +44,6 @@ static void ssl_info_callback(const SSL *ssl, int where, int ret) {
 	if (0 != (where & SSL_CB_HANDSHAKE_START)) {
 		connection *con = SSL_get_app_data(ssl);
 		++con->renegotiations;
-	} else if (0 != (where & SSL_CB_HANDSHAKE_DONE)) {
-		ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
 	}
 }
 #endif
@@ -112,18 +112,44 @@ static int network_ssl_servername_callback(SSL *ssl, int *al, server *srv) {
 	config_patch_connection(srv, con, COMP_HTTP_SCHEME);
 	config_patch_connection(srv, con, COMP_HTTP_HOST);
 
-	if (NULL == con->conf.ssl_ctx) {
-		/* ssl_ctx <=> pemfile was set <=> ssl_ctx got patched: so this should never happen */
+	if (NULL == con->conf.ssl_pemfile_x509 || NULL == con->conf.ssl_pemfile_pkey) {
+		/* x509/pkey available <=> pemfile was set <=> pemfile got patched: so this should never happen, unless you nest $SERVER["socket"] */
 		log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
-			"null SSL_CTX for TLS server name", con->tlsext_server_name);
+			"no certificate/private key for TLS server name", con->tlsext_server_name);
 		return SSL_TLSEXT_ERR_ALERT_FATAL;
 	}
 
-	/* switch to new SSL_CTX in reaction to a client's server_name extension */
-	if (con->conf.ssl_ctx != SSL_set_SSL_CTX(ssl, con->conf.ssl_ctx)) {
-		log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
-			"failed to set SSL_CTX for TLS server name", con->tlsext_server_name);
+	/* first set certificate! setting private key checks whether certificate matches it */
+	if (!SSL_use_certificate(ssl, con->conf.ssl_pemfile_x509)) {
+		log_error_write(srv, __FILE__, __LINE__, "ssb:s", "SSL:",
+			"failed to set certificate for TLS server name", con->tlsext_server_name,
+			ERR_error_string(ERR_get_error(), NULL));
 		return SSL_TLSEXT_ERR_ALERT_FATAL;
+	}
+
+	if (!SSL_use_PrivateKey(ssl, con->conf.ssl_pemfile_pkey)) {
+		log_error_write(srv, __FILE__, __LINE__, "ssb:s", "SSL:",
+			"failed to set private key for TLS server name", con->tlsext_server_name,
+			ERR_error_string(ERR_get_error(), NULL));
+		return SSL_TLSEXT_ERR_ALERT_FATAL;
+	}
+
+	if (con->conf.ssl_verifyclient) {
+		if (NULL == con->conf.ssl_ca_file_cert_names) {
+			log_error_write(srv, __FILE__, __LINE__, "ssb:s", "SSL:",
+				"can't verify client without ssl.ca-file for TLS server name", con->tlsext_server_name,
+				ERR_error_string(ERR_get_error(), NULL));
+			return SSL_TLSEXT_ERR_ALERT_FATAL;
+		}
+
+		SSL_set_client_CA_list(ssl, SSL_dup_CA_list(con->conf.ssl_ca_file_cert_names));
+		/* forcing verification here is really not that useful - a client could just connect without SNI */
+		SSL_set_verify(
+			ssl,
+			SSL_VERIFY_PEER | (con->conf.ssl_verifyclient_enforce ? SSL_VERIFY_FAIL_IF_NO_PEER_CERT : 0),
+			NULL
+		);
+		SSL_set_verify_depth(ssl, con->conf.ssl_verifyclient_depth);
 	}
 
 	return SSL_TLSEXT_ERR_OK;
@@ -224,7 +250,6 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
 			goto error_free_socket;
 		}
-		srv_socket->use_ipv6 = 1;
 	}
 #endif
 
@@ -389,7 +414,7 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 		goto error_free_socket;
 	}
 
-	if (s->is_ssl) {
+	if (s->ssl_enabled) {
 #ifdef USE_OPENSSL
 		if (NULL == (srv_socket->ssl_ctx = s->ssl_ctx)) {
 			log_error_write(srv, __FILE__, __LINE__, "s", "ssl.pemfile has to be set");
@@ -423,15 +448,15 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 #endif
 	}
 
-	srv_socket->is_ssl = s->is_ssl;
+	srv_socket->is_ssl = s->ssl_enabled;
 
 	if (srv->srv_sockets.size == 0) {
 		srv->srv_sockets.size = 4;
 		srv->srv_sockets.used = 0;
-		srv->srv_sockets.ptr = malloc(srv->srv_sockets.size * sizeof(server_socket));
+		srv->srv_sockets.ptr = malloc(srv->srv_sockets.size * sizeof(server_socket*));
 	} else if (srv->srv_sockets.used == srv->srv_sockets.size) {
 		srv->srv_sockets.size += 4;
-		srv->srv_sockets.ptr = realloc(srv->srv_sockets.ptr, srv->srv_sockets.size * sizeof(server_socket));
+		srv->srv_sockets.ptr = realloc(srv->srv_sockets.ptr, srv->srv_sockets.size * sizeof(server_socket*));
 	}
 
 	srv->srv_sockets.ptr[srv->srv_sockets.used++] = srv_socket;
@@ -492,9 +517,100 @@ typedef enum {
 	NETWORK_BACKEND_SOLARIS_SENDFILEV
 } network_backend_t;
 
+#ifdef USE_OPENSSL
+static X509* x509_load_pem_file(server *srv, const char *file) {
+	BIO *in;
+	X509 *x = NULL;
+
+	in = BIO_new(BIO_s_file());
+	if (NULL == in) {
+		log_error_write(srv, __FILE__, __LINE__, "S", "SSL: BIO_new(BIO_s_file()) failed");
+		goto error;
+	}
+
+	if (BIO_read_filename(in,file) <= 0) {
+		log_error_write(srv, __FILE__, __LINE__, "SSS", "SSL: BIO_read_filename('", file,"') failed");
+		goto error;
+	}
+	x = PEM_read_bio_X509(in, NULL, NULL, NULL);
+
+	if (NULL == x) {
+		log_error_write(srv, __FILE__, __LINE__, "SSS", "SSL: couldn't read X509 certificate from '", file,"'");
+		goto error;
+	}
+
+	BIO_free(in);
+	return x;
+
+error:
+	if (NULL != x) X509_free(x);
+	if (NULL != in) BIO_free(in);
+	return NULL;
+}
+
+static EVP_PKEY* evp_pkey_load_pem_file(server *srv, const char *file) {
+	BIO *in;
+	EVP_PKEY *x = NULL;
+
+	in=BIO_new(BIO_s_file());
+	if (NULL == in) {
+		log_error_write(srv, __FILE__, __LINE__, "s", "SSL: BIO_new(BIO_s_file()) failed");
+		goto error;
+	}
+
+	if (BIO_read_filename(in,file) <= 0) {
+		log_error_write(srv, __FILE__, __LINE__, "SSS", "SSL: BIO_read_filename('", file,"') failed");
+		goto error;
+	}
+	x = PEM_read_bio_PrivateKey(in, NULL, NULL, NULL);
+
+	if (NULL == x) {
+		log_error_write(srv, __FILE__, __LINE__, "SSS", "SSL: couldn't read private key from '", file,"'");
+		goto error;
+	}
+
+	BIO_free(in);
+	return x;
+
+error:
+	if (NULL != x) EVP_PKEY_free(x);
+	if (NULL != in) BIO_free(in);
+	return NULL;
+}
+
+static int network_openssl_load_pemfile(server *srv, size_t ndx) {
+	specific_config *s = srv->config_storage[ndx];
+
+#ifdef OPENSSL_NO_TLSEXT
+	{
+		data_config *dc = (data_config *)srv->config_context->data[i];
+		if ((ndx > 0 && (COMP_SERVER_SOCKET != dc->comp || dc->cond != CONFIG_COND_EQ))
+			|| !s->ssl_enabled) {
+			log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
+					"ssl.pemfile only works in SSL socket binding context as openssl version does not support TLS extensions");
+			return -1;
+		}
+	}
+#endif
+
+	if (NULL == (s->ssl_pemfile_x509 = x509_load_pem_file(srv, s->ssl_pemfile->ptr))) return -1;
+	if (NULL == (s->ssl_pemfile_pkey = evp_pkey_load_pem_file(srv, s->ssl_pemfile->ptr))) return -1;
+
+	if (!X509_check_private_key(s->ssl_pemfile_x509, s->ssl_pemfile_pkey)) {
+		log_error_write(srv, __FILE__, __LINE__, "sssb", "SSL:",
+				"Private key does not match the certificate public key, reason:",
+				ERR_error_string(ERR_get_error(), NULL),
+				s->ssl_pemfile);
+		return -1;
+	}
+
+	return 0;
+}
+#endif
+
 int network_init(server *srv) {
 	buffer *b;
-	size_t i;
+	size_t i, j;
 	network_backend_t backend;
 
 #if OPENSSL_VERSION_NUMBER >= 0x0090800fL
@@ -505,7 +621,9 @@ int network_init(server *srv) {
 #endif
 
 #ifdef USE_OPENSSL
+# ifndef OPENSSL_NO_DH
 	DH *dh;
+# endif
 	BIO *bio;
 
        /* 1024-bit MODP Group with 160-bit prime order subgroup (RFC5114)
@@ -579,18 +697,7 @@ int network_init(server *srv) {
 		long ssloptions =
 			SSL_OP_ALL | SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION | SSL_OP_NO_COMPRESSION;
 
-		if (buffer_is_empty(s->ssl_pemfile)) continue;
-
-#ifdef OPENSSL_NO_TLSEXT
-		{
-			data_config *dc = (data_config *)srv->config_context->data[i];
-			if (COMP_HTTP_HOST == dc->comp) {
-			    log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
-					    "can't use ssl.pemfile with $HTTP[\"host\"], openssl version does not support TLS extensions");
-			    return -1;
-			}
-		}
-#endif
+		if (buffer_is_empty(s->ssl_pemfile) && buffer_is_empty(s->ssl_ca_file)) continue;
 
 		if (srv->ssl_is_init == 0) {
 			SSL_load_error_strings();
@@ -605,10 +712,51 @@ int network_init(server *srv) {
 			}
 		}
 
+		if (!buffer_is_empty(s->ssl_pemfile)) {
+#ifdef OPENSSL_NO_TLSEXT
+			data_config *dc = (data_config *)srv->config_context->data[i];
+			if (COMP_HTTP_HOST == dc->comp) {
+				log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
+						"can't use ssl.pemfile with $HTTP[\"host\"], openssl version does not support TLS extensions");
+				return -1;
+			}
+#endif
+			if (network_openssl_load_pemfile(srv, i)) return -1;
+		}
+
+
+		if (!buffer_is_empty(s->ssl_ca_file)) {
+			s->ssl_ca_file_cert_names = SSL_load_client_CA_file(s->ssl_ca_file->ptr);
+			if (NULL == s->ssl_ca_file_cert_names) {
+				log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
+						ERR_error_string(ERR_get_error(), NULL), s->ssl_ca_file);
+			}
+		}
+
+		if (buffer_is_empty(s->ssl_pemfile) || !s->ssl_enabled) continue;
+
 		if (NULL == (s->ssl_ctx = SSL_CTX_new(SSLv23_server_method()))) {
 			log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
 					ERR_error_string(ERR_get_error(), NULL));
 			return -1;
+		}
+
+		/* completely useless identifier; required for client cert verification to work with sessions */
+		if (0 == SSL_CTX_set_session_id_context(s->ssl_ctx, (const unsigned char*) CONST_STR_LEN("lighttpd"))) {
+			log_error_write(srv, __FILE__, __LINE__, "ss:s", "SSL:",
+				"failed to set session context",
+				ERR_error_string(ERR_get_error(), NULL));
+			return -1;
+		}
+
+		if (s->ssl_empty_fragments) {
+#ifdef SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS
+			ssloptions &= ~SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS;
+#else
+			ssloptions &= ~0x00000800L; /* hardcode constant */
+			log_error_write(srv, __FILE__, __LINE__, "ss", "WARNING: SSL:",
+					"'insert empty fragments' not supported by the openssl version used to compile lighttpd with");
+#endif
 		}
 
 		SSL_CTX_set_options(s->ssl_ctx, ssloptions);
@@ -645,6 +793,7 @@ int network_init(server *srv) {
 			}
 		}
 
+#ifndef OPENSSL_NO_DH
 		/* Support for Diffie-Hellman key exchange */
 		if (!buffer_is_empty(s->ssl_dh_file)) {
 			/* DH parameters from file */
@@ -678,6 +827,11 @@ int network_init(server *srv) {
 		SSL_CTX_set_tmp_dh(s->ssl_ctx,dh);
 		SSL_CTX_set_options(s->ssl_ctx,SSL_OP_SINGLE_DH_USE);
 		DH_free(dh);
+#else
+		if (!buffer_is_empty(s->ssl_dh_file)) {
+			log_error_write(srv, __FILE__, __LINE__, "ss", "SSL: openssl compiled without DH support, can't load parameters from", s->ssl_dh_file->ptr);
+		}
+#endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x0090800fL
 #ifndef OPENSSL_NO_ECDH
@@ -704,45 +858,42 @@ int network_init(server *srv) {
 #endif
 #endif
 
-		if (!buffer_is_empty(s->ssl_ca_file)) {
-			if (1 != SSL_CTX_load_verify_locations(s->ssl_ctx, s->ssl_ca_file->ptr, NULL)) {
-				log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
-						ERR_error_string(ERR_get_error(), NULL), s->ssl_ca_file);
-				return -1;
-			}
-			if (s->ssl_verifyclient) {
-				STACK_OF(X509_NAME) *certs = SSL_load_client_CA_file(s->ssl_ca_file->ptr);
-				if (!certs) {
+		/* load all ssl.ca-files specified in the config into each SSL_CTX to be prepared for SNI */
+		for (j = 0; j < srv->config_context->used; j++) {
+			specific_config *s1 = srv->config_storage[j];
+
+			if (!buffer_is_empty(s1->ssl_ca_file)) {
+				if (1 != SSL_CTX_load_verify_locations(s->ssl_ctx, s1->ssl_ca_file->ptr, NULL)) {
 					log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
-							ERR_error_string(ERR_get_error(), NULL), s->ssl_ca_file);
-				}
-				if (SSL_CTX_set_session_id_context(s->ssl_ctx, (void*) &srv, sizeof(srv)) != 1) {
-					log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
-						ERR_error_string(ERR_get_error(), NULL));
+							ERR_error_string(ERR_get_error(), NULL), s1->ssl_ca_file);
 					return -1;
 				}
-				SSL_CTX_set_client_CA_list(s->ssl_ctx, certs);
-				SSL_CTX_set_verify(
-					s->ssl_ctx,
-					SSL_VERIFY_PEER | (s->ssl_verifyclient_enforce ? SSL_VERIFY_FAIL_IF_NO_PEER_CERT : 0),
-					NULL
-				);
-				SSL_CTX_set_verify_depth(s->ssl_ctx, s->ssl_verifyclient_depth);
 			}
-		} else if (s->ssl_verifyclient) {
-			log_error_write(
-				srv, __FILE__, __LINE__, "s",
-				"SSL: You specified ssl.verifyclient.activate but no ca_file"
-			);
 		}
 
-		if (SSL_CTX_use_certificate_file(s->ssl_ctx, s->ssl_pemfile->ptr, SSL_FILETYPE_PEM) < 0) {
+		if (s->ssl_verifyclient) {
+			if (NULL == s->ssl_ca_file_cert_names) {
+				log_error_write(srv, __FILE__, __LINE__, "s",
+					"SSL: You specified ssl.verifyclient.activate but no ca_file"
+				);
+				return -1;
+			}
+			SSL_CTX_set_client_CA_list(s->ssl_ctx, SSL_dup_CA_list(s->ssl_ca_file_cert_names));
+			SSL_CTX_set_verify(
+				s->ssl_ctx,
+				SSL_VERIFY_PEER | (s->ssl_verifyclient_enforce ? SSL_VERIFY_FAIL_IF_NO_PEER_CERT : 0),
+				NULL
+			);
+			SSL_CTX_set_verify_depth(s->ssl_ctx, s->ssl_verifyclient_depth);
+		}
+
+		if (SSL_CTX_use_certificate(s->ssl_ctx, s->ssl_pemfile_x509) < 0) {
 			log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
 					ERR_error_string(ERR_get_error(), NULL), s->ssl_pemfile);
 			return -1;
 		}
 
-		if (SSL_CTX_use_PrivateKey_file (s->ssl_ctx, s->ssl_pemfile->ptr, SSL_FILETYPE_PEM) < 0) {
+		if (SSL_CTX_use_PrivateKey(s->ssl_ctx, s->ssl_pemfile_pkey) < 0) {
 			log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
 					ERR_error_string(ERR_get_error(), NULL), s->ssl_pemfile);
 			return -1;
@@ -839,7 +990,6 @@ int network_init(server *srv) {
 	for (i = 1; i < srv->config_context->used; i++) {
 		data_config *dc = (data_config *)srv->config_context->data[i];
 		specific_config *s = srv->config_storage[i];
-		size_t j;
 
 		/* not our stage */
 		if (COMP_SERVER_SOCKET != dc->comp) continue;

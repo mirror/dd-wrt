@@ -65,7 +65,6 @@ FREE_FUNC(mod_redirect_free) {
 
 SETDEFAULTS_FUNC(mod_redirect_set_defaults) {
 	plugin_data *p = p_d;
-	data_unset *du;
 	size_t i = 0;
 
 	config_values_t cv[] = {
@@ -77,13 +76,14 @@ SETDEFAULTS_FUNC(mod_redirect_set_defaults) {
 	if (!p) return HANDLER_ERROR;
 
 	/* 0 */
-	p->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
+	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
 		plugin_config *s;
 		size_t j;
 		array *ca;
-		data_array *da = (data_array *)du;
+		data_unset *du;
+		data_array *da;
 
 		s = calloc(1, sizeof(plugin_config));
 		s->redirect   = pcre_keyvalue_buffer_init();

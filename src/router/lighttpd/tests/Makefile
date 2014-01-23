@@ -47,9 +47,9 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-build_triplet = x86_64-unknown-linux-gnu
-host_triplet = mipsel-unknown-linux-uclibc
-target_triplet = mipsel-unknown-linux-gnu
+build_triplet = x86_64-unknown-linux-uclibc
+host_triplet = arm-unknown-linux-gnu
+target_triplet = arm-unknown-linux-gnu
 #check_PROGRAMS = fcgi-auth$(EXEEXT) \
 #	fcgi-responder$(EXEEXT)
 subdir = tests
@@ -157,21 +157,21 @@ am__relativize = \
     dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
   done; \
   reldir="$$dir2"
-ACLOCAL = ${SHELL} /home/bluebat/DEV/src/router/lighttpd/missing --run aclocal-1.12
+ACLOCAL = ${SHELL} /opt/DEV/src/router/lighttpd/missing --run aclocal-1.12
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
-AR = mipsel-linux-uclibc-ar
+AR = arm-linux-uclibc-ar
 ATTR_LIB = 
-AUTOCONF = ${SHELL} /home/bluebat/DEV/src/router/lighttpd/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/bluebat/DEV/src/router/lighttpd/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/bluebat/DEV/src/router/lighttpd/missing --run automake-1.12
+AUTOCONF = ${SHELL} /opt/DEV/src/router/lighttpd/missing --run autoconf
+AUTOHEADER = ${SHELL} /opt/DEV/src/router/lighttpd/missing --run autoheader
+AUTOMAKE = ${SHELL} /opt/DEV/src/router/lighttpd/missing --run automake-1.12
 AWK = gawk
 BZ_LIB = 
-CC = mipsel-linux-uclibc-gcc
+CC = ccache ccache arm-linux-uclibc-gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -fPIC -DNEED_PRINTF -Os -pipe -mips32r2 -mtune=74kc -mdspr2 -fno-caller-saves  -msoft-float  -mno-branch-likely -minterlink-mips16 -mips16 -I/home/bluebat/DEV/src/router/pcre -I/home/bluebat/DEV/src/router/zlib -Wall -W -Wshadow -pedantic -std=gnu99
-CPP = mipsel-linux-uclibc-gcc -E
-CPPFLAGS =  -D_REENTRANT -D__EXTENSIONS__ -I/home/bluebat/DEV/src/router/openssl/include -I/home/bluebat/DEV/src/router/openssl/include -DOPENSSL_NO_KRB5  -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGE_FILES
+CFLAGS = -fPIC -DNEED_PRINTF -Os -pipe -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9  -msoft-float -mfloat-abi=soft -fno-caller-saves  -I/opt/DEV/src/router/pcre -I/opt/DEV/src/router/zlib -Wall -W -Wshadow -pedantic -std=gnu99
+CPP = ccache ccache arm-linux-uclibc-gcc -E
+CPPFLAGS = -Os -pipe -march=armv7-a -mcpu=cortex-a9 -mtune=cortex-a9  -msoft-float -mfloat-abi=soft -fno-caller-saves  -D_REENTRANT -D__EXTENSIONS__ -I/opt/DEV/src/router/openssl/include -I/opt/DEV/src/router/openssl/include -DOPENSSL_NO_KRB5  -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGE_FILES
 CRYPT_LIB = -lcrypt
 CYGPATH_W = echo
 DEFS = -DHAVE_CONFIG_H
@@ -196,9 +196,9 @@ INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
 LBER_LIB = 
-LD = mipsel-linux-uclibc-ld
+LD = arm-linux-uclibc-ld
 LDAP_LIB = 
-LDFLAGS = -Os -pipe -mips32r2 -mtune=74kc -mdspr2 -fno-caller-saves  -msoft-float  -mno-branch-likely -minterlink-mips16 -mips16 -L/home/bluebat/DEV/src/router/pcre/.libs -lpthread  -L/home/bluebat/DEV/src/router/zlib -lz -fPIC -L/home/bluebat/DEV/src/router/openssl/lib -L/home/bluebat/DEV/src/router/openssl
+LDFLAGS = -L/opt/DEV/src/router/pcre/.libs -lpthread -lpcre -L/opt/DEV/src/router/zlib  -lz -L/opt/DEV/src/router/openssl/lib -L/opt/DEV/src/router/openssl
 LIBEV_CFLAGS = 
 LIBEV_LIBS = 
 LIBOBJS =  ${LIBOBJDIR}lstat$U.o ${LIBOBJDIR}stat$U.o
@@ -209,50 +209,50 @@ LN_S = ln -s
 LTLIBOBJS =  ${LIBOBJDIR}lstat$U.lo ${LIBOBJDIR}stat$U.lo
 LUA_CFLAGS = 
 LUA_LIBS = 
-MAKEINFO = ${SHELL} /home/bluebat/DEV/src/router/lighttpd/missing --run makeinfo
+MAKEINFO = ${SHELL} /opt/DEV/src/router/lighttpd/missing --run makeinfo
 MANIFEST_TOOL = :
 MEMCACHE_LIB = 
 MKDIR_P = /usr/bin/mkdir -p
 MYSQL_CONFIG = 
 MYSQL_INCLUDE = 
 MYSQL_LIBS = 
-NM = mipsel-linux-uclibc-nm
+NM = arm-linux-uclibc-nm
 NMEDIT = 
-OBJDUMP = mipsel-linux-uclibc-objdump
+OBJDUMP = arm-linux-objdump
 OBJEXT = o
 OTOOL = 
 OTOOL64 = 
 PACKAGE = lighttpd
 PACKAGE_BUGREPORT = contact@lighttpd.net
 PACKAGE_NAME = lighttpd
-PACKAGE_STRING = lighttpd 1.4.32
+PACKAGE_STRING = lighttpd 1.4.34
 PACKAGE_TARNAME = lighttpd
 PACKAGE_URL = 
-PACKAGE_VERSION = 1.4.32
+PACKAGE_VERSION = 1.4.34
 PATH_SEPARATOR = :
 PCRECONFIG = /usr/bin/pcre-config
-PCRE_LIB = -L/usr/lib64 -lpcre
+PCRE_LIB = 
 PKG_CONFIG = /usr/bin/pkg-config
 PKG_CONFIG_LIBDIR = 
 PKG_CONFIG_PATH = 
-RANLIB = mipsel-linux-uclibc-ranlib
-SED = /home/bluebat/Dev/Toolchain/toolchain-mipsel_r2_gcc-4.7-linaro_uClibc-0.9.33.2/bin/sed
+RANLIB = arm-linux-uclibc-ranlib
+SED = /home/bluebat/Toolchains/toolchain-arm_v7-a_gcc-4.7-linaro_uClibc-0.9.33.2_eabi/bin/sed
 SENDFILE_LIB = 
 SET_MAKE = 
 SHELL = /bin/sh
 SQLITE_CFLAGS = 
 SQLITE_LIBS = 
 SSL_LIB = -lssl -lcrypto
-STRIP = @true
+STRIP = arm-linux-uclibc-strip
 UUID_LIBS = 
-VERSION = 1.4.32
+VERSION = 1.4.34
 XML_CFLAGS = 
 XML_LIBS = 
 Z_LIB = -lz
-abs_builddir = /home/bluebat/DEV/src/router/lighttpd/tests
-abs_srcdir = /home/bluebat/DEV/src/router/lighttpd/tests
-abs_top_builddir = /home/bluebat/DEV/src/router/lighttpd
-abs_top_srcdir = /home/bluebat/DEV/src/router/lighttpd
+abs_builddir = /opt/DEV/src/router/lighttpd/tests
+abs_srcdir = /opt/DEV/src/router/lighttpd/tests
+abs_top_builddir = /opt/DEV/src/router/lighttpd
+abs_top_srcdir = /opt/DEV/src/router/lighttpd
 ac_ct_AR = 
 ac_ct_CC = 
 ac_ct_DUMPBIN = 
@@ -262,10 +262,10 @@ am__quote =
 am__tar = tar --format=ustar -chf - "$$tardir"
 am__untar = tar -xf -
 bindir = ${exec_prefix}/bin
-build = x86_64-unknown-linux-gnu
+build = x86_64-unknown-linux-uclibc
 build_alias = 
 build_cpu = x86_64
-build_os = linux-gnu
+build_os = linux-uclibc
 build_vendor = unknown
 builddir = .
 datadir = ${datarootdir}
@@ -273,33 +273,33 @@ datarootdir = ${prefix}/share
 docdir = ${datarootdir}/doc/${PACKAGE_TARNAME}
 dvidir = ${docdir}
 exec_prefix = ${prefix}
-host = mipsel-unknown-linux-uclibc
-host_alias = mipsel-linux-uclibc
-host_cpu = mipsel
-host_os = linux-uclibc
+host = arm-unknown-linux-gnu
+host_alias = arm-linux
+host_cpu = arm
+host_os = linux-gnu
 host_vendor = unknown
 htmldir = ${docdir}
 includedir = ${prefix}/include
 infodir = ${datarootdir}/info
-install_sh = ${SHELL} /home/bluebat/DEV/src/router/lighttpd/install-sh
+install_sh = ${SHELL} /opt/DEV/src/router/lighttpd/install-sh
 libdir = /usr/lib/lighttpd
-libexecdir = ${exec_prefix}/lib
+libexecdir = /usr/lib
 localedir = ${datarootdir}/locale
-localstatedir = ${prefix}/var
+localstatedir = /var
 mandir = ${datarootdir}/man
 mkdir_p = /usr/bin/mkdir -p
 oldincludedir = /usr/include
 pdfdir = ${docdir}
 prefix = /usr
-program_transform_name = s&^&mipsel-linux-&
+program_transform_name = s,x,x,
 psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = .
-sysconfdir = /etc/lighttpd
-target = mipsel-unknown-linux-gnu
-target_alias = mipsel-linux
-target_cpu = mipsel
+sysconfdir = /tmp/lighttpd
+target = arm-unknown-linux-gnu
+target_alias = 
+target_cpu = arm
 target_os = linux-gnu
 target_vendor = unknown
 top_build_prefix = ../
@@ -317,43 +317,46 @@ TESTS = \
 	run-tests.pl \
 	cleanup.sh
 
-CONFS = fastcgi-10.conf \
-      fastcgi-auth.conf \
-      fastcgi-responder.conf \
-      fastcgi-13.conf \
+CONFS = \
+      404-handler.conf \
       bug-06.conf \
       bug-12.conf \
-      core-var-include.t \
-      var-include.conf \
-      var-include-sub.conf \
+      cachable.t \
       condition.conf \
+      core-404-handler.t \
       core-condition.t \
+      core-keepalive.t \
       core-request.t \
       core-response.t \
-      core-keepalive.t \
+      core-var-include.t \
       core.t \
-	  mod-proxy.t \
-	  proxy.conf \
-	  mod-secdownload.t \
+      fastcgi-10.conf \
+      fastcgi-13.conf \
+      fastcgi-auth.conf \
+      fastcgi-responder.conf \
+      LightyTest.pm \
+      lowercase.conf \
+      lowercase.t \
       mod-access.t \
       mod-auth.t \
       mod-cgi.t \
-      mod-compress.t \
       mod-compress.conf \
+      mod-compress.t \
       mod-fastcgi.t \
+      mod-proxy.t \
       mod-redirect.t \
       mod-rewrite.t \
-      mod-userdir.t \
-	  symlink.t \
-      request.t \
-      mod-ssi.t \
-      LightyTest.pm \
+      mod-secdownload.t \
       mod-setenv.t \
-      lowercase.t \
-      lowercase.conf \
-      cachable.t \
-      core-404-handler.t \
-      404-handler.conf
+      mod-simplevhost.conf \
+      mod-simplevhost.t \
+      mod-ssi.t \
+      mod-userdir.t \
+      proxy.conf \
+      request.t \
+      symlink.t \
+      var-include-sub.conf \
+      var-include.conf
 
 TESTS_ENVIRONMENT = $(srcdir)/wrapper.sh $(srcdir) $(top_builddir)
 EXTRA_DIST = wrapper.sh lighttpd.conf \
