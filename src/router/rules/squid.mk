@@ -1,5 +1,5 @@
 squid-configure:
-	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr CFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" CPPFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" CXXFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl" \
+	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr CFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl -pthread" CPPFLAGS="$(COPTS) -DNEED_PRINTF -pthread -L$(TOP)/openssl" CXXFLAGS="$(COPTS) -DNEED_PRINTF -pthread -L$(TOP)/openssl" \
 	ac_cv_header_linux_netfilter_ipv4_h=yes \
 	ac_cv_epoll_works=yes \
 	--datadir=/usr/local/squid \
