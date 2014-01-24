@@ -258,8 +258,8 @@ static NOINLINE char *xmalloc_optname_optval(uint8_t *option, const struct dhcp_
 		case OPTION_STRING_HOST:
 			memcpy(dest, option, len);
 			dest[len] = '\0';
-			if (type == OPTION_STRING_HOST && !good_hostname(dest))
-				safe_strncpy(dest, "bad", len);
+//			if (type == OPTION_STRING_HOST && !good_hostname(dest))
+//				safe_strncpy(dest, "bad", len);
 			return ret;
 		case OPTION_STATIC_ROUTES: {
 			/* Option binary format:
