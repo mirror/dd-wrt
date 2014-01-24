@@ -9,6 +9,7 @@
 #include <linux/mm.h>
 #include <linux/io.h>
 #include <linux/serial_reg.h>
+#include <asm/delay.h>
 #include <asm/addrspace.h>
 
 #include <asm/mach-ar231x/ar2315_regs.h>
@@ -43,7 +44,7 @@ void prom_putchar(unsigned char ch)
 	udelay(1);
 	}
 	prom_uart_wr(base, UART_TX, ch);
-	int cnt = 1000;
+	cnt = 1000;
 	while(cnt--) {
 	if ((prom_uart_rr(base, UART_LSR) & UART_LSR_THRE))
 	    break;

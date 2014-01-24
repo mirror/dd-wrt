@@ -728,7 +728,7 @@ static int ar231x_init(struct net_device *dev)
 	 */
 	ecode =
 		request_irq(dev->irq, &ar231x_interrupt,
-					IRQF_DISABLED | IRQF_SAMPLE_RANDOM,
+					IRQF_DISABLED,
 					dev->name, dev);
 	if (ecode) {
 		printk(KERN_WARNING "%s: %s: Requested IRQ %d is busy\n",
