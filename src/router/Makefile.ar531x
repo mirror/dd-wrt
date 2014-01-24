@@ -124,7 +124,7 @@ export NM := $(CROSS_COMPILE)nm
 export RANLIB := $(CROSS_COMPILE)ranlib
 export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
-export MIPS16_OPT:= -minterlink-mips16 -mips16
+#export MIPS16_OPT:= -minterlink-mips16 -mips16
 
 export CFLAGS := $(COPTS)
 
@@ -154,7 +154,7 @@ obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
 #
 
 
-all: build_date clean_target $(obj-y) $(obj-m) $(LINUXDIR)/.config kernel
+all: install_headers build_date clean_target $(obj-y) $(obj-m) $(LINUXDIR)/.config kernel
 
 
 build_date:
@@ -282,8 +282,8 @@ endif
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus_old
 
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
-	-$(MAKE) -f Makefile.ar531x ath9k
-	-$(MAKE) -f Makefile.ar531x ath9k-install
+#	-$(MAKE) -f Makefile.ar531x ath9k
+#	-$(MAKE) -f Makefile.ar531x ath9k-install
 	-$(MAKE) -f Makefile.ar531x libutils
 	-$(MAKE) -f Makefile.ar531x madwifi
 	-$(MAKE) -f Makefile.ar531x madwifi-install
@@ -426,6 +426,11 @@ endif
 	$(ARCH)-linux-objcopy -O binary $(strip-flags) $(ARCH)-uclibc/lzma_vmlinuxaw_initrd $(ARCH)-uclibc/lzma_vmlinusaw_initrd 
 
 
+install_headers:
+# important step, required for new kernels
+	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
+	$(MAKE) -C $(LINUXDIR) headers_install ARCH=mips INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
+
 
 	
 realclean: $(obj-clean)
@@ -462,43 +467,39 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
-	make -f Makefile.ar531x lib.$(ARCH)-install
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
-		"$(ARCH)-uclibc/target/lib/libc.so.0" \
-		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
-
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt_pic.a}" \
-		"$(ARCH)-uclibc/target/lib/libcrypt.so.0" \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
-		-Wl,-soname=libcrypt.so.0
-
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libm.so}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libm_pic.a}" \
-		"$(ARCH)-uclibc/target/lib/libm.so.0" \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
-		-Wl,-soname=libm.so.0 
-
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread_so.a}" \
-		"$(ARCH)-uclibc/target/lib/libpthread.so.0" \
-		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
-		-Wl,-soname=libpthread.so.0
-
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+ifeq ($(CONFIG_LIBDL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+endif
+ifeq ($(CONFIG_LIBRT),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
+endif
+ifeq ($(CONFIG_LIBNSL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
+endif
+ifeq ($(CONFIG_LIBUTIL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+endif
+ifeq ($(CONFIG_LIBCPP),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+endif
+ifeq ($(CONFIG_LIBCRYPT),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+endif
+ifeq ($(CONFIG_LIBM),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+endif
+ifeq ($(CONFIG_LIBRESOLV),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
+endif
+ifeq ($(CONFIG_LIBPTHREAD),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+endif
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
 
 ifneq ($(CONFIG_NOOPT),y)
+
 	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
 	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
 	-mkdir -p /tmp/$(ARCHITECTURE)/
@@ -578,7 +579,7 @@ endif
 
 	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	#cp ./switch/switch-adm.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
-	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+	#cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	#cp ./switch/switch-robo.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	
