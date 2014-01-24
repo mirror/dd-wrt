@@ -241,9 +241,25 @@ static bool usb_load_modules(char *fs)
 		insmod("btrfs");
 	}
 	if (!strcmp(fs, "hfs")) {
+		insmod("nls_base");
+		insmod("nls_cp932");
+		insmod("nls_cp936");
+		insmod("nls_cp950");
+		insmod("nls_cp437");
+		insmod("nls_iso8859-1");
+		insmod("nls_iso8859-2");
+		insmod("nls_utf8");
 		insmod("hfs");
 	}
 	if (!strcmp(fs, "hfsplus")) {
+		insmod("nls_base");
+		insmod("nls_cp932");
+		insmod("nls_cp936");
+		insmod("nls_cp950");
+		insmod("nls_cp437");
+		insmod("nls_iso8859-1");
+		insmod("nls_iso8859-2");
+		insmod("nls_utf8");
 		insmod("hfsplus");
 	}
 #endif
