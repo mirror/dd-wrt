@@ -568,6 +568,54 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 #endif
 };
 
+#define AR934X_GPIO_REG_OUT_FUNC0	0x2c
+
+static void __init ath79_gpio_output_select(unsigned gpio, u8 val)
+{
+	void __iomem *base = ar71xx_gpio_base;
+	unsigned long flags;
+	unsigned int reg;
+	u32 t, s;
+
+
+	if (gpio >= AR934X_GPIO_COUNT)
+		return;
+
+	reg = AR934X_GPIO_REG_OUT_FUNC0 + 4 * (gpio / 4);
+	s = 8 * (gpio % 4);
+
+	spin_lock_irqsave(&ar71xx_gpio_lock, flags);
+
+	t = __raw_readl(base + reg);
+	t &= ~(0xff << s);
+	t |= val << s;
+	__raw_writel(t, base + reg);
+
+	/* flush write */
+	(void) __raw_readl(base + reg);
+
+	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
+}
+
+#define AR934X_GPIO_OUT_EXT_LNA0	46
+#define AR934X_GPIO_OUT_EXT_LNA1	47
+
+static void ar934x_set_ext_lna_gpio(unsigned chain, int gpio)
+{
+	unsigned int sel;
+
+	if (WARN_ON(chain > 1))
+		return;
+
+	if (chain == 0)
+		sel = AR934X_GPIO_OUT_EXT_LNA0;
+	else
+		sel = AR934X_GPIO_OUT_EXT_LNA1;
+
+	ath79_gpio_output_select(gpio, sel);
+}
+
+
 void serial_print(char *fmt, ...);
 
 void __init ar71xx_gpio_init(void)
@@ -636,5 +684,11 @@ void __init ar71xx_gpio_init(void)
 
 	// finally disable 2.4 ghz led and let the driver handle it
 	__ar71xx_gpio_set_value(11, 1);
+#endif
+#ifdef CONFIG_WDR4300
+	if (is_ar934x()) {
+	ar934x_set_ext_lna_gpio(0,18);
+	ar934x_set_ext_lna_gpio(1,19);
+	}
 #endif
 }
