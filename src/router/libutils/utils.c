@@ -5556,15 +5556,23 @@ int ishexit(char c)
 
 int getMTD(char *name)
 {
-	char buf[128];
-	int device;
-
-	sprintf(buf, "cat /proc/mtd|grep \"%s\"", name);
-	FILE *fp = popen(buf, "rb");
-
-	fscanf(fp, "%s", &buf[0]);
-	device = buf[3] - '0';
-	pclose(fp);
+	char buf[32];
+	int device = -1;
+	char dev[32];
+	char size[32];
+	char esize[32];
+	char n[32];
+	sprintf(buf, "\"%s\"", name);
+	FILE *fp = fopen("/proc/mtd", "rb");
+	if (!fp)
+		return -1;
+	while (!feof(fp) && fscanf(fp, "%s %s %s %s", dev, size, esize, n) == 4) {
+		if (!strcmp(n, buf)) {
+			device = dev[3] - '0';
+			break;
+		}
+	}
+	fclose(fp);
 	return device;
 }
 
