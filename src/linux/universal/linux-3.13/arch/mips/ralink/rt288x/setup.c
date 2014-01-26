@@ -20,6 +20,7 @@
 #include <asm/mips_machine.h>
 #include <asm/reboot.h>
 #include <asm/time.h>
+#include <asm/idle.h>
 
 #include <asm/mach-ralink/common.h>
 #include <asm/mach-ralink/rt288x.h>
