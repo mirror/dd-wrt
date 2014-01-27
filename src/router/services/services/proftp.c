@@ -46,7 +46,7 @@ static void ftpsrv_umount()
 	if ( (fp = fopen("/proc/mounts", "r")) ) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			if (strstr(line, "proftpd")) {
-				sysprintf("/bin/umount %s/*/*", mnt_dir);
+				sysprintf("/bin/umount %s/*", mnt_dir);
 			}
 		}
 		fclose(fp);
@@ -140,7 +140,7 @@ void start_ftpsrv(void)
 			goto nextshare;
 		}
  
-		fprintf(fp, "<Directory      %s/%s/*>\n", cs->mp, cs->sd);
+		fprintf(fp, "<Directory      /*>\n");
 
 		fprintf(fp, "   <Limit WRITE>\n");
 		fprintf(fp, "%s", !strcmp(cs->access_perms, "ro") ? "DenyAll\n" : "\n");
@@ -152,8 +152,8 @@ void start_ftpsrv(void)
 			for (cu = samba3users; cu; cu = cunext) {
 				if (!strcmp(csu->username, cu->username) && (cu->sharetype & SHARETYPE_FTP)) {
 					fprintf(fp, "AllowUser %s\n", csu->username);
-					sysprintf("mkdir -p /tmp/proftpd/users/%s/%s/%s", cu->username, cs->label, cs->sd);
-					sysprintf("mount --bind %s /tmp/proftpd/users/%s/%s/%s", cs->mp, cu->username, cs->label, cs->sd);
+					sysprintf("mkdir -p /tmp/proftpd/users/%s", cu->username);
+					sysprintf("mount --bind %s/%s /tmp/proftpd/users/%s", cs->mp, cs->sd, cu->username);
 				}
 				cunext = cu->next;
 				free(cu);
