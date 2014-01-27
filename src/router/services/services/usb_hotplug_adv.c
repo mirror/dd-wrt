@@ -392,10 +392,10 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 	/* strategy two: mount by partition label, overrides strategy one */
 	if ((fp = fopen(part_file, "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
-			if (strstr(line, "Jffs") || strstr(line, "JFFS") || strstr(line, "jffs")) {
+			if (strstr(line, "Jffs") || strstr(line, "JFFS") || strstr(line, "\"jffs")) {
 				sprintf(mount_point, "/jffs");
 			}
-			if (strstr(line, "Opt") || strstr(line, "OPT") || strstr(line, "opt")) {
+			if (strstr(line, "Opt") || strstr(line, "OPT") || strstr(line, "\"opt")) {
 				sprintf(mount_point, "/opt");
 			}
 		}
