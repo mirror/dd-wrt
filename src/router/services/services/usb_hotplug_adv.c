@@ -178,8 +178,15 @@ static bool usb_stop_services()
 	eval("stopservice", "samba3");
 	eval("stopservice", "dlna");
 	eval("stopservice", "ftpsrv");
+#ifdef HAVE_WEBSERVER
 	eval("stopservice", "lighttpd");
+#endif
+#ifdef HAVE_TRANSMISSION	
 	eval("stopservice", "transmission");
+#endif
+#ifdef HAVE_FREERADIUS
+	eval("stopservice", "freeradius");
+#endif
 	return 0;
 }
 
@@ -190,8 +197,15 @@ static bool usb_start_services()
 	eval("startservice", "samba3");
 	eval("startservice", "dlna");
 	eval("startservice", "ftpsrv");
+#ifdef HAVE_WEBSERVER
 	eval("startservice", "lighttpd");
+#endif
+#ifdef HAVE_TRANSMISSION
 	eval("startservice", "transmission");
+#endif
+#ifdef HAVE_FREERADIUS
+	eval("startservice", "freeradius");
+#endif
 	return 0;
 }
 
