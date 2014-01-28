@@ -18,7 +18,7 @@ install:
 	install -d $(INSTALLDIR)/etc/config
 ifeq ($(CONFIG_USB_ADVANCED),y)
 	cp $(MODULE_ADV)* $(INSTALLDIR)/etc/config
-	cp kumount.sesbutton $(INSTALLDIR)/etc/config
+	cp usb.umount $(INSTALLDIR)/etc/config
 else
 	cp $(MODULE)* $(INSTALLDIR)/etc/config
 endif
