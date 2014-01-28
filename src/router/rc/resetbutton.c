@@ -1233,6 +1233,15 @@ void period_check(int sig)
 		runStartup("/jffs/etc/config", ".sesbutton");	// if available
 		runStartup("/mmc/etc/config", ".sesbutton");	// if available
 		runStartup("/tmp/etc/config", ".sesbutton");	// if available
+		if ( nvram_match("usb_ses_umount", "1") ) {
+			led_control(LED_DIAG, LED_FLASH);
+			runStartup("/etc/config", ".umount");
+			sleep(3);
+			led_control(LED_DIAG, LED_FLASH);
+			sleep(1);
+			led_control(LED_DIAG, LED_FLASH);
+		}
+		  
 		if (nvram_match("radiooff_button", "1")) {
 			led_control(LED_SES, LED_FLASH);	// when pressed, blink white
 			switch (ses_mode) {
