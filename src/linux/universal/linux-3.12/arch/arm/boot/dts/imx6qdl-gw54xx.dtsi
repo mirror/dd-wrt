@@ -113,6 +113,14 @@
 		mux-int-port = <1>;
 		mux-ext-port = <4>;
 	};
+
+	imx-drm {
+		compatible = "fsl,imx-drm";
+		crtcs = <&ipu1 0>, <&ipu1 1>;
+		connectors = <&hdmi>;
+	};
+
+
 };
 
 &audmux {
@@ -140,6 +148,15 @@
 	pinctrl-0 = <&pinctrl_gpmi_nand_2>;
 	status = "okay";
 };
+
+&hdmi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hog_hdmi>;
+	ddc = <&i2c2>;
+	status = "okay";
+	crtcs = <&ipu1 0>;
+};
+
 
 &i2c1 {
 	clock-frequency = <100000>;
@@ -353,6 +370,12 @@
 	pinctrl-0 = <&pinctrl_hog>;
 
 	hog {
+		pinctrl_hog_hdmi: hog-hdmi {
+			fsl,pins = <
+				MX6QDL_PAD_KEY_ROW2__HDMI_TX_CEC_LINE 0x1f8b0
+			>;
+		};
+
 		pinctrl_hog: hoggrp {
 			fsl,pins = <
 				MX6QDL_PAD_EIM_D22__GPIO3_IO22    0x80000000 /* OTG_PWR_EN */
