@@ -2675,12 +2675,13 @@ int wan_valid(char *ifname)
 
 void start_force_to_dial(void);
 
-static void vdsl_fuckup(char *ifname)
+static void vdsl_fuckup(char *mainif, char *ifname)
 {
 	int s;
 	struct ifreq ifr;
 	char mac[32];
 	char eabuf[32];
+	eval("ifconfig", mainif, "down");
 	eval("ifconfig", ifname, "down");
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 		return;
@@ -2695,8 +2696,11 @@ static void vdsl_fuckup(char *ifname)
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	ioctl(s, SIOCSIFHWADDR, &ifr);
+	strncpy(ifr.ifr_name, mainif, IFNAMSIZ);
+	ioctl(s, SIOCSIFHWADDR, &ifr);
 	close(s);
 	eval("ifconfig", ifname, "up");
+	eval("ifconfig", mainif, "up");
 }
 
 void start_wan(int status)
@@ -3500,7 +3504,7 @@ void start_wan(int status)
 				}
 
 				fprintf(fp, "nic-%s\n", vlannic);
-				vdsl_fuckup(vlannic);	/* work around for DTAG DSLAMS */
+				vdsl_fuckup(ifn,vlannic);	/* work around for DTAG DSLAMS */
 			} else {
 				char *ifn = enable_dtag_vlan(0);
 
@@ -3535,7 +3539,7 @@ void start_wan(int status)
 					eval("ifconfig", vlannic, "up");
 				}
 				fprintf(fp, "nic-%s\n", vlannic);
-				vdsl_fuckup(vlannic);	/* work around for DTAG DSLAMS */
+				vdsl_fuckup(pppoe_wan_ifname, vlannic);	/* work around for DTAG DSLAMS */
 			} else {
 				sprintf(vlannic, "%s.0008", pppoe_wan_ifname);
 				if (ifexists(vlannic))
