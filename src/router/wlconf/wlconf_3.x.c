@@ -2216,6 +2216,41 @@ cprintf("set ba mode %s\n",name);
 	/* Set up TxBF */
 	wlconf_set_txbf(name, prefix);
 
+
+	/* set airtime fairness */
+	val = 0;
+	str = nvram_get(strcat_r(prefix, "atf", tmp));
+	if (str) {
+		val = atoi(str);
+	}
+	WL_IOVAR_SETINT(name, "atf", val);
+
+	str = nvram_get(strcat_r(prefix, "ampdu_atf_us", tmp));
+	if (str) {
+		val = atoi(str);
+		if (val) {
+			WL_IOVAR_SETINT(name, "ampdu_atf_us", val);
+			WL_IOVAR_SETINT(name, "nar_atf_us", val);
+		}
+	}
+
+
+	/* set TAF */
+	val = 0;
+	str = nvram_get(strcat_r(prefix, "taf_enable", tmp));
+	if (str && (bandtype == WLC_BAND_5G)) {
+		val = atoi(str);
+	}
+	WL_IOVAR_SETINT(name, "taf", val);
+
+	val = 0;
+	str = nvram_get(strcat_r(prefix, "taf_rule", tmp));
+	if (str) {
+		val = strtoul(str, NULL, 0);
+		WL_IOVAR_SETINT(name, "taf_rule", val);
+	}
+
+
 cprintf("set up %s\n",name);
 	/* Bring the interface back up */
 	WL_IOCTL(name, WLC_UP, NULL, 0);
