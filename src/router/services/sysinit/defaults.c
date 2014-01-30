@@ -770,6 +770,9 @@ struct nvram_tuple srouter_defaults[] = {
 					 * change it to a radio appropriate default
 					 */
 #ifdef HAVE_80211AC
+	/* Airtime fairness */
+	{"wl0_atf", "1", 0 },		/* ATF feature on */
+	{"wl1_atf", "1", 0 },		/* ATF feature on */
 	{"wl0_txbf", "1", 0 },
 	{"wl1_txbf", "1", 0 },
 	{"wl0_itxbf", "1", 0 },
