@@ -18,8 +18,8 @@
 	</div>
 	<div class="setting">
 	<div class="label"><% tran("idx_pptp.srv"); %></div>
-	<input class="spaceradio" type="radio" value="1" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","1"); %> onclick="show_layer_ext(this, 'idpptpdhcp', false)" /><% tran("share.yes"); %>&nbsp;
-	<input class="spaceradio" type="radio" value="0" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","0"); %> onclick="show_layer_ext(this, 'idpptpdhcp', true)" /><% tran("share.no"); %>
+	<input class="spaceradio" type="radio" value="1" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","1"); %> onclick="show_layer_ext(this, 'idpptpdhcp', false); SelDHCP('dhcp',this.form);" /><% tran("share.yes"); %>&nbsp;
+	<input class="spaceradio" type="radio" value="0" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","0"); %> onclick="show_layer_ext(this, 'idpptpdhcp', true); SelDHCP('static',this.form);" /><% tran("share.no"); %>
 </div>
 <div id="idpptpdhcp">
 	<div class="setting">
@@ -31,6 +31,24 @@
 		<div class="label"><% tran("share.subnet"); %></div>
 		<input type="hidden" name="wan_netmask_static" value="4"/>
 		<input class="num" maxlength="3" size="3" name="wan_netmask_static_0" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_nm("wan_netmask_static","0"); %>" />.<input class="num" maxlength="3" size="3" name="wan_netmask_static_1" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_nm("wan_netmask_static","1"); %>" />.<input class="num" maxlength="3" size="3" name="wan_netmask_static_2" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_nm("wan_netmask_static","2"); %>" />.<input class="num" maxlength="3" size="3" name="wan_netmask_static_3" onblur="valid_range(this,0,255,share.subnet)" value="<% get_single_nm("wan_netmask_static","3"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("share.gateway"); %></div>
+		<input type="hidden" name="wan_gateway" value="4" />
+		<input class="num" maxlength="3" size="3" name="l2tp_wan_gateway_0" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("l2tp_wan_gateway","0"); %>" />.<input class="num" maxlength="3" size="3" name="l2tp_wan_gateway_1" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("l2tp_wan_gateway","1"); %>" />.<input class="num" maxlength="3" name="l2tp_wan_gateway_2" size="3" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("l2tp_wan_gateway","2"); %>" />.<input class="num" maxlength="3" name="l2tp_wan_gateway_3" size="3" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("l2tp_wan_gateway","3"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("idx_static.dns"); %>&nbsp;1</div>
+		<input type="hidden" name="wan_dns" value="4" />
+		<input class="num" name="wan_dns0_0" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","0","0"); %>" />.<input class="num" name="wan_dns0_1" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","0","1"); %>" />.<input class="num" name="wan_dns0_2" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","0","2"); %>" />.<input class="num" name="wan_dns0_3" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","0","3"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("idx_static.dns"); %>&nbsp;2</div>
+		<input class="num" name="wan_dns1_0" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","1","0"); %>" />.<input class="num" name="wan_dns1_1" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","1","1"); %>" />.<input class="num" name="wan_dns1_2" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","1","2"); %>" />.<input class="num" name="wan_dns1_3" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","1","3"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("idx_static.dns"); %>&nbsp;3</div>
+		<input class="num" name="wan_dns2_0" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","2","0"); %>" />.<input class="num" name="wan_dns2_1" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","2","1"); %>" />.<input class="num" name="wan_dns2_2" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","2","2"); %>" />.<input class="num" name="wan_dns2_3" size="3" maxlength="3" onblur="valid_range(this,0,255,idx_static.dns)" value="<% get_dns_ip("wan_dns","2","3"); %>" />
 	</div>
 </div>
 
