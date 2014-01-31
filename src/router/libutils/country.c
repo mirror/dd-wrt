@@ -335,7 +335,7 @@ enum CountryCode {
 	CTRY_RUSSIA = 643,	/* Russia */
 	CTRY_SAUDI_ARABIA = 682,	/* Saudi Arabia */
 	CTRY_SERBIA = 688,     /* Republic of Serbia */
-	CTRY_SERBIA_MONTENEGRO = 891,	/* Serbia and Montenegro */
+	CTRY_MONTENEGRO           = 499,     /* Montenegro */
 	CTRY_SINGAPORE = 702,	/* Singapore */
 	CTRY_SLOVAKIA = 703,	/* Slovak Republic */
 	CTRY_SLOVENIA = 705,	/* Slovenia */
@@ -600,6 +600,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_SAUDI_ARABIA, NULL1_WORLD, "SA", "SAUDI_ARABIA", YES, NO, YES,
 	 7000},
 	{CTRY_SERBIA, ETSI1_WORLD,   "RS", "REPUBLIC OF SERBIA", YES,  NO, YES, 7000 },
+	{CTRY_MONTENEGRO,  ETSI1_WORLD,   "ME", "MONTENEGRO",     YES,  NO, YES, 7000 },
 //#ifdef HAVE_BUFFALO
 //      {CTRY_SINGAPORE, APL6_FCCA, "SG", "SINGAPORE", YES, YES, YES, 7000},
 //#else
