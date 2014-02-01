@@ -34,7 +34,7 @@ endif
 ifeq ($(ARCH),x86_64)
 export OPENSSL_TARGET := linux-openwrt
 #export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-586.o aes_cbc.o"
-export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections
+export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections -DOPENSSL_NO_ASM
 endif
 
 openssl:
