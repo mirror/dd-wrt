@@ -48,3 +48,6 @@ squid-install:
 	rm -rf $(INSTALLDIR)/squid/usr/include
 	make -C squid/plugins/squid_radius_auth install DESTDIR=$(INSTALLDIR)/squid
 
+squid-clean:
+	make -C squid clean
+	make -C squid/plugins/squid_radius_auth clean
