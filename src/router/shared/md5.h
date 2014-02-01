@@ -31,6 +31,7 @@
 #include <string.h>
 # include <byteswap.h>
 # include <endian.h>
+# include <sys/types.h>
 
 #ifdef __BIG_ENDIAN__
 # define BB_BIG_ENDIAN 1
@@ -68,8 +69,8 @@
 
 
 
-typedef unsigned int uint32_t;
-typedef unsigned long long uint64_t;
+typedef u_int32_t uint32_t;
+typedef u_int64_t uint64_t;
 
 typedef struct md5_ctx_t {
 	uint32_t A;
