@@ -1,7 +1,11 @@
 ifeq ($(ARCH),i386)
 	export SUBARCH:=pc
 else
+ifeq ($(ARCH),x86_64)
+	export SUBARCH:=pc
+else
 	export SUBARCH:=unknown
+endif
 endif
 
 
