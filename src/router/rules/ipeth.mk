@@ -98,6 +98,7 @@ ipeth-configure:
 	cd $(TOP)/ipeth/libusbmuxd && make
 
 	cd $(TOP)/ipeth/libimobiledevice && ./configure --without-cython --host=$(ARCH)-linux \
+		ac_cv_sys_file_offset_bits=64 \
 		CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -I$(TOP)/ipeth  -Drpl_localtime=localtime -I$(TOP)/openssl/include -Drpl_malloc=malloc -Drpl_realloc=realloc" \
 		LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libusbmuxd/libusbmuxd -L$(TOP)/zlib" \
 		libusbmuxd_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb -I$(TOP)/ipeth/libusbmuxd/libusbmuxd" \
