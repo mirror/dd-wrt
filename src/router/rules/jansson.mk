@@ -1,5 +1,5 @@
 jansson-configure:
-	cd jansson && ./configure --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC" LDFLAGS="-lm"
+	cd jansson && ./configure --prefix=/usr --libdir=/usr/lib --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC" LDFLAGS="-lm"
 
 jansson:
 	$(MAKE) -C jansson
