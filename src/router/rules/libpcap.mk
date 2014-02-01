@@ -9,7 +9,7 @@ libpcap-configure:
 		--disable-nls --enable-shared --enable-static \
 		--disable-yydebug --enable-ipv6 --with-build-cc=gcc \
 		--with-pcap=linux --without-septel --without-dag \
-		CC="$(CC)" CFLAGS="$(COPTS)"
+		CC="$(CC)" CFLAGS="$(COPTS) -fPIC"
 libpcap:
 #	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so 
 	$(MAKE) -C libpcap_noring CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) version.h
