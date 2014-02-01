@@ -156,6 +156,11 @@ libnvram.so: nvram_linux.o nvram_convert.o backup.o
 	$(CC) $(CFLAGS) -shared -o $@ $^
 	$(AR) cr libnvram.a $^
 endif
+ifeq ($(ARCH),x86_64)
+libnvram.so: nvram_linux.o nvram_convert.o backup.o
+	$(CC) $(CFLAGS) -shared -o $@ $^
+	$(AR) cr libnvram.a $^
+endif
 ifeq ($(ARCH),armeb)
 libnvram.so: nvram_linux.o nvram_convert.o backup.o
 	$(CC) $(CFLAGS) -shared -o $@ $^
