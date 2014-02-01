@@ -948,6 +948,41 @@ endif
 
 endif
 
+
+ifeq ($(ARCH),x86_64)
+madwifi:
+ifeq ($(CONFIG_BOESE),y)
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=x86_64-boese-elf
+	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=x86_64-boese-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+else
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=x86_64-elf
+	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=x86_64-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+endif
+
+madwifi-clean:
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=x86_64-boese-elf
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+else
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=x86_64-elf
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+endif
+
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+ifneq ($(CONFIG_NOWIFI),y)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install TARGET=x86_64-elf install
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=x86_64-boese-elf install
+else
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=x86_64-elf install
+endif
+endif
+
+endif
+
+
+
 ifeq ($(ARCH),powerpc)
 madwifi:
 ifeq ($(CONFIG_BOESE),y)
