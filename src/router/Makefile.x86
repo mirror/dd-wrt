@@ -84,7 +84,7 @@ export TOOLCHAIN := $(shell cd $(dir $(shell which $(CROSS_COMPILE)gcc))/.. && p
 #export CFLAGS += -DBCMWPA2 
 #endif
 
-export BASEOPT:=-Os
+export BASEOPT:=-O2
 #export ARCH:= mipsel
 
 export LINUXVER = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
@@ -183,15 +183,13 @@ endif
 	-$(MAKE) -f Makefile.x86 opendpi-install
 	-$(MAKE) -f Makefile.x86 uniwip-gpio
 	-$(MAKE) -f Makefile.x86 uniwip-gpio-install
-	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
-	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
-	done
 
-	find $(TARGETDIR)/lib -name \*.ko | \
+	find $(INSTALLDIR) $(TARGETDIR) -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
 	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,........ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
 	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
 	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
 	( \
@@ -261,7 +259,36 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
-	make -f Makefile.x86 lib.i486-install
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+ifeq ($(CONFIG_LIBDL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+endif
+ifeq ($(CONFIG_LIBRT),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
+endif
+ifeq ($(CONFIG_LIBNSL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
+endif
+ifeq ($(CONFIG_LIBUTIL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+endif
+ifeq ($(CONFIG_LIBCPP),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+endif
+ifeq ($(CONFIG_LIBCRYPT),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+endif
+ifeq ($(CONFIG_LIBM),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+endif
+ifeq ($(CONFIG_LIBRESOLV),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
+endif
+ifeq ($(CONFIG_LIBPTHREAD),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+endif
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
 		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
@@ -363,7 +390,7 @@ install package: clean_target $(filter-out lib.i486-install,$(obj-install)) $(LI
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	# Install (and possibly optimize) C library
-	$(MAKE) -f Makefile.x86 lib.i486-install
+#	$(MAKE) -f Makefile.x86 lib.i486-install
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) -f Makefile.x86 optimize-lib
 	# Install modules into filesystem
@@ -383,7 +410,7 @@ endif
 
 	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	#cp ./switch/switch-adm.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
-	cp lib.i486/libgcc_s.so.1 $(TARGETDIR)/lib
+	#cp lib.i486/libgcc_s.so.1 $(TARGETDIR)/lib
 	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	#cp ./switch/switch-robo.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	
