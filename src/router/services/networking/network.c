@@ -542,6 +542,10 @@ static int wlconf_up(char *name)
 #else
 	eval("wl", "-i", name, "txpwr1", "-m", "-o", pwr);
 #endif
+#ifdef HAVE_80211AC
+	if( val == 71 ) // if user did not change txpwr set this to radio defaults - DAU Modus
+	    eval("wl", "-i", name, "txpwr1", "-1"); 
+#endif
 	/*
 	 * Set txant 
 	 */
