@@ -185,12 +185,8 @@ endif
 	-$(MAKE) -f Makefile.ventana opendpi-install
 	-$(MAKE) -f Makefile.ventana uniwip-gpio
 	-$(MAKE) -f Makefile.ventana uniwip-gpio-install
-	echo $(INSTALLDIR)
-	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
-	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
-	done
 
-	find $(TARGETDIR)/lib -name \*.ko | \
+	find $(INSTALLDIR) $(TARGETDIR) -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
@@ -260,7 +256,36 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
-	make -f Makefile.ventana lib.$(ARCH)-install	
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+ifeq ($(CONFIG_LIBDL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+endif
+ifeq ($(CONFIG_LIBRT),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
+endif
+ifeq ($(CONFIG_LIBNSL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
+endif
+ifeq ($(CONFIG_LIBUTIL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+endif
+ifeq ($(CONFIG_LIBCPP),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+endif
+ifeq ($(CONFIG_LIBCRYPT),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+endif
+ifeq ($(CONFIG_LIBM),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+endif
+ifeq ($(CONFIG_LIBRESOLV),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
+endif
+ifeq ($(CONFIG_LIBPTHREAD),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+endif
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
 		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
@@ -352,7 +377,7 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb
 	# optimize the crypto library by removing unneeded symbols
 	# Install (and possibly optimize) C library
-	$(MAKE) -f Makefile.ventana lib.$(ARCH)-install
+#	$(MAKE) -f Makefile.ventana lib.$(ARCH)-install
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) -f Makefile.ventana optimize-lib
 	# Install modules into filesystem
