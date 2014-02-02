@@ -196,11 +196,8 @@ endif
 	-$(MAKE) -f Makefile.mpc83xx opendpi-install
 	-$(MAKE) -f Makefile.mpc83xx uniwip-gpio
 	-$(MAKE) -f Makefile.mpc83xx uniwip-gpio-install
-	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
-	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
-	done
 
-	find $(TARGETDIR)/lib -name \*.ko | \
+	find $(INSTALLDIR) $(TARGETDIR) -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
