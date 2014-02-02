@@ -246,6 +246,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		fwrite(flashbuf, linuxsize, 1, out);
 		free(flashbuf);
 	}
+	fflush(out);
+	fsync(fileno(out));
 	fclose(out);
 	fprintf(stderr, "sync system\n");
 	sysprintf("sync");
