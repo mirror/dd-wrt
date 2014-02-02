@@ -2427,11 +2427,6 @@ void start_restore_defaults(void)
 	     brand == ROUTER_ASUS_RTN53 || brand == ROUTER_ASUS_RTN10PLUSD1 || brand == ROUTER_ASUS_RTN16)) {
 		nvram_set("wl0_txpwr", "17");
 	}
-	
-	if (restore_defaults && (brand == ROUTER_ASUS_AC66U || brand == ROUTER_NETGEAR_WNDR4500 || brand == ROUTER_NETGEAR_WNDR4500V2 || brand == ROUTER_NETGEAR_R6300)) {
-		nvram_set("wl0_txpwr", "40");
-		nvram_set("wl1_txpwr", "40");
-	}
 
 	if (restore_defaults && (brand == ROUTER_LINKSYS_E4200)) {
 		nvram_set("wl0_txpwr", "100");
