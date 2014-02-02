@@ -11,7 +11,7 @@ struct ipt_mark_info {
 };
 
 struct xt_mark_mtinfo1 {
-	unsigned long mark, mask;
+	u_int32_t mark, mask;
 	u_int8_t invert;
 };
 

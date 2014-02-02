@@ -25,7 +25,7 @@ struct ipt_mark_target_info_v1 {
 };
 
 struct xt_mark_tginfo2 {
-	unsigned long mark, mask;
+	u_int32_t mark, mask;
 };
 
 #endif /*_IPT_MARK_H_target*/
