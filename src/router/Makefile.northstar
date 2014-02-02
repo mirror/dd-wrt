@@ -156,20 +156,20 @@ kernel:
 ifeq ($(CONFIG_NORTHSTAR_NOSMP),y)
 	cp $(LINUXDIR)/.config_northstar $(LINUXDIR)/.config
 ifeq ($(CONFIG_BUFFALO),y)
-	cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_600.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
-	touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+	-cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_600.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+	-touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
 else
-	cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_default.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
-	touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+	-cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_default.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+	-touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
 endif
 else
 	cp $(LINUXDIR)/.config_northstar_smp $(LINUXDIR)/.config
 ifeq ($(CONFIG_BUFFALO),y)
-	cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_1750.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
-	touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+	-cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_1750.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+	-touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
 else
-	cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_default.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
-	touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+	-cp $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data_default.c $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
+	-touch $(LINUXDIR)/brcm/$(ARCH)/wl/clm/src/wlc_clm_data.c
 endif
 endif
 ifeq ($(CONFIG_EOP_TUNNEL),y)
@@ -199,6 +199,59 @@ endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
+endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
+endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
+endif
+ifneq ($(CONFIG_BONDING),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/bonding
+endif
+ifneq ($(CONFIG_USBIP),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/staging/usbip
+endif
+ifneq ($(CONFIG_USB),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/scsi
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/cdrom
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/isofs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/udf
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/exportfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/hfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/hfsplus
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/fat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/vfat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/msdos
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/udf
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/mbcache.ko
+endif
+ifeq ($(CONFIG_3G_ONLY),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls
+endif
+ifneq ($(CONFIG_USB_ADVANCED),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext4
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/btrfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd	
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd2	
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/hfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/hfsplus
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/udf
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/isofs
+endif
 
 	find $(INSTALLDIR) $(TARGETDIR) -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
@@ -375,6 +428,58 @@ ifeq ($(CONFIG_WP18),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/sunrpc
 endif
+ifneq ($(CONFIG_SAMBA),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
+endif
+ifneq ($(CONFIG_JFFS2),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jffs2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/lzma
+endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
+endif
+ifneq ($(CONFIG_BONDING),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/bonding
+endif
+ifneq ($(CONFIG_USBIP),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/staging/usbip
+endif
+ifneq ($(CONFIG_USB),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/usb
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/scsi
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/cdrom
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext2
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/isofs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/udf
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/exportfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/hfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/hfsplus
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/fat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/vfat
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/msdos
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/udf
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/mbcache.ko
+endif
+ifeq ($(CONFIG_3G_ONLY),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls
+endif
+ifneq ($(CONFIG_USB_ADVANCED),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext4
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/btrfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd	
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd2	
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/hfs
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/hfsplus
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/udf
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/isofs
+endif
 ifeq ($(CONFIG_WAVESAT),y)
 	make -f Makefile.northstar wavesat-install
 endif
@@ -428,6 +533,11 @@ endif
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r6300v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6300v2.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R6300V2.chk 
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r7000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r7000.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R7000.chk
 
+	cp $(ARCH)-uclibc/northstar-firmware-squashfs.bin  $(ARCH)-uclibc/tnet812.trx
+	./tools/trendnet/auto_add_header_812 $(ARCH)-uclibc/tnet812.trx
+
+	cp $(ARCH)-uclibc/northstar-firmware-squashfs.bin  $(ARCH)-uclibc/tnet811.trx
+	./tools/trendnet/auto_add_header_811 $(ARCH)-uclibc/tnet811.trx
 
 include rules/all.mk
 
