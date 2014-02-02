@@ -1029,6 +1029,48 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+void ej_show_syslog(webs_t wp, int argc, char_t ** argv)
+{
+	static const char filename[] = "/var/log/messages";
+	
+	websWrite(wp,"<fieldset><legend>System Log</legend>");
+	
+	if( nvram_match("syslogd_enable", "1") ){
+		if( !nvram_match("syslogd_rem_ip", "") ){
+			  websWrite(wp,"<table><tr align=\"center\"><td>Syslogd is currently configured to sent log messages to %s </td></tr></table>", nvram_get("syslogd_rem_ip") );
+		}else{
+			FILE *fp = fopen ( filename, "r" );
+			if ( fp != NULL )
+			{
+				char line [1024];
+				websWrite(wp,"<div style=\"height:800px; overflow-y:auto;\"><table>");
+				while ( fgets ( line, sizeof line, fp ) != NULL )
+				{
+					// a few sample colors
+					if( strstr(line, "authpriv.info") ){	
+						websWrite(wp,"<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
+					}else if(strstr(line, "authpriv.notice") ){
+						websWrite(wp,"<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
+					}else if(strstr(line, "mounting unchecked fs") ){
+						websWrite(wp,"<tr bgcolor=\"#FF0000\"><td>%s</td></tr>", line);
+					}
+					else{
+						websWrite(wp,"<tr><td>%s</td></tr>", line);
+					}
+				
+				}
+				websWrite(wp,"</table></div>");
+			
+				fclose(fp);
+			}
+		}
+	}else{
+		websWrite(wp,"<table><tr align=\"center\"><td>No messages available! Syslogd is not enabled!</td></tr></table>");
+	}
+	websWrite(wp,"</fieldset><p>");
+	return;
+}
+
 #ifdef HAVE_LANGUAGE
 // extern websRomPageIndexType websRomPageIndex[];
 void ej_show_languages(webs_t wp, int argc, char_t ** argv)
@@ -1515,7 +1557,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 
 #endif
 
-	static char menu_t[8][12][32] = {
+	static char menu_t[8][13][32] = {
 		{"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", "", ""},	// 
 		{"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", ""},	//
 		{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "Lighttpd.asp", ""},	//
@@ -1523,12 +1565,12 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		{"Filters.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
 		{"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp", "QoS.asp", "P2P.asp", "", "", "", "", ""},	//
 		{"Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", "", ""},	//
-		{"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp", "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", "Status_CWMP.asp"}	//
+		{"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp", "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", "Status_CWMP.asp", "Syslog.asp"}	//
 	};
 	/*
 	 * real name is bmenu.menuname[i][j] 
 	 */
-	static char menuname_t[8][13][32] = {
+	static char menuname_t[8][14][32] = {
 		{"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting", "setupvlan", "networking", "setupeop", "", "", "", "", ""},	//
 		{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax", "wirelessRadius", "wirelessSecurity",	//
 #ifdef HAVE_WPS
@@ -1542,16 +1584,16 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", ""},	//
 		{"applications", "applicationspforwarding", "applicationsprforwarding", "applicationsptriggering", "applicationsUpnp", "applicationsDMZ", "applicationsQoS", "applicationsP2P", "", "", "", "", ""},	//
 		{"admin", "adminManagement", "adminAlive", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", ""},	//
-		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP"}	//
+		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP", "statuSyslog"}	//
 	};
-	static char menu[8][12][32];
-	static char menuname[8][13][32];
-	memcpy(menu, menu_t, 8 * 12 * 32);
-	memcpy(menuname, menuname_t, 8 * 13 * 32);
+	static char menu[8][13][32];
+	static char menuname[8][14][32];
+	memcpy(menu, menu_t, 8 * 13 * 32);
+	memcpy(menuname, menuname_t, 8 * 14 * 32);
 #if HAVE_ERC
 	if (!wp->userid) {
-		memcpy(menu, menu_s, 8 * 12 * 32);
-		memcpy(menuname, menuname_s, 8 * 13 * 32);
+		memcpy(menu, menu_s, 8 * 13 * 32);
+		memcpy(menuname, menuname_s, 8 * 14 * 32);
 	}
 #endif
 #ifdef HAVE_IPR
@@ -1625,7 +1667,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 
 #define MAXMENU 8
-#define MAXSUBMENU 12
+#define MAXSUBMENU 13
 
 	for (i = 0; i < MAXMENU; i++) {
 		if (strlen(menu[i][0]) == 0)
@@ -1824,6 +1866,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifndef HAVE_FREECWMP
 				if (!strcmp(menu[i][j], "Status_CWMP.asp"))
+					j++;
+#endif
+#ifndef HAVE_STATUS_SYSLOG
+				if (!strcmp(menu[i][j], "Syslog.asp"))
 					j++;
 #endif
 				if (j >= MAXSUBMENU)
@@ -2377,7 +2423,7 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 		txpower = wifi_gettxpower(m);
 #elif HAVE_RT2880
 		txpower = atoi(nvram_safe_get(txpwr));
-#else				//broadcom
+#else		//broadcom
 		txpower = bcm_gettxpower(m);
 #endif
 #ifdef HAVE_BUFFALO
@@ -2387,8 +2433,14 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%d dBm", txpower);
 #elif HAVE_RT2880
 		websWrite(wp, "%d mW", txpower);
-#else				//broadcom
-		websWrite(wp, "%d mW", txpower);
+#else				
+#ifdef HAVE_80211AC//broadcom
+		if(txpower == 1496 ){
+			websWrite(wp, "Auto");
+		} else {
+			websWrite(wp, "%d mW", txpower);
+		}
+#endif
 #endif
 #endif
 	}
