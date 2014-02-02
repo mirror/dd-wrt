@@ -18,6 +18,8 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 
+#include <sys/types.h>
+#define HOSTAPD
 #include <include/compat.h>
 #include <net80211/ieee80211.h>
 //#ifdef WME_NUM_AC
