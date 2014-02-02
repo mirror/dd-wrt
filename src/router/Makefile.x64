@@ -152,6 +152,7 @@ build_date:
 kernel:
         # Also build kernel
 	# Also build kernel
+	cp $(LINUXDIR)/.config_x64 $(LINUXDIR)/.config
 ifeq ($(CONFIG_ISOFS),y)
 	cp $(LINUXDIR)/.config_isofs $(LINUXDIR)/.config
 endif
@@ -535,15 +536,9 @@ endif
 	cp grub/menu_serial.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	cp $(LINUXDIR)/arch/i386/boot/bzImage $(ARCH)-uclibc/root.grub/boot/vmlinuz
 
-ifeq ($(CONFIG_FULL),y)
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image 3 $(ARCH)-uclibc/root.grub 64 $(ARCH)-uclibc/root.fs 32
 	cp grub/menu_vga.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
 	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image 3 $(ARCH)-uclibc/root.grub 64 $(ARCH)-uclibc/root.fs 32
-else
-	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_serial.image 3 $(ARCH)-uclibc/root.grub 16 $(ARCH)-uclibc/root.fs 16
-	cp grub/menu_vga.lst $(ARCH)-uclibc/root.grub/boot/grub/menu.lst
-	-PATH="$(INSTALLDIR)/grub/usr/local/sbin:$(INSTALLDIR)/grub/usr/local/bin:$(PATH)" ./gen_image.sh $(ARCH)-uclibc/dd-wrt_vga.image 3 $(ARCH)-uclibc/root.grub 16 $(ARCH)-uclibc/root.fs 16
-endif
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_vga.image $(ARCH)-uclibc/dd-wrt-vga-webupgrade.bin
 	./tools/wrap $(ARCH)-uclibc/dd-wrt_serial.image $(ARCH)-uclibc/dd-wrt-serial-webupgrade.bin
 
