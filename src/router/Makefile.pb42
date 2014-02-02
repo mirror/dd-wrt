@@ -412,9 +412,6 @@ endif
 	-$(MAKE) -f Makefile.pb42 opendpi-install
 	-$(MAKE) -f Makefile.pb42 uniwip-gpio
 	-$(MAKE) -f Makefile.pb42 uniwip-gpio-install
-	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
-	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
-	done
 
 ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
@@ -465,7 +462,7 @@ ifneq ($(CONFIG_USB_ADVANCED),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/jbd2	
 endif
 
-	find $(TARGETDIR)/lib -name \*.ko | \
+	find $(INSTALLDIR) $(TARGETDIR) -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
