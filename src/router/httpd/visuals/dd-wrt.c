@@ -2801,7 +2801,7 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.", var, get_single_ip(ipv, 0));
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_1\" value=\"%d\" />.", var, get_single_ip(ipv, 1));
 	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_2\" value=\"%d\" />.", var, get_single_ip(ipv, 2));
-	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />.", var, get_single_ip(ipv, 3));
+	websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />", var, get_single_ip(ipv, 3));
 	websWrite(wp, "</div>\n");
 
 #ifdef HAVE_MADWIFI
@@ -5406,12 +5406,6 @@ void ej_show_defwpower(webs_t wp, int argc, char_t ** argv)
 	case ROUTER_ASUS_RTN16:
 		websWrite(wp, "17");
 		break;
-	case ROUTER_ASUS_AC66U:
-	case ROUTER_NETGEAR_WNDR4500:
-	case ROUTER_NETGEAR_WNDR4500V2:
-	case ROUTER_NETGEAR_R6300:
-		websWrite(wp, "40");
-		break;
 	case ROUTER_LINKSYS_E4200:
 		websWrite(wp, "100");
 		break;
@@ -6014,8 +6008,9 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
  */
 
 void ej_show_qos_aqd(webs_t wp, int argc, char_t ** argv)
-{
+{  
 #if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
+  
 	char *aqd = nvram_safe_get("svqos_aqd");
 
 	websWrite(wp, "<div class=\"setting\">\n\
