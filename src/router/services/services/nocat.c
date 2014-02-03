@@ -36,7 +36,7 @@
  */
 static char *_get_network(char *ipaddr, char *snmask)
 {
-	u_long ipaddr2long(char *ipstr) {
+	unsigned int ipaddr2long(char *ipstr) {
 		int ip[4];
 		char *tmp = malloc(4 * sizeof(char));
 
@@ -58,10 +58,10 @@ static char *_get_network(char *ipaddr, char *snmask)
 		return ((ip[0] << 24) + (ip[1] << 16) + (ip[2] << 8) + ip[3]);
 	}
 
-	char *long2ipaddr(u_long addr) {
+	char *long2ipaddr(unsigned int addr) {
 		static char buff[32];
 
-		sprintf(buff, "%ld.%ld.%ld.%ld", (addr >> 24 & 0xff), (addr >> 16 & 0xff), (addr >> 8 & 0xff), (addr & 0xff));
+		sprintf(buff, "%d.%d.%d.%d", (addr >> 24 & 0xff), (addr >> 16 & 0xff), (addr >> 8 & 0xff), (addr & 0xff));
 
 		return buff;
 	}
