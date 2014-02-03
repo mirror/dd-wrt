@@ -79,8 +79,8 @@ static void install_sdcard(void)
 	if (check != 0) {
 		fprintf(stderr, "device isnt formated, use EXT2\n");
 		fp = fopen("/dev/sda", "rb");
-		fseek(fp, 0, SEEK_END);
-		long size = ftell(fp);
+		fseeko(fp, 0, SEEK_END);
+		off_t size = ftello(fp);
 		size -= 65536 * 16;
 		size /= 4096;
 		char newsize[32];
