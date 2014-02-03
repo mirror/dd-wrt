@@ -482,7 +482,7 @@ int getbuttonstate()
 #include <linux/sockios.h>
 #include <linux/mii.h>
 #define u8 unsigned char
-#define u32 unsigned long
+#define u32 unsigned int
 
 #define GPIO_GET_BIT	0x0000001
 #define GPIO_SET_BIT	0x0000005
