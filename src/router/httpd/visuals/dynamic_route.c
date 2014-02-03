@@ -40,7 +40,7 @@ void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 	int count = 0;
 	FILE *fp;
 	int flgs, ref, use, metric;
-	unsigned long dest, gw, netmask;
+	unsigned int dest, gw, netmask;
 	char line[256];
 	struct in_addr dest_ip;
 	struct in_addr gw_ip;

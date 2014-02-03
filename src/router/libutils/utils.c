@@ -437,13 +437,13 @@ char *get_tcfmark(uint32 mark)
 #endif
 
 #ifdef HAVE_AQOS
-void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate, unsigned int level)
+void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level)
 {
 	char *wan_dev = get_wan_face();
 
 	unsigned int uplimit = atoi(nvram_get("wshaper_uplink"));
 	unsigned int downlimit = atoi(nvram_get("wshaper_downlink"));
-	unsigned long lanlimit = 1000000;
+	unsigned int lanlimit = 1000000;
 	unsigned int prio;
 	unsigned int parent;
 
@@ -459,13 +459,13 @@ void add_client_classes(unsigned int base, unsigned int level)
 
 	unsigned int uplimit = atoi(nvram_get("wshaper_uplink"));
 	unsigned int downlimit = atoi(nvram_get("wshaper_downlink"));
-	unsigned long lanlimit = 1000000;
+	unsigned int lanlimit = 1000000;
 	unsigned int prio;
 	unsigned int parent;
 
 	unsigned int quantum = atoi(get_mtu_val()) + 14;
 
-	unsigned long uprate = 0, downrate = 0;
+	unsigned int uprate = 0, downrate = 0;
 	int lanrate = lanlimit;
 #endif
 
@@ -684,7 +684,7 @@ void add_usermac(char *mac, int base, char *upstream, char *downstream, char *la
 {
 	unsigned int uprate = atoi(upstream);
 	unsigned int downrate = atoi(downstream);
-	unsigned long lanrate = atoi(lanstream);
+	unsigned int lanrate = atoi(lanstream);
 
 	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
@@ -722,7 +722,7 @@ void add_userip(char *ip, int base, char *upstream, char *downstream, char *lans
 {
 	unsigned int uprate = atoi(upstream);
 	unsigned int downrate = atoi(downstream);
-	unsigned long lanrate = atoi(lanstream);
+	unsigned int lanrate = atoi(lanstream);
 
 //      int ret;
 	char srvname[32], srvtype[32], srvdata[32], srvlevel[32];
@@ -2433,7 +2433,7 @@ int internal_getRouterBrand()
 	if (nvram_match("boardtype", "0xa4cf")
 	    && nvram_match("boardrev", "0x1102")) {
 		FILE *mtd1 = fopen("/dev/mtdblock/1", "rb");
-		unsigned long trxhd;
+		unsigned int trxhd;
 		if (mtd1) {
 			fread(&trxhd, 4, 1, mtd1);
 			fclose(mtd1);

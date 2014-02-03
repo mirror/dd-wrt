@@ -269,7 +269,7 @@ static void save_radius_users(webs_t wp)
 		db->users[db->usercount].passwordsize = strlen(p) + 1;
 		db->users[db->usercount].downstream = atoi(d);
 		db->users[db->usercount].upstream = atoi(up);
-		long expiration = atoi(e);
+		long expiration = atol(e);
 		if (expiration) {
 			long curtime = ((tm / 60) / 60) / 24;	//in days
 			expiration = expiration + curtime;
