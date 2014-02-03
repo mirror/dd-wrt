@@ -714,7 +714,7 @@ extern int find_pid_by_ps(char *pidName);
 extern int *find_all_pid_by_ps(char *pidName);
 extern char *find_name_by_proc(int pid);
 extern int get_ppp_pid(char *file);
-extern long convert_ver(char *ver);
+extern int convert_ver(char *ver);
 extern int check_flash(void);
 extern int check_action(void);
 extern int check_now_boot(void);
@@ -757,7 +757,7 @@ extern int first_time(void);
 
 extern int set_register_value(unsigned short port_addr,
 			      unsigned short option_content);
-extern unsigned long get_register_value(unsigned short id, unsigned short num);
+extern unsigned int get_register_value(unsigned short id, unsigned short num);
 // extern int sys_netdev_ioctl(int family, int socket, char *if_name, int
 // cmd, struct ifreq *ifr);
 
@@ -923,7 +923,7 @@ extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *le
 #ifdef HAVE_AQOS
 extern void add_usermac(char *mac, int idx, char *upstream, char *downstream, char *lanstream);
 extern void add_userip(char *ip, int idx, char *upstream, char *downstream, char *lanstream);
-extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate, unsigned int level);
+extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level);
 #else
 extern void add_client_classes(unsigned int base, unsigned int level);
 #endif
