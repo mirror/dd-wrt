@@ -737,7 +737,7 @@ void decode(char *buf, int len)
 /*
  * v1.41.7 => 014107 v1.2 => 0102 
  */
-long convert_ver(char *ver)
+int convert_ver(char *ver)
 {
 	char buf[10];
 	int v[3];
@@ -747,10 +747,10 @@ long convert_ver(char *ver)
 
 	if (ret == 2) {
 		snprintf(buf, sizeof(buf), "%02d%02d", v[0], v[1]);
-		return atol(buf);
+		return atoi(buf);
 	} else if (ret == 3) {
 		snprintf(buf, sizeof(buf), "%02d%02d%02d", v[0], v[1], v[2]);
-		return atol(buf);
+		return atoi(buf);
 	} else
 		return -1;
 }
@@ -974,7 +974,7 @@ int set_register_value(unsigned short port_addr, unsigned short option_content)
 	return 0;
 }
 
-unsigned long get_register_value(unsigned short id, unsigned short num)
+unsigned int get_register_value(unsigned short id, unsigned short num)
 {
 	struct ifreq ifr;
 	struct mii_ioctl_data stats;

@@ -206,7 +206,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			: live_translate("share.yes"), 31);
 
 		char *netmode;
-		long netmodecap = site_survey_lists[i].capability;
+		int netmodecap = site_survey_lists[i].capability;
 
 		netmodecap &= (DOT11_CAP_ESS | DOT11_CAP_IBSS);
 		if (netmodecap == DOT11_CAP_ESS)
