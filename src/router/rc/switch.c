@@ -28,7 +28,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#define uint32 unsigned long
+#define uint32 unsigned int
 #define uint unsigned int
 #define uint8 unsigned char
 #define uint64 unsigned long long

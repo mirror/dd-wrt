@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	struct itimerspec t1, t4, t5;
 	timer_t ntp1_id, ntp2_id, udhcpd_id;
 	int time;
-	long leasetime = 0;
+	long int leasetime = 0;
 
 	init_event_queue(40);
 

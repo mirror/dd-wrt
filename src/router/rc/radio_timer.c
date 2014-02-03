@@ -24,8 +24,8 @@
 int main(int argc, char **argv)
 {
 
-	long radiotime0;	// 4 byte int number (24 bits from gui + 1 bit for midnight)
-	long radiotime1;	// 4 byte int number (24 bits from gui + 1 bit for midnight)
+	unsigned int radiotime0;	// 4 byte int number (24 bits from gui + 1 bit for midnight)
+	unsigned int radiotime1;	// 4 byte int number (24 bits from gui + 1 bit for midnight)
 
 	int firsttime, needchange;
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 	firsttime = 1;
 
 	struct tm *currtime;
-	long tloc;
+	long int tloc;
 
 	do {
 		time(&tloc);	// get time in seconds since epoch
@@ -42,11 +42,11 @@ int main(int argc, char **argv)
 		if (currtime->tm_year > 100)	// ntp time must be set
 		{
 
-			radiotime0 = strtol(nvram_get("radio0_on_time"), NULL, 2);	// convert  binary  string  to  long  int
-			radiotime0 += ((radiotime0 & 1) << 24);	// duplicate 23-24h bit to the start to take care of midnight
+			radiotime0 = (unsigned int)strtol(nvram_get("radio0_on_time"), NULL, 2);	// convert  binary  string  to  long  int
+			radiotime0 &= ((radiotime0 & 1) << 24);	// duplicate 23-24h bit to the start to take care of midnight
 			radiotime0 = (radiotime0 >> (24 - currtime->tm_hour - 1)) & 3;	// get pattern only (last two bits)
-			radiotime1 = strtol(nvram_get("radio1_on_time"), NULL, 2); 
-			radiotime1 += ((radiotime1 & 1) << 24);
+			radiotime1 = (unsigned int)strtol(nvram_get("radio1_on_time"), NULL, 2); 
+			radiotime1 &= ((radiotime1 & 1) << 24);
 			radiotime1 = (radiotime1 >> (24 - currtime->tm_hour - 1)) & 3;
 
 			if (currtime->tm_min != 0)

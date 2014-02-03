@@ -122,14 +122,14 @@ int mtd_write(const char *path, const char *mtd)
 
 	struct sysinfo info;
 	struct trx_header trx;
-	unsigned long crc;
+	unsigned int crc;
 
 	FILE *fp;
 	char *buf = NULL;
-	long count, len, off;
-	long sum = 0;		// for debug
+	int count, len, off;
+	int sum = 0;		// for debug
 	int ret = -1;
-	long support_max_len;
+	int support_max_len;
 
 	if (strstr(nvram_safe_get("flash_type"), "640"))	// This is a
 		// 8MB flash
@@ -277,11 +277,11 @@ int nvram_restore(const char *path, char *mtd)
 	erase_info_t erase_info;
 
 	struct nvram_header header;
-	unsigned long crc = 0;
+	unsigned int crc = 0;
 
 	FILE *fp, *fp1;
 	char buf[NVRAM_SPACE];
-	long count = 0;
+	int crc = 0;
 	int ret = -1;
 
 	/* 

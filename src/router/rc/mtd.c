@@ -58,7 +58,7 @@
 #define NETGEAR_CRC_FAKE_LEN		0x00000004
 #define NETGEAR_CRC_FAKE_CHK		0x02C0010E
 #else
-static unsigned long calculate_checksum(int action, char *s, int size);
+static unsigned int calculate_checksum(int action, char *s, int size);
 #endif
 #define WGR614_LZMA_LOADER_SIZE		0x000919	//loader+400.lzma = 2329 bytes, please change if size changes!
 #define FLASH_SIZE_4M			0x400000
@@ -231,15 +231,15 @@ int mtd_write(const char *path, const char *mtd)
 #endif
 	struct trx_header trx;
 	struct chk_header chk;
-	unsigned long crc;
+	unsigned int crc;
 	int squashfound = 0;
 	unsigned int crc_data = 0;
 	unsigned int data_len = 0;
 	unsigned int cal_chksum = 0;
 	FILE *fp;
 	char *buf = NULL;
-	long count, len, off;
-	long sum = 0;		// for debug
+	int count, len, off;
+	int sum = 0;		// for debug
 	int ret = -1;
 	int i;
 	int skipoffset = 0;
@@ -248,7 +248,7 @@ int mtd_write(const char *path, const char *mtd)
 	/* 
 	 * Netgear WGR614v8_L: Read, store and write back old lzma loader from 1st block 
 	 */
-	unsigned long trxhd = STORE32_LE(TRX_MAGIC);
+	unsigned int trxhd = STORE32_LE(TRX_MAGIC);
 	switch (brand) {
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
@@ -649,8 +649,8 @@ int mtd_write(const char *path, const char *mtd)
 		cal_chksum = calculate_checksum(2, NULL, 0);
 #endif
 		char imageInfo[8];
-		unsigned long cfe_size = CFE_SIZE_128K;
-		unsigned long flash_len_chk_addr = NETGEAR_LEN_CHK_ADDR_4M;
+		unsigned int cfe_size = CFE_SIZE_128K;
+		unsigned int flash_len_chk_addr = NETGEAR_LEN_CHK_ADDR_4M;
 		if (brand == ROUTER_NETGEAR_WNR3500L) {
 			cfe_size = CFE_SIZE_256K;
 			if (mtd_info.size > FLASH_SIZE_4M) {
@@ -772,7 +772,7 @@ int mtd_write(const char *path, const char *mtd)
 	if (brand == ROUTER_BELKIN_F7D3301 || brand == ROUTER_BELKIN_F7D3302 || brand == ROUTER_BELKIN_F7D4302 || brand == ROUTER_BELKIN_F5D8235V3) {
 
 		sector_start = 0;
-		unsigned long be_magic = STORE32_LE(trxhd);
+		unsigned int be_magic = STORE32_LE(trxhd);
 		char be_trx[4];
 		memcpy(&be_trx[0], (char *)&be_magic, 4);
 		if (lseek(mtd_fd, sector_start, SEEK_SET) < 0) {
@@ -901,10 +901,10 @@ int mtd_unlock(const char *mtd)
 
 #ifndef NETGEAR_CRC_FAKE
 // Netgear image checksum
-static unsigned long calculate_checksum(int action, char *s, int size)
+static unsigned int calculate_checksum(int action, char *s, int size)
 {
-	static unsigned long c0, c1;
-	unsigned long checksum, b;
+	static unsigned int c0, c1;
+	unsigned int checksum, b;
 	int i;
 	switch (action) {
 	case 0:
