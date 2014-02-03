@@ -121,7 +121,7 @@ int main(int argc, char **argv)
 {
 
 	struct tm *currtime;
-	long tloc;
+	long int tloc;
 
 	time(&tloc);		// get time in seconds since epoch
 	currtime = localtime(&tloc);	// convert seconds to date structure 
