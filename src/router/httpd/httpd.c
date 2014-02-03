@@ -172,7 +172,7 @@ extern char *get_mac_from_ip(char *ip);
 static int initialize_listen_socket(usockaddr * usaP);
 static int auth_check(char *user, char *pass, char *dirname, char *authorization);
 static void send_error(int status, char *title, char *extra_header, char *text);
-static void send_headers(int status, char *title, char *extra_header, char *mime_type, long length, char *attach_file);
+static void send_headers(int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file);
 static int b64_decode(const char *str, unsigned char *space, int size);
 static int match(const char *pattern, const char *string);
 static int match_one(const char *pattern, int patternlen, const char *string);
@@ -296,7 +296,7 @@ static void send_error(int status, char *title, char *extra_header, char *text)
 	(void)wfflush(conn_fp);
 }
 
-static void send_headers(int status, char *title, char *extra_header, char *mime_type, long length, char *attach_file)
+static void send_headers(int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file)
 {
 	time_t now;
 	char timebuf[100];

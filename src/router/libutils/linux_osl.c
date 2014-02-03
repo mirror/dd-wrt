@@ -83,7 +83,7 @@ short osl_ifflags(const char *ifname)
 }
 
 #if 0
-int osl_join_multicast(struct iface *pif, int fd, ulong ipaddr, ushort port)
+int osl_join_multicast(struct iface *pif, int fd, unsigned int ipaddr, ushort port)
 {
 	struct ip_mreqn mcreqn;
 	struct ifreq ifreq;

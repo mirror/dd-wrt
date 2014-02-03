@@ -336,7 +336,7 @@ int do_matrixssl_recv(FILE * fp)
 	sslBuf_t in, out;
 	unsigned char error = 0, alertLevel = 0, alertDescription = 0;
 	unsigned char *in_buf = NULL, *out_buf = NULL;;
-	long more = 0;
+	unsigned long more = 0;
 
 	matrixssl_buf *pbuf = matrixssl_findbuf((int)fp);
 
