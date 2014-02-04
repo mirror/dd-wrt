@@ -449,9 +449,9 @@ ifeq ($(CONFIG_HDWIFI),y)
 	cp hdwifi/style.css $(INSTALLDIR)/www/style/hdwifi
 	cp hdwifi/images/* $(INSTALLDIR)/www/images
 	cp hdwifi/About.htm $(INSTALLDIR)/www
-	cp hdwifi/Status_Router.asp $(INSTALLDIR)/www
-	cp hdwifi/help/* $(INSTALLDIR)/www/help
-	rm -f $(INSTALLDIR)/www/images/favicon.ico
+#	cp hdwifi/Status_Router.asp $(INSTALLDIR)/www
+#	cp hdwifi/help/* $(INSTALLDIR)/www/help
+#	rm -f $(INSTALLDIR)/www/images/favicon.ico
 endif
 ifeq ($(CONFIG_ONNET),y)
 	mkdir $(INSTALLDIR)/www/style/onnet
