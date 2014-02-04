@@ -1409,7 +1409,19 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 		insmod("xt_layer7");
 		insmod("ipt_ipp2p");
 		insmod("xt_ipp2p");
-		save2file("-A advgrp_%d -m ipp2p --ipp2p -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --edk -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --dc -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --gnu -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --kazaa -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --bit -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --apple -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --soul -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --winmx -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --ares -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --mute -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --waste -j %s\n", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --xdcc -j %s\n", seq, log_drop);
+
 		/* p2p detection enhanced */
 #ifdef HAVE_OPENDPI
 		insmod("/lib/opendpi/xt_opendpi.ko");
