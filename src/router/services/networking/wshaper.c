@@ -75,7 +75,7 @@ extern char *get_tcfmark(uint32 mark);
 #endif
 
 #ifdef HAVE_AQOS
-extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate, unsigned int level);
+extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level);
 #else
 extern void add_client_classes(unsigned int base, unsigned int level);
 #endif
@@ -266,7 +266,7 @@ void aqos_tables(void)
 			break;
 
 		fprintf(outmacs, "%s\n", data);
-		add_client_classes(base, atoi(level), atoi(level2), atol(level3), atoi(prio));
+		add_client_classes(base, atoi(level), atoi(level2), atoi(level3), atoi(prio));
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
@@ -289,7 +289,7 @@ void aqos_tables(void)
 			break;
 
 		fprintf(outips, "%s\n", data);
-		add_client_classes(base, atoi(level), atoi(level2), atol(level3), atoi(prio));
+		add_client_classes(base, atoi(level), atoi(level2), atoi(level3), atoi(prio));
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		do {
