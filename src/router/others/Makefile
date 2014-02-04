@@ -28,6 +28,9 @@ else
  MOTD_ADD:=.onnet
 endif
 endif
+ifdef CONFIG_HDWIFI
+ MOTD_ADD:=.hdwifi
+endif
 
 install:
 	install -d $(INSTALLDIR)/etc
