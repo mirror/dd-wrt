@@ -38,6 +38,7 @@
 #include <net/if_arp.h>
 #include <sys/sysinfo.h>
 
+#if 0
 typedef u_int64_t u64;
 typedef u_int32_t u32;
 typedef u_int16_t u16;
@@ -47,7 +48,7 @@ typedef u_int64_t __u64;
 typedef u_int32_t __u32;
 typedef u_int16_t __u16;
 typedef u_int8_t __u8;
-
+#endif
 #include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
