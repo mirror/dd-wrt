@@ -437,7 +437,7 @@ char *get_tcfmark(uint32 mark)
 #endif
 
 #ifdef HAVE_AQOS
-void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level)
+void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate, unsigned int level)
 {
 	char *wan_dev = get_wan_face();
 

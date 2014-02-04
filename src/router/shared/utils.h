@@ -923,7 +923,7 @@ extern void add_client_ip_srvfilter(char *name, char *type, char *data, char *le
 #ifdef HAVE_AQOS
 extern void add_usermac(char *mac, int idx, char *upstream, char *downstream, char *lanstream);
 extern void add_userip(char *ip, int idx, char *upstream, char *downstream, char *lanstream);
-extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned int lanrate, unsigned int level);
+extern void add_client_classes(unsigned int base, unsigned int uprate, unsigned int downrate, unsigned long lanrate, unsigned int level);
 #else
 extern void add_client_classes(unsigned int base, unsigned int level);
 #endif
