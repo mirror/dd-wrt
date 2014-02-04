@@ -54,7 +54,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"router_style", "xiocom", 0},
 #elif HAVE_IMMERSIVE
 	{"router_style", "immersive", 0},
-#elif HAVE_HDWIF
+#elif HAVE_HDWIFI
 	{"router_style", "hdwifi", 0},
 #elif HAVE_DDLAN
 	{"router_style", "blue", 0},
