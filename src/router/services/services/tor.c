@@ -64,7 +64,7 @@ void start_tor(void)
 	}
 	fprintf(fp, "RunAsDaemon 1\n");
 	fprintf(fp, "Address %s\n",get_wan_ipaddr());
-//      fprintf(fp,"ControlPort 9051\n");
+//      fprintf(fp, "ControlPort 9051\n");
 	if (nvram_match("tor_relay", "1"))
 		fprintf(fp, "ORPort 9001\n");
 	if (nvram_match("tor_dir", "1"))
