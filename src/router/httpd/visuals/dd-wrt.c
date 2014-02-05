@@ -2040,6 +2040,12 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	getIfList(bufferif2, "ra");
 	sprintf(bufferif, "%s %s", bufferif, bufferif2);
 #endif
+
+#ifdef HAVE_MADWIFI
+	memset(bufferif2, 0, 256);
+	getIfList(bufferif2, "ath");
+	sprintf(bufferif, "%s %s", bufferif, bufferif2);
+#endif
 	memset(bufferif2, 0, 256);
 	getIfList(bufferif2, "br");
 	foreach(word, bufferif2, next) {
@@ -2048,27 +2054,17 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	}
 	int i;
 
-#ifdef HAVE_MADWIFI
-//      memset(bufferif2, 0, 256);
-//      getIfList(bufferif2, "ath");
-//      foreach(word, bufferif2, next) {
-//              if (contains(word, '.'))
-//                      sprintf(bufferif, "%s %s", bufferif, word);
-//      }
+#if 0 //def HAVE_MADWIFI
 	c = getdevicecount();
 
 	for (i = 0; i < c; i++) {
 		char ath[32];
 
-//              sprintf(ath, "ath%d_bridged", i);
-//              if (nvram_default_match(ath, "1", "1")) 
-		{
 			sprintf(bufferif, "%s ath%d", bufferif, i);
 			char vifs[32];
 
 			sprintf(vifs, "ath%d_vifs", i);
 			sprintf(bufferif, "%s %s", bufferif, nvram_safe_get(vifs));
-		}
 	}
 #endif
 #ifdef HAVE_BONDING
