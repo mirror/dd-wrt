@@ -87,4 +87,4 @@ typedef short int16;
 typedef unsigned short uint16;
 */
 
-struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
+static struct site_survey_list site_survey_lists[SITE_SURVEY_NUM];
