@@ -20,13 +20,8 @@ void start_backup(void)
 		off_t mtdlen = ftello(in);
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		fwrite(mem, 65536, 1, in);
-		fclose(in);
-		eval("sync");
-		fprintf(stderr, "reread for sync disc\n");
-		in = fopen(drive, "rb");
-		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
-		fread(mem, 65536, 1, in);
-		fprintf(stderr, "%X%X%X%X\n", mem[0] & 0xff, mem[1] & 0xff, mem[2] & 0xff, mem[3] & 0xff);
+		fflush(in);
+		fsync(fileno(in));
 		fclose(in);
 		free(mem);
 	}
