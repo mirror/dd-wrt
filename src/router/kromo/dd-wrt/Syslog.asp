@@ -13,13 +13,13 @@ function do_refresh() {
 	f.src = load_file(count);
 }
 function do_show_prev() {
-	if( count > 99 )
-		count = Number(count) - 100;
+	if( count > 49 )
+		count = Number(count) - 50;
 	do_refresh(count)
 }
 
 function do_show_next() {
-	count = Number(count) + 100;
+	count = Number(count) + 50;
 	do_refresh(count);
 }
 
@@ -55,14 +55,14 @@ addEvent(window, "unload", function() {
 					<div id="contents">						
 							<script type="text/javascript">
 								//<![CDATA[
-								document.write("<iframe id=\"syslog\" src=\"" + load_file(0) + "\" width=\"850\" height=\"1000\" frameborder=\"0\" type=\"text/html\"></iframe>");
+								document.write("<iframe id=\"syslog\" src=\"" + load_file(0) + "\" width=\"100%\" height=\"800\" frameborder=\"0\" type=\"text/html\"></iframe>");
 								//]]>
 							</script>
 							<div class="center">
 								<script type="text/javascript">
 								//<![CDATA[
-								document.write("<input class=\"button\" type=\"submit_button\" value=\"            < Prev\" onclick=\"do_show_prev();\">");
-								document.write("<input class=\"button\" type=\"submit_button\" value=\"            Next >\" onclick=\"do_show_next();\">");
+								document.write("<input class=\"button\" type=\"button\" value=\"<-- Prev\" onclick=\"do_show_prev();\">");
+								document.write("<input class=\"button\" type=\"button\" value=\"Next -->\" onclick=\"do_show_next();\">");
 								//]]>
 								</script>
 							</div>
