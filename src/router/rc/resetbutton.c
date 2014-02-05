@@ -1236,7 +1236,7 @@ void period_check(int sig)
 		if ( nvram_match("usb_ses_umount", "1") ) {
 			led_control(LED_DIAG, LED_FLASH);
 			runStartup("/etc/config", ".umount");
-			sleep(3);
+			sleep(5);
 			led_control(LED_DIAG, LED_FLASH);
 			sleep(1);
 			led_control(LED_DIAG, LED_FLASH);
