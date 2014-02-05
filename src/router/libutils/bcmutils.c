@@ -1843,6 +1843,6 @@ int nvram_used(int *space)
 		name += strlen(name) + 1;
 	}
 
-	return (sizeof(struct nvram_header) + (int)name - (int)buf);
+	return (sizeof(struct nvram_header) + (long)name - (long)buf);
 
 }
