@@ -672,6 +672,7 @@ static inline int startswith(char *source, char *cmp)
 
 extern char *getBridge(char *ifname);
 extern char *getRealBridge(char *ifname);
+extern char *getWDSSTA(void);
 extern char *getSTA(void);
 extern char *getWET(void);
 extern int wanChanged(void);
