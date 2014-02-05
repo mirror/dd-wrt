@@ -1029,47 +1029,6 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-void ej_show_syslog(webs_t wp, int argc, char_t ** argv)
-{
-	static const char filename[] = "/var/log/messages";
-	
-	websWrite(wp,"<fieldset><legend>System Log</legend>");
-	
-	if( nvram_match("syslogd_enable", "1") ){
-		if( !nvram_match("syslogd_rem_ip", "") ){
-			  websWrite(wp,"<table><tr align=\"center\"><td>Syslogd is currently configured to sent log messages to %s </td></tr></table>", nvram_get("syslogd_rem_ip") );
-		}else{
-			FILE *fp = fopen ( filename, "r" );
-			if ( fp != NULL )
-			{
-				char line [1024];
-				websWrite(wp,"<div style=\"height:800px; overflow-y:auto;\"><table>");
-				while ( fgets ( line, sizeof line, fp ) != NULL )
-				{
-					// a few sample colors
-					if( strstr(line, "authpriv.info") ){	
-						websWrite(wp,"<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
-					}else if(strstr(line, "authpriv.notice") ){
-						websWrite(wp,"<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
-					}else if(strstr(line, "mounting unchecked fs") ){
-						websWrite(wp,"<tr bgcolor=\"#FF0000\"><td>%s</td></tr>", line);
-					}
-					else{
-						websWrite(wp,"<tr><td>%s</td></tr>", line);
-					}
-				
-				}
-				websWrite(wp,"</table></div>");
-			
-				fclose(fp);
-			}
-		}
-	}else{
-		websWrite(wp,"<table><tr align=\"center\"><td>No messages available! Syslogd is not enabled!</td></tr></table>");
-	}
-	websWrite(wp,"</fieldset><p>");
-	return;
-}
 
 #ifdef HAVE_LANGUAGE
 // extern websRomPageIndexType websRomPageIndex[];
