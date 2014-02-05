@@ -1,3 +1,21 @@
+Release 1.8.0: (23rd October 2013)
+
+- options file, fix option documentation and links [Howarth]
+- fix many warnings [Howarth]
+- fix parallel build failure [Howarth]
+- fix call disconnect notify [Howarth]
+- add --nohostroute option to disable routing calls [Lamparter]
+- add --rtmark option for Linux policy routing [Lamparter]
+- move free of conn struct out of main loop [Cameron]
+- avoid using conn struct after it is freed [Keijser]
+- correct response to call disconnect notify [Shen]
+- avoid superfluous MPPE capability checks in pptpsetup [Howarth]
+- retain permissions on chap-secrets, closes RH BZ #492090 [Howarth]
+- compilation fixes for older distributions of Linux [Howarth]
+- port routing change feature for Solaris [Voronin]
+- add IP_BINARY [Cameron]
+- add include file build dependencies [Cameron]
+
 Release 1.7.2: (14th May 2008)
 
 - port for Solaris 10/11 [Voronin]
@@ -129,4 +147,4 @@ Release 1.0.0:
 
 - This is the first public release of the pptp-linux package.
 
-$Id: NEWS,v 1.59 2008/05/14 06:32:52 quozl Exp $	
+$Id: NEWS,v 1.71 2011/11/29 22:05:07 quozl Exp $	

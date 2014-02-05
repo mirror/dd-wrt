@@ -2,7 +2,7 @@
  *                Handle the IP Protocol 47 portion of PPTP.
  *                C. Scott Ananian <cananian@alumni.princeton.edu>
  *
- * $Id: pptp_gre.c,v 1.43 2007/04/04 06:43:15 quozl Exp $
+ * $Id: pptp_gre.c,v 1.49 2011/12/19 07:18:09 quozl Exp $
  */
 
 #include <sys/types.h>
@@ -14,6 +14,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined (__SVR4) && defined (__sun)
+#include <strings.h>
+#endif
 #include <errno.h>
 #include <fcntl.h>
 #include "ppp_fcs.h"
@@ -22,6 +25,10 @@
 #include "util.h"
 #include "pqueue.h"
 #include "test.h"
+
+/* globals from pptp.c */
+extern struct in_addr localbind;
+extern int rtmark;
 
 #define PACKET_MAX 8196
 /* test for a 32 bit counter overflow */
@@ -71,7 +78,7 @@ void print_packet(int fd, void *pack, unsigned int len)
 #endif
 
 /*** time_now_usecs ***********************************************************/
-uint64_t time_now_usecs()
+uint64_t time_now_usecs(void)
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -81,22 +88,32 @@ uint64_t time_now_usecs()
 /*** Open IP protocol socket **************************************************/
 int pptp_gre_bind(struct in_addr inetaddr)
 {
-    struct sockaddr_in src_addr, loc_addr;
-    extern struct in_addr localbind;
+    union {
+        struct sockaddr a;
+        struct sockaddr_in i;
+    } loc_addr, src_addr;
     int s = socket(AF_INET, SOCK_RAW, PPTP_PROTO);
     if (s < 0) { warn("socket: %s", strerror(errno)); return -1; }
+#ifdef SO_MARK
+    if (rtmark) {
+        if (setsockopt(s, SOL_SOCKET, SO_MARK, &rtmark, sizeof(rtmark))) {
+            warn("setsockopt(SO_MARK): %s", strerror(errno));
+            close(s); return -1;
+        }
+    }
+#endif
     if (localbind.s_addr != INADDR_NONE) {
         bzero(&loc_addr, sizeof(loc_addr));
-        loc_addr.sin_family = AF_INET;
-        loc_addr.sin_addr   = localbind;
-        if (bind(s, (struct sockaddr *) &loc_addr, sizeof(loc_addr)) != 0) {
+        loc_addr.i.sin_family = AF_INET;
+        loc_addr.i.sin_addr   = localbind;
+        if (bind(s, &loc_addr.a, sizeof(loc_addr.i)) != 0) {
             warn("bind: %s", strerror(errno)); close(s); return -1;
         }
     }
-    src_addr.sin_family = AF_INET;
-    src_addr.sin_addr   = inetaddr;
-    src_addr.sin_port   = 0;
-    if (connect(s, (struct sockaddr *) &src_addr, sizeof(src_addr)) < 0) {
+    src_addr.i.sin_family = AF_INET;
+    src_addr.i.sin_addr   = inetaddr;
+    src_addr.i.sin_port   = 0;
+    if (connect(s, &src_addr.a, sizeof(src_addr.i)) < 0) {
         warn("connect: %s", strerror(errno)); close(s); return -1;
     }
     my = test_redirections();
@@ -191,8 +208,7 @@ void pptp_gre_copy(u_int16_t call_id, u_int16_t peer_call_id,
 int decaps_hdlc(int fd, int (*cb)(int cl, void *pack, unsigned int len), int cl)
 {
     unsigned char buffer[PACKET_MAX];
-    unsigned int start = 0;
-    int end;
+    ssize_t start = 0, end;
     int status;
     static unsigned int len = 0, escape = 0;
     static unsigned char copy[PACKET_MAX];
@@ -201,7 +217,7 @@ int decaps_hdlc(int fd, int (*cb)(int cl, void *pack, unsigned int len), int cl)
     /*  this is the only blocking read we will allow */
     if ((end = read (fd, buffer, sizeof(buffer))) <= 0) {
         int saved_errno = errno;
-        warn("short read (%d): %s", end, strerror(saved_errno));
+        warn("short read (%zd): %s", end, strerror(saved_errno));
 	switch (saved_errno) {
 	  case EMSGSIZE: {
 	    socklen_t optval, optlen = sizeof(optval);
@@ -490,7 +506,7 @@ int encaps_gre (int fd, void *pack, unsigned int len)
                 if (errno == ENOBUFS)
                     rc = 0;         /* Simply ignore it */
                 stats.tx_failed++;
-            } else if (rc < sizeof(u.header) - sizeof(u.header.seq)) {
+            } else if ((size_t)rc < sizeof(u.header) - sizeof(u.header.seq)) {
                 stats.tx_short++;
             } else {
                 stats.tx_acks++;
@@ -524,7 +540,7 @@ int encaps_gre (int fd, void *pack, unsigned int len)
         if (errno == ENOBUFS)
             rc = 0;         /* Simply ignore it */
         stats.tx_failed++;
-    } else if (rc < header_len + len) {
+    } else if ((size_t)rc < header_len + len) {
         stats.tx_short++;
     } else {
         stats.tx_sent++;

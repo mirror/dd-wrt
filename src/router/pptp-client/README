@@ -17,7 +17,8 @@ Copyright (C) 2000  Free Software Foundation
 
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
-    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+    02110-1301, USA.
 
 You can find notes on installing in the file INSTALL, usage notes in
 the file USING, design notes in the Documentation directory, and the
@@ -45,4 +46,4 @@ James Cameron <james.cameron@hp.com> (maintainer, release engineer)
 C. Scott Ananian <cananian@alumni.princeton.edu> (original author)
 
 
-$Id: README,v 1.5 2007/08/28 00:17:13 quozl Exp $	
+$Id: README,v 1.6 2011/11/10 23:31:27 quozl Exp $	

@@ -14,7 +14,8 @@
 
 	You should have received a copy of the GNU General Public License
 	along with this program; if not, write to the Free Software
-	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+	02110-1301, USA.
 
 	pptp.c ... client shell to launch call managers, data handlers, and
 	the pppd from the command line.
@@ -61,9 +62,8 @@
 #include "version.h"
 #if defined(__linux__)
 #include <sys/prctl.h>
-#else
-#include "inststr.h"
 #endif
+#include "inststr.h"
 #include "util.h"
 #include "pptp_quirks.h"
 #include "pqueue.h"
@@ -119,6 +119,10 @@ void usage(char *progname)
             "  --max-echo-wait		Time to wait before giving up on lack of reply\n"
             "  --logstring <name>	Use <name> instead of 'anon' in syslog messages\n"
             "  --localbind <addr>	Bind to specified IP address instead of wildcard\n"
+#ifdef SO_MARK
+            "  --rtmark <n>	Use specified policy routing mark for all packets\n"
+#endif
+            "  --nohostroute		Do not add host route towards <hostname>\n"
             "  --loglevel <level>	Sets the debugging level (0=low, 1=default, 2=high)\n"
             "  --test-type <type>	Damage the packet stream by reordering\n"
             "  --test-rate <n>		Do the test every n packets\n",
@@ -129,10 +133,12 @@ void usage(char *progname)
 }
 
 #if defined (__SVR4) && defined (__sun)
-struct in_addr localbind = { INADDR_ANY };
+struct in_addr localbind = { .s_addr = INADDR_ANY };
 #else
 struct in_addr localbind = { INADDR_NONE };
 #endif
+int rtmark = 0;
+int nohostroute = 0;
 static int signaled = 0;
 
 /*** do nothing signal handler ************************************************/
@@ -145,13 +151,13 @@ void do_nothing(int sig)
 sigjmp_buf env;
 
 /*** signal handler ***********************************************************/
-void sighandler(int sig)
+void sighandler(int sig __attribute__ ((unused)))
 {
     siglongjmp(env, 1);
 }
 
 /*** report statistics signal handler (SIGUSR1) *******************************/
-void sigstats(int sig)
+void sigstats(int sig __attribute__ ((unused)))
 {
     syslog(LOG_NOTICE, "GRE statistics:\n");
 #define LOG(name,value) syslog(LOG_NOTICE, name "\n", stats .value)
@@ -183,6 +189,7 @@ int main(int argc, char **argv, char **envp)
     struct in_addr inetaddr;
     volatile int callmgr_sock = -1;
     char ttydev[PATH_MAX];
+    char *tty_name;
     int pty_fd, tty_fd, gre_fd, rc;
     volatile pid_t parent_pid, child_pid;
     u_int16_t call_id, peer_call_id;
@@ -212,6 +219,8 @@ int main(int argc, char **argv, char **envp)
 	    {"version", 0, 0, 0},
 	    {"test-type", 1, 0, 0},
 	    {"test-rate", 1, 0, 0},
+	    {"rtmark", 1, 0, 0},
+	    {"nohostroute", 0, 0, 0},
             {0, 0, 0, 0}
         };
         int option_index = 0;
@@ -290,6 +299,16 @@ int main(int argc, char **argv, char **envp)
  		    test_type = atoi(optarg);
  		} else if (option_index == 14) { /* --test-rate */
  		    test_rate = atoi(optarg);
+		} else if (option_index == 15) { /* --rtmark */
+#ifdef SO_MARK
+		    rtmark = atoi(optarg);
+#else
+		    printf("--rtmark support was missing when "
+				    "this binary was compiled.\n");
+		    exit(2);
+#endif
+		} else if (option_index == 16) { /* --nohostroute */
+		    nohostroute = 1;
                 }
                 break;
             case '?': /* unrecognised option */
@@ -391,7 +410,7 @@ int main(int argc, char **argv, char **envp)
         file2fd("/dev/null", "wb", STDERR_FILENO);
     }
 
-    char *tty_name = ttyname(tty_fd);
+    tty_name = ttyname(tty_fd);
     snprintf(buf, sizeof(buf), "pptp: GRE-to-PPP gateway on %s",
               tty_name ? tty_name : "(null)");
 #ifdef PR_SET_NAME
@@ -444,7 +463,10 @@ int open_callmgr(struct in_addr inetaddr, char *phonenr, int argc, char **argv,
         char **envp, int pty_fd, int gre_fd)
 {
     /* Try to open unix domain socket to call manager. */
-    struct sockaddr_un where;
+    union {
+        struct sockaddr a;
+        struct sockaddr_un u;
+    } where;
     const int NUM_TRIES = 3;
     int i, fd;
     pid_t pid;
@@ -454,12 +476,12 @@ int open_callmgr(struct in_addr inetaddr, char *phonenr, int argc, char **argv,
         fatal("Could not create unix domain socket: %s", strerror(errno));
     }
     /* Make address */
-    callmgr_name_unixsock(&where, inetaddr, localbind);
+    callmgr_name_unixsock(&where.u, inetaddr, localbind);
     for (i = 0; i < NUM_TRIES; i++) {
-        if (connect(fd, (struct sockaddr *) &where, sizeof(where)) < 0) {
+        if (connect(fd, &where.a, sizeof(where)) < 0) {
             /* couldn't connect.  We'll have to launch this guy. */
 
-            unlink (where.sun_path);	
+            unlink (where.u.sun_path); /* FIXME: potential race condition */
 
             /* fork and launch call manager process */
             switch (pid = fork()) {
@@ -475,7 +497,7 @@ int open_callmgr(struct in_addr inetaddr, char *phonenr, int argc, char **argv,
                 }
                 default: /* parent */
                     waitpid(pid, &status, 0);
-                    if (status!= 0)
+                    if (WEXITSTATUS(status) != 0)
                         fatal("Call manager exited with error %d", status);
                     break;
             }
@@ -489,7 +511,7 @@ int open_callmgr(struct in_addr inetaddr, char *phonenr, int argc, char **argv,
 }
 
 /*** call the call manager main ***********************************************/
-void launch_callmgr(struct in_addr inetaddr, char *phonenr, int argc,
+void launch_callmgr(struct in_addr inetaddr, char *phonenr, int argc __attribute__ ((unused)),
         char**argv,char**envp) 
 {
       char *my_argv[3] = { argv[0], inet_ntoa(inetaddr), phonenr };
@@ -546,10 +568,13 @@ int get_call_id(int sock, pid_t gre, pid_t pppd,
 void launch_pppd(char *ttydev, int argc, char **argv)
 {
     char *new_argv[argc + 4];/* XXX if not using GCC, hard code a limit here. */
+    char str_pppd[] = PPPD_BINARY;
+    char str_direct[] __attribute__ ((unused)) = "-direct";
+    char str_38400[] = "38400";
     int i = 0, j;
-    new_argv[i++] = PPPD_BINARY;
+    new_argv[i++] = str_pppd;
 #ifdef USER_PPP
-    new_argv[i++] = "-direct";
+    new_argv[i++] = str_direct;
     /* ppp expects to have stdin connected to ttydev */
     if ((j = open(ttydev, O_RDWR)) == -1)
         fatal("Cannot open %s: %s", ttydev, strerror(errno));
@@ -558,7 +583,7 @@ void launch_pppd(char *ttydev, int argc, char **argv)
     close(j);
 #else
     new_argv[i++] = ttydev;
-    new_argv[i++] = "38400";
+    new_argv[i++] = str_38400;
 #endif
     for (j = 0; j < argc; j++)
         new_argv[i++] = argv[j];

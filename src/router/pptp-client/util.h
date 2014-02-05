@@ -1,7 +1,7 @@
 /* util.h ....... error message utilities.
  *                C. Scott Ananian <cananian@alumni.princeton.edu>
  *
- * $Id: util.h,v 1.6 2005/03/10 01:18:20 quozl Exp $
+ * $Id: util.h,v 1.8 2011/12/19 07:15:03 quozl Exp $
  */
 
 #ifndef INC_UTIL_H
@@ -10,7 +10,7 @@
 /* log_string is an identifier for this pptp process, passed from
    command line using --log-string=X, and included with every log message.
    Useful for people with multiple pptp sessions open at a time */
-extern char * log_string;
+extern const char * log_string;
 
 /* log_level sets the logging verbosity. Values range from 0 (errors only)
    to 1 (errors and warnings) to 2 (high verbosity, for debugging) */
@@ -38,7 +38,7 @@ int file2fd(const char *path, const char *mode, int fd);
 /* signal to pipe delivery implementation */
 
 /* create a signal pipe, returns 0 for success, -1 with errno for failure */
-int sigpipe_create();
+int sigpipe_create(void);
 
 /* generic handler for signals, writes signal number to pipe */
 void sigpipe_handler(int signum);
@@ -47,11 +47,11 @@ void sigpipe_handler(int signum);
 void sigpipe_assign(int signum);
 
 /* return the signal pipe read file descriptor for select(2) */
-int sigpipe_fd();
+int sigpipe_fd(void);
 
 /* read and return the pending signal from the pipe */
-int sigpipe_read();
+int sigpipe_read(void);
 
-void sigpipe_close();
+void sigpipe_close(void);
 
 #endif /* INC_UTIL_H */
