@@ -31,6 +31,9 @@ endif
 ifdef CONFIG_HDWIFI
  MOTD_ADD:=.hdwifi
 endif
+ifdef CONFIG_ESPOD
+ MOTD_ADD:=.espod
+endif
 
 install:
 	install -d $(INSTALLDIR)/etc
