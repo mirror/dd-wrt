@@ -225,11 +225,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		off_t mtdlen = ftello(in);
 		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
 		fwrite(mem, 65536, 1, in);
-		fclose(in);
-		eval("sync");
-		in = fopen(drive, "rb");
-		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
-		fread(mem, 65536, 1, in);
+		fflush(in);
+		fsync(fileno(in));
 		fclose(in);
 		free(mem);
 	}
@@ -249,17 +246,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	fflush(out);
 	fsync(fileno(out));
 	fclose(out);
-	fprintf(stderr, "sync system\n");
-	sysprintf("sync");
-	sysprintf("sync");
-	writeproc("/proc/sys/vm/drop_caches", "3");
-	//reread for validation
-	fprintf(stderr, "check system for validation\n");
-	in = fopen(drive, "rb");
-	for (i = 0; i < linuxsize; i++)
-		getc(in);
-	fclose(in);
-	sysprintf("sync");
 	/*
 	 * Wait for write to terminate 
 	 */
@@ -361,6 +347,8 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 		int i;
 		for (i = 0; i < 65536; i++)
 			putc(0, in);	// erase backup area
+		fflush(in);
+		fsync(fileno(in));
 		fclose(in);
 	}
 	/*
