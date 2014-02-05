@@ -771,12 +771,12 @@ struct nvram_tuple srouter_defaults[] = {
 					 */
 #ifdef HAVE_80211AC
 	/* Airtime fairness */
-	{"wl0_atf", "1", 0 },		/* ATF feature on */
-	{"wl1_atf", "1", 0 },		/* ATF feature on */
-	{"wl0_txbf", "1", 0 },
-	{"wl1_txbf", "1", 0 },
-	{"wl0_itxbf", "1", 0 },
-	{"wl1_itxbf", "1", 0 },
+	{"wl0_atf", "0", 0 },		/* 0= off 1= on */
+	{"wl1_atf", "0", 0 },		
+	{"wl0_txbf", "0", 0 },
+	{"wl1_txbf", "0", 0 },
+	{"wl0_itxbf", "0", 0 },
+	{"wl1_itxbf", "0", 0 },
 
 	{"wl0_txbf_bfr_cap", "1", 0 },
 	{"wl0_txbf_bfe_cap", "1", 0 },
@@ -784,6 +784,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl1_txbf_bfe_cap", "1", 0 },
 	{"wl0_turbo_qam", "1", 0},	/* RIFS mode advertisement */
 	{"wl1_turbo_qam", "1", 0},	/* RIFS mode advertisement */
+	{"wl0_rxchain_pwrsave_enable", "0", 0},
+	{"wl1_rxchain_pwrsave_enable", "0", 0},
 #endif
 #ifdef HAVE_BCMMODERN
 	{"wl_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
