@@ -17,7 +17,7 @@
 
 #define MIN_CAPACITY 128 /* min allocated buffer for a packet */
 
-static int pqueue_alloc (int seq, unsigned char *packet, int packlen, pqueue_t **new);
+static int pqueue_alloc (u_int32_t seq, unsigned char *packet, int packlen, pqueue_t **new);
 
 int packet_timeout_usecs = DEFAULT_PACKET_TIMEOUT * 1000000;
 
@@ -29,7 +29,7 @@ static pqueue_t *pq_freelist_head = NULL;
 
 
 
-static int pqueue_alloc(int seq, unsigned char *packet, int packlen, pqueue_t **new) {
+static int pqueue_alloc(u_int32_t seq, unsigned char *packet, int packlen, pqueue_t **new) {
 
   pqueue_t *newent;
 
@@ -125,7 +125,7 @@ static int pqueue_alloc(int seq, unsigned char *packet, int packlen, pqueue_t **
 
 
 
-int pqueue_add (int seq, unsigned char *packet, int packlen) {
+int pqueue_add (u_int32_t seq, unsigned char *packet, int packlen) {
   pqueue_t *newent, *point;
 
   /* get a new entry */
@@ -217,7 +217,7 @@ int pqueue_del (pqueue_t *point) {
 
 
 
-pqueue_t *pqueue_head () {
+pqueue_t *pqueue_head (void) {
   return pq_head;
 }
 

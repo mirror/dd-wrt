@@ -2,7 +2,7 @@
  *                efficiently.
  *                C. Scott Ananian <cananian@alumni.princeton.edu>
  *
- * $Id: vector.h,v 1.1.1.1 2000/12/23 08:19:51 scott Exp $
+ * $Id: vector.h,v 1.2 2011/12/19 07:15:03 quozl Exp $
  */
 
 #ifndef INC_VECTOR_H
@@ -12,7 +12,7 @@
 
 typedef struct vector_struct VECTOR;
 
-VECTOR *vector_create();
+VECTOR *vector_create(void);
 void vector_destroy(VECTOR *v);
 
 int vector_size(VECTOR *v);

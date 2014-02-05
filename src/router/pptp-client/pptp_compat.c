@@ -2,20 +2,21 @@
  *
  */
 
-#if defined (__SVR4) && defined (__sun) /* Solaris */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <stropts.h>
 #include <stdlib.h>
+#if defined (__SVR4) && defined (__sun) /* Solaris */
+#include <stropts.h>
+#endif
 #include <strings.h>
 #include "pptp_compat.h"
 #include <stdio.h>
 #include "util.h"
 
-
+#if defined (__SVR4) && defined (__sun) /* Solaris */
 /*
  * daemon implementation from uClibc
  */

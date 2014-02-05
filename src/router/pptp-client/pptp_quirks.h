@@ -1,7 +1,7 @@
 /* pptp_quirks.h ...... various options to fix quirks found in buggy adsl modems
  *                      mulix <mulix@actcom.co.il>
  *
- * $Id: pptp_quirks.h,v 1.1 2001/11/20 06:30:10 quozl Exp $
+ * $Id: pptp_quirks.h,v 1.2 2011/12/19 07:15:03 quozl Exp $
  */
 
 #ifndef INC_PPTP_QUIRKS_H
@@ -53,7 +53,7 @@ int set_quirk_index(int index);
 
 /* get the global quirk index. return the index on success,
    -1 if no quirk is defined */
-int get_quirk_index();
+int get_quirk_index(void);
 
 
 #endif /* INC_PPTP_QUIRKS_H */

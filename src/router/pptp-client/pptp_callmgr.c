@@ -2,7 +2,7 @@
  *                    Handles TCP port 1723 protocol.
  *                    C. Scott Ananian <cananian@alumni.princeton.edu>
  *
- * $Id: pptp_callmgr.c,v 1.21 2006/08/02 06:22:34 quozl Exp $
+ * $Id: pptp_callmgr.c,v 1.27 2011/12/19 07:18:09 quozl Exp $
  */
 #include <signal.h>
 #include <sys/time.h>
@@ -15,6 +15,9 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined (__SVR4) && defined (__sun)
+#include <strings.h>
+#endif
 #include <assert.h>
 #include <setjmp.h>
 #include <stdio.h>
@@ -28,6 +31,8 @@
 #include "routing.h"
 
 extern struct in_addr localbind; /* from pptp.c */
+extern int rtmark;
+extern int nohostroute;
 
 int open_inetsock(struct in_addr inetaddr);
 int open_unixsock(struct in_addr inetaddr);
@@ -36,12 +41,12 @@ void close_unixsock(int fd, struct in_addr inetaddr);
 
 sigjmp_buf callmgr_env;
 
-void callmgr_sighandler(int sig) {
+void callmgr_sighandler(int sig __attribute__ ((unused))) {
     /* TODO: according to signal(2), siglongjmp() is unsafe used here */
     siglongjmp (callmgr_env, 1);
 }
 
-void callmgr_do_nothing(int sig) {
+void callmgr_do_nothing(int sig __attribute__ ((unused))) {
     /* do nothing signal handler */
 }
 
@@ -102,7 +107,7 @@ void call_callback(PPTP_CONN *conn, PPTP_CALL *call, enum call_state state)
  *****************************************************************************/
 
 /*** Call Manager *************************************************************/
-int callmgr_main(int argc, char **argv, char **envp)
+int callmgr_main(int argc, char **argv, char **envp __attribute__ ((unused)))
 {
     struct in_addr inetaddr;
     int inet_sock, unix_sock;
@@ -120,8 +125,10 @@ int callmgr_main(int argc, char **argv, char **envp)
     phonenr = argc == 3 ? argv[2] : NULL;
     if (inet_aton(argv[1], &inetaddr) == 0)
         fatal("Invalid IP address: %s", argv[1]);
-//    routing_init(inet_ntoa(inetaddr));
-//    routing_start();
+//   if (!nohostroute) {
+//       routing_init(inet_ntoa(inetaddr));
+//        routing_start();
+//    }
     /* Step 1: Open sockets. */
     if ((inet_sock = open_inetsock(inetaddr)) < 0)
         fatal("Could not open control connection to %s", argv[1]);
@@ -167,6 +174,7 @@ int callmgr_main(int argc, char **argv, char **envp)
     do {
         int rc;
         fd_set read_set = call_set, write_set;
+        if (pptp_conn_is_dead(conn)) break;
         FD_ZERO (&write_set);
         if (pptp_conn_established(conn)) {
 	  FD_SET (unix_sock, &read_set);
@@ -191,14 +199,17 @@ int callmgr_main(int argc, char **argv, char **envp)
         /* Step 5b: Handle new connection to UNIX socket */
         if (FD_ISSET(unix_sock, &read_set)) {
             /* New call! */
-            struct sockaddr_un from;
-            socklen_t len = sizeof(from);
+            union {
+                struct sockaddr a;
+                struct sockaddr_un u;
+            } from;
+            socklen_t len = sizeof(from.u);
             PPTP_CALL * call;
             struct local_callinfo *lci;
             int s;
             /* Accept the socket */
             FD_CLR (unix_sock, &read_set);
-            if ((s = accept(unix_sock, (struct sockaddr *) &from, &len)) < 0) {
+            if ((s = accept(unix_sock, &from.a, &len)) < 0) {
                 warn("Socket not accepted: %s", strerror(errno));
                 goto skip_accept;
             }
@@ -294,6 +305,7 @@ shutdown:
 	}
         /* with extreme prejudice */
         pptp_conn_destroy(conn);
+        pptp_conn_free(conn);
         vector_destroy(call_list);
     }
 cleanup:
@@ -307,25 +319,36 @@ cleanup:
 /*** open_inetsock ************************************************************/
 int open_inetsock(struct in_addr inetaddr)
 {
-    struct sockaddr_in dest, src;
+    union {
+        struct sockaddr a;
+        struct sockaddr_in i;
+    } dest, src;
     int s;
-    dest.sin_family = AF_INET;
-    dest.sin_port   = htons(PPTP_PORT);
-    dest.sin_addr   = inetaddr;
+    dest.i.sin_family = AF_INET;
+    dest.i.sin_port   = htons(PPTP_PORT);
+    dest.i.sin_addr   = inetaddr;
     if ((s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         warn("socket: %s", strerror(errno));
         return s;
     }
+#ifdef SO_MARK
+    if (rtmark) {
+        if (setsockopt(s, SOL_SOCKET, SO_MARK, &rtmark, sizeof(rtmark))) {
+            warn("setsockopt(SO_MARK): %s", strerror(errno));
+            close(s); return -1;
+        }
+    }
+#endif
     if (localbind.s_addr != INADDR_NONE) {
         bzero(&src, sizeof(src));
-        src.sin_family = AF_INET;
-        src.sin_addr   = localbind;
-        if (bind(s, (struct sockaddr *) &src, sizeof(src)) != 0) {
+        src.i.sin_family = AF_INET;
+        src.i.sin_addr   = localbind;
+        if (bind(s, &src.a, sizeof(src.i)) != 0) {
             warn("bind: %s", strerror(errno));
             close(s); return -1;
         }
     }
-    if (connect(s, (struct sockaddr *) &dest, sizeof(dest)) < 0) {
+    if (connect(s, &dest.a, sizeof(dest.i)) < 0) {
         warn("connect: %s", strerror(errno));
         close(s); return -1;
     }
@@ -335,7 +358,10 @@ int open_inetsock(struct in_addr inetaddr)
 /*** open_unixsock ************************************************************/
 int open_unixsock(struct in_addr inetaddr)
 {
-    struct sockaddr_un where;
+    union {
+        struct sockaddr a;
+        struct sockaddr_un u;
+    } where;
     struct stat st;
     char *dir;
     int s;
@@ -343,27 +369,27 @@ int open_unixsock(struct in_addr inetaddr)
         warn("socket: %s", strerror(errno));
         return s;
     }
-    callmgr_name_unixsock( &where, inetaddr, localbind);
-    if (stat(where.sun_path, &st) >= 0) {
+    callmgr_name_unixsock( &where.u, inetaddr, localbind);
+    if (stat(where.u.sun_path, &st) >= 0) {
         warn("Call manager for %s is already running.", inet_ntoa(inetaddr));
         close(s); return -1;
     }
     /* Make sure path is valid. */
-    dir = dirname(where.sun_path);
+    dir = dirname(where.u.sun_path);
     if (!make_valid_path(dir, 0770))
-        fatal("Could not make path to %s: %s", where.sun_path, strerror(errno));
+        fatal("Could not make path to %s: %s", where.u.sun_path, strerror(errno));
     free(dir);
-    if (bind(s, (struct sockaddr *) &where, sizeof(where)) < 0) {
+    if (bind(s, &where.a, sizeof(where.u)) < 0) {
         warn("bind: %s", strerror(errno));
         close(s); return -1;
     }
-    chmod(where.sun_path, 0777);
+    chmod(where.u.sun_path, 0777);
     listen(s, 127);
     return s;
 }
 
 /*** close_inetsock ***********************************************************/
-void close_inetsock(int fd, struct in_addr inetaddr)
+void close_inetsock(int fd, struct in_addr inetaddr __attribute__ ((unused)))
 {
     close(fd);
 }
