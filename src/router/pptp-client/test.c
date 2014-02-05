@@ -52,7 +52,7 @@ static ssize_t write_reordered_swap(int fd, const void *buf, size_t count)
       test_ordering_phase = 0;
       /* send the new packet first */
       stat = write(fd, buf, count);
-      if (stat != count) return stat;
+      if ((size_t)stat != count) return stat;
       /* then send the old packet next */
       stat = write(fd, pocket_buf, pocket_count);
       free(pocket_buf);
@@ -96,7 +96,7 @@ static ssize_t write_reordered_retransmit(int fd, const void *buf, size_t count)
     test_ordering_phase = 0;
     /* send the new packet first */
     stat = write(fd, buf, count);
-    if (stat != count) return stat;
+    if ((size_t)stat != count) return stat;
     /* send the buffered packets in normal order */
     for (n=0; n<test_length; n++) {
       stat = write(fd, pocket_buf[n], pocket_count[n]);
@@ -142,7 +142,7 @@ static ssize_t write_reordered_reverse(int fd, const void *buf, size_t count)
     test_ordering_phase = 0;
     /* send the new packet first */
     stat = write(fd, buf, count);
-    if (stat != count) return stat;
+    if ((size_t)stat != count) return stat;
     /* send the buffered packets in reverse order */
     for (n=test_length-1; n>0; n--) {
       stat = write(fd, pocket_buf[n], pocket_count[n]);
@@ -171,7 +171,7 @@ static ssize_t write_reordered(int fd, const void *buf, size_t count)
   }
 }
 
-struct test_redirections *test_redirections()
+struct test_redirections *test_redirections(void)
 {
   static struct test_redirections *my = NULL;
 

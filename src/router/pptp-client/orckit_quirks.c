@@ -1,7 +1,7 @@
 /* orckit_quirks.c ...... fix quirks in orckit adsl modems
  *                        mulix <mulix@actcom.co.il>
  *
- * $Id: orckit_quirks.c,v 1.3 2002/03/01 01:23:36 quozl Exp $
+ * $Id: orckit_quirks.c,v 1.4 2011/12/19 07:13:30 quozl Exp $
  */
 
 #include <string.h>
@@ -62,7 +62,7 @@ int
 orckit_atur3_start_ctrl_conn_hook(struct pptp_start_ctrl_conn* packet)
 {
     struct pptp_start_ctrl_conn fixed_packet = {
-	{0}, /* we'll set the header later */
+	{0, 0, 0, 0 , 0}, /* we'll set the header later */
 	hton16(PPTP_VERSION), 0, 0,
 	hton32(PPTP_FRAME_ASYNC), hton32(PPTP_BEARER_ANALOG),
 	hton16(0) /* max channels */,

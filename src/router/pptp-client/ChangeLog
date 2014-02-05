@@ -1,3 +1,99 @@
+Wed Oct 23 19:04:57 2013  James Cameron  <quozl@laptop.org>
+
+	* pptp-1.8.0: released.
+
+Thu Aug 30 13:45:26 2012  Paul Howarth <paul@city-fan.org>
+
+	* options.pptp: fix typo in 'Encryption' comment, add notes and
+	references regarding recent chapcrack exploit, note that the
+	ppp_mppe kernel module will not load into the kernel if it's
+	booted in FIPS mode (http://bugzilla.redhat.com/845112), and fix
+	broken link to Jan Dubiec's ppp_mppe_mppc code.
+
+Wed Nov 30 09:02:18 2011  Paul Howarth  <paul@city-fan.org>
+
+	* Makefile (config.h): fix unexpected build failure with a
+	highly-parallel build (-j16).
+
+Thu Mar  3 12:24:15 2011  David Lamparter  <david.lamparter@adyton.net>
+
+	* pptp.c, pptp_callmgr.c, pptp.8: add -nohostroute option to
+	disable adding a host route for the pptp server to the routing
+	table. Also add some documentation while at it.
+
+Mon Feb 21 15:01:14 2011  David Lamparter  <david.lamparter@adyton.net>
+
+	* pptp.c, pptp_callmgr.c, pptp_gre.c, pptp.8: add --rtmark option
+	for specifying the Linux policy routing / netfilter mark.
+
+Thu Sep 30 16:16:58 2010  Paul Howarth  <paul@city-fan.org>
+
+	* pptp_ctrl.c: we could maintain a separate vector of peer call
+	IDs and use that when we get a call-disconnect-notify packet to
+	find our call ID and close that call, but as
+	call-disconnect-notify packets are relatively rare, I've tried a
+	slower but simpler approach of doing a linear search through the
+	existing vector to look for the peer's call ID.
+
+Tue Jun 15 15:02:28 2010  James Cameron  <quozl@us.netrek.org>
+
+	* pptp.c (open_callmgr): fix usage of status returned by waitpid;
+	it must be wrapped by WEXITSTATUS to shift bits as required.
+
+Tue Jun 15 15:00:40 2010  James Cameron  <quozl@laptop.org>
+
+	* pptp_ctrl.c (pptp_conn_is_dead): immediately destroying the
+	connection and freeing the structure has led to segmentation
+	faults on more recent heap implementations, since we use the
+	structure after it has been freed.
+
+	Defer the free of the structure until after all uses of it have
+	ceased, by adding a connection state for dead and terminating the
+	main loop once it is detected.
+
+Fri Jun  4 10:54:04 2010  Jan Just Keijser  <jan.just.keijser@gmail.com>
+
+	* pptp_ctrl.c: check for failure return by pptp_send_ctrl_packet
+	and avoid using freed struct conn.
+
+Tue Nov 10 15:39:33 2009  Charles Shen  <cshen@cisco.com>
+
+	* pptp_ctrl.c (ctrlp_disp): add call ID of outgoing call so that
+	Call-Disconnect-Notify from peer causes correct disconnection
+	sequence.
+
+Thu Jun 25 11:39:24 2009  James Cameron  <quozl@us.netrek.org>
+
+	* AUTHORS: maintainer mail address change, james.cameron@hp.com is
+	no longer valid.
+
+Mon Jun  1 14:43:00 2009  Paul Howarth  <paul@city-fan.org>
+
+	* pptpsetup: only check for MPPE support in kernel and pppd if
+	an encrypted tunnel is being created.
+
+Wed Mar 25 13:38:00 2009  Paul Howarth  <paul@city-fan.org>
+
+	* pptpsetup: retain permissions on chap-secrets file when
+	deleting tunnels (http://bugzilla.redhat.com/492090).
+
+Thu Jul 24 15:51:30 2008  Paul Howarth  <paul@city-fan.org>
+
+	* routing.c, pptp_compat.c: compilation fixes for old
+	distributions.
+
+Thu Jul 24 15:28:32 2008  Ilya Voronin  <ivoronin@gmail.com>
+
+	* routing.c, Makefile: fixe use of /bin/ip and all compiler
+	warnings on Solaris.
+
+Thu May 22 09:44:19 2008  James Cameron  <quozl@us.netrek.org>
+
+	* routing.c: add config.h and use IP_BINARY.
+
+	* Makefile (IP): add pointer to IP binary, store it in config.h,
+	and add dependencies to support parallel make and development.
+
 Wed May 14 15:59:17 2008  James Cameron  <quozl@us.netrek.org>
 
 	* pptp-1.7.2 released.
