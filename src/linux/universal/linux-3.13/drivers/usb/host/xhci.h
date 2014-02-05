@@ -1260,11 +1260,7 @@ union xhci_trb {
  * since the command ring is 64-byte aligned.
  * It must also be greater than 16.
  */
-#ifdef CONFIG_BCM47XX
 #define TRBS_PER_SEGMENT	256
-#else
-#define TRBS_PER_SEGMENT	64
-#endif
 /* Allow two commands + a link TRB, along with any reserved command TRBs */
 #define MAX_RSVD_CMD_TRBS	(TRBS_PER_SEGMENT - 3)
 #define TRB_SEGMENT_SIZE	(TRBS_PER_SEGMENT*16)
