@@ -24,6 +24,7 @@
 
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 #include <signal.h>
 #include <stdio.h>
 #include <sys/types.h>
