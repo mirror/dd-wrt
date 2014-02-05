@@ -219,7 +219,7 @@ ifeq ($(CONFIG_WP18),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/ipv6
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/net/sunrpc
 endif
-	find $(INSTALLDIR) $(TARGETDIR) -name \*.ko | \
+	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt

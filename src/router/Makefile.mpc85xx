@@ -197,7 +197,7 @@ endif
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
 
-	find $(INSTALLDIR) $(TARGETDIR) -name \*.ko | \
+	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
 		xargs $(ARCH)-linux-nm | \
 		awk '$$1 == "U" { print $$2 } ' | \
 		sort -u > $(LINUXDIR)/mod_symtab.txt
