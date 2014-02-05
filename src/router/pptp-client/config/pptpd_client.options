@@ -20,6 +20,7 @@ lcp-echo-interval 2
 persist	#dont close session try to reconnect
 maxfail 0	#forever try to connect
 usepeerdns
+nohostroute
 idle 0
 ip-up-script /tmp/pptpd_client/ip-up
 ip-down-script /tmp/pptpd_client/ip-down
