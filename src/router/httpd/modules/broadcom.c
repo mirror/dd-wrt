@@ -1964,11 +1964,11 @@ static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, ch
 			if ( fp != NULL )
 			{
 				char line [1024];
-				websWrite(stream,"<div style=\"height:940px; overflow-y:auto;\"><table>");
+				websWrite(stream,"<div style=\"height:740px; overflow-y:auto;\"><table>");
 				while ( fgets ( line, sizeof line, fp ) != NULL )
 				{
 					count++;
-					if( offset < count && ((offset + 100) > count) ) // show 100 lines
+					if( offset < count && ((offset + 50) > count) ) // show 100 lines
 					// a few sample colors
 					if( strstr(line, "authpriv.info") ){	
 						websWrite(stream,"<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
