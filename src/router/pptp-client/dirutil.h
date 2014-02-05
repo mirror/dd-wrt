@@ -1,7 +1,7 @@
 /* dirutil.h ... directory utilities.
  *               C. Scott Ananian <cananian@alumni.princeton.edu>
  *
- * $Id: dirutil.h,v 1.1.1.1 2000/12/23 08:19:51 scott Exp $
+ * $Id: dirutil.h,v 1.1 2000/12/23 08:19:51 scott Exp $
  */
 
 /* Returned malloc'ed string representing basename */

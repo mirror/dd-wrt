@@ -2,7 +2,7 @@
  *                efficiently.
  *                C. Scott Ananian <cananian@alumni.princeton.edu>
  *
- * $Id: vector.c,v 1.3 2003/06/17 10:12:55 reink Exp $
+ * $Id: vector.c,v 1.4 2011/12/19 07:15:03 quozl Exp $
  */
 
 #include <stdlib.h>
@@ -35,7 +35,7 @@ struct vector_struct {
 static struct vector_item *binary_search(VECTOR *v, int key);
 
 /*** vector_create ************************************************************/
-VECTOR *vector_create()
+VECTOR *vector_create(void)
 {
     const int INITIAL_SIZE = 4;
 

@@ -1,10 +1,14 @@
 /* pptp_ctrl.c ... handle PPTP control connection.
  *                 C. Scott Ananian <cananian@alumni.princeton.edu>
  *
- * $Id: pptp_ctrl.c,v 1.33 2007/11/21 03:36:47 quozl Exp $
+ * $Id: pptp_ctrl.c,v 1.40 2011/12/19 07:15:03 quozl Exp $
  */
 
 #include <errno.h>
+#if defined (__SVR4) && defined (__sun) /* Solaris */
+#define _XPG4_2
+#define __EXTENSIONS__
+#endif /* Solaris */
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -58,8 +62,11 @@ static struct thread_specific {
 struct PPTP_CONN {
     int inet_sock;
     /* Connection States */
-    enum { 
-        CONN_IDLE, CONN_WAIT_CTL_REPLY, CONN_WAIT_STOP_REPLY, CONN_ESTABLISHED 
+    enum {
+      CONN_IDLE,
+      CONN_WAIT_CTL_REPLY, CONN_WAIT_STOP_REPLY,
+      CONN_ESTABLISHED,
+      CONN_DEAD
     } conn_state; /* on startup: CONN_IDLE */
     /* Keep-alive states */
     enum { 
@@ -171,7 +178,7 @@ int max_echo_wait = PPTP_TIMEOUT;
 
 /* Local prototypes */
 static void pptp_reset_timer(void);
-static void pptp_handle_timer();
+static void pptp_handle_timer(void);
 /* Write/read as much as we can without blocking. */
 int pptp_write_some(PPTP_CONN * conn);
 int pptp_read_some(PPTP_CONN * conn);
@@ -190,7 +197,7 @@ int ctrlp_disp(PPTP_CONN * conn, void * buffer, size_t size);
 void pptp_set_link(PPTP_CONN * conn, int peer_call_id);
 
 /*** log error information in control packets *********************************/
-static void ctrlp_error( int result, int error, int cause,
+static void ctrlp_error( int result, u_int8_t error, int cause,
         const char *result_text[], int max_result)
 {
     if( cause >= 0)
@@ -235,7 +242,7 @@ static const char *ctrl_msg_types[] = {
 #define MAX_CTRLMSG_TYPE 15
          
 /*** report a sent packet ****************************************************/
-static void ctrlp_rep( void * buffer, int size, int isbuff)
+static void ctrlp_rep( void * buffer, size_t size, int isbuff)
 {
     struct pptp_header *packet = buffer;
     unsigned int type;
@@ -393,9 +400,10 @@ void pptp_call_close(PPTP_CONN * conn, PPTP_CALL * call)
     /* don't check state against WAIT_DISCONNECT... allow multiple disconnect
      * requests to be made.
      */
-    pptp_send_ctrl_packet(conn, &rqst, sizeof(rqst));
-    pptp_reset_timer();
-    call->state.pns = PNS_WAIT_DISCONNECT;
+    if (pptp_send_ctrl_packet(conn, &rqst, sizeof(rqst))) {
+        pptp_reset_timer();
+        call->state.pns = PNS_WAIT_DISCONNECT;
+    }
     /* call structure will be freed when we have confirmation of disconnect. */
 }
 
@@ -428,9 +436,10 @@ void pptp_conn_close(PPTP_CONN * conn, u_int8_t close_reason)
         pptp_call_close(conn, vector_get_Nth(conn->call, i));
     /* now close connection */
     log("Closing PPTP connection");
-    pptp_send_ctrl_packet(conn, &rqst, sizeof(rqst));
-    pptp_reset_timer(); /* wait 60 seconds for reply */
-    conn->conn_state = CONN_WAIT_STOP_REPLY;
+    if (pptp_send_ctrl_packet(conn, &rqst, sizeof(rqst))) {
+        pptp_reset_timer(); /* wait 60 seconds for reply */
+        conn->conn_state = CONN_WAIT_STOP_REPLY;
+    }
     return;
 }
 
@@ -448,6 +457,16 @@ void pptp_conn_destroy(PPTP_CONN * conn)
     close(conn->inet_sock);
     /* deallocate */
     vector_destroy(conn->call);
+    conn->conn_state = CONN_DEAD;
+}
+
+int pptp_conn_is_dead(PPTP_CONN * conn)
+{
+    return conn->conn_state == CONN_DEAD;
+}
+
+void pptp_conn_free(PPTP_CONN * conn)
+{
     free(conn);
 }
 
@@ -517,7 +536,7 @@ int pptp_write_some(PPTP_CONN * conn) {
 	    return -1;
         }
     }
-    assert(retval <= conn->write_size);
+    assert((size_t)retval <= conn->write_size);
     conn->write_size -= retval;
     memmove(conn->write_buffer, conn->write_buffer + retval, conn->write_size);
     ctrlp_rep(conn->write_buffer, retval, 0);
@@ -720,8 +739,8 @@ int ctrlp_disp(PPTP_CONN * conn, void * buffer, size_t size)
                     reply.version = packet->version;
                     /* protocol version not supported */
                     reply.result_code = hton8(5);
-                    pptp_send_ctrl_packet(conn, &reply, sizeof(reply));
-                    pptp_reset_timer(); /* give sender a chance for a retry */
+                    if (pptp_send_ctrl_packet(conn, &reply, sizeof(reply)))
+                        pptp_reset_timer(); /* give sender a chance for a retry */
                 } else { /* same or greater version */
                     if (pptp_send_ctrl_packet(conn, &reply, sizeof(reply))) {
                         conn->conn_state = CONN_ESTABLISHED;
@@ -828,8 +847,8 @@ int ctrlp_disp(PPTP_CONN * conn, void * buffer, size_t size)
                 hton8(1), hton8(PPTP_GENERAL_ERROR_NONE), 0
             };
             logecho( PPTP_ECHO_RQST);
-            pptp_send_ctrl_packet(conn, &reply, sizeof(reply));
-            pptp_reset_timer();
+            if (pptp_send_ctrl_packet(conn, &reply, sizeof(reply)))
+                pptp_reset_timer();
             break;
         }
             /* ----------- OUTGOING CALL MESSAGES ------------ */
@@ -915,9 +934,10 @@ int ctrlp_disp(PPTP_CONN * conn, void * buffer, size_t size)
                 vector_search(conn->call, ntoh16(packet->call_id), &call);
                 if (call->callback != NULL)
                     call->callback(conn, call, CALL_CLOSE_RQST);
-                pptp_send_ctrl_packet(conn, &reply, sizeof(reply));
-                pptp_call_destroy(conn, call);
-                log("Call closed (RQST) (call id %d)", (int) call->call_id);
+                if (pptp_send_ctrl_packet(conn, &reply, sizeof(reply))) {
+                    pptp_call_destroy(conn, call);
+                    log("Call closed (RQST) (call id %d)", (int) call->call_id);
+                }
             }
             break;
         }
@@ -925,15 +945,25 @@ int ctrlp_disp(PPTP_CONN * conn, void * buffer, size_t size)
         {
             struct pptp_call_clear_ntfy *packet =
                 (struct pptp_call_clear_ntfy *)buffer;
+            int i;
+            u_int16_t our_call_id;
+            u_int16_t peer_call_id = ntoh16(packet->call_id);
             log("Call disconnect notification received (call id %d)",
-                    ntoh16(packet->call_id));
-            if (vector_contains(conn->call, ntoh16(packet->call_id))) {
-                PPTP_CALL * call;
-                ctrlp_error(packet->result_code, packet->error_code,
-                        packet->cause_code, pptp_call_disc_ntfy,
-                        MAX_CALL_DISC_NTFY);
-                vector_search(conn->call, ntoh16(packet->call_id), &call);
-                pptp_call_destroy(conn, call);
+                (int) peer_call_id);
+            /* See if we can map the peer's call id to our own */
+            for (i = 0; i < vector_size(conn->call); i++) {
+                PPTP_CALL * call = vector_get_Nth(conn->call, i);
+                if (call->peer_call_id == peer_call_id) {
+                    our_call_id = call->call_id;
+                    if (vector_contains(conn->call, our_call_id)) {
+                        ctrlp_error(packet->result_code, packet->error_code,
+                            packet->cause_code, pptp_call_disc_ntfy,
+                            MAX_CALL_DISC_NTFY);
+                        vector_search(conn->call, our_call_id, &call);
+                        pptp_call_destroy(conn, call);
+                    }
+                    break;
+                }
             }
             /* XXX we could log call stats here XXX */
             /* XXX not all servers send this XXX */
@@ -1033,16 +1063,18 @@ static void pptp_reset_timer(void)
 
 
 /*** Handle keep-alive timer **************************************************/
-static void pptp_handle_timer()
+static void pptp_handle_timer(void)
 {
     int i;
     /* "Keep Alives and Timers, 1": check connection state */
     if (global.conn->conn_state != CONN_ESTABLISHED) {
-        if (global.conn->conn_state == CONN_WAIT_STOP_REPLY) 
+        if (global.conn->conn_state == CONN_WAIT_STOP_REPLY) {
             /* hard close. */
             pptp_conn_destroy(global.conn);
-        else /* soft close */
-            pptp_conn_close(global.conn, PPTP_STOP_NONE);
+            return;
+        }
+        /* soft close */
+        pptp_conn_close(global.conn, PPTP_STOP_NONE);
     }
     /* "Keep Alives and Timers, 2": check echo status */
     if (global.conn->ka_state == KA_OUTSTANDING) {
@@ -1052,8 +1084,9 @@ static void pptp_handle_timer()
     } else { /* ka_state == NONE */ /* send keep-alive */
         struct pptp_echo_rqst rqst = {
             PPTP_HEADER_CTRL(PPTP_ECHO_RQST), hton32(global.conn->ka_id) };
-        pptp_send_ctrl_packet(global.conn, &rqst, sizeof(rqst));
-        global.conn->ka_state = KA_OUTSTANDING;
+        if (pptp_send_ctrl_packet(global.conn, &rqst, sizeof(rqst))) {
+            global.conn->ka_state = KA_OUTSTANDING;
+        }
     }
     /* check incoming/outgoing call states for !IDLE && !ESTABLISHED */
     for (i = 0; i < vector_size(global.conn->call); i++) {

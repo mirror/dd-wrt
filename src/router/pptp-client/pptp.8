@@ -82,6 +82,21 @@ Use <name> instead of 'anon' in syslog messages
 .B \-\-localbind <addr>
 Bind to specified IP address instead of wildcard
 .TP
+.B \-\-rtmark <n>
+Use specified policy routing mark for all packets.
+This causes both the TCP control connection's packets as well as the
+GRE packets to bear the given policy routing / netfilter mark. This
+can be used with
+.I ip rule
+(from iproute2) to use a separate routing table for the pptp client.
+
+(requires root privileges or the CAP_NET_ADMIN capability.)
+.TP
+.B \-\-nohostroute
+Do not configure a host route pointing towards the PPTP server.
+(cf. ROUTING below)
+
+.TP
 .B \-\-loglevel <level>
 Sets the debugging level (0=low, 1=default, 2=high)
 
@@ -104,6 +119,28 @@ Sets the number of packets to pass before causing a reordering test.
 Default is 100.  Has no effect if test-type is zero.  The result of
 test types 2 and 3 are undefined if this value is less than ten.
 
+
+.SH "ROUTING"
+When PPTP is used in conjunction with a default route on top of the
+tunnel (or just any route encompassing the PPTP server),
+the mechanics of routing would cause the PPTP packets themselves
+to be routed over the tunnel. This would result in an encapsulation
+loop, destroying connectivity.
+
+.B pptp
+by default works around this by looking up the route towards the
+PPTP server at startup and configures a host route with that data.
+This essentially "freezes" routing for PPTP packets at the startup
+configuration. This behaviour can be disabled with
+.B --nohostroute
+if undesired (like when using
+.B --rtmark
+to implement policy routing).
+
+.B NB:
+the route added by
+.B pptp
+is currently not deleted at exit!
 
 .SH "QUIRKS"
 
