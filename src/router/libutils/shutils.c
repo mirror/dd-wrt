@@ -692,6 +692,8 @@ void addList(char *listname, char *value)
 	free(newlist);
 }
 
+int f_read_string(const char *path, char *buffer, int max);
+
 char *psname(int pid, char *buffer, int maxlen)
 {
 	char buf[512];
