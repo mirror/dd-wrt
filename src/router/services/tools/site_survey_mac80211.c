@@ -55,6 +55,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <ctype.h>
+#include <bcmnvram.h>
 
 #include "linux/nl80211.h"
 
