@@ -5,6 +5,7 @@
 
 #include <typedefs.h>
 #include <bcmnvram.h>
+#include <utils.h>
 
 static void usage(void)
 {
@@ -54,7 +55,7 @@ int main(int argc, char **argv)
 			nvram_getall(buf, sizeof(buf));
 			for (name = buf; *name; name += strlen(name) + 1)
 				puts(name);
-			size = sizeof(struct nvram_header) + (int)name - (int)buf;
+			size = sizeof(struct nvram_header) + (long)name - (long)buf;
 			fprintf(stderr, "size: %d bytes (%d left)\n", size, NVRAM_SPACE - size);
 		} else if (!strncmp(*argv, "backup", 6)) {
 			if (*++argv) {

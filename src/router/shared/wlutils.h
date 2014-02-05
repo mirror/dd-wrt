@@ -215,7 +215,7 @@ char *getCountryList(void);
 u_int ieee80211_mhz2ieee(u_int freq);
 
 #endif
-#if defined(HAVE_RT2880) || defined(HAVE_RT61)
+#if defined(HAVE_RT2880) || defined(HAVE_RT61) || defined(HAVE_MADWIFI)
 int wifi_getchannel(char *ifname);
 int wifi_getfreq(char *ifname);
 u_int ieee80211_mhz2ieee(u_int freq);

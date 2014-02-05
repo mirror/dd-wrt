@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <shutils.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define SERVICE_MODULE "/lib/services.so"
 

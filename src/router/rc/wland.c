@@ -15,6 +15,7 @@
 #include <sys/time.h>
 #include <syslog.h>
 #include <wait.h>
+#include <ctype.h>
 
 #include <bcmnvram.h>
 #include <netconf.h>
@@ -26,6 +27,7 @@
 #include <cy_conf.h>
 #include <bcmutils.h>
 #include <utils.h>
+#include <wlutils.h>
 #include <nvparse.h>
 
 #define WL_IOCTL(name, cmd, buf, len) (wl_ioctl((name), (cmd), (buf), (len)))
