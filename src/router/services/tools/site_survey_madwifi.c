@@ -35,6 +35,7 @@
 #include <err.h>
 #include <shutils.h>
 #include <wlutils.h>
+#include <utils.h>
 
 #include <typedefs.h>
 #include <bcmnvram.h>
@@ -183,6 +184,7 @@ int site_survey_main(int argc, char *argv[])
 #ifdef HAVE_ATH9K
 #ifndef HAVE_NOWIFI
 	if (is_ath9k(sta)) {
+		extern int site_survey_main_mac802211(int argc, char *argv[]);
 		return site_survey_main_mac802211(argc, argv);
 	}
 #endif
