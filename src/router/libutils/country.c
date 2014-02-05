@@ -654,7 +654,7 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "AFRICA", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "ASIA", YES, NO, YES, 7000},
-	{CTRY_ARUBA, ETSI1_WORLD, "EU", "AUSTRALIA", YES, NO, YES, 7000},
+	{CTRY_ARUBA, ETSI1_WORLD, "AU", "AUSTRALIA", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "US", "CANADA", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "CN", "CHINA", YES, NO, YES, 7000},
 	{CTRY_ARUBA, ETSI1_WORLD, "EU", "EUROPE", YES, NO, YES, 7000},
@@ -828,6 +828,11 @@ void setRegulationDomain(char *reg)
 		strcpy(rrev0, "45");
 		strcpy(ccode1, "JP");
 		strcpy(rrev1, "45");
+	} else if (!strcmp(ccode, "AU")) {
+	        strcpy(ccode0, "Q1");
+	        strcpy(rrev0, "27");
+	        strcpy(ccode1, "AU");
+	        strcpy(rrev1, "0");
 	} else {
 		strcpy(ccode0, "Q1");
 		strcpy(rrev0, "27");
