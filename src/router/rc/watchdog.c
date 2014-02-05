@@ -5,6 +5,7 @@
 #include <utils.h>
 #include <wlutils.h>
 #include <errno.h>
+#include <bcmnvram.h>
 #if !defined(HAVE_MICRO) || defined(HAVE_ADM5120) || defined(HAVE_WRK54G)
 
 static void watchdog(void)
