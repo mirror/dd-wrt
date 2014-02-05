@@ -848,7 +848,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		if (nvram_nmatch("psk", "%s_akm", var))
 			strcat(authmode, ";WPAPSK");
 		if (nvram_nmatch("psk2", "%s_akm", var))
-			strcat(authmode, ";WPAPSK2");
+			strcat(authmode, ";WPA2PSK");
 		if (nvram_nmatch("psk psk2", "%s_akm", var))
 			strcat(authmode, ";WPAPSKWPA2PSK");
 		if (nvram_nmatch("wpa", "%s_akm", var))
