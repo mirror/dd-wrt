@@ -1142,6 +1142,7 @@ int get_gpio(int pin)
 #define WNDR4000_GPIO_LED_USB                    (5)
 #define WNDR4000_GPIO_LED_WPS                    (6)
 #define WNDR4000_GPIO_LED_WLAN                   (7)
+void set_gpio_normal(int pin, int value);
 
 void ext_output_value(unsigned int led_status, int clk, int data, int max_shifts)
 {
