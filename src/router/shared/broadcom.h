@@ -65,7 +65,7 @@ extern void do_vsp_info_page(struct mime_handler *handler, char *url, webs_t str
 /*
  * for static route 
  */
-#define STATIC_ROUTE_PAGE 50
+#define STATIC_ROUTE_PAGE 64
 
 /*
  * for wireless 
