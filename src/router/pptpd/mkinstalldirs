@@ -4,7 +4,7 @@
 # Created: 1993-05-16
 # Public domain
 
-# $Id: mkinstalldirs,v 1.1.1.1 2002/06/21 08:52:00 fenix_nl Exp $
+# $Id: mkinstalldirs,v 1.1 2002/06/21 08:52:00 fenix_nl Exp $
 
 errstatus=0
 
