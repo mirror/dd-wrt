@@ -1,0 +1,103 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Poptop MSCHAP2 ADS Howto</title>
+</head>
+
+<body>
+<p><strong>13. Software for R</strong><strong>adius Setup</strong></p>
+<p><em>freeradius</em> is not in the Fedora 8 DVD although it is in the F8 yum repository. Therefore, by default, it is not installed. Installing  it through <em>yum</em> is recommended as it has quite a few dependences. <em>yum</em> will resolve all required dependences automagically. The version of <em>freeradius</em> in F8 is v1.1.7. </p>
+<blockquote>
+  <pre>[root@pptp ~]# yum install freeradius </pre>
+</blockquote>
+<p>The second software you will need is <em>radiusclient-ng</em>. It is also available in the F8 yum repository. The version of the software is v0.5.6. </p>
+<blockquote>
+  <pre>[root@pptp ~]# yum install radiusclient-ng </pre>
+</blockquote>
+<p><strong>Note:</strong> information for FC4 / 5 / 6 is in <a href="poptop_ads_howto_a4.htm">Appendix A4</a>.</p>
+<hr>
+<p><strong><a name="rclient"></a>14. radiusclient-ng</strong></p>
+<p>The pppd radius plugin relies on the radiusclient package. Fedora, however, provides radiusclient-ng. To make pppd work with radiusclient-ng, create a soft link with the following command.</p>
+<blockquote>
+<pre>[root@pptp ~]# cd /etc
+[root@pptp etc]# ln -s radiusclient-ng radiusclient</pre>
+</blockquote>
+<p>There are a few configuration files in /etc/radiusclient-ng to look at. The first one is /etc/radiusclient-ng/servers which specify the radius server name and key. We have the radius server in the same box. So the file is like this:</p>
+<blockquote>
+  <pre>#Server Name or Client/Server pair              Key<br>#----------------                               ---------------<br>localhost                                       testing123	 </pre>
+</blockquote>
+<p>The key is the secret of the radius server which is specified in /etc/raddb/clients.conf. Older version of freeradius has the default key &quot;testing123&quot;. Of course, it is a bad idea to use the default.</p>
+<hr>
+<a name="rclientconf"></a><strong>14.1 radiusclient.conf</strong>
+<p>The main configuration file for radiusclient is /etc/radiusclient-ng/radiusclient.conf. Here is how it should be when all remarks are stripped off:</p>
+<blockquote>
+  <pre>auth_order radius
+login_tries 4
+login_timeout 60
+nologin /etc/nologin
+issue /etc/radiusclient-ng/issue
+authserver localhost
+acctserver localhost
+servers /etc/radiusclient-ng/servers
+dictionary /usr/share/radiusclient-ng/dictionary
+login_radius /usr/sbin/login.radius
+seqfile /var/run/radius.seq
+mapfile /etc/radiusclient-ng/port-id-map
+default_realm
+radius_timeout 10
+radius_retries 3
+#bindaddr *
+login_local /bin/login</pre>
+</blockquote>
+<p>Basically, all of the lines are default. I have not changed anything.</p>
+<hr>
+<strong><a name="dict"></a>14.2 dictionary.microsoft</strong>
+<p>In /usr/share/radiusclient-ng directory, there is a file called dictionary. Add the following line to the end of the file.</p>
+<blockquote>
+  <pre>INCLUDE /usr/share/radiusclient-ng/dictionary.microsoft</pre>
+</blockquote>
+<p>The file, dictionary.microsoft, is not included in the radiusclient-ng package. We can modify the one from  freeradius so that it can be used by pppd.</p>
+<p>First of all, copy the freeradius one, /usr/share/freeradius/dictionary.microsoft, to /usr/share/radiusclient-ng. Then change the word &quot;octets&quot; to &quot;string&quot; in the file. Add the word Microsoft to all attributes. Here is my version: </p>
+<blockquote>
+  <pre>#<br>#       Microsoft's VSA's, from RFC 2548<br>#<br>#       $Id: poptop_ads_howto_8.htm,v 1.8 2008/10/02 08:11:48 wskwok Exp $<br>#
+
+VENDOR          Microsoft       311     Microsoft
+
+BEGIN VENDOR    Microsoft
+ATTRIBUTE       MS-CHAP-Response        1       string  Microsoft<br>ATTRIBUTE       MS-CHAP-Error           2       string  Microsoft<br>ATTRIBUTE       MS-CHAP-CPW-1           3       string  Microsoft<br>ATTRIBUTE       MS-CHAP-CPW-2           4       string  Microsoft<br>ATTRIBUTE       MS-CHAP-LM-Enc-PW       5       string  Microsoft<br>ATTRIBUTE       MS-CHAP-NT-Enc-PW       6       string  Microsoft<br>ATTRIBUTE       MS-MPPE-Encryption-Policy 7     string  Microsoft<br># This is referred to as both singular and plural in the RFC.<br># Plural seems to make more sense.<br>ATTRIBUTE       MS-MPPE-Encryption-Type 8       string  Microsoft<br>ATTRIBUTE       MS-MPPE-Encryption-Types  8     string  Microsoft<br>ATTRIBUTE       MS-RAS-Vendor           9       integer Microsoft<br>ATTRIBUTE       MS-CHAP-Domain          10      string  Microsoft<br>ATTRIBUTE       MS-CHAP-Challenge       11      string  Microsoft<br>ATTRIBUTE       MS-CHAP-MPPE-Keys       12      string  Microsoft encrypt=1<br>ATTRIBUTE       MS-BAP-Usage            13      integer Microsoft<br>ATTRIBUTE       MS-Link-Utilization-Threshold 14 integer        Microsoft<br>ATTRIBUTE       MS-Link-Drop-Time-Limit 15      integer Microsoft<br>ATTRIBUTE       MS-MPPE-Send-Key        16      string  Microsoft<br>ATTRIBUTE       MS-MPPE-Recv-Key        17      string  Microsoft<br>ATTRIBUTE       MS-RAS-Version          18      string  Microsoft<br>ATTRIBUTE       MS-Old-ARAP-Password    19      string  Microsoft<br>ATTRIBUTE       MS-New-ARAP-Password    20      string  Microsoft<br>ATTRIBUTE       MS-ARAP-PW-Change-Reason 21     integer Microsoft
+
+ATTRIBUTE       MS-Filter               22      string  Microsoft<br>ATTRIBUTE       MS-Acct-Auth-Type       23      integer Microsoft<br>ATTRIBUTE       MS-Acct-EAP-Type        24      integer Microsoft<br>
+ATTRIBUTE       MS-CHAP2-Response       25      string  Microsoft<br>ATTRIBUTE       MS-CHAP2-Success        26      string  Microsoft<br>ATTRIBUTE       MS-CHAP2-CPW            27      string  Microsoft
+
+ATTRIBUTE       MS-Primary-DNS-Server   28      ipaddr<br>ATTRIBUTE       MS-Secondary-DNS-Server 29      ipaddr<br>ATTRIBUTE       MS-Primary-NBNS-Server  30      ipaddr<br>ATTRIBUTE       MS-Secondary-NBNS-Server 31     ipaddr
+
+#ATTRIBUTE      MS-ARAP-Challenge       33      string  Microsoft
+
+#<br>#       Integer Translations<br>#
+
+#       MS-BAP-Usage Values
+
+VALUE           MS-BAP-Usage            Not-Allowed     0<br>VALUE           MS-BAP-Usage            Allowed         1<br>VALUE           MS-BAP-Usage            Required        2
+
+#       MS-ARAP-Password-Change-Reason Values
+
+VALUE   MS-ARAP-PW-Change-Reason        Just-Change-Password            1<br>VALUE   MS-ARAP-PW-Change-Reason        Expired-Password                2<br>VALUE   MS-ARAP-PW-Change-Reason        Admin-Requires-Password-Change  3<br>VALUE   MS-ARAP-PW-Change-Reason        Password-Too-Short              4
+
+#       MS-Acct-Auth-Type Values
+
+VALUE           MS-Acct-Auth-Type       PAP             1<br>VALUE           MS-Acct-Auth-Type       CHAP            2<br>VALUE           MS-Acct-Auth-Type       MS-CHAP-1       3<br>VALUE           MS-Acct-Auth-Type       MS-CHAP-2       4<br>VALUE           MS-Acct-Auth-Type       EAP             5
+
+#       MS-Acct-EAP-Type Values
+
+VALUE           MS-Acct-EAP-Type        MD5             4<br>VALUE           MS-Acct-EAP-Type        OTP             5<br>VALUE           MS-Acct-EAP-Type        Generic-Token-Card      6<br>VALUE           MS-Acct-EAP-Type        TLS             13
+
+END-VENDOR Microsoft
+</pre>
+</blockquote><p></p>
+<hr>
+<a href="poptop_ads_howto_9.htm">Next</a> &nbsp;&nbsp;<a href="poptop_ads_howto_7.htm">Previous</a>&nbsp;&nbsp;<a href="poptop_ads_howto_1.htm#toc">Content</a>
+<p></p>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Poptop MSCHAP2 ADS Howto</title>
+</head>
+
+<body>
+<p><strong>9. Samba
+</strong></p>
+<p>Fedora 8 comes with samba v3.0.26a. The current samba RPM version from <em>yum</em> at the time of writing for F8 is v3.0.32. It is highly recommended to use the latest version. </p>
+<p>The required RPM packages for samba in Fedora are <em>samba, samba-client, samba-common</em>.  Install through <em>yum</em> if any of them is missing. </p>
+<blockquote>
+  <pre>[root@pptp ~]# yum install samba samba-common samba-client</pre>
+</blockquote>
+<p><strong>Note: </strong>
+Information on Samba for FC4 / 5 / 6 can be found in <a href="poptop_ads_howto_a3.htm">Appendix A3</a>.</p>
+<hr>
+<strong><a name="smbconf"></a>9.1 Configure Samba</strong>
+<p>No matter you choose to use winbind or freeradius to connect to Active Directory, you will have to configure samba properly. The configuration file of samba is in /etc/samba and is called smb.conf. The file should have at least the following lines. </p>
+<blockquote>
+  <pre>[global]
+# define the netbios name of the domain
+<strong>workgroup = EXAMPLE</strong>
+# define the pptp server netbios name
+<strong>netbios name = PPTPDSVR</strong>
+# define the AD domain name
+<strong>realm = EXAMPLENET.ORG</strong>
+# server description
+server string = pptpd Server
+# printer stuff
+printcap name = /etc/printcap
+load printers = no
+cups options = raw
+# log file stuff
+log file = /var/log/samba/%m.log
+max log size = 50
+# must set to ads
+<strong>security = ads</strong>                     
+# address of domain controller
+<strong>password server = 10.0.0.1</strong>
+# enable encrypt passwords
+<strong>encrypt passwords = yes</strong>
+# default socket options setting on older samba. It is not defined in v3.0.23c or above
+;socket options = TCP_NODELAY SO_RCVBUF=8192 SO_SNDBUF=8192
+# not to be a master browser
+domain master = no 
+preferred master = no
+# address of the WINS server
+<strong>wins server = 10.0.0.1</strong>
+dns proxy = no
+# require this line to join the domain in older samba
+# I don't need this for samba v3.0.23 or above
+<strong>;client use spnego = yes</strong>
+# winbind stuff
+<strong>idmap uid = 50001-550000
+idmap gid = 50001-550000
+winbind separator = +
+winbind nested groups = Yes
+winbind enum users=yes
+winbind enum groups=yes</strong>
+template shell = /bin/false
+winbind use default domain = no</pre>
+</blockquote>
+<p>The lines in bold are the important ones that you should pay attention to. Execute &quot;testparm&quot; to check the configuration. Correct any errors before proceeding to the next step.</p>
+<hr>
+<a href="poptop_ads_howto_6.htm">Next</a> &nbsp;&nbsp;<a href="poptop_ads_howto_4.htm">Previous</a>&nbsp;&nbsp;<a href="poptop_ads_howto_1.htm#toc">Content</a>
+<p>&nbsp; </p>
+</body>
+</html>
