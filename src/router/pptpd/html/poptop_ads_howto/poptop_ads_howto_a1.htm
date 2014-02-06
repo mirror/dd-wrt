@@ -1,0 +1,55 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Poptop MSCHAP2 ADS Howto</title>
+</head>
+
+<body>
+<p><strong>APPENDIX</strong></p>
+<p><strong><a name="mppe"></a>A1. Install MPPE Kernel Module on Fedora Core 4 / 5 / 6 </strong></p>
+<p>In summary, Fedora Core 5 or above, the Kernel has built-in MPPE functionality.</p>
+<hr>
+<strong><a name="a11_fc56" id="a11_fc56"></a>A1.1 Fedora Core 5 and 6</strong><br>
+(last update: 19 May 2007)
+<p>Kernel version 2.6.15 or above has MPPE built-in which is required for MSCHAPv2. Fedora Core 5 and 6 kernel version on the CD are 2.6.15 and 2.6.18 respectively. That means you do not need to install the MPPE module as you have to for Fedora Core 4. Information for FC4 and MPPE is in <a href="poptop_ads_howto_a1.htm">Appendix A1.2</a>.</p>
+<p>To test if your kernel supports MPPE:</p>
+<blockquote>
+  <pre>[root@pptp ~]# modprobe ppp-compress-18 &amp;&amp; echo ok</pre>
+</blockquote>
+<p>It should return an &quot;ok&quot;. Then move to <a href="poptop_ads_howto_4.htm#pppd_pptpd">step 8</a>.</p>
+<p><strong>Note:</strong> The latest kernel for Fedora Core 5/6 at the time of writing is 2.6.20.</p>
+<hr>
+<strong><a name="a12_fc4"></a>A1.2 Fedora Core 4<br>
+</strong>(last update: 6 March 2006) 
+<p>MPPE support is required for MSCHAPv2. Depending on the kernel version, you may or may not require to perform this step. Kernel version 2.6.15 or above has MPPE built-in. If you are using the latest FC4 2.6.15 kernel, you can go to <a href="poptop_ads_howto_4.htm#pppd_pptpd">Step 8 </a> now. If you are using an older kernel  which  does not support MPPE, you will have to add this feature to it. </p>
+<p>To test if your kernel supports MPPE:</p>
+<blockquote>
+  <pre>[root@pptp ~]# modprobe ppp-compress-18 &amp;&amp; echo ok</pre>
+</blockquote>
+<p>If it returns an &quot;ok&quot;, you can safely skip this step and move to <a href="poptop_ads_howto_4.htm#pppd_pptpd">Step 8 </a>. If you see &quot;FATAL: Module ppp_mppe not found.&quot;, install MPPE support as described in the following procedure:</p>
+<p>  Download the MPPE module builder in rpm format from <a href="http://sourceforge.net/project/showfiles.php?group_id=44827">here</a>. The required RPMs are::</p>
+<blockquote>
+  <pre>dkms-2.0.6-1.noarch.rpm
+kernel_ppp_mppe-1.0.2-3dkms.noarch.rpm</pre>
+</blockquote>
+<p>Install them with command &quot;rpm -ivh&quot;.</p>
+<blockquote>
+  <pre>[root@pptp ~]# rpm -ivh dkms-2.0.6-1.noarch.rpm
+[root@pptp ~]# rpm -ivh kernel_ppp_mppe-1.0.2-3dkms.noarch.rpm </pre>
+</blockquote>
+<p>If you upgrade your kernel to 2.6.13 or above, kernel_ppp_mppe version 1.0.2 or above must be used. Otherwise, the pptp tunnel will not connect and you will see error message &quot;This system lacks kernel support for PPP.&quot; in /var/log/messages.</p>
+<p>Please see <a href="#autoinstaller">A1.3 Kernel Upgrade and dkms_autoinstaller</a> for more information on dkms. </p>
+<dt><strong>Note:</strong></dt>
+<dd>(1) Fedora Extra provides also a dkms rpm, dkms-2.0.6-3.fc4.noarch.rpm. I have not tested it. You may want to use the one I mentioned above to make sure the installation will work. </dd>
+<br><hr>
+<strong><a name="autoinstaller"></a>A1.3 Kernel Upgrade and dkms_autoinstaller</strong><br>
+(last update: 6 March 2006)
+<p>If you upgrade your kernel after installing dkms, thanks to the dkms_autoinstaller service, you will not have to worry about the dkms kernel module. dkms_autoinstaller runs on every bootup. It checks  the dkms module to ensure it match the kernel version. If a mismatch is found, it will create a proper one for the boot kernel. </p>
+<p>For dkms_autoinstaller to work, you will need the correct kernel-devel version installed in your system. It is always a good idea to install the kernel-devel rpm alongside with your new kernel.</p>
+<hr>
+<a href="poptop_ads_howto_a2.htm">Next</a> &nbsp;&nbsp;<a href="poptop_ads_howto_12.htm">Previous</a>&nbsp;&nbsp;<a href="poptop_ads_howto_1.htm#toc">Content</a>
+</body>
+</html>
