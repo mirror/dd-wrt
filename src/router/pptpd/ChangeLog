@@ -1,3 +1,165 @@
+Wed Oct 23 16:23:58 2013  James Cameron  <quozl@laptop.org>
+
+	* pptpd-1.4.0.tar.gz: released.
+
+Mon Oct 21 20:50:07 2013  John Lauro  <john.lauro@covenanteyes.com>
+
+	* pqueue.c: don't leak memory from duplicate packet.
+
+	* pptpgre.c, pptpmanager.c: don't leak handle on connect fail and
+	detect error on socket creation instead later.
+
+	* bcrelay.c: code cleanup - warning fix.
+
+	* ctrlpacket.c, ctrlpacket.h, pptpctrl.c: clean up warning
+	dereferecing type-punned pointer from mixing struct and unsigned
+	char.
+
+	* ctrlpacket.c, pptpgre.c: fix several warnings in newer
+	compilers, caused by format and type discrepancies.
+
+	* ctrlpacket.c, ctrlpacket.h: use unsigned types to properly
+	handle negative error codes.
+
+	* bcrelay.c: code cleanup (potential off by one error, bcrelay),
+	switch a copy function to strncpy, as original had a potential off
+	by one error as the size check didn't account for trailing 0 to be
+	added in next line.
+
+	* bcrelay.c: fix several warnings in newer compilers, caused by
+	format and type discrepancies, and comparing with == directly to
+	"", as "" is not guaranteed to always be the same when redefined.
+
+Thu Feb  7 11:51:46 2013  James Cameron  <quozl@laptop.org>
+
+	* plugins/pptpd-logwtmp.c: use pppd.h provided by ppp package
+	instead of our own, fix for debian #369714.
+
+	Author: Stu Teasdale <stu@drogna.org.uk>
+	Author: Christoph Biedl <debian.axhn@manchmal.in-ulm.de>
+
+Thu Feb  7 11:50:03 2013  James Cameron  <quozl@laptop.org>
+
+	* pptpctrl.c: fix binary trash when launching ppp, fix for debian
+	#693196.
+
+	Author: tevaum@gmail.com
+
+Thu Feb  7 11:48:32 2013  James Cameron  <quozl@laptop.org>
+
+	* pptpgre.c: avoid dropping connection when kernel returns
+	ENOBUFS, fix for debian #629129.
+
+	Author: Maximiliano Curia <maxy@debian.org>
+	Author: James Cameron <quozl@laptop.org>
+
+Thu Feb  7 11:47:33 2013  James Cameron  <quozl@laptop.org>
+
+	* pptpctrl.c: add remotenumber support, fix for debian #610375,
+	#625459, and ubuntu #704245.
+
+	Author: Igor A Tarasov <develop@dicr.org>
+	Author: Michael Poetters <michael@poetters.net>
+
+Thu Feb  7 11:46:18 2013  James Cameron  <quozl@laptop.org>
+
+	* configfile.c: catch missing EOL at EOF, fix for sf.net poptop
+	ticket #35, debian #567480.
+
+	Author: Christoph Biedl <debian.axhn@manchmal.in-ulm.de>
+
+Thu Feb  7 11:45:45 2013  James Cameron  <quozl@laptop.org>
+
+	* bcrelay.8: add manual page, fix for debian #426553.
+
+	Author: Khang Nguyen Trong <trongkhang17@gmail.com>
+
+Thu Feb  7 11:44:59 2013  James Cameron  <quozl@laptop.org>
+
+	* pptpd.c: fix a segmentation fault on invalid IP range entry.
+
+	Author: Sergey Naumov
+
+Wed May 18 14:42:28 2011  David Lamparter  <david.lamparter@adyton.net>
+
+	* pptpctrl.c, pptpd.c, pptpgre.c, pptpmanager.c: introduce VRFs
+
+	this adds support for VRFs (Virtual Routing and Forwarding
+	instances) through libvrf from vrf-tools. pptpd gains the ability
+	to have its TCP and GRE sockets in a VRF different from the one
+	the process is running in.
+
+	As pppd is started from pptpd and does not have VRF support, the
+	pppX devices will be in the initial VRF. The PPTP traffic will
+	however be flowing in the given VRF. This allows full separation
+	of encapsulated and encapsulating networks.
+
+Mon Jun 15 12:53:58 2009  Michael Douglass  <mikedoug@mikedoug.net>
+
+	* pptpctrl.c (pptp_handle_ctrl_connection): fix IDLE_WAIT
+	implementation.
+
+	pptpd processes were not terminating when the remote pptp client
+	went off the network unexpectedly.  An strace of pptpd showed the
+	select() loop in pptctrl.c was never timing out because the
+	/dev/ptmx descriptor was sending data to pptpd every 10 seconds.
+	Since the select() loop was never timing out, the IDLE_WAIT
+	mechanism never triggered.
+
+	The patch below makes the following changes:
+
+	- select() returning 0 is no longer a direct trigger case for
+	sending an ECHO REQ
+
+	- track the last time we heard anything from our TCP socket in
+	last_time (initialized to now on startup)
+
+	- any time we go through the loop and we don't hear from our TCP
+	socket, we check to see if our last_time is older than IDLE_WAIT,
+	if so, send an ECHO REQ
+
+Fri Nov 14 10:28:27 2008  Karl Hiramoto  <karl@hiramoto.org>
+
+	* ctrlpacket.c (deal_start_ctrl_conn): fix compilation with uclibc
+	with legacy support disabled.  From "man bzero": This function is
+	deprecated (marked as LEGACY in POSIX.1-2001): use memset(3) in
+	new programs.  POSIX.1-2008 removes the specification of bzero().
+
+Wed Oct  8 09:47:33 2008  James Cameron  <quozl@us.netrek.org>
+
+	* pptpctrl.c (launch_pppd): exclude ipparam and plugin from SLIRP
+	and BSD PPP configurations.  Reported by Richard P. Koett.
+
+Fri Jul 20 10:27:37 2007  Eivind Naess  <Eivind.Naess@gmail.com>
+
+	* pptpdefs.h: add packed attribute to pptp_gre_header, to ensure
+	compiler alignment efforts do not conflict with processing the
+	header.
+
+Mon May 28 12:17:06 2007  James Cameron  <quozl@us.netrek.org>
+
+	* ctrlpacket.c (deal_set_link_info): change the "Ignored a SET
+	LINK INFO" message to be LOG_DEBUG, only emit when debug mode is
+	enabled, and explain further what it is.
+
+Thu May 24 10:43:45 2007  James Cameron  <quozl@us.netrek.org>
+
+	* pptpd.conf.5: add missing logwtmp option.
+
+Tue Apr 24 13:11:28 2007  Phil Oester  <kernel@linuxace.com>
+
+	* pptpgre.c (decaps_gre): further testing has revealed a couple
+	more problems with the packet reordering/buffering code:
+
+	1) Some clients (notably the PPTP client) start their sequence
+	   numbers at 1 instead of 0 as the RFC mandates.  My previous fix
+	   caused problems with these clients.
+
+	2) Duplicate packets were causing corruption when they were placed
+	   on the queue but never used -or- when they were placed on the
+	   queue but already existed on the queue (i.e. they previously
+	   arrived out of order).
+
 Mon Apr 16 10:32:40 2007  James Cameron  <quozl@us.netrek.org>
 
 	* pptpd-1.3.4.tar.gz: released.

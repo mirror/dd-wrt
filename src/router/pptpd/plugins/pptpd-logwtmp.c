@@ -1,5 +1,5 @@
 /*
- * $Id: pptpd-logwtmp.c,v 1.5 2007/04/16 00:21:02 quozl Exp $
+ * $Id: pptpd-logwtmp.c,v 1.6 2013/02/07 00:37:39 quozl Exp $
  * pptpd-logwtmp.c - pppd plugin to update wtmp for a pptpd user
  *
  * Copyright 2004 James Cameron.

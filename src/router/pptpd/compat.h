@@ -2,8 +2,6 @@
  * compat.h
  *
  * Compatibility functions for different OSes (prototypes)
- *
- * $Id: compat.h,v 1.5 2005/01/05 11:01:51 quozl Exp $
  */
 
 #ifndef _PPTPD_COMPAT_H
@@ -26,11 +24,11 @@
  * means we don't know how many bytes were copied
  */
 extern void strlcpy(char *dst, const char *src, size_t size);
-#endif	/* !HAVE_STRLCPY */
+#endif  /* !HAVE_STRLCPY */
 
 #ifndef HAVE_MEMMOVE
 extern void *memmove(void *dst, const void *src, size_t size);
-#endif	/* !HAVE_MEMMOVE */
+#endif  /* !HAVE_MEMMOVE */
 
 #ifndef HAVE_OPENPTY
 /* Originally from code by C. S. Ananian */
@@ -40,18 +38,18 @@ extern void *memmove(void *dst, const void *src, size_t size);
  * Note that Unix98 has an openpty() call so we don't need to worry
  * about the new pty names here.
  */
-#define PTYDEV		"/dev/ptyxx"
-#define TTYDEV		"/dev/ttyxx"
-#define PTYMAX		11
-#define TTYMAX		11
-#define PTYCHAR1	"pqrstuvwxyzabcde"
-#define PTYCHAR2	"0123456789abcdef"
+#define PTYDEV          "/dev/ptyxx"
+#define TTYDEV          "/dev/ttyxx"
+#define PTYMAX          11
+#define TTYMAX          11
+#define PTYCHAR1        "pqrstuvwxyzabcde"
+#define PTYCHAR2        "0123456789abcdef"
 
 /* Dummy the last 2 args, so we don't have to find the right include
  * files on every OS to define the needed structures.
  */
 extern int openpty(int *, int *, char *, void *, void *);
-#endif	/* !HAVE_OPENPTY */
+#endif  /* !HAVE_OPENPTY */
 
 #ifndef HAVE_STRERROR
 extern char *strerror(int);
@@ -79,4 +77,4 @@ int sigpipe_read();
 
 void sigpipe_close();
 
-#endif	/* !_PPTPD_COMPAT_H */
+#endif  /* !_PPTPD_COMPAT_H */

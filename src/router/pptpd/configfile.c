@@ -3,8 +3,6 @@
  *
  * Methods for accessing the PPTPD config file and searching for
  * PPTPD keywords.
- *
- * $Id: configfile.c,v 1.2 2004/04/22 10:48:16 quozl Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -38,88 +36,92 @@ static void close_config_file(FILE * file);
  */
 int read_config_file(char *filename, char *keyword, char *value)
 {
-	FILE *in;
-	int len = 0, keyword_len = 0;
-	int foundit = 0;
+        FILE *in;
+        int len = 0, keyword_len = 0;
+        int foundit = 0;
 
-	char *buff_ptr;
-	char buffer[MAX_CONFIG_STRING_SIZE];
+        char *buff_ptr;
+        char buffer[MAX_CONFIG_STRING_SIZE];
 
-	*value = '\0';
-	buff_ptr = buffer;
-	keyword_len = strlen(keyword);
+        *value = '\0';
+        buff_ptr = buffer;
+        keyword_len = strlen(keyword);
 
-	in = open_config_file(filename);
-	if (in == NULL) {
-		/* Couldn't find config file, or permission denied */
-		return -1;
-	}
-	while ((fgets(buffer, MAX_CONFIG_STRING_SIZE - 1, in)) != NULL) {
-		/* ignore long lines */
-		if (buffer[(len = strlen(buffer)) - 1] != '\n') {
-			syslog(LOG_ERR, "Long config file line ignored.");
-			do
-				fgets(buffer, MAX_CONFIG_STRING_SIZE - 1, in);
-			while (buffer[strlen(buffer) - 1] != '\n');
-			continue;
-		}
+        in = open_config_file(filename);
+        if (in == NULL) {
+                /* Couldn't find config file, or permission denied */
+                return -1;
+        }
+        while ((fgets(buffer, MAX_CONFIG_STRING_SIZE - 1, in)) != NULL) {
+                /* ignore long lines */
+                if (buffer[(len = strlen(buffer)) - 1] != '\n') {
+                        if (len >= MAX_CONFIG_STRING_SIZE - 2) {
+                                syslog(LOG_ERR, "Long config file line ignored.");
+                                char *p;
+                                do
+                                        p = fgets(buffer, MAX_CONFIG_STRING_SIZE - 1, in);
+                                while (p && buffer[strlen(buffer) - 1] != '\n');
+                                continue;
+                        }
+                } else {
+                        len--;                  /* For the NL at the end */
+                }
 
-		len--;			/* For the NL at the end */
-		while (--len >= 0)
-			if (buffer[len] != ' ' && buffer[len] != '\t')
-				break;
+                while (--len >= 0)
+                        if (buffer[len] != ' ' && buffer[len] != '\t')
+                                break;
 
-		len++;
-		buffer[len] = '\0';
+                len++;
+                buffer[len] = '\0';
 
-		buff_ptr = buffer;
+                buff_ptr = buffer;
 
-		/* Short-circuit blank lines and comments */
-		if (!len || *buff_ptr == '#')
-			continue;
+                /* Short-circuit blank lines and comments */
+                if (!len || *buff_ptr == '#')
+                        continue;
 
-		/* Non-blank lines starting with a space are an error */
+                /* Non-blank lines starting with a space are an error */
 
-		if (*buff_ptr == ' ' || *buff_ptr == '\t') {
-			syslog(LOG_ERR, "Config file line starts with a space: %s", buff_ptr);
-			continue;
-		}
+                if (*buff_ptr == ' ' || *buff_ptr == '\t') {
+                        syslog(LOG_ERR, "Config file line starts with a space: %s", buff_ptr);
+                        continue;
+                }
 
-		/* At this point we have a line trimmed for trailing spaces. */
-		/* Now we need to check if the keyword matches, and if so */
-		/* then get the value (if any). */
+                /* At this point we have a line trimmed for trailing spaces. */
+                /* Now we need to check if the keyword matches, and if so */
+                /* then get the value (if any). */
 
-		/* Check if it's the right keyword */
+                /* Check if it's the right keyword */
 
-		do {
-			if (*buff_ptr == ' ' || *buff_ptr == '\t')
-				break;
-		} while (*++buff_ptr);
+                do {
+                        if (*buff_ptr == ' ' || *buff_ptr == '\t')
+                                break;
+                } while (*++buff_ptr);
 
-		len = buff_ptr - buffer;
-		if (len == keyword_len && !strncmp(buffer, keyword, len)) {
-			foundit++;
-			break;
-		}
-	}
+                len = buff_ptr - buffer;
+                if (len == keyword_len && !strncmp(buffer, keyword, len)) {
+                        foundit++;
+                        break;
+                }
+        }
 
-	close_config_file(in);
+        close_config_file(in);
 
-	if (foundit) {
-		/* Right keyword, now get the value (if any) */
+        if (foundit) {
+                /* Right keyword, now get the value (if any) */
 
-		do {
-			if (*buff_ptr != ' ' && *buff_ptr != '\t')
-				break;
-			
-		} while (*++buff_ptr);
+                do {
+                        if (*buff_ptr != ' ' && *buff_ptr != '\t')
+                                break;
+                        
+                } while (*++buff_ptr);
 
-		strcpy(value, buff_ptr);
-		return 1;
-	} else {
-		/* didn't find it - better luck next time */
-		return 0;
-	}
+                strcpy(value, buff_ptr);
+                return 1;
+        } else {
+                /* didn't find it - better luck next time */
+                return 0;
+        }
 }
 
 /*
@@ -134,18 +136,18 @@ int read_config_file(char *filename, char *keyword, char *value)
  */
 static FILE *open_config_file(char *filename)
 {
-	FILE *in;
-	static int first = 1;
+        FILE *in;
+        static int first = 1;
 
-	if ((in = fopen(filename, "r")) == NULL) {
-		/* Couldn't open config file */
-		if (first) {
-			perror(filename);
-			first = 0;
-		}
-		return NULL;
-	}
-	return in;
+        if ((in = fopen(filename, "r")) == NULL) {
+                /* Couldn't open config file */
+                if (first) {
+                        perror(filename);
+                        first = 0;
+                }
+                return NULL;
+        }
+        return in;
 }
 
 /*
@@ -156,5 +158,5 @@ static FILE *open_config_file(char *filename)
  */
 static void close_config_file(FILE * in)
 {
-	fclose(in);
+        fclose(in);
 }
