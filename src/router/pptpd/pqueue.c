@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <syslog.h>
 
 #include "pqueue.h"
 
@@ -12,7 +13,6 @@
 #endif
 
 #define DEBUG_CMD(_a) if (DEBUG_ON) { _a }
-
 
 #define MIN_CAPACITY 128 /* min allocated buffer for a packet */
 
@@ -32,7 +32,7 @@ static int pqueue_alloc(int seq, unsigned char *packet, int packlen, pqueue_t **
 
   pqueue_t *newent;
 
-  DEBUG_CMD(log("seq=%d, packlen=%d", seq, packlen););
+  DEBUG_CMD(syslog(LOG_DEBUG, "seq=%d, packlen=%d", seq, packlen););
 
   /* search the freelist for one that has sufficient space  */
   if (pq_freelist_head) {
@@ -41,23 +41,23 @@ static int pqueue_alloc(int seq, unsigned char *packet, int packlen, pqueue_t **
 
       if (newent->capacity >= packlen) {
 
- 	/* unlink from freelist */
-	if (pq_freelist_head == newent) 
-	  pq_freelist_head = newent->next;
+        /* unlink from freelist */
+        if (pq_freelist_head == newent) 
+          pq_freelist_head = newent->next;
 
-	if (newent->prev) 
-	  newent->prev->next = newent->next;
+        if (newent->prev) 
+          newent->prev->next = newent->next;
 
-	if (newent->next) 
-	  newent->next->prev = newent->prev;
+        if (newent->next) 
+          newent->next->prev = newent->prev;
 
-	if (pq_freelist_head) 
-	  pq_freelist_head->prev = NULL;
+        if (pq_freelist_head) 
+          pq_freelist_head->prev = NULL;
 
-	break;
-      }	/* end if capacity >= packlen */
+        break;
+      } /* end if capacity >= packlen */
     } /* end for */
-	
+        
     /* nothing found? Take first and reallocate it */
     if (NULL == newent) {
 
@@ -65,42 +65,42 @@ static int pqueue_alloc(int seq, unsigned char *packet, int packlen, pqueue_t **
       pq_freelist_head = pq_freelist_head->next;
 
       if (pq_freelist_head) 
-	pq_freelist_head->prev = NULL;
+        pq_freelist_head->prev = NULL;
 
-      DEBUG_CMD(log("realloc capacity %d to %d",newent->capacity, packlen););
+      DEBUG_CMD(syslog(LOG_DEBUG, "realloc capacity %d to %d",newent->capacity, packlen););
 
       newent->packet = (unsigned char *)realloc(newent->packet, packlen);
 
       if (!newent->packet) {
-	warn("error reallocating packet: %s", strerror(errno));
-	return -1;
+        syslog(LOG_WARNING, "error reallocating packet: %s", strerror(errno));
+        return -1;
       }
       newent->capacity = packlen;
     }
     
-    DEBUG_CMD(log("Recycle entry from freelist. Capacity: %d", newent->capacity););
+    DEBUG_CMD(syslog(LOG_DEBUG, "Recycle entry from freelist. Capacity: %d", newent->capacity););
 
   } else {
 
     /* allocate a new one */
     newent = (pqueue_t *)malloc( sizeof(pqueue_t) );
     if (!newent) {
-      warn("error allocating newent: %s", strerror(errno));
+      syslog(LOG_WARNING, "error allocating newent: %s", strerror(errno));
       return -1;
     }
     newent->capacity = 0;
 
-    DEBUG_CMD(log("Alloc new queue entry"););
+    DEBUG_CMD(syslog(LOG_DEBUG, "Alloc new queue entry"););
   }
 
   if ( ! newent->capacity  ) {
     /* a new queue entry was allocated. Allocate the packet buffer */
     int size = packlen < MIN_CAPACITY ? MIN_CAPACITY : packlen;
     /* Allocate at least MIN_CAPACITY */
-    DEBUG_CMD(log("allocating for packet size %d", size););
+    DEBUG_CMD(syslog(LOG_DEBUG, "allocating for packet size %d", size););
     newent->packet = (unsigned char *)malloc(size);
     if (!newent->packet) {
-      warn("error allocating packet: %s", strerror(errno));
+      syslog(LOG_WARNING, "error allocating packet: %s", strerror(errno));
       return -1;
     }
     newent->capacity = size;
@@ -135,21 +135,22 @@ int pqueue_add (int seq, unsigned char *packet, int packlen) {
   for (point = pq_head; point != NULL; point = point->next) {
     if (point->seq == seq) {
       // queue already contains this packet
-      warn("discarding duplicate packet %d", seq);
+      syslog(LOG_WARNING, "discarding duplicate packet %d", seq);
+      pqueue_del(newent);
       return -1;
     }
     if (point->seq > seq) {
       // gone too far: point->seq > seq and point->prev->seq < seq
       if (point->prev) {
-	// insert between point->prev and point
-	DEBUG_CMD(log("adding %d between %d and %d", 
-		      seq, point->prev->seq, point->seq););
+        // insert between point->prev and point
+        DEBUG_CMD(syslog(LOG_DEBUG, "adding %d between %d and %d", 
+                      seq, point->prev->seq, point->seq););
 
-	point->prev->next = newent;
+        point->prev->next = newent;
       } else {
-	// insert at head of queue, before point
-	DEBUG_CMD(log("adding %d before %d", seq, point->seq););
-	pq_head = newent;
+        // insert at head of queue, before point
+        DEBUG_CMD(syslog(LOG_DEBUG, "adding %d before %d", seq, point->seq););
+        pq_head = newent;
       }
       newent->prev = point->prev; // will be NULL, at head of queue
       newent->next = point;
@@ -165,10 +166,10 @@ int pqueue_add (int seq, unsigned char *packet, int packlen) {
    */
   
   if (pq_head == NULL) {
-    DEBUG_CMD(log("adding %d to empty queue", seq););
+    DEBUG_CMD(syslog(LOG_DEBUG, "adding %d to empty queue", seq););
     pq_head = newent;
   } else {
-    DEBUG_CMD(log("adding %d as tail, after %d", seq, pq_tail->seq););
+    DEBUG_CMD(syslog(LOG_DEBUG, "adding %d as tail, after %d", seq, pq_tail->seq););
     pq_tail->next = newent;
   }
   newent->prev = pq_tail;
@@ -181,7 +182,7 @@ int pqueue_add (int seq, unsigned char *packet, int packlen) {
 
 int pqueue_del (pqueue_t *point) {
 
-  DEBUG_CMD(log("Move seq %d to freelist", point->seq););
+  DEBUG_CMD(syslog(LOG_DEBUG, "Move seq %d to freelist", point->seq););
 
   /* unlink from pq */
   if (pq_head == point) pq_head = point->next;
@@ -208,7 +209,7 @@ int pqueue_del (pqueue_t *point) {
     for ( point = pq_freelist_head; point ; point = point->next) {
       ++pq_freelist_count;
     }
-    log("queue length is %d, freelist length is %d", pq_count, pq_freelist_count);
+    syslog(LOG_DEBUG, "queue length is %d, freelist length is %d", pq_count, pq_freelist_count);
     );
 
   return 0;

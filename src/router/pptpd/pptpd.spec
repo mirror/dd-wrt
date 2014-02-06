@@ -8,17 +8,19 @@
 # --with    ipalloc
 # --without bcrelay
 #
+%define ppp_version %(rpm -q --qf='%{Version}\\n' ppp)
 
 Summary:        PoPToP Point to Point Tunneling Server
 Name:           pptpd
-Version:        1.3.4
+Version:        1.4.0
 Release:        1%{?dist}
 License:        GPL
 Group:          Applications/Internet
 URL:            http://poptop.sourceforge.net/
 Source0:        http://dl.sf.net/poptop/pptpd-%{version}.tar.gz
 Buildroot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Requires:       ppp >= 2.4.3
+Requires:       ppp = %{ppp_version}
+BuildRequires:  ppp
 
 %if %{?_without_libwrap:0}%{!?_without_libwrap:1}
 BuildRequires: tcp_wrappers
@@ -29,12 +31,14 @@ Requires(preun):  /sbin/chkconfig, /sbin/service
 Requires(postun): /sbin/service
 
 %description
-This implements a Virtual Private Networking Server (VPN) that is
+This implements a Virtual Private Networking (VPN) Server that is
 compatible with Microsoft VPN clients. It allows windows users to
 connect to an internal firewalled network using their dialup.
 
 %prep
 %setup -q
+date +'#define DATE "%d %b %y"' > plugins/patchlevel.h
+echo '#define VERSION "%{ppp_version}"' >> plugins/patchlevel.h
 
 # Fix permissions for debuginfo package
 %{__chmod} 644 *.[ch]
@@ -54,7 +58,6 @@ connect to an internal firewalled network using their dialup.
 	%{?_with_ipalloc:--with-pppd-ip-alloc} \
 	%{!?_without_bcrelay:--with-bcrelay} \
 	%{?_without_bcrelay:--without-bcrelay}
-(echo '#undef VERSION'; echo '#define VERSION "2.4.3"') >> plugins/patchlevel.h
 %{__make} CFLAGS='-fno-builtin -fPIC -DSBINDIR=\"%{_sbindir}\" %{optflags}'
 
 %install
@@ -100,7 +103,7 @@ fi
 
 %files
 %defattr(-,root,root,0755)
-%doc AUTHORS COPYING INSTALL README* TODO ChangeLog* samples
+%doc AUTHORS COPYING README* TODO ChangeLog* samples
 %{_sbindir}/pptpd
 %{_sbindir}/pptpctrl
 %{_sbindir}/pptp-portslave
@@ -116,6 +119,12 @@ fi
 %config(noreplace) /etc/ppp/options.pptpd
 
 %changelog
+* Thu Aug 30 2012 Charlie Brady <charlie_brady@mitel.com> 1.3.4-2
+- Update pptpd-logwtmp plugin version compatibility to match buildsys
+  ppp version.
+- Enforce ppp version compatibility via strict dependency.
+- Remove 'INSTALL' file from documentation directory
+
 * Tue Sep  5 2006 Paul Howarth <paul@city-fan.org> - 1.3.3-1
 - Update to 1.3.3
 - Add dist tag
