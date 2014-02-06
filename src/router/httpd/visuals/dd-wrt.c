@@ -6344,8 +6344,9 @@ void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 					<td nowrap>\n\
 						<input name=\"svqos_maclanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n\
 					</td>\n\
-					<td>\n\
-						<select name=\"svqos_macprio%d\" onChange=\"maclvl_grey(%d,this,this.form,false)\"> \n\
+					<td>\n",i, i, mac, mac,i, level, strcmp(prio, "0") == 0 ? "" : "disabled",i, level2, strcmp(prio, "0") == 0 ? "" : "disabled",i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");
+		
+		websWrite(wp, "				<select name=\"svqos_macprio%d\" onChange=\"maclvl_grey(%d,this,this.form,false)\"> \n\
 							<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + qos.prio_m + \"</option>\");\n\
 								document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n\
 								document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n\
@@ -6354,7 +6355,7 @@ void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 								document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");\n//]]>\n</script>\n\
 						</select>\n\
 					</td>\n\
-				</tr>\n", i, i, mac, mac, i, level, strcmp(prio, "0") == 0 ? "" : "disabled", i, level2, strcmp(prio, "0") == 0 ? "" : "disabled", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled", i, i, strcmp(prio, "0") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+				</tr>\n", i, i, strcmp(prio, "0") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp(prio, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
 		qos_macs = strpbrk(++qos_macs, "|");
 		qos_macs++;
