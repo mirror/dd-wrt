@@ -15,7 +15,7 @@ CFLAGS = -O2 -fno-builtin -Wall -DSBINDIR='"$(sbindir)"'
 #CFLAGS = -O2 -fno-builtin -Wall -ansi -DSBINDIR='"$(sbindir)"'
 #CFLAGS = -O2 -fno-builtin -Wall -ansi -pedantic -Wmissing-prototypes -Werror -DSBINDIR='"$(sbindir)"'
 
-man_MANS = pptpctrl.8 pptpd.8 pptpd.conf.5
+man_MANS = pptpctrl.8 pptpd.8 pptpd.conf.5 bcrelay.8
 
 EXTRA_DIST = \
 html README* ChangeLog NEWS TODO $(man_MANS) \
@@ -83,7 +83,7 @@ compat.o: compat.c config.h compat.h our_syslog.h inststr.h
 configfile.o: configfile.c config.h defaults.h configfile.h our_syslog.h
 
 ctrlpacket.o: ctrlpacket.c config.h our_syslog.h pptpdefs.h pptpctrl.h \
-  ctrlpacket.h compat.h
+ ctrlpacket.h compat.h
 
 getopt.o: getopt.c config.h our_getopt.h
 
@@ -94,16 +94,16 @@ inststr.o: inststr.c config.h inststr.h compat.h
 ppphdlc.o: ppphdlc.c config.h ppphdlc.h
 
 pptpctrl.o: pptpctrl.c config.h our_syslog.h compat.h pptpctrl.h \
-  pptpgre.h pptpdefs.h ctrlpacket.h defaults.h
+ pptpgre.h pptpdefs.h ctrlpacket.h defaults.h
 
 pptpd.o: pptpd.c config.h our_syslog.h our_getopt.h configfile.h \
-  defaults.h compat.h pptpmanager.h
+ defaults.h compat.h pptpmanager.h
 
 pptpgre.o: pptpgre.c config.h our_syslog.h ppphdlc.h pptpgre.h pptpdefs.h \
-  pptpctrl.h defaults.h pqueue.h compat.h
+ pptpctrl.h defaults.h pqueue.h compat.h
 
 pptpmanager.o: pptpmanager.c config.h our_syslog.h configfile.h \
-  defaults.h pptpctrl.h pptpdefs.h pptpmanager.h compat.h
+ defaults.h pptpctrl.h pptpdefs.h pptpmanager.h compat.h
 
 pqueue.o: pqueue.c pqueue.h
 

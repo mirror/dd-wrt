@@ -3,8 +3,6 @@
  * acconfig.h
  *
  * Additional autoconf defines for this program.
- *
- * $Id: acconfig.h,v 1.6 2005/12/29 01:21:09 quozl Exp $
  */
 
 /* Use BSD User land PPP? */
@@ -151,6 +149,9 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
@@ -159,6 +160,9 @@
 
 /* Version number of package */
 #undef VERSION
+
+/* Use vrf_socket from vrf library */
+#undef VRF
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
