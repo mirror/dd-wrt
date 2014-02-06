@@ -663,7 +663,9 @@ osl_pktfastfree(osl_t *osh, struct sk_buff *skb)
 #endif /* CTFPOOL_SPINLOCK */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 14)
+#if BITS_PER_LONG != 64 && !defined(CONFIG_KTIME_SCALAR)
 	skb->tstamp.tv.sec = 0;
+#endif
 #else
 	skb->stamp.tv_sec = 0;
 #endif

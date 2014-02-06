@@ -27,6 +27,7 @@
 #include <hndpmu.h>
 #include <chipcommonb.h>
 #include <armca9_core.h>
+#include <ddr_core.h>
 
 uint
 BCMINITFN(si_irq)(si_t *sih)
@@ -115,7 +116,7 @@ BCMINITFN(si_arm_setclock)(si_t *sih, uint32 armclock, uint32 ddrclock, uint32 a
 	bool ret = TRUE;
 	int idx;
 	int bootdev;
-	uint32 *ddrclk;
+	uint32 *ddrclk, ddrclk_limit = 0;
 	static uint32 BCMINITDATA(arm_pll_table)[][2] = {
 		{ 600,	0x1003001 },
 		{ 800,	0x1004001 },
@@ -139,7 +140,21 @@ BCMINITFN(si_arm_setclock)(si_t *sih, uint32 armclock, uint32 ddrclock, uint32 a
 				if (ddrclock == ddr_clock_table[idx])
 					break;
 			}
-			if (ddr_clock_table[idx] != 0) {
+			if (CHIPID(sih->chip) == BCM4707_CHIP_ID &&
+				sih->chippkg != BCM4709_PKG_ID) {
+				void *regs = (void *)si_setcore(sih, NS_DDR23_CORE_ID, 0);
+				int ddrtype_ddr3 = 0;
+				if (regs) {
+					ddrtype_ddr3 = ((si_core_sflags(sih, 0, 0) & DDR_TYPE_MASK)
+						== DDR_STAT_DDR3);
+				}
+				if (ddrtype_ddr3)
+					ddrclk_limit = 533;
+				else
+					ddrclk_limit = 400;
+			}
+			if (ddr_clock_table[idx] != 0 &&
+				(ddrclk_limit == 0 || ddrclock <= ddrclk_limit)) {
 				ddrclk = (uint32 *)(0x1000 + BISZ_OFFSET - 4);
 				*ddrclk = ddrclock;
 				bootdev = soc_boot_dev((void *)sih);
@@ -180,11 +195,11 @@ BCMINITFN(si_arm_setclock)(si_t *sih, uint32 armclock, uint32 ddrclock, uint32 a
 		W_REG(osh, (uint32 *)IHOST_PROC_CLK_PLLARMA, val);
 
 		W_REG(osh, (uint32 *)IHOST_PROC_CLK_POLICY_FREQ, 0x87070707);
-		W_REG(osh, (uint32 *)IHOST_PROC_CLK_CORE0_CLKGATE, 0x00000301);
-		W_REG(osh, (uint32 *)IHOST_PROC_CLK_CORE1_CLKGATE, 0x00000301);
-		W_REG(osh, (uint32 *)IHOST_PROC_CLK_ARM_SWITCH_CLKGATE, 0x00000301);
-		W_REG(osh, (uint32 *)IHOST_PROC_CLK_ARM_PERIPH_CLKGATE, 0x00000301);
-		W_REG(osh, (uint32 *)IHOST_PROC_CLK_APB0_CLKGATE, 0x00000303);
+		W_REG(osh, (uint32 *)IHOST_PROC_CLK_CORE0_CLKGATE, 0x00010303);
+		W_REG(osh, (uint32 *)IHOST_PROC_CLK_CORE1_CLKGATE, 0x00000303);
+		W_REG(osh, (uint32 *)IHOST_PROC_CLK_ARM_SWITCH_CLKGATE, 0x00010303);
+		W_REG(osh, (uint32 *)IHOST_PROC_CLK_ARM_PERIPH_CLKGATE, 0x00010303);
+		W_REG(osh, (uint32 *)IHOST_PROC_CLK_APB0_CLKGATE, 0x00010303);
 
 		val = (1 << IHOST_PROC_CLK_POLICY_CTL__GO) |
 		      (1 << IHOST_PROC_CLK_POLICY_CTL__GO_AC);

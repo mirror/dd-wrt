@@ -4718,16 +4718,16 @@ poll_plllock_done:
 	ldr	r1,=0x87070707
 	str	r1,[r0]
 	ldr	r0,=IHOST_PROC_CLK_CORE0_CLKGATE
-	ldr	r1,=0x00000301
+	ldr	r1,=0x00010303
 	str	r1,[r0]
 	ldr	r0,=IHOST_PROC_CLK_CORE1_CLKGATE
-	str	r1,[r0]
+	ldr	r2,=0x00000303
+	str	r2,[r0]
 	ldr	r0,=IHOST_PROC_CLK_ARM_SWITCH_CLKGATE
 	str	r1,[r0]
 	ldr	r0,=IHOST_PROC_CLK_ARM_PERIPH_CLKGATE
 	str	r1,[r0]
 	ldr	r0,=IHOST_PROC_CLK_APB0_CLKGATE
-	ldr	r1,=0x00000303
 	str	r1,[r0]
 
 	ldr	r0,=IHOST_PROC_CLK_POLICY_CTL
