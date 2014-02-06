@@ -1,0 +1,54 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Poptop MSCHAP2 ADS Howto</title>
+</head>
+
+<body>
+<p><strong><a name="mppe"></a>7. Install MPPE Kernel Module </strong></p>
+<p>If you plan to use MSCHAPv2, MPPE is required. Kernel version 2.6.15 or above has already got MPPE built-in. Fedora Core 8 kernel version on the DVD is 2.6.23.1. That means you do not need to install the MPPE module as you have to for older kernels. Information for MPPE on FC4 / 5 / 6 is in <a href="poptop_ads_howto_a1.htm">Appendix A1</a>.</p>
+<p>To test if your kernel supports MPPE:</p>
+<blockquote>
+  <pre>[root@pptp ~]# modprobe ppp-compress-18 &amp;&amp; echo ok</pre>
+</blockquote>
+<p>It should return an &quot;ok&quot;.</p>
+<p><strong>Note:</strong> The latest kernel for Fedora Core 8 at the time of writing is 2.6.26.3.</p>
+<hr>
+<strong><a name="pppd_pptpd" id="pppd_pptpd"></a>8. pppd and  pptpd</strong>
+<p><a name="pppd"><strong>8.1 pppd </strong></a></p>
+<p>FC8 comes with ppp-2.4.4-2. MPPE support is already enabled.  If ppp is not installed, use<em> yum</em> to install it.</p>
+<blockquote>
+  <pre>[root@pptp ~]# yum install ppp</pre>
+</blockquote>
+<p><strong>Note</strong>: Information on how to update ppp module on FC4 / 5/ 6 is in <a href="poptop_ads_howto_a2.htm">Appendix A2</a>.</p>
+<hr>
+<a name="pptpd"></a><strong>8.2 Install pptpd</strong>
+<p>From <a href="http://sourceforge.net/project/showfiles.php?group_id=44827">here</a> download the pptpd tar ball, pptpd-1.3.4.tar.gz. You can make a RPM from it with the<em> rpmbuild</em> command. If you don't have the <em>rpmbuild</em> command installed. Get the package <strong>rpm-build</strong> through <em>yum</em>. </p>
+<blockquote>
+  <pre>[root@pptp ~]# rpmbuild -ta pptpd-1.3.4.tar.gz</pre>
+</blockquote>
+<p>The command will create a pptpd rpm in /usr/src/redhat/RPMS/i386 directory. Install the package with the <em>rpm</em> commad.</p>
+<blockquote>
+  <pre>[root@pptp ~]# cd /usr/src/redhat/RPMS/i386/
+[root@pptp i386]# rpm -ivh pptpd-1.3.4-1.i386.rpm</pre>
+</blockquote>
+<p><strong>Note:</strong><br>
+The pptpd rpm package is built against ppp-2.4.3 but FC6 or above has ppp-2.4.4. It prevents the tunnel to be established  and gives the following error message is in /var/log/message.</p>
+<blockquote>
+  <p>Plugin /usr/lib/pptpd/pptpd-logwtmp.so is for pppd version 2.4.3, this is 2.4.4 </p>
+</blockquote>
+<p>The workaround is to disable the logwtmp option in /etc/pptpd.conf. The drawback is the<em> last</em> command won't show the pptpd login information.</p>
+<p>I have produced a patched RPMs for pptpd to address the problem. You can find them from the following links.</p>
+<dt>For Fedora 8</dt>
+  <dd><a href="http://rapidshare.com/files/147328050/pptpd-1.3.4-2.fc8.i386.rpm">pptpd-1.3.4-2.fc8.i386.rpm</a> (binary RPM - current version) </dd>
+  <dd><a href="http://rapidshare.com/files/147328118/pptpd-1.3.4-2.fc8.src.rpm">pptpd-1.3.4-2.fc8.src.rpm</a> (source RPM)<br></dd>
+<dt>For Fedora 6</dt>
+  <dd><a href="http://rapidshare.com/files/11740134/pptpd-1.3.3-2.fc6.i386.rpm">pptpd-1.3.3-2.fc6.i386.rpm</a> (binary RPM - older version) </dd>
+  <dd><a href="http://rapidshare.com/files/31923326/pptpd-1.3.4-2.FC6.i386.rpm">pptpd-1.3.4-2.FC6.i386.rpm</a> (binary RPM - current version) </dd>
+  <br>
+<hr>
+<a href="poptop_ads_howto_5.htm">Next</a>&nbsp;&nbsp;<a href="poptop_ads_howto_3.htm">Previous</a>&nbsp;&nbsp;<a href="poptop_ads_howto_1.htm#toc">Content</a>
+</body>
+</html>

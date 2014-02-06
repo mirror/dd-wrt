@@ -1,0 +1,41 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Poptop MSCHAP2 ADS Howto</title>
+</head>
+
+<body>
+<p><a name="a3_samba"></a><strong>A3. Samba for Fedora Core 4 / 5 / 6 </strong></p>
+<p><strong><a name="fc56_samba"></a>A3.1 Fedora Core 5 / 6</strong><br>
+(last update: 19 May 2007)</p>
+<p>FC5 comes with samba v3.0.21b and FC6 has version 3.0.23c. The current samba RPM version from <em>yum</em> at the time of writing for FC5/6 is v3.0.24. It is highly recommended to use the latest version. </p>
+<p>The required RPM packages for samba in Fedora are <em>samba, samba-client, samba-common</em>. Install through <em>yum</em> if any of them is missing. </p>
+<blockquote>
+  <pre>[root@pptp ~]# yum install samba samba-common samba-client</pre>
+</blockquote>
+<p>Please go to <a href="poptop_ads_howto_5.htm#smbconf">Section 9.1</a> to continue the Samba configuration. </p>
+<p><strong>Note: </strong> Information on Samba and FC4 can be found in <a href="poptop_ads_howto_a2.htm#samba">the next section</a>.</p>
+<hr>
+<strong>A3.2 Fedora Core 4 </strong><br>
+(last update: 6 March 2006)
+<p>FC4 comes with samba v3.0.14a. The samba project released v3.0.20 on 20 August 2005. Here is a quote from the v3.0.20 release note about winbind.</p>
+<blockquote>
+  <p>-- quote --<br>
+    Winbindd has been completely rewritten in this release to support
+an almost completely non-blocking, asynchronous request/reply
+model.  This means that winbindd will scale much better in 
+large domain environments and on high latency networks.<br>
+-- quote --
+  </p>
+</blockquote>
+<p>It is highly recommended to upgrade samba to v3.0.20 or above. The latest samba v3.0.21c rpms for FC4 can be found in <a href="http://us5.samba.org/samba/ftp/Binary_Packages/Fedora/RPMS/i386/core/4/">here</a>. Download a copy and then update samba with command &quot;rpm -Uvh samba*.rpm&quot;.</p>
+<p>Please go to <a href="poptop_ads_howto_5.htm#smbconf">Section 9.1</a> to continue the Samba configuration.</p>
+<p><strong>Note: </strong>
+Samba v3.0.21 has a bug on the oplock code. Avoid this version. Use v3.0.21a or above. </p>
+<hr>
+<a href="poptop_ads_howto_a4.htm">Next</a>&nbsp;&nbsp;<a href="poptop_ads_howto_a2.htm">Previous</a>&nbsp;&nbsp;<a href="poptop_ads_howto_1.htm#toc">Content</a>
+<p>&nbsp; </p>
+</body>
+</html>
