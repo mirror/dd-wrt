@@ -96,7 +96,7 @@ struct tr_resp {
 #define TR_PROTO_CBT    4
 
 /* igmpv3 report types */
-static struct tok igmpv3report2str[] = {
+static const struct tok igmpv3report2str[] = {
 	{ 1,	"is_in" },
 	{ 2,	"is_ex" },
 	{ 3,	"to_in" },
@@ -227,7 +227,11 @@ print_igmpv3_query(register const u_char *bp, register u_int len)
     }
     if (mrc != 100) {
 	(void)printf(" [max resp time ");
-	relts_print(mrt);
+        if (mrt < 600) {
+            (void)printf("%.1fs", mrt * 0.1);
+        } else {
+            relts_print(mrt / 10);
+        }
 	(void)printf("]");
     }
     TCHECK2(bp[4], 4);
