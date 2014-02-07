@@ -3044,14 +3044,14 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	char new_name[80];
 	char temp[60], *val = NULL;
 
-	buf = safe_malloc(2500);
-	buf_name = safe_malloc(2500);
-	old = safe_malloc(STATIC_ROUTE_PAGE * 60);
-	old_name = safe_malloc(STATIC_ROUTE_PAGE * 60);
+	buf = safe_malloc(2500 + 1);
+	buf_name = safe_malloc(2500 + 1);
+	old = safe_malloc(STATIC_ROUTE_PAGE * 60 + 1 );
+	old_name = safe_malloc(STATIC_ROUTE_PAGE * 60 + 1);
 	buf[0] = 0;
 	buf_name[0] = 0;
-	memset(old, 0, STATIC_ROUTE_PAGE * 60);
-	memset(old_name, 0, STATIC_ROUTE_PAGE * 60);
+	memset(old, 0, STATIC_ROUTE_PAGE * 60 + 1);
+	memset(old_name, 0, STATIC_ROUTE_PAGE * 60 + 1);
 	cur = buf;
 	cur_name = buf_name;
 
