@@ -144,7 +144,6 @@ void start_samba3(void)
 						csunext = csu->next;
 						free(csu);
 					}
-					free(cs->users);
 					goto nextshare;
 				}
 			}
