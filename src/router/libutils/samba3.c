@@ -98,6 +98,7 @@ struct samba3_user *getsamba3users(void)
 			}
 		}
 		json_array_clear(json);
+		free(json);
 	}
 
 	return list;
@@ -186,6 +187,7 @@ struct samba3_share *getsamba3shares(void)
 			}
 		}
 		json_array_clear(json);
+		free(json);
 	}
 	return list;
 }
