@@ -4,7 +4,7 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.passwd"); %></div>
-	<input id="ppp_passwd" name="ppp_passwd" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" value="<% nvram_get("ppp_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+	<input id="ppp_passwd" name="ppp_passwd" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" autocomplete="off" value="<% nvram_get("ppp_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
@@ -24,7 +24,7 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.pin"); %></div>
-	<input id="wan_pin" name="wan_pin" size="4" maxlength="4" onblur="valid_name(this,share.pin)" type="password" value="<% nvram_get("wan_pin"); %>" />&nbsp;&nbsp;&nbsp;
+	<input id="wan_pin" name="wan_pin" size="4" maxlength="4" onblur="valid_name(this,share.pin)" type="password" autocomplete="off" value="<% nvram_get("wan_pin"); %>" />&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" name="_wan_pin_unmask" value="0" onclick="setElementMask('wan_pin', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
