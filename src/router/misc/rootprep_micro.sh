@@ -116,6 +116,9 @@ echo "/jffs/usr/local/lib" >> etc/ld.so.conf
 echo "/mmc/lib" >> etc/ld.so.conf
 echo "/mmc/usr/lib" >> etc/ld.so.conf
 echo "/mmc/usr/local/lib" >> etc/ld.so.conf
+echo "/opt/lib" >> etc/ld.so.conf
+echo "/opt/usr/lib" >> etc/ld.so.conf
+echo "/opt/usr/local/lib" >> etc/ld.so.conf
 echo "/lib" >> etc/ld.so.conf
 echo "/usr/lib" >> etc/ld.so.conf
 /sbin/ldconfig -r $ROOTDIR
@@ -123,3 +126,5 @@ echo "/usr/lib" >> etc/ld.so.conf
 # miscellaneous
 mkdir -p mnt
 mkdir -p proc
+mkdir -p opt/lib/iptables
+ln -sf /opt/usr/lib/iptables usr/lib/iptables
