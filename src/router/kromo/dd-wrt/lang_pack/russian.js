@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////////////
+﻿//////////////////////////////////////////////////////////////////////////////////////////////
 //		Russian reference translation file - DD-WRT V23 SP1 by Yuri Krasilnikov 28/11/2008	//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -79,7 +79,7 @@ share.yes="Да";
 share.no="Нет";
 share.filter="Фильтровать";
 share.deny="Запретить";
-share.range="Лимит";
+share.range="Диапазон";
 share.use="Использовать";
 share.mins="мин";
 share.secs="с";
@@ -91,7 +91,7 @@ share.channel="Канал";
 share.rssi="Rssi";
 share.signal="Сигнал";
 share.noise="Шум";
-share.beacon="beacon";
+share.beacon="Маяк";
 share.openn="Открыто";
 share.dtim="dtim";
 share.rates="Скорость";
@@ -225,8 +225,8 @@ sbutton.help="   Помощь  ";
 sbutton.wl_client_mac="Список MAC беспроводных клиентов";
 sbutton.update_filter="Обновить список фильтра";
 sbutton.join="Присоединить";
-sbutton.log_in="Входящий журнал";
-sbutton.log_out="Исходящий журнал";
+sbutton.log_in="Журнал входящих";
+sbutton.log_out="Журнал исходящих";
 sbutton.edit_srv="Добавить/редактировать службу";
 sbutton.routingtab="Показать таблицу маршрутов";
 sbutton.wanmac="Получить MAC-адрес данного компьютера";
@@ -356,7 +356,7 @@ bmenu.setupvlan="VLANы";
 bmenu.setupeop="Туннель EoIP";
 bmenu.networking="Сеть";
 
-bmenu.wireless="WiFi";
+bmenu.wireless="Wi-Fi";
 bmenu.wirelessBasic="Основные настройки";
 bmenu.wirelessRadius="Radius";
 bmenu.wirelessSuperchannel="Суперканал";
@@ -364,8 +364,8 @@ bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="Безопасность";
 bmenu.wirelessMac="MAC-фильтр";
 bmenu.wirelessAdvanced="Дополнительно";
-bmenu.wirelessAdvancedwl0="WL0-Advanced Sett.";
-bmenu.wirelessAdvancedwl1="WL1-Advanced Sett.";
+bmenu.wirelessAdvancedwl0="WL0-Доп. настройки";
+bmenu.wirelessAdvancedwl1="WL1- Доп. настройки ";
 bmenu.wirelessWds="WDS";
 bmenu.wirelessWds0="Ath0-WDS";
 bmenu.wirelessWds1="Ath1-WDS";
@@ -396,14 +396,14 @@ bmenu.sipathoverview="Обзор";
 bmenu.sipathphone="Телефонная книга";
 bmenu.sipathstatus="Статус";
 
-bmenu.admin="Тех.обслуж.";
+bmenu.admin="Администрирование";
 bmenu.adminManagement="Управл.";
-bmenu.adminAlive="Под. жизни";
+bmenu.adminAlive="Поддержка соединения";
 bmenu.adminLog="Журнал";
 bmenu.adminDiag="Команды";
-bmenu.adminWol="WOL";
-bmenu.adminFactory="З. установки";
-bmenu.adminUpgrade="Mодернизация";
+bmenu.adminWol="Wake-On-LAN";
+bmenu.adminFactory="Заводск. Уст.";
+bmenu.adminUpgrade="Обновление";
 bmenu.adminBackup="Резервное коп.";
 
 bmenu.services="Службы";
@@ -412,7 +412,7 @@ bmenu.servicesPppoesrv="Сервер PPPoE";
 bmenu.servicesPptp="PPTP";
 bmenu.servicesUSB="USB";
 bmenu.servicesNAS="NAS";
-bmenu.servicesHotspot="Хот-спот";
+bmenu.servicesHotspot="HotSpot";
 bmenu.servicesMilkfish="Маршрутизатор Milkfish SIP";
 //bmenu.servicesAnchorFree="Моя рекламная сеть";
 
@@ -428,16 +428,16 @@ bmenu.statuSysInfo="Сведения о системе";
 bmenu.statuActivate="Активация";
 
 // ** Alive.asp **//
-alive.titl="Поддержание жизни";
-alive.h2="Поддержание жизни";
+alive.titl="Поддержание соединения";
+alive.h2="Поддержание соединения";
 alive.legend="Плановая перезагрузка";
 alive.sevr1="Плановая перезагрузка";
 alive.hour="В заданное время";
-alive.legend2="Сторож WDS/соединения";
-alive.sevr2="Включить сторожа";
+alive.legend2=" Watchdog для WDS/соединения";
+alive.sevr2="Включить Watchdog";
 alive.IP="IP-адреса";
-alive.legend3="Сторож прокси/соединения";
-alive.sevr3="Включить сторожа прокси";
+alive.legend3=" Watchdog для прокси/соединения";
+alive.sevr3="Включить Watchdog для прокси";
 alive.IP2="IP-адрес прокси";
 alive.port="Порт прокси";
 
@@ -560,7 +560,7 @@ hfilter.right6="Вы можете дать название вашей поли�
 hfilter.right8="Выберите дни недели, в которые должна действовать данная политика.";
 hfilter.right10="Задайте время суток, в течение которого должна действовать данная политика.";
 hfilter.right12="Вы можете заблокировать доступ к определенным службам. Нажмите кнопку <em>" + sbutton.filterSer + "</em> для изменения настроек.";
-hfilter.right14="Вы можете заблокировать доступ к определенным сайтам, введя их  URL.";
+hfilter.right14="Вы можете заблокировать доступ к определенным сайтам, введя их URL.";
 hfilter.right16="Вы можете заблокировать доступ к определенным сайтам по ключевым словам, содержащимся на их страницах.";
 
 
@@ -617,8 +617,8 @@ pforward.titl="Перенаправление портов";
 pforward.h2="Перенаправление портов";
 pforward.legend="Перенаправления";
 pforward.app="Приложение";
-pforward.from="Порт-источник";
-pforward.to="Порт-приемник";
+pforward.from="От порта";
+pforward.to="До порта";
 
 //help container
 hpforward.right2="Некоторые приложения для своей корректной работы требуют открыть определенные порты. К таким приложениям относятся, например, серверы и определенные онлайн-игры. Когда из Интернета на определенный порт придет запрос, маршрутизатор перенаправит его на указанный вами компьютер. По соображениям безопасности вы можете ограничить перенаправление портов только теми портами, которые действительно используются, и снять отметку с клетки <em>" + share.enable +"</em> для не используемых в данное время портов.";
@@ -634,8 +634,8 @@ usb.usb_storage="Поддержка USB-дисков";
 usb.usb_printer="Поддержка USB-принтера";
 
 // ** Hotspot.asp **//
-hotspot.titl="Хот-спот";
-hotspot.h2="Портал хот-спота";
+hotspot.titl=" Hotspot ";
+hotspot.h2="Портал Hotspot ";
 hotspot.legend="Chillispot";
 hotspot.nowifibridge="Отделить Wifi от моста LAN ";
 hotspot.hotspot="Chillispot";
@@ -668,8 +668,8 @@ hotspot.nocat_splash="Splash URL";
 hotspot.nocat_port="Исключить порты";
 hotspot.nocat_timeout="Таймаут подключения";
 hotspot.nocat_verbose="Verbosity";
-hotspot.nocat_route="Route Only";
-hotspot.nocat_MAClist="Белый список MAC";
+hotspot.nocat_route="Только маршрутизация";
+hotspot.nocat_MAClist="Список разрешенных MAC";
 hotspot.smtp_legend="Перенаправление SMTP";
 hotspot.smtp_srv="Перенаправление SMTP";
 hotspot.smtp_ip="IP назначения SMTP";
@@ -694,7 +694,7 @@ hotspot.wifidog_httpdname="Имя веб-сервера";
 hotspot.wifidog_httpdconn="Макс.число пользователей";
 hotspot.wifidog_checkinter="Интервал проверки (с)";
 hotspot.wifidog_checktimeout="Таймаут клиента";
-hotspot.wifidog_tmaclist="Белый список MAC";
+hotspot.wifidog_tmaclist="Список разрешенных MAC";
 hotspot.wifidog_authsrv="Имя хоста AuthServer";
 hotspot.wifidog_authsrvssl="AuthServer SSL доступен";
 hotspot.wifidog_authsrvsslport="Порт AuthServer SSL";
@@ -711,7 +711,7 @@ hotspot.wifidog_authsrvpath="Путь AuthServer";
 ////anchorfree.address_1="Адрес";
 //////anchorfree.address_2="Адрес 2";
 ////anchorfree.city="Город";
-////anchorfree.zip="Почтовый или Zip-код";
+////anchorfree.zip="Почтовый индекс или Zip-код";
 ////anchorfree.state="Округ/штат/область";
 ////anchorfree.country="Страна";
 ////anchorfree.category="Категория";
@@ -749,7 +749,7 @@ info.ap="Точка доступа";
 idx_h.srv="Сервер Heart Beat";
 idx_h.con_strgy="Стратегия соединения";
 idx_h.max_idle="Соединение по запросу: макс.время бездействия";
-idx_h.alive="Поддержание жизни: период повт.набора";
+idx_h.alive="Поддержание соединения: период повт.набора";
 idx_h.reconnect="Принудительный реконнект";
 
 
@@ -786,10 +786,10 @@ idx.h23="Установка локальной сети";
 idx.routerip="IP-адрес маршрутизатора";
 idx.lanip="Локальный IP-адрес";
 idx.legend2="Порт WAN";
-idx.wantoswitch="Включить порт WAN в коммутатор";
+idx.wantoswitch="Добавить порт WAN в коммутатор";
 idx.legend3="Настройки времени";
 idx.timeset="Часовой пояс";
-idx.dsttime="Летнее время (DST)";
+idx.dsttime="Переход не летнее время (DST)";
 idx.static_ip="Статический IP";
 idx.dhcp="Динамический IP - DHCP";
 idx.dhcp_legend="Настройки сервера сетевых адресов (DHCP)";
@@ -860,9 +860,9 @@ log.accept="Принятые";
 
 
 // ** Management.asp **//
-management.titl="Техническое обслуживание";
+management.titl="Администрирование";
 management.h2="Управление маршрутизатором";
-management.changepassword="В настоящее время ваш маршрутизатор использует небезопасную комбинацию имени пользователя и пароля по умолчанию и не защищен. Пожалуйста, измените их в следующем диалоге!";
+management.changepassword="В настоящее время ваш маршрутизатор использует небезопасную комбинацию имени пользователя и пароля по умолчанию и не защищен. Пожалуйста, измените их в следующем диалоговом окне!";
 management.psswd_legend="Пароль маршрутизатора";
 management.psswd_user="Имя пользователя маршрутизатора";
 management.psswd_pass="Пароль маршрутизатора";
@@ -1027,7 +1027,7 @@ route.olsrd_lqag="Link Quality Aging";
 route.olsrd_lqdmin="Link Quality Dijkstra Min";
 route.olsrd_lqdmax="Link Quality Dijkstra Max";
 route.olsrd_lqlvl="Link Quality Level";
-route.olsrd_hysteresis="Hysteresis";
+route.olsrd_hysteresis="Гистерезис";
 route.olsrd_newiface="Новый интерфейс";
 route.ospf_mod="Маршрутизатор OSPF";
 route.ospf_legend="Маршрутизация OSPF";
@@ -1198,7 +1198,7 @@ service.ttraff_daemon="Демон ttraff";
 
 //milkfish.webservices
 service.milkfish_siprouter="Маршрутизатор Milkfish SIP";
-service.milkfish_alias="Алиас";
+service.milkfish_alias="Псевдоним";
 service.milkfish_uri="SIP URI";
 service.milkfish_mainswitch="Main Switch";
 service.milkfish_fromswitch="From-Substitution";
@@ -1208,7 +1208,7 @@ service.milkfish_password="Пароль Milkfish";
 service.milkfish_audit="Аудит Milkfish";
 service.milkfish_siptrace="Трассировка SIP";
 service.milkfish_subscribers="Локальные подписчики";
-service.milkfish_aliases="Локальные алиасы";
+service.milkfish_aliases="Локальные псевдонимы";
 service.milkfish_dynsip="Динамический SIP";
 service.milkfish_status="Статус SIP";
 service.milkfish_database="База данных SIP";
@@ -1231,7 +1231,7 @@ service.hmilkfish_right8="Здесь задается ваше имя польз
 service.hmilkfish_right10="Здесь задается ваш пароль в  Milkfish Community Forum – он выдается при регистрации на yourname.homesip.net";
 service.hmilkfish_right12="Включает/отключает базовую трассировку SIP на вашем маршрутизаторе";
 service.hmilkfish_right14="Локальные подписчики SIP – это локально управляемые учетные записи SIP";
-service.hmilkfish_right16="Алиасы SIP – это форвардинг, аналогичный форвардингу E-mail. Можгут быть использованы для форвардинга алфавитно-цифровых учетных записей в цифровые учетные записи телефонных пользователей и наоборот";
+service.hmilkfish_right16="Псевдонимы SIP – это перенаправление, аналогичное перенаправлению E-mail. Можгут быть использованы для перенаправления буквенно-цифровых учетных записей в цифровые учетные записи телефонных пользователей и наоборот";
 service.hmilkfish_right18="Включает/отключает динамический SIP (т.е. службу Homesip.net). Требуется задание имени пользователя и пароля";
 service.hmilkfish_right20="пока не реализовано – оставьте поле пустым";
 service.hmilkfish_right22="пока не реализовано – оставьте поле пустым";
@@ -1249,10 +1249,10 @@ eoip.remoteIP="Удаленный IP-адрес";
 eoip.tunnelID="Идентификатор туннеля";
 eoip.comp="Сжатие";
 eoip.passtos="Транзит TOS";
-eoip.frag="fragment";
+eoip.frag="Фрагмент";
 eoip.mssfix="mssfix";
-eoip.shaper="shaper";
-eoip.bridging="Bridging";
+eoip.shaper="Формование";
+eoip.bridging="Создание моста";
 
 
 // ** Sipath.asp + cgi **//
@@ -1317,7 +1317,7 @@ status_router.mem_buf="Буфера";
 status_router.mem_cached="Кэш";
 status_router.mem_active="Активная";
 status_router.mem_inactive="Неактивная";
-status_router.mem_hidden="Hidden"; // do not translate this line, this is bogus (BrainSlayer)
+status_router.mem_hidden="Скрыто"; // do not translate this line, this is bogus (BrainSlayer)
 status_router.legend4="Сеть";
 status_router.net_maxports="Макс. число портов IP-фильтра";
 status_router.net_conntrack="Активные IP-соединения";
@@ -1366,8 +1366,8 @@ status_conn.h2="Активные IP-соединения";
 // ** Status_SputnikAPD.asp **//
 status_sputnik.titl="Статус Sputnik Agent";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
-status_sputnik.manage="Managed By";
-status_sputnik.license="SCC License No.";
+status_sputnik.manage="Управляется";
+status_sputnik.license="Нр.лицензии SCC.";
 
 //help container
 hstatus_sputnik.right1="Статус Sputnik Agent";
@@ -1474,8 +1474,8 @@ vlan.legend="VLAN";
 vlan.bridge="Назначена<br />мосту";
 vlan.tagged="Тегирована";
 vlan.negociate="Автосогласование";
-vlan.aggregation="Связывание<br>портов 3 и 4";
-vlan.trunk="Транк";
+vlan.aggregation="Агрегирование<br>портов 3 и 4";
+vlan.trunk="Объединение";
 
 
 // ** WEP.asp **//
@@ -1485,7 +1485,7 @@ wep.passphrase="Идентификационная фраза";
 
 // ** WOL.asp **//
 wol.titl="WOL";
-wol.h2="Разбудить через сеть (WOL)";
+wol.h2="Wake-On-LAN (WOL)";
 wol.legend="Доступные хосты";
 wol.legend2="Адреса WOL";
 wol.legend3="Выходной сигнал";
@@ -1534,8 +1534,8 @@ wpa.algorithms="Алгоритмы WPA";
 wpa.shared_key="Общий ключ WPA";
 
 sec80211x.xsuptype="XSupplicant Type";
-sec80211x.servercertif="Public Server Certificate";
-sec80211x.clientcertif="Client Certificate";
+sec80211x.servercertif="Сертификат публичного сервера";
+sec80211x.clientcertif="Клиентский сертификат";
 
 //help container
 hwpa.right2="Возможный выбор: Отключено, WEP, WPA Personal, WPA Enterprise или RADIUS. Все устройства в вашей сети должны использовать один и тот же режим безопасности.";
@@ -1615,8 +1615,8 @@ wl_adv.label="Тип аутентификации";
 wl_adv.label2="Базовая скорость";
 wl_adv.label3="Фиксированная скорость передачи";
 wl_adv.label4="Режим защиты CTS";
-wl_adv.label5="Frame Burst";
-wl_adv.label6="Интервал beacon";
+wl_adv.label5="Разброс фрейма";
+wl_adv.label6="Интервал маяка";
 wl_adv.label7="Интервал DTIM";
 wl_adv.label8="Порог фрагментации";
 wl_adv.label9="Порог RTS";
@@ -1626,7 +1626,7 @@ wl_adv.label12="Передающая антенна";
 wl_adv.label13="Приемная антенна";
 wl_adv.label14="Преамбула";
 wl_adv.reference="Эталонный шум";
-wl_adv.label16="Afterburner";
+wl_adv.label16="Форсаж";
 wl_adv.label17="Беспроводной доступ к GUI";
 wl_adv.label18="Поддержка WMM";
 wl_adv.label19="No-Acknowledgement";
@@ -1770,3 +1770,4 @@ dhcp.server="IP-адрес DHCP-сервера :";
 dhcp.tclient="Имя хоста клиента";
 
 donate.mb="Вы можете также внести пожертвование через систему Moneybookers на счет mb@dd-wrt.com";
+
