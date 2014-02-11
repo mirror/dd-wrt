@@ -879,24 +879,20 @@ static void handle_request(void)
 			char buf[128];
 			char call[64];
 			int pid;
-			char *statusfile = "/tmp/.ias_status";
 			FILE *fp;
 
-			sprintf(call, "ps | grep \"dns_responder\" > %s", statusfile);
-			system(call);
-			fp = fopen(statusfile, "r");
+			sprintf(call, "ps|grep \"dns_responder\"");
+			fp = popen(call, "r");
 			if (fp) {
 				while (fgets(buf, sizeof(buf), fp)) {
 					if (strstr(buf, nvram_get("lan_ipaddr"))) {
 						if (sscanf(buf, "%d ", &pid)) {
-							sprintf(call, "kill %d", pid);
-							system(call);
+							kill(pid);
 						}
 					}
 				}
 
-				fclose(fp);
-				unlink(statusfile);
+				pclose(fp);
 			}
 
 		}
