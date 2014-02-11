@@ -141,9 +141,9 @@ else
 endif
 endif
 endif
-ifeq ($(CONFIG_HIGHMEM),y)
+#ifeq ($(CONFIG_HIGHMEM),y)
 	cp $(LINUXDIR)/.config_std_highmem $(LINUXDIR)/.config
-endif
+#endif
 ifeq ($(CONFIG_NOAC),y)
 	cp $(LINUXDIR)/.config_std_noac $(LINUXDIR)/.config
 endif
