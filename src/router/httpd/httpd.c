@@ -887,7 +887,7 @@ static void handle_request(void)
 				while (fgets(buf, sizeof(buf), fp)) {
 					if (strstr(buf, nvram_get("lan_ipaddr"))) {
 						if (sscanf(buf, "%d ", &pid)) {
-							kill(pid);
+							kill(pid, SIGTERM);
 						}
 					}
 				}
