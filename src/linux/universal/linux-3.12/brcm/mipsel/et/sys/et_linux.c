@@ -27,7 +27,7 @@
 #include <linux/module.h>
 #include <linuxver.h>
 #include <bcmdefs.h>
-#include <osl.h>
+//#include <osl.h>
 
 #include <linux/types.h>
 #include <linux/errno.h>

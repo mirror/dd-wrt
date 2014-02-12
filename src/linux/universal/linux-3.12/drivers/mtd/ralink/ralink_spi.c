@@ -60,6 +60,10 @@ static struct mtd_partition rt2880_partitions[] = {
                 size:           MTDPART_SIZ_FULL,
                 offset:         MTDPART_OFS_APPEND,
         }, {
+                name:           "ddwrt", /* mtdblock4 */
+                size:           0x10000,
+                offset:         0x3f0000,
+        }, {
                 name:           "nvram", /* mtdblock4 */
                 size:           0x10000,
                 offset:         0x3f0000,
@@ -789,6 +793,7 @@ static int raspi_prob(void)
 {
 	struct chip_info		*chip;
 	unsigned			i;
+	struct squashfs_super_block *sb;
 #ifdef CONFIG_ROOTFS_IN_FLASH_NO_PADDING
 	loff_t offs;
 	struct __image_header {
@@ -853,15 +858,23 @@ static int raspi_prob(void)
 			    while((offset+flash->mtd.erasesize)<flash->mtd.size)
 			    {
 			    int retlen;
-			    mtd_read(&flash->mtd,offset,4, &retlen, buf);
+			    mtd_read(&flash->mtd,offset,sizeof(struct squashfs_super_block), &retlen, buf);
 			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
 				    {
-				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
+					sb = (struct squashfs_super_block *)buf;
+					int len;
+
+				    	printk(KERN_EMERG "\nfound squashfs at %X with %d len\n",offset, sb->bytes_used);
 					rt2880_partitions[3].size=(((flash->mtd.size)-nvramsize)-bootsize);					
 					rt2880_partitions[4].offset = offset;					
 					rt2880_partitions[4].size = rt2880_partitions[3].size-(offset-bootsize);					
-					rt2880_partitions[5].offset = flash->mtd.size - nvramsize;					
-					rt2880_partitions[5].size = flash->mtd.erasesize;					
+					len = offset + sb->bytes_used;
+					len += (mtd->erasesize - 1);
+					len &= ~(mtd->erasesize - 1);
+					rt2880_partitions[6].offset = flash->mtd.size - nvramsize;					
+					rt2880_partitions[6].size = flash->mtd.erasesize;					
+					rt2880_partitions[5].offset = len;					
+					rt2880_partitions[5].size = rt2880_partitions[6].offset - len;					
 					break;
 				    } 
 			    offset+=4096;
