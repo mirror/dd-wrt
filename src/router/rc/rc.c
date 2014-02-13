@@ -165,7 +165,7 @@ int redial_main(int argc, char **argv)
 				if (nvram_match("wan_proto", "l2tp")) {
 					stop_service("l2tp");
 					sleep(1);
-					start_service("l2tp_redial");
+					start_service("wan_redial");
 				}
 #ifdef HAVE_HEARTBEAT
 				else
