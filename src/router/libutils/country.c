@@ -726,7 +726,11 @@ extern int getRouterBrand(void);
 #ifdef HAVE_BUFFALO
 //char 
 
+#if defined(HAVE_NORTHSTAR) || defined(HAVE_MT7620)
+#define getUEnv(name) nvram_get(name)
+#else
 extern void *getUEnv(char *name);
+#endif
 
 static int isValidCountry(char *region, char *country)
 {
