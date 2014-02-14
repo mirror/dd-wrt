@@ -1323,6 +1323,8 @@ int wifi_gettxpoweroffset(char *ifname)
 	poweroffset = 8;
 #elif HAVE_EOC2610
 	poweroffset = 8;
+#elif HAVE_ECB3500
+	poweroffset = 8;
 #elif HAVE_EOC5610
 	poweroffset = 0;
 #elif HAVE_NS2
