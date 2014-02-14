@@ -3160,7 +3160,7 @@ static void save_prefix(webs_t wp, char *prefix)
 
 	copytonv(wp, n);
 
-#ifdef HAVE_NORTHSTAR
+#if defined(HAVE_NORTHSTAR) && !defined(HAVE_BUFFALO)
 	sprintf(n, "wl_regdomain");
 	char *reg = websGetVar(wp, n, NULL);
 	if (reg) {

@@ -4761,7 +4761,7 @@ if (!strcmp(prefix, "wl1"))
 
 void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 {
-#if defined(HAVE_NORTHSTAR)
+#if defined(HAVE_NORTHSTAR) || !defined(HAVE_BUFFALO)
 	char wl_regdomain[16];
 
 	sprintf(wl_regdomain, "wl_regdomain");
