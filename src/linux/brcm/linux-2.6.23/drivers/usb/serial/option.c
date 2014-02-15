@@ -30,6 +30,7 @@
 
 #define DRIVER_AUTHOR "Matthias Urlichs <smurf@smurf.noris.de>"
 #define DRIVER_DESC "USB Driver for GSM modems"
+#define DRIVER_VERSION ""
 
 #include <linux/kernel.h>
 #include <linux/jiffies.h>
@@ -1445,7 +1446,7 @@ static const struct usb_device_id option_ids[] = {
 	{ USB_DEVICE_AND_INTERFACE_INFO(ALINK_VENDOR_ID, ALINK_PRODUCT_3GU, 0xff, 0xff, 0xff) },
 	{ USB_DEVICE(ALCATEL_VENDOR_ID, ALCATEL_PRODUCT_X060S_X200) },
 
-	{ USB_DEVICE_AND_INTERFACE_INFO(ALCATEL_VENDOR_ID, ALCATEL_PRODUCT_X500D, 0xff, 0xff, 0xff) },
+	{ USB_DEVICE_AND_INTERFACE_INFO(ALCATEL_VENDOR_ID, ALCATEL_PRODUCT_X220_X500D, 0xff, 0xff, 0xff) },
 
 	{ USB_DEVICE(ALCATEL_VENDOR_ID, ALCATEL_PRODUCT_X220_X500D) },
 
