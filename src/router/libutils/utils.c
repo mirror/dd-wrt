@@ -4429,7 +4429,9 @@ int led_control(int type, int act)
 		break;
 #endif
 	case ROUTER_BOARD_UNIFI:
-		diag_gpio = 0x001;
+		diag_gpio = 0x101;
+		ses_gpio = 0x001;
+		sec0_gpio = 0x001;
 		break;
 	case ROUTER_BOARD_DANUBE:
 #ifdef HAVE_WMBR_G300NH
