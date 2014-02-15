@@ -25,6 +25,7 @@ do
 		else
 			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
 			ip link set dev oet${i} up
+			ifconfig oet${i} promisc 2>&1 > /dev/null
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
     		fi
 		echo enable > ${i}.pid
