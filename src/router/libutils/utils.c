@@ -738,8 +738,8 @@ void add_userip(char *ip, int base, char *upstream, char *downstream, char *lans
 //               qos_nfmark(0x64));
 	system2("iptables -t mangle -D FILTER_IN -j RETURN");
 
-	system2("iptables -t mangle -D FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");	
-	system2("iptables -t mangle -D FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
+//	system2("iptables -t mangle -D FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");	
+//	system2("iptables -t mangle -D FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
 	system2("iptables -t mangle -D FILTER_OUT -j VPN_DSCP");
 	system2("iptables -t mangle -D FILTER_OUT -j CONNMARK --save");
 	system2("iptables -t mangle -D FILTER_OUT -j RETURN");
@@ -765,8 +765,8 @@ void add_userip(char *ip, int base, char *upstream, char *downstream, char *lans
 //               qos_nfmark(0x64));
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 
-	system2("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");	
-	system2("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
+//	system2("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");	
+//	system2("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
 	system2("iptables -t mangle -A FILTER_OUT -j VPN_DSCP");
 	system2("iptables -t mangle -A FILTER_OUT -j CONNMARK --save");
 	system2("iptables -t mangle -A FILTER_OUT -j RETURN");
