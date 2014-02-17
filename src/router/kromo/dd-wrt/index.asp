@@ -169,6 +169,41 @@ function dhcp_enable_disable(F,T) {
 	return true;
 }
 
+function dhcp_show_static_dns(val) {
+	var i = 0;
+	if (val) {
+		tag = document.getElementById("dhcp_static_dns0").getElementsByTagName("*");
+		for (i = 0; i < tag.length; i ++)
+			tag[i].disabled = false;
+		$("dhcp_static_dns0").setStyle({display: 'block'});
+		
+		tag = document.getElementById("dhcp_static_dns1").getElementsByTagName("*");
+		for (i = 0; i < tag.length; i ++)
+			tag[i].disabled = false;
+		$("dhcp_static_dns1").setStyle({display: 'block'});
+		
+		tag = document.getElementById("dhcp_static_dns2").getElementsByTagName("*");
+		for (i = 0; i < tag.length; i ++)
+			tag[i].disabled = false;
+		$("dhcp_static_dns2").setStyle({display: 'block'});
+	} else {
+		tag = document.getElementById("dhcp_static_dns0").getElementsByTagName("*");
+		for (i = 0; i < tag.length; i ++)
+			tag[i].disabled = true;
+		$("dhcp_static_dns0").setStyle({display: 'none'});
+
+		tag = document.getElementById("dhcp_static_dns1").getElementsByTagName("*");
+		for (i = 0; i < tag.length; i ++)
+			tag[i].disabled = true;
+		$("dhcp_static_dns1").setStyle({display: 'none'});
+		
+		tag = document.getElementById("dhcp_static_dns2").getElementsByTagName("*");
+		for (i = 0; i < tag.length; i ++)
+			tag[i].disabled = true;
+		$("dhcp_static_dns2").setStyle({display: 'none'});
+	}
+}
+
 function ppp_enable_disable(F,I) {
 	if( I == "0") {
 		choose_disable(F.ppp_idletime);
