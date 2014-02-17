@@ -13,8 +13,8 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_pptp.srv"); %></div>
-	<input class="spaceradio" type="radio" value="1" name="l2tp_use_dhcp" <% nvram_checked("l2tp_use_dhcp","1"); %> onclick="show_layer_ext(this, 'idl2tpdhcp', false); SelDHCP('dhcp',this.form);" /><% tran("share.yes"); %>&nbsp;
-	<input class="spaceradio" type="radio" value="0" name="l2tp_use_dhcp" <% nvram_checked("l2tp_use_dhcp","0"); %> onclick="show_layer_ext(this, 'idl2tpdhcp', true); SelDHCP('static',this.form);" /><% tran("share.no"); %>
+	<input class="spaceradio" type="radio" value="1" name="l2tp_use_dhcp" <% nvram_checked("l2tp_use_dhcp","1"); %> onchange="show_layer_ext(this, 'idl2tpdhcp', false); dhcp_show_static_dns(1);" /><% tran("share.yes"); %>&nbsp;
+	<input class="spaceradio" type="radio" value="0" name="l2tp_use_dhcp" <% nvram_checked("l2tp_use_dhcp","0"); %> onchange="show_layer_ext(this, 'idl2tpdhcp', true); dhcp_show_static_dns();" /><% tran("share.no"); %>
 </div>
 <div id="idl2tpdhcp">
 	<div class="setting">
