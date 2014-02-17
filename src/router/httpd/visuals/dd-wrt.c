@@ -1136,34 +1136,36 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 			  "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_lease)</script></div><input class=\"num\" name=\"dhcp_lease\" size=\"5\" maxlength=\"5\" onblur=\"valid_range(this,0,99999,idx.dhcp_lease)\" value=\"%s\" > <script type=\"text/javascript\">Capture(share.minutes)</script></input></div>\n",
 			  nvram_safe_get("dhcp_lease"));
 		if (nvram_invmatch("wan_proto", "static")) 
-		{ 
+		{
+		       bool hide = 1;	
 			if ( !(nvram_match("wan_proto", "pppoe_dual") && nvram_invmatch("pptp_use_dhcp", "1")) && 
 		    	     !(nvram_match("wan_proto", "pptp") && nvram_invmatch("pptp_use_dhcp", "1")) &&
-		    	     !(nvram_match("wan_proto", "l2tp") && nvram_invmatch("l2tp_use_dhcp", "1")) )
-			{   
-				websWrite(wp, "<div class=\"setting\">\n");
-				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 1</div>");
-				websWrite(wp, "<input type=\"hidden\" name=\"wan_dns\" value=\"4\" />");
-				for (i = 0; i < 4; i++)
-					websWrite(wp,
-						  "<input class=\"num\" name=\"wan_dns0_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
-						  i, i == 3 ? 254 : 255, get_dns_ip("wan_dns", 0, i), i < 3 ? "." : "");
-
-				websWrite(wp, "\n</div>\n<div class=\"setting\">\n");
-				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 2</div>");
-				for (i = 0; i < 4; i++)
-					websWrite(wp,
-						  "<input class=\"num\" name=\"wan_dns1_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
-						  i, i == 3 ? 254 : 255, get_dns_ip("wan_dns", 1, i), i < 3 ? "." : "");
-
-				websWrite(wp, "\n</div>\n<div class=\"setting\">\n");
-				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 3</div>");
-				for (i = 0; i < 4; i++)
-					websWrite(wp,
-						  "<input class=\"num\" name=\"wan_dns2_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
-						  i, i == 3 ? 254 : 255, get_dns_ip("wan_dns", 2, i), i < 3 ? "." : "");
-				websWrite(wp, "\n</div>");
+		    	     !(nvram_match("wan_proto", "l2tp") && nvram_invmatch("l2tp_use_dhcp", "1")) ) {  
+			       	hide = 0;
 			}
+
+			websWrite(wp, "<div class=\"setting\" id=\"dhcp_static_dns0\" %s>\n", hide ? "style=\"display: none\" disabled=\"true\"" : "");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 1</div>");
+			websWrite(wp, "<input type=\"hidden\" name=\"wan_dns\" value=\"4\" />");
+			for (i = 0; i < 4; i++)
+				websWrite(wp,
+					  "<input class=\"num\" name=\"wan_dns0_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
+					  i, i == 3 ? 254 : 255, get_dns_ip("wan_dns", 0, i), i < 3 ? "." : "");
+
+			websWrite(wp, "\n</div>\n<div class=\"setting\" id=\"dhcp_static_dns1\" %s>\n", hide ? "style=\"display: none\" disabled=\"true\"" : "");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 2</div>");
+			for (i = 0; i < 4; i++)
+				websWrite(wp,
+					  "<input class=\"num\" name=\"wan_dns1_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
+					  i, i == 3 ? 254 : 255, get_dns_ip("wan_dns", 1, i), i < 3 ? "." : "");
+
+			websWrite(wp, "\n</div>\n<div class=\"setting\" id=\"dhcp_static_dns2\" %s>\n", hide ? "style=\"display: none\" disabled=\"true\"" : "");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 3</div>");
+			for (i = 0; i < 4; i++)
+				websWrite(wp,
+					  "<input class=\"num\" name=\"wan_dns2_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
+					  i, i == 3 ? 254 : 255, get_dns_ip("wan_dns", 2, i), i < 3 ? "." : "");
+			websWrite(wp, "\n</div>");
 		}
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\">WINS</div>\n");
