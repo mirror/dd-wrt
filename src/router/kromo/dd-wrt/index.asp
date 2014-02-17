@@ -172,32 +172,32 @@ function dhcp_enable_disable(F,T) {
 function dhcp_show_static_dns(val) {
 	var i = 0;
 	if (val) {
-		tag = document.getElementById("dhcp_static_dns0").getElementsByTagName("*");
+		tag = document.getElementById("dhcp_static_dns0").getElementsByTagName("input");
 		for (i = 0; i < tag.length; i ++)
 			tag[i].disabled = false;
 		$("dhcp_static_dns0").setStyle({display: 'block'});
 		
-		tag = document.getElementById("dhcp_static_dns1").getElementsByTagName("*");
+		tag = document.getElementById("dhcp_static_dns1").getElementsByTagName("input");
 		for (i = 0; i < tag.length; i ++)
 			tag[i].disabled = false;
 		$("dhcp_static_dns1").setStyle({display: 'block'});
 		
-		tag = document.getElementById("dhcp_static_dns2").getElementsByTagName("*");
+		tag = document.getElementById("dhcp_static_dns2").getElementsByTagName("input");
 		for (i = 0; i < tag.length; i ++)
 			tag[i].disabled = false;
 		$("dhcp_static_dns2").setStyle({display: 'block'});
 	} else {
-		tag = document.getElementById("dhcp_static_dns0").getElementsByTagName("*");
+		tag = document.getElementById("dhcp_static_dns0").getElementsByTagName("input");
 		for (i = 0; i < tag.length; i ++)
 			tag[i].disabled = true;
 		$("dhcp_static_dns0").setStyle({display: 'none'});
 
-		tag = document.getElementById("dhcp_static_dns1").getElementsByTagName("*");
+		tag = document.getElementById("dhcp_static_dns1").getElementsByTagName("input");
 		for (i = 0; i < tag.length; i ++)
 			tag[i].disabled = true;
 		$("dhcp_static_dns1").setStyle({display: 'none'});
 		
-		tag = document.getElementById("dhcp_static_dns2").getElementsByTagName("*");
+		tag = document.getElementById("dhcp_static_dns2").getElementsByTagName("input");
 		for (i = 0; i < tag.length; i ++)
 			tag[i].disabled = true;
 		$("dhcp_static_dns2").setStyle({display: 'none'});
@@ -299,12 +299,7 @@ addEvent(window, "load", function() {
 		document.setup.now_proto.value == "l2tp" ||
 		document.setup.now_proto.value == "heartbeat")
 			ppp_enable_disable(document.setup,'<% nvram_get("ppp_demand"); %>');
-	if (document.setup.now_proto.value == "pptp")
-	    pptpUseDHCP(document.setup, '<% nvram_get("pptp_use_dhcp"); %>')
-
-	if (document.setup.now_proto.value == "l2tp")
-	    l2tpUseDHCP(document.setup, '<% nvram_get("l2tp_use_dhcp"); %>')
-	    
+    
 	dhcp_enable_disable(document.setup,'<% nvram_get("lan_proto"); %>');
 	setDNSMasq(document.setup);
 	
@@ -312,9 +307,16 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.setup.pptp_use_dhcp, 'idpptpdhcp', <% nvram_else_match("pptp_use_dhcp", "1", "1", "0"); %> == 0);
 	show_layer_ext(document.setup.l2tp_use_dhcp, 'idl2tpdhcp', <% nvram_else_match("l2tp_use_dhcp", "1", "1", "0"); %> == 0);
 	show_layer_ext(document.setup.reconnect_enable, 'idreconnect', <% nvram_else_match("reconnect_enable", "1", "1", "0"); %> == 1);
+
+	if (document.setup.now_proto.value == "pptp")
+		dhcp_show_static_dns(<% nvram_get("pptp_use_dhcp"); %>);
+	if (document.setup.now_proto.value == "pppoe_dual")
+		dhcp_show_static_dns(<% nvram_get("pptp_use_dhcp"); %>);
+	if (document.setup.now_proto.value == "l2tp")
+		dhcp_show_static_dns(<% nvram_get("l2tp_use_dhcp"); %>);
+
 	update = new StatusbarUpdate();
 	update.start();
-	
 });
 
 addEvent(window, "unload", function() {
