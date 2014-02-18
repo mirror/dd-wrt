@@ -748,6 +748,7 @@ nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
 nas.dlna_thumb="Include Cover Artwork";
 nas.dlna_dir="Files Directory";
+nas.dlna_cleandb="Clean Database now";
 
 var hnas=new Object();
 hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through ftp or samba.";
