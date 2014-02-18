@@ -590,6 +590,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 #endif				/* CONFIG_FAILSAFE_UPGRADE */
 
 	} else {
+		root_dev_setup("1f04");
 		bootsz = boot_partition_size(sfl_info->base);
 		printk("Boot partition size = %d(0x%x)\n", bootsz, bootsz);
 		/* Size pmon */
@@ -628,12 +629,21 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 		nparts++;
 	}
 	/* Setup nvram MTD partition */
+	bcm947xx_flash_parts[nparts].name = "nvram_cfe";
+	bcm947xx_flash_parts[nparts].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+	if (maxsize)
+		bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
+	else
+		bcm947xx_flash_parts[nparts].offset = size - bcm947xx_flash_parts[nparts].size;
+	nparts++;
+
 	bcm947xx_flash_parts[nparts].name = "nvram";
 	bcm947xx_flash_parts[nparts].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	if (maxsize)
 		bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
 	else
 		bcm947xx_flash_parts[nparts].offset = size - bcm947xx_flash_parts[nparts].size;
+	bcm947xx_flash_parts[nparts].offset-=bcm947xx_flash_parts[nparts].size;
 	nparts++;
 
 	return bcm947xx_flash_parts;
