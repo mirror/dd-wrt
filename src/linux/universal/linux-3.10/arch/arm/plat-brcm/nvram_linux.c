@@ -35,6 +35,7 @@
 #include <linux/fs.h>
 #include <linux/miscdevice.h>
 #include <linux/mtd/mtd.h>
+#include <linux/vmalloc.h>
 
 #include <typedefs.h>
 #include <bcmendian.h>
@@ -83,6 +84,7 @@ static struct resource norflash_region = {
         .flags = IORESOURCE_MEM,
 };
 
+static int remap_cfe=0;
 #ifdef CONFIG_MTD_NFLASH
 static unsigned char nflash_nvh[NVRAM_SPACE];
 
@@ -184,9 +186,20 @@ early_nvram_init(void)
 		off = FLASH_MIN;
 		while (off <= lim) {
 			/* Windowed flash access */
+
+			header = (struct nvram_header *)(flash_base + off - (NVRAM_SPACE*2));
+			if (header->magic == NVRAM_MAGIC)
+				if (nvram_calc_crc(header) == (uint8)header->crc_ver_init) {
+					printk(KERN_INFO "found remapped nvram on sflash\n");
+					remap_cfe=0;
+					goto found;
+				}
+
 			header = (struct nvram_header *)(flash_base + off - NVRAM_SPACE);
 			if (header->magic == NVRAM_MAGIC)
 				if (nvram_calc_crc(header) == (uint8)header->crc_ver_init) {
+					printk(KERN_INFO "found cfe nvram on sflash\n");
+					remap_cfe=1;
 					goto found;
 				}
 			off <<= 1;
@@ -836,6 +849,13 @@ dev_nvram_init(void)
 	int order = 0, ret = 0;
 	struct page *page, *end;
 	osl_t *osh;
+	struct mtd_info *nvram_mtd_cfe = NULL;
+	struct mtd_info *nvram_mtd_temp = NULL;
+	DECLARE_WAITQUEUE(wait, current);
+	wait_queue_head_t wait_q;
+	struct erase_info erase;
+	struct nvram_header *header;
+	u32 *src, *dst;
 #if defined(CONFIG_MTD) || defined(CONFIG_MTD_MODULE)
 	unsigned int i;
 #endif
@@ -851,17 +871,76 @@ dev_nvram_init(void)
 #if defined(CONFIG_MTD) || defined(CONFIG_MTD_MODULE)
 	/* Find associated MTD device */
 	for (i = 0; i < MAX_MTD_DEVICES; i++) {
-		nvram_mtd = get_mtd_device(NULL, i);
-		if (!IS_ERR(nvram_mtd)) {
-			if (!strcmp(nvram_mtd->name, "nvram") &&
-			    nvram_mtd->size >= NVRAM_SPACE) {
-				break;
+		nvram_mtd_temp = get_mtd_device(NULL, i);
+		if (!IS_ERR(nvram_mtd_temp)) {
+			if (!strcmp(nvram_mtd_temp->name, "nvram_cfe")) {
+				nvram_mtd_cfe = nvram_mtd_temp;
+				printk(KERN_EMERG "found cfe nvram\n");
+				continue;
 			}
-			put_mtd_device(nvram_mtd);
+			if (!strcmp(nvram_mtd_temp->name, "nvram") && nvram_mtd_temp->size >= NVRAM_SPACE) {
+				nvram_mtd = nvram_mtd_temp;
+				continue;
+			}
+			put_mtd_device(nvram_mtd_temp);
 		}
 	}
-	if (i >= MAX_MTD_DEVICES)
-		nvram_mtd = NULL;
+
+	if (nvram_mtd_cfe != NULL && remap_cfe) {
+		printk(KERN_INFO "check if nvram copy is required CFE Size is %d\n", NVRAM_SPACE);
+		int len;
+		char *buf = vmalloc(NVRAM_SPACE);
+		if (buf == NULL) {
+			printk(KERN_ERR "mem allocation error");
+			goto done_nofree;
+		}
+		mtd_read(nvram_mtd, nvram_mtd->erasesize - NVRAM_SPACE,NVRAM_SPACE, &len, buf);
+		header = (struct nvram_header *)buf;
+		len = 0;
+		printk(KERN_INFO "nvram copy magic is %X\n", header->magic);
+		if (header->magic != NVRAM_MAGIC) {
+			printk(KERN_EMERG "copy cfe nvram to base nvram\n");
+			len = 0;
+			memset(buf, 0, NVRAM_SPACE);
+			mtd_read(nvram_mtd_cfe, nvram_mtd_cfe->erasesize - NVRAM_SPACE, NVRAM_SPACE, &len, buf + nvram_mtd->erasesize - NVRAM_SPACE);
+			put_mtd_device(nvram_mtd_cfe);
+			mtd_unlock(nvram_mtd, 0, nvram_mtd->erasesize);
+			init_waitqueue_head(&wait_q);
+			erase.mtd = nvram_mtd;
+			erase.addr = 0;
+			erase.len = nvram_mtd->erasesize;
+			erase.callback = erase_callback;
+			erase.priv = (u_long) & wait_q;
+			set_current_state(TASK_INTERRUPTIBLE);
+			add_wait_queue(&wait_q, &wait);
+			if ((ret = mtd_erase(nvram_mtd, &erase))) {
+				set_current_state(TASK_RUNNING);
+				remove_wait_queue(&wait_q, &wait);
+				printk("nvram_commit: erase error\n");
+				goto done;
+			}
+			/* Wait for erase to finish */
+			schedule();
+			remove_wait_queue(&wait_q, &wait);
+			len = 0;
+			printk(KERN_INFO "remap nvram %d\n", header->len);
+
+			src = (u32 *)buf + nvram_mtd->erasesize - NVRAM_SPACE;
+			dst = (u32 *)nvram_buf;
+			for (i = 0; i < sizeof(struct nvram_header); i += 4)
+				*dst++ = *src++;
+			for (; i < header->len && i < NVRAM_SPACE; i += 4)
+				*dst++ = ltoh32(*src++);
+
+			mtd_write(nvram_mtd, nvram_mtd->erasesize - NVRAM_SPACE, NVRAM_SPACE, &len, buf);
+
+		      done:;
+			vfree(buf);
+		      done_nofree:;
+		}
+	}
+
+
 #endif
 
 	/* Initialize hash table lock */
