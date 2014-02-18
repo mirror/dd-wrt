@@ -1137,13 +1137,6 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 			  nvram_safe_get("dhcp_lease"));
 		if (nvram_invmatch("wan_proto", "static")) 
 		{
-		       bool hide = 1;	
-			if ( !(nvram_match("wan_proto", "pppoe_dual") && nvram_invmatch("pptp_use_dhcp", "1")) && 
-		    	     !(nvram_match("wan_proto", "pptp") && nvram_invmatch("pptp_use_dhcp", "1")) &&
-		    	     !(nvram_match("wan_proto", "l2tp") && nvram_invmatch("l2tp_use_dhcp", "1")) ) {  
-			       	hide = 0;
-			}
-
 			websWrite(wp, "<div class=\"setting\" id=\"dhcp_static_dns0\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 1</div>");
 			websWrite(wp, "<input type=\"hidden\" name=\"wan_dns\" value=\"4\" />");
