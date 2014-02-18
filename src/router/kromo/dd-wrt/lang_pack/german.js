@@ -751,6 +751,7 @@ nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
 nas.dlna_thumb="Titelbilder einbinden";
 nas.dlna_dir="DLNA Verzeichnis";
+nas.dlna_cleandb="Datenbank jetzt leeren";
 
 //** Privoxy.asp **//
 
