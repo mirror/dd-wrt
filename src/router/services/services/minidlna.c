@@ -48,7 +48,10 @@ void start_dlna(void)
 	{
 #endif
 		mkdir("/jffs/minidlna", 0700);
-		eval("rm", "-f", "/jffs/minidlna/files.db");
+		if (nvram_match("dlna_cleandb", "1")){
+			eval("rm", "-f", "/jffs/minidlna/files.db");
+			nvram_set("dlna_cleandb", "0");
+		}
 		fprintf(fp, "db_dir=/jffs/minidlna\n");
 #ifndef HAVE_VENTANA
 	} else {
@@ -78,7 +81,7 @@ void start_dlna(void)
 	fprintf(fp, "inotify=yes\n");
 	fprintf(fp, "enable_tivo=no\n");
 	fprintf(fp, "strict_dlna=no\n");
-	fprintf(fp, "notify_interval=900\n");
+	fprintf(fp, "notify_interval=300\n");
 	fprintf(fp, "serial=12345678\nmodel_number=1\n");
 	fclose(fp);
 	eval("minidlna", "-f", "/tmp/minidlna.conf");

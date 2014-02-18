@@ -1,2 +1,3 @@
  "dlna_enable" "dlna support" "CHOICE" "2" "0" "1"  "FALSE" "0" 
  "dlna_thumb" "dlna cover art" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "dlna_cleandb" "dlna db clean" "CHOICE" "2" "0" "1"  "FALSE" "0"
