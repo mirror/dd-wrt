@@ -406,11 +406,11 @@ endif
 	-$(MAKE) -f Makefile.pb42 libutils
 	-$(MAKE) -f Makefile.pb42 madwifi
 	-$(MAKE) -f Makefile.pb42 madwifi-install
-ifneq ($(CONFIG_BATMANADV),y)
+ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.pb42 batman-adv
 	-$(MAKE) -f Makefile.pb42 batman-adv-install
 endif
-ifneq ($(CONFIG_OPENDPI),y)
+ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.pb42 opendpi
 	-$(MAKE) -f Makefile.pb42 opendpi-install
 endif
