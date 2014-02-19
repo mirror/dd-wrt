@@ -406,12 +406,14 @@ endif
 	-$(MAKE) -f Makefile.pb42 libutils
 	-$(MAKE) -f Makefile.pb42 madwifi
 	-$(MAKE) -f Makefile.pb42 madwifi-install
+ifneq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.pb42 batman-adv
 	-$(MAKE) -f Makefile.pb42 batman-adv-install
+endif
+ifneq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.pb42 opendpi
 	-$(MAKE) -f Makefile.pb42 opendpi-install
-	-$(MAKE) -f Makefile.pb42 uniwip-gpio
-	-$(MAKE) -f Makefile.pb42 uniwip-gpio-install
+endif
 
 ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
