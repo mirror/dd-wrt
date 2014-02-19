@@ -12,6 +12,7 @@
 					<input class="spaceradio" type="radio" name="dlna_thumb" value="1" <% nvram_checked("dlna_thumb", "1"); %> /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" name="dlna_thumb" value="0" <% nvram_checked("dlna_thumb", "0"); %> /><% tran("share.disable"); %>
 				</div>
+				<div class="setting">
 				<div class="label"><% tran("nas.dlna_cleandb"); %></div>
                                         <input class="spaceradio" type="radio" name="dlna_cleandb" value="1" <% nvram_checked("dlna_cleandb", "1"); %> /><% tran("share.enable"); %>&nbsp;
                                         <input class="spaceradio" type="radio" name="dlna_cleandb" value="0" <% nvram_checked("dlna_cleandb", "0"); %> /><% tran("share.disable"); %>
