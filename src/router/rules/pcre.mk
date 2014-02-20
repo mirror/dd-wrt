@@ -9,6 +9,6 @@ pcre-clean:
 	$(MAKE) -C pcre clean CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF"
 
 pcre-install:
-	install -D pcre/.libs/libpcre.so.0 $(INSTALLDIR)/pcre/usr/lib/libpcre.so.0
+	install -D pcre/.libs/libpcre.so.1 $(INSTALLDIR)/pcre/usr/lib/libpcre.so.1
 	install -D pcre/.libs/libpcrecpp.so.0 $(INSTALLDIR)/pcre/usr/lib/libpcrecpp.so.0
 	install -D pcre/.libs/libpcreposix.so.0 $(INSTALLDIR)/pcre/usr/lib/libpcreposix.so.0
