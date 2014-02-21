@@ -1,4 +1,0 @@
-<member name="test_substitution" displayname="Substitution tests" remove_on_change="tests/test_substitution.o tests/test_substitution.so">
-	<depend>TEST_FRAMEWORK</depend>
-	<depend>func_curl</depend>
-</member>

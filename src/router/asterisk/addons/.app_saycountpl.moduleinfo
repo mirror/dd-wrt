@@ -1,3 +1,0 @@
-<member name="app_saycountpl" displayname="Say polish counting words" remove_on_change="addons/app_saycountpl.o addons/app_saycountpl.so">
-	<defaultenabled>no</defaultenabled>
-</member>

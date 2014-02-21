@@ -1,3 +1,0 @@
-<member name="test_time" displayname="Time Tests" remove_on_change="tests/test_time.o tests/test_time.so">
-	<depend>TEST_FRAMEWORK</depend>
-</member>

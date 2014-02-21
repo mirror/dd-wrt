@@ -1,2 +1,0 @@
-<member name="res_security_log" displayname="Security Event Logging" remove_on_change="res/res_security_log.o res/res_security_log.so">
-</member>

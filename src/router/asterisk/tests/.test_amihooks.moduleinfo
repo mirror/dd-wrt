@@ -1,3 +1,0 @@
-<member name="test_amihooks" displayname="AMI Hook Test Module" remove_on_change="tests/test_amihooks.o tests/test_amihooks.so">
-	<defaultenabled>no</defaultenabled>
-</member>

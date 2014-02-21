@@ -1,3 +1,0 @@
-<member name="cdr_syslog" displayname="Customizable syslog CDR Backend" remove_on_change="cdr/cdr_syslog.o cdr/cdr_syslog.so">
-	 <depend>syslog</depend>
-</member>

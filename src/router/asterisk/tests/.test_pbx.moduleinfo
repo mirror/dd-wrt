@@ -1,3 +1,0 @@
-<member name="test_pbx" displayname="PBX test module" remove_on_change="tests/test_pbx.o tests/test_pbx.so">
-	<depend>TEST_FRAMEWORK</depend>
-</member>
