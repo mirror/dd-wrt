@@ -33,6 +33,9 @@ INLINE_DECL const char * dev_state2str_msg(dev_state_t state)
 	return enum2str(state, states, ITEMS_OF(states));
 }
 
+/* Only linear is allowed */
+EXPORT_DECL struct ast_format chan_dongle_format;
+EXPORT_DECL struct ast_format_cap * chan_dongle_format_cap;
 
 typedef enum {
 	RESTATE_TIME_NOW	= 0,
@@ -108,7 +111,9 @@ typedef struct pvt
 	char			* alock;			/*!< name of lockfile for audio */
 	char			* dlock;			/*!< name of lockfile for data */
 
-	struct ast_dsp*		dsp;				/*!< silence/DTMF detector */
+	struct ast_dsp*		dsp;				/*!< silence/DTMF detector - FIXME: must be in cpvt */
+	dc_dtmf_setting_t	real_dtmf;			/*!< real DTMF setting */
+
 	struct ast_timer*	a_timer;			/*!< audio write timer */
 
 	char			a_write_buf[FRAME_SIZE * 5];	/*!< audio write buffer */
@@ -241,6 +246,7 @@ INLINE_DECL struct pvt * find_device (const char* name)
 
 EXPORT_DECL struct pvt * find_device_ext(const char* name, const char ** reason);
 EXPORT_DECL struct pvt * find_device_by_resource_ex(struct public_state * state, const char * resource, int opts, const struct ast_channel * requestor, int * exists);
+EXPORT_DECL void pvt_dsp_setup(struct pvt * pvt, const char * id, dc_dtmf_setting_t dtmf_new);
 
 INLINE_DECL struct pvt * find_device_by_resource(const char * resource, int opts, const struct ast_channel * requestor, int * exists)
 {

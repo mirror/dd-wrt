@@ -19,7 +19,7 @@ typedef struct channel_var
 struct pvt;
 struct cpvt;
 
-EXPORT_DECL const struct ast_channel_tech channel_tech;
+EXPORT_DECL struct ast_channel_tech channel_tech;
 
 EXPORT_DECL struct ast_channel* new_channel (struct pvt * pvt, int ast_state, const char * cid_num, int call_idx, unsigned dir, unsigned state, const char * exten, const struct ast_channel * requestor);
 EXPORT_DECL int queue_control_channel (struct cpvt * cpvt, enum ast_control_frame_type control);

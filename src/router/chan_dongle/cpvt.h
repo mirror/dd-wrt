@@ -76,7 +76,6 @@ typedef struct cpvt {
 //	size_t			used;				/*!< bytes used in pvt->a_write_buf */
 //	char			a_write_buf[FRAME_SIZE * 5];	/*!< audio write buffer */
 //	struct ringbuffer	a_write_rb;			/*!< audio ring buffer */
-
 } cpvt_t;
 
 #define CPVT_SET_FLAGS(cpvt, flag)	do { (cpvt)->flags |= (flag); } while(0)
