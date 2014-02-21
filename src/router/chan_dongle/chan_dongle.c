@@ -43,6 +43,7 @@
 #include <asterisk.h>
 ASTERISK_FILE_VERSION(__FILE__, "$Rev: " PACKAGE_REVISION " $")
 
+#include <asterisk/ast_version.h>
 #include <asterisk/stringfields.h>	/* AST_DECLARE_STRING_FIELDS for asterisk/manager.h */
 #include <asterisk/manager.h>
 #include <asterisk/dsp.h>
@@ -71,6 +72,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Rev: " PACKAGE_REVISION " $")
 
 EXPORT_DEF const char * const dev_state_strs[4] = { "stop", "restart", "remove", "start" };
 EXPORT_DEF public_state_t * gpublic;
+EXPORT_DEF struct ast_format chan_dongle_format;
+EXPORT_DEF struct ast_format_cap * chan_dongle_format_cap;
 
 
 static int public_state_init(struct public_state * state);
@@ -1308,9 +1311,10 @@ EXPORT_DEF const char * sys_submode2str(int sys_submode)
 	return enum2str_def(sys_submode, sys_submodes, ITEMS_OF (sys_submodes), "Unknown");
 }
 
-#/* */
+#/* BUGFIX of https://code.google.com/p/asterisk-chan-dongle/issues/detail?id=118 */
 EXPORT_DEF char* rssi2dBm(int rssi, char * buf, unsigned len)
 {
+#if 0 /* old code */
 	if(rssi <= 0)
 	{
 		snprintf(buf, len, "<= -125 dBm");
@@ -1327,17 +1331,34 @@ EXPORT_DEF char* rssi2dBm(int rssi, char * buf, unsigned len)
 	{
 		snprintf(buf, len, "unknown");
 	}
+#else
+	if(rssi <= 0)
+	{
+		snprintf(buf, len, "<= -113 dBm");
+	}
+	else if(rssi <= 30)
+	{
+		snprintf(buf, len, "%d dBm", 2 * rssi - 113);
+	}
+	else if(rssi == 31)
+	{
+		snprintf(buf, len, ">= -51 dBm");
+	}
+	else
+	{
+		snprintf(buf, len, "unknown or unmeasurable");
+	}
+#endif
 	return buf;
 }
-
 
 /* Module */
 
 #/* */
-static void pvt_dsp_setup(struct pvt * pvt, const pvt_config_t * settings)
+EXPORT_DEF void pvt_dsp_setup(struct pvt * pvt, const char * id, dc_dtmf_setting_t dtmf_new)
 {
 	/* first remove dsp if off or changed */
-	if(SCONFIG(settings, dtmf) != CONF_SHARED(pvt, dtmf))
+	if(dtmf_new != CONF_SHARED(pvt, dtmf))
 	{
 		if(pvt->dsp)
 		{
@@ -1347,13 +1368,13 @@ static void pvt_dsp_setup(struct pvt * pvt, const pvt_config_t * settings)
 	}
 
 	/* wake up and initialize dsp */
-	if(SCONFIG(settings, dtmf) != DC_DTMF_SETTING_OFF)
+	if(dtmf_new != DC_DTMF_SETTING_OFF)
 	{
 		pvt->dsp = ast_dsp_new();
 		if(pvt->dsp)
 		{
 			int digitmode = DSP_DIGITMODE_DTMF;
-			if(SCONFIG(settings, dtmf) == DC_DTMF_SETTING_RELAX)
+			if(dtmf_new == DC_DTMF_SETTING_RELAX)
 				digitmode |= DSP_DIGITMODE_RELAXDTMF;
 
 			ast_dsp_set_features(pvt->dsp, DSP_FEATURE_DIGIT_DETECT);
@@ -1361,9 +1382,10 @@ static void pvt_dsp_setup(struct pvt * pvt, const pvt_config_t * settings)
 		}
 		else
 		{
-			ast_log(LOG_ERROR, "[%s] Can't setup dsp for dtmf detection, ignored\n", UCONFIG(settings, id));
+			ast_log(LOG_ERROR, "[%s] Can't setup dsp for dtmf detection, ignored\n", id);
 		}
 	}
+	pvt->real_dtmf = dtmf_new;
 }
 
 static struct pvt * pvt_create(const pvt_config_t * settings)
@@ -1391,7 +1413,7 @@ static struct pvt * pvt_create(const pvt_config_t * settings)
 
 		pvt->desired_state = SCONFIG(settings, initstate);
 
-		pvt_dsp_setup(pvt, settings);
+		pvt_dsp_setup(pvt, UCONFIG(settings, id), SCONFIG(settings, dtmf));
 
 		/* and copy settings */
 		memcpy(&pvt->settings, settings, sizeof(pvt->settings));
@@ -1471,7 +1493,7 @@ static int pvt_reconfigure(struct pvt * pvt, const pvt_config_t * settings, rest
 			pvt->restart_time = rv ? RESTATE_TIME_NOW : when;
 		}
 
-		pvt_dsp_setup(pvt, settings);
+		pvt_dsp_setup(pvt, UCONFIG(settings, id), SCONFIG(settings, dtmf));
 
 		/* and copy settings */
 		memcpy(&pvt->settings, settings, sizeof(pvt->settings));
@@ -1640,6 +1662,16 @@ static int public_state_init(struct public_state * state)
 		rv = AST_MODULE_LOAD_FAILURE;
 		if(discovery_restart(state) == 0)
 		{
+#if ASTERISK_VERSION_NUM >= 100000 /* 10+ */
+			/* set preferred capabilities */
+		        ast_format_set(&chan_dongle_format, AST_FORMAT_SLINEAR, 0);
+		        if (!(channel_tech.capabilities = ast_format_cap_alloc())) {
+                		return AST_MODULE_LOAD_FAILURE;
+		        }
+		        ast_format_cap_add(channel_tech.capabilities, &chan_dongle_format);
+			chan_dongle_format_cap = channel_tech.capabilities;
+#endif
+
 			/* register our channel type */
 			if(ast_channel_register(&channel_tech) == 0)
 			{
@@ -1652,6 +1684,9 @@ static int public_state_init(struct public_state * state)
 			}
 			else
 			{
+#if ASTERISK_VERSION_NUM >= 100000 /* 10+ */
+				channel_tech.capabilities = ast_format_cap_destroy(channel_tech.capabilities);
+#endif
 				ast_log (LOG_ERROR, "Unable to register channel class %s\n", channel_tech.type);
 			}
 			discovery_stop(state);
@@ -1679,6 +1714,9 @@ static void public_state_fini(struct public_state * state)
 {
 	/* First, take us out of the channel loop */
 	ast_channel_unregister (&channel_tech);
+#if ASTERISK_VERSION_NUM >= 100000 /* 10+ */
+	channel_tech.capabilities = ast_format_cap_destroy(channel_tech.capabilities);
+#endif
 
 	/* Unregister the CLI & APP & MANAGER */
 

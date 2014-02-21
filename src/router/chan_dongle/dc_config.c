@@ -20,6 +20,11 @@ static struct ast_jb_conf jbconf_default =
 
 static const char * const dtmf_values[] = { "off", "inband", "relax" };
 
+EXPORT_DEF int dc_dtmf_str2setting(const char * value)
+{
+    return str2enum(value, dtmf_values, ITEMS_OF(dtmf_values));
+}
+
 EXPORT_DEF const char * dc_dtmf_setting2str(dc_dtmf_setting_t dtmf)
 {
 	return enum2str(dtmf, dtmf_values, ITEMS_OF(dtmf_values));
@@ -189,7 +194,7 @@ EXPORT_DEF void dc_sconfig_fill(struct ast_config * cfg, const char * cat, struc
 		}
 		else if (!strcasecmp (v->name, "dtmf"))
 		{
-			int val = str2enum(v->value, dtmf_values, ITEMS_OF(dtmf_values));
+			int val = dc_dtmf_str2setting(v->value);
 			if(val >= 0)
 				config->dtmf = val;
 			else

@@ -731,9 +731,12 @@ static const struct dongle_manager
 EXPORT_DEF void manager_register()
 {
 	unsigned i;
+	struct ast_module* module = self_module();
+
 	for(i = 0; i < ITEMS_OF(dcm); i++)
 	{
-		ast_manager_register2 (dcm[i].name, dcm[i].authority, dcm[i].func, dcm[i].brief, dcm[i].desc);
+		ast_manager_register2 (dcm[i].name, dcm[i].authority, dcm[i].func,
+			module, dcm[i].brief, dcm[i].desc);
 	}
 }
 

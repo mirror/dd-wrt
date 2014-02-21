@@ -65,6 +65,7 @@ EXPORT_DEF struct cpvt * cpvt_alloc(struct pvt * pvt, int call_idx, unsigned dir
 				pvt_on_create_1st_channel(pvt);
 			PVT_STATE(pvt, chansno)++;
 			PVT_STATE(pvt, chan_count[cpvt->state])++;
+			
 
 
 			ast_debug (3, "[%s] create cpvt for call_idx %d dir %d state '%s'\n",  PVT_ID(pvt), call_idx, dir, call_state2str(state));
