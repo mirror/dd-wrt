@@ -1,2 +1,0 @@
-<member name="res_calendar" displayname="Asterisk Calendar integration" remove_on_change="res/res_calendar.o res/res_calendar.so">
-</member>

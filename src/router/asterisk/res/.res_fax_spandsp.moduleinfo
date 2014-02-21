@@ -1,4 +1,0 @@
-<member name="res_fax_spandsp" displayname="Spandsp G.711 and T.38 FAX Technologies" remove_on_change="res/res_fax_spandsp.o res/res_fax_spandsp.so">
-	<depend>spandsp</depend>
-	<depend>res_fax</depend>
-</member>

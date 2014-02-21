@@ -1,4 +1,0 @@
-<member name="chan_mobile" displayname="Bluetooth Mobile Device Channel Driver" remove_on_change="addons/chan_mobile.o addons/chan_mobile.so">
-	<depend>bluetooth</depend>
-	<defaultenabled>no</defaultenabled>
-</member>

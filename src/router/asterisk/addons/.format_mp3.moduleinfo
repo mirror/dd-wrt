@@ -1,3 +1,0 @@
-<member name="format_mp3" displayname="MP3 format [Any rate but 8000hz mono is optimal]" remove_on_change="addons/format_mp3.o addons/format_mp3.so">
-	<defaultenabled>no</defaultenabled>
-</member>

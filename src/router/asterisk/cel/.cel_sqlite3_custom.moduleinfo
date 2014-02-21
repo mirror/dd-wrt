@@ -1,3 +1,0 @@
-<member name="cel_sqlite3_custom" displayname="SQLite3 Custom CEL Module" remove_on_change="cel/cel_sqlite3_custom.o cel/cel_sqlite3_custom.so">
-	<depend>sqlite3</depend>
-</member>

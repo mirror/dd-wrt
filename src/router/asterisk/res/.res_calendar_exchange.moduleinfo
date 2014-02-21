@@ -1,5 +1,0 @@
-<member name="res_calendar_exchange" displayname="Asterisk MS Exchange Calendar Integration" remove_on_change="res/res_calendar_exchange.o res/res_calendar_exchange.so">
-	<depend>neon</depend>
-	<depend>ical</depend>
-	<depend>iksemel</depend>
-</member>

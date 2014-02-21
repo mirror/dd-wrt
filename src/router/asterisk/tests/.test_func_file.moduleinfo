@@ -1,3 +1,0 @@
-<member name="test_func_file" displayname="FILE() Tests" remove_on_change="tests/test_func_file.o tests/test_func_file.so">
-	<depend>TEST_FRAMEWORK</depend>
-</member>

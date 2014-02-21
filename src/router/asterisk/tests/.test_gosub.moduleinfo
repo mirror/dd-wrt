@@ -1,3 +1,0 @@
-<member name="test_gosub" displayname="Gosub Tests" remove_on_change="tests/test_gosub.o tests/test_gosub.so">
-	<depend>TEST_FRAMEWORK</depend>
-</member>
