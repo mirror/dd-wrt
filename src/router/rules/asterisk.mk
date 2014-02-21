@@ -5,9 +5,11 @@ asterisk-configure:
 	rm -f asterisk/menuselect.makeopts && \
 	cd asterisk && ./configure --host=$(ARCH)-linux-uclibc \
 	--libdir=/usr/lib \
+	--without-cap \
 	--without-curl \
 	--without-curses \
 	--with-gsm=internal \
+	--with-ilbc=internal \
 	--without-gtk \
 	--without-gtk2 \
 	--without-isdnnet \
@@ -23,7 +25,8 @@ asterisk-configure:
 	--without-osptk \
 	--without-pri \
 	--without-qt \
-	--without-sqlite3 \
+	--without-pwlib \
+	--with-sqlite3="$(TOP)/minidlna/sqlite-3.6.22" \
 	--without-sqlite \
 	--without-radius \
 	--without-sdl \
@@ -33,14 +36,17 @@ asterisk-configure:
 	--without-termcap \
 	--without-tinfo \
 	--without-vorbis \
+	--without-tonezone \
 	--without-vpb \
 	--with-z="$(TOP)/zlib" \
 	--disable-xmldoc \
+	--without-libxml2 \
 	--without-dahdi \
 	--without-gnutls \
-	--without-iksemel; fi
-	
-	cd chan_dongle && ./configure  --host=$(ARCH)-linux-uclibc --libdir=/usr/lib --with-asterisk=$(TOP)/asterisk/include DESTDIR=$(INSTALLDIR)/asterisk/usr/lib/asterisk/modules CFLAGS="$(CFLAGS) -I$(TOP)/glib20/libiconv/include"
+	--without-iksemel CFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22" SQLITE3_LIB="-L$(TOP)/minidlna/lib" SQLITE3_INCLUDE="-I$(TOP)/minidlna/sqlite-3.6.22" ; fi
+
+	-cd chan_dongle && aclocal && autoconf && automake -a && cd ..
+	cd chan_dongle && ./configure  --host=$(ARCH)-linux-uclibc --libdir=/usr/lib --with-asterisk=$(TOP)/asterisk/include DESTDIR=$(INSTALLDIR)/asterisk/usr/lib/asterisk/modules CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/glib20/libiconv/include -DASTERISK_VERSION_NUM=110000 -DLOW_MEMORY -D_XOPEN_SOURCE=600"
 
 asterisk-clean:
 	$(MAKE) -C asterisk clean
@@ -51,14 +57,15 @@ asterisk:
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
 		makeopts.embed_rules
-	ASTCFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include" \
-	ASTLDFLAGS="$(COPTS) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl" \
+	ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
+	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
 	$(MAKE) -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
 		DEBUG="" \
 		OPTIMIZE="" \
 		all
+	-make -C asterisk
 	make -C asterisk
 	make -C chan_dongle
 
