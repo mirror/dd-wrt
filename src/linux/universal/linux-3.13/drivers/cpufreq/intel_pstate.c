@@ -54,7 +54,6 @@ struct sample {
 	int32_t core_pct_busy;
 	u64 aperf;
 	u64 mperf;
-	unsigned long long tsc;
 	int freq;
 };
 
@@ -89,7 +88,6 @@ struct cpudata {
 
 	u64	prev_aperf;
 	u64	prev_mperf;
-	unsigned long long prev_tsc;
 	int	sample_ptr;
 	struct sample samples[SAMPLE_COUNT];
 };
@@ -501,17 +499,11 @@ static inline void intel_pstate_calc_busy(struct cpudata *cpu,
 					struct sample *sample)
 {
 	u64 core_pct;
-	u64 c0_pct;
+	core_pct = div64_u64(int_tofp(sample->aperf * 100),
+			     sample->mperf);
+	sample->freq = fp_toint(cpu->pstate.max_pstate * core_pct * 1000);
 
-	core_pct = div64_u64(sample->aperf * 100, sample->mperf);
-
-	c0_pct = div64_u64(sample->mperf * 100, sample->tsc);
-	sample->freq = fp_toint(
-		mul_fp(int_tofp(cpu->pstate.max_pstate),
-			int_tofp(core_pct * 1000)));
-
-	sample->core_pct_busy = mul_fp(int_tofp(core_pct),
-				div_fp(int_tofp(c0_pct + 1), int_tofp(100)));
+	sample->core_pct_busy = core_pct;
 }
 
 static inline void intel_pstate_sample(struct cpudata *cpu)
