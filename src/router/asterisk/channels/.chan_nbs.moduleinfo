@@ -1,3 +1,0 @@
-<member name="chan_nbs" displayname="Network Broadcast Sound Support" remove_on_change="channels/chan_nbs.o channels/chan_nbs.so">
-	<depend>nbs</depend>
-</member>

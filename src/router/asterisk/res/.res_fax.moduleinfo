@@ -1,3 +1,0 @@
-<member name="res_fax" displayname="Generic FAX Applications" remove_on_change="res/res_fax.o res/res_fax.so">
-	<conflict>app_fax</conflict>
-</member>

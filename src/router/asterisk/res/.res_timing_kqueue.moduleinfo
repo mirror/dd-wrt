@@ -1,4 +1,0 @@
-<member name="res_timing_kqueue" displayname="KQueue Timing Interface" remove_on_change="res/res_timing_kqueue.o res/res_timing_kqueue.so">
-	<depend>kqueue</depend>
-	<conflict>launchd</conflict>
-</member>

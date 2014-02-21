@@ -1,2 +1,0 @@
-<member name="res_realtime" displayname="Realtime Data Lookup/Rewrite" remove_on_change="res/res_realtime.o res/res_realtime.so">
-</member>

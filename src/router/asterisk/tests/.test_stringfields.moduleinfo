@@ -1,3 +1,0 @@
-<member name="test_stringfields" displayname="String Fields Test" remove_on_change="tests/test_stringfields.o tests/test_stringfields.so">
-	<depend>TEST_FRAMEWORK</depend>
-</member>

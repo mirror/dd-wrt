@@ -1,5 +1,0 @@
-<member name="res_calendar_caldav" displayname="Asterisk CalDAV Calendar Integration" remove_on_change="res/res_calendar_caldav.o res/res_calendar_caldav.so">
-	<depend>neon</depend>
-	<depend>ical</depend>
-	<depend>libxml2</depend>
-</member>

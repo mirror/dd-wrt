@@ -1,2 +1,0 @@
-<member name="app_playback" displayname="Sound File Playback Application" remove_on_change="apps/app_playback.o apps/app_playback.so">
-</member>

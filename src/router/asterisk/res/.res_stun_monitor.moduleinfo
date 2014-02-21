@@ -1,2 +1,0 @@
-<member name="res_stun_monitor" displayname="STUN Network Monitor" remove_on_change="res/res_stun_monitor.o res/res_stun_monitor.so">
-</member>

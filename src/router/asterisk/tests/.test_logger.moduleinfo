@@ -1,3 +1,0 @@
-<member name="test_logger" displayname="Logger Test Module" remove_on_change="tests/test_logger.o tests/test_logger.so">
-	<defaultenabled>no</defaultenabled>
-</member>
