@@ -1,0 +1,132 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 11 ManagerAction_AOCMessage</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Asterisk 11 ManagerAction_AOCMessage
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Jul 20, 2012 by <font color="#0050B2">wikibot</font>.
+				    </div>
+
+				    <h1><a name="Asterisk11ManagerAction_AOCMessage-AOCMessage"></a>AOCMessage</h1>
+
+<h3><a name="Asterisk11ManagerAction_AOCMessage-Synopsis"></a>Synopsis</h3>
+
+<p>Generate an Advice of Charge message on a channel.</p>
+<h3><a name="Asterisk11ManagerAction_AOCMessage-Description"></a>Description</h3>
+
+
+
+<p>Generates an AOC-D or AOC-E message on a channel.</p>
+
+<h3><a name="Asterisk11ManagerAction_AOCMessage-Syntax"></a>Syntax</h3>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: AOCMessage
+ActionID: &lt;value&gt;
+Channel: &lt;value&gt;
+ChannelPrefix: &lt;value&gt;
+MsgType: &lt;value&gt;
+ChargeType: &lt;value&gt;
+UnitAmount(0): &lt;value&gt;
+UnitType(0): &lt;value&gt;
+CurrencyName: &lt;value&gt;
+CurrencyAmount: &lt;value&gt;
+CurrencyMultiplier: &lt;value&gt;
+TotalType: &lt;value&gt;
+AOCBillingId: &lt;value&gt;
+ChargingAssociationId: &lt;value&gt;
+ChargingAssociationNumber: &lt;value&gt;
+ChargingAssociationPlan: &lt;value&gt;
+</pre>
+</div></div>
+<h5><a name="Asterisk11ManagerAction_AOCMessage-Arguments"></a>Arguments</h5>
+
+
+<ul>
+	<li><tt>ActionID</tt> - ActionID for this transaction. Will be returned.</li>
+	<li><tt>Channel</tt> - Channel name to generate the AOC message on.</li>
+	<li><tt>ChannelPrefix</tt> - Partial channel prefix. By using this option one can match the beginning part of a channel name without having to put the entire name in. For example if a channel name is SIP/snom-00000001 and this value is set to SIP/snom, then that channel matches and the message will be sent. Note however that only the first matched channel has the message sent on it.</li>
+	<li><tt>MsgType</tt> - Defines what type of AOC message to create, AOC-D or AOC-E
+	<ul>
+		<li><tt>D</tt></li>
+		<li><tt>E</tt></li>
+	</ul>
+	</li>
+	<li><tt>ChargeType</tt> - Defines what kind of charge this message represents.
+	<ul>
+		<li><tt>NA</tt></li>
+		<li><tt>FREE</tt></li>
+		<li><tt>Currency</tt></li>
+		<li><tt>Unit</tt></li>
+	</ul>
+	</li>
+	<li><tt>UnitAmount(0)</tt> - This represents the amount of units charged. The ETSI AOC standard specifies that this value along with the optional UnitType value are entries in a list. To accommodate this these values take an index value starting at 0 which can be used to generate this list of unit entries. For Example, If two unit entires were required this could be achieved by setting the paramter UnitAmount(0)=1234 and UnitAmount(1)=5678. Note that UnitAmount at index 0 is required when ChargeType=Unit, all other entries in the list are optional.</li>
+	<li><tt>UnitType(0)</tt> - Defines the type of unit. ETSI AOC standard specifies this as an integer value between 1 and 16, but this value is left open to accept any positive integer. Like the UnitAmount parameter, this value represents a list entry and has an index parameter that starts at 0.</li>
+	<li><tt>CurrencyName</tt> - Specifies the currency's name. Note that this value is truncated after 10 characters.</li>
+	<li><tt>CurrencyAmount</tt> - Specifies the charge unit amount as a positive integer. This value is required when ChargeType==Currency.</li>
+	<li><tt>CurrencyMultiplier</tt> - Specifies the currency multiplier. This value is required when ChargeType==Currency.
+	<ul>
+		<li><tt>OneThousandth</tt></li>
+		<li><tt>OneHundredth</tt></li>
+		<li><tt>OneTenth</tt></li>
+		<li><tt>One</tt></li>
+		<li><tt>Ten</tt></li>
+		<li><tt>Hundred</tt></li>
+		<li><tt>Thousand</tt></li>
+	</ul>
+	</li>
+	<li><tt>TotalType</tt> - Defines what kind of AOC-D total is represented.
+	<ul>
+		<li><tt>Total</tt></li>
+		<li><tt>SubTotal</tt></li>
+	</ul>
+	</li>
+	<li><tt>AOCBillingId</tt> - Represents a billing ID associated with an AOC-D or AOC-E message. Note that only the first 3 items of the enum are valid AOC-D billing IDs
+	<ul>
+		<li><tt>Normal</tt></li>
+		<li><tt>ReverseCharge</tt></li>
+		<li><tt>CreditCard</tt></li>
+		<li><tt>CallFwdUnconditional</tt></li>
+		<li><tt>CallFwdBusy</tt></li>
+		<li><tt>CallFwdNoReply</tt></li>
+		<li><tt>CallDeflection</tt></li>
+		<li><tt>CallTransfer</tt></li>
+	</ul>
+	</li>
+	<li><tt>ChargingAssociationId</tt> - Charging association identifier. This is optional for AOC-E and can be set to any value between -32768 and 32767</li>
+	<li><tt>ChargingAssociationNumber</tt> - Represents the charging association party number. This value is optional for AOC-E.</li>
+	<li><tt>ChargingAssociationPlan</tt> - Integer representing the charging plan associated with the ChargingAssociationNumber. The value is bits 7 through 1 of the Q.931 octet containing the type-of-number and numbering-plan-identification fields.</li>
+</ul>
+
+
+
+<h3><a name="Asterisk11ManagerAction_AOCMessage-ImportVersion"></a>Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version SVN-trunk-r370328</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Nov 02, 2012 17:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

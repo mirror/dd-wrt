@@ -1,0 +1,390 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : New in 11</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : New in 11
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Aug 19, 2012 by <font color="#0050B2">lathama</font>.
+				    </div>
+
+				    <div class='panelMacro'><table class='noteMacro'><colgroup><col width='24'><col></colgroup><tr><td valign='top'><img src="images/icons/emoticons/warning.gif" width="16" height="16" align="absmiddle" alt="" border="0"></td><td>Please read the upgrade notes at <a href="Upgrading to Asterisk 11.html" title="Upgrading to Asterisk 11">Upgrading to Asterisk 11</a> or in <a href="http://svnview.digium.com/svn/asterisk/branches/11/UPGRADE.txt">UPGRADE.txt</a> before migrating an existing installation to Asterisk 11.</td></tr></table></div>
+
+<h1><a name="Newin11-BuildSystem"></a>Build System</h1>
+<ul>
+	<li>The Asterisk build system will now build and install a shared library (<em>libasteriskssl.so</em>) used to wrap various initialization and shutdown functions from the <em>libssl</em> and <em>libcrypto</em> libraries provided by OpenSSL. This is done so that Asterisk can ensure that these functions do <b>not</b> get called by any modules that are loaded into Asterisk, since they should only be called once in any single process. If desired, this feature can be disabled by supplying the <tt>--disable-asteriskssl</tt> option to the configure script.</li>
+	<li>A new make target, <tt>full</tt>, has been added to the Makefile.  This performs the same compilation actions as <tt>make all</tt>, but will also scan the entirety of each source file for documentation.  This option is needed to generate <a href="Asterisk 11 AMI Events.html" title="Asterisk 11 AMI Events">AMI event</a> documentation.  Note that your system must have Python in order for this make target to succeed.</li>
+	<li>The optimization portion of the build system has been reworked to avoid broken builds on certain architectures.  All architecture-specific optimization has been removed in favor of using <tt>-march=native</tt> to allow gcc to detect the environment in which it is running when possible.  This can be toggled as <tt>BUILD_NATIVE</tt> under "<b>Compiler Flags</b>" in menuselect.</li>
+	<li><tt>BUILD_CFLAGS</tt> and <tt>BUILD_LDFLAGS</tt> can now be passed to menuselect, e.g., <tt>make BUILD_CFLAGS="whatever"</tt> or <tt>BUILD_LDFLAGS="whatever"</tt></li>
+	<li>Remove <em>asterisk/version.h</em> in favor of <em>asterisk/ast_version.h</em>.  If you previously parsed the header file to obtain the version of Asterisk, you will now have to go through Asterisk to get the version information.</li>
+</ul>
+
+
+<h1><a name="Newin11-Applications"></a>Applications</h1>
+
+<h2><a name="Newin11-BridgeAST%3AAsterisk11ApplicationBridge"></a><a href="Asterisk 11 Application_Bridge.html" title="Asterisk 11 Application_Bridge">Bridge</a></h2>
+<ul>
+	<li>Added '<b>F()</b>' option. Similar to the <a href="Asterisk 11 Application_Dial.html" title="Asterisk 11 Application_Dial">Dial</a> option, this can be supplied with arguments indicating where the callee should go after the caller is hung up, or without options specified, the priority after the call to <a href="Asterisk 11 Application_Bridge.html" title="Asterisk 11 Application_Bridge">Bridge</a> will be used.</li>
+</ul>
+
+
+<h2><a name="Newin11-ConfBridgeAST%3AAsterisk11ApplicationConfBridge"></a><a href="Asterisk 11 Application_ConfBridge.html" title="Asterisk 11 Application_ConfBridge">ConfBridge</a></h2>
+<ul>
+	<li>Added menu action <tt>admin_toggle_mute_participants</tt>.  This will mute / unmute all non-admin participants on a conference.  The confbridge configuration file also allows for the default sounds played to all conference users when this occurs to be overriden using <tt>sound_participants_unmuted</tt> and <tt>sound_participants_muted</tt>.</li>
+	<li>Added menu action <tt>participant_count</tt>.  This will playback the number of current participants in a conference.</li>
+	<li>Added announcement configuration option to user profile. If set the sound file will be played to the user, and only the user, upon joining the conference bridge.</li>
+</ul>
+
+
+<h2><a name="Newin11-DialAST%3AAsterisk11ApplicationDial"></a><a href="Asterisk 11 Application_Dial.html" title="Asterisk 11 Application_Dial">Dial</a></h2>
+<ul>
+	<li>Added '<b>b</b>' and '<b>B</b>' options to <a href="Asterisk 11 Application_Dial.html" title="Asterisk 11 Application_Dial">Dial</a> that execute a <a href="Asterisk 11 Application_Gosub.html" title="Asterisk 11 Application_Gosub">Gosub</a> on callee and caller channels respectively before the callee channels are called.  See <a href="Pre-Dial Handlers.html" title="Pre-Dial Handlers">pre-dial handlers</a> for more information.</li>
+</ul>
+
+
+<h2><a name="Newin11-ExternalIVRAST%3AAsterisk11ApplicationExternalIVR"></a><a href="Asterisk 11 Application_ExternalIVR.html" title="Asterisk 11 Application_ExternalIVR">ExternalIVR</a></h2>
+<ul>
+	<li>Added support for IPv6.</li>
+	<li>Add interrupt ('<b>I</b>') command to <a href="https://wiki.asterisk.org/wiki/display/AST/External+IVR+Interface" title="External IVR Interface">ExternalIVR</a>.  Sending this command from an external process will cause the current playlist to be cleared, including stopping any audio file that is currently playing.  This is useful when you want to interrupt audio playback only when specific DTMF is entered by the caller.</li>
+</ul>
+
+
+<h2><a name="Newin11-FollowMeAST%3AAsterisk11ApplicationFollowMe"></a><a href="Asterisk 11 Application_FollowMe.html" title="Asterisk 11 Application_FollowMe">FollowMe</a></h2>
+<ul>
+	<li>A new option, '<b>I</b>' has been added to <a href="Asterisk 11 Application_FollowMe.html" title="Asterisk 11 Application_FollowMe">FollowMe</a>. By setting this option, Asterisk will not update the caller with connected line changes when they occur.  This is similar to options in <a href="Asterisk 11 Application_Dial.html" title="Asterisk 11 Application_Dial">Dial</a> and <a href="Asterisk 11 Application_Queue.html" title="Asterisk 11 Application_Queue">Queue</a>.</li>
+	<li>The '<b>N</b>' option is now ignored if the call is already answered.</li>
+	<li>Added '<b>b</b>' and '<b>B</b>' options to <a href="Asterisk 11 Application_FollowMe.html" title="Asterisk 11 Application_FollowMe">FollowMe</a> that execute a <a href="Asterisk 11 Application_Gosub.html" title="Asterisk 11 Application_Gosub">Gosub</a> on callee and caller channels respectively before the callee channels are called.  For more information, see <a href="Pre-Dial Handlers.html" title="Pre-Dial Handlers">pre-dial handlers</a>.</li>
+	<li>The winning <a href="Asterisk 11 Application_FollowMe.html" title="Asterisk 11 Application_FollowMe">FollowMe</a> outgoing call is now put on hold if the caller put it on hold.</li>
+</ul>
+
+
+<h2><a name="Newin11-MixMonitorAST%3AAsterisk11ApplicationMixMonitor"></a><a href="Asterisk 11 Application_MixMonitor.html" title="Asterisk 11 Application_MixMonitor">MixMonitor</a></h2>
+<ul>
+	<li><a href="Asterisk 11 Application_MixMonitor.html" title="Asterisk 11 Application_MixMonitor">MixMonitor</a> hooks now have IDs associated with them which can be used to assign a target to <a href="Asterisk 11 Application_StopMixMonitor.html" title="Asterisk 11 Application_StopMixMonitor">StopMixMonitor</a>. Use of <a href="Asterisk 11 Application_MixMonitor.html" title="Asterisk 11 Application_MixMonitor">MixMonitor's</a> <b>i(variable)</b> option will allow storage of the MixMontior ID in a channel variable. <a href="Asterisk 11 Application_StopMixMonitor.html" title="Asterisk 11 Application_StopMixMonitor">StopMixMonitor</a> now accepts that ID as an argument.</li>
+	<li>Added '<b>m</b>' option, which stores a copy of the recording as a voicemail in the indicated mailboxes.</li>
+</ul>
+
+
+<h2><a name="Newin11-MySQL"></a>MySQL</h2>
+<ul>
+	<li>The connect action in app_mysql now allows you to specify a port number to connect to.  This is useful if you run a MySQL server on a non-standard port number.</li>
+</ul>
+
+
+<h2><a name="Newin11-OSPApplications"></a>OSP Applications</h2>
+<ul>
+	<li>Increased the default number of allowed destinations from 5 to 12.</li>
+</ul>
+
+
+<h2><a name="Newin11-PageAST%3AAsterisk11ApplicationPage"></a><a href="Asterisk 11 Application_Page.html" title="Asterisk 11 Application_Page">Page</a></h2>
+<ul>
+	<li>The app_page application now no longer depends on DAHDI or app_meetme.  It has been re-architected to use app_confbridge internally.</li>
+</ul>
+
+
+<h2><a name="Newin11-QueueAST%3AAsterisk11ApplicationQueue"></a><a href="Asterisk 11 Application_Queue.html" title="Asterisk 11 Application_Queue">Queue</a></h2>
+<ul>
+	<li>Added queue options <tt>autopausebusy</tt> and <tt>autopauseunavail</tt> for automatically pausing a queue member when their device reports busy or congestion.</li>
+	<li>The <tt>ignorebusy</tt> option for queue members has been deprecated in favor of the option <tt>ringinuse</tt>. Also a <tt>queue set ringinuse</tt> CLI command has been added as well as an AMI action <a href="Asterisk 11 ManagerAction_QueueMemberRingInUse.html" title="Asterisk 11 ManagerAction_QueueMemberRingInUse">QueueMemberRingInUse</a> to set this variable on a per interface basis. Individual <tt>ringinuse</tt> values can now be set in <em>queues.conf</em> via an argument to member definitions. Lastly, the queue <tt>ringinuse</tt> setting now only determines defaults for the per member <tt>ringinuse</tt> setting and does not override per member settings like it does in earlier versions.</li>
+	<li>Added '<b>F()</b>' option. Similar to the option in <a href="Asterisk 11 Application_Dial.html" title="Asterisk 11 Application_Dial">Dial</a>, this can be supplied with arguments indicating where the callee should go after the caller is hung up, or without options specified, the priority after the <a href="Asterisk 11 Application_Queue.html" title="Asterisk 11 Application_Queue">Queue</a> will be used.</li>
+	<li>Added new option <tt>log_member_name_as_agent</tt>, which will cause the membername to be logged in the agent field for <tt>ADDMEMBER</tt> and <tt>REMOVEMEMBER</tt> queue events if a <tt>state_interface</tt> has been set.</li>
+</ul>
+
+
+<h2><a name="Newin11-SayUnixTimeAST%3AAsterisk11ApplicationSayUnixTime"></a><a href="Asterisk 11 Application_SayUnixTime.html" title="Asterisk 11 Application_SayUnixTime">SayUnixTime</a></h2>
+<ul>
+	<li>Added '<b>j</b>' option to <a href="Asterisk 11 Application_SayUnixTime.html" title="Asterisk 11 Application_SayUnixTime">SayUnixTime</a>. <a href="Asterisk 11 Application_SayUnixTime.html" title="Asterisk 11 Application_SayUnixTime">SayUnixTime</a> no longer auto jumps to extension when receiving DTMF.  Use the '<b>j</b>' option to enable extension jumping. Also changed arguments to <a href="Asterisk 11 Application_SayUnixTime.html" title="Asterisk 11 Application_SayUnixTime">SayUnixTime</a> so that every option is truly optional even when using multiple options (so that <b>j</b> option could be used without having to manually specify timezone and format) There are other benefits, e.g., format can now be used without specifying time zone as well.</li>
+</ul>
+
+
+<h2><a name="Newin11-VoicemailAST%3AAsterisk11ApplicationVoiceMail"></a><a href="Asterisk 11 Application_VoiceMail.html" title="Asterisk 11 Application_VoiceMail">Voicemail</a></h2>
+<ul>
+	<li>Addition of the <a href="Asterisk 11 Function_VM_INFO.html" title="Asterisk 11 Function_VM_INFO">VM_INFO</a> function - see Function changes.</li>
+	<li>The <tt>imapserver</tt>, <tt>imapport</tt>, and <tt>imapflags</tt> configuration options can now be overriden on a user by user basis.</li>
+	<li>When voicemail plays a message's envelope with <tt>saycid</tt> set to yes, when reaching the caller id field it will play a recording of a file with the same base name as the sender's callerid if there is a similarly named file in <em>&lt;astspooldir&gt;/recordings/callerids/</em>.</li>
+	<li>Voicemails now contains a unique message identifier <tt>msg_id</tt>, which is stored in the message envelope with the sound files.  IMAP backends will now store the message identifiers with a header of "<tt>X-Asterisk-VM-Message-ID</tt>".  ODBC backends will store the message identifier in a "<tt>msg_id</tt>" column.  See <a href="http://svnview.digium.com/svn/asterisk/branches/11/UPGRADE.txt">UPGRADE.txt</a> or <a href="Upgrading to Asterisk 11.html" title="Upgrading to Asterisk 11">Upgrading to Asterisk 11</a> for more information.</li>
+	<li>Added <a href="Asterisk 11 Application_VoiceMailPlayMsg.html" title="Asterisk 11 Application_VoiceMailPlayMsg">VoiceMailPlayMsg</a> application.  This application will play a single voicemail message from a mailbox.  The result of the application, <tt>SUCCESS</tt> or <tt>FAILED</tt>, is stored in the channel variable <tt>VOICEMAIL_PLAYBACKSTATUS</tt>.</li>
+</ul>
+
+
+<h1><a name="Newin11-Functions"></a>Functions</h1>
+<ul>
+	<li><a href="Hangup Handlers.html" title="Hangup Handlers">Hangup handlers</a> can be attached to channels using the <a href="Asterisk 11 Function_CHANNEL.html" title="Asterisk 11 Function_CHANNEL">CHANNEL</a> function. Hangup handlers will run when the channel is hung up similar to the <b>h</b> extension. The <tt>hangup_handler_push</tt> option will push a <a href="Asterisk 11 Application_Gosub.html" title="Asterisk 11 Application_Gosub">Gosub</a> compatible location in the dialplan onto the channel's hangup handler stack.  The <tt>hangup_handler_pop</tt> option will remove the last added location, and optionally replace it with a new <a href="Asterisk 11 Application_Gosub.html" title="Asterisk 11 Application_Gosub">Gosub</a> compatible location.  The <tt>hangup_handler_wipe</tt> option will remove all locations on the stack, and optionally add a new location.</li>
+	<li>The expression parser now recognizes the <tt>ABS()</tt> absolute value function, which will convert negative floating point values to positive values.</li>
+	<li><a href="Asterisk 11 Function_FAXOPT.html" title="Asterisk 11 Function_FAXOPT">FAXOPT(faxdetect)</a> will enable a generic fax detect framehook for dialplan control of faxdetect.</li>
+	<li>Addition of the <a href="Asterisk 11 Function_VM_INFO.html" title="Asterisk 11 Function_VM_INFO">VM_INFO</a> function that can be used to retrieve voicemail user information, such as the email address and full name.  The <a href="Asterisk 11 Function_MAILBOX_EXISTS.html" title="Asterisk 11 Function_MAILBOX_EXISTS">MAILBOX_EXISTS</a> dialplan function has been deprecated in favour of <a href="Asterisk 11 Function_VM_INFO.html" title="Asterisk 11 Function_VM_INFO">VM_INFO</a>.</li>
+	<li>The <a href="Asterisk 11 Function_REDIRECTING.html" title="Asterisk 11 Function_REDIRECTING">REDIRECTING</a> function now supports the redirecting original party id and reason.</li>
+	<li>Two new functions have been added: <a href="Asterisk 11 Function_FEATURE.html" title="Asterisk 11 Function_FEATURE">FEATURE</a> and <a href="Asterisk 11 Function_FEATUREMAP.html" title="Asterisk 11 Function_FEATUREMAP">FEATUREMAP</a>.  <a href="Asterisk 11 Function_FEATURE.html" title="Asterisk 11 Function_FEATURE">FEATURE</a> lets you set some of the configuration options from the <tt>[general]</tt> section of <em>features.conf</em> on a per-channel basis.  <a href="Asterisk 11 Function_FEATUREMAP.html" title="Asterisk 11 Function_FEATUREMAP">FEATUREMAP</a> lets you customize the key sequence used to activate built-in features, such as <tt>blindxfer</tt>, and <tt>automon</tt>.</li>
+	<li><a href="Asterisk 11 Function_MESSAGE.html" title="Asterisk 11 Function_MESSAGE">MESSAGE(from)</a> for incoming SIP messages now returns <tt>"display-name" &lt;uri&gt;</tt> instead of simply the uri.  This is the format that <a href="Asterisk 11 Application_MessageSend.html" title="Asterisk 11 Application_MessageSend">MessageSend</a> can use in the from parameter for outgoing SIP messages.</li>
+	<li>Added the <a href="Asterisk 11 Function_PRESENCE_STATE.html" title="Asterisk 11 Function_PRESENCE_STATE">PRESENCE_STATE</a> function.  This allows retrieving presence state information from any presence state provider.  It also allows setting presence state information from a CustomPresence presence state provider.  See AMI/CLI changes for related commands.</li>
+	<li>Added the <a href="Asterisk 11 Function_AMI_CLIENT.html" title="Asterisk 11 Function_AMI_CLIENT">AMI_CLIENT</a> function to make manager account attributes available to the dialplan. It currently supports returning the current number of active sessions for a given account.</li>
+</ul>
+
+
+<h1><a name="Newin11-ChannelDrivers"></a>Channel Drivers</h1>
+
+<h2><a name="Newin11-chanlocal"></a>chan_local</h2>
+<ul>
+	<li>Added a manager event <a href="Asterisk 11 ManagerEvent_LocalBridge.html" title="Asterisk 11 ManagerEvent_LocalBridge">LocalBridge</a> for local channel call bridges between the two pseudo-channels created.</li>
+</ul>
+
+
+<h2><a name="Newin11-chandahdi"></a>chan_dahdi</h2>
+<ul>
+	<li>Added <tt>dialtone_detect</tt> option for analog ports to disconnect incoming calls when dialtone is detected.</li>
+	<li>Added option <tt>colp_send</tt> to send ISDN connected line information.  Allowed settings are <tt>block</tt>, to not send any connected line information; <tt>connect</tt>, to send connected line information on initial connect; and <tt>update</tt>, to send information on any update during a call.  Default is <tt>update</tt>.</li>
+	<li>Add options <tt>namedcallgroup</tt> and <tt>namedpickupgroup</tt> to support installations where a higher number of groups (&gt;64) is required.</li>
+</ul>
+
+
+<h2><a name="Newin11-chanmotif"></a>chan_motif</h2>
+<ul>
+	<li>A new channel driver named chan_motif has been added which provides support for Google Talk and Jingle in a single channel driver. This new channel driver includes support for both audio and video, RFC2833 DTMF, all codecs supported by Asterisk, hold, unhold, and ringing notification. It is also compliant with the current Jingle specification, current Google Jingle specification, and the original Google Talk protocol.</li>
+</ul>
+
+
+<div class='panelMacro'><table class='infoMacro'><colgroup><col width='24'><col></colgroup><tr><td valign='top'><img src="images/icons/emoticons/information.gif" width="16" height="16" align="absmiddle" alt="" border="0"></td><td>For more information on chan_motif, please see the updated <a href="https://wiki.asterisk.org/wiki/display/AST/Calling+using+Google" title="Calling using Google">calling using Google</a> page.</td></tr></table></div>
+
+
+<h2><a name="Newin11-chanooh323"></a>chan_ooh323</h2>
+<ul>
+	<li>Added NAT support for RTP.  Setting in config is <tt>nat</tt>, which can be set globally and overriden on a peer by peer basis.</li>
+	<li>Direct media functionality has been added. Options in config are: <tt>directmedia</tt> (<tt>directrtp</tt>) and <tt>directrtpsetup</tt> (<tt>earlydirect</tt>)</li>
+	<li>ChannelUpdate events now contain a <tt>CallRef</tt> header.</li>
+</ul>
+
+
+<h2><a name="Newin11-chansip"></a>chan_sip</h2>
+<ul>
+	<li>Asterisk will no longer substitute CID number for CID name in the display name field if CID number exists without a CID name. This change improves compatibility with certain device features such as Avaya IP500's directory lookup service.</li>
+	<li>A new setting for <tt>autocreatepeer</tt> (<tt>autocreatepeer=persistent</tt>) allows peers created using that setting to not be removed during SIP reload.</li>
+	<li>Added settings <tt>recordonfeature</tt> and <tt>recordofffeature</tt>.  When receiving an INFO request with a "<tt>Record:</tt>" header, this will turn the requested feature on/off. Allowed values are '<tt>automon</tt>', '<tt>automixmon</tt>', and blank to disable.  Note that dynamic features must be enabled and configured properly on the requesting channel for this to function properly.</li>
+	<li>Add support to realtime for the '<tt>callbackextension</tt>' option.</li>
+	<li>When multiple peers exist with the same address, but differing <tt>callbackextension</tt> options, incoming requests that are matched by address will be matched to the peer with the matching <tt>callbackextension</tt> if it is available.</li>
+	<li>Two new NAT options, <tt>auto_force_rport</tt> and <tt>auto_comedia</tt>, have been added which set the <tt>force_rport</tt> and <tt>comedia</tt> options automatically if Asterisk detects that an incoming SIP request crossed a NAT after being sent by the remote endpoint.</li>
+	<li>NAT settings are now a combinable list of options. The equivalent of the deprecated <tt>nat=yes</tt> is <tt>nat=force_rport,comedia</tt>. <tt>nat=no</tt> behaves as before.</li>
+	<li>Add an option <tt>send_diversion</tt> which can be disabled to prevent diversion headers from automatically being added to INVITE requests.</li>
+	<li>Add support for lightweight NAT keepalive. If enabled a blank packet will be sent to the remote host at a given interval to keep the NAT mapping open. This can be enabled using the <tt>keepalive</tt> configuration option.</li>
+	<li>Add option '<tt>tonezone</tt>' to specify country code for indications.  This option can be set both globally and overridden for specific peers.</li>
+	<li>The SIP Security Events Framework now supports IPv6.</li>
+	<li>Add a new setting for directmedia, '<tt>outgoing</tt>', to alleviate INVITE glares between multiple user agents. When set, for directmedia reinvites, Asterisk will not send an immediate reinvite on an incoming call leg. This option is useful when peered with another SIP user agent that is known to send immediate direct media reinvites upon call establishment.</li>
+	<li>Add support for WebSocket transport. This can be configured using '<tt>ws</tt>' or '<tt>wss</tt>' as the transport.</li>
+	<li>Add options <tt>subminexpiry</tt> and <tt>submaxexpiry</tt> to set limits of subscription timer independently from registration timer settings. The setting of the registration timer limits still is done by options <tt>minexpiry</tt>, <tt>maxexpiry</tt> and <tt>defaultexpiry</tt>. For backwards compatibility the setting of <tt>minexpiry</tt> and <tt>maxexpiry</tt> also is used to configure the subscription timer limits if <tt>subminexpiry</tt> and <tt>submaxexpiry</tt> are not set in sip.conf.</li>
+	<li>Set registration timer limits to default values when reloading sip configuration and values are not set by configuration.</li>
+	<li>Add options <tt>namedcallgroup</tt> and <tt>namedpickupgroup</tt> to support installations where a higher number of groups (&gt;64) is required.</li>
+	<li>When a MESSAGE request is received, the address the request was received from is now saved in the <tt>SIP_RECVADDR</tt> variable.</li>
+	<li>Add ANI2/OLI parsing for SIP.  The "From" header in INVITE requests is now parsed for the presence of "isup-oli", "ss7-oli", or "oli" tags.  If present, the ANI2/OLI information is set on the channel, which can be retrieved using the <a href="Asterisk 11 Function_CALLERID.html" title="Asterisk 11 Function_CALLERID">CALLERID</a> function.</li>
+	<li>Peers can now be configured to support negotiation of ICE candidates using the setting <tt>icesupport</tt>.  See res_rtp_asterisk changes for more information.</li>
+	<li>Added support for format attribute negotiation.  See the Codecs changes for more information.</li>
+	<li>Extra headers specified with <a href="Asterisk 11 Application_SIPAddHeader.html" title="Asterisk 11 Application_SIPAddHeader">SIPAddHeader</a> are sent with the REFER message when using <a href="Asterisk 11 Application_Transfer.html" title="Asterisk 11 Application_Transfer">Transfer</a> application. See <tt>refer_addheaders</tt> in <em>sip.conf.sample</em>.</li>
+</ul>
+
+
+<h2><a name="Newin11-chanskinny"></a>chan_skinny</h2>
+<ul>
+	<li>Added skinny version 17 protocol support.</li>
+</ul>
+
+
+<h2><a name="Newin11-chanunistim"></a>chan_unistim</h2>
+<ul>
+	<li>Added ability to use multiple lines for a single phone.  This allows multiple calls to occur on a single phone, using callwaiting and switching between calls.</li>
+	<li>Added option '<tt>sharpdial</tt>' allowing end dialing by pressing <b>#</b> key</li>
+	<li>Added option '<tt>interdigit_timer</tt>' to control phone dial timeout</li>
+	<li>Added options '<tt>cwstyle</tt>', '<tt>cwvolume</tt>' controlling <tt>callwaiting</tt> appearance</li>
+	<li>Added global '<tt>debug</tt>' option, that enables debug in channel driver</li>
+	<li>Added ability to translate on-screen menu in multiple languages. Tested on Russian languages.  Supported encodings: ISO 8859-1, ISO 8859-2, ISO 8859-4, ISO 8859-5, ISO 2022-JP. Language controlled by '<tt>language</tt>' and on-screen menu of phone</li>
+	<li>In addition to English added French and Russian languages for on-screen menus</li>
+	<li>Reworked dialing number input: added dialing by timeout, immediate dial on on dialplan compare, phone number length now not limited by screen size</li>
+	<li>Added ability to pickup a call using <em>features.conf</em> defined value and on-screen key</li>
+</ul>
+
+
+<div class='panelMacro'><table class='infoMacro'><colgroup><col width='24'><col></colgroup><tr><td valign='top'><img src="images/icons/emoticons/information.gif" width="16" height="16" align="absmiddle" alt="" border="0"></td><td>For more information on the chan_unistim changes, please see <a href="https://wiki.asterisk.org/wiki/display/AST/Unistim+channel+improvements" title="Unistim channel improvements">Unistim channel improvements</a></td></tr></table></div>
+
+<h2><a name="Newin11-chanmISDN%3A"></a>chan_mISDN:</h2>
+<ul>
+	<li>Add options <tt>namedcallgroup</tt> and <tt>namedpickupgroup</tt> to support installations where a higher number of groups (&gt;64) is required.</li>
+</ul>
+
+
+<h1><a name="Newin11-Core"></a>Core</h1>
+<ul>
+	<li>The minimum DTMF duration can now be configured in <em>asterisk.conf</em> as <tt>mindtmfduration</tt>. The default value is (as before) set to 80 ms.  Previously this option was set to a hard coded value in the source code.</li>
+	<li>Named ACLs can now be specified in <em>acl.conf</em> and used in configurations that use ACLs. As a general rule, if some derivative of '<tt>permit</tt>' or '<tt>deny</tt>' is used to specify an ACL, a similar form of '<tt>acl</tt>' will add a named ACL to the working ACL. In addition, some CLI commands have been added to provide show information and allow for module reloading - see CLI Changes.</li>
+	<li>Rules in ACLs (specified using '<tt>permit</tt>' and '<tt>deny</tt>') can now contain multiple items (separated by commas), and items in the rule can be negated by prefixing them with '<tt>!</tt>'. This simplifies Asterisk Realtime configurations, since it is no longer necessray to control the order that the '<tt>permit</tt>' and '<tt>deny</tt>' columns are returned from queries.</li>
+	<li>DUNDi now allows the built in variables ${NUMBER}, ${IPADDR} and ${SECRET} to  be used within the dynamic weight attribute when specifying a mapping.</li>
+	<li>CEL backends can now be configured to show "<tt>USER_DEFINED</tt>" in the <tt>EventName</tt> header, instead of putting the user defined event name there.  When enabled the <tt>UserDefType</tt> header is added for user defined events.  This feature is enabled with the setting <tt>show_user_defined</tt>.</li>
+	<li><a href="Asterisk 11 Application_Macro.html" title="Asterisk 11 Application_Macro">Macro</a> has been deprecated in favor of <a href="Asterisk 11 Application_Gosub.html" title="Asterisk 11 Application_Gosub">GoSub</a>.  For redirecting and connected line purposes use the following variables instead of their macro equivalents:
+	<ul>
+		<li><tt>REDIRECTING_SEND_SUB</tt></li>
+		<li><tt>REDIRECTING_SEND_SUB_ARGS</tt></li>
+		<li><tt>CONNECTED_LINE_SEND_SUB</tt></li>
+		<li><tt>CONNECTED_LINE_SEND_SUB_ARGS</tt><br/>
+For CCSS, use <tt>cc_callback_sub</tt> instead of <tt>cc_callback_macro</tt> in channel configurations.</li>
+	</ul>
+	</li>
+	<li>Asterisk can now use a system-provided NetBSD editline library (libedit) if it is available.</li>
+	<li>Call files now support the <tt>early_media</tt> option to connect with an outgoing extension when early media is received.</li>
+</ul>
+
+
+<h2><a name="Newin11-AGI"></a>AGI</h2>
+<ul>
+	<li>A new channel variable, <tt>AGIEXITONHANGUP</tt>, has been added which allows Asterisk to behave like it did in Asterisk 1.4 and earlier where the AGI application would exit immediately after a channel hangup is detected.</li>
+	<li>IPv6 addresses are now supported when using FastAGI (agi://).  Hostnames are resolved and each address is attempted in turn until one succeeds or all fail.</li>
+</ul>
+
+
+<h2><a name="Newin11-AMI%28AsteriskManagerInterface%29"></a>AMI (Asterisk Manager Interface)</h2>
+<ul>
+	<li>The <a href="Asterisk 11 ManagerAction_Originate.html" title="Asterisk 11 ManagerAction_Originate">Originate</a> action now has an option <tt>EarlyMedia</tt> that enables the call to bridge when we get early media in the call. Previously, early media was disregarded always when originating calls using AMI.</li>
+	<li>Added <tt>setvar=</tt> option to manager accounts (much like <em>sip.conf</em>)</li>
+	<li><a href="Asterisk 11 ManagerAction_Originate.html" title="Asterisk 11 ManagerAction_Originate">Originate</a> now generates an error response if the extension given is not found in the dialplan.</li>
+	<li><a href="Asterisk 11 ManagerAction_MixMonitor.html" title="Asterisk 11 ManagerAction_MixMonitor">MixMonitor</a> will now show IDs associated with the MixMonitor upon creating them if the <b>i(variable)</b> option is used. <a href="Asterisk 11 ManagerAction_StopMixMonitor.html" title="Asterisk 11 ManagerAction_StopMixMonitor">StopMixMonitor</a> will accept <tt>MixMonitorID</tt> as an option to close specific MixMonitors.</li>
+	<li>The <a href="Asterisk 11 ManagerAction_SIPshowpeer.html" title="Asterisk 11 ManagerAction_SIPshowpeer">SIPshowpeer</a> manager action response field <tt>SIP-Forcerport</tt> has been updated to include information about peers configured with <tt>nat=auto_force_rport</tt> by returning "<b>A</b>" if <tt>auto_force_rport</tt> is set and nat is detected, and "<b>a</b>" if it is set and nat is not detected. "<b>Y</b>" and "<b>N</b>" are still returned if <tt>auto_force_rport</tt> is not enabled.</li>
+	<li>Added <a href="Asterisk 11 ManagerAction_SIPpeerstatus.html" title="Asterisk 11 ManagerAction_SIPpeerstatus">SIPpeerstatus</a> manager command which will generate PeerStatus events similar to the existing PeerStatus events found in chan_sip on demand.</li>
+	<li><a href="Asterisk 11 ManagerAction_Hangup.html" title="Asterisk 11 ManagerAction_Hangup">Hangup</a> can now take a regular expression as the <tt>Channel</tt> option.  If you want to hangup multiple channels, use /regex/ as the Channel option.  Existing behavior to hanging up a single channel is unchanged, but if you pass a regex, the manager will send you a list of channels back that were hung up.</li>
+	<li>Support for IPv6 addresses has been added.</li>
+	<li><a href="Asterisk 11 AMI Events.html" title="Asterisk 11 AMI Events">AMI Events</a> can now be documented in the Asterisk source. Note that AMI event documentation is only generated when Asterisk is compiled using <tt>make full</tt>. See the CLI section for commands to display AMI event information.</li>
+	<li>The AMI <a href="Asterisk 11 ManagerEvent_Hangup.html" title="Asterisk 11 ManagerEvent_Hangup">Hangup</a> event now includes the <tt>AccountCode</tt> header so you can easily correlate with AMI <a href="Asterisk 11 ManagerEvent_Newchannel.html" title="Asterisk 11 ManagerEvent_Newchannel">Newchannel</a> events.</li>
+	<li>The <a href="Asterisk 11 ManagerEvent_QueueMemberStatus.html" title="Asterisk 11 ManagerEvent_QueueMemberStatus">QueueMemberStatus</a>, <a href="Asterisk 11 ManagerEvent_QueueMemberAdded.html" title="Asterisk 11 ManagerEvent_QueueMemberAdded">QueueMemberAdded</a>, and QueueMember events now include the <tt>StateInterface</tt> of the queue member.</li>
+	<li>Added AMI event SessionTimeout in the Call category that is issued when a call is terminated due to either RTP stream inactivity or SIP session timer expiration.</li>
+	<li>CEL events can now contain a user defined header <tt>UserDefType</tt>.  See core changes for more information.</li>
+	<li>OOH323 ChannelUpdate events now contain a <tt>CallRef</tt> header.</li>
+	<li>Added <a href="Asterisk 11 ManagerAction_PresenceState.html" title="Asterisk 11 ManagerAction_PresenceState">PresenceState</a> command.  This command will report the presence state for the given presence provider.</li>
+	<li>Added <a href="Asterisk 11 ManagerAction_Parkinglots.html" title="Asterisk 11 ManagerAction_Parkinglots">Parkinglots</a> command.  This will list all parking lots as a series of AMI Parkinglot events.</li>
+	<li>Added <a href="Asterisk 11 ManagerAction_MessageSend.html" title="Asterisk 11 ManagerAction_MessageSend">MessageSend</a> command.  This behaves in the same manner as the MessageSend application, and is a technolgoy agnostic mechanism to send out of call text messages.</li>
+	<li>Added "<tt>message</tt>" class authorization.  This grants an account permission to send out of call messages.  Write-only.  See <em>manager.conf.sample</em>.</li>
+</ul>
+
+
+<h2><a name="Newin11-CLI"></a>CLI</h2>
+<ul>
+	<li>The <tt>dialplan add include</tt> command has been modified to create context a context if one does not already exist. For instance, <tt>dialplan add include foo into bar</tt> will create context <tt>bar</tt> if it does not already exist.</li>
+	<li>A  <tt>dialplan remove context</tt> command has been added to remove a context from the dialplan</li>
+	<li>The <tt>mixmonitor list &lt;channel&gt;</tt> command will now show MixMonitor ID, and the filenames of all running mixmonitors on a channel.</li>
+	<li>The debug level of <tt>pri set debug</tt> is now a bitmask ranging from 0 to 15 if numeric instead of 0, 1, or 2.</li>
+	<li><tt>stun show status</tt> command will show a table describing how the STUN client is behaving.</li>
+	<li><tt>acl show [named acl]</tt> will show information regarding a Named ACL.  The acl module can be reloaded with <tt>reload acl</tt>.</li>
+	<li>Added CLI command to display AMI event information - <tt>manager show events</tt>, which shows a list of all known and documented AMI events, and <tt>manager show event [event name]</tt>, which shows detailed information about a specific AMI event.</li>
+	<li>The result of the CLI command <tt>queue show</tt> now includes the state interface information of the queue member.</li>
+	<li>The command <tt>core set verbose</tt> will now set a separate level of logging for each remote console without affecting any other console.</li>
+	<li>Added command <tt>cdr show pgsql status</tt> to check connection status</li>
+	<li><tt>sip show channel</tt> will now display the complete route set.</li>
+	<li>Added <tt>presencestate list</tt> command.  This command will list all custom presence states that have been set by using the <a href="Asterisk 11 Function_PRESENCE_STATE.html" title="Asterisk 11 Function_PRESENCE_STATE">PRESENCE_STATE</a> dialplan function.</li>
+	<li>Added <tt>presencestate change &lt;entity&gt; &lt;state&gt;[,&lt;subtype&gt;[,message[,options]]]</tt> command.  This changes a custom presence to a new state.</li>
+</ul>
+
+
+<h2><a name="Newin11-Codecs"></a>Codecs</h2>
+<ul>
+	<li>Codec lists may now be modified by the '<tt>!</tt>' character, to allow succinct specification of a list of codecs allowed and disallowed, without the requirement to use two different keywords.  For example, to specify all codecs except g729 and g723, one need only specify <tt>allow=all,!g729,!g723</tt>.</li>
+	<li>Add support for parsing SDP attributes, generating SDP attributes, and passing it through. This support includes codecs such as H.263, H.264, SILK, and CELT. You are able to set up a call and have attribute information pass. This should help considerably with video calls.</li>
+	<li>The iLBC codec can now use a system-provided iLBC library if one is installed, just like the GSM codec.</li>
+</ul>
+
+
+<h2><a name="Newin11-DUNDichanges"></a>DUNDi changes</h2>
+<ul>
+	<li>Added CLI commands <tt>dundi show hints</tt> and <tt>dundi show cache</tt> which will list DUNDi '<tt>DONTASK</tt>' hints in the cache and list all DUNDi cache entires respectively.</li>
+</ul>
+
+
+<h2><a name="Newin11-Logging"></a>Logging</h2>
+<ul>
+	<li>Asterisk version and build information is now logged at the beginning of a log file.</li>
+	<li>Threads belonging to a particular call are now linked with callids which get added to any log messages produced by those threads. Log messages can now be easily identified as involved with a certain call by looking at their call id. Call ids may also be attached to log messages for just about any case where it can be determined to be related to a particular call.</li>
+	<li>Each logging destination and console now have an independent notion of the current verbosity level.  <em>logger.conf</em> now allows an optional argument to the '<tt>verbose</tt>' specifier, indicating the level of verbosity sent to that particular logging destination.  Additionally, remote consoles now each  have their own verbosity level.  The command <tt>core set verbose</tt> will now set a separate level for each remote console without affecting any other console.</li>
+</ul>
+
+
+<h2><a name="Newin11-MusicOnHold"></a>Music On Hold</h2>
+<ul>
+	<li>Added <tt>announcement</tt> option which will play at the start of MOH and between songs in modes of MOH that can detect transitions between songs, e.g., files, mp3, etc.</li>
+</ul>
+
+
+<h2><a name="Newin11-Parking"></a>Parking</h2>
+<ul>
+	<li>New per parking lot options: <tt>comebackcontext</tt> and <tt>comebackdialtime</tt>. See <em>features.conf.sample</em> for more details.</li>
+	<li>Channel variable <tt>PARKER</tt> is now set when <tt>comebacktoorigin</tt> is disabled in a parking lot.</li>
+	<li>Channel variable <tt>PARKEDCALL</tt> is now set with the name of the parking lot when a timeout occurs.</li>
+</ul>
+
+
+<h2><a name="Newin11-CDRs"></a>CDRs</h2>
+
+<h3><a name="Newin11-CDRPostgresqlDriver"></a>CDR Postgresql Driver</h3>
+<ul>
+	<li>Added command <tt>cdr show pgsql status</tt> to check connection status</li>
+</ul>
+
+
+<h3><a name="Newin11-CDRAdaptiveODBCDriver"></a>CDR Adaptive ODBC Driver</h3>
+<ul>
+	<li>Added schema option for databases that support specifying a schema.</li>
+</ul>
+
+
+<h1><a name="Newin11-ResourceModules"></a>Resource Modules</h1>
+
+<h2><a name="Newin11-Calendars"></a>Calendars</h2>
+<ul>
+	<li>A <tt>CALENDAR_SUCCESS=1/0</tt> channel variable is now set to show whether or not <a href="Asterisk 11 Function_CALENDAR_WRITE.html" title="Asterisk 11 Function_CALENDAR_WRITE">CALENDAR_WRITE</a> has completed successfully.</li>
+</ul>
+
+
+
+<h2><a name="Newin11-resrtpasterisk"></a>res_rtp_asterisk</h2>
+<ul>
+	<li>A new option, <tt>probation</tt>, has been added to <em>rtp.conf</em>.  RTP processing in <tt>strictrtp</tt> mode can now require more than 1 packet to exit learning mode with a new source (and by default requires 4). The probation option allows the user to change the required number of packets in sequence to any desired value. Use a value of 1 to essentially restore the old behavior.  Also, with <tt>strictrtp</tt> enabled, Asterisk will now drop all packets until learning mode has successfully exited. These changes are based on how pjmedia handles media sources and source changes.</li>
+	<li>Add support for ICE/STUN/TURN in res_rtp_asterisk.  This option can be enabled or disabled using the <tt>icesupport</tt> setting.  A variety of other settings have been introduced to configure STUN/TURN connections.</li>
+</ul>
+
+
+<h2><a name="Newin11-rescorosync"></a>res_corosync</h2>
+<ul>
+	<li>A new module, res_corosync, has been introduced.  This module uses the <a href="http://www.corosync.org">Corosync cluster enginer</a> to allow a local cluster of Asterisk servers to both Message Waiting Indication (MWI) and/or Device State (presence) information.  This module is very similar to, and is a replacement for the res_ais module that was in previous releases of Asterisk.</li>
+</ul>
+
+
+<h2><a name="Newin11-resxmpp"></a>res_xmpp</h2>
+<ul>
+	<li>This module adds a cleaned up, drop-in replacement for res_jabber called res_xmpp. This provides the same externally facing functionality but is implemented differently internally.  res_jabber has been deprecated in favor of res_xmpp; please see <a href="Upgrading to Asterisk 11.html" title="Upgrading to Asterisk 11">Upgrading to Asterisk 11</a> or the <a href="http://svnview.digium.com/svn/asterisk/branches/11/UPGRADE.txt">UPGRADE.txt</a> file for more information.</li>
+</ul>
+
+
+<h1><a name="Newin11-Scripts"></a>Scripts</h1>
+<ul>
+	<li>The <em>safe_asterisk</em> script has been updated to allow several of its parameters to be set from environment variables.  This also enables a custom run directory of Asterisk to be specified, instead of defaulting to /tmp.</li>
+	<li>The <em>live_ast</em> script will now look for the <tt>LIVE_AST_BASE_DIR</tt> variable and use its value to determine the directory to assume is the top-level directory of the source tree.  If the variable is not set, it defaults to the current behavior and uses the current working directory.</li>
+</ul>
+
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Nov 02, 2012 17:41</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>
