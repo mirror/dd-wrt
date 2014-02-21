@@ -18,7 +18,7 @@
 
 
 /*** MODULEINFO
-	<defaultenabled>no</defaultenabled>
+	<defaultenabled>yes</defaultenabled>
 	<support_level>extended</support_level>
  ***/
 
