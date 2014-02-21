@@ -1,0 +1,150 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Hangup Cause</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Hangup Cause
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Aug 18, 2012 by <font color="#0050B2">mjordan</font>.
+				    </div>
+
+				    <h2><a name="HangupCause-Overview"></a>Overview</h2>
+
+<p>The Hangup Cause family of functions and dialplan applications allow for inspection of the hangup cause codes for each channel involved in a call.  This allows a dialplan writer to determine, for each channel, who hung up and for what reason(s).  Note that this extends the functionality available in the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+Standard+Channel+Variables" title="Asterisk Standard Channel Variables">HANGUPCAUSE</a> channel variable, by allowing a calling channel to inspect all called channel's hangup causes in a variety of dialling situations.</p>
+
+<p>Note that this feature replaces the technology specific mechanism of using the <a href="https://wiki.asterisk.org/wiki/display/AST/Function_MASTER_CHANNEL" title="Function_MASTER_CHANNEL">MASTER_CHANNEL</a> function to access a SIP channel's SIP_CAUSE, as well as extends similar functionality to a variety of other channel drivers.</p>
+
+<h2><a name="HangupCause-DialplanFunctionsandApplications"></a>Dialplan Functions and Applications</h2>
+
+<h3><a name="HangupCause-HANGUPCAUSEKEYSAST%3AAsterisk11FunctionHANGUPCAUSEKEYS"></a><a href="Asterisk 11 Function_HANGUPCAUSE_KEYS.html" title="Asterisk 11 Function_HANGUPCAUSE_KEYS">HANGUPCAUSE_KEYS</a></h3>
+
+<p>Used to obtain a comma separated list of all channels for which hangup causes are available.</p>
+
+<h4><a name="HangupCause-Example"></a>Example</h4>
+
+<p>The following example shows one way of accessing the channels that have hangup cause related information after a Dial has completed.  In this particular example, a parallel dial occurs to both <em>SIP/foo</em> and <em>SIP/bar</em>.  A <a href="Hangup Handlers.html" title="Hangup Handlers">hangup handler</a> has been attached to the calling channel, which executes the subroutine at <b>handler,s,1</b> when the channel is hung up.  This queries the <a href="Asterisk 11 Function_HANGUPCAUSE_KEYS.html" title="Asterisk 11 Function_HANGUPCAUSE_KEYS">HANGUPCAUSE_KEYS</a> function for the channels with hangup cause information and prints the information as a Verbose message.  On the CLI, this would look something like:</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">Channels with hangup cause information: SIP/bar-00000002,SIP/foo-00000001</pre>
+</div></div>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">[default]
+
+exten =&amp;gt; s,1,NoOp()
+same =&amp;gt; n,Set(CHANNEL(hangup_handler_push)=handler,s,1)
+same =&amp;gt; n,Dial(SIP/foo&amp;amp;SIP/bar,10)
+same =&amp;gt; n,Hangup()
+
+[handler]
+
+same =&amp;gt; s,1,NoOp()
+same =&amp;gt; n,Set(HANGUPCAUSE_STRING=${HANGUPCAUSE_KEYS()})
+same =&amp;gt; n,Verbose(0, Channels with hangup cause information: ${HANGUPCAUSE_STRING})
+same =&amp;gt; n,Return()</pre>
+</div></div>
+
+<h3><a name="HangupCause-HANGUPCAUSEAST%3AAsterisk11FunctionHANGUPCAUSE"></a><a href="Asterisk 11 Function_HANGUPCAUSE.html" title="Asterisk 11 Function_HANGUPCAUSE">HANGUPCAUSE</a></h3>
+
+<p>Used to obtain hangup cause information for a specific channel.  For a given channel, there are two sources of hangup cause information:</p>
+<ol>
+	<li>The channel technology specific hangup cause information</li>
+	<li>A text description of the Asterisk specific hangup cause</li>
+</ol>
+
+
+<p>Note that in some cases, the hangup causes returned may not be reflected in <a href="Hangup Cause Mappings.html" title="Hangup Cause Mappings">Hangup Cause Mappings</a>.  For example, if a Dial to a SIP UA is cancelled by Asterisk, the SIP UA may not have returned any final responses to Asterisk.  In these cases, the last known technology code will be returned by the function.</p>
+
+<h4><a name="HangupCause-Example"></a>Example</h4>
+
+<p>This example illustrates obtaining hangup cause information for a parallel dial to <em>SIP/foo</em> and <em>SIP/bar</em>.  A <a href="Hangup Handlers.html" title="Hangup Handlers">hangup handler</a> has been attached to the calling channel, which executes the subroutine at <b>handler,s,1</b> when the channel is hung up.  This queries the hangup cause information using the <a href="Asterisk 11 Function_HANGUPCAUSE_KEYS.html" title="Asterisk 11 Function_HANGUPCAUSE_KEYS">HANGUPCAUSE_KEYS</a> function and the <a href="Asterisk 11 Function_HANGUPCAUSE.html" title="Asterisk 11 Function_HANGUPCAUSE">HANGUPCAUSE</a> function.  The channels returned from <a href="Asterisk 11 Function_HANGUPCAUSE_KEYS.html" title="Asterisk 11 Function_HANGUPCAUSE_KEYS">HANGUPCAUSE_KEYS</a>  are parsed out, and each is queried for their hangup cause information.  The technology specific cause code as well as the Asterisk cause code are printed to the CLI.</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">[default]
+
+exten =&amp;gt; s,1,NoOp()
+same =&amp;gt; n,Set(CHANNEL(hangup_handler_push)=handler,s,1)
+same =&amp;gt; n,Dial(SIP/foo&amp;amp;SIP/bar,10)
+same =&amp;gt; n,Hangup()
+
+[handler]
+
+exten =&amp;gt; s,1,NoOp()
+
+same =&amp;gt; n,Set(HANGUPCAUSE_STRING=${HANGUPCAUSE_KEYS()})
+
+; start loop
+same =&amp;gt; n(hu_begin),NoOp()
+
+; check exit condition (no more array to check)
+same =&amp;gt; n,GotoIf($[${LEN(${HANGUPCAUSE_STRING})}=0]?hu_exit)
+
+; pull the next item
+same =&amp;gt; n,Set(ARRAY(item)=${HANGUPCAUSE_STRING})
+same =&amp;gt; n,Set(HANGUPCAUSE_STRING=${HANGUPCAUSE_STRING:${LEN(${item})}})
+
+; display the channel name and cause codes
+same =&amp;gt; n,Verbose(0, Got Channel ID ${item} with Technology Cause Code ${HANGUPCAUSE(${item},tech)}, Asterisk Cause Code ${HANGUPCAUSE(${item},ast)})
+
+; check exit condition (no more array to check)
+same =&amp;gt; n,GotoIf($[${LEN(${HANGUPCAUSE_STRING})}=0]?hu_exit)
+
+; we still have entries to process, so strip the leading comma
+same =&amp;gt; n,Set(HANGUPCAUSE_STRING=${HANGUPCAUSE_STRING:1})
+
+; go back to the beginning of the loop
+same =&amp;gt; n,Goto(hu_begin)
+
+same =&amp;gt; n(hu_exit),NoOp()
+same =&amp;gt; n,Return()</pre>
+</div></div>
+
+<h3><a name="HangupCause-HangupCauseClearAst%3AAsterisk11ApplicationHangupCauseClear"></a><a href="Asterisk 11 Application_HangupCauseClear.html" title="Asterisk 11 Application_HangupCauseClear">HangupCauseClear</a></h3>
+
+<p>Used to remove all hangup cause information currently stored.</p>
+
+<h4><a name="HangupCause-Example"></a>Example</h4>
+
+<p>The following example clears the hangup cause information from the channel if <em>SIP/foo</em> fails to answer and execution continues in the dialplan.  The <a href="Hangup Handlers.html" title="Hangup Handlers">hangup handler</a> attached to the channel will thus only report the the name of the last channel dialled.</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">exten =&amp;gt; s,1,NoOp()
+same =&amp;gt; n,Set(CHANNEL(hangup_handler_push)=handler,s,1)
+same =&amp;gt; n,Dial(SIP/foo,10)
+same =&amp;gt; n,HangupCauseClear()
+same =&amp;gt; n,Dial(SIP/bar,10)
+same =&amp;gt; n,Hangup()
+
+[handler]
+
+same =&amp;gt; s,1,NoOp()
+same =&amp;gt; n,Set(HANGUPCAUSE_STRING=${HANGUPCAUSE_KEYS()})
+same =&amp;gt; n,Verbose(0, Channels with hangup cause information: ${HANGUPCAUSE_STRING})
+same =&amp;gt; n,Return()</pre>
+</div></div>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Nov 02, 2012 17:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

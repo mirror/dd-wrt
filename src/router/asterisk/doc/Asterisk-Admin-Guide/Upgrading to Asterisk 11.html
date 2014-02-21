@@ -1,0 +1,179 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Upgrading to Asterisk 11</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Upgrading to Asterisk 11
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Oct 23, 2012 by <font color="#0050B2">mjordan</font>.
+				    </div>
+
+				    <p>The following are changes made in Asterisk 11 that may affect your configuration when upgrading.</p>
+
+<h2><a name="UpgradingtoAsterisk11-Applications"></a>Applications</h2>
+
+<h3><a name="UpgradingtoAsterisk11-Voicemail"></a>Voicemail</h3>
+
+<p>All voicemails now have a <tt>msg_id</tt> included in their metadata which uniquely identifies a message. For users of file system and IMAP storage of voicemail, this should be transparent.  For users of ODBC, you will need to add a <tt>msg_id</tt> column to your voice mail messages table. This should be a string capable of holding at least 32 characters.</p>
+
+<p>All messages created in old Asterisk installations will have a <tt>msg_id</tt> added to them when required. This operation should be transparent as well.</p>
+
+<h3><a name="UpgradingtoAsterisk11-MeetMe"></a>MeetMe</h3>
+
+<p>The '<b>c</b>' option (announce user count) will now work even if the '<b>q</b>' (quiet) option is enabled.</p>
+
+<h3><a name="UpgradingtoAsterisk11-FollowMe"></a>FollowMe</h3>
+
+<p>Answered outgoing calls no longer get cut off when the next step is started.  You now have until the last step times out to decide if you want to accept the call or not before being disconnected.</p>
+
+<h2><a name="UpgradingtoAsterisk11-ChannelDrivers"></a>Channel Drivers</h2>
+
+<h3><a name="UpgradingtoAsterisk11-changtalk"></a>chan_gtalk</h3>
+
+<p>chan_gtalk has been deprecated in favour of the chan_motif channel driver. It is recommended that users switch to using it as it is a core supported module.</p>
+
+<p>Please see <a href="https://wiki.asterisk.org/wiki/display/AST/Calling+using+Google" title="Calling using Google">Calling Using Google</a> for more information.</p>
+
+<h3><a name="UpgradingtoAsterisk11-chanjingle"></a>chan_jingle</h3>
+
+<p>chan_jingle has been deprecated in favour of the chan_motif channel driver. It is recommended that users switch to using it as it is a core supported module.</p>
+
+<p>Please see <a href="https://wiki.asterisk.org/wiki/display/AST/Calling+using+Google" title="Calling using Google">Calling Using Google</a> for more information.</p>
+
+<h3><a name="UpgradingtoAsterisk11-chansip"></a>chan_sip</h3>
+
+<ul>
+	<li>SIP_CAUSE is now deprecated.  It has been modified to use the same mechanism as the&nbsp;﻿<a href="Asterisk 11 Function_HANGUPCAUSE.html" title="Asterisk 11 Function_HANGUPCAUSE">HANGUPCAUSE</a>&nbsp;function.  Behaviour should not change, but performance should be vastly improved.  The ﻿<a href="Asterisk 11 Function_HANGUPCAUSE.html" title="Asterisk 11 Function_HANGUPCAUSE">HANGUPCAUSE</a> function should now be used instead of SIP_CAUSE. Because of this, the <em>storesipcause</em> option in sip.conf is also deprecated.  Please see&nbsp;﻿<a href="Hangup Cause.html" title="Hangup Cause">Hangup Cause</a>&nbsp;for more information.</li>
+	<li>ICE support has been added and can be enabled using the <tt>icesupport</tt> configuration option. Some endpoints may have problems with the ICE candidates within the SDP. Symptoms of this include one way media or no media flow.</li>
+</ul>
+
+
+<h3><a name="UpgradingtoAsterisk11-chanunistim"></a>chan_unistim</h3>
+
+<p>Due to massive updates in chan_unistim phone keys functions and on-screen information has changed.</p>
+
+<p>Please see the <a href="https://wiki.asterisk.org/wiki/display/AST/Unistim+channel+improvements">Unistim Channel Improvements</a> for more information.</p>
+
+<h2><a name="UpgradingtoAsterisk11-ResourceModules"></a>Resource Modules</h2>
+
+<h3><a name="UpgradingtoAsterisk11-resais"></a>res_ais</h3>
+
+<p>Users of res_ais in versions of Asterisk prior to Asterisk 11 must change to use the res_corosync module, instead.  OpenAIS is deprecated, but Corosync is still actively developed and maintained.  Corosync came out of the OpenAIS project.</p>
+
+<h3><a name="UpgradingtoAsterisk11-resjabber"></a>res_jabber</h3>
+
+<p>This module has been deprecated in favor of the res_xmpp module. The res_xmpp module is backwards compatible with the res_jabber configuration file, dialplan functions, and AMI actions. The old CLI commands can also be made available using the res_clialiases template for Asterisk 11.</p>
+
+<h2><a name="UpgradingtoAsterisk11-DialplanFunctions"></a>Dialplan Functions</h2>
+
+<ul>
+	<li>﻿<a href="Asterisk 11 Function_MAILBOX_EXISTS.html" title="Asterisk 11 Function_MAILBOX_EXISTS">MAILBOX_EXISTS</a> has been deprecated. Use ﻿<a href="Asterisk 11 Function_VM_INFO.html" title="Asterisk 11 Function_VM_INFO">VM_INFO</a> with the '<tt>exists</tt>' parameter instead.</li>
+	<li>﻿<a href="Asterisk 11 Application_Macro.html" title="Asterisk 11 Application_Macro">Macro</a> has been deprecated in favour of ﻿<a href="Asterisk 11 Application_Gosub.html" title="Asterisk 11 Application_Gosub">Gosub</a>.  While Macro has been deprecated for some time, in Asterisk 11 all internal functions that relied on Macros have been transitioned to use GoSub.  For redirecting and connected line purposes use the following variables instead of their macro equivalents:
+	<ul>
+		<li><tt>REDIRECTING_SEND_SUB</tt></li>
+		<li><tt>REDIRECTING_SEND_SUB_ARGS</tt></li>
+		<li><tt>CONNECTED_LINE_SEND_SUB</tt></li>
+		<li><tt>CONNECTED_LINE_SEND_SUB_ARGS</tt></li>
+	</ul>
+	</li>
+	<li>The ﻿<a href="Asterisk 11 Function_HANGUPCAUSE.html" title="Asterisk 11 Function_HANGUPCAUSE">HANGUPCAUSE</a> and ﻿<a href="Asterisk 11 Function_HANGUPCAUSE_KEYS.html" title="Asterisk 11 Function_HANGUPCAUSE_KEYS">HANGUPCAUSE_KEYS</a> functions have been introduced to provide a replacement for the SIP_CAUSE hash. The ﻿<a href="Asterisk 11 Application_HangupCauseClear.html" title="Asterisk 11 Application_HangupCauseClear">HangupCauseClear</a>&nbsp;application has also been introduced to remove this data from the channel when necessary.  Please see</li>
+	<li>﻿<a href="https://wiki.asterisk.org/wiki/display/AST/E.164+NUmber+Mapping+%28ENUM%29" title="AST:E.164 NUmber Mapping (ENUM)">ENUM</a> query functions now return a count of &#45;1 on lookup error to differentiate between a failed query and a successful query with 0 results matching the specified type.</li>
+</ul>
+
+
+<h2><a name="UpgradingtoAsterisk11-Core"></a>Core</h2>
+
+<h3><a name="UpgradingtoAsterisk11-Logging"></a>Logging</h3>
+
+<p>The <tt>verbose</tt> setting in <em>logger.conf</em> now takes an optional argument specifying the verbosity level for each logging destination.  The default, if not otherwise specified, is a verbosity of 3.</p>
+
+<h4><a name="UpgradingtoAsterisk11-Verbose%2FDebugsettingchanges"></a>Verbose/Debug setting changes</h4>
+<p>Asterisk 11 splits verbose logging levels from Asterisk and individual remote console sessions. This change was put in place due to the potential awkwardness of having verbosity changes take place in multiple remote console sessions on account of just one of those sessions requesting a verbosity change. Under the new system, core set verbosity is intercepted by the remote console and sets the remote CLI verbosity without ever actually contacting the Asterisk service involved.</p>
+
+<p>There have been some complications introduced with this feature. The command override performed by the remote console is performed over the command string and is naive to the fact that Asterisk can call the verbosity setting CLI command by other means, notably by setting an alias. If the command is aliased via cli_aliases.conf, the alias will be created at the startup of the Asterisk service and since the aliased command can be formatted in any manner, the core set verbose command that is internal to Asterisk will still be accessible to remote consoles. This behavior is confusing and quite likely to trip up users.</p>
+
+<p>Example of how it functions normally:</p>
+<ol>
+	<li>Asterisk service is started</li>
+	<li>user connects to Asterisk via remote console</li>
+	<li>Enters command: core set verbose 5</li>
+</ol>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: plain; gutter: false">*CLI&amp;gt; core set verbose 5
+Set remote console verbosity to 5</pre>
+</div></div>
+<ol>
+	<li>At this point, verbosity for the remote console session is at 5.</li>
+</ol>
+
+
+<p>If an alias is made in cli_aliases.conf: foo bar=core set verbose</p>
+<ol>
+	<li>Asterisk service is started</li>
+	<li>user connects to Asterisk via remote console</li>
+	<li>Enters command: foo bar 5</li>
+</ol>
+
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: plain; gutter: false">*CLI&amp;gt; foo bar 5
+Verbosity was 3 and is now 5</pre>
+</div></div>
+<ol>
+	<li>The user has been told verbosity is now 5, but in reality what he will see is still whatever the remote console's initial verbose level was and the internal verbosity is what has been changed. This is because foo bar 5 executed the internal version of 'core set verbose 5'</li>
+</ol>
+
+
+<p>A simple workaround for this right now is to just not alias 'core set verbose'.</p>
+
+<h3><a name="UpgradingtoAsterisk11-AMI"></a>AMI</h3>
+
+<ul>
+	<li>﻿<a href="Asterisk 11 Application_DBdeltree.html" title="Asterisk 11 Application_DBdeltree">DBdeltree</a> now correctly returns an error when 0 rows are deleted just as the ﻿<a href="Asterisk 11 Application_DBdel.html" title="Asterisk 11 Application_DBdel">DBdel</a> action does.</li>
+	<li>The IAX2 PeerStatus event now sends a <tt>Port</tt> header.  In Asterisk 10, this was erroneously being sent as a <tt>Post</tt> header.</li>
+</ul>
+
+
+<h3><a name="UpgradingtoAsterisk11-CCSS"></a>CCSS</h3>
+
+<p>Macro is deprecated. Use <tt>cc_callback_sub</tt> instead of <tt>cc_callback_macro</tt> in channel configurations.</p>
+
+<h3><a name="UpgradingtoAsterisk11-Parking"></a>Parking</h3>
+
+<ul>
+	<li>The <tt>comebacktoorigin</tt> setting must now be set per parking lot. The setting in the general section will not be applied automatically to each parking lot.</li>
+	<li>The <tt>BLINDTRANSFER</tt> channel variable is deleted from a channel when it is bridged to prevent subtle bugs in the parking feature.  The channel variable is used by Asterisk internally for the ﻿<a href="Asterisk 11 Application_Park.html" title="Asterisk 11 Application_Park">Park</a> application to work properly.  If you were using it for your own purposes, copy it to your own channel variable before the channel is bridged.</li>
+</ul>
+
+
+<h3><a name="UpgradingtoAsterisk11-users.conf"></a>users.conf</h3>
+
+<p>A defined user with <tt>hasvoicemail=yes</tt> now finally uses a Gosub to <tt>stdexten</tt> as documented in <em>extensions.conf.sample</em> since v1.6.0 instead of a Macro as documented in v1.4.  Set the asterisk.conf <tt>stdexten=macro</tt> parameter to invoke the <tt>stdexten</tt> the old way.</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Nov 02, 2012 17:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

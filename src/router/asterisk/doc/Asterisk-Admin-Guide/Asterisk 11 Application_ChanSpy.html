@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 11 Application_ChanSpy</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Asterisk 11 Application_ChanSpy
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Jul 20, 2012 by <font color="#0050B2">wikibot</font>.
+				    </div>
+
+				    <h1><a name="Asterisk11Application_ChanSpy-ChanSpy%28%29"></a>ChanSpy()</h1>
+
+<h3><a name="Asterisk11Application_ChanSpy-Synopsis"></a>Synopsis</h3>
+
+<p>Listen to a channel, and optionally whisper into it.</p>
+<h3><a name="Asterisk11Application_ChanSpy-Description"></a>Description</h3>
+
+
+
+<p>This application is used to listen to the audio from an Asterisk channel. This includes the audio coming in and out of the channel being spied on. If the <tt>chanprefix</tt> parameter is specified, only channels beginning with this string will be spied upon.</p>
+
+<p>While spying, the following actions may be performed:</p>
+
+<ul class="alternate" type="square">
+	<li>Dialing <tt>#</tt> cycles the volume level.</li>
+</ul>
+
+
+<ul class="alternate" type="square">
+	<li>Dialing <tt>*</tt> will stop spying and look for another channel to spy on.</li>
+</ul>
+
+
+<ul class="alternate" type="square">
+	<li>Dialing a series of digits followed by <tt>#</tt> builds a channel name to append to 'chanprefix'. For example, executing ChanSpy(Agent) and then dialing the digits '1234#' while spying will begin spying on the channel 'Agent/1234'. Note that this feature will be overridden if the 'd' option is used
+<div class='panelMacro'><table class='infoMacro'><colgroup><col width='24'><col></colgroup><tr><td valign='top'><img src="images/icons/emoticons/information.gif" width="16" height="16" align="absmiddle" alt="" border="0"></td><td><b>Note</b><br />The <em>X</em> option supersedes the three features above in that if a valid single digit extension exists in the correct context ChanSpy will exit to it. This also disables choosing a channel based on <tt>chanprefix</tt> and a digit sequence.</td></tr></table></div></li>
+</ul>
+
+
+
+<h3><a name="Asterisk11Application_ChanSpy-Syntax"></a>Syntax</h3>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>ChanSpy(chanprefix,options)</pre>
+</div></div>
+<h5><a name="Asterisk11Application_ChanSpy-Arguments"></a>Arguments</h5>
+
+
+<ul>
+	<li><tt>chanprefix</tt></li>
+	<li><tt>options</tt>
+	<ul>
+		<li><tt>b</tt> - Only spy on channels involved in a bridged call.</li>
+		<li><tt>B</tt> - Instead of whispering on a single channel barge in on both channels involved in the call.</li>
+		<li><tt>c</tt>
+		<ul>
+			<li><tt>digit</tt> - Specify a DTMF digit that can be used to spy on the next available channel.</li>
+		</ul>
+		</li>
+		<li><tt>d</tt> - Override the typical numeric DTMF functionality and instead use DTMF to switch between spy modes.
+		<ul>
+			<li><tt>4</tt> - spy mode</li>
+			<li><tt>5</tt> - whisper mode</li>
+			<li><tt>6</tt> - barge mode</li>
+		</ul>
+		</li>
+		<li><tt>e</tt> - Enable <b>enforced</b> mode, so the spying channel can only monitor extensions whose name is in the <em>ext</em> : delimited list.
+		<ul>
+			<li><tt>ext</tt></li>
+		</ul>
+		</li>
+		<li><tt>E</tt> - Exit when the spied-on channel hangs up.</li>
+		<li><tt>g</tt>
+		<ul>
+			<li><tt>grp</tt> - Only spy on channels in which one or more of the groups listed in <em>grp</em> matches one or more groups from the <tt>SPYGROUP</tt> variable set on the channel to be spied upon.</li>
+		</ul>
+		</li>
+		<li><tt>n</tt> - Say the name of the person being spied on if that person has recorded his/her name. If a context is specified, then that voicemail context will be searched when retrieving the name, otherwise the <tt>default</tt> context be used when searching for the name (i.e. if SIP/1000 is the channel being spied on and no mailbox is specified, then <tt>1000</tt> will be used when searching for the name).
+		<ul>
+			<li><tt>mailbox</tt></li>
+			<li><tt>context</tt></li>
+		</ul>
+		</li>
+		<li><tt>o</tt> - Only listen to audio coming from this channel.</li>
+		<li><tt>q</tt> - Don't play a beep when beginning to spy on a channel, or speak the selected channel name.</li>
+		<li><tt>r</tt> - Record the session to the monitor spool directory. An optional base for the filename may be specified. The default is <tt>chanspy</tt>.
+		<ul>
+			<li><tt>basename</tt></li>
+		</ul>
+		</li>
+		<li><tt>s</tt> - Skip the playback of the channel type (i.e. SIP, IAX, etc) when speaking the selected channel name.</li>
+		<li><tt>S</tt> - Stop when no more channels are left to spy on.</li>
+		<li><tt>v</tt> - Adjust the initial volume in the range from <tt>-4</tt> to <tt>4</tt>. A negative value refers to a quieter setting.
+		<ul>
+			<li><tt>value</tt></li>
+		</ul>
+		</li>
+		<li><tt>w</tt> - Enable <tt>whisper</tt> mode, so the spying channel can talk to the spied-on channel.</li>
+		<li><tt>W</tt> - Enable <tt>private whisper</tt> mode, so the spying channel can talk to the spied-on channel but cannot listen to that channel.</li>
+		<li><tt>x</tt>
+		<ul>
+			<li><tt>digit</tt> - Specify a DTMF digit that can be used to exit the application.</li>
+		</ul>
+		</li>
+		<li><tt>X</tt> - Allow the user to exit ChanSpy to a valid single digit numeric extension in the current context or the context specified by the <tt>SPY_EXIT_CONTEXT</tt> channel variable. The name of the last channel that was spied on will be stored in the <tt>SPY_CHANNEL</tt> variable.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3><a name="Asterisk11Application_ChanSpy-SeeAlso"></a>See Also</h3>
+
+
+<ul>
+	<li><a href="Asterisk 11 Application_ExtenSpy.html" title="Asterisk 11 Application_ExtenSpy">Asterisk 11 Application&#95;ExtenSpy</a></li>
+</ul>
+
+
+<h3><a name="Asterisk11Application_ChanSpy-ImportVersion"></a>Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version SVN-trunk-r370328</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Nov 02, 2012 17:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>
