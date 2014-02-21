@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Pre-Dial Handlers</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Pre-Dial Handlers
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Aug 08, 2012 by <font color="#0050B2">mjordan</font>.
+				    </div>
+
+				    <h2><a name="Pre-DialHandlers-Overview"></a>Overview</h2>
+
+<p>Pre-dial handlers allow you to execute a dialplan subroutine on a channel before a call is placed but after the application performing a dial action is invoked.  This means that the handlers are executed after the creation of the caller/callee channels, but before any actions have been taken to actually dial the callee channels.  You can execute a dialplan subroutine on the caller channel and on each callee channel dialled.</p>
+
+<p>There are two ways in which a pre-dial handler can be invoked:</p>
+<ul>
+	<li>The '<b>B</b>' option in an application executes a dialplan subroutine on the caller channel before any callee channels are created.</li>
+	<li>The '<b>b</b>' option in an application executes a dialplan subroutine on each callee channel after it is created but before the call is placed to the end-device.</li>
+</ul>
+
+
+<p>Pre-dial handlers are supported in the <a href="Asterisk 11 Application_Dial.html" title="Asterisk 11 Application_Dial">Dial</a> application and the <a href="Asterisk 11 Application_FollowMe.html" title="Asterisk 11 Application_FollowMe">FollowMe</a> application.</p>
+
+<div class='panelMacro'><table class='warningMacro'><colgroup><col width='24'><col></colgroup><tr><td valign='top'><img src="images/icons/emoticons/forbidden.gif" width="16" height="16" align="absmiddle" alt="" border="0"></td><td><b>WARNINGS</b><br /><ul>
+	<li>As pre-dial handlers are implemented using <a href="Asterisk 11 Application_Gosub.html" title="Asterisk 11 Application_Gosub">Gosub</a> subroutines, they must be terminated with a call to <a href="Asterisk 11 Application_Return.html" title="Asterisk 11 Application_Return">Return</a>.</li>
+	<li>Taking actions in pre-dial handlers that would put the caller/callee channels into other applications will result in undefined behaviour.  Pre-dial handlers should be short routines that do not impact the state that the dialling application assumes the channel will be in.</li>
+</ul>
+</td></tr></table></div>
+
+<h2><a name="Pre-DialHandlers-Syntax"></a>Syntax</h2>
+
+<p>Handlers are invoked using similar nomenclature as other options (such as <b>M</b> or <b>U</b>) in <a href="Asterisk 11 Application_Dial.html" title="Asterisk 11 Application_Dial">Dial</a> or <a href="Asterisk 11 Application_FollowMe.html" title="Asterisk 11 Application_FollowMe">FollowMe</a> that cause some portion of the dialplan to execute.</p>
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>b([[context^]exten^]priority[(arg1[^...][^argN])])
+B([[context^]exten^]priority[(arg1[^...][^argN])])
+</pre>
+</div></div>
+
+<div class='panelMacro'><table class='infoMacro'><colgroup><col width='24'><col></colgroup><tr><td valign='top'><img src="images/icons/emoticons/information.gif" width="16" height="16" align="absmiddle" alt="" border="0"></td><td>If context or exten are not supplied then the current values from the caller channel are used.</td></tr></table></div>
+
+<h2><a name="Pre-DialHandlers-Examples"></a>Examples</h2>
+
+<p>The examples illustrated below use the following channels:</p>
+<ul>
+	<li><em>SIP/foo</em> is calls either <em>SIP/bar</em>, <em>SIP/baz</em>, or both</li>
+	<li><em>SIP/foo</em> is the caller</li>
+	<li><em>SIP/bar</em> is a callee</li>
+	<li><em>SIP/baz</em> is another callee</li>
+</ul>
+
+
+<h4><a name="Pre-DialHandlers-Example1Executingapredialhandleronthecallerchannel"></a>Example 1 - Executing a pre-dial handler on the caller channel</h4>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">[default]
+
+exten =&amp;gt; s,1,NoOp()
+same =&amp;gt; n,Dial(SIP/bar,,B(default^caller_handler^1))
+same =&amp;gt; n,Hangup()
+
+exten =&amp;gt; caller_handler,1,NoOp()
+same =&amp;gt; n,Verbose(0, In caller pre-dial handler!)
+same =&amp;gt; n,Return()</pre>
+</div></div>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedHeader panelHeader" style="border-bottom-width: 1px;"><b>Example 1 CLI Output</b></div><div class="preformattedContent panelContent">
+<pre>&lt;SIP/foo-123&gt; Dial(SIP/bar,,B(default^caller_handler^1))
+&lt;SIP/foo-123&gt; Executing default,caller_handler,1
+&lt;SIP/foo-123&gt; In caller pre-dial handler!
+&lt;SIP/foo-123&gt; calling SIP/bar-124
+</pre>
+</div></div>
+
+<h4><a name="Pre-DialHandlers-Example2Executingapredialhandleronacalleechannel"></a>Example 2 - Executing a pre-dial handler on a callee channel</h4>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">[default]
+
+exten =&amp;gt; s,1,NoOp()
+same =&amp;gt; n,Dial(SIP/bar,,b(default^callee_handler^1))
+same =&amp;gt; n,Hangup()
+
+exten =&amp;gt; callee_handler,1,NoOp()
+same =&amp;gt; n,Verbose(0, In callee pre-dial handler!)
+same =&amp;gt; n,Return()</pre>
+</div></div>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedHeader panelHeader" style="border-bottom-width: 1px;"><b>Example 2 CLI Output</b></div><div class="preformattedContent panelContent">
+<pre>&lt;SIP/foo-123&gt; Dial(SIP/bar,,b(default^callee_handler^1))
+&lt;SIP/bar-124&gt; Executing default,callee_handler,1
+&lt;SIP/bar-124&gt; In callee pre-dial handler!
+&lt;SIP/foo-123&gt; calling SIP/bar-124
+</pre>
+</div></div>
+
+<h4><a name="Pre-DialHandlers-Example3Executingapredialhandleronmultiplecalleechannels"></a>Example 3 - Executing a pre-dial handler on multiple callee channels</h4>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">[default]
+
+exten =&amp;gt; s,1,NoOp()
+same =&amp;gt; n,Dial(SIP/bar&amp;amp;SIP/baz,,b(default^callee_handler^1))
+same =&amp;gt; n,Hangup()
+
+exten =&amp;gt; callee_handler,1,NoOp()
+same =&amp;gt; n,Verbose(0, In callee pre-dial handler!)
+same =&amp;gt; n,Return()</pre>
+</div></div>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedHeader panelHeader" style="border-bottom-width: 1px;"><b>Example 3 CLI Output</b></div><div class="preformattedContent panelContent">
+<pre>&lt;SIP/foo-123&gt; Dial(SIP/bar&amp;SIP/baz,,b(default^callee_handler^1))
+&lt;SIP/bar-124&gt; Executing default,callee_handler,1
+&lt;SIP/bar-124&gt; In callee pre-dial handler!
+&lt;SIP/baz-125&gt; Executing default,callee_handler,1
+&lt;SIP/baz-125&gt; In callee pre-dial handler!
+&lt;SIP/foo-123&gt; calling SIP/bar-124
+&lt;SIP/foo-123&gt; calling SIP/baz-125
+</pre>
+</div></div>
+
+
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Nov 02, 2012 17:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

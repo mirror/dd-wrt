@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk WebRTC Support</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Asterisk WebRTC Support
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Sep 20, 2012 by <font color="#0050B2">jcolp</font>.
+				    </div>
+
+				    <div class='panelMacro'><table class='noteMacro'><colgroup><col width='24'><col></colgroup><tr><td valign='top'><img src="images/icons/emoticons/warning.gif" width="16" height="16" align="absmiddle" alt="" border="0"></td><td>If you would like to test Asterisk with WebRTC you can now use the latest Chrome Canary build. As VP8 is not presently a supported codec for passthrough video will not work, but audio will!</td></tr></table></div>
+
+<h1><a name="AsteriskWebRTCSupport-Background"></a>Background</h1>
+
+<p>WebRTC/rtcweb is an effort to bring a defined API to JavaScript developers that allows them to venture into the world of real time communications. This may be a click-to-call system or a "softphone" with both delivered as a webpage. No plug-ins are required and as this is a defined specification it can be used across different browsers where supported.</p>
+
+<p>Asterisk has had support for WebRTC since version 11. A res_http_websocket module has been created which allows the JavaScript developers to interact and communicate with Asterisk. Support for WebSocket as a transport has been added to chan_sip to allow SIP to be used as the signaling protocol. <a href="http://tools.ietf.org/html/rfc5245">ICE</a>, <a href="http://tools.ietf.org/html/rfc5389">STUN</a>, and <a href="http://tools.ietf.org/html/rfc5766">TURN</a> support has been added to res_rtp_asterisk to allow clients behind NAT to better communicate with Asterisk. SRTP support was added in a previous version but it is also a requirement of WebRTC.</p>
+
+<h1><a name="AsteriskWebRTCSupport-BrowserSupport"></a>Browser Support</h1>
+
+<p>The latest information about browser support is available at <a href="http://en.wikipedia.org/wiki/WebRTC">http://en.wikipedia.org/wiki/WebRTC</a></p>
+
+<h1><a name="AsteriskWebRTCSupport-SRTP"></a>SRTP</h1>
+
+<p>Secure media is a requirement of WebRTC and as a result SRTP must be available. In order for Asterisk to build SRTP support the libsrtp library and development headers must be available. This can be installed using the distribution's package management system or from source. Failure to do this will result in the media offers being rejected.</p>
+
+<h1><a name="AsteriskWebRTCSupport-Configuringreshttpwebsocket"></a>Configuring res_http_websocket</h1>
+
+<p>The built-in Asterisk HTTP server is used to provide the WebSocket support. This can be enabled using the following in the general section of the http.conf configuration file.</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">enabled=yes</pre>
+</div></div>
+
+<p>If you would like to change the port from the default value of 8088 this can also be done in the general section.</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">bindport=8088</pre>
+</div></div>
+
+<p>The res_http_websocket must also be built and loaded by Asterisk. For most individuals this is done by default.</p>
+
+<div class='panelMacro'><table class='noteMacro'><colgroup><col width='24'><col></colgroup><tr><td valign='top'><img src="images/icons/emoticons/warning.gif" width="16" height="16" align="absmiddle" alt="" border="0"></td><td>Ensure that res_http_websocket.so is selected in menuconfig prior to building Asterisk. Also ensure that res_http_websocket.so is loaded prior to chan_sip.so if you are not using autoload in modules.conf</td></tr></table></div>
+
+<p>The secure calling tutorial viewable at <a href="https://wiki.asterisk.org/wiki/display/AST/Secure+Calling+Tutorial">https://wiki.asterisk.org/wiki/display/AST/Secure+Calling+Tutorial</a> can be used as a basis to configure the built-in HTTP server with HTTPS (and secure WebSocket) support.</p>
+
+<h1><a name="AsteriskWebRTCSupport-Configuringchansip"></a>Configuring chan_sip</h1>
+
+<p>All configuration occurs in sip.conf, or a configuration file included by it.</p>
+
+<p>To allow a peer, user, or friend access using the WebSocket transport it must be added to their transport options like the following.</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">transport=ws,wss</pre>
+</div></div>
+
+<p>To restrict access to clients using only an HTTPS connection allow the 'wss' transport only.</p>
+
+<p>The WebRTC standard has selected AVPF as the audio video profile to use for media streams. This is <b>not</b> the default profile in use by chan_sip. As a result the following must be added to the peer, user, or friend.</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">avpf=yes</pre>
+</div></div>
+
+<p>This will cause AVPF and SAVPF to be used and the media streams to be accepted.</p>
+
+<div class='panelMacro'><table class='noteMacro'><colgroup><col width='24'><col></colgroup><tr><td valign='top'><img src="images/icons/emoticons/warning.gif" width="16" height="16" align="absmiddle" alt="" border="0"></td><td>Asterisk 11.0.0-beta1 has an issue in it where registering over WebSocket may not work properly. The work around is to use a newer version of Asterisk that has been released, or check out the Asterisk 11 branch from SVN. You can also set
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">nat=yes,force_rport</pre>
+</div></div>
+
+<p>on the peer, user, or friend to work around the issue.</p>
+
+<p>The issue report for this problem is viewable at <a href="https://issues.asterisk.org/jira/browse/ASTERISK-20238">https://issues.asterisk.org/jira/browse/ASTERISK-20238</a></p></td></tr></table></div>
+
+<p>As media encryption is a requirement of rtcweb the following must be added to the peer, user, or friend to enable it.</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">encryption=yes</pre>
+</div></div>
+
+<h1><a name="AsteriskWebRTCSupport-UsingWebSocket"></a>Using WebSocket</h1>
+
+<p>The res_http_websocket module provides WebSocket at the /ws sub-directory only. This is an implementation specific detail. Some JavaScript libraries may need to be changed slightly to explicitly use the sub-directory. Symptoms of using the incorrect URL are a 404 Not Found response from the Asterisk HTTP server.</p>
+
+<h1><a name="AsteriskWebRTCSupport-JavaScriptLibraries"></a>JavaScript Libraries</h1>
+
+<p>1. <a href="http://sipml5.org/">sipml5</a> - Provides a WebRTC compatible JavaScript SIP library, requires minor changes to work with Asterisk. This code is still in flux so a patch is not yet provided.</p>
+
+<h1><a name="AsteriskWebRTCSupport-Issues"></a>Issues</h1>
+
+<p>All SIP responses are sent from Asterisk to the client.</p>
+
+<h2><a name="AsteriskWebRTCSupport-HTTPResponse%3A404NotFound"></a>HTTP Response: 404 Not Found</h2>
+
+<p>The JavaScript library is using an incorrect URL for WebSocket access. The URL must use the /ws sub-directory.</p>
+
+<h2><a name="AsteriskWebRTCSupport-SIPResponse%3A400BadRequestreceivedoverSIPwhenregisteringusingWebSocket"></a>SIP Response: 400 Bad Request received over SIP when registering using WebSocket</h2>
+
+<p>The version of chan_sip in use has a bug when registering. Update to a newer version.</p>
+
+<h2><a name="AsteriskWebRTCSupport-SIPResponse%3A488NotacceptableherereceivedoverSIPwhenplacingacalltoAsterisk"></a>SIP Response: 488 Not acceptable here received over SIP when placing a call to Asterisk</h2>
+
+<p>You have not enabled AVPF support in the peer, user, or friend entry using "avpf=yes" or have not allowed a codec that is supported by the caller.</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Nov 02, 2012 17:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

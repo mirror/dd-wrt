@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 11 Function_REDIRECTING</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Asterisk 11 Function_REDIRECTING
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Aug 14, 2012 by <font color="#0050B2">wikibot</font>.
+				    </div>
+
+				    <h1><a name="Asterisk11Function_REDIRECTING-REDIRECTING%28%29"></a>REDIRECTING()</h1>
+
+<h3><a name="Asterisk11Function_REDIRECTING-Synopsis"></a>Synopsis</h3>
+
+<p>Gets or sets Redirecting data on the channel.</p>
+<h3><a name="Asterisk11Function_REDIRECTING-Description"></a>Description</h3>
+
+
+
+<p>Gets or sets Redirecting data on the channel.</p>
+
+<p>The allowable values for the <em>reason</em> and <em>orig-reason</em> fields are the following:</p>
+<ul>
+	<li><tt>unknown</tt> - Unknown</li>
+	<li><tt>cfb</tt> - Call Forwarding Busy</li>
+	<li><tt>cfnr</tt> - Call Forwarding No Reply</li>
+	<li><tt>unavailable</tt> - Callee is Unavailable</li>
+	<li><tt>time_of_day</tt> - Time of Day</li>
+	<li><tt>dnd</tt> - Do Not Disturb</li>
+	<li><tt>deflection</tt> - Call Deflection</li>
+	<li><tt>follow_me</tt> - Follow Me</li>
+	<li><tt>out_of_order</tt> - Called DTE Out-Of-Order</li>
+	<li><tt>away</tt> - Callee is Away</li>
+	<li><tt>cf_dte</tt> - Call Forwarding By The Called DTE</li>
+	<li><tt>cfu</tt> - Call Forwarding Unconditional</li>
+</ul>
+
+
+<p>The allowable values for the <em>xxx-name-charset</em> field are the following:</p>
+<ul>
+	<li><tt>unknown</tt> - Unknown</li>
+	<li><tt>iso8859-1</tt> - ISO8859-1</li>
+	<li><tt>withdrawn</tt> - Withdrawn</li>
+	<li><tt>iso8859-2</tt> - ISO8859-2</li>
+	<li><tt>iso8859-3</tt> - ISO8859-3</li>
+	<li><tt>iso8859-4</tt> - ISO8859-4</li>
+	<li><tt>iso8859-5</tt> - ISO8859-5</li>
+	<li><tt>iso8859-7</tt> - ISO8859-7</li>
+	<li><tt>bmp</tt> - ISO10646 Bmp String</li>
+	<li><tt>utf8</tt> - ISO10646 UTF-8 String</li>
+</ul>
+
+
+<h3><a name="Asterisk11Function_REDIRECTING-Syntax"></a>Syntax</h3>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>REDIRECTING(datatype,i)</pre>
+</div></div>
+<h5><a name="Asterisk11Function_REDIRECTING-Arguments"></a>Arguments</h5>
+
+
+<ul>
+	<li><tt>datatype</tt> - The allowable datatypes are:
+	<ul>
+		<li><tt>orig-all</tt></li>
+		<li><tt>orig-name</tt></li>
+		<li><tt>orig-name-valid</tt></li>
+		<li><tt>orig-name-charset</tt></li>
+		<li><tt>orig-name-pres</tt></li>
+		<li><tt>orig-num</tt></li>
+		<li><tt>orig-num-valid</tt></li>
+		<li><tt>orig-num-plan</tt></li>
+		<li><tt>orig-num-pres</tt></li>
+		<li><tt>orig-subaddr</tt></li>
+		<li><tt>orig-subaddr-valid</tt></li>
+		<li><tt>orig-subaddr-type</tt></li>
+		<li><tt>orig-subaddr-odd</tt></li>
+		<li><tt>orig-tag</tt></li>
+		<li><tt>orig-reason</tt></li>
+		<li><tt>from-all</tt></li>
+		<li><tt>from-name</tt></li>
+		<li><tt>from-name-valid</tt></li>
+		<li><tt>from-name-charset</tt></li>
+		<li><tt>from-name-pres</tt></li>
+		<li><tt>from-num</tt></li>
+		<li><tt>from-num-valid</tt></li>
+		<li><tt>from-num-plan</tt></li>
+		<li><tt>from-num-pres</tt></li>
+		<li><tt>from-subaddr</tt></li>
+		<li><tt>from-subaddr-valid</tt></li>
+		<li><tt>from-subaddr-type</tt></li>
+		<li><tt>from-subaddr-odd</tt></li>
+		<li><tt>from-tag</tt></li>
+		<li><tt>to-all</tt></li>
+		<li><tt>to-name</tt></li>
+		<li><tt>to-name-valid</tt></li>
+		<li><tt>to-name-charset</tt></li>
+		<li><tt>to-name-pres</tt></li>
+		<li><tt>to-num</tt></li>
+		<li><tt>to-num-valid</tt></li>
+		<li><tt>to-num-plan</tt></li>
+		<li><tt>to-num-pres</tt></li>
+		<li><tt>to-subaddr</tt></li>
+		<li><tt>to-subaddr-valid</tt></li>
+		<li><tt>to-subaddr-type</tt></li>
+		<li><tt>to-subaddr-odd</tt></li>
+		<li><tt>to-tag</tt></li>
+		<li><tt>priv-orig-all</tt></li>
+		<li><tt>priv-orig-name</tt></li>
+		<li><tt>priv-orig-name-valid</tt></li>
+		<li><tt>priv-orig-name-charset</tt></li>
+		<li><tt>priv-orig-name-pres</tt></li>
+		<li><tt>priv-orig-num</tt></li>
+		<li><tt>priv-orig-num-valid</tt></li>
+		<li><tt>priv-orig-num-plan</tt></li>
+		<li><tt>priv-orig-num-pres</tt></li>
+		<li><tt>priv-orig-subaddr</tt></li>
+		<li><tt>priv-orig-subaddr-valid</tt></li>
+		<li><tt>priv-orig-subaddr-type</tt></li>
+		<li><tt>priv-orig-subaddr-odd</tt></li>
+		<li><tt>priv-orig-tag</tt></li>
+		<li><tt>priv-from-all</tt></li>
+		<li><tt>priv-from-name</tt></li>
+		<li><tt>priv-from-name-valid</tt></li>
+		<li><tt>priv-from-name-charset</tt></li>
+		<li><tt>priv-from-name-pres</tt></li>
+		<li><tt>priv-from-num</tt></li>
+		<li><tt>priv-from-num-valid</tt></li>
+		<li><tt>priv-from-num-plan</tt></li>
+		<li><tt>priv-from-num-pres</tt></li>
+		<li><tt>priv-from-subaddr</tt></li>
+		<li><tt>priv-from-subaddr-valid</tt></li>
+		<li><tt>priv-from-subaddr-type</tt></li>
+		<li><tt>priv-from-subaddr-odd</tt></li>
+		<li><tt>priv-from-tag</tt></li>
+		<li><tt>priv-to-all</tt></li>
+		<li><tt>priv-to-name</tt></li>
+		<li><tt>priv-to-name-valid</tt></li>
+		<li><tt>priv-to-name-charset</tt></li>
+		<li><tt>priv-to-name-pres</tt></li>
+		<li><tt>priv-to-num</tt></li>
+		<li><tt>priv-to-num-valid</tt></li>
+		<li><tt>priv-to-num-plan</tt></li>
+		<li><tt>priv-to-num-pres</tt></li>
+		<li><tt>priv-to-subaddr</tt></li>
+		<li><tt>priv-to-subaddr-valid</tt></li>
+		<li><tt>priv-to-subaddr-type</tt></li>
+		<li><tt>priv-to-subaddr-odd</tt></li>
+		<li><tt>priv-to-tag</tt></li>
+		<li><tt>reason</tt></li>
+		<li><tt>count</tt></li>
+	</ul>
+	</li>
+	<li><tt>i</tt> - If set, this will prevent the channel from sending out protocol messages because of the value being set</li>
+</ul>
+
+
+
+<h3><a name="Asterisk11Function_REDIRECTING-ImportVersion"></a>Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version SVN-branch-11-r371227</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Nov 02, 2012 17:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>
