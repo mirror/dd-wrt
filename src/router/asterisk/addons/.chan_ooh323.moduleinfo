@@ -1,3 +1,0 @@
-<member name="chan_ooh323" displayname="Objective Systems H323 Channel" remove_on_change="addons/chan_ooh323.o addons/chan_ooh323.so">
-	<defaultenabled>no</defaultenabled>
-</member>

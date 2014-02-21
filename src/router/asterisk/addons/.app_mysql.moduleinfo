@@ -1,4 +1,0 @@
-<member name="app_mysql" displayname="Simple Mysql Interface" remove_on_change="addons/app_mysql.o addons/app_mysql.so">
-	<depend>mysqlclient</depend>
-	<defaultenabled>no</defaultenabled>
-</member>

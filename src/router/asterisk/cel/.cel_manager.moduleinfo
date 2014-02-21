@@ -1,2 +1,0 @@
-<member name="cel_manager" displayname="Asterisk Manager Interface CEL Backend" remove_on_change="cel/cel_manager.o cel/cel_manager.so">
-</member>

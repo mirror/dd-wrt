@@ -1,2 +1,0 @@
-<member name="app_externalivr" displayname="External IVR Interface Application" remove_on_change="apps/app_externalivr.o apps/app_externalivr.so">
-</member>

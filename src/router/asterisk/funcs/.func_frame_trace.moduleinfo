@@ -1,2 +1,0 @@
-<member name="func_frame_trace" displayname="Frame Trace for internal ast_frame debugging." remove_on_change="funcs/func_frame_trace.o funcs/func_frame_trace.so">
-</member>

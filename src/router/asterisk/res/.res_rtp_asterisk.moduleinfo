@@ -1,2 +1,0 @@
-<member name="res_rtp_asterisk" displayname="Asterisk RTP Stack" remove_on_change="res/res_rtp_asterisk.o res/res_rtp_asterisk.so">
-</member>

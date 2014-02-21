@@ -1,3 +1,0 @@
-<member name="res_timing_dahdi" displayname="DAHDI Timing Interface" remove_on_change="res/res_timing_dahdi.o res/res_timing_dahdi.so">
-	<depend>dahdi</depend>
-</member>

@@ -1,4 +1,0 @@
-<member name="res_pktccops" displayname="PktcCOPS manager for MGCP" remove_on_change="res/res_pktccops.o res/res_pktccops.so">
-        <defaultenabled>no</defaultenabled>
-	<support_level>extended</support_level>
-</member>

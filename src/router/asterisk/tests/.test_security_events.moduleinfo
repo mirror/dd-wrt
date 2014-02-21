@@ -1,3 +1,0 @@
-<member name="test_security_events" displayname="Test Security Event Generation" remove_on_change="tests/test_security_events.o tests/test_security_events.so">
-	<defaultenabled>no</defaultenabled>
-</member>

@@ -1,3 +1,0 @@
-<member name="test_astobj2" displayname="ASTOBJ2 Unit Test" remove_on_change="tests/test_astobj2.o tests/test_astobj2.so">
-	<depend>TEST_FRAMEWORK</depend>
-</member>

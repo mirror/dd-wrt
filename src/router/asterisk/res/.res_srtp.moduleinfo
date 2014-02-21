@@ -1,3 +1,0 @@
-<member name="res_srtp" displayname="Secure RTP (SRTP)" remove_on_change="res/res_srtp.o res/res_srtp.so">
-         <depend>srtp</depend>
-</member>

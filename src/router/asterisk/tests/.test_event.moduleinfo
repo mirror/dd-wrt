@@ -1,3 +1,0 @@
-<member name="test_event" displayname="ast_event API Tests" remove_on_change="tests/test_event.o tests/test_event.so">
-	<depend>TEST_FRAMEWORK</depend>
-</member>

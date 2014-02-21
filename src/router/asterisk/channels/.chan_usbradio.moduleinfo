@@ -1,6 +1,0 @@
-<member name="chan_usbradio" displayname="usb Console Channel Driver" remove_on_change="channels/chan_usbradio.o channels/chan_usbradio.so">
-	<depend>oss</depend>
-	<depend>alsa</depend>
-	<depend>usb</depend>
-	<defaultenabled>no</defaultenabled>
-</member>

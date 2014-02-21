@@ -1,2 +1,0 @@
-<member name="app_celgenuserevent" displayname="Generate an User-Defined CEL event" remove_on_change="apps/app_celgenuserevent.o apps/app_celgenuserevent.so">
-</member>
