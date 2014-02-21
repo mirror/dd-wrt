@@ -1,0 +1,185 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Hangup Handlers</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Hangup Handlers
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Aug 08, 2012 by <font color="#0050B2">mjordan</font>.
+				    </div>
+
+				    <h2><a name="HangupHandlers-Overview"></a>Overview </h2>
+
+<p>Hangup handlers are subroutines attached to a channel that will execute when that channel hangs up.  Unlike the traditional <a href="https://wiki.asterisk.org/wiki/display/AST/Handling+Special+Extensions" title="Handling Special Extensions">h extension</a>, hangup handlers follow the channel.  Thus hangup handlers are always run when a channel is hung up, regardless of where in the dialplan a channel is executing.</p>
+
+<p>Multiple hangup handlers can be attached to a single channel.  If multiple hangup handlers are attached to a channel, the hangup handlers will be executed in the order of most recently added first.</p>
+
+<div class='panelMacro'><table class='infoMacro'><colgroup><col width='24'><col></colgroup><tr><td valign='top'><img src="images/icons/emoticons/information.gif" width="16" height="16" align="absmiddle" alt="" border="0"></td><td><b>NOTES</b><br /><ul>
+	<li>Please note that when the hangup handlers execute in relation to the h extension is not defined.  They could execute before or after the h extension.</li>
+	<li>Call transfers, call pickup, and call parking can result in channels on both sides of a bridge containing hangup handlers.</li>
+	<li>Hangup handlers can be attached to any call leg using <a href="Pre-Dial Handlers.html" title="Pre-Dial Handlers">pre-dial handlers</a>.</li>
+</ul>
+</td></tr></table></div>
+
+<div class='panelMacro'><table class='warningMacro'><colgroup><col width='24'><col></colgroup><tr><td valign='top'><img src="images/icons/emoticons/forbidden.gif" width="16" height="16" align="absmiddle" alt="" border="0"></td><td><b>WARNINGS</b><br /><ul>
+	<li>As hangup handlers are subroutines, they must be terminated with a call to <a href="Asterisk 11 Application_Return.html" title="Asterisk 11 Application_Return">Return</a>.</li>
+	<li>Adding a hangup handler in the h extension or during a hangup handler execution is undefined behaviour.</li>
+	<li>As always, hangup handlers, like the h extension, need to execute quickly because they are in the hangup sequence path of the call leg.  Specific channel driver protocols like ISDN and SIP may not be able to handle excessive delays completing the hangup sequence.</li>
+</ul>
+</td></tr></table></div>
+
+<h2><a name="HangupHandlers-DialplanApplicationsandFunctions"></a>Dialplan Applications and Functions</h2>
+
+<p>All manipulation of a channel's hangup handlers are done using the <a href="Asterisk 11 Function_CHANNEL.html" title="Asterisk 11 Function_CHANNEL">CHANNEL</a> function.  All values manipulated for hangup handlers are write-only.</p>
+
+<h3><a name="HangupHandlers-hanguphandlerpush"></a>hangup_handler_push</h3>
+
+<p>Used to push a hangup handler onto a channel.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>same =&gt; n,Set(CHANNEL(hangup_handler_push)=[[context,]exten,]priority[(arg1[,...][,argN])]);
+</pre>
+</div></div>
+
+<h3><a name="HangupHandlers-hanguphandlerpop"></a>hangup_handler_pop</h3>
+
+<p>Used to pop a hangup handler off a channel.  Optionally, a replacement hangup handler can be added to the channel.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>same =&gt; n,Set(CHANNEL(hangup_handler_pop)=[[[context,]exten,]priority[(arg1[,...][,argN])]]);
+</pre>
+</div></div>
+
+<h3><a name="HangupHandlers-hanguphandlerwipe"></a>hangup_handler_wipe</h3>
+
+<p>Remove all hangup handlers on the channel.  Optionally, a new hangup handler can be pushed onto the channel.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>same =&gt; n,Set(CHANNEL(hangup_handler_wipe)=[[[context,]exten,]priority[(arg1[,...][,argN])]]);
+</pre>
+</div></div>
+
+<h3><a name="HangupHandlers-Examples"></a>Examples</h3>
+
+<h5><a name="HangupHandlers-Addinghanguphandlerstoachannel"></a>Adding hangup handlers to a channel</h5>
+
+<p>In this example, three hangup handlers are added to a channel: hdlr3, hdlr2, and hdlr1.  When the channel is hung up, they will be executed in the order of most recently added first - so hdlr1 will execute first, followed by hdlr2, then hdlr3.</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">; Some dialplan extension
+same =&amp;gt; n,Set(CHANNEL(hangup_handler_push)=hdlr3,s,1(args));
+same =&amp;gt; n,Set(CHANNEL(hangup_handler_push)=hdlr2,s,1(args));
+same =&amp;gt; n,Set(CHANNEL(hangup_handler_push)=hdlr1,s,1(args));
+; Continuing in some dialplan extension
+
+[hdlr1]
+
+exten =&amp;gt; s,1,Verbose(0, Executed First)
+same =&amp;gt; n,Return()
+
+[hdlr2]
+
+exten =&amp;gt; s,1,Verbose(0, Executed Second)
+same =&amp;gt; n,Return()
+
+[hdlr3]
+
+exten =&amp;gt; s,1,Verbose(0, Executed Third)
+same =&amp;gt; n,Return()</pre>
+</div></div>
+
+<h5><a name="HangupHandlers-Removingandreplacinghanguphandlers"></a>Removing and replacing hangup handlers</h5>
+
+<p>In this example, three hangup handlers are added to a channel: hdlr3, hdlr2, and hdlr1.  Using the <a href="Asterisk 11 Function_CHANNEL.html" title="Asterisk 11 Function_CHANNEL">CHANNEL</a> function's <b>hangup_handler_pop</b> value, hdlr1 is removed from the stack of hangup handlers.  Then, using the <b>hangup_handler_pop</b> value again, hdlr2 is replaced with hdlr4.  When the channel is hung up, hdlr4 will be executed, followed by hdlr3.</p>
+
+<div class="code panel" style="border-width: 1px;"><div class="codeContent panelContent">
+<pre class="theme: Confluence; brush: java; gutter: false">; Some dialplan extension
+same =&amp;gt; n,Set(CHANNEL(hangup_handler_push)=hdlr3,s,1(args));
+same =&amp;gt; n,Set(CHANNEL(hangup_handler_push)=hdlr2,s,1(args));
+same =&amp;gt; n,Set(CHANNEL(hangup_handler_push)=hdlr1,s,1(args));
+; Remove hdlr1
+same =&amp;gt; n,Set(CHANNEL(hangup_handler_pop))
+; Replace hdlr2 with hdlr4
+same =&amp;gt; n,Set(CHANNEL(hangup_handler_pop)=hdlr4,s,1(args));
+
+; Continuing in some dialplan extension
+
+[hdlr1]
+
+exten =&amp;gt; s,1,Verbose(0, Not Executed)
+same =&amp;gt; n,Return()
+
+[hdlr2]
+
+exten =&amp;gt; s,1,Verbose(0, Not Executed)
+same =&amp;gt; n,Return()
+
+[hdlr3]
+
+exten =&amp;gt; s,1,Verbose(0, Executed Second)
+same =&amp;gt; n,Return()
+
+[hdlr4]
+
+exten =&amp;gt; s,1,Verbose(0, Executed First)
+same =&amp;gt; n,Return()</pre>
+</div></div>
+
+<h2><a name="HangupHandlers-CLICommands"></a>CLI Commands</h2>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedHeader panelHeader" style="border-bottom-width: 1px;"><b>Single channel</b></div><div class="preformattedContent panelContent">
+<pre>core show hanguphandlers &lt;chan&gt;
+</pre>
+</div></div>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedHeader panelHeader" style="border-bottom-width: 1px;"><b>Output</b></div><div class="preformattedContent panelContent">
+<pre>Channel       Handler
+&lt;chan-name&gt;   &lt;first handler to execute&gt;
+              &lt;second handler to execute&gt;
+              &lt;third handler to execute&gt;
+</pre>
+</div></div>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedHeader panelHeader" style="border-bottom-width: 1px;"><b>All channels</b></div><div class="preformattedContent panelContent">
+<pre>core show hanguphandlers all
+</pre>
+</div></div>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedHeader panelHeader" style="border-bottom-width: 1px;"><b>Output</b></div><div class="preformattedContent panelContent">
+<pre>Channel       Handler
+&lt;chan1-name&gt;  &lt;first handler to execute&gt;
+              &lt;second handler to execute&gt;
+              &lt;third handler to execute&gt;
+&lt;chan2-name&gt;  &lt;first handler to execute&gt;
+&lt;chan3-name&gt;  &lt;first handler to execute&gt;
+              &lt;second handler to execute&gt;
+</pre>
+</div></div>
+
+
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Nov 02, 2012 17:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

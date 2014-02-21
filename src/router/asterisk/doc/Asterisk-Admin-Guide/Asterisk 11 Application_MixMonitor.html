@@ -1,0 +1,130 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 11 Application_MixMonitor</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Asterisk 11 Application_MixMonitor
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Sep 26, 2012 by <font color="#0050B2">wikibot</font>.
+				    </div>
+
+				    <h1><a name="Asterisk11Application_MixMonitor-MixMonitor%28%29"></a>MixMonitor()</h1>
+
+<h3><a name="Asterisk11Application_MixMonitor-Synopsis"></a>Synopsis</h3>
+
+<p>Record a call and mix the audio during the recording. Use of StopMixMonitor is required to guarantee the audio file is available for processing during dialplan execution.</p>
+<h3><a name="Asterisk11Application_MixMonitor-Description"></a>Description</h3>
+
+
+
+<p>Records the audio on the current channel to the specified file.</p>
+
+<p>This application does not automatically answer and should be preceeded by an application such as Answer or Progress().</p>
+<div class='panelMacro'><table class='infoMacro'><colgroup><col width='24'><col></colgroup><tr><td valign='top'><img src="images/icons/emoticons/information.gif" width="16" height="16" align="absmiddle" alt="" border="0"></td><td><b>Note</b><br />MixMonitor runs as an audiohook. In order to keep it running through a transfer, AUDIOHOOK_INHERIT must be set for the channel which ran mixmonitor. For more information, including dialplan configuration set for using AUDIOHOOK_INHERIT with MixMonitor, see the function documentation for AUDIOHOOK_INHERIT.</td></tr></table></div>
+
+<ul>
+	<li><tt>MIXMONITOR_FILENAME</tt> - Will contain the filename used to record.</li>
+</ul>
+
+
+<h3><a name="Asterisk11Application_MixMonitor-Syntax"></a>Syntax</h3>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>MixMonitor(filename.extension,options,command)</pre>
+</div></div>
+<h5><a name="Asterisk11Application_MixMonitor-Arguments"></a>Arguments</h5>
+
+
+<ul>
+	<li><tt>file</tt>
+	<ul>
+		<li><tt>filename</tt> - If <em>filename</em> is an absolute path, uses that path, otherwise creates the file in the configured monitoring directory from <tt>asterisk.conf.</tt></li>
+		<li><tt>extension</tt></li>
+	</ul>
+	</li>
+	<li><tt>options</tt>
+	<ul>
+		<li><tt>a</tt> - Append to the file instead of overwriting it.</li>
+		<li><tt>b</tt> - Only save audio to the file while the channel is bridged.</li>
+		<li><tt>v</tt> - Adjust the <b>heard</b> volume by a factor of <em>x</em> (range <tt>-4</tt> to <tt>4</tt>)
+		<ul>
+			<li><tt>x</tt></li>
+		</ul>
+		</li>
+		<li><tt>V</tt> - Adjust the <b>spoken</b> volume by a factor of <em>x</em> (range <tt>-4</tt> to <tt>4</tt>)
+		<ul>
+			<li><tt>x</tt></li>
+		</ul>
+		</li>
+		<li><tt>W</tt> - Adjust both, <b>heard and spoken</b> volumes by a factor of <em>x</em> (range <tt>-4</tt> to <tt>4</tt>)
+		<ul>
+			<li><tt>x</tt></li>
+		</ul>
+		</li>
+		<li><tt>r</tt> - Use the specified file to record the <b>receive</b> audio feed. Like with the basic filename argument, if an absolute path isn't given, it will create the file in the configured monitoring directory.
+		<ul>
+			<li><tt>file</tt></li>
+		</ul>
+		</li>
+		<li><tt>t</tt> - Use the specified file to record the <b>transmit</b> audio feed. Like with the basic filename argument, if an absolute path isn't given, it will create the file in the configured monitoring directory.
+		<ul>
+			<li><tt>file</tt></li>
+		</ul>
+		</li>
+		<li><tt>i</tt> - Stores the MixMonitor's ID on this channel variable.
+		<ul>
+			<li><tt>chanvar</tt></li>
+		</ul>
+		</li>
+		<li><tt>m</tt> - Create a copy of the recording as a voicemail in the indicated <b>mailbox</b>(es) separated by commas eg. m(1111<input type="text" name="variableValues.default,2222" size="12" onkeyup="updateOthers(this)" />&nbsp;<span class="templateparameter">(default,2222)</span>default,...). Folders can be optionally specified using the syntax: mailbox@context/folder
+		<ul>
+			<li><tt>mailbox</tt></li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+	<li><tt>command</tt> - Will be executed when the recording is over.Any strings matching <tt>^{X</tt>} will be unescaped to <tt>X</tt>.All variables will be evaluated at the time MixMonitor is called.</li>
+</ul>
+
+
+<h3><a name="Asterisk11Application_MixMonitor-SeeAlso"></a>See Also</h3>
+
+
+<ul>
+	<li><a href="Asterisk 11 Application_Monitor.html" title="Asterisk 11 Application_Monitor">Asterisk 11 Application&#95;Monitor</a></li>
+	<li><a href="Asterisk 11 Application_StopMixMonitor.html" title="Asterisk 11 Application_StopMixMonitor">Asterisk 11 Application&#95;StopMixMonitor</a></li>
+	<li><a href="Asterisk 11 Application_PauseMonitor.html" title="Asterisk 11 Application_PauseMonitor">Asterisk 11 Application&#95;PauseMonitor</a></li>
+	<li><a href="Asterisk 11 Application_UnpauseMonitor.html" title="Asterisk 11 Application_UnpauseMonitor">Asterisk 11 Application&#95;UnpauseMonitor</a></li>
+	<li><a href="Asterisk 11 Function_AUDIOHOOK_INHERIT.html" title="Asterisk 11 Function_AUDIOHOOK_INHERIT">Asterisk 11 Function&#95;AUDIOHOOK&#95;INHERIT</a></li>
+</ul>
+
+
+<h3><a name="Asterisk11Application_MixMonitor-ImportVersion"></a>Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version SVN-branch-11-r373804</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Nov 02, 2012 17:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

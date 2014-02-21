@@ -1,0 +1,99 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 11 Application_PauseQueueMember</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Asterisk 11 Application_PauseQueueMember
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Jul 20, 2012 by <font color="#0050B2">wikibot</font>.
+				    </div>
+
+				    <h1><a name="Asterisk11Application_PauseQueueMember-PauseQueueMember%28%29"></a>PauseQueueMember()</h1>
+
+<h3><a name="Asterisk11Application_PauseQueueMember-Synopsis"></a>Synopsis</h3>
+
+<p>Pauses a queue member.</p>
+<h3><a name="Asterisk11Application_PauseQueueMember-Description"></a>Description</h3>
+
+
+
+<p>Pauses (blocks calls for) a queue member. The given interface will be paused in the given queue. This prevents any calls from being sent from the queue to the interface until it is unpaused with UnpauseQueueMember or the manager interface. If no queuename is given, the interface is paused in every queue it is a member of. The application will fail if the interface is not found.</p>
+
+<p>This application sets the following channel variable upon completion:</p>
+<ul>
+	<li><tt>PQMSTATUS</tt> - The status of the attempt to pause a queue member as a text string.
+	<ul>
+		<li>PAUSED</li>
+		<li>NOTFOUND</li>
+	</ul>
+	</li>
+</ul>
+
+
+<p>Example: PauseQueueMember(,SIP/3000)</p>
+
+<h3><a name="Asterisk11Application_PauseQueueMember-Syntax"></a>Syntax</h3>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>PauseQueueMember(queuename,interface,options,reason)</pre>
+</div></div>
+<h5><a name="Asterisk11Application_PauseQueueMember-Arguments"></a>Arguments</h5>
+
+
+<ul>
+	<li><tt>queuename</tt></li>
+	<li><tt>interface</tt></li>
+	<li><tt>options</tt></li>
+	<li><tt>reason</tt> - Is used to add extra information to the appropriate queue_log entries and manager events.</li>
+</ul>
+
+
+<h3><a name="Asterisk11Application_PauseQueueMember-SeeAlso"></a>See Also</h3>
+
+
+<ul>
+	<li><a href="Asterisk 11 Application_Queue.html" title="Asterisk 11 Application_Queue">Asterisk 11 Application&#95;Queue</a></li>
+	<li><a href="Asterisk 11 Application_QueueLog.html" title="Asterisk 11 Application_QueueLog">Asterisk 11 Application&#95;QueueLog</a></li>
+	<li><a href="Asterisk 11 Application_AddQueueMember.html" title="Asterisk 11 Application_AddQueueMember">Asterisk 11 Application&#95;AddQueueMember</a></li>
+	<li><a href="Asterisk 11 Application_RemoveQueueMember.html" title="Asterisk 11 Application_RemoveQueueMember">Asterisk 11 Application&#95;RemoveQueueMember</a></li>
+	<li><a href="" title="Asterisk 11 Application_PauseQueueMember">Asterisk 11 Application&#95;PauseQueueMember</a></li>
+	<li><a href="Asterisk 11 Application_UnpauseQueueMember.html" title="Asterisk 11 Application_UnpauseQueueMember">Asterisk 11 Application&#95;UnpauseQueueMember</a></li>
+	<li><a href="Asterisk 11 Function_QUEUE_VARIABLES.html" title="Asterisk 11 Function_QUEUE_VARIABLES">Asterisk 11 Function&#95;QUEUE&#95;VARIABLES</a></li>
+	<li><a href="Asterisk 11 Function_QUEUE_MEMBER.html" title="Asterisk 11 Function_QUEUE_MEMBER">Asterisk 11 Function&#95;QUEUE&#95;MEMBER</a></li>
+	<li><a href="Asterisk 11 Function_QUEUE_MEMBER_COUNT.html" title="Asterisk 11 Function_QUEUE_MEMBER_COUNT">Asterisk 11 Function&#95;QUEUE&#95;MEMBER&#95;COUNT</a></li>
+	<li><a href="Asterisk 11 Function_QUEUE_EXISTS.html" title="Asterisk 11 Function_QUEUE_EXISTS">Asterisk 11 Function&#95;QUEUE&#95;EXISTS</a></li>
+	<li><a href="Asterisk 11 Function_QUEUE_WAITING_COUNT.html" title="Asterisk 11 Function_QUEUE_WAITING_COUNT">Asterisk 11 Function&#95;QUEUE&#95;WAITING&#95;COUNT</a></li>
+	<li><a href="Asterisk 11 Function_QUEUE_MEMBER_LIST.html" title="Asterisk 11 Function_QUEUE_MEMBER_LIST">Asterisk 11 Function&#95;QUEUE&#95;MEMBER&#95;LIST</a></li>
+	<li><a href="Asterisk 11 Function_QUEUE_MEMBER_PENALTY.html" title="Asterisk 11 Function_QUEUE_MEMBER_PENALTY">Asterisk 11 Function&#95;QUEUE&#95;MEMBER&#95;PENALTY</a></li>
+</ul>
+
+
+<h3><a name="Asterisk11Application_PauseQueueMember-ImportVersion"></a>Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version SVN-trunk-r370328</p>
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Nov 02, 2012 17:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>

@@ -1,0 +1,358 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+        <title>Asterisk Project : Hangup Cause Mappings</title>
+	    <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">	    
+    </head>
+
+    <body>
+	    <table class="pagecontent" border="0" cellpadding="0" cellspacing="0" width="100%" bgcolor="#ffffff">
+		    <tr>
+			    <td valign="top" class="pagebody">
+				    <div class="pageheader">
+					    <span class="pagetitle">
+                            Asterisk Project : Hangup Cause Mappings
+                                                    </span>
+				    </div>
+				    <div class="pagesubheading">
+					    This page last changed on Aug 08, 2012 by <font color="#0050B2">mjordan</font>.
+				    </div>
+
+				    <h2><a name="HangupCauseMappings-AsteriskHangupCauseCodeMappings"></a>Asterisk Hangup Cause Code Mappings</h2>
+
+<div class='table-wrap'>
+<table class='confluenceTable'><tbody>
+<tr>
+<th class='confluenceTh'> Asterisk Value </th>
+<th class='confluenceTh'>  Q.931 Cause Text </th>
+<th class='confluenceTh'> MFC/R2 </th>
+<th class='confluenceTh'> SIP </th>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_NOT_DEFINED </td>
+<td class='confluenceTd'> Cause not defined </td>
+<td class='confluenceTd'> OR2_CAUSE_UNSPECIFIED </td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_UNALLOCATED </td>
+<td class='confluenceTd'> Unallocated (unassigned) number </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 404, 485, 604 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_NO_ROUTE_TRANSIT_NET </td>
+<td class='confluenceTd'> No route to specified transmit network </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_NO_ROUTE_DESTINATION </td>
+<td class='confluenceTd'> No route to destination </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 420 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_MISDIALLED_TRUNK_PREFIX </td>
+<td class='confluenceTd'> Misdialed trunk prefix </td>
+<td class='confluenceTd'> &nbsp; </td>
+<td class='confluenceTd'> &nbsp; </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_CHANNEL_UNACCEPTABLE </td>
+<td class='confluenceTd'> Channel unacceptable </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_CALL_AWARDED_DELIVERED </td>
+<td class='confluenceTd'> Call awarded and being delivered in an established channel </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_PRE_EMPTED </td>
+<td class='confluenceTd'> Pre-empted </td>
+<td class='confluenceTd'> &nbsp; </td>
+<td class='confluenceTd'> &nbsp; </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_NUMBER_PORTED_NOT_HERE </td>
+<td class='confluenceTd'> Number ported elsewhere </td>
+<td class='confluenceTd'> &nbsp; </td>
+<td class='confluenceTd'> &nbsp; </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_NORMAL_CLEARING </td>
+<td class='confluenceTd'> Normal Clearing </td>
+<td class='confluenceTd'> OR2_CAUSE_NORMAL_CLEARING </td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_USER_BUSY </td>
+<td class='confluenceTd'> User busy </td>
+<td class='confluenceTd'> OR2_CAUSE_BUSY_NUMBER </td>
+<td class='confluenceTd'> 486, 600 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_NO_USER_RESPONSE </td>
+<td class='confluenceTd'> No user responding </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 408 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_NO_ANSWER </td>
+<td class='confluenceTd'> User alerting, no answer </td>
+<td class='confluenceTd'> OR2_CAUSE_NO_ANSWER </td>
+<td class='confluenceTd'> 480, 483 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_SUBSCRIBER_ABSENT </td>
+<td class='confluenceTd'> Subscriber absent </td>
+<td class='confluenceTd'> OR2_CAUSE_UNALLOCATED_NUMBER </td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_CALL_REJECTED </td>
+<td class='confluenceTd'> Call Rejected </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 401, 403, 407, 603 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_NUMBER_CHANGED </td>
+<td class='confluenceTd'> Number changed </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 410 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_REDIRECTED_TO_NEW_DESTINATION </td>
+<td class='confluenceTd'> Redirected to new destination </td>
+<td class='confluenceTd'> &nbsp; </td>
+<td class='confluenceTd'> &nbsp; </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_ANSWERED_ELSEWHERE </td>
+<td class='confluenceTd'> Answered elsewhere </td>
+<td class='confluenceTd'> &nbsp; </td>
+<td class='confluenceTd'> &nbsp; </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_DESTINATION_OUT_OF_ORDER </td>
+<td class='confluenceTd'> Destination out of order </td>
+<td class='confluenceTd'> OR2_CAUSE_OUT_OF_ORDER </td>
+<td class='confluenceTd'> 502 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_INVALID_NUMBER_FORMAT </td>
+<td class='confluenceTd'> Invalid number format </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 484 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_FACILITY_REJECTED </td>
+<td class='confluenceTd'> Facility rejected </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 501 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_RESPONSE_TO_STATUS_ENQUIRY </td>
+<td class='confluenceTd'> Response to STATus ENQuiry </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_NORMAL_UNSPECIFIED </td>
+<td class='confluenceTd'> Normal, unspecified </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_NORMAL_CIRCUIT_CONGESTION </td>
+<td class='confluenceTd'> Circuit/channel congestion </td>
+<td class='confluenceTd'> OR2_CAUSE_NETWORK_CONGESTION </td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_NETWORK_OUT_OF_ORDER </td>
+<td class='confluenceTd'> Network out of order </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 500 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_NORMAL_TEMPORARY_FAILURE </td>
+<td class='confluenceTd'> Temporary failure </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 409 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_SWITCH_CONGESTION </td>
+<td class='confluenceTd'> Switching equipment congestion </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 5xx </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_ACCESS_INFO_DISCARDED </td>
+<td class='confluenceTd'> Access information discarded </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_REQUESTED_CHAN_UNAVAIL </td>
+<td class='confluenceTd'> Requested channel not available </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_FACILITY_NOT_SUBSCRIBED </td>
+<td class='confluenceTd'> Facility not subscribed </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_OUTGOING_CALL_BARRED </td>
+<td class='confluenceTd'> Outgoing call barred </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_INCOMING_CALL_BARRED </td>
+<td class='confluenceTd'> Incoming call barred </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_BEARERCAPABILITY_NOTAUTH </td>
+<td class='confluenceTd'> Bearer capability not authorized </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_BEARERCAPABILITY_NOTAVAIL </td>
+<td class='confluenceTd'> Bearer capability not available </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 488, 606 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_BEARERCAPABILITY_NOTIMPL </td>
+<td class='confluenceTd'> Bearer capability not implemented </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_CHAN_NOT_IMPLEMENTED </td>
+<td class='confluenceTd'> Channel not implemented </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_FACILITY_NOT_IMPLEMENTED </td>
+<td class='confluenceTd'> Facility not implemented </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_INVALID_CALL_REFERENCE </td>
+<td class='confluenceTd'> Invalid call reference value </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_INCOMPATIBLE_DESTINATION </td>
+<td class='confluenceTd'> Incompatible destination </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_INVALID_MSG_UNSPECIFIED </td>
+<td class='confluenceTd'> Invalid message unspecified </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_MANDATORY_IE_MISSING </td>
+<td class='confluenceTd'> Mandatory information element is missing </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_MESSAGE_TYPE_NONEXIST </td>
+<td class='confluenceTd'> Message type nonexist </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_WRONG_MESSAGE </td>
+<td class='confluenceTd'> Wrong message </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_IE_NONEXIST </td>
+<td class='confluenceTd'> Info. element nonexist or not implemented </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_INVALID_IE_CONTENTS </td>
+<td class='confluenceTd'> Invalid information element contents </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_WRONG_CALL_STATE </td>
+<td class='confluenceTd'> Message not compatible with call state </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_RECOVERY_ON_TIMER_EXPIRE </td>
+<td class='confluenceTd'> Recover on timer expiry </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 504 </td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_MANDATORY_IE_LENGTH_ERROR </td>
+<td class='confluenceTd'> Mandatory IE length error </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_PROTOCOL_ERROR </td>
+<td class='confluenceTd'> Protocol error, unspecified </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'>&nbsp;</td>
+</tr>
+<tr>
+<td class='confluenceTd'> AST_CAUSE_INTERWORKING </td>
+<td class='confluenceTd'> Interworking, unspecified </td>
+<td class='confluenceTd'>&nbsp;</td>
+<td class='confluenceTd'> 4xx, 505, 6xx </td>
+</tr>
+</tbody></table>
+</div>
+
+
+<h4><a name="HangupCauseMappings-Notes"></a>Notes</h4>
+<ul>
+	<li>The hangup cause AST_CAUSE_NOT_DEFINED is not actually a Q.931 cause code, and is used to capture hangup causes that do not map cleanly to a Q.931 cause code.</li>
+	<li>IAX2, ISDN, and SS7 are all subsets of the cause codes listed above.</li>
+	<li>Analog will always have a hangup cause code of AST_CAUSE_NORMAL_CLEARING.</li>
+	<li>SIP causes of 4xx, 5xx, and 6xx correspond to all 400, 500, and 600 response codes not explicitly listed in the table above.</li>
+</ul>
+
+
+				    
+                    			    </td>
+		    </tr>
+	    </table>
+	    <table border="0" cellpadding="0" cellspacing="0" width="100%">
+			<tr>
+				<td height="12" background="https://wiki.asterisk.org/wiki/images/border/border_bottom.gif"><img src="images/border/spacer.gif" width="1" height="1" border="0"/></td>
+			</tr>
+		    <tr>
+			    <td align="center"><font color="grey">Document generated by Confluence on Nov 02, 2012 17:42</font></td>
+		    </tr>
+	    </table>
+    </body>
+</html>
