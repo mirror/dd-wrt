@@ -120,6 +120,7 @@ typedef struct pvt_config
 #define SCONFIG(cfg,name)	((cfg)->shared.name)
 #define UCONFIG(cfg,name)	((cfg)->unique.name)
 
+EXPORT_DECL int dc_dtmf_str2setting(const char * str);
 EXPORT_DECL const char * dc_dtmf_setting2str(dc_dtmf_setting_t dtmf);
 EXPORT_DECL void dc_sconfig_fill_defaults(struct dc_sconfig * config);
 EXPORT_DECL void dc_sconfig_fill(struct ast_config * cfg, const char * cat, struct dc_sconfig * config);

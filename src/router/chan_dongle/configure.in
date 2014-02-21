@@ -2,7 +2,7 @@ dnl init
 dnl AC_REVISION($Revision: 1.30 $)
 AC_PREREQ([2.60])
 AC_INIT([chan_dongle],[1.1],[http://code.google.com/p/asterisk-chan-dongle/issues/list],[chan_dongle],[http://code.google.com/p/asterisk-chan-dongle])
-PACKAGE_REVISION="14"
+PACKAGE_REVISION="34"
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE
 AC_CONFIG_HEADERS([config.h])
@@ -88,7 +88,7 @@ AC_DEFUN([AC_HEADER_FIND], [
 )
 
 AC_HEADER_FIND([asterisk.h], $with_asterisk)
-AC_HEADER_FIND([iconv.h], $with_asterisk )
+AC_HEADER_FIND([iconv.h],)
 
 AC_DEFINE([ICONV_CONST],[], [Define to const if you has iconv() const declaration of input buffer])
 AC_MSG_CHECKING([for iconv use const inbuf])
@@ -198,7 +198,7 @@ if test "x$enable_debug" = "xyes" ; then
   CFLAGS="$CFLAGS -O0 -g"
   AC_DEFINE([__DEBUG__], [1], [Build with debugging])
 else
-  CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS -O6"
 fi
 
 if test "x$enable_manager" = "xyes" ; then
