@@ -168,6 +168,7 @@ int imx6q_set_lpm(enum mxc_cpu_pwr_mode mode)
 
 	return 0;
 }
+#ifdef CONFIG_PM
 
 static int imx6q_suspend_finish(unsigned long val)
 {
@@ -231,3 +232,4 @@ void __init imx6q_pm_init(void)
 
 	suspend_set_ops(&imx6q_pm_ops);
 }
+#endif
