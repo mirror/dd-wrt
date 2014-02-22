@@ -63,7 +63,7 @@ void start_syslog(void)
 		return;
 
 	if (strlen(nvram_safe_get("syslogd_rem_ip")) > 0)
-		ret1 = eval("syslogd", "-R", nvram_safe_get("syslogd_rem_ip"));
+		ret1 = eval("syslogd", "-L -R", nvram_safe_get("syslogd_rem_ip"));
 	else
 		ret1 = eval("syslogd", "-L");
 
