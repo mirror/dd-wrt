@@ -52,19 +52,19 @@ asterisk-clean:
 	$(MAKE) -C chan_dongle clean
 
 asterisk:
-	-$(MAKE) -C asterisk \
+	-make -C asterisk \
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
 		makeopts.embed_rules
 	ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
 	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
-	-$(MAKE) -C asterisk \
+	make -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
 		DEBUG="" \
 		OPTIMIZE="" \
 		all
-	make -C asterisk
+	-make -C asterisk
 	make -C chan_dongle
 
 asterisk-install:
