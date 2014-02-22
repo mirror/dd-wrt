@@ -1957,34 +1957,30 @@ static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, ch
 	websWrite(stream, "<body>\n<fieldset><legend>System Log</legend>");
 	
 	if( nvram_match("syslogd_enable", "1") ){
-		if( !nvram_match("syslogd_rem_ip", "") ){
-			  websWrite(stream,"<table><tr align=\"center\"><td>Syslogd configured and currently sending log messages to %s </td></tr></table>", nvram_get("syslogd_rem_ip") );
-		}else{
-			FILE *fp = fopen ( filename, "r" );
-			if ( fp != NULL )
+		FILE *fp = fopen ( filename, "r" );
+		if ( fp != NULL )
+		{
+			char line [1024];
+			websWrite(stream,"<div style=\"height:740px; overflow-y:auto;\"><table>");
+			while ( fgets ( line, sizeof line, fp ) != NULL )
 			{
-				char line [1024];
-				websWrite(stream,"<div style=\"height:740px; overflow-y:auto;\"><table>");
-				while ( fgets ( line, sizeof line, fp ) != NULL )
-				{
-					count++;
-					if( offset < count && ((offset + 50) > count) ) // show 100 lines
-					// a few sample colors
-					if( strstr(line, "authpriv.info") ){	
-						websWrite(stream,"<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
-					}else if(strstr(line, "authpriv.notice") ){
-						websWrite(stream,"<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
-					}else if(strstr(line, "mounting unchecked fs") ){
-						websWrite(stream,"<tr bgcolor=\"#FF0000\"><td>%s</td></tr>", line);
-					}else{
-						websWrite(stream,"<tr><td>%s</td></tr>", line);
-					}
-				
+				count++;
+				if( offset < count && ((offset + 50) > count) ) // show 100 lines
+				// a few sample colors
+				if( strstr(line, "authpriv.info") ){	
+					websWrite(stream,"<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
+				}else if(strstr(line, "authpriv.notice") ){
+					websWrite(stream,"<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
+				}else if(strstr(line, "mounting unchecked fs") ){
+					websWrite(stream,"<tr bgcolor=\"#FF0000\"><td>%s</td></tr>", line);
+				}else{
+					websWrite(stream,"<tr><td>%s</td></tr>", line);
 				}
-				websWrite(stream,"</table></div>");
 			
-				fclose(fp);
 			}
+			websWrite(stream,"</table></div>");
+		
+			fclose(fp);
 		}
 	}else{
 		websWrite(stream,"<table><tr align=\"center\"><td>No messages available! Syslogd is not enabled!</td></tr></table>");
@@ -2380,7 +2376,7 @@ struct mime_handler mime_handlers[] = {
 	{"traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup,
 	 do_auth, 0},
 	{"tadmin.cgi*", "text/html", no_cache, td_file_in, td_config_cgi,
-	 NULL, 1},
+	 do_auth, 1},
 	{"*", "application/octet-stream", no_cache, NULL, do_file, do_auth, 1},
 	// for ddm
 	{NULL, NULL, NULL, NULL, NULL, NULL, 0}
