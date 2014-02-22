@@ -1,7 +1,6 @@
 
 
 asterisk-configure:
-	if ! test -e "asterisk/makeopts"; then \
 	rm -f asterisk/menuselect.makeopts && \
 	cd asterisk && ./configure --host=$(ARCH)-linux-uclibc \
 	--libdir=/usr/lib \
@@ -43,7 +42,7 @@ asterisk-configure:
 	--without-libxml2 \
 	--without-dahdi \
 	--without-gnutls \
-	--without-iksemel CFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22" SQLITE3_LIB="-L$(TOP)/minidlna/lib" SQLITE3_INCLUDE="-I$(TOP)/minidlna/sqlite-3.6.22" ; fi
+	--without-iksemel CFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22" SQLITE3_LIB="-L$(TOP)/minidlna/lib" SQLITE3_INCLUDE="-I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl"
 
 	-cd chan_dongle && aclocal && autoconf && automake -a && cd ..
 	cd chan_dongle && ./configure  --host=$(ARCH)-linux-uclibc --libdir=/usr/lib --with-asterisk=$(TOP)/asterisk/include DESTDIR=$(INSTALLDIR)/asterisk/usr/lib/asterisk/modules CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/glib20/libiconv/include -DASTERISK_VERSION_NUM=110000 -DLOW_MEMORY -D_XOPEN_SOURCE=600"
@@ -53,19 +52,18 @@ asterisk-clean:
 	$(MAKE) -C chan_dongle clean
 
 asterisk:
-	$(MAKE) -C asterisk \
+	-$(MAKE) -C asterisk \
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
 		makeopts.embed_rules
 	ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
 	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
-	$(MAKE) -C asterisk \
+	-$(MAKE) -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
 		NOISY_BUILD="1" \
 		DEBUG="" \
 		OPTIMIZE="" \
 		all
-	-make -C asterisk
 	make -C asterisk
 	make -C chan_dongle
 
