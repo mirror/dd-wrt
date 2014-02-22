@@ -115,6 +115,9 @@ asterisk-install:
 	$(INSTALL_DIR)  $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules
 	$(INSTALL_BIN) $(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk/usr/lib/asterisk/modules/*voicemail.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
 	$(INSTALL_BIN) $(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk/usr/lib/asterisk/modules/res_adsi.so $(INSTALLDIR)/asterisk/usr/lib/asterisk/modules/
+
+	mv $(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk/usr/lib/*.so* $(INSTALLDIR)/asterisk/usr/lib/
+
 #	$(INSTALL_DIR) $(INSTALLDIR)/asterisk/usr/lib/asterisk/sounds/
 #	$(CP) $(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk/usr/lib/asterisk/sounds/en/vm-*.gsm $(INSTALLDIR)/asterisk/usr/lib/asterisk/sounds/
 
