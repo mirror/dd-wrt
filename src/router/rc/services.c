@@ -110,6 +110,9 @@ int start_services_main(int argc, char **argv)
 #ifdef HAVE_TOR
 	handle = start_service_nofree_f("tor", handle);
 #endif
+#ifdef HAVE_WEBSERVER
+	handle = start_service_nofree_f("lighttpd", handle);
+#endif	
 #ifdef HAVE_TRANSMISSION
 	handle = start_service_nofree_f("transmission", handle);
 #endif
@@ -280,6 +283,9 @@ int stop_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_TOR
 	handle = stop_service_nofree("tor", handle);
+#endif
+#ifdef HAVE_WEBSERVER
+	handle = stop_service_nofree("lighttpd", handle);
 #endif
 #ifdef HAVE_TRANSMISSION
 	handle = stop_service_nofree("transmission", handle);
