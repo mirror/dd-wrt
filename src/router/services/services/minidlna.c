@@ -44,7 +44,7 @@ void start_dlna(void)
 	mkdir("/tmp/db", 0700);
 	FILE *fp = fopen("/tmp/minidlna.conf", "wb");
 #ifndef HAVE_VENTANA
-	if (nvram_match("jffs_mounted", "1"))
+	if (nvram_match("jffs_mounted", "1") || ( freediskSpace("/jffs") > 134217728 ) )
 	{
 #endif
 		mkdir("/jffs/minidlna", 0700);
