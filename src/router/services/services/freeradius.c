@@ -89,7 +89,7 @@ void start_freeradius(void)
 #ifdef HAVE_X86
 	system("mount --bind /usr/local /jffs");
 #else
-	if (!nvram_match("jffs_mounted", "1") || freediskSpace("/jffs") < 134217728)
+	if (!nvram_match("jffs_mounted", "1") && (freediskSpace("/jffs") < 134217728))
 		return;		//jffs is a requirement for radius and must be mounted at this point here
 #endif
 #endif
