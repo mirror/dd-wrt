@@ -336,42 +336,42 @@ int svqos_iptables(void)
 #if !(defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
 	// if kernel version later then 2.4, overwrite all old tc filter
 
-	sysprintf("tc filter del dev %s pref %d", wan_dev, 1);
-	sysprintf("tc filter del dev %s pref %d", wan_dev, 3);
-	sysprintf("tc filter del dev %s pref %d", wan_dev, 5);
-	sysprintf("tc filter del dev %s pref %d", wan_dev, 8);
-	sysprintf("tc filter del dev %s pref %d", wan_dev, 9);
+	sysprintf("tc filter del dev %s pref 1", wan_dev);
+	sysprintf("tc filter del dev %s pref 3", wan_dev);
+	sysprintf("tc filter del dev %s pref 5", wan_dev);
+	sysprintf("tc filter del dev %s pref 8", wan_dev);
+	sysprintf("tc filter del dev %s pref 9", wan_dev);
 
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(100), 100);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(10), 10);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(20), 20);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(30), 30);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", wan_dev, get_tcfmark(40), 40);
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:100", wan_dev, get_tcfmark(100));
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:10", wan_dev, get_tcfmark(10));
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:20", wan_dev, get_tcfmark(20));
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:30", wan_dev, get_tcfmark(30));
+	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:40", wan_dev, get_tcfmark(40));
 
-	sysprintf("tc filter del dev %s pref %d", "imq0", 1);
-	sysprintf("tc filter del dev %s pref %d", "imq0", 3);
-	sysprintf("tc filter del dev %s pref %d", "imq0", 5);
-	sysprintf("tc filter del dev %s pref %d", "imq0", 8);
-	sysprintf("tc filter del dev %s pref %d", "imq0", 9);
+	sysprintf("tc filter del dev imq0 pref 1");
+	sysprintf("tc filter del dev imq0 pref 3");
+	sysprintf("tc filter del dev imq0 pref 5");
+	sysprintf("tc filter del dev imq0 pref 8");
+	sysprintf("tc filter del dev imq0 pref 9");
 
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(100), 100);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(10), 10);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(20), 20);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(30), 30);
-	sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq0", get_tcfmark(40), 40);
+	sysprintf("tc filter add dev imq0 protocol ip parent 1: u32 match mark %s flowid 1:100", get_tcfmark(100));
+	sysprintf("tc filter add dev imq0 protocol ip parent 1: u32 match mark %s flowid 1:10", get_tcfmark(10));
+	sysprintf("tc filter add dev imq0 protocol ip parent 1: u32 match mark %s flowid 1:20", get_tcfmark(20));
+	sysprintf("tc filter add dev imq0 protocol ip parent 1: u32 match mark %s flowid 1:30", get_tcfmark(30));
+	sysprintf("tc filter add dev imq0 protocol ip parent 1: u32 match mark %s flowid 1:40", get_tcfmark(40));
 
 	if (nvram_match("wshaper_dev", "LAN")) {
-		sysprintf("tc filter del dev %s pref %d", "imq1", 1);
-		sysprintf("tc filter del dev %s pref %d", "imq1", 3);
-		sysprintf("tc filter del dev %s pref %d", "imq1", 5);
-		sysprintf("tc filter del dev %s pref %d", "imq1", 8);
-		sysprintf("tc filter del dev %s pref %d", "imq1", 9);
+		sysprintf("tc filter del dev imq1 pref 1");
+		sysprintf("tc filter del dev imq1 pref 3");
+		sysprintf("tc filter del dev imq1 pref 5");
+		sysprintf("tc filter del dev imq1 pref 8");
+		sysprintf("tc filter del dev imq1 pref 9");
 
-		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(100), 100);
-		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(10), 10);
-		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(20), 20);
-		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(30), 30);
-		sysprintf("tc filter add dev %s protocol ip parent 1: u32 match mark %s flowid 1:%d", "imq1", get_tcfmark(40), 40);
+		sysprintf("tc filter add dev imq1 protocol ip parent 1: u32 match mark %s flowid 1:100", get_tcfmark(100));
+		sysprintf("tc filter add dev imq1 protocol ip parent 1: u32 match mark %s flowid 1:10", get_tcfmark(10));
+		sysprintf("tc filter add dev imq1 protocol ip parent 1: u32 match mark %s flowid 1:20", get_tcfmark(20));
+		sysprintf("tc filter add dev imq1 protocol ip parent 1: u32 match mark %s flowid 1:30", get_tcfmark(30));
+		sysprintf("tc filter add dev imq1 protocol ip parent 1: u32 match mark %s flowid 1:40", get_tcfmark(40));
 	}
 #endif
 
