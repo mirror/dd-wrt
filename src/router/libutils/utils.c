@@ -31,6 +31,7 @@
 #include <syslog.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/statfs.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdarg.h>
@@ -6334,4 +6335,16 @@ void getPortMapping(int *vlanmap)
 		vlanmap[4] = 4;
 	}
 
+}
+
+u_int64_t freediskSpace(char *path)
+{
+	struct statfs sizefs;
+	u_int64_t free = 0; 
+
+	if ( (statfs(path, &sizefs) != 0) || (sizefs.f_type == 0x73717368) ) {
+		memset(&sizefs, 0, sizeof(sizefs));
+	}
+
+	return (u_int64_t)sizefs.f_bsize * (u_int64_t)sizefs.f_bfree;
 }
