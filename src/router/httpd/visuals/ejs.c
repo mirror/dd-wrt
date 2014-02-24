@@ -1524,7 +1524,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		{"Filters.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
 		{"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp", "QoS.asp", "P2P.asp", "", "", "", "", ""},	//
 		{"Management.asp", "Alive.asp", "Diagnostics.asp", "Wol.asp", "Factory_Defaults.asp", "Upgrade.asp", "config.asp", "", "", "", "", ""},	//
-		{"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp", "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", "Status_CWMP.asp", "Syslog.asp"}	//
+		{"Status_Router.asp", "Status_Internet.asp", "Status_Lan.asp", "Status_Wireless.asp", "Status_SputnikAPD.asp", "Status_OpenVPN.asp", "Status_Bandwidth.asp", "Syslog.asp", "Info.htm", "register.asp", "MyPage.asp", "Gpio.asp", "Status_CWMP.asp"}	//
 	};
 	/*
 	 * real name is bmenu.menuname[i][j] 
@@ -1543,7 +1543,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", ""},	//
 		{"applications", "applicationspforwarding", "applicationsprforwarding", "applicationsptriggering", "applicationsUpnp", "applicationsDMZ", "applicationsQoS", "applicationsP2P", "", "", "", "", ""},	//
 		{"admin", "adminManagement", "adminAlive", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", ""},	//
-		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP", "statuSyslog"}	//
+		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSyslog", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP"}	//
 	};
 	static char menu[8][13][32];
 	static char menuname[8][14][32];
