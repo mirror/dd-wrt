@@ -242,6 +242,9 @@ endif
 ifeq ($(CONFIG_ZABBIX),y)
 CFLAGS += -DHAVE_ZABBIX
 endif
+ifeq ($(CONFIG_WEBSERVER),y)
+	CFLAGS += -DHAVE_WEBSERVER
+endif
 ifeq ($(CONFIG_WMBR_G300NH),y)
 CFLAGS += -DHAVE_WMBR_G300NH
 endif
