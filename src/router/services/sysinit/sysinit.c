@@ -2946,6 +2946,7 @@ void start_nvram(void)
 	// issue)
 
 	nvram_unset("do_reboot");	//for GUI, see broadcom.c
+	nvram_set("auth_time", "0");
 
 #ifdef DIST
 	nvram_set("dist_type", DIST);
