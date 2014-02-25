@@ -2,7 +2,7 @@
  * openvpn.c
  *
  * Copyright (C) 2005 - 2006 Sebastian Gottschall <gottschall@dd-wrt.com
- * Copyright (C) 2010 - 2013 Sash
+ * Copyright (C) 2010 - 2014 Sash
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -429,8 +429,7 @@ void start_openvpn(void)
 		fprintf(fp, "brctl addif br0 tap1\n"
 			"ifconfig tap1 0.0.0.0 up\n"); //non promisc for performance reasons
 	} else {
-		if (nvram_match("openvpncl_tuntap", "tap")
-		    && strlen(nvram_safe_get("openvpncl_ip")) > 0)
+		if (strlen(nvram_safe_get("openvpncl_ip")) > 0)
 			fprintf(fp, "ifconfig tap1 %s netmask %s up\n", nvram_safe_get("openvpncl_ip"), nvram_safe_get("openvpncl_mask"));
 	}
 	if (nvram_match("openvpncl_nat", "1"))
@@ -448,10 +447,10 @@ void start_openvpn(void)
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 //              fprintf(fp, "ip route flush table 10\n");
 		fprintf(fp, "for IP in `cat /tmp/openvpncl/policy_ips` ; do\n" "\t ip rule add from $IP table 10\n" "done\n");
-		if (nvram_match("openvpncl_tuntap", "tap"))
+/*		if (nvram_match("openvpncl_tuntap", "tap"))
+			fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n"); //needs investigation cause in TAP mode no gateway is received
+		else */
 			fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
-		else
-			fprintf(fp, "ip route add default via $ifconfig_remote table 10\n");
 		fprintf(fp, "ip route flush cache\n" "echo $ifconfig_remote >>/tmp/gateway.txt\n" "echo $route_vpn_gateway >>/tmp/gateway.txt\n" "echo $ifconfig_local >>/tmp/gateway.txt\n");
 	}
 	if (nvram_match("block_multicast", "0")	//block multicast on bridged vpns
