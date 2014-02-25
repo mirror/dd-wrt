@@ -1971,7 +1971,7 @@ static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, ch
 					websWrite(stream,"<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
 				}else if(strstr(line, "authpriv.notice") ){
 					websWrite(stream,"<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
-				}else if(strstr(line, "mounting unchecked fs") ){
+				}else if(strstr(line, "mounting unchecked fs") || strstr(line, "httpd login failure")){
 					websWrite(stream,"<tr bgcolor=\"#FF0000\"><td>%s</td></tr>", line);
 				}else{
 					websWrite(stream,"<tr><td>%s</td></tr>", line);

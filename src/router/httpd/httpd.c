@@ -157,6 +157,7 @@ static webs_t conn_fp = NULL;	// jimmy, https, 8/4/2003
 static char auth_userid[AUTH_MAX];
 static char auth_passwd[AUTH_MAX];
 char auth_realm[AUTH_MAX];
+char curr_page[32];
 
 //#ifdef GET_POST_SUPPORT
 int post;
@@ -242,8 +243,6 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 
 	char *crypt(const char *, const char *);
 
-	/* Is this the right user and password? */
-//#ifdef DDM_SUPPORT
 	char buf1[36];
 	char buf2[36];
 	char *enc1;
@@ -257,23 +256,44 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 
 	enc2 = crypt(authpass, (unsigned char *)pass);
 	if (strcmp(enc2, pass)) {
+		syslog(LOG_INFO, "httpd login failure - bad passwd !\n");
 		return 0;
 	}
 	memdebug_leave();
-
-	if (strcmp(enc1, user) == 0 && strcmp(enc2, pass) == 0) {
-		return 1;
+	
+	
+	if(!strcmp(curr_page, "apply.cgi")){
+		u_int64_t auth_time = (u_int64_t)( atoll(nvram_safe_get("auth_time")) );
+		u_int64_t curr_time = (u_int64_t)time(NULL);
+		char s_curr_time[24];
+		sprintf(s_curr_time, "%llu", curr_time);
+		
+		//TODO allow user to set a value for timeout under management
+		if((curr_time - auth_time) > 120){
+			//empty read buffer or send_authenticate will fail
+			char dummy[128];
+			while (wfgets(dummy, 64, conn_fp) != 0)
+			{
+				//fprintf(stderr, "flushing %s\n", dummy);
+			}
+			return 0;
+		}else{
+			nvram_set("auth_time", s_curr_time);
+		}
 	}
-//#else
-//  if (strcmp (auth_passwd, authpass) == 0)
-//    return 1;
-//#endif
-	//send_authenticate( dirname );
+
+	
+
 	return 1;
 }
 
 void send_authenticate(char *realm)
 {
+	u_int64_t auth_time = (u_int64_t)( atoll(nvram_safe_get("auth_time")) );
+	u_int64_t curr_time = (u_int64_t)time(NULL);
+	char s_curr_time[24];
+	sprintf(s_curr_time, "%llu", curr_time);
+	
 	char header[10000];
 
 	(void)snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", realm);
@@ -283,6 +303,7 @@ void send_authenticate(char *realm)
 #else
 		   "Authorization required. please note that the default username is \"root\" in all newer releases");
 #endif
+	nvram_set("auth_time", s_curr_time);
 }
 
 static void send_error(int status, char *title, char *extra_header, char *text)
@@ -1043,6 +1064,8 @@ static void handle_request(void)
 		FILE *fp;
 		int file_found = 1;
 
+		strncpy(curr_page, file, sizeof(curr_page));
+		
 		for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 			if (match(handler->pattern, file)) {
 #ifdef HAVE_REGISTER
@@ -1557,7 +1580,6 @@ int wfputs(char *buf, webs_t wp)
 int wfprintf(webs_t wp, char *fmt, ...)
 {
 	FILE *fp = wp->fp;
-
 	va_list args;
 	char buf[1024];
 	int ret;
@@ -1579,7 +1601,7 @@ int wfprintf(webs_t wp, char *fmt, ...)
 	else
 #endif
 #endif
-		ret = fprintf(fp, "%s", buf);
+	ret = fprintf(fp, "%s", buf);
 	va_end(args);
 	return ret;
 }
@@ -1675,6 +1697,7 @@ size_t wfread(char *buf, int size, int n, webs_t wp)
 int wfflush(webs_t wp)
 {
 	FILE *fp = wp->fp;
+	
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
 	if (do_ssl) {
