@@ -2253,12 +2253,12 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	    TEMP_MUL = 100;
 	    fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_max", "rb");
 	    if (fp) { // some heuristic to detect unit 
-		int temp;
-		fscanf(fp, "%d", &temp);
+		char temp[32];
+		fscanf(fp, "%s", &temp[0]);
 		fclose(fp);
-		if (temp>9999)
+		if (strlen(temp)>4)
 		    TEMP_MUL=1000;
-		if (temp>99999)
+		if (strlen(temp)>5)
 		    TEMP_MUL=10000;
 	    }		
 	    fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_input", "rb");
