@@ -2251,6 +2251,16 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	FILE *fp = fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
 	if (!fp) {
 	    TEMP_MUL = 100;
+	    fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_max", "rb");
+	    if (fp) { // some heuristic to detect unit 
+		int temp;
+		fscanf(fp, "%d", &temp);
+		fclose(fp);
+		if (temp>9999)
+		    TEMP_MUL=1000;
+		if (temp>99999)
+		    TEMP_MUL=10000;
+	    }		
 	    fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_input", "rb");
 	}
 #else
@@ -2266,7 +2276,6 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 	int temp;
-
 	fscanf(fp, "%d", &temp);
 	fclose(fp);
 	int high = temp / TEMP_MUL;
