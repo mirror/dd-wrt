@@ -168,3 +168,12 @@ ifeq ($(CONFIG_PHPCGI),y)
 	printf "upload_max_filesize = 32M\n" >$(INSTALLDIR)/php5/etc/php.ini
 	printf "output_buffering = Off\n" >$(INSTALLDIR)/php5/etc/php.ini
 endif
+ifeq ($(CONFIG_LIGHTTPD),y)
+	install -D php5/sapi/cgi/.libs/php-cgi $(INSTALLDIR)/php5/usr/bin/php-cgi
+	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php-cgi
+	mkdir -p $(INSTALLDIR)/php5/etc
+	printf "short_open_tag=on\ncgi.fix_pathinfo=1\n" >$(INSTALLDIR)/php5/etc/php.ini
+	printf "post_max_size = 32M\n" >$(INSTALLDIR)/php5/etc/php.ini
+	printf "upload_max_filesize = 32M\n" >$(INSTALLDIR)/php5/etc/php.ini
+	printf "output_buffering = Off\n" >$(INSTALLDIR)/php5/etc/php.ini
+endif
