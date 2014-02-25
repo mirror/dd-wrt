@@ -2246,9 +2246,13 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	int TEMP_MUL = 10;
 	FILE *fp = fopen("/sys/bus/i2c/devices/0-0029/temp0_input", "rb");
 #else
-#define TEMP_MUL 1000
+	int TEMP_MUL = 1000;
 #ifdef HAVE_X86
 	FILE *fp = fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
+	if (!fp) {
+	    TEMP_MUL = 100;
+	    fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_input", "rb");
+	}
 #else
 	FILE *fp = fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
 #endif
