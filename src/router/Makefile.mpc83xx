@@ -60,7 +60,7 @@ ifeq ($(ARCH),armeb)
 export LINUXDIR := $(SRCBASE)/linux/xscale/linux-2.6.17
 endif
 ifeq ($(ARCH),powerpc)
-export LINUXDIR := $(SRCBASE)/linux/magicbox/linux-2.6.23
+#export LINUXDIR := $(SRCBASE)/linux/magicbox/linux-2.6.23
 endif
 ifeq ($(ARCH),mipsel)
 export LINUXDIR := $(SRCBASE)/kernel/rb500/linux-2.6.17-rc5
