@@ -425,7 +425,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 
 	startradius[idx] = 0;
 	deconfigure_wifi();
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15) && !(defined(HAVE_ALL02310N)
 	char mac[32];
 	strcpy(mac, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
 	MAC_ADD(mac);
@@ -561,6 +561,9 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 #elif HAVE_EAP9550
 		fprintf(fp, "HT_TxStream=2\n");
 		fprintf(fp, "HT_RxStream=2\n");
+#elif HAVE_DIR615
+		fprintf(fp, "HT_TxStream=2\n");
+		fprintf(fp, "HT_RxStream=2\n");
 #elif HAVE_DIR600
 		fprintf(fp, "HT_TxStream=1\n");
 		fprintf(fp, "HT_RxStream=1\n");
@@ -573,9 +576,6 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 #elif HAVE_RT10N
 		fprintf(fp, "HT_TxStream=1\n");
 		fprintf(fp, "HT_RxStream=1\n");
-#elif HAVE_DIR615
-		fprintf(fp, "HT_TxStream=2\n");
-		fprintf(fp, "HT_RxStream=2\n");
 #elif HAVE_W502U
 		fprintf(fp, "HT_TxStream=1\n");
 		fprintf(fp, "HT_RxStream=1\n");
@@ -1110,7 +1110,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	fclose(fp);
 
 	if (isSTA(idx)) {
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15) && !defined(HAVE_ALL02310N)
 		if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 			sysprintf("insmod rt2860v2_sta mac=%s", nvram_safe_get("def_whwaddr"));
 		} else {
