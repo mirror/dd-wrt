@@ -170,7 +170,7 @@ void start_sysinit(void)
 
 #else
 
-#ifdef HAVE_DIR600
+#if defined(HAVE_DIR600) && !defined(HAVE_ALL02310N)
 	writeproc("/proc/rt3052/mii/ctrl", "write 0 0 0x3300");
 	writeproc("/proc/rt3052/mii/ctrl", "write 1 0 0x3300");
 	writeproc("/proc/rt3052/mii/ctrl", "write 2 0 0x3300");
@@ -218,7 +218,8 @@ void start_sysinit(void)
 		fclose(in);
 	}
 #endif
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) || defined(HAVE_AR690W)
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) || defined(HAVE_AR690W) && !defined(HAVE_ALL02310N)
+
 	FILE *in = fopen("/dev/mtdblock/1", "rb");
 	if (in != NULL) {
 		unsigned char *config = malloc(65536);
