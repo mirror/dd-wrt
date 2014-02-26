@@ -167,6 +167,9 @@ endif
 ifeq ($(CONFIG_NEXTMEDIA),y)
   CFLAGS += -DHAVE_NEXTMEDIA
 endif
+ifeq ($(CONFIG_ALL02310N),y)
+  CFLAGS += -DHAVE_ALL02310N
+endif
 ifeq ($(CONFIG_RAIEXTRA),y)
 CFLAGS += -DHAVE_RAIEXTRA
 endif
