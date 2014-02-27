@@ -92,7 +92,7 @@ void getWirelessMac(char *newmac, int instance)
 			}
 		} else {
 
-			if (getRouter() != ROUTER_ASUS_AC66U) {
+			if (getRouterBrand() != ROUTER_ASUS_AC66U) {
 				strcpy(newmac, nvram_safe_get("et0macaddr"));
 				MAC_ADD(newmac);	// et0macaddr +2
 				MAC_ADD(newmac);
@@ -121,7 +121,7 @@ void getWANMac(char *newmac)
 {
 	strcpy(newmac, nvram_safe_get("et0macaddr"));
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_WZRG300NH) && !defined(HAVE_WHRHPGN)
-	if (getRouter() != ROUTER_ASUS_AC66U) {
+	if ( getRouterBrand() != ROUTER_ASUS_AC66U) {
 		if (nvram_invmatch("wan_proto", "disabled")) {
 			MAC_ADD(newmac);	// et0macaddr +1
 
