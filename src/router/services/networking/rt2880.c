@@ -425,7 +425,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 
 	startradius[idx] = 0;
 	deconfigure_wifi();
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15) && !(defined(HAVE_ALL02310N)
+#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15) && !defined(HAVE_ALL02310N)
 	char mac[32];
 	strcpy(mac, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
 	MAC_ADD(mac);
