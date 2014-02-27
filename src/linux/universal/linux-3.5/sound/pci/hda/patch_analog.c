@@ -3575,6 +3575,8 @@ static const char * const ad1884_slave_vols[] = {
 static int patch_ad1884(struct hda_codec *codec)
 {
 	struct ad198x_spec *spec;
+	static hda_nid_t conn_0c[] = { 0x08 };
+	static hda_nid_t conn_0d[] = { 0x09 };
 	int err;
 
 	spec = kzalloc(sizeof(*spec), GFP_KERNEL);
@@ -3589,6 +3591,10 @@ static int patch_ad1884(struct hda_codec *codec)
 		return err;
 	}
 	set_beep_amp(spec, 0x10, 0, HDA_OUTPUT);
+
+	/* limit the loopback routes not to confuse the parser */
+	snd_hda_override_conn_list(codec, 0x0c, ARRAY_SIZE(conn_0c), conn_0c);
+	snd_hda_override_conn_list(codec, 0x0d, ARRAY_SIZE(conn_0d), conn_0d);
 
 	spec->multiout.max_channels = 2;
 	spec->multiout.num_dacs = ARRAY_SIZE(ad1884_dac_nids);
