@@ -33,6 +33,7 @@
 #include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,6 +53,9 @@
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>
+#include "libbridge.h"
+#include <services.h>
+#include <wlutils.h>
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 extern int br_add_interface(const char *br, const char *dev);
@@ -109,7 +113,7 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\teap=TLS\n");
 			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("tls8021xuser", prefix));
 			sprintf(psk, "/tmp/%s", prefix);
-			mkdir(psk);
+			mkdir(psk, 0700);
 			sprintf(psk, "/tmp/%s/ca.pem", prefix);
 			sprintf(ath, "%s_tls8021xca", prefix);
 			write_nvram(psk, ath);
@@ -147,7 +151,7 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("peap8021xuser", prefix));
 			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("peap8021xpasswd", prefix));
 			sprintf(psk, "/tmp/%s", prefix);
-			mkdir(psk);
+			mkdir(psk, 0700);
 			sprintf(psk, "/tmp/%s/ca.pem", prefix);
 			sprintf(ath, "%s_peap8021xca", prefix);
 			if (!nvram_match(ath, "")) {
@@ -176,7 +180,7 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("ttls8021xpasswd", prefix));
 			if (strlen(nvram_nget("%s_ttls8021xca", prefix)) > 0) {
 				sprintf(psk, "/tmp/%s", prefix);
-				mkdir(psk);
+				mkdir(psk, 0700);
 				sprintf(psk, "/tmp/%s/ca.pem", prefix);
 				sprintf(ath, "%s_ttls8021xca", prefix);
 				write_nvram(psk, ath);
@@ -425,7 +429,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 
 	startradius[idx] = 0;
 	deconfigure_wifi();
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15) && !defined(HAVE_ALL02310N)
+#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N)
 	char mac[32];
 	strcpy(mac, nvram_default_get("et0macaddr_safe", "00:11:22:33:44:55"));
 	MAC_ADD(mac);
@@ -1110,7 +1114,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	fclose(fp);
 
 	if (isSTA(idx)) {
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15) && !defined(HAVE_ALL02310N)
+#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N)
 		if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 			sysprintf("insmod rt2860v2_sta mac=%s", nvram_safe_get("def_whwaddr"));
 		} else {
@@ -1148,7 +1152,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		setupSupplicant(dev);
 	} else {
 		if (idx == 0) {
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)
+#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_AR690W) || defined(HAVE_VF803) || defined(HAVE_HAMEA15)) && !defined(HAVE_ALL02310N)
 			if (nvram_match("mac_clone_enable", "1") && nvram_invmatch("def_whwaddr", "00:00:00:00:00:00") && nvram_invmatch("def_whwaddr", "")) {
 				sysprintf("insmod rt2860v2_ap mac=%s", nvram_safe_get("def_whwaddr"));
 				if (nvram_match("rtchip", "3062"))
@@ -1403,18 +1407,16 @@ void start_hostapdwan(void)
 	}
 }
 
-void start_configurewifi(void)
-{
-	configure_wifi(0);
-	if (get_wl_instances() == 2)
-		configure_wifi(1);
-}
-
 void configure_wifi(void)
 {
 	configure_wifi_single(0);
 	if (get_wl_instances() == 2)
 		configure_wifi_single(1);
+}
+
+void start_configurewifi(void)
+{
+	configure_wifi();
 }
 
 void start_deconfigurewifi(void)
