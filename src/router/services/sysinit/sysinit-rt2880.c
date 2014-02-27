@@ -218,7 +218,7 @@ void start_sysinit(void)
 		fclose(in);
 	}
 #endif
-#if defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) || defined(HAVE_AR690W) && !defined(HAVE_ALL02310N)
+#if (defined(HAVE_DIR600) || defined(HAVE_AR670W) || defined(HAVE_EAP9550) || defined(HAVE_AR690W)) && !defined(HAVE_ALL02310N)
 
 	FILE *in = fopen("/dev/mtdblock/1", "rb");
 	if (in != NULL) {
@@ -268,7 +268,8 @@ void start_sysinit(void)
 #endif
 #endif
 
-#ifdef HAVE_ALLNET11N
+#if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
+    defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
 		sysprintf("switch reg w 14 405555");
 		sysprintf("switch reg w 50 2001");
 		sysprintf("switch reg w 90 7f7f");
@@ -278,67 +279,9 @@ void start_sysinit(void)
 		sysprintf("switch reg w 44 1001");
 		sysprintf("switch reg w 48 1001");
 		sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_ESR9752
-		sysprintf("switch reg w 14 405555");
-		sysprintf("switch reg w 50 2001");
-		sysprintf("switch reg w 90 7f7f");
-		sysprintf("switch reg w 98 7f3f");
-		sysprintf("switch reg w e4 3f");
-		sysprintf("switch reg w 40 1002");
-		sysprintf("switch reg w 44 1001");
-		sysprintf("switch reg w 48 1001");
-		sysprintf("switch reg w 70 ffff417e");
+#ifdef HAVE_ESR9752
 		sysprintf("switch reg w c8 3f502b28");
-#elif HAVE_ESR6650
-		sysprintf("switch reg w 14 405555");
-		sysprintf("switch reg w 50 2001");
-		sysprintf("switch reg w 90 7f7f");
-		sysprintf("switch reg w 98 7f3f");
-		sysprintf("switch reg w e4 3f");
-		sysprintf("switch reg w 40 1002");
-		sysprintf("switch reg w 44 1001");
-		sysprintf("switch reg w 48 1001");
-		sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_WR5422
-		sysprintf("switch reg w 14 405555");
-		sysprintf("switch reg w 50 2001");
-		sysprintf("switch reg w 90 7f7f");
-		sysprintf("switch reg w 98 7f3f");
-		sysprintf("switch reg w e4 3f");
-		sysprintf("switch reg w 40 1002");
-		sysprintf("switch reg w 44 1001");
-		sysprintf("switch reg w 48 1001");
-		sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_RT10N
-		sysprintf("switch reg w 14 405555");
-		sysprintf("switch reg w 50 2001");
-		sysprintf("switch reg w 90 7f7f");
-		sysprintf("switch reg w 98 7f3f");
-		sysprintf("switch reg w e4 3f");
-		sysprintf("switch reg w 40 1002");
-		sysprintf("switch reg w 44 1001");
-		sysprintf("switch reg w 48 1001");
-		sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_ACXNR22
-		sysprintf("switch reg w 14 405555");
-		sysprintf("switch reg w 50 2001");
-		sysprintf("switch reg w 90 7f7f");
-		sysprintf("switch reg w 98 7f3f");
-		sysprintf("switch reg w e4 3f");
-		sysprintf("switch reg w 40 1002");
-		sysprintf("switch reg w 44 1001");
-		sysprintf("switch reg w 48 1001");
-		sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_W502U
-		sysprintf("switch reg w 14 405555");
-		sysprintf("switch reg w 50 2001");
-		sysprintf("switch reg w 90 7f7f");
-		sysprintf("switch reg w 98 7f3f");
-		sysprintf("switch reg w e4 3f");
-		sysprintf("switch reg w 40 1002");
-		sysprintf("switch reg w 44 1001");
-		sysprintf("switch reg w 48 1001");
-		sysprintf("switch reg w 70 ffff417e");
+#endif
 #elif HAVE_AR670W
 		sysprintf("mii_mgr -s -p 29 -r 23 -v 0x07c2");
 		sysprintf("mii_mgr -s -p 29 -r 22 -v 0x8420");
@@ -449,42 +392,15 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 90 7f7f");
 			sysprintf("switch reg w 98 7f2f");
 			sysprintf("switch reg w e4 2f");
-#ifdef HAVE_ALLNET11N
+#if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
+    defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
 			sysprintf("switch reg w 40 1007");
 			sysprintf("switch reg w 44 1001");
 			sysprintf("switch reg w 48 1001");
 			sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_ESR9752
-			sysprintf("switch reg w 40 1007");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
+#ifdef HAVE_ESR9752
 			sysprintf("switch reg w c8 3f502b28");
-#elif HAVE_ESR6650
-			sysprintf("switch reg w 40 1007");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_WR5422
-			sysprintf("switch reg w 40 1007");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_RT10N
-			sysprintf("switch reg w 40 1007");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_ACXNR22
-			sysprintf("switch reg w 40 1007");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_W502U
-			sysprintf("switch reg w 40 1007");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
+#endif
 #else
 			sysprintf("switch reg w 40 1001");
 			sysprintf("switch reg w 44 1001");
@@ -501,42 +417,15 @@ char *enable_dtag_vlan(int enable)
 			sysprintf("switch reg w 90 7f7f");
 			sysprintf("switch reg w 98 7f3f");
 			sysprintf("switch reg w e4 3f");
-#ifdef HAVE_ALLNET11N
+#if defined(HAVE_ALLNET11N) || defined(HAVE_ESR6650) || defined(HAVE_WR5422) || defined(HAVE_RT10N) || \
+    defined(HAVE_ACXNR22) || defined(HAVE_W502U) || defined(HAVE_ESR9752) || defined(HAVE_ALL02310N)
 			sysprintf("switch reg w 40 1002");
 			sysprintf("switch reg w 44 1001");
 			sysprintf("switch reg w 48 1001");
 			sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_ESR9752
-			sysprintf("switch reg w 40 1002");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
+#ifdef HAVE_ESR9752
 			sysprintf("switch reg w c8 3f502b28");
-#elif HAVE_WR5422
-			sysprintf("switch reg w 40 1002");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_RT10N
-			sysprintf("switch reg w 40 1002");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_ESR6650
-			sysprintf("switch reg w 40 1002");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_ACXNR22
-			sysprintf("switch reg w 40 1002");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
-#elif HAVE_W502U
-			sysprintf("switch reg w 40 1002");
-			sysprintf("switch reg w 44 1001");
-			sysprintf("switch reg w 48 1001");
-			sysprintf("switch reg w 70 ffff417e");
+#endif
 #elif HAVE_BR6574N
 #elif HAVE_AR690W
 #elif HAVE_RT15N
