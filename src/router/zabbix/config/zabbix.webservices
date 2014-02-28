@@ -4,11 +4,24 @@
 	<legend><% tran("service.zabbix_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.zabbix_cl"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="zabbix_enable" <% nvram_checked("zabbix_enable","1"); %>  /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="zabbix_enable" <% nvram_checked("zabbix_enable","0"); %>  /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" onclick="show_layer_ext(this, 'idzabbix', true)" value="1" name="zabbix_enable" <% nvram_checked("zabbix_enable","1"); %>  /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" onclick="show_layer_ext(this, 'idzabbix', false)"value="0" name="zabbix_enable" <% nvram_checked("zabbix_enable","0"); %>  /><% tran("share.disable"); %>
 	</div>
-	<div class="setting">
-		<div class="label"><% tran("service.zabbix_serverip"); %></div>
-		<input size="15" maxlength="15" class="text" name="zabbix_serverip" value="<% nvram_get("zabbix_serverip"); %>" />
+	<div id="idzabbix">
+		<div class="setting">
+			<div class="label"><% tran("service.zabbix_serverip"); %></div>
+			<input size="15" maxlength="15" class="text" name="zabbix_serverip" value="<% nvram_get("zabbix_serverip"); %>" />
+			
+		</div>
+		<div class="setting">
+			  <div class="label"><% tran("service.zabbix_usrpara"); %></div>
+			  <textarea cols="60" rows="4" id="zabbix_usrpara" name="zabbix_usrpara"></textarea>
+			  <script type="text/javascript">
+			  //<![CDATA[
+			  var zabbix_usrpara = fix_cr( '<% nvram_get("zabbix_usrpara"); %>' );
+			  document.getElementById("zabbix_usrpara").value = zabbix_usrpara;
+			  //]]>
+			  </script>
+		</div>
 	</div>
 </fieldset><br/>
