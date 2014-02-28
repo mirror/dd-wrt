@@ -96,6 +96,7 @@ var update;
 
 addEvent(window, "load", function() {
 
+		show_layer_ext(document.setup.zabbix_enable, 'idzabbix', <% nvram_else_match("zabbix_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.sshd_enable, 'idssh', <% nvram_else_match("sshd_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.dnsmasq_enable, 'iddnsmasq', <% nvram_else_match("dnsmasq_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.kaid_enable, 'idkaid', <% nvram_else_match("kaid_enable", "1", "1", "0"); %> == 1);
