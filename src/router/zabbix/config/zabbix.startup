@@ -36,6 +36,12 @@ EOF
 
 echo "$ZABBIX_CONF" > /tmp/zabbix.conf
 
+if [ "$(nvram get zabbix_usrpara)" = "" ]; then
+USER_PARAMS=""
+else
+USER_PARAMS="$(nvram get zabbix_usrpara)"
+echo "$USER_PARAMS" >> /tmp/zabbix.conf
+fi
 
 /usr/sbin/zabbix_agentd -c /tmp/zabbix.conf
 
