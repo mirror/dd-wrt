@@ -69,7 +69,7 @@ struct trans_list {
 #define NL_DEBUG	1
 
 #define NL_DBG(LVL,FMT,ARG...) \
-	do {} while (0)
+	do { } while (0)
 
 #define BUG()                            \
 	do {                                 \

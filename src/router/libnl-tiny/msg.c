@@ -264,7 +264,7 @@ static struct nl_msg *__nlmsg_alloc(size_t len)
 
 	nm = calloc(1, sizeof(*nm));
 	if (!nm)
-		goto errout;
+		goto errout2;
 
 	nm->nm_refcnt = 1;
 
@@ -283,6 +283,8 @@ static struct nl_msg *__nlmsg_alloc(size_t len)
 	return nm;
 errout:
 	free(nm);
+
+errout2:;
 	return NULL;
 }
 
