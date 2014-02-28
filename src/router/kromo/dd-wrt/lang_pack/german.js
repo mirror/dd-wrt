@@ -1595,6 +1595,7 @@ service.dlna_type_images="Bilder";
 service.zabbix_legend="Zabbix";
 service.zabbix_cl="Client";
 service.zabbix_serverip="Zabbix Server IP";
+service.zabbix_usrpara="User Parameter";
 
 // ** eop-tunnel.asp **//
 
