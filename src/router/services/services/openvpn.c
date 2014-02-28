@@ -429,7 +429,8 @@ void start_openvpn(void)
 		fprintf(fp, "brctl addif br0 tap1\n"
 			"ifconfig tap1 0.0.0.0 up\n"); //non promisc for performance reasons
 	} else {
-		if (strlen(nvram_safe_get("openvpncl_ip")) > 0)
+		 if (nvram_match("openvpncl_tuntap", "tap") 
+			&& strlen(nvram_safe_get("openvpncl_ip")) > 0) 
 			fprintf(fp, "ifconfig tap1 %s netmask %s up\n", nvram_safe_get("openvpncl_ip"), nvram_safe_get("openvpncl_mask"));
 	}
 	if (nvram_match("openvpncl_nat", "1"))
