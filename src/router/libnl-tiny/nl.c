@@ -399,7 +399,7 @@ int nl_recv(struct nl_sock *sk, struct sockaddr_nl *nla,
 	if (page_size == 0)
 		page_size = getpagesize();
 
-	iov.iov_len = page_size;
+	iov.iov_len = page_size * 2;
 	iov.iov_base = *buf = malloc(iov.iov_len);
 
 	if (sk->s_flags & NL_SOCK_PASSCRED) {
