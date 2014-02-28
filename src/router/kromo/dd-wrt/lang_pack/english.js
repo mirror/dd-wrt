@@ -1600,6 +1600,7 @@ service.dlna_type_images="Images";
 service.zabbix_legend="Zabbix";
 service.zabbix_cl="Client";
 service.zabbix_serverip="Zabbix Server IP";
+service.zabbix_usrpara="User Parameters";
 
 //TRansmission
 service.transmission_legend="Bittorrent";
