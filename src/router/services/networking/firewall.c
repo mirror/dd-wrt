@@ -276,13 +276,6 @@ static void parse_port_forward(char *wordlist)
 	char *name, *enable, *proto, *port, *ip;
 	char buff[256], ip2[16];
 	int flag_dis = 0;
-#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-	char *wan_proto = nvram_safe_get("wan_proto");
-	char *wan_iface = nvram_safe_get("wan_ifname");
-	if (!strlen(wan_iface))
-		wan_iface = nvram_safe_get("wan_ifname2");
-#endif
-
 	/*
 	 * name:enable:proto:port>ip name:enable:proto:port>ip 
 	 */
@@ -330,10 +323,6 @@ static void parse_port_forward(char *wordlist)
 
 			if (flag_dis == 0) {
 				save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s\n", wanaddr, port, ip);
-#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-				if (!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp") || !strcmp(wan_proto, "pppoe_dual"))
-					save2file("-A PREROUTING -i %s -p tcp -d %s --dport %s -j DNAT --to-destination %s\n", wan_iface, wanaddr, port, ip);
-#endif
 				snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s --dport %s -j %s\n", ip, port, log_accept);
 			} else {
 				if ((!dmzenable)
@@ -351,10 +340,6 @@ static void parse_port_forward(char *wordlist)
 			bzero(buff, sizeof(buff));
 			if (flag_dis == 0) {
 				save2file("-A PREROUTING -p udp -d %s --dport %s -j DNAT --to-destination %s\n", wanaddr, port, ip);
-#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-				if (!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp") || !strcmp(wan_proto, "pppoe_dual"))
-					save2file("-A PREROUTING -i %s -p udp -d %s --dport %s -j DNAT --to-destination %s\n", wan_iface, wanaddr, port, ip);
-#endif
 				snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n", ip, port, log_accept);
 			} else {
 				if ((!dmzenable)
