@@ -724,11 +724,10 @@ char *getIsoName(const char *country)
 extern int getRouterBrand(void);
 
 #ifdef HAVE_BUFFALO
-//char 
-
-extern void *getUEnv(char *name);
 #if defined(HAVE_NORTHSTAR) || defined(HAVE_MT7620)
 #define getUEnv(name) nvram_get(name)
+#else
+extern void *getUEnv(char *name);
 #endif
 
 static int isValidCountry(char *region, char *country)
