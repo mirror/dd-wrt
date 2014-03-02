@@ -1078,6 +1078,13 @@ int internal_getRouterBrand()
 		return ROUTER_TRENDNET_TEW812;
 	}
 
+	if (boardnum == 1234 && nvram_match("boardtype", "0xC646") && nvram_match("pci/2/1", "0x43A2")
+	    && nvram_match("boardrev", "0x1200")
+	    && nvram_match("gpio7", "wps_button")) {
+		setRouter("Trendnet TEW818DRU");
+		return ROUTER_TRENDNET_TEW812;
+	}
+
 	if (boardnum == 1234 && nvram_match("boardtype", "0xD646") && nvram_match("1:devid", "0x43A2")
 	    && nvram_match("boardrev", "0x1100")
 	    && nvram_match("gpio7", "wps_button")) {
