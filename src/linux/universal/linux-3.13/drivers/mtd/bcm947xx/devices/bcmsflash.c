@@ -245,7 +245,7 @@ bcmsflash_mtd_init(void)
 		ret = -ENODEV;
 		goto fail;
 	}
-	if (boardnum == 1234)
+	if (boardnum == 1234 && nvram_match("boardrev","0x1100"))
 	    info->size = 8*1024*1024;  // truncate to 8 MB
 
 	bcmsflash.sfl = info;
