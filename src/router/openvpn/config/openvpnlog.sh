@@ -8,7 +8,7 @@
 	}'
 
 /bin/echo -e " \n"
-/usr/bin/cat /tmp/openvpn/openvpn.conf
+/bin/cat /tmp/openvpn/openvpn.conf
 
 /bin/echo -e " \n"
 /bin/echo -e " \n"
@@ -23,4 +23,4 @@
 	}'
 
 /bin/echo -e " \n"
-/usr/bin/cat /tmp/openvpncl/openvpncl.conf
+/bin/cat /tmp/openvpncl/openvpncl.conf
