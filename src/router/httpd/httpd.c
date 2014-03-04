@@ -268,8 +268,7 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 		char s_curr_time[24];
 		sprintf(s_curr_time, "%llu", curr_time);
 		
-		//TODO allow user to set a value for timeout under management
-		if((curr_time - auth_time) > 120){
+		if((curr_time - auth_time) > atoll(nvram_safe_get("auth_limit"))){
 			//empty read buffer or send_authenticate will fail
 			char dummy[128];
 			while (wfgets(dummy, 64, conn_fp) != 0)
