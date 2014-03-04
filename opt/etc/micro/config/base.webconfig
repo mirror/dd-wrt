@@ -29,6 +29,10 @@
 			<input class="num" name="refresh_time" size="2" maxlength="2" value="<% nvram_get("refresh_time"); %>" />
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("management.web_authlimit"); %></div>
+			<input class="num" name="auth_limit" size="3" maxlength="3" value="<% nvram_get("auth_limit"); %>" />
+		</div>
+		<div class="setting">
 			<div class="label">Protocol</div>
 			<input type="checkbox" value="1" name="http_enable" <% nvram_checked("http_enable", "1"); %> />HTTP
 			<input type="checkbox" value="1" name="https_enable" <% nvram_checked("https_enable", "1"); %> />HTTPS
