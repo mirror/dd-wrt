@@ -197,3 +197,4 @@
  "ezc_enable"  "EZConfig"  "CHOICE" "2"  "0"  "1"  "FALSE" "3"  
  "wl_afterburner"  "AfterBurner Technology"  "CHOICE" "3"  "on"  "off"  "auto"  "FALSE" "3"
  "refresh_time" "Auto-Refresh" "NULL" "TRUE" "0"
+ "auth_limit" "Athentication Limit" "NULL" "TRUE" "0"
