@@ -1090,6 +1090,7 @@ management.remote_allowanyip="Allow Any Remote IP";
 management.remote_ip="Allowed Remote IP Range";
 management.web_legend="Web Access";
 management.web_refresh="Auto-Refresh (in seconds)";
+management.web_authlimit="Reauthentication Limit (in seconds)";
 management.web_sysinfo="Enable Info Site";
 management.web_sysinfopass="Info Site Password Protection";
 management.web_sysinfomasq="Info Site MAC Masking";
