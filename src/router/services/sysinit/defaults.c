@@ -136,6 +136,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ntp_server", "", 0},	/* NTP server *//* Modify */
 #endif
 	{"refresh_time", "3", 0},	/* GUI Auto-Refresh interval */
+	{"auth_limit", "180", 0},	/* GUI auth limit ask if no config change in 180s ask for auth again */
 	{"log_level", "0", 0},	/* Bitmask 0:off 1:denied 2:accepted */
 
 #ifdef HAVE_UPNP
