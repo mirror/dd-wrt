@@ -27,6 +27,10 @@
 			<input class="num" name="refresh_time" size="2" maxlength="2" value="<% nvram_get("refresh_time"); %>" />
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("management.web_authlimit"); %></div>
+			<input class="num" name="auth_limit" size="3" maxlength="3" value="<% nvram_get("auth_limit"); %>" />
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("management.web_sysinfo"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="status_auth" <% nvram_checked("status_auth","1"); %> onclick="show_layer_ext(this, 'idsysinfo', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="status_auth" <% nvram_checked("status_auth","0"); %> onclick="show_layer_ext(this, 'idsysinfo', false)" /><% tran("share.disable"); %>

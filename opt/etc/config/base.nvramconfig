@@ -333,6 +333,7 @@
  "filter_p2p" "p2p filter" "FILTERP2P" "FALSE" "0"
  "maskmac"  "mac masking"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
  "refresh_time" "Auto-Refresh" "NULL" "TRUE" "0"
+ "auth_limit" "Athentication Limit" "NULL" "TRUE" "0"
  "wl0_radius_override" "radius override" "NULL" "FALSE" "0"
  "sputnik_mjid" "sputnik" "NULL" "TRUE" "0"
  "sputnik_mjid_type" "sputnik type" "CHOICE" "3" "0" "1" "2" "FALSE" "0"
