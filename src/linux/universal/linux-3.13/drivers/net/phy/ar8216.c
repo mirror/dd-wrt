@@ -34,6 +34,8 @@
 #include <linux/ar8216_platform.h>
 #include <linux/workqueue.h>
 #include <linux/of_device.h>
+#include <linux/leds.h>
+#include <linux/gpio.h>
 
 #include "ar8216.h"
 
@@ -67,6 +69,8 @@ struct ar8xxx_chip {
 	unsigned long caps;
 
 	int (*hw_init)(struct ar8xxx_priv *priv);
+	void (*cleanup)(struct ar8xxx_priv *priv);
+
 	void (*init_globals)(struct ar8xxx_priv *priv);
 	void (*init_port)(struct ar8xxx_priv *priv, int port);
 	void (*setup_port)(struct ar8xxx_priv *priv, int port, u32 egress,
@@ -80,9 +84,40 @@ struct ar8xxx_chip {
 	unsigned num_mibs;
 };
 
+enum ar8327_led_pattern {
+	AR8327_LED_PATTERN_OFF = 0,
+	AR8327_LED_PATTERN_BLINK,
+	AR8327_LED_PATTERN_ON,
+	AR8327_LED_PATTERN_RULE,
+};
+
+struct ar8327_led_entry {
+	unsigned reg;
+	unsigned shift;
+};
+
+struct ar8327_led {
+	struct led_classdev cdev;
+	struct ar8xxx_priv *sw_priv;
+
+	char *name;
+	bool active_low;
+	u8 led_num;
+	enum ar8327_led_mode mode;
+
+	struct mutex mutex;
+	spinlock_t lock;
+	struct work_struct led_work;
+	bool enable_hw_mode;
+	enum ar8327_led_pattern pattern;
+};
+
 struct ar8327_data {
 	u32 port0_status;
 	u32 port6_status;
+
+	struct ar8327_led **leds;
+	unsigned int num_leds;
 };
 
 struct ar8xxx_priv {
@@ -92,6 +127,7 @@ struct ar8xxx_priv {
 
 	u32 (*read)(struct ar8xxx_priv *priv, int reg);
 	void (*write)(struct ar8xxx_priv *priv, int reg, u32 val);
+	u32 (*rmw)(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val);
 
 	int (*get_port_link)(unsigned port);
 
@@ -326,6 +362,45 @@ ar8xxx_mii_write(struct ar8xxx_priv *priv, int reg, u32 val)
 	mutex_unlock(&bus->mdio_lock);
 }
 
+static u32
+ar8xxx_mii_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
+{
+	struct mii_bus *bus = priv->mii_bus;
+	u16 r1, r2, page;
+	u16 lo, hi;
+	u32 ret;
+
+	split_addr((u32) reg, &r1, &r2, &page);
+
+	mutex_lock(&bus->mdio_lock);
+
+	bus->write(bus, 0x18, 0, page);
+	usleep_range(1000, 2000); /* wait for the page switch to propagate */
+
+	lo = bus->read(bus, 0x10 | r2, r1);
+	hi = bus->read(bus, 0x10 | r2, r1 + 1);
+
+	ret = hi << 16 | lo;
+	ret &= ~mask;
+	ret |= val;
+
+	lo = ret & 0xffff;
+	hi = (u16) (ret >> 16);
+
+	if (priv->mii_lo_first) {
+		bus->write(bus, 0x10 | r2, r1, lo);
+		bus->write(bus, 0x10 | r2, r1 + 1, hi);
+	} else {
+		bus->write(bus, 0x10 | r2, r1 + 1, hi);
+		bus->write(bus, 0x10 | r2, r1, lo);
+	}
+
+	mutex_unlock(&bus->mdio_lock);
+
+	return ret;
+}
+
+
 static void
 ar8xxx_phy_dbg_write(struct ar8xxx_priv *priv, int phy_addr,
 		     u16 dbg_addr, u16 dbg_data)
@@ -349,31 +424,16 @@ ar8xxx_phy_mmd_write(struct ar8xxx_priv *priv, int phy_addr, u16 addr, u16 data)
 	mutex_unlock(&bus->mdio_lock);
 }
 
-static u32
+static inline u32
 ar8xxx_rmw(struct ar8xxx_priv *priv, int reg, u32 mask, u32 val)
 {
-	u32 v;
-
-	lockdep_assert_held(&priv->reg_mutex);
-
-	v = priv->read(priv, reg);
-	v &= ~mask;
-	v |= val;
-	priv->write(priv, reg, v);
-
-	return v;
+	return priv->rmw(priv, reg, mask, val);
 }
 
 static inline void
 ar8xxx_reg_set(struct ar8xxx_priv *priv, int reg, u32 val)
 {
-	u32 v;
-
-	lockdep_assert_held(&priv->reg_mutex);
-
-	v = priv->read(priv, reg);
-	v |= val;
-	priv->write(priv, reg, v);
+	priv->rmw(priv, reg, 0, val);
 }
 
 static int
@@ -408,10 +468,8 @@ ar8xxx_mib_op(struct ar8xxx_priv *priv, u32 op)
 	else
 		mib_func = AR8216_REG_MIB_FUNC;
 
-	mutex_lock(&priv->reg_mutex);
 	/* Capture the hardware statistics for all ports */
 	ar8xxx_rmw(priv, mib_func, AR8216_MIB_FUNC, (op << AR8216_MIB_FUNC_S));
-	mutex_unlock(&priv->reg_mutex);
 
 	/* Wait for the capturing to complete. */
 	ret = ar8xxx_reg_wait(priv, mib_func, AR8216_MIB_BUSY, 0, 10);
@@ -1065,6 +1123,317 @@ ar8327_get_port_init_status(struct ar8327_port_cfg *cfg)
 	return t;
 }
 
+#define AR8327_LED_ENTRY(_num, _reg, _shift) \
+	[_num] = { .reg = (_reg), .shift = (_shift) }
+
+static const struct ar8327_led_entry
+ar8327_led_map[AR8327_NUM_LEDS] = {
+	AR8327_LED_ENTRY(AR8327_LED_PHY0_0, 0, 14),
+	AR8327_LED_ENTRY(AR8327_LED_PHY0_1, 1, 14),
+	AR8327_LED_ENTRY(AR8327_LED_PHY0_2, 2, 14),
+
+	AR8327_LED_ENTRY(AR8327_LED_PHY1_0, 3, 8),
+	AR8327_LED_ENTRY(AR8327_LED_PHY1_1, 3, 10),
+	AR8327_LED_ENTRY(AR8327_LED_PHY1_2, 3, 12),
+
+	AR8327_LED_ENTRY(AR8327_LED_PHY2_0, 3, 14),
+	AR8327_LED_ENTRY(AR8327_LED_PHY2_1, 3, 16),
+	AR8327_LED_ENTRY(AR8327_LED_PHY2_2, 3, 18),
+
+	AR8327_LED_ENTRY(AR8327_LED_PHY3_0, 3, 20),
+	AR8327_LED_ENTRY(AR8327_LED_PHY3_1, 3, 22),
+	AR8327_LED_ENTRY(AR8327_LED_PHY3_2, 3, 24),
+
+	AR8327_LED_ENTRY(AR8327_LED_PHY4_0, 0, 30),
+	AR8327_LED_ENTRY(AR8327_LED_PHY4_1, 1, 30),
+	AR8327_LED_ENTRY(AR8327_LED_PHY4_2, 2, 30),
+};
+
+static void
+ar8327_set_led_pattern(struct ar8xxx_priv *priv, unsigned int led_num,
+		       enum ar8327_led_pattern pattern)
+{
+	const struct ar8327_led_entry *entry;
+
+	entry = &ar8327_led_map[led_num];
+	ar8xxx_rmw(priv, AR8327_REG_LED_CTRL(entry->reg),
+		   (3 << entry->shift), pattern << entry->shift);
+}
+
+static void
+ar8327_led_work_func(struct work_struct *work)
+{
+	struct ar8327_led *aled;
+	u8 pattern;
+
+	aled = container_of(work, struct ar8327_led, led_work);
+
+	spin_lock(&aled->lock);
+	pattern = aled->pattern;
+	spin_unlock(&aled->lock);
+
+	ar8327_set_led_pattern(aled->sw_priv, aled->led_num,
+			       pattern);
+}
+
+static void
+ar8327_led_schedule_change(struct ar8327_led *aled, u8 pattern)
+{
+	if (aled->pattern == pattern)
+		return;
+
+	aled->pattern = pattern;
+	schedule_work(&aled->led_work);
+}
+
+static inline struct ar8327_led *
+led_cdev_to_ar8327_led(struct led_classdev *led_cdev)
+{
+	return container_of(led_cdev, struct ar8327_led, cdev);
+}
+
+static int
+ar8327_led_blink_set(struct led_classdev *led_cdev,
+		     unsigned long *delay_on,
+		     unsigned long *delay_off)
+{
+	struct ar8327_led *aled = led_cdev_to_ar8327_led(led_cdev);
+
+	if (*delay_on == 0 && *delay_off == 0) {
+		*delay_on = 125;
+		*delay_off = 125;
+	}
+
+	if (*delay_on != 125 || *delay_off != 125) {
+		/*
+		 * The hardware only supports blinking at 4Hz. Fall back
+		 * to software implementation in other cases.
+		 */
+		return -EINVAL;
+	}
+
+	spin_lock(&aled->lock);
+
+	aled->enable_hw_mode = false;
+	ar8327_led_schedule_change(aled, AR8327_LED_PATTERN_BLINK);
+
+	spin_unlock(&aled->lock);
+
+	return 0;
+}
+
+static void
+ar8327_led_set_brightness(struct led_classdev *led_cdev,
+			  enum led_brightness brightness)
+{
+	struct ar8327_led *aled = led_cdev_to_ar8327_led(led_cdev);
+	u8 pattern;
+	bool active;
+
+	active = (brightness != LED_OFF);
+	active ^= aled->active_low;
+
+	pattern = (active) ? AR8327_LED_PATTERN_ON :
+			     AR8327_LED_PATTERN_OFF;
+
+	spin_lock(&aled->lock);
+
+	aled->enable_hw_mode = false;
+	ar8327_led_schedule_change(aled, pattern);
+
+	spin_unlock(&aled->lock);
+}
+
+static ssize_t
+ar8327_led_enable_hw_mode_show(struct device *dev,
+			       struct device_attribute *attr,
+			       char *buf)
+{
+	struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct ar8327_led *aled = led_cdev_to_ar8327_led(led_cdev);
+	ssize_t ret = 0;
+
+	spin_lock(&aled->lock);
+	ret += sprintf(buf, "%d\n", aled->enable_hw_mode);
+	spin_unlock(&aled->lock);
+
+	return ret;
+}
+
+static ssize_t
+ar8327_led_enable_hw_mode_store(struct device *dev,
+				struct device_attribute *attr,
+				const char *buf,
+				size_t size)
+{
+        struct led_classdev *led_cdev = dev_get_drvdata(dev);
+	struct ar8327_led *aled = led_cdev_to_ar8327_led(led_cdev);
+	u8 pattern;
+	u8 value;
+	int ret;
+
+	ret = kstrtou8(buf, 10, &value);
+	if (ret < 0)
+		return -EINVAL;
+
+	spin_lock(&aled->lock);
+
+	aled->enable_hw_mode = !!value;
+	if (aled->enable_hw_mode)
+		pattern = AR8327_LED_PATTERN_RULE;
+	else
+		pattern = AR8327_LED_PATTERN_OFF;
+
+	ar8327_led_schedule_change(aled, pattern);
+
+	spin_unlock(&aled->lock);
+
+	return size;
+}
+
+static DEVICE_ATTR(enable_hw_mode,  S_IRUGO | S_IWUSR,
+		   ar8327_led_enable_hw_mode_show,
+		   ar8327_led_enable_hw_mode_store);
+
+static int
+ar8327_led_register(struct ar8xxx_priv *priv, struct ar8327_led *aled)
+{
+	int ret;
+
+	ret = led_classdev_register(NULL, &aled->cdev);
+	if (ret < 0)
+		return ret;
+
+	if (aled->mode == AR8327_LED_MODE_HW) {
+		ret = device_create_file(aled->cdev.dev,
+					 &dev_attr_enable_hw_mode);
+		if (ret)
+			goto err_unregister;
+	}
+
+	return 0;
+
+err_unregister:
+	led_classdev_unregister(&aled->cdev);
+	return ret;
+}
+
+static void
+ar8327_led_unregister(struct ar8327_led *aled)
+{
+	if (aled->mode == AR8327_LED_MODE_HW)
+		device_remove_file(aled->cdev.dev, &dev_attr_enable_hw_mode);
+
+	led_classdev_unregister(&aled->cdev);
+	cancel_work_sync(&aled->led_work);
+}
+
+static int
+ar8327_led_create(struct ar8xxx_priv *priv,
+		  const struct ar8327_led_info *led_info)
+{
+	struct ar8327_data *data = &priv->chip_data.ar8327;
+	struct ar8327_led *aled;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_AR8216_PHY_LEDS))
+		return 0;
+
+	if (!led_info->name)
+		return -EINVAL;
+
+	if (led_info->led_num >= AR8327_NUM_LEDS)
+		return -EINVAL;
+
+	aled = kzalloc(sizeof(*aled) + strlen(led_info->name) + 1,
+		       GFP_KERNEL);
+	if (!aled)
+		return -ENOMEM;
+
+	aled->sw_priv = priv;
+	aled->led_num = led_info->led_num;
+	aled->active_low = led_info->active_low;
+	aled->mode = led_info->mode;
+
+	if (aled->mode == AR8327_LED_MODE_HW)
+		aled->enable_hw_mode = true;
+
+	aled->name = (char *)(aled + 1);
+	strcpy(aled->name, led_info->name);
+
+	aled->cdev.name = aled->name;
+	aled->cdev.brightness_set = ar8327_led_set_brightness;
+	aled->cdev.blink_set = ar8327_led_blink_set;
+	aled->cdev.default_trigger = led_info->default_trigger;
+
+	spin_lock_init(&aled->lock);
+	mutex_init(&aled->mutex);
+	INIT_WORK(&aled->led_work, ar8327_led_work_func);
+
+	ret = ar8327_led_register(priv, aled);
+	if (ret)
+		goto err_free;
+
+	data->leds[data->num_leds++] = aled;
+
+	return 0;
+
+err_free:
+	kfree(aled);
+	return ret;
+}
+
+static void
+ar8327_led_destroy(struct ar8327_led *aled)
+{
+	ar8327_led_unregister(aled);
+	kfree(aled);
+}
+
+static void
+ar8327_leds_init(struct ar8xxx_priv *priv)
+{
+	struct ar8327_data *data;
+	unsigned i;
+
+	if (!IS_ENABLED(CONFIG_AR8216_PHY_LEDS))
+		return;
+
+	data = &priv->chip_data.ar8327;
+
+	for (i = 0; i < data->num_leds; i++) {
+		struct ar8327_led *aled;
+
+		aled = data->leds[i];
+
+		if (aled->enable_hw_mode)
+			aled->pattern = AR8327_LED_PATTERN_RULE;
+		else
+			aled->pattern = AR8327_LED_PATTERN_OFF;
+
+		ar8327_set_led_pattern(priv, aled->led_num, aled->pattern);
+	}
+}
+
+static void
+ar8327_leds_cleanup(struct ar8xxx_priv *priv)
+{
+	struct ar8327_data *data = &priv->chip_data.ar8327;
+	unsigned i;
+
+	if (!IS_ENABLED(CONFIG_AR8216_PHY_LEDS))
+		return;
+
+	for (i = 0; i < data->num_leds; i++) {
+		struct ar8327_led *aled;
+
+		aled = data->leds[i];
+		ar8327_led_destroy(aled);
+	}
+
+	kfree(data->leds);
+}
+
 static int
 ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 		       struct ar8327_platform_data *pdata)
@@ -1134,6 +1503,18 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 
 	priv->write(priv, AR8327_REG_POWER_ON_STRIP, new_pos);
 
+	if (pdata->leds && pdata->num_leds) {
+		int i;
+
+		data->leds = kzalloc(pdata->num_leds * sizeof(void *),
+				     GFP_KERNEL);
+		if (!data->leds)
+			return -ENOMEM;
+
+		for (i = 0; i < pdata->num_leds; i++)
+			ar8327_led_create(priv, &pdata->leds[i]);
+	}
+
 	return 0;
 }
 
@@ -1197,6 +1578,8 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 	if (ret)
 		return ret;
 
+	ar8327_leds_init(priv);
+
 	bus = priv->mii_bus;
 	for (i = 0; i < AR8327_NUM_PHYS; i++) {
 		ar8327_phy_fixup(priv, i);
@@ -1215,6 +1598,12 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 }
 
 static void
+ar8327_cleanup(struct ar8xxx_priv *priv)
+{
+	ar8327_leds_cleanup(priv);
+}
+
+static void
 ar8327_init_globals(struct ar8xxx_priv *priv)
 {
 	u32 t;
@@ -1230,9 +1619,9 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 	    (AR8327_PORTS_ALL << AR8327_FWD_CTRL1_BC_FLOOD_S);
 	priv->write(priv, AR8327_REG_FWD_CTRL1, t);
 
-	/* setup MTU */
+	/* enable jumbo frames */
 	ar8xxx_rmw(priv, AR8327_REG_MAX_FRAME_SIZE,
-		   AR8327_MAX_FRAME_SIZE_MTU, 1518 + 8 + 2);
+		   AR8327_MAX_FRAME_SIZE_MTU, 9018 + 8 + 2);
 
 	/* Enable MIB counters */
 	ar8xxx_reg_set(priv, AR8327_REG_MODULE_EN,
@@ -1370,6 +1759,7 @@ ar8327_setup_port(struct ar8xxx_priv *priv, int port, u32 egress, u32 ingress,
 static const struct ar8xxx_chip ar8327_chip = {
 	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
 	.hw_init = ar8327_hw_init,
+	.cleanup = ar8327_cleanup,
 	.init_globals = ar8327_init_globals,
 	.init_port = ar8327_init_port,
 	.setup_port = ar8327_setup_port,
@@ -2211,6 +2601,9 @@ ar8xxx_create(void)
 static void
 ar8xxx_free(struct ar8xxx_priv *priv)
 {
+	if (priv->chip && priv->chip->cleanup)
+		priv->chip->cleanup(priv);
+
 	kfree(priv->mib_stats);
 	kfree(priv);
 }
@@ -2225,6 +2618,7 @@ ar8xxx_create_mii(struct mii_bus *bus)
 		priv->mii_bus = bus;
 		priv->read = ar8xxx_mii_read;
 		priv->write = ar8xxx_mii_write;
+		priv->rmw = ar8xxx_mii_rmw;
 	}
 
 	return priv;
