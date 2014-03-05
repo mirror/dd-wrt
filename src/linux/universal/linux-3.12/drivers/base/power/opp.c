@@ -712,10 +712,14 @@ int of_init_opp_table(struct device *dev)
 	int nr;
 
 	prop = of_find_property(dev->of_node, "operating-points", NULL);
-	if (!prop)
+	if (!prop) {
+		printk(KERN_INFO "no operating point\n");
 		return -ENODEV;
-	if (!prop->value)
+	}
+	if (!prop->value) {
+		printk(KERN_INFO "no operating data\n");
 		return -ENODATA;
+	}
 
 	/*
 	 * Each OPP is a set of tuples consisting of frequency and

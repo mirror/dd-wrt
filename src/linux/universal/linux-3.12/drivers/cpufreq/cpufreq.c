@@ -2187,8 +2187,7 @@ EXPORT_SYMBOL_GPL(cpufreq_unregister_driver);
 static int __init cpufreq_core_init(void)
 {
 	int cpu;
-	printk(KERN_EMERG "cpufreq core init\n");
-
+	
 	if (cpufreq_disabled())
 		return -ENODEV;
 
