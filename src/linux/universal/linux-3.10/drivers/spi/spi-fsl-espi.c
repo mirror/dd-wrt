@@ -338,16 +338,12 @@ static void fsl_espi_do_trans(struct spi_message *m,
 static void fsl_espi_cmd_trans(struct spi_message *m,
 				struct fsl_espi_transfer *trans, u8 *rx_buff)
 {
+	struct spi_device *spi = m->spi;
+	struct mpc8xxx_spi *mspi = spi_master_get_devdata(spi->master);
 	struct spi_transfer *t;
-	u8 *local_buf;
+	u8 *local_buf = mspi->local_buf;
 	int i = 0;
 	struct fsl_espi_transfer *espi_trans = trans;
-
-	local_buf = kzalloc(SPCOM_TRANLEN_MAX, GFP_KERNEL);
-	if (!local_buf) {
-		espi_trans->status = -ENOMEM;
-		return;
-	}
 
 	list_for_each_entry(t, &m->transfers, transfer_list) {
 		if (t->tx_buf) {
@@ -361,27 +357,22 @@ static void fsl_espi_cmd_trans(struct spi_message *m,
 	fsl_espi_do_trans(m, espi_trans);
 
 	espi_trans->actual_length = espi_trans->len;
-	kfree(local_buf);
 }
 
 static void fsl_espi_rw_trans(struct spi_message *m,
 				struct fsl_espi_transfer *trans, u8 *rx_buff)
 {
+	struct spi_device *spi = m->spi;
+	struct mpc8xxx_spi *mspi = spi_master_get_devdata(spi->master);
 	struct fsl_espi_transfer *espi_trans = trans;
 	unsigned int n_tx = espi_trans->n_tx;
 	unsigned int n_rx = espi_trans->n_rx;
 	struct spi_transfer *t;
-	u8 *local_buf;
+	u8 *local_buf = mspi->local_buf;
 	u8 *rx_buf = rx_buff;
 	unsigned int trans_len;
 	unsigned int addr;
 	int i, pos, loop;
-
-	local_buf = kzalloc(SPCOM_TRANLEN_MAX, GFP_KERNEL);
-	if (!local_buf) {
-		espi_trans->status = -ENOMEM;
-		return;
-	}
 
 	for (pos = 0, loop = 0; pos < n_rx; pos += trans_len, loop++) {
 		trans_len = n_rx - pos;
@@ -416,8 +407,6 @@ static void fsl_espi_rw_trans(struct spi_message *m,
 		else
 			espi_trans->actual_length += espi_trans->len;
 	}
-
-	kfree(local_buf);
 }
 
 static void fsl_espi_do_one_msg(struct spi_message *m)
@@ -585,6 +574,7 @@ static irqreturn_t fsl_espi_irq(s32 irq, void *context_data)
 static void fsl_espi_remove(struct mpc8xxx_spi *mspi)
 {
 	iounmap(mspi->reg_base);
+	kfree(mspi->local_buf);
 }
 
 static struct spi_master * fsl_espi_probe(struct device *dev,
@@ -615,10 +605,16 @@ static struct spi_master * fsl_espi_probe(struct device *dev,
 	mpc8xxx_spi->spi_do_one_msg = fsl_espi_do_one_msg;
 	mpc8xxx_spi->spi_remove = fsl_espi_remove;
 
+	mpc8xxx_spi->local_buf = kzalloc(SPCOM_TRANLEN_MAX, GFP_KERNEL);
+	if (!mpc8xxx_spi->local_buf) {
+		ret = -ENOMEM;
+		goto err_probe;
+	}
+
 	mpc8xxx_spi->reg_base = ioremap(mem->start, resource_size(mem));
 	if (!mpc8xxx_spi->reg_base) {
 		ret = -ENOMEM;
-		goto err_probe;
+		goto free_buf;
 	}
 
 	reg_base = mpc8xxx_spi->reg_base;
@@ -661,6 +657,8 @@ unreg_master:
 	free_irq(mpc8xxx_spi->irq, mpc8xxx_spi);
 free_irq:
 	iounmap(mpc8xxx_spi->reg_base);
+free_buf:
+	kfree(mpc8xxx_spi->local_buf);
 err_probe:
 	spi_master_put(master);
 err:
