@@ -156,6 +156,7 @@ static int tcf_generic_walker(struct sk_buff *skb, struct netlink_callback *cb,
 	}
 }
 
+
 static struct tcf_common *tcf_hash_lookup(u32 index, struct tcf_hashinfo *hinfo)
 {
 	struct tcf_common *p = NULL;

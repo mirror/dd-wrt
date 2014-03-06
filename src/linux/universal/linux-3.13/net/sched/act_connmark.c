@@ -43,8 +43,8 @@ static struct tcf_hashinfo connmark_hash_info = {
 	.lock	=	&connmark_lock,
 };
 
-static int tcf_connmark(struct sk_buff *skb, const struct tc_action *a,
-		       struct tcf_result *res)
+static int tcf_connmark(struct net *n, struct nlattr *nla, struct nlattr *est,
+			 struct tc_action *a, int ovr, int bind)
 {
 	struct nf_conn *c;
 	enum ip_conntrack_info ctinfo;

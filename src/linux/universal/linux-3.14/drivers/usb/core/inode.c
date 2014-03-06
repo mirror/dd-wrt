@@ -189,15 +189,15 @@ static int parse_options(struct super_block *s, char *data)
 
 static void update_special(struct dentry *special)
 {
-	special->d_inode->i_uid = listuid;
-	special->d_inode->i_gid = listgid;
+	special->d_inode->i_uid.val = listuid;
+	special->d_inode->i_gid.val = listgid;
 	special->d_inode->i_mode = S_IFREG | listmode;
 }
 
 static void update_dev(struct dentry *dev)
 {
-	dev->d_inode->i_uid = devuid;
-	dev->d_inode->i_gid = devgid;
+	dev->d_inode->i_uid.val = devuid;
+	dev->d_inode->i_gid.val = devgid;
 	dev->d_inode->i_mode = S_IFREG | devmode;
 }
 
@@ -205,8 +205,8 @@ static void update_bus(struct dentry *bus)
 {
 	struct dentry *dev = NULL;
 
-	bus->d_inode->i_uid = busuid;
-	bus->d_inode->i_gid = busgid;
+	bus->d_inode->i_uid.val = busuid;
+	bus->d_inode->i_gid.val = busgid;
 	bus->d_inode->i_mode = S_IFDIR | busmode;
 
 	mutex_lock(&bus->d_inode->i_mutex);
@@ -520,8 +520,8 @@ static struct dentry *fs_create_file (const char *name, umode_t mode,
 				dentry->d_inode->i_private = data;
 			if (fops)
 				dentry->d_inode->i_fop = fops;
-			dentry->d_inode->i_uid = uid;
-			dentry->d_inode->i_gid = gid;
+			dentry->d_inode->i_uid.val = uid;
+			dentry->d_inode->i_gid.val = gid;
 		}
 	}
 

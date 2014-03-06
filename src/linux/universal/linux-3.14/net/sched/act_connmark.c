@@ -33,15 +33,9 @@
 #define TCA_ACT_CONNMARK	20
 
 #define CONNMARK_TAB_MASK     3
-static struct tcf_common *tcf_connmark_ht[CONNMARK_TAB_MASK + 1];
 static u32 connmark_idx_gen;
-static DEFINE_RWLOCK(connmark_lock);
 
-static struct tcf_hashinfo connmark_hash_info = {
-	.htab	=	tcf_connmark_ht,
-	.hmask	=	CONNMARK_TAB_MASK,
-	.lock	=	&connmark_lock,
-};
+static struct tcf_hashinfo connmark_hash_info;
 
 static int tcf_connmark(struct sk_buff *skb, const struct tc_action *a,
 		       struct tcf_result *res)
@@ -78,13 +72,12 @@ out:
 	return TC_ACT_PIPE;
 }
 
-static int tcf_connmark_init(struct nlattr *nla, struct nlattr *est,
+static int tcf_connmark_init(struct net *n, struct nlattr *nla, struct nlattr *est,
 			 struct tc_action *a, int ovr, int bind)
 {
 	struct tcf_common *pc;
 
-	pc = tcf_hash_create(0, est, a, sizeof(*pc), bind,
-			     &connmark_idx_gen, &connmark_hash_info);
+	pc = tcf_hash_create(0, est, a, sizeof(*pc), bind);
 	if (IS_ERR(pc))
 	    return PTR_ERR(pc);
 
@@ -96,7 +89,7 @@ static int tcf_connmark_init(struct nlattr *nla, struct nlattr *est,
 static inline int tcf_connmark_cleanup(struct tc_action *a, int bind)
 {
 	if (a->priv)
-		return tcf_hash_release(a->priv, bind, &connmark_hash_info);
+		return tcf_hash_release(a->priv, bind, a->ops->hinfo);
 	return 0;
 }
 
@@ -110,13 +103,11 @@ static struct tc_action_ops act_connmark_ops = {
 	.kind		=	"connmark",
 	.hinfo		=	&connmark_hash_info,
 	.type		=	TCA_ACT_CONNMARK,
-	.capab		=	TCA_CAP_NONE,
 	.owner		=	THIS_MODULE,
 	.act		=	tcf_connmark,
 	.dump		=	tcf_connmark_dump,
 	.cleanup	=	tcf_connmark_cleanup,
 	.init		=	tcf_connmark_init,
-	.walk		=	tcf_generic_walker,
 };
 
 MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
@@ -125,6 +116,10 @@ MODULE_LICENSE("GPL");
 
 static int __init connmark_init_module(void)
 {
+	int err = tcf_hashinfo_init(&connmark_hash_info, CONNMARK_TAB_MASK);
+	if (err)
+		return err;
+
 	return tcf_register_action(&act_connmark_ops);
 }
 
