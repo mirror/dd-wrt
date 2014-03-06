@@ -575,7 +575,7 @@ static struct inode *squashfs_new_inode(struct super_block *s,
 		i->i_mode = inodeb->mode;
 		i->i_size = 0;
 		if (inodeb->guid == SQUASHFS_GUIDS)
-			i->i_gid = i->i_uid;
+			i->i_gid.val = i->i_uid.val;
 		else
 			i->i_gid = msblk->guid[inodeb->guid];
 	}
@@ -1111,7 +1111,7 @@ static int squashfs_fill_super(struct super_block *s, void *data, int silent)
 		ERROR("Failed to allocate uid/gid table\n");
 		goto failed_mount;
 	}
-	msblk->guid = msblk->uid + sblk->no_uids;
+	msblk->guid = (kgid_t *)msblk->uid + sblk->no_uids;
 
 	if (msblk->swap) {
 		unsigned int suid[sblk->no_uids + sblk->no_guids];

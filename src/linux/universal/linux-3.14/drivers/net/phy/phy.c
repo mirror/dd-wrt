@@ -742,9 +742,6 @@ void phy_state_machine(struct work_struct *work)
 
 	mutex_lock(&phydev->lock);
 
-	if (phydev->adjust_state)
-		phydev->adjust_state(phydev->attached_dev);
-
 	switch (phydev->state) {
 	case PHY_DOWN:
 	case PHY_STARTING:

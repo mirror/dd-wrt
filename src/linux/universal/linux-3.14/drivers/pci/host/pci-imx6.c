@@ -536,7 +536,7 @@ static int __init imx6_pcie_probe(struct platform_device *pdev)
 					"PCIe power enable");
 		if (ret) {
 			dev_err(&pdev->dev, "unable to get power-on gpio\n");
-			goto err;
+			return ret;
 		}
 	}
 
