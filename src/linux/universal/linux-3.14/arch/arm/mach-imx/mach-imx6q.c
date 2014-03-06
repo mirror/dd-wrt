@@ -110,34 +110,6 @@ DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8609, ventana_pciesw_early_fixup);
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8606, ventana_pciesw_early_fixup);
 DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8604, ventana_pciesw_early_fixup);
 
-/*
- * fixup for PLX PEX8909 bridge to configure GPIO1-7 as output High
- * as they are used for slots1-7 PERST#
- */
-static void ventana_pciesw_early_fixup(struct pci_dev *dev)
-{
-	u32 dw;
-
-	if (!of_machine_is_compatible("gw,ventana"))
-		return;
-
-	if (dev->devfn != 0)
-		return;
-
-	pci_read_config_dword(dev, 0x62c, &dw);
-	dw |= 0xaaa8; // GPIO1-7 outputs
-	pci_write_config_dword(dev, 0x62c, dw);
-
-	pci_read_config_dword(dev, 0x644, &dw);
-	dw |= 0xfe;   // GPIO1-7 output high
-	pci_write_config_dword(dev, 0x644, dw);
-
-	msleep(100);
-}
-DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8609, ventana_pciesw_early_fixup);
-DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8606, ventana_pciesw_early_fixup);
-DECLARE_PCI_FIXUP_EARLY(PCI_VENDOR_ID_PLX, 0x8604, ventana_pciesw_early_fixup);
-
 static int ar8031_phy_fixup(struct phy_device *dev)
 {
 	u16 val;

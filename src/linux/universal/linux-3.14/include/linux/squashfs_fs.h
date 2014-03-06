@@ -552,7 +552,7 @@ extern int squashfs_uncompress_exit(void);
 	SQUASHFS_MEMSET(s, d, n * bits / 8);\
 	for(entry = 0, bit_position = 0; entry < n; entry++, bit_position += \
 			bits)\
-		SQUASHFS_SWAP(s[entry], d, bit_position, bits);\
+		SQUASHFS_SWAP(s[entry].val, d, bit_position, bits);\
 }
 
 #define SQUASHFS_SWAP_FRAGMENT_INDEXES(s, d, n) SQUASHFS_SWAP_LONG_LONGS(s, d, n)
