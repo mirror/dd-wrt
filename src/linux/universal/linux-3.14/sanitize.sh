@@ -7,7 +7,13 @@ do
 	then 
 	    echo COPY $i
 	    cp $i .config
-	    make oldconfig ARCH=i386
+	    grep "CONFIG_X86_64=y" $i
+	    if [ $? -eq 0 ] 
+		then 
+		    make oldconfig ARCH=x86_64
+		else
+		    make oldconfig ARCH=i386
+		fi
 	    cp .config $i
     fi
 
