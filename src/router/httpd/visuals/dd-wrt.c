@@ -1862,7 +1862,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		showOptions(wp, bridge_name, "Filtered Unfiltered", "Filtered");
 		websWrite(wp, "&nbsp;Prio&nbsp;");
-		sprintf(bridge_name, "bridgeb%d", count);
+		sprintf(bridge_name, "bridgeprio%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"32768\" />\n", bridge_name);
 		websWrite(wp, "&nbsp;MTU&nbsp;");
 		// Bridges are bridges, Ports are ports, show it again HERE          
