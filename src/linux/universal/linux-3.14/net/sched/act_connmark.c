@@ -33,7 +33,6 @@
 #define TCA_ACT_CONNMARK	20
 
 #define CONNMARK_TAB_MASK     3
-static u32 connmark_idx_gen;
 
 static struct tcf_hashinfo connmark_hash_info;
 
@@ -72,18 +71,30 @@ out:
 	return TC_ACT_PIPE;
 }
 
-static int tcf_connmark_init(struct net *n, struct nlattr *nla, struct nlattr *est,
-			 struct tc_action *a, int ovr, int bind)
+static int tcf_connmark_init(struct net *net, struct nlattr *nla,
+			     struct nlattr *est, struct tc_action *a,
+			     int ovr, int bind)
 {
 	struct tcf_common *pc;
+	int ret = 0;
 
-	pc = tcf_hash_create(0, est, a, sizeof(*pc), bind);
-	if (IS_ERR(pc))
-	    return PTR_ERR(pc);
+	pc = tcf_hash_check(0, a, bind);
+	if (!pc) {
+		pc = tcf_hash_create(0, est, a, sizeof(*pc), bind);
+		if (IS_ERR(pc))
+		    return PTR_ERR(pc);
 
-	tcf_hash_insert(pc, &connmark_hash_info);
+		tcf_hash_insert(pc, a->ops->hinfo);
+		ret = ACT_P_CREATED;
+	} else {
+		if (!ovr) {
+			tcf_hash_release(pc, bind, a->ops->hinfo);
+			return -EEXIST;
+		}
+	}
+ 
 
-	return ACT_P_CREATED;
+	return ret;
 }
 
 static inline int tcf_connmark_cleanup(struct tc_action *a, int bind)
