@@ -43,7 +43,7 @@ static struct tcf_hashinfo connmark_hash_info = {
 	.lock	=	&connmark_lock,
 };
 
-static int tcf_connmark(struct sk_buff *skb, struct tc_action *a,
+static int tcf_connmark(struct sk_buff *skb, const struct tc_action *a,
 		       struct tcf_result *res)
 {
 	struct nf_conn *c;
@@ -82,15 +82,25 @@ static int tcf_connmark_init(struct nlattr *nla, struct nlattr *est,
 			 struct tc_action *a, int ovr, int bind)
 {
 	struct tcf_common *pc;
+	int ret = 0;
 
-	pc = tcf_hash_create(0, est, a, sizeof(*pc), bind,
-			     &connmark_idx_gen, &connmark_hash_info);
-	if (IS_ERR(pc))
-	    return PTR_ERR(pc);
+	pc = tcf_hash_check(0, a, bind, &connmark_hash_info);
+	if (!pc) {
+		pc = tcf_hash_create(0, est, a, sizeof(*pc), bind,
+				     &connmark_idx_gen, &connmark_hash_info);
+		if (IS_ERR(pc))
+		    return PTR_ERR(pc);
 
-	tcf_hash_insert(pc, &connmark_hash_info);
+		tcf_hash_insert(pc, &connmark_hash_info);
+		ret = ACT_P_CREATED;
+	} else {
+		if (!ovr) {
+			tcf_hash_release(pc, bind, &connmark_hash_info);
+			return -EEXIST;
+		}
+	}
 
-	return ACT_P_CREATED;
+	return ret;
 }
 
 static inline int tcf_connmark_cleanup(struct tc_action *a, int bind)
