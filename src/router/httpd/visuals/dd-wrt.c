@@ -1831,7 +1831,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	static char word[256];
 	char *next, *wordlist;
 	char *stp = word;
-	char *bridge, *prio, *mtu;
+	char *bridge, *prio, *mtu, *mcast;
 	char bridge_name[32];
 
 	memset(buffer, 0, 256);
@@ -1848,7 +1848,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	}
 	if (!br0found) {
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">Bridge %d</div>\n", count);
+		websWrite(wp, "Bridge %d\n", count);
 		sprintf(bridge_name, "bridgename%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"br0\" />\n", bridge_name);
 #ifdef HAVE_MSTP
@@ -1858,8 +1858,11 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 #endif
 		sprintf(bridge_name, "bridgestp%d", count);
 		showOptions(wp, bridge_name, "On Off", "Off");
+		websWrite(wp, "&nbsp;Multicast&nbsp;"); //IGMP Snooping
+		sprintf(bridge_name, "bridgemcastbr%d", count);
+		showOptions(wp, bridge_name, "Filtered Unfiltered", "Filtered");
 		websWrite(wp, "&nbsp;Prio&nbsp;");
-		sprintf(bridge_name, "bridgeprio%d", count);
+		sprintf(bridge_name, "bridgeb%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"32768\" />\n", bridge_name);
 		websWrite(wp, "&nbsp;MTU&nbsp;");
 		// Bridges are bridges, Ports are ports, show it again HERE          
@@ -1895,7 +1898,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 			break;
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">Bridge %d</div>\n", count);
+		websWrite(wp, "Bridge %d\n", count);
 		sprintf(bridge_name, "bridgename%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", bridge_name, bridge);
 #ifdef HAVE_MSTP
@@ -1905,6 +1908,9 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 #endif
 		sprintf(bridge_name, "bridgestp%d", count);
 		showOptions(wp, bridge_name, "On Off", stp);
+		websWrite(wp, "&nbsp;Multicast&nbsp;"); //IGMP Snooping
+		sprintf(bridge_name, "bridgemcastbr%d", count);
+		showOptions(wp, bridge_name, "Filtered Unfiltered", nvram_default_get(bridge_name, "Filtered") );
 		websWrite(wp, "&nbsp;Prio&nbsp;");
 		sprintf(bridge_name, "bridgeprio%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", bridge_name, prio != NULL ? prio : "32768");
@@ -1928,7 +1934,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	for (i = count; i < realcount; i++) {
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">Bridge %d</div>\n", i);
+		websWrite(wp, "Bridge %d\n", i);
 		sprintf(bridge_name, "bridgename%d", i);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" />\n", bridge_name);
 #ifdef HAVE_MSTP
@@ -1938,6 +1944,9 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 #endif
 		sprintf(bridge_name, "bridgestp%d", i);
 		showOptions(wp, bridge_name, "On Off", "On");
+		websWrite(wp, "&nbsp;Multicast&nbsp;"); //IGMP Snooping
+		sprintf(bridge_name, "bridgemcastbr%d", count);
+		showOptions(wp, bridge_name, "Filtered Unfiltered", nvram_default_get(bridge_name, "Filtered") );
 		websWrite(wp, "&nbsp;Prio&nbsp;");
 		sprintf(bridge_name, "bridgeprio%d", i);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", bridge_name, "32768");
