@@ -2628,8 +2628,8 @@ void start_drivers(void)
 		insmod("libata");
 		insmod("libahci");
 		insmod("ahci");
-		insmod("ahci_imx");
 		insmod("ahci_platforms");
+		insmod("ahci_imx");
 //mmc
 		insmod("mmc_core");
 		insmod("mmc_block");
