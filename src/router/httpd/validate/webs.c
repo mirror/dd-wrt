@@ -2446,7 +2446,7 @@ void save_networking(webs_t wp)
 	// save bridges
 
 	for (i = 0; i < bridgescount; i++) {
-		char *ifname, *tag, *prio, *mtu;
+		char *ifname, *tag, *prio, *mtu, *mcast;
 		char var[32];
 		char ipaddr[32];
 		char netmask[32];
@@ -2462,6 +2462,13 @@ void save_networking(webs_t wp)
 		tag = websGetVar(wp, var, NULL);
 		if (!tag)
 			return;
+		sprintf(var, "bridgemcastbr%d", i);
+		mcast = websGetVar(wp, var, NULL);
+		if (!mcast){
+			return;
+		}else{
+			nvram_set(var, mcast);
+		}
 		sprintf(var, "bridgeprio%d", i);
 		prio = websGetVar(wp, var, NULL);
 		if (!prio)
