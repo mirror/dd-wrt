@@ -25,6 +25,16 @@ MODULE_DESCRIPTION("Xtables: MAC address match");
 MODULE_ALIAS("ipt_mac");
 MODULE_ALIAS("ip6t_mac");
 
+static inline unsigned compare_ether_addr(const u8 *addr1, const u8 *addr2)
+{
+	const u16 *a = (const u16 *) addr1;
+	const u16 *b = (const u16 *) addr2;
+
+	BUILD_BUG_ON(ETH_ALEN != 6);
+	return ((a[0] ^ b[0]) | (a[1] ^ b[1]) | (a[2] ^ b[2])) != 0;
+}
+
+
 static bool mac_mt(const struct sk_buff *skb, struct xt_action_param *par)
 {
 	const struct xt_mac_info *info = par->matchinfo;
