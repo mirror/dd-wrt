@@ -49,8 +49,8 @@ struct squashfs_sb_info {
 	int			next_cache;
 	int			next_fragment;
 	int			next_meta_index;
-	unsigned int		*uid;
-	unsigned int		*guid;
+	kuid_t			*uid;
+	kgid_t			*guid;
 	long long		*fragment_index;
 	unsigned int		*fragment_index_2;
 	unsigned int		read_size;
