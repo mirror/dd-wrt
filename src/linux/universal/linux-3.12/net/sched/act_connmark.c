@@ -78,7 +78,7 @@ out:
 	return TC_ACT_PIPE;
 }
 
-static int tcf_connmark(struct net *n, struct nlattr *nla, struct nlattr *est,
+static int tcf_connmark_init(struct net *n, struct nlattr *nla, struct nlattr *est,
 			 struct tc_action *a, int ovr, int bind)
 {
 	struct tcf_common *pc;
