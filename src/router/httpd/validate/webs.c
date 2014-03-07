@@ -566,31 +566,8 @@ extern void gen_key(char *genstr, int weptype);
 extern unsigned char key128[4][13];
 extern unsigned char key64[4][5];
 
-void generate_wep_key(webs_t wp)
-{
-	char *prefix, *passphrase, *bit, *tx;
 
-#ifdef HAVE_MADWIFI
-	prefix = websGetVar(wp, "security_varname", "ath0");
-#else
-	prefix = websGetVar(wp, "security_varname", "wl");
-#endif
-	char var[80];
-
-	sprintf(var, "%s_wep_bit", prefix);
-	bit = websGetVar(wp, var, NULL);
-	if (bit != NULL)
-		nvram_set("wl_wep_bit", bit);
-	sprintf(var, "%s_passphrase", prefix);
-	passphrase = websGetVar(wp, var, NULL);
-	sprintf(var, "%s_key", prefix);
-	tx = websGetVar(wp, var, NULL);
-	cprintf("gen wep key: bits = %s\n", bit);
-
-	generate_wep_key_single(prefix, passphrase, bit, tx);
-}
-
-void generate_wep_key_single(char *prefix, char *passphrase, char *bit, char *tx)
+static void generate_wep_key_single(char *prefix, char *passphrase, char *bit, char *tx)
 {
 
 	int i;
@@ -671,6 +648,31 @@ void generate_wep_key_single(char *prefix, char *passphrase, char *bit, char *tx
 	}
 	return;
 }
+
+void generate_wep_key(webs_t wp)
+{
+	char *prefix, *passphrase, *bit, *tx;
+
+#ifdef HAVE_MADWIFI
+	prefix = websGetVar(wp, "security_varname", "ath0");
+#else
+	prefix = websGetVar(wp, "security_varname", "wl");
+#endif
+	char var[80];
+
+	sprintf(var, "%s_wep_bit", prefix);
+	bit = websGetVar(wp, var, NULL);
+	if (bit != NULL)
+		nvram_set("wl_wep_bit", bit);
+	sprintf(var, "%s_passphrase", prefix);
+	passphrase = websGetVar(wp, var, NULL);
+	sprintf(var, "%s_key", prefix);
+	tx = websGetVar(wp, var, NULL);
+	cprintf("gen wep key: bits = %s\n", bit);
+
+	generate_wep_key_single(prefix, passphrase, bit, tx);
+}
+
 
 void copytonv(webs_t wp, const char *fmt, ...)
 {
