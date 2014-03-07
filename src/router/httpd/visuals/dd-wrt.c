@@ -1910,7 +1910,9 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, bridge_name, "On Off", stp);
 		websWrite(wp, "&nbsp;Multicast&nbsp;"); //IGMP Snooping
 		sprintf(bridge_name, "bridgemcastbr%d", count);
-		showOptions(wp, bridge_name, "Filtered Unfiltered", nvram_default_get(bridge_name, "Filtered") );
+		char mcast[32];
+		sprintf(mcast,"%s_mcast",bridge);
+		showOptions(wp, bridge_name, "Filtered Unfiltered", nvram_default_match(mcast, "1") ? "Filtered" : "Unfiltered" );
 		websWrite(wp, "&nbsp;Prio&nbsp;");
 		sprintf(bridge_name, "bridgeprio%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", bridge_name, prio != NULL ? prio : "32768");

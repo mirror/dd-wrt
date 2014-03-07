@@ -2467,7 +2467,11 @@ void save_networking(webs_t wp)
 		if (!mcast){
 			return;
 		}else{
-			nvram_set(var, mcast);
+			sprintf(n, "%s_mcast", ifname);
+			if (!strmcmp(mcast,"Filtered"))
+			    nvram_set(n, "1");
+			else
+			    nvram_set(n, "0");
 		}
 		sprintf(var, "bridgeprio%d", i);
 		prio = websGetVar(wp, var, NULL);
