@@ -62,6 +62,11 @@
 		<input class="spaceradio" type="radio" name="l2tp_req_auth" value="no" <% nvram_checked("l2tp_req_auth", "no"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
+        <div class="label"><% tran("share.wan_dualaccess"); %></div>
+        <input class="spaceradio" type="radio" name="wan_dualaccess" value="1" <% nvram_checked("wan_dualaccess", "1"); %> /><% tran("share.yes"); %>&nbsp;
+        <input class="spaceradio" type="radio" name="wan_dualaccess" value="0" <% nvram_checked("wan_dualaccess", "0"); %> /><% tran("share.no"); %>
+</div>
+<div class="setting">
 	<div class="label"><% tran("idx_l.iptv"); %></div>
 	<input class="spaceradio" type="radio" name="pptp_iptv" value="1" <% nvram_checked("pptp_iptv", "1"); %> /><% tran("share.yes"); %>&nbsp;
 	<input class="spaceradio" type="radio" name="pptp_iptv" value="0" <% nvram_checked("pptp_iptv", "0"); %> /><% tran("share.no"); %>
