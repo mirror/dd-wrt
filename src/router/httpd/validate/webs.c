@@ -2470,7 +2470,7 @@ void save_networking(webs_t wp)
 			return;
 		}else{
 			sprintf(n, "%s_mcast", ifname);
-			if (!strcmp(mcast,"Filtered"))
+			if (!strcmp(mcast,"On"))
 			    nvram_set(n, "1");
 			else
 			    nvram_set(n, "0");

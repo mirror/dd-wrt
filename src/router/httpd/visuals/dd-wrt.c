@@ -1858,9 +1858,9 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 #endif
 		sprintf(bridge_name, "bridgestp%d", count);
 		showOptions(wp, bridge_name, "On Off", "Off");
-		websWrite(wp, "&nbsp;Multicast&nbsp;"); //IGMP Snooping
+		websWrite(wp, "&nbsp;IGMP Snooping&nbsp;"); //IGMP Snooping
 		sprintf(bridge_name, "bridgemcastbr%d", count);
-		showOptions(wp, bridge_name, "Filtered Unfiltered", nvram_default_match("br0_mcast", "1", "0") ? "Filtered" : "Unfiltered" );
+		showOptions(wp, bridge_name, "On Off", nvram_default_match("br0_mcast", "1", "0") ? "On" : "Off" );
 		websWrite(wp, "&nbsp;Prio&nbsp;");
 		sprintf(bridge_name, "bridgeprio%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"32768\" />\n", bridge_name);
@@ -1908,11 +1908,11 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 #endif
 		sprintf(bridge_name, "bridgestp%d", count);
 		showOptions(wp, bridge_name, "On Off", stp);
-		websWrite(wp, "&nbsp;Multicast&nbsp;"); //IGMP Snooping
+		websWrite(wp, "&nbsp;IGMP Snooping&nbsp;"); //IGMP Snooping
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		char mcast[32];
 		sprintf(mcast,"%s_mcast",bridge);
-		showOptions(wp, bridge_name, "Filtered Unfiltered", nvram_default_match(mcast, "1", "0") ? "Filtered" : "Unfiltered" );
+		showOptions(wp, bridge_name, "On Off", nvram_default_match(mcast, "1", "0") ? "On" : "Off" );
 		websWrite(wp, "&nbsp;Prio&nbsp;");
 		sprintf(bridge_name, "bridgeprio%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", bridge_name, prio != NULL ? prio : "32768");
@@ -1946,9 +1946,9 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 #endif
 		sprintf(bridge_name, "bridgestp%d", i);
 		showOptions(wp, bridge_name, "On Off", "On");
-		websWrite(wp, "&nbsp;Multicast&nbsp;"); //IGMP Snooping
+		websWrite(wp, "&nbsp;IGMP Snooping&nbsp;"); //IGMP Snooping
 		sprintf(bridge_name, "bridgemcastbr%d", count);
-		showOptions(wp, bridge_name, "Filtered Unfiltered", "Filtered");
+		showOptions(wp, bridge_name, "On Off", "Off");
 		websWrite(wp, "&nbsp;Prio&nbsp;");
 		sprintf(bridge_name, "bridgeprio%d", i);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", bridge_name, "32768");
