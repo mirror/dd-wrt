@@ -139,8 +139,7 @@ int br_add_bridge(const char *brname)
 	char ipaddr[32];
 	char brmcast[32];
 
-	sprintf(brmcast, "bridgemcast%s", brname);
-	
+	sprintf(brmcast, "%s_mcast", brname);
 	sprintf(ipaddr, "%s_ipaddr", brname);
 	char netmask[32];
 
@@ -154,7 +153,7 @@ int br_add_bridge(const char *brname)
 	} else
 		eval("ifconfig", brname, "mtu", getBridgeMTU(brname));
 	
-	if( !strcmp(nvram_get(brmcast), "Filtered") ){
+	if(nvram_match(brmcast, "1")){
 		sysprintf("echo 1 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
 	} else{
 		sysprintf("echo 0 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
