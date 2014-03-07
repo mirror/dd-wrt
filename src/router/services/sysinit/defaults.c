@@ -468,7 +468,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wan_dns", "", 0},	/* x.x.x.x x.x.x.x ... */
 
 	{"wan_wins", "0.0.0.0", 0},	/* x.x.x.x x.x.x.x ... */
-
+	{"wan_dualaccess", "0", 0},	/* dual-access mode, eg for russia */
 #ifdef HAVE_SKYTRON
 	{"wan_hostname", "skymax254b", 0},	/* WAN hostname */
 	{"wan_domain", "local", 0},	/* WAN domain name */

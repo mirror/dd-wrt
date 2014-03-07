@@ -276,6 +276,13 @@ static void parse_port_forward(char *wordlist)
 	char *name, *enable, *proto, *port, *ip;
 	char buff[256], ip2[16];
 	int flag_dis = 0;
+#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
+	char *wan_proto = nvram_safe_get("wan_proto");
+	char *wan_iface = nvram_safe_get("wan_ifname");
+	if (!strlen(wan_iface))
+		wan_iface = nvram_safe_get("wan_ifname2");
+#endif
+
 	/*
 	 * name:enable:proto:port>ip name:enable:proto:port>ip 
 	 */
@@ -323,6 +330,13 @@ static void parse_port_forward(char *wordlist)
 
 			if (flag_dis == 0) {
 				save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s\n", wanaddr, port, ip);
+#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
+				if ( !strcmp(wan_proto, "pppoe_dual") || 
+			             (!strcmp(wan_proto, "pptp") && nvram_safe_get("wan_dualaccess", "0")) ||
+				     (!strcmp(wan_proto, "l2tp") && nvram_safe_get("wan_dualaccess", "0"))
+				   )
+					save2file("-A PREROUTING -i %s -p tcp --dport %s -j DNAT --to-destination %s\n", wan_iface, port, ip);
+#endif
 				snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s --dport %s -j %s\n", ip, port, log_accept);
 			} else {
 				if ((!dmzenable)
@@ -340,6 +354,13 @@ static void parse_port_forward(char *wordlist)
 			bzero(buff, sizeof(buff));
 			if (flag_dis == 0) {
 				save2file("-A PREROUTING -p udp -d %s --dport %s -j DNAT --to-destination %s\n", wanaddr, port, ip);
+#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
+				if ( !strcmp(wan_proto, "pppoe_dual") || 
+			             (!strcmp(wan_proto, "pptp") && nvram_safe_get("wan_dualaccess", "0")) ||
+				     (!strcmp(wan_proto, "l2tp") && nvram_safe_get("wan_dualaccess", "0"))
+				   )
+					save2file("-A PREROUTING -i %s -p udp -m udp --dport %s -j DNAT --to-destination %s\n", wan_iface, port, ip);
+#endif
 				snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n", ip, port, log_accept);
 			} else {
 				if ((!dmzenable)
@@ -489,22 +510,27 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 	char *wan_proto = nvram_safe_get("wan_proto");
 	char *wan_iface = nvram_safe_get("wan_ifname");
-        if (!strlen(wan_iface))
+	if (!strlen(wan_iface))
 		wan_iface = nvram_safe_get("wan_ifname2");
 #endif
-
 	if (src && strlen(src) > 0) {
 		save2file("-A PREROUTING -p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", proto, proto, src, wanaddr, from, ip, to);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-		if (!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp") || !strcmp(wan_proto, "pppoe_dual"))
-			save2file("-A PREROUTING -i %s -p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", wan_iface, proto, proto, src, wanaddr, from, ip, to);
+		if ( !strcmp(wan_proto, "pppoe_dual") || 
+	             (!strcmp(wan_proto, "pptp") && nvram_safe_get("wan_dualaccess", "0")) ||
+		     (!strcmp(wan_proto, "l2tp") && nvram_safe_get("wan_dualaccess", "0"))
+		   )
+			save2file("-A PREROUTING -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s\n", wan_iface, proto, proto, from, ip, to);
 #endif
 		snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
 	} else {
 		save2file("-A PREROUTING -p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", proto, proto, wanaddr, from, ip, to);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-		if (!strcmp(wan_proto, "pptp") || !strcmp(wan_proto, "l2tp") || !strcmp(wan_proto, "pppoe_dual"))
-			save2file("-A PREROUTING -i %s -p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", wan_iface, proto, proto, wanaddr, from, ip, to);
+		if ( !strcmp(wan_proto, "pppoe_dual") || 
+	             (!strcmp(wan_proto, "pptp") && nvram_safe_get("wan_dualaccess", "0")) ||
+		     (!strcmp(wan_proto, "l2tp") && nvram_safe_get("wan_dualaccess", "0"))
+		   )
+			save2file("-A PREROUTING -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s\n", wan_iface, proto, proto, from, ip, to);
 #endif
 		snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -d %s --dport %s -j %s\n", proto, proto, ip, to, log_accept);
 	}
@@ -763,6 +789,18 @@ static void nat_postrouting(void)
 			wan_ifname_tun = getSTA();
 		}
 
+#if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
+		char *wan_proto = nvram_safe_get("wan_proto");
+		if ( !strcmp(wan_proto, "pppoe_dual") || 
+	             (!strcmp(wan_proto, "pptp") && nvram_safe_get("wan_dualaccess", "0")) ||
+		     (!strcmp(wan_proto, "l2tp") && nvram_safe_get("wan_dualaccess", "0")) )
+		{
+			struct in_addr ifaddr;
+			osl_ifaddr(wan_ifname_tun, &ifaddr);
+			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wan_ifname_tun, inet_ntoa(ifaddr));
+		}
+#endif
+/*
 		if (nvram_match("wan_proto", "pptp")) {
 			struct in_addr ifaddr;
 			osl_ifaddr(nvram_safe_get("pptp_ifname"), &ifaddr);
@@ -778,7 +816,7 @@ static void nat_postrouting(void)
 			osl_ifaddr(wan_ifname_tun, &ifaddr);
 			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wan_ifname_tun, inet_ntoa(ifaddr));
 		}
-
+*/
 		if (nvram_match("block_loopback", "0")) {
 			save2file("-A POSTROUTING -m mark --mark %s -j MASQUERADE\n", get_NFServiceMark("FORWARD", 1));
 		}
