@@ -2277,7 +2277,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 #endif
 				sprintf(fr, "%d", chan[i].freq);
 				int freq = get_wififreq(prefix, chan[i].freq);
-				if (freq != -1)
+				if (freq != -1) {
 #ifdef HAVE_ATH9K
 					if (is_ath9k(prefix)) {
 						websWrite(wp,
@@ -2288,6 +2288,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					{
 						websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d MHz</option>\");\n", fr, nvram_match(wl_channel, fr) ? "selected=\\\"selected\\\"" : "", cn, (freq));
 					}
+				}
 				i++;
 			}
 			free(chan);
