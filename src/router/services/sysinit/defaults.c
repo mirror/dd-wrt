@@ -2922,8 +2922,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"nstx_log", "0", 0},
 #endif
 #ifdef HAVE_PORTSETUP
-	{"bridgemcastbr0", "Filtered", 0},/* IGMP Snooping enabled */
-	{"bridgemcastbr1", "Filtered", 0},/* IGMP Snooping enabled */
+	{"br0_mcast", "1", 0},/* IGMP Snooping enabled */
+	{"br1_mcast", "1", 0},/* IGMP Snooping enabled */
 	
 	{"eth0_bridged", "1", 0},	/* Service set ID (network name) */
 	{"eth0_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
