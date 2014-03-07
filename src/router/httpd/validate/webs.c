@@ -2468,7 +2468,7 @@ void save_networking(webs_t wp)
 			return;
 		}else{
 			sprintf(n, "%s_mcast", ifname);
-			if (!strmcmp(mcast,"Filtered"))
+			if (!strncmp(mcast,"Filtered"))
 			    nvram_set(n, "1");
 			else
 			    nvram_set(n, "0");
