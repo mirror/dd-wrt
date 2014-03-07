@@ -153,11 +153,8 @@ int br_add_bridge(const char *brname)
 	} else
 		eval("ifconfig", brname, "mtu", getBridgeMTU(brname));
 	
-	if(nvram_match(brmcast, "1")){
-		sysprintf("echo 1 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
-	} else{
-		sysprintf("echo 0 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
-	}
+	char *mcast = nvram_default_get(brmcast,"0");
+	sysprintf("echo %s > /sys/devices/virtual/net/%s/bridge/multicast_snooping", mcast, brname);
 	return ret;
 }
 
