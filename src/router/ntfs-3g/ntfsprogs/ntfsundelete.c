@@ -1333,8 +1333,9 @@ static struct ufile * read_record(ntfs_volume *vol, long long record)
 	ATTR_RECORD *attr10, *attr20, *attr90;
 	struct ufile *file;
 	ntfs_attr *mft;
+#ifdef DEBUG
 	u32 log_levels;
-
+#endif
 	if (!vol)
 		return NULL;
 
@@ -1373,7 +1374,9 @@ static struct ufile * read_record(ntfs_volume *vol, long long record)
 	mft = NULL;
 
 	/* disable errors logging, while examining suspicious records */
+#ifdef DEBUG
 	log_levels = ntfs_log_clear_levels(NTFS_LOG_LEVEL_PERROR);
+#endif
 	attr10 = find_first_attribute(AT_STANDARD_INFORMATION,	file->mft);
 	attr20 = find_first_attribute(AT_ATTRIBUTE_LIST,	file->mft);
 	attr90 = find_first_attribute(AT_INDEX_ROOT,		file->mft);
@@ -1398,9 +1401,10 @@ static struct ufile * read_record(ntfs_volume *vol, long long record)
 	if (get_data(file, vol) < 0) {
 		ntfs_log_error("ERROR: Couldn't get data streams.\n");
 	}
+#ifdef DEBUG
 	/* restore errors logging */
 	ntfs_log_set_levels(log_levels);
-
+#endif
 	return file;
 }
 
