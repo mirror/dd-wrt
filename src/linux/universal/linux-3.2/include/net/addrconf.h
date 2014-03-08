@@ -76,7 +76,7 @@ extern struct inet6_ifaddr      *ipv6_get_ifaddr(struct net *net,
 						 struct net_device *dev,
 						 int strict);
 
-extern int			ipv6_dev_get_saddr(struct net *net,
+extern int	__weak		ipv6_dev_get_saddr(struct net *net,
 					       struct net_device *dev,
 					       const struct in6_addr *daddr,
 					       unsigned int srcprefs,
