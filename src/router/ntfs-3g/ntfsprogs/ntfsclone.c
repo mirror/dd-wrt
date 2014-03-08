@@ -553,10 +553,14 @@ static void parse_options(int argc, char **argv)
 	 */
 	if (opt.std_out) {
 		msg_out = stderr;
+#ifdef DEBUG
 		ntfs_log_set_handler(ntfs_log_handler_stderr);
+#endif
 	} else {
 		msg_out = stdout;
+#ifdef DEBUG
 		ntfs_log_set_handler(ntfs_log_handler_outerr);
+#endif
 	}
 }
 
