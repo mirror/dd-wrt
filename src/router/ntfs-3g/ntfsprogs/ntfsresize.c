@@ -5,7 +5,7 @@
  * Copyright (c) 2002-2005 Anton Altaparmakov
  * Copyright (c) 2002-2003 Richard Russon
  * Copyright (c) 2007      Yura Pakhuchiy
- * Copyright (c) 2011      Jean-Pierre Andre
+ * Copyright (c) 2011-2013 Jean-Pierre Andre
  *
  * This utility will resize an NTFS volume without data loss.
  *
@@ -145,6 +145,7 @@ static struct {
 	int info;
 	int infombonly;
 	int expand;
+	int reliable_size;
 	int show_progress;
 	int badsectors;
 	int check;
@@ -213,6 +214,7 @@ typedef struct {
 	int shrink;		     /* shrink = 1, enlarge = 0 */
 	s64 badclusters;	     /* num of physically dead clusters */
 	VCN mft_highest_vcn;	     /* used for relocating the $MFT */
+	runlist_element *new_mft_start; /* new first run for $MFT:$DATA */
 	struct DELAYED *delayed_runlists; /* runlists to process later */
 	struct progress_bar progress;
 	struct bitmap lcn_bitmap;
@@ -402,7 +404,7 @@ static void version(void)
 	printf("Copyright (c) 2002-2005  Anton Altaparmakov\n");
 	printf("Copyright (c) 2002-2003  Richard Russon\n");
 	printf("Copyright (c) 2007       Yura Pakhuchiy\n");
-	printf("Copyright (c) 2011       Jean-Pierre Andre\n");
+	printf("Copyright (c) 2011-2012  Jean-Pierre Andre\n");
 	printf("\n%s\n%s%s", ntfs_gpl, ntfs_bugs, ntfs_home);
 }
 
@@ -423,8 +425,10 @@ static s64 get_new_volume_size(char *s)
 	if (size <= 0 || errno == ERANGE)
 		err_exit("Illegal new volume size\n");
 
-	if (!*suffix)
+	if (!*suffix) {
+		opt.reliable_size = 1;
 		return size;
+	}
 
 	if (strlen(suffix) == 2 && suffix[1] == 'i')
 		prefix_kind = 1024;
@@ -723,14 +727,6 @@ static void collect_resize_constraints(ntfs_resize_t *resize, runlist *rl)
 		    err_exit("Highly fragmented $Bitmap isn't supported yet.");
 
 		supported = 1;
-
-	} else if (inode == FILE_MFT) {
-		llcn = &resize->last_mft;
-		/*
-		 *  First run of $MFT AT_DATA isn't supported yet.
-		 */
-		if (atype != AT_DATA || rl->vcn)
-			supported = 1;
 
 	} else if (NInoAttrList(resize->ni)) {
 		llcn = &resize->last_multi_mft;
@@ -1848,11 +1844,17 @@ static void relocate_run(ntfs_resize_t *resize, runlist **rl, int run)
 	}
 
 	hint = (resize->mref == FILE_MFTMirr) ? 1 : 0;
-	if (!(relocate_rl = alloc_cluster(&resize->lcn_bitmap, lcn_length,
-					  new_vol_size, hint)))
-		perr_exit("Cluster allocation failed for %llu:%lld",
-			  (unsigned long long)resize->mref,
-			  (long long)lcn_length);
+	if ((resize->mref == FILE_MFT)
+	    && (resize->ctx->attr->type == AT_DATA)
+	    && !run
+	    && resize->new_mft_start) {
+		relocate_rl = resize->new_mft_start;
+	} else
+		if (!(relocate_rl = alloc_cluster(&resize->lcn_bitmap,
+					lcn_length, new_vol_size, hint)))
+			perr_exit("Cluster allocation failed for %llu:%lld",
+				  (unsigned long long)resize->mref,
+				  (long long)lcn_length);
 
 	/* FIXME: check $MFTMirr DATA isn't multi-run (or support it) */
 	ntfs_log_verbose("Relocate record %7llu:0x%x:%08lld:0x%08llx:0x%08llx "
@@ -1868,7 +1870,13 @@ static void relocate_run(ntfs_resize_t *resize, runlist **rl, int run)
 
 	/* We don't release old clusters in the bitmap, that area isn't
 	   used by the allocator and will be truncated later on */
-	free(relocate_rl);
+
+		/* Do not free the relocated MFT start */
+	if ((resize->mref != FILE_MFT)
+	    || (resize->ctx->attr->type != AT_DATA)
+	    || run
+	    || !resize->new_mft_start)
+		free(relocate_rl);
 
 	resize->dirty_inode = DIRTY_ATTRIB;
 }
@@ -1915,6 +1923,12 @@ static void relocate_attribute(ntfs_resize_t *resize)
 
 static int is_mftdata(ntfs_resize_t *resize)
 {
+	/*
+	 * We must update the MFT own DATA record at the end of the second
+	 * step, because the old MFT must be kept available for processing
+	 * the other files.
+	 */
+
 	if (resize->ctx->attr->type != AT_DATA)
 		return 0;
 
@@ -1994,7 +2008,9 @@ static void relocate_attributes(ntfs_resize_t *resize, int do_mftdata)
 
 static void relocate_inode(ntfs_resize_t *resize, MFT_REF mref, int do_mftdata)
 {
-	if (ntfs_file_record_read(resize->vol, mref, &resize->mrec, NULL)) {
+	ntfs_volume *vol = resize->vol;
+
+	if (ntfs_file_record_read(vol, mref, &resize->mrec, NULL)) {
 		/* FIXME: continue only if it make sense, e.g.
 		   MFT record not in use based on $MFT bitmap */
 		if (errno == EIO || errno == ENOENT)
@@ -2010,12 +2026,26 @@ static void relocate_inode(ntfs_resize_t *resize, MFT_REF mref, int do_mftdata)
 
 	relocate_attributes(resize, do_mftdata);
 
-	if (resize->dirty_inode == DIRTY_INODE) {
 //		if (vol->dev->d_ops->sync(vol->dev) == -1)
 //			perr_exit("Failed to sync device");
-		if (write_mft_record(resize->vol, mref, resize->mrec))
+		/* relocate MFT during second step, even if not dirty */
+	if ((mref == FILE_MFT) && do_mftdata && resize->new_mft_start) {
+		s64 pos;
+
+			/* write the MFT own record at its new location */
+		pos = (resize->new_mft_start->lcn
+					<< vol->cluster_size_bits)
+			+ (FILE_MFT << vol->mft_record_size_bits);
+		if (!opt.ro_flag
+		    && (ntfs_mst_pwrite(vol->dev, pos, 1,
+				vol->mft_record_size, resize->mrec) != 1))
+			perr_exit("Couldn't update MFT own record");
+	} else {
+		if ((resize->dirty_inode == DIRTY_INODE)
+		   && write_mft_record(vol, mref, resize->mrec)) {
 			perr_exit("Couldn't update record %llu",
-					(unsigned long long)mref);
+						(unsigned long long)mref);
+		}
 	}
 }
 
@@ -2024,6 +2054,7 @@ static void relocate_inodes(ntfs_resize_t *resize)
 	s64 nr_mft_records;
 	MFT_REF mref;
 	VCN highest_vcn;
+	u64 length;
 
 	printf("Relocating needed data ...\n");
 
@@ -2036,6 +2067,57 @@ static void relocate_inodes(ntfs_resize_t *resize)
 
 	nr_mft_records = resize->vol->mft_na->initialized_size >>
 			resize->vol->mft_record_size_bits;
+
+		/*
+		 * If we need to relocate the first run of the MFT DATA,
+		 * do it now, to have a better chance of getting at least
+		 * 16 records in the first chunk. This is mandatory to be
+		 * later able to read an MFT extent in record 15.
+		 * Should this fail, we can stop with no damage, the volume
+		 * is still in its initial state.
+		 */
+	if (!resize->vol->mft_na->rl)
+		err_exit("Internal error : no runlist for $MFT\n");
+
+	if ((resize->vol->mft_na->rl->lcn + resize->vol->mft_na->rl->length)
+			>= resize->new_volume_size) {
+		/*
+		 * The length of the first run is normally found in
+		 * mft_na. However in some rare circumstance, this is
+		 * merged with the first run of an extent of MFT,
+		 * which implies there is a single run in the base record.
+		 * So we have to make sure not to overflow from the
+		 * runs present in the base extent.
+		 */
+		length = resize->vol->mft_na->rl->length;
+		if (ntfs_file_record_read(resize->vol, FILE_MFT,
+				&resize->mrec, NULL)
+		    || !(resize->ctx = attr_get_search_ctx(NULL,
+				resize->mrec))) {
+			err_exit("Could not read the base record of MFT\n");
+		}
+		while (!ntfs_attrs_walk(resize->ctx)
+		   && (resize->ctx->attr->type != AT_DATA)) { }
+		if (resize->ctx->attr->type == AT_DATA) {
+			le64 high_le;
+
+			high_le = resize->ctx->attr->highest_vcn;
+			if (le64_to_cpu(high_le) < length)
+				length = le64_to_cpu(high_le) + 1;
+		} else {
+			err_exit("Could not find the DATA of MFT\n");
+		}
+		ntfs_attr_put_search_ctx(resize->ctx);
+		resize->new_mft_start = alloc_cluster(&resize->lcn_bitmap,
+				length, resize->new_volume_size, 0);
+		if (!resize->new_mft_start
+		    || (((resize->new_mft_start->length
+			<< resize->vol->cluster_size_bits)
+			    >> resize->vol->mft_record_size_bits) < 16)) {
+			err_exit("Could not allocate 16 records in"
+					" the first MFT chunk\n");
+		}
+	}
 
 	for (mref = 0; mref < (MFT_REF)nr_mft_records; mref++)
 		relocate_inode(resize, mref, 0);
@@ -2434,14 +2516,28 @@ static void truncate_badclust_file(ntfs_resize_t *resize)
  */
 static void truncate_bitmap_file(ntfs_resize_t *resize)
 {
+	ntfs_volume *vol = resize->vol;
+
 	printf("Updating $Bitmap file ...\n");
 
 	lookup_data_attr(resize->vol, FILE_Bitmap, NULL, &resize->ctx);
 	truncate_bitmap_data_attr(resize);
 
-	if (write_mft_record(resize->vol, resize->ctx->ntfs_ino->mft_no,
+	if (resize->new_mft_start) {
+		s64 pos;
+
+			/* write the MFT record at its new location */
+		pos = (resize->new_mft_start->lcn << vol->cluster_size_bits)
+			+ (FILE_Bitmap << vol->mft_record_size_bits);
+		if (!opt.ro_flag
+		    && (ntfs_mst_pwrite(vol->dev, pos, 1,
+				vol->mft_record_size, resize->ctx->mrec) != 1))
+			perr_exit("Couldn't update $Bitmap at new location");
+	} else {
+		if (write_mft_record(vol, resize->ctx->ntfs_ino->mft_no,
 			     resize->ctx->mrec))
-		perr_exit("Couldn't update $Bitmap");
+			perr_exit("Couldn't update $Bitmap");
+	}
 
 #if CLEAN_EXIT
 	close_inode_and_context(resize->ctx);
@@ -2477,35 +2573,68 @@ static int setup_lcn_bitmap(struct bitmap *bm, s64 nr_clusters)
  */
 static void update_bootsector(ntfs_resize_t *r)
 {
-	NTFS_BOOT_SECTOR bs;
-	s64  bs_size = sizeof(NTFS_BOOT_SECTOR);
+	NTFS_BOOT_SECTOR *bs;
 	ntfs_volume *vol = r->vol;
+	s64  bs_size = vol->sector_size;
 
 	printf("Updating Boot record ...\n");
+
+	bs = (NTFS_BOOT_SECTOR*)ntfs_malloc(vol->sector_size);
+	if (!bs)
+		perr_exit("ntfs_malloc");
 
 	if (vol->dev->d_ops->seek(vol->dev, 0, SEEK_SET) == (off_t)-1)
 		perr_exit("lseek");
 
-	if (vol->dev->d_ops->read(vol->dev, &bs, bs_size) == -1)
+	if (vol->dev->d_ops->read(vol->dev, bs, bs_size) == -1)
 		perr_exit("read() error");
 
-	bs.number_of_sectors = cpu_to_sle64(r->new_volume_size *
-			bs.bpb.sectors_per_cluster);
+	bs->number_of_sectors = cpu_to_sle64(r->new_volume_size *
+			bs->bpb.sectors_per_cluster);
 
 	if (r->mftmir_old) {
 		r->progress.flags |= NTFS_PROGBAR_SUPPRESS;
-		copy_clusters(r, r->mftmir_rl.lcn, r->mftmir_old,
-			      r->mftmir_rl.length);
-		bs.mftmirr_lcn = cpu_to_sle64(r->mftmir_rl.lcn);
+		/* Be sure the MFTMirr holds the updated MFT runlist */
+		if (r->new_mft_start)
+			copy_clusters(r, r->mftmir_rl.lcn,
+				 r->new_mft_start->lcn, r->mftmir_rl.length);
+		else
+			copy_clusters(r, r->mftmir_rl.lcn, r->mftmir_old,
+				      r->mftmir_rl.length);
+		bs->mftmirr_lcn = cpu_to_sle64(r->mftmir_rl.lcn);
 		r->progress.flags &= ~NTFS_PROGBAR_SUPPRESS;
+	}
+		/* Set the start of the relocated MFT */
+	if (r->new_mft_start) {
+		bs->mft_lcn = cpu_to_sle64(r->new_mft_start->lcn);
+			/* no more need for the new MFT start */
+		free(r->new_mft_start);
+		r->new_mft_start = (runlist_element*)NULL;
 	}
 
 	if (vol->dev->d_ops->seek(vol->dev, 0, SEEK_SET) == (off_t)-1)
 		perr_exit("lseek");
 
 	if (!opt.ro_flag)
-		if (vol->dev->d_ops->write(vol->dev, &bs, bs_size) == -1)
+		if (vol->dev->d_ops->write(vol->dev, bs, bs_size) == -1)
 			perr_exit("write() error");
+		/*
+		 * Set the backup boot sector, if the target size is
+		 * either not defined or is defined with no multiplier
+		 * suffix and is a multiple of the sector size.
+		 * With these conditions we can be confident enough that
+		 * the partition size is already defined or it will be
+		 * later defined with the same exact value.
+		 */
+	if (!opt.ro_flag && opt.reliable_size
+	    && !(opt.bytes % vol->sector_size)) {
+		if (vol->dev->d_ops->seek(vol->dev, opt.bytes
+				- vol->sector_size, SEEK_SET) == (off_t)-1)
+			perr_exit("lseek");
+		if (vol->dev->d_ops->write(vol->dev, bs, bs_size) == -1)
+			perr_exit("write() error");
+	}
+	free(bs);
 }
 
 /**
@@ -4268,16 +4397,17 @@ int main(int argc, char **argv)
 			 "size!\nCorrupt partition table or incorrect device "
 			 "partitioning?\n");
 
-	if (!opt.bytes && !opt.info && !opt.infombonly)
+	if (!opt.bytes && !opt.info && !opt.infombonly) {
 		opt.bytes = device_size;
-
-	/* Take the integer part: don't make the volume bigger than requested */
-	new_size = opt.bytes / vol->cluster_size;
+		opt.reliable_size = 1;
+	}
 
 	/* Backup boot sector at the end of device isn't counted in NTFS
 	   volume size thus we have to reserve space for it. */
-	if (new_size)
-		--new_size;
+	if (opt.bytes > vol->sector_size)
+		new_size = (opt.bytes - vol->sector_size) / vol->cluster_size;
+	else
+		new_size = 0;
 
 	if (!opt.info && !opt.infombonly) {
 		print_vol_size("New volume size    ", vol_size(vol, new_size));
