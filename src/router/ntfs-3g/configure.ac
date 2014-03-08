@@ -2,7 +2,7 @@
 # configure.ac - Source file to generate "./configure" to prepare package for
 #		 compilation.
 #
-# Copyright (c) 2000-2006 Anton Altaparmakov
+# Copyright (c) 2000-2013 Anton Altaparmakov
 # Copyright (c) 2003 Jan Kratochvil
 # Copyright (c) 2005-2009 Szabolcs Szakacsits
 # Copyright (C) 2007-2008 Alon Bar-Lev
@@ -24,8 +24,8 @@
 
 # Autoconf
 AC_PREREQ(2.59)
-AC_INIT([ntfs-3g],[2013.1.13],[ntfs-3g-devel@lists.sf.net])
-LIBNTFS_3G_VERSION="84"
+AC_INIT([ntfs-3g],[2014.2.15],[ntfs-3g-devel@lists.sf.net])
+LIBNTFS_3G_VERSION="85"
 AC_CONFIG_SRCDIR([src/ntfs-3g.c])
 
 # Environment
@@ -417,12 +417,50 @@ if test "x$extrapath" != "x"; then
 	fi
 fi
 
+# Specify support for obtaining the correct BIOS legacy geometry needed for
+# Windows to boot in CHS mode.  We check if hd.h header is present and the hd
+# library is present that goes with it and then check if the hd_list() function
+# is present and usable.
+#
+# Using the hd library is enabled by default and can be disabled with the
+# --disable-hd option to the configure script.
+AC_ARG_WITH(hd, [
+  --with-hd@<:@=PFX@:>@         use Windows compliant disk geometry, with optional
+                          prefix to hd library and headers @<:@default=detect@:>@
+  --without-hd            do not use Windows compliant disk geometry],
+	if test "$with_hd" = "yes"; then
+		extrapath2=default
+	elif test "$with_hd" = "no"; then
+		extrapath2=
+	else
+		extrapath2=$with_hd
+	fi,
+	extrapath2=default
+)
+if test "x$extrapath2" != "x"; then
+	if test "x$extrapath2" != "xdefault"; then
+		LIBNTFS_CPPFLAGS="$LIBNTFS_CPPFLAGS -I$extrapath2/include"
+		LIBNTFS_LIBS="$LIBNTFS_LIBS -L$extrapath2/lib"
+	fi
+	AC_CHECK_HEADER([hd.h],
+		AC_CHECK_LIB([hd], [hd_list],
+			AC_DEFINE([ENABLE_HD], 1,
+			[Define this to 1 if you want to enable use of Windows
+			compliant disk geometry.])
+			LIBNTFS_LIBS="$LIBNTFS_LIBS -lhd"
+			NTFSPROGS_STATIC_LIBS="$NTFSPROGS_STATIC_LIBS -lhd",
+			AC_MSG_WARN([ntfsprogs Windows compliant geometry code requires the hd library.]),
+		),
+		AC_MSG_WARN([ntfsprogs Windows compliant geometry code requires the hd library.]),
+	)
+fi
+
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([ctype.h fcntl.h libgen.h libintl.h limits.h locale.h \
 	mntent.h stddef.h stdint.h stdlib.h stdio.h stdarg.h string.h \
 	strings.h errno.h time.h unistd.h utime.h wchar.h getopt.h features.h \
-	endian.h byteswap.h sys/byteorder.h sys/disk.h sys/endian.h \
+	regex.h endian.h byteswap.h sys/byteorder.h sys/disk.h sys/endian.h \
 	sys/param.h sys/ioctl.h sys/mkdev.h sys/mount.h sys/stat.h sys/types.h \
 	sys/vfs.h sys/statvfs.h sys/sysmacros.h linux/major.h linux/fd.h \
 	linux/hdreg.h machine/endian.h windows.h syslog.h pwd.h malloc.h])
@@ -554,6 +592,9 @@ AC_SUBST([LIBFUSE_LITE_CFLAGS])
 AC_SUBST([LIBFUSE_LITE_LIBS])
 AC_SUBST([MKNTFS_CPPFLAGS])
 AC_SUBST([MKNTFS_LIBS])
+AC_SUBST([LIBNTFS_CPPFLAGS])
+AC_SUBST([LIBNTFS_LIBS])
+AC_SUBST([NTFSPROGS_STATIC_LIBS])
 AC_SUBST([OUTPUT_FORMAT])
 AM_CONDITIONAL([FUSE_INTERNAL], [test "${with_fuse}" = "internal"])
 AM_CONDITIONAL([GENERATE_LDSCRIPT], [test "${enable_ldscript}" = "yes"])
