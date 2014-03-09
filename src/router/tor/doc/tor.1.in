@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets v1.76.1 <http://docbook.sf.net/>
-.\"      Date: 12/23/2013
+.\"      Date: 02/25/2014
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "12/23/2013" "Tor" "Tor Manual"
+.TH "TOR" "1" "02/25/2014" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -1620,7 +1620,9 @@ Minimum uptime of a v2 hidden service directory to be accepted as such by author
 .PP
 \fBDirPort\fR [\fIaddress\fR:]\fIPORT\fR|\fBauto\fR [\fIflags\fR]
 .RS 4
-If this option is nonzero, advertise the directory service on this port\&. Set it to "auto" to have Tor pick a port for you\&. This option can occur more than once\&. (Default: 0)
+If this option is nonzero, advertise the directory service on this port\&. Set it to "auto" to have Tor pick a port for you\&. This option can occur more than once, but only one advertised DirPort is supported: all but one DirPort must have the
+\fBNoAdvertise\fR
+flag set\&. (Default: 0)
 .sp
 .if n \{\
 .RS 4
