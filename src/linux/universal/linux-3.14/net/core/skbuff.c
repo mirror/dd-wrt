@@ -842,9 +842,6 @@ static void BCMFASTPATH_HOST __copy_skb_header(struct sk_buff *new, const struct
 	new->mark		= old->mark;
 	new->skb_iif		= old->skb_iif;
 	__nf_copy(new, old);
-#if IS_ENABLED(CONFIG_NETFILTER_XT_TARGET_TRACE)
-	new->nf_trace		= old->nf_trace;
-#endif
 #ifdef CONFIG_NET_SCHED
 	new->tc_index		= old->tc_index;
 #ifdef CONFIG_NET_CLS_ACT
