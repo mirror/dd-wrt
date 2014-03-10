@@ -214,3 +214,7 @@ void start_spotpass(void);
 void stop_spotpass(void);
 void start_spotpass_defaults(void);
 #endif
+
+#ifdef HAVE_ClOUD4WI
+void start_cloud4wi_provisioning(void);
+#endif
