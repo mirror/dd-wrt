@@ -314,6 +314,9 @@ ifeq ($(CONFIG_SPOTPASS),y)
 CFLAGS_EXTRA += -DHAVE_SPOTPASS
 OBJS += spotpass.o
 endif
+ifeq ($(CONFIG_CLOUD4WI),y)
+OBJS += cloud4wi.o
+endif
 ifeq ($(CONFIG_TXPWRFIXED),y)
 CFLAGS_EXTRA += -DHAVE_TXPWRFIXED
 endif
