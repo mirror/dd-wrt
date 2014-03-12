@@ -1095,7 +1095,7 @@ main(int argc, char **argv)
 
 	sudp = OpenAndConfSSDPReceiveSocket();
 	if (sudp < 0)
-	{
+	{	return 1;
 		DPRINTF(E_INFO, L_GENERAL, "Failed to open socket for receiving SSDP. Trying to use MiniSSDPd\n");
 		if (SubmitServicesToMiniSSDPD(lan_addr[0].str, runtime_vars.port) < 0)
 			DPRINTF(E_FATAL, L_GENERAL, "Failed to connect to MiniSSDPd. EXITING");
@@ -1103,13 +1103,16 @@ main(int argc, char **argv)
 	/* open socket for HTTP connections. Listen on the 1st LAN address */
 	shttpl = OpenAndConfHTTPSocket(runtime_vars.port);
 	if (shttpl < 0)
+		return 1;
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to open socket for HTTP. EXITING\n");
-	DPRINTF(E_WARN, L_GENERAL, "HTTP listening on port %d\n", runtime_vars.port);
+		DPRINTF(E_WARN, L_GENERAL, "HTTP listening on port %d\n", runtime_vars.port);
 
 	/* open socket for sending notifications */
-	if (OpenAndConfSSDPNotifySockets(snotify) < 0)
+	if (OpenAndConfSSDPNotifySockets(snotify) < 0){
+		return 1;
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to open sockets for sending SSDP notify "
 	                "messages. EXITING\n");
+	}
 
 #ifdef TIVO_SUPPORT
 	if (GETFLAG(TIVO_MASK))
