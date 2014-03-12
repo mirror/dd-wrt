@@ -27,9 +27,9 @@
 #if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)
 #include <net/ipv6.h>
 #include <net/mld.h>
-#include <net/addrconf.h>
 #include <net/ip6_checksum.h>
 #endif
+#include <net/addrconf.h>
 
 #include "br_private.h"
 
@@ -351,6 +351,9 @@ static struct sk_buff *br_ip4_multicast_alloc_query(struct net_bridge *br,
 	struct igmphdr *ih;
 	struct ethhdr *eth;
 	struct iphdr *iph;
+
+	if (!ipv6_dev_get_saddr)
+	    return NULL;
 
 	skb = netdev_alloc_skb_ip_align(br->dev, sizeof(*eth) + sizeof(*iph) +
 						 sizeof(*ih) + 4);
