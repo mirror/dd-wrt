@@ -279,10 +279,9 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 				//fprintf(stderr, "flushing %s\n", dummy);
 			}
 			return 0;
-		}else{
-			nvram_set("auth_time", s_curr_time);
 		}
 	}
+	nvram_set("auth_time", s_curr_time);
 
 	
 
