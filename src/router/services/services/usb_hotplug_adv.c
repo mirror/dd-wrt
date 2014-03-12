@@ -34,6 +34,60 @@ int usb_add_ufd(char *link, int host, char *devpath, int mode);
 #define PARTFILE	"/tmp/part.dump"
 #define MOUNTSTAT	"/tmp/mounting"
 
+static bool run_on_mount()
+{
+	struct stat tmp_stat;
+	char path[128];
+	if (!nvram_match("usb_runonmount", "")) {
+		sprintf(path, "%s", nvram_safe_get("usb_runonmount"));
+		if (stat(path, &tmp_stat) == 0)	//file exists
+		{
+			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin", 1);
+			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
+
+			system(path);
+		}
+	}
+}
+
+/* TODO improvement: use procfs to identify pids that have openfiles on externel discs and then stop them before umount*/
+static bool usb_stop_services()
+{
+	eval("stopservice", "cron");
+	eval("stopservice", "samba3");
+	eval("stopservice", "dlna");
+	eval("stopservice", "ftpsrv");
+#ifdef HAVE_WEBSERVER
+	eval("stopservice", "lighttpd");
+#endif
+#ifdef HAVE_TRANSMISSION	
+	eval("stopservice", "transmission");
+#endif
+#ifdef HAVE_FREERADIUS
+	eval("stopservice", "freeradius");
+#endif
+	return 0;
+}
+
+/* when adding external media some services should be restarted, e.g. minidlna in order to scan for media files*/
+static bool usb_start_services()
+{
+	eval("startservice", "cron");
+	eval("startservice", "samba3");
+	eval("startservice", "dlna");
+	eval("startservice", "ftpsrv");
+#ifdef HAVE_WEBSERVER
+	eval("startservice", "lighttpd");
+#endif
+#ifdef HAVE_TRANSMISSION
+	eval("startservice", "transmission");
+#endif
+#ifdef HAVE_FREERADIUS
+	eval("startservice", "freeradius");
+#endif
+	return 0;
+}
+
 //Kernel 2.6.x
 void start_hotplug_usb(void)
 {
@@ -64,7 +118,6 @@ void start_hotplug_usb(void)
 	 * If a new USB device is added and it is of storage class 
 	 */
 	if (class == 8 && subclass == 6) {
-
 		devpath = getenv("DEVPATH");
 		sysprintf("echo start_hotplug_usb devicepath %s >> /tmp/hotplugs", devpath);
 
@@ -141,8 +194,13 @@ void start_hotplug_block(void)
 	strcpy(dev, devp);
 
 	for (c = 'a'; c < 'f'; c++) {	//support sda - sdf
+
 		sprintf(dev, "sd%c", c);
 		sprintf(devmmc, "mmcblk%c", c);
+		
+		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0)//
+			if (!strcmp(action, "add"))
+				usb_stop_services();
 		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0) {
 			sysprintf("/usr/sbin/disktype /dev/%s", part);
 			sprintf(devname, "/dev/%s", part);
@@ -166,63 +224,17 @@ void start_hotplug_block(void)
 
 			}
 		}
+		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0)//
+		if (!strcmp(action, "add")){
+			//runs user specified script
+			run_on_mount();
+
+			//finally start services again after mounting all partitions for this drive
+			usb_start_services();
+		}
 	}
 
 	return;
-}
-
-/* TODO improvement: use procfs to identify pids that have openfiles on externel discs and then stop them before umount*/
-static bool usb_stop_services()
-{
-	eval("stopservice", "cron");
-	eval("stopservice", "samba3");
-	eval("stopservice", "dlna");
-	eval("stopservice", "ftpsrv");
-#ifdef HAVE_WEBSERVER
-	eval("stopservice", "lighttpd");
-#endif
-#ifdef HAVE_TRANSMISSION	
-	eval("stopservice", "transmission");
-#endif
-#ifdef HAVE_FREERADIUS
-	eval("stopservice", "freeradius");
-#endif
-	return 0;
-}
-
-/* when adding external media some services should be restarted, e.g. minidlna in order to scan for media files*/
-static bool usb_start_services()
-{
-	eval("startservice", "cron");
-	eval("startservice", "samba3");
-	eval("startservice", "dlna");
-	eval("startservice", "ftpsrv");
-#ifdef HAVE_WEBSERVER
-	eval("startservice", "lighttpd");
-#endif
-#ifdef HAVE_TRANSMISSION
-	eval("startservice", "transmission");
-#endif
-#ifdef HAVE_FREERADIUS
-	eval("startservice", "freeradius");
-#endif
-	return 0;
-}
-
-static bool run_on_mount()
-{
-	struct stat tmp_stat;
-	char path[128];
-	if (!nvram_match("usb_runonmount", "")) {
-		sprintf(path, "%s", nvram_safe_get("usb_runonmount"));
-		if (stat(path, &tmp_stat) == 0)	//file exists
-		{
-			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin", 1);
-			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
-
-			system(path);
-		}
-	}
 }
 
 static bool usb_load_modules(char *fs)
@@ -534,7 +546,7 @@ int usb_add_ufd(char *link, int host, char *devpath, int mode)
 	struct dirent *entry;
 
 	sysprintf("mkdir -p /tmp/disk/");
-	usb_stop_services();
+
 	//create directory to store disktype dumps
 
 	//sysprintf("echo usb_add_ufd host %d devname %s >> /tmp/hotplugs", host, devpath);
@@ -542,6 +554,7 @@ int usb_add_ufd(char *link, int host, char *devpath, int mode)
 	if (mode == 1) {	//K3
 		usb_process_path(devpath, -1, NULL, NULL);	//use -1 to signal K3          
 	} else {		//K2.6
+		usb_stop_services();//K3 will start/stop only for a drive not partition
 		dir = opendir(link);
 		if (dir != NULL) {
 			sysprintf("echo  Reading %s >> /tmp/hotplugs", link);
@@ -566,13 +579,10 @@ int usb_add_ufd(char *link, int host, char *devpath, int mode)
 		} else {
 			sysprintf("echo  Cannot read %s >> /tmp/hotplugs", link);
 		}
+		run_on_mount();
+		usb_start_services();
 	}
 
-	//runs user specified script
-	run_on_mount();
-
-	//finally start services again after mounting all partitions for this drive
-	usb_start_services();
 
 	return 0;
 }
