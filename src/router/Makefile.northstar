@@ -185,17 +185,19 @@ endif
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 
-	-$(MAKE) -f Makefile.northstar ath9k
-	-$(MAKE) -f Makefile.northstar ath9k-install
+#	-$(MAKE) -f Makefile.northstar ath9k
+#	-$(MAKE) -f Makefile.northstar ath9k-install
 	-$(MAKE) -f Makefile.northstar libutils
-	-$(MAKE) -f Makefile.northstar madwifi
-	-$(MAKE) -f Makefile.northstar madwifi-install
+#	-$(MAKE) -f Makefile.northstar madwifi
+#	-$(MAKE) -f Makefile.northstar madwifi-install
+ifeq ($(CONFIG_BATMANADV),y)
 	-$(MAKE) -f Makefile.northstar batman-adv
 	-$(MAKE) -f Makefile.northstar batman-adv-install
+endif
+ifeq ($(CONFIG_OPENDPI),y)
 	-$(MAKE) -f Makefile.northstar opendpi
 	-$(MAKE) -f Makefile.northstar opendpi-install
-	-$(MAKE) -f Makefile.northstar uniwip-gpio
-	-$(MAKE) -f Makefile.northstar uniwip-gpio-install
+endif
 
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
@@ -532,6 +534,12 @@ endif
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r6250.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6250.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R6250.chk
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r6300v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6300v2.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R6300V2.chk 
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r7000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r7000.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R7000.chk
+
+
+
+
+	cp $(ARCH)-uclibc/northstar-firmware-squashfs.bin  $(ARCH)-uclibc/tnet818.trx
+	./tools/trendnet/auto_add_header_818 $(ARCH)-uclibc/tnet818.trx
 
 	cp $(ARCH)-uclibc/northstar-firmware-squashfs.bin  $(ARCH)-uclibc/tnet812.trx
 	./tools/trendnet/auto_add_header_812 $(ARCH)-uclibc/tnet812.trx
