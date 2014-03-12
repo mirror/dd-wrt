@@ -5469,7 +5469,7 @@ static int complete_mmio(struct kvm_vcpu *vcpu)
 		frag = &vcpu->mmio_fragments[vcpu->mmio_cur_fragment++];
 		if (!vcpu->mmio_is_write)
 			memcpy(frag->data, run->mmio.data, frag->len);
-		if (vcpu->mmio_cur_fragment == vcpu->mmio_nr_fragments) {
+		if (vcpu->mmio_cur_fragment >= vcpu->mmio_nr_fragments) {
 			vcpu->mmio_needed = 0;
 			if (vcpu->mmio_is_write)
 				return 1;
