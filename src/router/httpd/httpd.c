@@ -253,10 +253,14 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	if (strcmp(enc1, user)) {
 		return 0;
 	}
-
+	char dummy[128];
 	enc2 = crypt(authpass, (unsigned char *)pass);
 	if (strcmp(enc2, pass)) {
 		syslog(LOG_INFO, "httpd login failure - bad passwd !\n");
+		while (wfgets(dummy, 64, conn_fp) != 0)
+		{
+				//fprintf(stderr, "flushing %s\n", dummy);
+		}
 		return 0;
 	}
 	memdebug_leave();
@@ -270,7 +274,6 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 		
 		if((curr_time - auth_time) > atoll(nvram_safe_get("auth_limit"))){
 			//empty read buffer or send_authenticate will fail
-			char dummy[128];
 			while (wfgets(dummy, 64, conn_fp) != 0)
 			{
 				//fprintf(stderr, "flushing %s\n", dummy);
