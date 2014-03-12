@@ -319,8 +319,10 @@ open_db(sqlite3 **sq3)
 		new_db = 1;
 		make_dir(db_path, S_ISVTX|S_IRWXU|S_IRWXG|S_IRWXO);
 	}
-	if (sqlite3_open(path, &db) != SQLITE_OK)
+	if (sqlite3_open(path, &db) != SQLITE_OK) {
 		DPRINTF(E_FATAL, L_GENERAL, "ERROR: Failed to open sqlite database!  Exiting...\n");
+		exit(1);
+	}
 	if (sq3)
 		*sq3 = db;
 	sqlite3_busy_timeout(db, 5000);
@@ -391,12 +393,16 @@ rescan:
 		sqlite3_close(db);
 
 		snprintf(cmd, sizeof(cmd), "rm -rf %s/files.db %s/art_cache", db_path, db_path);
-		if (system(cmd) != 0)
+		if (system(cmd) != 0) {
 			DPRINTF(E_FATAL, L_GENERAL, "Failed to clean old file cache!  Exiting...\n");
+			exit(1);
+		}
 
 		open_db(&db);
-		if (CreateDatabase() != 0)
+		if (CreateDatabase() != 0) {
 			DPRINTF(E_FATAL, L_GENERAL, "ERROR: Failed to create sqlite database!  Exiting...\n");
+			exit(1);
+		}
 #if USE_FORK
 		scanning = 1;
 		sqlite3_close(db);
@@ -886,8 +892,10 @@ init(int argc, char **argv)
 			break;
 		case 'R':
 			snprintf(buf, sizeof(buf), "rm -rf %s/files.db %s/art_cache", db_path, db_path);
-			if (system(buf) != 0)
+			if (system(buf) != 0) {
 				DPRINTF(E_FATAL, L_GENERAL, "Failed to clean old file cache. EXITING\n");
+				exit(1);
+				}
 			break;
 		case 'u':
 			if (i+1 != argc)
@@ -1004,19 +1012,27 @@ init(int argc, char **argv)
 	/* set signal handlers */
 	memset(&sa, 0, sizeof(struct sigaction));
 	sa.sa_handler = sigterm;
-	if (sigaction(SIGTERM, &sa, NULL))
+	if (sigaction(SIGTERM, &sa, NULL)) {
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to set %s handler. EXITING.\n", SIGTERM);
-	if (sigaction(SIGINT, &sa, NULL))
+		return 1;
+		}
+	if (sigaction(SIGINT, &sa, NULL)) {
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to set %s handler. EXITING.\n", SIGINT);
-	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+		return 1;
+		}
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to set %s handler. EXITING.\n", SIGPIPE);
+		return 1;
+		}
 
 	if (writepidfile(pidfilename, pid, uid) != 0)
 		pidfilename = NULL;
 
-	if (uid != -1 && setuid(uid) == -1)
+	if (uid != -1 && setuid(uid) == -1) {
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to switch to uid '%d'. [%s] EXITING.\n",
 		        uid, strerror(errno));
+		return 1;
+		}
 
 	return 0;
 }
@@ -1083,8 +1099,10 @@ main(int argc, char **argv)
 		if (!sqlite3_threadsafe() || sqlite3_libversion_number() < 3005001)
 			DPRINTF(E_ERROR, L_GENERAL, "SQLite library is not threadsafe!  "
 			                            "Inotify will be disabled.\n");
-		else if (pthread_create(&inotify_thread, NULL, start_inotify, NULL) != 0)
+		else if (pthread_create(&inotify_thread, NULL, start_inotify, NULL) != 0) {
 			DPRINTF(E_FATAL, L_GENERAL, "ERROR: pthread_create() failed for start_inotify. EXITING\n");
+			return 1;
+			}
 	}
 #endif
 	for (i = 0; i < n_lan_addr; i++)
@@ -1095,23 +1113,26 @@ main(int argc, char **argv)
 
 	sudp = OpenAndConfSSDPReceiveSocket();
 	if (sudp < 0)
-	{	return 1;
+	{	
 		DPRINTF(E_INFO, L_GENERAL, "Failed to open socket for receiving SSDP. Trying to use MiniSSDPd\n");
-		if (SubmitServicesToMiniSSDPD(lan_addr[0].str, runtime_vars.port) < 0)
+		if (SubmitServicesToMiniSSDPD(lan_addr[0].str, runtime_vars.port) < 0) {
 			DPRINTF(E_FATAL, L_GENERAL, "Failed to connect to MiniSSDPd. EXITING");
+			return 1;
+		}
 	}
 	/* open socket for HTTP connections. Listen on the 1st LAN address */
 	shttpl = OpenAndConfHTTPSocket(runtime_vars.port);
-	if (shttpl < 0)
-		return 1;
+	if (shttpl < 0) {
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to open socket for HTTP. EXITING\n");
-		DPRINTF(E_WARN, L_GENERAL, "HTTP listening on port %d\n", runtime_vars.port);
+		return 1;
+	}
+	DPRINTF(E_WARN, L_GENERAL, "HTTP listening on port %d\n", runtime_vars.port);
 
 	/* open socket for sending notifications */
 	if (OpenAndConfSSDPNotifySockets(snotify) < 0){
-		return 1;
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to open sockets for sending SSDP notify "
 	                "messages. EXITING\n");
+		return 1;
 	}
 
 #ifdef TIVO_SUPPORT
@@ -1124,9 +1145,11 @@ main(int argc, char **argv)
 			DPRINTF(E_ERROR, L_TIVO, "ERROR: Failed to add sqlite randomize function for TiVo!\n");
 		/* open socket for sending Tivo notifications */
 		sbeacon = OpenAndConfTivoBeaconSocket();
-		if(sbeacon < 0)
+		if(sbeacon < 0) {
 			DPRINTF(E_FATAL, L_GENERAL, "Failed to open sockets for sending Tivo beacon notify "
 		                "messages. EXITING\n");
+		        return 1;
+		}
 		tivo_bcast.sin_family = AF_INET;
 		tivo_bcast.sin_addr.s_addr = htonl(getBcastAddress());
 		tivo_bcast.sin_port = htons(2190);
@@ -1251,6 +1274,7 @@ main(int argc, char **argv)
 			if(errno == EINTR) continue;
 			DPRINTF(E_ERROR, L_GENERAL, "select(all): %s\n", strerror(errno));
 			DPRINTF(E_FATAL, L_GENERAL, "Failed to select open sockets. EXITING\n");
+			return 1;
 		}
 		upnpevents_processfds(&readset, &writeset);
 		/* process SSDP packets */
