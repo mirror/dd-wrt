@@ -83,6 +83,9 @@ int net_connect( int *fd, char *host, int port )
     struct sockaddr_in server_addr;
     struct hostent *server_host;
 
+    struct addrinfo *res, *r;
+    int s, sock;
+
 #if defined(WIN32) || defined(_WIN32_WCE)
     WSADATA wsaData;
 
@@ -97,12 +100,31 @@ int net_connect( int *fd, char *host, int port )
     signal( SIGPIPE, SIG_IGN );
 #endif
 
-    if( ( server_host = gethostbyname( host ) ) == NULL )
-        return( XYSSL_ERR_NET_UNKNOWN_HOST );
+    s = getaddrinfo(host, NULL, NULL, &res);
+    if (s != 0)
+    	return (XYSSL_ERR_NET_SOCKET_FAILED);
 
-    if( ( *fd = socket( AF_INET, SOCK_STREAM, IPPROTO_IP ) ) < 0 )
-        return( XYSSL_ERR_NET_SOCKET_FAILED );
+//    if( ( server_host = gethostbyname( host ) ) == NULL )
+//        return( XYSSL_ERR_NET_UNKNOWN_HOST );
 
+    for (r = res; r != NULL; r = r->ai_next) {
+	  *fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
+	  if (*fd == -1)
+		 continue;
+
+	  if ( connect(*fd, r->ai_addr, r->ai_addrlen) != -1 )
+		 break;		// success
+
+	 close(*fd);
+    }
+
+    if (r == NULL)
+	 return (XYSSL_ERR_NET_SOCKET_FAILED);
+
+//    if( ( *fd = socket( AF_INET, SOCK_STREAM, IPPROTO_IP ) ) < 0 )
+//        return( XYSSL_ERR_NET_SOCKET_FAILED );
+
+/*    
     memcpy( (void *) &server_addr.sin_addr,
             (void *) server_host->h_addr,
                      server_host->h_length );
@@ -116,6 +138,7 @@ int net_connect( int *fd, char *host, int port )
         close( *fd );
         return( XYSSL_ERR_NET_CONNECT_FAILED );
     }
+*/
 
     return( 0 );
 }
