@@ -18,7 +18,7 @@
 
 /* Enable if the system inotify.h exists.  Otherwise our own inotify.h will be used. */
 #define HAVE_INOTIFY
-#define HAVE_INOTIFY_H
+#define HAVE_SYS_INOTIFY_H
 
 /* Enable if the system iconv.h exists.  ID3 tag reading in various character sets will not work properly otherwise. */
 //#define HAVE_ICONV_H
