@@ -2255,6 +2255,14 @@ cprintf("set up %s\n",name);
 	/* Bring the interface back up */
 	WL_IOCTL(name, WLC_UP, NULL, 0);
 
+	/* Set phy periodic cal if nvram present. Otherwise, use driver defaults. */
+	str = nvram_get(strcat_r(prefix, "cal_period", tmp));
+	if (str) {
+		/* user specified phy cal period. */
+		val = atoi(str);
+		WL_IOVAR_SET(name, "cal_period", &val, sizeof(val));
+	}
+
 cprintf("set antdiv mode %s\n",name);
 	/* Set antenna */
 	val = atoi(nvram_default_get(strcat_r(prefix, "antdiv", tmp),"3"));
