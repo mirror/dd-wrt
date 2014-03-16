@@ -2,7 +2,7 @@
  * PHY module Power-per-rate API. Provides interface functions and definitions for opaque
  * ppr structure for use containing regulatory and board limits and tx power targets.
  *
- * Copyright (C) 2013, Broadcom Corporation
+ * Copyright (C) 2014, Broadcom Corporation
  * All Rights Reserved.
  * 
  * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Broadcom Corporation;

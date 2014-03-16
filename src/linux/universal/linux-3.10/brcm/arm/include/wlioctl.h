@@ -4,7 +4,7 @@
  *
  * Definitions subject to change without notice.
  *
- * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -18,7 +18,7 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: wlioctl.h 427697 2013-10-04 09:42:19Z $
+ * $Id: wlioctl.h 455621 2014-02-14 20:59:32Z $
  */
 
 #ifndef _wlioctl_h_
@@ -2417,6 +2417,22 @@ typedef struct {
 #define WL_TXPPR_VERSION	1
 #define WL_TXPPR_LENGTH	(sizeof(wl_txppr_t))
 #define TX_POWER_T_VERSION	44
+
+typedef struct chanspec_txpwr_max {
+	chanspec_t chanspec;   /* chanspec */
+	uint8 txpwr_max;       /* max txpwr in all the rates */
+	uint8 padding;
+} chanspec_txpwr_max_t;
+
+typedef struct  wl_chanspec_txpwr_max {
+	uint16 ver;			/* version of this struct */
+	uint16 len;			/* length in bytes of this structure */
+	uint32 count;		/* number of elements of (chanspec, txpwr_max) pair */
+	chanspec_txpwr_max_t txpwr[1];	/* array of (chanspec, max_txpwr) pair */
+} wl_chanspec_txpwr_max_t;
+
+#define WL_CHANSPEC_TXPWR_MAX_VER	1
+#define WL_CHANSPEC_TXPWR_MAX_LEN	(sizeof(wl_chanspec_txpwr_max_t))
 
 /* Defines used with channel_bandwidth for curpower */
 #define WL_BW_20MHZ 		0
@@ -5113,6 +5129,7 @@ typedef struct {
 	int8 bgnoise;
 	uint32 glitch_cnt;
 	uint8 ccastats;
+	uint8 chan_idle;
 	uint timestamp;
 } chanim_acs_record_t;
 
@@ -6032,6 +6049,20 @@ typedef struct statreq {
 	uint8 group_id;
 	uint16 reps;
 } statreq_t;
+
+#define WL_RRM_RPT_VER	0
+#define WL_RRM_RPT_MAX_PAYLOAD	64
+#define WL_RRM_RPT_MIN_PAYLOAD	7
+#define WL_RRM_RPT_FALG_ERR	0
+#define WL_RRM_RPT_FALG_OK	1
+typedef struct {
+	uint16 ver;		/* version */
+	struct ether_addr addr;	/* STA MAC addr */
+	uint32 timestamp;	/* timestamp of the report */
+	uint16 flag;		/* flag */
+	uint16 len;		/* length of payload data */
+	unsigned char data[WL_RRM_RPT_MAX_PAYLOAD];
+} statrpt_t;
 
 typedef struct wlc_l2keepalive_ol_params {
 	uint8 	flags;
