@@ -226,7 +226,7 @@ void __init board_fixup(struct tag *t, char **cmdline, struct meminfo *mi)
 	if (lo_size == mem_size)
 		return;
 
-	mi->bank[1].start = DRAM_LARGE_REGION_BASE + lo_size;
+	mi->bank[1].start = PHYS_OFFSET2;
 	mi->bank[1].size = mem_size - lo_size;
 	mi->nr_banks++;
 }
