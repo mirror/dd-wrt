@@ -14,6 +14,7 @@
 #include <asm/memory.h>
 #include <asm/mach-types.h>
 #include <plat/plat-bcm5301x.h>
+#include <armca9_core.h>
 
 #ifndef CONFIG_DEBUG_LL
 ENTRY(printch)
@@ -58,6 +59,21 @@ ENTRY(__mach_head_fixup)
 	ldr	r0, =0xffff002c
 	str	r0, [r1, #SOC_ROM_LUT_OFF]
 	nop
+	
+	/* disable CCU clock gating */
+	ldr	r0,=IHOST_PROC_CLK_CORE0_CLKGATE
+	ldr	r1,=0x00010303
+	str	r1,[r0]
+	ldr	r0,=IHOST_PROC_CLK_CORE1_CLKGATE
+	ldr	r2,=0x00000303
+	str	r2,[r0]
+	ldr	r0,=IHOST_PROC_CLK_ARM_SWITCH_CLKGATE
+	str	r1,[r0]
+	ldr	r0,=IHOST_PROC_CLK_ARM_PERIPH_CLKGATE
+	str	r1,[r0]
+	ldr	r0,=IHOST_PROC_CLK_APB0_CLKGATE
+	str	r1,[r0]
+
 
 #ifndef	CONFIG_XIP_KERNEL
 	/* Copy ourselves to RAM if loaded in wrong address */
@@ -69,9 +85,25 @@ ENTRY(__mach_head_fixup)
 	and	r9, r9, r0
 	cmp	r8, r9
 	beq	5f
-	add	r9, # TEXT_OFFSET
+	ldr	r12, =TEXT_OFFSET
+	add	r9, r9, r12
 	mov	r12, r9			@ start again in RAM
+#ifdef CONFIG_SPARSEMEM
+	ldr	r0, =(PAGE_OFFSET+SZ_128M)
+	ldr	r1, =__bss_start
+	cmp	r1, r0
+	bge	1f
+	ldr	r0, =PAGE_OFFSET
+	sub	r10, r1, r0
+	b	2f
+1:
+	sub	r1, r1, r0
+	ldr	r0, =PHYS_OFFSET2
+	add	r10, r1, r0
+2:
+#else
 	ldr	r10, =__virt_to_phys(__bss_start)
+#endif
 
 	mov	r0, #'X'
 	bl	printch
@@ -178,10 +210,22 @@ ENTRY(platform_secondary_startup)
 	 * Wait on <pen_release> variable by physical address
 	 * to contain our hardware CPU id
 	 */
-	adr	r4, 1f
-	ldmia	r4, {r5, r6}
-	sub	r4, r4, r5
-	add	r6, r6, r4
+#ifdef CONFIG_SPARSEMEM
+	ldr	r2, =(PAGE_OFFSET+SZ_128M)
+	ldr	r1, =pen_release
+	cmp	r1, r2
+	bge	1f
+	ldr	r2, =PAGE_OFFSET
+	sub	r6, r1, r2
+	b	2f
+1:
+	sub	r1, r1, r2
+	ldr	r2, =PHYS_OFFSET2
+	add	r6, r1, r2
+2:
+#else
+ 	ldr	r6, =__virt_to_phys(pen_release)
+#endif
 pen:	ldr	r7, [r6]
 	cmp	r7, r0
 	bne	pen
@@ -199,8 +243,6 @@ pen:	ldr	r7, [r6]
 	b	secondary_startup
 
 	.align
-1:	.long 	.
-	.long	pen_release
 
 ENDPROC(platform_secondary_startup)
 	.ltorg

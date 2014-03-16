@@ -376,6 +376,8 @@ static void __init soc_clocks_init(
 		struct clk * clk_ref
 		)
 {
+	void * __iomem reg;
+	u32 val;
 
 	/* registers are already mapped with the rest of DMU block */
 	/* Update register base address */
@@ -399,6 +401,49 @@ static void __init soc_clocks_init(
 	/* Install clock sources into the lookup table */
 	clkdev_add_table(soc_clk_lookups, 
 			ARRAY_SIZE(soc_clk_lookups));
+
+	/* Correct GMAC 2.66G line rate issue, it should be 2Gbps */
+	/* This incorrect setting only exist in OTP present 4708 chip */
+	/* is a OTPed 4708 chip which Ndiv == 0x50 */
+	reg = clk_genpll.regs_base + 0x14;
+	val = readl(reg);
+	if (((val >> 20) & 0x3ff) == 0x50) {
+		/* CRU_CLKSET_KEY, unlock */
+		reg = clk_genpll.regs_base + 0x40;
+		val = 0x0000ea68;
+		writel(val, reg);
+
+		/* Change CH0_MDIV to 8 */
+		/* After changing the CH0_MDIV to 8, the customer has been reporting that
+		 * there are differences between input throughput vs. output throughput.
+		 * The output throughput is slightly lower (927.537 mbps input rate vs. 927.49
+		 * mbps output rate).  Below is the solution to fix it.
+		 * 1. Change the oscillator on WLAN reference board from 25.000 to 25.001
+		 * 2. Change the CH0_MDIV to 7
+		 */
+		reg = clk_genpll.regs_base + 0x18;
+		val = readl(reg);
+		val &= ~((u32)0xff << 16);
+		val |= ((u32)0x7 << 16);
+		writel(val, reg);
+
+		/* Load Enable CH0 */
+		reg = clk_genpll.regs_base + 0x4;
+		val = readl(reg);
+		val &= ~(u32)0x1;
+		writel(val, reg);
+		val |= (u32)0x1;
+		writel(val, reg);
+		val &= ~(u32)0x1;
+		writel(val, reg);
+
+		/* CRU_CLKSET_KEY, lock */
+		reg = clk_genpll.regs_base + 0x40;
+		val = 0x0;
+		writel(val, reg);
+	}
+
+
 }
 
 void __init soc_dmu_init( struct clk *	clk_ref )
@@ -422,7 +467,6 @@ void __init soc_dmu_init( struct clk *	clk_ref )
 	soc_clocks_init( reg_base + 0x100, clk_ref );	/* CRU LCPLL control0 */
 
 }
-
 
 
 

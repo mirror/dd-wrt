@@ -19,6 +19,7 @@
 
 #include <asm/cacheflush.h>
 #include <asm/mach-types.h>
+#include <asm/localtimer.h>
 #include <asm/unified.h>
 #include <asm/smp.h>
 #include <asm/smp_scu.h>
@@ -29,6 +30,8 @@
 #include <linux/clockchips.h>
 //#include <mach/hardware.h>
 //#include <mach/smp.h>
+
+//volatile int __cpuinitdata pen_release = -1;
 
 static inline unsigned int get_core_count(void)
 {
