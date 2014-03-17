@@ -1,7 +1,7 @@
 /*
  * Linux OS Independent Layer
  *
- * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -562,12 +562,16 @@ do { \
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 36)
 #define	SKIPCT	(1 << 2)
 #define	CHAINED	(1 << 3)
+#define	OWNED	(1 << 4)
 #define	PKTSETSKIPCT(osh, skb)	(((struct sk_buff*)(skb))->pktc_flags |= SKIPCT)
 #define	PKTCLRSKIPCT(osh, skb)	(((struct sk_buff*)(skb))->pktc_flags &= (~SKIPCT))
 #define	PKTSKIPCT(osh, skb)	(((struct sk_buff*)(skb))->pktc_flags & SKIPCT)
 #define	PKTSETCHAINED(osh, skb)	(((struct sk_buff*)(skb))->pktc_flags |= CHAINED)
 #define	PKTCLRCHAINED(osh, skb)	(((struct sk_buff*)(skb))->pktc_flags &= (~CHAINED))
 #define	PKTISCHAINED(skb)	(((struct sk_buff*)(skb))->pktc_flags & CHAINED)
+#define	PKTSETOWNED(skb)	(((struct sk_buff*)(skb))->pktc_flags |= OWNED)
+#define	PKTCLROWNED(skb)	(((struct sk_buff*)(skb))->pktc_flags &= (~OWNED))
+#define	PKTISOWNED(skb)		(((struct sk_buff*)(skb))->pktc_flags & OWNED)
 #else
 #define	SKIPCT	(1 << 18)
 #define	CHAINED	(1 << 19)

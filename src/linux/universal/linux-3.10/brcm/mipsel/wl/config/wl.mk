@@ -1,7 +1,7 @@
 # Helper makefile for building Broadcom wl device driver
 # This file maps wl driver feature flags (import) to WLFLAGS and WLFILES_SRC (export).
 #
-# Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
+# Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
 # 
 # Permission to use, copy, modify, and/or distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -407,6 +407,9 @@ endif
 			WLFLAGS += -DWL_AP_TPC
 		endif
 #endif
+		ifeq ($(WL_CHANSPEC_TXPWR_MAX),1)
+			WLFLAGS += -DWL_CHANSPEC_TXPWR_MAX
+		endif
 	endif
 	WLFILES_SRC_HI += src/wl/sys/wlc_dfs.c
 	ifeq ($(WLC_DISABLE_DFS_RADAR_SUPPORT),1)
@@ -1490,7 +1493,13 @@ endif
 
 #ifdef WLMCHAN
 ifeq ($(WLMCHAN),1)
+ifeq ($(WL_HIGH),1)
 	WLFLAGS += -DWLTXPWR_CACHE
+else
+	ifneq ($(PHY_WLSRVSDB),1)
+		WLFLAGS += -DWLTXPWR_CACHE
+	endif
+endif
 	WLFLAGS += -DWLMCHAN
 	WLFILES_SRC_HI += src/wl/sys/wlc_mchan.c
 ifndef WLMULTIQUEUE
@@ -2225,7 +2234,6 @@ endif
 #ifdef PROP_TXSTATUS
 ifeq ($(WLMCHAN),1)
 ifeq ($(PROP_TXSTATUS),1)
-	WLFLAGS += -DWLTXPWR_CACHE
 	ifeq ($(WL_SPLIT),0)
 		WLFLAGS += -DWLMCHANPRECLOSE
 		WLFLAGS += -DBBPLL_PARR
@@ -2277,4 +2285,9 @@ endif
 # Work-arounds for ROM compatibility to handle ROM that exclude MFP support.
 ifeq ($(WLC_MFP_ROM_COMPAT),1)
 	EXTRA_DFLAGS += -DWLC_MFP_ROM_COMPAT
+endif
+
+# This feature disables mac sleep on 11AC router platforms (zero packet loss).
+ifeq ($(WLMAC_RX_NO_SLEEP),1)
+	WLFLAGS += -DWLMAC_RX_NO_SLEEP
 endif
