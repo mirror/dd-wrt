@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.30-rc1 Kernel Configuration
+# Linux/arm 3.10.33 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -2721,4 +2721,3 @@ CONFIG_AVERAGE=y
 # CONFIG_DDR is not set
 CONFIG_OID_REGISTRY=m
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_DDTB=y

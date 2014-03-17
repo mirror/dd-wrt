@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.10.30-rc1 Kernel Configuration
+# Linux/powerpc 3.10.33 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -2257,4 +2257,3 @@ CONFIG_CRYPTO_DEFLATE=m
 # CONFIG_PPC_CLOCK is not set
 CONFIG_PPC_LIB_RHEAP=y
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_DDTB=y
