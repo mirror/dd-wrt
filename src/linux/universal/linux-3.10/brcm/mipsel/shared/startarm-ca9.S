@@ -1,7 +1,7 @@
 /*
  * BCM53XXX ARM/Cortext A9 boot code for standalone apps.
  *
- * Copyright (C) 2013, Broadcom Corporation. All Rights Reserved.
+ * Copyright (C) 2014, Broadcom Corporation. All Rights Reserved.
  * 
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -4718,16 +4718,16 @@ poll_plllock_done:
 	ldr	r1,=0x87070707
 	str	r1,[r0]
 	ldr	r0,=IHOST_PROC_CLK_CORE0_CLKGATE
-	ldr	r1,=0x00000301
+	ldr	r1,=0x00010303
 	str	r1,[r0]
 	ldr	r0,=IHOST_PROC_CLK_CORE1_CLKGATE
-	str	r1,[r0]
+	ldr	r2,=0x00000303
+	str	r2,[r0]
 	ldr	r0,=IHOST_PROC_CLK_ARM_SWITCH_CLKGATE
 	str	r1,[r0]
 	ldr	r0,=IHOST_PROC_CLK_ARM_PERIPH_CLKGATE
 	str	r1,[r0]
 	ldr	r0,=IHOST_PROC_CLK_APB0_CLKGATE
-	ldr	r1,=0x00000303
 	str	r1,[r0]
 
 	ldr	r0,=IHOST_PROC_CLK_POLICY_CTL
