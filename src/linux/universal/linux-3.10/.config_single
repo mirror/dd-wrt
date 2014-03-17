@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 3.10.30-rc1 Kernel Configuration
+# Linux/i386 3.10.33 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -1535,7 +1535,7 @@ CONFIG_USB_HSO=m
 CONFIG_USB_NET_INT51X1=m
 CONFIG_USB_IPHETH=m
 CONFIG_USB_SIERRA_NET=m
-CONFIG_USB_VL600=m
+# CONFIG_USB_VL600 is not set
 CONFIG_WLAN=y
 # CONFIG_PCMCIA_RAYCS is not set
 # CONFIG_AIRO is not set
@@ -3267,4 +3267,3 @@ CONFIG_ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE=y
 CONFIG_AVERAGE=y
 CONFIG_CORDIC=y
 # CONFIG_DDR is not set
-CONFIG_DDTB=y

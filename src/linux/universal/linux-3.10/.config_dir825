@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.30-rc1 Kernel Configuration
+# Linux/mips 3.10.33 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2019,4 +2019,3 @@ CONFIG_AVERAGE=y
 # CONFIG_DDR is not set
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_DDTB=y
