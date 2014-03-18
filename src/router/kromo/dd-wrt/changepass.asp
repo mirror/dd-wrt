@@ -67,7 +67,7 @@ if (valid_password(F))
 					</div>
 				</div>
 				<div id="main">
-                    		<form name="changepassword" action="apply.cgi" method="post">
+                    		<form name="changepassword" action="apply.cgi<% insertpageToken(); %>" method="post">
                   			<input type="hidden" name="submit_button" value="index" />
                   			<input type="hidden" name="submit_type" />
                   			<input type="hidden" name="next_page" value="<% getsetuppage(); %>" />

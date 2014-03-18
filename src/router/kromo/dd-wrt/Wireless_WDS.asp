@@ -76,7 +76,7 @@ addEvent(window, "unload", function() {
 		  </div>
 		  <div id="main">
 			<div id="contents">
-			   <form name="wds" action="apply.cgi" method="post">
+			   <form name="wds" action="apply.cgi<% insertpageToken(); %>" method="post">
 			   	<input type="hidden" name="submit_button" value="Wireless_WDS-%s" />
 			   	<input type="hidden" name="action" value="Apply" />
 			   	<input type="hidden" name="interface" value="%s" />
