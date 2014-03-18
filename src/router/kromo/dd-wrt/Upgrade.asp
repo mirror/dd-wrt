@@ -85,7 +85,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="firmware" id="firmware" method="post" action="upgrade.cgi" enctype="multipart/form-data">
+						<form name="firmware" id="firmware" method="post" action="upgrade.cgi<% insertpageToken(); %>" enctype="multipart/form-data">
 							<input type="hidden" name="submit_button" id="submit_button" />
 							<input type="hidden" name="_action" id="submit_action" />
 							<input type="hidden" name="change_action" />

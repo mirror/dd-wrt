@@ -40,7 +40,7 @@ addEvent(window, "unload", function() {
 				</div>
 				    <div id="main">
 					<div id="contents">
-						<form name="nvramrestore" action="nvram.cgi" method="post" enctype="multipart/form-data">
+						<form name="nvramrestore" action="nvram.cgi<% insertpageToken(); %>" method="post" enctype="multipart/form-data">
 							<h2><% tran("config.h2"); %></h2>
 							
 							<fieldset>

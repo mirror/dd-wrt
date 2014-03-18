@@ -284,7 +284,7 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	}
 	
 	//protect config changes
-	if(!strcmp(curr_page, "apply.cgi")){
+	if(!strcmp(curr_page, "apply.cgi") || !strcmp(curr_page, "nvram.cgi") || !strcmp(curr_page, "upgrade.cgi") ){
 		//if auth time limit has been reached e.g. no webif activity and thus no auth limit update 
 	        //or if token does not match ask for auth again, make sure every page that calls apply.cgi submits a page token
 		if( ( (curr_time - auth_time) > atoll(nvram_safe_get("auth_limit")) ) || ( submittedtoken != currenttoken ) ){
