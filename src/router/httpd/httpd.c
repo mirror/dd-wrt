@@ -84,6 +84,8 @@
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
 #define TIMEOUT	15
 
+extern int getpageToken();
+
 /* A multi-family sockaddr. */
 typedef union {
 	struct sockaddr sa;
@@ -265,25 +267,35 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	}
 	memdebug_leave();
 	
+	u_int64_t auth_time = (u_int64_t)( atoll(nvram_safe_get("auth_time")) );
+	u_int64_t curr_time = (u_int64_t)time(NULL);
+	char s_curr_time[24];
+	sprintf(s_curr_time, "%llu", curr_time);
+	int submittedtoken = atoi(nvram_safe_get("token"));
+	int currenttoken = getpageToken();
 	
+	//check submitted page token
+	if( submittedtoken == currenttoken)
+	{
+		//if page token is okay, we can update the re auth limit
+		nvram_set("auth_time", s_curr_time);
+	} else {
+		//fprintf(stderr, "Page: %s Token: %d BAD\n", curr_page, token);
+	}
+	
+	//protect config changes
 	if(!strcmp(curr_page, "apply.cgi")){
-		u_int64_t auth_time = (u_int64_t)( atoll(nvram_safe_get("auth_time")) );
-		u_int64_t curr_time = (u_int64_t)time(NULL);
-		char s_curr_time[24];
-		sprintf(s_curr_time, "%llu", curr_time);
-		
-		if((curr_time - auth_time) > atoll(nvram_safe_get("auth_limit"))){
+		//if auth time limit has been reached e.g. no webif activity and thus no auth limit update 
+	        //or if token does not match ask for auth again, make sure every page that calls apply.cgi submits a page token
+		if( ( (curr_time - auth_time) > atoll(nvram_safe_get("auth_limit")) ) || ( submittedtoken != currenttoken ) ){
 			//empty read buffer or send_authenticate will fail
 			while (wfgets(dummy, 64, conn_fp) > 0)
 			{
 				//fprintf(stderr, "flushing %s\n", dummy);
 			}
 			return 0;
-		}else 
-			nvram_set("auth_time", s_curr_time);
+		}
 	}
-
-	
 
 	return 1;
 }
@@ -1020,8 +1032,15 @@ static void handle_request(void)
 		/* extract url args if present */
 		query = strchr(file, '?');
 		if (query) {
+			//see token length in createpageToken
+			char token[16]="0";
+			strncpy(token, &query[1], sizeof(token));
+			nvram_set("token",token);
 			*query++ = 0;
+		} else{
+			nvram_set("token","0");
 		}
+		
 		int changepassword = 0;
 
 #ifdef HAVE_REGISTER
