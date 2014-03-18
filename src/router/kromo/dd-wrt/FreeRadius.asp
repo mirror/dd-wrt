@@ -87,7 +87,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="radius" action="apply.cgi" method="post">
+						<form name="radius" action="apply.cgi<% insertpageToken(); %>" method="post">
 							<input type="hidden" name="submit_button" value="FreeRadius" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="del_value" />

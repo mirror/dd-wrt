@@ -647,7 +647,7 @@ function submitSavePrevButtons() {
 						<!--p>Assistant stage: <% print_sas_stage(); %></p-->
 						
 						<% do_sas_stage_menu(); %> 
-						<form name="setupassistant" action="apply.cgi" method="post">
+						<form name="setupassistant" action="apply.cgi<% insertpageToken(); %>" method="post">
 							<input type="hidden" name="submit_button" value="SetupAssistant" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
