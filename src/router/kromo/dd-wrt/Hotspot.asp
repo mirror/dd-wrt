@@ -118,7 +118,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="setup" action="apply.cgi" method="post">
+						<form name="setup" action="apply.cgi<% insertpageToken(); %>" method="post">
 							<input type="hidden" name="submit_button" value="Hotspot" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />

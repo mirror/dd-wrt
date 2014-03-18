@@ -55,7 +55,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="portRange" action="apply.cgi" method="post">
+						<form name="portRange" action="apply.cgi<% insertpageToken(); %>" method="post">
 							<input type="hidden" name="submit_button" value="ForwardSpec" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
