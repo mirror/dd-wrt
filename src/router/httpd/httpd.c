@@ -271,15 +271,15 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	u_int64_t curr_time = (u_int64_t)time(NULL);
 	char s_curr_time[24];
 	sprintf(s_curr_time, "%llu", curr_time);
+	
 	int submittedtoken = atoi(nvram_safe_get("token"));
 	int currenttoken = getpageToken();
 	
 	
 	//protect config changes
 	if(!strcmp(curr_page, "apply.cgi") || !strcmp(curr_page, "nvram.cgi") || !strcmp(curr_page, "upgrade.cgi") ){
-		//if auth time limit has been reached e.g. no webif activity and thus no auth limit update 
-	        //or if token does not match ask for auth again, make sure every page that calls apply.cgi submits a page token
-		if( ( (curr_time - auth_time) > atoll(nvram_safe_get("auth_limit")) ) || ( submittedtoken != currenttoken ) ){
+	        //if token does not match ask for auth again, every page that does submit data in POST must send correct token
+		if( ( submittedtoken != currenttoken ) ){
 			//empty read buffer or send_authenticate will fail
 			while (wfgets(dummy, 64, conn_fp) > 0)
 			{
@@ -288,8 +288,18 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 			return 0;
 		}
 	}
-
+	
+	if( ( (curr_time - auth_time) > atoll(nvram_safe_get("auth_limit")) ) ){
+			//empty read buffer or send_authenticate will fail
+			while (wfgets(dummy, 64, conn_fp) > 0)
+			{
+				//fprintf(stderr, "flushing %s\n", dummy);
+			}
+			return 0;
+	}
+	
 	nvram_set("auth_time", s_curr_time);
+
 
 	return 1;
 }
