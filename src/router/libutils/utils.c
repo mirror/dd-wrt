@@ -6364,7 +6364,7 @@ u_int64_t freediskSpace(char *path)
 int createpageToken()
 {
 	srand( (unsigned) time(NULL) );
-	pageToken = rand() % 100000;
+	pageToken = rand() % 1000000000;
 	//fprintf(stderr, "Generated page token: %d\n", pageToken);
 	return pageToken;
 }
