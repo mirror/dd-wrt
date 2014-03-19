@@ -274,7 +274,6 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	int submittedtoken = atoi(nvram_safe_get("token"));
 	int currenttoken = getpageToken();
 	
-	nvram_set("auth_time", s_curr_time);
 	
 	//protect config changes
 	if(!strcmp(curr_page, "apply.cgi") || !strcmp(curr_page, "nvram.cgi") || !strcmp(curr_page, "upgrade.cgi") ){
@@ -289,6 +288,8 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 			return 0;
 		}
 	}
+
+	nvram_set("auth_time", s_curr_time);
 
 	return 1;
 }
