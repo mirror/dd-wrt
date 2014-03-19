@@ -274,14 +274,7 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	int submittedtoken = atoi(nvram_safe_get("token"));
 	int currenttoken = getpageToken();
 	
-	//check submitted page token
-	if( submittedtoken == currenttoken)
-	{
-		//if page token is okay, we can update the re auth limit
-		nvram_set("auth_time", s_curr_time);
-	} else {
-		//fprintf(stderr, "Page: %s Token: %d BAD\n", curr_page, token);
-	}
+	nvram_set("auth_time", s_curr_time);
 	
 	//protect config changes
 	if(!strcmp(curr_page, "apply.cgi") || !strcmp(curr_page, "nvram.cgi") || !strcmp(curr_page, "upgrade.cgi") ){
