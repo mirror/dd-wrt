@@ -290,7 +290,15 @@ static int usb_process_path(char *path, char *fs, char *target)
 #endif
 			ret = eval("/bin/mount", path, mount_point);	//guess fs
 	}
-	writeproc("/proc/sys/vm/min_free_kbytes", "4096");	// avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram to 4096. everything else can be used for fs cache
+#ifdef HAVE_80211AC
+	writeproc("/proc/sys/vm/min_free_kbytes","16384");
+#else
+	writeproc("/proc/sys/vm/min_free_kbytes","4096");
+#endif
+	writeproc("/proc/sys/vm/pagecache_ratio","90");
+	writeproc("/proc/sys/vm/swappiness","90");
+	writeproc("/proc/sys/vm/overcommit_memory","2");
+	writeproc("/proc/sys/vm/overcommit_ratio","145");
 	eval("startservice", "samba3");
 	eval("startservice", "ftpsrv");
 	eval("startservice", "dlna");
