@@ -55,6 +55,8 @@
 #define CREATE_TRACE_POINTS
 #include <trace/events/vmscan.h>
 
+extern int check_pagecache_overlimit(void);
+
 struct scan_control {
 	/* Incremented by the number of inactive pages that were scanned */
 	unsigned long nr_scanned;
@@ -2437,7 +2439,6 @@ unsigned long shrink_all_pagecache_memory(unsigned long nr_pages)
 		.nr_to_reclaim = nr_pages,
 		.may_swap = 0,
 		.may_writepage = 1,
-		.swappiness = 0, /* Do not swap, only pagecache reclaim */
 		.reclaim_pagecache_only = 1, /* Flag it */
 	};
 	struct shrink_control shrink = {
