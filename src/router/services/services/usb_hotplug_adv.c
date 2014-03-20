@@ -510,10 +510,10 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 #else
 	writeproc("/proc/sys/vm/min_free_kbytes","4096");
 #endif
-	writeproc("/proc/sys/vm/pagecache_ratio","90");
-	writeproc("/proc/sys/vm/swappiness","90");
-	writeproc("/proc/sys/vm/overcommit_memory","2");
-	writeproc("/proc/sys/vm/overcommit_ratio","145");
+//	writeproc("/proc/sys/vm/pagecache_ratio","90");
+//	writeproc("/proc/sys/vm/swappiness","90");
+//	writeproc("/proc/sys/vm/overcommit_memory","2");
+//	writeproc("/proc/sys/vm/overcommit_ratio","145");
 	//prepare for optware
 	sysprintf("mkdir -p /jffs/lib/opkg");
 
