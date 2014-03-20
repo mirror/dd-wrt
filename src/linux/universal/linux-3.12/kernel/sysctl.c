@@ -1655,6 +1655,15 @@ static struct ctl_table debug_table[] = {
 		.extra2		= &one,
 	},
 #endif
+	{
+		.procname	= "pagecache_ratio",
+		.data		= &pagecache_ratio,
+		.maxlen		= sizeof(pagecache_ratio),
+		.mode		= 0644,
+		.proc_handler	= &pagecache_ratio_sysctl_handler,
+		.extra1		= &five,
+		.extra2		= &one_hundred,
+	},
 	{ }
 };
 

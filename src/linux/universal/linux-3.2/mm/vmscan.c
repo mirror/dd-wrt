@@ -97,6 +97,7 @@ struct scan_control {
 
 	int order;
 
+	int reclaim_pagecache_only;
 	/*
 	 * Intend to reclaim enough continuous memory rather than reclaim
 	 * enough amount of memory. i.e, mode for high order allocation.
@@ -788,7 +789,16 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 
 		VM_BUG_ON(PageActive(page));
 		VM_BUG_ON(page_zone(page) != zone);
-
+		
+		/* Take it easy if we are doing only pagecache pages */
+		if (sc->reclaim_pagecache_only) {
+			/* Check if this is a pagecache page they are not mapped */
+			if (page_mapped(page))
+				goto keep_locked;
+			/* Check if pagecache limit is exceeded */
+			if (!check_pagecache_overlimit())
+				goto keep_locked;
+		}
 		sc->nr_scanned++;
 
 		if (unlikely(!page_evictable(page, NULL)))
@@ -1727,6 +1737,13 @@ static void shrink_active_list(unsigned long nr_pages, struct zone *zone,
 			continue;
 		}
 
+		/* While reclaiming pagecache make it easy */
+		if (sc->reclaim_pagecache_only) {
+			if (page_mapped(page) || !check_pagecache_overlimit()) {
+				list_add(&page->lru, &l_active);
+				continue;
+			}
+		}
 		if (page_referenced(page, 0, sc->mem_cgroup, &vm_flags)) {
 			nr_rotated += hpage_nr_pages(page);
 			/*
@@ -2392,6 +2409,7 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 		.may_unmap = 1,
 		.may_swap = 1,
 		.order = order,
+		.reclaim_pagecache_only = 0,
 		.mem_cgroup = NULL,
 		.nodemask = nodemask,
 	};
@@ -2410,6 +2428,38 @@ unsigned long try_to_free_pages(struct zonelist *zonelist, int order,
 	return nr_reclaimed;
 }
 
+unsigned long shrink_all_pagecache_memory(unsigned long nr_pages)
+{
+	unsigned long ret = 0;
+	struct reclaim_state reclaim_state;
+	struct scan_control sc = {
+		.gfp_mask = GFP_KERNEL,
+		.nr_to_reclaim = nr_pages,
+		.may_swap = 0,
+		.may_writepage = 1,
+		.swappiness = 0, /* Do not swap, only pagecache reclaim */
+		.reclaim_pagecache_only = 1, /* Flag it */
+	};
+	struct shrink_control shrink = {
+		.gfp_mask = sc.gfp_mask,
+	};
+	struct zonelist *zonelist = node_zonelist(numa_node_id(), sc.gfp_mask);
+	struct task_struct *p = current;
+
+	p->flags |= PF_MEMALLOC;
+	lockdep_set_current_reclaim_state(sc.gfp_mask);
+	reclaim_state.reclaimed_slab = 0;
+	p->reclaim_state = &reclaim_state;
+
+	ret = do_try_to_free_pages(zonelist, &sc, &shrink);
+
+	p->reclaim_state = NULL;
+	lockdep_clear_current_reclaim_state();
+	p->flags &= ~PF_MEMALLOC;
+
+	return ret;
+}
+
 #ifdef CONFIG_CGROUP_MEM_RES_CTLR
 
 unsigned long mem_cgroup_shrink_node_zone(struct mem_cgroup *mem,
@@ -2424,6 +2474,7 @@ unsigned long mem_cgroup_shrink_node_zone(struct mem_cgroup *mem,
 		.may_unmap = 1,
 		.may_swap = !noswap,
 		.order = 0,
+		.reclaim_pagecache_only = 0,
 		.mem_cgroup = mem,
 	};
 
@@ -2462,6 +2513,7 @@ unsigned long try_to_free_mem_cgroup_pages(struct mem_cgroup *mem_cont,
 		.may_swap = !noswap,
 		.nr_to_reclaim = SWAP_CLUSTER_MAX,
 		.order = 0,
+		.reclaim_pagecache_only = 0,
 		.mem_cgroup = mem_cont,
 		.nodemask = NULL, /* we don't care the placement */
 		.gfp_mask = (gfp_mask & GFP_RECLAIM_MASK) |
@@ -2612,6 +2664,7 @@ static unsigned long balance_pgdat(pg_data_t *pgdat, int order,
 		 */
 		.nr_to_reclaim = ULONG_MAX,
 		.order = order,
+		.reclaim_pagecache_only = 0,
 		.mem_cgroup = NULL,
 	};
 	struct shrink_control shrink = {
@@ -3101,6 +3154,7 @@ unsigned long shrink_all_memory(unsigned long nr_to_reclaim)
 		.nr_to_reclaim = nr_to_reclaim,
 		.hibernation_mode = 1,
 		.order = 0,
+		.reclaim_pagecache_only = 0,
 	};
 	struct shrink_control shrink = {
 		.gfp_mask = sc.gfp_mask,
@@ -3290,6 +3344,7 @@ static int __zone_reclaim(struct zone *zone, gfp_t gfp_mask, unsigned int order)
 				       SWAP_CLUSTER_MAX),
 		.gfp_mask = gfp_mask,
 		.order = order,
+		.reclaim_pagecache_only = 0,
 	};
 	struct shrink_control shrink = {
 		.gfp_mask = sc.gfp_mask,
