@@ -72,6 +72,8 @@ typedef unsigned __bitwise__ reclaim_mode_t;
 #define RECLAIM_MODE_LUMPYRECLAIM	((__force reclaim_mode_t)0x08u)
 #define RECLAIM_MODE_COMPACTION		((__force reclaim_mode_t)0x10u)
 
+extern int check_pagecache_overlimit(void);
+
 struct scan_control {
 	/* Incremented by the number of inactive pages that were scanned */
 	unsigned long nr_scanned;
@@ -2437,7 +2439,6 @@ unsigned long shrink_all_pagecache_memory(unsigned long nr_pages)
 		.nr_to_reclaim = nr_pages,
 		.may_swap = 0,
 		.may_writepage = 1,
-		.swappiness = 0, /* Do not swap, only pagecache reclaim */
 		.reclaim_pagecache_only = 1, /* Flag it */
 	};
 	struct shrink_control shrink = {
