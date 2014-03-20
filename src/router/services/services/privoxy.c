@@ -26,6 +26,7 @@ void start_privoxy(void)
 	char vifs[256];
 	char *ip = nvram_safe_get("lan_ipaddr");
 	char *mask = nvram_safe_get("lan_netmask");
+	char *webif_port = nvram_safe_get("http_lanport");
 
 	sysprintf("grep -q nobody /etc/passwd || echo \"nobody:*:65534:65534:nobody:/var:/bin/false\" >> /etc/passwd");
 	mkdir("/var/log/privoxy", 0777);
@@ -34,6 +35,8 @@ void start_privoxy(void)
 	if (nvram_match("privoxy_transp_enable", "1")) {
 		sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wan, ip);
 		sysprintf("iptables -t nat -I PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wan, ip);
+		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port );
+		sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port );
 		mode = 1;
 		getIfLists(vifs, 256);
 		char vif_ip[32];
@@ -86,11 +89,13 @@ void stop_privoxy(void)
 	char *ip = nvram_safe_get("lan_ipaddr");
 	char *wan = get_wan_ipaddr();
 	char *mask = nvram_safe_get("lan_netmask");
+	char *webif_port = nvram_safe_get("http_lanport");
 	char *next;
 	char var[80];
 	char vifs[256];
 	
 	sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wan, ip);
+	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port );
 	
 	getIfLists(vifs, 256);
 	char vif_ip[32];

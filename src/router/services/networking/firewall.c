@@ -639,7 +639,9 @@ static void nat_prerouting(void)
 		{
 			save2file("-A PREROUTING -p tcp -s %s --dport 80 -j ACCEPT \n", nvram_safe_get("privoxy_transp_exclude"));
 		}
-		
+		/* do not filter access to the webif from lan */
+		save2file("-A PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), nvram_safe_get("lan_ipaddr"), nvram_safe_get("http_lanport") );
+		/* go through proxy */
 		save2file("-A PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118\n", wanaddr, nvram_safe_get("lan_ipaddr"));
 	}
 #endif
