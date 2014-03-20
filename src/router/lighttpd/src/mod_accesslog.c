@@ -603,7 +603,7 @@ SIGHUP_FUNC(log_access_cycle) {
 		    s->access_logfile->used > 1 &&
 		    s->access_logfile->ptr[0] != '|') {
 
-			close(s->log_access_fd);
+			if (-1 != s->log_access_fd) close(s->log_access_fd);
 
 			if (-1 == (s->log_access_fd =
 				   open(s->access_logfile->ptr, O_APPEND | O_WRONLY | O_CREAT | O_LARGEFILE, 0644))) {
@@ -612,9 +612,7 @@ SIGHUP_FUNC(log_access_cycle) {
 
 				return HANDLER_ERROR;
 			}
-#ifdef FD_CLOEXEC
-			fcntl(s->log_access_fd, F_SETFD, FD_CLOEXEC);
-#endif
+			fd_close_on_exec(s->log_access_fd);
 		}
 	}
 
@@ -917,6 +915,7 @@ REQUESTDONE_FUNC(log_access_write) {
 			}
 #endif
 		} else if (p->conf.log_access_fd != -1) {
+			force_assert(b->used > 0);
 			write(p->conf.log_access_fd, b->ptr, b->used - 1);
 		}
 		buffer_reset(b);

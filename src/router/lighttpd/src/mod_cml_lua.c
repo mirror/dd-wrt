@@ -64,7 +64,7 @@ static int lua_to_c_get_string(lua_State *L, const char *varname, buffer *b) {
 
 	lua_pop(L, 1);
 
-	assert(curelem - 1 == lua_gettop(L));
+	force_assert(curelem - 1 == lua_gettop(L));
 
 	return 0;
 }
@@ -86,7 +86,7 @@ static int lua_to_c_is_table(lua_State *L, const char *varname) {
 
 	lua_settop(L, curelem - 1);
 
-	assert(curelem - 1 == lua_gettop(L));
+	force_assert(curelem - 1 == lua_gettop(L));
 
 	return 1;
 }
@@ -209,12 +209,17 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 	lua_State *L;
 	readme rm;
 	int ret = -1;
-	buffer *b = buffer_init();
+	buffer *b;
 	int header_tbl = 0;
 
 	rm.done = 0;
-	stream_open(&rm.st, fn);
+	if (-1 == stream_open(&rm.st, fn)) {
+		log_error_write(srv, __FILE__, __LINE__, "sbss",
+				"opening lua cml file ", fn, "failed:", strerror(errno));
+		return -1;
+	}
 
+	b = buffer_init();
 	/* push the lua file to the interpreter and see what happends */
 	L = luaL_newstate();
 	luaL_openlibs(L);
@@ -398,26 +403,22 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 			con->file_finished = 1;
 
 			ds = (data_string *)array_get_element(con->response.headers, "Last-Modified");
+			if (0 == mtime) mtime = time(NULL); /* default last-modified to now */
 
 			/* no Last-Modified specified */
-			if ((mtime) && (NULL == ds)) {
+			if (NULL == ds) {
 
 				strftime(timebuf, sizeof(timebuf), "%a, %d %b %Y %H:%M:%S GMT", gmtime(&mtime));
 
 				response_header_overwrite(srv, con, CONST_STR_LEN("Last-Modified"), timebuf, sizeof(timebuf) - 1);
 
-
 				tbuf.ptr = timebuf;
 				tbuf.used = sizeof(timebuf);
 				tbuf.size = sizeof(timebuf);
-			} else if (ds) {
+			} else {
 				tbuf.ptr = ds->value->ptr;
 				tbuf.used = ds->value->used;
 				tbuf.size = ds->value->size;
-			} else {
-				tbuf.size = 0;
-				tbuf.used = 0;
-				tbuf.ptr = NULL;
 			}
 
 			if (HANDLER_FINISHED == http_response_handle_cachable(srv, con, &tbuf)) {
