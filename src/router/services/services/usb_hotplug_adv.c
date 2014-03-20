@@ -119,7 +119,6 @@ void start_hotplug_usb(void)
 	 */
 	if (class == 8 && subclass == 6) {
 		devpath = getenv("DEVPATH");
-		sysprintf("echo start_hotplug_usb devicepath %s >> /tmp/hotplugs", devpath);
 
 		/* to avoid problems with multiple discs sleep until the first disc is done */
 		if (stat(MOUNTSTAT, &tmp_stat) == 0) {
@@ -161,6 +160,23 @@ void start_hotplug_usb(void)
 	return;
 }
 
+/* Optimize performance */
+#define READ_AHEAD_KB_BUF	1024
+#define READ_AHEAD_CONF	"/sys/block/%s/queue/read_ahead_kb"
+
+static void optimize_block_device(char *devname)
+{
+	char blkdev[8] = { 0 };
+	char read_ahead_conf[64] = { 0 };
+	int err;
+
+	memset(blkdev, 0, sizeof(blkdev));
+	strncpy(blkdev, devname, 3);
+	sprintf(read_ahead_conf, READ_AHEAD_CONF, blkdev);
+	sysprintf("echo %d > %s", READ_AHEAD_KB_BUF, read_ahead_conf);
+}
+
+
 //Kernel 3.x
 void start_hotplug_block(void)
 {
@@ -192,6 +208,9 @@ void start_hotplug_block(void)
 	}
 	strcpy(part, devp);
 	strcpy(dev, devp);
+
+	char *slash = strrchr(devpath, '/');
+	optimize_block_device(slash + 1);
 
 	for (c = 'a'; c < 'f'; c++) {	//support sda - sdf
 
