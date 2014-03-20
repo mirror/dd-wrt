@@ -261,10 +261,8 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 		}
 	}
 
-#ifdef FD_CLOEXEC
 	/* set FD_CLOEXEC now, fdevent_fcntl_set is called later; needed for pipe-logger forks */
-	fcntl(srv_socket->fd, F_SETFD, FD_CLOEXEC);
-#endif
+	fd_close_on_exec(srv_socket->fd);
 
 	/* */
 	srv->cur_fds = srv_socket->fd;
@@ -351,14 +349,21 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 
 		break;
 	case AF_UNIX:
+		{
+			size_t hostlen = strlen(host) + 1;
+			if (hostlen > sizeof(srv_socket->addr.un.sun_path)) {
+				log_error_write(srv, __FILE__, __LINE__, "sS", "unix socket filename too long:", host);
+				goto error_free_socket;
+			}
+			memcpy(srv_socket->addr.un.sun_path, host, hostlen);
+		}
 		srv_socket->addr.un.sun_family = AF_UNIX;
-		strcpy(srv_socket->addr.un.sun_path, host);
 
 #ifdef SUN_LEN
 		addr_len = SUN_LEN(&srv_socket->addr.un);
 #else
 		/* stevens says: */
-		addr_len = strlen(host) + 1 + sizeof(srv_socket->addr.un.sun_family);
+		addr_len = hostlen + sizeof(srv_socket->addr.un.sun_family);
 #endif
 
 		/* check if the socket exists and try to connect to it. */
@@ -543,7 +548,6 @@ static X509* x509_load_pem_file(server *srv, const char *file) {
 	return x;
 
 error:
-	if (NULL != x) X509_free(x);
 	if (NULL != in) BIO_free(in);
 	return NULL;
 }
@@ -573,7 +577,6 @@ static EVP_PKEY* evp_pkey_load_pem_file(server *srv, const char *file) {
 	return x;
 
 error:
-	if (NULL != x) EVP_PKEY_free(x);
 	if (NULL != in) BIO_free(in);
 	return NULL;
 }
@@ -583,7 +586,7 @@ static int network_openssl_load_pemfile(server *srv, size_t ndx) {
 
 #ifdef OPENSSL_NO_TLSEXT
 	{
-		data_config *dc = (data_config *)srv->config_context->data[i];
+		data_config *dc = (data_config *)srv->config_context->data[ndx];
 		if ((ndx > 0 && (COMP_SERVER_SOCKET != dc->comp || dc->cond != CONFIG_COND_EQ))
 			|| !s->ssl_enabled) {
 			log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
@@ -927,6 +930,7 @@ int network_init(server *srv) {
 	buffer_append_long(b, srv->srvconf.port);
 
 	if (0 != network_server_init(srv, b, srv->config_storage[0])) {
+		buffer_free(b);
 		return -1;
 	}
 	buffer_free(b);

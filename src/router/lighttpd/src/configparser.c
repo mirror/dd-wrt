@@ -17,7 +17,7 @@
 static void configparser_push(config_t *ctx, data_config *dc, int isnew) {
   if (isnew) {
     dc->context_ndx = ctx->all_configs->used;
-    assert(dc->context_ndx > ctx->current->context_ndx);
+    force_assert(dc->context_ndx > ctx->current->context_ndx);
     array_insert_unique(ctx->all_configs, (data_unset *)dc);
     dc->parent = ctx->current;
     array_insert_unique(dc->parent->childs, (data_unset *)dc);
@@ -99,7 +99,7 @@ data_unset *configparser_merge_data(data_unset *op1, const data_unset *op2) {
       }
       break;
     default:
-      assert(0);
+      force_assert(0);
       break;
     }
   }
@@ -1094,7 +1094,7 @@ static void yy_reduce(
 {
   data_config *dc;
   dc = (data_config *)array_get_element(ctx->srv->config_context, "global");
-  assert(dc);
+  force_assert(dc);
   configparser_push(ctx, dc, 0);
 }
 #line 1100 "configparser.c"
@@ -1108,7 +1108,7 @@ static void yy_reduce(
   cur = ctx->current;
   configparser_pop(ctx);
 
-  assert(cur && ctx->current);
+  force_assert(cur && ctx->current);
 
   yygotominor.yy78 = cur;
 }
@@ -1151,7 +1151,7 @@ static void yy_reduce(
   cur = ctx->current;
   configparser_pop(ctx);
 
-  assert(cur && ctx->current);
+  force_assert(cur && ctx->current);
 
   yygotominor.yy78 = cur;
 }
@@ -1186,7 +1186,7 @@ static void yy_reduce(
     op = buffer_init_string("=~");
     break;
   default:
-    assert(0);
+    force_assert(0);
     return;
   }
 

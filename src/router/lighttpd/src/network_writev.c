@@ -230,14 +230,10 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 
 						return -1;
 					}
-#ifdef FD_CLOEXEC
-					fcntl(c->file.fd, F_SETFD, FD_CLOEXEC);
-#endif
+					fd_close_on_exec(c->file.fd);
 				}
 
 				if (MAP_FAILED == (c->file.mmap.start = mmap(NULL, to_mmap, PROT_READ, MAP_SHARED, c->file.fd, c->file.mmap.offset))) {
-					/* close it here, otherwise we'd have to set FD_CLOEXEC */
-
 					log_error_write(srv, __FILE__, __LINE__, "ssbd", "mmap failed:",
 							strerror(errno), c->file.name, c->file.fd);
 
@@ -273,7 +269,7 @@ int network_write_chunkqueue_writev(server *srv, connection *con, int fd, chunkq
 						c->file.mmap.length,
 						abs_offset,
 						c->file.mmap.offset);
-				assert(toSend < 0);
+				force_assert(toSend < 0);
 			}
 
 			if (toSend > max_bytes) toSend = max_bytes;

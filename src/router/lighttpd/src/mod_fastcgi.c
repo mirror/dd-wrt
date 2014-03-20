@@ -487,7 +487,7 @@ static handler_ctx * handler_ctx_init(void) {
 	handler_ctx * hctx;
 
 	hctx = calloc(1, sizeof(*hctx));
-	assert(hctx);
+	force_assert(hctx);
 
 	hctx->fde_ndx = -1;
 
@@ -634,7 +634,7 @@ static int fastcgi_extension_insert(fcgi_exts *ext, buffer *key, fcgi_extension_
 	if (i == ext->used) {
 		/* filextension is new */
 		fe = calloc(1, sizeof(*fe));
-		assert(fe);
+		force_assert(fe);
 		fe->key = buffer_init();
 		fe->last_used_ndx = -1;
 		buffer_copy_string_buffer(fe->key, key);
@@ -644,11 +644,11 @@ static int fastcgi_extension_insert(fcgi_exts *ext, buffer *key, fcgi_extension_
 		if (ext->size == 0) {
 			ext->size = 8;
 			ext->exts = malloc(ext->size * sizeof(*(ext->exts)));
-			assert(ext->exts);
+			force_assert(ext->exts);
 		} else if (ext->used == ext->size) {
 			ext->size += 8;
 			ext->exts = realloc(ext->exts, ext->size * sizeof(*(ext->exts)));
-			assert(ext->exts);
+			force_assert(ext->exts);
 		}
 		ext->exts[ext->used++] = fe;
 	} else {
@@ -658,11 +658,11 @@ static int fastcgi_extension_insert(fcgi_exts *ext, buffer *key, fcgi_extension_
 	if (fe->size == 0) {
 		fe->size = 4;
 		fe->hosts = malloc(fe->size * sizeof(*(fe->hosts)));
-		assert(fe->hosts);
+		force_assert(fe->hosts);
 	} else if (fe->size == fe->used) {
 		fe->size += 4;
 		fe->hosts = realloc(fe->hosts, fe->size * sizeof(*(fe->hosts)));
-		assert(fe->hosts);
+		force_assert(fe->hosts);
 	}
 
 	fe->hosts[fe->used++] = fh;
@@ -873,7 +873,13 @@ static int fcgi_spawn_connection(server *srv,
 
 #ifdef HAVE_SYS_UN_H
 		fcgi_addr_un.sun_family = AF_UNIX;
-		strcpy(fcgi_addr_un.sun_path, proc->unixsocket->ptr);
+		if (proc->unixsocket->used > sizeof(fcgi_addr_un.sun_path)) {
+			log_error_write(srv, __FILE__, __LINE__, "sB",
+					"ERROR: Unix Domain socket filename too long:",
+					proc->unixsocket);
+			return -1;
+		}
+		memcpy(fcgi_addr_un.sun_path, proc->unixsocket->ptr, proc->unixsocket->used);
 
 #ifdef SUN_LEN
 		servlen = SUN_LEN(&fcgi_addr_un);
@@ -969,6 +975,7 @@ static int fcgi_spawn_connection(server *srv,
 		if (setsockopt(fcgi_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0) {
 			log_error_write(srv, __FILE__, __LINE__, "ss",
 					"socketsockopt failed:", strerror(errno));
+			close(fcgi_fd);
 			return -1;
 		}
 
@@ -978,12 +985,14 @@ static int fcgi_spawn_connection(server *srv,
 				"bind failed for:",
 				proc->connection_name,
 				strerror(errno));
+			close(fcgi_fd);
 			return -1;
 		}
 
 		if (-1 == listen(fcgi_fd, 1024)) {
 			log_error_write(srv, __FILE__, __LINE__, "ss",
 				"listen failed:", strerror(errno));
+			close(fcgi_fd);
 			return -1;
 		}
 
@@ -1161,6 +1170,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 	data_unset *du;
 	size_t i = 0;
 	buffer *fcgi_mode = buffer_init();
+	fcgi_extension_host *host = NULL;
 
 	config_values_t cv[] = {
 		{ "fastcgi.server",              NULL, T_CONFIG_LOCAL, T_CONFIG_SCOPE_CONNECTION },       /* 0 */
@@ -1188,7 +1198,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 		ca = ((data_config *)srv->config_context->data[i])->value;
 
 		if (0 != config_insert_values_global(srv, ca, cv)) {
-			return HANDLER_ERROR;
+			goto error;
 		}
 
 		/*
@@ -1203,7 +1213,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 				log_error_write(srv, __FILE__, __LINE__, "sss",
 						"unexpected type for key: ", "fastcgi.server", "array of strings");
 
-				return HANDLER_ERROR;
+				goto error;
 			}
 
 
@@ -1221,7 +1231,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 							"unexpected type for key: ", "fastcgi.server",
 							"[", da->value->data[j]->key, "](string)");
 
-					return HANDLER_ERROR;
+					goto error;
 				}
 
 				/*
@@ -1238,8 +1248,6 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 
 				for (n = 0; n < da_ext->value->used; n++) {
 					data_array *da_host = (data_array *)da_ext->value->data[n];
-
-					fcgi_extension_host *host;
 
 					config_values_t fcv[] = {
 						{ "host",              NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },       /* 0 */
@@ -1271,7 +1279,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 								"fastcgi.server",
 								"[", da_host->key, "](string)");
 
-						return HANDLER_ERROR;
+						goto error;
 					}
 
 					host = fastcgi_host_init();
@@ -1308,7 +1316,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 					fcv[15].destination = &(host->fix_root_path_name);
 
 					if (0 != config_insert_values_internal(srv, da_host->value, fcv)) {
-						return HANDLER_ERROR;
+						goto error;
 					}
 
 					if ((!buffer_is_empty(host->host) || host->port) &&
@@ -1319,7 +1327,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 								da_ext->key, " => (",
 								da_host->key, " ( ...");
 
-						return HANDLER_ERROR;
+						goto error;
 					}
 
 					if (!buffer_is_empty(host->unixsocket)) {
@@ -1333,7 +1341,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 									da_ext->key, " => (",
 									da_host->key, " ( ...");
 
-							return HANDLER_ERROR;
+							goto error;
 						}
 					} else {
 						/* tcp/ip */
@@ -1346,7 +1354,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 									da_ext->key, " => (",
 									da_host->key, " ( ...");
 
-							return HANDLER_ERROR;
+							goto error;
 						} else if (host->port == 0) {
 							log_error_write(srv, __FILE__, __LINE__, "sbsbsbs",
 									"port has to be set in:",
@@ -1354,7 +1362,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 									da_ext->key, " => (",
 									da_host->key, " ( ...");
 
-							return HANDLER_ERROR;
+							goto error;
 						}
 					}
 
@@ -1397,13 +1405,14 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 							if (fcgi_spawn_connection(srv, p, host, proc)) {
 								log_error_write(srv, __FILE__, __LINE__, "s",
 										"[ERROR]: spawning fcgi failed.");
-								return HANDLER_ERROR;
+								fastcgi_process_free(proc);
+								goto error;
 							}
 
 							fastcgi_status_init(srv, p->statuskey, host, proc);
 
 							proc->next = host->first;
-							if (host->first) 	host->first->prev = proc;
+							if (host->first) host->first->prev = proc;
 
 							host->first = proc;
 						}
@@ -1437,7 +1446,7 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 							if (buffer_is_empty(host->docroot)) {
 								log_error_write(srv, __FILE__, __LINE__, "s",
 										"ERROR: docroot is required for authorizer mode.");
-								return HANDLER_ERROR;
+								goto error;
 							}
 						} else {
 							log_error_write(srv, __FILE__, __LINE__, "sbs",
@@ -1448,14 +1457,19 @@ SETDEFAULTS_FUNC(mod_fastcgi_set_defaults) {
 
 					/* if extension already exists, take it */
 					fastcgi_extension_insert(s->exts, da_ext->key, host);
+					host = NULL;
 				}
 			}
 		}
 	}
 
 	buffer_free(fcgi_mode);
-
 	return HANDLER_GO_ON;
+
+error:
+	if (NULL != host) fastcgi_host_free(host);
+	buffer_free(fcgi_mode);
+	return HANDLER_ERROR;
 }
 
 static int fcgi_set_state(server *srv, handler_ctx *hctx, fcgi_connection_state_t state) {
@@ -1623,7 +1637,7 @@ static int fcgi_env_add(buffer *env, const char *key, size_t key_len, const char
 }
 
 static int fcgi_header(FCGI_Header * header, unsigned char type, size_t request_id, int contentLength, unsigned char paddingLength) {
-	assert(contentLength <= FCGI_MAX_LENGTH);
+	force_assert(contentLength <= FCGI_MAX_LENGTH);
 	
 	header->version = FCGI_VERSION_1;
 	header->type = type;
@@ -1662,7 +1676,14 @@ static connection_result_t fcgi_establish_connection(server *srv, handler_ctx *h
 #ifdef HAVE_SYS_UN_H
 		/* use the unix domain socket */
 		fcgi_addr_un.sun_family = AF_UNIX;
-		strcpy(fcgi_addr_un.sun_path, proc->unixsocket->ptr);
+		if (proc->unixsocket->used > sizeof(fcgi_addr_un.sun_path)) {
+			log_error_write(srv, __FILE__, __LINE__, "sB",
+					"ERROR: Unix Domain socket filename too long:",
+					proc->unixsocket);
+			return -1;
+		}
+		memcpy(fcgi_addr_un.sun_path, proc->unixsocket->ptr, proc->unixsocket->used);
+
 #ifdef SUN_LEN
 		servlen = SUN_LEN(&fcgi_addr_un);
 #else
@@ -2086,7 +2107,7 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 							req_c->file.name);
 					}
 
-					assert(weHave != 0);
+					force_assert(weHave != 0);
 
 					chunkqueue_append_file(hctx->wb, req_c->file.name, req_c->offset, weHave);
 
@@ -2116,8 +2137,8 @@ static int fcgi_create_env(server *srv, handler_ctx *hctx, size_t request_id) {
 						}
 						c = hctx->wb->last;
 
-						assert(c->type == FILE_CHUNK);
-						assert(req_c->file.is_temp == 1);
+						force_assert(c->type == FILE_CHUNK);
+						force_assert(req_c->file.is_temp == 1);
 
 						c->file.is_temp = 1;
 						req_c->file.is_temp = 0;
@@ -2420,11 +2441,12 @@ static int fastcgi_get_packet(server *srv, handler_ctx *hctx, fastcgi_response_p
 	if ((packet->b->used == 0) ||
 	    (packet->b->used - 1 < sizeof(FCGI_Header))) {
 		/* no header */
-		buffer_free(packet->b);
-
 		if (hctx->plugin_data->conf.debug) {
 			log_error_write(srv, __FILE__, __LINE__, "sdsds", "FastCGI: header too small:", packet->b->used, "bytes <", sizeof(FCGI_Header), "bytes, waiting for more data");
 		}
+
+		buffer_free(packet->b);
+
 		return -1;
 	}
 
@@ -2532,7 +2554,7 @@ static int fcgi_demux_response(server *srv, handler_ctx *hctx) {
 		}
 
 		/* this should be catched by the b > 0 above */
-		assert(r);
+		force_assert(r);
 
 		b->used = r + 1; /* one extra for the fake \0 */
 		b->ptr[b->used - 1] = '\0';
@@ -2722,7 +2744,7 @@ static int fcgi_restart_dead_procs(server *srv, plugin_data *p, fcgi_extension_h
 		case PROC_STATE_KILLED:
 		case PROC_STATE_UNSET:
 			/* this should never happen as long as adaptive spawing is disabled */
-			assert(0);
+			force_assert(0);
 
 			break;
 		case PROC_STATE_RUNNING:
@@ -3014,7 +3036,7 @@ static handler_t fcgi_write_request(server *srv, handler_ctx *hctx) {
 
 			break;
 		}
-
+		/* fallthrough */
 	case FCGI_STATE_PREPARE_WRITE:
 		/* ok, we have the connection */
 

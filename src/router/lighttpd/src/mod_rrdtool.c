@@ -170,10 +170,8 @@ static int mod_rrd_create_pipe(server *srv, plugin_data *p) {
 		p->read_fd = from_rrdtool_fds[0];
 		p->rrdtool_pid = pid;
 
-#ifdef FD_CLOEXEC
-		fcntl(p->write_fd, F_SETFD, FD_CLOEXEC);
-		fcntl(p->read_fd, F_SETFD, FD_CLOEXEC);
-#endif
+		fd_close_on_exec(p->write_fd);
+		fd_close_on_exec(p->read_fd);
 
 		break;
 	}
@@ -346,7 +344,7 @@ SETDEFAULTS_FUNC(mod_rrd_set_defaults) {
 
 	if (!p) return HANDLER_ERROR;
 
-	assert(srv->config_context->used > 0);
+	force_assert(srv->config_context->used > 0);
 	p->config_storage = calloc(1, srv->config_context->used * sizeof(plugin_config *));
 
 	for (i = 0; i < srv->config_context->used; i++) {
@@ -437,7 +435,7 @@ TRIGGER_FUNC(mod_rrd_trigger) {
 		}
 
 		buffer_prepare_copy(p->resp, 4096);
-		if (-1 == (r = safe_read(p->read_fd, p->resp->ptr, p->resp->size))) {
+		if (-1 == (r = safe_read(p->read_fd, p->resp->ptr, p->resp->size - 1))) {
 			p->rrdtool_running = 0;
 
 			log_error_write(srv, __FILE__, __LINE__, "ss",
@@ -446,7 +444,8 @@ TRIGGER_FUNC(mod_rrd_trigger) {
 			return HANDLER_ERROR;
 		}
 
-		p->resp->used = r;
+		p->resp->used = r + 1;
+		p->resp->ptr[r] = '\0';
 
 		if (p->resp->ptr[0] != 'O' ||
 		    p->resp->ptr[1] != 'K') {
