@@ -351,7 +351,7 @@ static handler_ctx * handler_ctx_init(void) {
 	handler_ctx * hctx;
 
 	hctx = calloc(1, sizeof(*hctx));
-	assert(hctx);
+	force_assert(hctx);
 
 	hctx->fde_ndx = -1;
 
@@ -495,7 +495,7 @@ static int scgi_extension_insert(scgi_exts *ext, buffer *key, scgi_extension_hos
 	if (i == ext->used) {
 		/* filextension is new */
 		fe = calloc(1, sizeof(*fe));
-		assert(fe);
+		force_assert(fe);
 		fe->key = buffer_init();
 		buffer_copy_string_buffer(fe->key, key);
 
@@ -504,11 +504,11 @@ static int scgi_extension_insert(scgi_exts *ext, buffer *key, scgi_extension_hos
 		if (ext->size == 0) {
 			ext->size = 8;
 			ext->exts = malloc(ext->size * sizeof(*(ext->exts)));
-			assert(ext->exts);
+			force_assert(ext->exts);
 		} else if (ext->used == ext->size) {
 			ext->size += 8;
 			ext->exts = realloc(ext->exts, ext->size * sizeof(*(ext->exts)));
-			assert(ext->exts);
+			force_assert(ext->exts);
 		}
 		ext->exts[ext->used++] = fe;
 	} else {
@@ -518,11 +518,11 @@ static int scgi_extension_insert(scgi_exts *ext, buffer *key, scgi_extension_hos
 	if (fe->size == 0) {
 		fe->size = 4;
 		fe->hosts = malloc(fe->size * sizeof(*(fe->hosts)));
-		assert(fe->hosts);
+		force_assert(fe->hosts);
 	} else if (fe->size == fe->used) {
 		fe->size += 4;
 		fe->hosts = realloc(fe->hosts, fe->size * sizeof(*(fe->hosts)));
-		assert(fe->hosts);
+		force_assert(fe->hosts);
 	}
 
 	fe->hosts[fe->used++] = fh;
@@ -670,7 +670,13 @@ static int scgi_spawn_connection(server *srv,
 
 #ifdef HAVE_SYS_UN_H
 		scgi_addr_un.sun_family = AF_UNIX;
-		strcpy(scgi_addr_un.sun_path, proc->socket->ptr);
+		if (proc->socket->used > sizeof(scgi_addr_un.sun_path)) {
+			log_error_write(srv, __FILE__, __LINE__, "sB",
+					"ERROR: Unix Domain socket filename too long:",
+					proc->socket);
+			return -1;
+		}
+		memcpy(scgi_addr_un.sun_path, proc->socket->ptr, proc->socket->used);
 
 #ifdef SUN_LEN
 		servlen = SUN_LEN(&scgi_addr_un);
@@ -752,6 +758,7 @@ static int scgi_spawn_connection(server *srv,
 		if (setsockopt(scgi_fd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) < 0) {
 			log_error_write(srv, __FILE__, __LINE__, "ss",
 					"socketsockopt failed:", strerror(errno));
+			close(scgi_fd);
 			return -1;
 		}
 
@@ -762,12 +769,14 @@ static int scgi_spawn_connection(server *srv,
 				proc->socket,
 				proc->port,
 				strerror(errno));
+			close(scgi_fd);
 			return -1;
 		}
 
 		if (-1 == listen(scgi_fd, 1024)) {
 			log_error_write(srv, __FILE__, __LINE__, "ss",
 				"listen failed:", strerror(errno));
+			close(scgi_fd);
 			return -1;
 		}
 
@@ -918,6 +927,7 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 	plugin_data *p = p_d;
 	data_unset *du;
 	size_t i = 0;
+	scgi_extension_host *df = NULL;
 
 	config_values_t cv[] = {
 		{ "scgi.server",              NULL, T_CONFIG_LOCAL, T_CONFIG_SCOPE_CONNECTION },       /* 0 */
@@ -942,7 +952,7 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 		ca = ((data_config *)srv->config_context->data[i])->value;
 
 		if (0 != config_insert_values_global(srv, ca, cv)) {
-			return HANDLER_ERROR;
+			goto error;
 		}
 
 		/*
@@ -957,7 +967,7 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 				log_error_write(srv, __FILE__, __LINE__, "sss",
 						"unexpected type for key: ", "scgi.server", "array of strings");
 
-				return HANDLER_ERROR;
+				goto error;
 			}
 
 
@@ -975,7 +985,7 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 							"unexpected type for key: ", "scgi.server",
 							"[", da->value->data[j]->key, "](string)");
 
-					return HANDLER_ERROR;
+					goto error;
 				}
 
 				/*
@@ -992,8 +1002,6 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 
 				for (n = 0; n < da_ext->value->used; n++) {
 					data_array *da_host = (data_array *)da_ext->value->data[n];
-
-					scgi_extension_host *df;
 
 					config_values_t fcv[] = {
 						{ "host",              NULL, T_CONFIG_STRING, T_CONFIG_SCOPE_CONNECTION },       /* 0 */
@@ -1023,7 +1031,7 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 								"scgi.server",
 								"[", da_host->key, "](string)");
 
-						return HANDLER_ERROR;
+						goto error;
 					}
 
 					df = scgi_host_init();
@@ -1055,7 +1063,7 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 
 
 					if (0 != config_insert_values_internal(srv, da_host->value, fcv)) {
-						return HANDLER_ERROR;
+						goto error;
 					}
 
 					if ((!buffer_is_empty(df->host) || df->port) &&
@@ -1063,7 +1071,7 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 						log_error_write(srv, __FILE__, __LINE__, "s",
 								"either host+port or socket");
 
-						return HANDLER_ERROR;
+						goto error;
 					}
 
 					if (!buffer_is_empty(df->unixsocket)) {
@@ -1073,7 +1081,7 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 						if (df->unixsocket->used > sizeof(un.sun_path) - 2) {
 							log_error_write(srv, __FILE__, __LINE__, "s",
 									"path of the unixdomain socket is too large");
-							return HANDLER_ERROR;
+							goto error;
 						}
 					} else {
 						/* tcp/ip */
@@ -1087,7 +1095,7 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 									da_host->key,
 									"host");
 
-							return HANDLER_ERROR;
+							goto error;
 						} else if (df->port == 0) {
 							log_error_write(srv, __FILE__, __LINE__, "sbbbs",
 									"missing key (short):",
@@ -1095,7 +1103,7 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 									da_ext->key,
 									da_host->key,
 									"port");
-							return HANDLER_ERROR;
+							goto error;
 						}
 					}
 
@@ -1145,7 +1153,8 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 							if (scgi_spawn_connection(srv, p, df, proc)) {
 								log_error_write(srv, __FILE__, __LINE__, "s",
 										"[ERROR]: spawning fcgi failed.");
-								return HANDLER_ERROR;
+								scgi_process_free(proc);
+								goto error;
 							}
 
 							proc->next = df->first;
@@ -1176,12 +1185,17 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 
 					/* if extension already exists, take it */
 					scgi_extension_insert(s->exts, da_ext->key, df);
+					df = NULL;
 				}
 			}
 		}
 	}
 
 	return HANDLER_GO_ON;
+
+error:
+	if (NULL != df) scgi_host_free(df);
+	return HANDLER_ERROR;
 }
 
 static int scgi_set_state(server *srv, handler_ctx *hctx, scgi_connection_state_t state) {
@@ -1332,7 +1346,14 @@ static int scgi_establish_connection(server *srv, handler_ctx *hctx) {
 #ifdef HAVE_SYS_UN_H
 		/* use the unix domain socket */
 		scgi_addr_un.sun_family = AF_UNIX;
-		strcpy(scgi_addr_un.sun_path, proc->socket->ptr);
+		if (proc->socket->used > sizeof(scgi_addr_un.sun_path)) {
+			log_error_write(srv, __FILE__, __LINE__, "sB",
+					"ERROR: Unix Domain socket filename too long:",
+					proc->socket);
+			return -1;
+		}
+		memcpy(scgi_addr_un.sun_path, proc->socket->ptr, proc->socket->used);
+
 #ifdef SUN_LEN
 		servlen = SUN_LEN(&scgi_addr_un);
 #else
@@ -2997,6 +3018,7 @@ TRIGGER_FUNC(mod_scgi_handle_trigger) {
 					if (scgi_spawn_connection(srv, p, host, fp)) {
 						log_error_write(srv, __FILE__, __LINE__, "s",
 								"ERROR: spawning fcgi failed.");
+						scgi_process_free(fp);
 						return HANDLER_ERROR;
 					}
 
