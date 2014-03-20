@@ -73,7 +73,6 @@
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
 
-static int pageToken = 0;
 
 struct mii_ioctl_data {
 	unsigned short phy_id;
@@ -6364,12 +6363,10 @@ u_int64_t freediskSpace(char *path)
 int createpageToken()
 {
 	srand( (unsigned) time(NULL) );
-	pageToken = rand() % 1000000000;
-	//fprintf(stderr, "Generated page token: %d\n", pageToken);
-	return pageToken;
+	int tok = rand() % 1000000000;
+	char pToken[16];
+	snprintf ( pToken, 16, "%d", tok);
+	nvram_set("ptoken", pToken );
+	return tok;
 }
 
-int getpageToken()
-{
-	return pageToken;
-}

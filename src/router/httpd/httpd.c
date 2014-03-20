@@ -84,7 +84,6 @@
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
 #define TIMEOUT	15
 
-extern int getpageToken();
 
 /* A multi-family sockaddr. */
 typedef union {
@@ -273,7 +272,7 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	sprintf(s_curr_time, "%llu", curr_time);
 	
 	int submittedtoken = atoi(nvram_safe_get("token"));
-	int currenttoken = getpageToken();
+	int currenttoken = atoi(nvram_safe_get("ptoken"));
 	
 	
 	//protect config changes
