@@ -797,14 +797,6 @@ static unsigned long shrink_page_list(struct list_head *page_list,
 
 		VM_BUG_ON(PageActive(page));
 		VM_BUG_ON(page_zone(page) != zone);
-
-		/* While reclaiming pagecache make it easy */
-		if (sc->reclaim_pagecache_only) {
-			if (page_mapped(page) || !check_pagecache_overlimit()) {
-				list_add(&page->lru, &l_active);
-				continue;
-			}
-		}
 		
 		/* Take it easy if we are doing only pagecache pages */
 		if (sc->reclaim_pagecache_only) {
@@ -1684,6 +1676,14 @@ static void shrink_active_list(unsigned long nr_to_scan,
 				if (page_has_private(page))
 					try_to_release_page(page, 0);
 				unlock_page(page);
+			}
+		}
+
+		/* While reclaiming pagecache make it easy */
+		if (sc->reclaim_pagecache_only) {
+			if (page_mapped(page) || !check_pagecache_overlimit()) {
+				list_add(&page->lru, &l_active);
+				continue;
 			}
 		}
 
