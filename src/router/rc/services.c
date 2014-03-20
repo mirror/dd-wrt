@@ -639,23 +639,20 @@ static void handle_nassrv(void)
 {
 	void *handle = NULL;
 
-#ifdef HAVE_MINIDLNA
-	handle = stop_service_nofree("dlna", handle);
-#endif
-#ifdef HAVE_FTP
-	handle = stop_service_nofree("ftpsrv", handle);
-#endif
 #ifdef HAVE_SAMBA3
 	handle = stop_service_nofree("samba3", handle);
 	handle = start_service_nofree_f("samba3", handle);
 #endif
 #ifdef HAVE_FTP
+	handle = stop_service_nofree("ftpsrv", handle);
 	handle = start_service_nofree_f("ftpsrv", handle);
 #endif
 #ifdef HAVE_MINIDLNA
+	handle = stop_service_nofree("dlna", handle);
 	handle = start_service_nofree_f("dlna", handle);
 #endif
 #ifdef HAVE_TRANSMISSION
+	handle = stop_service_nofree("transmission", handle);
 	handle = start_service_nofree_f("transmission", handle);
 #endif
 //    if( handle )
