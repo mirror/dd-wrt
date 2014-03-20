@@ -1459,6 +1459,15 @@ static struct ctl_table vm_table[] = {
 		.mode		= 0644,
 		.proc_handler	= proc_doulongvec_minmax,
 	},
+	{
+		.procname	= "pagecache_ratio",
+		.data		= &pagecache_ratio,
+		.maxlen		= sizeof(pagecache_ratio),
+		.mode		= 0644,
+		.proc_handler	= &pagecache_ratio_sysctl_handler,
+		.extra1		= &five,
+		.extra2		= &one_hundred,
+	},
 	{ }
 };
 
@@ -1656,15 +1665,6 @@ static struct ctl_table debug_table[] = {
 		.extra2		= &one,
 	},
 #endif
-	{
-		.procname	= "pagecache_ratio",
-		.data		= &pagecache_ratio,
-		.maxlen		= sizeof(pagecache_ratio),
-		.mode		= 0644,
-		.proc_handler	= &pagecache_ratio_sysctl_handler,
-		.extra1		= &five,
-		.extra2		= &one_hundred,
-	},
 	{ }
 };
 
