@@ -1258,7 +1258,7 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 			if (1 == webdav_parse_chunkqueue(srv, con, p, con->request_content_queue, &xml)) {
 				xmlNode *rootnode = xmlDocGetRootElement(xml);
 
-				assert(rootnode);
+				force_assert(rootnode);
 
 				if (0 == xmlStrcmp(rootnode->name, BAD_CAST "propfind")) {
 					xmlNode *cmd;
@@ -1690,7 +1690,7 @@ URIHANDLER_FUNC(mod_webdav_subrequest_handler) {
 
 			/* if the file doesn't exist, create it */
 			if (-1 == (fd = open(con->physical.path->ptr, O_WRONLY|O_TRUNC, WEBDAV_FILE_MODE))) {
-				if (errno == ENOENT &&
+				if (errno != ENOENT ||
 				    -1 == (fd = open(con->physical.path->ptr, O_WRONLY|O_CREAT|O_TRUNC|O_EXCL, WEBDAV_FILE_MODE))) {
 					/* we can't open the file */
 					con->http_status = 403;
@@ -2235,7 +2235,7 @@ propmatch_cleanup:
 			if (1 == webdav_parse_chunkqueue(srv, con, p, con->request_content_queue, &xml)) {
 				xmlNode *rootnode = xmlDocGetRootElement(xml);
 
-				assert(rootnode);
+				force_assert(rootnode);
 
 				if (0 == xmlStrcmp(rootnode->name, BAD_CAST "lockinfo")) {
 					xmlNode *lockinfo;

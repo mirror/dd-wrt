@@ -1034,7 +1034,7 @@ found_header_end:
 
 			weWant = con->request.content_length - dst_cq->bytes_in;
 
-			assert(c->mem->used);
+			force_assert(c->mem->used);
 
 			weHave = c->mem->used - c->offset - 1;
 
@@ -1067,9 +1067,7 @@ found_header_end:
 						if (dst_c->file.fd == -1) {
 							/* this should not happen as we cache the fd, but you never know */
 							dst_c->file.fd = open(dst_c->file.name->ptr, O_WRONLY | O_APPEND);
-#ifdef FD_CLOEXEC
-							fcntl(dst_c->file.fd, F_SETFD, FD_CLOEXEC);
-#endif
+							fd_close_on_exec(dst_c->file.fd);
 						}
 					} else {
 						/* the chunk is too large now, close it */
@@ -1477,6 +1475,7 @@ int connection_state_machine(server *srv, connection *con) {
 				break;
 			case HANDLER_COMEBACK:
 				done = -1;
+				/* fallthrough */
 			case HANDLER_WAIT_FOR_EVENT:
 				/* come back here */
 				connection_set_state(srv, con, CON_STATE_HANDLE_REQUEST);

@@ -298,6 +298,7 @@ SETDEFAULTS_FUNC(mod_proxy_set_defaults) {
 					pcv[1].destination = &(df->port);
 
 					if (0 != config_insert_values_internal(srv, da_host->value, pcv)) {
+						df->free((data_unset*) df);
 						return HANDLER_ERROR;
 					}
 
@@ -309,6 +310,7 @@ SETDEFAULTS_FUNC(mod_proxy_set_defaults) {
 								da_host->key,
 								"host");
 
+						df->free((data_unset*) df);
 						return HANDLER_ERROR;
 					}
 
@@ -684,7 +686,7 @@ static int proxy_demux_response(server *srv, handler_ctx *hctx) {
 		}
 
 		/* this should be catched by the b > 0 above */
-		assert(r);
+		force_assert(r);
 
 		hctx->response->used += r;
 		hctx->response->ptr[hctx->response->used - 1] = '\0';
@@ -1256,7 +1258,7 @@ static handler_t mod_proxy_check_extension(server *srv, connection *con, void *p
 		}
 
 		/* just to be sure */
-		assert(extension->value->used < INT_MAX);
+		force_assert(extension->value->used < INT_MAX);
 
 		host = (data_proxy *)extension->value->data[0];
 

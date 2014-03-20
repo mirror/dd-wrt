@@ -172,7 +172,7 @@ static server *server_init(void) {
 	FILE *frandom = NULL;
 
 	server *srv = calloc(1, sizeof(*srv));
-	assert(srv);
+	force_assert(srv);
 #define CLEAN(x) \
 	srv->x = buffer_init();
 
@@ -230,13 +230,13 @@ static server *server_init(void) {
 	srv->startup_ts = srv->cur_ts;
 
 	srv->conns = calloc(1, sizeof(*srv->conns));
-	assert(srv->conns);
+	force_assert(srv->conns);
 
 	srv->joblist = calloc(1, sizeof(*srv->joblist));
-	assert(srv->joblist);
+	force_assert(srv->joblist);
 
 	srv->fdwaitqueue = calloc(1, sizeof(*srv->fdwaitqueue));
-	assert(srv->fdwaitqueue);
+	force_assert(srv->fdwaitqueue);
 
 	srv->srvconf.modules = array_init();
 	srv->srvconf.modules_dir = buffer_init_string(LIBRARY_DIR);
@@ -1001,6 +1001,7 @@ int main (int argc, char **argv) {
 	if (pid_fd != -1) {
 		buffer_copy_long(srv->tmp_buf, getpid());
 		buffer_append_string_len(srv->tmp_buf, CONST_STR_LEN("\n"));
+		force_assert(srv->tmp_buf->used > 0);
 		write(pid_fd, srv->tmp_buf->ptr, srv->tmp_buf->used - 1);
 		close(pid_fd);
 		pid_fd = -1;
