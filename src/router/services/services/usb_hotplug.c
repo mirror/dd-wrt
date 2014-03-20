@@ -295,10 +295,10 @@ static int usb_process_path(char *path, char *fs, char *target)
 #else
 	writeproc("/proc/sys/vm/min_free_kbytes","4096");
 #endif
-	writeproc("/proc/sys/vm/pagecache_ratio","90");
-	writeproc("/proc/sys/vm/swappiness","90");
-	writeproc("/proc/sys/vm/overcommit_memory","2");
-	writeproc("/proc/sys/vm/overcommit_ratio","145");
+//	writeproc("/proc/sys/vm/pagecache_ratio","90");
+//	writeproc("/proc/sys/vm/swappiness","90");
+//	writeproc("/proc/sys/vm/overcommit_memory","2");
+//	writeproc("/proc/sys/vm/overcommit_ratio","145");
 	eval("startservice", "samba3");
 	eval("startservice", "ftpsrv");
 	eval("startservice", "dlna");
