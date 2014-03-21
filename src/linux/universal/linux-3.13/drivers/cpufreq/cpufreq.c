@@ -1051,7 +1051,7 @@ static int __cpufreq_add_dev(struct device *dev, struct subsys_interface *sif,
 		goto err_set_policy_cpu;
 	}
 
-	if (cpufreq_driver->get) {
+	if (cpufreq_driver->get && !cpufreq_driver->setpolicy) {
 		policy->cur = cpufreq_driver->get(policy->cpu);
 		if (!policy->cur) {
 			pr_err("%s: ->get() failed\n", __func__);
@@ -1447,23 +1447,16 @@ static unsigned int __cpufreq_get(unsigned int cpu)
  */
 unsigned int cpufreq_get(unsigned int cpu)
 {
-	struct cpufreq_policy *policy = per_cpu(cpufreq_cpu_data, cpu);
+	struct cpufreq_policy *policy = cpufreq_cpu_get(cpu);
 	unsigned int ret_freq = 0;
 
-	if (cpufreq_disabled() || !cpufreq_driver)
-		return -ENOENT;
+	if (policy) {
+		down_read(&policy->rwsem);
+		ret_freq = __cpufreq_get(cpu);
+		up_read(&policy->rwsem);
 
-	BUG_ON(!policy);
-
-	if (!down_read_trylock(&cpufreq_rwsem))
-		return 0;
-
-	down_read(&policy->rwsem);
-
-	ret_freq = __cpufreq_get(cpu);
-
-	up_read(&policy->rwsem);
-	up_read(&cpufreq_rwsem);
+		cpufreq_cpu_put(policy);
+	}
 
 	return ret_freq;
 }
@@ -2058,7 +2051,7 @@ int cpufreq_update_policy(unsigned int cpu)
 	 * BIOS might change freq behind our back
 	 * -> ask driver for current freq and notify governors about a change
 	 */
-	if (cpufreq_driver->get) {
+	if (cpufreq_driver->get && !cpufreq_driver->setpolicy) {
 		new_policy.cur = cpufreq_driver->get(cpu);
 		if (!policy->cur) {
 			pr_debug("Driver did not initialize current freq");
