@@ -278,6 +278,7 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	//protect config changes
 	if(!strcmp(curr_page, "apply.cgi") || !strcmp(curr_page, "nvram.cgi") || !strcmp(curr_page, "upgrade.cgi") ){
 	        //if token does not match ask for auth again, every page that does submit data in POST must send correct token
+		if( currenttoken != 0 )
 		if( ( submittedtoken != currenttoken ) ){
 			//empty read buffer or send_authenticate will fail
 			while (wfgets(dummy, 64, conn_fp) > 0)
@@ -319,7 +320,9 @@ void send_authenticate(char *realm)
 #else
 		   "Authorization required. please note that the default username is \"root\" in all newer releases");
 #endif
+	/* init these after a successful auth */
 	nvram_set("auth_time", s_curr_time);
+	nvram_set("ptoken", "0");
 }
 
 static void send_error(int status, char *title, char *extra_header, char *text)
