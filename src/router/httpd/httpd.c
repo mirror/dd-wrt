@@ -82,7 +82,7 @@
 #define SERVER_NAME "httpd"
 #define PROTOCOL "HTTP/1.0"
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
-#define TIMEOUT	15
+#define TIMEOUT	5
 
 
 /* A multi-family sockaddr. */
