@@ -55,6 +55,7 @@ echo "/opt/usr/lib" >> etc/ld.so.conf
 echo "/opt/usr/local/lib" >> etc/ld.so.conf
 echo "/lib" >> etc/ld.so.conf
 echo "/usr/lib" >> etc/ld.so.conf
+echo "" > tmp/TZ
 /sbin/ldconfig -r $ROOTDIR
 
 # miscellaneous
@@ -62,3 +63,4 @@ ln -sf tmp/mnt mnt
 mkdir -p proc
 mkdir -p opt/lib/iptables
 ln -sf /opt/usr/lib/iptables usr/lib/iptables
+ln -sf tmp/TZ etc/TZ
