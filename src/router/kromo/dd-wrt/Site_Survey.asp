@@ -18,7 +18,7 @@ function do_join (F,SSID) {
 
 	<body>
 		<div id="bulle" class="bulle"></div>
-		<form name="Join" action="apply.cgi<% insertpageToken(); %>" method="post">
+		<form name="Join" action="apply.cgi?<% nvram_get("ptoken"); %>" method="post">
 			<input type="hidden" name="submit_button" value="Join" />
 			<input type="hidden" name="submit_type" value="Join" />
 			<input type="hidden" name="action" value="Apply" />
