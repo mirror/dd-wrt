@@ -1,5 +1,5 @@
-# intmax_t.m4 serial 7
-dnl Copyright (C) 1997-2004, 2006-2007, 2009-2010 Free Software Foundation,
+# intmax_t.m4 serial 8
+dnl Copyright (C) 1997-2004, 2006-2007, 2009-2013 Free Software Foundation,
 dnl Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
@@ -7,7 +7,7 @@ dnl with or without modifications, as long as this notice is preserved.
 
 dnl From Paul Eggert.
 
-AC_PREREQ([2.13])
+AC_PREREQ([2.53])
 
 # Define intmax_t to 'long' or 'long long'
 # if it is not already defined in <stdint.h> or <inttypes.h>.
@@ -38,7 +38,9 @@ AC_DEFUN([gt_AC_TYPE_INTMAX_T],
   AC_REQUIRE([gl_AC_HEADER_INTTYPES_H])
   AC_REQUIRE([gl_AC_HEADER_STDINT_H])
   AC_CACHE_CHECK([for intmax_t], [gt_cv_c_intmax_t],
-    [AC_TRY_COMPILE([
+    [AC_COMPILE_IFELSE(
+       [AC_LANG_PROGRAM(
+          [[
 #include <stddef.h>
 #include <stdlib.h>
 #if HAVE_STDINT_H_WITH_UINTMAX
@@ -47,7 +49,10 @@ AC_DEFUN([gt_AC_TYPE_INTMAX_T],
 #if HAVE_INTTYPES_H_WITH_UINTMAX
 #include <inttypes.h>
 #endif
-], [intmax_t x = -1; return !x;], gt_cv_c_intmax_t=yes, gt_cv_c_intmax_t=no)])
+          ]],
+          [[intmax_t x = -1; return !x;]])],
+       [gt_cv_c_intmax_t=yes],
+       [gt_cv_c_intmax_t=no])])
   if test $gt_cv_c_intmax_t = yes; then
     AC_DEFINE([HAVE_INTMAX_T], [1],
       [Define if you have the 'intmax_t' type in <stdint.h> or <inttypes.h>.])

@@ -1,5 +1,5 @@
 /* Searching in a string.
-   Copyright (C) 2005-2010 Free Software Foundation, Inc.
+   Copyright (C) 2005-2013 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2005.
 
    This program is free software: you can redistribute it and/or modify
@@ -27,6 +27,7 @@
 #include "mbuiter.h"
 
 /* Knuth-Morris-Pratt algorithm.  */
+#define UNIT unsigned char
 #define CANON_ELEMENT(c) c
 #include "str-kmp.h"
 
@@ -44,11 +45,12 @@ knuth_morris_pratt_multibyte (const char *haystack, const char *needle,
   size_t *table;
 
   /* Allocate room for needle_mbchars and the table.  */
-  char *memory = (char *) nmalloca (m, sizeof (mbchar_t) + sizeof (size_t));
+  void *memory = nmalloca (m, sizeof (mbchar_t) + sizeof (size_t));
+  void *table_memory;
   if (memory == NULL)
     return false;
-  needle_mbchars = (mbchar_t *) memory;
-  table = (size_t *) (memory + m * sizeof (mbchar_t));
+  needle_mbchars = memory;
+  table = table_memory = needle_mbchars + m;
 
   /* Fill needle_mbchars.  */
   {
@@ -339,10 +341,12 @@ mbsstr (const char *haystack, const char *needle)
                   if (needle_last_ccount == NULL)
                     {
                       /* Try the Knuth-Morris-Pratt algorithm.  */
-                      const char *result;
+                      const unsigned char *result;
                       bool success =
-                        knuth_morris_pratt_unibyte (haystack, needle - 1,
-                                                    &result);
+                        knuth_morris_pratt ((const unsigned char *) haystack,
+                                            (const unsigned char *) (needle - 1),
+                                            strlen (needle - 1),
+                                            &result);
                       if (success)
                         return (char *) result;
                       try_kmp = false;

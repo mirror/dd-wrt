@@ -1,5 +1,5 @@
 /* Checking of messages in PO files.
-   Copyright (C) 1995-1998, 2000-2008 Free Software Foundation, Inc.
+   Copyright (C) 1995-1998, 2000-2008, 2010-2012 Free Software Foundation, Inc.
    Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, April 1995.
 
    This program is free software: you can redistribute it and/or modify
@@ -280,7 +280,10 @@ plural_help (const char *nullentry)
    If no errors, returns in *DISTRIBUTION information about the plural_eval
    values distribution.  */
 static int
-check_plural (message_list_ty *mlp, struct plural_distribution *distributionp)
+check_plural (message_list_ty *mlp,
+              int ignore_untranslated_messages,
+              int ignore_fuzzy_messages,
+              struct plural_distribution *distributionp)
 {
   int seen_errors = 0;
   const message_ty *has_plural;
@@ -306,7 +309,10 @@ check_plural (message_list_ty *mlp, struct plural_distribution *distributionp)
     {
       message_ty *mp = mlp->item[j];
 
-      if (!mp->obsolete && mp->msgid_plural != NULL)
+      if (!mp->obsolete
+          && !(ignore_untranslated_messages && mp->msgstr[0] == '\0')
+          && !(ignore_fuzzy_messages && (mp->is_fuzzy && !is_header (mp)))
+          && mp->msgid_plural != NULL)
         {
           const char *p;
           const char *p_end;
@@ -538,7 +544,10 @@ static const message_ty *curr_mp;
 static lex_pos_ty curr_msgid_pos;
 static void
 formatstring_error_logger (const char *format, ...)
-     __attribute__ ((__format__ (__printf__, 1, 2)));
+#if defined __GNUC__ && ((__GNUC__ == 2 && __GNUC_MINOR__ >= 7) || __GNUC__ > 2)
+     __attribute__ ((__format__ (__printf__, 1, 2)))
+#endif
+;
 static void
 formatstring_error_logger (const char *format, ...)
 {
@@ -600,7 +609,7 @@ check_pair (const message_ty *mp,
               po_xerror (PO_SEVERITY_ERROR,
                          mp, msgid_pos->file_name, msgid_pos->line_number,
                          (size_t)(-1), false, _("\
-`msgid' and `msgid_plural' entries do not both begin with '\\n'"));
+'msgid' and 'msgid_plural' entries do not both begin with '\\n'"));
               seen_errors++;
             }
           for (p = msgstr, j = 0; p < msgstr + msgstr_len; p += strlen (p) + 1, j++)
@@ -608,7 +617,7 @@ check_pair (const message_ty *mp,
               {
                 char *msg =
                   xasprintf (_("\
-`msgid' and `msgstr[%u]' entries do not both begin with '\\n'"), j);
+'msgid' and 'msgstr[%u]' entries do not both begin with '\\n'"), j);
                 po_xerror (PO_SEVERITY_ERROR,
                            mp, msgid_pos->file_name, msgid_pos->line_number,
                            (size_t)(-1), false, msg);
@@ -623,7 +632,7 @@ check_pair (const message_ty *mp,
               po_xerror (PO_SEVERITY_ERROR,
                          mp, msgid_pos->file_name, msgid_pos->line_number,
                          (size_t)(-1), false, _("\
-`msgid' and `msgstr' entries do not both begin with '\\n'"));
+'msgid' and 'msgstr' entries do not both begin with '\\n'"));
               seen_errors++;
             }
         }
@@ -641,7 +650,7 @@ check_pair (const message_ty *mp,
               po_xerror (PO_SEVERITY_ERROR,
                          mp, msgid_pos->file_name, msgid_pos->line_number,
                          (size_t)(-1), false, _("\
-`msgid' and `msgid_plural' entries do not both end with '\\n'"));
+'msgid' and 'msgid_plural' entries do not both end with '\\n'"));
               seen_errors++;
             }
           for (p = msgstr, j = 0; p < msgstr + msgstr_len; p += strlen (p) + 1, j++)
@@ -649,7 +658,7 @@ check_pair (const message_ty *mp,
               {
                 char *msg =
                   xasprintf (_("\
-`msgid' and `msgstr[%u]' entries do not both end with '\\n'"), j);
+'msgid' and 'msgstr[%u]' entries do not both end with '\\n'"), j);
                 po_xerror (PO_SEVERITY_ERROR,
                            mp, msgid_pos->file_name, msgid_pos->line_number,
                            (size_t)(-1), false, msg);
@@ -664,7 +673,7 @@ check_pair (const message_ty *mp,
               po_xerror (PO_SEVERITY_ERROR,
                          mp, msgid_pos->file_name, msgid_pos->line_number,
                          (size_t)(-1), false, _("\
-`msgid' and `msgstr' entries do not both end with '\\n'"));
+'msgid' and 'msgstr' entries do not both end with '\\n'"));
               seen_errors++;
             }
         }
@@ -761,72 +770,54 @@ check_header_entry (const message_ty *mp, const char *msgstr_string)
   };
   const size_t nfields = SIZEOF (required_fields);
   const size_t nrequiredfields = nfields - 1;
-  int initial = -1;
   int cnt;
 
   for (cnt = 0; cnt < nfields; ++cnt)
     {
       int severity =
         (cnt < nrequiredfields ? PO_SEVERITY_ERROR : PO_SEVERITY_WARNING);
-      const char *endp = c_strstr (msgstr_string, required_fields[cnt]);
+      const char *field = required_fields[cnt];
+      size_t len = strlen (field);
+      const char *line;
 
-      if (endp == NULL)
+      for (line = msgstr_string; *line != '\0'; )
         {
-          char *msg =
-            xasprintf (_("header field `%s' missing in header\n"),
-                       required_fields[cnt]);
-          po_xerror (severity, mp, NULL, 0, 0, true, msg);
-          free (msg);
-        }
-      else if (endp != msgstr_string && endp[-1] != '\n')
-        {
-          char *msg =
-            xasprintf (_("\
-header field `%s' should start at beginning of line\n"),
-                       required_fields[cnt]);
-          po_xerror (severity, mp, NULL, 0, 0, true, msg);
-          free (msg);
-        }
-      else
-        {
-          const char *p = endp + strlen (required_fields[cnt]);
-          /* Test whether the field's value, starting at p, is the default
-             value.  */
-          if (*p == ':')
-            p++;
-          if (*p == ' ')
-            p++;
-          if (default_values[cnt] != NULL
-              && strncmp (p, default_values[cnt],
-                          strlen (default_values[cnt])) == 0)
+          if (strncmp (line, field, len) == 0 && line[len] == ':')
             {
-              p += strlen (default_values[cnt]);
-              if (*p == '\0' || *p == '\n')
-                {
-                  if (initial != -1)
-                    {
-                      po_xerror (severity,
-                                 mp, NULL, 0, 0, true, _("\
-some header fields still have the initial default value\n"));
-                      initial = -1;
-                      break;
-                    }
-                  else
-                    initial = cnt;
-                }
-            }
-        }
-    }
+              const char *p = line + len + 1;
 
-  if (initial != -1)
-    {
-      int severity =
-        (initial < nrequiredfields ? PO_SEVERITY_ERROR : PO_SEVERITY_WARNING);
-      char *msg =
-        xasprintf (_("header field `%s' still has the initial default value\n"),
-                   required_fields[initial]);
-      po_xerror (severity, mp, NULL, 0, 0, true, msg);
-      free (msg);
+              /* Test whether the field's value, starting at p, is the default
+                 value.  */
+              if (*p == ' ')
+                p++;
+              if (default_values[cnt] != NULL
+                  && strncmp (p, default_values[cnt],
+                              strlen (default_values[cnt])) == 0)
+                {
+                  p += strlen (default_values[cnt]);
+                  if (*p == '\0' || *p == '\n')
+                    {
+		      char *msg =
+			xasprintf (_("header field '%s' still has the initial default value\n"),
+				   field);
+		      po_xerror (severity, mp, NULL, 0, 0, true, msg);
+		      free (msg);
+                    }
+                }
+              break;
+            }
+          line = strchrnul (line, '\n');
+          if (*line == '\n')
+            line++;
+        }
+      if (*line == '\0')
+        {
+          char *msg =
+            xasprintf (_("header field '%s' missing in header\n"),
+                       field);
+          po_xerror (severity, mp, NULL, 0, 0, true, msg);
+          free (msg);
+        }
     }
 }
 
@@ -862,6 +853,8 @@ check_message (const message_ty *mp,
    Return the number of errors that were seen.  */
 int
 check_message_list (message_list_ty *mlp,
+                    int ignore_untranslated_messages,
+                    int ignore_fuzzy_messages,
                     int check_newlines,
                     int check_format_strings,
                     int check_header,
@@ -878,13 +871,16 @@ check_message_list (message_list_ty *mlp,
   distribution.histogram = NULL;
 
   if (check_header)
-    seen_errors += check_plural (mlp, &distribution);
+    seen_errors += check_plural (mlp, ignore_untranslated_messages,
+                                 ignore_fuzzy_messages, &distribution);
 
   for (j = 0; j < mlp->nitems; j++)
     {
       message_ty *mp = mlp->item[j];
 
-      if (!mp->obsolete)
+      if (!mp->obsolete
+          && !(ignore_untranslated_messages && mp->msgstr[0] == '\0')
+          && !(ignore_fuzzy_messages && (mp->is_fuzzy && !is_header (mp))))
         seen_errors += check_message (mp, &mp->pos,
                                       check_newlines,
                                       check_format_strings,

@@ -1,5 +1,5 @@
 /* Test for presence of ACL.
-   Copyright (C) 2008-2010 Free Software Foundation, Inc.
+   Copyright (C) 2008-2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -49,8 +49,11 @@ main (int argc, char *argv[])
 #if HAVE_DECL_ALARM
   /* Declare failure if test takes too long, by using default abort
      caused by SIGALRM.  */
-  signal (SIGALRM, SIG_DFL);
-  alarm (5);
+  {
+    int alarm_value = 5;
+    signal (SIGALRM, SIG_DFL);
+    alarm (alarm_value);
+  }
 #endif
 
 #if USE_ACL

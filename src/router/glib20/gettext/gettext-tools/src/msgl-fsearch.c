@@ -1,5 +1,5 @@
 /* Fast fuzzy searching among messages.
-   Copyright (C) 2006, 2008 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2008, 2011 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2006.
 
    This program is free software: you can redistribute it and/or modify
@@ -182,7 +182,12 @@ add_index (index_list_ty list, index_ty idx)
    limit the search to lengths l' in the range
      l / (2 / FUZZY_THRESHOLD - 1) <= l' <= l * (2 / FUZZY_THRESHOLD - 1)
    Thus we need the list of the short strings up to length:  */
-#define SHORT_MSG_MAX (int) (SHORT_STRING_MAX_BYTES * (2 / FUZZY_THRESHOLD - 1))
+#if !defined __SUNPRO_C
+# define SHORT_MSG_MAX (int) (SHORT_STRING_MAX_BYTES * (2 / FUZZY_THRESHOLD - 1))
+#else
+/* Sun C on Solaris 8 cannot compute this constant expression.  */
+# define SHORT_MSG_MAX 28
+#endif
 
 /* A fuzzy index contains a hash table mapping all n-grams to their
    occurrences list.  */
@@ -192,7 +197,7 @@ struct message_fuzzy_index_ty
   character_iterator_t iterator;
   hash_table gram4;
   size_t firstfew;
-  message_list_ty *short_messages[SHORT_MSG_MAX + 1];
+  message_list_ty **short_messages;
 };
 
 /* Allocate a fuzzy index corresponding to a given list of messages.
@@ -299,6 +304,7 @@ message_fuzzy_index_alloc (const message_list_ty *mlp,
     findex->firstfew = 10;
 
   /* Setup lists of short messages.  */
+  findex->short_messages = XNMALLOC (SHORT_MSG_MAX + 1, message_list_ty *);
   for (l = 0; l <= SHORT_MSG_MAX; l++)
     findex->short_messages[l] = message_list_alloc (false);
   for (j = 0; j < count; j++)
@@ -649,6 +655,7 @@ message_fuzzy_index_free (message_fuzzy_index_ty *findex)
   /* Free the short lists.  */
   for (l = 0; l <= SHORT_MSG_MAX; l++)
     message_list_free (findex->short_messages[l], 1);
+  free (findex->short_messages);
 
   /* Free the index lists occurring as values in the hash tables.  */
   iter = NULL;
