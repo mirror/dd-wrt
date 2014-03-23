@@ -1,4 +1,0 @@
-config OVERLAYFS_FS
-	tristate "Overlay filesystem support"
-	help
-	  Add support for overlay filesystem.
