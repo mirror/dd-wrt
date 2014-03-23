@@ -606,6 +606,7 @@ static void nat_prerouting(void)
 	char from[100], to[100];
 	char *remote_ip_any = nvram_default_get("remote_ip_any", "1");
 	char *remote_ip = nvram_default_get("remote_ip", "0.0.0.0 0");
+	char *lan_ip = nvram_safe_get("lan_ipaddr");
 	int remote_any = 0;
 	
 	char vifs[256];
@@ -628,7 +629,7 @@ static void nat_prerouting(void)
 			if (strcmp(get_wan_face(), var)
 			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_isolation", var)) {
-					save2file("-A PREROUTING -i %s -d %s/%s -j RETURN\n", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+					save2file("-A PREROUTING -i %s -d %s/%s -j RETURN\n", var, lan_ip, nvram_safe_get("lan_netmask"));
 					sprintf(vif_ip, "%s_ipaddr", var);
 					save2file("-A PREROUTING -i %s -d %s -j RETURN\n", var, nvram_safe_get(vif_ip));
 				}
@@ -639,16 +640,18 @@ static void nat_prerouting(void)
 		{
 			save2file("-A PREROUTING -p tcp -s %s --dport 80 -j ACCEPT \n", nvram_safe_get("privoxy_transp_exclude"));
 		}
+		/* block access from privoxy to webif */
+		save2file("-A PREROUTING -p tcp -s %s -d %s --dport %d -j DROP\n", lan_ip, lan_ip, web_lanport );
 		/* do not filter access to the webif from lan */
-		save2file("-A PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), nvram_safe_get("lan_ipaddr"), nvram_safe_get("http_lanport") );
+		save2file("-A PREROUTING -p tcp -s %s/%s -d %s --dport %d -j ACCEPT\n", lan_ip, nvram_safe_get("lan_netmask"), lan_ip, web_lanport );
 		/* go through proxy */
-		save2file("-A PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118\n", wanaddr, nvram_safe_get("lan_ipaddr"));
+		save2file("-A PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118\n", wanaddr, lan_ip);
 	}
 #endif
 #ifdef HAVE_TOR
 	if (nvram_match("tor_transparent", "1") && nvram_match("tor_enable", "1")) {
-		save2file("-A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:53\n", nvram_safe_get("lan_ipaddr"));
-		save2file("-A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040\n", nvram_safe_get("lan_ipaddr"));
+		save2file("-A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:53\n", lan_ip);
+		save2file("-A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040\n", lan_ip);
 	}
 #endif
 
@@ -657,14 +660,14 @@ static void nat_prerouting(void)
 	 */
 	if (remotemanage) {
 		if (remote_any) {
-			save2file("-A PREROUTING -p tcp -d %s --dport %s " "-j DNAT --to-destination %s:%d\n", wanaddr, nvram_safe_get("http_wanport"), nvram_safe_get("lan_ipaddr"), web_lanport);
+			save2file("-A PREROUTING -p tcp -d %s --dport %s " "-j DNAT --to-destination %s:%d\n", wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
 			wordlist = range(from, get_complete_ip(from, to));
 
 			foreach(var, wordlist, next) {
-				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s " "-j DNAT --to-destination %s:%d\n", var, wanaddr, nvram_safe_get("http_wanport"), nvram_safe_get("lan_ipaddr"), web_lanport);
+				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s " "-j DNAT --to-destination %s:%d\n", var, wanaddr, nvram_safe_get("http_wanport"), lan_ip, web_lanport);
 			}
 		}
 	}
@@ -674,7 +677,7 @@ static void nat_prerouting(void)
 	 */
 	if (remotessh) {
 		if (remote_any) {
-			save2file("-A PREROUTING -p tcp -d %s --dport %s " "-j DNAT --to-destination %s:%s\n", wanaddr, nvram_safe_get("sshd_wanport"), nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"));
+			save2file("-A PREROUTING -p tcp -d %s --dport %s " "-j DNAT --to-destination %s:%s\n", wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
@@ -683,7 +686,7 @@ static void nat_prerouting(void)
 			foreach(var, wordlist, next) {
 				save2file
 				    ("-A PREROUTING -p tcp -s %s -d %s --dport %s "
-				     "-j DNAT --to-destination %s:%s\n", var, wanaddr, nvram_safe_get("sshd_wanport"), nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"));
+				     "-j DNAT --to-destination %s:%s\n", var, wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
 			}
 		}
 	}
@@ -695,14 +698,14 @@ static void nat_prerouting(void)
 	 */
 	if (remotetelnet) {
 		if (remote_any) {
-			save2file("-A PREROUTING -p tcp -d %s --dport %s " "-j DNAT --to-destination %s:23\n", wanaddr, nvram_safe_get("telnet_wanport"), nvram_safe_get("lan_ipaddr"));
+			save2file("-A PREROUTING -p tcp -d %s --dport %s " "-j DNAT --to-destination %s:23\n", wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
 		} else {
 			sscanf(remote_ip, "%s %s", from, to);
 
 			wordlist = range(from, get_complete_ip(from, to));
 
 			foreach(var, wordlist, next) {
-				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s " "-j DNAT --to-destination %s:23\n", var, wanaddr, nvram_safe_get("telnet_wanport"), nvram_safe_get("lan_ipaddr"));
+				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s " "-j DNAT --to-destination %s:23\n", var, wanaddr, nvram_safe_get("telnet_wanport"), lan_ip);
 			}
 		}
 	}
@@ -711,14 +714,14 @@ static void nat_prerouting(void)
 	/*
 	 * ICMP packets are always redirected to INPUT chains 
 	 */
-	save2file("-A PREROUTING -p icmp -d %s -j DNAT --to-destination %s\n", wanaddr, nvram_safe_get("lan_ipaddr"));
+	save2file("-A PREROUTING -p icmp -d %s -j DNAT --to-destination %s\n", wanaddr, lan_ip);
 
 #ifdef HAVE_TFTP
 	/*
 	 * Enable remote upgrade 
 	 */
 	if (nvram_match("remote_upgrade", "1"))
-		save2file("-A PREROUTING -p udp -d %s --dport %d " "-j DNAT --to-destination %s\n", wanaddr, TFTP_PORT, nvram_safe_get("lan_ipaddr"));
+		save2file("-A PREROUTING -p udp -d %s --dport %d " "-j DNAT --to-destination %s\n", wanaddr, TFTP_PORT, lan_ip);
 #endif
 
 	/*
