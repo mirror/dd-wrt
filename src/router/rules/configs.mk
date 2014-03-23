@@ -281,11 +281,8 @@ configs-update:
 #	svn commit -m "faster hand optimized mksquashfs-lzma tool" $(LINUXDIR)
 	svn update $(LINUXDIR)
 	svn update $(LINUXDIR)/../linux-3.2
-	rm -rf $(LINUXDIR)/../linux-3.3
-	rm -rf $(LINUXDIR)/../linux-3.4
-	rm -rf $(LINUXDIR)/../linux-3.6
-	rm -rf $(LINUXDIR)/../linux-3.7
-	rm -rf $(LINUXDIR)/../linux-3.8
+	rm -rf $(LINUXDIR)/../linux-3.9
+	rm -rf $(LINUXDIR)/../linux-3.11
 	svn update $(LINUXDIR)/../linux-3.5
 	svn update $(LINUXDIR)/../linux-3.9
 	svn update $(LINUXDIR)/../linux-3.10
