@@ -81,3 +81,5 @@ samba3-install:
 
 samba3-clean:
 	-$(MAKE) -C samba36/source3 clean
+	-rm -f samba36/source3/multi.o
+	-rm -f samba36/auth/auth_sam_reply.o
