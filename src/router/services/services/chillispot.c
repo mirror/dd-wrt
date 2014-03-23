@@ -416,27 +416,8 @@ void chilli_config(void)
 	if (nvram_match("chilli_802.1Xauth", "1"))
 		fprintf(fp, "eapolenable\n");
 
-/*#ifndef HAVE_FON
-	if (nvram_match("fon_enable", "1")) {
-#endif	*/
-
-		char hyp[32];
-
-		strcpy(hyp, nvram_safe_get("wl0_hwaddr"));
-		for (i = 0; i < strlen(hyp); i++)
-			if (hyp[i] == ':')
-				hyp[i] = '-';
-		if (i > 0)
-			fprintf(fp, "radiusnasid %s\n", hyp);
-		nvram_set("chilli_radiusnasid", hyp);
-		fprintf(fp, "interval 300\n");
-
-/*#ifndef HAVE_FON
-	} else {
-		if (nvram_invmatch("chilli_radiusnasid", ""))
-			fprintf(fp, "radiusnasid %s\n", nvram_get("chilli_radiusnasid"));
-	}
-#endif	*/
+	if (nvram_invmatch("chilli_radiusnasid", ""))
+		fprintf(fp, "radiusnasid %s\n", nvram_get("chilli_radiusnasid"));
 
 	if (nvram_invmatch("chilli_additional", "")) {
 		char *add = nvram_safe_get("chilli_additional");
