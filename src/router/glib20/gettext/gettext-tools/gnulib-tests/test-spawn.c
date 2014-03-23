@@ -1,5 +1,5 @@
 /* Test of <spawn.h> substitute.
-   Copyright (C) 2009-2010 Free Software Foundation, Inc.
+   Copyright (C) 2009-2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ extern void f (struct sched_param *g);
 int
 main (void)
 {
-  switch (0)
+  switch (POSIX_SPAWN_RESETIDS)
     {
     case POSIX_SPAWN_RESETIDS:
     case POSIX_SPAWN_SETPGROUP:

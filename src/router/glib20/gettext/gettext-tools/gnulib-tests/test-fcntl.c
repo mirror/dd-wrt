@@ -1,5 +1,5 @@
 /* Test of fcntl(2).
-   Copyright (C) 2009, 2010 Free Software Foundation, Inc.
+   Copyright (C) 2009-2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -31,18 +31,15 @@ SIGNATURE_CHECK (fcntl, int, (int, int, ...));
 #include <unistd.h>
 
 #if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
-/* Get declarations of the Win32 API functions.  */
+/* Get declarations of the native Windows API functions.  */
 # define WIN32_LEAN_AND_MEAN
 # include <windows.h>
+/* Get _get_osfhandle.  */
+# include "msvc-nothrow.h"
 #endif
 
 #include "binary-io.h"
 #include "macros.h"
-
-/* Use O_CLOEXEC if available, but test works without it.  */
-#ifndef O_CLOEXEC
-# define O_CLOEXEC 0
-#endif
 
 #if !O_BINARY
 # define setmode(f,m) zero ()
@@ -54,7 +51,7 @@ static bool
 is_open (int fd)
 {
 #if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
-  /* On Win32, the initial state of unassigned standard file
+  /* On native Windows, the initial state of unassigned standard file
      descriptors is that they are open but point to an
      INVALID_HANDLE_VALUE, and there is no fcntl.  */
   return (HANDLE) _get_osfhandle (fd) != INVALID_HANDLE_VALUE;
@@ -71,7 +68,7 @@ static bool
 is_inheritable (int fd)
 {
 #if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
-  /* On Win32, the initial state of unassigned standard file
+  /* On native Windows, the initial state of unassigned standard file
      descriptors is that they are open but point to an
      INVALID_HANDLE_VALUE, and there is no fcntl.  */
   HANDLE h = (HANDLE) _get_osfhandle (fd);
@@ -214,6 +211,7 @@ main (void)
 {
   const char *file = "test-fcntl.tmp";
   int fd;
+  int bad_fd = getdtablesize ();
 
   /* Sanity check that rpl_fcntl is likely to work.  */
   ASSERT (func2 (1, 2) == 2);
@@ -240,7 +238,7 @@ main (void)
   ASSERT (fcntl (fd + 1, F_DUPFD, 0) == -1);
   ASSERT (errno == EBADF);
   errno = 0;
-  ASSERT (fcntl (10000000, F_DUPFD, 0) == -1);
+  ASSERT (fcntl (bad_fd, F_DUPFD, 0) == -1);
   ASSERT (errno == EBADF);
   errno = 0;
   ASSERT (fcntl (-1, F_DUPFD_CLOEXEC, 0) == -1);
@@ -249,23 +247,21 @@ main (void)
   ASSERT (fcntl (fd + 1, F_DUPFD_CLOEXEC, 0) == -1);
   ASSERT (errno == EBADF);
   errno = 0;
-  ASSERT (fcntl (10000000, F_DUPFD_CLOEXEC, 0) == -1);
+  ASSERT (fcntl (bad_fd, F_DUPFD_CLOEXEC, 0) == -1);
   ASSERT (errno == EBADF);
 
   /* For F_DUPFD*, the destination must be valid.  */
-  ASSERT (getdtablesize () < 10000000);
   errno = 0;
   ASSERT (fcntl (fd, F_DUPFD, -1) == -1);
   ASSERT (errno == EINVAL);
   errno = 0;
-  ASSERT (fcntl (fd, F_DUPFD, 10000000) == -1);
+  ASSERT (fcntl (fd, F_DUPFD, bad_fd) == -1);
   ASSERT (errno == EINVAL);
-  ASSERT (getdtablesize () < 10000000);
   errno = 0;
   ASSERT (fcntl (fd, F_DUPFD_CLOEXEC, -1) == -1);
   ASSERT (errno == EINVAL);
   errno = 0;
-  ASSERT (fcntl (fd, F_DUPFD_CLOEXEC, 10000000) == -1);
+  ASSERT (fcntl (fd, F_DUPFD_CLOEXEC, bad_fd) == -1);
   ASSERT (errno == EINVAL);
 
   /* For F_DUPFD*, check for correct inheritance, as well as
@@ -317,7 +313,7 @@ main (void)
   ASSERT (is_mode (fd + 2, O_TEXT));
   ASSERT (close (fd + 2) == 0);
 
-  /* Test F_GETFD.  */
+  /* Test F_GETFD on invalid file descriptors.  */
   errno = 0;
   ASSERT (fcntl (-1, F_GETFD) == -1);
   ASSERT (errno == EBADF);
@@ -325,8 +321,10 @@ main (void)
   ASSERT (fcntl (fd + 1, F_GETFD) == -1);
   ASSERT (errno == EBADF);
   errno = 0;
-  ASSERT (fcntl (10000000, F_GETFD) == -1);
+  ASSERT (fcntl (bad_fd, F_GETFD) == -1);
   ASSERT (errno == EBADF);
+
+  /* Test F_GETFD, the FD_CLOEXEC bit.  */
   {
     int result = fcntl (fd, F_GETFD);
     ASSERT (0 <= result);
@@ -337,6 +335,71 @@ main (void)
     ASSERT ((result & FD_CLOEXEC) == 0);
     ASSERT (close (fd + 1) == 0);
   }
+
+#ifdef F_SETFD
+  /* Test F_SETFD on invalid file descriptors.  */
+  errno = 0;
+  ASSERT (fcntl (-1, F_SETFD, 0) == -1);
+  ASSERT (errno == EBADF);
+  errno = 0;
+  ASSERT (fcntl (fd + 1, F_SETFD, 0) == -1);
+  ASSERT (errno == EBADF);
+  errno = 0;
+  ASSERT (fcntl (bad_fd, F_SETFD, 0) == -1);
+  ASSERT (errno == EBADF);
+#endif
+
+#ifdef F_GETFL
+  /* Test F_GETFL on invalid file descriptors.  */
+  errno = 0;
+  ASSERT (fcntl (-1, F_GETFL) == -1);
+  ASSERT (errno == EBADF);
+  errno = 0;
+  ASSERT (fcntl (fd + 1, F_GETFL) == -1);
+  ASSERT (errno == EBADF);
+  errno = 0;
+  ASSERT (fcntl (bad_fd, F_GETFL) == -1);
+  ASSERT (errno == EBADF);
+#endif
+
+#ifdef F_SETFL
+  /* Test F_SETFL on invalid file descriptors.  */
+  errno = 0;
+  ASSERT (fcntl (-1, F_SETFL, 0) == -1);
+  ASSERT (errno == EBADF);
+  errno = 0;
+  ASSERT (fcntl (fd + 1, F_SETFL, 0) == -1);
+  ASSERT (errno == EBADF);
+  errno = 0;
+  ASSERT (fcntl (bad_fd, F_SETFL, 0) == -1);
+  ASSERT (errno == EBADF);
+#endif
+
+#ifdef F_GETOWN
+  /* Test F_GETOWN on invalid file descriptors.  */
+  errno = 0;
+  ASSERT (fcntl (-1, F_GETOWN) == -1);
+  ASSERT (errno == EBADF);
+  errno = 0;
+  ASSERT (fcntl (fd + 1, F_GETOWN) == -1);
+  ASSERT (errno == EBADF);
+  errno = 0;
+  ASSERT (fcntl (bad_fd, F_GETOWN) == -1);
+  ASSERT (errno == EBADF);
+#endif
+
+#ifdef F_SETOWN
+  /* Test F_SETFL on invalid file descriptors.  */
+  errno = 0;
+  ASSERT (fcntl (-1, F_SETOWN, 0) == -1);
+  ASSERT (errno == EBADF);
+  errno = 0;
+  ASSERT (fcntl (fd + 1, F_SETOWN, 0) == -1);
+  ASSERT (errno == EBADF);
+  errno = 0;
+  ASSERT (fcntl (bad_fd, F_SETOWN, 0) == -1);
+  ASSERT (errno == EBADF);
+#endif
 
   /* Cleanup.  */
   ASSERT (close (fd) == 0);

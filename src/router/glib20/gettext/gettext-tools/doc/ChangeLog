@@ -1,3 +1,135 @@
+2013-06-10  Daiki Ueno  <ueno@gnu.org>
+
+	* Makefile.am: Use $(MKDIR_P) instead of $(mkdir_p).
+	Suggested by Stefano Lattarini in
+	<https://lists.gnu.org/archive/html/bug-gettext/2013-04/msg00044.html>.
+
+2013-06-04  Daiki Ueno  <ueno@gnu.org>
+
+	Support for Vala.
+	* xgettext.texi: Document Vala source language. Document
+	that it is applicable to --flag.
+
+2013-05-20  Pavel Kharitonov  <ineiev@gnu.org>  (tiny change)
+
+	Add --previous option to msgattrib.
+	* msgattrib.texi: Document --previous.
+
+2013-04-26  Daiki Ueno  <ueno@gnu.org>
+
+	Support for Python brace format.
+	* gettext.texi (PO Files): Mention python-brace-format.
+	(python-format): Mention brace format.
+
+2013-04-17  Andreas Stricker  <astricker@futurelab.ch>
+
+	Support for JavaScript.
+	* gettext.texi (PO Files): Mention javascript-format.
+	(javascript-format): New subsection.
+	(JavaScript): New subsection.
+	* xgettext.texi: Document JavaScript source language. Document
+	that it is applicable to --flag.
+
+2013-04-11  Ľubomír Remák  <lubomirr@lubomirr.eu>
+
+	Support for Lua.
+	* gettext.texi (PO Files): Mention lua-format.
+	(lua-format): New subsection.
+	(Lua): New subsection.
+	* xgettext.texi: Document Lua source language. Document that it is
+	applicable to --flag.
+
+2013-04-02  Daiki Ueno  <ueno@gnu.org>
+
+	* gettext.texi (PO Files): Use '@pxref' instead of '@xref'.
+
+2013-03-12  Andreas Stricker  <astricker@futurelab.ch>  (tiny change)
+
+	* msgfmt.texi (PO Format): A note about the header entry
+
+2013-02-15  Daiki Ueno  <ueno@gnu.org>
+
+	* msgfmt.texi (Input file location): Output file is not PO.
+
+2013-01-30  Miguel Angel Arruga Vivas  <rosen644835@gmail.com>  (tiny change)
+
+	* msgen.texi (Output details): Fix link in '@opindex' pointing to
+	msgcat.
+	Reported at <http://savannah.gnu.org/bugs/?36063>.
+	* msgmerge.texi (Output details): Likewise.
+
+2012-12-27  Daiki Ueno  <ueno@gnu.org>
+
+	* gettext.texi (Plural forms): Fix ngettext arguments.
+	Reported by Reinhard Schaffner <rschaffner@zynga.com>.
+
+2012-12-25  Daiki Ueno  <ueno@gnu.org>
+
+	* gettext-0.18.2 released.
+
+2012-06-03  Jim Meyering  <jim@meyering.net>
+
+	* gettext.texi: Spelling fixes.
+
+2012-05-03  Bruno Haible  <bruno@clisp.org>
+
+	Document msgfmt option --endianness.
+	* msgfmt.texi: Document the option --endianness.
+	Reported by Paul Martin <pm@debian.org> via
+	Santiago Vila <sanvila@unex.es>.
+
+2012-01-26  Bruno Haible  <bruno@clisp.org>
+
+	Modernize quoting.
+	* FAQ.html: Quote 'like this', not `like this', as per the recent
+	change to the GNU coding standards.
+	* ISO_3166: Likewise.
+	* ISO_3166_de: Likewise.
+	* tutorial.html: Process through
+	sed -e "s/\`\`\([^']*\)''/“\1”/g" | sed -e "s/\`\([^']*\)'/‘\1’/g"
+
+2011-07-08  Bruno Haible  <bruno@clisp.org>
+
+	* gettext.texi (aclocal): Recommend the use of aclocal's --install
+	option.
+	Suggested by Stefano Lattarini <stefano.lattarini@gmail.com>.
+
+2011-06-03  Bruno Haible  <bruno@clisp.org>
+
+	Copyright: Use LGPL 2.1 instead of LGPL 2.0.
+	* gettext.texi (Discussions, Licenses): Write "GNU Lesser General
+	Public License".
+
+2011-05-13  Ben Elliston  <bje@gnu.org>
+
+	* gettext.texi (config.guess): Update wget commands.
+
+2011-04-13  Bruno Haible  <bruno@clisp.org>
+
+	* msgcat.texi: Fix description of --use-first.
+	* msgcomm.texi: Fix typo.
+	Reported by Matthijs Kooijman.
+
+2010-12-14  Bruno Haible  <bruno@clisp.org>
+
+	* xgettext.texi: Mention that -L also supports Shell.
+	Reported by Eric Blake <eblake@redhat.com>.
+
+2010-11-13  Bruno Haible  <bruno@clisp.org>
+
+	* gettext.texi (Plural forms): Add Belarusian.
+	Reported by Ihar Hrachyshka <ihar.hrachyshka@gmail.com>.
+
+2010-08-29  Bruno Haible  <bruno@clisp.org>
+
+	* gettext.texi (Using Compendia): Correct after 2007-09-09 change.
+
+2010-06-06  Bruno Haible  <bruno@clisp.org>
+
+	xgettext: Recognize language of files ending in .perl.
+	* gettext.texi (Perl): Mention file extension '.perl'.
+	Suggested by Ævar Arnfjörð Bjarmason <avarab@gmail.com>.
+
 2010-06-04  Bruno Haible  <bruno@clisp.org>
 
 	* gettext-0.18.1 released.

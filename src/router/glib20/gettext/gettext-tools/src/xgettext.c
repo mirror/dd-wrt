@@ -1,5 +1,5 @@
 /* Extracts strings from C source file to Uniforum style .po file.
-   Copyright (C) 1995-1998, 2000-2010 Free Software Foundation, Inc.
+   Copyright (C) 1995-1998, 2000-2012 Free Software Foundation, Inc.
    Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, April 1995.
 
    This program is free software: you can redistribute it and/or modify
@@ -92,6 +92,9 @@
 #include "x-stringtable.h"
 #include "x-rst.h"
 #include "x-glade.h"
+#include "x-lua.h"
+#include "x-javascript.h"
+#include "x-vala.h"
 
 
 /* If nonzero add all comments immediately preceding one of the keywords. */
@@ -160,6 +163,9 @@ static flag_context_list_table_ty flag_table_ycp;
 static flag_context_list_table_ty flag_table_tcl;
 static flag_context_list_table_ty flag_table_perl;
 static flag_context_list_table_ty flag_table_php;
+static flag_context_list_table_ty flag_table_lua;
+static flag_context_list_table_ty flag_table_javascript;
+static flag_context_list_table_ty flag_table_vala;
 
 /* If true, recognize Qt format strings.  */
 static bool recognize_format_qt;
@@ -331,6 +337,9 @@ main (int argc, char *argv[])
   init_flag_table_tcl ();
   init_flag_table_perl ();
   init_flag_table_php ();
+  init_flag_table_lua ();
+  init_flag_table_javascript ();
+  init_flag_table_vala ();
 
   while ((optchar = getopt_long (argc, argv,
                                  "ac::Cd:D:eEf:Fhijk::l:L:m::M::no:p:sTVw:x:",
@@ -355,6 +364,9 @@ main (int argc, char *argv[])
         x_perl_extract_all ();
         x_php_extract_all ();
         x_glade_extract_all ();
+        x_lua_extract_all ();
+        x_javascript_extract_all ();
+        x_vala_extract_all ();
         break;
 
       case 'c':
@@ -432,6 +444,9 @@ main (int argc, char *argv[])
         x_perl_keyword (optarg);
         x_php_keyword (optarg);
         x_glade_keyword (optarg);
+        x_lua_keyword (optarg);
+        x_javascript_keyword (optarg);
+        x_vala_keyword (optarg);
         if (optarg == NULL)
           no_default_keywords = true;
         else
@@ -586,7 +601,7 @@ License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n\
 "),
-              "1995-1998, 2000-2010");
+              "1995-1998, 2000-2013");
       printf (_("Written by %s.\n"), proper_name ("Ulrich Drepper"));
       exit (EXIT_SUCCESS);
     }
@@ -682,7 +697,8 @@ xgettext cannot work without keywords to look for"));
       iconv_t cd;
 
       /* Avoid glibc-2.1 bug with EUC-KR.  */
-# if (__GLIBC__ - 0 == 2 && __GLIBC_MINOR__ - 0 <= 1) && !defined _LIBICONV_VERSION
+# if ((__GLIBC__ == 2 && __GLIBC_MINOR__ <= 1) && !defined __UCLIBC__) \
+     && !defined _LIBICONV_VERSION
       if (strcmp (xgettext_global_source_encoding, "EUC-KR") == 0)
         cd = (iconv_t)(-1);
       else
@@ -767,7 +783,7 @@ This version was built without iconv()."),
           if (language == NULL)
             {
               error (0, 0, _("\
-warning: file `%s' extension `%s' is unknown; will try C"), filename, extension);
+warning: file '%s' extension '%s' is unknown; will try C"), filename, extension);
               language = "C";
             }
           this_file_extractor = language_to_extractor (language);
@@ -809,7 +825,7 @@ static void
 usage (int status)
 {
   if (status != EXIT_SUCCESS)
-    fprintf (stderr, _("Try `%s --help' for more information.\n"),
+    fprintf (stderr, _("Try '%s --help' for more information.\n"),
              program_name);
   else
     {
@@ -856,7 +872,8 @@ Choice of input file language:\n"));
                                 (C, C++, ObjectiveC, PO, Shell, Python, Lisp,\n\
                                 EmacsLisp, librep, Scheme, Smalltalk, Java,\n\
                                 JavaProperties, C#, awk, YCP, Tcl, Perl, PHP,\n\
-                                GCC-source, NXStringTable, RST, Glade)\n"));
+                                GCC-source, NXStringTable, RST, Glade, Lua,\n\
+                                JavaScript, Vala)\n"));
       printf (_("\
   -C, --c++                   shorthand for --language=C++\n"));
       printf (_("\
@@ -889,21 +906,24 @@ Language specific options:\n"));
       printf (_("\
                                 (only languages C, C++, ObjectiveC, Shell,\n\
                                 Python, Lisp, EmacsLisp, librep, Scheme, Java,\n\
-                                C#, awk, Tcl, Perl, PHP, GCC-source, Glade)\n"));
+                                C#, awk, Tcl, Perl, PHP, GCC-source, Glade,\n\
+                                Lua, JavaScript, Vala)\n"));
       printf (_("\
   -kWORD, --keyword=WORD      look for WORD as an additional keyword\n\
   -k, --keyword               do not to use default keywords\n"));
       printf (_("\
                                 (only languages C, C++, ObjectiveC, Shell,\n\
                                 Python, Lisp, EmacsLisp, librep, Scheme, Java,\n\
-                                C#, awk, Tcl, Perl, PHP, GCC-source, Glade)\n"));
+                                C#, awk, Tcl, Perl, PHP, GCC-source, Glade,\n\
+                                Lua, JavaScript, Vala)\n"));
       printf (_("\
       --flag=WORD:ARG:FLAG    additional flag for strings inside the argument\n\
                               number ARG of keyword WORD\n"));
       printf (_("\
                                 (only languages C, C++, ObjectiveC, Shell,\n\
                                 Python, Lisp, EmacsLisp, librep, Scheme, Java,\n\
-                                C#, awk, YCP, Tcl, Perl, PHP, GCC-source)\n"));
+                                C#, awk, YCP, Tcl, Perl, PHP, GCC-source,\n\
+                                Lua, JavaScript, Vala)\n"));
       printf (_("\
   -T, --trigraphs             understand ANSI C trigraphs for input\n"));
       printf (_("\
@@ -959,7 +979,7 @@ Output details:\n"));
       printf (_("\
   -F, --sort-by-file          sort output by file location\n"));
       printf (_("\
-      --omit-header           don't write header with `msgid \"\"' entry\n"));
+      --omit-header           don't write header with 'msgid \"\"' entry\n"));
       printf (_("\
       --copyright-holder=STRING  set copyright holder in output\n"));
       printf (_("\
@@ -1673,6 +1693,11 @@ xgettext_record_flag (const char *optionstring)
                                                     name_start, name_end,
                                                     argnum, value, pass);
                     break;
+                  case format_python_brace:
+                    flag_context_list_table_insert (&flag_table_python, 0,
+                                                    name_start, name_end,
+                                                    argnum, value, pass);
+                    break;
                   case format_lisp:
                     flag_context_list_table_insert (&flag_table_lisp, 0,
                                                     name_start, name_end,
@@ -1764,6 +1789,16 @@ xgettext_record_flag (const char *optionstring)
                     break;
                   case format_boost:
                     flag_context_list_table_insert (&flag_table_cxx_boost, 1,
+                                                    name_start, name_end,
+                                                    argnum, value, pass);
+                    break;
+                  case format_lua:
+                    flag_context_list_table_insert (&flag_table_lua, 0,
+                                                    name_start, name_end,
+                                                    argnum, value, pass);
+                    break;
+                  case format_javascript:
+                    flag_context_list_table_insert (&flag_table_javascript, 0,
                                                     name_start, name_end,
                                                     argnum, value, pass);
                     break;
@@ -2242,7 +2277,29 @@ meta information, not the empty string.\n")));
     nitems_before = (mp->comment_dot != NULL ? mp->comment_dot->nitems : 0);
 
     if (extracted_comment != NULL)
-      message_comment_dot_append (mp, extracted_comment);
+      {
+        char *copy = xstrdup (extracted_comment);
+        char *rest;
+
+        rest = copy;
+        while (*rest != '\0')
+          {
+            char *newline = strchr (rest, '\n');
+
+            if (newline != NULL)
+              {
+                *newline = '\0';
+                message_comment_dot_append (mp, rest);
+                rest = newline + 1;
+              }
+            else
+              {
+                message_comment_dot_append (mp, rest);
+                break;
+              }
+          }
+        free (copy);
+      }
 
     add_all_remaining_comments = add_all_comments;
     for (j = 0; ; ++j)
@@ -2255,7 +2312,7 @@ meta information, not the empty string.\n")));
         CONVERT_STRING (s, lc_comment);
 
         /* To reduce the possibility of unwanted matches we do a two
-           step match: the line must contain `xgettext:' and one of
+           step match: the line must contain 'xgettext:' and one of
            the possible format description strings.  */
         if ((t = c_strstr (s, "xgettext:")) != NULL)
           {
@@ -2933,7 +2990,7 @@ arglist_parser_done (struct arglist_parser *ap, int argnum)
                                      msgid_context,
                                      &best_cp->msgid_pos,
                                      NULL, best_cp->msgid_comment);
-            if (best_cp->msgid_plural != NULL)
+            if (mp != NULL && best_cp->msgid_plural != NULL)
               remember_a_message_plural (mp, best_cp->msgid_plural,
                                          msgid_plural_context,
                                          &best_cp->msgid_plural_pos,
@@ -2999,6 +3056,7 @@ construct_header ()
   char *timestring;
   message_ty *mp;
   char *msgstr;
+  char *comment;
   static lex_pos_ty pos = { __FILE__, __LINE__ };
 
   if (package_name != NULL)
@@ -3015,7 +3073,7 @@ construct_header ()
     multiline_warning (xasprintf (_("warning: ")),
                        xstrdup (_("\
 The option --msgid-bugs-address was not specified.\n\
-If you are using a `Makevars' file, please specify\n\
+If you are using a 'Makevars' file, please specify\n\
 the MSGID_BUGS_ADDRESS variable there; otherwise please\n\
 specify an --msgid-bugs-address command line option.\n\
 ")));
@@ -3042,18 +3100,20 @@ Content-Transfer-Encoding: 8bit\n",
 
   mp = message_alloc (NULL, "", NULL, msgstr, strlen (msgstr) + 1, &pos);
 
-  message_comment_append (mp,
-                          copyright_holder[0] != '\0'
-                          ? xasprintf ("\
+  if (copyright_holder[0] != '\0')
+    comment = xasprintf ("\
 SOME DESCRIPTIVE TITLE.\n\
 Copyright (C) YEAR %s\n\
 This file is distributed under the same license as the PACKAGE package.\n\
 FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.\n",
-                                       copyright_holder)
-                          : "\
+			 copyright_holder);
+  else
+    comment = xstrdup ("\
 SOME DESCRIPTIVE TITLE.\n\
 This file is put in the public domain.\n\
 FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.\n");
+  message_comment_append (mp, comment);
+  free (comment);
 
   mp->is_fuzzy = true;
 
@@ -3181,6 +3241,9 @@ language_to_extractor (const char *name)
     SCANNERS_STRINGTABLE
     SCANNERS_RST
     SCANNERS_GLADE
+    SCANNERS_LUA
+    SCANNERS_JAVASCRIPT
+    SCANNERS_VALA
     /* Here may follow more languages and their scanners: pike, etc...
        Make sure new scanners honor the --exclude-file option.  */
   };
@@ -3223,7 +3286,7 @@ language_to_extractor (const char *name)
         return result;
       }
 
-  error (EXIT_FAILURE, 0, _("language `%s' unknown"), name);
+  error (EXIT_FAILURE, 0, _("language '%s' unknown"), name);
   /* NOTREACHED */
   {
     extractor_ty result = { NULL, NULL, NULL, NULL };
@@ -3264,6 +3327,9 @@ extension_to_language (const char *extension)
     EXTENSIONS_STRINGTABLE
     EXTENSIONS_RST
     EXTENSIONS_GLADE
+    EXTENSIONS_LUA
+    EXTENSIONS_JAVASCRIPT
+    EXTENSIONS_VALA
     /* Here may follow more file extensions... */
   };
 
