@@ -1,5 +1,5 @@
 /* Test duplicating non-inheritable file descriptors.
-   Copyright (C) 2009, 2010 Free Software Foundation, Inc.
+   Copyright (C) 2009-2013 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -25,9 +25,11 @@
 #include <unistd.h>
 
 #if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
-/* Get declarations of the Win32 API functions.  */
+/* Get declarations of the native Windows API functions.  */
 # define WIN32_LEAN_AND_MEAN
 # include <windows.h>
+/* Get _get_osfhandle.  */
+# include "msvc-nothrow.h"
 #endif
 
 #include "binary-io.h"
@@ -38,7 +40,7 @@ static int
 is_inheritable (int fd)
 {
 #if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
-  /* On Win32, the initial state of unassigned standard file
+  /* On native Windows, the initial state of unassigned standard file
      descriptors is that they are open but point to an
      INVALID_HANDLE_VALUE, and there is no fcntl.  */
   HANDLE h = (HANDLE) _get_osfhandle (fd);
@@ -76,6 +78,7 @@ main (void)
   const char *file = "test-cloexec.tmp";
   int fd = creat (file, 0600);
   int fd2;
+  int bad_fd = getdtablesize ();
 
   /* Assume std descriptors were provided by invoker.  */
   ASSERT (STDERR_FILENO < fd);
@@ -118,7 +121,7 @@ main (void)
   ASSERT (set_cloexec_flag (-1, false) == -1);
   ASSERT (errno == EBADF);
   errno = 0;
-  ASSERT (set_cloexec_flag (10000000, false) == -1);
+  ASSERT (set_cloexec_flag (bad_fd, false) == -1);
   ASSERT (errno == EBADF);
   errno = 0;
   ASSERT (set_cloexec_flag (fd2, false) == -1);
@@ -127,7 +130,7 @@ main (void)
   ASSERT (dup_cloexec (-1) == -1);
   ASSERT (errno == EBADF);
   errno = 0;
-  ASSERT (dup_cloexec (10000000) == -1);
+  ASSERT (dup_cloexec (bad_fd) == -1);
   ASSERT (errno == EBADF);
   errno = 0;
   ASSERT (dup_cloexec (fd2) == -1);

@@ -1,5 +1,5 @@
 /* Manipulates attributes of messages in translation catalogs.
-   Copyright (C) 2001-2007, 2009-2010 Free Software Foundation, Inc.
+   Copyright (C) 2001-2007, 2009-2010, 2012 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2001.
 
    This program is free software: you can redistribute it and/or modify
@@ -44,6 +44,7 @@
 #include "write-stringtable.h"
 #include "color.h"
 #include "propername.h"
+#include "xalloc.h"
 #include "gettext.h"
 
 #define _(str) gettext (str)
@@ -71,7 +72,8 @@ enum
   RESET_FUZZY           = 1 << 1,
   SET_OBSOLETE          = 1 << 2,
   RESET_OBSOLETE        = 1 << 3,
-  REMOVE_PREV           = 1 << 4
+  REMOVE_PREV           = 1 << 4,
+  ADD_PREV              = 1 << 5
 };
 static int to_change;
 
@@ -100,6 +102,7 @@ static const struct option long_options[] =
   { "only-fuzzy", no_argument, NULL, CHAR_MAX + 4 },
   { "only-obsolete", no_argument, NULL, CHAR_MAX + 6 },
   { "output-file", required_argument, NULL, 'o' },
+  { "previous", no_argument, NULL, CHAR_MAX + 21 },
   { "properties-input", no_argument, NULL, 'P' },
   { "properties-output", no_argument, NULL, 'p' },
   { "set-fuzzy", no_argument, NULL, CHAR_MAX + 7 },
@@ -324,6 +327,10 @@ main (int argc, char **argv)
         handle_style_option (optarg);
         break;
 
+      case CHAR_MAX + 21: /* --previous */
+        to_change |= ADD_PREV;
+        break;
+
       default:
         usage (EXIT_FAILURE);
         /* NOTREACHED */
@@ -400,7 +407,7 @@ static void
 usage (int status)
 {
   if (status != EXIT_SUCCESS)
-    fprintf (stderr, _("Try `%s --help' for more information.\n"),
+    fprintf (stderr, _("Try '%s --help' for more information.\n"),
              program_name);
   else
     {
@@ -458,6 +465,9 @@ Attribute manipulation:\n"));
       --set-obsolete          set all messages obsolete\n"));
       printf (_("\
       --clear-obsolete        set all messages non-obsolete\n"));
+      printf (_("\
+      --previous              when setting 'fuzzy', keep previous msgids\n\
+                              of translated messages.\n"));
       printf (_("\
       --clear-previous        remove the \"previous msgid\" from all messages\n"));
       printf (_("\
@@ -587,7 +597,22 @@ process_message_list (message_list_ty *mlp,
                   : true))
             {
               if (to_change & SET_FUZZY)
-                mp->is_fuzzy = true;
+                {
+                  if ((to_change & ADD_PREV) && !is_header (mp)
+                      && !mp->is_fuzzy && mp->msgstr[0] != '\0')
+                    {
+                      mp->prev_msgctxt =
+                        (mp->msgctxt != NULL ? xstrdup (mp->msgctxt) : NULL);
+                      mp->prev_msgid =
+                        (mp->msgid != NULL ? xstrdup (mp->msgid) : NULL);
+                      mp->prev_msgid_plural =
+                        (mp->msgid_plural != NULL
+                         ? xstrdup (mp->msgid_plural)
+                         : NULL);
+                    }
+                  mp->is_fuzzy = true;
+                }
+
               if (to_change & RESET_FUZZY)
                 mp->is_fuzzy = false;
               /* Always keep the header entry non-obsolete.  */
