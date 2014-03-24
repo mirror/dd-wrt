@@ -16,7 +16,7 @@ glib20-configure:
 	cd glib20/libiconv && ./configure --enable-shared --enable-static --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -Drpl_malloc=malloc"
 	$(MAKE) -C glib20/libiconv clean all
 
-	cd glib20/gettext && ./configure --enable-shared --disable-static --disable-openmp --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS)  $(MIPS16_OPT) -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/libiconv/include"
+	cd glib20/gettext && ./configure --enable-shared --disable-static --disable-openmp --host=$(ARCH)-linux CC="ccache $(CC)" LDFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -Drpl_malloc=malloc " CFLAGS="$(COPTS)  $(MIPS16_OPT) -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/libiconv/include" CXXFLAGS="$(COPTS)  $(MIPS16_OPT) -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/libiconv/include"
 	touch glib20/gettext/*
 	touch glib20/gettext/build-aux/*
 	touch glib20/gettext/gettext-runtime/*
