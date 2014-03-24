@@ -36,11 +36,6 @@ glib20-configure:
 glib20:
 	$(MAKE) -C glib20/libffi all
 	$(MAKE) -C glib20/libiconv all
-	touch glib20/gettext/*
-	touch glib20/gettext/build-aux/*
-	touch glib20/gettext/gettext-runtime/*
-	touch glib20/gettext/gettext-runtime/libasprintf/*
-	touch glib20/gettext/gettext-tools/*
 	$(MAKE) -C glib20/gettext all
 	$(MAKE) -C glib20/libglib all
 
