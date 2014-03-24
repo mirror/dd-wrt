@@ -799,8 +799,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0},
 	/* Default AMPDU regular rate retry limit per-tid setting */
 	{"wl_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
-	{"wl_amsdu", "off", 0 },		/* Disable AMSDU Tx by default */
-	{"wl_rx_amsdu_in_ampdu", "off", 0 },	/* Disable AMSDU Rx by default */
+	{"wl_amsdu", "auto", 0 },		/* Disable AMSDU Tx by default */
+	{"wl_rx_amsdu_in_ampdu", "auto", 0 },	/* Disable AMSDU Rx by default */
 	{"wl_cal_period", "0", 0 },			/* Disable periodic cal */
 	{"wl_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - 0=OFF 1=ON */
 
@@ -811,8 +811,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0},
 	/* Default AMPDU regular rate retry limit per-tid setting */
 	{"wl0_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
-	{"wl0_amsdu", "off", 0},	/* Default AMSDU setting */
-	{"wl0_rx_amsdu_in_ampdu", "off", 0 },	/* Disable AMSDU Rx by default */
+	{"wl0_amsdu", "auto", 0},	/* Default AMSDU setting */
+	{"wl0_rx_amsdu_in_ampdu", "auto", 0 },	/* Disable AMSDU Rx by default */
 	{"wl0_cal_period", "0", 0 },			/* Disable periodic cal */
 	{"wl0_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - OFF */
 	{"wl1_stbc_tx", "auto", 0},	/* Default STBC TX setting */
@@ -822,8 +822,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl1_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0},
 	/* Default AMPDU regular rate retry limit per-tid setting */
 	{"wl1_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
-	{"wl1_amsdu", "off", 0},	/* Default AMSDU setting */
-	{"wl1_rx_amsdu_in_ampdu", "off", 0 },	/* Disable AMSDU Rx by default */
+	{"wl1_amsdu", "auto", 0},	/* Default AMSDU setting */	
+	{"wl1_rx_amsdu_in_ampdu", "auto", 0 },	/* Disable AMSDU Rx by default */
 	{"wl1_cal_period", "0", 0 },			/* Disable periodic cal */
 	{"wl1_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - OFF */
 	/* Tx Beamforming */
