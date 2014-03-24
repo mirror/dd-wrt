@@ -17,6 +17,7 @@ glib20-configure:
 	$(MAKE) -C glib20/libiconv clean all
 
 	cd glib20/gettext && ./configure --enable-shared --disable-static --disable-openmp --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS)  $(MIPS16_OPT) -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/libiconv/include"
+	touch glib20/gettext/*    
 	$(MAKE) -C glib20/gettext clean all
 
 	cd glib20/libglib && ./configure --enable-shared --disable-static --disable-fam  --enable-debug=no --disable-selinux --disable-man --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS)  $(MIPS16_OPT) -I$(TOP)/zlib -fPIC -Drpl_malloc=malloc -I$(TOP)/glib20/gettext/gettext-runtime/intl  -I$(TOP)/glib20/libiconv/include -I$(TOP)/glib20/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/include  -L$(TOP)/glib20/libffi/$(ARCH)-$(SUBARCH)-linux-gnu/.libs -lffi -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/glib20/gettext/gettext-runtime/intl/.libs -L$(TOP)/zlib -pthread -lpthread" --with-libiconv=gnu --disable-modular-tests \
