@@ -993,7 +993,7 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WZR1750;
 	}
 
-	if ((boardnum == 2013012401 || boardnum == 2013083001 || boardnum == 2013032101) && nvram_match("boardtype", "0x0646")
+	if ((boardnum == 2013012401 || boardnum == 2013083001 || boardnum == 2013032101 || boardnum == 2013013101) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "7")) {
 #ifdef HAVE_BUFFALO
@@ -1004,7 +1004,7 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WZR900DHP;
 	}
 
-	if ((boardnum == 2013012401 || boardnum == 2013083001 || boardnum == 2013032101) && nvram_match("boardtype", "0x0646")
+	if ((boardnum == 2013012401 || boardnum == 2013083001 || boardnum == 2013032101 || boardnum == 2013013101) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "3")) {
 #ifdef HAVE_BUFFALO
