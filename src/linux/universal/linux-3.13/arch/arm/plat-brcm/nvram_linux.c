@@ -162,7 +162,7 @@ early_nvram_init(void)
 				continue;
 			if (nvram_calc_crc(header) == (uint8)header->crc_ver_init)
 			{
-			printk(KERN_INFO "found nand nvram at %X\n",off);
+				printk(KERN_INFO "found nand nvram at %X\n",off);
 				goto found;
 			}
 		}
