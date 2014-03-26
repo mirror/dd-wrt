@@ -1026,7 +1026,7 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 	if (knldev == SOC_KNLDEV_NANDFLASH)
 		offset = NFL_BOOT_OS_SIZE;
 
-	if ((boardnum == 2013012401 || boardnum == 2013083001 || boardnum == 2013032101) && nvram_match("boardtype", "0x0646")
+	if ((boardnum == 2013012401 || boardnum == 2013083001 || boardnum == 2013032101 || boardnum == 2013013101) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")) {
 		printk(KERN_EMERG "Buffalo WZR-900DHP dualboot\n");
 		isbufdual = 1;
