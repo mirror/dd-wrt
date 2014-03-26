@@ -526,7 +526,7 @@ static int wlconf_up(char *name)
 	char pwr[8];
 	sprintf(pwr, "%d", val);
 #ifdef HAVE_TXPWRFIXED
-	eval("wl", "-i", name, "txpwr1", "-m");
+//	eval("wl", "-i", name, "txpwr1", "-m");
 #else
 	eval("wl", "-i", name, "txpwr1", "-m", "-o", pwr);
 #endif
