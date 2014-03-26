@@ -1905,6 +1905,7 @@ void start_sysinit(void)
 
 	}
 	nvram_unset("et1macaddr");
+	insmod("ctf");
 	insmod("et");
 	//load mmc drivers
 	eval("ifconfig", "eth0", "up");
