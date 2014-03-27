@@ -271,7 +271,7 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	char s_curr_time[24];
 	sprintf(s_curr_time, "%llu", curr_time);
 #ifdef HAVE_IAS
-	if (nvram_get("ias_startup") && atoi(nvram_safe_get("ias_startup")) > 1) {
+	if (nvram_get("ias_startup") && atoi(nvram_safe_get("ias_startup")) > 0) {
 		fprintf(stderr, "IAS ignore\n");
 		return 1;
 	}
