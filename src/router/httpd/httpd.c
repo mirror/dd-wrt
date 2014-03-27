@@ -266,16 +266,15 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	}
 	memdebug_leave();
 	
+#ifndef HAVE_IAS
 	u_int64_t auth_time = (u_int64_t)( atoll(nvram_safe_get("auth_time")) );
 	u_int64_t curr_time = (u_int64_t)time(NULL);
 	char s_curr_time[24];
 	sprintf(s_curr_time, "%llu", curr_time);
-#ifdef HAVE_IAS
 	if (nvram_get("ias_startup") && atoi(nvram_safe_get("ias_startup")) > 0) {
 		fprintf(stderr, "IAS ignore\n");
 		return 1;
 	}
-#endif
 
 	
 	int submittedtoken = atoi(nvram_safe_get("token"));
@@ -305,6 +304,7 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	}
 	
 	nvram_set("auth_time", s_curr_time);
+#endif
 
 
 	return 1;
