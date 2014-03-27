@@ -3326,6 +3326,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"transmission_enable", "0", 0},
 	{"transmission_dir", "/jffs/transmission", 0},
 #endif
+	["ptoken","0",0},
 	{0, 0, 0}
 };
 #else
