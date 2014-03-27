@@ -109,6 +109,8 @@ int mtd_open(const char *mtd, int flags)
 	if ((fp = fopen("/proc/mtd", "r"))) {
 		while (fgets(dev, sizeof(dev), fp)) {
 			if (sscanf(dev, "mtd%d:", &i) && strstr(dev, mtd)) {
+				if (!strcmp(mtd,"nvram") && strstr(dev,"nvram_cfe")) 
+					continue;
 				snprintf(dev, sizeof(dev), "/dev/mtd/%d", i);
 				fclose(fp);
 				return open(dev, flags);
