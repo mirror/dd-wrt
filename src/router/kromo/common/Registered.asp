@@ -35,7 +35,7 @@ document.title = "<% nvram_get("router_name"); %> - Activation";
 					</div>
 				</div>
 				<div id="main">
-                    		<form name="register" action="apply.cgi" method="post">
+                    		<form name="register" action="apply.cgi<% insertpageToken(); %>" method="post">
                   			<input type="hidden" name="submit_button" value="Register" />
                   			<input type="hidden" name="submit_type" />
                   			<input type="hidden" name="change_action" />
