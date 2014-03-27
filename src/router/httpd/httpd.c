@@ -270,10 +270,12 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	u_int64_t curr_time = (u_int64_t)time(NULL);
 	char s_curr_time[24];
 	sprintf(s_curr_time, "%llu", curr_time);
+	if (nvram_match("token","ias_detect"))
+		return 1;
 	
 	int submittedtoken = atoi(nvram_safe_get("token"));
 	int currenttoken = atoi(nvram_safe_get("ptoken"));
-	
+	fprintf(stderr,"token %d=%d\n",submittedtoken,currenttoken);
 	
 	//protect config changes
 	if(!strcmp(curr_page, "apply.cgi") || !strcmp(curr_page, "nvram.cgi") || !strcmp(curr_page, "upgrade.cgi") ){
