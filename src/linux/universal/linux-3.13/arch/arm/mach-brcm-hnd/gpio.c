@@ -186,7 +186,7 @@ static int __init gpio_init(void)
 
 	}
 
-	if ((!strncmp(nvram_safe_get("boardnum","2013"),4) || !strncmp(nvram_safe_get("boardnum","2014"),4)) && nvram_match("boardtype", "0x0646")
+	if ((!strncmp(nvram_safe_get("boardnum"),"2013",4) || !strncmp(nvram_safe_get("boardnum"),"2014",4)) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "7")) {
 		printk(KERN_EMERG "Buffalo WZR-900DHP\n");
@@ -195,7 +195,7 @@ static int __init gpio_init(void)
 		return 0;
 	}
 
-	if ((!strncmp(nvram_safe_get("boardnum","2013"),4) || !strncmp(nvram_safe_get("boardnum","2014"),4)) && nvram_match("boardtype", "0x0646")
+	if ((!strncmp(nvram_safe_get("boardnum"),"2013",4) || !strncmp(nvram_safe_get("boardnum"),"2014",4)) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "3")) {
 		printk(KERN_EMERG "Buffalo WZR-600DHP2\n");
