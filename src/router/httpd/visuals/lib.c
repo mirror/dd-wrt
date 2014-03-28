@@ -56,7 +56,7 @@ void ej_compile_time(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 {
-#if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE) || defined(HAVE_HDWIFI)
+#if defined(HAVE_ESPOD) || defined(HAVE_ONNET) || defined(HAVE_IMMERSIVE) || defined(HAVE_HDWIFI) || defined(HAVE_IDEXX)
 	char *p;
 	char string[32], date[16];
 	sprintf(string, CYBERTAN_VERSION);
