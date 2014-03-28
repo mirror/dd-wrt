@@ -221,10 +221,19 @@ endif
 ifeq ($(CONFIG_GUESTPORT),y)
 CFLAGS += -DHAVE_GUESTPORT
 endif
+endif
+
 ifeq ($(CONFIG_FREECWMP),y)
 CFLAGS += -DHAVE_FREECWMP
 VISOBJS += freecwmp.o
 endif
+
+ifeq ($(CONFIG_UNFY),y)
+CLFAGS += -DHAVE_UNFY
+endif
+
+ifeq ($(CONFIG_IDEXX),y)
+CFLAGS += -DHAVE_IDEXX
 endif
 
 ifeq ($(CONFIG_FREECWMP),y)
@@ -1072,6 +1081,9 @@ CFLAGS += -DHAVE_WHRG300NV2
 endif
 ifeq ($(CONFIG_WHRHPG300N),y)
 CFLAGS += -DHAVE_WHRHPG300N
+endif
+ifeq ($(CONFIG_CUSTOMSSLCERT),y)
+CFLAGS += -DHAVE_CUSTOMSSLCERT
 endif
 
 #use this do disable number of arguments checking (less code and faster exec)
