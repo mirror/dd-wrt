@@ -217,6 +217,9 @@ endif
 ifeq ($(CONFIG_IMMERSIVE),y)
   CFLAGS += -DHAVE_IMMERSIVE
 endif
+ifeq ($(CONFIG_ONNET),y)
+  CFLAGS += -DHAVE_ONNET
+endif
 ifeq ($(CONFIG_HDWIFI),y)
   CFLAGS += -DHAVE_HDWIFI
 endif
