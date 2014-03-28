@@ -49,113 +49,117 @@ void start_olsrd(void)
 	sprintf(net, "%d.%d.%d.0", a, b, c);
 	FILE *fp = fopen("/tmp/olsrd.conf", "wb");
 
-	fprintf(fp, "DebugLevel\t0\n");
-	fprintf(fp, "IpVersion\t4\n");
-	fprintf(fp, "AllowNoInt\tyes\n");
-	fprintf(fp, "Pollrate\t%s\n", nvram_safe_get("olsrd_pollsize"));
-	fprintf(fp, "TcRedundancy\t%s\n", nvram_safe_get("olsrd_redundancy"));
-	fprintf(fp, "MprCoverage\t%s\n", nvram_safe_get("olsrd_coverage"));
-	fprintf(fp, "MainIp %s\n", nvram_safe_get("lan_ipaddr"));
-#ifdef HAVE_IPV6
-	if (nvram_match("olsrd_smartgw", "1")) {
-		nvram_set("ipv6_enable", "1");
-		start_ipv6();	// load ipv6 drivers
-		fprintf(fp, "RtTable auto\n");
-		fprintf(fp, "RtTableDefault auto\n");
-		fprintf(fp, "RtTableTunnel auto\n");
-
-		fprintf(fp, "RtTablePriority auto\n");
-		fprintf(fp, "RtTableDefaultOlsrPriority auto\n");
-		fprintf(fp, "RtTableTunnelPriority auto\n");
-		fprintf(fp, "RtTableDefaultPriority auto\n");
-
-		fprintf(fp, "SmartGateway yes\n");
-		fprintf(fp, "SmartGatewayAllowNAT yes\n");
-		fprintf(fp, "SmartGatewayUplink \"both\"\n");
-		fprintf(fp, "SmartGatewayUplinkNAT yes\n");
-		fprintf(fp, "SmartGatewaySpeed 128 1024\n");
-//              fprintf(fp, "SmartGatewayPrefix 0::/0\n");
+	if(strlen(nvram_safe_get("olsrd_conf")) > 0) {
+		fwritenvram("olsrd_conf", fp);	
 	} else {
-#endif
-		fprintf(fp, "SmartGateway no\n");
+		fprintf(fp, "DebugLevel\t0\n");
+		fprintf(fp, "IpVersion\t4\n");
+		fprintf(fp, "AllowNoInt\tyes\n");
+		fprintf(fp, "Pollrate\t%s\n", nvram_safe_get("olsrd_pollsize"));
+		fprintf(fp, "TcRedundancy\t%s\n", nvram_safe_get("olsrd_redundancy"));
+		fprintf(fp, "MprCoverage\t%s\n", nvram_safe_get("olsrd_coverage"));
+		fprintf(fp, "MainIp %s\n", nvram_safe_get("lan_ipaddr"));
 #ifdef HAVE_IPV6
-	}
+		if (nvram_match("olsrd_smartgw", "1")) {
+			nvram_set("ipv6_enable", "1");
+			start_ipv6();	// load ipv6 drivers
+			fprintf(fp, "RtTable auto\n");
+			fprintf(fp, "RtTableDefault auto\n");
+			fprintf(fp, "RtTableTunnel auto\n");
+	
+			fprintf(fp, "RtTablePriority auto\n");
+			fprintf(fp, "RtTableDefaultOlsrPriority auto\n");
+			fprintf(fp, "RtTableTunnelPriority auto\n");
+			fprintf(fp, "RtTableDefaultPriority auto\n");
+
+			fprintf(fp, "SmartGateway yes\n");
+			fprintf(fp, "SmartGatewayAllowNAT yes\n");
+			fprintf(fp, "SmartGatewayUplink \"both\"\n");
+			fprintf(fp, "SmartGatewayUplinkNAT yes\n");
+			fprintf(fp, "SmartGatewaySpeed 128 1024\n");
+//	              fprintf(fp, "SmartGatewayPrefix 0::/0\n");
+		} else {
 #endif
-	fprintf(fp, "LinkQualityFishEye\t%s\n", nvram_safe_get("olsrd_lqfisheye"));
-	fprintf(fp, "LinkQualityAging\t%s\n", nvram_safe_get("olsrd_lqaging"));
-	fprintf(fp, "LinkQualityAlgorithm    \"etx_ff\"\n");
-//      fprintf(fp, "LinkQualityDijkstraLimit\t%s %s\n",
-//              nvram_safe_get("olsrd_lqdijkstramin"),
-//              nvram_safe_get("olsrd_lqdijkstramax"));
-	fprintf(fp, "UseHysteresis\t%s\n", nvram_match("olsrd_hysteresis", "1") ? "yes" : "no");
-	if (nvram_match("olsrd_hysteresis", "0"))
-		fprintf(fp, "LinkQualityLevel\t%s\n", nvram_safe_get("olsrd_lqlevel"));
-	else
-		fprintf(fp, "LinkQualityLevel\t0\n");
-	fprintf(fp, "LoadPlugin \"olsrd_dyn_gw_plain.so\"\n");
-	fprintf(fp, "{\n");
-	fprintf(fp, "}\n");
-#ifndef HAVE_MICRO
-	fprintf(fp, "LoadPlugin \"olsrd_httpinfo.so\"\n");
-	fprintf(fp, "{\n");
-	fprintf(fp, "\tPlParam \"port\"\t\"8080\"\n");
-	fprintf(fp, "\tPlParam \"Host\"\t\"127.0.0.1\"\n");
-	fprintf(fp, "\tPlParam \"Net\"\t\"%s 255.255.255.0\"\n", net);
-	fprintf(fp, "}\n");
+			fprintf(fp, "SmartGateway no\n");
+#ifdef HAVE_IPV6
+		}
 #endif
-	fprintf(fp, "IpcConnect\n");
-	fprintf(fp, "{\n");
-	fprintf(fp, "\tMaxConnections\t1\n");
-	fprintf(fp, "\tHost\t127.0.0.1\n");
-	fprintf(fp, "\tNet\t%s 255.255.255.0\n", net);
-	fprintf(fp, "}\n");
-
-	char *wordlist = nvram_safe_get("olsrd_interfaces");
-	char *next;
-	char word[128];
-
-	foreach(word, wordlist, next) {
-		char *interface = word;
-		char *hellointerval = interface;
-
-		strsep(&hellointerval, ">");
-		char *hellovaliditytime = hellointerval;
-
-		strsep(&hellovaliditytime, ">");
-		char *tcinterval = hellovaliditytime;
-
-		strsep(&tcinterval, ">");
-		char *tcvaliditytime = tcinterval;
-
-		strsep(&tcvaliditytime, ">");
-		char *midinterval = tcvaliditytime;
-
-		strsep(&midinterval, ">");
-		char *midvaliditytime = midinterval;
-
-		strsep(&midvaliditytime, ">");
-		char *hnainterval = midvaliditytime;
-
-		strsep(&hnainterval, ">");
-		char *hnavaliditytime = hnainterval;
-
-		strsep(&hnavaliditytime, ">");
-		fprintf(fp, "Interface \"%s\"\n", interface);
+		fprintf(fp, "LinkQualityFishEye\t%s\n", nvram_safe_get("olsrd_lqfisheye"));
+		fprintf(fp, "LinkQualityAging\t%s\n", nvram_safe_get("olsrd_lqaging"));
+		fprintf(fp, "LinkQualityAlgorithm    \"etx_ff\"\n");
+//	      fprintf(fp, "LinkQualityDijkstraLimit\t%s %s\n",
+//	              nvram_safe_get("olsrd_lqdijkstramin"),
+//	              nvram_safe_get("olsrd_lqdijkstramax"));
+		fprintf(fp, "UseHysteresis\t%s\n", nvram_match("olsrd_hysteresis", "1") ? "yes" : "no");
+		if (nvram_match("olsrd_hysteresis", "0"))
+			fprintf(fp, "LinkQualityLevel\t%s\n", nvram_safe_get("olsrd_lqlevel"));
+		else
+			fprintf(fp, "LinkQualityLevel\t0\n");
+		fprintf(fp, "LoadPlugin \"olsrd_dyn_gw_plain.so\"\n");
 		fprintf(fp, "{\n");
-		fprintf(fp, "\tHelloInterval\t%s\n", hellointerval);
-		fprintf(fp, "\tHelloValidityTime\t%s\n", hellovaliditytime);
-		fprintf(fp, "\tTcInterval\t%s\n", tcinterval);
-		fprintf(fp, "\tTcValidityTime\t%s\n", tcvaliditytime);
-		fprintf(fp, "\tMidInterval\t%s\n", midinterval);
-		fprintf(fp, "\tMidValidityTime\t%s\n", midvaliditytime);
-		fprintf(fp, "\tHnaInterval\t%s\n", hnainterval);
-		fprintf(fp, "\tHnaValidityTime\t%s\n", hnavaliditytime);
 		fprintf(fp, "}\n");
-	}
-	if (strlen(nvram_safe_get("olsrd_hna")) > 0) {
-		fprintf(fp, "Hna4{\n");
-		fprintf(fp, "%s\n", nvram_safe_get("olsrd_hna"));
+#ifndef HAVE_MICRO
+		fprintf(fp, "LoadPlugin \"olsrd_httpinfo.so\"\n");
+		fprintf(fp, "{\n");
+		fprintf(fp, "\tPlParam \"port\"\t\"8080\"\n");
+		fprintf(fp, "\tPlParam \"Host\"\t\"127.0.0.1\"\n");
+		fprintf(fp, "\tPlParam \"Net\"\t\"%s 255.255.255.0\"\n", net);
 		fprintf(fp, "}\n");
+#endif
+		fprintf(fp, "IpcConnect\n");
+		fprintf(fp, "{\n");
+		fprintf(fp, "\tMaxConnections\t1\n");
+		fprintf(fp, "\tHost\t127.0.0.1\n");
+		fprintf(fp, "\tNet\t%s 255.255.255.0\n", net);
+		fprintf(fp, "}\n");
+
+		char *wordlist = nvram_safe_get("olsrd_interfaces");
+		char *next;
+		char word[128];
+	
+		foreach(word, wordlist, next) {
+			char *interface = word;
+			char *hellointerval = interface;
+	
+			strsep(&hellointerval, ">");
+			char *hellovaliditytime = hellointerval;
+	
+			strsep(&hellovaliditytime, ">");
+			char *tcinterval = hellovaliditytime;
+
+			strsep(&tcinterval, ">");
+			char *tcvaliditytime = tcinterval;
+	
+			strsep(&tcvaliditytime, ">");
+			char *midinterval = tcvaliditytime;
+	
+			strsep(&midinterval, ">");
+			char *midvaliditytime = midinterval;
+	
+			strsep(&midvaliditytime, ">");
+			char *hnainterval = midvaliditytime;
+	
+			strsep(&hnainterval, ">");
+			char *hnavaliditytime = hnainterval;
+	
+			strsep(&hnavaliditytime, ">");
+			fprintf(fp, "Interface \"%s\"\n", interface);
+			fprintf(fp, "{\n");
+			fprintf(fp, "\tHelloInterval\t%s\n", hellointerval);
+			fprintf(fp, "\tHelloValidityTime\t%s\n", hellovaliditytime);
+			fprintf(fp, "\tTcInterval\t%s\n", tcinterval);
+			fprintf(fp, "\tTcValidityTime\t%s\n", tcvaliditytime);
+			fprintf(fp, "\tMidInterval\t%s\n", midinterval);
+			fprintf(fp, "\tMidValidityTime\t%s\n", midvaliditytime);
+			fprintf(fp, "\tHnaInterval\t%s\n", hnainterval);
+			fprintf(fp, "\tHnaValidityTime\t%s\n", hnavaliditytime);
+			fprintf(fp, "}\n");
+		}
+		if (strlen(nvram_safe_get("olsrd_hna")) > 0) {
+			fprintf(fp, "Hna4{\n");
+			fprintf(fp, "%s\n", nvram_safe_get("olsrd_hna"));
+			fprintf(fp, "}\n");
+		}
 	}
 	fclose(fp);
 	eval("olsrd");
