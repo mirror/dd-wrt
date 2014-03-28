@@ -62,6 +62,7 @@ int main(int argc, char **argv)
 				int ret = nvram_backup(*argv);
 				if (ret < 0) {
 					fprintf(stderr, "can't write %s\n", *argv);
+					return 1;
 				}
 			}
 		} else if (!strncmp(*argv, "restore", 7)) {
@@ -69,9 +70,11 @@ int main(int argc, char **argv)
 				int ret = nvram_restore(*argv);
 				if (ret == -1) {
 					fprintf(stderr, "can't write %s\n", *argv);
+					return 1;
 				}
 				if (ret == -2) {
 					fprintf(stderr, "file %s broken\n", *argv);
+					return 1;
 				}
 			}
 		}

@@ -190,6 +190,9 @@ endif
 ifeq ($(CONFIG_BUFFALO_SA),y)
 CFLAGS += -DHAVE_BUFFALO_SA
 endif
+ifeq ($(CONFIG_UNFY),y)
+CFLAGS += -DHAVE_UNFY
+endif
 ifeq ($(CONFIG_OLSRD),y)
 CFLAGS += -DHAVE_OLSRD
 endif

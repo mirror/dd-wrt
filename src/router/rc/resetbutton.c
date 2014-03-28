@@ -18,6 +18,10 @@
 #define	SES_LED_CHECK_INTERVAL	"1"	/* Wait interval seconds */
 #define RESET_WAIT		3	/* seconds */
 #define RESET_WAIT_COUNT	RESET_WAIT * 10	/* 10 times a second */
+#ifdef HAVE_UNFY
+#define UPGRADE_WAIT		1	/* seconds */
+#define UPGRADE_WAIT_COUNT	UPGRADE_WAIT * 10 - 5
+#endif
 
 #define NORMAL_INTERVAL		1	/* second */
 #define URGENT_INTERVAL		100 * 1000	/* microsecond */
@@ -939,6 +943,9 @@ void period_check(int sig)
 	sesgpio = 0x10c;
 	val |= get_gpio(12) << 12;	//wps/ses pushbutton
 #endif
+#ifdef HAVE_UNFY
+	sesgpio = 0xfff;
+#endif
 #else
 	if (brand > 0xffff) {
 		if ((brand & 0x000ff) != 0x000ff)
@@ -1129,7 +1136,7 @@ void period_check(int sig)
 	}
 #endif
 
-	push = 1 << (sesgpio & 0x0ff);	// calculate push value from ses gpio 
+	push = 1 << (sesgpio & 0x0ff);	// calculate push value from ses gpio
 	pushwifi = 1 << (wifigpio & 0x0ff);	// calculate push value from ses gpio 
 	// 
 	// 
@@ -1217,14 +1224,14 @@ void period_check(int sig)
 						nvram_set("region", "SA");
 					nvram_commit();
 #endif
-#endif
 
 					// nvram_set ("sv_restore_defaults", "1");
 					// nvram_commit ();
 
 					kill(1, SIGTERM);
+#endif
 				}
-			}
+			} 
 		}
 	} else if ((sesgpio != 0xfff)
 		   && (((sesgpio & 0x100) == 0 && (val & push))
@@ -1311,12 +1318,33 @@ void period_check(int sig)
 		 * Although it's unpushed now, it had ever been pushed 
 		 */
 		if (mode == 1) {
+fprintf(stderr, "[RESETBUTTON] released %d\n", count);
+#ifdef HAVE_UNFY
+			  if (count > UPGRADE_WAIT_COUNT) {
+				
+				char *upgrade_script = "firmware_upgrade.sh";
+				char call[32];
+				fprintf(stderr, "[RESETBUTTON] check:%d count:%d\n", pidof(upgrade_script), count);
+				if(pidof(upgrade_script) < 0) {
+					sprintf(call, "/%s/%s", nvram_safe_get("fw_upgrade_dir"), upgrade_script);
+					if(f_exists(call)) {
+						fprintf(stderr, "[RESETBUTTON] trigger update script: %s\n", call);
+						system(call);
+					} else {
+						fprintf(stderr, "[RESETBUTTON] upgrade script not found\n");
+						led_control(LED_DIAG, LED_OFF);
+					}
+				}
+			}
+			count = 0;	// reset counter to avoid factory default
+			mode = 0;
+#else
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
 				alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
-			service_restart();
+#endif
 		}
 	}
 }
