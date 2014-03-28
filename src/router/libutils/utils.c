@@ -2057,7 +2057,7 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "7");
 	return ROUTER_BOARD_PB42;
 #elif HAVE_WZRHPAG300NH
-#ifdef HAVE_BUFFALO
+#if defined(HAVE_BUFFALO) || defined(HAVE_IDEXX)
 #ifdef HAVE_WZR600DHP
 	setRouter("WZR-600DHP");
 #else
