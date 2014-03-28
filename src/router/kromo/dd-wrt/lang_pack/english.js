@@ -1140,6 +1140,7 @@ management.lang_serbian="Serbian";
 management.lang_swedish="Swedish";
 management.lang_japanese="Japanese";
 management.lang_hungarian="Hungarian";
+management.lang_korean="Korean";
 management.lang_latvian="Latvian";
 management.net_legend="IP Filter Settings (adjust these for P2P)";
 management.net_conctrl="TCP Congestion Control";
@@ -1797,6 +1798,9 @@ hstatus_wireless.right4="As selected from the wireless tab, this will display th
 var status_openvpn=new Object();
 status_openvpn.titl="OpenVPN Status";
 
+// ** Status_CWMP.asp **//
+var status_cwmp=new Object();
+status_cwmp.titl="CWMP (TR-069) Status";
 
 // ** Triggering.asp **//
 var trforward=new Object();
