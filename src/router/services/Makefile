@@ -135,6 +135,12 @@ endif
 ifeq ($(CONFIG_FREECWMP),y)
 CFLAGS_EXTRA += -DHAVE_FREECWMP
 endif
+ifeq ($(CONFIG_ETISALAT),y)
+CFLAGS_EXTRA += -DHAVE_ETISALAT
+endif
+ifeq ($(CONFIG_AXTEL),y)
+CFLAGS_EXTRA += -DHAVE_AXTEL
+endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS_EXTRA += -DHAVE_MADWIFI_MIMO
 OBJS += madwifi_11n.o
@@ -313,6 +319,12 @@ endif
 ifeq ($(CONFIG_SPOTPASS),y)
 CFLAGS_EXTRA += -DHAVE_SPOTPASS
 OBJS += spotpass.o
+endif
+ifeq ($(CONFIG_UNFY),y)
+CFLAGS_EXTRA += -DHAVE_UNFY
+endif
+ifeq ($(CONFIG_IDEXX),y)
+CFLAGS_EXTRA += -DHAVE_IDEXX
 endif
 ifeq ($(CONFIG_CLOUD4WI),y)
 OBJS += cloud4wi.o
