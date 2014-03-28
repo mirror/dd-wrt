@@ -325,7 +325,11 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 {
 	pid_t pid;
 	char *wan_hostname = nvram_get("wan_hostname");
+#ifdef HAVE_FREECWMP
+	char *vendorclass = "dslforum.org";
+#else
 	char *vendorclass = nvram_get("dhcpc_vendorclass");
+#endif
 	char *requestip = nvram_get("dhcpc_requestip");
 	int use_extra = 0;
 
@@ -350,6 +354,10 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 		"-i", wan_ifname,
 		"-p", pidfile,
 		"-s", script,
+	        NULL, NULL,
+                NULL, NULL,
+                NULL, NULL,
+                NULL, NULL,
 		NULL, NULL,
 		NULL, NULL,
 		NULL, NULL,
@@ -362,12 +370,16 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 	int i = 7;
 
 #ifdef HAVE_BUSYBOX_UDHCPC
-	dhcp_argv[i++] = "-O";
-	dhcp_argv[i++] = "routes";
-	dhcp_argv[i++] = "-O";
-	dhcp_argv[i++] = "msstaticroutes";
-	dhcp_argv[i++] = "-O";
-	dhcp_argv[i++] = "staticroutes";
+        dhcp_argv[i++] = "-O";
+        dhcp_argv[i++] = "routes";
+        dhcp_argv[i++] = "-O";
+        dhcp_argv[i++] = "msstaticroutes";
+        dhcp_argv[i++] = "-O";
+        dhcp_argv[i++] = "staticroutes";
+#ifdef HAVE_FREECWMP
+        dhcp_argv[i++] = "-O";
+        dhcp_argv[i++] = "vendorspecific";
+#endif
 #endif
 
 	if (flags)
@@ -2669,6 +2681,8 @@ void start_force_to_dial(void);
 
 static void vdsl_fuckup(char *ifname)
 {
+fprintf(stderr, "[VDSL FUCK]\n");
+sleep(20);
 	int s;
 	struct ifreq ifr;
 	char mac[32];
@@ -3977,8 +3991,7 @@ void start_wan(int status)
 			char eabuf[32];
 
 			nvram_set("wan_hwaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
-			// fprintf(stderr,"write wan addr
-			// %s\n",nvram_safe_get("wan_hwaddr"));
+			//fprintf(stderr,"write wan addr %s\n",nvram_safe_get("wan_hwaddr"));
 		}
 
 	}
@@ -4486,8 +4499,8 @@ void start_set_routes(void)
 
 	if (f_exists("/tmp/tvrouting"))
 		system("sh /tmp/tvrouting");
-	if (f_exists("/tmp/udhcpstaticroutes"))
-		system("sh /tmp/udhcpstaticroutes");
+        if (f_exists("/tmp/udhcpstaticroutes"))
+                system("sh /tmp/udhcpstaticroutes");
 }
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)  && !defined(HAVE_RT61)
