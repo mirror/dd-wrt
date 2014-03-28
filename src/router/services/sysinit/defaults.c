@@ -124,6 +124,9 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef BUFFALO_JP
 	{"daylight_time", "1", 0},	/* japan has no summertime option */
 	{"time_zone", "+09", 0},	/* Time zone (GNU TZ format) */
+#elif HAVE_AXTEL
+	{"daylight_time", "2", 0},	/* Automatically adjust clock for daylight */
+	{"time_zone", "-06", 0},	/* Time zone (GNU TZ format) Mexico */
 #else
 	{"daylight_time", "3", 0},	/* Automatically adjust clock for daylight */
 	{"time_zone", "+01", 0},	/* Time zone (GNU TZ format) */
@@ -256,6 +259,9 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_KORENRON
 	{"lan_ipaddr", "10.0.0.1", 0}, 		/* LAN ip address */
 	{"lan_gateway", "10.0.0.254", 0},	/* Gateway */
+#elif HAVE_AXTEL
+	{"lan_ipaddr", "192.168.11.1", 0},	/* LAN IP address */
+	{"ath0_regdomain", "MEXICO", 0},	/* LAN IP address */
 #else
 	{"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #endif
@@ -315,13 +321,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
 	{"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
 	{"wan_dns", "", 0},	/* x.x.x.x x.x.x.x ... */
-#elif HAVE_IDEXX
-	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
-
-	{"wan_ipaddr", "0.0.0.0", 0},	/* WAN IP address */
-	{"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
-	{"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
-	{"wan_dns", "208.67.222.222 8.8.8.8 209.244.0.3", 0},	/* x.x.x.x x.x.x.x ... */
 #elif HAVE_SANSFIL
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif defined(HAVE_GGEW) && defined(HAVE_NS5)
@@ -465,7 +464,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
 	{"pptp_wan_gateway", "0.0.0.0", 0},
 	{"l2tp_wan_gateway", "0.0.0.0", 0},
+#ifdef HAVE_IDEXX
+	{"wan_dns", "208.67.222.222 8.8.8.8 209.244.0.3", 0},	/* x.x.x.x x.x.x.x ... */
+#else
 	{"wan_dns", "", 0},	/* x.x.x.x x.x.x.x ... */
+#endif
 
 	{"wan_wins", "0.0.0.0", 0},	/* x.x.x.x x.x.x.x ... */
 	{"wan_dualaccess", "0", 0},	/* dual-access mode, eg for russia */
@@ -621,7 +624,11 @@ struct nvram_tuple srouter_defaults[] = {
 	/*
 	 * DHCP server parameters 
 	 */
+#ifdef HAVE_IDEXX
+	{"dhcp_start", "2", 0},	/* First assignable DHCP address */
+#else
 	{"dhcp_start", "100", 0},	/* First assignable DHCP address */
+#endif
 	// { "dhcp_end", "150", 0 }, /* Last assignable DHCP address */ /* Remove 
 	// 
 	// 
@@ -634,7 +641,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_SKYTRON
 	{"dhcp_lease", "10", 0},	/* LAN lease time in minutes */
 #elif HAVE_IDEXX
-	{"dhcp_lease", "5760", 0},	/* LAN lease time in minutes */
+	{"dhcp_lease", "10080", 0},	/* LAN lease time in minutes */
 #else
 	{"dhcp_lease", "1440", 0},	/* LAN lease time in minutes */
 #endif
@@ -652,10 +659,12 @@ struct nvram_tuple srouter_defaults[] = {
 	{"http_username", "$1$OIw4f9TB$/dcveO2p0zs7eH0gHgsyw0", 0},
 #elif HAVE_CARLSONWIRELESS
 	{"http_username", "$1$y5qEiLaV$/2cQErs8qxs./J3pl2l2F.", 0},	/* HTTP username) */
-#elif HAVE_IAS
+#elif defined(HAVE_IAS) || defined(HAVE_AXTEL)
 	{"http_username", "$1$LJZEFe0/$TMujOR/zbGMDwxgb3KP0J.", 0},
 #elif HAVE_KORENRON
         {"http_username", "$1$9thN/f9/$nnZ35gSQvAaV0EPh.WJs8.", 0},     /* HTTP username */
+#elif HAVE_IDEXX
+	{"http_username", "$1$IpR13S3g$E1hg4idP4TZmfQeHIX20L/", 0},	/* Password */
 #else
 	{"http_username", "bJ/GddyoJuiU2", 0},	/* Username */
 #endif
@@ -672,10 +681,9 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"http_passwd", "bJxJZz5DYRGxI", 0},	/* Password */
 #endif
-//#elif HAVE_IDEXX
-//	{"http_passwd", "$1$L2oVrnvc$iOo92PtyNQjd9JhMWnhZN/", 0},
-//	{"http_username", "$1$9wWnpX1Q$1fobI1HcfeXewVtWCnhxh.", 0},	/* Password */
-#elif HAVE_IAS
+#elif HAVE_IDEXX
+	{"http_passwd", "$1$C.gzWpjy$x0Ic8.AnJFjjTSd6Bc.7a0", 0},
+#elif defined(HAVE_IAS) || defined(HAVE_AXTEL)
 	{"http_passwd", "$1$LJZEFe0/$yHSTW.W0nkBqSkWfcUnww.", 0},
 #elif HAVE_CORENET
 	{"http_passwd", "$1$YwPEyUx/$LLV6oaeof4WDEdpHPEMpA.", 0},	/* Username */
@@ -978,18 +986,23 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_IDEXX
 	{"wl0_ssid", "IDEXXw1", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "IDEXXw1", 0},	/* Service set ID (network name) */
+	{"ath0_crypto", "tkip+aes", 0},	/* ath0 encryption type */
 	{"wl1_ssid", "IDEXXw2", 0},	/* Service set ID (network name) */
 	{"ath1_ssid", "IDEXXw2", 0},	/* Service set ID (network name) */
+	{"ath1_crypto", "tkip+aes", 0},	/* ath0 encryption type */
+	{"ath0_vifs", "ath0.1", 0},
+	{"ath0.1_ssid", "LabStation Guest", 0},	/* Service set ID (network name) */
+	{"ath0.1_crypto", "tkip+aes", 0},	/* ath0 encryption type */
 #else
-#ifndef HAVE_BUFFALO
+#if !defined(HAVE_BUFFALO) && !defined(HAVE_AXTEL)
 	{"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
-	{"ath0_wpa_psk", "IDEXXwlan1234", 0},	/* ath0 encryption key */
 #endif
 #endif
 
 #endif
 #ifdef HAVE_IDEXX
+	{"ath0_wpa_psk", "IDEXXwlan1234", 0},	/* ath0 encryption key */
 	{"ath0.1_ssid", "LabStation Guest", 0},	/* Service set ID (network name) */
 #else
 	{"ath0.1_ssid", "", 0},	/* Service set ID (network name) */
@@ -1113,6 +1126,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_ONNET)
 	{"ath0_channelbw", "2040", 0},
 	{"ath1_channelbw", "2040", 0},
+#elif defined(HAVE_AXTEL)
+	{"ath0_channelbw", "2040", 0},
 #else
 	{"ath0_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
 	{"ath1_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
@@ -1338,6 +1353,9 @@ struct nvram_tuple srouter_defaults[] = {
 #ifndef HAVE_BUFFALO
 	{"wl0_akm", "disabled", 0},
 	{"wl0_wpa_psk", "", 0},	/* WPA pre-shared key */
+#elif HAVE_IDEXX
+	{"wl0_akm", "psk psk2", 0},
+	{"wl0_wpa_psk", "IDEXXwlan1234", 0},	/* WPA pre-shared key */
 #endif
 	{"wl0_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
 	{"wl0_radius_port", "1812", 0},	/* RADIUS server UDP port */
@@ -1345,6 +1363,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0_radius_key", "", 0},	/* RADIUS shared secret */
 #ifndef HAVE_BUFFALO
 	{"wl0_security_mode", "disabled", 0},	/* WPA mode */
+#elif HAVE_IDEXX
+	{"wl0_security_mode", "psk psk2", 0},	/* WPA mode */
 #endif
 
 	{"wl0.1_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
@@ -1375,11 +1395,24 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl0.3_radius_key", "", 0},	/* RADIUS shared secret */
 
 #else
+#ifdef HAVE_IDEXX
+	{"ath0_security_mode", "psk psk2", 0},	/* WPA mode */
+	{"ath0_auth_mode", "psk psk2", 0},	/* WPA mode (disabled|radius|wpa|psk)  */
+	{"ath0.1_security_mode", "psk psk2", 0},	/* WPA mode */
+	{"ath0X1_security_mode", "psk psk2", 0},	/* WPA mode */
+	{"ath1_security_mode", "psk psk2", 0},	/* WPA mode */
+#else
 	{"ath0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk)  */
-#ifndef HAVE_BUFFALO
+#endif
+#if !defined(HAVE_BUFFALO) && !defined(HAVE_AXTEL)
 #ifdef HAVE_CARLSONWIRELESS
 	{"ath0_akm", "psk2", 0},
 	{"ath0_wpa_psk", "7078227000", 0},	/* ath0 encryption key */
+#elif HAVE_IDEXX
+	{"ath0_akm", "psk psk2", 0},
+	{"ath0_wpa_psk", "IDEXXwlan1234", 0},	/* ath0 encryption key */
+	{"ath0.1_akm", "psk psk2", 0},
+	{"ath0.1_wpa_psk", "IDEXXguest1234", 0},	/* ath0 encryption key */
 #else
 	{"ath0_akm", "disabled", 0},
 	{"ath0_wpa_psk", "", 0},	/* WPA pre-shared key */
@@ -1395,8 +1428,13 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath1_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) 
 						 */
 #ifndef HAVE_BUFFALO
+#ifdef HAVE_IDEXX
+	{"ath1_akm", "psk psk2", 0},
+	{"ath1_wpa_psk", "IDEXXwlan1234", 0},	/* WPA pre-shared key */
+#else
 	{"ath1_akm", "disabled", 0},
 	{"ath1_wpa_psk", "", 0},	/* WPA pre-shared key */
+#endif
 #endif
 	{"ath1_radius_ipaddr", "", 0},	/* RADIUS server IP address */
 	{"ath1_radius_key", "", 0},	/* RADIUS shared secret */
@@ -1656,6 +1694,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"block_cookie", "0", 0},	/* Block Cookie [1|0] */
 	{"block_multicast", "0", 0},	/* Multicast Pass Through [1|0] */
 	{"block_loopback", "0", 0},	/* Block NAT loopback [1|0] */
+	{"block_snmp", "1", 0},	/* Block WAN SNMP access [1|0] */
 	{"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
 	{"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
 	{"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
@@ -1689,6 +1728,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_GGEW
 	{"remote_management", "0", 0},	/* Remote Management [1|0] */
+#elif HAVE_AXTEL
+	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_MAGICBOX
 	{"remote_management", "1", 0},	/* Remote Management [1|0] */
 #elif HAVE_RB600
@@ -1995,6 +2036,8 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_GGEW
 	{"telnetd_enable", "0", 0},
 #elif HAVE_UNFY
+	{"telnetd_enable", "0", 0},
+#elif HAVE_AXTEL
 	{"telnetd_enable", "0", 0},
 #elif HAVE_WRK54G
 	{"telnetd_enable", "0", 0},
@@ -2687,13 +2730,14 @@ struct nvram_tuple srouter_defaults[] = {
 	// #elif HAVE_ADM5120
 	// {"dhcp_dnsmasq", "0", 0},
 #elif HAVE_IDEXX
-	{"dhcp_dnsmasq", "0", 0},
+	{"dhcp_dnsmasq", "1", 0},
+	{"dns_dnsmasq", "0", 0},
 #else
 	{"dhcp_dnsmasq", "1", 0},
-#endif
 	{"dns_dnsmasq", "1", 0},
+#endif
 #ifdef HAVE_IDEXX
-	{"auth_dnsmasq", "0", 0},
+	{"auth_dnsmasq", "1", 0},
 #else
 	{"auth_dnsmasq", "1", 0},
 #endif

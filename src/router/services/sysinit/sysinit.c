@@ -672,6 +672,8 @@ static void buffalo_defaults(int force)
 			unsigned char *edata = (unsigned char *)ifr.ifr_hwaddr.sa_data;
 #if defined(HAVE_WZR300HP) || defined(HAVE_WHR300HP)
 			sprintf(eabuf, "BUFFALO-%02X%02X%02X", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
+#elif defined(HAVE_AXTEL)
+			sprintf(eabuf, "AXTELEXTREMO-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
 #else
 			sprintf(eabuf, "%02X%02X%02X%02X%02X%02X", edata[0] & 0xff, edata[1] & 0xff, edata[2] & 0xff, edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
 #endif
@@ -2127,8 +2129,12 @@ void start_restore_defaults(void)
 		nvram_set("lan_ipaddr", "192.168.180.1");
 #elif HAVE_BUFFALO
 		nvram_set("lan_ipaddr", "192.168.11.1");
+#elif HAVE_IDEXX
+		nvram_set("lan_ipaddr", "192.168.222.1");
 #elif HAVE_KORENRON
 		nvram_set("lan_ipaddr", "10.0.0.1");
+#elif HAVE_AXTEL
+		nvram_set("lan_ipaddr", "192.168.11.1");
 #else
 		nvram_set("lan_ipaddr", "192.168.1.1");
 #endif

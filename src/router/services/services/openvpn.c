@@ -195,10 +195,15 @@ void start_openvpnserver(void)
 	if (fp == NULL)
 		return;
 	fprintf(fp, "#!/bin/sh\n");
-#if defined(HAVE_TMK) || defined(HAVE_BKM)
+#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_get("gpiovpn");
 	if (gpiovpn != NULL) {
-		fprintf(fp, "gpio enable %s\n", gpiovpn);
+		if(strncmp(gpiovpn, "-", 1))
+			fprintf(fp, "gpio enable %s\n", gpiovpn);
+		else {
+			gpiovpn++;
+			fprintf(fp, "gpio disable %s\n", gpiovpn);
+		}
 	}
 #endif
 	//bring up tap interface when choosen
@@ -239,9 +244,16 @@ void start_openvpnserver(void)
 	if (fp == NULL)
 		return;
 	fprintf(fp, "#!/bin/sh\n");
-#if defined(HAVE_TMK) || defined(HAVE_BKM)
-	if (gpiovpn != NULL)
-		fprintf(fp, "gpio disable %s\n", gpiovpn);
+#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
+	gpiovpn = nvram_get("gpiovpn");
+	if (gpiovpn != NULL) {
+		if(strncmp(gpiovpn, "-", 1))
+			fprintf(fp, "gpio disable %s\n", gpiovpn);
+		else {
+			gpiovpn++;
+			fprintf(fp, "gpio enable %s\n", gpiovpn);
+		}
+	}
 #endif
 	// remove ebtales rules
 	if (nvram_match("block_multicast", "0")
@@ -282,10 +294,15 @@ void start_openvpnserver(void)
 
 void stop_openvpnserver(void)
 {
-#if defined(HAVE_TMK) || defined(HAVE_BKM)
+#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_get("gpiovpn");
 	if (gpiovpn != NULL) {
-		set_gpio(atoi(gpiovpn), 0);
+		if(strncmp(gpiovpn, "-", 1))
+			set_gpio(atoi(gpiovpn), 0);
+		else {
+			gpiovpn++;
+			set_gpio(atoi(gpiovpn), 1);
+		}
 	}
 #endif
 	if (stop_process("openvpnserver", "OpenVPN daemon (Server)")) {
@@ -422,6 +439,17 @@ void start_openvpn(void)
 		return;
 	}
 	fprintf(fp, "#!/bin/sh\n");
+#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
+	char *gpiovpn = nvram_get("gpiovpn");
+	if (gpiovpn != NULL) {
+		if(strncmp(gpiovpn, "-", 1))
+			fprintf(fp, "gpio enable %s\n", gpiovpn);
+		else {
+			gpiovpn++;
+			fprintf(fp, "gpio disable %s\n", gpiovpn);
+		}
+	}
+#endif
 	//bridge tap interface to br0 when choosen
 	if (nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_match("openvpncl_bridge", "1")
@@ -471,6 +499,15 @@ void start_openvpn(void)
 	if (fp == NULL)
 		return;
 	fprintf(fp, "#!/bin/sh\n");
+#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
+	if (gpiovpn != NULL)
+		if(strncmp(gpiovpn, "-", 1))
+			fprintf(fp, "gpio enable %s\n", gpiovpn);
+		else {
+			gpiovpn++;
+			fprintf(fp, "gpio disable %s\n", gpiovpn);
+		}
+#endif
 	if (nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_match("openvpncl_bridge", "1")
 	    && nvram_match("openvpncl_nat", "0"))
@@ -537,6 +574,17 @@ void stop_openvpn(void)
 
 void stop_openvpn_wandone(void)
 {
+#if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
+	char *gpiovpn = nvram_get("gpiovpn");
+	if (gpiovpn != NULL) {
+		if(strncmp(gpiovpn, "-", 1))
+			set_gpio(atoi(gpiovpn), 0);
+		else {
+			gpiovpn++;
+			set_gpio(atoi(gpiovpn), 1);
+		}
+	}
+#endif
 	if (nvram_invmatch("openvpncl_enable", "1"))
 		return;
 
