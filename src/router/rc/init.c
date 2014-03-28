@@ -555,6 +555,9 @@ int main(int argc, char **argv)
 #elif HAVE_ONNET
 #ifdef HAVE_ONNET_BLANK
         fprintf(fp, "Enterprise AP %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#elif HAVE_UNFY
+        //fprintf(fp, "UNIFY %s (c) 2013 \nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+        fprintf(fp, "Firmware %s (c) 2013 \nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #else
         fprintf(fp, "OTAi %s (c) 2014 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #endif
