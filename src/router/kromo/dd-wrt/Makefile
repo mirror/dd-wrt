@@ -400,6 +400,7 @@ ifeq ($(CONFIG_ESPOD),y)
 	cp espod/help/* $(INSTALLDIR)/www/help
 	cp espod/About.htm $(INSTALLDIR)/www
 	cp espod/Status_Router.asp $(INSTALLDIR)/www
+	cp espod/Status_Router.live.asp $(INSTALLDIR)/www
 	cp espod/SuperChannel.asp $(INSTALLDIR)/www
 	cp espod/UPnP.asp $(INSTALLDIR)/www
 	cp espod/Wiviz_Survey.asp $(INSTALLDIR)/www
