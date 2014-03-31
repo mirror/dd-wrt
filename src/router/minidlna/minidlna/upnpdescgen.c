@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "config.h"
+#include "upnpdescstrings.h"
 #include "getifaddr.h"
 #include "upnpdescgen.h"
 #include "minidlnapath.h"
