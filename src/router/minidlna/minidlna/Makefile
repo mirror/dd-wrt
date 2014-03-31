@@ -40,7 +40,7 @@ ETCINSTALLDIR = $(DESTDIR)/etc
 
 BASEOBJS = minidlna.o upnphttp.o upnpdescgen.o upnpsoap.o \
            upnpreplyparse.o minixml.o clients.o \
-           getifaddr.o daemonize.o upnpglobalvars.o \
+           getifaddr.o process.o upnpglobalvars.o \
            options.o minissdp.o uuid.o upnpevents.o \
            sql.o utils.o metadata.o scanner.o inotify.o \
            tivo_utils.o tivo_beacon.o tivo_commands.o \
