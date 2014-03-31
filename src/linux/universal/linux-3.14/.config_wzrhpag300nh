@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.14.0-rc5 Kernel Configuration
+# Linux/mips 3.14.0 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2130,6 +2130,3 @@ CONFIG_AVERAGE=y
 # CONFIG_DDR is not set
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_GFS2_FS is not set
-# CONFIG_GENWQE is not set
-# CONFIG_I40EVF is not set

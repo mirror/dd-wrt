@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.14.0-rc5 Kernel Configuration
+# Linux/arm 3.14.0 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -2359,6 +2359,3 @@ CONFIG_AVERAGE=y
 # CONFIG_CORDIC is not set
 # CONFIG_DDR is not set
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_GFS2_FS is not set
-# CONFIG_GENWQE is not set
-# CONFIG_I40EVF is not set

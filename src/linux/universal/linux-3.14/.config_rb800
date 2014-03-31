@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.14.0-rc5 Kernel Configuration
+# Linux/powerpc 3.14.0 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -2338,6 +2338,3 @@ CONFIG_CRYPTO_DEFLATE=m
 # CONFIG_OCF_OCF is not set
 CONFIG_PPC_LIB_RHEAP=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_GFS2_FS is not set
-# CONFIG_GENWQE is not set
-# CONFIG_I40EVF is not set
