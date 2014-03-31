@@ -1,7 +1,7 @@
-/* MiniUPnP project
- * http://miniupnp.free.fr/ or http://miniupnp.tuxfamily.org/
+/* Process handling
  *
- * Copyright (c) 2006, Thomas Bernard
+ * Copyright © 2013, Benoît Knecht <benoit.knecht@fsfe.org>
+ *
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,95 +26,41 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include <sys/types.h>
-#include <sys/stat.h>
+#ifndef __PROCESS_H__
+#define __PROCESS_H__
+
 #include <unistd.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-#include <signal.h>
 
-#include "daemonize.h"
-#include "config.h"
-#include "log.h"
+/**
+ * Fork a new child (just like fork()) but keep track of how many childs are
+ * already running, and refuse fo fork if there are too many.
+ * @return -1 if it couldn't fork, 0 in the child process, the pid of the
+ *         child process in the parent process.
+ */
+pid_t process_fork(void);
 
-int
-daemonize(void)
-{
-	int pid;
-#ifndef USE_DAEMON
-	int i;
+/**
+ * Handler to be called upon receiving SIGCHLD. This signal is received by the
+ * parent process when a child terminates, and this handler updates the number
+ * of running childs accordingly.
+ * @param signal The signal number.
+ */
+void process_handle_child_termination(int signal);
 
-	switch(fork())
-	{
-	/* fork error */
-	case -1:
-		perror("fork()");
-		exit(1);
-	
-	/* child process */
-	case 0:
-		/* obtain a new process group */
-		if( (pid = setsid()) < 0)
-		{
-			perror("setsid()");
-			exit(1);
-		}
+/**
+ * Daemonize the current process by forking itself and redirecting standard
+ * input, standard output and standard error to /dev/null.
+ * @return The pid of the process.
+ */ 
+int process_daemonize(void);
 
-		/* close all descriptors */
-		for (i=getdtablesize();i>=0;--i) close(i);		
+/**
+ * Check if the process corresponding to the pid found in the pid file is
+ * running.
+ * @param fname The path to the pid file.
+ * @return 0 if no other instance is running, -1 if the file name is invalid,
+ *         -2 if another instance is running.
+ */
+int process_check_if_running(const char *fname);
 
-		i = open("/dev/null",O_RDWR); /* open stdin */
-		dup(i); /* stdout */
-		dup(i); /* stderr */
-
-		umask(027);
-		chdir("/");
-
-		break;
-	/* parent process */
-	default:
-		exit(0);
-	}
-#else
-	if( daemon(0, 0) < 0 )
-		perror("daemon()");
-	pid = getpid();
-#endif
-	return pid;
-}
-
-int
-checkforrunning(const char * fname)
-{
-	char buffer[64];
-	int pidfile;
-	pid_t pid;
-
-	if(!fname || *fname == '\0')
-		return -1;
-
-	if( (pidfile = open(fname, O_RDONLY)) < 0)
-		return 0;
-	
-	memset(buffer, 0, 64);
-	
-	if(read(pidfile, buffer, 63))
-	{
-		if( (pid = atol(buffer)) > 0)
-		{
-			if(!kill(pid, 0))
-			{
-				close(pidfile);
-				return -2;
-			}
-		}
-	}
-	
-	close(pidfile);
-	
-	return 0;
-}
-
+#endif // __PROCESS_H__
