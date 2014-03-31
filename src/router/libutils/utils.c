@@ -1138,7 +1138,7 @@ int internal_getRouterBrand()
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
 #elif HAVE_VENTANA
-	char *filename = "/sys/devices/soc.0/2100000.aips-bus/21a0000.i2c/i2c-0/0-0051/eeprom";	/* bank2=0x100 kernel 3.0 */
+	char *filename = "/sys/devices/soc0/soc.0/2100000.aips-bus/21a0000.i2c/i2c-0/0-0051/eeprom";	/* bank2=0x100 kernel 3.0 */
 	FILE *file = fopen(filename, "rb");
 	if (!file) {
 		setRouter("Gateworks Ventana GW54XX");
@@ -1153,10 +1153,14 @@ int internal_getRouterBrand()
 			setRouter("Gateworks Ventana GW5400-C");
 		} else if (!strncmp(gwid, "GW5400-A", 8)) {
 			setRouter("Gateworks Ventana GW5400-A");
+		} else if (!strncmp(gwid, "GW5400", 6)) {
+			setRouter("Gateworks Ventana GW5400-X");
 		} else if (!strncmp(gwid, "GW5410-B", 8)) {
 			setRouter("Gateworks Ventana GW5410-B");
 		} else if (!strncmp(gwid, "GW5410-C", 8)) {
 			setRouter("Gateworks Ventana GW5410-C");
+		} else if (!strncmp(gwid, "GW5410", 6)) {
+			setRouter("Gateworks Ventana GW5410-X");
 		} else if (!strncmp(gwid, "GW5100", 6)) {
 			setRouter("Gateworks Ventana GW5100");
 			return ROUTER_BOARD_GW2380;
