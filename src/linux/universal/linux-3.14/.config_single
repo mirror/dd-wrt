@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 3.14.0-rc5 Kernel Configuration
+# Linux/i386 3.14.0 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -3588,6 +3588,3 @@ CONFIG_FONT_8x16=y
 # CONFIG_FONT_SUN8x16 is not set
 # CONFIG_FONT_SUN12x22 is not set
 # CONFIG_FONT_10x18 is not set
-# CONFIG_GFS2_FS is not set
-# CONFIG_GENWQE is not set
-# CONFIG_I40EVF is not set
