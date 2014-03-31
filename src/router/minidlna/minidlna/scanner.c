@@ -382,7 +382,7 @@ insert_containers(const char *name, const char *path, const char *refID, const c
 	valid_cache = 1;
 }
 
-int
+int64_t
 insert_directory(const char *name, const char *path, const char *base, const char *parentID, int objectID)
 {
 	int64_t detailID = 0;
@@ -440,7 +440,8 @@ insert_directory(const char *name, const char *path, const char *base, const cha
 	             "VALUES"
 	             " ('%s%s$%X', '%s%s', %lld, '%s', '%q')",
 	             base, parentID, objectID, base, parentID, detailID, class, name);
-	return 0;
+
+	return detailID;
 }
 
 int
@@ -594,95 +595,106 @@ sql_failed:
 	return (ret != SQLITE_OK);
 }
 
+static inline int
+filter_hidden(scan_filter *d)
+{
+	return (d->d_name[0] != '.');
+}
+
 static int
 filter_type(scan_filter *d)
 {
-	return ( (*d->d_name != '.') &&
-	         ((d->d_type == DT_DIR) ||
-	          (d->d_type == DT_LNK) ||
-	          (d->d_type == DT_UNKNOWN))
+	return ( (d->d_type == DT_DIR) ||
+	         (d->d_type == DT_LNK) ||
+	         (d->d_type == DT_UNKNOWN)
 	       );
 }
 
 static int
 filter_a(scan_filter *d)
 {
-	return ( filter_type(d) ||
-		 ((d->d_type == DT_REG) &&
-		  (is_audio(d->d_name) ||
-	           is_playlist(d->d_name))
-	       ) );
+	return ( filter_hidden(d) &&
+	         (filter_type(d) ||
+		  ((d->d_type == DT_REG) &&
+		   (is_audio(d->d_name) ||
+	            is_playlist(d->d_name))))
+	       );
 }
 
 static int
 filter_av(scan_filter *d)
 {
-	return ( filter_type(d) ||
-		 ((d->d_type == DT_REG) &&
-		  (is_audio(d->d_name) ||
-		   is_video(d->d_name) ||
-	           is_playlist(d->d_name)))
+	return ( filter_hidden(d) &&
+	         (filter_type(d) ||
+		  ((d->d_type == DT_REG) &&
+		   (is_audio(d->d_name) ||
+		    is_video(d->d_name) ||
+	            is_playlist(d->d_name))))
 	       );
 }
 
 static int
 filter_ap(scan_filter *d)
 {
-	return ( filter_type(d) ||
-		 ((d->d_type == DT_REG) &&
-		  (is_audio(d->d_name) ||
-		   is_image(d->d_name) ||
-	           is_playlist(d->d_name)))
+	return ( filter_hidden(d) &&
+	         (filter_type(d) ||
+		  ((d->d_type == DT_REG) &&
+		   (is_audio(d->d_name) ||
+		    is_image(d->d_name) ||
+	            is_playlist(d->d_name))))
 	       );
 }
 
 static int
 filter_v(scan_filter *d)
 {
-	return ( filter_type(d) ||
-		 (d->d_type == DT_REG &&
-	          is_video(d->d_name))
+	return ( filter_hidden(d) &&
+	         (filter_type(d) ||
+		  (d->d_type == DT_REG &&
+	           is_video(d->d_name)))
 	       );
 }
 
 static int
 filter_vp(scan_filter *d)
 {
-	return ( filter_type(d) ||
-		 ((d->d_type == DT_REG) &&
-		  (is_video(d->d_name) ||
-	           is_image(d->d_name)))
+	return ( filter_hidden(d) &&
+	         (filter_type(d) ||
+		  ((d->d_type == DT_REG) &&
+		   (is_video(d->d_name) ||
+	            is_image(d->d_name))))
 	       );
 }
 
 static int
 filter_p(scan_filter *d)
 {
-	return ( filter_type(d) ||
-		 (d->d_type == DT_REG &&
-		  is_image(d->d_name))
+	return ( filter_hidden(d) &&
+	         (filter_type(d) ||
+		  (d->d_type == DT_REG &&
+		   is_image(d->d_name)))
 	       );
 }
 
 static int
 filter_avp(scan_filter *d)
 {
-	return ( filter_type(d) ||
-		 ((d->d_type == DT_REG) &&
-		  (is_audio(d->d_name) ||
-		   is_image(d->d_name) ||
-		   is_video(d->d_name) ||
-	           is_playlist(d->d_name)))
+	return ( filter_hidden(d) &&
+	         (filter_type(d) ||
+		  ((d->d_type == DT_REG) &&
+		   (is_audio(d->d_name) ||
+		    is_image(d->d_name) ||
+		    is_video(d->d_name) ||
+	            is_playlist(d->d_name))))
 	       );
 }
 
-void
+static void
 ScanDirectory(const char *dir, const char *parent, media_types dir_types)
 {
 	struct dirent **namelist;
-	int i, n, startID=0;
-	char parent_id[PATH_MAX];
-	char full_path[PATH_MAX];
+	int i, n, startID = 0;
+	char *full_path;
 	char *name = NULL;
 	static long long unsigned int fileno = 0;
 	enum file_types type;
@@ -715,8 +727,16 @@ ScanDirectory(const char *dir, const char *parent, media_types dir_types)
 			n = -1;
 			break;
 	}
-	if (n < 0) {
+	if( n < 0 )
+	{
 		DPRINTF(E_WARN, L_SCANNER, "Error scanning %s\n", dir);
+		return;
+	}
+
+	full_path = malloc(PATH_MAX);
+	if (!full_path)
+	{
+		DPRINTF(E_ERROR, L_SCANNER, "Memory allocation failed scanning %s\n", dir);
 		return;
 	}
 
@@ -732,7 +752,7 @@ ScanDirectory(const char *dir, const char *parent, media_types dir_types)
 			break;
 #endif
 		type = TYPE_UNKNOWN;
-		sprintf(full_path, "%s/%s", dir, namelist[i]->d_name);
+		snprintf(full_path, PATH_MAX, "%s/%s", dir, namelist[i]->d_name);
 		name = escape_tag(namelist[i]->d_name, 1);
 		if( namelist[i]->d_type == DT_DIR )
 		{
@@ -748,9 +768,11 @@ ScanDirectory(const char *dir, const char *parent, media_types dir_types)
 		}
 		if( (type == TYPE_DIR) && (access(full_path, R_OK|X_OK) == 0) )
 		{
+			char *parent_id;
 			insert_directory(name, full_path, BROWSEDIR_ID, (parent ? parent:""), i+startID);
-			sprintf(parent_id, "%s$%X", (parent ? parent:""), i+startID);
+			xasprintf(&parent_id, "%s$%X", (parent ? parent:""), i+startID);
 			ScanDirectory(full_path, parent_id, dir_types);
+			free(parent_id);
 		}
 		else if( type == TYPE_FILE && (access(full_path, R_OK) == 0) )
 		{
@@ -761,46 +783,70 @@ ScanDirectory(const char *dir, const char *parent, media_types dir_types)
 		free(namelist[i]);
 	}
 	free(namelist);
+	free(full_path);
 	if( !parent )
 	{
 		DPRINTF(E_WARN, L_SCANNER, _("Scanning %s finished (%llu files)!\n"), dir, fileno);
 	}
 }
 
-void
-start_scanner()
+static void
+_notify_start(void)
 {
-	struct media_dir_s *media_path = media_dirs;
-	char name[MAXPATHLEN];
-
-	if (setpriority(PRIO_PROCESS, 0, 15) == -1)
-		DPRINTF(E_WARN, L_INOTIFY,  "Failed to reduce scanner thread priority\n");
-
 #ifdef READYNAS
 	FILE *flag = fopen("/ramfs/.upnp-av_scan", "w");
 	if( flag )
 		fclose(flag);
 #endif
-	setlocale(LC_COLLATE, "");
+}
 
-	av_register_all();
-	av_log_set_level(AV_LOG_PANIC);
-	while( media_path )
-	{
-		int64_t id;
-		strncpyt(name, media_path->path, sizeof(name));
-		id = GetFolderMetadata(basename(name), media_path->path, NULL, NULL, 0);
-		/* Use TIMESTAMP to store the media type */
-		sql_exec(db, "UPDATE DETAILS set TIMESTAMP = %d where ID = %lld", media_path->types, (long long)id);
-		ScanDirectory(media_path->path, NULL, media_path->types);
-		sql_exec(db, "INSERT into SETTINGS values (%Q, %Q)", "media_dir", media_path->path);
-		media_path = media_path->next;
-	}
+static void
+_notify_stop(void)
+{
 #ifdef READYNAS
 	if( access("/ramfs/.rescan_done", F_OK) == 0 )
 		system("/bin/sh /ramfs/.rescan_done");
 	unlink("/ramfs/.upnp-av_scan");
 #endif
+}
+
+void
+start_scanner()
+{
+	struct media_dir_s *media_path;
+	char path[MAXPATHLEN];
+
+	if (setpriority(PRIO_PROCESS, 0, 15) == -1)
+		DPRINTF(E_WARN, L_INOTIFY,  "Failed to reduce scanner thread priority\n");
+	_notify_start();
+
+	setlocale(LC_COLLATE, "");
+
+	av_register_all();
+	av_log_set_level(AV_LOG_PANIC);
+	for( media_path = media_dirs; media_path != NULL; media_path = media_path->next )
+	{
+		int64_t id;
+		char *bname, *parent = NULL;
+		char buf[8];
+		strncpyt(path, media_path->path, sizeof(path));
+		bname = basename(path);
+		/* If there are multiple media locations, add a level to the ContentDirectory */
+		if( media_dirs && media_dirs->next )
+		{
+			int startID = get_next_available_id("OBJECTS", BROWSEDIR_ID);
+			id = insert_directory(bname, path, BROWSEDIR_ID, "", startID);
+			sprintf(buf, "$%X", startID);
+			parent = buf;
+		}
+		else
+			id = GetFolderMetadata(bname, media_path->path, NULL, NULL, 0);
+		/* Use TIMESTAMP to store the media type */
+		sql_exec(db, "UPDATE DETAILS set TIMESTAMP = %d where ID = %lld", media_path->types, (long long)id);
+		ScanDirectory(media_path->path, parent, media_path->types);
+		sql_exec(db, "INSERT into SETTINGS values (%Q, %Q)", "media_dir", media_path->path);
+	}
+	_notify_stop();
 	/* Create this index after scanning, so it doesn't slow down the scanning process.
 	 * This index is very useful for large libraries used with an XBox360 (or any
 	 * client that uses UPnPSearch on large containers). */

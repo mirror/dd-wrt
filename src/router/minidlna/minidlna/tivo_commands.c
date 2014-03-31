@@ -116,7 +116,7 @@ SendFormats(struct upnphttp *h, const char *sformat)
 }
 
 static char *
-unescape_tag(char *tag)
+tivo_unescape_tag(char *tag)
 {
 	modifyString(tag, "&amp;amp;", "&amp;");
 	modifyString(tag, "&amp;amp;lt;", "&lt;");
@@ -141,7 +141,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 	if( strncmp(class, "item", 4) == 0 )
 	{
 		int flags = 0;
-		unescape_tag(title);
+		tivo_unescape_tag(title);
 		if( strncmp(mime, "audio", 5) == 0 )
 		{
 			flags |= FLAG_NO_PARAMS;
@@ -208,15 +208,15 @@ callback(void *args, int argc, char **argv, char **azColName)
 		{
 			return 0;
 		}
-		strcatf(str, "<Title>%s</Title>", unescape_tag(title));
+		strcatf(str, "<Title>%s</Title>", tivo_unescape_tag(title));
 		if( artist ) {
-			strcatf(str, "<ArtistName>%s</ArtistName>", unescape_tag(artist));
+			strcatf(str, "<ArtistName>%s</ArtistName>", tivo_unescape_tag(artist));
 		}
 		if( album ) {
-			strcatf(str, "<AlbumTitle>%s</AlbumTitle>", unescape_tag(album));
+			strcatf(str, "<AlbumTitle>%s</AlbumTitle>", tivo_unescape_tag(album));
 		}
 		if( genre ) {
-			strcatf(str, "<MusicGenre>%s</MusicGenre>", unescape_tag(genre));
+			strcatf(str, "<MusicGenre>%s</MusicGenre>", tivo_unescape_tag(genre));
 		}
 		if( resolution ) {
 			char *width = strsep(&resolution, "x");
@@ -277,7 +277,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 		                 "<ContentType>x-tivo-container/folder</ContentType>"
 		               "</Content>"
 		             "</Links>",
-		             unescape_tag(title), count, id);
+		             tivo_unescape_tag(title), count, id);
 	}
 	strcatf(str, "</Item>");
 
@@ -394,7 +394,7 @@ SendContainer(struct upnphttp *h, const char *objectID, int itemStart, int itemC
 	}
 	else
 	{
-		item = sql_get_text_field(db, "SELECT NAME from OBJECTS where OBJECT_ID = '%s'", objectID);
+		item = sql_get_text_field(db, "SELECT NAME from OBJECTS where OBJECT_ID = '%q'", objectID);
 		if( item )
 		{
 			title = escape_tag(item, 1);
@@ -406,12 +406,12 @@ SendContainer(struct upnphttp *h, const char *objectID, int itemStart, int itemC
 
 	if( recurse )
 	{
-		xasprintf(&which, "OBJECT_ID glob '%s$*'", objectID);
+		which = sqlite3_mprintf("OBJECT_ID glob '%q$*'", objectID);
 		strcpy(groupBy, "group by DETAIL_ID");
 	}
 	else
 	{
-		xasprintf(&which, "PARENT_ID = '%s'", objectID);
+		which = sqlite3_mprintf("PARENT_ID = '%q'", objectID);
 	}
 
 	if( sortOrder )
@@ -631,8 +631,8 @@ SendContainer(struct upnphttp *h, const char *objectID, int itemStart, int itemC
 		DPRINTF(E_ERROR, L_HTTP, "SQL error: %s\n", zErrMsg);
 		sqlite3_free(zErrMsg);
 		Send500(h);
+		sqlite3_free(which);
 		free(title);
-		free(which);
 		free(resp);
 		return;
 	}
@@ -653,7 +653,7 @@ SendContainer(struct upnphttp *h, const char *objectID, int itemStart, int itemC
 	memcpy(str.data, &str_buf, ret);
 	str.size = str.off+ret;
 	free(title);
-	free(which);
+	sqlite3_free(which);
 	BuildResp_upnphttp(h, str.data, str.size);
 	free(resp);
 	SendResp_upnphttp(h);
@@ -763,7 +763,8 @@ ProcessTiVoCommand(struct upnphttp *h, const char *orig_path)
 			}
 			else
 			{
-				SendContainer(h, container, itemStart, itemCount, anchorItem, anchorOffset, recurse, sortOrder, filter, randomSeed);
+				SendContainer(h, container, itemStart, itemCount, anchorItem,
+				              anchorOffset, recurse, sortOrder, filter, randomSeed);
 			}
 		}
 		else if( strcmp(command, "QueryItem") == 0 )
