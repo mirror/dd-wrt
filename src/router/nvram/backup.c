@@ -265,6 +265,7 @@ static char *filter[] = { "lan_ifnames",
 	"cert_region",
 	"devinfo_version",
 	"modelDescription",
+	"loader_version",
 	NULL
 };
 
