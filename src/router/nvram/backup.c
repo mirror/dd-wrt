@@ -266,6 +266,7 @@ static char *filter[] = { "lan_ifnames",
 	"devinfo_version",
 	"modelDescription",
 	"loader_version",
+	"gs_sku_id",
 	NULL
 };
 
