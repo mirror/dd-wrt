@@ -1917,6 +1917,15 @@ void start_sysinit(void)
 				    putc(e,out);
 				    e = getc(fp);
 				}			
+			fclose(out);
+			fclose(fp);
+			fclose(bp);
+			out = NULL;
+			bp = NULL;
+			fp = NULL;
+			fprintf(stderr,"update bootloader\n");
+			sysprintf("mtd -f write /tmp/cfe.bin boot");
+			fprintf(stderr,"reboot\n");
 			sys_reboot();
 			}
 			if (fp)
@@ -1925,7 +1934,6 @@ void start_sysinit(void)
 			    fclose(bp);
 			if (out)
 			    fclose(out);
-			sysprintf("mtd -f write /tmp/cfe.bin boot");
 		}
 		break;
 
