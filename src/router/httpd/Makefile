@@ -1095,6 +1095,29 @@ CFLAGS += -I$(TOP)/jansson/src
 #OBJS += http.o
 
 ifneq ($(CONFIG_NOSSL),y)
+ifeq ($(CONFIG_OPENSSL),y)
+ifeq ($(CONFIG_FREERADIUS),y)
+CONFIG_MATRIXSSL=n
+endif
+ifneq ($(CONFIG_ASTERISK),y)
+CONFIG_MATRIXSSL=n
+endif
+ifeq ($(CONFIG_AIRCRACK),y)
+CONFIG_MATRIXSSL=n
+endif
+ifeq ($(CONFIG_POUND),y)
+CONFIG_MATRIXSSL=n
+endif
+ifeq ($(CONFIG_IPETH),y)
+CONFIG_MATRIXSSL=n
+endif
+ifeq ($(CONFIG_VPNC),y)
+CONFIG_MATRIXSSL=n
+endif
+ifeq ($(CONFIG_TOR),y)
+CONFIG_MATRIXSSL=n
+endif
+endif
 
 ifneq ($(CONFIG_MATRIXSSL),y)
 ifeq ($(CONFIG_OPENSSL),y)
