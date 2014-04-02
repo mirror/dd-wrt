@@ -181,16 +181,18 @@ static void do_ej_s(int (*get) (void), webs_t stream)	// jimmy, https, 8/4/2003
 			goto release;
 
 		if (!asp) {
-			if (pattern[0] == '{') {
+			char pat = pattern[0];
+			if (pat == '{') {
+				if (len<3)
+				    continue;
 				ret = decompress(stream, pattern, len);
-				if (ret) {
-					if (len == 3)
-						len = 0;
-					continue;
-				}
+				if (!ret) 
+				    wfputs(pattern, stream);	//jimmy, https, 8/4/2003
+				len = 0;
+				continue;
 			}
 			/* Look for <% ... */
-			if (pattern[0] == 0x3c) {
+			if (pat == 0x3c) {
 				if (len == 1)
 					continue;
 				if (pattern[1] == 0x25) {
@@ -198,6 +200,14 @@ static void do_ej_s(int (*get) (void), webs_t stream)	// jimmy, https, 8/4/2003
 					continue;
 				}
 			}
+			pat = pattern[len - 1];
+			if (pat == '{' || pat == 0x3c) {
+				pattern[len - 1]='\0';
+				wfputs(pattern, stream);	//jimmy, https, 8/4/2003
+				pattern[0]=pat;
+				len = 1;
+			}
+			continue;
 		} else {
 			if (unqstrstr(asp, "%>")) {
 				for (func = asp; func < &pattern[len]; func = end) {
@@ -226,6 +236,8 @@ static void do_ej_s(int (*get) (void), webs_t stream)	// jimmy, https, 8/4/2003
 		wfputs(pattern, stream);	//jimmy, https, 8/4/2003
 		len = 0;
 	}
+	if (len)
+		wfputs(pattern, stream);	//jimmy, https, 8/4/2003
 
 #ifndef MEMLEAK_OVERRIDE
 	if (global_handle)
