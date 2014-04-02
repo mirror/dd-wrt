@@ -1898,6 +1898,35 @@ void start_sysinit(void)
 		nvram_set("0:ledbh12", "7");
 		nvram_set("1:ledbh10", "7");
 		set_gpio(9, 1);	// fixup ses button
+		if (!nvram_match("loader_version","v0.03")) {
+			FILE *fp = fopen("/etc/cfe/cfe_600.bin","rb");
+			FILE *bp = fopen("/dev/mtdblock0","rb");
+			FILE *out = fopen("/tmp/cfe.bin","wb");
+			if (fp && bp && out) {
+				int i;
+				for (i=0;i<0x400;i++) {
+				    putc(getc(fp),out);
+				    getc(bp);
+				}
+				for (i=0;i<0x1000;i++) {
+				    putc(getc(bp),out);
+				    getc(fp);
+				}	
+				int e = getc(fp);		
+				for (i=0;e!=EOF;i++) {
+				    putc(e,out);
+				    e = getc(fp);
+				}			
+			sys_reboot();
+			}
+			if (fp)
+			    fclose(fp);
+			if (bp)
+			    fclose(bp);
+			if (out)
+			    fclose(out);
+			sysprintf("mtd -f write /tmp/cfe.bin boot");
+		}
 		break;
 
 	default:
