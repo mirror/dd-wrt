@@ -266,7 +266,7 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	}
 	memdebug_leave();
 	
-#ifndef HAVE_IAS
+#if 0 //ndef HAVE_IAS
 	u_int64_t auth_time = (u_int64_t)( atoll(nvram_safe_get("auth_time")) );
 	u_int64_t curr_time = (u_int64_t)time(NULL);
 	char s_curr_time[24];
@@ -1608,7 +1608,6 @@ int wfputc(char c, webs_t wp)
 int wfputs(char *buf, webs_t wp)
 {
 	FILE *fp = wp->fp;
-
 #ifdef HAVE_HTTPS
 	if (do_ssl)
 #ifdef HAVE_OPENSSL
