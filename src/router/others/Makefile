@@ -45,6 +45,10 @@ install:
 	install -d $(INSTALLDIR)/usr/lib/firmware	
 	install -d $(INSTALLDIR)/lib
 	install services $(INSTALLDIR)/etc
+ifdef CONFIG_NORTHSTAR
+	install -d $(INSTALLDIR)/etc/cfe
+	install cfe/cfe_600.bin $(INSTALLDIR)/etc/cfe
+endif
 ifdef CONFIG_RT3052
 	install -d $(INSTALLDIR)/etc/wlan
 	install rt2880/RT30*.bin $(INSTALLDIR)/etc/wlan
