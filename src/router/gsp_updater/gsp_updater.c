@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 		print_help();
 		exit(-1);
 	}
-
+	int rev = atoi(argv[3]);
 	file = open("/dev/i2c-0", O_RDWR);
 	if (file < 0 && errno == ENOENT) {
 		file = open("/dev/i2c/0", O_RDWR);
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 
 	ret = i2c_smbus_read_byte_data(file, 14);
 	printf("Current GSP Firmware Rev: %i\n", ret & 0xff);
-	if ((ret & 0xff) == 35)
+	if ((ret & 0xff) == rev)
 	    {
 	    printf("no update required\n");
 	    exit(0);
