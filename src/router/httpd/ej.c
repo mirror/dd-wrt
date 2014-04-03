@@ -183,13 +183,12 @@ static void do_ej_s(int (*get) (void), webs_t stream)	// jimmy, https, 8/4/2003
 		if (!asp) {
 			char pat = pattern[0];
 			if (pat == '{') {
-				if (len<3)
-				    continue;
 				ret = decompress(stream, pattern, len);
-				if (!ret) 
-				    wfputs(pattern, stream);	//jimmy, https, 8/4/2003
-				len = 0;
-				continue;
+				if (ret) {
+					if (len == 3)
+						len = 0;
+					continue;
+				}
 			}
 			/* Look for <% ... */
 			if (pat == 0x3c) {
