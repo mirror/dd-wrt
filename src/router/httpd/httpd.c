@@ -328,7 +328,6 @@ void send_authenticate(char *realm)
 #endif
 	/* init these after a successful auth */
 	nvram_set("auth_time", s_curr_time);
-	nvram_set("ptoken", "0");
 }
 
 static void send_error(int status, char *title, char *extra_header, char *text)
