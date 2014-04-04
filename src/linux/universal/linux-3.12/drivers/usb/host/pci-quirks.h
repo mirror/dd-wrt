@@ -13,6 +13,8 @@ static inline void sb800_prefetch(struct device *dev, int on) {}
 #endif  /* CONFIG_PCI */
 #if defined(CONFIG_PCI) && !defined(CONFIG_PCI_DISABLE_COMMON_QUIRKS)
 int usb_amd_find_chipset_info(void);
+bool usb_amd_hang_symptom_quirk(void);
+bool usb_amd_prefetch_quirk(void);
 void usb_amd_dev_put(void);
 void usb_amd_quirk_pll_disable(void);
 void usb_amd_quirk_pll_enable(void);
