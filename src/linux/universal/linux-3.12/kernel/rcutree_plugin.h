@@ -1627,19 +1627,25 @@ module_param(rcu_idle_gp_delay, int, 0644);
 static int rcu_idle_lazy_gp_delay = RCU_IDLE_LAZY_GP_DELAY;
 module_param(rcu_idle_lazy_gp_delay, int, 0644);
 
-extern int tick_nohz_enabled;
+extern int tick_nohz_active;
 
 /*
- * Try to advance callbacks for all flavors of RCU on the current CPU.
- * Afterwards, if there are any callbacks ready for immediate invocation,
- * return true.
+ * Try to advance callbacks for all flavors of RCU on the current CPU, but
+ * only if it has been awhile since the last time we did so.  Afterwards,
+ * if there are any callbacks ready for immediate invocation, return true.
  */
 static bool rcu_try_advance_all_cbs(void)
 {
 	bool cbs_ready = false;
 	struct rcu_data *rdp;
+	struct rcu_dynticks *rdtp = this_cpu_ptr(&rcu_dynticks);
 	struct rcu_node *rnp;
 	struct rcu_state *rsp;
+
+	/* Exit early if we advanced recently. */
+	if (jiffies == rdtp->last_advance_all)
+		return 0;
+	rdtp->last_advance_all = jiffies;
 
 	for_each_rcu_flavor(rsp) {
 		rdp = this_cpu_ptr(rsp->rda);
@@ -1718,7 +1724,7 @@ static void rcu_prepare_for_idle(int cpu)
 	int tne;
 
 	/* Handle nohz enablement switches conservatively. */
-	tne = ACCESS_ONCE(tick_nohz_enabled);
+	tne = ACCESS_ONCE(tick_nohz_active);
 	if (tne != rdtp->tick_nohz_enabled_snap) {
 		if (rcu_cpu_has_callbacks(cpu, NULL))
 			invoke_rcu_core(); /* force nohz to see update. */
@@ -1739,6 +1745,8 @@ static void rcu_prepare_for_idle(int cpu)
 	 */
 	if (rdtp->all_lazy &&
 	    rdtp->nonlazy_posted != rdtp->nonlazy_posted_snap) {
+		rdtp->all_lazy = false;
+		rdtp->nonlazy_posted_snap = rdtp->nonlazy_posted;
 		invoke_rcu_core();
 		return;
 	}

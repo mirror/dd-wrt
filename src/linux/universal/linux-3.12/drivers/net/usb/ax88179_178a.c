@@ -1031,19 +1031,11 @@ static int ax88179_bind(struct usbnet *dev, struct usb_interface *intf)
 	dev->mii.phy_id = 0x03;
 	dev->mii.supports_gmii = 1;
 
-	if (usb_device_no_sg_constraint(dev->udev))
-		dev->can_dma_sg = 1;
-
 	dev->net->features |= NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM |
 			      NETIF_F_RXCSUM;
 
 	dev->net->hw_features |= NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM |
 				 NETIF_F_RXCSUM;
-
-	if (dev->can_dma_sg) {
-		dev->net->features |= NETIF_F_SG | NETIF_F_TSO;
-		dev->net->hw_features |= NETIF_F_SG | NETIF_F_TSO;
-	}
 
 	/* Enable checksum offload */
 	*tmp = AX_RXCOE_IP | AX_RXCOE_TCP | AX_RXCOE_UDP |
@@ -1119,6 +1111,10 @@ static int ax88179_rx_fixup(struct usbnet *dev, struct sk_buff *skb)
 	u32 rx_hdr;
 	u16 hdr_off;
 	u32 *pkt_hdr;
+
+	/* This check is no longer done by usbnet */
+	if (skb->len < dev->net->hard_header_len)
+		return 0;
 
 	skb_trim(skb, skb->len - 4);
 	memcpy(&rx_hdr, skb_tail_pointer(skb), 4);
