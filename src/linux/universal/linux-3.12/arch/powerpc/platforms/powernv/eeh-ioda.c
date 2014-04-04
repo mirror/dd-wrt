@@ -463,8 +463,7 @@ static int ioda_eeh_bridge_reset(struct pci_controller *hose,
 static int ioda_eeh_reset(struct eeh_pe *pe, int option)
 {
 	struct pci_controller *hose = pe->phb;
-	struct eeh_dev *edev;
-	struct pci_dev *dev;
+	struct pci_bus *bus;
 	int ret;
 
 	/*
@@ -493,31 +492,11 @@ static int ioda_eeh_reset(struct eeh_pe *pe, int option)
 	if (pe->type & EEH_PE_PHB) {
 		ret = ioda_eeh_phb_reset(hose, option);
 	} else {
-		if (pe->type & EEH_PE_DEVICE) {
-			/*
-			 * If it's device PE, we didn't refer to the parent
-			 * PCI bus yet. So we have to figure it out indirectly.
-			 */
-			edev = list_first_entry(&pe->edevs,
-					struct eeh_dev, list);
-			dev = eeh_dev_to_pci_dev(edev);
-			dev = dev->bus->self;
-		} else {
-			/*
-			 * If it's bus PE, the parent PCI bus is already there
-			 * and just pick it up.
-			 */
-			dev = pe->bus->self;
-		}
-
-		/*
-		 * Do reset based on the fact that the direct upstream bridge
-		 * is root bridge (port) or not.
-		 */
-		if (dev->bus->number == 0)
+		bus = eeh_pe_bus_get(pe);
+		if (pci_is_root_bus(bus))
 			ret = ioda_eeh_root_reset(hose, option);
 		else
-			ret = ioda_eeh_bridge_reset(hose, dev, option);
+			ret = ioda_eeh_bridge_reset(hose, bus->self, option);
 	}
 
 	return ret;
@@ -787,12 +766,12 @@ static int ioda_eeh_get_pe(struct pci_controller *hose,
  */
 static int ioda_eeh_next_error(struct eeh_pe **pe)
 {
-	struct pci_controller *hose, *tmp;
+	struct pci_controller *hose;
 	struct pnv_phb *phb;
 	u64 frozen_pe_no;
 	u16 err_type, severity;
 	long rc;
-	int ret = 1;
+	int ret = EEH_NEXT_ERR_NONE;
 
 	/*
 	 * While running here, it's safe to purge the event queue.
@@ -802,7 +781,7 @@ static int ioda_eeh_next_error(struct eeh_pe **pe)
 	eeh_remove_event(NULL);
 	opal_notifier_update_evt(OPAL_EVENT_PCI_ERROR, 0x0ul);
 
-	list_for_each_entry_safe(hose, tmp, &hose_list, list_node) {
+	list_for_each_entry(hose, &hose_list, list_node) {
 		/*
 		 * If the subordinate PCI buses of the PHB has been
 		 * removed, we needn't take care of it any more.
@@ -841,19 +820,19 @@ static int ioda_eeh_next_error(struct eeh_pe **pe)
 		switch (err_type) {
 		case OPAL_EEH_IOC_ERROR:
 			if (severity == OPAL_EEH_SEV_IOC_DEAD) {
-				list_for_each_entry_safe(hose, tmp,
-						&hose_list, list_node) {
+				list_for_each_entry(hose, &hose_list,
+						    list_node) {
 					phb = hose->private_data;
 					phb->eeh_state |= PNV_EEH_STATE_REMOVED;
 				}
 
 				pr_err("EEH: dead IOC detected\n");
-				ret = 4;
-				goto out;
+				ret = EEH_NEXT_ERR_DEAD_IOC;
 			} else if (severity == OPAL_EEH_SEV_INF) {
 				pr_info("EEH: IOC informative error "
 					"detected\n");
 				ioda_eeh_hub_diag(hose);
+				ret = EEH_NEXT_ERR_NONE;
 			}
 
 			break;
@@ -865,21 +844,20 @@ static int ioda_eeh_next_error(struct eeh_pe **pe)
 				pr_err("EEH: dead PHB#%x detected\n",
 					hose->global_number);
 				phb->eeh_state |= PNV_EEH_STATE_REMOVED;
-				ret = 3;
-				goto out;
+				ret = EEH_NEXT_ERR_DEAD_PHB;
 			} else if (severity == OPAL_EEH_SEV_PHB_FENCED) {
 				if (ioda_eeh_get_phb_pe(hose, pe))
 					break;
 
 				pr_err("EEH: fenced PHB#%x detected\n",
 					hose->global_number);
-				ret = 2;
-				goto out;
+				ret = EEH_NEXT_ERR_FENCED_PHB;
 			} else if (severity == OPAL_EEH_SEV_INF) {
 				pr_info("EEH: PHB#%x informative error "
 					"detected\n",
 					hose->global_number);
 				ioda_eeh_phb_diag(hose);
+				ret = EEH_NEXT_ERR_NONE;
 			}
 
 			break;
@@ -889,13 +867,23 @@ static int ioda_eeh_next_error(struct eeh_pe **pe)
 
 			pr_err("EEH: Frozen PE#%x on PHB#%x detected\n",
 				(*pe)->addr, (*pe)->phb->global_number);
-			ret = 1;
-			goto out;
+			ret = EEH_NEXT_ERR_FROZEN_PE;
+			break;
+		default:
+			pr_warn("%s: Unexpected error type %d\n",
+				__func__, err_type);
 		}
+
+		/*
+		 * If we have no errors on the specific PHB or only
+		 * informative error there, we continue poking it.
+		 * Otherwise, we need actions to be taken by upper
+		 * layer.
+		 */
+		if (ret > EEH_NEXT_ERR_INF)
+			break;
 	}
 
-	ret = 0;
-out:
 	return ret;
 }
 

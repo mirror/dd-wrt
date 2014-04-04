@@ -504,6 +504,7 @@ static int xs_nospace(struct rpc_task *task)
 	struct rpc_rqst *req = task->tk_rqstp;
 	struct rpc_xprt *xprt = req->rq_xprt;
 	struct sock_xprt *transport = container_of(xprt, struct sock_xprt, xprt);
+	struct sock *sk = transport->inet;
 	int ret = -EAGAIN;
 
 	dprintk("RPC: %5u xmit incomplete (%u left of %u)\n",
@@ -521,7 +522,7 @@ static int xs_nospace(struct rpc_task *task)
 			 * window size
 			 */
 			set_bit(SOCK_NOSPACE, &transport->sock->flags);
-			transport->inet->sk_write_pending++;
+			sk->sk_write_pending++;
 			/* ...and wait for more buffer space */
 			xprt_wait_for_buffer_space(task, xs_nospace_callback);
 		}
@@ -531,6 +532,9 @@ static int xs_nospace(struct rpc_task *task)
 	}
 
 	spin_unlock_bh(&xprt->transport_lock);
+
+	/* Race breaker in case memory is freed before above code is called */
+	sk->sk_write_space(sk);
 	return ret;
 }
 
@@ -849,6 +853,8 @@ static void xs_close(struct rpc_xprt *xprt)
 
 	dprintk("RPC:       xs_close xprt %p\n", xprt);
 
+	cancel_delayed_work_sync(&transport->connect_worker);
+
 	xs_reset_transport(transport);
 	xprt->reestablish_timeout = 0;
 
@@ -883,11 +889,7 @@ static void xs_local_destroy(struct rpc_xprt *xprt)
  */
 static void xs_destroy(struct rpc_xprt *xprt)
 {
-	struct sock_xprt *transport = container_of(xprt, struct sock_xprt, xprt);
-
 	dprintk("RPC:       xs_destroy xprt %p\n", xprt);
-
-	cancel_delayed_work_sync(&transport->connect_worker);
 
 	xs_local_destroy(xprt);
 }
@@ -1830,6 +1832,10 @@ static inline void xs_reclassify_socket(int family, struct socket *sock)
 }
 #endif
 
+static void xs_dummy_setup_socket(struct work_struct *work)
+{
+}
+
 static struct socket *xs_create_sock(struct rpc_xprt *xprt,
 		struct sock_xprt *transport, int family, int type, int protocol)
 {
@@ -2668,6 +2674,9 @@ static struct rpc_xprt *xs_setup_local(struct xprt_create *args)
 
 	xprt->ops = &xs_local_ops;
 	xprt->timeout = &xs_local_default_timeout;
+
+	INIT_DELAYED_WORK(&transport->connect_worker,
+			xs_dummy_setup_socket);
 
 	switch (sun->sun_family) {
 	case AF_LOCAL:
