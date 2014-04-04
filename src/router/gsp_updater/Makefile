@@ -28,14 +28,14 @@ install: gsp_updater i2cset i2cget i2cdump
 	install -d $(INSTDIR)
 	install -m $(INSTMODE) -o $(INSTOWNER) -g $(INSTGROUP) gsp_updater i2cset i2cget i2cdump $(INSTDIR)
 	install -d $(INSTALLDIR)/etc
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2380_v35.txt $(INSTALLDIR)/etc/gsc_2380_v35.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2382_v35.txt $(INSTALLDIR)/etc/gsc_2382_v35.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2383_v35.txt $(INSTALLDIR)/etc/gsc_2383_v35.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2380_v38.txt $(INSTALLDIR)/etc/gsc_2380_v38.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2382_v38.txt $(INSTALLDIR)/etc/gsc_2382_v38.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2383_v38.txt $(INSTALLDIR)/etc/gsc_2383_v38.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2384_v35.txt $(INSTALLDIR)/etc/gsc_2384_v35.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2386_v35.txt $(INSTALLDIR)/etc/gsc_2386_v35.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2387_v35.txt $(INSTALLDIR)/etc/gsc_2387_v35.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2388_v35.txt $(INSTALLDIR)/etc/gsc_2388_v35.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2391_v35.txt $(INSTALLDIR)/etc/gsc_2391_v35.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2386_v42.txt $(INSTALLDIR)/etc/gsc_2386_v42.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2387_v42.txt $(INSTALLDIR)/etc/gsc_2387_v42.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2388_v42.txt $(INSTALLDIR)/etc/gsc_2388_v42.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_2391_v42.txt $(INSTALLDIR)/etc/gsc_2391_v42.txt
 
 clean:
 	rm -f gsp_updater i2cset *.o core
