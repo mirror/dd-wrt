@@ -1115,10 +1115,15 @@ int internal_getRouterBrand()
 		FILE *model = fopen(devname, "rb");
 		if (model) {
 #define R6300V2 "U12H240T00_NETGEAR"
+#define AC1450 "U12H240T99_NETGEAR"
 			char modelstr[32];
 			fread(modelstr, 1, strlen(R6300V2), model);
-			if (!strncmp(modelstr, R6300V2, strlen(R6300V2))) {
+			if (!strncmp(modelstr, R6300V2, strlen(R6300V2)) ) {
 				setRouter("Netgear R6300V2");
+				fclose(model);
+				return ROUTER_NETGEAR_R6300V2;
+			} else if  ( !strncmp(modelstr, AC1450, strlen(AC1450)) ) {
+				setRouter("Netgear AC1450");
 				fclose(model);
 				return ROUTER_NETGEAR_R6300V2;
 			} else {
@@ -6364,13 +6369,4 @@ u_int64_t freediskSpace(char *path)
 	return (u_int64_t)sizefs.f_bsize * (u_int64_t)sizefs.f_bfree;
 }
 
-int createpageToken()
-{
-	srand( (unsigned) time(NULL) );
-	int tok = rand() % 1000000000;
-	char pToken[16];
-	snprintf ( pToken, 16, "%d", tok);
-	nvram_set("ptoken", pToken );
-	return tok;
-}
 
