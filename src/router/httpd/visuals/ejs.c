@@ -72,7 +72,6 @@ websRomPageIndexType *PwebsRomPageIndex = NULL;
 char *(*GOZILA_GET) (webs_t wp, char *name) = NULL;
 void (*validate_cgi) (webs_t fp) = NULL;
 
-extern int createpageToken();
 
 #ifdef HAVE_HTTPS
 int do_ssl;
@@ -1095,10 +1094,6 @@ static int checkandadd(char *name)
 
 }
 
-void ej_insertpageToken(webs_t wp, int argc, char_t ** argv)
-{
-	websWrite(wp, "?%d", createpageToken() );
-}
 
 void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 {
