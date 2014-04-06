@@ -1236,10 +1236,12 @@ int MSTP_IN_set_msti_port_config(per_tree_port_t *ptp, MSTI_PortConfig *cfg)
 int MSTP_IN_port_mcheck(port_t *prt)
 {
     bridge_t *br = prt->bridge;
+    per_tree_port_t *cist = GET_CIST_PTP_FROM_PORT(prt);
 
     if(rstpVersion(br) && prt->portEnabled && br->bridgeEnabled)
     {
         prt->mcheck = true;
+        cist->proposing = true;
         br_state_machines_run(br);
     }
 
