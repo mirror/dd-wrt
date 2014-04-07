@@ -218,8 +218,10 @@ void start_hotplug_block(void)
 		sprintf(devmmc, "mmcblk%c", c);
 		
 		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0)//
-			if (!strcmp(action, "add"))
+			if (!strcmp(action, "add")){
 				usb_stop_services();
+				sleep(3);
+			}
 		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0) {
 			sysprintf("/usr/sbin/disktype /dev/%s", part);
 			sprintf(devname, "/dev/%s", part);
