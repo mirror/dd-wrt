@@ -1099,7 +1099,7 @@ ifeq ($(CONFIG_OPENSSL),y)
 ifeq ($(CONFIG_FREERADIUS),y)
 CONFIG_MATRIXSSL=n
 endif
-ifneq ($(CONFIG_ASTERISK),y)
+ifeq ($(CONFIG_ASTERISK),y)
 CONFIG_MATRIXSSL=n
 endif
 ifeq ($(CONFIG_AIRCRACK),y)
