@@ -118,14 +118,26 @@ static int decompress(webs_t stream, char *pattern, int len)
 	};
 	int i;
 	int l = sizeof(decode) / sizeof(struct DECODE);
-	for (i = 0; i < l; i++) {
-		if (!strncmp(pattern, decode[i].src, len)) {
-			if (len == 3) {
-				websWrite(stream, decode[i].dst);
-			}
-			return 1;
+	switch (len) {
+	case 1:
+		for (i = 0; i < l; i++) {
+			if (pattern[0] == decode[i].src[0])
+				return 1;
 		}
-
+		break;
+	case 2:
+		for (i = 0; i < l; i++) {
+			if (pattern[0] == decode[i].src[0] && pattern[1] == decode[i].src[1])
+				return 1;
+		}
+	case 3:
+		for (i = 0; i < l; i++) {
+			if (pattern[0] == decode[i].src[0] && pattern[1] == decode[i].src[1] && pattern[2] == decode[i].src[2]) {
+				websWrite(stream, decode[i].dst);
+				return 1;
+			}
+		}
+	default:
 	}
 	return 0;
 }
@@ -201,9 +213,9 @@ static void do_ej_s(int (*get) (void), webs_t stream)	// jimmy, https, 8/4/2003
 			}
 			pat = pattern[len - 1];
 			if (pat == '{' || pat == 0x3c) {
-				pattern[len - 1]='\0';
+				pattern[len - 1] = '\0';
 				wfputs(pattern, stream);	//jimmy, https, 8/4/2003
-				pattern[0]=pat;
+				pattern[0] = pat;
 				len = 1;
 			}
 			continue;
