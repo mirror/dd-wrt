@@ -130,6 +130,7 @@ static int decompress(webs_t stream, char *pattern, int len)
 			if (pattern[0] == decode[i].src[0] && pattern[1] == decode[i].src[1])
 				return 1;
 		}
+		break;
 	case 3:
 		for (i = 0; i < l; i++) {
 			if (pattern[0] == decode[i].src[0] && pattern[1] == decode[i].src[1] && pattern[2] == decode[i].src[2]) {
@@ -137,7 +138,7 @@ static int decompress(webs_t stream, char *pattern, int len)
 				return 1;
 			}
 		}
-	default:
+		break;
 	}
 	return 0;
 }
