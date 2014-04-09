@@ -141,13 +141,13 @@ void start_sysinit(void)
 		sysprintf("gsp_updater -f /etc/gsc_2384_v35.txt 35");
 	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2383")
 	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2383"))
-		sysprintf("gsp_updater -f /etc/gsc_2383_v38.txt 38");
+		sysprintf("gsp_updater -f /etc/gsc_2383_v39.txt 39");
 	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2382")
 	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2382"))
-		sysprintf("gsp_updater -f /etc/gsc_2382_v38.txt 38");
+		sysprintf("gsp_updater -f /etc/gsc_2382_v39.txt 39");
 	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2380")
 	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2380"))
-		sysprintf("gsp_updater -f /etc/gsc_2380_v38.txt 38");
+		sysprintf("gsp_updater -f /etc/gsc_2380_v39.txt 39");
 
 	writeproc("/proc/irq/51/smp_affinity", "2");	//use second core for ethernet interrupts. this should increase performance a little bit
 	return;
