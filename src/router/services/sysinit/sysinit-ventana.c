@@ -127,33 +127,23 @@ void start_sysinit(void)
 	eval("hwclock", "-s");
 	eval("i2cset", "-f", "-y", "0", "0x20", "0", "0x0");
 	eval("i2cset", "-f", "-y", "0", "0x20", "11", "0x10");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2391")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2391"))
-		sysprintf("gsp_updater -f /etc/gsc_2391_v35.txt");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2389")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2389"))
-		sysprintf("gsp_updater -f /etc/gsc_2388_v35.txt");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2388")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2388"))
-		sysprintf("gsp_updater -f /etc/gsc_2388_v35.txt");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2387")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2387"))
-		sysprintf("gsp_updater -f /etc/gsc_2387_v35.txt");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2386")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2386"))
-		sysprintf("gsp_updater -f /etc/gsc_2386_v35.txt");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2384")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2384"))
-		sysprintf("gsp_updater -f /etc/gsc_2384_v35.txt");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2383")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2383"))
-		sysprintf("gsp_updater -f /etc/gsc_2383_v35.txt");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2382")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2382"))
-		sysprintf("gsp_updater -f /etc/gsc_2382_v35.txt");
-	if (!strcmp(nvram_safe_get("DD_BOARD"), "Gateworks Laguna GW2380")
-	    || !strcmp(nvram_safe_get("DD_BOARD2"), "Gateworks Laguna GW2380"))
-		sysprintf("gsp_updater -f /etc/gsc_2380_v35.txt");
+	char *board = nvram_safe_get("DD_BOARD");
+	char *board2 = nvram_safe_get("DD_BOARD2");
+	if (!strncmp(board, "Gateworks Ventana GW54",22)
+	    || !strncmp(board2, "Gateworks Ventana GW54",22))
+		sysprintf("gsp_updater -f /etc/gsc_5400_v43.txt 43");
+
+	if (!strncmp(board, "Gateworks Ventana GW53",22)
+	    || !strncmp(board2, "Gateworks Ventana GW53",22))
+		sysprintf("gsp_updater -f /etc/gsc_5300_v43.txt 43");
+
+	if (!strncmp(board, "Gateworks Ventana GW52",22)
+	    || !strncmp(board2, "Gateworks Ventana GW52",22))
+		sysprintf("gsp_updater -f /etc/gsc_5200_v43.txt 43");
+
+	if (!strncmp(board, "Gateworks Ventana GW51",22)
+	    || !strncmp(board2, "Gateworks Ventana GW51",22))
+		sysprintf("gsp_updater -f /etc/gsc_5100_v43.txt 43");
 
 	led_control(LED_POWER, LED_ON);
 	led_control(LED_DIAG, LED_OFF);
