@@ -7,8 +7,8 @@ endif
 ifeq ($(ARCH),arm)
 export OPENSSL_TARGET := linux-armv4
 #export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes-armv4.o aes_cbc.o"
-export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-armv4.o aes_cbc.o"
-export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -Wl,--gc-sections
+export OPENSSL_MAKEFLAGS := AES_ASM_OBJ="aes_core.o aes-armv4.o aes_cbc.o bsaes-armv7.o"
+export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(ARCH),mips)
 export OPENSSL_TARGET := linux-mips
@@ -93,4 +93,15 @@ openssl-configure:
 			-DOPENSSL_SMALL_FOOTPRINT \
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS) \
+
+	$(MAKE) -C openssl clean
+
+	$(MAKE) -j 4 -C openssl CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -j 4 -C openssl build-shared CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -j 4 -C openssl build_apps CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	rm -f openssl/apps/openssl
 	
+	$(MAKE) -j 4 -C openssl CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -j 4 -C openssl build-shared CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -j 4 -C openssl build_apps CC="$(CC) -I$(TOP)/zlib -L$(TOP)/zlib -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	rm -f openssl/apps/openssl
