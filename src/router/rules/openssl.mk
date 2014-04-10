@@ -77,9 +77,9 @@ openssl-clean:
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
 					no-rmd160 no-aes192 no-ripemd no-ans1 no-krb5
 ifeq ($(CONFIG_XSCALE),y)
-OPENSSL_OPTIONS:= no-err no-hw threads no-sse2 no-perlasm zlib -DHAVE_CRYPTODEV
+OPENSSL_OPTIONS:= no-err no-hw threads no-sse2 no-perlasm zlib-dynamic -DHAVE_CRYPTODEV
 else
-OPENSSL_OPTIONS:= no-err no-hw threads no-perlasm zlib
+OPENSSL_OPTIONS:= no-err no-hw threads no-perlasm zlib-dynamic
 endif
 
 
