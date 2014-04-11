@@ -955,6 +955,11 @@ optimizefiles:
 	../../../../tools/write4 $(INSTALLDIR)/www/*.asp
 	../../../../tools/write4 $(INSTALLDIR)/www/*.htm
 	../../../../tools/write4 $(INSTALLDIR)/www/help/*.asp
+	-repugly $(INSTALLDIR)/www
+ifeq ($(CONFIG_PWC),y)
+	-repugly $(INSTALLDIR)/www/js
+endif
+#	repugly $(INSTALLDIR)/www/lang_pack
 
 removeobsolete:
 	cd $(INSTALLDIR)/www  &&  find . -iname "CVS" | xargs rm -rf
