@@ -86,8 +86,8 @@ var update;
 
 addEvent(window, "load", function() {
 	
-	show_layer_ext(document.static.ospfd_copt, 'idospfd', <% nvram_else_match("ospfd_copt", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.static.zebra_copt, 'idzebra', <% nvram_else_match("zebra_copt", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.static.ospfd_copt, 'idospfd', <% nvem("ospfd_copt", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.static.zebra_copt, 'idzebra', <% nvem("zebra_copt", "1", "1", "0"); %> == 1);
 	
 	update = new StatusbarUpdate();
 	update.start();
@@ -136,8 +136,8 @@ addEvent(window, "unload", function() {
 							<legend><% tran("route.ospf_legend"); %></legend>
 							<div class="setting">
 								<div class="label"><% tran("route.ospf_copt"); %></div>
-								<input class="spaceradio" type="radio" value="1" name="ospfd_copt" <% nvram_checked("ospfd_copt","1"); %> onclick="show_layer_ext(this, 'idospfd', true)" /><% tran("route.copt_gui"); %>&nbsp;
-								<input class="spaceradio" type="radio" value="0" name="ospfd_copt" <% nvram_checked("ospfd_copt","0"); %> onclick="show_layer_ext(this, 'idospfd', false)" /><% tran("route.copt_vtysh"); %>
+								<input class="spaceradio" type="radio" value="1" name="ospfd_copt" <% nvc("ospfd_copt","1"); %> onclick="show_layer_ext(this, 'idospfd', true)" /><% tran("route.copt_gui"); %>&nbsp;
+								<input class="spaceradio" type="radio" value="0" name="ospfd_copt" <% nvc("ospfd_copt","0"); %> onclick="show_layer_ext(this, 'idospfd', false)" /><% tran("route.copt_vtysh"); %>
 							</div>
 							<div id="idospfd">
 								<div class="setting">
@@ -145,15 +145,15 @@ addEvent(window, "unload", function() {
 								    <textarea cols="60" rows="12" id="ospfd_conf" name="ospfd_conf"></textarea>
 								    <script type="text/javascript">
 								    //<![CDATA[
-								    var ospfd_conf = fix_cr( '<% nvram_get("ospfd_conf"); %>' );
+								    var ospfd_conf = fix_cr( '<% nvg("ospfd_conf"); %>' );
 								    document.getElementById("ospfd_conf").value = ospfd_conf;
 								    //]]>
 								    </script>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("route.zebra_copt"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="zebra_copt" <% nvram_checked("zebra_copt","1"); %> onclick="show_layer_ext(this, 'idzebra', true)" /><% tran("route.copt_gui"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="zebra_copt" <% nvram_checked("zebra_copt","0"); %> onclick="show_layer_ext(this, 'idzebra', false)" /><% tran("route.copt_vtysh"); %>
+									<input class="spaceradio" type="radio" value="1" name="zebra_copt" <% nvc("zebra_copt","1"); %> onclick="show_layer_ext(this, 'idzebra', true)" /><% tran("route.copt_gui"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="zebra_copt" <% nvc("zebra_copt","0"); %> onclick="show_layer_ext(this, 'idzebra', false)" /><% tran("route.copt_vtysh"); %>
 								</div>
 								<div id="idzebra">
 								<div class="setting">
@@ -161,7 +161,7 @@ addEvent(window, "unload", function() {
 								    <textarea cols="60" rows="12" id="zebra_conf" name="zebra_conf"></textarea>
 								    <script type="text/javascript">
 								    //<![CDATA[
-								    var zebra_conf = fix_cr( '<% nvram_get("zebra_conf"); %>' );
+								    var zebra_conf = fix_cr( '<% nvg("zebra_conf"); %>' );
 								    document.getElementById("zebra_conf").value = zebra_conf;
 								    //]]>
 								    </script>
@@ -169,8 +169,8 @@ addEvent(window, "unload", function() {
 							</div>
 								<div class="setting">
 									<div class="label"><% tran("route.zebra_log"); %></div>
-									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvram_checked("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="zebra_log" value="0" <% nvram_checked("zebra_log", "0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvc("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="zebra_log" value="0" <% nvc("zebra_log", "0"); %> /><% tran("share.disable"); %>
 								</div>
 								</div>
 							</fieldset><br />
@@ -180,7 +180,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("route.bgp_legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("route.bgp_own_as"); %></div>
-									<input size="10" name="routing_bgp_as" value="<% nvram_get("routing_bgp_as"); %>" />
+									<input size="10" name="routing_bgp_as" value="<% nvg("routing_bgp_as"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("route.bgp_ip"); %></div>
@@ -188,12 +188,12 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("route.bgp_as"); %></div>
-									<input size="10" name="routing_bgp_neighbor_as" value="<% nvram_get("routing_bgp_neighbor_as"); %>" />
+									<input size="10" name="routing_bgp_neighbor_as" value="<% nvg("routing_bgp_neighbor_as"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("route.zebra_copt"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="zebra_copt" <% nvram_checked("zebra_copt","1"); %> onclick="show_layer_ext(this, 'idzebra', true)" /><% tran("route.copt_gui"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="zebra_copt" <% nvram_checked("zebra_copt","0"); %> onclick="show_layer_ext(this, 'idzebra', false)" /><% tran("route.copt_vtysh"); %>
+									<input class="spaceradio" type="radio" value="1" name="zebra_copt" <% nvc("zebra_copt","1"); %> onclick="show_layer_ext(this, 'idzebra', true)" /><% tran("route.copt_gui"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="zebra_copt" <% nvc("zebra_copt","0"); %> onclick="show_layer_ext(this, 'idzebra', false)" /><% tran("route.copt_vtysh"); %>
 								</div>
 								<div id="idzebra">
 								<div class="setting">
@@ -201,15 +201,15 @@ addEvent(window, "unload", function() {
 								    <textarea cols="60" rows="12" id="zebra_conf" name="zebra_conf"></textarea>
 								    <script type="text/javascript">
 								    //<![CDATA[
-								    var zebra_conf = fix_cr( '<% nvram_get("zebra_conf"); %>' );
+								    var zebra_conf = fix_cr( '<% nvg("zebra_conf"); %>' );
 								    document.getElementById("zebra_conf").value = zebra_conf;
 								    //]]>
 								    </script>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("route.zebra_log"); %></div>
-									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvram_checked("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="zebra_log" value="0" <% nvram_checked("zebra_log", "0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvc("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="zebra_log" value="0" <% nvc("zebra_log", "0"); %> /><% tran("share.disable"); %>
 								</div>
 								</div>
 							</fieldset><br/>							
@@ -219,8 +219,8 @@ addEvent(window, "unload", function() {
 								<legend><% tran("route.zebra_legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("route.zebra_copt"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="zebra_copt" <% nvram_checked("zebra_copt","1"); %> onclick="show_layer_ext(this, 'idzebra', true)" /><% tran("route.copt_gui"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="zebra_copt" <% nvram_checked("zebra_copt","0"); %> onclick="show_layer_ext(this, 'idzebra', false)" /><% tran("route.copt_vtysh"); %>
+									<input class="spaceradio" type="radio" value="1" name="zebra_copt" <% nvc("zebra_copt","1"); %> onclick="show_layer_ext(this, 'idzebra', true)" /><% tran("route.copt_gui"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="zebra_copt" <% nvc("zebra_copt","0"); %> onclick="show_layer_ext(this, 'idzebra', false)" /><% tran("route.copt_vtysh"); %>
 								</div>
 								<div id="idzebra">
 								<div class="setting">
@@ -228,20 +228,20 @@ addEvent(window, "unload", function() {
 								    <textarea cols="60" rows="12" id="zebra_conf" name="zebra_conf"></textarea>
 								    <script type="text/javascript">
 								    //<![CDATA[
-								    var zebra_conf = fix_cr( '<% nvram_get("zebra_conf"); %>' );
+								    var zebra_conf = fix_cr( '<% nvg("zebra_conf"); %>' );
 								    document.getElementById("zebra_conf").value = zebra_conf;
 								    //]]>
 								    </script>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("route.zebra_log"); %></div>
-									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvram_checked("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="zebra_log" value="0" <% nvram_checked("zebra_log", "0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" name="zebra_log" value="1" <% nvc("zebra_log", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="zebra_log" value="0" <% nvc("zebra_log", "0"); %> /><% tran("share.disable"); %>
 								</div>
 								</div>
 							</fieldset><br />						
 							<% nvram_else_selmatch("wk_mode", "router","","-->"); %>							
-							<% nvram_selmatch("wk_mode", "gateway", "<!--"); %>
+							<% nvsm("wk_mode", "gateway", "<!--"); %>
 							<fieldset>
 								<legend><% tran("route.gateway_legend"); %></legend>
 								<div class="setting">
@@ -262,7 +262,7 @@ addEvent(window, "unload", function() {
 									</select>
 								</div>
 							 </fieldset><br/>
-							 <% nvram_selmatch("wk_mode","gateway", "-->"); %>
+							 <% nvsm("wk_mode","gateway", "-->"); %>
 							 
 							 <fieldset>
 								<legend><% tran("route.static_legend"); %></legend>

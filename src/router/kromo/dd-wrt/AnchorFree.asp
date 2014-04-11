@@ -71,9 +71,9 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	show_layer_ext(document.setup.af_enable, 'idanchorfree', <% nvram_else_match("af_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.af_ssid, 'idanchorfreessid', <% nvram_else_match("af_ssid", "1", "1", "0"); %> == 1);
-	update = new StatusUpdate("AnchorFree.live.asp", <% nvram_get("refresh_time"); %>);
+	show_layer_ext(document.setup.af_enable, 'idanchorfree', <% nvem("af_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.af_ssid, 'idanchorfreessid', <% nvem("af_ssid", "1", "1", "0"); %> == 1);
+	update = new StatusUpdate("AnchorFree.live.asp", <% nvg("refresh_time"); %>);
 	update.start();
 	
 });
@@ -109,44 +109,44 @@ addEvent(window, "unload", function() {
 	<legend><% tran("anchorfree.anchorfree_revenue"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("anchorfree.anchorfree"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="af_enable" <% nvram_selmatch("af_enable","1", "checked"); %> onclick="show_layer_ext(this, 'idanchorfree', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="af_enable" <% nvram_selmatch("af_enable","0", "checked"); %> onclick="show_layer_ext(this, 'idanchorfree', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="af_enable" <% nvsm("af_enable","1", "checked"); %> onclick="show_layer_ext(this, 'idanchorfree', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="af_enable" <% nvsm("af_enable","0", "checked"); %> onclick="show_layer_ext(this, 'idanchorfree', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idanchorfree" >
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.email"); %></div>
-			<input class="text" maxLength="100" size="25" name="af_email" value="<% nvram_get("af_email"); %>" />
+			<input class="text" maxLength="100" size="25" name="af_email" value="<% nvg("af_email"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.ssid"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="af_ssid" <% nvram_selmatch("af_ssid","1", "checked"); %> onclick="show_layer_ext(this, 'idanchorfreessid', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="af_ssid" <% nvram_selmatch("af_ssid","0", "checked"); %> onclick="show_layer_ext(this, 'idanchorfreessid', false)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="af_ssid" <% nvsm("af_ssid","1", "checked"); %> onclick="show_layer_ext(this, 'idanchorfreessid', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="af_ssid" <% nvsm("af_ssid","0", "checked"); %> onclick="show_layer_ext(this, 'idanchorfreessid', false)" /><% tran("share.disable"); %>
 		</div>
 		<div id="idanchorfreessid">
 			<div class="setting">
 				<div class="label"><% tran("anchorfree.ssid_name"); %></div>
-				<input class="text" maxLength="32" size="32" name="af_ssid_name" value="<% nvram_get("af_ssid_name"); %>" />
+				<input class="text" maxLength="32" size="32" name="af_ssid_name" value="<% nvg("af_ssid_name"); %>" />
 			</div>	
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.address_1"); %></div>
-			<input class="text" maxLength="100" size="64" name="af_address" value="<% nvram_get("af_address"); %>" />
+			<input class="text" maxLength="100" size="64" name="af_address" value="<% nvg("af_address"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.address_2"); %></div>
-			<input class="text" maxLength="100" size="64" name="af_address_2" value="<% nvram_get("af_address_2"); %>" />
+			<input class="text" maxLength="100" size="64" name="af_address_2" value="<% nvg("af_address_2"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.city"); %></div>
-			<input class="text" maxLength="100" size="32" name="af_city" value="<% nvram_get("af_city"); %>" />
+			<input class="text" maxLength="100" size="32" name="af_city" value="<% nvg("af_city"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.zip"); %></div>
-			<input class="text" maxLength="6" size="6" name="af_zip" value="<% nvram_get("af_zip"); %>" />
+			<input class="text" maxLength="6" size="6" name="af_zip" value="<% nvg("af_zip"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.state"); %></div>
-			<input class="text" maxLength="32" size="32" name="af_state" value="<% nvram_get("af_state"); %>" />
+			<input class="text" maxLength="32" size="32" name="af_state" value="<% nvg("af_state"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.country"); %></div>
@@ -204,16 +204,16 @@ addEvent(window, "unload", function() {
 		</div>		
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.publish"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="af_publish" <% nvram_selmatch("af_publish","1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="af_publish" <% nvram_selmatch("af_publish","0", "checked"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="af_publish" <% nvsm("af_publish","1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="af_publish" <% nvsm("af_publish","0", "checked"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.serviceid"); %></div>
-			<span id="af_serviceid"><% nvram_get("af_serviceid"); %></span>
+			<span id="af_serviceid"><% nvg("af_serviceid"); %></span>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.servicestatus"); %></div>
-			<span id="af_servicestatus"><% nvram_get("af_servicestatus"); %></span>
+			<span id="af_servicestatus"><% nvg("af_servicestatus"); %></span>
 		</div>
 		<div class="setting">
 				<div class="label"><% tran("anchorfree.agreement"); %></div>
@@ -294,7 +294,7 @@ No amendment or modification hereof shall be valid or binding upon the parties u
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("anchorfree.agree"); %></div>
-			<input type="checkbox" value="1" name="_af_agree" <% nvram_checked("af_agree", "1"); %> />
+			<input type="checkbox" value="1" name="_af_agree" <% nvc("af_agree", "1"); %> />
 		</div>
 
 	   </div>
@@ -302,7 +302,7 @@ No amendment or modification hereof shall be valid or binding upon the parties u
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+								var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
 								submitFooterButton(1,1,0,autoref);
 								//]]>
 								</script>

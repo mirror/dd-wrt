@@ -40,11 +40,11 @@ function setAlive() {
 var update;
 
 addEvent(window, "load", function() {
-	show_layer_ext(document.setup.squid_watchdog_enable, 'idsquid_watchdog', <% nvram_else_match("squid_watchdog_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.schedule_enable, 'idschedule', <% nvram_else_match("schedule_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.wds_watchdog_enable, 'idwds_watchdog', <% nvram_else_match("wds_watchdog_enable", "1", "1", "0"); %> == 1);
-	setWDS(<% nvram_get("wds_watchdog_enable"); %>);
-	setPXY(<% nvram_get("squid_watchdog_enable"); %>);
+	show_layer_ext(document.setup.squid_watchdog_enable, 'idsquid_watchdog', <% nvem("squid_watchdog_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.schedule_enable, 'idschedule', <% nvem("schedule_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.wds_watchdog_enable, 'idwds_watchdog', <% nvem("wds_watchdog_enable", "1", "1", "0"); %> == 1);
+	setWDS(<% nvg("wds_watchdog_enable"); %>);
+	setPXY(<% nvg("squid_watchdog_enable"); %>);
 	setAlive();
 	
 	update = new StatusbarUpdate();

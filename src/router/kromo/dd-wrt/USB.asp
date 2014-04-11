@@ -14,11 +14,11 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	show_layer_ext(document.setup.usb_enable, 'idusb', <% nvram_else_match("usb_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.usb_storage, 'idusbstor', <% nvram_else_match("usb_storage", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.usb_automnt, 'idusbmnt', <% nvram_else_match("usb_automnt", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.usb_enable, 'idusb', <% nvem("usb_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.usb_storage, 'idusbstor', <% nvem("usb_storage", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.usb_automnt, 'idusbmnt', <% nvem("usb_automnt", "1", "1", "0"); %> == 1);
 	
-	update = new StatusUpdate("USB.live.asp", <% nvram_get("refresh_time"); %>);
+	update = new StatusUpdate("USB.live.asp", <% nvg("refresh_time"); %>);
 	update.start();
 	
 });
@@ -54,7 +54,7 @@ addEvent(window, "unload", function() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								 var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+								 var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
 								 submitFooterButton(1,1,0,autoref);
 								//]]>
 								</script>

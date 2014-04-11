@@ -97,7 +97,7 @@ var update;
 addEvent(window, "load", function() {
 	setBRCTLTable(<% show_bridgetable(); %>);
 	
-	update = new StatusUpdate("Networking.live.asp", <% nvram_get("refresh_time"); %>);
+	update = new StatusUpdate("Networking.live.asp", <% nvg("refresh_time"); %>);
 	
 	update.onUpdate("bridges_table", function(u) {
 		eval('setBRCTLTable(' + u.bridges_table + ')');
@@ -160,7 +160,7 @@ addEvent(window, "unload", function() {
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload();\" />");
+									document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload();\" />");
 									//]]>
 									</script>
 								</div>

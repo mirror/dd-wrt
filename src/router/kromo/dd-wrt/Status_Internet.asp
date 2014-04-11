@@ -62,15 +62,15 @@ function reloadIt() {
 
 
 addEvent(window, "load", function() {
-	setElementVisible("wan_show", "<% nvram_get("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet");
-	setElementVisible("wan_showtraff", "<% nvram_get("ttraff_enable"); %>" == "1" && ("<% nvram_get("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet" && "<% nvram_get("wan_proto"); %>" != "disabled" || "<% nvram_get("ttraff_iface"); %>" != "") );
-	setElementVisible("wan_showdisabled", "<% nvram_get("wl0_mode"); %>" == "wet" || "<% nvram_get("wl0_mode"); %>" == "apstawet");
-	setElementVisible("wan_info", "<% nvram_get("wan_proto"); %>" != "disabled");
-	setElementVisible("wan_dhcp", "<% nvram_get("wan_proto"); %>" == "dhcp");
-	setElementVisible("wan_connection", "<% nvram_get("wan_proto"); %>" != "dhcp" && "<% nvram_get("wan_proto"); %>" != "static");
-	setElementVisible("wan_signal", "<% nvram_get("wan_proto"); %>" == "3g");
+	setElementVisible("wan_show", "<% nvg("wl0_mode"); %>" != "wet" && "<% nvg("wl0_mode"); %>" != "apstawet");
+	setElementVisible("wan_showtraff", "<% nvg("ttraff_enable"); %>" == "1" && ("<% nvg("wl0_mode"); %>" != "wet" && "<% nvram_get("wl0_mode"); %>" != "apstawet" && "<% nvram_get("wan_proto"); %>" != "disabled" || "<% nvram_get("ttraff_iface"); %>" != "") );
+	setElementVisible("wan_showdisabled", "<% nvg("wl0_mode"); %>" == "wet" || "<% nvg("wl0_mode"); %>" == "apstawet");
+	setElementVisible("wan_info", "<% nvg("wan_proto"); %>" != "disabled");
+	setElementVisible("wan_dhcp", "<% nvg("wan_proto"); %>" == "dhcp");
+	setElementVisible("wan_connection", "<% nvg("wan_proto"); %>" != "dhcp" && "<% nvg("wan_proto"); %>" != "static");
+	setElementVisible("wan_signal", "<% nvg("wan_proto"); %>" == "3g");
 
-	update = new StatusUpdate("Status_Internet.live.asp", <% nvram_get("refresh_time"); %>);
+	update = new StatusUpdate("Status_Internet.live.asp", <% nvg("refresh_time"); %>);
 	update.onUpdate("wan_shortproto", function(u) {
 		setElementVisible("wan_info", u.wan_shortproto != "disabled");
 		setElementVisible("wan_dhcp", u.wan_shortproto == "dhcp");
@@ -115,19 +115,19 @@ addEvent(window, "unload", function() {
 								<div id="wan_show" style="display:none">
 									<div class="setting">
 										<div class="label"><% tran("idx.conn_type"); %></div>
-										<% nvram_match("wan_proto", "dhcp", "<script type="text/javascript">Capture(idx.dhcp)</script>"); %>
-										<% nvram_match("wan_proto", "static", "<script type="text/javascript">Capture(share.sttic)</script>"); %>
-										<% nvram_match("wan_proto", "pppoe", "PPPoE"); %>
-										<% nvram_match("wan_proto", "pptp", "PPTP"); %>
-										<% nvram_match("wan_proto", "l2tp", "L2TP"); %>
-										<% nvram_match("wan_proto", "3g", "3G/UMTS"); %>
-										<% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %>
-										<% nvram_match("wan_proto", "disabled", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
+										<% nvm("wan_proto", "dhcp", "<script type="text/javascript">Capture(idx.dhcp)</script>"); %>
+										<% nvm("wan_proto", "static", "<script type="text/javascript">Capture(share.sttic)</script>"); %>
+										<% nvm("wan_proto", "pppoe", "PPPoE"); %>
+										<% nvm("wan_proto", "pptp", "PPTP"); %>
+										<% nvm("wan_proto", "l2tp", "L2TP"); %>
+										<% nvm("wan_proto", "3g", "3G/UMTS"); %>
+										<% nvm("wan_proto", "heartbeat", "HeartBeatSignal"); %>
+										<% nvm("wan_proto", "disabled", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 									</div>
 									<div id="wan_info" style="display:none">
 										<div class="setting" id="wan_connection">
 											<div class="label"><% tran("status_inet.www_loginstatus"); %></div>
-											<span id="wan_status"><% nvram_status_get("status2","1"); %>&nbsp;<input type="button" value="<% nvram_status_get("button1","1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1","0"); %>_<% nvram_get("wan_proto"); %>');" /></span>
+											<span id="wan_status"><% nvram_status_get("status2","1"); %>&nbsp;<input type="button" value="<% nvram_status_get("button1","1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1","0"); %>_<% nvg("wan_proto"); %>');" /></span>
 										</div>
 										<div class="setting" id="wan_signal">
 											<div class="label">Signal Status</div>
@@ -180,7 +180,7 @@ addEvent(window, "unload", function() {
 							</fieldset><br />
 							
 							<div id="wan_showtraff" style="display:none">
-							<h2><% tran("status_inet.traff"); %> <% nvram_get("ttraff_iface"); %></h2>
+							<h2><% tran("status_inet.traff"); %> <% nvg("ttraff_iface"); %></h2>
 								<fieldset>
 									<legend><% tran("status_inet.traff_tot"); %></legend>
 										 <div class="setting">
@@ -223,7 +223,7 @@ addEvent(window, "unload", function() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+								var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
 								submitFooterButton(0,0,0,autoref);
 								//]]>
 								</script>
