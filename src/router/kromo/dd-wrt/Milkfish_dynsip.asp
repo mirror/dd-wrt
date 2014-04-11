@@ -65,19 +65,19 @@ function to_apply(F) {
            				
 		            		    <div class="setting">
 				        	<div class="label"><% tran("service.milkfish_dynsipdomain"); %></div>
-						<input size="27" name="milkfish_dynsipdomain" value="<% nvram_get("milkfish_dynsipdomain"); %>" />
+						<input size="27" name="milkfish_dynsipdomain" value="<% nvg("milkfish_dynsipdomain"); %>" />
 					    </div>
 					    <div class="setting">
 					        <div class="label"><% tran("service.milkfish_dynsipurl"); %></div>
-					        <input size="27" name="milkfish_dynsipurl" value="<% nvram_get("milkfish_dynsipurl"); %>" />
+					        <input size="27" name="milkfish_dynsipurl" value="<% nvg("milkfish_dynsipurl"); %>" />
 					    </div>
 					    <div class="setting">
 					        <div class="label"><% tran("service.milkfish_dsusername"); %></div>
-						<input size="27" name="milkfish_dsusername" value="<% nvram_get("milkfish_dsusername"); %>" />
+						<input size="27" name="milkfish_dsusername" value="<% nvg("milkfish_dsusername"); %>" />
 					    </div>
 					    <div class="setting">
 						<div class="label"><% tran("service.milkfish_dspassword"); %></div>
-					        <input type="password" size="27" name="milkfish_dspassword" value="<% nvram_get("milkfish_dspassword"); %>" />
+					        <input type="password" size="27" name="milkfish_dspassword" value="<% nvg("milkfish_dspassword"); %>" />
 					    </div>
 					
 					<br />

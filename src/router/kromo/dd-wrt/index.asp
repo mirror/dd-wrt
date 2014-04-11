@@ -2,7 +2,7 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-var wan_proto = "<% nvram_get("wan_proto"); %>";
+var wan_proto = "<% nvg("wan_proto"); %>";
 var dhcp_win = null;
 
 function pptpUseDHCP(F, val) {
@@ -42,7 +42,7 @@ function mtu_enable_disable(F,I) {
 }
 
 function valid_value(F) {
-	if (!('<% nvram_get("wl0_mode"); %>' == 'wet') && !('<% nvram_get("wl0_mode"); %>' == 'apstawet')) {
+	if (!('<% nvg("wl0_mode"); %>' == 'wet') && !('<% nvg("wl0_mode"); %>' == 'apstawet')) {
 		if (F.now_proto.value == "pptp" || F.now_proto.value == "static") {
 			pptp_dhcp = "";
 	
@@ -98,9 +98,9 @@ function valid_value(F) {
 	if(document.setup)
 		if(document.setup.now_proto) {
 			if(document.setup.now_proto.value == "pptp")
-				pptpUseDHCP(document.setup, '<% nvram_get("pptp_use_dhcp"); %>');
+				pptpUseDHCP(document.setup, '<% nvg("pptp_use_dhcp"); %>');
 			if(document.setup.now_proto.value == "l2tp")
-				l2tpUseDHCP(document.setup, '<% nvram_get("l2tp_use_dhcp"); %>');
+				l2tpUseDHCP(document.setup, '<% nvg("l2tp_use_dhcp"); %>');
 		}
 
 	return true;
@@ -292,28 +292,28 @@ var update;
 
 addEvent(window, "load", function() {
 
-	mtu_enable_disable(document.setup,'<% nvram_get("mtu_enable"); %>');
+	mtu_enable_disable(document.setup,'<% nvg("mtu_enable"); %>');
 
 	if (document.setup.now_proto.value == "pppoe" ||
 		document.setup.now_proto.value == "pptp" ||
 		document.setup.now_proto.value == "l2tp" ||
 		document.setup.now_proto.value == "heartbeat")
-			ppp_enable_disable(document.setup,'<% nvram_get("ppp_demand"); %>');
+			ppp_enable_disable(document.setup,'<% nvg("ppp_demand"); %>');
     
-	dhcp_enable_disable(document.setup,'<% nvram_get("lan_proto"); %>');
+	dhcp_enable_disable(document.setup,'<% nvg("lan_proto"); %>');
 	setDNSMasq(document.setup);
 	
-	show_layer_ext(document.setup.ntp_enable, 'idntp', <% nvram_else_match("ntp_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.pptp_use_dhcp, 'idpptpdhcp', <% nvram_else_match("pptp_use_dhcp", "1", "1", "0"); %> == 0);
-	show_layer_ext(document.setup.l2tp_use_dhcp, 'idl2tpdhcp', <% nvram_else_match("l2tp_use_dhcp", "1", "1", "0"); %> == 0);
-	show_layer_ext(document.setup.reconnect_enable, 'idreconnect', <% nvram_else_match("reconnect_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.ntp_enable, 'idntp', <% nvem("ntp_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.pptp_use_dhcp, 'idpptpdhcp', <% nvem("pptp_use_dhcp", "1", "1", "0"); %> == 0);
+	show_layer_ext(document.setup.l2tp_use_dhcp, 'idl2tpdhcp', <% nvem("l2tp_use_dhcp", "1", "1", "0"); %> == 0);
+	show_layer_ext(document.setup.reconnect_enable, 'idreconnect', <% nvem("reconnect_enable", "1", "1", "0"); %> == 1);
 
 	if (document.setup.now_proto.value == "pptp")
-		dhcp_show_static_dns(<% nvram_get("pptp_use_dhcp"); %>);
+		dhcp_show_static_dns(<% nvg("pptp_use_dhcp"); %>);
 	if (document.setup.now_proto.value == "pppoe_dual")
-		dhcp_show_static_dns(<% nvram_get("pptp_use_dhcp"); %>);
+		dhcp_show_static_dns(<% nvg("pptp_use_dhcp"); %>);
 	if (document.setup.now_proto.value == "l2tp")
-		dhcp_show_static_dns(<% nvram_get("l2tp_use_dhcp"); %>);
+		dhcp_show_static_dns(<% nvg("l2tp_use_dhcp"); %>);
 
 	update = new StatusbarUpdate();
 	update.start();
@@ -393,34 +393,34 @@ addEvent(window, "unload", function() {
 								<legend><% tran("idx.optional"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("share.routername"); %></div>
-									<input maxlength="39" name="router_name" size="20" onblur="valid_name(this,&#34;Router%20Name&#34;)" value="<% nvram_get("router_name"); %>"/>
+									<input maxlength="39" name="router_name" size="20" onblur="valid_name(this,&#34;Router%20Name&#34;)" value="<% nvg("router_name"); %>"/>
 								</div>
 			
 				<% ifdef("WET", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<input maxlength="39" name="wan_hostname" size="20" onblur="valid_name(this,&#34;Host%20Name&#34;)" value="<% nvram_get("wan_hostname"); %>"/>
+									<input maxlength="39" name="wan_hostname" size="20" onblur="valid_name(this,&#34;Host%20Name&#34;)" value="<% nvg("wan_hostname"); %>"/>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.domainname"); %></div>
-									<input maxlength="79" name="wan_domain" size="20" onblur="valid_name(this,&#34;Domain%20name&#34;,SPACE_NO)" value="<% nvram_get("wan_domain"); %>" />
+									<input maxlength="79" name="wan_domain" size="20" onblur="valid_name(this,&#34;Domain%20name&#34;,SPACE_NO)" value="<% nvg("wan_domain"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("idx.mtu"); %></div>
 									<select name="mtu_enable" onchange="SelMTU(this.form.mtu_enable.selectedIndex,this.form)">
-										<option value="0" <% nvram_selmatch("mtu_enable", "0", "selected"); %>>Auto</option>
+										<option value="0" <% nvsm("mtu_enable", "0", "selected"); %>>Auto</option>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<option value=\"1\" <% nvram_selmatch("mtu_enable", "1", "selected"); %> >" + share.manual + "</option>");
+										document.write("<option value=\"1\" <% nvsm("mtu_enable", "1", "selected"); %> >" + share.manual + "</option>");
 										//]]>
 										</script>
 									</select>&nbsp;
-									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvram_get("wan_mtu"); %>" />
+									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvg("wan_mtu"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("idx.stp"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_checked("lan_stp", "1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvram_checked("lan_stp", "0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvc("lan_stp", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvc("lan_stp", "0"); %> /><% tran("share.disable"); %>
 								</div>
 								
 				<% ifdef("WET", "-->"); %>
@@ -457,8 +457,8 @@ addEvent(window, "unload", function() {
 								<legend><% tran("idx.legend3"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("idx.ntp_client"); %></div>
-									<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="1" <% nvram_checked("ntp_enable", "1"); %> onclick="show_layer_ext(this, 'idntp', true)" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="0" <% nvram_checked("ntp_enable", "0"); %> onclick="show_layer_ext(this, 'idntp', false)" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="1" <% nvc("ntp_enable", "1"); %> onclick="show_layer_ext(this, 'idntp', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="0" <% nvc("ntp_enable", "0"); %> onclick="show_layer_ext(this, 'idntp', false)" /><% tran("share.disable"); %>
 								</div>
 								<div id="idntp">
 								<div class="setting">
@@ -488,7 +488,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.srvipname"); %></div>
-									<input maxlength="32" size="25" name="ntp_server" value="<% nvram_get("ntp_server"); %>" />
+									<input maxlength="32" size="25" name="ntp_server" value="<% nvg("ntp_server"); %>" />
 								</div>
 								</div>
 							</fieldset><br />

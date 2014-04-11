@@ -2,8 +2,8 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-var wl_net_mode = '<%% nvram_get("%s_net_mode"); %%>';
-var wl_phytype = '<%% nvram_get("%s_phytype"); %%>';
+var wl_net_mode = '<%% nvg("%s_net_mode"); %%>';
+var wl_phytype = '<%% nvg("%s_phytype"); %%>';
 
 function initWlTimer(radio_on_time)
 {
@@ -142,7 +142,7 @@ function create_nrate(num,F)
 	var bw40_1 = new Array("13.5 (15)", "27 (30)", "40.5 (45)", "54 (60)", "81 (90)", "108 (120)", "121.5 (135)", "135 (150)");
 	var bw40_2 = new Array("27 (30)", "54 (60)", "81 (90)", "108 (120)", "162 (180)", "216 (240)", "243 (270)", "270 (300)");
 	var bw40_3 = new Array("40.5 (45)", "81 (90)", "121.5 (135)", "162 (180)", "243 (270)", "324 (360)", "364.5 (405)", "405 (450)");
-	var index = '<%% nvram_get("%s_nmcsidx"); %%>';
+	var index = '<%% nvg("%s_nmcsidx"); %%>';
 	
 
 	F.%s_nmcsidx[0] = new Option(share.auto);
@@ -214,14 +214,14 @@ var update;
 
 addEvent(window, "load", function() {
 	setRadioTable();
-	setWMM("<%% nvram_get("%s_wme"); %%>");
-	show_layer_ext(document.wireless.%s_wme, 'idwl_wme', <%% nvram_else_match("%s_wme", "on", "1", "0"); %%> == 1);
-	show_layer_ext(document.wireless.radio%d_timer_enable, 'radio', <%% nvram_else_match("radio%d_timer_enable", "1", "1", "0"); %%> == 1);
-	initWlTimer('<%% nvram_get("radio%d_on_time"); %%>');
-	show_layer_ext(document.wireless.%s_nmcsidx, 'id%s_nmcsidx', <%% nvram_else_match("%s_phytype", "n", "1", "0"); %%> == 1 || <%% nvram_else_match("%s_phytype", "s", "1", "0"); %%> == 1 || <%% nvram_else_match("%s_phytype", "h", "1", "0"); %%> == 1);
+	setWMM("<%% nvg("%s_wme"); %%>");
+	show_layer_ext(document.wireless.%s_wme, 'idwl_wme', <%% nvem("%s_wme", "on", "1", "0"); %%> == 1);
+	show_layer_ext(document.wireless.radio%d_timer_enable, 'radio', <%% nvem("radio%d_timer_enable", "1", "1", "0"); %%> == 1);
+	initWlTimer('<%% nvg("radio%d_on_time"); %%>');
+	show_layer_ext(document.wireless.%s_nmcsidx, 'id%s_nmcsidx', <%% nvem("%s_phytype", "n", "1", "0"); %%> == 1 || <%% nvem("%s_phytype", "s", "1", "0"); %%> == 1 || <%% nvram_else_match("%s_phytype", "h", "1", "0"); %%> == 1);
 	setElementActive( "document.wireless.wl_rate", !(wl_net_mode=="n-only") );
 
-	if(wl_phytype == "s" || wl_phytype == "n" || wl_phytype== "h") create_nrate('<%% nvram_get("%s_nbw"); %%>',document.wireless);
+	if(wl_phytype == "s" || wl_phytype == "n" || wl_phytype== "h") create_nrate('<%% nvg("%s_nbw"); %%>',document.wireless);
 	
 	update = new StatusbarUpdate();
 	update.start();
@@ -263,8 +263,8 @@ addEvent(window, "unload", function() {
 								<legend><%% tran("wl_adv.legend"); %%></legend>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label"); %%></div>
-									<input class="spaceradio" type="radio" name="%s_auth" value="0" <%% nvram_checked("%s_auth", "0"); %%> /><%% tran("share.auto"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="%s_auth" value="1" <%% nvram_checked("%s_auth", "1"); %%> /><%% tran("share.share_key"); %%>
+									<input class="spaceradio" type="radio" name="%s_auth" value="0" <%% nvc("%s_auth", "0"); %%> /><%% tran("share.auto"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_auth" value="1" <%% nvc("%s_auth", "1"); %%> /><%% tran("share.share_key"); %%>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": " + share.auto + ")");
@@ -327,8 +327,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label4"); %%></div>
-									<input class="spaceradio" type="radio" name="%s_gmode_protection" value="auto" <%% nvram_checked("%s_gmode_protection", "auto"); %%> /><%% tran("share.auto"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="%s_gmode_protection" value="off" <%% nvram_checked("%s_gmode_protection", "off"); %%> /><%% tran("share.disable"); %%>
+									<input class="spaceradio" type="radio" name="%s_gmode_protection" value="auto" <%% nvc("%s_gmode_protection", "auto"); %%> /><%% tran("share.auto"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_gmode_protection" value="off" <%% nvc("%s_gmode_protection", "off"); %%> /><%% tran("share.disable"); %%>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": " + share.auto + ")");
@@ -337,8 +337,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label5"); %%></div>
-									<input class="spaceradio" type="radio" name="%s_frameburst" value="on" <%% nvram_checked("%s_frameburst", "on"); %%> /><%% tran("share.enable"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="%s_frameburst" value="off" <%% nvram_checked("%s_frameburst", "off"); %%> /><%% tran("share.disable"); %%>
+									<input class="spaceradio" type="radio" name="%s_frameburst" value="on" <%% nvc("%s_frameburst", "on"); %%> /><%% tran("share.enable"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_frameburst" value="off" <%% nvc("%s_frameburst", "off"); %%> /><%% tran("share.disable"); %%>
 								</div><br />
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label6"); %%></div>
@@ -391,8 +391,8 @@ addEvent(window, "unload", function() {
 							 	</div><br />
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label11"); %%></div>
-									<input class="spaceradio" type="radio" name="%s_ap_isolate" value="1" <%% nvram_checked("%s_ap_isolate", "1"); %%> /><%% tran("share.enable"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="%s_ap_isolate" value="0" <%% nvram_checked("%s_ap_isolate", "0"); %%> /><%% tran("share.disable"); %%>
+									<input class="spaceradio" type="radio" name="%s_ap_isolate" value="1" <%% nvc("%s_ap_isolate", "1"); %%> /><%% tran("share.enable"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_ap_isolate" value="0" <%% nvc("%s_ap_isolate", "0"); %%> /><%% tran("share.disable"); %%>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": " + share.disable + ")");
@@ -522,8 +522,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label17"); %%></div>
-									<input class="spaceradio" type="radio" name="%s_web_filter" value="0" <%% nvram_checked("%s_web_filter", "0"); %%> /><%% tran("share.enable"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="%s_web_filter" value="1" <%% nvram_checked("%s_web_filter", "1"); %%> /><%% tran("share.disable"); %%>
+									<input class="spaceradio" type="radio" name="%s_web_filter" value="0" <%% nvc("%s_web_filter", "0"); %%> /><%% tran("share.enable"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_web_filter" value="1" <%% nvc("%s_web_filter", "1"); %%> /><%% tran("share.disable"); %%>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": " + share.enable + ")");
@@ -536,8 +536,8 @@ addEvent(window, "unload", function() {
 								<legend><%% tran("wl_basic.legend2"); %%></legend>
 								<div class="setting">
 									<div class="label"><%% tran("wl_basic.radiotimer"); %%></div>
-									<input class="spaceradio" type="radio" value="1" name="radio%d_timer_enable" <%% nvram_checked("radio%d_timer_enable", "1"); %%> onclick="show_layer_ext(this, 'radio', true)" /><%% tran("share.enable"); %%>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="radio%d_timer_enable" <%% nvram_checked("radio%d_timer_enable", "0"); %%> onclick="show_layer_ext(this, 'radio', false)" /><%% tran("share.disable"); %%>
+									<input class="spaceradio" type="radio" value="1" name="radio%d_timer_enable" <%% nvc("radio%d_timer_enable", "1"); %%> onclick="show_layer_ext(this, 'radio', true)" /><%% tran("share.enable"); %%>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="radio%d_timer_enable" <%% nvc("radio%d_timer_enable", "0"); %%> onclick="show_layer_ext(this, 'radio', false)" /><%% tran("share.disable"); %%>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": " + share.disable + ")");
@@ -562,8 +562,8 @@ addEvent(window, "unload", function() {
 								<legend><%% tran("wl_adv.legend2"); %%></legend>
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label18"); %%></div>
-									<input class="spaceradio" type="radio" name="%s_wme" value="on" <%% nvram_checked("%s_wme", "on"); %%>  onclick="show_layer_ext(this, 'idwl_wme', true);setWMM(this.value)" /><%% tran("share.enable"); %%>&nbsp;
-									<input class="spaceradio" type="radio" name="%s_wme" value="off" <%% nvram_checked("%s_wme", "off"); %%>  onclick="show_layer_ext(this, 'idwl_wme', false);setWMM(this.value)" /><%% tran("share.disable"); %%>
+									<input class="spaceradio" type="radio" name="%s_wme" value="on" <%% nvc("%s_wme", "on"); %%>  onclick="show_layer_ext(this, 'idwl_wme', true);setWMM(this.value)" /><%% tran("share.enable"); %%>&nbsp;
+									<input class="spaceradio" type="radio" name="%s_wme" value="off" <%% nvc("%s_wme", "off"); %%>  onclick="show_layer_ext(this, 'idwl_wme', false);setWMM(this.value)" /><%% tran("share.disable"); %%>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
 									document.write("(" + share.deflt + ": " + share.enable + ")");
@@ -573,8 +573,8 @@ addEvent(window, "unload", function() {
 								<div id="idwl_wme">
 									<div class="setting">
 										<div class="label"><%% tran("wl_adv.label19"); %%></div>
-										<input class="spaceradio" type="radio" name="%s_wme_no_ack" value="on" <%% nvram_checked("%s_wme_no_ack", "on"); %%> /><%% tran("share.enable"); %%>&nbsp;
-										<input class="spaceradio" type="radio" name="%s_wme_no_ack" value="off" <%% nvram_checked("%s_wme_no_ack", "off"); %%> /><%% tran("share.disable"); %%>
+										<input class="spaceradio" type="radio" name="%s_wme_no_ack" value="on" <%% nvc("%s_wme_no_ack", "on"); %%> /><%% tran("share.enable"); %%>&nbsp;
+										<input class="spaceradio" type="radio" name="%s_wme_no_ack" value="off" <%% nvc("%s_wme_no_ack", "off"); %%> /><%% tran("share.disable"); %%>
 										<span class="default"><script type="text/javascript">
 										//<![CDATA[
 										document.write("(" + share.deflt + ": " + share.disable + ")");

@@ -75,7 +75,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("diag.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("diag.cmd"); %></div>
-									<textarea id="ping_ip" name="ping_ip" rows="6" cols="40" style="font-family:Courier, Courier New" wrap="off"><% nvram_get("ping_ip"); %></textarea>
+									<textarea id="ping_ip" name="ping_ip" rows="6" cols="40" style="font-family:Courier, Courier New" wrap="off"><% nvg("ping_ip"); %></textarea>
 								</div>
 									<script type="text/javascript">
 									//<![CDATA[
@@ -89,10 +89,10 @@ addEvent(window, "unload", function() {
 									</script>
 							</fieldset><br />
 							
-							<% nvram_match("rc_startup", "", "<!--"); %>
+							<% nvm("rc_startup", "", "<!--"); %>
 							<fieldset>
 								<legend><% tran("diag.startup"); %></legend>
-								<pre id="startup"><% nvram_get("rc_startup"); %></pre><br />
+								<pre id="startup"><% nvg("rc_startup"); %></pre><br />
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
@@ -101,12 +101,12 @@ addEvent(window, "unload", function() {
 									</script>
 								</div>
 							</fieldset><br />
-							<% nvram_match("rc_startup", "", "-->"); %>
+							<% nvm("rc_startup", "", "-->"); %>
 
-							<% nvram_match("rc_shutdown", "", "<!--"); %>
+							<% nvm("rc_shutdown", "", "<!--"); %>
 							<fieldset>
 								<legend><% tran("diag.shutdown"); %></legend>
-								<pre id="shutdown"><% nvram_get("rc_shutdown"); %></pre><br />
+								<pre id="shutdown"><% nvg("rc_shutdown"); %></pre><br />
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
@@ -115,12 +115,12 @@ addEvent(window, "unload", function() {
 									</script>
 								</div>
 							</fieldset><br />
-							<% nvram_match("rc_shutdown", "", "-->"); %>
+							<% nvm("rc_shutdown", "", "-->"); %>
 							
-							<% nvram_match("rc_firewall", "", "<!--"); %>
+							<% nvm("rc_firewall", "", "<!--"); %>
 							<fieldset>
 								<legend><% tran("diag.firewall"); %></legend>
-								<pre id="firewall"><% nvram_get("rc_firewall"); %></pre><br />
+								<pre id="firewall"><% nvg("rc_firewall"); %></pre><br />
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
@@ -129,12 +129,12 @@ addEvent(window, "unload", function() {
 									</script>
 								</div>
 							</fieldset><br />
-							<% nvram_match("rc_firewall", "", "-->"); %>
+							<% nvm("rc_firewall", "", "-->"); %>
 
-							<% nvram_match("rc_custom", "", "<!--"); %>
+							<% nvm("rc_custom", "", "<!--"); %>
 							<fieldset>
 								<legend><% tran("diag.custom"); %></legend>
-								<pre id="custom"><% nvram_get("rc_custom"); %></pre><br />
+								<pre id="custom"><% nvg("rc_custom"); %></pre><br />
 								<div class="center">
 									<script type="text/javascript">
 									//<![CDATA[
@@ -143,7 +143,7 @@ addEvent(window, "unload", function() {
 									</script>
 								</div>
 							</fieldset><br />
-							<% nvram_match("rc_custom", "", "-->"); %>
+							<% nvm("rc_custom", "", "-->"); %>
 														
 							<div class="submitFooter">
 								<script type="text/javascript">

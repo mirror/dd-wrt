@@ -2,16 +2,16 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-var wl0_channel = '<% nvram_get("wl0_channel"); %>';
-var wl0_nctrlsb = '<% nvram_get("wl0_nctrlsb"); %>';
-var wl0_nbw = '<% nvram_get("wl0_nbw"); %>';
-var wl0_phytype = '<% nvram_get("wl0_phytype"); %>';
-var wl0_40m_disable = '<% nvram_get("wl0_40m_disable"); %>';
-var wl1_channel = '<% nvram_get("wl1_channel"); %>';
-var wl1_nctrlsb = '<% nvram_get("wl1_nctrlsb"); %>';
-var wl1_nbw = '<% nvram_get("wl1_nbw"); %>';
-var wl1_phytype = '<% nvram_get("wl1_phytype"); %>';
-var wl1_40m_disable = '<% nvram_get("wl1_40m_disable"); %>';
+var wl0_channel = '<% nvg("wl0_channel"); %>';
+var wl0_nctrlsb = '<% nvg("wl0_nctrlsb"); %>';
+var wl0_nbw = '<% nvg("wl0_nbw"); %>';
+var wl0_phytype = '<% nvg("wl0_phytype"); %>';
+var wl0_40m_disable = '<% nvg("wl0_40m_disable"); %>';
+var wl1_channel = '<% nvg("wl1_channel"); %>';
+var wl1_nctrlsb = '<% nvg("wl1_nctrlsb"); %>';
+var wl1_nbw = '<% nvg("wl1_nbw"); %>';
+var wl1_phytype = '<% nvg("wl1_phytype"); %>';
+var wl1_40m_disable = '<% nvg("wl1_40m_disable"); %>';
 
 function create_wchannel0_auto(F) {
 	F.wl0_wchannel.length = 1;
@@ -257,17 +257,17 @@ var update;
 
 addEvent(window, "load", function() {
 <% ifdef("HAVE_ATH9K", "initChannelProperties();"); %>
-	var wl0_mode = "<% nvram_get("wl0_mode"); %>";
+	var wl0_mode = "<% nvg("wl0_mode"); %>";
 	   if (wl0_mode=="ap" || wl0_mode=="infra")
 	{
 	    if (wl0_phytype == 'n' || wl0_phytype == 'h' || wl0_phytype == 'v' || wl0_phytype == 's')
-		InitBW0('<% nvram_get("wl0_nbw"); %>' ,document.wireless);
+		InitBW0('<% nvg("wl0_nbw"); %>' ,document.wireless);
 	}
-	var wl1_mode = "<% nvram_get("wl1_mode"); %>";
+	var wl1_mode = "<% nvg("wl1_mode"); %>";
 	   if (wl1_mode=="ap" || wl1_mode=="infra")
 	{
 	    if (wl1_phytype == 'n' || wl1_phytype == 'h' || wl1_phytype == 'v' || wl1_phytype == 's')
-		InitBW1('<% nvram_get("wl1_nbw"); %>' ,document.wireless);
+		InitBW1('<% nvg("wl1_nbw"); %>' ,document.wireless);
 	}
 		
 	update = new StatusbarUpdate();

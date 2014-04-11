@@ -63,8 +63,8 @@ function make_client_cert(F,I) {
 var update;
 
 addEvent(window, "load", function() {
-		show_layer_ext(document.radius.radius_enabled, 'idradius', <% nvram_else_match("radius_enabled", "1", "1", "0"); %> == 1);
-		update = new StatusUpdate("FreeRadius.live.asp", <% nvram_get("refresh_time"); %>);
+		show_layer_ext(document.radius.radius_enabled, 'idradius', <% nvem("radius_enabled", "1", "1", "0"); %> == 1);
+		update = new StatusUpdate("FreeRadius.live.asp", <% nvg("refresh_time"); %>);
 		update.start();		
 });
 
@@ -100,8 +100,8 @@ addEvent(window, "unload", function() {
 								<legend><% tran("freeradius.h2"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("freeradius.h2"); %></div>
-									<input class="spaceradio" type="radio" name="radius_enabled" value="1" <% nvram_checked("radius_enabled", "1"); %> onclick="show_layer_ext(this, 'idradius', true)" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="radius_enabled" value="0" <% nvram_checked("radius_enabled", "0"); %> onclick="show_layer_ext(this, 'idradius', false)" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" name="radius_enabled" value="1" <% nvc("radius_enabled", "1"); %> onclick="show_layer_ext(this, 'idradius', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="radius_enabled" value="0" <% nvc("radius_enabled", "0"); %> onclick="show_layer_ext(this, 'idradius', false)" /><% tran("share.disable"); %>
 								</div>
 							</fieldset>
 							<br />
@@ -111,31 +111,31 @@ addEvent(window, "unload", function() {
 							<legend><% tran("freeradius.certificate"); %></legend>
 							<div class="setting">
 							<div class="label"><% tran("freeradius.countrycode"); %></div>
-							<input size="3" name="radius_country" value="<% nvram_get("radius_country"); %>" />
+							<input size="3" name="radius_country" value="<% nvg("radius_country"); %>" />
 							</div>
 							<div class="setting">
 							<div class="label"><% tran("freeradius.state"); %></div>
-							<input size="32" name="radius_state" value="<% nvram_get("radius_state"); %>" />
+							<input size="32" name="radius_state" value="<% nvg("radius_state"); %>" />
 							</div>
 							<div class="setting">
 							<div class="label"><% tran("freeradius.locality"); %></div>
-							<input size="32" name="radius_locality" value="<% nvram_get("radius_locality"); %>" />
+							<input size="32" name="radius_locality" value="<% nvg("radius_locality"); %>" />
 							</div>
 							<div class="setting">
 							<div class="label"><% tran("freeradius.organisation"); %></div>
-							<input size="32" name="radius_organisation" value="<% nvram_get("radius_organisation"); %>" />
+							<input size="32" name="radius_organisation" value="<% nvg("radius_organisation"); %>" />
 							</div>
 							<div class="setting">
 							<div class="label"><% tran("freeradius.email"); %></div>
-							<input size="32" name="radius_email" value="<% nvram_get("radius_email"); %>" />
+							<input size="32" name="radius_email" value="<% nvg("radius_email"); %>" />
 							</div>
 							<div class="setting">
 							<div class="label"><% tran("freeradius.common"); %></div>
-							<input size="32" name="radius_common" value="<% nvram_get("radius_common"); %>" />
+							<input size="32" name="radius_common" value="<% nvg("radius_common"); %>" />
 							</div>
 							<div class="setting">
 							<div class="label"><% tran("freeradius.expiration"); %></div>
-							<input class="num" maxlength="5" size="5" name="radius_expiration" value="<% nvram_get("radius_expiration"); %>" />
+							<input class="num" maxlength="5" size="5" name="radius_expiration" value="<% nvg("radius_expiration"); %>" />
 								<span class="default">
 								<script type="text/javascript">
 								//<![CDATA[
@@ -145,7 +145,7 @@ addEvent(window, "unload", function() {
 							</div>
 							<div class="setting">
 							<div class="label"><% tran("freeradius.passphrase"); %></div>
-							<input size="32" name="radius_passphrase" value="<% nvram_get("radius_passphrase"); %>" />
+							<input size="32" name="radius_passphrase" value="<% nvg("radius_passphrase"); %>" />
 							</div>
 							<div class="center">
 							<script type="text/javascript">
@@ -170,7 +170,7 @@ addEvent(window, "unload", function() {
 							<legend><% tran("freeradius.settings"); %></legend>
 							<div class="setting">
 								<div class="label"><% tran("freeradius.port"); %></div>
-								<input class="num" maxlength="5" size="5" name="radius_port" onblur="valid_range(this,1,65535,'FreeRadius Port')" value="<% nvram_get("radius_port"); %>" />
+								<input class="num" maxlength="5" size="5" name="radius_port" onblur="valid_range(this,1,65535,'FreeRadius Port')" value="<% nvg("radius_port"); %>" />
 								<span class="default">
 								<script type="text/javascript">
 								//<![CDATA[
@@ -198,7 +198,7 @@ addEvent(window, "unload", function() {
 							<div class="submitFooter">
 							<script type="text/javascript">
 							 //<![CDATA[
-							 var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+							 var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
 							 submitFooterButton(1,1,0,autoref);
 							 //]]>
 							 </script>

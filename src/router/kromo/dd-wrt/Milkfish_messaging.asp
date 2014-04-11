@@ -71,7 +71,7 @@ function milkfish_sip_message_submit(F) {
 					<textarea cols="40" rows="4" id="sip_message" name="sip_message"></textarea>
 					<script type="text/javascript">
 					//<![CDATA[
-					    var sip_message = fix_cr( '<% nvram_get("sip_message"); %>' );
+					    var sip_message = fix_cr( '<% nvg("sip_message"); %>' );
 					    document.getElementById("sip_message").value = sip_message;
 					//]]>
 					</script>

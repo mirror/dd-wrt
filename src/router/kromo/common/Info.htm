@@ -19,7 +19,7 @@ function setWirelessTable() {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
-		if ("<% nvram_get("maskmac"); %>" != "1") {
+		if ("<% nvg("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
 		  cellmac.title = share.oui;
 		  cellmac.style.cursor = "pointer";
@@ -60,7 +60,7 @@ function setWDSTable() {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
-		if ("<% nvram_get("maskmac"); %>" != "1") {
+		if ("<% nvg("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
 		  cellmac.title = share.oui;
 		  cellmac.style.cursor = "pointer";
@@ -106,7 +106,7 @@ function setDHCPTable() {
 		row.insertCell(-1).innerHTML = val[i + 1];
 		
 		var mac = val[i + 2];
-		if ("<% nvram_get("maskmac"); %>" != "1") {
+		if ("<% nvg("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
 		  cellmac.title = share.oui;
 		  cellmac.style.cursor = "pointer";
@@ -144,7 +144,7 @@ function setMemoryValues(val) {
 	setElementContent("mem_cached", memCached.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
 	setElementContent("mem_active", memActive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
 	setElementContent("mem_inactive", memInactive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
-<% nvram_invmatch("show_hidden","1","/"); %><% nvram_invmatch("show_hidden","1","/"); %>	setElementContent("mem_hidden", "32 MB / 32 MB");
+<% nvim("show_hidden","1","/"); %><% nvim("show_hidden","1","/"); %>	setElementContent("mem_hidden", "32 MB / 32 MB");
 }
 
 var update;
@@ -155,9 +155,9 @@ addEvent(window, "load", function() {
 <% ifndef("HASWIFI", "/"); %><% ifndef("HASWIFI", "/"); %>	setWirelessTable(<% active_wireless(1); %>);
 <% ifndef("HASWIFI", "/"); %><% ifndef("HASWIFI", "/"); %>	setWDSTable(<% active_wds(1); %>);
 	setDHCPTable(<% dumpleases(1); %>);
-	setElementVisible("dhcp", "<% nvram_get("lan_proto"); %>" == "dhcp");
+	setElementVisible("dhcp", "<% nvg("lan_proto"); %>" == "dhcp");
 
-	update = new StatusUpdate("Info.live.htm", <% nvram_get("refresh_time"); %>);
+	update = new StatusUpdate("Info.live.htm", <% nvg("refresh_time"); %>);
 	update.onUpdate("packet_info", function(u) {
 		setPacketInfo(u.packet_info);
 	});
@@ -229,18 +229,18 @@ function refresh(F)
 									<legend><% tran("share.router"); %></legend>
 									<div class="setting">
 										<div class="label"><% tran("share.routername"); %></div>
-										<% nvram_get("router_name"); %>&nbsp;
+										<% nvg("router_name"); %>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("status_router.sys_model"); %></div>
-										<% nvram_get("DD_BOARD"); %>&nbsp;
+										<% nvg("DD_BOARD"); %>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label">LAN MAC</div>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<span id=\"lan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");
-										document.write("<% nvram_get("lan_hwaddr"); %>");
+										document.write("<span id=\"lan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("lan_hwaddr"); %>')\" >");
+										document.write("<% nvg("lan_hwaddr"); %>");
 										document.write("</span>");
 										//]]>
 										</script>&nbsp;
@@ -249,8 +249,8 @@ function refresh(F)
 										<div class="label">WAN MAC</div>
 										<script type="text/javascript">
 										//<![CDATA[
-										document.write("<span id=\"wan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");
-										document.write("<% nvram_get("wan_hwaddr"); %>");
+										document.write("<span id=\"wan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("wan_hwaddr"); %>')\" >");
+										document.write("<% nvg("wan_hwaddr"); %>");
 										document.write("</span>");
 										//]]>
 										</script>&nbsp;
@@ -273,7 +273,7 @@ function refresh(F)
 									</div>
 									<div class="setting">
 										<div class="label">LAN IP</div>
-										<span id="lan_ip"><% nvram_get("lan_ipaddr"); %></span>&nbsp;
+										<span id="lan_ip"><% nvg("lan_ipaddr"); %></span>&nbsp;
 									</div>
 								</fieldset><br />
 	<% ifndef("HASWIFI", "<!--"); %>
@@ -330,38 +330,38 @@ function refresh(F)
 									<legend><% tran("info.srv"); %></legend>
 									<div class="setting">
 										<div class="label"><% tran("service.dhcp_legend2"); %></div>
-										<% nvram_match("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_match("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
+										<% nvm("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvm("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label">WRT-radauth</div>
-									<% nvram_invmatch("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvram_match("wl0_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl0_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_invmatch("wl0_mode", "ap", "-->"); %>&nbsp;
+									<% nvim("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvm("wl0_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("wl0_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvim("wl0_mode", "ap", "-->"); %>&nbsp;
 									</div>
 									<% ifndef("RFLOW", "<!--"); %>
 									<div class="setting">
 										<div class="label">WRT-rflow</div>
-										<% nvram_match("rflow_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("rflow_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
+										<% nvm("rflow_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("rflow_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label">MAC-upd</div>
-										<% nvram_match("macupd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("macupd_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
+										<% nvm("macupd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("macupd_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 									</div>
 									<% ifndef("RFLOW", "-->"); %>
 									<% ifndef("SAMBA", "<!--"); %>
 									<div class="setting">
 										<div class="label"><% tran("management.samba_legend"); %></div>
-										<% nvram_match("samba_mount","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("samba_mount","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
+										<% nvm("samba_mount","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("samba_mount","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 									</div>
 									<% ifndef("SAMBA", "-->"); %>
 									<% ifndef("SPUTNIK_APD", "<!--"); %>
 									<div class="setting">
 										<div class="label"><% tran("bmenu.statuSputnik"); %></div>
-										<% nvram_match("apd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("apd_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
+										<% nvm("apd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("apd_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 									</div>
 									<% ifndef("SPUTNIK_APD", "-->"); %>
 									<% ifndef("USB", "<!--"); %>
 									<div class="setting">
 										<div class="label"><% tran("usb.usb_legend"); %></div>
-										<% nvram_match("usb_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("usb_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
+										<% nvm("usb_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvm("usb_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
 									</div>
 									<% ifndef("USB", "-->"); %>
 								</fieldset><br />
@@ -396,12 +396,12 @@ function refresh(F)
 										<div class="label"><% tran("status_router.mem_inactive"); %></div>
 										<span id="mem_inactive"></span>&nbsp;
 									</div>
-	<% nvram_invmatch("show_hidden","1","<!--"); %>
+	<% nvim("show_hidden","1","<!--"); %>
 									<div class="setting">
 										<div class="label"><% tran("status_router.mem_hidden"); %></div>
 										<span id="mem_hidden"></span>&nbsp;
 									</div>
-	<% nvram_invmatch("show_hidden","1","-->"); %>
+	<% nvim("show_hidden","1","-->"); %>
 								</fieldset><br />
 								
 								<fieldset>
@@ -416,7 +416,7 @@ function refresh(F)
 											<script type="text/javascript">
 											//<![CDATA[
 											<% statfs("/tmp/mnt/smbshare", "samba"); %>
-											document.write( ((<% nvram_get("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.used) + ' / ' + scaleSize(samba.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+											document.write( ((<% nvg("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.used) + ' / ' + scaleSize(samba.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 											//]]>
 											</script>
 										</div>
@@ -427,7 +427,7 @@ function refresh(F)
 										<script type="text/javascript">
 										//<![CDATA[
 										<% statfs("/jffs", "my_jffs"); %>
-										document.write( ((<% nvram_get("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.used) + ' / ' + scaleSize(my_jffs.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+										document.write( ((<% nvg("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.used) + ' / ' + scaleSize(my_jffs.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 										//]]>
 										</script>
 									</div>
@@ -438,7 +438,7 @@ function refresh(F)
 										<script type="text/javascript">
 										//<![CDATA[
 										<% statfs("/mmc", "mmc"); %>
-										document.write( ((<% nvram_get("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.used) + ' / ' + scaleSize(mmc.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+										document.write( ((<% nvg("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.used) + ' / ' + scaleSize(mmc.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 										//]]>
 										</script>
 									</div>
@@ -453,11 +453,11 @@ function refresh(F)
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("status_gpsi.lon"); %></div>
-										<span id="gps_lon"><% nvram_get("gps_lon_text"); %></span>&nbsp;
+										<span id="gps_lon"><% nvg("gps_lon_text"); %></span>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("status_gpsi.lat"); %></div>
-										<span id="gps_lat"><% nvram_get("gps_lat_text"); %></span>&nbsp;
+										<span id="gps_lat"><% nvg("gps_lat_text"); %></span>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("status_gpsi.lon"); %></div>
@@ -469,11 +469,11 @@ function refresh(F)
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("status_gpsi.alt"); %></div>
-										<span id="gps_alt"><% nvram_get("gps_alt"); %></span>&nbsp;
+										<span id="gps_alt"><% nvg("gps_alt"); %></span>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("status_gpsi.sat"); %></div>
-										<span id="gps_sat"><% nvram_get("gps_sat"); %></span>&nbsp;
+										<span id="gps_sat"><% nvg("gps_sat"); %></span>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label">Map Link</div>
@@ -540,7 +540,7 @@ function refresh(F)
 											<th width="25%"><% tran("share.hostname"); %></th>
 											<th width="25%"><% tran("share.ip"); %></th>
 											<th width="25%"><% tran("share.mac"); %></th>
-											<th width="25%"><script type="text/javascript">Capture(<% nvram_else_match("dhcp_dnsmasq","1","idx.dhcp_lease","share.expires"); %>)</script></th>
+											<th width="25%"><script type="text/javascript">Capture(<% nvem("dhcp_dnsmasq","1","idx.dhcp_lease","share.expires"); %>)</script></th>
 										</tr>
 									</table>
 							<script type="text/javascript">
@@ -554,7 +554,7 @@ function refresh(F)
 							<div class="submitFooter">
 								<script type="text/javascript">
 								 //<![CDATA[
-								 var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+								 var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
 								 submitFooterButton(0,0,0,autoref);
 								 //]]>
 								 </script>
