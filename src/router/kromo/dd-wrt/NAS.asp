@@ -485,16 +485,16 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	show_layer_ext(document.setup.proftpd_rad, 'idftprad', <% nvram_else_match("proftpd_rad", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.proftpd_enable, 'ftpen', <% nvram_else_match("proftpd_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.proftpd_enable, 'ftpenext', <% nvram_else_match("proftpd_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.proftpd_anon, 'ftpanon', <% nvram_else_match("proftpd_anon", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.samba3_enable, 'samba3config', <% nvram_else_match("samba3_enable", "1", "1", "0"); %> == 1);
-	//show_layer_ext(document.setup.samba3_pub, 'samba3pub', <% nvram_else_match("samba3_pub", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.samba3_advanced, 'samba3advanced', <% nvram_else_match("samba3_advanced", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.samba3_advanced, 'samba3basic', <% nvram_else_match("samba3_advanced", "1", "1", "0"); %> != 1);
+	show_layer_ext(document.setup.proftpd_rad, 'idftprad', <% nvem("proftpd_rad", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.proftpd_enable, 'ftpen', <% nvem("proftpd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.proftpd_enable, 'ftpenext', <% nvem("proftpd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.proftpd_anon, 'ftpanon', <% nvem("proftpd_anon", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.samba3_enable, 'samba3config', <% nvem("samba3_enable", "1", "1", "0"); %> == 1);
+	//show_layer_ext(document.setup.samba3_pub, 'samba3pub', <% nvem("samba3_pub", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.samba3_advanced, 'samba3advanced', <% nvem("samba3_advanced", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.samba3_advanced, 'samba3basic', <% nvem("samba3_advanced", "1", "1", "0"); %> != 1);
 	
-	show_layer_ext(document.setup.dlna_enable, 'dlnaen', <% nvram_else_match("dlna_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.dlna_enable, 'dlnaen', <% nvem("dlna_enable", "1", "1", "0"); %> == 1);
 
 	update = new StatusbarUpdate();
 	update.start();

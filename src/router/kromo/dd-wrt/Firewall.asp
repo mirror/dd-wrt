@@ -68,10 +68,10 @@ function setFirewall(val) {
 var update;
 
 addEvent(window, "load", function() {
-	setFirewall("<% nvram_get("filter"); %>");
-	show_layer_ext(document.firewall.log_enable, 'idlog1', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.firewall.log_enable, 'idlog2', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.firewall.warn_enabled, 'idwarn', <% nvram_else_match("warn_enabled", "1", "1", "0"); %> == 1);
+	setFirewall("<% nvg("filter"); %>");
+	show_layer_ext(document.firewall.log_enable, 'idlog1', <% nvem("log_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.firewall.log_enable, 'idlog2', <% nvem("log_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.firewall.warn_enabled, 'idwarn', <% nvem("warn_enabled", "1", "1", "0"); %> == 1);
 	
 	update = new StatusbarUpdate();
 	update.start();
@@ -124,8 +124,8 @@ addEvent(window, "unload", function() {
 							<legend><% tran("firewall.legend"); %></legend>
 							<div class="setting">
 								<div class="label"><% tran("firewall.firewall"); %></div>
-								<input class="spaceradio" type="radio" value="on" name="filter" <% nvram_checked("filter", "on"); %> onclick="setFirewall(this.value);" /><% tran("share.enable"); %>&nbsp;
-								<input class="spaceradio" type="radio" value="off" name="filter" <% nvram_checked("filter", "off"); %> onclick="setFirewall(this.value);" /><% tran("share.disable"); %>
+								<input class="spaceradio" type="radio" value="on" name="filter" <% nvc("filter", "on"); %> onclick="setFirewall(this.value);" /><% tran("share.enable"); %>&nbsp;
+								<input class="spaceradio" type="radio" value="off" name="filter" <% nvc("filter", "off"); %> onclick="setFirewall(this.value);" /><% tran("share.disable"); %>
 							</div>
 						</fieldset><br />
 						
@@ -133,40 +133,40 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("firewall.legend2"); %></legend>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_block_proxy" <% nvram_checked("block_proxy", "1"); %> /><% tran("firewall.proxy"); %>
+										<input class="spaceradio" type="checkbox" value="1" name="_block_proxy" <% nvc("block_proxy", "1"); %> /><% tran("firewall.proxy"); %>
 									</div>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_block_cookie" <% nvram_checked("block_cookie", "1"); %> /><% tran("firewall.cookies"); %>
+										<input class="spaceradio" type="checkbox" value="1" name="_block_cookie" <% nvc("block_cookie", "1"); %> /><% tran("firewall.cookies"); %>
 									</div>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_block_java" <% nvram_checked("block_java", "1"); %> /><% tran("firewall.applet"); %>
+										<input class="spaceradio" type="checkbox" value="1" name="_block_java" <% nvc("block_java", "1"); %> /><% tran("firewall.applet"); %>
 									</div>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_block_activex" <% nvram_checked("block_activex", "1"); %> /><% tran("firewall.activex"); %>
+										<input class="spaceradio" type="checkbox" value="1" name="_block_activex" <% nvc("block_activex", "1"); %> /><% tran("firewall.activex"); %>
 									</div>
 								</fieldset><br />
 								
 								<fieldset>
 									<legend><% tran("firewall.legend3"); %></legend>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvram_checked("block_wan", "1"); %> /><% tran("firewall.ping"); %>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvc("block_wan", "1"); %> /><% tran("firewall.ping"); %>
 										</div>
 										
 										<% ifndef("MULTICAST", "<!--"); %>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_block_multicast" <% nvram_checked("block_multicast", "1"); %> /><% tran("firewall.muticast"); %>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_multicast" <% nvc("block_multicast", "1"); %> /><% tran("firewall.muticast"); %>
 										</div>
 										<% ifndef("MULTICAST", "-->"); %>
 										
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_block_loopback" <% nvram_checked("block_loopback", "1"); %> /><% tran("filter.nat"); %>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_loopback" <% nvc("block_loopback", "1"); %> /><% tran("filter.nat"); %>
 										</div>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_block_ident" <% nvram_checked("block_ident", "1"); %> /><% tran("filter.port113"); %>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_ident" <% nvc("block_ident", "1"); %> /><% tran("filter.port113"); %>
 										</div>
 										<% ifndef("SNMP", "<!--"); %>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_block_snmp" <% nvram_checked("block_snmp", "1"); %> /><% tran("filter.snmp"); %>
+											<input class="spaceradio" type="checkbox" value="1" name="_block_snmp" <% nvc("block_snmp", "1"); %> /><% tran("filter.snmp"); %>
 										</div>
 										<% ifndef("SNMP", "-->"); %>
 									</fieldset>
@@ -175,16 +175,16 @@ addEvent(window, "unload", function() {
 								<fieldset>
 									<legend><% tran("firewall.legend4"); %></legend>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_limit_ssh" <% nvram_checked("limit_ssh", "1"); %> /><% tran("firewall.ssh"); %>
+											<input class="spaceradio" type="checkbox" value="1" name="_limit_ssh" <% nvc("limit_ssh", "1"); %> /><% tran("firewall.ssh"); %>
 										</div>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_limit_telnet" <% nvram_checked("limit_telnet", "1"); %> /><% tran("firewall.telnet"); %>
+											<input class="spaceradio" type="checkbox" value="1" name="_limit_telnet" <% nvc("limit_telnet", "1"); %> /><% tran("firewall.telnet"); %>
 										</div>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_limit_pptp" <% nvram_checked("limit_pptp", "1"); %> /><% tran("firewall.pptp"); %>
+											<input class="spaceradio" type="checkbox" value="1" name="_limit_pptp" <% nvc("limit_pptp", "1"); %> /><% tran("firewall.pptp"); %>
 										</div>
 										<div class="setting">
-											<input class="spaceradio" type="checkbox" value="1" name="_limit_ftp" <% nvram_checked("limit_ftp", "1"); %> /><% tran("firewall.ftp"); %>
+											<input class="spaceradio" type="checkbox" value="1" name="_limit_ftp" <% nvc("limit_ftp", "1"); %> /><% tran("firewall.ftp"); %>
 										</div>
 								</fieldset>
 								<% ifdef("MICRO", "-->"); %>
@@ -197,8 +197,8 @@ addEvent(window, "unload", function() {
 								<legend><% tran("log.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("log.legend"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="log_enable" <% nvram_checked("log_enable", "1"); %> onclick="show_layer_ext(this, 'idlog1', true);show_layer_ext(this,'idlog2', true)" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="log_enable" <% nvram_checked("log_enable", "0"); %> onclick="show_layer_ext(this, 'idlog1', false);show_layer_ext(this,'idlog2', false)" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="log_enable" <% nvc("log_enable", "1"); %> onclick="show_layer_ext(this, 'idlog1', true);show_layer_ext(this,'idlog2', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="log_enable" <% nvc("log_enable", "0"); %> onclick="show_layer_ext(this, 'idlog1', false);show_layer_ext(this,'idlog2', false)" /><% tran("share.disable"); %>
 								</div>
 							<div id="idlog1">
 								<div class="setting">

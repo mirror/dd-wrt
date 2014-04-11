@@ -120,10 +120,10 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	setUPnP("<% nvram_get("upnp_enable"); %>");
+	setUPnP("<% nvg("upnp_enable"); %>");
 	setUPnPTable(new Array(<% tf_upnp(); %>));
 
-	update = new StatusUpdate("UPnP.live.asp", <% nvram_get("refresh_time"); %>);
+	update = new StatusUpdate("UPnP.live.asp", <% nvg("refresh_time"); %>);
 	update.onUpdate("upnp_forwards", function(u) {
 		setUPnPTable(eval("new Array(" + u.upnp_forwards + ")"));
 	});
@@ -176,7 +176,7 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 									//<![CDATA[
 									document.write("<input class=\"button\" type=\"button\" name=\"delete_button\" value=\"" + sbutton.delall + "\" onclick=\"deleteForward('all');\" />");
-									document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload();\" />");
+									document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload();\" />");
 									//]]>
 									</script>
 								</div>
@@ -186,13 +186,13 @@ addEvent(window, "unload", function() {
 								<legend><% tran("upnp.legend2"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("upnp.serv"); %></div>
-									<input class="spaceradio" type="radio" name="upnp_enable" value="1" <% nvram_checked("upnp_enable","1"); %> onclick="setUPnP(this.value)" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="upnp_enable" value="0" <% nvram_checked("upnp_enable","0"); %> onclick="setUPnP(this.value)" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" name="upnp_enable" value="1" <% nvc("upnp_enable","1"); %> onclick="setUPnP(this.value)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="upnp_enable" value="0" <% nvc("upnp_enable","0"); %> onclick="setUPnP(this.value)" /><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("upnp.clear"); %></div>
-									<input class="spaceradio" type="radio" name="upnpcas" value="1" <% nvram_checked("upnpcas","1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="upnpcas" value="0" <% nvram_checked("upnpcas","0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" name="upnpcas" value="1" <% nvc("upnpcas","1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="upnpcas" value="0" <% nvc("upnpcas","0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br />
 							

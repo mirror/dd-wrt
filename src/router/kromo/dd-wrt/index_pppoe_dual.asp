@@ -1,10 +1,10 @@
 <div class="setting">
 	<div class="label"><% tran("share.usrname"); %></div>
-	<input name="ppp_username" size="30" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ppp_username"); %>" />
+	<input name="ppp_username" size="30" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvg("ppp_username"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.passwd"); %></div>
-	<input id="ppp_passwd" name="ppp_passwd" size="30" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" autocomplete="off" value="<% nvram_get("ppp_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+	<input id="ppp_passwd" name="ppp_passwd" size="30" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" autocomplete="off" value="<% nvg("ppp_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
@@ -14,12 +14,12 @@
 <div id="pppoe_advanced">
 	<div class="setting">
 	<div class="label"><% tran("share.srv"); %></div>
-	<input name="ppp_service" size="30" maxlength="63" onblur="valid_name(this,share.srv)" value="<% nvram_get("ppp_service"); %>" />
+	<input name="ppp_service" size="30" maxlength="63" onblur="valid_name(this,share.srv)" value="<% nvg("ppp_service"); %>" />
 	</div>
 	<div class="setting">
 	<div class="label"><% tran("idx_pptp.srv"); %></div>
-	<input class="spaceradio" type="radio" value="1" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","1"); %> onchange="show_layer_ext(this, 'idpptpdhcp', false); dhcp_show_static_dns(1);" /><% tran("share.yes"); %>&nbsp;
-	<input class="spaceradio" type="radio" value="0" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","0"); %> onchange="show_layer_ext(this, 'idpptpdhcp', true); dhcp_show_static_dns();" /><% tran("share.no"); %>
+	<input class="spaceradio" type="radio" value="1" name="pptp_use_dhcp" <% nvc("pptp_use_dhcp","1"); %> onchange="show_layer_ext(this, 'idpptpdhcp', false); dhcp_show_static_dns(1);" /><% tran("share.yes"); %>&nbsp;
+	<input class="spaceradio" type="radio" value="0" name="pptp_use_dhcp" <% nvc("pptp_use_dhcp","0"); %> onchange="show_layer_ext(this, 'idpptpdhcp', true); dhcp_show_static_dns();" /><% tran("share.no"); %>
 </div>
 <div id="idpptpdhcp">
 	<div class="setting">
@@ -54,17 +54,17 @@
 
 	<div class="setting">
 		<div class="label"><% tran("share.compression"); %></div>
-		<input class="spaceradio" type="radio" name="ppp_compression" value="1" <% nvram_checked("ppp_compression","1"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="ppp_compression" value="0" <% nvram_checked("ppp_compression","0"); %> /><% tran("share.disable"); %> 
+		<input class="spaceradio" type="radio" name="ppp_compression" value="1" <% nvc("ppp_compression","1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="ppp_compression" value="0" <% nvc("ppp_compression","0"); %> /><% tran("share.disable"); %> 
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("service.pptpd_encry"); %></div>
-		<input size="30" maxlength="63" onblur="valid_name(this,service.pptpd_encry)" name="ppp_mppe" value="<% nvram_get("ppp_mppe"); %>" />
+		<input size="30" maxlength="63" onblur="valid_name(this,service.pptpd_encry)" name="ppp_mppe" value="<% nvg("ppp_mppe"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("idx_pptp.iptv"); %></div>
-		<input class="spaceradio" type="radio" name="pptp_iptv" value="1" <% nvram_checked("pptp_iptv", "1"); %> /><% tran("share.yes"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="pptp_iptv" value="0" <% nvram_checked("pptp_iptv", "0"); %> /><% tran("share.no"); %>
+		<input class="spaceradio" type="radio" name="pptp_iptv" value="1" <% nvc("pptp_iptv", "1"); %> /><% tran("share.yes"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="pptp_iptv" value="0" <% nvc("pptp_iptv", "0"); %> /><% tran("share.no"); %>
 	</div>
 	
 <script>

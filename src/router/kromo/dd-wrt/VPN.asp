@@ -53,18 +53,18 @@ addEvent(window, "unload", function() {
 								<legend><% tran("vpn.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("vpn.ipsec"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="ipsec_pass" <% nvram_checked("ipsec_pass","1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="ipsec_pass" <% nvram_checked("ipsec_pass","0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="ipsec_pass" <% nvc("ipsec_pass","1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ipsec_pass" <% nvc("ipsec_pass","0"); %> /><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("vpn.pptp"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="pptp_pass" <% nvram_checked("pptp_pass","1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="pptp_pass" <% nvram_checked("pptp_pass","0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="pptp_pass" <% nvc("pptp_pass","1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="pptp_pass" <% nvc("pptp_pass","0"); %> /><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("vpn.l2tp"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="l2tp_pass" <% nvram_checked("l2tp_pass","1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="l2tp_pass" <% nvram_checked("l2tp_pass","0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="l2tp_pass" <% nvc("l2tp_pass","1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="l2tp_pass" <% nvc("l2tp_pass","0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br/>
 							

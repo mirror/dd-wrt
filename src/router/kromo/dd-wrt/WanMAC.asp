@@ -29,7 +29,7 @@ function SelMac(val) {
 var update;
 
 addEvent(window, "load", function() {
-	SelMac("<% nvram_get("mac_clone_enable"); %>");
+	SelMac("<% nvg("mac_clone_enable"); %>");
 	<% onload("MACClone", "document.mac.mac_clone_enable[0].checked = true; SelMac(1);"); %>
 	
 	update = new StatusbarUpdate();
@@ -67,8 +67,8 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend><% tran("wanmac.legend"); %></legend>
 								<div class="setting">
-									<input class="spaceradio" type="radio" value="1" name="mac_clone_enable" onclick="SelMac(this.value)" <% nvram_checked("mac_clone_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="mac_clone_enable" onclick="SelMac(this.value)" <% nvram_checked("mac_clone_enable", "0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="mac_clone_enable" onclick="SelMac(this.value)" <% nvc("mac_clone_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="mac_clone_enable" onclick="SelMac(this.value)" <% nvc("mac_clone_enable", "0"); %> /><% tran("share.disable"); %>
 								</div>
 								<div id="idmac">
 									<div class="setting">

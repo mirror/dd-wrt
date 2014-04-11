@@ -175,23 +175,23 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	port_enable_disable(document.setup, "<% nvram_get("remote_management"); %>");
+	port_enable_disable(document.setup, "<% nvg("remote_management"); %>");
 	if (document.setup.remote_mgt_ssh)
-		selSSH("<% nvram_get("sshd_enable"); %>", 1);
+		selSSH("<% nvg("sshd_enable"); %>", 1);
 	if (document.setup.remote_mgt_telnet)
-		selTelnet("<% nvram_get("telnetd_enable"); %>", 1);
+		selTelnet("<% nvg("telnetd_enable"); %>", 1);
 
-	show_layer_ext(document.setup.ipv6_enable0,'idipv6', <% nvram_else_match("ipv6_enable0", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.remote_mgt_ssh, 'idssh', <% nvram_else_match("remote_mgt_ssh", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.remote_mgt_telnet, 'idtelnet', <% nvram_else_match("remote_mgt_telnet", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.remote_ip_any, 'idremip', <% nvram_else_match("remote_ip_any", "1", "0", "1"); %> == 1);
-	show_layer_ext(document.setup.remote_management, 'idhttpd', <% nvram_else_match("remote_management", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.status_auth, 'idsysinfo', <% nvram_else_match("status_auth", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.cron_enable, 'idcron', <% nvram_else_match("cron_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.samba_mount, 'idsamba', <% nvram_else_match("samba_mount", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.enable_jffs2, 'idjffs2', <% nvram_else_match("enable_jffs2", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.mmc_enable0, 'idmmc', <% nvram_else_match("mmc_enable0", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.mmc_gpio, 'idmmcgpio', <% nvram_else_match("mmc_gpio", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.ipv6_enable0,'idipv6', <% nvem("ipv6_enable0", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.remote_mgt_ssh, 'idssh', <% nvem("remote_mgt_ssh", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.remote_mgt_telnet, 'idtelnet', <% nvem("remote_mgt_telnet", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.remote_ip_any, 'idremip', <% nvem("remote_ip_any", "1", "0", "1"); %> == 1);
+	show_layer_ext(document.setup.remote_management, 'idhttpd', <% nvem("remote_management", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.status_auth, 'idsysinfo', <% nvem("status_auth", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.cron_enable, 'idcron', <% nvem("cron_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.samba_mount, 'idsamba', <% nvem("samba_mount", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.enable_jffs2, 'idjffs2', <% nvem("enable_jffs2", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.mmc_enable0, 'idmmc', <% nvem("mmc_enable0", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.mmc_gpio, 'idmmcgpio', <% nvem("mmc_gpio", "1", "1", "0"); %> == 1);
 	
 	update = new StatusbarUpdate();
 	update.start();
@@ -224,7 +224,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1" />
 
-							<input type="hidden" name="PasswdModify" value="<% nvram_else_match("http_passwd", "admin", "1", "0"); %>" />
+							<input type="hidden" name="PasswdModify" value="<% nvem("http_passwd", "admin", "1", "0"); %>" />
 							<input type="hidden" name="remote_mgt_https" />
 							<input type="hidden" name="http_enable" />
 							<input type="hidden" name="info_passwd" />

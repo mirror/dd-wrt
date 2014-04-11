@@ -578,8 +578,8 @@ addEvent(window, "load", function() {
 	dhcp_enable_disable(document.setupassistant,'<% nvram_selget("lan_proto"); %>');
 	setDNSMasq(document.setupassistant);
 	
-	show_layer_ext(document.setupassistant.ntp_enable, 'idntp', <% nvram_else_match("ntp_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setupassistant.reconnect_enable, 'idreconnect', <% nvram_else_match("reconnect_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setupassistant.ntp_enable, 'idntp', <% nvem("ntp_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setupassistant.reconnect_enable, 'idreconnect', <% nvem("reconnect_enable", "1", "1", "0"); %> == 1);
 	
 	// Wireless
         var wl0_mode = "<% nvram_selget("wl0_mode"); %>";
@@ -695,8 +695,8 @@ function submitSavePrevButtons() {
 				
 								<!--div class="setting">
 									<div class="label"><% tran("idx.stp"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_checked("lan_stp", "1"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvram_checked("lan_stp", "0"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvc("lan_stp", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvc("lan_stp", "0"); %> /><% tran("share.disable"); %>
 								</div-->
 							</fieldset><br style="<% sas_stage_visible_css("1"); %>" />
 				
@@ -757,8 +757,8 @@ function submitSavePrevButtons() {
 								<legend><% tran("aoss.service"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("aoss.enable"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="aoss_enable" <% sas_nvram_checked("aoss_enable", "1"); %> onClick="toggleAOSS(this, true);" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% sas_nvram_checked("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="aoss_enable" <% sas_nvc("aoss_enable", "1"); %> onClick="toggleAOSS(this, true);" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% sas_nvc("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
 								</div>
 							</fieldset>
 

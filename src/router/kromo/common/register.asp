@@ -1,9 +1,9 @@
 <% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Activation</title>
+		<title><% nvg("router_name"); %> - Activation</title>
 		<script type="text/javascript">//
 		//<![CDATA[
 
-document.title = "<% nvram_get("router_name"); %> - Activation";
+document.title = "<% nvg("router_name"); %> - Activation";
 
 function to_submit(F) {
 	F.change_action.value = "gozila_cgi";
@@ -30,9 +30,9 @@ function to_submit(F) {
 							<ul id="menuMainList">
 								<li><span><strong><% tran("bmenu.setup"); %></strong></span></li>
 								<li><span><strong><% tran("bmenu.wireless"); %></strong></span></li>
-								<% nvram_invmatch("sipgate","1","<!--"); %>
+								<% nvim("sipgate","1","<!--"); %>
 								<li><span><strong><% tran("bmenu.sipath"); %></strong></span></li>
-								<% nvram_invmatch("sipgate","1","-->"); %>
+								<% nvim("sipgate","1","-->"); %>
 								<li><span><strong><% tran("bmenu.security"); %></strong></span></li>
 								<li><span><strong><% tran("bmenu.accrestriction"); %></strong></span></li>
 								<li><span><strong><% tran("bmenu.applications"); %></strong></span></li>
@@ -65,7 +65,7 @@ function to_submit(F) {
 						<textarea cols="80" rows="5" id="regvalue" name="regvalue"> </textarea>
 						<script type="text/javascript">
 						//<![CDATA[
-						var regvalue = fix_cr( '<% nvram_get("regvalue"); %>' );
+						var regvalue = fix_cr( '<% nvg("regvalue"); %>' );
 						document.getElementById("regvalue").value = regvalue;
 						//]]>
 						</script>

@@ -1,5 +1,5 @@
 <% do_pagehead(""); %>
-		<title><% nvram_get("router_name"); %></title>
+		<title><% nvg("router_name"); %></title>
 
 		<script type="text/javascript">
 		//<![CDATA[

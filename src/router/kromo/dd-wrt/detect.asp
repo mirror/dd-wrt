@@ -4,9 +4,9 @@
     <script type="text/javascript">
 	var detect = function() {
     		if(DetectTierIphone()) {
-			document.location = "http://<% nvram_get("lan_ipaddr"); %>/InternetAtStart.asp?ias_detect";
+			document.location = "http://<% nvg("lan_ipaddr"); %>/InternetAtStart.asp?ias_detect";
     		} else {
-			document.location = "http://<% nvram_get("lan_ipaddr"); %>/index.asp?ias_detect";
+			document.location = "http://<% nvg("lan_ipaddr"); %>/index.asp?ias_detect";
 			//document.location.href = "/index.asp?ias_detect";
 			//document.forms['redirectform'].action = "index.asp?ias_detect";
 			//document.forms['redirectform'].submit();

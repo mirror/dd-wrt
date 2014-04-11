@@ -31,8 +31,8 @@ function setRad(val) {
 var update;
 
 addEvent(window, "load", function() {
-	setRad("<% nvram_get("wl_radauth"); %>");
-	if ("ap" != "<% nvram_get("wl_mode"); %>"){
+	setRad("<% nvg("wl_radauth"); %>");
+	if ("ap" != "<% nvg("wl_mode"); %>"){
 		setElementsActive("wl_radauth", "_radius_override", false);
 		alert(errmsg.err49);
 	}
@@ -74,8 +74,8 @@ addEvent(window, "unload", function() {
 				<legend><% tran("radius.legend"); %></legend>
 				<div class="setting">
 					<div class="label"><% tran("radius.label"); %></div>
-					<input class="spaceradio" type="radio" name="wl_radauth" value="1" <% nvram_checked("wl_radauth","1"); %> onclick="setRad(this.value)" /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" name="wl_radauth" value="0" <% nvram_checked("wl_radauth","0"); %> onclick="setRad(this.value)" /><% tran("share.disable"); %>
+					<input class="spaceradio" type="radio" name="wl_radauth" value="1" <% nvc("wl_radauth","1"); %> onclick="setRad(this.value)" /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" name="wl_radauth" value="0" <% nvc("wl_radauth","0"); %> onclick="setRad(this.value)" /><% tran("share.disable"); %>
 				</div>
 				<div id="idradius">
 					  <div class="setting">
@@ -94,25 +94,25 @@ addEvent(window, "unload", function() {
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("radius.label4"); %></div>
-						<input class="num" size="5" maxlength="5" name="wl_radius_port" onblur="valid_range(this,1,65535,radius.label4)" value="<% nvram_get("wl_radius_port"); %>" />
+						<input class="num" size="5" maxlength="5" name="wl_radius_port" onblur="valid_range(this,1,65535,radius.label4)" value="<% nvg("wl_radius_port"); %>" />
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("radius.label5"); %></div>
-						<input class="num" size="5" maxlength="5" name="wl0_max_unauth_users" value="<% nvram_get("wl0_max_unauth_users"); %>" />
+						<input class="num" size="5" maxlength="5" name="wl0_max_unauth_users" value="<% nvg("wl0_max_unauth_users"); %>" />
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("radius.label6"); %></div>
-						<input class="spaceradio" type="radio" name="wl0_radmacpassword" value="1" <% nvram_checked("wl0_radmacpassword","1"); %> /><% tran("share.share_key"); %>&nbsp;
-						<input class="spaceradio" type="radio" name="wl0_radmacpassword" value="0" <% nvram_checked("wl0_radmacpassword","0"); %> /><% tran("share.mac"); %>
+						<input class="spaceradio" type="radio" name="wl0_radmacpassword" value="1" <% nvc("wl0_radmacpassword","1"); %> /><% tran("share.share_key"); %>&nbsp;
+						<input class="spaceradio" type="radio" name="wl0_radmacpassword" value="0" <% nvc("wl0_radmacpassword","0"); %> /><% tran("share.mac"); %>
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("radius.label7"); %></div>
-						<input type="password" id="wl_radius_key" name="wl_radius_key" size="20" maxlength="79" value="<% nvram_get("wl_radius_key"); %>" />&nbsp;&nbsp;&nbsp;
+						<input type="password" id="wl_radius_key" name="wl_radius_key" size="20" maxlength="79" value="<% nvg("wl_radius_key"); %>" />&nbsp;&nbsp;&nbsp;
 						<input type="checkbox" name="_wl_radius_unmask" value="0" onclick="setElementMask('wl_radius_key', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("radius.label8"); %></div>
-						<input type="checkbox" name="_radius_override" value="1" <% nvram_checked("wl0_radius_override", "1"); %> />
+						<input type="checkbox" name="_radius_override" value="1" <% nvc("wl0_radius_override", "1"); %> />
 					</div>
 					</div>
 				</fieldset><br/>

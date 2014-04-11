@@ -1,9 +1,9 @@
 <% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - SuperChannel</title>
+		<title><% nvg("router_name"); %> - SuperChannel</title>
 		<script type="text/javascript">//
 		//<![CDATA[
 
-document.title = "<% nvram_get("router_name"); %> - SuperChannel";
+document.title = "<% nvg("router_name"); %> - SuperChannel";
 
 function to_submit(F) {
 	F.change_action.value = "gozila_cgi";
@@ -53,7 +53,7 @@ function to_submit(F) {
 						<textarea cols="80" rows="5" id="regvalue" name="regvalue"> </textarea>
 						<script type="text/javascript">
 						//<![CDATA[
-						var regvalue = fix_cr( '<% nvram_get("regvalue"); %>' );
+						var regvalue = fix_cr( '<% nvg("regvalue"); %>' );
 						document.getElementById("regvalue").value = regvalue;
 						//]]>
 						</script>
