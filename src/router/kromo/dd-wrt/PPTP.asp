@@ -39,22 +39,22 @@ var update;
 
 addEvent(window, "load", function() {
 
-		show_layer_ext(document.setup.pptpd_radius, 'idradius', <% nvram_else_match("pptpd_radius", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_radius, 'idlocal', <% nvram_else_match("pptpd_radius", "0", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_enable, 'idpptpcred', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvram_else_match("openvpn_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_tuntap, 'idrouter', <% nvram_else_match("openvpn_tuntap", "tun", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_tuntap, 'idbridge', <% nvram_else_match("openvpn_tuntap", "tap", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_proxy, 'idproxy', <% nvram_else_match("openvpn_proxy", "0", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_switch, 'idnew', <% nvram_else_match("openvpn_switch", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_switch, 'idold', <% nvram_else_match("openvpn_switch", "0", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpn_adv, 'idmtu', <% nvram_else_match("openvpn_adv", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvram_else_match("openvpncl_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_adv, 'idmtucl', <% nvram_else_match("openvpncl_adv", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_nat, 'idnat', <% nvram_else_match("openvpncl_nat", "0", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.openvpncl_sec, 'idsec', <% nvram_else_match("openvpncl_sec", "0", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_radius, 'idradius', <% nvem("pptpd_radius", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_radius, 'idlocal', <% nvem("pptpd_radius", "0", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvem("pptpd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_enable, 'idpptpcred', <% nvem("pptpd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvem("pptpd_client_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvem("openvpn_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpn_tuntap, 'idrouter', <% nvem("openvpn_tuntap", "tun", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpn_tuntap, 'idbridge', <% nvem("openvpn_tuntap", "tap", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpn_proxy, 'idproxy', <% nvem("openvpn_proxy", "0", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpn_switch, 'idnew', <% nvem("openvpn_switch", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpn_switch, 'idold', <% nvem("openvpn_switch", "0", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpn_adv, 'idmtu', <% nvem("openvpn_adv", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvem("openvpncl_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_adv, 'idmtucl', <% nvem("openvpncl_adv", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_nat, 'idnat', <% nvem("openvpncl_nat", "0", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_sec, 'idsec', <% nvem("openvpncl_sec", "0", "1", "0"); %> == 1);
 		
 		update = new StatusbarUpdate();
 		update.start();
@@ -94,39 +94,39 @@ addEvent(window, "unload", function() {
 	<legend><% tran("service.pptp_srv"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.pptp_srv"); %></div>
-		<input class="spaceradio" type="radio" name="pptpd_enable" value="1" <% nvram_checked("pptpd_enable", "1"); %> onclick="show_layer_ext(this, 'idpptp', true);show_layer_ext(this, 'idpptpcred', true);" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="pptpd_enable" value="0" <% nvram_checked("pptpd_enable", "0"); %> onclick="show_layer_ext(this, 'idpptp', false);show_layer_ext(this, 'idpptpcred', false);" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="pptpd_enable" value="1" <% nvc("pptpd_enable", "1"); %> onclick="show_layer_ext(this, 'idpptp', true);show_layer_ext(this, 'idpptpcred', true);" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="pptpd_enable" value="0" <% nvc("pptpd_enable", "0"); %> onclick="show_layer_ext(this, 'idpptp', false);show_layer_ext(this, 'idpptpcred', false);" /><% tran("share.disable"); %>
 	</div>
 	<div id="idpptp">
 		<div class="setting">
 			<div class="label"><% tran("share.broadcast"); %></div>
-			<input class="spaceradio" type="radio" name="pptpd_bcrelay" value="1" <% nvram_checked("pptpd_bcrelay", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="pptpd_bcrelay" value="0" <% nvram_checked("pptpd_bcrelay", "0"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="pptpd_bcrelay" value="1" <% nvc("pptpd_bcrelay", "1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="pptpd_bcrelay" value="0" <% nvc("pptpd_bcrelay", "0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pptpd_encry"); %></div>
-			<input class="spaceradio" type="radio" name="pptpd_forcemppe" value="1" <% nvram_checked("pptpd_forcemppe", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="pptpd_forcemppe" value="0" <% nvram_checked("pptpd_forcemppe", "0"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="pptpd_forcemppe" value="1" <% nvc("pptpd_forcemppe", "1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="pptpd_forcemppe" value="0" <% nvc("pptpd_forcemppe", "0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.dns1"); %></div>
-			<input size="25" name="pptpd_dns1" value="<% nvram_get("pptpd_dns1"); %>" />
+			<input size="25" name="pptpd_dns1" value="<% nvg("pptpd_dns1"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.dns2"); %></div>
-			<input size="25" name="pptpd_dns2" value="<% nvram_get("pptpd_dns2"); %>" />
+			<input size="25" name="pptpd_dns2" value="<% nvg("pptpd_dns2"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.wins1"); %></div>
-			<input size="25" name="pptpd_wins1" value="<% nvram_get("pptpd_wins1"); %>" />
+			<input size="25" name="pptpd_wins1" value="<% nvg("pptpd_wins1"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.wins2"); %></div>
-			<input size="25" name="pptpd_wins2" value="<% nvram_get("pptpd_wins2"); %>" />
+			<input size="25" name="pptpd_wins2" value="<% nvg("pptpd_wins2"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pptpd_mtu"); %></div>
-			<input size="5" maxlength="5" class="num" name="pptpd_mtu" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("pptpd_mtu"); %>" />
+			<input size="5" maxlength="5" class="num" name="pptpd_mtu" onblur="valid_range(this,1,65535,share.port)" value="<% nvg("pptpd_mtu"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 			document.write("(" + share.deflt + ": 1436)");
@@ -135,7 +135,7 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pptpd_mru"); %></div>
-			<input size="5" maxlength="5" class="num" name="pptpd_mru" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("pptpd_mru"); %>" />
+			<input size="5" maxlength="5" class="num" name="pptpd_mru" onblur="valid_range(this,1,65535,share.port)" value="<% nvg("pptpd_mru"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 			document.write("(" + share.deflt + ": 1436)");
@@ -144,15 +144,15 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.srvip"); %></div>
-			<input size="25" name="pptpd_lip" value="<% nvram_get("pptpd_lip"); %>" />
+			<input size="25" name="pptpd_lip" value="<% nvg("pptpd_lip"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pptp_client"); %></div>
-			<input size="25" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" />
+			<input size="25" name="pptpd_rip" value="<% nvg("pptpd_rip"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("wl_adv.label10"); %></div>
-			<input size="5" maxlength="5" class="num" name="pptpd_conn" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("pptpd_conn"); %>" />
+			<input size="5" maxlength="5" class="num" name="pptpd_conn" onblur="valid_range(this,1,65535,share.port)" value="<% nvg("pptpd_conn"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 			document.write("(" + share.deflt + ": 64)");
@@ -163,8 +163,8 @@ addEvent(window, "unload", function() {
 <% ifndef("RADIUSPLUGIN", "<!--"); %>
 		<div class="setting">
 			<div class="label"><% tran("service.pppoesrv_auth"); %></div>
-			<input class="spaceradio" type="radio" name="pptpd_radius" value="1" <% nvram_checked("pptpd_radius", "1"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', true)" /><% tran("radius.legend"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="pptpd_radius" value="0" <% nvram_checked("pptpd_radius", "0"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', false)" /><% tran("service.pppoesrv_chaps"); %>
+			<input class="spaceradio" type="radio" name="pptpd_radius" value="1" <% nvc("pptpd_radius", "1"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', true)" /><% tran("radius.legend"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="pptpd_radius" value="0" <% nvc("pptpd_radius", "0"); %> onclick="toggle_layer_ext(this, 'idradius', 'idlocal', false)" /><% tran("service.pppoesrv_chaps"); %>
 		</div>
 <% ifndef("RADIUSPLUGIN", "-->"); %>	
 	</div>
@@ -180,7 +180,7 @@ addEvent(window, "unload", function() {
 		<textarea id="pptpd_auth" name="pptpd_auth" cols="60" rows="4"></textarea>
 		<script type="text/javascript">
 		//<![CDATA[
-			var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
+			var var_pptpd_auth = fix_cr( '<% nvg("pptpd_auth"); %>' );
 			document.getElementById("pptpd_auth").value = var_pptpd_auth;
 		//]]>
 		</script>
@@ -195,11 +195,11 @@ addEvent(window, "unload", function() {
 		<legend>Radius <% tran("service.pppoesrv_auth"); %></legend>
 		<div class="setting">
 			<div class="label"><% tran("service.pppoesrv_radip"); %></div>
-			<input maxlength="15" size="24" name="pptpd_radserver" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pptpd_radserver"); %>" />
+			<input maxlength="15" size="24" name="pptpd_radserver" onblur="valid_ip_str(this, share.ip)" value="<% nvg("pptpd_radserver"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pppoesrv_radauthport"); %></div>
-			<input size="5" maxlength="5" class="num" name="pptpd_radport" value="<% nvram_get("pptpd_radport"); %>" />
+			<input size="5" maxlength="5" class="num" name="pptpd_radport" value="<% nvg("pptpd_radport"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 			document.write("(" + share.deflt + ": 1812)");
@@ -208,7 +208,7 @@ addEvent(window, "unload", function() {
 		</div>			
 		<div class="setting">
 			<div class="label"><% tran("service.pppoesrv_radaccport"); %></div>
-			<input size="5" maxlength="5" class="num" name="pptpd_acctport" value="<% nvram_get("pptpd_acctport"); %>" />
+			<input size="5" maxlength="5" class="num" name="pptpd_acctport" value="<% nvg("pptpd_acctport"); %>" />
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 			document.write("(" + share.deflt + ": 1813)");
@@ -231,13 +231,13 @@ addEvent(window, "unload", function() {
 	<legend><% tran("service.pptpd_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.pptpd_option"); %></div>
-		<input class="spaceradio" type="radio" name="pptpd_client_enable" value="1" <% nvram_checked("pptpd_client_enable", "1"); %> onclick="show_layer_ext(this, 'idpptpcli', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="pptpd_client_enable" value="0" <% nvram_checked("pptpd_client_enable", "0"); %> onclick="show_layer_ext(this, 'idpptpcli', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="pptpd_client_enable" value="1" <% nvc("pptpd_client_enable", "1"); %> onclick="show_layer_ext(this, 'idpptpcli', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="pptpd_client_enable" value="0" <% nvc("pptpd_client_enable", "0"); %> onclick="show_layer_ext(this, 'idpptpcli', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idpptpcli">
 		<div class="setting">
 			<div class="label"><% tran("service.pptpd_ipdns"); %></div>
-			<input size="27" name="pptpd_client_srvip" value="<% nvram_get("pptpd_client_srvip"); %>" />
+			<input size="27" name="pptpd_client_srvip" value="<% nvg("pptpd_client_srvip"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pptpd_subnet"); %></div>
@@ -251,11 +251,11 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pptpd_encry"); %></div>
-			<input size="27" name="pptpd_client_srvsec" value="<% nvram_get("pptpd_client_srvsec"); %>" />
+			<input size="27" name="pptpd_client_srvsec" value="<% nvg("pptpd_client_srvsec"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pptpd_mtu"); %></div>
-			<input class="num" maxlength="4" size="5" name="pptpd_client_srvmtu" onblur="valid_range(this,0,1500,service.pptpd_mtu)" value="<% nvram_get("pptpd_client_srvmtu"); %>" />&nbsp;
+			<input class="num" maxlength="4" size="5" name="pptpd_client_srvmtu" onblur="valid_range(this,0,1500,service.pptpd_mtu)" value="<% nvg("pptpd_client_srvmtu"); %>" />&nbsp;
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 			document.write("(" + share.deflt + ": 1436)");
@@ -264,7 +264,7 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pptpd_mru"); %></div>
-			<input class="num" maxlength="4" size="5" name="pptpd_client_srvmru" onblur="valid_range(this,0,1500,service.pptpd_mru)" value="<% nvram_get("pptpd_client_srvmru"); %>" />&nbsp;
+			<input class="num" maxlength="4" size="5" name="pptpd_client_srvmru" onblur="valid_range(this,0,1500,service.pptpd_mru)" value="<% nvg("pptpd_client_srvmru"); %>" />&nbsp;
 			<span class="default"><script type="text/javascript">
 			//<![CDATA[
 			document.write("(" + share.deflt + ": 1436)");
@@ -273,16 +273,16 @@ addEvent(window, "unload", function() {
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("service.pptpd_nat"); %></div>
-			<input class="spaceradio" type="radio" name="pptpd_client_nat" value="1" <% nvram_checked("pptpd_client_nat", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="pptpd_client_nat" value="0" <% nvram_checked("pptpd_client_nat", "0"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="pptpd_client_nat" value="1" <% nvc("pptpd_client_nat", "1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="pptpd_client_nat" value="0" <% nvc("pptpd_client_nat", "0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.usrname"); %></div>
-			<input size="27" name="pptpd_client_srvuser" value="<% nvram_get("pptpd_client_srvuser"); %>" />
+			<input size="27" name="pptpd_client_srvuser" value="<% nvg("pptpd_client_srvuser"); %>" />
 		</div>		
 		<div class="setting">
 			<div class="label"><% tran("share.passwd"); %></div>
-			<input size="27" id="pptpd_client_srvpass" name="pptpd_client_srvpass" type="password" autocomplete="off" value="<% nvram_get("pptpd_client_srvpass"); %>" />
+			<input size="27" id="pptpd_client_srvpass" name="pptpd_client_srvpass" type="password" autocomplete="off" value="<% nvg("pptpd_client_srvpass"); %>" />
 			<input type="checkbox" name="_wl_unmask" value="0" onclick="setElementMask('pptpd_client_srvpass', this.checked)" />&nbsp;<% tran("share.unmask"); %>
 		</div>
 		<div class="setting">		
@@ -290,7 +290,7 @@ addEvent(window, "unload", function() {
 			<textarea cols="60" rows="2" id="pptpd_client_options" name="pptpd_client_options"></textarea>
 			<script type="text/javascript">
 			//<![CDATA[
-				var pptpd_client_options = fix_cr( '<% nvram_get("pptpd_client_options"); %>' );
+				var pptpd_client_options = fix_cr( '<% nvg("pptpd_client_options"); %>' );
 				document.getElementById("pptpd_client_options").value = pptpd_client_options;
 			//]]>
 			</script>

@@ -143,28 +143,28 @@ function setARPTable() {
 		cellcount.style.textAlign = 'center';
 		cellcount.innerHTML = val[i+3];
 		
-		setMeterBar(row.insertCell(-1), parseInt(val[i+3])/<% nvram_get("ip_conntrack_max"); %>*100, "");
+		setMeterBar(row.insertCell(-1), parseInt(val[i+3])/<% nvg("ip_conntrack_max"); %>*100, "");
 	}
 }
 
 var update;
 
 addEvent(window, "load", function() {
-	setElementContent("dhcp_end_ip", "<% prefix_ip_get("lan_ipaddr",1); %>" + (parseInt("<% nvram_get("dhcp_start"); %>") + parseInt("<% nvram_get("dhcp_num"); %>") - 1));
+	setElementContent("dhcp_end_ip", "<% prefix_ip_get("lan_ipaddr",1); %>" + (parseInt("<% nvg("dhcp_start"); %>") + parseInt("<% nvg("dhcp_num"); %>") - 1));
 	setDHCPTable(<% dumpleases(0); %>);
 <% ifndef("PPTPD", "/*"); %>
 	setPPTPTable(<% dumppptp(); %>);
-	setElementVisible("pptp", "<% nvram_get("pptpd_enable"); %>" == "1");
+	setElementVisible("pptp", "<% nvg("pptpd_enable"); %>" == "1");
 <% ifndef("PPTPD", "*/"); %>
 <% ifndef("PPPOESERVER", "/*"); %>
 	setPPPOETable(<% dumppppoe(); %>);
-	setElementVisible("pppoe", "<% nvram_get("pppoeserver_enabled"); %>" == "1");
+	setElementVisible("pppoe", "<% nvg("pppoeserver_enabled"); %>" == "1");
 <% ifndef("PPPOESERVER", "*/"); %>
 	setARPTable(<% dumparptable(0); %>);
-	setElementVisible("dhcp_1", "<% nvram_get("lan_proto"); %>" == "dhcp");
-	setElementVisible("dhcp_2", "<% nvram_get("lan_proto"); %>" == "dhcp");
+	setElementVisible("dhcp_1", "<% nvg("lan_proto"); %>" == "dhcp");
+	setElementVisible("dhcp_2", "<% nvg("lan_proto"); %>" == "dhcp");
 
-	update = new StatusUpdate("Status_Lan.live.asp", <% nvram_get("refresh_time"); %>);
+	update = new StatusUpdate("Status_Lan.live.asp", <% nvg("refresh_time"); %>);
 	update.onUpdate("lan_proto", function(u) {
 		setElementVisible("dhcp_1", u.lan_proto == "dhcp");
 		setElementVisible("dhcp_2", u.lan_proto == "dhcp");
@@ -228,27 +228,27 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.mac"); %></div>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<span id=\"lan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");
-									document.write("<% nvram_get("lan_hwaddr"); %>");
+									document.write("<span id=\"lan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("lan_hwaddr"); %>')\" >");
+									document.write("<% nvg("lan_hwaddr"); %>");
 									document.write("</span>");
 									//]]>
 									</script>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.ip"); %></div>
-									<span id="lan_ip"><% nvram_get("lan_ipaddr"); %></span>&nbsp;
+									<span id="lan_ip"><% nvg("lan_ipaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.subnet"); %></div>
-									<span id="lan_netmask"><% nvram_get("lan_netmask"); %></span>&nbsp;
+									<span id="lan_netmask"><% nvg("lan_netmask"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.gateway"); %></div>
-									<span id="lan_gateway"><% nvram_get("lan_gateway"); %></span>&nbsp;
+									<span id="lan_gateway"><% nvg("lan_gateway"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.localdns"); %></div>
-									<span id="lan_dns"><% nvram_get("sv_localdns"); %></span>&nbsp;
+									<span id="lan_dns"><% nvg("sv_localdns"); %></span>&nbsp;
 								</div>
 							</fieldset><br />
 							
@@ -260,7 +260,7 @@ addEvent(window, "unload", function() {
 										<th width="17%"><% tran("share.ip"); %></th>
 										<th width="16%"><% tran("share.mac"); %></th>
 										<th width="15%"><% tran("status_lan.concount"); %></th>
-										<th width="20%"><% tran("status_lan.conratio"); %> [<% nvram_get("ip_conntrack_max"); %>]</th>
+										<th width="20%"><% tran("status_lan.conratio"); %> [<% nvg("ip_conntrack_max"); %>]</th>
 									</tr>
 								</table>
 								<script type="text/javascript">
@@ -275,16 +275,16 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_lan.legend2"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("service.dhcp_legend2"); %></div>
-									<% nvram_match("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_match("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
+									<% nvm("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvm("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 								</div>
 								<div id="dhcp_1" style="display:none">
 									<div class="setting">
 										<div class="label"><% tran("service.dhcp_srv"); %></div>
-										<span id="dhcp_daemon"><% nvram_else_match("dhcp_dnsmasq", "1", "DNSMasq", "uDHCPd"); %></span>&nbsp;
+										<span id="dhcp_daemon"><% nvem("dhcp_dnsmasq", "1", "DNSMasq", "uDHCPd"); %></span>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("idx.dhcp_start"); %></div>
-										<span id="dhcp_start_ip"><% prefix_ip_get("lan_ipaddr", "1"); %><% nvram_get("dhcp_start"); %></span>&nbsp;
+										<span id="dhcp_start_ip"><% prefix_ip_get("lan_ipaddr", "1"); %><% nvg("dhcp_start"); %></span>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("idx.dhcp_end"); %></div>
@@ -292,7 +292,7 @@ addEvent(window, "unload", function() {
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("idx.dhcp_lease"); %></div>
-										<span id="dhcp_lease_time"><% nvram_get("dhcp_lease"); %></span> <% tran("share.minutes"); %>&nbsp;
+										<span id="dhcp_lease_time"><% nvg("dhcp_lease"); %></span> <% tran("share.minutes"); %>&nbsp;
 									</div>
 								</div>
 							</fieldset><br />
@@ -305,7 +305,7 @@ addEvent(window, "unload", function() {
 											<th width="46%"><% tran("share.hostname"); %></th>
 											<th width="17%"><% tran("share.ip"); %></th>
 											<th width="17%"><% tran("share.mac"); %></th>
-											<th width="20%"><script type="text/javascript">Capture(<% nvram_else_match("dhcp_dnsmasq","1","idx.dhcp_lease","share.expires"); %>)</script></th>
+											<th width="20%"><script type="text/javascript">Capture(<% nvem("dhcp_dnsmasq","1","idx.dhcp_lease","share.expires"); %>)</script></th>
 											<th><% tran("share.del"); %></th>
 										</tr>
 									</table>
@@ -362,7 +362,7 @@ addEvent(window, "unload", function() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+								var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
 								submitFooterButton(0,0,0,autoref);
 								//]]>
 								</script>

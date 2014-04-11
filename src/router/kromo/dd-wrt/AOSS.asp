@@ -94,7 +94,7 @@ var update;
 
 addEvent(window, "load", function() {
 
-	update = new StatusUpdate("AOSS.live.asp", <% nvram_get("refresh_time"); %>);
+	update = new StatusUpdate("AOSS.live.asp", <% nvg("refresh_time"); %>);
 	update.start();
 
 });
@@ -154,8 +154,8 @@ addEvent(window, "unload", function() {
 					<legend><% tran("aoss.service"); %></legend>
 					<div class="setting">
 						<div class="label"><% tran("aoss.enable"); %></div>
-						<input class="spaceradio" type="radio" value="1" name="aoss_enable" <% nvram_checked("aoss_enable", "1"); %> onClick="toggleAOSS(this, true);" /><% tran("share.enable"); %>&nbsp;
-						<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% nvram_checked("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
+						<input class="spaceradio" type="radio" value="1" name="aoss_enable" <% nvc("aoss_enable", "1"); %> onClick="toggleAOSS(this, true);" /><% tran("share.enable"); %>&nbsp;
+						<input class="spaceradio" type="radio" value="0" name="aoss_enable" <% nvc("aoss_enable", "0"); %> onClick="toggleAOSS(this, false);" /><% tran("share.disable"); %>
 					</div>
 					<div id="aoss_button" class="setting" style="<% visible_css("aoss_enable", "1"); %>">
 						<div class="label"><% tran("aoss.start"); %></div>
@@ -233,17 +233,17 @@ document.write("<\/tr>");
 					<legend><% tran("aoss.wps"); %></legend>
 					<div class="setting">
 						<div class="label"><% tran("aoss.wpsenable"); %></div>
-						<input class="spaceradio" type="radio" value="1" name="wps_enabled" <% nvram_checked("wps_enabled", "1"); %> /><% tran("share.enable"); %>&nbsp;
-						<input class="spaceradio" type="radio" value="0" name="wps_enabled" <% nvram_checked("wps_enabled", "0"); %> /><% tran("share.disable"); %>
+						<input class="spaceradio" type="radio" value="1" name="wps_enabled" <% nvc("wps_enabled", "1"); %> /><% tran("share.enable"); %>&nbsp;
+						<input class="spaceradio" type="radio" value="0" name="wps_enabled" <% nvc("wps_enabled", "0"); %> /><% tran("share.disable"); %>
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("aoss.externalregistrar"); %></div>
-						<input class="spaceradio" type="radio" value="1" name="wps_registrar" <% nvram_checked("wps_registrar", "1"); %> /><% tran("share.enable"); %>&nbsp;
-						<input class="spaceradio" type="radio" value="0" name="wps_registrar" <% nvram_checked("wps_registrar", "0"); %> /><% tran("share.disable"); %>
+						<input class="spaceradio" type="radio" value="1" name="wps_registrar" <% nvc("wps_registrar", "1"); %> /><% tran("share.enable"); %>&nbsp;
+						<input class="spaceradio" type="radio" value="0" name="wps_registrar" <% nvc("wps_registrar", "0"); %> /><% tran("share.disable"); %>
 					</div>
 					<div class="setting">
 						<div class="label"><% tran("aoss.wps_ap_pin"); %></div>
-						<input class="num" name="wps_ap_pin" size="16" maxlength="16" value="<% nvram_get("pincode"); %>"/>&nbsp;
+						<input class="num" name="wps_ap_pin" size="16" maxlength="16" value="<% nvg("pincode"); %>"/>&nbsp;
 						<script type="text/javascript">
 						//<![CDATA[
 						document.write("<input class=\"button\" type=\"button\" value=\"" + aoss.wpsactivate + "\" onclick=\"to_ap_register(this.form);\" />");
@@ -272,7 +272,7 @@ document.write("<\/tr>");
 				<div class="submitFooter">
 					<script type="text/javascript">
 									//<![CDATA[
-									var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+									var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
 									submitFooterButton(1,1,0,autoref);
 									//]]>
 									</script>

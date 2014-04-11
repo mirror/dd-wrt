@@ -1,11 +1,11 @@
 <% do_pagehead(""); %>
-		<title><% nvram_get("router_name"); %></title>
+		<title><% nvg("router_name"); %></title>
 
 		<script type="text/javascript">
 		//<![CDATA[
 
 var clk = <% get_clkfreq(); %>;
-var rest_default = <% nvram_get("sv_restore_defaults"); %>;
+var rest_default = <% nvg("sv_restore_defaults"); %>;
 my_tab = new getTimeOut(clk, rest_default, <% getrebootflags(); %>);
 var submit_button = "<% get_web_page_name(); %>";
 var timer = setTimeout("message()", my_tab.wait_time * 1000);

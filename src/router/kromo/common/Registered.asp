@@ -1,9 +1,9 @@
 <% do_pagehead(); %>
-		<title><% nvram_get("router_name"); %> - Activation</title>
+		<title><% nvg("router_name"); %> - Activation</title>
 		<script type="text/javascript">//
 		//<![CDATA[
 
-document.title = "<% nvram_get("router_name"); %> - Activation";
+document.title = "<% nvg("router_name"); %> - Activation";
 
 
 
@@ -22,9 +22,9 @@ document.title = "<% nvram_get("router_name"); %> - Activation";
 							<ul id="menuMainList">
 								<li><span><strong><% tran("bmenu.setup"); %></strong></span></li>
 								<li><span><strong><% tran("bmenu.wireless"); %></strong></span></li>
-								<% nvram_invmatch("sipgate","1","<!--"); %>
+								<% nvim("sipgate","1","<!--"); %>
 								<li><span><strong><% tran("bmenu.sipath"); %></strong></span></li>
-								<% nvram_invmatch("sipgate","1","-->"); %>
+								<% nvim("sipgate","1","-->"); %>
 								<li><span><strong><% tran("bmenu.security"); %></strong></span></li>
 								<li><span><strong><% tran("bmenu.accrestriction"); %></strong></span></li>
 								<li><span><strong><% tran("bmenu.applications"); %></strong></span></li>

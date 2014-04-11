@@ -3,7 +3,7 @@
 		//<![CDATA[
 
 function verify_unique_static_ip(F){                                              
-	static_leasenum = <% nvram_get("static_leasenum"); %>;
+	static_leasenum = <% nvg("static_leasenum"); %>;
 	
 	//Check all static leases
 	var static_leases=' ';                                                   
@@ -96,27 +96,27 @@ var update;
 
 addEvent(window, "load", function() {
 
-		show_layer_ext(document.setup.zabbix_enable, 'idzabbix', <% nvram_else_match("zabbix_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.sshd_enable, 'idssh', <% nvram_else_match("sshd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.dnsmasq_enable, 'iddnsmasq', <% nvram_else_match("dnsmasq_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.kaid_enable, 'idkaid', <% nvram_else_match("kaid_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.snmpd_enable, 'idsnmp', <% nvram_else_match("snmpd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.rflow_enable, 'idrflow', <% nvram_else_match("rflow_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.macupd_enable, 'idMACupd', <% nvram_else_match("macupd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.syslogd_enable, 'idsyslog', <% nvram_else_match("syslogd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.nstx_ipenable, 'idnstxip', <% nvram_else_match("nstx_ipenable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.nstxd_enable, 'idnstx', <% nvram_else_match("nstxd_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.oet1_en, 'idoet', <% nvram_else_match("oet1_en", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.radiooff_button, 'idradiooff', <% nvram_else_match("radiooff_button", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.usb_enable, 'idusb', <% nvram_else_match("usb_enable", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.usb_storage, 'idusbstor', <% nvram_else_match("usb_storage", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.gps, 'idgps', <% nvram_else_match("gps", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.zabbix_enable, 'idzabbix', <% nvem("zabbix_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.sshd_enable, 'idssh', <% nvem("sshd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.dnsmasq_enable, 'iddnsmasq', <% nvem("dnsmasq_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.kaid_enable, 'idkaid', <% nvem("kaid_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.snmpd_enable, 'idsnmp', <% nvem("snmpd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.rflow_enable, 'idrflow', <% nvem("rflow_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.macupd_enable, 'idMACupd', <% nvem("macupd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvem("pptpd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvem("pptpd_client_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.syslogd_enable, 'idsyslog', <% nvem("syslogd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.nstx_ipenable, 'idnstxip', <% nvem("nstx_ipenable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.nstxd_enable, 'idnstx', <% nvem("nstxd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.oet1_en, 'idoet', <% nvem("oet1_en", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.radiooff_button, 'idradiooff', <% nvem("radiooff_button", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.usb_enable, 'idusb', <% nvem("usb_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.usb_storage, 'idusbstor', <% nvem("usb_storage", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.gps, 'idgps', <% nvem("gps", "1", "1", "0"); %> == 1);
 		
 		if(document.setup.rstats_enable) {
 			rstats_select = '*user';
-			path_input = '<% nvram_get("rstats_path"); %>';
+			path_input = '<% nvg("rstats_path"); %>';
 			switch (path_input) {
 				case '':
 				case '*nvram':
@@ -129,7 +129,7 @@ addEvent(window, "load", function() {
 			(rstats_select == '*user') ? document.setup.u_path.value=path_input : document.setup.u_path.value='';
 			
 			setRstatsVal(document.setup);
-			show_layer_ext(document.setup.rstats_enable, 'idrstats', <% nvram_else_match("rstats_enable", "1", "1", "0"); %> == 1);
+			show_layer_ext(document.setup.rstats_enable, 'idrstats', <% nvem("rstats_enable", "1", "1", "0"); %> == 1);
 		}
 		
 	update = new StatusbarUpdate();

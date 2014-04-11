@@ -17,7 +17,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	show_layer_ext(document.p2p.ctorrent_enable, 'idctorrent', <% nvram_else_match("ctorrent_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.p2p.ctorrent_enable, 'idctorrent', <% nvem("ctorrent_enable", "1", "1", "0"); %> == 1);
 
 	update = new StatusbarUpdate();
 	update.start();	

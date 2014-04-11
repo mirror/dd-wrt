@@ -3,7 +3,7 @@
 		//<![CDATA[
 
 function guess_broadcast(ip) {
-	var netmask = "<% nvram_get("lan_netmask"); %>".split(".");
+	var netmask = "<% nvg("lan_netmask"); %>".split(".");
 	var ipaddr = ip.split(".");	
 	var network = new Array();
 	var broadcast = new Array();
@@ -33,11 +33,11 @@ function get_available_hosts() {
 }
 
 function get_wol_hosts() {
-	return "<% nvram_get("wol_hosts"); %>";
+	return "<% nvg("wol_hosts"); %>";
 }
 
 function get_static_leases() {
-	return "<% nvram_get("static_leases"); %>";
+	return "<% nvg("static_leases"); %>";
 }
 
 function get_dhcp_hosts() {
@@ -259,7 +259,7 @@ var update;
 addEvent(window, "load", function() {
 	setAvailableHostsTable();
 	setWolHostsTable();
-	show_layer_ext(document.ping.wol_enable, 'idwol', <% nvram_else_match("wol_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.ping.wol_enable, 'idwol', <% nvem("wol_enable", "1", "1", "0"); %> == 1);
 	
 	update = new StatusbarUpdate();
 	update.start();
@@ -334,15 +334,15 @@ addEvent(window, "unload", function() {
 								<legend><% tran("wol.legend4"); %></legend>
 									<div class="setting">
 										<div class="label"><% tran("wol.mac"); %></div>
-										<textarea id="manual_wol_mac" name="manual_wol_mac" onblur="valid_macs_list(this)" rows="3" cols="60"><% nvram_get("manual_wol_mac"); %></textarea>
+										<textarea id="manual_wol_mac" name="manual_wol_mac" onblur="valid_macs_list(this)" rows="3" cols="60"><% nvg("manual_wol_mac"); %></textarea>
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("share.ip"); %></div>
-										<input class="num" maxlength="15" size="15" id="manual_wol_network" onblur="valid_ip_str(this, share.ip)" name="manual_wol_network" value="<% nvram_get("manual_wol_network"); %>" />
+										<input class="num" maxlength="15" size="15" id="manual_wol_network" onblur="valid_ip_str(this, share.ip)" name="manual_wol_network" value="<% nvg("manual_wol_network"); %>" />
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("wol.udp"); %></div>
-										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_port(this)"  value="<% nvram_get("manual_wol_port"); %>" />
+										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_port(this)"  value="<% nvg("manual_wol_port"); %>" />
 									</div>
 									<script type="text/javascript">
 										//<![CDATA[
@@ -356,13 +356,13 @@ addEvent(window, "unload", function() {
 								<legend><% tran("wol.legend5"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("wol.srv"); %></div>
-									<input class="spaceradio" type="radio" name="wol_enable" value="1" <% nvram_checked("wol_enable", "1"); %> onclick="show_layer_ext(this, 'idwol', true)" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="wol_enable" value="0" <% nvram_checked("wol_enable", "0"); %> onclick="show_layer_ext(this, 'idwol', false)" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" name="wol_enable" value="1" <% nvc("wol_enable", "1"); %> onclick="show_layer_ext(this, 'idwol', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="wol_enable" value="0" <% nvc("wol_enable", "0"); %> onclick="show_layer_ext(this, 'idwol', false)" /><% tran("share.disable"); %>
 								</div>
 								<div id="idwol">
 									<div class="setting">
 										<div class="label"><% tran("share.inter"); %></div>
-										<input class="num" maxlength="5" size="5" name="wol_interval" onblur="valid_range(this,1,86400,'WOL Interval')" value="<% nvram_get("wol_interval"); %>" />
+										<input class="num" maxlength="5" size="5" name="wol_interval" onblur="valid_range(this,1,86400,'WOL Interval')" value="<% nvg("wol_interval"); %>" />
 										<span class="default"><script type="text/javascript">
 										//<![CDATA[
 											document.write("(" + share.deflt + ": 86400, " + share.range + ": 1 - 86400)");
@@ -371,18 +371,18 @@ addEvent(window, "unload", function() {
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("share.hostname"); %></div>
-										<input maxlength="100" size="25" name="wol_hostname" value="<% nvram_get("wol_hostname"); %>" />
+										<input maxlength="100" size="25" name="wol_hostname" value="<% nvg("wol_hostname"); %>" />
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("wol.pass"); %></div>
-										<input maxlength="63" size="25" name="wol_passwd" value="<% nvram_get("wol_passwd"); %>" />
+										<input maxlength="63" size="25" name="wol_passwd" value="<% nvg("wol_passwd"); %>" />
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("wol.mac"); %></div>
 										<textarea id="wol_macs" name="wol_macs" cols="60" rows="3"></textarea>
 										<script type="text/javascript">
 										//<![CDATA[
-											var wol_macs = fix_cr( '<% nvram_get("wol_macs"); %>' );
+											var wol_macs = fix_cr( '<% nvg("wol_macs"); %>' );
 											document.getElementById("wol_macs").value = wol_macs;
 										//]]>
 										</script>
@@ -390,7 +390,7 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br/>
 
-								<% nvram_selmatch("wol_cmd","","<!--"); %><script type="text/javascript">callDump();</script><% nvram_selmatch("wol_cmd","","-->"); %>
+								<% nvsm("wol_cmd","","<!--"); %><script type="text/javascript">callDump();</script><% nvram_selmatch("wol_cmd","","-->"); %>
 
 								<div class="submitFooter">
 									<script type="text/javascript">

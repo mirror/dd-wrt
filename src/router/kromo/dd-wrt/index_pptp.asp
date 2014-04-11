@@ -1,20 +1,20 @@
 <div class="setting">
 	<div class="label"><% tran("idx_pptp.gateway"); %></div>
-	<input name="pptp_server_name" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_get("pptp_server_name"); %>" />
+	<input name="pptp_server_name" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvg("pptp_server_name"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.usrname"); %></div>
-	<input name="ppp_username" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ppp_username"); %>" />
+	<input name="ppp_username" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvg("ppp_username"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.passwd"); %></div>
-	<input id="ppp_passwd" name="ppp_passwd" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" autocomplete="off" value="<% nvram_get("ppp_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+	<input id="ppp_passwd" name="ppp_passwd" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" autocomplete="off" value="<% nvg("ppp_passwd"); %>" />&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_pptp.srv"); %></div>
-	<input class="spaceradio" type="radio" value="1" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","1"); %> onchange="show_layer_ext(this, 'idpptpdhcp', false); dhcp_show_static_dns(1);" /><% tran("share.yes"); %>&nbsp;
-	<input class="spaceradio" type="radio" value="0" name="pptp_use_dhcp" <% nvram_checked("pptp_use_dhcp","0"); %> onchange="show_layer_ext(this, 'idpptpdhcp', true); dhcp_show_static_dns();" /><% tran("share.no"); %>
+	<input class="spaceradio" type="radio" value="1" name="pptp_use_dhcp" <% nvc("pptp_use_dhcp","1"); %> onchange="show_layer_ext(this, 'idpptpdhcp', false); dhcp_show_static_dns(1);" /><% tran("share.yes"); %>&nbsp;
+	<input class="spaceradio" type="radio" value="0" name="pptp_use_dhcp" <% nvc("pptp_use_dhcp","0"); %> onchange="show_layer_ext(this, 'idpptpdhcp', true); dhcp_show_static_dns();" /><% tran("share.no"); %>
 </div>
 <div id="idpptpdhcp">
 	<div class="setting">
@@ -48,35 +48,35 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("service.pptpd_encry"); %></div>
-	<input class="spaceradio" type="radio" name="pptp_encrypt" value="1" <% nvram_checked("pptp_encrypt","1"); %> /><% tran("share.enable"); %>&nbsp;
-	<input class="spaceradio" type="radio" name="pptp_encrypt" value="0" <% nvram_checked("pptp_encrypt","0"); %> /><% tran("share.disable"); %>
+	<input class="spaceradio" type="radio" name="pptp_encrypt" value="1" <% nvc("pptp_encrypt","1"); %> /><% tran("share.enable"); %>&nbsp;
+	<input class="spaceradio" type="radio" name="pptp_encrypt" value="0" <% nvc("pptp_encrypt","0"); %> /><% tran("share.disable"); %>
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_pptp.reorder"); %></div>
-	<input class="spaceradio" type="radio" name="pptp_reorder" value="1" <% nvram_checked("pptp_reorder","1"); %> /><% tran("share.enable"); %>&nbsp;
-	<input class="spaceradio" type="radio" name="pptp_reorder" value="0" <% nvram_checked("pptp_reorder","0"); %> /><% tran("share.disable"); %>
+	<input class="spaceradio" type="radio" name="pptp_reorder" value="1" <% nvc("pptp_reorder","1"); %> /><% tran("share.enable"); %>&nbsp;
+	<input class="spaceradio" type="radio" name="pptp_reorder" value="0" <% nvc("pptp_reorder","0"); %> /><% tran("share.disable"); %>
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.wan_dualaccess"); %></div>
-	<input class="spaceradio" type="radio" name="wan_dualaccess" value="1" <% nvram_checked("wan_dualaccess", "1"); %> /><% tran("share.yes"); %>&nbsp;
-	<input class="spaceradio" type="radio" name="wan_dualaccess" value="0" <% nvram_checked("wan_dualaccess", "0"); %> /><% tran("share.no"); %>
+	<input class="spaceradio" type="radio" name="wan_dualaccess" value="1" <% nvc("wan_dualaccess", "1"); %> /><% tran("share.yes"); %>&nbsp;
+	<input class="spaceradio" type="radio" name="wan_dualaccess" value="0" <% nvc("wan_dualaccess", "0"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_pptp.iptv"); %></div>
-	<input class="spaceradio" type="radio" name="pptp_iptv" value="1" <% nvram_checked("pptp_iptv", "1"); %> /><% tran("share.yes"); %>&nbsp;
-	<input class="spaceradio" type="radio" name="pptp_iptv" value="0" <% nvram_checked("pptp_iptv", "0"); %> /><% tran("share.no"); %>
+	<input class="spaceradio" type="radio" name="pptp_iptv" value="1" <% nvc("pptp_iptv", "1"); %> /><% tran("share.yes"); %>&nbsp;
+	<input class="spaceradio" type="radio" name="pptp_iptv" value="0" <% nvc("pptp_iptv", "0"); %> /><% tran("share.no"); %>
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_h.con_strgy"); %><br />&nbsp;</div>
-	<input class="spaceradio" type="radio" name="ppp_demand" value="1" onclick="ppp_enable_disable(this.form,1)" <% nvram_checked("ppp_demand","1"); %> /><% tran("idx_h.max_idle"); %>&nbsp;<input class="num" size="4" maxlength="4" name="ppp_idletime" onblur="valid_range(this,1,9999,idx_h.max_idle)" value="<% nvram_get("ppp_idletime"); %>" />&nbsp;<% tran("share.mins"); %><br />
-	<input class="spaceradio" type="radio" name="ppp_demand" value="0" onclick="ppp_enable_disable(this.form,0)" <% nvram_checked("ppp_demand","0"); %> /><% tran("idx_h.alive"); %>&nbsp;<input class="num" size="4" maxlength="4" name="ppp_redialperiod" onblur="valid_range(this,20,180,idx_h.alive)" value="<% nvram_get("ppp_redialperiod"); %>" />&nbsp;<% tran("share.secs"); %>
+	<input class="spaceradio" type="radio" name="ppp_demand" value="1" onclick="ppp_enable_disable(this.form,1)" <% nvc("ppp_demand","1"); %> /><% tran("idx_h.max_idle"); %>&nbsp;<input class="num" size="4" maxlength="4" name="ppp_idletime" onblur="valid_range(this,1,9999,idx_h.max_idle)" value="<% nvg("ppp_idletime"); %>" />&nbsp;<% tran("share.mins"); %><br />
+	<input class="spaceradio" type="radio" name="ppp_demand" value="0" onclick="ppp_enable_disable(this.form,0)" <% nvc("ppp_demand","0"); %> /><% tran("idx_h.alive"); %>&nbsp;<input class="num" size="4" maxlength="4" name="ppp_redialperiod" onblur="valid_range(this,20,180,idx_h.alive)" value="<% nvg("ppp_redialperiod"); %>" />&nbsp;<% tran("share.secs"); %>
 </div>
 <div class="setting">
 	<div class="label"><% tran("idx_pptp.addopt"); %></div>
 		<textarea cols="60" rows="3" id="pptp_extraoptions" name="pptp_extraoptions"></textarea>
 		<script type="text/javascript">
 		//<![CDATA[
-		var pptp_extraoptions = fix_cr( '<% nvram_get("pptp_extraoptions"); %>' );
+		var pptp_extraoptions = fix_cr( '<% nvg("pptp_extraoptions"); %>' );
 		document.getElementById("pptp_extraoptions").value = pptp_extraoptions;
 		//]]>
 		</script>

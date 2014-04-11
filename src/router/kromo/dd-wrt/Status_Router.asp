@@ -21,7 +21,7 @@ function setMemoryValues(val) {
 	setMeterBar("mem_cached", memCached / memUsed * 100, memCached + " kB / " + memUsed + " kB");
 	setMeterBar("mem_active", memActive / memUsed * 100, memActive + " kB / " + memUsed + " kB");
 	setMeterBar("mem_inactive", memInactive / memUsed * 100, memInactive + " kB / " + memUsed + " kB");
-<% nvram_invmatch("show_hidden","1","/"); %><% nvram_invmatch("show_hidden","1","/"); %>	setMeterBar("mem_hidden", 100 , "32768 kB / 32768 kB");
+<% nvim("show_hidden","1","/"); %><% nvram_invmatch("show_hidden","1","/"); %>	setMeterBar("mem_hidden", 100 , "32768 kB / 32768 kB");
 }
 
 function setUptimeValues(val) {
@@ -31,7 +31,7 @@ function setUptimeValues(val) {
 }
 
 function setIpconntrackValues(val) {
-	setMeterBar("ip_count", val / <% nvram_get("ip_conntrack_max"); %> * 100, val);
+	setMeterBar("ip_count", val / <% nvg("ip_conntrack_max"); %> * 100, val);
 }
 
 
@@ -40,7 +40,7 @@ addEvent(window, "load", function() {
 	setUptimeValues("<% get_uptime(); %>");
 	setIpconntrackValues("<% dumpip_conntrack(); %>");
 
-	update = new StatusUpdate("Status_Router.live.asp", <% nvram_get("refresh_time"); %>);
+	update = new StatusUpdate("Status_Router.live.asp", <% nvg("refresh_time"); %>);
 	update.onUpdate("mem_info", function(u) {
 		setMemoryValues(u.mem_info);
 	});
@@ -84,7 +84,7 @@ addEvent(window, "unload", function() {
 							<legend><% tran("status_router.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("share.routername"); %></div>
-									<% nvram_get("router_name"); %>
+									<% nvg("router_name"); %>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.sys_model"); %></div>
@@ -102,15 +102,15 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.mac"); %></div>
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<span id=\"wan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>');\" >");
-									document.write("<% nvram_get("wan_hwaddr"); %>");
+									document.write("<span id=\"wan_mac\" style=\"cursor:pointer; text-decoration:underline;\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvg("wan_hwaddr"); %>');\" >");
+									document.write("<% nvg("wan_hwaddr"); %>");
 									document.write("</span>");
 									//]]>
 									</script>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
-									<% nvram_get("wan_hostname"); %>&nbsp;
+									<% nvg("wan_hostname"); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.wandomainname"); %></div>
@@ -118,7 +118,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.landomainname"); %></div>
-									<% nvram_get("lan_domain"); %>&nbsp;
+									<% nvg("lan_domain"); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.sys_time"); %></div>
@@ -182,12 +182,12 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("status_router.mem_inactive"); %></div>
 									<span id="mem_inactive"></span>&nbsp;
 								</div>
-<% nvram_invmatch("show_hidden","1","<!--"); %>
+<% nvim("show_hidden","1","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("status_router.mem_hidden"); %></div>
 									<span id="mem_hidden"></span>&nbsp;
 								</div>
-<% nvram_invmatch("show_hidden","1","-->"); %>
+<% nvim("show_hidden","1","-->"); %>
 							</fieldset><br />
 							
 							<fieldset>
@@ -202,7 +202,7 @@ addEvent(window, "unload", function() {
 										<script type="text/javascript">
 										//<![CDATA[
 										<% statfs("/tmp/mnt/smbshare", "samba"); %>
-										document.write( ((<% nvram_get("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.used) + ' / ' + scaleSize(samba.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+										document.write( ((<% nvg("samba_mount"); %>) && (samba.size)) ? (scaleSize(samba.used) + ' / ' + scaleSize(samba.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 										//]]>
 										</script>
 									</div>
@@ -213,7 +213,7 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 									//<![CDATA[
 									<% statfs("/jffs", "my_jffs"); %>
-									document.write( ((<% nvram_get("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.used) + ' / ' + scaleSize(my_jffs.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+									document.write( ((<% nvg("enable_jffs2"); %>) && (my_jffs.size)) ? (scaleSize(my_jffs.used) + ' / ' + scaleSize(my_jffs.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 									//]]>
 									</script>
 								</div>
@@ -224,7 +224,7 @@ addEvent(window, "unload", function() {
 									<script type="text/javascript">
 									//<![CDATA[
 									<% statfs("/mmc", "mmc"); %>
-									document.write( ((<% nvram_get("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.used) + ' / ' + scaleSize(mmc.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
+									document.write( ((<% nvg("mmc_enable0"); %>) && (mmc.size)) ? (scaleSize(mmc.used) + ' / ' + scaleSize(mmc.size)) : '<span style="color:#999999;"><em>(' + share.nmounted + ')</em></span>' );
 									//]]>
 									</script>
 								</div>
@@ -235,7 +235,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_router.legend4"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("status_router.net_maxports"); %></div>
-									<% nvram_get("ip_conntrack_max"); %>&nbsp;
+									<% nvg("ip_conntrack_max"); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.net_conntrack"); %></div>
@@ -251,7 +251,7 @@ addEvent(window, "unload", function() {
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[
-								var autoref = <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
+								var autoref = <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %>;
 								submitFooterButton(0,0,0,autoref);
 								//]]>
 								</script>

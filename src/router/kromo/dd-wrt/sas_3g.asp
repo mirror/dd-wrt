@@ -10,9 +10,9 @@
 <div class="setting">
 	<div class="label"><% tran("share.dial"); %></div>
 	<select name="wan_dial" >
-		<option value="0" <% nvram_selmatch("wan_dial", "0", "selected"); %> >*99***1# (3G/UMTS)</option>
-		<option value="1" <% nvram_selmatch("wan_dial", "1", "selected"); %> >*99# (3G/UMTS)</option>
-		<option value="2" <% nvram_selmatch("wan_dial", "2", "selected"); %> >#777 (CDMA/EVDO)</option>
+		<option value="0" <% nvsm("wan_dial", "0", "selected"); %> >*99***1# (3G/UMTS)</option>
+		<option value="1" <% nvsm("wan_dial", "1", "selected"); %> >*99# (3G/UMTS)</option>
+		<option value="2" <% nvsm("wan_dial", "2", "selected"); %> >#777 (CDMA/EVDO)</option>
 	</select>
 </div>
 <div class="setting">
@@ -26,8 +26,8 @@
 </div>
 <div class="setting">
 		<div class="label"><% tran("idx_h.reconnect"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="reconnect_enable" <% sas_nvram_checked("reconnect_enable","1"); %> onclick="show_layer_ext(this, 'idreconnect', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="reconnect_enable" <% sas_nvram_checked("reconnect_enable","0"); %> onclick="show_layer_ext(this, 'idreconnect', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="reconnect_enable" <% sas_nvc("reconnect_enable","1"); %> onclick="show_layer_ext(this, 'idreconnect', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="reconnect_enable" <% sas_nvc("reconnect_enable","0"); %> onclick="show_layer_ext(this, 'idreconnect', false)" /><% tran("share.disable"); %>
 </div>
 <div id="idreconnect">
 	<div class="setting">

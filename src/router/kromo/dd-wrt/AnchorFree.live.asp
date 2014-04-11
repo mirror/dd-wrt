@@ -1,4 +1,4 @@
-{af_serviceid::<% nvram_get("af_serviceid"); %>}
-{af_servicestatus::<% nvram_get("af_servicestatus"); %>}
+{af_serviceid::<% nvg("af_serviceid"); %>}
+{af_servicestatus::<% nvg("af_servicestatus"); %>}
 {uptime::<% get_uptime(); %>}
 {ipinfo::<% show_wanipinfo(); %>}

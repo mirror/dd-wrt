@@ -117,14 +117,14 @@ function qos_grey(num,F) {
     F.qos_aqd.disabled = sw_disabled;
 	F.add_svc_button.disabled = sw_disabled;
 	F.edit_svc_button.disabled = sw_disabled;
-	<% nvram_match("portprio_support","0","/"); %><% nvram_match("portprio_support","0","/"); %>port_grey(sw_disabled, F);
+	<% nvm("portprio_support","0","/"); %><% nvm("portprio_support","0","/"); %>port_grey(sw_disabled, F);
     pkts_grey(sw_disabled, F);
 	macs_grey(sw_disabled, F, false);
 	ips_grey(sw_disabled, F, false);
 	svcs_grey(sw_disabled, F);		
 	F.svqos_defaults.disabled = sw_disabled;
 	if (sw_disabled == true) defaultlvl_grey(false, F);
-	<% nvram_match("svqos_defaults","0","/"); %><% nvram_match("svqos_defaults","0","/"); %>else if (F.svqos_defaults.checked) defaultlvl_grey(true, F);
+	<% nvm("svqos_defaults","0","/"); %><% nvm("svqos_defaults","0","/"); %>else if (F.svqos_defaults.checked) defaultlvl_grey(true, F);
 } 
 
 function service(id, name, port_start, port_end) {
@@ -192,7 +192,7 @@ var update;
 
 addEvent(window, "load", function() {
 	
-	qos_grey(<% nvram_get("wshaper_enable"); %>,document.QoS);
+	qos_grey(<% nvg("wshaper_enable"); %>,document.QoS);
 	
 	update = new StatusbarUpdate();
 	update.start();
@@ -231,31 +231,31 @@ addEvent(window, "unload", function() {
   								<legend><% tran("qos.legend"); %></legend>
   								<div class="setting">
 									<div class="label"><% tran("qos.srv"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_selmatch("wshaper_enable", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_selmatch("wshaper_enable", "0", "checked"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvsm("wshaper_enable", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvsm("wshaper_enable", "0", "checked"); %> /><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.port"); %></div>
 									<select name="wshaper_dev">
-										<option value="WAN" <% nvram_selmatch("wshaper_dev", "WAN", "selected"); %>>WAN</option>
-										<option value="LAN" <% nvram_selmatch("wshaper_dev", "LAN", "selected"); %>>LAN &amp; WLAN</option>
+										<option value="WAN" <% nvsm("wshaper_dev", "WAN", "selected"); %>>WAN</option>
+										<option value="LAN" <% nvsm("wshaper_dev", "LAN", "selected"); %>>LAN &amp; WLAN</option>
 									</select>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("qos.type"); %></div>
 									<select name="qos_type">
-										<option value="0" <% nvram_selmatch("qos_type", "0", "selected"); %>>HTB</option>
-										<option value="1" <% nvram_selmatch("qos_type", "1", "selected"); %>>HFSC</option>
+										<option value="0" <% nvsm("qos_type", "0", "selected"); %>>HTB</option>
+										<option value="1" <% nvsm("qos_type", "1", "selected"); %>>HFSC</option>
 									</select>
 								</div>
                                 <% show_qos_aqd(); %>
                                 <div class="setting">
 									<div class="label"><% tran("qos.uplink"); %></div>
-									<input type="text" size="5" class="num" name="wshaper_uplink" value="<% nvram_get("wshaper_uplink"); %>" />
+									<input type="text" size="5" class="num" name="wshaper_uplink" value="<% nvg("wshaper_uplink"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("qos.dnlink"); %></div>
-									<input type="text" size="5" class="num" name="wshaper_downlink" value="<% nvram_get("wshaper_downlink"); %>" />
+									<input type="text" size="5" class="num" name="wshaper_downlink" value="<% nvg("wshaper_downlink"); %>" />
 								</div>
 							</fieldset><br />
                             
@@ -347,7 +347,7 @@ addEvent(window, "unload", function() {
 								</table>
 							</fieldset><br />
 							<% show_default_level(); %>
-<% nvram_match("portprio_support","0","<!--"); %>							
+<% nvm("portprio_support","0","<!--"); %>							
 							<fieldset>
 								<legend><% tran("qos.legend5"); %></legend>
 								<table>
@@ -362,27 +362,27 @@ addEvent(window, "unload", function() {
 											<select name="svqos_port1prio">
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"100\" <% nvram_selmatch("svqos_port1prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
+												document.write("<option value=\"100\" <% nvsm("svqos_port1prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"10\" <% nvram_selmatch("svqos_port1prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
+												document.write("<option value=\"10\" <% nvsm("svqos_port1prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"20\" <% nvram_selmatch("svqos_port1prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
+												document.write("<option value=\"20\" <% nvsm("svqos_port1prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"30\" <% nvram_selmatch("svqos_port1prio", "30", "selected"); %> >" + share.standard + "</option>");
+												document.write("<option value=\"30\" <% nvsm("svqos_port1prio", "30", "selected"); %> >" + share.standard + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"40\" <% nvram_selmatch("svqos_port1prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
+												document.write("<option value=\"40\" <% nvsm("svqos_port1prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
 												//]]>
 												</script>
 											</select>
@@ -391,18 +391,18 @@ addEvent(window, "unload", function() {
 											<select name="svqos_port1bw">
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"0\" <% nvram_match("svqos_port1bw", "0", "selected"); %> >" + share.disable + "</option>");
+												document.write("<option value=\"0\" <% nvm("svqos_port1bw", "0", "selected"); %> >" + share.disable + "</option>");
 												//]]>
 												</script>
-												<option value="256K" <% nvram_match("svqos_port1bw", "256K", "selected"); %>>256k</option>
-												<option value="512K" <% nvram_match("svqos_port1bw", "512K", "selected"); %>>512k</option>
-												<option value="1M" <% nvram_match("svqos_port1bw", "1M", "selected"); %>>1M</option>
-												<option value="2M" <% nvram_match("svqos_port1bw", "2M", "selected"); %>>2M</option>
-												<option value="5M" <% nvram_match("svqos_port1bw", "5M", "selected"); %>>5M</option>
-												<option value="10M" <% nvram_match("svqos_port1bw", "10M", "selected"); %>>10M</option>
-												<option value="20M" <% nvram_match("svqos_port1bw", "20M", "selected"); %>>20M</option>
-												<option value="50M" <% nvram_match("svqos_port1bw", "50M", "selected"); %>>50M</option>
-												<option value="FULL" <% nvram_match("svqos_port1bw", "FULL", "selected"); %>>100M</option>
+												<option value="256K" <% nvm("svqos_port1bw", "256K", "selected"); %>>256k</option>
+												<option value="512K" <% nvm("svqos_port1bw", "512K", "selected"); %>>512k</option>
+												<option value="1M" <% nvm("svqos_port1bw", "1M", "selected"); %>>1M</option>
+												<option value="2M" <% nvm("svqos_port1bw", "2M", "selected"); %>>2M</option>
+												<option value="5M" <% nvm("svqos_port1bw", "5M", "selected"); %>>5M</option>
+												<option value="10M" <% nvm("svqos_port1bw", "10M", "selected"); %>>10M</option>
+												<option value="20M" <% nvm("svqos_port1bw", "20M", "selected"); %>>20M</option>
+												<option value="50M" <% nvm("svqos_port1bw", "50M", "selected"); %>>50M</option>
+												<option value="FULL" <% nvm("svqos_port1bw", "FULL", "selected"); %>>100M</option>
 											</select>
 										</td>
 									</tr>
@@ -412,27 +412,27 @@ addEvent(window, "unload", function() {
 											<select name="svqos_port2prio">
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"100\" <% nvram_selmatch("svqos_port2prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
+												document.write("<option value=\"100\" <% nvsm("svqos_port2prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"10\" <% nvram_selmatch("svqos_port2prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
+												document.write("<option value=\"10\" <% nvsm("svqos_port2prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"20\" <% nvram_selmatch("svqos_port2prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
+												document.write("<option value=\"20\" <% nvsm("svqos_port2prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"30\" <% nvram_selmatch("svqos_port2prio", "30", "selected"); %> >" + share.standard + "</option>");
+												document.write("<option value=\"30\" <% nvsm("svqos_port2prio", "30", "selected"); %> >" + share.standard + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"40\" <% nvram_selmatch("svqos_port2prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
+												document.write("<option value=\"40\" <% nvsm("svqos_port2prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
 												//]]>
 												</script>
 											</select>
@@ -441,18 +441,18 @@ addEvent(window, "unload", function() {
 											<select name="svqos_port2bw">
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"0\" <% nvram_selmatch("svqos_port2bw", "0", "selected"); %> >" + share.disable + "</option>");
+												document.write("<option value=\"0\" <% nvsm("svqos_port2bw", "0", "selected"); %> >" + share.disable + "</option>");
 												//]]>
 												</script>
-												<option value="256K" <% nvram_selmatch("svqos_port2bw", "256K", "selected"); %>>256k</option>
-												<option value="512K" <% nvram_selmatch("svqos_port2bw", "512K", "selected"); %>>512k</option>
-												<option value="1M" <% nvram_selmatch("svqos_port2bw", "1M", "selected"); %>>1M</option>
-												<option value="2M" <% nvram_selmatch("svqos_port2bw", "2M", "selected"); %>>2M</option>
-												<option value="5M" <% nvram_selmatch("svqos_port2bw", "5M", "selected"); %>>5M</option>
-												<option value="10M" <% nvram_selmatch("svqos_port2bw", "10M", "selected"); %>>10M</option>
-												<option value="20M" <% nvram_selmatch("svqos_port2bw", "20M", "selected"); %>>20M</option>
-												<option value="50M" <% nvram_selmatch("svqos_port2bw", "50M", "selected"); %>>50M</option>
-												<option value="FULL" <% nvram_selmatch("svqos_port2bw", "FULL", "selected"); %>>100M</option>
+												<option value="256K" <% nvsm("svqos_port2bw", "256K", "selected"); %>>256k</option>
+												<option value="512K" <% nvsm("svqos_port2bw", "512K", "selected"); %>>512k</option>
+												<option value="1M" <% nvsm("svqos_port2bw", "1M", "selected"); %>>1M</option>
+												<option value="2M" <% nvsm("svqos_port2bw", "2M", "selected"); %>>2M</option>
+												<option value="5M" <% nvsm("svqos_port2bw", "5M", "selected"); %>>5M</option>
+												<option value="10M" <% nvsm("svqos_port2bw", "10M", "selected"); %>>10M</option>
+												<option value="20M" <% nvsm("svqos_port2bw", "20M", "selected"); %>>20M</option>
+												<option value="50M" <% nvsm("svqos_port2bw", "50M", "selected"); %>>50M</option>
+												<option value="FULL" <% nvsm("svqos_port2bw", "FULL", "selected"); %>>100M</option>
 											</select>
 										</td>
 									</tr>
@@ -462,27 +462,27 @@ addEvent(window, "unload", function() {
 											<select name="svqos_port3prio">
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"100\" <% nvram_selmatch("svqos_port3prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
+												document.write("<option value=\"100\" <% nvsm("svqos_port3prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"10\" <% nvram_selmatch("svqos_port3prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
+												document.write("<option value=\"10\" <% nvsm("svqos_port3prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"20\" <% nvram_selmatch("svqos_port3prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
+												document.write("<option value=\"20\" <% nvsm("svqos_port3prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"30\" <% nvram_selmatch("svqos_port3prio", "30", "selected"); %> >" + share.standard + "</option>");
+												document.write("<option value=\"30\" <% nvsm("svqos_port3prio", "30", "selected"); %> >" + share.standard + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"40\" <% nvram_selmatch("svqos_port3prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
+												document.write("<option value=\"40\" <% nvsm("svqos_port3prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
 												//]]>
 												</script>
 										</select>
@@ -491,18 +491,18 @@ addEvent(window, "unload", function() {
 											<select name="svqos_port3bw">
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"0\" <% nvram_selmatch("svqos_port3bw", "0", "selected"); %> >" + share.disable + "</option>");
+												document.write("<option value=\"0\" <% nvsm("svqos_port3bw", "0", "selected"); %> >" + share.disable + "</option>");
 												//]]>
 												</script>
-												<option value="256K" <% nvram_selmatch("svqos_port3bw", "256K", "selected"); %>>256k</option>
-												<option value="512K" <% nvram_selmatch("svqos_port3bw", "512K", "selected"); %>>512k</option>
-												<option value="1M" <% nvram_selmatch("svqos_port3bw", "1M", "selected"); %>>1M</option>
-												<option value="2M" <% nvram_selmatch("svqos_port3bw", "2M", "selected"); %>>2M</option>
-												<option value="5M" <% nvram_selmatch("svqos_port3bw", "5M", "selected"); %>>5M</option>
-												<option value="10M" <% nvram_selmatch("svqos_port3bw", "10M", "selected"); %>>10M</option>
-												<option value="20M" <% nvram_selmatch("svqos_port3bw", "20M", "selected"); %>>20M</option>
-												<option value="50M" <% nvram_selmatch("svqos_port3bw", "50M", "selected"); %>>50M</option>
-												<option value="FULL" <% nvram_selmatch("svqos_port3bw", "FULL", "selected"); %>>100M</option>
+												<option value="256K" <% nvsm("svqos_port3bw", "256K", "selected"); %>>256k</option>
+												<option value="512K" <% nvsm("svqos_port3bw", "512K", "selected"); %>>512k</option>
+												<option value="1M" <% nvsm("svqos_port3bw", "1M", "selected"); %>>1M</option>
+												<option value="2M" <% nvsm("svqos_port3bw", "2M", "selected"); %>>2M</option>
+												<option value="5M" <% nvsm("svqos_port3bw", "5M", "selected"); %>>5M</option>
+												<option value="10M" <% nvsm("svqos_port3bw", "10M", "selected"); %>>10M</option>
+												<option value="20M" <% nvsm("svqos_port3bw", "20M", "selected"); %>>20M</option>
+												<option value="50M" <% nvsm("svqos_port3bw", "50M", "selected"); %>>50M</option>
+												<option value="FULL" <% nvsm("svqos_port3bw", "FULL", "selected"); %>>100M</option>
 											</select>
 										</td>
 									</tr>
@@ -512,27 +512,27 @@ addEvent(window, "unload", function() {
 											<select name="svqos_port4prio">
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"100\" <% nvram_selmatch("svqos_port4prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
+												document.write("<option value=\"100\" <% nvsm("svqos_port4prio", "100", "selected"); %> >" + qos.prio_x + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"10\" <% nvram_selmatch("svqos_port4prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
+												document.write("<option value=\"10\" <% nvsm("svqos_port4prio", "10", "selected"); %> >" + qos.prio_p + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"20\" <% nvram_selmatch("svqos_port4prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
+												document.write("<option value=\"20\" <% nvsm("svqos_port4prio", "20", "selected"); %> >" + qos.prio_e + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"30\" <% nvram_selmatch("svqos_port4prio", "30", "selected"); %> >" + share.standard + "</option>");
+												document.write("<option value=\"30\" <% nvsm("svqos_port4prio", "30", "selected"); %> >" + share.standard + "</option>");
 												//]]>
 												</script>
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"40\" <% nvram_selmatch("svqos_port4prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
+												document.write("<option value=\"40\" <% nvsm("svqos_port4prio", "40", "selected"); %> >" + qos.prio_b + "</option>");
 												//]]>
 												</script>
 											</select>
@@ -541,24 +541,24 @@ addEvent(window, "unload", function() {
 											<select name="svqos_port4bw">
 												<script type="text/javascript">
 												//<![CDATA[
-												document.write("<option value=\"0\" <% nvram_selmatch("svqos_port4bw", "0", "selected"); %> >" + share.disable + "</option>");
+												document.write("<option value=\"0\" <% nvsm("svqos_port4bw", "0", "selected"); %> >" + share.disable + "</option>");
 												//]]>
 												</script>
-												<option value="256K" <% nvram_selmatch("svqos_port4bw", "256K", "selected"); %>>256k</option>
-												<option value="512K" <% nvram_selmatch("svqos_port4bw", "512K", "selected"); %>>512k</option>
-												<option value="1M" <% nvram_selmatch("svqos_port4bw", "1M", "selected"); %>>1M</option>
-												<option value="2M" <% nvram_selmatch("svqos_port4bw", "2M", "selected"); %>>2M</option>
-												<option value="5M" <% nvram_selmatch("svqos_port4bw", "5M", "selected"); %>>5M</option>
-												<option value="10M" <% nvram_selmatch("svqos_port4bw", "10M", "selected"); %>>10M</option>
-												<option value="20M" <% nvram_selmatch("svqos_port4bw", "20M", "selected"); %>>20M</option>
-												<option value="50M" <% nvram_selmatch("svqos_port4bw", "50M", "selected"); %>>50M</option>
-												<option value="FULL" <% nvram_selmatch("svqos_port4bw", "FULL", "selected"); %>>100M</option>
+												<option value="256K" <% nvsm("svqos_port4bw", "256K", "selected"); %>>256k</option>
+												<option value="512K" <% nvsm("svqos_port4bw", "512K", "selected"); %>>512k</option>
+												<option value="1M" <% nvsm("svqos_port4bw", "1M", "selected"); %>>1M</option>
+												<option value="2M" <% nvsm("svqos_port4bw", "2M", "selected"); %>>2M</option>
+												<option value="5M" <% nvsm("svqos_port4bw", "5M", "selected"); %>>5M</option>
+												<option value="10M" <% nvsm("svqos_port4bw", "10M", "selected"); %>>10M</option>
+												<option value="20M" <% nvsm("svqos_port4bw", "20M", "selected"); %>>20M</option>
+												<option value="50M" <% nvsm("svqos_port4bw", "50M", "selected"); %>>50M</option>
+												<option value="FULL" <% nvsm("svqos_port4bw", "FULL", "selected"); %>>100M</option>
 											</select>
 										</td>
 									</tr>
 								</table>
 							</fieldset><br />
-<% nvram_match("portprio_support","0","-->"); %>							
+<% nvm("portprio_support","0","-->"); %>							
 							<div class="submitFooter">
 								<script type="text/javascript">
 								//<![CDATA[

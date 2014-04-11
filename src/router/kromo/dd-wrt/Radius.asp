@@ -5,7 +5,7 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("radius.label4"); %></div>
-	<input class="num" name="wl_radius_port" size="5" maxlength="5" onblur="valid_range(this,1,65535,wpa.radius_port)" value="<% nvram_get("wl_radius_port"); %>" />
+	<input class="num" name="wl_radius_port" size="5" maxlength="5" onblur="valid_range(this,1,65535,wpa.radius_port)" value="<% nvg("wl_radius_port"); %>" />
 	<span class="default"><script type="text/javascript">
 	//<![CDATA[
 	document.write("(" + share.deflt + ": 1812)");
@@ -14,6 +14,6 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("radius.label7"); %></div>
-	<input type="password" id="wl_radius_key" name="wl_radius_key" size="20" maxlength="79" value="<% nvram_get("wl_radius_key"); %>" />&nbsp;&nbsp;&nbsp;
+	<input type="password" id="wl_radius_key" name="wl_radius_key" size="20" maxlength="79" value="<% nvg("wl_radius_key"); %>" />&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" name="_wl_radius_unmask" value="0" onclick="setElementMask('wl_radius_key', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>

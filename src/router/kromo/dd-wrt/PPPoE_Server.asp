@@ -56,10 +56,10 @@ var update;
 
 addEvent(window, "load", function() {
 
-		show_layer_ext(document.setup.pppoeradius_enabled, 'idpppoelocal', <% nvram_else_match("pppoeradius_enabled", "0", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pppoeradius_enabled, 'idpppoerad', <% nvram_else_match("pppoeradius_enabled", "1", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pppoeserver_clip, 'idpppoeiploc', <% nvram_else_match("pppoeserver_clip", "local", "1", "0"); %> == 1);
-		show_layer_ext(document.setup.pppoeserver_enabled, 'idpppoesrv', <% nvram_else_match("pppoeserver_enabled", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pppoeradius_enabled, 'idpppoelocal', <% nvem("pppoeradius_enabled", "0", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pppoeradius_enabled, 'idpppoerad', <% nvem("pppoeradius_enabled", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pppoeserver_clip, 'idpppoeiploc', <% nvem("pppoeserver_clip", "local", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pppoeserver_enabled, 'idpppoesrv', <% nvem("pppoeserver_enabled", "1", "1", "0"); %> == 1);
 		
 		update = new StatusbarUpdate();
 		update.start();
@@ -105,8 +105,8 @@ addEvent(window, "unload", function() {
 		<legend><% tran("service.pppoesrv_legend"); %></legend>
 			<div class="setting">
 			<div class="label"><% tran("service.pppoesrv_srv"); %></div>
-				<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="1" <% nvram_checked("pppoeserver_enabled", "1"); %> onclick="show_layer_ext(this, 'idpppoesrv', true)" /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="0" <% nvram_checked("pppoeserver_enabled", "0"); %> onclick="show_layer_ext(this, 'idpppoesrv', false)" /><% tran("share.disable"); %>
+				<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="1" <% nvc("pppoeserver_enabled", "1"); %> onclick="show_layer_ext(this, 'idpppoesrv', true)" /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="pppoeserver_enabled" value="0" <% nvc("pppoeserver_enabled", "0"); %> onclick="show_layer_ext(this, 'idpppoesrv', false)" /><% tran("share.disable"); %>
 			</div>
 	</fieldset><br />
 	
@@ -121,18 +121,18 @@ addEvent(window, "unload", function() {
 <!--			<div id="idpppoerad">
 				<div class="setting">
 					<div class="label"><% tran("share.ip"); %></div>
-					<input class="spaceradio" type="radio" name="pppoeserver_clip" value="radius" <% nvram_checked("pppoeserver_clip", "radius"); %> onclick="show_layer_ext(this, 'idpppoeiploc', false)" /><% tran("radius.legend"); %>
-					<input class="spaceradio" type="radio" name="pppoeserver_clip" value="local" <% nvram_checked("pppoeserver_clip", "local"); %> onclick="show_layer_ext(this, 'idpppoeiploc', true)" /><% tran("share.localip"); %>
+					<input class="spaceradio" type="radio" name="pppoeserver_clip" value="radius" <% nvc("pppoeserver_clip", "radius"); %> onclick="show_layer_ext(this, 'idpppoeiploc', false)" /><% tran("radius.legend"); %>
+					<input class="spaceradio" type="radio" name="pppoeserver_clip" value="local" <% nvc("pppoeserver_clip", "local"); %> onclick="show_layer_ext(this, 'idpppoeiploc', true)" /><% tran("share.localip"); %>
 				</div>
 			</div>
 			<div id="idpppoeiploc">		-->	
 				<div class="setting">
 					<div class="label"><% tran("filterIP.ip_range"); %></div>
-					<input size="15" maxlength="20" class="num" name="pppoeserver_pool" value="<% nvram_get("pppoeserver_pool"); %>" />
+					<input size="15" maxlength="20" class="num" name="pppoeserver_pool" value="<% nvg("pppoeserver_pool"); %>" />
 				</div>			
 				<div class="setting">
 					<div class="label"><% tran("wl_adv.label10"); %></div>
-					<input size="5" maxlength="4" class="num" name="pppoeserver_clcount" value="<% nvram_get("pppoeserver_clcount"); %>" />
+					<input size="5" maxlength="4" class="num" name="pppoeserver_clcount" value="<% nvg("pppoeserver_clcount"); %>" />
 					<span class="default"><script type="text/javascript">
 					//<![CDATA[
 					document.write("(" + share.deflt + ": 64)");
@@ -142,27 +142,27 @@ addEvent(window, "unload", function() {
 <!--			</div> -->
 			<div class="setting">
 				<div class="label">Deflate <% tran("service.pppoesrv_compr"); %></div>
-				<input type="checkbox" value="1" name="_pppoeserver_deflate" <% nvram_checked("pppoeserver_deflate", "1"); %> />
+				<input type="checkbox" value="1" name="_pppoeserver_deflate" <% nvc("pppoeserver_deflate", "1"); %> />
 			</div>
 			<div class="setting">
 				<div class="label">BSD <% tran("service.pppoesrv_compr"); %></div>
-				<input type="checkbox" value="1" name="_pppoeserver_bsdcomp" <% nvram_checked("pppoeserver_bsdcomp", "1"); %> />
+				<input type="checkbox" value="1" name="_pppoeserver_bsdcomp" <% nvc("pppoeserver_bsdcomp", "1"); %> />
 			</div>
 			<div class="setting">
 				<div class="label">LZS Stac <% tran("service.pppoesrv_compr"); %></div>
-				<input type="checkbox" value="1" name="_pppoeserver_lzs" <% nvram_checked("pppoeserver_lzs", "1"); %> />
+				<input type="checkbox" value="1" name="_pppoeserver_lzs" <% nvc("pppoeserver_lzs", "1"); %> />
 			</div>
 			<div class="setting">
 				<div class="label">MPPC <% tran("service.pppoesrv_compr"); %></div>
-				<input type="checkbox" value="1" name="_pppoeserver_mppc" <% nvram_checked("pppoeserver_mppc", "1"); %> />
+				<input type="checkbox" value="1" name="_pppoeserver_mppc" <% nvc("pppoeserver_mppc", "1"); %> />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pptpd_encry"); %></div>
-				<input type="checkbox" value="1" name="_pppoeserver_encryption" <% nvram_checked("pppoeserver_encryption", "1"); %> />
+				<input type="checkbox" value="1" name="_pppoeserver_encryption" <% nvc("pppoeserver_encryption", "1"); %> />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_limit"); %></div>
-				<input size="5" maxlength="5" class="num" name="pppoeserver_sessionlimit" value="<% nvram_get("pppoeserver_sessionlimit"); %>" />
+				<input size="5" maxlength="5" class="num" name="pppoeserver_sessionlimit" value="<% nvg("pppoeserver_sessionlimit"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 0)");
@@ -171,7 +171,7 @@ addEvent(window, "unload", function() {
 			</div>	
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_lcpei"); %></div>
-				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechoint" value="<% nvram_get("pppoeserver_lcpechoint"); %>" />
+				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechoint" value="<% nvg("pppoeserver_lcpechoint"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 5)");
@@ -180,7 +180,7 @@ addEvent(window, "unload", function() {
 			</div>	
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_lcpef"); %></div>
-				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechofail" value="<% nvram_get("pppoeserver_lcpechofail"); %>" />
+				<input size="5" maxlength="5" class="num" name="pppoeserver_lcpechofail" value="<% nvg("pppoeserver_lcpechofail"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 12)");
@@ -189,7 +189,7 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_idlet"); %></div>
-				<input size="5" maxlength="5" class="num" name="pppoeserver_idle" value="<% nvram_get("pppoeserver_idle"); %>" />
+				<input size="5" maxlength="5" class="num" name="pppoeserver_idle" value="<% nvg("pppoeserver_idle"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 0 = Disable)");
@@ -198,7 +198,7 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pptpd_mtu"); %></div>
-				<input size="5" maxlength="5" class="num" name="pppoeserver_mtu" value="<% nvram_get("pppoeserver_mtu"); %>" />
+				<input size="5" maxlength="5" class="num" name="pppoeserver_mtu" value="<% nvg("pppoeserver_mtu"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 1492)");
@@ -207,7 +207,7 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pptpd_mru"); %></div>
-				<input size="5" maxlength="5" class="num" name="pppoeserver_mru" value="<% nvram_get("pppoeserver_mru"); %>" />
+				<input size="5" maxlength="5" class="num" name="pppoeserver_mru" value="<% nvg("pppoeserver_mru"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 1492)");
@@ -216,8 +216,8 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_auth"); %></div>
-				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="1" <% nvram_checked("pppoeradius_enabled", "1"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', true)" /><% tran("radius.legend"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="0" <% nvram_checked("pppoeradius_enabled", "0"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', false)" /><% tran("service.pppoesrv_chaps"); %>
+				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="1" <% nvc("pppoeradius_enabled", "1"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', true)" /><% tran("radius.legend"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="pppoeradius_enabled" value="0" <% nvc("pppoeradius_enabled", "0"); %> onclick="toggle_layer_ext(this, 'idpppoerad', 'idpppoelocal', false)" /><% tran("service.pppoesrv_chaps"); %>
 			</div>
 	</fieldset><br />
 
@@ -226,11 +226,11 @@ addEvent(window, "unload", function() {
 		<legend>Radius <% tran("service.pppoesrv_auth"); %></legend>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_radip"); %></div>
-				<input maxlength="15" size="20" name="pppoeserver_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvram_get("pppoeserver_authserverip"); %>" />
+				<input maxlength="15" size="20" name="pppoeserver_authserverip" onblur="valid_ip_str(this, share.ip)" value="<% nvg("pppoeserver_authserverip"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_radauthport"); %></div>
-				<input size="5" maxlength="5" class="num" name="pppoeserver_authserverport" value="<% nvram_get("pppoeserver_authserverport"); %>" />
+				<input size="5" maxlength="5" class="num" name="pppoeserver_authserverport" value="<% nvg("pppoeserver_authserverport"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 1812)");
@@ -239,7 +239,7 @@ addEvent(window, "unload", function() {
 			</div>			
 			<div class="setting">
 				<div class="label"><% tran("service.pppoesrv_radaccport"); %></div>
-				<input size="5" maxlength="5" class="num" name="pppoeserver_acctserverport" value="<% nvram_get("pppoeserver_acctserverport"); %>" />
+				<input size="5" maxlength="5" class="num" name="pppoeserver_acctserverport" value="<% nvg("pppoeserver_acctserverport"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 1813)");
@@ -252,11 +252,11 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("radius.label23"); %></div>
-				<input maxlength="15" size="20" name="pppoeserver_authserverip_backup" value="<% nvram_get("pppoeserver_authserverip_backup"); %>" />
+				<input maxlength="15" size="20" name="pppoeserver_authserverip_backup" value="<% nvg("pppoeserver_authserverip_backup"); %>" />
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("radius.label24"); %></div>
-				<input size="5" maxlength="5" class="num" name="pppoeserver_authserverport_backup" value="<% nvram_get("pppoeserver_authserverport_backup"); %>" />
+				<input size="5" maxlength="5" class="num" name="pppoeserver_authserverport_backup" value="<% nvg("pppoeserver_authserverport_backup"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 1812)");
@@ -265,7 +265,7 @@ addEvent(window, "unload", function() {
 			</div>			
 			<div class="setting">
 				<div class="label"><% tran("radius.label14"); %></div>
-				<input size="5" maxlength="5" class="num" name="pppoeserver_acctserverport_backup" value="<% nvram_get("pppoeserver_acctserverport_backup"); %>" />
+				<input size="5" maxlength="5" class="num" name="pppoeserver_acctserverport_backup" value="<% nvg("pppoeserver_acctserverport_backup"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
 				document.write("(" + share.deflt + ": 1813)");
@@ -274,7 +274,7 @@ addEvent(window, "unload", function() {
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("radius.label27"); %></div>
-				<input size="20" maxlength="63" type="password" name="pppoeserver_sharedkey_backup" value="<% nvram_get("pppoeserver_sharedkey_backup"); %>" />
+				<input size="20" maxlength="63" type="password" name="pppoeserver_sharedkey_backup" value="<% nvg("pppoeserver_sharedkey_backup"); %>" />
 			</div>
 	</fieldset>
 </div>

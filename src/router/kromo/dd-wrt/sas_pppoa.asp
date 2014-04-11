@@ -9,21 +9,21 @@
 </div>
 <div class="setting">
 	<div class="label"><% tran("share.compression"); %></div>
-	<input class="spaceradio" type="radio" name="ppp_compression" value="1" <% sas_nvram_checked("ppp_compression","1"); %> /><% tran("share.enable"); %>&nbsp;
-	<input class="spaceradio" type="radio" name="ppp_compression" value="0" <% sas_nvram_checked("ppp_compression","0"); %> /><% tran("share.disable"); %> 
+	<input class="spaceradio" type="radio" name="ppp_compression" value="1" <% sas_nvc("ppp_compression","1"); %> /><% tran("share.enable"); %>&nbsp;
+	<input class="spaceradio" type="radio" name="ppp_compression" value="0" <% sas_nvc("ppp_compression","0"); %> /><% tran("share.disable"); %> 
 </div>
 <!--div class="setting">
 	<div class="label"><% tran("service.pptpd_encry"); %></div>
-	<input size="27" maxlength="63" onblur="valid_name(this,service.pptpd_encry)" name="ppp_mppe" value="<% nvram_get("ppp_mppe"); %>" />
+	<input size="27" maxlength="63" onblur="valid_name(this,service.pptpd_encry)" name="ppp_mppe" value="<% nvg("ppp_mppe"); %>" />
 </div-->
 <!--div class="setting">
 	<div class="label"><% tran("share.mlppp"); %></div>
-	<input type="checkbox" value="1" name="_ppp_mlppp" <% nvram_checked("ppp_mlppp", "1"); %> />
+	<input type="checkbox" value="1" name="_ppp_mlppp" <% nvc("ppp_mlppp", "1"); %> />
 </div-->
 	<div class="setting">
 		<div class="label"><% tran("idx_h.reconnect"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="reconnect_enable" <% sas_nvram_checked("reconnect_enable","1"); %> onclick="show_layer_ext(this, 'idreconnect', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="reconnect_enable" <% sas_nvram_checked("reconnect_enable","0"); %> onclick="show_layer_ext(this, 'idreconnect', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="reconnect_enable" <% sas_nvc("reconnect_enable","1"); %> onclick="show_layer_ext(this, 'idreconnect', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="reconnect_enable" <% sas_nvc("reconnect_enable","0"); %> onclick="show_layer_ext(this, 'idreconnect', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idreconnect">
 		<div class="setting">

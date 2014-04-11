@@ -2,7 +2,7 @@
 		<script type="text/javascript">//
 		//<![CDATA[
 
-document.title = "<% nvram_get("router_name"); %> - User Password Change";
+document.title = "<% nvg("router_name"); %> - User Password Change";
 
 function valid_password(F) {
 	if (F.http_passwd.value != F.http_passwdConfirm.value) {
@@ -53,9 +53,9 @@ if (valid_password(F))
 								<% ifndef("HASWIFI", "<!--"); %>
 								<li><span><strong><% tran("bmenu.wireless"); %></strong></span></li>
 								<% ifndef("HASWIFI", "-->"); %>								
-								<% nvram_invmatch("sipgate","1","<!--"); %>
+								<% nvim("sipgate","1","<!--"); %>
 								<li><span><strong><% tran("bmenu.sipath"); %></strong></span></li>
-								<% nvram_invmatch("sipgate","1","-->"); %>
+								<% nvim("sipgate","1","-->"); %>
 								<li><span><strong><% tran("bmenu.services"); %></strong></span></li>
 								<li><span><strong><% tran("bmenu.security"); %></strong></span></li>
 								<li><span><strong><% tran("bmenu.accrestriction"); %></strong></span></li>
