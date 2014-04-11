@@ -189,7 +189,11 @@ void ej_nvram_get(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
-
+void ej_nvg(webs_t wp, int argc, char_t ** argv)
+{
+	ej_nvram_get(wp, argc, argv);
+	return;
+}
 void ej_nvram_real_get(webs_t wp, int argc, char_t ** argv)
 {
 
@@ -384,6 +388,12 @@ void ej_nvram_selmatch(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+void ej_nvsm(webs_t wp, int argc, char_t ** argv)
+{
+	ej_nvram_selmatch(wp, argc, argv);
+	return;
+}
+
 void ej_nvram_else_selmatch(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
@@ -451,6 +461,12 @@ void ej_nvram_else_match(webs_t wp, int argc, char_t ** argv)
 	else
 		websWrite(wp, argv[3]);
 
+	return;
+}
+
+void ej_nvem(webs_t wp, int argc, char_t ** argv)
+{
+	ej_nvram_else_match(wp, argc, argv);
 	return;
 }
 
@@ -665,6 +681,12 @@ void ej_nvram_match(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+void ej_nvm(webs_t wp, int argc, char_t ** argv)
+{
+	ej_nvram_match(wp, argc, argv);
+	return;
+}
+
 /*
  * Example:
  * wan_proto=dhcp
@@ -680,6 +702,12 @@ void ej_nvram_invmatch(webs_t wp, int argc, char_t ** argv)
 	if (!nvram_match(name, invmatch))
 		websWrite(wp, output);
 
+	return;
+}
+
+void ej_nvim(webs_t wp, int argc, char_t ** argv)
+{
+	ej_nvram_invmatch(wp, argc, argv);
 	return;
 }
 
@@ -2130,6 +2158,12 @@ void ej_nvram_checked(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
+void ej_nvc(webs_t wp, int argc, char_t ** argv)
+{
+	ej_nvram_checked(wp, argc, argv);
+	return;
+}
+
 
 void ej_nvram_checked_js(webs_t wp, int argc, char_t ** argv)
 {
