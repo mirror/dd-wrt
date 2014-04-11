@@ -1,6 +1,6 @@
-﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//Serbian(Cyrillic) translation file - DD-WRT V24 SP2, 29/MAY/2013, by Хранислав Миленковић (Mile-Lile) //
-//////////////////////////////////////////////////////////////////////////////////////////////
+﻿////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Serbian(Cyrillic) translation file - DD-WRT V24 SP2, 06/APRIL/2014, by Хранислав Миленковић (Mile-Lile) //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
 lang_charset.set="UTF-8";
@@ -49,7 +49,7 @@ share.proto="Протокол";
 share.ip="IP Адреса";
 share.localip="Локална IP";
 share.remoteip="Удаљена IP";
-share.mac="MAC Адреса";
+share.mac="MAC aдреса";
 share.none="нема";
 share.none2="нема";
 share.both="Обоје";
@@ -99,7 +99,7 @@ share.yes="Да";
 share.no="Не";
 share.filter="Филтрирај";
 share.deny="Одбиј";
-share.range="У распону";
+share.range="макс.";
 share.use="Користи";
 share.mins="Мин.";
 share.secs="Сек.";
@@ -129,7 +129,7 @@ share.point2point="Point to Point";
 share.nat="NAT";
 share.subnet="Подмрежна маска";
 share.unmask="Прикажи";
-share.deflt="Подразумевано";  //don't use share.default!!!
+share.deflt="Дифолт";  //don't use share.default!!!
 share.all="Све";
 share.auto="Ауто";
 share.right="Десно";
@@ -139,7 +139,7 @@ share.inter="Интервал (у секундама)";
 share.srv="Име услуге";
 share.port_range="Опсег портова";
 share.priority="Приоритет";
-share.gateway="Излаз";
+share.gateway="Гејтвеј";
 share.intrface="Интерфејс";  //don't use share.interface, Mozilla problem!!!
 share.ccq="CCQ";
 share.pintrface="Физички интерфејс";
@@ -159,13 +159,13 @@ share.disconnect="Прекини";
 share.disconnected="Прекинуто";
 share.info="Информације";
 share.state="Стање";
-share.mode="Начин";
+share.mode="Режим";
 share.encrypt="Шифровање";
 share.key="Кључ";
 share.wireless="Бежичне мреже";
 share.dhcp="DHCP";
 share.styl="Стил";
-share.err="грешка";
+share.err="грешака";
 share.errs="грешака";
 share.meters="метара";
 share.ht40="Широки HT40 (20+20 MHz)";
@@ -288,7 +288,7 @@ errmsg.err10="Потврђена лозинка не одговара унеше
 errmsg.err11="Празан простор (space) није дозвољен унос у лозинци";
 errmsg.err12="Морате унети команду за покретање.";
 errmsg.err13="Надоградња неуспела.";
-errmsg.err45="Није доступно у HTTPS! Молим повежите се у HTTP моду.";
+errmsg.err45="Није доступно у HTTPS! Молим повежите се у HTTP режим.";
 errmsg.err46="Није доступно HTTPS";
 
 //common.js error messages
@@ -340,7 +340,7 @@ errmsg.err44="Укупна провера превазилази 256 ставк�
 errmsg.err47="Неважећи SSID.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS није компатибилан са тренутном конфигурацијом рутера. Проверите следеће ставке :\n * Бежични мод мора бити постављен на AP \n * WPA2 није подржан у WDS-у \n * Wireless Network B-Only мод није подржан у WDS режиму";
+errmsg.err48="WDS није компатибилан са тренутном конфигурацијом рутера. Проверите следеће ставке :\n * Бежични режим мора бити постављен на AP \n * WPA2 није подржан у WDS-у \n * Wireless Network B-Only мод није подржан у WDS режиму";
 
 //Wireless_radauth.asp error messages
 errmsg.err49="Radius је доступан само у AP моду.";
@@ -594,7 +594,7 @@ filter.legend2="Дани";
 filter.time="Време";
 filter.h24="24 сати";
 filter.legend3="Блокирани сервиси";
-filter.catchall="Ухвати све P2P протоколе";
+filter.catchall="Блокирај све P2P протоколе";
 filter.legend4="Блокирање веб странице путем URL адресе";
 filter.legend5="Блокирање веб странице путем кључне речи";
 filter.mess1="Обрисати полису?";
@@ -930,7 +930,7 @@ idx.summt_opt7="последња Нед Сеп - прва Нед Апр";
 idx.summt_opt8="трећа Нед Окт - трећа Нед Мар";
 idx.summt_opt9="прва Нед Окт - прва Нед Апр";
 idx.summt_opt10="трећа Нед Окт - трећа Нед Феб";
-idx.portsetup="Подешавање Портова";
+idx.portsetup="Подешавање портова";
 idx.wanport="Додељивање WAN порта";
 idx.ntp_client="NTP Клијент";
 
@@ -994,25 +994,26 @@ management.psswd_user="Корисничко име Рутера";
 management.psswd_pass="Лозинка Рутера";
 management.pass_conf="Унесите поново да би потврдили";
 management.remote_legend="Приступ са удаљ. локац.";
-management.remote_gui="Web GUI Управљање";
+management.remote_gui="Web GUI управљање";
 management.remote_https="Користи HTTPS";
 management.remote_guiport="Web GUI порт";
-management.remote_ssh="SSH Управљање";
+management.remote_ssh="SSH управљање";
 management.remote_sshport="SSH Remote Port";
-management.remote_telnet="Telnet Управљање";
+management.remote_telnet="Telnet управљање";
 management.remote_telnetport="Telnet Remote Port";
-management.remote_allowanyip="Дозволи сваку IP";
+management.remote_allowanyip="Дозволи свакој IP";
 management.remote_ip="Дозволи IP Опсег";
 management.web_legend="Приступ преко Web-а";
 management.web_refresh="Ауто-освежавање (у секундама)";
-management.web_sysinfo="Омогући Инфо Страницу";
-management.web_sysinfopass="Заштита Лозинком Инфо Странице";
-management.web_sysinfomasq="Маскирање MAC-ова Инфо Странице";
+management.web_authlimit="Ограничи приступ GUI-у (сек.)";
+management.web_sysinfo="Омогући Инфо страницу";
+management.web_sysinfopass="Заштита Инфо странице лозинком";
+management.web_sysinfomasq="Маскирање MAC-ова Инфо странице";
 management.boot_legend="Чекај Boot";
 management.boot_srv="Чекај Boot";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
-management.cron_jobs="Додатни Cron Послови";
+management.cron_jobs="Додатне Cron команде";
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 management.wifi_legend="802.1x";
@@ -1055,7 +1056,7 @@ management.lang_hungarian="мађарски";
 management.lang_latvian="летонски";
 management.net_legend="Подешавања IP Филтера (наштелуј ове за P2P)";
 management.net_conctrl="Обуздавање TCP Закрчености";
-management.net_port="Максимално Портова";
+management.net_port="Максимално портова";
 management.net_tcptimeout="TCP Timeout (у секундама)";
 management.net_udptimeout="UDP Timeout (у секундама)";
 management.clock_legend="Оверклоковање";
@@ -1085,12 +1086,12 @@ portserv.h2="Порт Сервиси";
 
 
 // ** Networking.asp **//
-networking.h2="VLAN Означавање";
-networking.legend="Означавање";
+networking.h2="VLAN Таговање";
+networking.legend="Таговање";
 networking.h22="Bridge-овање";
-networking.legend2="Направи Bridge";
+networking.legend2="Креирај Bridge";
 networking.legend3="Додели Bridge-у";
-networking.legend4="Тренутна Bridging Табела";
+networking.legend4="Тренутна Bridging табела";
 networking.brname="Име Bridge-а";
 networking.stp="STP омогућено";
 networking.iface="Интерфејси";
@@ -1157,10 +1158,10 @@ routetbl.th1="Одредишни LAN NET";
 
 // ** Routing.asp **//
 route.titl="Рутирање";
-route.h2="Напредно Рутирање";
+route.h2="Напредно рутирање";
 route.metric="Metric";
 route.flags="Flags";
-route.mod="Начин Руковања";
+route.mod="Начин руковања";
 route.bgp_legend="BGP Подешавања";
 route.bgp_ip="Комшијска IP";
 route.bgp_own_as="BGP Own AS#";
@@ -1169,7 +1170,7 @@ route.rip2_mod="RIP2 Рутер";
 route.olsrd_mod="OLSR Рутер";
 route.olsrd_legend="OLSR Рутирање (Оптимизовано Link State Рутирање)";
 route.olsrd_poll="Poll Rate";
-route.olsrd_gateway="Gateway Мод";
+route.olsrd_gateway="Gateway режим";
 route.olsrd_hna="Host Net Announce";
 route.olsrd_tc="TC Редуданција";
 route.olsrd_mpr="MPR Покривање";
@@ -1193,8 +1194,8 @@ route.ospf_conf="OSPF Конфигурација";
 route.ospf_copt="OSPF Config Style";
 route.copt_gui="GUI";
 route.copt_vtysh="Vtysh";
-route.gateway_legend="Динамичко Рутирање";
-route.static_legend="Статичко Рутирање";
+route.gateway_legend="Динамичко рутирање";
+route.static_legend="Статичко рутирање";
 route.static_setno="Изаберите број поставке";
 route.static_name="Име Руте";
 route.static_ip="Одредишни LAN NET";
@@ -1238,12 +1239,12 @@ service.dhcp_jffs2="Користи JFFS2 за DB закуп клијентски
 service.dhcp_nvramlease="Користи NVRAM за DB закуп клијентских адреса";
 service.dhcp_domain="Коришћени Домен";
 service.dhcp_landomain="LAN Домен";
-service.dhcp_option="Додатне DHCPd Опције";
+service.dhcp_option="Додатне DHCPd опције";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="Локални DNS";
 service.dnsmasq_no_dns_rebind="Без DNS Rebind-овања";
-service.dnsmasq_opt="Додатне DNSMasq Опције";
+service.dnsmasq_opt="Додатне DNSMasq опције";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
@@ -1254,19 +1255,19 @@ service.pptp_chap="CHAP-Secrets";
 //syslog.webservices
 service.syslog_legend="Системски Запис";
 service.syslog_srv="Системски запис";
-service.syslog_ip="Удаљени Сервер";
+service.syslog_ip="Удаљени сервер";
 
 //telnet.webservices
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
 
 //pptpd_client.webservices
-service.pptpd_legend="PPTP Клијент";
-service.pptpd_option="Опције PPTP Клијента";
-service.pptpd_ipdns="Сервер IP или DNS Име";
-service.pptpd_subnet="Удаљена Подмрежа";
-service.pptpd_subnetmask="Удаљена Подмрежна Маска";
-service.pptpd_encry="MPPE Енкрипција";
+service.pptpd_legend="PPTP клијент";
+service.pptpd_option="Опције PPTP клијента";
+service.pptpd_ipdns="IP сервера или име DNS-а";
+service.pptpd_subnet="Удаљена подмрежа";
+service.pptpd_subnetmask="Удаљена подмрежна маска";
+service.pptpd_encry="MPPE енкрипција";
 service.pptpd_mtu="MTU";
 service.pptpd_mru="MRU";
 service.pptpd_nat="NAT";
@@ -1399,7 +1400,7 @@ service.hwmon_critemp="Критична температура (FAN Укључи
 service.hwmon_hystemp="Радна температура (FAN Искључи)";
 
 //rstat.webservices
-service.rstats_legend="Праћење Протока";
+service.rstats_legend="Праћење пропусне моћи";
 service.rstats_srv="rstats Daemon";
 service.rstats_path="Сачувај податке о Протоку у";
 service.rstats_time="Интервал снимања";
@@ -1517,16 +1518,16 @@ sipath.status_titl="Статус";
 
 // ** Status_Lan.asp **//
 status_lan.titl="Статус LAN-а";
-status_lan.h2="Локална Мрежа";
+status_lan.h2="Локална мрежа";
 status_lan.legend="Статус LAN-а";
-status_lan.h22="Протокол за Динамичко Конфигурисање Хостова (DHCP)";
+status_lan.h22="Протокол за динамичко конфигурисање хостова (DHCP)";
 status_lan.legend2="Статус DHCP-а";
-status_lan.legend3="DHCP Клијенти";
-status_lan.legend4="Активни Клијенти";
-status_lan.legend5="Повезани PPTP Клијенти";
-status_lan.legend6="Повезани PPPOE Клијенти";
-status_lan.concount="Број конекц.";
-status_lan.conratio="Размера";
+status_lan.legend3="DHCP клијенти";
+status_lan.legend4="Активни клијенти";
+status_lan.legend5="Повезани PPTP клијенти";
+status_lan.legend6="Повезани PPPOE клијенти";
+status_lan.concount="Број сесија";
+status_lan.conratio="Распон";
 
 //help container
 hstatus_lan.right2="Приказује MAC адресу рутера, онаквом како је виђена од стране других у вашој локалној Ethernet мрежи.";
@@ -1536,8 +1537,8 @@ hstatus_lan.right8="Ако користите рутер као DHCP серве�
 hstatus_lan.right10="Кликом на било коју MAC адресу, добићете јединствени идентификатор произвођача мрежног уређаја (IEEE Стандард\и OUI претрага базе података).";
 
 // ** Status_Bandwidth.asp **//
-status_band.titl="Праћење Протока";
-status_band.h2="Праћење Протока";
+status_band.titl="Праћење пропусне моћи";
+status_band.h2="Праћење пропусне моћи";
 status_band.chg_unit="Пребаци на ";
 status_band.chg_scale="Сам одреди";
 status_band.chg_error="Подаци о интерфејсу се не могу прибавити";
@@ -1548,25 +1549,26 @@ status_band.follow="прати";
 status_band.up="горе";
 
 //help container
-hstatus_band.svg="Да би се приказали графикони протока потребан је Adobe SVG plugin.";
+hstatus_band.svg="Да би се приказали графикони пропусне моћи потребан је Adobe SVG plugin.";
 hstatus_band.right1="Кликните на ознаку да би променили мерне јединице(bytes/s или bits/s).";
 hstatus_band.right2="Кликните на ознаку да би изабрали тип мерних јединица графикона.";
 
 // ** Status_Router.asp **//
-status_router.titl="Рутер Статус";
-status_router.h2="Информације о Рутеру";
+status_router.titl="Статус рутера";
+status_router.h2="Информације о рутеру";
 status_router.legend="Систем";
-status_router.sys_model="Модел Рутера";
-status_router.sys_firmver="Верзија Фирмвера";
-status_router.sys_time="Тренутно Време";
-status_router.sys_up="Време трајања";
-status_router.sys_load="Просек Оптерећења";
-status_router.sys_kernel="Верзија Кернела";
+status_router.sys_model="Модел рутера";
+status_router.sys_firmver="Верзија фирмвера";
+status_router.sys_time="Тренутно време";
+status_router.sys_up="Рутер је активан";
+status_router.sys_load="Просек оптерећења";
+status_router.sys_kernel="Верзија кернела";
 status_router.legend2="CPU";
-status_router.cpu="CPU Модел";
+status_router.cpu="Модел CPU-а";
+status_router.cores="Број CPU језгара";
 status_router.clock="Такт CPU-а";
 status_router.legend3="Меморија";
-status_router.mem_tot="Укупно Расположиво";
+status_router.mem_tot="Укупно расположиво";
 status_router.mem_free="Слободно";
 status_router.mem_used="Употребљено";
 status_router.mem_buf="Избаферовано";
@@ -1575,11 +1577,11 @@ status_router.mem_active="Активно";
 status_router.mem_inactive="Неактивно";
 status_router.mem_hidden="Hidden"; // do not translate this line, this is bogus (BrainSlayer)
 status_router.legend4="Мрежа";
-status_router.net_maxports="Број Максималних IP Портова";
-status_router.net_conntrack="Активних IP Конекција";
+status_router.net_maxports="Број дозвољених IP портова";
+status_router.net_conntrack="Број активних IP сесија";
 status_router.notavail="Није Доступно";
-status_router.legend6="Искоришћеност Простора";
-status_router.inpvolt="Улазни Напон Плоче";
+status_router.legend6="Искоришћеност простора";
+status_router.inpvolt="Улазни напон плоче";
 status_router.cputemp="Температура CPU-а";
 
 //help container
@@ -1591,20 +1593,20 @@ hstatus_router.right10="Ово је време које мери колико ј
 hstatus_router.right12="Ова дата три броја предстваљају оптерећеност система током периода од последњег (1), пет и петнаест минута.";
 
 // ** Status_Internet.asp **//
-status_inet.titl="WAN Статус";
+status_inet.titl="WAN статус";
 status_inet.h11="WAN";
-status_inet.conft="Врста Конфигурације";
-status_inet.www_loginstatus="Статус Пријављивања";
-status_inet.wanuptime="Време Трајања Конекције";
-status_inet.leasetime="Преостало Време Закупа";
+status_inet.conft="Конфигурисаност";
+status_inet.www_loginstatus="Статус линка";
+status_inet.wanuptime="Време трајања конекције";
+status_inet.leasetime="Преостало време закупа";
 status_inet.traff="Саобраћај";
-status_inet.traff_tot="Укупни Саобраћај";
-status_inet.traff_mon="Саобраћај по Месецима";
+status_inet.traff_tot="Укупни саобраћај";
+status_inet.traff_mon="Саобраћај по месецима";
 status_inet.traffin="Долазећи";
 status_inet.traffout="Одлазећи";
-status_inet.previous="Претходни Месец";
-status_inet.next="Идући Месец";
-status_inet.dataadmin="Администрација Података";
+status_inet.previous="За претходни месец";
+status_inet.next="Идући месец";
+status_inet.dataadmin="Администрација података";
 status_inet.delete_confirm="УПОЗОРЕЊЕ! Ова акција ће обрисати све податке о саобраћају. Наставити?";
 
 
@@ -1634,18 +1636,18 @@ hstatus_sputnik.right8="Број Лиценце вашег Контролног 
 
 
 // ** Status_Wireless.asp **//
-status_wireless.titl="Wi-Fi Статус";
+status_wireless.titl="Wi-Fi статус";
 status_wireless.h2="Wi-Fi";
-status_wireless.legend="Wi-Fi Статус";
+status_wireless.legend="Wi-Fi статус";
 status_wireless.net="Мрежа";
-status_wireless.pptp="PPTP Статус";
+status_wireless.pptp="PPTP статус";
 status_wireless.legend2="Инфо о Wi-Fi пакетима";
 status_wireless.rx="Примљених (RX)";
 status_wireless.tx="Пренешених (TX)";
-status_wireless.h22="Wi-Fi Чворови";
+status_wireless.h22="Wi-Fi чворишта";
 status_wireless.legend3="Клијенти";
-status_wireless.signal_qual="Квалитет Сигнала";
-status_wireless.wds="WDS Чворови";
+status_wireless.signal_qual="Квалитет сигнала";
+status_wireless.wds="WDS чворишта";
 
 // ** GPS info **//
 status_gpsi.legend="GPS Инфо";
@@ -1682,8 +1684,8 @@ htrforward.right10="Унесите крајњи број Укљученог и �
 
 // ** Upgrade.asp **//
 upgrad.titl="Надоградња";
-upgrad.h2="Фирмвер Управљање";
-upgrad.legend="Надоградња Фирмвера";
+upgrad.h2="Фирмвер управљање";
+upgrad.legend="Надоградња фирмвера";
 upgrad.info1="Након флешовања, ресетуј на";
 upgrad.resetOff="Немој ресетовати";
 upgrad.resetOn="Ресетуј на Фабричка Подешавања";
@@ -1713,11 +1715,11 @@ hupnp.right4="Дозвољава апликацијама да аутоматс�
 
 // ** VPN.asp **//
 vpn.titl="VPN Пролаз";
-vpn.h2="Вируелна Приватна Мрежа (VPN)";
+vpn.h2="Вируелна приватна мрежа (VPN)";
 vpn.legend="VPN Пролаз";
-vpn.ipsec="IPSec Пролаз";
-vpn.pptp="PPTP Пролаз";
-vpn.l2tp="L2TP Пролаз";
+vpn.ipsec="IPSec пропуштање";
+vpn.pptp="PPTP пропуштање";
+vpn.l2tp="L2TP пропуштање";
 
 //help container
 hvpn.right1="Можете изабрати да омогућите пролаз за IPSec, PPTP и/или L2TP како би омогућили вашим мрежним уређајима да комуницирају преко VPN-а.";
@@ -1747,7 +1749,7 @@ wol.legend2="WOL Адресе";
 wol.legend3="Излаз";
 wol.legend4="Ручно WOL";
 wol.enable="Омогућити WOL?";
-wol.mac="MAC Адреса/е";
+wol.mac="MAC aдреса/е";
 wol.broadcast="Мрежни Broadcast";
 wol.udp="UDP Порт";
 wol.msg1="Кликните да бисте уклонили WOL хост";
@@ -1786,8 +1788,8 @@ wpa.rekey="Интервал Key Renewal-а (у секундама)";
 wpa.radius_ipaddr="RADIUS Server Address";
 wpa.radius_port="Адреса RADIUS Сервера";
 wpa.radius_key="RADIUS Кључ";
-wpa.algorithms="WPA Алгоритми";
-wpa.shared_key="WPA Дељени Кључ";
+wpa.algorithms="WPA алгоритми";
+wpa.shared_key="WPA дељени кључ";
 
 
 aoss.titl="AOSS Безбедност";
@@ -1845,8 +1847,8 @@ hwpa.right2="Изаберите између Онеспособи, WEP, WPA Pers
 
 
 // ** WL_FilterTable.asp **//
-wl_filter.titl="Листа Филтрираних MAC Адреса";
-wl_filter.h2="Списак Филтрираних MAC Адреса";
+wl_filter.titl="Листа Филтрираних MAC aдреса";
+wl_filter.h2="Списак Филтрираних MAC aдреса";
 wl_filter.h3="Унесите MAC адресу у овом формату&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
@@ -1870,7 +1872,7 @@ wds.lazy_default="Подразумевано: Онеспособљено";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 wds.subnet="мрежни опсег";
-wds.legend2="Додатне Опције";
+wds.legend2="Додатне опције";
 
 
 // ** Wireless_radauth.asp **//
@@ -1907,12 +1909,12 @@ wl_mac.allow="Дозволи само клијентима који су на л
 // ** WiMAX
 wl_wimax.titl="WiMAX";
 wl_wimax.h2="Worldwide Interoperability for Microwave Access";
-wl_wimax.downstream="Низводна Фрекфенција";
-wl_wimax.upstream="Узводна Фрекфенција";
-wl_wimax.width="Ширина Канала";
-wl_wimax.duplex="Двоструки Режим";
-wl_wimax.mode="Режим Руковања";
-wl_wimax.mac="Претплатник MAC Адреса";
+wl_wimax.downstream="Низводна фрекфенција";
+wl_wimax.upstream="Узводна фрекфенција";
+wl_wimax.width="Ширина канала";
+wl_wimax.duplex="Двоструки режим";
+wl_wimax.mode="Режим руковања";
+wl_wimax.mac="Претплатник MAC aдреса";
 
 // ** Gpio **//
 gpio.titl="Gpio Улази / Излази";
@@ -1965,7 +1967,7 @@ wl_adv.label6="Beacon Interval";
 wl_adv.label7="DTIM Interval";
 wl_adv.label8="Fragmentation Threshold";
 wl_adv.label9="RTS Threshold";
-wl_adv.label10="Макс. Придружених Клијената";
+wl_adv.label10="Макс. дозвољених клијената";
 wl_adv.label11="AP Isolation";
 wl_adv.label12="TX Antenna";
 wl_adv.label13="RX Antenna";
@@ -2020,17 +2022,17 @@ hwl_adv.right2="Можете изабрати Ауто или Дељени Кљ�
 // ** Wireless_Basic.asp **//
 wl_basic.titl="WiFi";
 wl_basic.h2="Бежична Мрежа";
-wl_basic.cardtype="Врста Картице";
-wl_basic.legend="Основна Подешавања";
-wl_basic.label="Бежични Режим";
-wl_basic.label2="Режим Бежичне Мреже";
-wl_basic.label3="Назив Бежичне Мреже (SSID)";
-wl_basic.label4="Бежични Канал";
-wl_basic.label5="Објављивање Бежичног SSID-а";
-wl_basic.label6="Домет Осетљивости (ACK Timing)";
-wl_basic.label7="802.11n Режим Преноса";
-wl_basic.scanlist="Листа Прегледа";
-wl_basic.duallink="Двострука Веза";
+wl_basic.cardtype="Врста картице";
+wl_basic.legend="Основна подешавања";
+wl_basic.label="Бежични режим";
+wl_basic.label2="Режим бежичне мреже";
+wl_basic.label3="Назив бежичне мреже (SSID)";
+wl_basic.label4="Бежични канал";
+wl_basic.label5="Објављивање бежичног SSID-а";
+wl_basic.label6="Осетљивост (ACK Timing)";
+wl_basic.label7="802.11n Режим преноса";
+wl_basic.scanlist="Листа прегледа";
+wl_basic.duallink="Двострука веза";
 wl_basic.parent="Parent IP";
 wl_basic.masquerade="Masquerade / NAT";
 wl_basic.ap="AP";
@@ -2060,16 +2062,16 @@ wl_basic.rts="RTS Threshold";
 wl_basic.rtsvalue="Threshold";
 wl_basic.protmode="Режим Заштите";
 wl_basic.legend2="Рестрикције Времена Емитовања";
-wl_basic.radio="Radio";
-wl_basic.radiotimer="Radio Планирање";
-wl_basic.radio_on="Radio је укључен";
-wl_basic.radio_off="Radio је искључен";
-wl_basic.h2_v24="Бежични Физички Интерфејс";
-wl_basic.h2_vi="Виртуелни Интерфејс";
-wl_basic.regdom="Регулаторна Област";
-wl_basic.TXpower="TX Снага";
-wl_basic.TXpowerFcc="TX Peak Снага (FCC)";
-wl_basic.AntGain="Добит Антене";
+wl_basic.radio="Радио";
+wl_basic.radiotimer="Радио планирање";
+wl_basic.radio_on="Радио је укључен";
+wl_basic.radio_off="Радио је искључен";
+wl_basic.h2_v24="Бежични физички интерфејс";
+wl_basic.h2_vi="Виртуелни интерфејс";
+wl_basic.regdom="Регулаторна област";
+wl_basic.TXpower="TX снага";
+wl_basic.TXpowerFcc="TX Peak снага (FCC)";
+wl_basic.AntGain="Добит антене";
 wl_basic.diversity="Разноврсност";
 wl_basic.primary="Примарни";
 wl_basic.secondary="Секундарни";
@@ -2078,14 +2080,14 @@ wl_basic.horizontal="Водоравни";
 wl_basic.adaptive="Прилагодљив";
 wl_basic.internal="Унутрашни";
 wl_basic.external="Спољашњи";
-wl_basic.ghz24="2.4 GHz Излаз";
-wl_basic.ghz5="5 GHz Излаз";
+wl_basic.ghz24="2.4 GHz излаз";
+wl_basic.ghz5="5 GHz излаз";
 wl_basic.network="Подешавање мреже";
 wl_basic.unbridged="Unbridged";
 wl_basic.bridged="Bridged";
-wl_basic.turbo="Турбо Режим";
-wl_basic.extrange="Продужени Режим";
-wl_basic.supergcomp="Супер G Компресија";
+wl_basic.turbo="Турбо режим";
+wl_basic.extrange="Продужени режим";
+wl_basic.supergcomp="Супер G компресија";
 wl_basic.supergff="Super G Fast Framing";
 wl_basic.extchannel="Проширени канални мод";
 wl_basic.outband="Спољни банд";
@@ -2097,17 +2099,17 @@ wl_basic.specialmode="2.3 GHz Режим";
 wl_basic.wifi_bonding="Wifi Везивање";
 wl_basic.sifstime="OFDM SIFS Time";
 wl_basic.preambletime="OFDM Preamble Time";
-wl_basic.multicast="Мултикаст Прослеђивање";
+wl_basic.multicast="Мултикаст прослеђивање";
 wl_basic.intmit="Отпорност на буку";
 wl_basic.noise_immunity="Ниво отпорности на шум";
 wl_basic.ofdm_weak_det="OFDM Детекција Слабости";
 wl_basic.radar="Откривање Радара";
-wl_basic.mtikie="MTik Компатибилност";
+wl_basic.mtikie="MTik компатибилност";
 wl_basic.csma="Чуло за пренос";
 wl_basic.if_label="Назив (опционално)";
 wl_basic.if_info="Инфо (опционално)";
-wl_basic.advanced_options="Напредна Подешавања";
-wl_basic.rate_control="Алгоритам Контроле Брзине";
+wl_basic.advanced_options="Напредна подешавања";
+wl_basic.rate_control="Алгоритам контроле брзине";
 wl_basic.ap83_vap_note="Додавање више од три виртуелна интерфејса ће довести до смањења перформанси са неким специфичним клијентским уређајима на овим додатним виртуелним интерфејсима.";
 
 //help container
