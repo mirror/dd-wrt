@@ -126,6 +126,11 @@ ifeq ($(CONFIG_IAS),y)
 	cp -r ../../private/buffalo/intatstart/www/config/*.webconfig $(INSTALLDIR)/www/intatstart/config
 	cp -r ../../private/buffalo/intatstart/www/lang_pack/*.js $(INSTALLDIR)/www/intatstart/lang_pack
 	cp -r ../../private/buffalo/intatstart/kromo/dd-wrt/* $(INSTALLDIR)/www/
+ifeq ($(CONFIG_IAS_NOPLNPWD),y)
+	install $(TOP)/private/buffalo/intatstart/config/admincard_noplnpwd.webdisplay $(INSTALLDIR)/www/config/admincard.webdisplay
+else
+	install $(TOP)/private/buffalo/intatstart/config/admincard.webdisplay $(INSTALLDIR)/www/config/admincard.webdisplay
+endif
 endif
 ifeq ($(CONFIG_SPOTPASS),y)
 	mkdir $(INSTALLDIR)/www/style/nintendo
@@ -969,7 +974,7 @@ removeobsolete:
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
 makewww:
-	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico images/*/*.png images/*/*.gif js/* lang_pack/* style/* style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* intatstart/js/* intatstart/css/* intatstart/lang_pack/* intatstart/config/* $(SRCBASE)/router/httpd/html.c $(SRCBASE)/router/httpd/www 
+	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico images/*/*.png images/*/*.gif js/* lang_pack/* style/* style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* intatstart/js/* intatstart/css/* intatstart/lang_pack/* intatstart/config/* config/* $(SRCBASE)/router/httpd/html.c $(SRCBASE)/router/httpd/www 
 
 
 removepwc:
@@ -981,11 +986,13 @@ else
 endif
 
 cleanup:
-	-cd $(INSTALLDIR)/www && rm -f *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/* images/*/*.png images/*/*.gif js/* lang_pack/* intatstart/js/* intatstart/css/* intatstart/lang_pack/* intatstart/config/*
+	-cd $(INSTALLDIR)/www && rm -f *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/* images/*/*.png images/*/*.gif js/* lang_pack/* intatstart/js/* intatstart/css/* intatstart/lang_pack/* intatstart/config/* config/*
 	rm -rf $(INSTALLDIR)/www/images
 	rm -rf $(INSTALLDIR)/www/help
 	rm -rf $(INSTALLDIR)/www/js
 	rm -rf $(INSTALLDIR)/www/lang_pack
+	-rm -rf $(INSTALLDIR)/www/config
+	-rm -rf $(INSTALLDIR)/www/intatstart
 
 ifneq ($(NO_PROCESSLANGFILES),y)
 PROCESSLANGFILES:= processlangfiles
