@@ -1184,14 +1184,6 @@ ifneq ($(CONFIG_NOSSL),y)
 	install -d $(INSTALLDIR)/etc
 	install *.pem $(INSTALLDIR)/etc
 endif
-ifeq ($(CONFIG_IAS),y)
-	install -d $(INSTALLDIR)/etc/config
-ifeq ($(CONFIG_IAS_NOPLNPWD),y)
-	install ../private/buffalo/intatstart/config/admincard_noplnpwd.webdisplay $(INSTALLDIR)/etc/config/admincard.webdisplay
-else
-	install ../private/buffalo/intatstart/config/admincard.webdisplay $(INSTALLDIR)/etc/config/admincard.webdisplay
-endif
-endif
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf httpd httpsclient
 
 cert:
