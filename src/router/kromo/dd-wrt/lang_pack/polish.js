@@ -1872,7 +1872,6 @@ olupgrade.retrieve_error="Error retrieving update information";
 
 
 nintendo.titl="Nintendo";
-nintendo.spotpass=new Object();
 nintendo.spotpass.titl="Nintendo SpotPass";
 nintendo.spotpass.enable="Enable Nintendo SpotPass";
 nintendo.spotpass.servers="Allow Servers";
