@@ -1,12 +1,10 @@
-﻿//////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////
 //		English reference translation file - DD-WRT V24 SP2       24/JUL/2013				//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
-var lang_charset=new Object();
 lang_charset.set="UTF-8";
 
-var share=new Object();
 share.annex="Annex Type";
 share.apn="APN";
 share.pin="PIN";
@@ -219,7 +217,6 @@ share.broadcast="Broadcast support";
 share.secondcharacter="s";
 share.change="사용자 암호 변경";
 
-var sbutton=new Object();
 sbutton.save="저장";
 sbutton.savetitle="설정을 저정합니다(동작에는 반영하지 않음)";
 sbutton.apply="설정 적용";
@@ -277,7 +274,6 @@ sbutton.prev="&laquo; 되돌아가기";
 
 
 // ** COMMON ERROR MESSAGES  **//
-var errmsg=new Object();
 errmsg.err0="사용자 이름을 반드시 입력하여 주십시요.";
 errmsg.err1="공유기 이릉을 반드시 입력하여 주십시요.";
 errmsg.err2="입력하신 값이 사용가능한 범위를 초과 하였습니다, 시작 IP 어드레스 혹은 어드레스 범위를 변경하여 주십시요.";
@@ -388,7 +384,6 @@ errmsg.err101="설정을 복원하고 있습니다...<br/>잠시만 기다려 �
 errmsg.err102="펌웨어를 업그레이드하고 있습니다...<br/>잠시만 기다려 주십시요";
 
 // **  COMMON MENU ENTRIES  **//
-var bmenu= new Object();
 bmenu.setup="설정메뉴";
 bmenu.setupbasic="기본 설정";
 bmenu.setupddns="DDNS";
@@ -478,7 +473,6 @@ bmenu.setupnetw="네트워크";
 bmenu.adminman="관리메뉴";
 
 // ** Alive.asp **//
-var alive=new Object();
 alive.titl="켜진 상태유지";
 alive.h2="켜진 상태유지";
 alive.legend="일정주기로 리부팅하기";
@@ -493,12 +487,10 @@ alive.IP2="Proxy IP Address";
 alive.port="Proxy Port";
 
 //help container
-var halive=new Object();
 halive.right2="공유기 재기동을 실행하는 시각을 지정합니다. 시각 지정을 위해서, Cron 서비스가 활성화되어야 합니다.";
 halive.right4="IP 어드레스는 최대 3개까지 지정할 수 있습니다. 복수의 IP를 지정하려면 <em>SPACE</em> 로 구분하여 주십시요.<br/>IP 형식은 다음과 같습니다 xxx.xxx.xxx.xxx .";
 
 // ** config.asp **//
-var config=new Object();
 config.titl="설정보존 & 복원";
 config.h2="설정 파라미터 보존";
 config.legend="설정 보존";
@@ -510,12 +502,10 @@ config.mess3=" !!! 경  고 !!! ";
 config.mess4="같은 펌웨어와 같은 모델의 공유기에서 백업된 파일만을 업로드하여 주십시요.<br />현재와 다른 인터페이스에서 작성된 파일을 업로드하시면 안됩니다!";
 
 //help container
-var hconfig=new Object();
 hconfig.right2="리셋이 필요한 경우 혹은 공장 초기 설정으로 되돌려야 할 경우를 대비하여, 현재의 환경 설정을 백업하여 주십시요.<br /><br /> <em>Backup</em> 버튼을 클릭하시면 현재 설정의 백업을 진행합니다"
 hconfig.right4="<em>Browse...</em> 버튼을 클릭하여 PC에 저정된 환경 설정 파일을 검색하여 주십시요.<br /><br /><em>" + sbutton.restore + "</em> 을 클릭하시면 현재의 모든 설정이 선택하신 파일로 덮어쓰기를 합니다.";
 
 // ** DDNS.asp **//
-var ddns=new Object();
 ddns.titl="Dynamic DNS";
 ddns.h2="유동 도메인 네임 서버 시스템 (DDNS)";
 ddns.legend="DDNS";
@@ -531,7 +521,6 @@ ddns.options="추가 DDNS 옵션";
 ddns.forceupd="강제 업데이트 간격";
 ddns.wanip="외부 ip check를 사용하지 마십시요";
 
-var ddnsm=new Object();
 ddnsm.all_closed="DDNS 서버와 연결이 끊어져 있습니다";
 ddnsm.all_resolving="도메인 네임을 확인하고 있습니다";
 ddnsm.all_errresolv="도메인 네임 확인을 실패하였습니다";
@@ -541,12 +530,10 @@ ddnsm.all_disabled="DDNS 기능이 꺼져있습니다";
 ddnsm.all_noip="인터넷(WAN)에 연결되어 있지 않습니다";
 
 //help container
-var hddns=new Object();
 hddns.right2="DDNS는 외부에서 장비 (또는 내부 네트워크) 접근을 IP 주소 대신 도메인 이름으로 통신 할 수 있는 기능입니다. 기기가 IP 주소를 검색하면 DDNS 서비스를 제공하는 서버에 정보를 업데이트하며 DDNS 서비스는 항상 최신의 IP 주소를 다른 호스트에 알려줍니다. DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com 등에 등록하시면 DDNS 기능을 사용할 수 있게됩니다.";
 hddns.right4="IP 주소 정보를 업데이트하는 간격을 지정할 수 있습니다. IP 주소가 변경된 경우에는이 설정에 관계없이 자동으로 업데이트가 이루어집니다. DDNS 서비스 환경이 불안정한 경우 등에 사용하십시요";
 
 // ** Diagnostics.asp **//
-var diag=new Object();
 diag.titl="Diagnostics(진단명령실행)";
 diag.h2="Diagnostics(진단명령실행)";
 diag.legend="Command Shell";
@@ -557,12 +544,10 @@ diag.firewall="방화벽 스크립트";
 diag.custom="수동 스크립트";
 
 //help container
-var hdiag=new Object();
 hdiag.right2="Web 인터페이스에서 콘솔 명령을 실행하는 것이 가능합니다. Text area에 실행하고 싶은 명령을 입력하신후<em>" + sbutton.runcmd + "</ em> 을 클릭하여 실행할 수 있습니다. 콘솔에서 실행 결과가 하단에 표시됩니다.";
 
 
 // ** DMZ.asp **//
-var dmz=new Object();
 dmz.titl="DMZ";
 dmz.h2="Demilitarized Zone (DMZ설정)";
 dmz.legend="DMZ";
@@ -570,11 +555,9 @@ dmz.serv="DMZ 사용(설정)";
 dmz.host="DMZ Host IP Address";
 
 //help container
-var hdmz=new Object();
 hdmz.right2="이 기능을 사용하면 LAN 측 네트워크의 특정 호스트를 외부에 공개 할 수 있습니다. 활성화하면 지정된 호스트의 모든 Port가 외부에 공개됩니다.";
 
 // ** Factory_Defaults.asp **//
-var factdef=new Object();
 factdef.titl="설정 초기화";
 factdef.h2="설정 초기화";
 factdef.legend="공유기 설정 리셋";
@@ -582,11 +565,9 @@ factdef.restore="공장 출하상태로 복구";
 factdef.mess1="경고! 만일 OK를 클릭하시면 장치의 모든 설정이 공장 출하시의 초기설정으로 리셋이 되면 현재의 모든 설정이 삭제됩니다.";
 
 //help container
-var hfactdef=new Object();
 hfactdef.right1="모든 설정을 리셋한 후 공장 출하시의 초기설정으로 되돌아가며, 현재의 모든 설정은 삭제됩니다.";
 
 // ** FilterIPMAC.asp **//
-var filterIP=new Object();
 filterIP.titl="클라이언트 리스트";
 filterIP.h2="클라이언트 리스트";
 filterIP.h3="클라이언트의 MAC어드레스를 기입하여 주십시요:다음과 같은 형식으로 입력하여 주십시요 (xx:xx:xx:xx:xx:xx)";
@@ -595,7 +576,6 @@ filterIP.h33="클라이언트의 IP어드레스의 범위를 기입하여 주십
 filterIP.ip_range="IP 어드레스 범위";
 
 // ** Filter.asp **//
-var filter=new Object();
 filter.titl="접근 제한(타이머)";
 filter.h2="인터넷 억세스 설정";
 filter.legend="억세스 사용자 정의";
@@ -615,7 +595,6 @@ filter.mess2="최소한 하루 이상의 요일/일자를 지정하여 주십시
 filter.mess3="종료 시간은 시작 시간보다 빠르게 설정 할 수 없습니다.";
 
 //help container
-var hfilter=new Object();
 hfilter.right2="최대 10 개의 사용자 정의를 설정할 수 있습니다. <em>"+ sbutton.del + "</ em>을 클릭하면 선택한 사용자 정의가 삭제됩니다. 또한 <em>"+ sbutton.summary + "</ em>을 클릭하면 현재 설정된 사용자 정의 목록이 표시됩니다.";
 hfilter.right4="사용자 정의를 활성화 혹은 비활성화 하실 수 있습니다.";
 hfilter.right6="사용자 정의에 임의의 이름을 부여할 수 있습니다.";
@@ -626,14 +605,12 @@ hfilter.right14="URL을 작성하셔서 접근을 제한하실 웹사이트를 �
 hfilter.right16="키워드를 지정하셔서 특정 키워드를 포함하고 있는 웹사이트의 접근을 제한하실 수 있습니다.";
 
 // ** FilterSummary.asp **//
-var filterSum=new Object();
 filterSum.titl="접근 제한 일람";
 filterSum.h2="인터넷 사용자 정의 일람";
 filterSum.polnum="번호(No.)";
 filterSum.polday="시각";
 
 // ** Firewall.asp **//
-var firewall=new Object();
 firewall.titl="Firewall";
 firewall.h2="보안 설정";
 firewall.legend="방화벽 보호";
@@ -656,33 +633,27 @@ filter.port113="IDENT (Port 113)를 필터링합니다";
 filter.snmp="WAN SNMP 접근을 차단합니다";
 
 //help container
-var hfirewall=new Object();
 hfirewall.right2="SPI firewall 기능을 활성화 혹은 비활성화의 변경이 가능합니다.";
 
 // ** Forward.asp **//
-var prforward=new Object();
 prforward.titl="Port Range Forwarding";
 prforward.h2="Port Range Forwarding";
 prforward.legend="Forwards(어드레스교환 법칙)";
 prforward.app="어플리케이션";
 
 //help container
-var hprforward=new Object();
 hprforward.right2="인터넷을 이용하는 일부 응용 프로그램 (네트워크 게임 등)은 특정 포트를 개방하도록 하는 설정이 필요한 경우가 있습니다. 여기에서는 인터넷 측에서 특정 Port의 통신을 요구하는 경우 지정한 컴퓨터로 경로를 설정하실 수 있습니다. 보안을 위해 여기서 지정하신 포트는 응용 프로그램을 동작시키기 위한 최소한으로 제한하시고, 또한 응용 프로그램의 사용이 끝나면, 설정을 무효화 시켜주시기 바랍니다.";
 
 // ** P2P.asp **//
-var p2p=new Object();
 p2p.titl="Peer-to-Peer(P2P어플리케이션)";
 p2p.h2="BitTorrent Client";
 p2p.legend="CTorrent";
 p2p.ctorrent_srv="Ctorrent 서비스";
 
 //help container
-//var hp2p=new Object();
 //hpp2p.right2="인터넷을 이용하는 일부 응용 프로그램 (네트워크 게임 등)은 특정 포트를 개방하도록 하는 설정이 필요한 경우가 있습니다. 여기에서는 인터넷 측에서 특정 Port의 통신을 요구하는 경우 지정한 컴퓨터로 경로를 설정하실 수 있습니다. 보안을 위해 여기서 지정하신 포트는 응용 프로그램을 동작시키기위한 최소한으로 제한하시고, 또한 응용 프로그램의 사용이 끝나면,  <em>" + share.enable +"</em> 체크박스를 해제하시길 부탁드립니다.";
 
 // ** ForwardSpec.asp **//
-var pforward=new Object();
 pforward.titl="Port Forwarding(포트포워딩)";
 pforward.h2="Port Forwarding(포트포워딩)";
 pforward.legend="Forwards";
@@ -692,11 +663,9 @@ pforward.from="Port from(WAN측의 포트)";
 pforward.to="Port to(LAN측의 포트)";
 
 //help container
-var hpforward=new Object();
 hpforward.right2="인터넷을 이용하는 일부 응용 프로그램 (네트워크 게임 등)은 특정 포트를 개방하도록 하는 설정이 필요한 경우가 있습니다. 여기에서는 인터넷 측에서 특정 Port의 통신을 요구하는 경우 지정한 컴퓨터로 경로를 설정하실 수 있습니다. 보안을 위해 여기서 지정하신 포트는 응용 프로그램을 동작시키기위한 최소한으로 제한하시고, 또한 응용 프로그램의 사용이 끝나면, <em>Enable</em> 체크박스의 선택을 반드시 해제하시길 부탁드립니다.";
 
 // ** USB.asp **//
-var usb=new Object();
 usb.titl="USB";
 usb.usb_legend="USB 서포트";
 usb.usb_core="Core USB 서포트";
@@ -712,7 +681,6 @@ usb.usb_runonmount="Run-on-mount Script Name";
 usb.usb_diskinfo="디스크 정보";
 
 // ** NAS.asp **//
-var nas=new Object();
 nas.titl="NAS";
 nas.proftpd_legend="FTP 서버";
 nas.proftpd_srv="ProFTPD";
@@ -725,7 +693,6 @@ nas.proftpd_anon_subdir="Anonymous Home Sub-directory";
 nas.samba3_legend="파일 공유";
 nas.samba3="Samba Server";
 
-var hnas=new Object();
 hnas.right2="사용자 암호 목록 : 한 줄에 하나의 사용자 암호를 입력합니다. 암호는 일반 텍스트 또는 MD5 암호로 설정할 수 있습니다.";
 
 // ** DLNA **
@@ -735,7 +702,6 @@ nas.dlna_thumb="Cover 아트워크(Artwork) 포함";
 nas.dlna_dir="파일 디렉토리";
 
 // ** Hotspot.asp **//
-var hotspot=new Object();
 hotspot.titl="Hotspot";
 hotspot.h2="Hotspot 서비스 설정";
 hotspot.legend="Chillispot";
@@ -819,11 +785,9 @@ hotspot.wifidog_password="HTTP 서버 사용자 암호";
 hotspot.wifidog_auth="HTTP 서버 인증 지원";
 
 //help container
-var hstatus_hots=new Object();
 hstatus_hots.right1="conup/condown:<br><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i><br>Local Users:<br><i>When only local users are used set primary radius to 127.0.0.1</i>";
 
 // ** Hotspotsystem **//
-var hotspotsys=new Object();
 hotspotsys.legend="Hotspot System";
 hotspotsys.nobridge="LAN Bridge에서 Wifi를 분리시킴";
 hotspotsys.uamenable="특수 설정";
@@ -838,7 +802,6 @@ hotspotsys.dhcp="DHCP 인터페이스";
 hotspotsys.net="리모트 네트워크";
 hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
 
-//var anchorfree=new Object();
 //anchorfree.anchorfree="AnchorFree";
 //anchorfree.titl="My Ad Network";
 //anchorfree.h2="AnchorFree Ad Network";
@@ -864,7 +827,6 @@ hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
 //anchorfree.validcountry="핫스팟에 사용하실 국가를 선택하여 주십시요";
 //anchorfree.validterms="이용 약관에 반드시 동의 하여야 합니다!";
 //
-//var hanchorfree=new Object();
 //hanchorfree.right1="AnchorFree의 핫스팟 광고 네트워크에 참가합니다";
 //hanchorfree.right2="AnchorFree 은 DD-WRT 의 고객들이 핫스팟 광고 네트워크에 참가할 수 있는 기회를 제공하여 드립니다";
 //hanchorfree.right3="Generate incremental revenue with advertising from AnchorFree";
@@ -876,7 +838,6 @@ hotspotsys.customsplash="Custom Splash Page (Walled Garden)";
 //hanchorfree.right9="궁금한 점이 있으면 다음의 주소로 문의하시길 바랍니다 boxhelp@anchorfree.com";
 
 // ** Info.htm **//
-var info=new Object();
 info.titl="정보";
 info.h2="시스템 정보";
 info.wlanmac="무선 MAC 어드레스";
@@ -884,7 +845,6 @@ info.srv="서비스";
 info.ap="Access Point";
 
 // ** index_heartbeat.asp **//
-var idx_h=new Object();
 idx_h.srv="Heart Beat Server";
 idx_h.con_strgy="접속 확인 방법";
 idx_h.max_idle="On Demand 접속: 최대 대기 시간";
@@ -892,18 +852,15 @@ idx_h.alive="Keep Alive: Redial Period(간격)";
 idx_h.reconnect="강제 재접속";
 
 // ** index_l2tp.asp **//
-var idx_l=new Object();
 idx_l.srv="Gateway (L2TP Server)";
 idx_l.req_chap="CHAP 요구";
 idx_l.ref_pap="PAP 거부";
 idx_l.req_auth="인증요구";
 
 // ** index_pppoe.asp **//
-var idx_pppoe=new Object();
 idx_pppoe.use_rp="RP PPPoE 사용";
 
 // ** index_pptp.asp **//
-var idx_pptp=new Object();
 idx_pptp.srv="DHCP 사용";
 idx_pptp.wan_ip="WAN IP Address";
 idx_pptp.gateway="Gateway (PPTP Server)";
@@ -913,12 +870,10 @@ idx_pptp.addopt="추가 PPTP 옵션";
 
 
 // ** index_static.asp **//
-var idx_static=new Object();
 idx_static.dns="정적(고정)DNS";
 
 
 // ** index.asp **//
-var idx=new Object();
 idx.titl="기본 설정";
 idx.h2="WAN(인터넷) 설정";
 idx.h22="무선 설정";
@@ -965,7 +920,6 @@ idx.wanport="WAN(인터넷측) Port 설정";
 idx.ntp_client="NTP Client";
 
 //help container
-var hidx=new Object();
 hidx.right2="DHCP 서버에서 IP 주소를 자동으로 가져옵니다. 대부분의 케이블 TV 에서 이 연결 방식을 채용하고 있습니다.";
 hidx.right4="인터넷 서비스 업체로부터 부여받은 Host name을 입력하여 주십시요";
 hidx.right6="인터넷 서비스 업체로부터 부여받은 도메인 네임(Domain Name)을 입력하여 주십시요";
@@ -978,7 +932,6 @@ hidx.right18="라우터에서 타임존(UTC)를 설정하거나, 현지 시간�
 hidx.sas="이 설정 도우미 (Setup assistant guide)는 간단한 설정순서로 공유기 설정을 안내해드립니다.";
 
 // ** DSL ** //
-var dsl=new Object();
 dsl.status="DSL 상태";
 dsl.annex=" DSL Annex";
 dsl.iface_status="접속 상태";
@@ -986,7 +939,6 @@ dsl.datarate="접속 속도 (up/down)";
 dsl.snr="DSL Signal(신호) (up/down)";
 
 // ** Join.asp **//
-var join=new Object();
 
 //sshd.webservices
 join.titl="참가";
@@ -994,7 +946,6 @@ join.mess1="네트워크에 접속이 완료되었습니다: ";
 
 
 // ** Log_incoming.asp **//
-var log_in=new Object();
 log_in.titl="Incoming Log Table";
 log_in.h2="Incoming Log Table";
 log_in.th_ip="송신측 IP";
@@ -1002,7 +953,6 @@ log_in.th_port="수신측 Port 넘버";
 
 
 // ** Log_outgoing.asp **//
-var log_out=new Object();
 log_out.titl="Outgoing Log Table(송신메세지)";
 log_out.h2="Outgoing Log Table(송신메세지)";
 log_out.th_lanip="LAN IP";
@@ -1011,7 +961,6 @@ log_out.th_port="Service/Port Number";
 
 
 // ** Log.asp **//
-var log=new Object();
 log.titl="Log";
 log.h2="Log Management(방화벽 Log설정)";
 log.legend="Log";
@@ -1022,7 +971,6 @@ log.accept="Accepted(수신된 패킷 기록)";
 
 
 // ** Management.asp **//
-var management=new Object();
 management.titl="관리 설정";
 management.h2="공유기 관리";
 management.changepassword="초기 설정된 사용자 이름과 사용자 암호의 조합입니다, 공유기가 위험에 노출될 수 있으니, 다음 순서를 따라 사용자 이름과 암호를 변경하여 주십시요!";
@@ -1114,18 +1062,15 @@ management.SIPatH_domain="SIP 도메인";
 management.gui_style="Router GUI Style(공유기 인터페이스 스타일)";
 
 //help container
-var hmanagement=new Object();
 hmanagement.right1="자동 갱신:";
 hmanagement.right2="웹화면 상태표시를 장기적으로 갱신합니다, 0 으로 설정하시면 자동갱신을 실시하지 않습니다.";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymore) *****************************************//
-var portserv=new Object();
 portserv.titl="Port Services";
 portserv.h2="Port Services";
 
 
 // ** Networking.asp **//
-var networking=new Object();
 networking.h2="VLAN Tagging";
 networking.legend="Tagging";
 networking.h22="Bridging";
@@ -1139,12 +1084,10 @@ networking.h5="DHCPD";
 networking.legend5="Multiple DHCP Server";
 
 //help container
-var hnetworking=new Object();
 hnetworking.right1="멀티 DHCPD";
 hnetworking.right2="멀티 DHCPD를 사용하기위해서는, DNSMasq를 DHCP 서버로 설정을 하여야 합니다.";
 
 // ** QoS.asp **//
-var qos=new Object();
 qos.titl="Quality of Service(QOS)";
 qos.h2="Quality Of Service (QoS) 설정";
 qos.legend="QoS 설정";
@@ -1182,7 +1125,6 @@ qos.enabledefaultlvls="사용자별 초기 제한값을 유효화 합니다";
 qos.bandwidth="할당된 대역 (kbit)";
 
 //help container
-var hqos=new Object();
 hqos.right1="";
 hqos.right2="LAN 측 → 인터넷 측의 통신에 허용되는 대역폭을 지정합니다. Uplink:<br>80%-95% (최대) 의 범위에서 지정하십시요.<br>Downlink:<br>80%-100% (최대)의 범위내에서 다운로드를 설정하여 주십시요.";
 hqos.right3="";
@@ -1194,14 +1136,12 @@ hqos.right12="장치가 접속되어져 있는 물리적 LAN 포트에 따라 �
 
 
 // ** RouteTable.asp **//
-var routetbl=new Object();
 routetbl.titl="Routing Table";
 routetbl.h2="Routing Table Entry List";
 routetbl.th1="목적지 LAN NET";
 
 
 // ** Routing.asp **//
-var route=new Object();
 route.titl="경로 설정";
 route.h2="고급자 경로 설정";
 route.metric="Metric";
@@ -1246,7 +1186,6 @@ route.static_name="공유기 이름";
 route.static_ip="목적지 LAN NET";
 
 //help container
-var hroute=new Object();
 hroute.right2="만일 이 공유기가 인테넷 접속을 호스팅하고 있는 경우, <em>Gateway</em> 모드를 선택하여 주십시요. 만일 다른 공유기가 네트워크 상에 존재하고 있는 경우 <em>Router</em> 모드를 선택하여 주십시요.";
 hroute.right4="경로마다 번호가 지정되어 있습니다. 50가지의 경로까지 설정하실 수 있습니다.";
 hroute.right6="이 공유기에 할당할 이름을 입력하여 주십시요.";
@@ -1255,14 +1194,12 @@ hroute.right10="목적지의 네트워크 어드레스의 서브넷 마스크를
 
 
 // ** Site_Survey.asp **//
-var survey=new Object();
 survey.titl="Site 조사";
 survey.h2="인접 무선 네트워크";
 survey.thjoin="사이트에 들어가기";
 
 
 // ** Services.asp **//
-var service=new Object();
 service.titl="서비스";
 service.h2="서비스 설정/관리";
 
@@ -1351,7 +1288,6 @@ service.pppoesrv_radkey="Radius 공유키";
 service.pppoesrv_chaps="Local User 관리 (CHAP Secrets)";
 
 //help container
-var hpppoesrv=new Object();
 hpppoesrv.right2="IP: 0.0.0.0 -> 형식에 의거하여 IP어드레스를 정하실 수 있습니다";
 hpppoesrv.right3="IP 어드레스의 범위에 의거하여 유효한 클라이언트 수를 설정하셔야 합니다.";
 
@@ -1414,7 +1350,6 @@ service.vpn_tlscip="TLS Cipher";
 service.vpn_route="사용자 정의에 따른 경로 설정";
 
 //help container
-var hstatus_vpn=new Object();
 hstatus_vpn.right1="사용자 정의에 의한 경로 설정:<br><i>IPs/NETs 를 0.0.0.0/0 부터 추가하여 클라이언트가 강제로 초기 설정된 Gateway처럼 터널을 사용하도록 함. IP/NET 당 한 라인.<br><i>IP Address/Netmask:</i><br>DHCP-Proxy 모드를 사용할 경우 반드시 설정이 되어야 하며, local TAP은 중계(bridged)되어 있어서는 않됩니다.</i>";
 hstatus_vpn.right2="추가설정:<br><i>공유기에서 클라이언트가 \'push \"route IP mask gateway\"\'추가하도록 하고, DNS/WINS가 \'push \"dhcp-option DNS (혹은 WINS) IP\"\'를 설정에 추가하도록 합니다.</i><br>클라이언트의 직접 접속:<br><i>USB 혹은 JFFS 가 /jffs에 마운드되어 있을 경우, 스크립트는 /jffs/etc/openvpn/ccd/에서 호출되어져야 합니다</i>";
 hstatus_vpn.right3="개괄:<br><i> pkcs12 (+dh on server), static, 표준인증등의 3 가지의 인증방법을 지원합니다, MSS 링크의 한쪽만의 MSS를 유효화 하여 주시고, 링크 양쪽의 프래그먼트를 유효화 하여 주십시요.</i>";
@@ -1548,7 +1483,6 @@ service.dlna_type_video="Video(영상)";
 service.dlna_type_images="이미지(그림)";
 
 // ** eop-tunnel.asp **//
-var eoip=new Object();
 eoip.titl="EoIP Tunnel";
 eoip.tunnel="Tunnel";
 eoip.legend="Ethernet Over IP Tunneling";
@@ -1564,14 +1498,12 @@ eoip.bridging="Bridging";
 
 
 // ** Sipath.asp + cgi **//
-var sipath=new Object();
 sipath.titl="SiPath 개요";
 sipath.phone_titl="전화번호부";
 sipath.status_titl="상태";
 
 
 // ** Status_Lan.asp **//
-var status_lan=new Object();
 status_lan.titl="LAN 상태";
 status_lan.h2="Local(LAN측) 네트워크";
 status_lan.legend="LAN 상태";
@@ -1585,7 +1517,6 @@ status_lan.concount="접속수";
 status_lan.conratio="이용율";
 
 //help container
-var hstatus_lan=new Object();
 hstatus_lan.right2="이 기기의 유선 LAN에 할당된 MAC 어드레스를 표시합니다.";
 hstatus_lan.right4="이 기기의 LAN측(로컬네트워크) IP 어드레스를 표시합니다.";
 hstatus_lan.right6="이 기기의 LAN측(로컬네트워크)의 subnet mask를 표시합니다.";
@@ -1594,7 +1525,6 @@ hstatus_lan.right10="클라이언트 표시부의 MAC 주소를 클릭하여 IEE
 
 
 // ** Status_Bandwidth.asp **//
-var status_band=new Object();
 status_band.titl="대역폭 모니터링(성능)";
 status_band.h2="대역폭 모니터링";
 status_band.chg_unit="Switch to ";
@@ -1607,13 +1537,11 @@ status_band.follow="follow";
 status_band.up="up";
 
 //help container
-var hstatus_band=new Object();
 hstatus_band.svg="대역폭 그래프를 표시하기 위해서 Adobe's SVG 플러그인이 필요합니다.";
 hstatus_band.right1="단위를 변경하는 것이 가능합니다. (bytes/s 혹은 bits/s).";
 hstatus_band.right2="대역축 기준을 변경하실 수 있습니다.";
 
 // ** Status_Router.asp **//
-var status_router=new Object();
 status_router.titl="기기상태";
 status_router.h2="장비 정보";
 status_router.legend="시스템";
@@ -1644,7 +1572,6 @@ status_router.inpvolt="입력 전압";
 status_router.cputemp="CPU 온도";
 
 //help container
-var hstatus_router=new Object();
 hstatus_router.right2="<i>Setup</i> 탭에서 설정하신 기기에 부여된 이름입니다.";
 hstatus_router.right4="인터넷 측에서 사용되는 MAC 주소입니다, ISP에서 MAC 어드레스를 식별하는 데 사용되어집니다.";
 hstatus_router.right6="현재 이 기기에 적용되어진 펌웨어 정보입니다.";
@@ -1653,7 +1580,6 @@ hstatus_router.right10="기기가 기동을 시작한 시점부터의 시간입�
 hstatus_router.right12="CPU 사용률을 표시합니다. 각각 1 분, 5 분, 15 분 각각 동안에, CPU 평균 가동률이 표시됩니다.";
 
 // ** Status_Internet.asp **//
-var status_inet=new Object();
 status_inet.titl="WAN 상태";
 status_inet.h11="WAN";
 status_inet.conft="인터넷 접속 방식";
@@ -1672,27 +1598,23 @@ status_inet.delete_confirm="!!경고!! 모든 트래픽 데이터가 삭제됩�
 
 
 //help container
-var hstatus_inet=new Object();
 hstatus_inet.right2="ISP (인터넷)에 연결하는 방법을 표시합니다. 이 정보는 설정 페이지에서 설정할 수 있습니다. <em> Connect </ em>, <em> Disconnect </ em> 버튼을 클릭하여 연결을 시작 혹은 끊을 수 있습니다.";
 hstatus_inet.right4="마지막 재기동시부터 인터넷 트래픽을 표시합니다.";
 hstatus_inet.right6="공유기의 월별 인터넷 트래픽을 볼 수 있습니다. 마우스를 그래픽 위쪽으로 드레그하시면 일별 데이터를 볼수 있습니다. 데이터는 nvram에 저장되어집니다.";
 
 
 // ** Status_Conntrack.asp **//
-var status_conn=new Object();
 status_conn.titl="접속중인 IP 어드레스 테이블";
 status_conn.h2="접속중인 IP 어드레스";
 
 
 // ** Status_SputnikAPD.asp **//
-var status_sputnik=new Object();
 status_sputnik.titl="Sputnik Agent 정보";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
 status_sputnik.manage="관리자";
 status_sputnik.license="SCC 라이센스 No.";
 
 //help container
-var hstatus_sputnik=new Object();
 hstatus_sputnik.right1="Sputnik Agent 정보";
 hstatus_sputnik.right2="Sputnik Agent process에 관한 정보를 표시합니다.";
 hstatus_sputnik.right4="이 기기가 접속하는 Sputnik 제어 센터를 표시합니다.";
@@ -1701,7 +1623,6 @@ hstatus_sputnik.right8="Sputnik 제어 센터의 접속에 사용되는 라이�
 
 
 // ** Status_Wireless.asp **//
-var status_wireless=new Object();
 status_wireless.titl="Wireless 상태";
 status_wireless.h2="Wireless";
 status_wireless.legend="Wireless 상태";
@@ -1716,7 +1637,6 @@ status_wireless.signal_qual="신호품질";
 status_wireless.wds="WDS Nodes(접속상대)";
 
 // ** GPS info **//
-var status_gpsi=new Object();
 status_gpsi.legend="GPS 정보";
 status_gpsi.status="상태";
 status_gpsi.lon="경도";
@@ -1725,18 +1645,15 @@ status_gpsi.alt="고도";
 status_gpsi.sat="검색되어진 위성";
 
 //help container
-var hstatus_wireless=new Object();
 hstatus_wireless.right2="이 장비의 무선 LAN에 사용되는 MAC 주소를 표시합니다.";
 hstatus_wireless.right4="무선 LAN 설정에서 설정된 PHY 모드 (Mixed, G-Only, B-Only 혹은 무효화)가 표시됩니다.";
 
 
 // ** Status_OpenVPN.asp **//
-var status_openvpn=new Object();
 status_openvpn.titl="OpenVPN 상태";
 
 
 // ** Triggering.asp **//
-var trforward=new Object();
 trforward.titl="Port Triggering(어드레스 변환/Trigger지정)";
 trforward.h2="Port Triggering(Trigger지정의 어드레스 변환 설정)";
 trforward.legend="변환 룰";
@@ -1745,7 +1662,6 @@ trforward.fwdrange="전송포트 범위(인터넷->LAN)";
 trforward.app="어플리케이션 이름";
 
 //help container
-var htrforward=new Object();
 htrforward.right2="trigger에 적용/신청하신 이름을 입력하여 주십시요.";
 htrforward.right4="Trigger되는 포트를 지정합니다. LAN 측에서 이 포트에 대한 통신이 발생한 경우 전송 포트를 이용한 통신을 할 수 있습니다. 어떤 포트를 지정해야 하는가에 대해서는 사용하시는 응용 프로그램의 설명서 등을 참조하십시오.";
 htrforward.right6="Trigger에 의해 전송되는 Port의 범위를 지정합니다. 어떤 포트를 지정 해야할지 등의 내용은 사용하는 응용 프로그램의 설명서 등을 참조하십시오.";
@@ -1754,7 +1670,6 @@ htrforward.right10="Trigger와 Forwarded Range의 종료 포트를 지정하여 
 
 
 // ** Upgrade.asp **//
-var upgrad=new Object();
 upgrad.titl="펌웨어 업그레이드";
 upgrad.h2="펌웨어 관리";
 upgrad.legend="펌웨어 업그레이드";
@@ -1766,12 +1681,10 @@ upgrad.warning="!!!경고!!!";
 upgrad.mess1="펌웨어 업데이트는 보통 몇 분 정도 걸립니다. <br /> 업데이트 중 전원을 끄거나 리셋 버튼을 누르지 마십시오!";
 
 //help container
-var hupgrad=new Object();
 hupgrad.right2="펌웨어 업데이트합니다. <em>  Browse(검색)... </ em> 버튼을 클릭하여 공유기에 업로드할 펌웨어 파일을 선택하십시요. <br /> <br /> <em> Upgrade(업그레이드) </ em>을 클릭하면 업데이트가 시작됩니다. 일단 시작된 업데이트는 도중에 중단 할 수 없습니다.";
 
 
 // ** UPnP.asp **//
-var upnp=new Object();
 upnp.titl="UPnP";
 upnp.h2="Universal Plug and Play (UPnP설정)";
 upnp.legend="Forwards(포트교환 리스트)";
@@ -1783,13 +1696,11 @@ upnp.msg1="클릭하시면 Entry가 삭제됩니다";
 upnp.msg2="모든 Entry를 삭제할까요?";
 
 //help container
-var hupnp=new Object();
 hupnp.right2="Trash can(휴지통)을 클릭하시면 등록된 Entry를 삭제하실 수 있습니다.";
 hupnp.right4="어플리케이션이 자동으로 Port Forwarding의 환경 설정의 변경을 허락합니다.";
 
 
 // ** VPN.asp **//
-var vpn=new Object();
 vpn.titl="VPN Passthrough(통과)";
 vpn.h2="Virtual Private Network(가상 사설 네트워크) (VPN 설정)";
 vpn.legend="VPN Passthrough(통과)";
@@ -1798,12 +1709,10 @@ vpn.pptp="PPTP Passthrough(통과)";
 vpn.l2tp="L2TP Passthrough(통과)";
 
 //help container
-var hvpn=new Object();
 hvpn.right1="이 기능을 사용하여 IPSec, PPTP 그리고/혹은 L2TP passthrough의 활성화를 선택하시면, LAN 쪽 네트워크 장비가 VPN 프로토콜을 사용하여 외부 서버와 통신 할 수 있습니다.";
 
 
 // ** Vlan.asp **//
-var vlan=new Object();
 vlan.titl="Virtual LAN(가상랜)";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN";
@@ -1815,13 +1724,11 @@ vlan.trunk="Trunk";
 vlan.linkstatus="연결 상태";
 
 // ** WEP.asp **//
-var wep=new Object();
 wep.defkey="초기설정 전송키(Transmit Key)";
 wep.passphrase="Passphrase";
 
 
 // ** WOL.asp **//
-var wol=new Object();
 wol.titl="WOL";
 wol.h2="Wake-On-LAN 설정";
 wol.legend="검색된 Host";
@@ -1839,14 +1746,12 @@ wol.srv="WOL daemon(자동기동)";
 wol.pass="SecureOn 암호";
 
 //help container
-var hwol=new Object();
 hwol.right2="Wake-On-Lan은 LAN 측 네트워크에 존재하는 호스트를 이 장비로부터 기동시키는 기능입니다. 이 기능을 사용하기 위해서는 기동시킬 장비 역시 Wake-On-Lan 에 대응하여야 합니다. <em>"+ sbutton.wol + "</ em>를 클릭하면 수동으로 지정된 장치를 기동시킬 수 있습니다. 또한 "+wol.srv+" 를 클릭하면 자동으로 클라이언트가 기동하도록 프로그램 할 수 있습니다.";
 hwol.right4="MAC 어드레스는 xx : xx : xx : xx : xx : xx 의 형식으로 지정되어야 합니다 (예 : 01:23:45:67:89:AB). 또한 여러 MAC 주소를 지정하는 경우, 주소 사이에 공백을 넣어주십시요.";
 hwol.right6="IP 주소는 일반적으로 브로드 캐스트(Broadcast) 주소로 지정해야 합니다. 그러나, LAN 측 네트워크에 존재하지 않는 경우는 Unicast 주소를 사용할 수 도 있습니다.";
 
 
 // ** WanMAC.asp **//
-var wanmac=new Object();
 wanmac.titl="MAC Address Clone";
 wanmac.h2="MAC Address Clone";
 wanmac.legend="MAC Clone";
@@ -1854,12 +1759,10 @@ wanmac.wan="Clone WAN MAC(다음의 MAC 어드레스를 인터넷측 포트에 �
 wanmac.wlan="Clone Wireless MAC(다음의 MAC 어드레스를 무선랜 측에 사용)";
 
 //help container
-var hwanmac=new Object();
 hwanmac.right2="일부 ISP에는 접속 기기의 MAC 주소 등록이 필요한 경우가 있습니다. 여기에서는 ISP에 MAC 주소를 다시 등록하는 대신에 이 장비의 인터넷 측 주소에 등록 된 MAC을 설정하고, 통신을 할 수 있습니다.";
 
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
-var wpa=new Object();
 wpa.titl="무선 보안";
 wpa.h2="무선 보안 설정";
 wpa.secmode="Security Mode(무선랜 인증)";
@@ -1876,7 +1779,6 @@ wpa.algorithms="WPA 알고리즘";
 wpa.shared_key="WPA 공유키";
 
 
-var aoss=new Object();
 aoss.titl="AOSS 보안";
 aoss.aoss="AOSS";
 aoss.service="AOSS 서비스";
@@ -1907,7 +1809,6 @@ aoss.externalregistrar="PIN Method";
 aoss.release="개방";
 aoss.configure="환경설정";
 
-var olupgrade=new Object();
 olupgrade.avail_updates="유효한 업데이트가 있습니다";
 olupgrade.version="버전";
 olupgrade.release="개방";
@@ -1915,14 +1816,11 @@ olupgrade.readme="추가 정보";
 olupgrade.choose="선택";
 olupgrade.retrieve_error="업데이트 정보를 검색하는 동안 에러가 발생했습니다";
 
-var nintendo=new Object();
 nintendo.titl="Nintendo 닌텐도";
-nintendo.spotpass=new Object();
 nintendo.spotpass.titl="Nintendo SpotPass";
 nintendo.spotpass.enable="Nintendo SpotPass 우효화";
 nintendo.spotpass.servers="서비스 허가";
 
-var sec80211x=new Object();
 sec80211x.xsuptype="XSupplicant Type(동작 타입)";
 sec80211x.keyxchng="EAP Key-Management";
 sec80211x.servercertif="Public Server Certificate(CA증명서)";
@@ -1932,12 +1830,10 @@ sec80211x.anon="Anonymous Identity(익명신분)";
 sec80211x.options="추가 네트워크 옵션";
 
 //help container
-var hwpa=new Object();
 hwpa.right2="무선 LAN 인터페이스의 보안을 해제, WEP, WPA Personal, WPA Enterprise, RADIUS 중에서 선택합니다. 동일한 네트워크상의 클라이언트는 모두 동일한 보안 방식이어야 합니다. 11N 모드에서는 반드시 WPA2/AES를 사용하십시요.";
 
 
 // ** WL_FilterTable.asp **//
-var wl_filter=new Object();
 wl_filter.titl="MAC 어드레스 필터 리스트";
 wl_filter.h2="MAC 어드레스 필터 리스트";
 wl_filter.h3="MAC 어드리스는 다음과 같이 입력하여 주십시요&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
@@ -1945,7 +1841,6 @@ wl_filter.h3="MAC 어드리스는 다음과 같이 입력하여 주십시요&nbs
 
 
 // ** WL_ActiveTable.asp **//
-var wl_active=new Object();
 wl_active.titl="무선랜 클라이언트 MAC 리스트";
 wl_active.h2="무선랜 클라이언트 MAC 리스트";
 wl_active.h3="MAC 필터 적용";
@@ -1954,7 +1849,6 @@ wl_active.inactive="미접속인 클라이언트";
 
 
 // ** Wireless_WDS.asp **//
-var wds=new Object();
 wds.titl="WDS";
 wds.h2="Wireless Distribution System(WDS 설정)";
 wds.legend="WDS 설정";
@@ -1969,7 +1863,6 @@ wds.legend2="상세 설정";
 
 
 // ** Wireless_radauth.asp **//
-var radius=new Object();
 radius.titl="Radius";
 radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="Radius 인증";
@@ -1992,7 +1885,6 @@ radius.label17="Radius Acct Shared Secret";
 radius.label18="Radius Accounting";
 
 // ** Wireless_MAC.asp **//
-var wl_mac=new Object();
 wl_mac.titl="MAC 어드레스 필터";
 wl_mac.h2="무선 MAC 어드레스 필터";
 wl_mac.legend="MAC 어드레스 필터";
@@ -2002,7 +1894,6 @@ wl_mac.deny="리스트에 등록되어 있는 클라이언트의 통신을 거�
 wl_mac.allow="리스트에 등록되어 있는 클라이언트만 무선 네트워크의 접속을 허락합니다";
 
 // ** WiMAX
-var wl_wimax=new Object();
 wl_wimax.titl="WiMAX";
 wl_wimax.h2="Worldwide Interoperability for Microwave Access";
 wl_wimax.downstream="Downstream Frequency";
@@ -2013,14 +1904,12 @@ wl_wimax.mode="Operation Mode";
 wl_wimax.mac="Subscriber MAC Address";
 
 // ** Gpio **//
-var gpio=new Object();
 gpio.titl="Gpio Inputs / Outputs";
 gpio.h2="Gpio Inputs / Outputs";
 gpio.oplegend="Gpio Outputs";
 gpio.iplegend="Gpio Inputs";
 
 // ** FreeRadius.asp **//
-var freeradius=new Object();
 freeradius.titl="FreeRadius";
 freeradius.h2="FreeRadius";
 freeradius.certificate="서버 증명서";
@@ -2049,11 +1938,9 @@ freeradius.cert_status="증명서 상태";
 freeradius.port="Radius 포트";
 
 //help container
-var hfreeradius=new Object();
 hfreeradius.right2="FreeRadius를 시작하기 전에 JFFS를 반드시 활성화 하여야 합니다.";
 
 // ** Wireless_Advanced.asp **//
-var wl_adv=new Object();
 wl_adv.titl="고급 무선 설정";
 wl_adv.h2="고급 무선 설정";
 wl_adv.legend="고급 설정";
@@ -2117,11 +2004,9 @@ wl_adv.lng="Long";				//************* don't use .long ! *************
 wl_adv.shrt="Short";				//************* don't use .short ! **************		
 
 //help container
-var hwl_adv=new Object();
 hwl_adv.right2="자동 혹은 공유키(Shared Key)를 선택할 수 있습니다. 공유키 인증을 선택하신 경유 보안선택에서 WEP를 선택하셔야 합니다, 공유키를 선택하신 경우 네트워크상의 모든 장치에서 공유키 인증을 지원하여야 합니다.";
 
 // ** Wireless_Basic.asp **//
-var wl_basic=new Object();
 wl_basic.titl="무선 기본";
 wl_basic.h2="무선랜 물리 인터페이스 설정";
 wl_basic.cardtype="Card Type";
@@ -2215,20 +2100,17 @@ wl_basic.rate_control="Rate Control 알고리즘";
 wl_basic.ap83_vap_note="3개 이상의 가상 인터페이스를 추가하시면 추가된 가상 인터페이스의 일부 클라이언트에서 성능저하가 일어날수 있습니다.";
 
 //help container
-var hwl_basic=new Object();
 hwl_basic.right2="만일 G모드의 무선단말을 제외하고자 할 경우, <em>B-Only</em> 모드를 선택하여 주십시요. 만일 무선접속을 사용하지않으려는 경우, <em>Disable</em>을 선택하여 주십시요.<br/><b>주의 :</b> 무선방식(모드)을 변경하실경우, 일부 고급설정의 파라미터의 사용이 제한될 수 있습니다. (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="통신거리 유효범위: ";
 hwl_basic.right4=" ACK 통신응답 타임아웃까지의 시간을 설정하실 수 있습니다. 0은 브로드컴 펌웨어의 ack timing을 비활성화 시킵니다. Atheros 기반의 펌웨어에서는, 0 은 자동 ACK timing 모드를 활성화 시킵니다.";
 hwl_basic.right6="임의의 시간을 클릭하시면 무선 신호를 비활성화 혹은 활성화 합니다 (<em>green</em> 은 무선기능이 유효한 시간을, 그리고 <em>red</em>의 경우는 무효화되어 있는 시간대역을 지정하실 수 있습니다)";
 
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
-var fail=new Object();
 fail.mess1="입력하신 값이 유효하지 않습니다, 다시한번 입력하여 주십시요.";
 fail.mess2="업그레이트 실패.";
 
 
 // ** Success*.asp / Reboot.asp  **//
-var success=new Object();
 success.saved="설정이 저장되었습니다.";
 success.restore="설정이 복원되었습니다.<br/>장치가 재부팅을 합니다. 잠시만 기다려 주십시요...";
 success.upgrade="성공적으로 업그레이드 되었습니다.<br/>장치가 재부팅을 합니다. 잠시만 기다려 주십시요...";
@@ -2241,11 +2123,9 @@ success.alert2="공유기의 IP 어드레스가 변경되었을 경우, 네트�
 success.alert3="무선랜(WLAN)을 통해서 접속이 되었을 경우, 네트워크에 들어가서셔 <em>계속</em>을 클릭하여 주십시요.";
 
 // ** Logout.asp  **//
-var logout=new Object();
 logout.message="성공적으로 로그아웃이 되었습니다.<br />DD-WRT 를 사용해 주셔서 감사합니다!";
 
 // ** Setup Assistant **//
-var sas=new Object();
 sas.title="설정도우미";
 sas.internet_connection="인터넷 접속";
 sas.network_settings="네트워크 설정";
@@ -2253,7 +2133,6 @@ sas.wireless_settings="무선 설정";
 sas.other_settings="기타 설정";
 sas.hwan="인터넷(WAN) 설정";
 
-var hsas=new Object();
 hsas.wan="WAN 인터페이스는 공유기를 인터넷 혹은 다른 네트워크에 접속시켜 줍니다. 이미 네트워크가 인터넷이 연결되어있는 환경에서 공유기를 억세스 포인트(AP)로써 사용할고자 할 경우  WAN 모드를 \무효(disabled)\"로 설정 변경하여 주십시요.";
 hsas.h_routerip="Router IP(LAN측 접속)";
 hsas.routerip="내부 네트워크에서 할당된 IP 어드레스 입니다. 만일 어드레스를 변경하신 경우, 변경을 적용하신 후 새 어드레스를 이용하여 Router Management(공유기 관리) 기능에 접속하셔야 합니다";
@@ -2270,12 +2149,10 @@ hsas.wireless="무선 설정 도움말";
 hsas.other="기타 설정 도움말";
 
 // ** AOSS **//
-var haoss=new Object();
 haoss.basic="The \"AirStation One-Touch Secure System(버팔로 에어스테이션 원터치 보안 시스템)\" AOSS 기능을 사용하시면 자동으로 AOSS 대응 클라이언트가 억세스포인트에 접속할 수 있게 합니다.";
 haoss.securitymodes="AOSS 보안 모드는 어떠한 타입의 보안모드를 AOSS에 사용할 것인지를 설정합니다. 만일 클라이언트에서 지원하는 보안방식이 유효하지 않을 경우 접속하실 수 없습니다.";
 haoss.wps="라우터의 버튼 혹은 사용자 단말의 PIN을 사용하여 WPS에서 Wi-Fi 보호 설정을 지원합니다.";
 
-var ias=new Object();
 ias.title="설정";
 ias.card_info="설정 카드";
 ias.edit_note="설정카드상의 임의의 정보를 클릭하셔서 편집하여 주십시요.";
@@ -2293,11 +2170,9 @@ ias.hl_guest_card="방문자 카드";
 
 // ************		OLD PAGES 		*******************************//		
 // *********************** DHCPTable.asp *****************************//
-var dhcp=new Object();
 dhcp.titl="DHCP Active IP Table";
 dhcp.h2="DHCP Active IP Table";
 dhcp.server="DHCP 서버 IP 어드레스 :";
 dhcp.tclient="사용자 단말 호스트네임";
 
-var donate=new Object();
 donate.mb="You may also donate through the Moneybookers account mb@dd-wrt.com";

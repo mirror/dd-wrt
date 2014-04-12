@@ -699,7 +699,6 @@ nas.proftpd_writeen="書き込み許可";
 nas.proftpd_anon="Anonymousログイン(リードオンリー)";
 nas.proftpd_anon_subdir="Anonymousホームサブディレクトリー";
 
-var hnas = new Object();
 hnas.right2="ユーザーパスワードリスト:1行にひとつのユーザーパスワードを入力します。パスワードはプレーンテキストかMD5暗号で設定出来ます。";
 
 
