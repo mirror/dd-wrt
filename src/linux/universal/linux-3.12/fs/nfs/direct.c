@@ -223,14 +223,31 @@ out:
  * Synchronous I/O uses a stack-allocated iocb.  Thus we can't trust
  * the iocb is still valid here if this is a synchronous request.
  */
-static void nfs_direct_complete(struct nfs_direct_req *dreq)
+static void nfs_direct_complete(struct nfs_direct_req *dreq, bool write)
 {
+	struct inode *inode = dreq->inode;
+
+	if (dreq->iocb && write) {
+		loff_t pos = dreq->iocb->ki_pos + dreq->count;
+
+		spin_lock(&inode->i_lock);
+		if (i_size_read(inode) < pos)
+			i_size_write(inode, pos);
+		spin_unlock(&inode->i_lock);
+	}
+
+	if (write)
+		nfs_zap_mapping(inode, inode->i_mapping);
+
+	inode_dio_done(inode);
+
 	if (dreq->iocb) {
 		long res = (long) dreq->error;
 		if (!res)
 			res = (long) dreq->count;
 		aio_complete(dreq->iocb, res, 0);
 	}
+
 	complete_all(&dreq->completion);
 
 	nfs_direct_req_release(dreq);
@@ -273,7 +290,7 @@ static void nfs_direct_read_completion(struct nfs_pgio_header *hdr)
 	}
 out_put:
 	if (put_dreq(dreq))
-		nfs_direct_complete(dreq);
+		nfs_direct_complete(dreq, false);
 	hdr->release(hdr);
 }
 
@@ -403,6 +420,7 @@ static ssize_t nfs_direct_read_schedule_iovec(struct nfs_direct_req *dreq,
 					      loff_t pos, bool uio)
 {
 	struct nfs_pageio_descriptor desc;
+	struct inode *inode = dreq->inode;
 	ssize_t result = -EINVAL;
 	size_t requested_bytes = 0;
 	unsigned long seg;
@@ -411,6 +429,7 @@ static ssize_t nfs_direct_read_schedule_iovec(struct nfs_direct_req *dreq,
 			     &nfs_direct_read_completion_ops);
 	get_dreq(dreq);
 	desc.pg_dreq = dreq;
+	atomic_inc(&inode->i_dio_count);
 
 	for (seg = 0; seg < nr_segs; seg++) {
 		const struct iovec *vec = &iov[seg];
@@ -430,12 +449,13 @@ static ssize_t nfs_direct_read_schedule_iovec(struct nfs_direct_req *dreq,
 	 * generic layer handle the completion.
 	 */
 	if (requested_bytes == 0) {
+		inode_dio_done(inode);
 		nfs_direct_req_release(dreq);
 		return result < 0 ? result : -EIO;
 	}
 
 	if (put_dreq(dreq))
-		nfs_direct_complete(dreq);
+		nfs_direct_complete(dreq, false);
 	return 0;
 }
 
@@ -471,12 +491,6 @@ out_release:
 	nfs_direct_req_release(dreq);
 out:
 	return result;
-}
-
-static void nfs_inode_dio_write_done(struct inode *inode)
-{
-	nfs_zap_mapping(inode, inode->i_mapping);
-	inode_dio_done(inode);
 }
 
 #if IS_ENABLED(CONFIG_NFS_V3) || IS_ENABLED(CONFIG_NFS_V4)
@@ -594,8 +608,7 @@ static void nfs_direct_write_schedule_work(struct work_struct *work)
 			nfs_direct_write_reschedule(dreq);
 			break;
 		default:
-			nfs_inode_dio_write_done(dreq->inode);
-			nfs_direct_complete(dreq);
+			nfs_direct_complete(dreq, true);
 	}
 }
 
@@ -611,8 +624,7 @@ static void nfs_direct_write_schedule_work(struct work_struct *work)
 
 static void nfs_direct_write_complete(struct nfs_direct_req *dreq, struct inode *inode)
 {
-	nfs_inode_dio_write_done(inode);
-	nfs_direct_complete(dreq);
+	nfs_direct_complete(dreq, true);
 }
 #endif
 
