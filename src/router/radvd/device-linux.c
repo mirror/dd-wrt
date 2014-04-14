@@ -22,6 +22,9 @@
 #define IPV6_ADDR_LINKLOCAL   0x0020U
 #endif
 
+#ifndef ARPHRD_IEEE802154
+#define ARPHRD_IEEE802154	  804
+#endif
 /*
  * this function gets the hardware type and address of an interface,
  * determines the link layer token length and checks it against
