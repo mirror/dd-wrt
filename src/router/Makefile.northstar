@@ -179,8 +179,8 @@ else
 endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 
-	$(MAKE) -j 4 -C $(LINUXDIR) zImage  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
-	$(MAKE) -j 4 -C $(LINUXDIR) modules  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	$(MAKE) -j 4 -C $(LINUXDIR) zImage  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" KBUILD_MODPOST_WARN=1
+	$(MAKE) -j 4 -C $(LINUXDIR) modules  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" KBUILD_MODPOST_WARN=1
 
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
@@ -281,7 +281,8 @@ endif
 		echo; \
 	) > $(LINUXDIR)/symtab.h
 	rm -f $(LINUXDIR)/vmlinux
-	$(MAKE) -j 4 -C $(LINUXDIR) zImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h"  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
+	$(MAKE) -j 4 -C $(LINUXDIR) zImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h"  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"  KBUILD_MODPOST_WARN=1
+	#$(MAKE) -j 4 -C $(LINUXDIR) zImage EXTRA_LDSFLAGS="-I$(LINUXDIR)"  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"  KBUILD_MODPOST_WARN=1
 
 
 
