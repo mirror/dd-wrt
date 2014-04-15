@@ -32,6 +32,10 @@
 #define SOL_NETLINK	270
 #endif
 
+#ifndef RTM_SETLINK
+#define RTM_SETLINK (RTM_BASE+3)
+#endif
+
 void process_netlink_msg(int sock)
 {
 	int len;
@@ -67,8 +71,10 @@ void process_netlink_msg(int sock)
 			if_indextoname(ifinfo->ifi_index, ifname);
 			rta = IFLA_RTA(NLMSG_DATA(nh));
 			rta_len = nh->nlmsg_len - NLMSG_LENGTH(sizeof(struct ifinfomsg));
+#ifdef IFLA_LINKINFO
 			for (; RTA_OK(rta, rta_len); rta = RTA_NEXT(rta, rta_len)) {
 				if (rta->rta_type == IFLA_OPERSTATE || rta->rta_type == IFLA_LINKMODE) {
+#endif
 					if (ifinfo->ifi_flags & IFF_RUNNING) {
 						dlog(LOG_DEBUG, 3, "%s, ifindex %d, flags is running", ifname, ifinfo->ifi_index);
 					} else {
@@ -78,8 +84,10 @@ void process_netlink_msg(int sock)
 						reload_config();
 						reloaded = 1;
 					}
+#ifdef IFLA_LINKINFO
 				}
 			}
+#endif
 		}
 	}
 }
