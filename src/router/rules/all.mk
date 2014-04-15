@@ -264,6 +264,7 @@ include rules/lighttpd.mk
 include rules/transmission.mk
 include rules/libevent.mk
 include rules/tor.mk
+include rules/emf.mk
 
 #
 # Generic rules
