@@ -3012,6 +3012,7 @@ static void save_prefix(webs_t wp, char *prefix)
 #endif
 	copytonv(wp, "%s_closed", prefix);
 #ifdef HAVE_80211AC
+	copytonv(wp, "%s_wmf_bss_enable", prefix);
 	if (has_2ghz(prefix) && has_ac(prefix))
 		copytonv(wp, "%s_turbo_qam", prefix);
 	if (has_beamforming(prefix)) {
