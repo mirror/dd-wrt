@@ -2188,6 +2188,7 @@ wl_basic.label4="WLAN-Kanal";
 wl_basic.label5="WLAN-SSID-Broadcast";
 wl_basic.label6="Empfindlichkeitsbereich (ACK Timing)";
 wl_basic.label7="802.11n Übertragungs Modus";
+wl_basic.igmpsnooping="Optimiere Multicast Daten";
 wl_basic.scanlist="Abfrageliste";
 wl_basic.duallink="Dual Link";
 wl_basic.parent="Eltern IP";
