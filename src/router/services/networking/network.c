@@ -2188,6 +2188,9 @@ void start_lan(void)
 			}
 
 		}
+	if (nvram_match("emf_enable", "1")) {
+		eval("emf", "start", lan_ifname);
+	}
 	}
 #ifdef HAVE_EAD
 	if (strlen(eadline) > 0)
@@ -2600,6 +2603,7 @@ void start_lan(void)
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
+
 }
 
 void stop_lan(void)
