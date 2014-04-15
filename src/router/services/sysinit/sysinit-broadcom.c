@@ -287,6 +287,8 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 	case ROUTER_NETGEAR_R6300:
 	case ROUTER_ASUS_AC66U:
 	case ROUTER_D1800H:
+		insmod("emf");
+		insmod("igs");
 		insmod("wl");	// load module
 		break;
 	case ROUTER_LINKSYS_EA6500:

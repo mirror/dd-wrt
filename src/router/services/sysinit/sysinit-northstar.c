@@ -1979,7 +1979,8 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
-
+	insmod("emf");
+	insmod("igs");
 	insmod("wl");
 	/*
 	 * Set a sane date 
