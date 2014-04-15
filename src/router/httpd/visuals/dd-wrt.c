@@ -3985,6 +3985,7 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	websWrite(wp, "</div>\n");
 }
 #ifdef HAVE_80211AC
+#ifndef HAVE_NOAC
 {
 	char wl_igmp[16];
 
@@ -4046,6 +4047,7 @@ if (has_beamforming(prefix)) {
 	websWrite(wp, "</div>\n");
 
 }
+#endif
 #endif
 
 #ifdef HAVE_MADWIFI
