@@ -145,15 +145,18 @@ int br_add_bridge(const char *brname)
 
 	sprintf(netmask, "%s_netmask", brname);
 	int ret = eval("brctl", "addbr", brname);
-
+	if (nvram_match("emf_enable", "1")) {
+		eval("emf", "add", "bridge", brname);
+		eval("igs", "add", "bridge", brname);
+	}
 	if (nvram_get(ipaddr) && nvram_get(netmask)
 	    && !nvram_match(ipaddr, "0.0.0.0")
 	    && !nvram_match(netmask, "0.0.0.0")) {
 		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu", getBridgeMTU(brname), "up");
 	} else
 		eval("ifconfig", brname, "mtu", getBridgeMTU(brname));
-	
-	char *mcast = nvram_default_get(brmcast,"0");
+
+	char *mcast = nvram_default_get(brmcast, "0");
 	sysprintf("echo %s > /sys/devices/virtual/net/%s/bridge/multicast_snooping", mcast, brname);
 	return ret;
 }
@@ -163,6 +166,11 @@ int br_del_bridge(const char *brname)
 	if (!ifexists(brname))
 		return -1;
 	dd_syslog(LOG_INFO, "bridge deleted successfully\n");
+	/* Stop the EMF for this LAN */
+	eval("emf", "stop", brname);
+	/* Remove Bridge from igs */
+	eval("igs", "del", "bridge", brname);
+	eval("emf", "del", "bridge", brname);
 	return eval("brctl", "delbr", brname);
 }
 
@@ -187,7 +195,11 @@ int br_add_interface(const char *br, const char *dev)
 	}
 
 	dd_syslog(LOG_INFO, "interface added successfully\n");
-	return eval("brctl", "addif", br, dev);
+	int ret = eval("brctl", "addif", br, dev);
+	if (nvram_match("emf_enable", "1")) {
+		eval("emf", "add", "iface", br, dev);
+	}
+	return ret;
 }
 
 int br_del_interface(const char *br, const char *dev)
@@ -195,7 +207,11 @@ int br_del_interface(const char *br, const char *dev)
 	if (!ifexists(dev))
 		return -1;
 	dd_syslog(LOG_INFO, "interface deleted successfully\n");
-	return eval("brctl", "delif", br, dev);
+	int ret = eval("brctl", "delif", br, dev);
+	if (nvram_match("emf_enable", "1")) {
+		eval("emf", "del", "iface", br, dev);
+	}
+	return ret;
 }
 
 #endif
