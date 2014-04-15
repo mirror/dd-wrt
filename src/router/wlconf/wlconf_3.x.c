@@ -2419,11 +2419,11 @@ cprintf("set security settings %s\n",name);
 //		val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_ucigmp_query", tmp)));
 		wl_iovar_setint(name, "wmf_ucast_igmp_query", 1);
 //		val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_mdata_sendup", tmp)));
-		wl_iovar_setint(name, "wmf_mcast_data_sendup", 0);
+		wl_iovar_setint(name, "wmf_mcast_data_sendup", 1);
 //		val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_ucast_upnp", tmp)));
 		wl_iovar_setint(name, "wmf_ucast_upnp", 1);
 //		val = atoi(nvram_safe_get(strcat_r(prefix, "wmf_igmpq_filter", tmp)));
-		wl_iovar_setint(name, "wmf_igmpq_filter", 1);
+		wl_iovar_setint(name, "wmf_igmpq_filter", 0);
 	}
 
 	ret = 0;
