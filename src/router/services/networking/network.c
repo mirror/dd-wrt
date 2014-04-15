@@ -2188,9 +2188,9 @@ void start_lan(void)
 			}
 
 		}
-	if (nvram_match("emf_enable", "1")) {
+#ifdef HAVE_80211AC
 		eval("emf", "start", lan_ifname);
-	}
+#endif
 	}
 #ifdef HAVE_EAD
 	if (strlen(eadline) > 0)

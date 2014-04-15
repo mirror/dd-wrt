@@ -3985,6 +3985,23 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	websWrite(wp, "</div>\n");
 }
 #ifdef HAVE_80211AC
+{
+	char wl_igmp[16];
+
+	sprintf(wl_igmp, "%s_wmf_bss_enable", prefix);
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.igmpsnooping)</script></div>\n");
+	websWrite(wp,
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+		  wl_igmp, nvram_match(wl_igmp, "1") ? "checked=\"checked\"" : "");
+	websWrite(wp,
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+		  wl_igmp, nvram_match(wl_igmp, "0") ? "checked=\"checked\"" : "");
+	websWrite(wp, "</div>\n");
+
+}
+
+
 
 if (has_ac(prefix) && has_2ghz(prefix)) {
 	char wl_turboqam[16];
