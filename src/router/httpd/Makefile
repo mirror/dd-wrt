@@ -137,6 +137,9 @@ endif
 ifeq ($(CONFIG_80211AC),y)
 CFLAGS += -DHAVE_80211AC
 endif
+ifeq ($(CONFIG_NOAC),y)
+CFLAGS += -DHAVE_NOAC
+endif
 ifeq ($(CONFIG_WZRG450),y)
 CFLAGS += -DHAVE_WZRG450
 endif
