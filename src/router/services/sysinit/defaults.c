@@ -779,6 +779,8 @@ struct nvram_tuple srouter_defaults[] = {
 					 * change it to a radio appropriate default
 					 */
 #ifdef HAVE_80211AC
+	{"wl0_wmf_bss_enable", "0", 0 },		/* 0= off 1= on */
+	{"wl1_wmf_bss_enable", "0", 0 },		
 	/* Airtime fairness */
 	{"wl0_atf", "0", 0 },		/* 0= off 1= on */
 	{"wl1_atf", "0", 0 },		

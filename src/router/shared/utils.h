@@ -958,6 +958,8 @@ extern int is_ath9k(const char *prefix);
 extern int getath9kdevicecount(void);
 #endif
 
+extern char *get3GDeviceVendor(void);
+
 
 int isGrep(char *string, char *cmp);
 int softkill(char *name);

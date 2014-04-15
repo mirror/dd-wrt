@@ -224,6 +224,9 @@ void start_bridging(void)
 			br_set_bridge_prio(bridge, prio);
 
 		eval("ifconfig", bridge, "up");
+#ifdef HAVE_80211AC
+		eval("emf", "start", bridge);
+#endif
 	}
 #ifdef HAVE_MICRO
 	br_shutdown();

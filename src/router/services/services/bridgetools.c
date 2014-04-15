@@ -145,10 +145,12 @@ int br_add_bridge(const char *brname)
 
 	sprintf(netmask, "%s_netmask", brname);
 	int ret = eval("brctl", "addbr", brname);
-	if (nvram_match("emf_enable", "1")) {
-		eval("emf", "add", "bridge", brname);
-		eval("igs", "add", "bridge", brname);
-	}
+	
+#ifdef HAVE_80211AC
+	eval("emf", "add", "bridge", brname);
+	eval("igs", "add", "bridge", brname);
+#endif
+	
 	if (nvram_get(ipaddr) && nvram_get(netmask)
 	    && !nvram_match(ipaddr, "0.0.0.0")
 	    && !nvram_match(netmask, "0.0.0.0")) {
@@ -167,10 +169,12 @@ int br_del_bridge(const char *brname)
 		return -1;
 	dd_syslog(LOG_INFO, "bridge deleted successfully\n");
 	/* Stop the EMF for this LAN */
+#ifdef HAVE_80211AC
 	eval("emf", "stop", brname);
 	/* Remove Bridge from igs */
 	eval("igs", "del", "bridge", brname);
 	eval("emf", "del", "bridge", brname);
+#endif
 	return eval("brctl", "delbr", brname);
 }
 
@@ -196,9 +200,9 @@ int br_add_interface(const char *br, const char *dev)
 
 	dd_syslog(LOG_INFO, "interface added successfully\n");
 	int ret = eval("brctl", "addif", br, dev);
-	if (nvram_match("emf_enable", "1")) {
+#ifdef HAVE_80211AC
 		eval("emf", "add", "iface", br, dev);
-	}
+#endif
 	return ret;
 }
 
@@ -208,9 +212,9 @@ int br_del_interface(const char *br, const char *dev)
 		return -1;
 	dd_syslog(LOG_INFO, "interface deleted successfully\n");
 	int ret = eval("brctl", "delif", br, dev);
-	if (nvram_match("emf_enable", "1")) {
+#ifdef HAVE_80211AC
 		eval("emf", "del", "iface", br, dev);
-	}
+#endif
 	return ret;
 }
 
