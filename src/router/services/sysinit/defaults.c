@@ -781,6 +781,14 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_80211AC
 	{"wl0_wmf_bss_enable", "0", 0 },		/* 0= off 1= on */
 	{"wl1_wmf_bss_enable", "0", 0 },		
+	{"wl0_wmf_ucigmp_query", "0", 0 }, /* Disable Converting IGMP Query to ucast (default) */
+	{"wl0_wmf_mdata_sendup", "0", 0 }, /* Disable Sending Multicast Data to host  (default) */
+	{"wl0_wmf_ucast_upnp", "0", 0 }, /* Disable Converting upnp to ucast (default) */
+	{"wl0_wmf_igmpq_filter", "0", 0 },	/* Disable igmp query filter */
+	{"wl1_wmf_ucigmp_query", "0", 0 }, /* Disable Converting IGMP Query to ucast (default) */
+	{"wl1_wmf_mdata_sendup", "0", 0 }, /* Disable Sending Multicast Data to host  (default) */
+	{"wl1_wmf_ucast_upnp", "0", 0 }, /* Disable Converting upnp to ucast (default) */
+	{"wl1_wmf_igmpq_filter", "0", 0 },	/* Disable igmp query filter */
 	/* Airtime fairness */
 	{"wl0_atf", "0", 0 },		/* 0= off 1= on */
 	{"wl1_atf", "0", 0 },		
