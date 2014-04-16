@@ -1372,6 +1372,10 @@ cprintf("set bsscfg %s\n",name);
 		if (wmf) {
 			val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix, "wmf_bss_enable", tmp)));
 			WL_BSSIOVAR_SETINT(name, "wmf_bss_enable", bsscfg->idx, val);
+
+			val = atoi(nvram_safe_get(strcat_r(bsscfg->prefix,
+				"wmf_psta_disable", tmp)));
+			WL_BSSIOVAR_SETINT(name, "wmf_psta_disable", bsscfg->idx, val);
 		}
 
 		if (wet) {
