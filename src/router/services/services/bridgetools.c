@@ -145,10 +145,16 @@ int br_add_bridge(const char *brname)
 
 	sprintf(netmask, "%s_netmask", brname);
 	int ret = eval("brctl", "addbr", brname);
+	char *mcast = nvram_default_get(brmcast, "0");
 	
 #ifdef HAVE_80211AC
 	eval("emf", "add", "bridge", brname);
-	eval("igs", "add", "bridge", brname);
+	if (!strcmp(mcast,"1"))
+		eval("igs", "add", "bridge", brname);
+#else
+	if (!strcmp(mcast,"1"))
+		sysprintf("echo %s > /sys/devices/virtual/net/%s/bridge/multicast_snooping", mcast, brname);
+
 #endif
 	
 	if (nvram_get(ipaddr) && nvram_get(netmask)
@@ -158,8 +164,6 @@ int br_add_bridge(const char *brname)
 	} else
 		eval("ifconfig", brname, "mtu", getBridgeMTU(brname));
 
-	char *mcast = nvram_default_get(brmcast, "0");
-	sysprintf("echo %s > /sys/devices/virtual/net/%s/bridge/multicast_snooping", mcast, brname);
 	return ret;
 }
 
