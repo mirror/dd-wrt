@@ -2039,7 +2039,9 @@ ppp_registered(void)
      * So we grab a pty master/slave pair and use that.
      */
     if (!get_pty(&mfd, &local_fd, slave, 0)) {
+#ifdef NEED_PRINTF
 	no_ppp_msg = "Couldn't determine if PPP is supported (no free ptys)";
+#endif
 	return 0;
     }
 
@@ -2090,6 +2092,7 @@ int ppp_available(void)
 
     if (kernel_version >= KVERSION(2,3,13)) {
 	error("Couldn't open the /dev/ppp device: %m");
+#ifdef NEED_PRINTF
 	if (errno == ENOENT)
 	    no_ppp_msg =
 		"You need to create the /dev/ppp device node by\n"
@@ -2098,10 +2101,12 @@ int ppp_available(void)
 	else if (errno == ENODEV || errno == ENXIO)
 	    no_ppp_msg =
 		"Please load the ppp_generic kernel module.\n";
+#endif
 	return 0;
     }
 
     /* we are running on a really really old kernel */
+#ifdef NEED_PRINTF
     no_ppp_msg =
 	"This system lacks kernel support for PPP.  This could be because\n"
 	"the PPP kernel module could not be loaded, or because PPP was not\n"
@@ -2109,7 +2114,7 @@ int ppp_available(void)
 	"module, try `/sbin/modprobe -v ppp'.  If that fails, check that\n"
 	"ppp.o exists in /lib/modules/`uname -r`/net.\n"
 	"See README.linux file in the ppp distribution for more details.\n";
-
+#endif
 /*
  * Open a socket for doing the ioctl operations.
  */
@@ -2151,7 +2156,9 @@ int ppp_available(void)
 	if (size < 0) {
 	    error("Couldn't read driver version: %m");
 	    ok = 0;
+#ifdef NEED_PRINTF
 	    no_ppp_msg = "Sorry, couldn't verify kernel driver version\n";
+#endif
 
 	} else {
 	    decode_version(abBuffer,
@@ -2182,11 +2189,13 @@ int ppp_available(void)
 
 	    close (s);
 	    if (!ok) {
+#ifdef NEED_PRINTF
 		slprintf(route_buffer, sizeof(route_buffer),
 			 "Sorry - PPP driver version %d.%d.%d is out of date\n",
 			 driver_version, driver_modification, driver_patch);
 
 		no_ppp_msg = route_buffer;
+#endif
 	    }
 	}
     }

@@ -236,7 +236,9 @@ extern unsigned	link_connect_time; /* time the link was up for */
 extern int	using_pty;	/* using pty as device (notty or pty opt.) */
 extern int	log_to_fd;	/* logging to this fd as well as syslog */
 extern bool	log_default;	/* log_to_fd is default (stdout) */
+#ifdef NEED_PRINTF
 extern char	*no_ppp_msg;	/* message to print if ppp not in kernel */
+#endif
 extern volatile int status;	/* exit status for pppd */
 extern bool	devnam_fixed;	/* can no longer change devnam */
 extern int	unsuccess;	/* # unsuccessful connection attempts */
