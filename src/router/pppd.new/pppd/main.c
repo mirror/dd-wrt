@@ -194,7 +194,9 @@ static int got_sigchld;		/* set if we have received a SIGCHLD */
 
 int privopen;			/* don't lock, open device as root */
 
+#ifdef NEED_PRINTF
 char *no_ppp_msg = "Sorry - this system lacks PPP kernel support\n";
+#endif
 
 GIDSET_TYPE groups[NGROUPS_MAX];/* groups the user is in */
 int ngroups;			/* How many groups valid in groups */
