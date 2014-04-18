@@ -73,7 +73,10 @@ endif
 
 #HAS_SHADOW=y
 #USE_PAM=y
+
+ifeq ($(CONFIG_IPV6),y)
 HAVE_INET6=y
+endif
 
 # Enable plugins
 PLUGIN=y
