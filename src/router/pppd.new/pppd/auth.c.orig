@@ -68,7 +68,7 @@
  * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define RCSID	"$Id: auth.c,v 1.112 2006/06/18 11:26:00 paulus Exp $"
+#define RCSID	"$Id: auth.c,v 1.117 2008/07/01 12:27:56 paulus Exp $"
 
 #include <stdio.h>
 #include <stddef.h>
@@ -91,9 +91,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#ifdef USE_PAM
-#include <security/pam_appl.h>
-#endif
 
 #ifdef HAS_SHADOW
 #include <shadow.h>
@@ -116,6 +113,7 @@
 #include "cbcp.h"
 #endif
 #include "pathnames.h"
+#include "session.h"
 
 static const char rcsid[] = RCSID;
 
@@ -133,9 +131,6 @@ static int auth_pending[NUM_PPP];
 
 /* Records which authentication operations have been completed. */
 int auth_done[NUM_PPP];
-
-/* Set if we have successfully called plogin() */
-static int logged_in;
 
 /* List of addresses which the peer may use. */
 static struct permitted_ip *addresses[NUM_PPP];
@@ -195,6 +190,11 @@ int (*null_auth_hook) __P((struct wordlist **paddrs,
 
 int (*allowed_address_hook) __P((u_int32_t addr)) = NULL;
 
+#ifdef HAVE_MULTILINK
+/* Hook for plugin to hear when an interface joins a multilink bundle */
+void (*multilink_join_hook) __P((void)) = NULL;
+#endif
+
 /* A notifier for when the peer has authenticated itself,
    and we are proceeding to the network phase. */
 struct notifier *auth_up_notifier = NULL;
@@ -215,12 +215,11 @@ static enum script_state auth_state = s_down;
 static enum script_state auth_script_state = s_down;
 static pid_t auth_script_pid = 0;
 
-static int used_login;		/* peer authenticated against login database */
-
 /*
  * Option variables.
  */
 bool uselogin = 0;		/* Use /etc/passwd for checking PAP */
+bool session_mgmt = 0;		/* Do session management (login records) */
 bool cryptpap = 0;		/* Passwords in pap-secrets are encrypted */
 bool refuse_pap = 0;		/* Don't wanna auth. ourselves with PAP */
 bool refuse_chap = 0;		/* Don't wanna auth. ourselves with CHAP */
@@ -237,6 +236,8 @@ bool usehostname = 0;		/* Use hostname for our_name */
 bool auth_required = 0;		/* Always require authentication from peer */
 bool allow_any_ip = 0;		/* Allow peer to use any IP address */
 bool explicit_remote = 0;	/* User specified explicit remote name */
+bool explicit_user = 0;		/* Set if "user" option supplied */
+bool explicit_passwd = 0;	/* Set if "password" option supplied */
 char remote_name[MAXNAMELEN];	/* Peer's name for authentication */
 
 static char *uafname;		/* name of most recent +ua file */
@@ -248,8 +249,6 @@ extern char *crypt __P((const char *, const char *));
 static void network_phase __P((int));
 static void check_idle __P((void *));
 static void connect_time_expired __P((void *));
-static int  plogin __P((char *, char *, char **));
-static void plogout __P((void));
 static int  null_login __P((int));
 static int  get_pap_passwd __P((char *));
 static int  have_pap_secret __P((int *));
@@ -374,11 +373,13 @@ option_t auth_options[] = {
       OPT_PRIO | OPT_A2STRVAL, &uafname },
 
     { "user", o_string, user,
-      "Set name for auth with peer", OPT_PRIO | OPT_STATIC, NULL, MAXNAMELEN },
+      "Set name for auth with peer", OPT_PRIO | OPT_STATIC,
+      &explicit_user, MAXNAMELEN },
 
     { "password", o_string, passwd,
       "Password for authenticating us to the peer",
-      OPT_PRIO | OPT_STATIC | OPT_HIDE, NULL, MAXSECRETLEN },
+      OPT_PRIO | OPT_STATIC | OPT_HIDE,
+      &explicit_passwd, MAXSECRETLEN },
 
     { "usehostname", o_bool, &usehostname,
       "Must use hostname for authentication", 1 },
@@ -388,7 +389,10 @@ option_t auth_options[] = {
       &explicit_remote, MAXNAMELEN },
 
     { "login", o_bool, &uselogin,
-      "Use system password database for PAP", 1 },
+      "Use system password database for PAP", OPT_A2COPY | 1 ,
+      &session_mgmt },
+    { "enable-session", o_bool, &session_mgmt,
+      "Enable session accounting for remote peers", OPT_PRIV | 1 },
 
     { "papcrypt", o_bool, &cryptpap,
       "PAP passwords are encrypted", 1 },
@@ -462,10 +466,14 @@ setupapfile(argv)
     if (l > 0 && p[l-1] == '\n')
 	p[l-1] = 0;
 
-    if (override_value("user", option_priority, fname))
+    if (override_value("user", option_priority, fname)) {
 	strlcpy(user, u, sizeof(user));
-    if (override_value("passwd", option_priority, fname))
+	explicit_user = 1;
+    }
+    if (override_value("passwd", option_priority, fname)) {
 	strlcpy(passwd, p, sizeof(passwd));
+	explicit_passwd = 1;
+    }
 
     return (1);
 }
@@ -560,6 +568,7 @@ void start_link(unit)
 
     new_phase(PHASE_SERIALCONN);
 
+    hungup = 0;
     devfd = the_channel->connect();
     msg = "Connect script failed";
     if (devfd < 0)
@@ -628,10 +637,8 @@ link_terminated(unit)
 
     if (pap_logout_hook) {
 	pap_logout_hook();
-    } else {
-	if (logged_in)
-	    plogout();
     }
+    session_end(devnam);
 
     if (!doing_multilink) {
 	notice("Connection terminated.");
@@ -774,7 +781,6 @@ link_established(unit)
     }
 
     new_phase(PHASE_AUTHENTICATE);
-    used_login = 0;
     auth = 0;
     if (go->neg_eap) {
 	eap_authpeer(unit, our_name);
@@ -793,7 +799,9 @@ link_established(unit)
 	chap_auth_with_peer(unit, user, CHAP_DIGEST(ho->chap_mdtype));
 	auth |= CHAP_WITHPEER;
     } else if (ho->neg_upap) {
-	if (passwd[0] == 0) {
+	/* If a blank password was explicitly given as an option, trust
+	   the user and don't try to look up one. */
+	if (passwd[0] == 0 && !explicit_passwd) {
 	    passwd_from_file = 1;
 	    if (!get_pap_passwd(passwd))
 		error("No secret found for PAP login");
@@ -868,6 +876,8 @@ start_networks(unit)
 #ifdef HAVE_MULTILINK
     if (multilink) {
 	if (mp_join_bundle()) {
+	    if (multilink_join_hook)
+		(*multilink_join_hook)();
 	    if (updetach && !nodetach)
 		detach();
 	    return;
@@ -1146,7 +1156,6 @@ static void
 check_maxoctets(arg)
     void *arg;
 {
-    int diff;
     unsigned int used;
 
     update_link_stats(ifunit);
@@ -1167,8 +1176,7 @@ check_maxoctets(arg)
 	    used = link_stats.bytes_in+link_stats.bytes_out;
 	    break;
     }
-    diff = maxoctets - used;
-    if(diff < 0) {
+    if (used > maxoctets) {
 	notice("Traffic limit reached. Limit: %u Used: %u", maxoctets, used);
 	status = EXIT_TRAFFIC_LIMIT;
 	lcp_close(0, "Traffic limit");
@@ -1235,7 +1243,9 @@ auth_check_options()
     /* Default our_name to hostname, and user to our_name */
     if (our_name[0] == 0 || usehostname)
 	strlcpy(our_name, hostname, sizeof(our_name));
-    if (user[0] == 0)
+    /* If a blank username was explicitly given as an option, trust
+       the user and don't use our_name */
+    if (user[0] == 0 && !explicit_user)
 	strlcpy(user, our_name, sizeof(user));
 
     /*
@@ -1441,8 +1451,14 @@ check_passwd(unit, auser, userlen, apasswd, passwdlen, msg)
 	    ret = UPAP_AUTHACK;
 	    if (uselogin || login_secret) {
 		/* login option or secret is @login */
-		if ((ret = plogin(user, passwd, msg)) == UPAP_AUTHACK)
-		    used_login = 1;
+		if (session_full(user, passwd, devnam, msg) == 0) {
+		    ret = UPAP_AUTHNAK;
+		}
+	    } else if (session_mgmt) {
+		if (session_check(user, NULL, devnam, NULL) == 0) {
+		    warn("Peer %q failed PAP Session verification", user);
+		    ret = UPAP_AUTHNAK;
+		}
 	    }
 	    if (secret[0] != 0 && !login_secret) {
 		/* password given in pap-secrets - must match */
@@ -1486,232 +1502,6 @@ check_passwd(unit, auser, userlen, apasswd, passwdlen, msg)
 
     return ret;
 }
-
-/*
- * This function is needed for PAM.
- */
-
-#ifdef USE_PAM
-/* Static variables used to communicate between the conversation function
- * and the server_login function 
- */
-static char *PAM_username;
-static char *PAM_password;
-static int PAM_error = 0;
-static pam_handle_t *pamh = NULL;
-
-/* PAM conversation function
- * Here we assume (for now, at least) that echo on means login name, and
- * echo off means password.
- */
-
-static int PAM_conv (int num_msg,
-#ifndef SOL2
-    const
-#endif
-    struct pam_message **msg,
-    struct pam_response **resp, void *appdata_ptr)
-{
-    int replies = 0;
-    struct pam_response *reply = NULL;
-
-#define COPY_STRING(s) (s) ? strdup(s) : NULL
-
-    reply = malloc(sizeof(struct pam_response) * num_msg);
-    if (!reply) return PAM_CONV_ERR;
-
-    for (replies = 0; replies < num_msg; replies++) {
-        switch (msg[replies]->msg_style) {
-            case PAM_PROMPT_ECHO_ON:
-                reply[replies].resp_retcode = PAM_SUCCESS;
-                reply[replies].resp = COPY_STRING(PAM_username);
-                /* PAM frees resp */
-                break;
-            case PAM_PROMPT_ECHO_OFF:
-                reply[replies].resp_retcode = PAM_SUCCESS;
-                reply[replies].resp = COPY_STRING(PAM_password);
-                /* PAM frees resp */
-                break;
-            case PAM_TEXT_INFO:
-                /* fall through */
-            case PAM_ERROR_MSG:
-                /* ignore it, but pam still wants a NULL response... */
-                reply[replies].resp_retcode = PAM_SUCCESS;
-                reply[replies].resp = NULL;
-                break;
-            default:       
-                /* Must be an error of some sort... */
-                free (reply);
-                PAM_error = 1;
-                return PAM_CONV_ERR;
-        }
-    }
-    *resp = reply;     
-    return PAM_SUCCESS;
-}
-
-static struct pam_conv PAM_conversation = {
-    &PAM_conv,
-    NULL
-};
-#endif  /* USE_PAM */
-
-/*
- * plogin - Check the user name and password against the system
- * password database, and login the user if OK.
- *
- * returns:
- *	UPAP_AUTHNAK: Login failed.
- *	UPAP_AUTHACK: Login succeeded.
- * In either case, msg points to an appropriate message.
- */
-
-static int
-plogin(user, passwd, msg)
-    char *user;
-    char *passwd;
-    char **msg;
-{
-    char *tty;
-
-#ifdef USE_PAM
-    int pam_error;
-
-    pam_error = pam_start ("ppp", user, &PAM_conversation, &pamh);
-    if (pam_error != PAM_SUCCESS) {
-        *msg = (char *) pam_strerror (pamh, pam_error);
-	reopen_log();
-	return UPAP_AUTHNAK;
-    }
-    /*
-     * Define the fields for the credential validation
-     */
-     
-    PAM_username = user;
-    PAM_password = passwd;
-    PAM_error = 0;
-    pam_set_item (pamh, PAM_TTY, devnam); /* this might be useful to some modules */
-
-    /*
-     * Validate the user
-     */
-    pam_error = pam_authenticate (pamh, PAM_SILENT);
-    if (pam_error == PAM_SUCCESS && !PAM_error) {    
-        pam_error = pam_acct_mgmt (pamh, PAM_SILENT);
-        if (pam_error == PAM_SUCCESS)
-	    pam_error = pam_open_session (pamh, PAM_SILENT);
-    }
-
-    *msg = (char *) pam_strerror (pamh, pam_error);
-
-    /*
-     * Clean up the mess
-     */
-    reopen_log();	/* apparently the PAM stuff does closelog() */
-    PAM_username = NULL;
-    PAM_password = NULL;
-    if (pam_error != PAM_SUCCESS)
-        return UPAP_AUTHNAK;
-#else /* #ifdef USE_PAM */
-
-/*
- * Use the non-PAM methods directly
- */
-
-#ifdef HAS_SHADOW
-    struct spwd *spwd;
-    struct spwd *getspnam();
-#endif
-    struct passwd *pw = getpwnam(user);
-
-    endpwent();
-    if (pw == NULL)
-	return (UPAP_AUTHNAK);
-
-#ifdef HAS_SHADOW
-    spwd = getspnam(user);
-    endspent();
-    if (spwd) {
-	/* check the age of the password entry */
-	long now = time(NULL) / 86400L;
-
-	if ((spwd->sp_expire > 0 && now >= spwd->sp_expire)
-	    || ((spwd->sp_max >= 0 && spwd->sp_max < 10000)
-		&& spwd->sp_lstchg >= 0
-		&& now >= spwd->sp_lstchg + spwd->sp_max)) {
-	    warn("Password for %s has expired", user);
-	    return (UPAP_AUTHNAK);
-	}
-	pw->pw_passwd = spwd->sp_pwdp;
-    }
-#endif
-
-    /*
-     * If no passwd, don't let them login.
-     */
-    if (pw->pw_passwd == NULL || strlen(pw->pw_passwd) < 2
-	|| strcmp(crypt(passwd, pw->pw_passwd), pw->pw_passwd) != 0)
-	return (UPAP_AUTHNAK);
-
-#endif /* #ifdef USE_PAM */
-
-    /*
-     * Write a wtmp entry for this user.
-     */
-
-    tty = devnam;
-    if (strncmp(tty, "/dev/", 5) == 0)
-	tty += 5;
-    logwtmp(tty, user, ifname);		/* Add wtmp login entry */
-
-#if defined(_PATH_LASTLOG) && !defined(USE_PAM)
-    if (pw != (struct passwd *)NULL) {
-	    struct lastlog ll;
-	    int fd;
-
-	    if ((fd = open(_PATH_LASTLOG, O_RDWR, 0)) >= 0) {
-		(void)lseek(fd, (off_t)(pw->pw_uid * sizeof(ll)), SEEK_SET);
-		memset((void *)&ll, 0, sizeof(ll));
-		(void)time(&ll.ll_time);
-		(void)strncpy(ll.ll_line, tty, sizeof(ll.ll_line));
-		(void)write(fd, (char *)&ll, sizeof(ll));
-		(void)close(fd);
-	    }
-    }
-#endif /* _PATH_LASTLOG and not USE_PAM */
-
-    info("user %s logged in", user);
-    logged_in = 1;
-
-    return (UPAP_AUTHACK);
-}
-
-/*
- * plogout - Logout the user.
- */
-static void
-plogout()
-{
-    char *tty;
-#ifdef USE_PAM
-    int pam_error;
-
-    if (pamh != NULL) {
-	pam_error = pam_close_session (pamh, PAM_SILENT);
-	pam_end (pamh, pam_error);
-	pamh = NULL;
-    }
-    /* Apparently the pam stuff does closelog(). */
-    reopen_log();
-#endif /* USE_PAM */
-
-    tty = devnam;
-    if (strncmp(tty, "/dev/", 5) == 0)
-	tty += 5;
-    logwtmp(tty, "", "");		/* Wipe out utmp logout entry */
-    logged_in = 0;
-}
-
 
 /*
  * null_login - Check if a username of "" and a password of "" are

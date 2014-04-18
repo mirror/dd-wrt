@@ -277,7 +277,7 @@ parsePacket(PPPoEPacket *packet, ParseFunc *func, void *extra)
     }
 
     /* Do some sanity checks on packet */
-    if (len > ETH_DATA_LEN - 6) { /* 6-byte overhead for PPPoE header */
+    if (len > ETH_JUMBO_LEN - PPPOE_OVERHEAD) { /* 6-byte overhead for PPPoE header */
 	fprintf(stderr, "Invalid PPPoE packet length (%u)\n", len);
 	return -1;
     }
