@@ -564,13 +564,11 @@ link_required(unit)
 void start_link(unit)
     int unit;
 {
-    char *msg;
-
+    status = EXIT_CONNECT_FAILED;
     new_phase(PHASE_SERIALCONN);
 
     hungup = 0;
     devfd = the_channel->connect();
-    msg = "Connect script failed";
     if (devfd < 0)
 	goto fail;
 
@@ -583,7 +581,6 @@ void start_link(unit)
      * gives us.  Thus we don't need the tdb_writelock/tdb_writeunlock.
      */
     fd_ppp = the_channel->establish_ppp(devfd);
-    msg = "ppp establishment failed";
     if (fd_ppp < 0) {
 	status = EXIT_FATAL_ERROR;
 	goto disconnect;
@@ -684,9 +681,11 @@ link_terminated(unit)
 	(*the_channel->cleanup)();
 
     if (doing_multilink && multilink_master) {
-	if (!bundle_terminating)
+	if (!bundle_terminating) {
 	    new_phase(PHASE_MASTER);
-	else
+	    if (master_detach && !detached)
+		detach();
+	} else
 	    mp_bundle_terminated();
     } else
 	new_phase(PHASE_DEAD);
@@ -1462,9 +1461,11 @@ check_passwd(unit, auser, userlen, apasswd, passwdlen, msg)
 	    }
 	    if (secret[0] != 0 && !login_secret) {
 		/* password given in pap-secrets - must match */
-		if ((cryptpap || strcmp(passwd, secret) != 0)
-		    && strcmp(crypt(passwd, secret), secret) != 0)
-		    ret = UPAP_AUTHNAK;
+		if (cryptpap || strcmp(passwd, secret) != 0) {
+		    char *cbuf = crypt(passwd, secret);
+		    if (!cbuf || strcmp(cbuf, secret) != 0)
+			ret = UPAP_AUTHNAK;
+		}
 	    }
 	}
 	fclose(f);

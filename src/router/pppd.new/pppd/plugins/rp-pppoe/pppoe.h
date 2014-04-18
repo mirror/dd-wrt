@@ -129,6 +129,7 @@ extern UINT16_t Eth_PPPOE_Session;
 #define TAG_AC_COOKIE          0x0104
 #define TAG_VENDOR_SPECIFIC    0x0105
 #define TAG_RELAY_SESSION_ID   0x0110
+#define TAG_PPP_MAX_PAYLOAD    0x0120
 #define TAG_SERVICE_NAME_ERROR 0x0201
 #define TAG_AC_SYSTEM_ERROR    0x0202
 #define TAG_GENERIC_ERROR      0x0203
@@ -167,6 +168,13 @@ extern UINT16_t Eth_PPPOE_Session;
 #define IPV4ALEN     4
 #define SMALLBUF   256
 
+/* There are other fixed-size buffers preventing
+   this from being increased to 16110. The buffer
+   sizes would need to be properly de-coupled from
+   the default MRU. For now, getting up to 1500 is
+   enough. */
+#define ETH_JUMBO_LEN 1508
+
 /* A PPPoE Packet, including Ethernet headers */
 typedef struct PPPoEPacketStruct {
     struct ethhdr ethHdr;	/* Ethernet header */
@@ -174,7 +182,7 @@ typedef struct PPPoEPacketStruct {
     unsigned int code:8;	/* PPPoE code */
     unsigned int session:16;	/* PPPoE session */
     unsigned int length:16;	/* Payload length */
-    unsigned char payload[ETH_DATA_LEN]; /* A bit of room to spare */
+    unsigned char payload[ETH_JUMBO_LEN]; /* A bit of room to spare */
 } PPPoEPacket;
 
 #define PPPOE_VER(vt)		((vt) >> 4)
@@ -184,15 +192,18 @@ typedef struct PPPoEPacketStruct {
 /* Header size of a PPPoE packet */
 #define PPPOE_OVERHEAD 6  /* type, code, session, length */
 #define HDR_SIZE (sizeof(struct ethhdr) + PPPOE_OVERHEAD)
-#define MAX_PPPOE_PAYLOAD (ETH_DATA_LEN - PPPOE_OVERHEAD)
-#define MAX_PPPOE_MTU (MAX_PPPOE_PAYLOAD - 2)
+#define MAX_PPPOE_PAYLOAD (ETH_JUMBO_LEN - PPPOE_OVERHEAD)
+#define PPP_OVERHEAD 2  /* protocol */
+#define MAX_PPPOE_MTU (MAX_PPPOE_PAYLOAD - PPP_OVERHEAD)
+#define TOTAL_OVERHEAD (PPPOE_OVERHEAD + PPP_OVERHEAD)
+#define ETH_PPPOE_MTU (ETH_DATA_LEN - TOTAL_OVERHEAD)
 
 /* PPPoE Tag */
 
 typedef struct PPPoETagStruct {
     unsigned int type:16;	/* tag type */
     unsigned int length:16;	/* Length of payload */
-    unsigned char payload[ETH_DATA_LEN]; /* A LOT of room to spare */
+    unsigned char payload[ETH_JUMBO_LEN]; /* A LOT of room to spare */
 } PPPoETag;
 /* Header size of a PPPoE tag */
 #define TAG_HDR_SIZE 4
@@ -233,6 +244,9 @@ typedef struct PPPoEConnectionStruct {
     int error;			/* Error packet received */
     int debug;			/* Set to log packets sent and received */
     int discoveryTimeout;       /* Timeout for discovery packets */
+    int seenMaxPayload;
+    int mtu;			/* Stored MTU */
+    int mru;			/* Stored MRU */
 } PPPoEConnection;
 
 /* Structure used to determine acceptable PADO or PADS packet */
