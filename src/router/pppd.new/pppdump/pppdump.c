@@ -191,7 +191,7 @@ dumplog(f)
 	    show_time(f, c);
 	    break;
 	default:
-	    printf("?%.2x\n");
+	    printf("?%.2x\n", c);
 	}
     }
 }
@@ -421,7 +421,7 @@ dumpppp(f)
 	    show_time(f, c);
 	    break;
 	default:
-	    printf("?%.2x\n");
+	    printf("?%.2x\n", c);
 	}
     }
 }

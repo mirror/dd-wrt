@@ -151,6 +151,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <netdb.h>
@@ -178,6 +179,16 @@ int no_ifaceid_neg = 0;
 
 /* local vars */
 static int ipv6cp_is_up;
+
+/* Hook for a plugin to know when IPv6 protocol has come up */
+void (*ipv6_up_hook) __P((void)) = NULL;
+
+/* Hook for a plugin to know when IPv6 protocol has come down */
+void (*ipv6_down_hook) __P((void)) = NULL;
+
+/* Notifiers for when IPCPv6 goes up and down */
+struct notifier *ipv6_up_notifier = NULL;
+struct notifier *ipv6_down_notifier = NULL;
 
 /*
  * Callbacks for fsm code.  (CI = Configuration Information)
@@ -1120,7 +1131,7 @@ ipv6_check_options()
 
     if (demand && (eui64_iszero(wo->ourid) || eui64_iszero(wo->hisid))) {
 	option_error("local/remote LL address required for demand-dialling\n");
-	exit(1);
+	exit(EXIT_OPTION_ERROR);
     }
 }
 
@@ -1282,6 +1293,10 @@ ipv6cp_up(f)
     np_up(f->unit, PPP_IPV6);
     ipv6cp_is_up = 1;
 
+    notify(ipv6_up_notifier, 0);
+    if (ipv6_up_hook)
+       ipv6_up_hook();
+
     /*
      * Execute the ipv6-up script, like this:
      *	/etc/ppp/ipv6-up interface tty speed local-LL remote-LL
@@ -1305,6 +1320,9 @@ ipv6cp_down(f)
 {
     IPV6CPDEBUG(("ipv6cp: down"));
     update_link_stats(f->unit);
+    notify(ipv6_down_notifier, 0);
+    if (ipv6_down_hook)
+       ipv6_down_hook();
     if (ipv6cp_is_up) {
 	ipv6cp_is_up = 0;
 	np_down(f->unit, PPP_IPV6);

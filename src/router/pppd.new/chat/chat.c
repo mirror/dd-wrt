@@ -1167,6 +1167,7 @@ register char *s;
 
     if (timeout_next) {
 	timeout_next = 0;
+	s = clean(s, 0);
 	timeout = atoi(s);
 	
 	if (timeout <= 0)
