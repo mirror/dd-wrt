@@ -118,7 +118,7 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_easydns_server_rsp_ok, 
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_easydns_http_dns_server,
             DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL, 
-			"members.easydns.com", "/dyn/dyndns.php?hostname=", ""}},
+			"members.easydns.com", "/dyn/ez-ipupdate.php?hostname=", ""}},
 
     {DYNDNS_3322_DYNAMIC, 
         {"dyndns@3322.org", &dyndns_org_dynamic,  
