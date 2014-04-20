@@ -169,6 +169,7 @@ typedef enum
 
 /* SOME DEFAULT CONFIGURATIONS */
 #define DYNDNS_DEFAULT_SLEEP	(120) /*s*/
+#define DYNDNS_ERROR_UPDATE_PERIOD	(600) /* 10 min */
 #define DYNDNS_MIN_SLEEP	(30) /*s*/
 #define DYNDNS_MAX_SLEEP	(10 * 24 * 3600) /*10 days in s*/
 #define DYNDNS_MY_FORCED_UPDATE_PERIOD_S   (30 * 24 * 3600) /* 30 days in sec*/

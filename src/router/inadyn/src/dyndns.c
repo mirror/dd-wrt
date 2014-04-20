@@ -55,12 +55,12 @@ static int get_req_for_zoneedit_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,
 static int get_req_for_easydns_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 static int get_req_for_tzo_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
 
-static BOOL is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
-static BOOL is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
-static BOOL is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
-static BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
-static BOOL is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
-static BOOL is_tzo_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
+static int is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
+static int is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
+static int is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
+static int is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
+static int is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
+static int is_tzo_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 
 
 DYNDNS_SYSTEM_INFO dns_system_table[] = 
@@ -118,7 +118,7 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_easydns_server_rsp_ok, 
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_easydns_http_dns_server,
             DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL, 
-			"members.easydns.com", "/dyn/ez-ipupdate.php?hostname=", ""}},
+			"api.cp.easydns.com", "/dyn/ez-ipupdate.php?hostname=", ""}},
 
     {DYNDNS_3322_DYNAMIC, 
         {"dyndns@3322.org", &dyndns_org_dynamic,  
@@ -428,11 +428,18 @@ static RC_TYPE do_check_alias_update_table(DYN_DNS_CLIENT *p_self)
 /* DynDNS org.specific response validator.
     'good' or 'nochange' are the good answers,
 */
-static BOOL is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
+static int is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
 {
 	(void) p_ok_string;
-    return ( (strstr(p_rsp, DYNDNS_OK_RESPONSE) != NULL) ||
-             (strstr(p_rsp, DYNDNS_OK_NOCHANGE) != NULL) );
+
+	if (strstr(p_rsp, "good") != NULL ||
+		strstr(p_rsp, "nochg") != NULL)
+		return RC_OK;
+	else if (strstr(p_rsp, "dnserr") != NULL ||
+		strstr(p_rsp, "911") != NULL)
+		return RC_DYNDNS_RSP_RETRY_LATER;
+	else
+		return RC_ERROR;
 }
 
 /* Freedns afraid.org.specific response validator.
@@ -440,7 +447,7 @@ static BOOL is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p
     fail blabla and n.n.n.n
     are the good answers. We search our own IP address in response and that's enough.
 */
-static BOOL is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
+static int is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
 {
 	(void) p_ok_string;
     return (strstr(p_rsp, p_self->info.my_ip_address.name) != NULL);
@@ -450,7 +457,7 @@ static BOOL is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* 
 	parses a given string. If found is ok,
 	Example : 'SUCCESS CODE='
 */
-static BOOL is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
+static int is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
 {
 	if (p_ok_string == NULL)
 	{
@@ -464,7 +471,7 @@ static BOOL is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* 
 		CODE=200
 		CODE=707, for duplicated updates
 */
-BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
+static int is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
 {
 	return 
 	(		
@@ -477,15 +484,20 @@ BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_s
 /**
 	NOERROR is the OK code here
 */
-BOOL is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
+static int is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
 {
-	return (strstr(p_rsp, "NOERROR") != NULL);
+	if (strstr(p_rsp, "NOERROR") != NULL)
+		return RC_OK;
+	else if (strstr(p_rsp, "TOOSOON") != NULL)
+		return RC_DYNDNS_RSP_RETRY_LATER;
+	else
+		return RC_ERROR;
 }
 
 /**
 	If we have an HTTP 302 the update wasn't good and we're being redirected
 */
-BOOL is_tzo_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
+static int is_tzo_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
 {
 	return (strstr(p_rsp, " HTTP/1.%*c 302") == NULL);
 }
@@ -535,9 +547,9 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 
 				if (rc == RC_OK)
 				{
-					BOOL update_ok = p_self->info.p_dns_system->p_rsp_ok_func((struct _DYN_DNS_CLIENT*)p_self, http_tr.p_rsp, 
+					int rc = p_self->info.p_dns_system->p_rsp_ok_func((struct _DYN_DNS_CLIENT*)p_self, http_tr.p_rsp, 
 							p_self->info.p_dns_system->p_success_string);
-					if (update_ok)
+					if (rc)
 					{
 			                        p_self->alias_info.update_required[i] = FALSE;
 
@@ -1141,6 +1153,7 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 			{
 				break;
 			}
+			p_dyndns->sleep_sec = rc == RC_DYNDNS_RSP_RETRY_LATER ? DYNDNS_ERROR_UPDATE_PERIOD : DYNDNS_DEFAULT_SLEEP;
 
 			/* also sleep the time set in the ->sleep_sec data memeber*/
 			dyn_dns_wait_for_cmd(p_dyndns);
