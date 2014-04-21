@@ -97,7 +97,9 @@ INCLUDE_DIRS= -I../include
 COMPILE_FLAGS= -DHAVE_PATHS_H -DHAVE_MMAP
 
 ifeq ($(ARCHITECTURE),broadcom)
+ifneq ($(CONFIG_BCMMODERN),y)
 CFLAGS= -DBROADCOM
+endif
 endif
 
 CFLAGS+= -Wall $(COMPILE_FLAGS) $(COPTS) $(MIPS16_OPT) -Os -ffunction-sections -fdata-sections -Wl,--gc-sections $(INCLUDE_DIRS) '-DDESTDIR="@DESTDIR@"' 
