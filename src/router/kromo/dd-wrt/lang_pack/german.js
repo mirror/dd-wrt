@@ -764,6 +764,9 @@ privoxy.custom="Eigene Konfiguration";
 
 hprivoxy.right2="Schaltet Privoxy ein und konfiguriert ihn für ihre Clients. Proxy IP = <b>Router IP</b> Proxy Port = <b>8118</b>";
 
+//** Lighttpd.asp **//
+
+lighttpd.wan="WAN Zugriff";
 
 hnas.right2="Um eine neue Freigabe zu erstellen müssen Pfad und Freigabename eingetragen werden. Anschließend müssen Benutzer und deren Rechte für FTP und Samba Zugriff spezifiziert werden";
 
