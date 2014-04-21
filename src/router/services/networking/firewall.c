@@ -1863,6 +1863,13 @@ static void filter_input(void)
 		}
 	}
 #endif
+#ifdef HAVE_WEBSERVER
+	if (nvram_match("lighttpd_enable", "1") && nvram_match("lighttpd_wan", "1"))
+	{
+		save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("lighttpd_port"), log_accept);
+		save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("lighttpd_sslport"), log_accept);
+	}
+#endif
 /*#ifdef HAVE_AP_SERV
 	save2file("-A INPUT -i %s -p udp --dport 22359 -j ACCEPT\n",lanface);
 	save2file("-A INPUT -i %s -p udp --sport 22359 -j ACCEPT\n",lanface);
