@@ -773,7 +773,7 @@ lighttpd.server="Lighttpd";
 lighttpd.legend="Lighttpd Webserver";
 lighttpd.port="HTTP Port";
 lighttpd.sslport="HTTPS Port";
-lighttpd.custom="Custom Configuration";
+lighttpd.wan="WAN Access";
 
 var hlighttpd=new Object();
 hlighttpd.right2="Enable lighttpd and configure the HTTP/HTTPS ports lighttpd will listen for request. Default webserver root is under /jffs/www where you can place your websites.";
