@@ -409,7 +409,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service0" onchange="onchange_blockedServices(blocked_service0.selectedIndex, port0_start, port0_end)">
-										<option value="None" selected="selected">None</option>
+										<option value="None" selected="selected"><% tran("filter.none"); %></option>
 										<script type="text/javascript">
 										//<![CDATA[
 										write_service_options(servport_name0);
@@ -420,7 +420,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service1" onchange="onchange_blockedServices(blocked_service1.selectedIndex, port1_start, port1_end)">
-										<option value="None" selected="selected">None</option>
+										<option value="None" selected="selected"><% tran("filter.none"); %></option>
 										<script type="text/javascript">
 										//<![CDATA[
 										write_service_options(servport_name1);
@@ -431,7 +431,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service2" onchange="onchange_blockedServices(blocked_service2.selectedIndex, port2_start, port2_end)">
-										<option value="None" selected="selected">None</option>
+										<option value="None" selected="selected"><% tran("filter.none"); %></option>
 										<script type="text/javascript">
 										//<![CDATA[
 										write_service_options(servport_name2);
@@ -442,7 +442,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service3" onchange="onchange_blockedServices(blocked_service3.selectedIndex, port3_start, port3_end)">
-										<option value="None" selected="selected">None</option>
+										<option value="None" selected="selected"><% tran("filter.none"); %></option>
 										<script type="text/javascript">
 										//<![CDATA[
 										write_service_options(servport_name3);
