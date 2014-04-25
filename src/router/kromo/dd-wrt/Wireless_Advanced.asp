@@ -150,36 +150,36 @@ function create_nrate(num,F)
 
 	if(num == 0 || num == 20) {
 	    for(i=0;i<8;i++) {
-		F.%s_nmcsidx[i+1] = new Option(i+" - "+bw20_1[i]+" Mbps");
+		F.%s_nmcsidx[i+1] = new Option(i+" - "+bw20_1[i]+" "+wl_adv.mpbs);
 		F.%s_nmcsidx[i+1].value = i;
 	    }
 	    if(wl_phytype == "n" || wl_phytype == "h") {
 		    for(i=8;i<16;i++) {
-			F.%s_nmcsidx[i+1] = new Option(i+" - "+bw20_2[i-8]+" Mbps");
+			F.%s_nmcsidx[i+1] = new Option(i+" - "+bw20_2[i-8]+" "+wl_adv.mpbs);
 			F.%s_nmcsidx[i+1].value = i;
 	    	}
     	}
 	    if(wl_phytype == "h") {
 		    for(i=16;i<24;i++) {
-			F.%s_nmcsidx[i+1] = new Option(i+" - "+bw20_3[i-16]+" Mbps");
+			F.%s_nmcsidx[i+1] = new Option(i+" - "+bw20_3[i-16]+" "+wl_adv.mpbs);
 			F.%s_nmcsidx[i+1].value = i;
 	    	}
     	}
 	}
 	else {
 	    for(i=0;i<8;i++) {
-		F.%s_nmcsidx[i+1] = new Option(i+" - "+bw40_1[i]+" Mbps");
+		F.%s_nmcsidx[i+1] = new Option(i+" - "+bw40_1[i]+" "+wl_adv.mpbs);
 		F.%s_nmcsidx[i+1].value = i;
 	    }
 	    if(wl_phytype == "n" || wl_phytype == "h") {
 		    for(i=8;i<16;i++) {
-			F.%s_nmcsidx[i+1] = new Option(i+" - "+bw40_2[i-8]+" Mbps");
+			F.%s_nmcsidx[i+1] = new Option(i+" - "+bw40_2[i-8]+" "+wl_adv.mpbs);
 			F.%s_nmcsidx[i+1].value = i;
 	    	}
     	}
 	    if(wl_phytype == "h") {
 		    for(i=16;i<24;i++) {
-			F.%s_nmcsidx[i+1] = new Option(i+" - "+bw40_3[i-16]+" Mbps");
+			F.%s_nmcsidx[i+1] = new Option(i+" - "+bw40_3[i-16]+" "+wl_adv.mpbs);
 			F.%s_nmcsidx[i+1].value = i;
 	    	}
     	}
@@ -274,7 +274,7 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><%% tran("wl_adv.label2"); %%></div>
 									<select name="%s_rateset">
-										<option value="12" <%% nvram_selected("%s_rateset", "12"); %%>>1-2 Mbps</option>
+										<option value="12" <%% nvram_selected("%s_rateset", "12"); %%>>1-2 <%% tran("wl_adv.mpbs"); %%></option>
 										<script type="text/javascript">
 										//<![CDATA[
 										document.write("<option value=\"default\" <%% nvram_selected_js("%s_rateset", "default"); %%>>" + share.deflt + "</option>");
@@ -306,18 +306,18 @@ addEvent(window, "unload", function() {
 										document.write("<option value=\"0\" <%% nvram_selected_js("%s_rate", "0"); %%>>" + share.auto + "</option>");
 										//]]>
 										</script>
-										<option value="1000000" <%% nvram_selected("%s_rate", "1000000"); %%>>1 Mbps</option>
-										<option value="2000000" <%% nvram_selected("%s_rate", "2000000"); %%>>2 Mbps</option>
-										<option value="5500000" <%% nvram_selected("%s_rate", "5500000"); %%>>5.5 Mbps</option>
-										<option value="6000000" <%% nvram_selected("%s_rate", "6000000"); %%>>6 Mbps</option>
-										<option value="9000000" <%% nvram_selected("%s_rate", "9000000"); %%>>9 Mbps</option>
-										<option value="11000000" <%% nvram_selected("%s_rate", "11000000"); %%>>11 Mbps</option>
-										<option value="12000000" <%% nvram_selected("%s_rate", "12000000"); %%>>12 Mbps</option>
-										<option value="18000000" <%% nvram_selected("%s_rate", "18000000"); %%>>18 Mbps</option>
-										<option value="24000000" <%% nvram_selected("%s_rate", "24000000"); %%>>24 Mbps</option>
-										<option value="36000000" <%% nvram_selected("%s_rate", "36000000"); %%>>36 Mbps</option>
-										<option value="48000000" <%% nvram_selected("%s_rate", "48000000"); %%>>48 Mbps</option>
-										<option value="54000000" <%% nvram_selected("%s_rate", "54000000"); %%>>54 Mbps</option>
+										<option value="1000000" <%% nvram_selected("%s_rate", "1000000"); %%>>1 <%% tran("wl_adv.mpbs"); %%></option>
+										<option value="2000000" <%% nvram_selected("%s_rate", "2000000"); %%>>2 <%% tran("wl_adv.mpbs"); %%></option>
+										<option value="5500000" <%% nvram_selected("%s_rate", "5500000"); %%>>5.5 <%% tran("wl_adv.mpbs"); %%></option>
+										<option value="6000000" <%% nvram_selected("%s_rate", "6000000"); %%>>6 <%% tran("wl_adv.mpbs"); %%></option>
+										<option value="9000000" <%% nvram_selected("%s_rate", "9000000"); %%>>9 <%% tran("wl_adv.mpbs"); %%></option>
+										<option value="11000000" <%% nvram_selected("%s_rate", "11000000"); %%>>11 <%% tran("wl_adv.mpbs"); %%></option>
+										<option value="12000000" <%% nvram_selected("%s_rate", "12000000"); %%>>12 <%% tran("wl_adv.mpbs"); %%></option>
+										<option value="18000000" <%% nvram_selected("%s_rate", "18000000"); %%>>18 <%% tran("wl_adv.mpbs"); %%></option>
+										<option value="24000000" <%% nvram_selected("%s_rate", "24000000"); %%>>24 <%% tran("wl_adv.mpbs"); %%></option>
+										<option value="36000000" <%% nvram_selected("%s_rate", "36000000"); %%>>36 <%% tran("wl_adv.mpbs"); %%></option>
+										<option value="48000000" <%% nvram_selected("%s_rate", "48000000"); %%>>48 <%% tran("wl_adv.mpbs"); %%></option>
+										<option value="54000000" <%% nvram_selected("%s_rate", "54000000"); %%>>54 <%% tran("wl_adv.mpbs"); %%></option>
 									</select>
 									<span class="default"><script type="text/javascript">
 									//<![CDATA[
