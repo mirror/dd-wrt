@@ -835,6 +835,26 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 #define AR9341_REV_1_3			0x0123
 
 
+#define QCA9533_REV_1_0			0x0140
+#define QCA9556_REV_1_0			0x0130
+#define QCA9558_REV_1_0			0x1130
+
+#define QCA9533_REV_1_1			0x0141
+#define QCA9556_REV_1_1			0x0131
+#define QCA9558_REV_1_1			0x1131
+
+#define QCA9533_REV_1_2			0x0142
+#define QCA9556_REV_1_2			0x0132
+#define QCA9558_REV_1_2			0x1132
+
+#define QCA9533_REV_1_3			0x0143
+#define QCA9556_REV_1_3			0x0133
+#define QCA9558_REV_1_3			0x1133
+
+
+
+
+
 
 
 
@@ -847,6 +867,27 @@ static inline void ar7240_setup_for_stereo_slave(int ws)
 
 #define is_ar7242()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7242_REV_1_0) || \
 			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR7242_REV_1_1))
+
+
+#define is_qca9533()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9533_REV_1_3) || \
+			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9533_REV_1_2) || \
+			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9533_REV_1_1) || \
+			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9533_REV_1_0))
+
+#define is_qca9556()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9556_REV_1_3) || \
+			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9556_REV_1_2) || \
+			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9556_REV_1_1) || \
+			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9556_REV_1_0))
+
+#define is_qca9558()	(((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9558_REV_1_3) || \
+			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9558_REV_1_2) || \
+			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9558_REV_1_1) || \
+			 ((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == QCA9558_REV_1_0))
+
+#define is_qca955x() (is_qca9556() || is_qca9558())
+
+#define is_qca953x() (is_qca9533())
+
 
 #define is_ar9344_10()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9344_REV_1_0)
 #define is_ar9342_10()	((ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK) == AR9342_REV_1_0)

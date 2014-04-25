@@ -558,7 +558,7 @@ int __init ar7240_platform_init(void)
 	if (ret < 0)
 		return ret;
 
-	if (is_ar7241() || is_ar7242() || is_ar933x() || is_ar934x()) {
+	if (is_ar7241() || is_ar7242() || is_ar933x() || is_ar934x() || is_qca955x()) {
 		ret = platform_add_devices(ar7241_platform_devices, ARRAY_SIZE(ar7241_platform_devices));
 	}
 	if (is_ar7240()) {

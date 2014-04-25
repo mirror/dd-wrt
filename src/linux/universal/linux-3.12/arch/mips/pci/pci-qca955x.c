@@ -154,34 +154,6 @@ static void ar724x_pci_fixup(struct pci_dev *dev)
 }
 DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, ar724x_pci_fixup);
 
-int __init ar724x_pcibios_map_irq(const struct pci_dev *dev, uint8_t slot,
-				  uint8_t pin)
-{
-	int irq = -1;
-	int i;
-
-	for (i = 0; i < ar71xx_pci_nr_irqs; i++) {
-		struct ar71xx_pci_irq *entry;
-		entry = &ar71xx_pci_irq_map[i];
-
-		if (entry->bus == dev->bus->number &&
-		    entry->slot == slot &&
-		    entry->pin == pin) {
-			irq = entry->irq;
-			break;
-		}
-	}
-
-	if (irq < 0)
-		printk(KERN_ALERT "PCI: no irq found for pin%u@%s\n",
-				pin, pci_name((struct pci_dev *)dev));
-	else
-		printk(KERN_INFO "PCI: mapping irq %d to pin%u@%s\n",
-				irq, pin, pci_name((struct pci_dev *)dev));
-
-	return irq;
-}
-
 static struct pci_ops ar724x_pci_ops = {
 	.read	= ar724x_pci_read_config,
 	.write	= ar724x_pci_write_config,
@@ -219,7 +191,6 @@ static void __init ar724x_pci_reset(void)
 	ar71xx_device_start(AR724X_RESET_PCIE_PHY);
 	ar71xx_device_start(AR724X_RESET_PCIE);
 }
-int ath_nopcie=0;
 
 static int __init ar724x_pci_setup(void)
 {
@@ -255,7 +226,6 @@ static int __init ar724x_pci_setup(void)
 	t = __raw_readl(base + AR724X_PCI_REG_RESET);
 	if ((t & AR724X_PCI_RESET_LINK_UP) == 0x0) {
 		printk(KERN_WARNING "PCI: no PCIe module found\n");
-		ath_nopcie=1;
 		return -ENODEV;
 	}
 
@@ -323,7 +293,7 @@ static void ar724x_pci_irq_mask(struct irq_data *d)
 }
 
 static struct irq_chip ar724x_pci_irq_chip = {
-	.name		= "AR724X PCI ",
+	.name		= "QCA955X PCI ",
 	.irq_mask	= ar724x_pci_irq_mask,
 	.irq_unmask	= ar724x_pci_irq_unmask,
 	.irq_mask_ack	= ar724x_pci_irq_mask,
@@ -352,22 +322,22 @@ static void __init ar724x_pci_irq_init(int irq)
 	irq_set_chained_handler(irq, ar724x_pci_irq_handler);
 }
 
-int __init ar724x_pcibios_init(int irq)
+int __init qca955x_pcibios_init(int irq)
 {
 	int ret = -ENOMEM;
 
-	ar724x_pci_localcfg_base = ioremap_nocache(AR724X_PCI_CRP_BASE,
-						   AR724X_PCI_CRP_SIZE);
+	ar724x_pci_localcfg_base = ioremap_nocache(QCA955X_PCI_CRP_BASE1,
+						   QCA955X_PCI_CRP_SIZE);
 	if (ar724x_pci_localcfg_base == NULL)
 		goto err;
 
-	ar724x_pci_devcfg_base = ioremap_nocache(AR724X_PCI_CFG_BASE,
-						 AR724X_PCI_CFG_SIZE);
+	ar724x_pci_devcfg_base = ioremap_nocache(QCA955X_PCI_CFG_BASE1,
+						 QCA955X_PCI_CFG_SIZE);
 	if (ar724x_pci_devcfg_base == NULL)
 		goto err_unmap_localcfg;
 
-	ar724x_pci_ctrl_base = ioremap_nocache(AR724X_PCI_CTRL_BASE,
-					       AR724X_PCI_CTRL_SIZE);
+	ar724x_pci_ctrl_base = ioremap_nocache(QCA955X_PCI_CTRL_BASE1,
+					       QCA955X_PCI_CTRL_SIZE);
 	if (ar724x_pci_ctrl_base == NULL)
 		goto err_unmap_devcfg;
 

@@ -687,8 +687,8 @@ void __init ar71xx_gpio_init(void)
 #endif
 #ifdef CONFIG_WDR4300
 	if (is_ar934x()) {
-	ar934x_set_ext_lna_gpio(0,18);
-	ar934x_set_ext_lna_gpio(1,19);
+	    ar934x_set_ext_lna_gpio(0,18);
+	    ar934x_set_ext_lna_gpio(1,19);
 	}
 #endif
 }

@@ -164,7 +164,9 @@ int __init ar724x_pcibios_map_irq(const struct pci_dev *dev, uint8_t slot,
 		struct ar71xx_pci_irq *entry;
 		entry = &ar71xx_pci_irq_map[i];
 
-		if (entry->slot == slot && entry->pin == pin) {
+		if (entry->bus == dev->bus->number &&
+		    entry->slot == slot &&
+		    entry->pin == pin) {
 			irq = entry->irq;
 			break;
 		}
@@ -389,3 +391,4 @@ err_unmap_localcfg:
 err:
 	return ret;
 }
+
