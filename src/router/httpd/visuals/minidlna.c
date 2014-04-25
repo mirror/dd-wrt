@@ -136,7 +136,7 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  number, number, cs->types & TYPE_IMAGES ? "checked" : "");
 
 		websWrite(wp, "				<td style=\"width: 50px; text-align: center;\">\n");
-		websWrite(wp, "					<input type=\"button\" class=\"button\" name=\"dlnashare_del%s\" value=\"Remove\"  style=\"width: 100%%;\" onclick=\"removeDlnaShare(this);\">\n", number);
+		websWrite(wp, "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"button\\\" name=\\\"dlnashare_del%s\\\" value=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removeDlnaShare(this);\\\"i />\")</script>\n", number);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "			</tr>\n");
 
@@ -148,7 +148,7 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "		</table>\n");
 
 	// add button
-	websWrite(wp, "<div id=\"dlna_shares_add\" style=\"text-align: center;\"><input type=\"button\" class=\"button\" name=\"share_add\" value=\"Add Share\" onclick=\"addDlnaShare();\" /></div>");
+	websWrite(wp, "<script type=\"text/javascript\">document.write(\"<div id=\\\"dlna_shares_add\\\" style=\\\"text-align: center;\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"share_add\\\" value=\\\"\"+nas.shareadd+\"\\\" onclick=\\\"addDlnaShare();\\\" />\")</script></div>");
 
 	for (current = fs; fs; current = fs) {
 		fs = current->next;

@@ -138,7 +138,7 @@ addEvent(window, "unload", function() {
 		<legend><% tran("service.milkfish_status"); %></legend>
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<input class=\"button\" type=\"button\" value=\"SIP Status\" onclick=\"openWindow('Milkfish_status.asp', 820, 730);\" />");
+				document.write("<input class=\"button\" type=\"button\" value=\""+service.milkfish_status+"\" onclick=\"openWindow('Milkfish_status.asp', 820, 730);\" />");
 				//]]>
 				</script>
 	</fieldset>
@@ -149,7 +149,7 @@ addEvent(window, "unload", function() {
 		<legend><% tran("service.milkfish_phonebook"); %></legend>
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<input class=\"button\" type=\"button\" value=\"SIP Phonebook\" onclick=\"openWindow('Milkfish_phonebook.asp', 820, 730);\" />");
+				document.write("<input class=\"button\" type=\"button\" value=\""+service.milkfish_phonebook+"\" onclick=\"openWindow('Milkfish_phonebook.asp', 820, 730);\" />");
 				//]]>
 				</script>
 	</fieldset>
@@ -162,10 +162,10 @@ addEvent(window, "unload", function() {
 		<legend><% tran("service.milkfish_database"); %></legend>
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<input class=\"button\" type=\"button\" value=\"Local Subscribers\" onclick=\"openWindow('Milkfish_database.asp', 820, 730);\" />");
+				document.write("<input class=\"button\" type=\"button\" value=\""+service.milkfish_localsubscr+"\" onclick=\"openWindow('Milkfish_database.asp', 820, 730);\" />");
 				//]]>
                                 //<![CDATA[
-                                document.write("<input class=\"button\" type=\"button\" value=\"Local Aliases\" onclick=\"openWindow('Milkfish_aliases.asp', 820, 730);\" />");
+                                document.write("<input class=\"button\" type=\"button\" value=\""+service.milkfish_localalias+"\" onclick=\"openWindow('Milkfish_aliases.asp', 820, 730);\" />");
                                 //]]>
 				</script>
 	</fieldset>
@@ -178,7 +178,7 @@ addEvent(window, "unload", function() {
 		<legend><% tran("service.milkfish_messaging"); %></legend>
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<input class=\"button\" type=\"button\" value=\"SIP Messaging\" onclick=\"openWindow('Milkfish_messaging.asp', 820, 730);\" />");
+				document.write("<input class=\"button\" type=\"button\" value=\""+service.milkfish_messaging+"\" onclick=\"openWindow('Milkfish_messaging.asp', 820, 730);\" />");
 				//]]>
 				</script>
 
@@ -193,7 +193,7 @@ addEvent(window, "unload", function() {
 		<legend><% tran("service.milkfish_siptrace"); %></legend>
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<input class=\"button\" type=\"button\" value=\"SIP Trace\" onclick=\"openWindow('Milkfish_siptrace.asp', 820, 730);\" />");
+				document.write("<input class=\"button\" type=\"button\" value=\""+service.milkfish_siptrace+"\" onclick=\"openWindow('Milkfish_siptrace.asp', 820, 730);\" />");
 				//]]>
 				</script>
 
@@ -206,7 +206,7 @@ addEvent(window, "unload", function() {
 		<legend><% tran("service.milkfish_dynsip"); %></legend>
 				<script type="text/javascript">
 				//<![CDATA[
-				document.write("<input class=\"button\" type=\"button\" value=\"Advanced DynSIP Settings\" onclick=\"openWindow('Milkfish_dynsip.asp', 820, 730);\" />");
+				document.write("<input class=\"button\" type=\"button\" value=\""+service.milkfish_advdynsip+"\" onclick=\"openWindow('Milkfish_dynsip.asp', 820, 730);\" />");
 				//]]>
 				</script>
 	</fieldset>
@@ -214,7 +214,13 @@ addEvent(window, "unload", function() {
 <br />
 	<fieldset>
             <div class="center"><br />
-		<b>Problems, Questions, Suggestions? - Find answers in the <a href="http://forum.milkfish.org" target="_blank">Milkfish-dd User Forum</a></b><br />
+		<b>
+		<script type="text/javascript">
+		//<![CDATA[
+		document.write(service.milkfish_answers);
+		//]]
+		</script>
+		</b><br />
 		<br />
 	    </div>
 	</fieldset>
