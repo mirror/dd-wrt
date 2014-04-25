@@ -15,6 +15,7 @@
 struct pci_dev;
 
 struct ar71xx_pci_irq {
+	int	bus;
 	int	irq;
 	u8	slot;
 	u8	pin;
@@ -34,6 +35,8 @@ int ar71xx_pci_be_handler(int is_fixup);
 int ar724x_pcibios_map_irq(const struct pci_dev *dev,
 			   uint8_t slot, uint8_t pin) __init;
 int ar724x_pcibios_init(int irq) __init;
+
+int qca955x_pcibios_init(int irq) __init;
 
 int ar71xx_pci_init(unsigned nr_irqs, struct ar71xx_pci_irq *map) __init;
 #else
