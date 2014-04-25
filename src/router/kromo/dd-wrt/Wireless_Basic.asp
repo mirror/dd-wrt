@@ -303,16 +303,16 @@ function setChannelProperties(channels) {
 
 		// auto channel
 		if( channels[index].value == '0' ) {
-			nctrlsb.options[nctrlsb.length] = new Option( 'auto', 'auto' );
+			nctrlsb.options[nctrlsb.length] = new Option( 'auto', wl_basic.ch_pos_auto );
 		} else {
 
 			// HT40 minus
 			if( properties.HT40minus == 1 ) {
-				nctrlsb.options[nctrlsb.length] = new Option( 'lower', 'lower' );
+				nctrlsb.options[nctrlsb.length] = new Option( 'lower', wl_basic.ch_pos_lwr );
 			}
 	
 			if( properties.HT40plus == 1 ) {
-				nctrlsb.options[nctrlsb.length] = new Option( 'upper', 'upper' );
+				nctrlsb.options[nctrlsb.length] = new Option( 'upper', wl_basic.ch_pos_upr );
 			}
 		}
 

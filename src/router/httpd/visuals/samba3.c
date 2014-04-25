@@ -142,14 +142,14 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  "					<select name=\"smbshare_access_perms%s\" id=\"smbshare_access_perms%s\" style=\"width: 100%%;\"%s>\n",
 			  number, number, !strcmp(perms, "") ? " disabled" : "");
 		if (rows == 0 || strcmp(perms, "")) {
-			websWrite(wp, "						<option value=\"rw\"%s>Read/Write</option>\n", !strcmp(cs->access_perms, "rw") ? " selected" : "");
-			websWrite(wp, "						<option value=\"ro\"%s>Read Only</option>\n", !strcmp(cs->access_perms, "ro") ? " selected" : "");
+			websWrite(wp, "						<option value=\"rw\"%s><script type=\"text/javascript\">Capture(nas.perm_rw);</script></option>\n", !strcmp(cs->access_perms, "rw") ? " selected" : "");
+			websWrite(wp, "						<option value=\"ro\"%s><script type=\"text/javascript\">Capture(nas.perm_ro);</script></option>\n", !strcmp(cs->access_perms, "ro") ? " selected" : "");
 		}
 		websWrite(wp, "					</select>\n");
 		websWrite(wp, "					<input type=\"hidden\" name=\"smbshare_access_perms_prev_%d\" value=\"%s\">\n", rows, cs->access_perms);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "				<td style=\"width: 50px; text-align: center;\">\n");
-		websWrite(wp, "					<input type=\"button\" class=\"button\" name=\"smbshare_del%s\" value=\"Remove\"  style=\"width: 100%%;\" onclick=\"removeSambaShare(this);\">\n", number);
+		websWrite(wp, "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"button\\\" name=\\\"smbshare_del%s\\\" value=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removeSambaShare(this);\\\">\");</script>\n", number);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "			</tr>\n");
 
@@ -161,7 +161,7 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "		</table>\n");
 
 	// add button
-	websWrite(wp, "<div id=\"samba_shares_add\" style=\"text-align: center;\"><input type=\"button\" class=\"button\" name=\"share_add\" value=\"Add Share\" onclick=\"addSambaShare();\" /></div>");
+	websWrite(wp, "<script type=\"text/javascript\">document.write(\"<div id=\\\"samba_shares_add\\\" style=\\\"text-align: center;\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"share_add\\\" value=\\\"\"+nas.shareadd+\"\\\" onclick=\\\"addSambaShare();\\\" />\");</script></div>");
 
 	for (current = fs; fs; current = fs) {
 		fs = current->next;
@@ -197,8 +197,8 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 
 	websWrite(wp, "		<tr><th colspan=\"6\"><script type=\"text/javascript\">Capture(service.samba3_users)</script></th></tr>\n");
 	websWrite(wp, "		<tr>\n");
-	websWrite(wp, "			<th>username</th>\n");
-	websWrite(wp, "			<th style=\"width:180px;\">password</th>\n");
+	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(nas.uname);</script></th>\n");
+	websWrite(wp, "			<th style=\"width:180px;\"><script type=\"text/javascript\">Capture(nas.pwd);</script></th>\n");
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_user_shares)</script></th>\n");
 	websWrite(wp, "			<th>samba</th>\n");
 	websWrite(wp, "			<th>ftp</th>\n");
@@ -228,7 +228,7 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "				<input type=\"password\" name=\"smbuser_password%s\" id=\"smbuser_password%s\" value=\"%s\" size=\"12\">&nbsp;\n", number, number, cu->password);
 		//websWrite(wp, "                               <div style=\"float: left;padding-top: 2px;\">\n");
 		websWrite(wp,
-			  "					<input type=\"checkbox\" name=\"smbuser_password_unmask%s\" value=\"0\" onclick=\"setElementMask('smbuser_password' + this.name.substr(23, this.name.length - 23), this.checked);\" />Unmask\n",
+			  "					<input type=\"checkbox\" name=\"smbuser_password_unmask%s\" value=\"0\" onclick=\"setElementMask('smbuser_password' + this.name.substr(23, this.name.length - 23), this.checked);\" /><script type=\"text/javascript\">Capture(share.unmask);</script>\n",
 			  number, number);
 		//websWrite(wp, "                               </div>\n");
 		websWrite(wp, "			</td>\n");
@@ -274,7 +274,7 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "			<td valign=\"top\" style=\"width: 50px; text-align: center;\">\n");
 		websWrite(wp,
-			  "				<input type=\"button\" class=\"button\" name=\"smbuser_del%s\" value=\"Remove\" style=\"width: 100%%;\" onclick=\"removeTableEntry('samba_users', this);\">\n",
+			  "				<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"button\\\" name=\\\"smbuser_del%s\\\" value=\\\"\"+nas.userdel+\"\\\" style=\\\"width: 100%%;\\\" onclick=\\\"removeTableEntry('samba_users', this);\\\" />\");</script>\n",
 			  number);
 		websWrite(wp, "			</td>\n");
 
@@ -296,7 +296,7 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "		</table>\n");
 
 	// add button
-	websWrite(wp, "<div id=\"samba_users_add\" style=\"text-align: center;\"><input type=\"button\" class=\"button\" name=\"user_add\" value=\"Add User\" onclick=\"addSambaUser();\" /></div>");
+	websWrite(wp, "<script type=\"text/javascript\">document.write(\"<div id=\\\"samba_users_add\\\" style=\\\"text-align: center;\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"user_add\\\" value=\\\"\"+nas.useradd+\"\\\" onclick=\\\"addSambaUser();\\\" />\");</script></div>");
 
 	// free memory
 
