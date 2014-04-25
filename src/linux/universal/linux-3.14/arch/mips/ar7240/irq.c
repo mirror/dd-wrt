@@ -247,6 +247,70 @@ static void ar934x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
 	enable_irq(irq);
 }
 
+
+static void qca955x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
+{
+	u32 status;
+
+	disable_irq_nosync(irq);
+
+	status = ar71xx_reset_rr(QCA955X_RESET_REG_EXT_INT_STATUS);
+	status &= QCA955X_EXT_INT_PCIE_RC1_ALL | QCA955X_EXT_INT_WMAC_ALL;
+
+	if (status == 0) {
+		spurious_interrupt();
+		goto enable;
+	}
+
+	if (status & QCA955X_EXT_INT_PCIE_RC1_ALL) {
+		/* TODO: flush DDR? */
+		generic_handle_irq(AR934X_IP2_IRQ(1));
+	}
+
+	if (status & QCA955X_EXT_INT_WMAC_ALL) {
+		/* TODO: flush DDR? */
+		generic_handle_irq(AR934X_IP2_IRQ(0));
+	}
+
+enable:
+	enable_irq(irq);
+}
+
+static void qca955x_ip3_irq_dispatch(unsigned int irq, struct irq_desc *desc)
+{
+	u32 status;
+
+	disable_irq_nosync(irq);
+
+	status = ar71xx_reset_rr(QCA955X_RESET_REG_EXT_INT_STATUS);
+	status &= QCA955X_EXT_INT_PCIE_RC2_ALL |
+		  QCA955X_EXT_INT_USB1 |
+		  QCA955X_EXT_INT_USB2;
+
+	if (status == 0) {
+		spurious_interrupt();
+		goto enable;
+	}
+
+	if (status & QCA955X_EXT_INT_USB1) {
+		/* TODO: flush DDR? */
+		generic_handle_irq(AR934X_IP3_IRQ(0));
+	}
+
+	if (status & QCA955X_EXT_INT_USB2) {
+		/* TODO: flush DDR? */
+		generic_handle_irq(AR934X_IP3_IRQ(1));
+	}
+
+	if (status & QCA955X_EXT_INT_PCIE_RC2_ALL) {
+		/* TODO: flush DDR? */
+		generic_handle_irq(AR934X_IP3_IRQ(2));
+	}
+
+enable:
+	enable_irq(irq);
+}
+
 static void ar934x_ip2_irq_init(void)
 {
 	int i;
@@ -255,6 +319,28 @@ static void ar934x_ip2_irq_init(void)
 
 	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, ar934x_ip2_irq_dispatch);
 }
+
+
+static void qca955x_irq_init(void)
+{
+	int i;
+
+	for (i = AR934X_IP2_IRQ_BASE;
+	     i < AR934X_IP2_IRQ_BASE + AR934X_IP2_IRQ_COUNT; i++)
+		irq_set_chip_and_handler(i, &dummy_irq_chip,
+					 handle_level_irq);
+
+	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, qca955x_ip2_irq_dispatch);
+
+	for (i = AR934X_IP3_IRQ_BASE;
+	     i < AR934X_IP3_IRQ_BASE + AR934X_IP3_IRQ_COUNT; i++)
+		irq_set_chip_and_handler(i, &dummy_irq_chip,
+					 handle_level_irq);
+
+	irq_set_chained_handler(AR71XX_CPU_IRQ_IP3, qca955x_ip3_irq_dispatch);
+}
+
+
 
 /*
  * The IP2/IP3 lines are tied to a PCI/WMAC/USB device. Drivers for
@@ -317,6 +403,17 @@ static void ar933x_ip3_handler(void)
 }
 
 static void ar934x_ip3_handler(void)
+{
+	ar71xx_ddr_flush(AR934X_DDR_REG_FLUSH_USB);
+	do_IRQ(AR71XX_CPU_IRQ_USB);
+}
+
+static void ar71xx_default_ip2_handler(void)
+{
+	do_IRQ(AR71XX_CPU_IRQ_IP2);
+}
+
+static void ar71xx_default_ip3_handler(void)
 {
 	do_IRQ(AR71XX_CPU_IRQ_USB);
 }
@@ -387,6 +484,12 @@ void __init arch_init_irq(void)
 		ip2_handler = ar934x_ip2_handler;
 		ip3_handler = ar934x_ip3_handler;
 		break;
+	case AR71XX_SOC_QCA9533:
+	case AR71XX_SOC_QCA9556:
+	case AR71XX_SOC_QCA9558:
+		ip2_handler = ar71xx_default_ip2_handler;
+		ip3_handler = ar71xx_default_ip3_handler;
+		break;
 
 	default:
 		BUG();
@@ -398,6 +501,8 @@ void __init arch_init_irq(void)
 
 	if (ar71xx_soc == AR71XX_SOC_AR9341 || ar71xx_soc == AR71XX_SOC_AR9342 || ar71xx_soc == AR71XX_SOC_AR9344)
 		ar934x_ip2_irq_init();
+	else if (ar71xx_soc == AR71XX_SOC_QCA9556 || ar71xx_soc == AR71XX_SOC_QCA9558)
+		qca955x_irq_init();
 
 	cp0_perfcount_irq = AR71XX_MISC_IRQ_PERFC;
 

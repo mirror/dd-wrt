@@ -126,6 +126,7 @@ const char
 
 	char *chip;
 	u32 id;
+	u32 qca=0;
 	u32 rev = 0;
 	static char str[64];
 	id = ar7240_reg_rd(AR7240_REV_ID) & AR7240_REV_ID_MASK;
@@ -231,10 +232,72 @@ const char
 		chip = "9341";
 		rev = 3;
 		break;
+	case QCA9533_REV_1_0:
+		chip = "9533";
+		rev = 0;
+		qca = 1;
+		break;
+	case QCA9533_REV_1_1:
+		chip = "9533";
+		rev = 1;
+		qca = 1;
+		break;
+	case QCA9533_REV_1_2:
+		chip = "9533";
+		rev = 2;
+		qca = 1;
+		break;
+	case QCA9533_REV_1_3:
+		chip = "9533";
+		rev = 3;
+		qca = 1;
+		break;
+
+	case QCA9556_REV_1_0:
+		chip = "9556";
+		rev = 0;
+		qca = 1;
+		break;
+	case QCA9556_REV_1_1:
+		chip = "9556";
+		rev = 1;
+		qca = 1;
+		break;
+	case QCA9556_REV_1_2:
+		chip = "9556";
+		rev = 2;
+		qca = 1;
+		break;
+	case QCA9556_REV_1_3:
+		chip = "9556";
+		rev = 3;
+		qca = 1;
+		break;
+
+	case QCA9558_REV_1_0:
+		chip = "9558";
+		rev = 0;
+		qca = 1;
+		break;
+	case QCA9558_REV_1_1:
+		chip = "9558";
+		rev = 1;
+		qca = 1;
+		break;
+	case QCA9558_REV_1_2:
+		chip = "9558";
+		rev = 2;
+		qca = 1;
+		break;
+	case QCA9558_REV_1_3:
+		chip = "9558";
+		rev = 3;
+		qca = 1;
+		break;
 	default:
 		chip = "724x";
 	}
-	sprintf(str, "Atheros AR%s rev 1.%u (0x%04x)", chip, rev, id);
+	sprintf(str, "%s %s%s rev 1.%u (0x%04x)",qca ? "Qualcomm Atheros" : "Atheros", qca ? "QCA" : "AR",chip, rev, id);
 	return str;
 }
 
@@ -303,7 +366,7 @@ static void wasp_sys_frequency(void)
 
 	pll = ar7240_reg_rd(CPU_DPLL2_ADDRESS);
 
-	if (CPU_DPLL2_LOCAL_PLL_GET(pll)) {
+	if (!is_qca955x() && CPU_DPLL2_LOCAL_PLL_GET(pll)) {
 
 		out_div = CPU_DPLL2_OUTDIV_GET(pll);
 
@@ -331,7 +394,7 @@ static void wasp_sys_frequency(void)
 	ar7240_cpu_freq = (((nint * (ref / ref_div)) + frac) >> out_div) / (CPU_DDR_CLOCK_CONTROL_CPU_POST_DIV_GET(clk_ctrl) + 1);
 
 	pll = ar7240_reg_rd(DDR_DPLL2_ADDRESS);
-	if (DDR_DPLL2_LOCAL_PLL_GET(pll)) {
+	if (!is_qca955x() && DDR_DPLL2_LOCAL_PLL_GET(pll)) {
 		out_div = DDR_DPLL2_OUTDIV_GET(pll);
 
 		pll = ar7240_reg_rd(DDR_DPLL_ADDRESS);
@@ -556,6 +619,18 @@ void __init plat_mem_setup(void)
 		serial_print("AR9344\n");
 		ar71xx_soc = AR71XX_SOC_AR9344;
 		ar71xx_soc_rev = id & AR934X_REV_ID_REVISION_MASK;
+	} else if (is_qca9533()) {
+		serial_print("QCA9533\n");
+		ar71xx_soc = AR71XX_SOC_QCA9533;
+		ar71xx_soc_rev = id & QCA953X_REV_ID_REVISION_MASK;
+	} else if (is_qca9556()) {
+		serial_print("QCA9556\n");
+		ar71xx_soc = AR71XX_SOC_QCA9556;
+		ar71xx_soc_rev = id & QCA955X_REV_ID_REVISION_MASK;
+	} else if (is_qca9558()) {
+		serial_print("QCA9558\n");
+		ar71xx_soc = AR71XX_SOC_QCA9558;
+		ar71xx_soc_rev = id & QCA955X_REV_ID_REVISION_MASK;
 	} else {
 //                      serial_print("ARFOOO\n");
 

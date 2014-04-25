@@ -124,6 +124,44 @@ static void ar934x_wmac_init(void)
 	}
 }
 
+static void qca953x_wmac_init(void)
+{
+	u32 t;
+
+	ar9xxx_wmac_device.name = "qca953x_wmac";
+
+	ar9xxx_wmac_resources[0].start = QCA953X_WMAC_BASE;
+	ar9xxx_wmac_resources[0].end = QCA953X_WMAC_BASE + QCA953X_WMAC_SIZE - 1;
+	ar9xxx_wmac_resources[1].start = AR934X_IP2_IRQ_WMAC;
+	ar9xxx_wmac_resources[1].end = AR934X_IP2_IRQ_WMAC;
+
+	t = ar71xx_reset_rr(QCA953X_RESET_REG_BOOTSTRAP);
+	if (t & QCA953X_BOOTSTRAP_REF_CLK_40)
+		ar9xxx_wmac_data.is_clk_25mhz = false;
+	else
+		ar9xxx_wmac_data.is_clk_25mhz = true;
+}
+
+static void qca955x_wmac_init(void)
+{
+	u32 t;
+
+	ar9xxx_wmac_device.name = "qca955x_wmac";
+
+	ar9xxx_wmac_resources[0].start = QCA955X_WMAC_BASE;
+	ar9xxx_wmac_resources[0].end = QCA955X_WMAC_BASE + QCA955X_WMAC_SIZE - 1;
+	ar9xxx_wmac_resources[1].start = AR934X_IP2_IRQ_WMAC + 1;
+	ar9xxx_wmac_resources[1].end = AR934X_IP2_IRQ_WMAC + 1;
+
+
+	t = ar71xx_reset_rr(QCA955X_RESET_REG_BOOTSTRAP);
+	if (t & QCA955X_BOOTSTRAP_REF_CLK_40)
+		ar9xxx_wmac_data.is_clk_25mhz = false;
+	else
+		ar9xxx_wmac_data.is_clk_25mhz = true;
+
+}
+
 void __init ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr)
 {
 	switch (ar71xx_soc) {
@@ -141,6 +179,13 @@ void __init ar9xxx_add_device_wmac(u8 *cal_data, u8 *mac_addr)
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
 		ar934x_wmac_init();
+		break;
+	case AR71XX_SOC_QCA9533:
+		qca953x_wmac_init();
+		break;
+	case AR71XX_SOC_QCA9556:
+	case AR71XX_SOC_QCA9558:
+		qca955x_wmac_init();
 		break;
 
 	default:
