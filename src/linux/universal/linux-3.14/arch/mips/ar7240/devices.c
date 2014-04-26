@@ -20,6 +20,7 @@
 #include <linux/platform_device.h>
 #include <linux/serial_8250.h>
 #include <linux/clk.h>
+#include <linux/sizes.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/ar933x_uart_platform.h>
@@ -858,6 +859,9 @@ void __init ar71xx_add_device_eth(unsigned int id)
 	else
 		pdev = &ar71xx_eth1_device;
 
+	pdata->max_frame_len = 1540;
+	pdata->desc_pktlen_mask = 0xfff;
+
 	pdata = pdev->dev.platform_data;
 
 	err = ar71xx_setup_phy_if_mode(id, pdata);
@@ -1025,6 +1029,9 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
 
+		pdata->max_frame_len = SZ_16K - 1;
+		pdata->desc_pktlen_mask = SZ_16K - 1;
+
 		if (!pdata->fifo_cfg1)
 			pdata->fifo_cfg1 = 0x0010ffff;
 		if (!pdata->fifo_cfg2)
@@ -1079,6 +1086,18 @@ void __init ar71xx_add_device_eth(unsigned int id)
 		pdata->ddr_flush = ar71xx_ddr_no_flush;
 		pdata->has_gbit = 1;
 		pdata->is_ar724x = 1;
+
+
+		/*
+		 * Limit the maximum frame length to 4095 bytes.
+		 * Although the documentation says that the hardware
+		 * limit is 16383 bytes but that does not work in
+		 * practice. It seems that the hardware only updates
+		 * the lowest 12 bits of the packet length field
+		 * in the RX descriptor.
+		 */
+		pdata->max_frame_len = SZ_4K - 1;
+		pdata->desc_pktlen_mask = SZ_16K - 1;
 
 		if (!pdata->fifo_cfg1)
 			pdata->fifo_cfg1 = 0x0010ffff;
