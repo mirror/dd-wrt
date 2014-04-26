@@ -87,6 +87,19 @@ void ar71xx_device_stop(u32 mask)
 		ar71xx_reset_wr(AR934X_RESET_REG_RESET_MODULE, t | mask);
 		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
+	case AR71XX_SOC_QCA9533:
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
+		t = ar71xx_reset_rr(QCA953X_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(QCA953X_RESET_REG_RESET_MODULE, t | mask);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+		break;
+	case AR71XX_SOC_QCA9556:
+	case AR71XX_SOC_QCA9558:
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
+		t = ar71xx_reset_rr(QCA955X_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(QCA955X_RESET_REG_RESET_MODULE, t | mask);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+		break;
 
 	default:
 		BUG();
@@ -147,6 +160,19 @@ void ar71xx_device_start(u32 mask)
 		ar71xx_reset_wr(AR934X_RESET_REG_RESET_MODULE, t & ~mask);
 		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
+	case AR71XX_SOC_QCA9533:
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
+		t = ar71xx_reset_rr(QCA953X_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(QCA953X_RESET_REG_RESET_MODULE, t & ~mask);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+		break;
+	case AR71XX_SOC_QCA9556:
+	case AR71XX_SOC_QCA9558:
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
+		t = ar71xx_reset_rr(QCA955X_RESET_REG_RESET_MODULE);
+		ar71xx_reset_wr(QCA955X_RESET_REG_RESET_MODULE, t & ~mask);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+		break;
 
 	default:
 		BUG();
@@ -188,6 +214,13 @@ void ar71xx_device_reset_rmw(u32 clear, u32 set)
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
 		reg = AR934X_RESET_REG_RESET_MODULE;
+		break;
+	case AR71XX_SOC_QCA9533:
+		reg = QCA953X_RESET_REG_RESET_MODULE;
+		break;
+	case AR71XX_SOC_QCA9556:
+	case AR71XX_SOC_QCA9558:
+		reg = QCA955X_RESET_REG_RESET_MODULE;
 		break;
 
 	default:
@@ -247,6 +280,17 @@ int ar71xx_device_stopped(u32 mask)
 		t = ar71xx_reset_rr(AR934X_RESET_REG_RESET_MODULE);
 		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
 		break;
+	case AR71XX_SOC_QCA9533:
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
+		t = ar71xx_reset_rr(QCA953X_RESET_REG_RESET_MODULE);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+		break;
+	case AR71XX_SOC_QCA9556:
+	case AR71XX_SOC_QCA9558:
+		spin_lock_irqsave(&ar71xx_device_lock, flags);
+		t = ar71xx_reset_rr(QCA955X_RESET_REG_RESET_MODULE);
+		spin_unlock_irqrestore(&ar71xx_device_lock, flags);
+		break;
 
 	default:
 		BUG();
@@ -258,11 +302,17 @@ int ar71xx_device_stopped(u32 mask)
 EXPORT_SYMBOL_GPL(ar71xx_device_stopped);
 void ar71xx_ddr_flush(u32 reg)
 {
-	ar71xx_ddr_wr(reg, 1);
-	while ((ar71xx_ddr_rr(reg) & 0x1)) ;
+	void __iomem *flush_reg = ar71xx_ddr_base + reg;
 
-	ar71xx_ddr_wr(reg, 1);
-	while ((ar71xx_ddr_rr(reg) & 0x1)) ;
+	/* Flush the DDR write buffer. */
+	__raw_writel(0x1, flush_reg);
+	while (__raw_readl(flush_reg) & 0x1)
+		;
+
+	/* It must be run twice. */
+	__raw_writel(0x1, flush_reg);
+	while (__raw_readl(flush_reg) & 0x1)
+		;
 }
 
 EXPORT_SYMBOL_GPL(ar71xx_ddr_flush);
