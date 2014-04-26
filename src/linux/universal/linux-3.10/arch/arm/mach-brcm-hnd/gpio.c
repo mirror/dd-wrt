@@ -223,7 +223,7 @@ static int __init gpio_init(void)
 	}
 
 	if ((boardnum == 679) && nvram_match("boardtype", "0x0646") && (nvram_match("boardrev", "0x1110"))) {
-		printk(KERN_EMERG "Netgear R6250/R6300v2 init\n");
+		printk(KERN_EMERG "Netgear AC1450/R6250/R6300v2 init\n");
 		gpios = 1<<0 | 1<<1 | 1<<2 | 1<<3 | 1<<4 | 1<<5 | 1<<6 | 1<<7 | 1<<8 | 1<<9 | 1<<10 | 1<<11 | 1<<15;
 	}
 
