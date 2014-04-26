@@ -76,6 +76,7 @@ static void set_regulation(int card, char *code, char *rev)
 	}
 
 	switch (getRouterBrand()) {
+	case ROUTER_NETGEAR_AC1450:
 	case ROUTER_NETGEAR_R6250:
 	case ROUTER_NETGEAR_R6300V2:
 	case ROUTER_NETGEAR_R7000:
@@ -152,8 +153,232 @@ void start_sysinit(void)
 	if (nvram_get("et_txq_thresh") == NULL) {
 		nvram_set("et_txq_thresh", "1024");
 	}
+	
 
 	switch (getRouterBrand()) {
+	case ROUTER_NETGEAR_AC1450:
+
+		if (nvram_get("pci/1/1/vendid") == NULL) {
+			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
+			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
+			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
+			    || startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
+				char mac[20];
+				strcpy(mac, nvram_safe_get("et0macaddr"));
+				MAC_ADD(mac);
+				MAC_ADD(mac);
+				nvram_set("pci/1/1/macaddr", mac);
+				MAC_ADD(mac);
+				nvram_set("pci/2/1/macaddr", mac);
+			}
+			struct nvram_tuple ac1450_pci_1_1_params[] = {
+				{"pa2gw1a0", "0x191B", 0},
+				{"pa2gw1a1", "0x18BC", 0},
+				{"pa2gw1a2", "0x18B9", 0},
+				{"ledbh12", "11", 0},
+				{"legofdmbw202gpo", "0xCA862222", 0},
+				{"ag0", "0", 0},
+				{"ag1", "0", 0},
+				{"ag2", "0", 0},
+				{"legofdmbw20ul2gpo", "0xCA862222", 0},
+				{"rxchain", "7", 0},
+				{"cckbw202gpo", "0", 0},
+				{"mcsbw20ul2gpo", "0xCA862222", 0},
+				{"pa2gw0a0", "0xFE9D", 0},
+				{"pa2gw0a1", "0xFE93", 0},
+				{"pa2gw0a2", "0xFE77", 0},
+				{"boardflags", "0x80003200", 0},
+				{"tempoffset", "0", 0},
+				{"boardvendor", "0x14e4", 0},
+				{"triso2g", "3", 0},
+				{"sromrev", "9", 0},
+				{"extpagain2g", "1", 0},
+				{"venid", "0x14e4", 0},
+				{"maxp2ga0", "0x66", 0},
+				{"maxp2ga1", "0x66", 0},
+				{"maxp2ga2", "0x66", 0},
+				{"boardflags2", "0x4100000", 0},
+				{"tssipos2g", "1", 0},
+				{"ledbh0", "11", 0},
+				{"ledbh1", "11", 0},
+				{"ledbh2", "11", 0},
+				{"ledbh3", "11", 0},                                                                                                                                                                                               
+				{"mcs32po", "0x8", 0},                                                                                                                                                                                             
+				{"legofdm40duppo", "0x0", 0},                                                                                                                                                                                      
+				{"antswctl2g", "0", 0},                                                                                                                                                                                            
+				{"txchain", "7", 0},                                                                                                                                                                                               
+				{"elna2g", "2", 0},                                                                                                                                                                                                
+				{"antswitch", "0", 0},                                                                                                                                                                                             
+				{"aa2g", "7", 0},                                                                                                                                                                                                  
+				{"cckbw20ul2gpo", "0", 0},                                                                                                                                                                                         
+				{"leddc", "0xFFFF", 0},                                                                                                                                                                                            
+				{"pa2gw2a0", "0xF9FA", 0},                                                                                                                                                                                         
+				{"pa2gw2a1", "0xFA15", 0},                                                                                                                                                                                         
+				{"pa2gw2a2", "0xF9DD", 0},                                                                                                                                                                                         
+				{"xtalfreq", "20000", 0},                                                                                                                                                                                          
+				{"ccode", "Q1", 0},                                                                                                                                                                                                
+				{"pdetrange2g", "3", 0},                                                                                                                                                                                           
+				{"regrev", "15", 0},                                                                                                                                                                                               
+				{"devid", "0x4332", 0},                                                                                                                                                                                            
+				{"tempthresh", "120", 0},                                                                                                                                                                                          
+				{"mcsbw402gpo", "0xECA86222", 0},                                                                                                                                                                                  
+				{"macaddr", "", 0},                                                                                                                                                                                                
+				{"mcsbw202gpo", "0xCA862222", 0},
+				{0, 0, 0}
+			};
+			/*
+			 * set router's extra parameters 
+			 */
+			extra_params = ac1450_pci_1_1_params;
+			while (extra_params->name) {
+				nvram_nset(extra_params->value, "pci/1/1/%s", extra_params->name);
+				extra_params++;
+			}
+
+			struct nvram_tuple ac1450_pci_2_1_params[] = {
+				{"rxgains5ghtrisoa0", "5", 0},                                                                                                                                                                                     
+				{"rxgains5ghtrisoa1", "4", 0},                                                                                                                                                                                     
+				{"rxgains5ghtrisoa2", "4", 0},                                                                                                                                                                                     
+				{"mcslr5gmpo", "0", 0},                                                                                                                                                                                            
+				{"txchain", "7", 0},                                                                                                                                                                                               
+				{"phycal_tempdelta", "255", 0},
+				{"pdgain5g", "4", 0},
+				{"subband5gver", "0x4", 0},
+				{"ccode", "Q1", 0},
+				{"boardflags", "0x30000008", 0},
+				{"tworangetssi5g", "0", 0},
+				{"rxgains5gtrisoa0", "7", 0},
+				{"sb20in40hrpo", "0", 0},
+				{"rxgains5gtrisoa1", "6", 0},
+				{"rxgains5gtrisoa2", "5", 0},
+				{"tempoffset", "255", 0},
+				{"mcsbw205gmpo", "0xECA86400", 0},
+				{"noiselvl5ga0", "31,31,31,31", 0},
+				{"noiselvl5ga1", "31,31,31,31", 0},
+				{"noiselvl5ga2", "31,31,31,31", 0},
+				{"xtalfreq", "65535", 0},
+				{"devid", "0x43a2", 0},
+				{"tempsense_option", "0x3", 0},
+				{"femctrl", "3", 0},
+				{"aa5g", "7", 0},
+				{"pdoffset80ma0", "0", 0},
+				{"pdoffset80ma1", "0", 0},
+				{"pdoffset80ma2", "0", 0},
+				{"papdcap5g", "0", 0},
+				{"tssiposslope5g", "1", 0},
+				{"tempcorrx", "0x3f", 0},
+				{"mcslr5glpo", "0", 0},
+				{"sar5g", "15", 0},
+				{"pa5ga0", "0xFF28,0x19CC,0xFCB0,0xFF50,0x1AD0,0xFCE0,0xFF50,0x1B6F,0xFCD0,0xFF58,0x1BB9,0xFCD0", 0},
+				{"pa5ga1", "0xFF36,0x1AAD,0xFCBD,0xFF50,0x1AF7,0xFCE0,0xFF50,0x1B5B,0xFCD8,0xFF58,0x1B8F,0xFCD0", 0},
+				{"rxgains5gmelnagaina0", "2", 0},
+				{"pa5ga2", "0xFF40,0x1A1F,0xFCDA,0xFF48,0x1A5D,0xFCE8,0xFF35,0x1A2D,0xFCCA,0xFF3E,0x1A2B,0xFCD0", 0},
+				{"rxgains5gmelnagaina1", "2", 0},
+				{"rxgains5gmelnagaina2", "3", 0},
+				{"mcslr5ghpo", "0", 0},
+				{"rxgainerr5ga0", "63,63,63,63", 0},
+				{"rxgainerr5ga1", "31,31,31,31", 0},
+				{"rxgainerr5ga2", "31,31,31,31", 0},
+				{"pcieingress_war", "15", 0},
+				{"pdoffset40ma0", "4369", 0},
+				{"pdoffset40ma1", "4369", 0},
+				{"pdoffset40ma2", "4369", 0},
+				{"sb40and80lr5gmpo", "0", 0},
+				{"rxgains5gelnagaina0", "1", 0},
+				{"rxgains5gelnagaina1", "1", 0},
+				{"rxgains5gelnagaina2", "1", 0},
+				{"agbg0", "71", 0},
+				{"mcsbw205glpo", "0xECA86400", 0},
+				{"agbg1", "71", 0},
+				{"agbg2", "133", 0},
+				{"measpower1", "0x7f", 0},
+				{"sb20in80and160lr5gmpo", "0", 0},
+				{"measpower2", "0x7f", 0},
+				{"temps_period", "15", 0},
+				{"mcsbw805gmpo", "0xFEA86400", 0},
+				{"dot11agduplrpo", "0", 0},
+				{"mcsbw205ghpo", "0xECA86400", 0},
+				{"measpower", "0x7f", 0},
+				{"rxgains5ghelnagaina0", "2", 0},
+				{"rxgains5ghelnagaina1", "2", 0},
+				{"rxgains5ghelnagaina2", "3", 0},
+				{"gainctrlsph", "0", 0},
+				{"sb40and80hr5gmpo", "0", 0},
+				{"sb20in80and160hr5gmpo", "0", 0},
+				{"mcsbw1605gmpo", "0", 0},
+				{"epagain5g", "0", 0},
+				{"mcsbw405gmpo", "0xECA86400", 0},
+				{"boardtype", "0x621", 0},
+				{"rxchain", "7", 0},
+				{"sb40and80lr5glpo", "0", 0},
+				{"maxp5ga0", "102,102,102,102", 0},
+				{"maxp5ga1", "102,102,102,102", 0},
+				{"maxp5ga2", "102,102,102,102", 0},
+				{"sb20in80and160lr5glpo", "0", 0},
+				{"sb40and80lr5ghpo", "0", 0},
+				{"venid", "0x14e4", 0},
+				{"mcsbw805glpo", "0xFEA86400", 0},
+				{"boardvendor", "0x14e4", 0},
+				{"sb20in80and160lr5ghpo", "0", 0},
+				{"tempsense_slope", "0xff", 0},
+				{"mcsbw805ghpo", "0xFEA86400", 0},
+				{"antswitch", "0", 0},
+				{"aga0", "71", 0},
+				{"aga1", "133", 0},
+				{"rawtempsense", "0x1ff", 0},
+				{"aga2", "133", 0},
+				{"tempthresh", "255", 0},
+				{"dot11agduphrpo", "0", 0},
+				{"sb40and80hr5glpo", "0", 0},
+				{"sromrev", "11", 0},
+				{"boardnum", "20771", 0},
+				{"sb20in40lrpo", "0", 0},
+				{"sb20in80and160hr5glpo", "0", 0},
+				{"mcsbw1605glpo", "0", 0},
+				{"sb40and80hr5ghpo", "0", 0},
+				{"mcsbw405glpo", "0xECA86400", 0},
+				{"boardrev", "0x1402", 0},
+				{"rxgains5gmtrisoa0", "5", 0},
+				{"sb20in80and160hr5ghpo", "0", 0},
+				{"mcsbw1605ghpo", "0", 0},
+				{"rxgains5gmtrisoa1", "4", 0},
+				{"rxgains5gmtrisoa2", "4", 0},
+				{"rxgains5gmtrelnabypa0", "1", 0},
+				{"rxgains5gmtrelnabypa1", "1", 0},
+				{"rxgains5gmtrelnabypa2", "1", 0},
+				{"mcsbw405ghpo", "0xECA86400", 0},
+				{"boardflags2", "0x300002", 0},
+				{"boardflags3", "0x0", 0},
+				{"rxgains5ghtrelnabypa0", "1", 0},
+				{"rxgains5ghtrelnabypa1", "1", 0},
+				{"rxgains5ghtrelnabypa2", "1", 0},
+				{"regrev", "27", 0},
+				{"temps_hysteresis", "15", 0},
+				{"rxgains5gtrelnabypa0", "1", 0},
+				{"rxgains5gtrelnabypa1", "1", 0},
+				{"rxgains5gtrelnabypa2", "1", 0},
+				{0, 0, 0}
+			};
+
+			/*
+			 * set router's extra parameters 
+			 */
+			extra_params = ac1450_pci_2_1_params;
+			while (extra_params->name) {
+				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
+				extra_params++;
+			}
+		}
+		set_gpio(6, 1);	//reset button
+		set_gpio(2, 0);	//power led
+		set_gpio(3, 1);	//power led
+		set_gpio(1, 1);	//logo
+		set_gpio(0, 1);
+		set_gpio(4, 1);	//ses
+		set_gpio(5, 1);	//wifi
+		nvram_set("pci/1/1/vendid", "0x14E4");
+
+		break;
 	case ROUTER_NETGEAR_R6250:
 
 		if (nvram_get("pci/1/1/vendid") == NULL) {
@@ -641,10 +866,10 @@ void start_sysinit(void)
 				{"rxgainerr2ga1", "31", 0},
 				{"rxgainerr2ga2", "31", 0},
 				{"pdoffset2g40mvalid", "1", 0},
-				{"agbg0", "2", 0},
-				{"agbg1", "2", 0},
+				{"agbg0", "0", 0},
+				{"agbg1", "0", 0},
 				{"epagain2g", "0", 0},
-				{"agbg2", "2", 0},
+				{"agbg2", "0", 0},
 				{"gainctrlsph", "0", 0},
 				{"cckbw202gpo", "0", 0},
 				{"pdgain2g", "14", 0},
