@@ -36,7 +36,8 @@
 #define AR7240_FLOOD_MASK_BROAD_TO_CPU	BIT(26)
 
 #define AR7240_REG_GLOBAL_CTRL		0x30
-#define AR7240_GLOBAL_CTRL_MTU_M	BITM(12)
+#define AR7240_GLOBAL_CTRL_MTU_M	BITM(11)
+#define AR9340_GLOBAL_CTRL_MTU_M	BITM(14)
 
 #define AR7240_REG_VTU			0x0040
 #define   AR7240_VTU_OP			BITM(3)
@@ -209,6 +210,7 @@
 #define   AR934X_REG_OPER_MODE1_PHY4_MII_EN	BIT(28)
 
 #define AR934X_REG_FLOOD_MASK		0x2c
+#define   AR934X_FLOOD_MASK_MC_DP(_p)	BIT(16 + (_p))
 #define   AR934X_FLOOD_MASK_BC_DP(_p)	BIT(25 + (_p))
 
 #define AR934X_REG_QM_CTRL		0x3c
@@ -293,7 +295,6 @@ struct ar7240sw {
 	int num_ports;
 	u8 ver;
 	bool vlan;
-	bool init;
 	u16 vlan_id[AR7240_MAX_VLANS];
 	u8 vlan_table[AR7240_MAX_VLANS];
 	u8 vlan_tagged;
@@ -581,9 +582,15 @@ static void ar7240sw_setup(struct ar7240sw *as)
 		/* Enable ARP frame acknowledge */
 		ar7240sw_reg_set(mii, AR934X_REG_QM_CTRL,
 				 AR934X_QM_CTRL_ARP_EN);
-		/* Enable Broadcast frames transmitted to the CPU */
+		/* Enable Broadcast/Multicast frames transmitted to the CPU */
 		ar7240sw_reg_set(mii, AR934X_REG_FLOOD_MASK,
-				 AR934X_FLOOD_MASK_BC_DP(0));
+				 AR934X_FLOOD_MASK_BC_DP(0) |
+				 AR934X_FLOOD_MASK_MC_DP(0));
+
+		/* setup MTU */
+		ar7240sw_reg_rmw(mii, AR7240_REG_GLOBAL_CTRL,
+				 AR9340_GLOBAL_CTRL_MTU_M,
+				 AR9340_GLOBAL_CTRL_MTU_M);
 
 		/* Enable MIB counters */
 		ar7240sw_reg_set(mii, AR7240_REG_MIB_FUNCTION0,
@@ -600,11 +607,12 @@ static void ar7240sw_setup(struct ar7240sw *as)
 		/* Enable Broadcast frames transmitted to the CPU */
 		ar7240sw_reg_set(mii, AR7240_REG_FLOOD_MASK,
 				 AR7240_FLOOD_MASK_BROAD_TO_CPU);
-	}
 
-	/* setup MTU */
-	ar7240sw_reg_rmw(mii, AR7240_REG_GLOBAL_CTRL, AR7240_GLOBAL_CTRL_MTU_M,
-			 1536);
+		/* setup MTU */
+		ar7240sw_reg_rmw(mii, AR7240_REG_GLOBAL_CTRL,
+				 AR7240_GLOBAL_CTRL_MTU_M,
+				 AR7240_GLOBAL_CTRL_MTU_M);
+	}
 
 	/* setup Service TAG */
 	ar7240sw_reg_rmw(mii, AR7240_REG_SERVICE_TAG, AR7240_SERVICE_TAG_M, 0);
@@ -873,7 +881,7 @@ ar7240_hw_apply(struct switch_dev *dev)
 	ar7240_vtu_op(as, AR7240_VTU_OP_FLUSH, 0);
 
 	memset(portmask, 0, sizeof(portmask));
-	if (!as->init) {
+	if (as->vlan) {
 		/* calculate the port destination masks and load vlans
 		 * into the vlan translation unit */
 		for (j = 0; j < AR7240_MAX_VLANS; j++) {
@@ -916,7 +924,6 @@ static int
 ar7240_reset_switch(struct switch_dev *dev)
 {
 	struct ar7240sw *as = sw_to_ar7240(dev);
-	as->init = false;
 	ar7240sw_reset(as);
 	return 0;
 }
@@ -1043,7 +1050,7 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 	if ((phy_id1 != AR7240_PHY_ID1 || phy_id2 != AR7240_PHY_ID2) &&
 	    (phy_id1 != AR934X_PHY_ID1 || phy_id2 != AR934X_PHY_ID2)) {
 		pr_err("%s: unknown phy id '%04x:%04x'\n",
-		       ag->dev->name, phy_id1, phy_id2);
+		       dev_name(&mii->dev), phy_id1, phy_id2);
 		return NULL;
 	}
 
@@ -1074,7 +1081,7 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 					 AR934X_OPER_MODE0_PHY_MII_EN);
 		} else {
 			pr_err("%s: invalid PHY interface mode\n",
-			       ag->dev->name);
+			       dev_name(&mii->dev));
 			goto err_free;
 		}
 
@@ -1087,7 +1094,7 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 		}
 	} else {
 		pr_err("%s: unsupported chip, ctrl=%08x\n",
-			ag->dev->name, ctrl);
+			dev_name(&mii->dev), ctrl);
 		goto err_free;
 	}
 
@@ -1098,14 +1105,13 @@ static struct ar7240sw *ar7240_probe(struct ag71xx *ag)
 	if (register_switch(&as->swdev, ag->dev) < 0)
 		goto err_free;
 
-	pr_info("%s: Found an %s\n", ag->dev->name, swdev->name);
+	pr_info("%s: Found an %s\n", dev_name(&mii->dev), swdev->name);
 
 	/* initialize defaults */
 	for (i = 0; i < AR7240_MAX_VLANS; i++)
 		as->vlan_id[i] = i;
 
 	as->vlan_table[0] = ar7240sw_port_mask_all(as);
-	as->init = true;
 
 	return as;
 
