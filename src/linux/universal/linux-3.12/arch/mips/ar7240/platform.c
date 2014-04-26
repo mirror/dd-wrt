@@ -231,6 +231,56 @@ static struct platform_device *ar724x_platform_devices[] __initdata = {
 #endif
 };
 
+
+static struct ar8327_pad_cfg ap136_ar8327_pad0_cfg;
+static struct ar8327_pad_cfg ap136_ar8327_pad6_cfg;
+
+static struct ar8327_platform_data ap136_ar8327_data = {
+	.pad0_cfg = &ap136_ar8327_pad0_cfg,
+	.pad6_cfg = &ap136_ar8327_pad6_cfg,
+	.port0_cfg = {
+		.force_link = 1,
+		.speed = AR8327_PORT_SPEED_1000,
+		.duplex = 1,
+		.txpause = 1,
+		.rxpause = 1,
+	},
+	.port6_cfg = {
+		.force_link = 1,
+		.speed = AR8327_PORT_SPEED_1000,
+		.duplex = 1,
+		.txpause = 1,
+		.rxpause = 1,
+	},
+};
+
+static struct mdio_board_info ap136_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.phy_addr = 0,
+		.platform_data = &ap136_ar8327_data,
+	},
+};
+
+static void __init ap136_gmac_setup(void)
+{
+	void __iomem *base;
+	u32 t;
+
+	base = ioremap(QCA955X_GMAC_BASE, QCA955X_GMAC_SIZE);
+
+	t = __raw_readl(base + QCA955X_GMAC_REG_ETH_CFG);
+
+	t &= ~(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII);
+	t |= QCA955X_ETH_CFG_RGMII_EN;
+
+	__raw_writel(t, base + QCA955X_GMAC_REG_ETH_CFG);
+
+	iounmap(base);
+}
+
+
+
 static struct ar8327_pad_cfg db120_ar8327_pad0_cfg = {
 	.mode = AR8327_PAD_MAC_RGMII,
 	.txclk_delay_en = true,
@@ -437,13 +487,16 @@ int __init ar7240_platform_init(void)
 	void __iomem *base;
 	u32 t;
 
-#ifndef CONFIG_WDR4300
+#if !defined(CONFIG_WDR4300) && !defined(CONFIG_AP135)
 #ifdef CONFIG_DIR825C1
 	dir825b1_read_ascii_mac(mac0, DIR825C1_MAC_LOCATION_0);
 	dir825b1_read_ascii_mac(mac1, DIR825C1_MAC_LOCATION_1);
 #endif
 
 #else
+#ifdef CONFIG_AP135
+	mac = (u8 *)KSEG1ADDR(0x1fff0000);
+#endif
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
 #endif
@@ -470,6 +523,9 @@ int __init ar7240_platform_init(void)
 	/* flush write */
 	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
+#else
+#ifdef CONFIG_AP135
+	ap136_gmac_setup();
 #else
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
 	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
@@ -515,6 +571,45 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ar71xx_add_device_eth(1);
 #else
+#ifdef CONFIG_AP135
+
+	ar71xx_add_device_mdio(0, 0x0);
+
+	/* GMAC0 of the AR8327 switch is connected to GMAC1 via SGMII */
+	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
+	ap136_ar8327_pad0_cfg.sgmii_delay_en = true;
+
+	/* GMAC6 of the AR8327 switch is connected to GMAC0 via RGMII */
+	ap136_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_RGMII;
+	ap136_ar8327_pad6_cfg.txclk_delay_en = true;
+	ap136_ar8327_pad6_cfg.rxclk_delay_en = true;
+	ap136_ar8327_pad6_cfg.txclk_delay_sel = AR8327_CLK_DELAY_SEL1;
+	ap136_ar8327_pad6_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2;
+
+	ar71xx_eth0_pll_data.pll_1000 = 0x56000000;
+	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
+
+	mdiobus_register_board_info(ap136_mdio0_info,
+				    ARRAY_SIZE(ap136_mdio0_info));
+
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac + DB120_MAC0_OFFSET, 0);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac + DB120_MAC1_OFFSET, 0);
+
+	/* GMAC0 is connected to the RMGII interface */
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+
+	ar71xx_add_device_eth(0);
+
+	/* GMAC1 is connected tot eh SGMII interface */
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ar71xx_eth1_data.speed = SPEED_1000;
+	ar71xx_eth1_data.duplex = DUPLEX_FULL;
+
+	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
+	ar71xx_add_device_eth(1);
+#else
 #ifndef CONFIG_WDR4300
 #ifndef CONFIG_DIR825C1
 	ar71xx_add_device_mdio(1, 0x0);
@@ -553,7 +648,8 @@ int __init ar7240_platform_init(void)
 #endif
 #endif
 #endif
-
+#endif
+#endif
 	ret = platform_add_devices(ar724x_platform_devices, ARRAY_SIZE(ar724x_platform_devices));
 
 	if (ret < 0)
