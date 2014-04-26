@@ -79,6 +79,11 @@ void start_sysinit(void)
 #ifdef HAVE_WDR4300
 	system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
 	system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+#elif HAVE_WHR450HP
+	system("swconfig dev eth0 set reset 1");
+	system("swconfig dev eth0 set enable_vlan 0");
+	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4\"");
+	system("swconfig dev eth0 set apply");
 #else
 	system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
 	system("swconfig dev eth0 vlan 2 set ports \"0t 5\"");
@@ -100,10 +105,15 @@ void start_sysinit(void)
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 	}
 #endif
+#ifdef HAVE_WHR450HP
+	eval("ifconfig", "eth0", "up");
+	eval("ifconfig", "eth1", "up");
+#else
 	eval("ifconfig", "eth0", "up");
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");
 	eval("vconfig", "add", "eth0", "2");
+#endif
 	struct ifreq ifr;
 	int s;
 
@@ -130,6 +140,8 @@ void start_sysinit(void)
 #ifdef HAVE_WNDR3700V4
 	setWirelessLed(0, 11);
 	setWirelessLed(1, 14);
+#elif  HAVE_WHR450HP
+	setWirelessLed(0, 1);
 #elif  HAVE_DIR825C1
 	setWirelessLed(0, 13);
 	setWirelessLed(1, 32);
