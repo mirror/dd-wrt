@@ -157,8 +157,10 @@ php5-clean:
 	if test -e "php5/Makefile"; then make -C php5 clean; fi
 
 php5-install:
+ifeq ($(CONFIG_PHP),y)
 	install -D php5/sapi/cli/.libs/php $(INSTALLDIR)/php5/usr/bin/php
 	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php
+endif
 ifeq ($(CONFIG_PHPCGI),y)
 	install -D php5/sapi/cgi/.libs/php-cgi $(INSTALLDIR)/php5/usr/bin/php-cgi
 	$(STRIP) $(INSTALLDIR)/php5/usr/bin/php-cgi
