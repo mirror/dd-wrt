@@ -662,6 +662,8 @@
 
 #define ROUTER_BOARD_TI 0xd60f
 
+#define ROUTER_NETGEAR_AC1450 0xd716
+
 
 #define NVROUTER "DD_BOARD"
 
