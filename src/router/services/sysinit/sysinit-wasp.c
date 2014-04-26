@@ -83,6 +83,7 @@ void start_sysinit(void)
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set enable_vlan 0");
 	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4\"");
+	system("swconfig dev eth0 vlan 2 set ports \"5 6\"");
 	system("swconfig dev eth0 set apply");
 #else
 	system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
