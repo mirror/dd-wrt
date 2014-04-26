@@ -1125,7 +1125,7 @@ int internal_getRouterBrand()
 			} else if  ( !strncmp(modelstr, AC1450, strlen(AC1450)) ) {
 				setRouter("Netgear AC1450");
 				fclose(model);
-				return ROUTER_NETGEAR_R6300V2;
+				return ROUTER_NETGEAR_AC1450;
 			} else {
 				setRouter("Netgear R6250");
 				fclose(model);
@@ -5354,6 +5354,15 @@ int led_control(int type, int act)
 		diag_gpio = 0x003;
 		connected_gpio = 0x101;
 		disconnected_gpio = 0x102;
+		break;
+	case ROUTER_NETGEAR_AC1450:
+		power_gpio = 0x102;	// power led green
+		//diag_gpio = 0x103;    // power led orange
+		diag_gpio = 0x101;	// Netgear logo 
+		connected_gpio = 0x10a;	// wan led green - hw controlled
+		wlan0_gpio = 0x10b;	// radio led blue
+		usb_gpio = 0x108;	// usb led 
+		//usb_power = 0x000;    // usb enable
 		break;
 	case ROUTER_NETGEAR_R6250:
 		power_gpio = 0x102;	// power led green
