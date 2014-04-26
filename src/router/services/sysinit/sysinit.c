@@ -2267,6 +2267,7 @@ void start_restore_defaults(void)
 			nvram_set("vlan2ports", "0 1 2 3 8*");
 		}
 		break;
+	case ROUTER_NETGEAR_AC1450:
 	case ROUTER_NETGEAR_R6250:
 	case ROUTER_NETGEAR_R6300V2:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
