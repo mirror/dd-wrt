@@ -846,7 +846,6 @@ void __init ar71xx_add_device_eth(unsigned int id)
 	struct platform_device *pdev;
 	struct ag71xx_platform_data *pdata;
 	int err;
-
 	if (id > 1) {
 		printk(KERN_ERR "ar71xx: invalid ethernet id %d\n", id);
 		return;
@@ -859,10 +858,10 @@ void __init ar71xx_add_device_eth(unsigned int id)
 	else
 		pdev = &ar71xx_eth1_device;
 
+	pdata = pdev->dev.platform_data;
+
 	pdata->max_frame_len = 1540;
 	pdata->desc_pktlen_mask = 0xfff;
-
-	pdata = pdev->dev.platform_data;
 
 	err = ar71xx_setup_phy_if_mode(id, pdata);
 	if (err) {

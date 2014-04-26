@@ -150,8 +150,8 @@ static void qca955x_wmac_init(void)
 
 	ar9xxx_wmac_resources[0].start = QCA955X_WMAC_BASE;
 	ar9xxx_wmac_resources[0].end = QCA955X_WMAC_BASE + QCA955X_WMAC_SIZE - 1;
-	ar9xxx_wmac_resources[1].start = AR934X_IP2_IRQ_WMAC + 1;
-	ar9xxx_wmac_resources[1].end = AR934X_IP2_IRQ_WMAC + 1;
+	ar9xxx_wmac_resources[1].start = AR934X_IP2_IRQ_WMAC;
+	ar9xxx_wmac_resources[1].end = AR934X_IP2_IRQ_WMAC;
 
 
 	t = ar71xx_reset_rr(QCA955X_RESET_REG_BOOTSTRAP);
