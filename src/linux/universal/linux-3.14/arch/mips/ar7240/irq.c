@@ -213,6 +213,9 @@ static void __init ar71xx_misc_irq_init(void)
 	case AR71XX_SOC_AR9341:
 	case AR71XX_SOC_AR9342:
 	case AR71XX_SOC_AR9344:
+	case AR71XX_SOC_QCA9533:
+	case AR71XX_SOC_QCA9556:
+	case AR71XX_SOC_QCA9558:
 		ar71xx_misc_irq_chip.irq_ack = ar724x_misc_irq_ack;
 		break;
 	default:
