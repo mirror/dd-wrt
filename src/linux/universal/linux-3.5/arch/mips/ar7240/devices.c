@@ -20,7 +20,7 @@
 #include <linux/platform_device.h>
 #include <linux/serial_8250.h>
 #include <linux/clk.h>
-#include <linux/sizes.h>
+//#include <linux/sizes.h>
 
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/ar933x_uart_platform.h>
