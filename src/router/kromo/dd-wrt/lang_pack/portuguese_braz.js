@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//      Update (23143 based)               - DD-WRT V24 SP2 by mrc_torres 19/DEC/2013       //
-//      Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr      16/JUN/2006       //
+//      Update (23939 based)                    - DD-WRT V24 SP2 by mrc_torres 24/APR/2014  //
+//      Portuguese Brazililian translation file - DD-WRT V23 SP1 by aledr      16/JUN/2006  //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -35,6 +35,7 @@ share.vdsl="Rotulagem VLAN Avançada";
 share.vdslvlan7="Suporte T-Home VLAN 7";
 share.vdslvlan8="Suporte T-Home VLAN 8";
 share.wan_vlantag="VLAN Tag ID";
+share.wan_dualaccess="Modo Dual-Access";
 share.compression="Compressão PPP(MPPC)";
 share.mlppp="Single Line Multi Link";
 share.vpi_vci="VPI/VCI";
@@ -308,7 +309,7 @@ errmsg.err25="O valor da chave não está correto.";
 errmsg.err26="O tamanho da chave não está correto.";
 errmsg.err27="Máscara de Sub-Rede inválida.";
 errmsg.err28=" possui caracteres inválidos, devem estar entre [ 0 - 9 ].";
-errmsg.err29=" possui código ascii inválido."
+errmsg.err29=" possui código ascii inválido.";
 errmsg.err30=" possui dígitos hexadecimais inválidos.";
 errmsg.err31=" valor é inválido.";
 errmsg.err32="Endereço IP e Gateway não estão na mesma máscara de sub-rede.";
@@ -319,7 +320,7 @@ errmsg.err111="Endereço IP inválido";
 errmsg.err112="Inseridos caracteres inválidos \"<invchars>\" no campo \"<fieldname>\"";
 
 //Wol.asp error messages
-errmsg.err35="Você deve inserir um Endereço MAC para funcionar."
+errmsg.err35="Você deve inserir um Endereço MAC para funcionar.";
 errmsg.err36="Você deve inserir um endereço broadcast de rede para funcionar.";
 errmsg.err37="Você deve inserir uma porta UDP para funcionar.";
 
@@ -718,6 +719,7 @@ nas.dlna_legend="Servidor DLNA";
 nas.dlna_srv="MiniDLNA"; 
 nas.dlna_thumb="Incluir Arte da Capa";
 nas.dlna_dir="Pasta de Arquivos";
+nas.dlna_cleandb="Limpar Banco de Dados Agora";
 
 hnas.right2="A fim de compartilhar recursos adicione novos compartilhamentos fornecendo o caminho e o nome do compartilhamento. Defina os usuários que podem acessar o compartilhamento através de ftp ou samba.";
 
@@ -737,7 +739,7 @@ lighttpd.server="Lighttpd";
 lighttpd.legend="Servidor Web Lighttpd"; 
 lighttpd.port="Porta HTTP";
 lighttpd.sslport="Porta HTTPS";
-lighttpd.custom="Configuração Personalizada"; 
+lighttpd.wan="Acesso WAN"; 
  
 hlighttpd.right2="Habilita o lighttpd e configura as porta HTTP/HTTPS em que o lighttpd ouvirá as solicitações. O diretório raiz padrão do servidor web aonde você pode colocar seus sites é /jffs/www."; 
 
@@ -1035,6 +1037,7 @@ management.remote_allowanyip="Permitir Qualquer IP Remoto";
 management.remote_ip="Faixa de Endereços IP Remotos Permitidos";
 management.web_legend="Acesso Web";
 management.web_refresh="Auto-Atualização (em segundos)";
+management.web_authlimit="Limite de Reautenticação (em segundos)";
 management.web_sysinfo="Habilitar Página de Informações";
 management.web_sysinfopass="Proteger Página de Informações";
 management.web_sysinfomasq="Mascaramento de MAC na Página de Informações";
@@ -1083,6 +1086,7 @@ management.lang_serbian="Sérvio";
 management.lang_swedish="Sueco";
 management.lang_japanese="Japonês";
 management.lang_hungarian="Húngaro";
+management.lang_korean="Coreano";
 management.lang_latvian="Letão";
 management.net_legend="Configurações do Filtro de IP (ajustes para P2P)";
 management.net_conctrl="Controle de Congestionamento TCP";
@@ -1476,7 +1480,7 @@ service.milkfish_status="Status SIP";
 service.milkfish_database="Banco de Dados SIP";
 service.milkfish_messaging="Messaging SIP";
 service.milkfish_phonebook="Agenda Telefônica SIP";
-service.milkfish_dynsipdomain="\Domínio DynSIP";
+service.milkfish_dynsipdomain="Domínio DynSIP";
 service.milkfish_dynsipurl="URL de Atualização DynSIP";
 service.milkfish_dsusername="Nome de Usuário DynSIP";
 service.milkfish_dspassword="Senha DynSIP";
@@ -1512,7 +1516,7 @@ service.samba3_pass1=" Senha1";
 service.samba3_usr2="Usuário2";
 service.samba3_pass2=" Senha2";
 service.samba3_pubacl="Somente Leitura";
-service.samba3_advanced="Avançado"
+service.samba3_advanced="Avançado";
 service.samba3_custom="Usar Configuração Personalizada";
 service.samba3_shares="Compartilhamentos";
 service.samba3_share_path="Caminho";
@@ -1532,6 +1536,7 @@ service.dlna_type_images="Imagens";
 service.zabbix_legend="Zabbix";
 service.zabbix_cl="Cliente";
 service.zabbix_serverip="Endereço IP do servidor Zabbix";
+service.zabbix_usrpara="Parâmetros do Usuário";
 
 // Transmission 
 service.transmission_legend="Bittorrent"; 
@@ -2057,8 +2062,8 @@ wl_adv.row2="Melhor Esforço";
 wl_adv.row3="Vídeo";
 wl_adv.row4="Voz";
 wl_adv.table2="Parâmetros EDCA Cliente (Cliente para AP)";
-wl_adv.lng="Longo"; 					//************* don't use .long! *************
-wl_adv.shrt="Curto"; 					//************* don't use .short! **************
+wl_adv.lng="Longo"; 	//************* don't use .long!  *************//
+wl_adv.shrt="Curto"; 	//************* don't use .short! *************//
 
 //help container
 hwl_adv.right2="Você pode escolher entre Automático ou Chave Compartilhada. A autenticação de Chave Compartilhada é mais segura, mas todos os dispositivos da rede devem suportar esse modo de autenticação.";
@@ -2075,6 +2080,7 @@ wl_basic.label4="Canal Wireless";
 wl_basic.label5="Broadcast SSID Wireless";
 wl_basic.label6="Escala de Sensibilidade (Sincronismo ACK)";
 wl_basic.label7="Modo de Transmissão 802.11n";
+wl_basic.igmpsnooping="Otimizar Tráfego Multicast";
 wl_basic.turboqam="Suporte a TurboQAM (QAM256)";
 wl_basic.scanlist="ScanList";
 wl_basic.duallink="Dual Link";
@@ -2158,7 +2164,8 @@ wl_basic.if_info="Info (opcional)";
 wl_basic.advanced_options="Opções Avançadas";
 wl_basic.rate_control="Algorítmo de Controle de Taxa";
 wl_basic.ap83_vap_note="Adicionar mais que três interfaces virtuais irá resultar em baixa performance com alguns dispositivos clientes nessas interfaces virtuais adicionais.";
-wl_basic.isolation="Isolamento da Rede"; 
+wl_basic.isolation="Isolamento da Rede";
+wl_basic.country_settings="Configurações de País";
 
 //help container
 hwl_basic.right2="Se você deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se você deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em><br/><b>Nota:</b> alterando o modo wireless, alguns parâmetros avançados são suscetíveis de serem modificados (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" ou \"" + wl_adv.label5 + "\").";
@@ -2217,21 +2224,22 @@ haoss.wps="O WPS habilita o suporte para a Configuração Wi-Fi Protegida utiliz
 ias.title="Configuração"; 
 ias.card_info="Cartão de Configuração"; 
 ias.edit_note="Clique em qualquer informação no Cartão de Configuração para editá-la."; 
-ias.assistant="Executar Assistente de Configuração"; 
-ias.print_setup_card="Imprimir Cartão de Configuração"; 
-ias.print_guest_card="Imprimir Cartão de Convidado"; 
-ias.apply_changes="Aplicar Modificações"; 
-ias.wlnetwork="Rede Wireless"; 
-ias.wlinfo_2_4_GHz="(2.4 Ghz) - Compatível com 802.11n/g/b"; 
-ias.wlinfo_5_GHz="(5 Ghz) - Compatível com 802.11n/a"; 
-ias.hl_setup_card="Cartão de Configuração"; 
+ias.assistant="Executar Assistente de Configuração";
+ias.assistant_iptv="Executar Configuração IPTV";
+ias.print_setup_card="Imprimir Cartão de Configuração";
+ias.print_guest_card="Imprimir Cartão de Convidado";
+ias.apply_changes="Aplicar Modificações";
+ias.wlnetwork="Rede Wireless";
+ias.wlinfo_2_4_GHz="(2.4 Ghz) - Compatível com 802.11n/g/b";
+ias.wlinfo_5_GHz="(5 Ghz) - Compatível com 802.11n/a";
+ias.hl_setup_card="Cartão de Configuração";
 ias.hl_client_access="Para Acesso Cliente"; 
-ias.hl_for_conf="Para Configuração"; 
-ias.hl_guest_card="Cartão de Convidado"; 
+ias.hl_for_conf="Para Configuração";
+ias.hl_guest_card="Cartão de Convidado";
 
 
-// ************		OLD PAGES 		*******************************//
-// *********************** DHCPTable.asp *****************************//
+// ************	OLD PAGES *******************************//
+// ************ DHCPTable.asp ***************************//
 dhcp.titl="Tabela DHCP de IPs Ativos";
 dhcp.h2="Tabela DHCP de IPs Ativos";
 dhcp.server="Endereço IP do Servidor DHCP:";
