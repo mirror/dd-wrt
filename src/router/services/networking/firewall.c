@@ -2372,10 +2372,6 @@ static void filter_forward(void)
 	parse_trigger_out(nvram_safe_get("port_trigger"));
 	
 	/*
-	 * Clamp TCP MSS to PMTU of WAN interface 
-	 */
-	save2file("-I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
-		/*
 	 * If webfilter is not used we can put this rule on top in order to increase WAN<->LAN throughput
 	 */
 	if (!filter_host_url)
@@ -2399,6 +2395,12 @@ static void mangle_table(void)
 
 		save2file("-A PREROUTING -j CONNMARK --save\n");
 	}
+	
+	/*
+	 * Clamp TCP MSS to PMTU of WAN interface 
+	 */
+	save2file("-I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+
 	/*
 	 * Sveasoft add - avoid the "mark everything" rule, Reformed's PPPoE code 
 	 * should take care of this 
