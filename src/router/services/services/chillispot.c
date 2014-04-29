@@ -237,9 +237,9 @@ void main_config(void)
 	} 
 	// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
-		fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+//		fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");  
 		fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j MASQUERADE\n", chillinet);
-		fprintf(fp, "iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");	// clamp when fw clamping is off   
+//		fprintf(fp, "iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");	// clamp when fw clamping is off   
 		fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j MASQUERADE\n", chillinet);
 	} else {
 		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n", nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
@@ -274,7 +274,7 @@ void main_config(void)
 	    && nvram_invmatch("hotss_interface", "br0"))
 		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("hotss_interface"), chillinet, log_drop);
 	if (nvram_match("wan_proto", "disabled")) {
-		fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+//		fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 		fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j MASQUERADE\n", chillinet);
 	} else
 		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n", nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
