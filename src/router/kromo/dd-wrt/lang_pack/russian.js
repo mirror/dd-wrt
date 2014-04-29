@@ -712,6 +712,14 @@ nas.dlna_legend="Сервер DLNA";
 nas.dlna_srv="MiniDLNA";
 nas.dlna_thumb="Включить обложки";
 nas.dlna_dir="Файловая директория";
+nas.shareadd="Добавить папку";
+nas.sharedel="Удалить";
+nas.useradd="Добавить пользователя";
+nas.userdel="Удалить";
+nas.perm_rw="Чтение/Запись";
+nas.perm_ro="Только чтение";
+nas.uname="Пользователь";
+nas.pwd="Пароль";
 
 hnas.right2="Для общего доступа к файлам добавьте новую общую папку, указав ее имя и путь к ней. Укажите пользователей, которым будет разрешен доступ к папкам посредством FTP или Samba.";
 
@@ -779,6 +787,7 @@ hotspot.nocat_timeout="Таймаут подключения";
 hotspot.nocat_verbose="Verbosity";
 hotspot.nocat_route="Только маршрутизация";
 hotspot.nocat_MAClist="Список разрешенных MAC";
+hotspot.nocat_extifname="Внешний интерфейс";
 hotspot.smtp_legend="Перенаправление SMTP";
 hotspot.smtp_srv="Перенаправление SMTP";
 hotspot.smtp_ip="IP назначения SMTP";
@@ -1096,6 +1105,7 @@ management.SIPatH_srv="SIPatH";
 management.SIPatH_port="Порт SIP";
 management.SIPatH_domain="Домен SIP";
 management.gui_style="Стиль GUI маршрутизатора";
+management.web_authlimit="Таймаут повторного входа (секунды)";
 
 //help container
 hmanagement.right1="Автообновление:";
@@ -1118,6 +1128,20 @@ networking.stp="STP включено";
 networking.iface="Интерфейсы";
 networking.h5="DHCPD";
 networking.legend5="Множественный сервер DHCP";
+networking.vlan="VLAN";
+networking.iface="Интерфейс";
+networking.tg_number="Номер тэга";
+networking.prio="Приор.";
+networking.bridge="Мост";
+networking.snooping="IGMP Snooping";
+networking.assign="Назначение";
+networking.bonding="Объединение";
+networking.bondtype="Тип объединения";
+networking.bondifaces="Объединяемые интерфейсы";
+networking.bond="Объединение";
+networking.slave="Вспомогательный";
+networking.max="Макс.";
+networking.leasetime="Время аренды";
 
 //help container
 hnetworking.right1="Множественные DHCPD";
@@ -1159,6 +1183,8 @@ qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="Ограничить для каждого пользователя";
 qos.bandwidth="Ширина канала, КБит";
+qos.up="Восх.";
+qos.down="Нисх.";
 
 //help container
 hqos.right1="Исходящий поток:";
@@ -1214,6 +1240,7 @@ route.ospf_legend="Маршрутизация OSPF";
 route.ospf_conf="Конфигурация OSPF";
 route.copt_gui="Графический интерфейс";
 route.copt_vtysh="Vtysh";
+route.ospf_copt="Режим настройки OSPF";
 route.gateway_legend="Динамическая маршрутизация";
 route.static_legend="Статическая маршрутизация";
 route.static_setno="Номер маршрута";
@@ -1319,6 +1346,7 @@ service.pppoesrv_radauthport="Порт аутентификации Radius";
 service.pppoesrv_radaccport="Порт учета Radius";
 service.pppoesrv_radkey="Разделяемый ключ Radius";
 service.pppoesrv_chaps="Управление локальными пользователями (CHAP Secrets)";
+service.pppoesrv_limit="Лимит сессий на MAC адрес";
 
 //help container
 hpppoesrv.right2="IP: 0.0.0.0 -> Вы получите IP из пула адресов";
@@ -1381,6 +1409,12 @@ service.vpn_bridge="Объеденить туннель в мост с br0";
 service.vpn_adv="Дополнительные настройки";
 service.vpn_tlscip="Шифр TLS";
 service.vpn_route="Политика маршрутизации ";
+service.vpnd_server="Сервер";
+service.vpnd_deamon="Демон";
+service.vpnd_lzoyes="Да";
+service.vpnd_lzono="Нет";
+service.vpnd_lzooff="Off";
+service.vpnd_lzoadaptive="Адаптивно";
 
 //help container
 hstatus_vpn.right1=" Политика маршрутизации :<br><i>Добавьте IP/сеть в виде 0.0.0.0/0 для принудительного использования туннеля как шлюза по умолчанию. По одному значению на IP/сеть.<br><i>Адрес IP/Маска сети</i><br>Должны быть заданы при использовании режима DHCP-прокси и при условии, что туннель НЕ объединен мостом</i>";
@@ -1499,6 +1533,13 @@ service.milkfish_destination="Назначение SIP";
 service.milkfish_contact="Контакт";
 service.milkfish_agent="User Agent";
 service.milkfish_registrations="Активные регистрации";
+service.milkfish_localsubscr="Локальные подписчики";
+service.milkfish_localalias="Локальные псевдонимы";
+service.milkfish_messaging="Сообщения SIP";
+service.milkfish_siptrace="Трассировка SIP";
+service.milkfish_advdynsip="Расширенные настройки DynSIP";
+service.milkfish_answers="Проблемы, вопросы, предложения? – Ищите ответы на <a href=\"http:\/\/forum.milkfish.org\" target=\"_blank\">Форуме пользователей Milkfish-dd</a>";
+
 //service.milkfish_="";//
 service.hmilkfish_right2="Включает/отключает ваш маршрутизатор Milkfish SIP.";
 service.hmilkfish_right4="Включает/отключает подмену From:-Headerfield вашего WAN IP в исходящих сообщениях SIP. Эта опция должна быть включена, если вы хотите позволить вызываемым делать обратные вызовы при изменении вашего IP-адреса";
@@ -1546,6 +1587,7 @@ service.dlna_type_images="Изображения";
 service.zabbix_legend="Zabbix";
 service.zabbix_cl="Клиент";
 service.zabbix_serverip="IP адрес сервера Zabbix";
+service.zabbix_usrpara="Пользовательские настройки";
 
 //TRansmission
 service.transmission_legend="Bittorrent";
@@ -1793,11 +1835,16 @@ vlan.negociate="Автосогласование";
 vlan.aggregation="Агрегирование<br>портов 3 и 4";
 vlan.trunk="Объединение";
 vlan.linkstatus="Состояние соединения";
+vlan.fullspeed="Полная скорость";
+vlan.fullduplex="Полный дуплекс";
+vlan.gigabit="Гигабит";
 
 // ** WEP.asp **//
 wep.defkey="Ключ передачи по умолчанию";
 wep.passphrase="Идентификационная фраза";
-
+wep.opt_64="64 бит 10 16-тиричных цифр";
+wep.opt_128="128 бит 26 16-тиричных цифр";
+wep.generate="Сгенерировать";
 
 // ** WOL.asp **//
 wol.titl="WOL";
@@ -1902,7 +1949,7 @@ hwpa.right2="Возможный выбор: Отключено, WEP, WPA Persona
 wl_filter.titl="Список фильтра MAC-адресов";
 wl_filter.h2="Список фильтра MAC-адресов";
 wl_filter.h3="Введите MAC-адрес в следующем формате&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
-
+filter.none="Не задано";
 
 // ** WL_ActiveTable.asp **//
 wl_active.titl="Список MAC-адресов активных клиентов беспроводной сети";
@@ -2066,6 +2113,7 @@ wl_adv.row4="Голос";
 wl_adv.table2="Параметры EDCA STA (от клиента к точке доступа)";
 wl_adv.lng="Длинный"; 					//************* don't use .long! *************
 wl_adv.shrt="Короткий"; 				//************* don't use .short! **************
+wl_adv.mbps="Мбит/с";
 
 //help container
 hwl_adv.right2="Вы можете задать режимы Авто и Общий ключ. Аутентификация на основе общего ключа более надежна, но все устройства в вашей сети должны поддерживать данный режим аутентификации.";
@@ -2168,6 +2216,12 @@ wl_basic.rate_control="Алгоритм управления скоростью"
 wl_basic.ap83_vap_note="Использование более чем трех виртуальных интерфейсов могут привести к падению производительности при добавлении определенных клиентов к этим интерфейсам.";
 wl_basic.isolation="Изоляция сети";
 wl_basic.country_settings="Настройки по странам";
+wl_basic.ch_pos_auto="Авто";
+wl_basic.ch_pos_upr="Верхний";
+wl_basic.ch_pos_lwr="Нижний";
+wl_basic.ghz="ГГц";
+wl_basic.mhz="МГц";
+wl_basic.tbquam="TurboQUAM";
 
 //help container
 hwl_basic.right2="Если вы хотите исключить беспроводных G-клиентов, выберите режим <em>Только B</em>. Если вы хотите отключить беспроводной доступ, выберите <em>Отключить</em>.<br/><b>Замечание :</b> при изменении режима беспроводной сети также подлежат изменению некоторые чувствительные к режиму параметры (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" или \"" + wl_adv.label5 + "\").";
