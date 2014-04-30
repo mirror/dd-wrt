@@ -2237,8 +2237,9 @@ struct mime_handler mime_handlers[] = {
 	 NULL, 0},
 #endif
 #ifdef HAVE_BUFFALO
-	{"intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language,
-	 NULL, 0},
+	{"intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, 0},
+	{"intatstart/js/intatstart.js", "text/javascript", NULL, NULL, do_file, NULL, 0},
+	{"intatstart/js/mdetect.js", "text/javascript", NULL, NULL, do_file, NULL, 0},
 	{"vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, 1},
 #endif
 	{"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, 1},
@@ -2292,7 +2293,7 @@ struct mime_handler mime_handlers[] = {
 	{"**.png", "image/png", NULL, NULL, do_file, NULL, 0},
 	{"**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, 0},
 	{"**.ico", "image/x-icon", NULL, NULL, do_file, NULL, 0},
-	{"**.js", "text/javascript", NULL, NULL, do_ej, NULL, 0},
+	{"**.js", "text/javascript", NULL, NULL, do_file, NULL, 0},
 	{"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL,
 	 0},
 	{"**.pdf", "application/pdf", NULL, NULL, do_file, NULL, 0},
