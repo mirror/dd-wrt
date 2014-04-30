@@ -142,7 +142,6 @@ void start_sysinit(void)
 
 	int brand = getRouterBrand();
 #ifdef HAVE_WPE72
-	set_gpio(0,1);
 	sysprintf("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
 
 #else
