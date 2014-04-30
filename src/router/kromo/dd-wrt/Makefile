@@ -974,7 +974,7 @@ removeobsolete:
 	cd $(INSTALLDIR)/www  &&  find . -iname ".svn" | xargs rm -rf
 
 makewww:
-	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico images/*/*.png images/*/*.gif js/* lang_pack/* style/* style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* intatstart/js/* intatstart/css/* intatstart/lang_pack/* intatstart/config/* $(SRCBASE)/router/httpd/html.c $(SRCBASE)/router/httpd/www 
+	cd $(INSTALLDIR)/www && $(SRCBASE)/../tools/webcomp . $(SRCBASE)/../tools/filelist *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico images/*/*.png images/*/*.gif js/* lang_pack/* style/* style/*/* style/*/*/* style/*/*/*/* style/*/*/*/*/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/* $(SRCBASE)/router/httpd/html.c $(SRCBASE)/router/httpd/www 
 
 
 removepwc:
@@ -986,7 +986,7 @@ else
 endif
 
 cleanup:
-	-cd $(INSTALLDIR)/www && rm -f *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/* images/*/*.png images/*/*.gif js/* lang_pack/* intatstart/js/* intatstart/css/* intatstart/lang_pack/* intatstart/config/*
+	-cd $(INSTALLDIR)/www && rm -f *.asp *.svg *.htm *.css *.js help/*.asp help/*.png help/*.css images/*.gif images/*.png images/*.jpg images/*.ico style/*.css style/*.png style/*/* images/*/*.png images/*/*.gif js/* lang_pack/* intatstart/js/* intatstart/css/* intatstart/css/images/* intatstart/lang_pack/* intatstart/config/*
 	rm -rf $(INSTALLDIR)/www/images
 	rm -rf $(INSTALLDIR)/www/help
 	rm -rf $(INSTALLDIR)/www/js
