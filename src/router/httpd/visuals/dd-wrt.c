@@ -614,7 +614,7 @@ void ej_show_paypal(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<a href=\"http://www.corenetsolutions.com\">http://www.corenetsolutions.com</a><br />");
 #endif
 
-#ifndef CONFIG_BRANDING
+#ifndef HAVE_BRANDING
 #ifndef HAVE_REGISTER
 	websWrite(wp, "<a href=\"http://www.dd-wrt.com/\">DD-WRT</a><br />");
 	websWrite(wp, "<form action=\"https://www.paypal.com/cgi-bin/webscr\" method=\"post\" target=\"_blank\">");
@@ -842,7 +842,7 @@ void ej_show_staticleases(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_control(webs_t wp, int argc, char_t ** argv)
 {
-#ifdef CONFIG_BRANDING
+#ifdef HAVE_BRANDING
 	websWrite(wp, "Control Panel");
 #else
 	websWrite(wp, "DD-WRT Control Panel");
@@ -3268,7 +3268,7 @@ void ej_getdefaultindex(webs_t wp, int argc, char_t ** argv)
 void ej_showad(webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_FON
-#ifndef CONFIG_BRANDING
+#ifndef HAVE_BRANDING
 #ifdef HAVE_CHILLI
 	// if (nvram_invmatch ("fon_enable", "1"))
 	// websWrite (wp,
