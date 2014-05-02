@@ -1558,6 +1558,10 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	memset(buffer, 0, 256);
 	getIfList(buffer, "br");
 	sprintf(bufferif, "%s %s", bufferif, buffer);
+
+	memset(buffer, 0, 256);
+	getIfList(buffer, "vlan");
+	sprintf(bufferif, "%s %s", bufferif, buffer);
 #ifdef HAVE_MADWIFI
 	int c = getdevicecount();
 
