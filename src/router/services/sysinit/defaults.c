@@ -421,13 +421,13 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 	{"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 #endif
-#elif CONFIG_JJAP93
+#elif HAVE_JJAP93
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
-#elif CONFIG_JJAP005
+#elif HAVE_JJAP005
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
-#elif CONFIG_JJAP501
+#elif HAVE_JJAP501
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
-#elif CONFIG_AC722
+#elif HAVE_AC722
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
 #elif HAVE_AC622
 	{"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
@@ -2433,7 +2433,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 	{"snmpd_syslocation", "Unknown", 0},
 	{"snmpd_syscontact", "root", 0},
-#ifdef CONFIG_BRANDING
+#ifdef HAVE_BRANDING
 	{"snmpd_sysname", "anonymous", 0},
 #elif defined(HAVE_TRIMAX)
 	{"snmpd_sysname", "m2m", 0},
@@ -2627,12 +2627,12 @@ struct nvram_tuple srouter_defaults[] = {
 	{"dhcpfwd_enable", "0", 0},
 	{"dhcpfwd_ip", "0.0.0.0", 0},
 	{"NC_enable", "0", 0},
-#ifdef CONFIG_BRANDING
+#ifdef HAVE_BRANDING
 	{"NC_GatewayName", "GATEWAY", 0},
 #else
 	{"NC_GatewayName", "DD-WRT", 0},
 #endif
-#ifdef CONFIG_BRANDING
+#ifdef HAVE_BRANDING
 	{"NC_HomePage", "", 0},
 #else
 	{"NC_HomePage", "http://www.dd-wrt.com", 0},
@@ -2641,7 +2641,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"NC_IncludePorts", "", 0},
 	{"NC_Verbosity", "2", 0},
 	{"NC_LoginTimeout", "86400", 0},
-#ifdef CONFIG_BRANDING
+#ifdef HAVE_BRANDING
 	{"NC_AllowedWebHosts", "google.com", 0},
 #else
 	{"NC_AllowedWebHosts", "", 0},
