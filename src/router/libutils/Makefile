@@ -221,6 +221,20 @@ endif
 ifeq ($(CONFIG_SNMP),y)
   CFLAGS += -DHAVE_SNMP
 endif
+
+ifeq ($(CONFIG_AC622),y)
+  CFLAGS += -DHAVE_AC622
+endif
+
+ifeq ($(CONFIG_JJAP005),y)
+  CFLAGS += -DHAVE_JJAP005
+endif
+ifeq ($(CONFIG_JJAP501),y)
+  CFLAGS += -DHAVE_JJAP501
+endif
+ifeq ($(CONFIG_AC722),y)
+  CFLAGS += -DHAVE_AC722
+endif
 ifeq ($(CONFIG_UNIWIP),y)
   CFLAGS += -DHAVE_UNIWIP
 endif
