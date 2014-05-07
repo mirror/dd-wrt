@@ -2,6 +2,7 @@
  * idevicepair.c
  * Manage pairings with devices and this host
  *
+ * Copyright (c) 2014 Martin Szulecki All Rights Reserved.
  * Copyright (c) 2010 Nikias Bassen All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -23,26 +24,48 @@
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>
-#include "userpref.h"
+#include "common/userpref.h"
 
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
 
 static char *udid = NULL;
 
+static void print_error_message(lockdownd_error_t err)
+{
+	switch (err) {
+		case LOCKDOWN_E_PASSWORD_PROTECTED:
+			printf("ERROR: Could not validate with device %s because a passcode is set. Please enter the passcode on the device and retry.\n", udid);
+			break;
+		case LOCKDOWN_E_INVALID_HOST_ID:
+			printf("ERROR: Device %s is not paired with this host\n", udid);
+			break;
+		case LOCKDOWN_E_PAIRING_DIALOG_PENDING:
+			printf("ERROR: Please accept the trust dialog on the screen of device %s, then attempt to pair again.\n", udid);
+			break;
+		case LOCKDOWN_E_USER_DENIED_PAIRING:
+			printf("ERROR: Device %s said that the user denied the trust dialog.\n", udid);
+			break;
+		default:
+			printf("ERROR: Device %s returned unhandled error code %d\n", udid, err);
+			break;
+	}
+}
+
 static void print_usage(int argc, char **argv)
 {
 	char *name = NULL;
 	
 	name = strrchr(argv[0], '/');
-	printf("\n%s - Manage pairings with devices and this host.\n\n", (name ? name + 1: argv[0]));
+	printf("\n%s - Manage host pairings with devices and usbmuxd.\n\n", (name ? name + 1: argv[0]));
 	printf("Usage: %s [OPTIONS] COMMAND\n\n", (name ? name + 1: argv[0]));
 	printf(" Where COMMAND is one of:\n");
-	printf("  hostid       print the host id of this computer\n");
-	printf("  pair         pair device with this computer\n");
-	printf("  validate     validate if device is paired with this computer\n");
-	printf("  unpair       unpair device with this computer\n");
-	printf("  list         list devices paired with this computer\n\n");
+	printf("  systembuid   print the system buid of the usbmuxd host\n");
+	printf("  hostid       print the host id for target device\n");
+	printf("  pair         pair device with this host\n");
+	printf("  validate     validate if device is paired with this host\n");
+	printf("  unpair       unpair device with this host\n");
+	printf("  list         list devices paired with this host\n\n");
 	printf(" The following OPTIONS are accepted:\n");
 	printf("  -d, --debug      enable communication debugging\n");
 	printf("  -u, --udid UDID  target specific device by its 40-digit device UDID\n");
@@ -99,7 +122,7 @@ int main(int argc, char **argv)
 	char *type = NULL;
 	char *cmd;
 	typedef enum {
-		OP_NONE = 0, OP_PAIR, OP_VALIDATE, OP_UNPAIR, OP_LIST, OP_HOSTID
+		OP_NONE = 0, OP_PAIR, OP_VALIDATE, OP_UNPAIR, OP_LIST, OP_HOSTID, OP_SYSTEMBUID
 	} op_t;
 	op_t op = OP_NONE;
 
@@ -123,20 +146,22 @@ int main(int argc, char **argv)
 		op = OP_LIST;
 	} else if (!strcmp(cmd, "hostid")) {
 		op = OP_HOSTID;
+	} else if (!strcmp(cmd, "systembuid")) {
+		op = OP_SYSTEMBUID;
 	} else {
 		printf("ERROR: Invalid command '%s' specified\n", cmd);
 		print_usage(argc, argv);
 		exit(EXIT_FAILURE);
 	}
 
-	if (op == OP_HOSTID) {
-		char *hostid = NULL;
-		userpref_get_host_id(&hostid);
+	if (op == OP_SYSTEMBUID) {
+		char *systembuid = NULL;
+		userpref_read_system_buid(&systembuid);
 
-		printf("%s\n", hostid);
+		printf("%s\n", systembuid);
 
-		if (hostid)
-			free(hostid);
+		if (systembuid)
+			free(systembuid);
 
 		return EXIT_SUCCESS;
 	}
@@ -173,6 +198,31 @@ int main(int argc, char **argv)
 		}
 	}
 
+	ret = idevice_get_udid(device, &udid);
+	if (ret != IDEVICE_E_SUCCESS) {
+		printf("ERROR: Could not get device udid, error code %d\n", ret);
+		result = EXIT_FAILURE;
+		goto leave;
+	}
+
+	if (op == OP_HOSTID) {
+		plist_t pair_record = NULL;
+		char *hostid = NULL;
+
+		userpref_read_pair_record(udid, &pair_record);
+		pair_record_get_host_id(pair_record, &hostid);
+
+		printf("%s\n", hostid);
+
+		if (hostid)
+			free(hostid);
+
+		if (pair_record)
+			plist_free(pair_record);
+
+		return EXIT_SUCCESS;
+	}
+
 	lerr = lockdownd_client_new(device, &client, "idevicepair");
 	if (lerr != LOCKDOWN_E_SUCCESS) {
 		idevice_free(device);
@@ -196,13 +246,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	ret = idevice_get_udid(device, &udid);
-	if (ret != IDEVICE_E_SUCCESS) {
-		printf("ERROR: Could not get device udid, error code %d\n", ret);
-		result = EXIT_FAILURE;
-		goto leave;
-	}
-
 	switch(op) {
 		default:
 		case OP_PAIR:
@@ -211,11 +254,7 @@ int main(int argc, char **argv)
 			printf("SUCCESS: Paired with device %s\n", udid);
 		} else {
 			result = EXIT_FAILURE;
-			if (lerr == LOCKDOWN_E_PASSWORD_PROTECTED) {
-				printf("ERROR: Could not pair with the device because a passcode is set. Please enter the passcode on the device and retry.\n");
-			} else {
-				printf("ERROR: Pairing with device %s failed with unhandled error code %d\n", udid, lerr);
-			}
+			print_error_message(lerr);
 		}
 		break;
 
@@ -225,29 +264,19 @@ int main(int argc, char **argv)
 			printf("SUCCESS: Validated pairing with device %s\n", udid);
 		} else {
 			result = EXIT_FAILURE;
-			if (lerr == LOCKDOWN_E_PASSWORD_PROTECTED) {
-				printf("ERROR: Could not validate with the device because a passcode is set. Please enter the passcode on the device and retry.\n");
-			} else if (lerr == LOCKDOWN_E_INVALID_HOST_ID) {
-				printf("ERROR: Device %s is not paired with this host\n", udid);
-			} else {
-				printf("ERROR: Pairing failed with unhandled error code %d\n", lerr);
-			}
+			print_error_message(lerr);
 		}
 		break;
 
 		case OP_UNPAIR:
 		lerr = lockdownd_unpair(client, NULL);
 		if (lerr == LOCKDOWN_E_SUCCESS) {
-			/* also remove local device public key */
-			userpref_remove_device_public_key(udid);
+			/* also remove local device record */
+			userpref_delete_pair_record(udid);
 			printf("SUCCESS: Unpaired with device %s\n", udid);
 		} else {
 			result = EXIT_FAILURE;
-			if (lerr == LOCKDOWN_E_INVALID_HOST_ID) {
-				printf("ERROR: Device %s is not paired with this host\n", udid);
-			} else {
-				printf("ERROR: Unpairing with device %s failed with unhandled error code %d\n", udid, lerr);
-			}
+			print_error_message(lerr);
 		}
 		break;
 	}

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(libimobiledevice, 1.1.5, nospam@nowhere.com)
+AC_INIT(libimobiledevice, 1.1.6, nospam@nowhere.com)
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 AC_CONFIG_SRCDIR([src/])
@@ -17,7 +17,15 @@ dnl libtool versioning
 # CURRENT : REVISION : AGE
 LIBIMOBILEDEVICE_SO_VERSION=4:1:0
 
+dnl Minimum package versions
+LIBPLIST_VERSION=1.11
+LIBUSBMUXD_VERSION=1.0.9
+LIBPLISTMM_VERSION=1.11
+
 AC_SUBST(LIBIMOBILEDEVICE_SO_VERSION)
+AC_SUBST(LIBPLIST_VERSION)
+AC_SUBST(LIBUSBMUXD_VERSION)
+AC_SUBST(LIBPLISTMM_VERSION)
 
 # Checks for programs.
 AC_PROG_CC
@@ -26,9 +34,9 @@ AM_PROG_CC_C_O
 AC_PROG_LIBTOOL
 
 # Checks for libraries.
-PKG_CHECK_MODULES(libusbmuxd, libusbmuxd >= 1.0.8)
-PKG_CHECK_MODULES(libplist, libplist >= 1.8)
-PKG_CHECK_MODULES(libplistmm, libplist++ >= 1.8)
+PKG_CHECK_MODULES(libusbmuxd, libusbmuxd >= $LIBUSBMUXD_VERSION)
+PKG_CHECK_MODULES(libplist, libplist >= $LIBPLIST_VERSION)
+PKG_CHECK_MODULES(libplistmm, libplist++ >= $LIBPLISTMM_VERSION)
 AC_CHECK_LIB(pthread, [pthread_create, pthread_mutex_lock], [AC_SUBST(libpthread_LIBS,[-lpthread])], [AC_MSG_ERROR([libpthread is required to build libimobiledevice])])
 
 # Checks for header files.
@@ -44,19 +52,10 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
 
 # Checks for library functions.
-AC_CHECK_FUNCS([strcasecmp strdup strerror strndup])
-
-AC_CHECK_FUNC(asprintf, [have_asprintf="yes"], [have_asprintf="no"])
-if test "x$have_asprintf" = "xyes"; then
-  AC_DEFINE(HAVE_ASPRINTF,1,[define if asprintf is available])
-fi
-AC_CHECK_FUNC(vasprintf, [have_vasprintf="yes"], [have_vasprintf="no"])
-if test "x$have_vasprintf" = "xyes"; then
-  AC_DEFINE(HAVE_VASPRINTF,1,[define if vasprintf is available])
-fi
+AC_CHECK_FUNCS([asprintf strcasecmp strdup strerror strndup stpcpy vasprintf])
 
 AC_CHECK_HEADER(endian.h, [ac_cv_have_endian_h="yes"], [ac_cv_have_endian_h="no"])
-if test "x$ac_cv_have_endian" = "xno"; then
+if test "x$ac_cv_have_endian_h" = "xno"; then
   AC_DEFINE(__LITTLE_ENDIAN,1234,[little endian])
   AC_DEFINE(__BIG_ENDIAN,4321,[big endian])
   AC_C_BIGENDIAN([ac_cv_c_bigendian="yes"], [ac_cv_c_bigendian="no"], [], [])
@@ -189,7 +188,7 @@ else
 	building_debug_code=yes
 fi
 
-AS_COMPILER_FLAGS(GLOBAL_CFLAGS, "-Wall -Wextra -Wmissing-declarations -Wredundant-decls -Wshadow -Wpointer-arith  -Wwrite-strings -Wswitch-default -Wno-unused-parameter")
+AS_COMPILER_FLAGS(GLOBAL_CFLAGS, "-Wall -Wextra -Wmissing-declarations -Wredundant-decls -Wshadow -Wpointer-arith  -Wwrite-strings -Wswitch-default -Wno-unused-parameter -fsigned-char")
 AC_SUBST(GLOBAL_CFLAGS)
 
 # check for large file support
@@ -223,6 +222,7 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 AC_OUTPUT([
 Makefile
+common/Makefile
 src/Makefile
 include/Makefile
 dev/Makefile

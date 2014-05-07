@@ -3,7 +3,7 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* define if asprintf is available */
+/* Define to 1 if you have the `asprintf' function. */
 #undef HAVE_ASPRINTF
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
@@ -33,6 +33,9 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
+/* Define to 1 if you have the `stpcpy' function. */
+#undef HAVE_STPCPY
+
 /* Define to 1 if you have the `strcasecmp' function. */
 #undef HAVE_STRCASECMP
 
@@ -60,7 +63,7 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* define if vasprintf is available */
+/* Define to 1 if you have the `vasprintf' function. */
 #undef HAVE_VASPRINTF
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
