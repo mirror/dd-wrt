@@ -1,0 +1,47 @@
+INSTALLATION
+================================================================================
+
+For:
+	Apple Binary and XML Property Lists
+
+You must have:
+	libxml2-dev
+	cmake
+	make
+	gcc
+
+Optional:
+	swig
+	python
+
+To compile run:
+	mkdir build
+	cd build
+	cmake ..
+	make
+	sudo make install  # (if you want to install it into your system directories)
+
+On Ubuntu/Debian, you can do:
+	sudo apt-get install build-essential cmake libxml2-dev
+
+
+== Who/what/where? ==
+
+Home:
+	http://www.libimobiledevice.org/
+
+Code:
+	git clone http://cgit.sukimashita.com/libplist.git/
+
+	libplist uses libcnary, see:
+	http://github.com/Chronic-Dev/libcnary
+
+Tickets:
+	http://libiphone.lighthouseapp.com/
+	Please tag libplist related bugs with 'libplist'
+
+Mailing List:
+	http://lists.libimobiledevice.org/mailman/listinfo/libimobiledevice-devel
+
+updated:
+	2011-06-25
