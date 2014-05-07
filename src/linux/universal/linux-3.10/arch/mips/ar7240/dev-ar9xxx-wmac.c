@@ -132,8 +132,8 @@ static void qca953x_wmac_init(void)
 
 	ar9xxx_wmac_resources[0].start = QCA953X_WMAC_BASE;
 	ar9xxx_wmac_resources[0].end = QCA953X_WMAC_BASE + QCA953X_WMAC_SIZE - 1;
-	ar9xxx_wmac_resources[1].start = AR934X_IP2_IRQ_WMAC;
-	ar9xxx_wmac_resources[1].end = AR934X_IP2_IRQ_WMAC;
+	ar9xxx_wmac_resources[1].start = AR71XX_CPU_IRQ_IP2;
+	ar9xxx_wmac_resources[1].end = AR71XX_CPU_IRQ_IP2;
 
 	t = ar71xx_reset_rr(QCA953X_RESET_REG_BOOTSTRAP);
 	if (t & QCA953X_BOOTSTRAP_REF_CLK_40)
@@ -152,8 +152,7 @@ static void qca955x_wmac_init(void)
 	ar9xxx_wmac_resources[0].end = QCA955X_WMAC_BASE + QCA955X_WMAC_SIZE - 1;
 	ar9xxx_wmac_resources[1].start = AR934X_IP2_IRQ_WMAC;
 	ar9xxx_wmac_resources[1].end = AR934X_IP2_IRQ_WMAC;
-
-
+	
 	t = ar71xx_reset_rr(QCA955X_RESET_REG_BOOTSTRAP);
 	if (t & QCA955X_BOOTSTRAP_REF_CLK_40)
 		ar9xxx_wmac_data.is_clk_25mhz = false;
