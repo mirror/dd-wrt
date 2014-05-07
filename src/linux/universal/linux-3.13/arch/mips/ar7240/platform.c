@@ -96,8 +96,13 @@ static struct resource ar7240_usb_ehci_resources[] = {
 	       .flags = IORESOURCE_MEM,
 	       },
 	[1] = {
+#ifdef CONFIG_AP135
+	       .start = AR934X_IP3_IRQ(0),
+	       .end = AR934X_IP3_IRQ(0),
+#else
 	       .start = AR7240_CPU_IRQ_USB,
 	       .end = AR7240_CPU_IRQ_USB,
+#endif
 	       .flags = IORESOURCE_IRQ,
 	       },
 };
@@ -231,6 +236,13 @@ static struct platform_device *ar724x_platform_devices[] __initdata = {
 #endif
 };
 
+static struct ar8327_led_cfg wr1043nd_v2_ar8327_led_cfg = {
+	.led_ctrl0 = 0xcc35cc35,
+	.led_ctrl1 = 0xca35ca35,
+	.led_ctrl2 = 0xc935c935,
+	.led_ctrl3 = 0x03ffff00,
+	.open_drain = true,
+};
 
 static struct ar8327_pad_cfg ap136_ar8327_pad0_cfg;
 static struct ar8327_pad_cfg ap136_ar8327_pad6_cfg;
@@ -252,6 +264,9 @@ static struct ar8327_platform_data ap136_ar8327_data = {
 		.txpause = 1,
 		.rxpause = 1,
 	},
+#ifdef CONFIG_WR1043V2
+	.led_cfg = &wr1043nd_v2_ar8327_led_cfg,
+#endif
 };
 
 static struct mdio_board_info ap136_mdio0_info[] = {
@@ -493,7 +508,9 @@ int __init ar7240_platform_init(void)
 #endif
 
 #else
-#ifdef CONFIG_AP135
+#ifdef CONFIG_WR1043V2
+	mac = (u8 *)KSEG1ADDR(0x1f01fc00);
+#elif CONFIG_AP135
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
 #endif
 	ath79_init_mac(mac0, mac, -1);
@@ -574,6 +591,23 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_add_device_mdio(0, 0x0);
 
+#if 0
+	/* GMAC0 of the AR8327 switch is connected to GMAC0 via RGMII */
+	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_RGMII;
+	ap136_ar8327_pad0_cfg.txclk_delay_en = true;
+	ap136_ar8327_pad0_cfg.rxclk_delay_en = true;
+	ap136_ar8327_pad0_cfg.txclk_delay_sel = AR8327_CLK_DELAY_SEL1;
+	ap136_ar8327_pad0_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2;
+
+	/* GMAC6 of the AR8327 switch is connected to GMAC1 via SGMII */
+	ap136_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_SGMII;
+	ap136_ar8327_pad6_cfg.rxclk_delay_en = true;
+	ap136_ar8327_pad6_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL0;
+
+	ar71xx_eth0_pll_data.pll_1000 = 0xa6000000;
+	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
+#else
+
 	/* GMAC0 of the AR8327 switch is connected to GMAC1 via SGMII */
 	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
 	ap136_ar8327_pad0_cfg.sgmii_delay_en = true;
@@ -587,7 +621,7 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_eth0_pll_data.pll_1000 = 0x56000000;
 	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
-
+#endif
 	mdiobus_register_board_info(ap136_mdio0_info,
 				    ARRAY_SIZE(ap136_mdio0_info));
 

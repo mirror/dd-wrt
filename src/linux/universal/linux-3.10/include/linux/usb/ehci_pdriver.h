@@ -42,6 +42,9 @@ struct usb_ehci_pdata {
 	unsigned	big_endian_desc:1;
 	unsigned	big_endian_mmio:1;
 	unsigned	no_io_watchdog:1;
+	unsigned	ignore_oc:1;
+	unsigned	qca_force_host_mode:1;
+	unsigned	qca_force_16bit_ptw:1;
 
 	/* Turn on all power and clocks */
 	int (*power_on)(struct platform_device *pdev);
@@ -50,6 +53,7 @@ struct usb_ehci_pdata {
 	/* Turn on only VBUS suspend power and hotplug detection,
 	 * turn off everything else */
 	void (*power_suspend)(struct platform_device *pdev);
+	void (*reset_notifier)(struct platform_device *pdev);
 };
 
 #endif /* __USB_CORE_EHCI_PDRIVER_H */
