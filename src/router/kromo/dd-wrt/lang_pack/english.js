@@ -2626,6 +2626,8 @@ wl_basic.ch_pos_lwr="Lower";
 wl_basic.ghz="GHz";
 wl_basic.mhz="MHz";
 wl_basic.tbquam="TurboQUAM";
+wl_basic.upper="upper";
+wl_basic.lower="lower";
 
 //help container
 var hwl_basic=new Object();
