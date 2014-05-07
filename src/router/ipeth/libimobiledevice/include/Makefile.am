@@ -17,4 +17,6 @@ nobase_include_HEADERS = libimobiledevice/libimobiledevice.h \
 			 libimobiledevice/restore.h\
 			 libimobiledevice/webinspector.h\
 			 libimobiledevice/heartbeat.h\
-			 libimobiledevice/diagnostics_relay.h
+			 libimobiledevice/diagnostics_relay.h\
+			 libimobiledevice/syslog_relay.h\
+			 libimobiledevice/service.h

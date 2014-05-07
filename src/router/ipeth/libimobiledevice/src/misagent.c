@@ -27,7 +27,7 @@
 
 #include "misagent.h"
 #include "property_list_service.h"
-#include "debug.h"
+#include "common/debug.h"
 
 /**
  * Convert a property_list_service_error_t value to a misagent_error_t
@@ -40,19 +40,19 @@
  */
 static misagent_error_t misagent_error(property_list_service_error_t err)
 {
-       switch (err) {
-                case PROPERTY_LIST_SERVICE_E_SUCCESS:
-                        return MISAGENT_E_SUCCESS;
-                case PROPERTY_LIST_SERVICE_E_INVALID_ARG:
-                        return MISAGENT_E_INVALID_ARG;
-                case PROPERTY_LIST_SERVICE_E_PLIST_ERROR:
-                        return MISAGENT_E_PLIST_ERROR;
-                case PROPERTY_LIST_SERVICE_E_MUX_ERROR:
-                        return MISAGENT_E_CONN_FAILED;
-                default:
-                        break;
-        }
-        return MISAGENT_E_UNKNOWN_ERROR;
+	switch (err) {
+		case PROPERTY_LIST_SERVICE_E_SUCCESS:
+			return MISAGENT_E_SUCCESS;
+		case PROPERTY_LIST_SERVICE_E_INVALID_ARG:
+			return MISAGENT_E_INVALID_ARG;
+		case PROPERTY_LIST_SERVICE_E_PLIST_ERROR:
+			return MISAGENT_E_PLIST_ERROR;
+		case PROPERTY_LIST_SERVICE_E_MUX_ERROR:
+			return MISAGENT_E_CONN_FAILED;
+		default:
+			break;
+	}
+	return MISAGENT_E_UNKNOWN_ERROR;
 }
 
 /**
@@ -115,6 +115,26 @@ misagent_error_t misagent_client_new(idevice_t device, lockdownd_service_descrip
 }
 
 /**
+ * Starts a new misagent service on the specified device and connects to it.
+ *
+ * @param device The device to connect to.
+ * @param client Pointer that will point to a newly allocated
+ *     misagent_client_t upon successful return. Must be freed using
+ *     misagent_client_free() after use.
+ * @param label The label to use for communication. Usually the program name.
+ *  Pass NULL to disable sending the label in requests to lockdownd.
+ *
+ * @return MISAGENT_E_SUCCESS on success, or an MISAGENT_E_* error
+ *     code otherwise.
+ */
+misagent_error_t misagent_client_start_service(idevice_t device, misagent_client_t * client, const char* label)
+{
+	misagent_error_t err = MISAGENT_E_UNKNOWN_ERROR;
+	service_client_factory_start_service(device, MISAGENT_SERVICE_NAME, (void**)client, label, SERVICE_CONSTRUCTOR(misagent_client_new), &err);
+	return err;
+}
+
+/**
  * Disconnects an misagent client from the device and frees up the
  * misagent client data.
  *
@@ -151,23 +171,23 @@ misagent_error_t misagent_client_free(misagent_client_t client)
 misagent_error_t misagent_install(misagent_client_t client, plist_t profile)
 {
 	if (!client || !client->parent || !profile || (plist_get_node_type(profile) != PLIST_DATA))
-                return MISAGENT_E_INVALID_ARG;
+		return MISAGENT_E_INVALID_ARG;
 
 	client->last_error = MISAGENT_E_UNKNOWN_ERROR;
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict, "MessageType", plist_new_string("Install"));
-	plist_dict_insert_item(dict, "Profile", plist_copy(profile));
-	plist_dict_insert_item(dict, "ProfileType", plist_new_string("Provisioning"));
+	plist_dict_set_item(dict, "MessageType", plist_new_string("Install"));
+	plist_dict_set_item(dict, "Profile", plist_copy(profile));
+	plist_dict_set_item(dict, "ProfileType", plist_new_string("Provisioning"));
 
 	misagent_error_t res = misagent_error(property_list_service_send_xml_plist(client->parent, dict));
 	plist_free(dict);
 	dict = NULL;
 
-        if (res != MISAGENT_E_SUCCESS) {
-                debug_info("could not send plist, error %d", res);
+	if (res != MISAGENT_E_SUCCESS) {
+		debug_info("could not send plist, error %d", res);
 		return res;
-        }
+	}
 
 	res = misagent_error(property_list_service_receive_plist(client->parent, &dict));
 	if (res != MISAGENT_E_SUCCESS) {
@@ -202,22 +222,22 @@ misagent_error_t misagent_install(misagent_client_t client, plist_t profile)
 misagent_error_t misagent_copy(misagent_client_t client, plist_t* profiles)
 {
 	if (!client || !client->parent || !profiles)
-                return MISAGENT_E_INVALID_ARG;
+		return MISAGENT_E_INVALID_ARG;
 
 	client->last_error = MISAGENT_E_UNKNOWN_ERROR;
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict, "MessageType", plist_new_string("Copy"));
-	plist_dict_insert_item(dict, "ProfileType", plist_new_string("Provisioning"));
+	plist_dict_set_item(dict, "MessageType", plist_new_string("Copy"));
+	plist_dict_set_item(dict, "ProfileType", plist_new_string("Provisioning"));
 
 	misagent_error_t res = misagent_error(property_list_service_send_xml_plist(client->parent, dict));
 	plist_free(dict);
 	dict = NULL;
 
-        if (res != MISAGENT_E_SUCCESS) {
-                debug_info("could not send plist, error %d", res);
+	if (res != MISAGENT_E_SUCCESS) {
+		debug_info("could not send plist, error %d", res);
 		return res;
-        }
+	}
 
 	res = misagent_error(property_list_service_receive_plist(client->parent, &dict));
 	if (res != MISAGENT_E_SUCCESS) {
@@ -253,23 +273,23 @@ misagent_error_t misagent_copy(misagent_client_t client, plist_t* profiles)
 misagent_error_t misagent_remove(misagent_client_t client, const char* profileID)
 {
 	if (!client || !client->parent || !profileID)
-                return MISAGENT_E_INVALID_ARG;
+		return MISAGENT_E_INVALID_ARG;
 
 	client->last_error = MISAGENT_E_UNKNOWN_ERROR;
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict, "MessageType", plist_new_string("Remove"));
-	plist_dict_insert_item(dict, "ProfileID", plist_new_string(profileID));
-	plist_dict_insert_item(dict, "ProfileType", plist_new_string("Provisioning"));
+	plist_dict_set_item(dict, "MessageType", plist_new_string("Remove"));
+	plist_dict_set_item(dict, "ProfileID", plist_new_string(profileID));
+	plist_dict_set_item(dict, "ProfileType", plist_new_string("Provisioning"));
 
 	misagent_error_t res = misagent_error(property_list_service_send_xml_plist(client->parent, dict));
 	plist_free(dict);
 	dict = NULL;
 
-        if (res != MISAGENT_E_SUCCESS) {
-                debug_info("could not send plist, error %d", res);
+	if (res != MISAGENT_E_SUCCESS) {
+		debug_info("could not send plist, error %d", res);
 		return res;
-        }
+	}
 
 	res = misagent_error(property_list_service_receive_plist(client->parent, &dict));
 	if (res != MISAGENT_E_SUCCESS) {

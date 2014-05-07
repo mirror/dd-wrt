@@ -23,15 +23,11 @@
 #define __AFC_H
 
 #include <stdint.h>
-#ifdef WIN32
-#include <windows.h>
-#else
-#include <pthread.h>
-#endif
 
 #include "libimobiledevice/afc.h"
 #include "service.h"
 #include "endianness.h"
+#include "common/thread.h"
 
 #define AFC_MAGIC "CFA6LPAA"
 #define AFC_MAGIC_LEN (8)
@@ -53,20 +49,12 @@ typedef struct {
 	(x)->packet_num    = le64toh((x)->packet_num); \
 	(x)->operation     = le64toh((x)->operation);
 
-typedef struct {
-	uint64_t filehandle, size;
-} AFCFilePacket;
-
 struct afc_client_private {
 	service_client_t parent;
 	AFCPacket *afc_packet;
 	int file_handle;
 	int lock;
-#ifdef WIN32
-	CRITICAL_SECTION mutex;
-#else
-	pthread_mutex_t mutex;
-#endif
+	mutex_t mutex;
 	int free_parent;
 };
 

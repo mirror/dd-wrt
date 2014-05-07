@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include "file_relay.h"
 #include "property_list_service.h"
-#include "debug.h"
+#include "common/debug.h"
 
 /**
  * Connects to the file_relay service on the specified device.
@@ -54,6 +54,26 @@ file_relay_error_t file_relay_client_new(idevice_t device, lockdownd_service_des
 	/* all done, return success */
 	*client = client_loc;
 	return FILE_RELAY_E_SUCCESS;
+}
+
+/**
+ * Starts a new file_relay service on the specified device and connects to it.
+ *
+ * @param device The device to connect to.
+ * @param client Pointer that will point to a newly allocated
+ *     file_relay_client_t upon successful return. Must be freed using
+ *     file_relay_client_free() after use.
+ * @param label The label to use for communication. Usually the program name.
+ *  Pass NULL to disable sending the label in requests to lockdownd.
+ *
+ * @return FILE_RELAY_E_SUCCESS on success, or an FILE_RELAY_E_* error
+ *     code otherwise.
+ */
+file_relay_error_t file_relay_client_start_service(idevice_t device, file_relay_client_t * client, const char* label)
+{
+	file_relay_error_t err = FILE_RELAY_E_UNKNOWN_ERROR;
+	service_client_factory_start_service(device, FILE_RELAY_SERVICE_NAME, (void**)client, label, SERVICE_CONSTRUCTOR(file_relay_client_new), &err);
+	return err;
 }
 
 /**
@@ -96,6 +116,7 @@ file_relay_error_t file_relay_client_free(file_relay_client_t client)
  *     data using idevice_connection_receive(). The connection will be closed
  *     automatically by the device, but use file_relay_client_free() to clean
  *     up properly.
+ * @param timeout Maximum time in milliseconds to wait for data.
  *
  * @note WARNING: Don't call this function without reading the data afterwards.
  *     A directory mobile_file_relay.XXXX used for creating the archive will
@@ -108,7 +129,7 @@ file_relay_error_t file_relay_client_free(file_relay_client_t client)
  *     sources are invalid, FILE_RELAY_E_STAGING_EMPTY if no data is available
  *     for the given sources, or FILE_RELAY_E_UNKNOWN_ERROR otherwise.
  */
-file_relay_error_t file_relay_request_sources(file_relay_client_t client, const char **sources, idevice_connection_t *connection)
+file_relay_error_t file_relay_request_sources_timeout(file_relay_client_t client, const char **sources, idevice_connection_t *connection, unsigned int timeout)
 {
 	if (!client || !client->parent || !sources || !sources[0]) {
 		return FILE_RELAY_E_INVALID_ARG;
@@ -123,7 +144,7 @@ file_relay_error_t file_relay_request_sources(file_relay_client_t client, const 
 		i++;
 	}	
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict, "Sources", array);
+	plist_dict_set_item(dict, "Sources", array);
 
 	if (property_list_service_send_xml_plist(client->parent, dict) != PROPERTY_LIST_SERVICE_E_SUCCESS) {
 		debug_info("ERROR: Could not send request to device!");
@@ -133,7 +154,7 @@ file_relay_error_t file_relay_request_sources(file_relay_client_t client, const 
 	plist_free(dict);
 
 	dict = NULL;
-	if (property_list_service_receive_plist_with_timeout(client->parent, &dict, 60000) != PROPERTY_LIST_SERVICE_E_SUCCESS) {
+	if (property_list_service_receive_plist_with_timeout(client->parent, &dict, timeout) != PROPERTY_LIST_SERVICE_E_SUCCESS) {
 		debug_info("ERROR: Could not receive answer from device!");
 		err = FILE_RELAY_E_MUX_ERROR;
 		goto leave;
@@ -195,4 +216,40 @@ leave:
 		plist_free(dict);
 	}
 	return err;
+}
+
+/**
+ * Request data for the given sources. Calls file_relay_request_sources_timeout() with
+ * a timeout of 60000 milliseconds (60 seconds).
+ *
+ * @param client The connected file_relay client.
+ * @param sources A NULL-terminated list of sources to retrieve.
+ *     Valid sources are:
+ *     - AppleSupport
+ *     - Network
+ *     - VPN
+ *     - WiFi
+ *     - UserDatabases
+ *     - CrashReporter
+ *     - tmp
+ *     - SystemConfiguration
+ * @param connection The connection that has to be used for receiving the
+ *     data using idevice_connection_receive(). The connection will be closed
+ *     automatically by the device, but use file_relay_client_free() to clean
+ *     up properly.
+ *
+ * @note WARNING: Don't call this function without reading the data afterwards.
+ *     A directory mobile_file_relay.XXXX used for creating the archive will
+ *     remain in the /tmp directory otherwise.
+ *
+ * @return FILE_RELAY_E_SUCCESS on succes, FILE_RELAY_E_INVALID_ARG when one or
+ *     more parameters are invalid, FILE_RELAY_E_MUX_ERROR if a communication
+ *     error occurs, FILE_RELAY_E_PLIST_ERROR when the received result is NULL
+ *     or is not a valid plist, FILE_RELAY_E_INVALID_SOURCE if one or more
+ *     sources are invalid, FILE_RELAY_E_STAGING_EMPTY if no data is available
+ *     for the given sources, or FILE_RELAY_E_UNKNOWN_ERROR otherwise.
+ */
+file_relay_error_t file_relay_request_sources(file_relay_client_t client, const char **sources, idevice_connection_t *connection)
+{
+	return file_relay_request_sources_timeout(client, sources, connection, 60000);
 }
