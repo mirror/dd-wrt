@@ -3939,7 +3939,7 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
 			websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
 			websWrite(wp, "<option value=\"upper\" %s><script type=\"text/javascript\">Capture(\"wl_basic.upper\");</script></option>\n", nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "<option value=\"lower\" %s>script type=\"text/javascript\">Capture(\"wl_basic.lower\");</script></option>\n", nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "<option value=\"lower\" %s><script type=\"text/javascript\">Capture(\"wl_basic.lower\");</script></option>\n", nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "</select>\n");
 
 			websWrite(wp, "</div>\n");
