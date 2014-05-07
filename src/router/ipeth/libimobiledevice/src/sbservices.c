@@ -26,7 +26,7 @@
 
 #include "sbservices.h"
 #include "property_list_service.h"
-#include "debug.h"
+#include "common/debug.h"
 
 /**
  * Locks an sbservices client, used for thread safety.
@@ -36,11 +36,7 @@
 static void sbs_lock(sbservices_client_t client)
 {
 	debug_info("SBServices: Locked");
-#ifdef WIN32
-	EnterCriticalSection(&client->mutex);
-#else
-	pthread_mutex_lock(&client->mutex);
-#endif
+	mutex_lock(&client->mutex);
 }
 
 /**
@@ -51,11 +47,7 @@ static void sbs_lock(sbservices_client_t client)
 static void sbs_unlock(sbservices_client_t client)
 {
 	debug_info("SBServices: Unlocked");
-#ifdef WIN32
-	LeaveCriticalSection(&client->mutex);
-#else
-	pthread_mutex_unlock(&client->mutex);
-#endif
+	mutex_unlock(&client->mutex);
 }
 
 /**
@@ -69,19 +61,19 @@ static void sbs_unlock(sbservices_client_t client)
  */
 static sbservices_error_t sbservices_error(property_list_service_error_t err)
 {
-       switch (err) {
-                case PROPERTY_LIST_SERVICE_E_SUCCESS:
-                        return SBSERVICES_E_SUCCESS;
-                case PROPERTY_LIST_SERVICE_E_INVALID_ARG:
-                        return SBSERVICES_E_INVALID_ARG;
-                case PROPERTY_LIST_SERVICE_E_PLIST_ERROR:
-                        return SBSERVICES_E_PLIST_ERROR;
-                case PROPERTY_LIST_SERVICE_E_MUX_ERROR:
-                        return SBSERVICES_E_CONN_FAILED;
-                default:
-                        break;
-        }
-        return SBSERVICES_E_UNKNOWN_ERROR;
+	switch (err) {
+		case PROPERTY_LIST_SERVICE_E_SUCCESS:
+			return SBSERVICES_E_SUCCESS;
+		case PROPERTY_LIST_SERVICE_E_INVALID_ARG:
+			return SBSERVICES_E_INVALID_ARG;
+		case PROPERTY_LIST_SERVICE_E_PLIST_ERROR:
+			return SBSERVICES_E_PLIST_ERROR;
+		case PROPERTY_LIST_SERVICE_E_MUX_ERROR:
+			return SBSERVICES_E_CONN_FAILED;
+		default:
+			break;
+	}
+	return SBSERVICES_E_UNKNOWN_ERROR;
 }
 
 /**
@@ -105,14 +97,30 @@ sbservices_error_t sbservices_client_new(idevice_t device, lockdownd_service_des
 
 	sbservices_client_t client_loc = (sbservices_client_t) malloc(sizeof(struct sbservices_client_private));
 	client_loc->parent = plistclient;
-#ifdef WIN32
-	InitializeCriticalSection(&client_loc->mutex);
-#else
-	pthread_mutex_init(&client_loc->mutex, NULL);
-#endif
+	mutex_init(&client_loc->mutex);
 
 	*client = client_loc;
 	return SBSERVICES_E_SUCCESS;
+}
+
+/**
+ * Starts a new sbservices service on the specified device and connects to it.
+ *
+ * @param device The device to connect to.
+ * @param client Pointer that will point to a newly allocated
+ *     sbservices_client_t upon successful return. Must be freed using
+ *     sbservices_client_free() after use.
+ * @param label The label to use for communication. Usually the program name.
+ *  Pass NULL to disable sending the label in requests to lockdownd.
+ *
+ * @return SBSERVICES_E_SUCCESS on success, or an SBSERVICES_E_* error
+ *     code otherwise.
+ */
+sbservices_error_t sbservices_client_start_service(idevice_t device, sbservices_client_t * client, const char* label)
+{
+	sbservices_error_t err = SBSERVICES_E_UNKNOWN_ERROR;
+	service_client_factory_start_service(device, SBSERVICES_SERVICE_NAME, (void**)client, label, SERVICE_CONSTRUCTOR(sbservices_client_new), &err);
+	return err;
 }
 
 /**
@@ -131,11 +139,7 @@ sbservices_error_t sbservices_client_free(sbservices_client_t client)
 
 	sbservices_error_t err = sbservices_error(property_list_service_client_free(client->parent));
 	client->parent = NULL;
-#ifdef WIN32
-	DeleteCriticalSection(&client->mutex);
-#else
-	pthread_mutex_destroy(&client->mutex);
-#endif
+	mutex_destroy(&client->mutex);
 	free(client);
 
 	return err;
@@ -163,9 +167,9 @@ sbservices_error_t sbservices_get_icon_state(sbservices_client_t client, plist_t
 	sbservices_error_t res = SBSERVICES_E_UNKNOWN_ERROR;
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict, "command", plist_new_string("getIconState"));
+	plist_dict_set_item(dict, "command", plist_new_string("getIconState"));
 	if (format_version) {
-		plist_dict_insert_item(dict, "formatVersion", plist_new_string(format_version));
+		plist_dict_set_item(dict, "formatVersion", plist_new_string(format_version));
 	}
 
 	sbs_lock(client);
@@ -212,8 +216,8 @@ sbservices_error_t sbservices_set_icon_state(sbservices_client_t client, plist_t
 	sbservices_error_t res = SBSERVICES_E_UNKNOWN_ERROR;
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict, "command", plist_new_string("setIconState"));
-	plist_dict_insert_item(dict, "iconState", plist_copy(newstate));
+	plist_dict_set_item(dict, "command", plist_new_string("setIconState"));
+	plist_dict_set_item(dict, "iconState", plist_copy(newstate));
 
 	sbs_lock(client);
 
@@ -253,8 +257,8 @@ sbservices_error_t sbservices_get_icon_pngdata(sbservices_client_t client, const
 	sbservices_error_t res = SBSERVICES_E_UNKNOWN_ERROR;
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict, "command", plist_new_string("getIconPNGData"));
-	plist_dict_insert_item(dict, "bundleId", plist_new_string(bundleId));
+	plist_dict_set_item(dict, "command", plist_new_string("getIconPNGData"));
+	plist_dict_set_item(dict, "bundleId", plist_new_string(bundleId));
 
 	sbs_lock(client);
 
@@ -299,7 +303,7 @@ sbservices_error_t sbservices_get_interface_orientation(sbservices_client_t clie
 	sbservices_error_t res = SBSERVICES_E_UNKNOWN_ERROR;
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict, "command", plist_new_string("getInterfaceOrientation"));
+	plist_dict_set_item(dict, "command", plist_new_string("getInterfaceOrientation"));
 
 	sbs_lock(client);
 
@@ -351,7 +355,7 @@ sbservices_error_t sbservices_get_home_screen_wallpaper_pngdata(sbservices_clien
 	sbservices_error_t res = SBSERVICES_E_UNKNOWN_ERROR;
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict, "command", plist_new_string("getHomeScreenWallpaperPNGData"));
+	plist_dict_set_item(dict, "command", plist_new_string("getHomeScreenWallpaperPNGData"));
 
 	sbs_lock(client);
 

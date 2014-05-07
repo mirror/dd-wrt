@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/time.h>
+#include <inttypes.h>
 
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
@@ -177,7 +178,7 @@ static void plist_node_to_string(plist_t node)
 
 	case PLIST_UINT:
 		plist_get_uint_val(node, &u);
-		printf("%llu\n", (long long)u);
+		printf("%"PRIu64"\n", (long long)u);
 		break;
 
 	case PLIST_REAL:
@@ -377,6 +378,7 @@ int main(int argc, char *argv[])
 				node_type = plist_get_node_type(node);
 				if (node_type == PLIST_DICT) {
 					plist_dict_to_string(node);
+					break;
 				} else if (node_type == PLIST_ARRAY) {
 					plist_array_to_string(node);
 					break;

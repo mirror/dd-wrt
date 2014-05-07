@@ -26,7 +26,7 @@
 
 #include "mobile_image_mounter.h"
 #include "property_list_service.h"
-#include "debug.h"
+#include "common/debug.h"
 
 /**
  * Locks a mobile_image_mounter client, used for thread safety.
@@ -35,11 +35,7 @@
  */
 static void mobile_image_mounter_lock(mobile_image_mounter_client_t client)
 {
-#ifdef WIN32
-	EnterCriticalSection(&client->mutex);
-#else
-	pthread_mutex_lock(&client->mutex);
-#endif
+	mutex_lock(&client->mutex);
 }
 
 /**
@@ -49,11 +45,7 @@ static void mobile_image_mounter_lock(mobile_image_mounter_client_t client)
  */
 static void mobile_image_mounter_unlock(mobile_image_mounter_client_t client)
 {
-#ifdef WIN32
-	LeaveCriticalSection(&client->mutex);
-#else
-	pthread_mutex_unlock(&client->mutex);
-#endif
+	mutex_unlock(&client->mutex);
 }
 
 /**
@@ -107,14 +99,30 @@ mobile_image_mounter_error_t mobile_image_mounter_new(idevice_t device, lockdown
 	mobile_image_mounter_client_t client_loc = (mobile_image_mounter_client_t) malloc(sizeof(struct mobile_image_mounter_client_private));
 	client_loc->parent = plistclient;
 
-#ifdef WIN32
-	InitializeCriticalSection(&client_loc->mutex);
-#else
-	pthread_mutex_init(&client_loc->mutex, NULL);
-#endif
+	mutex_init(&client_loc->mutex);
 
 	*client = client_loc;
 	return MOBILE_IMAGE_MOUNTER_E_SUCCESS;
+}
+
+/**
+ * Starts a new mobile_image_mounter service on the specified device and connects to it.
+ *
+ * @param device The device to connect to.
+ * @param client Pointer that will point to a newly allocated
+ *     mobile_image_mounter_t upon successful return. Must be freed using
+ *     mobile_image_mounter_free() after use.
+ * @param label The label to use for communication. Usually the program name.
+ *  Pass NULL to disable sending the label in requests to lockdownd.
+ *
+ * @return MOBILE_IMAGE_MOUNTER_E_SUCCESS on success, or an MOBILE_IMAGE_MOUNTER_E_* error
+ *     code otherwise.
+ */
+mobile_image_mounter_error_t mobile_image_mounter_start_service(idevice_t device, mobile_image_mounter_client_t * client, const char* label)
+{
+	mobile_image_mounter_error_t err = MOBILE_IMAGE_MOUNTER_E_UNKNOWN_ERROR;
+	service_client_factory_start_service(device, MOBILE_IMAGE_MOUNTER_SERVICE_NAME, (void**)client, label, SERVICE_CONSTRUCTOR(mobile_image_mounter_new), &err);
+	return err;
 }
 
 /**
@@ -133,11 +141,7 @@ mobile_image_mounter_error_t mobile_image_mounter_free(mobile_image_mounter_clie
 
 	property_list_service_client_free(client->parent);
 	client->parent = NULL;
-#ifdef WIN32
-	DeleteCriticalSection(&client->mutex);
-#else
-	pthread_mutex_destroy(&client->mutex);
-#endif
+	mutex_destroy(&client->mutex);
 	free(client);
 
 	return MOBILE_IMAGE_MOUNTER_E_SUCCESS;
@@ -164,8 +168,8 @@ mobile_image_mounter_error_t mobile_image_mounter_lookup_image(mobile_image_moun
 	mobile_image_mounter_lock(client);
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict,"Command", plist_new_string("LookupImage"));
-	plist_dict_insert_item(dict,"ImageType", plist_new_string(image_type));
+	plist_dict_set_item(dict,"Command", plist_new_string("LookupImage"));
+	plist_dict_set_item(dict,"ImageType", plist_new_string(image_type));
 
 	mobile_image_mounter_error_t res = mobile_image_mounter_error(property_list_service_send_xml_plist(client->parent, dict));
 	plist_free(dict);
@@ -183,6 +187,128 @@ mobile_image_mounter_error_t mobile_image_mounter_lookup_image(mobile_image_moun
 leave_unlock:
 	mobile_image_mounter_unlock(client);
 	return res;
+}
+
+/**
+ * Uploads an image to the device.
+ *
+ * @param client The connected mobile_image_mounter client.
+ * @param image_type Type of image that is being uploaded.
+ * @param image_size Total size of the image.
+ * @param upload_cb Callback function that gets the data chunks for uploading
+ *    the image.
+ * @param userdata User defined data for the upload callback function.
+ *
+ * @return MOBILE_IMAGE_MOUNTER_E_SUCCESS on succes, or a
+ *    MOBILE_IMAGE_MOUNTER_E_* error code otherwise.
+ */
+mobile_image_mounter_error_t mobile_image_mounter_upload_image(mobile_image_mounter_client_t client, const char *image_type, size_t image_size, mobile_image_mounter_upload_cb_t upload_cb, void* userdata)
+{
+	if (!client || !image_type || (image_size == 0) || !upload_cb) {
+		return MOBILE_IMAGE_MOUNTER_E_INVALID_ARG;
+	}
+	mobile_image_mounter_lock(client);
+	plist_t result = NULL;
+
+	plist_t dict = plist_new_dict();
+	plist_dict_set_item(dict, "Command", plist_new_string("ReceiveBytes"));
+	plist_dict_set_item(dict, "ImageSize", plist_new_uint(image_size));
+	plist_dict_set_item(dict, "ImageType", plist_new_string(image_type));
+
+	mobile_image_mounter_error_t res = mobile_image_mounter_error(property_list_service_send_xml_plist(client->parent, dict));
+	plist_free(dict);
+
+	if (res != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
+		debug_info("Error sending XML plist to device!");
+		goto leave_unlock;
+	}
+
+	res = mobile_image_mounter_error(property_list_service_receive_plist(client->parent, &result));
+	if (res != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
+		debug_info("Error receiving response from device!");
+		goto leave_unlock;
+	}
+	res = MOBILE_IMAGE_MOUNTER_E_COMMAND_FAILED;
+
+	char* strval = NULL;
+	plist_t node = plist_dict_get_item(result, "Status");
+	if (node && plist_get_node_type(node) == PLIST_STRING) {
+		plist_get_string_val(node, &strval);
+	}
+	if (!strval) {
+		debug_info("Error: Unexpected response received!");
+		goto leave_unlock;
+	}
+	if (strcmp(strval, "ReceiveBytesAck") != 0) {
+		debug_info("Error: didn't get ReceiveBytesAck but %s", strval);
+		free(strval);
+		goto leave_unlock;
+	}
+	free(strval);
+
+	size_t tx = 0;
+	size_t bufsize = 65536;
+	unsigned char *buf = (unsigned char*)malloc(bufsize);
+	if (!buf) {
+		debug_info("Out of memory");
+		res = MOBILE_IMAGE_MOUNTER_E_UNKNOWN_ERROR;
+		goto leave_unlock;
+	}
+	debug_info("uploading image (%d bytes)", (int)image_size);
+	while (tx < image_size) {
+		size_t remaining = image_size - tx;
+		size_t amount = (remaining < bufsize) ? remaining : bufsize;
+		ssize_t r = upload_cb(buf, amount, userdata);
+		if (r < 0) {
+			debug_info("upload_cb returned %d", (int)r);
+			break;
+		}
+		uint32_t sent = 0;
+		if (service_send(client->parent->parent, (const char*)buf, (uint32_t)r, &sent) != SERVICE_E_SUCCESS) {
+			debug_info("service_send failed");
+			break;
+		}
+		tx += r;
+	}
+	free(buf);
+	if (tx < image_size) {
+		debug_info("Error: failed to upload image");
+		goto leave_unlock;
+	}
+	debug_info("image uploaded");
+
+	res = mobile_image_mounter_error(property_list_service_receive_plist(client->parent, &result));
+	if (res != MOBILE_IMAGE_MOUNTER_E_SUCCESS) {
+		debug_info("Error receiving response from device!");
+		goto leave_unlock;
+	}
+	res = MOBILE_IMAGE_MOUNTER_E_COMMAND_FAILED;
+
+	strval = NULL;
+	node = plist_dict_get_item(result, "Status");
+	if (node && plist_get_node_type(node) == PLIST_STRING) {
+		plist_get_string_val(node, &strval);
+	}
+	if (!strval) {
+		debug_info("Error: Unexpected response received!");	
+		goto leave_unlock;
+	}
+	if (strcmp(strval, "Complete") != 0) {
+		debug_info("Error: didn't get Complete but %s", strval);
+		free(strval);
+		goto leave_unlock;
+	} else {
+		res = MOBILE_IMAGE_MOUNTER_E_SUCCESS;
+	}
+	free(strval);
+	
+
+leave_unlock:
+	mobile_image_mounter_unlock(client);
+	if (result)
+		plist_free(result);
+	return res;
+
 }
 
 /**
@@ -214,10 +340,10 @@ mobile_image_mounter_error_t mobile_image_mounter_mount_image(mobile_image_mount
 	mobile_image_mounter_lock(client);
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict, "Command", plist_new_string("MountImage"));
-	plist_dict_insert_item(dict, "ImagePath", plist_new_string(image_path));
-	plist_dict_insert_item(dict, "ImageSignature", plist_new_data(image_signature, signature_length));
-	plist_dict_insert_item(dict, "ImageType", plist_new_string(image_type));
+	plist_dict_set_item(dict, "Command", plist_new_string("MountImage"));
+	plist_dict_set_item(dict, "ImagePath", plist_new_string(image_path));
+	plist_dict_set_item(dict, "ImageSignature", plist_new_data(image_signature, signature_length));
+	plist_dict_set_item(dict, "ImageType", plist_new_string(image_type));
 
 	mobile_image_mounter_error_t res = mobile_image_mounter_error(property_list_service_send_xml_plist(client->parent, dict));
 	plist_free(dict);
@@ -256,7 +382,7 @@ mobile_image_mounter_error_t mobile_image_mounter_hangup(mobile_image_mounter_cl
 	mobile_image_mounter_lock(client);
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict, "Command", plist_new_string("Hangup"));
+	plist_dict_set_item(dict, "Command", plist_new_string("Hangup"));
 
 	mobile_image_mounter_error_t res = mobile_image_mounter_error(property_list_service_send_xml_plist(client->parent, dict));
 	plist_free(dict);

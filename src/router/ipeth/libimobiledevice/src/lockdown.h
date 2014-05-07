@@ -2,6 +2,7 @@
  * lockdown.h
  * Defines lockdown stuff, like the client struct.
  *
+ * Copyright (c) 2014 Martin Szulecki All Rights Reserved.
  * Copyright (c) 2008 Zach C. All Rights Reserved.
  *
  * This library is free software; you can redistribute it and/or
@@ -22,10 +23,10 @@
 #ifndef __LOCKDOWND_H
 #define __LOCKDOWND_H
 
-#include "userpref.h"
-
 #include "libimobiledevice/lockdown.h"
 #include "property_list_service.h"
+
+#define LOCKDOWN_PROTOCOL_VERSION "2"
 
 struct lockdownd_client_private {
 	property_list_service_client_t parent;
@@ -34,8 +35,5 @@ struct lockdownd_client_private {
 	char *udid;
 	char *label;
 };
-
-lockdownd_error_t lockdownd_get_device_public_key(lockdownd_client_t client, key_data_t * public_key);
-lockdownd_error_t lockdownd_gen_pair_cert(key_data_t public_key, key_data_t * device_cert, key_data_t * host_cert, key_data_t * root_cert);
 
 #endif
