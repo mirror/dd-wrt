@@ -1,4 +1,5 @@
+libtoolize --force
+aclocal -I m4
 autoheader
-aclocal
+automake -a --add-missing
 autoconf
-automake -a
