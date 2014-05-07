@@ -25,7 +25,7 @@
 
 #include "mobilebackup2.h"
 #include "device_link_service.h"
-#include "debug.h"
+#include "common/debug.h"
 
 #define MBACKUP2_VERSION_INT1 300
 #define MBACKUP2_VERSION_INT2 0
@@ -102,6 +102,26 @@ mobilebackup2_error_t mobilebackup2_client_new(idevice_t device, lockdownd_servi
 }
 
 /**
+ * Starts a new mobilebackup2 service on the specified device and connects to it.
+ *
+ * @param device The device to connect to.
+ * @param client Pointer that will point to a newly allocated
+ *     mobilebackup2_client_t upon successful return. Must be freed using
+ *     mobilebackup2_client_free() after use.
+ * @param label The label to use for communication. Usually the program name.
+ *  Pass NULL to disable sending the label in requests to lockdownd.
+ *
+ * @return MOBILEBACKUP2_E_SUCCESS on success, or an MOBILEBACKUP2_E_* error
+ *     code otherwise.
+ */
+mobilebackup2_error_t mobilebackup2_client_start_service(idevice_t device, mobilebackup2_client_t * client, const char* label)
+{
+	mobilebackup2_error_t err = MOBILEBACKUP2_E_UNKNOWN_ERROR;
+	service_client_factory_start_service(device, MOBILEBACKUP2_SERVICE_NAME, (void**)client, label, SERVICE_CONSTRUCTOR(mobilebackup2_client_new), &err);
+	return err;
+}
+
+/**
  * Disconnects a mobilebackup2 client from the device and frees up the
  * mobilebackup2 client data.
  *
@@ -153,7 +173,7 @@ mobilebackup2_error_t mobilebackup2_send_message(mobilebackup2_client_t client, 
 		} else {
 			dict = plist_new_dict();
 		}
-		plist_dict_insert_item(dict, "MessageName", plist_new_string(message));
+		plist_dict_set_item(dict, "MessageName", plist_new_string(message));
 
 		/* send it as DLMessageProcessMessage */
 		err = mobilebackup2_error(device_link_service_send_process_message(client->parent, dict));
@@ -366,7 +386,7 @@ mobilebackup2_error_t mobilebackup2_version_exchange(mobilebackup2_client_t clie
 	for (i = 0; i < count; i++) {
 		plist_array_append_item(array, plist_new_real(local_versions[i]));
 	}
-	plist_dict_insert_item(dict, "SupportedProtocolVersions", array);
+	plist_dict_set_item(dict, "SupportedProtocolVersions", array);
 
 	mobilebackup2_error_t err = mobilebackup2_send_message(client, "Hello", dict);
 	plist_free(dict);
@@ -431,12 +451,24 @@ mobilebackup2_error_t mobilebackup2_send_request(mobilebackup2_client_t client, 
 		return MOBILEBACKUP2_E_INVALID_ARG;
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict, "TargetIdentifier", plist_new_string(target_identifier));
+	plist_dict_set_item(dict, "TargetIdentifier", plist_new_string(target_identifier));
 	if (source_identifier) {
-		plist_dict_insert_item(dict, "SourceIdentifier", plist_new_string(source_identifier));
+		plist_dict_set_item(dict, "SourceIdentifier", plist_new_string(source_identifier));
 	}
 	if (options) {
-		plist_dict_insert_item(dict, "Options", plist_copy(options));
+		plist_dict_set_item(dict, "Options", plist_copy(options));
+	}
+	if (!strcmp(request, "Unback") && options) {
+		plist_t node = plist_dict_get_item(options, "Password");
+		if (node) {
+			plist_dict_set_item(dict, "Password", plist_copy(node));
+		}
+	}
+	if (!strcmp(request, "EnableCloudBackup") && options) {
+		plist_t node = plist_dict_get_item(options, "CloudBackupState");
+		if (node) {
+			plist_dict_set_item(dict, "CloudBackupState", plist_copy(node));
+		}
 	}
 	mobilebackup2_error_t err = mobilebackup2_send_message(client, request, dict);
 	plist_free(dict);

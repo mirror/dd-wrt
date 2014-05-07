@@ -26,7 +26,7 @@
 
 #include "notification_proxy.h"
 #include "property_list_service.h"
-#include "debug.h"
+#include "common/debug.h"
 
 #ifdef WIN32
 #define sleep(x) Sleep(x*1000)
@@ -46,11 +46,7 @@ struct np_thread {
 static void np_lock(np_client_t client)
 {
 	debug_info("NP: Locked");
-#ifdef WIN32
-	EnterCriticalSection(&client->mutex);
-#else
-	pthread_mutex_lock(&client->mutex);
-#endif
+	mutex_lock(&client->mutex);
 }
 
 /**
@@ -61,11 +57,7 @@ static void np_lock(np_client_t client)
 static void np_unlock(np_client_t client)
 {
 	debug_info("NP: Unlocked");
-#ifdef WIN32
-	LeaveCriticalSection(&client->mutex);
-#else
-	pthread_mutex_unlock(&client->mutex);
-#endif
+	mutex_unlock(&client->mutex);
 }
 
 /**
@@ -117,16 +109,31 @@ np_error_t np_client_new(idevice_t device, lockdownd_service_descriptor_t servic
 	np_client_t client_loc = (np_client_t) malloc(sizeof(struct np_client_private));
 	client_loc->parent = plistclient;
 
-#ifdef WIN32
-	InitializeCriticalSection(&client_loc->mutex);
-	client_loc->notifier = NULL;
-#else
-	pthread_mutex_init(&client_loc->mutex, NULL);
-	client_loc->notifier = (pthread_t)NULL;
-#endif
+	mutex_init(&client_loc->mutex);
+	client_loc->notifier = (thread_t)NULL;
 
 	*client = client_loc;
 	return NP_E_SUCCESS;
+}
+
+/**
+ * Starts a new notification proxy service on the specified device and connects to it.
+ *
+ * @param device The device to connect to.
+ * @param client Pointer that will point to a newly allocated
+ *     np_client_t upon successful return. Must be freed using
+ *     np_client_free() after use.
+ * @param label The label to use for communication. Usually the program name.
+ *  Pass NULL to disable sending the label in requests to lockdownd.
+ *
+ * @return NP_E_SUCCESS on success, or an NP_E_* error
+ *     code otherwise.
+ */
+np_error_t np_client_start_service(idevice_t device, np_client_t* client, const char* label)
+{
+	np_error_t err = NP_E_UNKNOWN_ERROR;
+	service_client_factory_start_service(device, NP_SERVICE_NAME, (void**)client, label, SERVICE_CONSTRUCTOR(np_client_new), &err);
+	return err;
 }
 
 /**
@@ -146,17 +153,9 @@ np_error_t np_client_free(np_client_t client)
 	client->parent = NULL;
 	if (client->notifier) {
 		debug_info("joining np callback");
-#ifdef WIN32
-		WaitForSingleObject(client->notifier, INFINITE);
-#else
-		pthread_join(client->notifier, NULL);
-#endif
+		thread_join(client->notifier);
 	}
-#ifdef WIN32
-	DeleteCriticalSection(&client->mutex);
-#else
-	pthread_mutex_destroy(&client->mutex);
-#endif
+	mutex_destroy(&client->mutex);
 	free(client);
 
 	return NP_E_SUCCESS;
@@ -178,14 +177,14 @@ np_error_t np_post_notification(np_client_t client, const char *notification)
 	np_lock(client);
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict,"Command", plist_new_string("PostNotification"));
-	plist_dict_insert_item(dict,"Name", plist_new_string(notification));
+	plist_dict_set_item(dict,"Command", plist_new_string("PostNotification"));
+	plist_dict_set_item(dict,"Name", plist_new_string(notification));
 
 	np_error_t res = np_error(property_list_service_send_xml_plist(client->parent, dict));
 	plist_free(dict);
 
 	dict = plist_new_dict();
-	plist_dict_insert_item(dict,"Command", plist_new_string("Shutdown"));
+	plist_dict_set_item(dict,"Command", plist_new_string("Shutdown"));
 
 	res = np_error(property_list_service_send_xml_plist(client->parent, dict));
 	plist_free(dict);
@@ -238,8 +237,8 @@ np_error_t np_observe_notification( np_client_t client, const char *notification
 	np_lock(client);
 
 	plist_t dict = plist_new_dict();
-	plist_dict_insert_item(dict,"Command", plist_new_string("ObserveNotification"));
-	plist_dict_insert_item(dict,"Name", plist_new_string(notification));
+	plist_dict_set_item(dict,"Command", plist_new_string("ObserveNotification"));
+	plist_dict_set_item(dict,"Name", plist_new_string(notification));
 
 	np_error_t res = np_error(property_list_service_send_xml_plist(client->parent, dict));
 	if (res != NP_E_SUCCESS) {
@@ -310,11 +309,15 @@ static int np_get_notification(np_client_t client, char **notification)
 
 	np_lock(client);
 
-	property_list_service_receive_plist_with_timeout(client->parent, &dict, 500);
-	if (!dict) {
+	property_list_service_error_t perr = property_list_service_receive_plist_with_timeout(client->parent, &dict, 500);
+	if (perr == PROPERTY_LIST_SERVICE_E_RECEIVE_TIMEOUT) {
 		debug_info("NotificationProxy: no notification received!");
 		res = 0;
-	} else {
+	} else if (perr != PROPERTY_LIST_SERVICE_E_SUCCESS) {
+		debug_info("NotificationProxy: error %d occured!", perr);	
+		res = perr;
+	}
+	if (dict) {
 		char *cmd_value = NULL;
 		plist_t cmd_value_node = plist_dict_get_item(dict, "Command");
 
@@ -333,7 +336,7 @@ static int np_get_notification(np_client_t client, char **notification)
 			res = -2;
 			if (name_value_node && name_value) {
 				*notification = name_value;
-				debug_info("got notification %s\n", __func__, name_value);
+				debug_info("got notification %s", __func__, name_value);
 				res = 0;
 			}
 		} else if (cmd_value && !strcmp(cmd_value, "ProxyDeath")) {
@@ -369,7 +372,10 @@ void* np_notifier( void* arg )
 
 	debug_info("starting callback.");
 	while (npt->client->parent) {
-		np_get_notification(npt->client, &notification);
+		if (np_get_notification(npt->client, &notification) < 0) {
+			npt->cbfunc("", npt->user_data);
+			break;
+		}
 		if (notification) {
 			npt->cbfunc(notification, npt->user_data);
 			free(notification);
@@ -389,6 +395,9 @@ void* np_notifier( void* arg )
  * be called when a notification has been received.
  * It will start a thread that polls for notifications and calls the callback
  * function if a notification has been received.
+ * In case of an error condition when polling for notifications - e.g. device
+ * disconnect - the thread will call the callback function with an empty
+ * notification "" and terminate itself.
  *
  * @param client the NP client
  * @param notify_cb pointer to a callback function or NULL to de-register a
@@ -412,16 +421,11 @@ np_error_t np_set_notify_callback( np_client_t client, np_notify_cb_t notify_cb,
 
 	np_lock(client);
 	if (client->notifier) {
-		debug_info("callback already set, removing\n");
+		debug_info("callback already set, removing");
 		property_list_service_client_t parent = client->parent;
 		client->parent = NULL;
-#ifdef WIN32
-		WaitForSingleObject(client->notifier, INFINITE);
-		client->notifier = NULL;
-#else
-		pthread_join(client->notifier, NULL);
-		client->notifier = (pthread_t)NULL;
-#endif
+		thread_join(client->notifier);
+		client->notifier = (thread_t)NULL;
 		client->parent = parent;
 	}
 
@@ -432,18 +436,9 @@ np_error_t np_set_notify_callback( np_client_t client, np_notify_cb_t notify_cb,
 			npt->cbfunc = notify_cb;
 			npt->user_data = user_data;
 
-#ifdef WIN32
-			client->notifier = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)np_notifier, npt, 0, NULL);
-			if (client->notifier != INVALID_HANDLE_VALUE) {
-				res = NP_E_SUCCESS;
-			} else {
-				client->notifier = NULL;
-			}
-#else
-			if (pthread_create(&client->notifier, NULL, np_notifier, npt) == 0) {
+			if (thread_create(&client->notifier, np_notifier, npt) == 0) {
 				res = NP_E_SUCCESS;
 			}
-#endif
 		}
 	} else {
 		debug_info("no callback set");

@@ -30,7 +30,7 @@
 
 #include "mobilesync.h"
 #include "device_link_service.h"
-#include "debug.h"
+#include "common/debug.h"
 
 #define MSYNC_VERSION_INT1 300
 #define MSYNC_VERSION_INT2 100
@@ -106,6 +106,26 @@ mobilesync_error_t mobilesync_client_new(idevice_t device, lockdownd_service_des
 	*client = client_loc;
 
 	return ret;
+}
+
+/**
+ * Starts a new mobilesync service on the specified device and connects to it.
+ *
+ * @param device The device to connect to.
+ * @param client Pointer that will point to a newly allocated
+ *     mobilesync_client_t upon successful return. Must be freed using
+ *     mobilesync_client_free() after use.
+ * @param label The label to use for communication. Usually the program name.
+ *  Pass NULL to disable sending the label in requests to lockdownd.
+ *
+ * @return MOBILESYNC_E_SUCCESS on success, or an MOBILESYNC_E_* error
+ *     code otherwise.
+ */
+mobilesync_error_t mobilesync_client_start_service(idevice_t device, mobilesync_client_t * client, const char* label)
+{
+	mobilesync_error_t err = MOBILESYNC_E_UNKNOWN_ERROR;
+	service_client_factory_start_service(device, MOBILESYNC_SERVICE_NAME, (void**)client, label, SERVICE_CONSTRUCTOR(mobilesync_client_new), &err);
+	return err;
 }
 
 /**
@@ -967,10 +987,10 @@ void mobilesync_actions_add(plist_t actions, ...)
 				plist_array_append_item(array, plist_new_string(entity_names[i]));
 			}
 
-			plist_dict_insert_item(actions, key, array);
+			plist_dict_set_item(actions, key, array);
 		} else if (!strcmp(key, "SyncDeviceLinkAllRecordsOfPulledEntityTypeSentKey")) {
 			int link_records = va_arg(args, int);
-			plist_dict_insert_item(actions, key, plist_new_bool(link_records));
+			plist_dict_set_item(actions, key, plist_new_bool(link_records));
 		}
 		free(key);
 		key = NULL;
