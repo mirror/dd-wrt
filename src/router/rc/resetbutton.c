@@ -185,6 +185,15 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_WR1043V2)
+int getbuttonstate()
+{
+	int ret = get_gpio(16);
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_WHR450HP)
 int getbuttonstate()
 {
@@ -875,6 +884,9 @@ void period_check(int sig)
 #elif defined(HAVE_WNDR3700V4)
 	sesgpio = 0x10f;
 	val |= get_gpio(15) << 15;	//aoss pushbutton
+#elif defined(HAVE_WR1043V2)
+	sesgpio = 0x111;
+	val |= get_gpio(17) << 17;	//aoss pushbutton
 #elif defined(HAVE_WHR450HP)
 	sesgpio = 0x115;
 	val |= get_gpio(21) << 21;	//aoss pushbutton

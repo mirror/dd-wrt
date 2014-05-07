@@ -1719,6 +1719,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_rxantenna", "3");
 	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_WR1043V2
+	setRouter("TPLINK WR1043ND V2");
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WHR450HP
 	setRouter("Buffalo WHR-450HP");
 	nvram_default_get("ath0_rxantenna", "7");
@@ -4913,6 +4918,17 @@ int led_control(int type, int act)
 		usb_power = 0x020;
 		usb_gpio = 0x10d;
 		ses_gpio = 0x110;
+		break;
+#elif HAVE_WR1043V2
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x113;
+//		connected_gpio = 0x112;
+//		disconnected_gpio = 0x113;
+//		power_gpio = 0x10e;
+        	usb_power = 0x115;
+		usb_gpio = 0x10f;
+        	ses_gpio = 0x112;
+		sec0_gpio = 0x112;
 		break;
 #elif HAVE_WHR450HP
 	case ROUTER_BOARD_WHRHPGN:
