@@ -326,6 +326,11 @@ ifeq ($(CONFIG_AP135),y)
 else
 	echo "# CONFIG_AP135 is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WR1043V2),y)
+	echo CONFIG_WR1043V2=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_WR1043V2 is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_KERNEL_ELF_CORE),y)
 	sed -i 's/\# CONFIG_ELF_CORE is not set/CONFIG_ELF_CORE=y/g' $(LINUXDIR)/.config
 endif
@@ -1520,7 +1525,10 @@ ifeq ($(CONFIG_WDR4300),y)
 	-./tools/tplink/mktplinkfw -B TL-WDR3500 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR3500-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR3500-firmware.bin mips-uclibc/tplink-TL-WDR3500-firmware.bin
 endif
-
+ifeq ($(CONFIG_WR1043V2),y)
+	-./tools/tplink/mktplinkfw -B TL-WR1043V2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WR1043V2-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WR1043V2-firmware.bin mips-uclibc/tplink-TL-WR1043V2-firmware.bin
+endif
 ifeq ($(CONFIG_WRT400),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/root.wrt400 bs=1048576 conv=sync
 	./tools/wrt400/wrt400 $(ARCH)-uclibc/root.wrt400 $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/wrt400-firmware.bin
