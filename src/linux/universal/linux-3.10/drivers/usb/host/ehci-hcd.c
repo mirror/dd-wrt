@@ -259,6 +259,37 @@ static int ehci_reset (struct ehci_hcd *ehci)
 	command |= CMD_RESET;
 	dbg_cmd (ehci, "reset", command);
 	ehci_writel(ehci, command, &ehci->regs->command);
+
+	if (ehci->qca_force_host_mode) {
+		u32 usbmode;
+
+		udelay(1000);
+
+		usbmode = ehci_readl(ehci, &ehci->regs->usbmode);
+		usbmode |= USBMODE_CM_HC | (1 << 4);
+		ehci_writel(ehci, usbmode, &ehci->regs->usbmode);
+
+		ehci_dbg(ehci, "forced host mode, usbmode: %08x\n",
+			 ehci_readl(ehci, &ehci->regs->usbmode));
+	}
+
+	if (ehci->qca_force_16bit_ptw) {
+		u32 port_status;
+
+		udelay(1000);
+
+		/* enable 16-bit UTMI interface */
+		port_status = ehci_readl(ehci, &ehci->regs->port_status[0]);
+		port_status |= BIT(28);
+		ehci_writel(ehci, port_status, &ehci->regs->port_status[0]);
+
+		ehci_dbg(ehci, "16-bit UTMI interface enabled, status: %08x\n",
+			 ehci_readl(ehci, &ehci->regs->port_status[0]));
+	}
+
+	if (ehci->reset_notifier)
+		ehci->reset_notifier(ehci_to_hcd(ehci));
+
 #if defined(CONFIG_MACH_AR7240) || defined(CONFIG_MACH_HORNET) || defined(CONFIG_WASP_SUPPORT)
 #define ath_usb_reg_wr		ar7240_reg_wr
 #define ath_usb_reg_rd		ar7240_reg_rd
@@ -664,7 +695,7 @@ static int ehci_run (struct usb_hcd *hcd)
 		"USB %x.%x started, EHCI %x.%02x%s\n",
 		((ehci->sbrn & 0xf0)>>4), (ehci->sbrn & 0x0f),
 		temp >> 8, temp & 0xff,
-		ignore_oc ? ", overcurrent ignored" : "");
+		(ignore_oc || ehci->ignore_oc) ? ", overcurrent ignored" : "");
 
 	ehci_writel(ehci, INTR_MASK,
 		    &ehci->regs->intr_enable); /* Turn On Interrupts */
