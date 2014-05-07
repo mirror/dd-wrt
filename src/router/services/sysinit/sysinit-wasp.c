@@ -79,7 +79,7 @@ void start_sysinit(void)
 #ifdef HAVE_WDR4300
 	system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
 	system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
-#elif HAVE_WHR450HP
+#elif defined (HAVE_WHR450HP) || defined(HAVE_WR1043V2)
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set enable_vlan 0");
 	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4\"");
@@ -141,6 +141,8 @@ void start_sysinit(void)
 #ifdef HAVE_WNDR3700V4
 	setWirelessLed(0, 11);
 	setWirelessLed(1, 14);
+#elif  HAVE_WR1043V2
+	setWirelessLed(0, 12);
 #elif  HAVE_WHR450HP
 	setWirelessLed(0, 1);
 #elif  HAVE_DIR825C1
