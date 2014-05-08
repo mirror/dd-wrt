@@ -114,7 +114,7 @@ void start_sysinit(void)
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 	}
 #endif
-#if defned(HAVE_WHR450HP) || defined(HAVE_WDR3500)
+#if defined(HAVE_WHR450HP) || defined(HAVE_WDR3500)
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 #else
