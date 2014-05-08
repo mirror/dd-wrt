@@ -1596,12 +1596,12 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 
 		// sprintf (vlan_name, "%s.%s", tag, port);
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(\"networking.bonding\")+\" %d \"+Capture(\"networking.assign\")</script></div>\n", count);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(\"networking.bond\")</script>&nbsp;");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.bonding) + Capture(\" %d \") + Capture(networking.assign)</script></div>\n", count);
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.bond)</script>&nbsp;");
 		sprintf(vlan_name, "bondingifname%d", count);
 		showOptions(wp, vlan_name, bondnames, tag);
 		sprintf(vlan_name, "bondingattach%d", count);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(\"networking.slave\")</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.slave)</script>&nbsp;");
 		showOptions(wp, vlan_name, bufferif, port);
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bond_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
@@ -1614,12 +1614,12 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 		char vlan_name[32];
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(\"networking.bonding\")+\" %d \"+Capture(\"networking.iface\")</script>Interface</div>\n", i);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(\"networking.bond\")</script>&nbsp;");
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.bonding) + Capture(\" %d \")  + Capture(networking.iface)</script></div>\n", i);
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.bond)</script>&nbsp;");
 		sprintf(vlan_name, "bondingifname%d", i);
 		showOptions(wp, vlan_name, bondnames, "");
 		sprintf(vlan_name, "bondingattach%d", i);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(\"networking.slave\")</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.slave)</script>&nbsp;");
 		showOptions(wp, vlan_name, bufferif, "");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bond_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
