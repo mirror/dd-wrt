@@ -84,6 +84,12 @@ void start_sysinit(void)
 	system("swconfig dev eth0 set enable_vlan 1");
 	system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
 	system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
+#elif defined (HAVE_ARCHERC7)
+	system("swconfig dev eth0 set reset 1");
+	system("swconfig dev eth0 set enable_vlan 0");
+	system("swconfig dev eth0 vlan 1 set ports \"0 2 3 4 5\"");
+	system("swconfig dev eth0 vlan 2 set ports \"1 6\"");
+	system("swconfig dev eth0 set apply");
 #elif defined (HAVE_WHR450HP) || defined(HAVE_WR1043V2)
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set enable_vlan 0");

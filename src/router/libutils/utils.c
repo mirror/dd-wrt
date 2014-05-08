@@ -1726,6 +1726,13 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_rxantenna", "3");
 	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_ARCHERC7
+	setRouter("TPLINK ARCHER-C7 v1");
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("ath1_rxantenna", "7");
+	nvram_default_get("ath1_txantenna", "7");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WR1043V2
 	setRouter("TPLINK WR1043ND V2");
 	nvram_default_get("ath0_rxantenna", "7");
@@ -4939,6 +4946,22 @@ int led_control(int type, int act)
 		usb_power = 0x020;
 		usb_gpio = 0x10d;
 		ses_gpio = 0x110;
+		break;
+#elif HAVE_ARCHERC7
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x10e;
+        	ses_gpio = 0x10f;
+		sec0_gpio = 0x10f;
+
+        	usb_power = 0x016;
+		usb_gpio = 0x112;
+
+        	usb_power1 = 0x015;
+		usb_gpio1 = 0x113;
+		
+		
+        	usb_power = 0x015;
+		usb_gpio = 0x10f;
 		break;
 #elif HAVE_WR1043V2
 	case ROUTER_BOARD_WHRHPGN:
