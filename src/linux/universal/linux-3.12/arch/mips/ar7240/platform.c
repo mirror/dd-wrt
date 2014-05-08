@@ -528,6 +528,20 @@ int __init ar7240_platform_init(void)
 
 	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
+#elif CONFIG_WR841V9
+
+	base = ioremap(AR933X_GMAC_BASE, AR933X_GMAC_SIZE);
+
+	t = __raw_readl(base + AR933X_GMAC_REG_ETH_CFG);
+	t &= ~(AR933X_ETH_CFG_SW_PHY_SWAP | AR933X_ETH_CFG_SW_PHY_ADDR_SWAP);
+//	if (mac)
+//		t |= AR933X_ETH_CFG_SW_PHY_SWAP;
+//	if (mdio)
+//		t |= AR933X_ETH_CFG_SW_PHY_ADDR_SWAP;
+	__raw_writel(t, base + AR933X_GMAC_REG_ETH_CFG);
+
+	iounmap(base);
+
 #elif CONFIG_WR841V8
 	//swap phy
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
@@ -555,6 +569,7 @@ int __init ar7240_platform_init(void)
 	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
 #endif
+#endif
 
 #ifdef CONFIG_DIR615I
 	ar71xx_add_device_mdio(1, 0x0);
@@ -571,6 +586,18 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
+#elif CONFIG_WR841V9
+	ar71xx_add_device_mdio(0, 0x0);
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
+
+	/* LAN */
+	ar71xx_add_device_eth(1);
+
+	/* WAN */
+	ar71xx_switch_data.phy4_mii_en = 1;
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_add_device_eth(0);
 #elif CONFIG_WR841V8
 	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
@@ -688,7 +715,6 @@ int __init ar7240_platform_init(void)
 #endif
 #endif
 #endif
-#endif
 	ret = platform_add_devices(ar724x_platform_devices, ARRAY_SIZE(ar724x_platform_devices));
 
 	if (ret < 0)
@@ -712,6 +738,8 @@ int __init ar7240_platform_init(void)
 	ar9xxx_add_device_wmac(ee, mac0);
 #elif defined(CONFIG_DIR615I)
 	ar9xxx_add_device_wmac(ee, mac0);
+#elif defined(CONFIG_WR841V9)
+	ar9xxx_add_device_wmac(ee, mac);
 #elif defined(CONFIG_WR841V8)
 	ar9xxx_add_device_wmac(ee, mac);
 #else

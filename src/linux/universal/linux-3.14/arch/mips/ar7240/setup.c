@@ -366,7 +366,7 @@ static void wasp_sys_frequency(void)
 
 	pll = ar7240_reg_rd(CPU_DPLL2_ADDRESS);
 
-	if (!is_qca955x() && CPU_DPLL2_LOCAL_PLL_GET(pll)) {
+	if (!is_qca955x() && !is_qca953x() && CPU_DPLL2_LOCAL_PLL_GET(pll)) {
 
 		out_div = CPU_DPLL2_OUTDIV_GET(pll);
 
@@ -394,7 +394,7 @@ static void wasp_sys_frequency(void)
 	ar7240_cpu_freq = (((nint * (ref / ref_div)) + frac) >> out_div) / (CPU_DDR_CLOCK_CONTROL_CPU_POST_DIV_GET(clk_ctrl) + 1);
 
 	pll = ar7240_reg_rd(DDR_DPLL2_ADDRESS);
-	if (!is_qca955x() && DDR_DPLL2_LOCAL_PLL_GET(pll)) {
+	if (!is_qca955x() && !is_qca953x() && DDR_DPLL2_LOCAL_PLL_GET(pll)) {
 		out_div = DDR_DPLL2_OUTDIV_GET(pll);
 
 		pll = ar7240_reg_rd(DDR_DPLL_ADDRESS);
