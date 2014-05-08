@@ -805,6 +805,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl1_turbo_qam", "1", 0},	/* RIFS mode advertisement */
 	{"wl0_rxchain_pwrsave_enable", "0", 0},
 	{"wl1_rxchain_pwrsave_enable", "0", 0},
+	{"wl0_txchain_pwrsave_enable", "0", 0},
+	{"wl1_txchain_pwrsave_enable", "0", 0},
 #endif
 #ifdef HAVE_BCMMODERN
 	{"wl_rifs_advert", "auto", 0},	/* RIFS mode advertisement */
@@ -3370,6 +3372,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"lighttpd_sslport", "443", 0},
 	{"lighttpd_port", "81", 0},
 	{"lighttpd_root", "/jffs/www", 0},
+	{"lighttpd_wan", "0", 0},
 #endif
 #ifdef HAVE_GPSI
 	{"gps", "0", 0},
