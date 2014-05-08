@@ -2139,6 +2139,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_txantenna", "3");
 	setRouter("TP-Link TL-WR842ND v2");
 	return ROUTER_BOARD_PB42;
+#elif HAVE_WR841V9
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	setRouter("TP-Link TL-WR841ND v9");
+	return ROUTER_BOARD_PB42;
 #elif HAVE_WR841V8
 	nvram_default_get("ath0_rxantenna", "3");
 	nvram_default_get("ath0_txantenna", "3");
@@ -4619,7 +4624,9 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x007;
 		ses_gpio = 0x100;
 #endif
-#ifdef HAVE_WR842V2
+#ifdef HAVE_WR841V9
+		diag_gpio = 0x103;
+#elif HAVE_WR842V2
 		connected_gpio = 0x10e;
 		usb_power = 0x204;
 		usb_gpio = 0x10f;
