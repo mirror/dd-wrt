@@ -560,8 +560,15 @@ int __init ar7240_platform_init(void)
 #else
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
 	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
-	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_MII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE);
-#ifdef CONFIG_WDR4300
+
+	t &= ~(AR934X_ETH_CFG_RGMII_GMAC0 |
+	       AR934X_ETH_CFG_MII_GMAC0 |
+	       AR934X_ETH_CFG_GMII_GMAC0 |
+	       AR934X_ETH_CFG_SW_ONLY_MODE |
+	       AR934X_ETH_CFG_SW_PHY_SWAP);
+#ifdef CONFIG_WDR3500
+	t |= AR934X_ETH_CFG_SW_ONLY_MODE;
+#elif CONFIG_WDR4300
 	t |= AR934X_ETH_CFG_RGMII_GMAC0;
 #else
 	t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
@@ -676,6 +683,28 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
 	ar71xx_add_device_eth(1);
 #else
+#ifdef CONFIG_WDR3500
+	ar71xx_add_device_mdio(1, 0x0);
+
+	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, -1);
+
+	/* GMAC1 is connected to the internal switch */
+	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
+
+	ar71xx_add_device_eth(1);
+
+	/* WAN */
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 2);
+
+	/* GMAC0 is connected to the PHY4 of the internal switch */
+	ar71xx_switch_data.phy4_mii_en = 1;
+	ar71xx_switch_data.phy_poll_mask = BIT(4);
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.phy_mask = BIT(4);
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio1_device.dev;
+
+	ar71xx_add_device_eth(0);
+#else
 #ifndef CONFIG_WDR4300
 #ifndef CONFIG_DIR825C1
 	ar71xx_add_device_mdio(1, 0x0);
@@ -710,6 +739,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
 	ar71xx_add_device_eth(1);
+#endif
 #endif
 #endif
 #endif

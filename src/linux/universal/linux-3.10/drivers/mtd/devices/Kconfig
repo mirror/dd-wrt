@@ -324,6 +324,9 @@ config DIR825C1
 config WDR4300
 	bool "support for WDR4300"
 	depends on DIR825C1
+config WDR3500
+	bool "support for WDR3500/3500"
+	depends on WDR4300
 config AP135
 	bool "support for AP135/WHR450HP"
 	depends on DIR825C1
