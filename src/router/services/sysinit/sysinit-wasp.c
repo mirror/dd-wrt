@@ -74,9 +74,14 @@ void start_sysinit(void)
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
 
+#ifdef HAVE_WDR3500
+	system("swconfig dev eth0 set reset 1");
+	system("swconfig dev eth0 set enable_vlan 0");
+	system("swconfig dev eth0 vlan 0 set ports \"0 1 2 3 4\"");
+#else
+#ifdef HAVE_WDR4300
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set enable_vlan 1");
-#ifdef HAVE_WDR4300
 	system("swconfig dev eth0 vlan 1 set ports \"0t 2 3 4 5\"");
 	system("swconfig dev eth0 vlan 2 set ports \"0t 1\"");
 #elif defined (HAVE_WHR450HP) || defined(HAVE_WR1043V2)
@@ -86,8 +91,11 @@ void start_sysinit(void)
 	system("swconfig dev eth0 vlan 2 set ports \"5 6\"");
 	system("swconfig dev eth0 set apply");
 #else
+	system("swconfig dev eth0 set reset 1");
+	system("swconfig dev eth0 set enable_vlan 1");
 	system("swconfig dev eth0 vlan 1 set ports \"0t 1 2 3 4\"");
 	system("swconfig dev eth0 vlan 2 set ports \"0t 5\"");
+#endif
 #endif
 	system("swconfig dev eth0 set apply");
 #ifdef HAVE_WNDR3700V4
@@ -106,7 +114,7 @@ void start_sysinit(void)
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 	}
 #endif
-#ifdef HAVE_WHR450HP
+#if defned(HAVE_WHR450HP) || defined(HAVE_WDR3500)
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 #else
