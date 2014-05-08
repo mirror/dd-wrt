@@ -320,7 +320,7 @@ static void ar934x_ip2_irq_init(void)
 	for (i = AR934X_IP2_IRQ_BASE; i < AR934X_IP2_IRQ_BASE + AR934X_IP2_IRQ_COUNT; i++)
 		irq_set_chip_and_handler(i, &dummy_irq_chip, handle_level_irq);
 
-	irq_set_chained_handler(AR934X_IP2_IRQ(0), ar934x_ip2_irq_dispatch);
+	irq_set_chained_handler(AR71XX_CPU_IRQ_IP2, ar934x_ip2_irq_dispatch);
 }
 
 
