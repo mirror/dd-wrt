@@ -117,7 +117,7 @@ static void ar934x_wmac_init(void)
 	ar9xxx_wmac_resources[0].start = AR934X_WMAC_BASE;
 	ar9xxx_wmac_resources[0].end = AR934X_WMAC_BASE + AR934X_WMAC_SIZE - 1;
 	ar9xxx_wmac_resources[1].start = AR934X_IP2_IRQ_WMAC;
-	ar9xxx_wmac_resources[1].start = AR934X_IP2_IRQ_WMAC;
+	ar9xxx_wmac_resources[1].end = AR934X_IP2_IRQ_WMAC;
 	if (ar71xx_ref_freq == MHZ_25) {
 		printk(KERN_EMERG "25MHZ ref freq\n");
 		ar9xxx_wmac_data.is_clk_25mhz = true;
