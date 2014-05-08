@@ -578,6 +578,14 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 };
 
 #define AR934X_GPIO_REG_OUT_FUNC0	0x2c
+#define AR934X_GPIO_OUT_GPIO		0
+#define AR934X_GPIO_OUT_LED_LINK0	41
+#define AR934X_GPIO_OUT_LED_LINK1	42
+#define AR934X_GPIO_OUT_LED_LINK2	43
+#define AR934X_GPIO_OUT_LED_LINK3	44
+#define AR934X_GPIO_OUT_LED_LINK4	45
+#define AR934X_GPIO_OUT_EXT_LNA0	46
+#define AR934X_GPIO_OUT_EXT_LNA1	47
 
 static void __init ath79_gpio_output_select(unsigned gpio, u8 val)
 {
@@ -606,8 +614,6 @@ static void __init ath79_gpio_output_select(unsigned gpio, u8 val)
 	spin_unlock_irqrestore(&ar71xx_gpio_lock, flags);
 }
 
-#define AR934X_GPIO_OUT_EXT_LNA0	46
-#define AR934X_GPIO_OUT_EXT_LNA1	47
 
 static void ar934x_set_ext_lna_gpio(unsigned chain, int gpio)
 {
@@ -694,10 +700,29 @@ void __init ar71xx_gpio_init(void)
 	// finally disable 2.4 ghz led and let the driver handle it
 	__ar71xx_gpio_set_value(11, 1);
 #endif
-#ifdef CONFIG_WDR4300
+#ifdef CONFIG_WDR3500
+
+#define WDR3500_GPIO_LED_WAN		18
+#define WDR3500_GPIO_LED_LAN1		19
+#define WDR3500_GPIO_LED_LAN2		20
+#define WDR3500_GPIO_LED_LAN3		21
+#define WDR3500_GPIO_LED_LAN4		22
+
+	ath79_gpio_output_select(WDR3500_GPIO_LED_LAN1,
+				 AR934X_GPIO_OUT_LED_LINK3);
+	ath79_gpio_output_select(WDR3500_GPIO_LED_LAN2,
+				 AR934X_GPIO_OUT_LED_LINK2);
+	ath79_gpio_output_select(WDR3500_GPIO_LED_LAN3,
+				 AR934X_GPIO_OUT_LED_LINK1);
+	ath79_gpio_output_select(WDR3500_GPIO_LED_LAN4,
+				 AR934X_GPIO_OUT_LED_LINK0);
+	ath79_gpio_output_select(WDR3500_GPIO_LED_WAN,
+				 AR934X_GPIO_OUT_LED_LINK4);
+#elif CONFIG_WDR4300
 	if (is_ar934x()) {
 	    ar934x_set_ext_lna_gpio(0,18);
 	    ar934x_set_ext_lna_gpio(1,19);
 	}
 #endif
+
 }
