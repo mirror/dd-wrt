@@ -1684,6 +1684,13 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_WDR3500
+	setRouter("TPLINK TL-WDR3500 v1");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR3600
 	setRouter("TPLINK TL-WDR3600 v1");
 	nvram_default_get("ath0_rxantenna", "3");
@@ -4906,6 +4913,13 @@ int led_control(int type, int act)
 //              usb_power = 0x01a;
 //              usb_gpio = 0x10b;
 //              ses_gpio = 0x11b;
+		break;
+#elif HAVE_WDR3500
+	case ROUTER_BOARD_WHRHPGN:
+		usb_gpio = 0x10b;
+		usb_power = 0x00f;
+		diag_gpio = 0x10e;
+		connected_gpio = 0x10f;
 		break;
 #elif HAVE_WDR4300
 	case ROUTER_BOARD_WHRHPGN:
