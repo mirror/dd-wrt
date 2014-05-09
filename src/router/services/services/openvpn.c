@@ -407,7 +407,7 @@ void start_openvpn(void)
 		else
 			fprintf(fp, "route-noexec\n");
 	}
-	if (nvram_invmatch("openvpncl_auth", "none"))	//not needed if we have no auth anyway
+	if (nvram_invmatch("openvpncl_auth", "none") && nvram_invmatch("openvpncl_tlscip", "0"))	//not needed if we have no auth anyway
 		fprintf(fp, "tls-client\n");
 	if (nvram_invmatch("openvpncl_mtu", ""))
 		fprintf(fp, "tun-mtu %s\n", nvram_safe_get("openvpncl_mtu"));
