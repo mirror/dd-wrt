@@ -38,9 +38,9 @@ int ar724x_pcibios_init(int irq) __init;
 
 int qca955x_pcibios_init(int irq) __init;
 
-int ar71xx_pci_init(unsigned nr_irqs, struct ar71xx_pci_irq *map) __init;
+int ar71xx_pci_init(void) __init;
 #else
-static inline int ar71xx_pci_init(unsigned nr_irqs, struct ar71xx_pci_irq *map)
+static inline int ar71xx_pci_init(void)
 {
 	return 0;
 }

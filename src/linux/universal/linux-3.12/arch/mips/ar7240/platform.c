@@ -86,14 +86,19 @@ static struct platform_device ar7240_usb_ohci_device = {
 	.resource = ar7240_usb_ohci_resources,
 };
 
+
 /* 
  * EHCI (USB full speed host controller) 
  */
 static struct resource ar7240_usb_ehci_resources[] = {
 	[0] = {
 	       .start = AR7240_USB_EHCI_BASE,
+#ifdef CONFIG_AP135
+	       .end = AR7240_USB_EHCI_BASE + QCA955X_EHCI_SIZE - 1,
+#else
 	       .end = AR7240_USB_EHCI_BASE + AR7240_USB_WINDOW - 1,
-	       .flags = IORESOURCE_MEM,
+#endif	       
+		.flags = IORESOURCE_MEM,
 	       },
 	[1] = {
 #ifdef CONFIG_AP135
@@ -107,10 +112,28 @@ static struct resource ar7240_usb_ehci_resources[] = {
 	       },
 };
 
+
+
+static struct resource ar7240_usb_ehci2_resources[] = {
+	[0] = {
+	       .start = AR7240_USB_EHCI_BASE + 0x400000,
+	       .end = AR7240_USB_EHCI_BASE + 0x400000 + QCA955X_EHCI_SIZE - 1,
+	       .flags = IORESOURCE_MEM,
+	       },
+	[1] = {
+	       .start = AR934X_IP3_IRQ(1),
+	       .end = AR934X_IP3_IRQ(1),
+	       .flags = IORESOURCE_IRQ,
+	       },
+};
+
 /* 
  * The dmamask must be set for EHCI to work 
  */
 static u64 ehci_dmamask = ~(u32)0;
+
+
+static u64 ehci2_dmamask = ~(u32)0;
 
 static struct platform_device ar7240_usb_ehci_device = {
 	.name = "ar71xx-ehci",
@@ -121,6 +144,18 @@ static struct platform_device ar7240_usb_ehci_device = {
 		},
 	.num_resources = ARRAY_SIZE(ar7240_usb_ehci_resources),
 	.resource = ar7240_usb_ehci_resources,
+};
+
+
+static struct platform_device ar7240_usb_ehci2_device = {
+	.name = "ar71xx-ehci",
+	.id = 0,
+	.dev = {
+		.dma_mask = &ehci2_dmamask,
+		.coherent_dma_mask = 0xffffffff,
+		},
+	.num_resources = ARRAY_SIZE(ar7240_usb_ehci2_resources),
+	.resource = ar7240_usb_ehci2_resources,
 };
 
 static struct resource ar7240_uart_resources[] = {
@@ -212,6 +247,10 @@ static struct platform_device ath_uart = {
 
 static struct platform_device *ar7241_platform_devices[] __initdata = {
 	&ar7240_usb_ehci_device
+};
+
+static struct platform_device *qca955x_platform_devices[] __initdata = {
+	&ar7240_usb_ehci2_device
 };
 
 static struct platform_device *ar7240_platform_devices[] __initdata = {
@@ -755,6 +794,10 @@ int __init ar7240_platform_init(void)
 	}
 	if (is_ar7240()) {
 		ret = platform_add_devices(ar7240_platform_devices, ARRAY_SIZE(ar7240_platform_devices));
+	}
+
+	if (is_qca955x()) {
+		ret = platform_add_devices(qca955x_platform_devices, ARRAY_SIZE(qca955x_platform_devices));
 	}
 	platform_device_register_simple("ar71xx-wdt", -1, NULL, 0);
 

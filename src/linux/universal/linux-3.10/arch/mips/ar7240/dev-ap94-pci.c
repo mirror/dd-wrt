@@ -101,7 +101,7 @@ void __init ap94_pci_init(u8 *cal_data0, u8 *mac_addr0, u8 *cal_data1, u8 *mac_a
 	}
 
 	ar71xx_pci_plat_dev_init = ap94_pci_plat_dev_init;
-	ar71xx_pci_init(ARRAY_SIZE(ap94_pci_irqs), ap94_pci_irqs);
+	ar71xx_pci_init();
 
 	pci_enable_ath9k_fixup(17, ap94_wmac0_data.eeprom_data);
 	pci_enable_ath9k_fixup(18, ap94_wmac1_data.eeprom_data);
