@@ -66,6 +66,6 @@ endif
 obj-$(CONFIG_MACH_AR7100)	+= fixup-ar7100.o ops-ar7100.o pci-ar7100.o
 #obj-$(CONFIG_MACH_AR7240)	+= fixup-ar7240.o ops-ar7240.o pci-ar7240.o
 #obj-$(CONFIG_MACH_AR7100)	+= pci-ar71xx.o pci-ar724x.o
-obj-$(CONFIG_MACH_AR7240)	+= pci-ar724x.o pci-ar71xx.o pci-qca955x.o
+obj-$(CONFIG_MACH_AR7240)	+= pci-ar724x.o pci-ar71xx.o
 #+obj-$(CONFIG_ATHEROS_AR71XX)	+= pci-ar71xx.o pci-ar724x.o
 obj-$(CONFIG_SOC_RT288X)	+= pci-rt288x.o

@@ -267,12 +267,12 @@ static void qca955x_ip2_irq_dispatch(unsigned int irq, struct irq_desc *desc)
 
 	if (status & QCA955X_EXT_INT_PCIE_RC1_ALL) {
 		/* TODO: flush DDR? */
-		generic_handle_irq(AR934X_IP2_IRQ(1));
+		generic_handle_irq(AR934X_IP2_IRQ(0));
 	}
 
 	if (status & QCA955X_EXT_INT_WMAC_ALL) {
 		/* TODO: flush DDR? */
-		generic_handle_irq(AR934X_IP2_IRQ(0));
+		generic_handle_irq(AR934X_IP2_IRQ(1));
 	}
 
 enable:

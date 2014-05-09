@@ -127,6 +127,8 @@
 #define AR71XX_MISC_IRQ_COUNT	13
 #define AR71XX_GPIO_IRQ_COUNT	32
 #define AR71XX_PCI_IRQ_COUNT	6
+#define AR71XX_PCI_IRQ(_x)	(AR71XX_PCI_IRQ_BASE + (_x))
+
 #define AR934X_IP2_IRQ_BASE	78
 #define AR934X_IP2_IRQ_COUNT	2
 #define AR934X_IP2_IRQ(_x)       (AR934X_IP2_IRQ_BASE + (_x))
@@ -195,6 +197,77 @@ extern u32 ar71xx_soc_rev;
 
 extern enum ar71xx_soc_type ar71xx_soc;
 
+static inline int soc_is_ar71xx(void)
+{
+	return (ar71xx_soc == AR71XX_SOC_AR7130 ||
+		ar71xx_soc == AR71XX_SOC_AR7141 ||
+		ar71xx_soc == AR71XX_SOC_AR7161);
+}
+
+static inline int soc_is_ar724x(void)
+{
+	return (ar71xx_soc == AR71XX_SOC_AR7240 ||
+		ar71xx_soc == AR71XX_SOC_AR7241 ||
+		ar71xx_soc == AR71XX_SOC_AR7242);
+}
+
+static inline int soc_is_ar7240(void)
+{
+	return (ar71xx_soc == AR71XX_SOC_AR7240);
+}
+
+static inline int soc_is_ar7241(void)
+{
+	return (ar71xx_soc == AR71XX_SOC_AR7241);
+}
+
+static inline int soc_is_ar7242(void)
+{
+	return (ar71xx_soc == AR71XX_SOC_AR7242);
+}
+
+static inline int soc_is_ar913x(void)
+{
+	return (ar71xx_soc == AR71XX_SOC_AR9130 ||
+		ar71xx_soc == AR71XX_SOC_AR9132);
+}
+
+static inline int soc_is_ar933x(void)
+{
+	return (ar71xx_soc == AR71XX_SOC_AR9330 ||
+		ar71xx_soc == AR71XX_SOC_AR9331);
+}
+
+static inline int soc_is_ar9341(void)
+{
+	return (ar71xx_soc == AR71XX_SOC_AR9341);
+}
+
+static inline int soc_is_ar9342(void)
+{
+	return (ar71xx_soc == AR71XX_SOC_AR9342);
+}
+
+static inline int soc_is_ar9344(void)
+{
+	return (ar71xx_soc == AR71XX_SOC_AR9344);
+}
+
+static inline int soc_is_ar934x(void)
+{
+	return soc_is_ar9341() || soc_is_ar9342() || soc_is_ar9344();
+}
+
+static inline int soc_is_qca9533(void)
+{
+	return ar71xx_soc == AR71XX_SOC_QCA9533;
+}
+
+static inline int soc_is_qca953x(void)
+{
+	return soc_is_qca9533();
+}
+
 static inline int soc_is_qca9556(void)
 {
 	return ar71xx_soc == AR71XX_SOC_QCA9556;
@@ -204,7 +277,6 @@ static inline int soc_is_qca9558(void)
 {
 	return ar71xx_soc == AR71XX_SOC_QCA9558;
 }
-
 
 static inline int soc_is_qca955x(void)
 {

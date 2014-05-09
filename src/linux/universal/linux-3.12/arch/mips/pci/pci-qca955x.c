@@ -28,10 +28,20 @@
 #define DBG(fmt, args...)
 #endif
 
+#define AR724X_PCI_CMD_INIT	(PCI_COMMAND_MEMORY |		\
+				 PCI_COMMAND_MASTER |		\
+				 PCI_COMMAND_INVALIDATE |	\
+				 PCI_COMMAND_PARITY |		\
+				 PCI_COMMAND_SERR |		\
+				 PCI_COMMAND_FAST_BACK)
+
+
 static void __iomem *ar724x_pci_localcfg_base;
 static void __iomem *ar724x_pci_devcfg_base;
 static void __iomem *ar724x_pci_ctrl_base;
 static int ar724x_pci_fixup_enable;
+static int irq_base;
+
 
 static DEFINE_SPINLOCK(ar724x_pci_lock);
 
@@ -160,16 +170,16 @@ static struct pci_ops ar724x_pci_ops = {
 };
 
 static struct resource ar724x_pci_io_resource = {
-	.name		= "PCI IO space",
-	.start		= 0,
-	.end		= 0,
+	.name		= "PCI2 IO space",
+	.start		= 1,
+	.end		= 1,
 	.flags		= IORESOURCE_IO,
 };
 
 static struct resource ar724x_pci_mem_resource = {
-	.name		= "PCI memory space",
-	.start		= AR71XX_PCI_MEM_BASE,
-	.end		= AR71XX_PCI_MEM_BASE + AR71XX_PCI_MEM_SIZE - 1,
+	.name		= "PCI2 memory space",
+	.start		= QCA955X_PCI_MEM_BASE1,
+	.end		= QCA955X_PCI_MEM_BASE1 + QCA955X_PCI_MEM_SIZE - 1,
 	.flags		= IORESOURCE_MEM
 };
 
@@ -225,7 +235,7 @@ static int __init ar724x_pci_setup(void)
 
 	t = __raw_readl(base + AR724X_PCI_REG_RESET);
 	if ((t & AR724X_PCI_RESET_LINK_UP) == 0x0) {
-		printk(KERN_WARNING "PCI: no PCIe module found\n");
+		printk(KERN_WARNING "PCI 2: no PCIe module found\n");
 		return -ENODEV;
 	}
 
@@ -248,7 +258,7 @@ static void ar724x_pci_irq_handler(unsigned int irq, struct irq_desc *desc)
 		  __raw_readl(base + AR724X_PCI_REG_INT_MASK);
 
 	if (pending & AR724X_PCI_INT_DEV0)
-		generic_handle_irq(AR71XX_PCI_IRQ_DEV0);
+		generic_handle_irq(irq_base + 0);
 
 	else
 		spurious_interrupt();
@@ -259,8 +269,8 @@ static void ar724x_pci_irq_unmask(struct irq_data *d)
 	void __iomem *base = ar724x_pci_ctrl_base;
 	u32 t;
 
-	switch (d->irq) {
-	case AR71XX_PCI_IRQ_DEV0:
+	switch (irq_base - d->irq) {
+	case 0:
 		t = __raw_readl(base + AR724X_PCI_REG_INT_MASK);
 		__raw_writel(t | AR724X_PCI_INT_DEV0,
 			     base + AR724X_PCI_REG_INT_MASK);
@@ -274,8 +284,8 @@ static void ar724x_pci_irq_mask(struct irq_data *d)
 	void __iomem *base = ar724x_pci_ctrl_base;
 	u32 t;
 
-	switch (d->irq) {
-	case AR71XX_PCI_IRQ_DEV0:
+	switch (irq_base - d->irq) {
+	case 0:
 		t = __raw_readl(base + AR724X_PCI_REG_INT_MASK);
 		__raw_writel(t & ~AR724X_PCI_INT_DEV0,
 			     base + AR724X_PCI_REG_INT_MASK);
@@ -305,27 +315,70 @@ static void __init ar724x_pci_irq_init(int irq)
 	u32 t;
 	int i;
 
-	t = ar71xx_reset_rr(AR724X_RESET_REG_RESET_MODULE);
-	if (t & (AR724X_RESET_PCIE | AR724X_RESET_PCIE_PHY |
-		 AR724X_RESET_PCIE_PHY_SERIAL)) {
-		return;
-	}
 
 	__raw_writel(0, base + AR724X_PCI_REG_INT_MASK);
 	__raw_writel(0, base + AR724X_PCI_REG_INT_STATUS);
 
-	for (i = AR71XX_PCI_IRQ_BASE;
-	     i < AR71XX_PCI_IRQ_BASE + AR71XX_PCI_IRQ_COUNT; i++)
+
+	irq_base = AR71XX_PCI_IRQ_BASE + (1 * AR71XX_PCI_IRQ_COUNT);
+
+
+	for (i = irq_base;
+	     i < irq_base + AR71XX_PCI_IRQ_COUNT; i++)
 		irq_set_chip_and_handler(i, &ar724x_pci_irq_chip,
 					 handle_level_irq);
 
 	irq_set_chained_handler(irq, ar724x_pci_irq_handler);
 }
 
+
+static int ar724x_pci_local_write(int where, int size, u32 value)
+{
+	unsigned long flags;
+	void __iomem *base;
+	u32 data;
+	int s;
+
+	WARN_ON(where & (size - 1));
+
+	base = ar724x_pci_localcfg_base;
+
+	spin_lock_irqsave(&ar724x_pci_lock, flags);
+	data = __raw_readl(base + (where & ~3));
+
+	switch (size) {
+	case 1:
+		s = ((where & 3) * 8);
+		data &= ~(0xff << s);
+		data |= ((value & 0xff) << s);
+		break;
+	case 2:
+		s = ((where & 2) * 8);
+		data &= ~(0xffff << s);
+		data |= ((value & 0xffff) << s);
+		break;
+	case 4:
+		data = value;
+		break;
+	default:
+		spin_unlock_irqrestore(&ar724x_pci_lock, flags);
+		return PCIBIOS_BAD_REGISTER_NUMBER;
+	}
+
+	__raw_writel(data, base + (where & ~3));
+	/* flush write */
+	__raw_readl(base + (where & ~3));
+	spin_unlock_irqrestore(&ar724x_pci_lock, flags);
+
+	return PCIBIOS_SUCCESSFUL;
+}
+
+
 int __init qca955x_pcibios_init(int irq)
 {
 	int ret = -ENOMEM;
 
+printk(KERN_INFO "init QCA PCI 2\n");
 	ar724x_pci_localcfg_base = ioremap_nocache(QCA955X_PCI_CRP_BASE1,
 						   QCA955X_PCI_CRP_SIZE);
 	if (ar724x_pci_localcfg_base == NULL)
@@ -341,13 +394,17 @@ int __init qca955x_pcibios_init(int irq)
 	if (ar724x_pci_ctrl_base == NULL)
 		goto err_unmap_devcfg;
 
-	ar724x_pci_reset();
+//	ar724x_pci_reset();
 	ret = ar724x_pci_setup();
 	if (ret)
 		goto err_unmap_ctrl;
 
 	ar724x_pci_fixup_enable = 1;
+
 	ar724x_pci_irq_init(irq);
+
+	ar724x_pci_local_write(PCI_COMMAND, 4, AR724X_PCI_CMD_INIT);
+
 	register_pci_controller(&ar724x_pci_controller);
 
 	return 0;

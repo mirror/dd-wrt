@@ -281,6 +281,9 @@ config WR841V9
 config WR1043V2
 	bool "support for WR1043 V2"
 	depends on AP135
+config ARCHERC7
+	bool "support for ARCHER C7"
+	depends on WR1043V2
 config WDR2543
 	bool "support for WDR2543"
 	depends on MACH_AR7240
