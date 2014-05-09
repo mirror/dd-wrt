@@ -24,29 +24,6 @@ struct ath9k_platform_data wmac_data = {
 
 static char ap91_wmac_mac[6];
 
-static struct ar71xx_pci_irq ap91_pci_irqs[] __initdata = {
-	{
-	 .slot = 0,
-	 .pin = 1,
-	 .irq = AR71XX_PCI_IRQ_DEV0,
-	 }
-};
-
-static struct ar71xx_pci_irq qca955x_pci_irqs[] __initdata = {
-	{
-		.bus	= 0,
-		.slot	= 0,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV0,
-	},
-	{
-		.bus	= 1,
-		.slot	= 0,
-		.pin	= 1,
-		.irq	= AR71XX_PCI_IRQ_DEV1,
-	},
-};
-
 static int ap91_pci_plat_dev_init(struct pci_dev *dev)
 {
 	switch (PCI_SLOT(dev->devfn)) {
@@ -78,6 +55,7 @@ int __init pcibios_init(void);
 
 void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 {
+#ifndef CONFIG_ARCHERC7
 	if (cal_data)
 		memcpy(wmac_data.eeprom_data, cal_data, sizeof(wmac_data.eeprom_data));
 
@@ -88,10 +66,8 @@ void __init ap91_pci_init(u8 *cal_data, u8 *mac_addr)
 
 	ar71xx_pci_plat_dev_init = ap91_pci_plat_dev_init;
 	pci_enable_ath9k_fixup(0, wmac_data.eeprom_data);
-	if (soc_is_qca955x())
-		ar71xx_pci_init(ARRAY_SIZE(qca955x_pci_irqs), qca955x_pci_irqs);
-	else
-		ar71xx_pci_init(ARRAY_SIZE(ap91_pci_irqs), ap91_pci_irqs);
+#endif
+	ar71xx_pci_init();
 #ifdef CONFIG_MTD_NAND_ATH
 	pcibios_init();
 #endif
