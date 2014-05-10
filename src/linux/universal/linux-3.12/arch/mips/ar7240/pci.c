@@ -178,7 +178,7 @@ int __init ar71xx_pci_init(void)
 	case AR71XX_SOC_AR7241:
 	case AR71XX_SOC_AR7242:
 		pdev = ar71xx_register_pci_ar724x(-1,
-						 AR71XX_PCI_CFG_BASE,
+						 AR724X_PCI_CFG_BASE,
 						 AR724X_PCI_CTRL_BASE,
 						 AR724X_PCI_CRP_BASE,
 						 AR71XX_PCI_MEM_BASE,
@@ -192,7 +192,7 @@ int __init ar71xx_pci_init(void)
 		t = ar71xx_reset_rr(AR934X_RESET_REG_BOOTSTRAP);
 		if (t & AR934X_BOOTSTRAP_PCIE_RC) {
 		pdev = ar71xx_register_pci_ar724x(-1,
-						 AR71XX_PCI_CFG_BASE,
+						 AR724X_PCI_CFG_BASE,
 						 AR724X_PCI_CTRL_BASE,
 						 AR724X_PCI_CRP_BASE,
 						 AR71XX_PCI_MEM_BASE,
