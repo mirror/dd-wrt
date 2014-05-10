@@ -665,23 +665,6 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_add_device_mdio(0, 0x0);
 
-#if 0
-	/* GMAC0 of the AR8327 switch is connected to GMAC0 via RGMII */
-	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_RGMII;
-	ap136_ar8327_pad0_cfg.txclk_delay_en = true;
-	ap136_ar8327_pad0_cfg.rxclk_delay_en = true;
-	ap136_ar8327_pad0_cfg.txclk_delay_sel = AR8327_CLK_DELAY_SEL1;
-	ap136_ar8327_pad0_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL2;
-
-	/* GMAC6 of the AR8327 switch is connected to GMAC1 via SGMII */
-	ap136_ar8327_pad6_cfg.mode = AR8327_PAD_MAC_SGMII;
-	ap136_ar8327_pad6_cfg.rxclk_delay_en = true;
-	ap136_ar8327_pad6_cfg.rxclk_delay_sel = AR8327_CLK_DELAY_SEL0;
-
-	ar71xx_eth0_pll_data.pll_1000 = 0xa6000000;
-	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
-#else
-
 	/* GMAC0 of the AR8327 switch is connected to GMAC1 via SGMII */
 	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
 	ap136_ar8327_pad0_cfg.sgmii_delay_en = true;
@@ -695,7 +678,7 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_eth0_pll_data.pll_1000 = 0x56000000;
 	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
-#endif
+
 	mdiobus_register_board_info(ap136_mdio0_info,
 				    ARRAY_SIZE(ap136_mdio0_info));
 
