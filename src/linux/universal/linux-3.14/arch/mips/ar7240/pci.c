@@ -23,8 +23,8 @@
 #include <asm/mach-ar71xx/ar71xx.h>
 #include <asm/mach-ar71xx/pci.h>
 #ifndef CONFIG_MACH_HORNET
-unsigned ar71xx_pci_nr_irqs __initdata;
-struct ar71xx_pci_irq *ar71xx_pci_irq_map __initdata;
+static unsigned ar71xx_pci_nr_irqs __initdata;
+static const struct ar71xx_pci_irq *ar71xx_pci_irq_map __initdata;
 
 
 int (*ar71xx_pci_plat_dev_init) (struct pci_dev * dev);
@@ -77,9 +77,7 @@ int __init pcibios_map_irq(const struct pci_dev *dev, uint8_t slot, uint8_t pin)
 
 	if (ar71xx_pci_nr_irqs == 0 ||
 	    ar71xx_pci_irq_map == NULL) {
-		if (soc_is_ar71xx()) {
-			return ar71xx_pcibios_map_irq(dev, slot, pin);
-		} else if (soc_is_ar724x() ||
+		if (soc_is_ar724x() ||
 			   soc_is_ar9342() ||
 			   soc_is_ar9344()) {
 			ar71xx_pci_irq_map = ar724x_pci_irq_map;
