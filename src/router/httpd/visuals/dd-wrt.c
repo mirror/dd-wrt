@@ -5931,7 +5931,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.fullduplex)</script>");
 			break;
 		case 20:
-			websWrite(wp, "<script type=\"text/javascript\">Capture(share.enabled)<script>");
+			websWrite(wp, "<script type=\"text/javascript\">Capture(share.enabled)</script>");
 			break;
 		case 21:
 			websWrite(wp, "<script type=\"text/javascript\">Capture(vlan.gigabit)</script>");
