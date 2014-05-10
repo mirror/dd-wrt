@@ -23,8 +23,6 @@ struct ar71xx_pci_irq {
 
 #ifdef CONFIG_PCI
 extern int (*ar71xx_pci_plat_dev_init)(struct pci_dev *dev);
-extern unsigned ar71xx_pci_nr_irqs __initdata;
-extern struct ar71xx_pci_irq *ar71xx_pci_irq_map __initdata;
 
 int ar71xx_pcibios_map_irq(const struct pci_dev *dev,
 			   uint8_t slot, uint8_t pin) __init;
