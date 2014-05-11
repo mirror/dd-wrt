@@ -1,3 +1,6 @@
+zlib-configure:
+	cd zlib && ./configure --static
+
 zlib-clean:
 	make -C zlib clean
 
