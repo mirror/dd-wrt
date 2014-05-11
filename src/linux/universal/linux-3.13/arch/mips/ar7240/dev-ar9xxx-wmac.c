@@ -64,7 +64,7 @@ static void ar913x_wmac_init(void)
 	ar9xxx_wmac_resources[0].end = AR91XX_WMAC_BASE + AR91XX_WMAC_SIZE - 1;
 }
 
-static int ar933x_r1_get_wmac_revision(void)
+static int ar93xx_get_wmac_revision(void)
 {
 	return ar71xx_soc_rev;
 }
@@ -104,7 +104,7 @@ static void ar933x_wmac_init(void)
 		ar9xxx_wmac_data.is_clk_25mhz = true;
 	}
 	if (ar71xx_soc_rev == 1)
-		ar9xxx_wmac_data.get_mac_revision = ar933x_r1_get_wmac_revision;
+		ar9xxx_wmac_data.get_mac_revision = ar93xx_get_wmac_revision;
 
 	ar9xxx_wmac_data.external_reset = ar933x_wmac_reset;
 
@@ -140,6 +140,8 @@ static void qca953x_wmac_init(void)
 		ar9xxx_wmac_data.is_clk_25mhz = false;
 	else
 		ar9xxx_wmac_data.is_clk_25mhz = true;
+	
+	ar9xxx_wmac_data.get_mac_revision = ar93xx_get_wmac_revision;
 }
 
 static void qca955x_wmac_init(void)
