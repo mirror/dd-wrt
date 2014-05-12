@@ -157,6 +157,9 @@ void start_sysinit(void)
 	setWirelessLed(1, 14);
 #elif  HAVE_WR1043V2
 	setWirelessLed(0, 12);
+#ifdef HAVE_WDR4900V2
+	setWirelessLed(1, 17);
+#endif
 #elif  HAVE_WHR450HP
 	setWirelessLed(0, 1);
 #elif  HAVE_DIR825C1
