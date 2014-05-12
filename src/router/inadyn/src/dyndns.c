@@ -549,7 +549,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 				{
 					int rc = p_self->info.p_dns_system->p_rsp_ok_func((struct _DYN_DNS_CLIENT*)p_self, http_tr.p_rsp, 
 							p_self->info.p_dns_system->p_success_string);
-					if (rc)
+					if (rc == RC_OK)
 					{
 			                        p_self->alias_info.update_required[i] = FALSE;
 
@@ -576,6 +576,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 					}
 					else
 					{
+						DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Response Code: %d\n", rc));
 						DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Error validating DYNDNS svr answer. Check usr,pass,hostname! (%s)\n", http_tr.p_rsp));
 						shutdown++;
 					}
