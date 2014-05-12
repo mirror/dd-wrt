@@ -148,14 +148,15 @@ int br_add_bridge(const char *brname)
 	char *mcast = nvram_default_get(brmcast, "0");
 	
 #ifdef HAVE_80211AC
+	sysprintf("echo 0 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
 	eval("emf", "add", "bridge", brname);
 	if (!strcmp(mcast,"1"))
 		eval("igs", "add", "bridge", brname);
 #else
 	if (!strcmp(mcast,"1"))
-		sysprintf("echo %s > /sys/devices/virtual/net/%s/bridge/multicast_snooping", mcast, brname);
+		sysprintf("echo 1 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
 	else
-		sysprintf("echo 0 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", mcast, brname);
+		sysprintf("echo 0 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
 	
 #endif
 	
