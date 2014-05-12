@@ -1551,6 +1551,8 @@ ifeq ($(CONFIG_WR1043V2),y)
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v1-firmware.bin mips-uclibc/tplink-ARCHER-C7v1-firmware.bin
 	-./tools/tplink/mktplinkfw -B ARCHER-C7v2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v2-firmware.bin mips-uclibc/tplink-ARCHER-C7v2-firmware.bin
+	-./tools/tplink/mktplinkfw -B TL-WDR4900v2 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-TL-WDR4900v2-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/TL-WDR4900v2-firmware.bin mips-uclibc/tplink-TL-WDR4900v2-firmware.bin
 endif
 ifeq ($(CONFIG_WRT400),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/root.wrt400 bs=1048576 conv=sync
