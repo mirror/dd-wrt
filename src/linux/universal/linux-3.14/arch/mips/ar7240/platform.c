@@ -149,7 +149,7 @@ static struct platform_device ar7240_usb_ehci_device = {
 
 static struct platform_device ar7240_usb_ehci2_device = {
 	.name = "ar71xx-ehci",
-	.id = 0,
+	.id = 1,
 	.dev = {
 		.dma_mask = &ehci2_dmamask,
 		.coherent_dma_mask = 0xffffffff,
@@ -530,33 +530,34 @@ int __init ar7240_platform_init(void)
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
 #define DB120_MAC1_OFFSET	6
-#ifdef CONFIG_DIR825C1
+    #ifdef CONFIG_DIR825C1
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff1000);
-#elif CONFIG_WR841V8
+    #elif CONFIG_WR841V8
 //              u8 *art = (u8 *) KSEG1ADDR(0x1fff1000);
-#else
+    #else
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff0000);
-#endif
+    #endif
 	void __iomem *base;
 	u32 t;
 
-#if !defined(CONFIG_WDR4300) && !defined(CONFIG_AP135)
-#ifdef CONFIG_DIR825C1
+    #if !defined(CONFIG_WDR4300) && !defined(CONFIG_AP135)
+    #ifdef CONFIG_DIR825C1
 	dir825b1_read_ascii_mac(mac0, DIR825C1_MAC_LOCATION_0);
 	dir825b1_read_ascii_mac(mac1, DIR825C1_MAC_LOCATION_1);
-#endif
+    #endif
 
-#else
-#ifdef CONFIG_WR1043V2
+    #else
+
+    #ifdef CONFIG_WR1043V2
 	mac = (u8 *)KSEG1ADDR(0x1f01fc00);
-#elif CONFIG_AP135
+    #elif CONFIG_AP135
 	mac = (u8 *)KSEG1ADDR(0x1fff0000);
-#endif
+    #endif
 	ath79_init_mac(mac0, mac, -1);
 	ath79_init_mac(mac1, mac, 0);
-#endif
+    #endif
 
-#ifdef CONFIG_DIR615I
+    #ifdef CONFIG_DIR615I
 
 	dir825b1_read_ascii_mac(mac0, DIR615I_MAC_LOCATION_0);
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
@@ -566,7 +567,7 @@ int __init ar7240_platform_init(void)
 
 	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
-#elif CONFIG_WR841V9
+    #elif CONFIG_WR841V9
 
 	base = ioremap(AR933X_GMAC_BASE, AR933X_GMAC_SIZE);
 
@@ -580,7 +581,7 @@ int __init ar7240_platform_init(void)
 
 	iounmap(base);
 
-#elif CONFIG_WR841V8
+    #elif CONFIG_WR841V8
 	//swap phy
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
 	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
@@ -592,10 +593,10 @@ int __init ar7240_platform_init(void)
 	/* flush write */
 	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
-#else
-#ifdef CONFIG_AP135
+    #else
+	#ifdef CONFIG_AP135
 	ap136_gmac_setup();
-#else
+	#else
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
 	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 
@@ -604,19 +605,19 @@ int __init ar7240_platform_init(void)
 	       AR934X_ETH_CFG_GMII_GMAC0 |
 	       AR934X_ETH_CFG_SW_ONLY_MODE |
 	       AR934X_ETH_CFG_SW_PHY_SWAP);
-#ifdef CONFIG_WDR3500
+	    #ifdef CONFIG_WDR3500
 	t |= AR934X_ETH_CFG_SW_ONLY_MODE;
-#elif CONFIG_WDR4300
+	    #elif CONFIG_WDR4300
 	t |= AR934X_ETH_CFG_RGMII_GMAC0;
-#else
+	    #else
 	t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
-#endif
+	    #endif
 	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
-#endif
-#endif
+	#endif
+    #endif
 
-#ifdef CONFIG_DIR615I
+    #ifdef CONFIG_DIR615I
 	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_add_device_mdio(0, 0x0);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
@@ -631,7 +632,7 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
-#elif CONFIG_WR841V9
+    #elif CONFIG_WR841V9
 	ar71xx_add_device_mdio(0, 0x0);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
@@ -643,7 +644,7 @@ int __init ar7240_platform_init(void)
 	ar71xx_switch_data.phy4_mii_en = 1;
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_add_device_eth(0);
-#elif CONFIG_WR841V8
+    #elif CONFIG_WR841V8
 	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, -1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
@@ -659,8 +660,8 @@ int __init ar7240_platform_init(void)
 	/* GMAC1 is connected to the internal switch */
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ar71xx_add_device_eth(1);
-#else
-#ifdef CONFIG_AP135
+    #else
+	#ifdef CONFIG_AP135
 
 	ar71xx_add_device_mdio(0, 0x0);
 
@@ -681,13 +682,13 @@ int __init ar7240_platform_init(void)
 	mdiobus_register_board_info(ap136_mdio0_info,
 				    ARRAY_SIZE(ap136_mdio0_info));
 
-#ifdef CONFIG_WR1043V2
+	    #ifdef CONFIG_WR1043V2
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac, 1);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, 0);
-#else
+	    #else
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac + DB120_MAC0_OFFSET, 0);
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac + DB120_MAC1_OFFSET, 0);
-#endif
+	    #endif
 
 	/* GMAC0 is connected to the RMGII interface */
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
@@ -703,8 +704,8 @@ int __init ar7240_platform_init(void)
 
 	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
 	ar71xx_add_device_eth(1);
-#else
-#ifdef CONFIG_WDR3500
+	#else
+	    #ifdef CONFIG_WDR3500
 	ar71xx_add_device_mdio(1, 0x0);
 
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, mac, -1);
@@ -725,34 +726,34 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio1_device.dev;
 
 	ar71xx_add_device_eth(0);
-#else
-#ifndef CONFIG_WDR4300
-#ifndef CONFIG_DIR825C1
+	    #else
+		#ifndef CONFIG_WDR4300
+		    #ifndef CONFIG_DIR825C1
 	ar71xx_add_device_mdio(1, 0x0);
-#endif
-#endif
+		    #endif
+		#endif
 	ar71xx_add_device_mdio(0, 0x0);
 
-#ifdef CONFIG_DIR825C1
+		#ifdef CONFIG_DIR825C1
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 0);
-#else
+		#else
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
-#endif
+		#endif
 
-#ifdef CONFIG_WDR4300
+		#ifdef CONFIG_WDR4300
 	mdiobus_register_board_info(wdr4300_mdio0_info, ARRAY_SIZE(wdr4300_mdio0_info));
-#else
+		#else
 
 	mdiobus_register_board_info(db120_mdio0_info, ARRAY_SIZE(db120_mdio0_info));
-#endif
+		#endif
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = BIT(0);
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
 	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
 	ar71xx_add_device_eth(0);
 
-#ifndef CONFIG_WDR4300
-#ifndef CONFIG_DIR825C1
+		#ifndef CONFIG_WDR4300
+		    #ifndef CONFIG_DIR825C1
 	/* GMAC1 is connected to the internal switch */
 	ar71xx_init_mac(ar71xx_eth1_data.mac_addr, art + DB120_MAC1_OFFSET, 0);
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
@@ -760,11 +761,11 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 
 	ar71xx_add_device_eth(1);
-#endif
-#endif
-#endif
-#endif
-#endif
+		    #endif
+		#endif
+	    #endif
+	#endif
+    #endif
 #endif
 	ret = platform_add_devices(ar724x_platform_devices, ARRAY_SIZE(ar724x_platform_devices));
 
