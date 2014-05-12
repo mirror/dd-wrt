@@ -221,8 +221,7 @@ void start_sysinit(void)
 				{"regrev", "15", 0},                                                                                                                                                                                               
 				{"devid", "0x4332", 0},                                                                                                                                                                                            
 				{"tempthresh", "120", 0},                                                                                                                                                                                          
-				{"mcsbw402gpo", "0xECA86222", 0},                                                                                                                                                                                  
-				{"macaddr", "", 0},                                                                                                                                                                                                
+				{"mcsbw402gpo", "0xECA86222", 0},                                                                                                                                                                                                                                                                                                                                                                                
 				{"mcsbw202gpo", "0xCA862222", 0},
 				{0, 0, 0}
 			};
