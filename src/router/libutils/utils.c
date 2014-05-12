@@ -1726,6 +1726,13 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_rxantenna", "3");
 	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_WDR4900V2
+	setRouter("TPLINK WDR4900 v2");
+	nvram_default_get("ath0_rxantenna", "7");
+	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("ath1_rxantenna", "7");
+	nvram_default_get("ath1_txantenna", "7");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_ARCHERC7
 	setRouter("TPLINK ARCHER-C7 v1");
 	nvram_default_get("ath0_rxantenna", "7");
