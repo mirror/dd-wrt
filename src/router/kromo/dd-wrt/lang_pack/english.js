@@ -830,6 +830,8 @@ nas.useradd="Add User";
 nas.userdel="Remove";
 nas.perm_rw="Read/Write";
 nas.perm_ro="Read Only";
+nas.uname="User Name";
+nas.pwd="Password";
 
 var hnas=new Object();
 hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through ftp or samba.";
