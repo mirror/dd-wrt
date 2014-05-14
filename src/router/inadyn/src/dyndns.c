@@ -459,11 +459,13 @@ static int is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p
 */
 static int is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
 {
-	if (p_ok_string == NULL)
-	{
-		return FALSE;
-	}
-    return (strstr(p_rsp, p_ok_string) != NULL);
+	if( (strstr(p_rsp, "OK") != NULL) )
+		return RC_OK;
+	if( (strstr(p_rsp, "KO") != NULL) )
+		return RC_OK;
+	if( (strstr(p_rsp, "good") != NULL) )
+		return RC_OK;
+	return RC_ERROR;
 }
 
 /**
