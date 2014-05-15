@@ -631,6 +631,9 @@ ATH9KFILES += networking/madwifi_ath9k.c tools/site_survey_mac80211.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
 endif
+ifeq ($(CONFIG_ATH10K),y)
+ATH9KCFLAGS += -DHAVE_ATH10K
+endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 OBJS += site_survey_madwifi.o
