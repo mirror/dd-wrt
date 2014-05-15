@@ -160,6 +160,9 @@ void start_sysinit(void)
 #ifdef HAVE_WDR4900V2
 	setWirelessLed(1, 17);
 #endif
+#ifdef HAVE_ARCHERC7
+	setWirelessLed(1, 17);
+#endif
 #elif  HAVE_WHR450HP
 	setWirelessLed(0, 1);
 #elif  HAVE_DIR825C1

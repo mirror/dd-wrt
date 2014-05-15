@@ -6018,9 +6018,49 @@ int is_ath9k(const char *prefix)
 	if (globresult == 0)
 		count = (int)globbuf.gl_pathc;
 	globfree(&globbuf);
+	if (!count)
+	    return 0;
+	FILE *fp;
+	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/device", devnum);
+	fp = fopen(globstring, "rb");
 	return (count);
 }
 #endif
+#ifdef HAVE_ATH10K
+int is_ath10k(const char *prefix)
+{
+	glob_t globbuf;
+	int count = 0;
+	char globstring[1024];
+	int globresult;
+	int devnum;
+	// get legacy interface count
+#ifdef HAVE_MADWIFI_MIMO
+	if (!nvram_match("mimo_driver", "ath9k"))
+		return (0);
+#endif
+	// correct index if there are legacy cards arround
+	devnum = get_ath9k_phy_ifname(prefix);
+	sprintf(globstring, "/sys/class/ieee80211/phy%d", devnum);
+	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	if (globresult == 0)
+		count = (int)globbuf.gl_pathc;
+	globfree(&globbuf);
+	if (!count)
+	    return 0;
+	FILE *fp;
+	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/device", devnum);
+	fp = fopen(globstring, "rb");
+	char match[32];
+	fscanf(fp, "%s",match);
+	if (strcmp(match,"0x003c"))
+	    return 0;
+	return (count);
+}
+
+
+#endif
+
 
 double HTTxRate20_800(unsigned int index)
 {
