@@ -6018,11 +6018,6 @@ int is_ath9k(const char *prefix)
 	if (globresult == 0)
 		count = (int)globbuf.gl_pathc;
 	globfree(&globbuf);
-	if (!count)
-	    return 0;
-	FILE *fp;
-	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/device", devnum);
-	fp = fopen(globstring, "rb");
 	return (count);
 }
 #endif
