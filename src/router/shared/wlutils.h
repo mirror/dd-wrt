@@ -126,7 +126,10 @@ extern struct wifi_channels *list_channels_ath9k(char *devnr, char *country,int 
 extern int getdevicecount(void);
 extern int mac80211_get_coverageclass(char *interface);
 extern struct mac80211_info *mac80211_assoclist(char *interface); 
-extern char *mac80211_get_caps(char *interface); 
+extern char *mac80211_get_caps(char *interface);
+#ifdef HAVE_ATH10K 
+extern char *mac80211_get_vhtcaps(char *interface); 
+#endif
 extern int mac80211_check_band(char *interface,int checkband);
 struct wifi_channels *mac80211_get_channels(char *interface,char *country,int max_bandwidth_khz, unsigned char checkband);
 extern struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive);

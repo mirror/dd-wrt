@@ -53,6 +53,34 @@ typedef uint16_t u16;
 #define HT_CAP_INFO_40MHZ_INTOLERANT        ((u16) BIT(14))
 #define HT_CAP_INFO_LSIG_TXOP_PROTECT_SUPPORT   ((u16) BIT(15))
 
+#define VHT_CAP_MAX_MPDU_LENGTH_7991                ((u32) BIT(0))
+#define VHT_CAP_MAX_MPDU_LENGTH_11454               ((u32) BIT(1))
+#define VHT_CAP_SUPP_CHAN_WIDTH_160MHZ              ((u32) BIT(2))
+#define VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ     ((u32) BIT(3))
+#define VHT_CAP_RXLDPC                              ((u32) BIT(4))
+#define VHT_CAP_SHORT_GI_80                         ((u32) BIT(5))
+#define VHT_CAP_SHORT_GI_160                        ((u32) BIT(6))
+#define VHT_CAP_TXSTBC                              ((u32) BIT(7))
+#define VHT_CAP_RXSTBC_1                            ((u32) BIT(8))
+#define VHT_CAP_RXSTBC_2                            ((u32) BIT(9))
+#define VHT_CAP_RXSTBC_3                            ((u32) BIT(8) | BIT(9))
+#define VHT_CAP_RXSTBC_4                            ((u32) BIT(10))
+#define VHT_CAP_SU_BEAMFORMER_CAPABLE               ((u32) BIT(11))
+#define VHT_CAP_SU_BEAMFORMEE_CAPABLE               ((u32) BIT(12))
+#define VHT_CAP_BEAMFORMER_ANTENNAS_MAX             ((u32) BIT(13) | BIT(14))
+#define VHT_CAP_SOUNDING_DIMENTION_MAX              ((u32) BIT(16) | BIT(17))
+#define VHT_CAP_MU_BEAMFORMER_CAPABLE               ((u32) BIT(19))
+#define VHT_CAP_MU_BEAMFORMEE_CAPABLE               ((u32) BIT(20))
+#define VHT_CAP_VHT_TXOP_PS                         ((u32) BIT(21))
+#define VHT_CAP_HTC_VHT                             ((u32) BIT(22))
+#define VHT_CAP_MAX_A_MPDU_LENGTH_EXPONENT          ((u32) BIT(23))
+#define VHT_CAP_VHT_LINK_ADAPTATION_VHT_UNSOL_MFB   ((u32) BIT(27))
+#define VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB     ((u32) BIT(26) | BIT(27))
+#define VHT_CAP_RX_ANTENNA_PATTERN                  ((u32) BIT(28))
+#define VHT_CAP_TX_ANTENNA_PATTERN                  ((u32) BIT(29))
+
+
+
 static struct unl unl;
 
 static void print_wifi_clients(struct wifi_client_info *wci);
@@ -444,6 +472,67 @@ nla_put_failure:
 	return capstring;
 }
 
+
+#ifdef HAVE_ATH10K
+			
+#define VHT_CAP_MAX_MPDU_LENGTH_7991                ((u32) BIT(0))
+
+
+char *mac80211_get_vhtcaps(char *interface)
+{
+	struct nl_msg *msg;
+	struct nlattr *caps, *bands, *band;
+	int rem;
+	u32 cap;
+	char *capstring = NULL;
+	int phy;
+	phy = mac80211_get_phyidx_by_vifname(interface);
+	if (phy == -1) {
+		return strdup("");
+	}
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+		return "";
+	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
+	if (!bands)
+		goto out;
+
+	nla_for_each_nested(band, bands, rem) {
+		caps = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_VHT_CAPA);
+		if (!caps)
+			continue;
+		cap = nla_get_u32(caps);
+		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
+			 , (cap & VHT_CAP_SHORT_GI_80 ? "[SHORT-GI-80]" : "")
+			 , (cap & VHT_CAP_SHORT_GI_160 ? "[SHORT-GI-160]" : "")
+			 , (cap & VHT_CAP_TXSTBC ? "[TX-STBC-2BY1]" : "")
+			 , (((cap >> 8) & 0x3) == 1 ? "[RX-STBC1]" : "")
+			 , (((cap >> 8) & 0x3) == 2 ? "[RX-STBC12]" : "")
+			 , (((cap >> 8) & 0x3) == 3 ? "[RX-STBC123]" : "")
+			 , (cap & VHT_CAP_RXSTBC_4) ? "[RX-STBC1234]" : "")
+			 , (cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) ? "[SU-BEAMFORMER]" : "")
+			 , (cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) ? "[SU-BEAMFORMEE]" : "")
+			 , (cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) ? "[MU-BEAMFORMER]" : "")
+			 , (cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) ? "[MU-BEAMFORMEE]" : "")
+			 , (cap & VHT_CAP_VHT_TXOP_PS) ? "[VHT-TXOP-PS]" : "")
+			 , (cap & VHT_CAP_HTC_VHT) ? "[HTC-VHT]" : "")
+			 , (cap & VHT_CAP_RX_ANTENNA_PATTERN ? "[RX-ANTENNA-PATTERN]" : "")
+			 , (cap & VHT_CAP_TX_ANTENNA_PATTERN ? "[TX-ANTENNA-PATTERN]" : "")
+			 , ((cap & 3) == 1 ? "[MAX-MPDU-7991]" : "")
+			 , ((cap & 3) == 2 ? "[MAX-MPDU-11454]" : "")
+			 , (cap & VHT_CAP_SUPP_CHAN_WIDTH_160MHZ ? "[VHT160]" : "")
+			 , (cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ ? "[VHT160-80PLUS80]" : "")
+		    );
+	}
+out:
+nla_put_failure:
+	nlmsg_free(msg);
+	if (!capstring)
+		return strdup("");
+	return capstring;
+}
+#endif
 static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 	[NL80211_FREQUENCY_ATTR_FREQ] = {.type = NLA_U32},
 };

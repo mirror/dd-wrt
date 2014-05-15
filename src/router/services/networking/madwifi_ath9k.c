@@ -304,6 +304,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	char *crypto = nvram_nget("%s_crypto", prefix);
 	char ht[5];
 	int iht = 0;
+	char bw[32];
+	sprintf(bw, "%s_channelbw", prefix);
 	if ((!strcmp(netmode, "ng-only") ||	//
 	     !strcmp(netmode, "na-only") ||	//
 	     !strcmp(netmode, "n2-only") ||	//
@@ -317,31 +319,29 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			fprintf(fp, "require_ht=1\n");
 		}
 		fprintf(fp, "ieee80211n=1\n");
-		char bw[32];
-		sprintf(bw, "%s_channelbw", prefix);
 		if (nvram_match(bw, "2040")) {
 			fprintf(fp, "dynamic_ht40=1\n");
 		}
 		if (nvram_default_match(bw, "20", "20")) {
-			sprintf(ht, "20");
+			sprintf(ht, "HT20");
 		} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
 			char sb[32];
 			sprintf(sb, "%s_nctrlsb", prefix);
 			if (nvram_default_match(sb, "upper", "lower")) {
-				sprintf(ht, "40+");
+				sprintf(ht, "HT40+");
 				iht = 1;
 			} else {
-				sprintf(ht, "40-");
+				sprintf(ht, "HT40-");
 				iht = -1;
 			}
 		} else
-			sprintf(ht, "20");
+			sprintf(ht, "HT20");
 	} else {
-		sprintf(ht, "20");
+		sprintf(ht, "HT20");
 	}
 	// fix for repeater mode as long as the driver is not able to do that
 	if (isrepeater) {
-		sprintf(ht, "20");
+		sprintf(ht, "HT20");
 	}
 	char regdomain[16];
 	char *country;
@@ -390,11 +390,11 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				}
 				if (iht != 0) {
 					if (chan[i].ht40minus) {
-						sprintf(ht, "40-");
+						sprintf(ht, "HT40-");
 					} else if (chan[i].ht40plus) {
-						sprintf(ht, "40+");
+						sprintf(ht, "HT40+");
 					} else {
-						sprintf(ht, "20");
+						sprintf(ht, "HT20");
 					}
 				}
 				free_mac80211_ac(acs);
@@ -409,8 +409,38 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		}
 	}
 	caps = mac80211_get_caps(prefix);
-	fprintf(fp, "ht_capab=[HT%s]%s\n", ht, caps);
+	fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
 	free(caps);
+#ifdef HAVE_ATH10K
+	if (is_ath10k(prefix)) {
+		if ((!strcmp(netmode, "mixed") ||	//
+		     !strcmp(netmode, "ac-only"))) {
+			caps = mac80211_get_vhtcaps(prefix);
+			fprintf(fp, "vht_capab=[%s]%s\n", ht, caps);
+			free(caps);
+			fprintf(fp, "ieee80211ac=1\n");
+			if (!strcmp(netmode, "ac-only")) {
+				fprintf(fp, "require_vht=1\n");
+			}
+
+			if (nvram_match(bw, "80")) {
+				fprintf(fp, "vht_oper_chwidth=1\n");
+			} else {
+				if (nvram_match(bw, "160")) {
+					fprintf(fp, "vht_oper_chwidth=2\n");
+				} else {
+					if (nvram_match(bw, "80+80")) {
+						fprintf(fp, "vht_oper_chwidth=3\n");
+					} else {
+						fprintf(fp, "vht_oper_chwidth=0\n");
+					}
+				}
+			}
+		}
+
+	}
+#endif
+
 	if (chan)
 		free(chan);
 	if (freq < 4000) {
@@ -481,6 +511,7 @@ static int ieee80211_aton(char *str, unsigned char mac[6])
 		mac[i] = addr[i] & 0xff;
 	return 0;
 }
+
 extern char *hostapd_eap_get_types(void);
 extern void addWPS(FILE * fp, char *prefix, int configured);
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
