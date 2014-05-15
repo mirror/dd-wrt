@@ -31,6 +31,7 @@
 
 // some defenitions from hostapd
 typedef uint16_t u16;
+typedef uint32_t u32;
 #define BIT(x) (1ULL<<(x))
 #define HT_CAP_INFO_LDPC_CODING_CAP     ((u16) BIT(0))
 #define HT_CAP_INFO_SUPP_CHANNEL_WIDTH_SET  ((u16) BIT(1))
@@ -475,8 +476,6 @@ nla_put_failure:
 
 #ifdef HAVE_ATH10K
 			
-#define VHT_CAP_MAX_MPDU_LENGTH_7991                ((u32) BIT(0))
-
 
 char *mac80211_get_vhtcaps(char *interface)
 {
@@ -510,13 +509,13 @@ char *mac80211_get_vhtcaps(char *interface)
 			 , (((cap >> 8) & 0x3) == 1 ? "[RX-STBC1]" : "")
 			 , (((cap >> 8) & 0x3) == 2 ? "[RX-STBC12]" : "")
 			 , (((cap >> 8) & 0x3) == 3 ? "[RX-STBC123]" : "")
-			 , (cap & VHT_CAP_RXSTBC_4) ? "[RX-STBC1234]" : "")
-			 , (cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) ? "[SU-BEAMFORMER]" : "")
-			 , (cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) ? "[SU-BEAMFORMEE]" : "")
-			 , (cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) ? "[MU-BEAMFORMER]" : "")
-			 , (cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) ? "[MU-BEAMFORMEE]" : "")
-			 , (cap & VHT_CAP_VHT_TXOP_PS) ? "[VHT-TXOP-PS]" : "")
-			 , (cap & VHT_CAP_HTC_VHT) ? "[HTC-VHT]" : "")
+			 , (cap & VHT_CAP_RXSTBC_4 ? "[RX-STBC1234]" : "")
+			 , (cap & VHT_CAP_SU_BEAMFORMER_CAPABLE ? "[SU-BEAMFORMER]" : "")
+			 , (cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE ? "[SU-BEAMFORMEE]" : "")
+			 , (cap & VHT_CAP_MU_BEAMFORMER_CAPABLE ? "[MU-BEAMFORMER]" : "")
+			 , (cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE ? "[MU-BEAMFORMEE]" : "")
+			 , (cap & VHT_CAP_VHT_TXOP_PS ? "[VHT-TXOP-PS]" : "")
+			 , (cap & VHT_CAP_HTC_VHT ? "[HTC-VHT]" : "")
 			 , (cap & VHT_CAP_RX_ANTENNA_PATTERN ? "[RX-ANTENNA-PATTERN]" : "")
 			 , (cap & VHT_CAP_TX_ANTENNA_PATTERN ? "[TX-ANTENNA-PATTERN]" : "")
 			 , ((cap & 3) == 1 ? "[MAX-MPDU-7991]" : "")
