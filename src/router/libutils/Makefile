@@ -122,6 +122,9 @@ ATH9KFILES += wl_ath9k.c list_sort.c unl.c mac80211info.c mac80211regulatory.c m
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
 
+ifeq ($(CONFIG_ATH10K),y)
+ATH9KCFLAGS += -DHAVE_ATH10K
+endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
