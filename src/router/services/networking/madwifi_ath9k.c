@@ -416,7 +416,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		if ((!strcmp(netmode, "mixed") ||	//
 		     !strcmp(netmode, "ac-only"))) {
 			caps = mac80211_get_vhtcaps(prefix);
-			fprintf(fp, "vht_capab=[%s]%s\n", ht, caps);
+			fprintf(fp, "vht_capab=%s\n", caps);
 			free(caps);
 			fprintf(fp, "ieee80211ac=1\n");
 			if (!strcmp(netmode, "ac-only")) {
