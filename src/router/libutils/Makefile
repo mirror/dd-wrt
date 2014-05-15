@@ -105,6 +105,9 @@ endif
 ifeq ($(CONFIG_ATH9K),y)
 CFLAGS += -DHAVE_ATH9K
 endif
+ifeq ($(CONFIG_ATH10K),y)
+CFLAGS += -DHAVE_ATH10K
+endif
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
 NCFLAGS += $(COPTS) -fPIC -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../services/networking -I../madwifi.dev/madwifi_mimo.dev/core  -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL

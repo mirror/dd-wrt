@@ -175,6 +175,7 @@ share.ht40="Wide HT40 (20+20 MHz)";
 share.ht20="Full HT20 (20 MHz)";
 share.dynamicturbo="Dynamic (20/40 MHz)";
 share.turbo="Turbo (40 MHz)";
+share.vht="VHT (80 MHz)";
 share.full="Full (20 MHz)";
 share.half="Half (10 MHz)";
 share.quarter="Quarter (5 MHz)";
