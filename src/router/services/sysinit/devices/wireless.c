@@ -261,6 +261,12 @@ static void detect_wireless_devices(void)
 #ifdef HAVE_ATH9K
 	}
 #endif
+#ifdef HAVE_ATH10K
+	fprintf(stderr, "load ATH/QCA 802.11ac Driver\n");
+	insmod("/lib/ath9k/ath10k_core.ko");
+	insmod("/lib/ath9k/ath10k_pci.ko");
+#endif
+
 #endif
 #endif
 }

@@ -2687,6 +2687,11 @@ static void show_netmode(webs_t wp, char *prefix)
 			websWrite(wp, "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n", nvram_match(wl_net_mode, "na-only") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n", nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
 		}
+#ifdef HAVE_ATH10K
+		if (is_ath10k(prefix) && has_5ghz(prefix)) {
+			websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n", nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
+		}
+#endif
 	}
 #endif
 
@@ -3703,6 +3708,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		if (!is_ath9k(prefix) || has_ht40(prefix))
 #endif
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_match(wl_width, "40") ? "selected=\\\"selected\\\"" : "");
+#if defined(HAVE_ATH10K)
+		if (is_ath10k(prefix))
+			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
+#endif
 	}
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_match(wl_width, "20") ? "selected=\\\"selected\\\"" : "");
 
