@@ -502,14 +502,15 @@ char *mac80211_get_vhtcaps(char *interface)
 		if (!caps)
 			continue;
 		cap = nla_get_u32(caps);
-		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
+		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]"
+			 , (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
 			 , (cap & VHT_CAP_SHORT_GI_80 ? "[SHORT-GI-80]" : "")
 			 , (cap & VHT_CAP_SHORT_GI_160 ? "[SHORT-GI-160]" : "")
 			 , (cap & VHT_CAP_TXSTBC ? "[TX-STBC-2BY1]" : "")
-			 , (((cap >> 8) & 0x3) == 1 ? "[RX-STBC1]" : "")
-			 , (((cap >> 8) & 0x3) == 2 ? "[RX-STBC12]" : "")
-			 , (((cap >> 8) & 0x3) == 3 ? "[RX-STBC123]" : "")
-			 , (cap & VHT_CAP_RXSTBC_4 ? "[RX-STBC1234]" : "")
+			 , (((cap >> 8) & 0x7) == 1 ? "[RX-STBC1]" : "")
+			 , (((cap >> 8) & 0x7) == 2 ? "[RX-STBC12]" : "")
+			 , (((cap >> 8) & 0x7) == 3 ? "[RX-STBC123]" : "")
+			 , (((cap >> 8) & 0x7) == 4 ? "[RX-STBC1234]" : "")
 			 , (cap & VHT_CAP_SU_BEAMFORMER_CAPABLE ? "[SU-BEAMFORMER]" : "")
 			 , (cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE ? "[SU-BEAMFORMEE]" : "")
 			 , (cap & VHT_CAP_MU_BEAMFORMER_CAPABLE ? "[MU-BEAMFORMER]" : "")
@@ -522,6 +523,9 @@ char *mac80211_get_vhtcaps(char *interface)
 			 , ((cap & 3) == 2 ? "[MAX-MPDU-11454]" : "")
 			 , (cap & VHT_CAP_SUPP_CHAN_WIDTH_160MHZ ? "[VHT160]" : "")
 			 , (cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ ? "[VHT160-80PLUS80]" : "")
+			 , (((cap >> 26) & 3) == 2 ? "[VHT-LINK-ADAPT2]" : "")
+			 , (((cap >> 26) & 3) == 3 ? "[VHT-LINK-ADAPT3]" : "")
+			 , (cap >> 23) & 7))
 		    );
 	}
 out:
