@@ -4289,6 +4289,10 @@ if (!strcmp(prefix, "wl1"))
 		if (!is_ath9k(prefix) || has_ht40(prefix))
 #endif
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_match(wl_width, "40") ? "selected=\\\"selected\\\"" : "");
+#if defined(HAVE_ATH10K)
+		if (has_ac(prefix))
+			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
+#endif
 	}
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_match(wl_width, "20") ? "selected=\\\"selected\\\"" : "");
 
