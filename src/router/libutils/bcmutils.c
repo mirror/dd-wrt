@@ -362,6 +362,11 @@ int has_mimo(char *prefix)
 
 int has_ac(char *prefix)
 {
+#ifdef HAVE_ATH10K
+	return is_ath10k(prefix);
+#elif HAVE_ATH9K
+	return 0;
+#else
 	char mimo[32];
 	sprintf(mimo, "%s_phytypes", prefix);
 	char *phy = nvram_safe_get(mimo);
