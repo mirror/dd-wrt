@@ -21,7 +21,11 @@ ATH9K_LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 
 ifndef $(HOSTAPDVERSION)
+ifeq ($(CONFIG_ATH10K),y)
+HOSTAPDVERSION=2014-04-24
+else
 HOSTAPDVERSION=20120910
+endif
 #HOSTAPDVERSION=wps
 endif
 
