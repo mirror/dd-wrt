@@ -6051,10 +6051,14 @@ int is_ath10k(const char *prefix)
 	FILE *fp;
 	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/device", devnum);
 	fp = fopen(globstring, "rb");
-	char match[32];
-	fscanf(fp, "%s",match);
-	if (strcmp(match,"0x003c"))
-	    return 0;
+	if (fp) {
+	    char match[32];
+	    fscanf(fp, "%s",match);
+	    fclose(fp)
+	    if (strcmp(match,"0x003c"))
+		return 0;
+	}else
+		return 0;
 	return (count);
 }
 
