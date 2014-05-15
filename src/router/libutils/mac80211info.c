@@ -525,7 +525,7 @@ char *mac80211_get_vhtcaps(char *interface)
 			 , (cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ ? "[VHT160-80PLUS80]" : "")
 			 , (((cap >> 26) & 3) == 2 ? "[VHT-LINK-ADAPT2]" : "")
 			 , (((cap >> 26) & 3) == 3 ? "[VHT-LINK-ADAPT3]" : "")
-			 , (cap >> 23) & 7))
+			 , ((cap >> 23) & 7)
 		    );
 	}
 out:

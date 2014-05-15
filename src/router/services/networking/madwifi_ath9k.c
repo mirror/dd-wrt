@@ -324,10 +324,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		}
 		if (nvram_default_match(bw, "20", "20")) {
 			sprintf(ht, "HT20");
-		} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
+		} else if (nvram_match(bw, "80") || nvram_match(bw, "40") || nvram_match(bw, "2040")) {
 			char sb[32];
 			sprintf(sb, "%s_nctrlsb", prefix);
-			if (nvram_default_match(sb, "upper", "lower")) {
+			if (nvram_default_match(sb, "upper", "lower") || nvram_match(bw, "80")) {
 				sprintf(ht, "HT40+");
 				iht = 1;
 			} else {
@@ -423,19 +423,46 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				fprintf(fp, "require_vht=1\n");
 			}
 
-			if (nvram_match(bw, "80")) {
+			if (nvram_match(bw, "40")) {
 				fprintf(fp, "vht_oper_chwidth=1\n");
+				int idx = channel;
+				switch ((channel / 4) % 2) {
+				case 0:
+					idx = channel + 2;
+					break;
+				case 1:
+					idx = channel - 2;
+					break;
+				}
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
+			} else if (nvram_match(bw, "80")) {
+				fprintf(fp, "vht_oper_chwidth=1\n");
+				int idx = channel;
+//				switch ((channel / 4) % 4) {
+//				case 0:
+					idx = channel + 6;
+/*					break;
+				case 1:
+					idx = channel + 2;
+					break;
+				case 2:
+					idx = channel - 2;
+					break;
+				case 3:
+					idx = channel - 6;
+					break;
+				}*/
+				fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
+			} else if (nvram_match(bw, "160")) {
+				fprintf(fp, "vht_oper_chwidth=2\n");
 			} else {
-				if (nvram_match(bw, "160")) {
-					fprintf(fp, "vht_oper_chwidth=2\n");
+				if (nvram_match(bw, "80+80")) {
+					fprintf(fp, "vht_oper_chwidth=3\n");
 				} else {
-					if (nvram_match(bw, "80+80")) {
-						fprintf(fp, "vht_oper_chwidth=3\n");
-					} else {
-						fprintf(fp, "vht_oper_chwidth=0\n");
-					}
+					fprintf(fp, "vht_oper_chwidth=0\n");
 				}
 			}
+
 		}
 
 	}
