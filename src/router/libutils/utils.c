@@ -6049,7 +6049,7 @@ int is_ath10k(const char *prefix)
 	if (fp) {
 	    char match[32];
 	    fscanf(fp, "%s",match);
-	    fclose(fp)
+	    fclose(fp);
 	    if (strcmp(match,"0x003c"))
 		return 0;
 	}else
