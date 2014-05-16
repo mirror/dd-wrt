@@ -4300,12 +4300,17 @@ if (!strcmp(prefix, "wl1"))
 #endif
 	{
 #if defined(HAVE_ATH9K)
-		if (!is_ath9k(prefix) || has_ht40(prefix))
-#endif
+		if (!is_ath9k(prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_match(wl_width, "40") ? "selected=\\\"selected\\\"" : "");
+		else if (has_ht40(prefix))
+			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n", nvram_match(wl_width, "40") ? "selected=\\\"selected\\\"" : "");
+#else
+			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_match(wl_width, "40") ? "selected=\\\"selected\\\"" : "");
+#endif		
+	
 #if defined(HAVE_ATH10K)
 		if (has_ac(prefix))
-			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.ht80 + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
 #endif
 	}
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_match(wl_width, "20") ? "selected=\\\"selected\\\"" : "");
