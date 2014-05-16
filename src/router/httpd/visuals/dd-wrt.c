@@ -3343,7 +3343,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_ssid, "%s_ssid", prefix);
 	// check the frequency capabilities;
 	if (has_2ghz(prefix) && has_5ghz(prefix) && has_ac(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\" /5 \"+wl_basic.ghz\"/802.11ac]\");</script>");
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\" /5 \"+wl_basic.ghz+\"/802.11ac]\");</script>");
 	} else if (has_5ghz(prefix) && has_ac(prefix)) {
 		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"/802.11ac]\");</script>");
 	} else if (has_5ghz(prefix) && has_2ghz(prefix)) {
@@ -3706,12 +3706,17 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	{
 #if defined(HAVE_ATH9K)
-		if (!is_ath9k(prefix) || has_ht40(prefix))
-#endif
+		if (!is_ath9k(prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_match(wl_width, "40") ? "selected=\\\"selected\\\"" : "");
+		else if (has_ht40(prefix))
+			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n", nvram_match(wl_width, "40") ? "selected=\\\"selected\\\"" : "");
+#else
+			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_match(wl_width, "40") ? "selected=\\\"selected\\\"" : "");
+#endif		
+	
 #if defined(HAVE_ATH10K)
 		if (has_ac(prefix))
-			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.ht80 + \"</option>\");\n", nvram_match(wl_width, "80") ? "selected=\\\"selected\\\"" : "");
 #endif
 	}
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_match(wl_width, "20") ? "selected=\\\"selected\\\"" : "");
@@ -3938,9 +3943,9 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
 			  nvram_nmatch("0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "<option value=\"40\" %s>40 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "<option value=\"40\" %s><script type=\"text/javascript\">Capture(share.ht40);</script></option>\n", nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 		if (has_ac(prefix) && has_5ghz(prefix)) {
-			websWrite(wp, "<option value=\"80\" %s>80 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.ht80);</script></option>\n", nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 
 		}
 #endif
