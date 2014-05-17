@@ -5415,11 +5415,13 @@ int led_control(int type, int act)
 		diag_gpio = 0x103;
 		wlan0_gpio = 0x101;
 		wlan1_gpio = 0x102;
-
-
 	case ROUTER_ASUS_RTN18U:
+		usb_power = 0x00d;	//usb power on/off
 		usb_gpio = 0x103;
+		usb_gpio1 = 0x10e;
 		power_gpio = 0x100;
+		connected_gpio = 0x106;
+		disconnected_gpio = 0x109;
 		break;
 
 	case ROUTER_ASUS_AC67U:
