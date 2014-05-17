@@ -1089,6 +1089,9 @@ void period_check(int sig)
 		wifigpio = 0x107;	// gpio 7, inversed
 		sesgpio = 0x10f;	// gpio 7, inversed
 		break;
+	case ROUTER_ASUS_RTN18U:
+		sesgpio = 0x10b;	// gpio 11, inversed
+		break;
 	case ROUTER_ASUS_WL500G_PRE:
 		sesgpio = 0x004;	// gpio 4, normal
 		break;

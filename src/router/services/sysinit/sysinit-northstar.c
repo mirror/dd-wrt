@@ -1217,6 +1217,10 @@ void start_sysinit(void)
 		else
 			set_regulation(1, "US", "0");
 		break;
+	case ROUTER_ASUS_RTN18U:
+		set_gpio(7, 1);	// fixup reset button
+		set_gpio(11, 1);	// fixup wps button
+		break;
 	case ROUTER_ASUS_AC56U:
 		nvram_set("clkfreq", "800,666");
 		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {

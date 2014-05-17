@@ -1058,6 +1058,11 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
+	if (nvram_match("model", "RT-N18U")) {
+		setRouter("Asus RT-N18U");
+		return ROUTER_ASUS_RTN18U;
+	}
+
 	if (boardnum == 24 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("gpio7", "wps_button")) {
@@ -5410,6 +5415,12 @@ int led_control(int type, int act)
 		diag_gpio = 0x103;
 		wlan0_gpio = 0x101;
 		wlan1_gpio = 0x102;
+
+
+	case ROUTER_ASUS_RTN18U:
+		usb_gpio = 0x103;
+		power_gpio = 0x100;
+		break;
 
 	case ROUTER_ASUS_AC67U:
 	case ROUTER_ASUS_AC56U:
