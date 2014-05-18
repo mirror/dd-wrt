@@ -85,7 +85,7 @@
 					 * change when it's running */
 #define IFF_MACVLAN 0x200000		/* Macvlan device */
 
-#define IFF_NO_IP_ALIGN	0x200000	/* do not ip-align allocated rx pkts */
+#define IFF_NO_IP_ALIGN	0x400000	/* do not ip-align allocated rx pkts */
 
 
 #define IF_GET_IFACE	0x0001		/* for querying only */
