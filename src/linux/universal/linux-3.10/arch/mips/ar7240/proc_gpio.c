@@ -76,8 +76,21 @@ static ssize_t gpio_proc_read(struct file *file, char __user * buffer, size_t si
 
 static ssize_t gpio_proc_info_read(struct file *file, char __user * buffer, size_t size, loff_t * ppos)
 {
-	char buf[128];
-	sprintf(buf, "GPIO_IN   %#08X \nGPIO_OUT  %#08X \nGPIO_DIR  %#08X \n", ar7240_reg_rd(AR7240_GPIO_IN), ar7240_reg_rd(AR7240_GPIO_OUT), ar7240_reg_rd(AR7240_GPIO_OE));
+	char buf[512];
+	sprintf(buf,	"GPIO_IN   %#08X \n"
+		        "GPIO_OUT  %#08X \n"
+			"GPIO_SET  %#08X \n" 
+			"GPIO_CLEAR  %#08X \n" 
+			"GPIO_FUNC  %#08X \n" 
+			"GPIO_INT_ENABLE  %#08X \n"
+			"GPIO_DIR  %#08X \n", 
+			ar7240_reg_rd(AR7240_GPIO_IN), 
+			ar7240_reg_rd(AR7240_GPIO_OUT), 
+			ar7240_reg_rd(AR7240_GPIO_SET), 
+			ar7240_reg_rd(AR7240_GPIO_CLEAR), 
+			ar7240_reg_rd(AR7240_GPIO_FUNCTIONS), 
+			ar7240_reg_rd(AR7240_GPIO_INT_ENABLE), 
+			ar7240_reg_rd(AR7240_GPIO_OE));
 	return simple_read_from_buffer(buffer, size, ppos, buf, strlen(buf));
 
 }
