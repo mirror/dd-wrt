@@ -44,19 +44,31 @@ do
 	    echo CONFIG_WPE72=y >> .config
 	    echo CONFIG_WA901=y >> .config
 	    echo CONFIG_WDR4300=y >> .config
+	    echo CONFIG_WDR3500=y >> .config
 	    echo CONFIG_WDR2543=y >> .config
 	    echo CONFIG_WR841V8=y >> .config
+	    echo CONFIG_WR841V9=y >> .config
 	    echo CONFIG_NVRAM_64K=y >> .config
 	    echo CONFIG_NVRAM_60K=y >> .config
+	    echo CONFIG_ALFANX=y >> .config
+	    echo CONFIG_AP135=y >> .config
+	    echo CONFIG_WR1043V2=y >> .config
+	    echo CONFIG_ARCHERC7=y >> .config
 	    make oldconfig ARCH=mips
 	    sed -i 's/\CONFIG_WR841V8=y/ /g' .config	    
+	    sed -i 's/\CONFIG_WR841V9=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WPE72=y/ /g' .config	    
 	    sed -i 's/\CONFIG_DIR615I=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WA901=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WDR4300=y/ /g' .config	    
+	    sed -i 's/\CONFIG_WDR3500=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WDR2543=y/ /g' .config	    
 	    sed -i 's/\CONFIG_NVRAM_64K=y/ /g' .config	    
 	    sed -i 's/\CONFIG_NVRAM_60K=y/ /g' .config	    
+	    sed -i 's/\CONFIG_ALFANX=y/ /g' .config	    
+	    sed -i 's/\CONFIG_AP135=y/ /g' .config	    
+	    sed -i 's/\CONFIG_WR1043V2=y/ /g' .config	    
+	    sed -i 's/\CONFIG_ARCHERC7=y/ /g' .config	    
 	    cp .config $i
     fi
 done
