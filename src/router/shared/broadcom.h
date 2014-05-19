@@ -20,7 +20,7 @@
 #define sys_restart() kill(1,1)
 #define sys_reboot() kill(1,15)
 #else
-#define sys_restart() eval("event","3","1","1")
+#define sys_restart() eval("event","0","1","1")
 #define sys_reboot() eval("sync"); eval("event","3","1","15")
 #endif
 
