@@ -840,6 +840,7 @@ config WR741
 
 
 
+
 config  MACH_AR7100
     bool "Support for Atheros ar7100 based boards"
 	select CEVT_R4K
@@ -918,6 +919,11 @@ config DIR615E
 
 config WPE72
     bool "WPE72 support?"
+    depends on MACH_AR7240
+    default n
+
+config ALFANX
+    bool "alfa networks n5/n2"
     depends on MACH_AR7240
     default n
 
