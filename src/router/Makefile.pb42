@@ -321,6 +321,11 @@ endif
 ifeq ($(CONFIG_WNDR3700V4),y)
 	cp $(LINUXDIR)/.config_wndr3700v4 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_ALFANX),y)
+	echo CONFIG_ALFANX=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_ALFANX is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_AP135),y)
 	echo CONFIG_AP135=y >> $(LINUXDIR)/.config
 else
