@@ -276,6 +276,9 @@ endif
 ifeq ($(CONFIG_WNDR3700V4),y)
 CFLAGS += -DHAVE_WNDR3700V4
 endif
+ifeq ($(CONFIG_ALFANX),y)
+CFLAGS += -DHAVE_ALFANX
+endif
 ifeq ($(CONFIG_USR8200),y)
 CFLAGS += -DHAVE_USR8200
 endif
@@ -928,6 +931,9 @@ ifeq ($(CONFIG_WPS),y)
 	install wpswatcher $(INSTALLDIR)/sbin	
 endif
 ifeq ($(CONFIG_UBNTM),y)
+	install wlanled $(INSTALLDIR)/sbin	
+endif
+ifeq ($(CONFIG_ALFANX),y)
 	install wlanled $(INSTALLDIR)/sbin	
 endif
 #	install event $(INSTALLDIR)/sbin	
