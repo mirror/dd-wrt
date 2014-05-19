@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.33 Kernel Configuration
+# Linux/mips 3.10.40 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -57,6 +57,7 @@ CONFIG_MIPS=y
 CONFIG_MACH_AR7240=y
 # CONFIG_AR7240_DEFAULT_GPIO is not set
 # CONFIG_DIR615E is not set
+ 
  
 # CONFIG_AR7240_EMULATION is not set
 CONFIG_WASP_SUPPORT=y
@@ -861,6 +862,11 @@ CONFIG_MTD_CFI_I2=y
 #
 # CONFIG_MTD_DOCG3 is not set
 CONFIG_DIR825C1=y
+ 
+ 
+ 
+ 
+ 
  
  
 # CONFIG_WZRG450NH is not set
