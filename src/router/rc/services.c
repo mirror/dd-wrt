@@ -1265,8 +1265,6 @@ static struct SERVICES services_def[] = {
 
 int start_single_service_main(int argc, char **argv)
 {
-
-	sleep(3);
 	start_service("overclocking");
 	char *next;
 	char service[80];
