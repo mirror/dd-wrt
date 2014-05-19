@@ -467,6 +467,15 @@ int getbuttonstate()
 		return 1;
 	return 0;
 }
+#elif defined(HAVE_ALFANX)
+int getbuttonstate()
+{
+	int ret = get_gpio(11);
+
+	if (ret == 0)
+		return 1;
+	return 0;
+}
 #elif defined(HAVE_LSX)
 int getbuttonstate()
 {
