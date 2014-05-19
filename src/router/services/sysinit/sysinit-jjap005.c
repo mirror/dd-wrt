@@ -121,9 +121,9 @@ void start_sysinit(void)
 	led_control(LED_WLAN0, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
 
-	system2("echo 1 >/proc/sys/dev/wifi0/ledpin");
-	system2("echo 1 >/proc/sys/dev/wifi0/softled");
-
+#ifdef HAVE_ALFANX
+	sysprintf("/sbin/wlanled -L generic_12:-94 -L generic_8:-80 -L generic_6:-73 -L generic_7:-65");
+#endif
 	/*
 	 * Set a sane date 
 	 */
