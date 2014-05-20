@@ -322,6 +322,7 @@ static struct MAIN maincalls[] = {
 	{"start_single_service", NULL, start_single_service_main},
 	{"startstop_f", NULL, startstop_main_f},
 	{"startstop", NULL, startstop_main},
+	{"stop_running", NULL, stop_running_main}, 
 	{"softwarerevision", NULL, softwarerevision_main},
 #if !defined(HAVE_MICRO) || defined(HAVE_ADM5120) || defined(HAVE_WRK54G)
 	{"watchdog", NULL, &watchdog_main},

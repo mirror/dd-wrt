@@ -1021,6 +1021,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservices
 	cd $(INSTALLDIR)/sbin && ln -sf rc startstop
 	cd $(INSTALLDIR)/sbin && ln -sf rc startstop_f
+	cd $(INSTALLDIR)/sbin && ln -sf rc stop_running
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
 	cd $(INSTALLDIR)/sbin && ln -sf rc get_nfmark
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox httpd

@@ -74,7 +74,6 @@ extern char *get_wdev(void);
 
 extern int check_process(char *name);
 extern int start_services_main(int argc, char **argv);
-
 extern int config_vlan(void);
 extern void config_loopback(void);
 
@@ -147,6 +146,8 @@ extern void depend_vpn_modules(void);
 
 extern void start_service(char *name);
 extern void startstop(char *name);
+extern int stop_running(void);
+extern int stop_running_main(int argc,char *argv[]);
 extern void stop_service(char *name);
 extern void *start_service_nofree(char *name, void *handle);
 extern void *stop_service_nofree(char *name, void *handle);
