@@ -374,6 +374,15 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
+	if (strstr(base, "stopservice_f")) {
+		if (argc < 2) {
+			puts("try to be professional\n");
+			return 0;
+		}
+		stop_service_f(argv[1]);
+		return 0;
+	}
+	
 	if (strstr(base, "stopservice")) {
 		if (argc < 2) {
 			puts("try to be professional\n");
