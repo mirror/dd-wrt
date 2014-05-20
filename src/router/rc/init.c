@@ -34,6 +34,8 @@
 #define start_services() system("startservices");
 #define start_single_service() system("start_single_service");
 #define stop_service(a) sysprintf("stopservice %s",a);
+#define stop_running(a) sysprintf("stop_running");
+#define stop_service_f(a) sysprintf("stopservice_f %s",a);
 #define stop_services() system("stopservices");
 #define startstop(a) sysprintf("startstop %s",a);
 #define startstop_f(a) sysprintf("startstop_f %s",a);
@@ -600,10 +602,10 @@ int main(int argc, char **argv)
 			cprintf("USER1\n");
 			start_single_service();
 #ifdef HAVE_CHILLI
-			start_service("chilli");
+			start_service_f("chilli");
 #endif
 #ifdef HAVE_WIFIDOG
-			start_service("wifidog");
+			start_service_f("wifidog");
 #endif
 
 			state = IDLE;
@@ -661,20 +663,16 @@ int main(int argc, char **argv)
 			cprintf("STOP SERVICES\n");
 
 			stop_services();
-			stop_service("radio_timer");
+			stop_service_f("radio_timer");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-			stop_service("nas");
+			stop_service_f("nas");
 #endif
 			cprintf("STOP WAN\n");
-			stop_service("ttraff");
-			stop_service("wan");
+			stop_service_f("ttraff");
+			stop_service_f("wan");
 			cprintf("STOP LAN\n");
 #ifdef HAVE_MADWIFI
 			stop_service("stabridge");
-#endif
-#ifdef HAVE_RSTP
-			system("killall rstpd");
-			unlink("/tmp/.rstp_server");
 #endif
 #ifdef HAVE_VLANTAGGING
 			stop_service("bridging");
@@ -683,15 +681,15 @@ int main(int argc, char **argv)
 			stop_service("bonding");
 #endif
 
-			stop_service("lan");
 #ifdef HAVE_VLANTAGGING
 			stop_service("bridgesif");
 			stop_service("vlantagging");
 #endif
-
+			stop_service("lan");
 #ifndef HAVE_RB500
-			stop_service("resetbutton");
+			stop_service_f("resetbutton");
 #endif
+			stop_running();
 #ifdef HAVE_REGISTER
 			if (isregistered_real())
 #endif
@@ -790,24 +788,18 @@ int main(int argc, char **argv)
 				}
 			}
 #ifdef HAVE_CHILLI
-			start_service("chilli");
+			start_service_f("chilli");
 #endif
 #ifdef HAVE_WIFIDOG
-			start_service("wifidog");
+			start_service_f("wifidog");
 #endif
 			cprintf("start syslog\n");
 #ifdef HAVE_SYSLOG
 			startstop_f("syslog");
 #endif
-#ifdef HAVE_RSTP
-			// just experimental for playing
-			system("brctl stp br0 off");
-			system("rstpd");
-			system("rstpctl rstp br0 on");
-#endif
 
 			system("/etc/postinit&");
-			start_service("httpd");
+			start_service_f("httpd");
 			led_control(LED_DIAG, LED_OFF);
 			lcdmessage("System Ready");
 #ifndef HAVE_RB500
