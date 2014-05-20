@@ -27,7 +27,7 @@
 #include <unistd.h>
 
 #define SERVICE_MODULE "/lib/services.so"
-
+static int stops_running = 0;
 void *load_service(char *name)
 {
 	cprintf("load service %s\n", name);
@@ -52,8 +52,8 @@ void *load_service(char *name)
 
 int start_service(char *name)
 {
-	if (nvram_match("console_debug","1"))
-		fprintf(stderr,"start service nofork: %s\n",name);
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "start service nofork: %s\n", name);
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_service\n");
 	char service[64];
@@ -81,8 +81,8 @@ int start_service(char *name)
 	else
 		fprintf(stderr, "function %s not found \n", service);
 	dlclose(handle);
-	if (nvram_match("console_debug","1"))
-		fprintf(stderr,"start service nofork: %s ... Done\n",name);
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "start service nofork: %s ... Done\n", name);
 	cprintf("start_sevice done()\n");
 	return 0;
 }
@@ -95,8 +95,8 @@ int start_service_f(char *name)
 
 int start_service_fork(char *name)
 {
-	if (nvram_match("console_debug","1"))
-		fprintf(stderr,"start service fork: %s\n",name);
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "start service fork: %s\n", name);
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_service\n");
 	char service[64];
@@ -124,8 +124,8 @@ int start_service_fork(char *name)
 	else
 		fprintf(stderr, "function %s not found \n", service);
 	dlclose(handle);
-	if (nvram_match("console_debug","1"))
-		fprintf(stderr,"start service fork: %s ... Done\n",name);
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "start service fork: %s ... Done\n", name);
 	cprintf("start_service done()\n");
 	return 0;
 }
@@ -151,8 +151,8 @@ void *start_service_nofree_f(char *name, void *handle)
 int start_servicep(char *name, char *param)
 {
 	cprintf("start_servicep\n");
-	if (nvram_match("console_debug","1"))
-		fprintf(stderr,"start servicep : %s\n",name);
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "start servicep : %s\n", name);
 	void *handle = load_service(name);
 
 	if (handle == NULL) {
@@ -170,8 +170,8 @@ int start_servicep(char *name, char *param)
 		fprintf(stderr, "function %s not found \n", service);
 	dlclose(handle);
 	cprintf("start_sevicep done()\n");
-	if (nvram_match("console_debug","1"))
-		fprintf(stderr,"start servicep : %s ... Done\n",name);
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "start servicep : %s ... Done\n", name);
 	return 0;
 }
 
@@ -184,8 +184,8 @@ int start_servicep_f(char *name, char *param)
 void start_servicei(char *name, int param)
 {
 	// lcdmessaged("Starting Service",name);
-	if (nvram_match("console_debug","1"))
-		fprintf(stderr,"start servicei : %s\n",name);
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "start servicei : %s\n", name);
 	cprintf("start_servicei\n");
 	void *handle = load_service(name);
 
@@ -203,8 +203,8 @@ void start_servicei(char *name, int param)
 	else
 		fprintf(stderr, "function %s not found \n", service);
 	dlclose(handle);
-	if (nvram_match("console_debug","1"))
-		fprintf(stderr,"start servicei : %s ... Done\n",name);
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "start servicei : %s ... Done\n", name);
 	cprintf("start_sevicei done()\n");
 	return;
 }
@@ -217,8 +217,8 @@ void start_servicei_f(char *name, int param)
 void start_main(char *name, int argc, char **argv)
 {
 	cprintf("start_main\n");
-	if (nvram_match("console_debug","1"))
-		fprintf(stderr,"start main : %s\n",name);
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "start main : %s\n", name);
 	void *handle = load_service(name);
 
 	if (handle == NULL) {
@@ -235,8 +235,8 @@ void start_main(char *name, int argc, char **argv)
 	else
 		fprintf(stderr, "function %s not found \n", service);
 	dlclose(handle);
-	if (nvram_match("console_debug","1"))
-		fprintf(stderr,"start main : %s ... Done\n",name);
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "start main : %s ... Done\n", name);
 	cprintf("start_main done()\n");
 	return;
 }
@@ -248,13 +248,15 @@ void start_main_f(char *name, int argc, char **argv)
 
 void stop_service(char *name)
 {
-	if (nvram_match("console_debug","1"))
-		fprintf(stderr,"stop service nofork: %s\n",name);
+	stops_running++;
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "stop service nofork: %s\n", name);
 	// lcdmessaged("Stopping Service",name);
 	cprintf("stop service()\n");
 	void *handle = load_service(name);
 
 	if (handle == NULL) {
+		stops_running--;
 		return;
 	}
 	void (*fptr) (void);
@@ -268,11 +270,29 @@ void stop_service(char *name)
 	else
 		fprintf(stderr, "function %s not found \n", service);
 	dlclose(handle);
-	if (nvram_match("console_debug","1"))
-		fprintf(stderr,"stop service : %s ... Done\n",name);
+	if (nvram_match("console_debug", "1"))
+		fprintf(stderr, "stop service : %s ... Done\n", name);
 	cprintf("stop_service done()\n");
+	stops_running--;
 
 	return;
+}
+
+int stop_running(void)
+{
+	return stops_running > 0;
+}
+
+int stop_running_main(int argc, char **argv)
+{
+	int dead = 0;
+	while (stop_running() && dead < 50) {
+		usleep(100 * 1000);
+		dead++;
+	}
+	if (dead == 50) {
+		fprintf(stderr, "stopping processes taking too long!!!\n");
+	}
 }
 
 void stop_service_f(char *name)
