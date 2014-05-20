@@ -223,129 +223,130 @@ int stop_services_main(int argc, char **argv)
 {
 	void *handle = NULL;
 #ifdef HAVE_P910ND
-	handle = stop_service_nofree("printer", handle);
+	handle = stop_service_nofree_f("printer", handle);
 #endif
 
 	// stop_ses();
 #ifdef HAVE_AP_SERV
-	handle = stop_service_nofree("apserv", handle);
+	handle = stop_service_nofree_f("apserv", handle);
 #endif
 #ifdef HAVE_FREERADIUS
-	handle = stop_service_nofree("freeradius", handle);
+	handle = stop_service_nofree_f("freeradius", handle);
 #endif
 #ifdef HAVE_MULTICAST
-	handle = stop_service_nofree("igmp_proxy", handle);
+	handle = stop_service_nofree_f("igmp_proxy", handle);
 #endif
 #ifdef HAVE_UDPXY
-	handle = stop_service_nofree("udpxy", handle);
+	handle = stop_service_nofree_f("udpxy", handle);
 #endif
 #ifdef HAVE_PPPOERELAY
-	handle = stop_service_nofree("pppoerelay", handle);
+	handle = stop_service_nofree_f("pppoerelay", handle);
 #endif
 #ifdef HAVE_RSTATS
-	handle = stop_service_nofree("rstats", handle);
+	handle = stop_service_nofree_f("rstats", handle);
 #endif
 #ifdef HAVE_NSTX
-	handle = stop_service_nofree("nstxd", handle);
+	handle = stop_service_nofree_f("nstxd", handle);
 #endif
 
 #ifdef HAVE_UPNP
-	handle = stop_service_nofree("upnp", handle);
+	handle = stop_service_nofree_f("upnp", handle);
 #endif
-	handle = stop_service_nofree("udhcpd", handle);
-	handle = stop_service_nofree("dns_clear_resolv", handle);
-	handle = stop_service_nofree("cron", handle);
+	handle = stop_service_nofree_f("udhcpd", handle);
+	handle = stop_service_nofree_f("dns_clear_resolv", handle);
+	handle = stop_service_nofree_f("cron", handle);
 
 #ifdef HAVE_TFTP
-	handle = stop_service_nofree("tftpd", handle);
+	handle = stop_service_nofree_f("tftpd", handle);
 #endif
 #ifdef HAVE_SYSLOG
-	handle = stop_service_nofree("syslog", handle);
+	handle = stop_service_nofree_f("syslog", handle);
 #endif
 #ifdef HAVE_OLSRD
-	handle = stop_service_nofree("olsrd", handle);
+	handle = stop_service_nofree_f("olsrd", handle);
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	handle = stop_service_nofree("zebra", handle);
+	handle = stop_service_nofree_f("zebra", handle);
 #endif
-	handle = stop_service_nofree("wland", handle);
+	handle = stop_service_nofree_f("wland", handle);
 #ifdef HAVE_TELNET
-	handle = stop_service_nofree("telnetd", handle);
+	handle = stop_service_nofree_f("telnetd", handle);
 #endif
 #ifdef HAVE_FTP
-	handle = stop_service_nofree("ftpsrv", handle);
+	handle = stop_service_nofree_f("ftpsrv", handle);
 #endif
 #ifdef HAVE_SAMBA3
-	handle = stop_service_nofree("samba3", handle);
+	handle = stop_service_nofree_f("samba3", handle);
 #endif
 #ifdef HAVE_MINIDLNA
-	handle = stop_service_nofree("dlna", handle);
+	handle = stop_service_nofree_f("dlna", handle);
 #endif
 #ifdef HAVE_TOR
-	handle = stop_service_nofree("tor", handle);
+	handle = stop_service_nofree_f("tor", handle);
 #endif
 #ifdef HAVE_WEBSERVER
-	handle = stop_service_nofree("lighttpd", handle);
+	handle = stop_service_nofree_f("lighttpd", handle);
 #endif
 #ifdef HAVE_TRANSMISSION
-	handle = stop_service_nofree("transmission", handle);
+	handle = stop_service_nofree_f("transmission", handle);
 #endif
 #ifdef HAVE_PRIVOXY
-	handle = stop_service_nofree("privoxy", handle);
+	handle = stop_service_nofree_f("privoxy", handle);
 #endif
 #ifdef HAVE_SSHD
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
-		handle = stop_service_nofree("sshd", handle);
+		handle = stop_service_nofree_f("sshd", handle);
 #endif
 
 #ifdef HAVE_RADVD
-	handle = stop_service_nofree("radvd", handle);
+	handle = stop_service_nofree_f("radvd", handle);
 #endif
 
 #ifdef HAVE_WIFIDOG
-	handle = stop_service_nofree("wifidog", handle);
+	handle = stop_service_nofree_f("wifidog", handle);
 #endif
 
 #ifdef HAVE_CHILLI
-	handle = stop_service_nofree("chilli", handle);
+	handle = stop_service_nofree_f("chilli", handle);
 #endif
 
 #ifdef HAVE_PPPOESERVER
-	handle = stop_service_nofree("pppoeserver", handle);
+	handle = stop_service_nofree_f("pppoeserver", handle);
 #endif
 
 #ifdef HAVE_SNMP
-	handle = stop_service_nofree("snmp", handle);
+	handle = stop_service_nofree_f("snmp", handle);
 #endif
 
 #ifdef HAVE_LLTD
-	handle = stop_service_nofree("lltd", handle);
+	handle = stop_service_nofree_f("lltd", handle);
 #endif
 
 #ifdef HAVE_WOL
-	handle = stop_service_nofree("wol", handle);
+	handle = stop_service_nofree_f("wol", handle);
 #endif
-	handle = stop_service_nofree("wland", handle);
-	handle = stop_service_nofree("wshaper", handle);
+	handle = stop_service_nofree_f("wland", handle);
+	handle = stop_service_nofree_f("wshaper", handle);
 
 #ifdef HAVE_PPTPD
-	handle = stop_service_nofree("pptpd", handle);
+	handle = stop_service_nofree_f("pptpd", handle);
 #endif
 #ifdef HAVE_NOCAT
-	handle = stop_service_nofree("splashd", handle);
+	handle = stop_service_nofree_f("splashd", handle);
 #endif
 #ifdef HAVE_VNCREPEATER
-	handle = stop_service_nofree("vncrepeater", handle);
+	handle = stop_service_nofree_f("vncrepeater", handle);
 #endif
 #ifdef HAVE_OPENVPN
-	handle = stop_service_nofree("openvpnserversys", handle);
-	handle = stop_service_nofree("openvpn", handle);
+	handle = stop_service_nofree_f("openvpnserversys", handle);
+	handle = stop_service_nofree_f("openvpn", handle);
 #endif
 #ifdef HAVE_GPSI
-	handle = stop_service_nofree("gps", handle);
+	handle = stop_service_nofree_f("gps", handle);
 #endif
+	stop_running_main(0,NULL);
 //    if( handle )
 //      dlclose( handle );
 
@@ -363,33 +364,36 @@ static void handle_index(void)
 	unlink("/tmp/ppp/log");
 	void *handle = NULL;
 
-	handle = stop_service_nofree("wan", handle);
-	handle = stop_service_nofree("radio_timer", handle);
+	handle = stop_service_nofree_f("wan", handle);
+	handle = stop_service_nofree_f("radio_timer", handle);
 #ifdef HAVE_MULTICAST
-	handle = stop_service_nofree("igmp_proxy", handle);
+	handle = stop_service_nofree_f("igmp_proxy", handle);
 #endif
 #ifdef HAVE_UDPXY
-	handle = stop_service_nofree("udpxy", handle);
+	handle = stop_service_nofree_f("udpxy", handle);
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	handle = stop_service_nofree("nas", handle);
+	handle = stop_service_nofree_f("nas", handle);
 #endif
 #ifdef HAVE_MADWIFI
-	handle = stop_service_nofree("stabridge", handle);
+	handle = stop_service_nofree_f("stabridge", handle);
 #endif
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree("bridgesif", handle);
-	handle = stop_service_nofree("vlantagging", handle);
+	handle = stop_service_nofree_f("bridgesif", handle);
+	handle = stop_service_nofree_f("vlantagging", handle);
 #endif
 #ifdef HAVE_BONDING
-	handle = stop_service_nofree("bonding", handle);
+	handle = stop_service_nofree_f("bonding", handle);
 #endif
-	handle = stop_service_nofree("lan", handle);
+	handle = stop_service_nofree_f("lan", handle);
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree("bridging", handle);
+	handle = stop_service_nofree_f("bridging", handle);
 #endif
-	handle = stop_service_nofree("ttraff", handle);
-	handle = stop_service_nofree("wan", handle);
+	handle = stop_service_nofree_f("ttraff", handle);
+	handle = stop_service_nofree_f("wan", handle);
+
+	stop_running_main(0,NULL);
+
 #ifdef HAVE_VLANTAGGING
 	handle = start_service_nofree("bridging", handle);
 #endif
@@ -467,31 +471,33 @@ static void handle_hotspot(void)
 {
 	void *handle = NULL;
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	handle = stop_service_nofree("zebra", handle);
+	handle = stop_service_nofree_f("zebra", handle);
 #endif
 
-	handle = stop_service_nofree("radio_timer", handle);
+	handle = stop_service_nofree_f("radio_timer", handle);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	handle = stop_service_nofree("nas", handle);
+	handle = stop_service_nofree_f("nas", handle);
 	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
 	eval("wlconf", nvram_safe_get("wl1_ifname"), "down");
 #endif
 #ifdef HAVE_MADWIFI
-	handle = stop_service_nofree("stabridge", handle);
+	handle = stop_service_nofree_f("stabridge", handle);
 #endif
-	handle = stop_service_nofree("ttraff", handle);
-	handle = stop_service_nofree("wan", handle);
+	handle = stop_service_nofree_f("ttraff", handle);
+	handle = stop_service_nofree_f("wan", handle);
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree("bridgesif", handle);
-	handle = stop_service_nofree("vlantagging", handle);
+	handle = stop_service_nofree_f("bridgesif", handle);
+	handle = stop_service_nofree_f("vlantagging", handle);
 #endif
 #ifdef HAVE_BONDING
-	handle = stop_service_nofree("bonding", handle);
+	handle = stop_service_nofree_f("bonding", handle);
 #endif
-	handle = stop_service_nofree("lan", handle);
+	handle = stop_service_nofree_f("lan", handle);
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree("bridging", handle);
+	handle = stop_service_nofree_f("bridging", handle);
 #endif
+	stop_running_main(0,NULL);
+
 #ifdef HAVE_WIFIDOG
 	handle = startstop_nofree_f("wifidog", handle);
 #endif
@@ -640,21 +646,33 @@ static void handle_nassrv(void)
 	void *handle = NULL;
 
 #ifdef HAVE_SAMBA3
-	handle = stop_service_nofree("samba3", handle);
+	handle = stop_service_nofree_f("samba3", handle);
+#endif
+#ifdef HAVE_FTP
+	handle = stop_service_nofree_f("ftpsrv", handle);
+#endif
+#ifdef HAVE_MINIDLNA
+	handle = stop_service_nofree_f("dlna", handle);
+#endif
+#ifdef HAVE_TRANSMISSION
+	handle = stop_service_nofree_f("transmission", handle);
+#endif
+
+	stop_running_main(0,NULL);
+
+#ifdef HAVE_SAMBA3
 	handle = start_service_nofree_f("samba3", handle);
 #endif
 #ifdef HAVE_FTP
-	handle = stop_service_nofree("ftpsrv", handle);
 	handle = start_service_nofree_f("ftpsrv", handle);
 #endif
 #ifdef HAVE_MINIDLNA
-	handle = stop_service_nofree("dlna", handle);
 	handle = start_service_nofree_f("dlna", handle);
 #endif
 #ifdef HAVE_TRANSMISSION
-	handle = stop_service_nofree("transmission", handle);
 	handle = start_service_nofree_f("transmission", handle);
 #endif
+
 //    if( handle )
 //      dlclose( handle );
 
@@ -665,13 +683,16 @@ static void handle_management(void)
 	void *handle = NULL;
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	handle = stop_service_nofree("nas", handle);
+	handle = stop_service_nofree_f("nas", handle);
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	handle = stop_service_nofree("zebra", handle);
+	handle = stop_service_nofree_f("zebra", handle);
 #endif
-	handle = stop_service_nofree("cron", handle);
-	handle = stop_service_nofree("udhcpd", handle);
+	handle = stop_service_nofree_f("cron", handle);
+	handle = stop_service_nofree_f("udhcpd", handle);
+
+	stop_running_main(0,NULL);
+
 	handle = start_service_nofree_f("udhcpd", handle);
 	handle = start_service_nofree_f("cron", handle);
 #ifdef HAVE_IPV6
@@ -719,26 +740,29 @@ static void handle_pppoe(void)
 	unlink("/tmp/ppp/log");
 	void *handle = NULL;
 
-	handle = stop_service_nofree("radio_timer", handle);
+	handle = stop_service_nofree_f("radio_timer", handle);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	handle = stop_service_nofree("nas", handle);
+	handle = stop_service_nofree_f("nas", handle);
 #endif
 #ifdef HAVE_MADWIFI
-	handle = stop_service_nofree("stabridge", handle);
+	handle = stop_service_nofree_f("stabridge", handle);
 #endif
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree("bridgesif", handle);
-	handle = stop_service_nofree("vlantagging", handle);
+	handle = stop_service_nofree_f("bridgesif", handle);
+	handle = stop_service_nofree_f("vlantagging", handle);
 #endif
-	handle = stop_service_nofree("lan", handle);
+	handle = stop_service_nofree_f("lan", handle);
 #ifdef HAVE_BONDING
-	handle = stop_service_nofree("bonding", handle);
+	handle = stop_service_nofree_f("bonding", handle);
 #endif
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree("bridging", handle);
+	handle = stop_service_nofree_f("bridging", handle);
 #endif
-	handle = stop_service_nofree("ttraff", handle);
-	handle = stop_service_nofree("wan", handle);
+	handle = stop_service_nofree_f("ttraff", handle);
+	handle = stop_service_nofree_f("wan", handle);
+
+	stop_running_main(0,NULL);
+
 #ifdef HAVE_VLANTAGGING
 	handle = start_service_nofree("bridging", handle);
 #endif
@@ -957,18 +981,19 @@ static void handle_upgrade(void)
 {
 	void *handle = NULL;
 
-	handle = stop_service_nofree("ttraff", handle);
-	handle = stop_service_nofree("wan", handle);
+	handle = stop_service_nofree_f("ttraff", handle);
+	handle = stop_service_nofree_f("wan", handle);
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	handle = stop_service_nofree("zebra", handle);
+	handle = stop_service_nofree_f("zebra", handle);
 #endif
 #ifdef HAVE_OLSRD
-	handle = stop_service_nofree("olsrd", handle);
+	handle = stop_service_nofree_f("olsrd", handle);
 #endif
 #ifdef HAVE_UPNP
-	handle = stop_service_nofree("upnp", handle);
+	handle = stop_service_nofree_f("upnp", handle);
 #endif
-	handle = stop_service_nofree("cron", handle);
+	handle = stop_service_nofree_f("cron", handle);
+	stop_running_main(0,NULL);
 //    if( handle )
 //      dlclose( handle );
 
@@ -986,17 +1011,17 @@ static void handle_wireless(void)
 	void *handle = NULL;
 	int wanchanged = wanChanged();
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	handle = stop_service_nofree("zebra", handle);
+	handle = stop_service_nofree_f("zebra", handle);
 #endif
 
-	handle = stop_service_nofree("radio_timer", handle);
+	handle = stop_service_nofree_f("radio_timer", handle);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	handle = stop_service_nofree("nas", handle);
+	handle = stop_service_nofree_f("nas", handle);
 	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
 	eval("wlconf", nvram_safe_get("wl1_ifname"), "down");
 #endif
 #ifdef HAVE_MADWIFI
-	handle = stop_service_nofree("stabridge", handle);
+	handle = stop_service_nofree_f("stabridge", handle);
 #endif
 	if (getSTA() || getWET() || wanchanged
 #ifdef HAVE_MADWIFI
@@ -1007,21 +1032,22 @@ static void handle_wireless(void)
 		if (!nvram_match("wan_proto", "3g"))
 #endif
 		{
-			handle = stop_service_nofree("ttraff", handle);
-			handle = stop_service_nofree("wan", handle);
+			handle = stop_service_nofree_f("ttraff", handle);
+			handle = stop_service_nofree_f("wan", handle);
 		}
 	}
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree("bridgesif", handle);
-	handle = stop_service_nofree("vlantagging", handle);
+	handle = stop_service_nofree_f("bridgesif", handle);
+	handle = stop_service_nofree_f("vlantagging", handle);
 #endif
 #ifdef HAVE_BONDING
-	handle = stop_service_nofree("bonding", handle);
+	handle = stop_service_nofree_f("bonding", handle);
 #endif
-	handle = stop_service_nofree("lan", handle);
+	handle = stop_service_nofree_f("lan", handle);
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree("bridging", handle);
+	handle = stop_service_nofree_f("bridging", handle);
 #endif
+	stop_running_main(0,NULL);
 #ifdef HAVE_VLANTAGGING
 	handle = start_service_nofree("bridging", handle);
 #endif
@@ -1078,17 +1104,17 @@ static void handle_wireless_2(void)
 	int wanchanged = wanChanged();
 
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
-	handle = stop_service_nofree("zebra", handle);
+	handle = stop_service_nofree_f("zebra", handle);
 #endif
 
-	handle = stop_service_nofree("radio_timer", handle);
+	handle = stop_service_nofree_f("radio_timer", handle);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	handle = stop_service_nofree("nas", handle);
+	handle = stop_service_nofree_f("nas", handle);
 	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
 	eval("wlconf", nvram_safe_get("wl1_ifname"), "down");
 #endif
 #ifdef HAVE_MADWIFI
-	handle = stop_service_nofree("stabridge", handle);
+	handle = stop_service_nofree_f("stabridge", handle);
 #endif
 	if (getSTA() || getWET() || wanchanged 
 #ifdef HAVE_MADWIFI
@@ -1099,21 +1125,22 @@ static void handle_wireless_2(void)
 		if (!nvram_match("wan_proto", "3g"))
 #endif
 		{
-			handle = stop_service_nofree("ttraff", handle);
-			handle = stop_service_nofree("wan", handle);
+			handle = stop_service_nofree_f("ttraff", handle);
+			handle = stop_service_nofree_f("wan", handle);
 		}
 	}
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree("bridgesif", handle);
-	handle = stop_service_nofree("vlantagging", handle);
+	handle = stop_service_nofree_f("bridgesif", handle);
+	handle = stop_service_nofree_f("vlantagging", handle);
 #endif
 #ifdef HAVE_BONDING
-	handle = stop_service_nofree("bonding", handle);
+	handle = stop_service_nofree_f("bonding", handle);
 #endif
-	handle = stop_service_nofree("lan", handle);
+	handle = stop_service_nofree_f("lan", handle);
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree("bridging", handle);
+	handle = stop_service_nofree_f("bridging", handle);
 #endif
+	stop_running_main(0,NULL);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	handle = start_service_nofree("wlconf", handle);
 #endif
