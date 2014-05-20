@@ -778,10 +778,6 @@ ifeq ($(CONFIG_SVQOS),y)
 CFLAGS += -DHAVE_SVQOS
 endif
 
-ifeq ($(CONFIG_RSTP),y)
-CFLAGS += -DHAVE_RSTP
-endif
-
 ifeq ($(CONFIG_BCMMODERN),y)
 CFLAGS += -DHAVE_BCMMODERN
 endif
@@ -1016,6 +1012,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice_f
 #	cd $(INSTALLDIR)/sbin && ln -sf rc switch
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
+	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice_f
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservices
 	cd $(INSTALLDIR)/sbin && ln -sf rc start_single_service
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservices
