@@ -1,0 +1,6 @@
+#include "qcom-msm8660.dtsi"
+
+/ {
+	model = "Qualcomm MSM8660 SURF";
+	compatible = "qcom,msm8660-surf", "qcom,msm8660";
+};

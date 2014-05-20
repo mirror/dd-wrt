@@ -1,0 +1,279 @@
+if RALINK_RT2880
+
+choice
+        prompt "Soc Hardware Type"
+	default RT2880_ASIC
+
+config  RT2880_ASIC 
+        bool "RT2880-ASIC"
+endchoice
+
+endif
+#-----------------------------
+
+if RALINK_RT3052
+
+choice
+        prompt "Soc Hardware Type"
+	default RT3052_ASIC
+
+config  RT3052_ASIC 
+        bool "RT305x/RT3350-ASIC"
+endchoice
+
+config RALINK_RT3350
+	bool "Ralink RT3350 chipset"
+
+endif
+
+
+config  RT2860V2_2850
+        bool "Dual Band"
+        depends on RALINK_RT2880
+
+choice
+        prompt "RF Type"
+        depends on RALINK_RT5350 
+        default RALINK_RT5350_1T1R
+
+        config  RALINK_RT5350_1T1R
+        bool "1T1R"
+endchoice
+
+choice
+        prompt "RF Type"
+        depends on RALINK_RT3052
+        default RALINK_RT3052_2T2R
+
+        config  RALINK_RT3050_1T1R
+        bool "1T1R"
+
+        config  RALINK_RT3051_1T2R
+        bool "1T2R"
+
+        config  RALINK_RT3052_2T2R
+        bool "2T2R"
+endchoice
+
+choice
+        prompt "RF Type"
+        depends on  RALINK_RT3352 
+
+        config  RALINK_RT3352_2T2R
+        bool "2T2R"
+endchoice
+
+choice
+	prompt "RF Type"
+	depends on RALINK_RT3883
+
+	config  RALINK_RT3662_2T2R
+	bool "2T3R (RT3662)"
+
+	config  RALINK_RT3883_3T3R
+	bool "3T3R (RT3883)"
+endchoice
+
+if RALINK_RT3352
+
+choice
+        prompt "Soc Hardware Type"
+	default RT3352_ASIC
+
+config  RT3352_ASIC 
+	bool "RT3352-ASIC"
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
+
+endchoice
+
+endif
+
+#--------------------------
+
+if RALINK_RT3883
+
+choice
+        prompt "Soc Hardware Type"
+	default RT3883_ASIC
+
+config  RT3883_ASIC 
+	bool "RT3883/RT3662-ASIC"
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
+endchoice
+
+choice
+        prompt "RT3883 PCI architecture"
+	default PCIE_PCI_CONCURRENT
+
+config PCIE_PCI_CONCURRENT
+        bool "PCIE RC and PCI HOST CONCURRENT"
+config PCIE_ONLY
+        bool "PCIE RC ONLY"
+config PCI_ONLY
+        bool "PCI HOST ONLY"
+config PCIE_PCI_NONE
+        bool "Non-support PCI/PCIe"
+endchoice
+
+endif
+
+#---------------------------
+
+if RALINK_RT5350
+
+choice
+	prompt "Soc Hardware Type"
+	default RT5350_ASIC
+
+config	RT5350_ASIC 
+	bool "RT5350-ASIC"
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
+
+endchoice
+
+endif
+
+#--------------------------
+
+config FLASH_REMAP_NEED
+       bool
+       default y if (RALINK_RT2880)
+choice
+       prompt "DRAM Size"
+       default RT2880_DRAM_16M
+
+config RT2880_DRAM_8M
+       bool "8M"
+
+config RT2880_DRAM_16M
+       bool "16M"
+
+config RT2880_DRAM_32M
+       bool "32M"
+
+config RT2880_DRAM_64M
+       bool "64M"
+
+endchoice
+
+choice
+       prompt "Flash Size"
+       default RT2880_FLASH_4M
+       depends on  FLASH_REMAP_NEED
+
+config RT2880_FLASH_2M
+       bool "2M"
+
+config RT2880_FLASH_4M
+       bool "4M"
+
+config RT2880_FLASH_8M
+       bool "8M"
+
+config RT2880_FLASH_16M
+       bool "16M"
+
+endchoice
+
+config  RT2880_FLASH_32M
+        bool "Flash Size 32MB Support"
+	depends on (RALINK_RT3052_MP2 || RALINK_RT3350) && !MTD_SPI_RALINK
+	select MTD_CONCAT if RT2880_FLASH_32M
+
+config  RALINK_RAM_SIZE
+	int 
+	default 8 if RT2880_DRAM_8M
+	default 16 if RT2880_DRAM_16M
+	default 32 if RT2880_DRAM_32M
+	default 64 if RT2880_DRAM_64M
+
+config MTD_PHYSMAP_START
+       hex 'Physmap start'
+       default 0xBF000000 if !FLASH_REMAP_NEED && RALINK_RT3052
+
+config MTD_PHYSMAP_LEN
+       hex 
+       default 0x200000 if RT2880_FLASH_2M
+       default 0x400000 if RT2880_FLASH_4M
+       default 0x800000 if RT2880_FLASH_8M
+       default 0x1000000 if RT2880_FLASH_16M
+       default 0x2000000 if RT2880_FLASH_32M
+       default 0x1000000 if !FLASH_REMAP_NEED
+
+config MTD_PHYSMAP_BUSWIDTH
+       int 
+       default 2
+
+choice
+	prompt "Root File System Type"
+	default RT2880_ROOTFS_IN_RAM
+
+config  RT2880_ROOTFS_IN_RAM
+        bool "RootFS_in_RAM"
+	select BLK_DEV_INITRD 
+	select BLK_DEV_RAM 
+
+config  RT2880_ROOTFS_IN_FLASH
+        bool "RootFS_in_FLASH"
+endchoice
+
+config BLK_DEV_RAM_SIZE
+	int 'Default RAM disk size'
+	default 8192
+	depends on RT2880_ROOTFS_IN_RAM
+
+config	INITRAMFS_LZMA
+	bool "Compress ramdisk by lzma instead of gzip"
+	depends on RT2880_ROOTFS_IN_RAM
+
+config MTD_KERNEL_PART_SIZ
+	hex 'MTD Kernel Partition Size (Unit:Bytes)'
+	default 0xD0000
+	depends on RT2880_ROOTFS_IN_FLASH
+
+config  RALINK_TIMER
+	tristate 'Ralink WatchDog' 
+
+config  RALINK_TIMER_WDG
+        bool "Ralink WatchDog Timer"
+        depends on RALINK_TIMER
+
+config  RALINK_TIMER_WDG_RESET_OUTPUT
+        bool "Ralink WatchDog Reset Output"
+        depends on RALINK_TIMER_WDG
+
+config  EAP9550
+	bool "EAP 9550 watchdog workaround"
+	depends on RALINK_RT3052
+
+config  RALINK_WDG_TIMER
+        int "WatchDog Timer (Unit:1Sec, Max=30Sec)"
+        default 10
+        depends on RALINK_TIMER_WDG
+
+config  RALINK_WDG_REFRESH_INTERVAL
+        int "WatchDog Refresh Interval (Unit:1Sec, Max=30Sec)"
+        default 4
+        depends on RALINK_TIMER_WDG
+
+config  RALINK_TIMER_DFS
+        bool "Ralink DFS Timer"
+        depends on RALINK_TIMER
+
+
+config RT3XXX_EHCI_OHCI
+	bool "Ralink USB EHCI/OHCI controller support"
+        depends on (RALINK_RT3883 || RALINK_RT3352)
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
+
+#config RALINK_EXTERNAL_TIMER
+#	bool "Ralink External Timer"
+#	depends on RALINK_RT3352 || RALINK_RT5350
+
+config TIXI
+	bool "Tixi Board support"
+	depends on RALINK_RT3352
