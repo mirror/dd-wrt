@@ -146,7 +146,9 @@ static int remotessh = 0;	/* Botho 03-05-2006 */
 #ifdef HAVE_TELNET
 static int remotetelnet = 0;
 #endif
-
+static int isstopped=0;
+#define CHECKSTOP() if (isstopped) return; else isstopped=1;
+#define RELEASESTOP() isstopped=1;
 static void save2file(const char *fmt, ...)
 {
 	char buf[10240];
@@ -2597,6 +2599,7 @@ int main(void)
 void start_firewall(void)
 #endif
 {
+	RELEASESTOP();
 	DIR *dir;
 	struct dirent *file;
 	FILE *fp;
@@ -2863,6 +2866,7 @@ void start_firewall(void)
 
 void stop_firewall(void)
 {
+	CHECKSTOP();
 	eval("iptables", "-t", "raw", "-F");
 //      stop_anchorfree();
 	/*
