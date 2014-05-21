@@ -75,6 +75,9 @@
 #include <etsockio.h>
 #include <bcmparams.h>
 #include <services.h>
+static int isstopped=0;
+#define CHECKSTOP() if (isstopped) return; else isstopped=1;
+#define RELEASESTOP() isstopped=1;
 
 extern int br_add_bridge(const char *brname);
 extern int br_del_bridge(const char *brname);
@@ -4120,11 +4123,13 @@ void start_wan(int status)
 
 void start_wan_boot(void)
 {
+	RELEASESTOP();
 	start_wan(BOOT);
 }
 
 void start_wan_redial(void)
 {
+	RELEASESTOP();
 	start_wan(REDIAL);
 }
 
@@ -4436,6 +4441,7 @@ void start_wan_done(char *wan_ifname)
 
 void stop_wan(void)
 {
+	CHECKSTOP();
 	char *wan_ifname = get_wan_face();
 
 	nvram_set("wanup", "0");
