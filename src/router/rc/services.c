@@ -365,32 +365,31 @@ static void handle_index(void)
 	void *handle = NULL;
 
 	handle = stop_service_nofree_f("wan", handle);
-	handle = stop_service_nofree_f("radio_timer", handle);
+	handle = stop_service_nofree_f("radio_timer", handle); //
 #ifdef HAVE_MULTICAST
-	handle = stop_service_nofree_f("igmp_proxy", handle);
+	handle = stop_service_nofree_f("igmp_proxy", handle); //
 #endif
 #ifdef HAVE_UDPXY
 	handle = stop_service_nofree_f("udpxy", handle);
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	handle = stop_service_nofree_f("nas", handle);
+	handle = stop_service_nofree_f("nas", handle); //
 #endif
 #ifdef HAVE_MADWIFI
 	handle = stop_service_nofree_f("stabridge", handle);
 #endif
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree_f("bridgesif", handle);
-	handle = stop_service_nofree_f("vlantagging", handle);
+	handle = stop_service_nofree_f("bridgesif", handle); //
+	handle = stop_service_nofree_f("vlantagging", handle); //
 #endif
 #ifdef HAVE_BONDING
-	handle = stop_service_nofree_f("bonding", handle);
+	handle = stop_service_nofree_f("bonding", handle); //
 #endif
-	handle = stop_service_nofree_f("lan", handle);
+	handle = stop_service_nofree_f("lan", handle); //
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree_f("bridging", handle);
+	handle = stop_service_nofree_f("bridging", handle); //
 #endif
-	handle = stop_service_nofree_f("ttraff", handle);
-	handle = stop_service_nofree_f("wan", handle);
+	handle = stop_service_nofree_f("ttraff", handle); //
 
 	stop_running_main(0,NULL);
 
