@@ -55,7 +55,7 @@
 #include <services.h>
 static int isstopped=0;
 #define CHECKSTOP() if (isstopped) return; else isstopped=1;
-#define RELEASESTOP() isstopped=1;
+#define RELEASESTOP() isstopped=0;
 
 void start_vpn_modules(void)
 {
