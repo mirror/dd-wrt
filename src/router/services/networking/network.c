@@ -77,7 +77,7 @@
 #include <services.h>
 static int isstopped=0;
 #define CHECKSTOP() if (isstopped) return; else isstopped=1;
-#define RELEASESTOP() isstopped=1;
+#define RELEASESTOP() isstopped=0;
 
 extern int br_add_bridge(const char *brname);
 extern int br_del_bridge(const char *brname);
