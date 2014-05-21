@@ -148,7 +148,7 @@ static int remotetelnet = 0;
 #endif
 static int isstopped=0;
 #define CHECKSTOP() if (isstopped) return; else isstopped=1;
-#define RELEASESTOP() isstopped=1;
+#define RELEASESTOP() isstopped=0;
 static void save2file(const char *fmt, ...)
 {
 	char buf[10240];
