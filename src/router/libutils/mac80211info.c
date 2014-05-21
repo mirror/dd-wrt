@@ -645,7 +645,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 				if (skip && tb[NL80211_FREQUENCY_ATTR_DISABLED])
 					continue;
 				regfound = 0;
-				if (max_bandwidth_khz == 40)
+				if (max_bandwidth_khz == 40 || max_bandwidth_khz == 80)
 					range = 10;
 				else
 					// for 10/5mhz this should be fine 
@@ -696,7 +696,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								list[count].passive_scan = 1;
 							if (rd->reg_rules[rrc].flags & RRF_NO_IBSS)
 								list[count].no_ibss = 1;
-							if (regmaxbw == 40) {
+							if (regmaxbw == 40 || regmaxbw == 80) {
 								if ((freq_mhz - htrange) >= startfreq) {
 									list[count].ht40minus = 1;
 								}
