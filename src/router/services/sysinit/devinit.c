@@ -134,6 +134,7 @@ void start_devinit(void)
 	 * /var 
 	 */
 	mkdir("/tmp/var", 0777);
+	mkdir("/tmp/services", 0777);
 	mkdir("/var/lock", 0777);
 	mkdir("/var/lock/subsys", 0777);
 	mkdir("/var/log", 0777);
