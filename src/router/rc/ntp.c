@@ -151,6 +151,7 @@ void ntp_main(timer_t t, int arg)
 
 	//dd_syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
 	eval("stopservice", "ntpc");
+	eval("startservice", "ntpc");
 	if (do_ntp() == 0) {
 		if (arg == FIRST)
 			dd_timer_cancel(t);
