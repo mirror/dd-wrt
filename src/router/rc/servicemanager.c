@@ -54,7 +54,7 @@ static void _RELEASESTOPPED(char *name)
 {
 	char fname[64];
 	sprintf(fname, "/tmp/services/%s.stopped", name);
-	unlink(name);
+	unlink(fname);
 }
 
 static int _STOPPED(char *name)
