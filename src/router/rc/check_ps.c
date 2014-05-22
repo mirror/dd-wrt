@@ -35,10 +35,14 @@ enum { M_LAN, M_WAN };
 
 struct mon mons[] = {
 	// {"tftpd", 1, M_LAN, stop_tftpd, start_tftpd},
+#ifdef HAVE_UPNP
 	{"upnp", 1, M_LAN, "upnp_enable", "1"},
+#endif
 	{"process_monitor", 1, M_LAN},
 	{"httpd", 2, M_LAN},
+#ifdef HAVE_UDHCPD
 	{"udhcpd", 1, M_LAN},
+#endif
 	{"dnsmasq", 1, M_LAN, "dnsmasq_enable", "1"},
 	{"dhcpfwd", 1, M_LAN, "dhcpfwd_enable", "1"},
 #ifdef HAVE_PRIVOXY
