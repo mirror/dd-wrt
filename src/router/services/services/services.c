@@ -124,29 +124,10 @@ int write_nvram(char *name, char *nv)
 
 int usejffs = 0;
 
-#if 0
 void start_ntpc(void)
 {
-	char *servers = nvram_safe_get("ntp_server");
-
-	if (!nvram_invmatch("ntpd_enable", "0"))
-		return;
-
-	if (strlen(servers)) {
-		char *nas_argv[] = { "ntpclient", "-h", servers, "-i", "5", "-l", "-s", "-c",
-			"2",
-			NULL
-		};
-		pid_t pid;
-
-		_evalpid(nas_argv, NULL, 0, &pid);
-		dd_syslog(LOG_INFO, "ntpclient : ntp client successfully started\n");
-	}
-
-	cprintf("done\n");
-	return;
+// dummy
 }
-#endif
 void stop_ntpc(void)
 {
 	stop_process("ntpclient", "Network Time Protocol client");
