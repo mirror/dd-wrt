@@ -53,13 +53,9 @@
 #include <nvparse.h>
 #include <syslog.h>
 #include <services.h>
-static int isstopped=0;
-#define CHECKSTOP() if (isstopped) return; else isstopped=1;
-#define RELEASESTOP() isstopped=0;
 
 void start_vpn_modules(void)
 {
-	RELEASESTOP();
 	if ((nvram_match("pptp_pass", "1") || nvram_match("l2tp_pass", "1")
 	     || nvram_match("ipsec_pass", "1"))) {
 		insmod("nf_conntrack_proto_gre");
@@ -81,7 +77,6 @@ void start_vpn_modules(void)
 
 void stop_vpn_modules(void)
 {
-	CHECKSTOP();
 	rmmod("nf_nat_pptp");
 	rmmod("nf_conntrack_pptp");
 	rmmod("nf_nat_proto_gre");
