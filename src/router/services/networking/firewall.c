@@ -2596,7 +2596,6 @@ int main(void)
 void start_firewall(void)
 #endif
 {
-	RELEASESTOP();
 	DIR *dir;
 	struct dirent *file;
 	FILE *fp;
