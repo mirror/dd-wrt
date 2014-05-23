@@ -4118,9 +4118,17 @@ void start_wan(int status)
 	cprintf("done()()()\n");
 }
 
+void stop_wan_boot(void) // dummy
+{
+}
+
 void start_wan_boot(void)
 {
 	start_wan(BOOT);
+}
+
+void stop_wan_redial(void) // dummy
+{
 }
 
 void start_wan_redial(void)

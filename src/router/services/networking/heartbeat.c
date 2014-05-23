@@ -137,6 +137,12 @@ void stop_heartbeat(void)
 
 	return;
 }
+void stop_heartbeat_boot(void)
+{
+	stop_heartbeat();
+}
+
+
 
 void start_heartbeat_boot(void)
 {
@@ -144,12 +150,16 @@ void start_heartbeat_boot(void)
 
 }
 
+void stop_heartbeat_redial(void)
+{
+	stop_heartbeat();
+}
+
 void start_heartbeat_redial(void)
 {
 	start_heartbeat(REDIAL);
 
 }
-
 /*
  *  Called when link comes up
  *  argv[1] : listenport
