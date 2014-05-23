@@ -85,13 +85,13 @@ int main(int argc, char **argv)
 
 				case 1:	// 01 - turn radio on
 					syslog(LOG_DEBUG, "Turning radio 0 on\n");
-					start_service("radio_on_0");
+					startstop("radio_on_0");
 
 					break;
 
 				case 2:	// 10 - turn radio off
 					syslog(LOG_DEBUG, "Turning radio 0 off\n");
-					start_service("radio_off_0");
+					startstop("radio_off_0");
 					break;
 				}
 				
@@ -102,12 +102,12 @@ int main(int argc, char **argv)
 
 				case 1:	// 01 - turn radio on
 					syslog(LOG_DEBUG, "Turning radio 1 on\n");
-					start_service("radio_on_1");
+					startstop("radio_on_1");
 					break;
 
 				case 2:	// 10 - turn radio off
 					syslog(LOG_DEBUG, "Turning radio 1 off\n");
-					start_service("radio_off_1");
+					startstop("radio_off_1");
 					break;
 				}
 				needchange = 0;

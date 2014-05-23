@@ -109,6 +109,7 @@ void checknas(void)		// for broadcom v24 only
 
 #endif
 #ifdef HAVE_MADWIFI
+	sysprintf("stopservice checkhostapd");
 	sysprintf("startservice_f checkhostapd");
 #endif
 }
