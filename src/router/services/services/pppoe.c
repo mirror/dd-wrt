@@ -271,8 +271,11 @@ void stop_pppoe(void)
 	cprintf("done\n");
 	return;
 }
-
 void stop_dns_clear_resolv(void)
+{
+}
+
+void start_dns_clear_resolv(void)
 {
 	FILE *fp_w;
 	stop_process("dnsmasq", "dnsmasq daemon");

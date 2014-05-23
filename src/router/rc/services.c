@@ -253,7 +253,7 @@ int stop_services_main(int argc, char **argv)
 	handle = stop_service_nofree_f("upnp", handle);
 #endif
 	handle = stop_service_nofree_f("udhcpd", handle);
-	handle = stop_service_nofree_f("dns_clear_resolv", handle);
+	handle = startstop_nofree_f("dns_clear_resolv", handle);
 	handle = stop_service_nofree_f("cron", handle);
 
 #ifdef HAVE_TFTP
@@ -829,7 +829,7 @@ static void handle_routing(void)
 	handle = stop_service_nofree("zebra", handle);
 #endif
 	handle = startstop_nofree("firewall", handle);
-	handle = start_service_nofree_f("set_routes", handle);
+	handle = startstop_nofree_f("set_routes", handle);
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = start_service_nofree_f("zebra", handle);
 #endif

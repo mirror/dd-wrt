@@ -38,7 +38,7 @@
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
-void start_config_macs(char *wlifname)	// reconfigure macs which
+void config_macs(char *wlifname)	// reconfigure macs which
 						// should fix the corerev 5
 						// and 7 problem
 {
