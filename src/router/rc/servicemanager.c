@@ -105,7 +105,7 @@ static int handle_service(char *method,char *name)
 	}
 	void (*fptr) (void);
 
-	sprintf(service, "start_%s", name);
+	sprintf(service, "%s_%s", method, name);
 	cprintf("resolving %s\n", service);
 	fptr = (void (*)(void))dlsym(handle, service);
 	if (fptr)
