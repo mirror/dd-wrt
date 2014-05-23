@@ -753,6 +753,9 @@ static void buffalo_defaults(int force)
 /*
  * SeG dd-wrt addition for module startup scripts 
  */
+void stop_modules(void) {
+	
+}
 void start_modules(void)
 {
 	runStartup("/etc/config", ".startup");
@@ -799,7 +802,9 @@ void start_wanup(void)
 	}
 	return;
 }
-
+void stop_run_rc_startup(void)
+{
+}
 void start_run_rc_startup(void)
 {
 	DIR *directory;
@@ -822,7 +827,9 @@ void start_run_rc_startup(void)
 		}
 	}
 }
-
+void stop_run_rc_shutdown(void)
+{
+}
 void start_run_rc_shutdown(void)
 {
 	runStartup("/opt/etc/init.d", "K**");	// if available; run K** shutdown scripts
