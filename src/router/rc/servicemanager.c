@@ -50,17 +50,17 @@ void *load_service(char *name)
 	return handle;
 }
 
-static void _RELEASESTOPPED(char *name)
+static void _RELEASESTOPPED(char *method, char *name)
 {
 	char fname[64];
-	sprintf(fname, "/tmp/services/%s.stopped", name);
+	sprintf(fname, "/tmp/services/%s.%s", name, method);
 	unlink(fname);
 }
 
-static int _STOPPED(char *name)
+static int _STOPPED(char *method,char *name)
 {
 	char fname[64];
-	sprintf(fname, "/tmp/services/%s.stopped", name);
+	sprintf(fname, "/tmp/services/%s.%s", name, method);
 	FILE *fp = fopen(fname, "rb");
 	if (fp) {
 		fclose(fp);
@@ -74,12 +74,18 @@ static int _STOPPED(char *name)
 	return 0;
 }
 
-#define STOPPED() if (_STOPPED(name)) return;
-#define RELEASESTOPPED() _RELEASESTOPPED(name);
+#define STOPPED() if (_STOPPED(method, name)) return;
+#define RELEASESTOPPED(a) _RELEASESTOPPED(a, name);
 
-int start_service(char *name)
+static int handle_service(char *method,char *name)
 {
-	RELEASESTOPPED();
+	if (!strcmp(method,"start"))
+	    RELEASESTOPPED("stop");
+	if (!strcmp(method,"stop")) {
+	    stops_running++;
+	    RELEASESTOPPED("start");
+	}
+	STOPPED();
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_service\n");
 	char service[64];
@@ -107,25 +113,31 @@ int start_service(char *name)
 	else
 		fprintf(stderr, "function %s not found \n", service);
 	dlclose(handle);
+	if (!strcmp(method,"stop")) {
+	    stops_running--;
+	}
 	cprintf("start_sevice done()\n");
 	return 0;
 }
 
-int start_service_f(char *name)
+
+
+int start_service(char *name)
 {
-	FORK(start_service(name));
+	handle_service("start",name);
 	return 0;
 }
 
-int start_service_fork_f(char *name)
+
+int start_service_f(char *name)
 {
-	FORK(start_service(name));
+	FORK(handle_service("start",name));
 	return 0;
 }
 
 void *start_service_nofree(char *name, void *handle)
 {
-	start_service(name);
+	handle_service("start",name);
 	return handle;
 }
 
@@ -192,34 +204,6 @@ void start_main_f(char *name, int argc, char **argv)
 	FORK(start_main(name, argc, argv));
 }
 
-void stop_service(char *name)
-{
-	STOPPED();
-	stops_running++;
-	// lcdmessaged("Stopping Service",name);
-	cprintf("stop service()\n");
-	void *handle = load_service(name);
-
-	if (handle == NULL) {
-		stops_running--;
-		return;
-	}
-	void (*fptr) (void);
-	char service[64];
-
-	sprintf(service, "stop_%s", name);
-	cprintf("resolving %s\n", service);
-	fptr = (void (*)(void))dlsym(handle, service);
-	if (fptr)
-		(*fptr) ();
-	else
-		fprintf(stderr, "function %s not found \n", service);
-	dlclose(handle);
-	cprintf("stop_service done()\n");
-	stops_running--;
-
-	return;
-}
 
 int stop_running(void)
 {
@@ -238,20 +222,25 @@ int stop_running_main(int argc, char **argv)
 	}
 }
 
+void stop_service(char *name)
+{
+	handle_service("stop", name);
+}
+
 void stop_service_f(char *name)
 {
-	FORK(stop_service(name));
+	FORK(handle_service("stop", name));
 }
 
 void *stop_service_nofree(char *name, void *handle)
 {
-	stop_service(name);
+	handle_service("stop", name);
 	return handle;
 }
 
 void *stop_service_nofree_f(char *name, void *handle)
 {
-	FORK(stop_service(name));
+	FORK(handle_service("stop", name));
 	return handle;
 }
 
