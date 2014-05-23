@@ -178,6 +178,12 @@ static void optimize_block_device(char *devname)
 
 
 //Kernel 3.x
+
+
+void stop_hotplug_block(void)
+{
+}
+
 void start_hotplug_block(void)
 {
 	char *devpath;
