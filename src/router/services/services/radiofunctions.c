@@ -31,3 +31,28 @@ void start_radio_on_1(void)
 {
 	radio_on(1);
 }
+
+
+void stop_radio_off(void)
+{
+}
+
+void stop_radio_on(void)
+{
+}
+
+void stop_radio_off_0(void)
+{
+}
+
+void stop_radio_on_0(void)
+{
+}
+
+void stop_radio_off_1(void)
+{
+}
+
+void stop_radio_on_1(void)
+{
+}

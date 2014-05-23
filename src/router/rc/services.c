@@ -400,7 +400,7 @@ static void handle_index(void)
 #ifdef HAVE_BONDING
 	handle = start_service_nofree("bonding", handle);
 #endif
-	handle = start_service_nofree("wan_boot", handle);
+	handle = startstop_nofree("wan_boot", handle);
 	handle = start_service_nofree_f("ttraff", handle);
 #ifdef HAVE_MADWIFI
 	handle = start_service_nofree_f("stabridge", handle);
@@ -434,7 +434,7 @@ static void handle_index(void)
 	// anymore on wan/lan 
 	// ip changes changes
 //      handle = start_service_nofree_f("anchorfreednat", handle);
-	handle = start_service_nofree("wan_boot", handle);
+	handle = startstop_nofree("wan_boot", handle);
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
@@ -769,7 +769,7 @@ static void handle_pppoe(void)
 #ifdef HAVE_BONDING
 	handle = start_service_nofree("bonding", handle);
 #endif
-	handle = start_service_nofree("wan_boot", handle);
+	handle = startstop_nofree("wan_boot", handle);
 	handle = start_service_nofree_f("ttraff", handle);
 #ifdef HAVE_MADWIFI
 	handle = start_service_nofree_f("stabridge", handle);
@@ -1083,7 +1083,7 @@ static void handle_wireless(void)
 		if (!nvram_match("wan_proto", "3g"))
 #endif
 		{
-			handle = start_service_nofree("wan_boot", handle);
+			handle = startstop_nofree("wan_boot", handle);
 			handle = start_service_nofree_f("ttraff", handle);
 		}
 	}
@@ -1185,7 +1185,7 @@ static void handle_wireless_2(void)
 		if (!nvram_match("wan_proto", "3g"))
 #endif
 		{
-			handle = start_service_nofree("wan_boot", handle);
+			handle = startstop_nofree("wan_boot", handle);
 			handle = start_service_nofree_f("ttraff", handle);
 		}
 	}

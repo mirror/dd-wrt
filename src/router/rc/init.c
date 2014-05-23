@@ -738,7 +738,7 @@ int main(int argc, char **argv)
 			start_service("vlantagging");
 			start_service("bridgesif");
 #endif
-			start_service("wan_boot");
+			startstop("wan_boot");
 			start_service_f("ttraff");
 
 			cprintf("diag STOP LED\n");
@@ -750,13 +750,13 @@ int main(int argc, char **argv)
 #ifdef HAVE_RADIOOFF
 			if (nvram_match("radiooff_button", "1")
 			    && nvram_match("radiooff_boot_off", "1")) {
-				start_service("radio_off");
+				startstop("radio_off");
 				led_control(LED_SEC0, LED_OFF);
 				led_control(LED_SEC1, LED_OFF);
 			} else
 #endif
 			{
-				start_service("radio_on");
+				startstop("radio_on");
 			}
 #endif
 			start_service_f("radio_timer");
@@ -777,7 +777,7 @@ int main(int argc, char **argv)
 				cprintf("start modules\n");
 				start_service_f("modules");
 #ifdef HAVE_MILKFISH
-				start_service_f("milkfish_boot");
+				startstop_f("milkfish_boot");
 #endif
 				if (nvram_invmatch("rc_custom", ""))	// create
 					// custom
