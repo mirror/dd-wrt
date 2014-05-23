@@ -1313,7 +1313,7 @@ void period_check(int sig)
 				dd_syslog(LOG_DEBUG, "AOSS button: turning radio(s) on\n");
 #endif
 #ifndef HAVE_ERC
-				sysprintf("startservice radio_on");
+				sysprintf("startstop radio_on");
 #endif
 #endif
 
@@ -1329,7 +1329,7 @@ void period_check(int sig)
 				dd_syslog(LOG_DEBUG, "AOSS button: turning radio(s) off\n");
 #endif
 #ifndef HAVE_ERC
-				sysprintf("startservice radio_off");
+				sysprintf("startstop radio_off");
 #endif
 #endif
 
@@ -1340,7 +1340,7 @@ void period_check(int sig)
 		}
 #ifdef HAVE_AOSS
 		else if (nvram_match("radiooff_button", "2")) {
-			sysprintf("startservice aoss");
+			sysprintf("startstop aoss");
 		}
 #else
 #endif
@@ -1352,13 +1352,13 @@ void period_check(int sig)
 		switch (wifi_mode) {
 		case 1:
 			dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
-			sysprintf("startservice radio_on");
+			sysprintf("startstop radio_on");
 			wifi_mode = 0;
 			break;
 		case 0:
 			// (AOSS) led
 			dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
-			sysprintf("startservice radio_off");
+			sysprintf("startstop radio_off");
 			wifi_mode = 1;
 			break;
 		}
