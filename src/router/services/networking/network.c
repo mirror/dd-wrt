@@ -82,6 +82,7 @@ extern int br_add_interface(const char *br, const char *dev);
 extern int br_del_interface(const char *br, const char *dev);
 extern int br_set_stp_state(const char *br, int stp_state);
 void start_set_routes(void);
+void config_macs(char *wlifname);
 
 #define PTABLE_MAGIC 0xbadc0ded
 #define PTABLE_SLT1 1
@@ -1951,7 +1952,7 @@ void start_lan(void)
 	else
 		cprintf("Write wireless mac successfully\n");
 	eval("wl", "-i", wl_face, "up");
-	start_config_macs(wl_face);
+	config_macs(wl_face);
 #endif
 	if (getSTA()) {
 		unsigned char mac[20];
@@ -2087,7 +2088,7 @@ void start_lan(void)
 						else
 							cprintf("Write wireless mac successfully\n");
 						eval("wl", "-i", name, "up");
-						start_config_macs(name);
+						config_macs(name);
 					}
 				}
 
@@ -3113,7 +3114,7 @@ void start_wan(int status)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 		if (wlifname && !strcmp(wan_ifname, wlifname)) {
 			eval("wl", "-i", wan_ifname, "up");
-			start_config_macs(wan_ifname);
+			config_macs(wan_ifname);
 		}
 #endif
 		cprintf("Write WAN mac successfully\n");
@@ -4506,6 +4507,9 @@ void stop_wan(void)
 
 	cprintf("done\n");
 }
+void stop_set_routes(void) {
+    // dummy
+}
 
 void start_set_routes(void)
 {
@@ -4690,6 +4694,10 @@ static int notify_nas(char *type, char *ifname, char *action)
  * 
  * } 
  */
+void stop_hotplug_net(void)
+{
+}
+
 void start_hotplug_net(void)
 {
 #ifdef HAVE_MADWIFI

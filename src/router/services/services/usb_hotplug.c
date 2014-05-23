@@ -55,6 +55,9 @@ static char *getdisc(void)	// works only for squashfs
 	return NULL;
 }
 #endif
+void stop_hotplug_usb(void)
+{
+}
 void start_hotplug_usb(void)
 {
 	char *device, *interface;
