@@ -33,6 +33,7 @@
 
 #define start_service(a) eval("startservice",a);
 #define stop_service(a) eval("stopservice",a);
+#define startstop(a) eval("startstop",a);
 
 int main(int argc, char **argv)
 {
