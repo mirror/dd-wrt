@@ -96,7 +96,7 @@ static int handle_service(char *method,char *name)
 	if (ck != NULL) {
 		fclose(ck);
 		cprintf("found shell based service %s\n", service);
-		return system(service);
+		return sysprintf("%s %s",service,method);
 	}
 	void *handle = load_service(name);
 
