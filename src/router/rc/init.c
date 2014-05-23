@@ -712,7 +712,7 @@ int main(int argc, char **argv)
 #ifndef HAVE_RB500
 			start_service_f("resetbutton");
 #endif
-			start_service("setup_vlans");
+			startstop("setup_vlans");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 			start_service("wlconf");
 #endif
