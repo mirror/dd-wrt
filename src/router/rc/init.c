@@ -766,7 +766,7 @@ int main(int argc, char **argv)
 			if (isregistered_real())
 #endif
 			{
-				start_service_f("run_rc_startup");
+				startstop_f("run_rc_startup");
 // start init scripts				
 				system("/etc/init.d/rcS");	
 				system("/opt/etc/init.d/rcS");	
@@ -775,7 +775,7 @@ int main(int argc, char **argv)
 				// startup script
 				// (siPath impl)
 				cprintf("start modules\n");
-				start_service_f("modules");
+				startstop_f("modules");
 #ifdef HAVE_MILKFISH
 				startstop_f("milkfish_boot");
 #endif
