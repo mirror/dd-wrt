@@ -100,7 +100,7 @@ struct event {
 	unsigned short flags;
 	struct event *next;
 #ifdef TIMER_PROFILE
-	uint expected_ms;
+	unsigned int expected_ms;
 	uclock_t start;
 #endif
 };
@@ -121,7 +121,7 @@ void dd_unblock_timer();
 
 static struct event *event_queue = NULL;
 static struct event *event_freelist;
-static uint g_granularity;
+static unsigned int g_granularity;
 static int g_maxevents = 0;
 
 uclock_t uclock()
@@ -466,9 +466,9 @@ static void alarm_handler(int i)
 	struct itimerval itimer;
 	struct timeval small_interval = { 0, g_granularity / 2 };
 #ifdef TIMER_PROFILE
-	uint junk;
+	unsigned int junk;
 	uclock_t end;
-	uint actual;
+	unsigned int actual;
 #endif
 
 	dd_block_timer();

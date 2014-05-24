@@ -48,7 +48,9 @@
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
+#ifdef __UCLIBC__
 #include <error.h>
+#endif
 #include <signal.h>
 
 #include <unistd.h>

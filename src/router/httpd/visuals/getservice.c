@@ -66,6 +66,9 @@
 
 #define	MAXALIASES	35
 
+#ifndef _PATH_SERVICES
+#define	_PATH_SERVICES		"/etc/services"
+#endif
 static FILE *servf = NULL;
 static char line[BUFSIZ + 1];
 static struct servent serv;

@@ -41,7 +41,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-COPTS += $(MIPS16_OPT) 
+COPTS += $(MIPS16_OPT) -D_GNU_SOURCE
 
 BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE
 
