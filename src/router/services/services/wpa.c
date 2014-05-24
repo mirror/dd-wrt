@@ -187,6 +187,9 @@ static void convert_wds(int instance)
 			del_wds_wsec(instance, j);
 	}
 }
+void stop_guest_nas(void)
+{
+}
 
 void start_guest_nas(void)
 {
