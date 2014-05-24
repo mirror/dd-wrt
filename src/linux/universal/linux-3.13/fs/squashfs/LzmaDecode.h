@@ -32,7 +32,7 @@
 /* It can increase speed on some 32-bit CPUs,
    but memory usage will be doubled in that case */
 
-/* #define _LZMA_LOC_OPT */
+#define _LZMA_LOC_OPT
 /* Enable local speed optimizations inside code */
 
 #ifndef UInt32
