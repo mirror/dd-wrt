@@ -219,6 +219,10 @@
 #undef TERMIO
 #undef SGTTY
 #endif
+#ifndef __UCLIBC__
+#undef TERMIO
+#define TERMIOS
+#endif
 
 #ifdef TERMIOS
 # include <termios.h>
@@ -227,6 +231,7 @@
 # define TTY_get(tty,data)	tcgetattr(tty,data)
 # define TTY_set(tty,data)	tcsetattr(tty,TCSANOW,data)
 #endif
+
 
 #ifdef TERMIO
 # include <termio.h>
