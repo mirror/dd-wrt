@@ -140,6 +140,10 @@
 #undef TERMIO
 #undef SGTTY
 #endif
+#ifndef __UCLIBC__
+#undef TERMIO
+#define TERMIOS
+#endif
 
 #ifdef TERMIOS
 #include <termios.h>
