@@ -43,7 +43,7 @@ int aoss_status(void)
 void start_aoss(void)
 {
 	if (!aoss_status()) {
-		system("startservice aoss");
+		system("startstop aoss");
 	}
 }
 
