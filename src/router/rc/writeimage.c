@@ -7,7 +7,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#ifdef __UCLIBC__
 #include <error.h>
+#endif
 #include <sys/ioctl.h>
 #include <sys/sysinfo.h>
 

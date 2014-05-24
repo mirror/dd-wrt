@@ -72,7 +72,9 @@
 //#include <xyssl_xface.h>
 #endif
 
+#ifdef __UCLIBC__
 #include <error.h>
+#endif
 #include <sys/signal.h>
 
 #ifdef HAVE_IAS

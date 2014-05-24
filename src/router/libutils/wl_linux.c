@@ -13,6 +13,7 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
@@ -20,11 +21,19 @@
 #include <net/if.h>
 #include <linux/types.h>
 
+#ifdef __UCLIBC__
 typedef u_int64_t u64;
 typedef u_int32_t u32;
 typedef u_int16_t u16;
 typedef u_int8_t u8;
+#else
+typedef uint64_t u64;
+typedef uint32_t u32;
+typedef uint16_t u16;
+typedef uint8_t u8;
 
+
+#endif
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
 

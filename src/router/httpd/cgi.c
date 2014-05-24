@@ -51,9 +51,13 @@ char *get_cgi(char *name)
 {
 	ENTRY e, *ep;
 
+#ifdef __UCLIBC__
 	if (!htab.table)
 		return NULL;
-
+#else
+	if (!htab.__tab)
+		return NULL;
+#endif
 	e.key = name;
 	hsearch_r(e, FIND, &ep, &htab);
 
@@ -66,8 +70,13 @@ void set_cgi(char *name, char *value)
 
 	//cprintf("\nIn set_cgi(), name = %s, value = %s\n", name, value);
 
+#ifdef __UCLIBC__
 	if (!htab.table)
-		return;
+		return NULL;
+#else
+	if (!htab.__tab)
+		return NULL;
+#endif
 
 	e.key = name;
 	hsearch_r(e, FIND, &ep, &htab);
