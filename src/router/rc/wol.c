@@ -62,7 +62,7 @@ int wol_main(int argc, char **argv)
 	 * Run it in the background 
 	 */
 
-	signal(SIGCLD, SIG_IGN);
+	signal(SIGCHLD, SIG_IGN);
 
 	switch (fork()) {
 	case -1:

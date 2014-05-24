@@ -21,6 +21,7 @@
 #include <utils.h>
 #include <bcmnvram.h>
 #include <syslog.h>
+#include <fcntl.h>
 //#include <math.h>
 #ifdef HAVE_ATH9K
 #include <glob.h>

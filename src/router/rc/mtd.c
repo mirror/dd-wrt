@@ -6,7 +6,9 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <errno.h>
+#ifdef __UCLIBC__
 #include <error.h>
+#endif
 #include <time.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>

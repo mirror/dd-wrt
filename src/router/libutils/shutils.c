@@ -16,7 +16,9 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <errno.h>
+#ifdef __UCLIBC__
 #include <error.h>
+#endif
 #include <fcntl.h>
 #include <limits.h>
 #include <unistd.h>

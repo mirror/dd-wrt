@@ -11,10 +11,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-
+#ifndef __UCLIBC__
+#define __DEFINED_float_t
+#endif
 #include <string.h>
 #include <unistd.h>
-
 #include <typedefs.h>
 #include <bcmutils.h>
 #include <wlutils.h>

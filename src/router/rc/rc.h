@@ -4,7 +4,7 @@
 
 // #include <code_pattern.h>
 #include <bcmconfig.h>
-#include <netinet/in.h>
+//#include <netinet/in.h>
 
 #include <fcntl.h>
 
