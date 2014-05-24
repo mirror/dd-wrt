@@ -272,6 +272,9 @@ int stop_services_main(int argc, char **argv)
 #ifdef HAVE_TELNET
 	handle = stop_service_nofree_f("telnetd", handle);
 #endif
+#ifdef HAVE_CPUTEMP
+	handle = stop_service_nofree_f("hwmon", handle);
+#endif
 #ifdef HAVE_FTP
 	handle = stop_service_nofree_f("ftpsrv", handle);
 #endif
@@ -585,7 +588,7 @@ static void handle_services(void)
 #endif
 	handle = startstop_nofree_f("udhcpd", handle);
 #ifdef HAVE_CPUTEMP
-	handle = start_service_nofree_f("hwmon", handle);
+	handle = startstop_nofree_f("hwmon", handle);
 #endif
 #ifdef HAVE_TELNET
 	handle = startstop_nofree_f("telnetd", handle);
@@ -689,6 +692,9 @@ static void handle_management(void)
 #endif
 	handle = stop_service_nofree_f("cron", handle);
 	handle = stop_service_nofree_f("udhcpd", handle);
+#ifdef HAVE_IPV6
+	handle = stop_service_nofree_f("ipv6", handle);
+#endif
 
 	stop_running_main(0,NULL);
 
@@ -1291,7 +1297,7 @@ static struct SERVICES services_def[] = {
 
 int start_single_service_main(int argc, char **argv)
 {
-	start_service("overclocking");
+	startstop("overclocking");
 	char *next;
 	char service[80];
 	char *services = nvram_safe_get("action_service");

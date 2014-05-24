@@ -78,6 +78,11 @@
 #define TEMP_MUL 1000
 #endif
 
+void stop_hwmon(void)
+{
+}
+
+
 void start_hwmon(void)
 {
 	int temp_max = atoi(nvram_safe_get("hwmon_temp_max")) * TEMP_MUL;
