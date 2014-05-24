@@ -1687,6 +1687,9 @@ void start_filter_del(int seq)
 	update_filter(0, seq);
 }
 
+void stop_filtersync(void)
+{
+}
 void start_filtersync(void)
 {
 	time_t ct;		/* Calendar time */
