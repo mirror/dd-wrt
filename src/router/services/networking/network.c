@@ -648,6 +648,9 @@ int isClient(void)
 	return 0;
 
 }
+void stop_wlconf(void)
+{
+}
 
 void start_wlconf(void)
 {

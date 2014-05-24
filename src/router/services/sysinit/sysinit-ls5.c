@@ -125,6 +125,9 @@ int check_pmon_nv(void)
 	return 0;
 }
 
+void stop_overclocking(void)
+{
+}
 void start_overclocking(void)
 {
 }

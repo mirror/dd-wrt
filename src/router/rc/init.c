@@ -614,7 +614,7 @@ int main(int argc, char **argv)
 		case RESTART:
 			lcdmessage("RESTART SYSTEM");
 #ifdef HAVE_OVERCLOCKING
-			start_service("overclocking");
+			startstop("overclocking");
 #endif
 			cprintf("RESET NVRAM VARS\n");
 			nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
@@ -670,6 +670,10 @@ int main(int argc, char **argv)
 			cprintf("STOP WAN\n");
 			stop_service_f("ttraff");
 			stop_service_f("wan");
+			stop_service_f("mkfiles");
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+			stop_service_f("wlconf");
+#endif
 			cprintf("STOP LAN\n");
 #ifdef HAVE_MADWIFI
 			stop_service("stabridge");
@@ -690,6 +694,9 @@ int main(int argc, char **argv)
 			stop_service_f("resetbutton");
 #endif
 			stop_running();
+#ifdef HAVE_IPV6
+			stop_service("ipv6");
+#endif
 #ifdef HAVE_REGISTER
 			if (isregistered_real())
 #endif
