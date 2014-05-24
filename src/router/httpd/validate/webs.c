@@ -3182,7 +3182,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (reg) {
 		if (strcmp(nvram_get("wl_regdomain"), reg)) {
 			setRegulationDomain(reg);
-			system("startservice lan");
+			system("startstop lan");
 		}
 	}
 #endif
