@@ -53,6 +53,7 @@ enum { L_FAIL, L_ERROR, L_UPGRADE, L_ESTABLISHED, L_SUCCESS };
 
 #define start_service(a) eval("startservice",a);
 #define stop_service(a) eval("stopservice",a);
+#define startstop(a) eval("startstop",a);
 
 struct iphdr {
 	u_int8_t version;
@@ -385,7 +386,7 @@ int main(int argc, char *argv[])
 			switch (ret) {
 			case L_SUCCESS:
 				DEBUG1("**************** received an lan to wan packet **************\n\n");
-				start_service("force_to_dial");
+				startstop("force_to_dial");
 				if (nvram_match("wan_proto", "heartbeat"))
 					exit(0);
 

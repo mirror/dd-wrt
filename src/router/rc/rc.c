@@ -154,6 +154,7 @@ int redial_main(int argc, char **argv)
 #ifdef HAVE_PPTP
 				if (nvram_match("wan_proto", "pptp")) {
 					stop_service("pptp");
+					unlink("/tmp/services/pptp.stop");
 					sleep(1);
 					startstop("wan_redial");
 				}
@@ -164,6 +165,7 @@ int redial_main(int argc, char **argv)
 #ifdef HAVE_L2TP
 				if (nvram_match("wan_proto", "l2tp")) {
 					stop_service("l2tp");
+					unlink("/tmp/services/l2tp.stop");
 					sleep(1);
 					startstop("wan_redial");
 				}
@@ -463,7 +465,7 @@ int main(int argc, char **argv)
 	// ////////////////////////////////////////////////////
 	// 
 	if (strstr(base, "filtersync")) {
-		start_service("filtersync");
+		startstop("filtersync");
 		return 0;
 	}
 	/* 
@@ -497,7 +499,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 	if (strstr(base, "setpasswd")) {
-		start_service("mkfiles");
+		startstop("mkfiles");
 		return 0;
 	}
 	/* 

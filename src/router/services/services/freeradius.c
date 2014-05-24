@@ -46,6 +46,8 @@ static void prep(void)
 	}
 
 }
+void stop_gen_radius_cert(void) {
+}
 
 void start_gen_radius_cert(void)
 {
