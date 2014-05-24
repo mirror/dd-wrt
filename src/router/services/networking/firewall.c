@@ -43,6 +43,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <limits.h>
 #include <l7protocols.h>
 
 #ifndef DEVELOPE_ENV
