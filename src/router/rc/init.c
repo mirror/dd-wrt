@@ -32,6 +32,7 @@
 #define start_service(a) sysprintf("startservice %s",a);
 #define start_service_force(a) sysprintf("startservice %s -f",a);
 #define start_service_f(a) sysprintf("startservice_f %s",a);
+#define start_service_force_f(a) sysprintf("startservice_f %s -f",a);
 #define start_services() system("startservices");
 #define start_single_service() system("start_single_service");
 #define stop_service(a) sysprintf("stopservice %s",a);
@@ -617,7 +618,7 @@ int main(int argc, char **argv)
 		case RESTART:
 			lcdmessage("RESTART SYSTEM");
 #ifdef HAVE_OVERCLOCKING
-			startstop("overclocking");
+			start_service_force("overclocking");
 #endif
 			cprintf("RESET NVRAM VARS\n");
 			nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
@@ -650,7 +651,7 @@ int main(int argc, char **argv)
 			if (isregistered_real())
 #endif
 			{
-				start_service("run_rc_shutdown");
+				start_service_force("run_rc_shutdown");
 			}
 
 			if (state == STOP) {
@@ -734,7 +735,7 @@ int main(int argc, char **argv)
 			start_service("bonding");
 #endif
 #ifdef HAVE_REGISTER
-			start_service("mkfiles");
+			start_service_force("mkfiles");
 #endif
 #ifdef HAVE_MADWIFI
 			start_service_f("stabridge");
@@ -785,9 +786,9 @@ int main(int argc, char **argv)
 				// startup script
 				// (siPath impl)
 				cprintf("start modules\n");
-				startservice_force_f("modules");
+				start_service_force_f("modules");
 #ifdef HAVE_MILKFISH
-				startservice_force_f("milkfish_boot");
+				start_service_force_f("milkfish_boot");
 #endif
 				if (nvram_invmatch("rc_custom", ""))	// create
 					// custom
