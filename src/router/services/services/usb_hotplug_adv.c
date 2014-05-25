@@ -72,18 +72,18 @@ static bool usb_stop_services()
 /* when adding external media some services should be restarted, e.g. minidlna in order to scan for media files*/
 static bool usb_start_services()
 {
-	eval("startservice", "cron");
-	eval("startservice", "samba3");
-	eval("startservice", "dlna");
-	eval("startservice", "ftpsrv");
+	eval("startservice_f", "cron");
+	eval("startservice_f", "samba3");
+	eval("startservice_f", "dlna");
+	eval("startservice_f", "ftpsrv");
 #ifdef HAVE_WEBSERVER
-	eval("startservice", "lighttpd");
+	eval("startservice_f", "lighttpd");
 #endif
 #ifdef HAVE_TRANSMISSION
-	eval("startservice", "transmission");
+	eval("startservice_f", "transmission");
 #endif
 #ifdef HAVE_FREERADIUS
-	eval("startservice", "freeradius");
+	eval("startservice_f", "freeradius");
 #endif
 	return 0;
 }

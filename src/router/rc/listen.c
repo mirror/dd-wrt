@@ -52,6 +52,7 @@ enum { L_FAIL, L_ERROR, L_UPGRADE, L_ESTABLISHED, L_SUCCESS };
 # define DEBUG1(args...) do {;} while(0)
 
 #define start_service(a) eval("startservice",a);
+#define start_service_force(a) eval("startservice",a,"-f");
 #define stop_service(a) eval("stopservice",a);
 #define startstop(a) eval("startstop",a);
 
@@ -386,7 +387,7 @@ int main(int argc, char *argv[])
 			switch (ret) {
 			case L_SUCCESS:
 				DEBUG1("**************** received an lan to wan packet **************\n\n");
-				startstop("force_to_dial");
+				startservice_force("force_to_dial");
 				if (nvram_match("wan_proto", "heartbeat"))
 					exit(0);
 

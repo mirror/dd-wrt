@@ -430,7 +430,7 @@ static void buffalo_defaults(int force)
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
 #ifdef HAVE_SPOTPASS
-		system("startservice spotpass_defaults");
+		system("startservice spotpass_defaults -f");
 #endif
 	}
 }
@@ -528,7 +528,7 @@ static void buffalo_defaults(int force)
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
 #ifdef HAVE_SPOTPASS
-		system("startservice spotpass_defaults");
+		system("startservice spotpass_defaults -f");
 #endif
 		nvram_commit();
 	}
@@ -742,7 +742,7 @@ static void buffalo_defaults(int force)
 		nvram_unset("http_userpln");
 		nvram_unset("http_pwdpln");
 #ifdef HAVE_SPOTPASS
-		system("startservice spotpass_defaults");
+		system("startservice spotpass_defaults -f");
 #endif
 		nvram_commit();
 	}
