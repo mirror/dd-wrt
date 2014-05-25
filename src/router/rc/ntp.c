@@ -150,8 +150,7 @@ void ntp_main(timer_t t, int arg)
 		return;		// don't execute if not online
 
 	//dd_syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
-	eval("stopservice", "ntpc");
-	eval("startservice", "ntpc");
+	eval("stopservice", "ntpc", "-f");
 	if (do_ntp() == 0) {
 		if (arg == FIRST)
 			dd_timer_cancel(t);
