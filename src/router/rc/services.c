@@ -1048,11 +1048,11 @@ static void handle_wireless(void)
 #ifdef HAVE_BONDING
 	handle = stop_service_nofree_f("bonding", handle);
 #endif
-	handle = stop_service_nofree_f("lan", handle);
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree_f("bridging", handle);
 #endif
 	stop_running_main(0,NULL);
+	handle = stop_service_nofree("lan", handle);
 #ifdef HAVE_VLANTAGGING
 	handle = start_service_nofree("bridging", handle);
 #endif
@@ -1297,7 +1297,7 @@ static struct SERVICES services_def[] = {
 
 int start_single_service_main(int argc, char **argv)
 {
-	startstop("overclocking");
+	start_service_force("overclocking");
 	char *next;
 	char service[80];
 	char *services = nvram_safe_get("action_service");
