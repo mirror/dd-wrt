@@ -124,7 +124,7 @@ int redial_main(int argc, char **argv)
 #ifdef HAVE_PPPOE
 				if (nvram_match("wan_proto", "pppoe")) {
 					sleep(1);
-					startstop("wan_redial");
+					startservice_force("wan_redial");
 				}
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM) || defined(HAVE_PPPOEDUAL)
 				else
@@ -134,7 +134,7 @@ int redial_main(int argc, char **argv)
 #ifdef HAVE_PPPOEDUAL
 				if (nvram_match("wan_proto", "pppoe_dual")) {
 					sleep(1);
-					startstop("wan_redial");
+					startservice_force("wan_redial");
 				}
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM)
 				else
@@ -144,7 +144,7 @@ int redial_main(int argc, char **argv)
 #ifdef HAVE_PPPOATM
 				if (nvram_match("wan_proto", "pppoa")) {
 					sleep(1);
-					startstop("wan_redial");
+					startservice_force("wan_redial");
 				}
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
 				else
@@ -153,10 +153,10 @@ int redial_main(int argc, char **argv)
 
 #ifdef HAVE_PPTP
 				if (nvram_match("wan_proto", "pptp")) {
-					stop_service("pptp");
+					stop_service_force("pptp");
 					unlink("/tmp/services/pptp.stop");
 					sleep(1);
-					startstop("wan_redial");
+					startservice_force("wan_redial");
 				}
 #if defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
 				else
@@ -164,10 +164,10 @@ int redial_main(int argc, char **argv)
 #endif
 #ifdef HAVE_L2TP
 				if (nvram_match("wan_proto", "l2tp")) {
-					stop_service("l2tp");
+					stop_service_force("l2tp");
 					unlink("/tmp/services/l2tp.stop");
 					sleep(1);
-					startstop("wan_redial");
+					startservice_force("wan_redial");
 				}
 #ifdef HAVE_HEARTBEAT
 				else
@@ -181,9 +181,9 @@ int redial_main(int argc, char **argv)
 #ifdef HAVE_HEARTBEAT
 				if (nvram_match("wan_proto", "heartbeat")) {
 					if (is_running("bpalogin") == 0) {
-						stop_service("heartbeat_redial");
+						stop_service_force("heartbeat_redial");
 						sleep(1);
-						start_service("heartbeat_redial");
+						start_service_force("heartbeat_redial");
 					}
 
 				}
@@ -191,13 +191,13 @@ int redial_main(int argc, char **argv)
 #ifdef HAVE_3G
 				else if (nvram_match("wan_proto", "3g")) {
 					sleep(1);
-					startstop("wan_redial");
+					startservice_force("wan_redial");
 				}
 #endif
 #ifdef HAVE_IPETH
 				else if (nvram_match("wan_proto", "iphone")) {
 					sleep(1);
-					startstop("wan_redial");
+					startservice_force("wan_redial");
 				}
 #endif
 				exit(0);
@@ -364,7 +364,10 @@ int main(int argc, char **argv)
 			puts("try to be professional\n");
 			return 0;
 		}
-		start_service_f(argv[1]);
+		if (argc==3 && !strcmp(argv[2],"-f"))
+		    start_service_force_f(argv[1]);
+		else
+		    start_service_f(argv[1]);
 		return 0;
 	}
 	if (strstr(base, "startservice")) {
@@ -372,7 +375,10 @@ int main(int argc, char **argv)
 			puts("try to be professional\n");
 			return 0;
 		}
-		start_service(argv[1]);
+		if (argc==3 && !strcmp(argv[2],"-f"))
+		    start_service_force(argv[1]);
+		else
+		    start_service(argv[1]);
 		return 0;
 	}
 
@@ -381,7 +387,10 @@ int main(int argc, char **argv)
 			puts("try to be professional\n");
 			return 0;
 		}
-		stop_service_f(argv[1]);
+		if (argc==3 && !strcmp(argv[2],"-f"))
+		    stop_service_force_f(argv[1]);
+		else
+		    stop_service_f(argv[1]);
 		return 0;
 	}
 	
@@ -390,7 +399,10 @@ int main(int argc, char **argv)
 			puts("try to be professional\n");
 			return 0;
 		}
-		stop_service(argv[1]);
+		if (argc==3 && !strcmp(argv[2],"-f"))
+		    stop_service_force(argv[1]);
+		else
+		    stop_service(argv[1]);
 		return 0;
 	}
 #ifndef HAVE_RB500
