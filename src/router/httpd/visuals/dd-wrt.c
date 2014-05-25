@@ -3690,6 +3690,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
 			     || nvram_nmatch("mixed", "%s_net_mode", prefix)
 			     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
+			     || nvram_nmatch("ac-only", "%s_net_mode", prefix)
 			     || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 				websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n", nvram_match(wl_width, "2040") ? "selected=\\\"selected\\\"" : "");
 				fprintf(stderr, "[CHANNEL WIDTH] 20/40 (1)\n");
@@ -3726,6 +3727,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
+#if defined(HAVE_ATH10K)
+		if (!has_ac(prefix))
+#endif
 {
 	websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n", nvram_match(wl_width, "10") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n", nvram_match(wl_width, "5") ? "selected=\\\"selected\\\"" : "");
@@ -4285,6 +4289,7 @@ if (!strcmp(prefix, "wl1"))
 			     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
 			     || nvram_nmatch("mixed", "%s_net_mode", prefix)
 			     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
+			     || nvram_nmatch("ac-only", "%s_net_mode", prefix)
 			     || nvram_nmatch("na-only", "%s_net_mode", prefix)))
 				websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n", nvram_match(wl_width, "2040") ? "selected=\\\"selected\\\"" : "");
 
@@ -4296,6 +4301,7 @@ if (!strcmp(prefix, "wl1"))
 		    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("mixed", "%s_net_mode", prefix)
 		    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
+		    || nvram_nmatch("ac-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("na-only", "%s_net_mode", prefix))))
 #endif
 	{
@@ -4317,6 +4323,9 @@ if (!strcmp(prefix, "wl1"))
 
 #if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
+#if defined(HAVE_ATH10K)
+		if (!has_ac(prefix)) 
+#endif
 	{
 		websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n", nvram_match(wl_width, "10") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n", nvram_match(wl_width, "5") ? "selected=\\\"selected\\\"" : "");
@@ -4347,6 +4356,7 @@ if (!strcmp(prefix, "wl1"))
 			|| nvram_nmatch("mixed", "%s_net_mode", prefix)
 			|| nvram_nmatch("n2-only", "%s_net_mode", prefix)
 			|| nvram_nmatch("n5-only", "%s_net_mode", prefix)
+			|| nvram_nmatch("ac-only", "%s_net_mode", prefix)
 			|| nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 			show_channel(wp, prefix, prefix, 1);
 
