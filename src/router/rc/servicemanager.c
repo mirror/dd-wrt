@@ -131,21 +131,19 @@ int start_service(char *name)
 int start_service_force(char *name)
 {
 	RELEASESTOPPED("start");
-	handle_service("start",name);
-	return 0;
+	return start_service(name);
 }
 
 
 int start_service_f(char *name)
 {
-	FORK(handle_service("start",name));
+	FORK(start_service(name));
 	return 0;
 }
 
 int start_service_force_f(char *name)
 {
-	RELEASESTOPPED("start");
-	FORK(handle_service("start",name));
+	FORK(start_service_force(name));
 	return 0;
 }
 
@@ -155,9 +153,21 @@ void *start_service_nofree(char *name, void *handle)
 	return handle;
 }
 
+void *start_service_nofree_force(char *name, void *handle)
+{
+	RELEASESTOPPED("start");
+	return start_service_nofree(name,handle);
+}
+
 void *start_service_nofree_f(char *name, void *handle)
 {
-	FORK(start_service(name));
+	FORK(start_service_nofree(name,handle));	
+	return handle;
+}
+
+void *start_service_nofree_force_f(char *name, void *handle)
+{
+	FORK(start_service_nofree_force(name,handle));	
 	return handle;
 }
 
@@ -244,18 +254,18 @@ void stop_service(char *name)
 void stop_service_force(char *name)
 {
 	RELEASESTOPPED("stop");
-	handle_service("stop", name);
+	stop_service(name);
 }
 
 void stop_service_f(char *name)
 {
-	FORK(handle_service("stop", name));
+	FORK(stop_service(name));
 }
 
 void stop_service_force_f(char *name)
 {
 	RELEASESTOPPED("stop");
-	FORK(handle_service("stop", name));
+	FORK(stop_service_force(name));
 }
 
 void *stop_service_nofree(char *name, void *handle)
@@ -267,20 +277,18 @@ void *stop_service_nofree(char *name, void *handle)
 void *stop_service_nofree_force(char *name, void *handle)
 {
 	RELEASESTOPPED("stop");
-	handle_service("stop", name);
-	return handle;
+	return stop_service_nofree(name,handle);
 }
 
 void *stop_service_nofree_f(char *name, void *handle)
 {
-	FORK(handle_service("stop", name));
+	FORK(stop_service_nofree(name,handle));
 	return handle;
 }
 
 void *stop_service_nofree_force_f(char *name, void *handle)
 {
-	RELEASESTOPPED("stop");
-	FORK(handle_service("stop", name));
+	FORK(stop_service_nofree_force(name,handle));
 	return handle;
 }
 

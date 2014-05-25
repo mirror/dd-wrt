@@ -486,7 +486,7 @@ static void handle_hotspot(void)
 	handle = stop_service_nofree_f("stabridge", handle);
 #endif
 	handle = stop_service_nofree_f("ttraff", handle);
-	handle = stop_service_nofree_forc_f("wan", handle);
+	handle = stop_service_nofree_force_f("wan", handle);
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree_f("bridgesif", handle);
 	handle = stop_service_nofree_f("vlantagging", handle);
