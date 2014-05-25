@@ -66,7 +66,7 @@ void radius_generate_certificate(webs_t wp)
 	system("rm /jffs/etc/freeradius/certs/index.txt");
 	system("rm /jffs/etc/freeradius/certs/serial");
 	system("rm -rf /jffs/etc/freeradius/certs/clients");	//delete client certificates since they will become invalid
-	system("startstop_f gen_radius_cert");
+	system("startservice gen_radius_cert -f");
 }
 
 /*struct radiususer {
