@@ -367,7 +367,7 @@ static void handle_index(void)
 	unlink("/tmp/ppp/log");
 	void *handle = NULL;
 
-	handle = stop_service_nofree_f("wan", handle);
+	handle = stop_service_nofree_force_f("wan", handle);
 	handle = stop_service_nofree_f("radio_timer", handle); //
 #ifdef HAVE_MULTICAST
 	handle = stop_service_nofree_f("igmp_proxy", handle); //
@@ -403,7 +403,7 @@ static void handle_index(void)
 #ifdef HAVE_BONDING
 	handle = start_service_nofree("bonding", handle);
 #endif
-	handle = startstop_nofree("wan_boot", handle);
+	handle = start_service_nofree_force("wan_boot", handle);
 	handle = start_service_nofree_f("ttraff", handle);
 #ifdef HAVE_MADWIFI
 	handle = start_service_nofree_f("stabridge", handle);
@@ -437,7 +437,7 @@ static void handle_index(void)
 	// anymore on wan/lan 
 	// ip changes changes
 //      handle = start_service_nofree_f("anchorfreednat", handle);
-	handle = startstop_nofree("wan_boot", handle);
+	handle = start_service_nofree_force("wan_boot", handle);
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
@@ -486,7 +486,7 @@ static void handle_hotspot(void)
 	handle = stop_service_nofree_f("stabridge", handle);
 #endif
 	handle = stop_service_nofree_f("ttraff", handle);
-	handle = stop_service_nofree_f("wan", handle);
+	handle = stop_service_nofree_forc_f("wan", handle);
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree_f("bridgesif", handle);
 	handle = stop_service_nofree_f("vlantagging", handle);
@@ -522,7 +522,7 @@ static void handle_hotspot(void)
 #ifdef HAVE_BONDING
 	handle = start_service_nofree("bonding", handle);
 #endif
-	handle = start_service_nofree_f("wan", handle);
+	handle = start_service_nofree_force_f("wan", handle);
 	handle = start_service_nofree_f("ttraff", handle);
 #ifdef HAVE_MADWIFI
 	handle = start_service_nofree_f("stabridge", handle);
@@ -764,7 +764,7 @@ static void handle_pppoe(void)
 	handle = stop_service_nofree_f("bridging", handle);
 #endif
 	handle = stop_service_nofree_f("ttraff", handle);
-	handle = stop_service_nofree_f("wan", handle);
+	handle = stop_service_nofree_force_f("wan", handle);
 
 	stop_running_main(0,NULL);
 
@@ -775,7 +775,7 @@ static void handle_pppoe(void)
 #ifdef HAVE_BONDING
 	handle = start_service_nofree("bonding", handle);
 #endif
-	handle = startstop_nofree("wan_boot", handle);
+	handle = start_service_nofree_force("wan_boot", handle);
 	handle = start_service_nofree_f("ttraff", handle);
 #ifdef HAVE_MADWIFI
 	handle = start_service_nofree_f("stabridge", handle);
@@ -797,7 +797,7 @@ static void handle_pppoe(void)
 static void handle_spppoe(void)
 {
 	stop_service_f("ttraff");
-	stop_service_f("wan");
+	stop_service_force_f("wan");
 }
 
 static void handle_filters(void)
@@ -987,7 +987,7 @@ static void handle_upgrade(void)
 	void *handle = NULL;
 
 	handle = stop_service_nofree_f("ttraff", handle);
-	handle = stop_service_nofree_f("wan", handle);
+	handle = stop_service_nofree_force_f("wan", handle);
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = stop_service_nofree_f("zebra", handle);
 #endif
@@ -1038,7 +1038,7 @@ static void handle_wireless(void)
 #endif
 		{
 			handle = stop_service_nofree_f("ttraff", handle);
-			handle = stop_service_nofree_f("wan", handle);
+			handle = stop_service_nofree_force_f("wan", handle);
 		}
 	}
 #ifdef HAVE_VLANTAGGING
@@ -1089,7 +1089,7 @@ static void handle_wireless(void)
 		if (!nvram_match("wan_proto", "3g"))
 #endif
 		{
-			handle = startstop_nofree("wan_boot", handle);
+			handle = start_service_nofree_force("wan_boot", handle);
 			handle = start_service_nofree_f("ttraff", handle);
 		}
 	}
@@ -1131,7 +1131,7 @@ static void handle_wireless_2(void)
 #endif
 		{
 			handle = stop_service_nofree_f("ttraff", handle);
-			handle = stop_service_nofree_f("wan", handle);
+			handle = stop_service_nofree_force_f("wan", handle);
 		}
 	}
 #ifdef HAVE_VLANTAGGING
@@ -1191,7 +1191,7 @@ static void handle_wireless_2(void)
 		if (!nvram_match("wan_proto", "3g"))
 #endif
 		{
-			handle = startstop_nofree("wan_boot", handle);
+			handle = start_service_nofree_force("wan_boot", handle);
 			handle = start_service_nofree_f("ttraff", handle);
 		}
 	}

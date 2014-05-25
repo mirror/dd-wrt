@@ -30,12 +30,15 @@
 #define	_PATH_CONSOLE	"/dev/console"
 
 #define start_service(a) sysprintf("startservice %s",a);
+#define start_service_force(a) sysprintf("startservice %s -f",a);
 #define start_service_f(a) sysprintf("startservice_f %s",a);
 #define start_services() system("startservices");
 #define start_single_service() system("start_single_service");
 #define stop_service(a) sysprintf("stopservice %s",a);
+#define stop_service_force(a) sysprintf("stopservice %s -f",a);
 #define stop_running(a) sysprintf("stop_running");
 #define stop_service_f(a) sysprintf("stopservice_f %s",a);
+#define stop_service_force_f(a) sysprintf("stopservice_f %s -f",a);
 #define stop_services() system("stopservices");
 #define startstop(a) sysprintf("startstop %s",a);
 #define startstop_f(a) sysprintf("startstop_f %s",a);
@@ -669,7 +672,7 @@ int main(int argc, char **argv)
 #endif
 			cprintf("STOP WAN\n");
 			stop_service_f("ttraff");
-			stop_service_f("wan");
+			stop_service_force_f("wan");
 			stop_service_f("mkfiles");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 			stop_service_f("wlconf");
@@ -745,7 +748,7 @@ int main(int argc, char **argv)
 			start_service("vlantagging");
 			start_service("bridgesif");
 #endif
-			startstop("wan_boot");
+			start_service_force("wan_boot");
 			start_service_f("ttraff");
 
 			cprintf("diag STOP LED\n");
@@ -782,9 +785,9 @@ int main(int argc, char **argv)
 				// startup script
 				// (siPath impl)
 				cprintf("start modules\n");
-				startstop_f("modules");
+				startservice_force_f("modules");
 #ifdef HAVE_MILKFISH
-				startstop_f("milkfish_boot");
+				startservice_force_f("milkfish_boot");
 #endif
 				if (nvram_invmatch("rc_custom", ""))	// create
 					// custom

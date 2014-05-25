@@ -128,9 +128,23 @@ int start_service(char *name)
 	return 0;
 }
 
+int start_service_force(char *name)
+{
+	RELEASESTOPPED("start");
+	handle_service("start",name);
+	return 0;
+}
+
 
 int start_service_f(char *name)
 {
+	FORK(handle_service("start",name));
+	return 0;
+}
+
+int start_service_force_f(char *name)
+{
+	RELEASESTOPPED("start");
 	FORK(handle_service("start",name));
 	return 0;
 }
@@ -227,13 +241,32 @@ void stop_service(char *name)
 	handle_service("stop", name);
 }
 
+void stop_service_force(char *name)
+{
+	RELEASESTOPPED("stop");
+	handle_service("stop", name);
+}
+
 void stop_service_f(char *name)
 {
 	FORK(handle_service("stop", name));
 }
 
+void stop_service_force_f(char *name)
+{
+	RELEASESTOPPED("stop");
+	FORK(handle_service("stop", name));
+}
+
 void *stop_service_nofree(char *name, void *handle)
 {
+	handle_service("stop", name);
+	return handle;
+}
+
+void *stop_service_nofree_force(char *name, void *handle)
+{
+	RELEASESTOPPED("stop");
 	handle_service("stop", name);
 	return handle;
 }
@@ -244,10 +277,19 @@ void *stop_service_nofree_f(char *name, void *handle)
 	return handle;
 }
 
+void *stop_service_nofree_force_f(char *name, void *handle)
+{
+	RELEASESTOPPED("stop");
+	FORK(handle_service("stop", name));
+	return handle;
+}
+
 void startstop(char *name)
 {
 	void *handle = NULL;
 
+	RELEASESTOPPED("stop");
+	RELEASESTOPPED("start");
 	cprintf("stop and start service\n");
 	handle = stop_service_nofree(name, handle);
 	handle = start_service_nofree(name, handle);
@@ -269,6 +311,8 @@ int startstop_main(int argc, char **argv)
 int startstop_main_f(int argc, char **argv)
 {
 	char *name = argv[1];
+	RELEASESTOPPED("stop");
+	RELEASESTOPPED("start");
 	FORK(startstop_main(argc, argv));
 	return 0;
 }
@@ -276,6 +320,8 @@ int startstop_main_f(int argc, char **argv)
 void *startstop_nofree(char *name, void *handle)
 {
 	cprintf("stop and start service (nofree)\n");
+	RELEASESTOPPED("stop");
+	RELEASESTOPPED("start");
 	stop_service(name);
 	start_service(name);
 	return handle;
