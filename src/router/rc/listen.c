@@ -387,7 +387,7 @@ int main(int argc, char *argv[])
 			switch (ret) {
 			case L_SUCCESS:
 				DEBUG1("**************** received an lan to wan packet **************\n\n");
-				startservice_force("force_to_dial");
+				start_service_force("force_to_dial");
 				if (nvram_match("wan_proto", "heartbeat"))
 					exit(0);
 

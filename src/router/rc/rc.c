@@ -124,7 +124,7 @@ int redial_main(int argc, char **argv)
 #ifdef HAVE_PPPOE
 				if (nvram_match("wan_proto", "pppoe")) {
 					sleep(1);
-					startservice_force("wan_redial");
+					start_service_force("wan_redial");
 				}
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM) || defined(HAVE_PPPOEDUAL)
 				else
@@ -134,7 +134,7 @@ int redial_main(int argc, char **argv)
 #ifdef HAVE_PPPOEDUAL
 				if (nvram_match("wan_proto", "pppoe_dual")) {
 					sleep(1);
-					startservice_force("wan_redial");
+					start_service_force("wan_redial");
 				}
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT) || defined(HAVE_PPPOATM)
 				else
@@ -144,7 +144,7 @@ int redial_main(int argc, char **argv)
 #ifdef HAVE_PPPOATM
 				if (nvram_match("wan_proto", "pppoa")) {
 					sleep(1);
-					startservice_force("wan_redial");
+					start_service_force("wan_redial");
 				}
 #if defined(HAVE_PPTP) || defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
 				else
@@ -156,7 +156,7 @@ int redial_main(int argc, char **argv)
 					stop_service_force("pptp");
 					unlink("/tmp/services/pptp.stop");
 					sleep(1);
-					startservice_force("wan_redial");
+					start_service_force("wan_redial");
 				}
 #if defined(HAVE_L2TP) || defined(HAVE_HEARTBEAT)
 				else
@@ -167,7 +167,7 @@ int redial_main(int argc, char **argv)
 					stop_service_force("l2tp");
 					unlink("/tmp/services/l2tp.stop");
 					sleep(1);
-					startservice_force("wan_redial");
+					start_service_force("wan_redial");
 				}
 #ifdef HAVE_HEARTBEAT
 				else
@@ -191,13 +191,13 @@ int redial_main(int argc, char **argv)
 #ifdef HAVE_3G
 				else if (nvram_match("wan_proto", "3g")) {
 					sleep(1);
-					startservice_force("wan_redial");
+					start_service_force("wan_redial");
 				}
 #endif
 #ifdef HAVE_IPETH
 				else if (nvram_match("wan_proto", "iphone")) {
 					sleep(1);
-					startservice_force("wan_redial");
+					start_service_force("wan_redial");
 				}
 #endif
 				exit(0);
