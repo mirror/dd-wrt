@@ -124,10 +124,6 @@ int write_nvram(char *name, char *nv)
 
 int usejffs = 0;
 
-void start_ntpc(void)
-{
-// dummy
-}
 void stop_ntpc(void)
 {
 	stop_process("ntpclient", "Network Time Protocol client");
