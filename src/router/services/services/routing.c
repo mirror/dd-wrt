@@ -42,29 +42,33 @@ int zebra_init(void)
 	char *sub;
 	char var[32], *next;
 	char daemons[64];
+	int services=0;
 	sprintf(daemons, "watchquagga -dz -r '%%s -d' zebra");
 
 	sub = nvram_safe_get("wk_mode");
 	foreach(var, sub, next) {
-		if (!strcmp(var, "gateway")) {
-			printf("zebra disabled.\n");
-			return 0;
-		} else if (!strcmp(var, "ospf")) {
+		if (!strcmp(var, "ospf")) {
+			services++;
 			zebra_ospf_init();
 			strcat(daemons, " ospfd");
 		} else if (!strcmp(var, "ospf6")) {
+			services++;
 			zebra_ospf6_init();
 			strcat(daemons, " ospf6d");
 		} else if (!strcmp(var, "bgp")) {
+			services++;
 			zebra_bgp_init();
 			strcat(daemons, " bgpd");
 		} else if (!strcmp(var, "router")) {
+			services++;
 			zebra_ripd_init();
 			strcat(daemons, " ripd");
 		}
 	}
-	dd_syslog(LOG_INFO, "zebra : zebra (%s) successfully initiated\n", daemons);
-	system(daemons);
+	if (services) {
+		dd_syslog(LOG_INFO, "zebra : zebra (%s) successfully initiated\n", daemons);
+		system(daemons);
+	}
 	return 0;
 }
 
