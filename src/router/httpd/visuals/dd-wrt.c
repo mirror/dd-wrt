@@ -1669,11 +1669,11 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, vlan_name, buffer, tag);
 		//tag number
 		sprintf(vlan_name, "vlantag%d", count);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.tg_number)</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.tg_number);</script>&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", vlan_name, port);
 		//priority
 		sprintf(vlan_name, "vlanprio%d", count);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio)</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio);</script>&nbsp;");
 		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", prio);
 
 		websWrite(wp,
@@ -1694,11 +1694,11 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, vlan_name, buffer, "");
 		sprintf(vlan_name, "vlantag%d", i);
 		//tag number
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.tg_number)</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.tg_number);</script>&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"0\" />\n", vlan_name);
 		//priority
 		sprintf(vlan_name, "vlanprio%d", i);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio)</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio);</script>&nbsp;");
 		showOptions(wp, vlan_name, "0 1 2 3 4 5 6 7", "0");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"vlan_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
@@ -1757,7 +1757,7 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		char *netmask = nvram_nget("%s_netmask", interface);
 
 		if (strlen(ipaddr) > 0 && strlen(netmask) > 0) {
-			websWrite(wp, "<script type=\"text/javascript\">Capture(networking.iface)</script> %s: IP %s/%s\n", interface, ipaddr, netmask);
+			websWrite(wp, "<script type=\"text/javascript\">Capture(networking.iface);</script> %s: IP %s/%s\n", interface, ipaddr, netmask);
 		}
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\">DHCP %d</div>\n", count);
@@ -1768,14 +1768,14 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		showOptions(wp, vlan_name, "On Off", dhcpon);
 		// start
 		sprintf(vlan_name, "mdhcpstart%d", count);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.start)</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(share.start);</script>&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n", vlan_name, start);
 		// max
 		sprintf(vlan_name, "mdhcpmax%d", count);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.max)</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.max);</script>&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" value=\"%s\" />\n", vlan_name, max);
 		sprintf(vlan_name, "mdhcpleasetime%d", count);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.leasetime)</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.leasetime);</script>&nbsp;");
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"5\" value=\"%s\" />\n", vlan_name, leasetime);
 		// 
 		websWrite(wp,
@@ -2123,13 +2123,13 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		char vlan_name[32];
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(\"networking.assign\")</script> %d</div>\n", count);
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.assign);</script> %d</div>\n", count);
 		sprintf(vlan_name, "bridge%d", count);
 		showOptions(wp, vlan_name, finalbuffer, tag);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(\"networking.bridge\")</script><script type=\"text/javascript\">Capture(\"networking.iface\")</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.bridge);</script><script type=\"text/javascript\">Capture(networking.iface);</script>&nbsp;");
 		sprintf(vlan_name, "bridgeif%d", count);
 		showOptions(wp, vlan_name, bufferif, port);
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(\"networking.prio\")</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio);</script>&nbsp;");
 		sprintf(vlan_name, "bridgeifprio%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n", vlan_name, prio != NULL ? prio : "63");
 		websWrite(wp,
@@ -2144,13 +2144,13 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 		char vlan_name[32];
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(\"networking.assign\")</script> %d</div>\n", i);
+		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(networking.assign)</script> %d</div>\n", i);
 		sprintf(vlan_name, "bridge%d", i);
 		showOptions(wp, vlan_name, finalbuffer, "");
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(\"networking.iface\")</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.iface)</script>&nbsp;");
 		sprintf(vlan_name, "bridgeif%d", i);
 		showOptions(wp, vlan_name, bufferif, "");
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(\"networking.prio\")</script>&nbsp;");
+		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio)</script>&nbsp;");
 		sprintf(vlan_name, "bridgeifprio%d", i);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", vlan_name, "63");
 		websWrite(wp,
@@ -3994,9 +3994,9 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
 			websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-			websWrite(wp, "<option value=\"upper\" %s><script type=\"text/javascript\">Capture(\"wl_basic.upper\");</script></option>\n",
+			websWrite(wp, "<option value=\"upper\" %s><script type=\"text/javascript\">Capture(wl_basic.upper);</script></option>\n",
 				  nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "<option value=\"lower\" %s><script type=\"text/javascript\">Capture(\"wl_basic.lower\");</script></option>\n",
+			websWrite(wp, "<option value=\"lower\" %s><script type=\"text/javascript\">Capture(wl_basic.lower);</script></option>\n",
 				  nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "</select>\n");
 
@@ -4420,9 +4420,9 @@ if (!strcmp(prefix, "wl1"))
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_wide)</script></div>\n");
 				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
-				websWrite(wp, "<option value=\"upper\" %s><script type=\"text/javascript\">Capture(\"wl_basic.upper\");</script></option>\n",
+				websWrite(wp, "<option value=\"upper\" %s><script type=\"text/javascript\">Capture(wl_basic.upper);</script></option>\n",
 					  nvram_nmatch("upper", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
-				websWrite(wp, "<option value=\"lower\" %s><script type=\"text/javascript\">Capture(\"wl_basic.lower\");</script></option>\n",
+				websWrite(wp, "<option value=\"lower\" %s><script type=\"text/javascript\">Capture(wl_basic.lower);</script></option>\n",
 					  nvram_nmatch("lower", "%s_nctrlsb", prefix) ? "selected=\\\"selected\\\"" : "");
 				websWrite(wp, "</select>\n");
 
