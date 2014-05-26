@@ -48,7 +48,7 @@ void config_macs(char *wlifname)	// reconfigure macs which
 	char *next;
 	char var[80];
 
-	if (!strcmp(mbss, "0") || nvram_nmatch("apsta", "wl%d_mode", unit)) {
+	if (!strcmp(mbss, "0") || nvram_nmatch("apsta", "wl%d_mode", unit) || nvram_nmatch("ap", "wl%d_mode", unit)) {
 		if (vifs != NULL)
 			foreach(var, vifs, next) {
 			eval("ifconfig", "%s", "down", var);
