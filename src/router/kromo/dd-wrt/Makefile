@@ -744,6 +744,7 @@ endif
 
 ifneq ($(CONFIG_WEBSERVER),y)
 	rm -f $(INSTALLDIR)/www/Lighttpd.asp
+	rm -f $(INSTALLDIR)/www/help/HLighttpd.asp
 endif
 
 ifneq ($(CONFIG_FTP),y)
