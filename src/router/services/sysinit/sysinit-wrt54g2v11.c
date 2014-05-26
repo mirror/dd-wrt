@@ -171,9 +171,6 @@ int check_pmon_nv(void)
 void start_overclocking(void)
 {
 }
-void stop_overclocking(void)
-{
-}
 
 char *enable_dtag_vlan(int enable)
 {
