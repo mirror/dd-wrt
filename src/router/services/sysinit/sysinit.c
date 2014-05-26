@@ -778,9 +778,6 @@ void start_modules(void)
 	return;
 }
 
-void stop_wanup(void)
-{
-}
 void start_wanup(void)
 {
 	runStartup("/etc/config", ".wanup");
