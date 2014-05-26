@@ -528,7 +528,7 @@ static void do_madwifi_check(void)
 						eval("ifconfig", wdsdev, "down");
 						sleep(1);
 						eval("ifconfig", wdsdev, "up");
-						eval("startstop", "set_routes");
+						eval("startservice", "set_routes", "-f");
 					}
 				}
 			}
@@ -574,7 +574,7 @@ static void do_madwifi_check(void)
 						sprintf(power, "%s_txpwrdbm", dev);
 						int newpower = atoi(nvram_default_get(power, "16"));
 						sysprintf("iwconfig %s txpower %ddBm", dev, newpower);
-						eval("startstop", "set_routes");
+						eval("startservice", "set_routes", "-f");
 						lastchans[i] = -1;
 					} else if (!notstarted[i]) {
 						notstarted[i] = 1;
@@ -590,7 +590,7 @@ static void do_madwifi_check(void)
 						if (vifs != NULL && strlen(vifs) > 0) {
 							foreach(var, vifs, next) {
 								eval("ifconfig", var, "up");
-								eval("startstop", "set_routes");
+								eval("startservice", "set_routes", "-f");
 							}
 						}
 

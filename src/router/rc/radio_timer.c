@@ -19,6 +19,7 @@
 #include <wlutils.h>
 
 #define start_service(a) eval("startservice",a);
+#define start_service_force(a) eval("startservice",a, "-f");
 #define stop_service(a) eval("stopservice",a);
 #define startstop(a) sysprintf("startstop %s",a);
 #define startstop_f(a) sysprintf("startstop_f %s",a);
@@ -87,13 +88,13 @@ int main(int argc, char **argv)
 
 				case 1:	// 01 - turn radio on
 					syslog(LOG_DEBUG, "Turning radio 0 on\n");
-					startstop("radio_on_0");
+					start_service_force("radio_on_0");
 
 					break;
 
 				case 2:	// 10 - turn radio off
 					syslog(LOG_DEBUG, "Turning radio 0 off\n");
-					startstop("radio_off_0");
+					start_service_force("radio_off_0");
 					break;
 				}
 				
@@ -104,12 +105,12 @@ int main(int argc, char **argv)
 
 				case 1:	// 01 - turn radio on
 					syslog(LOG_DEBUG, "Turning radio 1 on\n");
-					startstop("radio_on_1");
+					start_service_force("radio_on_1");
 					break;
 
 				case 2:	// 10 - turn radio off
 					syslog(LOG_DEBUG, "Turning radio 1 off\n");
-					startstop("radio_off_1");
+					start_service_force("radio_off_1");
 					break;
 				}
 				needchange = 0;

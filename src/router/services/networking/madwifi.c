@@ -631,10 +631,6 @@ static void checkhostapd(char *ifname)
 			}
 		}
 	}
-
-}
-void stop_checkhostapd(void) { // dummy
-
 }
 
 void start_checkhostapd(void)
