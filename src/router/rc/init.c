@@ -723,7 +723,7 @@ int main(int argc, char **argv)
 #ifndef HAVE_RB500
 			start_service_f("resetbutton");
 #endif
-			startstop("setup_vlans");
+			start_service_force("setup_vlans");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 			start_service("wlconf");
 #endif
@@ -761,13 +761,13 @@ int main(int argc, char **argv)
 #ifdef HAVE_RADIOOFF
 			if (nvram_match("radiooff_button", "1")
 			    && nvram_match("radiooff_boot_off", "1")) {
-				startstop("radio_off");
+				start_service_force("radio_off");
 				led_control(LED_SEC0, LED_OFF);
 				led_control(LED_SEC1, LED_OFF);
 			} else
 #endif
 			{
-				startstop("radio_on");
+				start_service_force("radio_on");
 			}
 #endif
 			start_service_f("radio_timer");

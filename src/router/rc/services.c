@@ -835,7 +835,7 @@ static void handle_routing(void)
 	handle = stop_service_nofree("zebra", handle);
 #endif
 	handle = startstop_nofree("firewall", handle);
-	handle = startstop_nofree_f("set_routes", handle);
+	handle = start_service_nofree_force_f("set_routes", handle);
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = start_service_nofree_f("zebra", handle);
 #endif

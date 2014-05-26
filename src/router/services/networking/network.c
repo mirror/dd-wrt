@@ -4124,17 +4124,10 @@ void start_wan(int status)
 	cprintf("done()()()\n");
 }
 
-void stop_wan_boot(void) // dummy
-{
-}
 
 void start_wan_boot(void)
 {
 	start_wan(BOOT);
-}
-
-void stop_wan_redial(void) // dummy
-{
 }
 
 void start_wan_redial(void)
@@ -4511,9 +4504,6 @@ void stop_wan(void)
 #endif
 
 	cprintf("done\n");
-}
-void stop_set_routes(void) {
-    // dummy
 }
 
 void start_set_routes(void)

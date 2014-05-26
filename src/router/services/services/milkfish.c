@@ -51,9 +51,6 @@ void start_milkfish(void)
 		dd_syslog(LOG_INFO, "Milkfish service successfully started\n");
 	}
 }
-void stop_milkfish_boot(void) {
- // dummy
-}
 
 void start_milkfish_boot(void)
 {
