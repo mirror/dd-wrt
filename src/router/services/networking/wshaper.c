@@ -682,6 +682,10 @@ int svqos_iptables(void)
 	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --save");
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 
+#ifndef HAVE_80211AC
+	// seems to crash northstar
+
+
 	// http://svn.dd-wrt.com:8000/ticket/2803 && http://svn.dd-wrt.com/ticket/2811   
 	do {
 		if (sscanf(qos_pkts, "%3s ", pkt_filter) < 1)
@@ -689,6 +693,7 @@ int svqos_iptables(void)
 		sysprintf("iptables -t mangle -A FILTER_OUT -p tcp -m tcp --tcp-flags %s %s -m length --length :64 -j CLASSIFY --set-class 1:100", pkt_filter, pkt_filter);
 
 	} while ((qos_pkts = strpbrk(++qos_pkts, "|")) && qos_pkts++);
+#endif
 // obsolete
 //      system2
 //          ("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
