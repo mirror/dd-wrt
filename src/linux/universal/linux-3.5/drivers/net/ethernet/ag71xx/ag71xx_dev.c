@@ -689,6 +689,9 @@ void __init ar71xx_add_device_eth(unsigned int id)
 
 	pdata = pdev->dev.platform_data;
 
+	pdata->max_frame_len = 1540;
+	pdata->desc_pktlen_mask = 0xfff;
+
 	err = ar71xx_setup_phy_if_mode(id, pdata);
 	if (err) {
 		printk(KERN_ERR
