@@ -770,10 +770,11 @@ spiflash_init(si_t *sih)
 			spiflash.numblocks = 64;
 			break;
 		case 0x16:
+		case 0x17:
 			/* ST M25P64 64 Mbit Serial Flash */
 			spiflash.numblocks = 128;
 			break;
-		case 0x17:
+		
 		case 0x18:
 			/* ST M25FL128 128 Mbit Serial Flash */
 			spiflash.numblocks = 256;
