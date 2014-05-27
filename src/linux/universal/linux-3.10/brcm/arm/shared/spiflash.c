@@ -774,7 +774,6 @@ spiflash_init(si_t *sih)
 			/* ST M25P64 64 Mbit Serial Flash */
 			spiflash.numblocks = 128;
 			break;
-		
 		case 0x18:
 			/* ST M25FL128 128 Mbit Serial Flash */
 			spiflash.numblocks = 256;
