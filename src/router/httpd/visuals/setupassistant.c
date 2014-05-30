@@ -1969,7 +1969,7 @@ void ej_sas_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp,
-			  "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_maxusers)</script></div><input class=\"num\" name=\"dhcp_num\"size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,253,idx.dhcp_maxusers)\" value=\"%s\" %s/></div>\n",
+			  "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_maxusers)</script></div><input class=\"num\" name=\"dhcp_num\"size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,999,idx.dhcp_maxusers)\" value=\"%s\" %s/></div>\n",
 			  nvram_selget(wp, "dhcp_num"), nvram_selmatch(wp, "lan_proto", "static") ? "disabled style=\"background: #e0e0e0\"" : "");
 	}
 
