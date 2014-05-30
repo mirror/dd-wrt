@@ -397,11 +397,11 @@ static void handle_index(void)
 	stop_running_main(0,NULL);
 
 #ifdef HAVE_VLANTAGGING
-	handle = start_service_nofree("bridging", handle);
+	handle = start_service_nofree_f("bridging", handle);
 #endif
-	handle = start_service_nofree("lan", handle);
+	handle = start_service_nofree_force_f("lan", handle);
 #ifdef HAVE_BONDING
-	handle = start_service_nofree("bonding", handle);
+	handle = start_service_nofree_f("bonding", handle);
 #endif
 	handle = start_service_nofree_force("wan_boot", handle);
 	handle = start_service_nofree_f("ttraff", handle);
@@ -428,19 +428,18 @@ static void handle_index(void)
 #endif
 	handle = start_service_nofree_f("radio_timer", handle);
 	handle = startstop_nofree("firewall", handle);
-	handle = startstop_nofree_f("httpd", handle);	// httpd will not
+	// httpd will not
 	// accept connection
 	// anymore on wan/lan 
 	// ip changes changes
-	handle = startstop_nofree_f("cron", handle);	// httpd will not
-	// accept connection
-	// anymore on wan/lan 
-	// ip changes changes
+	sleep(2);
+	handle = startstop_nofree_f("httpd", handle);
+	handle = startstop_nofree_f("cron", handle);
 //      handle = start_service_nofree_f("anchorfreednat", handle);
-	handle = start_service_nofree_force("wan_boot", handle);
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
+	
 //    if( handle )
 //      dlclose( handle );
 }
@@ -544,6 +543,8 @@ static void handle_hotspot(void)
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = start_service_nofree("zebra", handle);
 #endif
+	//since start/stop is faster now we need to sleep, otherwise httpd is stopped/started while response is sent to client
+	sleep(2);
 	startstop_f("httpd");	// httpd will not accept connection anymore
 
 	FORK(eval("/etc/config/http-redirect.firewall"));
@@ -1096,8 +1097,9 @@ static void handle_wireless(void)
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	handle = start_service_nofree("zebra", handle);
 #endif
-	startstop_f("httpd");	// httpd will not accept connection anymore
-	// on wan/lan ip changes changes
+	//since start/stop is faster now we need to sleep, otherwise httpd is stopped/started while response is sent to client
+	sleep(2);
+	startstop_f("httpd");	// httpd will not accept connection anymore on wan/lan ip changes changes
 //    if( handle )
 //      dlclose( handle );
 
