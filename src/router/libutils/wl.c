@@ -2331,7 +2331,7 @@ void radio_off(int idx)
 		eval("stopservice", "nas");
 	}
 	if (idx != -1) {
-		dd_syslog(LOG_INFO, "radio_timer idx: %d %s\n", idx, get_wl_instance_name(idx));
+		fprintf(stderr, "radio_off(%d) interface: %s\n", idx, get_wl_instance_name(idx));
 		eval("wl", "-i", get_wl_instance_name(idx), "radio", "off");
 		if (idx == 0)
 			led_control(LED_WLAN0, LED_OFF);
@@ -2350,7 +2350,7 @@ void radio_off(int idx)
 		led_control(LED_WLAN1, LED_OFF);
 	}
 	//fix ticket 2991
-	eval("startservice", "nas");
+	eval("startservice", "nas", "-f");
 }
 
 void radio_on(int idx)
@@ -2360,7 +2360,7 @@ void radio_on(int idx)
 	}
 	if (idx != -1) {
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx))
-			dd_syslog(LOG_INFO, "radio_timer idx: %d %s \n", idx, get_wl_instance_name(idx));
+			fprintf(stderr, "radio_on(%d) interface: %s \n", idx, get_wl_instance_name(idx));
 		eval("wl", "-i", get_wl_instance_name(idx), "radio", "on");
 		if (idx == 0)
 			led_control(LED_WLAN0, LED_ON);
@@ -2378,8 +2378,8 @@ void radio_on(int idx)
 		led_control(LED_WLAN0, LED_ON);
 		led_control(LED_WLAN1, LED_ON);
 	}
-	eval("startservice", "nas");
-	eval("startservice", "guest_nas");
+	eval("startservice", "nas", "-f");
+	eval("startservice", "guest_nas", "-f");
 }
 
 /*
