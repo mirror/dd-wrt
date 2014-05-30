@@ -102,7 +102,7 @@ void checknas(void)		// for broadcom v24 only
 		// processes
 	{
 		sysprintf("stopservice nas");
-		sysprintf("startservice_f nas");
+		sysprintf("startservice nas -f");
 	}
 
 	return;
@@ -116,8 +116,7 @@ void checknas(void)		// for broadcom v24 only
 		/* 
 		 * software wlan led control 
 		 */
-void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro
-					// builds.
+void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro builds.
 {
 #if defined(HAVE_MICRO) && !defined(HAVE_ADM5120) && !defined(HAVE_WRK54G)
 	int brand;
