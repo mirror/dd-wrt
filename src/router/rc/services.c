@@ -112,7 +112,7 @@ int start_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_WEBSERVER
 	handle = start_service_nofree_f("lighttpd", handle);
-#endif	
+#endif
 #ifdef HAVE_TRANSMISSION
 	handle = start_service_nofree_f("transmission", handle);
 #endif
@@ -349,7 +349,7 @@ int stop_services_main(int argc, char **argv)
 #ifdef HAVE_GPSI
 	handle = stop_service_nofree_f("gps", handle);
 #endif
-	stop_running_main(0,NULL);
+	stop_running_main(0, NULL);
 //    if( handle )
 //      dlclose( handle );
 
@@ -368,33 +368,33 @@ static void handle_index(void)
 	void *handle = NULL;
 
 	handle = stop_service_nofree_force_f("wan", handle);
-	handle = stop_service_nofree_f("radio_timer", handle); //
+	handle = stop_service_nofree_f("radio_timer", handle);	//
 #ifdef HAVE_MULTICAST
-	handle = stop_service_nofree_f("igmp_proxy", handle); //
+	handle = stop_service_nofree_f("igmp_proxy", handle);	//
 #endif
 #ifdef HAVE_UDPXY
 	handle = stop_service_nofree_f("udpxy", handle);
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	handle = stop_service_nofree_f("nas", handle); //
+	handle = stop_service_nofree_f("nas", handle);	//
 #endif
 #ifdef HAVE_MADWIFI
 	handle = stop_service_nofree_f("stabridge", handle);
 #endif
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree_f("bridgesif", handle); //
-	handle = stop_service_nofree_f("vlantagging", handle); //
+	handle = stop_service_nofree_f("bridgesif", handle);	//
+	handle = stop_service_nofree_f("vlantagging", handle);	//
 #endif
 #ifdef HAVE_BONDING
-	handle = stop_service_nofree_f("bonding", handle); //
+	handle = stop_service_nofree_f("bonding", handle);	//
 #endif
-	handle = stop_service_nofree_f("lan", handle); //
+	handle = stop_service_nofree_f("lan", handle);	//
 #ifdef HAVE_VLANTAGGING
-	handle = stop_service_nofree_f("bridging", handle); //
+	handle = stop_service_nofree_f("bridging", handle);	//
 #endif
-	handle = stop_service_nofree_f("ttraff", handle); //
+	handle = stop_service_nofree_f("ttraff", handle);	//
 
-	stop_running_main(0,NULL);
+	stop_running_main(0, NULL);
 
 #ifdef HAVE_VLANTAGGING
 	handle = start_service_nofree_f("bridging", handle);
@@ -432,14 +432,13 @@ static void handle_index(void)
 	// accept connection
 	// anymore on wan/lan 
 	// ip changes changes
-	sleep(2);
-	handle = startstop_nofree_f("httpd", handle);
+	handle = startstop_nofree_fdelay("httpd", handle, 2);
 	handle = startstop_nofree_f("cron", handle);
 //      handle = start_service_nofree_f("anchorfreednat", handle);
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
-	
+
 //    if( handle )
 //      dlclose( handle );
 }
@@ -497,7 +496,7 @@ static void handle_hotspot(void)
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree_f("bridging", handle);
 #endif
-	stop_running_main(0,NULL);
+	stop_running_main(0, NULL);
 
 #ifdef HAVE_WIFIDOG
 	handle = startstop_nofree_f("wifidog", handle);
@@ -544,8 +543,7 @@ static void handle_hotspot(void)
 	handle = start_service_nofree("zebra", handle);
 #endif
 	//since start/stop is faster now we need to sleep, otherwise httpd is stopped/started while response is sent to client
-	sleep(2);
-	startstop_f("httpd");	// httpd will not accept connection anymore
+	startstop_fdelay("httpd", 2);	// httpd will not accept connection anymore
 
 	FORK(eval("/etc/config/http-redirect.firewall"));
 	FORK(eval("/etc/config/smtp-redirect.firewall"));
@@ -637,7 +635,7 @@ static void handle_services(void)
 #endif
 #ifdef HAVE_ZABBIX
 	handle = startstop_nofree_f("zabbix", handle);
-#endif 
+#endif
 //      handle = start_service_nofree_f("anchorfreednat", handle);
 //    if( handle )
 //      dlclose( handle );
@@ -661,7 +659,7 @@ static void handle_nassrv(void)
 	handle = stop_service_nofree_f("transmission", handle);
 #endif
 
-	stop_running_main(0,NULL);
+	stop_running_main(0, NULL);
 
 #ifdef HAVE_SAMBA3
 	handle = start_service_nofree_f("samba3", handle);
@@ -697,7 +695,7 @@ static void handle_management(void)
 	handle = stop_service_nofree_f("ipv6", handle);
 #endif
 
-	stop_running_main(0,NULL);
+	stop_running_main(0, NULL);
 
 	handle = start_service_nofree_f("udhcpd", handle);
 	handle = start_service_nofree_f("cron", handle);
@@ -723,7 +721,7 @@ static void handle_management(void)
 	handle = stop_service_nofree("wland", handle);
 	handle = startstop_nofree_f("wshaper", handle);
 	handle = start_service_nofree_f("wland", handle);
-	handle = startstop_nofree_f("httpd", handle);
+	handle = startstop_nofree_fdelay("httpd", handle, 2);
 #ifdef HAVE_NOCAT
 	handle = startstop_nofree_f("splashd", handle);
 #endif
@@ -767,7 +765,7 @@ static void handle_pppoe(void)
 	handle = stop_service_nofree_f("ttraff", handle);
 	handle = stop_service_nofree_force_f("wan", handle);
 
-	stop_running_main(0,NULL);
+	stop_running_main(0, NULL);
 
 #ifdef HAVE_VLANTAGGING
 	handle = start_service_nofree("bridging", handle);
@@ -999,7 +997,7 @@ static void handle_upgrade(void)
 	handle = stop_service_nofree_f("upnp", handle);
 #endif
 	handle = stop_service_nofree_f("cron", handle);
-	stop_running_main(0,NULL);
+	stop_running_main(0, NULL);
 //    if( handle )
 //      dlclose( handle );
 
@@ -1052,7 +1050,7 @@ static void handle_wireless(void)
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree_f("bridging", handle);
 #endif
-	stop_running_main(0,NULL);
+	stop_running_main(0, NULL);
 	handle = stop_service_nofree("lan", handle);
 #ifdef HAVE_VLANTAGGING
 	handle = start_service_nofree("bridging", handle);
@@ -1098,8 +1096,7 @@ static void handle_wireless(void)
 	handle = start_service_nofree("zebra", handle);
 #endif
 	//since start/stop is faster now we need to sleep, otherwise httpd is stopped/started while response is sent to client
-//	sleep(2);
-//	startstop_f("httpd");	// httpd will not accept connection anymore on wan/lan ip changes changes
+	startstop_fdelay("httpd", 2);	// httpd will not accept connection anymore on wan/lan ip changes changes
 //    if( handle )
 //      dlclose( handle );
 
@@ -1123,7 +1120,7 @@ static void handle_wireless_2(void)
 #ifdef HAVE_MADWIFI
 	handle = stop_service_nofree_f("stabridge", handle);
 #endif
-	if (getSTA() || getWET() || wanchanged 
+	if (getSTA() || getWET() || wanchanged
 #ifdef HAVE_MADWIFI
 	    || getWDSSTA()
 #endif
@@ -1147,7 +1144,7 @@ static void handle_wireless_2(void)
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree_f("bridging", handle);
 #endif
-	stop_running_main(0,NULL);
+	stop_running_main(0, NULL);
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	handle = start_service_nofree("wlconf", handle);
 #endif
@@ -1178,7 +1175,7 @@ static void handle_wireless_2(void)
 #ifdef HAVE_3G
 		if (!nvram_match("wan_proto", "3g"))
 #endif
-			startstop_f("httpd");	// httpd will not accept connection anymore
+			startstop_fdelay("httpd", 2);	// httpd will not accept connection anymore
 	}
 	// on wan/lan ip changes changes
 #ifdef HAVE_MADWIFI
