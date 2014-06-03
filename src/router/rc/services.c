@@ -1098,8 +1098,8 @@ static void handle_wireless(void)
 	handle = start_service_nofree("zebra", handle);
 #endif
 	//since start/stop is faster now we need to sleep, otherwise httpd is stopped/started while response is sent to client
-	sleep(2);
-	startstop_f("httpd");	// httpd will not accept connection anymore on wan/lan ip changes changes
+//	sleep(2);
+//	startstop_f("httpd");	// httpd will not accept connection anymore on wan/lan ip changes changes
 //    if( handle )
 //      dlclose( handle );
 
