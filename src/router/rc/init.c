@@ -667,16 +667,16 @@ int main(int argc, char **argv)
 			cprintf("STOP SERVICES\n");
 
 			stop_services();
-			stop_service_f("radio_timer");
+			stop_service("radio_timer");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-			stop_service_f("nas");
+			stop_service("nas");
 #endif
 			cprintf("STOP WAN\n");
-			stop_service_f("ttraff");
-			stop_service_force_f("wan");
-			stop_service_f("mkfiles");
+			stop_service("ttraff");
+			stop_service_force("wan");
+			stop_service("mkfiles");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-			stop_service_f("wlconf");
+			stop_service("wlconf");
 #endif
 			cprintf("STOP LAN\n");
 #ifdef HAVE_MADWIFI
@@ -695,9 +695,8 @@ int main(int argc, char **argv)
 #endif
 			stop_service("lan");
 #ifndef HAVE_RB500
-			stop_service_f("resetbutton");
+			stop_service("resetbutton");
 #endif
-			stop_running();
 #ifdef HAVE_IPV6
 			stop_service("ipv6");
 #endif
