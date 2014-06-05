@@ -12,6 +12,20 @@ RANDFILE		= $ENV::HOME/.rnd
 #oid_file		= $ENV::HOME/.oid
 oid_section		= new_oids
 
+
+openssl_conf = openssl_def
+
+[openssl_def]
+engines = openssl_engines
+
+[openssl_engines]
+af_alg = af_alg_engine
+
+[af_alg_engine]
+default_algorithms = ALL
+CIPHERS=aes-128-cbc aes-192-cbc aes-256-cbc des-cbc des-ede3-cbc
++DIGESTS=md4 md5 sha1 sha224 sha256 sha512
+
 # To use this configuration file with the "-extfile" option of the
 # "openssl x509" utility, name here the section containing the
 # X.509v3 extensions to use:
