@@ -250,8 +250,13 @@ my %globals;
 	# in $self->{label}, new gas requires sign extension...
 	use integer;
 	$self->{label} =~ s/(?<![\w\$\.])(0x?[0-9a-f]+)/oct($1)/egi;
-	$self->{label} =~ s/([0-9]+\s*[\*\/\%]\s*[0-9]+)/eval($1)/eg;
-	$self->{label} =~ s/([0-9]+)/$1<<32>>32/eg;
+	$self->{label} =~ s/\b([0-9]+\s*[\*\/\%]\s*[0-9]+)\b/eval($1)/eg;
+	$self->{label} =~ s/\b([0-9]+)\b/$1<<32>>32/eg;
+
+	if (!$self->{label} && $self->{index} && $self->{scale}==1 &&
+	    $self->{base} =~ /(rbp|r13)/) {
+		$self->{base} = $self->{index}; $self->{index} = $1;
+	}
 
 	if ($gas) {
 	    $self->{label} =~ s/^___imp_/__imp__/   if ($flavour eq "mingw64");
@@ -266,13 +271,14 @@ my %globals;
 	    }
 	} else {
 	    %szmap = (	b=>"BYTE$PTR", w=>"WORD$PTR", l=>"DWORD$PTR",
-	    		q=>"QWORD$PTR",o=>"OWORD$PTR",x=>"XMMWORD$PTR" );
+	    		q=>"QWORD$PTR",o=>"OWORD$PTR",x=>"XMMWORD$PTR",
+			y=>"" );
 
 	    $self->{label} =~ s/\./\$/g;
 	    $self->{label} =~ s/(?<![\w\$\.])0x([0-9a-f]+)/0$1h/ig;
 	    $self->{label} = "($self->{label})" if ($self->{label} =~ /[\*\+\-\/]/);
-	    $sz="q" if ($self->{asterisk} || opcode->mnemonic() eq "movq");
-	    $sz="l" if (opcode->mnemonic() eq "movd");
+	    $sz="q" if ($self->{asterisk} || opcode->mnemonic() =~ /^v?movq$/);
+	    $sz="l" if (opcode->mnemonic() =~ /^v?movd$/);
 
 	    if (defined($self->{index})) {
 		sprintf "%s[%s%s*%d%s]",$szmap{$sz},
@@ -412,7 +418,7 @@ my %globals;
     }
     sub out {
 	my $self = shift;
-	if ($nasm && opcode->mnemonic()=~m/^j/) {
+	if ($nasm && opcode->mnemonic()=~m/^j(?![re]cxz)/) {
 	    "NEAR ".$self->{value};
 	} else {
 	    $self->{value};
@@ -772,6 +778,45 @@ my $rdrand = sub {
     }
 };
 
+sub rxb {
+ local *opcode=shift;
+ my ($dst,$src1,$src2,$rxb)=@_;
+
+   $rxb|=0x7<<5;
+   $rxb&=~(0x04<<5) if($dst>=8);
+   $rxb&=~(0x01<<5) if($src1>=8);
+   $rxb&=~(0x02<<5) if($src2>=8);
+   push @opcode,$rxb;
+}
+
+my $vprotd = sub {
+    if (shift =~ /\$([x0-9a-f]+),\s*%xmm([0-9]+),\s*%xmm([0-9]+)/) {
+      my @opcode=(0x8f);
+	rxb(\@opcode,$3,$2,-1,0x08);
+	push @opcode,0x78,0xc2;
+	push @opcode,0xc0|($2&7)|(($3&7)<<3);		# ModR/M
+	my $c=$1;
+	push @opcode,$c=~/^0/?oct($c):$c;
+	@opcode;
+    } else {
+	();
+    }
+};
+
+my $vprotq = sub {
+    if (shift =~ /\$([x0-9a-f]+),\s*%xmm([0-9]+),\s*%xmm([0-9]+)/) {
+      my @opcode=(0x8f);
+	rxb(\@opcode,$3,$2,-1,0x08);
+	push @opcode,0x78,0xc3;
+	push @opcode,0xc0|($2&7)|(($3&7)<<3);		# ModR/M
+	my $c=$1;
+	push @opcode,$c=~/^0/?oct($c):$c;
+	@opcode;
+    } else {
+	();
+    }
+};
+
 if ($nasm) {
     print <<___;
 default	rel
@@ -837,6 +882,7 @@ while($line=<>) {
 		    my $arg = $_->out();
 		    # $insn.=$sz compensates for movq, pinsrw, ...
 		    if ($arg =~ /^xmm[0-9]+$/) { $insn.=$sz; $sz="x" if(!$sz); last; }
+		    if ($arg =~ /^ymm[0-9]+$/) { $insn.=$sz; $sz="y" if(!$sz); last; }
 		    if ($arg =~ /^mm[0-9]+$/)  { $insn.=$sz; $sz="q" if(!$sz); last; }
 		}
 		@args = reverse(@args);
@@ -1046,7 +1092,7 @@ close STDOUT;
 #	.rva	.LSEH_end_function
 #	.rva	function_unwind_info
 #
-# Reference to functon_unwind_info from .xdata segment is the anchor.
+# Reference to function_unwind_info from .xdata segment is the anchor.
 # In case you wonder why references are 32-bit .rvas and not 64-bit
 # .quads. References put into these two segments are required to be
 # *relative* to the base address of the current binary module, a.k.a.
