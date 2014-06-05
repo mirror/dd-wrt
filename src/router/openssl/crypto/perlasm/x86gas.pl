@@ -70,6 +70,8 @@ sub ::DWP
 { my($addr,$reg1,$reg2,$idx)=@_;
   my $ret="";
 
+    if (!defined($idx) && 1*$reg2) { $idx=$reg2; $reg2=$reg1; undef $reg1; }
+
     $addr =~ s/^\s+//;
     # prepend global references with optional underscore
     $addr =~ s/^([^\+\-0-9][^\+\-]*)/&::islabel($1) or "$nmdecor$1"/ige;
@@ -157,7 +159,7 @@ sub ::file_end
 	}
     }
     if (grep {/\b${nmdecor}OPENSSL_ia32cap_P\b/i} @out) {
-	my $tmp=".comm\t${nmdecor}OPENSSL_ia32cap_P,8";
+	my $tmp=".comm\t${nmdecor}OPENSSL_ia32cap_P,16";
 	if ($::macosx)	{ push (@out,"$tmp,2\n"); }
 	elsif ($::elf)	{ push (@out,"$tmp,4\n"); }
 	else		{ push (@out,"$tmp\n"); }
@@ -170,10 +172,9 @@ sub ::data_short{   push(@out,".value\t".join(',',@_)."\n");  }
 sub ::data_word {   push(@out,".long\t".join(',',@_)."\n");   }
 
 sub ::align
-{ my $val=$_[0],$p2,$i;
+{ my $val=$_[0];
     if ($::aout)
-    {	for ($p2=0;$val!=0;$val>>=1) { $p2++; }
-	$val=$p2-1;
+    {	$val=int(log($val)/log(2));
 	$val.=",0x90";
     }
     push(@out,".align\t$val\n");
@@ -182,7 +183,9 @@ sub ::align
 sub ::picmeup
 { my($dst,$sym,$base,$reflabel)=@_;
 
-    if (($::pic && ($::elf || $::aout)) || $::macosx)
+    if (defined($base) && $sym eq "OPENSSL_ia32cap_P" && !$::macosx)
+    {	&::lea($dst,&::DWP("$sym-$reflabel",$base));	}
+    elsif (($::pic && ($::elf || $::aout)) || $::macosx)
     {	if (!defined($base))
 	{   &::call(&::label("PIC_me_up"));
 	    &::set_label("PIC_me_up");
@@ -249,5 +252,7 @@ ___
 
 sub ::dataseg
 {   push(@out,".data\n");   }
+
+*::hidden = sub { push(@out,".hidden\t$nmdecor$_[0]\n"); } if ($::elf);
 
 1;
