@@ -38,7 +38,7 @@ LN          =   ln
 CC          =   gcc
 ENSUREDIR   =   $(srcdir)/ensure-dir.sh
 INSTALL     =   $(srcdir)/install-sh
-CFLAGS      =   $(COPTS) -fomit-frame-pointer -Wall
+CFLAGS      =   $(COPTS) $(MIPS16_OPT) -fomit-frame-pointer -Wall -D_GNU_SOURCE -D__GLIBC__
 CPPFLAGS    =   
 OBJECTS     =   src/libnet_resolve.o\
 		src/libnet_socket.o\

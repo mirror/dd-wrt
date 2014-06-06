@@ -39,6 +39,7 @@
  *
  * @(#) $Header: /home/cvsroot/bcm4712/src/router/libnet/include/bpf.h,v 1.1 2004/04/27 01:30:54 dyang Exp $ (LBL)
  */
+#include <sys/types.h>
 
 #ifndef BPF_MAJOR_VERSION
 
