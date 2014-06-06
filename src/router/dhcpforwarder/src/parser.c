@@ -27,6 +27,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 
 #include "parser.h"
 #include "cfg.h"
