@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 8.6.7" />
+<meta name="generator" content="AsciiDoc 8.6.9" />
 <title>TOR(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -87,9 +87,15 @@ ul, ol, li > p {
 ul > li     { color: #aaa; }
 ul > li > * { color: black; }
 
-pre {
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
   padding: 0;
   margin: 0;
+}
+pre {
+  white-space: pre-wrap;
 }
 
 #author {
@@ -219,7 +225,7 @@ div.exampleblock > div.content {
 }
 
 div.imageblock div.content { padding-left: 0; }
-span.image img { border-style: none; }
+span.image img { border-style: none; vertical-align: text-bottom; }
 a.image:visited { color: white; }
 
 dl {
@@ -415,12 +421,6 @@ div.unbreakable { page-break-inside: avoid; }
  *
  * */
 
-tt {
-  font-family: "Courier New", Courier, monospace;
-  font-size: inherit;
-  color: navy;
-}
-
 div.tableblock {
   margin-top: 1.0em;
   margin-bottom: 1.5em;
@@ -453,12 +453,6 @@ div.tableblock > table[frame="vsides"] {
  * html5 specific
  *
  * */
-
-.monospaced {
-  font-family: "Courier New", Courier, monospace;
-  font-size: inherit;
-  color: navy;
-}
 
 table.tableblock {
   margin-top: 1.0em;
@@ -539,6 +533,8 @@ body.manpage div.sectionbody {
 @media print {
   body.manpage div#toc { display: none; }
 }
+
+
 </style>
 <script type="text/javascript">
 /*<![CDATA[*/
@@ -787,7 +783,7 @@ difficulty tracking the source of the stream.</p></div>
 <dd>
 <p>
     Specify a new configuration file to contain further Tor configuration
-    options. (Default: $HOME/.torrc, or @CONFDIR@/torrc if that file is not
+    options. (Default: @CONFDIR@/torrc, or $HOME/.torrc if that file is not
     found)
 </p>
 </dd>
@@ -1522,7 +1518,7 @@ option name with a forward slash.</p></div>
     protocol, mm, http, app, control, circ, rend, bug, dir, dirserv, or, edge,
     acct, hist, and handshake.  Domain names are case-insensitive.<br />
 <br />
-    For example, "<tt>Log [handshake]debug [~net,~mm]info notice stdout</tt>" sends
+    For example, "<code>Log [handshake]debug [~net,~mm]info notice stdout</code>" sends
     to stdout: all handshake messages of any severity, all info-and-higher
     messages from domains other than networking and memory management, and all
     messages of severity notice or higher.
@@ -2113,8 +2109,8 @@ When evaluating MapAddress expressions Tor stops when it hits the most
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><tt>MapAddress www.torproject.org 2.2.2.2
-MapAddress www.torproject.org 1.1.1.1</tt></pre>
+<pre><code>MapAddress www.torproject.org 2.2.2.2
+MapAddress www.torproject.org 1.1.1.1</code></pre>
 </div></div>
 </li>
 <li>
@@ -2125,8 +2121,8 @@ Tor evaluates the MapAddress configuration until it finds no matches. So
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><tt>MapAddress 1.1.1.1 2.2.2.2
-MapAddress www.torproject.org 1.1.1.1</tt></pre>
+<pre><code>MapAddress 1.1.1.1 2.2.2.2
+MapAddress www.torproject.org 1.1.1.1</code></pre>
 </div></div>
 </li>
 <li>
@@ -2137,7 +2133,7 @@ The following MapAddress expression is invalid (and will be
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><tt>MapAddress www.torproject.org *.torproject.org.torserver.exit</tt></pre>
+<pre><code>MapAddress www.torproject.org *.torproject.org.torserver.exit</code></pre>
 </div></div>
 </li>
 <li>
@@ -2278,7 +2274,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><tt>Other recognized _flags_ for a SOCKSPort are:
+<pre><code>Other recognized _flags_ for a SOCKSPort are:
 **NoIPv4Traffic**;;
     Tell exits to not connect to IPv4 addresses in response to SOCKS
     requests on this connection.
@@ -2288,11 +2284,11 @@ Using a wildcard to match only part of a string (as in *ample.com) is
     IPv6.)
 **PreferIPv6**;;
     Tells exits that, if a host has both an IPv4 and an IPv6 address,
-    we would prefer to connect to it via IPv6. (IPv4 is the default.) +</tt></pre>
+    we would prefer to connect to it via IPv6. (IPv4 is the default.) +</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><tt>   NOTE: Although this option allows you to specify an IP address
+<pre><code>   NOTE: Although this option allows you to specify an IP address
    other than localhost, you should do so only with extreme caution.
    The SOCKS protocol is unencrypted and (as we use it)
    unauthenticated, so exposing it in this way could leak your
@@ -2331,7 +2327,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
     username/password combination then get confused when asked for
     one. You can disable this behavior, so that Tor will select "No
     authentication" when IsolateSOCKSAuth is disabled, or when this
-    option is set.</tt></pre>
+    option is set.</code></pre>
 </div></div>
 </dd>
 </dl></div>
@@ -3027,7 +3023,7 @@ is non-zero):</p></div>
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><tt>reject *:25
+<pre><code>reject *:25
 reject *:119
 reject *:135-139
 reject *:445
@@ -3037,7 +3033,7 @@ reject *:4661-4666
 reject *:6346-6429
 reject *:6699
 reject *:6881-6999
-accept *:*</tt></pre>
+accept *:*</code></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
@@ -3116,7 +3112,7 @@ accept *:*</tt></pre>
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><tt>Tor recognizes these flags on each ORPort:
+<pre><code>Tor recognizes these flags on each ORPort:
 **NoAdvertise**::
     By default, we bind to a port and tell our users about it. If
     NoAdvertise is specified, we don't advertise, but listen anyway.  This
@@ -3132,12 +3128,12 @@ accept *:*</tt></pre>
     address, only listen to the IPv4 address.
 **IPv6Only**::
     If the address is absent, or resolves to both an IPv4 and an IPv6
-    address, only listen to the IPv6 address.</tt></pre>
+    address, only listen to the IPv6 address.</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><tt>For obvious reasons, NoAdvertise and NoListen are mutually exclusive, and
-IPv4Only and IPv6Only are mutually exclusive.</tt></pre>
+<pre><code>For obvious reasons, NoAdvertise and NoListen are mutually exclusive, and
+IPv4Only and IPv6Only are mutually exclusive.</code></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
@@ -3152,8 +3148,8 @@ IPv4Only and IPv6Only are mutually exclusive.</tt></pre>
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><tt>This option is deprecated; you can get the same behavior with ORPort now
-that it supports NoAdvertise and explicit addresses.</tt></pre>
+<pre><code>This option is deprecated; you can get the same behavior with ORPort now
+that it supports NoAdvertise and explicit addresses.</code></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
@@ -3620,7 +3616,7 @@ if DirPort is non-zero):</p></div>
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><tt>The same flags are supported here as are supported by ORPort.</tt></pre>
+<pre><code>The same flags are supported here as are supported by ORPort.</code></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
@@ -3635,8 +3631,8 @@ if DirPort is non-zero):</p></div>
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><tt>This option is deprecated; you can get the same behavior with DirPort now
-that it supports NoAdvertise and explicit addresses.</tt></pre>
+<pre><code>This option is deprecated; you can get the same behavior with DirPort now
+that it supports NoAdvertise and explicit addresses.</code></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
@@ -4063,7 +4059,7 @@ that it supports NoAdvertise and explicit addresses.</tt></pre>
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><tt>ServerDNSAllowBrokenConfig 1
+<pre><code>ServerDNSAllowBrokenConfig 1
 DirAllowPrivateAddresses 1
 EnforceDistinctSubnets 0
 AssumeReachable 1
@@ -4082,7 +4078,7 @@ TestingV3AuthInitialVotingInterval 5 minutes
 TestingV3AuthInitialVoteDelay 20 seconds
 TestingV3AuthInitialDistDelay 20 seconds
 TestingAuthDirTimeToLearnReachability 0 minutes
-TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
+TestingEstimatedDescriptorPropagationTime 0 minutes</code></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
@@ -4234,6 +4230,14 @@ TestingEstimatedDescriptorPropagationTime 0 minutes</tt></pre>
 <dd>
 <p>
     The configuration file, which contains "option value" pairs.
+</p>
+</dd>
+<dt class="hdlist1">
+<strong>$HOME/.torrc</strong>
+</dt>
+<dd>
+<p>
+    Fallback location for torrc, if @CONFDIR@/torrc is not found.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4448,7 +4452,7 @@ A short history of bandwidth usage, as produced in the router
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2014-02-25 15:04:21 EST
+Last updated 2014-05-01 11:03:03 EDT
 </div>
 </div>
 </body>

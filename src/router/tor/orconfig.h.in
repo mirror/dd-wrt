@@ -415,9 +415,6 @@
 /* Define to 1 if we are building with nat-pmp. */
 #undef NAT_PMP
 
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
-
 /* Define to 1 iff memset(0) sets pointers to NULL */
 #undef NULL_REP_IS_ZERO_BYTES
 
