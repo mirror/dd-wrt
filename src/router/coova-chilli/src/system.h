@@ -165,7 +165,9 @@
 #endif
 
 #ifdef HAVE_NET_ETHERNET_H
+#ifdef __UCLIBC__
 #include <net/ethernet.h>
+#endif
 #endif
 
 #ifdef HAVE_ASM_TYPES_H
