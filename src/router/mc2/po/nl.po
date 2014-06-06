@@ -4,7 +4,7 @@
 #
 # Translators:
 # flipthegreat <flipthegreat@hotmail.com>, 2011
-# Heimen Stoffels <vistausss@gmail.com>, 2013
+# Heimen Stoffels <motionshot@vivaldi.net>, 2013
 # Richard E. van der Luit <nippur@fedoraproject.org>, 2012-2013
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # toniotonba <TonioTonBa@gmail.com>, 2011
@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Dutch (http://www.transifex.com/projects/p/mc/language/nl/)\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
@@ -23,6 +23,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Waarschuwing: kan codepagina's niet laden"
 
@@ -155,6 +156,9 @@ msgstr ""
 "of non-256 colors terminal.\n"
 "Standaard skin is geladen"
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "Functietoets 1"
 
@@ -215,59 +219,56 @@ msgstr "Functietoets 19"
 msgid "Function key 20"
 msgstr "Functietoets 20"
 
-msgid "Backspace key"
-msgstr "Backspace-toets"
+msgid "Completion/M-tab"
+msgstr "Completeren/M-Tab"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "End-toets"
 
-msgid "Up arrow key"
-msgstr "Pijl omhoog"
+msgid "Page Up"
+msgstr ""
 
-msgid "Down arrow key"
-msgstr "Pijl omlaag"
+msgid "Page Down"
+msgstr ""
 
-msgid "Left arrow key"
-msgstr "Pijl links"
-
-msgid "Right arrow key"
-msgstr "Pijl rechts"
-
-msgid "Home key"
-msgstr "Home-toets"
-
-msgid "Page Down key"
-msgstr "PageDown-toets"
-
-msgid "Page Up key"
-msgstr "PageUp-toets"
-
-msgid "Insert key"
-msgstr "Ins"
-
-msgid "Delete key"
-msgstr "Del-toets"
-
-msgid "Completion/M-tab"
-msgstr "Completeren/M-Tab"
-
-msgid "Back Tabulation S-tab"
-msgstr "Back Tabulatie S-tab"
-
-msgid "+ on keypad"
-msgstr "Numeriek +"
-
-msgid "- on keypad"
-msgstr "Numeriek -"
-
-msgid "Slash on keypad"
-msgstr "Numeriek /"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "Numeriek *"
 
-msgid "Escape key"
-msgstr "Escape"
+msgid "- on keypad"
+msgstr "Numeriek -"
+
+msgid "+ on keypad"
+msgstr "Numeriek +"
 
 msgid "Left arrow keypad"
 msgstr "Numeriek pijl links"
@@ -320,14 +321,14 @@ msgstr "A1-toets"
 msgid "C1 key"
 msgstr "C1-toets"
 
-msgid "Plus"
-msgstr "Plus"
+msgid "Asterisk"
+msgstr "Asterisk"
 
 msgid "Minus"
 msgstr "Min"
 
-msgid "Asterisk"
-msgstr "Asterisk"
+msgid "Plus"
+msgstr "Plus"
 
 msgid "Dot"
 msgstr "Punt"
@@ -953,7 +954,8 @@ msgstr "Openen van pipe voor lezen mislukt: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Openen van bestand voor schrijven mislukt: %s "
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "Het bestand wat u opslaat eindigt niet met een nieuwe regel"
 
 msgid "C&ontinue"
@@ -1510,8 +1512,8 @@ msgstr ""
 "Eeen gebruikersvriendelijke tekstbewerker\n"
 "geschreven voor de Midnight Commander"
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Over"
@@ -1719,6 +1721,18 @@ msgstr "A&utomatisch instellingen opslaan"
 msgid "Configure options"
 msgstr "Instellingen"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr "Hoofdletter&ongevoelig"
 
@@ -1866,9 +1880,6 @@ msgstr "Weergave bits"
 
 msgid "Input / display codepage:"
 msgstr "Invoer / weergave karakterset:"
-
-msgid "&Select"
-msgstr "&Selecteer"
 
 msgid "Directory tree"
 msgstr "Maphiërarchie"
@@ -2270,8 +2281,8 @@ msgid "FileOperation|Delete"
 msgstr "Verwijder"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2295,13 +2306,6 @@ msgstr "bestanden/mappen"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " met bronmasker:"
-
-msgid "to:"
-msgstr "naar:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Harde link maken mislukt"
@@ -2731,6 +2735,9 @@ msgstr "Bron"
 
 msgid "Target"
 msgstr "Doel"
+
+msgid "to:"
+msgstr "naar:"
 
 msgid "Follow &links"
 msgstr "Volg &links"
@@ -3205,6 +3212,9 @@ msgstr "Venstero&pties "
 
 msgid "C&onfirmation..."
 msgstr "&Bevestiging..."
+
+msgid "&Appearance..."
+msgstr ""
 
 msgid "&Display bits..."
 msgstr "&Weergavebits..."
@@ -4279,3 +4289,6 @@ msgstr "Doorgaan vanaf het begin?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Kan geen lokale versie van /ftp://some.host/editme.txt ophalen"
+
+#~ msgid "&Select"
+#~ msgstr "&Selecteer"

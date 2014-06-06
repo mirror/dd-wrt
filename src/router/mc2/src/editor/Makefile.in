@@ -151,14 +151,14 @@ am__libedit_la_SOURCES_DIST = bookmark.c choosesyntax.c edit-impl.h \
 	edit.c edit.h editbuffer.c editbuffer.h editcmd.c \
 	editcmd_dialogs.c editcmd_dialogs.h editdraw.c editmenu.c \
 	editoptions.c editwidget.c editwidget.h etags.c etags.h \
-	syntax.c wordproc.c spell.c spell.h spell_dialogs.c \
+	format.c syntax.c spell.c spell.h spell_dialogs.c \
 	spell_dialogs.h
 @HAVE_GMODULE_TRUE@@USE_ASPELL_TRUE@am__objects_1 = spell.lo \
 @HAVE_GMODULE_TRUE@@USE_ASPELL_TRUE@	spell_dialogs.lo
 am_libedit_la_OBJECTS = bookmark.lo choosesyntax.lo edit.lo \
 	editbuffer.lo editcmd.lo editcmd_dialogs.lo editdraw.lo \
-	editmenu.lo editoptions.lo editwidget.lo etags.lo syntax.lo \
-	wordproc.lo $(am__objects_1)
+	editmenu.lo editoptions.lo editwidget.lo etags.lo format.lo \
+	syntax.lo $(am__objects_1)
 libedit_la_OBJECTS = $(am_libedit_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -442,7 +442,7 @@ EXTRA_DIST =
 libedit_la_SOURCES = bookmark.c choosesyntax.c edit-impl.h edit.c \
 	edit.h editbuffer.c editbuffer.h editcmd.c editcmd_dialogs.c \
 	editcmd_dialogs.h editdraw.c editmenu.c editoptions.c \
-	editwidget.c editwidget.h etags.c etags.h syntax.c wordproc.c \
+	editwidget.c editwidget.h etags.c etags.h format.c syntax.c \
 	$(am__append_1)
 AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir) $(PCRE_CPPFLAGS)
 all: all-am
@@ -511,10 +511,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editoptions.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editwidget.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/etags.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/format.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spell.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spell_dialogs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/syntax.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wordproc.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

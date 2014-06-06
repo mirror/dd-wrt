@@ -1,8 +1,8 @@
 /*
    Search functions for diffviewer.
 
-   Copyright (C) 2010, 2011, 2012
-   The Free Software Foundation, Inc.
+   Copyright (C) 2010-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2010.
@@ -229,7 +229,7 @@ mcdiffview_do_search (WDiff * dview)
     if (!present_result)
     {
         dview->search.last_found_line = -1;
-        error_dialog (_("Search"), _("Search string not found"));
+        query_dialog (_("Search"), _("Search string not found"), D_NORMAL, 1, _("&Dismiss"));
     }
 }
 

@@ -1,9 +1,8 @@
 /*
    Configure module for the Midnight Commander
 
-   Copyright (C) 1994, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
-   2007, 2009, 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 1994-2014
+   Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
 

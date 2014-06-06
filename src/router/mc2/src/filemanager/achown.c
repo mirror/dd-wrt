@@ -1,9 +1,8 @@
 /*
    Chown-advanced command -- for the Midnight Commander
 
-   Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2007, 2011, 2012, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 1994-2014
+   Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
 
@@ -369,53 +368,57 @@ do_enter_key (WDialog * h, int f_pos)
 
         result = dlg_run (chl_dlg);
 
-        if (b_pos != chl_list->pos)
+        if (result != B_CANCEL)
         {
-            gboolean ok = FALSE;
-            char *text;
+            if (b_pos != chl_list->pos)
+            {
+                gboolean ok = FALSE;
+                char *text;
 
-            listbox_get_current (chl_list, &text, NULL);
-            if (is_owner)
-            {
-                chl_pass = getpwnam (text);
-                if (chl_pass != NULL)
+                listbox_get_current (chl_list, &text, NULL);
+                if (is_owner)
                 {
-                    ok = TRUE;
-                    sf_stat->st_uid = chl_pass->pw_uid;
+                    chl_pass = getpwnam (text);
+                    if (chl_pass != NULL)
+                    {
+                        ok = TRUE;
+                        sf_stat->st_uid = chl_pass->pw_uid;
+                    }
                 }
-            }
-            else
-            {
-                chl_grp = getgrnam (text);
-                if (chl_grp != NULL)
+                else
                 {
-                    sf_stat->st_gid = chl_grp->gr_gid;
-                    ok = TRUE;
+                    chl_grp = getgrnam (text);
+                    if (chl_grp != NULL)
+                    {
+                        sf_stat->st_gid = chl_grp->gr_gid;
+                        ok = TRUE;
+                    }
                 }
+                if (ok)
+                {
+                    ch_flags[f_pos + 6] = '+';
+                    update_ownership ();
+                }
+                dlg_focus (h);
+                if (ok)
+                    print_flags ();
             }
-            if (ok)
+            if (result == KEY_LEFT)
             {
-                ch_flags[f_pos + 6] = '+';
-                update_ownership ();
+                if (!is_owner)
+                    chl_end = TRUE;
+                dlg_one_up (ch_dlg);
+                f_pos--;
             }
-            dlg_focus (h);
-            if (ok)
-                print_flags ();
+            else if (result == KEY_RIGHT)
+            {
+                if (is_owner)
+                    chl_end = TRUE;
+                dlg_one_down (ch_dlg);
+                f_pos++;
+            }
         }
-        if (result == KEY_LEFT)
-        {
-            if (!is_owner)
-                chl_end = TRUE;
-            dlg_one_up (ch_dlg);
-            f_pos--;
-        }
-        else if (result == KEY_RIGHT)
-        {
-            if (is_owner)
-                chl_end = TRUE;
-            dlg_one_down (ch_dlg);
-            f_pos++;
-        }
+
         /* Here we used to redraw the window */
         dlg_destroy (chl_dlg);
     }

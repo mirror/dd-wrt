@@ -1,8 +1,8 @@
 /* Virtual File System: SFTP file system.
    The internal functions: files
 
-   Copyright (C) 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 2011-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Ilia Maslakov <il.smind@gmail.com>, 2011
@@ -60,12 +60,16 @@ static void
 sftpfs_reopen (vfs_file_handler_t * file_handler, GError ** error)
 {
     sftpfs_file_handler_data_t *file_handler_data;
+    int flags;
+    mode_t mode;
 
     file_handler_data = (sftpfs_file_handler_data_t *) file_handler->data;
+    flags = file_handler_data->flags;
+    mode = file_handler_data->mode;
 
     sftpfs_close_file (file_handler, error);
     if (error == NULL || *error == NULL)
-        sftpfs_open_file (file_handler, file_handler_data->flags, file_handler_data->mode, error);
+        sftpfs_open_file (file_handler, flags, mode, error);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -361,8 +365,6 @@ sftpfs_lseek (vfs_file_handler_t * file_handler, off_t offset, int whence, GErro
 {
     sftpfs_file_handler_data_t *file_handler_data;
 
-    file_handler_data = (sftpfs_file_handler_data_t *) file_handler->data;
-
     switch (whence)
     {
     case SEEK_SET:
@@ -391,6 +393,8 @@ sftpfs_lseek (vfs_file_handler_t * file_handler, off_t offset, int whence, GErro
         file_handler->pos = file_handler->ino->st.st_size - offset;
         break;
     }
+
+    file_handler_data = (sftpfs_file_handler_data_t *) file_handler->data;
 
     libssh2_sftp_seek64 (file_handler_data->handle, file_handler->pos);
     file_handler->pos = (off_t) libssh2_sftp_tell64 (file_handler_data->handle);

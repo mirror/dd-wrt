@@ -2,8 +2,8 @@
    Skins engine.
    Set of hardcoded skins
 
-   Copyright (C) 2009, 2011, 2012
-   The Free Software Foundation, Inc.
+   Copyright (C) 2009-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2009

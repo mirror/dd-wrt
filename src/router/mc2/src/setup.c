@@ -1,9 +1,8 @@
 /*
    Setup loading/saving.
 
-   Copyright (C) 1994, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2006, 2007, 2009, 2010, 2011, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 1994-2014
+   Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
 
@@ -42,8 +41,6 @@
 #include "lib/timefmt.h"
 #include "lib/util.h"
 #include "lib/widget.h"
-
-#include "lib/vfs/vfs.h"
 
 #ifdef ENABLE_VFS_FTP
 #include "src/vfs/ftpfs/ftpfs.h"
@@ -103,7 +100,7 @@ int confirm_overwrite = 1;
 /* Asks for confirmation before executing a program by pressing enter */
 int confirm_execute = 0;
 /* Asks for confirmation before leaving the program */
-int confirm_exit = 1;
+int confirm_exit = 0;
 
 /* If true, at startup the user-menu is invoked */
 int auto_menu = 0;
@@ -349,6 +346,7 @@ static const struct
     { "editor_edit_confirm_save", &edit_confirm_save },
     { "editor_syntax_highlighting", &option_syntax_highlighting },
     { "editor_persistent_selections", &option_persistent_selections },
+    { "editor_drop_selection_on_copy", &option_drop_selection_on_copy },
     { "editor_cursor_beyond_eol", &option_cursor_beyond_eol },
     { "editor_cursor_after_inserted_block", &option_cursor_after_inserted_block },
     { "editor_visible_tabs", &visible_tabs },
@@ -377,6 +375,7 @@ static const struct
 #ifdef USE_INTERNAL_EDIT
     { "editor_backup_extension", &option_backup_ext, "~" },
     { "editor_filesize_threshold", &option_filesize_threshold, "64M" },
+    { "editor_stop_format_chars", &option_stop_format_chars, "-+*\\,.;:&>" },
 #endif
     { "mcview_eof", &mcview_show_eof, "" },
     {  NULL, NULL, NULL }
@@ -921,10 +920,11 @@ load_setup (void)
 {
     const char *profile;
     size_t i;
-    char *buffer;
     const char *kt;
 
 #ifdef HAVE_CHARSET
+    char *buffer;
+
     load_codepages_list ();
 #endif /* HAVE_CHARSET */
 
@@ -989,18 +989,6 @@ load_setup (void)
     /* At least one of the panels is a listing panel */
     if (startup_left_mode != view_listing && startup_right_mode != view_listing)
         startup_left_mode = view_listing;
-
-    {
-        vfs_path_t *vpath;
-
-        buffer = mc_config_get_string (mc_panels_config, "Dirs", "other_dir", ".");
-        vpath = vfs_path_from_str (buffer);
-        if (vfs_file_is_local (vpath))
-            saved_other_dir = buffer;
-        else
-            g_free (buffer);
-        vfs_path_free (vpath);
-    }
 
     boot_current_is_left = mc_config_get_bool (mc_panels_config, "Dirs", "current_is_left", TRUE);
 

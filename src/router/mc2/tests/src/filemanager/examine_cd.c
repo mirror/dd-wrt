@@ -1,8 +1,8 @@
 /*
    src/filemanager - examine_cd() function testing
 
-   Copyright (C) 2012, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 2012-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Andrew Borodin <aborodin@vmail.ru>, 2012

@@ -1,9 +1,8 @@
 /*
    Main dialog (file panels) of the Midnight Commander
 
-   Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002,
-   2003, 2004, 2005, 2006, 2007, 2009, 2010, 2011, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 1994-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Miguel de Icaza, 1994, 1995, 1996, 1997
@@ -336,6 +335,8 @@ create_options_menu (void)
     entries = g_list_prepend (entries, menu_entry_create (_("&Panel options..."), CK_OptionsPanel));
     entries =
         g_list_prepend (entries, menu_entry_create (_("C&onfirmation..."), CK_OptionsConfirm));
+    entries =
+        g_list_prepend (entries, menu_entry_create (_("&Appearance..."), CK_OptionsAppearance));
     entries =
         g_list_prepend (entries, menu_entry_create (_("&Display bits..."), CK_OptionsDisplayBits));
     entries = g_list_prepend (entries, menu_entry_create (_("Learn &keys..."), CK_LearnKeys));
@@ -1000,7 +1001,7 @@ mc_maybe_editor_or_viewer (void)
             if (mc_run_param0 != NULL && *(char *) mc_run_param0 != '\0')
                 vpath = prepend_cwd_on_local ((char *) mc_run_param0);
 
-            ret = view_file (vpath, 0, 1);
+            ret = view_file (vpath, FALSE, TRUE);
             vfs_path_free (vpath);
             break;
         }
@@ -1069,15 +1070,6 @@ quit_cmd (void)
 
 /* --------------------------------------------------------------------------------------------- */
 
-static void
-toggle_show_hidden (void)
-{
-    panels_options.show_dot_files = !panels_options.show_dot_files;
-    update_panels (UP_RELOAD, UP_KEEPSEL);
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
 /**
  * Repaint the contents of the panels without frames.  To schedule panel
  * for repainting, set panel->dirty to 1.  There are many reasons why
@@ -1093,6 +1085,17 @@ update_dirty_panels (void)
 
     if (get_other_type () == view_listing && other_panel->dirty)
         widget_redraw (WIDGET (other_panel));
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+toggle_show_hidden (void)
+{
+    panels_options.show_dot_files = !panels_options.show_dot_files;
+    update_panels (UP_RELOAD, UP_KEEPSEL);
+    /* redraw panels forced */
+    update_dirty_panels ();
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1249,6 +1252,9 @@ midnight_execute_cmd (Widget * sender, unsigned long command)
 #endif
     case CK_OptionsLayout:
         layout_box ();
+        break;
+    case CK_OptionsAppearance:
+        appearance_box ();
         break;
     case CK_LearnKeys:
         learn_keys ();
@@ -1743,19 +1749,11 @@ do_nc (void)
 {
     gboolean ret;
 
-    dlg_colors_t midnight_colors;
-
-    midnight_colors[DLG_COLOR_NORMAL] = mc_skin_color_get ("dialog", "_default_");
-    midnight_colors[DLG_COLOR_FOCUS] = mc_skin_color_get ("dialog", "focus");
-    midnight_colors[DLG_COLOR_HOT_NORMAL] = mc_skin_color_get ("dialog", "hotnormal");
-    midnight_colors[DLG_COLOR_HOT_FOCUS] = mc_skin_color_get ("dialog", "hotfocus");
-    midnight_colors[DLG_COLOR_TITLE] = mc_skin_color_get ("dialog", "title");
-
 #ifdef USE_INTERNAL_EDIT
     edit_stack_init ();
 #endif
 
-    midnight_dlg = dlg_create (FALSE, 0, 0, LINES, COLS, midnight_colors, midnight_callback,
+    midnight_dlg = dlg_create (FALSE, 0, 0, LINES, COLS, dialog_colors, midnight_callback,
                                midnight_event, "[main]", NULL, DLG_NONE);
 
     /* Check if we were invoked as an editor or file viewer */

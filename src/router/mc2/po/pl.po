@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Piotr Drąg <piotrdrag@gmail.com>, 2011-2013
+# Piotr Drąg <piotrdrag@gmail.com>, 2011-2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-03-22 14:47+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish (http://www.transifex.com/projects/p/mc/language/pl/)\n"
 "Language: pl\n"
@@ -20,6 +20,7 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
 "|| n%100>=20) ? 1 : 2);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Ostrzeżenie: nie można wczytać listy stron kodowych"
 
@@ -155,32 +156,35 @@ msgstr ""
 "kolorów na terminalu nie dysponującym 256 kolorami.\n"
 "Domyślna skórka nie została wczytana"
 
+msgid "Escape"
+msgstr "Escape"
+
 msgid "Function key 1"
-msgstr "1 klaw. funkcyjny "
+msgstr "1 klaw. funkcyjny"
 
 msgid "Function key 2"
-msgstr "2 klaw. funkcyjny "
+msgstr "2 klaw. funkcyjny"
 
 msgid "Function key 3"
-msgstr "3 klaw. funkcyjny "
+msgstr "3 klaw. funkcyjny"
 
 msgid "Function key 4"
-msgstr "4 klaw. funkcyjny "
+msgstr "4 klaw. funkcyjny"
 
 msgid "Function key 5"
-msgstr "5 klaw. funkcyjny "
+msgstr "5 klaw. funkcyjny"
 
 msgid "Function key 6"
-msgstr "6 klaw. funkcyjny "
+msgstr "6 klaw. funkcyjny"
 
 msgid "Function key 7"
-msgstr "7 klaw. funkcyjny "
+msgstr "7 klaw. funkcyjny"
 
 msgid "Function key 8"
-msgstr "8 klaw. funkcyjny "
+msgstr "8 klaw. funkcyjny"
 
 msgid "Function key 9"
-msgstr "9 klaw. funkcyjny "
+msgstr "9 klaw. funkcyjny"
 
 msgid "Function key 10"
 msgstr "10 klaw. funkcyjny"
@@ -215,59 +219,56 @@ msgstr "19 klaw. funkcyjny"
 msgid "Function key 20"
 msgstr "20 klaw. funkcyjny"
 
-msgid "Backspace key"
-msgstr "Klawisz Backspace "
-
-msgid "End key"
-msgstr "Klawisz End       "
-
-msgid "Up arrow key"
-msgstr "Strzałka w górę   "
-
-msgid "Down arrow key"
-msgstr "Strzałka w dół    "
-
-msgid "Left arrow key"
-msgstr "Strzałka w lewo   "
-
-msgid "Right arrow key"
-msgstr "Strzałka w prawo  "
-
-msgid "Home key"
-msgstr "Klawisz Home      "
-
-msgid "Page Down key"
-msgstr "Klawisz Page Down "
-
-msgid "Page Up key"
-msgstr "Klawisz Page Up   "
-
-msgid "Insert key"
-msgstr "Klawisz Insert    "
-
-msgid "Delete key"
-msgstr "Klawisz Delete    "
-
 msgid "Completion/M-tab"
 msgstr "Uzupełnianie/M-tab"
 
-msgid "Back Tabulation S-tab"
-msgstr "Wsteczna tabulacja/S-tab"
+msgid "BackTab/S-tab"
+msgstr "BackTab/S-tab"
 
-msgid "+ on keypad"
-msgstr "+ na klaw. numer. "
+msgid "Backspace"
+msgstr "Backspace"
 
-msgid "- on keypad"
-msgstr "- na klaw. numer. "
+msgid "Up arrow"
+msgstr "Strzałka w górę"
 
-msgid "Slash on keypad"
-msgstr "Ukośnik na klaw. numer."
+msgid "Down arrow"
+msgstr "Strzałka w dół"
+
+msgid "Left arrow"
+msgstr "Strzałka w lewo"
+
+msgid "Right arrow"
+msgstr "Strzałka w prawo"
+
+msgid "Insert"
+msgstr "Insert"
+
+msgid "Delete"
+msgstr "Delete"
+
+msgid "Home"
+msgstr "Home"
+
+msgid "End key"
+msgstr "Klawisz End"
+
+msgid "Page Up"
+msgstr "Page Up"
+
+msgid "Page Down"
+msgstr "Page Down"
+
+msgid "/ on keypad"
+msgstr "/ na klaw. numer."
 
 msgid "* on keypad"
-msgstr "* na klaw. numer. "
+msgstr "* na klaw. numer."
 
-msgid "Escape key"
-msgstr "Klawisz Escape    "
+msgid "- on keypad"
+msgstr "- na klaw. numer."
+
+msgid "+ on keypad"
+msgstr "+ na klaw. numer."
 
 msgid "Left arrow keypad"
 msgstr "Strzałka w lewo na klaw. numer."
@@ -320,14 +321,14 @@ msgstr "Klawisz A1"
 msgid "C1 key"
 msgstr "Klawisz C1"
 
-msgid "Plus"
-msgstr "Plus"
+msgid "Asterisk"
+msgstr "Gwiazdka"
 
 msgid "Minus"
 msgstr "Minus"
 
-msgid "Asterisk"
-msgstr "Gwiazdka"
+msgid "Plus"
+msgstr "Plus"
 
 msgid "Dot"
 msgstr "Kropka"
@@ -958,7 +959,8 @@ msgstr "Nie można otworzyć potoku do zapisywania: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Nie można otworzyć pliku do zapisywania: %s"
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "Zapisywany plik nie kończy się nowym wierszem"
 
 msgid "C&ontinue"
@@ -1234,7 +1236,7 @@ msgid "&New"
 msgstr "&Nowy"
 
 msgid "&Close"
-msgstr "_Zamknij"
+msgstr "&Zamknij"
 
 msgid "Save &as..."
 msgstr "Z&apisz jako..."
@@ -1519,8 +1521,8 @@ msgstr ""
 "Przyjazny dla użytkownika edytor tekstu,\n"
 "napisany dla programu Midnight Commander"
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2013 Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2014 Free Software Foundation"
 
 msgid "About"
 msgstr "O programie"
@@ -1727,6 +1729,18 @@ msgstr "Auto&matyczny zapis ustawień"
 msgid "Configure options"
 msgstr "Konfiguracja opcji"
 
+msgid "< Default >"
+msgstr "< Domyślne >"
+
+msgid "Skins"
+msgstr "Skórki"
+
+msgid "Skin:"
+msgstr "Skórka:"
+
+msgid "Appearance"
+msgstr "Wygląd"
+
 msgid "Case &insensitive"
 msgstr "Bez rozróżniania w&ielkości"
 
@@ -1873,9 +1887,6 @@ msgstr "Wyświetlane bity"
 
 msgid "Input / display codepage:"
 msgstr "Strona kodowa wejściowa/wyjściowa:"
-
-msgid "&Select"
-msgstr "&Wybierz"
 
 msgid "Directory tree"
 msgstr "Drzewo katalogów"
@@ -2276,8 +2287,8 @@ msgid "FileOperation|Delete"
 msgstr "Usuwanie"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr "%o %f%n\"%s\"%m"
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2301,13 +2312,6 @@ msgstr "plików/katalogów"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " z maską źródłową:"
-
-msgid "to:"
-msgstr "do:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Nie można utworzyć dowiązania"
@@ -2739,6 +2743,9 @@ msgstr "Źródło"
 msgid "Target"
 msgstr "Cel"
 
+msgid "to:"
+msgstr "do:"
+
 msgid "Follow &links"
 msgstr "Podążanie za &dowiązaniami"
 
@@ -2746,10 +2753,10 @@ msgid "Preserve &attributes"
 msgstr "&Zachowanie atrybutów"
 
 msgid "Di&ve into subdir if exists"
-msgstr "&Schodzenie do podkat., jeśli istnieją"
+msgstr "&Schodzenie do podkat."
 
 msgid "&Stable symlinks"
-msgstr "&Stabilne dowiązania symboliczne"
+msgstr "Zachowanie dowiązań s&ymb."
 
 msgid "&Background"
 msgstr "&W tle"
@@ -3215,6 +3222,9 @@ msgstr "Opcje &panelu..."
 
 msgid "C&onfirmation..."
 msgstr "P&otwierdzenie..."
+
+msgid "&Appearance..."
+msgstr "W&ygląd..."
 
 msgid "&Display bits..."
 msgstr "&Wyświetlane bity..."
@@ -4300,3 +4310,6 @@ msgstr "Kontynuować od początku?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
 "Nie można pobrać lokalnej kopii /ftp://jakiś.komputer/modyfikuj_mnie.txt"
+
+#~ msgid "&Select"
+#~ msgstr "&Wybierz"

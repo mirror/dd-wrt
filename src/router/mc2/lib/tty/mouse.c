@@ -1,9 +1,8 @@
 /*
    Mouse managing
 
-   Copyright (C) 1994, 1998, 1999, 2000, 2001, 2002, 2004, 2005, 2006,
-   2007, 2009, 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 1994-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Andrew Borodin <aborodin@vmail.ru>, 2009.

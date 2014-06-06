@@ -1,9 +1,8 @@
 /*
    Concurrent shell support for the Midnight Commander
 
-   Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2011, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 1994-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2013
@@ -47,7 +46,6 @@
 #include <sys/ioctl.h>
 #endif
 #include <termios.h>
-#include <unistd.h>
 
 #ifdef HAVE_STROPTS_H
 #include <stropts.h>            /* For I_PUSH */
@@ -55,6 +53,7 @@
 
 #include "lib/global.h"
 
+#include "lib/unixcompat.h"
 #include "lib/tty/tty.h"        /* LINES */
 #include "lib/tty/key.h"        /* XCTRL */
 #include "lib/vfs/vfs.h"
@@ -92,18 +91,6 @@ gboolean update_subshell_prompt = FALSE;
 
 #ifndef WIFEXITED
 #define WIFEXITED(stat_val) (((stat_val) & 255) == 0)
-#endif
-
-#ifndef STDIN_FILENO
-#define STDIN_FILENO 0
-#endif
-
-#ifndef STDOUT_FILENO
-#define STDOUT_FILENO 1
-#endif
-
-#ifndef STDERR_FILENO
-#define STDERR_FILENO 2
 #endif
 
 /* Initial length of the buffer for the subshell's prompt */
@@ -892,7 +879,8 @@ init_subshell (void)
 
     case ZSH:
         g_snprintf (precmd, sizeof (precmd),
-                    " precmd(){ pwd>&%d;kill -STOP $$ }\n", subshell_pipe[WRITE]);
+                    " _mc_precmd(){ pwd>&%d;kill -STOP $$ }; precmd_functions+=(_mc_precmd)\n",
+                    subshell_pipe[WRITE]);
         break;
 
     case TCSH:
@@ -1231,6 +1219,17 @@ do_subshell_chdir (const vfs_path_t * vpath, gboolean update_prompt)
             vfs_print_message (_("Warning: Cannot change to %s.\n"), cwd);
             g_free (cwd);
         }
+    }
+
+    /* Really escape Zsh history */
+    if (subshell_type == ZSH)
+    {
+        /* Per Zsh documentation last command prefixed with space lingers in the internal history
+         * until the next command is entered before it vanishes. To make it vanish right away,
+         * type a space and press return. */
+        write_all (mc_global.tty.subshell_pty, " \n", 2);
+        subshell_state = RUNNING_COMMAND;
+        feed_subshell (QUIETLY, FALSE);
     }
 
     update_subshell_prompt = FALSE;
