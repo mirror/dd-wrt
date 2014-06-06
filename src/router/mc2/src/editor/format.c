@@ -1,15 +1,14 @@
 /*
-   Word-processor mode for the editor: does dynamic
-   paragraph formatting.
+   Dynamic paragraph formatting.
 
-   Copyright (C) 2011, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 2011-2014
+   Free Software Foundation, Inc.
 
    Copyright (C) 1996 Paul Sheer
 
    Writen by:
    Paul Sheer, 1996
-   Andrew Borodin <aborodin@vmail.ru>, 2013
+   Andrew Borodin <aborodin@vmail.ru>, 2013, 2014
 
    This file is part of the Midnight Commander.
 
@@ -28,11 +27,11 @@
  */
 
 /** \file
- *  \brief Source: word-processor mode for the editor: does dynamic paragraph formatting
+ *  \brief Source: Dynamic paragraph formatting
  *  \author Paul Sheer
  *  \date 1996
  *  \author Andrew Borodin
- *  \date 2013
+ *  \date 2013, 2014
  */
 
 #include <config.h>
@@ -57,11 +56,12 @@
 
 /*** global variables ****************************************************************************/
 
+char *option_stop_format_chars = NULL;
+
 /*** file scope macro definitions ****************************************************************/
 
 #define tab_width option_tab_spacing
 
-#define NO_FORMAT_CHARS_START "-+*\\,.;:&>"
 #define FONT_MEAN_WIDTH 1
 
 /*** file scope type declarations ****************************************************************/
@@ -112,7 +112,7 @@ bad_line_start (const edit_buffer_t * buf, off_t p)
                  && edit_buffer_get_byte (buf, p + 2) == '-');
     }
 
-    return (strchr (NO_FORMAT_CHARS_START, c) != NULL);
+    return (option_stop_format_chars != NULL && strchr (option_stop_format_chars, c) != NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -122,7 +122,7 @@ bad_line_start (const edit_buffer_t * buf, off_t p)
  */
 
 static off_t
-begin_paragraph (WEdit * edit, gboolean force)
+begin_paragraph (WEdit * edit, gboolean force, long *lines)
 {
     long i;
 
@@ -134,8 +134,10 @@ begin_paragraph (WEdit * edit, gboolean force)
             break;
         }
 
+    *lines = edit->buffer.curs_line - i;
+
     return edit_buffer_move_backward (&edit->buffer, edit_buffer_get_current_bol (&edit->buffer),
-                                      edit->buffer.curs_line - i);
+                                      *lines);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -316,7 +318,6 @@ word_start (unsigned char *t, off_t q, off_t size)
             return (-1);
         if (c == ' ' || c == '\t')
             return i;
-        i--;
     }
 }
 
@@ -448,7 +449,6 @@ put_paragraph (WEdit * edit, unsigned char *t, off_t p, long indent, off_t size)
         if (c != t[i])
             replace_at (edit, p, t[i]);
     }
-    edit_cursor_move (edit, cursor - edit->buffer.curs1);       /* restore cursor position */
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -477,6 +477,7 @@ void
 format_paragraph (WEdit * edit, gboolean force)
 {
     off_t p, q;
+    long lines;
     off_t size;
     GString *t;
     long indent;
@@ -488,7 +489,7 @@ format_paragraph (WEdit * edit, gboolean force)
     if (edit_line_is_blank (edit, edit->buffer.curs_line))
         return;
 
-    p = begin_paragraph (edit, force);
+    p = begin_paragraph (edit, force, &lines);
     q = end_paragraph (edit, force);
     indent = test_indent (edit, p, q);
 
@@ -498,27 +499,60 @@ format_paragraph (WEdit * edit, gboolean force)
     if (!force)
     {
         off_t i;
+        char *stop_format_chars;
 
-        if (strchr (NO_FORMAT_CHARS_START, t->str[0]) == NULL)
-            for (i = 0; i < size - 1; i++)
-                if (t->str[i] == '\n'
-                    && strchr (NO_FORMAT_CHARS_START "\t ", t->str[i + 1]) != NULL)
-                    break;
+        if (option_stop_format_chars != NULL
+            && strchr (option_stop_format_chars, t->str[0]) != NULL)
+        {
+            g_string_free (t, TRUE);
+            return;
+        }
 
-        g_string_free (t, TRUE);
-        return;
+        if (option_stop_format_chars == NULL || *option_stop_format_chars == '\0')
+            stop_format_chars = g_strdup ("\t");
+        else
+            stop_format_chars = g_strconcat (option_stop_format_chars, "\t", (char *) NULL);
+
+        for (i = 0; i < size - 1; i++)
+            if (t->str[i] == '\n' && strchr (stop_format_chars, t->str[i + 1]) != NULL)
+            {
+                g_free (stop_format_chars);
+                g_string_free (t, TRUE);
+                return;
+            }
+
+        g_free (stop_format_chars);
     }
 
     t2 = (unsigned char *) g_string_free (t, FALSE);
 #ifdef HAVE_CHARSET
     utf8 = edit->utf8;
 #endif
+    /* scroll up to show 1st line of paragraph */
+    edit_move_up (edit, lines, TRUE);
+    /* scroll left as much as possible to show the formatted paragraph */
+    edit_scroll_left (edit, -edit->start_col);
+
     format_this (t2, q - p, indent, utf8);
     put_paragraph (edit, t2, p, indent, size);
     g_free ((char *) t2);
 
-    /* Scroll left as much as possible to show the formatted paragraph */
-    edit_scroll_left (edit, -edit->start_col);
+    /* move to the end of paragraph */
+    q = end_paragraph (edit, force);
+    edit_cursor_move (edit, q - edit->buffer.curs1);
+
+    /* try move to the start of next paragraph */
+    if (edit->buffer.curs_line < edit->buffer.lines)
+    {
+        edit_execute_cmd (edit, CK_Home, -1);
+
+        do
+        {
+            edit_execute_cmd (edit, CK_Down, -1);
+        }
+        while (edit->buffer.curs_line < edit->buffer.lines
+               && edit_line_is_blank (edit, edit->buffer.curs_line));
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
