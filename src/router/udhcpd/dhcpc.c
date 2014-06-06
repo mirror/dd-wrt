@@ -35,6 +35,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include "dhcpd.h"
 #include "dhcpc.h"
