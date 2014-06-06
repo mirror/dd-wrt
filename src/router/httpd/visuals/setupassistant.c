@@ -414,7 +414,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 {
 
 	char wl_mode[16];
-	char wl_macaddr[16];
+	char wl_macaddr[18];
 	char wl_ssid[16];
 	char power[16];
 #ifdef HAVE_REGISTER
