@@ -42,6 +42,8 @@
  * $Id: magic.h,v 1.5 2003/06/11 23:56:26 paulus Exp $
  */
 
+#include "pppd.h"
+
 void magic_init __P((void));	/* Initialize the magic number generator */
 u_int32_t magic __P((void));	/* Returns the next magic number */
 

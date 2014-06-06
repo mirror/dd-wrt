@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include "pppoe.h"
+#include <pppd/pppd.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -25,10 +26,6 @@
 #include <netpacket/packet.h>
 #elif defined(HAVE_LINUX_IF_PACKET_H)
 #include <linux/if_packet.h>
-#endif
-
-#ifdef HAVE_NET_ETHERNET_H
-#include <net/ethernet.h>
 #endif
 
 #ifdef HAVE_ASM_TYPES_H
@@ -716,6 +713,26 @@ char *xstrdup(const char *s)
 	sysErr("strdup");
     return ret;
 }
+int error_count;
+
+#ifdef NEED_PRINTF
+void
+error(char *fmt, ...)
+{
+    va_list pvar;
+
+#if defined(__STDC__)
+    va_start(pvar, fmt);
+#else
+    char *fmt;
+    va_start(pvar);
+    fmt = va_arg(pvar, char *);
+#endif
+
+    fprintf(stderr, fmt, pvar);
+    va_end(pvar);
+}
+#endif
 
 void usage(void)
 {
