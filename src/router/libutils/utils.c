@@ -1112,6 +1112,7 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
+
 	if (boardnum == 679 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")) {
 		int mtd = getMTD("board_data");
@@ -1121,6 +1122,7 @@ int internal_getRouterBrand()
 		if (model) {
 #define R6300V2 "U12H240T00_NETGEAR"
 #define AC1450 "U12H240T99_NETGEAR"
+#define EX6200 "U12H269T00_NETGEAR"
 			char modelstr[32];
 			fread(modelstr, 1, strlen(R6300V2), model);
 			if (!strncmp(modelstr, R6300V2, strlen(R6300V2)) ) {
@@ -1131,6 +1133,10 @@ int internal_getRouterBrand()
 				setRouter("Netgear AC1450");
 				fclose(model);
 				return ROUTER_NETGEAR_AC1450;
+			} else if  ( !strncmp(modelstr, EX6200, strlen(EX6200)) ) {
+				setRouter("Netgear EX6200");
+				fclose(model);
+				return ROUTER_NETGEAR_EX6200;
 			} else {
 				setRouter("Netgear R6250");
 				fclose(model);
@@ -5434,6 +5440,15 @@ int led_control(int type, int act)
 		diag_gpio = 0x003;
 		connected_gpio = 0x101;
 		disconnected_gpio = 0x102;
+		break;
+	case ROUTER_NETGEAR_EX6200:
+		//power_gpio = 0x109;	// connected red
+		diag_gpio = 0x101;	// Netgear logo 
+		connected_gpio = 0x108;	// connected green
+		wlan1_gpio = 0x10b;	// radio led red 2.4G
+		wlan0_gpio = 0x10d;	// radio led red 5G
+		usb_gpio = 0x105;	// usb led 
+		//usb_power = 0x000;    // usb enable
 		break;
 	case ROUTER_NETGEAR_AC1450:
 		power_gpio = 0x102;	// power led green
