@@ -15,8 +15,10 @@
 
 #include <syslog.h>
 #include <sys/socket.h>
+#ifdef __UCLIBC__
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
 #include <iptables.h>
 #include <linux/netfilter_ipv4/ip_tables.h>
 #include "utils.h"
@@ -27,7 +29,9 @@
 #include <getopt.h>
 #include <errno.h>
 #include <string.h>
+#ifdef __UCLIBC__
 #include <netdb.h>
+#endif
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdarg.h>
@@ -337,7 +341,7 @@ struct in_addr *dotted_to_addr(const char *dotted)
 	return &addr;
 }
 
-static void set_revision(char *name, u_int8_t revision)
+static void set_revision(char *name, uint8_t revision)
 {
 	/* Old kernel sources don't have ".revision" field,
 	*  but we stole a byte from name. */

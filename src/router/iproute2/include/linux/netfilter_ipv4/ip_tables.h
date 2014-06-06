@@ -30,34 +30,34 @@ struct ipt_ip {
 	unsigned char iniface_mask[IFNAMSIZ], outiface_mask[IFNAMSIZ];
 
 	/* Protocol, 0 = ANY */
-	u_int16_t proto;
+	uint16_t proto;
 
 	/* Flags word */
-	u_int8_t flags;
+	uint8_t flags;
 	/* Inverse flags */
-	u_int8_t invflags;
+	uint8_t invflags;
 };
 
 struct ipt_entry_match
 {
 	union {
 		struct {
-			u_int16_t match_size;
+			uint16_t match_size;
 
 			/* Used by userspace */
 			char name[IPT_FUNCTION_MAXNAMELEN-1];
 
-			u_int8_t revision;
+			uint8_t revision;
 		} user;
 		struct {
-			u_int16_t match_size;
+			uint16_t match_size;
 
 			/* Used inside the kernel */
 			struct ipt_match *match;
 		} kernel;
 
 		/* Total length */
-		u_int16_t match_size;
+		uint16_t match_size;
 	} u;
 
 	unsigned char data[0];
@@ -67,22 +67,22 @@ struct ipt_entry_target
 {
 	union {
 		struct {
-			u_int16_t target_size;
+			uint16_t target_size;
 
 			/* Used by userspace */
 			char name[IPT_FUNCTION_MAXNAMELEN-1];
 
-			u_int8_t revision;
+			uint8_t revision;
 		} user;
 		struct {
-			u_int16_t target_size;
+			uint16_t target_size;
 
 			/* Used inside the kernel */
 			struct ipt_target *target;
 		} kernel;
 
 		/* Total length */
-		u_int16_t target_size;
+		uint16_t target_size;
 	} u;
 
 	unsigned char data[0];
@@ -124,9 +124,9 @@ struct ipt_entry
 	unsigned int nfcache;
 
 	/* Size of ipt_entry + matches */
-	u_int16_t target_offset;
+	uint16_t target_offset;
 	/* Size of ipt_entry + matches + target */
-	u_int16_t next_offset;
+	uint16_t next_offset;
 
 	/* Back pointer */
 	unsigned int comefrom;
@@ -163,12 +163,12 @@ struct ipt_entry
 /* TCP matching stuff */
 struct ipt_tcp
 {
-	u_int16_t spts[2];			/* Source port range. */
-	u_int16_t dpts[2];			/* Destination port range. */
-	u_int8_t option;			/* TCP Option iff non-zero*/
-	u_int8_t flg_mask;			/* TCP flags mask byte */
-	u_int8_t flg_cmp;			/* TCP flags compare byte */
-	u_int8_t invflags;			/* Inverse flags */
+	uint16_t spts[2];			/* Source port range. */
+	uint16_t dpts[2];			/* Destination port range. */
+	uint8_t option;			/* TCP Option iff non-zero*/
+	uint8_t flg_mask;			/* TCP flags mask byte */
+	uint8_t flg_cmp;			/* TCP flags compare byte */
+	uint8_t invflags;			/* Inverse flags */
 };
 
 /* Values for "inv" field in struct ipt_tcp. */
@@ -181,9 +181,9 @@ struct ipt_tcp
 /* UDP matching stuff */
 struct ipt_udp
 {
-	u_int16_t spts[2];			/* Source port range. */
-	u_int16_t dpts[2];			/* Destination port range. */
-	u_int8_t invflags;			/* Inverse flags */
+	uint16_t spts[2];			/* Source port range. */
+	uint16_t dpts[2];			/* Destination port range. */
+	uint8_t invflags;			/* Inverse flags */
 };
 
 /* Values for "invflags" field in struct ipt_udp. */
@@ -194,9 +194,9 @@ struct ipt_udp
 /* ICMP matching stuff */
 struct ipt_icmp
 {
-	u_int8_t type;				/* type to match */
-	u_int8_t code[2];			/* range of code */
-	u_int8_t invflags;			/* Inverse flags */
+	uint8_t type;				/* type to match */
+	uint8_t code[2];			/* range of code */
+	uint8_t invflags;			/* Inverse flags */
 };
 
 /* Values for "inv" field for struct ipt_icmp. */
@@ -289,7 +289,7 @@ struct ipt_get_revision
 {
 	char name[IPT_FUNCTION_MAXNAMELEN-1];
 
-	u_int8_t revision;
+	uint8_t revision;
 };
 
 /* Standard return verdict, or do jump. */

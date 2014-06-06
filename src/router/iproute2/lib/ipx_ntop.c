@@ -4,9 +4,9 @@
 
 #include "utils.h"
 
-static __inline__ int do_digit(char *str, u_int32_t addr, u_int32_t scale, size_t *pos, size_t len)
+static __inline__ int do_digit(char *str, uint32_t addr, uint32_t scale, size_t *pos, size_t len)
 {
-	u_int32_t tmp = addr >> (scale * 4);
+	uint32_t tmp = addr >> (scale * 4);
 
 	if (*pos == len)
 		return 1;

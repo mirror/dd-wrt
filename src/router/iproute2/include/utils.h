@@ -2,11 +2,16 @@
 #define __UTILS_H__ 1
 
 #include <asm/types.h>
+#ifdef __UCLIBC__
 #include <resolv.h>
-
+#endif
 #include "libnetlink.h"
 #include "ll_map.h"
 #include "rtm_map.h"
+
+#ifndef HZ
+#define HZ 100
+#endif
 
 extern int preferred_family;
 extern int show_stats;
@@ -66,8 +71,8 @@ struct dn_naddr
 #define IPX_NODE_LEN 6
 
 struct ipx_addr {
-	u_int32_t ipx_net;
-	u_int8_t  ipx_node[IPX_NODE_LEN];
+	uint32_t ipx_net;
+	uint8_t  ipx_node[IPX_NODE_LEN];
 };
 
 extern __u32 get_addr32(const char *name);
