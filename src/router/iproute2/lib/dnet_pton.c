@@ -4,19 +4,19 @@
 
 #include "utils.h"
 
-static __inline__ u_int16_t dn_htons(u_int16_t addr)
+static __inline__ u_int16_t dn_htons(uint16_t addr)
 {
         union {
-                u_int8_t byte[2];
-                u_int16_t word;
+                uint8_t byte[2];
+                uint16_t word;
         } u;
 
         u.word = addr;
-        return ((u_int16_t)u.byte[0]) | (((u_int16_t)u.byte[1]) << 8);
+        return ((uint16_t)u.byte[0]) | (((uint16_t)u.byte[1]) << 8);
 }
 
 
-static int dnet_num(const char *src, u_int16_t * dst)
+static int dnet_num(const char *src, uint16_t * dst)
 {
 	int rv = 0;
 	int tmp;
@@ -37,8 +37,8 @@ static int dnet_num(const char *src, u_int16_t * dst)
 
 static int dnet_pton1(const char *src, struct dn_naddr *dna)
 {
-	u_int16_t area = 0;
-	u_int16_t node = 0;
+	uint16_t area = 0;
+	uint16_t node = 0;
 	int pos;
 
 	pos = dnet_num(src, &area);
@@ -48,7 +48,7 @@ static int dnet_pton1(const char *src, struct dn_naddr *dna)
 	if ((pos == 0) || (node > 1023))
 		return 0;
 	dna->a_len = 2;
-	*(u_int16_t *)dna->a_addr = dn_htons((area << 10) | node);
+	*(uint16_t *)dna->a_addr = dn_htons((area << 10) | node);
 
 	return 1;
 }
