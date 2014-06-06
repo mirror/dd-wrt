@@ -180,7 +180,7 @@ static struct ebt_u_watcher ulog_watcher =
 	.extra_ops	= opts,
 };
 
-void _ulog_ulog_ulog_init(void)
+void _init(void)
 {
 	ebt_register_watcher(&ulog_watcher);
 }

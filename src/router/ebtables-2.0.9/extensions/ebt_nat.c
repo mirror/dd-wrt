@@ -10,8 +10,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#include "../include/ebtables_u.h"
+#ifdef __UCLIBC__
 #include <netinet/ether.h>
+#endif
+#include "../include/ebtables_u.h"
 #include <linux/netfilter_bridge/ebt_nat.h>
 
 static int to_source_supplied, to_dest_supplied;
@@ -231,7 +233,7 @@ static struct ebt_u_target dnat_target =
 	.extra_ops	= opts_d,
 };
 
-void _nat_nat_nat_init(void)
+void _init(void)
 {
 	ebt_register_target(&snat_target);
 	ebt_register_target(&dnat_target);
