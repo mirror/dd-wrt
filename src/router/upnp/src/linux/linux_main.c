@@ -12,7 +12,7 @@
  * $Id: linux_main.c,v 1.9 2008/06/20 05:27:46 Exp $
  */
 #include <errno.h>
-#include <error.h>
+//#include <error.h>
 #include <signal.h>
 #include <assert.h>
 #include <stdlib.h>
