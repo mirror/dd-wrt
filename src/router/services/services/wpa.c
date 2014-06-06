@@ -307,7 +307,7 @@ void start_nas_lan(int c)
 
 	if (strlen(vifs))
 		foreach(var, vifs, next) {
-		start_nas_single("lan", var);
+			start_nas_single("lan", var);
 		}
 }
 
