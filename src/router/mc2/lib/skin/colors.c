@@ -2,8 +2,8 @@
    Skins engine.
    Work with colors
 
-   Copyright (C) 2009, 2010, 2011, 2012
-   The Free Software Foundation, Inc.
+   Copyright (C) 2009-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2009
@@ -178,6 +178,7 @@ mc_skin_color_set_default_for_terminal (mc_skin_t * mc_skin)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
 static void
 mc_skin_color_cache_init (void)
 {
@@ -255,7 +256,6 @@ mc_skin_color_cache_init (void)
     DFF_CHH_COLOR = mc_skin_color_get ("diffviewer", "changednew");
     DFF_CHD_COLOR = mc_skin_color_get ("diffviewer", "changed");
     DFF_DEL_COLOR = mc_skin_color_get ("diffviewer", "removed");
-    DFF_FOLDER_COLOR = mc_skin_color_get ("diffviewer", "folder");
     DFF_ERROR_COLOR = mc_skin_color_get ("diffviewer", "error");
 }
 

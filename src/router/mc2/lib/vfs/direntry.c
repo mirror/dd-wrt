@@ -1,8 +1,8 @@
 /*
    Directory cache support
 
-   Copyright (C) 1998, 2011, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 1998-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Pavel Machek <pavel@ucw.cz>, 1998
@@ -655,6 +655,9 @@ vfs_s_close (void *fh)
 {
     int res = 0;
     struct vfs_class *me = FH_SUPER->me;
+
+    if (me == NULL)
+        return (-1);
 
     FH_SUPER->fd_usage--;
     if (!FH_SUPER->fd_usage)

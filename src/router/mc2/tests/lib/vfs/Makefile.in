@@ -83,7 +83,8 @@ TESTS = canonicalize_pathname$(EXEEXT) current_dir$(EXEEXT) \
 	relative_cd$(EXEEXT) tempdir$(EXEEXT) \
 	vfs_parse_ls_lga$(EXEEXT) vfs_path_from_str_flags$(EXEEXT) \
 	vfs_path_string_convert$(EXEEXT) vfs_prefix_to_class$(EXEEXT) \
-	vfs_split$(EXEEXT) vfs_s_get_path$(EXEEXT) $(am__EXEEXT_1)
+	vfs_setup_cwd$(EXEEXT) vfs_split$(EXEEXT) \
+	vfs_s_get_path$(EXEEXT) $(am__EXEEXT_1)
 @CHARSET_TRUE@am__append_1 = path_recode \
 @CHARSET_TRUE@	vfs_get_encoding
 
@@ -159,7 +160,8 @@ am__EXEEXT_2 = canonicalize_pathname$(EXEEXT) current_dir$(EXEEXT) \
 	relative_cd$(EXEEXT) tempdir$(EXEEXT) \
 	vfs_parse_ls_lga$(EXEEXT) vfs_path_from_str_flags$(EXEEXT) \
 	vfs_path_string_convert$(EXEEXT) vfs_prefix_to_class$(EXEEXT) \
-	vfs_split$(EXEEXT) vfs_s_get_path$(EXEEXT) $(am__EXEEXT_1)
+	vfs_setup_cwd$(EXEEXT) vfs_split$(EXEEXT) \
+	vfs_s_get_path$(EXEEXT) $(am__EXEEXT_1)
 am_canonicalize_pathname_OBJECTS = canonicalize_pathname.$(OBJEXT)
 canonicalize_pathname_OBJECTS = $(am_canonicalize_pathname_OBJECTS)
 canonicalize_pathname_LDADD = $(LDADD)
@@ -213,6 +215,9 @@ vfs_prefix_to_class_LDADD = $(LDADD)
 am_vfs_s_get_path_OBJECTS = vfs_s_get_path.$(OBJEXT)
 vfs_s_get_path_OBJECTS = $(am_vfs_s_get_path_OBJECTS)
 vfs_s_get_path_LDADD = $(LDADD)
+am_vfs_setup_cwd_OBJECTS = vfs_setup_cwd.$(OBJEXT)
+vfs_setup_cwd_OBJECTS = $(am_vfs_setup_cwd_OBJECTS)
+vfs_setup_cwd_LDADD = $(LDADD)
 am_vfs_split_OBJECTS = vfs_split.$(OBJEXT)
 vfs_split_OBJECTS = $(am_vfs_split_OBJECTS)
 vfs_split_LDADD = $(LDADD)
@@ -258,7 +263,7 @@ SOURCES = $(canonicalize_pathname_SOURCES) $(current_dir_SOURCES) \
 	$(vfs_parse_ls_lga_SOURCES) $(vfs_path_from_str_flags_SOURCES) \
 	$(vfs_path_string_convert_SOURCES) \
 	$(vfs_prefix_to_class_SOURCES) $(vfs_s_get_path_SOURCES) \
-	$(vfs_split_SOURCES)
+	$(vfs_setup_cwd_SOURCES) $(vfs_split_SOURCES)
 DIST_SOURCES = $(canonicalize_pathname_SOURCES) $(current_dir_SOURCES) \
 	$(path_cmp_SOURCES) $(path_len_SOURCES) \
 	$(path_manipulations_SOURCES) $(path_recode_SOURCES) \
@@ -267,7 +272,7 @@ DIST_SOURCES = $(canonicalize_pathname_SOURCES) $(current_dir_SOURCES) \
 	$(vfs_parse_ls_lga_SOURCES) $(vfs_path_from_str_flags_SOURCES) \
 	$(vfs_path_string_convert_SOURCES) \
 	$(vfs_prefix_to_class_SOURCES) $(vfs_s_get_path_SOURCES) \
-	$(vfs_split_SOURCES)
+	$(vfs_setup_cwd_SOURCES) $(vfs_split_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -748,6 +753,9 @@ tempdir_SOURCES = \
 vfs_get_encoding_SOURCES = \
 	vfs_get_encoding.c
 
+vfs_setup_cwd_SOURCES = \
+	vfs_setup_cwd.c
+
 vfs_split_SOURCES = \
 	vfs_split.c
 
@@ -870,6 +878,10 @@ vfs_s_get_path$(EXEEXT): $(vfs_s_get_path_OBJECTS) $(vfs_s_get_path_DEPENDENCIES
 	@rm -f vfs_s_get_path$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(vfs_s_get_path_OBJECTS) $(vfs_s_get_path_LDADD) $(LIBS)
 
+vfs_setup_cwd$(EXEEXT): $(vfs_setup_cwd_OBJECTS) $(vfs_setup_cwd_DEPENDENCIES) $(EXTRA_vfs_setup_cwd_DEPENDENCIES) 
+	@rm -f vfs_setup_cwd$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(vfs_setup_cwd_OBJECTS) $(vfs_setup_cwd_LDADD) $(LIBS)
+
 vfs_split$(EXEEXT): $(vfs_split_OBJECTS) $(vfs_split_DEPENDENCIES) $(EXTRA_vfs_split_DEPENDENCIES) 
 	@rm -f vfs_split$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(vfs_split_OBJECTS) $(vfs_split_LDADD) $(LIBS)
@@ -895,6 +907,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_path_string_convert.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_prefix_to_class.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_s_get_path.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_setup_cwd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_split.Po@am__quote@
 
 .c.o:
@@ -1197,6 +1210,13 @@ vfs_path_string_convert.log: vfs_path_string_convert$(EXEEXT)
 vfs_prefix_to_class.log: vfs_prefix_to_class$(EXEEXT)
 	@p='vfs_prefix_to_class$(EXEEXT)'; \
 	b='vfs_prefix_to_class'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+vfs_setup_cwd.log: vfs_setup_cwd$(EXEEXT)
+	@p='vfs_setup_cwd$(EXEEXT)'; \
+	b='vfs_setup_cwd'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

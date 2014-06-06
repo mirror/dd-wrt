@@ -8,17 +8,18 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Azerbaijani (http://www.transifex.com/projects/p/mc/language/"
 "az/)\n"
 "Language: az\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr ""
 
@@ -137,6 +138,9 @@ msgid ""
 "Default skin has been loaded"
 msgstr ""
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "Funksiya Düyməsi 1"
 
@@ -197,59 +201,56 @@ msgstr "Funksiya Düyməsi 19"
 msgid "Function key 20"
 msgstr "Funksiya Düyməsi 20"
 
-msgid "Backspace key"
-msgstr "Backspace düyməsi"
+msgid "Completion/M-tab"
+msgstr "Tamamlama/M-tab"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "End düyməsi"
 
-msgid "Up arrow key"
-msgstr "Yuxarı ox düyməsi"
-
-msgid "Down arrow key"
-msgstr "Aşağı ox düyməsi"
-
-msgid "Left arrow key"
-msgstr "Sol ox düyməsi"
-
-msgid "Right arrow key"
-msgstr "Sağ ox düyməsi"
-
-msgid "Home key"
-msgstr "Home düyməsi"
-
-msgid "Page Down key"
-msgstr "Aşağı Səhifə düyməsi"
-
-msgid "Page Up key"
-msgstr "Yuxarı Səhifə düyməsi"
-
-msgid "Insert key"
-msgstr "Insert düyməsi"
-
-msgid "Delete key"
-msgstr "Sil (delete) düyməsi"
-
-msgid "Completion/M-tab"
-msgstr "Tamamlama/M-tab"
-
-msgid "Back Tabulation S-tab"
+msgid "Page Up"
 msgstr ""
 
-msgid "+ on keypad"
-msgstr "düymə lövhəsi üstündəki +"
+msgid "Page Down"
+msgstr ""
 
-msgid "- on keypad"
-msgstr "düymə lövhəsi üstündəki -"
-
-msgid "Slash on keypad"
-msgstr "düymə lövhəsi üstündəki Slash düyməsi"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "düymə lövhəsi üstündəki *"
 
-msgid "Escape key"
-msgstr ""
+msgid "- on keypad"
+msgstr "düymə lövhəsi üstündəki -"
+
+msgid "+ on keypad"
+msgstr "düymə lövhəsi üstündəki +"
 
 msgid "Left arrow keypad"
 msgstr "düymə lövhəsi üstündəki Sol OX"
@@ -302,13 +303,13 @@ msgstr ""
 msgid "C1 key"
 msgstr ""
 
-msgid "Plus"
+msgid "Asterisk"
 msgstr ""
 
 msgid "Minus"
 msgstr ""
 
-msgid "Asterisk"
+msgid "Plus"
 msgstr ""
 
 msgid "Dot"
@@ -891,7 +892,7 @@ msgstr ""
 msgid "Cannot open file for writing: %s"
 msgstr ""
 
-msgid "The file you are saving is not finished with a newline"
+msgid "The file you are saving does not end with a newline."
 msgstr ""
 
 msgid "C&ontinue"
@@ -1440,7 +1441,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1639,6 +1640,18 @@ msgstr ""
 msgid "Configure options"
 msgstr "Seçənəkləri quraşdır"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr ""
 
@@ -1781,9 +1794,6 @@ msgstr ""
 
 msgid "Input / display codepage:"
 msgstr "Giriş / ekran kod səhifəsi:"
-
-msgid "&Select"
-msgstr "&Seç"
 
 msgid "Directory tree"
 msgstr ""
@@ -2169,8 +2179,8 @@ msgid "FileOperation|Delete"
 msgstr ""
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2194,13 +2204,6 @@ msgstr "fayllar/qovluqlar"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " qaynaq maskalı: "
-
-msgid "to:"
-msgstr "göndər:"
-
-#, c-format
-msgid "%s?"
-msgstr ""
 
 msgid "Cannot make the hardlink"
 msgstr ""
@@ -2556,6 +2559,9 @@ msgstr "Qaynaq"
 msgid "Target"
 msgstr "Hədəf"
 
+msgid "to:"
+msgstr "göndər:"
+
 msgid "Follow &links"
 msgstr ""
 
@@ -2644,6 +2650,7 @@ msgstr "Qurtardım"
 msgid "Finished (ignored %zd directory)"
 msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] ""
+msgstr[1] ""
 
 #, c-format
 msgid "Searching %s"
@@ -2806,6 +2813,7 @@ msgstr "Böyüklük:    %s"
 msgid " (%ld block)"
 msgid_plural " (%ld blocks)"
 msgstr[0] ""
+msgstr[1] ""
 
 #, c-format
 msgid "Owner:     %s/%s"
@@ -3024,6 +3032,9 @@ msgstr ""
 msgid "C&onfirmation..."
 msgstr ""
 
+msgid "&Appearance..."
+msgstr ""
+
 msgid "&Display bits..."
 msgstr "Bitləri &göstər ..."
 
@@ -3037,6 +3048,7 @@ msgstr ""
 msgid "You have %zd opened screen. Quit anyway?"
 msgid_plural "You have %zd opened screens. Quit anyway?"
 msgstr[0] ""
+msgstr[1] ""
 
 msgid "The Midnight Commander"
 msgstr ""
@@ -3183,11 +3195,13 @@ msgstr "<bağ oxuması iflas etdi>"
 msgid "%s byte"
 msgid_plural "%s bytes"
 msgstr[0] ""
+msgstr[1] ""
 
 #, c-format
 msgid "%s in %d file"
 msgid_plural "%s in %d files"
 msgstr[0] ""
+msgstr[1] ""
 
 msgid "Panelize"
 msgstr ""
@@ -4064,3 +4078,6 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "&Select"
+#~ msgstr "&Seç"

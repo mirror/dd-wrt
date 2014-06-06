@@ -1,8 +1,8 @@
 /*
    File operation contexts for the Midnight Commander
 
-   Copyright (C) 1999, 2001, 2002, 2003, 2004, 2005, 2007, 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 1999-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Federico Mena <federico@nuclecu.unam.mx>

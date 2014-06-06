@@ -5,8 +5,8 @@
 
    Copyright (C) Andrew Tridgell 1992-1998
 
-   Copyright (C) 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 2011-2014
+   Free Software Foundation, Inc.
 
    Modified by Jeremy Allison 1995.
 

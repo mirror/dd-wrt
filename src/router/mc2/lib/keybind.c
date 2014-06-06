@@ -1,8 +1,8 @@
 /*
    Definitions of key bindings.
 
-   Copyright (C) 2005, 2009, 2010, 2011, 2011, 2012
-   The Free Software Foundation, Inc.
+   Copyright (C) 2005-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Vitja Makarov, 2005
@@ -176,6 +176,7 @@ static name_keymap_t command_names[] = {
     {"Jobs", CK_Jobs},
 #endif
     {"OptionsLayout", CK_OptionsLayout},
+    {"OptionsAppearance", CK_OptionsAppearance},
     {"Link", CK_Link},
     {"PanelListingChange", CK_PanelListingChange},
     {"PanelListing", CK_PanelListing},

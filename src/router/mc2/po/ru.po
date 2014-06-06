@@ -13,13 +13,13 @@
 # Ilia Maslakov <il.smind@gmail.com>, 2009
 # Slava Zanko <slavazanko@gmail.com>, 2009, 2011
 # NaiLi (aka jamesjames) Rootaerc <theism@mail.ru>, 2012
-# Andrew Borodin <aborodin@vmail.ru>, 2009-2013.
+# Andrew Borodin <aborodin@vmail.ru>, 2009-2014.
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-07-05 09:15+0300\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-28 13:31+0300\n"
 "Last-Translator: Andrew Borodin <aborodin@vmail.ru>\n"
 "Language-Team: Russian (http://www.transifex.com/projects/p/mc/language/"
 "ru/)\n"
@@ -165,6 +165,9 @@ msgstr ""
 "на терминале, не поддерживающем 256 цветов.\n"
 "Будет использован скин по-умолчанию"
 
+msgid "Escape"
+msgstr "Клавиша Esc      "
+
 msgid "Function key 1"
 msgstr "Функциональная 1 "
 
@@ -225,59 +228,56 @@ msgstr "Функциональная 19"
 msgid "Function key 20"
 msgstr "Функциональная 20"
 
-msgid "Backspace key"
+msgid "Completion/M-tab"
+msgstr "Завершение/M-tab "
+
+msgid "BackTab/S-tab"
+msgstr "Обратная таб./S-tab"
+
+msgid "Backspace"
 msgstr "Клавиша Backspace"
+
+msgid "Up arrow"
+msgstr "Стрелка вверх    "
+
+msgid "Down arrow"
+msgstr "Стрелка вниз     "
+
+msgid "Left arrow"
+msgstr "Стрелка влево    "
+
+msgid "Right arrow"
+msgstr "Стрелка вправо   "
+
+msgid "Insert"
+msgstr "Клавиша Insert   "
+
+msgid "Delete"
+msgstr "Клавиша Delete   "
+
+msgid "Home"
+msgstr "Клавиша Home     "
 
 msgid "End key"
 msgstr "Клавиша End      "
 
-msgid "Up arrow key"
-msgstr "Стрелка вверх    "
-
-msgid "Down arrow key"
-msgstr "Стрелка вниз     "
-
-msgid "Left arrow key"
-msgstr "Стрелка влево    "
-
-msgid "Right arrow key"
-msgstr "Стрелка вправо   "
-
-msgid "Home key"
-msgstr "Клавиша Home     "
-
-msgid "Page Down key"
-msgstr "Клавиша Page Down"
-
-msgid "Page Up key"
+msgid "Page Up"
 msgstr "Клавиша Page Up  "
 
-msgid "Insert key"
-msgstr "Клавиша Insert   "
+msgid "Page Down"
+msgstr "Клавиша Page Down"
 
-msgid "Delete key"
-msgstr "Клавиша Delete   "
-
-msgid "Completion/M-tab"
-msgstr "Завершение/M-Tab "
-
-msgid "Back Tabulation S-tab"
-msgstr "Обратная табуляция S-tab"
-
-msgid "+ on keypad"
-msgstr "+ доп.клавиатуры "
-
-msgid "- on keypad"
-msgstr "- доп.клавиатуры "
-
-msgid "Slash on keypad"
+msgid "/ on keypad"
 msgstr "/ доп.клавиатуры "
 
 msgid "* on keypad"
 msgstr "* доп.клавиатуры "
 
-msgid "Escape key"
-msgstr "Клавиша Esc      "
+msgid "- on keypad"
+msgstr "- доп.клавиатуры "
+
+msgid "+ on keypad"
+msgstr "+ доп.клавиатуры "
 
 msgid "Left arrow keypad"
 msgstr "Left доп.клавиатуры"
@@ -330,14 +330,14 @@ msgstr "Клавиша A1"
 msgid "C1 key"
 msgstr "Клавиша C1"
 
-msgid "Plus"
-msgstr "Плюс"
+msgid "Asterisk"
+msgstr "Звёздочка"
 
 msgid "Minus"
 msgstr "Минус"
 
-msgid "Asterisk"
-msgstr "Звёздочка"
+msgid "Plus"
+msgstr "Плюс"
 
 msgid "Dot"
 msgstr "Точка"
@@ -971,7 +971,7 @@ msgstr "Невозможно открыть канал для записи: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Невозможно открыть файл для записи: %s"
 
-msgid "The file you are saving is not finished with a newline"
+msgid "The file you are saving does not end with a newline."
 msgstr "Сохраняемый файл не имеет символа перевода строки в конце файла"
 
 msgid "C&ontinue"
@@ -1530,8 +1530,8 @@ msgstr ""
 "Текстовый редактор с дружественным интерфейсом пользователя.\n"
 "Создан для Midnight Commander."
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2014 the Free Software Foundation"
 
 msgid "About"
 msgstr "О программе"
@@ -1739,6 +1739,18 @@ msgstr "&Автосохранение настроек"
 msgid "Configure options"
 msgstr "Параметры конфигурации"
 
+msgid "< Default >"
+msgstr "< По умолчанию >"
+
+msgid "Skins"
+msgstr "Скины"
+
+msgid "Skin:"
+msgstr "Скин:"
+
+msgid "Appearance"
+msgstr "Оформление"
+
 msgid "Case &insensitive"
 msgstr "Без &учета регистра"
 
@@ -1885,9 +1897,6 @@ msgstr "Отображение символов"
 
 msgid "Input / display codepage:"
 msgstr "Кодировка ввода/вывода:"
-
-msgid "&Select"
-msgstr "Выбрать"
 
 msgid "Directory tree"
 msgstr "Дерево каталогов"
@@ -2287,8 +2296,8 @@ msgid "FileOperation|Delete"
 msgstr "Удалить"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr "%o %f%n\"%s\"%m"
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2312,13 +2321,6 @@ msgstr "файлы/каталоги"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " с исходным шаблоном:"
-
-msgid "to:"
-msgstr "в:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Невозможно создать жесткую ссылку"
@@ -2750,6 +2752,9 @@ msgstr "Источник"
 
 msgid "Target"
 msgstr "Приемник"
+
+msgid "to:"
+msgstr "в:"
 
 msgid "Follow &links"
 msgstr "&Разыменовывать ссылки"
@@ -3226,6 +3231,9 @@ msgstr "&Настройки панелей..."
 
 msgid "C&onfirmation..."
 msgstr "&Подтверждение..."
+
+msgid "&Appearance..."
+msgstr "&Оформление..."
 
 msgid "&Display bits..."
 msgstr "&Биты символов..."
@@ -4309,6 +4317,3 @@ msgstr "Продолжить с начала?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Невозможно получить локальную копию /ftp://some.host/editme.txt"
-
-#~ msgid "Deleting"
-#~ msgstr "Удаляем"

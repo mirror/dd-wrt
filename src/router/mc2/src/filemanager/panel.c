@@ -1,9 +1,8 @@
 /*
    Panel managing.
 
-   Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2009, 2011, 2012, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 1994-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Miguel de Icaza, 1995
@@ -37,7 +36,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "lib/global.h"
 
@@ -1507,7 +1505,7 @@ panel_paint_sort_info (WPanel * panel)
     if (*panel->sort_field->hotkey != '\0')
     {
         const char *sort_sign =
-            panel->sort_info.reverse ? panel_sort_down_sign : panel_sort_up_sign;
+            panel->sort_info.reverse ? panel_sort_up_sign : panel_sort_down_sign;
         char *str;
 
         str = g_strdup_printf ("%s%s", sort_sign, Q_ (panel->sort_field->hotkey));
@@ -1582,7 +1580,7 @@ paint_frame (WPanel * panel)
                     && strcmp (format->id, panel->sort_field->id) == 0)
                     g_string_append (format_txt,
                                      panel->sort_info.reverse
-                                     ? panel_sort_down_sign : panel_sort_up_sign);
+                                     ? panel_sort_up_sign : panel_sort_down_sign);
 
                 g_string_append (format_txt, format->title);
                 if (strcmp (format->id, "name") == 0 && panel->filter && *panel->filter)
@@ -4758,7 +4756,7 @@ void
 panel_init (void)
 {
     panel_sort_up_sign = mc_skin_get ("widget-common", "sort-sign-up", "'");
-    panel_sort_down_sign = mc_skin_get ("widget-common", "sort-sign-down", ",");
+    panel_sort_down_sign = mc_skin_get ("widget-common", "sort-sign-down", ".");
 
     panel_hiddenfiles_sign_show = mc_skin_get ("widget-panel", "hiddenfiles-sign-show", ".");
     panel_hiddenfiles_sign_hide = mc_skin_get ("widget-panel", "hiddenfiles-sign-hide", ".");

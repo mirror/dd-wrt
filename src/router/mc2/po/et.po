@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Kristjan Räts <kristjanrats@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Estonian (http://www.transifex.com/projects/p/mc/language/"
 "et/)\n"
 "Language: et\n"
@@ -19,6 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Hoiatus: koodilehtede laadimine nurjus"
 
@@ -153,6 +154,9 @@ msgstr ""
 "mis ei toeta 256 värvi on võimatu.\n"
 "Laeti vaikimisi nahk"
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "Klahv F1"
 
@@ -213,59 +217,56 @@ msgstr "Klahv F19"
 msgid "Function key 20"
 msgstr "Klahv F20"
 
-msgid "Backspace key"
-msgstr "Tagasisamm"
+msgid "Completion/M-tab"
+msgstr "Lõpetamine/M-Tab"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "Klahv End"
 
-msgid "Up arrow key"
-msgstr "Nool üles"
+msgid "Page Up"
+msgstr ""
 
-msgid "Down arrow key"
-msgstr "Nool alla"
+msgid "Page Down"
+msgstr ""
 
-msgid "Left arrow key"
-msgstr "Nool vasakule"
-
-msgid "Right arrow key"
-msgstr "Nool paremale"
-
-msgid "Home key"
-msgstr "Klahv Home"
-
-msgid "Page Down key"
-msgstr "Klahv Page Down"
-
-msgid "Page Up key"
-msgstr "Klahv Page Up"
-
-msgid "Insert key"
-msgstr "Klahv Insert"
-
-msgid "Delete key"
-msgstr "Klahv Delete"
-
-msgid "Completion/M-tab"
-msgstr "Lõpetamine/M-Tab"
-
-msgid "Back Tabulation S-tab"
-msgstr "Tagurpidi tab. S-Tab"
-
-msgid "+ on keypad"
-msgstr "numbristiku +"
-
-msgid "- on keypad"
-msgstr "numbristiku -"
-
-msgid "Slash on keypad"
-msgstr "numbristiku /"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "numbristiku *"
 
-msgid "Escape key"
-msgstr "Klahv Esc"
+msgid "- on keypad"
+msgstr "numbristiku -"
+
+msgid "+ on keypad"
+msgstr "numbristiku +"
 
 msgid "Left arrow keypad"
 msgstr "numbristiku nool vasakule"
@@ -318,14 +319,14 @@ msgstr "Klahv A1"
 msgid "C1 key"
 msgstr "Klahv C1"
 
-msgid "Plus"
-msgstr "Pluss +"
+msgid "Asterisk"
+msgstr "Tärn *"
 
 msgid "Minus"
 msgstr "Miinus -"
 
-msgid "Asterisk"
-msgstr "Tärn *"
+msgid "Plus"
+msgstr "Pluss +"
 
 msgid "Dot"
 msgstr "Punkt ."
@@ -954,7 +955,8 @@ msgstr "Toru avamine kirjutamiseks nurjus: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Faili avamine kirjutamiseks nurjus: %s"
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "Fail, mida salvestad, ei lõppe reavahetusega"
 
 msgid "C&ontinue"
@@ -1513,8 +1515,8 @@ msgstr ""
 "Kasutajasõbralik tekstitoimeti, mis\n"
 "on loodud Midnight Commanderile."
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
-msgstr "Kopeerimisõigus (C) 1996-2013 Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Programmist"
@@ -1721,6 +1723,18 @@ msgstr "Seadete a&utomaatsalvestus"
 msgid "Configure options"
 msgstr "Valikute seadistamine"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr "&Tõstutundetu"
 
@@ -1866,9 +1880,6 @@ msgstr "Kuva bitlisus"
 
 msgid "Input / display codepage:"
 msgstr "Sisend/kuva kooditabel:"
-
-msgid "&Select"
-msgstr "&Vali"
 
 msgid "Directory tree"
 msgstr "Kataloogipuu"
@@ -2268,8 +2279,8 @@ msgid "FileOperation|Delete"
 msgstr "FileOperation|Kustutamine"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2293,13 +2304,6 @@ msgstr "failid/kataloogid"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr "lähtemaskiga:"
-
-msgid "to:"
-msgstr "asukohta:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Jäikviida loomine nurjus"
@@ -2730,6 +2734,9 @@ msgstr "Lähe"
 
 msgid "Target"
 msgstr "Siht"
+
+msgid "to:"
+msgstr "asukohta:"
 
 msgid "Follow &links"
 msgstr "&Viitade järgimine"
@@ -3204,6 +3211,9 @@ msgstr "P&aneeli seaded..."
 
 msgid "C&onfirmation..."
 msgstr "&Kinnituste küsimine..."
+
+msgid "&Appearance..."
+msgstr ""
 
 msgid "&Display bits..."
 msgstr "&Kuva bitid"
@@ -4284,3 +4294,6 @@ msgstr "Kas jätkata algusest?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Kohaliku koopia hankimine failist /ftp://some.host/editme.txt nurjus"
+
+#~ msgid "&Select"
+#~ msgstr "&Vali"

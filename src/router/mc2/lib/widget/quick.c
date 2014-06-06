@@ -1,9 +1,8 @@
 /*
    Widget based utility functions.
 
-   Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 1994-2014
+   Free Software Foundation, Inc.
 
    Authors:
    Miguel de Icaza, 1994, 1995, 1996
@@ -71,7 +70,7 @@ quick_create_input (int y, int x, const quick_widget_t * qw)
 {
     WInput *in;
 
-    in = input_new (y, x, input_get_default_colors (), 8, qw->u.input.text, qw->u.input.histname,
+    in = input_new (y, x, input_colors, 8, qw->u.input.text, qw->u.input.histname,
                     qw->u.input.completion_flags);
 
     in->is_password = qw->u.input.is_passwd;

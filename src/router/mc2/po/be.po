@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Belarusian (http://www.transifex.com/projects/p/mc/language/"
 "be/)\n"
 "Language: be\n"
@@ -20,6 +20,7 @@ msgstr ""
 "Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Перасьцярога: немагчыма заладаваць сьпіс кадовак"
 
@@ -155,6 +156,9 @@ msgstr ""
 "але тэрмінал не падтрымвае столькі колераў.\n"
 "Ужываецца звычайнае."
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "Функцыянальная 1"
 
@@ -215,59 +219,56 @@ msgstr "Функцыянальная 19"
 msgid "Function key 20"
 msgstr "Функцыянальная 20"
 
-msgid "Backspace key"
-msgstr "Кляв. «Backspace»"
+msgid "Completion/M-tab"
+msgstr "Дапоўніць/«M-Tab»"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "Клявіша «End»"
 
-msgid "Up arrow key"
-msgstr "Стрэлка «ўверх»"
+msgid "Page Up"
+msgstr ""
 
-msgid "Down arrow key"
-msgstr "Стрэлка «ўніз»"
+msgid "Page Down"
+msgstr ""
 
-msgid "Left arrow key"
-msgstr "Стрэлка «ўлева»"
-
-msgid "Right arrow key"
-msgstr "Стрэлка «ўправа»"
-
-msgid "Home key"
-msgstr "Клявіша «Home»"
-
-msgid "Page Down key"
-msgstr "Кляв. «Page Down»"
-
-msgid "Page Up key"
-msgstr "Кляв. «Page Up»"
-
-msgid "Insert key"
-msgstr "Клявіша «Insert»"
-
-msgid "Delete key"
-msgstr "Клявіша «Delete»"
-
-msgid "Completion/M-tab"
-msgstr "Дапоўніць/«M-Tab»"
-
-msgid "Back Tabulation S-tab"
-msgstr "Адв. зрух «S-Tab»"
-
-msgid "+ on keypad"
-msgstr "«+» лічбав. кляв."
-
-msgid "- on keypad"
-msgstr "«-» лічбав. кляв."
-
-msgid "Slash on keypad"
-msgstr "«/» лічбав. кляв."
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "«*» лічбав. кляв."
 
-msgid "Escape key"
-msgstr "Клявіша «Esc»"
+msgid "- on keypad"
+msgstr "«-» лічбав. кляв."
+
+msgid "+ on keypad"
+msgstr "«+» лічбав. кляв."
 
 msgid "Left arrow keypad"
 msgstr "«Улева» л/кл"
@@ -320,14 +321,14 @@ msgstr "Клявіша «A1»"
 msgid "C1 key"
 msgstr "Клявіша «C1»"
 
-msgid "Plus"
-msgstr "Плюс"
+msgid "Asterisk"
+msgstr "Зорачка"
 
 msgid "Minus"
 msgstr "Мінус"
 
-msgid "Asterisk"
-msgstr "Зорачка"
+msgid "Plus"
+msgstr "Плюс"
 
 msgid "Dot"
 msgstr "Кропка"
@@ -952,7 +953,8 @@ msgstr "Канал не ўдалося адчыніць запісваць: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Файл не ўдалося адчыніць запісваць: %s"
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "Файл, які вы спрабуеце захаваць, не заканчваецца новым радком"
 
 msgid "C&ontinue"
@@ -1509,7 +1511,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1718,6 +1720,18 @@ msgstr "Самарушна захоўваць &налады"
 msgid "Configure options"
 msgstr "Наставіць налады"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr "&Ня ўлічваць памер"
 
@@ -1864,9 +1878,6 @@ msgstr "Кадоўка адлюстраваньня"
 
 msgid "Input / display codepage:"
 msgstr "Кадоўка ўводу (адлюстраваньня):"
-
-msgid "&Select"
-msgstr "&Абраць"
 
 msgid "Directory tree"
 msgstr "Дрэва каталёґаў"
@@ -2266,8 +2277,8 @@ msgid "FileOperation|Delete"
 msgstr "Выдаліць"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f «%s»%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2291,13 +2302,6 @@ msgstr "файлы або каталёґі"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " з зыходным шаблёнам:"
-
-msgid "to:"
-msgstr "сюды:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Немагчыма стварыць строгую спасылку"
@@ -2719,6 +2723,9 @@ msgstr "Крыніца"
 
 msgid "Target"
 msgstr "Прызначэньне"
+
+msgid "to:"
+msgstr "сюды:"
 
 msgid "Follow &links"
 msgstr "Ператвараць &спасылкі"
@@ -3197,6 +3204,9 @@ msgstr "Налады п&анэляў…"
 
 msgid "C&onfirmation..."
 msgstr "&Пацьвярджаць…"
+
+msgid "&Appearance..."
+msgstr ""
 
 msgid "&Display bits..."
 msgstr "&Кадоўка адлюстраваньня…"
@@ -4278,3 +4288,6 @@ msgstr "Ці працягваць ад пачатку?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "&Select"
+#~ msgstr "&Абраць"

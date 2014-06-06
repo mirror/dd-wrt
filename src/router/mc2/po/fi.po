@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Finnish (http://www.transifex.com/projects/p/mc/language/"
 "fi/)\n"
 "Language: fi\n"
@@ -19,6 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Varoitus: Koodilistaa ei pysty lataamaan"
 
@@ -144,6 +145,9 @@ msgid ""
 "Default skin has been loaded"
 msgstr ""
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "Funktio 1"
 
@@ -204,59 +208,56 @@ msgstr "Funktio 19"
 msgid "Function key 20"
 msgstr "Funktio 20"
 
-msgid "Backspace key"
-msgstr "Askelpalautin"
+msgid "Completion/M-tab"
+msgstr ""
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "End"
 
-msgid "Up arrow key"
-msgstr "Ylänuoli"
-
-msgid "Down arrow key"
-msgstr "Alanuoli"
-
-msgid "Left arrow key"
-msgstr "Vasen nuoli"
-
-msgid "Right arrow key"
-msgstr "Oikea nuoli"
-
-msgid "Home key"
-msgstr "Home"
-
-msgid "Page Down key"
-msgstr "Page Down"
-
-msgid "Page Up key"
-msgstr "Page Up"
-
-msgid "Insert key"
-msgstr "Insert"
-
-msgid "Delete key"
-msgstr "Delete"
-
-msgid "Completion/M-tab"
+msgid "Page Up"
 msgstr ""
 
-msgid "Back Tabulation S-tab"
+msgid "Page Down"
 msgstr ""
 
-msgid "+ on keypad"
-msgstr "+ keypadilla"
-
-msgid "- on keypad"
-msgstr "- keypadilla"
-
-msgid "Slash on keypad"
-msgstr "Viiva keypadilla"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "* keypadilla"
 
-msgid "Escape key"
-msgstr "Esc"
+msgid "- on keypad"
+msgstr "- keypadilla"
+
+msgid "+ on keypad"
+msgstr "+ keypadilla"
 
 msgid "Left arrow keypad"
 msgstr "Vasen nuoli keypadilla"
@@ -309,14 +310,14 @@ msgstr "A1"
 msgid "C1 key"
 msgstr "C1"
 
-msgid "Plus"
-msgstr "Plus"
+msgid "Asterisk"
+msgstr "Tähti"
 
 msgid "Minus"
 msgstr "Miinus"
 
-msgid "Asterisk"
-msgstr "Tähti"
+msgid "Plus"
+msgstr "Plus"
 
 msgid "Dot"
 msgstr "Piste"
@@ -898,7 +899,7 @@ msgstr ""
 msgid "Cannot open file for writing: %s"
 msgstr ""
 
-msgid "The file you are saving is not finished with a newline"
+msgid "The file you are saving does not end with a newline."
 msgstr ""
 
 msgid "C&ontinue"
@@ -1447,7 +1448,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1646,6 +1647,18 @@ msgstr ""
 msgid "Configure options"
 msgstr ""
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr ""
 
@@ -1787,9 +1800,6 @@ msgid "Display bits"
 msgstr ""
 
 msgid "Input / display codepage:"
-msgstr ""
-
-msgid "&Select"
 msgstr ""
 
 msgid "Directory tree"
@@ -2176,7 +2186,7 @@ msgid "FileOperation|Delete"
 msgstr ""
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
 msgstr ""
 
 #, no-c-format
@@ -2200,13 +2210,6 @@ msgstr ""
 
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
-msgstr ""
-
-msgid "to:"
-msgstr ""
-
-#, c-format
-msgid "%s?"
 msgstr ""
 
 msgid "Cannot make the hardlink"
@@ -2561,6 +2564,9 @@ msgid "Source"
 msgstr ""
 
 msgid "Target"
+msgstr ""
+
+msgid "to:"
 msgstr ""
 
 msgid "Follow &links"
@@ -3031,6 +3037,9 @@ msgid "&Panel options..."
 msgstr ""
 
 msgid "C&onfirmation..."
+msgstr ""
+
+msgid "&Appearance..."
 msgstr ""
 
 msgid "&Display bits..."

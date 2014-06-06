@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Japanese (http://www.transifex.com/projects/p/mc/language/"
 "ja/)\n"
 "Language: ja\n"
@@ -22,6 +22,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "警告: コードページの一覧を読み込めません"
 
@@ -147,6 +148,9 @@ msgid ""
 "Default skin has been loaded"
 msgstr ""
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "Function キー 1"
 
@@ -207,59 +211,56 @@ msgstr "Function キー 19"
 msgid "Function key 20"
 msgstr "Function キー 20"
 
-msgid "Backspace key"
-msgstr "Backspaece キー"
+msgid "Completion/M-tab"
+msgstr "Completion/M-tab"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "Endキー"
 
-msgid "Up arrow key"
-msgstr "上矢印"
-
-msgid "Down arrow key"
-msgstr "下矢印"
-
-msgid "Left arrow key"
-msgstr "左矢印"
-
-msgid "Right arrow key"
-msgstr "右矢印"
-
-msgid "Home key"
-msgstr "Home キー"
-
-msgid "Page Down key"
-msgstr "PageDownキー"
-
-msgid "Page Up key"
-msgstr "PageUp キー"
-
-msgid "Insert key"
-msgstr "Insert キー"
-
-msgid "Delete key"
-msgstr "Delete キー"
-
-msgid "Completion/M-tab"
-msgstr "Completion/M-tab"
-
-msgid "Back Tabulation S-tab"
+msgid "Page Up"
 msgstr ""
 
-msgid "+ on keypad"
-msgstr "10キーの +"
+msgid "Page Down"
+msgstr ""
 
-msgid "- on keypad"
-msgstr "10キーの -"
-
-msgid "Slash on keypad"
-msgstr "10キーの /"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "10キーの *"
 
-msgid "Escape key"
-msgstr "エスケープ キー"
+msgid "- on keypad"
+msgstr "10キーの -"
+
+msgid "+ on keypad"
+msgstr "10キーの +"
 
 msgid "Left arrow keypad"
 msgstr "10キーの 左矢印"
@@ -312,14 +313,14 @@ msgstr "A1 キー"
 msgid "C1 key"
 msgstr "C1 キー"
 
-msgid "Plus"
-msgstr "プラス"
+msgid "Asterisk"
+msgstr "アスタリスク"
 
 msgid "Minus"
 msgstr "マイナス"
 
-msgid "Asterisk"
-msgstr "アスタリスク"
+msgid "Plus"
+msgstr "プラス"
 
 msgid "Dot"
 msgstr "ドット"
@@ -901,7 +902,7 @@ msgstr ""
 msgid "Cannot open file for writing: %s"
 msgstr ""
 
-msgid "The file you are saving is not finished with a newline"
+msgid "The file you are saving does not end with a newline."
 msgstr ""
 
 msgid "C&ontinue"
@@ -1450,7 +1451,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1653,6 +1654,18 @@ msgstr "自動保存の設定(&U)"
 msgid "Configure options"
 msgstr "設定オプション"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr ""
 
@@ -1795,9 +1808,6 @@ msgstr ""
 
 msgid "Input / display codepage:"
 msgstr "入力 / コードページを表示:"
-
-msgid "&Select"
-msgstr "選択(&S)"
 
 msgid "Directory tree"
 msgstr "ディレクトリーのツリー"
@@ -2185,8 +2195,8 @@ msgid "FileOperation|Delete"
 msgstr "ファイル操作|削除"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2210,13 +2220,6 @@ msgstr "files/directories"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " with source mask:"
-
-msgid "to:"
-msgstr "to:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "ハードリンクが作成できません"
@@ -2571,6 +2574,9 @@ msgstr "元"
 
 msgid "Target"
 msgstr "ターゲット"
+
+msgid "to:"
+msgstr "to:"
 
 msgid "Follow &links"
 msgstr ""
@@ -3039,6 +3045,9 @@ msgstr "パネルのオプション(&P)"
 
 msgid "C&onfirmation..."
 msgstr "確認(&O)..."
+
+msgid "&Appearance..."
+msgstr ""
 
 msgid "&Display bits..."
 msgstr "表示ビット数(&D)..."
@@ -4081,3 +4090,6 @@ msgstr "初めから続けますか?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "&Select"
+#~ msgstr "選択(&S)"

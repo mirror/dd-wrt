@@ -2,9 +2,8 @@
    Input line filename/username/hostname/variable/command completion.
    (Let mc type for you...)
 
-   Copyright (C) 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2007, 2011, 2013
-   the Free Software Foundation, Inc.
+   Copyright (C) 1995-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Jakub Jelinek, 1995
@@ -1050,7 +1049,7 @@ query_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
 
                 new_end = str_get_prev_char (&input->buffer[end]) - input->buffer;
 
-                for (i = 0, e = LISTBOX (h->current->data)->list;
+                for (i = 0, e = listbox_get_first_link (LISTBOX (h->current->data));
                      e != NULL; i++, e = g_list_next (e))
                 {
                     WLEntry *le = LENTRY (e->data);
@@ -1102,7 +1101,7 @@ query_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
                     return MSG_HANDLED;
                 }
 
-                for (i = 0, e = LISTBOX (h->current->data)->list;
+                for (i = 0, e = listbox_get_first_link (LISTBOX (h->current->data));
                      e != NULL; i++, e = g_list_next (e))
                 {
                     WLEntry *le = LENTRY (e->data);

@@ -10,9 +10,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Ukrainian (http://www.transifex.com/projects/p/mc/language/"
 "uk/)\n"
 "Language: uk\n"
@@ -22,6 +22,7 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Попередження: не вдалося завантажити список кодових сторінок"
 
@@ -157,6 +158,9 @@ msgstr ""
 "на не-256-кольоровому терміналі.\n"
 "Завантажено стандартну обкладинку"
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "F1"
 
@@ -217,59 +221,56 @@ msgstr "F19"
 msgid "Function key 20"
 msgstr "F20"
 
-msgid "Backspace key"
-msgstr "← Backspace"
+msgid "Completion/M-tab"
+msgstr "Доповнення/M-Tab"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "End"
 
-msgid "Up arrow key"
-msgstr "↑"
+msgid "Page Up"
+msgstr ""
 
-msgid "Down arrow key"
-msgstr "↓"
+msgid "Page Down"
+msgstr ""
 
-msgid "Left arrow key"
-msgstr "←"
-
-msgid "Right arrow key"
-msgstr "→"
-
-msgid "Home key"
-msgstr "Home"
-
-msgid "Page Down key"
-msgstr "Page Down"
-
-msgid "Page Up key"
-msgstr "Page Up"
-
-msgid "Insert key"
-msgstr "Insert"
-
-msgid "Delete key"
-msgstr "Delete"
-
-msgid "Completion/M-tab"
-msgstr "Доповнення/M-Tab"
-
-msgid "Back Tabulation S-tab"
-msgstr "Зворотна табуляція S-tab"
-
-msgid "+ on keypad"
-msgstr "Дод. +"
-
-msgid "- on keypad"
-msgstr "Дод. -"
-
-msgid "Slash on keypad"
-msgstr "Дод. /"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "Дод. *"
 
-msgid "Escape key"
-msgstr "Escape"
+msgid "- on keypad"
+msgstr "Дод. -"
+
+msgid "+ on keypad"
+msgstr "Дод. +"
 
 msgid "Left arrow keypad"
 msgstr "Дод. ←"
@@ -322,14 +323,14 @@ msgstr "A1"
 msgid "C1 key"
 msgstr "C1"
 
-msgid "Plus"
-msgstr "+"
+msgid "Asterisk"
+msgstr "*"
 
 msgid "Minus"
 msgstr "-"
 
-msgid "Asterisk"
-msgstr "*"
+msgid "Plus"
+msgstr "+"
 
 msgid "Dot"
 msgstr "."
@@ -952,7 +953,8 @@ msgstr "Не вдалося відкрити канал для запису: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Не вдалося відкрити файл для запису: %s"
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "Файл, що зберігається, не завершено новим рядком"
 
 msgid "C&ontinue"
@@ -1511,7 +1513,7 @@ msgstr ""
 "Дружній до користувача редактор тексту\n"
 "написаний для Midnight Commander."
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1719,6 +1721,18 @@ msgstr "&Автозбереження параметрів"
 msgid "Configure options"
 msgstr "Параметри конфігурації"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr "Не враховувати регістр"
 
@@ -1864,9 +1878,6 @@ msgstr "Відображення символів"
 
 msgid "Input / display codepage:"
 msgstr "Кодування вводу/показу:"
-
-msgid "&Select"
-msgstr "&Вибрати"
 
 msgid "Directory tree"
 msgstr "Дерево каталогів"
@@ -2266,8 +2277,8 @@ msgid "FileOperation|Delete"
 msgstr "FileOperation|Видалення"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f «%s»%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2291,13 +2302,6 @@ msgstr "файли/каталоги"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " із шаблоном джерела:"
-
-msgid "to:"
-msgstr "до:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Не вдалося створити жорстке посилання"
@@ -2725,6 +2729,9 @@ msgstr "Джерело"
 
 msgid "Target"
 msgstr "Ціль"
+
+msgid "to:"
+msgstr "до:"
 
 msgid "Follow &links"
 msgstr "&Iти за посиланнями"
@@ -3201,6 +3208,9 @@ msgstr "Параметри панелі…"
 
 msgid "C&onfirmation..."
 msgstr "&Підтвердження…"
+
+msgid "&Appearance..."
+msgstr ""
 
 msgid "&Display bits..."
 msgstr "&Відображення символів…"
@@ -4286,3 +4296,6 @@ msgstr "Почати спочатку?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "&Select"
+#~ msgstr "&Вибрати"

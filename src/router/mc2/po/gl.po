@@ -12,9 +12,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Galician (http://www.transifex.com/projects/p/mc/language/"
 "gl/)\n"
 "Language: gl\n"
@@ -23,6 +23,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Aviso: non é posíbel cargar a lista de codificacións"
 
@@ -159,6 +160,9 @@ msgstr ""
 "para 256 colores en terminais sen esta característica.\n"
 "Cargouse o tema predeterminado"
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "Tecla «F1»"
 
@@ -219,59 +223,56 @@ msgstr "Tecla «F19»"
 msgid "Function key 20"
 msgstr "Tecla «F20»"
 
-msgid "Backspace key"
-msgstr "Tecla «Retroceso» (<--)"
+msgid "Completion/M-tab"
+msgstr "Completar/M-Tab"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "Tecla «Fin»"
 
-msgid "Up arrow key"
-msgstr "Tecla «Frecha arriba»"
+msgid "Page Up"
+msgstr ""
 
-msgid "Down arrow key"
-msgstr "Tecla «Frecha abaixo»"
+msgid "Page Down"
+msgstr ""
 
-msgid "Left arrow key"
-msgstr "Tecla «Frecha esquerda»"
-
-msgid "Right arrow key"
-msgstr "Tecla «Frecha dereita»"
-
-msgid "Home key"
-msgstr "Tecla «Inicio»"
-
-msgid "Page Down key"
-msgstr "Tecla «Av Pág»"
-
-msgid "Page Up key"
-msgstr "Tecla «Re Pág»"
-
-msgid "Insert key"
-msgstr "Tecla «Insert»"
-
-msgid "Delete key"
-msgstr "Tecla «Supr»"
-
-msgid "Completion/M-tab"
-msgstr "Completar/M-Tab"
-
-msgid "Back Tabulation S-tab"
-msgstr "Tab. atrás > Maiús-Tab"
-
-msgid "+ on keypad"
-msgstr "+ no teclado numérico"
-
-msgid "- on keypad"
-msgstr "- no teclado numérico"
-
-msgid "Slash on keypad"
-msgstr "«/» (barra) do teclado numérico"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "* no teclado numérico"
 
-msgid "Escape key"
-msgstr "Tecla «Escape»"
+msgid "- on keypad"
+msgstr "- no teclado numérico"
+
+msgid "+ on keypad"
+msgstr "+ no teclado numérico"
 
 msgid "Left arrow keypad"
 msgstr "«Frecha esquerda» do teclado numérico"
@@ -324,14 +325,14 @@ msgstr "Tecla «A1»"
 msgid "C1 key"
 msgstr "Tecla «C1»"
 
-msgid "Plus"
-msgstr "Máis"
+msgid "Asterisk"
+msgstr "Asterisco"
 
 msgid "Minus"
 msgstr "Menos"
 
-msgid "Asterisk"
-msgstr "Asterisco"
+msgid "Plus"
+msgstr "Máis"
 
 msgid "Dot"
 msgstr "Punto"
@@ -960,7 +961,8 @@ msgstr "Non é posíbel abrir canalización para escritura: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Non é posíbel abrir o ficheiro para escritura: %s"
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "O ficheiro a gardar non remata cun salto de liña"
 
 msgid "C&ontinue"
@@ -1519,8 +1521,8 @@ msgstr ""
 "Un editor de texto de uso amigábel\n"
 "escrito para o Midnight Commander."
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2013 a Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Sobre"
@@ -1728,6 +1730,18 @@ msgstr "Configuración do &Auto-gardado"
 msgid "Configure options"
 msgstr "Configuración"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr "&Non distinguir maiúsculas"
 
@@ -1874,9 +1888,6 @@ msgstr "Mostrar bits"
 
 msgid "Input / display codepage:"
 msgstr "Entrada / mostrar xogo de caracteres:"
-
-msgid "&Select"
-msgstr "&Seleccionar"
 
 msgid "Directory tree"
 msgstr "Árbore de directorios"
@@ -2278,8 +2289,8 @@ msgid "FileOperation|Delete"
 msgstr "FileOperation|Eliminar"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f «%s»%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2303,13 +2314,6 @@ msgstr "ficheiros/directorios"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " con máscara de orixe:"
-
-msgid "to:"
-msgstr "a:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Non é posíbel crear a ligazón permanente"
@@ -2741,6 +2745,9 @@ msgstr "Orixe"
 
 msgid "Target"
 msgstr "Destino"
+
+msgid "to:"
+msgstr "a:"
 
 msgid "Follow &links"
 msgstr "Seguir &Ligazóns"
@@ -3215,6 +3222,9 @@ msgstr "Opcións dos &Paneis..."
 
 msgid "C&onfirmation..."
 msgstr "c&Onfirmación..."
+
+msgid "&Appearance..."
+msgstr ""
 
 msgid "&Display bits..."
 msgstr "&Mostrar bits..."
@@ -4297,3 +4307,6 @@ msgstr "Continuar desde o principio?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Non é posíbel obter unha copia local de /ftp://some.host/editme.txt"
+
+#~ msgid "&Select"
+#~ msgstr "&Seleccionar"
