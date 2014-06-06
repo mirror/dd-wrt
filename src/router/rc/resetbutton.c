@@ -1166,6 +1166,9 @@ void period_check(int sig)
 		sesgpio = 0x104;
 		wifigpio = 0x105;
 		break;
+	case ROUTER_NETGEAR_EX6200:
+		wifigpio = 0x104;
+		break;
 	case ROUTER_WRT310NV2:
 		sesgpio = 0x105;	// gpio 5, inversed
 		break;
