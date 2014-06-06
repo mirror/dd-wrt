@@ -16,7 +16,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <errno.h>
-#include <error.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
