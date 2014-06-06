@@ -2,9 +2,8 @@
    Internal file viewer for the Midnight Commander
    Function for search data
 
-   Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2009, 2011, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 1994-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Miguel de Icaza, 1994, 1995, 1998
@@ -344,7 +343,7 @@ mcview_do_search (mcview_t * view)
     }
 
     if (!isFound && view->search->error_str != NULL)
-        message (D_NORMAL, _("Search"), "%s", view->search->error_str);
+        query_dialog (_("Search"), view->search->error_str, D_NORMAL, 1, _("&Dismiss"));
 
     view->dirty++;
     mcview_update (view);

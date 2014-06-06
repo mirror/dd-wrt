@@ -10,9 +10,8 @@
    Janne Kukonlehto added much error recovery to them for being used
    in an interactive program.
 
-   Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2009, 2011, 2012, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 1994-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Janne Kukonlehto, 1994, 1995
@@ -1315,6 +1314,9 @@ file_mask_dialog (file_op_context_t * ctx, FileOperation operation,
         else
             ctx->search_handle->search_type = MC_SEARCH_T_REGEX;
 
+        tmp = dest_dir;
+        dest_dir = tilde_expand (tmp);
+        g_free (tmp);
         vpath = vfs_path_from_str (dest_dir);
 
         ctx->dest_mask = strrchr (dest_dir, PATH_SEP);

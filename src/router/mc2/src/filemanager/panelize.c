@@ -1,9 +1,8 @@
 /*
    External panelize
 
-   Copyright (C) 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005,
-   2007, 2009, 2011, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 1995-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Janne Kukonlehto, 1995
@@ -187,7 +186,7 @@ init_panelize (void)
     y += WIDGET (l_panelize)->lines + 1;
     add_widget (panelize_dlg, label_new (y++, UX, _("Command")));
     pname =
-        input_new (y++, UX, input_get_default_colors (), panelize_cols - UX * 2, "", "in",
+        input_new (y++, UX, input_colors, panelize_cols - UX * 2, "", "in",
                    INPUT_COMPLETE_FILENAMES | INPUT_COMPLETE_HOSTNAMES | INPUT_COMPLETE_COMMANDS |
                    INPUT_COMPLETE_VARIABLES | INPUT_COMPLETE_USERNAMES | INPUT_COMPLETE_CD |
                    INPUT_COMPLETE_SHELL_ESC);

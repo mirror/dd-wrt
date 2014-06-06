@@ -1,8 +1,8 @@
 /*
    User interface for syntax selection.
 
-   Copyright (C) 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 2011-2014
+   Free Software Foundation, Inc.
 
    Copyright (C) 2005, 2006
    Leonard den Ottolander <leonard den ottolander nl>

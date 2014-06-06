@@ -1,8 +1,8 @@
 /*
    Interface to the terminal controlling library.
 
-   Copyright (C) 2005, 2006, 2007, 2009, 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 2005-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Roland Illig <roland.illig@gmx.de>, 2005.

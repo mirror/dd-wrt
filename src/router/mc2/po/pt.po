@@ -5,15 +5,15 @@
 # Translators:
 # Gilberto J <2101458@my.ipleiria.pt>, 2012
 # Gilberto J <gmj125@gmail.com>, 2012-2013
-# Gilberto J <gmj125@gmail.com>, 2013
+# Gilberto J <gmj125@gmail.com>, 2013-2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 11:37+0000\n"
+"Last-Translator: Gilberto J <gmj125@gmail.com>\n"
 "Language-Team: Portuguese (http://www.transifex.com/projects/p/mc/language/"
 "pt/)\n"
 "Language: pt\n"
@@ -22,6 +22,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Aviso: Não foi possível carregar lista de páginas de código"
 
@@ -156,6 +157,9 @@ msgstr ""
 "num terminal que não suporta 256 cores.\n"
 "Skin por defeito foi carregada"
 
+msgid "Escape"
+msgstr "Escape"
+
 msgid "Function key 1"
 msgstr "Tecla de função 1"
 
@@ -216,59 +220,56 @@ msgstr "Tecla de função 19"
 msgid "Function key 20"
 msgstr "Tecla de função 20"
 
-msgid "Backspace key"
-msgstr "Tecla de backspace"
+msgid "Completion/M-tab"
+msgstr "Completar/M-tab"
+
+msgid "BackTab/S-tab"
+msgstr "BackTab/S-tab"
+
+msgid "Backspace"
+msgstr "Backspace"
+
+msgid "Up arrow"
+msgstr "Seta cima"
+
+msgid "Down arrow"
+msgstr "Seta baixo"
+
+msgid "Left arrow"
+msgstr "Seta esquerda"
+
+msgid "Right arrow"
+msgstr "Seta direita"
+
+msgid "Insert"
+msgstr "Inserir"
+
+msgid "Delete"
+msgstr "Apagar"
+
+msgid "Home"
+msgstr "Início"
 
 msgid "End key"
 msgstr "Tecla End"
 
-msgid "Up arrow key"
-msgstr "Tecla seta acima"
+msgid "Page Up"
+msgstr "Página cima"
 
-msgid "Down arrow key"
-msgstr "Tecla seta abaixo"
+msgid "Page Down"
+msgstr "Página baixo"
 
-msgid "Left arrow key"
-msgstr "Tecla seta esquerda"
-
-msgid "Right arrow key"
-msgstr "Tecla seta direita"
-
-msgid "Home key"
-msgstr "Tecla Home"
-
-msgid "Page Down key"
-msgstr "Tecla Page Down"
-
-msgid "Page Up key"
-msgstr "Tecla Page Up"
-
-msgid "Insert key"
-msgstr "Tecla Insert"
-
-msgid "Delete key"
-msgstr "Tecla Delete"
-
-msgid "Completion/M-tab"
-msgstr "Completar/M-tab"
-
-msgid "Back Tabulation S-tab"
-msgstr "Back Tabulation S-tab"
-
-msgid "+ on keypad"
-msgstr "+ no teclado numérico"
-
-msgid "- on keypad"
-msgstr "- no teclado numérico"
-
-msgid "Slash on keypad"
-msgstr "Barra no teclado numérico"
+msgid "/ on keypad"
+msgstr "/ no teclado numérico"
 
 msgid "* on keypad"
 msgstr "* no teclado numérico"
 
-msgid "Escape key"
-msgstr "Tecla Escape"
+msgid "- on keypad"
+msgstr "- no teclado numérico"
+
+msgid "+ on keypad"
+msgstr "+ no teclado numérico"
 
 msgid "Left arrow keypad"
 msgstr "Seta esquerda no teclado numérico"
@@ -321,14 +322,14 @@ msgstr "Tecla A1"
 msgid "C1 key"
 msgstr "Tecla C1"
 
-msgid "Plus"
-msgstr "Mais"
+msgid "Asterisk"
+msgstr "Asterisco"
 
 msgid "Minus"
 msgstr "Menos"
 
-msgid "Asterisk"
-msgstr "Asterisco"
+msgid "Plus"
+msgstr "Mais"
 
 msgid "Dot"
 msgstr "Ponto"
@@ -960,7 +961,8 @@ msgstr "Não é possível abrir o pipe para escrita: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Não é possível abrir o ficheiro para escrita: %s"
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "O ficheiro que está a gravar não termina com uma nova linha"
 
 msgid "C&ontinue"
@@ -1519,8 +1521,8 @@ msgstr ""
 "Um editor de texto amigo do utilizador\n"
 "escrito para o Midnight Commander."
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2014 the Free Software Foundation"
 
 msgid "About"
 msgstr "Acerca"
@@ -1728,6 +1730,18 @@ msgstr "Guardar setup a&uto"
 msgid "Configure options"
 msgstr "Opções de configuração"
 
+msgid "< Default >"
+msgstr "< Default >"
+
+msgid "Skins"
+msgstr "Skins"
+
+msgid "Skin:"
+msgstr "Skin:"
+
+msgid "Appearance"
+msgstr "Aspeto"
+
 msgid "Case &insensitive"
 msgstr "Insensível à cap&italização"
 
@@ -1874,9 +1888,6 @@ msgstr "Bits de display"
 
 msgid "Input / display codepage:"
 msgstr "Entrada / mostrar página de codificação:"
-
-msgid "&Select"
-msgstr "&Selecionar"
 
 msgid "Directory tree"
 msgstr "Árvore de diretório"
@@ -2277,8 +2288,8 @@ msgid "FileOperation|Delete"
 msgstr "FileOperation|Apagar"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr "%o %f%n\"%s\"%m"
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2302,13 +2313,6 @@ msgstr "ficheiros/diretórios"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " com máscara na origem:"
-
-msgid "to:"
-msgstr "para:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Não é possível fazer a hardlink"
@@ -2740,6 +2744,9 @@ msgstr "Fonte"
 
 msgid "Target"
 msgstr "Alvo"
+
+msgid "to:"
+msgstr "para:"
 
 msgid "Follow &links"
 msgstr "Seguir &ligações"
@@ -3214,6 +3221,9 @@ msgstr "Opções de &painel..."
 
 msgid "C&onfirmation..."
 msgstr "C&onfirmação..."
+
+msgid "&Appearance..."
+msgstr "&Aspeto..."
 
 msgid "&Display bits..."
 msgstr "Mostrar &bits..."
@@ -4295,3 +4305,6 @@ msgstr "Continuar do início?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Não é possível obter uma cópia local de /ftp://some.host/editme.txt"
+
+#~ msgid "&Select"
+#~ msgstr "&Selecionar"

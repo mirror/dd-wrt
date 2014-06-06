@@ -2,8 +2,8 @@
    Search text engine.
    Common share code for module.
 
-   Copyright (C) 2009, 2011, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 2009-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2009, 2011

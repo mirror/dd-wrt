@@ -1771,6 +1771,12 @@ confirm.
 .PP
 The
 .\"LINK2"
+Appearance
+.\"Appearance"
+command pops up a dialog from which you specify the skin.
+.PP
+The
+.\"LINK2"
 Display bits
 .\"Display bits"
 command pops up a dialog from which you may select which characters is your
@@ -2123,7 +2129,15 @@ to the the panel sort order: case sensitive or not.
 In this dialog you configure the confirmation options for file deletion,
 overwriting files, execution by pressing enter, quitting the program,
 directory hotlist entries deletion and history cleanup.
- and.
+.\"NODE "    Appearance"
+.SH "    Appearance"
+In this dialog you can select the skin to be used.
+.PP
+See the
+.\"LINK2"
+Skins
+.\"Skins"
+section for technical details about the skin definition files.
 .\"NODE "    Display bits"
 .SH "    Display bits"
 This is used to configure the range of visible characters on the
@@ -4125,13 +4139,11 @@ and viewers. The Midnight Commander tries to search the
 and then in the ~/.config/mc/ini file. The option name should be equal to the name
 (full pathname) of external editor or viewer. The option value can contain following
 variables:
-.PP
+.TP
 .I %filename
-.IP
 The filename to edit/view.
-.PP
+.TP
 .I %lineno
-.IP
 The start line in the opening file.
 .PP
 For example:
@@ -4142,6 +4154,17 @@ For example:
     joe=%filename +%lineno
     more=%filename +%lineno
 .fi
+.PP
+Start line is passed to the external editor/viewer only if it is called from the
+.\"LINK2"
+Find file
+.\"Find File"
+results window.
+.PP
+If external editor/viewer is launched via F4/F3 keys, MC hopes that program
+(at least "joe", but probably others too) has an own feature that by default
+opens the file where it was last open. MC doesn't prevent external editor/viewer
+to save and restore position in opened files.
 .\"NODE "Terminal databases"
 .SH "Terminal databases"
 The Midnight Commander provides a way to fix your system terminal

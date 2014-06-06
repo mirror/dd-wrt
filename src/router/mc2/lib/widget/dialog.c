@@ -1,9 +1,8 @@
 /*
    Dialog box features module for the Midnight Commander
 
-   Copyright (C) 1994, 1995, 1998, 1999, 2000, 2001, 2002, 2003, 2004,
-   2005, 2007, 2009, 2010, 2011, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 1994-2014
+   Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
 
@@ -51,6 +50,7 @@
 /* Color styles for normal and error dialogs */
 dlg_colors_t dialog_colors;
 dlg_colors_t alarm_colors;
+dlg_colors_t listbox_colors;
 
 /* Primitive way to check if the the current dialog is our dialog */
 /* This is needed by async routines like load_prompt */
@@ -700,7 +700,7 @@ dlg_set_position (WDialog * h, int y1, int x1, int y2, int x2)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/** this function sets only size, leaving positioning to automatic methods */
+/** Set dialog size and position */
 
 void
 dlg_set_size (WDialog * h, int lines, int cols)
@@ -708,14 +708,19 @@ dlg_set_size (WDialog * h, int lines, int cols)
     int x = WIDGET (h)->x;
     int y = WIDGET (h)->y;
 
-    if (h->flags & DLG_CENTER)
+    if ((h->flags & DLG_CENTER) != 0)
     {
         y = (LINES - lines) / 2;
         x = (COLS - cols) / 2;
     }
 
-    if ((h->flags & DLG_TRYUP) && (y > 3))
-        y -= 2;
+    if ((h->flags & DLG_TRYUP) != 0)
+    {
+        if (y > 3)
+            y -= 2;
+        else if (y == 3)
+            y = 2;
+    }
 
     dlg_set_position (h, y, x, y + lines, x + cols);
 }
@@ -780,8 +785,7 @@ dlg_create (gboolean modal, int y1, int x1, int lines, int cols,
 
     new_d->state = DLG_CONSTRUCT;
     new_d->modal = modal;
-    if (colors != NULL)
-        memmove (new_d->color, colors, sizeof (dlg_colors_t));
+    new_d->color = colors;
     new_d->help_ctx = help_ctx;
     new_d->flags = flags;
     new_d->data = NULL;
@@ -824,6 +828,12 @@ dlg_set_default_colors (void)
     alarm_colors[DLG_COLOR_HOT_NORMAL] = ERROR_HOT_NORMAL;
     alarm_colors[DLG_COLOR_HOT_FOCUS] = ERROR_HOT_FOCUS;
     alarm_colors[DLG_COLOR_TITLE] = ERROR_TITLE;
+
+    listbox_colors[DLG_COLOR_NORMAL] = PMENU_ENTRY_COLOR;
+    listbox_colors[DLG_COLOR_FOCUS] = PMENU_SELECTED_COLOR;
+    listbox_colors[DLG_COLOR_HOT_NORMAL] = PMENU_ENTRY_COLOR;
+    listbox_colors[DLG_COLOR_HOT_FOCUS] = PMENU_SELECTED_COLOR;
+    listbox_colors[DLG_COLOR_TITLE] = PMENU_TITLE_COLOR;
 }
 
 /* --------------------------------------------------------------------------------------------- */

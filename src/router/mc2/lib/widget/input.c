@@ -1,9 +1,8 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994, 1995, 1996, 1998, 1999, 2000, 2001, 2002, 2003,
-   2004, 2005, 2006, 2007, 2009, 2010, 2011, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 1994-2014
+   Free Software Foundation, Inc.
 
    Authors:
    Radek Doulik, 1994, 1995
@@ -60,6 +59,9 @@
 int quote = 0;
 
 const global_keymap_t *input_map = NULL;
+
+/* Color styles for input widgets */
+input_colors_t input_colors;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -990,7 +992,7 @@ input_set_options_callback (Widget * w, widget_options_t options, gboolean enabl
   * @return                     WInput object
   */
 WInput *
-input_new (int y, int x, const int *input_colors, int width, const char *def_text,
+input_new (int y, int x, const int *colors, int width, const char *def_text,
            const char *histname, input_complete_t completion_flags)
 {
     WInput *in;
@@ -1002,8 +1004,7 @@ input_new (int y, int x, const int *input_colors, int width, const char *def_tex
     w->options |= W_IS_INPUT;
     w->set_options = input_set_options_callback;
 
-    memmove (in->color, input_colors, sizeof (input_colors_t));
-
+    in->color = colors;
     in->first = TRUE;
     in->highlight = FALSE;
     in->term_first_shown = 0;
@@ -1111,20 +1112,13 @@ input_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
 
 /* --------------------------------------------------------------------------------------------- */
 
-/** Get default colors for WInput widget.
-  * @return default colors
-  */
-const int *
-input_get_default_colors (void)
+void
+input_set_default_colors (void)
 {
-    static input_colors_t standart_colors;
-
-    standart_colors[WINPUTC_MAIN] = INPUT_COLOR;
-    standart_colors[WINPUTC_MARK] = INPUT_MARK_COLOR;
-    standart_colors[WINPUTC_UNCHANGED] = INPUT_UNCHANGED_COLOR;
-    standart_colors[WINPUTC_HISTORY] = INPUT_HISTORY_COLOR;
-
-    return standart_colors;
+    input_colors[WINPUTC_MAIN] = INPUT_COLOR;
+    input_colors[WINPUTC_MARK] = INPUT_MARK_COLOR;
+    input_colors[WINPUTC_UNCHANGED] = INPUT_UNCHANGED_COLOR;
+    input_colors[WINPUTC_HISTORY] = INPUT_HISTORY_COLOR;
 }
 
 /* --------------------------------------------------------------------------------------------- */

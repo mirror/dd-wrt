@@ -1,8 +1,8 @@
 /*
    Editor dialogs for high level editing commands
 
-   Copyright (C) 2009, 2011, 2012, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 2009-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Slava Zanko <slavazanko@gmail.com>, 2009
@@ -323,7 +323,7 @@ editcmd_dialog_raw_key_query (const char *heading, const char *query, gboolean c
                     NULL, NULL, heading, DLG_CENTER | DLG_TRYUP | DLG_WANT_TAB);
 
     add_widget (raw_dlg, label_new (y, 3, query));
-    add_widget (raw_dlg, input_new (y++, 3 + wq + 1, input_get_default_colors (),
+    add_widget (raw_dlg, input_new (y++, 3 + wq + 1, input_colors,
                                     w - (6 + wq + 1), "", 0, INPUT_COMPLETE_NONE));
     if (cancel)
     {

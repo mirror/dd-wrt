@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Czech (http://www.transifex.com/projects/p/mc/language/cs/)\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
@@ -18,6 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Varování: není možné nahrát seznam znakových sad"
 
@@ -143,6 +144,9 @@ msgid ""
 "Default skin has been loaded"
 msgstr ""
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "Funkční klávesa 1"
 
@@ -203,59 +207,56 @@ msgstr "Funkční klávesa 19"
 msgid "Function key 20"
 msgstr "Funkční klávesa 20"
 
-msgid "Backspace key"
-msgstr "Klávesa Backspace"
+msgid "Completion/M-tab"
+msgstr "Doplňování/M-tab"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "Klávesa End"
 
-msgid "Up arrow key"
-msgstr "Šipka nahoru"
-
-msgid "Down arrow key"
-msgstr "Šipka dolů"
-
-msgid "Left arrow key"
-msgstr "Šipka vlevo"
-
-msgid "Right arrow key"
-msgstr "Šipka vpravo"
-
-msgid "Home key"
-msgstr "Klávesa Home"
-
-msgid "Page Down key"
-msgstr "Klávesa Page Down"
-
-msgid "Page Up key"
-msgstr "Klávesa Page Up"
-
-msgid "Insert key"
-msgstr "Klávesa Insert"
-
-msgid "Delete key"
-msgstr "Klávesa Delete"
-
-msgid "Completion/M-tab"
-msgstr "Doplňování/M-tab"
-
-msgid "Back Tabulation S-tab"
+msgid "Page Up"
 msgstr ""
 
-msgid "+ on keypad"
-msgstr "+ na num. klávesnici"
+msgid "Page Down"
+msgstr ""
 
-msgid "- on keypad"
-msgstr "- na num. klávesnici"
-
-msgid "Slash on keypad"
-msgstr "/ na num. klávesnici"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "* na num. klávesnici"
 
-msgid "Escape key"
-msgstr "Klávesa Escape"
+msgid "- on keypad"
+msgstr "- na num. klávesnici"
+
+msgid "+ on keypad"
+msgstr "+ na num. klávesnici"
 
 msgid "Left arrow keypad"
 msgstr "Šipka vlevo na numerické klávesnici"
@@ -308,14 +309,14 @@ msgstr "Klávesa A1"
 msgid "C1 key"
 msgstr "Klávesa C1"
 
-msgid "Plus"
-msgstr "Plus"
+msgid "Asterisk"
+msgstr "Hvězdička"
 
 msgid "Minus"
 msgstr "Mínus"
 
-msgid "Asterisk"
-msgstr "Hvězdička"
+msgid "Plus"
+msgstr "Plus"
 
 msgid "Dot"
 msgstr "Tečka"
@@ -908,7 +909,8 @@ msgstr "Nelze otevřít rouru pro zápis: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Nelze otevřít rouru pro zápis: %s"
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "Soubor, ktorý ukladáte není ukončený znakem nového řádku"
 
 msgid "C&ontinue"
@@ -1461,7 +1463,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1670,6 +1672,18 @@ msgstr "&Automatické ukládání parametrů"
 msgid "Configure options"
 msgstr "Změna nastavení"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr "Nevšímat si velikos&ti písmen"
 
@@ -1816,9 +1830,6 @@ msgstr "Zobrazení bitů"
 
 msgid "Input / display codepage:"
 msgstr "Vstupní/zobrazovací codepage:"
-
-msgid "&Select"
-msgstr "&Výběr"
 
 msgid "Directory tree"
 msgstr "Strom adresářů"
@@ -2216,8 +2227,8 @@ msgid "FileOperation|Delete"
 msgstr "FileOperation|Smazat"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f „%s“%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2241,13 +2252,6 @@ msgstr "souborů/adresářů"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " vyhovující masce:"
-
-msgid "to:"
-msgstr "na:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Nelze vytvořit přímý odkaz"
@@ -2669,6 +2673,9 @@ msgstr "Zdroj"
 
 msgid "Target"
 msgstr "Cíl"
+
+msgid "to:"
+msgstr "na:"
 
 msgid "Follow &links"
 msgstr "Nás&ledovat odkazy"
@@ -3141,6 +3148,9 @@ msgstr "Nastavení panelu..."
 
 msgid "C&onfirmation..."
 msgstr "P&otvrzování..."
+
+msgid "&Appearance..."
+msgstr ""
 
 msgid "&Display bits..."
 msgstr "&Zobrazení bitů..."
@@ -4215,3 +4225,6 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "&Select"
+#~ msgstr "&Výběr"

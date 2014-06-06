@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Danish (http://www.transifex.com/projects/p/mc/language/da/)\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
@@ -18,6 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Advarsel: kan ikke indlæse codepages-liste"
 
@@ -143,6 +144,9 @@ msgid ""
 "Default skin has been loaded"
 msgstr ""
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "Funktionstast 1"
 
@@ -203,59 +207,56 @@ msgstr "Funktionstast 19"
 msgid "Function key 20"
 msgstr "Funktionstast 20"
 
-msgid "Backspace key"
-msgstr "Slet tilbage-tast"
+msgid "Completion/M-tab"
+msgstr "Fuldfør navn/M-tab"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "End-tast"
 
-msgid "Up arrow key"
-msgstr "Pil op"
-
-msgid "Down arrow key"
-msgstr "Pil ned"
-
-msgid "Left arrow key"
-msgstr "Venstrepil"
-
-msgid "Right arrow key"
-msgstr "Højrepil"
-
-msgid "Home key"
-msgstr "Home-tast"
-
-msgid "Page Down key"
-msgstr "Side ned-tast"
-
-msgid "Page Up key"
-msgstr "Side op-tast"
-
-msgid "Insert key"
-msgstr "Indsæt-tast"
-
-msgid "Delete key"
-msgstr "Slet-tast"
-
-msgid "Completion/M-tab"
-msgstr "Fuldfør navn/M-tab"
-
-msgid "Back Tabulation S-tab"
+msgid "Page Up"
 msgstr ""
 
-msgid "+ on keypad"
-msgstr "+ på numerisk tastatur"
+msgid "Page Down"
+msgstr ""
 
-msgid "- on keypad"
-msgstr "- på numerisk tastatur"
-
-msgid "Slash on keypad"
-msgstr "Slash på numerisk tastatur"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "* på numerisk tastatur"
 
-msgid "Escape key"
-msgstr "Escape-tast"
+msgid "- on keypad"
+msgstr "- på numerisk tastatur"
+
+msgid "+ on keypad"
+msgstr "+ på numerisk tastatur"
 
 msgid "Left arrow keypad"
 msgstr "Venstrepil på numerisk tastatur"
@@ -308,14 +309,14 @@ msgstr "A1-tast"
 msgid "C1 key"
 msgstr "C1-tast"
 
-msgid "Plus"
-msgstr "Plus"
+msgid "Asterisk"
+msgstr "Stjerne"
 
 msgid "Minus"
 msgstr "Minus"
 
-msgid "Asterisk"
-msgstr "Stjerne"
+msgid "Plus"
+msgstr "Plus"
 
 msgid "Dot"
 msgstr "Punktum"
@@ -908,7 +909,8 @@ msgstr "Kan ikke åbne datakanal til skrivning: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Kan ikke åbne fil til skrivning: %s"
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "Filen, du gemmer, er ikke afsluttet med et linjeskift"
 
 msgid "C&ontinue"
@@ -1461,7 +1463,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1670,6 +1672,18 @@ msgstr "Opsætning for a&utomatisk gemning"
 msgid "Configure options"
 msgstr "Konfigurer indstillinger"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr "Er ikke &versalfølsom"
 
@@ -1816,9 +1830,6 @@ msgstr "Vis bit"
 
 msgid "Input / display codepage:"
 msgstr "Kodning for inddata/visning:"
-
-msgid "&Select"
-msgstr "&Vælg"
 
 msgid "Directory tree"
 msgstr "Mappetræ"
@@ -2217,8 +2228,8 @@ msgid "FileOperation|Delete"
 msgstr "Slet"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f »%s«%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2242,13 +2253,6 @@ msgstr "filer/mapper"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " med kildemaske:"
-
-msgid "to:"
-msgstr "til:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Kan ikke lave den hårde henvisning"
@@ -2671,6 +2675,9 @@ msgstr "Kilde"
 
 msgid "Target"
 msgstr "Mål"
+
+msgid "to:"
+msgstr "til:"
 
 msgid "Follow &links"
 msgstr "Følg %henvisninger"
@@ -3141,6 +3148,9 @@ msgstr "&Panelindstilinger..."
 
 msgid "C&onfirmation..."
 msgstr "&Bekræftelse..."
+
+msgid "&Appearance..."
+msgstr ""
 
 msgid "&Display bits..."
 msgstr "&Vis bit..."
@@ -4211,3 +4221,6 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "&Select"
+#~ msgstr "&Vælg"

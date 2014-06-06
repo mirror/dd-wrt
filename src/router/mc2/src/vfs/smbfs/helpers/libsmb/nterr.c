@@ -1,7 +1,7 @@
 /* NT error codes.  please read nterr.h
 
-   Copyright (C) 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 2011-2014
+   Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
 

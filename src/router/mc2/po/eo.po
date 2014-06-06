@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-03-05 22:46+0000\n"
+"Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
 "Language-Team: Esperanto (http://www.transifex.com/projects/p/mc/language/"
 "eo/)\n"
 "Language: eo\n"
@@ -19,6 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Averto: ne eblas ŝargi liston da kodpaĝoj"
 
@@ -153,6 +154,9 @@ msgstr ""
 "ĉe terminalo kun malpli da koloroj.\n"
 "Uzanta la aprioran etoson"
 
+msgid "Escape"
+msgstr "Eskapa klavo"
+
 msgid "Function key 1"
 msgstr "Funkcia klavo 1"
 
@@ -213,59 +217,56 @@ msgstr "Funkcia klavo 19"
 msgid "Function key 20"
 msgstr "Funkcia klavo 20"
 
-msgid "Backspace key"
-msgstr "Retropaŝo"
+msgid "Completion/M-tab"
+msgstr "Kompletiga klavo"
 
-msgid "End key"
-msgstr "Fino"
+msgid "BackTab/S-tab"
+msgstr "Inversa tabado/S-tabo"
 
-msgid "Up arrow key"
+msgid "Backspace"
+msgstr "Retropaŝa klavo"
+
+msgid "Up arrow"
 msgstr "Supra sagoklavo"
 
-msgid "Down arrow key"
-msgstr "Suba sagoklavo"
+msgid "Down arrow"
+msgstr "Malsupra sagoklavo"
 
-msgid "Left arrow key"
+msgid "Left arrow"
 msgstr "Maldekstra sagoklavo"
 
-msgid "Right arrow key"
+msgid "Right arrow"
 msgstr "Dekstra sagoklavo"
 
-msgid "Home key"
-msgstr "Hejmo"
+msgid "Insert"
+msgstr "Enmeta klavo"
 
-msgid "Page Down key"
-msgstr "Suben je ekranpleno"
-
-msgid "Page Up key"
-msgstr "Supren je ekranpleno"
-
-msgid "Insert key"
-msgstr "Enmeto"
-
-msgid "Delete key"
+msgid "Delete"
 msgstr "Foriga klavo"
 
-msgid "Completion/M-tab"
-msgstr "Kompleto"
+msgid "Home"
+msgstr "Hejma klavo"
 
-msgid "Back Tabulation S-tab"
-msgstr "Inversa tabado: S-tabo"
+msgid "End key"
+msgstr "Finiga klavo"
 
-msgid "+ on keypad"
-msgstr "+ ĉe cifera klavaro"
+msgid "Page Up"
+msgstr "Klavo por suprenigi je ekranpleno"
 
-msgid "- on keypad"
-msgstr "- ĉe cifera klavaro"
+msgid "Page Down"
+msgstr "Klavo por malsuprenigi je ekranpleno"
 
-msgid "Slash on keypad"
+msgid "/ on keypad"
 msgstr "/ ĉe cifera klavaro"
 
 msgid "* on keypad"
 msgstr "* ĉe cifera klavaro"
 
-msgid "Escape key"
-msgstr "Eskapa klavo"
+msgid "- on keypad"
+msgstr "- ĉe cifera klavaro"
+
+msgid "+ on keypad"
+msgstr "+ ĉe cifera klavaro"
 
 msgid "Left arrow keypad"
 msgstr "Maldekstra sagoklavo [cifera klavaro]"
@@ -280,25 +281,25 @@ msgid "Down arrow keypad"
 msgstr "Suba sagoklavo [cifera klavaro]"
 
 msgid "Home on keypad"
-msgstr "Hejmo [cifera klavaro]"
+msgstr "Hejma klavo [cifera klavaro]"
 
 msgid "End on keypad"
-msgstr "Fino [cifera klavaro]"
+msgstr "Finiga klavo [cifera klavaro]"
 
 msgid "Page Down keypad"
-msgstr "Suben [cifera klavaro]"
+msgstr "Klavo por malsuprenigi je ekranpleno [cifera klavaro]"
 
 msgid "Page Up keypad"
-msgstr "Supren [cifera klavaro]"
+msgstr "Klavo por suprenigi je ekranpleno [cifera klavaro]"
 
 msgid "Insert on keypad"
-msgstr "Enmeto [cifera klavaro]"
+msgstr "Enmeta klavo [cifera klavaro]"
 
 msgid "Delete on keypad"
 msgstr "Foriga klavo [cifera klavaro]"
 
 msgid "Enter on keypad"
-msgstr "Enen-klavo sagoklavo [cifera klavaro]"
+msgstr "Enen-klavo [cifera klavaro]"
 
 msgid "Function key 21"
 msgstr "Funkcia klavo 21"
@@ -318,14 +319,14 @@ msgstr "Klavo A1"
 msgid "C1 key"
 msgstr "Klavo C1"
 
-msgid "Plus"
-msgstr "Plus"
+msgid "Asterisk"
+msgstr "Steleto"
 
 msgid "Minus"
 msgstr "Minus"
 
-msgid "Asterisk"
-msgstr "Steleto"
+msgid "Plus"
+msgstr "Plus"
 
 msgid "Dot"
 msgstr "Punkto"
@@ -337,7 +338,7 @@ msgid "Great than"
 msgstr "Pli ol"
 
 msgid "Equal"
-msgstr "Egala"
+msgstr "Egalsigno"
 
 msgid "Comma"
 msgstr "Komo"
@@ -467,7 +468,7 @@ msgid "Starting linear transfer..."
 msgstr "Komencanta linian transigon..."
 
 msgid "Getting file"
-msgstr "Ricevanta dosieron."
+msgstr "Ricevanta dosieron"
 
 msgid "Changes to file lost"
 msgstr "Ŝanĝoj de la dosiero perditaj"
@@ -952,7 +953,8 @@ msgstr "Ne eblas malfermi dukton por skribi: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Ne eblas malfermi dosieron por skribi: %s"
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "La dosiero, kiun vi estas konservanta, ne finiĝas per nova linio"
 
 msgid "C&ontinue"
@@ -1510,10 +1512,10 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 "Afabla tekstoredaktilo\n"
-"verkita por la Midnight Commander."
+"verkita por Midnight Commander."
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
-msgstr "Kopirajto (C) 1996–2013 la Fondaĵo pri liberaj programoj"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgstr "Kopirajto (C) 1996–2014 la Fondaĵo pri liberaj programoj"
 
 msgid "About"
 msgstr "Pri"
@@ -1721,6 +1723,18 @@ msgstr "Aŭtomate konservi agor&don"
 msgid "Configure options"
 msgstr "Agordaĵoj"
 
+msgid "< Default >"
+msgstr "< Apriora >"
+
+msgid "Skins"
+msgstr "Etosoj"
+
+msgid "Skin:"
+msgstr "Etoso:"
+
+msgid "Appearance"
+msgstr "Aspekto"
+
 msgid "Case &insensitive"
 msgstr "&Ignori usklecon"
 
@@ -1867,9 +1881,6 @@ msgstr "Elmontraj bitoj"
 
 msgid "Input / display codepage:"
 msgstr "Enmeta / elmontra kodpaĝo:"
-
-msgid "&Select"
-msgstr "&Elekti"
 
 msgid "Directory tree"
 msgstr "Dosieruja arbo"
@@ -2270,8 +2281,8 @@ msgid "FileOperation|Delete"
 msgstr "Dosieroperacio|forigi"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr "%o %f%n\"%s\"%m"
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2295,13 +2306,6 @@ msgstr "dosier(uj)ojn"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " kun fonta masko:"
-
-msgid "to:"
-msgstr "al:"
-
-#, c-format
-msgid "%s?"
-msgstr "Ĉu %s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Ne eblas fari la malmolan ligilon"
@@ -2732,6 +2736,9 @@ msgstr "Fonto"
 
 msgid "Target"
 msgstr "Celo"
+
+msgid "to:"
+msgstr "al:"
 
 msgid "Follow &links"
 msgstr "Sekvi &Ligilojn"
@@ -3206,6 +3213,9 @@ msgstr "&Flankaj agordaĵoj..."
 
 msgid "C&onfirmation..."
 msgstr "Ko&nfirmo..."
+
+msgid "&Appearance..."
+msgstr "A&spekto..."
 
 msgid "&Display bits..."
 msgstr "&Elmontraj bitoj..."
@@ -4287,3 +4297,6 @@ msgstr "Ĉu deiri de la komenco?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Ne eblas atingi lokan kopion de /ftp://some.host/editme.txt"
+
+#~ msgid "&Select"
+#~ msgstr "&Elekti"

@@ -3,8 +3,8 @@
 
    Copyright (C) 2001 Walery Studennikov <despair@sama.ru>
 
-   Copyright (C) 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 2011-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Walery Studennikov <despair@sama.ru>, 2001

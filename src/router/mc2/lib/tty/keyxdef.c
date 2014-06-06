@@ -3,8 +3,8 @@
 /*
    Additional keyboard support routines.
 
-   Copyright (C) 1998, 2000, 2001, 2005, 2007, 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 1998-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Gyorgy Tamasi, 1998

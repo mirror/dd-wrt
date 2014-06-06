@@ -1,8 +1,8 @@
 /*
    Virtual File System garbage collection code
 
-   Copyright (C) 2003, 2004, 2005, 2007, 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 2003-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Miguel de Icaza, 1995

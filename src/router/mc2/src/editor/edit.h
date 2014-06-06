@@ -39,6 +39,7 @@ extern int option_return_does_auto_indent;
 extern int option_backspace_through_tabs;
 extern int option_fake_half_tabs;
 extern int option_persistent_selections;
+extern int option_drop_selection_on_copy;
 extern int option_cursor_beyond_eol;
 extern gboolean option_cursor_after_inserted_block;
 extern int option_line_state;
@@ -48,6 +49,7 @@ extern int option_syntax_highlighting;
 extern int option_group_undo;
 extern char *option_backup_ext;
 extern char *option_filesize_threshold;
+extern char *option_stop_format_chars;
 
 extern int edit_confirm_save;
 
