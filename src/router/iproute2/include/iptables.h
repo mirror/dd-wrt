@@ -3,6 +3,7 @@
 
 #include "iptables_common.h"
 #include "libiptc/libiptc.h"
+#include <stdint.h>
 
 #ifndef IPT_LIB_DIR
 #define IPT_LIB_DIR "/usr/local/lib/iptables"
@@ -16,11 +17,12 @@
 #define IPT_SO_GET_REVISION_MATCH	(IPT_BASE_CTL + 2)
 #define IPT_SO_GET_REVISION_TARGET	(IPT_BASE_CTL + 3)
 
+
 struct ipt_get_revision
 {
 	char name[IPT_FUNCTION_MAXNAMELEN-1];
 
-	u_int8_t revision;
+	uint8_t revision;
 };
 #endif /* IPT_SO_GET_REVISION_MATCH   Old kernel source */
 
@@ -39,7 +41,7 @@ struct iptables_match
 	ipt_chainlabel name;
 
 	/* Revision of match (0 by default). */
-	u_int8_t revision;
+	uint8_t revision;
 
 	const char *version;
 
@@ -92,7 +94,7 @@ struct iptables_target
 	ipt_chainlabel name;
 
 	/* Revision of target (0 by default). */
-	u_int8_t revision;
+	uint8_t revision;
 
 	const char *version;
 
@@ -151,7 +153,7 @@ extern char *mask_to_dotted(const struct in_addr *mask);
 
 extern void parse_hostnetworkmask(const char *name, struct in_addr **addrpp,
                       struct in_addr *maskp, unsigned int *naddrs);
-extern u_int16_t parse_protocol(const char *s);
+extern uint16_t parse_protocol(const char *s);
 
 extern int do_command(int argc, char *argv[], char **table,
 		      iptc_handle_t *handle);

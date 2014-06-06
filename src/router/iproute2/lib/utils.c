@@ -27,6 +27,7 @@
 #include <resolv.h>
 #include <asm/types.h>
 #include <linux/pkt_sched.h>
+#include <limits.h>
 
 #include "utils.h"
 
