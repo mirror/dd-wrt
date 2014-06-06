@@ -1,6 +1,6 @@
 #CFLAGS = -Os -Wall -Werror -pedantic --std=gnu99C
 CFLAGS+= -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include
-CFLAGS += $(COPTS) $(MIPS16_OPT)
+CFLAGS += $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE
 CPPFLAGS = $(CFLAGS) -I. -I$(LINUXDIR)/include
 LDFLAGS =
 
