@@ -16,7 +16,7 @@ PPPDIR=$(DESTDIR)/etc/ppp
 
 #CC	= gcc
 RM	= rm -f
-OPTIMIZE= $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
+OPTIMIZE= $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE
 include ../.config
 
 #OPTIMIZE= -O0
