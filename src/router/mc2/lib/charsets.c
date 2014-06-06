@@ -1,8 +1,8 @@
 /*
    Text conversion from one charset to another.
 
-   Copyright (C) 2001, 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 2001-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Walery Studennikov <despair@sama.ru>

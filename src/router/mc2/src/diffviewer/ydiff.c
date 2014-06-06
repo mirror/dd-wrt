@@ -1,6 +1,6 @@
 /*
-   Copyright (C) 2007, 2010, 2011, 2012, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 2007-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Daniel Borca <dborca@yahoo.com>, 2007
@@ -49,7 +49,7 @@
 #endif
 #include "lib/event.h"          /* mc_event_raise() */
 
-#include "src/filemanager/cmd.h"        /* do_edit_at_line(), view_other_cmd() */
+#include "src/filemanager/cmd.h"        /* edit_file_at_line(), view_other_cmd() */
 #include "src/filemanager/panel.h"
 #include "src/filemanager/layout.h"     /* Needed for get_current_index and get_other_panel */
 
@@ -2830,18 +2830,18 @@ dview_update (WDiff * dview)
             if (xwidth < width1 - 1)
             {
                 tty_gotoyx (1, xwidth);
-                tty_print_alt_char (mc_tty_frm[MC_TTY_FRM_DTOPMIDDLE], FALSE);
+                tty_print_alt_char (ACS_TTEE, FALSE);
                 tty_gotoyx (height, xwidth);
-                tty_print_alt_char (mc_tty_frm[MC_TTY_FRM_DBOTTOMMIDDLE], FALSE);
-                tty_draw_vline (2, xwidth, mc_tty_frm[MC_TTY_FRM_VERT], height - 2);
+                tty_print_alt_char (ACS_BTEE, FALSE);
+                tty_draw_vline (2, xwidth, ACS_VLINE, height - 2);
             }
             if (xwidth < width2 - 1)
             {
                 tty_gotoyx (1, width1 + xwidth);
-                tty_print_alt_char (mc_tty_frm[MC_TTY_FRM_DTOPMIDDLE], FALSE);
+                tty_print_alt_char (ACS_TTEE, FALSE);
                 tty_gotoyx (height, width1 + xwidth);
-                tty_print_alt_char (mc_tty_frm[MC_TTY_FRM_DBOTTOMMIDDLE], FALSE);
-                tty_draw_vline (2, width1 + xwidth, mc_tty_frm[MC_TTY_FRM_VERT], height - 2);
+                tty_print_alt_char (ACS_BTEE, FALSE);
+                tty_draw_vline (2, width1 + xwidth, ACS_VLINE, height - 2);
             }
         }
         dview->new_frame = 0;
@@ -2883,7 +2883,7 @@ dview_edit (WDiff * dview, diff_place_t ord)
         vfs_path_t *tmp_vpath;
 
         tmp_vpath = vfs_path_from_str (dview->file[ord]);
-        do_edit_at_line (tmp_vpath, use_internal_edit, linenum);
+        edit_file_at_line (tmp_vpath, use_internal_edit != 0, linenum);
         vfs_path_free (tmp_vpath);
     }
     h->modal = h_modal;

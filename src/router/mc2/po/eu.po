@@ -9,9 +9,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Basque (http://www.transifex.com/projects/p/mc/language/eu/)\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
@@ -19,6 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Abisua: kode-orrialde zerrenda ezin zamatu"
 
@@ -153,6 +154,9 @@ msgstr ""
 "256 koloretakoa ez den terminal batean erabili.\n"
 "Lehenetsitako azala zamatu da"
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "1. funtzio tekla"
 
@@ -213,59 +217,56 @@ msgstr "19. funtzio tekla"
 msgid "Function key 20"
 msgstr "20. funtzio tekla"
 
-msgid "Backspace key"
-msgstr "Atzera tekla"
+msgid "Completion/M-tab"
+msgstr "Burutzea/M-tab"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "Bukaera tekla"
 
-msgid "Up arrow key"
-msgstr "Gora gezia tekla"
-
-msgid "Down arrow key"
-msgstr "Behera gezia tekla"
-
-msgid "Left arrow key"
-msgstr "Ezkerrera gezia tekla"
-
-msgid "Right arrow key"
-msgstr "Eskuinera gezia tekla"
-
-msgid "Home key"
-msgstr "Hasiera tekla"
-
-msgid "Page Down key"
-msgstr "Orrian behera tekla"
-
-msgid "Page Up key"
-msgstr "Orrian gora tekla"
-
-msgid "Insert key"
-msgstr "Txertatu tekla"
-
-msgid "Delete key"
-msgstr "Ezabatu tekla"
-
-msgid "Completion/M-tab"
-msgstr "Burutzea/M-tab"
-
-msgid "Back Tabulation S-tab"
+msgid "Page Up"
 msgstr ""
 
-msgid "+ on keypad"
-msgstr "+ zenbakizko teklatuan"
+msgid "Page Down"
+msgstr ""
 
-msgid "- on keypad"
-msgstr "- zenbakizko teklatuan"
-
-msgid "Slash on keypad"
-msgstr "Barra, zenbakizko teklatuan"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "* zenbakizko teklatuan"
 
-msgid "Escape key"
-msgstr "Ihes tekla"
+msgid "- on keypad"
+msgstr "- zenbakizko teklatuan"
+
+msgid "+ on keypad"
+msgstr "+ zenbakizko teklatuan"
 
 msgid "Left arrow keypad"
 msgstr "Ezkerrera gezia, zenbakizko teklatuan"
@@ -318,14 +319,14 @@ msgstr "A1 tekla"
 msgid "C1 key"
 msgstr "C1 tekla"
 
-msgid "Plus"
-msgstr "Gehi"
+msgid "Asterisk"
+msgstr "Asterisko"
 
 msgid "Minus"
 msgstr "Ken"
 
-msgid "Asterisk"
-msgstr "Asterisko"
+msgid "Plus"
+msgstr "Gehi"
 
 msgid "Dot"
 msgstr "Puntu"
@@ -929,7 +930,8 @@ msgstr "Hodia idazteko ezin ireki: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Fitxategia idazteko ezin ireki: %s"
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "Gordetzen ari zaren fitxategia ez da lerro-berri batekin amaitzen"
 
 msgid "C&ontinue"
@@ -1484,7 +1486,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1693,6 +1695,18 @@ msgstr "A&uto gorde ezarpena"
 msgid "Configure options"
 msgstr "Konfiguratu aukerak"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr "&Ez bereizi maius/minus"
 
@@ -1839,9 +1853,6 @@ msgstr "Bistaratu bitak"
 
 msgid "Input / display codepage:"
 msgstr "Sartu / bistaratu kode-orrialdea:"
-
-msgid "&Select"
-msgstr "&Hautatu"
 
 msgid "Directory tree"
 msgstr "Direktorio zuhaitza"
@@ -2245,8 +2256,8 @@ msgid "FileOperation|Delete"
 msgstr "Ezabatu"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2270,13 +2281,6 @@ msgstr "fitxategiak/direktorioak"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " iturburu maskararekin:"
-
-msgid "to:"
-msgstr "hona:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Esteka trinkoa ezin egin"
@@ -2701,6 +2705,9 @@ msgstr "Iturburua"
 
 msgid "Target"
 msgstr "Helburua"
+
+msgid "to:"
+msgstr "hona:"
 
 msgid "Follow &links"
 msgstr "jarraitu &estekei"
@@ -3171,6 +3178,9 @@ msgstr "&Panelen aukerak..."
 
 msgid "C&onfirmation..."
 msgstr "&Berrespena..."
+
+msgid "&Appearance..."
+msgstr ""
 
 msgid "&Display bits..."
 msgstr "&Bistaratu bitak..."
@@ -4249,3 +4259,6 @@ msgstr "Hasieratik jarraitu?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "&Select"
+#~ msgstr "&Hautatu"

@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Serbian (http://www.transifex.com/projects/p/mc/language/"
 "sr/)\n"
 "Language: sr\n"
@@ -20,6 +20,7 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
 "%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr ""
 
@@ -138,6 +139,9 @@ msgid ""
 "Default skin has been loaded"
 msgstr ""
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "Функц. тастер 1"
 
@@ -198,59 +202,56 @@ msgstr "Функц. тастер 19"
 msgid "Function key 20"
 msgstr "Функц. тастер 20"
 
-msgid "Backspace key"
-msgstr "Таст. `Backspace'"
+msgid "Completion/M-tab"
+msgstr "Допуна/M-tab"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "Таст. `End'"
 
-msgid "Up arrow key"
-msgstr "Стрелица нагоре"
-
-msgid "Down arrow key"
-msgstr "Стрелица надоле"
-
-msgid "Left arrow key"
-msgstr "Стрелица налево"
-
-msgid "Right arrow key"
-msgstr "Стрелица надесно"
-
-msgid "Home key"
-msgstr "Таст. `Home'"
-
-msgid "Page Down key"
-msgstr "Таст. `Page Up'"
-
-msgid "Page Up key"
-msgstr "Таст. `Page Down'"
-
-msgid "Insert key"
-msgstr "Таст. `Insert'"
-
-msgid "Delete key"
-msgstr "Таст. `Delete'"
-
-msgid "Completion/M-tab"
-msgstr "Допуна/M-tab"
-
-msgid "Back Tabulation S-tab"
+msgid "Page Up"
 msgstr ""
 
-msgid "+ on keypad"
-msgstr "Сиви +"
+msgid "Page Down"
+msgstr ""
 
-msgid "- on keypad"
-msgstr "Сиви -"
-
-msgid "Slash on keypad"
-msgstr "Сиви /"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "Сиви *"
 
-msgid "Escape key"
-msgstr ""
+msgid "- on keypad"
+msgstr "Сиви -"
+
+msgid "+ on keypad"
+msgstr "Сиви +"
 
 msgid "Left arrow keypad"
 msgstr "Сива стрел. налево"
@@ -303,13 +304,13 @@ msgstr ""
 msgid "C1 key"
 msgstr ""
 
-msgid "Plus"
+msgid "Asterisk"
 msgstr ""
 
 msgid "Minus"
 msgstr ""
 
-msgid "Asterisk"
+msgid "Plus"
 msgstr ""
 
 msgid "Dot"
@@ -892,7 +893,7 @@ msgstr ""
 msgid "Cannot open file for writing: %s"
 msgstr ""
 
-msgid "The file you are saving is not finished with a newline"
+msgid "The file you are saving does not end with a newline."
 msgstr ""
 
 msgid "C&ontinue"
@@ -1441,7 +1442,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1640,6 +1641,18 @@ msgstr ""
 msgid "Configure options"
 msgstr "Подеси изборе"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr ""
 
@@ -1782,9 +1795,6 @@ msgstr ""
 
 msgid "Input / display codepage:"
 msgstr "Кодна страна улаза и приказа:"
-
-msgid "&Select"
-msgstr "&Изабери"
 
 msgid "Directory tree"
 msgstr ""
@@ -2170,8 +2180,8 @@ msgid "FileOperation|Delete"
 msgstr ""
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2195,13 +2205,6 @@ msgstr "датотека/директоријума"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " уз изворну маску:"
-
-msgid "to:"
-msgstr "у:"
-
-#, c-format
-msgid "%s?"
-msgstr ""
 
 msgid "Cannot make the hardlink"
 msgstr ""
@@ -2556,6 +2559,9 @@ msgstr "Извор"
 
 msgid "Target"
 msgstr "Одредиште"
+
+msgid "to:"
+msgstr "у:"
 
 msgid "Follow &links"
 msgstr ""
@@ -3027,6 +3033,9 @@ msgid "&Panel options..."
 msgstr ""
 
 msgid "C&onfirmation..."
+msgstr ""
+
+msgid "&Appearance..."
 msgstr ""
 
 msgid "&Display bits..."
@@ -4078,3 +4087,6 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "&Select"
+#~ msgstr "&Изабери"

@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 09:12+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Vietnamese (http://www.transifex.com/projects/p/mc/language/"
 "vi/)\n"
 "Language: vi\n"
@@ -19,6 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr ""
 
@@ -137,6 +138,9 @@ msgid ""
 "Default skin has been loaded"
 msgstr ""
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr "Phím chức năng 1"
 
@@ -197,59 +201,56 @@ msgstr "Phím chức năng 19"
 msgid "Function key 20"
 msgstr "Phím chức năng 20"
 
-msgid "Backspace key"
-msgstr "Phím Backspace"
+msgid "Completion/M-tab"
+msgstr "Hoàn thành/M-Tab"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr ""
+
+msgid "Down arrow"
+msgstr ""
+
+msgid "Left arrow"
+msgstr ""
+
+msgid "Right arrow"
+msgstr ""
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr "Phím End"
 
-msgid "Up arrow key"
-msgstr "Phím mũi tên lên"
-
-msgid "Down arrow key"
-msgstr "Phím mũi tên xuống"
-
-msgid "Left arrow key"
-msgstr "Phím mũi tên sang trái"
-
-msgid "Right arrow key"
-msgstr "Phím mũi tên sang phải"
-
-msgid "Home key"
-msgstr "Phím Home"
-
-msgid "Page Down key"
-msgstr "Phím Page Down"
-
-msgid "Page Up key"
-msgstr "Phím Page Up"
-
-msgid "Insert key"
-msgstr "Phím Insert"
-
-msgid "Delete key"
-msgstr "Phím Delete"
-
-msgid "Completion/M-tab"
-msgstr "Hoàn thành/M-Tab"
-
-msgid "Back Tabulation S-tab"
+msgid "Page Up"
 msgstr ""
 
-msgid "+ on keypad"
-msgstr "+ trên phần keypad"
+msgid "Page Down"
+msgstr ""
 
-msgid "- on keypad"
-msgstr "- trên phần keypad"
-
-msgid "Slash on keypad"
-msgstr "Slash trên keypad"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr "* trên phần keypad"
 
-msgid "Escape key"
-msgstr ""
+msgid "- on keypad"
+msgstr "- trên phần keypad"
+
+msgid "+ on keypad"
+msgstr "+ trên phần keypad"
 
 msgid "Left arrow keypad"
 msgstr "Mũi tên sang trái trên phần keypad"
@@ -302,13 +303,13 @@ msgstr ""
 msgid "C1 key"
 msgstr ""
 
-msgid "Plus"
+msgid "Asterisk"
 msgstr ""
 
 msgid "Minus"
 msgstr ""
 
-msgid "Asterisk"
+msgid "Plus"
 msgstr ""
 
 msgid "Dot"
@@ -891,7 +892,7 @@ msgstr ""
 msgid "Cannot open file for writing: %s"
 msgstr ""
 
-msgid "The file you are saving is not finished with a newline"
+msgid "The file you are saving does not end with a newline."
 msgstr ""
 
 msgid "C&ontinue"
@@ -1440,7 +1441,7 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1639,6 +1640,18 @@ msgstr ""
 msgid "Configure options"
 msgstr "Tùy chọn cấu hình"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr ""
 
@@ -1781,9 +1794,6 @@ msgstr ""
 
 msgid "Input / display codepage:"
 msgstr "Bảng mã đầu vào / hiển thị:"
-
-msgid "&Select"
-msgstr "&Lựa chọn"
 
 msgid "Directory tree"
 msgstr ""
@@ -2169,8 +2179,8 @@ msgid "FileOperation|Delete"
 msgstr ""
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2194,13 +2204,6 @@ msgstr "tập tin/thư mục"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " với nhãn ban đầu:"
-
-msgid "to:"
-msgstr "vào:"
-
-#, c-format
-msgid "%s?"
-msgstr ""
 
 msgid "Cannot make the hardlink"
 msgstr ""
@@ -2555,6 +2558,9 @@ msgstr "Nguồn"
 
 msgid "Target"
 msgstr "Đích"
+
+msgid "to:"
+msgstr "vào:"
 
 msgid "Follow &links"
 msgstr ""
@@ -3022,6 +3028,9 @@ msgid "&Panel options..."
 msgstr ""
 
 msgid "C&onfirmation..."
+msgstr ""
+
+msgid "&Appearance..."
 msgstr ""
 
 msgid "&Display bits..."
@@ -4068,3 +4077,6 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "&Select"
+#~ msgstr "&Lựa chọn"

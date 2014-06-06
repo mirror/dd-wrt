@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-03-08 14:35+0000\n"
+"Last-Translator: David Martin <dhmartina@yahoo.es>\n"
 "Language-Team: Spanish (http://www.transifex.com/projects/p/mc/language/"
 "es/)\n"
 "Language: es\n"
@@ -24,6 +24,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Atención: imposible cargar lista de codificaciones"
 
@@ -158,6 +159,9 @@ msgstr ""
 "en terminales sin esta característica.\n"
 "Se ha cargado skin por defecto."
 
+msgid "Escape"
+msgstr "Escape"
+
 msgid "Function key 1"
 msgstr "F1"
 
@@ -218,59 +222,56 @@ msgstr "F19"
 msgid "Function key 20"
 msgstr "F20"
 
-msgid "Backspace key"
+msgid "Completion/M-tab"
+msgstr "Alt-Tab"
+
+msgid "BackTab/S-tab"
+msgstr "Mayús-Tab"
+
+msgid "Backspace"
 msgstr "Borrar"
+
+msgid "Up arrow"
+msgstr "Arriba"
+
+msgid "Down arrow"
+msgstr "Abajo"
+
+msgid "Left arrow"
+msgstr "Izquierda"
+
+msgid "Right arrow"
+msgstr "Derecha"
+
+msgid "Insert"
+msgstr "Insertar"
+
+msgid "Delete"
+msgstr "Suprimir"
+
+msgid "Home"
+msgstr "Inicio"
 
 msgid "End key"
 msgstr "Fin"
 
-msgid "Up arrow key"
-msgstr "Arriba"
-
-msgid "Down arrow key"
-msgstr "Abajo"
-
-msgid "Left arrow key"
-msgstr "Izquierda"
-
-msgid "Right arrow key"
-msgstr "Derecha"
-
-msgid "Home key"
-msgstr "Inicio"
-
-msgid "Page Down key"
-msgstr "Avanzar Página"
-
-msgid "Page Up key"
+msgid "Page Up"
 msgstr "Retrasar Página"
 
-msgid "Insert key"
-msgstr "Insertar"
+msgid "Page Down"
+msgstr "Avanzar Página"
 
-msgid "Delete key"
-msgstr "Eliminar"
-
-msgid "Completion/M-tab"
-msgstr "Alt-Tab"
-
-msgid "Back Tabulation S-tab"
-msgstr "Mayús-Tab"
-
-msgid "+ on keypad"
-msgstr "+ (num.)"
-
-msgid "- on keypad"
-msgstr "- (num.)"
-
-msgid "Slash on keypad"
+msgid "/ on keypad"
 msgstr "/ (num.)"
 
 msgid "* on keypad"
 msgstr "* (num.)"
 
-msgid "Escape key"
-msgstr "Escape"
+msgid "- on keypad"
+msgstr "- (num.)"
+
+msgid "+ on keypad"
+msgstr "+ (num.)"
 
 msgid "Left arrow keypad"
 msgstr "Izquierda (num.)"
@@ -323,14 +324,14 @@ msgstr "A1"
 msgid "C1 key"
 msgstr "C1"
 
-msgid "Plus"
-msgstr "Suma"
+msgid "Asterisk"
+msgstr "Asterisco"
 
 msgid "Minus"
 msgstr "Resta"
 
-msgid "Asterisk"
-msgstr "Asterisco"
+msgid "Plus"
+msgstr "Suma"
 
 msgid "Dot"
 msgstr "Punto"
@@ -963,7 +964,8 @@ msgstr "Imposible abrir tubería para escritura: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Imposible abrir archivo para escritura: %s"
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "El archivo a guardar no acaba con salto de línea"
 
 msgid "C&ontinue"
@@ -1522,8 +1524,8 @@ msgstr ""
 "Un editor de texto amigable\n"
 "para Midnight Commander."
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2014 the Free Software Foundation"
 
 msgid "About"
 msgstr "Acerca de..."
@@ -1731,6 +1733,18 @@ msgstr "auto-guarda con&Figuración"
 msgid "Configure options"
 msgstr "Configuración"
 
+msgid "< Default >"
+msgstr "< Por defecto >"
+
+msgid "Skins"
+msgstr "Skins"
+
+msgid "Skin:"
+msgstr "Skin:"
+
+msgid "Appearance"
+msgstr "Aspecto"
+
 msgid "Case &insensitive"
 msgstr "ignorar may/mi&N"
 
@@ -1877,9 +1891,6 @@ msgstr "Juego de caracteres"
 
 msgid "Input / display codepage:"
 msgstr "Juego de caracteres entrada/pantalla:"
-
-msgid "&Select"
-msgstr "&Seleccionar"
 
 msgid "Directory tree"
 msgstr "Árbol de directorios"
@@ -2281,8 +2292,8 @@ msgid "FileOperation|Delete"
 msgstr "Borrar"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f «%s»%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr "%o %f%n«%s»%m"
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2306,13 +2317,6 @@ msgstr "archivos/directorios"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " aplicando la máscara:"
-
-msgid "to:"
-msgstr "a:"
-
-#, c-format
-msgid "%s?"
-msgstr "¿%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Imposible crear el enlace"
@@ -2743,6 +2747,9 @@ msgstr "Origen"
 
 msgid "Target"
 msgstr "Destino"
+
+msgid "to:"
+msgstr "a:"
 
 msgid "Follow &links"
 msgstr "seguir en&Laces"
@@ -3218,6 +3225,9 @@ msgstr "pane&Les..."
 msgid "C&onfirmation..."
 msgstr "c&Onfirmación..."
 
+msgid "&Appearance..."
+msgstr "&Aspecto..."
+
 msgid "&Display bits..."
 msgstr "&Juego de caracteres..."
 
@@ -3580,7 +3590,7 @@ msgstr ""
 "y espere a que este mensaje desaparezca.\n"
 "\n"
 "A continuación, presione la tecla nuevo y\n"
-"vea si la marca «OK» aparece junto a su botón\n"
+"vea si la marca «✓» aparece junto a su botón\n"
 "\n"
 "Para abortar, presione una vez\n"
 "la tecla «Escape» y espere."
@@ -3594,7 +3604,7 @@ msgstr "Usted tecleó «%s»"
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
-msgstr "OK"
+msgstr "✓"
 
 msgid ""
 "It seems that all your keys already\n"
@@ -4297,3 +4307,6 @@ msgstr "¿Continuar desde el principio?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Imposible obtener una copia local de /ftp://some.host/editme.txt"
+
+#~ msgid "&Select"
+#~ msgstr "&Seleccionar"

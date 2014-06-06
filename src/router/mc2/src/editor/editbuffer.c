@@ -1,8 +1,8 @@
 /*
    Editor text keep buffer.
 
-   Copyright (C) 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 2013-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Andrew Borodin <aborodin@vmail.ru> 2013
@@ -608,7 +608,7 @@ edit_buffer_move_forward (const edit_buffer_t * buf, off_t current, long lines, 
  *
  * @param buf editor buffer
  * @param current current offset
- * @param lines number of lines to move bacward
+ * @param lines number of lines to move backward
  *
  * @return backward offset with specified number of lines.
  */

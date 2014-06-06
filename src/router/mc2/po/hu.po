@@ -3,16 +3,16 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Rezső Páder <rezso@rezso.net>, 2012-2013
+# Rezső Páder <rezso@rezso.net>, 2012-2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # Atekka <atekka@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-02-19 16:07+0000\n"
+"Last-Translator: Rezső Páder <rezso@rezso.net>\n"
 "Language-Team: Hungarian (http://www.transifex.com/projects/p/mc/language/"
 "hu/)\n"
 "Language: hu\n"
@@ -21,6 +21,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Figyelem: A kódlapok listája nem tölthető be"
 
@@ -155,6 +156,9 @@ msgstr ""
 "nem 256 színű terminálokon.\\n\n"
 "Alapértelmezett borítás használata"
 
+msgid "Escape"
+msgstr ""
+
 msgid "Function key 1"
 msgstr " F1 "
 
@@ -215,59 +219,56 @@ msgstr " F19"
 msgid "Function key 20"
 msgstr " F20"
 
-msgid "Backspace key"
-msgstr " \"Backspace\""
+msgid "Completion/M-tab"
+msgstr " Kieg./M-Tab"
+
+msgid "BackTab/S-tab"
+msgstr ""
+
+msgid "Backspace"
+msgstr ""
+
+msgid "Up arrow"
+msgstr " <Fel> "
+
+msgid "Down arrow"
+msgstr " <Le> "
+
+msgid "Left arrow"
+msgstr " <Balra> "
+
+msgid "Right arrow"
+msgstr " <Jobbra> "
+
+msgid "Insert"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Home"
+msgstr ""
 
 msgid "End key"
 msgstr " \"End\""
 
-msgid "Up arrow key"
-msgstr " <Fel> "
+msgid "Page Up"
+msgstr ""
 
-msgid "Down arrow key"
-msgstr " <Le> "
+msgid "Page Down"
+msgstr ""
 
-msgid "Left arrow key"
-msgstr " <Balra> "
-
-msgid "Right arrow key"
-msgstr " <Jobbra> "
-
-msgid "Home key"
-msgstr " \"Home\" "
-
-msgid "Page Down key"
-msgstr " \"Page Down\" "
-
-msgid "Page Up key"
-msgstr " \"Page Up\" "
-
-msgid "Insert key"
-msgstr " \"Insert\" "
-
-msgid "Delete key"
-msgstr " \"Delete\" "
-
-msgid "Completion/M-tab"
-msgstr " Kieg./M-Tab"
-
-msgid "Back Tabulation S-tab"
-msgstr "Hátsó Tabulátor S-tab"
-
-msgid "+ on keypad"
-msgstr " + numerikus"
-
-msgid "- on keypad"
-msgstr " - numerikus"
-
-msgid "Slash on keypad"
-msgstr " / numerikus"
+msgid "/ on keypad"
+msgstr ""
 
 msgid "* on keypad"
 msgstr " * numerikus"
 
-msgid "Escape key"
-msgstr " Escape"
+msgid "- on keypad"
+msgstr " - numerikus"
+
+msgid "+ on keypad"
+msgstr " + numerikus"
 
 msgid "Left arrow keypad"
 msgstr "<Jobbra> - numer."
@@ -320,14 +321,14 @@ msgstr "A1 billentyű"
 msgid "C1 key"
 msgstr "C1 billentyű"
 
-msgid "Plus"
-msgstr "Plusz"
+msgid "Asterisk"
+msgstr "Csillag"
 
 msgid "Minus"
 msgstr "Mínusz"
 
-msgid "Asterisk"
-msgstr "Csillag"
+msgid "Plus"
+msgstr "Plusz"
 
 msgid "Dot"
 msgstr "Pont"
@@ -961,7 +962,8 @@ msgstr "A cső nem megnyitható írásra: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "A(z) \"%s\" fájl nem megnyitható írásra."
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "A file nem soremeléssel ér véget"
 
 msgid "C&ontinue"
@@ -1520,8 +1522,8 @@ msgstr ""
 "Felhasználóbarát szövegszerkesztő\n"
 "a Midnight Commander-hez készítve"
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Névjegy"
@@ -1729,6 +1731,18 @@ msgstr "Auto &Beállításmentés"
 msgid "Configure options"
 msgstr "Alapbeállítások"
 
+msgid "< Default >"
+msgstr ""
+
+msgid "Skins"
+msgstr ""
+
+msgid "Skin:"
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
 msgid "Case &insensitive"
 msgstr "&Kis-/nagybetű mindegy"
 
@@ -1874,9 +1888,6 @@ msgstr "Kivitel és bevitel"
 
 msgid "Input / display codepage:"
 msgstr "Beviteli/kijelzési kódlap:"
-
-msgid "&Select"
-msgstr "&Kiválaszt"
 
 msgid "Directory tree"
 msgstr "Könyvtárfa"
@@ -2277,8 +2288,8 @@ msgid "FileOperation|Delete"
 msgstr "Töröl"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "\"%s\" nevű %f %o%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr ""
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2302,13 +2313,6 @@ msgstr "fájl/könyvtár"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " az alábbi maszkkal:"
-
-msgid "to:"
-msgstr "Cél:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Nem sikerült létrehozni a hard linket"
@@ -2741,6 +2745,9 @@ msgstr "Forrás"
 
 msgid "Target"
 msgstr "Cél"
+
+msgid "to:"
+msgstr "Cél:"
 
 msgid "Follow &links"
 msgstr "&Linkek követése"
@@ -3215,6 +3222,9 @@ msgstr "&Panelbeállítások..."
 
 msgid "C&onfirmation..."
 msgstr "&Rákérdezés..."
+
+msgid "&Appearance..."
+msgstr ""
 
 msgid "&Display bits..."
 msgstr "&Kivitel és bevitel..."
@@ -4296,3 +4306,6 @@ msgstr "Folytatás az elejéről?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Nem sikerült behozni /ftp://some.host/editme.txt helyi másolatát"
+
+#~ msgid "&Select"
+#~ msgstr "&Kiválaszt"

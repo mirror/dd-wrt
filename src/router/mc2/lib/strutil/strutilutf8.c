@@ -1,8 +1,8 @@
 /*
    UTF-8 strings utilities
 
-   Copyright (C) 2007, 2011, 2013
-   The Free Software Foundation, Inc.
+   Copyright (C) 2007-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Rostislav Benes, 2007

@@ -4,15 +4,15 @@
 #
 # Translators:
 # Arthur Titeica <arthur@psw.ro>, 2013
-# roentgen <arthur.titeica@gmail.com>, 2013
+# roentgen <arthur.titeica@gmail.com>, 2013-2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2013-11-29 21:46+0300\n"
-"PO-Revision-Date: 2013-11-20 12:28+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2014-04-01 14:47+0300\n"
+"PO-Revision-Date: 2014-03-30 14:05+0000\n"
+"Last-Translator: roentgen <arthur.titeica@gmail.com>\n"
 "Language-Team: Romanian (http://www.transifex.com/projects/p/mc/language/"
 "ro/)\n"
 "Language: ro\n"
@@ -22,6 +22,7 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?"
 "2:1));\n"
 
+# "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
 msgstr "Atenție: nu se poate încărca lista de coduri de pagină"
 
@@ -156,6 +157,9 @@ msgstr ""
 "pe un terminal non-256.\n"
 "A fost încărcată tematica implicită"
 
+msgid "Escape"
+msgstr "Escape"
+
 msgid "Function key 1"
 msgstr "Tasta funcț. 1"
 
@@ -216,59 +220,56 @@ msgstr "Tasta funcț. 19"
 msgid "Function key 20"
 msgstr "Tasta funcț. 20"
 
-msgid "Backspace key"
-msgstr "Tasta Backspace"
+msgid "Completion/M-tab"
+msgstr "Completare/M-tab"
+
+msgid "BackTab/S-tab"
+msgstr "BackTab/S-tab"
+
+msgid "Backspace"
+msgstr "Backspace"
+
+msgid "Up arrow"
+msgstr "Săgeată sus"
+
+msgid "Down arrow"
+msgstr "Săgeată jos"
+
+msgid "Left arrow"
+msgstr "Săgeată stânga"
+
+msgid "Right arrow"
+msgstr "Săgeată dreapta"
+
+msgid "Insert"
+msgstr "Insert"
+
+msgid "Delete"
+msgstr "Delete"
+
+msgid "Home"
+msgstr "Home"
 
 msgid "End key"
 msgstr "Tasta End"
 
-msgid "Up arrow key"
-msgstr "Săgeata în sus"
+msgid "Page Up"
+msgstr "Page Up"
 
-msgid "Down arrow key"
-msgstr "Săgeata în jos"
+msgid "Page Down"
+msgstr "Page Down"
 
-msgid "Left arrow key"
-msgstr "Săgeata stânga"
-
-msgid "Right arrow key"
-msgstr "Săgeata dreapta"
-
-msgid "Home key"
-msgstr "Tasta Home"
-
-msgid "Page Down key"
-msgstr "Tasta Page Down"
-
-msgid "Page Up key"
-msgstr "Tasta Page Up"
-
-msgid "Insert key"
-msgstr "Tasta Insert"
-
-msgid "Delete key"
-msgstr "Tasta Delete"
-
-msgid "Completion/M-tab"
-msgstr "Completare/M-tab"
-
-msgid "Back Tabulation S-tab"
-msgstr "Tab înapoi S-tab"
-
-msgid "+ on keypad"
-msgstr "+ pe keypad"
-
-msgid "- on keypad"
-msgstr "- pe keypad"
-
-msgid "Slash on keypad"
-msgstr "Slash pe keypad"
+msgid "/ on keypad"
+msgstr "/ pe tastatura numerică"
 
 msgid "* on keypad"
 msgstr "* pe keypad"
 
-msgid "Escape key"
-msgstr "Tasta Escape"
+msgid "- on keypad"
+msgstr "- pe keypad"
+
+msgid "+ on keypad"
+msgstr "+ pe keypad"
 
 msgid "Left arrow keypad"
 msgstr "Săgeată stânga pe keypad"
@@ -321,14 +322,14 @@ msgstr "Tasta A1"
 msgid "C1 key"
 msgstr "Tasta C1"
 
-msgid "Plus"
-msgstr "Plus"
+msgid "Asterisk"
+msgstr "Asterisc"
 
 msgid "Minus"
 msgstr "Minus"
 
-msgid "Asterisk"
-msgstr "Asterisc"
+msgid "Plus"
+msgstr "Plus"
 
 msgid "Dot"
 msgstr "Punct"
@@ -941,7 +942,8 @@ msgstr "Nu se poate pipe pentru scriere: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Nu se poate deschide fișierul pentru scriere: %s"
 
-msgid "The file you are saving is not finished with a newline"
+#, fuzzy
+msgid "The file you are saving does not end with a newline."
 msgstr "Fișierul pe care îl salvezi nu se termină cu o linie nouă"
 
 msgid "C&ontinue"
@@ -1501,8 +1503,8 @@ msgstr ""
 "Un editor de text ușor de utilizat\n"
 "creat pentru Midnight Commander."
 
-msgid "Copyright (C) 1996-2013 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2013 the Free Software Foundation"
+msgid "Copyright (C) 1996-2014 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2014 Free Software Foundation"
 
 msgid "About"
 msgstr "Despre"
@@ -1710,6 +1712,18 @@ msgstr "Auto-salvare a configurației"
 msgid "Configure options"
 msgstr "Opțiuni de configurare"
 
+msgid "< Default >"
+msgstr "< Implicit >"
+
+msgid "Skins"
+msgstr "Tematici"
+
+msgid "Skin:"
+msgstr "Tematică:"
+
+msgid "Appearance"
+msgstr "Aspect"
+
 msgid "Case &insensitive"
 msgstr "&Ignoră majuscule"
 
@@ -1856,9 +1870,6 @@ msgstr "Biți de afișare"
 
 msgid "Input / display codepage:"
 msgstr "Intrare / cod de afișare:"
-
-msgid "&Select"
-msgstr "&Selectare"
 
 msgid "Directory tree"
 msgstr "Arbore dosare"
@@ -2258,8 +2269,8 @@ msgid "FileOperation|Delete"
 msgstr "FileOperation|Șterge"
 
 #, no-c-format
-msgid "%o %f \"%s\"%m"
-msgstr "%o %f \"%s\"%m"
+msgid "%o %f%n\"%s\"%m"
+msgstr "%o %f%n\"%s\"%m"
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2283,13 +2294,6 @@ msgstr "fișiere/dosare"
 #. TRANSLATORS: keep leading space here to split words in Copy/Move dialog
 msgid " with source mask:"
 msgstr " cu mască sursă:"
-
-msgid "to:"
-msgstr "către:"
-
-#, c-format
-msgid "%s?"
-msgstr "%s?"
 
 msgid "Cannot make the hardlink"
 msgstr "Nu se poate crea o legătură dură"
@@ -2721,6 +2725,9 @@ msgstr "Sursă"
 
 msgid "Target"
 msgstr "Destinație"
+
+msgid "to:"
+msgstr "către:"
 
 msgid "Follow &links"
 msgstr "Urmărește &legăturile"
@@ -3197,6 +3204,9 @@ msgstr "Opțiuni &panou..."
 
 msgid "C&onfirmation..."
 msgstr "C&onfirmare..."
+
+msgid "&Appearance..."
+msgstr "&Aspect..."
 
 msgid "&Display bits..."
 msgstr "&Biți de afișare..."
@@ -4283,3 +4293,6 @@ msgstr "Continuă de la început?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Nu se poate aduce o copie locală a /ftp://some.host/editme.txt"
+
+#~ msgid "&Select"
+#~ msgstr "&Selectare"

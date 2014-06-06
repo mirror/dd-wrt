@@ -1,8 +1,8 @@
 /*
    Default values for keybinding engine
 
-   Copyright (C) 2009, 2010, 2011
-   The Free Software Foundation, Inc.
+   Copyright (C) 2009-2014
+   Free Software Foundation, Inc.
 
    Written by:
    Vitja Makarov, 2005
