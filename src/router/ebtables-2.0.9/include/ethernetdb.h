@@ -25,6 +25,10 @@
 #include <netinet/in.h>
 #include <stdint.h>
 
+#ifndef __THROW
+#define __THROW
+#endif
+
 /* Absolute file name for network data base files.  */
 #ifndef	_PATH_ETHERTYPES
 #define	_PATH_ETHERTYPES	"/etc/ethertypes"
