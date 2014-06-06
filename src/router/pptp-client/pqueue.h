@@ -3,6 +3,7 @@
 
 #include <time.h>
 #include <sys/time.h>
+#include <sys/types.h>
 
 /* wait this many seconds for missing packets before forgetting about them */
 #define DEFAULT_PACKET_TIMEOUT 0.3
