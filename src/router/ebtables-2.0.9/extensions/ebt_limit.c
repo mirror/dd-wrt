@@ -59,11 +59,11 @@ static void print_help(void)
 "                                default %u\n", EBT_LIMIT_BURST);
 }
 
-static int parse_rate(const char *rate, u_int32_t *val)
+static int parse_rate(const char *rate, uint32_t *val)
 {
 	const char *delim;
-	u_int32_t r;
-	u_int32_t mult = 1;  /* Seconds by default. */
+	uint32_t r;
+	uint32_t mult = 1;  /* Seconds by default. */
 
 	delim = strchr(rate, '/');
 	if (delim) {
@@ -151,7 +151,7 @@ static void final_check(const struct ebt_u_entry *entry,
 struct rates
 {
 	const char *name;
-	u_int32_t mult;
+	uint32_t mult;
 };
 
 static struct rates g_rates[] =
@@ -162,7 +162,7 @@ static struct rates g_rates[] =
 	{ "sec", EBT_LIMIT_SCALE }
 };
 
-static void print_rate(u_int32_t period)
+static void print_rate(uint32_t period)
 {
 	unsigned int i;
 
