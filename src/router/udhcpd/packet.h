@@ -3,6 +3,7 @@
 
 #include <netinet/udp.h>
 #include <netinet/ip.h>
+#include <sys/types.h>
 
 struct dhcpMessage {
 	u_int8_t op;

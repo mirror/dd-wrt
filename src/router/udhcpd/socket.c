@@ -43,7 +43,7 @@
 
 #include "debug.h"
 
-int read_interface(char *interface, int *ifindex, u_int32_t *addr, unsigned char *arp)
+int read_interface(char *interface, int *ifindex, uint32_t *addr, unsigned char *arp)
 {
 	int fd;
 	struct ifreq ifr;
