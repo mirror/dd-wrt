@@ -103,7 +103,7 @@
 #define HAVE_NETPACKET_PACKET_H 1
 
 /* Define if you have the <sys/cdefs.h> header file.  */
-#define HAVE_SYS_CDEFS_H 1
+/* #define HAVE_SYS_CDEFS_H 1 */
 
 /* Define if you have the <sys/dlpi.h> header file.  */
 /* #undef HAVE_SYS_DLPI_H */
