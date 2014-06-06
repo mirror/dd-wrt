@@ -24,8 +24,8 @@
 
 struct lease_t {
 	unsigned char chaddr[16];
-	u_int32_t yiaddr;
-	u_int32_t expires;
+	uint32_t yiaddr;
+	uint32_t expires;
 	char hostname[64];
 };
 #define EXPIRES_NEVER 0xFFFFFFFF
