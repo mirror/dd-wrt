@@ -21,6 +21,7 @@
 
 #include <net/if.h>
 #include <linux/if_bridge.h>
+#include <sys/types.h>
 
 struct bridge_id
 {
