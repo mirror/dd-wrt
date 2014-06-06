@@ -446,6 +446,7 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 	uint32 top = 0;
 	uint32 bootsz;
 	uint32 maxsize = 0;
+	int is_ex6200 = 0;
 #ifdef CONFIG_FAILSAFE_UPGRADE
 	char *img_boot = nvram_get(BOOTPARTITION);
 	char *imag_1st_offset = nvram_get(IMAGE_FIRST_OFFSET);
@@ -474,11 +475,15 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 		maxsize = 0x200000;
 		size = maxsize;
 	}
-	
+
 	if (nvram_match("boardnum","679") && nvram_match("boardtype", "0x0646") 
 	    && (nvram_match("boardrev", "0x1110"))) {
-	    maxsize = 0x200000;
-	    size = maxsize;
+		maxsize = 0x200000;
+		if (nvram_match("board_id", "U12H269T00_NETGEAR")){
+		    maxsize = 0x800000;
+		    is_ex6200 = 1;
+		}
+		size = maxsize;
 	}
 
 	if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x0665")
@@ -628,6 +633,14 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 		bcm947xx_flash_parts[nparts].size = (size - bcm947xx_flash_parts[nparts].offset) - ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 		nparts++;
 	}
+	
+	if(is_ex6200){
+		bcm947xx_flash_parts[nparts].name = "board_data";
+		bcm947xx_flash_parts[nparts].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
+		bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
+		nparts++;
+	}
+	
 	/* Setup nvram MTD partition */
 	bcm947xx_flash_parts[nparts].name = "nvram_cfe";
 	bcm947xx_flash_parts[nparts].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
@@ -635,12 +648,16 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 		bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
 	else
 		bcm947xx_flash_parts[nparts].offset = size - bcm947xx_flash_parts[nparts].size;
-	nparts++;
+	if(!is_ex6200)//skip on ex6200
+		nparts++;
+	
 
 	bcm947xx_flash_parts[nparts].name = "nvram";
 	bcm947xx_flash_parts[nparts].size = ROUNDUP(NVRAM_SPACE, mtd->erasesize);
 	if (maxsize)
 		bcm947xx_flash_parts[nparts].offset = (size - 0x10000) - bcm947xx_flash_parts[nparts].size;
+		if(is_ex6200)
+			bcm947xx_flash_parts[nparts].offset = size + 0x10000 - bcm947xx_flash_parts[nparts].size;
 	else
 		bcm947xx_flash_parts[nparts].offset = size - bcm947xx_flash_parts[nparts].size;
 	bcm947xx_flash_parts[nparts].offset-=bcm947xx_flash_parts[nparts].size;
