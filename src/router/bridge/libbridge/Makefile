@@ -1,4 +1,4 @@
-CC := $(CC) -Wall -c -g $(COPTS) -DNEED_PRINTF
+CC := $(CC) -Wall -c -g $(COPTS) -DNEED_PRINTF -D_GNU_SOURCE
 
 all:			libbridge.a
 
