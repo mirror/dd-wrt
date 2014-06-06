@@ -24,6 +24,10 @@
 #include "utils.h"
 #include "tc_util.h"
 
+#ifndef MIN
+#define	MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+
 int get_qdisc_handle(__u32 *h, const char *str)
 {
 	__u32 maj;
