@@ -73,8 +73,8 @@ SOURCES.OBJ := $(SOURCES)
 SOURCES.OBJ := $(patsubst %.c,$(OBJDIR)/%.o,$(SOURCES.OBJ))
 
 TARGET = upnp
-LIBS = -L$(UPNPBASE) -L$(SRCBASE)/router/netconf -L$(TOP)/libutils -L$(TOP)/iptables/libiptc \
-	-L$(SRCBASE)/router/nvram -L$(SRCBASE)/router/shared -lupnp -lnetconf -lutils -lnvram -liptc $(ADDLIBS)
+LIBS = -L$(UPNPBASE) -L$(TOP)/netconf -L$(TOP)/libutils -L$(TOP)/iptables/libiptc \
+	-L$(TOP)/nvram -L$(TOP)/shared -lupnp -lnetconf -lutils -lnvram -liptc $(ADDLIBS)
 
 all : $(OBJDIR) $(TARGET)
 
@@ -93,21 +93,21 @@ ifneq ($(BUILD_LIBS),)
 
 $(TARGET) :: libnetconf.so
 
-$(TARGET) :: $(SRCBASE)/router/iptables/libiptables.a 
+$(TARGET) :: $(TOP)/iptables/libiptables.a 
 
-$(TARGET) :: $(SRCBASE)/router/nvram/libnvram.a 
+$(TARGET) :: $(TOP)/nvram/libnvram.a 
 
-$(SRCBASE)/router/iptables/libiptables.a : FORCE
-	$(MAKE) -C $(SRCBASE)/router/iptables PLATFORM=x86 CC=$(CC) LD=$(LD) SRCBASE=../.. TOP=..
+$(TOP)/iptables/libiptables.a : FORCE
+	$(MAKE) -C $(TOP)/iptables PLATFORM=x86 CC=$(CC) LD=$(LD) SRCBASE=../.. TOP=..
 
-$(SRCBASE)/router/nvram/libnvram.a : FORCE
-	$(MAKE) -C $(SRCBASE)/router/nvram PLATFORM=x86 CC=$(CC) LD=$(LD) SRCBASE=../.. TOP=..
+$(TOP)/nvram/libnvram.a : FORCE
+	$(MAKE) -C $(TOP)/nvram PLATFORM=x86 CC=$(CC) LD=$(LD) SRCBASE=../.. TOP=..
 
-$(SRCBASE)/router/netconf/libnetconf.so : $(SRCBASE)/router/iptables/libiptables.a FORCE
-	$(MAKE) -C $(SRCBASE)/router/netconf DEBUG=1 PLATFORM=x86 CC=$(CC) LD=$(LD) SRCBASE=../.. TOP=..
+$(TOP)/netconf/libnetconf.so : $(TOP)/iptables/libiptables.a FORCE
+	$(MAKE) -C $(TOP)/netconf DEBUG=1 PLATFORM=x86 CC=$(CC) LD=$(LD) SRCBASE=../.. TOP=..
 
 libnetconf.so : $(SRCBASE)/router/netconf/libnetconf.so
-	#	cp $(SRCBASE)/router/netconf/libnetconf.so /router/usr/lib/
+	#	cp $(TOP)/netconf/libnetconf.so /router/usr/lib/
 
 endif
 
@@ -124,9 +124,9 @@ clean:
 	rm -f upnp
 	$(MAKE) -C $(UPNPBASE) clean
 ifneq ($(BUILD_LIBS),)
-	$(MAKE) -C $(SRCBASE)/router/netconf clean
-	$(MAKE) -C $(SRCBASE)/router/iptables clean
-	$(MAKE) -C $(SRCBASE)/router/nvram clean
+	$(MAKE) -C $(TOP)/netconf clean
+	$(MAKE) -C $(TOP)/iptables clean
+	$(MAKE) -C $(TOP)/nvram clean
 endif
 
 FORCE:
