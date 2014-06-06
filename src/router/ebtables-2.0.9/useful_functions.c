@@ -22,10 +22,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-#include "include/ebtables_u.h"
-#include "include/ethernetdb.h"
 #include <stdio.h>
+#ifdef __UCLIBC__
 #include <netinet/ether.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -33,6 +33,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+
+#include "include/ebtables_u.h"
+#include "include/ethernetdb.h"
 
 const unsigned char mac_type_unicast[ETH_ALEN] =   {0,0,0,0,0,0};
 const unsigned char msk_type_unicast[ETH_ALEN] =   {1,0,0,0,0,0};

@@ -362,7 +362,7 @@ static struct ebt_u_match arp_match =
 	.extra_ops	= opts,
 };
 
-void _arp_arp_arp_init(void)
+void _init(void)
 {
 	ebt_register_match(&arp_match);
 }
