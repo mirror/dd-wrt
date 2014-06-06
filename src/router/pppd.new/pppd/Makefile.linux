@@ -88,7 +88,9 @@ PLUGIN=y
 #USE_SRP=y
 
 # Use libutil
+ifneq ($(CONFIG_MUSL),y)
 USE_LIBUTIL=y
+endif
 
 MAXOCTETS=y
 
