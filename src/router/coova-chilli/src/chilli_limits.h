@@ -18,8 +18,8 @@
  * 
  */
 
-#ifndef _LIMITS_H
-#define _LIMITS_H
+#ifndef _COOVALIMITS_H
+#define _COOVALIMITS_H
 
 /*
  * extracted from various .h files, needs some cleanup.
