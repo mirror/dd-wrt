@@ -212,7 +212,7 @@ static struct ebt_u_match limit_match =
 	.extra_ops	= opts,
 };
 
-void _limit_limit_limit_init(void)
+void _init(void)
 {
 	ebt_register_match(&limit_match);
 }

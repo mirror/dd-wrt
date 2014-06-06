@@ -11,8 +11,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#include "../include/ebtables_u.h"
+#ifdef __UCLIBC__
 #include <netinet/ether.h>
+#endif
+#include "../include/ebtables_u.h"
 #include <linux/netfilter_bridge/ebt_arpreply.h>
 
 static int mac_supplied;
@@ -133,7 +135,7 @@ static struct ebt_u_target arpreply_target =
 	.extra_ops	= opts,
 };
 
-void _arpreply_arpreply_arpreply_init(void)
+void _init(void)
 {
 	ebt_register_target(&arpreply_target);
 }

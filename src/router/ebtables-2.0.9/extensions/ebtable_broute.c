@@ -23,7 +23,7 @@ ebt_u_table table =
 //	.help		= print_help,
 };
 
-void _t_broute_t_broute_t_broute_init(void)
+void _init(void)
 {
 	ebt_register_table(&table);
 }

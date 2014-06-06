@@ -172,7 +172,7 @@ static struct ebt_u_target mark_target =
 	.extra_ops	= opts,
 };
 
-void _mark_mark_mark_init(void)
+void _init(void)
 {
 	ebt_register_target(&mark_target);
 }

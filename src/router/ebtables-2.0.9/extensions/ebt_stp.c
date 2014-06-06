@@ -337,7 +337,7 @@ static struct ebt_u_match stp_match =
 	.extra_ops	= opts,
 };
 
-void _stp_stp_stp_init(void)
+void _init(void)
 {
 	ebt_register_match(&stp_match);
 }

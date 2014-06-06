@@ -12,14 +12,16 @@
 #include <getopt.h>
 #include <ctype.h>
 #include <unistd.h>
+#ifdef __UCLIBC__
 #include <netinet/ether.h>
+#endif
 #include "../include/ebtables_u.h"
 #include "../include/ethernetdb.h"
-#include <linux/if_ether.h>
 #include <linux/netfilter_bridge/ebt_among.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
 
 #define AMONG_DST '1'
 #define AMONG_SRC '2'
@@ -489,7 +491,7 @@ static struct ebt_u_match among_match = {
 	.extra_ops 	= opts,
 };
 
-void _among_among_among_init(void)
+void _init(void)
 {
 	ebt_register_match(&among_match);
 }
