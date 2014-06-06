@@ -2275,6 +2275,7 @@ void start_restore_defaults(void)
 			nvram_set("vlan2ports", "0 1 2 3 8*");
 		}
 		break;
+	case ROUTER_NETGEAR_EX6200:
 	case ROUTER_NETGEAR_AC1450:
 	case ROUTER_NETGEAR_R6250:
 	case ROUTER_NETGEAR_R6300V2:
@@ -2318,6 +2319,7 @@ void start_restore_defaults(void)
 			case ROUTER_WRT320N:
 			case ROUTER_NETGEAR_WNDR4500:
 			case ROUTER_NETGEAR_WNDR4500V2:
+			case ROUTER_NETGEAR_EX6200:
 			case ROUTER_NETGEAR_AC1450:
 			case ROUTER_NETGEAR_R6250:
 			case ROUTER_NETGEAR_R6300:
@@ -2373,6 +2375,7 @@ void start_restore_defaults(void)
 			case ROUTER_NETGEAR_R6300:
 				nvram_set("vlan2ports", "4 8");
 				break;
+			case ROUTER_NETGEAR_EX6200:
 			case ROUTER_NETGEAR_AC1450:
 			case ROUTER_NETGEAR_R6250:
 			case ROUTER_NETGEAR_R6300V2:
