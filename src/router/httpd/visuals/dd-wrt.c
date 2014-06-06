@@ -2966,7 +2966,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", IFMAP(var));
 		tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 		// contains html tag
-		char wl_macaddr[16];
+		char wl_macaddr[18];
 		sprintf(wl_macaddr, "%s_hwaddr", var);
 		if (nvram_get(wl_macaddr))
 			websWrite(wp, "] HWAddr [%s", nvram_safe_get(wl_macaddr));
@@ -3172,7 +3172,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", IFMAP(var));
 			tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 			// contains html tag
-			char wl_macaddr[16];
+			char wl_macaddr[18];
 			sprintf(wl_macaddr, "%s_hwaddr", var);
 			if (nvram_get(wl_macaddr))
 				websWrite(wp, "] HWAddr [%s", nvram_safe_get(wl_macaddr));
@@ -3334,7 +3334,7 @@ void ej_show_countrylist(webs_t wp, int argc, char_t ** argv)
 void ej_show_wireless_single(webs_t wp, char *prefix)
 {
 	char wl_mode[16];
-	char wl_macaddr[16];
+	char wl_macaddr[18];
 	char wl_ssid[16];
 	char frequencies[48];
 
