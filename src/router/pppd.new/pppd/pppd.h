@@ -67,6 +67,9 @@
 #define volatile
 #endif
 
+#undef __P
+#define __P(args) args
+
 #ifdef INET6
 #include "eui64.h"
 #endif
