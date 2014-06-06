@@ -4,6 +4,16 @@
 #define _FWCHAINS_KERNEL_HEADERS_H
 
 #include <limits.h>
+
+#ifdef __UCLIBC__
+#include <netinet/ip.h>
+#include <netinet/in.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/tcp.h>
+#include <netinet/udp.h>
+#include <net/if.h>
+#include <sys/types.h>
+#else /* libc5 */
 #include <sys/socket.h>
 #include <linux/ip.h>
 #include <linux/in.h>
@@ -13,5 +23,5 @@
 #include <linux/udp.h>
 #include <linux/types.h>
 #include <linux/in6.h>
-
+#endif
 #endif
