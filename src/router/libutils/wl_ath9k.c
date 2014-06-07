@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  */
 #ifndef __UCLIBC__
-#define __DEFINED_float_t
+//#define __DEFINED_float_t
 #endif
 #include <string.h>
 #include <unistd.h>
