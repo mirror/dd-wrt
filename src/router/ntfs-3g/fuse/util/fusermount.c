@@ -28,6 +28,7 @@
 #include <sys/socket.h>
 #include <sys/utsname.h>
 #include <sched.h>
+#include <paths.h>
 
 #define FUSE_COMMFD_ENV		"_FUSE_COMMFD"
 

@@ -23,6 +23,7 @@
 #include <sys/wait.h>
 #include <sys/mount.h>
 #include <sys/param.h>
+#include <paths.h>
 
 #ifdef __NetBSD__
 #define umount2(mnt, flags) unmount(mnt, (flags == 2) ? MNT_FORCE : 0)

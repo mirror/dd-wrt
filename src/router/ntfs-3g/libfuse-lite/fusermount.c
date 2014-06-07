@@ -33,6 +33,7 @@
 #include <sys/mount.h>
 #include <sys/socket.h>
 #include <sys/utsname.h>
+#include <paths.h>
 
 #define FUSE_DEV_NEW "/dev/fuse"
 
