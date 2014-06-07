@@ -363,7 +363,7 @@ static int posix_close_fd (int *fd)
    return 0;
 }
 
-static int posix_close (SLFile_FD_Type *f)
+static int s_posix_close (SLFile_FD_Type *f)
 {
    int status = do_close (f);
 
@@ -914,7 +914,7 @@ static SLang_Intrin_Fun_Type Fd_Name_Table [] =
    MAKE_INTRINSIC_2("write", posix_write, V, F, B),
    MAKE_INTRINSIC_1("dup_fd", posix_dup, V, F),
    MAKE_INTRINSIC_2("dup2_fd", posix_dup2, I, F, I),
-   MAKE_INTRINSIC_1("close", posix_close, I, F),
+   MAKE_INTRINSIC_1("close", s_posix_close, I, F),
    MAKE_INTRINSIC_1("_close", posix_close_fd, I, I),
    SLANG_END_INTRIN_FUN_TABLE
 };
