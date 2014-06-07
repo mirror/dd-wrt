@@ -35,6 +35,7 @@
 #include <syslog.h>
 #include <services.h>
 #include <radiusdb.h>
+#include <time.h>
 
 static void prep(void)
 {
