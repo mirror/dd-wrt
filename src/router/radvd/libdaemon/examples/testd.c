@@ -23,7 +23,9 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#ifdef __UCLIBC__
 #include <sys/unistd.h>
+#endif
 #include <sys/select.h>
 
 #include <libdaemon/dfork.h>
