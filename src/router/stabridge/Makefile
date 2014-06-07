@@ -1,5 +1,5 @@
 
-CFLAGS := $(COPTS) -Wall -Wstrict-prototypes
+CFLAGS := $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -Wall -Wstrict-prototypes
 
 CFLAGS += -D_GNU_SOURCE
 

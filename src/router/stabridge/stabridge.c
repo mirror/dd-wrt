@@ -63,7 +63,7 @@ typedef struct iface {
         unsigned char hwaddr[ETH_ALEN]; /* interface MAC address */
 } iface_t;
 
-typedef struct	ether_arp {
+typedef struct	compat_ether_arp {
     struct ether_header ethhdr;            /* ethernet header */
     unsigned short ar_hrd;		/* Format of hardware address.  */
     unsigned short ar_pro;		/* Format of protocol address.  */
@@ -75,8 +75,7 @@ typedef struct	ether_arp {
     unsigned char arp_tha[ETH_ALEN];	/* target hardware address */
     unsigned char arp_tpa[4];		/* target protocol address */
 //    unsigned char pad[18];           /* pad for min. ethernet payload (60 bytes) */
-} __attribute__((packed)) ether_arp_t;
-
+} __attribute__((packed)) compat_ether_arp_t;
 
 static const char* const MODULE = "[stabridge]";
 static const char* const STABRIDGE_CONFIG_FILE = "/etc/stabridge_def.conf";
@@ -315,18 +314,18 @@ static int snat_handler(int s_idx,
 	int length = 0;	/*length of the received frame*/
 	int i;
 
-	ether_arp_t* arph;
+	compat_ether_arp_t* arph;
 
 	length = recv(s[s_idx], buffer, ETH_FRAME_LEN, 0);
 	if (length == -1 ||
-	    length < sizeof(ether_arp_t)
+	    length < sizeof(compat_ether_arp_t)
 	   )
 	{
 		debug("%s Droping invalid length packet\n", MODULE);
 		return -1;
 	}
 
-	arph = (ether_arp_t*)buffer;
+	arph = (compat_ether_arp_t*)buffer;
 	switch (htons(arph->ar_op))
 	{
 	case ARPOP_REPLY:
@@ -408,18 +407,18 @@ static int dnat_handler(int b)
 	unsigned char buffer[ETH_FRAME_LEN]; /*Buffer for ethernet frame*/
 	int length = 0;	/*length of the received frame*/
 	int i;
-	ether_arp_t* arph;
+	compat_ether_arp_t* arph;
 
 	length = recv(b, buffer, ETH_FRAME_LEN, 0);
 	if (length == -1 ||
-	    length < sizeof(ether_arp_t)
+	    length < sizeof(compat_ether_arp_t)
 	   )
 	{
 		debug("%s Droping invalid length packet\n", MODULE);
 		return -1;
 	}
 
-	arph = (ether_arp_t*)buffer;
+	arph = (compat_ether_arp_t*)buffer;
 	switch (htons(arph->ar_op))
 	{
 	case ARPOP_REPLY:
