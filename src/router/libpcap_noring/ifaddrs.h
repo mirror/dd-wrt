@@ -23,7 +23,7 @@
 #include <features.h>
 #include <sys/socket.h>
 
-__BEGIN_DECLS
+
 
 /* The `getifaddrs' function generates a linked list of these structures.
    Each element of the list describes one network interface.  */
@@ -64,11 +64,10 @@ struct ifaddrs
 
    The storage returned in *IFAP is allocated dynamically and can
    only be properly freed by passing it to `freeifaddrs'.  */
-extern int getifaddrs (struct ifaddrs **__ifap) __THROW;
+extern int getifaddrs (struct ifaddrs **__ifap);
 
 /* Reclaim the storage allocated by a previous `getifaddrs' call.  */
-extern void freeifaddrs (struct ifaddrs *__ifa)  __THROW;
+extern void freeifaddrs (struct ifaddrs *__ifa);
 
-__END_DECLS
 
 #endif /* ifaddrs.h */
