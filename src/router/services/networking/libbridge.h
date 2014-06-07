@@ -19,6 +19,9 @@
 #ifndef _LIBBRIDGE_H
 #define _LIBBRIDGE_H
 
+#ifndef __UCLIBC__
+#include <netinet/in.h>
+#endif
 #include <net/if.h>
 #include <linux/if_bridge.h>
 
