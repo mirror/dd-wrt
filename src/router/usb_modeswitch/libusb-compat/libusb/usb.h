@@ -30,6 +30,7 @@
 #include <limits.h>
 
 #include <dirent.h>
+#include <sys/types.h>
 
 /*
  * USB spec information
