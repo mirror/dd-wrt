@@ -117,10 +117,11 @@
 #include "udpTable.h"
 #include "sysORTable.h"
 
+#if HAVE_SYS_SYSCTL_H
 #ifdef CAN_USE_SYSCTL
 #include <sys/sysctl.h>
 #endif
-
+#endif
 #if HAVE_DMALLOC_H
 #include <dmalloc.h>
 #endif
