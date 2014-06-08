@@ -11,7 +11,7 @@ NETBIOS = -DDROP_NETBIOS # -DALLOW_WINS
 # PROF  = -pg -fprofile-arcs -D_DEBUG
 # DEBUG = -g -D_DEBUG
 
-OPTIM =  $(COPTS)
+OPTIM =  $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE
 
 # install service
 PROGNAME   = shatd

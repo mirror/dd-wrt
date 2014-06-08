@@ -36,11 +36,10 @@
 #include <asm/types.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
-#include <linux/if_tun.h>
 #include <net/route.h>
 
 #include <features.h>    /* for the glibc version number */
-#if __GLIBC__ >= 2 && __GLIBC_MINOR >= 1
+#if 1//  __GLIBC__ >= 2 && __GLIBC_MINOR >= 1
 # include <netpacket/packet.h>
 # include <net/ethernet.h>     /* the L2 protocols */
 #else
@@ -49,10 +48,14 @@
 # include <linux/if_ether.h>   /* The L2 protocols */
 #endif
 
+#define _LINUX_IF_ETHER_H
+#include <linux/if_tun.h>
+
 #include "util.h"
 
 #define __DEVICE_PRIVATE
 #include "device.h"
+
 
 /* ----------------------------------------------------------------------- *
  * variables and definitions
