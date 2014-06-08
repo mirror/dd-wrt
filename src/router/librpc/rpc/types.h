@@ -47,7 +47,24 @@
 #define _(X)	X
 #endif
 #include <features.h>
-
+#ifndef __UCLIBC__
+#include <sys/stat.h>
+#include <sys/statfs.h>
+typedef uid_t __uid_t;
+typedef gid_t __gid_t;
+typedef fsid_t __fsid_t;
+typedef quad_t __quad_t;
+typedef u_quad_t __u_quad_t;
+typedef int __daddr_t;
+typedef caddr_t __caddr_t;
+typedef u_long __u_long;
+typedef u_short __u_short;
+typedef u_int __u_int;
+typedef u_char __u_char;
+#define __THROW
+#define __END_DECLS
+#define __BEGIN_DECLS
+#endif
 typedef int bool_t;
 typedef int enum_t;
 /* This needs to be changed to uint32_t in the future */
@@ -84,6 +101,7 @@ typedef __u_char u_char;
 typedef __u_short u_short;
 typedef __u_int u_int;
 typedef __u_long u_long;
+typedef __u_short u_short;
 typedef __quad_t quad_t;
 typedef __u_quad_t u_quad_t;
 typedef __fsid_t fsid_t;
