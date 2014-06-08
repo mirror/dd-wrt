@@ -11,7 +11,7 @@ DEBUG ?= 0
 NO_DEBUG_MESSAGES ?= 1
 
 # the optimize option to be set for gcc
-OPTIMIZE ?= $(COPTS) $(MIPS16_OPT)
+OPTIMIZE = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE
 
 #-ffunction-sections -fdata-sections -Wl,--gc-sections
 #CFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
@@ -75,7 +75,7 @@ SGW_POLICY_SCRIPT ?= sgw_policy_routing_setup.sh
 DOCDIR_OLSRD ?= $(DOCDIR)/$(EXENAME)
 
 
-CPPFLAGS =	-Isrc
+CPPFLAGS =	-Isrc -D_GNU_SOURCE
 ifneq ($(TOPDIR),.)
 CPPFLAGS +=	-I$(TOPDIR)/src
 endif
@@ -151,6 +151,7 @@ WARNINGS :=	$(shell CC="$(CC)" "$(TOPDIR)/gcc-warnings" $(WARNINGS))
 endif
 CFLAGS +=	$(WARNINGS)
 CFLAGS +=	$(OPTIMIZE)
+CPPFLAGS += 	$(OPTIMIZE)
 CFLAGS +=	$(EXTRA_CFLAGS)
 
 endif
