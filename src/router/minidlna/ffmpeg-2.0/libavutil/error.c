@@ -16,7 +16,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#ifdef __UCLIBC__
 #undef _GNU_SOURCE
+#endif
 #include "avutil.h"
 #include "avstring.h"
 #include "common.h"
