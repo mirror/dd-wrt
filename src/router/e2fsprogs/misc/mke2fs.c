@@ -2021,7 +2021,7 @@ static int mke2fs_discard_blocks(ext2_filsys fs)
 	int ret;
 	int blocksize;
 	__u64 blocks;
-	__uint64_t range[2];
+	__u64 range[2];
 
 	blocks = fs->super->s_blocks_count;
 	blocksize = EXT2_BLOCK_SIZE(fs->super);
