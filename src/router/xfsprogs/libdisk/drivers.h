@@ -18,6 +18,7 @@
 
 #include <xfs/libxfs.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 #include <volume.h>
 
 /*
