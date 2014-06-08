@@ -128,7 +128,7 @@ if test "x$RESOLV_LIB_NONE" = "x"; then
 			[AC_MSG_RESULT([yes])
 			RESOLV_LIBS=-lresolv],
 			[AC_MSG_RESULT([no])
-                        AC_MSG_ERROR(No resolver library found)])
+#                        AC_MSG_ERROR(No resolver library found)])
 	fi
 	LIBS="$STASH_LIBS"
 fi
