@@ -392,6 +392,9 @@ attr_list_by_handle(
 	alhreq.flags = flags;
 	alhreq.buffer = buf;
 	alhreq.buflen = bufsize;
+#ifndef XATTR_LIST_MAX
+#define XATTR_LIST_MAX 65536	/* size of extended attribute namelist (64k) */
+#endif
 	/* prevent needless EINVAL from the kernel */
 	if (alhreq.buflen > XATTR_LIST_MAX)
 		alhreq.buflen = XATTR_LIST_MAX;

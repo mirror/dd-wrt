@@ -166,6 +166,10 @@ jdm_attr_list(	jdm_fshandle_t *fshp,
 	filehandle_t filehandle;
 	int rval;
 
+#ifndef XATTR_LIST_MAX
+#define XATTR_LIST_MAX 65536	/* size of extended attribute namelist (64k) */
+#endif
+
 	/* prevent needless EINVAL from the kernel */
 	if (bufsz > XATTR_LIST_MAX)
 		bufsz = XATTR_LIST_MAX;
