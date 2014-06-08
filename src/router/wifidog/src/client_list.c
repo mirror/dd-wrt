@@ -35,7 +35,7 @@
 #include <pthread.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include <sys/unistd.h>
+#include <unistd.h>
 
 #include <string.h>
 
