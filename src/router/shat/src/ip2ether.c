@@ -39,7 +39,7 @@
 #include <linux/rtnetlink.h>
 
 #include <features.h>    /* for the glibc version number */
-#if __GLIBC__ >= 2 && __GLIBC_MINOR >= 1
+#if 1//__GLIBC__ >= 2 && __GLIBC_MINOR >= 1
 # include <netpacket/packet.h>
 # include <net/ethernet.h>     /* the L2 protocols */
 #else
