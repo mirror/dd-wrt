@@ -50,7 +50,7 @@
 #define __UPNPHTTP_H__
 
 #include <netinet/in.h>
-#include <sys/queue.h>
+#include "queue.h"
 
 #include "minidlnatypes.h"
 #include "config.h"
