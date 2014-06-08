@@ -21,9 +21,6 @@
 #include <mntent.h>
 #include <sys/stat.h>
 #undef ustat
-#ifndef __UCLIBC__
-#include <sys/ustat.h>
-#endif
 #include <sys/mount.h>
 #include <sys/ioctl.h>
 #include <sys/sysinfo.h>
@@ -51,27 +48,6 @@ static int max_block_alignment;
 int
 platform_check_ismounted(char *name, char *block, struct stat64 *s, int verbose)
 {
-#ifndef __UCLIBC__
-	/* Pad ust; pre-2.6.28 linux copies out too much in 32bit compat mode */
-	struct ustat	ust[2];
-	struct stat64	st;
-
-	if (!s) {
-		if (stat64(block, &st) < 0)
-			return 0;
-		if ((st.st_mode & S_IFMT) != S_IFBLK)
-			return 0;
-		s = &st;
-	}
-
-	if (ustat(s->st_rdev, ust) >= 0) {
-		if (verbose)
-			fprintf(stderr,
-				_("%s: %s contains a mounted filesystem\n"),
-				progname, name);
-		return 1;
-	}
-#endif
 	return 0;
 }
 
