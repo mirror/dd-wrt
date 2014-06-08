@@ -30,7 +30,7 @@
 #define __UPNPREPLYPARSE_H__
 
 #include <stdint.h>
-#include <sys/queue.h>
+#include "queue.h"
 
 #ifdef __cplusplus
 extern "C" {
