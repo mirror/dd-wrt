@@ -37,8 +37,10 @@
 #ifdef HAVE_ENDIAN_H
 # include <endian.h>
 #endif
+#ifdef __UCLIBC__
 #ifdef HAVE_TTYENT_H
 # include <ttyent.h>
+#endif
 #endif
 #ifdef HAVE_UTIME_H
 # include <utime.h>
@@ -84,10 +86,14 @@
 #endif
 #include <termios.h>
 #ifdef HAVE_SYS_BITYPES_H
+#ifdef __UCLIBC__
 # include <sys/bitypes.h> /* For u_intXX_t */
 #endif
+#endif
 #ifdef HAVE_SYS_CDEFS_H
+#ifdef __UCLIBC__
 # include <sys/cdefs.h> /* For __P() */
+#endif
 #endif
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h> /* For S_* constants and macros */
