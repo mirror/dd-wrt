@@ -192,7 +192,7 @@ struct adfs_super_block {
 	char    s_dummy2[62];
 	char    s_checksum[1];
 };
-#define adfsblksize(s)	((uint) s.s_blksize[0])
+#define adfsblksize(s)	((unsigned int) s.s_blksize[0])
 
 /* found in first 4 bytes of block 1 */
 struct vxfs_super_block {
