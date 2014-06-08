@@ -4976,10 +4976,8 @@ int led_control(int type, int act)
 
         	usb_power1 = 0x015;
 		usb_gpio1 = 0x113;
-		
-		
-        	usb_power = 0x015;
-		usb_gpio = 0x10f;
+				
+    		usb_gpio = 0x10f;
 		break;
 #elif HAVE_WR1043V2
 	case ROUTER_BOARD_WHRHPGN:
