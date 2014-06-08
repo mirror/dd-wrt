@@ -46,6 +46,7 @@
 #include <linux/types.h>
 #include <sys/socket.h>
 #include <sys/uio.h>
+#include <sys/types.h>
 
 #include <linux/netlink.h>
 
