@@ -93,7 +93,10 @@
 	#include <sys/select.h>
 
 	#include <net/if.h>
+	#include <sys/types.h>
+#if 0
 	#include <netinet/if_ether.h>
+#endif
 #ifdef linux
 	#include <netpacket/packet.h>
 	#include <linux/if_tun.h>

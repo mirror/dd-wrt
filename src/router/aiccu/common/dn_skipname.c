@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <resolv.h>
+#include <sys/types.h>
 
 /* Ripped from glibc 2.4 sources. */
 
