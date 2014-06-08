@@ -35,6 +35,7 @@
 #include <sys/wait.h>
 #include <sys/vfs.h>
 #include <sys/statvfs.h>
+#include <paths.h>
 #ifndef __UCLIBC__
 #include <sys/xattr.h>
 #endif
