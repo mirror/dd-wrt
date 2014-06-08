@@ -19,7 +19,9 @@
 #ifndef _RPC_AUTH_DES_H
 #define _RPC_AUTH_DES_H	1
 
+#ifdef __UCLIBC__
 #include <sys/cdefs.h>
+#endif
 #include <rpc/auth.h>
 
 __BEGIN_DECLS
