@@ -181,8 +181,10 @@
 #if HAVE_OSRELDATE_H
 #include <osreldate.h>
 #endif
+#if HAVE_SYS_SYSCTL_H
 #ifdef CAN_USE_SYSCTL
 #include <sys/sysctl.h>
+#endif
 #endif
 
 #include <net-snmp/net-snmp-includes.h>
