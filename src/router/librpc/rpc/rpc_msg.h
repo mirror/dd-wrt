@@ -31,9 +31,9 @@
 
 #ifndef _RPC_MSG_H
 #define _RPC_MSG_H 1
-
+#ifdef __UCLIBC__
 #include <sys/cdefs.h>
-
+#endif
 #include <rpc/xdr.h>
 #include <rpc/clnt.h>
 
