@@ -13,6 +13,10 @@
 
 #include <sys/resource.h>
 
+#ifndef __UCLIBC__
+typedef int __priority_which_t;
+#endif
+
 /*_syscall3(int, setpriority, __priority_which_t, which, id_t, who, int, prio);*/
 static int my_setpriority(__priority_which_t which, id_t who, int prio) {
 	#ifdef __NR_setpriority
