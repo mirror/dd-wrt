@@ -48,7 +48,9 @@
 # include <linux/if_ether.h>   /* The L2 protocols */
 #endif
 
+#ifndef __UCLIBC__
 #define _LINUX_IF_ETHER_H
+#endif
 #include <linux/if_tun.h>
 
 #include "util.h"
