@@ -30,7 +30,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+
+#ifdef __UCLIBC__
 #include <termio.h>
+#else
+#include <termios.h>
+#define termio termios
+#endif
+#ifndef XCASE
+#define XCASE	0000004
+#endif
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
