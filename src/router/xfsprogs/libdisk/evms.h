@@ -15,7 +15,7 @@
  *   along with this program;  if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
-
+#include <stdint.h>
 #define EVMS_MAJOR			117
 #define EVMS_GET_VOL_STRIPE_INFO	\
 		_IOR(EVMS_MAJOR, 0xF0, struct evms_vol_stripe_info_s)
@@ -27,6 +27,6 @@
  * width: the number of stripe members or RAID data disks
  */
 typedef struct evms_vol_stripe_info_s {
-	u_int32_t	size;
-	u_int32_t	width;
+	uint32_t	size;
+	uint32_t	width;
 } evms_vol_stripe_info_t;
