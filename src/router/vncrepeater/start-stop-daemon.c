@@ -50,7 +50,6 @@
 #include <limits.h>
 #include <assert.h>
 #include <ctype.h>
-#include <error.h>
 
 static int testmode = 0;
 static int quietmode = 0;
