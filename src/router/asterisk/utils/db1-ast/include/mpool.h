@@ -36,7 +36,7 @@
 #ifndef _MPOOL_H
 #define _MPOOL_H 1
 
-#include <sys/queue.h>
+#include "queue.h"
 #ifndef CIRCLEQ_HEAD
 #include <circ-queue.h>
 #endif
