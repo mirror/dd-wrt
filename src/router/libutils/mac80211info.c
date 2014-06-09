@@ -88,10 +88,10 @@ static void print_wifi_clients(struct wifi_client_info *wci);
 void free_wifi_clients(struct wifi_client_info *wci);
 static struct wifi_client_info *add_to_wifi_clients(struct wifi_client_info *list_root);
 static int mac80211_cb_survey(struct nl_msg *msg, void *data);
+static bool bunl=0;
 
 static void __attribute__((constructor)) mac80211_init(void)
 {
-	static bool bunl;
 	if (!bunl) {
 		unl_genl_init(&unl, "nl80211");
 		bunl = 1;
@@ -976,14 +976,15 @@ static int mac80211_get_antennas(int phy, int which, int direction)
 	struct genlmsghdr *gnlh;
 	int ret = 0;
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg)
+	    return 0;
+
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 
 	if (unl_genl_request_single(&unl, msg, &msg) < 0)
 		return 0;
-	if (!msg)
-		return 0;
-
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
+
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
 	if (which == 0 && direction == 0) {
