@@ -969,7 +969,6 @@ nla_put_failure:
 	nlmsg_free(msg);
 	return;
 }
-
 static int mac80211_get_antennas(int phy, int which, int direction)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
