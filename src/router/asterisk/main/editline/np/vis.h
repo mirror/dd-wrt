@@ -74,7 +74,13 @@
  */
 #define	UNVIS_END	1	/* no more characters */
 
+#ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
+#else
+#define __P(a) a
+#define __BEGIN_DECLS
+#define __END_DECLS
+#endif
 
 __BEGIN_DECLS
 char	*vis __P((char *, int, int, int));

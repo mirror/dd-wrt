@@ -17,6 +17,8 @@
 #include <sys/types.h>
 #include <stdio.h>
 
+#define __P(a) a
+
 #if !defined(STANDALONE) && !defined(STANDALONE2)	\
 	
 ASTERISK_FILE_VERSION(__FILE__, "$Revision: 360359 $")
