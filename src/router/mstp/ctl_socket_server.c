@@ -26,6 +26,7 @@
 
 #include <sys/un.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "ctl_socket_client.h"
 #include "epoll_loop.h"
