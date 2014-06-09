@@ -29,13 +29,14 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netinet/ether.h>
+#include <paths.h>
 #include <sys/time.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
 #ifdef __linux__
-#include <linux/if_ether.h>
+//#include <linux/if_ether.h>
 #include <sys/mman.h>
 #endif
 #include "md5.h"

@@ -1,7 +1,7 @@
 
 #CC?=gcc
 
-CFLAGS += $(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
+CFLAGS += $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
 # Run this with make LIBS=-lrt if you want to compile on kfreebsd
 
 all: macping mndp mactelnet mactelnetd
