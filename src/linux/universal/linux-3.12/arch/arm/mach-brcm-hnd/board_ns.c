@@ -532,6 +532,8 @@ struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_inf
 #else
 
 		bcm947xx_flash_parts[nparts].size = mtd->size - vmlz_off;
+		if(is_ex6200)
+			bcm947xx_flash_parts[nparts].size -= 0x10000;
 
 #ifdef PLC
 		/* Reserve for PLC */
