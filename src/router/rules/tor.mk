@@ -1,5 +1,5 @@
 miniupnpc:
-	make -C miniupnpc OS="Linux" OS_STRING="DD-WRT" PREFIX="/usr" CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC"
+	make -C miniupnpc OS="Linux" OS_STRING="DD-WRT" PREFIX="/usr" CFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC"
 
 miniupnpc-clean:
 	make -C miniupnpc clean
