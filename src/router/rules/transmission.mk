@@ -29,9 +29,9 @@ curl-configure:
 
 transmission: libevent curl
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib  -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/libevent/include" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib   -I$(TOP)/curl/include  -I$(TOP)/openssl/include  -I$(TOP)/libevent/include" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/zlib    -L$(TOP)/openssl -lopenssl -L$(TOP)/libevent/.libs -levent -L$(TOP)/curl/lib/.libs -lcurl -ldl" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib  -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/libevent/include" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib   -I$(TOP)/curl/include  -I$(TOP)/openssl/include  -I$(TOP)/libevent/include" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -L$(TOP)/zlib    -L$(TOP)/openssl -lopenssl -L$(TOP)/libevent/.libs -levent -L$(TOP)/curl/lib/.libs -lcurl -ldl" \
 	$(MAKE) -C transmission
 
 transmission-install:
@@ -48,9 +48,9 @@ transmission-configure: libevent-configure curl-configure
 	cd transmission && ./autogen.sh
 	cd transmission && ./configure  --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	--enable-daemon --disable-nls \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib   -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/libevent/include" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib  -I$(TOP)/curl/include  -I$(TOP)/openssl/include  -I$(TOP)/libevent/include" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -L$(TOP)/zlib   -L$(TOP)/openssl -L$(TOP)/libevent/.libs  -L$(TOP)/curl/lib/.libs -ldl" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib   -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/libevent/include" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib  -I$(TOP)/curl/include  -I$(TOP)/openssl/include  -I$(TOP)/libevent/include" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE  -L$(TOP)/zlib   -L$(TOP)/openssl -L$(TOP)/libevent/.libs  -L$(TOP)/curl/lib/.libs -ldl" \
 	LIBCURL_CFLAGS="-I$(TOP)/curl/include" \
 	LIBCURL_LIBS="-L$(TOP)/curl/lib/.libs -lcurl" \
 	LIBEVENT_CFLAGS="-I$(TOP)/libevent/include" \
