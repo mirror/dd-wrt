@@ -130,6 +130,10 @@ extern char    *fgetline(FILE *, int *);
 
 #ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
+#else
+#define __P(a) a
+#define __BEGIN_DECLS
+#define __END_DECLS
 #endif
 
 #endif /* _h_sys */
