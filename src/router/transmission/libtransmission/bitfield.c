@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <stdlib.h> /* realloc () */
 #include <string.h> /* memset */
+#include <unistd.h> /* memset */
 
 #include "transmission.h"
 #include "bitfield.h"
