@@ -38,8 +38,11 @@ int tun_get_hwaddr(int fd, char *dev, uint8_t *hwaddr);
 
 /***************************************************************************/
 #if defined(__linux__) || defined(__GLIBC__)
+#ifdef __UCLIBC__
 #include <error.h>
-
+#else
+#define error(status,err,fmt,args...) fprintf(stderr,fmt,## args); 
+#endif
 #define HAVE_VASPRINTF 1
 #define HAVE_ASPRINTF  1
 #define HAVE_ERROR     1

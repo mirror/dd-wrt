@@ -55,10 +55,14 @@
 #include <w32api/winreg.h>
 #include <sys/cygwin.h>
 #endif
+#include "sysdep.h"
 
 #if defined(__DragonFly__)
 #include <net/tun/if_tun.h>
 #elif defined(__linux__)
+#ifndef __UCLIBC__
+#define _LINUX_IF_ETHER_H
+#endif
 #include <linux/if_tun.h>
 #elif defined(__APPLE__)
 /* no header for tun */
@@ -68,7 +72,6 @@
 #include <net/if_tun.h>
 #endif
 
-#include "sysdep.h"
 
 #if !defined(HAVE_VASPRINTF) || !defined(HAVE_ASPRINTF) || !defined(HAVE_ERROR)
 #include <stdarg.h>
