@@ -488,7 +488,7 @@ ifneq ($(CONFIG_USB_ADVANCED),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/udf
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/isofs
 endif
-ifeq ($(CONFIG_SMALLARM),y)
+ifeq ($(CONFIG_DIST),"mini")
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext4
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/xfs
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/btrfs
@@ -497,9 +497,6 @@ ifeq ($(CONFIG_SMALLARM),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/hfsplus
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/lib/raid6
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/cdrom
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls/nls_cp936.ko
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls/nls_cp950.ko
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls/nls_cp932.ko
 	rm -rf $(TARGETDIR)/etc/cfe/cfe_600.bin
 	rm -rf $(TARGETDIR)/usr/share/pci.ids
 endif
