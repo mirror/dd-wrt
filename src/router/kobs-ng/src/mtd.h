@@ -27,6 +27,8 @@
 
 #include <mtd/mtd-user.h>
 #include <endian.h>
+#include <stddef.h>
+#include <fcntl.h>
 
 #include "BootControlBlocks.h"
 #include "rom_nand_hamming_code_ecc.h"
