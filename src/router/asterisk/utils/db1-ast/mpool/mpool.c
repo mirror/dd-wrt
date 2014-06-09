@@ -36,7 +36,6 @@ static char sccsid[] = "@(#)mpool.c	8.5 (Berkeley) 7/26/94";
 #endif /* LIBC_SCCS and not lint */
 
 #include <sys/param.h>
-#include <sys/queue.h>
 #include <sys/stat.h>
 
 #include <errno.h>
