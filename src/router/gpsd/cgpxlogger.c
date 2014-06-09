@@ -16,7 +16,7 @@
  */
 
 #include <sys/types.h>
-#include <sys/cdefs.h>
+//#include <sys/cdefs.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
 
