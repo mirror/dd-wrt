@@ -13,6 +13,7 @@
 #define MSTP_H
 
 #include <stdlib.h>
+#include <sys/types.h>
 
 #include "bridge_ctl.h"
 #include "list.h"
