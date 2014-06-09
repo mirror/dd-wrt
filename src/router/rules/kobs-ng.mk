@@ -1,5 +1,5 @@
 kobs-ng-configure:
-	cd kobs-ng && ./configure --host=$(ARCH)-linux CFLAGS=" $(COPTS) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -DNEED_PRINTF" --prefix=/usr
+	cd kobs-ng && ./configure --host=$(ARCH)-linux CFLAGS=" $(COPTS) -D_GNU_SOURCE -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -DNEED_PRINTF" --prefix=/usr
 
 kobs-ng:
 	make   -C kobs-ng
