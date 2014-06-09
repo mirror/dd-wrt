@@ -3735,11 +3735,7 @@ static struct ast_config *config_text_file_load(const char *database, const char
 		glob_t globbuf;
 
 		globbuf.gl_offs = 0;	/* initialize it to silence gcc */
-#ifdef SOLARIS
 		glob_ret = glob(fn, GLOB_NOCHECK, NULL, &globbuf);
-#else
-		glob_ret = glob(fn, GLOB_NOMAGIC|GLOB_BRACE, NULL, &globbuf);
-#endif
 		if (glob_ret == GLOB_NOSPACE)
 			ast_log(LOG_WARNING,
 				"Glob Expansion of pattern '%s' failed: Not enough memory\n", fn);
