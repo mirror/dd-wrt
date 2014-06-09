@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <stdlib.h> /* bsearch () */
 #include <string.h> /* memcmp () */
+#include <fcntl.h>
 
 #include <openssl/sha.h>
 
