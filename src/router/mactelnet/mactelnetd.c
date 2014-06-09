@@ -36,8 +36,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <paths.h>
 #ifdef __linux__
-#include <linux/if_ether.h>
+//#include <linux/if_ether.h>
 #include <sys/mman.h>
 #else
 #include <sys/time.h>
