@@ -629,7 +629,7 @@ MAD_FLAGS +=  -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h
 endif
 ifeq ($(CONFIG_ATH9K),y)
 ifneq ($(CONFIG_NOWIFI),y)
-ATH9KCFLAGS+= $(COPTS) -fPIC -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/compat-wireless/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
+ATH9KCFLAGS+= $(COPTS) -fPIC -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
 ATH9KOBJS += madwifi_ath9k.o site_survey_mac80211.o
 ATH9KFILES += networking/madwifi_ath9k.c tools/site_survey_mac80211.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
