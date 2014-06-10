@@ -11,8 +11,13 @@
 
 #include "unl.h"
 
+extern void init_msg_size(void);
+extern void ctrl_init(void);
+
 static int unl_init(struct unl *unl)
 {
+	init_msg_size();
+	ctrl_init();
 	unl->sock = nl_socket_alloc();
 	if (!unl->sock)
 		return -1;
@@ -39,8 +44,9 @@ int unl_genl_init(struct unl *unl, const char *family)
 		goto error;
 
 	unl->family = genl_ctrl_search_by_name(unl->cache, family);
-	if (!unl->family)
+	if (!unl->family) {
 		goto error;
+	}
 
 	return 0;
 
