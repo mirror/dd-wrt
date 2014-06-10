@@ -84,7 +84,13 @@ void start_dlna(void)
 	fprintf(fp, "notify_interval=300\n");
 	fprintf(fp, "serial=12345678\nmodel_number=1\n");
 	fclose(fp);
-	eval("minidlna", "-f", "/tmp/minidlna.conf");
+	fp = fopen("/jffs/etc/minidlna.conf", "r"); //test if custom config is available
+	if ( fp !=NULL ){
+		eval("minidlna", "-f", "/jffs/etc/minidlna.conf");
+		fclose(fp);
+	}else{
+		eval("minidlna", "-f", "/tmp/minidlna.conf");
+	}
 	syslog(LOG_INFO, "minidlna : DLNA Media Server successfully started\n");
 
 	return;
