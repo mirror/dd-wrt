@@ -82,18 +82,18 @@ typedef uint32_t u32;
 
 
 
-static struct unl unl;
+struct unl unl;
+bool bunl;
 
 static void print_wifi_clients(struct wifi_client_info *wci);
 void free_wifi_clients(struct wifi_client_info *wci);
 static struct wifi_client_info *add_to_wifi_clients(struct wifi_client_info *list_root);
 static int mac80211_cb_survey(struct nl_msg *msg, void *data);
-static bool bunl=0;
 
 static void __attribute__((constructor)) mac80211_init(void)
 {
 	if (!bunl) {
-		unl_genl_init(&unl, "nl80211");
+		int ret = unl_genl_init(&unl, "nl80211");
 		bunl = 1;
 	}
 }
@@ -975,6 +975,7 @@ static int mac80211_get_antennas(int phy, int which, int direction)
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
 	int ret = 0;
+
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	if (!msg)
 	    return 0;
