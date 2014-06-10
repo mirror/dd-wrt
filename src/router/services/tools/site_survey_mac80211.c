@@ -61,13 +61,18 @@
 
 #include "mac80211site_survey.h"
 
-static struct unl unl;
+extern struct unl unl;
+extern bool bunl;
 
 static void __attribute__((constructor)) mac80211_init(void)
 {
-	unl_genl_init(&unl, "nl80211");
-}
+	if (!bunl) {
+		unl_genl_init(&unl, "nl80211");
+		bunl = 1;
+	}
 
+
+}
 static int sscount = 0;
 static int rate_count = 0;
 
