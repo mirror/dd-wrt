@@ -78,17 +78,16 @@ static int tcf_connmark_init(struct net *net, struct nlattr *nla,
 	struct tcf_common *pc;
 	int ret = 0;
 
-	pc = tcf_hash_check(0, a, bind);
-	if (!pc) {
-		pc = tcf_hash_create(0, est, a, sizeof(*pc), bind);
-		if (IS_ERR(pc))
-		    return PTR_ERR(pc);
+	if (tcf_hash_check(0, a, bind)) {
+		ret = tcf_hash_create(0, est, a, sizeof(*pc), bind);
+		if (ret)
+		    return ret;
 
-		tcf_hash_insert(pc, a->ops->hinfo);
+		tcf_hash_insert(a);
 		ret = ACT_P_CREATED;
 	} else {
 		if (!ovr) {
-			tcf_hash_release(pc, bind, a->ops->hinfo);
+			tcf_hash_release(a, bind);
 			return -EEXIST;
 		}
 	}
@@ -97,11 +96,10 @@ static int tcf_connmark_init(struct net *net, struct nlattr *nla,
 	return ret;
 }
 
-static inline int tcf_connmark_cleanup(struct tc_action *a, int bind)
+static void tcf_connmark_cleanup(struct tc_action *a, int bind)
 {
 	if (a->priv)
-		return tcf_hash_release(a->priv, bind, a->ops->hinfo);
-	return 0;
+		tcf_hash_release(a, bind);
 }
 
 static inline int tcf_connmark_dump(struct sk_buff *skb, struct tc_action *a,
@@ -127,11 +125,7 @@ MODULE_LICENSE("GPL");
 
 static int __init connmark_init_module(void)
 {
-	int err = tcf_hashinfo_init(&connmark_hash_info, CONNMARK_TAB_MASK);
-	if (err)
-		return err;
-
-	return tcf_register_action(&act_connmark_ops);
+	return tcf_register_action(&act_connmark_ops, CONNMARK_TAB_MASK);
 }
 
 static void __exit connmark_cleanup_module(void)

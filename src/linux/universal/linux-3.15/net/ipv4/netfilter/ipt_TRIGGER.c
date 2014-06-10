@@ -41,8 +41,8 @@
 /* This rwlock protects the main hash table, protocol/helper/expected
  *    registrations, conntrack timers*/
 
-#define ASSERT_READ_LOCK(x) MUST_BE_READ_LOCKED(&nf_conntrack_lock)
-#define ASSERT_WRITE_LOCK(x) MUST_BE_WRITE_LOCKED(&nf_conntrack_lock)
+#define ASSERT_READ_LOCK(x) MUST_BE_READ_LOCKED(&nf_conntrack_expect_lock)
+#define ASSERT_WRITE_LOCK(x) MUST_BE_WRITE_LOCKED(&nf_conntrack_expect_lock)
 
 #include <linux/netfilter_ipv4/listhelp.h>
 
@@ -70,7 +70,7 @@ static void trigger_refresh(struct ipt_trigger *trig, unsigned long extra_jiffie
 {
     DEBUGP("%s: \n", __FUNCTION__);
     NF_CT_ASSERT(trig);
-    spin_lock_bh(&nf_conntrack_lock);
+    spin_lock_bh(&nf_conntrack_expect_lock);
 
     /* Need del_timer for race avoidance (may already be dying). */
     if (del_timer(&trig->timeout)) {
@@ -78,14 +78,14 @@ static void trigger_refresh(struct ipt_trigger *trig, unsigned long extra_jiffie
 	add_timer(&trig->timeout);
     }
 
-    spin_unlock_bh(&nf_conntrack_lock);
+    spin_unlock_bh(&nf_conntrack_expect_lock);
 }
 
 static void __del_trigger(struct ipt_trigger *trig)
 {
     DEBUGP("%s: \n", __FUNCTION__);
     NF_CT_ASSERT(trig);
-//    MUST_BE_WRITE_LOCKED(&nf_conntrack_lock);
+//    MUST_BE_WRITE_LOCKED(&nf_conntrack_expect_lock);
 
      /* delete from 'trigger_list' */
     list_del(&trig->list);
@@ -97,9 +97,9 @@ static void trigger_timeout(unsigned long ul_trig)
     struct ipt_trigger *trig= (void *) ul_trig;
 
     DEBUGP("trigger list %p timed out\n", trig);
-    spin_lock_bh(&nf_conntrack_lock);
+    spin_lock_bh(&nf_conntrack_expect_lock);
     __del_trigger(trig);
-    spin_unlock_bh(&nf_conntrack_lock);
+    spin_unlock_bh(&nf_conntrack_expect_lock);
 }
 
 static unsigned int
@@ -108,12 +108,12 @@ add_new_trigger(struct ipt_trigger *trig)
     struct ipt_trigger *new;
 
     DEBUGP("!!!!!!!!!!!! %s !!!!!!!!!!!\n", __FUNCTION__);
-    spin_lock_bh(&nf_conntrack_lock);
+    spin_lock_bh(&nf_conntrack_expect_lock);
     new = (struct ipt_trigger *)
 	kmalloc(sizeof(struct ipt_trigger), GFP_ATOMIC);
 
     if (!new) {
-	spin_unlock_bh(&nf_conntrack_lock);
+	spin_unlock_bh(&nf_conntrack_expect_lock);
 	DEBUGP("%s: OOM allocating trigger list\n", __FUNCTION__);
 	return -ENOMEM;
     }
@@ -131,7 +131,7 @@ add_new_trigger(struct ipt_trigger *trig)
     new->timeout.expires = jiffies + (TRIGGER_TIMEOUT * HZ);
     add_timer(&new->timeout);
 	    
-    spin_unlock_bh(&nf_conntrack_lock);
+    spin_unlock_bh(&nf_conntrack_expect_lock);
 
     return 0;
 }

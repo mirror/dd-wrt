@@ -486,9 +486,6 @@ struct phy_driver {
 	 */
 	int (*config_aneg)(struct phy_device *phydev);
 
-	/* Determine if autonegotiation is done */
-	int (*aneg_done)(struct phy_device *phydev);
-
 	/* Determines the auto negotiation result */
 	int (*aneg_done)(struct phy_device *phydev);
 
