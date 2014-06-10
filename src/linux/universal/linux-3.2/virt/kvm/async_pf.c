@@ -75,7 +75,6 @@ static void async_pf_execute(struct work_struct *work)
 	spin_lock(&vcpu->async_pf.lock);
 	list_add_tail(&apf->link, &vcpu->async_pf.done);
 	apf->page = page;
-	apf->done = true;
 	spin_unlock(&vcpu->async_pf.lock);
 
 	/*
@@ -88,7 +87,7 @@ static void async_pf_execute(struct work_struct *work)
 	if (waitqueue_active(&vcpu->wq))
 		wake_up_interruptible(&vcpu->wq);
 
-	mmdrop(mm);
+	mmput(mm);
 	kvm_put_kvm(vcpu->kvm);
 }
 
@@ -99,10 +98,12 @@ void kvm_clear_async_pf_completion_queue(struct kvm_vcpu *vcpu)
 		struct kvm_async_pf *work =
 			list_entry(vcpu->async_pf.queue.next,
 				   typeof(*work), queue);
-		cancel_work_sync(&work->work);
 		list_del(&work->queue);
-		if (!work->done) /* work was canceled */
+		if (cancel_work_sync(&work->work)) {
+			mmput(work->mm);
+			kvm_put_kvm(vcpu->kvm); /* == work->vcpu->kvm */
 			kmem_cache_free(async_pf_cache, work);
+		}
 	}
 
 	spin_lock(&vcpu->async_pf.lock);
@@ -163,13 +164,12 @@ int kvm_setup_async_pf(struct kvm_vcpu *vcpu, gva_t gva, gfn_t gfn,
 		return 0;
 
 	work->page = NULL;
-	work->done = false;
 	work->vcpu = vcpu;
 	work->gva = gva;
 	work->addr = gfn_to_hva(vcpu->kvm, gfn);
 	work->arch = *arch;
 	work->mm = current->mm;
-	atomic_inc(&work->mm->mm_count);
+	atomic_inc(&work->mm->mm_users);
 	kvm_get_kvm(work->vcpu->kvm);
 
 	/* this can't really happen otherwise gfn_to_pfn_async
@@ -187,7 +187,7 @@ int kvm_setup_async_pf(struct kvm_vcpu *vcpu, gva_t gva, gfn_t gfn,
 	return 1;
 retry_sync:
 	kvm_put_kvm(work->vcpu->kvm);
-	mmdrop(work->mm);
+	mmput(work->mm);
 	kmem_cache_free(async_pf_cache, work);
 	return 0;
 }
