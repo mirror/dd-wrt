@@ -32,6 +32,7 @@
 #include <errno.h>
 
 #define start_service(a) eval("startservice",a);
+#define start_service_force(a) eval("startservice",a,"-f");
 #define stop_service(a) eval("stopservice",a);
 #define startstop(a) eval("startstop",a);
 
@@ -40,7 +41,7 @@ int main(int argc, char **argv)
 	if (argc >= 2) {
 //              sysprintf("echo received %s >> /tmp/hotplugs",argv[1]);
 		if (!strcmp(argv[1], "net")) {
-			startstop("hotplug_net");
+			start_service_force("hotplug_net");
 
 			return 0;
 		}
@@ -68,12 +69,12 @@ int main(int argc, char **argv)
 #ifdef HAVE_USB
 #ifdef HAVE_HOTPLUG2
 		if (!strcmp(argv[1], "block")) {
-			startstop("hotplug_block");
+			start_service_force("hotplug_block");
 			return 0;
 		}
 #else
 		if (!strcmp(argv[1], "usb")) {
-			startstop("hotplug_usb");
+			start_service_force("hotplug_usb");
 			return 0;
 		}
 #endif
