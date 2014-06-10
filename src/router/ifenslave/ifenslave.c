@@ -156,6 +156,7 @@ static const char *help_msg =
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdint.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <getopt.h>
