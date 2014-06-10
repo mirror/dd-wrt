@@ -39,9 +39,9 @@ MODULE_LICENSE("GPL v2");
 #define DRV_NAME  "peak_pci"
 
 struct peak_pci_chan {
-	void __iomem *cfg_base;	     /* Common for all channels */
-	struct net_device *next_dev; /* Chain of network devices */
-	u16 icr_mask;		     /* Interrupt mask for fast ack */
+	void __iomem *cfg_base;		/* Common for all channels */
+	struct net_device *prev_dev;	/* Chain of network devices */
+	u16 icr_mask;			/* Interrupt mask for fast ack */
 };
 
 #define PEAK_PCI_CAN_CLOCK	(16000000 / 2)
@@ -98,7 +98,7 @@ static int __devinit peak_pci_probe(struct pci_dev *pdev,
 {
 	struct sja1000_priv *priv;
 	struct peak_pci_chan *chan;
-	struct net_device *dev, *dev0 = NULL;
+	struct net_device *dev, *prev_dev;
 	void __iomem *cfg_base, *reg_base;
 	u16 sub_sys_id, icr;
 	int i, err, channels;
@@ -196,17 +196,13 @@ static int __devinit peak_pci_probe(struct pci_dev *pdev,
 		}
 
 		/* Create chain of SJA1000 devices */
-		if (i == 0)
-			dev0 = dev;
-		else
-			chan->next_dev = dev;
+		chan->prev_dev = pci_get_drvdata(pdev);
+		pci_set_drvdata(pdev, dev);
 
 		dev_info(&pdev->dev,
 			 "%s at reg_base=0x%p cfg_base=0x%p irq=%d\n",
 			 dev->name, priv->reg_base, chan->cfg_base, dev->irq);
 	}
-
-	pci_set_drvdata(pdev, dev0);
 
 	/* Enable interrupts */
 	writew(icr, cfg_base + PITA_ICR + 2);
@@ -217,12 +213,13 @@ failure_remove_channels:
 	/* Disable interrupts */
 	writew(0x0, cfg_base + PITA_ICR + 2);
 
-	for (dev = dev0; dev; dev = chan->next_dev) {
-		unregister_sja1000dev(dev);
-		free_sja1000dev(dev);
+	for (dev = pci_get_drvdata(pdev); dev; dev = prev_dev) {
 		priv = netdev_priv(dev);
 		chan = priv->priv;
-		dev = chan->next_dev;
+		prev_dev = chan->prev_dev;
+
+		unregister_sja1000dev(dev);
+		free_sja1000dev(dev);
 	}
 
 	pci_iounmap(pdev, reg_base);
@@ -241,7 +238,7 @@ failure_disable_pci:
 
 static void __devexit peak_pci_remove(struct pci_dev *pdev)
 {
-	struct net_device *dev = pci_get_drvdata(pdev); /* First device */
+	struct net_device *dev = pci_get_drvdata(pdev); /* Last device */
 	struct sja1000_priv *priv = netdev_priv(dev);
 	struct peak_pci_chan *chan = priv->priv;
 	void __iomem *cfg_base = chan->cfg_base;
@@ -252,10 +249,12 @@ static void __devexit peak_pci_remove(struct pci_dev *pdev)
 
 	/* Loop over all registered devices */
 	while (1) {
+		struct net_device *prev_dev = chan->prev_dev;
+
 		dev_info(&pdev->dev, "removing device %s\n", dev->name);
 		unregister_sja1000dev(dev);
 		free_sja1000dev(dev);
-		dev = chan->next_dev;
+		dev = prev_dev;
 		if (!dev)
 			break;
 		priv = netdev_priv(dev);
