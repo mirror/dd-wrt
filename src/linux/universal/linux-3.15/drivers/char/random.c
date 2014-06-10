@@ -928,7 +928,7 @@ void random_input_words(__u32 *buf, size_t wordcount, int ent_count)
 	 * Wake up waiting processes if we have enough
 	 * entropy.
 	 */
-	if (input_pool.entropy_count >= random_read_wakeup_thresh)
+	if (input_pool.entropy_count >= random_read_wakeup_bits)
 		wake_up_interruptible(&random_read_wait);
 }
 EXPORT_SYMBOL(random_input_words);
@@ -945,12 +945,12 @@ int random_input_wait(void)
 	int count;
 
 	wait_event_interruptible(random_write_wait,
-		input_pool.entropy_count < random_write_wakeup_thresh);
+		input_pool.entropy_count < random_write_wakeup_bits);
 
-	count = random_write_wakeup_thresh - input_pool.entropy_count;
+	count = random_write_wakeup_bits - input_pool.entropy_count;
 
 	/* likely we got woken up due to a signal */
-	if (count <= 0) count = random_read_wakeup_thresh;
+	if (count <= 0) count = random_read_wakeup_bits;
 
 	return count;
 }
