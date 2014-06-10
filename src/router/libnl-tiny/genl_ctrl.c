@@ -289,7 +289,7 @@ static struct nl_cache_ops genl_ctrl_ops = {
 	.co_obj_ops		= &genl_family_ops,
 };
 
-static void __init ctrl_init(void)
+void __init ctrl_init(void)
 {
 	genl_register(&genl_ctrl_ops);
 }
