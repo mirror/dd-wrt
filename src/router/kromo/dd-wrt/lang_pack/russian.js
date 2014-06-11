@@ -938,7 +938,6 @@ idx.legend2="Порт WAN";
 idx.wantoswitch="Добавить порт WAN в коммутатор";
 idx.legend3="Настройки времени";
 idx.timeset="Часовой пояс";
-idx.dsttime="Переход не летнее время (DST)";
 idx.static_ip="Статический IP";
 idx.dhcp="Динамический IP - DHCP";
 idx.dhcp_legend="Настройки сервера сетевых адресов (DHCP)";

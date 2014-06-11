@@ -857,7 +857,6 @@ idx.legend2="WAN Port";
 idx.wantoswitch="Koppla WAN Porten till Switchen";
 idx.legend3="Tid Inställning";
 idx.timeset="Tid zon";
-idx.dsttime="Sommartid (DST)";
 idx.static_ip="Fast IP";
 idx.dhcp="Automatisk Konfiguration - DHCP";
 idx.dhcp_legend="Nätverks Adress Server Inställning (DHCP)";

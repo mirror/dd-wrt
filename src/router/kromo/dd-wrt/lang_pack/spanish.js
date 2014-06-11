@@ -880,7 +880,6 @@ idx.legend2="Puerto WAN";
 idx.wantoswitch="Asignar Puerto WAN al Switch";
 idx.legend3="Config. Hora";
 idx.timeset="Zona Horaria";
-idx.dsttime="Horario Verano (DST)";
 idx.static_ip="IP Estática";
 idx.dhcp="Configuración Automática - DHCP";
 idx.dhcp_legend="Config del servidor de Direcciones de red (DHCP)";

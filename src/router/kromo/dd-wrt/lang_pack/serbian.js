@@ -906,7 +906,6 @@ idx.legend2="WAN Порт";
 idx.wantoswitch="Додели WAN порт свичу";
 idx.legend3="Подешавања времена";
 idx.timeset="Временске зоне";
-idx.dsttime="Летње рачунање времена (DST)";
 idx.static_ip="Статичка IP";
 idx.dhcp="Аутоматска конфигурација - DHCP";
 idx.dhcp_legend="Подешавање Адресе Мрежног Сервера (DHCP)";

@@ -710,7 +710,6 @@ idx.legend2="WAN端口";
 idx.wantoswitch="指派WAN口为交换口（WAN口变交换口）";
 idx.legend3="时间设置";
 idx.timeset="时区";
-idx.dsttime="夏令时 (DST)";
 idx.static_ip="静态IP";
 idx.dhcp="自动配置 - DHCP";
 idx.dhcp_legend="网络地址服务器设置 (DHCP)";
