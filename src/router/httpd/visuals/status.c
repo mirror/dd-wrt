@@ -57,7 +57,6 @@ char *rfctime(const time_t * timep, char *s)
 {
 	struct tm tm;
 
-	setenv("TZ", nvram_safe_get("time_zone"), 1);
 	memcpy(&tm, localtime(timep), sizeof(struct tm));
 	strftime(s, 200, "%a, %d %b %Y %H:%M:%S", &tm);	// spec for linksys
 	return s;
