@@ -468,25 +468,6 @@ addEvent(window, "unload", function() {
 									</select>
 								</div>
 								<div class="setting">
-									<div class="label"><% tran("idx.dsttime"); %></div>
-									<select name="daylight_time">
-									<script type="text/javascript">
-										//<![CDATA[
-										document.write("<option value=\"1\" <% nvram_selected_js("daylight_time", "1"); %>>" + idx.summt_opt1 + "</option>");
-										document.write("<option value=\"2\" <% nvram_selected_js("daylight_time", "2"); %>>" + idx.summt_opt2 + "</option>");
-										document.write("<option value=\"3\" <% nvram_selected_js("daylight_time", "3"); %>>" + idx.summt_opt3 + "</option>");
-										document.write("<option value=\"4\" <% nvram_selected_js("daylight_time", "4"); %>>" + idx.summt_opt4 + "</option>");
-										document.write("<option value=\"5\" <% nvram_selected_js("daylight_time", "5"); %>>" + idx.summt_opt5 + "</option>");
-										document.write("<option value=\"6\" <% nvram_selected_js("daylight_time", "6"); %>>" + idx.summt_opt6 + "</option>");
-										document.write("<option value=\"7\" <% nvram_selected_js("daylight_time", "7"); %>>" + idx.summt_opt7 + "</option>");
-										document.write("<option value=\"8\" <% nvram_selected_js("daylight_time", "8"); %>>" + idx.summt_opt8 + "</option>");
-										document.write("<option value=\"9\" <% nvram_selected_js("daylight_time", "9"); %>>" + idx.summt_opt9 + "</option>");
-										document.write("<option value=\"10\" <% nvram_selected_js("daylight_time", "10"); %>>" + idx.summt_opt10 + "</option>");
-										//]]>
-									</script>
-									</select>
-								</div>
-								<div class="setting">
 									<div class="label"><% tran("share.srvipname"); %></div>
 									<input maxlength="32" size="25" name="ntp_server" value="<% nvg("ntp_server"); %>" />
 								</div>
