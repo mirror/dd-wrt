@@ -3,6 +3,7 @@
 
 #include "iptables_common.h"
 #include "libiptc/libiptc.h"
+#include <sys/types.h>
 
 #ifndef IPT_LIB_DIR
 #define IPT_LIB_DIR "/usr/local/lib/iptables"
