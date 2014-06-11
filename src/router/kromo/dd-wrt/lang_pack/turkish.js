@@ -880,7 +880,6 @@ idx.legend2="WAN Portu";
 idx.wantoswitch="WAN Portu'nu Anahtara Ata";
 idx.legend3="Zaman Ayarları";
 idx.timeset="Saat Dilimi";
-idx.dsttime="Yaz Saati (DST)";
 idx.static_ip="Statik IP";
 idx.dhcp="Otomatik Yapılandırma - DHCP";
 idx.dhcp_legend="Ağ Adresi Sunucu Ayarları (DHCP)";

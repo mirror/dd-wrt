@@ -931,7 +931,6 @@ idx.legend2="Port WAN";
 idx.wantoswitch="Atribuie port WAN către Switch";
 idx.legend3="Setare oră";
 idx.timeset="Fus orar";
-idx.dsttime="Oră de vară (DST)";
 idx.static_ip="IP static";
 idx.dhcp="Configurare automată - DHCP";
 idx.dhcp_legend="Setări server adresă rețea (DHCP)";

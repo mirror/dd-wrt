@@ -922,7 +922,6 @@ idx.legend2="Port WAN";
 idx.wantoswitch="Assigna el Port WAN al Commutador";
 idx.legend3="Paràmetres d'Hora";
 idx.timeset="Fus Horari";
-idx.dsttime="Temps d'Estiu (DST)";
 idx.static_ip="IP Estàtic";
 idx.dhcp="Configuració Automàtica - DHCP";
 idx.dhcp_legend="Paràmetres de Servidor d'Adreçes de Xarxa (DHCP)";

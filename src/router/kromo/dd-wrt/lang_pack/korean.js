@@ -891,7 +891,6 @@ idx.legend2="WAN Port";
 idx.wantoswitch="스위치에 WAN(인터넷)측 Port 설정";
 idx.legend3="시간 설정";
 idx.timeset="Time Zone(타임존)";
-idx.dsttime="서머타임 (DST)";
 idx.static_ip="고정 IP(수동 설정)";
 idx.dhcp="IP자동 설정 - DHCP";
 idx.dhcp_legend="네트워크 어드레스 서버 설정 (DHCP)";

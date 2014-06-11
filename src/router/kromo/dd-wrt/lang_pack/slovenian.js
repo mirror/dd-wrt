@@ -956,7 +956,6 @@ idx.legend2="WAN vrata";
 idx.wantoswitch="dodeli WAN vrata k stikalu";
 idx.legend3="Nastavitev časa";
 idx.timeset="Časovna cona";
-idx.dsttime="Poletni čas";
 idx.static_ip="Statični IP";
 idx.dhcp="Samodejna namestitev - DHCP";
 idx.dhcp_legend="Nastavitev strežnika mrežnih naslovov (DHCP)";

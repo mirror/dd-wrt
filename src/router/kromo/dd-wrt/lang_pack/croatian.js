@@ -942,7 +942,6 @@ idx.legend2="WAN Vrata";
 idx.wantoswitch="Dodjeli WAN Vrata Preklopniku";
 idx.legend3="Vrijeme Usmjerivača";
 idx.timeset="Vremenska Zona";
-idx.dsttime="Ljetno Računanje Vremena (DST)";
 idx.static_ip="Statička IP Adresa";
 idx.dhcp="Automatska Konfiguracija - DHCP";
 idx.dhcp_legend="Mrežni Poslužitelj Adresa (DHCP)";

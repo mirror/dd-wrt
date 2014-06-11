@@ -888,7 +888,6 @@ idx.legend2="WAN Poort";
 idx.wantoswitch="WAN Poort aan Switch toewijzen";
 idx.legend3="Tijd Instellingen";
 idx.timeset="Tijdzone";
-idx.dsttime="Zomertijd (DST)";
 idx.static_ip="Statisch IP";
 idx.dhcp="Automatische Configuratie - DHCP";
 idx.dhcp_legend="Netwerk Adres Server Instellingen (DHCP)";

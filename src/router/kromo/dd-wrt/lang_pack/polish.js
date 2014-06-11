@@ -924,7 +924,6 @@ idx.legend2="WAN Port";
 idx.wantoswitch="Assign WAN Port to Switch";
 idx.legend3="Time Settings";
 idx.timeset="Time Zone";
-idx.dsttime="Summer Time (DST)";
 idx.static_ip="Static IP";
 idx.dhcp="Automatic Configuration - DHCP";
 idx.dhcp_legend="Network Address Server Settings (DHCP)";
