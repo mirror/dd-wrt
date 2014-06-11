@@ -66,26 +66,23 @@ void check_udhcpd(timer_t t, int arg)
 int do_ntp(void)		// called from ntp_main and
 				// process_monitor_main; (now really) called every hour!
 {
-	struct timeval tv;
-	float fofs;
-	int dst;
 	char *servers;
-	char tzon[16], tdst[4];
 
 	if (!nvram_match("ntp_enable", "1"))
 		return 0;
 
-	// convert old timezone format into new
-
-	if (strlen(nvram_safe_get("time_zone")) > 6) {
-		sscanf(nvram_safe_get("time_zone"), "%s %*d %s", tzon, tdst);
-		nvram_set("time_zone", tzon);
-		nvram_set("daylight_time", tdst);
+	char *tz;
+	tz = nvram_safe_get("time_zone"); //e.g. EUROPE/BERLIN
+	
+	int i;
+	for (i = 0; i < 396; i++) {
+	  if( !strcmp(allTimezones[i].tz_name,tz) ){
+		FILE *fp = fopen("/tmp/TZ", "wb");
+		fprintf(fp, "%s\n", allTimezones[i].tz_string);
+		fclose(fp);
+	  }
 	}
-
-	sscanf(nvram_safe_get("time_zone"), "%f", &fofs);
-	sscanf(nvram_safe_get("daylight_time"), "%d", &dst);
-
+	
 	if (((servers = nvram_get("ntp_server")) == NULL)
 	    || (*servers == 0))
 		servers = "209.81.9.7 207.46.130.100 192.36.144.23 pool.ntp.org";
@@ -95,37 +92,11 @@ int do_ntp(void)		// called from ntp_main and
 		// fprintf (stderr, "ntp returned a error\n");
 		return 1;
 	}
-	// -- probably should move to ntpclient
-
-	gettimeofday(&tv, NULL);
-	tv.tv_sec += (int)(fofs * 3600);	// <-- cast it or this will
-	// be off (?)
-
-	if ((dst >= 1) && (dst <= 10)) {
-		struct tm *tm = localtime(&tv.tv_sec);
-		int mon = tm->tm_mon + 1;
-		int day = tm->tm_mday;
-		int yi = tm->tm_year + 1900 - 2008;	// dst table starts at 2008
-		int mbeg = dstEntry[dst].startMonth;
-		int mend = dstEntry[dst].endMonth;
-		int dbeg = dstEntry[dst].startDay[yi];
-		int dend = dstEntry[dst].endDay[yi];
-
-		if (((mon == mbeg) && (day >= dbeg)) || ((mon == mend) && (day <= dend)) || ((mbeg < mend) && (mon > mbeg) && (mon < mend)) || ((mbeg > mend) && ((mon > mbeg) || (mon < mend)))) {
-			if ((mon != mend) || (day != dend)
-			    || (tm->tm_hour <= 1))
-				tv.tv_sec += dstEntry[dst].dstBias;
-		}
-		settimeofday(&tv, NULL);
+	
 #if defined(HAVE_VENTANA) || defined(HAVE_LAGUNA) || defined(HAVE_STORM) || (defined(HAVE_GATEWORX) && !defined(HAVE_NOP8670))
 		eval("hwclock", "-w");
 #endif
-		/* 
-		 * time_t now = time(0); dd_syslog(LOG_INFO, "time updated: %s\n",
-		 * ctime(&now)); 
-		 */
-	}
-
+		
 	return 0;
 }
 
