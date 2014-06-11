@@ -46,9 +46,9 @@ static char version[] =
 #include <sys/socket.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
-#ifndef __GLIBC__
-#include <linux/if_arp.h>
-#include <linux/if_ether.h>
+#ifndef __GLIBC__ 
+//#include <linux/if_arp.h>
+//#include <linux/if_ether.h>
 #endif
 #include "mii.h"
 
