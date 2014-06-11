@@ -17,15 +17,10 @@ else
     openssl req -batch -nodes -new -x509 -keyout clients/${CC_COMMONNAME}-key.pem -out clients/${CC_COMMONNAME}-req.pem -days $DEFDAYS -config client.cnf ;
     openssl x509 -x509toreq -in clients/${CC_COMMONNAME}-req.pem -signkey clients/${CC_COMMONNAME}-key.pem -out clients/${CC_COMMONNAME}-tmp.pem ;
 fi
-# create date in UTC (exclude timezone)
-start=$(awk -v tz=`nvram get time_zone` -v dlt=`nvram get daylight_time` ' BEGIN { print strftime("%y%m%d%H%M%SZ", mktime(strftime("%Y %m %d %H %M %S 0")) - ((dlt - tz) * 3600), "") } ') && \
-        start="-startdate $start" || \
-        start=""
-echo using start: $start
-# append startdate to ca, use ca.cnf
+
 openssl ca -batch \
 	-config ca.cnf \
-	-days $DEFDAYS $start \
+	-days $DEFDAYS \
 	-policy policy_anything \
 	-out clients/${CC_COMMONNAME}-cert.pem \
 	-passin pass:`grep output_password server.cnf | sed 's/.*=//;s/^ *//'` \
