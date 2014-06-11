@@ -976,7 +976,6 @@ idx.legend2="Porta WAN";
 idx.wantoswitch="Atribuir Porta WAN ao Switch";
 idx.legend3="Configurações de Hora";
 idx.timeset="Fuso Horário";
-idx.dsttime="Horário de Verão (DST)";
 idx.static_ip="Endereço IP Estático";
 idx.dhcp="Configuração Automática - DHCP";
 idx.dhcp_legend="Configurações do Servidor de Endereços de Rede (DHCP)";

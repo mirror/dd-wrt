@@ -703,7 +703,6 @@ idx.legend2="WAN port";
 idx.wantoswitch="WAN port hozzárendelése a kapcsoláshoz";
 idx.legend3="Idõ beállítások";
 idx.timeset="Idõzóna";
-idx.dsttime="Nyári idõszámítás (DST)";
 idx.static_ip="Statikus IP";
 idx.dhcp="Automatikus konfiguráció - DHCP";
 idx.dhcp_legend="Hálózati címszolgáltató szerver (DHCP) beállítások";
