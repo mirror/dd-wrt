@@ -889,7 +889,6 @@ idx.legend2="インターネット側Port";
 idx.wantoswitch="スイッチにインターネット側ポートを設定する";
 idx.legend3="時刻設定";
 idx.timeset="タイムゾーン";
-idx.dsttime="サマータイム設定 (DST)";
 idx.static_ip="手動設定";
 idx.dhcp="DHCP (IP自動取得)";
 idx.dhcp_legend="DHCP";

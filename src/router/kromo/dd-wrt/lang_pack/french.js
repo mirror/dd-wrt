@@ -767,7 +767,6 @@ idx.legend2="Port WAN";
 idx.wantoswitch="Ajouter le port WAN au Switch";
 idx.legend3="Réglage de l'heure";
 idx.timeset="Fuseau horaire";
-idx.dsttime="Heure d'été";
 idx.static_ip="Adresse IP statique";
 idx.dhcp="Configuration automatique - DHCP";
 idx.dhcp_legend="Paramètres du serveur d'adresse de réseau (DHCP)";

@@ -828,7 +828,6 @@ idx.legend2="WAN 埠";
 idx.wantoswitch="將 WAN 端指定給交換器";
 idx.legend3="時間設定";
 idx.timeset="時區";
-idx.dsttime="日光節約時間 (DST)";
 idx.static_ip="靜態 IP";
 idx.dhcp="自動設定 - DHCP";
 idx.dhcp_legend="網路位址伺服器設定 (DHCP)";
