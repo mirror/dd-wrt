@@ -43,10 +43,7 @@ void start_openvpnserver(void)
 	if (nvram_invmatch("openvpn_enable", "1"))
 		return;
 		
-	if ((nvram_match("usb_enable", "1")
-		&& nvram_match("usb_storage", "1")
-		&& nvram_match("usb_automnt", "1")
-		&& nvram_match("usb_mntpoint", "jffs"))
+	if ( (freediskSpace("/jffs") > 16384)
 	    || (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
 		&& nvram_match("sys_enable_jffs2", "1")))
