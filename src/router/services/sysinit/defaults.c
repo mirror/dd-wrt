@@ -122,14 +122,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"timer_interval", "3600", 0},	/* Timer interval in seconds */
 #endif
 #ifdef BUFFALO_JP
-	{"daylight_time", "1", 0},	/* japan has no summertime option */
-	{"time_zone", "+09", 0},	/* Time zone (GNU TZ format) */
+	{"time_zone", "Asia/Tokyo", 0},
 #elif HAVE_AXTEL
-	{"daylight_time", "2", 0},	/* Automatically adjust clock for daylight */
-	{"time_zone", "-06", 0},	/* Time zone (GNU TZ format) Mexico */
+	{"time_zone", "America/Mexico City", 0},
 #else
-	{"daylight_time", "3", 0},	/* Automatically adjust clock for daylight */
-	{"time_zone", "+01", 0},	/* Time zone (GNU TZ format) */
+	{"time_zone", "Europe/Berlin", 0},
 #endif
 #ifdef HAVE_SKYTRON
 	{"ntp_server", "ntp0.fau.de", 0},	/* NTP server *//* Modify */
