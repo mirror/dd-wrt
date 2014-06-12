@@ -290,7 +290,7 @@ int stop_running(void)
 int stop_running_main(int argc, char **argv)
 {
 	int dead = 0;
-	while (stops_running != NULL && stop_running() && dead < 50) {
+	while (stops_running != NULL && stop_running() && dead < 100) {
 		if (nvram_match("service_debugrunnings","1"))
 			fprintf(stderr,"%s: dead: %d running %d\n",__func__,dead,stops_running[0]);
 		if (dead == 0)
