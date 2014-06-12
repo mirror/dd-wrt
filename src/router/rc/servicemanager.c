@@ -382,7 +382,7 @@ void *stop_service_nofree_force_f(char *name, void *handle)
 	return handle;
 }
 
-void startstop_delay(char *name, int delay)
+static void startstop_delay(char *name, int delay)
 {
 	void *handle = NULL;
 	DEBUG();
@@ -391,14 +391,17 @@ void startstop_delay(char *name, int delay)
 	RELEASESTOPPED("stop");
 	RELEASESTOPPED("start");
 	cprintf("stop and start service\n");
-	handle = stop_service_nofree(name, handle);
-	handle = start_service_nofree(name, handle);
+	handle_service("stop", name);
+	handle_service("start", name);
 	if (handle)
 		dlclose(handle);
 }
 
 void startstop(char *name)
 {
+	init_shared();
+	if (stops_running)
+		stops_running[0]++;
 	startstop_delay(name, 0);
 }
 
@@ -406,6 +409,8 @@ void startstop_fdelay(char *name, int delay)
 {
 	DEBUG();
 	init_shared();
+	if (stops_running)
+		stops_running[0]++;
 	FORK(startstop_delay(name, 0));
 }
 
@@ -426,11 +431,13 @@ int startstop_main_f(int argc, char **argv)
 	RELEASESTOPPED("stop");
 	RELEASESTOPPED("start");
 	init_shared();
-	FORK(startstop_main(argc, argv));
+	if (stops_running)
+		stops_running[0]++;
+	FORK(startstop_delay(argc, argv));
 	return 0;
 }
 
-void *startstop_nofree_delay(char *name, void *handle, int delay)
+static void *startstop_nofree_delay(char *name, void *handle, int delay)
 {
 	cprintf("stop and start service (nofree)\n");
 	DEBUG();
@@ -438,13 +445,16 @@ void *startstop_nofree_delay(char *name, void *handle, int delay)
 		sleep(delay);
 	RELEASESTOPPED("stop");
 	RELEASESTOPPED("start");
-	stop_service(name);
-	start_service(name);
+	handle_service("stop", name);
+	handle_service("start", name);
 	return handle;
 }
 
 void *startstop_nofree(char *name, void *handle)
 {
+	init_shared();
+	if (stops_running)
+		stops_running[0]++;
 	return startstop_nofree_delay(name, handle, 0);
 }
 
@@ -452,7 +462,9 @@ void *startstop_nofree_f(char *name, void *handle)
 {
 	DEBUG();
 	init_shared();
-	FORK(startstop_nofree(name, handle));
+	if (stops_running)
+		stops_running[0]++;
+	FORK(startstop_nofree_delay(name, handle, 0));
 	return handle;
 }
 
@@ -460,6 +472,8 @@ void *startstop_nofree_fdelay(char *name, void *handle, int delay)
 {
 	DEBUG();
 	init_shared();
+	if (stops_running)
+		stops_running[0]++;
 	FORK(startstop_nofree_delay(name, handle, delay));
 	return handle;
 }
