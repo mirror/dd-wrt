@@ -1999,7 +1999,7 @@ void ej_show_timeoptions(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	int i;
 
-	for (i = 0; i < 396; i++) {
+	for (i = 0; i < allTimezones[i].tz_name != NULL; i++) {
 		websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_match("time_zone", allTimezones[i].tz_name) ? "selected=\"selected\"" : "", allTimezones[i].tz_name);
 	}
 

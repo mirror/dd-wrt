@@ -75,7 +75,7 @@ int do_ntp(void)		// called from ntp_main and
 	tz = nvram_safe_get("time_zone"); //e.g. EUROPE/BERLIN
 	
 	int i;
-	for (i = 0; i < 396; i++) {
+	for (i = 0; allTimezones[i].tz_name!=NULL ; i++) {
 	  if( !strcmp(allTimezones[i].tz_name,tz) ){
 		FILE *fp = fopen("/tmp/TZ", "wb");
 		fprintf(fp, "%s\n", allTimezones[i].tz_string);
