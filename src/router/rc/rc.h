@@ -149,7 +149,6 @@ extern void stop_service(char *name);
 extern void start_service_force(char *name);
 extern void stop_service_force(char *name);
 extern void startstop(char *name);
-extern void startstop_delay(char *name, int delay);
 extern int stop_running(void);
 extern int stop_running_main(int argc,char *argv[]);
 extern void *start_service_nofree(char *name, void *handle);
@@ -159,7 +158,6 @@ extern void *start_service_nofree_force(char *name, void *handle);
 extern void *stop_service_nofree_force(char *name, void *handle);
 extern int startstop_main(int argc, char **argv);
 extern void *startstop_nofree(char *name, void *handle);
-extern void *startstop_nofree_delay(char *name, void *handle, int delay);
 extern int start_main(char *name, int argc, char **argv);
 extern void start_servicei(char *name, int param);
 
