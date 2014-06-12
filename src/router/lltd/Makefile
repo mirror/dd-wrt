@@ -4,8 +4,8 @@ VPATH = .
 
 #CC = $(CROSS)/bin/mipsel-linux-uclibc-gcc
 #LD = $(CC)
-CFLAGS = -I. $(COPTS) -Wall -Wno-unused -s -fpack-struct -Wpadded
-#LDFLAGS = -L~/openwrt/staging_dir_mipsel/usr/lib
+CFLAGS = -I. $(COPTS) $(MIPS16_OPT) -Wall -Wno-unused -s -fpack-struct -Wpadded -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS =  -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 OS_LAYER = osl-linux.c
 
