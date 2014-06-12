@@ -66,11 +66,11 @@ int av_strerror(int errnum, char *errbuf, size_t errbuf_size)
     if (entry) {
         av_strlcpy(errbuf, entry->str, errbuf_size);
     } else {
-#if HAVE_STRERROR_R
-        ret = AVERROR(strerror_r(AVUNERROR(errnum), errbuf, errbuf_size));
-#else
+//#if HAVE_STRERROR_R
+//        ret = AVERROR(strerror_r(AVUNERROR(errnum), errbuf, errbuf_size));
+//#else
         ret = -1;
-#endif
+//#endif
         if (ret < 0)
             snprintf(errbuf, errbuf_size, "Error number %d occurred", errnum);
     }
