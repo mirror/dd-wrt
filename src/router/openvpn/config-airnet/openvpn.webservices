@@ -1,0 +1,106 @@
+<fieldset>
+	<legend>OpenVPN Daemon</legend>
+	<div class="setting">
+		<div class="label">Start OpenVPN</div>
+		<input class="spaceradio" type="radio" name="openvpn_enable" value="1" <% nvram_checked("openvpn_enable", "1"); %> onclick="show_layer_ext(this, 'idvpn', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="openvpn_enable" value="0" <% nvram_checked("openvpn_enable", "0"); %> onclick="show_layer_ext(this, 'idvpn', false)" /><% tran("share.disable"); %>
+		</div>
+	<div id="idvpn">
+	<div class="setting">
+		<div class="label">Start type</div>
+		<input type="radio" name="openvpn_onwan" value="1" <% nvram_checked("openvpn_onwan", "1"); %> />Wan Up
+		<input type="radio" name="openvpn_onwan" value="0" <% nvram_checked("openvpn_onwan", "0"); %> />System
+		</div>
+	
+	<div class="setting">		
+		<div class="label">Public Server Cert</div>
+		<textarea cols="60" rows="10" id="openvpn_ca" name="openvpn_ca"> </textarea>
+		<script type="text/javascript">
+		//<![CDATA[
+				var openvpn_ca = fix_cr( '<% nvram_get("openvpn_ca"); %>' );
+				document.getElementById("openvpn_ca").value = openvpn_ca;
+		//]]>
+		</script>
+	</div>
+	<div class="setting">		
+		<div class="label">Certificate Revoke List</div>
+		<textarea cols="60" rows="10" id="openvpn_crl" name="openvpn_crl"> </textarea>
+		<script type="text/javascript">
+		//<![CDATA[
+				var openvpn_crl = fix_cr( '<% nvram_get("openvpn_crl"); %>' );
+				document.getElementById("openvpn_crl").value = openvpn_crl;
+		//]]>
+		</script>
+	</div>
+	<div class="setting">		
+		<div class="label">Public Client Cert</div>
+		<textarea cols="60" rows="10" id="openvpn_client" name="openvpn_client"> </textarea>
+		<script type="text/javascript">
+		//<![CDATA[
+				var openvpn_client = fix_cr( '<% nvram_get("openvpn_client"); %>' );
+				document.getElementById("openvpn_client").value = openvpn_client;
+		//]]>
+		</script>
+	</div>
+	<div class="setting">		
+		<div class="label">Private Client Key</div>
+		<textarea cols="60" rows="10" id="openvpn_key" name="openvpn_key"> </textarea>
+		<script type="text/javascript">
+		//<![CDATA[		
+				var openvpn_key = fix_cr( '<% nvram_get("openvpn_key"); %>' );
+				document.getElementById("openvpn_key").value = openvpn_key;
+		//]]>
+		</script>
+	</div>
+	<div class="setting">		
+		<div class="label">DH PEM </div>
+		<textarea cols="60" rows="10" id="openvpn_dh" name="openvpn_dh"> </textarea>
+		<script type="text/javascript">
+		//<![CDATA[		
+				var openvpn_dh = fix_cr( '<% nvram_get("openvpn_dh"); %>' );
+				document.getElementById("openvpn_dh").value = openvpn_dh;
+		//]]>
+		</script>
+	</div>
+	<div class="setting">		
+		<div class="label">OpenVPN Config </div>
+		<textarea cols="60" rows="10" id="openvpn_config" name="openvpn_config"> </textarea>
+		<script type="text/javascript">
+		//<![CDATA[
+				var openvpn_config = fix_cr( '<% nvram_get("openvpn_config"); %>' );
+				document.getElementById("openvpn_config").value = openvpn_config;
+		//]]>
+		</script>
+	</div>
+	<div class="setting">		
+		<div class="label">OpenVPN TLS Auth </div>
+		<textarea cols="60" rows="10" id="openvpn_tlsauth" name="openvpn_tlsauth"> </textarea>
+		<script type="text/javascript">
+		//<![CDATA[
+				var openvpn_tlsauth = fix_cr( '<% nvram_get("openvpn_tlsauth"); %>' );
+				document.getElementById("openvpn_tlsauth").value = openvpn_tlsauth;
+		//]]>
+		</script>
+	</div>
+	<div class="setting">		
+			<div class="label">route-up.sh</div>
+			<textarea cols="60" rows="2" id="openvpncl_routeup" name="openvpn_routeup"></textarea>
+			<script type="text/javascript">
+			//<![CDATA[
+				var openvpncl_routeup = fix_cr( '<% nvram_get("openvpn_routeup"); %>' );
+				document.getElementById("openvpncl_routeup").value = openvpn_routeup;
+			//]]>
+			</script>
+		</div>
+		<div class="setting">		
+			<div class="label">route-down.sh</div>
+			<textarea cols="60" rows="2" id="openvpncl_routedown" name="openvpn_routedown"></textarea>
+			<script type="text/javascript">
+			//<![CDATA[
+				var openvpncl_routedown = fix_cr( '<% nvram_get("openvpn_routedown"); %>' );
+				document.getElementById("openvpncl_routedown").value = openvpn_routedown;
+			//]]>
+			</script>
+		</div>
+	</div>	
+</fieldset><br/>
