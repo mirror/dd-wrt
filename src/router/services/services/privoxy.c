@@ -40,9 +40,7 @@ void start_privoxy(void)
 		sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port );
 		sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port );
 		/* no gui setting yet - redirect all except this IP */
-		if( strlen(nvram_safe_get("privoxy_transp_exclude")) )
-		  
-		{
+		if( strlen(nvram_safe_get("privoxy_transp_exclude")) )  {
 			save2file("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
 			save2file("iptables -t nat -I PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
 		}
