@@ -784,6 +784,9 @@ init_options (struct options *o, const bool init_gc)
   o->max_routes = MAX_ROUTES_DEFAULT;
   o->resolve_retry_seconds = RESOLV_RETRY_INFINITE;
   o->proto_force = -1;
+  o->ce.xormethod = 0; 
+  o->ce.xormask ="\0"; 
+  o->ce.xormasklen = 1; 
 #ifdef ENABLE_OCC
   o->occ = true;
 #endif
@@ -902,7 +905,9 @@ setenv_connection_entry (struct env_set *es,
   setenv_int_i (es, "local_port", e->local_port, i);
   setenv_str_i (es, "remote", e->remote, i);
   setenv_int_i (es, "remote_port", e->remote_port, i);
-
+  setenv_int_i (es, "xormethod", e->xormethod, i); 
+  setenv_str_i (es, "xormask", e->xormask, i); 
+  setenv_int_i (es, "xormasklen", e->xormasklen, i); 
 #ifdef ENABLE_HTTP_PROXY
   if (e->http_proxy_options)
     {
@@ -1347,7 +1352,9 @@ show_connection_entry (const struct connection_entry *o)
   SHOW_INT (connect_retry_seconds);
   SHOW_INT (connect_timeout);
   SHOW_INT (connect_retry_max);
-
+  SHOW_INT (xormethod); 
+  SHOW_STR (xormask); 
+  SHOW_INT (xormasklen);
 #ifdef ENABLE_HTTP_PROXY
   if (o->http_proxy_options)
     show_http_proxy_options (o->http_proxy_options);
@@ -4254,6 +4261,36 @@ add_option (struct options *options,
       VERIFY_PERMISSION (OPT_P_GENERAL);
       options->management_flags |= MF_QUERY_PROXY;
       options->force_connection_list = true;
+    }
+  else if (streq (p[0], "scramble")) 
+    { 
+      VERIFY_PERMISSION (OPT_P_GENERAL|OPT_P_CONNECTION); 
+      if (streq (p[1], "xormask")) 
+      { 
+	options->ce.xormethod = 1; 
+	options->ce.xormask = p[2]; 
+	options->ce.xormasklen = strlen(options->ce.xormask); 
+      } 
+      else if (streq (p[1], "xorptrpos")) 
+      { 
+	options->ce.xormethod = 2; 
+      } 
+      else if (streq (p[1], "reverse")) 
+      { 
+	options->ce.xormethod = 3; 
+      } 
+      else if (streq (p[1], "obfuscate")) 
+      { 
+	options->ce.xormethod = 4; 
+	options->ce.xormask = p[2]; 
+	options->ce.xormasklen = strlen(options->ce.xormask); 
+      } 
+      else 
+      { 
+	options->ce.xormethod = 1; 
+	options->ce.xormask = p[1]; 
+	options->ce.xormasklen = strlen(options->ce.xormask); 
+      } 
     }
   else if (streq (p[0], "management-hold"))
     {
