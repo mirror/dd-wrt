@@ -433,7 +433,7 @@ int startstop_main_f(int argc, char **argv)
 	init_shared();
 	if (stops_running)
 		stops_running[0]++;
-	FORK(startstop_delay(argc, argv));
+	FORK(startstop_delay(name, 0));
 	return 0;
 }
 
