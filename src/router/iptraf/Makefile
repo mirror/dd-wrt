@@ -24,7 +24,7 @@ ALL_CFLAGS = $(CPPFLAGS) $(CFLAGS)
 ALL_LDFLAGS = $(LDFLAGS)
 STRIP ?= strip
 
-prefix = $(HOME)
+prefix =
 sbindir_relative = sbin
 sbindir = $(prefix)/$(sbindir_relative)
 mandir = $(prefix)/share/man
