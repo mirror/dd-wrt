@@ -635,11 +635,6 @@ static void nat_prerouting(void)
 				}
 			}
 		}
-		/* no gui setting yet - redirect all except this IP */
-		if( strlen(nvram_safe_get("privoxy_transp_exclude")) )
-		{
-			save2file("-A PREROUTING -p tcp -s %s --dport 80 -j ACCEPT \n", nvram_safe_get("privoxy_transp_exclude"));
-		}
 		/* block access from privoxy to webif */
 		save2file("-A PREROUTING -p tcp -s %s -d %s --dport %d -j DROP\n", lan_ip, lan_ip, web_lanport );
 		/* do not filter access to the webif from lan */
