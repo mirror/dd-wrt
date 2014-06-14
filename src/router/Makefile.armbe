@@ -285,9 +285,18 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+ifneq ($(CONFIG_MUSL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+else
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so} $(ARCH)-uclibc/target/lib/libc.so 
+endif
+ifneq ($(CONFIG_MUSL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uclibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+else
+	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-arm.so.1
+endif
 ifeq ($(CONFIG_LIBDL),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
 endif
 ifeq ($(CONFIG_LIBRT),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
@@ -296,32 +305,27 @@ ifeq ($(CONFIG_LIBNSL),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
 endif
 ifeq ($(CONFIG_LIBUTIL),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
 endif
 ifeq ($(CONFIG_LIBCPP),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
 endif
 ifeq ($(CONFIG_LIBCRYPT),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
 endif
 ifeq ($(CONFIG_LIBM),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
 endif
 ifeq ($(CONFIG_LIBRESOLV),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
 endif
 ifeq ($(CONFIG_LIBPTHREAD),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
 endif
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 
 ifneq ($(CONFIG_NOOPT),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
-
 	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
 	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
 	-mkdir -p /tmp/$(ARCHITECTURE)/
@@ -334,6 +338,7 @@ ifneq ($(CONFIG_NOOPT),y)
 		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
 
 	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
+ifneq ($(CONFIG_MUSL),y)
 	mklibs.py -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
@@ -342,9 +347,21 @@ ifneq ($(CONFIG_NOOPT),y)
 		--ldlib /lib/ld-uClibc.so.0 \
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+else
+	mklibs.py -D \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-musl-arm.so.1 \
+		--target $(ARCH)-linux-uclibc \
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+
+endif
+
 	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
 else
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
 #	cp ${shell $(ARCH)-linux-gcc -print-file-name=libuClibc-0.99.33.2.so}  $(ARCH)-uclibc/target/lib/libc.so.0
 #	relink-lib.sh \
 #		"$(ARCH)-linux-" \
@@ -353,6 +370,8 @@ else
 #		"$(ARCH)-uclibc/target/lib/libc.so.0" \
 #		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
 #		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
+
+ifneq ($(CONFIG_MUSL),y)
 
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
@@ -378,6 +397,7 @@ else
 		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
 		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
 		-Wl,-soname=libpthread.so.0
+endif
 endif
 
 	rm -f $(TARGETDIR)/lib/*.a
@@ -405,7 +425,7 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	ln -sf ../tmp/smbshare $(ARCH)-uclibc/target/www/smb
 	# optimize the crypto library by removing unneeded symbols
 	# Install (and possibly optimize) C library
-	$(MAKE) -f Makefile.armbe lib.$(ARCH)-install
+#	$(MAKE) -f Makefile.armbe lib.$(ARCH)-install
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) -f Makefile.armbe optimize-lib
 	# Install modules into filesystem
