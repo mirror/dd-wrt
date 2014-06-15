@@ -147,7 +147,7 @@ static int remotessh = 0;	/* Botho 03-05-2006 */
 #ifdef HAVE_TELNET
 static int remotetelnet = 0;
 #endif
-void save2file(const char *fmt, ...)
+static void save2file(const char *fmt, ...)
 {
 	char buf[10240];
 	va_list args;
