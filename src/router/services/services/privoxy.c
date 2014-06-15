@@ -41,8 +41,8 @@ void start_privoxy(void)
 		sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port );
 		/* no gui setting yet - redirect all except this IP */
 		if( strlen(nvram_safe_get("privoxy_transp_exclude")) )  {
-			save2file("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
-			save2file("iptables -t nat -I PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
+			sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
+			sysprintf("iptables -t nat -I PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
 		}
 		mode = 1;
 		getIfLists(vifs, 256);
@@ -104,7 +104,7 @@ void stop_privoxy(void)
 	sysprintf("iptables -t nat -D PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wan, ip);
 	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s/%s -d %s --dport %s -j ACCEPT", ip, mask, ip, webif_port );
 	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s -d %s --dport %s -j DROP", ip, ip, webif_port );
-	save2file("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
+	sysprintf("iptables -t nat -D PREROUTING -p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
 	
 	getIfLists(vifs, 256);
 	char vif_ip[32];
