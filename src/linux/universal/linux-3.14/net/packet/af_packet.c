@@ -3366,7 +3366,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
                         return -EINVAL;
                 if (copy_from_user(&val, optval, sizeof(val)))
                         return -EFAULT;
-                po->pkt_type = val & ~PACKET_LOOPBACK;
+                po->pkt_type = val & ~BIT(PACKET_LOOPBACK);
                 return 0;
         }
 	case PACKET_FANOUT:
@@ -3460,8 +3460,11 @@ static int packet_getsockopt(struct socket *sock, int level, int optname,
 
 		break;
 	case PACKET_RECV_TYPE:
+		if (len > sizeof(unsigned int))
+			len = sizeof(unsigned int);
 		val = po->pkt_type;
 
+		data = &val;
 		break;
 	case PACKET_VERSION:
 		val = po->tp_version;
