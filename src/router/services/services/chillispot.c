@@ -171,7 +171,7 @@ void stop_chilli(void)
 
 void main_config(void)
 {
-	char *chillinet;
+	char *chillinet = NULL;
 	int log_level = 0;
 	
 	FILE *fp;
@@ -195,15 +195,17 @@ void main_config(void)
 		sprintf(log_reject, "%s", "logreject");
 	else
 		sprintf(log_reject, "%s", TARG_RST);
+	int hss_enable = nvram_match("hotss_enable", "1");
+	int chilli_enable = nvram_match("chilli_enable", "1");
 
-	if (nvram_match("hotss_enable", "1")) {
+	if (hss_enable) {
 		if (strlen(nvram_safe_get("hotss_net")) > 0)
 			chillinet = nvram_safe_get("hotss_net");
 		else
 			chillinet = "192.168.182.0/24";
 	}
-	if (nvram_match("chilli_enable", "1")
-	    && nvram_match("hotss_enable", "0")) {
+	if (chilli_enable
+	    && !hss_enable) {
 		if (strlen(nvram_safe_get("chilli_net")) > 0)
 			chillinet = nvram_safe_get("chilli_net");
 		else
@@ -221,14 +223,14 @@ void main_config(void)
 	fprintf(fp, "iptables -I FORWARD -i tun0 -j %s\n", log_accept);
 	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n", log_accept);
 	//      secure chilli interface, only usefull if ! br0
-	if (nvram_match("chilli_enable", "1")
-	    && nvram_match("hotss_enable", "0")
+	if (chilli_enable
+	    && !hss_enable
 	    && nvram_invmatch("chilli_interface", "br0")) {
 		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("chilli_interface"), chillinet, log_drop);
 		fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("chilli_interface"), chillinet, log_drop);
 	}
-	if (nvram_match("chilli_enable", "1")
-	    && nvram_match("hotss_enable", "1")
+	if (chilli_enable
+	    && hss_enable
 	    && nvram_invmatch("hotss_interface", "br0")) {
 		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("hotss_interface"), chillinet, log_drop);
 		fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("hotss_interface"), chillinet, log_drop);
@@ -244,12 +246,12 @@ void main_config(void)
 		fprintf(fp, "iptables -t nat -I POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n", nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
 	}
 	// enable Reverse Path Filtering to prevent double outgoing packages
-	if (nvram_match("chilli_enable", "1")
-		&& nvram_match("hotss_enable", "0")) {
+	if (chilli_enable
+		&& !hss_enable) {
 		fprintf(fp, "echo 1 > /proc/sys/net/ipv4/conf/%s/rp_filter\n", nvram_safe_get("chilli_interface"));
 	}
-	if (nvram_match("chilli_enable", "1")
-		&& nvram_match("hotss_enable", "1")) {
+	if (chilli_enable
+		&& hss_enable) {
 		fprintf(fp, "echo 1 > /proc/sys/net/ipv4/conf/%s/rp_filter\n", nvram_safe_get("hotss_interface"));
 	}
 	fclose(fp);
