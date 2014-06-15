@@ -1,7 +1,7 @@
 
 # -*- sh -*-
 
-CPPFLAGS += -I./include $(ZLIBCPPFLAGS) $(LZOCPPFLAGS) $(XZCPPFLAGS) -I./include/linux/lzma -I$(TOP)/zlib -DNEED_PRINTF
+CPPFLAGS += -I./include $(ZLIBCPPFLAGS) $(LZOCPPFLAGS) $(XZCPPFLAGS) -I./include/linux/lzma -I$(TOP)/zlib -DNEED_PRINTF -D_GNU_SOURCE $(MIPS16_OPT)
 
 #ifeq ($(WITHOUT_XATTR), 1)
   CPPFLAGS += -DWITHOUT_XATTR
