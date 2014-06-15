@@ -12,7 +12,7 @@ WFLAGS := -Wall \
 	$(call cc-option,-Wextra) \
 	$(call cc-option,-Wwrite-strings) \
 	$(call cc-option,-Wno-sign-compare)
-CFLAGS += $(WFLAGS)  -L$(TOP)/zlib -DNEED_PRINTF
+CFLAGS += $(WFLAGS)  -L$(TOP)/zlib $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE
 SECTION_CFLAGS := $(call cc-option,-ffunction-sections -fdata-sections -Wl$(comma)--gc-sections)
 CFLAGS += $(SECTION_CFLAGS)
 
