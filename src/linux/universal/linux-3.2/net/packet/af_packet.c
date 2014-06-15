@@ -3194,7 +3194,7 @@ packet_setsockopt(struct socket *sock, int level, int optname, char __user *optv
                         return -EINVAL;
                 if (copy_from_user(&val, optval, sizeof(val)))
                         return -EFAULT;
-                po->pkt_type = val & ~PACKET_LOOPBACK;
+                po->pkt_type = val & ~BIT(PACKET_LOOPBACK);
                 return 0;
         }
 	case PACKET_FANOUT:
