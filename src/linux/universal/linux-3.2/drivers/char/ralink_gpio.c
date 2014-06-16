@@ -101,7 +101,7 @@ void ralink_gpio_control(int gpio,int level)
 
        *(volatile u32 *)(RALINK_REG_PIODATA) = cpu_to_le32(piodata); 
 }
-
+EXPORT_SYMBOL(ralink_gpio_control);
 long ralink_gpio_ioctl(struct file *file, unsigned int req,
 		unsigned long arg)
 {
