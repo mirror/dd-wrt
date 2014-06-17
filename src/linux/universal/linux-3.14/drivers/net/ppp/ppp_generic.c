@@ -54,6 +54,12 @@
 #include <net/net_namespace.h>
 #include <net/netns/generic.h>
 
+#ifdef HNDCTF
+#define TYPEDEF_INT32
+#include <ctf/hndctf.h>
+#include <linux/if_pppox.h>
+#endif
+
 #define PPP_VERSION	"2.4.2"
 
 /*
@@ -2981,6 +2987,38 @@ static void *unit_find(struct idr *p, int n)
 {
 	return idr_find(p, n);
 }
+
+#if defined(CTF_PPPOE)
+void
+ppp_rxstats_upd(void *pppif, struct sk_buff *skb)
+{
+	struct ppp *ppp;
+
+	if(pppif == NULL || skb == NULL)
+		return;
+
+	ppp = (struct ppp *)netdev_priv((const struct net_device *)pppif);
+	ppp->dev->stats.rx_packets;
+	ppp->dev->stats.rx_bytes += skb->len;
+	ppp->last_recv = jiffies;
+}
+
+void
+ppp_txstats_upd(void *pppif, struct sk_buff *skb)
+{
+	struct ppp *ppp;
+	if(pppif == NULL || skb == NULL)
+		return;
+
+	ppp = (struct ppp *)netdev_priv((const struct net_device *)pppif);
+	++ppp->dev->stats.tx_packets;
+	ppp->dev->stats.tx_bytes += skb->len;
+	ppp->last_xmit = jiffies;
+}
+EXPORT_SYMBOL(ppp_rxstats_upd);
+EXPORT_SYMBOL(ppp_txstats_upd);
+
+#endif /* CTF_PPPOE */
 
 /* Module/initialization stuff */
 

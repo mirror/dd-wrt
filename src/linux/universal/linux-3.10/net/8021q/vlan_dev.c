@@ -68,6 +68,42 @@ static int vlan_dev_rebuild_header(struct sk_buff *skb)
 	return 0;
 }
 
+#ifdef HNDCTF
+
+void BCMFASTPATH vlan_rxstats_upd(struct net_device *vldev,
+	struct sk_buff *skb, int packets, int bytes)
+{
+	struct vlan_pcpu_stats *stats;
+	
+	rcu_read_lock();
+	stats = per_cpu_ptr(vlan_dev_priv(vldev)->vlan_pcpu_stats, smp_processor_id());
+	u64_stats_update_begin(&stats->syncp);
+	stats->rx_packets += packets;
+	stats->rx_bytes += bytes;
+	u64_stats_update_end(&stats->syncp);
+	rcu_read_unlock();
+}
+
+EXPORT_SYMBOL(vlan_rxstats_upd);
+
+void BCMFASTPATH vlan_txstats_upd(struct net_device *vldev,
+	struct sk_buff *skb, int packets, int bytes)
+{
+	struct vlan_pcpu_stats *stats;
+	
+	rcu_read_lock();
+	stats = per_cpu_ptr(vlan_dev_priv(vldev)->vlan_pcpu_stats, smp_processor_id());
+	u64_stats_update_begin(&stats->syncp);
+	stats->tx_packets += packets;
+	stats->tx_bytes += bytes;
+	u64_stats_update_end(&stats->syncp);
+	rcu_read_unlock();
+}
+
+EXPORT_SYMBOL(vlan_txstats_upd);
+
+#endif /* HNDCTF */
+
 static inline u16
 vlan_dev_get_egress_qos_mask(struct net_device *dev, struct sk_buff *skb)
 {

@@ -186,6 +186,16 @@ static int __init gpio_init(void)
 
 	}
 
+	if (boardnum == 00 && nvram_match("boardtype", "0x0665")
+	    && nvram_match("boardrev", "0x1103")
+	    && nvram_match("melco_id", "RD_BB13049")) {
+		printk(KERN_EMERG "Buffalo WXR-1900DHP\n");
+		isbuffalo = 1;
+		gpio_init_flag = 1;
+		return 0;
+
+	}
+
 	if ((!strncmp(nvram_safe_get("boardnum"),"2013",4) || !strncmp(nvram_safe_get("boardnum"),"2014",4)) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "7")) {
