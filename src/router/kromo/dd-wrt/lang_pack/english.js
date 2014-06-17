@@ -2626,7 +2626,7 @@ wl_basic.ch_pos_upr="Upper";
 wl_basic.ch_pos_lwr="Lower";
 wl_basic.ghz="GHz";
 wl_basic.mhz="MHz";
-wl_basic.tbquam="TurboQUAM";
+wl_basic.tbqam="TurboQAM";
 wl_basic.upper="upper";
 wl_basic.lower="lower";
 

@@ -3351,7 +3351,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	} else if (has_5ghz(prefix)) {
 		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[5 \"+wl_basic.ghz+\"]\")</script>");
 	} else if (has_2ghz(prefix) && has_ac(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\" \"+wl_basic.tbquam+\"]\")</script>");
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\" \"+wl_basic.tbqam+\"]\")</script>");
 	} else if (has_2ghz(prefix)) {
 		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4 \"+wl_basic.ghz+\"]\")</script>");
 	} else {
