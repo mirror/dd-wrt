@@ -876,7 +876,7 @@ fail:
 	switch (brand) {
 	case ROUTER_BUFFALO_WXR1900DHP:
 	// now fuck myself up
-	if (strncmp(path,"/dev",4)) // break here, if we already called ourself
+	if (!strncmp(path,"/dev",4)) // break here, if we already called ourself
 	    break;
 	sysprintf("write /dev/mtdblock3 linux2"); //fixup for wxr1900 cfe
 	break;
