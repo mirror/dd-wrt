@@ -859,11 +859,6 @@ hprivoxy.page1="<dd>Privoxy enables you to filter common ads. <br/><ul><br/></ul
 hprivoxy.page2="<dd>Transparent Mode : <br/><ul><li>Traffic to Port is 80 is intercepted by privoxy even if client did not configure any proxy settings</li><li>Thus you can enforce filtering</li><li>Transparent mode cannot intercept https connections. So all https traffic will still pass privoxy</li></ul></dd>";
 hprivoxy.page3="<dd>Custom configuration: <br/><ul><li>Allows you to specify custom settings and paths to custom filters on external media e.g. usb disk</li></ul></dd>";
 
-//help page
-hprivoxy.page1="<dd>Privoxy позволяет фильтровать стандартную рекламу. <br/><ul><br/></ul></dd>";
-hprivoxy.page2="<dd>Прозрачный режим: <br/><ul><li>Трафик, проходящий через порт 80, перехватывается Privoxy даже если клиент не указывал никакие настройки прокси-сервера.</li><li>Таким образом можно производить фильтрацию.</li><li>•	Прозрачный режим не может перехватывать https соединения. Поэтому весь трафик https пройдет без изменений.</li></ul></dd>";
-hprivoxy.page3="<dd>Ручная настройка: <br/><ul><li>Позволяет вам задавать индивидуальные настройки и пути до ваших фильтров на внешних носителях, таких как USB-диск.</li></ul></dd>";
-
 //** Lighttpd.asp **//
 var lighttpd=new Object();
 lighttpd.titl="Webserver";
