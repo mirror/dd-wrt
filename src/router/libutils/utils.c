@@ -993,6 +993,18 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WZR1750;
 	}
 
+
+	if (boardnum == 00 && nvram_match("boardtype", "0x0665")
+	    && nvram_match("boardrev", "0x1103")
+	    && nvram_match("melco_id", "RD_BB13049")) {
+#ifdef HAVE_BUFFALO
+		setRouter("WXR-1900DHP");
+#else
+		setRouter("Buffalo WXR-1900");
+#endif
+		return ROUTER_BUFFALO_WXR1900DHP;
+	}
+
 	if ((!strncmp(nvram_safe_get("boardnum"),"2013",4) || !strncmp(nvram_safe_get("boardnum"),"2014",4)) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "7")) {
