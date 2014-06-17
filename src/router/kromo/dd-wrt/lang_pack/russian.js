@@ -2220,7 +2220,7 @@ wl_basic.ch_pos_upr="Верхний";
 wl_basic.ch_pos_lwr="Нижний";
 wl_basic.ghz="ГГц";
 wl_basic.mhz="МГц";
-wl_basic.tbquam="TurboQUAM";
+wl_basic.tbqam="TurboQAM";
 
 //help container
 hwl_basic.right2="Если вы хотите исключить беспроводных G-клиентов, выберите режим <em>Только B</em>. Если вы хотите отключить беспроводной доступ, выберите <em>Отключить</em>.<br/><b>Замечание :</b> при изменении режима беспроводной сети также подлежат изменению некоторые чувствительные к режиму параметры (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" или \"" + wl_adv.label5 + "\").";
