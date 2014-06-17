@@ -1411,7 +1411,7 @@ int main(int argc, char *argv[])
 	brand = getRouterBrand();
 #ifndef HAVE_MI424WR
 #if !defined(HAVE_NOP8670) && !defined(HAVE_TONZE)
-	if ((brand & 0x000f) == 0x000f)
+	if (brand <= 0xffff && (brand & 0x000f) == 0x000f)
 #endif
 	{
 		puts("sorry, your unit does not support resetbutton feature\n");
