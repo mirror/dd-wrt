@@ -3,6 +3,7 @@ ATH9K_CFLAGS=-I$(TOP)/libnl-tiny/include\
 	-DCONFIG_LIBNL20 \
 	-D_GNU_SOURCE
 ATH9K_LDFLAGS=-L$(TOP)/libnl-tiny/ -lm -lnl-tiny
+TINY=libnltiny
 endif
 ifeq ($(CONFIG_TIEXTRA1),y)
 ATH9K_LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
@@ -31,7 +32,7 @@ endif
 
 ATH9K_CFLAGS += $(MIPS16_OPT) 
 
-hostapd2: libnltiny
+hostapd2: $(TINY)
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/hostapd clean
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/wpa_supplicant clean
 	echo ` \
