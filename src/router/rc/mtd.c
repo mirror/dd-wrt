@@ -255,6 +255,7 @@ int mtd_write(const char *path, const char *mtd)
 	unsigned int trxhd = STORE32_LE(TRX_MAGIC);
 	switch (brand) {
 	case ROUTER_BUFFALO_WZR900DHP:
+//	case ROUTER_BUFFALO_WXR1900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
 	case ROUTER_LINKSYS_EA6900:
 	case ROUTER_LINKSYS_EA6700:
