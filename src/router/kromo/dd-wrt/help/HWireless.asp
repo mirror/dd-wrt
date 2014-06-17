@@ -7,8 +7,9 @@
 		<div id="content">
 			<h2>Wireless Settings</h2>
 			<dl>
-				<dt>Wireless Mode</dt>
-				<dd>The wireless part of your router can run in different modes:
+				<!--dt>Wireless Mode</dt-->
+				<dt><% tran("wl_basic.label"); %></dt>
+				<!--dd>The wireless part of your router can run in different modes:
 					<ul class="wide">
 						<li>AP mode &ndash; This is the default mode, also called Infrastructure mode. Your router acts as an central connection point, which wireless clients can connect to.</li>
 						<li>Client mode &ndash; The radio interface is used to connect the internet-facing side of the router (i.e., the WAN) as a client to a remote accesspoint. NAT or routing are performed between WAN and LAN, like in "normal" gateway or router mode. Use this mode, e.g., if your internet connection is provided by a remote accesspoint, and you want to connect a subnet of your own to it. </li>
@@ -19,24 +20,34 @@
 						<h4>Note</h4>
 						<div>Note that <a href="HWDS.asp">WDS</a> is only available in AP mode.</div>
 					</div>
-				</dd>
-				<dt>Wireless Network Mode</dt>
-				<dd>If you have Wireless-G and 802.11b devices in your network, then keep the default setting, <i>Mixed</i>. If you have only Wireless-G devices, select <i>G-Only</i>. If you would like to limit your network to only 802.11b devices, then select <i>B-Only</i>. If you want to disable wireless networking, select <i>Disable</i>. Note that <i>B-Only</i> mode is not supported under WDS. 
-</dd>
-				<dt>Wireless Network Name (SSID)</dt>
-				<dd>The SSID is the network name shared among all devices in a wireless network. The SSID must be identical for all devices in the wireless network. It is case-sensitive and must not exceed 32 alphanumeric characters, which may be any keyboard character. Make sure this setting is the same for all devices in your wireless network.<br /><br />
+				</dd-->
+				<% tran("hwl_basic.page1"); %>
+				<!--dt>Wireless Network Mode</dt-->
+				<dt><% tran("wl_basic.label2"); %></dt>
+				<!--dd>If you have Wireless-G and 802.11b devices in your network, then keep the default setting, <i>Mixed</i>. If you have only Wireless-G devices, select <i>G-Only</i>. If you would like to limit your network to only 802.11b devices, then select <i>B-Only</i>. If you want to disable wireless networking, select <i>Disable</i>. Note that <i>B-Only</i> mode is not supported under WDS. 
+</dd-->
+				<% tran("hwl_basic.page2"); %>
+				<!--dt>Wireless Network Name (SSID)</dt-->
+				<dt><% tran("wl_basic.label3"); %></dt>
+				<!--dd>The SSID is the network name shared among all devices in a wireless network. The SSID must be identical for all devices in the wireless network. It is case-sensitive and must not exceed 32 alphanumeric characters, which may be any keyboard character. Make sure this setting is the same for all devices in your wireless network.<br /><br />
 					<div class="note">
 						<h4>Note</h4>
 						<div>For added security, it is recommended to change the default SSID <tt>dd-wrt</tt> to a unique name of your choice.</div>
 					</div>
-				</dd>
-				<dt>Wireless Channel</dt>
-				<dd>Select the appropriate channel from the list provided to correspond with your network settings (in North America between channel 1 and 11, in Europe 1 and 13, in Japan all 14 channels). All devices in your wireless network must use the same channel in order to function correctly. Try to avoid conflicts with other wireless networks by choosing a channel where the upper and lower three channels are not in use.</dd>
-				<dt>Wireless SSID Broadcast</dt>
-				<dd>When wireless clients survey the local area for wireless networks to associate with, they will detect the SSID broadcast by the router. To broadcast the router SSID, keep the default setting, <i>Enable</i>. If you do not want to broadcast the router SSID, then select <i>Disable</i>.</dd>
+				</dd-->
+				<% tran("hwl_basic.page3"); %>
+				<!--dt>Wireless Channel</dt-->
+				<dt><% tran("wl_basic.label4"); %></dt>
+				<!--dd>Select the appropriate channel from the list provided to correspond with your network settings (in North America between channel 1 and 11, in Europe 1 and 13, in Japan all 14 channels). All devices in your wireless network must use the same channel in order to function correctly. Try to avoid conflicts with other wireless networks by choosing a channel where the upper and lower three channels are not in use.</dd-->
+				<% tran("hwl_basic.page4"); %>
+				<!--dt>Wireless SSID Broadcast</dt-->
+				<dt><% tran("wl_basic.label5"); %></dt>
+				<!--dd>When wireless clients survey the local area for wireless networks to associate with, they will detect the SSID broadcast by the router. To broadcast the router SSID, keep the default setting, <i>Enable</i>. If you do not want to broadcast the router SSID, then select <i>Disable</i>.</dd-->
+				<% tran("hwl_basic.page5"); %>
 <% ifndef("ACK", "<!--"); %>
-				<dt>Sensitivity Range</dt>
-				<dd>Adjusts the ack timing in Atheros typical way based on the maximum distance in meters
+				<!--dt>Sensitivity Range</dt-->
+				<dt><% tran("wl_basic.label6"); %></dt>
+				<!--dd>Adjusts the ack timing in Atheros typical way based on the maximum distance in meters
 					<div class="note">
 						<h4>Note</h4>
 						<div>On Atheros based DD-WRT firmwares 0 will not disable ack timing but will turn into auto ACK timing mode</div>
@@ -45,9 +56,11 @@
 						<li> 0 disables ack timing completely</li>
 						<li> 1 - 999999 adjusts ack timing</li>
 					</ul>
-				</dd>
+				</dd-->
+				<% tran("hwl_basic.page6"); %>
 <% ifndef("ACK", "-->"); %>
-				<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
+				<!--dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd-->
+				<% tran("hwl_basic.page7"); %>
 			</dl>
 		</div>
 		<div class="also">
