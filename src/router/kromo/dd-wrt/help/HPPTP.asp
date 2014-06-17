@@ -8,16 +8,17 @@
 			<h2><% tran("service.pptp_legend"); %></h2>
 			<dl>
 				<dt><% tran("service.pptp_legend"); %> Server</dt>
-				<dd>A VPN technology by Microsoft and remote access vendors. It is implemented in Windows XP. Configuring this allows you to access your LAN at home remotely.
+				<!--dd>A VPN technology by Microsoft and remote access vendors. It is implemented in Windows XP. Configuring this allows you to access your LAN at home remotely.
 					<ul class="wide">
 						<li>Server IP &ndash; The IP address of your router</li>
 						<li>Client IP &ndash; A list or range of IP addresses for remotely connected machines. This range should not overlap with the DHCP range (for example 192.168.0.2,192.168.0.3), a range (for example 192.168.0.1-254 or 192.168.0-255.2) or some combination (for example 192.168.0.2,192.168.0.5-8).</li>
 						<li>CHAP-Secrets &ndash; A list of usernames and passwords for the VPN login, one user per line (Example: joe * joespassword *). For more details look up the pppd man page.</li>
 					</ul>
-				</dd>
+				</dd-->
+				<% tran("hstatus_vpn.page1"); %>
 				
 				<dt><% tran("service.pptpd_legend"); %></dt>
-				<dd>A VPN Client that enable you to connect to VPN servers by Microsoft and remote access vendors. Configuring this allows the router to VPN into a remote network.
+				<!--dd>A VPN Client that enable you to connect to VPN servers by Microsoft and remote access vendors. Configuring this allows the router to VPN into a remote network.
 					<ul class="wide">
 						<li>Server IP or DNS Name &ndash; The IP address or DNS Name of the VPN server that you would like to connect to (Example: www.MyServer.com). </li>
 						<li>Remote Subnet &ndash; Remote Subnet of the network you are connecting to (Example: 192.168.2.0). </li>
@@ -30,7 +31,8 @@
 					</ul>
 				</dd>
 
-				<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
+				<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd-->
+				<% tran("hstatus_vpn.page2"); %>
 			
 			</dl>
 						

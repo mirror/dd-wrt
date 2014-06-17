@@ -9,7 +9,7 @@
 			<dl>
 				<dd>This screen allows you to block or allow specific kinds of Internet usage. You can set up Internet access policies for specific PCs and set up filters by using network port numbers.</dd>
 				<dt><% tran("filter.legend"); %></dt>
-				<dd>This feature allows you to customize up to ten different Internet Access Policies for particular PCs, which are identified by their IP or MAC addresses. For each policy designated PCs, during the days and time periods specified.<br /><br />
+				<!--dd>This feature allows you to customize up to ten different Internet Access Policies for particular PCs, which are identified by their IP or MAC addresses. For each policy designated PCs, during the days and time periods specified.<br /><br />
 					To create or edit a policy, follow these instructions:
 					<ol class="wide">
 						<li>Select the policy number (1-10) in the drop-down menu.</li>
@@ -24,9 +24,11 @@
 						<li>To create or edit additional policies, repeat steps 1-9.</li>
 					</ol><br />
 					To delete an Internet Access Policy, select the policy number, and click the <i>Delete</i> button.
-				</dd>
+				</dd-->
+				<% tran("hfilter.page1"); %>
 				<dt><% tran("sbutton.summary"); %></dt>
-				<dd>To see a summary of all the policies, click the <i>Summary</i> button. The Internet Policy Summary screen will show each policy's number, Policy Name, Days, and Time of Day. To delete a policy, click its box, and then click the <i>Delete</i> button. Click the <i>Close</i> button to return to the Filters screen.</dd>
+				<!--dd>To see a summary of all the policies, click the <i>Summary</i> button. The Internet Policy Summary screen will show each policy's number, Policy Name, Days, and Time of Day. To delete a policy, click its box, and then click the <i>Delete</i> button. Click the <i>Close</i> button to return to the Filters screen.</dd-->
+				<% tran("hfilter.page2"); %>
 			</dl>
 		</div>
 	</body>
