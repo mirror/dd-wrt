@@ -93,4 +93,9 @@ enum {
     PPPOX_DEAD		= 16  /* dead, useless, please clean me up!*/
 };
 
+#ifdef CTF_PPPOE
+extern void ppp_rxstats_upd(void *pppif, struct sk_buff *skb);
+extern void ppp_txstats_upd(void *pppif, struct sk_buff *skb);
+#endif
+
 #endif /* !(__LINUX_IF_PPPOX_H) */

@@ -1,4 +1,3 @@
-
 #include <linux/types.h>
 #include <linux/version.h>
 #include <linux/init.h>
@@ -782,9 +781,23 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 	uint32 nvsz = 0;
 	uint32 bootossz = NFL_BOOT_OS_SIZE;
 	int isbufdual = 0;
+	int isbufvxdual = 0;
 	uint boardnum = bcm_strtoul(nvram_safe_get("boardnum"), NULL, 0);
 	if ((!strncmp(nvram_safe_get("boardnum"),"2013",4) || !strncmp(nvram_safe_get("boardnum"),"2014",4)) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")) {
+		printk(KERN_EMERG "Buffalo WZR-900DHP dualboot\n");
+		isbufdual = 1;
+		bootossz = 0x4000000;
+	}
+
+	if (boardnum == 00 && nvram_match("boardtype", "0x0665")
+	    && nvram_match("boardrev", "0x1103")
+	    && nvram_match("melco_id", "RD_BB13049")) {
+		printk(KERN_EMERG "Buffalo WXR-1900DHP dualboot\n");
+		isbufvxdual = 1;
+		bootossz = 0x6000000;
+	}
+	if (nvram_match("boardrev", "0x1110")) {
 		printk(KERN_EMERG "Buffalo WZR-900DHP dualboot\n");
 		isbufdual = 1;
 		bootossz = 0x4000000;
@@ -813,9 +826,17 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 	 */
 	if (isbufdual) {
 	if (imag_1st_offset == NULL)
-		imag_1st_offset = "0x200000";
+		imag_1st_offset = "2097152";
 	if (imag_2nd_offset == NULL)
-		imag_2nd_offset = "0x2100000";
+		imag_2nd_offset = "34603008";
+	}
+	if (isbufvxdual) {
+	if (!img_boot)
+	    img_boot="0";
+	if (imag_1st_offset == NULL)
+		imag_1st_offset = "0";
+	if (imag_2nd_offset == NULL)
+		imag_2nd_offset = "50331648";
 	}
 	dual_image_on = (img_boot != NULL && imag_1st_offset != NULL && imag_2nd_offset != NULL);
 

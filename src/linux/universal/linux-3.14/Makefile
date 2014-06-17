@@ -581,6 +581,19 @@ endif # $(dot-config)
 # Defaults to vmlinux, but the arch makefile usually adds further targets
 all: vmlinux
 
+ifeq ($(CONFIG_ARM),y)
+ifneq ($(CONFIG_SMP),)
+ifneq ($(CONFIG_BCM_CTF),)
+#KBUILD_CFLAGS += -DHNDCTF -DCTFPOOL -DCTFMAP -DPKTC -DCTF_PPPOE
+ifneq ($(CONFIG_WL_USBAP),)
+#KBUILD_CFLAGS += -DCTFPOOL_SPINLOCK
+endif
+ifneq ($(CONFIG_IPV6),)
+#KBUILD_CFLAGS += -DCTF_IPV6
+endif
+endif
+endif
+endif
 
 ifneq ($(CONFIG_PROXYARP),)
 KBUILD_CFLAGS += -DPROXYARP
