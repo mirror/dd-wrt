@@ -476,4 +476,12 @@ static inline void vlan_set_encap_proto(struct sk_buff *skb,
 		 */
 		skb->protocol = htons(ETH_P_802_2);
 }
+
+#ifdef HNDCTF
+extern void vlan_rxstats_upd(struct net_device *vldev,
+	struct sk_buff *skb, int packets, int bytes);
+extern void vlan_txstats_upd(struct net_device *vldev,
+    	struct sk_buff *skb, int packets, int bytes);
+#endif /* HNDCTF */
+
 #endif /* !(_LINUX_IF_VLAN_H_) */
