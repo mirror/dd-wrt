@@ -7,10 +7,11 @@
 		<div id="content">
 			<h2><% tran("wanmac.h2"); %></h2>
 			<dl>
-				<dd>The router's MAC address is a 12-digit code assigned to a unique piece of hardware for identification. Some ISPs require that you register the MAC address of your network card/adapter, which was connected to your cable or DSL modem during installation.</dd>
+				<!--dd>The router's MAC address is a 12-digit code assigned to a unique piece of hardware for identification. Some ISPs require that you register the MAC address of your network card/adapter, which was connected to your cable or DSL modem during installation.</dd-->
+				<% tran("hwanmac.page1"); %>
 				
 				<dt><% tran("wanmac.legend"); %></dt>
-					<dd>To clone your network adapter's MAC address onto the router, select <i>Enable</i> and enter your adapter's MAC address in the <i>Clone WAN MAC</i> field or click <i>Get Current PC MAC Address</i> to fill in the MAC address of your PC you are using. Then save your changes by clicking on the <i>Save Settings</i> button.
+					<!--dd>To clone your network adapter's MAC address onto the router, select <i>Enable</i> and enter your adapter's MAC address in the <i>Clone WAN MAC</i> field or click <i>Get Current PC MAC Address</i> to fill in the MAC address of your PC you are using. Then save your changes by clicking on the <i>Save Settings</i> button.
 					<br/><br/>
 					To disable MAC address cloning, keep the default setting, <i>Disable</i>.
 					</dd>
@@ -32,7 +33,8 @@
 							<li>Write down your adapter's MAC address.</li>
 						</ol>
 					</dd>
-					<dd>Check all values and click <i>Save Settings</i> to save your settings. Click </i>Cancel Changes</i> to cancel your unsaved changes.</dd>
+					<dd>Check all values and click <i>Save Settings</i> to save your settings. Click </i>Cancel Changes</i> to cancel your unsaved changes.</dd-->
+				<% tran("hwanmac.page2"); %>
 			</dl>
 		</div>
 		<div class="also">

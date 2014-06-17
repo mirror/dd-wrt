@@ -5,9 +5,9 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
 		</div>
 		<div id="content">
-			<h2>LAN Status</h2>
+			<h2><% tran("bmenu.statuLAN"); %></h2>
 			<dl>
-				<dd>This status screen displays the LAN status and configuration. All information is read-only.</dd>
+				<!--dd>This status screen displays the LAN status and configuration. All information is read-only.</dd>
 				<dt>MAC Address</dt>
 				<dd>The MAC Address of the LAN interface is displayed here.</dd>
 				<dt>IP Address and Subnet Mask</dt>
@@ -17,7 +17,8 @@
 				<dt>Start/End IP Address</dt>
 				<dd>The first and the last IP address the DHCP server can hand out to clients.</dd>
 				<dt>DHCP Client List</dt>
-				<dd>To show the current IP address leases by the DHCP server, click the <i>DHCP Clients Table</i> button.</dd>
+				<dd>To show the current IP address leases by the DHCP server, click the <i>DHCP Clients Table</i> button.</dd-->
+				<% tran("hstatus_lan.page1"); %>
 			</dl>
 		</div>
 		<div class="also">
