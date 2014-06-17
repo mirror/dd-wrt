@@ -1045,6 +1045,9 @@ void period_check(int sig)
 	case ROUTER_BUFFALO_WZR1750:
 		sesgpio = 0x10c;	// gpio 12, inversed
 		break;
+	case ROUTER_BUFFALO_WXR1900DHP:
+		sesgpio = 0x110;	// gpio 16, inversed
+		break;
 	case ROUTER_D1800H:
 		sesgpio = 0x10a;	// gpio 10, inversed
 		break;
