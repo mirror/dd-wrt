@@ -5,9 +5,9 @@
 			<div class="navig"><a href="index.asp">Index</a> | <a href="javascript:self.close();"><% tran("sbutton.clos"); %></a></div>
 		</div>
 		<div id="content">
-			<h2>Status</h2>
+			<h2><% tran("bmenu.statu"); %></h2>
 			<dl>
-				<dd>This status screen displays the router's current status and configuration. All information is read-only.</dd>
+				<!--dd>This status screen displays the router's current status and configuration. All information is read-only.</dd>
 				<dt>Firmware Version </dt>
 				<dd>The version number of the firmware currently installed is displayed here. Firmware should only be upgraded from the System screen if you experience problems with the router. Visit <a href="http://www.dd-wrt.com" target="_new">www.dd-wrt.com</a> to find out if there is updated firmware.</dd>
 				<dt>Current Time</dt>
@@ -31,7 +31,8 @@
 				<dt>DNS</dt>
 				<dd>The DNS (Domain Name System) IP Addresses currently used by the router are shown here. Multiple DNS IP settings are common. In most cases, the first available DNS entry is used.</dd>
 				<dt>Traffic</dt>
-				<dd>This shows your router's Internet traffic (total since last reboot or by month).</dd>
+				<dd>This shows your router's Internet traffic (total since last reboot or by month).</dd-->
+				<% tran("hstatus_router.page1"); %>
 			</dl>
 		</div>
 		<div class="also">
