@@ -255,7 +255,6 @@ int mtd_write(const char *path, const char *mtd)
 	unsigned int trxhd = STORE32_LE(TRX_MAGIC);
 	switch (brand) {
 	case ROUTER_BUFFALO_WZR900DHP:
-//	case ROUTER_BUFFALO_WXR1900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
 	case ROUTER_LINKSYS_EA6900:
 	case ROUTER_LINKSYS_EA6700:
@@ -873,6 +872,16 @@ fail:
 	if (!ret)
 		sysprintf("ubootenv del buf_crc");
 #endif
+
+	switch (brand) {
+	case ROUTER_BUFFALO_WXR1900DHP:
+	// now fuck myself up
+	if (strncmp(path,"/dev",4)) // break here, if we already called ourself
+	    break;
+	sysprintf("write /dev/mtdblock3 linux2"); //fixup for wxr1900 cfe
+	break;
+	}
+
 	// eval("fischecksum");
 	return ret;
 }
