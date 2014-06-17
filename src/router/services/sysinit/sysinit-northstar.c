@@ -2321,6 +2321,11 @@ void start_sysinit(void)
 		nvram_set("1:ledbh10", "7");
 		set_gpio(12, 1);	// fixup ses button
 		break;
+	case ROUTER_BUFFALO_WXR1900DHP:
+		nvram_set("0:ledbh12", "7");
+		nvram_set("1:ledbh10", "7");
+		set_gpio(12, 1);	// fixup ses button
+		break;
 	case ROUTER_BUFFALO_WZR900DHP:
 	case ROUTER_BUFFALO_WZR600DHP2:
 		nvram_set("0:boardflags2", "0x1000");
