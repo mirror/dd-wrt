@@ -1000,7 +1000,7 @@ int internal_getRouterBrand()
 #ifdef HAVE_BUFFALO
 		setRouter("WXR-1900DHP");
 #else
-		setRouter("Buffalo WXR-1900");
+		setRouter("Buffalo WXR-1900DHP");
 #endif
 		return ROUTER_BUFFALO_WXR1900DHP;
 	}
