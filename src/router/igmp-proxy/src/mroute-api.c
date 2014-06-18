@@ -175,6 +175,8 @@ int addMRoute( struct MRouteDesc *Dp )
            );
     }
 
+    sysprintf("emf add mfdb br0 %s %s",fmtInAdr( FmtBuM, CtlReq.mfcc_mcastgrp ), getIfByVifIndex((int)CtlReq.mfcc_parent)->Name);
+
     rc = setsockopt( MRouterFD, IPPROTO_IP, MRT_ADD_MFC,
 		    (void *)&CtlReq, sizeof( CtlReq ) );
     if (rc)
