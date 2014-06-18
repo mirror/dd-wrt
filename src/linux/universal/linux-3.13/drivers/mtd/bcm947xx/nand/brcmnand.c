@@ -1052,6 +1052,15 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 	}
 	ASSERT(size > offset);
 
+	if (boardnum == 00 && nvram_match("boardtype", "0x0665")
+	    && nvram_match("boardrev", "0x1103")
+	    && nvram_match("melco_id", "RD_BB13049")) {
+		printk(KERN_EMERG "Buffalo WXR-1900DHP dualboot part\n");
+		isbufdual = 1;
+		offset = 0x6000000;
+		size -= 0x100000;
+	}
+
 	brcmnand_parts[0].offset = offset;
 	brcmnand_parts[0].size = size - offset;
 
