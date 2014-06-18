@@ -238,26 +238,6 @@ void start_bridging(void)
 extern char *getBridgeMTU(char *);
 extern char *getMTU(char *);
 
-char *getBridge(char *ifname)
-{
-	static char word[256];
-	char *next, *wordlist;
-
-	wordlist = nvram_safe_get("bridgesif");
-	foreach(word, wordlist, next) {
-		char *port = word;
-		char *tag = strsep(&port, ">");
-		char *prio = port;
-
-		strsep(&prio, ">");
-		if (!tag || !port)
-			break;
-		if (!strcmp(port, ifname))
-			return tag;
-	}
-	return nvram_safe_get("lan_ifname");
-}
-
 char *getRealBridge(char *ifname)
 {
 	static char word[256];
