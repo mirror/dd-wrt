@@ -145,6 +145,10 @@ void addVIF( struct IfDesc *IfDp )
 
 }
 
+extern int sysprintf(const char *fmt, ...);
+
+struct IfDesc *getIfByVifIndex( unsigned vifindex );
+
 /*
 ** Adds the multicast routed '*Dp' to the kernel routes
 **
@@ -173,9 +177,9 @@ int addMRoute( struct MRouteDesc *Dp )
              fmtInAdr( FmtBuM, CtlReq.mfcc_mcastgrp ),
              (int)CtlReq.mfcc_parent
            );
+	sysprintf("emf add mfdb br0 %s %s",fmtInAdr( FmtBuM, CtlReq.mfcc_mcastgrp ), getIfByVifIndex((int)CtlReq.mfcc_parent)->Name);
     }
 
-    sysprintf("emf add mfdb br0 %s %s",fmtInAdr( FmtBuM, CtlReq.mfcc_mcastgrp ), getIfByVifIndex((int)CtlReq.mfcc_parent)->Name);
 
     rc = setsockopt( MRouterFD, IPPROTO_IP, MRT_ADD_MFC,
 		    (void *)&CtlReq, sizeof( CtlReq ) );
