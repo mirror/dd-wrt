@@ -18,6 +18,7 @@ ifneq ($(wildcard ../cy_conf.mak),)
 endif
 
 CONFIG_WPE72_SIZE?=0x3d0000
+CONFIG_MUSL=y
 
 #
 # Paths
@@ -156,6 +157,7 @@ all: install_headers build_date clean_target $(obj-y) $(obj-m) $(LINUXDIR)/.conf
 
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
+	echo "CONFIG_MUSL=y" >> .config 
 
 drop-sections	= .comment
 strip-flags	= $(addprefix --remove-section=,$(drop-sections))
@@ -167,7 +169,7 @@ kernelsource:
 	cd $(LINUXDIR)/../ && ./patch $(KERNELVERSION)
 
 
-kernel:
+kernel: clean
         # Also build kernel
 	# Also build kernel
 ifeq ($(CONFIG_LSX),y)
@@ -603,10 +605,19 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+ifneq ($(CONFIG_MUSL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+else
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so} $(ARCH)-uclibc/target/lib/libc.so 
+#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.a} $(ARCH)-uclibc/target/lib/libc_pic.a 
+endif
+ifneq ($(CONFIG_MUSL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uclibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+else
+	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-mips.so.1
+endif
 ifeq ($(CONFIG_LIBDL),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
 endif
 ifeq ($(CONFIG_LIBRT),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
@@ -615,27 +626,27 @@ ifeq ($(CONFIG_LIBNSL),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
 endif
 ifeq ($(CONFIG_LIBUTIL),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
 endif
 ifeq ($(CONFIG_LIBCPP),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
 endif
 ifeq ($(CONFIG_LIBCRYPT),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
 endif
 ifeq ($(CONFIG_LIBM),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
 endif
 ifeq ($(CONFIG_LIBRESOLV),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
 endif
 ifeq ($(CONFIG_LIBPTHREAD),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
 endif
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 
 ifneq ($(CONFIG_NOOPT),y)
-
 	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
 	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
 	-mkdir -p /tmp/$(ARCHITECTURE)/
@@ -648,6 +659,7 @@ ifneq ($(CONFIG_NOOPT),y)
 		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
 
 	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
+ifneq ($(CONFIG_MUSL),y)
 	mklibs.py -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
@@ -656,8 +668,63 @@ ifneq ($(CONFIG_NOOPT),y)
 		--ldlib /lib/ld-uClibc.so.0 \
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
-	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
+else
+	mklibs.py -D \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-musl-mips.so.1 \
+		--target $(ARCH)-linux-uclibc \
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+
 endif
+
+	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
+else
+#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libuClibc-0.99.33.2.so}  $(ARCH)-uclibc/target/lib/libc.so.0
+#	relink-lib.sh \
+#		"$(ARCH)-linux-" \
+#		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
+#		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
+#		"$(ARCH)-uclibc/target/lib/libc.so.0" \
+#		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
+#		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
+
+ifneq ($(CONFIG_MUSL),y)
+
+	relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt_pic.a}" \
+		"$(ARCH)-uclibc/target/lib/libcrypt.so.0" \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
+		-Wl,-soname=libcrypt.so.0
+
+	relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libm.so}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libm_pic.a}" \
+		"$(ARCH)-uclibc/target/lib/libm.so.0" \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
+		-Wl,-soname=libm.so.0 
+
+	relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread_so.a}" \
+		"$(ARCH)-uclibc/target/lib/libpthread.so.0" \
+		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
+		-Wl,-soname=libpthread.so.0
+endif
+endif
+
+	rm -f $(TARGETDIR)/lib/*.a
+	rm -f $(TARGETDIR)/lib/*.map
+#	cp lib.$(ARCH)/libresolv.so.0 $(TARGETDIR)/lib
+#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
 	install -d $(TARGETDIR)
@@ -1495,6 +1562,9 @@ ifeq ($(CONFIG_WR741),y)
 
 	-./tools/tplink/mktplinkfw -B TL-WR841NDv7 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR841NDv7-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR841NDv7-firmware.bin mips-uclibc/tplink-WR841NDv7-firmware.bin
+
+	-./tools/tplink/mktplinkfw -B WNRT627V1 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/WNRT627V1-firmware.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WNRT627V1-firmware.bin mips-uclibc/planex-WNRT627V1-firmware.bin
 
 	-./tools/tplink/mktplinkfw -B TL-MR3420 -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinus.gzip -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-MR3420-firmware.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/MR3420-firmware.bin mips-uclibc/tplink-MR3420-firmware.bin
