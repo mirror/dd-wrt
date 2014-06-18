@@ -144,13 +144,13 @@ void addVIF( struct IfDesc *IfDp )
         my_log( LOG_ERR, errno, "MRT_ADD_VIF" );
 
 }
-
+/*
 extern int sysprintf(const char *fmt, ...);
 
 struct IfDesc *getIfByVifIndex( unsigned vifindex );
 
 char *getBridge(char *ifname);
-
+*/
 
 /*
 ** Adds the multicast routed '*Dp' to the kernel routes
@@ -180,10 +180,10 @@ int addMRoute( struct MRouteDesc *Dp )
              fmtInAdr( FmtBuM, CtlReq.mfcc_mcastgrp ),
              (int)CtlReq.mfcc_parent
            );
-	if (nvram_match("wl0_wmf_bss_enable","1"))
-	sysprintf("emf add mfdb %s %s %s",getBridge("eth1"),fmtInAdr( FmtBuM, CtlReq.mfcc_mcastgrp ),"eth1");
-	if (nvram_match("wl1_wmf_bss_enable","1"))
-	sysprintf("emf add mfdb %s %s %s",getBridge("eth2"),fmtInAdr( FmtBuM, CtlReq.mfcc_mcastgrp ),"eth2");
+//	if (nvram_match("wl0_wmf_bss_enable","1"))
+//	sysprintf("emf add mfdb %s %s %s",getBridge("eth1"),fmtInAdr( FmtBuM, CtlReq.mfcc_mcastgrp ),"eth1");
+//	if (nvram_match("wl1_wmf_bss_enable","1"))
+//	sysprintf("emf add mfdb %s %s %s",getBridge("eth2"),fmtInAdr( FmtBuM, CtlReq.mfcc_mcastgrp ),"eth2");
     }
 
 
