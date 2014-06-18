@@ -1976,9 +1976,8 @@ void start_lan(void)
 	 * Bring up bridged interface 
 	 */
 #ifdef HAVE_EAD
-	char eadline[64];
+	char *eadline=NULL;
 
-	memset(eadline, 0, 64);
 #endif
 
 	if (strncmp(lan_ifname, "br0", 3) == 0) {
@@ -2006,7 +2005,15 @@ void start_lan(void)
 #else
 			if (wl_probe(name))
 #endif
-				sprintf(eadline, "%s%s %s ", eadline, "-d", name);
+			{
+			if (!eadline)
+			    eadline=malloc(64);
+			    sprintf(eadline, "%s", "-d", name);
+			}else{
+			    eadline=realloc(eadline,strlen(eadline)+64);
+			    strcat(eadline, " -d ");
+			    strcat(eadline, name);
+			}	
 #endif
 			if (nvram_match("wan_ifname", name))
 				continue;
@@ -2238,8 +2245,10 @@ void start_lan(void)
 #endif
 	}
 #ifdef HAVE_EAD
-	if (strlen(eadline) > 0)
+	if (eadline && strlen(eadline) > 0) {
 		sysprintf("ead %s -B", eadline);
+		free(eadline);
+	}
 #endif
 
 	/*
