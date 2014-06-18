@@ -5130,7 +5130,6 @@ int led_control(int type, int act)
 		power_gpio = 0x006;
 		diag_gpio = 0x005;
 		diag_gpio_disabled = 0x006;
-		usb_gpio = 0x02f;
 		break;
 
 
