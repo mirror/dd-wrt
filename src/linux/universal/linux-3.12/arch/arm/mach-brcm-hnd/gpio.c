@@ -40,6 +40,10 @@ static struct {
 
 static int gpio_init_flag = 0;
 static int __init gpio_init(void);
+void set_hc595(uint32 pin, uint32 value);
+void set_hc595_reset(void);
+void set_hc595_core(si_t *sih);
+
 
 static int gpio_open(struct inode *inode, struct file *file)
 {
@@ -151,6 +155,7 @@ extern int iswrt300n11;
 int isac66 = 0;
 int isac68 = 0;
 int isbuffalo = 0;
+int isbuffalowxr = 0;
 int isdefault = 0;
 static struct class *gpio_class = NULL;
 
@@ -181,6 +186,7 @@ static int __init gpio_init(void)
 	    && nvram_match("melco_id", "RD_BB12068")) {
 		printk(KERN_EMERG "Buffalo WZR-1750DHP\n");
 		isbuffalo = 1;
+		set_hc595_reset();
 		gpio_init_flag = 1;
 		return 0;
 
@@ -190,7 +196,7 @@ static int __init gpio_init(void)
 	    && nvram_match("boardrev", "0x1103")
 	    && nvram_match("melco_id", "RD_BB13049")) {
 		printk(KERN_EMERG "Buffalo WXR-1900DHP\n");
-		isbuffalo = 1;
+		isbuffalowxr = 1;
 		gpio_init_flag = 1;
 		return 0;
 
@@ -201,6 +207,7 @@ static int __init gpio_init(void)
 	    && nvram_match("0:rxchain", "7")) {
 		printk(KERN_EMERG "Buffalo WZR-900DHP\n");
 		isbuffalo = 1;
+		set_hc595_reset();
 		gpio_init_flag = 1;
 		return 0;
 	}
@@ -210,6 +217,7 @@ static int __init gpio_init(void)
 	    && nvram_match("0:rxchain", "3")) {
 		printk(KERN_EMERG "Buffalo WZR-600DHP2\n");
 		isbuffalo = 1;
+		set_hc595_reset();
 		gpio_init_flag = 1;
 		return 0;
 	}
