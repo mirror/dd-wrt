@@ -719,6 +719,7 @@ char *psname(int pid, char *buffer, int maxlen)
 int f_exists(const char *path)	// note: anything but a directory
 {
 	struct stat st;
+	memset(&st,0,sizeof(struct stat));
 
 	return (stat(path, &st) == 0) && (!S_ISDIR(st.st_mode));
 }
