@@ -121,6 +121,10 @@ endif
 ifeq ($(CONFIG_ALFANX),y)
 CFLAGS_EXTRA += -DHAVE_ALFANX
 endif
+ifeq ($(CONFIG_80211AC),y)
+CFLAGS_EXTRA += -DHAVE_EMF
+OBJS += emf.o
+endif
 ifeq ($(CONFIG_WDR4900),y)
 CFLAGS_EXTRA += -DHAVE_WDR4900
 endif
