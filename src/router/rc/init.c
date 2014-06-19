@@ -682,6 +682,9 @@ int main(int argc, char **argv)
 #ifdef HAVE_MADWIFI
 			stop_service("stabridge");
 #endif
+#ifdef HAVE_EMF
+			stop_service("emf");
+#endif
 #ifdef HAVE_VLANTAGGING
 			stop_service("bridging");
 #endif
@@ -747,6 +750,9 @@ int main(int argc, char **argv)
 #ifdef HAVE_VLANTAGGING
 			start_service("vlantagging");
 			start_service("bridgesif");
+#endif
+#ifdef HAVE_EMF
+			start_service("emf");
 #endif
 			start_service_force("wan_boot");
 			start_service_f("ttraff");
