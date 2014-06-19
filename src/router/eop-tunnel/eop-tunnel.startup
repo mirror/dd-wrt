@@ -7,6 +7,7 @@ for i in 1 2 3 4 5 6 7 8 9 10
 do
 	if test -e "${i}.pid" 
 	then 
+	    emf del iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
 	    brctl delif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
 	    ip tunnel del oet${i}
 	    rm -f ${i}.pid
@@ -22,6 +23,7 @@ do
 			ifconfig oet${i} promisc 2>&1 > /dev/null
 			brctl addif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
 			brctl setportprio $(getbridge oet${i}) oet${i} $(getbridgeprio oet${i})
+			emf add iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
 		else
 			ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
 			ip link set dev oet${i} up
