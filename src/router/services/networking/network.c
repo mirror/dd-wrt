@@ -2240,9 +2240,6 @@ void start_lan(void)
 			}
 
 		}
-#ifdef HAVE_80211AC
-		eval("emf", "start", lan_ifname);
-#endif
 	}
 #ifdef HAVE_EAD
 	if (eadline && strlen(eadline) > 0) {

@@ -381,6 +381,9 @@ static void handle_index(void)
 #ifdef HAVE_MADWIFI
 	handle = stop_service_nofree_f("stabridge", handle);
 #endif
+#ifdef HAVE_EMF
+	handle = stop_service_nofree_f("emf", handle);	//
+#endif
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree_f("bridgesif", handle);	//
 	handle = stop_service_nofree_f("vlantagging", handle);	//
@@ -421,6 +424,9 @@ static void handle_index(void)
 #ifdef HAVE_VLANTAGGING
 	handle = start_service_nofree("vlantagging", handle);
 	handle = start_service_nofree("bridgesif", handle);
+#endif
+#ifdef HAVE_EMF
+	handle = start_service_nofree("emf", handle);	//
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	handle = start_service_nofree("nas", handle);
@@ -485,6 +491,9 @@ static void handle_hotspot(void)
 #endif
 	handle = stop_service_nofree_f("ttraff", handle);
 	handle = stop_service_nofree_force_f("wan", handle);
+#ifdef HAVE_EMF
+	handle = stop_service_nofree_f("emf", handle);	//
+#endif
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree_f("bridgesif", handle);
 	handle = stop_service_nofree_f("vlantagging", handle);
@@ -528,6 +537,9 @@ static void handle_hotspot(void)
 #ifdef HAVE_VLANTAGGING
 	handle = start_service_nofree("vlantagging", handle);
 	handle = start_service_nofree("bridgesif", handle);
+#endif
+#ifdef HAVE_EMF
+	handle = start_service_nofree("emf", handle);	//
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	handle = start_service_nofree("nas", handle);
@@ -751,6 +763,9 @@ static void handle_pppoe(void)
 #ifdef HAVE_MADWIFI
 	handle = stop_service_nofree_f("stabridge", handle);
 #endif
+#ifdef HAVE_EMF
+	handle = stop_service_nofree_f("emf", handle);	//
+#endif
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree_f("bridgesif", handle);
 	handle = stop_service_nofree_f("vlantagging", handle);
@@ -782,6 +797,9 @@ static void handle_pppoe(void)
 #ifdef HAVE_VLANTAGGING
 	handle = start_service_nofree("vlantagging", handle);
 	handle = start_service_nofree("bridgesif", handle);
+#endif
+#ifdef HAVE_EMF
+	handle = start_service_nofree("emf", handle);	//
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	handle = start_service_nofree("nas", handle);
@@ -1040,6 +1058,9 @@ static void handle_wireless(void)
 			handle = stop_service_nofree_force_f("wan", handle);
 		}
 	}
+#ifdef HAVE_EMF
+	handle = stop_service_nofree_f("emf", handle);	//
+#endif
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree_f("bridgesif", handle);
 	handle = stop_service_nofree_f("vlantagging", handle);
@@ -1068,6 +1089,9 @@ static void handle_wireless(void)
 #ifdef HAVE_VLANTAGGING
 	handle = start_service_nofree("vlantagging", handle);
 	handle = start_service_nofree("bridgesif", handle);
+#endif
+#ifdef HAVE_EMF
+	handle = start_service_nofree("emf", handle);	//
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	handle = start_service_nofree("nas", handle);
@@ -1133,6 +1157,9 @@ static void handle_wireless_2(void)
 			handle = stop_service_nofree_force_f("wan", handle);
 		}
 	}
+#ifdef HAVE_EMF
+	handle = stop_service_nofree_f("emf", handle);	//
+#endif
 #ifdef HAVE_VLANTAGGING
 	handle = stop_service_nofree_f("bridgesif", handle);
 	handle = stop_service_nofree_f("vlantagging", handle);
@@ -1161,6 +1188,9 @@ static void handle_wireless_2(void)
 #ifdef HAVE_VLANTAGGING
 	handle = start_service_nofree("vlantagging", handle);
 	handle = start_service_nofree("bridgesif", handle);
+#endif
+#ifdef HAVE_EMF
+	handle = start_service_nofree("emf", handle);	//
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	handle = start_service_nofree("nas", handle);
