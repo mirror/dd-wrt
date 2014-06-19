@@ -181,48 +181,6 @@ int start_service_force_f(char *name)
 	return 0;
 }
 
-void *start_service_nofree_delay(char *name, void *handle, int delay)
-{
-	DEBUG();
-	if (delay)
-		sleep(delay);
-	handle_service("start", name);
-	return handle;
-}
-
-void *start_service_nofree(char *name, void *handle)
-{
-	return start_service_nofree_delay(name, handle, 0);
-}
-
-void *start_service_nofree_force(char *name, void *handle)
-{
-	DEBUG();
-	RELEASESTOPPED("start");
-	return start_service_nofree(name, handle);
-}
-
-void *start_service_nofree_f(char *name, void *handle)
-{
-	DEBUG();
-	FORK(start_service_nofree(name, handle));
-	return handle;
-}
-
-void *start_service_nofree_fdelay(char *name, void *handle, int delay)
-{
-	DEBUG();
-	FORK(start_service_nofree_delay(name, handle, delay));
-	return handle;
-}
-
-void *start_service_nofree_force_f(char *name, void *handle)
-{
-	DEBUG();
-	FORK(start_service_nofree_force(name, handle));
-	return handle;
-}
-
 void start_servicei(char *name, int param)
 {
 	// lcdmessaged("Starting Service",name);
@@ -344,43 +302,6 @@ void stop_service_force_f(char *name)
 	FORK(handle_service("stop", name));
 }
 
-void *stop_service_nofree(char *name, void *handle)
-{
-	DEBUG();
-	init_shared();
-	if (stops_running)
-		stops_running[0]++;
-	handle_service("stop", name);
-	return handle;
-}
-
-void *stop_service_nofree_force(char *name, void *handle)
-{
-	DEBUG();
-	RELEASESTOPPED("stop");
-	return stop_service_nofree(name, handle);
-}
-
-void *stop_service_nofree_f(char *name, void *handle)
-{
-	DEBUG();
-	init_shared();
-	if (stops_running)
-		stops_running[0]++;
-	FORK(handle_service("stop", name));
-	return handle;
-}
-
-void *stop_service_nofree_force_f(char *name, void *handle)
-{
-	DEBUG();
-	init_shared();
-	if (stops_running)
-		stops_running[0]++;
-	RELEASESTOPPED("stop");
-	FORK(handle_service("stop", name));
-	return handle;
-}
 
 static void startstop_delay(char *name, int delay)
 {
@@ -435,45 +356,4 @@ int startstop_main_f(int argc, char **argv)
 		stops_running[0]++;
 	FORK(startstop_delay(name, 0));
 	return 0;
-}
-
-static void *startstop_nofree_delay(char *name, void *handle, int delay)
-{
-	cprintf("stop and start service (nofree)\n");
-	DEBUG();
-	if (delay)
-		sleep(delay);
-	RELEASESTOPPED("stop");
-	RELEASESTOPPED("start");
-	handle_service("stop", name);
-	handle_service("start", name);
-	return handle;
-}
-
-void *startstop_nofree(char *name, void *handle)
-{
-	init_shared();
-	if (stops_running)
-		stops_running[0]++;
-	return startstop_nofree_delay(name, handle, 0);
-}
-
-void *startstop_nofree_f(char *name, void *handle)
-{
-	DEBUG();
-	init_shared();
-	if (stops_running)
-		stops_running[0]++;
-	FORK(startstop_nofree_delay(name, handle, 0));
-	return handle;
-}
-
-void *startstop_nofree_fdelay(char *name, void *handle, int delay)
-{
-	DEBUG();
-	init_shared();
-	if (stops_running)
-		stops_running[0]++;
-	FORK(startstop_nofree_delay(name, handle, delay));
-	return handle;
 }
