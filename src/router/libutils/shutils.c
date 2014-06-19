@@ -685,11 +685,14 @@ void addList(char *listname, char *value)
 
 	if (list)
 		listlen = strlen(list);
-	newlist = safe_malloc(strlen(value + 2) + listlen);
-	if (list)
-		sprintf(newlist, "%s %s", list, value);
-	else
-		sprintf(newlist, "%s", value);
+	newlist = safe_malloc(strlen(value) + listlen + 2);
+	if (list) {
+		strcpy(newlist,list);
+		strcat(newlist," ");
+		strcat(newlist,value);	
+	}else {
+		strcpy(newlist,value);
+	}
 	nvram_set(listname, newlist);
 	free(newlist);
 }
