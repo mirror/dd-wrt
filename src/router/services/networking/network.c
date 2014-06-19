@@ -357,10 +357,10 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 		"-i", wan_ifname,
 		"-p", pidfile,
 		"-s", script,
-	        NULL, NULL,
-                NULL, NULL,
-                NULL, NULL,
-                NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
+		NULL, NULL,
 		NULL, NULL,
 		NULL, NULL,
 		NULL, NULL,
@@ -373,15 +373,15 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 	int i = 7;
 
 #ifdef HAVE_BUSYBOX_UDHCPC
-        dhcp_argv[i++] = "-O";
-        dhcp_argv[i++] = "routes";
-        dhcp_argv[i++] = "-O";
-        dhcp_argv[i++] = "msstaticroutes";
-        dhcp_argv[i++] = "-O";
-        dhcp_argv[i++] = "staticroutes";
+	dhcp_argv[i++] = "-O";
+	dhcp_argv[i++] = "routes";
+	dhcp_argv[i++] = "-O";
+	dhcp_argv[i++] = "msstaticroutes";
+	dhcp_argv[i++] = "-O";
+	dhcp_argv[i++] = "staticroutes";
 #ifdef HAVE_FREECWMP
-        dhcp_argv[i++] = "-O";
-        dhcp_argv[i++] = "vendorspecific";
+	dhcp_argv[i++] = "-O";
+	dhcp_argv[i++] = "vendorspecific";
 #endif
 #endif
 
@@ -541,13 +541,13 @@ static int wlconf_up(char *name)
 	char pwr[8];
 	sprintf(pwr, "%d", val);
 #ifdef HAVE_TXPWRFIXED
-//	eval("wl", "-i", name, "txpwr1", "-m");
+//      eval("wl", "-i", name, "txpwr1", "-m");
 #else
 	eval("wl", "-i", name, "txpwr1", "-m", "-o", pwr);
 #endif
 #ifdef HAVE_80211AC
-	if( val == 71 ) // if user did not change txpwr set this to radio defaults - DAU Modus
-	    eval("wl", "-i", name, "txpwr1", "-1"); 
+	if (val == 71)		// if user did not change txpwr set this to radio defaults - DAU Modus
+		eval("wl", "-i", name, "txpwr1", "-1");
 #endif
 	/*
 	 * Set txant 
@@ -650,6 +650,7 @@ int isClient(void)
 	return 0;
 
 }
+
 void stop_wlconf(void)
 {
 }
@@ -1976,7 +1977,7 @@ void start_lan(void)
 	 * Bring up bridged interface 
 	 */
 #ifdef HAVE_EAD
-	char *eadline=NULL;
+	char *eadline = NULL;
 
 #endif
 
@@ -2006,14 +2007,15 @@ void start_lan(void)
 			if (wl_probe(name))
 #endif
 			{
-			if (!eadline)
-			    eadline=malloc(64);
-			    sprintf(eadline, "%s", "-d", name);
-			}else{
-			    eadline=realloc(eadline,strlen(eadline)+64);
-			    strcat(eadline, " -d ");
-			    strcat(eadline, name);
-			}	
+				if (!eadline) {
+					eadline = malloc(64);
+					sprintf(eadline, "-d %s", name);
+				} else {
+					eadline = realloc(eadline, strlen(eadline) + 64);
+					strcat(eadline, " -d ");
+					strcat(eadline, name);
+				}
+			}
 #endif
 			if (nvram_match("wan_ifname", name))
 				continue;
@@ -2736,8 +2738,8 @@ void start_force_to_dial(void);
 
 static void vdsl_fuckup(char *ifname)
 {
-fprintf(stderr, "[VDSL FUCK]\n");
-sleep(20);
+	fprintf(stderr, "[VDSL FUCK]\n");
+	sleep(20);
 	int s;
 	struct ifreq ifr;
 	char mac[32];
@@ -3570,7 +3572,7 @@ void start_wan(int status)
 				}
 
 				fprintf(fp, "nic-%s\n", vlannic);
-//				vdsl_fuckup(vlannic);	/* work around for DTAG DSLAMS */
+//                              vdsl_fuckup(vlannic);   /* work around for DTAG DSLAMS */
 			} else {
 				char *ifn = enable_dtag_vlan(0);
 
@@ -3605,7 +3607,7 @@ void start_wan(int status)
 					eval("ifconfig", vlannic, "up");
 				}
 				fprintf(fp, "nic-%s\n", vlannic);
-//				vdsl_fuckup(vlannic);	/* work around for DTAG DSLAMS */
+//                              vdsl_fuckup(vlannic);   /* work around for DTAG DSLAMS */
 			} else {
 				sprintf(vlannic, "%s.0008", pppoe_wan_ifname);
 				if (ifexists(vlannic))
@@ -4130,7 +4132,6 @@ void start_wan(int status)
 	cprintf("done()()()\n");
 }
 
-
 void start_wan_boot(void)
 {
 	start_wan(BOOT);
@@ -4564,8 +4565,8 @@ void start_set_routes(void)
 
 	if (f_exists("/tmp/tvrouting"))
 		system("sh /tmp/tvrouting");
-        if (f_exists("/tmp/udhcpstaticroutes"))
-                system("sh /tmp/udhcpstaticroutes");
+	if (f_exists("/tmp/udhcpstaticroutes"))
+		system("sh /tmp/udhcpstaticroutes");
 }
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)  && !defined(HAVE_RT61)
