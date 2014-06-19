@@ -6198,13 +6198,16 @@ double HTTxRate40_400(unsigned int index)
 
 int writeproc(char *path, char *value)
 {
-	FILE *fp;
+/*	FILE *fp;
+	fprintf(stderr,"write %s to %s\n",value,path);
 	fp = fopen(path, "wb");
 	if (fp == NULL) {
+		fprintf(stderr,"cannot open %s\n",path);
 		return -1;
 	}
-	fprintf(fp, value);
-	fclose(fp);
+	fprintf(fp,"%s",value);
+	fclose(fp);*/
+	sysprintf("echo %s > %s",value,path);
 	return 0;
 }
 
