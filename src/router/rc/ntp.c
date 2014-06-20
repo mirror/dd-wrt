@@ -79,6 +79,7 @@ int do_ntp(void)		// called from ntp_main and
 	  if( !strcmp(allTimezones[i].tz_name,tz) ){
 		FILE *fp = fopen("/tmp/TZ", "wb");
 		fprintf(fp, "%s\n", allTimezones[i].tz_string);
+		eval("export", "TZ=%s", allTimezones[i].tz_string);
 		fclose(fp);
 	  }
 	}
