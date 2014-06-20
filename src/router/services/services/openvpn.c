@@ -563,7 +563,7 @@ void stop_openvpn(void)
 		unlink("/tmp/openvpncl/ta.key");
 		unlink("/tmp/openvpncl/cert.p12");
 		unlink("/tmp/openvpncl/static.key");
-		unlink("/tmp/openvpncl/openvpncl.conf");
+		unlink("/tmp/openvpncl/openvpn.conf");
 		unlink("/tmp/openvpncl/route-up.sh");
 		unlink("/tmp/openvpncl/route-down.sh");
 	}
@@ -598,7 +598,7 @@ void stop_openvpn_wandone(void)
 		unlink("/tmp/openvpncl/ta.key");
 		unlink("/tmp/openvpncl/cert.p12");
 		unlink("/tmp/openvpncl/static.key");
-		unlink("/tmp/openvpncl/openvpncl.conf");
+		unlink("/tmp/openvpncl/openvpn.conf");
 		unlink("/tmp/openvpncl/route-up.sh");
 		unlink("/tmp/openvpncl/route-down.sh");
 	}
