@@ -54,9 +54,10 @@ void setupassistant_save(webs_t wp)
 	security_save(wp);
 
 	// aoss
+#ifdef HAVE_AOSS
 	fprintf(stderr, "[SetupAssistant Save] AOSS\n");
 	aoss_save(wp);
-
+#endif
 	// all other vars
 	validate_cgi(wp);
 }

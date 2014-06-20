@@ -567,7 +567,7 @@ extern unsigned char key128[4][13];
 extern unsigned char key64[4][5];
 
 
-static void generate_wep_key_single(char *prefix, char *passphrase, char *bit, char *tx)
+void generate_wep_key_single(char *prefix, char *passphrase, char *bit, char *tx)
 {
 
 	int i;
