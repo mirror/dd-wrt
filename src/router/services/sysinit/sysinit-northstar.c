@@ -1329,6 +1329,11 @@ void start_sysinit(void)
 		set_gpio(10,1); //green 2.4
 		set_gpio(12,1); //green 5
 		break;
+	case ROUTER_ASUS_AC87U:
+		set_gpio(11, 1);	// fixup reset button
+		set_gpio(15, 1);	// fixup wifi button
+		set_gpio(2, 1);	// fixup ses button
+	break;
 	case ROUTER_ASUS_AC67U:
 		if (!nvram_match("bl_version", "1.0.1.1"))
 			nvram_set("clkfreq", "800,666");
