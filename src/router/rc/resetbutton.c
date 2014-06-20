@@ -1097,6 +1097,10 @@ void period_check(int sig)
 		wifigpio = 0x10f;
 		sesgpio = 0x107;	// gpio 7, inversed
 		break;
+	case ROUTER_ASUS_AC87U:
+		sesgpio = 0x102;	// gpio 2, inversed
+		wifigpio = 0x10f;
+		break;
 	case ROUTER_ASUS_AC56U:
 		wifigpio = 0x107;	// gpio 7, inversed
 		sesgpio = 0x10f;	// gpio 7, inversed

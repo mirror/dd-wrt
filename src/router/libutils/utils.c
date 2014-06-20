@@ -1097,6 +1097,29 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
+	if (nvram_match("productid", "RT-AC87U")) {
+		setRouter("Asus RT-AC87U");
+		return ROUTER_ASUS_AC87U;
+	}
+
+	if (nvram_match("boardtype", "0x0665")
+	    && nvram_match("boardrev", "0x1103")
+	    && !nvram_match("melco_id", "RD_BB13049")) {
+		setRouter("Asus RT-AC87U");
+		return ROUTER_ASUS_AC87U;
+	}
+
+
+	if (nvram_match("model", "RT-AC87U")) {
+		setRouter("Asus RT-AC87U");
+		return ROUTER_ASUS_AC87U;
+	}
+
+	if (nvram_match("odmpid", "RT-AC87U")) {
+		setRouter("Asus RT-AC87U");
+		return ROUTER_ASUS_AC87U;
+	}
+
 	if (nvram_match("model", "RT-N18U")) {
 		setRouter("Asus RT-N18U");
 		return ROUTER_ASUS_RTN18U;
@@ -5495,6 +5518,13 @@ int led_control(int type, int act)
 		diag_gpio = 0x003;
 		connected_gpio = 0x101;
 		disconnected_gpio = 0x102;
+		break;
+	case ROUTER_ASUS_AC87U:
+		usb_power = 0x009;
+		power_gpio = 0x103;
+		connected_gpio = 0x105;
+		ses_gpio = 0x101;
+		// quantenna reset 8 inv (off / on to reset)	
 		break;
 	case ROUTER_NETGEAR_EX6200:
 		//power_gpio = 0x109;	// connected red
