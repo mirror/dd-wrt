@@ -273,8 +273,13 @@ void start_setup_vlans(void)
 	else
 		asttemp = nvram_safe_get("vlan0ports");
 
-	if (strstr(asttemp, "5*") || strstr(asttemp, "8*"))
-		ast = 1;
+	if (strstr(asttemp, "5*"))
+		ast = 5;
+	if (strstr(asttemp, "8*"))
+		ast = 8;
+	if (strstr(asttemp, "7u"))
+		ast = 7;
+		
 
 	memset(&portsettings[0][0], 0, 16 * 64);
 	memset(&tagged[0], 0, 16);
@@ -377,10 +382,10 @@ void start_setup_vlans(void)
 		foreach(vlan, port, next) {
 			if (atoi(vlan) < 5 && atoi(vlan) >= 0 && tagged[atoi(vlan)])
 				sprintf(&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
-			else if ((atoi(vlan) == 5 || atoi(vlan) == 8)
+			else if ((atoi(vlan) == 5 || atoi(vlan) == 8 || atoi(vlan) == 7)
 				 && tagged[atoi(vlan)] && !ast)
 				sprintf(&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
-			else if ((atoi(vlan) == 5 || atoi(vlan) == 8)
+			else if ((atoi(vlan) == 5 || atoi(vlan) == 8 || atoi(vlan) == 7)
 				 && tagged[atoi(vlan)] && ast)
 				sprintf(&portsettings[i][0], "%s %s*", &portsettings[i][0], vlan);
 			else
