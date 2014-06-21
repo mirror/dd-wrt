@@ -771,6 +771,11 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 		bootossz = 0x4000000;
 	}
 
+	if (nvram_match("model","RT-AC87U")) {
+		printk(KERN_EMERG "Asus AC87U\n");
+		bootossz = 0x4000000;
+	}
+
 	if (boardnum == 00 && nvram_match("boardtype", "0x0665")
 	    && nvram_match("boardrev", "0x1103")
 	    && nvram_match("melco_id", "RD_BB13049")) {
@@ -900,7 +905,7 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 			offset = image_second_offset;
 		else
 #endif
-			offset = NFL_BOOT_OS_SIZE;
+			offset = bootossz;
 		nparts++;
 
 		/* Setup rootfs MTD partition */
@@ -915,7 +920,7 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 #endif
 		{
 			bcm947xx_nflash_parts[nparts].name = "rootfs";
-			bcm947xx_nflash_parts[nparts].size = NFL_BOOT_OS_SIZE - shift;
+			bcm947xx_nflash_parts[nparts].size = bootossz - shift;
 		}
 		bcm947xx_nflash_parts[nparts].offset = shift;
 		bcm947xx_nflash_parts[nparts].mask_flags = MTD_WRITEABLE;
