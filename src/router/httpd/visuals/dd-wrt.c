@@ -1420,7 +1420,7 @@ void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"olsrd_gateway\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
 			  nvram_default_match("olsrd_gateway", "0", "0") ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
-
+		
 		show_inputlabel(wp, "route.olsrd_hna", "olsrd_hna", 32, "num", 32);
 		show_inputlabel(wp, "route.olsrd_poll", "olsrd_pollsize", 5, "num", 5);
 		showOptionsLabel(wp, "route.olsrd_tc", "olsrd_redundancy", "0 1 2", nvram_default_get("olsrd_redundancy", "2"));
@@ -3110,18 +3110,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifndef HAVE_NOAC
 {
 	char wl_igmp[16];
-
 	sprintf(wl_igmp, "%s_wmf_bss_enable", var);
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.igmpsnooping)</script></div>\n");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  wl_igmp, nvram_match(wl_igmp, "1") ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-		  wl_igmp, nvram_match(wl_igmp, "0") ? "checked=\"checked\"" : "");
-	websWrite(wp, "</div>\n");
-
+	nvram_default_get(wl.igmp,"0");
+	showRadio(wp, "wl_basic.igmpsnooping", wl_igmp);
 }
 #endif
 #endif
@@ -4041,62 +4032,26 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 #ifndef HAVE_NOAC
 {
 	char wl_igmp[16];
-
 	sprintf(wl_igmp, "%s_wmf_bss_enable", prefix);
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.igmpsnooping)</script></div>\n");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  wl_igmp, nvram_match(wl_igmp, "1") ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-		  wl_igmp, nvram_match(wl_igmp, "0") ? "checked=\"checked\"" : "");
-	websWrite(wp, "</div>\n");
-
+	nvram_default_get(wl.igmp,"0");
+	showRadio(wp, "wl_basic.igmpsnooping", wl_igmp);
 }
 
 if (has_ac(prefix) && has_2ghz(prefix)) {
 	char wl_turboqam[16];
 
 	sprintf(wl_turboqam, "%s_turbo_qam", prefix);
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.turboqam)</script></div>\n");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  wl_turboqam, nvram_match(wl_turboqam, "1") ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-		  wl_turboqam, nvram_match(wl_turboqam, "0") ? "checked=\"checked\"" : "");
-	websWrite(wp, "</div>\n");
-
+	showRadio(wp, "wl_basic.turboqam", wl_turboqam);
 }
 
 if (has_beamforming(prefix)) {
 
 	char wl_bft[16];
 	sprintf(wl_bft, "%s_txbf", prefix);
+	showRadio(wp, "wl_basic.bft", wl_wft);
 	char wl_bfr[16];
 	sprintf(wl_bfr, "%s_itxbf", prefix);
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.bft)</script></div>\n");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  wl_bft, nvram_match(wl_bft, "1") ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-		  wl_bft, nvram_match(wl_bft, "0") ? "checked=\"checked\"" : "");
-	websWrite(wp, "</div>\n");
-
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.bfr)</script></div>\n");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  wl_bfr, nvram_match(wl_bfr, "1") ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-		  wl_bfr, nvram_match(wl_bfr, "0") ? "checked=\"checked\"" : "");
-	websWrite(wp, "</div>\n");
-
+	showRadio(wp, "wl_basic.bft", wl_wfr);
 }
 #endif
 #endif
