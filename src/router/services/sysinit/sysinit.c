@@ -2252,7 +2252,6 @@ void start_restore_defaults(void)
 	case ROUTER_LINKSYS_EA6500V2:
 	case ROUTER_ASUS_RTN18U:
 	case ROUTER_ASUS_AC67U:
-	case ROUTER_ASUS_AC87U:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
 		    || !nvram_get("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
@@ -2260,6 +2259,15 @@ void start_restore_defaults(void)
 			nvram_set("vlan2ports", "0 5u");
 		}
 		break;
+	case ROUTER_ASUS_AC87U:
+		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_get("vlan2ports")
+		    || nvram_match("vlan2ports", "")) {
+			nvram_set("vlan1ports", "1 2 3 5 7*");
+			nvram_set("vlan2ports", "0 7u");
+		}
+		break;
+
 	case ROUTER_ASUS_RTN53:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
 		    || !nvram_get("vlan2ports")
