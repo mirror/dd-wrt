@@ -1333,8 +1333,6 @@ void start_sysinit(void)
 		set_gpio(11, 1);	// fixup reset button
 		set_gpio(15, 1);	// fixup wifi button
 		set_gpio(2, 1);	// fixup ses button
-		if (nvram_match("vlan1ports","1 2 3 5 7*")) //fixup for port 4
-		    nvram_set("vlan1ports", "1 2 3 4 5 7*");
 	break;
 	case ROUTER_ASUS_AC67U:
 		if (!nvram_match("bl_version", "1.0.1.1"))
