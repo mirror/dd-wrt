@@ -1037,6 +1037,11 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 		
 	}
 
+	if (nvram_match("model","RT-AC87U")) {
+		printk(KERN_EMERG "Asus AC87U\n");
+		offset = 0x4000000;
+	}
+
 	if (boardnum == 1 && nvram_match("boardtype","0xF646") && nvram_match("boardrev","0x1100")) {
 		offset = 0x4000000;
 		
