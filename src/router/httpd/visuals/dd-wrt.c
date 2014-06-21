@@ -3111,7 +3111,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 {
 	char wl_igmp[16];
 	sprintf(wl_igmp, "%s_wmf_bss_enable", var);
-	nvram_default_get(wl.igmp,"0");
+	nvram_default_get(wl_igmp,"0");
 	showRadio(wp, "wl_basic.igmpsnooping", wl_igmp);
 }
 #endif
@@ -4033,7 +4033,7 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 {
 	char wl_igmp[16];
 	sprintf(wl_igmp, "%s_wmf_bss_enable", prefix);
-	nvram_default_get(wl.igmp,"0");
+	nvram_default_get(wl_igmp,"0");
 	showRadio(wp, "wl_basic.igmpsnooping", wl_igmp);
 }
 
