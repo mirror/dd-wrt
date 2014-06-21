@@ -2379,10 +2379,10 @@ void start_sysinit(void)
 		break;
 
 	default:
+		nvram_unset("et1macaddr");
 		nvram_set("bootpartition", "0");
 
 	}
-	nvram_unset("et1macaddr");
 	insmod("ctf");
 	insmod("et");
 	//load mmc drivers
