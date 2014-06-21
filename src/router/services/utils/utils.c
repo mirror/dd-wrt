@@ -40,7 +40,11 @@
 
 void getLANMac(char *newmac)
 {
-	strcpy(newmac, nvram_safe_get("et0macaddr"));
+	if (getRouterBrand() == ROUTER_ASUS_AC87U) {
+		strcpy(newmac, nvram_safe_get("et1macaddr"));
+	} else {
+		strcpy(newmac, nvram_safe_get("et0macaddr"));
+	}
 #ifndef HAVE_BUFFALO
 
 	if (nvram_match("port_swap", "1")) {
@@ -92,7 +96,14 @@ void getWirelessMac(char *newmac, int instance)
 			}
 		} else {
 
-			if (getRouterBrand() != ROUTER_ASUS_AC66U) {
+			if (getRouterBrand() == ROUTER_ASUS_AC87U) {
+				strcpy(newmac, nvram_safe_get("et1macaddr"));
+				MAC_ADD(newmac);	// et0macaddr +2
+				MAC_ADD(newmac);
+				if (instance)
+					MAC_ADD(newmac);
+			} else if (getRouterBrand() != ROUTER_ASUS_AC66U) {
+				char *et0 = nvram_get("et0macaddr");
 				strcpy(newmac, nvram_safe_get("et0macaddr"));
 				MAC_ADD(newmac);	// et0macaddr +2
 				MAC_ADD(newmac);
@@ -123,8 +134,8 @@ void getWANMac(char *newmac)
 #if defined(HAVE_HORNET)
 	struct ifreq ifr;
 	int s;
-	
-	if (nvram_get("wan_ifname") ) {
+
+	if (nvram_get("wan_ifname")) {
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 			char eabuf[32];
 
@@ -133,18 +144,21 @@ void getWANMac(char *newmac)
 			strcpy(newmac, ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 			close(s);
 		}
-	cprintf("getWANMAC returns %s from %s\n", newmac, nvram_safe_get("wan_ifname"));
-	return;
+		cprintf("getWANMAC returns %s from %s\n", newmac, nvram_safe_get("wan_ifname"));
+		return;
+	} else {
+		strcpy(newmac, nvram_safe_get("et0macaddr"));
+		MAC_ADD(newmac);	// et0macaddr +1
+		return;
 	}
-else {
-	strcpy(newmac, nvram_safe_get("et0macaddr"));
-	MAC_ADD(newmac);	// et0macaddr +1
-	return;
-}
 #endif
-	strcpy(newmac, nvram_safe_get("et0macaddr"));
+	if (getRouterBrand() == ROUTER_ASUS_AC87U) {
+		strcpy(newmac, nvram_safe_get("et1macaddr"));
+	} else {
+		strcpy(newmac, nvram_safe_get("et0macaddr"));
+	}
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_WZRG300NH) && !defined(HAVE_WHRHPGN)
-	if ( getRouterBrand() != ROUTER_ASUS_AC66U) {
+	if (getRouterBrand() != ROUTER_ASUS_AC66U) {
 		if (nvram_invmatch("wan_proto", "disabled")) {
 			MAC_ADD(newmac);	// et0macaddr +1
 
