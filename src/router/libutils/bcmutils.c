@@ -351,6 +351,10 @@ int has_ac(char *prefix)
 
 int has_mimo(char *prefix)
 {
+#ifdef HAVE_QTN
+	if (!strcmp(prefix,"wl1"))
+	    return 1;
+#endif
 	char mimo[32];
 	sprintf(mimo, "%s_phytypes", prefix);
 	char *phy = nvram_safe_get(mimo);
@@ -367,6 +371,10 @@ int has_ac(char *prefix)
 #elif HAVE_ATH9K
 	return 0;
 #else
+#ifdef HAVE_QTN
+	if (!strcmp(prefix,"wl1"))
+	    return 1;
+#endif
 	char mimo[32];
 	sprintf(mimo, "%s_phytypes", prefix);
 	char *phy = nvram_safe_get(mimo);
