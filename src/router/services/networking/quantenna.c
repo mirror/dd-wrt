@@ -166,6 +166,9 @@ int gen_stateless_conf(void)
 	for (i=0;i<strlen(country);i++)
 	    lower[i]=tolower(country[i]);
 	lower[i]=0;
+	if (!strcmp(lower,"eu"))
+	fprintf(fp, "wifi0_region=de\n");
+	else
 	fprintf(fp, "wifi0_region=%s\n", lower);
 	nvram_set("wl1_country_code", nvram_safe_get("1:ccode"));
 	fprintf(fp, "wifi0_vht=1\n");
