@@ -2512,7 +2512,6 @@ struct nvram_tuple srouter_defaults[] = {
 	{"status_auth", "1", 0},
 #endif
 	{"ipv6_enable", "0", 0},
-	{"ipv6_enable0", "0", 0},
 #ifdef HAVE_UNFY
 	{"enable_jffs2", "1", 0},
 	{"clean_jffs2", "1", 0},
