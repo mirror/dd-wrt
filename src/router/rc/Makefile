@@ -96,7 +96,9 @@ ifeq ($(CONFIG_NORTHSTAR),y)
 endif
 ifeq ($(CONFIG_QTN),y)
   CFLAGS += -DHAVE_QTN
+  CFLAGS +=  -I$(TOP)/qtn/libqcsapi_client -I$(TOP)/qtn/libqcsapi_client/librpc    
   LDFLAGS += -Wl,-rpath,$(TOP)/qtn/libqcsapi_client 
+  QTNFLAGS = -L$(TOP)/qtn/libqcsapi_client -lqcsapi_client  -L$(TOP)/qtn/libqcsapi_client/librpc -lrpc
 endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
@@ -940,6 +942,9 @@ endif
 ifeq ($(CONFIG_ALFANX),y)
 	install wlanled $(INSTALLDIR)/sbin	
 endif
+ifeq ($(CONFIG_QTN),y)
+	install qtn_monitor $(INSTALLDIR)/sbin	
+endif
 #	install event $(INSTALLDIR)/sbin	
 	install radio_timer $(INSTALLDIR)/sbin
 	install hotplug $(INSTALLDIR)/sbin
@@ -1064,6 +1069,9 @@ rc: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless
 ifeq ($(CONFIG_MADWIFI),y)
 	$(CC) $(CFLAGS) -o roaming_daemon roaming_daemon.c $(LDFLAGS) ../wireless-tools/libiw.so 
+endif
+ifeq ($(CONFIG_QTN),y)
+	$(CC) $(CFLAGS) -o qtn_monitor qtn_monitor.c $(LDFLAGS) $(QTNFLAGS)
 endif
 	$(CC) $(CFLAGS) -o ttraff ttraff.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless

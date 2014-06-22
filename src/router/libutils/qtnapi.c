@@ -39,7 +39,10 @@
 
 #include <qtnapi.h>
 
-#define dbG(a,...)
+//#define dbG(a,...)
+
+#define dbg(fmt, args...) fprintf(stderr, fmt, ## args)
+#define dbG(fmt, args...) dbg("%s(0x%04x): " fmt , __FUNCTION__ , __LINE__, ## args)
 
 #define	MAX_RETRY_TIMES	30
 #define	MAX_TOTAL_TIME	120
@@ -268,14 +271,14 @@ int rpc_qcsapi_set_bw(const char *bw)
 
 	switch (atoi(bw))
 	{
-		case 1:
+		case 20:
 			BW = 20;
 			break;
-		case 2:
+		case 40:
 			BW = 40;
 			break;
 		case 0:
-		case 3:
+		case 80:
 			BW = 80;
 			break;
 	}
@@ -488,19 +491,14 @@ void rpc_update_macmode(const char *mac_address_filtering)
 		dbG("rpc_qcsapi_set_mac_address_filtering %s error, return: %d\n", WIFINAME, ret);
 	}
 
-//	if (nvram_get_int("sw_mode") == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
-//		return;
-
-	for (i = 1; i < 4; i++)
-	{
-		snprintf(prefix, sizeof(prefix), "wl%d.%d_", unit, i);
-
-		if (nvram_match(strcat_r(prefix, "bss_enabled", tmp), "1"))
-		{
+	
+	char *next;
+	char var[80];
+	char *vifs = nvram_safe_get("wl1_vifs");
+	foreach(var, vifs, next) {
 			ret = rpc_qcsapi_set_mac_address_filtering(wl_vifname_qtn(unit, i), mac_address_filtering);
 			if (ret < 0)
 				dbG("rpc_qcsapi_set_mac_address_filtering %s error, return: %d\n", wl_vifname_qtn(unit, i), ret);
-		}
 	}
 
 }
@@ -1144,7 +1142,7 @@ void rpc_set_radio(int unit, int subunit, int on)
 				dbG("rpc_qcsapi_set_SSID_broadcast %s error, return: %d\n",
 					wl_vifname_qtn(unit, subunit), ret);
 
-			ret = rpc_qcsapi_set_beacon_type(wl_vifname_qtn(unit, subunit), nvram_safe_get(strcat_r(prefix, "auth_mode_x", tmp)));
+			ret = rpc_qcsapi_set_beacon_type(wl_vifname_qtn(unit, subunit), nvram_safe_get(strcat_r(prefix, "akm", tmp)));
 			if (ret < 0)
 				dbG("rpc_qcsapi_set_beacon_type %s error, return: %d\n",
 					wl_vifname_qtn(unit, subunit), ret);
@@ -1201,11 +1199,11 @@ void rpc_parse_nvram(const char *name, const char *value)
 		rpc_qcsapi_set_SSID_broadcast(WIFINAME, value);
 	else if (!strcmp(name, "wl1_nmode_x"))
 		rpc_qcsapi_set_vht(value);
-	else if (!strcmp(name, "wl1_bw"))
+	else if (!strcmp(name, "wl1_nbw"))
 		rpc_qcsapi_set_bw(value);
-	else if (!strcmp(name, "wl1_chanspec"))
+	else if (!strcmp(name, "wl1_channel"))
 		rpc_qcsapi_set_channel(value);
-	else if (!strcmp(name, "wl1_auth_mode_x"))
+	else if (!strcmp(name, "wl1_akm"))
 		rpc_qcsapi_set_beacon_type(WIFINAME, value);
 	else if (!strcmp(name, "wl1_crypto"))
 		rpc_qcsapi_set_WPA_encryption_modes(WIFINAME, value);
@@ -1324,19 +1322,13 @@ void rpc_update_wlmaclist(void)
 	if (ret < 0)
 		dbG("rpc_qcsapi_set_wlmaclist %s error, return: %d\n", WIFINAME, ret);
 
-//	if (nvram_get_int("sw_mode") == SW_MODE_REPEATER && nvram_get_int("wlc_band"))
-//                return;
-
-	for (i = 1; i < 4; i++)
-	{
-		snprintf(prefix, sizeof(prefix), "wl%d.%d_", unit, i);
-
-		if (nvram_match(strcat_r(prefix, "bss_enabled", tmp), "1"))
-		{
+	char *next;
+	char var[80];
+	char *vifs = nvram_safe_get("wl1_vifs");
+	foreach(var, vifs, next) {
 			ret = rpc_qcsapi_set_wlmaclist(wl_vifname_qtn(unit, i));
 			if (ret < 0)
 				dbG("rpc_qcsapi_set_wlmaclist %s error, return: %d\n", wl_vifname_qtn(unit, i), ret);
-		}
 	}
 }
 
@@ -1391,6 +1383,7 @@ void rpc_update_wdslist()
 
 	for (i = 0; i < 8; i++)
 	{
+		char tmp[20];
 		ret = qcsapi_wds_get_peer_address(WIFINAME, i, (uint8_t *) &peer_address);
 		if (ret < 0)
 		{
@@ -1398,7 +1391,7 @@ void rpc_update_wdslist()
 			dbG("Qcsapi qcsapi_wds_get_peer_address %s error, return: %d\n", WIFINAME, ret);
 		}
 		else
-			dbG("current WDS peer index 0 addresse: %s\n", ether_etoa((struct ether_addr *) &peer_address));
+			dbG("current WDS peer index 0 addresse: %s\n", ether_etoa((struct ether_addr *) &peer_address,tmp));
 	}
 }
 
@@ -1459,7 +1452,7 @@ static void rpc_reload_mbss(int unit, int subunit, const char *name_mbss)
 		set_type = SET_SSID;
 	else if (!strcmp(name_mbss, "closed"))
 		set_type = SET_CLOSED;
-	else if (!strcmp(name_mbss, "auth_mode_x"))
+	else if (!strcmp(name_mbss, "akm"))
 		set_type = SET_AUTH;
 	else if (!strcmp(name_mbss, "crypto"))
 		set_type = SET_CRYPTO;
@@ -1488,7 +1481,7 @@ static void rpc_reload_mbss(int unit, int subunit, const char *name_mbss)
 
 	if (set_type & SET_AUTH)
 	{
-		ret = rpc_qcsapi_set_beacon_type(wl_vifname_qtn(unit, subunit), nvram_safe_get(strcat_r(prefix, "auth_mode_x", tmp)));
+		ret = rpc_qcsapi_set_beacon_type(wl_vifname_qtn(unit, subunit), nvram_safe_get(strcat_r(prefix, "akm", tmp)));
 		if (ret < 0)
 			dbG("rpc_qcsapi_set_beacon_type %s error, return: %d\n",
 				wl_vifname_qtn(unit, subunit), ret);
@@ -1496,7 +1489,7 @@ static void rpc_reload_mbss(int unit, int subunit, const char *name_mbss)
 
 	if (set_type & SET_CRYPTO)
 	{
-		auth_mode = nvram_safe_get(strcat_r(prefix, "auth_mode_x", tmp));
+		auth_mode = nvram_safe_get(strcat_r(prefix, "akm", tmp));
 		if (!strcmp(auth_mode, "psk")  ||
 		    !strcmp(auth_mode, "psk2") ||
 		    !strcmp(auth_mode, "pskpsk2"))
@@ -1510,7 +1503,7 @@ static void rpc_reload_mbss(int unit, int subunit, const char *name_mbss)
 
 	if (set_type & SET_WPAPSK)
 	{
-		auth_mode = nvram_safe_get(strcat_r(prefix, "auth_mode_x", tmp));
+		auth_mode = nvram_safe_get(strcat_r(prefix, "akm", tmp));
 		if (!strcmp(auth_mode, "psk")  ||
 		    !strcmp(auth_mode, "psk2") ||
 		    !strcmp(auth_mode, "pskpsk2"))
