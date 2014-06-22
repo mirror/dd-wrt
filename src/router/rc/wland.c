@@ -305,6 +305,9 @@ void start_wds_check(void)
 	 * else add it to the br0 bridge 
 	 */
 	int cnt = get_wl_instances();
+#ifdef HAVE_QTN
+	cnt = 1;
+#endif
 	int c;
 
 	for (c = 0; c < cnt; c++) {
