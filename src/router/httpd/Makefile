@@ -684,6 +684,13 @@ ifeq ($(CONFIG_DLM101),y)
   CFLAGS += -DHAVE_DLM101
 endif
 
+ifeq ($(CONFIG_QTN),y)
+LDFLAGS += -Wl,-rpath,-L$(TOP)/qtn/libqcsapi_client
+LDFLAGS += -L$(TOP)/qtn/libqcsapi_client -lqcsapi_client
+CFLAGS += -DHAVE_QTN
+endif
+
+
 ifeq ($(CONFIG_FTP),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
