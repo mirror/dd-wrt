@@ -57,6 +57,9 @@ ifeq ($(ARCHITECTURE),openrisc)
 ADDLIBS +=-L$(TOP)/jansson/src/.libs -ljansson
 endif
 endif
+ifeq ($(CONFIG_QTN),y)
+ADDLIBS += -Wl,-rpath,$(TOP)/qtn/libqcsapi_client 
+endif
 
 
 
