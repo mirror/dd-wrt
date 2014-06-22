@@ -60,15 +60,21 @@ void rpc_parse_nvram_from_httpd(void)
 
 	// rpc_qcsapi_set_SSID(WIFINAME, value);
 	rpc_qcsapi_set_SSID_broadcast(WIFINAME, nvram_default_get("wl1_closed", "0"));
-	//rpc_qcsapi_set_vht(nvram_safe_get("wl1_nmode_x"));
+	char *netmode = nvram_safe_get("wl1_net_mode");
+		if ((!strcmp(netmode, "mixed") ||	
+		     !strcmp(netmode, "ac-only")))
+	    rpc_qcsapi_set_vht("1");
+		else
+	    rpc_qcsapi_set_vht("0");
+
 	// rpc_qcsapi_set_bw(value);
 	// rpc_qcsapi_set_channel(value);
 	// rpc_qcsapi_set_beacon_type(WIFINAME, value);
 	// rpc_qcsapi_set_WPA_encryption_modes(WIFINAME, value);
 	// rpc_qcsapi_set_key_passphrase(WIFINAME, value);
-	//rpc_qcsapi_set_dtim(nvram_safe_get("wl1_dtim"));
-	//rpc_qcsapi_set_beacon_interval(nvram_safe_get("wl1_bcn"));
-	//rpc_set_radio(1, 0, nvram_get_int("wl1_radio"));
+	rpc_qcsapi_set_dtim(nvram_safe_get("wl1_dtim"));
+	rpc_qcsapi_set_beacon_interval(nvram_safe_get("wl1_bcn"));
+	rpc_set_radio(1, 0, atoi(nvram_default_get("wl1_radio","1")));
 	//rpc_update_macmode(nvram_safe_get("wl1_macmode"));
 	//rpc_update_wlmaclist();
 	//rpc_update_wdslist();

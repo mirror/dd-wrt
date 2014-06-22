@@ -597,6 +597,7 @@ int main(int argc, char **argv)
 	int cnt = get_wl_instances();
 #ifdef HAVE_QTN
 	cnt = 1;
+	nvram_set("qtn_ready", "0");
 #endif
 #endif
 	int c;
