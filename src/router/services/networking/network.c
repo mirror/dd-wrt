@@ -659,7 +659,9 @@ void start_wlconf(void)
 {
 	int cnt = get_wl_instances();
 	int c;
-
+#ifdef HAVE_QTN
+	    cnt = 1;
+#endif
 	for (c = 0; c < cnt; c++) {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 		if (cnt > 1)

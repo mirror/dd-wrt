@@ -595,6 +595,9 @@ int main(int argc, char **argv)
 
 #ifndef HAVE_MADWIFI
 	int cnt = get_wl_instances();
+#ifdef HAVE_QTN
+	cnt = 1;
+#endif
 #endif
 	int c;
 
