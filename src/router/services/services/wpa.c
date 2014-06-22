@@ -348,7 +348,9 @@ void start_nas(void)
 	int c;
 	int deadcount;
 	int radiostate = -1;
-
+#ifdef HAVE_QTN
+	cnt = 1;
+#endif
 	for (c = 0; c < cnt; c++) {
 		if (nvram_nmatch("disabled", "wl%d_net_mode", c))
 			continue;
