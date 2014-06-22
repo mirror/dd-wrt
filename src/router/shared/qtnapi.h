@@ -19,7 +19,7 @@ extern int rpc_qtn_ready();
 extern int qcsapi_init(void);
 extern void rpc_update_macmode(const char *mac_address_filtering);
 extern time_t uptime(void);
-extern double rpc_get_temperature(void);
+extern int rpc_get_temperature(void);
 extern int rpc_qcsapi_restore_default_config(int flag);
 extern int rpc_qcsapi_bootcfg_commit(void);
 extern void rpc_set_radio(int unit, int subunit, int on);
