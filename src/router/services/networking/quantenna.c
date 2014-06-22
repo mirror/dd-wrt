@@ -193,6 +193,7 @@ void start_qtn(void)
 	eval("tftpd"); // bootloader from qtn will load files from /tmp directory now
 	set_gpio(8,0);
 	set_gpio(8,1);
+	eval("qtn_monitor");
 	return;
 }
 
