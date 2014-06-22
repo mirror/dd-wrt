@@ -191,11 +191,18 @@ void start_qtn(void)
 	eval("ifconfig", "br0:1", "169.254.39.1", "netmask", "255.255.255.0");
 	eval("ifconfig", "br0:2", "1.1.1.1", "netmask", "255.255.255.0");
 	eval("tftpd"); // bootloader from qtn will load files from /tmp directory now
+	set_gpio(8,0);
+	set_gpio(8,1);
 	return;
 }
 
 void stop_qtn(void)
 {
 	return;
+}
+
+void start_qtn_test(void)
+{
+rpc_show_config();
 }
 #endif

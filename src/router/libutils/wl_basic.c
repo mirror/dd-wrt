@@ -52,6 +52,10 @@ int get_wl_instance(char *name)
 #else
 char *get_wl_instance_name(int instance)
 {
+#ifdef HAVE_QTN
+	if (instance==1)
+	    return "qtn";
+#endif
 	if (get_wl_instance("eth1") == instance)
 		return "eth1";
 	if (get_wl_instance("eth2") == instance)
@@ -66,12 +70,16 @@ char *get_wl_instance_name(int instance)
 
 int get_wl_instances(void)
 {
+#ifdef HAVE_QTN
+	return 2;
+#else
 	if (get_wl_instance("eth1") == 1)
 		return 2;
 	if (get_wl_instance("eth2") == 1)
 		return 2;
 	if (get_wl_instance("eth3") == 1)
 		return 2;
+#endif
 	return 1;
 }
 
