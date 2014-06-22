@@ -19,7 +19,8 @@ static void watchdog(void)
 	int counter = 0;
 	int radioledinitcount = 0;
 	int fd = open("/dev/misc/watchdog", O_WRONLY);
-	if (fd == -1)
+	if (fd == -1
+	)
 		fd = open("/dev/watchdog", O_WRONLY);
 
 	if (fd == -1) {
@@ -59,8 +60,10 @@ static void watchdog(void)
 		}
 #else
 		wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
+#ifndef HAVE_QTN
 		if (cnt == 2)
 			wl_ioctl(get_wl_instance_name(1), WLC_GET_RADIO, &radiostate1, sizeof(int));
+#endif
 #endif
 
 		if (radiostate0 != oldstate0) {
