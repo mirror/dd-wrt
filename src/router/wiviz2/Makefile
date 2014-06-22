@@ -9,7 +9,7 @@ ifeq ($(CONFIG_ATH9K),y)
 LIBS += -L$(TOP)/libnl-tiny -lnl-tiny
 endif
 
-CCOPTS=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CCOPTS=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -lgcc_s
 INCLUDE=../libpcap_noring
 SOURCES=wiviz.c wl_access.c channelhopper.c
 OBJS=wiviz.o wl_access.o channelhopper.o
@@ -64,6 +64,10 @@ LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 ifeq ($(ARCHITECTURE),openrisc)
 LDFLAGS +=-L$(TOP)/jansson/src/.libs -ljansson
 endif
+endif
+ifeq ($(CONFIG_QTN),y)
+  CFLAGS += -DHAVE_QTN
+  LDFLAGS += -Wl,-rpath,$(TOP)/qtn/libqcsapi_client 
 endif
 ifeq ($(CONFIG_FTP),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs

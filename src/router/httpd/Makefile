@@ -685,8 +685,7 @@ ifeq ($(CONFIG_DLM101),y)
 endif
 
 ifeq ($(CONFIG_QTN),y)
-LDFLAGS += -Wl,-rpath,-L$(TOP)/qtn/libqcsapi_client
-LDFLAGS += -L$(TOP)/qtn/libqcsapi_client -lqcsapi_client
+LDFLAGS += -Wl,-rpath,$(TOP)/qtn/libqcsapi_client 
 CFLAGS += -DHAVE_QTN
 endif
 
