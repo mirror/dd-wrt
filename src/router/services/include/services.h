@@ -31,6 +31,11 @@ extern void start_upnp(void);
 extern void stop_upnp(void);
 #endif
 
+#ifdef HAVE_QTN
+extern void start_qtn(void);
+extern void stop_qtn(void);
+#endif
+
 extern void start_pptp(int status);
 extern void stop_pptp(void);
 
