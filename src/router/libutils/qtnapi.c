@@ -1555,10 +1555,10 @@ void rpc_update_mbss(const char* name, const char *value)
 	ret = qcsapi_interface_get_status(wl_vifname_qtn(unit, subunit), &interface_status);
 //	if (ret < 0)
 //		dbG("qcsapi_interface_get_status %s error, return: %d\n", wl_vifname_qtn(unit, subunit), ret);
-
+	fprintf(stderr,"update %s = %s\n",name, name_mbss);
 	if (!strcmp(name_mbss, "bss_enabled"))
 	{
-		if (nvram_match(name, "1"))
+		if (value && !strcmp(value, "1"))
 		{
 			if (interface_status)
 			{
