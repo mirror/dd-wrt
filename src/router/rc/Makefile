@@ -96,8 +96,7 @@ ifeq ($(CONFIG_NORTHSTAR),y)
 endif
 ifeq ($(CONFIG_QTN),y)
   CFLAGS += -DHAVE_QTN
-  LDFLAGS += -Wl,-rpath,-L$(TOP)/qtn/libqcsapi_client 
-  LDFLAGS += -L$(TOP)/qtn/libqcsapi_client -lqcsapi_client
+  LDFLAGS += -Wl,-rpath,$(TOP)/qtn/libqcsapi_client 
 endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
