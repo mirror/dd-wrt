@@ -74,6 +74,9 @@ endif
 ifeq ($(CONFIG_MINIDLNA),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
+ifeq ($(CONFIG_QTN),y)
+LDFLAGS += -Wl,-rpath,$(TOP)/qtn/libqcsapi_client 
+endif
 
 
 CFLAGS += $(MIPS16_OPT)
