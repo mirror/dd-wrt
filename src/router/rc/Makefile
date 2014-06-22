@@ -94,6 +94,11 @@ endif
 ifeq ($(CONFIG_NORTHSTAR),y)
   CFLAGS += -DHAVE_NORTHSTAR
 endif
+ifeq ($(CONFIG_QTN),y)
+  CFLAGS += -DHAVE_QTN
+  LDFLAGS += -Wl,-rpath,-L$(TOP)/qtn/libqcsapi_client 
+  LDFLAGS += -L$(TOP)/qtn/libqcsapi_client -lqcsapi_client
+endif
 ifeq ($(CONFIG_ACK),y)
 CFLAGS += -DHAVE_ACK
 endif
@@ -1069,7 +1074,7 @@ endif
 #ifeq ($(CONFIG_LSX),y)
 #	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c $(TOP)/nvram/libnvram.a $(TOP)/libutils/libutils.a
 #else
-	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lutils  $(LDFLAGS)
+	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lutils  $(LDFLAGS) 
 #endif
 	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram  -L$(TOP)/libutils -lutils $(LDFLAGS)
