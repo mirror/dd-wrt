@@ -56,7 +56,7 @@ qcsapi_sockrpc: ${SOCKET_PROG_OBJS:%=build/%} $(LIB_REALNAME)
 qcsapi_sockrpc_static: ${SOCKET_PROG_OBJS:%=build/%} ${LIB_OBJS}
 	${CC} $(filter %.o, $^) -o $@
 
-$(LIB_REALNAME): ${LIB_OBJS:%=build/%}
+$(LIB_REALNAME): ${LIB_OBJS:%=build/%} qcsapi_rpc_common/client/find_host_addr.o
 	${CC} -shared -s -o  $@ -Wl,-soname,$(LIB_SONAME) -lc $^ -Llibrpc -lrpc
 	cd ${@D} ; ln -fs $(LIB_REALNAME) $(LIB_SONAME)
 	cd ${@D} ; ln -fs $(LIB_SONAME) $(LIB_LDNAME)
