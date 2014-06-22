@@ -1188,17 +1188,17 @@ int rpc_update_ap_isolate(const char *ifname, const int isolate)
 	return 0;
 }
 
-double rpc_get_temperature(void)
+int rpc_get_temperature(void)
 {
 	int statval = 0;
 	int qcsapi_retval;
 	int temp_external, temp_internal;
 
 	if(!rpc_qtn_ready())
-		return -0;
+		return 0;
 	qcsapi_retval = qcsapi_get_temperature_info(&temp_external, &temp_internal);
 	if (qcsapi_retval >= 0) {
-		return (double)(temp_internal / 1000000.0f);
+		return temp_internal;
 	} 
 	return 0;
 }
