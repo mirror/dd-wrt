@@ -1,4 +1,4 @@
-CFLAGS = $(COPTS) -Wall $(EXTRACFLAGS)
+CFLAGS = $(COPTS) -Wall $(EXTRACFLAGS) -DNEED_PRINTF
 
 all: tftpc tftpd
 
