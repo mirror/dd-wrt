@@ -187,13 +187,14 @@ int gen_stateless_conf(void)
 void start_qtn(void)
 {
 	gen_stateless_conf();
+	nvram_set("qtn_ready","0");
 	sysprintf("cp /etc/qtn/* /tmp/");
 	eval("ifconfig", "br0:1", "169.254.39.1", "netmask", "255.255.255.0");
 	eval("ifconfig", "br0:2", "1.1.1.1", "netmask", "255.255.255.0");
 	eval("tftpd"); // bootloader from qtn will load files from /tmp directory now
 	set_gpio(8,0);
 	set_gpio(8,1);
-	eval("qtn_monitor");
+	sysprintf("qtn_monitor&");
 	return;
 }
 
