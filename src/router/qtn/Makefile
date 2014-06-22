@@ -2,7 +2,7 @@ include $(TOP)/.config
 
 
 all: 
-	make -C libqcsapi_client
+	make -C libqcsapi_client all
 	make -C tftp
 
 clean: 
@@ -12,8 +12,8 @@ clean:
 install:
 	install -D tftp/tftpd $(INSTALLDIR)/usr/sbin/tftpd
 	mkdir -p $(INSTALLDIR)/etc/qtn
-	mkdir -p $(INSTALLDIR)/usr/lib
-	cp libqcsapi_client/libqcsapi_client.so.1 $(INSTALLDIR)/usr/lib
+#	mkdir -p $(INSTALLDIR)/usr/lib
+#	cp libqcsapi_client/libqcsapi_client.so.1 $(INSTALLDIR)/usr/lib
 	cp images/* $(INSTALLDIR)/etc/qtn
 	
 
