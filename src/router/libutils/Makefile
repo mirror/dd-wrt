@@ -191,6 +191,12 @@ endif
 ifeq ($(CONFIG_SAMBA),y)
   CFLAGS += -DHAVE_SAMBA
 endif
+ifeq ($(CONFIG_QTN),y)
+  CFLAGS += -DHAVE_QTN
+  OBJS += qtnapi.o 
+  CFLAGS +=  -I$(TOP)/qtn/libqcsapi_client -I$(TOP)/qtn/libqcsapi_client/librpc   -L$(TOP)/qtn/libqcsapi_client -lqcsapi_client 
+  QTNFLAGS =  -L$(TOP)/qtn/libqcsapi_client/librpc -lrpc
+endif
 ifeq ($(CONFIG_SAMBA3),y)
   OBJS += samba3.o 
   CFLAGS += -I$(TOP)/jansson/src -L$(TOP)/jansson/src/.libs -ljansson -lm
@@ -1216,7 +1222,7 @@ clean:
 
 
 libutils.so: $(OBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram $(QTNFLAGS)
 
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c
 	$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) $(MIPS16_OPT) -c -o $@ $^
