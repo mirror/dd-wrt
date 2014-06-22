@@ -885,6 +885,10 @@ void main(int argc, char *argv[])
 #endif
 int has_5ghz(char *prefix)
 {
+#ifdef HAVE_QTN
+	if (!strcmp(prefix,"wl1"))
+	    return 1;
+#endif
 	if (strstr(nvram_nget("%s_bandlist", prefix), "a"))
 		return 1;
 
