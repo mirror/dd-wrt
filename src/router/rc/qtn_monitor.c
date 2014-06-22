@@ -101,6 +101,10 @@ void rpc_parse_nvram_from_httpd(void)
 				sprintf(ssid, "%s_ssid", var);
 				rpc_update_mbss(ssid, nvram_safe_get(ssid));
 
+				char closed[32];
+				sprintf(ssid, "%s_closed", var);
+				rpc_update_mbss(closed, nvram_safe_get(closed));
+
 				char psk[32];
 				sprintf(ssid, "%s_wpa_psk", var);
 				rpc_update_mbss(psk, nvram_safe_get(psk));
@@ -117,8 +121,8 @@ void rpc_parse_nvram_from_httpd(void)
 		}
 		if (!found) {
 			char mbss[32];
-			sprintf(mbss, "%s_bss_enabled", var);
-			rpc_update_mbss("wl1.1_bss_enabled", "0");
+			sprintf(mbss, "%s_bss_enabled", viflist[i]);
+			rpc_update_mbss(mbss, "0");
 		}
 
 	}
