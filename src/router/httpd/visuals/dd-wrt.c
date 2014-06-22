@@ -3108,7 +3108,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		showRadio(wp, "wl_adv.label11", ssid);
 #ifdef HAVE_80211AC
 #ifndef HAVE_NOAC
-{
+if (!has_qtn(var)){
 	char wl_igmp[16];
 	sprintf(wl_igmp, "%s_wmf_bss_enable", var);
 	nvram_default_get(wl_igmp,"0");
@@ -3158,7 +3158,10 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #elif HAVE_RT2880
 	if (count < 7)
 #else
-	if (count < WL_MAXBSSCFG)
+	int max = WL_MAXBSSCFG;
+	if (has_qtn(prefix))
+	    max = 3;
+	if (count < max)
 #endif
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
@@ -3255,7 +3258,10 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #elif HAVE_RT2880
 	if (count < 7 && gpfound == 0)
 #else
-	if (count < WL_MAXBSSCFG && gpfound == 0)
+	int max = WL_MAXBSSCFG;
+	if (has_qtn(prefix))
+	    max = 3;
+	if (count < max && gpfound == 0)
 #endif
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"$('gp_modify').value='add';vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
@@ -4030,7 +4036,7 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 }
 #ifdef HAVE_80211AC
 #ifndef HAVE_NOAC
-{
+if (!has_qtn(prefix)){
 	char wl_igmp[16];
 	sprintf(wl_igmp, "%s_wmf_bss_enable", prefix);
 	nvram_default_get(wl_igmp,"0");

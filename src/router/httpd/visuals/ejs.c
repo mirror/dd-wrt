@@ -1999,7 +1999,7 @@ void ej_show_timeoptions(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	int i;
 
-	for (i = 0; i < allTimezones[i].tz_name != NULL; i++) {
+	for (i = 0; (allTimezones[i].tz_name != NULL); i++) {
 		websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_match("time_zone", allTimezones[i].tz_name) ? "selected=\"selected\"" : "", allTimezones[i].tz_name);
 	}
 
@@ -2168,6 +2168,10 @@ void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
 }
 
 #ifdef HAVE_CPUTEMP
+#ifdef HAVE_QCN
+#include <qcnapi.h>
+#endif
+
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_BCMMODERN
@@ -2188,11 +2192,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (nvram_match("wl0_net_mode", "disabled") || (ret = wl_ioctl("eth1", WLC_GET_VAR, buf, sizeof(buf)))) {
 		no2 = 1;
 	}
-
+	
+#ifndef HAVE_QTN
 	if (nvram_match("wl1_net_mode", "disabled") || (ret = wl_ioctl("eth2", WLC_GET_VAR, buf2, sizeof(buf2)))) {
 		no5 = 1;
 	}
-
 	ret_int = (unsigned int *)buf;
 	ret_int2 = (unsigned int *)buf2;
 
@@ -2218,6 +2222,25 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		tempavg_24 = (tempavg_24 * 4 + *ret_int) / 5;
 		tempavg_50 = (tempavg_50 * 4 + *ret_int2) / 5;
 	}
+#else
+	ret_int = (unsigned int *)buf;
+
+	if (tempcount == -2) {
+		tempcount++;
+		tempavg_24 = *ret_int;
+		if (tempavg_24 < 0.0)
+			tempavg_24 = 0.0;
+	} else {
+		if (tempavg_24 < 10.0 && *ret_int > 0.0)
+			tempavg_24 = *ret_int;
+		if (tempavg_24 > 200.0 && *ret_int > 0.0)
+			tempavg_24 = *ret_int;
+		tempavg_24 = (tempavg_24 * 4 + *ret_int) / 5;
+	}
+	tempavg_50 = rpc_get_temperature();
+
+#endif
+
 
 	int cputemp = 1;
 #ifdef HAVE_NORTHSTAR
@@ -2231,8 +2254,13 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #endif
 	if (no2 && no5 && cputemp)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
+#ifdef HAVE_QCN
+	else if (no2)
+		websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50);
+#else
 	else if (no2)
 		websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50 * 0.5 + 20.0);
+#endif
 	else if (no5)
 		websWrite(wp, "WL0 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0);
 	else
