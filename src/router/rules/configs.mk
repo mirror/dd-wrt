@@ -7,6 +7,7 @@ obj-$(CONFIG_OPENSSL) += openssl openssl-shared openssl-apps
 obj-$(CONFIG_MATRIXSSL) += matrixssl
 obj-$(CONFIG_CTORRENT) += ctorrent
 obj-$(CONFIG_SFTPSERVER) += sftp-server
+obj-$(CONFIG_QTN) += qtn
 obj-$(CONFIG_HTTPD) += httpd
 obj-$(CONFIG_ATH9K) += libnltiny
 obj-$(CONFIG_RC) += rc services 
