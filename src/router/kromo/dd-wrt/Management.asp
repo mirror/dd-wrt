@@ -181,7 +181,7 @@ addEvent(window, "load", function() {
 	if (document.setup.remote_mgt_telnet)
 		selTelnet("<% nvg("telnetd_enable"); %>", 1);
 
-	show_layer_ext(document.setup.ipv6_enable0,'idipv6', <% nvem("ipv6_enable0", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.ipv6_enable,'idipv6', <% nvem("ipv6_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.remote_mgt_ssh, 'idssh', <% nvem("remote_mgt_ssh", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.remote_mgt_telnet, 'idtelnet', <% nvem("remote_mgt_telnet", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.remote_ip_any, 'idremip', <% nvem("remote_ip_any", "1", "0", "1"); %> == 1);
