@@ -10,11 +10,16 @@
 #include "qcsapi_driver.h"
 #include "call_qcsapi.h"
 
+#include <time.h>
+
 #define WIFINAME "wifi0"
 
 extern int rpc_qcsapi_init(int verbose);
 extern int rpc_qtn_ready();
 extern int qcsapi_init(void);
+extern void rpc_update_macmode(const char *mac_address_filtering);
+extern time_t uptime(void);
+
 extern int rpc_qcsapi_restore_default_config(int flag);
 extern int rpc_qcsapi_bootcfg_commit(void);
 extern void rpc_set_radio(int unit, int subunit, int on);
