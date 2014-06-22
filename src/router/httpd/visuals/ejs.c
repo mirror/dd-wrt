@@ -2254,17 +2254,21 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #endif
 	if (no2 && no5 && cputemp)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
-#ifdef HAVE_QCN
 	else if (no2)
+#ifdef HAVE_QTN
 		websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50);
 #else
-	else if (no2)
 		websWrite(wp, "WL1 %4.2f &#176;C", tempavg_50 * 0.5 + 20.0);
 #endif
 	else if (no5)
 		websWrite(wp, "WL0 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0);
 	else
+#ifdef HAVE_QTN
+		websWrite(wp, "WL0 %4.2f &#176;C / WL1 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0, tempavg_50);
+#else
 		websWrite(wp, "WL0 %4.2f &#176;C / WL1 %4.2f &#176;C", tempavg_24 * 0.5 + 20.0, tempavg_50 * 0.5 + 20.0);
+#endif
+
 #else
 #ifdef HAVE_GATEWORX
 	int TEMP_MUL = 100;
