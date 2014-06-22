@@ -2347,6 +2347,9 @@ void start_lan(void)
 
 	reset_hwaddr(lan_ifname);
 	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+#ifdef HAVE_QTN
+	start_qtn(); //bootup quantenna firmware
+#endif
 	sysprintf("/sbin/gratarp %s", lan_ifname);
 
 	cprintf("%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
