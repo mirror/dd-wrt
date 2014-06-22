@@ -378,6 +378,15 @@ int has_ac(char *prefix)
 }
 #endif
 
+
+int has_qtn(char *prefix)
+{
+#ifdef HAVE_QTN
+	if (!strcmp(prefix,"wl1"))
+	    return 1;
+#endif
+    return 0;
+}
 char *get_mac_from_ip(char *ip)
 {
 	FILE *fp;
