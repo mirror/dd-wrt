@@ -689,13 +689,7 @@ static void handle_management(void)
 	start_service_f("udhcpd");
 	start_service_f("cron");
 #ifdef HAVE_IPV6
-	eval("/etc/config/ipv6.startup");
-	if (nvram_match("need_reboot", "1")) {
-		nvram_set("need_reboot", "0");
-		nvram_set("need_commit", "0");
-		nvram_commit();
-		start_service_f("ipv6");
-	}
+	start_service_f("ipv6");
 #endif
 #ifdef HAVE_RADVD
 	startstop_f("radvd");
