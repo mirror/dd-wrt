@@ -662,8 +662,6 @@ tsend (char *pFilename, struct sockaddr_in client, char *pMode, int tid)
 		    recvfrom (sock, recvbuf, sizeof (recvbuf), MSG_DONTWAIT,
 			      (struct sockaddr *) &ack,
 			      (socklen_t *) & client_len);
-
-		  usleep (10);
 		}
 	      if (n < 0 && errno != EAGAIN)
 		{
