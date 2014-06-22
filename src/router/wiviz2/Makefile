@@ -67,7 +67,6 @@ endif
 endif
 ifeq ($(CONFIG_QTN),y)
   CFLAGS += -DHAVE_QTN
-  LDFLAGS += -Wl,-rpath,$(TOP)/qtn/libqcsapi_client 
 endif
 ifeq ($(CONFIG_FTP),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
