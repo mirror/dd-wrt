@@ -29,17 +29,24 @@ LIB_OBJS = \
 	qcsapi_rpc/generated/qcsapi_rpc_clnt_adapter.o	\
 
 #TARGETS = c_rpc_qcsapi_sample qcsapi_sockrpc qcsapi_sockrpc_static qcsapi_pcie qcsapi_pcie_static $(LIB_REALNAME)
-TARGETS = qcsapi_sockrpc $(LIB_REALNAME)
 
 
-all: rpc $(TARGETS)
+#$(LIB_REALNAME)
+
+
 
 -include $(shell find . -name \*.d)
 
 LIB_NAME = qcsapi_client
+LIB_NAME_AR = qcsapi_client.a
 LIB_LDNAME = lib$(LIB_NAME).so
 LIB_SONAME = $(LIB_LDNAME).1
 LIB_REALNAME = $(LIB_LDNAME).1.0.1
+
+TARGETS = qcsapi_sockrpc $(LIB_NAME_AR)
+
+all: rpc libqcsapi_client.a 
+#rpc $(TARGETS)
 
 c_rpc_qcsapi_sample: ${SOCKET_C_SAMPLE_OBJS:%=build/%} $(LIB_REALNAME)
 	${CC} $(filter %.o, $^) -L. -l$(LIB_NAME) -o $@
@@ -61,6 +68,9 @@ $(LIB_REALNAME): ${LIB_OBJS:%=build/%} qcsapi_rpc_common/client/find_host_addr.o
 	cd ${@D} ; ln -fs $(LIB_REALNAME) $(LIB_SONAME)
 	cd ${@D} ; ln -fs $(LIB_SONAME) $(LIB_LDNAME)
 
+libqcsapi_client.a: ${LIB_OBJS:%=build/%} qcsapi_rpc_common/client/find_host_addr.o
+	$(AR) cr $@ $^
+
 build/%.o: %.c
 	@mkdir -p ${@D}
 	${CC} ${CFLAGS} $< -c -o $@ -MD -MF $@.d
@@ -74,6 +84,6 @@ rpc:
 	make -C librpc
 
 clean:
-	rm -rf build $(LIB_LDNAME)* $(TARGETS)
+	rm -rf build $(LIB_LDNAME)* libqcsapi_client.a $(TARGETS)
 	-make -C librpc clean
 	-$(call CMakeClean,librpc)
