@@ -159,7 +159,14 @@ int gen_stateless_conf(void)
 			fprintf(fp, "wifi0_beacon=Basic\n");
 		}
 	}
-	fprintf(fp, "wifi0_region=%s\n", "us");
+	
+	char *country = getIsoName(nvram_safe_get("wl_regdomain"));
+	char lower[32];
+	int i;
+	for (i=0;i<strlen(country);i++)
+	    lower[i]=tolower(country[i]);
+	lower[i]=0;
+	fprintf(fp, "wifi0_region=%s\n", lower);
 	nvram_set("wl1_country_code", nvram_safe_get("1:ccode"));
 	fprintf(fp, "wifi0_vht=1\n");
 	if(bw==20) fprintf(fp, "wifi0_bw=20\n");
