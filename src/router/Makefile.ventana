@@ -95,7 +95,8 @@ ifeq ($(ARCH),armeb)
 export COPTS:=$(BASEOPT) -pipe -mtune=xscale -march=armv5te -Wa,-mcpu=xscale -mno-thumb-interwork -mno-thumb 
 endif
 ifeq ($(ARCH),arm)
-export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp
+#export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard
+export COPTS:=$(BASEOPT) -pipe -mtune=cortex-a9 -march=armv7-a -mfpu=neon -mfloat-abi=hard
 #-D_FILE_OFFSET_BITS=64
 endif
 ifeq ($(ARCH),mips)
@@ -256,10 +257,19 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+ifneq ($(CONFIG_MUSL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+else
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so} $(ARCH)-uclibc/target/lib/libc.so 
+endif
+ifneq ($(CONFIG_MUSL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uclibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+else
+	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-arm.so.1
+endif
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 ifeq ($(CONFIG_LIBDL),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
 endif
 ifeq ($(CONFIG_LIBRT),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
@@ -268,24 +278,25 @@ ifeq ($(CONFIG_LIBNSL),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
 endif
 ifeq ($(CONFIG_LIBUTIL),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
 endif
 ifeq ($(CONFIG_LIBCPP),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
 endif
 ifeq ($(CONFIG_LIBCRYPT),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
 endif
 ifeq ($(CONFIG_LIBM),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
 endif
 ifeq ($(CONFIG_LIBRESOLV),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
 endif
 ifeq ($(CONFIG_LIBPTHREAD),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
 endif
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+ifeq ($(CONFIG_RELINK),y)
+ifneq ($(CONFIG_MUSL),y)
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
 		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
@@ -293,8 +304,17 @@ endif
 		"$(ARCH)-uclibc/target/lib/libc.so.0" \
 		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
 		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
-
+else
 	relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libc.a}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libc.a}" \
+		"$(ARCH)-uclibc/target/lib/libc.so" \
+		-Wl,-init,__uClibc_init -Wl,-soname=libc.so \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
+endif
+
+	-relink-lib.sh \
 		"$(ARCH)-linux-" \
 		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so}" \
 		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt_pic.a}" \
@@ -302,7 +322,7 @@ endif
 		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
 		-Wl,-soname=libcrypt.so.0
 
-	relink-lib.sh \
+	-relink-lib.sh \
 		"$(ARCH)-linux-" \
 		"${shell $(ARCH)-linux-gcc -print-file-name=libm.so}" \
 		"${shell $(ARCH)-linux-gcc -print-file-name=libm_pic.a}" \
@@ -310,7 +330,7 @@ endif
 		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
 		-Wl,-soname=libm.so.0 
 
-	relink-lib.sh \
+	-relink-lib.sh \
 		"$(ARCH)-linux-" \
 		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0}" \
 		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread_so.a}" \
@@ -318,7 +338,7 @@ endif
 		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
 		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
 		-Wl,-soname=libpthread.so.0
-
+endif
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 #	relink-lib.sh \
 #		"$(ARCH)-linux-" \
@@ -342,6 +362,7 @@ ifneq ($(CONFIG_NOOPT),y)
 		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
 
 	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
+ifneq ($(CONFIG_MUSL),y)
 	mklibs.py -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
@@ -350,6 +371,17 @@ ifneq ($(CONFIG_NOOPT),y)
 		--ldlib /lib/ld-uClibc.so.0 \
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+else
+	mklibs.py -D \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-musl-arm.so.1 \
+		--target $(ARCH)-linux-uclibc \
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+
+endif
 	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
 endif
 #	rm -f $(TARGETDIR)/lib/*.a
