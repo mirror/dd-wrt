@@ -101,7 +101,8 @@ static int _STOPPED(const char *method, const char *name)
 
 static int handle_service(const char *method, const char *name)
 {
-
+	setenv("TZ", nvram_default_get("TZ", "GMT0"), 1);
+	
 	if (!strcmp(method, "start"))
 		RELEASESTOPPED("stop");
 	if (!strcmp(method, "stop")) {
