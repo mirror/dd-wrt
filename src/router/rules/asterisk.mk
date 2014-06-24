@@ -27,6 +27,8 @@ asterisk-configure:
 	--without-pwlib \
 	--with-sqlite3="$(TOP)/minidlna/sqlite-3.6.22" \
 	--without-sqlite \
+	--without-mysql \
+	--without-mysqlclient \
 	--without-radius \
 	--without-sdl \
 	--without-spandsp \
@@ -42,10 +44,12 @@ asterisk-configure:
 	--without-libxml2 \
 	--without-dahdi \
 	--without-gnutls \
-	--without-iksemel CFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22" SQLITE3_LIB="-L$(TOP)/minidlna/lib" SQLITE3_INCLUDE="-I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl"
+	--without-iksemel \
+	ac_cv_header_locale_h=yes \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -I$(TOP)/minidlna/sqlite-3.6.22" SQLITE3_LIB="-L$(TOP)/minidlna/lib" SQLITE3_INCLUDE="-I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl"
 
 	-cd chan_dongle && aclocal && autoconf && automake -a && cd ..
-	cd chan_dongle && ./configure  --host=$(ARCH)-linux-uclibc --libdir=/usr/lib --with-asterisk=$(TOP)/asterisk/include DESTDIR=$(INSTALLDIR)/asterisk/usr/lib/asterisk/modules CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/glib20/libiconv/include -DASTERISK_VERSION_NUM=110000 -DLOW_MEMORY -D_XOPEN_SOURCE=600"
+	cd chan_dongle && ./configure  ac_cv_header_locale_h=yes --host=$(ARCH)-linux-uclibc --libdir=/usr/lib --with-asterisk=$(TOP)/asterisk/include DESTDIR=$(INSTALLDIR)/asterisk/usr/lib/asterisk/modules CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/glib20/libiconv/include -DASTERISK_VERSION_NUM=110000 -DLOW_MEMORY -D_XOPEN_SOURCE=600"
 
 asterisk-clean:
 	$(MAKE) -C asterisk clean
