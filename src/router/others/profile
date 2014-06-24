@@ -2,6 +2,7 @@ export PATH=/bin:/usr/bin:/sbin:/usr/sbin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/j
 export LD_LIBRARY_PATH=/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/jffs/usr/local/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib
 export PS1='\u@\h:\w\$ '
 export QCSAPI_RPC_TARGET=169.254.39.2
+export TZ=`cat /etc/TZ`
 
 reboot() {
   for f in /opt/etc/init.d/K* ; do
