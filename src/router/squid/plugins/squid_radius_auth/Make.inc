@@ -37,7 +37,7 @@ clean:
 
 install: squid_radius_auth
 	mkdir -p $(DESTDIR)$(BINDIR)
-	install -m 755 -s squid_radius_auth $(DESTDIR)$(BINDIR)/squid_radius_auth
+	install -m 755 squid_radius_auth $(DESTDIR)$(BINDIR)/squid_radius_auth
 	mkdir -p $(DESTDIR)$(CONFDIR)
 	install -m 644 etc/squid_radius_auth.conf $(DESTDIR)$(CONFDIR)/squid_radius_auth.conf.default
 	if ! test -f $(DESTDIR)$(CONFDIR)/squid_radius_auth.conf; then \
