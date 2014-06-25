@@ -420,7 +420,7 @@ endif
 validate: $(eval FILE_SIZE = $(shell stat -c %s $(PATH)))
 	@if [ ${FILE_SIZE} -gt ${MAXIMUM_SIZE} ] ; then \
 		echo "Image is to large. Maximum size ${MAXIMUM_SIZE} current size  ${FILE_SIZE}." ; \
-		/usr/bin/rm -f $(PATH) ; \
+		rm -f $(PATH) ; \
 	fi
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
