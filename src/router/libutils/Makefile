@@ -192,10 +192,10 @@ ifeq ($(CONFIG_SAMBA),y)
   CFLAGS += -DHAVE_SAMBA
 endif
 ifeq ($(CONFIG_QTN),y)
-  CFLAGS += -DHAVE_QTN
+  CFLAGS += -DHAVE_QTN -DRPCOVERRIDE
   OBJS += qtnapi.o 
   CFLAGS +=  -I$(TOP)/qtn/libqcsapi_client -I$(TOP)/qtn/libqcsapi_client/librpc
-  QTNFLAGS = -L$(TOP)/qtn/libqcsapi_client -lqcsapi_client   -L$(TOP)/qtn/libqcsapi_client/librpc -lrpc
+  QTNFLAGS =  -L$(TOP)/qtn/libqcsapi_client -lqcsapi_client   -L$(TOP)/qtn/libqcsapi_client/librpc -lrpc
 endif
 ifeq ($(CONFIG_SAMBA3),y)
   OBJS += samba3.o 
