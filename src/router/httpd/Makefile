@@ -685,7 +685,7 @@ ifeq ($(CONFIG_DLM101),y)
 endif
 
 ifeq ($(CONFIG_QTN),y)
-CFLAGS += -DHAVE_QTN
+CFLAGS += -DHAVE_QTN  -DRPCOVERRIDE
 endif
 
 

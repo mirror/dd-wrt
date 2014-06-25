@@ -67,6 +67,14 @@ void rpc_parse_nvram_from_httpd(void)
 		else
 	    rpc_qcsapi_set_vht("0");
 
+	char *country = getIsoName(nvram_safe_get("wl_regdomain"));
+	char lower[32];
+	int i;
+	for (i=0;i<strlen(country);i++)
+	    lower[i]=tolower(country[i]);
+	lower[i]=0;
+	rpc_qcsapi_set_region("wifi0",lower);
+
 	// rpc_qcsapi_set_bw(value);
 	// rpc_qcsapi_set_channel(value);
 	// rpc_qcsapi_set_beacon_type(WIFINAME, value);
@@ -84,7 +92,6 @@ void rpc_parse_nvram_from_httpd(void)
 
 	char *viflist[4] = { "wl1.1", "wl1.2", "wl1.3" };
 	int cnt = 0;
-	int i;
 	for (i = 0; i < 3; i++) {
 		char *next;
 		char var[80];
