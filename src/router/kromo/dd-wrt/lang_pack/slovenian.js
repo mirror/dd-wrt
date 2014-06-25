@@ -532,7 +532,7 @@ ddns.statu="DDNS status";
 ddns.system="DNS sistem";
 ddns.options="Dodatne DDNS možnosti";
 ddns.forceupd="Interval prisiljene posodobitve";
-ddns.wanip="Ne uporabi zunanjega preverjanja IPja";
+ddns.wanip="uporabi zunanjega preverjanja IPja";
 
 
 ddnsm.all_closed="DDNS strežnik je trenutno zaprt";

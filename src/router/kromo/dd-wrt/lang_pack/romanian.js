@@ -523,7 +523,7 @@ ddns.statu="Stare DDNS";
 ddns.system="Server DYNDNS";
 ddns.options="Opțiuni DDNS adiționale";
 ddns.forceupd="Interval de actualizare forțată";
-ddns.wanip="Fără verificare externă a IP-ului";
+ddns.wanip="Verificare externă a IP-ului";
 
 ddnsm.all_closed="Deocamdată serverul DDNS este închis";
 ddnsm.all_resolving="Rezolvare nume domeniu";

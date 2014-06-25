@@ -522,7 +522,7 @@ ddns.statu="DDNS Статус";
 ddns.system="DYNDNS Сервер";
 ddns.options="Додатне DDNS опције";
 ddns.forceupd="Принудни интервал ажурирања";
-ddns.wanip="Немој користити спољну проверу ip-а";
+ddns.wanip="користити спољну проверу ip-а";
 
 ddnsm.all_closed="DDNS Сервер је тренутно затворен";
 ddnsm.all_resolving="Превођење домен имена";
