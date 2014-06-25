@@ -13,7 +13,7 @@ dnsmasq-clean:
 dnsmasq:
 	$(MAKE) -C dnsmasq clean
 ifeq ($(CONFIG_DNSMASQ_TFTP),y)
-	$(MAKE) -j 4 -C dnsmasq COPTS=-DHAVE_BROKEN_RTC CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	$(MAKE) -j 4 -C dnsmasq COPTS=-DHAVE_BROKEN_RTC CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections"
 else
 ifeq ($(CONFIG_DIST),"micro")
 	$(MAKE) -j 4 -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG $(DNSMASQ_MAKEFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections"
