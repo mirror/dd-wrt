@@ -515,7 +515,7 @@ ddns.statu="Estado DDNS";
 ddns.system="Servidor DYNDNS";
 ddns.options="Opciones DDNS adicionales";
 ddns.forceupd="Forzar intervalo de actualización";
-ddns.wanip="No usar chequeo externo de la IP";
+ddns.wanip="Usar chequeo externo de la IP";
 
 
 ddnsm.all_closed="El servidor DDNS está actualmente caído";

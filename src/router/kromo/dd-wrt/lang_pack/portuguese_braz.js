@@ -535,7 +535,7 @@ ddns.statu="Status DDNS";
 ddns.system="Servidor DYNDNS";
 ddns.options="Opções Adicionais DDNS";
 ddns.forceupd="Intervalo de Atualização Forçada";
-ddns.wanip="Não usar verificação de IP externa";
+ddns.wanip="Usar verificação de IP externa";
 
 ddnsm.all_closed="O Servidor DDNS está fechado";
 ddnsm.all_resolving="Resolvendo nome de domínio";

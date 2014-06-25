@@ -503,7 +503,7 @@ ddns.statu="DDNS Status";
 ddns.system="DYNDNS Server";
 ddns.options="Aanvullende DDNS Opties";
 ddns.forceupd="Geforceerde Update Interval";
-ddns.wanip="Gebruik geen externe IP controle"; 
+ddns.wanip="Gebruik externe IP controle"; 
 
 
 ddnsm.all_closed="DDNS server is niet actief";
