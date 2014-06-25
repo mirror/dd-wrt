@@ -380,6 +380,31 @@ int rpc_qcsapi_set_WPA_encryption_modes(const char *ifname, const char *crypto)
 	return 0;
 }
 
+int rpc_qcsapi_set_region(const char *ifname, const char *region)
+{
+	int ret,qcsapi_retval;
+
+	if (!rpc_qtn_ready())
+		return -1;
+
+		qcsapi_retval = qcsapi_regulatory_set_regulatory_region(
+			ifname,
+			region
+		);
+
+		if (qcsapi_retval == -qcsapi_region_database_not_found) {
+			qcsapi_retval = qcsapi_wifi_set_regulatory_region(
+				ifname,
+				region
+			);
+		}
+	return 0;
+
+}
+
+
+
+
 int rpc_qcsapi_set_key_passphrase(const char *ifname, const char *wpa_psk)
 {
 	int ret;
