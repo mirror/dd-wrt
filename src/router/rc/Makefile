@@ -95,7 +95,7 @@ ifeq ($(CONFIG_NORTHSTAR),y)
   CFLAGS += -DHAVE_NORTHSTAR
 endif
 ifeq ($(CONFIG_QTN),y)
-  CFLAGS += -DHAVE_QTN
+  CFLAGS += -DHAVE_QTN -DRPCOVERRIDE
   CFLAGS +=  -I$(TOP)/qtn/libqcsapi_client -I$(TOP)/qtn/libqcsapi_client/librpc    
 #  LDFLAGS += -Wl,-rpath,$(TOP)/qtn/libqcsapi_client 
 #  QTNFLAGS = -L$(TOP)/qtn/libqcsapi_client -lqcsapi_client  -L$(TOP)/qtn/libqcsapi_client/librpc -lrpc
