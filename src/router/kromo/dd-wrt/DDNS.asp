@@ -188,8 +188,8 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wanip"); %></div>
-									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.yes"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.no"); %>
+									<input class="spaceradio" type="radio" value="0" name="ddns_wan_ip" <% nvc("ddns_wan_ip","0"); %> /><% tran("share.yes"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="1" name="ddns_wan_ip" <% nvc("ddns_wan_ip","1"); %> /><% tran("share.no"); %>
 								</div>
 					<% nvsm("ddns_enable","2","-->"); %>
 					<% nvsm("ddns_enable","3","-->"); %>

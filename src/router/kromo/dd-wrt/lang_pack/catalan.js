@@ -523,7 +523,7 @@ ddns.statu="Estatus DDNS";
 ddns.system="Servidor DYNDNS";
 ddns.options="Opcions DDNS Adicionals";
 ddns.forceupd="Interval d'Actualizació Forçada";
-ddns.wanip="No comprovis la IP external";
+ddns.wanip="Comprovis la IP external";
 
 ddnsm.all_closed="Servidor DDNS actualment està tancat";
 ddnsm.all_resolving="Resolent nom de domini";

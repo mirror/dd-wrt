@@ -531,7 +531,7 @@ ddns.statu="DDNS Status";
 ddns.system="DYNDNS Poslužitelj";
 ddns.options="Dodatne DDNS Opcije";
 ddns.forceupd="Interval Nasilne Obnove";
-ddns.wanip="Ne provjeravati vanjsku IP adresu";
+ddns.wanip="Provjeravati vanjsku IP adresu";
 
 
 ddnsm.all_closed="DDNS poslužitelj je trenutno zatvoren";

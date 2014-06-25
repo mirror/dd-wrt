@@ -521,7 +521,7 @@ ddns.statu="Статус DDNS";
 ddns.system="Сервер DYNDNS";
 ddns.options="Дополнительные опции DDNS";
 ddns.forceupd="Период принудит. обновления";
-ddns.wanip="Не использовать проверку внешнего IP";
+ddns.wanip="использовать проверку внешнего IP";
 
 ddnsm.all_closed="Сервер DDNS не отвечает";
 ddnsm.all_resolving="Разрешение имени домена";
