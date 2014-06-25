@@ -10,6 +10,6 @@ batman-adv-clean:
 
 batman-adv-install:
 	install -D batman-adv/batman-adv.ko $(INSTALLDIR)/batman-adv/lib/batman-adv/batman-adv.ko
-	strip --strip-unneeded --remove-section=.comment --remove-section=.pdr --remove-section=.mdebug.abi32 $(INSTALLDIR)/batman-adv/lib/batman-adv/*
+	$(ARCH)-linux-strip --strip-unneeded --remove-section=.comment --remove-section=.pdr --remove-section=.mdebug.abi32 $(INSTALLDIR)/batman-adv/lib/batman-adv/*
 	install -D batctl/batctl $(INSTALLDIR)/batman-adv/usr/sbin/batctl
 	install -D batctl/config/batstart.sh $(INSTALLDIR)/batman-adv/usr/sbin/batstart.sh
