@@ -6,7 +6,7 @@ libdnet-configure:
 		--libdir=$(TOP)/libdnet/src/.libs/ \
 		--disable-shared \
 		--enable-static \
-		CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I$(TOP)/iptables/include/libipq/" LDFLAGS="-L$(TOP)/iptables/libipq"
+		CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -I$(TOP)/iptables/include/libipq/" LDFLAGS="-L$(TOP)/iptables/libipq"
 
 
 libdnet:
