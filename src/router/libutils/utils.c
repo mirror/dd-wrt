@@ -5172,8 +5172,9 @@ int led_control(int type, int act)
 		usb_power1 = 0x00e;	// USB 3.0 xhci port
 //              wlan0_gpio = 0x028; // wireless orange
 //              wlan1_gpio = 0x029; // wireless blue
-//		connected_gpio = 0x02a;	// connected blue
-		sec0_gpio = 0x009;
+		connected_gpio = 0x009;	// connected blue
+		disconnected_gpio = 0x00a;	// connected blue
+		sec0_gpio = 0x00b;
 		sec1_gpio = 0x00b;
 		// 0x2b strange led orange
 		// 0x2c strange led blue
