@@ -492,6 +492,8 @@ static int is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p
 		return RC_OK;
 	else if (strstr(p_rsp, "TOOSOON") != NULL)
 		return RC_DYNDNS_RSP_RETRY_LATER;
+	else if (strstr(p_rsp, "TOO_FREQ") != NULL)
+		return RC_DYNDNS_RSP_RETRY_LATER;
 	else
 		return RC_ERROR;
 }
@@ -1156,10 +1158,13 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 			{
 				break;
 			}
-			p_dyndns->sleep_sec = rc == RC_DYNDNS_RSP_RETRY_LATER ? DYNDNS_ERROR_UPDATE_PERIOD : DYNDNS_DEFAULT_SLEEP;
-
+			
+			int store = p_dyndns->sleep_sec;
+			p_dyndns->sleep_sec = rc == RC_DYNDNS_RSP_RETRY_LATER ? DYNDNS_ERROR_UPDATE_PERIOD : p_dyndns->sleep_sec;
 			/* also sleep the time set in the ->sleep_sec data memeber*/
 			dyn_dns_wait_for_cmd(p_dyndns);
+			p_dyndns->sleep_sec = store;
+			
 			if (p_dyndns->cmd == CMD_STOP)
 			{
 				DBG_PRINTF((LOG_DEBUG,"STOP command received. Exiting.\n"));
