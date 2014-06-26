@@ -25,7 +25,7 @@ ifeq ($(TARGET_ARCH),linux)
 	ARCH_SPECIFIC_CFLAGS += $(COPTS)
 endif
 
-CFLAGS += -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/nvram -L$(TOP)/libutils -I$(TOP)/../include.bcm
+CFLAGS += -DNEED_PRINTF $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/nvram -L$(TOP)/libutils -I$(TOP)/../include.bcm
 
 ifeq ($(CONFIG_TIEXTRA1),y)
 CFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
