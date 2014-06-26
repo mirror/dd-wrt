@@ -2327,7 +2327,7 @@ void start_sysinit(void)
 		set_gpio(12, 1);	// fixup ses button
 		break;
 	case ROUTER_BUFFALO_WXR1900DHP:
-		nvram_set("0:ledbh10", "7");
+		nvram_set("0:ledbh12", "7");
 		nvram_set("1:ledbh12", "7");
 		set_gpio(16, 1);	// fixup ses button
 		set_gpio(15, 1);	// fixup ses button
