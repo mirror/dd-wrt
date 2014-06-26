@@ -159,7 +159,7 @@ obj-$(CONFIG_MOXA) += moxa
 obj-$(CONFIG_BONDING) += ifenslave
 obj-$(CONFIG_NSTX) += nstx
 obj-$(CONFIG_SQUID) += squid
-obj-$(CONFIG_IPERF) += iperf speedtest
+obj-$(CONFIG_IPERF) += iperf
 obj-$(CONFIG_NTPD) += ntpd
 obj-$(CONFIG_GPSD) += gpsd
 obj-$(CONFIG_PHP5) += php5
@@ -258,7 +258,7 @@ endif
 obj-$(CONFIG_80211AC) += emf
 #obj-y+=anchorfree
 obj-y+=ttraff
-obj-y+=speedtest
+#obj-y+=speedtest
 obj-$(CONFIG_MKIMAGE) += mkimage
 obj-y+=configs
 
