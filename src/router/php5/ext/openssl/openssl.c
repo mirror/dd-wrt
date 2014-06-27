@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) 1997-2014 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -77,6 +77,10 @@
 #endif
 #define DEBUG_SMIME	0
 
+#if !defined(OPENSSL_NO_EC) && defined(EVP_PKEY_EC)
+#define HAVE_EVP_PKEY_EC 1
+#endif
+
 /* FIXME: Use the openssl constants instead of
  * enum. It is now impossible to match real values
  * against php constants. Also sorry to break the
@@ -87,7 +91,7 @@ enum php_openssl_key_type {
 	OPENSSL_KEYTYPE_DSA,
 	OPENSSL_KEYTYPE_DH,
 	OPENSSL_KEYTYPE_DEFAULT = OPENSSL_KEYTYPE_RSA,
-#ifdef EVP_PKEY_EC
+#ifdef HAVE_EVP_PKEY_EC
 	OPENSSL_KEYTYPE_EC = OPENSSL_KEYTYPE_DH +1
 #endif
 };
@@ -657,18 +661,33 @@ static time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr TSRMLS_DC) /* {{{ */
 	char * thestr;
 	long gmadjust = 0;
 
-	if (timestr->length < 13) {
-		php_error_docref(NULL TSRMLS_CC, E_WARNING, "extension author too lazy to parse %s correctly", timestr->data);
+	if (ASN1_STRING_type(timestr) != V_ASN1_UTCTIME && ASN1_STRING_type(timestr) != V_ASN1_GENERALIZEDTIME) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "illegal ASN1 data type for timestamp");
 		return (time_t)-1;
 	}
 
-	strbuf = estrdup((char *)timestr->data);
+	if (ASN1_STRING_length(timestr) != strlen(ASN1_STRING_data(timestr))) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "illegal length in timestamp");
+		return (time_t)-1;
+	}
+
+	if (ASN1_STRING_length(timestr) < 13) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "unable to parse time string %s correctly", timestr->data);
+		return (time_t)-1;
+	}
+
+	if (ASN1_STRING_type(timestr) == V_ASN1_GENERALIZEDTIME && ASN1_STRING_length(timestr) < 15) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "unable to parse time string %s correctly", timestr->data);
+		return (time_t)-1;
+	}
+
+	strbuf = estrdup((char *)ASN1_STRING_data(timestr));
 
 	memset(&thetime, 0, sizeof(thetime));
 
 	/* we work backwards so that we can use atoi more easily */
 
-	thestr = strbuf + timestr->length - 3;
+	thestr = strbuf + ASN1_STRING_length(timestr) - 3;
 
 	thetime.tm_sec = atoi(thestr);
 	*thestr = '\0';
@@ -683,13 +702,20 @@ static time_t asn1_time_to_time_t(ASN1_UTCTIME * timestr TSRMLS_DC) /* {{{ */
 	*thestr = '\0';
 	thestr -= 2;
 	thetime.tm_mon = atoi(thestr)-1;
-	*thestr = '\0';
-	thestr -= 2;
-	thetime.tm_year = atoi(thestr);
 
-	if (thetime.tm_year < 68) {
-		thetime.tm_year += 100;
+	*thestr = '\0';
+	if( ASN1_STRING_type(timestr) == V_ASN1_UTCTIME ) {
+		thestr -= 2;
+		thetime.tm_year = atoi(thestr);
+
+		if (thetime.tm_year < 68) {
+			thetime.tm_year += 100;
+		}
+	} else if( ASN1_STRING_type(timestr) == V_ASN1_GENERALIZEDTIME ) {
+		thestr -= 4;
+		thetime.tm_year = atoi(thestr) - 1900;
 	}
+
 
 	thetime.tm_isdst = -1;
 	ret = mktime(&thetime);
@@ -856,7 +882,7 @@ static int php_openssl_parse_config(struct php_x509_request * req, zval * option
 		req->digest = req->md_alg = EVP_get_digestbyname(req->digest_name);
 	}
 	if (req->md_alg == NULL) {
-		req->md_alg = req->digest = EVP_md5();
+		req->md_alg = req->digest = EVP_sha1();
 	}
 
 	PHP_SSL_CONFIG_SYNTAX_CHECK(extensions_section);
@@ -1118,7 +1144,7 @@ PHP_MINIT_FUNCTION(openssl)
 	REGISTER_LONG_CONSTANT("OPENSSL_KEYTYPE_DSA", OPENSSL_KEYTYPE_DSA, CONST_CS|CONST_PERSISTENT);
 #endif
 	REGISTER_LONG_CONSTANT("OPENSSL_KEYTYPE_DH", OPENSSL_KEYTYPE_DH, CONST_CS|CONST_PERSISTENT);
-#ifdef EVP_PKEY_EC
+#ifdef HAVE_EVP_PKEY_EC
 	REGISTER_LONG_CONSTANT("OPENSSL_KEYTYPE_EC", OPENSSL_KEYTYPE_EC, CONST_CS|CONST_PERSISTENT);
 #endif
 
@@ -3016,6 +3042,15 @@ static int php_openssl_is_private_key(EVP_PKEY* pkey TSRMLS_DC)
 			}
 			break;
 #endif
+#ifdef HAVE_EVP_PKEY_EC
+		case EVP_PKEY_EC:
+			assert(pkey->pkey.ec != NULL);
+
+			if ( NULL == EC_KEY_get0_private_key(pkey->pkey.ec)) {
+				return 0;
+			}
+			break;
+#endif
 		default:
 			php_error_docref(NULL TSRMLS_CC, E_WARNING, "key type not supported in this PHP build!");
 			break;
@@ -3416,7 +3451,7 @@ PHP_FUNCTION(openssl_pkey_get_details)
 			}
 
 			break;
-#ifdef EVP_PKEY_EC 
+#ifdef HAVE_EVP_PKEY_EC
 		case EVP_PKEY_EC:
 			ktype = OPENSSL_KEYTYPE_EC;
 			break;
@@ -4361,6 +4396,7 @@ PHP_FUNCTION(openssl_seal)
 
 	if (!EVP_EncryptInit(&ctx,cipher,NULL,NULL)) {
 		RETVAL_FALSE;
+		EVP_CIPHER_CTX_cleanup(&ctx);
 		goto clean_exit;
 	}
 
@@ -4371,10 +4407,12 @@ PHP_FUNCTION(openssl_seal)
 #endif
 	/* allocate one byte extra to make room for \0 */
 	buf = emalloc(data_len + EVP_CIPHER_CTX_block_size(&ctx));
+	EVP_CIPHER_CTX_cleanup(&ctx);
 
 	if (!EVP_SealInit(&ctx, cipher, eks, eksl, NULL, pkeys, nkeys) || !EVP_SealUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len)) {
 		RETVAL_FALSE;
 		efree(buf);
+		EVP_CIPHER_CTX_cleanup(&ctx);
 		goto clean_exit;
 	}
 
@@ -4407,6 +4445,7 @@ PHP_FUNCTION(openssl_seal)
 		efree(buf);
 	}
 	RETVAL_LONG(len1 + len2);
+	EVP_CIPHER_CTX_cleanup(&ctx);
 
 clean_exit:
 	for (i=0; i<nkeys; i++) {
@@ -4465,25 +4504,21 @@ PHP_FUNCTION(openssl_open)
 	if (EVP_OpenInit(&ctx, cipher, (unsigned char *)ekey, ekey_len, NULL, pkey) && EVP_OpenUpdate(&ctx, buf, &len1, (unsigned char *)data, data_len)) {
 		if (!EVP_OpenFinal(&ctx, buf + len1, &len2) || (len1 + len2 == 0)) {
 			efree(buf);
-			if (keyresource == -1) { 
-				EVP_PKEY_free(pkey);
-			}
-			RETURN_FALSE;
+			RETVAL_FALSE;
+		} else {
+			zval_dtor(opendata);
+			buf[len1 + len2] = '\0';
+			ZVAL_STRINGL(opendata, erealloc(buf, len1 + len2 + 1), len1 + len2, 0);
+			RETVAL_TRUE;
 		}
 	} else {
 		efree(buf);
-		if (keyresource == -1) {
-			EVP_PKEY_free(pkey);
-		}
-		RETURN_FALSE;
+		RETVAL_FALSE;
 	}
 	if (keyresource == -1) {
 		EVP_PKEY_free(pkey);
 	}
-	zval_dtor(opendata);
-	buf[len1 + len2] = '\0';
-	ZVAL_STRINGL(opendata, erealloc(buf, len1 + len2 + 1), len1 + len2, 0);
-	RETURN_TRUE;
+	EVP_CIPHER_CTX_cleanup(&ctx);
 }
 /* }}} */
 
@@ -5054,7 +5089,7 @@ PHP_FUNCTION(openssl_cipher_iv_length)
 
 
 /* {{{ proto string openssl_dh_compute_key(string pub_key, resource dh_key)
-   Computes shared sicret for public value of remote DH key and local DH key */
+   Computes shared secret for public value of remote DH key and local DH key */
 PHP_FUNCTION(openssl_dh_compute_key)
 {
 	zval *key;

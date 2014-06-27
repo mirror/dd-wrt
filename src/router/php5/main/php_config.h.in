@@ -374,6 +374,9 @@
 /* */
 #undef HAVE_ADABAS
 
+/* Whether you have AI_V4MAPPED */
+#undef HAVE_AI_V4MAPPED
+
 /* whether the compiler supports __alignof__ */
 #undef HAVE_ALIGNOF
 

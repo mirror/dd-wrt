@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2013 The PHP Group                                |
+  | Copyright (c) 1997-2014 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: d3ec27bafeaf3029bbb38e7de437f9fbadbff703 $ */
+/* $Id: 05dd1ecc211075107543b0ef8cee488dd229fccf $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -1537,7 +1537,7 @@ static ZIPARCHIVE_METHOD(open)
 		RETURN_LONG((long)err);
 	}
 	ze_obj->filename = estrdup(resolved_path);
-	ze_obj->filename_len = filename_len;
+	ze_obj->filename_len = strlen(resolved_path);
 	ze_obj->za = intern;
 	RETURN_TRUE;
 }
@@ -2874,7 +2874,7 @@ static PHP_MINFO_FUNCTION(zip)
 	php_info_print_table_start();
 
 	php_info_print_table_row(2, "Zip", "enabled");
-	php_info_print_table_row(2, "Extension Version","$Id: d3ec27bafeaf3029bbb38e7de437f9fbadbff703 $");
+	php_info_print_table_row(2, "Extension Version","$Id: 05dd1ecc211075107543b0ef8cee488dd229fccf $");
 	php_info_print_table_row(2, "Zip version", PHP_ZIP_VERSION_STRING);
 	php_info_print_table_row(2, "Libzip version", LIBZIP_VERSION);
 

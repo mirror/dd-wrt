@@ -3688,7 +3688,7 @@ ac_config_headers="$ac_config_headers main/php_config.h"
 
 PHP_MAJOR_VERSION=5
 PHP_MINOR_VERSION=5
-PHP_RELEASE_VERSION=6
+PHP_RELEASE_VERSION=14
 PHP_EXTRA_VERSION=""
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr $PHP_MAJOR_VERSION \* 10000 + $PHP_MINOR_VERSION \* 100 + $PHP_RELEASE_VERSION`
@@ -18047,7 +18047,7 @@ int main(int argc, char *argv[])
 {
   FILE *fp;
   long position;
-  char *filename = "/tmp/phpglibccheck";
+  char *filename = tmpnam(NULL);
 
   fp = fopen(filename, "w");
   if (fp == NULL) {
@@ -39041,31 +39041,66 @@ $as_echo "If configure fails try --with-xpm-dir=<DIR>" >&6; }
   if test "$PHP_FREETYPE_DIR" != "no"; then
 
     for i in $PHP_FREETYPE_DIR /usr/local /usr; do
-      if test -f "$i/include/freetype2/freetype/freetype.h"; then
+      if test -f "$i/bin/freetype-config"; then
         FREETYPE2_DIR=$i
-        FREETYPE2_INC_DIR=$i/include/freetype2
+        FREETYPE2_CONFIG="$i/bin/freetype-config"
         break
       fi
     done
 
     if test -z "$FREETYPE2_DIR"; then
-      as_fn_error $? "freetype.h not found." "$LINENO" 5
+      as_fn_error $? "freetype-config not found." "$LINENO" 5
     fi
 
+    FREETYPE2_CFLAGS=`$FREETYPE2_CONFIG --cflags`
+    FREETYPE2_LIBS=`$FREETYPE2_CONFIG --libs`
 
-  save_old_LDFLAGS=$LDFLAGS
-  ac_stuff="
-      -L$FREETYPE2_DIR/$PHP_LIBDIR
-    "
 
-  save_ext_shared=$ext_shared
-  ext_shared=yes
+  for ac_i in $FREETYPE2_CFLAGS; do
+    case $ac_i in
+    -I*)
+      ac_ii=`echo $ac_i|cut -c 3-`
 
-  for ac_i in $ac_stuff; do
+  if test "$ac_ii" != "/usr/include"; then
+
+  if test -z "$ac_ii" || echo "$ac_ii" | grep '^/' >/dev/null ; then
+    ai_p=$ac_ii
+  else
+
+    ep_dir=`echo $ac_ii|$SED 's%/*[^/][^/]*/*$%%'`
+
+    ep_realdir=`(cd "$ep_dir" && pwd)`
+    ai_p="$ep_realdir"/`basename "$ac_ii"`
+  fi
+
+
+
+  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$INCLUDEPATH$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "INCLUDEPATH$unique=set"
+
+      if test ""; then
+        INCLUDES="-I$ai_p $INCLUDES"
+      else
+        INCLUDES="$INCLUDES -I$ai_p"
+      fi
+
+  fi
+
+  fi
+
+    ;;
+    esac
+  done
+
+
+  for ac_i in $FREETYPE2_LIBS; do
     case $ac_i in
     -pthread)
       if test "$ext_shared" = "yes"; then
-        LDFLAGS="$LDFLAGS -pthread"
+        GD_SHARED_LIBADD="$GD_SHARED_LIBADD -pthread"
       else
 
 
@@ -39087,7 +39122,7 @@ $as_echo "If configure fails try --with-xpm-dir=<DIR>" >&6; }
   c|c_r|pthread*) ;;
   *)
     if test "$ext_shared" = "yes"; then
-        LDFLAGS="$LDFLAGS -l$ac_ii"
+        GD_SHARED_LIBADD="$GD_SHARED_LIBADD -l$ac_ii"
     else
 
 
@@ -39122,8 +39157,8 @@ $as_echo "If configure fails try --with-xpm-dir=<DIR>" >&6; }
 
 
       if test "$ext_shared" = "yes"; then
-        LDFLAGS="-L$ai_p $LDFLAGS"
-        test -n "$ld_runpath_switch" && LDFLAGS="$ld_runpath_switch$ai_p $LDFLAGS"
+        GD_SHARED_LIBADD="-L$ai_p $GD_SHARED_LIBADD"
+        test -n "$ld_runpath_switch" && GD_SHARED_LIBADD="$ld_runpath_switch$ai_p $GD_SHARED_LIBADD"
       else
 
 
@@ -39149,206 +39184,6 @@ $as_echo "If configure fails try --with-xpm-dir=<DIR>" >&6; }
     esac
   done
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FT_New_Face in -lfreetype" >&5
-$as_echo_n "checking for FT_New_Face in -lfreetype... " >&6; }
-if ${ac_cv_lib_freetype_FT_New_Face+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lfreetype  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char FT_New_Face ();
-int
-main ()
-{
-return FT_New_Face ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_freetype_FT_New_Face=yes
-else
-  ac_cv_lib_freetype_FT_New_Face=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_freetype_FT_New_Face" >&5
-$as_echo "$ac_cv_lib_freetype_FT_New_Face" >&6; }
-if test "x$ac_cv_lib_freetype_FT_New_Face" = xyes; then :
-
-    LDFLAGS=$save_old_LDFLAGS
-    ext_shared=$save_ext_shared
-
-
-
-  if test "$ext_shared" = "yes"; then
-    GD_SHARED_LIBADD="-lfreetype $GD_SHARED_LIBADD"
-    if test -n "$FREETYPE2_DIR/$PHP_LIBDIR"; then
-
-  if test "$FREETYPE2_DIR/$PHP_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$FREETYPE2_DIR/$PHP_LIBDIR" != "/usr/lib"; then
-
-  if test -z "$FREETYPE2_DIR/$PHP_LIBDIR" || echo "$FREETYPE2_DIR/$PHP_LIBDIR" | grep '^/' >/dev/null ; then
-    ai_p=$FREETYPE2_DIR/$PHP_LIBDIR
-  else
-
-    ep_dir=`echo $FREETYPE2_DIR/$PHP_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$FREETYPE2_DIR/$PHP_LIBDIR"`
-  fi
-
-
-      if test "$ext_shared" = "yes"; then
-        GD_SHARED_LIBADD="-L$ai_p $GD_SHARED_LIBADD"
-        test -n "$ld_runpath_switch" && GD_SHARED_LIBADD="$ld_runpath_switch$ai_p $GD_SHARED_LIBADD"
-      else
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-
-  fi
-
-
-      fi
-
-  fi
-
-    fi
-  else
-
-
-  if test -n "$FREETYPE2_DIR/$PHP_LIBDIR"; then
-
-  if test "$FREETYPE2_DIR/$PHP_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$FREETYPE2_DIR/$PHP_LIBDIR" != "/usr/lib"; then
-
-  if test -z "$FREETYPE2_DIR/$PHP_LIBDIR" || echo "$FREETYPE2_DIR/$PHP_LIBDIR" | grep '^/' >/dev/null ; then
-    ai_p=$FREETYPE2_DIR/$PHP_LIBDIR
-  else
-
-    ep_dir=`echo $FREETYPE2_DIR/$PHP_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$FREETYPE2_DIR/$PHP_LIBDIR"`
-  fi
-
-
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-
-  fi
-
-
-
-  fi
-
-  fi
-
-
-  case freetype in
-  c|c_r|pthread*) ;;
-  *)
-      LIBS="-lfreetype $LIBS"
-   ;;
-  esac
-
-
-
-
-  fi
-
-
-
-  if test "$FREETYPE2_DIR/include" != "/usr/include"; then
-
-  if test -z "$FREETYPE2_DIR/include" || echo "$FREETYPE2_DIR/include" | grep '^/' >/dev/null ; then
-    ai_p=$FREETYPE2_DIR/include
-  else
-
-    ep_dir=`echo $FREETYPE2_DIR/include|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$FREETYPE2_DIR/include"`
-  fi
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$INCLUDEPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "INCLUDEPATH$unique=set"
-
-      if test ""; then
-        INCLUDES="-I$ai_p $INCLUDES"
-      else
-        INCLUDES="$INCLUDES -I$ai_p"
-      fi
-
-  fi
-
-  fi
-
-
-  if test "$FREETYPE2_INC_DIR" != "/usr/include"; then
-
-  if test -z "$FREETYPE2_INC_DIR" || echo "$FREETYPE2_INC_DIR" | grep '^/' >/dev/null ; then
-    ai_p=$FREETYPE2_INC_DIR
-  else
-
-    ep_dir=`echo $FREETYPE2_INC_DIR|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$FREETYPE2_INC_DIR"`
-  fi
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$INCLUDEPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "INCLUDEPATH$unique=set"
-
-      if test ""; then
-        INCLUDES="-I$ai_p $INCLUDES"
-      else
-        INCLUDES="$INCLUDES -I$ai_p"
-      fi
-
-  fi
-
-  fi
-
 
 $as_echo "#define USE_GD_IMGSTRTTF 1" >>confdefs.h
 
@@ -39357,19 +39192,6 @@ $as_echo "#define HAVE_LIBFREETYPE 1" >>confdefs.h
 
 
 $as_echo "#define ENABLE_GD_TTF 1" >>confdefs.h
-
-
-
-else
-
-    LDFLAGS=$save_old_LDFLAGS
-    ext_shared=$save_ext_shared
-    unset ac_cv_lib_freetype_FT_New_Face
-
-      as_fn_error $? "Problem with freetype.(a|so). Please check config.log for more information." "$LINENO" 5
-
-
-fi
 
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: If configure fails try --with-freetype-dir=<DIR>" >&5
@@ -41183,31 +41005,66 @@ $as_echo "If configure fails try --with-xpm-dir=<DIR>" >&6; }
   if test "$PHP_FREETYPE_DIR" != "no"; then
 
     for i in $PHP_FREETYPE_DIR /usr/local /usr; do
-      if test -f "$i/include/freetype2/freetype/freetype.h"; then
+      if test -f "$i/bin/freetype-config"; then
         FREETYPE2_DIR=$i
-        FREETYPE2_INC_DIR=$i/include/freetype2
+        FREETYPE2_CONFIG="$i/bin/freetype-config"
         break
       fi
     done
 
     if test -z "$FREETYPE2_DIR"; then
-      as_fn_error $? "freetype.h not found." "$LINENO" 5
+      as_fn_error $? "freetype-config not found." "$LINENO" 5
     fi
 
+    FREETYPE2_CFLAGS=`$FREETYPE2_CONFIG --cflags`
+    FREETYPE2_LIBS=`$FREETYPE2_CONFIG --libs`
 
-  save_old_LDFLAGS=$LDFLAGS
-  ac_stuff="
-      -L$FREETYPE2_DIR/$PHP_LIBDIR
-    "
 
-  save_ext_shared=$ext_shared
-  ext_shared=yes
+  for ac_i in $FREETYPE2_CFLAGS; do
+    case $ac_i in
+    -I*)
+      ac_ii=`echo $ac_i|cut -c 3-`
 
-  for ac_i in $ac_stuff; do
+  if test "$ac_ii" != "/usr/include"; then
+
+  if test -z "$ac_ii" || echo "$ac_ii" | grep '^/' >/dev/null ; then
+    ai_p=$ac_ii
+  else
+
+    ep_dir=`echo $ac_ii|$SED 's%/*[^/][^/]*/*$%%'`
+
+    ep_realdir=`(cd "$ep_dir" && pwd)`
+    ai_p="$ep_realdir"/`basename "$ac_ii"`
+  fi
+
+
+
+  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$INCLUDEPATH$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "INCLUDEPATH$unique=set"
+
+      if test ""; then
+        INCLUDES="-I$ai_p $INCLUDES"
+      else
+        INCLUDES="$INCLUDES -I$ai_p"
+      fi
+
+  fi
+
+  fi
+
+    ;;
+    esac
+  done
+
+
+  for ac_i in $FREETYPE2_LIBS; do
     case $ac_i in
     -pthread)
       if test "$ext_shared" = "yes"; then
-        LDFLAGS="$LDFLAGS -pthread"
+        GD_SHARED_LIBADD="$GD_SHARED_LIBADD -pthread"
       else
 
 
@@ -41229,7 +41086,7 @@ $as_echo "If configure fails try --with-xpm-dir=<DIR>" >&6; }
   c|c_r|pthread*) ;;
   *)
     if test "$ext_shared" = "yes"; then
-        LDFLAGS="$LDFLAGS -l$ac_ii"
+        GD_SHARED_LIBADD="$GD_SHARED_LIBADD -l$ac_ii"
     else
 
 
@@ -41264,8 +41121,8 @@ $as_echo "If configure fails try --with-xpm-dir=<DIR>" >&6; }
 
 
       if test "$ext_shared" = "yes"; then
-        LDFLAGS="-L$ai_p $LDFLAGS"
-        test -n "$ld_runpath_switch" && LDFLAGS="$ld_runpath_switch$ai_p $LDFLAGS"
+        GD_SHARED_LIBADD="-L$ai_p $GD_SHARED_LIBADD"
+        test -n "$ld_runpath_switch" && GD_SHARED_LIBADD="$ld_runpath_switch$ai_p $GD_SHARED_LIBADD"
       else
 
 
@@ -41291,206 +41148,6 @@ $as_echo "If configure fails try --with-xpm-dir=<DIR>" >&6; }
     esac
   done
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FT_New_Face in -lfreetype" >&5
-$as_echo_n "checking for FT_New_Face in -lfreetype... " >&6; }
-if ${ac_cv_lib_freetype_FT_New_Face+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lfreetype  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char FT_New_Face ();
-int
-main ()
-{
-return FT_New_Face ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_freetype_FT_New_Face=yes
-else
-  ac_cv_lib_freetype_FT_New_Face=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_freetype_FT_New_Face" >&5
-$as_echo "$ac_cv_lib_freetype_FT_New_Face" >&6; }
-if test "x$ac_cv_lib_freetype_FT_New_Face" = xyes; then :
-
-    LDFLAGS=$save_old_LDFLAGS
-    ext_shared=$save_ext_shared
-
-
-
-  if test "$ext_shared" = "yes"; then
-    GD_SHARED_LIBADD="-lfreetype $GD_SHARED_LIBADD"
-    if test -n "$FREETYPE2_DIR/$PHP_LIBDIR"; then
-
-  if test "$FREETYPE2_DIR/$PHP_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$FREETYPE2_DIR/$PHP_LIBDIR" != "/usr/lib"; then
-
-  if test -z "$FREETYPE2_DIR/$PHP_LIBDIR" || echo "$FREETYPE2_DIR/$PHP_LIBDIR" | grep '^/' >/dev/null ; then
-    ai_p=$FREETYPE2_DIR/$PHP_LIBDIR
-  else
-
-    ep_dir=`echo $FREETYPE2_DIR/$PHP_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$FREETYPE2_DIR/$PHP_LIBDIR"`
-  fi
-
-
-      if test "$ext_shared" = "yes"; then
-        GD_SHARED_LIBADD="-L$ai_p $GD_SHARED_LIBADD"
-        test -n "$ld_runpath_switch" && GD_SHARED_LIBADD="$ld_runpath_switch$ai_p $GD_SHARED_LIBADD"
-      else
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-
-  fi
-
-
-      fi
-
-  fi
-
-    fi
-  else
-
-
-  if test -n "$FREETYPE2_DIR/$PHP_LIBDIR"; then
-
-  if test "$FREETYPE2_DIR/$PHP_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$FREETYPE2_DIR/$PHP_LIBDIR" != "/usr/lib"; then
-
-  if test -z "$FREETYPE2_DIR/$PHP_LIBDIR" || echo "$FREETYPE2_DIR/$PHP_LIBDIR" | grep '^/' >/dev/null ; then
-    ai_p=$FREETYPE2_DIR/$PHP_LIBDIR
-  else
-
-    ep_dir=`echo $FREETYPE2_DIR/$PHP_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$FREETYPE2_DIR/$PHP_LIBDIR"`
-  fi
-
-
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-
-  fi
-
-
-
-  fi
-
-  fi
-
-
-  case freetype in
-  c|c_r|pthread*) ;;
-  *)
-      LIBS="-lfreetype $LIBS"
-   ;;
-  esac
-
-
-
-
-  fi
-
-
-
-  if test "$FREETYPE2_DIR/include" != "/usr/include"; then
-
-  if test -z "$FREETYPE2_DIR/include" || echo "$FREETYPE2_DIR/include" | grep '^/' >/dev/null ; then
-    ai_p=$FREETYPE2_DIR/include
-  else
-
-    ep_dir=`echo $FREETYPE2_DIR/include|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$FREETYPE2_DIR/include"`
-  fi
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$INCLUDEPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "INCLUDEPATH$unique=set"
-
-      if test ""; then
-        INCLUDES="-I$ai_p $INCLUDES"
-      else
-        INCLUDES="$INCLUDES -I$ai_p"
-      fi
-
-  fi
-
-  fi
-
-
-  if test "$FREETYPE2_INC_DIR" != "/usr/include"; then
-
-  if test -z "$FREETYPE2_INC_DIR" || echo "$FREETYPE2_INC_DIR" | grep '^/' >/dev/null ; then
-    ai_p=$FREETYPE2_INC_DIR
-  else
-
-    ep_dir=`echo $FREETYPE2_INC_DIR|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$FREETYPE2_INC_DIR"`
-  fi
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$INCLUDEPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "INCLUDEPATH$unique=set"
-
-      if test ""; then
-        INCLUDES="-I$ai_p $INCLUDES"
-      else
-        INCLUDES="$INCLUDES -I$ai_p"
-      fi
-
-  fi
-
-  fi
-
 
 $as_echo "#define USE_GD_IMGSTRTTF 1" >>confdefs.h
 
@@ -41499,19 +41156,6 @@ $as_echo "#define HAVE_LIBFREETYPE 1" >>confdefs.h
 
 
 $as_echo "#define ENABLE_GD_TTF 1" >>confdefs.h
-
-
-
-else
-
-    LDFLAGS=$save_old_LDFLAGS
-    ext_shared=$save_ext_shared
-    unset ac_cv_lib_freetype_FT_New_Face
-
-      as_fn_error $? "Problem with freetype.(a|so). Please check config.log for more information." "$LINENO" 5
-
-
-fi
 
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: If configure fails try --with-freetype-dir=<DIR>" >&5
@@ -49378,7 +49022,6 @@ fi
 
 
 fi
-
 
 
 php_with_interbase=no
@@ -67451,7 +67094,6 @@ but you've either not enabled pdo, or have disabled it.
 fi
 
 
-
 php_with_pdo_firebird=no
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Firebird support for PDO" >&5
@@ -85424,6 +85066,42 @@ $as_echo "$ac_cv_ss_family" >&6; }
   if test "$ac_cv_ss_family" = yes; then
 
 $as_echo "#define HAVE_SA_SS_FAMILY 1" >>confdefs.h
+
+  fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if getaddrinfo supports AI_V4MAPPED" >&5
+$as_echo_n "checking if getaddrinfo supports AI_V4MAPPED... " >&6; }
+if ${ac_cv_gai_ai_v4mapped+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <netdb.h>
+
+int
+main ()
+{
+int flag = AI_V4MAPPED;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_gai_ai_v4mapped=yes
+else
+  ac_cv_gai_ai_v4mapped=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_gai_ai_v4mapped" >&5
+$as_echo "$ac_cv_gai_ai_v4mapped" >&6; }
+
+  if test "$ac_cv_gai_ai_v4mapped" = yes; then
+
+$as_echo "#define HAVE_AI_V4MAPPED 1" >>confdefs.h
 
   fi
 
@@ -103520,7 +103198,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 103523 "configure"
+#line 103201 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -105432,7 +105110,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 105435 "configure"' > conftest.$ac_ext
+  echo '#line 105113 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -106824,7 +106502,7 @@ else
       LDFLAGS="$LDFLAGS -Wl,-exported_symbols_list,conftest.sym"
 
 cat > conftest.$ac_ext <<EOF
-#line 106827 "configure"
+#line 106505 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -106982,11 +106660,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:106985: $lt_compile\"" >&5)
+   (eval echo "\"configure:106663: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:106989: \$? = $ac_status" >&5
+   echo "configure:106667: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -107280,11 +106958,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:107283: $lt_compile\"" >&5)
+   (eval echo "\"configure:106961: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:107287: \$? = $ac_status" >&5
+   echo "configure:106965: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -107384,11 +107062,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:107387: $lt_compile\"" >&5)
+   (eval echo "\"configure:107065: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:107391: \$? = $ac_status" >&5
+   echo "configure:107069: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -107848,7 +107526,7 @@ _LT_EOF
        # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 107851 "configure"
+#line 107529 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -107890,7 +107568,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	 # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 107893 "configure"
+#line 107571 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -109415,7 +109093,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 109418 "configure"
+#line 109096 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -109515,7 +109193,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 109518 "configure"
+#line 109196 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -110580,7 +110258,7 @@ case $host_os in
       # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 110583 "configure"
+#line 110261 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -110623,7 +110301,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	# Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 110626 "configure"
+#line 110304 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -111875,11 +111553,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:111878: $lt_compile\"" >&5)
+   (eval echo "\"configure:111556: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:111882: \$? = $ac_status" >&5
+   echo "configure:111560: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -111979,11 +111657,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:111982: $lt_compile\"" >&5)
+   (eval echo "\"configure:111660: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:111986: \$? = $ac_status" >&5
+   echo "configure:111664: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -113558,7 +113236,7 @@ esac
     zend_ini_parser.c zend_ini_scanner.c \
     zend_alloc.c zend_compile.c zend_constants.c zend_dynamic_array.c zend_dtrace.c \
     zend_execute_API.c zend_highlight.c zend_llist.c \
-    zend_opcode.c zend_operators.c zend_ptr_stack.c zend_stack.c \
+    zend_vm_opcodes.c zend_opcode.c zend_operators.c zend_ptr_stack.c zend_stack.c \
     zend_variables.c zend.c zend_API.c zend_extensions.c zend_hash.c \
     zend_list.c zend_indent.c zend_builtin_functions.c zend_sprintf.c \
     zend_ini.c zend_qsort.c zend_multibyte.c zend_ts_hash.c zend_stream.c \

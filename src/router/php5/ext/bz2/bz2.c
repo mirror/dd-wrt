@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2013 The PHP Group                                |
+  | Copyright (c) 1997-2014 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -229,6 +229,9 @@ PHP_BZ2_API php_stream *_php_stream_bz2open(php_stream_wrapper *wrapper,
 #endif  
 
 	if (php_check_open_basedir(path_copy TSRMLS_CC)) {
+#ifdef VIRTUAL_DIR
+		free(path_copy);
+#endif
 		return NULL;
 	}
 	
@@ -238,6 +241,9 @@ PHP_BZ2_API php_stream *_php_stream_bz2open(php_stream_wrapper *wrapper,
 	if (opened_path && bz_file) {
 		*opened_path = estrdup(path_copy);
 	}
+#ifdef VIRTUAL_DIR
+	free(path_copy);
+#endif
 	path_copy = NULL;
 	
 	if (bz_file == NULL) {

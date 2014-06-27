@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) 1997-2014 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -402,7 +402,7 @@ static zval *spl_array_read_dimension_ex(int check_inherited, zval *object, zval
 	/* When in a write context,
 	 * ZE has to be fooled into thinking this is in a reference set
 	 * by separating (if necessary) and returning as an is_ref=1 zval (even if refcount == 1) */
-	if ((type == BP_VAR_W || type == BP_VAR_RW || type == BP_VAR_UNSET) && !Z_ISREF_PP(ret)) {
+	if ((type == BP_VAR_W || type == BP_VAR_RW || type == BP_VAR_UNSET) && !Z_ISREF_PP(ret) && ret != &EG(uninitialized_zval_ptr)) {
 		if (Z_REFCOUNT_PP(ret) > 1) {
 			zval *newval;
 
@@ -922,7 +922,14 @@ static int spl_array_skip_protected(spl_array_object *intern, HashTable *aht TSR
 	if (Z_TYPE_P(intern->array) == IS_OBJECT) {
 		do {
 			if (zend_hash_get_current_key_ex(aht, &string_key, &string_length, &num_key, 0, &intern->pos) == HASH_KEY_IS_STRING) {
-				if (!string_length || string_key[0]) {
+				/* zend_hash_get_current_key_ex() should never set
+				 * string_length to 0 when returning HASH_KEY_IS_STRING, but we
+				 * may as well be defensive and consider that successful.
+				 * Beyond that, we're looking for protected keys (which will
+				 * have a null byte at string_key[0]), but want to avoid
+				 * skipping completely empty keys (which will also have the
+				 * null byte, but a string_length of 1). */
+				if (!string_length || string_key[0] || string_length == 1) {
 					return SUCCESS;
 				}
 			} else {
@@ -1789,7 +1796,7 @@ SPL_METHOD(Array, unserialize)
 	++p;
 
 	ALLOC_INIT_ZVAL(pmembers);
-	if (!php_var_unserialize(&pmembers, &p, s + buf_len, &var_hash TSRMLS_CC)) {
+	if (!php_var_unserialize(&pmembers, &p, s + buf_len, &var_hash TSRMLS_CC) || Z_TYPE_P(pmembers) != IS_ARRAY) {
 		zval_ptr_dtor(&pmembers);
 		goto outexcept;
 	}

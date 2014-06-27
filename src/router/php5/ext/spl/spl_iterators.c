@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) 1997-2014 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -848,6 +848,8 @@ static union _zend_function *spl_recursive_it_get_method(zval **object_ptr, char
 				*object_ptr = zobj;
 				function_handler = Z_OBJ_HT_P(*object_ptr)->get_method(object_ptr, method, method_len, key TSRMLS_CC);
 			}
+		} else {
+			*object_ptr = zobj;
 		}
 	}
 	return function_handler;
@@ -2055,7 +2057,7 @@ SPL_METHOD(RegexIterator, accept)
 	}
 
 	if (intern->u.regex.flags & REGIT_INVERTED) {
-		RETVAL_BOOL(Z_LVAL_P(return_value));
+		RETVAL_BOOL(! Z_LVAL_P(return_value));
 	}
 
 	if (use_copy) {
@@ -3692,6 +3694,7 @@ PHP_MINIT_FUNCTION(spl_iterators)
 #if HAVE_PCRE || HAVE_BUNDLED_PCRE
 	REGISTER_SPL_SUB_CLASS_EX(RegexIterator, FilterIterator, spl_dual_it_new, spl_funcs_RegexIterator);
 	REGISTER_SPL_CLASS_CONST_LONG(RegexIterator, "USE_KEY",     REGIT_USE_KEY);
+	REGISTER_SPL_CLASS_CONST_LONG(RegexIterator, "INVERT_MATCH",REGIT_INVERTED);
 	REGISTER_SPL_CLASS_CONST_LONG(RegexIterator, "MATCH",       REGIT_MODE_MATCH);
 	REGISTER_SPL_CLASS_CONST_LONG(RegexIterator, "GET_MATCH",   REGIT_MODE_GET_MATCH);
 	REGISTER_SPL_CLASS_CONST_LONG(RegexIterator, "ALL_MATCHES", REGIT_MODE_ALL_MATCHES);

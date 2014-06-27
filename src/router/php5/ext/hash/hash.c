@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2013 The PHP Group                                |
+  | Copyright (c) 1997-2014 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -609,16 +609,15 @@ Generate a PBKDF2 hash of the given password and salt
 Returns lowercase hexits by default */
 PHP_FUNCTION(hash_pbkdf2)
 {
-	char *returnval, *algo, *salt, *pass = NULL;
-	unsigned char *computed_salt, *digest, *temp, *result, *K1, *K2 = NULL;
-	long loops, i, j, algo_len, pass_len, iterations, length, digest_length = 0;
-	int argc, salt_len = 0;
+	char *returnval, *algo, *salt, *pass;
+	unsigned char *computed_salt, *digest, *temp, *result, *K1, *K2;
+	long loops, i, j, iterations, length = 0, digest_length;
+	int algo_len, pass_len, salt_len;
 	zend_bool raw_output = 0;
 	const php_hash_ops *ops;
 	void *context;
 
-	argc = ZEND_NUM_ARGS();
-	if (zend_parse_parameters(argc TSRMLS_CC, "sssl|lb", &algo, &algo_len, &pass, &pass_len, &salt, &salt_len, &iterations, &length, &raw_output) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sssl|lb", &algo, &algo_len, &pass, &pass_len, &salt, &salt_len, &iterations, &length, &raw_output) == FAILURE) {
 		return;
 	}
 
