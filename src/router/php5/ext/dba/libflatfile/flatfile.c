@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) 1997-2014 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -19,7 +19,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 6ce2f616c81b8404a2b4143c0be5cadeaa0d4742 $ */
+/* $Id: a1fce218ab7b7d67f4d8eb1c8f931246e35e5247 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -306,7 +306,7 @@ datum flatfile_nextkey(flatfile *dba TSRMLS_DC) {
 /* {{{ flatfile_version */
 char *flatfile_version() 
 {
-	return "1.0, $Id: 6ce2f616c81b8404a2b4143c0be5cadeaa0d4742 $";
+	return "1.0, $Id: a1fce218ab7b7d67f4d8eb1c8f931246e35e5247 $";
 }
 /* }}} */ 
 

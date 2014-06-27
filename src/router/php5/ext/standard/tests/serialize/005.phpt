@@ -157,7 +157,7 @@ object(TestNAOld)#%d (0) {
 ===NANew===
 unserializer(TestNANew)
 TestNew::__wakeup()
-object(TestNANew)#%d (0) {
+object(TestNANew)#1 (0) {
 }
 ===NANew2===
 unserializer(TestNANew2)
