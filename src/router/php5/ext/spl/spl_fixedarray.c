@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2013 The PHP Group                                |
+  | Copyright (c) 1997-2014 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -116,7 +116,7 @@ static void spl_fixedarray_resize(spl_fixedarray *array, long size TSRMLS_DC) /*
 			array->elements = NULL;
 		}
 	} else if (size > array->size) {
-		array->elements = erealloc(array->elements, sizeof(zval *) * size);
+		array->elements = safe_erealloc(array->elements, size, sizeof(zval *), 0);
 		memset(array->elements + array->size, '\0', sizeof(zval *) * (size - array->size));
 	} else { /* size < array->size */
 		long i;

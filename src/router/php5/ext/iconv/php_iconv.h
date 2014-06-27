@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2013 The PHP Group                                |
+   | Copyright (c) 1997-2014 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -17,7 +17,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 04fa6ef5343d7bcc71d249670b2771f096bda5bf $ */
+/* $Id: 26e3f3b2a614c7fef88059b9e69137f694a0de42 $ */
 
 #ifndef PHP_ICONV_H
 #define PHP_ICONV_H
