@@ -154,7 +154,6 @@ static int br_handle_local_finish(struct sk_buff *skb)
 
 	/* check if vlan is allowed, to avoid spoofing */
 	if (p->flags & BR_LEARNING && br_should_learn(p, skb, &vid))
-		if (p->flags & BR_LEARNING)
 			br_fdb_update(p->br, p, eth_hdr(skb)->h_source, vid, false);
 	}
 
