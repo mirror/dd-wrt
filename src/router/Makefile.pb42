@@ -152,7 +152,7 @@ obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
 #
 
 
-all: install_headers build_date clean_target $(obj-y) $(obj-m) $(LINUXDIR)/.config kernel
+all: kernel install_headers build_date clean_target $(obj-y) $(obj-m) $(LINUXDIR)/.config
 
 
 build_date:
@@ -551,11 +551,11 @@ wndr:
 		$(ARCH)-uclibc/rootfs.uimage \
 		$(ARCH)-uclibc/rootfs.wndr3700v4
 	sync	
-	fsync $(ARCH)-uclibc/rootfs.wndr3700v4
-	fsync $(ARCH)-uclibc/root.wndr3700v4
+	-fsync $(ARCH)-uclibc/rootfs.wndr3700v4
+	-fsync $(ARCH)-uclibc/root.wndr3700v4
 	dd if=$(TOP)/$(ARCH)-uclibc/root.wndr3700v4 bs=$(shell expr $(shell expr $(shell expr $(shell expr $(shell expr 128 + $(shell du -b $(TOP)/$(ARCH)-uclibc/root.wndr3700v4 | awk {'print $$1'})) / 131072) + 1) \* 131072) - 64) conv=sync of=$(TOP)/$(ARCH)-uclibc/root.wndr3700v4.final
 	sync
-	fsync $(TOP)/$(ARCH)-uclibc/root.wndr3700v4.final
+	-fsync $(TOP)/$(ARCH)-uclibc/root.wndr3700v4.final
 	dd if=$(ARCH)-uclibc/rootfs.wndr3700v4 bs=64 count=1 conv=fsync >> $(ARCH)-uclibc/root.wndr3700v4.final
 	( \
 	    dd if=$(ARCH)-uclibc/root.wndr3700v4.final bs=$(shell du -b $(ARCH)-uclibc/root.wndr3700v4.final | awk {'print $$1'}) conv=sync; \
