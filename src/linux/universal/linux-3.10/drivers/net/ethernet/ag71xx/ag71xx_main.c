@@ -1133,7 +1133,7 @@ static int ag71xx_probe(struct platform_device *pdev)
 	}
 
 	if (pdata->mii_bus_dev == NULL && pdata->phy_mask) {
-		dev_err(&pdev->dev, "no MII bus device specified\n");
+		printk(KERN_INFO "no MII bus device specified\n");
 		err = -EINVAL;
 		goto err_out;
 	}
@@ -1145,8 +1145,11 @@ static int ag71xx_probe(struct platform_device *pdev)
 		goto err_out;
 	}
 
-	if (!pdata->max_frame_len || !pdata->desc_pktlen_mask)
-		return -EINVAL;
+	if (!pdata->max_frame_len || !pdata->desc_pktlen_mask) {
+		printk(KERN_INFO "bad frame len, fix it\n");
+		pdata->max_frame_len = 1540;
+		pdata->desc_pktlen_mask = 0xfff;
+	}
 
 	SET_NETDEV_DEV(dev, &pdev->dev);
 
