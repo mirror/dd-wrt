@@ -309,6 +309,14 @@ uint64_t octeon_get_clock_rate(void)
 }
 EXPORT_SYMBOL(octeon_get_clock_rate);
 
+
+int getCPUClock(void)
+{
+	struct cvmx_sysinfo *sysinfo = cvmx_sysinfo_get();
+
+	return sysinfo->cpu_clock_hz / 1000;
+}
+
 static u64 octeon_io_clock_rate;
 
 u64 octeon_get_io_clock_rate(void)

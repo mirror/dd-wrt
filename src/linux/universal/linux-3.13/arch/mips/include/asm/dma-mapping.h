@@ -16,6 +16,9 @@
 #include <dma-coherence.h>
 #endif
 
+extern struct dma_map_ops *mips_dma_map_ops;
+
+
 void __dma_sync(struct page *page, unsigned long offset, size_t size,
 		enum dma_data_direction direction);
 void *mips_dma_alloc_coherent(struct device *dev, size_t size,

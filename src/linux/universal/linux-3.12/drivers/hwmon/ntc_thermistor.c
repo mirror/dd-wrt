@@ -44,7 +44,6 @@ struct ntc_compensation {
 	unsigned int	ohm;
 };
 
-/* Order matters, ntc_match references the entries by index */
 static const struct platform_device_id ntc_thermistor_id[] = {
 	{ "ncp15wb473", TYPE_NCPXXWB473 },
 	{ "ncp18wb473", TYPE_NCPXXWB473 },
@@ -142,7 +141,7 @@ struct ntc_data {
 	char name[PLATFORM_NAME_SIZE];
 };
 
-#if defined(CONFIG_OF) && IS_ENABLED(CONFIG_IIO)
+#ifdef CONFIG_OF
 static int ntc_adc_iio_read(struct ntc_thermistor_platform_data *pdata)
 {
 	struct iio_channel *channel = pdata->chan;
@@ -164,15 +163,15 @@ static int ntc_adc_iio_read(struct ntc_thermistor_platform_data *pdata)
 
 static const struct of_device_id ntc_match[] = {
 	{ .compatible = "ntc,ncp15wb473",
-		.data = &ntc_thermistor_id[0] },
+		.data = &ntc_thermistor_id[TYPE_NCPXXWB473] },
 	{ .compatible = "ntc,ncp18wb473",
-		.data = &ntc_thermistor_id[1] },
+		.data = &ntc_thermistor_id[TYPE_NCPXXWB473] },
 	{ .compatible = "ntc,ncp21wb473",
-		.data = &ntc_thermistor_id[2] },
+		.data = &ntc_thermistor_id[TYPE_NCPXXWB473] },
 	{ .compatible = "ntc,ncp03wb473",
-		.data = &ntc_thermistor_id[3] },
+		.data = &ntc_thermistor_id[TYPE_NCPXXWB473] },
 	{ .compatible = "ntc,ncp15wl333",
-		.data = &ntc_thermistor_id[4] },
+		.data = &ntc_thermistor_id[TYPE_NCPXXWL333] },
 	{ },
 };
 MODULE_DEVICE_TABLE(of, ntc_match);
@@ -223,8 +222,6 @@ ntc_thermistor_parse_dt(struct platform_device *pdev)
 {
 	return NULL;
 }
-
-#define ntc_match	NULL
 
 static void ntc_iio_channel_release(struct ntc_thermistor_platform_data *pdata)
 { }
