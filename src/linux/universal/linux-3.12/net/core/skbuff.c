@@ -2855,84 +2855,81 @@ EXPORT_SYMBOL_GPL(skb_pull_rcsum);
 
 /**
  *	skb_segment - Perform protocol segmentation on skb.
- *	@head_skb: buffer to segment
+ *	@skb: buffer to segment
  *	@features: features for the output path (see dev->features)
  *
  *	This function performs segmentation on the given skb.  It returns
  *	a pointer to the first in a list of new skbs for the segments.
  *	In case of error it returns ERR_PTR(err).
  */
-struct sk_buff *skb_segment(struct sk_buff *head_skb,
-			    netdev_features_t features)
+struct sk_buff *skb_segment(struct sk_buff *skb, netdev_features_t features)
 {
 	struct sk_buff *segs = NULL;
 	struct sk_buff *tail = NULL;
-	struct sk_buff *list_skb = skb_shinfo(head_skb)->frag_list;
-	skb_frag_t *frag = skb_shinfo(head_skb)->frags;
-	unsigned int mss = skb_shinfo(head_skb)->gso_size;
-	unsigned int doffset = head_skb->data - skb_mac_header(head_skb);
-	struct sk_buff *frag_skb = head_skb;
+	struct sk_buff *fskb = skb_shinfo(skb)->frag_list;
+	skb_frag_t *skb_frag = skb_shinfo(skb)->frags;
+	unsigned int mss = skb_shinfo(skb)->gso_size;
+	unsigned int doffset = skb->data - skb_mac_header(skb);
 	unsigned int offset = doffset;
-	unsigned int tnl_hlen = skb_tnl_header_len(head_skb);
+	unsigned int tnl_hlen = skb_tnl_header_len(skb);
 	unsigned int headroom;
 	unsigned int len;
 	__be16 proto;
 	bool csum;
 	int sg = !!(features & NETIF_F_SG);
-	int nfrags = skb_shinfo(head_skb)->nr_frags;
+	int nfrags = skb_shinfo(skb)->nr_frags;
 	int err = -ENOMEM;
 	int i = 0;
 	int pos;
 
-	proto = skb_network_protocol(head_skb);
+	proto = skb_network_protocol(skb);
 	if (unlikely(!proto))
 		return ERR_PTR(-EINVAL);
 
 	csum = !!can_checksum_protocol(features, proto);
-	__skb_push(head_skb, doffset);
-	headroom = skb_headroom(head_skb);
-	pos = skb_headlen(head_skb);
+	__skb_push(skb, doffset);
+	headroom = skb_headroom(skb);
+	pos = skb_headlen(skb);
 
 	do {
 		struct sk_buff *nskb;
-		skb_frag_t *nskb_frag;
+		skb_frag_t *frag;
 		int hsize;
 		int size;
 
-		len = head_skb->len - offset;
+		len = skb->len - offset;
 		if (len > mss)
 			len = mss;
 
-		hsize = skb_headlen(head_skb) - offset;
+		hsize = skb_headlen(skb) - offset;
 		if (hsize < 0)
 			hsize = 0;
 		if (hsize > len || !sg)
 			hsize = len;
 
-		if (!hsize && i >= nfrags && skb_headlen(list_skb) &&
-		    (skb_headlen(list_skb) == len || sg)) {
-			BUG_ON(skb_headlen(list_skb) > len);
+		if (!hsize && i >= nfrags && skb_headlen(fskb) &&
+		    (skb_headlen(fskb) == len || sg)) {
+			BUG_ON(skb_headlen(fskb) > len);
 
 			i = 0;
-			nfrags = skb_shinfo(list_skb)->nr_frags;
-			frag = skb_shinfo(list_skb)->frags;
-			frag_skb = list_skb;
-			pos += skb_headlen(list_skb);
+			nfrags = skb_shinfo(fskb)->nr_frags;
+			skb_frag = skb_shinfo(fskb)->frags;
+			pos += skb_headlen(fskb);
 
 			while (pos < offset + len) {
 				BUG_ON(i >= nfrags);
 
-				size = skb_frag_size(frag);
+				size = skb_frag_size(skb_frag);
 				if (pos + size > offset + len)
 					break;
 
 				i++;
 				pos += size;
-				frag++;
+				skb_frag++;
 			}
 
-			nskb = skb_clone(list_skb, GFP_ATOMIC);
-			list_skb = list_skb->next;
+			nskb = skb_clone(fskb, GFP_ATOMIC);
+			fskb = fskb->next;
 
 			if (unlikely(!nskb))
 				goto err;
@@ -2953,7 +2950,7 @@ struct sk_buff *skb_segment(struct sk_buff *head_skb,
 			__skb_push(nskb, doffset);
 		} else {
 			nskb = __alloc_skb(hsize + doffset + headroom,
-					   GFP_ATOMIC, skb_alloc_rx_flag(head_skb),
+					   GFP_ATOMIC, skb_alloc_rx_flag(skb),
 					   NUMA_NO_NODE);
 
 			if (unlikely(!nskb))
@@ -2969,19 +2966,19 @@ struct sk_buff *skb_segment(struct sk_buff *head_skb,
 			segs = nskb;
 		tail = nskb;
 
-		__copy_skb_header(nskb, head_skb);
-		nskb->mac_len = head_skb->mac_len;
+		__copy_skb_header(nskb, skb);
+		nskb->mac_len = skb->mac_len;
 
 		/* nskb and skb might have different headroom */
 		if (nskb->ip_summed == CHECKSUM_PARTIAL)
 			nskb->csum_start += skb_headroom(nskb) - headroom;
 
 		skb_reset_mac_header(nskb);
-		skb_set_network_header(nskb, head_skb->mac_len);
+		skb_set_network_header(nskb, skb->mac_len);
 		nskb->transport_header = (nskb->network_header +
-					  skb_network_header_len(head_skb));
+					  skb_network_header_len(skb));
 
-		skb_copy_from_linear_data_offset(head_skb, -tnl_hlen,
+		skb_copy_from_linear_data_offset(skb, -tnl_hlen,
 						 nskb->data - tnl_hlen,
 						 doffset + tnl_hlen);
 
@@ -2990,32 +2987,30 @@ struct sk_buff *skb_segment(struct sk_buff *head_skb,
 
 		if (!sg) {
 			nskb->ip_summed = CHECKSUM_NONE;
-			nskb->csum = skb_copy_and_csum_bits(head_skb, offset,
+			nskb->csum = skb_copy_and_csum_bits(skb, offset,
 							    skb_put(nskb, len),
 							    len, 0);
 			continue;
 		}
 
-		nskb_frag = skb_shinfo(nskb)->frags;
+		frag = skb_shinfo(nskb)->frags;
 
-		skb_copy_from_linear_data_offset(head_skb, offset,
+		skb_copy_from_linear_data_offset(skb, offset,
 						 skb_put(nskb, hsize), hsize);
 
-		skb_shinfo(nskb)->tx_flags = skb_shinfo(head_skb)->tx_flags &
-			SKBTX_SHARED_FRAG;
+		skb_shinfo(nskb)->tx_flags = skb_shinfo(skb)->tx_flags & SKBTX_SHARED_FRAG;
 
 		while (pos < offset + len) {
 			if (i >= nfrags) {
-				BUG_ON(skb_headlen(list_skb));
+				BUG_ON(skb_headlen(fskb));
 
 				i = 0;
-				nfrags = skb_shinfo(list_skb)->nr_frags;
-				frag = skb_shinfo(list_skb)->frags;
-				frag_skb = list_skb;
+				nfrags = skb_shinfo(fskb)->nr_frags;
+				skb_frag = skb_shinfo(fskb)->frags;
 
 				BUG_ON(!nfrags);
 
-				list_skb = list_skb->next;
+				fskb = fskb->next;
 			}
 
 			if (unlikely(skb_shinfo(nskb)->nr_frags >=
@@ -3026,30 +3021,27 @@ struct sk_buff *skb_segment(struct sk_buff *head_skb,
 				goto err;
 			}
 
-			if (unlikely(skb_orphan_frags(frag_skb, GFP_ATOMIC)))
-				goto err;
-
-			*nskb_frag = *frag;
-			__skb_frag_ref(nskb_frag);
-			size = skb_frag_size(nskb_frag);
+			*frag = *skb_frag;
+			__skb_frag_ref(frag);
+			size = skb_frag_size(frag);
 
 			if (pos < offset) {
-				nskb_frag->page_offset += offset - pos;
-				skb_frag_size_sub(nskb_frag, offset - pos);
+				frag->page_offset += offset - pos;
+				skb_frag_size_sub(frag, offset - pos);
 			}
 
 			skb_shinfo(nskb)->nr_frags++;
 
 			if (pos + size <= offset + len) {
 				i++;
-				frag++;
+				skb_frag++;
 				pos += size;
 			} else {
-				skb_frag_size_sub(nskb_frag, pos + size - (offset + len));
+				skb_frag_size_sub(frag, pos + size - (offset + len));
 				goto skip_fraglist;
 			}
 
-			nskb_frag++;
+			frag++;
 		}
 
 skip_fraglist:
@@ -3063,12 +3055,15 @@ perform_csum_check:
 						  nskb->len - doffset, 0);
 			nskb->ip_summed = CHECKSUM_NONE;
 		}
-	} while ((offset += len) < head_skb->len);
+	} while ((offset += len) < skb->len);
 
 	return segs;
 
 err:
-	kfree_skb_list(segs);
+	while ((skb = segs)) {
+		segs = skb->next;
+		kfree_skb(skb);
+	}
 	return ERR_PTR(err);
 }
 EXPORT_SYMBOL_GPL(skb_segment);

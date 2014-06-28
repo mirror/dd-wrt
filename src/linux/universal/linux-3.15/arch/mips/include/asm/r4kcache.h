@@ -412,6 +412,7 @@ static inline void invalidate_tcache_page(unsigned long addr)
 		: "r" (base),						\
 		  "i" (op));
 
+#ifdef CONFIG_MIPS_BRCM
 static inline void blast_dcache(void)
 {
 	unsigned long start = KSEG0;
