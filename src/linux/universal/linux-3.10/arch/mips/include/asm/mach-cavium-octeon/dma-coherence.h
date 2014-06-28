@@ -21,18 +21,21 @@ static inline dma_addr_t plat_map_dma_mem(struct device *dev, void *addr,
 	size_t size)
 {
 	BUG();
+	return 0;
 }
 
 static inline dma_addr_t plat_map_dma_mem_page(struct device *dev,
 	struct page *page)
 {
 	BUG();
+	return 0;
 }
 
 static inline unsigned long plat_dma_addr_to_phys(struct device *dev,
 	dma_addr_t dma_addr)
 {
 	BUG();
+	return 0;
 }
 
 static inline void plat_unmap_dma_mem(struct device *dev, dma_addr_t dma_addr,
@@ -44,6 +47,7 @@ static inline void plat_unmap_dma_mem(struct device *dev, dma_addr_t dma_addr,
 static inline int plat_dma_supported(struct device *dev, u64 mask)
 {
 	BUG();
+	return 0;
 }
 
 static inline int plat_device_is_coherent(struct device *dev)

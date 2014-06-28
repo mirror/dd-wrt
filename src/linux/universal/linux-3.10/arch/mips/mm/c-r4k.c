@@ -44,7 +44,12 @@
 #endif
 
 /* For enabling BCM4710 cache workarounds */
+#ifndef CONFIG_MIPS_BRCM
+#define bcm4710 0
+#else
 int bcm4710 = 0;
+#endif
+
 
 /*
  * Special Variant of smp_call_function for use by cache functions:
@@ -1701,8 +1706,8 @@ void __cpuinit r4k_cache_init(void)
 		printk("Enabling BCM4710A0 cache workarounds.\n");
 		bcm4710 = 1;
 	} else
-#endif
 		bcm4710 = 0;
+#endif
 
 	probe_pcache();
 	setup_scache();

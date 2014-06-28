@@ -376,6 +376,7 @@ static inline void invalidate_tcache_page(unsigned long addr)
 		: "r" (base),						\
 		  "i" (op));
 
+#ifdef CONFIG_MIPS_BRCM
 static inline void blast_dcache(void)
 {
 	unsigned long start = KSEG0;
@@ -418,7 +419,7 @@ static inline void blast_dcache_page_indexed(unsigned long page)
 		}
 	}
 }
-
+#endif
 
 /* build blast_xxx, blast_xxx_page, blast_xxx_page_indexed */
 #define __BUILD_BLAST_CACHE(pfx, desc, indexop, hitop, lsize, war) \
