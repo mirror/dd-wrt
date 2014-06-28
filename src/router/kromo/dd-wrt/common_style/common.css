@@ -6,6 +6,7 @@ body {
   background:#fff;
   margin:.906em;
   font-size:69%;
+  -webkit-text-size-adjust:100%;
 }
 body.gui {
   text-align:center;
