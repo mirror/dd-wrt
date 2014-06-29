@@ -309,7 +309,7 @@ int getCPUClock(void)
 {
 	struct cvmx_sysinfo *sysinfo = cvmx_sysinfo_get();
 
-	return sysinfo->cpu_clock_hz / 1000;
+	return sysinfo->cpu_clock_hz / 1000000;
 }
 
 static u64 octeon_io_clock_rate;
