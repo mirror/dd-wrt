@@ -204,6 +204,29 @@ out:
 	return p;
 }
 
+static struct net_bridge_port *maybe_deliver_addr(
+	struct net_bridge_port *prev, struct net_bridge_port *p,
+	struct sk_buff *skb, const unsigned char *addr,
+	void (*__packet_hook)(const struct net_bridge_port *p,
+			      struct sk_buff *skb))
+{
+	struct net_device *dev = BR_INPUT_SKB_CB(skb)->brdev;
+
+	if (!should_deliver(p, skb))
+		return prev;
+
+	skb = skb_copy(skb, GFP_ATOMIC);
+	if (!skb) {
+		dev->stats.tx_dropped++;
+		return prev;
+	}
+
+	memcpy(eth_hdr(skb)->h_dest, addr, ETH_ALEN);
+	__packet_hook(p, skb);
+
+	return prev;
+}
+
 /* called under bridge lock */
 static void br_flood(struct net_bridge *br, struct sk_buff *skb,
 		     struct sk_buff *skb0,
@@ -270,6 +293,7 @@ static void br_multicast_flood(struct net_bridge_mdb_entry *mdst,
 	struct net_bridge_port *prev = NULL;
 	struct net_bridge_port_group *p;
 	struct hlist_node *rp;
+	const unsigned char *addr;
 
 	rp = rcu_dereference(hlist_first_rcu(&br->router_list));
 	p = mdst ? rcu_dereference(mdst->ports) : NULL;
@@ -280,10 +304,19 @@ static void br_multicast_flood(struct net_bridge_mdb_entry *mdst,
 		rport = rp ? hlist_entry(rp, struct net_bridge_port, rlist) :
 			     NULL;
 
-		port = (unsigned long)lport > (unsigned long)rport ?
-		       lport : rport;
+		if ((unsigned long)lport > (unsigned long)rport) {
+			port = lport;
+			addr = p->unicast ? p->eth_addr : NULL;
+		} else {
+			port = rport;
+			addr = NULL;
+		}
 
-		prev = maybe_deliver(prev, port, skb, __packet_hook);
+		if (addr)
+			prev = maybe_deliver_addr(prev, port, skb, addr,
+						  __packet_hook);
+		else
+			prev = maybe_deliver(prev, port, skb, __packet_hook);
 		if (IS_ERR(prev))
 			goto out;
 
