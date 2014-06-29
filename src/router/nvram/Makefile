@@ -48,6 +48,9 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI
 endif
+ifeq ($(CONFIG_EROUTER),y)
+CFLAGS += -DHAVE_EROUTER
+endif
 ifeq ($(CONFIG_FONERA),y)
 CFLAGS += -DHAVE_FONERA
 endif
@@ -151,42 +154,12 @@ install: all
 clean:
 	rm -f *.o *.a *.so nvram
 
-ifeq ($(ARCH),i386)
 libnvram.so: nvram_linux.o nvram_convert.o backup.o
 	$(CC) $(CFLAGS) -shared -o $@ $^
 	$(AR) cr libnvram.a $^
-endif
-ifeq ($(ARCH),x86_64)
-libnvram.so: nvram_linux.o nvram_convert.o backup.o
-	$(CC) $(CFLAGS) -shared -o $@ $^
-	$(AR) cr libnvram.a $^
-endif
-ifeq ($(ARCH),armeb)
-libnvram.so: nvram_linux.o nvram_convert.o backup.o
-	$(CC) $(CFLAGS) -shared -o $@ $^
-	$(AR) cr libnvram.a $^
-endif
-ifeq ($(ARCH),arm)
-libnvram.so: nvram_linux.o nvram_convert.o backup.o
-	$(CC) $(CFLAGS) -shared -o $@ $^
-	$(AR) cr libnvram.a $^
-endif
-ifeq ($(ARCH),powerpc)
-libnvram.so: nvram_linux.o nvram_convert.o backup.o
-	$(CC) $(CFLAGS) -shared -o $@ $^
-	$(AR) cr libnvram.a $^
-endif
-ifeq ($(ARCH),mips)
-libnvram.so: nvram_linux.o nvram_convert.o backup.o
-	$(CC) $(CFLAGS) -shared -o $@ $^
-	$(AR) cr libnvram.a $^
-endif
-ifeq ($(ARCH),mipsel)
-libnvram.so: nvram_linux.o nvram_convert.o backup.o
-	$(CC) $(CFLAGS) -shared -o $@ $^
-	$(AR) cr libnvram.a $^
-endif
+
 convertnvram: convertnvram.o
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram
+
 nvram: main.o
 	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram
