@@ -86,4 +86,6 @@ obj-$(CONFIG_RALINK_RT2880)	+= nvram_kernel.o
 obj-$(CONFIG_RALINK_RT2883)	+= nvram_kernel.o
 obj-$(CONFIG_ATHEROS)		+= nvram_kernel.o
 obj-$(CONFIG_MTD_RALINK)        += ralink-flash.o
+obj-$(CONFIG_CAVIUM_OCTEON_REFERENCE_BOARD) += nvram_kernel.o
+
 endif

@@ -562,8 +562,8 @@ dev_nvram_init(void)
 	if (i >= 32)
 	{
 	printk(KERN_EMERG "no nvram partition found\n");
-		return -1;
-		nvram_mtd = NULL;
+	nvram_mtd = NULL;
+	return -1;
 	}
     
 #endif

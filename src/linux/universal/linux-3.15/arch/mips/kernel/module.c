@@ -228,6 +228,14 @@ int module_frob_arch_sections(Elf_Ehdr *hdr, Elf_Shdr *sechdrs,
 	unsigned int core_size, init_size;
 	int i;
 
+	mod->arch.phys_plt_offset = 0;
+	mod->arch.virt_plt_offset = 0;
+	mod->arch.phys_plt_tbl = NULL;
+	mod->arch.virt_plt_tbl = NULL;
+
+	if (IS_ENABLED(CONFIG_64BIT))
+		return 0;
+
 	for (i = 1; i < hdr->e_shnum; i++)
 		if (sechdrs[i].sh_type == SHT_SYMTAB)
 			symindex = i;
@@ -235,10 +243,6 @@ int module_frob_arch_sections(Elf_Ehdr *hdr, Elf_Shdr *sechdrs,
 	core_size = get_plt_size(hdr, sechdrs, secstrings, symindex, false);
 	init_size = get_plt_size(hdr, sechdrs, secstrings, symindex, true);
 
-	mod->arch.phys_plt_offset = 0;
-	mod->arch.virt_plt_offset = 0;
-	mod->arch.phys_plt_tbl = NULL;
-	mod->arch.virt_plt_tbl = NULL;
 
 	if ((core_size + init_size) == 0)
 		return 0;
