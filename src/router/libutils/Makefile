@@ -305,6 +305,12 @@ endif
 ifeq ($(CONFIG_DLM101),y)
   CFLAGS += -DHAVE_DLM101
 endif
+ifeq ($(CONFIG_OCTEON),y)
+  CFLAGS += -DHAVE_OCTEON
+endif
+ifeq ($(CONFIG_EROUTER),y)
+  CFLAGS += -DHAVE_EROUTER
+endif
 ifeq ($(CONFIG_WG302V1),y)
   CFLAGS += -DHAVE_WG302V1
 endif
