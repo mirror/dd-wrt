@@ -101,6 +101,9 @@ struct net_bridge_port_group {
 	struct timer_list		timer;
 	struct br_ip			addr;
 	unsigned char			state;
+
+	unsigned char			eth_addr[ETH_ALEN];
+	bool				unicast;
 };
 
 struct net_bridge_mdb_entry
@@ -158,6 +161,7 @@ struct net_bridge_port
 #define BR_MULTICAST_FAST_LEAVE	0x00000008
 #define BR_ADMIN_COST		0x00000010
 #define BR_ISOLATE_MODE		0x00000020
+#define BR_MULTICAST_TO_UCAST	0x00000040
 
 #ifdef CONFIG_BRIDGE_IGMP_SNOOPING
 	u32				multicast_startup_queries_sent;
@@ -469,7 +473,8 @@ extern struct net_bridge_port_group *br_multicast_new_port_group(
 				struct net_bridge_port *port,
 				struct br_ip *group,
 				struct net_bridge_port_group *next,
-				unsigned char state);
+				unsigned char state,
+				const unsigned char *src);
 extern void br_mdb_init(void);
 extern void br_mdb_uninit(void);
 extern void br_mdb_notify(struct net_device *dev, struct net_bridge_port *port,
