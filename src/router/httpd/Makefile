@@ -170,6 +170,9 @@ endif
 ifeq ($(CONFIG_SYSLOG),y)
 CFLAGS += -DHAVE_SYSLOG
 endif
+ifeq ($(CONFIG_OCTEON),y)
+CFLAGS += -DHAVE_OCTEON
+endif
 ifeq ($(CONFIG_STATUS_SYSLOG),y)
 CFLAGS += -DHAVE_STATUS_SYSLOG
 endif
