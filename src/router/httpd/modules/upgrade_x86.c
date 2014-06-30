@@ -26,6 +26,11 @@
 #include <broadcom.h>
 #include <cyutils.h>
 
+
+#ifdef HAVE_EROUTER
+#define HAVE_RB600
+#endif
+
 #define MIN_BUF_SIZE    4096
 #define CODE_PATTERN_ERROR 9999
 static int upgrade_ret;
@@ -214,6 +219,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #endif
 	fprintf(stderr, "Write Linux %d to %s\n", linuxsize, dev);
 	//backup nvram
+#ifndef HAVE_EROUTER
 	fprintf(stderr, "backup nvram\n");
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in) {
@@ -230,6 +236,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		fclose(in);
 		free(mem);
 	}
+#endif
 	fprintf(stderr, "write system\n");
 	FILE *out = fopen(drive, "r+b");
 	char *flashbuf = (char *)malloc(linuxsize);
@@ -332,6 +339,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	 * Restore factory original settings if told to. This will also cause a
 	 * restore defaults on reboot of a Sveasoft firmware. 
 	 */
+#ifndef HAVE_EROUTER
 	if (nvram_match("sv_restore_defaults", "1")) {
 		system2("rm -f /usr/local/nvram/nvram.bin");
 		char drive[64];
@@ -351,6 +359,11 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 		fsync(fileno(in));
 		fclose(in);
 	}
+#else
+	if (nvram_match("sv_restore_defaults", "1")) {
+		eval("erase", "nvram");
+	}
+#endif
 	/*
 	 * Slurp anything remaining in the request 
 	 */
