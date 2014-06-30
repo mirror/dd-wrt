@@ -81,6 +81,9 @@ void start_sysinit(void)
 
 	int brand = getRouterBrand();
 
+	insmod("ocf");
+	insmod("cryptodev");
+	insmod("cryptocteon");
 	/*
 	 * network drivers 
 	 */
