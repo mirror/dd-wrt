@@ -80,6 +80,9 @@ endif
 ifeq ($(CONFIG_LAGUNA),y)
 MODULE:=conntrack.26
 endif
+ifeq ($(CONFIG_OCTEON),y)
+MODULE:=conntrack.26
+endif
 ifeq ($(CONFIG_AP83),y)
 MODULE:=conntrack.26
 endif
