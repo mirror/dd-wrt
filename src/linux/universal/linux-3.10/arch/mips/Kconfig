@@ -813,6 +813,7 @@ config CAVIUM_OCTEON_REFERENCE_BOARD
 	select ZONE_DMA32
 	select USB_ARCH_HAS_OHCI
 	select USB_ARCH_HAS_EHCI
+	select ARCH_WANT_OPTIONAL_GPIOLIB	
 	select HOLES_IN_ZONE
 	help
 	  This option supports all of the Octeon reference boards from Cavium

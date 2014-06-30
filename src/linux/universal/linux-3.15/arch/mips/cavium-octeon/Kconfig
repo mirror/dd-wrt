@@ -23,6 +23,14 @@ config CAVIUM_OCTEON_2ND_KERNEL
 	  with this option to be run at the same time as one built without this
 	  option.
 
+config CAVIUM_OCTEON_KERNEL_CRYPTO
+	bool "Enable support for use of OCTEON crypto instructions from kernel code"
+	help
+	  Use of OCTEON crypto instructions from kernel code requires
+	  great care, and if done improperly, can corrupt userspace
+	  crypto state.  If OCTEON crypto instruction support is
+	  needed, select this option.
+
 config CAVIUM_OCTEON_CVMSEG_SIZE
 	int "Number of L1 cache lines reserved for CVMSEG memory"
 	range 0 54

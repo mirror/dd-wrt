@@ -20,6 +20,8 @@ obj-y += executive/
 obj-$(CONFIG_MTD)		      += flash_setup.o
 obj-$(CONFIG_SMP)		      += smp.o
 obj-$(CONFIG_OCTEON_ILM)	      += oct_ilm.o
+obj-$(CONFIG_GPIOLIB)                 += octeon-gpio.o
+obj-$(CONFIG_CAVIUM_OCTEON_KERNEL_CRYPTO) += octeon-crypto.o
 
 DTS_FILES = octeon_3xxx.dts octeon_68xx.dts
 DTB_FILES = $(patsubst %.dts, %.dtb, $(DTS_FILES))
