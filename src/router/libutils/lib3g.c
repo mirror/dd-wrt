@@ -47,7 +47,7 @@ static int scanFor(int Vendor, int Product)
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	char grepstr[128];
 	sprintf(grepstr, "grep Vendor=%x ProdID=%x /tmp/usb/devices|wc -l", Vendor, Product);
-	FILE *check = popen(grepstr, "rb");
+	FILE *check = popen(grepstr, "r");
 	if (check) {
 		int count = 0;
 		fscanf(check, "%d", &count);
