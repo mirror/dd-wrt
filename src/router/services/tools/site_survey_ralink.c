@@ -124,7 +124,7 @@ int site_survey_main(int argc, char *argv[])
 	}
 	char openn[32];
 	sprintf(openn,"iwpriv %s get_site_survey",getRADev(ifn));
-	FILE *scan = popen(openn, "rb");
+	FILE *scan = popen(openn, "r");
 	skipline(scan);
 	skipline(scan);
 //      fscanf(scan, "%s %s", b1, b2);  // skip first line

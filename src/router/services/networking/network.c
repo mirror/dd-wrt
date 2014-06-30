@@ -3300,7 +3300,7 @@ void start_wan(int status)
 			//set pin
 			sysprintf("uqmi -d /dev/cdc-wdm0 --verify-pin1 %s", nvram_safe_get("wan_pin"));
 			//set apn and dial
-			fp = popen("/usr/sbin/uqmi -d /dev/cdc-wdm0 --get-client-id wds", "rb");
+			fp = popen("/usr/sbin/uqmi -d /dev/cdc-wdm0 --get-client-id wds", "r");
 			fscanf(fp, "%d", &clientid);
 			pclose(fp);
 			fp = fopen("/tmp/qmi-clientid", "wb");
