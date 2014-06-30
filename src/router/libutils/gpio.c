@@ -40,7 +40,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#ifdef HAVE_UNIWIP
+#if defined(HAVE_UNIWIP) || defined(HAVE_OCTEON)
 void set_gpio(int pin, int value)
 {
 	char str[32];
