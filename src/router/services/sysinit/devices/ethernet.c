@@ -40,7 +40,7 @@ static int detect(char *devicename)
 	int res;
 
 	sprintf(devcall, "cat /tmp/devices|/bin/grep \"%s\"|/usr/bin/wc -l", devicename);
-	FILE *in = popen(devcall, "rb");
+	FILE *in = popen(devcall, "r");
 
 	fscanf(in, "%d", &res);
 	pclose(in);

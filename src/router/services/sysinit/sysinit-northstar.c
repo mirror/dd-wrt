@@ -1517,21 +1517,21 @@ void start_sysinit(void)
 		if (nvram_get("pci/1/1/vendid") == NULL) {
 
 			char buf[64];
-			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "rb");
+			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
 			fread(buf, 1, 24, fp);
 			pclose(fp);
 			buf[24] = 0;
 			fprintf(stderr, "set main mac %s\n", &buf[7]);
 			nvram_set("et0macaddr", &buf[7]);
 
-			fp = popen("cat /dev/mtdblock0|grep wlan5mac", "rb");
+			fp = popen("cat /dev/mtdblock0|grep wlan5mac", "r");
 			fread(buf, 1, 26, fp);
 			pclose(fp);
 			buf[26] = 0;
 			fprintf(stderr, "set 5g mac %s\n", &buf[9]);
 			nvram_set("pci/2/0/macaddr", &buf[9]);
 			nvram_set("pci/2/1/macaddr", &buf[9]);
-			fp = popen("cat /dev/mtdblock0|grep wlan24mac", "rb");
+			fp = popen("cat /dev/mtdblock0|grep wlan24mac", "r");
 			fread(buf, 1, 27, fp);
 			pclose(fp);
 			buf[27] = 0;
