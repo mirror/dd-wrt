@@ -119,7 +119,7 @@ int bcm_gettxpower(char *wlname)
 
 	sprintf(cmd, "wl -i %s txpwr1", get_wl_instance_name(c));
 
-	FILE *in = popen(cmd, "rb");
+	FILE *in = popen(cmd, "r");
 	if (in == NULL)
 		return pwr;
 	// TxPower is 74 qdbm,  18.50 dbm, 71 mW  Override is Off               

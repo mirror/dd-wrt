@@ -4165,7 +4165,8 @@ int pidof(const char *name)
 {
 	pid_t *pids;
 	pid_t p;
-
+	if (!name)
+	    return -1;
 	if (_pidof(name, &pids) > 0) {
 		p = *pids;
 		free(pids);

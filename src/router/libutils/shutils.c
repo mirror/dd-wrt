@@ -697,6 +697,31 @@ void addList(char *listname, char *value)
 	free(newlist);
 }
 
+size_t strlcpy_compat(register char *dst,
+				  register const char *src,
+				  size_t n)
+{
+	const char *src0 = src;
+	char dummy[1];
+
+	if (!n) {
+		dst = dummy;
+	} else {
+		--n;
+	}
+
+	while ((*dst = *src) != 0) {
+		if (n) {
+			--n;
+			++dst;
+		}
+		++src;
+	}
+
+	return src - src0;
+}
+
+
 int f_read_string(const char *path, char *buffer, int max);
 
 char *psname(int pid, char *buffer, int maxlen)
@@ -713,7 +738,7 @@ char *psname(int pid, char *buffer, int maxlen)
 	    && ((p = strrchr(buf, ')')) != NULL)) {
 		*p = 0;
 		if (((p = strchr(buf, '(')) != NULL) && (atoi(buf) == pid)) {
-			strlcpy(buffer, p + 1, maxlen);
+			strlcpy_compat(buffer, p + 1, maxlen);
 		}
 	}
 	return buffer;
