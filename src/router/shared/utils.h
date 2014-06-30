@@ -672,7 +672,7 @@
 
 #define ROUTER_ASUS_AC87U 0xdb1b // BCM4708 SMP 800 Mhz 128 MB Nand Flash, 128 MB Ram
 
-#define ROUTER_UBNT_EROUTERLITE 0xdc0f // Edgerouter Lite  (e100) Cavium Octeon SMP
+#define ROUTER_UBNT_EROUTERLITE 0xdc1b // Edgerouter Lite  (e100) Cavium Octeon SMP
 
 #define NVROUTER "DD_BOARD"
 
