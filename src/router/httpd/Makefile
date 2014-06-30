@@ -175,6 +175,7 @@ CFLAGS += -DHAVE_OCTEON
 endif
 ifeq ($(CONFIG_EROUTER),y)
 CFLAGS += -DHAVE_EROUTER
+OBJS += upgrade_x86.o
 endif
 ifeq ($(CONFIG_STATUS_SYSLOG),y)
 CFLAGS += -DHAVE_STATUS_SYSLOG
@@ -268,6 +269,7 @@ else
 
 ifneq ($(CONFIG_X86),y)
 ifneq ($(CONFIG_RB600),y)
+ifneq ($(CONFIG_EROUTER),y)
 ifeq ($(CONFIG_BUFFALO),y)
 ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),JP)
 OBJS += upgrade_buffalo.o
@@ -278,6 +280,7 @@ else
 OBJS += upgrade.o
 endif
 CFLAGS += -DHAVE_LOUD
+endif
 endif
 endif
 endif
