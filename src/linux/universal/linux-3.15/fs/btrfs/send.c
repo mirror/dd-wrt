@@ -975,7 +975,7 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
 	struct btrfs_dir_item *di;
 	struct btrfs_key di_key;
 	char *buf = NULL;
-	const int buf_len = PATH_MAX;
+	int buf_len;
 	u32 name_len;
 	u32 data_len;
 	u32 cur;
@@ -984,6 +984,11 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
 	int slot;
 	int num;
 	u8 type;
+
+	if (found_key->type == BTRFS_XATTR_ITEM_KEY)
+		buf_len = BTRFS_MAX_XATTR_SIZE(root);
+	else
+		buf_len = PATH_MAX;
 
 	buf = kmalloc(buf_len, GFP_NOFS);
 	if (!buf) {
@@ -1006,12 +1011,23 @@ static int iterate_dir_item(struct btrfs_root *root, struct btrfs_path *path,
 		type = btrfs_dir_type(eb, di);
 		btrfs_dir_item_key_to_cpu(eb, di, &di_key);
 
-		/*
-		 * Path too long
-		 */
-		if (name_len + data_len > buf_len) {
-			ret = -ENAMETOOLONG;
-			goto out;
+		if (type == BTRFS_FT_XATTR) {
+			if (name_len > XATTR_NAME_MAX) {
+				ret = -ENAMETOOLONG;
+				goto out;
+			}
+			if (name_len + data_len > buf_len) {
+				ret = -E2BIG;
+				goto out;
+			}
+		} else {
+			/*
+			 * Path too long
+			 */
+			if (name_len + data_len > buf_len) {
+				ret = -ENAMETOOLONG;
+				goto out;
+			}
 		}
 
 		read_extent_buffer(eb, buf, (unsigned long)(di + 1),
@@ -1628,6 +1644,10 @@ static int lookup_dir_item_inode(struct btrfs_root *root,
 		goto out;
 	}
 	btrfs_dir_item_key_to_cpu(path->nodes[0], di, &key);
+	if (key.type == BTRFS_ROOT_ITEM_KEY) {
+		ret = -ENOENT;
+		goto out;
+	}
 	*found_inode = key.objectid;
 	*found_type = btrfs_dir_type(path->nodes[0], di);
 
@@ -3054,32 +3074,17 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
 	if (ret < 0)
 		goto out;
 
-	if (parent_ino == sctx->cur_ino) {
-		/* child only renamed, not moved */
-		ASSERT(parent_gen == sctx->cur_inode_gen);
-		ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen,
-				   from_path);
-		if (ret < 0)
-			goto out;
-		ret = fs_path_add_path(from_path, name);
-		if (ret < 0)
-			goto out;
-	} else {
-		/* child moved and maybe renamed too */
-		sctx->send_progress = pm->ino;
-		ret = get_cur_path(sctx, pm->ino, pm->gen, from_path);
-		if (ret < 0)
-			goto out;
-	}
-
-	fs_path_free(name);
-	name = NULL;
-
-	to_path = fs_path_alloc();
-	if (!to_path) {
-		ret = -ENOMEM;
+	ret = get_cur_path(sctx, parent_ino, parent_gen,
+			   from_path);
+	if (ret < 0)
 		goto out;
-	}
+	ret = fs_path_add_path(from_path, name);
+	if (ret < 0)
+		goto out;
+
+	fs_path_reset(name);
+	to_path = name;
+	name = NULL;
 
 	sctx->send_progress = sctx->cur_ino + 1;
 	ret = get_cur_path(sctx, pm->ino, pm->gen, to_path);
