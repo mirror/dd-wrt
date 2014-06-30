@@ -39,8 +39,11 @@
 /****************************************************************************/
 
 #include <linux/scatterlist.h>
+#include <asm/octeon/cvmx.h>
+#include <asm/octeon/cvmx-address.h>
+#include <asm/octeon/octeon-model.h>
 #include <asm/octeon/octeon.h>
-#include "octeon-asm.h"
+#include <asm/octeon/cvmx-asm.h>
 
 /****************************************************************************/
 
