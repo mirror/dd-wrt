@@ -77,4 +77,4 @@ lzo2a_999_compress      ( const lzo_bytep src, lzo_uint  src_len,
 #endif /* already included */
 
 
-/* vim:set ts=4 et: */
+/* vim:set ts=4 sw=4 et: */

@@ -105,10 +105,10 @@ lzo_get_crc32_table(void)
 #define LZO_DO1(buf,i) \
     crc = table[(unsigned char)((unsigned char)crc ^ buf[i])] ^ (crc >> 8)
 #endif
-#define LZO_DO2(buf,i)  LZO_DO1(buf,i); LZO_DO1(buf,i+1);
-#define LZO_DO4(buf,i)  LZO_DO2(buf,i); LZO_DO2(buf,i+2);
-#define LZO_DO8(buf,i)  LZO_DO4(buf,i); LZO_DO4(buf,i+4);
-#define LZO_DO16(buf,i) LZO_DO8(buf,i); LZO_DO8(buf,i+8);
+#define LZO_DO2(buf,i)  LZO_DO1(buf,i); LZO_DO1(buf,i+1)
+#define LZO_DO4(buf,i)  LZO_DO2(buf,i); LZO_DO2(buf,i+2)
+#define LZO_DO8(buf,i)  LZO_DO4(buf,i); LZO_DO4(buf,i+4)
+#define LZO_DO16(buf,i) LZO_DO8(buf,i); LZO_DO8(buf,i+8)
 
 
 LZO_PUBLIC(lzo_uint32_t)

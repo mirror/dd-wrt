@@ -64,7 +64,4 @@
 #define lzo1f_decompress_asm_safe           0
 
 
-/*
-vi:ts=4:et
-*/
-
+/* vim:set ts=4 sw=4 et: */

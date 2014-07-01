@@ -100,10 +100,10 @@ _lzo_version_date(void)
 /* NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1 */
 
 #define LZO_DO1(buf,i)  s1 += buf[i]; s2 += s1
-#define LZO_DO2(buf,i)  LZO_DO1(buf,i); LZO_DO1(buf,i+1);
-#define LZO_DO4(buf,i)  LZO_DO2(buf,i); LZO_DO2(buf,i+2);
-#define LZO_DO8(buf,i)  LZO_DO4(buf,i); LZO_DO4(buf,i+4);
-#define LZO_DO16(buf,i) LZO_DO8(buf,i); LZO_DO8(buf,i+8);
+#define LZO_DO2(buf,i)  LZO_DO1(buf,i); LZO_DO1(buf,i+1)
+#define LZO_DO4(buf,i)  LZO_DO2(buf,i); LZO_DO2(buf,i+2)
+#define LZO_DO8(buf,i)  LZO_DO4(buf,i); LZO_DO4(buf,i+4)
+#define LZO_DO16(buf,i) LZO_DO8(buf,i); LZO_DO8(buf,i+8)
 
 LZO_PUBLIC(lzo_uint32_t)
 lzo_adler32(lzo_uint32_t adler, const lzo_bytep buf, lzo_uint len)

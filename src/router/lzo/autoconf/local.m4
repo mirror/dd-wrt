@@ -445,7 +445,7 @@ AC_DEFUN([mfx_LZO_CHECK_ENDIAN], [
 AC_C_BIGENDIAN([AC_DEFINE(LZO_ABI_BIG_ENDIAN,1,[Define to 1 if your machine is big endian.])],[AC_DEFINE(LZO_ABI_LITTLE_ENDIAN,1,[Define to 1 if your machine is little endian.])])
 ])
 
-dnl Serial 2 mfx/m4/lzo_lzochk.m4
+dnl Serial 3 mfx/m4/lzo_lzochk.m4
 
 AC_DEFUN([mfx_LZO_LZOCHK], [
 mfx_tmp=$1
@@ -456,9 +456,11 @@ test "X$mfx_tmp" = "X" || CPPFLAGS="$mfx_tmp $CPPFLAGS"
 AC_MSG_CHECKING([whether your compiler passes the LZO conformance test])
 
 AC_LANG_CONFTEST([AC_LANG_PROGRAM(
-[[#define LZO_CFG_NO_CONFIG_HEADER 1
+[[#include <limits.h>
+#include <stddef.h>
+#define LZO_CFG_NO_CONFIG_HEADER 1
 #define LZO_WANT_ACC_INCD_H 1
-#include $2
+$2
 #include $3
 
 #undef  LZOCHK_ASSERT
