@@ -270,7 +270,4 @@ zlib_crc32_x_compress   ( const m_bytep src, m_uint  src_len,
 #endif /* ALG_ZLIB */
 
 
-/*
-vi:ts=4:et
-*/
-
+/* vim:set ts=4 sw=4 et: */
