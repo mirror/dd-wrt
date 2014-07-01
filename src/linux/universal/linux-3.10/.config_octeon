@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.45 Kernel Configuration
+# Linux/mips 3.10.46-rc1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -62,6 +62,7 @@ CONFIG_CAVIUM_OCTEON_REFERENCE_BOARD=y
 # CONFIG_GENERIC_GPIO is not set
 CONFIG_CROSS_COMPILE=""
 # CONFIG_ALCHEMY_GPIO_INDIRECT is not set
+# CONFIG_CAVIUM_OCTEON2 is not set
 # CONFIG_CAVIUM_CN63XXP1 is not set
 # CONFIG_CAVIUM_OCTEON_2ND_KERNEL is not set
 CONFIG_CAVIUM_OCTEON_KERNEL_CRYPTO=y
