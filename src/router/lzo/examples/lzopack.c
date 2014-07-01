@@ -68,12 +68,12 @@ static lzo_uint xread(FILE *fp, lzo_voidp buf, lzo_uint len, lzo_bool allow_eof)
     l = (lzo_uint) lzo_fread(fp, buf, len);
     if (l > len)
     {
-        fprintf(stderr, "\nsomething's wrong with your C library !!!\n");
+        fprintf(stderr, "\n%s: internal error - something is wrong with your C library !!!\n", progname);
         exit(1);
     }
     if (l != len && !allow_eof)
     {
-        fprintf(stderr, "\nread error - premature end of file\n");
+        fprintf(stderr, "\n%s: read error - premature end of file\n", progname);
         exit(1);
     }
     total_in += (unsigned long) l;
@@ -84,7 +84,7 @@ static lzo_uint xwrite(FILE *fp, const lzo_voidp buf, lzo_uint len)
 {
     if (fp != NULL && lzo_fwrite(fp, buf, len) != len)
     {
-        fprintf(stderr, "\nwrite error  (disk full ?)\n");
+        fprintf(stderr, "\n%s: write error  (disk full ?)\n", progname);
         exit(1);
     }
     total_out += (unsigned long) len;
@@ -120,7 +120,7 @@ static lzo_uint32_t xread32(FILE *fp)
     return v;
 }
 
-static void xwrite32(FILE *fp, lzo_xint v)
+static void xwrite32(FILE *fp, lzo_uint v)
 {
     unsigned char b[4];
 
@@ -274,7 +274,7 @@ static int do_decompress(FILE *fi, FILE *fo)
 /*
  * Step 1: check magic header, read flags & block size, init checksum
  */
-    if (xread(fi, m, sizeof(magic),1) != sizeof(magic) ||
+    if (xread(fi, m, sizeof(magic), 1) != sizeof(magic) ||
         memcmp(m, magic, sizeof(magic)) != 0)
     {
         printf("%s: header error - this file is not compressed by lzopack\n", progname);
@@ -299,7 +299,7 @@ static int do_decompress(FILE *fi, FILE *fo)
         r = 3;
         goto err;
     }
-    checksum = lzo_adler32(0,NULL,0);
+    checksum = lzo_adler32(0, NULL, 0);
 
 /*
  * Step 2: allocate buffer for in-place decompression

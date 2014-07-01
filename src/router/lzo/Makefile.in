@@ -464,19 +464,19 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-EXTRA_DIST = BUGS autoconf/shtool src/compr1b.h src/compr1c.h \
-	src/config1.h src/config1a.h src/config1b.h src/config1c.h \
-	src/config1f.h src/config1x.h src/config1y.h src/config1z.h \
-	src/config2a.h src/lzo1_cm.ch src/lzo1_d.ch src/lzo1a_cm.ch \
-	src/lzo1a_cr.ch src/lzo1a_de.h src/lzo1b_c.ch src/lzo1b_cc.h \
-	src/lzo1b_cm.ch src/lzo1b_cr.ch src/lzo1b_d.ch src/lzo1b_de.h \
-	src/lzo1b_r.ch src/lzo1b_sm.ch src/lzo1b_tm.ch src/lzo1c_cc.h \
-	src/lzo1f_d.ch src/lzo1x_c.ch src/lzo1x_d.ch src/lzo1x_oo.ch \
-	src/lzo2a_d.ch src/lzo_conf.h src/lzo_dict.h src/lzo_dll.ch \
-	src/lzo_func.h src/lzo_mchw.ch src/lzo_ptr.h src/lzo_supp.h \
-	src/lzo_swd.ch src/stats1a.h src/stats1b.h src/stats1c.h \
-	examples/portab.h examples/portab_a.h lzotest/asm.h \
-	lzotest/db.h lzotest/wrap.h lzotest/wrapmisc.h \
+EXTRA_DIST = BUGS CMakeLists.txt autoconf/shtool src/compr1b.h \
+	src/compr1c.h src/config1.h src/config1a.h src/config1b.h \
+	src/config1c.h src/config1f.h src/config1x.h src/config1y.h \
+	src/config1z.h src/config2a.h src/lzo1_cm.ch src/lzo1_d.ch \
+	src/lzo1a_cm.ch src/lzo1a_cr.ch src/lzo1a_de.h src/lzo1b_c.ch \
+	src/lzo1b_cc.h src/lzo1b_cm.ch src/lzo1b_cr.ch src/lzo1b_d.ch \
+	src/lzo1b_de.h src/lzo1b_r.ch src/lzo1b_sm.ch src/lzo1b_tm.ch \
+	src/lzo1c_cc.h src/lzo1f_d.ch src/lzo1x_c.ch src/lzo1x_d.ch \
+	src/lzo1x_oo.ch src/lzo2a_d.ch src/lzo_conf.h src/lzo_dict.h \
+	src/lzo_dll.ch src/lzo_func.h src/lzo_mchw.ch src/lzo_ptr.h \
+	src/lzo_supp.h src/lzo_swd.ch src/stats1a.h src/stats1b.h \
+	src/stats1c.h examples/portab.h examples/portab_a.h \
+	lzotest/asm.h lzotest/db.h lzotest/wrap.h lzotest/wrapmisc.h \
 	minilzo/Makefile.minilzo minilzo/README.LZO minilzo/minilzo.h
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)
 LDADD = src/liblzo2.la

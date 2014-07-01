@@ -20,7 +20,7 @@ noinst_PROGRAMS =
 ##************************************************************************/
 
 doc_DATA = AUTHORS COPYING NEWS THANKS doc/LZO.FAQ doc/LZO.TXT doc/LZOAPI.TXT
-EXTRA_DIST += BUGS autoconf/shtool
+EXTRA_DIST += BUGS CMakeLists.txt autoconf/shtool
 
 # hooks for Automake targets
 dist-hook: dist-hook-1

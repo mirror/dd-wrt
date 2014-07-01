@@ -37,7 +37,7 @@ This configure script may be copied, distributed and modified under the
 terms of the GNU General Public License; see COPYING for more details.])
 
 AC_PREREQ(2.69)
-AC_INIT([LZO],[2.07],[markus@oberhumer.com],[lzo],[http://www.oberhumer.com/opensource/lzo/])
+AC_INIT([LZO],[2.08],[markus@oberhumer.com],[lzo],[http://www.oberhumer.com/opensource/lzo/])
 AC_MSG_NOTICE([Configuring LZO $PACKAGE_VERSION])
 AC_CONFIG_SRCDIR(src/lzo_init.c)
 AC_CONFIG_AUX_DIR(autoconf)
@@ -164,7 +164,7 @@ AM_CONDITIONAL(LZO_USE_ASM_i386_obj_elf32, [false])
 # // Write output files
 # ************************************************************************/
 
-mfx_LZO_LZOCHK(["-I$srcdir"],["include/lzo/lzodefs.h"],["src/lzo_supp.h"])
+mfx_LZO_LZOCHK(["-I$srcdir"],[#include "include/lzo/lzoconf.h"],["src/lzo_supp.h"])
 
 if test -r .Conf.settings2; then
     . ./.Conf.settings2

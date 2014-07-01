@@ -478,8 +478,4 @@
 #endif
 
 
-
-/*
-vi:ts=4:et
-*/
-
+/* vim:set ts=4 sw=4 et: */
