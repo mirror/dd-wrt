@@ -86,7 +86,15 @@ static int _STOPPED(const char *method, const char *name)
 	}
 	return 0;
 }
-
+#ifdef HAVE_X86
+#define STOPPED() if (_STOPPED(method, name)) { \
+		    if (!strcmp(method, "stop")) { \
+			if (stops_running) \
+				stops_running[0]--; \
+		    } \
+		     return 0; \
+		    }
+#else
 #define STOPPED() if (_STOPPED(method, name)) { \
 		    if (nvram_match("service_debug","1")) \
 			    fprintf(stderr,"calling %s_%s not required!\n",method,name); \
@@ -96,13 +104,11 @@ static int _STOPPED(const char *method, const char *name)
 		    } \
 		     return 0; \
 		    }
-
+#endif
 #define RELEASESTOPPED(a) _RELEASESTOPPED(a, name);
 
 static int handle_service(const char *method, const char *name)
-{
-	setenv("TZ", nvram_default_get("TZ", "GMT0"), 1);
-	
+{	
 	if (!strcmp(method, "start"))
 		RELEASESTOPPED("stop");
 	if (!strcmp(method, "stop")) {
@@ -110,8 +116,10 @@ static int handle_service(const char *method, const char *name)
 	}
 	STOPPED();
 
+#ifndef HAVE_X86
 	if (nvram_match("service_debug", "1"))
 		fprintf(stderr, "calling %s_%s\n", method, name);
+#endif
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_service\n");
 	char service[64];
@@ -144,12 +152,14 @@ static int handle_service(const char *method, const char *name)
 		if (stops_running)
 			stops_running[0]--;
 	}
+#ifndef HAVE_X86
 	if (nvram_match("service_debug", "1")) {
 		if (stops_running)
 			fprintf(stderr, "calling done %s_%s (pending stops %d)\n", method, name, stops_running[0]);
 		else
 			fprintf(stderr, "calling done %s_%s\n", method, name);
 	}
+#endif
 	cprintf("start_sevice done()\n");
 	return 0;
 }
@@ -250,8 +260,10 @@ int stop_running_main(int argc, char **argv)
 {
 	int dead = 0;
 	while (stops_running != NULL && stop_running() && dead < 100) {
+#ifndef HAVE_X86
 		if (nvram_match("service_debugrunnings","1"))
 			fprintf(stderr,"%s: dead: %d running %d\n",__func__,dead,stops_running[0]);
+#endif
 		if (dead == 0)
 			fprintf(stderr, "waiting for services to finish (%d)...\n", stops_running[0]);
 		usleep(100 * 1000);
