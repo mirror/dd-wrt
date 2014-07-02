@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 /*
     returns the inet addr of a char* begining with an IP address: "nnn.nnn.nnn.nnn"
 */
-RC_TYPE os_convert_ip_to_inet_addr(unsigned long *p_addr, const char *p_name)
+RC_TYPE os_convert_ip_to_inet_addr(uint32_t *p_addr, const char *p_name)
 {
     RC_TYPE rc = RC_OK;
 
@@ -45,7 +45,7 @@ RC_TYPE os_convert_ip_to_inet_addr(unsigned long *p_addr, const char *p_name)
         unsigned int b2;
         unsigned int b1;
         unsigned int b0;
-        unsigned long ipa;
+        uint32_t ipa;
         int n;
 
         ipa = 0x0;
