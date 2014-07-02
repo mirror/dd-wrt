@@ -215,7 +215,7 @@ RC_TYPE os_shell_execute(char * p_cmd)
 	return rc; 
 }
 
-static unsigned long os_get_inet_addr(char* addr)
+static uint32_t os_get_inet_addr(char* addr)
 {
     unsigned long b3;
     unsigned long b2;
