@@ -63,6 +63,9 @@ struct mon mons[] = {
 #ifdef HAVE_SPUTNIK_APD
 	{"sputnik", 1, M_WAN, "apd_enable", "1"},
 #endif
+#ifdef HAVE_MULTICAST
+	{"igmprt", 1, M_WAN, "block_multicast", "0"},
+#endif
 	{NULL, 0, 0}
 };
 
