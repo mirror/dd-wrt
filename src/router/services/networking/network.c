@@ -3029,7 +3029,7 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_MULTICAST
 	if (!nvram_match("dtag_vlan8", "1") || nvram_match("wan_vdsl", "0"))
-		stop_igmp_proxy();
+		stop_igmprt();
 #endif
 #ifdef HAVE_UDPXY
 	if (!nvram_match("udpxy_enable", "1"))
@@ -4458,8 +4458,8 @@ void start_wan_done(char *wan_ifname)
 	cprintf("start igmp proxy\n");
 #ifdef HAVE_MULTICAST
 	if (!nvram_match("dtag_vlan8", "1") || nvram_match("wan_vdsl", "0"))
-		stop_igmp_proxy();
-	start_igmp_proxy();
+		stop_igmprt();
+	start_igmprt();
 #endif
 	cprintf("ready\n");
 #ifdef HAVE_UDPXY

@@ -230,7 +230,7 @@ int stop_services_main(int argc, char **argv)
 	stop_service_f("freeradius");
 #endif
 #ifdef HAVE_MULTICAST
-	stop_service_f("igmp_proxy");
+	stop_service_f("igmprt");
 #endif
 #ifdef HAVE_UDPXY
 	stop_service_f("udpxy");
@@ -377,7 +377,7 @@ static void handle_index(void)
 	stop_service_force_f("wan");
 	stop_service_f("radio_timer");	//
 #ifdef HAVE_MULTICAST
-	stop_service_f("igmp_proxy");	//
+	stop_service_f("igmprt");	//
 #endif
 #ifdef HAVE_UDPXY
 	stop_service_f("udpxy");
@@ -813,7 +813,7 @@ static void handle_filters(void)
 	startstop_f("splashd");
 #endif
 #ifdef HAVE_MULTICAST
-	startstop_f("igmp_proxy");
+	startstop_f("igmprt");
 #endif
 #ifdef HAVE_UDPXY
 	startstop_f("udpxy");
