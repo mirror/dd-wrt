@@ -110,7 +110,7 @@ install: all
 #	$(DIRINSTALL) -m 755 $(DESTDIR)$(SBINDIR) $(DESTDIR)$(IDSDIR) $(DESTDIR)$(MANDIR)/man8 $(DESTDIR)$(MANDIR)/man7
 	$(DIRINSTALL) -m 755 $(DESTDIR)$(SBINDIR)
 	$(DIRINSTALL) -m 755 $(DESTDIR)$(IDSDIR)
-#	$(INSTALL) -c -m 755 $(STRIP) lspci $(DESTDIR)$(SBINDIR)
+	$(INSTALL) -c -m 755 lspci $(DESTDIR)$(SBINDIR)
 #	$(INSTALL) -c -m 755 update-pciids $(DESTDIR)$(SBINDIR)
 	$(INSTALL) -c -m 644 $(PCI_IDS) $(DESTDIR)$(IDSDIR)
 #	$(INSTALL) -c -m 644 lspci.8 setpci.8 update-pciids.8 $(DESTDIR)$(MANDIR)/man8
