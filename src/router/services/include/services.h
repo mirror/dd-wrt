@@ -101,8 +101,8 @@ extern void start_firewall(void);
 extern void stop_firewall(void);
 
 #ifdef HAVE_MULTICAST
-extern void start_igmp_proxy(void);
-extern void stop_igmp_proxy(void);
+extern void start_igmprt(void);
+extern void stop_igmprt(void);
 #endif
 
 #ifdef HAVE_UDPXY
