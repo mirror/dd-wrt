@@ -11,6 +11,7 @@
 #define        __IPERF_API_H
 
 #include <setjmp.h>
+#include <sys/select.h>
 
 struct iperf_test;
 struct iperf_stream_result;
