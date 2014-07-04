@@ -2803,7 +2803,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpncl_pkcs12", "", 0},
 	{"openvpncl_lzo", "adaptive", 0},
 	{"openvpncl_proto", "udp", 0},
-	{"openvpncl_mtu", "1400", 0},
+	{"openvpncl_mtu", "1500", 0},
 	{"openvpncl_mssfix", "0", 0},
 	{"openvpncl_fragment", "", 0},
 	{"openvpncl_certtype", "0", 0},
