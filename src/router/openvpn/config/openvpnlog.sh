@@ -23,4 +23,4 @@
 	}'
 
 /bin/echo -e " \n"
-/bin/cat /tmp/openvpncl/openvpncl.conf
+/bin/cat /tmp/openvpncl/openvpn.conf
