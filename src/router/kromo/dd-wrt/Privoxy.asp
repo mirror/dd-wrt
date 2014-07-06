@@ -16,7 +16,7 @@ var update;
 addEvent(window, "load", function() {
 	show_layer_ext(document.setup.privoxy_enable, 'privoxyconfig', <% nvem("privoxy_enable", "1", "1", "0"); %> == 1);
 	show_layer_ext(document.setup.privoxy_advanced, 'privoxyadvanced', <% nvem("privoxy_advanced", "1", "1", "0"); %> == 1);
-
+	show_layer_ext(document.setup.privoxy_advanced, 'privoxywhite', <% nvem("privoxy_advanced", "0", "1", "0"); %> == 1);
 	update = new StatusbarUpdate();
 	update.start();
 	
