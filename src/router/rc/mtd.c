@@ -111,7 +111,7 @@ int mtd_open(const char *mtd, int flags)
 	if ((fp = fopen("/proc/mtd", "r"))) {
 		while (fgets(dev, sizeof(dev), fp)) {
 			if (sscanf(dev, "mtd%d:", &i) && strstr(dev, mtd)) {
-				if (!strcmp(mtd,"nvram") && strstr(dev,"nvram_cfe")) 
+				if (!strcmp(mtd, "nvram") && strstr(dev, "nvram_cfe"))
 					continue;
 				snprintf(dev, sizeof(dev), "/dev/mtd/%d", i);
 				fclose(fp);
@@ -263,10 +263,10 @@ int mtd_write(const char *path, const char *mtd)
 			mtd = "linux2";
 			nvram_set("bootpartition", "0");
 			nvram_commit();
-		}else{
+		} else {
 			mtd = "linux2";
 			nvram_set("bootpartition", "1");
-			nvram_commit();		
+			nvram_commit();
 		}
 		break;
 	case ROUTER_NETGEAR_WGR614L:
@@ -873,16 +873,15 @@ fail:
 		sysprintf("ubootenv del buf_crc");
 #endif
 	if (!ret) {
-	switch (brand) {
-	case ROUTER_BUFFALO_WXR1900DHP:
-	// now fuck myself up
-	if (!strncmp(path,"/dev",4)) // break here, if we already called ourself
-	    break;
-	sysprintf("write /dev/mtdblock3 linux2"); //fixup for wxr1900 cfe
-	break;
+		switch (brand) {
+		case ROUTER_BUFFALO_WXR1900DHP:
+			// now fuck myself up
+			if (!strncmp(path, "/dev", 4))	// break here, if we already called ourself
+				break;
+			sysprintf("write /dev/mtdblock3 linux2");	//fixup for wxr1900 cfe
+			break;
+		}
 	}
-	}
-
 	// eval("fischecksum");
 	return ret;
 }

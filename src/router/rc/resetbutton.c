@@ -833,7 +833,7 @@ void period_check(int sig)
 		if ((fp = fopen(GPIO_FILE, "r"))) {
 #ifdef HAVE_XSCALE
 			fscanf(fp, "%d", &val);
-#else			
+#else
 			if (brand == ROUTER_NETGEAR_WGR614L)	//gpio 7 power led shared with reset button
 			{
 				set_gpio(7, 1);	//disable power led
@@ -1097,9 +1097,9 @@ void period_check(int sig)
 	case ROUTER_LINKSYS_EA6900:
 	case ROUTER_LINKSYS_EA6700:
 	case ROUTER_LINKSYS_EA6500V2:
-	case ROUTER_TRENDNET_TEW812:		
+	case ROUTER_TRENDNET_TEW812:
 		sesgpio = 0x107;	// gpio 7, inversed
-		break;		
+		break;
 	case ROUTER_DLINK_DIR868:
 	case ROUTER_ASUS_AC67U:
 		wifigpio = 0x10f;
@@ -1166,15 +1166,15 @@ void period_check(int sig)
 		wifigpio = 0x105;
 		break;
 	case ROUTER_NETGEAR_AC1450:
-		sesgpio = 0x104;	
+		sesgpio = 0x104;
 		wifigpio = 0x105;
 		break;
 	case ROUTER_NETGEAR_R6250:
-		sesgpio = 0x104;	
+		sesgpio = 0x104;
 		wifigpio = 0x105;
 		break;
 	case ROUTER_NETGEAR_R6300V2:
-		sesgpio = 0x104;	
+		sesgpio = 0x104;
 		wifigpio = 0x105;
 		break;
 	case ROUTER_NETGEAR_R7000:
@@ -1300,7 +1300,7 @@ void period_check(int sig)
 					kill(1, SIGTERM);
 #endif
 				}
-			} 
+			}
 		}
 	} else if ((sesgpio != 0xfff)
 		   && (((sesgpio & 0x100) == 0 && (val & push))
@@ -1309,7 +1309,7 @@ void period_check(int sig)
 		runStartup("/jffs/etc/config", ".sesbutton");	// if available
 		runStartup("/mmc/etc/config", ".sesbutton");	// if available
 		runStartup("/tmp/etc/config", ".sesbutton");	// if available
-		if ( nvram_match("usb_ses_umount", "1") ) {
+		if (nvram_match("usb_ses_umount", "1")) {
 			led_control(LED_DIAG, LED_FLASH);
 			runStartup("/etc/config", ".umount");
 			sleep(5);
@@ -1317,7 +1317,7 @@ void period_check(int sig)
 			sleep(1);
 			led_control(LED_DIAG, LED_FLASH);
 		}
-		  
+
 		if (nvram_match("radiooff_button", "1")) {
 			led_control(LED_SES, LED_FLASH);	// when pressed, blink white
 			switch (ses_mode) {
@@ -1387,16 +1387,16 @@ void period_check(int sig)
 		 * Although it's unpushed now, it had ever been pushed 
 		 */
 		if (mode == 1) {
-fprintf(stderr, "[RESETBUTTON] released %d\n", count);
+			fprintf(stderr, "[RESETBUTTON] released %d\n", count);
 #ifdef HAVE_UNFY
-			  if (count > UPGRADE_WAIT_COUNT) {
-				
+			if (count > UPGRADE_WAIT_COUNT) {
+
 				char *upgrade_script = "firmware_upgrade.sh";
 				char call[32];
 				fprintf(stderr, "[RESETBUTTON] check:%d count:%d\n", pidof(upgrade_script), count);
-				if(pidof(upgrade_script) < 0) {
+				if (pidof(upgrade_script) < 0) {
 					sprintf(call, "/%s/%s", nvram_safe_get("fw_upgrade_dir"), upgrade_script);
-					if(f_exists(call)) {
+					if (f_exists(call)) {
 						fprintf(stderr, "[RESETBUTTON] trigger update script: %s\n", call);
 						system(call);
 					} else {

@@ -91,7 +91,7 @@ static void add_interface(const char *ifname)
 	list_add_tail(&iface->list, &interfaces);
 }
 
-static bool add_led(const char *name,bool inversed)
+static bool add_led(const char *name, bool inversed)
 {
 	struct led *led;
 	const char *c;
@@ -210,7 +210,7 @@ static void process_leds(void)
 			continue;
 
 		led->last_val = val;
-		led_set_val(led, led->inversed?!val:val);
+		led_set_val(led, led->inversed ? !val : val);
 	}
 }
 
@@ -283,11 +283,11 @@ int main(int argc, char **argv)
 			add_interface(optarg);
 			break;
 		case 'l':
-			if (!add_led(optarg,0))
+			if (!add_led(optarg, 0))
 				return usage(argv[0]);
 			break;
 		case 'L':
-			if (!add_led(optarg,1))
+			if (!add_led(optarg, 1))
 				return usage(argv[0]);
 			break;
 		case 'd':

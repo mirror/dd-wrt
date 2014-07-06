@@ -324,7 +324,7 @@ static struct MAIN maincalls[] = {
 	{"start_single_service", NULL, start_single_service_main},
 	{"startstop_f", NULL, startstop_main_f},
 	{"startstop", NULL, startstop_main},
-	{"stop_running", NULL, stop_running_main}, 
+	{"stop_running", NULL, stop_running_main},
 	{"softwarerevision", NULL, softwarerevision_main},
 #if !defined(HAVE_MICRO) || defined(HAVE_ADM5120) || defined(HAVE_WRK54G)
 	{"watchdog", NULL, &watchdog_main},
@@ -364,10 +364,10 @@ int main(int argc, char **argv)
 			puts("try to be professional\n");
 			return 0;
 		}
-		if (argc==3 && !strcmp(argv[2],"-f"))
-		    start_service_force_f(argv[1]);
+		if (argc == 3 && !strcmp(argv[2], "-f"))
+			start_service_force_f(argv[1]);
 		else
-		    start_service_f(argv[1]);
+			start_service_f(argv[1]);
 		return 0;
 	}
 	if (strstr(base, "startservice")) {
@@ -375,10 +375,10 @@ int main(int argc, char **argv)
 			puts("try to be professional\n");
 			return 0;
 		}
-		if (argc==3 && !strcmp(argv[2],"-f"))
-		    start_service_force(argv[1]);
+		if (argc == 3 && !strcmp(argv[2], "-f"))
+			start_service_force(argv[1]);
 		else
-		    start_service(argv[1]);
+			start_service(argv[1]);
 		return 0;
 	}
 
@@ -387,22 +387,22 @@ int main(int argc, char **argv)
 			puts("try to be professional\n");
 			return 0;
 		}
-		if (argc==3 && !strcmp(argv[2],"-f"))
-		    stop_service_force_f(argv[1]);
+		if (argc == 3 && !strcmp(argv[2], "-f"))
+			stop_service_force_f(argv[1]);
 		else
-		    stop_service_f(argv[1]);
+			stop_service_f(argv[1]);
 		return 0;
 	}
-	
+
 	if (strstr(base, "stopservice")) {
 		if (argc < 2) {
 			puts("try to be professional\n");
 			return 0;
 		}
-		if (argc==3 && !strcmp(argv[2],"-f"))
-		    stop_service_force(argv[1]);
+		if (argc == 3 && !strcmp(argv[2], "-f"))
+			stop_service_force(argv[1]);
 		else
-		    stop_service(argv[1]);
+			stop_service(argv[1]);
 		return 0;
 	}
 #ifndef HAVE_RB500
