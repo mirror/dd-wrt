@@ -48,6 +48,7 @@ static int br_pass_frame_up(struct sk_buff *skb)
 	}
 
 	indev = skb->dev;
+	skb->orig_dev = skb->dev;
 	skb->dev = brdev;
 	skb = br_handle_vlan(br, pv, skb);
 	if (!skb)

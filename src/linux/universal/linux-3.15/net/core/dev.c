@@ -147,6 +147,8 @@
 #define BCMFASTPATH_HOST
 #endif
 
+#include <linux/ddtb.h>
+
 /* Instead of increasing this, you should create a hash table. */
 #define MAX_GRO_SKBS 8
 
