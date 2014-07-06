@@ -142,14 +142,18 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  "					<select name=\"smbshare_access_perms%s\" id=\"smbshare_access_perms%s\" style=\"width: 100%%;\"%s>\n",
 			  number, number, !strcmp(perms, "") ? " disabled" : "");
 		if (rows == 0 || strcmp(perms, "")) {
-			websWrite(wp, "						<option value=\"rw\"%s><script type=\"text/javascript\">Capture(nas.perm_rw);</script></option>\n", !strcmp(cs->access_perms, "rw") ? " selected" : "");
-			websWrite(wp, "						<option value=\"ro\"%s><script type=\"text/javascript\">Capture(nas.perm_ro);</script></option>\n", !strcmp(cs->access_perms, "ro") ? " selected" : "");
+			websWrite(wp, "						<option value=\"rw\"%s><script type=\"text/javascript\">Capture(nas.perm_rw);</script></option>\n",
+				  !strcmp(cs->access_perms, "rw") ? " selected" : "");
+			websWrite(wp, "						<option value=\"ro\"%s><script type=\"text/javascript\">Capture(nas.perm_ro);</script></option>\n",
+				  !strcmp(cs->access_perms, "ro") ? " selected" : "");
 		}
 		websWrite(wp, "					</select>\n");
 		websWrite(wp, "					<input type=\"hidden\" name=\"smbshare_access_perms_prev_%d\" value=\"%s\">\n", rows, cs->access_perms);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "				<td style=\"width: 50px; text-align: center;\">\n");
-		websWrite(wp, "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"button\\\" name=\\\"smbshare_del%s\\\" value=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removeSambaShare(this);\\\">\");</script>\n", number);
+		websWrite(wp,
+			  "					<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" class=\\\"button\\\" name=\\\"smbshare_del%s\\\" value=\\\"\"+nas.sharedel+\"\\\"  style=\\\"width: 100%%;\\\" onclick=\\\"removeSambaShare(this);\\\">\");</script>\n",
+			  number);
 		websWrite(wp, "				</td>\n");
 		websWrite(wp, "			</tr>\n");
 
@@ -161,7 +165,8 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "		</table>\n");
 
 	// add button
-	websWrite(wp, "<script type=\"text/javascript\">document.write(\"<div id=\\\"samba_shares_add\\\" style=\\\"text-align: center;\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"share_add\\\" value=\\\"\"+nas.shareadd+\"\\\" onclick=\\\"addSambaShare();\\\" />\");</script></div>");
+	websWrite(wp,
+		  "<script type=\"text/javascript\">document.write(\"<div id=\\\"samba_shares_add\\\" style=\\\"text-align: center;\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"share_add\\\" value=\\\"\"+nas.shareadd+\"\\\" onclick=\\\"addSambaShare();\\\" />\");</script></div>");
 
 	for (current = fs; fs; current = fs) {
 		fs = current->next;
@@ -296,7 +301,8 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "		</table>\n");
 
 	// add button
-	websWrite(wp, "<script type=\"text/javascript\">document.write(\"<div id=\\\"samba_users_add\\\" style=\\\"text-align: center;\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"user_add\\\" value=\\\"\"+nas.useradd+\"\\\" onclick=\\\"addSambaUser();\\\" />\");</script></div>");
+	websWrite(wp,
+		  "<script type=\"text/javascript\">document.write(\"<div id=\\\"samba_users_add\\\" style=\\\"text-align: center;\\\"><input type=\\\"button\\\" class=\\\"button\\\" name=\\\"user_add\\\" value=\\\"\"+nas.useradd+\"\\\" onclick=\\\"addSambaUser();\\\" />\");</script></div>");
 
 	// free memory
 
