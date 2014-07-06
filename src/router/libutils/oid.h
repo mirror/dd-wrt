@@ -1,23 +1,22 @@
-/* vi: set sw=4 ts=4 sts=4: */
+/* vi: set sw=4 ts=4 sts=4: */  
 /*
  *	utils.c -- System Utilities 
  *
  *	Copyright (c) Ralink Technology Corporation All Rights Reserved.
  *
  *	$Id: oid.h,v 1.5 2008-09-22 06:20:13 chhung Exp $
- */
-
-
+ */ 
+    
 #define RT_PRIV_IOCTL				(SIOCIWFIRSTPRIV + 0x01)
-
+    
 #define RTPRIV_IOCTL_SET			(SIOCIWFIRSTPRIV + 0x02)
-
+    
 #ifdef DBG
 #define RTPRIV_IOCTL_BBP			(SIOCIWFIRSTPRIV + 0x03)
 #define RTPRIV_IOCTL_MAC			(SIOCIWFIRSTPRIV + 0x05)
 #define RTPRIV_IOCTL_E2P			(SIOCIWFIRSTPRIV + 0x07)
-#endif
-
+#endif	/*  */
+    
 #define RTPRIV_IOCTL_STATISTICS			(SIOCIWFIRSTPRIV + 0x09)
 #define RTPRIV_IOCTL_ADD_PMKID_CACHE	(SIOCIWFIRSTPRIV + 0x0A)
 #define RTPRIV_IOCTL_RADIUS_DATA		(SIOCIWFIRSTPRIV + 0x0C)
@@ -28,13 +27,13 @@
 #define RTPRIV_IOCTL_WSC_PROFILE		(SIOCIWFIRSTPRIV + 0x12)
 #define RT_QUERY_ATE_TXDONE_COUNT 		0x0401
 #define OID_GET_SET_TOGGLE				0x8000
-
+    
 #define OID_802_11_NETWORK_TYPES_SUPPORTED          0x0103
 #define OID_802_11_NETWORK_TYPE_IN_USE              0x0104
 #define OID_802_11_RSSI_TRIGGER                     0x0107
-#define RT_OID_802_11_RSSI							0x0108 //rt2860 only , kathy
-#define RT_OID_802_11_RSSI_1						0x0109 //rt2860 only , kathy
-#define RT_OID_802_11_RSSI_2						0x010A //rt2860 only , kathy
+#define RT_OID_802_11_RSSI							0x0108	//rt2860 only , kathy
+#define RT_OID_802_11_RSSI_1						0x0109	//rt2860 only , kathy
+#define RT_OID_802_11_RSSI_2						0x010A	//rt2860 only , kathy
 #define OID_802_11_NUMBER_OF_ANTENNAS               0x010B
 #define OID_802_11_RX_ANTENNA_SELECTED              0x010C
 #define OID_802_11_TX_ANTENNA_SELECTED              0x010D
@@ -71,9 +70,9 @@
 #define RT_OID_802_11_EXTRA_INFO                    0x0524
 #ifdef DBG
 #define RT_OID_802_11_HARDWARE_REGISTER             0x0525
-#endif
+#endif	/*  */
 #define OID_802_11_ENCRYPTION_STATUS                OID_802_11_WEP_STATUS
-
+    
 #define RT_OID_DEVICE_NAME                          0x0607
 #define RT_OID_VERSION_INFO                         0x0608
 #define OID_802_11_BSSID_LIST                       0x0609
@@ -89,7 +88,7 @@
 #define RT_OID_802_11_QUERY_LAST_RX_RATE            0x0613
 #define RT_OID_802_11_TX_POWER_LEVEL_1              0x0614
 #define RT_OID_802_11_QUERY_PIDVID                  0x0615
-
+    
 //#if WPA_SUPPLICANT_SUPPORT
 #define OID_SET_COUNTERMEASURES                     0x0616
 #define OID_802_11_SET_IEEE8021X                    0x0617
@@ -98,7 +97,7 @@
 #define RT_OID_WPA_SUPPLICANT_SUPPORT					0x0621
 #define RT_OID_WE_VERSION_COMPILED                  0x0622
 //#endif
-
+    
 //rt2860 , kathy
 #define	RT_OID_802_11_SNR_0							0x0630
 #define	RT_OID_802_11_SNR_1							0x0631
@@ -121,16 +120,14 @@
 #define RT_OID_802_11_QUERY_BATABLE					0x0642
 #define RT_OID_802_11_ADD_IMME_BA					0x0643
 #define RT_OID_802_11_TEAR_IMME_BA					0x0644
-
+    
 // mesh extension OID
 #define OID_802_11_MESH_LINK_STATUS             0x0654
 #define OID_802_11_MESH_LIST                    0x0655
-
-
-
+    
 // Ralink defined OIDs
 // Dennis Lee move to platform specific 
-
+    
 #define RT_OID_802_11_BSSID                   (OID_GET_SET_TOGGLE | OID_802_11_BSSID)
 #define RT_OID_802_11_SSID                    (OID_GET_SET_TOGGLE | OID_802_11_SSID)
 #define RT_OID_802_11_INFRASTRUCTURE_MODE     (OID_GET_SET_TOGGLE | OID_802_11_INFRASTRUCTURE_MODE)
@@ -155,9 +152,8 @@
 #define RT_OID_802_11_DESIRED_RATES           (OID_GET_SET_TOGGLE | OID_802_11_DESIRED_RATES)
 #define RT_OID_802_11_CONFIGURATION           (OID_GET_SET_TOGGLE | OID_802_11_CONFIGURATION)
 #define RT_OID_802_11_POWER_MODE              (OID_GET_SET_TOGGLE | OID_802_11_POWER_MODE)
-
-
-/* for WPS --YY  */
+    
+/* for WPS --YY  */ 
 #define RT_OID_SYNC_RT61                            0x0D010750
 #define RT_OID_WSC_QUERY_STATUS                     ((RT_OID_SYNC_RT61 + 0x01) & 0xffff)
 #define RT_OID_WSC_PIN_CODE							((RT_OID_SYNC_RT61 + 0x02) & 0xffff)

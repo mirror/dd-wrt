@@ -352,8 +352,8 @@ int has_ac(char *prefix)
 int has_mimo(char *prefix)
 {
 #ifdef HAVE_QTN
-	if (!strcmp(prefix,"wl1"))
-	    return 1;
+	if (!strcmp(prefix, "wl1"))
+		return 1;
 #endif
 	char mimo[32];
 	sprintf(mimo, "%s_phytypes", prefix);
@@ -372,8 +372,8 @@ int has_ac(char *prefix)
 	return 0;
 #else
 #ifdef HAVE_QTN
-	if (!strcmp(prefix,"wl1"))
-	    return 1;
+	if (!strcmp(prefix, "wl1"))
+		return 1;
 #endif
 	char mimo[32];
 	sprintf(mimo, "%s_phytypes", prefix);
@@ -386,15 +386,15 @@ int has_ac(char *prefix)
 }
 #endif
 
-
 int has_qtn(char *prefix)
 {
 #ifdef HAVE_QTN
-	if (!strncmp(prefix,"wl1","3"))
-	    return 1;
+	if (!strncmp(prefix, "wl1", "3"))
+		return 1;
 #endif
-    return 0;
+	return 0;
 }
+
 char *get_mac_from_ip(char *ip)
 {
 	FILE *fp;
