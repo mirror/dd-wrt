@@ -21,6 +21,7 @@ void start_privoxy(void)
 		return;
 
 	int mode = 0;
+	int whitelist = 0;
 	char *next;
 	char var[80];
 	char vifs[256];
@@ -61,8 +62,17 @@ void start_privoxy(void)
 		}
 	}
 
+	if (nvram_invmatch("privoxy_whitel", "")) {
+		  eval("cp", "/etc/privoxy/user.action", "/tmp/user.action");
+		  FILE *fpuser = fopen("/tmp/user.action", "ab");
+		  fprintf(fpuser, "%s", "{ -block }\n");
+		  fprintf(fpuser, "%s", nvram_safe_get("privoxy_whitel"));
+		  fclose(fpuser);
+		  whitelist = 1;
+	}
+	
 	FILE *fp = fopen("/tmp/privoxy.conf", "wb");
-
+	
 	if (nvram_match("privoxy_advanced", "1") && nvram_invmatch("privoxy_conf", "")) {
 		fprintf(fp, "%s", nvram_safe_get("privoxy_conf"));
 	} else {
@@ -70,7 +80,7 @@ void start_privoxy(void)
 			"logdir /var/log/privoxy\n"
 			"actionsfile match-all.action\n"
 			"actionsfile default.action\n"
-			"actionsfile user.action\n"
+			"actionsfile %s\n"
 			"filterfile default.filter\n"
 			"logfile logfile\n"
 			"listen-address  %s:8118\n"
@@ -78,7 +88,12 @@ void start_privoxy(void)
 			"enable-remote-toggle  0\n"
 			"enable-remote-http-toggle  0\n"
 			"enable-edit-actions 0\n"
-			"buffer-limit 4096\n" "accept-intercepted-requests %d\n" "split-large-forms 0\n" "keep-alive-timeout 5\n" "socket-timeout 300\n" "handle-as-empty-doc-returns-ok 1\n", ip, mode);
+			"buffer-limit 4096\n"
+			"accept-intercepted-requests %d\n" 
+			"split-large-forms 0\n" 
+			"keep-alive-timeout 5\n" 
+			"socket-timeout 300\n"  
+			"handle-as-empty-doc-returns-ok 1\n", whitelist ?  "/tmp/user.action" : "user.action", ip, mode);
 	}
 	fclose(fp);
 	eval("privoxy", "/tmp/privoxy.conf");
