@@ -26,7 +26,6 @@
 #include <broadcom.h>
 #include <cyutils.h>
 
-
 #ifdef HAVE_EROUTER
 #define HAVE_RB600
 #endif
