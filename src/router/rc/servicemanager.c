@@ -86,6 +86,7 @@ static int _STOPPED(const char *method, const char *name)
 	}
 	return 0;
 }
+
 #ifdef HAVE_X86
 #define STOPPED() if (_STOPPED(method, name)) { \
 		    if (!strcmp(method, "stop")) { \
@@ -108,7 +109,7 @@ static int _STOPPED(const char *method, const char *name)
 #define RELEASESTOPPED(a) _RELEASESTOPPED(a, name);
 
 static int handle_service(const char *method, const char *name)
-{	
+{
 	if (!strcmp(method, "start"))
 		RELEASESTOPPED("stop");
 	if (!strcmp(method, "stop")) {
@@ -133,7 +134,6 @@ static int handle_service(const char *method, const char *name)
 		return sysprintf("%s %s", service, method);
 	}
 	void *handle = load_service(name);
-
 
 	if (handle == NULL) {
 		return -1;
@@ -261,8 +261,8 @@ int stop_running_main(int argc, char **argv)
 	int dead = 0;
 	while (stops_running != NULL && stop_running() && dead < 100) {
 #ifndef HAVE_X86
-		if (nvram_match("service_debugrunnings","1"))
-			fprintf(stderr,"%s: dead: %d running %d\n",__func__,dead,stops_running[0]);
+		if (nvram_match("service_debugrunnings", "1"))
+			fprintf(stderr, "%s: dead: %d running %d\n", __func__, dead, stops_running[0]);
 #endif
 		if (dead == 0)
 			fprintf(stderr, "waiting for services to finish (%d)...\n", stops_running[0]);
@@ -314,7 +314,6 @@ void stop_service_force_f(char *name)
 	RELEASESTOPPED("stop");
 	FORK(handle_service("stop", name));
 }
-
 
 static void startstop_delay(char *name, int delay)
 {
