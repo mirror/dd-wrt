@@ -1284,9 +1284,9 @@ void sas_show_wparadius(webs_t wp, char *prefix)
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.algorithms)</script></div>\n");
 	websWrite(wp, "<select name=\"%s_crypto\">\n", prefix);
 	sprintf(var, "%s_crypto", prefix);
-	websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(wp, var, "tkip", "selected=\"selected\""));
 	websWrite(wp, "<option value=\"aes\" %s>AES</option>\n", selmatch(wp, var, "aes", "selected=\"selected\""));
 	websWrite(wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n", selmatch(wp, var, "tkip+aes", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(wp, var, "tkip", "selected=\"selected\""));
 	websWrite(wp, "</select></div>\n");
 #ifdef HAVE_MADWIFI
 	sas_show_radius(wp, prefix, 0, 1);
@@ -1760,9 +1760,9 @@ void sas_show_preshared(webs_t wp, char *prefix)
 	websWrite(wp, "<div><div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.algorithms)</script></div>\n");
 	websWrite(wp, "<select name=\"%s_crypto\">\n", prefix);
-	websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(wp, var, "tkip", "selected=\"selected\""));
 	websWrite(wp, "<option value=\"aes\" %s>AES</option>\n", selmatch(wp, var, "aes", "selected=\"selected\""));
 	websWrite(wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n", selmatch(wp, var, "tkip+aes", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(wp, var, "tkip", "selected=\"selected\""));
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
