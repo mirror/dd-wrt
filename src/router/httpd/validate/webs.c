@@ -566,7 +566,6 @@ extern void gen_key(char *genstr, int weptype);
 extern unsigned char key128[4][13];
 extern unsigned char key64[4][5];
 
-
 void generate_wep_key_single(char *prefix, char *passphrase, char *bit, char *tx)
 {
 
@@ -672,7 +671,6 @@ void generate_wep_key(webs_t wp)
 
 	generate_wep_key_single(prefix, passphrase, bit, tx);
 }
-
 
 void copytonv(webs_t wp, const char *fmt, ...)
 {
@@ -2466,14 +2464,14 @@ void save_networking(webs_t wp)
 			return;
 		sprintf(var, "bridgemcastbr%d", i);
 		mcast = websGetVar(wp, var, NULL);
-		if (!mcast){
+		if (!mcast) {
 			return;
-		}else{
+		} else {
 			sprintf(n, "%s_mcast", ifname);
-			if (!strcmp(mcast,"On"))
-			    nvram_set(n, "1");
+			if (!strcmp(mcast, "On"))
+				nvram_set(n, "1");
 			else
-			    nvram_set(n, "0");
+				nvram_set(n, "0");
 		}
 		sprintf(var, "bridgeprio%d", i);
 		prio = websGetVar(wp, var, NULL);
@@ -3081,7 +3079,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (wl_newmode && (nvram_match(n, "sta") || nvram_match(n, "apsta")) && strcmp(wl_newmode, "sta") && strcmp(wl_newmode, "apsta"))
 		notifywanChange();
 
-	if (wl_newmode && nvram_match(n, "ap") && ( !strcmp(wl_newmode, "sta") || !strcmp(wl_newmode, "apsta") ) )
+	if (wl_newmode && nvram_match(n, "ap") && (!strcmp(wl_newmode, "sta") || !strcmp(wl_newmode, "apsta")))
 		notifywanChange();
 
 	if (nvram_match(n, "sta")) {
@@ -3470,7 +3468,7 @@ char *request_freedns(char *user, char *password)
 	for (i = 0; i < 63 && feof(in) == 0; i++) {
 		hash[i] = getc(in);
 		if (hash[i] == EOF)
-		        break;
+			break;
 	}
 	fclose(in);
 	hash[i] = 0;

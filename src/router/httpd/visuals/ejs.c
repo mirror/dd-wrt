@@ -72,7 +72,6 @@ websRomPageIndexType *PwebsRomPageIndex = NULL;
 char *(*GOZILA_GET) (webs_t wp, char *name) = NULL;
 void (*validate_cgi) (webs_t fp) = NULL;
 
-
 #ifdef HAVE_HTTPS
 int do_ssl;
 #endif
@@ -189,11 +188,13 @@ void ej_nvram_get(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
+
 void ej_nvg(webs_t wp, int argc, char_t ** argv)
 {
 	ej_nvram_get(wp, argc, argv);
 	return;
 }
+
 void ej_nvram_real_get(webs_t wp, int argc, char_t ** argv)
 {
 
@@ -1058,7 +1059,6 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-
 #ifdef HAVE_LANGUAGE
 // extern websRomPageIndexType websRomPageIndex[];
 void ej_show_languages(webs_t wp, int argc, char_t ** argv)
@@ -1121,7 +1121,6 @@ static int checkandadd(char *name)
 	return 0;
 
 }
-
 
 void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 {
@@ -2134,12 +2133,12 @@ void ej_nvram_checked(webs_t wp, int argc, char_t ** argv)
 
 	return;
 }
+
 void ej_nvc(webs_t wp, int argc, char_t ** argv)
 {
 	ej_nvram_checked(wp, argc, argv);
 	return;
 }
-
 
 void ej_nvram_checked_js(webs_t wp, int argc, char_t ** argv)
 {
@@ -2192,7 +2191,6 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (nvram_match("wl0_net_mode", "disabled") || (ret = wl_ioctl("eth1", WLC_GET_VAR, buf, sizeof(buf)))) {
 		no2 = 1;
 	}
-	
 #ifndef HAVE_QTN
 	if (nvram_match("wl1_net_mode", "disabled") || (ret = wl_ioctl("eth2", WLC_GET_VAR, buf2, sizeof(buf2)))) {
 		no5 = 1;
@@ -2240,7 +2238,6 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	int t50 = rpc_get_temperature();
 	tempavg_50 = t50 / 1000000.0f;
 #endif
-
 
 	int cputemp = 1;
 #ifdef HAVE_NORTHSTAR
@@ -2294,18 +2291,18 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_X86
 	FILE *fp = fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
 	if (!fp) {
-	    TEMP_MUL = 100;
-	    fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_max", "rb");
-	    if (fp) { // some heuristic to detect unit 
-		char temp[32];
-		fscanf(fp, "%s", &temp[0]);
-		fclose(fp);
-		if (strlen(temp)>4)
-		    TEMP_MUL=1000;
-		if (strlen(temp)>5)
-		    TEMP_MUL=10000;
-	    }		
-	    fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_input", "rb");
+		TEMP_MUL = 100;
+		fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_max", "rb");
+		if (fp) {	// some heuristic to detect unit 
+			char temp[32];
+			fscanf(fp, "%s", &temp[0]);
+			fclose(fp);
+			if (strlen(temp) > 4)
+				TEMP_MUL = 1000;
+			if (strlen(temp) > 5)
+				TEMP_MUL = 10000;
+		}
+		fp = fopen("/sys/class/hwmon/hwmon0/device/temp1_input", "rb");
 	}
 #else
 	FILE *fp = fopen("/sys/devices/platform/i2c-0/0-0048/temp1_input", "rb");
@@ -2439,7 +2436,7 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 		txpower = wifi_gettxpower(m);
 #elif HAVE_RT2880
 		txpower = atoi(nvram_safe_get(txpwr));
-#else		//broadcom
+#else				//broadcom
 		txpower = bcm_gettxpower(m);
 #endif
 #ifdef HAVE_BUFFALO
@@ -2449,9 +2446,9 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%d dBm", txpower);
 #elif HAVE_RT2880
 		websWrite(wp, "%d mW", txpower);
-#else				
-#ifdef HAVE_80211AC//broadcom
-		if(txpower == 1496 ){
+#else
+#ifdef HAVE_80211AC		//broadcom
+		if (txpower == 1496) {
 			websWrite(wp, "Auto");
 		} else {
 			websWrite(wp, "%d mW", txpower);
