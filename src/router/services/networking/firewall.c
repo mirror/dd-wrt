@@ -626,6 +626,11 @@ static void nat_prerouting(void)
 				}
 			}
 		}
+		/* no gui setting yet - redirect all except this IP */
+		if( strlen(nvram_safe_get("privoxy_transp_exclude")) )
+		{
+			save2file("-A PREROUTING -p tcp -s %s --dport 80 -j ACCEPT \n", nvram_safe_get("privoxy_transp_exclude"));
+		}
 		/* block access from privoxy to webif */
 		save2file("-A PREROUTING -p tcp -s %s -d %s --dport %d -j DROP\n", lan_ip, lan_ip, web_lanport);
 		/* do not filter access to the webif from lan */
@@ -2102,7 +2107,7 @@ void filter_output(void)
 
 static void filter_forward(void)
 {
-	char *filter_web_hosts, *filter_web_urls;
+	char *filter_web_hosts, *filter_web_urls, *filter_rule;
 	char *next;
 	char dev[16];
 	char var[80];
@@ -2117,8 +2122,11 @@ static void filter_forward(void)
 
 		filter_web_hosts = nvram_nget("filter_web_host%d", i);
 		filter_web_urls = nvram_nget("filter_web_url%d", i);
+		filter_rule = nvram_nget("filter_rule%d", i);
 
-		if (filter_web_hosts && strcmp(filter_web_hosts, "") || filter_web_urls && strcmp(filter_web_urls, "")) {
+		if (filter_web_hosts && strcmp(filter_web_hosts, "") 
+		  || filter_web_urls && strcmp(filter_web_urls, "") 
+		  || filter_rule && !strcmp(filter_rule, "STAT:1") ) {
 			filter_host_url = 1;
 		}
 	}
