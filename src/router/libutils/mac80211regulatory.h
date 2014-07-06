@@ -58,9 +58,9 @@
 
 struct regdb_file_header {
 	/* must be REGDB_MAGIC */
-	__be32	magic;
+	__be32 magic;
 	/* must be REGDB_VERSION */
-	__be32	version;
+	__be32 version;
 	/*
 	 * Pointer (offset) into file where country list starts
 	 * and number of countries. The country list is sorted
@@ -68,16 +68,16 @@ struct regdb_file_header {
 	 * become really huge). Each country is described by a
 	 * struct regdb_file_reg_country.
 	 */
-	__be32	reg_country_ptr;
-	__be32	reg_country_num;
+	__be32 reg_country_ptr;
+	__be32 reg_country_num;
 	/* length (in bytes) of the signature at the end of the file */
-	__be32	signature_length;
+	__be32 signature_length;
 };
 
 struct regdb_file_freq_range {
-	__be32	start_freq,	/* in kHz */
-		end_freq,	/* in kHz */
-		max_bandwidth;	/* in kHz */
+	__be32 start_freq,	/* in kHz */
+	 end_freq,		/* in kHz */
+	 max_bandwidth;		/* in kHz */
 };
 
 /*
@@ -86,52 +86,51 @@ struct regdb_file_freq_range {
  */
 struct regdb_file_power_rule {
 	/* antenna gain is in mBi (100 * dBi) */
-	__be32	max_antenna_gain;
+	__be32 max_antenna_gain;
 	/* this is in mBm (100 * dBm) */
-	__be32	max_eirp;
+	__be32 max_eirp;
 };
 
 /* must match <linux/nl80211.h> enum nl80211_reg_rule_flags */
 
 enum reg_rule_flags {
-	RRF_NO_OFDM		= 1<<0, /* OFDM modulation not allowed */
-	RRF_NO_CCK		= 1<<1, /* CCK modulation not allowed */
-	RRF_NO_INDOOR		= 1<<2, /* indoor operation not allowed */
-	RRF_NO_OUTDOOR		= 1<<3, /* outdoor operation not allowed */
-	RRF_DFS			= 1<<4, /* DFS support is required to be
-					 * used */
-	RRF_PTP_ONLY		= 1<<5, /* this is only for Point To Point
-					 * links */
-	RRF_PTMP_ONLY		= 1<<6, /* this is only for Point To Multi
-					 * Point links */
-	RRF_PASSIVE_SCAN	= 1<<7, /* passive scan is required */
-	RRF_NO_IBSS		= 1<<8, /* IBSS is not allowed */
+	RRF_NO_OFDM = 1 << 0,	/* OFDM modulation not allowed */
+	RRF_NO_CCK = 1 << 1,	/* CCK modulation not allowed */
+	RRF_NO_INDOOR = 1 << 2,	/* indoor operation not allowed */
+	RRF_NO_OUTDOOR = 1 << 3,	/* outdoor operation not allowed */
+	RRF_DFS = 1 << 4,	/* DFS support is required to be
+				 * used */
+	RRF_PTP_ONLY = 1 << 5,	/* this is only for Point To Point
+				 * links */
+	RRF_PTMP_ONLY = 1 << 6,	/* this is only for Point To Multi
+				 * Point links */
+	RRF_PASSIVE_SCAN = 1 << 7,	/* passive scan is required */
+	RRF_NO_IBSS = 1 << 8,	/* IBSS is not allowed */
 };
 
 struct regdb_file_reg_rule {
 	/* pointers (offsets) into the file */
-	__be32	freq_range_ptr; /* pointer to a struct regdb_file_freq_range */
-	__be32	power_rule_ptr; /* pointer to a struct regdb_file_power_rule */
+	__be32 freq_range_ptr;	/* pointer to a struct regdb_file_freq_range */
+	__be32 power_rule_ptr;	/* pointer to a struct regdb_file_power_rule */
 	/* rule flags using enum reg_rule_flags */
 	__be32 flags;
 };
 
 struct regdb_file_reg_rules_collection {
-	__be32	reg_rule_num;
+	__be32 reg_rule_num;
 	/* pointers (offsets) into the file. There are reg_rule_num elements
 	 * in the reg_rule_ptrs array pointing to struct
 	 * regdb_file_reg_rule */
-	__be32	reg_rule_ptrs[];
+	__be32 reg_rule_ptrs[];
 };
 
 struct regdb_file_reg_country {
-	__u8	alpha2[2];
-	__u8	PAD[2];
+	__u8 alpha2[2];
+	__u8 PAD[2];
 	/* pointer (offset) into the file to a struct
 	 * regdb_file_reg_rules_collection */
-	__be32	reg_collection_ptr;
+	__be32 reg_collection_ptr;
 };
-
 
 /*
  * Verify that no unexpected padding is added to structures
@@ -154,7 +153,7 @@ static inline void check_db_binary_structs(void)
 	CHECK_STRUCT(regdb_file_reg_country, 8);
 }
 
-/* from reglib.h */ 
+/* from reglib.h */
 
 /* Common regulatory structures, functions and helpers */
 
@@ -206,11 +205,11 @@ static inline int is_alpha2(const char *alpha2)
 /* Avoid stdlib */
 static inline int is_len_2(const char *alpha2)
 {
-        if (alpha2[0] == '\0' || (alpha2[1] == '\0'))
-                return 0;
-        if (alpha2[2] == '\0')
-                return 1;
-        return 0;
+	if (alpha2[0] == '\0' || (alpha2[1] == '\0'))
+		return 0;
+	if (alpha2[2] == '\0')
+		return 1;
+	return 0;
 }
 
 static inline int is_valid_regdom(const char *alpha2)
@@ -237,7 +236,6 @@ static inline __u32 min(__u32 a, __u32 b)
 static void *crda_get_file_ptr(__u8 *db, int dblen, int structlen, __be32 ptr);
 
 /* File reg db entry -> rd converstion utilities */
-struct ieee80211_regdomain *country2rd(__u8 *db, int dblen,
-	struct regdb_file_reg_country *country);
+struct ieee80211_regdomain *country2rd(__u8 *db, int dblen, struct regdb_file_reg_country *country);
 
-struct ieee80211_regdomain *mac80211_get_regdomain (char *varcountry);
+struct ieee80211_regdomain *mac80211_get_regdomain(char *varcountry);

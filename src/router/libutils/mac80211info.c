@@ -80,8 +80,6 @@ typedef uint32_t u32;
 #define VHT_CAP_RX_ANTENNA_PATTERN                  ((u32) BIT(28))
 #define VHT_CAP_TX_ANTENNA_PATTERN                  ((u32) BIT(29))
 
-
-
 struct unl unl;
 bool bunl;
 
@@ -473,9 +471,7 @@ nla_put_failure:
 	return capstring;
 }
 
-
 #ifdef HAVE_ATH10K
-			
 
 char *mac80211_get_vhtcaps(char *interface)
 {
@@ -502,8 +498,7 @@ char *mac80211_get_vhtcaps(char *interface)
 		if (!caps)
 			continue;
 		cap = nla_get_u32(caps);
-		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]"
-			 , (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
+		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
 			 , (cap & VHT_CAP_SHORT_GI_80 ? "[SHORT-GI-80]" : "")
 			 , (cap & VHT_CAP_SHORT_GI_160 ? "[SHORT-GI-160]" : "")
 			 , (cap & VHT_CAP_TXSTBC ? "[TX-STBC-2BY1]" : "")
@@ -969,6 +964,7 @@ nla_put_failure:
 	nlmsg_free(msg);
 	return;
 }
+
 static int mac80211_get_antennas(int phy, int which, int direction)
 {
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
@@ -978,7 +974,7 @@ static int mac80211_get_antennas(int phy, int which, int direction)
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	if (!msg)
-	    return 0;
+		return 0;
 
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 
