@@ -53,8 +53,8 @@ int get_wl_instance(char *name)
 char *get_wl_instance_name(int instance)
 {
 #ifdef HAVE_QTN
-	if (instance==1)
-	    return "qtn";
+	if (instance == 1)
+		return "qtn";
 #endif
 	if (get_wl_instance("eth1") == instance)
 		return "eth1";

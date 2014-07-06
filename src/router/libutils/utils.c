@@ -73,7 +73,6 @@
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
 
-
 struct mii_ioctl_data {
 	unsigned short phy_id;
 	unsigned short reg_num;
@@ -169,9 +168,9 @@ char *getBridge(char *ifname)
 	return nvram_safe_get("lan_ifname");
 }
 #else
-char *getBridge(char *ifname) 
+char *getBridge(char *ifname)
 {
-return nvram_safe_get("lan_ifname");
+	return nvram_safe_get("lan_ifname");
 }
 #endif
 
@@ -767,8 +766,8 @@ void add_userip(char *ip, int base, char *upstream, char *downstream, char *lans
 //               qos_nfmark(0x64));
 	system2("iptables -t mangle -D FILTER_IN -j RETURN");
 
-//	system2("iptables -t mangle -D FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");	
-//	system2("iptables -t mangle -D FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
+//      system2("iptables -t mangle -D FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");   
+//      system2("iptables -t mangle -D FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
 	system2("iptables -t mangle -D FILTER_OUT -j VPN_DSCP");
 	system2("iptables -t mangle -D FILTER_OUT -j CONNMARK --save");
 	system2("iptables -t mangle -D FILTER_OUT -j RETURN");
@@ -794,8 +793,8 @@ void add_userip(char *ip, int base, char *upstream, char *downstream, char *lans
 //               qos_nfmark(0x64));
 	system2("iptables -t mangle -A FILTER_IN -j RETURN");
 
-//	system2("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");	
-//	system2("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
+//      system2("iptables -t mangle -A FILTER_OUT -p tcp -m length --length 0:64 --tcp-flags ACK ACK -j CLASSIFY --set-class 1:100");   
+//      system2("iptables -t mangle -A FILTER_OUT -m layer7 --l7proto dns -j CLASSIFY --set-class 1:100");
 	system2("iptables -t mangle -A FILTER_OUT -j VPN_DSCP");
 	system2("iptables -t mangle -A FILTER_OUT -j CONNMARK --save");
 	system2("iptables -t mangle -A FILTER_OUT -j RETURN");
@@ -1023,7 +1022,6 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WZR1750;
 	}
 
-
 	if (boardnum == 00 && nvram_match("boardtype", "0x0665")
 	    && nvram_match("boardrev", "0x1103")
 	    && nvram_match("melco_id", "RD_BB13049")) {
@@ -1035,7 +1033,7 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WXR1900DHP;
 	}
 
-	if ((!strncmp(nvram_safe_get("boardnum"),"2013",4) || !strncmp(nvram_safe_get("boardnum"),"2014",4)) && nvram_match("boardtype", "0x0646")
+	if ((!strncmp(nvram_safe_get("boardnum"), "2013", 4) || !strncmp(nvram_safe_get("boardnum"), "2014", 4)) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "7")) {
 #ifdef HAVE_BUFFALO
@@ -1046,7 +1044,7 @@ int internal_getRouterBrand()
 		return ROUTER_BUFFALO_WZR900DHP;
 	}
 
-	if ((!strncmp(nvram_safe_get("boardnum"),"2013",4) || !strncmp(nvram_safe_get("boardnum"),"2014",4)) && nvram_match("boardtype", "0x0646")
+	if ((!strncmp(nvram_safe_get("boardnum"), "2013", 4) || !strncmp(nvram_safe_get("boardnum"), "2014", 4)) && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
 	    && nvram_match("0:rxchain", "3")) {
 #ifdef HAVE_BUFFALO
@@ -1112,7 +1110,6 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC87U;
 	}
 
-
 	if (nvram_match("model", "RT-AC87U")) {
 		setRouter("Asus RT-AC87U");
 		return ROUTER_ASUS_AC87U;
@@ -1177,7 +1174,6 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
-
 	if (boardnum == 679 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")) {
 		int mtd = getMTD("board_data");
@@ -1190,15 +1186,15 @@ int internal_getRouterBrand()
 #define EX6200 "U12H269T00_NETGEAR"
 			char modelstr[32];
 			fread(modelstr, 1, strlen(R6300V2), model);
-			if (!strncmp(modelstr, R6300V2, strlen(R6300V2)) ) {
+			if (!strncmp(modelstr, R6300V2, strlen(R6300V2))) {
 				setRouter("Netgear R6300V2");
 				fclose(model);
 				return ROUTER_NETGEAR_R6300V2;
-			} else if  ( !strncmp(modelstr, AC1450, strlen(AC1450)) ) {
+			} else if (!strncmp(modelstr, AC1450, strlen(AC1450))) {
 				setRouter("Netgear AC1450");
 				fclose(model);
 				return ROUTER_NETGEAR_AC1450;
-			} else if  ( !strncmp(modelstr, EX6200, strlen(EX6200)) ) {
+			} else if (!strncmp(modelstr, EX6200, strlen(EX6200))) {
 				setRouter("Netgear EX6200");
 				fclose(model);
 				return ROUTER_NETGEAR_EX6200;
@@ -4166,7 +4162,7 @@ int pidof(const char *name)
 	pid_t *pids;
 	pid_t p;
 	if (!name)
-	    return -1;
+		return -1;
 	if (_pidof(name, &pids) > 0) {
 		p = *pids;
 		free(pids);
@@ -5034,37 +5030,37 @@ int led_control(int type, int act)
 #elif HAVE_ARCHERC7
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x10e;
-        	ses_gpio = 0x10f;
+		ses_gpio = 0x10f;
 		sec0_gpio = 0x10f;
 
-        	usb_power = 0x016;
+		usb_power = 0x016;
 		usb_gpio = 0x112;
 
-        	usb_power1 = 0x015;
+		usb_power1 = 0x015;
 		usb_gpio1 = 0x113;
-				
-    		usb_gpio = 0x10f;
+
+		usb_gpio = 0x10f;
 		break;
 #elif HAVE_WR1043V2
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x113;
-//		connected_gpio = 0x112;
-//		disconnected_gpio = 0x113;
-//		power_gpio = 0x10e;
-        	usb_power = 0x015;
+//              connected_gpio = 0x112;
+//              disconnected_gpio = 0x113;
+//              power_gpio = 0x10e;
+		usb_power = 0x015;
 		usb_gpio = 0x10f;
-        	ses_gpio = 0x112;
+		ses_gpio = 0x112;
 		sec0_gpio = 0x112;
 		break;
 #elif HAVE_WHR450HP
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x114;
-//		connected_gpio = 0x112;
-//		disconnected_gpio = 0x113;
-//		power_gpio = 0x10e;
+//              connected_gpio = 0x112;
+//              disconnected_gpio = 0x113;
+//              power_gpio = 0x10e;
 //              usb_power = 0x01a;
-//		usb_gpio = 0x10b;
-        	ses_gpio = 0x102;
+//              usb_gpio = 0x10b;
+		ses_gpio = 0x102;
 		sec0_gpio = 0x102;
 		break;
 #elif HAVE_DIR825C1
@@ -5186,9 +5182,6 @@ int led_control(int type, int act)
 		diag_gpio = 0x005;
 		diag_gpio_disabled = 0x006;
 		break;
-
-
-
 
 	case ROUTER_BUFFALO_WZR1750:
 		usb_power = 0x009;	// USB 2.0 ehci port
@@ -5529,10 +5522,10 @@ int led_control(int type, int act)
 		power_gpio = 0x103;
 		connected_gpio = 0x105;
 		ses_gpio = 0x101;
-		// quantenna reset 8 inv (off / on to reset)	
+		// quantenna reset 8 inv (off / on to reset)    
 		break;
 	case ROUTER_NETGEAR_EX6200:
-		//power_gpio = 0x109;	// connected red
+		//power_gpio = 0x109;   // connected red
 		diag_gpio = 0x101;	// Netgear logo 
 		connected_gpio = 0x108;	// connected green
 		wlan1_gpio = 0x10b;	// radio led red 2.4G
@@ -5748,7 +5741,7 @@ int led_control(int type, int act)
 		case LED_ON:
 			set_gpio(gpio_value, enable);
 			if (setin)
-			    get_gpio(gpio_value);
+				get_gpio(gpio_value);
 			break;
 		case LED_OFF:
 			set_gpio(gpio_value, disable);
@@ -6160,24 +6153,22 @@ int is_ath10k(const char *prefix)
 		count = (int)globbuf.gl_pathc;
 	globfree(&globbuf);
 	if (!count)
-	    return 0;
+		return 0;
 	FILE *fp;
 	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/device", devnum);
 	fp = fopen(globstring, "rb");
 	if (fp) {
-	    char match[32];
-	    fscanf(fp, "%s",match);
-	    fclose(fp);
-	    if (strcmp(match,"0x003c"))
-		return 0;
-	}else
+		char match[32];
+		fscanf(fp, "%s", match);
+		fclose(fp);
+		if (strcmp(match, "0x003c"))
+			return 0;
+	} else
 		return 0;
 	return (count);
 }
 
-
 #endif
-
 
 double HTTxRate20_800(unsigned int index)
 {
@@ -6242,7 +6233,7 @@ int writeproc(char *path, char *value)
 	}
 	fprintf(fp,"%s",value);
 	fclose(fp);*/
-	sysprintf("echo %s > %s",value,path);
+	sysprintf("echo %s > %s", value, path);
 	return 0;
 }
 
@@ -6612,13 +6603,11 @@ void getPortMapping(int *vlanmap)
 u_int64_t freediskSpace(char *path)
 {
 	struct statfs sizefs;
-	u_int64_t free = 0; 
+	u_int64_t free = 0;
 
-	if ( (statfs(path, &sizefs) != 0) || (sizefs.f_type == 0x73717368) ) {
+	if ((statfs(path, &sizefs) != 0) || (sizefs.f_type == 0x73717368)) {
 		memset(&sizefs, 0, sizeof(sizefs));
 	}
 
 	return (u_int64_t)sizefs.f_bsize * (u_int64_t)sizefs.f_bfree;
 }
-
-

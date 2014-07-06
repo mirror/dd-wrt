@@ -687,19 +687,17 @@ void addList(char *listname, char *value)
 		listlen = strlen(list);
 	newlist = safe_malloc(strlen(value) + listlen + 2);
 	if (list) {
-		strcpy(newlist,list);
-		strcat(newlist," ");
-		strcat(newlist,value);	
-	}else {
-		strcpy(newlist,value);
+		strcpy(newlist, list);
+		strcat(newlist, " ");
+		strcat(newlist, value);
+	} else {
+		strcpy(newlist, value);
 	}
 	nvram_set(listname, newlist);
 	free(newlist);
 }
 
-size_t strlcpy_compat(register char *dst,
-				  register const char *src,
-				  size_t n)
+size_t strlcpy_compat(register char *dst, register const char *src, size_t n)
 {
 	const char *src0 = src;
 	char dummy[1];
@@ -720,7 +718,6 @@ size_t strlcpy_compat(register char *dst,
 
 	return src - src0;
 }
-
 
 int f_read_string(const char *path, char *buffer, int max);
 
@@ -747,7 +744,7 @@ char *psname(int pid, char *buffer, int maxlen)
 int f_exists(const char *path)	// note: anything but a directory
 {
 	struct stat st;
-	memset(&st,0,sizeof(struct stat));
+	memset(&st, 0, sizeof(struct stat));
 
 	return (stat(path, &st) == 0) && (!S_ISDIR(st.st_mode));
 }
