@@ -362,15 +362,20 @@ static void handle_index(void)
 	tz = nvram_safe_get("time_zone"); //e.g. EUROPE/BERLIN
 	
 	int i;
+	int found=0;
+	char *zone = "Europe/Berlin";
 	for (i = 0; allTimezones[i].tz_name!=NULL ; i++) {
 	  if( !strcmp(allTimezones[i].tz_name,tz) ){
-		FILE *fp = fopen("/tmp/TZ", "wb");
-		fprintf(fp, "%s\n", allTimezones[i].tz_string);
-		fclose(fp);
-		nvram_set("TZ", allTimezones[i].tz_string);
-		nvram_commit();
+		zone = allTimezones[i].tz_string;
+		found =1;
+		break;
 	  }
 	}
+	if (!found)
+	    nvram_set("time_zone",zone);
+	FILE *fp = fopen("/tmp/TZ", "wb");
+	fprintf(fp, "%s\n", zone);
+	fclose(fp);
 	
 	unlink("/tmp/ppp/log");
 
