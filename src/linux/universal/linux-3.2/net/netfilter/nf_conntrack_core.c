@@ -147,8 +147,9 @@ void ddtb_ip_conntrack_add(struct sk_buff *skb, u_int32_t hooknum,
 		tcph = ((struct tcphdr *)(((__u8 *)iph) + (iph->ihl << 2)));
 		protocol = iph->protocol;
 	} else if (ipver == 6) {
-		if (!IS_ENABLED(CONFIG_IPV6_notyet))
+		#ifndef CONFIG_IPV6_notyet
 			return;
+		#endif
 
 		ip6h = (struct ipv6hdr *) iph;
 		tcph = NULL /* (struct tcphdr *) ddtb_ctx->lkup_l4proto((uint8_t *) ip6h, &protocol) */;

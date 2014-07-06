@@ -73,11 +73,11 @@
 static struct hlist_head rs[BUCKET_SIZE];
 static unsigned int ddtb_dbg;
 static unsigned int ddtb_stats;
+static struct spinlock lock;
 
 #ifdef CONFIG_DEBUG_FS
 
 static struct dentry *debugfs;
-static struct spinlock lock;
 
 static int
 ddtb_cache_show_ip(struct seq_file *s, char *prefix, u32 _ip, int port)
