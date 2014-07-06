@@ -172,11 +172,11 @@ void runStartup(char *folder, char *extension)
 		n++;
 	}
 	free(entry);
-	
-//	sysprintf("/usr/sbin/wl interference_override 4");
-//	sysprintf("/usr/sbin/wl -i eth1 interference 3");
-//	sysprintf("/usr/sbin/wl -i eth2 interference 3");
-	
+
+//      sysprintf("/usr/sbin/wl interference_override 4");
+//      sysprintf("/usr/sbin/wl -i eth1 interference 3");
+//      sysprintf("/usr/sbin/wl -i eth2 interference 3");
+
 	return;
 }
 
@@ -244,9 +244,9 @@ static void buffalo_defaults(int force)
 				if (wpapsk) {
 					nvram_set("wl_wpa_psk", wpapsk);
 					nvram_set("wl0_wpa_psk", wpapsk);
-				}else{
+				} else {
 					nvram_set("wl_wpa_psk", "12345678");
-					nvram_set("wl0_wpa_psk", "12345678");				
+					nvram_set("wl0_wpa_psk", "12345678");
 				}
 			}
 			{
@@ -442,14 +442,14 @@ static void buffalo_defaults(int force)
 	if (nvram_get("ath0_akm") == NULL || force) {
 		nvram_set("ath0_akm", "disabled");
 		nvram_set("ath1_akm", "disabled");
-	
+
 		FILE *fp;
 		char script[32] = "/tmp/fdefaults.sh";
 		char config[32] = "/tmp/sysdefaults.txt";
 		char partition[20] = "/dev/mtdblock6";
 		char mountpoint[20] = "/tmp/sysdefaults";
 		char conffile[16] = "mac.dat";
-		
+
 		fp = fopen(script, "w");
 		if (fp) {
 			fprintf(fp, "#!/bin/sh\n");
@@ -460,7 +460,7 @@ static void buffalo_defaults(int force)
 			fprintf(fp, "cat %s/%s > %s\n", mountpoint, conffile, config);
 			fclose(fp);
 		}
-		
+
 		chmod(script, 0755);
 		system(script);
 
@@ -469,23 +469,23 @@ static void buffalo_defaults(int force)
 			char line[32];
 			char list[2][30];
 			int i;
-				
+
 			while (fgets(line, sizeof(line), fp) != NULL) {
-				
-				// make string sscanf ready	
-				for(i = 0; i < sizeof(line); i++) {
-					if(line[i] == '=') {
+
+				// make string sscanf ready     
+				for (i = 0; i < sizeof(line); i++) {
+					if (line[i] == '=') {
 						line[i] = ' ';
 						break;
 					}
 				}
-					
+
 				if (sscanf(line, "%s %s[\n]", list[0], list[1]) != 2)
 					continue;
-				
+
 				if (!strcmp("Region", list[0]))
 					nvram_set("region", list[1]);
-				
+
 				if (!strcmp("WIFIFacWPAPSK1", list[0])) {
 					nvram_set("wl0_security_mode", "psk psk2");
 					nvram_set("wl0_akm", "psk psk2");
@@ -500,13 +500,12 @@ static void buffalo_defaults(int force)
 			}
 			fclose(fp);
 		}
-		
 		// cleanup
 		unlink(script);
 		unlink(config);
 		eval("umount", partition);
 		rmdir(mountpoint);
-			
+
 		struct ifreq ifr;
 		int s;
 
@@ -753,9 +752,11 @@ static void buffalo_defaults(int force)
 /*
  * SeG dd-wrt addition for module startup scripts 
  */
-void stop_modules(void) {
-	
+void stop_modules(void)
+{
+
 }
+
 void start_modules(void)
 {
 	runStartup("/etc/config", ".startup");
@@ -799,9 +800,11 @@ void start_wanup(void)
 	}
 	return;
 }
+
 void stop_run_rc_startup(void)
 {
 }
+
 void start_run_rc_startup(void)
 {
 	DIR *directory;
@@ -824,9 +827,11 @@ void start_run_rc_startup(void)
 		}
 	}
 }
+
 void stop_run_rc_shutdown(void)
 {
 }
+
 void start_run_rc_shutdown(void)
 {
 	runStartup("/opt/etc/init.d", "K**");	// if available; run K** shutdown scripts
@@ -905,7 +910,7 @@ void start_restore_defaults(void)
 	if (nvram_invmatch("sv_restore_defaults", "0")
 	    && (!strcmp(getUEnv("region"), "AP")
 		|| !strcmp(getUEnv("region"), "US")))
-		    nvram_set("region", "SA");
+		nvram_set("region", "SA");
 #endif
 #ifdef HAVE_RB500
 	struct nvram_tuple generic[] = {
@@ -1722,7 +1727,7 @@ void start_restore_defaults(void)
 		{"wan_default", "vlan2", 0},
 		{0, 0, 0}
 	};
-	
+
 	struct nvram_tuple wrt320vlan[] = {
 		{"lan_ifname", "br0", 0},
 		{"lan_ifnames", "vlan1 eth1", 0},
@@ -1865,7 +1870,6 @@ void start_restore_defaults(void)
 	if (nvram_get("router_name") == NULL) {
 		restore_defaults = 1;
 	}
-
 #elif HAVE_GEMTEK
 	linux_overrides = generic;
 	int brand = getRouterBrand();
@@ -2210,7 +2214,7 @@ void start_restore_defaults(void)
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "0 1 2 3 8*");
 			nvram_set("vlan2ports", "4 8");
-		}	
+		}
 		break;
 	case ROUTER_WRT610N:
 	case ROUTER_WRT350N:
@@ -2437,7 +2441,7 @@ void start_restore_defaults(void)
 		}
 
 	}
-	
+
 	if (restore_defaults && nvram_get("vlan0ports") == NULL && nvram_get("vlan1ports")
 	    && nvram_get("vlan2ports")) {
 		nvram_set("port0vlans", "2");
@@ -2447,7 +2451,6 @@ void start_restore_defaults(void)
 		nvram_set("port4vlans", "1");
 		nvram_set("port5vlans", "1 2 16");
 	}
-	
 
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG) {
 		if (!nvram_get("aa0"))
@@ -2471,7 +2474,7 @@ void start_restore_defaults(void)
 	}
 
 	if (restore_defaults &&
-	    (brand == ROUTER_ASUS_RTN10 || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN12  || brand == ROUTER_ASUS_RTN12B ||
+	    (brand == ROUTER_ASUS_RTN10 || brand == ROUTER_ASUS_RTN10U || brand == ROUTER_ASUS_RTN12 || brand == ROUTER_ASUS_RTN12B ||
 	     brand == ROUTER_ASUS_RTN53 || brand == ROUTER_ASUS_RTN10PLUSD1 || brand == ROUTER_ASUS_RTN16)) {
 		nvram_set("wl0_txpwr", "17");
 	}
@@ -2591,9 +2594,10 @@ void start_restore_defaults(void)
 		}
 	}
 }
+
 void stop_drivers(void)
 {
- // dummy
+	// dummy
 }
 
 void start_drivers(void)
@@ -2644,8 +2648,7 @@ void start_drivers(void)
 		insmod("ci13xxx_imx");
 		insmod("usbmisc_imx");
 		insmod("ci_hdrc_imx");
-		
-		
+
 		if (nvram_match("usb_storage", "1")) {
 			cprintf("loading scsi_mod\n");
 			insmod("scsi_mod");
@@ -2688,7 +2691,6 @@ void start_drivers(void)
 		insmod("sdhci");
 		insmod("sdhci-pltfm");
 		insmod("sdhci-esdhc-imx");
-		
 
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 //   Mounting is done by hotplug event!         
@@ -2709,7 +2711,6 @@ void start_drivers(void)
 		rmmod("scsi_wait_scan");
 		rmmod("scsi_mod");
 
-
 		rmmod("usbmisc_imx");
 		rmmod("ci13xxx_imx");
 		rmmod("ci_hdrc");
@@ -2720,7 +2721,6 @@ void start_drivers(void)
 		rmmod("dwc_otg");	// usb
 		rmmod("xhci-hcd");
 
-
 		rmmod("usb-ohci");
 		rmmod("ohci-hcd");
 		rmmod("uhci-hcd");
@@ -2730,10 +2730,9 @@ void start_drivers(void)
 		rmmod("ehci-hcd");
 		rmmod("fsl-mph-dr-of");
 
-
 		rmmod("usbcore");
 		rmmod("usb-common");
-		
+
 /* unload filesystems */
 /* xfs */
 		rmmod("xfs");

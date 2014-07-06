@@ -145,7 +145,7 @@ void start_devinit(void)
 	system("/etc/hotplug2.startup");
 #endif
 #ifdef HAVE_OPENRISC
-	mkdir("/dev/misc",0700);
+	mkdir("/dev/misc", 0700);
 	mknod("/dev/misc/gpio", S_IFCHR | 0644, makedev(125, 0));
 #endif
 #ifdef HAVE_X86

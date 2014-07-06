@@ -689,7 +689,6 @@ int svqos_iptables(void)
 #ifndef HAVE_80211AC
 	// seems to crash northstar
 
-
 	// http://svn.dd-wrt.com:8000/ticket/2803 && http://svn.dd-wrt.com/ticket/2811   
 	do {
 		if (sscanf(qos_pkts, "%3s ", pkt_filter) < 1)
@@ -772,15 +771,15 @@ void start_wshaper(void)
 #endif
 
 	//under K3 interface defaults are way to high, set some sane values
-	eval("ifconfig", "imq0", "down");	
+	eval("ifconfig", "imq0", "down");
 	eval("ifconfig", "imq0", "mtu", "1500");
 	eval("ifconfig", "imq0", "txqueuelen", "30");
 	eval("ifconfig", "imq0", "up");
 
-	if (!strcmp(wshaper_dev, "WAN")){
+	if (!strcmp(wshaper_dev, "WAN")) {
 		eval("ifconfig", "imq1", "down");
 		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd);
-	}else{
+	} else {
 		eval(script_name, ul_val, dl_val, wan_dev, mtu_val, "imq0", aqd, "imq1");
 	}
 	svqos_iptables();
@@ -788,7 +787,6 @@ void start_wshaper(void)
 #endif
 	nvram_set("qos_done", "1");
 
-	
 	return;
 }
 

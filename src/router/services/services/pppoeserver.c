@@ -162,8 +162,8 @@ static void makeipup(void)
 		&& nvram_match("jffs_mounted", "1")
 		&& nvram_match("sys_enable_jffs2", "1")))
 		mkdir("/jffs/etc", 0700);
-		mkdir("/jffs/etc/pppoeserver", 0700);
-		sysprintf("/bin/cp /jffs/etc/pppoeserver/pppoe_peer.db /tmp/");
+	mkdir("/jffs/etc/pppoeserver", 0700);
+	sysprintf("/bin/cp /jffs/etc/pppoeserver/pppoe_peer.db /tmp/");
 }
 
 static void do_pppoeconfig(FILE * fp)
@@ -377,9 +377,9 @@ void start_pppoeserver(void)
 			makeipup();
 		}
 
-//		// clamp when fw clamping is off
-//		if (nvram_match("wan_proto", "disabled"))
-//			system("/usr/sbin/iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+//              // clamp when fw clamping is off
+//              if (nvram_match("wan_proto", "disabled"))
+//                      system("/usr/sbin/iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 
 		if (nvram_invmatch("wan_proto", "pppoe")	//if there is no ppp0, reduce rules
 		    && nvram_invmatch("wan_proto", "pptp") && nvram_invmatch("wan_proto", "pppoe_dual")) {
@@ -417,9 +417,8 @@ void stop_pppoeserver(void)
 			mkdir("/jffs/etc/pppoeserver", 0700);
 			sysprintf("/bin/cp /tmp/pppoe_peer.db /jffs/etc/pppoeserver");
 		}
-
-//		if (nvram_match("wan_proto", "disabled"))
-//			system("/usr/sbin/iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+//              if (nvram_match("wan_proto", "disabled"))
+//                      system("/usr/sbin/iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 
 		//system("/usr/sbin/ebtables -D INPUT -i `nvram get pppoeserver_interface` -p 0x8863 -j DROP");
 		if (nvram_invmatch("wan_proto", "pppoe")

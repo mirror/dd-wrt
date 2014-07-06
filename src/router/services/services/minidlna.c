@@ -44,11 +44,10 @@ void start_dlna(void)
 	mkdir("/tmp/db", 0700);
 	FILE *fp = fopen("/tmp/minidlna.conf", "wb");
 #ifndef HAVE_VENTANA
-	if (nvram_match("jffs_mounted", "1") || ( freediskSpace("/jffs") > 134217728 ) )
-	{
+	if (nvram_match("jffs_mounted", "1") || (freediskSpace("/jffs") > 134217728)) {
 #endif
 		mkdir("/jffs/minidlna", 0700);
-		if (nvram_match("dlna_cleandb", "1")){
+		if (nvram_match("dlna_cleandb", "1")) {
 			eval("rm", "-f", "/jffs/minidlna/files.db");
 			nvram_set("dlna_cleandb", "0");
 		}
@@ -84,11 +83,11 @@ void start_dlna(void)
 	fprintf(fp, "notify_interval=300\n");
 	fprintf(fp, "serial=12345678\nmodel_number=1\n");
 	fclose(fp);
-	fp = fopen("/jffs/etc/minidlna.conf", "r"); //test if custom config is available
-	if ( fp !=NULL ){
+	fp = fopen("/jffs/etc/minidlna.conf", "r");	//test if custom config is available
+	if (fp != NULL) {
 		eval("minidlna", "-f", "/jffs/etc/minidlna.conf");
 		fclose(fp);
-	}else{
+	} else {
 		eval("minidlna", "-f", "/tmp/minidlna.conf");
 	}
 	syslog(LOG_INFO, "minidlna : DLNA Media Server successfully started\n");

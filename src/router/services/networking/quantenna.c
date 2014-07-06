@@ -36,16 +36,15 @@ struct txpower_ac_qtn_s {
 
 static const struct txpower_ac_qtn_s txpower_list_qtn_rtac87u[] = {
 	/* 1 ~ 25% */
-	{ 1, 25, 14},
+	{1, 25, 14},
 	/* 26 ~ 50% */
-	{ 26, 50, 17},
+	{26, 50, 17},
 	/* 51 ~ 75% */
-	{ 51, 75, 20},
+	{51, 75, 20},
 	/* 76 ~ 100% */
-	{ 76, 100, 23},
-	{ 0, 0, 0x0}
+	{76, 100, 23},
+	{0, 0, 0x0}
 };
-
 
 int get_tx_power_qtn(void)
 {
@@ -64,7 +63,6 @@ int get_tx_power_qtn(void)
 	/* default max power */
 	return 23;
 }
-
 
 int gen_stateless_conf(void)
 {
@@ -89,7 +87,7 @@ int gen_stateless_conf(void)
 
 	fp = fopen("/tmp/stateless_slave_config", "w");
 
-	if(nvram_match("wl1_mode","sta")){
+	if (nvram_match("wl1_mode", "sta")) {
 		/* media bridge mode */
 		fprintf(fp, "wifi0_mode=sta\n");
 
@@ -99,34 +97,31 @@ int gen_stateless_conf(void)
 
 		strncpy(ssid, nvram_safe_get("wl1_ssid"), sizeof(ssid));
 		fprintf(fp, "wifi0_SSID=\"%s\"\n", ssid);
-		
+
 		/* convert security from nvram to qtn */
-		if(!strcmp(auth, "psk2") && !strcmp(crypto, "aes")){
+		if (!strcmp(auth, "psk2") && !strcmp(crypto, "aes")) {
 			fprintf(fp, "wifi0_auth_mode=PSKAuthentication\n");
 			fprintf(fp, "wifi0_beacon=11i\n");
 			fprintf(fp, "wifi0_encryption=AESEncryption\n");
 			fprintf(fp, "wifi0_passphrase=%s\n", key);
-		}
-		else if(!strcmp(auth, "pskpsk2") && !strcmp(crypto, "aes") ){
+		} else if (!strcmp(auth, "pskpsk2") && !strcmp(crypto, "aes")) {
 			fprintf(fp, "wifi0_auth_mode=PSKAuthentication\n");
 			fprintf(fp, "wifi0_beacon=WPAand11i\n");
 			fprintf(fp, "wifi0_encryption=AESEncryption\n");
 			fprintf(fp, "wifi0_passphrase=%s\n", key);
-		}
-		else if(!strcmp(auth, "pskpsk2") && !strcmp(crypto, "tkip+aes") ){
+		} else if (!strcmp(auth, "pskpsk2") && !strcmp(crypto, "tkip+aes")) {
 			fprintf(fp, "wifi0_auth_mode=PSKAuthentication\n");
 			fprintf(fp, "wifi0_beacon=WPAand11i\n");
 			fprintf(fp, "wifi0_encryption=TKIPandAESEncryption\n");
 			fprintf(fp, "wifi0_passphrase=%s\n", key);
-		}
-		else{
+		} else {
 			fprintf(fp, "wifi0_auth_mode=NONE\n");
 			fprintf(fp, "wifi0_beacon=Basic\n");
 		}
 
 		/* auto channel for media bridge mode */
 		channel = 0;
-	}else{
+	} else {
 		/* not media bridge mode */
 		fprintf(fp, "wifi0_mode=ap\n");
 
@@ -137,52 +132,50 @@ int gen_stateless_conf(void)
 		strncpy(ssid, nvram_safe_get("wl1_ssid"), sizeof(ssid));
 		fprintf(fp, "wifi0_SSID=\"%s\"\n", ssid);
 
-		if(!strcmp(auth, "psk2") && !strcmp(crypto, "aes")){
+		if (!strcmp(auth, "psk2") && !strcmp(crypto, "aes")) {
 			fprintf(fp, "wifi0_auth_mode=PSKAuthentication\n");
 			fprintf(fp, "wifi0_beacon=11i\n");
 			fprintf(fp, "wifi0_encryption=AESEncryption\n");
 			fprintf(fp, "wifi0_passphrase=%s\n", key);
-		}
-		else if(!strcmp(auth, "pskpsk2") && !strcmp(crypto, "aes") ){
+		} else if (!strcmp(auth, "pskpsk2") && !strcmp(crypto, "aes")) {
 			fprintf(fp, "wifi0_auth_mode=PSKAuthentication\n");
 			fprintf(fp, "wifi0_beacon=WPAand11i\n");
 			fprintf(fp, "wifi0_encryption=AESEncryption\n");
 			fprintf(fp, "wifi0_passphrase=%s\n", key);
-		}
-		else if(!strcmp(auth, "pskpsk2") && !strcmp(crypto, "tkip+aes") ){
+		} else if (!strcmp(auth, "pskpsk2") && !strcmp(crypto, "tkip+aes")) {
 			fprintf(fp, "wifi0_auth_mode=PSKAuthentication\n");
 			fprintf(fp, "wifi0_beacon=WPAand11i\n");
 			fprintf(fp, "wifi0_encryption=TKIPandAESEncryption\n");
 			fprintf(fp, "wifi0_passphrase=%s\n", key);
-		}
-		else{
+		} else {
 			fprintf(fp, "wifi0_beacon=Basic\n");
 		}
 	}
-	
+
 	char *country = getIsoName(nvram_safe_get("wl_regdomain"));
 	char lower[32];
 	int i;
-	for (i=0;i<strlen(country);i++)
-	    lower[i]=tolower(country[i]);
-	lower[i]=0;
-	if (!strcmp(lower,"eu"))
-	fprintf(fp, "wifi0_region=de\n");
-	else
+	for (i = 0; i < strlen(country); i++)
+		lower[i] = tolower(country[i]);
+	lower[i] = 0;
 	fprintf(fp, "wifi0_region=%s\n", lower);
 	nvram_set("wl1_country_code", nvram_safe_get("1:ccode"));
 	fprintf(fp, "wifi0_vht=1\n");
-	if(bw==20) fprintf(fp, "wifi0_bw=20\n");
-	else if(bw==40) fprintf(fp, "wifi0_bw=40\n");
-	else if(bw==80) fprintf(fp, "wifi0_bw=80\n");
-	else fprintf(fp, "wifi0_bw=80\n");
+	if (bw == 20)
+		fprintf(fp, "wifi0_bw=20\n");
+	else if (bw == 40)
+		fprintf(fp, "wifi0_bw=40\n");
+	else if (bw == 80)
+		fprintf(fp, "wifi0_bw=80\n");
+	else
+		fprintf(fp, "wifi0_bw=80\n");
 
 	/* if media bridge mode, always auto channel */
 	fprintf(fp, "wifi0_channel=%d\n", channel);
 	fprintf(fp, "wifi0_pwr=%d\n", get_tx_power_qtn());
-	if(nvram_match("wl1_itxbf","1") || nvram_match("wl1_txbf","1")){
+	if (nvram_match("wl1_itxbf", "1") || nvram_match("wl1_txbf", "1")) {
 		fprintf(fp, "wifi0_bf=1\n");
-	}else{
+	} else {
 		fprintf(fp, "wifi0_bf=0\n");
 	}
 	fprintf(fp, "wifi0_staticip=1\n");
@@ -193,17 +186,16 @@ int gen_stateless_conf(void)
 	return 1;
 }
 
-
 void start_qtn(void)
 {
 	gen_stateless_conf();
-	nvram_set("qtn_ready","0");
+	nvram_set("qtn_ready", "0");
 	sysprintf("cp /etc/qtn/* /tmp/");
 	eval("ifconfig", "br0:1", "169.254.39.1", "netmask", "255.255.255.0");
 	eval("ifconfig", "br0:2", "1.1.1.1", "netmask", "255.255.255.0");
-	eval("tftpd"); // bootloader from qtn will load files from /tmp directory now
-	set_gpio(8,0);
-	set_gpio(8,1);
+	eval("tftpd");		// bootloader from qtn will load files from /tmp directory now
+	set_gpio(8, 0);
+	set_gpio(8, 1);
 	sysprintf("qtn_monitor&");
 	return;
 }
@@ -215,6 +207,6 @@ void stop_qtn(void)
 
 void start_qtn_test(void)
 {
-rpc_show_config();
+	rpc_show_config();
 }
 #endif

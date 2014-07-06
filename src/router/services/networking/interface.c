@@ -226,7 +226,7 @@ void start_config_vlan(void)
 
 void start_setup_vlans(void)
 {
-#if defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_VENTANA)  || defined(HAVE_EROUTER) 
+#if defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_LS2) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_SOLO51) || defined(HAVE_OPENRISC) || defined(HAVE_VENTANA)  || defined(HAVE_EROUTER)
 	return;
 #else
 	/*
@@ -279,7 +279,6 @@ void start_setup_vlans(void)
 		ast = 8;
 	if (strstr(asttemp, "7u"))
 		ast = 7;
-		
 
 	memset(&portsettings[0][0], 0, 16 * 64);
 	memset(&tagged[0], 0, 16);

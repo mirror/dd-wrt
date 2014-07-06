@@ -438,9 +438,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			} else if (nvram_match(bw, "80")) {
 				fprintf(fp, "vht_oper_chwidth=1\n");
 				int idx = channel;
-//				switch ((channel / 4) % 4) {
-//				case 0:
-					idx = channel + 6;
+//                              switch ((channel / 4) % 4) {
+//                              case 0:
+				idx = channel + 6;
 /*					break;
 				case 1:
 					idx = channel + 2;

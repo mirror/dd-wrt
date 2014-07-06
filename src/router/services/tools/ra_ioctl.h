@@ -10,7 +10,6 @@
 #define RAETH_ESW_EGRESS_RATE		0x89F6
 #define RAETH_ESW_PHY_DUMP		0x89F7
 
-
 #if defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
     defined (CONFIG_RALINK_MT7620)
 
@@ -18,21 +17,19 @@
 #define REG_ESW_WT_MAC_ATA1             0x74
 #define REG_ESW_WT_MAC_ATA2             0x78
 #define REG_ESW_WT_MAC_ATWD             0x7C
-#define REG_ESW_WT_MAC_ATC              0x80 
+#define REG_ESW_WT_MAC_ATC              0x80
 
 #define REG_ESW_TABLE_TSRA1		0x84
 #define REG_ESW_TABLE_TSRA2		0x88
 #define REG_ESW_TABLE_ATRD		0x8C
 
-
 #define REG_ESW_VLAN_VTCR		0x90
 #define REG_ESW_VLAN_VAWD1		0x94
 #define REG_ESW_VLAN_VAWD2		0x98
 
-
 #define REG_ESW_VLAN_ID_BASE		0x100
 
-//#define REG_ESW_VLAN_ID_BASE		0x50
+//#define REG_ESW_VLAN_ID_BASE          0x50
 #define REG_ESW_VLAN_MEMB_BASE		0x70
 #define REG_ESW_TABLE_SEARCH		0x24
 #define REG_ESW_TABLE_STATUS0		0x28
@@ -55,16 +52,14 @@
 #define REG_ESW_WT_MAC_AD2		0x3C
 #endif
 
-
-#if defined(CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350) 
+#if defined(CONFIG_RALINK_RT3352) || defined (CONFIG_RALINK_RT5350)
 #define REG_ESW_MAX			0x16C
 #elif defined (CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_RT6855A) || \
       defined (CONFIG_RALINK_MT7620)
 #define REG_ESW_MAX			0x7FFFF
-#else //RT305x, RT3350
+#else				//RT305x, RT3350
 #define REG_ESW_MAX			0xFC
 #endif
-
 
 typedef struct rt3052_esw_reg {
 	unsigned int off;
@@ -72,17 +67,16 @@ typedef struct rt3052_esw_reg {
 } esw_reg;
 
 typedef struct ralink_mii_ioctl_data {
-	__u32	phy_id;
-	__u32	reg_num;
-	__u32	val_in;
-	__u32	val_out;
+	__u32 phy_id;
+	__u32 reg_num;
+	__u32 val_in;
+	__u32 val_out;
 } ra_mii_ioctl_data;
 
 typedef struct rt335x_esw_reg {
 	unsigned int on_off;
 	unsigned int port;
-	unsigned int bw;/*Mbps*/
+	unsigned int bw;	/*Mbps */
 } esw_rate;
-
 
 #endif

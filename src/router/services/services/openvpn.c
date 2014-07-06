@@ -42,13 +42,13 @@ void start_openvpnserver(void)
 
 	if (nvram_invmatch("openvpn_enable", "1"))
 		return;
-		
-	if ( (freediskSpace("/jffs") > 16384)
+
+	if ((freediskSpace("/jffs") > 16384)
 	    || (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
 		&& nvram_match("sys_enable_jffs2", "1")))
-			jffs = 1;
-		
+		jffs = 1;
+
 	dd_syslog(LOG_INFO, "openvpn : OpenVPN daemon (Server) starting/restarting...\n");
 	mkdir("/tmp/openvpn", 0700);
 	mkdir("/tmp/openvpn/ccd", 0700);
@@ -62,7 +62,7 @@ void start_openvpnserver(void)
 	write_nvram("/tmp/openvpn/static.key", "openvpn_static");
 	chmod("/tmp/openvpn/key.pem", 0600);
 
-	//	use jffs for ccd if available
+	//      use jffs for ccd if available
 	if (jffs == 1) {
 		mkdir("/jffs/etc", 0700);
 		mkdir("/jffs/etc/openvpn", 0700);
@@ -70,7 +70,7 @@ void start_openvpnserver(void)
 		if (strlen(nvram_safe_get("openvpn_ccddef")) > 0) {
 			write_nvram("/jffs/etc/openvpn/ccd/DEFAULT", "openvpn_ccddef");
 			chmod("/jffs/etc/openvpn/ccd/DEFAULT", 0700);
-			}
+		}
 //                      if (strlen(nvram_safe_get("openvpn_clcon")) > 0) 
 //                              write_nvram("/jffs/etc/openvpn/clcon.sh", "openvpn_clcon");
 //                      if (strlen(nvram_safe_get("openvpn_cldiscon")) > 0) 
@@ -195,7 +195,7 @@ void start_openvpnserver(void)
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_get("gpiovpn");
 	if (gpiovpn != NULL) {
-		if(strncmp(gpiovpn, "-", 1))
+		if (strncmp(gpiovpn, "-", 1))
 			fprintf(fp, "gpio enable %s\n", gpiovpn);
 		else {
 			gpiovpn++;
@@ -205,8 +205,7 @@ void start_openvpnserver(void)
 #endif
 	//bring up tap interface when choosen
 	if (nvram_match("openvpn_tuntap", "tap")) {
-		fprintf(fp, "brctl addif br0 tap2\n"
-			"ifconfig tap2 0.0.0.0 up\n"); //non promisc for performance reasons
+		fprintf(fp, "brctl addif br0 tap2\n" "ifconfig tap2 0.0.0.0 up\n");	//non promisc for performance reasons
 	}
 	if (nvram_match("block_multicast", "0")	//block multicast on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap"))
@@ -215,8 +214,7 @@ void start_openvpnserver(void)
 			"ebtables -D OUTPUT -o tap2 --pkttype-type multicast -j DROP\n"
 			"ebtables -A FORWARD -o tap2 --pkttype-type multicast -j DROP\n"
 			"ebtables -A OUTPUT -o tap2 --pkttype-type multicast -j DROP\n");	*/
-			"ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n" 
-			"ebtables -t nat -I POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n");
+			"ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o tap2 --pkttype-type multicast -j DROP\n");
 
 	if (nvram_match("openvpn_dhcpbl", "1")	//block dhcp on bridged vpns
 	    && nvram_match("openvpn_tuntap", "tap")
@@ -232,9 +230,7 @@ void start_openvpnserver(void)
 			"ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
-	fprintf(fp, "startservice set_routes -f\n" 
-			"stopservice wshaper\n"
-			"startservice wshaper\n");
+	fprintf(fp, "startservice set_routes -f\n" "stopservice wshaper\n" "startservice wshaper\n");
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpn/route-down.sh", "wb");
@@ -244,7 +240,7 @@ void start_openvpnserver(void)
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	gpiovpn = nvram_get("gpiovpn");
 	if (gpiovpn != NULL) {
-		if(strncmp(gpiovpn, "-", 1))
+		if (strncmp(gpiovpn, "-", 1))
 			fprintf(fp, "gpio disable %s\n", gpiovpn);
 		else {
 			gpiovpn++;
@@ -294,7 +290,7 @@ void stop_openvpnserver(void)
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_get("gpiovpn");
 	if (gpiovpn != NULL) {
-		if(strncmp(gpiovpn, "-", 1))
+		if (strncmp(gpiovpn, "-", 1))
 			set_gpio(atoi(gpiovpn), 0);
 		else {
 			gpiovpn++;
@@ -309,7 +305,7 @@ void stop_openvpnserver(void)
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 --pkttype-type multicast -j DROP");
 		system("/usr/sbin/ebtables -t nat -D POSTROUTING -o tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP");
 		system("/usr/sbin/ebtables -t nat -D PREROUTING -i tap2 -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP");
-        unlink("/tmp/openvpn/ccd/DEFAULT");
+		unlink("/tmp/openvpn/ccd/DEFAULT");
 		unlink("/tmp/openvpn/dh.pem");
 		unlink("/tmp/openvpn/ca.crt");
 		unlink("/tmp/openvpn/cert.pem");
@@ -385,10 +381,7 @@ void start_openvpn(void)
 	}
 	fprintf(fp,
 		"management 127.0.0.1 16\n"
-		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" 
-		"writepid /var/run/openvpncl.pid\n" "client\n" 
-		"resolv-retry infinite\n" "nobind\n" "persist-key\n" 
-		"persist-tun\n" "script-security 2\n");
+		"management-log-cache 100\n" "verb 3\n" "mute 3\n" "syslog\n" "writepid /var/run/openvpncl.pid\n" "client\n" "resolv-retry infinite\n" "nobind\n" "persist-key\n" "persist-tun\n" "script-security 2\n");
 	fprintf(fp, "dev %s1\n", nvram_safe_get("openvpncl_tuntap"));
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
@@ -439,7 +432,7 @@ void start_openvpn(void)
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_get("gpiovpn");
 	if (gpiovpn != NULL) {
-		if(strncmp(gpiovpn, "-", 1))
+		if (strncmp(gpiovpn, "-", 1))
 			fprintf(fp, "gpio enable %s\n", gpiovpn);
 		else {
 			gpiovpn++;
@@ -451,11 +444,10 @@ void start_openvpn(void)
 	if (nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_match("openvpncl_bridge", "1")
 	    && nvram_match("openvpncl_nat", "0")) {
-		fprintf(fp, "brctl addif br0 tap1\n"
-			"ifconfig tap1 0.0.0.0 up\n"); //non promisc for performance reasons
+		fprintf(fp, "brctl addif br0 tap1\n" "ifconfig tap1 0.0.0.0 up\n");	//non promisc for performance reasons
 	} else {
-		 if (nvram_match("openvpncl_tuntap", "tap") 
-			&& strlen(nvram_safe_get("openvpncl_ip")) > 0) 
+		if (nvram_match("openvpncl_tuntap", "tap")
+		    && strlen(nvram_safe_get("openvpncl_ip")) > 0)
 			fprintf(fp, "ifconfig tap1 %s netmask %s up\n", nvram_safe_get("openvpncl_ip"), nvram_safe_get("openvpncl_mask"));
 	}
 	if (nvram_match("openvpncl_nat", "1"))
@@ -476,7 +468,7 @@ void start_openvpn(void)
 /*		if (nvram_match("openvpncl_tuntap", "tap"))
 			fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n"); //needs investigation cause in TAP mode no gateway is received
 		else */
-			fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
+		fprintf(fp, "ip route add default via $route_vpn_gateway table 10\n");
 		fprintf(fp, "ip route flush cache\n" "echo $ifconfig_remote >>/tmp/gateway.txt\n" "echo $route_vpn_gateway >>/tmp/gateway.txt\n" "echo $ifconfig_local >>/tmp/gateway.txt\n");
 	}
 	if (nvram_match("block_multicast", "0")	//block multicast on bridged vpns
@@ -487,9 +479,8 @@ void start_openvpn(void)
 //                      "ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
 			"ebtables -t nat -D POSTROUTING -o tap1 --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o tap1 --pkttype-type multicast -j DROP\n");
 	}
-	if (nvram_match("wshaper_enable", "1"))		
-		fprintf(fp, "stopservice wshaper\n"
-			"startservice wshaper\n");
+	if (nvram_match("wshaper_enable", "1"))
+		fprintf(fp, "stopservice wshaper\n" "startservice wshaper\n");
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
@@ -498,7 +489,7 @@ void start_openvpn(void)
 	fprintf(fp, "#!/bin/sh\n");
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	if (gpiovpn != NULL)
-		if(strncmp(gpiovpn, "-", 1))
+		if (strncmp(gpiovpn, "-", 1))
 			fprintf(fp, "gpio enable %s\n", gpiovpn);
 		else {
 			gpiovpn++;
@@ -574,7 +565,7 @@ void stop_openvpn_wandone(void)
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_get("gpiovpn");
 	if (gpiovpn != NULL) {
-		if(strncmp(gpiovpn, "-", 1))
+		if (strncmp(gpiovpn, "-", 1))
 			set_gpio(atoi(gpiovpn), 0);
 		else {
 			gpiovpn++;
