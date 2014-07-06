@@ -31,6 +31,7 @@ struct nf_conn;
 struct nf_conn_nat {
 	struct hlist_node bysource;
 	struct nf_conn *ct;
+	struct ddtb_conn __rcu *ddtb;
 	union nf_conntrack_nat_help help;
 #if defined(CONFIG_IP_NF_TARGET_MASQUERADE) || \
     defined(CONFIG_IP_NF_TARGET_MASQUERADE_MODULE) || \

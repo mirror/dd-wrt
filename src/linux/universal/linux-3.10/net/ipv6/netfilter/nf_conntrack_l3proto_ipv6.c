@@ -172,13 +172,29 @@ out:
 	return nf_conntrack_confirm(skb);
 }
 
+static unsigned int ipv6_conntrack_hook(unsigned int hooknum, struct sk_buff *skb, int ret)
+{
+#ifdef CONFIG_DDTB_notyet
+	if (ret == NF_ACCEPT) {
+		enum ip_conntrack_info ctinfo;
+		struct nf_conn *ct;
+
+		ct = nf_ct_get(skb, &ctinfo);
+		ddtb_ip_conntrack_add(skb, hooknum, ct, ctinfo, NULL);
+	}
+#endif
+	return ret;
+}
+
 static unsigned int ipv6_conntrack_in(unsigned int hooknum,
 				      struct sk_buff *skb,
 				      const struct net_device *in,
 				      const struct net_device *out,
 				      int (*okfn)(struct sk_buff *))
 {
-	return nf_conntrack_in(dev_net(in), PF_INET6, hooknum, skb);
+	unsigned int ret = nf_conntrack_in(dev_net(in), PF_INET6, hooknum, skb);
+
+	return ipv6_conntrack_hook(hooknum, skb, ret);
 }
 
 static unsigned int ipv6_conntrack_local(unsigned int hooknum,
@@ -187,12 +203,17 @@ static unsigned int ipv6_conntrack_local(unsigned int hooknum,
 					 const struct net_device *out,
 					 int (*okfn)(struct sk_buff *))
 {
+	unsigned int ret;
+
 	/* root is playing with raw sockets. */
 	if (skb->len < sizeof(struct ipv6hdr)) {
 		net_notice_ratelimited("ipv6_conntrack_local: packet too short\n");
 		return NF_ACCEPT;
 	}
-	return nf_conntrack_in(dev_net(out), PF_INET6, hooknum, skb);
+
+	ret = nf_conntrack_in(dev_net(out), PF_INET6, hooknum, skb);
+
+	return ipv6_conntrack_hook(hooknum, skb, ret);
 }
 
 static struct nf_hook_ops ipv6_conntrack_ops[] __read_mostly = {

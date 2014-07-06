@@ -1208,6 +1208,7 @@ enum netdev_priv_flags {
 	IFF_LIVE_ADDR_CHANGE		= 1<<20,
 	IFF_MACVLAN			= 1<<21,
 	IFF_NO_IP_ALIGN			= 1<<22,
+	IFF_FAST_PATH			= 1<<23, /* ddtb fastpath capable */
 };
 
 #define IFF_802_1Q_VLAN			IFF_802_1Q_VLAN
