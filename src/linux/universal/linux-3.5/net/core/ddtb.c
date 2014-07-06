@@ -6,6 +6,69 @@
 #include <linux/rculist.h>
 #include <linux/seq_file.h>
 
+#define VA_NUM_ARGS(...) VA_NUM_ARGS_IMPL(__VA_ARGS__, 5,4,3,2,1)
+#define VA_NUM_ARGS_IMPL(_1,_2,_3,_4,_5,N,...) N
+
+#define macro_dispatcher(func, ...) \
+	macro_dispatcher_(func, VA_NUM_ARGS(__VA_ARGS__))
+#define macro_dispatcher_(func, nargs) \
+	macro_dispatcher__(func, nargs)
+#define macro_dispatcher__(func, nargs) \
+	func ## nargs
+
+
+#undef hlist_entry_safe
+#define hlist_entry_safe(ptr, type, member) \
+	(ptr) ? hlist_entry(ptr, type, member) : NULL
+
+#define hlist_for_each_entry4(tpos, pos, head, member)			\
+	for (pos = (head)->first;					\
+	     pos &&							\
+		({ tpos = hlist_entry(pos, typeof(*tpos), member); 1;});\
+	     pos = pos->next)
+
+#define hlist_for_each_entry_safe5(tpos, pos, n, head, member)		\
+	for (pos = (head)->first;					\
+	     pos && ({ n = pos->next; 1; }) &&				\
+		({ tpos = hlist_entry(pos, typeof(*tpos), member); 1;});\
+	     pos = n)
+
+#define hlist_for_each_entry3(pos, head, member)				\
+	for (pos = hlist_entry_safe((head)->first, typeof(*(pos)), member);	\
+	     pos;								\
+	     pos = hlist_entry_safe((pos)->member.next, typeof(*(pos)), member))
+
+#define hlist_for_each_entry_safe4(pos, n, head, member) 			\
+	for (pos = hlist_entry_safe((head)->first, typeof(*pos), member);	\
+	     pos && ({ n = pos->member.next; 1; });				\
+	     pos = hlist_entry_safe(n, typeof(*pos), member))
+
+#undef hlist_for_each_entry
+#define hlist_for_each_entry(...) \
+	macro_dispatcher(hlist_for_each_entry, __VA_ARGS__)(__VA_ARGS__)
+#undef hlist_for_each_entry_safe
+#define hlist_for_each_entry_safe(...) \
+	macro_dispatcher(hlist_for_each_entry_safe, __VA_ARGS__)(__VA_ARGS__)
+
+
+#define hlist_for_each_entry_rcu4(tpos, pos, head, member)		\
+	for (pos = rcu_dereference_raw(hlist_first_rcu(head));		\
+	     pos &&							\
+		({ tpos = hlist_entry(pos, typeof(*tpos), member); 1; });\
+	     pos = rcu_dereference_raw(hlist_next_rcu(pos)))
+
+#define hlist_for_each_entry_rcu3(pos, head, member)				\
+	for (pos = hlist_entry_safe (rcu_dereference_raw(hlist_first_rcu(head)),\
+			typeof(*(pos)), member);				\
+		pos;								\
+		pos = hlist_entry_safe(rcu_dereference_raw(hlist_next_rcu(	\
+			&(pos)->member)), typeof(*(pos)), member))
+
+#undef hlist_for_each_entry_rcu
+#define hlist_for_each_entry_rcu(...) \
+	macro_dispatcher(hlist_for_each_entry_rcu, __VA_ARGS__)(__VA_ARGS__)
+
+
 #define BUCKET_SIZE	128
 static struct hlist_head rs[BUCKET_SIZE];
 static unsigned int ddtb_dbg;
