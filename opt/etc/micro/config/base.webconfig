@@ -3,11 +3,11 @@
 		<legend>Router Password</legend>
 		<div class="setting">
 			<div class="label">Router Password</div>
-			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwd" onblur="valid_name(this,'Password',SPACE_NO)" />
+			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" autocomplete="off" name="http_passwd" onblur="valid_name(this,'Password',SPACE_NO)" />
 		</div>
 		<div class="setting">
 			<div class="label">Re-enter to confirm</div>
-			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onblur="valid_name(this,'Password',SPACE_NO)" />
+			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" autocomplete="off" name="http_passwdConfirm" onblur="valid_name(this,'Password',SPACE_NO)" />
 		</div>
 	</fieldset><br />
 	<fieldset>
