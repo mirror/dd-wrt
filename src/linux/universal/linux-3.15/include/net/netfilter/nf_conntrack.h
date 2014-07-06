@@ -106,6 +106,14 @@ struct nf_conn {
 	u_int32_t secmark;
 #endif
 
+#ifdef CONFIG_DDTB
+	/* Timeout for the connection */
+	unsigned long expire_jiffies;
+
+	/* Flags for connection attributes */
+	uint32_t ctf_flags;
+#endif
+
 	/* Extensions */
 	struct nf_ct_ext *ext;
 #ifdef CONFIG_NET_NS

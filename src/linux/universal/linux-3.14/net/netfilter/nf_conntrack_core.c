@@ -55,6 +55,19 @@
 
 #define NF_CONNTRACK_VERSION	"0.5.0"
 
+#ifdef CONFIG_IPV6
+#include <linux/ipv6.h>
+#include <net/ipv6.h>
+#include <net/ip6_route.h>
+#define IPVERSION_IS_4(ipver)           ((ipver) == 4)
+#else
+#define IPVERSION_IS_4(ipver)           1
+#endif
+
+#include <net/ip.h>
+#include <net/route.h>
+#include <linux/ddtb.h>
+
 int (*nfnetlink_parse_nat_setup_hook)(struct nf_conn *ct,
 				      enum nf_nat_manip_type manip,
 				      const struct nlattr *attr) __read_mostly;
@@ -74,6 +87,230 @@ EXPORT_PER_CPU_SYMBOL(nf_conntrack_untracked);
 
 unsigned int nf_conntrack_hash_rnd __read_mostly;
 EXPORT_SYMBOL_GPL(nf_conntrack_hash_rnd);
+
+#ifdef CONFIG_DDTB
+
+#define IPV4_TOS(ipv4_body)		(((u8 *)(ipv4_body))[1])
+#define IPV4_TOS_DSCP_MASK		0xfc
+#define IPV6_TRAFFIC_CLASS(ipv6_body) \
+			(((((u8 *)(ipv6_body))[0] & 0x0f) << 4) | \
+			((((u8 *)(ipv6_body))[1] & 0xf0) >> 4))
+extern void ip6_route_input(struct sk_buff *skb);
+
+static void ddtb_tuple_set_dev(struct ddtb_tuple *t, struct net_device *dev)
+{
+	if (dev->priv_flags & IFF_802_1Q_VLAN) {
+		t->dev = vlan_dev_real_dev(dev);
+		t->vid = vlan_dev_vlan_id(dev);
+	} else {
+		t->dev = dev;
+		t->vid = -1;
+	}
+}
+
+static void ddtb_fill_nf_tuple(struct ddtb_dir *dir, struct nf_conntrack_tuple *t)
+{
+	memcpy(dir->tuple.dip, &t->dst.u3, sizeof(dir->tuple.dip));
+	dir->tuple.dp = t->dst.u.tcp.port;
+	memcpy(dir->tuple.sip, &t->src.u3, sizeof(dir->tuple.sip));
+	dir->tuple.sp = t->src.u.tcp.port;
+}
+
+void ddtb_ip_conntrack_add(struct sk_buff *skb, u_int32_t hooknum,
+		struct nf_conn *ct, enum ip_conntrack_info ci,
+		struct nf_conntrack_tuple *manip)
+{
+	struct nf_conn_nat *ctn;
+	struct ddtb_conn c;
+	struct iphdr *iph;
+	struct tcphdr *tcph;
+	struct rtable *rt;
+	struct nf_conn_help *help;
+	enum ip_conntrack_dir dir;
+	uint8_t ipver, protocol;
+	uint32_t nud_flags;
+	struct ipv6hdr *ip6h = NULL;
+	struct net_device *dst_dev;
+	struct ddtb_dir *src, *dest;
+
+	if (!skb || !ct || !skb->orig_dev)
+		return;
+
+	if (hooknum != NF_INET_POST_ROUTING)
+		return;
+
+	/* We only add cache entires for non-helper connections and at
+	 * pre or post routing hooks.
+	 */
+	help = nfct_help(ct);
+	if (help && help->helper)
+		return;
+
+	iph = ip_hdr(skb);
+	ipver = iph->version;
+
+	/* make sure it is ipv4 or ipv6 */
+	if (ipver == 4) {
+		tcph = ((struct tcphdr *)(((__u8 *)iph) + (iph->ihl << 2)));
+		protocol = iph->protocol;
+	} else if (ipver == 6) {
+		if (!IS_ENABLED(CONFIG_IPV6_notyet))
+			return;
+
+		ip6h = (struct ipv6hdr *) iph;
+		tcph = NULL /* (struct tcphdr *) ddtb_ctx->lkup_l4proto((uint8_t *) ip6h, &protocol) */;
+		if (!tcph)
+			return;
+	} else {
+		return;
+	}
+
+	/* Only TCP and UDP are supported */
+	switch (protocol) {
+	case IPPROTO_TCP:
+		/* Add ipc entries for connections in established state only */
+		if (ci != IP_CT_ESTABLISHED &&
+		    ci != IP_CT_ESTABLISHED + IP_CT_IS_REPLY)
+			return;
+		if (ct->proto.tcp.state >= TCP_CONNTRACK_FIN_WAIT &&
+		    ct->proto.tcp.state <= TCP_CONNTRACK_TIME_WAIT)
+			return;
+		break;
+	case IPPROTO_UDP:
+		break;
+	default:
+		return;
+	}
+
+	dir = CTINFO2DIR(ci);
+	if (ct->ctf_flags)
+		return;
+
+	memset(&c, 0, sizeof(struct ddtb_conn));
+	if (dir == IP_CT_DIR_ORIGINAL) {
+		src = &c.request;
+		dest = &c.reply;
+	} else {
+		src = &c.reply;
+		dest = &c.request;
+	}
+
+	ddtb_fill_nf_tuple(&c.request, &ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple);
+	ddtb_fill_nf_tuple(&c.reply, &ct->tuplehash[IP_CT_DIR_REPLY].tuple);
+
+	/* Do route lookup for alias address if we are doing DNAT in this
+	 * direction.
+	 */
+	if (skb_dst(skb) == NULL) {
+		/* Find the destination interface */
+		if (IPVERSION_IS_4(ipver))
+			ip_route_input(skb, dest->tuple.dip[0], dest->tuple.sip[0], iph->tos, skb->dev);
+		else if (IS_ENABLED(CONFIG_IPV6))
+			ip6_route_input(skb);
+	}
+
+	/* make sure its a forwarding conn */
+	rt = skb_rtable(skb);
+	if (rt == NULL)
+		return;
+
+	/* setup neighbouthood cache entry */
+	nud_flags = NUD_PERMANENT | NUD_REACHABLE | NUD_STALE | NUD_DELAY | NUD_PROBE;
+
+	if (!IPVERSION_IS_4(ipver))
+		return;
+
+	if (rt->dst.input != ip_forward || rt->rt_type != RTN_UNICAST)
+		return;
+
+	if (!skb_dst(skb))
+		return;
+
+	dst_dev = skb_dst(skb)->dev;
+	if (!dst_dev || !(dst_dev->priv_flags & IFF_FAST_PATH))
+		return;
+
+	if (dst_dev->priv_flags & IFF_FAST_PATH) {
+		struct neighbour *neigh;
+		bool valid = false;
+
+		/* verify that the target is a unicast addr */
+		neigh = dst_neigh_lookup(&rt->dst, &iph->daddr);
+		if (!neigh)
+			return;
+
+		valid = (neigh->nud_state & nud_flags);
+		memcpy(dest->tuple.mac, neigh->ha, ETH_ALEN);
+		neigh_release(neigh);
+
+		if (!valid)
+			return;
+
+	} else if (!(dst_dev->flags & IFF_POINTOPOINT)) {
+		return;
+	}
+
+	if (skb->orig_dev->priv_flags & IFF_FAST_PATH)
+		memcpy(src->tuple.mac, eth_hdr(skb)->h_source, ETH_ALEN);
+	else if (!(skb->orig_dev->flags & IFF_POINTOPOINT))
+		return;
+
+	src->tuple.proto = dest->tuple.proto = protocol;
+	ddtb_tuple_set_dev(&dest->tuple, dst_dev);
+	ddtb_tuple_set_dev(&src->tuple, skb->orig_dev);
+
+	if (ct->status & IPS_DST_NAT)
+		c.request.flags |= DDTB_F_DNAT;
+	if (ct->status & IPS_SRC_NAT)
+		c.request.flags |= DDTB_F_SNAT;
+
+	ctn = nfct_nat(ct);
+	rcu_assign_pointer(ctn->ddtb, ddtb_ip_add(&c, src->tuple.dev, !IPVERSION_IS_4(ipver)));
+	ct->ctf_flags |= (1 << dir);
+}
+
+EXPORT_SYMBOL(ddtb_ip_conntrack_add);
+
+static int
+ddtb_ip_conntrack_delete(struct nf_conn *ct, int ct_timeout)
+{
+
+	struct nf_conn_nat *ctn = nfct_nat(ct);
+	struct ddtb_conn *c;
+	int ret = 0;
+
+	if (!ctn)
+		return 0;
+
+	rcu_read_lock();
+	c = rcu_dereference(ctn->ddtb);
+	if (!c)
+		goto err;
+
+	if (ct_timeout) {
+		mod_timer(&ct->timeout, jiffies + ct->expire_jiffies);
+		ret = -1;
+		goto err;
+	}
+
+	ddtb_ip_delete(ctn->ddtb, 0);
+	ctn->ddtb = NULL;
+
+err:
+	rcu_read_unlock();
+
+	return ret;
+}
+
+#else
+
+static int
+ddtb_ip_conntrack_delete(struct nf_conn *ct, int ct_timeout)
+{
+	return 0;
+}
+
+#endif
 
 static u32 hash_conntrack_raw(const struct nf_conntrack_tuple *tuple, u16 zone)
 {
@@ -203,6 +440,8 @@ destroy_conntrack(struct nf_conntrack *nfct)
 	NF_CT_ASSERT(atomic_read(&nfct->use) == 0);
 	NF_CT_ASSERT(!timer_pending(&ct->timeout));
 
+	ddtb_ip_conntrack_delete(ct, 0);
+
 	/* To make sure we don't get any weird locking issues here:
 	 * destroy_conntrack() MUST NOT be called with a write lock
 	 * to nf_conntrack_lock!!! -HW */
@@ -295,6 +534,12 @@ static void nf_ct_dying_timeout(struct nf_conn *ct)
 bool nf_ct_delete(struct nf_conn *ct, u32 portid, int report)
 {
 	struct nf_conn_tstamp *tstamp;
+
+	/* If negative error is returned it means the entry hasn't
+	 * timed out yet.
+	 */
+	if (ddtb_ip_conntrack_delete(ct, jiffies >= ct->timeout.expires ? 1 : 0) != 0)
+		return;
 
 	tstamp = nf_conn_tstamp_find(ct);
 	if (tstamp && tstamp->stop == 0)
@@ -671,6 +916,8 @@ static noinline int early_drop(struct net *net, unsigned int hash)
 
 	if (!ct)
 		return dropped;
+
+	ddtb_ip_conntrack_delete(ct, 0);
 
 	if (del_timer(&ct->timeout)) {
 		if (nf_ct_delete(ct, 0, 0)) {
@@ -1127,6 +1374,9 @@ void __nf_ct_refresh_acct(struct nf_conn *ct,
 
 	/* If not in hash table, timer will not be active yet */
 	if (!nf_ct_is_confirmed(ct)) {
+#ifdef CONFIG_DDTB
+		ct->expire_jiffies = extra_jiffies;
+#endif
 		ct->timeout.expires = extra_jiffies;
 	} else {
 		unsigned long newtime = jiffies + extra_jiffies;
@@ -1134,8 +1384,12 @@ void __nf_ct_refresh_acct(struct nf_conn *ct,
 		/* Only update the timeout if the new timeout is at least
 		   HZ jiffies from the old timeout. Need del_timer for race
 		   avoidance (may already be dying). */
-		if (newtime - ct->timeout.expires >= HZ)
+		if (newtime - ct->timeout.expires >= HZ) {
+#ifdef CONFIG_DDTB
+			ct->expire_jiffies = extra_jiffies;
+#endif /* CONFIG_DDTB */
 			mod_timer_pending(&ct->timeout, newtime);
+		}
 	}
 
 acct:
@@ -1294,6 +1548,8 @@ void nf_ct_iterate_cleanup(struct net *net,
 	unsigned int bucket = 0;
 
 	while ((ct = get_next_corpse(net, iter, data, &bucket)) != NULL) {
+		ddtb_ip_conntrack_delete(ct, 0);
+
 		/* Time to push up daises... */
 		if (del_timer(&ct->timeout))
 			nf_ct_delete(ct, portid, report);
