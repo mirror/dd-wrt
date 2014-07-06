@@ -19,10 +19,9 @@ void start_transmission(void)
 {
 	if (!nvram_match("transmission_enable", "1"))
 		return;
-	
-	
+
 	eval("mkdir", "-p", nvram_safe_get("transmission_dir"));
-	
+
 	eval("transmissiond", "--config-dir", nvram_safe_get("transmission_dir"));
 	syslog(LOG_INFO, "transmission : transmissiond started\n");
 	return;

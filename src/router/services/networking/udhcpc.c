@@ -368,7 +368,7 @@ static int bound(void)
 		//route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway"), "255.255.255.255");
 		route_del(wan_ifname, 0, nvram_safe_get("wan_gateway"), NULL, "255.255.255.255");
 		route_add(wan_ifname, 0, nvram_safe_get("l2tp_server_ip"), nvram_safe_get("wan_gateway_buf"), "255.255.255.255");
-		
+
 		start_firewall();
 		start_l2tp_boot();
 	}
@@ -379,15 +379,15 @@ static int bound(void)
 		int i;
 
 		dns_to_resolv();
-	
-	/*	
-		dns_list = get_dns_list();
-		if (dns_list) {
-			for (i=0; i<dns_list->num_servers; i++)
-				route_add(wan_ifname, 0, dns_list->dns_server[i], nvram_safe_get("wan_gateway"), "255.255.255.255");
-			free(dns_list);
-		}
-	*/
+
+		/*      
+		   dns_list = get_dns_list();
+		   if (dns_list) {
+		   for (i=0; i<dns_list->num_servers; i++)
+		   route_add(wan_ifname, 0, dns_list->dns_server[i], nvram_safe_get("wan_gateway"), "255.255.255.255");
+		   free(dns_list);
+		   }
+		 */
 
 		start_firewall();
 		start_pppoe_dual(BOOT);
@@ -459,7 +459,7 @@ static int bound_tv(void)
 	if (ifname) {
 		system("/etc/cidrroute.sh /tmp/tvrouting");
 	}
-#else	
+#else
 	if (cidr && ifname) {
 		char *callbuffer = malloc(strlen(cidr) + 128);
 		sprintf(callbuffer, "export cidrroute=\"%s\";export interface=\"%s\";/etc/cidrroute.sh", cidr, ifname);

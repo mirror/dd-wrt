@@ -60,15 +60,15 @@ void start_samba3(void)
 	}
 #endif
 
-	if (!nvram_match("samba3_enable", "1")){
+	if (!nvram_match("samba3_enable", "1")) {
 		if (nvram_match("txworkq", "1")) {
 			nvram_unset("txworkq");
 			nvram_commit();
 		}
 		return;
-		
+
 	}
-	
+
 	if (!nvram_match("txworkq", "1")) {
 		nvram_set("txworkq", "1");
 		nvram_commit();
@@ -198,20 +198,19 @@ void start_samba3(void)
 		fclose(fp);
 	}
 	chmod("/jffs", 0777);
-	
 
-#ifdef HAVE_SMP	
+#ifdef HAVE_SMP
 	eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
 #else
 	eval("/usr/sbin/smbd", "-D", "--configfile=/tmp/smb.conf");
 #endif
 	eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
 	if (pidof("nmbd") > 0) {
-	}else{
+	} else {
 		eval("/usr/sbin/nmbd", "-D", "--configfile=/tmp/smb.conf");
 	}
 	syslog(LOG_INFO, "Samba3 : samba started\n");
-	
+
 	return;
 }
 
@@ -221,7 +220,6 @@ void stop_samba3(void)
 	stop_process("nmbd", "nmbd");
 	//samba has changed the way pidfiles are named, thus stop process will not kill smbd and nmbd pidfiles, see pidfile.c in samba 
 	sysprintf("rm -rf %s", "/var/run/*smb.conf.pid");
-	
 
 }
 #endif

@@ -41,9 +41,9 @@ static void ftpsrv_umount()
 	FILE *fp;
 	char line[256];
 	char mnt_dir[32] = "/tmp/proftpd/users";
-	
+
 	//cleanup 
-	if ( (fp = fopen("/proc/mounts", "r")) ) {
+	if ((fp = fopen("/proc/mounts", "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			if (strstr(line, "proftpd")) {
 				sysprintf("/bin/umount %s/*/*", mnt_dir);
@@ -52,7 +52,6 @@ static void ftpsrv_umount()
 		fclose(fp);
 	}
 }
-
 
 void start_ftpsrv(void)
 {
@@ -63,9 +62,9 @@ void start_ftpsrv(void)
 
 	if (!nvram_match("proftpd_enable", "1"))
 		return;
-	
+
 	ftpsrv_umount();
-	
+
 	FILE *fp, *tmp;
 	char buf[256];
 	char user[256];
@@ -139,7 +138,7 @@ void start_ftpsrv(void)
 			}
 			goto nextshare;
 		}
- 
+
 		fprintf(fp, "<Directory      /%s/*>\n", cs->label);
 
 		fprintf(fp, "   <Limit WRITE>\n");
@@ -179,13 +178,9 @@ void start_ftpsrv(void)
 			"RadiusAuthServer	%s:%s	%s 5\n"
 			"RadiusAcctServer	%s:%s	%s 5\n",
 			nvram_safe_get("proftpd_authserverip"),
-			nvram_safe_get("proftpd_authserverport"),
-			nvram_safe_get("proftpd_sharedkey"), 
-			nvram_safe_get("proftpd_authserverip"), 
-			nvram_safe_get("proftpd_acctserverport"), 
-			nvram_safe_get("proftpd_sharedkey")
-		       );
-		fprintf(fp, "RadiusUserInfo 0 0 %s /bin/false\n", "/mnt"); //TODO allow to choose dir
+			nvram_safe_get("proftpd_authserverport"), nvram_safe_get("proftpd_sharedkey"), nvram_safe_get("proftpd_authserverip"), nvram_safe_get("proftpd_acctserverport"), nvram_safe_get("proftpd_sharedkey")
+		    );
+		fprintf(fp, "RadiusUserInfo 0 0 %s /bin/false\n", "/mnt");	//TODO allow to choose dir
 	}
 	// Anonymous ftp - read only
 	if (nvram_match("proftpd_anon", "1")) {
@@ -193,11 +188,10 @@ void start_ftpsrv(void)
 			"<Anonymous      /%s>\n"
 			"User           ftp\n"
 			"Group          root\n"
-			"UserAlias      anonymous ftp\n"
-			"<Directory *>\n" "  <Limit WRITE>\n" "    DenyAll\n" "  </Limit>\n" "</Directory>\n" "</Anonymous>\n", nvram_safe_get("proftpd_anon_dir"));
+			"UserAlias      anonymous ftp\n" "<Directory *>\n" "  <Limit WRITE>\n" "    DenyAll\n" "  </Limit>\n" "</Directory>\n" "</Anonymous>\n", nvram_safe_get("proftpd_anon_dir"));
 	}
 	fclose(fp);
-#ifdef HAVE_SMP	
+#ifdef HAVE_SMP
 	eval("/usr/bin/taskset", "0x2", "proftpd");
 #else
 	eval("proftpd");

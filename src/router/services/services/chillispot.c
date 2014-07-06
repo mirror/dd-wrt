@@ -38,8 +38,7 @@
 #include <md5.h>
 #include <services.h>
 
-static int  jffs = 0;
-
+static int jffs = 0;
 
 #ifdef HAVE_CHILLI
 #ifdef HAVE_HOTSPOT
@@ -81,13 +80,13 @@ void start_chilli(void)
 
 #endif
 
-if ((nvram_match("usb_enable", "1")
-	&& nvram_match("usb_storage", "1")
-	&& nvram_match("usb_automnt", "1")
-	&& nvram_match("usb_mntpoint", "jffs"))
-	|| (nvram_match("enable_jffs2", "1")
-	&& nvram_match("jffs_mounted", "1")
-	&& nvram_match("sys_enable_jffs2", "1")))
+	if ((nvram_match("usb_enable", "1")
+	     && nvram_match("usb_storage", "1")
+	     && nvram_match("usb_automnt", "1")
+	     && nvram_match("usb_mntpoint", "jffs"))
+	    || (nvram_match("enable_jffs2", "1")
+		&& nvram_match("jffs_mounted", "1")
+		&& nvram_match("sys_enable_jffs2", "1")))
 		jffs = 1;
 
 	stop_chilli();		//ensure that its stopped
@@ -99,7 +98,6 @@ if ((nvram_match("usb_enable", "1")
 	main_config();
 
 #ifdef HAVE_HOTSPOT
-
 
 	if (nvram_match("hotss_enable", "1")) {
 		stop_cron();
@@ -129,9 +127,7 @@ if ((nvram_match("usb_enable", "1")
 #ifdef HAVE_COOVA_CHILLI
 		putenv("CHILLISTATEDIR=/var/run/chilli1");
 		mkdir("/var/run/chilli1", 0700);
-		ret = eval("chilli", "--statedir=/var/run/chilli1",
-			"--pidfile=/var/run/chilli1/chilli.pid",
-			"-c", "/tmp/chilli/hotss.conf");
+		ret = eval("chilli", "--statedir=/var/run/chilli1", "--pidfile=/var/run/chilli1/chilli.pid", "-c", "/tmp/chilli/hotss.conf");
 #else
 		ret = eval("chilli", "-c", "/tmp/chilli/hotss.conf");
 #endif
@@ -140,9 +136,7 @@ if ((nvram_match("usb_enable", "1")
 #ifdef HAVE_COOVA_CHILLI
 		putenv("CHILLISTATEDIR=/var/run/chilli1");
 		mkdir("/var/run/chilli1", 0700);
-		ret = eval("chilli", "--statedir=/var/run/chilli1",
-			"--pidfile=/var/run/chilli1/chilli.pid",
-			"-c", "/tmp/chilli/chilli.conf");
+		ret = eval("chilli", "--statedir=/var/run/chilli1", "--pidfile=/var/run/chilli1/chilli.pid", "-c", "/tmp/chilli/chilli.conf");
 #else
 		ret = eval("chilli", "-c", "/tmp/chilli/chilli.conf");
 #endif
@@ -173,7 +167,7 @@ void main_config(void)
 {
 	char *chillinet = NULL;
 	int log_level = 0;
-	
+
 	FILE *fp;
 	log_level = atoi(nvram_safe_get("log_level"));
 	mkdir("/tmp/chilli", 0700);
@@ -204,8 +198,7 @@ void main_config(void)
 		else
 			chillinet = "192.168.182.0/24";
 	}
-	if (chilli_enable
-	    && !hss_enable) {
+	if (chilli_enable && !hss_enable) {
 		if (strlen(nvram_safe_get("chilli_net")) > 0)
 			chillinet = nvram_safe_get("chilli_net");
 		else
@@ -223,35 +216,29 @@ void main_config(void)
 	fprintf(fp, "iptables -I FORWARD -i tun0 -j %s\n", log_accept);
 	fprintf(fp, "iptables -I FORWARD -o tun0 -j %s\n", log_accept);
 	//      secure chilli interface, only usefull if ! br0
-	if (chilli_enable
-	    && !hss_enable
-	    && nvram_invmatch("chilli_interface", "br0")) {
+	if (chilli_enable && !hss_enable && nvram_invmatch("chilli_interface", "br0")) {
 		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("chilli_interface"), chillinet, log_drop);
 		fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("chilli_interface"), chillinet, log_drop);
 	}
-	if (chilli_enable
-	    && hss_enable
-	    && nvram_invmatch("hotss_interface", "br0")) {
+	if (chilli_enable && hss_enable && nvram_invmatch("hotss_interface", "br0")) {
 		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("hotss_interface"), chillinet, log_drop);
 		fprintf(fp, "iptables -t nat -I PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("hotss_interface"), chillinet, log_drop);
-	} 
+	}
 	// MASQUERADE chilli/hotss
 	if (nvram_match("wan_proto", "disabled")) {
-//		fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");  
+//              fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");  
 		fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j MASQUERADE\n", chillinet);
-//		fprintf(fp, "iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");	// clamp when fw clamping is off   
+//              fprintf(fp, "iptables -I FORWARD 1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");    // clamp when fw clamping is off   
 		fprintf(fp, "iptables -t nat -I POSTROUTING -s %s -j MASQUERADE\n", chillinet);
 	} else {
 		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n", nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
 		fprintf(fp, "iptables -t nat -I POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n", nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
 	}
 	// enable Reverse Path Filtering to prevent double outgoing packages
-	if (chilli_enable
-		&& !hss_enable) {
+	if (chilli_enable && !hss_enable) {
 		fprintf(fp, "echo 1 > /proc/sys/net/ipv4/conf/%s/rp_filter\n", nvram_safe_get("chilli_interface"));
 	}
-	if (chilli_enable
-		&& hss_enable) {
+	if (chilli_enable && hss_enable) {
 		fprintf(fp, "echo 1 > /proc/sys/net/ipv4/conf/%s/rp_filter\n", nvram_safe_get("hotss_interface"));
 	}
 	fclose(fp);
@@ -274,7 +261,7 @@ void main_config(void)
 	    && nvram_invmatch("hotss_interface", "br0"))
 		fprintf(fp, "iptables -t nat -D PREROUTING -i %s ! -s %s -j %s\n", nvram_safe_get("hotss_interface"), chillinet, log_drop);
 	if (nvram_match("wan_proto", "disabled")) {
-//		fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+//              fprintf(fp, "iptables -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
 		fprintf(fp, "iptables -t nat -D POSTROUTING -s %s -j MASQUERADE\n", chillinet);
 	} else
 		fprintf(fp, "iptables -t nat -D POSTROUTING -o %s -s %s -j SNAT --to-source=%s\n", nvram_safe_get("wan_iface"), chillinet, get_wan_ipaddr());
@@ -352,9 +339,9 @@ void chilli_config(void)
 		fprintf(fp, "conup /jffs/etc/chilli/con-up.sh\n");
 		fprintf(fp, "condown /jffs/etc/chilli/con-down.sh\n");
 	}
-//	if (strlen(nvram_safe_get("chilli_localusers")) > 0)
-//		localusers /tmp/chilli/localusers.db
-	if (strlen(nvram_safe_get("fon_userlist")) > 0) //only reuse it for testing. will be changed for better integration
+//      if (strlen(nvram_safe_get("chilli_localusers")) > 0)
+//              localusers /tmp/chilli/localusers.db
+	if (strlen(nvram_safe_get("fon_userlist")) > 0)	//only reuse it for testing. will be changed for better integration
 		fprintf(fp, "localusers /tmp/chilli/fonusers.local\n");
 	if (nvram_invmatch("chilli_dns1", "0.0.0.0")
 	    && nvram_invmatch("chilli_dns1", "")) {

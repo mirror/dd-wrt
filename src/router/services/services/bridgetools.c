@@ -146,20 +146,20 @@ int br_add_bridge(const char *brname)
 	sprintf(netmask, "%s_netmask", brname);
 	int ret = eval("brctl", "addbr", brname);
 	char *mcast = nvram_default_get(brmcast, "0");
-	
+
 #ifdef HAVE_80211AC
 	sysprintf("echo 0 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
 	eval("emf", "add", "bridge", brname);
-	if (!strcmp(mcast,"1"))
+	if (!strcmp(mcast, "1"))
 		eval("igs", "add", "bridge", brname);
 #else
-	if (!strcmp(mcast,"1"))
+	if (!strcmp(mcast, "1"))
 		sysprintf("echo 1 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
 	else
 		sysprintf("echo 0 > /sys/devices/virtual/net/%s/bridge/multicast_snooping", brname);
-	
+
 #endif
-	
+
 	if (nvram_get(ipaddr) && nvram_get(netmask)
 	    && !nvram_match(ipaddr, "0.0.0.0")
 	    && !nvram_match(netmask, "0.0.0.0")) {
@@ -208,7 +208,7 @@ int br_add_interface(const char *br, const char *dev)
 	dd_syslog(LOG_INFO, "interface added successfully\n");
 	int ret = eval("brctl", "addif", br, dev);
 #ifdef HAVE_80211AC
-		eval("emf", "add", "iface", br, dev);
+	eval("emf", "add", "iface", br, dev);
 #endif
 	return ret;
 }
@@ -220,7 +220,7 @@ int br_del_interface(const char *br, const char *dev)
 	dd_syslog(LOG_INFO, "interface deleted successfully\n");
 	int ret = eval("brctl", "delif", br, dev);
 #ifdef HAVE_80211AC
-		eval("emf", "del", "iface", br, dev);
+	eval("emf", "del", "iface", br, dev);
 #endif
 	return ret;
 }

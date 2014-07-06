@@ -32,7 +32,6 @@ void start_radio_on_1(void)
 	radio_on(1);
 }
 
-
 void stop_radio_off(void)
 {
 }

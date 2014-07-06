@@ -112,9 +112,9 @@ static void install_sdcard(void)
 	eval("umount", "/tmp/install");
 	eval("sync");
 	fprintf(stderr, "signal installation complete\n");
-	set_gpio(4,1);
+	set_gpio(4, 1);
 	sleep(1);
-	set_gpio(4,0);
+	set_gpio(4, 0);
 }
 
 void start_sysinit(void)
@@ -136,7 +136,7 @@ void start_sysinit(void)
 	 * Setup console 
 	 */
 	cprintf("sysinit() load 8250 driver\n");
-	eval("insmod","8250.ko");
+	eval("insmod", "8250.ko");
 
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, atoi(nvram_safe_get("console_loglevel")));

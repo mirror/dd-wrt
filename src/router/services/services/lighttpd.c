@@ -19,14 +19,13 @@ void start_lighttpd(void)
 {
 	if (!nvram_match("lighttpd_enable", "1"))
 		return;
-	
-	
+
 	FILE *fp;
 	eval("mkdir", "-p", "/tmp/lighttpd/logs");
 	eval("mkdir", "-p", nvram_safe_get("lighttpd_root"));
-	
+
 	fp = fopen("/tmp/lighttpd.conf", "wb");
-	if ( fp !=NULL ){
+	if (fp != NULL) {
 		fprintf(fp,
 			"debug.log-request-handling   = \"disable\"\n"
 			"debug.log-request-header     = \"disable\"\n"
@@ -51,7 +50,7 @@ void start_lighttpd(void)
 			"\"mod_fastcgi\",\n"
 			"\"mod_cgi\",\n"
 			"\"mod_compress\",\n"
-			"\"mod_accesslog\"\n" 
+			"\"mod_accesslog\"\n"
 			")\n\n"
 			"server.indexfiles           = ( \"index.php\", \"index.html\", \"index.htm\" )\n\n"
 			"mimetype.assign             = (\n"
@@ -106,22 +105,19 @@ void start_lighttpd(void)
 			"server.bind           = \"%s\"\n"
 			"server.port           = %s\n"
 			"server.document-root  = \"%s\"\n",
-			nvram_safe_get("lighttpd_sslport"),
-			strcmp(nvram_get("lighttpd_wan"), "0") ? "0.0.0.0" : nvram_safe_get("lan_ipaddr"), 
-			nvram_safe_get("lighttpd_port"), 
-			nvram_safe_get("lighttpd_root") );
+			nvram_safe_get("lighttpd_sslport"), strcmp(nvram_get("lighttpd_wan"), "0") ? "0.0.0.0" : nvram_safe_get("lan_ipaddr"), nvram_safe_get("lighttpd_port"), nvram_safe_get("lighttpd_root"));
 	}
-	
+
 	fclose(fp);
-	
-	fp = fopen("/jffs/etc/lighttpd.conf", "r"); //test if custom config is available
-	if ( fp !=NULL ){
+
+	fp = fopen("/jffs/etc/lighttpd.conf", "r");	//test if custom config is available
+	if (fp != NULL) {
 		eval("lighttpd", "-f", "/jffs/etc/lighttpd.conf");
 		fclose(fp);
-	}else{
+	} else {
 		eval("lighttpd", "-f", "/tmp/lighttpd.conf");
 	}
-	
+
 	syslog(LOG_INFO, "lighttpd : lighttpd started\n");
 	return;
 }

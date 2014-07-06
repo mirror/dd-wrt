@@ -58,6 +58,7 @@ static char *getdisc(void)	// works only for squashfs
 void stop_hotplug_usb(void)
 {
 }
+
 void start_hotplug_usb(void)
 {
 	char *device, *interface;
@@ -294,14 +295,14 @@ static int usb_process_path(char *path, char *fs, char *target)
 			ret = eval("/bin/mount", path, mount_point);	//guess fs
 	}
 #ifdef HAVE_80211AC
-	writeproc("/proc/sys/vm/min_free_kbytes","16384");
+	writeproc("/proc/sys/vm/min_free_kbytes", "16384");
 #else
-	writeproc("/proc/sys/vm/min_free_kbytes","4096");
+	writeproc("/proc/sys/vm/min_free_kbytes", "4096");
 #endif
-//	writeproc("/proc/sys/vm/pagecache_ratio","90");
-//	writeproc("/proc/sys/vm/swappiness","90");
-//	writeproc("/proc/sys/vm/overcommit_memory","2");
-//	writeproc("/proc/sys/vm/overcommit_ratio","145");
+//      writeproc("/proc/sys/vm/pagecache_ratio","90");
+//      writeproc("/proc/sys/vm/swappiness","90");
+//      writeproc("/proc/sys/vm/overcommit_memory","2");
+//      writeproc("/proc/sys/vm/overcommit_ratio","145");
 	eval("startservice_f", "samba3");
 	eval("startservice_f", "ftpsrv");
 	eval("startservice_f", "dlna");

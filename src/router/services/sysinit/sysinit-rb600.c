@@ -89,10 +89,10 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_UNIWIP
 	insmod("mpc8xxx_wdt");
-//	insmod("ocf");
-//	insmod("cryptodev");
-//	insmod("cryptosoft");
-//	insmod("talitos");
+//      insmod("ocf");
+//      insmod("cryptodev");
+//      insmod("cryptosoft");
+//      insmod("talitos");
 	insmod("gpio");
 /* gpios 
 8 = reset
@@ -104,7 +104,6 @@ void start_sysinit(void)
 21 = r232 enable
 22 = port reset
 */
-
 
 #endif
 	struct ifreq ifr;
@@ -265,7 +264,7 @@ void start_sysinit(void)
 		eval("ifconfig", "vlan2", "hw", "ether", mac);
 	}
 #else
-	set_gpio(244,1); //gps
+	set_gpio(244, 1);	//gps
 #endif
 	if (!nvram_match("disable_watchdog", "1"))
 		eval("watchdog");

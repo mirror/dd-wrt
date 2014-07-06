@@ -66,8 +66,6 @@ void setPassword(char *passwd)
 	fclose(fp);
 }
 
-
-
 void stop_mkfiles(void)
 {
 }

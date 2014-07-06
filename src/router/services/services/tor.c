@@ -51,7 +51,7 @@ void start_tor(void)
 
 	if (nvram_match("tor_enable", "0"))
 		return;
-	
+
 	mkdir("/tmp/tor", 0700);
 	FILE *fp = fopen("/tmp/torrc", "wb");
 	fprintf(fp, "Log notice syslog\n");
@@ -63,7 +63,7 @@ void start_tor(void)
 		fprintf(fp, "SocksPort %s:9050\n", nvram_safe_get("lan_ipaddr"));
 	}
 	fprintf(fp, "RunAsDaemon 1\n");
-	fprintf(fp, "Address %s\n",get_wan_ipaddr());
+	fprintf(fp, "Address %s\n", get_wan_ipaddr());
 //      fprintf(fp, "ControlPort 9051\n");
 	if (nvram_match("tor_relay", "1"))
 		fprintf(fp, "ORPort 9001\n");
@@ -78,8 +78,8 @@ void start_tor(void)
 		fprintf(fp, "DNSPort 53\n");
 		fprintf(fp, "TransListenAddress %s\n", nvram_safe_get("lan_ipaddr"));
 		fprintf(fp, "DNSListenAddress %s\n", nvram_safe_get("lan_ipaddr"));
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:53",nvram_safe_get("lan_ipaddr"));
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040",nvram_safe_get("lan_ipaddr"));
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:53", nvram_safe_get("lan_ipaddr"));
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", nvram_safe_get("lan_ipaddr"));
 
 	}
 
