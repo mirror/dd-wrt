@@ -490,6 +490,8 @@ static int is_easydns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p
 {
 	if (strstr(p_rsp, "NOERROR") != NULL)
 		return RC_OK;
+	if (strstr(p_rsp, "OK") != NULL)
+		return RC_OK;
 	else if (strstr(p_rsp, "TOOSOON") != NULL)
 		return RC_DYNDNS_RSP_RETRY_LATER;
 	else if (strstr(p_rsp, "TOO_FREQ") != NULL)
