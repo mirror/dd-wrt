@@ -849,6 +849,7 @@ privoxy.titl="Adblocking";
 privoxy.server="Privoxy";
 privoxy.legend="Filtering Proxy Server";
 privoxy.transp="Transparent Mode";
+privoxy.whitel="Whitelist";
 privoxy.custom="Custom Configuration";
 
 var hprivoxy=new Object();
