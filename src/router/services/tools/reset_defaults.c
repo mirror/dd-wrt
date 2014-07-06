@@ -101,7 +101,6 @@ extern void free_defaults(void);
 #define NVRAMSPACE NVRAM_SPACE
 #endif
 
-
 void start_defaults(void)
 {
 	fprintf(stderr, "restore nvram to defaults\n");

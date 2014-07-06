@@ -120,15 +120,13 @@ void start_sysinit(void)
 				eval("ifconfig", "eth0", "hw", "ether", mac);
 				fprintf(stderr, "Using second mac for eth1 (%s)\n", mac2);
 				eval("ifconfig", "eth1", "hw", "ether", mac2);
-			}
-			else {
+			} else {
 				fprintf(stderr, "Using second mac for eth0 (%s)\n", mac2);
 				eval("ifconfig", "eth0", "hw", "ether", mac2);
 				fprintf(stderr, "Using first mac for eth1 (%s)\n", mac);
 				eval("ifconfig", "eth1", "hw", "ether", mac);
 			}
-		}
-		else {
+		} else {
 			fprintf(stderr, "configure eth0 to %s\n", mac);
 			eval("ifconfig", "eth0", "hw", "ether", mac);
 			MAC_ADD(mac);
@@ -174,11 +172,11 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_HORNET
 #ifdef HAVE_ONNET
-	setEthLED(13,"eth0");
-	setEthLED(17,"eth1");
+	setEthLED(13, "eth0");
+	setEthLED(17, "eth1");
 #else
-	setEthLED(17,"eth0");
-	setEthLED(13,"eth1");
+	setEthLED(17, "eth0");
+	setEthLED(13, "eth1");
 #endif
 #endif
 	struct ifreq ifr;

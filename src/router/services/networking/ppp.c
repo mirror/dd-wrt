@@ -105,13 +105,13 @@ int ipup_main(int argc, char **argv)
 #ifdef HAVE_PPPOEDUAL
 	    || nvram_match("wan_proto", "pppoe_dual")
 #endif
-	   )
+	    )
 		nvram_set("pppoe_ifname", wan_ifname);
 
 	if (getenv("IPLOCAL")) {
 		value = getenvs("IPLOCAL");
 		ifconfig(wan_ifname, IFUP, value, "255.255.255.255");
-		if (nvram_match("wan_proto", "pppoe") 
+		if (nvram_match("wan_proto", "pppoe")
 #ifdef HAVE_PPPOEDUAL
 		    || nvram_match("wan_proto", "pppoe_dual")
 #endif

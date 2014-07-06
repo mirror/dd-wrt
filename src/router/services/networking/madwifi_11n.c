@@ -864,7 +864,7 @@ void configure_single_11n(int count)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "maksat_vap"));
 #endif
 #elif defined(HAVE_SANSFIL)
-                sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "SANSFIL_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "SANSFIL_vap"));
 #elif defined(HAVE_TRIMAX)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "trimax_vap"));
 #elif defined(HAVE_WIKINGS)
@@ -878,13 +878,11 @@ void configure_single_11n(int count)
 #elif defined(HAVE_CORENET)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "corenet.ap"));
 #elif defined(HAVE_ONNET_BLANK)
-		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "Enterprise WIFI_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "Enterprise WIFI_vap"));
 #elif defined(HAVE_ONNET)
-		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "OTAi_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "OTAi_vap"));
 #elif defined(HAVE_KORENRON)
-                sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "WBR2000_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "WBR2000_vap"));
 #else
 #ifdef HAVE_REGISTER
 		if (!isregistered())
@@ -959,7 +957,7 @@ void configure_single_11n(int count)
 #elif defined(HAVE_CORENET)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "corenet.ap"));
 #elif defined(HAVE_KORENRON)
-        sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "WBR2000"));
+	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "WBR2000"));
 #else
 #ifdef HAVE_REGISTER
 	if (!isregistered())
@@ -1004,7 +1002,7 @@ void configure_single_11n(int count)
 #elif defined(HAVE_CORENET)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "corenet.ap"));
 #elif defined(HAVE_KORENRON)
-                sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "WBR2000"));
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "WBR2000"));
 #else
 		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "dd-wrt"));
 #endif

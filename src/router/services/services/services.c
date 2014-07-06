@@ -175,6 +175,7 @@ void stop_iptqueue(void)
 void stop_ipv6(void)
 {
 }
+
 void start_ipv6(void)
 {
 	int ret = 0;
@@ -233,9 +234,11 @@ void stop_dhcpc(void)
 
 extern void start_heartbeat_boot(void);
 
-void stop_force_to_dial(void) {
+void stop_force_to_dial(void)
+{
 
 }
+
 /*
  * Trigger Connect On Demand 
  */

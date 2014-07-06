@@ -42,7 +42,7 @@ int zebra_init(void)
 	char *sub;
 	char var[32], *next;
 	char daemons[64];
-	int services=0;
+	int services = 0;
 	sprintf(daemons, "watchquagga -dz -r '%%s -d' zebra");
 
 	sub = nvram_safe_get("wk_mode");

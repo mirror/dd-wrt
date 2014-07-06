@@ -93,7 +93,6 @@ void start_sysinit(void)
 #ifdef HAVE_WHR300HP2
 	insmod("rt2880_wdt");
 
-
 	FILE *in = fopen("/dev/mtdblock/2", "rb");
 	unsigned char mac[32];
 	if (in != NULL) {
@@ -105,7 +104,7 @@ void start_sysinit(void)
 		for (i = 0; i < 6; i++)
 			copy[i] = mac[i] & 0xff;
 		sprintf(mac, "%02x:%02x:%02x:%02x:%02x:%02x", copy[0], copy[1], copy[2], copy[3], copy[4], copy[5]);
-		fprintf(stderr,"configure mac address to %s\n",mac);
+		fprintf(stderr, "configure mac address to %s\n", mac);
 		if (!strcmp(mac, "ff:ff:ff:ff:ff:ff"))
 			eval("ifconfig", "eth0", "hw", "ether", "00:11:22:33:44:55");
 		else
@@ -117,7 +116,7 @@ void start_sysinit(void)
 	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 6t\"");
 	system("swconfig dev eth0 vlan 2 set ports \"4 6t\"");
 	system("swconfig dev eth0 set apply");*/
-	
+
 	//LAN/WAN ports as security mode
 	sysprintf("switch reg w 2004 ff0003");
 	sysprintf("switch reg w 2104 ff0003");
@@ -129,16 +128,15 @@ void start_sysinit(void)
 	sysprintf("switch reg w 2010 810000c0");
 	sysprintf("switch reg w 2110 810000c0");
 	sysprintf("switch reg w 2210 810000c0");
-	sysprintf("switch reg w 2310 810000c0");	
+	sysprintf("switch reg w 2310 810000c0");
 	sysprintf("switch reg w 2410 810000c0");
 	sysprintf("switch reg w 2510 810000c0");
 	//set CPU/P7 port as user port
 	sysprintf("switch reg w 2610 81000000");
 	sysprintf("switch reg w 2710 81000000");
 
-	sysprintf("switch reg w 2604 20ff0003");// #port6, Egress VLAN Tag Attribution=tagged
-	sysprintf("switch reg w 2704 20ff0003");// #port7, Egress VLAN Tag Attribution=tagged
-	
+	sysprintf("switch reg w 2604 20ff0003");	// #port6, Egress VLAN Tag Attribution=tagged
+	sysprintf("switch reg w 2704 20ff0003");	// #port7, Egress VLAN Tag Attribution=tagged
 
 	sysprintf("switch reg w 2014 10001");
 	sysprintf("switch reg w 2114 10001");
@@ -151,7 +149,7 @@ void start_sysinit(void)
 	sysprintf("switch vlan set 1 2 00001011");
 	sysprintf("switch clear");
 	eval("ifconfig", "eth0", "up");
-	
+
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("vconfig", "add", "eth0", "1");	//LAN
 	eval("vconfig", "add", "eth0", "2");	//WAN
@@ -167,7 +165,6 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", ether_etoa((unsigned char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		close(s);
 	}
-
 #else
 
 #if defined(HAVE_DIR600) && !defined(HAVE_ALL02310N)
@@ -353,8 +350,8 @@ void start_sysinit(void)
 	led_control(LED_WLAN1, LED_OFF);
 	led_control(LED_CONNECTED, LED_OFF);
 #ifdef HAVE_WCRGN
-	set_gpio(0,1);
-	set_gpio(10,1);
+	set_gpio(0, 1);
+	set_gpio(10, 1);
 #endif
 
 	if (!nvram_match("disable_watchdog", "1")) {

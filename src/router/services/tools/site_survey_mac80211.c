@@ -71,8 +71,8 @@ static void __attribute__((constructor)) mac80211_init(void)
 		bunl = 1;
 	}
 
-
 }
+
 static int sscount = 0;
 static int rate_count = 0;
 

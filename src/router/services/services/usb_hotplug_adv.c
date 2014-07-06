@@ -60,7 +60,7 @@ static bool usb_stop_services()
 #ifdef HAVE_WEBSERVER
 	eval("stopservice", "lighttpd");
 #endif
-#ifdef HAVE_TRANSMISSION	
+#ifdef HAVE_TRANSMISSION
 	eval("stopservice", "transmission");
 #endif
 #ifdef HAVE_FREERADIUS
@@ -176,9 +176,7 @@ static void optimize_block_device(char *devname)
 	sysprintf("echo %d > %s", READ_AHEAD_KB_BUF, read_ahead_conf);
 }
 
-
 //Kernel 3.x
-
 
 void stop_hotplug_block(void)
 {
@@ -222,9 +220,9 @@ void start_hotplug_block(void)
 
 		sprintf(dev, "sd%c", c);
 		sprintf(devmmc, "mmcblk%c", c);
-		
-		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0)//
-			if (!strcmp(action, "add")){
+
+		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0)	//
+			if (!strcmp(action, "add")) {
 				usb_stop_services();
 				sleep(3);
 			}
@@ -251,14 +249,14 @@ void start_hotplug_block(void)
 
 			}
 		}
-		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0)//
-		if (!strcmp(action, "add")){
-			//runs user specified script
-			run_on_mount();
+		if (strcmp(part, dev) == 0 || strcmp(part, devmmc) == 0)	//
+			if (!strcmp(action, "add")) {
+				//runs user specified script
+				run_on_mount();
 
-			//finally start services again after mounting all partitions for this drive
-			usb_start_services();
-		}
+				//finally start services again after mounting all partitions for this drive
+				usb_start_services();
+			}
 	}
 
 	return;
@@ -514,14 +512,14 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 
 	/* avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram everything else can be used for fs cache */
 #ifdef HAVE_80211AC
-	writeproc("/proc/sys/vm/min_free_kbytes","16384");
+	writeproc("/proc/sys/vm/min_free_kbytes", "16384");
 #else
-	writeproc("/proc/sys/vm/min_free_kbytes","4096");
+	writeproc("/proc/sys/vm/min_free_kbytes", "4096");
 #endif
-//	writeproc("/proc/sys/vm/pagecache_ratio","90");
-//	writeproc("/proc/sys/vm/swappiness","90");
-//	writeproc("/proc/sys/vm/overcommit_memory","2");
-//	writeproc("/proc/sys/vm/overcommit_ratio","145");
+//      writeproc("/proc/sys/vm/pagecache_ratio","90");
+//      writeproc("/proc/sys/vm/swappiness","90");
+//      writeproc("/proc/sys/vm/overcommit_memory","2");
+//      writeproc("/proc/sys/vm/overcommit_ratio","145");
 	//prepare for optware
 	sysprintf("mkdir -p /jffs/lib/opkg");
 
@@ -585,7 +583,7 @@ int usb_add_ufd(char *link, int host, char *devpath, int mode)
 	if (mode == 1) {	//K3
 		usb_process_path(devpath, -1, NULL, NULL);	//use -1 to signal K3          
 	} else {		//K2.6
-		usb_stop_services();//K3 will start/stop only for a drive not partition
+		usb_stop_services();	//K3 will start/stop only for a drive not partition
 		dir = opendir(link);
 		if (dir != NULL) {
 			sysprintf("echo  Reading %s >> /tmp/hotplugs", link);
@@ -613,7 +611,6 @@ int usb_add_ufd(char *link, int host, char *devpath, int mode)
 		run_on_mount();
 		usb_start_services();
 	}
-
 
 	return 0;
 }

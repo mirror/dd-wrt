@@ -57,20 +57,18 @@ union ieee80211_country_ie_triplet {
 		__u8 first_channel;
 		__u8 num_channels;
 		__s8 max_power;
-	} __attribute__ ((packed)) chans;
+	} __attribute__((packed)) chans;
 	struct {
 		__u8 reg_extension_id;
 		__u8 reg_class;
 		__u8 coverage_class;
-	} __attribute__ ((packed)) ext;
-} __attribute__ ((packed));
-
+	} __attribute__((packed)) ext;
+} __attribute__((packed));
 
 enum print_ie_type {
 	PRINT_SCAN,
 	PRINT_LINK,
 };
-
 
 struct scan_params {
 	bool unknown;
@@ -78,9 +76,8 @@ struct scan_params {
 	bool show_both_ie_sets;
 };
 
-static unsigned char wifi_oui[3]      = { 0x00, 0x50, 0xf2 };
+static unsigned char wifi_oui[3] = { 0x00, 0x50, 0xf2 };
 static unsigned char ieee80211_oui[3] = { 0x00, 0x0f, 0xac };
-
 
 /* typedef unsigned char uint8;
 typedef short int16;
