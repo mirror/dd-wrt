@@ -57,7 +57,7 @@
 
 #include <sqlite3.h>
 
-#define MINIDLNA_VERSION "1.1.2"
+#define MINIDLNA_VERSION "1.1.3"
 
 #ifdef NETGEAR
 # define SERVER_NAME "ReadyDLNA"
@@ -73,6 +73,7 @@
 #else
 #define _(string) (string)
 #endif
+#define THISORNUL(s) (s ? s : "")
 
 #ifndef PNPX
 #define PNPX 0
@@ -189,6 +190,7 @@ extern uint32_t runtime_flags;
 #define DLNA_STRICT_MASK      0x0004
 #define NO_PLAYLIST_MASK      0x0008
 #define SYSTEMD_MASK          0x0010
+#define MERGE_MEDIA_DIRS_MASK 0x0020
 
 #define SETFLAG(mask)	runtime_flags |= mask
 #define GETFLAG(mask)	(runtime_flags & mask)
