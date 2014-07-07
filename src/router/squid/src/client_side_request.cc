@@ -875,11 +875,12 @@ ClientHttpRequest::noteAdaptationAclCheckDone(Adaptation::ServiceGroupPointer g)
 #if ICAP_CLIENT
     Adaptation::Icap::History::Pointer ih = request->icapHistory();
     if (ih != NULL) {
-        if (getConn() != NULL) {
+        if (getConn() != NULL && getConn()->clientConnection != NULL) {
             ih->rfc931 = getConn()->clientConnection->rfc931;
 #if USE_SSL
-            assert(getConn()->clientConnection != NULL);
-            ih->ssluser = sslGetUserEmail(fd_table[getConn()->clientConnection->fd].ssl);
+            if (getConn()->clientConnection->isOpen()) {
+                ih->ssluser = sslGetUserEmail(fd_table[getConn()->clientConnection->fd].ssl);
+            }
 #endif
         }
         ih->log_uri = log_uri;
@@ -1130,8 +1131,7 @@ clientInterpretRequestHeaders(ClientHttpRequest * http)
     else {
         req_hdr->delById(HDR_RANGE);
         req_hdr->delById(HDR_REQUEST_RANGE);
-        delete request->range;
-        request->range = NULL;
+        request->ignoreRange("neither HEAD nor GET");
     }
 
     if (req_hdr->has(HDR_AUTHORIZATION))
@@ -1386,7 +1386,7 @@ ClientHttpRequest::processRequest()
 #endif
         logType = LOG_TCP_MISS;
         getConn()->stopReading(); // tunnels read for themselves
-        tunnelStart(this, &out.size, &al->http.code);
+        tunnelStart(this, &out.size, &al->http.code, al);
         return;
     }
 
@@ -1663,7 +1663,7 @@ ClientHttpRequest::doCallouts()
             clientStreamNode *node = (clientStreamNode *)client_stream.tail->prev->data;
             clientReplyContext *repContext = dynamic_cast<clientReplyContext *>(node->data.getRaw());
             assert (repContext);
-            repContext->setReplyToStoreEntry(e);
+            repContext->setReplyToStoreEntry(e, "immediate SslBump error");
             errorAppendEntry(e, calloutContext->error);
             calloutContext->error = NULL;
             if (calloutContext->readNextRequest)
