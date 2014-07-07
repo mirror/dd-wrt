@@ -445,7 +445,7 @@ insert_directory(const char *name, const char *path, const char *base, const cha
 }
 
 int
-insert_file(char *name, const char *path, const char *parentID, int object)
+insert_file(char *name, const char *path, const char *parentID, int object, media_types types)
 {
 	char class[32];
 	char objectID[64];
@@ -455,7 +455,7 @@ insert_file(char *name, const char *path, const char *parentID, int object)
 	char *baseid;
 	char *orig_name = NULL;
 
-	if( is_image(name) )
+	if( (types & TYPE_IMAGES) && is_image(name) )
 	{
 		if( is_album_art(name) )
 			return -1;
@@ -463,7 +463,7 @@ insert_file(char *name, const char *path, const char *parentID, int object)
 		strcpy(class, "item.imageItem.photo");
 		detailID = GetImageMetadata(path, name);
 	}
-	else if( is_video(name) )
+	else if( (types & TYPE_VIDEO) && is_video(name) )
 	{
  		orig_name = strdup(name);
 		strcpy(base, VIDEO_DIR_ID);
@@ -477,7 +477,7 @@ insert_file(char *name, const char *path, const char *parentID, int object)
 		if( insert_playlist(path, name) == 0 )
 			return 1;
 	}
-	if( !detailID && is_audio(name) )
+	if( !detailID && (types & TYPE_AUDIO) && is_audio(name) )
 	{
 		strcpy(base, MUSIC_DIR_ID);
 		strcpy(class, "item.audioItem.musicTrack");
@@ -591,7 +591,7 @@ CreateDatabase(void)
 
 sql_failed:
 	if( ret != SQLITE_OK )
-		fprintf(stderr, "Error creating SQLite3 database!\n");
+		DPRINTF(E_ERROR, L_DB_SQL, "Error creating SQLite3 database!\n");
 	return (ret != SQLITE_OK);
 }
 
@@ -604,10 +604,14 @@ filter_hidden(scan_filter *d)
 static int
 filter_type(scan_filter *d)
 {
+#if HAVE_STRUCT_DIRENT_D_TYPE
 	return ( (d->d_type == DT_DIR) ||
 	         (d->d_type == DT_LNK) ||
 	         (d->d_type == DT_UNKNOWN)
 	       );
+#else
+	return 1;
+#endif
 }
 
 static int
@@ -615,7 +619,7 @@ filter_a(scan_filter *d)
 {
 	return ( filter_hidden(d) &&
 	         (filter_type(d) ||
-		  ((d->d_type == DT_REG) &&
+		  (is_reg(d) &&
 		   (is_audio(d->d_name) ||
 	            is_playlist(d->d_name))))
 	       );
@@ -626,7 +630,7 @@ filter_av(scan_filter *d)
 {
 	return ( filter_hidden(d) &&
 	         (filter_type(d) ||
-		  ((d->d_type == DT_REG) &&
+		  (is_reg(d) &&
 		   (is_audio(d->d_name) ||
 		    is_video(d->d_name) ||
 	            is_playlist(d->d_name))))
@@ -638,7 +642,7 @@ filter_ap(scan_filter *d)
 {
 	return ( filter_hidden(d) &&
 	         (filter_type(d) ||
-		  ((d->d_type == DT_REG) &&
+		  (is_reg(d) &&
 		   (is_audio(d->d_name) ||
 		    is_image(d->d_name) ||
 	            is_playlist(d->d_name))))
@@ -650,7 +654,7 @@ filter_v(scan_filter *d)
 {
 	return ( filter_hidden(d) &&
 	         (filter_type(d) ||
-		  (d->d_type == DT_REG &&
+		  (is_reg(d) &&
 	           is_video(d->d_name)))
 	       );
 }
@@ -660,7 +664,7 @@ filter_vp(scan_filter *d)
 {
 	return ( filter_hidden(d) &&
 	         (filter_type(d) ||
-		  ((d->d_type == DT_REG) &&
+		  (is_reg(d) &&
 		   (is_video(d->d_name) ||
 	            is_image(d->d_name))))
 	       );
@@ -671,7 +675,7 @@ filter_p(scan_filter *d)
 {
 	return ( filter_hidden(d) &&
 	         (filter_type(d) ||
-		  (d->d_type == DT_REG &&
+		  (is_reg(d) &&
 		   is_image(d->d_name)))
 	       );
 }
@@ -681,7 +685,7 @@ filter_avp(scan_filter *d)
 {
 	return ( filter_hidden(d) &&
 	         (filter_type(d) ||
-		  ((d->d_type == DT_REG) &&
+		  (is_reg(d) &&
 		   (is_audio(d->d_name) ||
 		    is_image(d->d_name) ||
 		    is_video(d->d_name) ||
@@ -754,11 +758,11 @@ ScanDirectory(const char *dir, const char *parent, media_types dir_types)
 		type = TYPE_UNKNOWN;
 		snprintf(full_path, PATH_MAX, "%s/%s", dir, namelist[i]->d_name);
 		name = escape_tag(namelist[i]->d_name, 1);
-		if( namelist[i]->d_type == DT_DIR )
+		if( is_dir(namelist[i]) == 1 )
 		{
 			type = TYPE_DIR;
 		}
-		else if( namelist[i]->d_type == DT_REG )
+		else if( is_reg(namelist[i]) == 1 )
 		{
 			type = TYPE_FILE;
 		}
@@ -769,14 +773,14 @@ ScanDirectory(const char *dir, const char *parent, media_types dir_types)
 		if( (type == TYPE_DIR) && (access(full_path, R_OK|X_OK) == 0) )
 		{
 			char *parent_id;
-			insert_directory(name, full_path, BROWSEDIR_ID, (parent ? parent:""), i+startID);
-			xasprintf(&parent_id, "%s$%X", (parent ? parent:""), i+startID);
+			insert_directory(name, full_path, BROWSEDIR_ID, THISORNUL(parent), i+startID);
+			xasprintf(&parent_id, "%s$%X", THISORNUL(parent), i+startID);
 			ScanDirectory(full_path, parent_id, dir_types);
 			free(parent_id);
 		}
 		else if( type == TYPE_FILE && (access(full_path, R_OK) == 0) )
 		{
-			if( insert_file(name, full_path, (parent ? parent:""), i+startID) == 0 )
+			if( insert_file(name, full_path, THISORNUL(parent), i+startID, dir_types) == 0 )
 				fileno++;
 		}
 		free(name);
@@ -832,7 +836,7 @@ start_scanner()
 		strncpyt(path, media_path->path, sizeof(path));
 		bname = basename(path);
 		/* If there are multiple media locations, add a level to the ContentDirectory */
-		if( media_dirs && media_dirs->next )
+		if( !GETFLAG(MERGE_MEDIA_DIRS_MASK) && media_dirs->next )
 		{
 			int startID = get_next_available_id("OBJECTS", BROWSEDIR_ID);
 			id = insert_directory(bname, path, BROWSEDIR_ID, "", startID);
@@ -861,7 +865,7 @@ start_scanner()
 		fill_playlists();
 	}
 
-	DPRINTF(E_DEBUG, L_SCANNER, "Initial file scan completed\n", DB_VERSION);
+	DPRINTF(E_DEBUG, L_SCANNER, "Initial file scan completed\n");
 	//JM: Set up a db version number, so we know if we need to rebuild due to a new structure.
 	sql_exec(db, "pragma user_version = %d;", DB_VERSION);
 }
