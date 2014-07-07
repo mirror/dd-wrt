@@ -821,6 +821,7 @@ nas.samba3="Samba Server";
 // ** DLNA **
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
+nas.dlna_merge="Merge Media Dirs";
 nas.dlna_thumb="Include Cover Artwork";
 nas.dlna_dir="Files Directory";
 nas.dlna_cleandb="Clean Database now";
