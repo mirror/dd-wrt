@@ -595,8 +595,8 @@ MAKEFLAGS=
 # Identity of this package.
 PACKAGE_NAME='Squid Web Proxy'
 PACKAGE_TARNAME='squid'
-PACKAGE_VERSION='3.3.9'
-PACKAGE_STRING='Squid Web Proxy 3.3.9'
+PACKAGE_VERSION='3.3.12'
+PACKAGE_STRING='Squid Web Proxy 3.3.12'
 PACKAGE_BUGREPORT='http://bugs.squid-cache.org/'
 PACKAGE_URL=''
 
@@ -753,6 +753,10 @@ REPL_POLICIES
 STORE_TESTS
 STORE_LIBS_TO_ADD
 STORE_LIBS_TO_BUILD
+HAVE_FS_ROCK_FALSE
+HAVE_FS_ROCK_TRUE
+HAVE_FS_UFS_FALSE
+HAVE_FS_UFS_TRUE
 USE_AIO_WIN32_FALSE
 USE_AIO_WIN32_TRUE
 USE_AIOPS_WIN32_FALSE
@@ -1588,7 +1592,7 @@ if test "$ac_init_help" = "long"; then
   # Omit some internal or obsolete options to make the list less imposing.
   # This message is too long to be a string in the A/UX 3.1 sh.
   cat <<_ACEOF
-\`configure' configures Squid Web Proxy 3.3.9 to adapt to many kinds of systems.
+\`configure' configures Squid Web Proxy 3.3.12 to adapt to many kinds of systems.
 
 Usage: $0 [OPTION]... [VAR=VALUE]...
 
@@ -1658,7 +1662,7 @@ fi
 
 if test -n "$ac_init_help"; then
   case $ac_init_help in
-     short | recursive ) echo "Configuration of Squid Web Proxy 3.3.9:";;
+     short | recursive ) echo "Configuration of Squid Web Proxy 3.3.12:";;
    esac
   cat <<\_ACEOF
 
@@ -3969,7 +3973,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE='squid'
- VERSION='3.3.9'
+ VERSION='3.3.12'
 
 
 cat >>confdefs.h <<_ACEOF
@@ -20235,7 +20239,7 @@ done
 $as_echo "$as_me: Windows threads support automatically enabled" >&6;}
             ;;
           freebsd)
-            if test `echo "$squid_host_os_version" | cut -b1` -lt 7 ; then
+            if test `echo "$squid_host_os_version" | tr -d .` -lt 70 ; then
                 { $as_echo "$as_me:${as_lineno-$LINENO}: pthread library requires FreeBSD 7 or later" >&5
 $as_echo "$as_me: pthread library requires FreeBSD 7 or later" >&6;}
                 squid_opt_use_diskthreads="no"
@@ -20804,12 +20808,29 @@ $as_echo "$as_me: WARNING: COSS Support is not stable yet in Squid-3. Please do 
 	  "x$squid_disk_module_candidates_Blocking" != "xyes"; then
 	  as_fn_error $? "Storage module Rock requires IpcIo or Blocking DiskIO module" "$LINENO" 5
 	fi
-	STORE_TESTS="$STORE_TESTS tests/testRock$EXEEXT"
+	squid_do_build_rock=true
 	;;
     ufs)
-      STORE_TESTS="$STORE_TESTS tests/testUfs$EXEEXT"
+	squid_do_build_ufs=true
+	;;
     esac
 done
+
+ if test "x$squid_do_build_ufs" = "xtrue" ; then
+  HAVE_FS_UFS_TRUE=
+  HAVE_FS_UFS_FALSE='#'
+else
+  HAVE_FS_UFS_TRUE='#'
+  HAVE_FS_UFS_FALSE=
+fi
+
+ if test "x$squid_do_build_rock" = "xtrue" ; then
+  HAVE_FS_ROCK_TRUE=
+  HAVE_FS_ROCK_FALSE='#'
+else
+  HAVE_FS_ROCK_TRUE='#'
+  HAVE_FS_ROCK_FALSE=
+fi
 
 
 
@@ -28210,13 +28231,14 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 esac
 
 
-
 # Check whether --with-maxfd was given.
 if test "${with_maxfd+set}" = set; then :
   withval=$with_maxfd;
   case ${withval} in
     [0-9]*)
       squid_filedescriptors_num=$withval
+      { $as_echo "$as_me:${as_lineno-$LINENO}: forcing default of $squid_filedescriptors_num filedescriptors (user-forced)" >&5
+$as_echo "$as_me: forcing default of $squid_filedescriptors_num filedescriptors (user-forced)" >&6;}
       ;;
     *)
       as_fn_error $? "--with-maxfd expects a numeric argument" "$LINENO" 5
@@ -28233,6 +28255,8 @@ if test "${with_filedescriptors+set}" = set; then :
   case ${withval} in
     [0-9]*)
       squid_filedescriptors_num=$withval
+      { $as_echo "$as_me:${as_lineno-$LINENO}: forcing default of $squid_filedescriptors_num filedescriptors (user-forced)" >&5
+$as_echo "$as_me: forcing default of $squid_filedescriptors_num filedescriptors (user-forced)" >&6;}
       ;;
     *)
       as_fn_error $? "--with-filedescriptors expects a numeric argument" "$LINENO" 5
@@ -28298,7 +28322,6 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-if test "x$squid_filedescriptors_num" = "x"; then
 
 for ac_func in setrlimit
 do :
@@ -28452,9 +28475,9 @@ if test `expr $squid_filedescriptors_num % 64` != 0; then
 $as_echo "$as_me: WARNING: $squid_filedescriptors_num is not an multiple of 64. This may cause issues on certain platforms." >&2;}
 fi
 
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: forcing use of $squid_filedescriptors_num filedescriptors (user-forced)" >&5
-$as_echo "$as_me: forcing use of $squid_filedescriptors_num filedescriptors (user-forced)" >&6;}
+if test "x$squid_filedescriptors_num" != "x"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: Default number of fieldescriptors: $squid_filedescriptors_num" >&5
+$as_echo "$as_me: Default number of fieldescriptors: $squid_filedescriptors_num" >&6;}
 fi
 if test "$squid_filedescriptors_num" -lt 512 ; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: $squid_filedescriptors_num may not be enough filedescriptors if your" >&5
@@ -31966,6 +31989,14 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${USE_AIO_WIN32_TRUE}" && test -z "${USE_AIO_WIN32_FALSE}"; then
   as_fn_error $? "conditional \"USE_AIO_WIN32\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_FS_UFS_TRUE}" && test -z "${HAVE_FS_UFS_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_FS_UFS\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${HAVE_FS_ROCK_TRUE}" && test -z "${HAVE_FS_ROCK_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_FS_ROCK\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${ENABLE_PINGER_TRUE}" && test -z "${ENABLE_PINGER_FALSE}"; then

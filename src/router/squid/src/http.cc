@@ -924,10 +924,6 @@ HttpStateData::haveParsedReplyHeaders()
     Ctx ctx = ctx_enter(entry->mem_obj->url);
     HttpReply *rep = finalReply();
 
-    if (rep->sline.status == HTTP_PARTIAL_CONTENT &&
-            rep->content_range)
-        currentOffset = rep->content_range->spec.offset;
-
     entry->timestampsSet();
 
     /* Check if object is cacheable or not based on reply code */
@@ -1740,8 +1736,7 @@ HttpStateData::httpBuildRequestHeader(HttpRequest * request,
         /* don't cache the result */
         request->flags.cachable = 0;
         /* pretend it's not a range request */
-        delete request->range;
-        request->range = NULL;
+        request->ignoreRange("want to request the whole object");
         request->flags.isRanged=false;
     }
 
@@ -1978,12 +1973,30 @@ copyOneHeaderFromClientsideRequestToUpstreamRequest(const HttpHeaderEntry *e, co
 
     case HDR_IF_MODIFIED_SINCE:
         /** \par If-Modified-Since:
-        * append unless we added our own;
-         * \note at most one client's ims header can pass through */
-
-        if (!hdr_out->has(HDR_IF_MODIFIED_SINCE))
+         * append unless we added our own,
+         * but only if cache_miss_revalidate is enabled, or
+         *  the request is not cacheable, or
+         *  the request contains authentication credentials.
+         * \note at most one client's If-Modified-Since header can pass through
+         */
+        // XXX: need to check and cleanup the auth case so cacheable auth requests get cached.
+        if (hdr_out->has(HDR_IF_MODIFIED_SINCE))
+            break;
+        else if (Config.onoff.cache_miss_revalidate || !request->flags.cachable || request->flags.auth)
             hdr_out->addEntry(e->clone());
+        break;
 
+    case HDR_IF_NONE_MATCH:
+        /** \par If-None-Match:
+         * append if the wildcard '*' special case value is present, or
+         *   cache_miss_revalidate is disabled, or
+         *   the request is not cacheable in this proxy, or
+         *   the request contains authentication credentials.
+         * \note this header lists a set of responses for the server to elide sending. Squid added values are extending that set.
+         */
+        // XXX: need to check and cleanup the auth case so cacheable auth requests get cached.
+        if (hdr_out->hasListMember(HDR_IF_MATCH, "*", ',') || Config.onoff.cache_miss_revalidate || !request->flags.cachable || request->flags.auth)
+            hdr_out->addEntry(e->clone());
         break;
 
     case HDR_MAX_FORWARDS:
