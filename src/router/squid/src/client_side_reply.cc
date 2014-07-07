@@ -134,13 +134,18 @@ void clientReplyContext::setReplyToError(const HttpRequestMethod& method, ErrorS
 
     http->al->http.code = errstate->httpStatus;
 
+    if (http->request)
+        http->request->ignoreRange("responding with a Squid-generated error");
+
     createStoreEntry(method, RequestFlags());
     assert(errstate->callback_data == NULL);
     errorAppendEntry(http->storeEntry(), errstate);
     /* Now the caller reads to get this */
 }
 
-void clientReplyContext::setReplyToStoreEntry(StoreEntry *entry)
+// Assumes that the entry contains an error response without Content-Range.
+// To use with regular entries, make HTTP Range header removal conditional.
+void clientReplyContext::setReplyToStoreEntry(StoreEntry *entry, const char *reason)
 {
     entry->lock(); // removeClientStoreReference() unlocks
     sc = storeClientListAdd(entry, this);
@@ -149,6 +154,8 @@ void clientReplyContext::setReplyToStoreEntry(StoreEntry *entry)
 #endif
     reqofs = 0;
     reqsize = 0;
+    if (http->request)
+        http->request->ignoreRange(reason);
     flags.storelogiccomplete = 1;
     http->storeEntry(entry);
 }
@@ -507,6 +514,7 @@ clientReplyContext::cacheHit(StoreIOBuffer result)
 
     if (strcmp(e->mem_obj->url, urlCanonical(r)) != 0) {
         debugs(33, DBG_IMPORTANT, "clientProcessHit: URL mismatch, '" << e->mem_obj->url << "' != '" << urlCanonical(r) << "'");
+        http->logType = LOG_TCP_MISS; // we lack a more precise LOG_*_MISS code
         processMiss();
         return;
     }
@@ -538,6 +546,7 @@ clientReplyContext::cacheHit(StoreIOBuffer result)
     case VARY_CANCEL:
         /* varyEvaluateMatch found a object loop. Process as miss */
         debugs(88, DBG_IMPORTANT, "clientProcessHit: Vary object loop!");
+        http->logType = LOG_TCP_MISS; // we lack a more precise LOG_*_MISS code
         processMiss();
         return;
     }

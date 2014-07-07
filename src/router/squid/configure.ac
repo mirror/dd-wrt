@@ -1,4 +1,4 @@
-AC_INIT([Squid Web Proxy],[3.3.9],[http://bugs.squid-cache.org/],[squid])
+AC_INIT([Squid Web Proxy],[3.3.12],[http://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
 AC_CONFIG_AUX_DIR(cfgaux)
@@ -567,7 +567,7 @@ for module in $squid_disk_module_candidates none; do
             AC_MSG_NOTICE([Windows threads support automatically enabled])
             ;;
           freebsd)
-            if test `echo "$squid_host_os_version" | cut -b1` -lt 7 ; then
+            if test `echo "$squid_host_os_version" | tr -d .` -lt 70 ; then
                 AC_MSG_NOTICE(pthread library requires FreeBSD 7 or later)
                 squid_opt_use_diskthreads="no"
             else
@@ -805,13 +805,16 @@ for fs in $squid_storeio_module_candidates none; do
 	  "x$squid_disk_module_candidates_Blocking" != "xyes"; then
 	  AC_MSG_ERROR([Storage module Rock requires IpcIo or Blocking DiskIO module])
 	fi
-	STORE_TESTS="$STORE_TESTS tests/testRock$EXEEXT"
+	squid_do_build_rock=true
 	;;
     ufs)
-      STORE_TESTS="$STORE_TESTS tests/testUfs$EXEEXT"
+	squid_do_build_ufs=true
+	;;
     esac
 done
-
+ 
+AM_CONDITIONAL(HAVE_FS_UFS,[test "x$squid_do_build_ufs" = "xtrue" ])
+AM_CONDITIONAL(HAVE_FS_ROCK,[test "x$squid_do_build_rock" = "xtrue" ])
 dnl hack: need to define those even if not used in the build system to
 dnl make sure that global FS objects are linked to the squid binary.
 AH_TEMPLATE(HAVE_FS_UFS, "Define to 1 if ufs filesystem module is build")
@@ -2693,7 +2696,6 @@ case "$squid_host_os" in
     ;;
 esac
 
-
 dnl --with-maxfd present for compatibility with Squid-2.
 dnl undocumented in ./configure --help  to encourage using the Squid-3 directive
 AC_ARG_WITH(maxfd,,
@@ -2701,6 +2703,7 @@ AC_ARG_WITH(maxfd,,
   case ${withval} in
     [[0-9]]*)
       squid_filedescriptors_num=$withval
+      AC_MSG_NOTICE([forcing default of $squid_filedescriptors_num filedescriptors (user-forced)])
       ;;
     *)
       AC_MSG_ERROR(--with-maxfd expects a numeric argument)
@@ -2715,6 +2718,7 @@ AC_ARG_WITH(filedescriptors,
   case ${withval} in
     [[0-9]]*)
       squid_filedescriptors_num=$withval
+      AC_MSG_NOTICE([forcing default of $squid_filedescriptors_num filedescriptors (user-forced)])
       ;;
     *)
       AC_MSG_ERROR(--with-filedescriptors expects a numeric argument)
@@ -2723,10 +2727,9 @@ AC_ARG_WITH(filedescriptors,
 ])
 
 SQUID_CHECK_DEFAULT_FD_SETSIZE
-if test "x$squid_filedescriptors_num" = "x"; then
-  SQUID_CHECK_MAXFD
-else
-  AC_MSG_NOTICE([forcing use of $squid_filedescriptors_num filedescriptors (user-forced)])
+SQUID_CHECK_MAXFD
+if test "x$squid_filedescriptors_num" != "x"; then
+  AC_MSG_NOTICE([Default number of fieldescriptors: $squid_filedescriptors_num])
 fi
 if test "$squid_filedescriptors_num" -lt 512 ; then
     AC_MSG_WARN([$squid_filedescriptors_num may not be enough filedescriptors if your])
@@ -3549,93 +3552,93 @@ AC_MSG_NOTICE([BUILD EXTRA C++ FLAGS: $SQUID_CXXFLAGS])
 dnl Clean up after OSF/1 core dump bug
 rm -f core 
 
-AC_CONFIG_FILES([\
-	Makefile \
-	compat/Makefile \
-	lib/Makefile \
-	lib/ntlmauth/Makefile \
-	lib/profiler/Makefile \
-	lib/rfcnb/Makefile \
-	lib/smblib/Makefile \
-	scripts/Makefile \
-	src/Makefile \
-	src/anyp/Makefile \
-	src/base/Makefile \
-	src/acl/Makefile \
-	src/fs/Makefile \
-	src/repl/Makefile \
-	src/auth/Makefile \
-	src/auth/basic/Makefile \
-	src/auth/digest/Makefile \
-	src/auth/negotiate/Makefile \
-	src/auth/ntlm/Makefile \
-	src/adaptation/Makefile \
-	src/adaptation/icap/Makefile \
-	src/adaptation/ecap/Makefile \
-	src/comm/Makefile \
-	src/esi/Makefile \
-	src/eui/Makefile \
-	src/format/Makefile \
-	src/icmp/Makefile \
-	src/ident/Makefile \
-	src/ip/Makefile \
-	src/log/Makefile \
-	src/ipc/Makefile \
-	src/ssl/Makefile \
-	src/mgr/Makefile \
-	src/snmp/Makefile \
-	contrib/Makefile \
-	snmplib/Makefile \
-	icons/Makefile \
-	errors/Makefile \
-	test-suite/Makefile \
-	doc/Makefile \
-	doc/manuals/Makefile \
-	helpers/Makefile \
-	helpers/basic_auth/Makefile \
-	helpers/basic_auth/DB/Makefile \
-	helpers/basic_auth/fake/Makefile \
-	helpers/basic_auth/getpwnam/Makefile \
-	helpers/basic_auth/LDAP/Makefile \
-	helpers/basic_auth/MSNT/Makefile \
-	helpers/basic_auth/MSNT-multi-domain/Makefile \
-	helpers/basic_auth/NCSA/Makefile \
-	helpers/basic_auth/NIS/Makefile \
-	helpers/basic_auth/PAM/Makefile \
-	helpers/basic_auth/POP3/Makefile \
-	helpers/basic_auth/RADIUS/Makefile \
-	helpers/basic_auth/SASL/Makefile \
-	helpers/basic_auth/SMB/Makefile \
-	helpers/basic_auth/SSPI/Makefile \
-	helpers/digest_auth/Makefile \
-	helpers/digest_auth/eDirectory/Makefile \
-	helpers/digest_auth/file/Makefile \
-	helpers/digest_auth/LDAP/Makefile \
-	helpers/ntlm_auth/Makefile \
-	helpers/ntlm_auth/fake/Makefile \
-	helpers/ntlm_auth/smb_lm/Makefile \
-	helpers/ntlm_auth/SSPI/Makefile \
-	helpers/negotiate_auth/Makefile \
-	helpers/negotiate_auth/kerberos/Makefile \
-	helpers/negotiate_auth/SSPI/Makefile \
-	helpers/negotiate_auth/wrapper/Makefile \
-	helpers/external_acl/Makefile \
-	helpers/external_acl/AD_group/Makefile \
-	helpers/external_acl/eDirectory_userip/Makefile \
-	helpers/external_acl/file_userip/Makefile \
-	helpers/external_acl/kerberos_ldap_group/Makefile \
-	helpers/external_acl/LDAP_group/Makefile \
-	helpers/external_acl/LM_group/Makefile \
-	helpers/external_acl/session/Makefile \
-	helpers/external_acl/SQL_session/Makefile \
-	helpers/external_acl/unix_group/Makefile \
-	helpers/external_acl/wbinfo_group/Makefile \
-	helpers/external_acl/time_quota/Makefile \
-	helpers/log_daemon/Makefile \
-	helpers/log_daemon/DB/Makefile \
-	helpers/log_daemon/file/Makefile \
-	helpers/url_rewrite/Makefile \
-	helpers/url_rewrite/fake/Makefile \
+AC_CONFIG_FILES([
+	Makefile
+	compat/Makefile
+	lib/Makefile
+	lib/ntlmauth/Makefile
+	lib/profiler/Makefile
+	lib/rfcnb/Makefile
+	lib/smblib/Makefile
+	scripts/Makefile
+	src/Makefile
+	src/anyp/Makefile
+	src/base/Makefile
+	src/acl/Makefile
+	src/fs/Makefile
+	src/repl/Makefile
+	src/auth/Makefile
+	src/auth/basic/Makefile
+	src/auth/digest/Makefile
+	src/auth/negotiate/Makefile
+	src/auth/ntlm/Makefile
+	src/adaptation/Makefile
+	src/adaptation/icap/Makefile
+	src/adaptation/ecap/Makefile
+	src/comm/Makefile
+	src/esi/Makefile
+	src/eui/Makefile
+	src/format/Makefile
+	src/icmp/Makefile
+	src/ident/Makefile
+	src/ip/Makefile
+	src/log/Makefile
+	src/ipc/Makefile
+	src/ssl/Makefile
+	src/mgr/Makefile
+	src/snmp/Makefile
+	contrib/Makefile
+	snmplib/Makefile
+	icons/Makefile
+	errors/Makefile
+	test-suite/Makefile
+	doc/Makefile
+	doc/manuals/Makefile
+	helpers/Makefile
+	helpers/basic_auth/Makefile
+	helpers/basic_auth/DB/Makefile
+	helpers/basic_auth/fake/Makefile
+	helpers/basic_auth/getpwnam/Makefile
+	helpers/basic_auth/LDAP/Makefile
+	helpers/basic_auth/MSNT/Makefile
+	helpers/basic_auth/MSNT-multi-domain/Makefile
+	helpers/basic_auth/NCSA/Makefile
+	helpers/basic_auth/NIS/Makefile
+	helpers/basic_auth/PAM/Makefile
+	helpers/basic_auth/POP3/Makefile
+	helpers/basic_auth/RADIUS/Makefile
+	helpers/basic_auth/SASL/Makefile
+	helpers/basic_auth/SMB/Makefile
+	helpers/basic_auth/SSPI/Makefile
+	helpers/digest_auth/Makefile
+	helpers/digest_auth/eDirectory/Makefile
+	helpers/digest_auth/file/Makefile
+	helpers/digest_auth/LDAP/Makefile
+	helpers/ntlm_auth/Makefile
+	helpers/ntlm_auth/fake/Makefile
+	helpers/ntlm_auth/smb_lm/Makefile
+	helpers/ntlm_auth/SSPI/Makefile
+	helpers/negotiate_auth/Makefile
+	helpers/negotiate_auth/kerberos/Makefile
+	helpers/negotiate_auth/SSPI/Makefile
+	helpers/negotiate_auth/wrapper/Makefile
+	helpers/external_acl/Makefile
+	helpers/external_acl/AD_group/Makefile
+	helpers/external_acl/eDirectory_userip/Makefile
+	helpers/external_acl/file_userip/Makefile
+	helpers/external_acl/kerberos_ldap_group/Makefile
+	helpers/external_acl/LDAP_group/Makefile
+	helpers/external_acl/LM_group/Makefile
+	helpers/external_acl/session/Makefile
+	helpers/external_acl/SQL_session/Makefile
+	helpers/external_acl/unix_group/Makefile
+	helpers/external_acl/wbinfo_group/Makefile
+	helpers/external_acl/time_quota/Makefile
+	helpers/log_daemon/Makefile
+	helpers/log_daemon/DB/Makefile
+	helpers/log_daemon/file/Makefile
+	helpers/url_rewrite/Makefile
+	helpers/url_rewrite/fake/Makefile
 	tools/Makefile
 	tools/purge/Makefile
 ])
