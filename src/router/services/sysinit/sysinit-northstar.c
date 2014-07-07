@@ -1122,7 +1122,7 @@ void start_sysinit(void)
 		nvram_set("wl0_pcie_mrrs", "128");
 		nvram_set("wl1_pcie_mrrs", "128");
 		nvram_set("pci/1/1/vendid", "0x14E4");
-
+		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_NETGEAR_EX6200:
 		nvram_set("vlan2hwname", "et0");
