@@ -479,7 +479,6 @@ unsigned int nf_nat_packet(struct nf_conn *ct,
 
 		/* We are aiming to look like inverse of other direction. */
 		nf_ct_invert_tuplepr(&target, &ct->tuplehash[!dir].tuple);
-		ddtb_ip_conntrack_add(skb, hooknum, ct, ctinfo, &target);
 
 		l3proto = __nf_nat_l3proto_find(target.src.l3num);
 		l4proto = __nf_nat_l4proto_find(target.src.l3num,

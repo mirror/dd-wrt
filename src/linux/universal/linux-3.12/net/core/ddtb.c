@@ -310,7 +310,7 @@ ddtb_ip_setup_skb(struct ddtb_tuple *t, struct sk_buff *skb,
 		skb->protocol = htons(ETH_P_8021Q);
 	}
 
-	if (skb->dev->priv_flags & IFF_FAST_PATH) {
+	if (skb->dev->priv_flags & (IFF_FAST_PATH | IFF_EBRIDGE)) {
 		eh = (struct ethhdr *) __skb_push(skb, sizeof(struct ethhdr));
 		eh->h_proto = skb->protocol;
 		memcpy(eh->h_source, skb->dev->dev_addr, ETH_ALEN);
@@ -381,6 +381,17 @@ static void ddtb_nat_packet(struct ddtb_tuple *tuple, struct iphdr *iph, void *t
 }
 
 static int
+ddtb_packet_xmit(struct ddtb_conn *c, struct sk_buff *skb)
+{
+#ifdef CONFIG_NF_CONNTRACK_MARK
+	if (c->mark)
+		skb->mark = c->mark;
+#endif
+
+	dev_queue_xmit(skb);
+}
+
+static int
 ddtb_rewrite_request_v4(struct ddtb_conn *c, struct sk_buff *skb, struct iphdr *iph, void *trans)
 {
 	if (c->request.flags & DDTB_F_SNAT)
@@ -396,7 +407,7 @@ ddtb_rewrite_request_v4(struct ddtb_conn *c, struct sk_buff *skb, struct iphdr *
 		c->tx_bytes += skb->len;
 	}
 
-	dev_queue_xmit(skb);
+	ddtb_packet_xmit(c, skb);
 
 	return 0;
 }
@@ -417,7 +428,7 @@ ddtb_rewrite_reply_v4(struct ddtb_conn *c, struct sk_buff *skb, struct iphdr *ip
 		c->rx_bytes += skb->len;
 	}
 
-	dev_queue_xmit(skb);
+	ddtb_packet_xmit(c, skb);
 
 	return 0;
 }

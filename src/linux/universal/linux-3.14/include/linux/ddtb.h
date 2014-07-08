@@ -1,16 +1,3 @@
-/*
- *  ddtb.h - shameless reimplementation of broadcom ctf nat acceleration driver
- *
- *  Copyright (C) 2013-2014 <to be filled in>
- *
- *	This program is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU General Public License version
- *	2 as published by the Free Software Foundation.
- *
- *  debugfs is for people to use instead of /proc or /sys.
- *  See Documentation/DocBook/filesystems for more details.
- */
-
 #ifndef _DDTB_H
 #define _DDTB_H
 
@@ -57,6 +44,10 @@ struct ddtb_conn {
 	struct ddtb_dir		request;
 	struct ddtb_dir		reply;
 
+#ifdef CONFIG_NF_CONNTRACK_MARK
+	u32			mark;
+#endif
+
 	u32			rx_pkts;
 	u32			rx_bytes;
 	u32			tx_pkts;
@@ -70,6 +61,9 @@ struct ddtb_conn {
 int ddtb_intercept(struct sk_buff *skb);
 struct ddtb_conn *ddtb_ip_add(struct ddtb_conn *_c, struct net_device *orig, int v6);
 int ddtb_ip_delete(struct ddtb_conn *_c, int v6);
+
+void nf_conntrack_ddtb_init(void);
+void nf_conntrack_ddtb_exit(void);
 
 #else
 
@@ -87,6 +81,14 @@ ddtb_ip_add(struct ddtb_conn *_c, struct net_device *orig, int v6)
 static inline int ddtb_ip_delete(struct ddtb_conn *_c, int v6)
 {
 	return 0;
+}
+
+static inline void nf_conntrack_ddtb_init(void)
+{
+}
+
+static inline void nf_conntrack_ddtb_exit(void)
+{
 }
 
 #endif
