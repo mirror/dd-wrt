@@ -93,13 +93,6 @@ typedef enum {
     __CVMX_USB_TRANSACTION_FLAGS_IN_USE = 1<<16,
 } cvmx_usb_transaction_flags_t;
 
-enum {
-	USB_CLOCK_TYPE_REF_12,
-	USB_CLOCK_TYPE_REF_24,
-	USB_CLOCK_TYPE_REF_48,
-	USB_CLOCK_TYPE_CRYSTAL_12,
-};
-
 /**
  * Logical transactions may take numerous low level
  * transactions, especially when splits are concerned. This
