@@ -992,6 +992,9 @@ int internal_getRouterBrand()
 #ifdef HAVE_NP28G
 	setRouter("Compex NP28G");
 	return ROUTER_BOARD_NP28G;
+#elif HAVE_E200
+	setRouter("Ubiquiti Edgerouter Pro");
+	return ROUTER_UBNT_EROUTERPRO;
 #elif HAVE_EROUTER
 	setRouter("Ubiquiti Edgerouter Lite");
 	return ROUTER_UBNT_EROUTERLITE;

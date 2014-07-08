@@ -225,6 +225,9 @@ endif
 ifeq ($(CONFIG_EROUTER),y)
 CFLAGS += -DHAVE_EROUTER
 endif
+ifeq ($(CONFIG_E200),y)
+CFLAGS += -DHAVE_E200
+endif
 ifeq ($(CONFIG_DIR600),y)
 CFLAGS += -DHAVE_DIR600
 endif

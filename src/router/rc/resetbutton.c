@@ -137,6 +137,14 @@ int getbuttonstate()
 		return 0;
 	return 1;
 }
+#elif defined(HAVE_E200)
+int getbuttonstate()
+{
+	int ret = get_gpio(0);
+	if (ret == 1)
+		return 0;
+	return 1;
+}
 #elif defined(HAVE_EROUTER)
 int getbuttonstate()
 {
