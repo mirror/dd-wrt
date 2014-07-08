@@ -399,6 +399,9 @@ endif
 ifeq ($(CONFIG_EROUTER),y)
 CFLAGS_EXTRA += -DHAVE_EROUTER
 endif
+ifeq ($(CONFIG_E200),y)
+CFLAGS_EXTRA += -DHAVE_E200
+endif
 ifeq ($(CONFIG_CORENET),y)
 CFLAGS_EXTRA += -DHAVE_CORENET
 endif
