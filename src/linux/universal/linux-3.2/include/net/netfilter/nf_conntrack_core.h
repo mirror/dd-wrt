@@ -76,21 +76,4 @@ print_tuple(struct seq_file *s, const struct nf_conntrack_tuple *tuple,
 
 extern spinlock_t nf_conntrack_lock ;
 
-#ifdef CONFIG_DDTB
-
-extern void ddtb_ip_conntrack_add(struct sk_buff *skb, u_int32_t hooknum,
-		struct nf_conn *ct, enum ip_conntrack_info ci,
-		struct nf_conntrack_tuple *manip);
-
-#else
-
-static inline void
-ddtb_ip_conntrack_add(struct sk_buff *skb, u_int32_t hooknum,
-		      struct nf_conn *ct, enum ip_conntrack_info ci,
-		      struct nf_conntrack_tuple *manip)
-{
-}
-
-#endif
-
 #endif /* _NF_CONNTRACK_CORE_H */
