@@ -3,13 +3,14 @@
  * License.  See the file "COPYING" in the main directory of this archive
  * for more details.
  *
- * Copyright (C) 2011 Cavium Inc. 
+ * Copyright (C) 2011,2012 Cavium Inc.
  */
 
-#include <linux/kernel.h>
 #include <linux/platform_device.h>
+#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/gpio.h>
+#include <linux/io.h>
 
 #include <asm/octeon/octeon.h>
 #include <asm/octeon/cvmx-gpio-defs.h>
@@ -77,7 +78,7 @@ static int octeon_gpio_get(struct gpio_chip *chip, unsigned offset)
 	return ((1ull << offset) & read_bits) != 0;
 }
 
-static int __init octeon_gpio_probe(struct platform_device *pdev)
+static int octeon_gpio_probe(struct platform_device *pdev)
 {
 	struct octeon_gpio *gpio;
 	struct gpio_chip *chip;
@@ -102,8 +103,8 @@ static int __init octeon_gpio_probe(struct platform_device *pdev)
 		err = -ENXIO;
 		goto out;
 	}
-	gpio->register_base = (u64)ioremap(res_mem->start,
-					   resource_size(res_mem));
+	gpio->register_base = (u64)devm_ioremap(&pdev->dev, res_mem->start,
+						resource_size(res_mem));
 
 
 	pdev->dev.platform_data = chip;
@@ -112,12 +113,7 @@ static int __init octeon_gpio_probe(struct platform_device *pdev)
 	chip->owner = THIS_MODULE;
 	chip->base = 0;
 	chip->can_sleep = 0;
-
-	if (OCTEON_IS_MODEL(OCTEON_CN66XX))
-		chip->ngpio = 18;
-	else
-		chip->ngpio = 16;
-
+	chip->ngpio = 20;
 	chip->direction_input = octeon_gpio_dir_in;
 	chip->get = octeon_gpio_get;
 	chip->direction_output = octeon_gpio_dir_out;
@@ -126,12 +122,12 @@ static int __init octeon_gpio_probe(struct platform_device *pdev)
 	if (err)
 		goto out;
 
-	dev_info(&pdev->dev, "probed\n");
+	dev_info(&pdev->dev, "version: " DRV_VERSION "\n");
 out:
 	return err;
 }
 
-static int __exit octeon_gpio_remove(struct platform_device *pdev)
+static int octeon_gpio_remove(struct platform_device *pdev)
 {
 	struct gpio_chip *chip = pdev->dev.platform_data;
 	return gpiochip_remove(chip);
@@ -143,29 +139,19 @@ static struct of_device_id octeon_gpio_match[] = {
 	},
 	{},
 };
-MODULE_DEVICE_TABLE(of, octeon_mgmt_match);
+MODULE_DEVICE_TABLE(of, octeon_gpio_match);
 
 static struct platform_driver octeon_gpio_driver = {
+	.probe		= octeon_gpio_probe,
+	.remove		= octeon_gpio_remove,
 	.driver = {
 		.name		= "octeon_gpio",
 		.owner		= THIS_MODULE,
 		.of_match_table = octeon_gpio_match,
 	},
-	.probe		= octeon_gpio_probe,
-	.remove		= __exit_p(octeon_gpio_remove),
 };
 
-static int __init octeon_gpio_mod_init(void)
-{
-	return platform_driver_register(&octeon_gpio_driver);
-}
-module_init(octeon_gpio_mod_init);
-
-static void __exit octeon_gpio_mod_exit(void)
-{
-	platform_driver_unregister(&octeon_gpio_driver);
-}
-module_exit(octeon_gpio_mod_exit);
+module_platform_driver(octeon_gpio_driver);
 
 MODULE_DESCRIPTION(DRV_DESCRIPTION);
 MODULE_AUTHOR("David Daney");

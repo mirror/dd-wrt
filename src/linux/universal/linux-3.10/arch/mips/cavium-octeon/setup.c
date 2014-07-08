@@ -55,6 +55,9 @@ extern void pci_console_init(const char *arg);
 
 static unsigned long long MAX_MEMORY = 512ull << 20;
 
+DEFINE_SEMAPHORE(octeon_bootbus_sem);
+
+EXPORT_SYMBOL(octeon_bootbus_sem);
 struct octeon_boot_descriptor *octeon_boot_desc_ptr;
 
 struct cvmx_bootinfo *octeon_bootinfo;
@@ -889,15 +892,16 @@ void __init plat_mem_setup(void)
 {
 	uint64_t mem_alloc_size;
 	uint64_t total;
-	uint64_t crashk_end;
+#ifdef CONFIG_KEXEC
+	uint64_t crashk_end = 0;
+#endif
 #ifndef CONFIG_CRASH_DUMP
-	int64_t memory;
+	uint64_t memory;
 	uint64_t kernel_start;
 	uint64_t kernel_size;
 #endif
 
 	total = 0;
-	crashk_end = 0;
 
 	/*
 	 * The Mips memory init uses the first memory location for
