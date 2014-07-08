@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.40 Kernel Configuration
+# Linux/arm 3.10.48-rc1 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -971,6 +971,7 @@ CONFIG_RFKILL=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
+CONFIG_DDTB=y
 CONFIG_HAVE_BPF_JIT=y
 
 #
@@ -1846,6 +1847,7 @@ CONFIG_SENSORS_GSP=y
 # CONFIG_SENSORS_MAX6697 is not set
 # CONFIG_SENSORS_MCP3021 is not set
 # CONFIG_SENSORS_NCT6775 is not set
+# CONFIG_SENSORS_NTC_THERMISTOR is not set
 # CONFIG_SENSORS_PC87360 is not set
 # CONFIG_SENSORS_PC87427 is not set
 # CONFIG_SENSORS_PCF8591 is not set
@@ -3179,4 +3181,3 @@ CONFIG_AVERAGE=y
 # CONFIG_CORDIC is not set
 # CONFIG_DDR is not set
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_DDTB=y

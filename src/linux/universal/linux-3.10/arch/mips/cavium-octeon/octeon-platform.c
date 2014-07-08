@@ -171,6 +171,7 @@ device_initcall(octeon_ohci_device_init);
 static struct of_device_id __initdata octeon_ids[] = {
 	{ .compatible = "simple-bus", },
 	{ .compatible = "cavium,octeon-6335-uctl", },
+	{ .compatible = "cavium,octeon-5750-usbn", },
 	{ .compatible = "cavium,octeon-3860-bootbus", },
 	{ .compatible = "cavium,mdio-mux", },
 	{ .compatible = "gpio-leds", },
@@ -336,13 +337,13 @@ static void __init octeon_fdt_pip_iface(int pip, int idx, u64 *pmac)
 	int p;
 	int count = 0;
 
-	if (cvmx_helper_interface_enumerate(idx) == 0)
-		count = cvmx_helper_ports_on_interface(idx);
-
 	snprintf(name_buffer, sizeof(name_buffer), "interface@%d", idx);
 	iface = fdt_subnode_offset(initial_boot_params, pip, name_buffer);
 	if (iface < 0)
 		return;
+
+	if (cvmx_helper_interface_enumerate(idx) == 0)
+		count = cvmx_helper_ports_on_interface(idx);
 
 	for (p = 0; p < 16; p++)
 		octeon_fdt_pip_port(iface, idx, p, count - 1, pmac);
@@ -411,7 +412,7 @@ int __init octeon_prune_device_tree(void)
 	pip_path = fdt_getprop(initial_boot_params, aliases, "pip", NULL);
 	if (pip_path) {
 		int pip = fdt_path_offset(initial_boot_params, pip_path);
-		if (pip  >= 0)
+		if (pip	 >= 0)
 			for (i = 0; i <= 4; i++)
 				octeon_fdt_pip_iface(pip, i, &mac_addr_base);
 	}
@@ -455,27 +456,20 @@ int __init octeon_prune_device_tree(void)
 	else
 		max_port = 1;
 
-	/*
-	 * Landbird NIC card does not have PHY. Probing MDIO is putting
-	 * XAUI in interface 0 in bad state.
-	 */
-	if (octeon_bootinfo->board_type == CVMX_BOARD_TYPE_NIC_XLE_10G)
-		max_port = 0;
-
-	for (i = 0; i < 4; i++) {
-		int smi;
+	for (i = 0; i < 2; i++) {
+		int i2c;
 		snprintf(name_buffer, sizeof(name_buffer),
 			 "smi%d", i);
 		alias_prop = fdt_getprop(initial_boot_params, aliases,
 					name_buffer, NULL);
 
 		if (alias_prop) {
-			smi = fdt_path_offset(initial_boot_params, alias_prop);
-			if (smi < 0)
+			i2c = fdt_path_offset(initial_boot_params, alias_prop);
+			if (i2c < 0)
 				continue;
 			if (i >= max_port) {
 				pr_debug("Deleting smi%d\n", i);
-				fdt_nop_node(initial_boot_params, smi);
+				fdt_nop_node(initial_boot_params, i2c);
 				fdt_nop_property(initial_boot_params, aliases,
 						 name_buffer);
 			}
@@ -498,8 +492,15 @@ int __init octeon_prune_device_tree(void)
 
 		if (alias_prop) {
 			uart = fdt_path_offset(initial_boot_params, alias_prop);
-			if (uart_mask & (1 << i))
+			if (uart_mask & (1 << i)) {
+				__be32 f;
+
+				f = cpu_to_be32(octeon_get_io_clock_rate());
+				fdt_setprop_inplace(initial_boot_params,
+						    uart, "clock-frequency",
+						    &f, sizeof(f));
 				continue;
+			}
 			pr_debug("Deleting uart%d\n", i);
 			fdt_nop_node(initial_boot_params, uart);
 			fdt_nop_property(initial_boot_params, aliases,
@@ -679,6 +680,37 @@ end_led:
 			   octeon_bootinfo->board_type == CVMX_BOARD_TYPE_NIC4E) {
 			/* Missing "refclk-type" defaults to crystal. */
 			fdt_nop_property(initial_boot_params, uctl, "refclk-type");
+		}
+	}
+
+	/* DWC2 USB */
+	alias_prop = fdt_getprop(initial_boot_params, aliases,
+				 "usbn", NULL);
+	if (alias_prop) {
+		int usbn = fdt_path_offset(initial_boot_params, alias_prop);
+
+		if (usbn >= 0 && (current_cpu_type() == CPU_CAVIUM_OCTEON2 ||
+				  !octeon_has_feature(OCTEON_FEATURE_USB))) {
+			pr_debug("Deleting usbn\n");
+			fdt_nop_node(initial_boot_params, usbn);
+			fdt_nop_property(initial_boot_params, aliases, "usbn");
+		} else  {
+			__be32 new_f[1];
+			enum cvmx_helper_board_usb_clock_types c;
+			c = __cvmx_helper_board_usb_get_clock_type();
+			switch (c) {
+			case USB_CLOCK_TYPE_REF_48:
+				new_f[0] = cpu_to_be32(48000000);
+				fdt_setprop_inplace(initial_boot_params, usbn,
+						    "refclk-frequency",  new_f, sizeof(new_f));
+				/* Fall through ...*/
+			case USB_CLOCK_TYPE_REF_12:
+				/* Missing "refclk-type" defaults to external. */
+				fdt_nop_property(initial_boot_params, usbn, "refclk-type");
+				break;
+			default:
+				break;
+			}
 		}
 	}
 
