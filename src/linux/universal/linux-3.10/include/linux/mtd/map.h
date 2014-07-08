@@ -395,7 +395,7 @@ static inline map_word map_word_ff(struct map_info *map)
 static inline map_word inline_map_read(struct map_info *map, unsigned long ofs)
 {
 	map_word r;
-
+	r.x[0] = 0;
 	if (map_bankwidth_is_1(map))
 		r.x[0] = __raw_readb(map->virt + ofs);
 	else if (map_bankwidth_is_2(map))
