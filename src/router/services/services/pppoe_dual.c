@@ -20,7 +20,7 @@
  * * $Id:
  * */
 #include <stdlib.h>
-#include <stdio.h>  
+#include <stdio.h>
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
@@ -59,22 +59,22 @@
 #include <time.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <sys/param.h>  
+#include <sys/param.h>
 #include <sys/mount.h>
-#include <sys/stat.h>   
+#include <sys/stat.h>
 #include <sys/reboot.h>
 #include <sys/sysinfo.h>
-                
+
 #include <string.h>
 #include <linux/version.h>
-        
+
 #include <linux/sockios.h>
 //#include <linux/ethtool.h>
 //#include <libbridge.h>
-         
+
 #include <bcmnvram.h>
 #include <netconf.h>
-#include <shutils.h>    
+#include <shutils.h>
 #include <code_pattern.h>
 #include <wlutils.h>
 #include <utils.h>
@@ -95,7 +95,7 @@ void start_pppoe_dual(int status)
 	char username[80], passwd[80];
 	char idletime[20], retry_num[20];
 	char *wan_ifname = nvram_safe_get("wan_ifname");
-	
+
 	if (isClient())
 		wan_ifname = getSTA();
 
@@ -130,7 +130,7 @@ void start_pppoe_dual(int status)
 			free(dns_list);
 		}
 */
-//	}
+//      }
 
 	if (nvram_match("pptp_use_dhcp", "0")) {
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr_static"), nvram_safe_get("wan_netmask_static"));
@@ -156,7 +156,7 @@ void start_pppoe_dual(int status)
 	if (nvram_invmatch("pppoe_service", ""))
 		fprintf(fp, " rp_pppoe_service %s", nvram_safe_get("pppoe_service"));
 	fprintf(fp, "\n");
-	
+
 	char vlannic[32];
 	char tvnic[32];
 	char *pppoe_wan_ifname = nvram_safe_get("wan_ifname");
@@ -204,8 +204,8 @@ void start_pppoe_dual(int status)
 		// "ipcp-accept-remote\n"
 		// "nodetach\n"
 		"nopcomp\n");
-		// "novj\n" 
-		// "novjccomp\n");
+	// "novj\n" 
+	// "novjccomp\n");
 	if (nvram_invmatch("ppp_mppe", ""))
 		fprintf(fp, "%s\n", nvram_safe_get("ppp_mppe"));
 	else
@@ -261,8 +261,8 @@ void start_pppoe_dual(int status)
 
 #ifdef HAVE_IPV6
 	if (nvram_match("ipv6_enable", "1"))
-	    	fprintf(fp,"ipv6 ,\n");
-#endif			
+		fprintf(fp, "ipv6 ,\n");
+#endif
 	fclose(fp);
 
 	symlink("/sbin/rc", "/tmp/ppp/ip-up");
@@ -283,7 +283,7 @@ void start_pppoe_dual(int status)
 	if (status != REDIAL) {
 		start_redial();
 	}
-	
+
 	start_wan_done(nvram_safe_get("pppoe_ifname"));
 }
 
@@ -291,9 +291,8 @@ void stop_pppoe_dual()
 {
 	unlink("/tmp/ppp/link");
 	stop_process("pppd", "pppoe process");
-	
+
 	cprintf("done\n");
 	return;
 }
 #endif
-

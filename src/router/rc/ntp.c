@@ -72,17 +72,24 @@ int do_ntp(void)		// called from ntp_main and
 		return 0;
 
 	char *tz;
-	tz = nvram_safe_get("time_zone"); //e.g. EUROPE/BERLIN
-	
+	tz = nvram_safe_get("time_zone");	//e.g. EUROPE/BERLIN
+
 	int i;
-	for (i = 0; allTimezones[i].tz_name!=NULL ; i++) {
-	  if( !strcmp(allTimezones[i].tz_name,tz) ){
-		FILE *fp = fopen("/tmp/TZ", "wb");
-		fprintf(fp, "%s\n", allTimezones[i].tz_string);
-		fclose(fp);
-	  }
+	int found = 0;
+	char *zone = "Europe/Berlin";
+	for (i = 0; allTimezones[i].tz_name != NULL; i++) {
+		if (!strcmp(allTimezones[i].tz_name, tz)) {
+			zone = allTimezones[i].tz_string;
+			found = 1;
+			break;
+		}
 	}
-	
+	if (!found)
+		nvram_set("time_zone", zone);
+	FILE *fp = fopen("/tmp/TZ", "wb");
+	fprintf(fp, "%s\n", zone);
+	fclose(fp);
+
 	if (((servers = nvram_get("ntp_server")) == NULL)
 	    || (*servers == 0))
 		servers = "209.81.9.7 207.46.130.100 192.36.144.23 pool.ntp.org";
@@ -92,11 +99,10 @@ int do_ntp(void)		// called from ntp_main and
 		// fprintf (stderr, "ntp returned a error\n");
 		return 1;
 	}
-	
 #if defined(HAVE_VENTANA) || defined(HAVE_LAGUNA) || defined(HAVE_STORM) || (defined(HAVE_GATEWORX) && !defined(HAVE_NOP8670))
-		eval("hwclock", "-w");
+	eval("hwclock", "-w");
 #endif
-		
+
 	return 0;
 }
 

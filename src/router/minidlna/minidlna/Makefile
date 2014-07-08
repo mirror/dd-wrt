@@ -44,8 +44,8 @@ BASEOBJS = minidlna.o upnphttp.o upnpdescgen.o upnpsoap.o \
            options.o minissdp.o uuid.o upnpevents.o \
            sql.o utils.o metadata.o scanner.o inotify.o \
            tivo_utils.o tivo_beacon.o tivo_commands.o \
-           tagutils/textutils.o tagutils/misc.o tagutils/tagutils.o \
-           playlist.o image_utils.o albumart.o log.o
+           playlist.o image_utils.o albumart.o log.o \
+           tagutils/tagutils.o
 
 ALLOBJS = $(BASEOBJS) $(LNXOBJS)
 

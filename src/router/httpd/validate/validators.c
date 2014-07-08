@@ -695,8 +695,8 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 		nvram_set("pptp_use_dhcp", "1");
 	} else
 		nvram_set("pptp_use_dhcp", "0");
-	
-	if (strcmp(wan_proto, "pppoe_dual")) { 
+
+	if (strcmp(wan_proto, "pppoe_dual")) {
 		if (FALSE == pptp_skip_check && !valid_ipaddr(wp, wan_ipaddr, &which[0]))
 			return;
 	} else {
@@ -708,7 +708,7 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 	nvram_set("wan_ipaddr", wan_ipaddr);
 	nvram_set("wan_ipaddr_static", wan_ipaddr_static);
 
-	if (strcmp(wan_proto, "pppoe_dual")) { 
+	if (strcmp(wan_proto, "pppoe_dual")) {
 		if (FALSE == pptp_skip_check && !valid_netmask(wp, wan_netmask, &which[1]))
 			return;
 	} else {
@@ -3046,7 +3046,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 
 	buf = safe_malloc(2500 + 1);
 	buf_name = safe_malloc(2500 + 1);
-	old = safe_malloc(STATIC_ROUTE_PAGE * 60 + 1 );
+	old = safe_malloc(STATIC_ROUTE_PAGE * 60 + 1);
 	old_name = safe_malloc(STATIC_ROUTE_PAGE * 60 + 1);
 	buf[0] = 0;
 	buf_name[0] = 0;

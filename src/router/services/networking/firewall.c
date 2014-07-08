@@ -331,10 +331,8 @@ static void parse_port_forward(char *wordlist)
 			if (flag_dis == 0) {
 				save2file("-A PREROUTING -p tcp -d %s --dport %s -j DNAT --to-destination %s\n", wanaddr, port, ip);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-				if ( !strcmp(wan_proto, "pppoe_dual") || 
-			             (!strcmp(wan_proto, "pptp") && nvram_match("wan_dualaccess", "1")) ||
-				     (!strcmp(wan_proto, "l2tp") && nvram_match("wan_dualaccess", "1"))
-				   )
+				if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_match("wan_dualaccess", "1")) || (!strcmp(wan_proto, "l2tp") && nvram_match("wan_dualaccess", "1"))
+				    )
 					save2file("-A PREROUTING -i %s -p tcp --dport %s -j DNAT --to-destination %s\n", wan_iface, port, ip);
 #endif
 				snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s --dport %s -j %s\n", ip, port, log_accept);
@@ -355,10 +353,8 @@ static void parse_port_forward(char *wordlist)
 			if (flag_dis == 0) {
 				save2file("-A PREROUTING -p udp -d %s --dport %s -j DNAT --to-destination %s\n", wanaddr, port, ip);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-				if ( !strcmp(wan_proto, "pppoe_dual") || 
-			             (!strcmp(wan_proto, "pptp") && nvram_match("wan_dualaccess", "1")) ||
-				     (!strcmp(wan_proto, "l2tp") && nvram_match("wan_dualaccess", "1"))
-				   )
+				if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_match("wan_dualaccess", "1")) || (!strcmp(wan_proto, "l2tp") && nvram_match("wan_dualaccess", "1"))
+				    )
 					save2file("-A PREROUTING -i %s -p udp -m udp --dport %s -j DNAT --to-destination %s\n", wan_iface, port, ip);
 #endif
 				snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s --dport %s -j %s\n", ip, port, log_accept);
@@ -516,20 +512,16 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 	if (src && strlen(src) > 0) {
 		save2file("-A PREROUTING -p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", proto, proto, src, wanaddr, from, ip, to);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-		if ( !strcmp(wan_proto, "pppoe_dual") || 
-	             (!strcmp(wan_proto, "pptp") && nvram_match("wan_dualaccess", "1")) ||
-		     (!strcmp(wan_proto, "l2tp") && nvram_match("wan_dualaccess", "1"))
-		   )
+		if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_match("wan_dualaccess", "1")) || (!strcmp(wan_proto, "l2tp") && nvram_match("wan_dualaccess", "1"))
+		    )
 			save2file("-A PREROUTING -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s\n", wan_iface, proto, proto, from, ip, to);
 #endif
 		snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
 	} else {
 		save2file("-A PREROUTING -p %s -m %s -d %s --dport %s -j DNAT --to-destination %s:%s\n", proto, proto, wanaddr, from, ip, to);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
-		if ( !strcmp(wan_proto, "pppoe_dual") || 
-	             (!strcmp(wan_proto, "pptp") && nvram_match("wan_dualaccess", "1")) ||
-		     (!strcmp(wan_proto, "l2tp") && nvram_match("wan_dualaccess", "1"))
-		   )
+		if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_match("wan_dualaccess", "1")) || (!strcmp(wan_proto, "l2tp") && nvram_match("wan_dualaccess", "1"))
+		    )
 			save2file("-A PREROUTING -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s\n", wan_iface, proto, proto, from, ip, to);
 #endif
 		snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -d %s --dport %s -j %s\n", proto, proto, ip, to, log_accept);
@@ -608,12 +600,11 @@ static void nat_prerouting(void)
 	char *remote_ip = nvram_default_get("remote_ip", "0.0.0.0 0");
 	char *lan_ip = nvram_safe_get("lan_ipaddr");
 	int remote_any = 0;
-	
+
 	char vifs[256];
-	
+
 	if (!strcmp(remote_ip_any, "1") || !strncmp(remote_ip, "0.0.0.0", 7))
 		remote_any = 1;
-	
 
 	getIfLists(vifs, 256);
 
@@ -635,10 +626,15 @@ static void nat_prerouting(void)
 				}
 			}
 		}
+		/* no gui setting yet - redirect all except this IP */
+		if( strlen(nvram_safe_get("privoxy_transp_exclude")) )
+		{
+			save2file("-A PREROUTING -p tcp -s %s --dport 80 -j ACCEPT \n", nvram_safe_get("privoxy_transp_exclude"));
+		}
 		/* block access from privoxy to webif */
-		save2file("-A PREROUTING -p tcp -s %s -d %s --dport %d -j DROP\n", lan_ip, lan_ip, web_lanport );
+		save2file("-A PREROUTING -p tcp -s %s -d %s --dport %d -j DROP\n", lan_ip, lan_ip, web_lanport);
 		/* do not filter access to the webif from lan */
-		save2file("-A PREROUTING -p tcp -s %s/%s -d %s --dport %d -j ACCEPT\n", lan_ip, nvram_safe_get("lan_netmask"), lan_ip, web_lanport );
+		save2file("-A PREROUTING -p tcp -s %s/%s -d %s --dport %d -j ACCEPT\n", lan_ip, nvram_safe_get("lan_netmask"), lan_ip, web_lanport);
 		/* go through proxy */
 		save2file("-A PREROUTING -p tcp -d ! %s --dport 80 -j DNAT --to %s:8118\n", wanaddr, lan_ip);
 	}
@@ -679,9 +675,7 @@ static void nat_prerouting(void)
 			wordlist = range(from, get_complete_ip(from, to));
 
 			foreach(var, wordlist, next) {
-				save2file
-				    ("-A PREROUTING -p tcp -s %s -d %s --dport %s "
-				     "-j DNAT --to-destination %s:%s\n", var, wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
+				save2file("-A PREROUTING -p tcp -s %s -d %s --dport %s " "-j DNAT --to-destination %s:%s\n", var, wanaddr, nvram_safe_get("sshd_wanport"), lan_ip, nvram_safe_get("sshd_port"));
 			}
 		}
 	}
@@ -788,13 +782,9 @@ static void nat_postrouting(void)
 		if (isClient()) {
 			wan_ifname_tun = getSTA();
 		}
-
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 		char *wan_proto = nvram_safe_get("wan_proto");
-		if ( !strcmp(wan_proto, "pppoe_dual") || 
-	             (!strcmp(wan_proto, "pptp") && nvram_match("wan_dualaccess", "1")) ||
-		     (!strcmp(wan_proto, "l2tp") && nvram_match("wan_dualaccess", "1")) )
-		{
+		if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_match("wan_dualaccess", "1")) || (!strcmp(wan_proto, "l2tp") && nvram_match("wan_dualaccess", "1"))) {
 			struct in_addr ifaddr;
 			osl_ifaddr(wan_ifname_tun, &ifaddr);
 			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wan_ifname_tun, inet_ntoa(ifaddr));
@@ -1686,6 +1676,7 @@ void start_filter_del(int seq)
 void stop_filtersync(void)
 {
 }
+
 void start_filtersync(void)
 {
 	time_t ct;		/* Calendar time */
@@ -1862,8 +1853,7 @@ static void filter_input(void)
 	}
 #endif
 #ifdef HAVE_WEBSERVER
-	if (nvram_match("lighttpd_enable", "1") && nvram_match("lighttpd_wan", "1"))
-	{
+	if (nvram_match("lighttpd_enable", "1") && nvram_match("lighttpd_wan", "1")) {
 		save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("lighttpd_port"), log_accept);
 		save2file("-A INPUT -i %s -p tcp --dport %s -j %s\n", wanface, nvram_safe_get("lighttpd_sslport"), log_accept);
 	}
@@ -2117,7 +2107,7 @@ void filter_output(void)
 
 static void filter_forward(void)
 {
-	char *filter_web_hosts, *filter_web_urls;
+	char *filter_web_hosts, *filter_web_urls, *filter_rule;
 	char *next;
 	char dev[16];
 	char var[80];
@@ -2132,8 +2122,11 @@ static void filter_forward(void)
 
 		filter_web_hosts = nvram_nget("filter_web_host%d", i);
 		filter_web_urls = nvram_nget("filter_web_url%d", i);
+		filter_rule = nvram_nget("filter_rule%d", i);
 
-		if (filter_web_hosts && strcmp(filter_web_hosts, "") || filter_web_urls && strcmp(filter_web_urls, "")) {
+		if (filter_web_hosts && strcmp(filter_web_hosts, "") 
+		  || filter_web_urls && strcmp(filter_web_urls, "") 
+		  || filter_rule && !strcmp(filter_rule, "STAT:1") ) {
 			filter_host_url = 1;
 		}
 	}
@@ -2347,14 +2340,13 @@ static void filter_forward(void)
 			if (nvram_nmatch("1", "%s_isolation", var)) {
 				save2file("-I FORWARD -i %s -d %s/%s -m state --state NEW -j %s\n", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_drop);
 				save2file("-A FORWARD -i br0 -o %s -m state --state NEW -j %s\n", var, log_drop);
-				if ( nvram_nmatch("1","privoxy_transp_enable") )
-				{
-					 save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s\n", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_accept);
+				if (nvram_nmatch("1", "privoxy_transp_enable")) {
+					save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s\n", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_accept);
 				}
 			}
-		}	  
+		}
 	}
-	
+
 	/*
 	 * Accept new connections 
 	 */
@@ -2368,7 +2360,7 @@ static void filter_forward(void)
 	lan2wan_chains();
 
 	parse_trigger_out(nvram_safe_get("port_trigger"));
-	
+
 	/*
 	 * If webfilter is not used we can put this rule on top in order to increase WAN<->LAN throughput
 	 */
@@ -2393,7 +2385,7 @@ static void mangle_table(void)
 
 		save2file("-A PREROUTING -j CONNMARK --save\n");
 	}
-	
+
 	/*
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */

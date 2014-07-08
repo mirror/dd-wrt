@@ -53,6 +53,11 @@
 err_type
 aclGetDenyInfoPage(AclDenyInfoList ** head, const char *name, int redirect_allowed)
 {
+    if (!name) {
+        debugs(28, 3, "ERR_NONE due to a NULL name");
+        return ERR_NONE;
+    }
+
     AclDenyInfoList *A = NULL;
 
     debugs(28, 8, HERE << "got called for " << name);
@@ -82,10 +87,12 @@ aclGetDenyInfoPage(AclDenyInfoList ** head, const char *name, int redirect_allow
 int
 aclIsProxyAuth(const char *name)
 {
-    debugs(28, 5, "aclIsProxyAuth: called for " << name);
-
-    if (NULL == name)
+    if (!name) {
+        debugs(28, 3, "false due to a NULL name");
         return false;
+    }
+
+    debugs(28, 5, "aclIsProxyAuth: called for " << name);
 
     ACL *a;
 

@@ -1,4 +1,4 @@
- 
+
 #ifdef HAVE_ZABBIX
 #include <unistd.h>
 #include <stdio.h>
@@ -19,12 +19,12 @@ void start_zabbix(void)
 	if (!nvram_match("zabbix_enable", "1"))
 		return;
 	if (pidof("zabbix_agentd") > 0) {
-	  //syslog(LOG_INFO, "dlna : minidlna already running\n");
-	}else{
-	  eval("sh" , "/etc/config/zabbix.startup");
-	  syslog(LOG_INFO, "zabbix : monitoring client started\n");
+		//syslog(LOG_INFO, "dlna : minidlna already running\n");
+	} else {
+		eval("sh", "/etc/config/zabbix.startup");
+		syslog(LOG_INFO, "zabbix : monitoring client started\n");
 	}
-	
+
 	return;
 }
 
@@ -34,9 +34,9 @@ void stop_zabbix(void)
 	stop_process("zabbix_agentd", "zabbix_agentd");
 	/* kill it once again since stop_process does not close all instances */
 	if (pidof("zabbix_agentd") > 0) {
-	  eval("kill", "-9", pidof("zabbix_agentd"));
+		eval("kill", "-9", pidof("zabbix_agentd"));
 	}
-	
+
 	return;
 }
 #endif

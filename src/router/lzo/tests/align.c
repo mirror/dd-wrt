@@ -135,7 +135,7 @@ static unsigned long align_test(lzo_bytep block, lzo_uint len, lzo_uint step)
 //
 **************************************************************************/
 
-#define BLOCK_LEN   (128*1024ul)
+#define BLOCK_SIZE  (128*1024ul)
 
 int main(int argc, char *argv[])
 {
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
         printf("lzo_init() failed !!!\n");
         return 3;
     }
-    buf = (lzo_bytep) lzo_malloc(2*BLOCK_LEN + 256);
+    buf = (lzo_bytep) lzo_malloc(2*BLOCK_SIZE + 256);
     if (buf == NULL)
     {
         printf("out of memory\n");
@@ -171,16 +171,16 @@ int main(int argc, char *argv[])
         unsigned long n;
         unsigned gap;
 
-        gap = __lzo_align_gap(block,step);
-        block = LZO_PTR_ALIGN_UP(block,step);
+        gap = __lzo_align_gap(block, step);
+        block = LZO_PTR_ALIGN_UP(block, step);
         if (opt_verbose >= 1)
             printf("STEP %5lu: GAP: %5lu  %p %p %5lu\n",
                    (unsigned long) step, (unsigned long) gap, buf, block,
                    (unsigned long) (block - buf));
-        n = align_test(block,BLOCK_LEN,step);
+        n = align_test(block, BLOCK_SIZE, step);
         if (n == 0)
             return 1;
-        if ((n + 1) * step != BLOCK_LEN)
+        if ((n + 1) * step != BLOCK_SIZE)
         {
             printf("error 4: %ld %lu\n", (long)step, n);
             return 1;

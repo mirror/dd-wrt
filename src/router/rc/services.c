@@ -230,7 +230,7 @@ int stop_services_main(int argc, char **argv)
 	stop_service_f("freeradius");
 #endif
 #ifdef HAVE_MULTICAST
-	stop_service_f("igmp_proxy");
+	stop_service_f("igmprt");
 #endif
 #ifdef HAVE_UDPXY
 	stop_service_f("udpxy");
@@ -359,25 +359,30 @@ static void handle_dhcpd(void)
 static void handle_index(void)
 {
 	char *tz;
-	tz = nvram_safe_get("time_zone"); //e.g. EUROPE/BERLIN
-	
+	tz = nvram_safe_get("time_zone");	//e.g. EUROPE/BERLIN
+
 	int i;
-	for (i = 0; allTimezones[i].tz_name!=NULL ; i++) {
-	  if( !strcmp(allTimezones[i].tz_name,tz) ){
-		FILE *fp = fopen("/tmp/TZ", "wb");
-		fprintf(fp, "%s\n", allTimezones[i].tz_string);
-		fclose(fp);
-		nvram_set("TZ", allTimezones[i].tz_string);
-		nvram_commit();
-	  }
+	int found = 0;
+	char *zone = "Europe/Berlin";
+	for (i = 0; allTimezones[i].tz_name != NULL; i++) {
+		if (!strcmp(allTimezones[i].tz_name, tz)) {
+			zone = allTimezones[i].tz_string;
+			found = 1;
+			break;
+		}
 	}
-	
+	if (!found)
+		nvram_set("time_zone", zone);
+	FILE *fp = fopen("/tmp/TZ", "wb");
+	fprintf(fp, "%s\n", zone);
+	fclose(fp);
+
 	unlink("/tmp/ppp/log");
 
 	stop_service_force_f("wan");
 	stop_service_f("radio_timer");	//
 #ifdef HAVE_MULTICAST
-	stop_service_f("igmp_proxy");	//
+	stop_service_f("igmprt");	//
 #endif
 #ifdef HAVE_UDPXY
 	stop_service_f("udpxy");
@@ -680,7 +685,6 @@ static void handle_nassrv(void)
 	start_service_f("transmission");
 #endif
 
-
 }
 
 static void handle_management(void)
@@ -730,7 +734,6 @@ static void handle_management(void)
 	start_service("guest_nas");
 #endif
 //      start_service_f("anchorfreednat");
-
 
 }
 
@@ -813,7 +816,7 @@ static void handle_filters(void)
 	startstop_f("splashd");
 #endif
 #ifdef HAVE_MULTICAST
-	startstop_f("igmp_proxy");
+	startstop_f("igmprt");
 #endif
 #ifdef HAVE_UDPXY
 	startstop_f("udpxy");

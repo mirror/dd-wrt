@@ -28,8 +28,8 @@
 #include <signal.h>
 #include <services.h>
 
-void stop_igmp_proxy(void);
-void start_igmp_proxy(void)
+void stop_igmprt(void);
+void start_igmprt(void)
 {
 	int ret = 0;
 	pid_t pid;
@@ -101,7 +101,7 @@ void start_igmp_proxy(void)
 	return;
 }
 
-void stop_igmp_proxy(void)
+void stop_igmprt(void)
 {
 	stop_process("igmprt", "multicast daemon");
 	cprintf("done\n");

@@ -44,11 +44,10 @@ void start_dlna(void)
 	mkdir("/tmp/db", 0700);
 	FILE *fp = fopen("/tmp/minidlna.conf", "wb");
 #ifndef HAVE_VENTANA
-	if (nvram_match("jffs_mounted", "1") || ( freediskSpace("/jffs") > 134217728 ) )
-	{
+	if (nvram_match("jffs_mounted", "1") || (freediskSpace("/jffs") > 134217728)) {
 #endif
 		mkdir("/jffs/minidlna", 0700);
-		if (nvram_match("dlna_cleandb", "1")){
+		if (nvram_match("dlna_cleandb", "1")) {
 			eval("rm", "-f", "/jffs/minidlna/files.db");
 			nvram_set("dlna_cleandb", "0");
 		}
@@ -78,17 +77,20 @@ void start_dlna(void)
 	if (nvram_match("dlna_thumb", "1")) {
 		fprintf(fp, "album_art_names=Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg\n");
 	}
+	if (nvram_match("dlna_merge", "1")) {
+		fprintf(fp, "merge_media_dirs=yes\n");
+	}
 	fprintf(fp, "inotify=yes\n");
 	fprintf(fp, "enable_tivo=no\n");
 	fprintf(fp, "strict_dlna=no\n");
 	fprintf(fp, "notify_interval=300\n");
 	fprintf(fp, "serial=12345678\nmodel_number=1\n");
 	fclose(fp);
-	fp = fopen("/jffs/etc/minidlna.conf", "r"); //test if custom config is available
-	if ( fp !=NULL ){
+	fp = fopen("/jffs/etc/minidlna.conf", "r");	//test if custom config is available
+	if (fp != NULL) {
 		eval("minidlna", "-f", "/jffs/etc/minidlna.conf");
 		fclose(fp);
-	}else{
+	} else {
 		eval("minidlna", "-f", "/tmp/minidlna.conf");
 	}
 	syslog(LOG_INFO, "minidlna : DLNA Media Server successfully started\n");

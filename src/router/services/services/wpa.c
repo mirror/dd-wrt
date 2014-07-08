@@ -187,6 +187,7 @@ static void convert_wds(int instance)
 			del_wds_wsec(instance, j);
 	}
 }
+
 void stop_guest_nas(void)
 {
 }
@@ -307,7 +308,7 @@ void start_nas_lan(int c)
 
 	if (strlen(vifs))
 		foreach(var, vifs, next) {
-			start_nas_single("lan", var);
+		start_nas_single("lan", var);
 		}
 }
 

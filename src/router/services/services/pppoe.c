@@ -271,6 +271,7 @@ void stop_pppoe(void)
 	cprintf("done\n");
 	return;
 }
+
 void stop_dns_clear_resolv(void)
 {
 }

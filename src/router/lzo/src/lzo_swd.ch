@@ -237,20 +237,33 @@ void swd_insertdict(lzo_swd_p s, lzo_uint node, lzo_uint len)
 //
 ************************************************************************/
 
+static void swd_exit(lzo_swd_p s);
+
 static
 int swd_init(lzo_swd_p s, const lzo_bytep dict, lzo_uint dict_len)
 {
 #if defined(__LZO_CHECKER)
+    unsigned r = 1;
     s->b = (lzo_bytep) malloc(SWD_N + SWD_F + SWD_F);
     s->head3 = (swd_uintp) malloc(sizeof(swd_uint) * SWD_HSIZE);
     s->succ3 = (swd_uintp) malloc(sizeof(swd_uint) * (SWD_N + SWD_F));
     s->best3 = (swd_uintp) malloc(sizeof(swd_uint) * (SWD_N + SWD_F));
     s->llen3 = (swd_uintp) malloc(sizeof(swd_uint) * SWD_HSIZE);
+    r &= s->b != NULL;
+    r &= s->head3 != NULL;
+    r &= s->succ3 != NULL;
+    r &= s->best3 != NULL;
+    r &= s->llen3 != NULL;
 #ifdef HEAD2
     IF_HEAD2(s) {
         s->head2 = (swd_uintp) malloc(sizeof(swd_uint) * 65536L);
+        r &= s->head2 != NULL;
     }
 #endif
+    if (r != 1) {
+        swd_exit(s);
+        return LZO_E_OUT_OF_MEMORY;
+    }
 #endif
 
     s->m_len = 0;

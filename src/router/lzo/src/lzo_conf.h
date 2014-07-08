@@ -52,7 +52,7 @@
 #endif
 #endif
 
-#if (LZO_VERSION < 0x2070) || !defined(__LZOCONF_H_INCLUDED)
+#if (LZO_VERSION < 0x2080) || !defined(__LZOCONF_H_INCLUDED)
 #  error "version mismatch"
 #endif
 

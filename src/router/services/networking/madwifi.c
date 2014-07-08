@@ -1548,7 +1548,7 @@ static void configure_single(int count)
 		}
 
 	}
-	
+
 	int enable = 1;
 	int disable = 0;
 
@@ -1565,7 +1565,7 @@ static void configure_single(int count)
 	int gpio = 7;
 #endif
 #ifdef HAVE_LC2
-	enable = 0;	// swap it
+	enable = 0;		// swap it
 	disable = 1;
 	int gpio = 2;
 #endif
@@ -1577,23 +1577,23 @@ static void configure_single(int count)
 	case 0:		// vertical
 		setsysctrl(wif, "rxantenna", 2);
 		setsysctrl(wif, "txantenna", 2);
-		set_gpio(gpio,enable);
+		set_gpio(gpio, enable);
 		break;
 	case 1:		// horizontal
 		setsysctrl(wif, "rxantenna", 1);
 		setsysctrl(wif, "txantenna", 1);
-		set_gpio(gpio,enable);
+		set_gpio(gpio, enable);
 		break;
 	case 2:		// external
 		setsysctrl(wif, "rxantenna", 1);
 		setsysctrl(wif, "txantenna", 1);
-		set_gpio(gpio,disable);
+		set_gpio(gpio, disable);
 		break;
 	case 3:		// adaptive
 		setsysctrl(wif, "diversity", 1);
 		setsysctrl(wif, "rxantenna", 0);
 		setsysctrl(wif, "txantenna", 0);
-		set_gpio(gpio,enable);
+		set_gpio(gpio, enable);
 		break;
 	}
 #else
@@ -1725,7 +1725,7 @@ static void configure_single(int count)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "maksat_vap"));
 #endif
 #elif defined(HAVE_SANSFIL)
-                sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "SANSFIL_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "SANSFIL_vap"));
 #elif defined(HAVE_TRIMAX)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "m2m_vap"));
 #elif defined(HAVE_WIKINGS)
@@ -1743,11 +1743,9 @@ static void configure_single(int count)
 #elif defined(HAVE_CORENET)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "corenet.ap"));
 #elif defined(HAVE_ONNET_BLANK)
-		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "Enterprise WIFI_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "Enterprise WIFI_vap"));
 #elif defined(HAVE_ONNET)
-		sysprintf("iwconfig %s essid -- \"%s\"", var,
-			  nvram_default_get(ssid, "OTAi_vap"));
+		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "OTAi_vap"));
 #elif defined(HAVE_KORENRON)
 		sysprintf("iwconfig %s essid -- \"%s\"", var, nvram_default_get(ssid, "WBR2000_vap"));
 #else
@@ -1847,7 +1845,7 @@ static void configure_single(int count)
 #elif defined(HAVE_CORENET)
 	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "corenet.ap"));
 #elif defined(HAVE_KORENRON)
-        sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "WBR2000"));
+	sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "WBR2000"));
 #else
 #ifdef HAVE_REGISTER
 	if (!isregistered())
@@ -1894,7 +1892,7 @@ static void configure_single(int count)
 #elif defined(HAVE_CORENET)
 		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "corenet.ap"));
 #elif defined(HAVE_KORENRON)
-                sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "WBR2000"));
+		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "WBR2000"));
 #else
 		sysprintf("iwconfig %s essid -- \"%s\"", dev, nvram_default_get(ssid, "dd-wrt"));
 #endif

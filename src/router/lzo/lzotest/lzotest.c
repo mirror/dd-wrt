@@ -619,7 +619,7 @@ lzo_bool is_compressor ( const compress_t *c )
 // check that memory gets accessed within bounds
 **************************************************************************/
 
-static void memchecker_init ( mblock_t *mb, lzo_xint l, unsigned char random_byte )
+static void memchecker_init ( mblock_t *mb, lzo_uint l, unsigned char random_byte )
 {
     lzo_uint i;
     lzo_uint len = (lzo_uint) l;
@@ -645,7 +645,7 @@ static void memchecker_init ( mblock_t *mb, lzo_xint l, unsigned char random_byt
 }
 
 
-static int memchecker_check ( mblock_t *mb, lzo_xint l, unsigned char random_byte )
+static int memchecker_check ( mblock_t *mb, lzo_uint l, unsigned char random_byte )
 {
     lzo_uint i;
     lzo_uint len = (lzo_uint) l;
@@ -2089,7 +2089,4 @@ int __lzo_cdecl_main main(int argc, char *argv[])
 }
 
 
-/*
-vi:ts=4:et
-*/
-
+/* vim:set ts=4 sw=4 et: */

@@ -24,7 +24,7 @@ extern void runStartup(char *folder, char *extension);
 
 extern void shutdown_system(void);
 
-extern void start_dhcpc(char *wan_ifname,char *pidfile,char *script, int fork);
+extern void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork);
 
 /*
  * ppp scripts 
@@ -57,10 +57,8 @@ extern void fatal_signal(int sig);
  * interface 
  */
 extern int ifconfig(char *ifname, int flags, char *addr, char *netmask);
-extern int route_add(char *name, int metric, char *dst, char *gateway,
-		     char *genmask);
-extern int route_del(char *name, int metric, char *dst, char *gateway,
-		     char *genmask);
+extern int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
+extern int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
 
 /*
  * network 
@@ -150,7 +148,7 @@ extern void start_service_force(char *name);
 extern void stop_service_force(char *name);
 extern void startstop(char *name);
 extern int stop_running(void);
-extern int stop_running_main(int argc,char *argv[]);
+extern int stop_running_main(int argc, char *argv[]);
 extern void *start_service_nofree(char *name, void *handle);
 extern void *start_service_nofree_delay(char *name, void *handle, int delay);
 extern void *stop_service_nofree(char *name, void *handle);
@@ -167,7 +165,7 @@ extern void start_service_force_f(char *name);
 extern void stop_service_f(char *name);
 extern void stop_service_force_f(char *name);
 extern void *start_service_nofree_f(char *name, void *handle);
-extern void *start_service_nofree_fdelay(char *name, void *handle,int delay);
+extern void *start_service_nofree_fdelay(char *name, void *handle, int delay);
 extern void *stop_service_nofree_f(char *name, void *handle);
 extern void *start_service_nofree_force_f(char *name, void *handle);
 extern void *stop_service_nofree_force_f(char *name, void *handle);

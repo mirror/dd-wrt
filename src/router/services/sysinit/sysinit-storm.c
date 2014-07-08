@@ -106,10 +106,10 @@ void start_sysinit(void)
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 	//disable led's 
-	set_gpio(1,0);
-	set_gpio(2,0);
-	set_gpio(3,0);
-	set_gpio(5,0);
+	set_gpio(1, 0);
+	set_gpio(2, 0);
+	set_gpio(3, 0);
+	set_gpio(5, 0);
 
 	eval("hwclock", "-s");
 

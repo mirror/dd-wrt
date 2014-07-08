@@ -367,7 +367,7 @@ __lzo_static_forceinline lzo_uint32_t lzo_memops_get_le32(const lzo_voidp ss)
     v = (lzo_uint32_t) vv;
 #else
     const lzo_memops_TU1p s = (const lzo_memops_TU1p) ss;
-    v = (lzo_uint32_t) (((lzo_uint32_t)s[0] << 24) | ((lzo_uint32_t)s[1] << 16) | ((lzo_uint32_t)s[2] << 8) | ((lzo_uint32_t)s[3]));
+    v = (lzo_uint32_t) (((lzo_uint32_t)s[0]) | ((lzo_uint32_t)s[1] << 8) | ((lzo_uint32_t)s[2] << 16) | ((lzo_uint32_t)s[3] << 24));
 #endif
     return v;
 }

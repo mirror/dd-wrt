@@ -783,11 +783,6 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 		isbufvxdual = 1;
 		bootossz = 0x6000000;
 	}
-	if (nvram_match("boardrev", "0x1110")) {
-		printk(KERN_EMERG "Buffalo WZR-900DHP dualboot\n");
-		isbufdual = 1;
-		bootossz = 0x4000000;
-	}
 
 	if (((boardnum == 1) || (nvram_get("boardnum") == NULL)) && nvram_match("boardtype","0xD646") && nvram_match("boardrev","0x1100")) {
 		bootossz = 0x4000000;	

@@ -863,8 +863,8 @@ static int __devinit raspi_prob(void)
 					rt2880_partitions[4].offset = offset;					
 					rt2880_partitions[4].size = rt2880_partitions[3].size-(offset-bootsize);					
 					len = offset + sb->bytes_used;
-					len += (mtd->erasesize - 1);
-					len &= ~(mtd->erasesize - 1);
+					len += (flash->mtd.erasesize - 1);
+					len &= ~(flash->mtd.erasesize - 1);
 					rt2880_partitions[6].offset = flash->mtd.size - nvramsize;					
 					rt2880_partitions[6].size = flash->mtd.erasesize;					
 					rt2880_partitions[5].offset = len;					

@@ -38,7 +38,7 @@ void start_udpxy(void)
 
 	if (!nvram_match("udpxy_enable", "1"))
 		return;
-	
+
 	nicfrom = nvram_safe_get("tvnicfrom");
 	listen_if = nvram_safe_get("udpxy_listenif");
 	listen_port = nvram_safe_get("udpxy_listenport");
@@ -47,10 +47,10 @@ void start_udpxy(void)
 		return;
 
 	eval(cmd, "-m", nicfrom, "-a", listen_if, "-p", listen_port);
-	
+
 	dd_syslog(LOG_INFO, "udpxy : UDP-to-HTTP multicast traffic relay daemon started\n");
 
-	return;	
+	return;
 }
 
 void stop_udpxy(void)

@@ -72,7 +72,8 @@ check_PROGRAMS = $(am__EXEEXT_1) tests/testBoilerplate$(EXEEXT) \
 	tests/testHttpReply$(EXEEXT) tests/testHttpRequest$(EXEEXT) \
 	tests/testStore$(EXEEXT) tests/testString$(EXEEXT) \
 	tests/testURL$(EXEEXT) tests/testConfigParser$(EXEEXT) \
-	tests/testStatHist$(EXEEXT) $(STORE_TESTS)
+	tests/testStatHist$(EXEEXT) $(STORE_TESTS) $(am__EXEEXT_2) \
+	$(am__EXEEXT_3)
 @USE_LOADABLE_MODULES_TRUE@am__append_1 = $(INCLTDL)
 @ENABLE_AUTH_TRUE@am__append_2 = auth
 @ENABLE_AUTH_TRUE@am__append_3 = tests/testACLMaxUserIP
@@ -88,10 +89,12 @@ EXTRA_PROGRAMS = DiskIO/DiskDaemon/diskd$(EXEEXT) unlinkd$(EXEEXT) \
 noinst_PROGRAMS = cf_gen$(EXEEXT)
 sbin_PROGRAMS = squid$(EXEEXT)
 bin_PROGRAMS =
-libexec_PROGRAMS = $(am__EXEEXT_2) $(DISK_PROGRAMS) $(am__EXEEXT_3)
+libexec_PROGRAMS = $(am__EXEEXT_4) $(DISK_PROGRAMS) $(am__EXEEXT_5)
 @USE_LOADABLE_MODULES_TRUE@am__append_8 = $(LOADABLE_MODULES_SOURCES)
 @USE_LOADABLE_MODULES_TRUE@am__append_9 = -L$(top_builddir) $(LIBLTDL)
 @USE_LOADABLE_MODULES_TRUE@am__append_10 = $(INCLTDL)
+@HAVE_FS_ROCK_TRUE@am__append_11 = tests/testRock
+@HAVE_FS_UFS_TRUE@am__append_12 = tests/testUfs
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude/init.m4 \
@@ -185,8 +188,10 @@ am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(libexecdir)" \
 	"$(DESTDIR)$(sbindir)" "$(DESTDIR)$(man8dir)" \
 	"$(DESTDIR)$(datadir)" "$(DESTDIR)$(sysconfdir)"
 @ENABLE_AUTH_TRUE@am__EXEEXT_1 = tests/testACLMaxUserIP$(EXEEXT)
-@ENABLE_DNSHELPER_TRUE@am__EXEEXT_2 = dnsserver$(EXEEXT)
-@ENABLE_UNLINKD_TRUE@am__EXEEXT_3 = unlinkd$(EXEEXT)
+@HAVE_FS_ROCK_TRUE@am__EXEEXT_2 = tests/testRock$(EXEEXT)
+@HAVE_FS_UFS_TRUE@am__EXEEXT_3 = tests/testUfs$(EXEEXT)
+@ENABLE_DNSHELPER_TRUE@am__EXEEXT_4 = dnsserver$(EXEEXT)
+@ENABLE_UNLINKD_TRUE@am__EXEEXT_5 = unlinkd$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS) $(libexec_PROGRAMS) $(noinst_PROGRAMS) \
 	$(sbin_PROGRAMS)
 am_DiskIO_DiskDaemon_diskd_OBJECTS =  \
@@ -1315,14 +1320,15 @@ am__tests_testRock_SOURCES_DIST = cbdata.cc CacheDigest.h \
 	tests/testMain.cc tests/testRock.h tests/testStoreSupport.cc \
 	tests/testStoreSupport.h log/access_log.h \
 	tests/stub_access_log.cc cache_cf.h YesNoNone.h \
-	tests/stub_cache_cf.cc tests/stub_cache_manager.cc client_db.h \
+	tests/stub_cache_cf.cc client_db.h tests/stub_cache_manager.cc \
 	tests/stub_client_db.cc tests/stub_client_side_request.cc \
 	tests/stub_debug.cc tests/stub_errorpage.cc \
 	tests/stub_HelperChildConfig.cc tests/stub_http.cc \
 	tests/stub_HttpRequest.cc tests/stub_icp.cc tests/stub_ipc.cc \
 	tests/stub_ipcache.cc tests/stub_libformat.cc \
-	tests/stub_libicmp.cc tests/stub_MemStore.cc mime.h \
-	tests/stub_mime.cc tests/stub_Port.cc tests/stub_pconn.cc \
+	tests/stub_libicmp.cc tests/stub_libmgr.cc \
+	tests/stub_MemStore.cc mime.h tests/stub_mime.cc \
+	tests/stub_Port.cc tests/stub_pconn.cc \
 	tests/stub_store_client.cc store_rebuild.h \
 	tests/stub_store_rebuild.cc tests/stub_store_stats.cc tools.h \
 	tests/stub_tools.cc time.cc url.cc URLScheme.cc wordlist.h \
@@ -1372,9 +1378,10 @@ am_tests_testRock_OBJECTS = cbdata.$(OBJEXT) CacheDigest.$(OBJEXT) \
 	tests/stub_http.$(OBJEXT) tests/stub_HttpRequest.$(OBJEXT) \
 	tests/stub_icp.$(OBJEXT) tests/stub_ipc.$(OBJEXT) \
 	tests/stub_ipcache.$(OBJEXT) tests/stub_libformat.$(OBJEXT) \
-	tests/stub_libicmp.$(OBJEXT) tests/stub_MemStore.$(OBJEXT) \
-	tests/stub_mime.$(OBJEXT) tests/stub_Port.$(OBJEXT) \
-	tests/stub_pconn.$(OBJEXT) tests/stub_store_client.$(OBJEXT) \
+	tests/stub_libicmp.$(OBJEXT) tests/stub_libmgr.$(OBJEXT) \
+	tests/stub_MemStore.$(OBJEXT) tests/stub_mime.$(OBJEXT) \
+	tests/stub_Port.$(OBJEXT) tests/stub_pconn.$(OBJEXT) \
+	tests/stub_store_client.$(OBJEXT) \
 	tests/stub_store_rebuild.$(OBJEXT) \
 	tests/stub_store_stats.$(OBJEXT) tests/stub_tools.$(OBJEXT) \
 	time.$(OBJEXT) url.$(OBJEXT) URLScheme.$(OBJEXT) \
@@ -5058,8 +5065,8 @@ tests_testRock_SOURCES = \
 	cache_cf.h \
 	YesNoNone.h \
 	tests/stub_cache_cf.cc \
-	tests/stub_cache_manager.cc \
 	client_db.h \
+	tests/stub_cache_manager.cc \
 	tests/stub_client_db.cc \
 	tests/stub_client_side_request.cc \
 	tests/stub_debug.cc \
@@ -5072,6 +5079,7 @@ tests_testRock_SOURCES = \
 	tests/stub_ipcache.cc \
 	tests/stub_libformat.cc \
 	tests/stub_libicmp.cc \
+	tests/stub_libmgr.cc \
 	tests/stub_MemStore.cc \
 	mime.h \
 	tests/stub_mime.cc \
@@ -5115,7 +5123,6 @@ tests_testRock_LDADD = \
 	acl/libstate.la \
 	eui/libeui.la \
 	ipc/libipc.la \
-	mgr/libmgr.la \
 	base/libbase.la \
 	$(SSL_LIBS) \
 	$(top_builddir)/lib/libmisccontainers.la \
@@ -6291,6 +6298,8 @@ tests/stub_comm.$(OBJEXT): tests/$(am__dirstamp) \
 tests/testNull$(EXEEXT): $(tests_testNull_OBJECTS) $(tests_testNull_DEPENDENCIES) $(EXTRA_tests_testNull_DEPENDENCIES) tests/$(am__dirstamp)
 	@rm -f tests/testNull$(EXEEXT)
 	$(tests_testNull_LINK) $(tests_testNull_OBJECTS) $(tests_testNull_LDADD) $(LIBS)
+tests/stub_libmgr.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
 tests/testRock.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 tests/testRock$(EXEEXT): $(tests_testRock_OBJECTS) $(tests_testRock_DEPENDENCIES) $(EXTRA_tests_testRock_DEPENDENCIES) tests/$(am__dirstamp)
@@ -6412,6 +6421,7 @@ mostlyclean-compile:
 	-rm -f tests/stub_libcomm.$(OBJEXT)
 	-rm -f tests/stub_libformat.$(OBJEXT)
 	-rm -f tests/stub_libicmp.$(OBJEXT)
+	-rm -f tests/stub_libmgr.$(OBJEXT)
 	-rm -f tests/stub_libsslsquid.$(OBJEXT)
 	-rm -f tests/stub_main_cc.$(OBJEXT)
 	-rm -f tests/stub_mem.$(OBJEXT)
@@ -6692,6 +6702,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_libcomm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_libformat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_libicmp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_libmgr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_libsslsquid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_main_cc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_mem.Po@am__quote@

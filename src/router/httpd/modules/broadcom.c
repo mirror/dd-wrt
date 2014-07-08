@@ -1697,7 +1697,6 @@ static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, 
 		0xd55, 0xfcc, 0xe77, 0xfff
 	};
 
-	
 	unsigned int yellow[30] = {
 		0xeec900, 0x000, 0xee3, 0x880, 0x880, 0xee3, 0xffd700, 0x660,
 		0xee7,
@@ -1942,50 +1941,48 @@ char *live_translate(char *tran)
 
 static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
-  
-  static const char filename[] = "/var/log/messages";
-	
+
+	static const char filename[] = "/var/log/messages";
+
 	int offset = 0;
 	int count = 0;
 	if (sscanf(query, "%d", &offset) != 1)
 		return;
-	
+
 	websWrite(stream,
 		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate("lang_charset.set"));
 	websWrite(stream, "<style type=\"text/css\">\n body { font-size: small; } \n</style>\n</head>\n");
 	websWrite(stream, "<body>\n<fieldset><legend>System Log</legend>");
-	
-	if( nvram_match("syslogd_enable", "1") ){
-		FILE *fp = fopen ( filename, "r" );
-		if ( fp != NULL )
-		{
-			char line [1024];
-			websWrite(stream,"<div style=\"height:740px; overflow-y:auto;\"><table>");
-			while ( fgets ( line, sizeof line, fp ) != NULL )
-			{
+
+	if (nvram_match("syslogd_enable", "1")) {
+		FILE *fp = fopen(filename, "r");
+		if (fp != NULL) {
+			char line[1024];
+			websWrite(stream, "<div style=\"height:740px; overflow-y:auto;\"><table>");
+			while (fgets(line, sizeof line, fp) != NULL) {
 				count++;
-				if( offset < count && ((offset + 50) > count) ) // show 100 lines
-				// a few sample colors
-				if( strstr(line, "authpriv.info") ){	
-					websWrite(stream,"<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
-				}else if(strstr(line, "authpriv.notice") ){
-					websWrite(stream,"<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
-				}else if(strstr(line, "mounting unchecked fs") || strstr(line, "httpd login failure")){
-					websWrite(stream,"<tr bgcolor=\"#FF0000\"><td>%s</td></tr>", line);
-				}else{
-					websWrite(stream,"<tr><td>%s</td></tr>", line);
-				}
-			
+				if (offset < count && ((offset + 50) > count))	// show 100 lines
+					// a few sample colors
+					if (strstr(line, "authpriv.info")) {
+						websWrite(stream, "<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
+					} else if (strstr(line, "authpriv.notice")) {
+						websWrite(stream, "<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
+					} else if (strstr(line, "mounting unchecked fs") || strstr(line, "httpd login failure")) {
+						websWrite(stream, "<tr bgcolor=\"#FF0000\"><td>%s</td></tr>", line);
+					} else {
+						websWrite(stream, "<tr><td>%s</td></tr>", line);
+					}
+
 			}
-			websWrite(stream,"</table></div>");
-		
+			websWrite(stream, "</table></div>");
+
 			fclose(fp);
 		}
-	}else{
-		websWrite(stream,"<table><tr align=\"center\"><td>No messages available! Syslogd is not enabled!</td></tr></table>");
+	} else {
+		websWrite(stream, "<table><tr align=\"center\"><td>No messages available! Syslogd is not enabled!</td></tr></table>");
 	}
-	websWrite(stream,"</fieldset><p></body></html>");
+	websWrite(stream, "</fieldset><p></body></html>");
 	return;
 }
 
@@ -2372,7 +2369,7 @@ struct mime_handler mime_handlers[] = {
 	 do_cfebackup,
 	 do_auth, 0},
 #endif
-	{"syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, 1}, 
+	{"syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, 1},
 	{"ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth, 1},
 	{"traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup,
 	 do_auth, 0},

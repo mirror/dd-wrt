@@ -210,7 +210,7 @@ struct nvram_tuple srouter_defaults[] = {
 #endif
 	{"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #elif HAVE_IDEXX
-	{"lan_ipaddr", "192.168.222.1", 0}, 	/* LAN ip address */
+	{"lan_ipaddr", "192.168.222.1", 0},	/* LAN ip address */
 #elif HAVE_BUFFALO
 #ifdef BUFFALO_EU
 	{"ath0_regdomain", "GERMANY", 0},	/* LAN IP address */
@@ -254,7 +254,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_IPR
 	{"lan_ipaddr", "192.168.14.14", 0},	/* LAN ip address */
 #elif HAVE_KORENRON
-	{"lan_ipaddr", "10.0.0.1", 0}, 		/* LAN ip address */
+	{"lan_ipaddr", "10.0.0.1", 0},	/* LAN ip address */
 	{"lan_gateway", "10.0.0.254", 0},	/* Gateway */
 #elif HAVE_AXTEL
 	{"lan_ipaddr", "192.168.11.1", 0},	/* LAN IP address */
@@ -661,7 +661,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif defined(HAVE_IAS) || defined(HAVE_AXTEL)
 	{"http_username", "$1$LJZEFe0/$TMujOR/zbGMDwxgb3KP0J.", 0},
 #elif HAVE_KORENRON
-        {"http_username", "$1$9thN/f9/$nnZ35gSQvAaV0EPh.WJs8.", 0},     /* HTTP username */
+	{"http_username", "$1$9thN/f9/$nnZ35gSQvAaV0EPh.WJs8.", 0},	/* HTTP username */
 #elif HAVE_IDEXX
 	{"http_username", "$1$IpR13S3g$E1hg4idP4TZmfQeHIX20L/", 0},	/* Password */
 #else
@@ -778,28 +778,28 @@ struct nvram_tuple srouter_defaults[] = {
 					 * change it to a radio appropriate default
 					 */
 #ifdef HAVE_80211AC
-	{"wl0_wmf_bss_enable", "0", 0 },		/* 0= off 1= on */
-	{"wl1_wmf_bss_enable", "0", 0 },		
-	{"wl0_wmf_ucigmp_query", "0", 0 }, /* Disable Converting IGMP Query to ucast (default) */
-	{"wl0_wmf_mdata_sendup", "0", 0 }, /* Disable Sending Multicast Data to host  (default) */
-	{"wl0_wmf_ucast_upnp", "1", 0 }, /* Disable Converting upnp to ucast (default) */
-	{"wl0_wmf_igmpq_filter", "0", 0 },	/* Disable igmp query filter */
-	{"wl1_wmf_ucigmp_query", "0", 0 }, /* Disable Converting IGMP Query to ucast (default) */
-	{"wl1_wmf_mdata_sendup", "0", 0 }, /* Disable Sending Multicast Data to host  (default) */
-	{"wl1_wmf_ucast_upnp", "1", 0 }, /* Disable Converting upnp to ucast (default) */
-	{"wl1_wmf_igmpq_filter", "0", 0 },	/* Disable igmp query filter */
+	{"wl0_wmf_bss_enable", "0", 0},	/* 0= off 1= on */
+	{"wl1_wmf_bss_enable", "0", 0},
+	{"wl0_wmf_ucigmp_query", "0", 0},	/* Disable Converting IGMP Query to ucast (default) */
+	{"wl0_wmf_mdata_sendup", "0", 0},	/* Disable Sending Multicast Data to host  (default) */
+	{"wl0_wmf_ucast_upnp", "1", 0},	/* Disable Converting upnp to ucast (default) */
+	{"wl0_wmf_igmpq_filter", "0", 0},	/* Disable igmp query filter */
+	{"wl1_wmf_ucigmp_query", "0", 0},	/* Disable Converting IGMP Query to ucast (default) */
+	{"wl1_wmf_mdata_sendup", "0", 0},	/* Disable Sending Multicast Data to host  (default) */
+	{"wl1_wmf_ucast_upnp", "1", 0},	/* Disable Converting upnp to ucast (default) */
+	{"wl1_wmf_igmpq_filter", "0", 0},	/* Disable igmp query filter */
 	/* Airtime fairness */
-	{"wl0_atf", "0", 0 },		/* 0= off 1= on */
-	{"wl1_atf", "0", 0 },		
-	{"wl0_txbf", "0", 0 },
-	{"wl1_txbf", "0", 0 },
-	{"wl0_itxbf", "0", 0 },
-	{"wl1_itxbf", "0", 0 },
+	{"wl0_atf", "0", 0},	/* 0= off 1= on */
+	{"wl1_atf", "0", 0},
+	{"wl0_txbf", "0", 0},
+	{"wl1_txbf", "0", 0},
+	{"wl0_itxbf", "0", 0},
+	{"wl1_itxbf", "0", 0},
 
-	{"wl0_txbf_bfr_cap", "1", 0 },
-	{"wl0_txbf_bfe_cap", "1", 0 },
-	{"wl1_txbf_bfr_cap", "1", 0 },
-	{"wl1_txbf_bfe_cap", "1", 0 },
+	{"wl0_txbf_bfr_cap", "1", 0},
+	{"wl0_txbf_bfe_cap", "1", 0},
+	{"wl1_txbf_bfr_cap", "1", 0},
+	{"wl1_txbf_bfe_cap", "1", 0},
 	{"wl0_turbo_qam", "1", 0},	/* RIFS mode advertisement */
 	{"wl1_turbo_qam", "1", 0},	/* RIFS mode advertisement */
 	{"wl0_rxchain_pwrsave_enable", "0", 0},
@@ -818,9 +818,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0},
 	/* Default AMPDU regular rate retry limit per-tid setting */
 	{"wl_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
-	{"wl_amsdu", "auto", 0 },		/* Disable AMSDU Tx by default */
-	{"wl_rx_amsdu_in_ampdu", "auto", 0 },	/* Disable AMSDU Rx by default */
-	{"wl_cal_period", "0", 0 },			/* Disable periodic cal */
+	{"wl_amsdu", "auto", 0},	/* Disable AMSDU Tx by default */
+	{"wl_rx_amsdu_in_ampdu", "auto", 0},	/* Disable AMSDU Rx by default */
+	{"wl_cal_period", "0", 0},	/* Disable periodic cal */
 	{"wl_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - 0=OFF 1=ON */
 
 	{"wl0_stbc_tx", "auto", 0},	/* Default STBC TX setting */
@@ -831,8 +831,8 @@ struct nvram_tuple srouter_defaults[] = {
 	/* Default AMPDU regular rate retry limit per-tid setting */
 	{"wl0_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
 	{"wl0_amsdu", "auto", 0},	/* Default AMSDU setting */
-	{"wl0_rx_amsdu_in_ampdu", "auto", 0 },	/* Disable AMSDU Rx by default */
-	{"wl0_cal_period", "0", 0 },			/* Disable periodic cal */
+	{"wl0_rx_amsdu_in_ampdu", "auto", 0},	/* Disable AMSDU Rx by default */
+	{"wl0_cal_period", "0", 0},	/* Disable periodic cal */
 	{"wl0_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - OFF */
 	{"wl1_stbc_tx", "auto", 0},	/* Default STBC TX setting */
 	{"wl1_stbc_rx", "1", 0},	/* Default STBC RX setting */
@@ -841,9 +841,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"wl1_ampdu_rtylimit_tid", "5 5 5 5 5 5 5 5", 0},
 	/* Default AMPDU regular rate retry limit per-tid setting */
 	{"wl1_ampdu_rr_rtylimit_tid", "2 2 2 2 2 2 2 2", 0},
-	{"wl1_amsdu", "auto", 0},	/* Default AMSDU setting */	
-	{"wl1_rx_amsdu_in_ampdu", "auto", 0 },	/* Disable AMSDU Rx by default */
-	{"wl1_cal_period", "0", 0 },			/* Disable periodic cal */
+	{"wl1_amsdu", "auto", 0},	/* Default AMSDU setting */
+	{"wl1_rx_amsdu_in_ampdu", "auto", 0},	/* Disable AMSDU Rx by default */
+	{"wl1_cal_period", "0", 0},	/* Disable periodic cal */
 	{"wl1_obss_coex", "0", 0},	/* Default OBSS Coexistence setting - OFF */
 	/* Tx Beamforming */
 #endif
@@ -905,7 +905,7 @@ struct nvram_tuple srouter_defaults[] = {
 #elif HAVE_34TELECOM
 	{"wl_ssid", "Lobo", 0},	/* Service set ID (network name) */
 #elif HAVE_KORENRON
-	{"wl_ssid", "WBR2000", 0}, /* Service set ID (network name) */
+	{"wl_ssid", "WBR2000", 0},	/* Service set ID (network name) */
 #else
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
@@ -992,8 +992,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath0_security_mode", "psk2", 0},	/* ath0 encryption type */
 	{"ath0_wpa_psk", "marcomarco14", 0},	/* ath0 encryption key */
 #elif defined(HAVE_KORENRON)
-        {"wl0_ssid", "WBR2000", 0},      /* Service set ID (network name) */
-        {"ath0_ssid", "WBR2000", 0},     /* Service set ID (network name) */
+	{"wl0_ssid", "WBR2000", 0},	/* Service set ID (network name) */
+	{"ath0_ssid", "WBR2000", 0},	/* Service set ID (network name) */
 #elif HAVE_IDEXX
 	{"wl0_ssid", "IDEXXw1", 0},	/* Service set ID (network name) */
 	{"ath0_ssid", "IDEXXw1", 0},	/* Service set ID (network name) */
@@ -2803,7 +2803,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpncl_pkcs12", "", 0},
 	{"openvpncl_lzo", "adaptive", 0},
 	{"openvpncl_proto", "udp", 0},
-	{"openvpncl_mtu", "1400", 0},
+	{"openvpncl_mtu", "1500", 0},
 	{"openvpncl_mssfix", "0", 0},
 	{"openvpncl_fragment", "", 0},
 	{"openvpncl_certtype", "0", 0},
@@ -2982,9 +2982,9 @@ struct nvram_tuple srouter_defaults[] = {
 	{"nstx_log", "0", 0},
 #endif
 #ifdef HAVE_PORTSETUP
-	{"br0_mcast", "0", 0},/* IGMP Snooping enabled */
-	{"br1_mcast", "0", 0},/* IGMP Snooping enabled */
-	
+	{"br0_mcast", "0", 0},	/* IGMP Snooping enabled */
+	{"br1_mcast", "0", 0},	/* IGMP Snooping enabled */
+
 	{"eth0_bridged", "1", 0},	/* Service set ID (network name) */
 	{"eth0_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
 	{"eth0_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
@@ -3333,7 +3333,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"freecwmp_local_username", "softathome", 0},
 	{"freecwmp_local_password", "softathome", 0},
 #elif HAVE_AXTEL
-	
+
 #else
 	{"freecwmp_enable", "0", 0},
 	{"freecwmp_local_auth_enable", "0", 0},
@@ -3381,7 +3381,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"transmission_enable", "0", 0},
 	{"transmission_dir", "/jffs/transmission", 0},
 #endif
-	{"ptoken","0",0},
+	{"ptoken", "0", 0},
 	{0, 0, 0}
 };
 #else

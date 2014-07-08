@@ -1,39 +1,69 @@
-bin_PROGRAMS = iperf
+lib_LTLIBRARIES         = libiperf.la                                   # Build and install an iperf library
+bin_PROGRAMS            = iperf3                                        # Build and install an iperf binary
+noinst_PROGRAMS         = t_timer t_units t_uuid         # Build, but don't install the test programs and a profiled version of iperf3
+include_HEADERS         = iperf_api.h # Defines the headers that get installed with the program
 
-LIBCOMPAT_LDADDS = @STRIP_BEGIN@ \
-		   $(top_builddir)/compat/libcompat.a \
-		   @STRIP_END@
 
-AM_CPPFLAGS = @STRIP_BEGIN@ \
-	      -I$(top_srcdir)/include \
-	      -I$(top_builddir)/include \
-	      @STRIP_END@
+# Specify the source files and flags for the iperf library
+libiperf_la_SOURCES     = \
+                        cjson.c \
+                        cjson.h \
+                        flowlabel.h \
+                        iperf.h \
+                        iperf_api.c \
+                        iperf_api.h \
+                        iperf_error.c \
+			iperf_client_api.c \
+                        iperf_server_api.c \
+                        iperf_tcp.c \
+                        iperf_tcp.h \
+                        iperf_udp.c \
+                        iperf_udp.h \
+                        iperf_util.c \
+                        iperf_util.h \
+                        locale.c \
+                        locale.h \
+                        net.c \
+                        net.h \
+                        queue.h \
+                        tcp_info.c \
+                        tcp_window_size.c \
+                        tcp_window_size.h \
+                        timer.c \
+                        timer.h \
+                        units.c \
+                        units.h \
+                        version.h
 
-AM_CXXFLAGS = -Wall
-AM_CFLAGS = -Wall
+# Specify the sources and various flags for the iperf binary
+iperf3_SOURCES          = main.c
+iperf3_CFLAGS           = -g
+iperf3_LDADD            = libiperf.la
+iperf3_LDFLAGS          = -g
 
-iperf_LDFLAGS = @CFLAGS@ @PTHREAD_CFLAGS@ @WEB100_CFLAGS@ @DEFS@
+# Specify the sources and various flags for the test cases
+t_timer_SOURCES         = t_timer.c
+t_timer_CFLAGS          = -g
+t_timer_LDFLAGS         =
+t_timer_LDADD           = libiperf.la
 
-iperf_SOURCES = \
-		Client.cpp \
-		Extractor.c \
-		Launch.cpp \
-		List.cpp \
-		Listener.cpp \
-		Locale.c \
-		PerfSocket.cpp \
-		ReportCSV.c \
-		ReportDefault.c \
-		Reporter.c \
-		Server.cpp \
-		Settings.cpp \
-		SocketAddr.c \
-		gnu_getopt.c \
-		gnu_getopt_long.c \
-		main.cpp \
-		service.c \
-		sockets.c \
-		stdio.c \
-		tcp_window_size.c
+t_units_SOURCES         = t_units.c
+t_units_CFLAGS          = -g
+t_units_LDFLAGS         =
+t_units_LDADD           = libiperf.la
 
-iperf_LDADD = $(LIBCOMPAT_LDADDS)
+t_uuid_SOURCES          = t_uuid.c
+t_uuid_CFLAGS           = -g
+t_uuid_LDFLAGS          =
+t_uuid_LDADD            = libiperf.la
+
+
+
+
+# Specify which tests to run during a "make check"
+TESTS                   = \
+                        t_timer \
+                        t_units \
+                        t_uuid
+
+dist_man_MANS          = iperf3.1 libiperf.3

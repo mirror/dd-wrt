@@ -137,4 +137,4 @@ lzo_rdtsc_asm(lzo_uint32_tp /* lzo_uint32_t ticks[2] */ );
 #endif /* already included */
 
 
-/* vim:set ts=4 et: */
+/* vim:set ts=4 sw=4 et: */

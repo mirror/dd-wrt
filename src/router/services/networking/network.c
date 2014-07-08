@@ -660,7 +660,7 @@ void start_wlconf(void)
 	int cnt = get_wl_instances();
 	int c;
 #ifdef HAVE_QTN
-	    cnt = 1;
+	cnt = 1;
 #endif
 	for (c = 0; c < cnt; c++) {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
@@ -2013,7 +2013,7 @@ void start_lan(void)
 #ifdef HAVE_EAD
 		eval("killall", "-9", "ead");
 #endif
-		
+
 		foreach(name, lan_ifnames, next) {
 			int ex = ifexists(name);
 			if (!ex)
@@ -2052,7 +2052,6 @@ void start_lan(void)
 			if (ifconfig(realname, IFUP, "0.0.0.0", NULL)) {
 				continue;
 			}
-
 			// set proper mtu
 
 			if (strncmp(realname, "ath", 3) != 0) {	// this is not an ethernet driver
@@ -2367,7 +2366,7 @@ void start_lan(void)
 	reset_hwaddr(lan_ifname);
 	ifconfig(lan_ifname, IFUP, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 #ifdef HAVE_QTN
-	start_qtn(); //bootup quantenna firmware
+	start_qtn();		//bootup quantenna firmware
 #endif
 	sysprintf("/sbin/gratarp %s", lan_ifname);
 
@@ -3029,7 +3028,7 @@ void start_wan(int status)
 #endif
 #ifdef HAVE_MULTICAST
 	if (!nvram_match("dtag_vlan8", "1") || nvram_match("wan_vdsl", "0"))
-		stop_igmp_proxy();
+		stop_igmprt();
 #endif
 #ifdef HAVE_UDPXY
 	if (!nvram_match("udpxy_enable", "1"))
@@ -4458,8 +4457,8 @@ void start_wan_done(char *wan_ifname)
 	cprintf("start igmp proxy\n");
 #ifdef HAVE_MULTICAST
 	if (!nvram_match("dtag_vlan8", "1") || nvram_match("wan_vdsl", "0"))
-		stop_igmp_proxy();
-	start_igmp_proxy();
+		stop_igmprt();
+	start_igmprt();
 #endif
 	cprintf("ready\n");
 #ifdef HAVE_UDPXY

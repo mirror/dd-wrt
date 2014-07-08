@@ -457,20 +457,20 @@ void ej_show_cpucores(webs_t wp, int argc, char_t ** argv)
 	FILE *fp = popen("cat /proc/cpuinfo|grep processor|wc -l", "r");
 	int count, dcount;
 	if (fp) {
-	fscanf(fp, "%d", &count);
-	pclose(fp);
+		fscanf(fp, "%d", &count);
+		pclose(fp);
 	}
 	fp = popen("cat /proc/cpuinfo|grep \"compatible processor\"|wc -l", "r");
 	if (fp) {
-	fscanf(fp, "%d", &dcount);
-	pclose(fp);
+		fscanf(fp, "%d", &dcount);
+		pclose(fp);
 	}
 	count -= dcount;
 
 	fp = popen("cat /proc/cpuinfo|grep \"Intel(R) processor\"|wc -l", "r");
 	if (fp) {
-	fscanf(fp, "%d", &dcount);
-	pclose(fp);
+		fscanf(fp, "%d", &dcount);
+		pclose(fp);
 	}
 	count -= dcount;
 
@@ -1426,7 +1426,7 @@ void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"olsrd_gateway\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
 			  nvram_default_match("olsrd_gateway", "0", "0") ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
-		
+
 		show_inputlabel(wp, "route.olsrd_hna", "olsrd_hna", 32, "num", 32);
 		show_inputlabel(wp, "route.olsrd_poll", "olsrd_pollsize", 5, "num", 5);
 		showOptionsLabel(wp, "route.olsrd_tc", "olsrd_redundancy", "0 1 2", nvram_default_get("olsrd_redundancy", "2"));
@@ -3114,12 +3114,12 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		showRadio(wp, "wl_adv.label11", ssid);
 #ifdef HAVE_80211AC
 #ifndef HAVE_NOAC
-if (!has_qtn(var)){
-	char wl_igmp[16];
-	sprintf(wl_igmp, "%s_wmf_bss_enable", var);
-	nvram_default_get(wl_igmp,"0");
-	showRadio(wp, "wl_basic.igmpsnooping", wl_igmp);
-}
+		if (!has_qtn(var)) {
+			char wl_igmp[16];
+			sprintf(wl_igmp, "%s_wmf_bss_enable", var);
+			nvram_default_get(wl_igmp, "0");
+			showRadio(wp, "wl_basic.igmpsnooping", wl_igmp);
+		}
 #endif
 #endif
 #ifdef HAVE_MADWIFI
@@ -3166,7 +3166,7 @@ if (!has_qtn(var)){
 #else
 	int max = WL_MAXBSSCFG;
 	if (has_qtn(prefix))
-	    max = 3;
+		max = 3;
 	if (count < max)
 #endif
 		websWrite(wp,
@@ -3266,7 +3266,7 @@ if (!has_qtn(var)){
 #else
 	int max = WL_MAXBSSCFG;
 	if (has_qtn(prefix))
-	    max = 3;
+		max = 3;
 	if (count < max && gpfound == 0)
 #endif
 		websWrite(wp,
@@ -3750,7 +3750,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
 #if defined(HAVE_ATH10K)
-		if (!has_ac(prefix))
+if (!has_ac(prefix))
 #endif
 {
 	websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n", nvram_match(wl_width, "10") ? "selected=\\\"selected\\\"" : "");
@@ -4042,10 +4042,10 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 }
 #ifdef HAVE_80211AC
 #ifndef HAVE_NOAC
-if (!has_qtn(prefix)){
+if (!has_qtn(prefix)) {
 	char wl_igmp[16];
 	sprintf(wl_igmp, "%s_wmf_bss_enable", prefix);
-	nvram_default_get(wl_igmp,"0");
+	nvram_default_get(wl_igmp, "0");
 	showRadio(wp, "wl_basic.igmpsnooping", wl_igmp);
 }
 
@@ -4063,7 +4063,7 @@ if (has_beamforming(prefix)) {
 	showRadio(wp, "wl_basic.bft", wl_bft);
 	char wl_bfr[16];
 	sprintf(wl_bfr, "%s_itxbf", prefix);
-	showRadio(wp, "wl_basic.bft", wl_bfr);
+	showRadio(wp, "wl_basic.bfr", wl_bfr);
 }
 #endif
 #endif
@@ -4310,7 +4310,7 @@ if (!strcmp(prefix, "wl1"))
 #if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
 #if defined(HAVE_ATH10K)
-		if (!has_ac(prefix)) 
+	if (!has_ac(prefix))
 #endif
 	{
 		websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n", nvram_match(wl_width, "10") ? "selected=\\\"selected\\\"" : "");
@@ -4883,9 +4883,9 @@ void show_preshared(webs_t wp, char *prefix)
 	websWrite(wp, "<div><div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.algorithms)</script></div>\n");
 	websWrite(wp, "<select name=\"%s_crypto\">\n", prefix);
-	websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(var, "tkip", "selected=\"selected\""));
 	websWrite(wp, "<option value=\"aes\" %s>AES</option>\n", selmatch(var, "aes", "selected=\"selected\""));
 	websWrite(wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n", selmatch(var, "tkip+aes", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(var, "tkip", "selected=\"selected\""));
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -5338,9 +5338,9 @@ void show_wparadius(webs_t wp, char *prefix)
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.algorithms)</script></div>\n");
 	websWrite(wp, "<select name=\"%s_crypto\">\n", prefix);
 	sprintf(var, "%s_crypto", prefix);
-	websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(var, "tkip", "selected=\"selected\""));
 	websWrite(wp, "<option value=\"aes\" %s>AES</option>\n", selmatch(var, "aes", "selected=\"selected\""));
 	websWrite(wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n", selmatch(var, "tkip+aes", "selected=\"selected\""));
+	websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(var, "tkip", "selected=\"selected\""));
 	websWrite(wp, "</select></div>\n");
 #ifdef HAVE_MADWIFI
 	show_radius(wp, prefix, 0, 1);

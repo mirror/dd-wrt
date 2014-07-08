@@ -72,8 +72,6 @@
 #define SERVICEALT_MODULE "/jffs/usr/lib/validate.so"
 #define VISSERVICEALT_MODULE "/jffs/usr/lib/visuals.so"
 
-
-
 #define cprintf(fmt, args...)
 
 #ifndef cprintf
@@ -128,8 +126,8 @@ static void *load_service(char *name)
 	void *handle = dlopen(SERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
 	if (!handle)
 		handle = dlopen(SERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
-//	if (!handle)
-//	    fprintf(stderr,"%s\n",dlerror());
+//      if (!handle)
+//          fprintf(stderr,"%s\n",dlerror());
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
 		cprintf("not found, try to load alternate\n");
