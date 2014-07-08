@@ -1,7 +1,7 @@
 /*
  * Octeon Watchdog driver
  *
- * Copyright (C) 2007, 2008, 2009, 2010 Cavium Networks
+ * Copyright (C) 2007 - 2012 Cavium, Inc.
  *
  * Some parts derived from wdt.c
  *
@@ -72,6 +72,7 @@
 #include <asm/uasm.h>
 
 #include <asm/octeon/octeon.h>
+#include <asm/octeon/cvmx-ciu2-defs.h>
 
 /* The count needed to achieve timeout_sec. */
 static unsigned int timeout_cnt;
@@ -103,6 +104,11 @@ MODULE_PARM_DESC(nowayout,
 	"Watchdog cannot be stopped once started (default="
 				__MODULE_STRING(WATCHDOG_NOWAYOUT) ")");
 
+static int disable;
+module_param(disable, int, 0444);
+MODULE_PARM_DESC(disable,
+	"Disable the watchdog entirely (default=0)");
+
 static unsigned long octeon_wdt_is_open;
 static char expect_close;
 
@@ -129,10 +135,9 @@ static void __init octeon_wdt_build_stage1(void)
 	int i;
 	int len;
 	u32 *p = nmi_stage1_insns;
-#ifdef CONFIG_HOTPLUG_CPU
 	struct uasm_label *l = labels;
 	struct uasm_reloc *r = relocs;
-#endif
+	bool is_ciu2 = OCTEON_IS_MODEL(OCTEON_CN68XX);
 
 	/*
 	 * For the next few instructions running the debugger may
@@ -144,62 +149,66 @@ static void __init octeon_wdt_build_stage1(void)
 	uasm_i_dmtc0(&p, K0, C0_DESAVE);
 
 	uasm_i_mfc0(&p, K0, C0_STATUS);
-#ifdef CONFIG_HOTPLUG_CPU
-	uasm_il_bbit0(&p, &r, K0, ilog2(ST0_NMI), label_enter_bootloader);
-#endif
 	/* Force 64-bit addressing enabled */
 	uasm_i_ori(&p, K0, K0, ST0_UX | ST0_SX | ST0_KX);
 	uasm_i_mtc0(&p, K0, C0_STATUS);
 
-#ifdef CONFIG_HOTPLUG_CPU
-	uasm_i_mfc0(&p, K0, C0_EBASE);
-	/* Coreid number in K0 */
-	uasm_i_andi(&p, K0, K0, 0xf);
-	/* 8 * coreid in bits 16-31 */
-	uasm_i_dsll_safe(&p, K0, K0, 3 + 16);
-	uasm_i_ori(&p, K0, K0, 0x8001);
-	uasm_i_dsll_safe(&p, K0, K0, 16);
-	uasm_i_ori(&p, K0, K0, 0x0700);
-	uasm_i_drotr_safe(&p, K0, K0, 32);
 	/*
-	 * Should result in: 0x8001,0700,0000,8*coreid which is
-	 * CVMX_CIU_WDOGX(coreid) - 0x0500
-	 *
-	 * Now ld K0, CVMX_CIU_WDOGX(coreid)
+	 * If octeon_bootloader_entry_addr is set, we can transfer
+	 * control to the bootloader if it is not a watchdog related
+	 * NMI.
 	 */
-	uasm_i_ld(&p, K0, 0x500, K0);
-	/*
-	 * If bit one set handle the NMI as a watchdog event.
-	 * otherwise transfer control to bootloader.
-	 */
-	uasm_il_bbit0(&p, &r, K0, 1, label_enter_bootloader);
-	uasm_i_nop(&p);
-#endif
-
-	/* Clear Dcache so cvmseg works right. */
-	uasm_i_cache(&p, 1, 0, 0);
-
-	/* Use K0 to do a read/modify/write of CVMMEMCTL */
-	uasm_i_dmfc0(&p, K0, C0_CVMMEMCTL);
-	/* Clear out the size of CVMSEG	*/
-	uasm_i_dins(&p, K0, 0, 0, 6);
-	/* Set CVMSEG to its largest value */
-	uasm_i_ori(&p, K0, K0, 0x1c0 | 54);
-	/* Store the CVMMEMCTL value */
-	uasm_i_dmtc0(&p, K0, C0_CVMMEMCTL);
+	if (octeon_bootloader_entry_addr) {
+		uasm_il_bbit0(&p, &r, K0, ilog2(ST0_NMI),
+			      label_enter_bootloader);
+		uasm_i_mfc0(&p, K0, C0_EBASE);
+		/* Coreid number in K0 */
+		uasm_i_andi(&p, K0, K0, is_ciu2 ? 0x1f : 0xf);
+		/* 8 * coreid in bits 16-31 */
+		uasm_i_dsll_safe(&p, K0, K0, 3 + 16);
+		uasm_i_ori(&p, K0, K0, 0x8001);
+		uasm_i_dsll_safe(&p, K0, K0, 16);
+		if (is_ciu2) {
+			uasm_i_ori(&p, K0, K0, 0x0701);
+			uasm_i_dsll_safe(&p, K0, K0, 16);
+			uasm_i_ori(&p, K0, K0, 0x0010);
+			uasm_i_drotr_safe(&p, K0, K0, 48);
+			/*
+			 * Should result in: 0x8001,0701,0010,8*coreid which is
+			 * CVMX_CIU2_WDOGX(coreid)
+			 */
+			uasm_i_ld(&p, K0, 0, K0);
+		} else {
+			uasm_i_ori(&p, K0, K0, 0x0700);
+			uasm_i_drotr_safe(&p, K0, K0, 32);
+			/*
+			 * Should result in: 0x8001,0700,0000,8*coreid which is
+			 * CVMX_CIU_WDOGX(coreid) - 0x0500
+			 *
+			 * Now ld K0, CVMX_CIU_WDOGX(coreid)
+			 */
+			uasm_i_ld(&p, K0, 0x500, K0);
+		}
+		/*
+		 * If bit one set handle the NMI as a watchdog event.
+		 * otherwise transfer control to bootloader.
+		 */
+		uasm_il_bbit0(&p, &r, K0, 1, label_enter_bootloader);
+		uasm_i_nop(&p);
+	}
 
 	/* Load the address of the second stage handler */
 	UASM_i_LA(&p, K0, (long)octeon_wdt_nmi_stage2);
 	uasm_i_jr(&p, K0);
 	uasm_i_dmfc0(&p, K0, C0_DESAVE);
 
-#ifdef CONFIG_HOTPLUG_CPU
-	uasm_build_label(&l, p, label_enter_bootloader);
-	/* Jump to the bootloader and restore K0 */
-	UASM_i_LA(&p, K0, (long)octeon_bootloader_entry_addr);
-	uasm_i_jr(&p, K0);
-	uasm_i_dmfc0(&p, K0, C0_DESAVE);
-#endif
+	if (octeon_bootloader_entry_addr) {
+		uasm_build_label(&l, p, label_enter_bootloader);
+		/* Jump to the bootloader and restore K0 */
+		UASM_i_LA(&p, K0, (long)octeon_bootloader_entry_addr);
+		uasm_i_jr(&p, K0);
+		uasm_i_dmfc0(&p, K0, C0_DESAVE);
+	}
 	uasm_resolve_relocs(relocs, labels);
 
 	len = (int)(p - nmi_stage1_insns);
@@ -330,12 +339,13 @@ void octeon_wdt_nmi_stage3(u64 reg[32])
 	u64 cp0_status = read_c0_status();
 	u64 cp0_error_epc = read_c0_errorepc();
 	u64 cp0_epc = read_c0_epc();
+	bool is_ciu2 = OCTEON_IS_MODEL(OCTEON_CN68XX);
 
 	/* Delay so output from all cores output is not jumbled together. */
-	__delay(100000000ull * coreid);
+	udelay(85000 * coreid);
 
 	octeon_wdt_write_string("\r\n*** NMI Watchdog interrupt on Core 0x");
-	octeon_wdt_write_hex(coreid, 1);
+	octeon_wdt_write_hex(coreid, 2);
 	octeon_wdt_write_string(" ***\r\n");
 	for (i = 0; i < 32; i++) {
 		octeon_wdt_write_string("\t");
@@ -358,11 +368,28 @@ void octeon_wdt_nmi_stage3(u64 reg[32])
 	octeon_wdt_write_hex(cp0_cause, 16);
 	octeon_wdt_write_string("\r\n");
 
-	octeon_wdt_write_string("\tsum0\t0x");
-	octeon_wdt_write_hex(cvmx_read_csr(CVMX_CIU_INTX_SUM0(coreid * 2)), 16);
-	octeon_wdt_write_string("\ten0\t0x");
-	octeon_wdt_write_hex(cvmx_read_csr(CVMX_CIU_INTX_EN0(coreid * 2)), 16);
-	octeon_wdt_write_string("\r\n");
+	/* The CIU register are different in cn68xx compared to other models. */
+	if (is_ciu2) {
+		octeon_wdt_write_string("\tsrc_wd\t0x");
+		octeon_wdt_write_hex(cvmx_read_csr(CVMX_CIU2_SRC_PPX_IP2_WDOG(coreid)), 16);
+		octeon_wdt_write_string("\ten_wd\t0x");
+		octeon_wdt_write_hex(cvmx_read_csr(CVMX_CIU2_EN_PPX_IP2_WDOG(coreid)), 16);
+		octeon_wdt_write_string("\r\n");
+		octeon_wdt_write_string("\tsrc_rml\t0x");
+		octeon_wdt_write_hex(cvmx_read_csr(CVMX_CIU2_SRC_PPX_IP2_RML(coreid)), 16);
+		octeon_wdt_write_string("\ten_rml\t0x");
+		octeon_wdt_write_hex(cvmx_read_csr(CVMX_CIU2_EN_PPX_IP2_RML(coreid)), 16);
+		octeon_wdt_write_string("\r\n");
+		octeon_wdt_write_string("\tsum\t0x");
+		octeon_wdt_write_hex(cvmx_read_csr(CVMX_CIU2_SUM_PPX_IP2(coreid)), 16);
+		octeon_wdt_write_string("\r\n");
+	} else {
+		octeon_wdt_write_string("\tsum0\t0x");
+		octeon_wdt_write_hex(cvmx_read_csr(CVMX_CIU_INTX_SUM0(coreid * 2)), 16);
+		octeon_wdt_write_string("\ten0\t0x");
+		octeon_wdt_write_hex(cvmx_read_csr(CVMX_CIU_INTX_EN0(coreid * 2)), 16);
+		octeon_wdt_write_string("\r\n");
+	}
 
 	octeon_wdt_write_string("*** Chip soft reset soon ***\r\n");
 }
@@ -443,6 +470,9 @@ static void octeon_wdt_ping(void)
 	int cpu;
 	int coreid;
 
+	if (disable)
+		return;
+
 	for_each_online_cpu(cpu) {
 		coreid = cpu2core(cpu);
 		cvmx_write_csr(CVMX_CIU_PP_POKEX(coreid), 1);
@@ -481,6 +511,9 @@ static void octeon_wdt_calc_parameters(int t)
 	countdown_reset = periods > 2 ? periods - 2 : 0;
 	heartbeat = t;
 	timeout_cnt = ((octeon_get_io_clock_rate() >> 8) * timeout_sec) >> 8;
+	/* cn68XX runs at half that rate.  */
+	if (OCTEON_IS_MODEL(OCTEON_CN68XX))
+		timeout_cnt >>= 1;
 }
 
 static int octeon_wdt_set_heartbeat(int t)
@@ -493,6 +526,9 @@ static int octeon_wdt_set_heartbeat(int t)
 		return -1;
 
 	octeon_wdt_calc_parameters(t);
+
+	if (disable)
+		return 0;
 
 	for_each_online_cpu(cpu) {
 		coreid = cpu2core(cpu);
@@ -695,6 +731,11 @@ static int __init octeon_wdt_init(void)
 		goto out;
 	}
 
+	if (disable) {
+		pr_notice("disabled\n");
+		return 0;
+	}
+
 	/* Build the NMI handler ... */
 	octeon_wdt_build_stage1();
 
@@ -725,6 +766,9 @@ static void __exit octeon_wdt_cleanup(void)
 
 	misc_deregister(&octeon_wdt_miscdev);
 
+	if (disable)
+		return;
+
 	unregister_hotcpu_notifier(&octeon_wdt_cpu_notifier);
 
 	for_each_online_cpu(cpu) {
@@ -742,7 +786,7 @@ static void __exit octeon_wdt_cleanup(void)
 }
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Cavium Networks <support@caviumnetworks.com>");
-MODULE_DESCRIPTION("Cavium Networks Octeon Watchdog driver.");
+MODULE_AUTHOR("Cavium Inc. <support@cavium.com>");
+MODULE_DESCRIPTION("Cavium Inc. OCTEON Watchdog driver.");
 module_init(octeon_wdt_init);
 module_exit(octeon_wdt_cleanup);

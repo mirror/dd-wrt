@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.40 Kernel Configuration
+# Linux/arm 3.10.48-rc1 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -842,6 +842,7 @@ CONFIG_RFKILL_LEDS=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
+CONFIG_DDTB=y
 CONFIG_HAVE_BPF_JIT=y
 
 #
@@ -2249,4 +2250,3 @@ CONFIG_AVERAGE=y
 # CONFIG_CORDIC is not set
 # CONFIG_DDR is not set
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_DDTB=y

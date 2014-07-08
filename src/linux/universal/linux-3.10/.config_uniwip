@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.10.40 Kernel Configuration
+# Linux/powerpc 3.10.48-rc1 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -826,6 +826,7 @@ CONFIG_WEXT_PRIV=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
+CONFIG_DDTB=y
 
 #
 # Device Drivers
@@ -1618,6 +1619,7 @@ CONFIG_SENSORS_LM75=y
 # CONFIG_SENSORS_MAX6650 is not set
 # CONFIG_SENSORS_MAX6697 is not set
 # CONFIG_SENSORS_MCP3021 is not set
+# CONFIG_SENSORS_NTC_THERMISTOR is not set
 # CONFIG_SENSORS_PCF8591 is not set
 # CONFIG_PMBUS is not set
 # CONFIG_SENSORS_SHT15 is not set
@@ -2502,4 +2504,3 @@ CONFIG_OCF_BENCH=m
 # CONFIG_PPC_CLOCK is not set
 CONFIG_PPC_LIB_RHEAP=y
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_DDTB=y
