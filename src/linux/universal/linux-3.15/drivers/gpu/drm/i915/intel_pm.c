@@ -511,8 +511,7 @@ void intel_update_fbc(struct drm_device *dev)
 	obj = intel_fb->obj;
 	adjusted_mode = &intel_crtc->config.adjusted_mode;
 
-	if (i915.enable_fbc < 0 &&
-	    INTEL_INFO(dev)->gen <= 7 && !IS_HASWELL(dev)) {
+	if (i915.enable_fbc < 0) {
 		if (set_no_fbc_reason(dev_priv, FBC_CHIP_DEFAULT))
 			DRM_DEBUG_KMS("disabled per chip default\n");
 		goto out_disable;
@@ -5314,10 +5313,25 @@ bool intel_display_power_enabled_sw(struct drm_i915_private *dev_priv,
 				    enum intel_display_power_domain domain)
 {
 	struct i915_power_domains *power_domains;
+	struct i915_power_well *power_well;
+	bool is_enabled;
+	int i;
+
+	if (dev_priv->pm.suspended)
+		return false;
 
 	power_domains = &dev_priv->power_domains;
+	is_enabled = true;
+	for_each_power_well_rev(i, power_well, BIT(domain), power_domains) {
+		if (power_well->always_on)
+			continue;
 
-	return power_domains->domain_use_count[domain];
+		if (!power_well->count) {
+			is_enabled = false;
+			break;
+		}
+	}
+	return is_enabled;
 }
 
 bool intel_display_power_enabled(struct drm_i915_private *dev_priv,
@@ -5706,32 +5720,55 @@ void intel_display_power_put(struct drm_i915_private *dev_priv,
 static struct i915_power_domains *hsw_pwr;
 
 /* Display audio driver power well request */
-void i915_request_power_well(void)
+int i915_request_power_well(void)
 {
 	struct drm_i915_private *dev_priv;
 
-	if (WARN_ON(!hsw_pwr))
-		return;
+	if (!hsw_pwr)
+		return -ENODEV;
 
 	dev_priv = container_of(hsw_pwr, struct drm_i915_private,
 				power_domains);
 	intel_display_power_get(dev_priv, POWER_DOMAIN_AUDIO);
+	return 0;
 }
 EXPORT_SYMBOL_GPL(i915_request_power_well);
 
 /* Display audio driver power well release */
-void i915_release_power_well(void)
+int i915_release_power_well(void)
 {
 	struct drm_i915_private *dev_priv;
 
-	if (WARN_ON(!hsw_pwr))
-		return;
+	if (!hsw_pwr)
+		return -ENODEV;
 
 	dev_priv = container_of(hsw_pwr, struct drm_i915_private,
 				power_domains);
 	intel_display_power_put(dev_priv, POWER_DOMAIN_AUDIO);
+	return 0;
 }
 EXPORT_SYMBOL_GPL(i915_release_power_well);
+
+/*
+ * Private interface for the audio driver to get CDCLK in kHz.
+ *
+ * Caller must request power well using i915_request_power_well() prior to
+ * making the call.
+ */
+int i915_get_cdclk_freq(void)
+{
+	struct drm_i915_private *dev_priv;
+
+	if (!hsw_pwr)
+		return -ENODEV;
+
+	dev_priv = container_of(hsw_pwr, struct drm_i915_private,
+				power_domains);
+
+	return intel_ddi_get_cdclk_freq(dev_priv);
+}
+EXPORT_SYMBOL_GPL(i915_get_cdclk_freq);
+
 
 #define POWER_DOMAIN_MASK (BIT(POWER_DOMAIN_NUM) - 1)
 
