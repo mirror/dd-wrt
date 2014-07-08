@@ -861,7 +861,8 @@ void phy_state_machine(struct work_struct *work)
 			}
 			break;
 		case PHY_FORCING:
-			err = genphy_update_link(phydev);
+			err = phy_read_status(phydev);
+//			err = genphy_update_link(phydev);
 
 			if (err)
 				break;

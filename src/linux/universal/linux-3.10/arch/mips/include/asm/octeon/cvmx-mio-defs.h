@@ -1038,20 +1038,43 @@ union cvmx_mio_emm_cfg {
 	uint64_t u64;
 	struct cvmx_mio_emm_cfg_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_17_63:47;
-		uint64_t boot_fail:1;
-		uint64_t reserved_4_15:12;
-		uint64_t bus_ena:4;
+	uint64_t reserved_17_63               : 47;
+	uint64_t boot_fail                    : 1;  /**< SW should set BOOT_FAIL when an unrecoverable error occurs
+                                                         while attempt to boot from eMMC or NOR Flash.   When set, the
+                                                         following pattern will be output:
+                                                           BOOT_AD[7:0] pulled up to 1
+                                                           BOOT_CE_N[7:0] driven to 1
+                                                           BOOT_ALE driven to 0
+                                                           BOOT_OE_L driven to 1
+                                                           BOOT_WE_L driven to 1 */
+	uint64_t reserved_4_15                : 12;
+	uint64_t bus_ena                      : 4;  /**< eMMC bus enable mask.
+
+                                                         Setting bit0 of BUS_ENA causes BOOT_CE[1] to become dedicated
+                                                         eMMC bus 0 command (ie. disabling any NOR use)
+
+                                                         Setting bit1 of BUS_ENA causes BOOT_CE[2] to become dedicated
+                                                         eMMC bus 1 command (ie. disabling any NOR use).
+
+                                                         Setting bit2 of BUS_ENA causes BOOT_CE[3] to become dedicated
+                                                         eMMC bus 2 command (ie. disabling any NOR use).
+
+                                                         Setting bit3 of BUS_ENA causes BOOT_CE[4] to become dedicated
+                                                         eMMC bus 3 command (ie. disabling any NOR use).
+
+                                                         Setting any bit of BUS_ENA causes BOOT_CE[5] to become the eMMC
+                                                         clock for both bus0 and bus1. */
 #else
-		uint64_t bus_ena:4;
-		uint64_t reserved_4_15:12;
-		uint64_t boot_fail:1;
-		uint64_t reserved_17_63:47;
+	uint64_t bus_ena                      : 4;
+	uint64_t reserved_4_15                : 12;
+	uint64_t boot_fail                    : 1;
+	uint64_t reserved_17_63               : 47;
 #endif
 	} s;
-	struct cvmx_mio_emm_cfg_s cn61xx;
-	struct cvmx_mio_emm_cfg_s cnf71xx;
+	struct cvmx_mio_emm_cfg_s             cn61xx;
+	struct cvmx_mio_emm_cfg_s             cnf71xx;
 };
+typedef union cvmx_mio_emm_cfg cvmx_mio_emm_cfg_t;
 
 union cvmx_mio_emm_cmd {
 	uint64_t u64;
@@ -1090,61 +1113,79 @@ union cvmx_mio_emm_dma {
 	uint64_t u64;
 	struct cvmx_mio_emm_dma_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_62_63:2;
-		uint64_t bus_id:2;
-		uint64_t dma_val:1;
-		uint64_t sector:1;
-		uint64_t dat_null:1;
-		uint64_t thres:6;
-		uint64_t rel_wr:1;
-		uint64_t rw:1;
-		uint64_t multi:1;
-		uint64_t block_cnt:16;
-		uint64_t card_addr:32;
+	uint64_t reserved_62_63               : 2;
+	uint64_t bus_id                       : 2;  /**< Specify the eMMC bus */
+	uint64_t dma_val                      : 1;  /**< SW writes this bit to a 1 to indicate that HW should perform
+                                                         the DMA transfer.   HW clears when DMA operation completes or
+                                                         is terminated. */
+	uint64_t sector                       : 1;  /**< Specify CARD_ADDR and eMMC are using sector (512B) addressing. */
+	uint64_t dat_null                     : 1;  /**< Do not perform any eMMC commands.   A DMA read will return all
+                                                         0s.  A DMA write tosses the data.  In the case of a failure,
+                                                         this can be used to unwind the DMA engine. */
+	uint64_t thres                        : 6;  /**< Number of 8B blocks of data that must exist in the DBUF before
+                                                         the starting the 512B block transfer.  0 indicates to wait for
+                                                         the entire block. */
+	uint64_t rel_wr                       : 1;  /**< Set the reliable write parameter when performing CMD23
+                                                         (SET_BLOCK_COUNT) for a multiple block */
+	uint64_t rw                           : 1;  /**< R/W bit (0 = read, 1 = write) */
+	uint64_t multi                        : 1;  /**< Perform operation using a multiple block command instead of a
+                                                         series of single block commands. */
+	uint64_t block_cnt                    : 16; /**< Number of blocks to read/write.  Hardware decrements the block
+                                                         count after each successful block transfer. */
+	uint64_t card_addr                    : 32; /**< Data address for media =<2GB is a 32bit byte address and data
+                                                         address for media > 2GB is a 32bit sector (512B) address.
+                                                         Hardware advances the card address after each successful block
+                                                         transfer by 512 for byte addressing and by 1 for sector
+                                                         addressing. */
 #else
-		uint64_t card_addr:32;
-		uint64_t block_cnt:16;
-		uint64_t multi:1;
-		uint64_t rw:1;
-		uint64_t rel_wr:1;
-		uint64_t thres:6;
-		uint64_t dat_null:1;
-		uint64_t sector:1;
-		uint64_t dma_val:1;
-		uint64_t bus_id:2;
-		uint64_t reserved_62_63:2;
+	uint64_t card_addr                    : 32;
+	uint64_t block_cnt                    : 16;
+	uint64_t multi                        : 1;
+	uint64_t rw                           : 1;
+	uint64_t rel_wr                       : 1;
+	uint64_t thres                        : 6;
+	uint64_t dat_null                     : 1;
+	uint64_t sector                       : 1;
+	uint64_t dma_val                      : 1;
+	uint64_t bus_id                       : 2;
+	uint64_t reserved_62_63               : 2;
 #endif
 	} s;
-	struct cvmx_mio_emm_dma_s cn61xx;
-	struct cvmx_mio_emm_dma_s cnf71xx;
+	struct cvmx_mio_emm_dma_s             cn61xx;
+	struct cvmx_mio_emm_dma_s             cnf71xx;
 };
+typedef union cvmx_mio_emm_dma cvmx_mio_emm_dma_t;
+
 
 union cvmx_mio_emm_int {
 	uint64_t u64;
 	struct cvmx_mio_emm_int_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_7_63:57;
-		uint64_t switch_err:1;
-		uint64_t switch_done:1;
-		uint64_t dma_err:1;
-		uint64_t cmd_err:1;
-		uint64_t dma_done:1;
-		uint64_t cmd_done:1;
-		uint64_t buf_done:1;
+	uint64_t reserved_7_63                : 57;
+	uint64_t switch_err                   : 1;  /**< Switch operation encountered an error. */
+	uint64_t switch_done                  : 1;  /**< Switch operation completed successfully */
+	uint64_t dma_err                      : 1;  /**< DMA transfer encountered an error.   See MIO_EMM_RSP. */
+	uint64_t cmd_err                      : 1;  /**< Operation specified by MIO_EMM_CMD encountered an error.  See
+                                                         MIO_EMM_RSP. */
+	uint64_t dma_done                     : 1;  /**< DMA transfer completed successfully */
+	uint64_t cmd_done                     : 1;  /**< Operation specified by MIO_EMM_CMD completed successfully */
+	uint64_t buf_done                     : 1;  /**< The next 512B block transfer of a multi-block transfer has
+                                                         completed. */
 #else
-		uint64_t buf_done:1;
-		uint64_t cmd_done:1;
-		uint64_t dma_done:1;
-		uint64_t cmd_err:1;
-		uint64_t dma_err:1;
-		uint64_t switch_done:1;
-		uint64_t switch_err:1;
-		uint64_t reserved_7_63:57;
+	uint64_t buf_done                     : 1;
+	uint64_t cmd_done                     : 1;
+	uint64_t dma_done                     : 1;
+	uint64_t cmd_err                      : 1;
+	uint64_t dma_err                      : 1;
+	uint64_t switch_done                  : 1;
+	uint64_t switch_err                   : 1;
+	uint64_t reserved_7_63                : 57;
 #endif
 	} s;
-	struct cvmx_mio_emm_int_s cn61xx;
-	struct cvmx_mio_emm_int_s cnf71xx;
+	struct cvmx_mio_emm_int_s             cn61xx;
+	struct cvmx_mio_emm_int_s             cnf71xx;
 };
+typedef union cvmx_mio_emm_int cvmx_mio_emm_int_t;
 
 union cvmx_mio_emm_int_en {
 	uint64_t u64;
@@ -1245,62 +1286,83 @@ union cvmx_mio_emm_rsp_sts {
 	uint64_t u64;
 	struct cvmx_mio_emm_rsp_sts_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_62_63:2;
-		uint64_t bus_id:2;
-		uint64_t cmd_val:1;
-		uint64_t switch_val:1;
-		uint64_t dma_val:1;
-		uint64_t dma_pend:1;
-		uint64_t reserved_29_55:27;
-		uint64_t dbuf_err:1;
-		uint64_t reserved_24_27:4;
-		uint64_t dbuf:1;
-		uint64_t blk_timeout:1;
-		uint64_t blk_crc_err:1;
-		uint64_t rsp_busybit:1;
-		uint64_t stp_timeout:1;
-		uint64_t stp_crc_err:1;
-		uint64_t stp_bad_sts:1;
-		uint64_t stp_val:1;
-		uint64_t rsp_timeout:1;
-		uint64_t rsp_crc_err:1;
-		uint64_t rsp_bad_sts:1;
-		uint64_t rsp_val:1;
-		uint64_t rsp_type:3;
-		uint64_t cmd_type:2;
-		uint64_t cmd_idx:6;
-		uint64_t cmd_done:1;
+	uint64_t reserved_62_63               : 2;
+	uint64_t bus_id                       : 2;  /**< eMMC bus id to which the response status corresponds. */
+	uint64_t cmd_val                      : 1;  /**< Read-only copy of MIO_EMM_CMD[CMD_VAL].  CMD_VAL=1 indicates a
+                                                         direct operation is in progress. */
+	uint64_t switch_val                   : 1;  /**< Read-only copy of MIO_EMM_SWITCH[SWITCH_EXE].   SWITCH_VAL=1
+                                                         indicates a switch operation is in progress. */
+	uint64_t dma_val                      : 1;  /**< Read-only copy of MIO_EMM_DMA[DMA_VAL].   DMA_VAL=1 indicates a
+                                                         DMA operation is in progress. */
+	uint64_t dma_pend                     : 1;  /**< The DMA engine has a pending transfer resulting from an error.
+                                                         SW can resume the transfer by writing MIO_EMM_DMA[DMA_VAL]=1.
+                                                         SW can terminate the transfer by writing MIO_EMM_DMA[DMA_VAL]=1
+                                                         and MIO_EMM_DMA[NULL]=1.   HW will clear DMA_PEND and perform
+                                                         the DMA operation */
+	uint64_t reserved_29_55               : 27;
+	uint64_t dbuf_err                     : 1;  /**< For CMD_TYPE=1, indicates a DMA read data arrived from card
+                                                         without a free DBUF.
+
+                                                         For CMD_TYPE=2, indicates a DBUF underflow occurred during a
+                                                         DMA write.    See MIO_EMM_DMA[THRES]. */
+	uint64_t reserved_24_27               : 4;
+	uint64_t dbuf                         : 1;  /**< DBUF corresponding to the most recently attempted block
+                                                         transfer. */
+	uint64_t blk_timeout                  : 1;  /**< Timeout waiting for read data or 3bit CRC token */
+	uint64_t blk_crc_err                  : 1;  /**< For CMD_TYPE=1, indicates a card read data CRC mismatch.
+                                                         MIO_EMM_RSP_STS[DBUF] indicates the failing data buffer.
+
+                                                         For CMD_TYPE=2, indicates card returned 3-bit CRC status token
+                                                         indicating the card encountered a write data CRC check
+                                                         mismatch.  MIO_EMM_RSP_STS[DBUF] indicates the failing data
+                                                         buffer. */
+	uint64_t rsp_busybit                  : 1;  /**< Debug only.  eMMC protocol utilizes DAT0 as a busy signal
+                                                         during block writes and R1b responses. */
+	uint64_t stp_timeout                  : 1;  /**< Stop transmission response timeout. */
+	uint64_t stp_crc_err                  : 1;  /**< Stop transmission response had a CRC error */
+	uint64_t stp_bad_sts                  : 1;  /**< Stop transmission response had bad status. */
+	uint64_t stp_val                      : 1;  /**< Stop transmission response valid. */
+	uint64_t rsp_timeout                  : 1;  /**< Response timeout */
+	uint64_t rsp_crc_err                  : 1;  /**< Response CRC error */
+	uint64_t rsp_bad_sts                  : 1;  /**< Response bad status */
+	uint64_t rsp_val                      : 1;  /**< Response id.   See MIO_EMM_RSP_HI/LO */
+	uint64_t rsp_type                     : 3;  /**< Indicates the response type. See MIO_EMM_RSP_HI/LO */
+	uint64_t cmd_type                     : 2;  /**< eMMC command type (0=no data, 1=read, 2=write) */
+	uint64_t cmd_idx                      : 6;  /**< eMMC command index most recently attempted */
+	uint64_t cmd_done                     : 1;  /**< eMMC command completed.   Once the command has complete, the
+                                                         status is final and can be examined by SW. */
 #else
-		uint64_t cmd_done:1;
-		uint64_t cmd_idx:6;
-		uint64_t cmd_type:2;
-		uint64_t rsp_type:3;
-		uint64_t rsp_val:1;
-		uint64_t rsp_bad_sts:1;
-		uint64_t rsp_crc_err:1;
-		uint64_t rsp_timeout:1;
-		uint64_t stp_val:1;
-		uint64_t stp_bad_sts:1;
-		uint64_t stp_crc_err:1;
-		uint64_t stp_timeout:1;
-		uint64_t rsp_busybit:1;
-		uint64_t blk_crc_err:1;
-		uint64_t blk_timeout:1;
-		uint64_t dbuf:1;
-		uint64_t reserved_24_27:4;
-		uint64_t dbuf_err:1;
-		uint64_t reserved_29_55:27;
-		uint64_t dma_pend:1;
-		uint64_t dma_val:1;
-		uint64_t switch_val:1;
-		uint64_t cmd_val:1;
-		uint64_t bus_id:2;
-		uint64_t reserved_62_63:2;
+	uint64_t cmd_done                     : 1;
+	uint64_t cmd_idx                      : 6;
+	uint64_t cmd_type                     : 2;
+	uint64_t rsp_type                     : 3;
+	uint64_t rsp_val                      : 1;
+	uint64_t rsp_bad_sts                  : 1;
+	uint64_t rsp_crc_err                  : 1;
+	uint64_t rsp_timeout                  : 1;
+	uint64_t stp_val                      : 1;
+	uint64_t stp_bad_sts                  : 1;
+	uint64_t stp_crc_err                  : 1;
+	uint64_t stp_timeout                  : 1;
+	uint64_t rsp_busybit                  : 1;
+	uint64_t blk_crc_err                  : 1;
+	uint64_t blk_timeout                  : 1;
+	uint64_t dbuf                         : 1;
+	uint64_t reserved_24_27               : 4;
+	uint64_t dbuf_err                     : 1;
+	uint64_t reserved_29_55               : 27;
+	uint64_t dma_pend                     : 1;
+	uint64_t dma_val                      : 1;
+	uint64_t switch_val                   : 1;
+	uint64_t cmd_val                      : 1;
+	uint64_t bus_id                       : 2;
+	uint64_t reserved_62_63               : 2;
 #endif
 	} s;
-	struct cvmx_mio_emm_rsp_sts_s cn61xx;
-	struct cvmx_mio_emm_rsp_sts_s cnf71xx;
+	struct cvmx_mio_emm_rsp_sts_s         cn61xx;
+	struct cvmx_mio_emm_rsp_sts_s         cnf71xx;
 };
+typedef union cvmx_mio_emm_rsp_sts cvmx_mio_emm_rsp_sts_t;
 
 union cvmx_mio_emm_sample {
 	uint64_t u64;
@@ -1325,55 +1387,79 @@ union cvmx_mio_emm_sts_mask {
 	uint64_t u64;
 	struct cvmx_mio_emm_sts_mask_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_32_63:32;
-		uint64_t sts_msk:32;
+	uint64_t reserved_32_63               : 32;
+	uint64_t sts_msk                      : 32; /**< Any bit set in STS_MSK causes the corresponding bit in the card
+                                                         status to be considered when computing response bad status. */
 #else
-		uint64_t sts_msk:32;
-		uint64_t reserved_32_63:32;
+	uint64_t sts_msk                      : 32;
+	uint64_t reserved_32_63               : 32;
 #endif
 	} s;
-	struct cvmx_mio_emm_sts_mask_s cn61xx;
-	struct cvmx_mio_emm_sts_mask_s cnf71xx;
+	struct cvmx_mio_emm_sts_mask_s        cn61xx;
+	struct cvmx_mio_emm_sts_mask_s        cnf71xx;
 };
+typedef union cvmx_mio_emm_sts_mask cvmx_mio_emm_sts_mask_t;
 
 union cvmx_mio_emm_switch {
 	uint64_t u64;
 	struct cvmx_mio_emm_switch_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_62_63:2;
-		uint64_t bus_id:2;
-		uint64_t switch_exe:1;
-		uint64_t switch_err0:1;
-		uint64_t switch_err1:1;
-		uint64_t switch_err2:1;
-		uint64_t reserved_49_55:7;
-		uint64_t hs_timing:1;
-		uint64_t reserved_43_47:5;
-		uint64_t bus_width:3;
-		uint64_t reserved_36_39:4;
-		uint64_t power_class:4;
-		uint64_t clk_hi:16;
-		uint64_t clk_lo:16;
+	uint64_t reserved_62_63               : 2;
+	uint64_t bus_id                       : 2;  /**< Specify the eMMC bus */
+	uint64_t switch_exe                   : 1;  /**< When SWITCH_EXE is 0, the operating modes will be update
+                                                         directly without performing any SWITCH operations.   This
+                                                         allows SW to perform the SWITCH operations manually, then
+                                                         update the HW.
+
+                                                         SW writes this bit to a 1 to indicate that HW should perform
+                                                         the necessary SWITCH operations.   First, the POWER_CLASS
+                                                         switch will be performed.   If it fails, SWITCH_ERR0 will be
+                                                         and the remaining SWITCH operations will not be performed.   If
+                                                         is succeeds, the POWER_CLASS field will be updated and the
+                                                         HS_TIMING switch will be performed.   If it fails, SWITCH_ERR1
+                                                         will be set and the remaining SWITCH operations will not be
+                                                         performed.   If is succeeds, the HS_TIMING field will be
+                                                         updated and the BUS_WITDH switch operation will be performed.
+                                                         If it fails, SWITCH_ERR2 will be set.  If it succeeds, the
+                                                         BUS_WITDH will be updated.
+
+                                                         Changes to CLK_HI and CLK_LO are discarded if any switch error
+                                                         occurs. */
+	uint64_t switch_err0                  : 1;  /**< Error encounter while performing POWER_CLASS switch .   See
+                                                         MIO_EMM_RSP_STS */
+	uint64_t switch_err1                  : 1;  /**< Error encounter while performing HS_TIMING switch .   See
+                                                         MIO_EMM_RSP_STS */
+	uint64_t switch_err2                  : 1;  /**< Error encounter while performing BUS_WIDTH switch .   See
+                                                         MIO_EMM_RSP_STS */
+	uint64_t reserved_49_55               : 7;
+	uint64_t hs_timing                    : 1;  /**< Requested update to HS_TIMING */
+	uint64_t reserved_43_47               : 5;
+	uint64_t bus_width                    : 3;  /**< Requested update to BUS_WIDTH */
+	uint64_t reserved_36_39               : 4;
+	uint64_t power_class                  : 4;  /**< Requested update to POWER_CLASS */
+	uint64_t clk_hi                       : 16; /**< Requested update to CLK_HI */
+	uint64_t clk_lo                       : 16; /**< Requested update to CLK_LO */
 #else
-		uint64_t clk_lo:16;
-		uint64_t clk_hi:16;
-		uint64_t power_class:4;
-		uint64_t reserved_36_39:4;
-		uint64_t bus_width:3;
-		uint64_t reserved_43_47:5;
-		uint64_t hs_timing:1;
-		uint64_t reserved_49_55:7;
-		uint64_t switch_err2:1;
-		uint64_t switch_err1:1;
-		uint64_t switch_err0:1;
-		uint64_t switch_exe:1;
-		uint64_t bus_id:2;
-		uint64_t reserved_62_63:2;
+	uint64_t clk_lo                       : 16;
+	uint64_t clk_hi                       : 16;
+	uint64_t power_class                  : 4;
+	uint64_t reserved_36_39               : 4;
+	uint64_t bus_width                    : 3;
+	uint64_t reserved_43_47               : 5;
+	uint64_t hs_timing                    : 1;
+	uint64_t reserved_49_55               : 7;
+	uint64_t switch_err2                  : 1;
+	uint64_t switch_err1                  : 1;
+	uint64_t switch_err0                  : 1;
+	uint64_t switch_exe                   : 1;
+	uint64_t bus_id                       : 2;
+	uint64_t reserved_62_63               : 2;
 #endif
 	} s;
-	struct cvmx_mio_emm_switch_s cn61xx;
-	struct cvmx_mio_emm_switch_s cnf71xx;
+	struct cvmx_mio_emm_switch_s          cn61xx;
+	struct cvmx_mio_emm_switch_s          cnf71xx;
 };
+typedef union cvmx_mio_emm_switch cvmx_mio_emm_switch_t;
 
 union cvmx_mio_emm_wdog {
 	uint64_t u64;
@@ -2606,59 +2692,62 @@ union cvmx_mio_ndf_dma_cfg {
 	uint64_t u64;
 	struct cvmx_mio_ndf_dma_cfg_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t en:1;
-		uint64_t rw:1;
-		uint64_t clr:1;
-		uint64_t reserved_60_60:1;
-		uint64_t swap32:1;
-		uint64_t swap16:1;
-		uint64_t swap8:1;
-		uint64_t endian:1;
-		uint64_t size:20;
-		uint64_t adr:36;
+	uint64_t en                           : 1;  /**< DMA Engine enable */
+	uint64_t rw                           : 1;  /**< DMA Engine R/W bit (0 = read, 1 = write) */
+	uint64_t clr                          : 1;  /**< DMA Engine clear EN on device terminated burst */
+	uint64_t reserved_60_60               : 1;
+	uint64_t swap32                       : 1;  /**< DMA Engine 32 bit swap */
+	uint64_t swap16                       : 1;  /**< DMA Engine 16 bit swap */
+	uint64_t swap8                        : 1;  /**< DMA Engine 8 bit swap */
+	uint64_t endian                       : 1;  /**< DMA Engine NCB endian mode (0 = big, 1 = little) */
+	uint64_t size                         : 20; /**< DMA Engine size */
+	uint64_t adr                          : 36; /**< DMA Engine address */
 #else
-		uint64_t adr:36;
-		uint64_t size:20;
-		uint64_t endian:1;
-		uint64_t swap8:1;
-		uint64_t swap16:1;
-		uint64_t swap32:1;
-		uint64_t reserved_60_60:1;
-		uint64_t clr:1;
-		uint64_t rw:1;
-		uint64_t en:1;
+	uint64_t adr                          : 36;
+	uint64_t size                         : 20;
+	uint64_t endian                       : 1;
+	uint64_t swap8                        : 1;
+	uint64_t swap16                       : 1;
+	uint64_t swap32                       : 1;
+	uint64_t reserved_60_60               : 1;
+	uint64_t clr                          : 1;
+	uint64_t rw                           : 1;
+	uint64_t en                           : 1;
 #endif
 	} s;
-	struct cvmx_mio_ndf_dma_cfg_s cn52xx;
-	struct cvmx_mio_ndf_dma_cfg_s cn61xx;
-	struct cvmx_mio_ndf_dma_cfg_s cn63xx;
-	struct cvmx_mio_ndf_dma_cfg_s cn63xxp1;
-	struct cvmx_mio_ndf_dma_cfg_s cn66xx;
-	struct cvmx_mio_ndf_dma_cfg_s cn68xx;
-	struct cvmx_mio_ndf_dma_cfg_s cn68xxp1;
-	struct cvmx_mio_ndf_dma_cfg_s cnf71xx;
+	struct cvmx_mio_ndf_dma_cfg_s         cn52xx;
+	struct cvmx_mio_ndf_dma_cfg_s         cn61xx;
+	struct cvmx_mio_ndf_dma_cfg_s         cn63xx;
+	struct cvmx_mio_ndf_dma_cfg_s         cn63xxp1;
+	struct cvmx_mio_ndf_dma_cfg_s         cn66xx;
+	struct cvmx_mio_ndf_dma_cfg_s         cn68xx;
+	struct cvmx_mio_ndf_dma_cfg_s         cn68xxp1;
+	struct cvmx_mio_ndf_dma_cfg_s         cnf71xx;
 };
+typedef union cvmx_mio_ndf_dma_cfg cvmx_mio_ndf_dma_cfg_t;
 
 union cvmx_mio_ndf_dma_int {
 	uint64_t u64;
 	struct cvmx_mio_ndf_dma_int_s {
 #ifdef __BIG_ENDIAN_BITFIELD
-		uint64_t reserved_1_63:63;
-		uint64_t done:1;
+	uint64_t reserved_1_63                : 63;
+	uint64_t done                         : 1;  /**< DMA Engine request completion interrupt */
 #else
-		uint64_t done:1;
-		uint64_t reserved_1_63:63;
+	uint64_t done                         : 1;
+	uint64_t reserved_1_63                : 63;
 #endif
 	} s;
-	struct cvmx_mio_ndf_dma_int_s cn52xx;
-	struct cvmx_mio_ndf_dma_int_s cn61xx;
-	struct cvmx_mio_ndf_dma_int_s cn63xx;
-	struct cvmx_mio_ndf_dma_int_s cn63xxp1;
-	struct cvmx_mio_ndf_dma_int_s cn66xx;
-	struct cvmx_mio_ndf_dma_int_s cn68xx;
-	struct cvmx_mio_ndf_dma_int_s cn68xxp1;
-	struct cvmx_mio_ndf_dma_int_s cnf71xx;
+	struct cvmx_mio_ndf_dma_int_s         cn52xx;
+	struct cvmx_mio_ndf_dma_int_s         cn61xx;
+	struct cvmx_mio_ndf_dma_int_s         cn63xx;
+	struct cvmx_mio_ndf_dma_int_s         cn63xxp1;
+	struct cvmx_mio_ndf_dma_int_s         cn66xx;
+	struct cvmx_mio_ndf_dma_int_s         cn68xx;
+	struct cvmx_mio_ndf_dma_int_s         cn68xxp1;
+	struct cvmx_mio_ndf_dma_int_s         cnf71xx;
 };
+typedef union cvmx_mio_ndf_dma_int cvmx_mio_ndf_dma_int_t;
+
 
 union cvmx_mio_ndf_dma_int_en {
 	uint64_t u64;

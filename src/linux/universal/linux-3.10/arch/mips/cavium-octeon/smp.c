@@ -26,11 +26,6 @@ volatile unsigned long octeon_processor_boot = 0xff;
 volatile unsigned long octeon_processor_sp;
 volatile unsigned long octeon_processor_gp;
 
-#ifdef CONFIG_HOTPLUG_CPU
-uint64_t octeon_bootloader_entry_addr;
-EXPORT_SYMBOL(octeon_bootloader_entry_addr);
-#endif
-
 static irqreturn_t mailbox_interrupt(int irq, void *dev_id)
 {
 	const int coreid = cvmx_get_core_num();
@@ -255,7 +250,7 @@ static void octeon_cpus_done(void)
 /* State of each CPU. */
 DEFINE_PER_CPU(int, cpu_state);
 
-extern void fixup_irqs(void);
+extern void octeon_fixup_irqs(void);
 
 static int octeon_cpu_disable(void)
 {
@@ -267,7 +262,7 @@ static int octeon_cpu_disable(void)
 	set_cpu_online(cpu, false);
 	cpu_clear(cpu, cpu_callin_map);
 	local_irq_disable();
-	fixup_irqs();
+	octeon_fixup_irqs();
 	local_irq_enable();
 
 	flush_cache_all();

@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.47 Kernel Configuration
+# Linux/mips 3.10.48-rc1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -419,7 +419,6 @@ CONFIG_ARCH_SUSPEND_POSSIBLE=y
 # CONFIG_SUSPEND is not set
 # CONFIG_PM_RUNTIME is not set
 CONFIG_NET=y
-CONFIG_ETHERNET_PACKET_MANGLE=y
 CONFIG_COMPAT_NETLINK_MESSAGES=y
 
 #

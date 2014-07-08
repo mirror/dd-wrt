@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 3.10.40 Kernel Configuration
+# Linux/i386 3.10.48-rc1 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -936,6 +936,7 @@ CONFIG_RFKILL_LEDS=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
+CONFIG_DDTB=y
 
 #
 # Device Drivers
@@ -2013,6 +2014,7 @@ CONFIG_SENSORS_MAX6650=m
 # CONFIG_SENSORS_MAX6697 is not set
 # CONFIG_SENSORS_MCP3021 is not set
 # CONFIG_SENSORS_NCT6775 is not set
+# CONFIG_SENSORS_NTC_THERMISTOR is not set
 CONFIG_SENSORS_PC87360=m
 CONFIG_SENSORS_PC87427=m
 CONFIG_SENSORS_PCF8591=m
@@ -3267,4 +3269,3 @@ CONFIG_ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE=y
 CONFIG_AVERAGE=y
 CONFIG_CORDIC=y
 # CONFIG_DDR is not set
-CONFIG_DDTB=y

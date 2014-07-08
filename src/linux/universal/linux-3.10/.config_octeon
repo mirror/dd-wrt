@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.46-rc1 Kernel Configuration
+# Linux/mips 3.10.48-rc1 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -824,6 +824,7 @@ CONFIG_WEXT_PRIV=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
+CONFIG_DDTB=y
 
 #
 # Device Drivers
@@ -1298,6 +1299,7 @@ CONFIG_GPIO_SYSFS=y
 # Memory mapped GPIO drivers:
 #
 # CONFIG_GPIO_GENERIC_PLATFORM is not set
+CONFIG_GPIO_OCTEON=y
 # CONFIG_GPIO_TS5500 is not set
 # CONFIG_GPIO_VX855 is not set
 # CONFIG_GPIO_GRGPIO is not set
@@ -2027,4 +2029,3 @@ CONFIG_CLZ_TAB=y
 CONFIG_MPILIB=y
 CONFIG_LIBFDT=y
 CONFIG_OID_REGISTRY=y
-CONFIG_DDTB=y

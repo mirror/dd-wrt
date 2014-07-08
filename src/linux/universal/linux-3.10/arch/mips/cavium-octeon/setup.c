@@ -41,6 +41,8 @@
 #include <asm/octeon/pci-octeon.h>
 #include <asm/octeon/cvmx-mio-defs.h>
 
+#include "octeon_boot.h"
+
 #ifdef CONFIG_CAVIUM_DECODE_RSL
 extern void cvmx_interrupt_rsl_decode(void);
 extern int __cvmx_interrupt_ecc_report_single_bit_errors;
@@ -62,6 +64,10 @@ struct octeon_boot_descriptor *octeon_boot_desc_ptr;
 
 struct cvmx_bootinfo *octeon_bootinfo;
 EXPORT_SYMBOL(octeon_bootinfo);
+
+uint64_t octeon_bootloader_entry_addr;
+EXPORT_SYMBOL(octeon_bootloader_entry_addr);
+
 
 static unsigned long long RESERVE_LOW_MEM = 0ull;
 #ifdef CONFIG_KEXEC
@@ -633,6 +639,7 @@ void octeon_user_io_init(void)
 void __init prom_init(void)
 {
 	struct cvmx_sysinfo *sysinfo;
+	struct linux_app_boot_info *labi;
 	const char *arg;
 	char *p;
 	int i;
@@ -868,6 +875,15 @@ void __init prom_init(void)
 
 	octeon_user_io_init();
 	register_smp_ops(&octeon_smp_ops);
+
+
+	labi = (struct linux_app_boot_info *)PHYS_TO_XKSEG_CACHED(LABI_ADDR_IN_BOOTLOADER);
+	if (labi->labi_signature != LABI_SIGNATURE)
+		panic("The bootloader version on this board is incorrect.");
+
+	octeon_bootloader_entry_addr = labi->InitTLBStart_addr;
+
+
 }
 
 /* Exclude a single page from the regions obtained in plat_mem_setup. */
