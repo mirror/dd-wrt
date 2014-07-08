@@ -838,6 +838,8 @@ static void nat_postrouting(void)
 		if (nvram_match("block_loopback", "0"))
 			writeproc("/proc/sys/net/ipv4/conf/br0/loop", "1");
 
+		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
+		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
 	} else {
 		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
 		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
