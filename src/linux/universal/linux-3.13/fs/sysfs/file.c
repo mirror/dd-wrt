@@ -94,12 +94,13 @@ static int sysfs_seq_show(struct seq_file *sf, void *v)
 	char *buf;
 	ssize_t count;
 
-	/* acquire buffer and ensure that it's >= PAGE_SIZE */
+	/* acquire buffer and ensure that it's >= PAGE_SIZE and clear */
 	count = seq_get_buf(sf, &buf);
 	if (count < PAGE_SIZE) {
 		seq_commit(sf, -1);
 		return 0;
 	}
+	memset(buf, 0, PAGE_SIZE);
 
 	/*
 	 * Need @of->sd for attr and ops, its parent for kobj.  @of->mutex
