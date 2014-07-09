@@ -60,6 +60,11 @@ static void ddtb_add_ipv4(struct sk_buff *skb, struct nf_conn *ct,
 	if (ct->ddtb || !skb->orig_dev || !skb_dst(skb) || !skb_dst(skb)->dev)
 		return;
 
+	/* make sure its a forwarding conn */
+	rt = skb_rtable(skb);
+	if (!rt || rt->rt_type != RTN_UNICAST || !rt_is_input_route(rt))
+		return;
+
 	memset(&c, 0, sizeof(struct ddtb_conn));
 	ddtb_fill_nf_tuple(&c.request, &ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple);
 	ddtb_fill_nf_tuple(&c.reply, &ct->tuplehash[IP_CT_DIR_REPLY].tuple);
@@ -82,14 +87,6 @@ static void ddtb_add_ipv4(struct sk_buff *skb, struct nf_conn *ct,
 		get_ipaddr(dest->tuple.sip[0]),
 		get_ipaddr(dest->tuple.dip[0]));
 #endif
-
-	if (!skb_dst(skb) || !skb_dst(skb)->dev)
-		return;
-
-	/* make sure its a forwarding conn */
-	rt = skb_rtable(skb);
-	if (!rt || rt->rt_type != RTN_UNICAST)
-		return;
 
 	/*
 	 * When routing from bridge to bridge, we cannot get both the input
