@@ -83,7 +83,7 @@ static void ddtb_add_ipv4(struct sk_buff *skb, struct nf_conn *ct,
 		get_ipaddr(dest->tuple.dip[0]));
 #endif
 
-	if (!skb_dst(skb))
+	if (!skb_dst(skb) || !skb_dst(skb)->dev)
 		return;
 
 	/* make sure its a forwarding conn */
