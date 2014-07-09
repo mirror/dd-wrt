@@ -1,8 +1,8 @@
 VERSION = 3
 PATCHLEVEL = 13
 SUBLEVEL = 11
-EXTRAVERSION =
-NAME = One Giant Leap for Frogkind
+EXTRAVERSION = .4
+NAME = King of Alienated Frog Porn
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
