@@ -112,6 +112,7 @@ include rules/snmp.mk
 include rules/wifidog.mk
 include rules/wol.mk
 include rules/dhcp-forwarder.mk
+include rules/dhcpv6.mk
 include rules/rtp-proxy.mk
 include rules/shat.mk
 include rules/radauth.mk
