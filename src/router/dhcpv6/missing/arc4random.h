@@ -33,5 +33,9 @@
 #define	__P(x)	x
 typedef uint32_t u_int32_t;
 #endif
+#ifndef __THROW
+#define __THROW
+#define __P(args)	args
+#endif
 
 extern u_int32_t arc4random __P((void));
