@@ -70,7 +70,7 @@ void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 			while (line[ifl] != ' ' && line[ifl] != '\t' && line[ifl] != '\0')
 				ifl++;
 			line[ifl] = 0;	/* interface */
-			if (sscanf(line + ifl + 1, "%lx%lx%X%d%d%d%lx", &dest, &gw, &flgs, &ref, &use, &metric, &netmask) != 7) {
+			if (sscanf(line + ifl + 1, "%x%x%X%d%d%d%x", &dest, &gw, &flgs, &ref, &use, &metric, &netmask) != 7) {
 				break;
 			}
 			debug = 0;
