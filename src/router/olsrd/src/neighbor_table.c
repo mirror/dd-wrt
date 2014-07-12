@@ -385,15 +385,10 @@ olsr_print_neighbor_table(void)
   /* The whole function doesn't do anything else. */
   const int iplen = olsr_cnf->ip_version == AF_INET ? (INET_ADDRSTRLEN - 1) : (INET6_ADDRSTRLEN - 1);
   int idx;
-  struct tm * nowtm;
-  struct timeval now;
-
-	(void)gettimeofday(&now, NULL);
-  nowtm = localtime((time_t *)&now.tv_sec);
 
   OLSR_PRINTF(1,
-              "\n--- %02d:%02d:%02d.%02d ------------------------------------------------ NEIGHBORS\n\n"
-              "%*s  LQ     NLQ    SYM   MPR   MPRS  will\n", nowtm->tm_hour, nowtm->tm_min, nowtm->tm_sec, (int)now.tv_usec / 10000,
+              "\n--- %s ------------------------------------------------ NEIGHBORS\n\n"
+              "%*s  LQ     NLQ    SYM   MPR   MPRS  will\n", olsr_wallclock_string(),
               iplen, "IP address");
 
   for (idx = 0; idx < HASHSIZE; idx++) {

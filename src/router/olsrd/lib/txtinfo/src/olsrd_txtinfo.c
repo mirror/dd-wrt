@@ -301,8 +301,15 @@ ipc_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
   FD_ZERO(&rfds);
   FD_SET((unsigned int)ipc_connection, &rfds);  /* Win32 needs the cast here */
   if (0 <= select(ipc_connection + 1, &rfds, NULL, NULL, &tv)) {
-    char requ[128];
-    ssize_t s = recv(ipc_connection, (void *)&requ, sizeof(requ), 0);   /* Win32 needs the cast here */
+    char requ[1024];
+    ssize_t s = recv(ipc_connection, (void *)&requ, sizeof(requ)-1, 0);   /* Win32 needs the cast here */
+
+    if (s == sizeof(requ)-1) {
+      /* input was much too long, just skip the rest */
+      char dummy[1024];
+
+      while (recv(ipc_connection, (void *)&dummy, sizeof(dummy), 0) == sizeof(dummy));
+    }
     if (0 < s) {
       requ[s] = 0;
       /* To print out neighbours only on the Freifunk Status
@@ -329,6 +336,7 @@ ipc_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
         if (0 != strstr(requ, "/ver")) send_what |= SIW_VERSION;
       }
     }
+
     if ( send_what == 0 ) send_what = SIW_ALL;
   }
 

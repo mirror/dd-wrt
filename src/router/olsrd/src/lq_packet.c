@@ -360,8 +360,8 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
   /*
    * Initially, we want to put the complete lq_hello into the message.
    * For this flush the output buffer (if there are some bytes in).
-   * This is a hack/fix, which prevents message fragementation resulting
-   * in instable links. The ugly lq/genmsg code should be reworked anyhow.
+   * This is a hack/fix, which prevents message fragmentation resulting
+   * in unstable links. The ugly lq/genmsg code should be reworked anyhow.
    */
   if (0 < net_output_pending(outif)) {
     for (i = 0; i <= MAX_NEIGH; i++) {
@@ -408,7 +408,7 @@ serialize_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
         req = olsr_cnf->ipsize + olsr_sizeof_hello_lqdata();
 
         // no, we also need space for an info header, as this is the
-        // first neighbor with the current neighor type and link type
+        // first neighbor with the current neighbor type and link type
 
         if (is_first)
           req += sizeof(struct lq_hello_info_header);
@@ -552,8 +552,8 @@ serialize_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
   /*
    * Initially, we want to put the complete lq_tc into the message.
    * For this flush the output buffer (if there are some bytes in).
-   * This is a hack/fix, which prevents message fragementation resulting
-   * in instable links. The ugly lq/genmsg code should be reworked anyhow.
+   * This is a hack/fix, which prevents message fragmentation resulting
+   * in unstable links. The ugly lq/genmsg code should be reworked anyhow.
    */
   if (0 < net_output_pending(outif)) {
     for (neigh = lq_tc->neigh; neigh != NULL; neigh = neigh->next) {

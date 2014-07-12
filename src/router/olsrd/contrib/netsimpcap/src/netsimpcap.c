@@ -70,6 +70,10 @@ u_int8_t mac_bc[6] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 static void
 signalHandler(int signo __attribute__ ((unused)))
 {
+  /*
+   * Normally errno must be saved here and restored before returning but since
+   * we do a simple assignment we don't need to do that in this signal handler.
+   */
   running = 0;
 }
 

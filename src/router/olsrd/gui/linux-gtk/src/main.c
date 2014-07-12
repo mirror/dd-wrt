@@ -129,12 +129,14 @@ __attribute__((noreturn))
 void
 shutdown_(int sig)
 {
+  int errNr = errno;
   printf("Cleaning up...\n");
 
   if (ipc_close() < 0)
     printf("Could not close socket!\n");
 
   printf("BYE-BYE!\n");
+  errno = errNr;
   exit(sig);
 }
 
