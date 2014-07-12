@@ -40,6 +40,11 @@ typedef uint32_t u_int32_t;
 #endif
 #endif
 
+#ifndef __THROW
+#define __THROW
+#define __P(args)	args
+#endif
+
 #define DEFAULT_SERVER_CONTROL_ADDR "::1" /* default IPv6 address for server
 					   * control socket */
 #define DEFAULT_SERVER_CONTROL_PORT "5547" /* default TCP port for server
