@@ -53,6 +53,12 @@ typedef uint64_t u_int64_t;
 #endif
 #endif
 
+#ifndef __THROW
+#define __THROW
+#define __P(args)	args
+#endif
+
+
 /* Error Values */
 #define DH6ERR_FAILURE		16
 #define DH6ERR_AUTHFAIL		17
