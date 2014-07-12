@@ -1,3 +1,26 @@
+0.6.6.2 -------------------------------------------------------------------
+
+Alessio Caiazza (2):
+      Hotfix for very long http headers also for jsoninfo
+      jsoninfo: HTTP headers with CORS (if requested)
+
+Ferry Huberts (8):
+      pud: fix java detection in the wireformat java bindings (again)
+      pud: do the same fix as in the previous commit, now for i386
+      Make sure to save/restore errno in signal handlers
+      main: olsr_create_lock_file: fix return value check on 'open' call
+      pud: fix readIPAddress function
+      tok: improve the nmea_calc_crc function a bit
+      neighbor table: fix crash in olsr_print_neighbor_table on MinGW
+      Fix strange coding in the 'long headers' fix
+
+Henning Rogge (5):
+      Update version after release of v0.6.6.1
+      Fix processing error for fragmented hellos
+      Fix some spelling mistakes
+      Hotfix for much too long http headers
+      Release v0.6.6.2
+
 0.6.6.1 -------------------------------------------------------------------
 
 Henning Rogge (2):

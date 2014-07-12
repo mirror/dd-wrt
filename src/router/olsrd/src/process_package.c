@@ -441,21 +441,15 @@ olsr_hello_tap(struct hello_message *message, struct interface *in_if, const uni
 
     /* find the input interface in the list of neighbor interfaces */
     for (walker = message->neighbors; walker != NULL; walker = walker->next) {
-      if (walker->link != UNSPEC_LINK
-          && ipequal(&walker->address, &in_if->ip_addr)) {
+      if (ipequal(&walker->address, &in_if->ip_addr)) {
+        /*
+         * memorize our neighbour's idea of the link quality, so that we
+         * know the link quality in both directions
+         */
+        olsr_memorize_foreign_hello_lq(lnk, walker->link != UNSPEC_LINK ? walker : NULL);
         break;
       }
     }
-
-    /*
-     * memorize our neighbour's idea of the link quality, so that we
-     * know the link quality in both directions
-     *
-     * walker is NULL if there the current interface was not included in
-     * the message (or was included as an UNSPEC_LINK)
-     */
-    olsr_memorize_foreign_hello_lq(lnk, walker);
-
     /* update packet loss for link quality calculation */
     olsr_received_hello_handler(lnk);
   }
@@ -493,7 +487,7 @@ olsr_hello_tap(struct hello_message *message, struct interface *in_if, const uni
   if (neighbor->willingness != WILL_NEVER)
     process_message_neighbors(neighbor, message);
 
-  /* Process changes immedeatly in case of MPR updates */
+  /* Process changes immediately in case of MPR updates */
   olsr_process_changes();
 
   olsr_free_hello_packet(message);

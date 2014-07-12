@@ -96,6 +96,9 @@
 
 static int ipc_socket;
 
+/* Response types */
+#define HTTP_200 "HTTP/1.1 200 OK"
+
 /* IPC initialization function */
 static int plugin_ipc_init(void);
 
@@ -125,6 +128,18 @@ static void ipc_print_config(struct autobuf *);
 static void ipc_print_interfaces(struct autobuf *);
 static void ipc_print_plugins(struct autobuf *);
 static void ipc_print_olsrd_conf(struct autobuf *abuf);
+
+static size_t build_http_header(const char *status, const char *mime,
+  uint32_t msgsize, char *buf, uint32_t bufsize);
+
+/*
+ * this is the size of the buffer used for build_http_header
+ * the amount of data written into the buffer will be less than
+ * 400 bytes approximatively.
+ * The size may vary because the Content-Length header contains
+ * the length of the json data
+ */
+#define MAX_HTTPHEADER_SIZE 512
 
 #define TXT_IPC_BUFSIZE 256
 
@@ -508,8 +523,15 @@ ipc_action(int fd, void *data __attribute__ ((unused)), unsigned int flags __att
   FD_ZERO(&rfds);
   FD_SET((unsigned int)ipc_connection, &rfds);  /* Win32 needs the cast here */
   if (0 <= select(ipc_connection + 1, &rfds, NULL, NULL, &tv)) {
-    char requ[128];
-    ssize_t s = recv(ipc_connection, (void *)&requ, sizeof(requ), 0);   /* Win32 needs the cast here */
+    char requ[1024];
+    ssize_t s = recv(ipc_connection, (void *)&requ, sizeof(requ)-1, 0);   /* Win32 needs the cast here */
+
+    if (s == sizeof(requ)-1) {
+      /* input was too much long, just skip the rest */
+      char dummy[1024];
+
+      while (recv(ipc_connection, (void *)&dummy, sizeof(dummy), 0) == sizeof(dummy));
+    }
     if (0 < s) {
       requ[s] = 0;
       /* print out the requested tables */
@@ -1275,6 +1297,9 @@ static void
 send_info(unsigned int send_what, int the_socket)
 {
   struct autobuf abuf;
+  size_t header_len = 0;
+  char header_buf[MAX_HTTPHEADER_SIZE];
+  const char *content_type = "application/json";
 
   /* global variables for tracking when to put a comma in for JSON */
   entrynumber[0] = 0;
@@ -1313,12 +1338,17 @@ send_info(unsigned int send_what, int the_socket)
     ipc_print_olsrd_conf(&abuf);
   }
 
-  outbuffer[outbuffer_count] = olsr_malloc(abuf.len, "txt output buffer");
-  outbuffer_size[outbuffer_count] = abuf.len;
+  if(http_headers) {
+    header_len = build_http_header(HTTP_200, content_type, abuf.len, header_buf, sizeof(header_buf));
+  }
+
+  outbuffer[outbuffer_count] = olsr_malloc(header_len + abuf.len, "json output buffer");
+  outbuffer_size[outbuffer_count] = header_len + abuf.len;
   outbuffer_written[outbuffer_count] = 0;
   outbuffer_socket[outbuffer_count] = the_socket;
 
-  memcpy(outbuffer[outbuffer_count], abuf.buf, abuf.len);
+  memcpy(outbuffer[outbuffer_count], header_buf, header_len);
+  memcpy((outbuffer[outbuffer_count]) + header_len, abuf.buf, abuf.len);
   outbuffer_count++;
 
   if (outbuffer_count == 1) {
@@ -1331,6 +1361,53 @@ send_info(unsigned int send_what, int the_socket)
   }
 
   abuf_free(&abuf);
+}
+
+static size_t
+build_http_header(const char *status, const char *mime, uint32_t msgsize,
+  char *buf, uint32_t bufsize)
+{
+  time_t currtime;
+  size_t size;
+
+  size = snprintf(buf, bufsize, "%s\r\n", status);
+
+  /* Date */
+  time(&currtime);
+  size += strftime(&buf[size], bufsize - size, "Date: %a, %d %b %Y %H:%M:%S GMT\r\n", localtime(&currtime));
+
+  /* Server version */
+  size += snprintf(&buf[size], bufsize - size, "Server: OLSRD JSONInfo plugin\r\n");
+
+  /* connection-type */
+  size += snprintf(&buf[size], bufsize - size, "Connection: closed\r\n");
+
+  /* MIME type */
+  if(mime != NULL) {
+    size += snprintf(&buf[size], bufsize - size, "Content-type: %s\r\n", mime);
+  }
+
+  /* CORS data */
+  /**No needs to be strict here, access control is based on source IP*/
+  size += snprintf(&buf[size], bufsize - size, "Access-Control-Allow-Origin: *\r\n");
+  size += snprintf(&buf[size], bufsize - size, "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n");
+  size += snprintf(&buf[size], bufsize - size, "Access-Control-Allow-Headers: Accept, Origin, X-Requested-With\r\n");
+  size += snprintf(&buf[size], bufsize - size, "Access-Control-Max-Age: 1728000\r\n");
+
+  /* Content length */
+  if (msgsize > 0) {
+    size += snprintf(&buf[size], bufsize - size, "Content-length: %i\r\n", msgsize);
+  }
+
+  /* Cache-control
+   * No caching dynamic pages
+   */
+  size += snprintf(&buf[size], bufsize - size, "Cache-Control: no-cache\r\n");
+
+  /* End header */
+  size += snprintf(&buf[size], bufsize - size, "\r\n");
+
+  return size;
 }
 
 /*
