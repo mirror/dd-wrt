@@ -32,7 +32,7 @@ CHILLIEXTRAFLAGS=$(CHILLICOOVAEXTRAFLAGS)
 
 chillispot-configure:
 	cd $(CHILLIDIR) &&  rm -rf config.{cache,status} && ./configure $(CHILLIEXTRAFLAGS) --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) $(CHILLIEXTRA_CFLAGS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections"
-	cd $(CHILLICOOVADIR) && rm -rf config.{cache,status} && ./configure $(CHILLICOOVAEXTRAFLAGS) --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) $(CHILLIEXTRA_CFLAGS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	cd $(CHILLICOOVADIR) && rm -rf config.{cache,status} && ./configure $(CHILLICOOVAEXTRAFLAGS) --host=$(ARCH)-linux-elf AR=$(ARCH)-linux-ar CFLAGS="$(COPTS) $(CHILLIEXTRA_CFLAGS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 chillispot:
 	$(MAKE) -j 4 -C $(CHILLIDIR)

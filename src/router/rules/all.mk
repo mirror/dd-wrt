@@ -222,7 +222,7 @@ include rules/aoss.mk
 include rules/ap-serv.mk
 include rules/buffalo-flash.mk
 include rules/relayd.mk
-include $(TOP)/private/ath9k-rules/ath9k.mk
+#include $(TOP)/private/ath9k-rules/ath9k.mk
 include rules/libnltiny.mk
 include rules/hotplug2.mk
 include rules/dsl_cpe_control.mk
@@ -265,7 +265,7 @@ include rules/lighttpd.mk
 include rules/transmission.mk
 include rules/libevent.mk
 include rules/tor.mk
-include rules/emf.mk
+#include rules/emf.mk
 
 #
 # Generic rules

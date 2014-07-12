@@ -2,7 +2,7 @@ ifneq ($(CONFIG_IPV6),y)
 export DNSMASQ_MAKEFLAGS:=-DNO_IPV6
 endif
 
-DNSMASQ_COPTS += $(MIPS16_OPT)
+DNSMASQ_COPTS += $(MIPS16_OPT) -DNEED_PRINTF
 
 dnsmasq-clean:
 	$(MAKE) -j 4 -C dnsmasq CFLAGS="$(COPTS)" clean
@@ -15,7 +15,7 @@ dnsmasq:
 ifeq ($(CONFIG_DNSMASQ_TFTP),y)
 	$(MAKE) -j 4 -C dnsmasq COPTS=-DHAVE_BROKEN_RTC CFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 else
-ifeq ($(CONFIG_DIST),"micro")
+ifeq ($(CONFIG_DIST),"micros")
 	$(MAKE) -j 4 -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 else
 ifeq ($(CONFIG_DIST),"micro-special")

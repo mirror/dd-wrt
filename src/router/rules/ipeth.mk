@@ -80,9 +80,9 @@ ipeth-configure:
 			-DCMAKE_CXX_FLAGS_RELEASE="-DNDEBUG" \
 			-DCMAKE_C_COMPILER=$(CROSS_COMPILE)gcc \
 			-DCMAKE_CXX_COMPILER=$(CROSS_COMPILE)g++ \
-			-DCMAKE_EXE_LINKER_FLAGS="$(TARGET_LDFLAGS) -lpthread" \
-			-DCMAKE_MODULE_LINKER_FLAGS="$(TARGET_LDFLAGS) -lpthread" \
-			-DCMAKE_SHARED_LINKER_FLAGS="$(TARGET_LDFLAGS) -lpthread" \
+			-DCMAKE_EXE_LINKER_FLAGS="$(TARGET_LDFLAGS) -lpthread -lm -ldl" \
+			-DCMAKE_MODULE_LINKER_FLAGS="$(TARGET_LDFLAGS) -lpthread -lm -ldl" \
+			-DCMAKE_SHARED_LINKER_FLAGS="$(TARGET_LDFLAGS) -lpthread -lm -ldl" \
 			-DCMAKE_FIND_ROOT_PATH=$(STAGING_DIR) \
 			-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=$(STAGING_DIR_HOST) \
 			-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=$(STAGING_DIR) \
@@ -100,7 +100,7 @@ ipeth-configure:
 	cd $(TOP)/ipeth/libimobiledevice && ./configure --without-cython --host=$(ARCH)-linux \
 		ac_cv_sys_file_offset_bits=64 \
 		CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -I$(TOP)/ipeth  -Drpl_localtime=localtime -I$(TOP)/openssl/include -Drpl_malloc=malloc -Drpl_realloc=realloc" \
-		LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libusbmuxd/libusbmuxd -L$(TOP)/zlib" \
+		LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libusbmuxd/libusbmuxd -L$(TOP)/zlib -lm -ldl" \
 		libusbmuxd_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb -I$(TOP)/ipeth/libusbmuxd/libusbmuxd" \
 		libusbmuxd_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a -lusbmuxd" \
 		libplist_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
