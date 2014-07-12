@@ -43,8 +43,10 @@ SHAREJAVADIR ?= $(SHAREDIR)/java/$(EXENAME)
 
 MACHINE=$(shell uname -m)
 ARCH=
+ARCH2=-i386
 ifeq ($(strip $(MACHINE)),x86_64)
   ARCH=.$(MACHINE)
+  ARCH2=-amd64
 endif
 
 
@@ -58,11 +60,11 @@ INC_DIR_WIREFORMAT_FULL = $(INC_DIR_WIREFORMAT)/$(WIREFORMAT_PROJECT)
 ifneq ($(wildcard /usr/lib/jvm/java),)
   INC_DIR_JVM = /usr/lib/jvm/java/include
 else
-  ifneq ($(wildcard /usr/lib/jvm/default-java),)
-    INC_DIR_JVM = /usr/lib/jvm/default-java/include
+  ifneq ($(wildcard /usr/lib/jvm/java-1.7.0-openjdk$(ARCH)),)
+    INC_DIR_JVM = /usr/lib/jvm/java-1.7.0-openjdk$(ARCH)/include
   else
-    ifneq ($(wildcard /usr/lib/jvm/java-1.7.0-openjdk$(ARCH)),)
-      INC_DIR_JVM = /usr/lib/jvm/java-1.7.0-openjdk$(ARCH)/include
+    ifneq ($(wildcard /usr/lib/jvm/java-1.7.0-openjdk$(ARCH2)),)
+      INC_DIR_JVM = /usr/lib/jvm/java-1.7.0-openjdk$(ARCH2)/include
     else
       ifneq ($(wildcard /usr/lib/jvm/java-1.7.0-openjdk),)
         INC_DIR_JVM = /usr/lib/jvm/java-1.7.0-openjdk/include
@@ -70,10 +72,14 @@ else
         ifneq ($(wildcard /usr/lib/jvm/java-1.6.0-openjdk$(ARCH)),)
           INC_DIR_JVM = /usr/lib/jvm/java-1.6.0-openjdk$(ARCH)/include
         else
-          ifneq ($(wildcard /usr/lib/jvm/java-1.6.0-openjdk),)
-            INC_DIR_JVM = /usr/lib/jvm/java-1.6.0-openjdk/include
+          ifneq ($(wildcard /usr/lib/jvm/java-1.6.0-openjdk$(ARCH2)),)
+            INC_DIR_JVM = /usr/lib/jvm/java-1.6.0-openjdk$(ARCH2)/include
           else
-            $(error No java detected)
+            ifneq ($(wildcard /usr/lib/jvm/java-1.6.0-openjdk),)
+              INC_DIR_JVM = /usr/lib/jvm/java-1.6.0-openjdk/include
+            else
+              $(error No java detected)
+            endif
           endif
         endif
       endif

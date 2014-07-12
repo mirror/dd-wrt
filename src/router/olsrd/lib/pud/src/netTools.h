@@ -68,15 +68,15 @@ static inline void setOlsrSockaddrPort(union olsr_sockaddr * addr, in_port_t por
  @param addr
  A pointer to the IP address (in network byte order)
  */
-static inline void setOlsrSockaddrAddr(union olsr_sockaddr * addr, void * ip) {
+static inline void setOlsrSockaddrAddr(union olsr_sockaddr * addr, union olsr_sockaddr * ip) {
 	if (!addr) {
 		return;
 	}
 
 	if (addr->in.sa_family == AF_INET) {
-		addr->in4.sin_addr = *((struct in_addr *)ip);
+	  addr->in4.sin_addr = ip->in4.sin_addr;
 	} else {
-		addr->in6.sin6_addr = *((struct in6_addr *)ip);
+	  addr->in6.sin6_addr = ip->in6.sin6_addr;
 	}
 }
 

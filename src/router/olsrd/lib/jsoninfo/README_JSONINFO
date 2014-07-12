@@ -73,6 +73,14 @@ LoadPlugin "olsrd_jsoninfo.so.0.0"
     # if you set it to 0.0.0.0, it will accept all connections
     #PlParam      "accept" "0.0.0.0"
 
+    # The "httpheaders" parameter prepends HTTP headers to the reply.
+    # If not set it will default to "no" and have the same behaviour as before.
+    # Among with a minimal set of headers also Cross-origin resource sharing
+    # headers (CORS) are included in reply allowing the json retrieval by
+    # javascript applications not served by olsrd itself.
+    # You can enable it uncommenting the following line:
+    #PlParam      "httpheaders" "yes"
+
     # specify a UUID for this node to track it for debugging
     #PlParam      "UUIDFile" "/etc/olsrd/olsrd.uuid"
 }

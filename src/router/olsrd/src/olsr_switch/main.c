@@ -105,10 +105,14 @@ void
 ohs_close(int signo __attribute__ ((unused)))
 #endif /* _WIN32 */
 {
+#ifndef _WIN32
+  int errNr = errno;
+#endif
   printf("OHS: exit\n");
-
   close(srv_socket);
-
+#ifndef _WIN32
+  errno = errNr;
+#endif
   exit(0);
 }
 

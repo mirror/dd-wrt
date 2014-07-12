@@ -62,6 +62,7 @@ extern union olsr_ip_addr jsoninfo_accept_ip;
 extern union olsr_ip_addr jsoninfo_listen_ip;
 extern int ipc_port;
 extern int nompr;
+extern bool http_headers;
 
 int olsrd_plugin_interface_version(void);
 int olsrd_plugin_init(void);
