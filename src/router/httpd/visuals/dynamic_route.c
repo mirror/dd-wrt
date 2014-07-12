@@ -78,8 +78,8 @@ void ej_dump_route_table(webs_t wp, int argc, char_t ** argv)
 			gw_ip.s_addr = gw;
 			netmask_ip.s_addr = netmask;
 			char client[32];
-			strcpy(sdest, (dest_ip.s_addr == 0 ? "0.0.0.0" : inet_ntop(AF_INET, &dest_ip, client, 16)));	// default
-			strcpy(sgw, (gw_ip.s_addr == 0 ? "0.0.0.0" : inet_ntop(AF_INET, &gw_ip, client, 16)));	// *
+			strcpy(sdest, (dest_ip.s_addr == 0 ? "default" : inet_ntop(AF_INET, &dest_ip, client, 16)));	// default
+			strcpy(sgw, (gw_ip.s_addr == 0 ? "*" : inet_ntop(AF_INET, &gw_ip, client, 16)));	// *
 
 			/*
 			 * not 0x0001 route usable 
