@@ -1176,4 +1176,4 @@ CONFIG_HAS_DMA=y
 # CONFIG_NET_VENDOR_TOSHIBA is not set
 # CONFIG_WP543 is not set
 # CONFIG_CGROUPS is not set
-CONFIG_DDTB=y
+# CONFIG_DDTB is not set

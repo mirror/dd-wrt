@@ -736,7 +736,7 @@ CONFIG_RFKILL=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
-CONFIG_DDTB=y
+# CONFIG_DDTB is not set
 
 #
 # Device Drivers
