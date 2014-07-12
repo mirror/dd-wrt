@@ -749,7 +749,6 @@ nas.samba3="Samba Server";
 // ** DLNA **//
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
-nas.dlna_merge="Verzeichnisse zusammenführen";
 nas.dlna_thumb="Titelbilder einbinden";
 nas.dlna_dir="DLNA Verzeichnis";
 nas.dlna_cleandb="Datenbank jetzt leeren";
@@ -953,7 +952,7 @@ idx_pptp.srv="Nutze DHCP";
 idx_pptp.wan_ip="WAN-IP-Adresse";
 idx_pptp.gateway="Gateway (PPTP-Server)";
 idx_pptp.encrypt="PPTP-Verschlüsselung";
-idx_pptp.reorder="Packet Neuanordung";
+idx_pptp.reorder="Paket Neuanordung";
 idx_pptp.addopt="Zusätzliche PPTP-Optionen";
 
 
@@ -1217,8 +1216,8 @@ qos.maxrate_o="Max Rate";
 qos.legend4="MAC-Priorität";
 qos.legend5="Ethernet-Port-Priorität";
 qos.legend6="Standard-Bandbreiten-Zuweisung";
-qos.legend7="TCP-Packet Priorität";
-qos.pktdesc="Priorisiere kleine TCP-Packete mit den folgenden Attributen:";
+qos.legend7="TCP-Paket Priorität";
+qos.pktdesc="Priorisiere kleine TCP-Pakete mit den folgenden Attributen:";
 qos.pktack="ACK";
 qos.pktrst="RST";
 qos.pktsyn="SYN";
@@ -1296,7 +1295,7 @@ hroute.right2="Wenn Ihr Router die Internetverbindung bereitstellt, benutzen Sie
 hroute.right4="Dies ist eine eindeutige Routen-Nummer, Sie können bis zu 50 Routen definieren.";
 hroute.right6="Geben Sie einen Namen an, den Sie der Route zuweisen möchten.";
 hroute.right8="Dies ist die IP-Adresse des Zielnetzes, dem die statische Route zugewiesen wird.";
-hroute.right10="Setzt den angewanten Netzwerk-Bereich.";
+hroute.right10="Setzt den angewandten Netzwerk-Bereich.";
 
 
 // ** Site_Survey.asp **//
@@ -1319,7 +1318,7 @@ service.apserv="APServ";
 //kaid
 service.kaid_legend="XBOX-Kaid";
 service.kaid_srv="Start Kaid";
-service.kaid_locdevnum="Anzahl Lokaler Geräte";
+service.kaid_locdevnum="Anzahl lokaler Geräte";
 service.kaid_uibind="UI Port";
 service.kaid_orbport="ORB Port";
 service.kaid_orbdeepport="ORB Deep Port";
@@ -1518,9 +1517,9 @@ service.warn_legend="Verbindungswarner";
 service.warn="Verbindungswarner";
 service.warn_limit="Verbindungslimit";
 service.warn_server="Email SMTP Server";
-service.warn_from="Email Addresse des Absenders";
+service.warn_from="Email Adresse des Absenders";
 service.warn_fromfull="Voller Name des Absenders";
-service.warn_to="Email Addresse des Empfängers";
+service.warn_to="Email Adresse des Empfängers";
 service.warn_domain="Domain Name des Empfängers";
 service.warn_user="SMTP Auth Benutzername";
 service.warn_pass="SMTP Auth Kennwort";
