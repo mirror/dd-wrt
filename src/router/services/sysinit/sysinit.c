@@ -199,8 +199,12 @@ static void buffalo_defaults(int force)
 				&& strcmp(region, "CH"))) {
 			{
 				char *mode_ex = getUEnv("DEF-p_wireless_eth1_11a-authmode_ex");
+				if (!mode_ex)
+					mode_ex = getUEnv("DEF-p_wireless_eth1_11bg-authmode_ex")
 				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
 					char *mode = getUEnv("DEF-p_wireless_eth1_11a-authmode");
+					if (!mode)
+					    mode = getUEnv("DEF-p_wireless_eth1_11bg-authmode");
 					if (!mode) {
 						nvram_set("wl_akm", "disabled");
 						nvram_set("wl0_akm", "disabled");
@@ -222,6 +226,8 @@ static void buffalo_defaults(int force)
 					}
 				} else {
 					char *mode = getUEnv("DEF-p_wireless_eth1_11a-authmode");
+					if (!mode)
+						mode = getUEnv("DEF-p_wireless_eth1_11bg-authmode");
 					if (mode) {
 						nvram_set("wl0_akm", mode);
 						nvram_set("wl0_security_mode", mode);
@@ -236,11 +242,15 @@ static void buffalo_defaults(int force)
 				}
 
 				char *crypto = getUEnv("DEF-p_wireless_eth1_11a-crypto");
+				if (!crypto)
+					crypto = getUEnv("DEF-p_wireless_eth1_11bg-crypto");
 				if (crypto) {
 					nvram_set("wl0_crypto", crypto);
 					nvram_set("wl_crypto", crypto);
 				}
 				char *wpapsk = getUEnv("DEF-p_wireless_eth1_11a-wpapsk");
+				if (!wpapsk)
+					wpapsk = getUEnv("DEF-p_wireless_eth1_11bg-wpapsk");
 				if (wpapsk) {
 					nvram_set("wl_wpa_psk", wpapsk);
 					nvram_set("wl0_wpa_psk", wpapsk);
@@ -251,8 +261,13 @@ static void buffalo_defaults(int force)
 			}
 			{
 				char *mode_ex = getUEnv("DEF-p_wireless_eth2_11bg-authmode_ex");
+				if (!mode_ex)
+					mode_ex = getUEnv("DEF-p_wireless_eth2_11a-authmode_ex")
+
 				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
 					char *mode = getUEnv("DEF-p_wireless_eth2_11bg-authmode");
+					if (!mode)
+					    mode = getUEnv("DEF-p_wireless_eth2_11a-authmode");
 					if (!mode) {
 						nvram_set("wl1_akm", "disabled");
 						nvram_set("wl1_security_mode", "disabled");
@@ -268,6 +283,8 @@ static void buffalo_defaults(int force)
 					}
 				} else {
 					char *mode = getUEnv("DEF-p_wireless_eth2_11bg-authmode");
+					if (!mode)
+						mode = getUEnv("DEF-p_wireless_eth2_11a-authmode");
 					if (mode) {
 						nvram_set("wl1_akm", mode);
 						nvram_set("wl1_security_mode", mode);
@@ -278,9 +295,13 @@ static void buffalo_defaults(int force)
 				}
 
 				char *crypto = getUEnv("DEF-p_wireless_eth2_11bg-crypto");
+				if (!crypto)
+					crypto = getUEnv("DEF-p_wireless_eth2_11a-crypto");
 				if (crypto)
 					nvram_set("wl1_crypto", crypto);
 				char *wpapsk = getUEnv("DEF-p_wireless_eth2_11bg-wpapsk");
+				if (!wpapsk)
+					wpapsk = getUEnv("DEF-p_wireless_eth2_11a-wpapsk");
 				if (wpapsk)
 					nvram_set("wl1_wpa_psk", wpapsk);
 				else
