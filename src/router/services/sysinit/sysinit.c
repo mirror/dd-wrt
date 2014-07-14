@@ -200,7 +200,7 @@ static void buffalo_defaults(int force)
 			{
 				char *mode_ex = getUEnv("DEF-p_wireless_eth1_11a-authmode_ex");
 				if (!mode_ex)
-					mode_ex = getUEnv("DEF-p_wireless_eth1_11bg-authmode_ex")
+					mode_ex = getUEnv("DEF-p_wireless_eth1_11bg-authmode_ex");
 				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
 					char *mode = getUEnv("DEF-p_wireless_eth1_11a-authmode");
 					if (!mode)
@@ -262,8 +262,7 @@ static void buffalo_defaults(int force)
 			{
 				char *mode_ex = getUEnv("DEF-p_wireless_eth2_11bg-authmode_ex");
 				if (!mode_ex)
-					mode_ex = getUEnv("DEF-p_wireless_eth2_11a-authmode_ex")
-
+					mode_ex = getUEnv("DEF-p_wireless_eth2_11a-authmode_ex");
 				if (mode_ex && !strcmp(mode_ex, "mixed-psk")) {
 					char *mode = getUEnv("DEF-p_wireless_eth2_11bg-authmode");
 					if (!mode)
