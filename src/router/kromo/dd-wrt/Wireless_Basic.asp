@@ -308,11 +308,11 @@ function setChannelProperties(channels) {
 
 			// HT40 minus
 			if( properties.HT40minus == 1 ) {
-				nctrlsb.options[nctrlsb.length] = new Option( 'lower', wl_basic.ch_pos_lwr );
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_lwr, 'lower' );
 			}
 	
 			if( properties.HT40plus == 1 ) {
-				nctrlsb.options[nctrlsb.length] = new Option( 'upper', wl_basic.ch_pos_upr );
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_upr, 'upper' );
 			}
 		}
 
