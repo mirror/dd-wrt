@@ -826,7 +826,7 @@ void update_timezone(void)
 
 	int i;
 	int found = 0;
-	char *zone = "Europe/Berlin";
+	const char *zone = "Europe/Berlin";
 	for (i = 0; allTimezones[i].tz_name != NULL; i++) {
 		if (!strcmp(allTimezones[i].tz_name, tz)) {
 			zone = allTimezones[i].tz_string;
