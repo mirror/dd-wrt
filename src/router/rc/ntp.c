@@ -70,7 +70,7 @@ int do_ntp(void)		// called from ntp_main and
 
 	if (!nvram_match("ntp_enable", "1"))
 		return 0;
-	uptime_timezone();
+	update_timezone();
 
 	if (((servers = nvram_get("ntp_server")) == NULL)
 	    || (*servers == 0))
