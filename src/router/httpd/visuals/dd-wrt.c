@@ -3392,7 +3392,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	// char maxpower[16];
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix)) {
-		if (isFXXN_PRO(prefix)) {
+		if (isFXXN_PRO(prefix) == 1) {
 			char wl_cardtype[32];
 			sprintf(wl_cardtype, "%s_cardtype", prefix);
 			websWrite(wp, "<div class=\"setting\">\n");
@@ -4475,7 +4475,7 @@ if (!strcmp(prefix, "wl1"))
 
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix)) {
-		if (isFXXN_PRO(prefix)) {
+		if (isFXXN_PRO(prefix) == 1) {
 			char wl_cardtype[32];
 			sprintf(wl_cardtype, "%s_cardtype", prefix);
 			websWrite(wp, "<div class=\"setting\">\n");
