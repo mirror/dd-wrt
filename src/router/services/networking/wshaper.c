@@ -949,7 +949,7 @@ void stop_wshaper(void)
 #elif HAVE_WDR3500
 	ret = eval(script_name, "stop", "XX", "eth0");
 	ret = eval(script_name, "stop", "XX", "eth1");
-#elif HAVE_WHR450HP
+#elif HAVE_WZR450HP2
 	ret = eval(script_name, "stop", "XX", "eth0");
 	ret = eval(script_name, "stop", "XX", "eth1");
 #elif HAVE_WASP

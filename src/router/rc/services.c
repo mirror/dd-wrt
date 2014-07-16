@@ -80,6 +80,7 @@ void del_routes(char *route)
 
 int start_services_main(int argc, char **argv)
 {
+	update_timezone();
 
 	nvram_set("qos_done", "0");
 #ifdef HAVE_GPSI
@@ -358,25 +359,6 @@ static void handle_dhcpd(void)
 
 static void handle_index(void)
 {
-	char *tz;
-	tz = nvram_safe_get("time_zone");	//e.g. EUROPE/BERLIN
-
-	int i;
-	int found = 0;
-	char *zone = "Europe/Berlin";
-	for (i = 0; allTimezones[i].tz_name != NULL; i++) {
-		if (!strcmp(allTimezones[i].tz_name, tz)) {
-			zone = allTimezones[i].tz_string;
-			found = 1;
-			break;
-		}
-	}
-	if (!found)
-		nvram_set("time_zone", zone);
-	FILE *fp = fopen("/tmp/TZ", "wb");
-	fprintf(fp, "%s\n", zone);
-	fclose(fp);
-
 	unlink("/tmp/ppp/log");
 
 	stop_service_force_f("wan");
@@ -1285,7 +1267,7 @@ int start_single_service_main(int argc, char **argv)
 	char *next;
 	char service[80];
 	char *services = nvram_safe_get("action_service");
-
+	update_timezone();
 	foreach(service, services, next) {
 #ifdef HAVE_OLED
 		char message[32];

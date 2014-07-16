@@ -451,7 +451,7 @@ int flush_interfaces(void)
 	snprintf(all_ifnames, 255, "%s %s %s", "eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WNR2000
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
-#elif HAVE_WHR450HP
+#elif HAVE_WZR450HP2
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
 #elif HAVE_WDR3500
 	snprintf(all_ifnames, 255, "%s %s %s", "eth0 eth1", nvram_safe_get("lan_ifnames"), nvram_safe_get("wan_ifnames"));
