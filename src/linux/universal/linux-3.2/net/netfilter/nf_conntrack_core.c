@@ -73,7 +73,7 @@ unsigned int nf_conntrack_hash_rnd __read_mostly;
 #ifdef CONFIG_DDTB
 
 static int
-ddtb_ip_conntrack_delete(struct nf_conn *ct, int ct_timeout)
+ddtb_ip_conntrack_delete(struct nf_conn *ct, bool ct_timeout)
 {
 	struct ddtb_conn *c;
 	int ret = 0;
@@ -83,7 +83,7 @@ ddtb_ip_conntrack_delete(struct nf_conn *ct, int ct_timeout)
 	if (!c)
 		goto out;
 
-	if (ct_timeout) {
+	if (ct_timeout && time_before(jiffies, c->jiffies + ct->expire_jiffies)) {
 		mod_timer(&ct->timeout, jiffies + ct->expire_jiffies);
 		ret = -1;
 		goto out;
@@ -101,7 +101,7 @@ out:
 #else
 
 static int
-ddtb_ip_conntrack_delete(struct nf_conn *ct, int ct_timeout)
+ddtb_ip_conntrack_delete(struct nf_conn *ct, bool ct_timeout)
 {
 	return 0;
 }
@@ -344,7 +344,7 @@ static void death_by_timeout(unsigned long ul_conntrack)
 	/* If negative error is returned it means the entry hasn't
 	 * timed out yet.
 	 */
-	if (ddtb_ip_conntrack_delete(ct, jiffies >= ct->timeout.expires ? 1 : 0) != 0)
+	if (ddtb_ip_conntrack_delete(ct, 1) != 0)
 		return;
 
 	tstamp = nf_conn_tstamp_find(ct);
@@ -1089,11 +1089,11 @@ void __nf_ct_refresh_acct(struct nf_conn *ct,
 	if (test_bit(IPS_FIXED_TIMEOUT_BIT, &ct->status))
 		goto acct;
 
+#ifdef CONFIG_DDTB
+	ct->expire_jiffies = extra_jiffies;
+#endif
 	/* If not in hash table, timer will not be active yet */
 	if (!nf_ct_is_confirmed(ct)) {
-#ifdef CONFIG_DDTB
-		ct->expire_jiffies = extra_jiffies;
-#endif
 		ct->timeout.expires = extra_jiffies;
 	} else {
 		unsigned long newtime = jiffies + extra_jiffies;
@@ -1101,12 +1101,8 @@ void __nf_ct_refresh_acct(struct nf_conn *ct,
 		/* Only update the timeout if the new timeout is at least
 		   HZ jiffies from the old timeout. Need del_timer for race
 		   avoidance (may already be dying). */
-		if (newtime - ct->timeout.expires >= HZ) {
-#ifdef CONFIG_DDTB
-			ct->expire_jiffies = extra_jiffies;
-#endif /* CONFIG_DDTB */
+		if (newtime - ct->timeout.expires >= HZ)
 			mod_timer_pending(&ct->timeout, newtime);
-		}
 	}
 
 acct:
