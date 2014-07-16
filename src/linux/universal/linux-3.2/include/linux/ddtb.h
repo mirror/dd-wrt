@@ -44,6 +44,8 @@ struct ddtb_conn {
 	struct ddtb_dir		request;
 	struct ddtb_dir		reply;
 
+	unsigned long jiffies;
+
 #ifdef CONFIG_NF_CONNTRACK_MARK
 	u32			mark;
 #endif

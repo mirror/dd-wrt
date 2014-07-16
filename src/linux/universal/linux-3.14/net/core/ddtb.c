@@ -233,6 +233,7 @@ ddtb_ip_add(struct ddtb_conn *_c, struct net_device *orig, int v6)
 		return NULL;
 
 	memcpy(c, _c, sizeof(*c));
+	c->jiffies = jiffies;
 	c->request.flags |= DDTB_F_REQUEST;
 	spin_lock_bh(&lock);
 	hlist_add_head(&c->request.h, &rs[b]);
@@ -380,13 +381,14 @@ static void ddtb_nat_packet(struct ddtb_tuple *tuple, struct iphdr *iph, void *t
 	*hdr_ip = new_ip;
 }
 
-static int
+static void
 ddtb_packet_xmit(struct ddtb_conn *c, struct sk_buff *skb)
 {
 #ifdef CONFIG_NF_CONNTRACK_MARK
 	if (c->mark)
 		skb->mark = c->mark;
 #endif
+	c->jiffies = jiffies;
 
 	dev_queue_xmit(skb);
 }
