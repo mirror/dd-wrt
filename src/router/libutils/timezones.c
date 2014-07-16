@@ -21,6 +21,7 @@
  */
 
 #include <utils.h>
+#include <bcmnvram.h>
 
 TIMEZONE_TO_TZSTRING allTimezones[] = {
 	{"Africa/Abidjan", "GMT0"}
@@ -817,3 +818,25 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{NULL, NULL}
 };
+
+void update_timezone(void) 
+{
+	char *tz;
+	tz = nvram_safe_get("time_zone");	//e.g. EUROPE/BERLIN
+
+	int i;
+	int found = 0;
+	char *zone = "Europe/Berlin";
+	for (i = 0; allTimezones[i].tz_name != NULL; i++) {
+		if (!strcmp(allTimezones[i].tz_name, tz)) {
+			zone = allTimezones[i].tz_string;
+			found = 1;
+			break;
+		}
+	}
+	if (!found)
+		nvram_set("time_zone", zone);
+	FILE *fp = fopen("/tmp/TZ", "wb");
+	fprintf(fp, "%s\n", zone);
+	fclose(fp);
+}
