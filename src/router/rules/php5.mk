@@ -148,7 +148,7 @@ PHP_CONFIGURE_ARGS= \
 	EXTRA_LDFLAGS="-L$(TOP)/libmcrypt/lib/.libs -lmcrypt -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/openssl -lcrypto -lssl -lcrypt -ldl" \
 	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/libmcrypt/lib/.libs -lmcrypt -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/openssl -lcrypto -lssl -lcrypt -ldl"
 	
-php5-configure: libpng-configure libgd-configure libxml2-configure libpng libgd libxml2
+php5-configure: minidlna-configure libpng-configure libgd-configure libxml2-configure libpng libgd libxml2
 	rm -f php5/config.cache
 	cd php5 && './configure'  '--host=$(ARCH)-linux-uclibc'  $(PHP_CONFIGURE_ARGS) \
 	'CFLAGS=$(COPTS) -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/libmcrypt -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -liconv' \
