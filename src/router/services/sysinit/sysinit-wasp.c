@@ -90,7 +90,7 @@ void start_sysinit(void)
 	system("swconfig dev eth0 vlan 1 set ports \"0 2 3 4 5\"");
 	system("swconfig dev eth0 vlan 2 set ports \"1 6\"");
 	system("swconfig dev eth0 set apply");
-#elif defined (HAVE_WHR450HP) || defined(HAVE_WR1043V2)
+#elif defined (HAVE_WZR450HP2) || defined(HAVE_WR1043V2)
 	system("swconfig dev eth0 set reset 1");
 	system("swconfig dev eth0 set enable_vlan 0");
 	system("swconfig dev eth0 vlan 1 set ports \"0 1 2 3 4\"");
@@ -120,7 +120,7 @@ void start_sysinit(void)
 		eval("ifconfig", "eth0", "hw", "ether", mac);
 	}
 #endif
-#if defined(HAVE_WHR450HP) || defined(HAVE_WDR3500)
+#if defined(HAVE_WZR450HP2) || defined(HAVE_WDR3500)
 	eval("ifconfig", "eth0", "up");
 	eval("ifconfig", "eth1", "up");
 #else
@@ -163,7 +163,7 @@ void start_sysinit(void)
 #ifdef HAVE_ARCHERC7
 	setWirelessLed(1, 17);
 #endif
-#elif  HAVE_WHR450HP
+#elif  HAVE_WZR450HP2
 	setWirelessLed(0, 1);
 #elif  HAVE_DIR825C1
 	setWirelessLed(0, 13);

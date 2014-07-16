@@ -688,6 +688,7 @@ typedef struct {
 } TIMEZONE_TO_TZSTRING;
 
  
+extern void update_timezone(void);
 extern TIMEZONE_TO_TZSTRING allTimezones[];
 
 extern char *getBridge(char *ifname);
