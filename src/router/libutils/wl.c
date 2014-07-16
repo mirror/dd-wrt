@@ -1244,6 +1244,8 @@ int isFXXN_PRO(char *ifname)	//checks if its usualla a DBII Networks FxxN-PRO ca
 
 	if (!strcmp(cvendor, "0x168c") && !strcmp(cproduct, "0x2096")) {	//F36N-PRO / F64N-PRO shares the same id's
 		return 1;
+	} else if (!strcmp(cvendor, "0xdb11") && !strcmp(cproduct, "0x0f50")) { // F50N-PRO
+		return 2;
 	}
 	return 0;
 }
@@ -1374,16 +1376,11 @@ int wifi_gettxpoweroffset(char *ifname)
 			return 10;
 	}
 #ifdef HAVE_ATH9K
-	if (isFXXN_PRO(ifname)) {
-		if (nvram_nmatch("1", "%s_cardtype", ifname))
-			return 5;
-		if (nvram_nmatch("2", "%s_cardtype", ifname))
-			return 5;
-	} else if (isSR71E(ifname)) {
+	if (isFXXN_PRO(ifname))
+		return 5;
+	else if (isSR71E(ifname))
 		return 6;
-	}
 #endif
-
 	int vendor;
 	int devcount;
 	char readid[64];
@@ -1421,7 +1418,7 @@ int get_wififreq(char *ifname, int freq)
 			return freq - 2400;
 	}
 #ifdef HAVE_ATH9K
-	if (isFXXN_PRO(ifname)) {
+	if (isFXXN_PRO(ifname) == 1) {
 		if (nvram_nmatch("1", "%s_cardtype", ifname)) {
 			if (freq < 5180 || freq > 5580)
 				return -1;
