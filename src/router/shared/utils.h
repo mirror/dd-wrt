@@ -1008,6 +1008,7 @@ struct wl_client_mac {
 	int status;		// 0:offline 1:online
 	int check;
 };
+#include <time.h>
 
 extern int dd_timer_delete(timer_t timer);
 extern int dd_timer_create(clockid_t clock_id, struct sigevent *evp, timer_t * pTimer);
