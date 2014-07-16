@@ -1484,10 +1484,13 @@ static struct dentry *cgroup_mount(struct file_system_type *fs_type,
 			 int flags, const char *unused_dev_name,
 			 void *data)
 {
+	struct super_block *pinned_sb = NULL;
+	struct cgroup_subsys *ss;
 	struct cgroup_root *root;
 	struct cgroup_sb_opts opts;
 	struct dentry *dentry;
 	int ret;
+	int i;
 	bool new_sb;
 
 	/*
@@ -1512,6 +1515,29 @@ retry:
 		cgroup_get(&root->cgrp);
 		ret = 0;
 		goto out_unlock;
+	}
+
+	/*
+	 * Destruction of cgroup root is asynchronous, so subsystems may
+	 * still be dying after the previous unmount.  Let's drain the
+	 * dying subsystems.  We just need to ensure that the ones
+	 * unmounted previously finish dying and don't care about new ones
+	 * starting.  Testing ref liveliness is good enough.
+	 */
+	for_each_subsys(ss, i) {
+		if (!(opts.subsys_mask & (1 << i)) ||
+		    ss->root == &cgrp_dfl_root)
+			continue;
+
+		if (!atomic_inc_not_zero(&ss->root->cgrp.refcnt)) {
+			mutex_unlock(&cgroup_mutex);
+			mutex_unlock(&cgroup_tree_mutex);
+			msleep(10);
+			mutex_lock(&cgroup_tree_mutex);
+			mutex_lock(&cgroup_mutex);
+			goto retry;
+		}
+		cgroup_put(&ss->root->cgrp);
 	}
 
 	for_each_root(root) {
@@ -1559,10 +1585,25 @@ retry:
 		 * destruction to complete so that the subsystems are free.
 		 * We can use wait_queue for the wait but this path is
 		 * super cold.  Let's just sleep for a bit and retry.
+
+		 * We want to reuse @root whose lifetime is governed by its
+		 * ->cgrp.  Let's check whether @root is alive and keep it
+		 * that way.  As cgroup_kill_sb() can happen anytime, we
+		 * want to block it by pinning the sb so that @root doesn't
+		 * get killed before mount is complete.
+		 *
+		 * With the sb pinned, inc_not_zero can reliably indicate
+		 * whether @root can be reused.  If it's being killed,
+		 * drain it.  We can use wait_queue for the wait but this
+		 * path is super cold.  Let's just sleep a bit and retry.
 		 */
-		if (!atomic_inc_not_zero(&root->cgrp.refcnt)) {
+		pinned_sb = kernfs_pin_sb(root->kf_root, NULL);
+		if (IS_ERR(pinned_sb) ||
+		    !atomic_inc_not_zero(&root->cgrp.refcnt)) {
 			mutex_unlock(&cgroup_mutex);
 			mutex_unlock(&cgroup_tree_mutex);
+			if (!IS_ERR_OR_NULL(pinned_sb))
+				deactivate_super(pinned_sb);
 			msleep(10);
 			mutex_lock(&cgroup_tree_mutex);
 			mutex_lock(&cgroup_mutex);
@@ -1609,6 +1650,16 @@ out_unlock:
 				CGROUP_SUPER_MAGIC, &new_sb);
 	if (IS_ERR(dentry) || !new_sb)
 		cgroup_put(&root->cgrp);
+
+	/*
+	 * If @pinned_sb, we're reusing an existing root and holding an
+	 * extra ref on its sb.  Mount is complete.  Put the extra ref.
+	 */
+	if (pinned_sb) {
+		WARN_ON(new_sb);
+		deactivate_super(pinned_sb);
+	}
+
 	return dentry;
 }
 
