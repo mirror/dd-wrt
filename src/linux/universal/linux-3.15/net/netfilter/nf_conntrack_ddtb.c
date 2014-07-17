@@ -172,6 +172,7 @@ static struct nf_conntrack_helper ddtb[] __read_mostly = {
 		.tuple.dst.protonum = IPPROTO_TCP,
 		.help = ddtb_help_tcp,
 		.expect_policy = &ddtb_exp_policy,
+		.flags = NF_CT_HELPER_F_OVERRIDE,
 	},
 	{
 		.name = "ddtb",
@@ -179,6 +180,7 @@ static struct nf_conntrack_helper ddtb[] __read_mostly = {
 		.tuple.dst.protonum = IPPROTO_UDP,
 		.help = ddtb_help_udp,
 		.expect_policy = &ddtb_exp_policy,
+		.flags = NF_CT_HELPER_F_OVERRIDE,
 	},
 };
 
