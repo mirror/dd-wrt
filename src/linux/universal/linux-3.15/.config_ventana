@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.15.0 Kernel Configuration
+# Linux/arm 3.15.6-rc2 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -1048,6 +1048,7 @@ CONFIG_RFKILL_LEDS=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
+CONFIG_DDTB=y
 CONFIG_HAVE_BPF_JIT=y
 
 #
@@ -3799,5 +3800,3 @@ CONFIG_FONT_8x16=y
 # CONFIG_FONT_SUN12x22 is not set
 # CONFIG_FONT_10x18 is not set
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_DDTB=y
-CONFIG_DDTB=y

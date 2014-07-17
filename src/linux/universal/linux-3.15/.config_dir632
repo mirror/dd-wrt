@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.15.0 Kernel Configuration
+# Linux/mips 3.15.6-rc2 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -785,6 +785,7 @@ CONFIG_RFKILL_LEDS=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
+CONFIG_DDTB=y
 
 #
 # Device Drivers
@@ -2104,5 +2105,3 @@ CONFIG_AVERAGE=y
 # CONFIG_DDR is not set
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_DDTB=y
-CONFIG_DDTB=y
