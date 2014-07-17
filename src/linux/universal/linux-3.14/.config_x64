@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86_64 3.14.7-rc1 Kernel Configuration
+# Linux/x86_64 3.14.13-rc2 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -1010,6 +1010,7 @@ CONFIG_RFKILL_LEDS=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
+CONFIG_DDTB=y
 CONFIG_HAVE_BPF_JIT=y
 
 #
@@ -3588,4 +3589,3 @@ CONFIG_FONT_SUPPORT=y
 # CONFIG_FONTS is not set
 CONFIG_FONT_8x8=y
 CONFIG_FONT_8x16=y
-CONFIG_DDTB=y

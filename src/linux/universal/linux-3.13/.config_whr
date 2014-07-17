@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.13.11 Kernel Configuration
+# Linux/mips 3.13.11.4 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -700,6 +700,7 @@ CONFIG_WEXT_PRIV=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
+CONFIG_DDTB=y
 
 #
 # Device Drivers
@@ -1481,4 +1482,3 @@ CONFIG_ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE=y
 # CONFIG_CORDIC is not set
 # CONFIG_DDR is not set
 # CONFIG_VIRTUALIZATION is not set
-CONFIG_DDTB=y

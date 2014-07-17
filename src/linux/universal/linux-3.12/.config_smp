@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 3.12.20 Kernel Configuration
+# Linux/i386 3.12.24 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -1021,6 +1021,7 @@ CONFIG_RFKILL_LEDS=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
+CONFIG_DDTB=y
 
 #
 # Device Drivers
@@ -2201,6 +2202,7 @@ CONFIG_SENSORS_MAX6650=m
 # CONFIG_SENSORS_MAX6697 is not set
 # CONFIG_SENSORS_MCP3021 is not set
 # CONFIG_SENSORS_NCT6775 is not set
+# CONFIG_SENSORS_NTC_THERMISTOR is not set
 CONFIG_SENSORS_PC87360=m
 CONFIG_SENSORS_PC87427=m
 CONFIG_SENSORS_PCF8591=m
@@ -3556,4 +3558,3 @@ CONFIG_FONT_8x16=y
 # CONFIG_FONT_SUN8x16 is not set
 # CONFIG_FONT_SUN12x22 is not set
 # CONFIG_FONT_10x18 is not set
-CONFIG_DDTB=y
