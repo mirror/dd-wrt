@@ -400,7 +400,6 @@ struct sk_buff {
 
 	struct sock		*sk;
 	struct net_device	*dev;
-	struct net_device	*orig_dev;
 
 	/*
 	 * This is the control buffer. It is free to use for every

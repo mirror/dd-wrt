@@ -351,8 +351,6 @@ source "net/caif/Kconfig"
 source "net/ceph/Kconfig"
 source "net/nfc/Kconfig"
 
-config DDTB
-	bool "DD-WRT Turbo Boost Module"
 
 endif   # if NET
 

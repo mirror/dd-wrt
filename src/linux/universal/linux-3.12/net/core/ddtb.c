@@ -518,6 +518,9 @@ ddtb_intercept(struct sk_buff *skb)
 	__be16 vlan = -1;
 	unsigned int pflags;
 
+	if (skb->pkt_type == PACKET_LOOPBACK)
+		return -1;
+
 	if (!skb->dev)
 		return -1;
 
