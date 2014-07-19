@@ -150,10 +150,6 @@
 #endif
 
 
-#include <linux/ddtb.h>
-
-#include <linux/ddtb.h>
-
 /* Instead of increasing this, you should create a hash table. */
 #define MAX_GRO_SKBS 8
 
@@ -3209,12 +3205,6 @@ static int __netif_receive_skb(struct sk_buff *skb)
 	net_timestamp_check(!netdev_tstamp_prequeue, skb);
 
 	trace_netif_receive_skb(skb);
-
-	if (!ddtb_intercept(skb))
-		return NET_RX_SUCCESS;
-
-	if (!ddtb_intercept(skb))
-		return NET_RX_SUCCESS;
 
 	/* if we've gotten here through NAPI, check netpoll */
 	if (netpoll_receive_skb(skb))
