@@ -50,8 +50,6 @@
 
 #define NF_CONNTRACK_VERSION	"0.5.0"
 
-#include <linux/ddtb.h>
-
 int (*nfnetlink_parse_nat_setup_hook)(struct nf_conn *ct,
 				      enum nf_nat_manip_type manip,
 				      const struct nlattr *attr) __read_mostly;
@@ -71,44 +69,6 @@ EXPORT_PER_CPU_SYMBOL(nf_conntrack_untracked);
 
 unsigned int nf_conntrack_hash_rnd __read_mostly;
 EXPORT_SYMBOL_GPL(nf_conntrack_hash_rnd);
-
-#ifdef CONFIG_DDTB
-
-static int
-ddtb_ip_conntrack_delete(struct nf_conn *ct, bool ct_timeout)
-{
-	struct ddtb_conn *c;
-	int ret = 0;
-
-	rcu_read_lock();
-	c = rcu_dereference(ct->ddtb);
-	if (!c)
-		goto out;
-
-	if (ct_timeout && time_before(jiffies, c->jiffies + ct->expire_jiffies)) {
-		mod_timer(&ct->timeout, jiffies + ct->expire_jiffies);
-		ret = -1;
-		goto out;
-	}
-
-	ddtb_ip_delete(c, 0);
-	rcu_assign_pointer(ct->ddtb, NULL);
-
-out:
-	rcu_read_unlock();
-
-	return ret;
-}
-
-#else
-
-static int
-ddtb_ip_conntrack_delete(struct nf_conn *ct, bool ct_timeout)
-{
-	return 0;
-}
-
-#endif
 
 static u32 hash_conntrack_raw(const struct nf_conntrack_tuple *tuple, u16 zone)
 {
@@ -238,8 +198,6 @@ destroy_conntrack(struct nf_conntrack *nfct)
 	NF_CT_ASSERT(atomic_read(&nfct->use) == 0);
 	NF_CT_ASSERT(!timer_pending(&ct->timeout));
 
-	ddtb_ip_conntrack_delete(ct, 0);
-
 	/* To make sure we don't get any weird locking issues here:
 	 * destroy_conntrack() MUST NOT be called with a write lock
 	 * to nf_conntrack_lock!!! -HW */
@@ -342,12 +300,6 @@ static void death_by_timeout(unsigned long ul_conntrack)
 {
 	struct nf_conn *ct = (void *)ul_conntrack;
 	struct nf_conn_tstamp *tstamp;
-
-	/* If negative error is returned it means the entry hasn't
-	 * timed out yet.
-	 */
-	if (ddtb_ip_conntrack_delete(ct, 1) != 0)
-		return;
 
 	tstamp = nf_conn_tstamp_find(ct);
 	if (tstamp && tstamp->stop == 0)
@@ -695,8 +647,6 @@ static noinline int early_drop(struct net *net, unsigned int hash)
 
 	if (!ct)
 		return dropped;
-
-	ddtb_ip_conntrack_delete(ct, 0);
 
 	if (del_timer(&ct->timeout)) {
 		death_by_timeout((unsigned long)ct);
@@ -1143,9 +1093,6 @@ void __nf_ct_refresh_acct(struct nf_conn *ct,
 	if (test_bit(IPS_FIXED_TIMEOUT_BIT, &ct->status))
 		goto acct;
 
-#ifdef CONFIG_DDTB
-	ct->expire_jiffies = extra_jiffies;
-#endif
 	/* If not in hash table, timer will not be active yet */
 	if (!nf_ct_is_confirmed(ct)) {
 		ct->timeout.expires = extra_jiffies;
@@ -1309,8 +1256,6 @@ void nf_ct_iterate_cleanup(struct net *net,
 	unsigned int bucket = 0;
 
 	while ((ct = get_next_corpse(net, iter, data, &bucket)) != NULL) {
-		ddtb_ip_conntrack_delete(ct, 0);
-
 		/* Time to push up daises... */
 		if (del_timer(&ct->timeout))
 			death_by_timeout((unsigned long)ct);
@@ -1577,7 +1522,6 @@ static int nf_conntrack_init_init_net(void)
 	if (ret < 0)
 		goto err_proto;
 
-	nf_conntrack_ddtb_exit();
 #ifdef CONFIG_NF_CONNTRACK_ZONES
 	ret = nf_ct_extend_register(&nf_ct_zone_extend);
 	if (ret < 0)
@@ -1591,7 +1535,6 @@ static int nf_conntrack_init_init_net(void)
 	}
 	/*  - and look it like as a confirmed connection */
 	nf_ct_untracked_status_or(IPS_CONFIRMED | IPS_UNTRACKED);
-	nf_conntrack_ddtb_init();
 	return 0;
 
 #ifdef CONFIG_NF_CONNTRACK_ZONES
