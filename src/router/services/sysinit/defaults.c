@@ -2820,7 +2820,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpncl_ip", "", 0},
 	{"openvpncl_mask", "", 0},
 	{"openvpncl_sec", "1", 0},
-
+	{"openvpncl_scramble", "off", 0},
+	{"openvpncl_scrmblpw", "o54a72ReutDK", 0},
 	{"openvpn_enable", "0", 0},
 	{"openvpn_net", "0.0.0.0", 0},
 	{"openvpn_mask", "0.0.0.0", 0},
@@ -2837,7 +2838,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_pkcs12", "", 0},
 	{"openvpn_lzo", "adaptive", 0},
 	{"openvpn_proto", "udp", 0},
-	{"openvpn_mtu", "1400", 0},
+	{"openvpn_mtu", "1500", 0},
 	{"openvpn_mssfix", "0", 0},
 	{"openvpn_fragment", "", 0},
 	{"openvpn_config", "", 0},
@@ -2856,9 +2857,11 @@ struct nvram_tuple srouter_defaults[] = {
 	{"openvpn_tlscip", "0", 0},
 	{"openvpn_proxy", "0", 0},
 	{"openvpn_clcon", "", 0},
+	{"openvpn_cldiscon", "", 0},
 	{"openvpn_ccddef", "", 0},
-	{"openvpn_dhcpbl", "0", 0},
-
+	{"openvpn_dhcpbl", "0", 0},	
+	{"openvpn_scramble", "off", 0},
+	{"openvpn_scrmblpw", "o54a72ReutDK", 0},
 #endif
 #ifdef HAVE_KODATA
 	{"newhttp_username", "bJ/GddyoJuiU2", 0},
