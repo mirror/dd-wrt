@@ -908,6 +908,10 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 			bcm947xx_nflash_parts[nparts].size += 0x200000;
 		}
 		
+		if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1101")) {
+			bcm947xx_nflash_parts[nparts].size += 0x600000;
+		}
+		
 		bcm947xx_nflash_parts[nparts].offset = offset;
 
 		shift = lookup_nflash_rootfs_offset(nfl, mtd, offset, bcm947xx_nflash_parts[nparts].size);
@@ -942,6 +946,10 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 		if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1301")) {			
 			bcm947xx_nflash_parts[nparts].size += 0x200000;
 		}
+		
+		if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1101")) {
+			bcm947xx_nflash_parts[nparts].size += 0x600000;
+		}
 
 		nparts++;
 		
@@ -950,6 +958,14 @@ struct mtd_partition *init_nflash_mtd_partitions(hndnand_t * nfl, struct mtd_inf
 			bcm947xx_nflash_parts[nparts].name = "board_data";
 			bcm947xx_nflash_parts[nparts].size = 0x40000;
 			bcm947xx_nflash_parts[nparts].offset = 0x2200000;
+			nparts++;
+		}
+		
+		if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1101")) {
+			
+			bcm947xx_nflash_parts[nparts].name = "board_data";
+			bcm947xx_nflash_parts[nparts].size = 0x80000;
+			bcm947xx_nflash_parts[nparts].offset = 0x2600000;
 			nparts++;
 		}
 		
