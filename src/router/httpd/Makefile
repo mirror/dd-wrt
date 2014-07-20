@@ -190,6 +190,9 @@ endif
 ifeq ($(CONFIG_UNIWIP),y)
 CFLAGS += -DHAVE_UNIWIP
 endif
+ifeq ($(CONFIG_MMS344),y)
+CFLAGS += -DHAVE_MMS344
+endif
 ifeq ($(CONFIG_OLSRD),y)
 CFLAGS += -DHAVE_OLSRD
 endif
