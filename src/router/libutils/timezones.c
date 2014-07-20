@@ -839,4 +839,5 @@ void update_timezone(void)
 	FILE *fp = fopen("/tmp/TZ", "wb");
 	fprintf(fp, "%s\n", zone);
 	fclose(fp);
+	setenv("TZ", zone);
 }
