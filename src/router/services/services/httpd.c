@@ -32,7 +32,7 @@ void start_httpd(void)
 {
 	int ret = 0;
 	stop_httpd();
-
+	update_timezone();
 	if (nvram_invmatch("http_enable", "0")
 	    && !f_exists("/var/run/httpd.pid")) {
 		chdir("/www");
