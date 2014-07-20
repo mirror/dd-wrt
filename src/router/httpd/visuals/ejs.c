@@ -1546,7 +1546,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 
 	static char menu_t[8][13][32] = {
-		{"index.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", "", ""},	// 
+		{"index.asp", "IPV6.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", ""},	// 
 		{"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", ""},	//
 		{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "Lighttpd.asp", ""},	//
 		{"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", ""},	//
@@ -1559,7 +1559,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	 * real name is bmenu.menuname[i][j] 
 	 */
 	static char menuname_t[8][14][32] = {
-		{"setup", "setupbasic", "setupddns", "setupmacclone", "setuprouting", "setupvlan", "networking", "setupeop", "", "", "", "", ""},	//
+		{"setup", "setupbasic", "setupipv6", "setupddns", "setupmacclone", "setuprouting", "setupvlan", "networking", "setupeop", "", "", "", ""},	//
 		{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax", "wirelessRadius", "wirelessSecurity",	//
 #ifdef HAVE_WPS
 		 "wirelessAossWPS",
@@ -2002,6 +2002,14 @@ void ej_show_timeoptions(webs_t wp, int argc, char_t ** argv)	// Eko
 		websWrite(wp, "<option value=\"%s\" %s>%s</option>\n", allTimezones[i].tz_name, nvram_match("time_zone", allTimezones[i].tz_name) ? "selected=\"selected\"" : "", allTimezones[i].tz_name);
 	}
 
+}
+
+void ej_show_ipv6options(webs_t wp, int argc, char_t ** argv)
+{
+	websWrite(wp, "<option value=\"ipv6native\" %s>Native IPv6 from ISP</option>\n", nvram_match("ipv6_typ", "ipv6native") ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"ipv6pd\" %s>DHCPv6 with Prefix Delegation</option>\n", nvram_match("ipv6_typ", "ipv6pd") ? "selected=\"selected\"" : "");
+	//websWrite(wp, "<option value=\"ipv6to4\" %s>6to4 Anycast Releay</option>\n", nvram_match("ipv6_typ", "ipv6to4") ? "selected=\"selected\"" : "");
+	//websWrite(wp, "<option value=\"ipv6in4\" %s>6in4 Static Tunnel</option>\n", nvram_match("ipv6_typ", "ipv6in4") ? "selected=\"selected\"" : "");
 }
 
 void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
