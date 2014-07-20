@@ -409,6 +409,7 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 
 }
 
+
 /*
  * Enable WET DHCP relay for ethernet clients 
  */
@@ -4194,6 +4195,62 @@ void start_wan_service(void)
 	start_ddns();
 }
 
+const char *ipv6_router_address(struct in6_addr *in6addr)
+{
+	char *p;
+	struct in6_addr addr;
+	static char addr6[INET6_ADDRSTRLEN];
+
+	addr6[0] = '\0';
+
+	if ((p = nvram_safe_get("ipv6_addr")) && *p) {
+		inet_pton(AF_INET6, p, &addr);
+	} else if ((p = nvram_safe_get("ipv6_prefix")) && *p) {
+		inet_pton(AF_INET6, p, &addr);
+		addr.s6_addr16[7] = htons(0x0001);
+	} else {
+		return addr6;
+	}
+
+	inet_ntop(AF_INET6, &addr, addr6, sizeof(addr6));
+	if (in6addr)
+		memcpy(in6addr, &addr, sizeof(addr));
+
+	return addr6;
+}
+void start_wan6_done(char *wan_ifname)
+{
+	if(nvram_match("ipv6_enable", "0"))
+		return 0;
+  
+	fprintf(stderr, "Starting wan6 done\n");
+	sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
+	
+
+	if(nvram_match("ipv6_typ", "ipv6native")){
+		
+		char ip[INET6_ADDRSTRLEN + 4];
+		const char *p;
+
+		p = ipv6_router_address(NULL);
+		if (*p) {
+			snprintf(ip, sizeof(ip), "%s/%d", p, atoi(nvram_get("ipv6_pf_len")) ? : 64);
+			eval("ip", "-6", "addr", "add", ip, "dev", nvram_safe_get("lan_ifname"));
+		}
+		
+		fprintf(stderr, "ipv6native route add\n");
+		sysprintf("ip", "route", "add", "::/0", "dev", nvram_get("wan_ifname"), "metric", "2048");
+	}
+	
+	
+	if(nvram_match("ipv6_typ", "ipv6pd")){
+		fprintf(stderr, "ipv6pd start/stop dhcp6c\n");
+		sysprintf("stopservice dhcp6c -f");
+		sysprintf("startservice dhcp6c -f");
+	}
+ 
+}
+
 void start_wan_done(char *wan_ifname)
 {
 	if (nvram_match("wan_testmode", "1")) {
@@ -4273,6 +4330,9 @@ void start_wan_done(char *wan_ifname)
 #ifdef HAVE_UDHCPD
 	stop_udhcpd();
 	start_udhcpd();
+#endif
+#ifdef HAVE_IPV6
+	start_wan6_done(wan_ifname);
 #endif
 	cprintf("restart dns proxy\n");
 	/*
