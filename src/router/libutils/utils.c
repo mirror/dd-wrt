@@ -1809,8 +1809,10 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_MMS344
 	setRouter("Compex MMS344");
-	nvram_default_get("ath0_rxantenna", "7");
-	nvram_default_get("ath0_txantenna", "7");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	nvram_default_get("ath1_rxantenna", "3");
+	nvram_default_get("ath1_txantenna", "3");
 	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_WDR4900V2
 	setRouter("TPLINK WDR4900 v2");
@@ -5040,6 +5042,10 @@ int led_control(int type, int act)
 		usb_power = 0x020;
 		usb_gpio = 0x10d;
 		ses_gpio = 0x110;
+		break;
+#elif HAVE_MMS344
+	case ROUTER_BOARD_WHRHPGN:
+		diag_gpio = 0x10e;
 		break;
 #elif HAVE_ARCHERC7
 	case ROUTER_BOARD_WHRHPGN:
