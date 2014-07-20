@@ -83,6 +83,7 @@ void start_dlna(void)
 	fprintf(fp, "inotify=yes\n");
 	fprintf(fp, "enable_tivo=no\n");
 	fprintf(fp, "strict_dlna=no\n");
+	fprintf(fp, "max_connections=10\n");
 	fprintf(fp, "notify_interval=300\n");
 	fprintf(fp, "serial=12345678\nmodel_number=1\n");
 	fclose(fp);
