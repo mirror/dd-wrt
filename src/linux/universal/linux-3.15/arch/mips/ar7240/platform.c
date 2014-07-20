@@ -734,7 +734,9 @@ int __init ar7240_platform_init(void)
 		#endif
 	ar71xx_add_device_mdio(0, 0x0);
 
-		#ifdef CONFIG_DIR825C1
+		#ifdef CONFIG_MMS344
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);		
+		#elif CONFIG_DIR825C1
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, mac0, 0);
 		#else
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
@@ -790,7 +792,9 @@ int __init ar7240_platform_init(void)
 #elif CONFIG_WASP_SUPPORT
 #if !defined(CONFIG_MTD_NAND_ATH)
 	ee = (u8 *)KSEG1ADDR(0x1fff1000);
-#if defined(CONFIG_DIR825C1)
+#if defined(CONFIG_MMS344)
+	ar9xxx_add_device_wmac(ee, art + 2);
+#elif defined(CONFIG_DIR825C1)
 	ar9xxx_add_device_wmac(ee, mac0);
 #elif defined(CONFIG_DIR615I)
 	ar9xxx_add_device_wmac(ee, mac0);
