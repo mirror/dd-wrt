@@ -12,6 +12,7 @@
 #include <signal.h>
 #include <typedefs.h>
 
+#define sys_reboot() eval("sync"); eval("event","3","1","15")
 /*
  * 2 byte router ID number; Eko 4.jul.06
  * 
@@ -674,6 +675,8 @@
 
 #define ROUTER_UBNT_EROUTERLITE 0xdc1b // Edgerouter Lite  (e100) Cavium Octeon SMP
 #define ROUTER_UBNT_EROUTERPRO 0xdd10 // Edgerouter Lite  (e200) Cavium Octeon SMP
+
+#define ROUTER_NETGEAR_R8000 0xde16
 
 #define NVROUTER "DD_BOARD"
 
