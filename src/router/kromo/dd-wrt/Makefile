@@ -34,6 +34,9 @@ endif
 ifneq ($(CONFIG_SPOTPASS),y)
 	rm -f $(INSTALLDIR)/www/Nintendo.asp
 endif
+ifneq ($(CONFIG_IPV6),y)
+	rm -f $(INSTALLDIR)/www/IPV6.asp
+endif
 
 ifeq ($(CONFIG_DIST),"micro-special")
 	rm -f $(INSTALLDIR)/www/images/favicon.ico
