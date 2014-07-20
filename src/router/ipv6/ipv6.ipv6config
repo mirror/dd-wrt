@@ -1,0 +1,70 @@
+
+<fieldset>
+	<legend><% tran("management.ipv6_legend"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("management.ipv6_srv"); %></div>
+		<input class="spaceradio" type="radio" value="1" name="ipv6_enable" <% nvram_checked("ipv6_enable","1"); %> onclick="show_layer_ext(this, 'idipv6', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="ipv6_enable" <% nvram_checked("ipv6_enable","0"); %> onclick="show_layer_ext(this, 'idipv6', false)" /><% tran("share.disable"); %>
+	</div>
+	<div id="idipv6">
+		<div class="setting">
+			<div class="label"><% tran("management.ipv6_typ"); %></div>
+			<select name="ipv6_typ">
+				<% show_ipv6options(); %>
+			</select>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("management.ipv6_pf_len"); %></div>
+				 <input size="2" maxlength="2" class="text" name="ipv6_pf_len" value="<% nvram_get("ipv6_pf_len"); %>" />
+			</select>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("management.ipv6_dns"); %></div>
+				 <input size="40" maxlength="40" class="text" name="ipv6_dns1" value="<% nvram_get("ipv6_dns1"); %>" />
+			</select>
+		</div>
+		<div class="setting">
+			<div class="label">&nbsp;</div>
+				 <input size="40" maxlength="40" class="text" name="ipv6_dns2" value="<% nvram_get("ipv6_dns2"); %>" />
+			</select>
+		</div>
+		<!-- TODO only show if native is selected-->
+		<div id="idipv6_native">
+			<div class="setting">
+				<div class="label"><% tran("management.ipv6_prefix"); %></div>
+					<input size="40" maxlength="40" class="text" name="ipv6_prefix" value="<% nvram_get("ipv6_prefix"); %>" />
+				</select>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("management.ipv6_addr"); %></div>
+					<input size="40" maxlength="40" class="text" name="ipv6_addr" value="<% nvram_get("ipv6_addr"); %>" />
+				</select>
+			</div>
+		</div>
+		<!--<div class="setting">
+			<div class="label">Dhcpc6 config</div>
+			<textarea id="dhcp6c_conf" name="dhcp6c_conf" cols="60" rows="4"></textarea>
+			<script type="text/javascript">
+			//<![CDATA[
+				var dhcp6c_conf = fix_cr( '<% nvram_get("dhcp6c_conf"); %>' );
+				document.getElementById("dhcp6c_conf").value = dhcp6c_conf;
+			//]]>
+			</script>
+		</div>-->
+		<div class="setting">
+			<div class="label"><% tran("management.ipv6_rad"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="radvd_enable" <% nvram_checked("radvd_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="radvd_enable" <% nvram_checked("radvd_enable","0"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("management.ipv6_radconf"); %></div>
+			<textarea id="radvd_conf" name="radvd_conf" cols="60" rows="4"></textarea>
+			<script type="text/javascript">
+			//<![CDATA[
+				var radvd_conf = fix_cr( '<% nvram_get("radvd_conf"); %>' );
+				document.getElementById("radvd_conf").value = radvd_conf;
+			//]]>
+			</script>
+		</div>
+	</div>
+</fieldset><br/>

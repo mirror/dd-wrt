@@ -1,3 +1,11 @@
  "ipv6_enable" "ipv6 support" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "ipv6_typ" "ipv6 service type" "NULL" "FALSE" "0"
+ "ipv6_pf_len" "ipv6 prefix length" "NULL" "FALSE" "0"
  "radvd_enable" "ipv6 support" "CHOICE" "2" "0" "1"  "FALSE" "0"
- "radvd_conf"  "ipv6 support"  "NULL"  "TRUE" "0"
+ "radvd_conf" "ipv6 support"  "NULL"  "TRUE" "0"
+ "dhcp6c_conf" "dhcpc6 config"  "NULL"  "TRUE" "0"
+ "ipv6_dns1" "ipv6 dns1"  "NULL"  "TRUE" "0"
+ "ipv6_dns2" "ipv6 dns2"  "NULL"  "TRUE" "0"
+ "ipv6_prefix" "ipv6 prefix"  "NULL"  "TRUE" "0"
+ "ipv6_addr" "ipv6 address"  "NULL"  "TRUE" "0"
+ 
