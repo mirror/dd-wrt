@@ -130,3 +130,4 @@ mkdir -p proc
 mkdir -p opt/lib/iptables
 ln -sf /opt/usr/lib/iptables usr/lib/iptables
 ln -sf /tmp/TZ etc/TZ
+ln -sf /tmp/dhcp6c.conf etc/dhcp6c.conf
