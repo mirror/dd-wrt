@@ -1214,6 +1214,12 @@ int internal_getRouterBrand()
 		setRouter("Netgear R7000");
 		return ROUTER_NETGEAR_R7000;
 	}
+	
+	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
+	    && nvram_match("boardrev", "0x1101")) {
+		setRouter("Netgear R8000");
+		return ROUTER_NETGEAR_R8000;
+	}
 
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
