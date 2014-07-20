@@ -1232,6 +1232,7 @@ get_default_ifid(pif)
 		cp = (char *)(sdl->sdl_data + sdl->sdl_nlen);
 #endif
 #ifdef __linux__
+/*		
 		if (ifa->ifa_addr->sa_family != AF_PACKET)
 			continue;
 
@@ -1242,7 +1243,7 @@ get_default_ifid(pif)
 			    pif->ifname);
 			goto fail;
 		}
-
+*/
 		memset(pif->ifid, 0, sizeof(pif->ifid));
 		cp = (char *)(sll->sll_addr);
 #endif
