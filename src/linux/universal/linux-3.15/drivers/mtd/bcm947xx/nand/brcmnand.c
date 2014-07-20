@@ -1055,6 +1055,10 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 	if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1301")) {
 		offset = 0x2240000;
 	}
+	
+	if (nvram_match("boardnum", "32") && nvram_match("boardtype", "0x0665") && nvram_match("boardrev", "0x1101")) {
+		offset = 0x2680000;
+	}
 	ASSERT(size > offset);
 
 	if (boardnum == 00 && nvram_match("boardtype", "0x0665")
