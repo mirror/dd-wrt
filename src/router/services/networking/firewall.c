@@ -2585,6 +2585,26 @@ void set_gprules(char *iface)
 
 int isregistered_real(void);
 
+
+void start_firewall6()
+{
+	fprintf(stderr, "start firewall6\n");
+	sysprintf("insmod nf_defrag_ipv6");
+	sysprintf("insmod ip6_tables");
+	sysprintf("insmod nf_conntrack_ipv6");
+	sysprintf("insmod ip6table_filter");
+	sysprintf("ip6tables -F INPUT");
+	sysprintf("ip6tables -F FORWARD");
+	sysprintf("ip6tables -F OUTPUT");
+	sysprintf("ip6tables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT");
+	sysprintf("ip6tables -A INPUT -p icmpv6 -j ACCEPT");
+	sysprintf("ip6tables -A INPUT -s fe80::/64 -j ACCEPT");
+	sysprintf("ip6tables -A INPUT -j DROP");
+	sysprintf("ip6tables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT");
+	sysprintf("ip6tables -A FORWARD -o %s -j ACCEPT", nvram_get("wan_ifname"));
+	sysprintf("ip6tables -A FORWARD -j DROP");
+}
+
 #ifdef DEVELOPE_ENV
 int main(void)
 #else
@@ -2853,6 +2873,17 @@ void start_firewall(void)
 	cprintf("ready");
 
 	cprintf("done\n");
+#ifdef HAVE_IPV6
+	start_firewall6();
+#endif
+}
+
+void stop_firewall6(void)
+{
+	if(nvram_match("ipv6_enable", "0"))
+		return 0;
+	
+	eval("ip", "-6", "addr", "flush", "scope", "global");
 }
 
 void stop_firewall(void)
@@ -2895,6 +2926,9 @@ void stop_firewall(void)
 		rmmod("xt_mac");
 	}
 	cprintf("done\n");
+#ifdef HAVE_IPV6	
+	stop_firewall6();
+#endif
 	return;
 }
 
