@@ -102,8 +102,6 @@ void start_dhcp6c() {
 		fclose(fpc);
 	}
 
-
-	///tmp/strace dhcp6c -c /tmp/dhcp6c.conf -T LL -D vlan2
 	eval("dhcp6c", "-c" , "/tmp/dhcp6c.conf" , "-T", "LL", "-D" , nvram_safe_get("wan_ifname"));
 }
 
