@@ -102,6 +102,8 @@ static void *load_visual_service(char *name)
 	void *handle = dlopen(VISSERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
 	if (!handle)
 		handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
+      if (!handle)
+          fprintf(stderr,"%s\n",dlerror());
 
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
@@ -126,8 +128,8 @@ static void *load_service(char *name)
 	void *handle = dlopen(SERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
 	if (!handle)
 		handle = dlopen(SERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
-//      if (!handle)
-//          fprintf(stderr,"%s\n",dlerror());
+      if (!handle)
+          fprintf(stderr,"%s\n",dlerror());
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
 		cprintf("not found, try to load alternate\n");
