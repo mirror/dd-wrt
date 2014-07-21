@@ -41,16 +41,6 @@
 				</select>
 			</div>
 		</div>
-		<!--<div class="setting">
-			<div class="label">Dhcpc6 config</div>
-			<textarea id="dhcp6c_conf" name="dhcp6c_conf" cols="60" rows="4"></textarea>
-			<script type="text/javascript">
-			//<![CDATA[
-				var dhcp6c_conf = fix_cr( '<% nvram_get("dhcp6c_conf"); %>' );
-				document.getElementById("dhcp6c_conf").value = dhcp6c_conf;
-			//]]>
-			</script>
-		</div>-->
 		<div class="setting">
 			<div class="label"><% tran("management.ipv6_rad"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="radvd_enable" <% nvram_checked("radvd_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
