@@ -99,6 +99,7 @@ char *GOZILA_GET(webs_t wp, char *name)
 static void *load_visual_service(char *name)
 {
 	cprintf("load service %s\n", name);
+	void *handle = NULL;
 //	void *handle = dlopen(VISSERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
 //	if (!handle)
 		handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
@@ -125,6 +126,7 @@ static void *load_visual_service(char *name)
 static void *load_service(char *name)
 {
 	cprintf("load service %s\n", name);
+	void *handle = NULL;
 //	void *handle = dlopen(SERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
 //	if (!handle)
 		handle = dlopen(SERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
