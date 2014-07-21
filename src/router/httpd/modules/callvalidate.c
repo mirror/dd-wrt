@@ -69,8 +69,10 @@
 #define VISSERVICE_MODULE "/usr/lib/visuals.so"
 #endif
 
-#define SERVICEALT_MODULE "/jffs/usr/lib/validate.so"
-#define VISSERVICEALT_MODULE "/jffs/usr/lib/visuals.so"
+//#define SERVICEALT_MODULE "/jffs/usr/lib/validate.so"
+//#define VISSERVICEALT_MODULE "/jffs/usr/lib/visuals.so"
+#define SERVICEALT_MODULE "/tmp/validate.so"
+#define VISSERVICEALT_MODULE "/tmp/visuals.so"
 
 #define cprintf(fmt, args...)
 
@@ -99,9 +101,10 @@ char *GOZILA_GET(webs_t wp, char *name)
 static void *load_visual_service(char *name)
 {
 	cprintf("load service %s\n", name);
-	void *handle = NULL;
-//	void *handle = dlopen(VISSERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
-//	if (!handle)
+	void *handle = dlopen(VISSERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
+        if (!handle)
+           fprintf(stderr,"%s\n",dlerror());
+	if (!handle)
 		handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
       if (!handle)
           fprintf(stderr,"%s\n",dlerror());
@@ -126,12 +129,13 @@ static void *load_visual_service(char *name)
 static void *load_service(char *name)
 {
 	cprintf("load service %s\n", name);
-	void *handle = NULL;
-//	void *handle = dlopen(SERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
-//	if (!handle)
+	void *handle = dlopen(SERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
+        if (!handle)
+           fprintf(stderr,"%s\n",dlerror());
+	if (!handle)
 		handle = dlopen(SERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
-      if (!handle)
-          fprintf(stderr,"%s\n",dlerror());
+        if (!handle)
+           fprintf(stderr,"%s\n",dlerror());
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
 		cprintf("not found, try to load alternate\n");
