@@ -33,7 +33,7 @@
 #include <sys/queue.h>
 #include <sys/ioctl.h>
 
-#include <net/if.h>
+
 #include <netinet/in.h>
 #ifdef __KAME__
 #include <net/if_dl.h>
@@ -1235,15 +1235,15 @@ get_default_ifid(pif)
 /*		
 		if (ifa->ifa_addr->sa_family != AF_PACKET)
 			continue;
-
+*/
 		sll = (struct sockaddr_ll *)ifa->ifa_addr;
 		if (sll->sll_halen < 6) {
 			dprintf(LOG_NOTICE, FNAME,
 			    "link layer address is too short (%s)",
 			    pif->ifname);
-			goto fail;
+			//goto fail;
 		}
-*/
+
 		memset(pif->ifid, 0, sizeof(pif->ifid));
 		cp = (char *)(sll->sll_addr);
 #endif
