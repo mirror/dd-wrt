@@ -99,11 +99,11 @@ char *GOZILA_GET(webs_t wp, char *name)
 static void *load_visual_service(char *name)
 {
 	cprintf("load service %s\n", name);
-	void *handle = dlopen(VISSERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
+//	void *handle = dlopen(VISSERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
+//	if (!handle)
+		handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
       if (!handle)
           fprintf(stderr,"%s\n",dlerror());
-	if (!handle)
-		handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
 
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
@@ -125,11 +125,11 @@ static void *load_visual_service(char *name)
 static void *load_service(char *name)
 {
 	cprintf("load service %s\n", name);
-	void *handle = dlopen(SERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
+//	void *handle = dlopen(SERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
+//	if (!handle)
+		handle = dlopen(SERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
       if (!handle)
           fprintf(stderr,"%s\n",dlerror());
-	if (!handle)
-		handle = dlopen(SERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
 		cprintf("not found, try to load alternate\n");
