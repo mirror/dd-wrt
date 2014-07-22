@@ -352,8 +352,17 @@ void start_openvpn(void)
 	write_nvram("/tmp/openvpncl/cert.p12", "openvpncl_pkcs12");
 	write_nvram("/tmp/openvpncl/static.key", "openvpncl_static");
 	chmod("/tmp/openvpn/client.key", 0600);
+	
+	FILE *fp;
+	
+	if (nvram_match("openvpncl_upauth", "1")){
+		fp = fopen("/tmp/openvpncl/credentials", "wb");
+		fprintf(fp, "%s\n", nvram_safe_get("openvpncl_user"));
+		fprintf(fp, "%s\n", nvram_safe_get("openvpncl_pass"));
+		fclose(fp);
+	}
 
-	FILE *fp = fopen("/tmp/openvpncl/openvpn.conf", "wb");
+	fp = fopen("/tmp/openvpncl/openvpn.conf", "wb");
 	if (fp == NULL)
 		return;
 	if (nvram_invmatch("openvpncl_static", ""))
@@ -375,6 +384,8 @@ void start_openvpn(void)
 	fprintf(fp, "proto %s\n", nvram_safe_get("openvpncl_proto"));
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
 	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
+	if (nvram_match("openvpncl_upauth", "1"))
+		fprintf(fp, "auth-user-pass %s\n", "/tmp/openvpncl/credentials");
 	fprintf(fp, "remote %s %s\n", nvram_safe_get("openvpncl_remoteip"), nvram_safe_get("openvpncl_remoteport"));
 	if (nvram_invmatch("openvpncl_scramble", "off")) {
 		if (nvram_match("openvpncl_scramble", "obfuscate"))
