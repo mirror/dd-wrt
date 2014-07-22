@@ -408,7 +408,9 @@ static int i915_gem_object_info(struct seq_file *m, void* data)
 		struct file_stats stats;
 
 		memset(&stats, 0, sizeof(stats));
+		spin_lock(&file->table_lock);
 		idr_for_each(&file->object_idr, per_file_stats, &stats);
+		spin_unlock(&file->table_lock);
 		seq_printf(m, "%s: %u objects, %zu bytes (%zu active, %zu inactive, %zu unbound)\n",
 			   get_pid_task(file->pid, PIDTYPE_PID)->comm,
 			   stats.count,

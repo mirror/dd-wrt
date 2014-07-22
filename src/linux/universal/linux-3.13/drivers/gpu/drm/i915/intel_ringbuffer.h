@@ -42,11 +42,11 @@ enum intel_ring_hangcheck_action {
 };
 
 struct intel_ring_hangcheck {
-	bool deadlock;
 	u32 seqno;
 	u32 acthd;
 	int score;
 	enum intel_ring_hangcheck_action action;
+	int deadlock;
 };
 
 struct  intel_ring_buffer {
