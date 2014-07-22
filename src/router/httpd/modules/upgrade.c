@@ -27,7 +27,7 @@
 #include <cyutils.h>
 #include <shutils.h>
 
-#define MIN_BUF_SIZE    4096
+#define MIN_BUF_SIZE    1024
 #define CODE_PATTERN_ERROR 9999
 static int upgrade_ret;
 
