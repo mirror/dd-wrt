@@ -2394,10 +2394,14 @@ static int semaphore_passed(struct intel_ring_buffer *ring)
 	struct intel_ring_buffer *signaller;
 	u32 seqno, ctl;
 
-	ring->hangcheck.deadlock = true;
+	ring->hangcheck.deadlock++;
 
 	signaller = semaphore_waits_for(ring, &seqno);
-	if (signaller == NULL || signaller->hangcheck.deadlock)
+	if (signaller == NULL)
+		return -1;
+
+	/* Prevent pathological recursion due to driver bugs */
+	if (signaller->hangcheck.deadlock >= I915_NUM_RINGS)
 		return -1;
 
 	/* cursory check for an unkickable deadlock */
@@ -2405,7 +2409,13 @@ static int semaphore_passed(struct intel_ring_buffer *ring)
 	if (ctl & RING_WAIT_SEMAPHORE && semaphore_passed(signaller) < 0)
 		return -1;
 
-	return i915_seqno_passed(signaller->get_seqno(signaller, false), seqno);
+	if (i915_seqno_passed(signaller->get_seqno(signaller, false), seqno))
+		return 1;
+
+	if (signaller->hangcheck.deadlock)
+		return -1;
+
+	return 0;
 }
 
 static void semaphore_clear_deadlocks(struct drm_i915_private *dev_priv)
@@ -2414,7 +2424,7 @@ static void semaphore_clear_deadlocks(struct drm_i915_private *dev_priv)
 	int i;
 
 	for_each_ring(ring, dev_priv, i)
-		ring->hangcheck.deadlock = false;
+		ring->hangcheck.deadlock = 0;
 }
 
 static enum intel_ring_hangcheck_action
