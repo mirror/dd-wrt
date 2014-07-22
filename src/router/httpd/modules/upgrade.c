@@ -411,6 +411,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		fprintf(stderr, "uploading [%d]\r", uploadcount);
 		i++;
 	}
+	safe_fwrite(buf, 1, MIN_BUF_SIZE, fifo); // just write a little bit more
+
+
 	fclose(fifo);
 	fifo = NULL;
 
