@@ -27,3 +27,6 @@
  "openvpncl_ip"  "TAP IP on Proxy Server mode"  "NULL"   "FALSE" "0"
  "openvpncl_mask"  "TAP Netmask on Proxy Server mode"  "NULL"   "FALSE" "0"
  "openvpncl_sec"   "Client Firewall"   "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "openvpncl_upauth" "User Password Authentication" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "openvpncl_user" "Username" "NULL" "FALSE" "0"
+ "openvpncl_pass" "Password" "NULL" "FALSE" "0"
