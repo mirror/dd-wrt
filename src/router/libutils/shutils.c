@@ -350,6 +350,8 @@ int safe_fread(void *ptr, size_t size, size_t nmemb, FILE * stream)
 		ret += fread((char *)ptr + (ret * size), size, nmemb - ret, stream);
 	}
 	while (ret < nmemb && ferror(stream) && errno == EINTR);
+	
+	fprintf(stderr,"result %d, ferror %d, errno %d\n",ret, ferror(stream),errno);
 
 	return ret;
 }
