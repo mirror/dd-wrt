@@ -397,6 +397,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #else
 			safe_fwrite(&buf[sizeof(struct code_header)], 1, count - sizeof(struct code_header), fifo);
 #endif
+			fflush(fifo);
 			i++;
 			continue;
 		}
@@ -404,6 +405,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	      write_data:
 		*total -= count;
 		safe_fwrite(buf, 1, count, fifo);
+		fflush(fifo);
 		// safe_fwrite(buf, 1, size, fifo);
 		uploadcount += count;
 		fprintf(stderr, "uploading [%d]\r", uploadcount);
