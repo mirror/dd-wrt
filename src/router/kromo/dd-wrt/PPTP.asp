@@ -53,6 +53,7 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.openvpn_adv, 'idmtu', <% nvem("openvpn_adv", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpncl_enable, 'idvpncl', <% nvem("openvpncl_enable", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpncl_adv, 'idmtucl', <% nvem("openvpncl_adv", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpncl_upauth, 'idupauth', <% nvem("openvpncl_upauth", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpncl_nat, 'idnat', <% nvem("openvpncl_nat", "0", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.openvpncl_sec, 'idsec', <% nvem("openvpncl_sec", "0", "1", "0"); %> == 1);
 		
