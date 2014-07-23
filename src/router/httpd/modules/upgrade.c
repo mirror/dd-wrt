@@ -27,7 +27,7 @@
 #include <cyutils.h>
 #include <shutils.h>
 
-#define MIN_BUF_SIZE    1024
+#define MIN_BUF_SIZE    4096
 #define CODE_PATTERN_ERROR 9999
 static int upgrade_ret;
 
@@ -418,13 +418,13 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	}
 
 
-	fclose(fifo);
-	fifo = NULL;
 
 	/*
 	 * Wait for write to terminate 
 	 */
 	waitpid(pid, &ret, 0);
+	fclose(fifo);
+	fifo = NULL;
 	fprintf(stderr, "uploading [%d]\n", uploadcount);
 	cprintf("done\n");
 #ifdef HAVE_HTTPS
