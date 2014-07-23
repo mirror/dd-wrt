@@ -19,6 +19,7 @@ endif
 
 CONFIG_WPE72_SIZE?=0x3d0000
 CONFIG_MUSL=y
+CONFIG_NOOPT=y
 
 #
 # Paths
@@ -299,6 +300,9 @@ endif
 ifeq ($(CONFIG_DIR825C1),y)
 	cp $(LINUXDIR)/.config_dir825c1 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_MMS344),y)
+	cp $(LINUXDIR)/.config_dir825c1 $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_RB2011),y)
 	cp $(LINUXDIR)/.config_rb2011 $(LINUXDIR)/.config
 endif
@@ -396,6 +400,11 @@ ifeq ($(CONFIG_WDR2543),y)
 	echo CONFIG_WDR2543=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_WDR2543 is not set" >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_MMS344),y)
+	echo CONFIG_MMS344=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_MMS344 is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_EHCI),y)
 	sed -i 's/\# CONFIG_USB_EHCI_HCD is not set/CONFIG_USB_EHCI_HCD=m/g' $(LINUXDIR)/.config
@@ -1144,6 +1153,14 @@ ifeq ($(CONFIG_WPE72),y)
 		-p0x30000:$(strip $(CONFIG_WPE72_SIZE)):alp:0x80060000 \
 		-b0x30000:$(strip $(CONFIG_WPE72_SIZE))::$(ARCH)-uclibc/vmlinux.lsx 	\
 		mips-uclibc/wpe72.img
+endif
+ifeq ($(CONFIG_MMS344),y)
+#	dd if=$(ARCH)-uclibc/vmlinux.lzma of=$(ARCH)-uclibc/vmlinux.lsx bs=65536 conv=sync
+#	cat $(ARCH)-uclibc/root.fs>>$(ARCH)-uclibc/vmlinux.lsx
+	-./tools/compex/mkmylofw -B MMS344HV \
+		-p0x30000:0x7d0000:al:0x80060000 \
+		-b0x30000:0x7d0000::$(ARCH)-uclibc/aligned.uimage 	\
+		mips-uclibc/mms344.img
 endif
 ifeq ($(CONFIG_UBNTM),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
