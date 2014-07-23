@@ -1,29 +1,18 @@
 #!/bin/sh
-/bin/echo "status 2" | /usr/bin/nc 127.0.0.1 14  | grep -v "^>\|TITLE" | awk -F "," 'BEGIN{print "<table>"}{
-	print "<tr>";
-	if ($1 == "HEADER")
-		{
-		print "<tr><td colspan=6><hr></td></tr>";
-		for (i=3;i<NF;i++)
-			{
-			#ueberschrift
-			printf "<td><b>"$i"</b></td>"
-			}
-		}
-	else if ($1 == "TITLE")
-		{
-		for (i=2;i<=NF;i++)
-			{
-			printf "<td>"$i"</td>";
-			}
-		}
-	else
-		{
-		for (i=2;i<NF;i++)
-			{
-			printf "<td>"$i"</td>";
-			}
-		}
-	print"</tr>"
-	}
+if [ "$(nvram get openvpn_enable)" = "1" ]; then
+/bin/echo "status 2" | /usr/bin/nc 127.0.0.1 14  | grep "bytes" | awk -F "," 'BEGIN{print "<table><tr><td colspan=2>VPN Server Stats<hr></td></tr>"}{             
+                                                                          
+        printf "<tr>\n<td>%s</td><td>%d</td>\n</tr>", $1, $2;            
+                                                         
+}                                                        
 END{print "</table>"}'
+fi
+if [ "$(nvram get openvpncl_enable)" = "1" ]; then
+/bin/echo "status 2" | /usr/bin/nc 127.0.0.1 16  | grep "bytes" | awk -F "," 'BEGIN{print "<table><tr><td colspan=2>VPN Client Stats<hr></td></tr>"}{             
+                                                                          
+        printf "<tr>\n<td>%s</td><td>%d</td>\n</tr>", $1, $2;            
+                                                         
+}                                                        
+END{print "</table>"}'
+fi
+
