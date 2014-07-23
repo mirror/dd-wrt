@@ -27,7 +27,7 @@
 #include <cyutils.h>
 #include <shutils.h>
 
-#define MIN_BUF_SIZE    4096
+#define MIN_BUF_SIZE    512
 #define CODE_PATTERN_ERROR 9999
 static int upgrade_ret;
 
@@ -153,6 +153,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 	if (size < MIN_BUF_SIZE)
 		size = MIN_BUF_SIZE;
+	fprintf(stderr,"use buffer size %d\n",size);
 	if ((buf = safe_malloc(size)) == NULL) {
 		ret = ENOMEM;
 		goto err;
@@ -420,7 +421,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 
 	fprintf(stderr, "uploading [%d]\n", uploadcount);
-	sleep(5);
 	fclose(fifo);
 	fifo = NULL;
 	/*
