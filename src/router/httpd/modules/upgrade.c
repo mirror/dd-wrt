@@ -419,13 +419,14 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 
 
+	fprintf(stderr, "uploading [%d]\n", uploadcount);
+	sleep(5);
+	fclose(fifo);
+	fifo = NULL;
 	/*
 	 * Wait for write to terminate 
 	 */
 	waitpid(pid, &ret, 0);
-	fclose(fifo);
-	fifo = NULL;
-	fprintf(stderr, "uploading [%d]\n", uploadcount);
 	cprintf("done\n");
 #ifdef HAVE_HTTPS
 	if (!do_ssl) {
