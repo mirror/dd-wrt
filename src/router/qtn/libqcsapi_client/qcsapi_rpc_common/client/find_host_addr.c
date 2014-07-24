@@ -53,7 +53,7 @@ EH0*/
 
 static const char * const cfg_file_paths[] = {
 	"/mnt/jffs2/rmt_ip.conf",
-	"/etc/qcsapi_target_ip.conf",
+	"/tmp/qcsapi_target_ip.conf",
 	NULL	/* last entry must be null */
 };
 

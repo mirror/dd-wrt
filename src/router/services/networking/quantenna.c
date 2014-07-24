@@ -190,6 +190,24 @@ int gen_stateless_conf(void)
 	return 1;
 }
 
+static void inc_mac(char *mac, int plus)
+{
+	unsigned char m[6];
+	int i;
+
+	for (i = 0; i < 6; i++)
+		m[i] = (unsigned char) strtol(mac + (3 * i), (char **)NULL, 16);
+	while (plus != 0) {
+		for (i = 5; i >= 3; --i) {
+			m[i] += (plus < 0) ? -1 : 1;
+			if (m[i] != 0) break;	// continue if rolled over
+		}
+		plus += (plus < 0) ? 1 : -1;
+	}
+	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X",
+		m[0], m[1], m[2], m[3], m[4], m[5]);
+}
+
 /* start: 169.254.39.1, 0x127fea9 */
 /* end: 169.254.39.254, 0xfe27fea9 */
 int gen_rpc_qcsapi_ip(void)
