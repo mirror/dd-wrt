@@ -163,6 +163,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	 * Pipe the rest to the FIFO 
 	 */
 	cprintf("Upgrading\n");
+	if (total)
+	    fprintf(stderr,"total size = %d\n",*total);
 	while (total && *total) {
 #ifdef HAVE_HTTPS
 		if (do_ssl) {
@@ -174,6 +176,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		{
 			if (waitfor(fileno(stream->fp), 5) <= 0) {
 				cprintf("waitfor timeout 5 secs\n");
+				fprintf(stderr,"break cause by timeout of 5 sec\n");
 				break;
 			}
 			count = safe_fread(buf, 1, size, stream->fp);
