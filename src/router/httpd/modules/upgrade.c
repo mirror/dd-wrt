@@ -177,8 +177,10 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				break;
 			}
 			count = safe_fread(buf, 1, size, stream->fp);
-			if (!count && (ferror(stream->fp) || feof(stream->fp)))
+			if (!count && (ferror(stream->fp) || feof(stream->fp))) {
+				fprintf(stderr,"break cause %d ferror %d feof %d\n",count,ferror(stream->fp),feof(stream->fp));
 				break;
+			}
 		}
 
 		if (i == 0) {	// check code pattern, the first data must
