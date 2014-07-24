@@ -43,6 +43,10 @@
 
 #include "types.h"
 
+#ifndef NETDB_INTERNAL
+#define NETDB_INTERNAL -1
+#endif
+
 __BEGIN_DECLS
 
 struct rpcent
