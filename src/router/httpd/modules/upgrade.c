@@ -174,9 +174,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		} else
 #endif
 		{
-			if (waitfor(fileno(stream->fp), 5) <= 0) {
-				cprintf("waitfor timeout 5 secs\n");
-				fprintf(stderr,"break cause by timeout of 5 sec\n");
+			if (waitfor(fileno(stream->fp), 10) <= 0) {
+				cprintf("waitfor timeout 10 secs\n");
+				fprintf(stderr,"break cause by timeout of 10 sec\n");
 				break;
 			}
 			count = safe_fread(buf, 1, size, stream->fp);
