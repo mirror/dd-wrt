@@ -302,7 +302,6 @@ int mtd_write(const char *path, const char *mtd)
 #ifdef HAVE_WRT160NL
 	fprintf(stderr, "size of ETRX header = %d\n", sizeof(struct etrx_header));
 	if ((fp = fopen(path, "r"))) {
-		setvbuf(fp,NULL,_IONBF,0);
 		count = safe_fread(&etrx, 1, sizeof(struct etrx_header), fp);
 	}else
 		return -1;
@@ -310,7 +309,6 @@ int mtd_write(const char *path, const char *mtd)
 #else
 
 	if ((fp = fopen(path, "r"))) {
-		setvbuf(fp,NULL,_IONBF,0);
 
 		count = safe_fread(&trx, 1, sizeof(struct trx_header), fp);
 
