@@ -11,7 +11,7 @@
  *
  * $Id: cgi.c,v 1.1 2005/09/26 16:58:15 seg Exp $
  */
-
+#undef RPCOVERRIDE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
