@@ -27,7 +27,7 @@
 #include <cyutils.h>
 #include <shutils.h>
 
-#define MIN_BUF_SIZE    512
+#define MIN_BUF_SIZE    4096
 #define CODE_PATTERN_ERROR 9999
 static int upgrade_ret;
 
@@ -163,8 +163,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	 * Pipe the rest to the FIFO 
 	 */
 	cprintf("Upgrading\n");
-	if (total)
-	    fprintf(stderr,"total size = %d\n",*total);
+	int lastblock=0;
 	while (total && *total) {
 #ifdef HAVE_HTTPS
 		if (do_ssl) {
@@ -175,12 +174,10 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #endif
 		{
 			if (waitfor(fileno(stream->fp), 5) <= 0) {
-				cprintf("waitfor timeout 5 secs\n");
-				fprintf(stderr,"break cause by timeout of 5 sec. ignore\n");
+			    lastblock=1;		
 			}
 			count = safe_fread(buf, 1, size, stream->fp);
 			if (!count && (ferror(stream->fp) || feof(stream->fp))) {
-				fprintf(stderr,"break cause %d ferror %d feof %d\n",count,ferror(stream->fp),feof(stream->fp));
 				break;
 			}
 		}
@@ -407,7 +404,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #else
 			safe_fwrite(&buf[sizeof(struct code_header)], 1, count - sizeof(struct code_header), fifo);
 #endif
-			fflush(fifo);
 			i++;
 			continue;
 		}
@@ -415,10 +411,10 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	      write_data:
 		*total -= count;
 		safe_fwrite(buf, 1, count, fifo);
-		fflush(fifo);
-		// safe_fwrite(buf, 1, size, fifo);
 		uploadcount += count;
 		fprintf(stderr, "uploading [%d]\r", uploadcount);
+		if (lastblock)
+		    break;
 		i++;
 	}
 
