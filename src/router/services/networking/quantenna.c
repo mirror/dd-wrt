@@ -20,6 +20,8 @@
  * $Id:
  */
 #ifdef HAVE_QTN
+#include <net/if.h>
+#include <netinet/in.h>
 #include <stdlib.h>
 #include <bcmnvram.h>
 #include <shutils.h>
