@@ -200,7 +200,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 						ret = errno;
 					goto err;
 				}
-				setvbuf(fifo,NULL,_IONBF,0);
 				goto write_data;
 			}
 #endif
@@ -235,7 +234,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 						ret = errno;
 					goto err;
 				}
-				setvbuf(fifo,NULL,_IONBF,0);
 				goto write_data;
 			} else if (!strncmp(fh.magic, "FIRMWARE", 8)) {	// check for "FIRMWARE"
 				char *write_argv_buf[4];
@@ -250,7 +248,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 						ret = errno;
 					goto err;
 				}
-				setvbuf(fifo,NULL,_IONBF,0);
 				goto write_data;
 			} else {
 				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv, NULL, 0, &pid))
@@ -259,7 +256,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 						ret = errno;
 					goto err;
 				}
-			setvbuf(fifo,NULL,_IONBF,0);
 
 			}
 
@@ -272,7 +268,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 					ret = errno;
 				goto err;
 			}
-			setvbuf(fifo,NULL,_IONBF,0);
 #endif
 			// have code pattern
 			char ver[40];
