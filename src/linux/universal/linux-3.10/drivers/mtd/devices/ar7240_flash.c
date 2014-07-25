@@ -411,7 +411,7 @@ static int __init ar7240_flash_init(void)
 		}
 		dir_parts[6].offset = 0;	// linux + nvram = phy size
 		dir_parts[6].size = mtd->size;	// linux + nvram = phy size
-		result = add_mtd_partitions(mtd, dir_parts, 8);
+		result = add_mtd_partitions(mtd, dir_parts, 9);
 	}
 
 	return 0;
