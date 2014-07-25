@@ -2400,7 +2400,7 @@ struct ieee80211_iface_limit {
  *  };
  */
 struct ieee80211_iface_combination {
-	const struct ieee80211_iface_limit *limits;
+	struct ieee80211_iface_limit *limits;
 	u32 num_different_channels;
 	u16 max_interfaces;
 	u8 n_limits;

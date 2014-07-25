@@ -289,6 +289,7 @@ static struct mtd_partition dir_parts[] = {
       {name: "board_config", offset: 0x3f0000, size:0x10000,},
       {name: "fullflash", offset: 0x3f0000, size:0x10000,},
       {name: "fullboot", offset: 0, size:0x30000,},
+      {name: "uboot-env", offset: 0x40000, size:0x10000,},
       {name:NULL,},
 };
 
@@ -364,9 +365,11 @@ static int __init ar7240_flash_init(void)
 			       guess);
 			dir_parts[0].offset = 0;
 			dir_parts[0].size = guess;			
-			dir_parts[7].size = guess;			
+			dir_parts[7].size = guess;
 			dir_parts[1].offset = guess;
 			dir_parts[1].size = 0;
+			dir_parts[8].offset = guess - mtd->erasesize;
+			dir_parts[8].size = mtd->erasesize;
 		}
 		while ((offset + mtd->erasesize) < mtd->size) {
 //                      printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
