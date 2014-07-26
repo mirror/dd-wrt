@@ -6112,7 +6112,11 @@ int getath9kdevicecount(void)
 			count = (int)globbuf.gl_pathc;
 		globfree(&globbuf);
 	}
+#if defined(HAVE_MMS344) || defined(HAVE_ARCHERC7)
+	return 2;
+#else
 	return (count);
+#endif
 }
 
 int get_ath9k_phy_idx(int idx)
