@@ -265,11 +265,14 @@ void start_openvpnserver(void)
 	chmod("/tmp/openvpn/route-down.sh", 0700);
 	eval("ln", "-s", "/usr/sbin/openvpn", "/tmp/openvpnserver");
 
+#ifdef HAVE_OCTEON
+	eval("/tmp/openvpnserver", "--config", "/tmp/openvpn/openvpn.conf", "--route-up", "/tmp/openvpn/route-up.sh", "--down-pre", "/tmp/openvpn/route-down.sh", "--daemon", "--engine", "octeon");
+#else
 	if (nvram_match("use_crypto", "1"))
 		eval("/tmp/openvpnserver", "--config", "/tmp/openvpn/openvpn.conf", "--route-up", "/tmp/openvpn/route-up.sh", "--down-pre", "/tmp/openvpn/route-down.sh", "--daemon", "--engine", "cryptodev");
 	else
 		eval("/tmp/openvpnserver", "--config", "/tmp/openvpn/openvpn.conf", "--route-up", "/tmp/openvpn/route-up.sh", "--down-pre", "/tmp/openvpn/route-down.sh", "--daemon");
-
+#endif
 //	eval("stopservice", "wshaper"); disable wshaper, causes fw race condition
 //	eval("startservice", "wshaper");
 }
@@ -544,11 +547,14 @@ void start_openvpn(void)
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
 	chmod("/tmp/openvpncl/route-down.sh", 0700);
 
+#ifdef HAVE_OCTEON
+		eval("openvpn", "--config", "/tmp/openvpncl/openvpn.conf", "--route-up", "/tmp/openvpncl/route-up.sh", "--down-pre", "/tmp/openvpncl/route-down.sh", "--daemon", "--engine", "octeon");
+#else
 	if (nvram_match("use_crypto", "1"))
 		eval("openvpn", "--config", "/tmp/openvpncl/openvpn.conf", "--route-up", "/tmp/openvpncl/route-up.sh", "--down-pre", "/tmp/openvpncl/route-down.sh", "--daemon", "--engine", "cryptodev");
 	else
 		eval("openvpn", "--config", "/tmp/openvpncl/openvpn.conf", "--route-up", "/tmp/openvpncl/route-up.sh", "--down-pre", "/tmp/openvpncl/route-down.sh", "--daemon");
-
+#endif
 /*	if (nvram_match("wshaper_enable", "1")) { disable wshaper, causes fw race condition
 		eval("stopservice", "wshaper");
 		eval("startservice", "wshaper");
