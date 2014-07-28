@@ -26,15 +26,21 @@
 @c @set have-armv5te no
 @c @set have-armv6 no
 @c @set have-armv6t2 no
+@c @set have-armv8 no
 @c @set have-neon no
 @c @set have-vfp no
 @c @set have-vfpv3 no
+@c @set have-altivec no
+@c @set have-dcbzl no
+@c @set have-ldbrx no
+@c @set have-ppc4xx no
+@c @set have-vsx no
 @c @set have-amd3dnow no
 @c @set have-amd3dnowext no
 @c @set have-avx no
 @c @set have-avx2 no
+@c @set have-fma3 no
 @c @set have-fma4 no
-@c @set have-i686 no
 @c @set have-mmx no
 @c @set have-mmxext no
 @c @set have-sse no
@@ -43,25 +49,32 @@
 @c @set have-sse4 no
 @c @set have-sse42 no
 @c @set have-ssse3 no
-@c @set have-altivec no
-@c @set have-ppc4xx no
-@c @set have-vis no
+@c @set have-xop no
+@c @set have-cpunop no
+@c @set have-i686 no
 @c @set have-mipsfpu no
 @c @set have-mips32r2 no
 @c @set have-mipsdspr1 no
 @c @set have-mipsdspr2 no
+@c @set have-loongson no
 @c @set have-armv5te-external no
 @c @set have-armv6-external no
 @c @set have-armv6t2-external no
+@c @set have-armv8-external no
 @c @set have-neon-external no
 @c @set have-vfp-external no
 @c @set have-vfpv3-external no
+@c @set have-altivec-external no
+@c @set have-dcbzl-external no
+@c @set have-ldbrx-external no
+@c @set have-ppc4xx-external no
+@c @set have-vsx-external no
 @c @set have-amd3dnow-external no
 @c @set have-amd3dnowext-external no
 @c @set have-avx-external no
 @c @set have-avx2-external no
+@c @set have-fma3-external no
 @c @set have-fma4-external no
-@c @set have-i686-external no
 @c @set have-mmx-external no
 @c @set have-mmxext-external no
 @c @set have-sse-external no
@@ -70,25 +83,32 @@
 @c @set have-sse4-external no
 @c @set have-sse42-external no
 @c @set have-ssse3-external no
-@c @set have-altivec-external no
-@c @set have-ppc4xx-external no
-@c @set have-vis-external no
+@c @set have-xop-external no
+@c @set have-cpunop-external no
+@c @set have-i686-external no
 @c @set have-mipsfpu-external no
 @c @set have-mips32r2-external no
 @c @set have-mipsdspr1-external no
 @c @set have-mipsdspr2-external no
+@c @set have-loongson-external no
 @c @set have-armv5te-inline no
 @c @set have-armv6-inline no
 @c @set have-armv6t2-inline no
+@c @set have-armv8-inline no
 @c @set have-neon-inline no
 @c @set have-vfp-inline no
 @c @set have-vfpv3-inline no
+@c @set have-altivec-inline no
+@c @set have-dcbzl-inline no
+@c @set have-ldbrx-inline no
+@c @set have-ppc4xx-inline no
+@c @set have-vsx-inline no
 @c @set have-amd3dnow-inline no
 @c @set have-amd3dnowext-inline no
 @c @set have-avx-inline no
 @c @set have-avx2-inline no
+@c @set have-fma3-inline no
 @c @set have-fma4-inline no
-@c @set have-i686-inline no
 @c @set have-mmx-inline no
 @c @set have-mmxext-inline no
 @c @set have-sse-inline no
@@ -97,189 +117,203 @@
 @c @set have-sse4-inline no
 @c @set have-sse42-inline no
 @c @set have-ssse3-inline no
-@c @set have-altivec-inline no
-@c @set have-ppc4xx-inline no
-@c @set have-vis-inline no
+@c @set have-xop-inline no
+@c @set have-cpunop-inline no
+@c @set have-i686-inline no
 @c @set have-mipsfpu-inline no
 @c @set have-mips32r2-inline no
 @c @set have-mipsdspr1-inline no
 @c @set have-mipsdspr2-inline no
+@c @set have-loongson-inline no
+@c @set have-aligned-stack no
+@c @set have-fast-64bit no
+@c @set have-fast-clz no
+@c @set have-fast-cmov no
+@c @set have-local-aligned-8 no
+@c @set have-local-aligned-16 no
+@c @set have-local-aligned-32 no
+@c @set have-atomics-gcc no
+@c @set have-atomics-suncc no
+@c @set have-atomics-win32 no
+@c @set have-atomic-cas-ptr no
+@c @set have-machine-rw-barrier no
+@c @set have-memorybarrier no
+@c @set have-mm-empty no
+@c @set have-rdtsc no
+@c @set have-sarestart no
+@c @set have-sync-val-compare-and-swap no
 @set have-inline-asm yes
-@set have-symver yes
+@c @set have-symver no
 @c @set have-yasm no
 @set have-bigendian yes
 @c @set have-fast-unaligned no
 @c @set have-incompatible-libav-abi no
-@c @set have-incompatible-fork-abi no
-@set have-pthreads yes
-@c @set have-w32threads no
-@c @set have-os2threads no
-@set have-atomics-gcc yes
-@c @set have-atomics-suncc no
-@c @set have-atomics-win32 no
-@set have-atanf yes
-@set have-atan2f yes
-@set have-cbrt yes
-@set have-cbrtf yes
-@set have-cosf yes
-@set have-exp2 yes
-@set have-exp2f yes
-@set have-expf yes
-@set have-isinf yes
-@set have-isnan yes
-@set have-ldexpf yes
-@set have-llrint yes
-@set have-llrintf yes
-@set have-log2 yes
-@set have-log2f yes
-@set have-log10f yes
-@set have-lrint yes
-@set have-lrintf yes
-@set have-powf yes
-@set have-rint yes
-@set have-round yes
-@set have-roundf yes
-@set have-sinf yes
-@set have-trunc yes
-@set have-truncf yes
-@set have-access yes
-@c @set have-aligned-malloc no
-@c @set have-aligned-stack no
 @c @set have-alsa-asoundlib-h no
 @c @set have-altivec-h no
 @c @set have-arpa-inet-h no
-@c @set have-asm-mod-q no
-@c @set have-asm-mod-y no
-@set have-asm-types-h yes
-@c @set have-atomic-cas-ptr no
-@set have-atomics-native yes
-@set have-attribute-may-alias yes
-@set have-attribute-packed yes
+@c @set have-asm-types-h no
 @c @set have-cdio-paranoia-h no
 @c @set have-cdio-paranoia-paranoia-h no
 @c @set have-cl-cl-h no
-@set have-clock-gettime yes
-@c @set have-closesocket no
-@c @set have-commandlinetoargvw no
-@c @set have-cpunop no
-@c @set have-cryptgenrandom no
-@c @set have-dcbzl no
 @c @set have-dev-bktr-ioctl-bt848-h no
 @c @set have-dev-bktr-ioctl-meteor-h no
 @c @set have-dev-ic-bt8xx-h no
 @c @set have-dev-video-bktr-ioctl-bt848-h no
 @c @set have-dev-video-meteor-ioctl-meteor-h no
 @c @set have-direct-h no
-@set have-dlfcn-h yes
-@set have-dlopen yes
-@c @set have-dos-paths no
+@c @set have-dlfcn-h no
 @c @set have-dxva-h no
-@c @set have-ebp-available no
-@c @set have-ebx-available no
-@c @set have-fast-64bit no
-@c @set have-fast-clz no
-@c @set have-fast-cmov no
-@set have-fcntl yes
-@set have-fork yes
+@c @set have-es2-gl-h no
+@c @set have-gsm-h no
+@c @set have-io-h no
+@c @set have-mach-mach-time-h no
+@c @set have-machine-ioctl-bt848-h no
+@c @set have-machine-ioctl-meteor-h no
+@c @set have-malloc-h no
+@c @set have-openjpeg-1-5-openjpeg-h no
+@c @set have-opengl-gl3-h no
+@c @set have-poll-h no
+@c @set have-sndio-h no
+@c @set have-soundcard-h no
+@c @set have-sys-mman-h no
+@c @set have-sys-param-h no
+@c @set have-sys-resource-h no
+@c @set have-sys-select-h no
+@c @set have-sys-soundcard-h no
+@c @set have-sys-time-h no
+@c @set have-sys-un-h no
+@c @set have-sys-videoio-h no
+@c @set have-termios-h no
+@c @set have-unistd-h no
+@c @set have-windows-h no
+@c @set have-winsock2-h no
+@c @set have-atanf no
+@c @set have-atan2f no
+@c @set have-cbrt no
+@c @set have-cbrtf no
+@c @set have-cosf no
+@c @set have-exp2 no
+@c @set have-exp2f no
+@c @set have-expf no
+@c @set have-fminf no
+@c @set have-isinf no
+@c @set have-isnan no
+@c @set have-ldexpf no
+@c @set have-llrint no
+@c @set have-llrintf no
+@c @set have-log2 no
+@c @set have-log2f no
+@c @set have-log10f no
+@c @set have-lrint no
+@c @set have-lrintf no
+@c @set have-powf no
+@c @set have-rint no
+@c @set have-round no
+@c @set have-roundf no
+@c @set have-sinf no
+@c @set have-trunc no
+@c @set have-truncf no
+@c @set have-access no
+@c @set have-aligned-malloc no
+@c @set have-clock-gettime no
+@c @set have-closesocket no
+@c @set have-commandlinetoargvw no
+@c @set have-cotaskmemfree no
+@c @set have-cryptgenrandom no
+@c @set have-dlopen no
+@c @set have-fcntl no
+@set have-flt-lim yes
+@c @set have-fork no
 @c @set have-getaddrinfo no
 @c @set have-gethrtime no
-@set have-getopt yes
+@c @set have-getopt no
 @c @set have-getprocessaffinitymask no
 @c @set have-getprocessmemoryinfo no
 @c @set have-getprocesstimes no
-@c @set have-getsystemtimeasfiletime no
-@set have-getrusage yes
+@c @set have-getrusage no
 @c @set have-getservbyport no
-@set have-gettimeofday yes
-@set have-glob yes
-@c @set have-gnu-as no
-@c @set have-gsm-h no
-@c @set have-ibm-asm no
-@set have-inet-aton yes
-@c @set have-io-h no
-@set have-inline-asm-labels yes
-@set have-isatty yes
+@c @set have-getsystemtimeasfiletime no
+@c @set have-gettimeofday no
+@c @set have-glob no
+@c @set have-glxgetprocaddress no
+@c @set have-inet-aton no
+@c @set have-isatty no
 @c @set have-jack-port-get-latency-range no
 @c @set have-kbhit no
-@c @set have-ldbrx no
-@c @set have-libdc1394-1 no
-@c @set have-libdc1394-2 no
-@c @set have-local-aligned-16 no
-@c @set have-local-aligned-8 no
-@set have-localtime-r yes
-@c @set have-loongson no
+@c @set have-localtime-r no
 @c @set have-lzo1x-999-compress no
-@c @set have-machine-ioctl-bt848-h no
-@c @set have-machine-ioctl-meteor-h no
-@c @set have-machine-rw-barrier no
-@set have-makeinfo yes
-@set have-malloc-h yes
+@c @set have-mach-absolute-time no
 @c @set have-mapviewoffile no
-@set have-memalign yes
-@c @set have-memorybarrier no
-@set have-mkstemp yes
-@c @set have-mm-empty no
-@set have-mmap yes
-@set have-mprotect yes
-@c @set have-msvcrt no
-@set have-nanosleep yes
-@c @set have-openjpeg-1-5-openjpeg-h no
+@c @set have-memalign no
+@c @set have-mkstemp no
+@c @set have-mmap no
+@c @set have-mprotect no
+@c @set have-nanosleep no
 @c @set have-peeknamedpipe no
-@set have-perl yes
-@set have-pod2man yes
-@set have-poll-h yes
-@set have-posix-memalign yes
-@set have-pragma-deprecated yes
-@set have-pthread-cancel yes
-@c @set have-rdtsc no
-@set have-rsync-contimeout yes
-@set have-sarestart yes
-@set have-sched-getaffinity yes
-@c @set have-sdl no
+@c @set have-posix-memalign no
+@c @set have-pthread-cancel no
+@c @set have-sched-getaffinity no
 @c @set have-setconsoletextattribute no
 @c @set have-setmode no
-@set have-setrlimit yes
+@c @set have-setrlimit no
 @c @set have-sleep no
-@c @set have-sndio-h no
+@c @set have-strerror-r no
+@c @set have-sysconf no
+@c @set have-sysctl no
+@c @set have-usleep no
+@c @set have-virtualalloc no
+@c @set have-wglgetprocaddress no
+@c @set have-pthreads no
+@c @set have-os2threads no
+@c @set have-w32threads no
+@c @set have-as-dn-directive no
+@c @set have-as-func no
+@c @set have-asm-mod-q no
+@set have-attribute-may-alias yes
+@set have-attribute-packed yes
+@c @set have-ebp-available no
+@c @set have-ebx-available no
+@c @set have-gnu-as no
+@c @set have-gnu-windres no
+@c @set have-ibm-asm no
+@set have-inline-asm-labels yes
+@set have-inline-asm-nonlocal-labels yes
+@c @set have-inline-asm-direct-symbol-refs no
+@set have-pragma-deprecated yes
+@set have-rsync-contimeout yes
+@c @set have-symver-asm-label no
+@c @set have-symver-gnu-asm no
+@c @set have-vfp-args no
+@c @set have-xform-asm no
+@c @set have-xmm-clobbers no
 @c @set have-socklen-t no
-@c @set have-soundcard-h no
-@set have-strerror-r yes
 @c @set have-struct-addrinfo no
 @c @set have-struct-group-source-req no
 @c @set have-struct-ip-mreq-source no
 @c @set have-struct-ipv6-mreq no
 @c @set have-struct-pollfd no
-@set have-struct-rusage-ru-maxrss yes
+@c @set have-struct-rusage-ru-maxrss no
 @c @set have-struct-sctp-event-subscribe no
 @c @set have-struct-sockaddr-in6 no
 @c @set have-struct-sockaddr-sa-len no
 @c @set have-struct-sockaddr-storage no
-@set have-struct-stat-st-mtim-tv-nsec yes
-@set have-struct-v4l2-frmivalenum-discrete yes
-@c @set have-symver-asm-label no
-@set have-symver-gnu-asm yes
-@set have-sync-val-compare-and-swap yes
-@set have-sysconf yes
-@set have-sysctl yes
-@set have-sys-mman-h yes
-@set have-sys-param-h yes
-@set have-sys-resource-h yes
-@set have-sys-select-h yes
-@set have-sys-soundcard-h yes
-@set have-sys-time-h yes
-@set have-sys-un-h yes
-@c @set have-sys-videoio-h no
-@set have-termios-h yes
-@set have-texi2html yes
-@set have-threads yes
-@set have-unistd-h yes
-@set have-usleep yes
-@c @set have-vfp-args no
-@c @set have-virtualalloc no
-@c @set have-windows-h no
-@c @set have-winsock2-h no
-@c @set have-xform-asm no
-@c @set have-xmm-clobbers no
+@c @set have-struct-stat-st-mtim-tv-nsec no
+@c @set have-struct-v4l2-frmivalenum-discrete no
+@c @set have-atomics-native no
+@c @set have-dos-paths no
+@c @set have-dxva2api-cobj no
+@c @set have-dxva2-lib no
+@c @set have-libc-msvcrt no
+@c @set have-libdc1394-1 no
+@c @set have-libdc1394-2 no
+@set have-makeinfo yes
+@set have-perl yes
+@set have-pod2man yes
+@c @set have-sdl no
+@c @set have-texi2html no
+@c @set have-threads no
+@c @set have-vdpau-x11 no
+@c @set have-xlib no
 @c @set config-bsfs no
 @set config-decoders yes
 @set config-demuxers yes
@@ -292,14 +326,27 @@
 @set config-parsers yes
 @set config-protocols yes
 @c @set config-doc no
-@set config-htmlpages yes
+@c @set config-htmlpages no
 @set config-manpages yes
 @set config-podpages yes
 @set config-txtpages yes
+@set config-avio-reading-example yes
+@set config-decoding-encoding-example yes
+@set config-demuxing-decoding-example yes
+@c @set config-filter-audio-example no
+@c @set config-filtering-audio-example no
+@c @set config-filtering-video-example no
+@set config-metadata-example yes
+@c @set config-muxing-example no
+@set config-remuxing-example yes
+@set config-resampling-audio-example yes
+@c @set config-scaling-video-example no
+@set config-transcode-aac-example yes
+@c @set config-transcoding-example no
 @c @set config-avisynth no
 @c @set config-bzlib no
 @c @set config-crystalhd no
-@c @set config-fontconfig no
+@c @set config-decklink no
 @c @set config-frei0r no
 @c @set config-gnutls no
 @c @set config-iconv no
@@ -307,6 +354,7 @@
 @c @set config-libaacplus no
 @c @set config-libass no
 @c @set config-libbluray no
+@c @set config-libbs2b no
 @c @set config-libcaca no
 @c @set config-libcdio no
 @c @set config-libcelt no
@@ -314,7 +362,9 @@
 @c @set config-libfaac no
 @c @set config-libfdk-aac no
 @c @set config-libflite no
+@c @set config-libfontconfig no
 @c @set config-libfreetype no
+@c @set config-libfribidi no
 @c @set config-libgme no
 @c @set config-libgsm no
 @c @set config-libiec61883 no
@@ -332,6 +382,7 @@
 @c @set config-librtmp no
 @c @set config-libschroedinger no
 @c @set config-libshine no
+@c @set config-libsmbclient no
 @c @set config-libsoxr no
 @c @set config-libspeex no
 @c @set config-libssh no
@@ -346,20 +397,38 @@
 @c @set config-libvorbis no
 @c @set config-libvpx no
 @c @set config-libwavpack no
+@c @set config-libwebp no
 @c @set config-libx264 no
+@c @set config-libx265 no
 @c @set config-libxavs no
 @c @set config-libxvid no
 @c @set config-libzmq no
 @c @set config-libzvbi no
 @c @set config-openal no
 @c @set config-opencl no
+@c @set config-opengl no
 @c @set config-openssl no
 @c @set config-x11grab no
+@c @set config-xlib no
 @c @set config-zlib no
+@c @set config-ftrapv no
+@c @set config-gray no
+@c @set config-hardcoded-tables no
+@set config-runtime-cpudetect yes
+@set config-safe-bitstream-reader yes
+@set config-shared yes
+@set config-small yes
+@c @set config-sram no
+@set config-static yes
+@set config-swscale-alpha yes
 @c @set config-dxva2 no
 @c @set config-vaapi no
 @c @set config-vda no
 @c @set config-vdpau no
+@c @set config-xvmc no
+@set config-gpl yes
+@c @set config-nonfree no
+@c @set config-version3 no
 @set config-avcodec yes
 @set config-avdevice yes
 @c @set config-avfilter no
@@ -378,59 +447,66 @@
 @set config-error-resilience yes
 @c @set config-fast-unaligned no
 @set config-fft yes
-@c @set config-ftrapv no
-@set config-gpl yes
-@c @set config-gray no
-@c @set config-hardcoded-tables no
-@c @set config-incompatible-libav-abi no
-@c @set config-incompatible-fork-abi no
 @c @set config-lsp no
 @set config-lzo yes
 @set config-mdct yes
+@c @set config-network no
+@set config-rdft yes
+@c @set config-fontconfig no
+@c @set config-incompatible-libav-abi no
 @c @set config-memalign-hack no
 @c @set config-memory-poisoning no
-@c @set config-network no
-@c @set config-nonfree no
+@c @set config-neon-clobber-test no
 @set config-pic yes
-@set config-rdft yes
-@set config-runtime-cpudetect yes
-@set config-safe-bitstream-reader yes
-@set config-shared yes
-@set config-small yes
-@c @set config-sram no
-@set config-static yes
-@set config-swscale-alpha yes
+@set config-pod2man yes
+@c @set config-raise-major no
 @c @set config-thumb no
-@c @set config-version3 no
 @c @set config-xmm-clobber-test no
 @c @set config-aandcttables no
 @set config-ac3dsp yes
 @c @set config-audio-frame-queue no
+@c @set config-audiodsp no
+@set config-blockdsp yes
+@set config-bswapdsp yes
+@set config-cabac yes
 @set config-dsputil yes
+@c @set config-dvprofile no
 @set config-exif yes
+@set config-fdctdsp yes
 @c @set config-frame-thread-encoder no
 @c @set config-gcrypt no
 @set config-golomb yes
 @c @set config-gplv3 no
+@set config-h263dsp yes
 @set config-h264chroma yes
 @set config-h264dsp yes
 @set config-h264pred yes
 @set config-h264qpel yes
 @set config-hpeldsp yes
 @c @set config-huffman no
+@c @set config-huffyuvdsp no
+@c @set config-huffyuvencdsp no
+@set config-idctdsp yes
+@set config-intrax8 yes
 @c @set config-lgplv3 no
+@c @set config-llauddsp no
+@c @set config-llviddsp no
 @c @set config-lpc no
+@set config-mpeg-er yes
 @set config-mpegaudio yes
 @set config-mpegaudiodsp yes
 @set config-mpegvideo yes
 @c @set config-mpegvideoenc no
 @c @set config-nettle no
+@set config-pixblockdsp yes
+@set config-qpeldsp yes
 @c @set config-rangecoder no
 @set config-riffdec yes
 @c @set config-riffenc no
 @c @set config-rtpdec no
 @c @set config-rtpenc-chain no
 @set config-sinewin yes
+@c @set config-tpeldsp no
 @set config-videodsp yes
 @c @set config-vp3dsp no
 @c @set config-aac-adtstoasc-bsf no
@@ -440,7 +516,6 @@
 @c @set config-imx-dump-header-bsf no
 @c @set config-mjpeg2jpeg-bsf no
 @c @set config-mjpega-dump-header-bsf no
-@c @set config-mp3-header-compress-bsf no
 @c @set config-mp3-header-decompress-bsf no
 @c @set config-mov2textsub-bsf no
 @c @set config-noise-bsf no
@@ -448,6 +523,7 @@
 @c @set config-text2movsub-bsf no
 @c @set config-aasc-decoder no
 @c @set config-aic-decoder no
+@c @set config-alias-pix-decoder no
 @c @set config-amv-decoder no
 @c @set config-anm-decoder no
 @c @set config-ansi-decoder no
@@ -498,6 +574,7 @@
 @c @set config-exr-decoder no
 @c @set config-ffv1-decoder no
 @c @set config-ffvhuff-decoder no
+@c @set config-fic-decoder no
 @c @set config-flashsv-decoder no
 @c @set config-flashsv2-decoder no
 @c @set config-flic-decoder no
@@ -516,6 +593,7 @@
 @c @set config-h264-vda-decoder no
 @c @set config-h264-vdpau-decoder no
 @c @set config-hevc-decoder no
+@c @set config-hnm4-video-decoder no
 @c @set config-huffyuv-decoder no
 @c @set config-idcin-decoder no
 @c @set config-iff-byterun1-decoder no
@@ -534,7 +612,7 @@
 @c @set config-loco-decoder no
 @c @set config-mdec-decoder no
 @c @set config-mimic-decoder no
-@c @set config-mjpeg-decoder no
+@set config-mjpeg-decoder yes
 @c @set config-mjpegb-decoder no
 @c @set config-mmvideo-decoder no
 @c @set config-motionpixels-decoder no
@@ -633,6 +711,7 @@
 @c @set config-vp6-decoder no
 @c @set config-vp6a-decoder no
 @c @set config-vp6f-decoder no
+@c @set config-vp7-decoder no
 @c @set config-vp8-decoder no
 @c @set config-vp9-decoder no
 @c @set config-vqa-decoder no
@@ -660,6 +739,7 @@
 @set config-aac-decoder yes
 @c @set config-aac-latm-decoder no
 @set config-ac3-decoder yes
+@c @set config-ac3-fixed-decoder no
 @c @set config-alac-decoder no
 @c @set config-als-decoder no
 @c @set config-amrnb-decoder no
@@ -667,11 +747,16 @@
 @c @set config-ape-decoder no
 @c @set config-atrac1-decoder no
 @c @set config-atrac3-decoder no
+@c @set config-atrac3p-decoder no
 @c @set config-binkaudio-dct-decoder no
 @c @set config-binkaudio-rdft-decoder no
 @c @set config-bmv-audio-decoder no
 @c @set config-cook-decoder no
 @c @set config-dca-decoder no
+@c @set config-dsd-lsbf-decoder no
+@c @set config-dsd-msbf-decoder no
+@c @set config-dsd-lsbf-planar-decoder no
+@c @set config-dsd-msbf-planar-decoder no
 @c @set config-dsicinaudio-decoder no
 @c @set config-eac3-decoder no
 @c @set config-evrc-decoder no
@@ -700,6 +785,8 @@
 @c @set config-mpc7-decoder no
 @c @set config-mpc8-decoder no
 @c @set config-nellymoser-decoder no
+@c @set config-on2avc-decoder no
+@c @set config-opus-decoder no
 @c @set config-paf-audio-decoder no
 @c @set config-qcelp-decoder no
 @c @set config-qdm2-decoder no
@@ -791,6 +878,7 @@
 @c @set config-adpcm-sbpro-4-decoder no
 @c @set config-adpcm-swf-decoder no
 @c @set config-adpcm-thp-decoder no
+@c @set config-adpcm-vima-decoder no
 @c @set config-adpcm-xa-decoder no
 @c @set config-adpcm-yamaha-decoder no
 @c @set config-vima-decoder no
@@ -869,12 +957,14 @@
 @c @set config-cavsvideo-demuxer no
 @c @set config-cdg-demuxer no
 @c @set config-cdxl-demuxer no
+@c @set config-cine-demuxer no
 @c @set config-concat-demuxer no
 @c @set config-data-demuxer no
 @c @set config-daud-demuxer no
 @c @set config-dfa-demuxer no
 @c @set config-dirac-demuxer no
 @c @set config-dnxhd-demuxer no
+@c @set config-dsf-demuxer no
 @c @set config-dsicin-demuxer no
 @set config-dts-demuxer yes
 @set config-dtshd-demuxer yes
@@ -890,6 +980,7 @@
 @set config-flac-demuxer yes
 @c @set config-flic-demuxer no
 @c @set config-flv-demuxer no
+@c @set config-live-flv-demuxer no
 @c @set config-fourxm-demuxer no
 @c @set config-frm-demuxer no
 @c @set config-g722-demuxer no
@@ -903,6 +994,7 @@
 @set config-h264-demuxer yes
 @c @set config-hevc-demuxer no
 @c @set config-hls-demuxer no
+@c @set config-hnm-demuxer no
 @c @set config-ico-demuxer no
 @c @set config-idcin-demuxer no
 @c @set config-idf-demuxer no
@@ -910,6 +1002,8 @@
 @c @set config-ilbc-demuxer no
 @c @set config-image2-demuxer no
 @c @set config-image2pipe-demuxer no
+@c @set config-image2-alias-pix-demuxer no
+@c @set config-image2-brender-pix-demuxer no
 @c @set config-ingenient-demuxer no
 @c @set config-ipmovie-demuxer no
 @c @set config-ircam-demuxer no
@@ -921,6 +1015,7 @@
 @c @set config-latm-demuxer no
 @c @set config-lmlm4-demuxer no
 @c @set config-loas-demuxer no
+@c @set config-lrc-demuxer no
 @c @set config-lvf-demuxer no
 @c @set config-lxf-demuxer no
 @set config-m4v-demuxer yes
@@ -929,6 +1024,7 @@
 @c @set config-microdvd-demuxer no
 @c @set config-mjpeg-demuxer no
 @c @set config-mlp-demuxer no
+@c @set config-mlv-demuxer no
 @c @set config-mm-demuxer no
 @c @set config-mmf-demuxer no
 @set config-mov-demuxer yes
@@ -996,9 +1092,11 @@
 @c @set config-sap-demuxer no
 @c @set config-sbg-demuxer no
 @c @set config-sdp-demuxer no
+@c @set config-sdr2-demuxer no
 @c @set config-segafilm-demuxer no
 @c @set config-shorten-demuxer no
 @c @set config-siff-demuxer no
+@c @set config-sln-demuxer no
 @c @set config-smacker-demuxer no
 @c @set config-smjpeg-demuxer no
 @c @set config-smush-demuxer no
@@ -1030,6 +1128,7 @@
 @c @set config-w64-demuxer no
 @c @set config-wav-demuxer no
 @c @set config-wc3-demuxer no
+@c @set config-webm-dash-manifest-demuxer no
 @c @set config-webvtt-demuxer no
 @c @set config-wsaud-demuxer no
 @c @set config-wsvqa-demuxer no
@@ -1041,12 +1140,22 @@
 @c @set config-xwma-demuxer no
 @c @set config-yop-demuxer no
 @c @set config-yuv4mpegpipe-demuxer no
+@c @set config-image-bmp-pipe-demuxer no
+@c @set config-image-dpx-pipe-demuxer no
+@c @set config-image-exr-pipe-demuxer no
+@c @set config-image-j2k-pipe-demuxer no
+@c @set config-image-pictor-pipe-demuxer no
+@c @set config-image-png-pipe-demuxer no
+@c @set config-image-sgi-pipe-demuxer no
+@c @set config-image-sunrast-pipe-demuxer no
+@c @set config-image-tiff-pipe-demuxer no
 @c @set config-libgme-demuxer no
 @c @set config-libmodplug-demuxer no
 @c @set config-libnut-demuxer no
 @c @set config-libquvi-demuxer no
 @c @set config-a64multi-encoder no
 @c @set config-a64multi5-encoder no
+@c @set config-alias-pix-encoder no
 @c @set config-amv-encoder no
 @c @set config-asv1-encoder no
 @c @set config-asv2-encoder no
@@ -1054,6 +1163,7 @@
 @c @set config-avui-encoder no
 @c @set config-ayuv-encoder no
 @c @set config-bmp-encoder no
+@c @set config-cinepak-encoder no
 @c @set config-cljr-encoder no
 @c @set config-comfortnoise-encoder no
 @c @set config-dnxhd-encoder no
@@ -1126,6 +1236,7 @@
 @c @set config-flac-encoder no
 @c @set config-g723-1-encoder no
 @c @set config-mp2-encoder no
+@c @set config-mp2fixed-encoder no
 @c @set config-nellymoser-encoder no
 @c @set config-ra-144-encoder no
 @c @set config-sonic-encoder no
@@ -1177,6 +1288,7 @@
 @c @set config-movtext-encoder no
 @c @set config-srt-encoder no
 @c @set config-subrip-encoder no
+@c @set config-webvtt-encoder no
 @c @set config-xsub-encoder no
 @c @set config-libfaac-encoder no
 @c @set config-libfdk-aac-encoder no
@@ -1199,14 +1311,17 @@
 @c @set config-libvpx-vp8-encoder no
 @c @set config-libvpx-vp9-encoder no
 @c @set config-libwavpack-encoder no
+@c @set config-libwebp-encoder no
 @c @set config-libx264-encoder no
 @c @set config-libx264rgb-encoder no
+@c @set config-libx265-encoder no
 @c @set config-libxavs-encoder no
 @c @set config-libxvid-encoder no
 @c @set config-libaacplus-encoder no
 @c @set config-aconvert-filter no
 @c @set config-adelay-filter no
 @c @set config-aecho-filter no
+@c @set config-aeval-filter no
 @c @set config-afade-filter no
 @c @set config-aformat-filter no
 @c @set config-ainterleave-filter no
@@ -1236,12 +1351,14 @@
 @c @set config-bandreject-filter no
 @c @set config-bass-filter no
 @c @set config-biquad-filter no
+@c @set config-bs2b-filter no
 @c @set config-channelmap-filter no
 @c @set config-channelsplit-filter no
 @c @set config-compand-filter no
 @c @set config-earwax-filter no
 @c @set config-ebur128-filter no
 @c @set config-equalizer-filter no
+@c @set config-flanger-filter no
 @c @set config-highpass-filter no
 @c @set config-join-filter no
 @c @set config-ladspa-filter no
@@ -1275,12 +1392,14 @@
 @c @set config-curves-filter no
 @c @set config-dctdnoiz-filter no
 @c @set config-decimate-filter no
+@c @set config-dejudder-filter no
 @c @set config-delogo-filter no
 @c @set config-deshake-filter no
 @c @set config-drawbox-filter no
 @c @set config-drawgrid-filter no
 @c @set config-drawtext-filter no
 @c @set config-edgedetect-filter no
+@c @set config-elbg-filter no
 @c @set config-extractplanes-filter no
 @c @set config-fade-filter no
 @c @set config-field-filter no
@@ -1288,6 +1407,7 @@
 @c @set config-fieldorder-filter no
 @c @set config-format-filter no
 @c @set config-fps-filter no
+@c @set config-framepack-filter no
 @c @set config-framestep-filter no
 @c @set config-frei0r-filter no
 @c @set config-geq-filter no
@@ -1297,6 +1417,7 @@
 @c @set config-histeq-filter no
 @c @set config-histogram-filter no
 @c @set config-hqdn3d-filter no
+@c @set config-hqx-filter no
 @c @set config-hue-filter no
 @c @set config-idet-filter no
 @c @set config-il-filter no
@@ -1339,6 +1460,8 @@
 @c @set config-setsar-filter no
 @c @set config-settb-filter no
 @c @set config-showinfo-filter no
+@c @set config-shuffleplanes-filter no
+@c @set config-signalstats-filter no
 @c @set config-smartblur-filter no
 @c @set config-split-filter no
 @c @set config-spp-filter no
@@ -1360,6 +1483,7 @@
 @c @set config-w3fdif-filter no
 @c @set config-yadif-filter no
 @c @set config-zmq-filter no
+@c @set config-zoompan-filter no
 @c @set config-cellauto-filter no
 @c @set config-color-filter no
 @c @set config-frei0r-src-filter no
@@ -1375,6 +1499,7 @@
 @c @set config-nullsink-filter no
 @c @set config-avectorscope-filter no
 @c @set config-concat-filter no
+@c @set config-showcqt-filter no
 @c @set config-showspectrum-filter no
 @c @set config-showwaves-filter no
 @c @set config-amovie-filter no
@@ -1384,8 +1509,11 @@
 @c @set config-h264-dxva2-hwaccel no
 @c @set config-h264-vaapi-hwaccel no
 @c @set config-h264-vda-hwaccel no
+@c @set config-h264-vda-old-hwaccel no
 @c @set config-h264-vdpau-hwaccel no
+@c @set config-mpeg1-xvmc-hwaccel no
 @c @set config-mpeg1-vdpau-hwaccel no
+@c @set config-mpeg2-xvmc-hwaccel no
 @c @set config-mpeg2-dxva2-hwaccel no
 @c @set config-mpeg2-vaapi-hwaccel no
 @c @set config-mpeg2-vdpau-hwaccel no
@@ -1398,16 +1526,19 @@
 @c @set config-wmv3-vaapi-hwaccel no
 @c @set config-wmv3-vdpau-hwaccel no
 @c @set config-alsa-indev no
+@c @set config-avfoundation-indev no
 @c @set config-bktr-indev no
 @c @set config-dshow-indev no
 @c @set config-dv1394-indev no
 @c @set config-fbdev-indev no
+@c @set config-gdigrab-indev no
 @c @set config-iec61883-indev no
 @c @set config-jack-indev no
 @c @set config-lavfi-indev no
 @c @set config-openal-indev no
 @c @set config-oss-indev no
 @c @set config-pulse-indev no
+@c @set config-qtkit-indev no
 @c @set config-sndio-indev no
 @c @set config-v4l2-indev no
 @c @set config-vfwcap-indev no
@@ -1453,6 +1584,8 @@
 @c @set config-h261-muxer no
 @c @set config-h263-muxer no
 @c @set config-h264-muxer no
+@c @set config-hds-muxer no
+@c @set config-hevc-muxer no
 @c @set config-hls-muxer no
 @c @set config-ico-muxer no
 @c @set config-ilbc-muxer no
@@ -1464,6 +1597,7 @@
 @c @set config-ivf-muxer no
 @c @set config-jacosub-muxer no
 @c @set config-latm-muxer no
+@c @set config-lrc-muxer no
 @c @set config-m4v-muxer no
 @c @set config-md5-muxer no
 @c @set config-matroska-muxer no
@@ -1489,8 +1623,10 @@
 @c @set config-mxf-d10-muxer no
 @c @set config-null-muxer no
 @c @set config-nut-muxer no
+@c @set config-oga-muxer no
 @c @set config-ogg-muxer no
 @c @set config-oma-muxer no
+@c @set config-opus-muxer no
 @c @set config-pcm-alaw-muxer no
 @c @set config-pcm-mulaw-muxer no
 @c @set config-pcm-f64be-muxer no
@@ -1525,6 +1661,7 @@
 @c @set config-smoothstreaming-muxer no
 @c @set config-sox-muxer no
 @c @set config-spdif-muxer no
+@c @set config-speex-muxer no
 @c @set config-srt-muxer no
 @c @set config-swf-muxer no
 @c @set config-tee-muxer no
@@ -1532,12 +1669,14 @@
 @c @set config-tgp-muxer no
 @c @set config-mkvtimestamp-v2-muxer no
 @c @set config-truehd-muxer no
+@c @set config-uncodedframecrc-muxer no
 @c @set config-vc1-muxer no
 @c @set config-vc1t-muxer no
 @c @set config-voc-muxer no
 @c @set config-w64-muxer no
 @c @set config-wav-muxer no
 @c @set config-webm-muxer no
+@c @set config-webm-dash-manifest-muxer no
 @c @set config-webvtt-muxer no
 @c @set config-wtv-muxer no
 @c @set config-wv-muxer no
@@ -1545,7 +1684,9 @@
 @c @set config-libnut-muxer no
 @c @set config-alsa-outdev no
 @c @set config-caca-outdev no
+@c @set config-decklink-outdev no
 @c @set config-fbdev-outdev no
+@c @set config-opengl-outdev no
 @c @set config-oss-outdev no
 @c @set config-pulse-outdev no
 @c @set config-sdl-outdev no
@@ -1577,6 +1718,7 @@
 @set config-mpeg4video-parser yes
 @set config-mpegaudio-parser yes
 @c @set config-mpegvideo-parser no
+@c @set config-opus-parser no
 @c @set config-png-parser no
 @c @set config-pnm-parser no
 @c @set config-rv30-parser no
@@ -1586,6 +1728,7 @@
 @c @set config-vorbis-parser no
 @c @set config-vp3-parser no
 @c @set config-vp8-parser no
+@c @set config-vp9-parser no
 @c @set config-bluray-protocol no
 @c @set config-cache-protocol no
 @c @set config-concat-protocol no
@@ -1613,6 +1756,7 @@
 @c @set config-rtp-protocol no
 @c @set config-sctp-protocol no
 @c @set config-srtp-protocol no
+@c @set config-subfile-protocol no
 @c @set config-tcp-protocol no
 @c @set config-tls-protocol no
 @c @set config-udp-protocol no
@@ -1623,3 +1767,4 @@
 @c @set config-librtmpt-protocol no
 @c @set config-librtmpte-protocol no
 @c @set config-libssh-protocol no
+@c @set config-libsmbclient-protocol no
