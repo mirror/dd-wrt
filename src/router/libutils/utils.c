@@ -1833,8 +1833,12 @@ int internal_getRouterBrand()
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
-#elif HAVE_WHR450HP
-	setRouter("Buffalo WHR-450HP");
+#elif HAVE_WZR450HP2
+#ifdef HAVE_BUFFALO
+	setRouter("WZR-450HP2");
+#else
+	setRouter("Buffalo WZR-450HP2");
+#endif
 	nvram_default_get("ath0_rxantenna", "7");
 	nvram_default_get("ath0_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
@@ -5072,7 +5076,7 @@ int led_control(int type, int act)
 		ses_gpio = 0x112;
 		sec0_gpio = 0x112;
 		break;
-#elif HAVE_WHR450HP
+#elif HAVE_WZR450HP2
 	case ROUTER_BOARD_WHRHPGN:
 		diag_gpio = 0x114;
 //              connected_gpio = 0x112;
