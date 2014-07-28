@@ -5417,7 +5417,8 @@ void show_wep(webs_t wp, char *prefix)
 
 	websWrite(wp, "\" />");
 	websWrite(wp, "<input type=\"hidden\" value=\"Null\" name=\"generateButton\" />\n");
-	websWrite(wp, "<input class=\"button\" type=\"button\" value=\"<script type=\"text/javascript\">Capture(wep.generate);</script>\" onclick=generateKey(this.form,\"%s\") name=wepGenerate />\n</div>", prefix);
+	websWrite(wp, "<input class=\"button\" type=\"button\" value=\"Generate\" onclick=\"generateKey(this.form,\'%s\')\" name=\"wepGenerate\" id=\"wepGenerate\"/>\n</div>", prefix);
+	websWrite(wp, "<script type=\"text/javascript\">document.getElementById(\'wepGenerate\').value=wep.generate;</script>");
 
 	char *mlen = "10";
 	char *mlen2 = "12";
