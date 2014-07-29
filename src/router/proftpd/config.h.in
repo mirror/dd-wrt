@@ -321,6 +321,9 @@
 /* Define if you have the gethostname function.  */
 #undef HAVE_GETHOSTNAME
 
+/* Define if you have the getifaddrs function.  */
+#undef HAVE_GETIFADDRS
+
 /* Define if you have the getnameinfo function.  */
 #undef HAVE_GETNAMEINFO
 
@@ -474,6 +477,12 @@
 /* Define if you have the statfs function.  */
 #undef HAVE_STATFS
 
+/* Define if you have the struct statfs.f_fstypename member.  */
+#undef HAVE_STATFS_F_FSTYPENAME
+
+/* Define if you have the struct statfs.f_type member.  */
+#undef HAVE_STATFS_F_TYPE
+
 /* Define if you have the strchr function.  */
 #undef HAVE_STRCHR
 
@@ -482,6 +491,12 @@
 
 /* Define if you have the strerror function.  */
 #undef HAVE_STRERROR
+
+/* Define if you have the strlcat function.  */
+#undef HAVE_STRLCAT
+
+/* Define if you have the strlcpy function.  */
+#undef HAVE_STRLCPY
 
 /* Define if you have the strsep function.  */
 #undef HAVE_STRSEP
@@ -555,6 +570,9 @@
 /* Define if you have the <iconv.h> header file.  */
 #undef HAVE_ICONV_H
 
+/* Define if you have the <ifaddrs.h> header file.  */
+#undef HAVE_IFADDRS_H
+
 /* Define if you have the <inttypes.h> header file.  */
 #undef HAVE_INTTYPES_H
 
@@ -596,6 +614,9 @@
 
 /* Define if you have the <netdb.h> header file.  */
 #undef HAVE_NETDB_H
+
+/* Define if you have the <net/if.h> header file.  */
+#undef HAVE_NET_IF_H
 
 /* Define if you have the <netinet/in.h> header file.  */
 #undef HAVE_NETINET_IN_H
@@ -671,6 +692,9 @@
 
 /* Define if you have the <sys/param.h> header file.  */
 #undef HAVE_SYS_PARAM_H
+
+/* Define if you have the <sys/prctl.h> header file.  */
+#undef HAVE_SYS_PRCTL_H
 
 /* Define if you have the <sys/pstat.h> header file.  */
 #undef HAVE_SYS_PSTAT_H
@@ -935,6 +959,11 @@
 
 /* Define if OpenSSL support, if available, should be used.  */
 #undef PR_USE_OPENSSL
+
+/* Define if OpenSSL Elliptic Curve Cryptography (ECC) support, if available,
+ * should be used.
+ */
+#undef PR_USE_OPENSSL_ECC
 
 /* Define if OpenSSL support (with FIPS enabled), if available, should be
  * used.

@@ -1,4 +1,4 @@
-<!-- $Id: mod_sql.html,v 1.27 2011/09/05 20:07:15 castaglia Exp $ -->
+<!-- $Id: mod_sql.html,v 1.32 2014/01/21 22:32:31 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_sql.html,v $ -->
 
 <html>
@@ -64,6 +64,7 @@ The most current version of <code>mod_sql</code> is distributed with ProFTPD.
   <li><a href="#SQLDefaultUID">SQLDefaultUID</a>
   <li><a href="#SQLEngine">SQLEngine</a>
   <li><a href="#SQLGroupInfo">SQLGroupInfo</a>
+  <li><a href="#SQLGroupPrimaryKey">SQLGroupPrimaryKey</a>
   <li><a href="#SQLGroupWhereClause">SQLGroupWhereClause</a>
   <li><a href="#SQLLog">SQLLog</a>
   <li><a href="#SQLLogFile">SQLLogFile</a>
@@ -78,6 +79,7 @@ The most current version of <code>mod_sql</code> is distributed with ProFTPD.
   <li><a href="#SQLRatioStats">SQLRatioStats</a>
   <li><a href="#SQLShowInfo">SQLShowInfo</a>
   <li><a href="#SQLUserInfo">SQLUserInfo</a>
+  <li><a href="#SQLUserPrimaryKey">SQLUserPrimaryKey</a>
   <li><a href="#SQLUserWhereClause">SQLUserWhereClause</a>
 </ul>
 
@@ -671,6 +673,25 @@ supporting the old, inefficient comma-delimited format for the members column.)
 
 <p>
 <hr>
+<h2><a name="SQLGroupPrimaryKey">SQLGroupPrimaryKey</a></h2>
+<strong>Syntax:</strong> SQLGroupPrimaryKey <em>column | &quot;custom:/&quot;named-query</em><br>
+<strong>Default:</strong> gid<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br
+<strong>Module:</strong> mod_sql<br>
+<strong>Compatibility:</strong> 1.3.5rc3 and later
+
+<p>
+The <code>SQLGroupPrimaryKey</code> directive configures the column name
+that is used as the "primary key" for group data; this primary key can
+then be used in other SQL tables via foreign key constraints.  The
+<a href="../howto/SQL.html#SQLPrimaryKeys">SQL howto</a> covers using this
+directive in more details.
+
+<p>
+See also: <a href="#SQLUserPrimaryKey"><code>SQLUserPrimaryKey</code></a>
+
+<p>
+<hr>
 <h2><a name="SQLGroupWhereClause">SQLGroupWhereClause</a></h2>
 <strong>Syntax:</strong> SQLGroupWhereClause <em>where-clause</em><br>
 <strong>Default:</strong> off<br>
@@ -693,6 +714,13 @@ would be appended to every group-related query as the string:
 <pre>
   " WHERE (LoginAllowed = 'true')"
 </pre>
+
+<p>
+<b>Note</b> that if custom group <code>SQLNamedQuery</code> are configured,
+those custom queries will be used <i>as is</i>; any configured
+<code>SQLGroupWhereClause</code> will <b>not</b> be appended.  Custom queries
+can be of any format/syntax, and thus simply appending a
+<code>SQLGroupWhereClause</code> to a custom query may be syntactically invalid.
 
 <p>
 As of ProFTPD 1.3.1rc2, the configured <code>SQLGroupWhereClause</code>
@@ -798,7 +826,7 @@ transferred, the user and host doing the transfer, and the time of transfer
 <strong>Compatibility:</strong> 1.2.8rc2 and later
 
 <p>
-The <code>SQLLogFile</code> directive is used to a specify a log file for
+The <code>SQLLogFile</code> directive is used to specify a log file for
 <code>mod_sql</code> reporting and debugging, and can be done a per-server
 basis.  The <em>file</em> parameter must be the full path to the file to use for
 logging.  Note that this path must <b>not</b> be to a world-writeable
@@ -1070,13 +1098,28 @@ behavior of <code>mod_sql</code>.
 <p>
 Example:
 <pre>
-  SQLOptions noDisconnectOnError
+  SQLOptions NoDisconnectOnError
 </pre>
 
 <p>
 The currently implemented options are:
 <ul>
-  <li><code>noDisconnectOnError</code><br>
+  <li><code>IgnoreConfigfile</code><br>
+    <p>
+    If the database client library in use has its own configuration file
+    (<i>e.g.</i> <code>my.cnf</code> for the MySQL client library), then
+    the <code>mod_sql</code> sub-module will read that file.  There are some
+    cases, however, where access to that config file is restricted.  For
+    such cases, use "IgnoreConfigFile" to tell <code>mod_sql</code> to not
+    attempt to read that client library configuration file.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.5rc4</code>.
+  </li>
+
+  <p>
+  <li><code>NoDisconnectOnError</code><br>
     <p>
     By default, <code>mod_sql</code> will automatically disconnect the client
     whenever there is a database error.  If this option is enabled,
@@ -1084,15 +1127,15 @@ The currently implemented options are:
     database errors.
 
   <p>
-  <li><code>noReconnect</code><br>
+  <li><code>NoReconnect</code><br>
     <p>
     If supported by the database client library, <code>mod_sql</code> will
     try to automatically reconnect <i>once</i>, if it determines that the
-    connection to the database server was lost.  Use "noReconnect" to disable
+    connection to the database server was lost.  Use "NoReconnect" to disable
     this auto-reconnection attempt.
 
   <p>
-  <li><code>useNormalizedGroupSchema</code><br>
+  <li><code>UseNormalizedGroupSchema</code><br>
     <p>
     If this option is enabled, then <code>mod_sql</code>, when retrieving all
     of the groups for a user, will use a SQL statement like:
@@ -1339,6 +1382,25 @@ work as expected.
 
 <p>
 <hr>
+<h2><a name="SQLUserPrimaryKey">SQLUserPrimaryKey</a></h2>
+<strong>Syntax:</strong> SQLUserPrimaryKey <em>column | &quot;custom:/&quot;named-query</em><br>
+<strong>Default:</strong> uid<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br
+<strong>Module:</strong> mod_sql<br>
+<strong>Compatibility:</strong> 1.3.5rc3 and later
+
+<p>
+The <code>SQLUserPrimaryKey</code> directive configures the column name
+that is used as the "primary key" for user data; this primary key can
+then be used in other SQL tables via foreign key constraints.  The
+<a href="../howto/SQL.html#SQLPrimaryKeys">SQL howto</a> covers using this
+directive in more details.
+
+<p>
+See also: <a href="#SQLGroupPrimaryKey"><code>SQLGroupPrimaryKey</code></a>
+
+<p>
+<hr>
 <h2><a name="SQLUserWhereClause">SQLUserWhereClause</a></h2>
 <strong>Syntax:</strong> SQLUserWhereClause <em>where-clause </em><br>
 <strong>Default:</strong> None<br>
@@ -1361,6 +1423,13 @@ would be appended to every user-related query as the string:
 <pre>
   " WHERE (LoginAllowed = 'true')"
 </pre>
+
+<p>
+<b>Note</b> that if custom user <code>SQLNamedQuery</code> are configured,
+those custom queries will be used <i>as is</i>; any configured
+<code>SQLUserWhereClause</code> will <b>not</b> be appended.  Custom queries
+can be of any format/syntax, and thus simply appending a
+<code>SQLUserWhereClause</code> to a custom query may be syntactically invalid.
 
 <p>
 As of ProFTPD 1.3.1rc2, the configured <code>SQLUserWhereClause</code>
@@ -1403,12 +1472,12 @@ Complete the build with the following standard commands:
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011/09/05 20:07:15 $</i><br>
+Last Updated: <i>$Date: 2014/01/21 22:32:31 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2011 The ProFTPD Project<br>
+&copy; Copyright 2000-2014 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

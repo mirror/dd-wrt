@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2012 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Unix authentication module for ProFTPD
- * $Id: mod_auth_unix.c,v 1.50.2.1 2012/11/16 17:38:45 castaglia Exp $
+ * $Id: mod_auth_unix.c,v 1.61 2013/10/13 17:34:01 castaglia Exp $
  */
 
 #include "conf.h"
@@ -106,10 +106,12 @@ extern int _pw_stayopen;
 
 module auth_unix_module;
 
+static const char *trace_channel = "auth";
+
 static FILE *pwdf = NULL;
 static FILE *grpf = NULL;
 
-extern unsigned char persistent_passwd;
+static int unix_persistent_passwd = FALSE;
 
 #undef PASSWD
 #define PASSWD		pwdfname
@@ -132,14 +134,18 @@ extern unsigned char persistent_passwd;
 
 static unsigned long auth_unix_opts = 0UL;
 
+/* Necessary prototypes */
+static void auth_unix_exit_ev(const void *, void *);
+static int auth_unix_sess_init(void);
+
 static void p_setpwent(void) {
-  if (pwdf)
+  if (pwdf) {
     rewind(pwdf);
 
-  else {
+  } else {
     pwdf = fopen(PASSWD, "r");
     if (pwdf == NULL) {
-      pr_log_pri(PR_LOG_ERR, "Unable to open password file %s for reading: %s",
+      pr_log_pri(PR_LOG_ERR, "unable to open password file %s for reading: %s",
         PASSWD, strerror(errno));
     }
   }
@@ -153,13 +159,13 @@ static void p_endpwent(void) {
 }
 
 static RETSETGRENTTYPE p_setgrent(void) {
-  if (grpf)
+  if (grpf) {
     rewind(grpf);
 
-  else {
+  } else {
     grpf = fopen(GROUP, "r");
     if (grpf == NULL) {
-      pr_log_pri(PR_LOG_ERR, "Unable to open group file %s for reading: %s",
+      pr_log_pri(PR_LOG_ERR, "unable to open group file %s for reading: %s",
         GROUP, strerror(errno));
     }
   }
@@ -258,93 +264,104 @@ static struct group *p_getgrgid(gid_t gid) {
 }
 
 MODRET pw_setpwent(cmd_rec *cmd) {
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     p_setpwent();
 
-  else
+  } else {
     setpwent();
+  }
 
   return PR_DECLINED(cmd);
 }
 
 MODRET pw_endpwent(cmd_rec *cmd) {
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     p_endpwent();
 
-  else
+  } else {
     endpwent();
+  }
 
   return PR_DECLINED(cmd);
 }
 
 MODRET pw_setgrent(cmd_rec *cmd) {
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     p_setgrent();
 
-  else
+  } else {
     setgrent();
+  }
 
   return PR_DECLINED(cmd);
 }
 
 MODRET pw_endgrent(cmd_rec *cmd) {
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     p_endgrent();
 
-  else
+  } else {
     endgrent();
+  }
 
   return PR_DECLINED(cmd);
 }
 
 MODRET pw_getgrent(cmd_rec *cmd) {
-  struct group *gr;
+  struct group *gr = NULL;
 
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     gr = p_getgrent();
 
-  else
+  } else {
     gr = getgrent();
+  }
 
   return gr ? mod_create_data(cmd, gr) : PR_DECLINED(cmd);
 }
 
 MODRET pw_getpwent(cmd_rec *cmd) {
-  struct passwd *pw;
+  struct passwd *pw = NULL;
 
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     pw = p_getpwent();
 
-  else
+  } else {
     pw = getpwent();
+  }
 
   return pw ? mod_create_data(cmd, pw) : PR_DECLINED(cmd);
 }
 
 MODRET pw_getpwuid(cmd_rec *cmd) {
-  struct passwd *pw;
+  struct passwd *pw = NULL;
   uid_t uid;
 
   uid = *((uid_t *) cmd->argv[0]);
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     pw = p_getpwuid(uid);
 
-  else
+  } else {
     pw = getpwuid(uid);
+  }
 
   return pw ? mod_create_data(cmd, pw) : PR_DECLINED(cmd);
 }
 
 MODRET pw_getpwnam(cmd_rec *cmd) {
-  struct passwd *pw;
+  struct passwd *pw = NULL;
   const char *name;
 
   name = cmd->argv[0];
-  if (persistent_passwd) {
+  if (unix_persistent_passwd) {
     pw = p_getpwnam(name);
 
   } else {
     pw = getpwnam(name);
+  }
+
+  if (pw == NULL) {
+    return PR_DECLINED(cmd);
   }
 
   if (auth_unix_opts & AUTH_UNIX_OPT_MAGIC_TOKEN_CHROOT) {
@@ -431,29 +448,31 @@ MODRET pw_getpwnam(cmd_rec *cmd) {
 }
 
 MODRET pw_getgrnam(cmd_rec *cmd) {
-  struct group *gr;
+  struct group *gr = NULL;
   const char *name;
 
   name = cmd->argv[0];
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     gr = p_getgrnam(name);
 
-  else
+  } else {
     gr = getgrnam(name);
+  }
 
   return gr ? mod_create_data(cmd, gr) : PR_DECLINED(cmd);
 }
 
 MODRET pw_getgrgid(cmd_rec *cmd) {
-  struct group *gr;
+  struct group *gr = NULL;
   gid_t gid;
 
   gid = *((gid_t *) cmd->argv[0]);
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     gr = p_getgrgid(gid);
 
-  else
+  } else {
     gr = getgrgid(gid);
+  }
 
   return gr ? mod_create_data(cmd, gr) : PR_DECLINED(cmd);
 }
@@ -463,6 +482,9 @@ static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
     time_t *max, time_t *warn, time_t *inact, time_t *expire) {
   struct spwd *sp;
   char *cpw = NULL;
+
+  pr_trace_msg(trace_channel, 7,
+    "looking up user '%s' via Unix shadow mechanism", u);
 
   PRIVS_ROOT
 #ifdef HAVE_SETSPENT
@@ -504,13 +526,16 @@ static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
 #endif /* HAVE_SPWD_SP_EXPIRE */
 
   } else {
-    pr_log_debug(DEBUG3, "mod_auth_unix: getspnam(3) for user '%s' error: %s",
+    pr_log_debug(DEBUG5, "mod_auth_unix: getspnam(3) for user '%s' error: %s",
       u, strerror(errno));
   }
 
 #ifdef PR_USE_AUTO_SHADOW
   if (sp == NULL) {
     struct passwd *pw;
+
+    pr_trace_msg(trace_channel, 7,
+      "looking up user '%s' via Unix autoshadow mechanism", u);
 
     endspent();
     PRIVS_RELINQUISH
@@ -544,7 +569,7 @@ static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
       }
 
     } else {
-      pr_log_debug(DEBUG3, "mod_auth_unix: getpwnam(3) for user '%s' error: %s",
+      pr_log_debug(DEBUG5, "mod_auth_unix: getpwnam(3) for user '%s' error: %s",
         u, strerror(errno));
     }
 
@@ -575,6 +600,9 @@ static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
   * requires that we are root in order to have the password member
   * filled in.
   */
+
+  pr_trace_msg(trace_channel, 7,
+    "looking up user '%s' via normal Unix mechanism", u);
 
   PRIVS_ROOT
 #if !defined(HAVE_GETPRPWENT) || defined(COMSEC)
@@ -614,6 +642,10 @@ static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
 
     if (expire)
       *expire = (time_t) -1;
+
+  } else {
+    pr_log_debug(DEBUG5, "mod_auth_unix: getpwnam(3) for user '%s' error: %s",
+      u, strerror(errno));
   }
 
   endpwent();
@@ -684,21 +716,26 @@ MODRET pw_auth(cmd_rec *cmd) {
   cpw = _get_pw_info(cmd->tmp_pool, name, &lstchg, NULL, &max, NULL, &inact,
     &disable);
 
-  if (!cpw)
+  if (!cpw) {
     return PR_DECLINED(cmd);
+  }
 
-  if (pr_auth_check(cmd->tmp_pool, cpw, cmd->argv[0], cmd->argv[1]))
+  if (pr_auth_check(cmd->tmp_pool, cpw, cmd->argv[0], cmd->argv[1])) {
     return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
+  }
 
   if (lstchg > (time_t) 0 &&
       max > (time_t) 0 &&
-      inact > (time_t)0)
-    if (now > lstchg + max + inact)
+      inact > (time_t) 0) {
+    if (now > lstchg + max + inact) {
       return PR_ERROR_INT(cmd, PR_AUTH_AGEPWD);
+    }
+  }
 
   if (disable > (time_t) 0 &&
-      now > disable)
+      now > disable) {
     return PR_ERROR_INT(cmd, PR_AUTH_DISABLEDPWD);
+  }
 
   session.auth_mech = "mod_auth_unix.c";
   return PR_HANDLED(cmd);
@@ -803,7 +840,7 @@ MODRET pw_check(cmd_rec *cmd) {
   /* Use Tru64's C2 SIA subsystem for authenticating this user. */
   user = cmd->argv[1];
 
-  pr_log_auth(PR_LOG_NOTICE, "using SIA for user '%s'", user);
+  pr_log_auth(PR_LOG_INFO, "using SIA for user '%s'", user);
 
   info[0] = "ProFTPD";
   info[1] = NULL;
@@ -890,7 +927,7 @@ MODRET pw_check(cmd_rec *cmd) {
       return PR_DECLINED(cmd);
     }
 
-  } else
+  } else {
 # endif /* CYGWIN */
 
   /* Call pw_authz here, to make sure the user is authorized to login. */
@@ -905,13 +942,18 @@ MODRET pw_check(cmd_rec *cmd) {
 
   crypted_text = (char *) crypt(pw, cpw);
   if (crypted_text == NULL) {
-    pr_log_pri(PR_LOG_NOTICE, "error error crypt(3): %s", strerror(errno));
+    pr_log_pri(PR_LOG_NOTICE, "crypt(3) failed: %s", strerror(errno));
     return PR_DECLINED(cmd);
   }
 
   if (strcmp(crypted_text, cpw) != 0) {
     return PR_DECLINED(cmd);
   }
+
+# ifdef CYGWIN
+  }
+# endif /* CYGWIN */
+
 #endif /* PR_USE_SIA */
 
 #ifdef COMSEC
@@ -923,67 +965,72 @@ MODRET pw_check(cmd_rec *cmd) {
 }
 
 MODRET pw_uid2name(cmd_rec *cmd) {
+  struct passwd *pw = NULL;
   uid_t uid;
-  struct passwd *pw;
 
   uid = *((uid_t *) cmd->argv[0]);
 
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     pw = p_getpwuid(uid);
 
-  else
+  } else {
     pw = getpwuid(uid);
+  }
 
-  if (pw)
+  if (pw) {
     return mod_create_data(cmd, pw->pw_name);
+  }
 
   return PR_DECLINED(cmd);
 }
 
 MODRET pw_gid2name(cmd_rec *cmd) {
+  struct group *gr = NULL;
   gid_t gid;
-  struct group *gr;
 
   gid = *((gid_t *) cmd->argv[0]);
-
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     gr = p_getgrgid(gid);
 
-  else
+  } else {
     gr = getgrgid(gid);
+  }
 
-  if (gr) 
+  if (gr) {
     return mod_create_data(cmd, gr->gr_name);
+  }
 
   return PR_DECLINED(cmd);
 }
 
 MODRET pw_name2uid(cmd_rec *cmd) {
-  struct passwd *pw;
+  struct passwd *pw = NULL;
   const char *name;
 
   name = cmd->argv[0];
 
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     pw = p_getpwnam(name);
 
-  else
+  } else {
     pw = getpwnam(name);
+  }
 
   return pw ? mod_create_data(cmd, (void *) &pw->pw_uid) : PR_DECLINED(cmd);
 }
 
 MODRET pw_name2gid(cmd_rec *cmd) {
-  struct group *gr;
+  struct group *gr = NULL;
   const char *name;
 
   name = cmd->argv[0];
 
-  if (persistent_passwd)
+  if (unix_persistent_passwd) {
     gr = p_getgrnam(name);
 
-  else
+  } else {
     gr = getgrnam(name);
+  }
 
   return gr ? mod_create_data(cmd, (void *) &gr->gr_gid) : PR_DECLINED(cmd);
 }
@@ -1007,7 +1054,7 @@ MODRET pw_getgroups(cmd_rec *cmd) {
   RETSETGRENTTYPE (*my_setgrent)(void) = NULL;
 
   /* Play function pointer games */
-  if (persistent_passwd) {
+  if (unix_persistent_passwd) {
     my_getpwnam = p_getpwnam;
     my_getgrgid = p_getgrgid;
     my_getgrent = p_getgrent;
@@ -1076,7 +1123,11 @@ MODRET pw_getgroups(cmd_rec *cmd) {
 
     memset(group_ids, 0, sizeof(group_ids));
     if (getgrouplist(pw->pw_name, pw->pw_gid, group_ids, &ngroups) < 0) {
-      pr_log_pri(PR_LOG_ERR, "getgrouplist error: %s", strerror(errno));
+      int xerrno = errno;
+
+      pr_log_pri(PR_LOG_WARNING, "getgrouplist error: %s", strerror(xerrno));
+
+      errno = xerrno;
       return PR_DECLINED(cmd);
     }
 
@@ -1106,7 +1157,11 @@ MODRET pw_getgroups(cmd_rec *cmd) {
 
     grouplist = getgrset(pw->pw_name);
     if (grouplist == NULL) {
-      pr_log_pri(PR_LOG_ERR, "getgrset error: %s", strerror(errno));
+      int xerrno = errno;
+
+      pr_log_pri(PR_LOG_WARNING, "getgrset error: %s", strerror(xerrno));
+
+      errno = xerrno;
       return PR_DECLINED(cmd);
     }
 
@@ -1199,6 +1254,33 @@ MODRET pw_getgroups(cmd_rec *cmd) {
   return PR_DECLINED(cmd);
 }
 
+/* Command handlers
+ */
+
+MODRET auth_unix_post_host(cmd_rec *cmd) {
+
+  /* If the HOST command changed the main_server pointer, reinitialize
+   * ourselves.
+   */
+  if (session.prev_server != NULL) {
+    int res;
+
+    pr_event_unregister(&auth_unix_module, "core.exit", auth_unix_exit_ev);
+    auth_unix_opts = 0UL;
+
+    res = auth_unix_sess_init();
+    if (res < 0) {
+      pr_session_disconnect(&auth_unix_module,
+        PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+    }
+  }
+
+  return PR_DECLINED(cmd);
+}
+
+/* Configuration handlers
+ */
+
 /* usage: AuthUnixOptions opt1 ... */
 MODRET set_authunixoptions(cmd_rec *cmd) {
   config_rec *c;
@@ -1236,15 +1318,20 @@ MODRET set_authunixoptions(cmd_rec *cmd) {
 }
 
 MODRET set_persistentpasswd(cmd_rec *cmd) {
-  int bool = -1;
+  int persistence = -1;
+  config_rec *c;
 
   CHECK_ARGS(cmd, 1);
-  CHECK_CONF(cmd, CONF_ROOT);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if ((bool = get_boolean(cmd, 1)) == -1)
+  persistence = get_boolean(cmd, 1);
+  if (persistence == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
-  persistent_passwd = bool;
+  c = add_config_param(cmd->argv[0], 1, NULL);
+  c->argv[0] = palloc(c->pool, sizeof(int));
+  *((int *) c->argv[0]) = persistence;
 
   return PR_HANDLED(cmd);
 }
@@ -1280,6 +1367,11 @@ static int auth_unix_sess_init(void) {
   if (c) {
     auth_unix_opts = *((unsigned long *) c->argv[0]);
   }
+
+  c = find_config(main_server->conf, CONF_PARAM, "PersistentPasswd", FALSE);
+  if (c) {
+    unix_persistent_passwd = *((int *) c->argv[0]);
+  }
  
   return 0;
 }
@@ -1291,6 +1383,11 @@ static conftable auth_unix_conftab[] = {
   { "AuthUnixOptions",		set_authunixoptions,		NULL },
   { "PersistentPasswd",		set_persistentpasswd,		NULL },
   { NULL,			NULL,				NULL }
+};
+
+static cmdtable auth_unix_cmdtab[] = {
+  { POST_CMD,	C_HOST,	G_NONE,	auth_unix_post_host,	FALSE, FALSE },
+  { 0, NULL }
 };
 
 static authtable auth_unix_authtab[] = {
@@ -1328,7 +1425,7 @@ module auth_unix_module = {
   auth_unix_conftab,
 
   /* Module command handler table */
-  NULL,
+  auth_unix_cmdtab,
 
   /* Module authentication handler table */
   auth_unix_authtab,

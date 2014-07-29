@@ -1,4 +1,4 @@
-<!-- $Id: mod_memcache.html,v 1.6 2011/04/05 22:20:40 castaglia Exp $ -->
+<!-- $Id: mod_memcache.html,v 1.7 2013/05/07 05:11:40 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_memcache.html,v $ -->
 
 <html>
@@ -109,6 +109,12 @@ as a space-delimited list.  For example:
 </pre>
 
 <p>
+Alternatively, you can configure a Unix domain socket path using <i>e.g.</i>:
+<pre>
+  MemcacheServers /var/run/memcached.sock
+</pre>
+
+<p>
 <hr>
 <h2><a name="MemcacheTimeouts">MemcacheTimeouts</a></h2>
 <strong>Syntax:</strong> MemcacheTimeouts <em>connect read write</em><br>
@@ -147,12 +153,12 @@ You may also need to tell <code>configure</code> how to find the
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011/04/05 22:20:40 $</i><br>
+Last Updated: <i>$Date: 2013/05/07 05:11:40 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2011 The ProFTPD Project<br>
+&copy; Copyright 2011-2013 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

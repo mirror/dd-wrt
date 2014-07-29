@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # ---------------------------------------------------------------------------
-# Copyright (C) 2008-2011 TJ Saunders <tj@castaglia.org>
+# Copyright (C) 2008-2013 TJ Saunders <tj@castaglia.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
 #
-#  $Id: ftpmail,v 1.6 2011/05/23 21:25:44 castaglia Exp $
+#  $Id: ftpmail,v 1.8 2013/10/13 22:34:14 castaglia Exp $
 # ---------------------------------------------------------------------------
 
 use strict;
@@ -31,8 +31,8 @@ my $program = basename($0);
 
 my $opts = {};
 GetOptions($opts, 'attach-file', 'fifo=s', 'from=s', 'help', 'ignore-users=s',
-  'log=s', 'recipient=s@', 'sleep=s', 'smtp-server=s', 'subject=s',
-  'watch-users=s', 'auth=s');
+  'log=s', 'recipient=s@', 'upload-recipient=s@', 'download-recipient=s@',
+  'sleep=s', 'smtp-server=s', 'subject=s', 'watch-users=s', 'auth=s');
 
 if ($opts->{help}) {
   usage();
@@ -51,11 +51,23 @@ unless ($opts->{from}) {
 }
 my $from = $opts->{from};
 
-unless ($opts->{recipient}) {
-  print STDERR "$program: missing required --recipient parameter\n";
+unless ($opts->{recipient} ||
+        $opts->{'upload-recipient'}) {
+  print STDERR "$program: missing required --recipient (or --upload-recipient) parameter\n";
   exit 1;
 }
-my $recipients = $opts->{recipient};
+my $upload_recipients = $opts->{recipient};
+
+# The --upload-recipient list takes precedence over the (deprecated)
+# --recipient list.
+if (defined($opts->{'upload-recipient'})) {
+   $upload_recipients = $opts->{'upload-recipient'};
+}
+
+my $download_recipients = undef;
+if (defined($opts->{'download-recipient'})) {
+  $download_recipients = $opts->{'download-recipient'};
+}
 
 unless ($opts->{'smtp-server'}) {
   print STDERR "$program: missing required --smtp-server parameter\n";
@@ -125,6 +137,14 @@ if (open($fifoh, "< $fifo")) {
           $send_email = 1;
         }
 
+        if (defined($download_recipients)) {
+          # If we have a list of download email recipients, it means we should
+          # send emails for downloads, too.
+          if ($xfer_direction eq 'o') {
+            $send_email = 1;
+          }
+        }
+
         if ($send_email) {
 
           # First, check for any specific --watch-users filter.  If configured,
@@ -155,6 +175,7 @@ if (open($fifoh, "< $fifo")) {
             auth_mode => $access_mode,
             user => $user_name,
             status => $completion_status,
+            direction => $xfer_direction,
           });
         }
       }
@@ -214,6 +235,9 @@ sub get_auth_info {
         my $key = $2;
         my $val = $5;
 
+        # Trim off comments after the value, if any
+        $val =~ s/(\s*#.*)?$//;
+
         # Ignore any keys other than 'user' and 'password'.
 
         if (lc($key) eq 'user') {
@@ -246,33 +270,38 @@ sub get_auth_info {
 }
 
 sub send_email {
-  my $upload_info = shift;
+  my $transfer_info = shift;
 
-  my $file = $upload_info->{file};
+  my $file = $transfer_info->{file};
   my $file_str = basename($file);
 
-  my $subject = "User '$upload_info->{user}' uploaded file '$file_str' via FTP";
+  my $transferred = 'uploaded';
+  if ($transfer_info->{direction} eq 'o') {
+    $transferred = 'downloaded';
+  }
+
+  my $subject = "User '$transfer_info->{user}' $transferred file '$file_str' via FTP";
   if ($opts->{subject}) {
     $subject = $opts->{subject};
   }
 
   my $bytes_str = "bytes";
-  if ($upload_info->{size} == 1) {
+  if ($transfer_info->{size} == 1) {
     $bytes_str = "byte";
   }
 
   my $status = "Completed";
-  if ($upload_info->{status} eq 'i') {
+  if ($transfer_info->{status} eq 'i') {
     $status = "Incomplete";
   }
 
   my $secs_str = "secs";
-  if ($upload_info->{duration} == 1) {
+  if ($transfer_info->{duration} == 1) {
     $secs_str = "sec";
   }
 
   my $type_str = "Binary";
-  if ($upload_info->{transfer_type} eq 'a') {
+  if ($transfer_info->{transfer_type} eq 'a') {
     $type_str = "ASCII";
   }
 
@@ -285,13 +314,13 @@ sub send_email {
   my $text = <<EOT;
 File just uploaded via FTP:
 
-  User: $upload_info->{user}
-    Client: $upload_info->{client}
+  User: $transfer_info->{user}
+    Client: $transfer_info->{client}
 
   File: $file $attached
-    Size: $upload_info->{size} $bytes_str
-    At: $upload_info->{timestamp}
-    Duration: $upload_info->{duration} $secs_str
+    Size: $transfer_info->{size} $bytes_str
+    At: $transfer_info->{timestamp}
+    Duration: $transfer_info->{duration} $secs_str
     Status: $status
     Transfer type: $type_str
 
@@ -303,9 +332,15 @@ EOT
   my $email_info = {
     smtp => $smtp_server,
     From => $from,
-    To => join(', ', @$recipients),
     Subject => $subject,
   };
+
+  if ($transfer_info->{direction} eq 'i') {
+    $email_info->{To} = join(', ', @$upload_recipients);
+
+  } elsif ($transfer_info->{direction} eq 'o') {
+    $email_info->{To} = join(', ', @$download_recipients);
+  }
 
   if ($opts->{'auth'}) {
     $email_info->{'auth'} = $smtp_auth;
@@ -340,7 +375,7 @@ EOT
         $email_info->{Body} .= "$boundary\n";
 
         $email_info->{Body} .= "Content-Disposition: attachment; filename=\"$file\"\n";
-        if ($upload_info->{transfer_type} eq 'a') {
+        if ($transfer_info->{transfer_type} eq 'a') {
           $email_info->{Body} .= "Content-Type: text/plain; charset=\"iso-8859-1\"\n\n";
           $email_info->{Body} .= $attach;
 
@@ -380,7 +415,8 @@ sub usage {
   print <<EOH;
 
 usage: $program [--help] [--fifo \$path] [--from \$addr] [--log \$path]
-  [--recipient \$addr] [--subject \$string] [--smtp-server \$addr]
+  [--recipient \$addrs] [--upload-recipient \$addrs]
+  [--download-recipient \$addrs] [--subject \$string] [--smtp-server \$addr]
   [--attach-file] [--ignore-users \$regex | --watch-users \$regex]
 
 The purpose of this script is to monitor the TransferLog written by proftpd
@@ -428,6 +464,16 @@ Command-line options:
 			notification of the upload.  This option can be
 			used multiple times to specify multiple recipients.
 			AT LEAST ONE recipient is REQUIRED.
+
+  --upload-recipient    Same as --recipient.
+
+  --download-recipient \$addr
+                        Specifies an email address to which to send an email
+                        notification of the B<download>.  This option can be
+                        used multiple times to specify multiple recipients.
+
+                        If this option is specified, then C<ftpmail> will
+                        watch for FTP downloads as well as uploads.
 
   --smtp-server \$addr	Specifies the SMTP server to which to send the email.
                         This parameter is REQUIRED.

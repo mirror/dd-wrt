@@ -18,12 +18,13 @@ my $order = 0;
 
 my $TESTS = {
   delay_cold_table => {
+    order => ++$order,
     test_class => [qw(forking)],
   },
 
   delay_warm_table => {
     order => ++$order,
-    test_class => [qw(forking)],
+    test_class => [qw(forking slow)],
   },
 
   delay_extra_user_cmd_bug3622 => {
@@ -54,7 +55,7 @@ sub delay_cold_table {
   my $pid_file = File::Spec->rel2abs("$tmpdir/delay.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/delay.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/delay.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/delay.group");
@@ -146,6 +147,9 @@ sub delay_cold_table {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -160,7 +164,7 @@ sub delay_warm_table {
   my $pid_file = File::Spec->rel2abs("$tmpdir/delay.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/delay.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/delay.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/delay.group");
@@ -189,6 +193,12 @@ sub delay_warm_table {
   auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $delay_tab = File::Spec->rel2abs("$home_dir/delay.tab");
+
+  # In order to warm up the DelayTable, we need to fill its columns,
+  # which means more than 256 logins before the table is "warm".
+  my $nlogins = 300;
+
+  my $timeout = ($nlogins * 2);
 
   my $config = {
     PidFile => $pid_file,
@@ -224,11 +234,6 @@ sub delay_warm_table {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
-
-      # In order to warm up the DelayTable, we need to fill its columns,
-      # which means more than 256 logins before the table is "warm".
-
-      my $nlogins = 300;
       my $max_elapsed = -1;
 
       for (my $i = 0; $i < $nlogins; $i++) {
@@ -264,7 +269,7 @@ sub delay_warm_table {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh, 90) };
+    eval { server_wait($config_file, $rfh, $timeout) };
     if ($@) {
       warn($@);
       exit 1;
@@ -279,6 +284,9 @@ sub delay_warm_table {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -293,7 +301,7 @@ sub delay_extra_user_cmd_bug3622 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/delay.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/delay.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/delay.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/delay.group");
@@ -370,11 +378,11 @@ sub delay_extra_user_cmd_bug3622 {
 
       my $expected;
 
-      $expected = 503;
+      $expected = 500;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = 'You are already logged in';
+      $expected = 'Bad sequence of commands';
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 
@@ -437,6 +445,9 @@ sub delay_extra_user_cmd_bug3622 {
     $self->assert($ok, test_msg("Trace messages appeared unexpectedly"));
 
   } else {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die("Can't open $log_file: $!");
   }
 
@@ -595,6 +606,9 @@ sub delay_extra_pass_cmd_bug3622 {
     $self->assert($ok, test_msg("Trace messages appeared unexpectedly"));
 
   } else {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die("Can't open $log_file: $!");
   }
 

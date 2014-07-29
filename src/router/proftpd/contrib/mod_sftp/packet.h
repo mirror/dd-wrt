@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp packet IO
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: packet.h,v 1.7.2.1 2012/03/11 18:45:17 castaglia Exp $
+ * $Id: packet.h,v 1.10 2012/03/11 18:44:03 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -39,14 +39,14 @@ struct ssh2_packet {
   /* Length of the padding field. */
   unsigned char padding_len;
 
-  char *payload;
+  unsigned char *payload;
   uint32_t payload_len;
 
   /* Must be at least 4 bytes of padding, with a maximum of 255 bytes. */
-  char *padding;
+  unsigned char *padding;
 
   /* Message Authentication Code. */
-  char *mac;
+  unsigned char *mac;
   uint32_t mac_len;
 
   /* Packet sequence number. */
@@ -59,13 +59,13 @@ struct ssh2_packet {
 /* From the SFTP Draft, Section 4. */
 struct sftp_packet {
   uint32_t packet_len;
-  char packet_type;
+  unsigned char packet_type;
   uint32_t request_id;
 };
 
 struct ssh2_packet *sftp_ssh2_packet_create(pool *);
 char sftp_ssh2_packet_get_mesg_type(struct ssh2_packet *);
-const char *sftp_ssh2_packet_get_mesg_type_desc(char);
+const char *sftp_ssh2_packet_get_mesg_type_desc(unsigned char);
 
 /* Returns a struct timeval populated with the time we last received an SSH2
  * packet from the client.
@@ -110,6 +110,7 @@ int sftp_ssh2_packet_rekey_set_size(off_t);
 
 int sftp_ssh2_packet_send_version(void);
 int sftp_ssh2_packet_set_poll_timeout(int);
+int sftp_ssh2_packet_set_version(const char *);
 
 int sftp_ssh2_packet_set_client_alive(unsigned int, unsigned int);
 

@@ -1,4 +1,4 @@
-<!-- $Id: Debugging.html,v 1.6 2007/08/24 15:07:35 castaglia Exp $ -->
+<!-- $Id: Debugging.html,v 1.7 2012/12/02 00:23:36 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Debugging.html,v $ -->
 
 <html>
@@ -19,6 +19,28 @@ problem, and fix it?  This is the art of debugging.  When users post these
 problems are the mailing lists, it is extremely helpful to include the
 following bits of information to help find the answer.  Even better is when the
 user follows these steps and determines the solution for themselves.
+
+<p>
+Keep in mind that <code>proftpd</code> runs on quite a few different platforms,
+including Linux (and its various distributions), Solaris, Mac OSX, various BSDs,
+etc.  So please, when reporting issues, <b>include as much information as you
+can</b>.  Saying something like "latest Ubuntu/CentOS/Fedora", or "stable
+Debian", or "FreeBSD ports", does not mean that much to those of us who don't
+run/use those platforms.
+
+<p>
+We <b>want</b> to help you, but to do that, we need to know as many details as
+possible.  One goal is for us to be able to reproduce the issue locally. That's
+why providing the `proftpd -V' output, and the <code>proftpd.conf</code>, the
+debug logging, and a description of the behavior you <b><i>expect</i></b> (as
+well as what you actually <b><i>observed</i></b>) is so important.  These
+things help us to recreate the setup, and the circumstances, locally.  And
+once we can see the same issue on our machines, we can help that much more
+rapidly with the solution.
+
+<p>
+You will hear requests for these details come up quite a bit.  It's worth
+pointing out why that is.
 
 <p>
 <b>Know the Version</b><br>
@@ -57,15 +79,15 @@ When making changes to the configuration file, it is often helpful to make sure
 that your changes are valid.  The easiest way to do this is to do an
 informative syntax check:
 <pre>
-  proftpd -td5
+  proftpd -td10
 </pre>
 The <code>-t</code> option directs the server to only do a syntax check, to
 parse the configuration file but stop before actually starting its operations
-as a server.  The <code>-d5</code> will cause the server to display debugging
+as a server.  The <code>-d10</code> will cause the server to display debugging
 messages during this testing of the configuration file.  Another useful
 command is:
 <pre>
-  proftpd -c <i>/path/to/new/config/file</i> -td5
+  proftpd -c <i>/path/to/new/config/file</i> -td10
 </pre>
 which lets you test the syntax of some new configuration file before it
 is put into production.
@@ -81,7 +103,7 @@ the trick is in enabling that reporting, and tracking down where it is sent.
 The easiest way to get the debugging information is to start the server from
 the command line using:
 <pre>
-  proftpd -nd6
+  proftpd -nd10
 </pre>
 <b>Note</b>: make sure that no other <code>proftpd</code> instances are
 running before using this command, otherwise you will see:
@@ -104,7 +126,7 @@ send debugging information to the mailing list, you can send the relevant
 snippets (if you know what the relevant debug messages are), or you can
 capture the debug output to a file:
 <pre>
-  proftpd -nd5 2>&1 >& /path/to/debug/file
+  proftpd -nd10 2>&1 >& /path/to/debug/file
 </pre>
 and send that file, compressed, along with your post.
 
@@ -129,7 +151,8 @@ add <code>-d5</code> (or whatever your preferred debug level is) to the
 server startup script.
 
 <p>
-As of version 1.2.8rc1, ProFTPD supports a <a href="http://www.proftpd.org/docs/directives/linked/config_ref_DebugLevel.html"><code>DebugLevel</code></a>
+As of version 1.2.8rc1, ProFTPD supports a
+<a href="../modules/mod_core.html#DebugLevel"><code>DebugLevel</code></a>
 configuration directive.  This lets you set a debugging level in your
 <code>proftpd.conf</code> file, without needing to edit <code>inetd.conf</code>
 or <code>xinetd</code> configuration file.
@@ -139,14 +162,15 @@ or <code>xinetd</code> configuration file.
 A common response on the mailing lists to a posted question is: &quot;What
 do your server logs say?&quot;  Locating the server's log files can be
 troublesome, depending on your configuration.  If the
-<a href="http://www.proftpd.org/docs/directives/linked/config_ref_SystemLog.html"><code>SystemLog</code></a> configuration directive is in effect, you know exactly where
-the server's log file is.  If not, then by default the server uses
-<code>syslog</code> for logging.  The location of <code>syslog</code>'d log
-files is set in your system's <code>/etc/syslog.conf</code> file.  You may
-need to read your system's man pages for <code>syslog.conf</code> or
-<code>syslogd</code> to understand the format of that file.  Note that the
-server will log using a <code>syslog</code> facility of <code>daemon</code>
-(and level <code>debug</code> when debugging) for most of its messages; during
+<a href="../modules/mod_log.html#SystemLog"><code>SystemLog</code></a>
+configuration directive is in effect, you know exactly where the server's log
+file is.  If not, then by default the server uses <code>syslog</code> for
+logging.  The location of <code>syslog</code>'d log files is set in your
+system's <code>/etc/syslog.conf</code> file.  You may need to read your
+system's man pages for <code>syslog.conf</code> or <code>syslogd</code> to
+understand the format of that file.  Note that the server will log using a
+<code>syslog</code> facility of <code>daemon</code> (and level
+<code>debug</code> when debugging) for most of its messages; during
 authentication, messages are logged using the <code>authpriv</code> facility.
 
 <p>
@@ -216,14 +240,13 @@ for a short period of time, in order to get a useful automatic stack trace.
 <p>
 <b>Common Problems</b><br>
 One common question is: &quot;I changed the configuration file, but the new
-configuration is not being seen!&quot; The solution depends on your
-configured
-<a href="http://www.proftpd.org/docs/directives/linked/config_ref_ServerType.html"><code>ServerType</code></a>.  Almost certainly it will be <code>standalone</code>, as
-<code>inetd</code>-mode servers pick up configuration changes almost instantly
-(the server is started from the ground up for each connection).  For
-configuration changes to be seen by a <code>standalone</code> server, you need
-to either stop, then start the server (the hard way), or to send the
-<code>HUP</code> signal the the daemon process.
+configuration is not being seen!&quot; The solution depends on your configured
+<a href="ServerType.html"><code>ServerType</code></a>.  Almost certainly it
+will be <code>standalone</code>, as <code>inetd</code>-mode servers pick up
+configuration changes almost instantly (the server is started from the ground
+up for each connection).  For configuration changes to be seen by a
+<code>standalone</code> server, you need to either stop, then start the server
+(the hard way), or to send the <code>HUP</code> signal the the daemon process.
 
 <p>
 Another common question involves use of ProFTPD's <code>&lt;Limit&gt;</code>
@@ -249,7 +272,7 @@ be answered:
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2007/08/24 15:07:35 $</i><br>
+Last Updated: <i>$Date: 2012/12/02 00:23:36 $</i><br>
 <hr>
 
 <hr>

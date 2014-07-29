@@ -1,4 +1,4 @@
-<!-- $Id: mod_qos.html,v 1.1 2010/03/04 22:11:29 castaglia Exp $ -->
+<!-- $Id: mod_qos.html,v 1.2 2013/08/14 21:40:17 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_qos.html,v $ -->
 
 <html>
@@ -102,15 +102,23 @@ Then follow the usual steps:
 </pre>
 
 <p>
+Alternatively, if your proftpd was compiled with DSO support, you can
+use the <code>prxs</code> tool to build <code>mod_qos</code> as a shared
+module:
+<pre>
+  prxs -c -i -d mod_qos.c
+</pre>
+
+<p>
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2010/03/04 22:11:29 $</i><br>
+Last Updated: <i>$Date: 2013/08/14 21:40:17 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2010 TJ Saunders<br>
+&copy; Copyright 2010-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

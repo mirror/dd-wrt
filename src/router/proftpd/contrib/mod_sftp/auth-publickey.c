@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth-publickey.c,v 1.9.2.1 2012/03/13 19:02:24 castaglia Exp $
+ * $Id: auth-publickey.c,v 1.13 2012/07/10 00:52:20 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -37,10 +37,10 @@
 
 static const char *trace_channel = "ssh2";
 
-static int send_pubkey_ok(const char *algo, const char *pubkey_data,
+static int send_pubkey_ok(const char *algo, const unsigned char *pubkey_data,
     uint32_t pubkey_len) {
   struct ssh2_packet *pkt;
-  char *buf, *ptr;
+  unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
   int res;
 
@@ -74,10 +74,12 @@ static int send_pubkey_ok(const char *algo, const char *pubkey_data,
 }
 
 int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
-    const char *orig_user, const char *user, const char *service, char **buf,
-    uint32_t *buflen, int *send_userauth_fail) {
-  int have_signature, pubkey_type;
-  char *pubkey_algo = NULL, *pubkey_data;
+    const char *orig_user, const char *user, const char *service,
+    unsigned char **buf, uint32_t *buflen, int *send_userauth_fail) {
+  int have_signature, res;
+  enum sftp_key_type_e pubkey_type;
+  unsigned char *pubkey_data;
+  char *pubkey_algo = NULL;
   const char *fp = NULL;
   uint32_t pubkey_len;
   struct passwd *pw;
@@ -114,10 +116,21 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     pubkey_algo, have_signature ? "with signature" : "without signature");
 
   if (strncmp(pubkey_algo, "ssh-rsa", 8) == 0) {
-    pubkey_type = EVP_PKEY_RSA;
+    pubkey_type = SFTP_KEY_RSA;
 
   } else if (strncmp(pubkey_algo, "ssh-dss", 8) == 0) {
-    pubkey_type = EVP_PKEY_DSA;
+    pubkey_type = SFTP_KEY_DSA;
+
+#ifdef PR_USE_OPENSSL_ECC
+  } else if (strncmp(pubkey_algo, "ecdsa-sha2-nistp256", 20) == 0) {
+    pubkey_type = SFTP_KEY_ECDSA_256;
+
+  } else if (strncmp(pubkey_algo, "ecdsa-sha2-nistp384", 20) == 0) {
+    pubkey_type = SFTP_KEY_ECDSA_384;
+
+  } else if (strncmp(pubkey_algo, "ecdsa-sha2-nistp521", 20) == 0) {
+    pubkey_type = SFTP_KEY_ECDSA_521;
+#endif /* PR_USE_OPENSSL_ECC */
 
   /* XXX This is where we would add support for X509 public keys, e.g.:
    *
@@ -137,11 +150,20 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     return 0;
   }
 
-  if (sftp_keys_verify_pubkey_type(pkt->pool, pubkey_data, pubkey_len,
-      pubkey_type) != TRUE) {
+  res = sftp_keys_verify_pubkey_type(pkt->pool, pubkey_data, pubkey_len,
+    pubkey_type);
+  if (res != TRUE) {
+    int xerrno = errno;
+
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "unable to verify that given public key matches given '%s' algorithm",
       pubkey_algo);
+
+    if (res < 0) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error verifying public key algorithm '%s': %s", pubkey_algo,
+        strerror(xerrno));
+    }
 
     *send_userauth_fail = TRUE;
     errno = EINVAL;
@@ -204,7 +226,7 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
 
   } else {
     const unsigned char *id;
-    char *buf2, *ptr2, *signature_data;
+    unsigned char *buf2, *ptr2, *signature_data;
     uint32_t buflen2, bufsz2, id_len, signature_len;
 
     /* XXX This should become a more generic "is this key data
@@ -240,6 +262,7 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     if (sftp_keystore_verify_user_key(pkt->pool, user, pubkey_data,
         pubkey_len) < 0) {
       *send_userauth_fail = TRUE;
+      errno = EPERM;
       return 0;
     }
 
@@ -253,7 +276,7 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     bufsz2 = buflen2 = pubkey_len + 1024;
     ptr2 = buf2 = sftp_msg_getbuf(pkt->pool, bufsz2);
 
-    sftp_msg_write_data(&buf2, &buflen2, (char *) id, id_len, TRUE);
+    sftp_msg_write_data(&buf2, &buflen2, id, id_len, TRUE);
     sftp_msg_write_byte(&buf2, &buflen2, SFTP_SSH2_MSG_USER_AUTH_REQUEST);
     sftp_msg_write_string(&buf2, &buflen2, orig_user);
 
@@ -282,6 +305,7 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
         "failed to verify '%s' signature on public key auth request for "
         "user '%s'", pubkey_algo, orig_user);
       *send_userauth_fail = TRUE;
+      errno = EPERM;
       return 0;
     }
   }

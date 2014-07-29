@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2010-2011 The ProFTPD Project team
+ * Copyright (c) 2010-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* ProFTPD symbol table hash ("stash")
- * $Id: stash.h,v 1.2 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: stash.h,v 1.3 2012/04/24 23:27:38 castaglia Exp $
  */
 
 #ifndef PR_STASH_H
@@ -36,9 +36,13 @@ typedef enum {
   PR_SYM_HOOK
 } pr_stash_type_t;
 
-int init_stash(void);
 int pr_stash_add_symbol(pr_stash_type_t, void *);
 void *pr_stash_get_symbol(pr_stash_type_t, const char *, void *, int *);
 int pr_stash_remove_symbol(pr_stash_type_t, const char *, module *);
+
+void pr_stash_dump(void (*)(const char *, ...));
+
+/* Internal use only */
+int init_stash(void);
 
 #endif /* PR_STASH_H */

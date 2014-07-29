@@ -24,7 +24,7 @@ sub new {
   # given timeout.
 
   my %opts = (
-      Port => $port,
+    Port => $port,
   );
 
   if ($use_port) {
@@ -55,6 +55,16 @@ sub new {
     $conn_ex = $@;
     chomp($conn_ex);
     sleep(1);
+  }
+
+  # Naughtily invade the Net::FTP internals; it makes for less confusion
+  # when writing the unit tests.
+  if (exists($ENV{FTP_FIREWALL})) {
+    ${*$ftp}{net_ftp_firewall} = $ENV{FTP_FIREWALL};
+  }
+
+  if (exists($ENV{FTP_FIREWALL_TYPE})) {
+    ${*$ftp}{net_ftp_firewall_type} = $ENV{FTP_FIREWALL_TYPE};
   }
 
   my $self = {
@@ -174,7 +184,22 @@ sub login {
   $SIG{ALRM} = \&login_alarm;
   alarm($login_timeout);
 
+  # Work around some (strange? broken?) ness in Net::FTP's handling of
+  # the destination server in the login() method for "firewalls"
+  # (i.e. proxying).
+
+  my $ftp = $self->{ftp};
+  my $net_ftp_host = ${*$ftp}{net_ftp_host};
+
+  if (exists($ENV{FTP_FIREWALL})) {
+    ${*$ftp}{net_ftp_host} = $ENV{FTP_FIREWALL};
+  }
+
   unless ($self->{ftp}->login($user, $pass)) {
+    if (exists($ENV{FTP_FIREWALL})) {
+      ${*$ftp}{net_ftp_host} = $net_ftp_host;
+    }
+
     alarm(0);
     $SIG{ALRM} = 'DEFAULT';
 
@@ -1620,6 +1645,23 @@ sub host {
 
   if ($code == 4 || $code == 5) {
     croak("HOST command failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  my $msg = $self->response_msg();
+  if (wantarray()) {
+    return ($self->{ftp}->code, $msg);
+
+  } else {
+    return $msg;
+  }
+}
+
+sub abort {
+  my $self = shift;
+
+  unless ($self->{ftp}->abort()) {
+    croak("ABOR command failed: " .  $self->{ftp}->code . ' ' .
       $self->response_msg());
   }
 

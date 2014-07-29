@@ -1,4 +1,4 @@
-<!-- $Id: Compiling.html,v 1.8 2011/04/05 22:20:40 castaglia Exp $ -->
+<!-- $Id: Compiling.html,v 1.10 2013/10/06 16:02:23 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Compiling.html,v $ -->
 
 <html>
@@ -156,7 +156,7 @@ on most systems, that is the user which has permissions for creating new
 files/directories under the <code>/usr/local/</code> directory.
 
 <p>
-If you wish to install using a different user or group ownership, set the
+If you wish to <i>install</i> using a different user or group ownership, set the
 <code>install_user</code> and <code>install_group</code> environment variables
 before running <code>configure</code>.  Using a Bourne-ish style shell
 (<i>e.g.</i> sh, ksh, bash), you can do this on the command line like this:
@@ -169,6 +169,9 @@ For example, I do a lot of personal ProFTPD builds, and so I typically use:
 <pre>
   # install_user=tj install_group=tj ./configure --prefix=/home/tj/proftpd/devel/build/ ...
 </pre>
+Note that the <code>install_user</code> and <code>install_group</code>
+environment variables do <b>not</b> affect the IDs used when <i>running</i>
+<code>proftpd</code>.
 
 <p><a name="FeatureOptions">
 <b>Feature Options</b><br>
@@ -180,6 +183,11 @@ about the more common of these feature options:
     The <a href="../modules/mod_auth_file.html"><code>mod_auth_file</code></a>
     module is included in the build by default; use this option to <b>not</b>
     include the module.
+  </li>
+
+  <p>
+  <li><code>--enable-autoshadow</code><br>
+    Enables support for <i>autoshadow</i>
   </li>
 
   <p>
@@ -764,8 +772,55 @@ is the way to get a statically linked <code>proftpd</code> executable:
 </pre>
 
 <p>
+<font color=red>Question</font>: I have a very long line in my
+<code>proftpd.conf</code>, and when I try to start <code>proftpd</code> I 
+see this:
+<pre>
+  warning: handling possibly truncated configuration data at line 17 of '/etc/proftpd.conf'
+  Fatal: unknown configuration directive ')"' on line 18 of '/etc/proftpd.conf'
+</pre>
+How can I avoid this error?<br>
+<font color=blue>Answer</font>: If possible, you should try to break up your
+long directive line into multiple lines, using a backslash.  For example:
+<pre>
+  Allow 1.2.3.4 5.6.7.8 9.10.11.12
+</pre>
+can also appear as:
+<pre>
+  Allow \
+    1.2.3.4 \
+    5.6.7.8 \
+    9.10.11.12
+</pre>
+However, if this approach cannot be used (<i>e.g.</i> your configuration has
+a single parameter which exceeds the 1024 byte buffer limit, and which
+<b>cannot</b> be broken up), then you will have to recompile
+<code>proftpd</code> with a larger buffer size.  To do this, use the
+<code>--enable-buffer-size</code> configure option, <i>e.g.</i>:
+<pre>
+  # ./configure --enable-buffer-size=2048 ...
+</pre>
+
+<p>
+<font color=red>Question</font>: What is the difference between the
+<code>--enable-shadow</code> and the <code>--enable-autoshadow</code> configure
+options, and when do I use them?<br>
+<font color=blue>Answer</font>:  The <code>--enable-shadow</code> configure
+option enables support for <em>shadow</em> files,
+<i>e.g.</i> <code>/etc/shadow</code> and the related C library functions.
+On other Unix platforms, though, use "transparent shadow" support, where
+the normal C library functions are used; only when root privileges are used
+to call those functions will the actual password be obtained from the shadow
+files.  Support for this approach is enabled by the
+<code>--enable-autoshadow</code> option.
+
+<p>
+If you are not sure which to use, try using both <code>--enable-shadow</code>
+and <code>--enable-autoshadow</code>.
+
+<p>
 <hr>
-<i>$Date: 2011/04/05 22:20:40 $</i><br>
+<i>$Date: 2013/10/06 16:02:23 $</i><br>
 
 </body>
 </html>

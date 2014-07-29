@@ -24,7 +24,7 @@
  * The file size to encode 294,903 of 48-bit fingerprints is just 1.3 MB,
  * which corresponds to less than 4.5 bytes per fingerprint.
  *
- * $Id: blacklist.c,v 1.2.4.2 2012/03/13 20:15:32 castaglia Exp $
+ * $Id: blacklist.c,v 1.6 2012/03/13 20:15:25 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -113,7 +113,7 @@ static int validate_blacklist(int fd, unsigned int *bytes,
 
 static int expected_offset(uint16_t idx, uint16_t shift,
     unsigned int records) {
-  return ((idx * (long long) records) >> 16) - shift;
+  return (int) (((idx * (long long) records) >> 16) - shift);
 }
 
 /* Returns -1 if there was an error, 1 if the fingerprint was found, and
@@ -218,7 +218,8 @@ static int check_fp(int fd, const char *fp_str) {
   return 0;
 }
 
-int sftp_blacklist_reject_key(pool *p, char *key_data, uint32_t key_datalen) {
+int sftp_blacklist_reject_key(pool *p, unsigned char *key_data,
+    uint32_t key_datalen) {
   int fd, res;
   const char *fp;
   char *digest_name = "none", *hex, *ptr;

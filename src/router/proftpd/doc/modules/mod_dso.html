@@ -1,4 +1,4 @@
-<!-- $Id: mod_dso.html,v 1.4 2011/04/06 18:23:28 castaglia Exp $ -->
+<!-- $Id: mod_dso.html,v 1.7 2013/05/09 03:58:40 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_dso.html,v $ -->
 
 <html>
@@ -336,16 +336,121 @@ of DSO modules, use the <code>--enable-dso</code> configure option:
 This option causes <code>mod_dso</code> to be compiled into
 <code>proftpd</code>.
 
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="DSOAlreadyLoaded">
+<font color=red>Question</font>: When I try to start <code>proftpd</code>, it
+fails like this:
+<pre>
+  proftpd[1234]: mod_dso/0.5: module 'mod_radius.c' already loaded
+  proftpd[1234]: Fatal: LoadModule: error loading module 'mod_radius.c': Operation not permitted on line 9 of '/etc/proftpd/proftpd.conf'
+</pre>
+How do I fix this "module already loaded" error?<br>
+<font color=blue>Answer</font>:  This happens when the proftpd configuration
+either <i>a)</i> uses the <a href="#LoadModule"><code>LoadModule</code></a>
+on a module which was compiled in as a static module, or <i>b)</i> is
+inadvertently using <code>LoadModule</code> on the same module multiple times.
+
+<p>
+To check if the module has been statically compiled into your
+<code>proftpd</code> executable, use the <code>-l</code> command-line parameter,
+<i>e.g.</i>:
+<pre>
+  # proftpd -l
+  Compiled-in modules:
+    mod_core.c
+    mod_xfer.c
+    mod_auth_unix.c
+    mod_auth_file.c
+    mod_auth.c
+    mod_ls.c
+    mod_log.c
+    mod_site.c
+    mod_delay.c
+    mod_facts.c
+    mod_dso.c
+    mod_ident.c
+    mod_auth_pam.c
+    mod_tls.c
+    mod_cap.c
+</pre>
+The modules listed via the command are the static modules.  So if your
+<code>LoadModule</code> directive is used for one of the modules in this list,
+you can remove that <code>LoadModule</code> directive; that module will already
+be loaded.
+
+<p>
+The other cause, that of having multiple <code>LoadModule</code> directives
+for the same module, usually happens when your <code>proftpd.conf</code>
+file includes other config files, <i>e.g.</i>:
+<pre>
+  Include /path/to/modules.conf
+</pre>
+and it is those other config files which have <code>LoadModule</code> directives
+of their own.
+
+<p>
+If you find yourself needs to change the configuration to work around this
+error, you can use the following to see if the module has already been
+loaded, and if not, load it:
+<pre>
+  &lt;IfModule !mod_radius.c&gt;
+    LoadModule mod_radius.c
+  &lt;/IfModule&gt;
+</pre>
+
+<p><a name="DSOAlreadyLoadedSpecialModules">
+<font color=red>Question</font>: When I try to start <code>proftpd</code>, it
+fails like this:
+<pre>
+  proftpd[1234]: mod_dso/0.5: module 'mod_ctrls.c' already loaded
+  proftpd[1234]: Fatal: LoadModule: error loading module 'mod_ctrls.c': Operation not permitted on line 9 of '/etc/proftpd/proftpd.conf'
+</pre>
+I do not have any other <code>LoadModule</code> directives in my config, nor
+is the <code>mod_ctrls</code> module in my <code>--with-modules</code>
+configure option.<br><br>
+<font color=blue>Answer</font>: In this particular case, the
+<code>mod_ctrls</code> module is automatically compiled in, as a static module,
+when the <code>--enable-ctrls</code> configure option is used.  There are only
+a few such modules with this special handling:
+<ul>
+  <li><code>mod_ctrls</code> (<i>via the <code>--enable-ctrls</code> configure option</i>)
+  <li><code>mod_dso</code> (<i>via the <code>--enable-dso</code> configure option</i>)
+  <li><code>mod_lang</code> (<i>via the <code>--enable-nls</code> configure option</i>)
+  <li><code>mod_memcache</code> (<i>via the <code>--enable-memcache</code> configure option</i>)
+</ul>
+All of these modules would appear in the <code>`proftpd -l'</code> static
+module list.
+
+<p><a name="DSOLoadingStaticModule">
+<font color=red>Question</font>: If I use <code><a href="../utils/prxs.html">prxs</a></code> to compile a module like <code>mod_ldap</code>, which is already
+built into my <code>proftpd</code> as a static module, and then I use:
+<pre>
+  LoadModule mod_ldap.c
+</pre>
+in my <code>proftpd.conf</code>, then which <code>mod_ldap</code> code is used,
+the static module or the shared module?<br>
+<font color=blue>Answer</font>: Excellent question.  The short answer is: the
+static module wins.
+
+<p>
+When <code>mod_dso</code> goes to load a module, it first checks to see
+whether that module is already loaded -- and if so, the module will
+<b>not</b> be loaded again.  Static modules, by definition, are always
+"already loaded".  This means that your <code>mod_ldap</code> shared module
+code would not be loaded, and thus would not override the static module.
+
 <p>
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011/04/06 18:23:28 $</i><br>
+Last Updated: <i>$Date: 2013/05/09 03:58:40 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2004-2011 TJ Saunders<br>
+&copy; Copyright 2004-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

@@ -39,7 +39,7 @@ sub dele_bug2321 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/limit.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/limit.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/limit.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/limit.group");
@@ -60,6 +60,7 @@ sub dele_bug2321 {
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs("$tmpdir/users/$user");
   my $uid = 500;
   my $gid = 500;
@@ -108,7 +109,7 @@ EOL
  
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -240,6 +241,9 @@ EOL
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 

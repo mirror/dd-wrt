@@ -1,4 +1,4 @@
-<!-- $Id: mod_cap.html,v 1.6 2009/11/04 23:02:10 castaglia Exp $ -->
+<!-- $Id: mod_cap.html,v 1.9 2013/07/19 17:17:00 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_cap.html,v $ -->
 
 <html>
@@ -83,6 +83,7 @@ ProFTPD source distribution:
 <h2>Directives</h2>
 <ul>
   <li><a href="#CapabilitiesEngine">CapabilitiesEngine</a>
+  <li><a href="#CapabilitiesRootRevoke">CapabilitiesRootRevoke</a>
   <li><a href="#CapabilitiesSet">CapabilitiesSet</a>
 </ul>
 
@@ -99,6 +100,24 @@ The <code>CapabilitesEngine</code> directive enables or disables the module's
 runtime capabilities engine.  If it is set to <em>off</em> this module does no
 runtime capabilities processing at all.  Use this directive to disable the
 module.
+
+<p>
+<hr>
+<h2><a name="CapabilitiesRootRevoke">CapabilitiesRootRevoke</a></h2>
+<strong>Syntax:</strong> CapabilitiesRootRevoke <em>on|off</em><br>
+<strong>Default:</strong> CapabilitiesRootRevoke on<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_cap<br>
+<strong>Compatibility:</strong> 1.3.5rc1 and later
+
+<p>
+By default, the <code>mod_cap</code> module will <em>revoke</em> (<i>i.e.</i>
+drop) root privileges entirely, once the necessary capabilities have been
+set.  Use the <code>CapabilitiesRootRevoke</code> directive to change this
+default behavior, <i>e.g.</i>:
+<pre>
+  CapabilitiesRootRevoke off
+</pre>
 
 <p>
 <hr>
@@ -133,6 +152,8 @@ use '+'.  This directive supports the following capabilities:
   <li><code>CAP_DAC_OVERRIDE</code> (override all directory access controls)
   <li><code>CAP_DAC_READ_SEARCH</code> (allow read and search directory access)
   <li><code>CAP_FOWNER</code>
+  <li><code>CAP_FSETID</code>
+  <li><code>CAP_SETUID</code>
 </ul>
 
 <p>
@@ -197,11 +218,11 @@ you will need to use a configuration such as:
 <p>
 <hr><br>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2009/11/04 23:02:10 $</i><br>
+Last Updated: <i>$Date: 2013/07/19 17:17:00 $</i><br>
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2009 TJ Saunders<br>
+&copy; Copyright 2000-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

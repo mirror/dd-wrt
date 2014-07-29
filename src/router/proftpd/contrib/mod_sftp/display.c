@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp Display files
- * Copyright (c) 2010-2011 TJ Saunders
+ * Copyright (c) 2010-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Display of files
- * $Id: display.c,v 1.8 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: display.c,v 1.12 2013/09/25 16:08:50 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -32,17 +32,21 @@
 #include "msg.h"
 
 static void format_size_str(char *buf, size_t buflen, off_t size) {
-  char units[] = {'K', 'M', 'G', 'T', 'P'};
+  char *units[] = {"", "K", "M", "G", "T", "P"};
+  unsigned int nunits = 6;
   register unsigned int i = 0;
 
   /* Determine the appropriate units label to use. */
-  while (size > 1024) {
+  while (size > 1024 &&
+         i < nunits) {
+    pr_signals_handle();
+
     size /= 1024;
     i++;
   }
 
   /* Now, prepare the buffer. */
-  snprintf(buf, buflen, "%.3" PR_LU "%cB", (pr_off_t) size, units[i]);
+  snprintf(buf, buflen, "%.3" PR_LU "%sB", (pr_off_t) size, units[i]);
 }
 
 const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
@@ -66,7 +70,7 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
   pr_fsio_fstat(fh, &st);
   fh->fh_iosz = st.st_blksize;
 
-  res = pr_fs_getsize2(fh->fh_path, &fs_size);
+  res = pr_fs_fgetsize(fh->fh_fd, &fs_size);
   if (res < 0 &&
       errno != ENOSYS) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -89,8 +93,8 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
 
   snprintf(mg_cur, sizeof(mg_cur), "%u", current_clients ? *current_clients: 1);
 
-  if (session.class &&
-      session.class->cls_name) {
+  if (session.conn_class != NULL &&
+      session.conn_class->cls_name) {
     unsigned int *class_clients = NULL;
     config_rec *maxc = NULL;
     unsigned int maxclients = 0;
@@ -114,7 +118,7 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
     while (maxc) {
       pr_signals_handle();
 
-      if (strcmp(maxc->argv[0], session.class->cls_name) != 0) {
+      if (strcmp(maxc->argv[0], session.conn_class->cls_name) != 0) {
         maxc = find_config_next(maxc, maxc->next, CONF_PARAM,
           "MaxClientsPerClass", FALSE);
         continue;
@@ -257,7 +261,7 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
       "%U", user,
       "%u", rfc1413_ident,
       "%V", main_server->ServerName,
-      "%x", session.class ? session.class->cls_name : "(unknown)",
+      "%x", session.conn_class ? session.conn_class->cls_name : "(unknown)",
       "%y", mg_cur_class,
       "%z", mg_class_limit,
       NULL);

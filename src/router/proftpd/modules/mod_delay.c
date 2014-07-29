@@ -2,7 +2,7 @@
  * ProFTPD: mod_delay -- a module for adding arbitrary delays to the FTP
  *                       session lifecycle
  *
- * Copyright (c) 2004-2013 TJ Saunders
+ * Copyright (c) 2004-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * This is mod_delay, contrib software for proftpd 1.2.10 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_delay.c,v 1.60.2.2 2013/04/23 15:14:41 castaglia Exp $
+ * $Id: mod_delay.c,v 1.73 2014/02/09 20:42:23 castaglia Exp $
  */
 
 #include "conf.h"
@@ -86,11 +86,14 @@
 /* Define an absolute upper limit on the delay values selected, in usecs.
  *
  * I originally wanted a ceiling of 1 hour, but when converted to usecs, the
- * value exceeded LONG_MAX.  So instead, just use LONG_MAX (which turns out to
- * 35 minutes or so); it's a good enough ceiling, and avoids the compiler
- * warnings about integer overflows.
+ * value exceeded LONG_MAX.  So instead, we use 1800000000 usecs (30 min).
  */
-#define DELAY_MAX_DELAY_USECS		LONG_MAX
+#define DELAY_MAX_DELAY_USECS			1800000000L
+
+/* Define an upper bound on the interval we will use, between time of connect
+ * and time of USER command.  This is currently limited to 60 seconds.
+ */
+#define DELAY_MAX_CONNECT_INTERVAL_USECS	60000000L
 
 #if defined(PR_USE_CTRLS)
 static ctrls_acttab_t delay_acttab[];
@@ -116,7 +119,7 @@ struct delay_rec {
 struct {
   const char *dt_path;
   int dt_fd;
-  off_t dt_size;
+  size_t dt_size;
   void *dt_data;
 
 } delay_tab;
@@ -127,6 +130,7 @@ static unsigned int delay_npass = 0;
 static pool *delay_pool = NULL;
 static struct timeval delay_tv;
 
+static int delay_sess_init(void);
 static void delay_table_reset(void);
 
 #define delay_swap(a, b) \
@@ -322,9 +326,13 @@ static void delay_delay(long interval) {
    * maximum of half of the given interval.
    */
   rand_usec = ((interval / 2.0) * rand()) / RAND_MAX;
-  interval += rand_usec;
   pr_trace_msg(trace_channel, 8, "additional random delay of %ld usecs added",
     (long int) rand_usec);
+  interval += rand_usec;
+
+  if (interval > DELAY_MAX_DELAY_USECS) {
+    interval = DELAY_MAX_DELAY_USECS;
+  }
 
   tv.tv_sec = interval / 1000000;
   tv.tv_usec = interval % 1000000;
@@ -392,6 +400,12 @@ static void delay_table_add_interval(unsigned int rownum, const char *protocol,
     sizeof(long) * (DELAY_NVALUES - 1));
 
   /* Add the given value to the end. */
+
+  if (interval > DELAY_MAX_DELAY_USECS) {
+    /* Truncate the interval to the maximum allowed value. */
+    interval = DELAY_MAX_DELAY_USECS;
+  }
+
   dv->dv_vals[DELAY_NVALUES-1] = interval;
   if (dv->dv_nvals < DELAY_NVALUES) {
     dv->dv_nvals++;
@@ -418,15 +432,15 @@ static int delay_table_init(void) {
    *  number of vhosts * 2 * row size
    */
 
-  for (s = (server_rec *) server_list->xas_list; s; s = s->next)
+  for (s = (server_rec *) server_list->xas_list; s; s = s->next) {
     nservers++;
+  }
+
   tab_size = nservers * 2 * sizeof(struct delay_rec);
 
   PRIVS_ROOT
   fh = pr_fsio_open(delay_tab.dt_path, flags);
-  if (fh == NULL) {
-    xerrno = errno;
-  }
+  xerrno = errno;
   PRIVS_RELINQUISH
 
   if (fh == NULL) {
@@ -439,11 +453,37 @@ static int delay_table_init(void) {
     return -1;
   }
 
+  /* Find a usable fd for the just-opened DelayTable fd. */
+  if (pr_fs_get_usable_fd2(&(fh->fh_fd)) < 0) {
+    pr_log_debug(DEBUG0, MOD_DELAY_VERSION
+      ": warning: unable to find good fd for DelayTable %d: %s",
+      fh->fh_fd, strerror(errno));
+  }
+
+  /* Set the close-on-exec flag, for safety. */
+  if (fcntl(fh->fh_fd, F_SETFD, FD_CLOEXEC) < 0) {
+    pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
+      ": unable to set CLO_EXEC on DelayTable fd %d: %s", fh->fh_fd,
+      strerror(errno));
+  }
+
   if (pr_fsio_fstat(fh, &st) < 0) {
     xerrno = errno;
 
     pr_trace_msg(trace_channel, 1, "error stat'ing DelayTable '%s': %s",
       delay_tab.dt_path, strerror(xerrno));
+    pr_fsio_close(fh);
+
+    errno = xerrno;
+    return -1;
+  }
+
+  if (S_ISDIR(st.st_mode)) {
+    xerrno = EISDIR;
+
+    pr_trace_msg(trace_channel, 1, "error using DelayTable '%s': %s",
+      delay_tab.dt_path, strerror(xerrno));
+    pr_fsio_close(fh);
 
     errno = xerrno;
     return -1;
@@ -477,13 +517,17 @@ static int delay_table_init(void) {
         continue;
 
       } else {
+        xerrno = errno;
+
         pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
           ": unable to obtain write lock on DelayTable '%s': %s",
-          fh->fh_path, strerror(errno));
+          fh->fh_path, strerror(xerrno));
         pr_trace_msg(trace_channel, 1,
           "unable to obtain write lock on DelayTable '%s': %s", fh->fh_path,
-          strerror(errno));
+          strerror(xerrno));
         pr_fsio_close(fh);
+
+        errno = xerrno;
         return -1;
       } 
     } 
@@ -535,10 +579,10 @@ static int delay_table_init(void) {
   }
 
   delay_tab.dt_fd = fh->fh_fd;
-  delay_tab.dt_size = tab_size;
+  delay_tab.dt_size = (size_t) tab_size;
 
-  pr_trace_msg(trace_channel, 8, "mapping DelayTable '%s' (%" PR_LU
-    " bytes, fd %d) into memory", fh->fh_path, (pr_off_t) delay_tab.dt_size,
+  pr_trace_msg(trace_channel, 8, "mapping DelayTable '%s' (%lu bytes, fd %d) "
+    "into memory", fh->fh_path, (unsigned long) delay_tab.dt_size,
     delay_tab.dt_fd);
   delay_tab.dt_data = mmap(NULL, delay_tab.dt_size, PROT_READ|PROT_WRITE,
     MAP_SHARED, delay_tab.dt_fd, 0);
@@ -548,7 +592,7 @@ static int delay_table_init(void) {
 
     delay_tab.dt_data = NULL;
 
-    pr_log_pri(PR_LOG_ERR, MOD_DELAY_VERSION
+    pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
       ": error mapping DelayTable '%s' into memory: %s", delay_tab.dt_path,
       strerror(xerrno));
     pr_trace_msg(trace_channel, 1,
@@ -618,13 +662,17 @@ static int delay_table_init(void) {
         continue;
 
       } else {
+        xerrno = errno;
+
         pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
           ": unable to obtain write lock on DelayTable '%s': %s",
-          fh->fh_path, strerror(errno));
+          fh->fh_path, strerror(xerrno));
         pr_trace_msg(trace_channel, 1,
           "unable to obtain write lock on DelayTable '%s': %s", fh->fh_path,
-          strerror(errno));
+          strerror(xerrno));
         pr_fsio_close(fh);
+
+        errno = xerrno;
         return -1;
       }
     }
@@ -737,9 +785,9 @@ static int delay_table_load(int lock_table) {
   }
 
   if (delay_tab.dt_data == NULL) {
-    pr_trace_msg(trace_channel, 8, "mapping DelayTable '%s' (%" PR_LU
-      " bytes, fd %d) into memory", delay_tab.dt_path,
-      (pr_off_t) delay_tab.dt_size, delay_tab.dt_fd);
+    pr_trace_msg(trace_channel, 8, "mapping DelayTable '%s' (%lu bytes, fd %d) "
+      "into memory", delay_tab.dt_path, (unsigned long) delay_tab.dt_size,
+      delay_tab.dt_fd);
     delay_tab.dt_data = mmap(NULL, delay_tab.dt_size, PROT_READ|PROT_WRITE,
       MAP_SHARED, delay_tab.dt_fd, 0);
 
@@ -956,9 +1004,7 @@ static int delay_handle_info(pr_ctrls_t *ctrl, int reqargc,
 
   PRIVS_ROOT
   fh = pr_fsio_open(delay_tab.dt_path, O_RDWR);
-  if (fh == NULL) {
-    xerrno = errno;
-  }
+  xerrno = errno;
   PRIVS_RELINQUISH
 
   if (fh == NULL) {
@@ -1108,12 +1154,10 @@ static int delay_handle_reset(pr_ctrls_t *ctrl, int reqargc,
 
   PRIVS_ROOT
   fh = pr_fsio_open(delay_tab.dt_path, O_RDWR);
-  if (fh == NULL) {
-    xerrno = errno;
-  }
+  xerrno = errno;
   PRIVS_RELINQUISH
 
-  if (!fh) {
+  if (fh == NULL) {
     pr_ctrls_add_response(ctrl,
       "unable to open DelayTable '%s': %s", delay_tab.dt_path,
       strerror(xerrno));
@@ -1271,8 +1315,9 @@ MODRET delay_post_pass(cmd_rec *cmd) {
   const char *proto;
   unsigned char *authenticated;
 
-  if (!delay_engine)
+  if (delay_engine == FALSE) {
     return PR_DECLINED(cmd);
+  }
 
   /* Has the client already authenticated? */
   authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
@@ -1298,6 +1343,7 @@ MODRET delay_post_pass(cmd_rec *cmd) {
     return PR_DECLINED(cmd);
   }
 
+  memset(&tv, 0, sizeof(tv));
   gettimeofday(&tv, NULL);
 
   delay_table_wlock(rownum);
@@ -1372,15 +1418,41 @@ MODRET delay_pre_pass(cmd_rec *cmd) {
   return PR_DECLINED(cmd);
 }
 
+MODRET delay_post_host(cmd_rec *cmd) {
+
+  /* If the HOST command changed the main_server pointer, reinitialize
+   * ourselves.
+   */
+  if (session.prev_server != NULL) {
+    int res;
+
+    delay_engine = TRUE;
+
+    if (delay_tab.dt_fd > 0) {
+      close(delay_tab.dt_fd);
+      delay_tab.dt_fd = -1;
+    }
+
+    res = delay_sess_init();
+    if (res < 0) {
+      pr_session_disconnect(&delay_module,
+        PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+    }
+  }
+
+  return PR_DECLINED(cmd);
+}
+
 MODRET delay_post_user(cmd_rec *cmd) {
   struct timeval tv;
   unsigned int rownum;
-  long interval, median;
+  long interval = 0L, median = 0L;
   const char *proto;
   unsigned char *authenticated;
 
-  if (!delay_engine)
+  if (delay_engine == FALSE) {
     return PR_DECLINED(cmd);
+  }
 
   /* Has the client already authenticated? */
   authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
@@ -1406,12 +1478,24 @@ MODRET delay_post_user(cmd_rec *cmd) {
     return PR_DECLINED(cmd);
   }
 
+  memset(&tv, 0, sizeof(tv));
   gettimeofday(&tv, NULL);
 
   delay_table_wlock(rownum);
 
   interval = (tv.tv_sec - delay_tv.tv_sec) * 1000000 +
     (tv.tv_usec - delay_tv.tv_usec);
+
+  /* There can conceivably be quite a bit of time between connect and USER,
+   * e.g. for TLS handshakes, DNS lookups, user latency, etc.  Thus we put
+   * a bound on this interval at 60 seconds.  For the most part, this will
+   * not affect the selected median value -- expect when the DelayTable
+   * is empty, and this is the only value present.
+   */
+  if (interval > DELAY_MAX_CONNECT_INTERVAL_USECS) {
+    interval = DELAY_MAX_CONNECT_INTERVAL_USECS;
+  }
+ 
   pr_trace_msg(trace_channel, 9,
     "interval between connect and USER command: %ld usecs", interval);
 
@@ -1492,15 +1576,19 @@ static void delay_postparse_ev(const void *event_data, void *user_data) {
   config_rec *c;
 
   c = find_config(main_server->conf, CONF_PARAM, "DelayEngine", FALSE);
-  if (c && *((unsigned int *) c->argv[0]) == FALSE)
+  if (c != NULL &&
+      *((unsigned int *) c->argv[0]) == FALSE) {
     delay_engine = FALSE;
+  }
 
-  if (!delay_engine)
+  if (delay_engine == FALSE) {
     return;
+  }
 
   c = find_config(main_server->conf, CONF_PARAM, "DelayTable", FALSE);
-  if (c)
+  if (c != NULL) {
     delay_tab.dt_path = c->argv[0];
+  }
 
   (void) delay_table_init();
   return;
@@ -1511,8 +1599,12 @@ static void delay_restart_ev(const void *event_data, void *user_data) {
     register unsigned int i;
 #endif /* PR_USE_CTRLS */
 
-  if (delay_pool)
+  delay_tab.dt_path = PR_RUN_DIR "/proftpd.delay";
+  delay_tab.dt_data = NULL;
+
+  if (delay_pool) {
     destroy_pool(delay_pool);
+  }
 
   delay_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(delay_pool, MOD_DELAY_VERSION);
@@ -1542,9 +1634,7 @@ static void delay_shutdown_ev(const void *event_data, void *user_data) {
 
   PRIVS_ROOT
   fh = pr_fsio_open(delay_tab.dt_path, O_RDWR);
-  if (fh == NULL) {
-    xerrno = errno;
-  }
+  xerrno = errno;
   PRIVS_RELINQUISH
 
   if (fh == NULL) {
@@ -1620,7 +1710,7 @@ static int delay_init(void) {
 #if defined(PR_USE_CTRLS)
   if (pr_ctrls_register(&delay_module, "delay", "tune mod_delay settings",
       delay_handle_delay) < 0) {
-    pr_log_pri(PR_LOG_INFO, MOD_DELAY_VERSION
+    pr_log_pri(PR_LOG_NOTICE, MOD_DELAY_VERSION
       ": error registering 'delay' control: %s", strerror(errno));
 
   } else {
@@ -1641,18 +1731,22 @@ static int delay_sess_init(void) {
   config_rec *c;
   int xerrno = errno;
 
-  if (!delay_engine)
+  if (delay_engine == FALSE) {
     return 0;
+  }
 
   /* Look up DelayEngine again, as it may have been disabled in an
    * <IfClass> section.
    */
   c = find_config(main_server->conf, CONF_PARAM, "DelayEngine", FALSE);
-  if (c && *((unsigned int *) c->argv[0]) == FALSE)
+  if (c != NULL &&
+      *((unsigned int *) c->argv[0]) == FALSE) {
     delay_engine = FALSE;
+  }
 
-  if (!delay_engine)
+  if (delay_engine == FALSE) {
     return 0;
+  }
 
   delay_nuser = 0;
   delay_npass = 0;
@@ -1661,9 +1755,7 @@ static int delay_sess_init(void) {
 
   PRIVS_ROOT
   fh = pr_fsio_open(delay_tab.dt_path, O_RDWR);
-  if (fh == NULL) {
-    xerrno = errno;
-  }
+  xerrno = errno;
   PRIVS_RELINQUISH
 
   if (fh == NULL) {
@@ -1674,6 +1766,20 @@ static int delay_sess_init(void) {
       delay_tab.dt_path, strerror(xerrno));
     delay_engine = FALSE;
     return 0;
+  }
+
+  /* Find a usable fd for the just-opened DelayTable fd. */
+  if (pr_fs_get_usable_fd2(&(fh->fh_fd)) < 0) {
+    pr_log_debug(DEBUG0, MOD_DELAY_VERSION
+      ": warning: unable to find good fd for DelayTable %d: %s",
+      fh->fh_fd, strerror(errno));
+  }
+
+  /* Set the close-on-exec flag, for safety. */
+  if (fcntl(fh->fh_fd, F_SETFD, FD_CLOEXEC) < 0) {
+    pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
+      ": unable to set CLO_EXEC on DelayTable fd %d: %s", fh->fh_fd,
+      strerror(errno));
   }
 
   delay_tab.dt_fd = fh->fh_fd;
@@ -1707,6 +1813,7 @@ static cmdtable delay_cmdtab[] = {
   { PRE_CMD,		C_USER,	G_NONE,	delay_pre_user,		FALSE, FALSE },
   { POST_CMD,		C_USER,	G_NONE,	delay_post_user,	FALSE, FALSE },
   { POST_CMD_ERR,	C_USER,	G_NONE,	delay_post_user,	FALSE, FALSE },
+  { POST_CMD,		C_HOST,	G_NONE, delay_post_host,	FALSE, FALSE },
   { 0, NULL }
 };
 

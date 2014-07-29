@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2011 The ProFTPD Project team
+ * Copyright (c) 2003-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* ProFTPD xferlog(5) logging support.
- * $Id: xferlog.c,v 1.11 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: xferlog.c,v 1.12 2013/02/15 22:39:00 castaglia Exp $
  */
 
 #include "conf.h"
@@ -78,7 +78,7 @@ int xferlog_write(long xfertime, const char *remhost, off_t fsize, char *fname,
   }
 
   for (i = 0; (i + 1 < sizeof(fbuf)) && fname[i] != '\0'; i++) {
-    fbuf[i] = (isspace((int) fname[i]) || iscntrl((int) fname[i])) ? '_' :
+    fbuf[i] = (PR_ISSPACE(fname[i]) || PR_ISCNTRL(fname[i])) ? '_' :
       fname[i];
   }
   fbuf[i] = '\0';

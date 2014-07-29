@@ -36,6 +36,34 @@ sub assert_child_ok {
     "Child test process $pid failed in $func (line $lineno) [see above for possible errors]");
 }
 
+sub assert_transfer_ok {
+  my $self = shift;
+  my $resp_code = shift;
+  my $resp_msg = shift;
+  my $aborted = shift;
+  $aborted = 0 unless $aborted;
+
+  if ($resp_code == 226) {
+    my $expected = "Transfer complete";
+    if ($aborted) {
+      $expected = "Abort successful";
+    }
+
+    if ($expected ne $resp_msg) {
+      croak("Expected response message '$expected', got '$resp_msg'");
+    }
+
+  } elsif ($resp_code == 150) {
+    my $expected = "Opening .*? mode data connection";
+    if ($resp_msg !~ /$expected/) {
+      croak("Expected response message '$expected', got '$resp_msg'");
+    }
+
+  } else {
+    croak("Expected response code 150 or 226, got $resp_code");
+  }
+}
+
 sub set_up {
   my $self = shift;
 

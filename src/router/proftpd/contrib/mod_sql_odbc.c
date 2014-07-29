@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sql_odbc -- Support for connecting to databases via ODBC
  *
- * Copyright (c) 2003-2011 TJ Saunders
+ * Copyright (c) 2003-2013 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_sql_odbc.c,v 1.14 2011/05/23 20:56:40 castaglia Exp $
+ * $Id: mod_sql_odbc.c,v 1.15 2013/09/25 04:25:54 castaglia Exp $
  */
 
 #include "conf.h"
@@ -426,7 +426,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
         for (i = 1; i <= sd->fnum; i++) {
           SQLCHAR col_name[80];
           SQLSMALLINT col_namelen, col_type, col_digits, col_nullable;
-          SQLUINTEGER col_size;
+          SQLULEN col_size;
 
           if (SQLDescribeCol(conn->sth, i, col_name, sizeof(col_name),
               &col_namelen, &col_type, &col_size, &col_digits,
@@ -447,7 +447,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
                 col_ctype = SQL_C_CHAR;
 
                 if (col_size) {
-                  SQLINTEGER buflen;
+                  SQLLEN buflen;
                   SQLCHAR *buf = pcalloc(cmd->tmp_pool, ++col_size);
 
                   if (SQLGetData(conn->sth, i, col_ctype, buf, col_size,
@@ -478,8 +478,9 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
                   *((char **) push_array(dh)) = pstrdup(cmd->tmp_pool,
                     (char *) buf);
 
-                } else
+                } else {
                   *((char **) push_array(dh)) = pstrdup(cmd->tmp_pool, "");
+                }
 
                 break;
 
@@ -491,7 +492,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
               case SQL_TINYINT: {
                 char buf[64];
                 short col_cval;
-                SQLINTEGER ind;
+                SQLLEN ind;
 
                 col_ctype = SQL_C_TINYINT;
 
@@ -529,7 +530,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
               case SQL_SMALLINT: {
                 char buf[64];
                 short col_cval;
-                SQLINTEGER ind;
+                SQLLEN ind;
 
                 col_ctype = SQL_C_SHORT;
 
@@ -567,7 +568,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
               case SQL_INTEGER: {
                 char buf[64];
                 int col_cval;
-                SQLINTEGER ind;
+                SQLLEN ind;
 
                 col_ctype = SQL_INTEGER;
 
@@ -605,7 +606,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
               case SQL_BIGINT: {
                 char buf[64];
                 long col_cval;
-                SQLINTEGER ind;
+                SQLLEN ind;
 
                 col_ctype = SQL_C_LONG;
 
@@ -643,7 +644,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
               case SQL_REAL: {
                 char buf[64];
                 long col_cval;
-                SQLINTEGER ind;
+                SQLLEN ind;
 
                 col_ctype = SQL_C_LONG;
 
@@ -681,7 +682,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
               case SQL_FLOAT: {
                 char buf[64];
                 float col_cval;
-                SQLINTEGER ind;
+                SQLLEN ind;
 
                 col_ctype = SQL_C_FLOAT;
 
@@ -719,7 +720,7 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
               case SQL_DOUBLE: {
                 char buf[64];
                 double col_cval;
-                SQLINTEGER ind;
+                SQLLEN ind;
 
                 col_ctype = SQL_C_DOUBLE;
 
@@ -759,9 +760,10 @@ static modret_t *sqlodbc_get_data(cmd_rec *cmd, db_conn_t *conn) {
                   sqlodbc_typestr(col_type), i);
             }
 
-          } else
+          } else {
             sql_log(DEBUG_WARN, "error describing column %u: %s", i,
               sqlodbc_errstr(SQL_HANDLE_STMT, conn->sth, NULL));
+          }
         }
         break;
 
@@ -1749,7 +1751,6 @@ static int sqlodbc_sess_init(void) {
    *
    *   http://updates.oracle.com/ARULink/PatchDetails/process_form?patch_num=5059238"
    * This comment was found at:
-   *
    *
    *  http://www.topxml.com/forum/Database_Adapter_for_Oracle_on_64bit_Windows/m_3448/tm.htm
    */

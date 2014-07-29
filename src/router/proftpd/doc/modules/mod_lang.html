@@ -1,4 +1,4 @@
-<!-- $Id: mod_lang.html,v 1.8 2010/08/10 17:39:08 castaglia Exp $ -->
+<!-- $Id: mod_lang.html,v 1.12 2012/10/10 01:26:33 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_lang.html,v $ -->
 
 <html>
@@ -16,10 +16,12 @@
 
 <p>
 <b>Internalization and Localization</b><br>
-The <code>mod_lang</code> module is ProFTPD's module for handling the LANG
-and OPTS UTF8 commands, in support of <a href="http://www.faqs.org/rfcs/rfc2640.html">RFC 2640</a>.  The <code>mod_lang</code> module also supports character
-sets other than UTF8, for those sites which do not require RFC2640 support, but
-<i>do</i> use character sets other than ASCII.  This module is contained in the
+The <code>mod_lang</code> module is ProFTPD's module for handling the
+<code>LANG</code> and <code>OPTS UTF8</code> commands, in support of
+<a href="http://www.faqs.org/rfcs/rfc2640.html">RFC 2640</a>.  The
+<code>mod_lang</code> module also supports character sets other than UTF-8,
+for those sites which do not require RFC 2640 support, but <i>do</i> use
+character sets other than ASCII.  This module is contained in the
 <code>mod_lang.c</code> file for ProFTPD 1.3.<i>x</i>, and is compiled in
 whenever the <code>--enable-nls</code> configure option is used.  Installation
 instructions are discussed <a href="#Installation">here</a>.  Examples
@@ -78,8 +80,8 @@ Example:
 
 <p>
 The <code>LangEngine</code> directive enables or disables the module's
-handling of the LANG command.  If it is set to <em>off</em> this module does no
-localization of responses.
+handling of the <code>LANG</code> command.  If it is set to <em>off</em> this
+module does no localization of responses.
 
 <p>
 <b>Note</b> that setting <code>LangEngine</code> to <em>off</em> also keeps
@@ -123,7 +125,7 @@ Example:
 <p>
 <hr>
 <h2><a name="UseEncoding">UseEncoding</a></h2>
-<strong>Syntax:</strong> UseEncoding <em>on|off|local-charset client-charset</em><br>
+<strong>Syntax:</strong> UseEncoding <em>on|off|local-charset client-charset [&quot;strict&quot;]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_lang<br>
@@ -132,12 +134,13 @@ Example:
 <p>
 The <code>UseEncoding</code> directive is used to explicitly configure which
 character sets should be used for encoding.  By default, the
-<code>mod_lang</code> will automatically discover the local character set,
-and will use UTF8 for the client character set.  The module will also allow
-the use of UTF8 encoding to be changed by clients using the OPTS UTF8 command
-(as per RFC2640).  However, if the <code>UseEncoding</code> directive is
-explicitly used to indicate the character sets to use (or not use), then any
-OPTS UTF8 commands used by clients will be refused.
+<code>mod_lang</code> module will automatically discover the local character
+set, and will use UTF-8 for the client character set.  The module will also
+allow the use of UTF-8 encoding to be changed by clients using the
+<code>OPTS UTF8</code> command (as per RFC 2640).  However, if the
+<code>UseEncoding</code> directive is explicitly used to indicate the character
+sets to use (or not use) <b>and</b> the <em>&quot;strict&quot;</em> keyword
+is used, then any OPTS UTF8 commands used by clients will be refused.
 
 <p>
 For example, to disable all use of encoding, use the following in your
@@ -159,6 +162,15 @@ clients.  One such usage this way might look like:
 <pre>
   UseEncoding koi8-r cp1251
 </pre>
+With the above, a client could still request a switch from <code>koi8-r</code>
+encoding to UTF-8 via the <code>OPTS UTF8</code> command.  If, however, you
+wished to prevent clients from changing the encoding to UTF-8, the above
+configuration would instead look like:
+<pre>
+  UseEncoding koi8-r cp1251 strict
+</pre>
+
+<p>
 For a full list of the character sets which are supported, use:
 <pre>
   $ iconv --list
@@ -186,8 +198,9 @@ This option causes <code>mod_lang</code> to be compiled into
 One common request of <code>proftpd</code> is to properly handle Cyrillic
 characters in file and directory names.  The usual character sets which
 contain Cyrillic characters use the same codes as used for Telnet
-control codes, unfortunately.  RFC959 (which defines FTP) mandates that the
-Telnet control codes be supported in FTP implementations.
+control codes, unfortunately.
+<a href="http://www.faqs.org/rfcs/rfc959.html">RFC 959</a> (which defines FTP)
+mandates that the Telnet control codes be supported in FTP implementations.
 
 <p>
 The <code>mod_lang</code> module, however, can be used to deal with this
@@ -221,10 +234,28 @@ is listed below; the names are <b>not</b> case-sensitive:
 <p><a name="FAQ"></a>
 <b>Frequently Asked Questions</b><br>
 
+<p><a name="Translations">
+<font color=red>Question</font>: What translations for proftpd currently exist?<br>
+<font color=blue>Answer</font>: ProFTPD has currently been translated into:
+<ul>
+  <li>bg_BG
+  <li>en_US
+  <li>es_ES
+  <li>fr_FR
+  <li>it_IT
+  <li>ja_JP
+  <li>ko_KR
+  <li>ru_RU
+  <li>zh_CN
+  <li>zh_TW
+</ul>
+If you are interested in providing more translations, please read this
+<a href="../howto/Translations.html">howto</a>.
+
 <p><a name="SpecialCharacters">
 <font color=red>Question</font>: When I upload a file with special characters
-(<i>e.g.</i> umlauts, accents, cedillas, <i>etc</i>), the special characters
-are turned into '?' on the server.  What's wrong?<br>
+(<i>e.g.</i> umlauts, accents, cedillas, <i>etc</i>) in the file name, the
+special characters are turned into '?' on the server.  What's wrong?<br>
 <font color=blue>Answer</font>: There are a couple of things to check when
 this happens.
 
@@ -238,7 +269,7 @@ appear in the output.
 
 <p>
 Next, make sure that the <code>LANG</code> environment variable is set before
-starting the server.  Special characters require that UTF8 or ISO-8859-1 be
+starting the server.  Special characters require that UTF-8 or ISO-8859-1 be
 used, thus you might use things like:
 <pre>
   # export LANG=de_DE.utf8
@@ -254,14 +285,29 @@ have been known to filter both the <code>FEAT</code> response and/or block
 commands like <code>OPTS UTF8</code>, thus interfering with the protocol and
 causing encoding problems.
 
+<p><a name="UnsupportedLanguage">
+<font color=red>Question</font>: I have configured my <code>mod_lang</code>
+module to use a language, but when I start <code>proftpd</code>, I see an
+error like this:
+<pre>
+  mod_lang/0.9: LangDefault '<i>language</i>', configured for server '<i>serverName</i>', is not a supported language, removing
+</pre>
+<font color=blue>Answer</font>:  This usually happens for one of two reasons:
+<ul>
+  <li>The configured <em>language</em> is <b>not</b> listed in <code>`setlocale -a'</code>
+  <li>The configured <em>language</em> is <b>not</b> one of the <a href="#Translations">supported translations</a>
+</ul>
+Both of these conditions <b>must</b> be true, otherwise you will see the
+"not a supported language" error.
+
 <p>
 <hr><br>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2010/08/10 17:39:08 $</i><br>
+Last Updated: <i>$Date: 2012/10/10 01:26:33 $</i><br>
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2006-2010 TJ Saunders<br>
+&copy; Copyright 2006-2012 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

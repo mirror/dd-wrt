@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* ProFTPD bindings support routines.
- * $Id: bindings.h,v 1.13 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: bindings.h,v 1.14 2012/04/15 18:04:14 castaglia Exp $
  */
 
 #include "conf.h"
@@ -59,23 +59,24 @@ typedef struct ipbind_rec {
    */
   array_header *ib_namebinds;
 
-  /* if this binding is the DefaultServer binding */
+  /* If this binding is the DefaultServer binding */
   unsigned char ib_isdefault;
 
-  /* if this binding handles localhost requests */
+  /* If this binding handles localhost requests */
   unsigned char ib_islocalhost;
 
-  /* if this binding is active */
+  /* If this binding is active */
   unsigned char ib_isactive;
 
 } pr_ipbind_t;
 
 /* Structure associating a name to a server_rec */
 typedef struct namebind_rec {
-  server_rec *nb_server;
-  conn_t *nb_listener;
   const char *nb_name;
+  unsigned char nb_iswildcard;
   unsigned char nb_isactive;
+  server_rec *nb_server;
+
 } pr_namebind_t;
 
 /* Define the size of the hash table used to store server configurations.

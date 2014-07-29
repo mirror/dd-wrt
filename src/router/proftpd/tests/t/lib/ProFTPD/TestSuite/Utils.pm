@@ -22,6 +22,8 @@ our @CONFIG = qw(
 );
 
 our @FEATURES = qw(
+  feature_get_compiled_modules
+  feature_get_shared_modules
   feature_get_version
   feature_have_feature_enabled
   feature_have_module_compiled
@@ -29,13 +31,18 @@ our @FEATURES = qw(
 );
 
 our @RUNNING = qw(
+  server_restart
   server_start
   server_stop
   server_wait
 );
 
 our @TEST = qw(
+  test_append_logfile
+  test_cleanup
+  test_get_logfile
   test_msg
+  test_setup
 );
 
 our @TESTSUITE = qw(
@@ -89,6 +96,10 @@ sub get_high_numbered_port {
 sub get_passwd {
   my $user_passwd = shift;
 
+  if ($user_passwd eq '') {
+    return '';
+  }
+
   # First, try to use MD5 hashing for passwords
   my $md5_salt = '$1$' . join('', (0..9, 'A'..'Z', 'a'..'z')[rand(62), rand(62), rand(62), rand(62), rand(62), rand(62), rand(62), rand(62)]);
 
@@ -122,6 +133,19 @@ sub auth_group_write {
 
   my @member_names = @_;
 
+  my $existed = -f $group_file;
+  my $prev_mode;
+
+  if ($existed) {
+    # Get current permissions
+    $prev_mode = (stat($group_file))[2];
+
+    # Set needed permissions
+    unless (chmod(0666, $group_file)) {
+      croak("Can't set perms on $group_file: $!");
+    }
+  }
+
   if (open(my $fh, ">> $group_file")) {
     print $fh "$group_name:*:$group_id:" . join(',', @member_names) . "\n";
 
@@ -132,6 +156,19 @@ sub auth_group_write {
   } else {
     croak("Can't open $group_file: $!");
   }
+
+  if ($existed) {
+    # Restore previous perms
+    unless (chmod($prev_mode, $group_file)) {
+      croak("Can't set perms on $group_file: $!");
+    }
+
+  } else {
+    # Set correct perms
+    unless (chmod(0440, $group_file)) {
+      croak("Can't set perms on $group_file: $!");
+    }
+  }
 }
 
 sub auth_user_write {
@@ -140,7 +177,7 @@ sub auth_user_write {
   my $user_name = shift;
   croak("Missing user name argument") unless $user_name;
   my $user_passwd = shift;
-  croak("Missing user password argument") unless $user_passwd;
+  croak("Missing user password argument") unless defined($user_passwd);
   my $user_id = shift;
   croak("Missing user ID argument") unless defined($user_id);
   my $group_id = shift;
@@ -149,19 +186,48 @@ sub auth_user_write {
   croak("Missing home directory argument") unless $home;
   my $shell = shift;
   croak("Missing shell argument") unless $shell;
+  my $gecos = shift;
+  $gecos = '' unless defined($gecos);
+
+  my $existed = -f $user_file;
+  my $prev_mode;
 
   my $passwd = get_passwd($user_passwd);
 
-  if (open(my $fh, ">> $user_file")) {
-    print $fh join(':', ($user_name, $passwd, $user_id, $group_id, '', $home,
-      $shell)), "\n";
+  if ($existed) {
+    # Get current permissions
+    $prev_mode = (stat($user_file))[2];
+ 
+    # Set needed permissions
+    unless (chmod(0666, $user_file)) {
+      croak("Can't set perms on $user_file: $!");
+    }
+  }
 
+  if (open(my $fh, ">> $user_file")) {
+    my $pw_entry = join(':', ($user_name, $passwd, $user_id, $group_id,
+      $gecos, $home, $shell));
+
+    print $fh "$pw_entry\n";
     unless (close($fh)) {
       croak("Can't write $user_file: $!");
     }
 
   } else {
     croak("Can't open $user_file: $!");
+  }
+
+  if ($existed) {
+    # Restore previous perms
+    unless (chmod($prev_mode, $user_file)) {
+      croak("Can't set perms on $user_file: $!");
+    }
+
+  } else {
+    # Set correct perms
+    unless (chmod(0440, $user_file)) {
+      croak("Can't set perms on $user_file: $!");
+    }
   }
 }
 
@@ -282,74 +348,155 @@ sub config_write {
   my ($user_name, $group_name) = config_get_identity();
 
   # Set a bunch of defaults, unless overridden by the caller
+  my $port;
 
-  unless (defined($config->{Port})) {
-    $config->{Port} = get_high_numbered_port();
-  }
-  my $port = $config->{Port};
-
-  unless (defined($config->{User})) {
-    $config->{User} = $user_name;
-  }
-
-  unless (defined($config->{Group})) {
-    $config->{Group} = $group_name;
-  }
-
-  unless ($opts->{NoAllowOverride}) {
-    unless (defined($config->{AllowOverride})) {
-      $config->{AllowOverride} = 'off';
+  if (ref($config) eq 'HASH') {
+    unless (defined($config->{Port})) {
+      my $dynport = get_high_numbered_port();
+      $config->{Port} = $dynport;
     }
-  }
 
-  unless (defined($config->{DefaultAddress})) {
-    $config->{DefaultAddress} = '127.0.0.1';
-  }
+    $port = $config->{Port};
 
-  unless (defined($config->{DefaultServer})) {
-    $config->{DefaultServer} = 'on';
-  }
+    unless (defined($config->{User})) {
+      $config->{User} = $user_name;
 
-  unless (defined($config->{IdentLookups})) {
-    $config->{IdentLookups} = 'off';
-  }
-
-  unless (defined($config->{RequireValidShell})) {
-    $config->{RequireValidShell} = 'off';
-  }
-
-  unless (defined($config->{ServerType})) {
-    $config->{ServerType} = 'standalone';
-  }
-
-  unless (defined($config->{TimeoutIdle})) {
-    $config->{TimeoutIdle} = '10';
-  }
-
-  unless (defined($config->{TimeoutLinger})) {
-    $config->{TimeoutLinger} = '1';
-  }
-
-  unless (defined($config->{TransferLog})) {
-    $config->{TransferLog} = 'none';
-  }
-
-  unless (defined($config->{UseFtpUsers})) {
-    $config->{UseFtpUsers} = 'off';
-  }
-
-  if (feature_have_feature_enabled('ipv6')) {
-    unless (defined($config->{UseIPv6})) {
-      $config->{UseIPv6} = 'off';
+      if ($< == 0) {
+        $config->{User} = 'root';
+      }
     }
-  }
 
-  unless (defined($config->{UseReverseDNS})) {
-    $config->{UseReverseDNS} = 'off';
-  }
+    unless (defined($config->{Group})) {
+      $config->{Group} = $group_name;
+    }
 
-  unless (defined($config->{WtmpLog})) {
-    $config->{WtmpLog} = 'off';
+    unless ($opts->{NoAllowOverride}) {
+      unless (defined($config->{AllowOverride})) {
+        $config->{AllowOverride} = 'off';
+      }
+    }
+
+    unless (defined($config->{DefaultAddress})) {
+      $config->{DefaultAddress} = '127.0.0.1';
+    }
+
+    unless (defined($config->{DefaultServer})) {
+      $config->{DefaultServer} = 'on';
+    }
+
+    unless (defined($config->{IdentLookups})) {
+      $config->{IdentLookups} = 'off';
+    }
+
+    unless (defined($config->{RequireValidShell})) {
+      $config->{RequireValidShell} = 'off';
+    }
+
+    unless (defined($config->{ServerType})) {
+      $config->{ServerType} = 'standalone';
+    }
+
+    unless (defined($config->{TimeoutIdle})) {
+      $config->{TimeoutIdle} = '10';
+    }
+
+    unless (defined($config->{TimeoutLinger})) {
+      $config->{TimeoutLinger} = '1';
+    }
+
+    unless (defined($config->{TransferLog})) {
+      $config->{TransferLog} = 'none';
+    }
+
+    unless (defined($config->{UseFtpUsers})) {
+      $config->{UseFtpUsers} = 'off';
+    }
+
+    if (feature_have_feature_enabled('ipv6')) {
+      unless (defined($config->{UseIPv6})) {
+        $config->{UseIPv6} = 'off';
+      }
+    }
+
+    unless (defined($config->{UseReverseDNS})) {
+      $config->{UseReverseDNS} = 'off';
+    }
+
+    unless (defined($config->{WtmpLog})) {
+      $config->{WtmpLog} = 'off';
+    }
+
+  } elsif (ref($config) eq 'ARRAY') {
+    unless (grep(/Port /, @$config) > 0) {
+      $port = get_high_numbered_port();
+      push(@$config, "Port $port");
+    }
+
+    unless (grep(/^User /, @$config) > 0) {
+      push(@$config, "User $user_name");
+
+      if ($< == 0) {
+        push(@$config, "User root");
+      }
+    }
+
+    unless (grep(/^Group /, @$config) > 0) {
+      push(@$config, "Group $group_name");
+    }
+
+    unless (grep(/^AlloOverride/, @$config) > 0) {
+      push(@$config, "AllowOverride off");
+    }
+
+    unless (grep(/^DefaultAddress/, @$config) > 0) {
+      push(@$config, "DefaultAddress 127.0.0.1");
+    }
+
+    unless (grep(/^DefaultServer/, @$config) > 0) {
+      push(@$config, "DefaultServer on");
+    }
+
+    unless (grep(/^IdentLookups/, @$config) > 0) {
+      push(@$config, "IdentLookups off");
+    }
+
+    unless (grep(/^RequireValidShell/, @$config) > 0) {
+      push(@$config, "RequireValidShell off");
+    }
+
+    unless (grep(/^ServerType/, @$config) > 0) {
+      push(@$config, "ServerType standalone");
+    }
+
+    unless (grep(/^TimeoutIdle/, @$config) > 0) {
+      push(@$config, "TimeoutIdle 10");
+    }
+
+    unless (grep(/^TimeoutLinger/, @$config) > 0) {
+      push(@$config, "TimeoutLinger 1");
+    }
+
+    unless (grep(/^TransferLog/, @$config) > 0) {
+      push(@$config, "TransferLog none");
+    }
+
+    unless (grep(/UseFtpUsers/, @$config) > 0) {
+      push(@$config, "UseFtpUsers off");
+    }
+
+    if (feature_have_feature_enabled('ipv6')) {
+      unless (grep(/UseIPv6/, @$config) > 0) {
+        push(@$config, "UseIPv6 off");
+      }
+    }
+
+    unless (grep(/UseReverseDNS/, @$config) > 0) {
+      push(@$config, "UseReverseDNS off");
+    }
+
+    unless (grep(/WtmpLog/, @$config) > 0) {
+      push(@$config, "WtmpLog off");
+    }
   }
 
   my $abs_path = File::Spec->rel2abs($path);
@@ -360,146 +507,153 @@ sub config_write {
     print $fh "# Auto-generated proftpd config file\n";
     print $fh "# Written on: $timestamp\n\n";
 
-    while (my ($k, $v) = each(%$config)) {
-      if ($k eq 'IfModules') {
-        my $modules = $v;
+    if (ref($config) eq 'HASH') {
+      while (my ($k, $v) = each(%$config)) {
+        if ($k eq 'IfModules') {
+          my $modules = $v;
 
-        foreach my $mod (keys(%$modules)) {
-          print $fh "<IfModule $mod>\n";
+          foreach my $mod (keys(%$modules)) {
+            print $fh "<IfModule $mod>\n";
 
-          my $section = $modules->{$mod};
+            my $section = $modules->{$mod};
 
-          if (ref($section) eq 'HASH') {
-            while (my ($mod_k, $mod_v) = each(%$section)) {
-              print $fh "  $mod_k $mod_v\n";
-            }
+            if (ref($section) eq 'HASH') {
+              while (my ($mod_k, $mod_v) = each(%$section)) {
+                print $fh "  $mod_k $mod_v\n";
+              }
 
-          } elsif (ref($section) eq 'ARRAY') {
-            foreach my $line (@$section) {
-              print $fh "  $line\n";
-            }
-          }
-
-          print $fh "</IfModule>\n";
-        }
-
-      } elsif ($k eq 'Anonymous') {
-        my $sections = $v;
-
-        foreach my $anon (keys(%$sections)) {
-          print $fh "<Anonymous $anon>\n";
-
-          my $section = $sections->{$anon};
-
-          if (ref($section) eq 'HASH') {
-            while (my ($anon_k, $anon_v) = each(%$section)) {
-              if (ref($anon_v) eq 'HASH' ||
-                  ref($anon_v) eq 'ARRAY') {
-                config_write_subsection($fh, $anon_k, $anon_v, "  ");
-
-              } else {
-                print $fh "  $anon_k $anon_v\n";
+            } elsif (ref($section) eq 'ARRAY') {
+              foreach my $line (@$section) {
+                print $fh "  $line\n";
               }
             }
 
-          } elsif (ref($section) eq 'ARRAY') {
-            foreach my $line (@$section) {
-              print $fh "  $line\n";
-            }
+            print $fh "</IfModule>\n";
           }
 
-          print $fh "</Anonymous>\n";
-        }
+        } elsif ($k eq 'Anonymous') {
+          my $sections = $v;
 
-      } elsif ($k eq 'Directory') {
-        my $sections = $v;
+          foreach my $anon (keys(%$sections)) {
+            print $fh "<Anonymous $anon>\n";
 
-        foreach my $dir (keys(%$sections)) {
-          print $fh "<Directory $dir>\n";
+            my $section = $sections->{$anon};
 
-          my $section = $sections->{$dir};
+            if (ref($section) eq 'HASH') {
+              while (my ($anon_k, $anon_v) = each(%$section)) {
+                if (ref($anon_v) eq 'HASH' ||
+                    ref($anon_v) eq 'ARRAY') {
+                  config_write_subsection($fh, $anon_k, $anon_v, "  ");
 
-          if (ref($section) eq 'HASH') {
-            while (my ($dir_k, $dir_v) = each(%$section)) {
-              if (ref($dir_v) eq 'HASH' ||
-                  ref($dir_v) eq 'ARRAY') {
-                config_write_subsection($fh, $dir_k, $dir_v, "  ");
+                } else {
+                  print $fh "  $anon_k $anon_v\n";
+                }
+              }
 
-              } else {
-                print $fh "  $dir_k $dir_v\n";
+            } elsif (ref($section) eq 'ARRAY') {
+              foreach my $line (@$section) {
+                print $fh "  $line\n";
               }
             }
 
-          } elsif (ref($section) eq 'ARRAY') {
-            foreach my $line (@$section) {
-              print $fh "  $line\n";
-            }
+            print $fh "</Anonymous>\n";
           }
 
-          print $fh "</Directory>\n";
-        }
+        } elsif ($k eq 'Directory') {
+          my $sections = $v;
 
-      } elsif ($k eq 'Limit') {
-        my $sections = $v;
+          foreach my $dir (keys(%$sections)) {
+            print $fh "<Directory $dir>\n";
 
-        foreach my $limits (keys(%$sections)) {
-          print $fh "<Limit $limits>\n";
+            my $section = $sections->{$dir};
 
-          my $section = $sections->{$limits};
+            if (ref($section) eq 'HASH') {
+              while (my ($dir_k, $dir_v) = each(%$section)) {
+                if (ref($dir_v) eq 'HASH' ||
+                    ref($dir_v) eq 'ARRAY') {
+                  config_write_subsection($fh, $dir_k, $dir_v, "  ");
 
-          if (ref($section) eq 'HASH') {
-            while (my ($limit_k, $limit_v) = each(%$section)) {
-              if (ref($limit_v) eq 'HASH' ||
-                  ref($limit_v) eq 'ARRAY') {
-                config_write_subsection($fh, $limit_k, $limit_v, "  ");
+                } else {
+                  print $fh "  $dir_k $dir_v\n";
+                }
+              }
 
-              } else {
-                print $fh "  $limit_k $limit_v\n";
+            } elsif (ref($section) eq 'ARRAY') {
+              foreach my $line (@$section) {
+                print $fh "  $line\n";
               }
             }
 
-          } elsif (ref($section) eq 'ARRAY') {
-            foreach my $line (@$section) {
-              print $fh "  $line\n";
-            }
+            print $fh "</Directory>\n";
           }
 
-          print $fh "</Limit>\n";
-        }
+        } elsif ($k eq 'Limit') {
+          my $sections = $v;
 
-      } elsif ($k eq 'Class') {
-        my $sections = $v;
+          foreach my $limits (keys(%$sections)) {
+            print $fh "<Limit $limits>\n";
 
-        foreach my $class (keys(%$sections)) {
-          print $fh "<Class $class>\n";
+            my $section = $sections->{$limits};
 
-          my $section = $sections->{$class};
+            if (ref($section) eq 'HASH') {
+              while (my ($limit_k, $limit_v) = each(%$section)) {
+                if (ref($limit_v) eq 'HASH' ||
+                    ref($limit_v) eq 'ARRAY') {
+                  config_write_subsection($fh, $limit_k, $limit_v, "  ");
 
-          if (ref($section) eq 'HASH') {
-            while (my ($class_k, $class_v) = each(%$section)) {
-              print $fh "  $class_k $class_v\n";
+                } else {
+                  print $fh "  $limit_k $limit_v\n";
+                }
+              }
+
+            } elsif (ref($section) eq 'ARRAY') {
+              foreach my $line (@$section) {
+                print $fh "  $line\n";
+              }
             }
 
-          } elsif (ref($section) eq 'ARRAY') {
-            foreach my $line (@$section) {
-              print $fh "  $line\n";
-            }
+            print $fh "</Limit>\n";
           }
 
-          print $fh "</Class>\n";
-        }
+        } elsif ($k eq 'Class') {
+          my $sections = $v;
 
-      } elsif ($k eq 'Global') {
-        print $fh "<Global>\n";
+          foreach my $class (keys(%$sections)) {
+            print $fh "<Class $class>\n";
 
-        foreach my $name (keys(%$v)) {
-          print $fh "  $name $v->{$name}\n";
-        }
+            my $section = $sections->{$class};
 
-        print $fh "</Global>\n";
+            if (ref($section) eq 'HASH') {
+              while (my ($class_k, $class_v) = each(%$section)) {
+                print $fh "  $class_k $class_v\n";
+              }
+
+            } elsif (ref($section) eq 'ARRAY') {
+              foreach my $line (@$section) {
+                print $fh "  $line\n";
+              }
+            }
+
+            print $fh "</Class>\n";
+          }
+
+        } elsif ($k eq 'Global') {
+          print $fh "<Global>\n";
+
+          foreach my $name (keys(%$v)) {
+            print $fh "  $name $v->{$name}\n";
+          }
+
+          print $fh "</Global>\n";
  
-      } else {
-        print $fh "$k $v\n";
+        } else {
+          print $fh "$k $v\n";
+        }
+      }
+
+    } elsif (ref($config) eq 'ARRAY') {
+      foreach my $line (@$config) {
+        print $fh "$line\n";
       }
     }
 
@@ -516,6 +670,44 @@ sub config_write {
   }
 
   return 1;
+}
+
+sub feature_get_shared_modules {
+  my $proftpd_bin = get_proftpd_bin();
+
+  my $shared_modules = [];
+
+  my $configure_args;
+  if (open(my $cmdh, "$proftpd_bin -V |")) {
+    while (my $line = <$cmdh>) {
+      chomp($line);
+
+      next unless $line =~ /^\s+configure (.*?)$/;
+
+      $configure_args = $1;
+      last;
+    }
+
+    close($cmdh);
+
+    my $args = [split(' ', $configure_args)];
+
+    foreach my $arg (@$args) {
+      $arg =~ s/^'//;
+      $arg =~ s/'$//;
+
+      if ($arg =~ /^\-\-with\-shared=(.*?)$/) {
+        my $module_list = $1;
+
+        $shared_modules = [split(':', $module_list)];
+      }
+    }
+
+    return $shared_modules;
+
+  } else {
+    croak("Error listing features");
+  }
 }
 
 sub feature_get_version {
@@ -567,6 +759,13 @@ sub feature_have_feature_enabled {
 
       if ($flag eq '+') {
         push(@$feat_list, $feature);
+
+        # Special-case hack for FIPS-enabled OpenSSL
+        if ($feature =~ /OpenSSL/i) {
+          if ($line =~ /\(FIPS enabled\)/) {
+            push(@$feat_list, "OpenSSL_FIPS");             
+          }
+        }
       }
     }
 
@@ -580,14 +779,11 @@ sub feature_have_feature_enabled {
   }
 }
 
-sub feature_have_module_compiled {
-  my $module = shift;
-
+sub feature_get_compiled_modules {
   my $proftpd_bin = get_proftpd_bin();
+  my $mod_list = [];
 
   if (open(my $cmdh, "$proftpd_bin -l |")) {
-    my $mod_list;
-
     while (my $line = <$cmdh>) {
       chomp($line);
 
@@ -599,13 +795,19 @@ sub feature_have_module_compiled {
 
     close($cmdh);
 
-    my $matches = grep { /^$module$/ } @$mod_list;
-
-    return $matches;
-
   } else {
     croak("Error listing compiled modules");
   }
+
+  return $mod_list;
+}
+
+sub feature_have_module_compiled {
+  my $module = shift;
+
+  my $mod_list = feature_get_compiled_modules();
+  my $matches = grep { /^$module$/ } @$mod_list;
+  return $matches;
 }
 
 sub feature_have_module_loaded {
@@ -644,23 +846,63 @@ sub feature_have_module_loaded {
   }
 }
 
+sub server_restart {
+  my $pid_file = shift;
+  croak("Missing PID file argument") unless $pid_file;
+
+  my $pid;
+  if (open(my $fh, "< $pid_file")) {
+    $pid = <$fh>;
+    chomp($pid);
+    close($fh);
+
+  } else {
+    die("Can't read $pid_file: $!");
+  }
+
+  my $cmd = "kill -HUP $pid";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Restarting server: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+}
+
 sub server_start {
   my $config_file = shift;
   croak("Missing config file argument") unless $config_file;
-  my $debug_level = shift;
   my $pid_file = shift;
+  my $server_opts = shift;
+  $server_opts = {} unless defined($server_opts);
 
   # Make sure that the config file is an absolute path
   my $abs_config_file = File::Spec->rel2abs($config_file);
 
   my $proftpd_bin = get_proftpd_bin();
 
-  my $cmd = "$proftpd_bin -q -c $abs_config_file";
+  my $cmd = '';
 
-  if ($debug_level) {
-    $cmd .= " -d $debug_level";
+  if (defined($server_opts->{env})) {
+    my $envs = $server_opts->{env};
 
-  } elsif ($ENV{TEST_VERBOSE}) {
+    while (my ($key, $value) = each(%$envs)) {
+      # Assume Bourne-shell syntax
+      $cmd .= "$key=$value ";
+    }
+  }
+
+  $cmd .= "$proftpd_bin -q -c $abs_config_file";
+
+  if (defined($server_opts->{define})) {
+    my $defines = $server_opts->{define};
+
+    foreach my $define (@$defines) {
+      $cmd .= " -D$define";
+    }
+  }
+
+  if ($ENV{TEST_VERBOSE}) {
     $cmd .= " -d10";
 
   } else {
@@ -678,6 +920,7 @@ sub server_start {
   # codes are not that nice yet, sadly.  Instead, we'll use the PidFile
   # written out by the server, if provided.
   if ($pid_file) {
+    sleep(1);
 
     my $pid;
     if (open(my $fh, "< $pid_file")) {
@@ -754,10 +997,29 @@ sub server_wait {
   my $config_file = shift;
   my $rfh = shift;
   $server_wait_timeout = shift;
-  $server_wait_timeout = 10 unless defined($server_wait_timeout);
+  my $server_opts = {};
+
+  # Check to see if the timeout argument is a hashref (for additional
+  # server_start parameters) or not.  If not, it's just the timeout.
+
+  if (defined($server_wait_timeout)) {
+    if (ref($server_wait_timeout) eq 'HASH') {
+      $server_opts = $server_wait_timeout;
+
+      if (defined($server_opts->{timeout})) {
+        $server_wait_timeout = $server_opts->{timeout};
+
+      } else {
+        $server_wait_timeout = 10;
+      }
+    }
+
+  } else {
+    $server_wait_timeout = 10;
+  }
 
   # Start server
-  server_start($config_file);
+  server_start($config_file, undef, $server_opts);
 
   $SIG{ALRM} = \&server_wait_alarm;
   alarm($server_wait_timeout);
@@ -776,12 +1038,145 @@ sub server_wait {
   return 1;
 }
 
+sub test_append_logfile {
+  my $log_file = shift;
+  my $ex = shift;
+
+  my ($infh, $outfh); 
+
+  my $out_file = File::Spec->rel2abs('tests.log');
+
+  unless (open($outfh, ">> $out_file")) {
+    die("Can't append to $out_file: $!");
+  }
+
+  unless (open($infh, "< $log_file")) {
+    die("Can't read $log_file: $!");
+  }
+
+  my ($pkg, $filename, $lineno, $func) = (caller(1))[0, 1, 2, 3];
+  if ($func =~ /test_cleanup/) {
+    ($pkg, $filename, $lineno, $func) = (caller(2))[0, 1, 2, 3];
+  }
+
+  print $outfh "-----BEGIN $func-----\n";
+
+  while (my $line = <$infh>) {
+    print $outfh $line;
+  }
+
+  # If an exception was provided, write that out to the log file, too.
+  if (defined($ex)) {
+    print $outfh "\nException:\n\t$ex\n";
+  }
+
+  print $outfh "-----END $func-----\n";
+
+  close($infh);
+
+  unless (close($outfh)) {
+    die("Can't write $out_file: $!");
+  }
+}
+
+sub test_cleanup {
+  my $log_file = shift;
+  my $ex = shift;
+  my $keep_logfile = shift;
+  $keep_logfile = 0 unless $keep_logfile;
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    croak($ex);
+  }
+
+  unlink($log_file) unless $keep_logfile;
+}
+
+sub test_get_logfile {
+  # Returns the testcase-specific logfile name to use
+  my $depth = shift;
+  $depth = 1 unless defined($depth);
+
+  my ($pkg, $filename, $lineno, $func) = (caller($depth))[0, 1, 2, 3];
+
+  # We use the function name as the basis for the testcase-specific log
+  # file name.  We ignore the first two parts (which are always 'ProFTPD' and
+  # 'Tests'), and merge the rest into a log file name.
+
+  my @parts = split('::', $func);
+  my $logfile = File::Spec->rel2abs(join('_', @parts) . '.log');
+
+  return $logfile;
+}
+
 sub test_msg {
   my $msg = shift;
 
   my ($pkg, $file, $lineno) = caller();
 
   return "$msg (at $file:$lineno)";
+}
+
+sub test_setup {
+  my $tmpdir = shift;
+  croak("Missing temporary directory argument") unless $tmpdir;
+  my $name = shift;
+  croak("Missing test name argument") unless $name;
+  my $user = shift;
+  $user = 'proftpd' unless defined($user);
+  my $passwd = shift;
+  $passwd = 'test' unless defined($passwd);
+  my $group = shift;
+  $group = 'ftpd' unless defined($group);
+  my $uid = shift;
+  $uid = 500 unless defined($uid);
+  my $gid = shift;
+  $gid = 500 unless defined($gid);
+
+  my $config_file = "$tmpdir/$name.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/$name.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/$name.scoreboard");
+  my $log_file = test_get_logfile(2);
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/$name.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/$name.group");
+
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      croak("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      croak("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $setup = {
+    auth_user_file => $auth_user_file,
+    auth_group_file => $auth_group_file,
+    config_file => $config_file,
+    gid => $gid,
+    group => $group,
+    home_dir => $home_dir,
+    log_file => $log_file,
+    passwd => $passwd,
+    pid_file => $pid_file,
+    scoreboard_file => $scoreboard_file,
+    uid => $uid,
+    user => $user,
+  };
+
+  return $setup;
 }
 
 sub testsuite_empty_test {

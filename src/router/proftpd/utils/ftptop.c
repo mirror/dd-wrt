@@ -26,7 +26,7 @@
 /* Shows who is online via proftpd, in a manner similar to top.  Uses the
  * scoreboard files.
  *
- * $Id: ftptop.c,v 1.42.2.2 2013/02/06 17:05:14 castaglia Exp $
+ * $Id: ftptop.c,v 1.45 2013/03/08 16:25:27 castaglia Exp $
  */
 
 #define FTPTOP_VERSION "ftptop/0.9"
@@ -262,9 +262,7 @@ static const char *show_ftpd_uptime(void) {
     return "";
 
   memset(buf, '\0', sizeof(buf));
-
-  strcat(buf, ", up for ");
-  pos += strlen(buf); 
+  pos += snprintf(buf, sizeof(buf)-1, "%s", ", up for ");
 
   updays = (int) uptime_secs / (60 * 60 * 24);
 

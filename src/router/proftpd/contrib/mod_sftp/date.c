@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp date(1) simulation
- * Copyright (c) 2011 TJ Saunders
+ * Copyright (c) 2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: date.c,v 1.2 2011/09/29 14:17:35 castaglia Exp $
+ * $Id: date.c,v 1.3 2012/02/15 23:50:51 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -69,7 +69,7 @@ static struct date_session *date_get_session(uint32_t channel_id) {
 
 /* Main entry point */
 int sftp_date_handle_packet(pool *p, void *ssh2, uint32_t channel_id,
-    char *data, uint32_t datalen) {
+    unsigned char *data, uint32_t datalen) {
 
   (void) ssh2;
   (void) channel_id;
@@ -139,7 +139,7 @@ int sftp_date_set_params(pool *p, uint32_t channel_id, array_header *req) {
 
 int sftp_date_postopen_session(uint32_t channel_id) {
   struct date_session *sess;
-  char *buf, *ptr;
+  unsigned char *buf, *ptr;
   const char *date_str;
   uint32_t buflen, bufsz;
   time_t now;

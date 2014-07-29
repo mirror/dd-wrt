@@ -1,4 +1,4 @@
-<!-- $Id: SQL.html,v 1.15 2011/03/16 19:07:48 castaglia Exp $ -->
+<!-- $Id: SQL.html,v 1.18 2014/01/22 17:14:30 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/SQL.html,v $ -->
 
 <html>
@@ -150,6 +150,8 @@ be provided is described below.
     <td>user's shell</td>
   </tr>
 </table>
+
+<p>
 <i>Notes</i>:
 <ol type=number>
   <li>The user table <b>MUST</b> exist.
@@ -161,11 +163,10 @@ be provided is described below.
     doing</i>.
 
   <p>
-  <li>See the <code>SQLDefaultHomedir</code> and <code>SQLUserInfo</code>
-    configuration directives.
+  <li>See the <a href="../contrib/mod_sql.html#SQLDefaultHomedir"><code>SQLDefaultHomedir</code></a> and <a href="../contrib/mod_sql.html#SQLUserInfo"><code>SQLUserInfo</code></a> configuration directives.
 
   <p>
-  <li>See the <code>RequireValidShell</code> configuration directive.
+  <li>See the <a href="../modules/mod_auth.html#RequireValidShell"><code>RequireValidShell</code></a> configuration directive.
 </ol>
 
 <p>
@@ -203,14 +204,15 @@ be provided is described below.
     <td>group's members</td>
   </tr>
 </table>
+
+<p>
 <i>Notes</i>:
 <ol type=number>
   <li><code>mod_sql</code> will normally concatenate all matching group rows;
     you can have multiple rows for each group with only one member per group,
     or have a single row with multiple groups, or a mixing of the two.  However,
     if you use the <em>fast</em> option for <em>groupset</em> of the
-    <code>SQLAuthenticate</code> directive, you may <i>not</i> have multiple
-    rows per group.
+    <a href="../contrib/mod_sql.html#SQLAuthenticate"><code>SQLAuthenticate</code></a> directive, you may <i>not</i> have multiple rows per group.
 
   <p>
   <li>Multiple members per group are formatted as comma-separated names
@@ -238,7 +240,10 @@ To create a user table:
     gid INTEGER,
     homedir VARCHAR(255),
     shell VARCHAR(255)
-  )
+  );
+
+  CREATE INDEX users_userid_idx ON users (userid);
+
 </pre>
 (<i>Note</i>: if you plan to reuse the same UID for multiple users, then you
 will need to remove the <code>UNIQUE</code> from the <code>uid</code> column
@@ -248,35 +253,230 @@ description).  To create a group table:
     groupname VARCHAR(30) NOT NULL,
     gid INTEGER NOT NULL,
     members VARCHAR(255)
-  )
+  );
+
+  CREATE INDEX groups_gid_idx ON groups (gid);
 </pre>
 
 <p>
 The key configuration directives for <code>mod_sql</code> are:
 <ul>
-  <li><code>SQLConnectInfo</code>, for setting the information for connecting
-     to the database server
-  <li><code>SQLAuthenticate</code>, for controlling how the module will
-     perform its authentication lookups
-  <li><code>SQLAuthTypes</code>, for defining which authentication methods to
-     use
-  <li><code>SQLUserInfo</code>, for modifying the names of the columns using
-    which the module will lookup values from the user table
-  <li><code>SQLGroupInfo</code>, for modifying the names of the columns using
-    which the module will lookup values from the group table
+  <li><a href="../contrib/mod_sql.html#SQLConnectInfo"><code>SQLConnectInfo</code></a> for setting the information for connecting to the database server
+  <li><a href="../contrib/mod_sql.html#SQLAuthenticate"><code>SQLAuthenticate</code></a> for controlling how the module will perform its authentication lookups
+  <li><a href="../contrib/mod_sql.html"><code>SQLAuthTypes</code></a> for defining which authentication methods to use
+  <li><a href="../contrib/mod_sql.html#SQLUserInfo"><code>SQLUserInfo</code></a> for modifying the names of the columns using which the module will lookup values from the user table
+  <li><a href="../contrib/mod_sql.html#SQLGroupInfo"><code>SQLGroupInfo</code></a> for modifying the names of the columns using which the module will lookup values from the group table
 </ul>
-A list of <code>mod_sql</code> configuration directives can be found
-<a href="../contrib/mod_sql.html">here</a>.
+
+<p><a name="Recipes">
+<b>Recipes</b><br>
+
+<p>
+<i>Using SQLNamedConnectInfo</i><br>
+What is <code>SQLNamedConnectInfo</code>, and how can I use it?  The
+<a href="../contrib/mod_sql.html#SQLNamedConnectInfo"><code>SQLNamedConnectInfo</code></a> directive appeared in proftpd-1.3.4rc2 (see <a href="http://bugs.proftpd.org/show_bug.cgi?id=3262">Bug#3262</a>); it allows logging to
+SQL tables in a database separate from <i>e.g.</i> your user database.  Using
+<a href="../contrib/mod_sql.html#SQLNamedQuery"><code>SQLNamedQuery</code></a>
+and <a href="../contrib/mod_sql.html#SQLLog"><code>SQLLog</code></a>, you tell
+<code>mod_sql</code> to log information to your database.  And now, with
+<code>SQLNamedConnectInfo</code>, you can tell <code>mod_sql</code> to log
+information to <em>multiple different</em> databases.
+
+<p>
+The following illustrates how <code>SQLNamedConnectInfo</code> can be used.
+We have two databases, a "userdb" containing the tables with our user
+data, and a "logdb" database containing various logging tables.  First, in the
+<code>users</code> table schema in the <code>userdb</code> database, let's
+include a <code>users.last_accessed</code> column, indicating when that
+user last logged in successfully:
+<pre>
+  CREATE TABLE users (
+    userid VARCHAR(30) NOT NULL UNIQUE,
+    passwd VARCHAR(80) NOT NULL,
+    uid INTEGER UNIQUE,
+    gid INTEGER,
+    homedir VARCHAR(255),
+    shell VARCHAR(255),
+    last_accessed DATETIME
+  );
+</pre>
+In the <code>logdb</code> database, let's define a table that we will use for
+separately logging all successful logins:
+<pre>
+  CREATE TABLE login_history (
+    user VARCHAR NOT NULL,
+    client_ip VARCHAR NOT NULL,
+    server_ip VARCHAR NOT NULL,
+    protocol VARCHAR NOT NULL,
+    when DATETIME
+  );
+</pre>
+
+<p>
+With these tables defined in their databases, we can now configure
+<code>mod_sql</code> to use the <code>users</code> table for authenticating
+users.  In addition, when a user logs in successfully, update the <code>users.last_accessed</code> column <b>and</b> add a row to the
+<code>login_history</code> table in the separate logging database:
+<pre>
+  &lt;IfModule mod_sql.c&gt;
+    AuthOrder mod_sql.c
+
+    # We need our "default" connection to the <b>userdb</b> database
+    SQLConnectInfo userdb@dbhost:3306 user pass
+
+    # Now that we have a default connection, we can create another connection, named "logdb" and using the "mysql" backend, to the <b>logdb</b> database
+    SQLNamedConnectInfo <b><i>logdb</i></b> mysql logdb@dbhost:3306 user pass
+
+    # Point mod_sql at our users/groups tables
+    SQLUserInfo users ...
+    SQLGroupInfo groups ...
+
+    # Update the users.last_accessed column on successful login in the <b>userdb</b>
+    SQLNamedQuery last_accessed UPDATE "last_accessed = NOW() WHERE userid='%u'" users
+    SQLLog PASS last_accessed
+
+    # Add a row to the login_history table on successful login in the <b>logdb</b>
+    SQLNamedQuery log_sess FREEFORM "INSERT INTO login_history (user, client_ip, server_ip, protocol, when) VALUES ('%u', '%a', '%V', '%{protocol}', NOW())" <b><i>logdb</i></b>
+
+    SQLLog PASS log_sess IGNORE_ERRORS
+  &lt;/IfModule&gt;
+</pre>
+Notice how the "log_sess" <code>SQLNamedQuery</code> has "logdb" at the end of the directive, after the SQL to be run?  That tells <code>mod_sql</code> that,
+when running that <code>SQLNamedQuery</code>, use the connection named "logdb".
+
+<p>
+Another interesting point in the example above is the use of the
+<em>IGNORE_ERRORS</em> modifier, when we call the "log_sess" <code>SQLNamedQuery</code>.  Why is that used?  Here, it means that if the logdb database is not
+available, or if there is any other problem when inserting the row into the
+<code>login_history</code> table, that <code>mod_sql</code> should ignore
+that error and keep processing the connection.
+
+<p>
+<font color=red>Question</font>: Why does the <code>SQLNamedConnectInfo</code>
+documentation say that "<code>SQLNamedConnectInfo</code> directives will only
+be honored if a <code>SQLConnectInfo</code> directive is configured"?<br>
+<font color=blue>Answer</font>: The <code>mod_sql</code> module requires
+a <code>SQLConnectInfo</code> directive in order to define the "default"
+named connection.  This will be the database connection that
+<code>mod_sql</code> uses for queries, <i>unless explicitly told</i> to use
+some other named connection.  And if there is no <code>SQLConnectInfo</code>
+directive present, then <code>mod_sql</code> won't even bother to look for
+<code>SQLNamedConnectInfo</code> directives, since the "default" connection
+must be present in order to use any other named connection.
+
+<p><a name="SQLPrimaryKeys">
+<i>Using SQLUserPrimaryKey and SQLGroupPrimaryKey</i><br>
+What is a primary key in <code>mod_sql</code>, and how can I use it?  To
+answer this question, let's look at a common database layout for a
+<code>proftpd</code> site.  You have a <code>ftp_users</code> table
+containing the user information (<i>i.e.</i> username/password, UID, GID,
+<i>etc</i>).  You have a <code>ftp_sessions</code> logging table that
+records all client sessions, keyed to the user that logged in.  And you have
+another logging table, <code>ftp_transfers</code>, that tracks the files
+that are transferred in and out by clients; the entries in this table, too,
+are keyed to the logged-in user.
+
+<p>
+Good schema design principles suggest that which this schema, the
+<code>ftp_sessions</code> and <code>ftp_transfers</code> tables should have
+foreign key constraints on columns in the <code>ftp_users</code> table, to
+enforce the fact that entries in the <code>ftp_sessions</code> and
+<code>ftp_transfers</code> tables <b>must</b> be related to a row in the
+<code>ftp_users</code> table.  And for efficient database storage, you want
+the foreign key constraint to use a small column.  But there's a problem.
+The obvious choice of primary key for an <code>ftp_user</code> row would
+be the UID, a numeric value.  <b>But</b> you reuse UIDs for your users;
+this means that a single UID does <b>not</b> uniquely identify a user.
+In fact, the only unique identifier you have in <code>ftp_users</code> is
+the actual username, a string.  And some of your usernames are quite large.
+
+<p>
+To demonstrate this more clearly, let's look at the <code>mod_sql</code>
+configuration that would be used to add rows to the <code>ftp_sessions</code>
+table:
+<pre>
+  # Insert a row on successful login (i.e. successful PASS)
+  SQLLog PASS start-session IGNORE_ERRORS
+
+  SQLNamedQuery start-session FREEFORM "INSERT INTO ftp_sessions (userid, session_id, ...) VALUES ('%u', '%{env:UNIQUE_ID}', ...)"
+</pre>
+Instead of <code>userid</code> (which is a <code>VARCHAR(255)</code>), you
+would prefer to use the <code>ftp_users.id</code> column value, which you
+added to your <code>ftp_users</code> table specifically to use as a primary
+key.  How to do you tell <code>mod_sql</code> to use that as the primary key
+for the logged-in user?
+
+<p>
+The
+<a href="../contrib/mod_sql.html#SQLUserPrimaryKey"><code>SQLUserPrimaryKey</code></a> and <a href="../contrib/mod_sql.html#SQLGroupPrimaryKey"><code>SQLGroupPrimaryKey</code></a> directives appeared in proftpd-1.3.5rc3 (see <a href="http://bugs.proftpd.org/show_bug.cgi?id=3864">Bug#3864</a>) for just this reason;
+they configure the columns that <code>mod_sql</code> to retrieve/use as
+primary keys.  When these directives were present, whenever
+<code>mod_sql</code> does a successful lookup of a user <b>by name</b> (or
+of a group <b>by name</b>), <code>mod_sql</code> will then run another query,
+<i>i.e.</i>:
+<pre>
+  SELECT <i>column-name</i> FROM <i>user/group-table</i> WHERE name = <i>user/group-name</i>
+</pre>
+And to support the case where the tables/columns are customised, these new
+directives would of course support custom queries:
+<pre>
+  SQLUserPrimaryKey custom:/<i>named-query</i>
+  SQLGroupPrimaryKey custom:/<i>named-query</i>
+</pre>
+So that you could do:
+<pre>
+  SQLNamedQuery get-user-key SELECT "id FROM ftp_users WHERE userid = '%U'"
+  SQLUserPrimaryKey custom:/get-user-key
+
+  SQLNamedQuery get-group-key SELECT "id FROM ftp_groups WHERE groupname = '%g'"
+  SQLGroupPrimaryKey custom:/get-group-key
+</pre>
+
+<p>
+Now that <code>mod_sql</code> can look up the value for the primary key for
+the user/group, we need to then be able to <i>use</i> that value in other
+queries.  For this, you would use the "notes" <code>SQLLog</code> variable:
+<pre>
+  %{note:sql.user-primary-key}
+  %{note:sql.group-primary-key}
+</pre>
+
+<p>
+Putting this altogether, the above <code>mod_sql</code> configuration for
+adding rows to the <code>ftp_sessions</code> table, using
+<code>ftp_users.id</code> as the primary key, becomes:
+<pre>
+  # Tell mod_sql to use the ftp_users table for user data
+  SQLUserInfo ftp_users ...
+
+  # Use ftp_users.id as the user primary key
+  SQLUserPrimaryKey id
+
+  # Insert a row on successful login (i.e. successful PASS)
+  SQLLog PASS start-session IGNORE_ERRORS
+
+  SQLNamedQuery start-session FREEFORM "INSERT INTO ftp_sessions (userid, session_id, ...) VALUES (%{note:sql.user-primary-key}, '%{env:UNIQUE_ID}', ...)"
+</pre>
+
+<p>
+<font color=red>Question</font>: Why use new configuration directives, rather
+than changing the existing <code>SQLUserInfo</code>/<code>SQLGroupInfo</code>
+directives to include a primary key column?<br>
+<font color=blue>Answer</font>: New directives were added for this functionality
+for two reasons: <i>1)</i> not every site needs/uses primary keys and
+foreign key constraints in their schema, and <i>2)</i> we wanted to make
+sure that existing configurations/schema did not break and behave unexpectedly
+(<i>i.e.</i> to preserve backward compatibility).
 
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
 Whenever questions arise about problems using <code>mod_sql</code>, the first
 place to look will be the server debugging output and in a
-<code>SQLLogFile</code>.  <code>mod_sql</code> is <i>very</i> verbose with its
-debugging information, and you can see everything it is doing.  However, there
-are times when there is too much information in the debugging output, and you
-are unsure of how to remedy the problem.  These are some of the frequent
-questions.
+<a href="../contrib/mod_sql.html#SQLLogFile"><code>SQLLogFile</code></a>.
+<code>mod_sql</code> is <i>very</i> verbose with its debugging information,
+and you can see everything it is doing.  However, there are times when there
+is too much information in the debugging output, and you are unsure of how to
+remedy the problem.  These are some of the frequent questions.
 
 <p><a name="SQLAuthoritative"></a>
 <font color=red>Question</font>: Why is <code>proftpd</code> only looking in
@@ -291,11 +491,21 @@ using the <em>*</em> option.  Conversely, if you actually want
 <font color=red>Question</font>: Why does my SQL user not use the UID/GID I
 configured for her in my SQL table?<br>
 <font color=blue>Answer</font>: More than likely, you gave this user a UID
-that is below the default <code>SQLMinUserUID</code> (999), or a GID that is
-below the default <code>SQLMinUserGID</code> (999).  Use the
+that is below the default <a href="../contrib/mod_sql.html#SQLMinUserUID"><code>SQLMinUserUID</code></a> (999), or a GID that is
+below the default <a href="../contrib/mod_sql.html#SQLMinUserGID"><code>SQLMinUserGID</code></a> (999).  Use the
 <code>SQLMinUserUID</code>, <code>SQLMinUserGID</code>, and/or
-<code>SQLMinID</code> configuration directives to set these limits lower as
-needed.
+<a href="../contrib/mod_sql.html#SQLMinID"><code>SQLMinID</code></a>
+configuration directives to set these limits lower as needed.
+
+<p>
+This problem also presents itself in terms of queries using UID/GID of 65533,
+<i>e.g.</i> when you see queries like this againt your database:
+<pre>
+  SELECT groupname FROM ftp_groups WHERE (gid = 65533) LIMIT 1
+</pre>
+If the UID/GID retrieved from the database is below the minimum UID/GID,
+then <code>mod_sql</code> will use the default UID/GID value, which is 65533.
+These defaults can be changed using <a href="../contrib/mod_sql.html#SQLDefaultUID"><code>SQLDefaultUID</code></a> and <a href="../contrib/mod_sql.html#SQLDefaultGID"><code>SQLDefaultGID</code></a>.
 
 <p><a name="SQLShell"></a>
 <font color=red>Question</font>: Do I have to configure a real shell for my
@@ -303,8 +513,7 @@ SQL-defined users?<br>
 <font color=blue>Answer</font>: No. The <code>proftpd</code> daemon only checks
 the shell for a user in order to provide compatibilty with other FTP daemons,
 which do the same check; <code>proftpd</code> itself does not spawn the shell.
-See the <code>RequireValidShell</code> configuration directive for turning this
-check off.
+See the <a href="../modules/mod_auth.html#RequireValidShell"><code>RequireValidShell</code></a> configuration directive for turning this check off.
 
 <p><a name="SQLLogQUIT"></a>
 <font color=red>Question</font>: How come my <code>SQLLog QUIT</code> is not
@@ -540,7 +749,7 @@ compiled with SSL support.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2011/03/16 19:07:48 $</i><br>
+Last Updated: <i>$Date: 2014/01/22 17:14:30 $</i><br>
 <hr>
 
 </body>

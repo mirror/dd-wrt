@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2012 The ProFTPD Project team
+ * Copyright (c) 2003-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Network ACL routines
- * $Id: netacl.c,v 1.25.2.1 2012/02/14 18:38:57 castaglia Exp $
+ * $Id: netacl.c,v 1.27 2013/02/15 22:39:00 castaglia Exp $
  */
 
 #include "conf.h"
@@ -339,7 +339,7 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
        * into account).
        */
       for (i = 0; i < aclstr_len; i++) {
-        if (isalpha((int) aclstr[i])) {
+        if (PR_ISALPHA(aclstr[i])) {
 #ifdef PR_USE_IPV6
           if (pr_netaddr_use_ipv6()) {
             if (aclstr[i] == 'A' || aclstr[i] == 'a' ||
@@ -432,7 +432,7 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
 
       aclstr_len = strlen(aclstr);
       for (i = 0; i < aclstr_len; i++) {
-        if (isalpha((int) aclstr[i])) {
+        if (PR_ISALPHA(aclstr[i])) {
 #ifdef PR_USE_IPV6
           if (pr_netaddr_use_ipv6()) {
             if (aclstr[i] == 'A' || aclstr[i] == 'a' ||

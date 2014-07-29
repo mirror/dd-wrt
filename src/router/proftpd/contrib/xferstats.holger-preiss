@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#!/usr/bin/env perl
 # ---------------------------------------------------------------------------
 #
 # USAGE: xferstats <options>
@@ -10,8 +10,9 @@
 #       -h		include report on hourly traffic
 #       -d		include report on domain traffic
 #       -t		report on total traffic by section
-#	-i 		report incomming traffic only (uploads)
+#	-i 		report incoming traffic only (uploads)
 #	-o		report outgoing traffic only (download)
+#	-e		report deleted files only (just for complete)
 #       -D <domain>     report only on traffic from <domain>
 #				this option leads to problems with the local
 #				domain: e.g. test.com is counted under test
@@ -25,6 +26,12 @@
 #       -s <section>    Section to report on, For example: -s /pub will report
 #				only on paths under /pub
 #       -u <user>       Report traffic for specified user.
+#
+# ---------------------------------------------------------------------------
+# 04.09.2013: minor change by Andretta Paolo and TJ Saunders
+# - enabled -d (not working)
+# - corrected -i & -o (not working)
+# - added -e
 #
 # ---------------------------------------------------------------------------
 # 05.09.01: minor change by Jamie Fifield (fifield@chebucto.ns.ca):
@@ -60,7 +67,7 @@ $opt_t = 1;
 $opt_l = 3;
 
 require 'getopts.pl';
-&Getopts('f:rahdD:l:s:A:iou:');
+&Getopts('f:rahdD:l:s:A:iotu:e');
 
 if ($opt_r) { $real = 1;}
 if ($opt_a) { $anon = 1;}
@@ -68,36 +75,41 @@ if ($real == 0 && $anon == 0) { $anon = 1; }
 if ($opt_f) {$usage_file = $opt_f;}
 if ($opt_i) {$opt_i = 1;}
 if ($opt_o) {$opt_o = 1;}
+if ($opt_e) {$opt_e = 1;}
 
 open (LOG,$usage_file) || die "Error opening usage log file: $usage_file\n";
 
 if ($opt_o) {
-   print "Transfer Totals include outgoing traffic only.\n\n";
+   print "Transfer totals include outgoing traffic only.\n\n";
 }
 
 if ($opt_i) {
-   print "Transfer Totals include incoming traffic only.\n\n";
+   print "Transfer totals include incoming traffic only.\n\n";
+}
+
+if ($opt_e) {
+   print "Transfer totals include deleted files only.\n\n";
 }
 
 if ($opt_D) {
    $opt_D =~ tr/A-Z/a-z/;
-   print "Transfer Totals include the '$opt_D' domain only.\n";
+   print "Transfer totals include the '$opt_D' domain only.\n";
    print "All other domains are filtered out for this report.\n\n";
 }
 
 if ($opt_A) {
    $opt_A =~ tr/A-Z/a-z/;
-   print "Transfer Totals include the addresses ending in '$opt_A' only.\n";
+   print "Transfer totals include the addresses ending in '$opt_A' only.\n";
    print "All other addresses are filtered out for this report.\n\n";
 }
 
 if ($opt_s) {
-   print "Transfer Totals include the '$opt_s' section only.\n";
+   print "Transfer totals include the '$opt_s' section only.\n";
    print "All other sections are filtered out for this report.\n\n";
 }
 
 if ($opt_u) {
-   print "Transfer Totals are for user '$opt_u' only.\n";
+   print "Transfer totals are for user '$opt_u' only.\n";
    print "All other users are filtered out for this report.\n\n";
 }
 
@@ -121,8 +133,9 @@ line: while (<LOG>) {
    }
    next if (!$opt_u && !$anon && $line[$offset+3] eq "a");
    next if (!$opt_u && !$real && $line[$offset+3] eq "r");
-   next if ($opt_i && $line[$offset+2] ne "i");
-   next if ($opt_o && $line[$offset+2] ne "o");
+   next if ($opt_i && $line[$offset-1] ne "i");
+   next if ($opt_o && $line[$offset-1] ne "o");
+   next if ($opt_e && $line[$offset-1] ne "d");
    next if ($opt_u && $line[$offset+4] ne $opt_u);
 
    $daytime = substr($_, 0, 10) . substr($_, 19, 5);

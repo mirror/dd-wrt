@@ -1,4 +1,4 @@
-<!-- $Id: ServerType.html,v 1.6 2009/10/06 15:44:11 castaglia Exp $ -->
+<!-- $Id: ServerType.html,v 1.7 2012/12/02 00:33:19 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/ServerType.html,v $ -->
 
 <html>
@@ -13,10 +13,11 @@
 <hr>
 
 <p>
-The <a href="http://www.proftpd.org/docs/directives/linked/config_ref_ServerType.html"><code>ServerType</code></a> configuration directive for ProFTPD can cause
-confusion for those just starting with this server.  What is the purpose
-for this directive?  What are these &quot;inetd&quot; and &quot;standalone&quot;
-types, and why does one need to choose one or the other?
+The <a href="../modules/mod_core.html#ServerType"><code>ServerType</code></a>
+configuration directive for ProFTPD can cause confusion for those just starting
+with this server.  What is the purpose for this directive?  What are these
+&quot;inetd&quot; and &quot;standalone&quot; types, and why does one need to
+choose one or the other?
 
 <p>
 The purpose of this directive is to choose between the two operating modes for
@@ -151,11 +152,11 @@ secure their network servers; indeed, this is a good practice to get into.
 However, the most common way this is done is through <code>inetd</code>.
 When running a <code>proftpd</code> server in <em>standalone</em> mode,
 then, it is not quite as straightforward; however, it is not hard, either.
-The <a href="http://www.castaglia.org/proftpd/modules/mod_wrap.html"><code>mod_wrap</code></a> module can be compiled into your <code>proftpd</code>.  This
-module allows a standalone <code>proftpd</code> server to use the normal
-<code>/etc/hosts.allow</code>, <code>/etc/hosts.deny</code> files, in addition
-to other files (something that normal <code>tcpwrappers</code> configurations
-cannot do).
+The <a href="../contrib/mod_wrap.html"><code>mod_wrap</code></a> module can be
+compiled into your <code>proftpd</code>.  This module allows a standalone
+<code>proftpd</code> server to use the normal <code>/etc/hosts.allow</code>,
+<code>/etc/hosts.deny</code> files, in addition to other files (something that
+normal <code>tcpwrappers</code> configurations cannot do).
 
 <p>
 If you try to start a <code>proftpd</code> server configured with a
@@ -240,7 +241,7 @@ Another solution is simply to <a href="#Switching">switch</a> your
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2009/10/06 15:44:11 $</i><br>
+Last Updated: <i>$Date: 2012/12/02 00:33:19 $</i><br>
 <hr>
 
 </body>

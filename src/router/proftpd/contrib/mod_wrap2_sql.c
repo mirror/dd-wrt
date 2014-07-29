@@ -2,7 +2,7 @@
  * ProFTPD: mod_wrap2_sql -- a mod_wrap2 sub-module for supplying IP-based
  *                           access control data via SQL tables
  *
- * Copyright (c) 2002-2011 TJ Saunders
+ * Copyright (c) 2002-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_wrap2_sql.c,v 1.11 2011/05/23 20:56:40 castaglia Exp $
+ * $Id: mod_wrap2_sql.c,v 1.12 2012/05/01 21:31:48 castaglia Exp $
  */
 
 #include "mod_wrap2.h"
@@ -83,7 +83,8 @@ static array_header *sqltab_fetch_clients_cb(wrap2_table_t *sqltab,
   /* Find the cmdtable for the sql_lookup command. */
   sql_cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "sql_lookup", NULL, NULL);
   if (sql_cmdtab == NULL) {
-    wrap2_log("error: unable to find SQL hook symbol 'sql_lookup'");
+    wrap2_log("error: unable to find SQL hook symbol 'sql_lookup': "
+      "perhaps your proftpd.conf needs 'LoadModule mod_sql.c'?");
     destroy_pool(tmp_pool);
     return NULL;
   }
@@ -95,14 +96,16 @@ static array_header *sqltab_fetch_clients_cb(wrap2_table_t *sqltab,
   sql_res = pr_module_call(sql_cmdtab->m, sql_cmdtab->handler, sql_cmd);
 
   /* Check the results. */
-  if (!sql_res) {
-    wrap2_log("NamedQuery '%s' returned no data", query);
+  if (sql_res == NULL) {
+    wrap2_log("SQLNamedQuery '%s' returned no data; "
+      "see the mod_sql.c SQLLogFile for more details", query);
     destroy_pool(tmp_pool);
     return NULL;
   }
 
   if (MODRET_ISERROR(sql_res)) {
-    wrap2_log("error processing NamedQuery '%s'", query);
+    wrap2_log("error processing SQLNamedQuery '%s': "
+      "check the mod_sql.c SQLLogFile for more details", query);
     destroy_pool(tmp_pool);
     return NULL;
   }
@@ -111,7 +114,8 @@ static array_header *sqltab_fetch_clients_cb(wrap2_table_t *sqltab,
   vals = (char **) sql_data->elts;
 
   if (sql_data->nelts < 1) {
-    wrap2_log("NamedQuery '%s' returned no data", query);
+    wrap2_log("SQLNamedQuery '%s' returned no data; "
+      "see the mod_sql.c SQLLogFile for more details", query);
     destroy_pool(tmp_pool);
     return NULL;
   }
@@ -203,7 +207,8 @@ static array_header *sqltab_fetch_options_cb(wrap2_table_t *sqltab,
   /* Find the cmdtable for the sql_lookup command. */
   sql_cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "sql_lookup", NULL, NULL);
   if (sql_cmdtab == NULL) {
-    wrap2_log("error: unable to find SQL hook symbol 'sql_lookup'");
+    wrap2_log("error: unable to find SQL hook symbol 'sql_lookup': "
+      "perhaps your proftpd.conf needs 'LoadModule mod_sql.c'?");
     destroy_pool(tmp_pool);
     return NULL;
   }
@@ -216,13 +221,15 @@ static array_header *sqltab_fetch_options_cb(wrap2_table_t *sqltab,
 
   /* Check the results. */
   if (!sql_res) {
-    wrap2_log("NamedQuery '%s' returned no data", query);
+    wrap2_log("SQLNamedQuery '%s' returned no data; "
+      "see the mod_sql.c SQLLogFile for more details", query);
     destroy_pool(tmp_pool);
     return NULL;
   }
 
   if (MODRET_ISERROR(sql_res)) {
-    wrap2_log("error processing NamedQuery '%s'", query);
+    wrap2_log("error processing SQLNamedQuery '%s': "
+      "check the mod_sql.c SQLLogFile for more details", query);
     destroy_pool(tmp_pool);
     return NULL;
   }
@@ -234,7 +241,8 @@ static array_header *sqltab_fetch_options_cb(wrap2_table_t *sqltab,
   vals = (char **) sql_data->elts;
 
   if (sql_data->nelts < 1) {
-    wrap2_log("NamedQuery '%s' returned no data", query);
+    wrap2_log("SQLNamedQuery '%s' returned no data; "
+      "see the mod_sql.c SQLLogFile for more details", query);
     destroy_pool(tmp_pool);
     return NULL;
   }
@@ -304,6 +312,9 @@ static wrap2_table_t *sqltab_open_cb(pool *parent_pool, char *srcinfo) {
   if (c == NULL) {
     wrap2_log("error: unable to resolve SQLNamedQuery name '%s'",
       clients_query);
+    pr_log_pri(PR_LOG_WARNING, MOD_WRAP2_SQL_VERSION
+      ": no such SQLNamedQuery '%s' found, allowing connection", clients_query);
+
     destroy_pool(tab_pool);
     destroy_pool(tmp_pool);
     errno = EINVAL;

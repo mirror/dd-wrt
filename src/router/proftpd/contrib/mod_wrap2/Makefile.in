@@ -4,7 +4,7 @@ srcdir=@srcdir@
 
 include $(top_srcdir)/Make.rules
 
-.SUFFIXES: .la
+.SUFFIXES: .la .lo
 
 SHARED_CFLAGS=-DPR_SHARED_MODULE
 SHARED_LDFLAGS=-avoid-version -export-dynamic -module
@@ -16,7 +16,7 @@ MODULE_LIBS=@MODULE_LIBS@
 
 # Necessary redefinitions
 CPPFLAGS= -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(MODULE_INCLUDES)
-LDFLAGS=-L../../lib
+LDFLAGS=-L../../lib @LDFLAGS@
 
 .c.o:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
@@ -36,7 +36,8 @@ install:
 	fi
 
 clean:
-	$(RM) *.o
-	$(LIBTOOL) --mode=clean $(RM) "$(MODULE_NAME).o"
-	$(LIBTOOL) --mode=clean $(RM) `echo "$(MODULE_NAME).la" | sed 's/\.la$\/.lo/g'`
+	$(LIBTOOL) --mode=clean $(RM) $(MODULE_NAME).a $(MODULE_NAME).la *.o *.lo .libs/*.o
 
+dist: clean
+	$(RM) Makefile $(MODULE_NAME).h config.status config.cache config.log
+	-$(RM) -r .git/ CVS/ RCS/

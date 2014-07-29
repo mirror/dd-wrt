@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp date(1) simulation
- * Copyright (c) 2011 TJ Saunders
+ * Copyright (c) 2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: date.h,v 1.1 2011/05/24 20:55:50 castaglia Exp $
+ * $Id: date.h,v 1.2 2012/02/15 23:50:51 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -29,7 +29,8 @@
 #ifndef MOD_SFTP_DATE_H
 #define MOD_SFTP_DATE_H
 
-int sftp_date_handle_packet(pool *, void *, uint32_t, char *, uint32_t);
+int sftp_date_handle_packet(pool *, void *, uint32_t, unsigned char *,
+  uint32_t);
 
 int sftp_date_postopen_session(uint32_t);
 int sftp_date_open_session(uint32_t);

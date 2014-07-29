@@ -135,6 +135,36 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
+  sql_passwd_sha1_encode_salt_hash_encode_password => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  sql_passwd_pbkdf2_sha1_base64 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  sql_passwd_pbkdf2_sha1_hex_lc => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  sql_passwd_pbkdf2_sha1_hex_uc => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  sql_passwd_pbkdf2_sha512_hex_lc => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  sql_passwd_pbkdf2_per_user_bug4052 => {
+    order => ++$order,
+    test_class => [qw(forking bug)],
+  },
+
 };
 
 sub new {
@@ -153,9 +183,10 @@ sub sql_passwd_md5_base64 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -183,14 +214,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -295,6 +326,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -309,9 +343,10 @@ sub sql_passwd_md5_hex_lc {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -339,14 +374,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -451,6 +486,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -465,9 +503,10 @@ sub sql_passwd_md5_hex_uc {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -496,14 +535,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -608,6 +647,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -622,9 +664,10 @@ sub sql_passwd_sha1_base64 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -652,14 +695,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -764,6 +807,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -778,9 +824,10 @@ sub sql_passwd_sha1_hex_lc {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -808,14 +855,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -920,6 +967,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -934,9 +984,10 @@ sub sql_passwd_sha1_hex_uc {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -965,14 +1016,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -1077,6 +1128,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1091,9 +1145,10 @@ sub sql_passwd_engine_off {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -1121,14 +1176,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -1235,6 +1290,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1249,11 +1307,12 @@ sub sql_passwd_salt_file {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $salt = '8Hkqr7bnPaZ52j81VvuoWdOEuq6EeXwpiIw5Q679xzvEqwe128';
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -1281,14 +1340,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -1407,6 +1466,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1421,11 +1483,12 @@ sub sql_passwd_salt_file_trailing_newline {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $salt = '8Hkqr7bnPaZ52j81VvuoWdOEuq6EeXwpiIw5Q679xzvEqwe128';
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -1453,14 +1516,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -1582,6 +1645,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1596,11 +1662,12 @@ sub sql_passwd_salt_file_prepend {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $salt = '8Hkqr7bnPaZ52j81VvuoWdOEuq6EeXwpiIw5Q679xzvEqwe128';
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -1628,14 +1695,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -1754,6 +1821,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1768,9 +1838,10 @@ sub sql_passwd_sha256_base64_bug3344 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -1798,14 +1869,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -1910,6 +1981,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1924,9 +1998,10 @@ sub sql_passwd_sha256_hex_lc_bug3344 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -1954,14 +2029,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -2066,6 +2141,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -2080,9 +2158,10 @@ sub sql_passwd_sha256_hex_uc_bug3344 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -2111,14 +2190,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -2223,6 +2302,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -2237,9 +2319,10 @@ sub sql_passwd_sha512_base64_bug3344 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -2267,14 +2350,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -2379,6 +2462,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -2393,9 +2479,10 @@ sub sql_passwd_sha512_hex_lc_bug3344 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -2423,14 +2510,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -2535,6 +2622,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -2549,9 +2639,10 @@ sub sql_passwd_sha512_hex_uc_bug3344 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -2580,14 +2671,14 @@ CREATE TABLE users (
   homedir TEXT, 
   shell TEXT
 );
-INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
   groupname TEXT,
   gid INTEGER,
   members TEXT
 );
-INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', 500, '$user');
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 EOS
 
     unless (close($fh)) {
@@ -2692,6 +2783,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -2706,9 +2800,10 @@ sub sql_passwd_user_salt_name {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
+  my $group = 'ftpd';
 
   # I used:
   #
@@ -2849,6 +2944,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -2863,7 +2961,7 @@ sub sql_passwd_user_salt_sql {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
 
@@ -3015,6 +3113,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -3029,7 +3130,7 @@ sub sql_passwd_md5_hash_encode_salt_password_bug3500 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
 
@@ -3191,6 +3292,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -3205,7 +3309,7 @@ sub sql_passwd_md5_hash_encode_password_bug3500 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
 
@@ -3358,6 +3462,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -3372,7 +3479,7 @@ sub sql_passwd_md5_rounds_bug3500 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
 
@@ -3534,6 +3641,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -3548,7 +3658,7 @@ sub sql_passwd_md5_rounds_hash_encode_salt_password_bug3500 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
 
@@ -3714,6 +3824,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -3728,7 +3841,7 @@ sub sql_passwd_md5_hash_password {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
 
@@ -3879,6 +3992,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -3893,7 +4009,7 @@ sub sql_passwd_md5_hash_salt {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
 
@@ -4052,6 +4168,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -4066,7 +4185,7 @@ sub sql_passwd_md5_encode_salt {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
 
@@ -4228,6 +4347,1112 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sql_passwd_sha1_encode_salt_hash_encode_password {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sqlpasswd.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $user = 'proftpd';
+
+  # See http://forums.proftpd.org/smf/index.php/topic,3733.0.html for more
+  # details
+
+  my $passwd = 'test1234';
+  my $salt = '48d84dc8792accc3770117c804f1b5ce';
+
+  # I used:
+  #
+  #  Digest::SHA1::sha1_hex($salt . Digest::SHA1::sha1_hex($passwd))
+  #
+  # to generate this password.
+  my $db_passwd = '03cb508a6c32e33a21695ed139e6f7cb4e479a76';
+
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT, 
+  shell TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$db_passwd', $uid, $gid, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
+
+CREATE TABLE user_salts (
+  userid TEXT,
+  salt TEXT
+);
+INSERT INTO user_salts (userid, salt) VALUES ('$user', '$salt');
+
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'sha1',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLNamedQuery => 'get-user-salt SELECT "salt FROM user_salts WHERE userid = \'%{0}\'"',
+        SQLMinID => '100',
+      },
+
+      'mod_sql_passwd.c' => {
+        SQLPasswordEngine => 'on',
+        SQLPasswordEncoding => 'hex',
+        SQLPasswordUserSalt => 'sql:/get-user-salt Prepend',
+        SQLPasswordOptions => 'HashEncodePassword',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+
+      my $resp_msgs = $client->response_msgs();
+      my $nmsgs = scalar(@$resp_msgs);
+
+      my $expected;
+
+      $expected = 1;
+      $self->assert($expected == $nmsgs,
+        test_msg("Expected $expected, got $nmsgs")); 
+
+      $expected = "User proftpd logged in";
+      $self->assert($expected eq $resp_msgs->[0],
+        test_msg("Expected '$expected', got '$resp_msgs->[0]'"));
+
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sql_passwd_pbkdf2_sha1_base64 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sqlpasswd.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $user = 'proftpd';
+  my $group = 'ftpd';
+
+  # RFC 6070: PKCS#5 PBKDF2 Test Vectors
+  #
+  # Input:
+  #   P = "password" (8 octets)
+  #   S = "salt" (4 octets)
+  #   c = 4096
+  #   dkLen = 20
+  #
+  # Output:
+  #   DK = 4b 00 79 01 b7 65 48 9a
+  #        be ad 49 d9 26 f7 21 d0
+  #        65 a4 29 c1             (20 octets)
+  #
+  # Base64:
+  #   DK = SwB5AbdlSJq+rUnZJvch0GWkKcE=
+  #
+  my $passwd = "SwB5AbdlSJq+rUnZJvch0GWkKcE=";
+
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT, 
+  shell TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $salt = 'salt';
+
+  my $salt_file = File::Spec->rel2abs("$home_dir/sqlpasswd.salt");
+  if (open(my $fh, "> $salt_file")) {
+    binmode($fh);
+    print $fh $salt;
+
+    unless (close($fh)) {
+      die("Can't write $salt_file: $!");
+    }
+
+  } else {
+    die("Can't open $salt_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'pbkdf2',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+      },
+
+      'mod_sql_passwd.c' => {
+        SQLPasswordEngine => 'on',
+        SQLPasswordEncoding => 'base64',
+        SQLPasswordPBKDF2 => 'sha1 4096 20',
+        SQLPasswordSaltFile => $salt_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, "password");
+
+      my $resp_msgs = $client->response_msgs();
+      my $nmsgs = scalar(@$resp_msgs);
+
+      my $expected;
+
+      $expected = 1;
+      $self->assert($expected == $nmsgs,
+        test_msg("Expected $expected, got $nmsgs")); 
+
+      $expected = "User proftpd logged in";
+      $self->assert($expected eq $resp_msgs->[0],
+        test_msg("Expected '$expected', got '$resp_msgs->[0]'"));
+
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sql_passwd_pbkdf2_sha1_hex_lc {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sqlpasswd.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $user = 'proftpd';
+  my $group = 'ftpd';
+
+  # RFC 6070: PKCS#5 PBKDF2 Test Vectors
+  #
+  # Input:
+  #   P = "password" (8 octets)
+  #   S = "salt" (4 octets)
+  #   c = 4096
+  #   dkLen = 20
+  #
+  # Output:
+  #   DK = 4b 00 79 01 b7 65 48 9a
+  #        be ad 49 d9 26 f7 21 d0
+  #        65 a4 29 c1             (20 octets)
+  my $passwd = "4b007901b765489abead49d926f721d065a429c1";
+
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT, 
+  shell TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $salt = 'salt';
+
+  my $salt_file = File::Spec->rel2abs("$home_dir/sqlpasswd.salt");
+  if (open(my $fh, "> $salt_file")) {
+    binmode($fh);
+    print $fh $salt;
+
+    unless (close($fh)) {
+      die("Can't write $salt_file: $!");
+    }
+
+  } else {
+    die("Can't open $salt_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'pbkdf2',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+      },
+
+      'mod_sql_passwd.c' => {
+        SQLPasswordEngine => 'on',
+        SQLPasswordEncoding => 'hex',
+        SQLPasswordPBKDF2 => 'sha1 4096 20',
+        SQLPasswordSaltFile => $salt_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, "password");
+
+      my $resp_msgs = $client->response_msgs();
+      my $nmsgs = scalar(@$resp_msgs);
+
+      my $expected;
+
+      $expected = 1;
+      $self->assert($expected == $nmsgs,
+        test_msg("Expected $expected, got $nmsgs")); 
+
+      $expected = "User proftpd logged in";
+      $self->assert($expected eq $resp_msgs->[0],
+        test_msg("Expected '$expected', got '$resp_msgs->[0]'"));
+
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sql_passwd_pbkdf2_sha1_hex_uc {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sqlpasswd.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $user = 'proftpd';
+  my $group = 'ftpd';
+
+  # RFC 6070: PKCS#5 PBKDF2 Test Vectors
+  #
+  # Input:
+  #   P = "password" (8 octets)
+  #   S = "salt" (4 octets)
+  #   c = 4096
+  #   dkLen = 20
+  #
+  # Output:
+  #   DK = 4b 00 79 01 b7 65 48 9a
+  #        be ad 49 d9 26 f7 21 d0
+  #        65 a4 29 c1             (20 octets)
+  my $passwd = "4B007901B765489ABEAD49D926F721D065A429C1";
+
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT, 
+  shell TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $salt = 'salt';
+
+  my $salt_file = File::Spec->rel2abs("$home_dir/sqlpasswd.salt");
+  if (open(my $fh, "> $salt_file")) {
+    binmode($fh);
+    print $fh $salt;
+
+    unless (close($fh)) {
+      die("Can't write $salt_file: $!");
+    }
+
+  } else {
+    die("Can't open $salt_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'pbkdf2',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+      },
+
+      'mod_sql_passwd.c' => {
+        SQLPasswordEngine => 'on',
+        SQLPasswordEncoding => 'HEX',
+        SQLPasswordPBKDF2 => 'sha1 4096 20',
+        SQLPasswordSaltFile => $salt_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, "password");
+
+      my $resp_msgs = $client->response_msgs();
+      my $nmsgs = scalar(@$resp_msgs);
+
+      my $expected;
+
+      $expected = 1;
+      $self->assert($expected == $nmsgs,
+        test_msg("Expected $expected, got $nmsgs")); 
+
+      $expected = "User proftpd logged in";
+      $self->assert($expected eq $resp_msgs->[0],
+        test_msg("Expected '$expected', got '$resp_msgs->[0]'"));
+
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sql_passwd_pbkdf2_sha512_hex_lc {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sqlpasswd.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $user = 'proftpd';
+  my $group = 'ftpd';
+
+  # See:
+  #  http://stackoverflow.com/questions/15593184/pbkdf2-hmac-sha-512-test-vectors
+  my $passwd = '867f70cf1ade02cff3752599a3a53dc4af34c7a669815ae5d513554e1c8cf252c02d470a285a0501bad999bfe943c08f050235d7d68b1da55e63f73b60a57fce';
+
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT, 
+  shell TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $salt = 'salt';
+
+  my $salt_file = File::Spec->rel2abs("$home_dir/sqlpasswd.salt");
+  if (open(my $fh, "> $salt_file")) {
+    binmode($fh);
+    print $fh $salt;
+
+    unless (close($fh)) {
+      die("Can't write $salt_file: $!");
+    }
+
+  } else {
+    die("Can't open $salt_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'pbkdf2',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+      },
+
+      'mod_sql_passwd.c' => {
+        SQLPasswordEngine => 'on',
+        SQLPasswordEncoding => 'hex',
+        SQLPasswordPBKDF2 => 'sha512 1 64',
+        SQLPasswordSaltFile => $salt_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, "password");
+
+      my $resp_msgs = $client->response_msgs();
+      my $nmsgs = scalar(@$resp_msgs);
+
+      my $expected;
+
+      $expected = 1;
+      $self->assert($expected == $nmsgs,
+        test_msg("Expected $expected, got $nmsgs")); 
+
+      $expected = "User proftpd logged in";
+      $self->assert($expected eq $resp_msgs->[0],
+        test_msg("Expected '$expected', got '$resp_msgs->[0]'"));
+
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sql_passwd_pbkdf2_per_user_bug4052 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sqlpasswd.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sqlpasswd.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $user = 'proftpd';
+  my $group = 'ftpd';
+
+  # RFC 6070: PKCS#5 PBKDF2 Test Vectors
+  #
+  # Input:
+  #   P = "password" (8 octets)
+  #   S = "salt" (4 octets)
+  #   c = 4096
+  #   dkLen = 20
+  #
+  # Output:
+  #   DK = 4b 00 79 01 b7 65 48 9a
+  #        be ad 49 d9 26 f7 21 d0
+  #        65 a4 29 c1             (20 octets)
+  #
+  # Base64:
+  #   DK = SwB5AbdlSJq+rUnZJvch0GWkKcE=
+  #
+  my $passwd = "SwB5AbdlSJq+rUnZJvch0GWkKcE=";
+
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT, 
+  shell TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
+
+CREATE TABLE user_pbkdf2 (
+  userid TEXT,
+  algo TEXT,
+  rounds INTEGER,
+  len INTEGER
+);
+INSERT INTO user_pbkdf2 (userid, algo, rounds, len) VALUES ('$user', 'sha1', 4096, 20);
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $salt = 'salt';
+
+  my $salt_file = File::Spec->rel2abs("$home_dir/sqlpasswd.salt");
+  if (open(my $fh, "> $salt_file")) {
+    binmode($fh);
+    print $fh $salt;
+
+    unless (close($fh)) {
+      die("Can't write $salt_file: $!");
+    }
+
+  } else {
+    die("Can't open $salt_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'pbkdf2',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLNamedQuery => 'get-user-pbkdf2 SELECT "algo, rounds, len FROM user_pbkdf2 WHERE userid = \'%{0}\'"',
+      },
+
+      'mod_sql_passwd.c' => {
+        SQLPasswordEngine => 'on',
+        SQLPasswordEncoding => 'base64',
+        SQLPasswordPBKDF2 => 'sql:/get-user-pbkdf2',
+        SQLPasswordSaltFile => $salt_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, "password");
+
+      my $resp_msgs = $client->response_msgs();
+      my $nmsgs = scalar(@$resp_msgs);
+
+      my $expected;
+
+      $expected = 1;
+      $self->assert($expected == $nmsgs,
+        test_msg("Expected $expected, got $nmsgs")); 
+
+      $expected = "User proftpd logged in";
+      $self->assert($expected eq $resp_msgs->[0],
+        test_msg("Expected '$expected', got '$resp_msgs->[0]'"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 

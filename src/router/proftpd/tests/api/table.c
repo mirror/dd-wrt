@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Table API tests
- * $Id: table.c,v 1.3 2011/05/23 20:50:31 castaglia Exp $
+ * $Id: table.c,v 1.6 2012/01/26 17:55:07 castaglia Exp $
  */
 
 #include "tests.h"
@@ -555,7 +555,7 @@ START_TEST (table_ctl_test) {
   int res;
   pr_table_t *tab;
   unsigned long flags = 0;
-  unsigned int nchains = 0;
+  unsigned int max_ents = 0, nchains = 0;
 
   res = pr_table_ctl(NULL, 0, NULL);
   fail_unless(res == -1, "Failed to handle null table");
@@ -595,6 +595,58 @@ START_TEST (table_ctl_test) {
   nchains = 1; 
   res = pr_table_ctl(tab, PR_TABLE_CTL_SET_NCHAINS, &nchains);
   fail_unless(res == 0, "Failed to handle SET_NCHAINS: %s", strerror(errno));
+
+  res = pr_table_ctl(tab, PR_TABLE_CTL_SET_MAX_ENTS, &max_ents);
+  fail_unless(res == -1, "Failed to handle SET_MAX_ENTS, zero args");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  /* Add two entries, then try to set MAX_ENTS to one.  We should get an
+   * EPERM back for that.
+   */
+  res = pr_table_add(tab, "foo", "bar", 0);
+  fail_unless(res == 0, "Failed to add 'foo' to table: %s", strerror(errno));
+
+  res = pr_table_add(tab, "baz", "quxx", 0);
+  fail_unless(res == 0, "Failed to add 'baz' to table: %s", strerror(errno));
+
+  max_ents = 1;
+  res = pr_table_ctl(tab, PR_TABLE_CTL_SET_MAX_ENTS, &max_ents);
+  fail_unless(res == -1, "Failed to handle SET_MAX_ENTS on non-empty table");
+  fail_unless(errno == EPERM, "Failed to set errno to EPERM");
+
+  /* Now empty the table, set the MAX_ENTS to one, then try add two entries. */
+
+  res = pr_table_empty(tab);
+  fail_unless(res == 0, "Failed to empty table: %s", strerror(errno));
+
+  max_ents = 1;
+  res = pr_table_ctl(tab, PR_TABLE_CTL_SET_MAX_ENTS, &max_ents);
+  fail_unless(res == 0, "Failed to handle SET_MAX_ENTS to %d: %s",
+    max_ents, strerror(errno));
+
+  res = pr_table_add(tab, "foo", "bar", 0);
+  fail_unless(res == 0, "Failed to add 'foo' to table: %s", strerror(errno));
+
+  res = pr_table_add(tab, "baz", "quxx", 0);
+  fail_unless(res == -1, "Added second entry unexpectedly");
+  fail_unless(errno == ENOSPC,
+    "Failed to set errno to ENOSPC, received %s (%d)", errno, strerror(errno));
+}
+END_TEST
+
+START_TEST (table_load_test) {
+  pr_table_t *tab = NULL;
+  float load;
+
+  load = pr_table_load(tab);
+  fail_unless(load < 0, "Failed to handle NULL table argument");
+  fail_unless(errno == EINVAL,
+    "Failed to set errno to EINVAL; received %s (%d)", errno, strerror(errno));
+
+  tab = pr_table_alloc(p, 0);
+  load = pr_table_load(tab);
+  fail_unless(load >= 0.0, "Failed to calculate load properly; load = %0.3f",
+    load);
 }
 END_TEST
 
@@ -660,6 +712,7 @@ Suite *tests_get_table_suite(void) {
   tcase_add_test(testcase, table_set_test);
   tcase_add_test(testcase, table_do_test);
   tcase_add_test(testcase, table_ctl_test);
+  tcase_add_test(testcase, table_load_test);
   tcase_add_test(testcase, table_dump_test);
   tcase_add_test(testcase, table_pcalloc_test);
 

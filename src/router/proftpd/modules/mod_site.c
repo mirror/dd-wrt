@@ -24,7 +24,7 @@
  */
 
 /* "SITE" commands module for ProFTPD
- * $Id: mod_site.c,v 1.57 2011/05/23 21:11:56 castaglia Exp $
+ * $Id: mod_site.c,v 1.58 2013/10/07 05:51:30 castaglia Exp $
  */
 
 #include "conf.h"
@@ -169,9 +169,10 @@ MODRET site_chmod(cmd_rec *cmd) {
   /* Construct the target file name by concatenating all the parameters after
    * the mode, separating them with spaces.
    */
-  for (i = 2; i <= cmd->argc-1; i++)
+  for (i = 2; i <= cmd->argc-1; i++) {
     arg = pstrcat(cmd->tmp_pool, arg, *arg ? " " : "",
       pr_fs_decode_path(cmd->tmp_pool, cmd->argv[i]), NULL);
+  }
 
 #ifdef PR_USE_REGEX
   pre = get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
@@ -194,9 +195,12 @@ MODRET site_chmod(cmd_rec *cmd) {
 #endif
 
   dir = dir_realpath(cmd->tmp_pool, arg);
+  if (dir == NULL) {
+    int xerrno = errno;
 
-  if (!dir) {
-    pr_response_add_err(R_550, "%s: %s", arg, strerror(errno));
+    pr_response_add_err(R_550, "%s: %s", arg, strerror(xerrno));
+
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
@@ -229,6 +233,8 @@ MODRET site_chmod(cmd_rec *cmd) {
 
     while (TRUE) {
       who = pstrdup(cmd->tmp_pool, cp);
+
+      pr_signals_handle();
 
       tmp = strpbrk(who, "+-=");
       if (tmp != NULL) {

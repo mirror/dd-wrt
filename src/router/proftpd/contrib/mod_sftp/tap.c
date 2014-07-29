@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp traffic analysis protection
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: tap.c,v 1.11 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: tap.c,v 1.12 2012/02/15 23:50:51 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -198,8 +198,7 @@ int sftp_tap_send_packet(void) {
   }
 
   if (chance == curr_policy.chance) {
-    unsigned char *rand_data;
-    char *buf, *ptr;
+    unsigned char *buf, *ptr, *rand_data;
     uint32_t bufsz, buflen, rand_datalen;
     struct ssh2_packet *pkt;
     unsigned int max_datalen = 8192;
@@ -227,7 +226,7 @@ int sftp_tap_send_packet(void) {
     RAND_pseudo_bytes(rand_data, rand_datalen);
 
     sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_IGNORE);
-    sftp_msg_write_data(&buf, &buflen, (char *) rand_data, rand_datalen, TRUE);
+    sftp_msg_write_data(&buf, &buflen, rand_data, rand_datalen, TRUE);
 
     pkt->payload = ptr;
     pkt->payload_len = (bufsz - buflen);

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp ciphers
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: cipher.c,v 1.9.2.1 2012/03/13 00:23:38 castaglia Exp $
+ * $Id: cipher.c,v 1.18 2014/03/02 06:07:43 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -69,6 +69,9 @@ static size_t cipher_blockszs[2] = {
   SFTP_CIPHER_DEFAULT_BLOCK_SZ,
   SFTP_CIPHER_DEFAULT_BLOCK_SZ,
 };
+
+/* Buffer size for reading/writing keys */
+#define SFTP_CIPHER_BUFSZ			1536
 
 static unsigned int read_cipher_idx = 0;
 static unsigned int write_cipher_idx = 0;
@@ -151,15 +154,22 @@ static void clear_cipher(struct sftp_cipher *cipher) {
 }
 
 static int set_cipher_iv(struct sftp_cipher *cipher, const EVP_MD *hash,
-    const char *k, uint32_t klen, const char *h, uint32_t hlen, char *letter,
-    const unsigned char *id, uint32_t id_len) {
+    const unsigned char *k, uint32_t klen, const char *h, uint32_t hlen,
+    char *letter, const unsigned char *id, uint32_t id_len) {
 
   EVP_MD_CTX ctx;
   unsigned char *iv = NULL;
-  size_t cipher_iv_len, iv_sz;
+  size_t cipher_iv_len = 0, iv_sz = 0;
   uint32_t iv_len = 0;
 
-  /* Some ciphers do not use IVs; handle this case. */
+  if (strncmp(cipher->algo, "none", 5) == 0) {
+    cipher->iv = iv;
+    cipher->iv_len = iv_len;
+
+    return 0;
+  }
+
+   /* Some ciphers do not use IVs; handle this case. */
   cipher_iv_len = EVP_CIPHER_iv_length(cipher->cipher);
   if (cipher_iv_len != 0) {
     iv_sz = sftp_crypto_get_size(cipher_iv_len, EVP_MD_size(hash));
@@ -171,13 +181,13 @@ static int set_cipher_iv(struct sftp_cipher *cipher, const EVP_MD *hash,
   if (iv_sz == 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "unable to determine IV length for cipher '%s'", cipher->algo);
-    errno = EINVAL;
+     errno = EINVAL;
     return -1;
   }
 
   iv = malloc(iv_sz);
   if (iv == NULL) {
-    pr_log_pri(PR_LOG_CRIT, MOD_SFTP_VERSION ": Out of memory!");
+    pr_log_pri(PR_LOG_ALERT, MOD_SFTP_VERSION ": Out of memory!");
     _exit(1);
   }
 
@@ -216,13 +226,20 @@ static int set_cipher_iv(struct sftp_cipher *cipher, const EVP_MD *hash,
 }
 
 static int set_cipher_key(struct sftp_cipher *cipher, const EVP_MD *hash,
-    const char *k, uint32_t klen, const char *h, uint32_t hlen, char *letter,
-    const unsigned char *id, uint32_t id_len) {
+    const unsigned char *k, uint32_t klen, const char *h, uint32_t hlen,
+    char *letter, const unsigned char *id, uint32_t id_len) {
 
   EVP_MD_CTX ctx;
   unsigned char *key = NULL;
-  size_t key_sz;
+  size_t key_sz = 0;
   uint32_t key_len = 0;
+
+  if (strncmp(cipher->algo, "none", 5) == 0) {
+    cipher->key = key;
+    cipher->key_len = key_len;
+
+    return 0;
+  }
 
   key_sz = sftp_crypto_get_size(cipher->key_len > 0 ?
       cipher->key_len : EVP_CIPHER_key_length(cipher->cipher),
@@ -237,7 +254,7 @@ static int set_cipher_key(struct sftp_cipher *cipher, const EVP_MD *hash,
 
   key = malloc(key_sz);
   if (key == NULL) {
-    pr_log_pri(PR_LOG_CRIT, MOD_SFTP_VERSION ": Out of memory!");
+    pr_log_pri(PR_LOG_ALERT, MOD_SFTP_VERSION ": Out of memory!");
     _exit(1);
   }
 
@@ -284,13 +301,13 @@ static int set_cipher_discarded(struct sftp_cipher *cipher,
 
   garbage_in = malloc(cipher->discard_len);
   if (garbage_in == NULL) {
-    pr_log_pri(PR_LOG_CRIT, MOD_SFTP_VERSION ": Out of memory!");
+    pr_log_pri(PR_LOG_ALERT, MOD_SFTP_VERSION ": Out of memory!");
     _exit(1);
   }
 
   garbage_out = malloc(cipher->discard_len);
   if (garbage_out == NULL) {
-    pr_log_pri(PR_LOG_CRIT, MOD_SFTP_VERSION ": Out of memory!");
+    pr_log_pri(PR_LOG_ALERT, MOD_SFTP_VERSION ": Out of memory!");
     free(garbage_in);
     _exit(1);
   }
@@ -324,7 +341,8 @@ void sftp_cipher_set_block_size(size_t blocksz) {
 }
 
 const char *sftp_cipher_get_read_algo(void) {
-  if (read_ciphers[read_cipher_idx].key) {
+  if (read_ciphers[read_cipher_idx].key != NULL ||
+      strncmp(read_ciphers[read_cipher_idx].algo, "none", 5) == 0) {
     return read_ciphers[read_cipher_idx].algo;
   }
 
@@ -353,7 +371,8 @@ int sftp_cipher_set_read_algo(const char *algo) {
 int sftp_cipher_set_read_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
     const char *h, uint32_t hlen) {
   const unsigned char *id = NULL;
-  char letter, *buf, *ptr;
+  unsigned char *buf, *ptr;
+  char letter;
   uint32_t buflen, bufsz, id_len;
   int key_len;
   struct sftp_cipher *cipher;
@@ -369,7 +388,7 @@ int sftp_cipher_set_read_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
    */
   EVP_CIPHER_CTX_init(cipher_ctx);
 
-  bufsz = buflen = 1024;
+  bufsz = buflen = SFTP_CIPHER_BUFSZ;
   ptr = buf = sftp_msg_getbuf(p, bufsz);
 
   /* Need to use SSH2-style format of K for the IV and key. */
@@ -435,7 +454,7 @@ int sftp_cipher_set_read_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
 }
 
 int sftp_cipher_read_data(pool *p, unsigned char *data, uint32_t data_len,
-    char **buf, uint32_t *buflen) {
+    unsigned char **buf, uint32_t *buflen) {
   struct sftp_cipher *cipher;
   EVP_CIPHER_CTX *cipher_ctx;
   size_t cipher_blocksz;
@@ -462,7 +481,7 @@ int sftp_cipher_read_data(pool *p, unsigned char *data, uint32_t data_len,
       ptr = palloc(p, bufsz);
 
     } else {
-      ptr = (unsigned char *) *buf;
+      ptr = *buf;
     }
 
     res = EVP_Cipher(cipher_ctx, ptr, data, data_len);
@@ -474,18 +493,19 @@ int sftp_cipher_read_data(pool *p, unsigned char *data, uint32_t data_len,
     }
 
     *buflen = data_len;
-    *buf = (char *) ptr;
+    *buf = ptr;
 
     return 0;
   }
 
-  *buf = (char *) data;
+  *buf = data;
   *buflen = data_len;
   return 0;
 }
 
 const char *sftp_cipher_get_write_algo(void) {
-  if (write_ciphers[write_cipher_idx].key) {
+  if (write_ciphers[write_cipher_idx].key != NULL ||
+      strncmp(write_ciphers[write_cipher_idx].algo, "none", 5) == 0) {
     return write_ciphers[write_cipher_idx].algo;
   }
 
@@ -514,7 +534,8 @@ int sftp_cipher_set_write_algo(const char *algo) {
 int sftp_cipher_set_write_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
     const char *h, uint32_t hlen) {
   const unsigned char *id = NULL;
-  char letter, *buf, *ptr;
+  unsigned char *buf, *ptr;
+  char letter;
   uint32_t buflen, bufsz, id_len;
   int key_len;
   struct sftp_cipher *cipher;
@@ -530,7 +551,7 @@ int sftp_cipher_set_write_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
    */
   EVP_CIPHER_CTX_init(cipher_ctx);
 
-  bufsz = buflen = 1024;
+  bufsz = buflen = SFTP_CIPHER_BUFSZ;
   ptr = buf = sftp_msg_getbuf(p, bufsz);
 
   /* Need to use SSH2-style format of K for the IV and key. */
@@ -594,7 +615,8 @@ int sftp_cipher_set_write_key(pool *p, const EVP_MD *hash, const BIGNUM *k,
   return 0;
 }
 
-int sftp_cipher_write_data(struct ssh2_packet *pkt, char *buf, size_t *buflen) {
+int sftp_cipher_write_data(struct ssh2_packet *pkt, unsigned char *buf,
+    size_t *buflen) {
   struct sftp_cipher *cipher;
   EVP_CIPHER_CTX *cipher_ctx;
 
@@ -603,7 +625,7 @@ int sftp_cipher_write_data(struct ssh2_packet *pkt, char *buf, size_t *buflen) {
 
   if (cipher->key) {
     int res;
-    char *data, *ptr;
+    unsigned char *data, *ptr;
     uint32_t datalen, datasz = sizeof(uint32_t) + pkt->packet_len;
 
     datalen = datasz;
@@ -614,12 +636,12 @@ int sftp_cipher_write_data(struct ssh2_packet *pkt, char *buf, size_t *buflen) {
     sftp_msg_write_data(&data, &datalen, pkt->payload, pkt->payload_len, FALSE);
     sftp_msg_write_data(&data, &datalen, pkt->padding, pkt->padding_len, FALSE);
 
-    res = EVP_Cipher(cipher_ctx, (unsigned char *) buf,
-      (unsigned char *) ptr, (datasz - datalen));
+    res = EVP_Cipher(cipher_ctx, buf, ptr, (datasz - datalen));
     if (res != 1) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error encrypting %s data for client: %s", cipher->algo,
         sftp_crypto_get_errors());
+      errno = EIO;
       return -1;
     }
 
@@ -647,6 +669,5 @@ int sftp_cipher_write_data(struct ssh2_packet *pkt, char *buf, size_t *buflen) {
   }
 
   *buflen = 0;
-
   return 0;
 }

@@ -21,11 +21,12 @@
 # format, or AuthGroupFile, in group(5) format.  The idea is somewhat similar
 # to Apache's htpasswd program.
 #
-#  $Id: ftpasswd,v 1.13.2.2 2013/04/23 23:25:27 castaglia Exp $
+#  $Id: ftpasswd,v 1.22 2013/12/10 17:26:30 castaglia Exp $
 # ---------------------------------------------------------------------------
 
 use strict;
 
+use Fcntl qw(:flock);
 use File::Basename qw(basename);
 use Getopt::Long;
 
@@ -39,7 +40,7 @@ my $shell_file = "/etc/shells";
 my $default_cracklib_dict = "/usr/lib/cracklib_dict";
 my $cracklib_dict;
 my $output_file;
-my $version = "1.1.3";
+my $version = "1.3.0";
 
 my @data;
 
@@ -58,15 +59,19 @@ GetOptions(\%opts,
   'hash',
   'h|help',
   'home=s',
+  'l|lock',
   'md5',
   'm|member=s@',
   'name=s',
   'not-previous-password',
   'not-system-password',
   'passwd',
+  'sha256',
+  'sha512',
   'shell=s',
   'stdin',
   'uid=n',
+  'u|unlock',
   'use-cracklib:s',
   'version',
 );
@@ -125,6 +130,50 @@ if ((exists($opts{'passwd'}) && exists($opts{'group'})) ||
     handle_passwd_entry(name => $opts{'name'}, uid => $uid, gid => $gid,
       gecos => $gecos, home => $home, shell => $shell,
       delete_user => $opts{'delete-user'});
+
+    close_output_file();
+
+    # done
+    exit 0;
+  }
+
+  # check for and handle the --lock option.
+  if (defined($opts{'l'})) {
+    open_output_file();
+
+    my ($pass, $uid, $gid, $gecos, $home, $shell) = find_passwd_entry(name =>
+      $opts{'name'});
+
+    my $new_passwd = $pass;
+
+    # If this password is already "locked", leave it alone
+    if ($new_passwd !~ /^!/) {
+      $new_passwd = '!' . $new_passwd;
+    }
+
+    handle_passwd_entry(name => $opts{'name'}, uid => $uid, gid => $gid,
+      gecos => $gecos, home => $home, shell => $shell,
+      new_passwd => $new_passwd);
+
+    close_output_file();
+
+    # done
+    exit 0;
+  }
+
+  # check for and handle the --unlock option.
+  if (defined($opts{'u'})) {
+    open_output_file();
+
+    my ($pass, $uid, $gid, $gecos, $home, $shell) = find_passwd_entry(name =>
+      $opts{'name'});
+
+    my $new_passwd = $pass;
+    $new_passwd =~ s/^!+//;
+
+    handle_passwd_entry(name => $opts{'name'}, uid => $uid, gid => $gid,
+      gecos => $gecos, home => $home, shell => $shell,
+      new_passwd => $new_passwd);
 
     close_output_file();
 
@@ -277,18 +326,33 @@ sub check_shell {
 sub close_output_file {
   my %args = @_;
 
-  open(OUTPUT, "> $output_file") or
-    die "$program: unable to open $output_file: $!\n";
+  if (open(my $fh, "> $output_file")) {
+    if (flock($fh, LOCK_EX|LOCK_NB)) {
+      # flush the data to the file
+      foreach my $line (@data) {
+        print $fh "$line\n";
+      }
 
-  # flush the data to the file
-  foreach my $line (@data) {
-    print OUTPUT "$line\n";
+      # set the permissions appropriately, ie 0440, before closing the file
+      unless (chmod(0440, $output_file)) {
+        flock($fh, LOCK_UN);
+        die("$program: unable to set permissions on $output_file: $!");
+      }
+
+      flock($fh, LOCK_UN);
+
+      unless (close($fh)) {
+        die("$program: unable to close $output_file: $!\n");
+      }
+
+    } else {
+      close($fh);
+      die("$program: unable to write $output_file: Locked (in use) by another process\n");
+    }
+
+  } else {
+    die("$program: unable to open $output_file: $!\n");
   }
-
-  # set the permissions appropriately, ie 0444, before closing the file
-  chmod 0444, $output_file;
-
-  close(OUTPUT) or die "$program: unable to close $output_file: $!\n";
 }
 
 # ----------------------------------------------------------------------------
@@ -334,17 +398,35 @@ sub get_salt {
   # how to do its thing.  By default, generate a salt that triggers MD5.
 
   if (defined($opts{'des'})) {
-
     # DES salt
     $salt = join '', ('.', '/', 0..9, 'A'..'Z', 'a'..'z')[rand 64, rand 64];
 
-  } else {
-
-    # MD5 salt
+  } elsif (defined($opts{'sha256'})) {
+    # SHA-256 salt (16 characters)
     $salt = join '', (0..9, 'A'..'Z', 'a'..'z')
-      [rand 62, rand 62, rand 62, rand 62, rand 62, rand 62, rand 62, rand 62];
-    $salt = '$1$' . $salt;
+      [rand 62, rand 62, rand 62, rand 62,
+       rand 62, rand 62, rand 62, rand 62,
+       rand 62, rand 62, rand 62, rand 62,
+       rand 62, rand 62, rand 62, rand 62];
+    $salt = '$5$' . $salt;
 
+  } elsif (defined($opts{'sha512'})) {
+    # SHA-512 salt (16 characters)
+    $salt = join '', (0..9, 'A'..'Z', 'a'..'z')
+      [rand 62, rand 62, rand 62, rand 62,
+       rand 62, rand 62, rand 62, rand 62,
+       rand 62, rand 62, rand 62, rand 62,
+       rand 62, rand 62, rand 62, rand 62];
+    $salt = '$6$' . $salt;
+
+  } else {
+    # MD5 salt (16 characters)
+    $salt = join '', (0..9, 'A'..'Z', 'a'..'z')
+      [rand 62, rand 62, rand 62, rand 62,
+       rand 62, rand 62, rand 62, rand 62,
+       rand 62, rand 62, rand 62, rand 62,
+       rand 62, rand 62, rand 62, rand 62];
+    $salt = '$1$' . $salt;
   }
 
   return $salt;
@@ -360,7 +442,7 @@ sub get_passwd {
   # limit of relevant password characters.
 
   if (defined($opts{'des'}) && !defined($opts{'stdin'})) {
-    print STDOUT "\nPlease be aware that only the first 8 characters of a DES password are\nrelevant.  Use the --md5 option to select MD5 passwords, as they do not have\nthis limitation.\n";
+    print STDOUT "\nPlease be aware that only the first 8 characters of a DES password are\nrelevant.  Use the --md5, --sha256, or --sha512 options as they do not have\nthis limitation.\n";
   }
 
   if (defined($opts{'stdin'})) {
@@ -478,23 +560,55 @@ sub get_passwd {
   my $hash = crypt($passwd, $salt);
 
   # Check that the crypt() implementation properly supports use of the MD5
-  # algorithm, if specified
+  # (or other non-DES algorithm), if specified.
+  if (!defined($opts{'des'})) {
+    if (defined($opts{'md5'})) {
+      # if the first three characters of the hash are not "$1$", the crypt()
+      # implementation doesn't support MD5.  Some crypt()s will happily use
+      # "$1" as a salt even though this is not a valid DES salt.  Humf.
+      #
+      # Perl doesn't treat strings as arrays of characters, so extracting the
+      # first three characters is a little more convoluted (I'm accustomed to
+      # C's strncmp(3) for this now).
 
-  if (defined($opts{'md5'}) || !defined($opts{'des'})) {
+      my @string = split('', $hash);
+      my $prefix = $string[0] . $string[1] . $string[2];
 
-    # if the first three characters of the hash are not "$1$", the crypt()
-    # implementation doesn't support MD5.  Some crypt()s will happily use
-    # "$1" as a salt even though this is not a valid DES salt.  Humf.
-    #
-    # Perl doesn't treat strings as arrays of characters, so extracting the
-    # first three characters is a little more convoluted (I'm accustomed to
-    # C's strncmp(3) for this now).
+      if ($prefix ne '$1$') { 
+        print STDOUT "You requested MD5 passwords but your system does not support it.  Defaulting to DES passwords.\n\n";
+      }
 
-    my @string = split('', $hash);
-    my $prefix = $string[0] . $string[1] . $string[2];
+    } elsif (defined($opts{'sha256'})) {
+      # if the first three characters of the hash are not "$5$", the crypt()
+      # implementation doesn't support SHA-256.  Some crypt()s will happily use
+      # "$5" as a salt even though this is not a valid DES salt.  Humf.
+      #
+      # Perl doesn't treat strings as arrays of characters, so extracting the
+      # first three characters is a little more convoluted (I'm accustomed to
+      # C's strncmp(3) for this now).
 
-    if ($prefix ne '$1$') { 
-      print STDOUT "You requested MD5 passwords but your system does not support it.  Defaulting to DES passwords.\n\n";
+      my @string = split('', $hash);
+      my $prefix = $string[0] . $string[1] . $string[2];
+
+      if ($prefix ne '$5$') {
+        print STDOUT "You requested SHA-256 passwords but your system does not support it.  Defaulting to DES passwords.\n\n";
+      }
+
+    } elsif (defined($opts{'sha512'})) {
+      # if the first three characters of the hash are not "$6$", the crypt()
+      # implementation doesn't support SHA-512.  Some crypt()s will happily use
+      # "$6" as a salt even though this is not a valid DES salt.  Humf.
+      #
+      # Perl doesn't treat strings as arrays of characters, so extracting the
+      # first three characters is a little more convoluted (I'm accustomed to
+      # C's strncmp(3) for this now).
+
+      my @string = split('', $hash);
+      my $prefix = $string[0] . $string[1] . $string[2];
+
+      if ($prefix ne '$6$') {
+        print STDOUT "You requested SHA-512 passwords but your system does not support it.  Defaulting to DES passwords.\n\n";
+      }
     }
   }
 
@@ -630,6 +744,7 @@ sub handle_passwd_entry {
   my $home = $args{'home'};
   my $shell = $args{'shell'};
   my $delete_user = $args{'delete_user'};
+  my $new_passwd = $args{'new_passwd'};
 
   # Trim any trailing slashes in $home.
   $home =~ s/(.*)\/$/$1/ if ($home =~ /\/$/);
@@ -664,12 +779,18 @@ sub handle_passwd_entry {
   }
 
   my $passwd;
-  unless ($delete_user) {
-    # check the requested shell against the list in /etc/shells
-    check_shell(shell => $shell);
 
-    # prompt the user for the password
-    $passwd = get_passwd(name => $name);
+  if (!$delete_user) {
+    if (!$new_passwd) {
+      # check the requested shell against the list in /etc/shells
+      check_shell(shell => $shell);
+
+      # prompt the user for the password
+      $passwd = get_passwd(name => $name);
+
+    } else {
+      $passwd = $new_passwd;
+    }
   }
 
   # remove the entry to be updated
@@ -715,10 +836,21 @@ sub open_output_file {
       die "$program: unable to set permissions on $output_file to 0644: $!\n";
     }
 
-    open(INPUT, "< $output_file") or
-      die "$program: unable to open $output_file: $!\n";
-    chomp(@data = <INPUT>);
-    close(INPUT);
+    if (open(my $fh, "< $output_file")) {
+      if (flock($fh, LOCK_SH|LOCK_NB)) {
+        chomp(@data = <$fh>);
+        flock($fh, LOCK_UN);
+        close($fh);
+
+      } else {
+        close($fh);
+        die("$program: unable to read $output_file: Locked (in use) by another process\n");
+      }
+
+
+    } else {
+      die("$program: unable to open $output_file: $!\n");
+    }
   }
 
   # if the --force option was given, just zero out any data that might have
@@ -803,6 +935,11 @@ usage: $program [--help] [--hash|--group|--passwd]
  
                 Remove the entry for the given user name from the file.
 
+    -l          Lock the password of the named account.  This option disables a
+    --lock      password by changing it to a value which matches no possible
+                encrypted value (it adds a '!' at the beginning of the
+                password).
+
     --not-previous-password
 
                 Double-checks the given password against the previous password
@@ -817,10 +954,18 @@ usage: $program [--help] [--hash|--group|--passwd]
                 helps to enforce different passwords for different types of
                 access.
 
+    --sha256    Use the SHA-256 algorithm for encrypting passwords.
+
+    --sha512    Use the SHA-512 algorithm for encrypting passwords.
+
     --stdin
                 Read the password directly from standard in rather than
                 prompting for it.  This is useful for writing scripts that
                 automate use of $program.
+
+    -u          Unlock the password of the named account.  This option
+    --unlock    re-enables a password by changing the password back to its
+                previous value (to the value before using the -l option).
 
     --use-cracklib
 
@@ -875,6 +1020,10 @@ usage: $program [--help] [--hash|--group|--passwd]
                 the specified output-file, an entry will be created for them.
                 Otherwise, the given fields will be updated.
 
+    --sha256    Use the SHA-256 algorithm for encrypting passwords.
+
+    --sha512    Use the SHA-512 algorithm for encrypting passwords.
+
     --stdin
                 Read the password directly from standard in rather than
                 prompting for it.  This is useful for writing scripts that
@@ -903,6 +1052,10 @@ usage: $program [--help] [--hash|--group|--passwd]
 
     --md5       Use the MD5 algorithm for encrypting passwords.  This is the
                 default.
+
+    --sha256    Use the SHA-256 algorithm for encrypting passwords.
+
+    --sha512    Use the SHA-512 algorithm for encrypting passwords.
 
     --stdin
                 Read the password directly from standard in rather than

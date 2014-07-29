@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * Parts Copyright (C) 1991, 1992, 1993, 1999, 2000 Free Software
  *   Foundation, Inc.
@@ -28,7 +28,7 @@
  */
 
 /* ProFTPD support library definitions.
- * $Id: libsupp.h,v 1.16 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: libsupp.h,v 1.17 2013/06/22 04:59:35 castaglia Exp $
  */
 
 #include <glibc-glob.h>
@@ -47,7 +47,7 @@
 #define	PR_FNM_NOMATCH	1
 
 int pr_fnmatch(const char *, const char *, int);
-char *sstrncpy(char *, const char *, size_t);
+int sstrncpy(char *, const char *, size_t);
 
 #ifndef HAVE_GAI_STRERROR
 const char *pr_gai_strerror(int);

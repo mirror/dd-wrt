@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 /* Logging, either to syslog or stderr, as well as debug logging
  * and debug levels.
  *
- * $Id: log.h,v 1.34 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: log.h,v 1.38 2013/10/07 01:29:05 castaglia Exp $
  */
 
 #ifndef PR_LOG_H
@@ -200,11 +200,22 @@ typedef struct log_event {
 } pr_log_event_t;
 
 #define PR_LOG_TYPE_UNSPEC	0
+#define PR_LOG_NAME_UNSPEC	"core.log.unspec"
+
 #define PR_LOG_TYPE_XFERLOG	1
+#define PR_LOG_NAME_XFERLOG	"core.log.xferlog"
+
 #define PR_LOG_TYPE_SYSLOG	2
+#define PR_LOG_NAME_SYSLOG	"core.log.syslog"
+
 #define PR_LOG_TYPE_SYSTEMLOG	3
+#define PR_LOG_NAME_SYSTEMLOG	"core.log.systemlog"
+
 #define PR_LOG_TYPE_EXTLOG	4
+#define PR_LOG_NAME_EXTLOG	"core.log.extendedlog"
+
 #define PR_LOG_TYPE_TRACELOG	5
+#define PR_LOG_NAME_TRACELOG	"core.log.tracelog"
 
 /* Helper function to generate the necessary log event, passing along the
  * log event context data.

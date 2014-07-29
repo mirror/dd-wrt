@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Event API tests
- * $Id: event.c,v 1.2 2011/05/23 20:50:31 castaglia Exp $
+ * $Id: event.c,v 1.3 2013/01/05 03:36:39 castaglia Exp $
  */
 
 #include "tests.h"
@@ -178,7 +178,8 @@ START_TEST (event_dump_test) {
     0, event_dumped);
 
   res = pr_event_register(NULL, event, event_cb, NULL);
-  fail_unless(res == 0, "Failed to register event: %s", strerror(errno));
+  fail_unless(res == 0, "Failed to register event '%s', callback %p: %s",
+    event, event_cb, strerror(errno));
 
   pr_event_dump(event_dump);
   fail_unless(event_dumped == 1, "Expected dumped count of %u, got %u",
@@ -187,10 +188,12 @@ START_TEST (event_dump_test) {
   event_dumped = 0;
 
   res = pr_event_register(NULL, event, event_cb2, NULL);
-  fail_unless(res == 0, "Failed to register event: %s", strerror(errno));
+  fail_unless(res == 0, "Failed to register event '%s', callback %p: %s",
+    event, event_cb2, strerror(errno));
 
   res = pr_event_register(NULL, "bar", event_cb2, NULL);
-  fail_unless(res == 0, "Failed to register event: %s", strerror(errno));
+  fail_unless(res == 0, "Failed to register event 'bar', callback %p: %s",
+    event_cb2, strerror(errno));
 
   pr_event_dump(event_dump);
   fail_unless(event_dumped == 3, "Expected dumped count of %u, got %u",
@@ -207,7 +210,6 @@ Suite *tests_get_event_suite(void) {
   testcase = tcase_create("base");
 
   tcase_add_checked_fixture(testcase, set_up, tear_down);
-
   tcase_add_test(testcase, event_register_test);
   tcase_add_test(testcase, event_unregister_test);
   tcase_add_test(testcase, event_generate_test);

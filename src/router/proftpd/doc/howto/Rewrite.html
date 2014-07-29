@@ -1,4 +1,4 @@
-<!-- $Id: Rewrite.html,v 1.7 2011/10/17 18:25:59 castaglia Exp $ -->
+<!-- $Id: Rewrite.html,v 1.9 2013/01/08 00:20:44 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Rewrite.html,v $ -->
 
 <html>
@@ -134,7 +134,7 @@ ID (PID), to ensure some sort of file name uniqueness.  Enter
     RewriteEngine on
 
     RewriteCondition %m STOR
-    RewriteRule (.*)  $1.%P
+    RewriteRule (.*) $1.%P
   &lt;/IfModule&gt;
 </pre>
 This appends the PID of the current session process to any uploaded filename.
@@ -196,7 +196,7 @@ solution does not need <code>RewriteMap</code>; instead, you simply use:
     RewriteEngine on
 
     RewriteCondition %m USER
-    RewriteRule (.*)  $1@domain.com
+    RewriteRule (.*) $1@domain.com
   &lt;/IfModule&gt;
 </pre>
 And if instead you wanted to use a fixed prefix, rather than a suffix, the
@@ -206,7 +206,7 @@ only difference would be in the <code>RewriteRule</code> directive, <i>e.g.</i>:
     RewriteEngine on
 
     RewriteCondition %m USER
-    RewriteRule (.*)  PREFIX$1
+    RewriteRule (.*) PREFIX$1
   &lt;/IfModule&gt;
 </pre>
 
@@ -304,7 +304,7 @@ commands.  As of ProFTPD 1.3.2 (see <a href="http://bugs.proftpd.org/show_bug.cg
   &lt;IfModule mod_rewrite.c&gt;
     RewriteEngine on
     RewriteMap replace int:replaceall
-    RewriteCondition  %m "^SITE CHMOD$" [NC]
+    RewriteCondition %m "^SITE CHMOD$" [NC]
     RewriteRule "^(.*) +(.*)$" "$1 ${replace:!$2!\\\\!/}"'
   &lt;/IfModule&gt;
 </pre>
@@ -363,7 +363,7 @@ names.  Note that "&auml" in hex notation is <code>0xE4</code>:
   my $rewrite_rule = 'RewriteRule (.*) ${replace:/$1/' . chr(0xE4) . '/ae}';
 
   my $config = '/path/to/proftpd.conf';
-  if (open(my $fh, "> $config")) {
+  if (open(my $fh, "&gt; $config")) {
     print $fh EOR;
 
   &lt;IfModule mod_rewrite.c&gt;
@@ -376,6 +376,82 @@ names.  Note that "&auml" in hex notation is <code>0xE4</code>:
 EOR
   }
 </pre>
+
+<p>
+<b>Time-Related Content</b><br>
+What if you find yourself wanting to serve different files based on the
+time of day, day of the month, <i>etc</i>?  Or what if you wanted to
+put an automatic timestamp on the names of files being uploaded?  Starting
+with <code>proftpd-1.3.5rc1</code>, these things are now possible using
+<code>mod_rewrite</code>; see the time-related variables in the
+<a href="../contrib/mod_rewrite.html#RewriteCondition"><code>RewriteCondition</code></a> documentation.
+
+<p>
+To demonstrate the concept of time-related content, let's assume that you
+have a two different files, one for "daytime" and one for "nighttime".
+Depending on when a client connects and requests this file, you can have
+<code>mod_rewrite</code> transparently point the client to the correct file.
+Let's show how this might work:
+<pre>
+  &lt;IfModule mod_rewrite.c&gt;
+    RewriteEngine on
+    RewriteLog /path/to/rewrite.log
+
+    # For requests of index.txt during the day, rewrite the command to
+    # be for index.txt.day
+    RewriteCondition %m RETR
+    RewriteCondition %f index.txt$
+    RewriteCondition %{TIME_HOUR}%{TIME_MIN} &gt;0700
+    RewriteCondition %{TIME_HOUR}%{TIME_MIN} &lt;1900
+    RewriteRule ^(.*) $1.day
+
+    # For requests of index.txt during the night, rewrite the command to
+    # be for index.txt.night
+    RewriteCondition %m RETR
+    RewriteCondition %f index.txt$
+    RewriteCondition %{TIME_HOUR}%{TIME_MIN} &lt;0700
+    RewriteCondition %{TIME_HOUR}%{TIME_MIN} &gt;1900
+    RewriteRule ^(.*) $1.night
+
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+Another use case involving time is the case where you might want to
+automatically timestamp every file being uploaded.  To do this, you can
+use <code>mod_rewrite</code> like so:
+<pre>
+  &lt;IfModule mod_rewrite.c&gt;
+    RewriteEngine on
+    RewriteLog /path/to/rewrite.log
+
+    # Automatically timestamp all uploaded files with ".DD-MM-YYYY".
+    RewriteCondition %m STOR
+    RewriteRule (.*) $1.%{TIME_DAY}-%{TIME_MON}-%{TIME_YEAR}
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
+Or maybe you have a special file that should only be available for a month,
+and then be inaccessible?  To do this, you would first give the special file
+a name that includes a timestamp, <i>e.g.</i> "special.bin-01-2013".  Then
+have the following <code>mod_rewrite</code> configuration:
+<pre>
+  &lt;IfModule mod_rewrite.c&gt;
+    RewriteEngine on
+    RewriteLog /path/to/rewrite.log
+
+    RewriteCondition %m RETR
+    RewriteCondition %f special.bin$
+    RewriteRule (.*) $1-%{TIME_MON}-%{TIME_YEAR}
+  &lt;/IfModule&gt;
+</pre>
+Now, if the "special.bin" file is requested during January 2013, the RETR
+request will be rewritten and will match the name of the file on disk; the
+file is accessible, and the download succeeds.  If the same file is requested
+any other time than during January 2013, then the
+<code>mod_rewrite</code>-rewritten path will not match the name of the file
+on disk, and the download will fail.
 
 <hr>
 </body>

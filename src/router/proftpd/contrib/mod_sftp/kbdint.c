@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp keyboard-interactive driver mgmt
- * Copyright (c) 2008-2009 TJ Saunders
+ * Copyright (c) 2008-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: kbdint.c,v 1.4 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: kbdint.c,v 1.6 2013/09/14 06:53:47 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -30,6 +30,8 @@
 #include "msg.h"
 #include "utf8.h"
 #include "kbdint.h"
+
+#define SFTP_KBDINT_MAX_RESPONSES	500
 
 struct kbdint_driver {
   struct kbdint_driver *next, *prev;
@@ -192,7 +194,7 @@ int sftp_kbdint_unregister_driver(const char *name) {
 int sftp_kbdint_send_challenge(const char *user, const char *instruction,
     unsigned int count, sftp_kbdint_challenge_t *challenges) {
   register unsigned int i;
-  char *buf, *ptr;
+  unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
   struct ssh2_packet *pkt;
   int res;
@@ -252,10 +254,10 @@ int sftp_kbdint_send_challenge(const char *user, const char *instruction,
   return res;
 }
 
-int sftp_kbdint_recv_response(pool *p, unsigned int *count,
-    const char ***responses) {
+int sftp_kbdint_recv_response(pool *p, unsigned int expected_count,
+    unsigned int *rcvd_count, const char ***responses) {
   register unsigned int i;
-  char *buf;
+  unsigned char *buf;
   cmd_rec *cmd;
   array_header *list;
   uint32_t buflen, resp_count;
@@ -264,7 +266,7 @@ int sftp_kbdint_recv_response(pool *p, unsigned int *count,
   int res;
 
   if (p == NULL ||
-      count == NULL ||
+      rcvd_count == NULL ||
       responses == NULL) {
     errno = EINVAL;
     return -1;
@@ -299,6 +301,29 @@ int sftp_kbdint_recv_response(pool *p, unsigned int *count,
 
   resp_count = sftp_msg_read_int(pkt->pool, &buf, &buflen);
 
+  /* Ensure that the number of responses sent by the client is the same
+   * as the number of challenges sent, lest a malicious client attempt to
+   * trick us into allocating too much memory (Bug#3973).
+   */
+  if (resp_count != expected_count) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "sent %lu %s, but received %lu %s", (unsigned long) expected_count,
+      expected_count != 1 ? "challenges" : "challenge",
+      (unsigned long) resp_count, resp_count != 1 ? "responses" : "response");
+    destroy_pool(pkt->pool);
+    errno = EPERM;
+    return -1;
+  }
+
+  if (resp_count > SFTP_KBDINT_MAX_RESPONSES) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "received too many responses (%lu > max %lu), rejecting",
+      (unsigned long) resp_count, (unsigned long) SFTP_KBDINT_MAX_RESPONSES);
+    destroy_pool(pkt->pool);
+    errno = EPERM;
+    return -1;
+  }
+
   list = make_array(p, resp_count, sizeof(char *));
   for (i = 0; i < resp_count; i++) {
     char *resp;
@@ -307,7 +332,7 @@ int sftp_kbdint_recv_response(pool *p, unsigned int *count,
     *((char **) push_array(list)) = pstrdup(p, sftp_utf8_decode_str(p, resp));
   }
 
-  *count = (unsigned int) resp_count;
+  *rcvd_count = (unsigned int) resp_count;
   *responses = ((const char **) list->elts);
   return 0;
 }

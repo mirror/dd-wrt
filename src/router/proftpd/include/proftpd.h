@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* General options
- * $Id: proftpd.h,v 1.71 2011/09/21 05:40:04 castaglia Exp $
+ * $Id: proftpd.h,v 1.75 2012/04/15 18:04:14 castaglia Exp $
  */
 
 #ifndef PR_PROFTPD_H
@@ -64,9 +64,10 @@ struct conn_struc;
 struct cmd_struc;
 struct config_struc;
 struct modret_struc;
+struct server_struc;
 
 typedef struct {
-  pool *pool;
+  struct pool_rec *pool;
 
   volatile int sf_flags;		/* Session/State flags */
   volatile int sp_flags;		/* Session/Protection flags */
@@ -120,7 +121,7 @@ typedef struct {
 
   pr_table_t *notes;			/* Session notes table */
 
-  pr_class_t *class;			/* Session class */
+  pr_class_t *conn_class;		/* Session class */
   char *proc_prefix;			/* The "prefix" of our process name */
 
   int wtmp_log;				/* Are we logging to wtmp? */
@@ -142,10 +143,14 @@ typedef struct {
 
   int curr_phase;                       /* Current handler phase */
 
+  struct server_struc *prev_server;	/* Previous server_rec, if HOST changed
+					 * the main_server pointer.
+					 */
+
   off_t restart_pos;			/* Restart marked position */
 
   struct {
-    struct pool *p;
+    struct pool_rec *p;
 
     int xfer_type;     /* xfer session attributes, default/append/hidden */
     int direction;

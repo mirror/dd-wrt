@@ -13,6 +13,8 @@ AC_MINIX
 AC_HEADER_STDC
 AC_CHECK_HEADERS(stdlib.h unistd.h limits.h fcntl.h)
 
+AC_SUBST(LDFLAGS)
+
 MODULE_LIBS=
 if test "$ostype" = "SOLARIS" ; then
   MODULE_LIBS="-lkstat"

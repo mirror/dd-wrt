@@ -1,4 +1,4 @@
-<!-- $Id: mod_auth_unix.html,v 1.4 2011/02/20 18:20:26 castaglia Exp $ -->
+<!-- $Id: mod_auth_unix.html,v 1.7 2013/09/29 23:28:02 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_auth_unix.html,v $ -->
 
 <html>
@@ -93,7 +93,7 @@ currently implemented options are:
 <hr>
 <h2><a name="PersistentPasswd">PersistentPasswd</a></h2>
 <strong>Syntax:</strong> PersistentPasswd <em>on|off</em><br>
-<strong>Default:</strong> None<br>
+<strong>Default:</strong> off<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_auth_unix<br>
 <strong>Compatibility:</strong> 1.2.0
@@ -110,20 +110,11 @@ that <code>/etc/shadow</code> is never held open, for security reasons).
 <p>
 On some platforms, you <b>must</b> turn this option on, as the libc functions
 are incapable of accessing these databases from inside of a
-<code>chroot()</code>.  At compile-time, the <code>configure</code> script
-will attempt to detect whether or not you need this support, and set the
-default accordingly..  However, such "guessing" may fail, and you will have to
-manually enable/disable the feature.  If you cannot see user or group names
-when performing a directory listing inside a <code>chroot()</code>ed login,
-this indicates you must enable the directive.  Use of the
-<code>AuthUserFile</code> or <code>AuthGroupFile</code> directives will force
-partial support for persistent user or group database files, regardless of
-<code>PersistentPasswd</code>'s setting.
+<code>chroot()</code>.
 
 <p>
 Note: <code>NIS</code>/<code>NIS+</code> and <code>NSS</code> users will most
-likely want to disable this feature, regardless of <code>proftpd</code>'s
-detected configuration defaults.  Failure to disable this will make your
+likely want to disable this feature.  Failure to disable this will make your
 <code>NIS</code>/<code>NIS+</code> maps and <code>NSS</code> lookups not work!
 On certain systems, you may also need to use the
 <code>--enable-autoshadow</code> option in order to authenticate both users
@@ -136,6 +127,24 @@ The <code>mod_auth_unix</code> module is compiled by default.
 
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
+
+<p><a name="Password8Characters">
+<font color=red>Question</font>: I found that only the first 8 characters of
+passwords are used! This is a security bug!<br>
+<font color=blue>Answer</font>: No, it is not.
+
+<p>
+The default Unix password hashing scheme uses the <a href="http://en.wikipedia.org/wiki/Data_Encryption_Standard">Data Encryption Standard</a> (DES) algorithm.
+As per the <code>crypt(3)</code> man page, <b>only the first 8 characters
+of the password are used</b>.  Thus this 8 character limitation comes from
+the underlying system authentication, <b>not</b> from proftpd.  The whole
+purpose of the PAM system was to enable replacing the use of DES with other
+authentication algorithms, which do not have this 8 character limitation.
+
+<p>
+Later, other <code>crypt(3)</code> implementations were made which can also
+support algorithms such as MD5, or Blowfish.  Some platforms support these
+enhanced versions of <code>crypt(3)</code>, some do not.
 
 <p><a name="ExpiredPasswords">
 <font color=red>Question</font>: It appears that the handling of expired
@@ -155,16 +164,46 @@ it is better to use the
 configuration which can better handle password expiration according to your
 site's needs.
 
+<p><a name="CachedUsers">
+<font color=red>Question</font>: I've added new user to my system (<i>i.e.</i>
+in the <code>/etc/passwd</code> file), but my <code>proftpd</code> does not
+see the new user until I have restarted it.  Is there any way to not have
+to restart <code>proftpd</code>, to disable its caching of system users?<br>
+<font color=blue>Answer</font>: ProFTPD is not caching system users, per se.
+Instead, this behavior is a side-effect of the
+<a href="#PersistentPasswd"><code>PersistentPasswd</code></a> setting.  Check
+to see if you have:
+<pre>
+  PersistentPasswd on
+</pre>
+in your <code>proftpd.conf</code>. If you do (or if you do not have
+<code>PersistentPasswd</code> in your config at all), then change your
+<code>proftpd.conf</code> to have:
+<pre>
+  PersistentPasswd off
+</pre>
+
+<p>
+Why is this necessary?  When you use <code>PersistentPasswd on</code>,
+then <code>proftpd</code> will open a <i>file descriptor</i> on the system
+<code>/etc/passwd</code> file during server startup.  This descriptor is kept
+open during the lifetime of the daemon.  Later, when you add a new user to the
+system <code>/etc/passwd</code> file, the system tools create a new version of
+that file, then rename the new file to have the <code>/etc/passwd</code> name.
+But <code>proftpd</code> still has a descriptor to the <i>old</i> file, and
+does not see/know that the file has changed.  That is why it can look like
+<code>proftpd</code> is "caching" your system users.
+
 <p>
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011/02/20 18:20:26 $</i><br>
+Last Updated: <i>$Date: 2013/09/29 23:28:02 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2010-2011<br>
+&copy; Copyright 2010-2013<br>
  All Rights Reserved<br>
 </i></b></font>
 

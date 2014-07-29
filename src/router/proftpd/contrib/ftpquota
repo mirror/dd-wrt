@@ -16,7 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
 #
-#  $Id: ftpquota,v 1.3.2.1 2013/04/23 23:25:27 castaglia Exp $
+#  $Id: ftpquota,v 1.6 2013/04/23 23:25:20 castaglia Exp $
 # -------------------------------------------------------------------------
 
 use strict;
@@ -342,7 +342,7 @@ sub get_display_bytes {
   if ($byte_units eq "byte") {
     # no calculation necessary
 
-    unless ($bytes eq "unlimited") {
+    unless ($bytes eq "unlimited" || $bytes <= 0) {
       return sprintf "bytes:\t%.2f", $bytes;
     } else {
       return sprintf "bytes:\tunlimited";
@@ -352,7 +352,7 @@ sub get_display_bytes {
     # divide by 1024.0
     my $adj_bytes = $bytes / 1024.0;
 
-    unless ($bytes eq "unlimited") {
+    unless ($bytes eq "unlimited" || $bytes <= 0) {
       return sprintf "Kb:\t%.2f", $adj_bytes;
     } else {
       return sprintf "Kb:\tunlimited";
@@ -362,7 +362,7 @@ sub get_display_bytes {
     # divide by 1024.0 * 1024.0
     my $adj_bytes = $bytes / (1024.0 * 1024.0);
 
-    unless ($bytes eq "unlimited") {
+    unless ($bytes eq "unlimited" || $bytes <= 0) {
       return sprintf "Mb:\t%.2f", $adj_bytes;
     } else {
       return sprintf "Mb:\tunlimited";
@@ -372,7 +372,7 @@ sub get_display_bytes {
     # divide by 1024.0 * 1024.0 * 1024.0
     my $adj_bytes = $bytes / (1024.0 * 1024.0 * 1024.0);
 
-    unless ($bytes eq "unlimited") {
+    unless ($bytes eq "unlimited" || $bytes <= 0) {
       return sprintf "Gb:\t%.2f", $adj_bytes;
     } else {
       return sprintf "Gb:\tunlimited";
@@ -582,6 +582,10 @@ sub parse_options {
     $record{'bytes_in'} = $opts{'bytes-upload'} if
       (defined($opts{'bytes-upload'}));
 
+    if ($record{'bytes_in'} <= 0.0) {
+      print STDERR "$program: notice: upload bytes value '", $record{'bytes_in'}, "' means 'unlimited'\n";
+    }
+
     if ($record{'bytes_in'} != $default_bytes_in) {
       if ($byte_units eq "kilo") {
         $record{'bytes_in'} = $record{'bytes_in'} * 1024.0;
@@ -610,6 +614,10 @@ sub parse_options {
     $record{'bytes_out'} = $opts{'bytes-download'} if
       (defined($opts{'bytes-download'}));
 
+    if ($record{'bytes_out'} <= 0.0) {
+      print STDERR "$program: notice: download bytes value '", $record{'bytes_out'}, "' means 'unlimited'\n";
+    }
+
     if ($record{'bytes_out'} != $default_bytes_out) {
       if ($byte_units eq "kilo") {
         $record{'bytes_out'} = $record{'bytes_out'} * 1024.0;
@@ -637,6 +645,10 @@ sub parse_options {
     $record{'bytes_xfer'} = $opts{'Bx'} if (defined($opts{'Bx'}));
     $record{'bytes_xfer'} = $opts{'bytes-xfer'} if
       (defined($opts{'bytes-xfer'}));
+
+    if ($record{'bytes_xfer'} <= 0.0) {
+      print STDERR "$program: notice: transfer bytes value '", $record{'bytes_xfer'}, "' means 'unlimited'\n";
+    }
 
     if ($record{'bytes_xfer'} != $default_bytes_xfer) {
       if ($byte_units eq "kilo") {
@@ -668,6 +680,10 @@ sub parse_options {
     $record{'files_in'} = $opts{'files-upload'} if
       (defined($opts{'files-upload'}));
 
+    if ($record{'files_in'} <= 0) {
+      print STDERR "$program: notice: upload files value '", $record{'files_in'}, "' means 'unlimited'\n";
+    }
+
   } else {
 
     $record{'files_in'} = $default_files_in if ($table_type == $LIMIT_TABLE);
@@ -684,6 +700,10 @@ sub parse_options {
     $record{'files_out'} = $opts{'files-download'} if
       (defined($opts{'files-download'}));
 
+    if ($record{'files_out'} <= 0) {
+      print STDERR "$program: notice: download files value '", $record{'files_out'}, "' means 'unlimited'\n";
+    }
+
   } else {
 
     $record{'files_out'} = $default_files_out if ($table_type == $LIMIT_TABLE);
@@ -699,6 +719,10 @@ sub parse_options {
     $record{'files_xfer'} = $opts{'Fx'} if (defined($opts{'Fx'}));
     $record{'files_xfer'} = $opts{'files-xfer'} if
       (defined($opts{'files-xfer'}));
+
+    if ($record{'files_xfer'} <= 0) {
+      print STDERR "$program: notice: transfer files value '", $record{'files_xfer'}, "' means 'unlimited'\n";
+    }
 
   } else {
 
@@ -749,13 +773,13 @@ sub print_record {
 
   # print "unlimited" if quota is unlimited, but only for limit tables
   if ($table_type == $LIMIT_TABLE) {
-    $bytes_in = "unlimited" if ($bytes_in < 0.0);
-    $bytes_out = "unlimited" if ($bytes_out < 0.0);
-    $bytes_xfer = "unlimited" if ($bytes_xfer < 0.0);
+    $bytes_in = "unlimited" if ($bytes_in <= 0.0);
+    $bytes_out = "unlimited" if ($bytes_out <= 0.0);
+    $bytes_xfer = "unlimited" if ($bytes_xfer <= 0.0);
 
-    $files_in = "unlimited" if ($files_in == 0);
-    $files_out = "unlimited" if ($files_out == 0);
-    $files_xfer = "unlimited" if ($files_xfer == 0);
+    $files_in = "unlimited" if ($files_in <= 0);
+    $files_out = "unlimited" if ($files_out <= 0);
+    $files_xfer = "unlimited" if ($files_xfer <= 0);
   }
 
   print STDOUT "-------------------------------------------\n";

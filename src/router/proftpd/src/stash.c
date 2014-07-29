@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2010-2011 The ProFTPD Project team
+ * Copyright (c) 2010-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Symbol table hashes
- * $Id: stash.c,v 1.10 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: stash.c,v 1.12 2014/02/11 15:17:04 castaglia Exp $
  */
 
 #include "conf.h"
@@ -635,6 +635,85 @@ int pr_stash_remove_symbol(pr_stash_type_t sym_type, const char *sym_name,
   }
 
   return count;
+}
+
+#ifdef PR_USE_DEVEL
+static void stash_dumpf(const char *fmt, ...) {
+  char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
+  va_list msg;
+
+  va_start(msg, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, msg);
+  va_end(msg);
+
+  buf[sizeof(buf)-1] = '\0';
+
+  pr_log_debug(DEBUG5, "%s", buf);
+}
+#endif
+
+void pr_stash_dump(void (*dumpf)(const char *, ...)) {
+#ifdef PR_USE_DEVEL
+  register unsigned int i;
+  unsigned int nsyms = 0, nconf_syms = 0, ncmd_syms = 0, nauth_syms = 0,
+    nhook_syms = 0;
+
+  if (dumpf == NULL) {
+    dumpf = stash_dumpf;
+  }
+
+  for (i = 0; i < PR_TUNABLE_HASH_TABLE_SIZE; i++) {
+    unsigned int nrow_syms = 0;
+    struct stash *sym;
+
+    xaset_t *syms = symbol_table[i];
+
+    for (sym = (struct stash *) syms->xas_list; sym; sym = sym->next) {
+      nrow_syms++;
+      nsyms++;
+    }
+
+    dumpf("stab index %u: %u symbols", i, nrow_syms);
+
+    for (sym = (struct stash *) syms->xas_list; sym; sym = sym->next) {
+      const char *type = "<unknown>";
+
+      switch (sym->sym_type) {
+        case PR_SYM_CONF:
+          nconf_syms++;
+          type = "CONF";
+          break;
+
+        case PR_SYM_CMD:
+          ncmd_syms++;
+          type = "CMD";
+          break;
+
+        case PR_SYM_AUTH:
+          nauth_syms++;
+          type = "AUTH";
+          break;
+
+        case PR_SYM_HOOK:
+          nhook_syms++;
+          type = "HOOK";
+          break;
+      }
+
+      if (sym->sym_module != NULL) {
+        dumpf(" + %s symbol: %s (mod_%s.c)", type, sym->sym_name,
+          sym->sym_module->name);
+
+      } else {
+        dumpf(" + %s symbol: %s (core)", type, sym->sym_name);
+      }
+    }
+  }
+
+  dumpf("stab: %u total symbols: %u CONF, %u CMD, %u AUTH, %u HOOK", nsyms,
+    nconf_syms, ncmd_syms, nauth_syms, nhook_syms);
+
+#endif /* PR_USE_DEVEL */
 }
 
 int init_stash(void) {

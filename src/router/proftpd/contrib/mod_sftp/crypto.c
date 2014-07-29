@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp OpenSSL interface
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,11 +21,12 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: crypto.c,v 1.20.2.3 2012/11/14 22:13:39 castaglia Exp $
+ * $Id: crypto.c,v 1.33 2014/01/28 17:26:17 castaglia Exp $
  */
 
 #include "mod_sftp.h"
 #include "crypto.h"
+#include "umac.h"
 
 /* In OpenSSL 0.9.7, all des_ functions were renamed to DES_ to avoid 
  * clashes with older versions of libdes. 
@@ -83,7 +84,6 @@ static struct sftp_cipher ciphers[] = {
   /* The handling of NULL openssl_name and get_type fields is done in
    * sftp_crypto_get_cipher(), as special cases.
    */
-
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
   { "aes256-ctr",	NULL,		0,	NULL,	TRUE, TRUE },
   { "aes192-ctr",	NULL,		0,	NULL,	TRUE, TRUE },
@@ -144,11 +144,23 @@ struct sftp_digest {
 };
 
 static struct sftp_digest digests[] = {
-  { "hmac-sha1",	"sha1",		EVP_sha1,	0,	TRUE, TRUE },
+  /* The handling of NULL openssl_name and get_type fields is done in
+   * sftp_crypto_get_digest(), as special cases.
+   */
+#ifdef HAVE_SHA256_OPENSSL
+  { "hmac-sha2-256",	"sha256",		EVP_sha256,	0, TRUE, TRUE },
+#endif /* SHA256 support in OpenSSL */
+#ifdef HAVE_SHA512_OPENSSL
+  { "hmac-sha2-512",	"sha512",		EVP_sha512,	0, TRUE, TRUE },
+#endif /* SHA512 support in OpenSSL */
+  { "hmac-sha1",	"sha1",		EVP_sha1,	0, 	TRUE, TRUE },
   { "hmac-sha1-96",	"sha1",		EVP_sha1,	12,	TRUE, TRUE },
   { "hmac-md5",		"md5",		EVP_md5,	0,	TRUE, FALSE },
   { "hmac-md5-96",	"md5",		EVP_md5,	12,	TRUE, FALSE },
   { "hmac-ripemd160",	"rmd160",	EVP_ripemd160,	0,	TRUE, FALSE },
+#if OPENSSL_VERSION_NUMBER > 0x000907000L
+  { "umac-64@openssh.com", NULL,	NULL,		8,	TRUE, FALSE },
+#endif /* OpenSSL-0.9.7 or later */
   { "none",		"null",		EVP_md_null,	0,	FALSE, TRUE },
   { NULL, NULL, NULL, 0, FALSE, FALSE }
 };
@@ -183,7 +195,7 @@ static int init_bf_ctr(EVP_CIPHER_CTX *ctx, const unsigned char *key,
     /* Allocate our data structure. */
     bce = calloc(1, sizeof(struct bf_ctr_ex));
     if (bce == NULL) {
-      pr_log_pri(PR_LOG_ERR, MOD_SFTP_VERSION ": Out of memory!");
+      pr_log_pri(PR_LOG_ALERT, MOD_SFTP_VERSION ": Out of memory!");
       _exit(1);
     }
 
@@ -226,7 +238,7 @@ static int cleanup_bf_ctr(EVP_CIPHER_CTX *ctx) {
 }
 
 static int do_bf_ctr(EVP_CIPHER_CTX *ctx, unsigned char *dst,
-    const unsigned char *src, unsigned int len) {
+    const unsigned char *src, size_t len) {
   struct bf_ctr_ex *bce;
   unsigned int n;
   unsigned char buf[BF_BLOCK];
@@ -303,6 +315,8 @@ static const EVP_CIPHER *get_bf_ctr_cipher(void) {
   return &bf_ctr_cipher;
 }
 
+#if OPENSSL_VERSION_NUMBER > 0x000907000L
+
 /* 3DES CTR mode implementation */
 
 struct des3_ctr_ex {
@@ -332,7 +346,7 @@ static int init_des3_ctr(EVP_CIPHER_CTX *ctx, const unsigned char *key,
     /* Allocate our data structure. */
     dce = calloc(1, sizeof(struct des3_ctr_ex));
     if (dce == NULL) {
-      pr_log_pri(PR_LOG_ERR, MOD_SFTP_VERSION ": Out of memory!");
+      pr_log_pri(PR_LOG_ALERT, MOD_SFTP_VERSION ": Out of memory!");
       _exit(1);
     }
 
@@ -380,7 +394,7 @@ static int cleanup_des3_ctr(EVP_CIPHER_CTX *ctx) {
 }
 
 static int do_des3_ctr(EVP_CIPHER_CTX *ctx, unsigned char *dst,
-    const unsigned char *src, unsigned int len) {
+    const unsigned char *src, size_t len) {
   struct des3_ctr_ex *dce;
   unsigned int n;
   unsigned char buf[8];
@@ -453,8 +467,6 @@ static const EVP_CIPHER *get_des3_ctr_cipher(void) {
   return &des3_ctr_cipher;
 }
 
-#if OPENSSL_VERSION_NUMBER > 0x000907000L
-
 /* AES CTR mode implementation */
 struct aes_ctr_ex {
   AES_KEY key;
@@ -473,7 +485,7 @@ static int init_aes_ctr(EVP_CIPHER_CTX *ctx, const unsigned char *key,
     /* Allocate our data structure. */
     ace = calloc(1, sizeof(struct aes_ctr_ex));
     if (ace == NULL) {
-      pr_log_pri(PR_LOG_ERR, MOD_SFTP_VERSION ": Out of memory!");
+      pr_log_pri(PR_LOG_ALERT, MOD_SFTP_VERSION ": Out of memory!");
       _exit(1);
     }
 
@@ -516,7 +528,7 @@ static int cleanup_aes_ctr(EVP_CIPHER_CTX *ctx) {
 }
 
 static int do_aes_ctr(EVP_CIPHER_CTX *ctx, unsigned char *dst,
-    const unsigned char *src, unsigned int len) {
+    const unsigned char *src, size_t len) {
   struct aes_ctr_ex *ace;
 # if OPENSSL_VERSION_NUMBER <= 0x0090704fL
   unsigned int n;
@@ -592,6 +604,32 @@ static const EVP_CIPHER *get_aes_ctr_cipher(int key_len) {
       aes_ctr_cipher.nid = NID_undef;
   }
 #else
+  /* Setting this nid member to something other than NID_undef causes
+   * interesting problems on an OpenSolaris system, using the provided
+   * OpenSSL installation's pkcs11 engine via:
+   *
+   *  SFTPCryptoDevice pkcs11
+   *
+   * for the mod_sftp config.  I'm not sure why; I need to look into this
+   * issue more.
+   *
+   * For posterity, the issues seen when using the above config are
+   * described below.  After sending the NEWKEYS request, mod_sftp
+   * would log the following, upon receiving the next message from sftp(1):
+   *
+   *  <ssh2:20>: SSH2 packet len = 1500737511 bytes
+   *  <ssh2:20>: SSH2 packet padding len = 95 bytes
+   *  <ssh2:20>: SSH2 packet payload len = 1500737415 bytes
+   *  <ssh2:20>: payload len (1500737415 bytes) exceeds max payload len (262144), ignoring payload
+   *  client sent buggy/malicious packet payload length, ignoring
+   *
+   * and sftp(1), for its side, would report:
+   *
+   *  debug1: send SSH2_MSG_SERVICE_REQUEST
+   *  Disconnecting: Bad packet length.
+   *  debug1: Calling cleanup 0x807cc14(0x0)
+   *  Couldn't read packet: Error 0
+   */
   aes_ctr_cipher.nid = NID_undef;
 #endif /* OPENSSL_FIPS */
 
@@ -609,6 +647,60 @@ static const EVP_CIPHER *get_aes_ctr_cipher(int key_len) {
 
   return &aes_ctr_cipher;
 }
+
+static int update_umac(EVP_MD_CTX *ctx, const void *data, size_t len) {
+  int res;
+
+  if (ctx->md_data == NULL) {
+    struct umac_ctx *umac;
+
+    umac = umac_new((unsigned char *) data);
+    if (umac == NULL) {
+      return 0;
+    }
+
+    ctx->md_data = umac;
+    return 1;
+  }
+
+  res = umac_update(ctx->md_data, (unsigned char *) data, (long) len);
+  return res;
+}
+
+static int final_umac(EVP_MD_CTX *ctx, unsigned char *md) {
+  unsigned char nonce[8];
+  int res;
+
+  res = umac_final(ctx->md_data, md, nonce);
+  return res;
+}
+
+static int delete_umac(EVP_MD_CTX *ctx) {
+  struct umac_ctx *umac;
+
+  umac = ctx->md_data;
+  umac_delete(umac);
+  ctx->md_data = NULL;
+
+  return 1;
+}
+
+static const EVP_MD *get_umac_digest(void) {
+  static EVP_MD umac_digest;
+
+  memset(&umac_digest, 0, sizeof(EVP_MD));
+
+  umac_digest.type = NID_undef;
+  umac_digest.pkey_type = NID_undef;
+  umac_digest.md_size = 8;
+  umac_digest.flags = 0UL;
+  umac_digest.update = update_umac;
+  umac_digest.final = final_umac;
+  umac_digest.cleanup = delete_umac;
+  umac_digest.block_size = 32;
+
+  return &umac_digest;
+}
 #endif /* OpenSSL older than 0.9.7 */
 
 const EVP_CIPHER *sftp_crypto_get_cipher(const char *name, size_t *key_len,
@@ -622,10 +714,10 @@ const EVP_CIPHER *sftp_crypto_get_cipher(const char *name, size_t *key_len,
       if (strncmp(name, "blowfish-ctr", 13) == 0) {
         cipher = get_bf_ctr_cipher();
 
+#if OPENSSL_VERSION_NUMBER > 0x000907000L
       } else if (strncmp(name, "3des-ctr", 9) == 0) {
         cipher = get_des3_ctr_cipher();
 
-#if OPENSSL_VERSION_NUMBER > 0x000907000L
       } else if (strncmp(name, "aes256-ctr", 11) == 0) {
         cipher = get_aes_ctr_cipher(32);
 
@@ -670,7 +762,19 @@ const EVP_MD *sftp_crypto_get_digest(const char *name, uint32_t *mac_len) {
 
   for (i = 0; digests[i].name; i++) {
     if (strcmp(digests[i].name, name) == 0) {
-      const EVP_MD *digest = digests[i].get_type();
+      const EVP_MD *digest = NULL;
+
+#if OPENSSL_VERSION_NUMBER > 0x000907000L
+      if (strncmp(name, "umac-64@openssh.com", 12) == 0) {
+        digest = get_umac_digest();
+#else
+      if (FALSE) {
+#endif /* OpenSSL older than 0.9.7 */
+
+      } else {
+        digest = digests[i].get_type();
+      }
+
       if (mac_len) {
         *mac_len = digests[i].mac_len;
       }
@@ -842,14 +946,22 @@ const char *sftp_crypto_get_kexinit_digest_list(pool *p) {
 #endif /* OPENSSL_FIPS */
 
           if (strncmp(c->argv[i], "none", 5) != 0) {
-            if (EVP_get_digestbyname(digests[j].openssl_name) != NULL) {
+            if (digests[j].openssl_name != NULL &&
+                EVP_get_digestbyname(digests[j].openssl_name) != NULL) {
               res = pstrcat(p, res, *res ? "," : "",
                 pstrdup(p, digests[j].name), NULL);
 
             } else {
-              pr_trace_msg(trace_channel, 3,
-                "unable to use '%s' digest: Unsupported by OpenSSL",
-                digests[j].name);
+              /* The umac-64 digest is a special case. */
+              if (strncmp(digests[j].name, "umac-64@openssh.com", 12) == 0) {
+                res = pstrcat(p, res, *res ? "," : "",
+                  pstrdup(p, digests[j].name), NULL);
+
+              } else {
+                pr_trace_msg(trace_channel, 3,
+                  "unable to use '%s' digest: Unsupported by OpenSSL",
+                  digests[j].name);
+              }
             }
 
           } else {
@@ -880,14 +992,22 @@ const char *sftp_crypto_get_kexinit_digest_list(pool *p) {
 #endif /* OPENSSL_FIPS */
 
         if (strncmp(digests[i].name, "none", 5) != 0) {
-          if (EVP_get_digestbyname(digests[i].openssl_name) != NULL) {
+          if (digests[i].openssl_name != NULL &&
+              EVP_get_digestbyname(digests[i].openssl_name) != NULL) {
             res = pstrcat(p, res, *res ? "," : "",
               pstrdup(p, digests[i].name), NULL);
 
           } else {
-            pr_trace_msg(trace_channel, 3,
-              "unable to use '%s' digest: Unsupported by OpenSSL",
-              digests[i].name);
+            /* The umac-64 digest is a special case. */
+            if (strncmp(digests[i].name, "umac-64@openssh.com", 12) == 0) {
+              res = pstrcat(p, res, *res ? "," : "",
+                pstrdup(p, digests[i].name), NULL);
+
+            } else {
+              pr_trace_msg(trace_channel, 3,
+                "unable to use '%s' digest: Unsupported by OpenSSL",
+                digests[i].name);
+            }
           }
 
         } else {

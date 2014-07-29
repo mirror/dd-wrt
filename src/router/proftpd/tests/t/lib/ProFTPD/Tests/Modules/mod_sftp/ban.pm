@@ -85,7 +85,7 @@ sub sftp_ban_max_login_attempts {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
@@ -184,24 +184,16 @@ sub sftp_ban_max_login_attempts {
         die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
       }
 
-      # Try to authenticate twice using 'publickey'; we know this will not
-      # succeed.  The first attempt will hit the MaxLoginAttempts limit, the
-      # second attempt will *exceed* the MaxLoginAttempts limit, and thus
-      # trigger the mod_ban rule.
-      if ($ssh2->auth_publickey($user, $rsa_pub_key, $rsa_priv_key)) {
-        die("Publickey auth succeeded unexpectedly");
-      }
-
-      if ($ssh2->auth_publickey($user, $rsa_pub_key, $rsa_priv_key)) {
-        die("Publickey auth succeeded unexpectedly");
+      if ($ssh2->auth_password($user, 'foo')) {
+        die("Password auth (wrong password) succeeded unexpectedly");
       }
 
       $ssh2->disconnect();
 
-      # Now try 'password' authentication, which would succeed -- except that
-      # mod_ban should now have a ban in place, and prevent us from doing this.
-      # Note that we need to create a new connection to test the mod_ban
-      # rules.
+      # Now try the correct password for authentication, which would succeed --
+      # except that mod_ban should now have a ban in place, and prevent us
+      # from doing this.  Note that we need to create a new connection to test
+      # the mod_ban rules.
 
       $ssh2 = Net::SSH2->new();
       if ($ssh2->connect('127.0.0.1', $port)) {
@@ -232,6 +224,9 @@ sub sftp_ban_max_login_attempts {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -246,7 +241,7 @@ sub sftp_ban_maxcmdrate_exceeded {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
@@ -408,6 +403,9 @@ sub sftp_ban_maxcmdrate_exceeded {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 

@@ -1,4 +1,4 @@
-<!-- $Id: mod_auth.html,v 1.2 2011/04/06 17:54:27 castaglia Exp $ -->
+<!-- $Id: mod_auth.html,v 1.11 2013/08/19 16:28:23 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_auth.html,v $ -->
 
 <html>
@@ -19,10 +19,104 @@ ProFTPD 1.3.<i>x</i>, and is compiled by default.
 
 <h2>Directives</h2>
 <ul>
+  <li><a href="#AllowChrootSymlinks">AllowChrootSymlinks</a>
+  <li><a href="#CreateHome">CreateHome</a>
   <li><a href="#DefaultRoot">DefaultRoot</a>
+  <li><a href="#MaxLoginAttempts">MaxLoginAttempts</a>
+  <li><a href="#RequireValidShell">RequireValidShell</a>
+  <li><a href="#RewriteHome">RewriteHome</a>
+  <li><a href="#RootLogin">RootLogin</a>
+  <li><a href="#RootRevoke">RootRevoke</a>
+  <li><a href="#TimeoutLogin">TimeoutLogin</a>
+  <li><a href="#TimeoutSession">TimeoutSession</a>
+  <li><a href="#UseFtpUsers">UseFtpUsers</a>
   <li><a href="#UserPassword">UserPassword</a>
 </ul>
 
+<hr>
+<h2><a name="AllowChrootSymlinks">AllowChrootSymlinks</a></h2>
+<strong>Syntax:</strong> AllowChrootSymlinks <em>on|off</em><br>
+<strong>Default:</strong> AllowChrootSymlinks on<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth<br>
+<strong>Compatibility:</strong> 1.3.5rc1 and later
+
+<p>
+The <code>AllowChrootSymlinks</code> directive configures whether
+<code>proftpd</code> will follow a symlink to the destination directory
+when performing a <code>chroot(2)</code> call.  This applies both to
+<a href="#DefaultRoot"><code>DefaultRoot</code></a> directives <b>and</b> to
+<code>&lt;Anonymous&gt;</code> sections.
+
+<p>
+<b>Security note</b>: If you permit your users the ability to remove
+directories which might be FTP users' home directories (<i>or</i>
+<code>&lt;Anonymous&gt;</code> directories) and create symlinks, then you
+<b>should</b> use:
+<pre>
+  AllowChrootSymlinks off
+</pre>
+This includes sites which are hosting providers, <i>i.e.</i> which allow
+users to run their untrusted webapps (<i>e.g.</i> PHP, Perl, Ruby, Python,
+<i>etc</i> apps) on the servers.
+
+<p>
+<hr>
+<h2><a name="CreateHome">CreateHome</a></h2>
+<strong>Syntax:</strong> CreateHome <em>off|on [mode] [skel path] [dirmode mode]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth<br>
+<strong>Compatibility:</strong> 1.2.8rc2 and later
+
+<p>
+The <code>CreateHome</code> directive configures the server to automatically
+create a user's home directory, if that directory does not exist, during the
+login process.
+
+<p>
+The <em>mode</em> parameter is used to configure the absolute mode of the home
+directory created. If not specified, the mode will default to 700.
+
+<p>
+The optional <em>skel path</em> parameters can be used to configure an
+<code>/etc/skel</code>-like directory containing account initialization files
+and directories.  The parameter must be the full path to the skeleton directory.
+The directory must <b>not</b> be world-writeable.  Files copied from this
+directory into the new home directory will have ownership set to the UID and
+GID of the logging-in user. Note that sockets and FIFOs in the skeleton
+directory will <b>not</b> be copied; any setuid or setgid bits on files will be
+removed from the copied files in the target home directory.
+
+<p>
+The optional <em>dirmode</em> parameter can be used to specify the mode for
+intermediate directories that may need to be created in order to create the
+target home directory.  By default, the mode for such intermediate directories
+will be 711. <b>Note</b>: using a mode that does not include the execute bit to
+be enabled can cause havoc. <b><i>You have been warned.</i></b>
+
+<p>
+Examples:
+<pre>
+  # Use the CreateHome default settings
+  CreateHome on
+
+  # Specify a skeleton directory
+  CreateHome on skel /etc/ftpd/skel
+
+  # No skeleton, but make sure that intermediate directories have 755
+  # permissions.
+  CreateHome on dirmode 755
+
+  # Skeleton directory, with 700 intermediate directories
+  CreateHome on skel /etc/ftpd/skel dirmode 700
+</pre>
+
+<p>
+A fuller description of the <code>CreateHome</code> directive and its uses,
+with more examples, can be read <a href="../howto/CreateHome.html">here</a>.
+
+<p>
 <hr>
 <h2><a name="DefaultRoot">DefaultRoot</a></h2>
 <strong>Syntax:</strong> DefaultRoot <em>path [group-expression]</em><br>
@@ -35,6 +129,227 @@ ProFTPD 1.3.<i>x</i>, and is compiled by default.
 The <code>DefaultRoot</code> directive is used to <code>chroot()</code> the
 session process for the connecting client.  A fuller explanation can be
 found in the <a href="../howto/Chroot.html">Chroot</a> howto.
+
+<p>
+<hr>
+<h2><a name="MaxLoginAttempts">MaxLoginAttempts</a></h2>
+<strong>Syntax:</strong> MaxLoginAttempts <em>count</em><br>
+<strong>Default:</strong> 3<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>MaxLoginAttempts</code> directive configures the maximum number of
+times a client may attempt to authenticate to the server <i>on the same TCP
+connection</i>.  After the number of attempts exceeds the configured
+<em>count</em>, the client is disconnected and an appropriate message is
+logged.
+
+<p>
+<hr>
+<h2><a name="RequireValidShell">RequireValidShell</a></h2>
+<strong>Syntax:</strong> RequireValidShell <em>on|off</em><br>
+<strong>Default:</strong> RequireValidShell on<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
+<strong>Module:</strong> mod_auth<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>RequireValidShell</code> directive configures the server, virtual
+host or anonymous login to allow or deny logins which do not have a shell
+listed in <code>/etc/shells</code>.  By default, <code>proftpd</code>
+<b>will not allow a login</b> unless the user's default shell is listed in
+<code>/etc/shells</code>. If <code>/etc/shells</code> cannot be found, all
+default shells are assumed to be valid.
+
+<p>
+<hr>
+<h2><a name="RewriteHome">RewriteHome</a></h2>
+<strong>Syntax:</strong> RewriteHome <em>on|off</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>
+<strong>Module:</strong> mod_auth<br>
+<strong>Compatibility:</strong> 1.3.3rc1 and later
+
+<p>
+The <code>RewriteHome</code> directive can be used to support rewriting the
+home directory for a user, based on regular expression rules.  One such use
+case is where some portion of the home directory is retrieved <i>e.g.</i>
+from an LDAP directory, but you need to apply some custom prefix to the LDAP
+attribute.  <b>Note</b> that this feature requires that the
+<code>mod_rewrite</code> module also be present in your <code>proftpd</code>
+daemon.
+
+<p>
+To enable this feature, first you need to add the following to your
+<code>proftpd.conf</code>:
+<pre>
+  RewriteHome on
+</pre>
+Next, you need to configure the mod_rewrite rules for rewriting your home
+directory; this feature depends on the <code>mod_rewrite</code> module for the
+rewriting.  The pseudo-command used by <code>mod_rewrite</code> for rewriting
+home directories is "REWRITE_HOME".  Thus would you use:
+<pre>
+  &lt;IfModule mod_rewrite.c&gt;
+    RewriteEngine on
+    RewrlteLog /path/to/rewrite.log
+
+    RewriteCondition %m REWRITE_HOME
+    RewriteRule (.*) /my/new/prefix$1
+ &lt;/IfModule&gt;
+</pre>
+
+<p>
+<hr>
+<h2><a name="RootLogin">RootLogin</a></h2>
+<strong>Syntax:</strong> RootLogin <em>on|off</em><br>
+<strong>Default:</strong> RootLogin off<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
+<strong>Module:</strong> mod_auth<br>
+<strong>Compatibility:</strong> 1.1.5 and later
+
+<p>
+Normally, <code>proftpd</code> does <b>not allow</b> root logins under any
+circumstance.  If a client attempts to login as root, using the correct
+password, a special security message is logged:
+<pre>
+  SECURITY VIOLATION: root login attempted. 
+</pre>
+
+When <code>RootLogin on</code> is used, the root user may authenticate just as
+any other user could (assuming no <i>other</i> access control measures deny
+access); however the root login security message is still logged:
+<pre>
+  ROOT FTP login successful.
+</pre>
+Obviously, extreme care should be taken when using this directive.
+
+<p>
+The use of <code>RootLogin</code> in the <code>&lt;Anonymous&gt;</code>
+context is only valid when the <code>User</code>/<code>Group</code> defined
+in the <code>&lt;Anonymous&gt;</code> section is set to 'root'.
+
+<p>
+<hr>
+<h2><a name="RootRevoke">RootRevoke</a></h2>
+<strong>Syntax:</strong> RootRevoke <em>on|off|UseNonCompliantActiveTransfers</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
+<strong>Module:</strong> mod_auth<br>
+<strong>Compatibility:</strong> 1.2.9rc1 and later
+
+<p>
+The <code>RootRevoke</code> directive causes all root privileges to be dropped
+once a user is authenticated.  This will also cause active data transfers
+(<i>e.g.</i> via the <code>PORT</code>/<code>EPRT</code> FTP commands) to be
+disabled <i>if the server is listening on a port less than 1024</i>.  Note that
+this only affects <i>active</i> data transfers; passive transfers will not be
+blocked.
+
+<p>
+The reason for rejecting active data transfers in these cases is because of
+a requirement in RFC 959 (which defines the File Transfer Protocol) that for
+active data transfers, the data connection <b>must</b> have a source port of
+<em>L</em>-1, where <em>L</em> is the control connection port (see RFC 959, Section 3.2 "Establishing Data Connections").  Thus if the FTP server listens on
+port 21, then a client requesting an active data transfer from that server
+will have a data connection whose source port (on the server) is port 20
+(<em>L</em> = 21, <em>L</em>-1 = 20).
+
+<p>
+Even though passive data transfers are highly preferable, many FTP clients
+may still require/expect to be able to do an active data transfer.  One
+question, though, is how many FTP clients actually <i>check</i> that the
+source port of the active data transfer connection is actually <em>L</em>-1.
+Or how many networking appliances along the way (<i>i.e.</i> firewalls, NATs,
+routers, <i>etc</i>) enforce this restriction as well.
+
+<p>
+If not for that requirement, then with "RootRevoke on" in the
+<code>proftpd.conf</code>, <code>proftpd</code> would not be <i>required</i>
+to use root privileges for binding to a privileged port like port 20.
+
+<p>
+Thus the <code>RootRevoke</code> directive also accepts (as of <code>proftpd-1.3.5rc1</code>) a parameter of "UseNonCompliantActiveTransfers", <i>e.g.</i>:
+<pre>
+  # Drop root privs, but allow active data tranfers (only use a non-standard
+  # source port for the active data connection).
+  RootRevoke UseNonCompliantActiveTranfers
+</pre>
+With this configuration, <code>proftpd</code> will drop root privileges,
+<i>but</i> would <b>not</b> reject <code>PORT</code>/<code>EPRT</code>
+commands at all.  Instead, the active data transfers would be allowed as per
+normal, except that <code>proftpd</code> would not try to bind to the
+<em>L</em>-1 port for those active transfers.
+
+<p>
+This <code>RootRevoke</code> parameter is valuable because it helps in
+getting <code>proftpd</code> to drop root privileges for sessions more often,
+which is a <b>far more secure configuration</b>.  Exploits such as the
+"Roaring Beast" attack would not be possible in a session where root privileges
+have been dropped completely.
+
+<p>
+<hr>
+<h2><a name="TimeoutLogin">TimeoutLogin</a></h2>
+<strong>Syntax:</strong> TimeoutLogin <em>seconds</em><br>
+<strong>Default:</strong> 300 seconds<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_auth<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>TimeoutLogin</code> directive configures the maximum number of
+<em>seconds</em> a client is allowed to spend authenticating, <i>i.e.</i>
+from the time when the client connects to the time when the client has
+successfully authenticated.  The login timer is <b>not</b> reset when a client
+transmits data, and is only removed once a client has transmitted an
+acceptable combination of <code>USER</code>/<code>PASS</code> commands.
+The maximum allowed <em>seconds</em> value is 65535 (108 minutes).
+
+<p>
+See also: <a href="mod_core.html#TimeoutIdle"><code>TimeoutIdle</code></a>,
+<a href="mod_xfer.html#TimeoutNoTransfer"><code>TimeoutNoTransfer</code></a>,
+<a href="mod_xfer.html#TimeoutStalled"><code>TimeoutStalled</code></a>
+
+<p>
+<hr>
+<h2><a name="TimeoutSession">TimeoutSession</a></h2>
+<strong>Syntax:</strong> TimeoutSessions <em>seconds</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
+<strong>Module:</strong> mod_auth<br>
+<strong>Compatibility:</strong> 1.2.6rc1 and later
+
+<p>
+The <code>TimeoutSession</code> directive sets the maximum number of
+<em>seconds</em> a control connection between the proftpd server and client
+can exist, after the client has successfully authenticated.  If the
+<em>seconds</em> argument is set to zero, sessions are allowed to last
+indefinitely; this is the default.  There is no maxium value for the
+<em>seconds</em> parameter.
+
+<p>
+<hr>
+<h2><a name="UseFtpUsers">UseFtpUsers</a></h2>
+<strong>Syntax:</strong> UseFtpUsers <em>on|off</em><br>
+<strong>Default:</strong> UseFtpUsers on<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
+<strong>Module:</strong> mod_auth<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+Legacy FTP servers generally check a special authorization file (typically
+<code>/etc/ftpusers</code>) when a client attempts to authenticate.
+<b>If</b> the user's name is <i>found</i> in this file, FTP access is
+<i>denied</i>. For compatibility of behavior, <code>proftpd</code> defaults to
+checking this same file during authentication. This behavior can be suppressed
+using the <code>UseFtpUsers</code> directive, <i>e.g.</i>:
+<pre>
+  # Do not check /etc/ftpusers
+  UseFtpUsers off
+</pre>
 
 <p>
 <hr>
@@ -83,12 +398,12 @@ The <code>mod_auth</code> module is compiled by default.
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011/04/06 17:54:27 $</i><br>
+Last Updated: <i>$Date: 2013/08/19 16:28:23 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2002-2011<br>
+&copy; Copyright 2002-2013<br>
  All Rights Reserved<br>
 </i></b></font>
 

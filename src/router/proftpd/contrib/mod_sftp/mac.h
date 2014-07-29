@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mac.h,v 1.3 2011/05/23 20:40:13 castaglia Exp $
+ * $Id: mac.h,v 1.4 2013/03/28 18:48:31 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -30,6 +30,9 @@
 #define MOD_SFTP_MAC_H
 
 #include "packet.h"
+
+int sftp_mac_init(void);
+int sftp_mac_free(void);
 
 /* Returns the block size of the negotiated MAC algorithm, or 0 if no MAC
  * has been negotiated yet.

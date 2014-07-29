@@ -22,7 +22,7 @@
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql_mysql.c,v 1.64.2.2 2013/04/30 16:10:56 castaglia Exp $
+ * $Id: mod_sql_mysql.c,v 1.72 2013/10/07 05:51:29 castaglia Exp $
  */
 
 /*
@@ -274,9 +274,10 @@ static void _sql_check_cmd(cmd_rec *cmd, char *msg) {
   if (!cmd || 
       !cmd->tmp_pool) {
     pr_log_pri(PR_LOG_ERR, MOD_SQL_MYSQL_VERSION
-      ": '%s' was passed an invalid cmd_rec. Shutting down.", msg);
-    sql_log(DEBUG_WARN, "'%s' was passed an invalid cmd_rec. Shutting down.",
+      ": '%s' was passed an invalid cmd_rec (internal bug); shutting down",
       msg);
+    sql_log(DEBUG_WARN, "'%s' was passed an invalid cmd_rec (internal bug); "
+      "shutting down", msg);
     pr_session_end(0);
   }    
 
@@ -475,17 +476,19 @@ MODRET cmd_open(cmd_rec *cmd) {
   /* Make sure we have a new conn struct */
   conn->mysql = mysql_init(NULL);
   if (conn->mysql == NULL) {
-    pr_log_pri(PR_LOG_ERR, MOD_SQL_MYSQL_VERSION
-      ": failed to allocate memory for MYSQL structure.  Shutting down.");
-    sql_log(DEBUG_WARN, "%s", "failed to allocate memory for MYSQL structure. "
-      "Shutting down.");
+    pr_log_pri(PR_LOG_ALERT, MOD_SQL_MYSQL_VERSION
+      ": failed to allocate memory for MYSQL structure; shutting down");
+    sql_log(DEBUG_WARN, "%s", "failed to allocate memory for MYSQL structure; "
+      "shutting down");
     pr_session_end(0);
   }
 
-  /* Make sure the MySQL config files are read in.  This will read in
-   * options from group "client" in the MySQL .cnf files.
-   */
-  mysql_options(conn->mysql, MYSQL_READ_DEFAULT_GROUP, "client");
+  if (!(pr_sql_opts & SQL_OPT_IGNORE_CONFIG_FILE)) {
+    /* Make sure the MySQL config files are read in.  This will read in
+     * options from group "client" in the MySQL .cnf files.
+     */
+    mysql_options(conn->mysql, MYSQL_READ_DEFAULT_GROUP, "client");
+  }
 
 #if MYSQL_VERSION_ID >= 50013
   /* The MYSQL_OPT_RECONNECT option appeared in MySQL 5.0.13, according to

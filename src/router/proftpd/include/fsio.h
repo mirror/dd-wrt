@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2013 The ProFTPD Project
+ * Copyright (c) 2001-2014 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,8 +25,7 @@
  */
 
 /* ProFTPD virtual/modular filesystem support.
- *
- * $Id: fsio.h,v 1.28.2.3 2013/01/14 00:40:57 castaglia Exp $
+ * $Id: fsio.h,v 1.37 2014/01/31 16:52:33 castaglia Exp $
  */
 
 #ifndef PR_FSIO_H
@@ -102,7 +101,7 @@ struct fs_rec {
   void *fs_data;
 
   /* Pool for this object's use */
-  pool *fs_pool;
+  struct pool_rec *fs_pool;
 
   /* FS function pointers */
   int (*stat)(pr_fs_t *, const char *, struct stat *);
@@ -188,6 +187,9 @@ struct fh_rec {
   /* Hint of the optimal buffer size for IO on this file. */
   size_t fh_iosz;
 };
+
+/* Maximum symlink count, for loop detection. */
+#define PR_FSIO_MAX_LINK_COUNT		32
 
 /* Macros for that code that needs to get into the internals of pr_fs_t.
  * (These will help keep the internals as opaque as possible).
@@ -275,6 +277,12 @@ int pr_fsio_utimes(const char *, struct timeval *);
 int pr_fsio_futimes(pr_fh_t *, struct timeval *);
 off_t pr_fsio_lseek(pr_fh_t *, off_t, int);
 
+/* Set a flag determining whether we guard against write operations in
+ * certain sensitive directories while we are chrooted, e.g. "Roaring Beast"
+ * style attacks.
+ */
+int pr_fsio_guard_chroot(int);
+
 /* Set a flag determining whether to use mkdtemp(3) (if available) or not.
  * Returns the previously-set value.
  */
@@ -316,10 +324,14 @@ int pr_fs_resolve_partial(const char *, char *, size_t, int);
 int pr_fs_resolve_path(const char *, char *, size_t, int);
 char *pr_fs_decode_path(pool *, const char *);
 char *pr_fs_encode_path(pool *, const char *);
-int pr_fs_use_encoding(int bool);
+int pr_fs_use_encoding(int);
 int pr_fs_valid_path(const char *);
 void pr_fs_virtual_path(const char *, char *, size_t);
+
 void pr_fs_clean_path(const char *, char *, size_t);
+int pr_fs_clean_path2(const char *, char *, size_t, int);
+#define PR_FSIO_CLEAN_PATH_FL_MAKE_ABS_PATH	0x001
+
 int pr_fs_glob(const char *, int, int (*errfunc)(const char *, int), glob_t *);
 void pr_fs_globfree(glob_t *);
 void pr_resolve_fs_map(void);
@@ -329,6 +341,12 @@ void pr_resolve_fs_map(void);
  * until the new fd is not one of the big three.
  */
 int pr_fs_get_usable_fd(int);
+
+/* Similar to pr_fs_get_usable_fd(), except that it automatically closes the
+ * old (given) fd if a usable fd was found.  Returns -1 (with errno set) if
+ * a usable fd could not be found.
+ */
+int pr_fs_get_usable_fd2(int *);
 
 #if defined(HAVE_STATFS) || defined(HAVE_SYS_STATVFS_H) || \
   defined(HAVE_SYS_VFS_H)
@@ -340,6 +358,17 @@ off_t pr_fs_getsize(char *);
  * filesystem stats.
  */
 int pr_fs_getsize2(char *, off_t *);
+
+/* Similar to pr_fs_getsize2(), except that this operates on an already-opened
+ * file descriptor, rather than a path.
+ */
+int pr_fs_fgetsize(int, off_t *);
+
+/* Returns TRUE if the given path is on an NFS-mounted filesystem, FALSE
+ * if not on an NFS-mounted filesystem, and -1 if there was an error
+ * determining which (with errno set appropriately).
+ */
+int pr_fs_is_nfs(const char *path);
 
 /* For internal use only. */
 int init_fs(void);

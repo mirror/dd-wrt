@@ -1,7 +1,7 @@
 /*
  * ProFTPD - mod_sftp public key store (including RFC4716 public key file
  *                                      format)
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: keystore.h,v 1.4 2011/05/23 20:40:13 castaglia Exp $
+ * $Id: keystore.h,v 1.5 2012/02/15 23:50:51 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -35,7 +35,8 @@ int sftp_keystore_free(void);
 
 int sftp_keystore_supports_store(const char *, unsigned int);
 int sftp_keystore_verify_host_key(pool *, const char *, const char *,
-  const char *, char *, uint32_t);
-int sftp_keystore_verify_user_key(pool *, const char *, char *, uint32_t);
+  const char *, unsigned char *, uint32_t);
+int sftp_keystore_verify_user_key(pool *, const char *, unsigned char *,
+  uint32_t);
 
 #endif

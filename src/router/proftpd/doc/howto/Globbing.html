@@ -1,4 +1,4 @@
-<!-- $Id: Globbing.html,v 1.2 2009/03/22 01:38:22 castaglia Exp $ -->
+<!-- $Id: Globbing.html,v 1.3 2011/11/21 22:24:19 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Globbing.html,v $ -->
 
 <html>
@@ -112,22 +112,22 @@ levels is not executed, but instead an error code signalling
 that it will not handle the expression.
 
 <p>
-There is a similar limit on the maximum number of matches for a glob
-expression.  By default, this limit is 100000 (the hardcoded default in
-the GNU library <code>glob(3)</code> implementation).  In the
+There is a similar limit on the maximum number of files that will be checked
+for a glob expression.  By default, this limit is 100000 (the hardcoded default
+in the GNU library <code>glob(3)</code> implementation).  In the
 <code>1.3.3rc1</code> ProFTPD release, a way of altering this limit was
 added: <code>PR_TUNABLE_GLOBBING_MAX_MATCHES</code>.  For sites which really
-do require a higher number of matches for their glob expressions, the
-following <code>configure</code> command can be used:
+do require a higher number of files to be matched for their glob expressions,
+the following <code>configure</code> command can be used:
 <pre>
   ./configure CFLAGS="-DPR_TUNABLE_GLOBBING_MAX_MATCHES=200000UL" ...
 </pre>
-A globbing expression that matches more than this limit will have the
-number of matches silently truncated to the limit (or just below).
+A globbing expression that needs to examine more files than this limit will
+have the number of matches silently truncated to the limit (or just below).
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2009/03/22 01:38:22 $</i><br>
+Last Updated: <i>$Date: 2011/11/21 22:24:19 $</i><br>
 <hr>
 
 </body>

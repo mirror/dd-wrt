@@ -29,7 +29,7 @@ Suite 500, Boston, MA 02110-1335, USA.  */
 extern void pr_log_pri(int, char *, ...);
 
 /* From support.c */
-extern char *sstrncpy(char *dest, const char *src, size_t n);
+extern int sstrncpy(char *dst, const char *src, size_t n);
 
 #define NPWDFIELDS 	7
 #define NGRPFIELDS 	4

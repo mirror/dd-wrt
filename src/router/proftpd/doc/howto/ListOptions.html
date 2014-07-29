@@ -1,4 +1,4 @@
-<!-- $Id: ListOptions.html,v 1.5 2010/06/19 20:45:21 castaglia Exp $ -->
+<!-- $Id: ListOptions.html,v 1.6 2012/02/02 00:40:13 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/ListOptions.html,v $ -->
 
 <html>
@@ -116,6 +116,12 @@ The following keywords are supported, in addition to &quot;strict&quot;:
       <dd>Sets a maximum limit on the number of directories listed in one directory listing</dd>
   <li><dt>maxdepth</dt>
       <dd>Sets a maximum recursion depth, if the <code>-R</code> option is allowed</dd>
+  <li><dt>LISTOnly</dt>
+      <dd>Applies the <code>ListOptions</code> only to <code>LIST</code> commands (and not <code>NLST</code> or <code>STAT</code> commands)
+  <li><dt>NLSTOnly</dt>
+      <dd>Applies the <code>ListOptions</code> only to <code>NLST</code> commands (and not <code>LIST</code> or <code>STAT</code> commands)
+  <li><dt>NoErrorIfAbsent</dt>
+      <dd>Causes a 226 response code to be returned for <code>LIST/NLST</code> commands for files which do not exist, rather than 450
 </ul>
 These keywords were added for finer-grained control over directory listings.
 They make it possible to allow recursive listings and yet still apply limits,
@@ -129,12 +135,20 @@ option, <code>proftpd</code> will not recurse into directories more than 3
 levels deep when generating the listing.
 
 <p>
+Or perhaps you want the one-file-per-line format, but only for
+<code>NLST</code> commands and <b>not</b> <code>LIST</code> commands.  You
+would thus use something like:
+<pre>
+  ListOptions "-1" strict NLSTOnly
+</pre>
+
+<p>
 Note that <code><a href="Limit.html">&lt;Limit&gt;</a></code> sections can be
 used to block the <code>LIST</code> and <code>NLST</code> commands altogether.
 
 <p>
 <hr>
-<i>$Date: 2010/06/19 20:45:21 $</i><br>
+<i>$Date: 2012/02/02 00:40:13 $</i><br>
 
 </body>
 </html>

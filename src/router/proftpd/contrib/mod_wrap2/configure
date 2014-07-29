@@ -614,6 +614,7 @@ LIBS
 build_alias
 host_alias
 target_alias
+LDFLAGS
 MODULE_LIBS
 LIBOBJS
 LTLIBOBJS'
@@ -1652,6 +1653,7 @@ fi
 MODULE_LIBS="$ac_wrap2_libs"
 
 
+
 ac_config_headers="$ac_config_headers mod_wrap2.h"
 
 ac_config_files="$ac_config_files Makefile"
@@ -2308,12 +2310,13 @@ LIBS!$LIBS$ac_delim
 build_alias!$build_alias$ac_delim
 host_alias!$host_alias$ac_delim
 target_alias!$target_alias$ac_delim
+LDFLAGS!$LDFLAGS$ac_delim
 MODULE_LIBS!$MODULE_LIBS$ac_delim
 LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 40; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 41; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -2669,7 +2672,7 @@ do
     cat >>$CONFIG_STATUS <<_ACEOF
     # First, check the format of the line:
     cat >"\$tmp/defines.sed" <<\\CEOF
-/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*\$/b def
+/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*/b def
 /^[	 ]*#[	 ]*define[	 ][	 ]*$ac_word_re[(	 ]/b def
 b
 :def

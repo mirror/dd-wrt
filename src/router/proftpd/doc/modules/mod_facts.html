@@ -1,4 +1,4 @@
-<!-- $Id: mod_facts.html,v 1.5.2.1 2012/07/31 16:59:59 castaglia Exp $ -->
+<!-- $Id: mod_facts.html,v 1.13 2013/07/29 16:54:45 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_facts.html,v $ -->
 
 <html>
@@ -24,7 +24,7 @@ The <code>mod_facts</code> module is ProFTPD's module for handling the
 the <code>mod_facts</code> module implements the <code>MFF</code> and
 <code>MFMT</code> commands defined in:
 <pre>
-  <a href="http://www.ietf.org/internet-drafts/draft-somers-ftp-mfxx-04.txt">http://www.ietf.org/internet-drafts/draft-somers-ftp-mfxx-04.txt</a>
+  <a href="http://tools.ietf.org/html/draft-somers-ftp-mfxx-04">http://tools.ietf.org/html/draft-somers-ftp-mfxx-04</a>
 </pre>
 
 <p>
@@ -64,7 +64,7 @@ to use the newer <code>MLSD</code>/<code>MLST</code> commands, or the older
 <code>LIST</code>/<code>NLST</code> commands.  Some FTP clients, though,
 will attempt to use the newer commands just as if they were equivalent to
 the older commands, including supporting glob/wildcard characters.
-Section 2.2.2 of RFC3659 explicitly states that wildcard characters are
+Section 2.2.2 of RFC3659, which explicitly states that wildcard characters are
 <b>not</b> supported in the <code>MLSD</code> and <code>MLST</code> commands.
 Thus, to prevent problems when using such FTP clients with proftpd,
 you can disable the advertising of support for those commands using
@@ -115,7 +115,7 @@ The currently implemented options are:
 <font color=red>Question</font>: Why does <code>MLSD</code> list all of the
 files in a directory, including the "hidden" files, where the <code>LIST</code>
 command does not?<br>
-<font color=blue>Answer</code>: The <code>MLSD</code> and <code>MLST</code>
+<font color=blue>Answer</font>: The <code>MLSD</code> and <code>MLST</code>
 commands do not have any notions of "options" like the <code>LIST</code> and
 <code>NLST</code> commands do; there is no way for a client, in the request
 to list the files in a directory, to ask the server to filter the list of
@@ -129,10 +129,10 @@ commands.
 <font color=red>Question</font>: Why does <code>MLST</code> show the UIDs/GIDs
 for listed files, where <code>LIST</code>/<code>NLST</code> show the user/group
 names?<br>
-<font color=blue>Answer</code>: The list of "facts" defined by RFC 3659 does
+<font color=blue>Answer</font>: The list of "facts" defined by RFC 3659 does
 <b>not</b> include a fact for the stringified version of user/group owner
 names, unfortunately.  This means that the <code>MLSD</code>/<code>MLST</code>
-commands don't have a good way of obtaining the user/group names.
+commands do not have a good way of obtaining the user/group names.
 
 <p>
 To work around this issue, you can add the following to your
@@ -143,7 +143,9 @@ To work around this issue, you can add the following to your
   &lt;/IfModule&gt;
 </pre>
 This tells <code>proftpd</code> to not advertise to the client that it can
-support the <code>MLSD</code>/<code>MLST</code> commands.
+support the <code>MLSD</code>/<code>MLST</code> commands.  The client will then
+usually fall back to using the older <code>LIST</code> command, which
+<i>does</i> include the file owner user/group names.
 
 <p><a name="FactsSymlinks">
 <font color=red>Question</font>: Why does FileZilla not display symlinks
@@ -168,14 +170,68 @@ by FileZilla (and perhaps other FTP clients). By default, the
 <code>mod_facts</code> module uses the better "OS.unix=symlink" syntax.
 
 <p>
+<b>Note</b> that if you are running <code>proftpd-1.3.3</code>, however,
+the <code>FactsOptions</code> directive is not supported.  To get FileZilla
+to display symlinks properly for older proftpd versions, then, you would use:
+<pre>
+  &lt;IfModule mod_facts.c&gt;
+    FactsAdvertise off
+  &lt;/IfModule&gt;
+</pre>
+This tells the <code>mod_facts</code> module to <b>not</b> advertise that it
+supports the newer <code>MLST/MLSD</code> commands.  FileZilla will then fall
+back to using the older directory list commands (<i>i.e.</i> <code>LIST</code>,
+<code>NLST</code>), which should show symlinks properly.
+
+<p><a name="FactsDotfiles">
+<font color=red>Question</font>: How can I hide dotfiles (<i>e.g.</i> ".msg")
+from the <code>MLSD</code> command?<br>
+<font color=blue>Answer</font>: There are two possible ways of dealing
+with FTP clients which use the <code>MLSD</code> command for listing
+directories, as opposed to the <code>LIST</code>/<code>NLST</code> commands.
+
+<p>
+Since the <code>MLSD</code> command does not have the concept of "options",
+unlike <code>LIST</code>/<code>NLST</code>, the <code>ListOptions</code>
+directive does not apply to <code>MLSD</code> as some would expect.  Thus
+using a configuration like so:
+<pre>
+  ListOptions +a
+</pre>
+to hide dotfiles from <code>LIST</code> commands does <b>not</b> work for
+<code>MLSD</code>.  How, then, to hide dotfiles from MLSD commands?  You can
+configure proftpd so that it does not advertise the fact that it can support
+the <code>MLSD</code> command, via:
+<pre>
+  &lt;IfModule mod_facts.c&gt;
+    FactsAdvertise off
+  &lt;/IfModule&gt;
+</pre>
+Alternatively, you can use the <code>HideFiles</code> and
+<code>IgnoreHidden</code> directives:
+<pre>
+  &lt;Directory /&gt;
+    # Hide files whose names start with "."
+    HideFiles ^\.
+
+    &lt;Limit LIST MLSD NLST&gt;
+      # Do not include hidden files for LIST, MLSD, and NLST
+      IgnoreHidden on
+    &lt;/Limit&gt;
+  &lt;/Directory&gt;
+</pre>
+This latter configuration will apply to <code>LIST</code>, <code>NLST</code>,
+and <code>MLSD</code> equally.
+
+<p>
 <hr><br>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2012/07/31 16:59:59 $</i><br>
+Last Updated: <i>$Date: 2013/07/29 16:54:45 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2007-2012 TJ Saunders<br>
+&copy; Copyright 2007-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

@@ -2,7 +2,7 @@
  * ProFTPD: mod_ratio -- Support upload/download ratios.
  * Portions Copyright (c) 1998-1999 Johnie Ingram.
  * Copyright (c) 2002 James Dogopoulos.
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2013 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -579,7 +579,7 @@ MODRET ratio_log_pass(cmd_rec *cmd) {
 
     memset(buf, '\0', sizeof(buf));
     snprintf(buf, sizeof(buf)-1, RATIO_STUFFS);
-    pr_log_pri(PR_LOG_NOTICE, "Ratio: %s/%s %s[%s]: %s.", g.user,
+    pr_log_pri(PR_LOG_INFO, "Ratio: %s/%s %s[%s]: %s.", g.user,
       session.group, session.c->remote_name, pr_netaddr_get_ipstr
       (session.c->remote_addr), buf);
   }
