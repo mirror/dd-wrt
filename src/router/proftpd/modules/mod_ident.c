@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_ident -- a module for performing identd lookups [RFC1413]
  *
- * Copyright (c) 2008-2011 The ProFTPD Project
+ * Copyright (c) 2008-2013 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_ident.c,v 1.9 2011/05/23 21:11:56 castaglia Exp $
+ * $Id: mod_ident.c,v 1.11 2013/02/15 22:50:54 castaglia Exp $
  */
 
 #include "conf.h"
@@ -40,6 +40,9 @@ static pr_netio_stream_t *ident_nstrm = NULL;
 static int ident_timeout_triggered = FALSE;
 
 static const char *trace_channel = "ident";
+
+/* Necessary prototypes */
+static int ident_sess_init(void);
 
 /* Support routines
  */
@@ -245,7 +248,7 @@ static char *ident_lookup(pool *p, conn_t *conn) {
     tok = pr_str_get_token(&tmp, ":");
     if (tok &&
         (tok = pr_str_get_token(&tmp, ":"))) {
-      while (*tok && isspace((int) *tok)) {
+      while (*tok && PR_ISSPACE(*tok)) {
         pr_signals_handle();
         tok++;
       }
@@ -254,7 +257,7 @@ static char *ident_lookup(pool *p, conn_t *conn) {
 
       if (strcasecmp(tok, "ERROR") == 0) {
         if (tmp) {
-          while (*tmp && isspace((int) *tmp)) {
+          while (*tmp && PR_ISSPACE(*tmp)) {
             pr_signals_handle();
             tmp++;
           }
@@ -269,7 +272,7 @@ static char *ident_lookup(pool *p, conn_t *conn) {
         if (tmp &&
             (tok = pr_str_get_token(&tmp, ":"))) {
           if (tmp) {
-            while (*tmp && isspace((int) *tmp)) {
+            while (*tmp && PR_ISSPACE(*tmp)) {
               pr_signals_handle();
               tmp++;
             }
@@ -287,6 +290,29 @@ static char *ident_lookup(pool *p, conn_t *conn) {
   pr_timer_remove(timerno, &ident_module);
 
   return pstrdup(p, ident);
+}
+
+/* Command handlers
+ */
+
+MODRET ident_post_host(cmd_rec *cmd) {
+
+  /* If the HOST command changed the main_server pointer, reinitialize
+   * ourselves.
+   */
+  if (session.prev_server != NULL) {
+    int res;
+
+    ident_engine = FALSE;
+
+    res = ident_sess_init();
+    if (res < 0) {
+      pr_session_disconnect(&ident_module,
+        PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+    }
+  }
+
+  return PR_DECLINED(cmd);
 }
 
 /* Configuration handlers
@@ -320,11 +346,20 @@ static int ident_sess_init(void) {
   char *ident = NULL;
 
   c = find_config(main_server->conf, CONF_PARAM, "IdentLookups", FALSE);
-  if (c)
+  if (c != NULL) {
     ident_engine = *((int *) c->argv[0]);
+  }
 
-  if (!ident_engine) {
+  if (ident_engine == FALSE) {
     pr_log_debug(DEBUG6, MOD_IDENT_VERSION ": ident lookup disabled");
+    return 0;
+  }
+
+  /* If we have already performed an IDENTD lookup, then there's no need to
+   * do it again.  This can happen, for example, when we are handling a HOST
+   * command to change the server.
+   */
+  if (pr_table_get(session.notes, "mod_ident.rfc1413-ident", NULL) != NULL) {
     return 0;
   }
 
@@ -366,6 +401,11 @@ static conftable ident_conftab[] = {
   { NULL }
 };
 
+static cmdtable ident_cmdtab[] = {
+  { POST_CMD,	C_HOST,	G_NONE,	ident_post_host,	FALSE,	FALSE },
+  { 0, NULL }
+};
+
 module ident_module = {
   NULL, NULL,
 
@@ -379,7 +419,7 @@ module ident_module = {
   ident_conftab,
 
   /* Module command handler table */
-  NULL,
+  ident_cmdtab,
 
   /* Module authentication handler table */
   NULL,

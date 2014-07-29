@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2011 The ProFTPD Project team
+ * Copyright (c) 2009-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: cmd.h,v 1.6 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: cmd.h,v 1.7 2012/12/27 22:30:58 castaglia Exp $
  */
 
 #ifndef PR_CMD_H
@@ -105,6 +105,8 @@ int pr_cmd_get_id(const char *name_name);
 /* The minimum and maximum command name lengths. */
 #define PR_CMD_MIN_NAMELEN	3
 #define PR_CMD_MAX_NAMELEN	4
+
+int pr_cmd_set_name(cmd_rec *, const char *);
 
 /* Implemented in main.c */
 int pr_cmd_read(cmd_rec **);

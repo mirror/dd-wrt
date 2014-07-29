@@ -84,13 +84,14 @@ sub mlst_file_ok {
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -109,7 +110,7 @@ sub mlst_file_ok {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $full_path = File::Spec->rel2abs($config_file);
 
@@ -158,7 +159,7 @@ sub mlst_file_ok {
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; ' . $full_path . '$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/cmds\.conf$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -186,6 +187,9 @@ sub mlst_file_ok {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -200,13 +204,14 @@ sub mlst_file_chrooted_ok {
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -225,7 +230,7 @@ sub mlst_file_chrooted_ok {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -301,6 +306,9 @@ sub mlst_file_chrooted_ok {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -315,13 +323,14 @@ sub mlst_dir_ok {
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -343,7 +352,7 @@ sub mlst_dir_ok {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -390,7 +399,7 @@ sub mlst_dir_ok {
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = ('modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; ' . $sub_dir . '$');
+      $expected = ('modify=\d+;perm=flcdmpe;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/foo$');
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -418,6 +427,9 @@ sub mlst_dir_ok {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -432,13 +444,14 @@ sub mlst_no_path_ok {
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -460,7 +473,7 @@ sub mlst_no_path_ok {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -507,7 +520,7 @@ sub mlst_no_path_ok {
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = ('modify=\d+;perm=flcdmpe;type=cdir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; ' . $home_dir . '$');
+      $expected = ('modify=\d+;perm=flcdmpe;type=cdir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/(.*?)$');
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -535,6 +548,9 @@ sub mlst_no_path_ok {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -549,13 +565,14 @@ sub mlst_fails_enoent {
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -576,7 +593,7 @@ sub mlst_fails_enoent {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -658,6 +675,9 @@ sub mlst_fails_enoent {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -672,13 +692,14 @@ sub mlst_fails_eperm {
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -708,7 +729,7 @@ sub mlst_fails_eperm {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -792,6 +813,9 @@ sub mlst_fails_eperm {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -806,13 +830,14 @@ sub mlst_hidden_file_ok {
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -831,7 +856,7 @@ sub mlst_hidden_file_ok {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.foo");
   if (open(my $fh, "> $test_file")) {
@@ -923,6 +948,9 @@ sub mlst_hidden_file_ok {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -937,13 +965,14 @@ sub mlst_path_with_spaces_ok {
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -962,7 +991,7 @@ sub mlst_path_with_spaces_ok {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_file = File::Spec->rel2abs("$tmpdir/foo bar");
   if (open(my $fh, "> $test_file")) {
@@ -1017,7 +1046,7 @@ sub mlst_path_with_spaces_ok {
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; ' . $test_file . '$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/foo bar$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -1045,6 +1074,9 @@ sub mlst_path_with_spaces_ok {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1059,13 +1091,14 @@ sub mlst_nonascii_chars_bug3032 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -1084,9 +1117,10 @@ sub mlst_nonascii_chars_bug3032 {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
-  my $test_file = File::Spec->rel2abs("$tmpdir/test\b");
+  my $test_name = "test\b";
+  my $test_file = File::Spec->rel2abs("$tmpdir/$test_name");
   if (open(my $fh, "> $test_file")) {
     close($fh);
 
@@ -1131,7 +1165,7 @@ sub mlst_nonascii_chars_bug3032 {
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->mlst("test\b");
+      ($resp_code, $resp_msg) = $client->mlst($test_name);
 
       my $expected;
 
@@ -1139,7 +1173,7 @@ sub mlst_nonascii_chars_bug3032 {
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; ' . $test_file;
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/.*\/' . $test_name;
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -1167,6 +1201,9 @@ sub mlst_nonascii_chars_bug3032 {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1181,13 +1218,14 @@ sub mlst_greek_letters {
   my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -1206,13 +1244,14 @@ sub mlst_greek_letters {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   # See issue described at:
   #
   #  http://forums.proftpd.org/smf/index.php/topic,3808.0/all.html
 
-  my $test_file = File::Spec->rel2abs("$home_dir/αβγδεζηθικλμνξοπρστυφχψω");
+  my $test_name = "αβγδεζηθικλμνξοπρστυφχψω";
+  my $test_file = File::Spec->rel2abs("$home_dir/$test_name");
   if (open(my $fh, "> $test_file")) {
     close($fh);
 
@@ -1259,7 +1298,7 @@ sub mlst_greek_letters {
       $client->login($user, $passwd);
 
       my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->mlst('αβγδεζηθικλμνξοπρστυφχψω');
+      ($resp_code, $resp_msg) = $client->mlst($test_name);
 
       my $expected;
 
@@ -1267,7 +1306,7 @@ sub mlst_greek_letters {
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; ' . $test_file . '$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; \/*.*\/' . $test_name . '$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -1295,6 +1334,9 @@ sub mlst_greek_letters {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file);
+    unlink($log_file);
+
     die($ex);
   }
 

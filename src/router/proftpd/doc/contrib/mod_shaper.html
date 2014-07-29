@@ -1,4 +1,4 @@
-<!-- $Id: mod_shaper.html,v 1.2 2009/04/28 22:24:25 castaglia Exp $ -->
+<!-- $Id: mod_shaper.html,v 1.4 2013/08/14 21:40:18 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_shaper.html,v $ -->
 
 <html>
@@ -174,7 +174,7 @@ directive to disable the module instead of commenting out all
 <strong>Compatibility:</strong> 1.2.10rc1 and later
 
 <p>
-The <code>ShaperLog</code> directive is used to a specify a log file for
+The <code>ShaperLog</code> directive is used to specify a log file for
 <code>mod_shaper</code> reporting and debugging. The <em>path</em> parameter
 must be the full path to the file to use for logging.  Note that this path must
 <b>not</b> be to a world-writeable directory and, unless
@@ -385,8 +385,23 @@ making sure to include the <code>--enable-ctrls</code> configure option,
 which <code>mod_shaper</code> requires:
 <pre>
   ./configure --enable-ctrls --with-modules=mod_shaper
-  make
+</pre>
+To build <code>mod_shaper</code> as a DSO module:
+<pre>
+  ./configure --enable-ctrls --enable-dso --with-shared=mod_shaper
+</pre>
+Then follow the usual steps:
+<pre>
+  make 
   make install
+</pre>
+
+<p>
+Alternatively, if your proftpd was compiled with DSO support, you can
+use the <code>prxs</code> tool to build <code>mod_shaper</code> as a shared
+module:
+<pre>
+  prxs -c -i -d mod_shaper.c
 </pre>
 
 <p>
@@ -595,12 +610,12 @@ while the daemon and sessions are running, to set the desired shaping values.
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2009/04/28 22:24:25 $</i><br>
+Last Updated: <i>$Date: 2013/08/14 21:40:18 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2004 TJ Saunders<br>
+&copy; Copyright 2004-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

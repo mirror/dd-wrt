@@ -1,4 +1,4 @@
-<!-- $Id: mod_quotatab_file.html,v 1.1 2004/11/03 19:37:45 castaglia Exp $ -->
+<!-- $Id: mod_quotatab_file.html,v 1.3 2013/08/14 21:40:17 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_quotatab_file.html,v $ -->
 
 <html>
@@ -17,7 +17,7 @@
 This <code>mod_quotatab</code> submodule is contained in the
 <code>mod_quotatab_file.c</code>, and is found in the <code>contrib/</code>
 area of the ProFTPD source distribution.  See the <code>mod_quotatab</code>
-<a href="http://www.castaglia.org/proftpd/modules/mod_quotatab.html#Installation">installation</a> instructions.
+<a href="mod_quotatab.html#Installation">installation</a> instructions.
 
 <p>
 This submodule provides the file-specific &quot;driver&quot; for storing quota
@@ -46,6 +46,14 @@ is used, then the <em>source-info</em> parameter must be the full path to
 the file table.
 
 <p>
+<code>mod_quotatab_file</code> treats any number <b>zero or less</b> for a
+<b>bytes limit</b> as &quot;unlimited&quot;.  Similarly, it treats a value of
+<b>zero</b> for any of the <b>files limit</b>s as &quot;unlimited&quot;.
+&quot;Unlimited&quot; values are ignored, in that any limit that is
+&quot;unlimited&quot; is not used in any of <code>mod_quotatab</code>'s
+calculations.
+
+<p>
 Examples:
 <pre>
   # Using a file-based limit table
@@ -59,12 +67,12 @@ Examples:
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2004/11/03 19:37:45 $</i><br>
+Last Updated: <i>$Date: 2013/08/14 21:40:17 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2003 TJ Saunders<br>
+&copy; Copyright 2000-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

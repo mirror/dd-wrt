@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,27 +23,21 @@
  */
 
 /* String manipulation functions
- * $Id: str.c,v 1.11 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: str.c,v 1.21 2013/11/24 00:45:30 castaglia Exp $
  */
 
 #include "conf.h"
 
-/* Maximum number of replacements that we will do in a given string. */
-#define PR_STR_MAX_REPLACEMENTS			128
+/* Maximum number of matches that we will do in a given string. */
+#define PR_STR_MAX_MATCHES			128
 
-char *sreplace(pool *p, char *s, ...) {
-  va_list args;
+static char *str_vreplace(pool *p, unsigned int max_replaces, char *s,
+    va_list args) {
   char *m, *r, *src, *cp;
-  char *matches[PR_STR_MAX_REPLACEMENTS+1], *replaces[PR_STR_MAX_REPLACEMENTS+1];
+  char *matches[PR_STR_MAX_MATCHES+1], *replaces[PR_STR_MAX_MATCHES+1];
   char buf[PR_TUNABLE_PATH_MAX] = {'\0'}, *pbuf = NULL;
   size_t nmatches = 0, rlen = 0;
   int blen = 0;
-
-  if (p == NULL ||
-      s == NULL) {
-    errno = EINVAL;
-    return NULL;
-  }
 
   src = s;
   cp = buf;
@@ -54,10 +48,8 @@ char *sreplace(pool *p, char *s, ...) {
 
   blen = strlen(src) + 1;
 
-  va_start(args, s);
-
   while ((m = va_arg(args, char *)) != NULL &&
-         nmatches < PR_STR_MAX_REPLACEMENTS) {
+         nmatches < PR_STR_MAX_MATCHES) {
     char *tmp = NULL;
     int count = 0;
 
@@ -74,11 +66,9 @@ char *sreplace(pool *p, char *s, ...) {
     while (tmp) {
       pr_signals_handle();
       count++;
-      if (count > 8) {
-        /* More than eight instances of the same escape on the same line?
-         * Give me a break.
-         */
-        return s;
+      if (count > max_replaces) {
+        errno = E2BIG;
+        return NULL;
       }
 
       /* Be sure to increment the pointer returned by strstr(3), to
@@ -108,8 +98,6 @@ char *sreplace(pool *p, char *s, ...) {
       replaces[nmatches++] = r;
     }
   }
-
-  va_end(args);
 
   /* If there are no matches, then there is nothing to replace. */
   if (nmatches == 0) {
@@ -181,23 +169,81 @@ char *sreplace(pool *p, char *s, ...) {
   return pbuf;
 }
 
-/* "safe" strcat, saves room for NUL at end of dst, and refuses to copy more
- * than "n" bytes.
- */
-char *sstrcat(char *dst, const char *src, size_t n) {
-  register char *d;
+char *pr_str_replace(pool *p, unsigned int max_replaces, char *s, ...) {
+  va_list args;
+  char *res = NULL;
 
-  if (!dst || !src || n == 0) {
+  if (p == NULL ||
+      s == NULL ||
+      max_replaces == 0) {
     errno = EINVAL;
     return NULL;
   }
 
-  for (d = dst; *d && n > 1; d++, n--) ;
+  va_start(args, s);
+  res = str_vreplace(p, max_replaces, s, args);
+  va_end(args);
 
-  while (n-- > 1 && *src)
-    *d++ = *src++;
+  return res;
+}
 
-  *d = 0;
+char *sreplace(pool *p, char *s, ...) {
+  va_list args;
+  char *res = NULL;
+
+  if (p == NULL ||
+      s == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  va_start(args, s);
+  res = str_vreplace(p, PR_STR_MAX_REPLACEMENTS, s, args);
+  va_end(args);
+
+  if (res == NULL &&
+      errno == E2BIG) {
+    /* For backward compatible behavior. */
+    return s;
+  }
+
+  return res;
+}
+
+/* "safe" strcat, saves room for NUL at end of dst, and refuses to copy more
+ * than "n" bytes.
+ */
+char *sstrcat(char *dst, const char *src, size_t n) {
+  register char *d = dst;
+
+  if (dst == NULL ||
+      src == NULL ||
+      n == 0) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  /* Edge case short ciruit; strlcat(3) doesn't do what I think it should
+   * do for this particular case.
+   */
+  if (n > 1) {
+#ifdef HAVE_STRLCAT
+    strlcat(dst, src, n);
+  
+#else
+    for (; *d && n > 1; d++, n--) ;
+
+    while (n-- > 1 && *src) {
+      *d++ = *src++;
+    }
+
+    *d = '\0';
+#endif /* HAVE_STRLCAT */
+
+  } else {
+    *d = '\0';
+  }
+
   return dst;
 }
 
@@ -231,11 +277,10 @@ char *pstrndup(pool *p, const char *str, size_t n) {
 }
 
 char *pdircat(pool *p, ...) {
-  char *argp, *res;
+  char *argp, *ptr, *res;
   char last;
-
   int count = 0;
-  size_t len = 0;
+  size_t len = 0, res_len = 0;
   va_list ap;
 
   if (p == NULL) {
@@ -251,35 +296,46 @@ char *pdircat(pool *p, ...) {
     /* If the first argument is "", we have to account for a leading /
      * which must be added.
      */
-    if (!count++ && !*res)
+    if (!count++ && !*res) {
       len++;
 
-    else if (last && last != '/' && *res != '/')
+    } else if (last && last != '/' && *res != '/') {
       len++;
 
-    else if (last && last == '/' && *res == '/')
+    } else if (last && last == '/' && *res == '/') {
       len--;
+    }
 
-    len += strlen(res);
-    last = (*res ? res[strlen(res) - 1] : 0);
+    res_len = strlen(res);
+    len += res_len;
+    last = (*res ? res[res_len-1] : 0);
   }
 
   va_end(ap);
-  res = (char *) pcalloc(p, len + 1);
+  ptr = res = (char *) pcalloc(p, len + 1);
 
   va_start(ap, p);
 
-  last = 0;
+  last = res_len = 0;
 
   while ((argp = va_arg(ap, char *)) != NULL) {
-    if (last && last == '/' && *argp == '/')
+    size_t arglen;
+
+    if (last && last == '/' && *argp == '/') {
       argp++;
 
-    else if (last && last != '/' && *argp != '/')
-      sstrcat(res, "/", len + 1);
+    } else if (last && last != '/' && *argp != '/') {
+      sstrcat(ptr, "/", len + 1);
+      ptr += 1;
+      res_len += 1;
+    }
 
-    sstrcat(res, argp, len + 1);
-    last = (*res ? res[strlen(res) - 1] : 0);
+    arglen = strlen(argp);
+    sstrcat(ptr, argp, len + 1);
+    ptr += arglen;
+    res_len += arglen;
+ 
+    last = (*res ? res[res_len-1] : 0);
   }
 
   va_end(ap);
@@ -288,8 +344,7 @@ char *pdircat(pool *p, ...) {
 }
 
 char *pstrcat(pool *p, ...) {
-  char *argp, *res;
-
+  char *argp, *ptr, *res;
   size_t len = 0;
   va_list ap;
 
@@ -300,19 +355,71 @@ char *pstrcat(pool *p, ...) {
 
   va_start(ap, p);
 
-  while ((res = va_arg(ap, char *)) != NULL)
+  while ((res = va_arg(ap, char *)) != NULL) {
     len += strlen(res);
+  }
 
   va_end(ap);
 
-  res = pcalloc(p, len + 1);
+  ptr = res = pcalloc(p, len + 1);
 
   va_start(ap, p);
 
-  while ((argp = va_arg(ap, char *)) != NULL)
-    sstrcat(res, argp, len + 1);
+  while ((argp = va_arg(ap, char *)) != NULL) {
+    size_t arglen;
+
+    arglen = strlen(argp);
+    sstrcat(ptr, argp, len + 1);
+    ptr += arglen;
+  }
 
   va_end(ap);
+
+  return res;
+}
+
+int pr_strnrstr(const char *s, size_t slen, const char *suffix,
+    size_t suffixlen, int flags) {
+  int res = FALSE;
+
+  if (s == NULL ||
+      suffix == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (slen == 0) {
+    slen = strlen(s);
+  }
+
+  if (suffixlen == 0) {
+    suffixlen = strlen(suffix);
+  }
+
+  if (slen == 0 &&
+      suffixlen == 0) {
+    return TRUE;
+  }
+
+  if (slen == 0 ||
+      suffixlen == 0) {
+    return FALSE;
+  }
+
+  if (suffixlen > slen) {
+    return FALSE;
+  }
+
+  if (flags & PR_STR_FL_IGNORE_CASE) {
+    if (strncasecmp(s + (slen - suffixlen), suffix, suffixlen) == 0) {
+      res = TRUE;
+    }
+
+  } else {
+    if (strncmp(s + (slen - suffixlen), suffix, suffixlen) == 0) {
+      res = TRUE;
+    }
+  }
 
   return res;
 }
@@ -326,10 +433,10 @@ char *pr_str_strip(pool *p, char *str) {
   }
  
   /* First, find the non-whitespace start of the given string */
-  for (start = str; isspace((int) *start); start++);
+  for (start = str; PR_ISSPACE(*start); start++);
  
   /* Now, find the non-whitespace end of the given string */
-  for (finish = &str[strlen(str)-1]; isspace((int) *finish); finish--);
+  for (finish = &str[strlen(str)-1]; PR_ISSPACE(*finish); finish--);
 
   /* finish is now pointing to a non-whitespace character.  So advance one
    * character forward, and set that to NUL.
@@ -367,6 +474,216 @@ char *pr_str_strip_end(char *s, char *ch) {
   return s;
 }
 
+/* NOTE: Update mod_ban's ban_parse_timestr() to use this function. */
+int pr_str_get_duration(const char *str, int *duration) {
+  unsigned int hours, mins, secs;
+  int flags = PR_STR_FL_IGNORE_CASE, has_suffix = FALSE;
+  size_t len;
+  char *ptr = NULL;
+
+  if (str == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (sscanf(str, "%2u:%2u:%2u", &hours, &mins, &secs) == 3) {
+    if (hours > INT_MAX ||
+        mins > INT_MAX ||
+        secs > INT_MAX) {
+      errno = ERANGE;
+      return -1;
+    }
+
+    if (duration != NULL) {
+      *duration = (hours * 60 * 60) + (mins * 60) + secs;
+    }
+
+    return 0;
+  }
+
+  len = strlen(str);
+  if (len == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Handle the "single component" formats:
+   *
+   * If ends with "S", "s", or "sec": parse secs
+   * If ends with "M", "m", or "min": parse minutes
+   * If ends with "H", "h", or "hr": parse hours
+   *
+   * Otherwise, try to parse as just a number of seconds.
+   */
+
+  has_suffix = pr_strnrstr(str, len, "s", 1, flags);
+  if (has_suffix == FALSE) {
+    has_suffix = pr_strnrstr(str, len, "sec", 3, flags);
+  }
+  if (has_suffix == TRUE) {
+    /* Parse seconds */
+
+    if (sscanf(str, "%u", &secs) == 1) {
+      if (secs > INT_MAX) {
+        errno = ERANGE;
+        return -1;
+      }
+
+      if (duration != NULL) {
+        *duration = secs;
+      }
+
+      return 0;
+    }
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  has_suffix = pr_strnrstr(str, len, "m", 1, flags);
+  if (has_suffix == FALSE) {
+    has_suffix = pr_strnrstr(str, len, "min", 3, flags);
+  }
+  if (has_suffix == TRUE) {
+    /* Parse minutes */
+
+    if (sscanf(str, "%u", &mins) == 1) {
+      if (mins > INT_MAX) {
+        errno = ERANGE;
+        return -1;
+      }
+
+      if (duration != NULL) {
+        *duration = (mins * 60);
+      }
+  
+      return 0;
+    }
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  has_suffix = pr_strnrstr(str, len, "h", 1, flags);
+  if (has_suffix == FALSE) {
+    has_suffix = pr_strnrstr(str, len, "hr", 2, flags);
+  }
+  if (has_suffix == TRUE) {
+    /* Parse hours */
+
+    if (sscanf(str, "%u", &hours) == 1) {
+      if (hours > INT_MAX) {
+        errno = ERANGE;
+        return -1;
+      }
+
+      if (duration != NULL) {
+        *duration = (hours * 60 * 60);
+      }
+ 
+      return 0;
+    }
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Use strtol(3) here, check for trailing garbage, etc. */
+  secs = (int) strtol(str, &ptr, 10);
+  if (ptr && *ptr) {
+    /* Not a bare number, but a string with non-numeric characters. */
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (secs < 0 ||
+      secs > INT_MAX) {
+    errno = ERANGE;
+    return -1;
+  }
+
+  if (duration != NULL) {
+    *duration = secs;
+  }
+
+  return 0;
+}
+
+int pr_str_get_nbytes(const char *str, const char *units, off_t *nbytes) {
+  off_t sz;
+  char *ptr = NULL;
+  float factor = 0.0;
+
+  if (str == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* No negative numbers. */
+  if (*str == '-') {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (units == NULL ||
+      *units == '\0') {
+    factor = 1.0;
+
+  } else if (strncasecmp(units, "KB", 3) == 0) {
+    factor = 1024.0;
+
+  } else if (strncasecmp(units, "MB", 3) == 0) {
+    factor = 1024.0 * 1024.0;
+
+  } else if (strncasecmp(units, "GB", 3) == 0) {
+    factor = 1024.0 * 1024.0 * 1024.0;
+
+  } else if (strncasecmp(units, "TB", 3) == 0) {
+    factor = 1024.0 * 1024.0 * 1024.0 * 1024.0;
+  
+  } else if (strncasecmp(units, "B", 2) == 0) {
+    factor = 1.0;
+
+  } else {
+    errno = EINVAL;
+    return -1;
+  }
+
+  errno = 0;
+
+#ifdef HAVE_STRTOULL
+  sz = strtoull(str, &ptr, 10);
+#else
+  sz = strtoul(str, &ptr, 10);
+#endif /* !HAVE_STRTOULL */
+
+  if (errno == ERANGE) {
+    return -1;
+  }
+
+  if (ptr != NULL && *ptr) {
+    /* Error parsing the given string */
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Don't bother applying the factor if the result will overflow the result. */
+#ifdef ULLONG_MAX
+  if (sz > (ULLONG_MAX / factor)) {
+#else
+  if (sz > (ULONG_MAX / factor)) {
+#endif /* !ULLONG_MAX */
+    errno = ERANGE;
+    return -1;
+  }
+
+  if (nbytes != NULL) {
+    *nbytes = (off_t) (sz * factor);
+  }
+
+  return 0;
+}
+
 char *pr_str_get_word(char **cp, int flags) {
   char *res, *dst;
   char quote_mode = 0;
@@ -379,8 +696,9 @@ char *pr_str_get_word(char **cp, int flags) {
   }
 
   if (!(flags & PR_STR_FL_PRESERVE_WHITESPACE)) {
-    while (**cp && isspace((int) **cp))
+    while (**cp && PR_ISSPACE(**cp)) {
       (*cp)++;
+    }
   }
 
   if (!**cp)
@@ -399,7 +717,7 @@ char *pr_str_get_word(char **cp, int flags) {
     (*cp)++;
   }
 
-  while (**cp && (quote_mode ? (**cp != '\"') : !isspace((int) **cp))) {
+  while (**cp && (quote_mode ? (**cp != '\"') : !PR_ISSPACE(**cp))) {
     if (**cp == '\\' && quote_mode) {
 
       /* Escaped char */
@@ -422,27 +740,43 @@ char *pr_str_get_word(char **cp, int flags) {
  * non-separator in the string.  If the src string is empty or NULL, the next
  * token returned is NULL.
  */
-char *pr_str_get_token(char **s, char *sep) {
-  char *res;
+char *pr_str_get_token2(char **src, char *sep, size_t *token_len) {
+  char *token;
+  size_t len = 0;
 
-  if (s == NULL ||
-      *s == NULL ||
-      **s == '\0' ||
+  if (src == NULL ||
+      *src == NULL ||
+      **src == '\0' ||
       sep == NULL) {
+
+    if (token_len != NULL) {
+      *token_len = len;
+    }
+
     errno = EINVAL;
     return NULL;
   }
 
-  res = *s;
+  token = *src;
 
-  while (**s && !strchr(sep, **s)) {
-    (*s)++;
+  while (**src && !strchr(sep, **src)) {
+    (*src)++;
+    len++;
   }
 
-  if (**s)
-    *(*s)++ = '\0';
+  if (**src) {
+    *(*src)++ = '\0';
+  }
 
-  return res;
+  if (token_len != NULL) {
+    *token_len = len;
+  }
+
+  return token;
+}
+
+char *pr_str_get_token(char **src, char *sep) {
+  return pr_str_get_token2(src, sep, NULL);
 }
 
 int pr_str_is_boolean(const char *str) {

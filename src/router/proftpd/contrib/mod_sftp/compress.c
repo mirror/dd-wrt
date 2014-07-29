@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: compress.c,v 1.6.2.2 2012/12/13 23:56:07 castaglia Exp $
+ * $Id: compress.c,v 1.8 2012/12/13 23:05:15 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -498,6 +498,7 @@ int sftp_compress_write_data(struct ssh2_packet *pkt) {
           (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
             "unhandled zlib error (%d) while compressing", zres);
           destroy_pool(sub_pool);
+          errno = EIO;
           return -1;
       }
     }

@@ -1,4 +1,4 @@
-<!-- $Id: Controls.html,v 1.4 2009/08/31 20:40:18 castaglia Exp $ -->
+<!-- $Id: Controls.html,v 1.5 2013/01/09 20:53:43 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Controls.html,v $ -->
 
 <html>
@@ -127,13 +127,13 @@ implemented by that module.  For <code>mod_ctrls</code>, the
 <code>ControlsACLs</code> configuration directive is used.  In the
 example configuration we see:
 <pre>
-  ControlsACLs          all allow group ftpadm
+  ControlsACLs all allow group ftpadm
 </pre>
 which allows only the system group <code>ftpadm</code> to use all of the
 control actions provided by <code>mod_ctrls</code>.  If one wanted to
 allow all users to use all of the control actions, it would be:
 <pre>
-  ControlsACLs allow user *
+  ControlsACLs all allow user *
 </pre>
 However, if one wanted to specify separate ACLs for separate actions, then
 the <code>ControlsACLs</code> directive would be used multiple times, like
@@ -309,7 +309,7 @@ If either allows access, the client can use that control action.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2009/08/31 20:40:18 $</i><br>
+Last Updated: <i>$Date: 2013/01/09 20:53:43 $</i><br>
 <hr>
 
 </body>

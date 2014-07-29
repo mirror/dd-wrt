@@ -1,4 +1,4 @@
-<!-- $Id: mod_xfer.html,v 1.4 2011/04/26 16:10:11 castaglia Exp $ -->
+<!-- $Id: mod_xfer.html,v 1.10 2013/03/13 18:08:28 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_xfer.html,v $ -->
 
 <html>
@@ -40,8 +40,156 @@ file transfers.
 
 <p>
 <hr>
+<h2><a name="AllowOverwrite">AllowOverwrite</a></h2>
+<strong>Syntax:</strong> AllowOverwrite <em>on|off</em><br>
+<strong>Default:</strong> <code>AllowOverwrite off</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
+<strong>Module:</strong> mod_xfer<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>AllowOverwrite</code> directive permits newly transfered files to
+overwrite existing files. By default, FTP clients <b>cannot</b> overwrite
+existing files.
+
+<p>
+<hr>
+<h2><a name="AllowRetrieveRestart">AllowRetrieveRestart</a></h2>
+<strong>Syntax:</strong> AllowRetrieveRestart <em>on|off</em><br>
+<strong>Default:</strong> <code>AllowRetrieveRestart on</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
+<strong>Module:</strong> mod_xfer<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>AllowRetrieveRestart</code> directive permits (or denies) clients
+from performing "restart" download (retrieve) file transfers via the FTP
+<code>REST</code> command. By default, restarted downloads are allowed, so
+that clients may resume interrupted file transfers at a later time without
+losing previously collected data.
+
+<p>
+See also: <a href="#AllowStoreRestart"><code>AllowStoreRestart</code></a>
+
+<p>
+<hr>
+<h2><a name="AllowStoreRestart">AllowStoreRestart</a></h2>
+<strong>Syntax:</strong> AllowStoreRestart <em>on|off</em><br>
+<strong>Default:</strong> <code>AllowStoreRestart on</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
+<strong>Module:</strong> mod_xfer<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>AllowStoreRestart</code> directive permits (or denies) clients from
+"restarting" interrupted upload (store) transfers. By default restarting (via
+the FTP <code>REST</code> command) is <b>not</b> permitted when uploading
+files to the server.  Care should be taken to disallow anonymous FTP
+"incoming" transfers to be restarted, as this will allow clients to corrupt or
+increase the size of previously stored files (even if not their own).
+
+<p>
+The FTP <code>REST</code> command is automatically blocked when
+<code>HiddenStores</code> is enabled, with the server returning a 501 error
+code to the client.
+
+<p> 
+See also: <a href="#AllowRetrieveRestart"><code>AllowRetrieveRestart</code></a>,
+<a href="#DeleteAbortedStores"><code>DeleteAbortedStore</code></a>,
+<a href="#HiddenStores"><code>HiddenStores</code></a>
+
+<p>
+<hr>
+<h2><a name="DeleteAbortedStores">DeleteAbortedStores</a></h2>
+<strong>Syntax:</strong> DeleteAbortedStores <em>on|off</em><br>
+<strong>Default:</strong> <code>DeleteAbortedStores off</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
+<strong>Module:</strong> mod_xfer<br>
+<strong>Compatibility:</strong> 1.2.0rc2 and later
+
+<p>
+The <code>DeleteAbortedStores</code> directive controls whether ProFTPD
+deletes partially uploaded files if the transfer is stopped via the
+FTP <code>ABOR</code> command (as opposed to a connection failure).
+By default, <code>DeleteAbortedStores</code> is <em>off</em>; however when
+<code>HiddenStores</code> is enabled, then <code>DeleteAbortedStores</code>
+is automatically enabled as well.
+
+<p>
+See also: <a href="#HiddenStores"><code>HiddenStores</code></a>
+
+<p>
+<hr>
+<h2><a name="HiddenStores">HiddenStores</a></h2>
+<strong>Syntax:</strong> HiddenStores <em>on|off|prefix [suffix]</em><br>
+<strong>Default:</strong> <code>HiddenStores off</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code><br>
+<strong>Module:</strong> mod_xfer<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>HiddenStores</code> directive enables two-step file uploads: files
+are uploaded as ".in.<em>filename</em>." and once the upload is complete,
+renamed to just <em>filename</em>.  This provides a degree of atomicity and
+helps prevent <i>1)</i> incomplete uploads and <i>2)</i> files being used
+while they are still being uploaded.  When <code>HiddenStores</code> is
+enabled, then <a href="#DeleteAbortedStores"><code>DeleteAbortedStores</code></a> is automatically enabled as well.
+
+<p>
+Note that if the temporary file name is already in use (<i>e.g.</i>, a server
+crash during upload), it will prevent the file from being uploaded.
+
+<p>
+The FTP <code>REST</code> command is automatically blocked when
+<code>HiddenStores</code> is enabled, with the server returning a 501 error
+code to the client.
+
+<p>
+In <code>proftpd-1.3.3rc2</code> and later, the ".in." <em>prefix</em> can be
+customised via the <code>HiddenStores</code> directive, <i>e.g.</i>:
+<pre>
+  # Use a different prefix for HiddenStores
+  HiddenStores filepart-
+</pre>
+
+<p>
+In <code>proftpd-1.3.5rc2</code> and later, the "." <em>suffix</em> can be
+customised using the <code>HiddenStores</code> directive as well, <i>e.g.</i>:
+<pre>
+  # Use a different prefix <b>and</b> suffix for HiddenStores
+  HiddenStores incoming- .lock
+</pre>
+You can also use this capability to configure <em>no</em> prefix, and just
+a suffix:
+<pre>
+  # Use an empty string as the prefix, and a suffix of ".filepart".
+  HiddenStores "" ".filepart"
+</pre>
+<b>Note</b> that in order to specify the suffix, you <b>must</b> specify a
+prefix as well.
+
+<p>
+<b><i>Discussion</i></b><br>
+When would you want or need to specify different prefix and suffix values
+for <code>HiddenStores</code>?  You might need this when, for example, your
+<code>proftpd</code> writes files to an NFS-mounted filesystem.  Another
+machine mounts that same filesystem remotely using a CIFS client (<i>e.g.</i>
+a NetApp machine).  The trailing "." suffix causes the CIFS client to list
+the temporary filenames different (<i>e.g.</i> in a Windows 8.3 file format
+style): "in.test." becomes "INTES~1".  This view confuses users/admins.
+
+<p>
+By changing the default <code>HiddenStores</code> suffix, then, that modified
+CIFS client filename view can be avoided.
+
+<p>
+See also: <a href="#AllowStoreRestart"><code>AllowStoreRestart</code></a>,
+<a href="#DeleteAbortedStores"><code>DeleteAbortedStores</code></a>
+
+<p>
+<hr>
 <h2><a name="MaxRetrieveFileSize">MaxRetrieveFileSize</a></h2>
-<strong>Syntax:</strong> MaxRetrieveFileSize <em>[number|"*" units ["user"|"group"|"class" expression]]</em>
+<strong>Syntax:</strong> MaxRetrieveFileSize <em>[number|"*" units ["user"|"group"|"class" expression]]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
 <strong>Module:</strong> mod_xfer<br>
@@ -73,7 +221,7 @@ found for the current user, then a limit with no expression (<i>i.e.</i> no
 
 <p>
 Examples:
-</pre>
+<pre>
   # Restrict downloads to only 1 gigabyte
   MaxRetrieveFileSize 1 Gb
 
@@ -89,7 +237,7 @@ See also: <a href="#MaxStoreFileSize"><code>MaxStoreFileSize</code></a>
 <p>
 <hr>
 <h2><a name="MaxStoreFileSize">MaxStoreFileSize</a></h2>
-<strong>Syntax:</strong> MaxStoreFileSize <em>[number|"*" units ["user"|"group"|"class" expression]]</em>
+<strong>Syntax:</strong> MaxStoreFileSize <em>[number|"*" units ["user"|"group"|"class" expression]]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
 <strong>Module:</strong> mod_xfer<br>
@@ -141,6 +289,44 @@ over the network.
 
 <p>
 See also: <a href="#MaxRetrieveFileSize"><code>MaxRetrieveFileSize</code></a>
+
+<p>
+<hr>
+<h2><a name="TimeoutNoTransfer">TimeoutNoTransfer</a></h2>
+<strong>Syntax:</strong> TimeoutNoTransfer <em>seconds</em><br>
+<strong>Default:</strong> 300 seconds<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_xfer<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>TimeoutNoTransfer</code> directive configures the maximum number of
+<em>seconds</em> a client is allowed to spend connected, after authentication,
+without issuing a data transfer command which results in a data connection
+(<i>i.e.</i> sending/receiving a file, or requesting a directory listing).
+The maximum allowed <em>seconds</em> value is 65535 (108 minutes).
+
+<p>
+See also: <a href="mod_core.html#TimeoutIdle"><code>TimeoutIdle</code></a>,
+<a href="mod_auth.html#TimeoutLogin"><code>TimeoutLogin</code></a>,
+<a href="#TimeoutStalled"><code>TimeoutStalled</code></a>.
+
+<p>
+<hr>
+<h2><a name="TimeoutStalled">TimeoutStalled</a></h2>
+<strong>Syntax:</strong> TimeoutStalled <em>seconds</em><br>
+<strong>Default:</strong> 3600 seconds<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_xfer<br>
+<strong>Compatibility:</strong> 1.1.6 and later
+
+<p>
+The <code>TimeoutStalled</code> directive sets the maximum number of
+<em>seconds</em> a data connection between <code>proftpd</code> and a client
+can exist but have no actual data transferred (<i>i.e.</i> "stalled").  If the
+<em>seconds</em> parameter is set to zero, data transfers are allowed to stall
+indefinitely; <b>note</b> that this is <b>not</b> a recommended configuration.
+The maximum allowed <em>seconds</em> value is 65535 (108 minutes).
 
 <p>
 <hr>
@@ -249,12 +435,12 @@ The <code>mod_xfer</code>module is <b>always</b> installed.
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011/04/26 16:10:11 $</i><br>
+Last Updated: <i>$Date: 2013/03/13 18:08:28 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2011 The ProFTPD Project<br>
+&copy; Copyright 2000-2013 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

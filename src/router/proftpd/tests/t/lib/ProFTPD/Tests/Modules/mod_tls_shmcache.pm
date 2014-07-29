@@ -64,7 +64,7 @@ sub tls_sess_cache_shm {
   my $pid_file = File::Spec->rel2abs("$tmpdir/tls.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/tls.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/tls.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/tls.group");
@@ -125,7 +125,7 @@ sub tls_sess_cache_shm {
 
       'mod_tls_shmcache.c' => {
         # 10332 is the minimum number of bytes for shmcache
-        TLSSessionCache => "shm:/file=$shm_path&size=10332",
+        TLSSessionCache => "shm:/file=$shm_path&size=20664",
       },
     },
   };
@@ -166,7 +166,9 @@ sub tls_sess_cache_shm {
         '-starttls',
         'ftp',
         '-sess_out',
-        $sessid_file, 
+        $sessid_file,
+        '-CAfile',
+        $ca_file,
       );
 
       my $tls_rh = IO::Handle->new();
@@ -222,6 +224,9 @@ sub tls_sess_cache_shm {
       $self->assert(qr/$expected/, $cipher_str,
         test_msg("Expected '$expected', got '$cipher_str'"));
 
+      # Wait for a couple of seconds
+      sleep(2);
+
       @cmd = (
         $openssl,
         's_client',
@@ -230,7 +235,9 @@ sub tls_sess_cache_shm {
         '-starttls',
         'ftp',
         '-sess_in',
-        $sessid_file, 
+        $sessid_file,
+        '-CAfile',
+        $ca_file,
       );
 
       $tls_rh = IO::Handle->new();
@@ -312,6 +319,9 @@ sub tls_sess_cache_shm {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 

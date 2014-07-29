@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* ProFTPD module definitions.
- * $Id: modules.h,v 1.56 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: modules.h,v 1.59 2012/04/15 18:04:14 castaglia Exp $
  */
 
 #ifndef PR_MODULES_H
@@ -66,7 +66,7 @@ struct modret_struc {
 #define MODRET_ERRMSG(x)		((x) ? (x)->mr_message : NULL)
 #define MODRET_HASDATA(x)		((x) ? ((x)->data ? TRUE : FALSE) : FALSE)
 
-typedef struct {
+typedef struct conftab_rec {
   char *directive;
   modret_t *(*handler)(cmd_rec*);
 
@@ -103,7 +103,7 @@ typedef struct {
 #define LOG_CMD_ERR			6
 #define HOOK				7
 
-typedef struct {
+typedef struct cmdtab_rec {
 
   /* See above for cmd types. */
   unsigned char cmd_type;
@@ -119,11 +119,12 @@ typedef struct {
   /* Can this command be issued during a transfer? (Now obsolete) */
   unsigned char interrupt_xfer;
 
-  int class;
+  int cmd_class;
   module *m;
+
 } cmdtable;
 
-typedef struct {
+typedef struct authtab_rec {
   int auth_flags;			/* future use */
   char *name;
   modret_t *(*handler)(cmd_rec*);
@@ -139,9 +140,9 @@ struct module_struc {
   int api_version;			/* API version _not_ module version */
   char *name;				/* Module name */
 
-  conftable *conftable;			/* Configuration directive table */
-  cmdtable *cmdtable;			/* Command table */
-  authtable *authtable; 		/* Authentication handler table */
+  struct conftab_rec *conftable;	/* Configuration directive table */
+  struct cmdtab_rec *cmdtable;		/* Command table */
+  struct authtab_rec *authtable; 	/* Authentication handler table */
 
   int (*init)(void); 			/* Module initialization */
   int (*sess_init)(void);		/* Session initialization */
@@ -169,6 +170,11 @@ unsigned char pr_module_exists(const char *);
 module *pr_module_get(const char *);
 int pr_module_load(module *m);
 int pr_module_unload(module *m);
+
+/* Load the various symbol tables from this module. */
+int pr_module_load_authtab(module *m);
+int pr_module_load_cmdtab(module *m);
+int pr_module_load_conftab(module *m);
 
 modret_t *pr_module_call(module *, modret_t *(*)(cmd_rec *), cmd_rec *);
 

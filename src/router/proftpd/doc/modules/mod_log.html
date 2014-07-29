@@ -1,4 +1,4 @@
-<!-- $Id: mod_log.html,v 1.8 2011/03/29 17:40:53 castaglia Exp $ -->
+<!-- $Id: mod_log.html,v 1.17 2014/01/02 16:43:54 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_log.html,v $ -->
 
 <html>
@@ -96,7 +96,7 @@ This table shows the supported command classes:
 
   <tr>
     <td><code>ALL</code></td>
-    <td>All commands (<i>default</i>)</td>
+    <td>All commands <i>except</i> the <code>EXIT</code> pseudo-command (<i>default</i>)</td>
   </tr>
 
   <tr>
@@ -156,7 +156,10 @@ This table shows the supported command classes:
 
   <tr>
     <td><code>EXIT</code></td>
-    <td>Logs the configured <code>LogFormat</code> at session exit</td>
+    <td>Logs the configured <code>LogFormat</code> at session exit.<br>
+        <b>NOTE</b>: <code>EXIT</code> is <b>not</b> part of the
+        <code>ALL</code> command class, in order to preserve
+        backward-compatible <code>ALL</code> behavior.</td>
   </tr>
 </table>
 
@@ -196,6 +199,13 @@ used to start a meta sequence/variable (see below). To insert a literal '%'
 character, use "%%".
 
 <p>
+The default <code>LogFormat</code> is:
+<pre>
+  "%h %l %u %t \"%r\" %s %b"
+</pre>
+which produces log entries in the <a href="http://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format">Common Log Format</a>.
+
+<p>
 The following meta sequences/variables are available and are replaced as
 indicated when logging.
 
@@ -217,6 +227,11 @@ indicated when logging.
   </tr>
 
   <tr>
+    <td>&nbsp;<code>%{basename}</code>&nbsp;</td>
+    <td>Last component of path, <i>i.e.</i> just the file or directory name.</td>
+  </tr>
+
+  <tr>
     <td>&nbsp;<code>%b</code>&nbsp;</td>
     <td>Number of bytes sent for this command</td>
   </tr>
@@ -229,15 +244,17 @@ indicated when logging.
   <tr>
     <td>&nbsp;<code>%d</code>&nbsp;</td>
     <td>Directory name (<i>not</i> full path) for: <code>CDUP</code>,
-      <code>CWD</code>, <code>MKD</code>, <code>RMD</code>, <code>XCWD</code>,
-      <code>XCUP</code>, <code>XMKD</code>, <code>XRMD</code></td>
+      <code>CWD</code>, <code>LIST</code>, <code>MLSD</code>, <code>MKD</code>,
+      <code>NLST</code>, <code>RMD</code>, <code>XCWD</code>, <code>XCUP</code>,
+      <code>XMKD</code>, <code>XRMD</code></td>
   </tr>
 
   <tr>
     <td>&nbsp;<code>%D</code>&nbsp;</td>
-    <td>Directory name (full path) for: <code>CDUP</code>,
-      <code>CWD</code>, <code>MKD</code>, <code>RMD</code>, <code>XCWD</code>,
-      <code>XCUP</code>, <code>XMKD</code>, <code>XRMD</code></td>
+    <td>Directory path (full path) for: <code>CDUP</code>,
+      <code>CWD</code>, <code>LIST</code>, <code>MLSD</code>, <code>MKD</code>,
+      <code>NLST</code>, <code>RMD</code>, <code>XCWD</code>, <code>XCUP</code>,
+      <code>XMKD</code>, <code>XRMD</code></td>
   </tr>
 
   <tr>
@@ -271,6 +288,11 @@ indicated when logging.
   </tr>
 
   <tr>
+    <td>&nbsp;<code>%g</code>&nbsp;</td>
+    <td>Primary group of authenticated user</td>
+  </tr>
+
+  <tr>
     <td>&nbsp;<code>%h</code>&nbsp;</td>
     <td>Remote client DNS name</td>
   </tr>
@@ -283,6 +305,11 @@ indicated when logging.
   <tr>
     <td>&nbsp;<code>%I</code>&nbsp;</td>
     <td>Total number of "raw" bytes read in from network</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>%{iso8601}</code>&nbsp;</td>
+    <td>shorthand form of <code>%{%Y-%m-%d %H:%M:%S}t,%{millisecs}</code>, <i>e.g.</i> "2013-01-30 20:14:05,670"</td>
   </tr>
 
   <tr>
@@ -307,13 +334,23 @@ indicated when logging.
   </tr>
 
   <tr>
+    <td>&nbsp;<code>%{microsecs}</code>&nbsp;</td>
+    <td>6 digit value of the microseconds of the current time</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>%{millisecs}</code>&nbsp;</td>
+    <td>3 digit value of the milliseconds of the current time</td>
+  </tr>
+
+  <tr>
     <td>&nbsp;<code>%O</code>&nbsp;</td>
     <td>Total number of "raw" bytes written out to network</td>
   </tr>
 
   <tr>
     <td>&nbsp;<code>%p</code>&nbsp;</td>
-    <td>Local server IP address</td>
+    <td>Local port</td>
   </tr>
 
   <tr>
@@ -333,7 +370,7 @@ indicated when logging.
 
   <tr>
     <td>&nbsp;<code>%s</code>&nbsp;</td>
-    <td>Numeric FTP response code (status)</td>
+    <td>Numeric FTP response code (status); see <a href="http://www.faqs.org/rfcs/rfc959.html">RFC 959</a> Section 4.2.1</td>
   </tr>
 
   <tr>
@@ -354,6 +391,16 @@ indicated when logging.
   <tr>
     <td>&nbsp;<code>%T</code>&nbsp;</td>
     <td>Time taken to send/receive file, in seconds</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>%{transfer-failure}</code>&nbsp;</td>
+    <td>Reason for data transfer failure (if applicable), or "-"</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>%{transfer-status}</code>&nbsp;</td>
+    <td>Status of data transfer: "success", "failed", "cancelled", "timeout", or "-"</td>
   </tr>
 
   <tr>
@@ -449,12 +496,12 @@ The <code>mod_log</code> module is compiled by default.
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011/03/29 17:40:53 $</i><br>
+Last Updated: <i>$Date: 2014/01/02 16:43:54 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2002-2011<br>
+&copy; Copyright 2002-2014<br>
  All Rights Reserved<br>
 </i></b></font>
 

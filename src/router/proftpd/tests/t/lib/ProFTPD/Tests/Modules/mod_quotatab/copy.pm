@@ -110,7 +110,7 @@ sub quotatab_site_copy_user_limit_bug3641 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -304,6 +304,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -350,7 +353,7 @@ sub quotatab_site_copy_user_limit_bytes_in_exceeded_soft_limit_bug3641 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -544,6 +547,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -590,7 +596,7 @@ sub quotatab_site_copy_user_limit_bytes_in_exceeded_hard_limit_bug3641 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -791,6 +797,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -814,7 +823,7 @@ EOS
   $self->assert(qr/$expected/, $bytes_xfer_used,
     test_msg("Expected $expected bytes-xfer-used, got $bytes_xfer_used"));
 
-  $expected = 1;
+  $expected = 0;
   $self->assert($expected == $files_in_used,
     test_msg("Expected $expected files-in-used, got $files_in_used"));
 
@@ -837,7 +846,7 @@ sub quotatab_site_copy_user_limit_files_in_reached_bug3641 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -1033,6 +1042,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1079,7 +1091,7 @@ sub quotatab_site_copy_user_limit_files_in_exceeded_bug3641 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -1282,6 +1294,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1328,7 +1343,7 @@ sub quotatab_site_copy_src_dir_bug3641 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -1536,6 +1551,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1582,7 +1600,7 @@ sub quotatab_site_copy_src_dir_bytes_in_exceeded_bug3641 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -1792,6 +1810,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1838,7 +1859,7 @@ sub quotatab_site_copy_src_dir_bytes_in_exceeded_chrooted_bug3641 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -2064,6 +2085,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -2110,7 +2134,7 @@ sub quotatab_site_copy_src_dir_files_in_exceeded_bug3641 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -2326,6 +2350,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -2365,7 +2392,6 @@ EOS
 }
 
 sub quotatab_site_copy_src_dir_files_in_exceeded_chrooted_bug3641 {
-$ENV{TEST_VERBOSE}=1;
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -2373,7 +2399,7 @@ $ENV{TEST_VERBOSE}=1;
   my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -2605,6 +2631,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -2651,7 +2680,7 @@ sub quotatab_site_copy_src_dir_directory_tally_bug3641 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
   my $passwd = 'test';
@@ -2697,7 +2726,7 @@ CREATE TABLE quotalimits (
   files_out_avail INTEGER NOT NULL,
   files_xfer_avail INTEGER NOT NULL
 );
-INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 8192, 0, 0, 3, 0, 0);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 16384, 0, 0, 3, 0, 0);
 
 CREATE TABLE quotatallies (
   name TEXT NOT NULL,
@@ -2825,7 +2854,9 @@ EOS
       $self->assert($expected eq $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
 
-      ($resp_code, $resp_msg) = $client->site('CPTO', 'dst.d');
+      $client->site('CPTO', 'dst.d');
+      $resp_code = $client->response_code();
+      $resp_msg = $client->response_msg(0);
       
       $expected = 250;
       $self->assert($expected == $resp_code,
@@ -2860,6 +2891,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -2872,6 +2906,12 @@ EOS
     test_msg("Expected '$expected', got '$quota_type'"));
 
   $expected = '^(4124.0|4124)$';
+  if ($^O eq 'linux') {
+    # On Linux, the block size for a directory file might be different,
+    # hence the different expectations of bytes-in-used.
+    $expected = '^(8220.0|8222)$';
+  }
+
   $self->assert(qr/$expected/, $bytes_in_used,
     test_msg("Expected $expected bytes-in-used, got $bytes_in_used"));
 

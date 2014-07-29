@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server API testsuite
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Testsuite management
- * $Id: tests.h,v 1.5 2011/10/31 18:38:51 castaglia Exp $
+ * $Id: tests.h,v 1.7 2014/01/06 06:58:23 castaglia Exp $
  */
 
 #ifndef PR_TESTS_H
@@ -59,6 +59,8 @@ Suite *tests_get_stash_suite(void);
 Suite *tests_get_modules_suite(void);
 Suite *tests_get_cmd_suite(void);
 Suite *tests_get_response_suite(void);
+Suite *tests_get_fsio_suite(void);
+Suite *tests_get_netio_suite(void);
 
 /* Temporary hack/placement for this variable, until we get to testing
  * the Signals API.
@@ -68,6 +70,7 @@ unsigned int recvd_signal_flags;
 extern char ServerType;
 extern int ServerUseReverseDNS;
 extern server_rec *main_server;
+extern pid_t mpid;
 extern module *loaded_modules;
 extern module *static_modules[];
 

@@ -23,7 +23,7 @@
  */
 
 /* Variables API implementation
- * $Id: var.c,v 1.6.2.1 2013/04/23 15:20:57 castaglia Exp $
+ * $Id: var.c,v 1.8 2013/10/06 05:30:31 castaglia Exp $
  */
 
 #include "conf.h"
@@ -41,16 +41,18 @@ static pr_table_t *var_tab = NULL;
 
 typedef const char *(*var_vstr_cb)(void *, size_t);
 
+static const char *trace_channel = "var";
+
 /* Public API
  */
 
 int pr_var_delete(const char *name) {
-  if (!var_tab) {
+  if (var_tab == NULL) {
     errno = EPERM;
     return -1;
   }
 
-  if (!name) {
+  if (name == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -59,12 +61,12 @@ int pr_var_delete(const char *name) {
 }
 
 int pr_var_exists(const char *name) {
-  if (!var_tab) {
+  if (var_tab == NULL) {
     errno = EPERM;
     return -1;
   }
 
-  if (!name) {
+  if (name == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -73,21 +75,22 @@ int pr_var_exists(const char *name) {
 }
 
 const char *pr_var_get(const char *name) {
-  struct var *v;
+  struct var *v = NULL;
 
-  if (!var_tab) {
+  if (var_tab == NULL) {
     errno = EPERM;
     return NULL;
   }
 
-  if (!name) {
+  if (name == NULL) {
     errno = EINVAL;
     return NULL;
   }
 
   v = pr_table_get(var_tab, name, NULL);
-  if (!v)
+  if (v == NULL) {
     return NULL;
+  }
 
   switch (v->v_type) {
     case PR_VAR_TYPE_STR:
@@ -100,7 +103,8 @@ const char *pr_var_get(const char *name) {
 
     default:
       /* Pass through to the error case. */
-      ;
+      pr_trace_msg(trace_channel, 9,
+        "unknown var type (%d) found for name '%s'", v->v_type, name);
   }
 
   errno = EINVAL;
@@ -111,30 +115,34 @@ const char *pr_var_next(const char **desc) {
   const char *name;
   struct var *v;
 
-  if (!var_tab) {
+  if (var_tab == NULL) {
     errno = EPERM;
     return NULL;
   }
 
   name = pr_table_next(var_tab);
-  if (!name)
+  if (name == NULL) {
     return NULL;
+  }
 
   v = pr_table_get(var_tab, name, NULL);
-  if (v && desc)
+  if (v && desc) {
     *desc = v->v_desc;
+  }
 
   return name;
 }
 
 void pr_var_rewind(void) {
-  if (var_tab)
+  if (var_tab != NULL) {
     pr_table_rewind(var_tab);
+  }
 }
 
-int pr_var_set(pool *p, const char *name, const char *desc, int type,
+int pr_var_set(pool *p, const char *name, const char *desc, int vtype,
     void *val, void *data, size_t datasz) {
   struct var *v;
+  size_t namelen = 0;
 
   if (var_tab == NULL) {
     errno = EPERM;
@@ -149,7 +157,15 @@ int pr_var_set(pool *p, const char *name, const char *desc, int type,
   }
 
   /* The length of the key must be greater than 3 characters (for "%{}"). */
-  if (strlen(name) < 4) {
+  namelen = strlen(name);
+  if (namelen < 4) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* If the given variable type is not recognized, reject. */
+  if (vtype != PR_VAR_TYPE_STR &&
+      vtype != PR_VAR_TYPE_FUNC) {
     errno = EINVAL;
     return -1;
   }
@@ -172,7 +188,7 @@ int pr_var_set(pool *p, const char *name, const char *desc, int type,
 
   /* Variable names MUST start with '%{', and end in '}'. */
   if (strncmp(name, "%{", 2) != 0 ||
-      name[strlen(name)-1] != '}') {
+      name[namelen-1] != '}') {
     errno = EINVAL;
     return -1;
   }
@@ -193,12 +209,14 @@ int pr_var_set(pool *p, const char *name, const char *desc, int type,
    * growth.
    */
 
-  switch (type) {
+  switch (vtype) {
     case PR_VAR_TYPE_STR:
       v = pcalloc(p, sizeof(struct var));
 
-      if (desc)
+      if (desc) {
         v->v_desc = (const char *) pstrdup(p, desc);
+      }
+
       v->v_type = PR_VAR_TYPE_STR; 
       v->v_val = pstrdup(p, (char *) val);
       v->v_datasz = strlen((char *) val);
@@ -207,8 +225,10 @@ int pr_var_set(pool *p, const char *name, const char *desc, int type,
     case PR_VAR_TYPE_FUNC:
       v = pcalloc(p, sizeof(struct var));
 
-      if (desc)
+      if (desc) {
         v->v_desc = (const char *) pstrdup(p, desc);
+      }
+
       v->v_type = PR_VAR_TYPE_FUNC; 
       v->v_val = val;
 
@@ -229,13 +249,14 @@ int pr_var_set(pool *p, const char *name, const char *desc, int type,
 
 int var_init(void) {
 
-  if (!var_pool) {
+  if (var_pool == NULL) {
     var_pool = make_sub_pool(permanent_pool);
     pr_pool_tag(var_pool, "Variables Pool");
   }
 
-  if (!var_tab)
+  if (var_tab == NULL) {
     var_tab = pr_table_alloc(var_pool, 0);
+  }
 
   return 0;
 }

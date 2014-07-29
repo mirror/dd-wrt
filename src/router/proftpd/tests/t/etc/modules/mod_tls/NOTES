@@ -123,3 +123,20 @@ directory, I used:
       --signing-ca=ca-cert.pem --signing-key=ca-cert.pem
 
 The passphrase is "password".
+
+To create the DSA cert, I used:
+
+  # CERT_TOOL_USE_DSA=1 ./cert-tool --create-ca=dsa-server-cert --combined --signing-ca=dsa-ca.pem --signing-key=dsa-ca.pem --verbose --key-length=512
+
+NOTE: the --key-length=512 is important.  By default, cert-tool creates keys
+of 1024 bits; this turns out to be too large for DSA keys for OpenSSL.
+
+To create an EC cert, I used:
+
+  # cert-tool --create-ca=ec-ca --combined --signing-ca=self \
+     --verbose --key-cipher curve:secp256k1 --days-valid 3650
+  # cert-tool --create-cert=ec-server-cert --combined --signing-ca=ec-ca.pem \
+     --signing-key=ec-ca.pem --verbose --key-cipher= curve:secp256k1 \
+     --days-valid 3650
+
+The passphrase is "password".

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp cipher mgmt
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: cipher.h,v 1.3 2011/05/23 20:40:13 castaglia Exp $
+ * $Id: cipher.h,v 1.4 2013/01/29 07:29:22 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -40,13 +40,13 @@ const char *sftp_cipher_get_read_algo(void);
 int sftp_cipher_set_read_algo(const char *);
 int sftp_cipher_set_read_key(pool *, const EVP_MD *, const BIGNUM *,
   const char *, uint32_t);
-int sftp_cipher_read_data(pool *, unsigned char *, uint32_t, char **,
-  uint32_t *);
+int sftp_cipher_read_data(pool *, unsigned char *, uint32_t,
+  unsigned char **, uint32_t *);
 
 const char *sftp_cipher_get_write_algo(void);
 int sftp_cipher_set_write_algo(const char *);
 int sftp_cipher_set_write_key(pool *, const EVP_MD *, const BIGNUM *,
   const char *, uint32_t);
-int sftp_cipher_write_data(struct ssh2_packet *, char *, size_t *);
+int sftp_cipher_write_data(struct ssh2_packet *, unsigned char *, size_t *);
 
 #endif

@@ -1,4 +1,4 @@
-<!-- $Id: DisplayFiles.html,v 1.7 2010/04/17 18:52:35 castaglia Exp $ -->
+<!-- $Id: DisplayFiles.html,v 1.8 2012/05/03 18:29:41 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/DisplayFiles.html,v $ -->
 
 <html>
@@ -230,7 +230,7 @@ as well; please consult their documentation for more information.
 <b>Frequently Asked Questions</b><br>
 
 <p><a name="DisplayPathsWithSpaces">
-<font color=red>Question</font>: I configured path which contains spaces for
+<font color=red>Question</font>: I configured a path which contains spaces for
 <code>DisplayLogin</code>, and it doesn't work.  Why not?<br>
 <font color=blue>Answer</font>: If using paths/files which contains spaces,
 make sure that you enclose the path in quotation marks, <i>e.g.</i>:
@@ -240,9 +240,24 @@ make sure that you enclose the path in quotation marks, <i>e.g.</i>:
 Otherwise, the configuration file parser will treat the space-separated
 portions of the path as separate directive parameters.
 
+<p><a name="DisplayAvailableBytes">
+<font color=red>Question</font>: I configured a <code>DisplayLogin</code>
+file which uses the <code>%F</code> variable, but it is not showing me the
+correct amount of bytes available on my system.  Why not?<br>
+<font color=blue>Answer</font>:  ProFTPD determines the available bytes for
+the <code>%F</code>/<code>%f</code> variables <i>based on the filesystem
+containing the <code>Display</code> file</i>.
+
+<p>
+For example, if your <code>Display</code> file is in <code>/etc/proftpd</code>,,
+and the <code>/etc</code> directory is mounted on a small disk, then
+<code>%F</code>/<code>%f</code> will only report on the bytes available in the
+<code>/etc</code> filesystem, not on other filesystems (<i>e.g.</i> not
+the <code>/home</code> filesystem).
+
 <p>
 <hr>
-<i>$Date: 2010/04/17 18:52:35 $</i><br>
+<i>$Date: 2012/05/03 18:29:41 $</i><br>
 
 </body>
 </html>

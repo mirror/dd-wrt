@@ -23,7 +23,7 @@
  */
 
 /* Configuration parser
- * $Id: parser.c,v 1.25.2.1 2013/01/19 01:08:25 castaglia Exp $
+ * $Id: parser.c,v 1.40 2013/12/30 06:38:59 castaglia Exp $
  */
 
 #include "conf.h"
@@ -65,10 +65,10 @@ static struct config_src *parser_sources = NULL;
  */
 
 static void add_config_ctxt(config_rec *c) {
-  if (!*parser_curr_config)
+  if (!*parser_curr_config) {
     *parser_curr_config = c;
 
-  else {
+  } else {
     parser_curr_config = (config_rec **) push_array(parser_confstack);
     *parser_curr_config = c;
   }
@@ -84,10 +84,10 @@ static struct config_src *add_config_source(pr_fh_t *fh) {
   cs->cs_fh = fh;
   cs->cs_lineno = 0;
 
-  if (!parser_sources)
+  if (!parser_sources) {
     parser_sources = cs;
 
-  else {
+  } else {
     cs->cs_next = parser_sources;
     parser_sources = cs;
   }
@@ -96,13 +96,16 @@ static struct config_src *add_config_source(pr_fh_t *fh) {
 }
 
 static char *get_config_word(pool *p, char *word) {
+  size_t wordlen;
 
   /* Should this word be replaced with a value from the environment?
    * If so, tmp will contain the expanded value, otherwise tmp will
    * contain a string duped from the given pool.
    */
 
-  if (strlen(word) > 7) {
+  wordlen = strlen(word);
+
+  if (wordlen > 7) {
     char *ptr = NULL;
 
     /* Does the given word use the environment syntax?
@@ -113,10 +116,10 @@ static char *get_config_word(pool *p, char *word) {
      */
 
     if (strncmp(word, "%{env:", 6) == 0 &&
-        word[strlen(word)-1] == '}') {
+        word[wordlen-1] == '}') {
       char *env;
 
-      word[strlen(word)-1] = '\0';
+      word[wordlen-1] = '\0';
 
       env = pr_env_get(p, word + 6);
 
@@ -281,7 +284,7 @@ config_rec *pr_parser_config_ctxt_open(const char *name) {
    * parent server.  This keeps <Global> config recs from being freed
    * prematurely, and helps to avoid memory leaks.
    */
-  if (strncmp(name, "<Global>", 9) == 0) {
+  if (strncasecmp(name, "<Global>", 9) == 0) {
     if (!global_config_pool) {
       global_config_pool = make_sub_pool(permanent_pool);
       pr_pool_tag(global_config_pool, "<Global> Pool");
@@ -330,7 +333,7 @@ int pr_parser_parse_file(pool *p, const char *path, config_rec *start,
   pool *tmp_pool;
   char *report_path;
 
-  if (!path) {
+  if (path == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -347,13 +350,44 @@ int pr_parser_parse_file(pool *p, const char *path, config_rec *start,
 
   fh = pr_fsio_open(path, O_RDONLY);
   if (fh == NULL) {
+    int xerrno = errno;
+
     destroy_pool(tmp_pool);
+
+    errno = xerrno;
     return -1;
   }
 
   /* Stat the opened file to determine the optimal buffer size for IO. */
   memset(&st, 0, sizeof(st));
-  pr_fsio_fstat(fh, &st);
+  if (pr_fsio_fstat(fh, &st) < 0) {
+    int xerrno = errno;
+
+    pr_fsio_close(fh);
+    destroy_pool(tmp_pool);
+
+    errno = xerrno;
+    return -1;
+  }
+
+  if (S_ISDIR(st.st_mode)) {
+    pr_fsio_close(fh);
+    destroy_pool(tmp_pool);
+
+    errno = EISDIR;
+    return -1;
+  }
+
+  /* Check for world-writable files (and later, files in world-writable
+   * directories).
+   *
+   * For now, just warn about these; later, we will be more draconian.
+   */
+  if (st.st_mode & S_IWOTH) {
+    pr_log_pri(PR_LOG_WARNING, "warning: config file '%s' is world-writable",
+     path); 
+  }
+
   fh->fh_iosz = st.st_blksize;
 
   /* Push the configuration information onto the stack of configuration
@@ -393,18 +427,20 @@ int pr_parser_parse_file(pool *p, const char *path, config_rec *start,
           if (MODRET_ISERROR(mr)) {
 
             if (!(flags & PR_PARSER_FL_DYNAMIC_CONFIG)) {
-              pr_log_pri(PR_LOG_ERR, "Fatal: %s on line %u of '%s'",
+              pr_log_pri(PR_LOG_WARNING, "fatal: %s on line %u of '%s'",
                 MODRET_ERRMSG(mr), cs->cs_lineno, report_path);
               exit(1);
 
-            } else
+            } else {
               pr_log_pri(PR_LOG_WARNING, "warning: %s on line %u of '%s'",
                 MODRET_ERRMSG(mr), cs->cs_lineno, report_path);
+            }
           }
         }
 
-        if (!MODRET_ISDECLINED(mr))
+        if (!MODRET_ISDECLINED(mr)) {
           found = TRUE;
+        }
 
         conftab = pr_stash_get_symbol(PR_SYM_CONF, cmd->argv[0], conftab,
           &cmd->stash_index);
@@ -416,15 +452,16 @@ int pr_parser_parse_file(pool *p, const char *path, config_rec *start,
       if (!found) {
 
         if (!(flags & PR_PARSER_FL_DYNAMIC_CONFIG)) {
-          pr_log_pri(PR_LOG_ERR, "Fatal: unknown configuration directive "
+          pr_log_pri(PR_LOG_WARNING, "fatal: unknown configuration directive "
             "'%s' on line %u of '%s'", cmd->argv[0], cs->cs_lineno,
             report_path);
           exit(1);
 
-        } else 
+        } else {
           pr_log_pri(PR_LOG_WARNING, "warning: unknown configuration directive "
             "'%s' on line %u of '%s'", cmd->argv[0], cs->cs_lineno,
             report_path);
+        }
       }
     }
 
@@ -546,11 +583,12 @@ int pr_parser_prepare(pool *p, xaset_t **parsed_servers) {
     p = parser_pool;
   }
 
-  if (!parsed_servers)
+  if (parsed_servers == NULL) {
     parser_server_list = &server_list;
 
-  else
+  } else {
     parser_server_list = parsed_servers;
+  }
 
   parser_servstack = make_array(p, 1, sizeof(server_rec *));
   parser_curr_server = (server_rec **) push_array(parser_servstack);
@@ -601,15 +639,15 @@ char *pr_parser_read_line(char *buf, size_t bufsz) {
     if (buflen &&
         buf[buflen - 1] == '\n') {
       have_eol = TRUE;
-      buf[buflen - 1] = '\0';
-      buflen = strlen(buf);
+      buf[buflen-1] = '\0';
+      buflen--;
     }
 
     while (buflen &&
            buf[buflen - 1] == '\r') {
       pr_signals_handle();
-      buf[buflen - 1] = '\0';
-      buflen = strlen(buf);
+      buf[buflen-1] = '\0';
+      buflen--;
     }
 
     if (!have_eol) {
@@ -619,7 +657,7 @@ char *pr_parser_read_line(char *buf, size_t bufsz) {
     }
 
     /* Advance past any leading whitespace. */
-    for (bufp = buf; *bufp && isspace((int) *bufp); bufp++);
+    for (bufp = buf; *bufp && PR_ISSPACE(*bufp); bufp++);
 
     /* Check for commented or blank lines at this point, and just continue on
      * to the next configuration line if found.  If not, return the
@@ -679,6 +717,14 @@ server_rec *pr_parser_server_ctxt_open(const char *addrstr) {
   s->pool = p;
   s->config_type = CONF_VIRTUAL;
   s->sid = ++parser_sid;
+  s->notes = pr_table_nalloc(p, 0, 8);
+
+  /* TCP KeepAlive is enabled by default, with the system defaults. */
+  s->tcp_keepalive = palloc(s->pool, sizeof(struct tcp_keepalive));
+  s->tcp_keepalive->keepalive_enabled = TRUE;
+  s->tcp_keepalive->keepalive_idle = -1;
+  s->tcp_keepalive->keepalive_count = -1;
+  s->tcp_keepalive->keepalive_intvl = -1;
 
   /* Have to make sure it ends up on the end of the chain, otherwise
    * main_server becomes useless.

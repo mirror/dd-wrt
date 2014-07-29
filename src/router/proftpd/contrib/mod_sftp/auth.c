@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp user authentication
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth.c,v 1.38.2.7 2013/01/10 02:06:56 castaglia Exp $
+ * $Id: auth.c,v 1.53 2014/03/04 07:54:12 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -173,7 +173,8 @@ static char *get_default_root(pool *p) {
         (void) pr_fs_interpolate(path, interp_path, sizeof(interp_path) - 1);
 
         pr_log_pri(PR_LOG_NOTICE,
-          "notice: unable to use %s (resolved to '%s'): %s", path, interp_path,
+          "notice: unable to use DefaultRoot %s (resolved to '%s'): %s",
+            path, interp_path,
           strerror(xerrno));
       }
     }
@@ -265,7 +266,7 @@ static void set_userauth_methods(void) {
 static int setup_env(pool *p, char *user) {
   struct passwd *pw;
   config_rec *c;
-  int login_acl, i, res, show_symlinks = FALSE;
+  int login_acl, i, res, show_symlinks = FALSE, xerrno;
   struct stat st;
   char *default_chdir, *default_root, *home_dir;
   const char *sess_ttyname = NULL, *xferlog = NULL;
@@ -285,14 +286,14 @@ static int setup_env(pool *p, char *user) {
       if (*((int *) c->argv[0]) == FALSE) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "root login attempted, denied by RootLogin configuration");
-        pr_log_auth(PR_LOG_CRIT, "SECURITY VIOLATION: Root login attempted.");
+        pr_log_auth(PR_LOG_NOTICE, "SECURITY VIOLATION: Root login attempted.");
         return -1;
       }
 
     } else {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "root login attempted, denied by RootLogin configuration");
-      pr_log_auth(PR_LOG_CRIT, "SECURITY VIOLATION: Root login attempted.");
+      pr_log_auth(PR_LOG_NOTICE, "SECURITY VIOLATION: Root login attempted.");
       return -1;
     }
   }
@@ -453,10 +454,12 @@ static int setup_env(pool *p, char *user) {
   }
 
   res = set_groups(p, pw->pw_gid, session.gids);
+  xerrno = errno;
   PRIVS_RELINQUISH
 
   if (res < 0) {
-    pr_log_pri(PR_LOG_ERR, "unable to set process groups: %s", strerror(errno));
+    pr_log_pri(PR_LOG_WARNING, "unable to set process groups: %s",
+      strerror(xerrno));
   }
 
   default_root = get_default_root(session.pool);
@@ -464,7 +467,7 @@ static int setup_env(pool *p, char *user) {
     ensure_open_passwd(p);
 
     if (pr_auth_chroot(default_root) < 0) {
-      pr_log_pri(PR_LOG_ERR, "unable to set DefaultRoot directory '%s'",
+      pr_log_pri(PR_LOG_WARNING, "unable to set DefaultRoot directory '%s'",
         default_root);
       return -1;
     }
@@ -496,6 +499,7 @@ static int setup_env(pool *p, char *user) {
       ": retaining root privileges per RootRevoke setting");
 
   } else {
+    PRIVS_ROOT
     PRIVS_REVOKE
     session.disable_id_switching = TRUE;
   }
@@ -503,14 +507,15 @@ static int setup_env(pool *p, char *user) {
 #ifdef HAVE_GETEUID
   if (getegid() != pw->pw_gid ||
       geteuid() != pw->pw_uid) {
-    pr_log_pri(PR_LOG_ERR, "process effective IDs do not match expected IDs");
+    pr_log_pri(PR_LOG_WARNING,
+      "process effective IDs do not match expected IDs");
     return -1;
   }
 #endif
 
   if (pw->pw_dir == NULL ||
       strncmp(pw->pw_dir, "", 1) == 0) {
-    pr_log_pri(PR_LOG_ERR, "Home directory for user '%s' is NULL/empty",
+    pr_log_pri(PR_LOG_WARNING, "Home directory for user '%s' is NULL/empty",
       session.user);
     return -1;
   }
@@ -523,16 +528,21 @@ static int setup_env(pool *p, char *user) {
   }
 
   if (pr_fsio_chdir_canon(session.cwd, !show_symlinks) < 0) {
+    xerrno = errno;
+
     if (session.chroot_path != NULL ||
         default_root != NULL) {
 
       pr_log_debug(DEBUG2, "unable to chdir to %s (%s), defaulting to chroot "
-        "directory %s", session.cwd, strerror(errno),
+        "directory %s", session.cwd, strerror(xerrno),
         (session.chroot_path ? session.chroot_path : default_root));
 
       if (pr_fsio_chdir_canon("/", !show_symlinks) == -1) {
-        pr_log_pri(PR_LOG_ERR, "%s chdir(\"/\"): %s", session.user,
-          strerror(errno));
+        xerrno = errno;
+
+        pr_log_pri(PR_LOG_NOTICE, "%s chdir(\"/\") failed: %s", session.user,
+          strerror(xerrno));
+        errno = xerrno;
         return -1;
       }
 
@@ -541,14 +551,18 @@ static int setup_env(pool *p, char *user) {
         "directory %s", session.cwd, strerror(errno), pw->pw_dir);
 
       if (pr_fsio_chdir_canon(pw->pw_dir, !show_symlinks) == -1) {
-        pr_log_pri(PR_LOG_ERR, "%s chdir(\"%s\"): %s", session.user,
-          session.cwd, strerror(errno));
+        xerrno = errno;
+
+        pr_log_pri(PR_LOG_NOTICE, "%s chdir(\"%s\") failed: %s", session.user,
+          session.cwd, strerror(xerrno));
+        errno = xerrno;
         return -1;
       }
 
     } else {
-      pr_log_pri(PR_LOG_ERR, "%s chdir(\"%s\"): %s", session.user, session.cwd,
-        strerror(errno));
+      pr_log_pri(PR_LOG_NOTICE, "%s chdir(\"%s\") failed: %s", session.user,
+        session.cwd, strerror(xerrno));
+      errno = xerrno;
       return -1;
     }
 
@@ -561,14 +575,14 @@ static int setup_env(pool *p, char *user) {
 
   /* Make sure directory config pointers are set correctly */
   cmd = pr_cmd_alloc(p, 1, C_PASS);
-  cmd->class = CL_AUTH;
+  cmd->cmd_class = CL_AUTH;
   cmd->arg = "";
   dir_check_full(p, cmd, G_NONE, session.cwd, NULL);
 
   session.proc_prefix = pstrdup(session.pool, session.c->remote_name);
   session.sf_flags = 0;
 
-  pr_log_auth(PR_LOG_NOTICE, "USER %s: Login successful", user);
+  pr_log_auth(PR_LOG_INFO, "USER %s: Login successful", user);
 
   if (pw->pw_uid == PR_ROOT_UID) {
     pr_log_auth(PR_LOG_WARNING, "ROOT SFTP login successful");
@@ -601,13 +615,15 @@ static int setup_env(pool *p, char *user) {
 
 static int send_userauth_banner_file(void) {
   struct ssh2_packet *pkt;
-  char *path, *buf, *ptr;
+  char *path;
+  unsigned char *buf, *ptr;
   const char *msg;
   int res;
   uint32_t buflen, bufsz;
   config_rec *c;
   pr_fh_t *fh;
   pool *sub_pool;
+  struct stat st;
 
   if (auth_sent_userauth_banner_file) {
     /* Already sent the banner; no need to do it again. */
@@ -630,6 +646,27 @@ static int send_userauth_banner_file(void) {
   if (fh == NULL) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error opening SFTPDisplayBanner '%s': %s", path, strerror(errno));
+    return 0;
+  }
+
+  res = pr_fsio_fstat(fh, &st);
+  if (res < 0) {
+    int xerrno = errno;
+
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "unable to stat SFTPDisplayBanner '%s': %s", path, strerror(xerrno));
+
+    pr_fsio_close(fh);
+    return 0;
+  }
+
+  if (S_ISDIR(st.st_mode)) {
+    int xerrno = EISDIR;
+
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "unable to use SFTPDisplayBanner '%s': %s", path, strerror(xerrno));
+    
+    pr_fsio_close(fh);
     return 0;
   }
 
@@ -676,7 +713,8 @@ static int send_userauth_banner_file(void) {
 
 static int send_userauth_failure(char *failed_meth) {
   struct ssh2_packet *pkt;
-  char *buf, *ptr, *meths;
+  unsigned char *buf, *ptr;
+  char *meths;
   uint32_t buflen, bufsz = 1024;
   int res;
 
@@ -749,7 +787,7 @@ static int send_userauth_failure(char *failed_meth) {
 
 static int send_userauth_success(void) {
   struct ssh2_packet *pkt;
-  char *buf, *ptr;
+  unsigned char *buf, *ptr;
   uint32_t buflen, bufsz = 1024;
   int res;
 
@@ -789,7 +827,7 @@ static int send_userauth_success(void) {
 
 static int send_userauth_methods(void) {
   struct ssh2_packet *pkt;
-  char *buf, *ptr;
+  unsigned char *buf, *ptr;
   uint32_t buflen, bufsz = 1024;
   int res;
 
@@ -841,7 +879,8 @@ static void incr_auth_attempts(const char *user) {
 
 /* Return -1 on error, 0 to continue, and 1 if the authentication succeeded. */
 static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
-  char *buf, *orig_user, *user, *method;
+  unsigned char *buf;
+  char *orig_user, *user, *method;
   uint32_t buflen;
   cmd_rec *cmd, *user_cmd, *pass_cmd;
   int res, send_userauth_fail = FALSE;
@@ -853,11 +892,11 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
   orig_user = sftp_msg_read_string(pkt->pool, &buf, &buflen);
 
   user_cmd = pr_cmd_alloc(pkt->pool, 2, pstrdup(pkt->pool, C_USER), orig_user);
-  user_cmd->class = CL_AUTH;
+  user_cmd->cmd_class = CL_AUTH;
   user_cmd->arg = orig_user;
 
   pass_cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, C_PASS));
-  user_cmd->class = CL_AUTH;
+  user_cmd->cmd_class = CL_AUTH;
   pass_cmd->arg = pstrdup(pkt->pool, "(hidden)");
 
   /* Dispatch these as a PRE_CMDs, so that mod_delay's tactics can be used
@@ -925,10 +964,37 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
     }
 
   } else {
-    auth_service = pstrdup(auth_pool, *service);
+
+    /* Check to see if the requested service is one that we support.
+     *
+     * As far as I can tell, the only defined 'service names' are:
+     *
+     *  ssh-userauth (RFC4252)
+     *  ssh-connection (RFC4254)
+     *
+     * If the requested service name is NOT one of the above,
+     * we should disconnect, as recommended by RFC4252.
+     */
+
+    if (strncmp(*service, "ssh-userauth", 13) == 0 ||
+        strncmp(*service, "ssh-connection", 15) == 0) {
+      auth_service = pstrdup(auth_pool, *service);
+
+    } else {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "client requested unknown/unsupported service name '%s' in "
+        "USERAUTH_REQUEST, disconnecting", *service);
+
+      pr_response_add_err(R_530, "Login incorrect.");
+      pr_cmd_dispatch_phase(user_cmd, POST_CMD_ERR, 0);
+      pr_cmd_dispatch_phase(user_cmd, LOG_CMD_ERR, 0);
+      pr_response_clear(&resp_err_list);
+
+      return -1;
+    }
   }
 
-  pr_response_add(R_331, "Password required for %s", user); 
+  pr_response_add(R_331, "Password required for %s", user);
   pr_cmd_dispatch_phase(user_cmd, POST_CMD, 0);
   pr_cmd_dispatch_phase(user_cmd, LOG_CMD, 0);
   pr_response_clear(&resp_list);
@@ -946,7 +1012,7 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "USERAUTH_REQUEST"));
   cmd->arg = pstrcat(pkt->pool, user, " ", method, NULL);
-  cmd->class = CL_AUTH;
+  cmd->cmd_class = CL_AUTH;
 
   if (auth_attempts > auth_attempts_max) {
     pr_log_auth(PR_LOG_NOTICE,
@@ -1188,9 +1254,10 @@ static int handle_userauth_req(struct ssh2_packet *pkt, char **service) {
       if (send_userauth_failure(errno != EPERM ? NULL : method) < 0) {
         return -1;
       }
+
+      incr_auth_attempts(user);
     }
 
-    incr_auth_attempts(user);
     return res;
   }
 
@@ -1289,7 +1356,7 @@ char *sftp_auth_get_default_dir(void) {
 
 int sftp_auth_send_banner(const char *banner) {
   struct ssh2_packet *pkt;
-  char *buf, *ptr;
+  unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
   size_t banner_len;
   int res;

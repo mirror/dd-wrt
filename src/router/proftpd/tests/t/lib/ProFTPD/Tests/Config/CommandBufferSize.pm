@@ -94,6 +94,8 @@ sub cmdbuffersz_small {
     die("Can't open $test_path: $!");
   }
 
+  my $idle_timeout = 3;
+
   my $config = {
     PidFile => $pid_file,
     ScoreboardFile => $scoreboard_file,
@@ -103,6 +105,7 @@ sub cmdbuffersz_small {
     AuthGroupFile => $auth_group_file,
 
     CommandBufferSize => $cmdbufsz,
+    TimeoutIdle => $idle_timeout,
 
     IfModules => {
       'mod_delay.c' => {
@@ -128,44 +131,16 @@ sub cmdbuffersz_small {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
       $client->login($user, $passwd);
 
-      my $conn = $client->list_raw($test_file);
-      unless ($conn) {
-        die("Failed to LIST $test_file: " . $client->response_code() . " " .
-          $client->response_msg());
+      # Since our filename is longer than the CommandBufferSize, proftpd
+      # should simply ignore this.  It will fail because of the idle timeout
+      # first.
+      eval { $client->stat($test_file) };
+      unless ($@) {
+        die("STAT command succeeded unexpectedly");
       }
-
-      my $buf;
-      $conn->read($buf, 8192, 30);
-      eval { $conn->close() };
-
-      my $resp_code = $client->response_code();
-      my $resp_msg = $client->response_msg();
-
-      # CommandBufferSize works by truncating any input longer than the
-      # configured length.  (It should arguably reject such longer input,
-      # but that is a different consideration.)
-      #
-      # Since our file name is longer than the CommandBufferSize, it means
-      # the path will be truncated, and the LIST should return 450.
-
-      my $expected;
-
-      $expected = 450;
-      $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
-
-      # This length is CommandBufferSize - "LIST"(4) - " "(1) - 1 for
-      # the NUL reserved in the code.  Thus CommandBufferSize - 6.
-      my $truncated_name = ("A" x ($cmdbufsz - 6));
-
-      $expected = "$truncated_name: No such file or directory";
-      $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
-
-      $client->quit();
     };
 
     if ($@) {
@@ -176,7 +151,7 @@ sub cmdbuffersz_small {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($config_file, $rfh, 15) };
     if ($@) {
       warn($@);
       exit 1;

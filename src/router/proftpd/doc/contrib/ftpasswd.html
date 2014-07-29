@@ -1,4 +1,4 @@
-<!-- $Id: ftpasswd.html,v 1.1 2004/11/03 19:37:44 castaglia Exp $ -->
+<!-- $Id: ftpasswd.html,v 1.3 2013/12/08 17:06:12 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/ftpasswd.html,v $ -->
 
 <html>
@@ -218,6 +218,11 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
  
                 Remove the entry for the given user name from the file.
 
+    -l          Lock the password of the named account.  This option disables a
+    --lock      password by changing it to a value which matches no possible
+                encrypted value (it adds a '!' at the beginning of the
+                password).
+
     --not-previous-password
 
                 Double-checks the given password against the previous password
@@ -232,10 +237,18 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
                 helps to enforce different passwords for different types of
                 access.
 
+    --sha256    Use the SHA-256 algorithm for encrypting passwords.
+
+    --sha512    Use the SHA-512 algorithm for encrypting passwords.
+
     --stdin
                 Read the password directly from standard in rather than
                 prompting for it.  This is useful for writing scripts that
                 automate use of ftpasswd.
+
+    -u          Unlock the password of the named account.  This option
+    --unlock    re-enables a password by changing the password back to its
+                previous value (to the value before using the -l option).
 
     --use-cracklib
                 Causes ftpasswd to use Alec Muffet's cracklib routines in
@@ -289,6 +302,10 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
                 the specified output-file, an entry will be created for them.
                 Otherwise, the given fields will be updated.
 
+    --sha256    Use the SHA-256 algorithm for encrypting passwords.
+
+    --sha512    Use the SHA-512 algorithm for encrypting passwords.
+
     --stdin
                 Read the password directly from standard in rather than
                 prompting for it.  This is useful for writing scripts that
@@ -317,6 +334,10 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
     --md5       Use the MD5 algorithm for encrypting passwords.  This is the
                 default.
 
+    --sha256    Use the SHA-256 algorithm for encrypting passwords.
+
+    --sha512    Use the SHA-512 algorithm for encrypting passwords.
+
     --stdin
                 Read the password directly from standard in rather than
                 prompting for it.  This is useful for writing scripts that
@@ -335,12 +356,12 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2004/11/03 19:37:44 $</i><br>
+Last Updated: <i>$Date: 2013/12/08 17:06:12 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2002 TJ Saunders<br>
+&copy; Copyright 2000-2012 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

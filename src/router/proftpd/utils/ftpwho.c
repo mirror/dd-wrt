@@ -26,7 +26,7 @@
 
 /* Shows a count of "who" is online via proftpd.  Uses the scoreboard file.
  *
- * $Id: ftpwho.c,v 1.30 2011/05/23 20:46:20 castaglia Exp $
+ * $Id: ftpwho.c,v 1.31 2011/11/16 22:30:09 castaglia Exp $
  */
 
 #include "utils.h"
@@ -516,6 +516,11 @@ int main(int argc, char **argv) {
 
   } else {
     printf("no users connected\n");
+  }
+
+  if (server_name) {
+    free(server_name);
+    server_name = NULL;
   }
 
   return 0;

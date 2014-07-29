@@ -23,7 +23,7 @@
  */
 
 /* Trace functions
- * $Id: trace.c,v 1.36.2.1 2013/02/22 03:21:19 castaglia Exp $
+ * $Id: trace.c,v 1.46 2013/02/25 19:40:43 castaglia Exp $
  */
 
 
@@ -94,7 +94,7 @@ static void trace_restart_ev(const void *event_data, void *user_data) {
 static int trace_write(const char *channel, int level, const char *msg,
     int discard) {
   char buf[PR_TUNABLE_BUFFER_SIZE];
-  size_t buflen;
+  size_t buflen, len;
   struct tm *tm;
   int use_conn_ips = FALSE;
 
@@ -109,8 +109,8 @@ static int trace_write(const char *channel, int level, const char *msg,
     now = time(NULL);
     tm = pr_localtime(NULL, &now);
 
-    strftime(buf, sizeof(buf), "%b %d %H:%M:%S", tm);
-    buf[sizeof(buf)-1] = '\0';
+    len = strftime(buf, sizeof(buf)-1, "%Y-%m-%d %H:%M:%S", tm);
+    buflen = len;
 
   } else {
     struct timeval now;
@@ -120,17 +120,15 @@ static int trace_write(const char *channel, int level, const char *msg,
 
     tm = pr_localtime(NULL, (const time_t *) &(now.tv_sec));
 
-    strftime(buf, sizeof(buf), "%b %d %H:%M:%S", tm);
-
-    buflen = strlen(buf);
+    len = strftime(buf, sizeof(buf)-1, "%Y-%m-%d %H:%M:%S", tm);
+    buflen = len;
 
     /* Convert microsecs to millisecs. */
     millis = now.tv_usec / 1000;
 
-    snprintf(buf + buflen, sizeof(buf) - buflen, ",%03lu", millis);
+    len = snprintf(buf + buflen, sizeof(buf) - buflen, ",%03lu", millis);
+    buflen += len;
   }
-
-  buflen = strlen(buf);
 
   if ((trace_opts & PR_TRACE_OPT_LOG_CONN_IPS) &&
       session.c != NULL) {
@@ -142,9 +140,10 @@ static int trace_write(const char *channel, int level, const char *msg,
   }
 
   if (use_conn_ips == FALSE) {
-    snprintf(buf + buflen, sizeof(buf) - buflen, " [%u] <%s:%d>: %s",
+    len = snprintf(buf + buflen, sizeof(buf) - buflen, " [%u] <%s:%d>: %s",
       (unsigned int) (session.pid ? session.pid : getpid()), channel, level,
       msg);
+    buflen += len;
 
   } else {
     const char *client_ip, *server_ip;
@@ -154,16 +153,16 @@ static int trace_write(const char *channel, int level, const char *msg,
     server_ip = pr_netaddr_get_ipstr(session.c->local_addr);
     server_port = pr_netaddr_get_port(session.c->local_addr);
 
-    snprintf(buf + buflen, sizeof(buf) - buflen,
+    len = snprintf(buf + buflen, sizeof(buf) - buflen,
       " [%u] (client %s, server %s:%d) <%s:%d>: %s",
       (unsigned int) (session.pid ? session.pid : getpid()),
       client_ip != NULL ? client_ip : "none",
       server_ip != NULL ? server_ip : "none", server_port, channel, level, msg);
+    buflen += len;
   }
 
   buf[sizeof(buf)-1] = '\0';
 
-  buflen = strlen(buf);
   if (buflen < (sizeof(buf) - 1)) {
     buf[buflen] = '\n';
     buflen++;
@@ -171,8 +170,6 @@ static int trace_write(const char *channel, int level, const char *msg,
   } else {
     buf[sizeof(buf)-2] = '\n';
   }
-
-  buflen = strlen(buf);
 
   pr_log_event_generate(PR_LOG_TYPE_TRACELOG, trace_logfd, level, buf, buflen);
 
@@ -251,6 +248,12 @@ int pr_trace_parse_levels(char *str, int *min_level, int *max_level) {
   if (str == NULL ||
       min_level == NULL ||
       max_level == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Watch for blank strings for levels (i.e. misconfigured/typo in config). */
+  if (*str == '\0') {
     errno = EINVAL;
     return -1;
   }
@@ -362,8 +365,20 @@ int pr_trace_set_file(const char *path) {
 int pr_trace_set_levels(const char *channel, int min_level, int max_level) {
 
   if (channel == NULL) {
-    errno = EINVAL;
-    return -1;
+    void *v;
+
+    if (trace_tab == NULL) {
+      errno = EINVAL;
+      return -1;
+    }
+
+    v = pr_table_remove(trace_tab, channel, NULL);
+    if (v == NULL) {
+      errno = EINVAL;
+      return -1;
+    }
+
+    return 0;
   }
 
   if (min_level > max_level) {
@@ -437,6 +452,23 @@ int pr_trace_set_options(unsigned long opts) {
   return 0;
 }
 
+int pr_trace_use_stderr(int use_stderr) {
+  if (use_stderr) {
+    int res;
+
+    res = dup(STDERR_FILENO);
+    if (res < 0) {
+      return -1;
+    }
+
+    /* Avoid a file descriptor leak by closing any existing fd. */
+    (void) close(trace_logfd);
+    trace_logfd = res;
+  }
+
+  return 0;
+}
+
 int pr_trace_msg(const char *channel, int level, const char *fmt, ...) {
   int res;
   va_list msg;
@@ -477,7 +509,7 @@ int pr_trace_vmsg(const char *channel, int level, const char *fmt,
   if (levels == NULL) {
     discard = TRUE;
 
-    if (pr_log_event_listening(PR_LOG_TYPE_TRACELOG) == FALSE) {
+    if (pr_log_event_listening(PR_LOG_TYPE_TRACELOG) <= 0) {
       return -1;
     }
   }
@@ -486,7 +518,7 @@ int pr_trace_vmsg(const char *channel, int level, const char *fmt,
       level < levels->min_level) {
     discard = TRUE;
 
-    if (pr_log_event_listening(PR_LOG_TYPE_TRACELOG) == FALSE) {
+    if (pr_log_event_listening(PR_LOG_TYPE_TRACELOG) <= 0) {
       return 0;
     }
   }
@@ -495,23 +527,22 @@ int pr_trace_vmsg(const char *channel, int level, const char *fmt,
       level > levels->max_level) {
     discard = TRUE;
 
-    if (pr_log_event_listening(PR_LOG_TYPE_TRACELOG) == FALSE) {
+    if (pr_log_event_listening(PR_LOG_TYPE_TRACELOG) <= 0) {
       return 0;
     }
   }
 
-  vsnprintf(buf, sizeof(buf), fmt, msg);
+  buflen = vsnprintf(buf, sizeof(buf), fmt, msg);
 
   /* Always make sure the buffer is NUL-terminated. */
   buf[sizeof(buf)-1] = '\0';
 
   /* Trim trailing newlines. */
-  buflen = strlen(buf);
   while (buflen >= 1 &&
          buf[buflen-1] == '\n') {
     pr_signals_handle();
     buf[buflen-1] = '\0';
-    buflen = strlen(buf);
+    buflen--;
   }
 
   return trace_write(channel, level, buf, discard);

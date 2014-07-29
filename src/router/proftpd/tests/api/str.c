@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* String API tests
- * $Id: str.c,v 1.5 2011/05/23 20:50:31 castaglia Exp $
+ * $Id: str.c,v 1.12 2014/01/27 18:34:44 castaglia Exp $
  */
 
 #include "tests.h"
@@ -44,21 +44,24 @@ static void tear_down(void) {
 }
 
 START_TEST (sstrncpy_test) {
-  char *res, *ok, *dst;
+  char *ok, *dst;
   size_t len, sz = 32;
+  int res;
 
-  res = sstrncpy(NULL, NULL, 0);
-  fail_unless(res == NULL, "Failed to handle null arguments");
+  len = 0;
+  res = sstrncpy(NULL, NULL, len);
+  fail_unless(res == -1, "Failed to handle null arguments");
 
   dst = "";
   res = sstrncpy(dst, "foo", 0);
-  fail_unless(res == NULL, "Failed to handle zero length");
+  fail_unless(res == 0, "Failed to handle zero length");
 
   dst = pcalloc(p, sz);
   memset(dst, 'A', sz);
 
-  res = sstrncpy(dst, NULL, 1);
-  fail_unless(res == NULL, "Failed to handle null arguments");
+  len = 1;
+  res = sstrncpy(dst, NULL, len);
+  fail_unless(res == -1, "Failed to handle null arguments");
 
   ok = "Therefore, all progress depends on the unreasonable man";
 
@@ -66,36 +69,36 @@ START_TEST (sstrncpy_test) {
   len = 1;
 
   res = sstrncpy(dst, ok, len);
-  fail_unless(res == dst, "Expected %p, got %p", dst, res);
-  fail_unless(strlen(res) == (len - 1), "Expected len %u, got len %u", len - 1,
-    strlen(res));
-  fail_unless(res[len-1] == '\0', "Expected NUL, got '%c'", res[len-1]);
+  fail_unless(res <= len, "Expected result %d, got %d", len, res);
+  fail_unless(strlen(dst) == (len - 1), "Expected len %u, got len %u", len - 1,
+    strlen(dst));
+  fail_unless(dst[len-1] == '\0', "Expected NUL, got '%c'", dst[len-1]);
 
   memset(dst, 'A', sz);
   len = 7;
 
   res = sstrncpy(dst, ok, len);
-  fail_unless(res == dst, "Expected %p, got %p", dst, res);
-  fail_unless(strlen(res) == (len - 1), "Expected len %u, got len %u", len - 1,
-    strlen(res));
-  fail_unless(res[len-1] == '\0', "Expected NUL, got '%c'", res[len-1]);
+  fail_unless(res <= len, "Expected result %d, got %d", len, res);
+  fail_unless(strlen(dst) == (len - 1), "Expected len %u, got len %u", len - 1,
+    strlen(dst));
+  fail_unless(dst[len-1] == '\0', "Expected NUL, got '%c'", dst[len-1]);
 
   memset(dst, 'A', sz);
   len = sz;
 
   res = sstrncpy(dst, ok, len);
-  fail_unless(res == dst, "Expected %p, got %p", dst, res);
-  fail_unless(strlen(res) == (len - 1), "Expected len %u, got len %u", len - 1,
-    strlen(res));
-  fail_unless(res[len-1] == '\0', "Expected NUL, got '%c'", res[len-1]);
+  fail_unless(res <= len, "Expected result %d, got %d", len, res);
+  fail_unless(strlen(dst) == (len - 1), "Expected len %u, got len %u", len - 1,
+    strlen(dst));
+  fail_unless(dst[len-1] == '\0', "Expected NUL, got '%c'", dst[len-1]);
 
   memset(dst, 'A', sz);
   len = sz;
 
   res = sstrncpy(dst, "", len);
-  fail_unless(res == dst, "Expected %p, got %p", dst, res);
-  fail_unless(strlen(res) == 0, "Expected len %u, got len %u", 0, strlen(res));
-  fail_unless(*res == '\0', "Expected NUL, got '%c'", *res);
+  fail_unless(res <= len, "Expected result %d, got %d", len, res);
+  fail_unless(strlen(dst) == 0, "Expected len %u, got len %u", 0, strlen(dst));
+  fail_unless(*dst == '\0', "Expected NUL, got '%c'", *dst);
 }
 END_TEST
 
@@ -290,6 +293,53 @@ START_TEST (sreplace_bug3614_test) {
     "%{yy}", "bar", "%{zz}", "bar",
     NULL);
   fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+}
+END_TEST
+
+START_TEST (str_replace_test) {
+  char *fmt = NULL, *res, *ok;
+  int max_replace = PR_STR_MAX_REPLACEMENTS;
+
+  res = pr_str_replace(NULL, max_replace, NULL, 0);
+  fail_unless(res == NULL, "Failed to handle invalid arguments");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  res = pr_str_replace(NULL, max_replace, "", 0);
+  fail_unless(res == NULL, "Failed to handle invalid arguments");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  res = pr_str_replace(p, max_replace, NULL, 0);
+  fail_unless(res == NULL, "Failed to handle invalid arguments");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  fmt = "%a";
+  res = pr_str_replace(p, max_replace, fmt, "foo", NULL);
+  fail_unless(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
+
+  fmt = "foo %a";
+  res = pr_str_replace(p, max_replace, fmt, "%b", NULL);
+  fail_unless(strcmp(res, fmt) == 0, "Expected '%s', got '%s'", fmt, res);
+
+  fmt = "foo %a";
+  ok = "foo bar";
+  res = pr_str_replace(p, max_replace, fmt, "%a", "bar", NULL);
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  fmt = "foo %a %a";
+  ok = "foo bar bar";
+  res = pr_str_replace(p, max_replace, fmt, "%a", "bar", NULL);
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  fmt = "foo %a %a %a %a %a %a %a %a";
+  ok = "foo bar bar bar bar bar bar bar bar";
+  res = pr_str_replace(p, max_replace, fmt, "%a", "bar", NULL);
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  fmt = "foo %a %a %a %a %a %a %a %a %a";
+  ok = "foo bar bar bar bar bar bar bar bar bar";
+  res = pr_str_replace(p, max_replace, fmt, "%a", "bar", NULL);
+  fail_unless(res == NULL, "Failed to handle too many replacements");
+  fail_unless(errno == E2BIG, "Failed to set errno to E2BIG");
 }
 END_TEST
 
@@ -559,6 +609,63 @@ START_TEST (get_token_test) {
 }
 END_TEST
 
+START_TEST (get_token2_test) {
+  char *ok, *res, *str;
+  size_t len = 0, ok_len;
+
+  res = pr_str_get_token2(NULL, NULL, NULL);
+  fail_unless(res == NULL, "Failed to handle null arguments");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  str = NULL;
+  res = pr_str_get_token2(&str, NULL, NULL);
+  fail_unless(res == NULL, "Failed to handle null str argument");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  str = pstrdup(p, "foo,bar,bazz");
+  res = pr_str_get_token2(&str, NULL, NULL);
+  fail_unless(res == NULL, "Failed to handle null sep argument");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  res = pr_str_get_token2(&str, ",", &len);
+  fail_unless(res != NULL, "Failed to get token from '%s': %s", str,
+    strerror(errno));
+
+  ok = "foo";
+  ok_len = 3;
+  fail_unless(len == ok_len, "Expected len %lu, got %lu",
+    (unsigned long) ok_len, (unsigned long) len);
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  res = pr_str_get_token2(&str, ",", &len);
+  fail_unless(res != NULL, "Failed to get token from '%s': %s", str,
+    strerror(errno));
+
+  ok = "bar";
+  ok_len = 3; 
+  fail_unless(len == ok_len, "Expected len %lu, got %lu",
+    (unsigned long) ok_len, (unsigned long) len);
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  res = pr_str_get_token2(&str, ",", &len);
+  fail_unless(res != NULL, "Failed to get token from '%s': %s", str,
+    strerror(errno));
+
+  ok = "bazz";
+  ok_len = 4; 
+  fail_unless(len == ok_len, "Expected len %lu, got %lu",
+    (unsigned long) ok_len, (unsigned long) len);
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  res = pr_str_get_token2(&str, ",", &len);
+
+  ok_len = 0;
+  fail_unless(len == ok_len, "Expected len %lu, got %lu",
+    (unsigned long) ok_len, (unsigned long) len);
+  fail_unless(res == NULL, "Unexpectedly got token '%s'", res);
+}
+END_TEST
+
 START_TEST (get_word_test) {
   char *ok, *res, *str;
 
@@ -719,6 +826,351 @@ START_TEST (is_fnmatch_test) {
 }
 END_TEST
 
+START_TEST (get_nbytes_test) {
+  char *str, *units;
+  off_t nbytes;
+  int res;
+
+  res = pr_str_get_nbytes(NULL, NULL, NULL);
+  fail_unless(res == -1, "Failed to handle null arguments");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  str = NULL;
+  res = pr_str_get_nbytes(str, NULL, NULL);
+  fail_unless(res == -1, "Failed to handle null str argument");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  str = "1";
+  units = "f";
+  res = pr_str_get_nbytes(str, units, NULL);
+  fail_unless(res == -1, "Failed to handle bad suffix argument");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  str = "a";
+  units = "";
+  res = pr_str_get_nbytes(str, units, NULL);
+  fail_unless(res == -1, "Failed to handle invalid str argument");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  str = "1 1";
+  units = "";
+  res = pr_str_get_nbytes(str, units, NULL);
+  fail_unless(res == -1, "Failed to handle invalid str argument");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  str = "1.1";
+  units = "";
+  res = pr_str_get_nbytes(str, units, NULL);
+  fail_unless(res == -1, "Failed to handle invalid str argument");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  str = "-1";
+  units = "";
+  res = pr_str_get_nbytes(str, units, NULL);
+  fail_unless(res == -1, "Failed to handle invalid str argument");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  /* XXX Test good suffix: B, KB, MB, GB, TB */
+
+  str = "1";
+  units = "";
+  res = pr_str_get_nbytes(str, units, &nbytes);
+  fail_unless(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
+  fail_unless(nbytes == 1, "Expected nbytes = 1, got %" PR_LU,
+    (pr_off_t) nbytes);
+
+  str = "1";
+  units = "B";
+  res = pr_str_get_nbytes(str, units, &nbytes);
+  fail_unless(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
+  fail_unless(nbytes == 1,
+    "Expected nbytes = 1, got %" PR_LU, (pr_off_t) nbytes);
+
+  str = "1";
+  units = "KB";
+  res = pr_str_get_nbytes(str, units, &nbytes);
+  fail_unless(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
+  fail_unless(nbytes == 1024UL,
+    "Expected nbytes = 1024, got %" PR_LU, (pr_off_t) nbytes);
+
+  str = "1";
+  units = "MB";
+  res = pr_str_get_nbytes(str, units, &nbytes);
+  fail_unless(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
+  fail_unless(nbytes == 1048576UL,
+    "Expected nbytes = 1048576, got %" PR_LU, (pr_off_t) nbytes);
+
+  str = "1";
+  units = "GB";
+  res = pr_str_get_nbytes(str, units, &nbytes);
+  fail_unless(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
+  fail_unless(nbytes == 1073741824UL,
+    "Expected nbytes = 1073741824, got %" PR_LU, (pr_off_t) nbytes);
+
+  str = "1";
+  units = "TB";
+  res = pr_str_get_nbytes(str, units, &nbytes);
+  fail_unless(res == 0, "Expected result 0, got %d: %s", res, strerror(errno));
+  fail_unless(nbytes == 1099511627776UL,
+    "Expected nbytes = 1099511627776, got %" PR_LU, (pr_off_t) nbytes);
+
+  /* This should definitely trigger the ERANGE error. */
+  str = "1099511627776";
+  units = "TB";
+  res = pr_str_get_nbytes(str, units, &nbytes);
+  fail_unless(res == -1, "Expected ERANGE failure, succeeded unexpectedly");
+  fail_unless(errno == ERANGE, "Expected %s [%d], got %s [%d]",
+    strerror(ERANGE), ERANGE, strerror(errno), errno);
+}
+END_TEST
+
+START_TEST (get_duration_test) {
+  char *str;
+  int duration, expected;
+  int res;
+
+  res = pr_str_get_duration(NULL, NULL);
+  fail_unless(res == -1, "Failed to handle null arguments");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  str = "";
+  res = pr_str_get_duration(str, NULL);
+  fail_unless(res == -1,
+    "Failed to handle badly formatted string '%s'", str);
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  str = "-1:-1:-1";
+  res = pr_str_get_duration(str, NULL);
+  fail_unless(res == -1,
+    "Failed to handle badly formatted string '%s'", str);
+  fail_unless(errno == ERANGE, "Failed to set errno to ERANGE");
+
+  str = "a:b:c";
+  res = pr_str_get_duration(str, NULL);
+  fail_unless(res == -1,
+    "Failed to handle badly formatted string '%s'", str);
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  str = "111:222:333";
+  res = pr_str_get_duration(str, NULL);
+  fail_unless(res == -1,
+    "Failed to handle badly formatted string '%s'", str);
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  /* Test well-formatted hh::mm::ss strings. */
+
+  str = "00:00:00";
+  expected = 0;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "01:02:03";
+  expected = 3723;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "99:99:99";
+  expected = 362439;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  /* Test bad suffixes: -1h, -1hr, 9999foo, etc */
+
+  str = "-1h";
+  res = pr_str_get_duration(str, NULL);
+  fail_unless(res == -1,
+    "Failed to handle badly formatted suffix string '%s'", str);
+  fail_unless(errno == ERANGE, "Failed to set errno to ERANGE");
+
+  str = "-1hr";
+  res = pr_str_get_duration(str, NULL);
+  fail_unless(res == -1,
+    "Failed to handle badly formatted suffix string '%s'", str);
+  fail_unless(errno == ERANGE, "Failed to set errno to ERANGE");
+
+  str = "99foo";
+  res = pr_str_get_duration(str, NULL);
+  fail_unless(res == -1,
+    "Failed to handle badly formatted suffix string '%s'", str);
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  str = "foo";
+  res = pr_str_get_duration(str, NULL);
+  fail_unless(res == -1,
+    "Failed to handle badly formatted suffix string '%s'", str);
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  /* Test good suffices: "H"/"h"/"hr", "M"/"m"/"min", "S"/"s"/"sec" */
+
+  str = "76H";
+  expected = 273600;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "76h";
+  expected = 273600;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "76Hr";
+  expected = 273600;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "888M";
+  expected = 53280;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "888m";
+  expected = 53280;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "888MiN";
+  expected = 53280;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "999S";
+  expected = 999;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "999s";
+  expected = 999;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "999sEc";
+  expected = 999;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "0h";
+  expected = 0;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "0M";
+  expected = 0;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "0sec";
+  expected = 0;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "17";
+  expected = 17;
+  res = pr_str_get_duration(str, &duration);
+  fail_unless(res == 0,
+    "Failed to parse well-formed time string '%s': %s", str, strerror(errno));
+  fail_unless(duration == expected,
+    "Expected duration %d secs, got %d", expected, duration);
+
+  str = "-1";
+  res = pr_str_get_duration(str, NULL);
+  fail_unless(res == -1,
+    "Failed to handle badly formatted suffix string '%s'", str);
+  fail_unless(errno == ERANGE, "Failed to set errno to ERANGE");
+}
+END_TEST
+
+START_TEST (strnrstr_test) {
+  int res, flags = 0;
+  const char *s = NULL, *suffix = NULL;
+
+  res = pr_strnrstr(NULL, 0, NULL, 0, flags);
+  fail_unless(res == -1, "Failed to handle null arguments");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  res = pr_strnrstr(NULL, 0, "", 0, flags);
+  fail_unless(res == -1, "Failed to handle null s");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  res = pr_strnrstr("", 0, NULL, 0, flags);
+  fail_unless(res == -1, "Failed to handle null suffix");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  s = suffix = "";
+  res = pr_strnrstr(s, 0, suffix, 0, flags);
+  fail_unless(res == TRUE, "Expected true, got false");
+
+  s = "";
+  suffix = "s";
+  res = pr_strnrstr(s, 0, suffix, 0, flags);
+  fail_unless(res == FALSE, "Expected false, got true");
+
+  s = "food";
+  suffix = "ood";
+  res = pr_strnrstr(s, 0, suffix, 0, flags);
+  fail_unless(res == TRUE, "Expected true, got false");
+
+  s = "food";
+  suffix = "ood";
+  res = pr_strnrstr(s, 4, suffix, 3, flags);
+  fail_unless(res == TRUE, "Expected true, got false");
+
+  s = "FOOD";
+  suffix = "ood";
+  res = pr_strnrstr(s, 4, suffix, 3, flags);
+  fail_unless(res == FALSE, "Expected false, got true");
+
+  flags = PR_STR_FL_IGNORE_CASE;
+  s = "FOOD";
+  suffix = "ood";
+  res = pr_strnrstr(s, 4, suffix, 3, flags);
+  fail_unless(res == TRUE, "Expected true, got false");
+}
+END_TEST
+
 Suite *tests_get_str_suite(void) {
   Suite *suite;
   TCase *testcase;
@@ -734,6 +1186,7 @@ Suite *tests_get_str_suite(void) {
   tcase_add_test(testcase, sreplace_test);
   tcase_add_test(testcase, sreplace_enospc_test);
   tcase_add_test(testcase, sreplace_bug3614_test);
+  tcase_add_test(testcase, str_replace_test);
   tcase_add_test(testcase, pdircat_test);
   tcase_add_test(testcase, pstrcat_test);
   tcase_add_test(testcase, pstrdup_test);
@@ -741,9 +1194,13 @@ Suite *tests_get_str_suite(void) {
   tcase_add_test(testcase, strip_test);
   tcase_add_test(testcase, strip_end_test);
   tcase_add_test(testcase, get_token_test);
+  tcase_add_test(testcase, get_token2_test);
   tcase_add_test(testcase, get_word_test);
   tcase_add_test(testcase, is_boolean_test);
   tcase_add_test(testcase, is_fnmatch_test);
+  tcase_add_test(testcase, get_nbytes_test);
+  tcase_add_test(testcase, get_duration_test);
+  tcase_add_test(testcase, strnrstr_test);
 
   suite_add_tcase(suite, testcase);
 

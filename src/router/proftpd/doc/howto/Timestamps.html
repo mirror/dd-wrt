@@ -1,4 +1,4 @@
-<!-- $Id: Timestamps.html,v 1.6 2009/11/17 17:36:31 castaglia Exp $ -->
+<!-- $Id: Timestamps.html,v 1.7 2012/06/06 17:56:51 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Timestamps.html,v $ -->
 
 <html>
@@ -94,6 +94,13 @@ your site.  For example, some systems expect different values for the
 <pre>
   SetEnv TZ :/etc/localtime
 </pre>
+<b>Note</b>: Using a filesystem location such as ":/etc/localtime" for the
+<code>TZ</code> environment variable can still result in log timestamp issues,
+<i>e.g.</i> when the <code>MFMT</code>/<code>MFF</code> FTP commands are used.
+The best solution is to always specify the timezone name, rather than a file,
+whenever possible.
+
+<p>
 These are provided as <i>examples</i>; please consult your system documentation
 for the proper syntax to use for the <code>TZ</code> value.
 
@@ -147,7 +154,7 @@ log files.
 
 <p>
 <hr>
-<i>$Date: 2009/11/17 17:36:31 $</i><br>
+<i>$Date: 2012/06/06 17:56:51 $</i><br>
 
 </body>
 </html>

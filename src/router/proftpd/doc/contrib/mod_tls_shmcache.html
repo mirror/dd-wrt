@@ -1,4 +1,4 @@
-<!-- $Id: mod_tls_shmcache.html,v 1.2 2010/12/21 00:30:01 castaglia Exp $ -->
+<!-- $Id: mod_tls_shmcache.html,v 1.3 2013/11/05 21:33:21 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_tls_shmcache.html,v $ -->
 
 <html>
@@ -113,6 +113,18 @@ a shared module:
 </pre>
 
 <p>
+<b>Note</b>: If using <code>mod_tls_shmcache</code> as a shared module, make
+sure that this module is loaded <i>after</i> the <code>mod_tls</code> module,
+<i>i.e.</i>:
+<pre>
+  # Load mod_tls first
+  LoadModule mod_tls.c
+ 
+  # Then load any SSL session caching modules
+  LoadModule mod_tls_shmcache.c
+</pre>
+
+<p>
 <hr>
 <h2><a name="Usage">Usage</a></h2>
 
@@ -129,14 +141,30 @@ this unique key.  The module also uses the configured
 <code>TLSSessionCache</code> file for locking, as when handling a
 <code>ftpdctl</code> request to clear the cache.
 
+<p><a name="TLSShmcacheUndefinedSymbol">
+<font color=red>Question</font>: I am trying to use
+<code>mod_tls_shmcache</code> as a shared module, but my <code>proftpd</code>
+server fails to start up, failing with this error:
+<pre>
+  proftpd: symbol lookup error: /usr/local/libexec/mod_tls_shmcache.so: undefined symbol: tls_sess_cache_register
+</pre>
+<font color=blue>Answer</font>: This happens when your configuration is
+loading the <code>mod_tls_shmcache</code> module <i>before</i> the
+<code>mod_tls</code> has been loaded.  The fix, then, is to make sure
+your config looks something like this:
+<pre>
+  LoadModule mod_tls.c
+  LoadModule mod_tls_shmcache.c
+</pre>
+
 <p>
 <hr>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2010/12/21 00:30:01 $</i><br>
+Last Updated: <i>$Date: 2013/11/05 21:33:21 $</i><br>
 
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2009-2010 TJ Saunders<br>
+&copy; Copyright 2009-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

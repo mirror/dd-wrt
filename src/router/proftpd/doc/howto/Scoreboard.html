@@ -1,4 +1,4 @@
-<!-- $Id: Scoreboard.html,v 1.7 2011/05/27 03:03:07 castaglia Exp $ -->
+<!-- $Id: Scoreboard.html,v 1.9 2013/01/04 23:07:38 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Scoreboard.html,v $ -->
 
 <html>
@@ -164,7 +164,7 @@ will only lead to trouble.  Second, NFS does not support file locking, which
 <font color=blue>Answer</font>: These debug messages indicate when the
 <code>proftpd</code> daemon is scrubbing the <code>ScoreboardFile</code>.
 
-<p>
+<p><a name="ScoreboardDisabling">
 <font color=red>Question</font>: Our site has <i>many</i> connections, and
 it looks like the logins/sessions are slow.  Analysis shows that the
 session processes are all waiting/competing for the
@@ -183,8 +183,10 @@ the FTP sessions were no longer slow.
 <b>However</b>, be aware that using this trick causes the following to
 <b>NOT</b> work:
 <ul>
+  <li>ftpcount
   <li>ftpwho
   <li>ftptop
+  <li>ftpdctl kick
   <li><code>MaxClients</code>
   <li><code>MaxClientsPerClass</code>
   <li><code>MaxClientsPerHost</code>
@@ -213,7 +215,7 @@ daemon will automatically create a new scoreboard in the correct format.
 
 <p>
 <hr>
-<i>$Date: 2011/05/27 03:03:07 $</i><br>
+<i>$Date: 2013/01/04 23:07:38 $</i><br>
 
 </body>
 </html>

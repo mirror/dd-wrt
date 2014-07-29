@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Pool API tests
- * $Id: pool.c,v 1.4 2011/05/23 20:50:31 castaglia Exp $
+ * $Id: pool.c,v 1.5 2013/02/19 15:49:16 castaglia Exp $
  */
 
 #include "tests.h"
@@ -60,18 +60,75 @@ START_TEST (pool_create_sz_test) {
 
   sz = 0;
   sub_pool = pr_pool_create_sz(p, sz);
-  fail_if(sub_pool == NULL, "Failed to allocate %u-size sub pool", sz);
+  fail_if(sub_pool == NULL, "Failed to allocate %u byte sub-pool", sz);
   destroy_pool(sub_pool);
 
   sz = 1;
   sub_pool = pr_pool_create_sz(p, sz);
-  fail_if(sub_pool == NULL, "Failed to allocate %u-size sub pool", sz);
+  fail_if(sub_pool == NULL, "Failed to allocate %u byte sub-pool", sz);
   destroy_pool(sub_pool);
 
   sz = 16382;
   sub_pool = pr_pool_create_sz(p, sz);
-  fail_if(sub_pool == NULL, "Failed to allocate %u-size sub pool", sz);
+  fail_if(sub_pool == NULL, "Failed to allocate %u byte sub-pool", sz);
   destroy_pool(sub_pool);
+
+  destroy_pool(p);
+}
+END_TEST
+
+START_TEST (pool_create_sz_with_alloc_test) {
+  register unsigned int i;
+  pool *p;
+  unsigned int factors[] = { 1, 2, 4, 8, 16, 32, 64, 128, 0 };
+
+  p = make_sub_pool(NULL);
+
+  for (i = 0; factors[i] > 0; i++) {
+    register unsigned int j;
+    size_t pool_sz, alloc_sz;
+    pool *sub_pool;
+    unsigned char *data;
+
+    /* Allocate a pool with a given size, then allocate more than that out of
+     * the pool.
+     */
+    pool_sz = (32 * factors[i]);
+#ifdef PR_TEST_VERBOSE
+    fprintf(stdout, "pool_sz: %lu bytes (factor %u)\n", pool_sz, factors[i]);
+#endif /* PR_TEST_VERBOSE */
+    sub_pool = pr_pool_create_sz(p, pool_sz);
+    fail_if(sub_pool == NULL, "Failed to allocate %u byte sub-pool", pool_sz);
+
+    alloc_sz = (pool_sz * 2);
+#ifdef PR_TEST_VERBOSE
+    fprintf(stdout, "alloc_sz: %lu bytes (factor %u)\n", alloc_sz, factors[i]);
+#endif /* PR_TEST_VERBOSE */
+    data = palloc(sub_pool, alloc_sz);
+
+    /* Initialize our allocated memory with some values. */
+    mark_point();
+    for (j = 0; j < alloc_sz; j++) {
+      data[j] = j;
+    }
+
+    /* Verify that our values are still there. */
+    mark_point();
+    for (j = 0; j < alloc_sz; j++) {
+#ifdef PR_TEST_VERBOSE
+      if (data[j] != j) {
+        fprintf(stdout,
+          "Iteration #%u: Expected value %u at memory index %u, got %u\n",
+          i + 1, j, j, data[j]);
+      }
+#endif /* PR_TEST_VERBOSE */
+      fail_if(data[j] != j,
+        "Iteration #%u: Expected value %u at memory index %u, got %u\n", i + 1,
+        j, j, data[j]);
+    }
+
+    destroy_pool(sub_pool);
+  }
 
   destroy_pool(p);
 }
@@ -142,6 +199,23 @@ Suite *tests_get_pool_suite(void) {
   tcase_add_test(testcase, parent_pool_test);
   tcase_add_test(testcase, parent_sub_pool_test);
   tcase_add_test(testcase, pool_create_sz_test);
+
+  /* Seems this particular testcase reveals a bug in the pool code.  On the
+   * third iteration of the loop (pool size = 256, alloc size = 512), the
+   * memory check fails.  Perhaps related to PR_TUNABLE_NEW_POOL_SIZE being
+   * 512 bytes?  Need to dig into this more.  In the mean time, keep the
+   * testcase commented out.
+   *
+   * Note: when it fails, it looks like:
+   *
+   *   api/pool.c:116:F:base:pool_create_sz_with_alloc_test:0: Iteration #3: Expected value 256 at memory index 256, got 0
+   *
+   * If the PR_TEST_VERBOSE macro is defined, you can see the printout of
+   * where the memory read does not meet expectations.
+   */
+#if 0
+  tcase_add_test(testcase, pool_create_sz_with_alloc_test);
+#endif
   tcase_add_test(testcase, palloc_test);
   tcase_add_test(testcase, pcalloc_test);
 

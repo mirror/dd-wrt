@@ -2,7 +2,7 @@
  * ProFTPD: mod_copy -- a module supporting copying of files on the server
  *                      without transferring the data to the client and back
  *
- * Copyright (c) 2009-2011 TJ Saunders
+ * Copyright (c) 2009-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * This is mod_copy, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_copy.c,v 1.6 2011/05/26 21:46:13 castaglia Exp $
+ * $Id: mod_copy.c,v 1.8 2012/12/27 22:31:29 castaglia Exp $
  */
 
 #include "conf.h"
@@ -111,7 +111,7 @@ static int create_path(pool *p, const char *path) {
     cmd = pr_cmd_alloc(sub_pool, 2, pstrdup(sub_pool, C_MKD),
       pstrdup(sub_pool, curr_path));
     cmd->arg = pstrdup(cmd->pool, curr_path);
-    cmd->class = CL_DIRS|CL_WRITE;
+    cmd->cmd_class = CL_DIRS|CL_WRITE;
 
     pr_response_clear(&resp_list);
     pr_response_clear(&resp_err_list);
@@ -244,7 +244,7 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir) {
         pstrdup(iter_pool, "COPY"), pstrdup(iter_pool, src_path),
         pstrdup(iter_pool, dst_path));
       cmd->arg = pstrcat(iter_pool, "COPY ", src_path, " ", dst_path, NULL);
-      cmd->class = CL_WRITE;
+      cmd->cmd_class = CL_WRITE;
 
       pr_response_clear(&resp_list);
       pr_response_clear(&resp_err_list);
@@ -502,13 +502,17 @@ MODRET copy_copy(cmd_rec *cmd) {
     to = dir_canonical_vpath(cmd->tmp_pool, to);
 
     cmd_name = cmd->argv[0];
-    cmd->argv[0] = "SITE_COPY";
+    pr_cmd_set_name(cmd, "SITE_COPY");
     if (!dir_check(cmd->tmp_pool, cmd, G_WRITE, to, NULL)) {
-      cmd->argv[0] = cmd_name;
-      pr_response_add_err(R_550, "%s: %s", cmd->argv[3], strerror(EPERM));
+      int xerrno = EPERM;
+
+      pr_cmd_set_name(cmd, cmd_name);
+      pr_response_add_err(R_550, "%s: %s", cmd->argv[3], strerror(xerrno));
+
+      errno = xerrno;
       return PR_ERROR(cmd);
     }
-    cmd->argv[0] = cmd_name;
+    pr_cmd_set_name(cmd, cmd_name);
 
     if (copy_paths(cmd->tmp_pool, from, to) < 0) {
       int xerrno = errno;

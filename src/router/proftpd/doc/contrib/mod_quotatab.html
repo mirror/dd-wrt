@@ -1,4 +1,4 @@
-<!-- $Id: mod_quotatab.html,v 1.16 2009/10/01 16:18:43 castaglia Exp $ -->
+<!-- $Id: mod_quotatab.html,v 1.20 2014/01/27 22:08:41 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_quotatab.html,v $ -->
 
 <html>
@@ -63,6 +63,7 @@ for overwritten files.
 
 <h2>Directives</h2>
 <ul>
+  <li><a href="#QuotaDefault">QuotaDefault</a>
   <li><a href="#QuotaDirectoryTally">QuotaDirectoryTally</a>
   <li><a href="#QuotaDisplayUnits">QuotaDisplayUnits</a>
   <li><a href="#QuotaEngine">QuotaEngine</a>
@@ -81,6 +82,41 @@ for overwritten files.
   <li><a href="#SITE_QUOTA">SITE QUOTA</a>
 </ul>
 
+<hr>
+<h2><a name="QuotaDefault">QuotaDefault</a></h2>
+<strong>Syntax:</strong> QuotaDefault <em>quota-type per-session limit-type bytes-avail-in bytes-avail-out bytes-avail-xfer files-avail-in files-avail-out files-avail-xfer</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_quotatab<br>
+<strong>Compatibility:</strong> 1.3.5rc1 and later
+
+<p>
+The <code>QuotaDefault</code> directive configures a "default" quota limit,
+to be used when a limit is not found for the current user (<i>e.g.</i> a limit
+has not yet been configured for the user via one of the mod_quotatab backends).
+Since this "default" needs to provide all of the limit information required
+by <code>mod_quotatab</b>, there are quite a few required parameters:
+<ul>
+  <li><em>quota-type</em>
+  <li><em>per-session</em>
+  <li><em>limit-type</em>
+  <li><em>bytes-avail-in</em>
+  <li><em>bytes-avail-out</em>
+  <li><em>bytes-avail-xfer</em>
+  <li><em>files-avail-in</em>
+  <li><em>files-avail-out</em>
+  <li><em>files-avail-xfer</em>
+</ul>
+The meaning of these parameters is discussed in more detail
+<a href="#QuotaLookup">here</a>.
+
+<p>
+For example, you might use:
+<pre>
+  QuotaDefault user false hard 10485760 0 0 0 0 0
+</pre>
+
+<p>
 <hr>
 <h2><a name="QuotaDirectoryTally">QuotaDirectoryTally</a></h2>
 <strong>Syntax:</strong> QuotaDirectoryTally <em>on|off</em><br>
@@ -190,7 +226,7 @@ See also: <a href="#QuotaTallyTable">QuotaTallyTable</a>
 <h2><a name="QuotaLock">QuotaLock</a></h2>
 <strong>Syntax:</strong>  QuotaLock <em>file</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> <br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_quotatab<br>
 <strong>Compatibility:</strong> 1.2.9rc1 and later</a>
 
@@ -210,12 +246,12 @@ configured lock file <b>not</b> be on an NFS (or any other network) filesystem.
 <h2><a name="QuotaLog">QuotaLog</a></h2>
 <strong>Syntax:</strong>  QuotaLog <em>file|&quot;none&quot;</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> <br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_quotatab<br>
 <strong>Compatibility:</strong> 1.2.5rc2 and later</a>
 
 <p>
-The <code>QuotaLog</code> directive is used to a specify a log file for
+The <code>QuotaLog</code> directive is used to specify a log file for
 <code>mod_quotatab</code> reporting, and can be done a per-server basis.
 The <em>file</em> parameter must be the full path to the file to use for
 logging.  Note that this path must <b>not</b> be to a world-writeable
@@ -272,7 +308,7 @@ The currently implemented options are:
 <h2><a name="QuotaShowQuotas">QuotaShowQuotas</a></h2>
 <strong>Syntax:</strong>  QuotaShowQuotas <em>on|off</em><br>
 <strong>Default:</strong> on<br>
-<strong>Context:</strong> <br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_quotatab<br>
 <strong>Compatibility:</strong> 1.2.5rc2 and later</a>
 
@@ -288,7 +324,7 @@ may consider this a definite feature.
 <h2><a name="QuotaTallyTable">QuotaTallyTable</a></h2>
 <strong>Syntax:</strong> QuotaTallyTable <em>source-type:source-info</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> <br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_quotatab<br>
 <strong>Compatibility:</strong> 1.2.5rc2 and later</a>
 
@@ -536,26 +572,34 @@ Note that the values for the various byte variables honor any
 <h2><a name="Installation">Installation</a></h2>
 Follow the usual steps for using third-party modules in proftpd: 
 <pre>
-  ./configure --with-modules=<i>quotatab-modules</i>
+  ./configure --with-modules=<i>mod_quotatab:...</i>
   make
   make install
 </pre>
-where <i>quotatab-modules</i> will depend on the types of quota tables
-you wish to support.
+where the list of modules, including <code>mod_quotatab</code>, will depend on
+the types of quota tables you wish to support.
 
 <p>
-For file-based quota tables, include the <code>mod_quotatab_file</code>
+For using file-based quota tables, include the <code>mod_quotatab_file</code>
 submodule, <i>e.g.</i>:
 <pre>
-  mod_quotatab:mod_quotatab_file
+  --with-modules=mod_quotatab:mod_quotatab_file
+</pre>
+or:
+<pre>
+  --enable-dso --with-shared=mod_quotatab:mod_quotatab_file
 </pre>
 
 <p>
-For LDAP-based quota limit tables, include <code>mod_quotatab_ldap</code>
+For using LDAP-based quota limit tables, include <code>mod_quotatab_ldap</code>
 in addition to either <code>mod_quotatab_file</code> or
 <code>mod_quotatab_sql</code>:
 <pre>
-  mod_quotatab:mod_quotatab_file:mod_quotatab_ldap
+  --with-modules=mod_quotatab:mod_quotatab_file:mod_quotatab_ldap
+</pre>
+or:
+<pre>
+  --enable-dso --with-shared=mod_quotatab:mod_quotatab_file:mod_quotatab_ldap
 </pre>
 Note that file- or SQL-based tally tables are needed since
 <code>mod_quotatab_ldap</code> cannot handle tally tables, only limit tables.
@@ -563,14 +607,22 @@ Note that file- or SQL-based tally tables are needed since
 <code>mod_ldap</code> module.
 
 <p>
-For SQL-based quota tables, include the <code>mod_quotatab_sql</code>
+For using SQL-based quota tables, include the <code>mod_quotatab_sql</code>
 submodule, <i>e.g.</i>:
 <pre>
-  mod_quotatab:mod_quotatab_sql
+  --with-modules=mod_quotatab:mod_quotatab_sql
 </pre>
-And, if you wish to support file- and SQL-based quota tables:
+or:
 <pre>
-  mod_quotatab:mod_quotatab_file:mod_quotatab_sql
+  --enable-dso --with-shared=mod_quotatab:mod_quotatab_sql
+</pre>
+And, if you wish to support file- <b>and</b> SQL-based quota tables:
+<pre>
+  --with-modules=mod_quotatab:mod_quotatab_file:mod_quotatab_sql
+</pre>
+or:
+<pre>
+  --enable-dso --with-shared=mod_quotatab:mod_quotatab_file:mod_quotatab_sql
 </pre>
 Note that SQL tables require that a correct installation of
 <code>mod_sql</code> (and any of its backend modules) also be used.
@@ -581,12 +633,12 @@ for that module.
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2009/10/01 16:18:43 $</i><br>
+Last Updated: <i>$Date: 2014/01/27 22:08:41 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2007 TJ Saunders<br>
+&copy; Copyright 2000-2014 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

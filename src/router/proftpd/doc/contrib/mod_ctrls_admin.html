@@ -1,4 +1,4 @@
-<!-- $Id: mod_ctrls_admin.html,v 1.10 2011/05/24 00:06:44 castaglia Exp $ -->
+<!-- $Id: mod_ctrls_admin.html,v 1.12 2013/08/14 21:40:17 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_ctrls_admin.html,v $ -->
 
 <html>
@@ -42,7 +42,6 @@ questions, concerns, or suggestions regarding this module.
   <li><a href="#debug"><code>debug</code></a>
   <li><a href="#dns"><code>dns</code></a>
   <li><a href="#down"><code>down</code></a>
-  <li><a href="#dump"><code>dump</code></a>
   <li><a href="#get"><code>get</code></a>
   <li><a href="#kick"><code>kick</code></a>
   <li><a href="#restart"><code>restart</code></a>
@@ -141,20 +140,14 @@ Instead, to simply check the current debug logging verbosity, use:
 </pre>
 
 <p>
-Alternatively, for developers, this control action can be used to display
-the current memory allocation of the daemon:
+Alternatively, for developers (<i>i.e.</i> if <code>proftpd</code> was
+compiled with the <code>--enable-devel</code> configure option), this control
+action can be used to display the current memory allocation of the daemon:
 <pre>
   ftpdctl debug memory
 </pre>
 Memory allocations for session processes are currently not available via
 this control action.
-
-<p>
-A dump of the in-memory configuration structure can also be obtained via this
-control action:
-<pre>
-  ftpdctl debug config
-</pre>
 
 <p>
 <hr>
@@ -201,38 +194,6 @@ Note that using &quot;down all&quot; effectively puts the daemon in an
 &quot;administrative&quot; shutdown state, where the daemon is still running
 but no servers are available for servicing incoming connection requests.
 Current sessions are not affected.
-
-<p>
-<hr>
-<h2><a name="dump"><code>dump</code></a></h2>
-<strong>Syntax:</strong> ftpdctl dump classes|config|memory</em><br>
-<strong>Purpose:</strong> Dump internal information from the running daemon
-
-<p>
-The <code>dump</code> control action dumps various information from the
-internal subsystems.  It is intended mainly for use by developers and
-curious system administrators.
-
-This control action can be used to display the current memory allocation of
-the daemon:
-<pre>
-  ftpdctl dump memory
-</pre>
-Memory allocations for session processes are currently not available via
-this control action.
-
-<p>
-A dump of the in-memory configuration structure can also be obtained via this
-control action:
-<pre>
-  ftpdctl dump config
-</pre>
-
-<p>
-To list the in-meory representation of all configured Classes, use:
-<pre>
-  ftpdctl dump classes
-</pre>
 
 <p>
 <hr>
@@ -444,18 +405,33 @@ via the <code>--enable-ctrls</code> configure option.  Follow the normal
 steps for using third-party modules in ProFTPD:
 <pre>
   ./configure --enable-ctrls --with-modules=mod_ctrls_admin
+</pre>
+To build <code>mod_ctrls_admin</code> as a DSO module:
+<pre>
+  ./configure --enable-ctrls --enable-dso --with-shared=mod_ctrls_admin
+</pre>
+Then follow the usual steps:
+<pre>
   make
   make install
 </pre>
 
 <p>
+For those with an existing ProFTPD installation, you can use the
+<code>prxs</code> tool to add <code>mod_ctrls_admin</code>, as a DSO module, to
+your existing server:
+<pre>
+  # prxs -c -i -d mod_ctrls_admin.c
+</pre>
+
+<p>
 <hr>
-Last Updated: <i>$Date: 2011/05/24 00:06:44 $</i><br>
+Last Updated: <i>$Date: 2013/08/14 21:40:17 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2004-2011 The ProFTPD Project<br>
+&copy; Copyright 2004-2013 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

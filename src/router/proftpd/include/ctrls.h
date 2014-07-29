@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Controls API definitions
- * $Id: ctrls.h,v 1.8 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: ctrls.h,v 1.9 2013/02/04 06:46:22 castaglia Exp $
  */
 
 #ifndef PR_CTRLS_H
@@ -158,7 +158,7 @@ int pr_ctrls_unregister(module *mod, const char *action);
 /* Add the given ctrls_arg string to the pr_ctrls_t object's argument
  * array. Returns 0 on success, -1 on failure.
  */
-int pr_ctrls_add_arg(pr_ctrls_t *ctrl, char *ctrls_arg);
+int pr_ctrls_add_arg(pr_ctrls_t *ctrl, char *ctrls_arg, size_t ctrls_arglen);
 
 /* Add the given string to the pr_ctrls_t object's response array.  Returns
  * 0 on success, -1 on failure.  Control handlers can use this function to

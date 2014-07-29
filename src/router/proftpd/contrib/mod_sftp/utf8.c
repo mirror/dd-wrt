@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp UTF8 encoding
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: utf8.c,v 1.16 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: utf8.c,v 1.18 2013/01/29 06:51:11 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -237,6 +237,26 @@ char *sftp_utf8_decode_str(pool *p, const char *str) {
 
   if (utf8_convert(decode_conv, inbuf, &inbuflen, outbuf, &outbuflen) < 0) {
     pr_trace_msg("sftp", 1, "error decoding string: %s", strerror(errno));
+
+    if (pr_trace_get_level("sftp") >= 14) {
+      /* Write out the string we tried (and failed) to decode, in hex. */
+      register unsigned int i;
+      unsigned char *raw_str;
+      size_t len, raw_len;
+      
+      len = strlen(str);
+      raw_len = (len * 5) + 1;
+      raw_str = pcalloc(p, raw_len + 1);
+
+      for (i = 0; i < len; i++) {
+        snprintf((char *) (raw_str + (i * 5)), (raw_len - 1) - (i * 5),
+          "0x%02x ", (unsigned char) str[i]);
+      }
+
+      pr_trace_msg("sftp", 14, "unable to decode string (raw bytes): %s",
+        raw_str);
+    }
+
     return (char *) str;
   }
 
@@ -276,6 +296,26 @@ char *sftp_utf8_encode_str(pool *p, const char *str) {
 
   if (utf8_convert(encode_conv, inbuf, &inbuflen, outbuf, &outbuflen) < 0) {
     pr_trace_msg("sftp", 1, "error encoding string: %s", strerror(errno));
+
+    if (pr_trace_get_level("sftp") >= 14) {
+      /* Write out the string we tried (and failed) to encode, in hex. */
+      register unsigned int i;
+      unsigned char *raw_str;
+      size_t len, raw_len;
+
+      len = strlen(str);
+      raw_len = (len * 5) + 1;
+      raw_str = pcalloc(p, raw_len + 1);
+
+      for (i = 0; i < len; i++) {
+        snprintf((char *) (raw_str + (i * 5)), (raw_len - 1) - (i * 5),
+          "0x%02x ", (unsigned char) str[i]);
+      }
+
+      pr_trace_msg("sftp", 14, "unable to encode string (raw bytes): %s",
+        raw_str);
+    }
+
     return (char *) str;
   }
 

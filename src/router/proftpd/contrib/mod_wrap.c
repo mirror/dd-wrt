@@ -2,7 +2,7 @@
  * ProFTPD: mod_wrap -- use Wietse Venema's TCP wrappers library for
  *                      access control
  *
- * Copyright (c) 2000-2011 TJ Saunders
+ * Copyright (c) 2000-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  *
  * -- DO NOT MODIFY THE TWO LINES BELOW --
  * $Libraries: -lwrap -lnsl$
- * $Id: mod_wrap.c,v 1.26 2011/05/23 20:56:40 castaglia Exp $
+ * $Id: mod_wrap.c,v 1.28 2013/10/13 22:51:36 castaglia Exp $
  */
 
 #define MOD_WRAP_VERSION "mod_wrap/1.2.4"
@@ -130,30 +130,48 @@ static char *wrap_get_user_table(cmd_rec *cmd, char *user,
 }
 
 static int wrap_is_usable_file(char *filename) {
-  struct stat statbuf;
+  struct stat st;
   pr_fh_t *fh = NULL;
 
   /* check the easy case first */
   if (filename == NULL)
     return FALSE;
 
-  if (pr_fsio_stat(filename, &statbuf) == -1) {
-    pr_log_pri(PR_LOG_INFO, MOD_WRAP_VERSION ": \"%s\": %s", filename,
-      strerror(errno));
-    return FALSE;
-  }
-
-  /* OK, the file exists.  Now, to make sure that the current process
-   * can _read_ the file
-   */
+  /* Make sure that the current process can _read_ the file. */
   fh = pr_fsio_open(filename, O_RDONLY);
   if (fh == NULL) {
-    pr_log_pri(PR_LOG_INFO, MOD_WRAP_VERSION ": \"%s\": %s", filename,
-      strerror(errno));
+    int xerrno = errno;
+
+    pr_log_pri(PR_LOG_NOTICE, MOD_WRAP_VERSION ": failed to read \"%s\": %s",
+      filename, strerror(xerrno));
+
+    errno = xerrno;
     return FALSE;
   }
-  pr_fsio_close(fh);
 
+  if (pr_fsio_fstat(fh, &st) < 0) {
+    int xerrno = errno;
+
+    pr_log_pri(PR_LOG_NOTICE, MOD_WRAP_VERSION ": failed to stat \"%s\": %s",
+      filename, strerror(xerrno));
+
+    pr_fsio_close(fh);
+    errno = xerrno;
+    return FALSE;
+  }
+
+  if (S_ISDIR(st.st_mode)) {
+    int xerrno = EISDIR;
+
+    pr_log_pri(PR_LOG_NOTICE, MOD_WRAP_VERSION ": unable to use \"%s\": %s",
+      filename, strerror(xerrno));
+
+    pr_fsio_close(fh);
+    errno = xerrno;
+    return FALSE;
+  }
+
+  pr_fsio_close(fh);
   return TRUE;
 }
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp channels
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: channel.c,v 1.43 2011/05/24 20:55:50 castaglia Exp $
+ * $Id: channel.c,v 1.47 2012/02/18 22:12:20 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -50,7 +50,7 @@ struct ssh2_channel_exec_handler {
   int (*set_params)(pool *, uint32_t, array_header *);
   int (*prepare)(uint32_t);
   int (*postopen)(uint32_t);
-  int (*handle_packet)(pool *, void *, uint32_t, char *, uint32_t);
+  int (*handle_packet)(pool *, void *, uint32_t, unsigned char *, uint32_t);
   int (*finish)(uint32_t);
 };
 
@@ -229,7 +229,7 @@ static void drain_pending_channel_data(uint32_t channel_id) {
            db->buflen > 0 &&
            chan->remote_windowsz > 0) {
       struct ssh2_packet *pkt;
-      char *buf, *ptr;
+      unsigned char *buf, *ptr;
       uint32_t bufsz, buflen, payload_len;
       int res;
 
@@ -375,7 +375,8 @@ static struct ssh2_channel_databuf *get_databuf(uint32_t channel_id,
 }
 
 static int read_channel_open(struct ssh2_packet *pkt, uint32_t *channel_id) {
-  char *buf, *channel_type;
+  unsigned char *buf;
+  char *channel_type;
   uint32_t buflen, initial_windowsz, max_packetsz;
   cmd_rec *cmd;
 
@@ -405,7 +406,7 @@ static int read_channel_open(struct ssh2_packet *pkt, uint32_t *channel_id) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_OPEN"));
   cmd->arg = channel_type;
-  cmd->class = CL_MISC;
+  cmd->cmd_class = CL_MISC;
 
   if (strncmp(channel_type, "session", 8) != 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -428,7 +429,7 @@ static int read_channel_open(struct ssh2_packet *pkt, uint32_t *channel_id) {
 
 static int handle_channel_close(struct ssh2_packet *pkt) {
   char chan_str[16];
-  char *buf;
+  unsigned char *buf;
   uint32_t buflen, channel_id;
   struct ssh2_channel *chan;
   cmd_rec *cmd;
@@ -443,7 +444,7 @@ static int handle_channel_close(struct ssh2_packet *pkt) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_CLOSE"));
   cmd->arg = pstrdup(pkt->pool, chan_str);
-  cmd->class = CL_MISC;
+  cmd->cmd_class = CL_MISC;
 
   chan = get_channel(channel_id);
   if (chan == NULL) {
@@ -473,7 +474,7 @@ static int handle_channel_close(struct ssh2_packet *pkt) {
 }
 
 static int process_channel_data(struct ssh2_channel *chan,
-    struct ssh2_packet *pkt, char *data, uint32_t datalen) {
+    struct ssh2_packet *pkt, unsigned char *data, uint32_t datalen) {
   int res;
 
   if (chan->handle_packet == NULL) {
@@ -490,7 +491,7 @@ static int process_channel_data(struct ssh2_channel *chan,
   chan->local_windowsz -= datalen;
 
   if (chan->local_windowsz < (chan->local_max_packetsz * 3)) {
-    char *buf, *ptr;
+    unsigned char *buf, *ptr;
     uint32_t buflen, bufsz, window_adjlen;
     struct ssh2_packet *resp;
 
@@ -529,7 +530,7 @@ static int process_channel_data(struct ssh2_channel *chan,
 }
 
 static int handle_channel_data(struct ssh2_packet *pkt, uint32_t *channel_id) {
-  char *buf, *data;
+  unsigned char *buf, *data;
   uint32_t buflen, datalen;
   struct ssh2_channel *chan;
 
@@ -577,7 +578,7 @@ static int handle_channel_data(struct ssh2_packet *pkt, uint32_t *channel_id) {
  */
 static int send_channel_done(pool *p, uint32_t channel_id) {
   int res;
-  char *buf, *ptr;
+  unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
   struct ssh2_channel *chan;
   struct ssh2_packet *pkt;
@@ -664,7 +665,7 @@ static int send_channel_done(pool *p, uint32_t channel_id) {
 
 static int handle_channel_eof(struct ssh2_packet *pkt) {
   char chan_str[16];
-  char *buf;
+  unsigned char *buf;
   uint32_t buflen, channel_id;
   struct ssh2_channel *chan;
   cmd_rec *cmd;
@@ -679,7 +680,7 @@ static int handle_channel_eof(struct ssh2_packet *pkt) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_EOF"));
   cmd->arg = pstrdup(pkt->pool, chan_str);
-  cmd->class = CL_MISC;
+  cmd->cmd_class = CL_MISC;
 
   chan = get_channel(channel_id);
   if (chan == NULL) {
@@ -768,10 +769,10 @@ static int allow_env(const char *key) {
 }
 
 static int handle_exec_channel(struct ssh2_channel *chan,
-    struct ssh2_packet *pkt, char **buf, uint32_t *buflen) {
+    struct ssh2_packet *pkt, unsigned char **buf, uint32_t *buflen) {
   register unsigned int i;
   int flags = PR_STR_FL_PRESERVE_WHITESPACE, have_handler = FALSE;
-  char *command, *ptr, **reqargv, *word;
+  char *command, *ptr, *word;
   array_header *req;
   struct ssh2_channel_exec_handler **handlers;
 
@@ -789,8 +790,6 @@ static int handle_exec_channel(struct ssh2_channel *chan,
   }
 
   *((char **) push_array(req)) = NULL;
-
-  reqargv = (char **) req->elts;
 
   handlers = channel_exec_handlers->elts;
   for (i = 0; i < channel_exec_handlers->nelts; i++) {
@@ -840,7 +839,7 @@ static int handle_exec_channel(struct ssh2_channel *chan,
 }
 
 static int handle_env_channel(struct ssh2_channel *chan,
-    struct ssh2_packet *pkt, char **buf, uint32_t *buflen) {
+    struct ssh2_packet *pkt, unsigned char **buf, uint32_t *buflen) {
   int res;
   char *key, *value;
 
@@ -869,7 +868,7 @@ static int handle_env_channel(struct ssh2_channel *chan,
 }
 
 static int handle_signal_channel(struct ssh2_channel *chan,
-    struct ssh2_packet *pkt, char **buf, uint32_t *buflen) {
+    struct ssh2_packet *pkt, unsigned char **buf, uint32_t *buflen) {
   int res;
   char bool, *sig_name;
 
@@ -940,7 +939,7 @@ static int handle_signal_channel(struct ssh2_channel *chan,
 }
 
 static int handle_subsystem_channel(struct ssh2_channel *chan,
-    struct ssh2_packet *pkt, char **buf, uint32_t *buflen) {
+    struct ssh2_packet *pkt, unsigned char **buf, uint32_t *buflen) {
   char *subsystem;
 
   subsystem = sftp_msg_read_string(pkt->pool, buf, buflen);
@@ -972,7 +971,8 @@ static int handle_subsystem_channel(struct ssh2_channel *chan,
 }
 
 static int handle_channel_req(struct ssh2_packet *pkt) {
-  char *buf, *channel_request;
+  unsigned char *buf;
+  char *channel_request;
   uint32_t buflen, channel_id;
   int res, unsupported = FALSE, want_reply;
   struct ssh2_channel *chan;
@@ -992,7 +992,7 @@ static int handle_channel_req(struct ssh2_packet *pkt) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_REQUEST"));
   cmd->arg = channel_request;
-  cmd->class = CL_MISC;
+  cmd->cmd_class = CL_MISC;
 
   chan = get_channel(channel_id);
   if (chan == NULL) {
@@ -1055,7 +1055,7 @@ static int handle_channel_req(struct ssh2_packet *pkt) {
 
   if (want_reply) {
     struct ssh2_packet *pkt2;
-    char *buf2, *ptr2;
+    unsigned char *buf2, *ptr2;
     uint32_t buflen2, bufsz2;
 
     buflen2 = bufsz2 = 128;
@@ -1130,7 +1130,7 @@ static int handle_channel_req(struct ssh2_packet *pkt) {
 
 static int handle_channel_window_adjust(struct ssh2_packet *pkt) {
   char adjust_str[32];
-  char *buf;
+  unsigned char *buf;
   uint32_t buflen, channel_id, adjust_len, max_adjust_len;
   struct ssh2_channel *chan;
   cmd_rec *cmd;
@@ -1147,7 +1147,7 @@ static int handle_channel_window_adjust(struct ssh2_packet *pkt) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_WINDOW_ADJUST"));
   cmd->arg = pstrdup(pkt->pool, adjust_str);
-  cmd->class = CL_MISC;
+  cmd->cmd_class = CL_MISC;
 
   chan = get_channel(channel_id);
   if (chan == NULL) {
@@ -1193,7 +1193,7 @@ static int handle_channel_window_adjust(struct ssh2_packet *pkt) {
 static int write_channel_open_confirm(struct ssh2_packet *pkt,
     uint32_t channel_id) {
   register unsigned int i;
-  char *buf, *ptr;
+  unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
   struct ssh2_channel *chan = NULL, **chans;
 
@@ -1236,7 +1236,7 @@ static int write_channel_open_confirm(struct ssh2_packet *pkt,
 
 static int write_channel_open_failed(struct ssh2_packet *pkt,
     uint32_t channel_id) {
-  char *buf, *ptr;
+  unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
 
   buflen = bufsz = 1024;
@@ -1275,6 +1275,10 @@ unsigned int sftp_channel_set_max_count(unsigned int max) {
   channel_max = max;
 
   return prev_max;
+}
+
+uint32_t sftp_channel_get_max_packetsz(void) {
+  return chan_packet_size;
 }
 
 uint32_t sftp_channel_set_max_packetsz(uint32_t packetsz) {
@@ -1516,8 +1520,8 @@ int sftp_channel_drain_data(void) {
   return 0;
 }
 
-static int channel_write_data(pool *p, uint32_t channel_id, char *buf,
-    uint32_t buflen, char msg_type, uint32_t data_type) {
+static int channel_write_data(pool *p, uint32_t channel_id,
+    unsigned char *buf, uint32_t buflen, char msg_type, uint32_t data_type) {
   struct ssh2_channel *chan;
   int res;
 
@@ -1562,7 +1566,7 @@ static int channel_write_data(pool *p, uint32_t channel_id, char *buf,
 
     if (payload_len > 0) {
       struct ssh2_packet *pkt;
-      char *buf2, *ptr2;
+      unsigned char *buf2, *ptr2;
       uint32_t bufsz2, buflen2;
 
       /* In addition to the data itself, we need to allocate room in the
@@ -1650,14 +1654,14 @@ static int channel_write_data(pool *p, uint32_t channel_id, char *buf,
   return 0;
 }
 
-int sftp_channel_write_data(pool *p, uint32_t channel_id, char *buf,
-    uint32_t buflen) {
+int sftp_channel_write_data(pool *p, uint32_t channel_id,
+    unsigned char *buf, uint32_t buflen) {
   return channel_write_data(p, channel_id, buf, buflen,
     SFTP_SSH2_MSG_CHANNEL_DATA, 0);
 }
 
-int sftp_channel_write_ext_data_stderr(pool *p, uint32_t channel_id, char *buf,
-    uint32_t buflen) {
+int sftp_channel_write_ext_data_stderr(pool *p, uint32_t channel_id,
+    unsigned char *buf, uint32_t buflen) {
   return channel_write_data(p, channel_id, buf, buflen,
     SFTP_SSH2_MSG_CHANNEL_EXTENDED_DATA,
     SFTP_SSH2_MSG_CHANNEL_EXTENDED_DATA_TYPE_STDERR);
@@ -1694,9 +1698,9 @@ int sftp_channel_register_exec_handler(module *m, const char *command,
     int (*set_params)(pool *, uint32_t, array_header *),
     int (*prepare)(uint32_t),
     int (*postopen)(uint32_t),
-    int (*handle_packet)(pool *, void *, uint32_t, char *, uint32_t),
+    int (*handle_packet)(pool *, void *, uint32_t, unsigned char *, uint32_t),
     int (*finish)(uint32_t),
-    int (**write_data)(pool *, uint32_t, char *, uint32_t)) {
+    int (**write_data)(pool *, uint32_t, unsigned char *, uint32_t)) {
   struct ssh2_channel_exec_handler *handler;
 
   if (m == NULL ||

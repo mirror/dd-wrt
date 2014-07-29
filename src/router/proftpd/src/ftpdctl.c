@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* ProFTPD Controls command-line client
- * $Id: ftpdctl.c,v 1.18 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: ftpdctl.c,v 1.20 2013/07/16 21:36:49 castaglia Exp $
  */
 
 #include "conf.h"
@@ -137,22 +137,28 @@ int pr_trace_msg(const char *channel, int level, const char *fmt, ...) {
   return -1;
 }
 
-char *sstrncpy(char *dest, const char *src, size_t n) {
-  register char *d = dest;
+int sstrncpy(char *dst, const char *src, size_t n) {
+  register char *d = dst;
+  int res = 0;
 
-  if (!dest)
-    return NULL;
+  if (dst == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
-  if (n == 0)
-    return NULL;
+  if (n == 0) {
+    return 0;
+  }
 
   if (src && *src) {
-    for (; *src && n > 1; n--)
+    for (; *src && n > 1; n--) {
       *d++ = *src++;
+      res++;
+    }
   }
 
   *d = '\0';
-  return dest;
+  return res;
 }
 
 #ifdef PR_USE_CTRLS

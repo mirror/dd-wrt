@@ -23,7 +23,7 @@
  */
 
 /* Controls API routines
- * $Id: ctrls.c,v 1.30.2.4 2013/05/28 21:04:37 castaglia Exp $
+ * $Id: ctrls.c,v 1.40 2013/05/28 21:02:02 castaglia Exp $
  */
 
 #include "conf.h"
@@ -44,6 +44,9 @@
 #ifdef PR_USE_CTRLS
 
 #include "mod_ctrls.h"
+
+/* Maximum length of a single request argument. */
+#define CTRLS_MAX_REQARGLEN	256
 
 typedef struct ctrls_act_obj {
   struct ctrls_act_obj *prev, *next;
@@ -198,8 +201,9 @@ static char *ctrls_sep(char **str) {
   if (!str || !*str || !**str)
     return NULL;
 
-  while (**str && isspace((int) **str))
+  while (**str && PR_ISSPACE(**str)) {
     (*str)++;
+  }
 
   if (!**str)
     return NULL;
@@ -212,7 +216,7 @@ static char *ctrls_sep(char **str) {
   }
 
   while (**str &&
-         (quoted ? (**str != '\"') : !isspace((int) **str))) {
+         (quoted ? (**str != '\"') : !PR_ISSPACE(**str))) {
 
     if (**str == '\\' && quoted) {
 
@@ -334,12 +338,22 @@ int pr_ctrls_unregister(module *mod, const char *action) {
   return 0;
 }
 
-int pr_ctrls_add_arg(pr_ctrls_t *ctrl, char *ctrls_arg) {
+int pr_ctrls_add_arg(pr_ctrls_t *ctrl, char *ctrls_arg, size_t ctrls_arglen) {
+  register unsigned int i;
 
   /* Sanity checks */
-  if (!ctrl || !ctrls_arg) {
+  if (ctrl == NULL ||
+      ctrls_arg == NULL) {
     errno = EINVAL;
     return -1;
+  }
+
+  /* Scan for non-printable characters. */
+  for (i = 0; i < ctrls_arglen; i++) {
+    if (!isprint((int) ctrls_arg[i])) {
+      errno = EPERM;
+      return -1;
+    }
   }
 
   /* Make sure the pr_ctrls_t has a temporary pool, from which the args will
@@ -350,8 +364,9 @@ int pr_ctrls_add_arg(pr_ctrls_t *ctrl, char *ctrls_arg) {
     pr_pool_tag(ctrl->ctrls_tmp_pool, "ctrls tmp pool");
   }
 
-  if (!ctrl->ctrls_cb_args)
+  if (!ctrl->ctrls_cb_args) {
     ctrl->ctrls_cb_args = make_array(ctrl->ctrls_tmp_pool, 0, sizeof(char *));
+  }
 
   /* Add the given argument */
   *((char **) push_array(ctrl->ctrls_cb_args)) = pstrdup(ctrl->ctrls_tmp_pool,
@@ -502,7 +517,7 @@ int pr_ctrls_parse_msg(pool *msg_pool, char *msg, unsigned int *msgargc,
 
 int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
   pr_ctrls_t *ctrl = NULL, *next_ctrl = NULL;
-  char reqaction[512] = {'\0'}, *reqarg = NULL;
+  char reqaction[128] = {'\0'}, *reqarg = NULL;
   size_t reqargsz = 0;
   unsigned int nreqargs = 0, reqarglen = 0;
   int status = 0;
@@ -528,13 +543,21 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
    * as well as responses, and the status is a necessary part of a response.
    */
   if (read(cl->cl_fd, &status, sizeof(int)) < 0) {
+    int xerrno = errno;
+
     pr_signals_unblock();
+
+    errno = xerrno;
     return -1;
   }
  
   /* Read in the args, length first, then string. */
   if (read(cl->cl_fd, &nreqargs, sizeof(unsigned int)) < 0) {
+    int xerrno = errno;
+
     pr_signals_unblock();
+
+    errno = xerrno;
     return -1;
   }
 
@@ -545,7 +568,11 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
    */
   
   if (read(cl->cl_fd, &reqarglen, sizeof(unsigned int)) < 0) {
+    int xerrno = errno;
+
     pr_signals_unblock();
+
+    errno = xerrno;
     return -1;
   }
 
@@ -558,7 +585,11 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
   memset(reqaction, '\0', sizeof(reqaction));
 
   if (read(cl->cl_fd, reqaction, reqarglen) < 0) {
+    int xerrno = errno;
+
     pr_signals_unblock();
+
+    errno = xerrno;
     return -1;
   }
 
@@ -579,7 +610,22 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
     memset(reqarg, '\0', reqargsz);
 
     if (read(cl->cl_fd, &reqarglen, sizeof(unsigned int)) < 0) {
+      int xerrno = errno;
+
       pr_signals_unblock();
+
+      errno = xerrno;
+      return -1;
+    }
+
+    if (reqarglen == 0) {
+      /* Skip any zero-length arguments. */
+      continue;
+    }
+
+    if (reqarglen > CTRLS_MAX_REQARGLEN) {
+      pr_signals_unblock();
+      errno = ENOMEM;
       return -1;
     }
 
@@ -599,12 +645,20 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
     }
 
     if (read(cl->cl_fd, reqarg, reqarglen) < 0) {
+      int xerrno = errno;
+
       pr_signals_unblock();
+
+      errno = xerrno;
       return -1;
     }
 
-    if (pr_ctrls_add_arg(ctrl, reqarg)) {
+    if (pr_ctrls_add_arg(ctrl, reqarg, reqarglen)) {
+      int xerrno = errno;
+
       pr_signals_unblock();
+
+      errno = xerrno;
       return -1;
     }
   }
@@ -622,8 +676,9 @@ int pr_ctrls_recv_request(pr_ctrls_cl_t *cl) {
   next_ctrl = ctrls_lookup_next_action(NULL, TRUE);
 
   while (next_ctrl) {
-    if (pr_ctrls_copy_args(ctrl, next_ctrl))
+    if (pr_ctrls_copy_args(ctrl, next_ctrl)) {
       return -1;
+    }
 
     /* Add this ctrl object to the client object. */
     *((pr_ctrls_t **) push_array(cl->cl_ctrls)) = next_ctrl;
@@ -707,8 +762,9 @@ int pr_ctrls_recv_response(pool *resp_pool, int ctrls_sockfd,
     *((char **) push_array(resparr)) = pstrdup(resp_pool, response);
   }
 
-  if (respargv)
+  if (respargv) {
     *respargv = ((char **) resparr->elts);
+  }
 
   pr_signals_unblock(); 
   return respargc;
@@ -725,11 +781,13 @@ int pr_ctrls_send_msg(int sockfd, int msgstatus, unsigned int msgargc,
     return -1;
   }
 
-  if (msgargc < 1)
-    return 0;    
-
-  if (msgargv == NULL)
+  if (msgargc < 1) {
     return 0;
+  }
+
+  if (msgargv == NULL) {
+    return 0;
+  }
 
   /* No interruptions */
   pr_signals_block();
@@ -759,28 +817,31 @@ int pr_ctrls_send_msg(int sockfd, int msgstatus, unsigned int msgargc,
       res = write(sockfd, &msgarglen, sizeof(unsigned int));
 
       if (res != sizeof(unsigned int)) {
-        if (errno == EAGAIN)
+        if (errno == EAGAIN) {
           continue;
+        }
 
         pr_signals_unblock();
         return -1;
+      }
 
-      } else
-        break;
+      break;
     }
 
     while (TRUE) {
       res = write(sockfd, msgargv[i], msgarglen);
 
       if (res != msgarglen) {
-        if (errno == EAGAIN)
+        if (errno == EAGAIN) {
           continue;
+        }
 
         pr_signals_unblock();
         return -1;
 
-      } else
-        break;
+      }
+
+      break;
     }
   }
 
@@ -945,6 +1006,15 @@ int pr_ctrls_connect(const char *socket_file) {
     int xerrno = errno;
 
     pr_signals_unblock();
+
+    errno = xerrno;
+    return -1;
+  }
+
+  if (fcntl(sockfd, F_SETFD, FD_CLOEXEC) < 0) {
+    int xerrno = errno;
+
+    close(sockfd);
 
     errno = xerrno;
     return -1;
@@ -1638,7 +1708,7 @@ static char *ctrls_argsep(char **arg) {
   if (!arg || !*arg || !**arg)
     return NULL;
 
-  while (**arg && isspace((int) **arg))
+  while (**arg && PR_ISSPACE(**arg))
     (*arg)++;
 
   if (!**arg)
@@ -1652,7 +1722,7 @@ static char *ctrls_argsep(char **arg) {
   }
 
   while (**arg && **arg != ',' &&
-      (quote_mode ? (**arg != '\"') : (!isspace((int) **arg)))) {
+      (quote_mode ? (**arg != '\"') : (!PR_ISSPACE(**arg)))) {
 
     if (**arg == '\\' && quote_mode) {
 

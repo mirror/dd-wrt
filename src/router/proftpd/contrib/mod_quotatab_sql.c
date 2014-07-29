@@ -2,7 +2,7 @@
  * ProFTPD: mod_quotatab_sql -- a mod_quotatab sub-module for managing quota
  *                              data via SQL-based tables
  *
- * Copyright (c) 2002-2011 TJ Saunders
+ * Copyright (c) 2002-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_quotatab_sql.c,v 1.16 2011/05/26 23:08:08 castaglia Exp $
+ * $Id: mod_quotatab_sql.c,v 1.17 2013/01/21 19:59:59 castaglia Exp $
  */
 
 #include "mod_quotatab.h"
@@ -255,7 +255,7 @@ static unsigned char sqltab_lookup(quota_table_t *sqltab, void *ptr,
      *  files_{in,out,xfer}_used
      */
 
-    if (sql_data->nelts != 8) {
+    if (sql_data->nelts < 8) {
       if (sql_data->nelts > 0) {
         quotatab_log("error: SQLNamedQuery '%s' returned incorrect number of "
           "values (%d)", select_query, sql_data->nelts);
@@ -338,7 +338,7 @@ static unsigned char sqltab_lookup(quota_table_t *sqltab, void *ptr,
      *  files_{in,out,xfer}_avail
      */
 
-    if (sql_data->nelts != 10) {
+    if (sql_data->nelts < 10) {
       if (sql_data->nelts > 0) {
         quotatab_log("error: SQLNamedQuery '%s' returned incorrect number of "
           "values (%d)", select_query, sql_data->nelts);

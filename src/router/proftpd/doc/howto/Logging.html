@@ -1,15 +1,15 @@
-<!-- $Id: Logging.html,v 1.4 2010/04/19 20:10:35 castaglia Exp $ -->
+<!-- $Id: Logging.html,v 1.13 2013/10/09 16:46:37 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Logging.html,v $ -->
 
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Logging</title>
+<title>ProFTPD Logging</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b><i>Logging</i></b></h2></center>
+<center><h2><b><i>ProFTPD Logging</i></b></h2></center>
 <hr>
 
 <p>
@@ -17,10 +17,11 @@
 Logging the activity of the server is an integral part of effective server
 administration.  ProFTPD provides several different and flexing logging
 mechanisms.  When examining the different logging mechanisms, have in
-mind the intended use of the logged data, the volume, any post-processing
-that may need to be done, etc.  Log files are more useful when they contain a
-complete record of server activity. It is often easier to simply post-process
-the log files to remove requests that you do not want to consider.  
+mind the intended use of the logged data, the volume of data being logged,
+any post-processing that may need to be done, <i>etc</i>.  Log files are more
+useful when they contain a complete record of server activity. It is often
+easier to simply post-process the log files to remove requests that you do not
+want to consider.  
 
 <p>
 <b>Security Warning</b><br>
@@ -42,7 +43,7 @@ directories; there are no exceptions.  (If you have configured log files in
 your <code>proftpd.conf</code> that are not appearing, check for the warnings
 about world-writable directories.)  The <code>proftpd</code> process will also,
 by default, log a warning if the file given is a symlink; this symlink check
-can be configured via the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_AllowLogSymlinks.html"><code>AllowLogSymlinks</code></a> directive.
+can be configured via the <a href="../modules/mod_log.html#AllowLogSymlinks"><code>AllowLogSymlinks</code></a> directive.
 
 <p>
 In addition, log files may contain information supplied directly by the client,
@@ -51,7 +52,7 @@ control-characters in the log files, so care must be taken in dealing with
 raw logs.
 
 <p><a name="Syslog"></a>
-<b><code>syslog</code></b><br>
+<b>Unix <code>syslog</code> Logging</b><br>
 By default, <code>proftpd</code> will log via <code>syslog(3)</code>, using
 the <code>daemon</code> facility (<code>auth</code> for some logging),
 at various levels: <code>err</code>, <code>notice</code>, <code>warn</code>,
@@ -59,31 +60,84 @@ at various levels: <code>err</code>, <code>notice</code>, <code>warn</code>,
 level).  The location of the server's log files in this case is determined by
 your <code>/etc/syslog.conf</code> configuration.
 
+<p>
+You can fine-tune your <code>proftpd</code>'s syslog-based logging via the
+<a href="../modules/mod_core.html#SyslogFacility"><code>SyslogFacility</code></a> and <a href="../modules/mod_core.html#SyslogLevel"><code>SyslogLevel</code></a> directives.  See the <a href="LogLevels.html">log level</a> documentation for
+more details on these settings.
+
 <p><a name="LogFiles"></a>
-<b><code>Log Files</code></b><br>
+<b>Log Files</b><br>
 There are three main types of logs that a <code>proftpd</code> daemon can
-generate: <code>TransferLog</code>s, a <code>SystemLog</code>, and
-<code>ExtendedLog</code>s.
+generate: <code>TransferLog</code>, <code>SystemLog</code>, and
+<code>ExtendedLog</code>.
 
 <p><a name="TransferLog"></a>
-A <a href="http://www.proftpd.org/docs/directives/linked/config_ref_TransferLog.html"><code>TransferLog</code></a> is the most common log kept, recording file
-transfers.  Its format is described in the <code>xferlog(5)</code> man page,
-also available <a href="http://www.castaglia.org/proftpd/doc/xferlog.html">here</a>
+A <a href="../modules/mod_core.html#TransferLog"><code>TransferLog</code></a>
+is the most common log kept, recording file transfers.  Its format is described
+in the <code>xferlog(5)</code> man page,
+also available <a href="http://www.castaglia.org/proftpd/doc/xferlog.html">here</a>.
 
-<p><a name="SystemLog"</a>
-If the site administrator wants to have <code>proftpd</code> log its
-messages to a file rather than going through <code>syslogd</code>, the
-<a href="http://www.proftpd.org/docs/directives/linked/config_ref_SystemLog.html"><code>SystemLog</code></a> configuration directive is the one to use.  There
-is only one such file kept for the entire daemon.  See the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_ServerLog.html"><code>ServerLog</code></a> directive for keeping a similar log on a per-vhost basis.
+<p><a name="SystemLog"></a>
+If the site administrator wants to have <code>proftpd</code> log its messages
+to a file rather than going through <code>syslogd</code>, the
+<a href="../modules/mod_log.html#SystemLog"><code>SystemLog</code></a>
+configuration directive is the one to use.  There is only one such file kept
+for the entire daemon.  See the
+<a href="../modules/mod_log.html#ServerLog"><code>ServerLog</code></a>
+directive for keeping a similar log on a per-vhost basis.  Note that the
+<a href="../modules/mod_core.html#DebugLevel"><code>DebugLevel</code></a>
+directive only applies to <code>SystemLog</code> files; it does not materially
+affect the syslog-based logging messages.
 
 <p><a name="ExtendedLog"></a>
-The <a href="http://www.proftpd.org/docs/directives/linked/config_ref_ExtendedLog.html">ExtendedLog</a> directive is used to create log files of a very
-flexible and configurable format, and to have granular control over what is
-logged, and when.  The format of an <code>ExtendedLog</code> is described
-using the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_LogFormat.html">LogFormat</a> directive.  Multiple <code>ExtendedLogs</code> can
-be configured, each with a different format.
+The <a href="../modules/mod_log.html#ExtendedLog"><code>ExtendedLog</code></a>
+directive is used to create log files of a very flexible and configurable
+format, and to have granular control over what is logged, and when.  The format
+of an <code>ExtendedLog</code> is described using the
+<a href="../modules/mod_log.html#LogFormat">LogFormat</a> directive.
+Multiple <code>ExtendedLogs</code> can be configured, each with a different
+<code>LogFormat</code>.
 
 <!-- Add note/chunk about FTP response codes, from RFC959, for ExtendedLog? -->
+
+<p><a name="SyslogVSFileLog"></a>
+<b>Use of syslog versus file logging</b><br>
+Most sites will choose to have <code>proftpd</code> log via syslog (which is
+the default) or to a file (via the <code>SystemLog</code> directive).  In
+either case, there is the question of logging <i>verbosity</i>, <i>i.e.</i>
+which messages to log.  This verbosity is determined by the
+<a href="../modules/mod_core.html#SyslogLevel"><code>SyslogLevel</code></a>
+directive.  ProFTPD will log everything by default, meaning that the default
+<code>SyslogLevel</code> is effectively <code>debug</code>.  If, however, you
+have your <code>proftpd</code> configured to log via syslog, then you
+<i>should</i> also check your <code>/etc/syslog.conf</code> file, to see what
+additional filtering of log messages is being applied by syslog.  For example,
+if <code>/etc/syslog.conf</code> contained something like:
+<pre>
+  # Log anything (except mail) of level info or higher.
+  *.info;mail.none;authpriv.none;cron.none                /var/log/messages
+</pre>
+then ProFTPD's log messages below the <code>info</code> level would be filtered
+out <b>by syslog</b>.  When you are using syslog logging, the
+<code>SyslogLevel</code> configuration directive applies only to the proftpd
+logging, and does not control the additional syslog filtering.
+
+<p>
+For finer-grained control of the <code>debug</code> level log messages, ProFTPD
+internally implements different levels for its <code>debug</code> log messages.
+Currently ProFTPD has level 1 through level 10 <code>debug</code> messages.
+The <a href="../modules/mod_core.html#DebugLevel"><code>DebugLevel</code></a>
+directive is used control the verbosity/filtering of these messages.  Since
+these different debug levels are purely a ProFTPD convention, the
+<code>DebugLevel</code> directive has no effect on syslog logging.  Also, if
+your <code>SyslogLevel</code> configuration uses a level higher than
+<code>debug</code>, then the <code>DebugLevel</code> configuration will have
+no effect &mdash; your <code>debug</code> level messages are already filtered
+out by the <code>SyslogLevel</code> filtering.
+
+<p>
+The last point to mention is that the
+<a href="../modules/mod_core.html#SyslogFacility"><code>SyslogFacility</code></a> directive only applies to syslog logging; it has no effect on file logging.
 
 <p><a name="LogAnalysis"></a>
 <b>Log Analysis</b><br>
@@ -187,6 +241,12 @@ configure option.
 The <code>mod_sql</code> module also enables some powerful and complex
 logging capabilities...
 
+<p><a name="TraceLogging"></a>
+<b>Trace Logging</b><br>
+ProFTPD also supports a much more verbose form of logging called "trace
+logging".  This form of logging is covered in greater detail
+<a href="Tracing.html">here</a>.
+
 <p><a name="PidFile"></a>
 <b>Pid File</b><br>
 On startup, <code>proftpd</code> saves the process ID of the parent daemon
@@ -223,8 +283,113 @@ tells proftpd to log that <code>LogFormat</code> via syslog at the "notice"
 syslog level.
 
 <p>
+<font color=red>Question</font>: I have <code>SystemLog</code> in my
+<code>proftpd.conf</code>, and when I use the <code>SyslogLevel</code> directive
+to try to filter the messages which <code>proftpd</code> logs to my
+<code>SystemLog</code>, it doesn't work.  Why not?<br>
+<font color=blue>Answer</font>: When ProFTPD is configured to log everything
+to a file via the <code>SystemLog</code> directive, it will do just that:
+log <i>everything</i>, without any filtering, regardless of any
+<code>SyslogLevel</code> directive.  <b>However</b>, this changed in
+ProFTPD 1.3.4rc1: in that release, the <code>SyslogLevel</code> directive was
+made to apply to file-based logging as well.
+
+<p>
+<font color=red>Question</font>: I configured my <code>ExtendedLog</code>
+directive (or <code>SystemLog</code>, or other logs) to point to a FIFO.
+The FIFO path exists.  But when I try to start <code>proftpd</code>, it
+fails to start with this error:
+<pre>
+  unable to open ExtendedLog '/path/to/extlog.fifo': No such device or address
+</pre>
+Shouldn't this work?<br>
+<font color=blue>Answer</font>: The "No such device or address" error occurs
+when you configure <code>proftpd</code> to log to a FIFO, <b>and</b> the
+FIFO reader process has not yet been started.  In times past,
+<code>proftpd</code> would wait indefinitely on startup, waiting for the FIFO
+reader process to start; now, <code>proftpd</code> tries to open the FIFO
+in a nonblocking mode, so that it can fail immediately if there is no process
+on the other end of the FIFO.
+
+<p>
+The "fix" is to make sure that any FIFO reader processes are started
+<i>before</i> starting <code>proftpd</code>.
+
+<p>
+<font color=red>Question</font>: How can I configure <code>proftpd</code> so
+that <b>nothing</b> is logged for certain clients/IP addresses?<br>
+<font color=blue>Answer</font>: Using a combination of <a href="Classes.html">classes</a> and the <a href="../contrib/mod_ifsession.html"><code>mod_ifsession</code></a> module, this can be done using a configuration like this:
+<pre>
+  &lt;Class invisible&gt;
+    From 1.2.3.4
+  &lt;/Class&gt;
+
+  &lt;IfClass invisible&gt;
+    # Disable all logging of these clients
+    SystemLog none
+    ExtendedLog /path/to/ext.log NONE
+    TransferLog none
+  &lt;/IfClass&gt;
+</pre>
+
+<p>
+<font color=red>Question</font>: How can I configure <code>proftpd</code> so
+that it does <em>no logging at all</em>?  I have a very small embedded system
+for development/testing, and so do not need or want the logging.<br>
+<font color=blue>Answer</font>: To do this, you will need to disable much
+of the builtin, default logging that <code>proftpd</code> does, <i>e.g.</i>:
+<pre>
+  # Discard the normal logging
+  SystemLog none
+
+  # Disable xferlog(5) logging
+  TransferLog none
+
+  # Disable logging to b/u/wtmp files
+  WtmpLog off
+</pre>
+In addition, you may need to go through your <code>proftpd.conf</code> file
+(as well as any <code>Include</code> config files), and remove all
+<code>ExtendedLog</code> and <code>TraceLog</code> directives.  Also remove
+any per-module <code><i>*</i>Log</code> directives like <code>BanLog</code>,
+<code>SFTPLog</code>, <code>SQLLogFile</code>, <code>TLSLog</code>, <i>etc</i>.
+
+<p>
+You might be tempted to symlink the log files configured to
+<code>/dev/null</code>, rather than changing the <code>proftpd.conf</code>.
+This approach can work, <b><i>if you also use the <code>AllowLogSymlinks</code> directive</i></b>, <i>i.e.</i>:
+<pre>
+  # Allow proftpd to write logs to symlinks; note that this is insecure,
+  # as the symlinks might be changed to point to other files such that
+  # proftpd will overwrite them.
+  AllowLogSymlinks on
+</pre>
+
+<p>
+<font color=red>Question</font>: I see:
+<pre>
+  wtmp /var/log/wtmp: No such file or directory
+</pre>
+in my logs.  What is <code>WtmpLog</code> logging?  The description in the
+documentation is quite vague.<br>
+<font color=blue>Answer</font>: The <code>wtmp</code> logging support is
+<b>not</b> specific to <code>proftpd</code>, and instead is a more general Unix
+facility; this is why the ProFTPD documentation does not cover it in great
+detail.  To learn more about <code>wtmp</code> (or any of its other
+incarnations: <code>wtmpx</code>, <code>utmp</code>, <code>utmpx</code>),
+please find their related man pages.
+
+<p>
+Now to make the "No such file or directory" log message go away, simply tell
+<code>proftpd</code> to stop trying to use <code>wtmp</code> logging by using:
+<pre>
+  WtmpLog off
+</pre>
+in your <code>proftpd.conf</code>.
+
+<p>
 <hr>
-Last Updated: <i>$Date: 2010/04/19 20:10:35 $</i><br>
+Last Updated: <i>$Date: 2013/10/09 16:46:37 $</i><br>
 <hr>
 
 </body>

@@ -86,6 +86,16 @@ my $TESTS = {
     test_class => [qw(bug forking mod_vroot)],
   },
 
+  exec_open_fds_bug3553 => {
+    order => ++$order,
+    test_class => [qw(bug forking os_linux)],
+  },
+
+  exec_on_event_as_user_bug3964 => {
+    order => ++$order,
+    test_class => [qw(forking rootprivs)],
+  },
+
 };
 
 sub new {
@@ -104,13 +114,14 @@ sub exec_on_connect {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -129,7 +140,7 @@ sub exec_on_connect {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $connect_file = File::Spec->rel2abs("$tmpdir/connect.txt");
 
@@ -174,6 +185,7 @@ sub exec_on_connect {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
+      $client->quit();
     };
 
     if ($@) {
@@ -198,23 +210,36 @@ sub exec_on_connect {
 
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
+  eval {
+    # MacOSX hack
+    if ($^O eq 'darwin') {
+      $connect_file = ('/private' . $connect_file);
+    }
+
+    if (open(my $fh, "< $connect_file")) {
+      my $line = <$fh>;
+      close($fh);
+
+      chomp($line);
+
+      my $expected = '127.0.0.1';
+
+      $self->assert($expected eq $line,
+        test_msg("Expected '$expected', got '$line'"));
+
+    } else {
+      die("Can't read $connect_file: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
   }
 
-  if (open(my $fh, "< $connect_file")) {
-    my $line = <$fh>;
-    close($fh);
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
 
-    chomp($line);
-
-    my $expected = '127.0.0.1';
-
-    $self->assert($expected eq $line,
-      test_msg("Expected '$expected', got '$line'"));
-
-  } else {
-    die("Can't read $connect_file: $!");
+    die($ex);
   }
 
   unlink($log_file);
@@ -228,13 +253,14 @@ sub exec_on_cmd {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -253,7 +279,7 @@ sub exec_on_cmd {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $cmd_file = File::Spec->rel2abs("$tmpdir/cmd.txt");
 
@@ -324,6 +350,9 @@ sub exec_on_cmd {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -353,13 +382,14 @@ sub exec_on_cmd_var_total_bytes_xfer {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -378,7 +408,7 @@ sub exec_on_cmd_var_total_bytes_xfer {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $cmd_file = File::Spec->rel2abs("$tmpdir/cmd.txt");
 
@@ -449,6 +479,9 @@ sub exec_on_cmd_var_total_bytes_xfer {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -478,13 +511,14 @@ sub exec_on_cmd_var_bytes_xfer {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -503,7 +537,7 @@ sub exec_on_cmd_var_bytes_xfer {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
   if (open(my $fh, "> $test_file")) {
@@ -598,6 +632,9 @@ sub exec_on_cmd_var_bytes_xfer {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -627,13 +664,14 @@ sub exec_on_exit {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -652,7 +690,7 @@ sub exec_on_exit {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $exit_file = File::Spec->rel2abs("$tmpdir/exit.txt");
 
@@ -723,6 +761,9 @@ sub exec_on_exit {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -752,13 +793,14 @@ sub exec_on_error {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -777,7 +819,7 @@ sub exec_on_error {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $cmd_file = File::Spec->rel2abs("$tmpdir/cmd.txt");
 
@@ -861,6 +903,9 @@ sub exec_on_error {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -915,13 +960,14 @@ sub exec_on_restart {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -940,7 +986,7 @@ sub exec_on_restart {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $restart_file = File::Spec->rel2abs("$tmpdir/restart.txt");
 
@@ -1009,13 +1055,14 @@ sub exec_opt_log_stdout {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -1034,7 +1081,7 @@ sub exec_opt_log_stdout {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $script = File::Spec->rel2abs("$tmpdir/exec.pl");
   if (open(my $fh, "> $script")) {
@@ -1121,6 +1168,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1160,13 +1210,14 @@ sub exec_opt_log_stderr {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -1185,7 +1236,7 @@ sub exec_opt_log_stderr {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $script = File::Spec->rel2abs("$tmpdir/exec.pl");
   if (open(my $fh, "> $script")) {
@@ -1272,6 +1323,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1311,13 +1365,14 @@ sub exec_opt_send_stdout {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -1336,7 +1391,7 @@ sub exec_opt_send_stdout {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $script = File::Spec->rel2abs("$tmpdir/exec.pl");
   if (open(my $fh, "> $script")) {
@@ -1436,6 +1491,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1450,13 +1508,14 @@ sub exec_opt_use_stdin {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -1475,7 +1534,7 @@ sub exec_opt_use_stdin {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $script = File::Spec->rel2abs("$tmpdir/exec.pl");
   if (open(my $fh, "> $script")) {
@@ -1518,7 +1577,7 @@ EOS
         ExecEngine => 'on',
         ExecLog => $log_file,
         ExecTimeout => 1,
-        ExecOnConnect => "$script 1 2 3 addr=%a",
+        ExecBeforeCommand => "PASS $script 1 2 3 addr=%a user=%U",
         ExecOptions => 'logStdout useStdin',
       },
 
@@ -1546,6 +1605,8 @@ EOS
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+      $client->quit();
     };
 
     if ($@) {
@@ -1571,29 +1632,10 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
-  }
-
-  if (open(my $fh, "< $log_file")) {
-    while (my $line = <$fh>) {
-      unless ($line =~ /stdout from '$script'/) {
-        next;
-      }
-
-      chomp($line);
-      close($fh);
-
-      $line =~ /stdout from '$script': '(.*?)'/;
-      my $stdout = $1;
-
-      my $expected = 'addr=127.0.0.1';
-
-      $self->assert($expected eq $stdout,
-        test_msg("Expected '$expected', got '$stdout'"));
-    }
-
-  } else {
-    die("Can't read $log_file: $!");
   }
 
   unlink($log_file);
@@ -1607,13 +1649,14 @@ sub exec_before_cmd_var_f_bug3432 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -1632,7 +1675,7 @@ sub exec_before_cmd_var_f_bug3432 {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $cmd_file = File::Spec->rel2abs("$tmpdir/cmd.txt");
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
@@ -1712,6 +1755,9 @@ sub exec_before_cmd_var_f_bug3432 {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1739,13 +1785,14 @@ sub exec_before_cmd_var_F_bug3432 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -1764,7 +1811,7 @@ sub exec_before_cmd_var_F_bug3432 {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $cmd_file = File::Spec->rel2abs("$tmpdir/cmd.txt");
   my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
@@ -1844,6 +1891,9 @@ sub exec_before_cmd_var_F_bug3432 {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1871,7 +1921,7 @@ sub exec_on_cmd_var_A_bug3479 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
@@ -1982,6 +2032,9 @@ sub exec_on_cmd_var_A_bug3479 {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1996,6 +2049,345 @@ sub exec_on_cmd_var_A_bug3479 {
 
   } else {
     die("Can't read $cmd_file: $!");
+  }
+
+  unlink($log_file);
+}
+
+sub exec_open_fds_bug3553 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/exec.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+  
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $script = File::Spec->rel2abs("$tmpdir/exec.pl");
+  if (open(my $fh, "> $script")) {
+    print $fh <<EOS;
+#!/usr/bin/env perl
+
+my \$pid = \$\$;
+
+# Read all of the open fds for this process, via procfs
+my \$proc_fds_dir = "/proc/\$pid/fd";
+my \$dirh;
+unless (opendir(\$dirh, \$proc_fds_dir)) {
+  print STDERR "Unable to read \$proc_fds_dir: \$!\\n";
+  exit 1;
+}
+
+while (my \$dent = readdir(\$dirh)) {
+  next if \$dent =~ /^\\./;
+  print STDOUT "FD: \$dent\\n";
+}
+closedir(\$dirh);
+exit 0;
+EOS
+    unless (close($fh)) {
+      die("Can't write $script: $!");
+    }
+
+    unless (chmod(0755, $script)) {
+      die("Can't set perms on $script to 0755: $!");
+    }
+
+  } else {
+    die("Can't open $script: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_exec.c' => {
+        ExecEngine => 'on',
+        ExecLog => $log_file,
+        ExecTimeout => 5,
+        ExecOnConnect => $script,
+        ExecOptions => 'logStdout',
+      },
+
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if (open(my $fh, "< $log_file")) {
+    my $expected = {
+      '0' => 1,
+      '1' => 1,
+      '2' => 1,
+      '3' => 1,
+    };
+
+    my $open_fds = {};
+
+    while (my $line = <$fh>) {
+      chomp($line);
+
+      if ($line =~ /FD:\s+(\d+)/) {
+        my $fd = $1;
+        $open_fds->{$fd} = 1;
+      }
+    }
+
+    close($fh);
+
+    foreach my $fd (keys(%$expected)) {
+      $self->assert(defined($open_fds->{$fd}),
+        test_msg("FD $fd not open as expected"));
+      delete($open_fds->{$fd});
+    }
+
+    # If we have any open FDs left, they are not on the expected list,
+    # and something has gone wrong.
+
+    my $nopen = scalar(keys(%$open_fds));
+    $self->assert($nopen == 0,
+      test_msg("Found $nopen unexpectedly open fds"));
+
+  } else {
+    die("Can't read $log_file: $!");
+  }
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub exec_on_event_as_user_bug3964 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/exec.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/exec.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/exec.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/exec.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/exec.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+  
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $chroot_file = File::Spec->rel2abs("$tmpdir/chroot.txt");
+
+  my $script_file = File::Spec->rel2abs("$tmpdir/chroot.sh");
+  if (open(my $fh, "> $script_file")) {
+    print $fh <<EOS;
+#!/bin/bash
+
+echo \$EUID > $chroot_file
+exit 0
+EOS
+    unless (close($fh)) {
+      die("Can't write $script_file: $!");
+    }
+
+  } else {
+    die("Can't open $script_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_exec.c' => {
+        ExecEngine => 'on',
+        ExecLog => $log_file,
+        ExecTimeout => 1,
+        ExecOnEvent => "core.chroot~ /bin/bash $script_file",
+      },
+
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  eval {
+    # MacOSX hack
+    if ($^O eq 'darwin') {
+      $chroot_file = ('/private' . $chroot_file);
+    }
+
+    if (open(my $fh, "< $chroot_file")) {
+      my $line = <$fh>;
+      close($fh);
+      chomp($line);
+
+      my $expected = $uid;
+
+      $self->assert($expected eq $line,
+        test_msg("Expected UID '$expected', got '$line'"));
+
+    } else {
+      die("Can't read $chroot_file: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
   }
 
   unlink($log_file);

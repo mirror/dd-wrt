@@ -31,7 +31,10 @@ TEST_API_DEPS=\
   $(top_srcdir)/src/stash.o \
   $(top_srcdir)/src/modules.o \
   $(top_srcdir)/src/cmd.o \
-  $(top_srcdir)/src/response.o
+  $(top_srcdir)/src/response.o \
+  $(top_srcdir)/src/fsio.o \
+  $(top_srcdir)/src/netio.o \
+  $(top_srcdir)/src/encode.o
 
 TEST_API_LIBS=-lcheck
 
@@ -57,6 +60,8 @@ TEST_API_OBJS=\
   api/modules.o \
   api/cmd.o \
   api/response.o \
+  api/fsio.o \
+  api/netio.o \
   api/stubs.o \
   api/tests.o
 
@@ -80,7 +85,24 @@ api-tests$(EXEEXT): $(TEST_API_OBJS) $(TEST_API_DEPS)
 running-tests:
 	perl tests.pl
 
-check: dummy api-tests$(EXEEXT) running-tests
+check-api: dummy api-tests$(EXEEXT)
+
+check-commands:
+	perl tests.pl --file-pattern '^t\/(commands\/|logins\.t)'
+
+check-configs:
+	perl tests.pl --file-pattern '^t\/config\/'
+
+check-logging:
+	perl tests.pl --file-pattern '^t\/logging\/'
+
+check-modules:
+	perl tests.pl --file-pattern '^t\/logging\/'
+
+check-utils:
+	perl tests.pl --file-pattern '^t\/utils\/'
+
+check: check-api running-tests
 
 clean:
 	$(LIBTOOL) --mode=clean $(RM) *.o api/*.o api-tests$(EXEEXT) api-tests.log

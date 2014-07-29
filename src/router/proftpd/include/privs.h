@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* $Id: privs.h,v 1.33 2011/05/23 20:35:35 castaglia Exp $
+/* $Id: privs.h,v 1.34 2012/01/25 07:20:42 castaglia Exp $
  */
 
 #ifndef PR_PRIVS_H
@@ -66,5 +66,8 @@ int pr_privs_root(const char *, int);
 int pr_privs_user(const char *, int);
 int pr_privs_relinquish(const char *, int);
 int pr_privs_revoke(const char *, int);
+
+/* For internal use only. */
+int init_privs(void);
 
 #endif /* PR_PRIVS_H */

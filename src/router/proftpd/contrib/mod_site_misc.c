@@ -22,7 +22,7 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: mod_site_misc.c,v 1.20 2011/05/26 23:14:01 castaglia Exp $
+ * $Id: mod_site_misc.c,v 1.21 2011/12/11 02:33:14 castaglia Exp $
  */
 
 #include "conf.h"
@@ -124,7 +124,7 @@ static int site_misc_create_path(pool *p, const char *path) {
     cmd = pr_cmd_alloc(sub_pool, 2, pstrdup(sub_pool, C_MKD),
       pstrdup(sub_pool, curr_path));
     cmd->arg = pstrdup(cmd->pool, curr_path);
-    cmd->class = CL_DIRS|CL_WRITE;
+    cmd->cmd_class = CL_DIRS|CL_WRITE;
 
     res = pr_cmd_dispatch_phase(cmd, PRE_CMD, 0);
     if (res < 0) {
@@ -218,7 +218,7 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
       cmd = pr_cmd_alloc(sub_pool, 2, pstrdup(sub_pool, C_DELE),
         pstrdup(sub_pool, file));
       cmd->arg = pstrdup(cmd->pool, file);
-      cmd->class = CL_WRITE;
+      cmd->cmd_class = CL_WRITE;
 
       res = pr_cmd_dispatch_phase(cmd, PRE_CMD, 0);
       if (res < 0) {
@@ -270,7 +270,7 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
   cmd = pr_cmd_alloc(sub_pool, 2, pstrdup(sub_pool, C_RMD),
     pstrdup(sub_pool, dir));
   cmd->arg = pstrdup(cmd->pool, dir);
-  cmd->class = CL_DIRS|CL_WRITE;
+  cmd->cmd_class = CL_DIRS|CL_WRITE;
 
   res = pr_cmd_dispatch_phase(cmd, PRE_CMD, 0);
   if (res < 0) {

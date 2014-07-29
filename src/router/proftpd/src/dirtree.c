@@ -25,7 +25,7 @@
  */
 
 /* Read configuration file(s), and manage server/configuration structures.
- * $Id: dirtree.c,v 1.260.2.2 2013/01/29 00:47:48 castaglia Exp $
+ * $Id: dirtree.c,v 1.292 2013/10/13 18:06:57 castaglia Exp $
  */
 
 #include "conf.h"
@@ -140,14 +140,16 @@ xaset_t *get_dir_ctxt(pool *p, char *dir_path) {
   char *full_path = dir_path;
 
   if (session.chroot_path) {
-    if (*dir_path != '/')
+    if (*dir_path != '/') {
       full_path = pdircat(p, session.chroot_path, session.cwd, dir_path, NULL);
 
-    else
+    } else {
       full_path = pdircat(p, session.chroot_path, dir_path, NULL);
+    }
 
-  } else if (*dir_path != '/')
+  } else if (*dir_path != '/') {
     full_path = pdircat(p, session.cwd, dir_path, NULL);
+  }
 
   c = dir_match_path(p, full_path);
 
@@ -306,15 +308,23 @@ unsigned char dir_hide_file(const char *path) {
   file_name = strrchr(dir_name, '/');
   if (file_name != NULL) {
 
-    /* Make sure handle paths like "/path". */
     if (file_name != dir_name) {
+      /* Handle paths like "/path". */
       *file_name = '\0';
+      file_name++;
 
     } else {
+      /* Handle "/". */
       dir_name = "/";
-    }
 
-    file_name++;
+      if (strlen(file_name) > 1) {
+        file_name++;
+
+      } else {
+        /* Handle "/". */
+        file_name = "/";
+      }
+    }
 
   } else {
     file_name = dir_name;
@@ -545,7 +555,7 @@ void kludge_enable_umask(void) {
 }
 
 /* Adds a config_rec to the specified set */
-config_rec *add_config_set(xaset_t **set, const char *name) {
+config_rec *pr_config_add_set(xaset_t **set, const char *name, int flags) {
   pool *conf_pool = NULL, *set_pool = NULL;
   config_rec *c, *parent = NULL;
 
@@ -591,14 +601,24 @@ config_rec *add_config_set(xaset_t **set, const char *name) {
     c->config_id = pr_config_set_id(c->name);
   }
 
-  xaset_insert_end(*set, (xasetmember_t *) c);
+  if (flags & PR_CONFIG_FL_INSERT_HEAD) {
+    xaset_insert(*set, (xasetmember_t *) c);
+    
+  } else {
+    xaset_insert_end(*set, (xasetmember_t *) c);
+  }
+
   return c;
+}
+
+config_rec *add_config_set(xaset_t **set, const char *name) {
+  return pr_config_add_set(set, name, 0);
 }
 
 /* Adds a config_rec to the given server.  If no server is specified, the
  * config_rec is added to the current "level".
  */
-config_rec *add_config(server_rec *s, const char *name) {
+config_rec *pr_config_add(server_rec *s, const char *name, int flags) {
   config_rec *parent = NULL, *c = NULL;
   pool *p = NULL;
   xaset_t **set = NULL;
@@ -621,7 +641,7 @@ config_rec *add_config(server_rec *s, const char *name) {
         s->conf->xas_list == NULL) {
 
       p = make_sub_pool(s->pool);
-      pr_pool_tag(p, "add_config() subpool");
+      pr_pool_tag(p, "pr_config_add() subpool");
 
     } else {
       p = ((config_rec *) s->conf->xas_list)->pool;
@@ -634,10 +654,14 @@ config_rec *add_config(server_rec *s, const char *name) {
     *set = xaset_create(p, NULL);
   }
 
-  c = add_config_set(set, name);
+  c = pr_config_add_set(set, name, flags);
   c->parent = parent;
 
   return c;
+}
+
+config_rec *add_config(server_rec *s, const char *name) {
+  return pr_config_add(s, name, 0);
 }
 
 /* Per-directory configuration */
@@ -667,8 +691,9 @@ static config_rec *recur_match_path(pool *p, xaset_t *s, char *path) {
       tmp_path = c->name;
 
       if (c->argv[1]) {
-        if (*(char *)(c->argv[1]) == '~')
+        if (*(char *)(c->argv[1]) == '~') {
           c->argv[1] = dir_canonical_path(c->pool, (char *) c->argv[1]);
+        }
 
         tmp_path = pdircat(p, (char *) c->argv[1], tmp_path, NULL);
       }
@@ -767,7 +792,10 @@ config_rec *dir_match_path(pool *p, char *path) {
   char *tmp = NULL;
   size_t tmplen;
 
-  if (!p || !path || !*path) {
+  if (p == NULL ||
+      path == NULL ||
+      *path == '\0') {
+    errno = EINVAL;
     return NULL;
   }
 
@@ -822,16 +850,31 @@ static int dir_check_op(pool *p, xaset_t *set, int op, const char *path,
     case OP_HIDE:
       c = find_config(set, CONF_PARAM, "HideUser", FALSE);
       while (c) {
-        unsigned char inverted;
-        uid_t hide_uid;
+        int inverted = FALSE;
+        const char *hide_user = NULL;
+        uid_t hide_uid = -1;
 
         pr_signals_handle();
 
-        hide_uid = *((uid_t *) c->argv[0]);
+        hide_user = c->argv[0];
         inverted = *((unsigned char *) c->argv[1]);
 
-        if (hide_uid == (uid_t) -1) {
+        if (strncmp(hide_user, "~", 2) == 0) {
           hide_uid = session.uid;
+
+        } else {
+          struct passwd *pw;
+
+          pw = pr_auth_getpwnam(p, hide_user);
+          if (pw == NULL) {
+            pr_log_debug(DEBUG1,
+              "HideUser '%s' is not a known/valid user, ignoring", hide_user);
+
+            c = find_config_next(c, c->next, CONF_PARAM, "HideUser", FALSE);
+            continue;
+          }
+
+          hide_uid = pw->pw_uid;
         }
 
         if (file_uid == hide_uid) {
@@ -858,13 +901,33 @@ static int dir_check_op(pool *p, xaset_t *set, int op, const char *path,
       if (res == TRUE) {
         c = find_config(set, CONF_PARAM, "HideGroup", FALSE);
         while (c) {
-          unsigned char inverted;
-          gid_t hide_gid;
+          int inverted = FALSE;
+          const char *hide_group = NULL;
+          gid_t hide_gid = -1;
 
           pr_signals_handle();
 
-          hide_gid = *((gid_t *) c->argv[0]);
-          inverted = *((unsigned char *) c->argv[1]);
+          hide_group = c->argv[0];
+          inverted = *((int *) c->argv[1]);
+
+          if (strncmp(hide_group, "~", 2) == 0) {
+            hide_gid = session.gid;
+
+          } else {
+            struct group *gr;
+
+            gr = pr_auth_getgrnam(p, hide_group);
+            if (gr == NULL) {
+              pr_log_debug(DEBUG1,
+                "HideGroup '%s' is not a known/valid group, ignoring",
+                hide_group);
+
+              c = find_config_next(c, c->next, CONF_PARAM, "HideUser", FALSE);
+              continue;
+            }
+
+            hide_gid = gr->gr_gid;
+          }
 
           if (hide_gid != (gid_t) -1) {
             if (file_gid == hide_gid) {
@@ -1050,8 +1113,14 @@ static int check_group_access(xaset_t *set, const char *name) {
 
 static int check_class_access(xaset_t *set, const char *name) {
   int res = 0;
-  config_rec *c = find_config(set, CONF_PARAM, name, FALSE);
+  config_rec *c;
 
+  /* If no class was found for this session, short-circuit the check. */
+  if (session.conn_class == NULL) {
+    return res;
+  }
+
+  c = find_config(set, CONF_PARAM, name, FALSE);
   while (c) {
     pr_signals_handle();
 
@@ -1059,8 +1128,9 @@ static int check_class_access(xaset_t *set, const char *name) {
     if (*((unsigned char *) c->argv[0]) == PR_EXPR_EVAL_REGEX) {
       pr_regex_t *pre = (pr_regex_t *) c->argv[1];
 
-      if (session.class &&
-          pr_regexp_exec(pre, session.class->cls_name, 0, NULL, 0, 0, 0) == 0) {
+      if (session.conn_class &&
+          pr_regexp_exec(pre, session.conn_class->cls_name, 0, NULL, 0,
+            0, 0) == 0) {
         res = TRUE;
         break;
       }
@@ -1097,11 +1167,20 @@ static int check_filter_access(xaset_t *set, const char *name, cmd_rec *cmd) {
 
   c = find_config(set, CONF_PARAM, name, FALSE);
   while (c) {
+    int matched = 0;
     pr_regex_t *pre = (pr_regex_t *) c->argv[0];
 
     pr_signals_handle();
 
-    if (pr_regexp_exec(pre, cmd->arg, 0, NULL, 0, 0, 0) == 0) {
+    pr_trace_msg("filter", 8,
+      "comparing %s argument '%s' against %s pattern '%s'", cmd->argv[0],
+      cmd->arg, name, pr_regexp_get_pattern(pre));
+    matched = pr_regexp_exec(pre, cmd->arg, 0, NULL, 0, 0, 0);
+    pr_trace_msg("filter", 8,
+      "comparing %s argument '%s' against %s pattern '%s' returned %d",
+      cmd->argv[0], cmd->arg, name, pr_regexp_get_pattern(pre), matched);
+
+    if (matched == 0) {
       res = TRUE;
       break;
     }
@@ -1109,6 +1188,9 @@ static int check_filter_access(xaset_t *set, const char *name, cmd_rec *cmd) {
     c = find_config_next(c, c->next, CONF_PARAM, name, FALSE);
   }
 
+  pr_trace_msg("filter", 8,
+    "comparing %s argument '%s' against %s patterns returned %d", cmd->argv[0],
+    cmd->arg, name, res);
   return res;
 #else
   return 0;
@@ -1151,8 +1233,8 @@ static int check_ip_negative(const config_rec *c) {
         /* -1 signifies a NONE match, which isn't valid for negative
          * conditions.
          */
-        pr_log_pri(PR_LOG_ERR, "ooops, it looks like !NONE was used in an ACL "
-          "somehow.");
+        pr_log_pri(PR_LOG_NOTICE,
+          "ooops, it looks like !NONE was used in an ACL somehow");
         return FALSE;
 
       default:
@@ -1260,7 +1342,7 @@ static int check_limit_allow(config_rec *c, cmd_rec *cmd) {
     return 1;
   }
 
-  if (session.class &&
+  if (session.conn_class != NULL &&
       check_class_access(c->subset, "AllowClass")) {
     return 1;
   }
@@ -1300,7 +1382,7 @@ static int check_limit_deny(config_rec *c, cmd_rec *cmd) {
     return 1;
   }
 
-  if (session.class &&
+  if (session.conn_class != NULL &&
       check_class_access(c->subset, "DenyClass")) {
     return 1;
   }
@@ -1691,7 +1773,7 @@ void build_dyn_config(pool *p, const char *_path, struct stat *stp,
 
       pr_trace_msg("ftpaccess", 6, "adding config for '%s'", ftpaccess_name);
 
-      d = add_config_set(set, ftpaccess_name);
+      d = pr_config_add_set(set, ftpaccess_name, 0);
       d->config_type = CONF_DIR;
       d->argc = 1;
       d->argv = pcalloc(d->pool, 2 * sizeof (void *));
@@ -1706,7 +1788,7 @@ void build_dyn_config(pool *p, const char *_path, struct stat *stp,
 
         pr_trace_msg("ftpaccess", 6, "adding config for '%s'", ftpaccess_name);
 
-        newd = add_config_set(set, ftpaccess_name);
+        newd = pr_config_add_set(set, ftpaccess_name, 0);
         newd->config_type = CONF_DIR;
         newd->argc = 1;
         newd->argv = pcalloc(newd->pool, 2 * sizeof(void *));
@@ -1936,7 +2018,7 @@ int dir_check_full(pool *pp, cmd_rec *cmd, const char *group, const char *path,
       }
 
     } else {
-        session.fsgid = session.gid;
+      session.fsgid = session.gid;
     }
   }
 
@@ -2179,16 +2261,17 @@ static void reparent_all(config_rec *newparent, xaset_t *set) {
 /* Recursively find the most appropriate place to move a CONF_DIR
  * directive to.
  */
-
-static config_rec *_find_best_dir(xaset_t *set, char *path, size_t *matchlen) {
+static config_rec *find_best_dir(xaset_t *set, char *path, size_t *matchlen) {
   config_rec *c, *res = NULL, *rres;
   size_t len, pathlen, imatchlen, tmatchlen;
 
   *matchlen = 0;
 
-  if (!set ||
-      !set->xas_list)
+  if (set == NULL ||
+      set->xas_list == NULL) {
+    errno = EINVAL;
     return NULL;
+  }
 
   pathlen = strlen(path);
 
@@ -2202,19 +2285,21 @@ static config_rec *_find_best_dir(xaset_t *set, char *path, size_t *matchlen) {
        * doing direct pointer/address comparisons is valid.  If ever this
        * assumption is broken, we will need to revert back to a more
        * costly (especially when there are many <Directory> config sections)
-       * use of strcmp().
+       * use of strcmp(3).
        */
-      if (c->name == path)
+      if (c->name == path) {
         continue;
+      }
 
       len = strlen(c->name);
+
+      /* Do NOT change the zero here to a one; the expression IS correct. */
       while (len > 0 &&
              (*(c->name+len-1) == '*' || *(c->name+len-1) == '/')) {
         len--;
       }
 
-      /*
-       * Just a partial match on the pathname does not mean that the longer
+      /* Just a partial match on the pathname does not mean that the longer
        * path is the subdirectory of the other -- they might just be sharing
        * the last path component!
        * /var/www/.1
@@ -2223,14 +2308,23 @@ static config_rec *_find_best_dir(xaset_t *set, char *path, size_t *matchlen) {
        * /var/www/.1
        * /var/www/.1/images
        *            ^ -- /, is subdir
+       *
+       * And then there are glob considerations, e.g.:
+       *
+       *   /var/www/<glob>/dir2
+       *   /var/www/dir1/dir2
+       *
+       * In these cases, we need to make sure that the glob path appears
+       * BEFORE the exact path.  Right?
        */
       if (pathlen > len &&
-          path[len] != '/')
-          continue;
+          path[len] != '/') {
+        continue;
+      }
 
       if (len < pathlen &&
           strncmp(c->name, path, len) == 0) {
-        rres = _find_best_dir(c->subset ,path, &imatchlen);
+        rres = find_best_dir(c->subset ,path, &imatchlen);
         tmatchlen = _strmatch(path, c->name);
         if (!rres &&
             tmatchlen > *matchlen) {
@@ -2257,11 +2351,17 @@ static void reorder_dirs(xaset_t *set, int flags) {
   int defer = 0;
   size_t tmp;
 
-  if (!set || !set->xas_list)
+  if (set == NULL ||
+      set->xas_list == NULL) {
     return;
+  }
 
-  if (!(flags & CF_DEFER))
+  /* Ignore the CF_SILENT flag for purposes of reordering. */
+  flags &= ~CF_SILENT;
+
+  if (!(flags & CF_DEFER)) {
     defer = 1;
+  }
 
   for (c = (config_rec *) set->xas_list; c; c = cnext) {
     cnext = c->next;
@@ -2288,7 +2388,7 @@ static void reorder_dirs(xaset_t *set, int flags) {
         xaset_remove(c->parent->subset, (xasetmember_t *) c);
 
       } else {
-        newparent = _find_best_dir(set, c->name, &tmp);
+        newparent = find_best_dir(set, c->name, &tmp);
         if (newparent) {
           if (!newparent->subset)
             newparent->subset = xaset_create(newparent->pool, NULL);
@@ -2327,13 +2427,16 @@ void pr_config_dump(void (*dumpf)(const char *, ...), xaset_t *s,
     char *indent) {
   config_rec *c = NULL;
 
-  if (!s)
+  if (s == NULL) {
     return;
+  }
 
-  if (!indent)
+  if (indent == NULL) {
     indent = "";
+  }
 
   for (c = (config_rec *) s->xas_list; c; c = c->next) {
+    pr_signals_handle();
 
     /* Don't display directives whose name starts with an underscore. */
     if (c->name != NULL &&
@@ -2351,20 +2454,26 @@ void pr_config_dump(void (*dumpf)(const char *, ...), xaset_t *s,
 void pr_dirs_dump(void (*dumpf)(const char *, ...), xaset_t *s, char *indent) {
   config_rec *c;
 
-  if (!s)
+  if (s == NULL) {
     return;
+  }
 
-  if (!indent)
+  if (indent == NULL) {
     indent = " ";
+  }
 
   for (c = (config_rec *) s->xas_list; c; c = c->next) {
-    if (c->config_type != CONF_DIR)
+    pr_signals_handle();
+
+    if (c->config_type != CONF_DIR) {
       continue;
+    }
 
     dumpf("%s<Directory %s>", indent, c->name);
 
-    if (c->subset)
+    if (c->subset) {
       pr_dirs_dump(dumpf, c->subset, pstrcat(c->pool, indent, " ", NULL));
+    }
   }
 
   return;
@@ -2505,10 +2614,11 @@ static config_rec *copy_config_from(const config_rec *src, config_rec *dst) {
   /* If the destination parent config_rec doesn't already have a subset
    * container, allocate one.
    */
-  if (dst->subset == NULL)
+  if (dst->subset == NULL) {
     dst->subset = xaset_create(dst->pool, NULL);
+  }
 
-  c = add_config_set(&dst->subset, src->name);
+  c = pr_config_add_set(&dst->subset, src->name, 0);
   c->config_type = src->config_type;
   c->flags = src->flags;
   c->config_id = src->config_id;
@@ -2645,27 +2755,49 @@ void resolve_anonymous_dirs(xaset_t *clist) {
 void resolve_deferred_dirs(server_rec *s) {
   config_rec *c;
 
-  if (!s ||
-      !s->conf)
+  if (s == NULL ||
+      s->conf == NULL) {
     return;
+  }
 
   for (c = (config_rec *) s->conf->xas_list; c; c = c->next) {
     if (c->config_type == CONF_DIR &&
         (c->flags & CF_DEFER)) {
-      char *realdir;
+      char *interp_dir = NULL, *real_dir = NULL, *orig_name = NULL;
+      const char *trace_channel = "directory";
+
+      if (pr_trace_get_level(trace_channel) >= 11) {
+        orig_name = pstrdup(c->pool, c->name);
+      }
 
       /* Check for any expandable variables. */
       c->name = path_subst_uservar(c->pool, &c->name);
 
-      realdir = dir_best_path(c->pool, c->name);
-      if (realdir) {
-        c->name = realdir;
+      /* Handle any '~' interpolation. */
+      interp_dir = dir_interpolate(c->pool, c->name);
+      if (interp_dir == NULL) {
+        /* This can happen when the '~' is just that, and does not refer
+         * to any known user.
+         */
+        interp_dir = c->name;
+      }
+
+      real_dir = dir_best_path(c->pool, interp_dir);
+      if (real_dir) {
+        c->name = real_dir;
 
       } else {
-        realdir = dir_canonical_path(c->pool, c->name);
-        if (realdir)
-          c->name = realdir;
+        real_dir = dir_canonical_path(c->pool, interp_dir);
+        if (real_dir) {
+          c->name = real_dir;
+        }
       }
+
+      pr_trace_msg(trace_channel, 11,
+        "resolved <Directory %s> to <Directory %s>", orig_name, c->name);
+
+      /* Clear the CF_DEFER flag. */
+      c->flags &= ~CF_DEFER;
     }
   }
 }
@@ -2679,7 +2811,7 @@ static void copy_recur(xaset_t **set, pool *p, config_rec *c,
   if (!*set)
     *set = xaset_create(p, NULL);
 
-  newconf = add_config_set(set, c->name);
+  newconf = pr_config_add_set(set, c->name, 0);
   newconf->config_type = c->config_type;
   newconf->flags = c->flags;
   newconf->parent = new_parent;
@@ -2752,10 +2884,11 @@ static void fixup_globals(xaset_t *list) {
 }
 
 void fixup_dirs(server_rec *s, int flags) {
-  if (!s)
+  if (s == NULL) {
     return;
+  }
 
-  if (!s->conf) {
+  if (s->conf == NULL) {
     if (!(flags & CF_SILENT)) {
       pr_log_debug(DEBUG5, "%s", "");
       pr_log_debug(DEBUG5, "Config for %s:", s->ServerName);
@@ -2778,24 +2911,29 @@ void fixup_dirs(server_rec *s, int flags) {
   return;
 }
 
-config_rec *find_config_next(config_rec *prev, config_rec *c, int type,
-    const char *name, int recurse) {
+config_rec *find_config_next2(config_rec *prev, config_rec *c, int type,
+    const char *name, int recurse, unsigned long flags) {
   config_rec *top = c;
   unsigned int cid = 0;
+  size_t namelen = 0;
 
   /* We do two searches (if recursing) so that we find the "deepest"
    * level first.
    */
 
-  if (!c &&
-      !prev)
+  if (c == NULL &&
+      prev == NULL) {
     return NULL;
+  }
 
-  if (!prev)
+  if (prev == NULL) {
     prev = top;
+  }
 
-  if (name)
+  if (name != NULL) {
     cid = pr_config_get_id(name);
+    namelen = strlen(name);
+  }
 
   if (recurse) {
     do {
@@ -2811,7 +2949,33 @@ config_rec *find_config_next(config_rec *prev, config_rec *c, int type,
           for (subc = (config_rec *) c->subset->xas_list;
                subc;
                subc = subc->next) {
-            res = find_config_next(NULL, subc, type, name, recurse + 1);
+            pr_signals_handle();
+
+            if (subc->config_type == CONF_ANON &&
+                (flags & PR_CONFIG_FIND_FL_SKIP_ANON)) {
+              /* Skip <Anonymous> config_rec */
+              continue;
+            }
+
+            if (subc->config_type == CONF_DIR &&
+                (flags & PR_CONFIG_FIND_FL_SKIP_DIR)) {
+              /* Skip <Directory> config_rec */
+              continue;
+            }
+
+            if (subc->config_type == CONF_LIMIT &&
+                (flags & PR_CONFIG_FIND_FL_SKIP_LIMIT)) {
+              /* Skip <Limit> config_rec */
+              continue;
+            }
+
+            if (subc->config_type == CONF_DYNDIR &&
+                (flags & PR_CONFIG_FIND_FL_SKIP_DYNDIR)) {
+              /* Skip .ftpaccess config_rec */
+              continue;
+            }
+
+            res = find_config_next2(NULL, subc, type, name, recurse + 1, flags);
             if (res)
               return res;
           }
@@ -2830,16 +2994,18 @@ config_rec *find_config_next(config_rec *prev, config_rec *c, int type,
         if (type == -1 ||
             type == c->config_type) {
 
-          if (!name)
+          if (name == NULL) {
             return c;
+          }
 
           if (cid != 0 &&
               cid == c->config_id) {
             return c;
           }
 
-          if (strcmp(name, c->name) == 0)
+          if (strncmp(name, c->name, namelen + 1) == 0) {
             return c;
+          }
         }
       }
 
@@ -2861,21 +3027,27 @@ config_rec *find_config_next(config_rec *prev, config_rec *c, int type,
       if (type == -1 ||
           type == c->config_type) {
 
-        if (!name)
+        if (name == NULL) {
           return c;
+        }
 
         if (cid != 0 &&
             cid == c->config_id) {
           return c;
         }
 
-        if (strcmp(name, c->name) == 0)
+        if (strncmp(name, c->name, namelen + 1) == 0)
           return c;
       }
     }
   }
 
   return NULL;
+}
+
+config_rec *find_config_next(config_rec *prev, config_rec *c, int type,
+    const char *name, int recurse) {
+  return find_config_next2(prev, c, type, name, recurse, 0UL);
 }
 
 void find_config_set_top(config_rec *c) {
@@ -2888,16 +3060,22 @@ void find_config_set_top(config_rec *c) {
   }
 }
 
+config_rec *find_config2(xaset_t *set, int type, const char *name,
+  int recurse, unsigned long flags) {
 
-config_rec *find_config(xaset_t *set, int type, const char *name, int recurse) {
-  if (!set ||
-      !set->xas_list)
+  if (set == NULL ||
+      set->xas_list == NULL) {
     return NULL;
+  }
 
   find_config_set_top((config_rec *) set->xas_list);
 
-  return find_config_next(NULL, (config_rec *) set->xas_list, type, name,
-    recurse);
+  return find_config_next2(NULL, (config_rec *) set->xas_list, type, name,
+    recurse, flags);
+}
+
+config_rec *find_config(xaset_t *set, int type, const char *name, int recurse) {
+  return find_config2(set, type, name, recurse, 0UL);
 }
 
 void *get_param_ptr(xaset_t *set, const char *name, int recurse) {
@@ -2984,7 +3162,7 @@ int remove_config(xaset_t *set, const char *name, int recurse) {
 
 config_rec *add_config_param_set(xaset_t **set, const char *name,
     int num, ...) {
-  config_rec *c = add_config_set(set, name);
+  config_rec *c = pr_config_add_set(set, name, 0);
   void **argv;
   va_list ap;
 
@@ -3006,7 +3184,7 @@ config_rec *add_config_param_set(xaset_t **set, const char *name,
 }
 
 config_rec *add_config_param_str(const char *name, int num, ...) {
-  config_rec *c = add_config(NULL, name);
+  config_rec *c = pr_config_add(NULL, name, 0);
   char *arg = NULL;
   void **argv = NULL;
   va_list ap;
@@ -3035,7 +3213,7 @@ config_rec *add_config_param_str(const char *name, int num, ...) {
 
 config_rec *pr_conf_add_server_config_param_str(server_rec *s, const char *name,
     int num, ...) {
-  config_rec *c = add_config(s, name);
+  config_rec *c = pr_config_add(s, name, 0);
   char *arg = NULL;
   void **argv = NULL;
   va_list ap;
@@ -3072,7 +3250,7 @@ config_rec *add_config_param(const char *name, int num, ...) {
     return NULL;
   }
 
-  c = add_config(NULL, name);
+  c = pr_config_add(NULL, name, 0);
   if (c) {
     c->config_type = CONF_PARAM;
     c->argc = num;
@@ -3120,7 +3298,7 @@ int parse_config_path(pool *p, const char *path) {
       *tmp++ = '\0';
 
       if (pr_str_is_fnmatch(dup_path)) {
-        pr_log_pri(PR_LOG_ERR, "error: wildcard patterns not allowed in "
+        pr_log_pri(PR_LOG_WARNING, "error: wildcard patterns not allowed in "
           "configuration directory name '%s'", dup_path);
         errno = EINVAL;
         return -1;
@@ -3130,15 +3308,16 @@ int parse_config_path(pool *p, const char *path) {
       pr_fsio_lstat(dup_path, &st);
 
       if (S_ISLNK(st.st_mode) || !S_ISDIR(st.st_mode)) {
-        pr_log_pri(PR_LOG_ERR, "error: cannot read configuration path '%s'",
+        pr_log_pri(PR_LOG_WARNING,
+          "error: cannot read configuration path '%s': Not a directory",
           dup_path);
         errno = EINVAL;
         return -1;
       }
 
       if (!pr_str_is_fnmatch(tmp)) {
-        pr_log_pri(PR_LOG_ERR, "error: wildcard pattern required for file '%s'",
-          tmp);
+        pr_log_pri(PR_LOG_WARNING,
+          "error: wildcard pattern required for file '%s'", tmp);
         errno = EINVAL;
         return -1;
       }
@@ -3148,8 +3327,8 @@ int parse_config_path(pool *p, const char *path) {
       dup_path);
 
     dirh = pr_fsio_opendir(dup_path);
-    if (!dirh) {
-      pr_log_pri(PR_LOG_ERR,
+    if (dirh == NULL) {
+      pr_log_pri(PR_LOG_WARNING,
         "error: unable to open configuration directory '%s': %s", dup_path,
         strerror(errno));
       errno = EINVAL;
@@ -3176,6 +3355,7 @@ int parse_config_path(pool *p, const char *path) {
         config_filename_cmp);
 
       for (i = 0; i < file_list->nelts; i++) {
+        int res, xerrno;
         char *file;
 
         file = ((char **) file_list->elts)[i];
@@ -3186,8 +3366,15 @@ int parse_config_path(pool *p, const char *path) {
          * we have root privs.  See Bug#3855.
          */
         PRIVS_ROOT
-        pr_parser_parse_file(p, file, NULL, 0);
+        res = pr_parser_parse_file(p, file, NULL, 0);
+        xerrno = errno;
         PRIVS_RELINQUISH
+
+        if (res < 0) {
+          pr_log_pri(PR_LOG_WARNING,
+            "error: unable to open parse file '%s': %s", file,
+            strerror(xerrno));
+        }
       }
     }
 
@@ -3215,11 +3402,10 @@ int fixup_servers(xaset_t *list) {
     unsigned char *default_server = NULL;
 
     next_s = s->next;
-    if (!s->ServerAddress) {
+    if (s->ServerAddress == NULL) {
       array_header *addrs = NULL;
 
       s->ServerAddress = pr_netaddr_get_localaddr_str(s->pool);
-
       s->addr = pr_netaddr_get_addr(s->pool, s->ServerAddress, &addrs);
      
       if (addrs) {
@@ -3249,8 +3435,9 @@ int fixup_servers(xaset_t *list) {
         }
       }
  
-    } else 
+    } else {
       s->addr = pr_netaddr_get_addr(s->pool, s->ServerAddress, NULL);
+    }
 
     if (s->addr == NULL) {
       pr_log_pri(PR_LOG_WARNING,
@@ -3262,27 +3449,32 @@ int fixup_servers(xaset_t *list) {
 
       xaset_remove(list, (xasetmember_t *) s);
       destroy_pool(s->pool);
+      s->pool = NULL;
       continue;
     }
 
     s->ServerFQDN = pr_netaddr_get_dnsstr(s->addr);
 
-    if (!s->ServerFQDN)
+    if (s->ServerFQDN == NULL) {
       s->ServerFQDN = s->ServerAddress;
+    }
 
-    if (!s->ServerAdmin)
+    if (s->ServerAdmin == NULL) {
       s->ServerAdmin = pstrcat(s->pool, "root@", s->ServerFQDN, NULL);
+    }
 
-    if (!s->ServerName) {
+    if (s->ServerName == NULL) {
       server_rec *m = (server_rec *) list->xas_list;
       s->ServerName = pstrdup(s->pool, m->ServerName);
     }
 
-    if (!s->tcp_rcvbuf_len)
+    if (s->tcp_rcvbuf_len == 0) {
       s->tcp_rcvbuf_len = tcp_rcvbufsz;
+    }
 
-    if (!s->tcp_sndbuf_len)
+    if (s->tcp_sndbuf_len == 0) {
       s->tcp_sndbuf_len = tcp_sndbufsz;
+    }
 
     c = find_config(s->conf, CONF_PARAM, "MasqueradeAddress", FALSE);
     if (c != NULL) {
@@ -3299,7 +3491,7 @@ int fixup_servers(xaset_t *list) {
     if (default_server &&
         *default_server == TRUE) {
 
-      if (!SocketBindTight) {
+      if (SocketBindTight == FALSE) {
         pr_netaddr_set_sockaddr_any(s->addr);
 
       } else {
@@ -3316,7 +3508,7 @@ int fixup_servers(xaset_t *list) {
    * it's possible to have all vhosts (even the default) rejected.
    */
   if (list->xas_list == NULL) {
-    pr_log_pri(PR_LOG_NOTICE, "error: no valid servers configured");
+    pr_log_pri(PR_LOG_WARNING, "error: no valid servers configured");
     return -1;
   }
 
@@ -3324,7 +3516,7 @@ int fixup_servers(xaset_t *list) {
   return 0;
 }
 
-static void set_tcp_bufsz(void) {
+static void set_tcp_bufsz(server_rec *s) {
   int sockfd;
   socklen_t optlen = 0;
   struct protoent *p = NULL;
@@ -3336,15 +3528,15 @@ static void set_tcp_bufsz(void) {
   p = getprotobyname("tcp");
   if (p == NULL) {
 #ifndef PR_TUNABLE_RCVBUFSZ
-    tcp_rcvbufsz = PR_TUNABLE_DEFAULT_RCVBUFSZ;
+    s->tcp_rcvbuf_len = tcp_rcvbufsz = PR_TUNABLE_DEFAULT_RCVBUFSZ;
 #else
-    tcp_rcvbufsz = PR_TUNABLE_RCVBUFSZ;
+    s->tcp_rcvbuf_len = tcp_rcvbufsz = PR_TUNABLE_RCVBUFSZ;
 #endif /* PR_TUNABLE_RCVBUFSZ */
 
 #ifndef PR_TUNABLE_SNDBUFSZ
-    tcp_sndbufsz = PR_TUNABLE_DEFAULT_SNDBUFSZ;
+    s->tcp_sndbuf_len = tcp_sndbufsz = PR_TUNABLE_DEFAULT_SNDBUFSZ;
 #else
-    tcp_sndbufsz = PR_TUNABLE_SNDBUFSZ;
+    s->tcp_sndbuf_len = tcp_sndbufsz = PR_TUNABLE_SNDBUFSZ;
 #endif /* PR_TUNABLE_SNDBUFSZ */
 
     pr_log_debug(DEBUG3, "getprotobyname error for 'tcp': %s", strerror(errno));
@@ -3364,8 +3556,8 @@ static void set_tcp_bufsz(void) {
 
   sockfd = socket(AF_INET, SOCK_STREAM, p->p_proto);
   if (sockfd < 0) {
-    tcp_rcvbufsz = PR_TUNABLE_DEFAULT_RCVBUFSZ;
-    tcp_sndbufsz = PR_TUNABLE_DEFAULT_SNDBUFSZ;
+    s->tcp_rcvbuf_len = tcp_rcvbufsz = PR_TUNABLE_DEFAULT_RCVBUFSZ;
+    s->tcp_sndbuf_len = tcp_sndbufsz = PR_TUNABLE_DEFAULT_SNDBUFSZ;
 
     pr_log_debug(DEBUG3, "socket error: %s", strerror(errno));
     pr_log_debug(DEBUG4, "using default TCP receive/send buffer sizes");
@@ -3376,7 +3568,7 @@ static void set_tcp_bufsz(void) {
   optlen = sizeof(tcp_rcvbufsz);
   if (getsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (void *) &tcp_rcvbufsz,
       &optlen) < 0) {
-    tcp_rcvbufsz = PR_TUNABLE_DEFAULT_RCVBUFSZ;
+    s->tcp_rcvbuf_len = tcp_rcvbufsz = PR_TUNABLE_DEFAULT_RCVBUFSZ;
 
     pr_log_debug(DEBUG3, "getsockopt error for SO_RCVBUF: %s", strerror(errno));
     pr_log_debug(DEBUG4, "using default TCP receive buffer size of %d bytes",
@@ -3385,10 +3577,11 @@ static void set_tcp_bufsz(void) {
   } else {
     pr_log_debug(DEBUG5, "using TCP receive buffer size of %d bytes",
       tcp_rcvbufsz);
+    s->tcp_rcvbuf_len = tcp_rcvbufsz;
   }
 #else
   optlen = -1;
-  tcp_rcvbufsz = PR_TUNABLE_RCVBUFSZ;
+  s->tcp_rcvbuf_len = tcp_rcvbufsz = PR_TUNABLE_RCVBUFSZ;
   pr_log_debug(DEBUG5, "using preset TCP receive buffer size of %d bytes",
     tcp_rcvbufsz);
 #endif /* PR_TUNABLE_RCVBUFSZ */
@@ -3398,7 +3591,7 @@ static void set_tcp_bufsz(void) {
   optlen = sizeof(tcp_sndbufsz);
   if (getsockopt(sockfd, SOL_SOCKET, SO_SNDBUF, (void *) &tcp_sndbufsz,
       &optlen) < 0) {
-    tcp_sndbufsz = PR_TUNABLE_DEFAULT_SNDBUFSZ;
+    s->tcp_sndbuf_len = tcp_sndbufsz = PR_TUNABLE_DEFAULT_SNDBUFSZ;
     
     pr_log_debug(DEBUG3, "getsockopt error for SO_SNDBUF: %s", strerror(errno));
     pr_log_debug(DEBUG4, "using default TCP send buffer size of %d bytes",
@@ -3407,10 +3600,11 @@ static void set_tcp_bufsz(void) {
   } else {
     pr_log_debug(DEBUG5, "using TCP send buffer size of %d bytes",
       tcp_sndbufsz);
+    s->tcp_sndbuf_len = tcp_sndbufsz;
   }
 #else
   optlen = -1;
-  tcp_sndbufsz = PR_TUNABLE_SNDBUFSZ;
+  s->tcp_sndbuf_len = tcp_sndbufsz = PR_TUNABLE_SNDBUFSZ;
   pr_log_debug(DEBUG5, "using preset TCP send buffer size of %d bytes",
     tcp_sndbufsz);
 #endif /* PR_TUNABLE_SNDBUFSZ */
@@ -3468,6 +3662,13 @@ void init_config(void) {
     /* Free the old configuration completely */
     for (s = (server_rec *) server_list->xas_list; s; s = s_next) {
       s_next = s->next;
+
+      /* Make sure that any pointers are explicitly nulled; this does not
+       * automatically happen as part of pool destruction.
+       */
+      s->conf = NULL;
+      s->set = NULL;
+
       destroy_pool(s->pool);
     }
 
@@ -3491,12 +3692,21 @@ void init_config(void) {
   main_server->pool = conf_pool;
   main_server->set = server_list;
   main_server->sid = 1;
+  main_server->notes = pr_table_nalloc(conf_pool, 0, 8);
+
+  /* TCP KeepAlive is enabled by default, with the system defaults. */
+  main_server->tcp_keepalive = palloc(main_server->pool,
+    sizeof(struct tcp_keepalive));
+  main_server->tcp_keepalive->keepalive_enabled = TRUE;
+  main_server->tcp_keepalive->keepalive_idle = -1;
+  main_server->tcp_keepalive->keepalive_count = -1;
+  main_server->tcp_keepalive->keepalive_intvl = -1;
 
   /* Default server port */
   main_server->ServerPort = pr_inet_getservport(main_server->pool,
     "ftp", "tcp");
 
-  set_tcp_bufsz();
+  set_tcp_bufsz(main_server);
   return;
 }
 
@@ -3564,26 +3774,7 @@ int get_boolean(cmd_rec *cmd, int av) {
 }
 
 char *get_full_cmd(cmd_rec *cmd) {
-  pool *p = cmd->tmp_pool;
-  char *res = "";
-
-  if (cmd->arg && *cmd->arg)
-    res = pstrcat(p, cmd->argv[0], " ", pr_fs_decode_path(p, cmd->arg), NULL);
-
-  else if (cmd->argc > 1) {
-    register unsigned int i = 0;
-    res = cmd->argv[0];
-
-    for (i = 1; i < cmd->argc; i++)
-      res = pstrcat(p, res, pr_fs_decode_path(p, cmd->argv[i]), " ", NULL);
-
-    while (res[strlen(res)-1] == ' ' && *res)
-      res[strlen(res)-1] = '\0';
-
-  } else
-    res = pstrdup(p, cmd->argv[0]);
-
-  return res;
+  return pr_cmd_get_displayable_str(cmd, NULL);
 }
 
 unsigned int pr_config_get_id(const char *name) {

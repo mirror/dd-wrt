@@ -1,4 +1,4 @@
-<!-- $Id: Authentication.html,v 1.10 2010/01/04 17:58:33 castaglia Exp $ -->
+<!-- $Id: Authentication.html,v 1.11 2013/08/19 16:32:23 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Authentication.html,v $ -->
 
 <html>
@@ -69,8 +69,7 @@ To disable use of PAM entirely, use:
 
 <p><a name="directives"><b>Configuration Directives</b><br>
 There are several configuration directives that can cause login problems.
-The most common one is <a href="http://www.proftpd.org/docs/directives/linked/config_ref_RequireValidShell.html"><code>RequireValidShell</code></a>, so
-common that it is a
+The most common one is <a href="../modules/mod_auth.html#RequireValidShell"><code>RequireValidShell</code></a>, so common that it is a
 <a href="http://www.proftpd.org/docs/faq/faq_full.html#AEN267">FAQ</a>.
 If <code>proftpd</code> does not actually <i>use</i> the shell configured for
 a user, why does it check to see if the shell is valid by looking in
@@ -87,7 +86,7 @@ Another reason why a client cannot login might be if the login user is
 <code>root</code> (or has a UID of zero, and hence has root privileges).
 Logging in as <code>root</code> is dangerous, and should be avoided if
 possible.  If you do find it absolutely necessary to login as <code>root</code>,
-<i>please</i> use <a href="TLS.html">SSL/TLS</a>, or at least <a href="SSH.html">tunnel</a> your FTP connection using SSH.  The <a href="http://www.proftpd.org/docs/directives/linked/config_ref_RootLogin.html"><code>RootLogin</code></a> configuration directive is needed
+<i>please</i> use <a href="TLS.html">SSL/TLS</a>, or at least <a href="SSH.html">tunnel</a> your FTP connection using SSH.  The <a href="../modules/mod_auth.html#RootLogin"><code>RootLogin</code></a> configuration directive is needed
 in your <code>proftpd.conf</code> in order for <code>proftpd</code> to
 explicitly allow root logins.
 
@@ -100,14 +99,15 @@ to login via FTP.  A little backwards from what might be expected from the
 file name, I agree.  <code>proftpd</code> was made to similarly honor any <code>/etc/ftpusers</code> file by default in order to ease the pain for sites
 migrating from <code>wu-ftpd</code> to <code>proftpd</code>. Disabling
 <code>proftpd</code>'s check for this file is as simple as using the
-<a href="http://www.proftpd.org/docs/directives/linked/config_ref_UseFtpUsers.html"><code>UseFtpUsers</code></a> configuration directive, like so:
+<a href="../modules/mod_auth.html#UseFtpUsers"><code>UseFtpUsers</code></a>
+configuration directive, like so:
 <pre>
   UseFtpUsers off
 </pre>
 in your <code>proftpd.conf</code> file.
 
 <p>
-The <a href="http://www.proftpd.org/docs/directives/linked/config_ref_PersistentPasswd.html"><code>PersistentPasswd</code></a> configuration directive can
+The <a href="../modules/mod_auth_unix.html#PersistentPasswd"><code>PersistentPasswd</code></a> configuration directive can
 be necessary in some environments, particularly those that use NIS/YP,
 NSS modules, or (in the case of Mac OSX) the <code>netinfo</code> service.
 In order to be able to lookup and map UIDs and GIDs to names, as when
@@ -206,22 +206,22 @@ following authentication modules are all provided with <code>proftpd</code>:
   </li>
 
   <p>
-  <li><a href="http://www.proftpd.org/docs/modules/mod_auth_file.html"><code>mod_auth_file</code></a><br>
+  <li><a href="../modules/mod_auth_file.html"><code>mod_auth_file</code></a><br>
     Handles the <code>AuthUserFile</code> and <code>AuthGroupFile</code> directives, for storing user account information in <a href="AuthFiles.html">other files</a>
   </li>
 
   <p>
-  <li><a href="http://www.proftpd.org/docs/directives/linked/config_ref_mod_ldap.html"><code>mod_ldap</code></a><br>
+  <li><a href="../contrib/mod_ldap.html"><code>mod_ldap</code></a><br>
     Handles user account information stored in LDAP directories
   </li>
 
   <p>
-  <li><a href="http://www.proftpd.org/docs/contrib/mod_radius.html"><code>mod_radius</code></a><br>
+  <li><a href="../contrib/mod_radius.html"><code>mod_radius</code></a><br>
     Handles user account information provided by RADIUS servers
   </li>
 
   <p>
-  <li><a href="http://www.proftpd.org/docs/contrib/mod_sql.html"><code>mod_sql</code></a><br>
+  <li><a href="../contrib/mod_sql.html"><code>mod_sql</code></a><br>
     Handles user account information stored in <a href="SQL.html">SQL tables</a>
   </li>
 </ul>
@@ -255,7 +255,7 @@ from asking other modules.  <code>mod_auth_pam</code>'s
 in the <code>SQLAuthenticate</code> directive of <code>mod_sql</code>, are
 examples of this authoritativeness.  In general, it is best to avoid using
 such mechanisms, and to use the
-<a href="http://www.proftpd.org/docs/directives/linked/config_ref_AuthOrder.html"><code>AuthOrder</code></a> configuration directive instead.
+<a href="../modules/mod_core.html#AuthOrder"><code>AuthOrder</code></a> configuration directive instead.
 
 <p>
 The following illustrates a situation where <code>AuthOrder</code> is
@@ -285,9 +285,18 @@ your SQL tables first, and then default to system users:
 Note that the <code>mod_auth.c</code> module should <b>never</b> be used in an
 <code>AuthOrder</code> directive.
 
+<p><a name="FAQ"></a>
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="LogPassword">
+<font color=red>Question</font>: How can I configure <code>proftpd</code> to
+log/show the password typed by the user?<br>
+<font color=blue>Answer</font>:  You cannot.  Period.  The <code>proftpd</code>
+code goes out of its way to ensure that the password is never logged.
+
 <p>
 <hr>
-Last Updated: <i>$Date: 2010/01/04 17:58:33 $</i><br>
+Last Updated: <i>$Date: 2013/08/19 16:32:23 $</i><br>
 <hr>
 
 </body>

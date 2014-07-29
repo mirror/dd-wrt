@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sql_sqlite -- Support for connecting to SQLite databases
  *
- * Copyright (c) 2004-2011 TJ Saunders
+ * Copyright (c) 2004-2013 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_sql_sqlite.c,v 1.23 2011/05/23 20:56:40 castaglia Exp $
+ * $Id: mod_sql_sqlite.c,v 1.24 2013/10/07 05:51:29 castaglia Exp $
  * $Libraries: -lsqlite3 $
  */
 
@@ -1061,7 +1061,7 @@ static int sql_sqlite_init(void) {
    * For now, we only log if there is a difference.
    */
   if (strcmp(sqlite3_libversion(), SQLITE_VERSION) != 0) {
-    pr_log_pri(PR_LOG_ERR, MOD_SQL_SQLITE_VERSION
+    pr_log_pri(PR_LOG_WARNING, MOD_SQL_SQLITE_VERSION
       ": compiled using SQLite version '%s' headers, but linked to "
       "SQLite version '%s' library", SQLITE_VERSION, sqlite3_libversion());
   }

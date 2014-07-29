@@ -11,20 +11,21 @@ SHARED_LDFLAGS=-avoid-version -export-dynamic -module
 VPATH=@srcdir@
 
 MODULE_NAME=mod_sftp
-MODULE_OBJS=mod_sftp.o msg.o packet.o cipher.o mac.o compress.o kex.o keys.o \
-  crypto.o utf8.o session.o service.o kbdint.o auth-hostbased.o auth-kbdint.o \
-  auth-password.o auth-publickey.o auth.o disconnect.o rfc4716.o keystore.o \
-  channel.o blacklist.o interop.o tap.o fxp.o scp.o display.o misc.o date.o
-SHARED_MODULE_OBJS=mod_sftp.lo msg.lo packet.lo cipher.lo mac.lo \
+MODULE_OBJS=mod_sftp.o msg.o packet.o cipher.o mac.o umac.o \
+  compress.o kex.o keys.o crypto.o utf8.o session.o service.o kbdint.o \
+  auth-hostbased.o auth-kbdint.o auth-password.o auth-publickey.o auth.o \
+  disconnect.o rfc4716.o keystore.o channel.o blacklist.o agent.o \
+  interop.o tap.o fxp.o scp.o display.o misc.o date.o
+SHARED_MODULE_OBJS=mod_sftp.lo msg.lo packet.lo cipher.lo mac.lo umac.lo \
   compress.lo kex.lo keys.lo crypto.lo utf8.lo session.lo service.lo kbdint.lo \
   auth-hostbased.lo auth-kbdint.lo auth-password.lo auth-publickey.lo auth.lo \
-  disconnect.lo rfc4716.lo keystore.lo channel.lo blacklist.lo interop.lo \
-  tap.lo fxp.lo scp.lo display.lo misc.lo date.lo
+  disconnect.lo rfc4716.lo keystore.lo channel.lo blacklist.lo agent.lo \
+  interop.lo tap.lo fxp.lo scp.lo display.lo misc.lo date.lo
 
 # Necessary redefinitions
 INCLUDES=-I. -I../.. -I../../include @INCLUDES@
 CPPFLAGS= $(ADDL_CPPFLAGS) -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
-LDFLAGS=-L../../lib @LIBDIRS@
+LDFLAGS=-L../../lib @LDFLAGS@
 
 .c.o:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
@@ -49,10 +50,8 @@ install-misc:
 	$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0644 blacklist.dat $(DESTDIR)$(sysconfdir)/blacklist.dat
 
 clean:
-	$(RM) $(MODULE_NAME).a *.o *.la *.lo
-	$(LIBTOOL) --mode=clean $(RM) "$(MODULE_NAME).o"
-	$(LIBTOOL) --mode=clean $(RM) `echo "$(MODULE_NAME).la" | sed 's/\.la$\/.lo/g'`
+	$(LIBTOOL) --mode=clean $(RM) $(MODULE_NAME).a $(MODULE_NAME).la *.o *.lo .libs/*.o
 
 dist: clean
 	$(RM) Makefile $(MODULE_NAME).h config.status config.cache config.log
-	-$(RM) -r .libs/ CVS/ RCS/
+	-$(RM) -r CVS/ RCS/

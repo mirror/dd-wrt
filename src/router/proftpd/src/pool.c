@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 /* Resource allocation code
- * $Id: pool.c,v 1.58.2.1 2013/01/30 22:39:03 castaglia Exp $
+ * $Id: pool.c,v 1.72 2013/10/07 05:51:30 castaglia Exp $
  */
 
 #include "conf.h"
@@ -58,7 +58,7 @@ union block_hdr {
   } h;
 };
 
-union block_hdr *block_freelist = NULL;
+static union block_hdr *block_freelist = NULL;
 
 /* Statistics */
 static unsigned int stat_malloc = 0;	/* incr when malloc required */
@@ -103,7 +103,7 @@ static void *null_alloc(size_t size) {
   }
 
   if (ret == NULL) {
-    pr_log_pri(PR_LOG_ERR, "fatal: Memory exhausted");
+    pr_log_pri(PR_LOG_ALERT, "Out of memory!");
 #ifdef PR_USE_DEVEL
     if (debug_flags & PR_POOL_DEBUG_FL_OOM_DUMP_POOLS) {
       pr_pool_debug_memory(oom_printf);
@@ -128,7 +128,7 @@ static void *smalloc(size_t size) {
 /* Grab a completely new block from the system pool.  Relies on malloc()
  * to return truly aligned memory.
  */
-static union block_hdr *malloc_block(int size) {
+static union block_hdr *malloc_block(size_t size) {
   union block_hdr *blok =
     (union block_hdr *) smalloc(size + sizeof(union block_hdr));
 
@@ -151,8 +151,8 @@ static void chk_on_blk_list(union block_hdr *blok, union block_hdr *free_blk,
       continue;
     }
 
-    pr_log_pri(PR_LOG_ERR, "Fatal: DEBUG: Attempt to free already free block "
-     "in pool '%s'", pool_tag ? pool_tag : "<unnamed>");
+    pr_log_pri(PR_LOG_WARNING, "fatal: DEBUG: Attempt to free already free "
+     "block in pool '%s'", pool_tag ? pool_tag : "<unnamed>");
     exit(1);
   }
 #endif /* PR_USE_DEVEL */
@@ -230,14 +230,14 @@ static void run_cleanups(struct cleanup *);
 
 /* Pool internal and management */
 
-struct pool {
+struct pool_rec {
   union block_hdr *first;
   union block_hdr *last;
   struct cleanup *cleanups;
-  struct pool *sub_pools;
-  struct pool *sub_next;
-  struct pool *sub_prev;
-  struct pool *parent;
+  struct pool_rec *sub_pools;
+  struct pool_rec *sub_next;
+  struct pool_rec *sub_prev;
+  struct pool_rec *parent;
   char *free_first_avail;
   const char *tag;
 };
@@ -250,7 +250,7 @@ pool *global_config_pool = NULL;
  * aligned).
  */
 
-#define POOL_HDR_CLICKS (1 + ((sizeof(struct pool) - 1) / CLICK_SZ))
+#define POOL_HDR_CLICKS (1 + ((sizeof(struct pool_rec) - 1) / CLICK_SZ))
 #define POOL_HDR_BYTES (POOL_HDR_CLICKS * CLICK_SZ)
 
 #ifdef PR_USE_DEVEL
@@ -300,20 +300,24 @@ static long walk_pools(pool *p, int level,
   char _levelpad[80] = "";
   long total = 0;
 
-  if (!p)
+  if (p == NULL) {
     return 0;
+  }
 
   if (level > 1) {
     memset(_levelpad, ' ', sizeof(_levelpad)-1);
-    if ((level - 1) * 3 >= sizeof(_levelpad))
+
+    if ((level - 1) * 3 >= sizeof(_levelpad)) {
       _levelpad[sizeof(_levelpad)-1] = 0;
-    else
+
+    } else {
       _levelpad[(level - 1) * 3] = '\0';
+    }
   }
 
   /* The emitted message is:
    *
-   *  <pool-tag> (n B, m L, r P)
+   *  <pool-tag> [pool-ptr] (n B, m L, r P)
    *
    * where n is the number of bytes (B), m is the number of allocated blocks
    * in the pool list (L), and r is the number of sub-pools (P).
@@ -322,13 +326,13 @@ static long walk_pools(pool *p, int level,
   for (; p; p = p->sub_next) {
     total += bytes_in_block_list(p->first);
     if (level == 0) {
-      debugf("%s (%lu B, %lu L, %u P)",
-        p->tag ? p->tag : "<unnamed>", bytes_in_block_list(p->first),
+      debugf("%s [%p] (%lu B, %lu L, %u P)",
+        p->tag ? p->tag : "<unnamed>", p, bytes_in_block_list(p->first),
         blocks_in_block_list(p->first), subpools_in_pool(p));
 
     } else {
-      debugf("%s + %s (%lu B, %lu L, %u P)", _levelpad,
-        p->tag ? p->tag : "<unnamed>", bytes_in_block_list(p->first),
+      debugf("%s + %s [%p] (%lu B, %lu L, %u P)", _levelpad,
+        p->tag ? p->tag : "<unnamed>", p, bytes_in_block_list(p->first),
         blocks_in_block_list(p->first), subpools_in_pool(p));
     }
 
@@ -342,14 +346,16 @@ static long walk_pools(pool *p, int level,
 }
 
 static void debug_pool_info(void (*debugf)(const char *, ...)) {
-  if (block_freelist)
+  if (block_freelist) {
     debugf("Free block list: %lu bytes",
       bytes_in_block_list(block_freelist));
-  else
-    debugf("Free block list: empty");
 
-  debugf("%u count blocks allocated", stat_malloc);
-  debugf("%u count blocks reused", stat_freehit);
+  } else {
+    debugf("Free block list: empty");
+  }
+
+  debugf("%u blocks allocated", stat_malloc);
+  debugf("%u blocks reused", stat_freehit);
 }
 
 void pr_pool_debug_memory(void (*debugf)(const char *, ...)) {
@@ -366,29 +372,30 @@ int pr_pool_debug_set_flags(int flags) {
 #endif /* PR_USE_DEVEL */
 
 void pr_pool_tag(pool *p, const char *tag) {
-  if (!p || !tag)
+  if (p == NULL ||
+      tag == NULL) {
     return;
+  }
 
   p->tag = tag;
 }
 
 /* Release the entire free block list */
 static void pool_release_free_block_list(void) {
-  union block_hdr *blok,*next;
+  union block_hdr *blok = NULL, *next = NULL;
 
   pr_alarms_block();
 
-  blok = block_freelist;
-  if (blok) {
-    for (next = blok->h.next; next; blok = next, next = blok->h.next)
-      free(blok);
+  for (blok = block_freelist; blok; blok = next) {
+    next = blok->h.next;
+    free(blok);
   }
   block_freelist = NULL;
 
   pr_alarms_unblock();
 }
 
-struct pool *make_sub_pool(struct pool *p) {
+struct pool_rec *make_sub_pool(struct pool_rec *p) {
   union block_hdr *blok;
   pool *new_pool;
 
@@ -399,7 +406,7 @@ struct pool *make_sub_pool(struct pool *p) {
   new_pool = (pool *) blok->h.first_avail;
   blok->h.first_avail += POOL_HDR_BYTES;
 
-  memset(new_pool, 0, sizeof(struct pool));
+  memset(new_pool, 0, sizeof(struct pool_rec));
   new_pool->free_first_avail = blok->h.first_avail;
   new_pool->first = new_pool->last = blok;
 
@@ -418,7 +425,7 @@ struct pool *make_sub_pool(struct pool *p) {
   return new_pool;
 }
 
-struct pool *pr_pool_create_sz(struct pool *p, int sz) {
+struct pool_rec *pr_pool_create_sz(struct pool_rec *p, size_t sz) {
   union block_hdr *blok;
   pool *new_pool;
 
@@ -429,7 +436,7 @@ struct pool *pr_pool_create_sz(struct pool *p, int sz) {
   new_pool = (pool *) blok->h.first_avail;
   blok->h.first_avail += POOL_HDR_BYTES;
 
-  memset(new_pool, 0, sizeof(struct pool));
+  memset(new_pool, 0, sizeof(struct pool_rec));
   new_pool->free_first_avail = blok->h.first_avail;
   new_pool->first = new_pool->last = blok;
 
@@ -451,8 +458,10 @@ struct pool *pr_pool_create_sz(struct pool *p, int sz) {
 /* Initialize the pool system by creating the base permanent_pool. */
 
 void init_pools(void) {
-  if (!permanent_pool)
+  if (permanent_pool == NULL) {
     permanent_pool = make_sub_pool(NULL);
+  }
+
   pr_pool_tag(permanent_pool, "permanent_pool");
 }
 
@@ -462,11 +471,12 @@ void free_pools(void) {
   pool_release_free_block_list();
 }
 
-static void clear_pool(struct pool *p) {
+static void clear_pool(struct pool_rec *p) {
 
   /* Sanity check. */
-  if (!p)
+  if (p == NULL) {
     return;
+  }
 
   pr_alarms_block();
 
@@ -475,8 +485,10 @@ static void clear_pool(struct pool *p) {
   p->cleanups = NULL;
 
   /* Destroy subpools. */
-  while (p->sub_pools)
+  while (p->sub_pools) {
     destroy_pool(p->sub_pools);
+  }
+
   p->sub_pools = NULL;
 
   free_blocks(p->first->h.next, p->tag);
@@ -489,35 +501,48 @@ static void clear_pool(struct pool *p) {
 }
 
 void destroy_pool(pool *p) {
-  if (p == NULL)
+  if (p == NULL) {
     return;
+  }
 
   pr_alarms_block();
 
   if (p->parent) {
-    if (p->parent->sub_pools == p)
+    if (p->parent->sub_pools == p) {
       p->parent->sub_pools = p->sub_next;
+    }
 
-    if (p->sub_prev)
+    if (p->sub_prev) {
       p->sub_prev->sub_next = p->sub_next;
+    }
 
-    if (p->sub_next)
+    if (p->sub_next) {
       p->sub_next->sub_prev = p->sub_prev;
+    }
   }
+
   clear_pool(p);
   free_blocks(p->first, p->tag);
 
   pr_alarms_unblock();
+
+#ifdef PR_DEVEL_NO_POOL_FREELIST
+  /* If configured explicitly to do so, call free(3) on the freelist after
+   * a pool is destroyed.  This can be useful for tracking down use-after-free
+   * and other memory issues using libraries such as dmalloc.
+   */
+  pool_release_free_block_list();
+#endif /* PR_EVEL_NO_POOL_FREELIST */
 }
 
 /* Allocation interface...
  */
 
-static void *alloc_pool(struct pool *p, int reqsz, int exact) {
+static void *alloc_pool(struct pool_rec *p, size_t reqsz, int exact) {
 
   /* Round up requested size to an even number of aligned units */
-  int nclicks = 1 + ((reqsz - 1) / CLICK_SZ);
-  int sz = nclicks * CLICK_SZ;
+  size_t nclicks = 1 + ((reqsz - 1) / CLICK_SZ);
+  size_t sz = nclicks * CLICK_SZ;
 
   /* For performance, see if space is available in the most recently
    * allocated block.
@@ -527,8 +552,10 @@ static void *alloc_pool(struct pool *p, int reqsz, int exact) {
   char *first_avail = blok->h.first_avail;
   char *new_first_avail;
 
-  if (reqsz <= 0)
+  if (reqsz == 0) {
+    /* Don't try to allocate memory of zero length. */
     return NULL;
+  }
 
   new_first_avail = first_avail + sz;
 
@@ -551,29 +578,33 @@ static void *alloc_pool(struct pool *p, int reqsz, int exact) {
   return (void *) first_avail;
 }
 
-void *palloc(struct pool *p, int sz) {
+void *palloc(struct pool_rec *p, size_t sz) {
   return alloc_pool(p, sz, FALSE);
 }
 
-void *pallocsz(struct pool *p, int sz) {
+void *pallocsz(struct pool_rec *p, size_t sz) {
   return alloc_pool(p, sz, TRUE);
 }
 
-void *pcalloc(struct pool *p, int sz) {
-  void *res = palloc(p, sz);
+void *pcalloc(struct pool_rec *p, size_t sz) {
+  void *res;
+
+  res = palloc(p, sz);
   memset(res, '\0', sz);
+
   return res;
 }
 
-void *pcallocsz(struct pool *p, int sz) {
-  void *res = pallocsz(p, sz);
+void *pcallocsz(struct pool_rec *p, size_t sz) {
+  void *res;
+
+  res = pallocsz(p, sz);
   memset(res, '\0', sz);
+
   return res;
 }
 
-/*
- * Array functions
- */
+/* Array functions */
 
 array_header *make_array(pool *p, unsigned int nelts, size_t elt_size) {
   array_header *res;
@@ -729,15 +760,14 @@ array_header *append_arrays(pool *p, const array_header *first,
   return res;
 }
 
-/*
- * Generic cleanups
- */
+/* Generic cleanups */
 
 typedef struct cleanup {
   void *data;
   void (*plain_cleanup_cb)(void *);
   void (*child_cleanup_cb)(void *);
   struct cleanup *next;
+
 } cleanup_t;
 
 void register_cleanup(pool *p, void *data, void (*plain_cleanup_cb)(void*),
@@ -757,7 +787,8 @@ void unregister_cleanup(pool *p, void *data, void (*cleanup_cb)(void *)) {
   cleanup_t **lastp = &p->cleanups;
 
   while (c) {
-    if (c->data == data && c->plain_cleanup_cb == cleanup_cb) {
+    if (c->data == data &&
+        c->plain_cleanup_cb == cleanup_cb) {
 
       /* Remove the given cleanup by pointing the previous next pointer to
        * the matching cleanup's next pointer.

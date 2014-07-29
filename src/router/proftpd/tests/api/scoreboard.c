@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Scoreboard API tests
- * $Id: scoreboard.c,v 1.6 2011/09/23 16:54:03 castaglia Exp $
+ * $Id: scoreboard.c,v 1.10 2013/01/05 03:36:39 castaglia Exp $
  */
 
 #include "tests.h"
@@ -52,8 +52,18 @@ START_TEST (scoreboard_get_test) {
   ok = PR_RUN_DIR "/proftpd.scoreboard";
 
   res = pr_get_scoreboard();
-  fail_unless(res != NULL, "Failed to get scoreboard path");
-  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+  fail_unless(res != NULL, "Failed to get scoreboard path: %s",
+    strerror(errno));
+  fail_unless(strcmp(res, ok) == 0,
+    "Expected scoreboard path '%s', got '%s'", ok, res);
+
+  ok = PR_RUN_DIR "/proftpd.scoreboard.lck";
+
+  res = pr_get_scoreboard_mutex();
+  fail_unless(res != NULL, "Failed to get scoreboard mutex path: %s",
+    strerror(errno));
+  fail_unless(strcmp(res, ok) == 0,
+    "Expected scoreboard mutex path '%s', got '%s'", ok, res);
 }
 END_TEST
 
@@ -217,7 +227,7 @@ START_TEST (scoreboard_open_close_test) {
   }
 
   /* Now that we have a scoreboard, try opening it again using O_RDONLY. */
-  pr_close_scoreboard();
+  pr_close_scoreboard(FALSE);
 
   res = pr_open_scoreboard(O_RDONLY);
   if (res == 0) {
@@ -377,6 +387,26 @@ START_TEST (scoreboard_restore_test) {
     (void) rmdir(dir);
 
     fail("Failed to open scoreboard: %s", strerror(xerrno));
+  }
+
+  res = pr_restore_scoreboard();
+  if (res == 0) {
+    (void) unlink(path);
+    (void) unlink(mutex_path);
+    (void) rmdir(dir);
+
+    fail("restoring scoreboard before rewind succeeded unexpectedly");
+  }
+
+  res = pr_rewind_scoreboard();
+  if (res < 0) {
+    int xerrno = errno;
+
+    (void) unlink(path);
+    (void) unlink(mutex_path);
+    (void) rmdir(dir);
+
+    fail("Failed to rewind scoreboard: %s", strerror(xerrno));
   }
 
   res = pr_restore_scoreboard();
@@ -1321,6 +1351,82 @@ START_TEST (scoreboard_entry_update_test) {
 }
 END_TEST
 
+START_TEST (scoreboard_disabled_test) {
+  register unsigned int i = 0;
+  const char *paths[4] = {
+    "/dev/null",
+    "none",
+    "off",
+    NULL
+  };
+  const char *path;
+
+  for (path = paths[i]; path != NULL; path = paths[i++]) { 
+    int res;
+    const char *field, *ok;
+    pid_t scoreboard_pid;
+    time_t scoreboard_uptime;
+    pr_scoreboard_entry_t *score;
+
+    res = pr_set_scoreboard(path);
+    fail_unless(res == 0, "Failed set to scoreboard to '%s': %s", path,
+      strerror(errno));
+
+    ok = PR_RUN_DIR "/proftpd.scoreboard";
+
+    path = pr_get_scoreboard();
+    fail_unless(path != NULL, "Failed to get scoreboard path: %s",
+      strerror(errno));
+    fail_unless(strcmp(path, ok) == 0,
+      "Expected path '%s', got '%s'", ok, path);
+
+    res = pr_open_scoreboard(O_RDONLY);
+    fail_unless(res == 0, "Failed to open '%s' scoreboard: %s", path,
+      strerror(errno));
+
+    res = pr_scoreboard_scrub();
+    fail_unless(res == 0, "Failed to scrub '%s' scoreboard: %s", path,
+      strerror(errno));
+
+    scoreboard_pid = pr_scoreboard_get_daemon_pid();
+    fail_unless(scoreboard_pid == 0,
+      "Expected to get scoreboard PID 0, got %lu",
+      (unsigned long) scoreboard_pid);
+
+    scoreboard_uptime = pr_scoreboard_get_daemon_uptime();
+    fail_unless(scoreboard_uptime == 0,
+      "Expected to get scoreboard uptime 0, got %lu",
+      (unsigned long) scoreboard_uptime);
+
+    res = pr_scoreboard_entry_add();
+    fail_unless(res == 0, "Failed to add entry to '%s' scoreboard: %s", path,
+      strerror(errno));
+
+    score = pr_scoreboard_entry_read();
+    fail_unless(score == NULL, "Expected null entry");
+
+    field = pr_scoreboard_entry_get(PR_SCORE_CMD_ARG);
+    fail_unless(field == NULL, "Expected null CMD_ARG field");
+
+    res = pr_scoreboard_entry_update(getpid(), PR_SCORE_CWD, "foo", NULL);
+    fail_unless(res == 0, "Failed to update CWD field: %s", strerror(errno));
+
+    res = pr_scoreboard_entry_del(FALSE);
+    fail_unless(res == 0, "Failed to delete entry from '%s' scoreboard: %s",
+      path, strerror(errno));
+
+    res = pr_close_scoreboard(FALSE);
+    fail_unless(res == 0, "Failed to close '%s' scoreboard: %s", path,
+      strerror(errno));
+
+    /* Internal hack: even calling pr_set_scoreboard() with a NULL
+     * argument will set the Scoreboard API internal flag back to true.
+     */
+    pr_set_scoreboard(NULL);
+  }
+}
+END_TEST
+
 Suite *tests_get_scoreboard_suite(void) {
   Suite *suite;
   TCase *testcase;
@@ -1345,6 +1451,7 @@ Suite *tests_get_scoreboard_suite(void) {
   tcase_add_test(testcase, scoreboard_entry_read_test);
   tcase_add_test(testcase, scoreboard_entry_get_test);
   tcase_add_test(testcase, scoreboard_entry_update_test);
+  tcase_add_test(testcase, scoreboard_disabled_test);
 
   suite_add_tcase(suite, testcase);
 

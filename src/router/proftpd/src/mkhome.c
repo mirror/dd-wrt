@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2011 The ProFTPD Project team
+ * Copyright (c) 2003-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Home-on-demand support
- * $Id: mkhome.c,v 1.17 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: mkhome.c,v 1.23 2013/10/09 05:21:06 castaglia Exp $
  */
 
 #include "conf.h"
@@ -42,8 +42,12 @@ static int create_dir(const char *dir, uid_t uid, gid_t gid,
 
   if (res == -1 &&
       errno != ENOENT) {
+    int xerrno = errno;
+
     pr_log_pri(PR_LOG_WARNING, "error checking '%s': %s", dir,
-      strerror(errno));
+      strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
@@ -58,17 +62,25 @@ static int create_dir(const char *dir, uid_t uid, gid_t gid,
   prev_mask = umask(0);
 
   if (pr_fsio_mkdir(dir, mode) < 0) {
+    int xerrno = errno;
+
     umask(prev_mask);
     pr_log_pri(PR_LOG_WARNING, "error creating '%s': %s", dir,
-      strerror(errno));
+      strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
   umask(prev_mask);
 
   if (pr_fsio_chown(dir, uid, gid) < 0) {
+    int xerrno = errno;
+
     pr_log_pri(PR_LOG_WARNING, "error setting ownership of '%s': %s", dir,
-      strerror(errno));
+      strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
@@ -92,8 +104,6 @@ static int create_path(pool *p, const char *path, const char *user,
     errno = EEXIST;
     return -1;
   }
-
-  pr_event_generate("core.create-home", user);
 
   /* The special-case values of -1 for dir UID/GID mean that the destination
    * UID/GID should be used for the parent directories.
@@ -144,8 +154,12 @@ static int copy_symlink(pool *p, const char *src_dir, const char *src_path,
 
   len = pr_fsio_readlink(src_path, link_path, PR_TUNABLE_BUFFER_SIZE-1);
   if (len < 0) {
+    int xerrno = errno;
+
     pr_log_pri(PR_LOG_WARNING, "CreateHome: error reading link '%s': %s",
-      src_path, strerror(errno));
+      src_path, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
   link_path[len] = '\0';
@@ -158,8 +172,12 @@ static int copy_symlink(pool *p, const char *src_dir, const char *src_path,
   }
 
   if (pr_fsio_symlink(link_path, dst_path) < 0) {
+    int xerrno = errno;
+
     pr_log_pri(PR_LOG_WARNING, "CreateHome: error symlinking '%s' to '%s': %s",
-      link_path, dst_path, strerror(errno));
+      link_path, dst_path, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
@@ -183,8 +201,12 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
 
   dh = opendir(src_dir);
   if (dh == NULL) {
+    int xerrno = errno;
+
     pr_log_pri(PR_LOG_WARNING, "CreateHome: error copying '%s' skel files: %s",
-      src_dir, strerror(errno));
+      src_dir, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
@@ -221,11 +243,13 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
 
       /* Make sure to prevent S{U,G}ID permissions on target files. */
 
-      if (dst_mode & S_ISUID)
+      if (dst_mode & S_ISUID) {
         dst_mode &= ~S_ISUID;
+      }
 
-      if (dst_mode & S_ISGID)
+      if (dst_mode & S_ISGID) {
         dst_mode &= ~S_ISGID;
+      }
 
       (void) pr_fs_copy_file(src_path, dst_path);
 
@@ -245,7 +269,6 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
 
     /* Is this path a symlink? */
     } else if (S_ISLNK(st.st_mode)) {
-
       copy_symlink(p, src_dir, src_path, dst_dir, dst_path, uid, gid);
       continue;
 
@@ -266,6 +289,7 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
 int create_home(pool *p, const char *home, const char *user, uid_t uid,
     gid_t gid) {
   int res;
+  unsigned long flags = 0;
   config_rec *c;
   mode_t dir_mode, dst_mode;
   uid_t dir_uid, dst_uid;
@@ -283,20 +307,29 @@ int create_home(pool *p, const char *home, const char *user, uid_t uid,
   dir_gid = *((gid_t *) c->argv[5]);
   dir_mode = *((mode_t *) c->argv[2]);
   home_gid = *((gid_t *) c->argv[6]);
+  flags = *((unsigned long *) c->argv[7]);
 
   dst_uid = uid;
   dst_gid = (home_gid == -1) ? gid : home_gid;
 
   dst_mode = *((mode_t *) c->argv[1]);
 
-  PRIVS_ROOT
+  if (!(flags & PR_MKHOME_FL_USE_USER_PRIVS)) {
+    PRIVS_ROOT
+  }
+
+  pr_event_generate("core.creating-home", user);
 
   res = create_path(p, home, user, dir_uid, dir_gid, dir_mode,
     dst_uid, dst_gid, dst_mode);
 
   if (res < 0 &&
       errno != EEXIST) {
+    int xerrno = errno;
+
     PRIVS_RELINQUISH
+
+    errno = xerrno;
     return -1;
   }
 
@@ -312,9 +345,19 @@ int create_home(pool *p, const char *home, const char *user, uid_t uid,
       skel_dir, home);
     pr_log_debug(DEBUG4, "CreateHome: copying skel files from '%s' into '%s'",
       skel_dir, home);
+
+    pr_event_generate("core.copying-skel", user);
+
     if (copy_dir(p, skel_dir, home, uid, gid) < 0) {
       pr_log_debug(DEBUG4, "CreateHome: error copying skel files");
+
+    } else {
+      pr_event_generate("core.copied-skel", user);
     }
+  }
+
+  if (res == 0) {
+    pr_event_generate("core.created-home", user);
   }
 
   PRIVS_RELINQUISH

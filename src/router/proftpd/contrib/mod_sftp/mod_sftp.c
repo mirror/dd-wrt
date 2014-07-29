@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * DO NOT EDIT BELOW THIS LINE
  * $Archive: mod_sftp.a $
  * $Libraries: -lcrypto -lz $
- * $Id: mod_sftp.c,v 1.61.2.2 2013/03/14 21:51:43 castaglia Exp $
+ * $Id: mod_sftp.c,v 1.86 2014/03/02 22:05:43 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -32,6 +32,7 @@
 #include "packet.h"
 #include "interop.h"
 #include "crypto.h"
+#include "mac.h"
 #include "keys.h"
 #include "keystore.h"
 #include "disconnect.h"
@@ -57,6 +58,7 @@ unsigned int sftp_services = SFTP_SERVICE_DEFAULT;
 
 static int sftp_engine = 0;
 static const char *sftp_client_version = NULL;
+static const char *sftp_server_version = SFTP_ID_DEFAULT_STRING;
 
 static int sftp_have_authenticated(cmd_rec *cmd) {
   return (sftp_sess_state & SFTP_SESS_STATE_HAVE_AUTH);
@@ -69,7 +71,7 @@ static int sftp_get_client_version(conn_t *conn) {
   char buf[256];
 
   /* Read client version.  This looks ugly, reading one byte at a time.
-   * It is necesary, though.  The banner sent by the client is not of any
+   * It is necessary, though.  The banner sent by the client is not of any
    * guaranteed length.  The client might also send the next SSH packet in
    * the exchange, such that both messages are in the socket buffer.  If
    * we read too much of the banner, we'll read into the KEXINIT, for example,
@@ -204,7 +206,7 @@ static void sftp_cmd_loop(server_rec *s, conn_t *conn) {
       NULL);
   }
 
-  sftp_kex_init(sftp_client_version, SFTP_ID_STRING);
+  sftp_kex_init(sftp_client_version, sftp_server_version);
   sftp_service_init();
   sftp_auth_init();
   sftp_channel_init();
@@ -406,61 +408,6 @@ MODRET set_sftpciphers(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-static uint32_t get_size(const char *bytes, const char *units) {
-  unsigned long res;
-  uint32_t nbytes;
-  char *ptr = NULL;
-  float units_factor = 0.0;
-
-  /* First, check the given units to determine the correct mulitplier. */
-  if (*units == '\0') {
-    units_factor = 1.0;
-
-  } else if (strncasecmp(units, "Gb", 3) == 0) {
-    units_factor = 1024.0 * 1024.0 * 1024.0;
-
-  } else if (strncasecmp(units, "Mb", 3) == 0) {
-    units_factor = 1024.0 * 1024.0;
-
-  } else if (strncasecmp(units, "Kb", 3) == 0) {
-    units_factor = 1024.0;
-
-  } else if (strncasecmp(units, "b", 2) == 0) {
-    units_factor = 1.0;
-
-  } else {
-    errno = EINVAL;
-    return 0;
-  }
-
-  errno = 0;
-  res = strtoul(bytes, &ptr, 10);
-
-  if (errno == ERANGE) {
-    return 0;
-  }
-
-  if (ptr && *ptr) {
-    errno = EINVAL;
-    return 0;
-  }
-
-  /* Don't bother to apply the factor if that will cause the number to
-   * overflow.
-   */
-  if (res > (ULONG_MAX / units_factor)) {
-    errno = ERANGE;
-    return 0;
-  }
-
-  nbytes = (uint32_t) (res * units_factor);
-  if (nbytes == 0) {
-    errno = EINVAL;
-  }
- 
-  return nbytes;
-}
-
 /* usage: SFTPClientAlive count interval */
 MODRET set_sftpclientalive(cmd_rec *cmd) {
   int count, interval;
@@ -539,7 +486,7 @@ MODRET set_sftpclientmatch(cmd_rec *cmd) {
 
   for (i = 2; i < cmd->argc; i++) {
     if (strncmp(cmd->argv[i], "channelWindowSize", 18) == 0) {
-      uint32_t window_size;
+      off_t window_size;
       void *value;
       char *arg, units[3];
       size_t arglen;
@@ -591,15 +538,14 @@ MODRET set_sftpclientmatch(cmd_rec *cmd) {
         }
       }
 
-      window_size = get_size(arg, units);
-      if (window_size == 0) {
+      if (pr_str_get_nbytes(arg, units, &window_size) < 0) {
         CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
           "error parsing 'channelWindowSize' value ", cmd->argv[i+1], ": ",
           strerror(errno), NULL));
       }
 
       value = palloc(c->pool, sizeof(uint32_t));
-      *((uint32_t *) value) = window_size;
+      *((uint32_t *) value) = (uint32_t) window_size;
 
       if (pr_table_add(tab, pstrdup(c->pool, "channelWindowSize"), value,
           sizeof(uint32_t)) < 0) {
@@ -611,7 +557,7 @@ MODRET set_sftpclientmatch(cmd_rec *cmd) {
       i++;
 
     } else if (strncmp(cmd->argv[i], "channelPacketSize", 18) == 0) {
-      uint32_t packet_size;
+      off_t packet_size;
       void *value;
       char *arg, units[3];
       size_t arglen;
@@ -663,8 +609,7 @@ MODRET set_sftpclientmatch(cmd_rec *cmd) {
         }
       }
 
-      packet_size = get_size(arg, units);
-      if (packet_size == 0) {
+      if (pr_str_get_nbytes(arg, units, &packet_size) < 0) {
         CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
           "error parsing 'channelPacketSize' value ", cmd->argv[i+1], ": ",
           strerror(errno), NULL));
@@ -677,7 +622,7 @@ MODRET set_sftpclientmatch(cmd_rec *cmd) {
       }
 
       value = palloc(c->pool, sizeof(uint32_t));
-      *((uint32_t *) value) = packet_size;
+      *((uint32_t *) value) = (uint32_t) packet_size;
 
       if (pr_table_add(tab, pstrdup(c->pool, "channelPacketSize"), value,
           sizeof(uint32_t)) < 0) {
@@ -808,8 +753,8 @@ MODRET set_sftpclientmatch(cmd_rec *cmd) {
       /* Don't forget to advance i past the value. */
       i++;
 
-#ifdef PR_USE_NLS
     } else if (strncmp(cmd->argv[i], "sftpUTF8ProtocolVersion", 24) == 0) {
+#ifdef PR_USE_NLS
       char *ptr = NULL;
       void *value;
       long protocol_version;
@@ -839,8 +784,9 @@ MODRET set_sftpclientmatch(cmd_rec *cmd) {
 
       /* Don't forget to advance i past the value. */
       i++;
+#else
+      CONF_ERROR(cmd, "'sftpUTF8ProtocolVersion' requires NLS support (--enable-nls)");
 #endif /* PR_USE_NLS */
-
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown SFTPClientMatch key: '",
         cmd->argv[i], "'", NULL));
@@ -1014,6 +960,17 @@ MODRET set_sftpextensions(cmd_rec *cmd) {
           break;
       }
 
+    } else if (strncasecmp(ext, "fsync", 6) == 0) {
+      switch (action) {
+        case '-':
+          ext_flags &= ~SFTP_FXP_EXT_FSYNC;
+          break;
+
+        case '+':
+          ext_flags |= SFTP_FXP_EXT_FSYNC;
+          break;
+      }
+
     } else if (strncasecmp(ext, "vendorID", 9) == 0) {
       switch (action) {
         case '-':
@@ -1093,26 +1050,35 @@ MODRET set_sftpextensions(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/* usage: SFTPHostKey path */
+/* usage: SFTPHostKey path|"agent:/..." */
 MODRET set_sftphostkey(cmd_rec *cmd) {
   struct stat st;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (*cmd->argv[1] != '/') {
-    CONF_ERROR(cmd, "must be an absolute path");
-  }
+  if (strncmp(cmd->argv[1], "agent:", 6) != 0) {
+    int res, xerrno;
 
-  if (stat(cmd->argv[1], &st) < 0) {
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to check '", cmd->argv[1],
-      "': ", strerror(errno), NULL));
-  }
+    if (*cmd->argv[1] != '/') {
+      CONF_ERROR(cmd, "must be an absolute path");
+    }
 
-  if ((st.st_mode & S_IRWXG) ||
-      (st.st_mode & S_IRWXO)) {
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to use '", cmd->argv[1],
-      "' as host key, as it is group- or world-accessible", NULL));
+    PRIVS_ROOT
+    res = stat(cmd->argv[1], &st);
+    xerrno = errno;
+    PRIVS_RELINQUISH
+
+    if (res < 0) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to check '", cmd->argv[1],
+        "': ", strerror(xerrno), NULL));
+    }
+
+    if ((st.st_mode & S_IRWXG) ||
+        (st.st_mode & S_IRWXO)) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to use '", cmd->argv[1],
+        "' as host key, as it is group- or world-accessible", NULL));
+    }
   }
 
   (void) add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
@@ -1160,6 +1126,11 @@ MODRET set_sftpkeyexchanges(cmd_rec *cmd) {
         strncmp(cmd->argv[i], "diffie-hellman-group-exchange-sha256", 37) != 0 &&
 #endif
         strncmp(cmd->argv[i], "diffie-hellman-group-exchange-sha1", 35) != 0 &&
+#ifdef PR_USE_OPENSSL_ECC
+        strncmp(cmd->argv[i], "ecdh-sha2-nistp256", 19) != 0 &&
+        strncmp(cmd->argv[i], "ecdh-sha2-nistp384", 19) != 0 &&
+        strncmp(cmd->argv[i], "ecdh-sha2-nistp521", 19) != 0 &&
+#endif /* PR_USE_OPENSSL_ECC */
         strncmp(cmd->argv[i], "rsa1024-sha1", 13) != 0) {
 
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
@@ -1232,6 +1203,9 @@ MODRET set_sftpoptions(cmd_rec *cmd) {
     if (strncmp(cmd->argv[i], "IgnoreSFTPUploadPerms", 22) == 0) {
       opts |= SFTP_OPT_IGNORE_SFTP_UPLOAD_PERMS;
 
+    } else if (strncmp(cmd->argv[i], "IgnoreSFTPSetOwners", 19) == 0) {
+      opts |= SFTP_OPT_IGNORE_SFTP_SET_OWNERS;
+
     } else if (strncmp(cmd->argv[i], "IgnoreSFTPSetPerms", 19) == 0) {
       opts |= SFTP_OPT_IGNORE_SFTP_SET_PERMS;
 
@@ -1240,6 +1214,9 @@ MODRET set_sftpoptions(cmd_rec *cmd) {
 
     } else if (strncmp(cmd->argv[i], "IgnoreSCPUploadPerms", 20) == 0) {
       opts |= SFTP_OPT_IGNORE_SCP_UPLOAD_PERMS;
+
+    } else if (strncmp(cmd->argv[i], "IgnoreSCPUploadTimes", 20) == 0) {
+      opts |= SFTP_OPT_IGNORE_SCP_UPLOAD_TIMES;
 
     } else if (strncmp(cmd->argv[i], "OldProtocolCompat", 18) == 0) {
       opts |= SFTP_OPT_OLD_PROTO_COMPAT;
@@ -1254,6 +1231,9 @@ MODRET set_sftpoptions(cmd_rec *cmd) {
 
     } else if (strncmp(cmd->argv[i], "MatchKeySubject", 16) == 0) {
       opts |= SFTP_OPT_MATCH_KEY_SUBJECT;
+
+    } else if (strcmp(cmd->argv[1], "AllowInsecureLogin") == 0) {
+      opts |= SFTP_OPT_ALLOW_INSECURE_LOGIN;
 
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown SFTPOption '",
@@ -1472,6 +1452,7 @@ static void sftp_mod_unload_ev(const void *event_data, void *user_data) {
     sftp_interop_free();
     sftp_keystore_free();
     sftp_keys_free();
+    sftp_mac_free();
     pr_response_block(FALSE);
     sftp_utf8_free();
 
@@ -1524,6 +1505,7 @@ static void sftp_shutdown_ev(const void *event_data, void *user_data) {
   sftp_interop_free();
   sftp_keystore_free();
   sftp_keys_free();
+  sftp_mac_free();
   sftp_utf8_free();
 
   /* Clean up the OpenSSL stuff. */
@@ -1596,22 +1578,40 @@ static void sftp_wrap_conn_denied_ev(const void *event_data, void *user_data) {
  */
 
 static int sftp_init(void) {
+  unsigned long openssl_version;
 
   /* Check that the OpenSSL headers used match the version of the
    * OpenSSL library used.
    *
    * For now, we only log if there is a difference.
    */
-  if (SSLeay() != OPENSSL_VERSION_NUMBER) {
-    pr_log_pri(PR_LOG_ERR, MOD_SFTP_VERSION
-      ": compiled using OpenSSL version '%s' headers, but linked to "
-      "OpenSSL version '%s' library", OPENSSL_VERSION_TEXT,
-      SSLeay_version(SSLEAY_VERSION));
+  openssl_version = SSLeay();
+
+  if (openssl_version != OPENSSL_VERSION_NUMBER) {
+    int unexpected_version_mismatch = TRUE;
+
+    if (OPENSSL_VERSION_NUMBER >= 0x1000000fL) {
+      /* OpenSSL versions after 1.0.0 try to maintain ABI compatibility.
+       * So we will warn about header/library version mismatches only if
+       * the library is older than the headers.
+       */
+      if (openssl_version >= OPENSSL_VERSION_NUMBER) {
+        unexpected_version_mismatch = FALSE;
+      }
+    }
+
+    if (unexpected_version_mismatch == TRUE) {
+      pr_log_pri(PR_LOG_WARNING, MOD_SFTP_VERSION
+        ": compiled using OpenSSL version '%s' headers, but linked to "
+        "OpenSSL version '%s' library", OPENSSL_VERSION_TEXT,
+        SSLeay_version(SSLEAY_VERSION));
+    }
   }
 
   pr_log_debug(DEBUG2, MOD_SFTP_VERSION ": using " OPENSSL_VERSION_TEXT);
 
   sftp_keystore_init();
+  sftp_mac_init();
 
   pr_event_register(&sftp_module, "mod_ban.ban-class", sftp_ban_class_ev, NULL);
   pr_event_register(&sftp_module, "mod_ban.ban-host", sftp_ban_host_ev, NULL);
@@ -1663,13 +1663,14 @@ static int sftp_sess_init(void) {
 
   c = find_config(main_server->conf, CONF_PARAM, "SFTPLog", FALSE);
   if (c) {
-    int res;
+    int res, xerrno;
 
     sftp_logname = c->argv[0];
 
     pr_signals_block();
     PRIVS_ROOT
-    res = pr_log_openfile(sftp_logname, &sftp_logfd, 0600);
+    res = pr_log_openfile(sftp_logname, &sftp_logfd, PR_LOG_SYSTEM_MODE);
+    xerrno = errno;
     PRIVS_RELINQUISH
     pr_signals_unblock();
 
@@ -1677,15 +1678,15 @@ static int sftp_sess_init(void) {
       if (res == -1) {
         pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_VERSION
           ": notice: unable to open SFTPLog '%s': %s", sftp_logname,
-          strerror(errno));
+          strerror(xerrno));
 
       } else if (res == PR_LOG_WRITABLE_DIR) {
-        pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_VERSION
+        pr_log_pri(PR_LOG_WARNING, MOD_SFTP_VERSION
           ": notice: unable to open SFTPLog '%s': parent directory is "
           "world-writable", sftp_logname);
 
       } else if (res == PR_LOG_SYMLINK) {
-        pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_VERSION
+        pr_log_pri(PR_LOG_WARNING, MOD_SFTP_VERSION
           ": notice: unable to open SFTPLog '%s': cannot log to a symlink",
           sftp_logname);
       }
@@ -1734,7 +1735,7 @@ static int sftp_sess_init(void) {
   if (c) {
     if (sftp_crypto_set_driver(c->argv[0]) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "unable use TLSCryptoDevice '%s': %s", (const char *) c->argv[0],
+        "unable use SFTPCryptoDevice '%s': %s", (const char *) c->argv[0],
         strerror(errno));
     }
   }
@@ -1747,9 +1748,13 @@ static int sftp_sess_init(void) {
   while (c) {
     const char *path = c->argv[0];
 
-    if (sftp_keys_get_hostkey(path) < 0) {
+    /* This pool needs to have the lifetime of the session, since the hostkey
+     * data is needed for rekeying, and rekeying can happen at any time
+     * during the session.
+     */
+    if (sftp_keys_get_hostkey(sftp_pool, path) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error loading hostkey '%s' from disk, skipping key", path);
+        "error loading hostkey '%s', skipping key", path);
     }
 
     c = find_config_next(c, c->next, CONF_PARAM, "SFTPHostKey", FALSE);
@@ -1783,8 +1788,15 @@ static int sftp_sess_init(void) {
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "SFTPOptions", FALSE);
-  if (c) {
-    sftp_opts = *((unsigned long *) c->argv[0]);
+  while (c != NULL) {
+    unsigned long opts;
+
+    pr_signals_handle();
+
+    opts = *((unsigned long *) c->argv[0]);
+    sftp_opts |= opts;
+
+    c = find_config_next(c, c->next, CONF_PARAM, "SFTPOptions", FALSE);
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "DisplayLogin", FALSE);
@@ -1795,6 +1807,28 @@ static int sftp_sess_init(void) {
     if (sftp_fxp_set_displaylogin(path) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using DisplayLogin '%s': %s", path, strerror(errno));
+    }
+  }
+
+  c = find_config(main_server->conf, CONF_PARAM, "ServerIdent", FALSE);
+  if (c) {
+    if (*((unsigned char *) c->argv[0]) == FALSE) {
+      /* The admin configured "ServerIdent off".  Set the version string to
+       * just "mod_sftp", and that's it, no version.
+       */
+      sftp_server_version = pstrcat(sftp_pool, SFTP_ID_PREFIX, "mod_sftp",
+        NULL);
+      sftp_ssh2_packet_set_version(sftp_server_version);
+
+    } else {
+      /* The admin configured "ServerIdent on", and possibly some custom
+       * string.
+       */
+      if (c->argc > 1) {
+        sftp_server_version = pstrcat(sftp_pool, SFTP_ID_PREFIX, c->argv[1],
+          NULL);
+        sftp_ssh2_packet_set_version(sftp_server_version);
+      }
     }
   }
 

@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 /* Simple utility to create the proftpd shutdown message file, allowing
  * an admin to configure the shutdown, deny, disconnect times and messages.
  *
- * $Id: ftpshut.c,v 1.9 2011/05/23 20:46:20 castaglia Exp $
+ * $Id: ftpshut.c,v 1.10 2013/02/15 22:39:01 castaglia Exp $
  */
 
 #include "conf.h"
@@ -39,15 +39,17 @@ static void show_usage(char *progname) {
 }
 
 static int isnumeric(char *str) {
-  while (str && isspace((int) *str))
+  while (str && PR_ISSPACE(*str)) {
     str++;
+  }
 
   if (!str || !*str)
     return 0;
 
   for (; str && *str; str++) {
-    if (!isdigit((int) *str))
+    if (!PR_ISDIGIT(*str)) {
       return 0;
+    }
   }
 
   return 1;
@@ -121,17 +123,18 @@ int main(int argc, char *argv[]) {
   if(strcasecmp(shut,"now") != 0) {
     if(*shut == '+') {
       shut++;
-      while (shut && *shut && isspace((int) *shut)) shut++;
+      while (shut && *shut && PR_ISSPACE(*shut)) shut++;
 
-      if(!isnumeric(shut)) {
+      if (!isnumeric(shut)) {
 	fprintf(stderr, "%s: Invalid time interval specified.\n", progname);
 	show_usage(progname);
       }
 
       now += (60 * atoi(shut));
       tm = localtime(&now);
+
     } else {
-      if((strlen(shut) != 4 && strlen(shut) != 2) || !isnumeric(shut)) {
+      if ((strlen(shut) != 4 && strlen(shut) != 2) || !isnumeric(shut)) {
 	fprintf(stderr, "%s: Invalid time interval specified.\n", progname);
 	show_usage(progname);
       }

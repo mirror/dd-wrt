@@ -1,4 +1,4 @@
-<!-- $Id: FTP.html,v 1.4 2004/12/31 19:17:17 castaglia Exp $ -->
+<!-- $Id: FTP.html,v 1.7 2012/12/27 23:01:25 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/FTP.html,v $ -->
 
 <html>
@@ -19,13 +19,17 @@
   </li>
 
   <p>
+  <li><a name="ALLO"><b><code>ALLO</code></b></a><br>
+  </li>
+
+  <p>
   <li><a name="APPE"><b><code>APPE</code></b></a><br>
     Short for <b>APPE</b>nd.<br>
   </li>
 
   <p>
   <li><a name="AUTH"><b><code>AUTH</code></b></a><br>
-    Short for <b>AUTH</b>enticate (supported by <code>mod_tls</code>)<br>
+    Short for <b>AUTH</b>enticate (supported by <a href="../contrib/mod_tls.html"><code>mod_tls</code></a>)<br>
   </li>
 
   <p>
@@ -71,6 +75,10 @@
   </li>
 
   <p>
+  <li><a name="LANG"><b><code>LANG</code></b></a><br>
+  </li>
+
+  <p>
   <li><a name="LIST"><b><code>LIST</code></b></a><br>
   </li>
 
@@ -78,15 +86,51 @@
   <li><a name="MDTM"><b><code>MDTM</code></b></a><br>
     Short for <b>M</b>o<b>D</b>ification <b>T</b>i<b>M</b>e, this command
     is used by the client to request the modification time of a file on the
-    server.  This command is not defined in any formal RFCs (yet), but is
-    a commonly implemented FTP command.  <i>Note</i> that this command
-    <b>cannot</b> be used to change the modification time of the file on
-    the server; it only reports on the file's modification time.<br> 
+    server.  This command is defined formally in <a href="http://www.faqs.org/rfcs/rfc3659.html">RFC 3659</a>, and is a commonly implemented FTP command.
+    <i>Note</i> that this command <b>cannot</b> be used to change the
+    modification time of the file on the server; it only <i>reports</i> on the
+    file's modification time.  The <a href="#MFMT"><code>MFMT</code></a>
+    command is used to <i>change</i> a file's modification time.<br> 
+  </li>
+
+  <p>
+  <li><a name="MFMT"><b><code>MFMT</code></b></a><br>
+    Short for <b>M</b>odify <b>F</b>act: Last <b>M</b>odified <b>T</b>ime,
+    supported by <a href="../modules/mod_facts.html"><code>mod_facts</code></a>.
+    Some clients use this command to change the last modified timestamp on
+    a newly uploaded file so that the timestamp on the server matches the
+    timestamp of that file on the client.
   </li>
 
   <p>
   <li><a name="MKD"><b><code>MKD</code></b></a><br>
     Short for <b>M</b>a<b>K</b>e <b>D</b>irectory.<br>
+  </li>
+
+  <p>
+  <li><a name="MLSD"><b><code>MLSD</code></b></a><br>
+    Short for <b>M</b>achine <b>L</b>i<b>S</b>ting, <b>D</b>irectory, supported
+    by <a href="../modules/mod_facts.html"><code>mod_facts</code></a>.  Unlike
+    the <a href="#LIST"><code>LIST</code></a> command, whose response format
+    was never specified, the <code>MLSD</code> command has a strictly defined
+    response format (see <a href="http://www.faqs.org/rfcs/rfc3659.html">RFC 3659</a> for details).  This format was designed to be easily machine parseable,
+    for automated processing of directory listing formats; the format was also
+    designed to be platform-agnostic, and thus portable.
+  </li>
+
+  <p>
+  <li><a name="MLST"><b><code>MLST</code></b></a><br>
+    Short for <b>M</b>achine <b>L</b>i<b>ST</b>ing, supported by
+    <a href="../modules/mod_facts.html"><code>mod_facts</code></a>.  This
+    command is similar to <a href="#MLSD"><code>MLSD</code></a> in that it
+    uses the same response format.  Unlike <code>MLSD</code>, the response for a
+    <code>MLST</code> is sent back on the control connection rather than
+    using a data connection, and <b>is for a single file only</b>.
+  </li>
+
+  <p>
+  <li><a name="MODE"><b><code>MODE</code></b></a><br>
+    There are three mode types defined by <a href="http://www.faqs.org/rfcs/rfc969.html">RFC 959</a>; <code>proftpd</code> only supports one (<i>i.e.</i> <b>S</b>tream).
   </li>
 
   <p>
@@ -124,7 +168,7 @@
   <li><a name="PBSZ"><b><code>PBSZ</code></b></a><br>
     Short for <b>P</b>rotection <b>B</b>uffer <b>S</b>i<b>Z</b>e.  Used
     to determine the size of a buffer needed for secure handshaking (supported
-    by <code>mod_tls</code>)<br>
+    by <a href="../contrib/mod_tls.html"><code>mod_tls</code></a>)<br>
   </li>
 
   <p>
@@ -137,7 +181,8 @@
   <p>
   <li><a name="PROT"><b><code>PROT</code></b></a><br>
     Short for <b>PROT</b>ection.  Used to set the protection level on the
-    data channel (supported by <code>mod_tls</code>)<br>
+    data channel (supported by
+    <a href="../contrib/mod_tls.html"><code>mod_tls</code></a>)<br>
   </li>
 
   <p>
@@ -293,7 +338,7 @@
 <pre>
   SITE MKDIR /path/to/some/dir/that/is/not/there/
 </pre>
-    Supported by the <code>mod_site_misc</code> module.
+    Supported by the <a href="../contrib/mod_site_misc.html"><code>mod_site_misc</code></a> module.
   </li>
 
   <p>
@@ -306,7 +351,7 @@
 <pre>
   SITE RMDIR /path/to/some/dir/with/files/
 </pre>
-    Supported by the <code>mod_site_misc</code> module.
+    Supported by the <a href="../contrib/mod_site_misc.html"><code>mod_site_misc</code></a> module.
   </li>
 
   <p>
@@ -318,7 +363,7 @@
 <pre>
   SITE SYMLINK src dest
 </pre>
-    Supported by the <code>mod_site_misc</code> module.
+    Supported by the <a href="../contrib/mod_site_misc.html"><code>mod_site_misc</code></a> module.
   </li>
 
   <p>
@@ -329,9 +374,8 @@
 <pre>
   SITE UTIME 200412312359 /path/to/some/file.txt
 </pre>
-    Supported by the <code>mod_site_misc</code> module.
+    Supported by the <a href="../contrib/mod_site_misc.html"><code>mod_site_misc</code></a> module.
   </li>
-
 </ul>
 
 <p>
@@ -342,21 +386,10 @@
   </li>
 
   <p>
-  <li><a name="ALLO"><b><code>ALLO</code></b></a><br>
-  </li>
-
-  <p>
   <li><a name="MACB"><b><code>MACB</code></b></a><br>
     Short for <b>MAC</b>intosh <b>B</b>inary.  This command is not defined in
     any RFC, and is something of a hack added by Apple in order to support
     transfers of the resource forks of Mac files.<br>
-  </li>
-
-  <p>
-  <li><a name="MODE"><b><code>MODE</code></b></a><br>
-    There are three mode types defined by RFC959; <code>proftpd</code> only
-    supports one (<i>i.e.</i> <b>S</b>tream), and thus this command is not
-    supported.<br>
   </li>
 
   <p>
@@ -375,10 +408,61 @@
   </li>
 </ul>
 
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b>
+
+<p><a name="MoveDirectoriesAcrossDevices">
+<font color=red>Question</font>: I can use the <code>RNFR</code> and
+<code>RNTO</code> commands to <i>move</i> a file, even across different
+disks/mount points.  And I can use <code>RNFR</code>/<code>RNTO</code> to move
+a directory, <b>but</b> I <b>cannot</b> move a directory across different
+disks/mount points.  Is this a bug?<br>
+<font color=blue>Answer</font>: No, it is not a bug.  Why not?  Ultimately,
+it is because the FTP specifications do not guarantee (or even <i>discuss</i>)
+that an FTP implementation must support renaming of directories across
+mount points.
+<p>
+
+<p>
+ProFTPD implements the <code>RNFR</code>/<code>RNTO</code> functionality
+by using the <code>rename(2)</code> system call.  And <code>rename(2)</code>
+is documented to <b>not</b> work across mount points.
+
+<p>
+"But then why does it work when I rename a file across mount points?" you
+ask.  Good question.  The answer is that for <b>files only</b>, ProFTPD
+detects the <code>rename(2)</code> error for renaming across mount points,
+and then <i>copies</i> the file in question to the new location, deleting
+the old location when the copy completes successfully.
+
+<p>
+"Great!" you say, "Now do the same thing for directories!" Unfortunately, for
+directories, the answer is not that simple.  Here are some things to consider
+when copying directories: what if the directory contains sockets, FIFOs,
+devices, and other irregular file types which cannot be easily copied/moved?
+Should copying/moving of directories automatically use root privileges in
+order to preserve the ownership on files that do not belong to the logged-in
+user?  What if the copying/deleting of files fails in the midde: what should
+then happen to the copied (and remaining) files/directories?
+
+<p>
+Since there are no easy answers as yet to the above questions, ProFTPD now
+detects the <code>rename(2)</code> error for renaming across mount points
+for a <b>directory</b>, and rejects the <code>RNTO</code> command, showing
+something like:
+<pre>
+  RNFR directory
+  350 File or directory exists, ready for destination name
+  RNTO /other/mount/directory
+  550 Rename /other/mount/directory: Is a directory
+</pre>
+That "Is a directory" error indicates that ProFTPD cannot rename a directory
+across the mount points you requested.  (That particular error message can,
+and will, be made more informative.)
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2004/12/31 19:17:17 $</i><br>
+Last Updated: <i>$Date: 2012/12/27 23:01:25 $</i><br>
 </hr>
 
 </body>

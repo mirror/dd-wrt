@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp channels
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: channel.h,v 1.12 2011/05/24 20:55:50 castaglia Exp $
+ * $Id: channel.h,v 1.14 2012/02/15 23:50:51 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -64,10 +64,11 @@ struct ssh2_channel {
   /* For channel handling systems (e.g. fxp, scp) */
   int (*prepare)(uint32_t);
   int (*postopen)(uint32_t);
-  int (*handle_packet)(pool *, void *, uint32_t, char *, uint32_t);
+  int (*handle_packet)(pool *, void *, uint32_t, unsigned char *, uint32_t);
   int (*finish)(uint32_t);
 };
 
+uint32_t sftp_channel_get_max_packetsz(void);
 uint32_t sftp_channel_get_windowsz(uint32_t);
 unsigned int sftp_channel_set_max_count(unsigned int);
 uint32_t sftp_channel_set_max_packetsz(uint32_t);
@@ -77,10 +78,11 @@ int sftp_channel_drain_data(void);
 int sftp_channel_free(void);
 int sftp_channel_handle(struct ssh2_packet *, char);
 int sftp_channel_init(void);
-int sftp_channel_write_data(pool *, uint32_t, char *, uint32_t);
+int sftp_channel_write_data(pool *, uint32_t, unsigned char *, uint32_t);
 
 /* Like sftp_channel_write_data(), but sends EXTENDED_DATA messages. */
-int sftp_channel_write_ext_data_stderr(pool *, uint32_t, char *, uint32_t);
+int sftp_channel_write_ext_data_stderr(pool *, uint32_t, unsigned char *,
+  uint32_t);
 
 /* Return the number of open channels, if any.  If a pointer to a uint32_t
  * is provided, AND the returned count is greater than zero, then the

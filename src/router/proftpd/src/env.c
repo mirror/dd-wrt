@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2007-2010 The ProFTPD Project team
+ * Copyright (c) 2007-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Environment management
- * $Id: env.c,v 1.7 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: env.c,v 1.11 2013/10/07 01:29:05 castaglia Exp $
  */
 
 #include "conf.h"
@@ -70,14 +70,14 @@ int pr_env_set(pool *p, const char *key, const char *value) {
 #if defined(HAVE_SETENV)
 # ifdef PR_USE_DEVEL
   k = strdup(key);
-  if (!k) {
-    pr_log_pri(PR_LOG_ERR, "fatal: Memory exhausted");
+  if (k == NULL) {
+    pr_log_pri(PR_LOG_ALERT, "Out of memory!");
     exit(1);
   }
 
   v = strdup(value);
-  if (!v) {
-    pr_log_pri(PR_LOG_ERR, "fatal: Memory exhausted");
+  if (v == NULL) {
+    pr_log_pri(PR_LOG_ALERT, "Out of memory!");
     exit(1);
   }
 
@@ -92,8 +92,8 @@ int pr_env_set(pool *p, const char *key, const char *value) {
 
 # ifdef PR_USE_DEVEL
   str = strdup(str);
-  if (!str) {
-    pr_log_pri(PR_LOG_ERR, "fatal: Memory exhausted");
+  if (str == NULL) {
+    pr_log_pri(PR_LOG_ALERT, "Out of memory!");
     exit(1);
   }
 # endif /* PR_USE_DEVEL */
