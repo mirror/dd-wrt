@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,34 +33,54 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+
 #include "libsupp.h"
 
 /* "safe" strncpy, saves room for \0 at end of dest, and refuses to copy
  * more than "n" bytes.
  */
-char *sstrncpy(char *dest, const char *src, size_t n) {
-  register char *d = dest;
+int sstrncpy(char *dst, const char *src, size_t n) {
+#ifndef HAVE_STRLCPY
+  register char *d = dst;
+#endif /* HAVE_STRLCPY */
+  int res = 0;
 
-  if (dest == NULL) {
+  if (dst == NULL) {
     errno = EINVAL;
-    return NULL;
+    return -1;
   }
 
   if (src == NULL) {
     errno = EINVAL;
-    return NULL;
+    return -1;
   }
 
-  if (n == 0)
-    return NULL;
+  if (n == 0) {
+    return 0;
+  }
 
+#ifdef HAVE_STRLCPY
+  strlcpy(dst, src, n);
+
+  /* We want the returned length to be the number of bytes copied as
+   * requested by the caller, not the total length of the src string.
+   */
+  res = n;
+
+#else
   if (src && *src) {
-    for (; *src && n > 1; n--)
+    for (; *src && n > 1; n--) {
       *d++ = *src++;
+      res++;
+    }
   }
 
   *d = '\0';
+#endif /* HAVE_STRLCPY */
 
-  return dest;
+  return res;
 }
 

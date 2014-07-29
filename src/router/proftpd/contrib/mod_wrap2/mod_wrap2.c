@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_wrap2 -- tcpwrappers-like access control
  *
- * Copyright (c) 2000-2011 TJ Saunders
+ * Copyright (c) 2000-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -135,7 +135,7 @@ int wrap2_log(const char *fmt, ...) {
 }
 
 static int wrap2_openlog(void) {
-  int res = 0;
+  int res = 0, xerrno;
 
   /* Sanity check */
   wrap2_logname = get_param_ptr(main_server->conf, "WrapLog", FALSE);
@@ -150,10 +150,12 @@ static int wrap2_openlog(void) {
 
   pr_signals_block();
   PRIVS_ROOT
-  res = pr_log_openfile(wrap2_logname, &wrap2_logfd, 0640);
+  res = pr_log_openfile(wrap2_logname, &wrap2_logfd, PR_LOG_SYSTEM_MODE);
+  xerrno = errno;
   PRIVS_RELINQUISH
   pr_signals_unblock();
 
+  errno = xerrno;
   return res;
 }
 
@@ -325,32 +327,44 @@ static char *wrap2_get_hostname(wrap2_host_t *host) {
     int reverse_dns;
     size_t namelen;
 
-    /* Manually tweak the UseReverseDNS setting, and any caches, so that
-     * we really do use the DNS name here if possible.
-     */
-    pr_netaddr_clear_cache();
-
     reverse_dns = pr_netaddr_set_reverse_dns(TRUE);
-    session.c->remote_addr->na_have_dnsstr = FALSE;
-    sstrncpy(host->name, pr_netaddr_get_dnsstr(session.c->remote_addr),
-      sizeof(host->name));
+    if (reverse_dns) {
+      /* If UseReverseDNS is on, then clear any caches, so that we really do
+       * use the DNS name here if possible.
+       */
+      pr_netaddr_clear_cache();
 
-    /* If the retrieved hostname ends in a trailing period, trim it off. */
-    namelen = strlen(host->name); 
-    if (host->name[namelen-1] == '.') {
-      host->name[namelen-1] = '\0';
-      namelen--;
+      session.c->remote_addr->na_have_dnsstr = FALSE;
+      sstrncpy(host->name, pr_netaddr_get_dnsstr(session.c->remote_addr),
+        sizeof(host->name));
+
+      /* If the retrieved hostname ends in a trailing period, trim it off. */
+      namelen = strlen(host->name); 
+      if (host->name[namelen-1] == '.') {
+        host->name[namelen-1] = '\0';
+        namelen--;
+      }
+
+      pr_netaddr_set_reverse_dns(reverse_dns);
+      session.c->remote_addr->na_have_dnsstr = TRUE;
+
+    } else {
+      wrap2_log("'UseReverseDNS off' in effect, NOT resolving %s to DNS name "
+        "for comparison", pr_netaddr_get_ipstr(session.c->remote_addr));
+
+      sstrncpy(host->name, pr_netaddr_get_dnsstr(session.c->remote_addr),
+        sizeof(host->name));
+      pr_netaddr_set_reverse_dns(reverse_dns);
     }
-
-    pr_netaddr_set_reverse_dns(reverse_dns);
-    session.c->remote_addr->na_have_dnsstr = TRUE;
   }
 
   return host->name;
 }
 
 static char *wrap2_get_hostinfo(wrap2_host_t *host) {
-  char *hostname = wrap2_get_hostname(host);
+  char *hostname;
+
+  hostname = wrap2_get_hostname(host);
 
   if (WRAP2_IS_KNOWN_HOSTNAME(hostname))
     return hostname;
@@ -360,7 +374,9 @@ static char *wrap2_get_hostinfo(wrap2_host_t *host) {
 
 static char *wrap2_get_client(wrap2_conn_t *conn) {
   static char both[WRAP2_BUFFER_SIZE] = {'\0'};
-  char *hostinfo = wrap2_get_hostinfo(conn->client);
+  char *hostinfo;
+
+  hostinfo = wrap2_get_hostinfo(conn->client);
 
   if (strcasecmp(wrap2_get_user(conn), WRAP2_UNKNOWN) != 0) {
     snprintf(both, sizeof(both), "%s@%s", conn->user, hostinfo);
@@ -390,7 +406,7 @@ static char *wrap2_skip_whitespace(char *str) {
   /* Skip any leading whitespace. */
   tmp = str;
   for (i = 0; str[i]; i++) {
-    if (isspace((int) str[i])) {
+    if (PR_ISSPACE(str[i])) {
       tmp = &str[i+1];
       continue;
     }
@@ -510,16 +526,18 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
     return TRUE;
 
   } else if (strcasecmp(tok, "KNOWN") == 0) {
+    char *name;
 
     /* Check address and name. */
-    char *name = wrap2_get_hostname(host);
+    name = wrap2_get_hostname(host);
     return ((strcasecmp(wrap2_get_hostaddr(host), WRAP2_UNKNOWN) != 0) &&
       WRAP2_IS_KNOWN_HOSTNAME(name));
 
   } else if (strcasecmp(tok, "LOCAL") == 0) {
+    char *name;
 
     /* Local: no dots in name. */
-    char *name = wrap2_get_hostname(host);
+    name = wrap2_get_hostname(host);
     return (strchr(name, '.') == NULL && WRAP2_IS_KNOWN_HOSTNAME(name));
 
   } else if (tok[(len = strlen(tok)) - 1] == '.') {
@@ -832,9 +850,10 @@ static char *wrap2_opt_trim_string(char *string) {
   char *start = NULL, *end = NULL, *cp = NULL;
 
   for (cp = string; *cp; cp++) {
-    if (!isspace((int) *cp)) {
-      if (start == '\0')
+    if (!PR_ISSPACE(*cp)) {
+      if (start == '\0') {
         start = cp;
+      }
       end = cp;
     }
   }
@@ -1789,8 +1808,7 @@ MODRET wrap2_pre_pass(cmd_rec *cmd) {
 
   wrap2_log("%s", "checking access rules for connection");
 
-  if (strcasecmp(wrap2_get_hostname(conn.client), WRAP2_PARANOID) == 0 ||
-      !wrap2_allow_access(&conn)) {
+  if (wrap2_allow_access(&conn) == FALSE) {
     char *msg = NULL;
 
     /* Log the denied connection */
@@ -1945,8 +1963,15 @@ static int wrap2_sess_init(void) {
   pr_event_register(&wrap2_module, "core.exit", wrap2_exit_ev, NULL);
 
   c = find_config(main_server->conf, CONF_PARAM, "WrapOptions", FALSE);
-  if (c) {
-    wrap2_opts = *((unsigned long *) c->argv[0]);
+  while (c != NULL) {
+    unsigned long opts;
+
+    pr_signals_handle();
+
+    opts = *((unsigned long *) c->argv[0]);
+    wrap2_opts |= opts;
+
+    c = find_config_next(c, c->next, CONF_PARAM, "WrapOptions", FALSE);
   }
 
   if (wrap2_opts & WRAP_OPT_CHECK_ON_CONNECT) {
@@ -1968,8 +1993,7 @@ static int wrap2_sess_init(void) {
 
       wrap2_log("%s", "checking access rules for connection");
 
-      if (strcasecmp(wrap2_get_hostname(conn.client), WRAP2_PARANOID) == 0 ||
-          !wrap2_allow_access(&conn)) {
+      if (wrap2_allow_access(&conn) == FALSE) {
         char *msg = NULL;
 
         /* Log the denied connection */

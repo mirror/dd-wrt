@@ -73,6 +73,31 @@ ftptop$(EXEEXT): lib utils
 ftpwho$(EXEEXT): lib utils
 	$(CC) $(LDFLAGS) -o $@ $(BUILD_FTPWHO_OBJS) $(UTILS_LIBS)
 
+# Run the API tests
+check-api: proftpd$(EXEEXT)
+	test -z "$(ENABLE_TESTS)" || (cd tests/ && $(MAKE) check-api)
+
+# Run the FTP command testsuite
+check-commands: proftpd$(EXEEXT)
+	test -z "$(ENABLE_TESTS)" || (cd tests/ && $(MAKE) check-commands)
+
+# Run the FTP configuration testsuite
+check-configs: proftpd$(EXEEXT)
+	test -z "$(ENABLE_TESTS)" || (cd tests/ && $(MAKE) check-configs)
+
+# Run the FTP logging testsuite
+check-logging: proftpd$(EXEEXT)
+	test -z "$(ENABLE_TESTS)" || (cd tests/ && $(MAKE) check-logging)
+
+# Run the FTP module testsuite
+check-modules: proftpd$(EXEEXT)
+	test -z "$(ENABLE_TESTS)" || (cd tests/ && $(MAKE) check-modules)
+
+# Run the FTP utils testsuite
+check-utils: proftpd$(EXEEXT)
+	test -z "$(ENABLE_TESTS)" || (cd tests/ && $(MAKE) check-utils)
+
+# Run the entire testsuite
 check: proftpd$(EXEEXT)
 	test -z "$(ENABLE_TESTS)" || (cd tests/ && $(MAKE) check)
 
@@ -107,7 +132,7 @@ install-pkgconfig: $(DESTDIR)$(pkgconfigdir)
 	@echo '' >> proftpd.pc
 	@echo 'Name: ProFTPD' >> proftpd.pc
 	@echo 'Description: Professional FTP Daemon' >> proftpd.pc
-	@echo 'Version: $(VERSION)' >> proftpd.pc
+	@echo 'Version: $(BUILD_VERSION)' >> proftpd.pc
 	@echo 'Requires: ' >> proftpd.pc
 	@echo 'Libs: -L$${libdir}' >> proftpd.pc
 	@echo 'Cflags: -I$${includedir}' >> proftpd.pc
@@ -150,6 +175,7 @@ install-man: $(DESTDIR)$(mandir) $(DESTDIR)$(mandir)/man1 $(DESTDIR)$(mandir)/ma
 	$(INSTALL_MAN) $(top_srcdir)/utils/ftpcount.1 $(DESTDIR)$(mandir)/man1
 	$(INSTALL_MAN) $(top_srcdir)/utils/ftptop.1   $(DESTDIR)$(mandir)/man1
 	$(INSTALL_MAN) $(top_srcdir)/utils/ftpwho.1   $(DESTDIR)$(mandir)/man1
+	$(INSTALL_MAN) $(top_srcdir)/src/proftpd.conf.5 $(DESTDIR)$(mandir)/man5
 	$(INSTALL_MAN) $(top_srcdir)/src/xferlog.5    $(DESTDIR)$(mandir)/man5
 
 install-all: install-proftpd install-modules install-utils install-conf install-man install-libs install-headers install-pkgconfig install-locales $(INSTALL_DEPS)
@@ -189,17 +215,19 @@ distclean: clean
 	rm -f include/buildstamp.h
 	rm -rf .libs/
 
-dist: depend distclean
+spec:
+	# RPM needs this in the top-level directory in order to support '-t'
+	mv -f contrib/dist/rpm/proftpd.spec .
+	cat proftpd.spec | sed 's/global proftpd_version.*/global proftpd_version\t$(RELEASE_VERSION)/' | sed 's/global proftpd_cvs_version_main.*/global proftpd_cvs_version_main\t$(RELEASE_VERSION)/' | sed 's/global release_cand_version.*/global release_cand_version\t$(RC_VERSION)/' > /tmp/proftpd-build-spec.tmp && mv /tmp/proftpd-build-spec.tmp proftpd.spec
+
+dist: depend distclean spec
 	rm -rf `find . -name CVS`
 	rm -rf `find . -name .cvsignore`
 	rm -rf `find . -name core`
 	rm -rf `find . -name '*~'`
 	rm -fr `find . -name '*.bak'`
-	# RPM needs this in the top-level directory in order to support '-t'
-	mv -f contrib/dist/rpm/proftpd.spec .
 	# Other users may need to execute these scripts
 	chmod a+x configure config.sub install-sh modules/glue.sh
-
 
 # autoheader might not change config.h.in, so touch a stamp file.
 ${srcdir}/config.h.in: stamp-h.in

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp packet IO
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: packet.c,v 1.32.2.4 2012/12/13 23:56:07 castaglia Exp $
+ * $Id: packet.c,v 1.46 2013/03/08 16:22:18 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -74,7 +74,8 @@ static off_t rekey_size = 0;
 static int poll_timeout = -1;
 static time_t last_recvd, last_sent;
 
-static const char *version_id = SFTP_ID_STRING "\r\n";
+static const char *server_version = SFTP_ID_DEFAULT_STRING;
+static const char *version_id = SFTP_ID_DEFAULT_STRING "\r\n";
 static int sent_version_id = FALSE;
 
 static void is_client_alive(void);
@@ -215,6 +216,7 @@ int sftp_ssh2_packet_sock_read(int sockfd, void *buf, size_t reqlen,
      * EAGAIN/EWOULDBLOCK errors.
      */
     res = read(sockfd, ptr, remainlen);
+
     while (res <= 0) {
       if (res < 0) {
         int xerrno = errno;
@@ -306,12 +308,12 @@ int sftp_ssh2_packet_sock_read(int sockfd, void *buf, size_t reqlen,
 static char peek_mesg_type(struct ssh2_packet *pkt) {
   char mesg_type;
 
-  memcpy(&mesg_type, pkt->payload, sizeof(char));
+  memmove(&mesg_type, pkt->payload, sizeof(char));
   return mesg_type;
 }
 
 static void handle_global_request_mesg(struct ssh2_packet *pkt) {
-  char *buf, *ptr;
+  unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
   char *request_name;
   int want_reply;
@@ -362,7 +364,7 @@ static void handle_client_alive_mesg(struct ssh2_packet *pkt, char mesg_type) {
 
 static void is_client_alive(void) {
   unsigned int count;
-  char *buf, *ptr;
+  unsigned char *buf, *ptr;
   uint32_t bufsz, buflen, channel_id;
   struct ssh2_packet *pkt;
   pool *tmp_pool;
@@ -435,7 +437,7 @@ static void read_packet_discard(int sockfd) {
   if (buflen > 0) {
     int flags = SFTP_PACKET_READ_FL_PESSIMISTIC;
 
-    /* We don't necessary want to wait for the entire random amount of data
+    /* We don't necessarily want to wait for the entire random amount of data
      * to be read in.
      */
     sftp_ssh2_packet_sock_read(sockfd, buf, buflen, flags);
@@ -445,11 +447,11 @@ static void read_packet_discard(int sockfd) {
 }
 
 static int read_packet_len(int sockfd, struct ssh2_packet *pkt,
-    char *buf, size_t *offset, size_t *buflen, size_t bufsz) {
+    unsigned char *buf, size_t *offset, size_t *buflen, size_t bufsz) {
   uint32_t packet_len = 0, len = 0;
   size_t blocksz; 
   int res;
-  char *ptr = NULL;
+  unsigned char *ptr = NULL;
 
   blocksz = sftp_cipher_get_block_size();
 
@@ -463,12 +465,11 @@ static int read_packet_len(int sockfd, struct ssh2_packet *pkt,
     return res;
 
   len = res;
-  if (sftp_cipher_read_data(pkt->pool, (unsigned char *) buf, blocksz, &ptr,
-      &len) < 0) {
+  if (sftp_cipher_read_data(pkt->pool, buf, blocksz, &ptr, &len) < 0) {
     return -1;
   }
 
-  memcpy(&packet_len, ptr, sizeof(uint32_t));
+  memmove(&packet_len, ptr, sizeof(uint32_t));
   pkt->packet_len = ntohl(packet_len);
 
   ptr += sizeof(uint32_t);
@@ -478,7 +479,7 @@ static int read_packet_len(int sockfd, struct ssh2_packet *pkt,
    * buffer.
    */
   if (len > 0) {
-    memcpy(buf, ptr, len);
+    memmove(buf, ptr, len);
     *buflen = (size_t) len;
   }
 
@@ -487,11 +488,11 @@ static int read_packet_len(int sockfd, struct ssh2_packet *pkt,
 }
 
 static int read_packet_padding_len(int sockfd, struct ssh2_packet *pkt,
-    char *buf, size_t *offset, size_t *buflen, size_t bufsz) {
+    unsigned char *buf, size_t *offset, size_t *buflen, size_t bufsz) {
 
   if (*buflen > sizeof(char)) {
     /* XXX Assume the data in the buffer is unecrypted, and thus usable. */
-    memcpy(&pkt->padding_len, buf + *offset, sizeof(char));
+    memmove(&pkt->padding_len, buf + *offset, sizeof(char));
 
     /* Advance the buffer past the byte we just read off. */
     *offset += sizeof(char);
@@ -507,8 +508,8 @@ static int read_packet_padding_len(int sockfd, struct ssh2_packet *pkt,
 }
 
 static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
-    char *buf, size_t *offset, size_t *buflen, size_t bufsz) {
-  char *ptr = NULL;
+    unsigned char *buf, size_t *offset, size_t *buflen, size_t bufsz) {
+  unsigned char *ptr = NULL;
   int res;
   uint32_t payload_len = pkt->payload_len, padding_len = pkt->padding_len,
     data_len, len = 0;
@@ -543,7 +544,7 @@ static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
    */
   if (*buflen > 0) {
     if (*buflen < payload_len) {
-      memcpy(pkt->payload, buf + *offset, *buflen);
+      memmove(pkt->payload, buf + *offset, *buflen);
 
       payload_len -= *buflen;
       *offset = 0;
@@ -551,7 +552,7 @@ static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
 
     } else {
       /* There's enough already for the payload length.  Nice. */
-      memcpy(pkt->payload, buf + *offset, payload_len);
+      memmove(pkt->payload, buf + *offset, payload_len);
 
       *offset += payload_len;
       *buflen -= payload_len;
@@ -568,7 +569,7 @@ static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
    */
   if (*buflen > 0) {
     if (*buflen < padding_len) {
-      memcpy(pkt->padding, buf + *offset, *buflen);
+      memmove(pkt->padding, buf + *offset, *buflen);
 
       padding_len -= *buflen;
       *offset = 0;
@@ -576,7 +577,7 @@ static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
 
     } else {
       /* There's enough already for the padding length.  Nice. */
-      memcpy(pkt->padding, buf + *offset, padding_len);
+      memmove(pkt->padding, buf + *offset, padding_len);
 
       *offset += padding_len;
       *buflen -= padding_len;
@@ -602,22 +603,23 @@ static int read_packet_payload(int sockfd, struct ssh2_packet *pkt,
   }
  
   len = res;
-  if (sftp_cipher_read_data(pkt->pool, (unsigned char *) buf + *offset,
-      data_len, &ptr, &len) < 0) {
+  if (sftp_cipher_read_data(pkt->pool, buf + *offset, data_len, &ptr,
+      &len) < 0) {
     return -1;
   }
 
   if (payload_len > 0) {
-    memcpy(pkt->payload + (pkt->payload_len - payload_len), ptr,
+    memmove(pkt->payload + (pkt->payload_len - payload_len), ptr,
       payload_len);
   }
 
-  memcpy(pkt->padding + (pkt->padding_len - padding_len), ptr + payload_len,
+  memmove(pkt->padding + (pkt->padding_len - padding_len), ptr + payload_len,
     padding_len);
   return 0;
 }
 
-static int read_packet_mac(int sockfd, struct ssh2_packet *pkt, char *buf) {
+static int read_packet_mac(int sockfd, struct ssh2_packet *pkt,
+    unsigned char *buf) {
   int res;
   uint32_t mac_len = pkt->mac_len;
 
@@ -629,7 +631,7 @@ static int read_packet_mac(int sockfd, struct ssh2_packet *pkt, char *buf) {
     return res;
 
   pkt->mac = palloc(pkt->pool, pkt->mac_len);
-  memcpy(pkt->mac, buf, res);
+  memmove(pkt->mac, buf, res);
 
   return 0;
 }
@@ -638,7 +640,7 @@ struct ssh2_packet *sftp_ssh2_packet_create(pool *p) {
   pool *tmp_pool;
   struct ssh2_packet *pkt;
 
-  tmp_pool = pr_pool_create_sz(p, 128);
+  tmp_pool = make_sub_pool(p);
   pr_pool_tag(tmp_pool, "SSH2 packet pool");
 
   pkt = pcalloc(tmp_pool, sizeof(struct ssh2_packet));
@@ -657,7 +659,7 @@ int sftp_ssh2_packet_get_last_recvd(time_t *tp) {
     return -1;
   }
 
-  memcpy(tp, &last_recvd, sizeof(time_t));
+  memmove(tp, &last_recvd, sizeof(time_t));
   return 0;
 }
 
@@ -667,21 +669,21 @@ int sftp_ssh2_packet_get_last_sent(time_t *tp) {
     return -1;
   }
 
-  memcpy(tp, &last_sent, sizeof(time_t));
+  memmove(tp, &last_sent, sizeof(time_t));
   return 0;
 }
 
 char sftp_ssh2_packet_get_mesg_type(struct ssh2_packet *pkt) {
   char mesg_type;
 
-  memcpy(&mesg_type, pkt->payload, sizeof(char));
+  memmove(&mesg_type, pkt->payload, sizeof(char));
   pkt->payload += sizeof(char);
   pkt->payload_len -= sizeof(char);
 
   return mesg_type;
 }
 
-const char *sftp_ssh2_packet_get_mesg_type_desc(char mesg_type) {
+const char *sftp_ssh2_packet_get_mesg_type_desc(unsigned char mesg_type) {
   switch (mesg_type) {
     case SFTP_SSH2_MSG_DISCONNECT:
       return "SSH_MSG_DISCONNECT";
@@ -804,13 +806,14 @@ int sftp_ssh2_packet_set_client_alive(unsigned int max, unsigned int interval) {
 }
 
 int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
-  char buf[SFTP_MAX_PACKET_LEN];
+  unsigned char buf[SFTP_MAX_PACKET_LEN];
   size_t buflen, bufsz = SFTP_MAX_PACKET_LEN, offset = 0;
 
   pr_session_set_idle();
 
   while (1) {
     uint32_t req_blocksz;
+    int res;
 
     pr_signals_handle();
 
@@ -979,7 +982,19 @@ int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
     }
 
     packet_client_seqno++;
-    pr_timer_reset(PR_TIMER_IDLE, ANY_MODULE);
+
+    /* Handle the case where timers might be being processed at the
+     * moment.
+     */
+    res = pr_timer_reset(PR_TIMER_IDLE, ANY_MODULE);
+    while (res < 0) {
+      if (errno == EINTR) {
+        pr_signals_handle();
+        res = pr_timer_reset(PR_TIMER_IDLE, ANY_MODULE);
+      }
+
+      break;
+    }
 
     break;
   }
@@ -1056,7 +1071,7 @@ static struct iovec packet_iov[SFTP_SSH2_PACKET_IOVSZ];
 static unsigned int packet_niov = 0;
 
 int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
-  char buf[SFTP_MAX_PACKET_LEN * 2], mesg_type;
+  unsigned char buf[SFTP_MAX_PACKET_LEN * 2], mesg_type;
   size_t buflen = 0, bufsz = SFTP_MAX_PACKET_LEN;
   uint32_t packet_len = 0;
   int res, write_len = 0;
@@ -1158,16 +1173,23 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
     }
   }
 
+  if (packet_poll(sockfd, SFTP_PACKET_IO_WR) < 0) {
+    int xerrno = errno;
+
+    /* Socket not writable?  Clear the array, and try again. */
+    memset(packet_iov, 0, sizeof(packet_iov));
+    packet_niov = 0;
+
+    errno = xerrno;
+    return -1;
+  }
+
   /* Generate an event for any interested listeners.  Since the data are
    * probably encrypted and such, and since listeners won't/shouldn't
    * have the facilities for handling such data, we only pass the
    * amount of data to be written out.
    */
   pr_event_generate("ssh2.netio-write", &write_len);
-
-  if (packet_poll(sockfd, SFTP_PACKET_IO_WR) < 0) {
-    return -1;
-  }
 
   /* The socket we accept is blocking, thus there's no need to handle
    * EAGAIN/EWOULDBLOCK errors.
@@ -1210,7 +1232,12 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
   memset(packet_iov, 0, sizeof(packet_iov));
   packet_niov = 0;
 
-  sent_version_id = TRUE;
+  if (sent_version_id == FALSE) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "sent server version '%s'", server_version);
+    sent_version_id = TRUE;
+  }
+
   time(&last_sent);
 
   packet_server_seqno++;
@@ -1287,8 +1314,8 @@ void sftp_ssh2_packet_handle_debug(struct ssh2_packet *pkt) {
    * characters.
    */
   for (i = 0; i < strlen(str); i++) {
-    if (iscntrl((int) str[i]) ||
-        !isprint((int) str[i])) {
+    if (PR_ISCNTRL(str[i]) ||
+        !PR_ISPRINT(str[i])) {
       str[i] = '?';
     }
   }
@@ -1328,7 +1355,7 @@ void sftp_ssh2_packet_handle_disconnect(struct ssh2_packet *pkt) {
 
   /* Sanity-check the message for control characters. */
   for (i = 0; i < strlen(explain); i++) {
-    if (iscntrl((int) explain[i])) {
+    if (PR_ISCNTRL(explain[i])) {
       explain[i] = '?';
     }
   }
@@ -1340,7 +1367,8 @@ void sftp_ssh2_packet_handle_disconnect(struct ssh2_packet *pkt) {
   }
 
   (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-    "client sent SSH_DISCONNECT message: %s (%s)", explain, reason_str);
+    "client at %s sent SSH_DISCONNECT message: %s (%s)",
+    pr_netaddr_get_ipstr(session.c->remote_addr), explain, reason_str);
   pr_session_disconnect(&sftp_module, PR_SESS_DISCONNECT_CLIENT_QUIT, explain);
 }
 
@@ -1462,14 +1490,26 @@ int sftp_ssh2_packet_handle(void) {
 
     case SFTP_SSH2_MSG_USER_AUTH_REQUEST:
       if (sftp_sess_state & SFTP_SESS_STATE_HAVE_SERVICE) {
-        int ok;
 
-        ok = sftp_auth_handle(pkt);
-        if (ok == 1) {
-          sftp_sess_state |= SFTP_SESS_STATE_HAVE_AUTH;
+        /* If the client has already authenticated this connection, then
+         * silently ignore this additional auth request, per recommendation
+         * in RFC4252.
+         */
+        if (sftp_sess_state & SFTP_SESS_STATE_HAVE_AUTH) {
+          (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+            "ignoring %s (%d) message: Connection already authenticated",
+            sftp_ssh2_packet_get_mesg_type_desc(mesg_type), mesg_type);
 
-        } else if (ok < 0) {
-          SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+        } else {
+          int ok;
+
+          ok = sftp_auth_handle(pkt);
+          if (ok == 1) {
+            sftp_sess_state |= SFTP_SESS_STATE_HAVE_AUTH;
+
+          } else if (ok < 0) {
+            SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+          }
         }
 
         break;
@@ -1570,8 +1610,22 @@ int sftp_ssh2_packet_send_version(void) {
 
     sent_version_id = TRUE;
     session.total_raw_out += res;
+
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "sent server version '%s'", server_version);
   }
 
+  return 0;
+}
+
+int sftp_ssh2_packet_set_version(const char *version) {
+  if (server_version == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  server_version = version;
+  version_id = pstrcat(sftp_pool, version, "\r\n", NULL);
   return 0;
 }
 

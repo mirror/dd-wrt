@@ -60,6 +60,53 @@ dnl check and disable those symbols.  Otherwise mod_sftp fails to build due
 dnl to linker errors.
 saved_libs="$LIBS"
 LIBS="$LIBS -lcrypto"
+
+AC_MSG_CHECKING([whether linking with OpenSSL functions requires -ldl])
+saved_libs="$LIBS"
+
+dnl Splice out -lsupp, since that library hasn't been built yet
+LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+LIBS="$LIBS -lcrypto -ldl"
+
+AC_TRY_LINK(
+  [
+    #include <openssl/evp.h>
+  ], [
+    SSLeay_add_all_algorithms();
+  ], [
+    AC_MSG_RESULT(yes)
+    LIBS="$saved_libs -ldl"
+  ], [
+    AC_MSG_RESULT(no)
+    LIBS="$saved_libs"
+  ]
+)
+
+AC_MSG_CHECKING([whether linking with OpenSSL functions requires -lz])
+saved_libs="$LIBS"
+
+dnl Splice out -lsupp, since that library hasn't been built yet
+LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+LIBS="$LIBS -lcrypto -lz"
+
+AC_TRY_LINK(
+  [
+    #include <openssl/evp.h>
+    #include <openssl/bio.h>
+    #include <openssl/comp.h>
+  ], [
+    BIO *bio;
+    SSLeay_add_all_algorithms();
+    bio = BIO_new(BIO_f_zlib());
+  ], [
+    AC_MSG_RESULT(yes)
+    LIBS="$saved_libs -lz"
+  ], [
+    AC_MSG_RESULT(no)
+    LIBS="$saved_libs"
+  ]
+)
+
 AC_MSG_CHECKING([whether OpenSSL has crippled AES support])
 AC_TRY_LINK(
   [ #ifdef HAVE_STRING_H
@@ -123,6 +170,7 @@ INCLUDES="$ac_build_addl_includes"
 LIBDIRS="$ac_build_addl_libdirs"
 
 AC_SUBST(INCLUDES)
+AC_SUBST(LDFLAGS)
 AC_SUBST(LIBDIRS)
 
 AC_CONFIG_HEADER(mod_sftp.h)

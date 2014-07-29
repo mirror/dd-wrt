@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server API testsuite
- * Copyright (c) 2011 The ProFTPD Project team
+ * Copyright (c) 2011-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Command API tests
- * $Id: cmd.c,v 1.2 2011/05/23 20:50:30 castaglia Exp $
+ * $Id: cmd.c,v 1.4 2014/01/27 18:25:15 castaglia Exp $
  */
 
 #include "tests.h"
@@ -356,6 +356,92 @@ START_TEST (cmd_strcmp_test) {
 }
 END_TEST
 
+START_TEST (cmd_get_displayable_str_test) {
+  char *ok, *res = NULL;
+  cmd_rec *cmd = NULL;
+  size_t len = 0;
+
+  res = pr_cmd_get_displayable_str(NULL, NULL);
+  fail_unless(res == NULL, "Failed to handle null cmd_rec");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  cmd = pr_cmd_alloc(p, 1, "foo");
+  res = pr_cmd_get_displayable_str(cmd, NULL);
+
+  ok = "foo";
+  fail_if(res == NULL, "Expected string, got null");
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  mark_point();
+  cmd->argc = 0;
+  res = pr_cmd_get_displayable_str(cmd, NULL);
+
+  fail_if(res == NULL, "Expected string, got null");
+
+  /* Note: We still expect the PREVIOUS ok value, since
+   * pr_cmd_get_displayable_str() should cache the constructed string,
+   * rather than creating it anew.
+   */
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  mark_point();
+  pr_cmd_clear_cache(cmd);
+  res = pr_cmd_get_displayable_str(cmd, NULL);
+
+  ok = "";
+  fail_if(res == NULL, "Expected string, got null");
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  mark_point();
+  cmd = pr_cmd_alloc(p, 1, "bar");
+  cmd->arg = NULL;
+  res = pr_cmd_get_displayable_str(cmd, NULL);
+
+  ok = "bar";
+  fail_if(res == NULL, "Expected string, got null");
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  mark_point();
+  cmd = pr_cmd_alloc(p, 1, "baz");
+  cmd->argv[0] = NULL;
+  cmd->arg = pstrdup(p, "baz");
+  res = pr_cmd_get_displayable_str(cmd, NULL);
+
+  /* cmd->argv[0] is the command name; without that, it does not matter
+   * what cmd->arg is.  Hence why if cmd->argv[0] is null, we expect the
+   * empty string.
+   */
+  ok = "";
+  fail_if(res == NULL, "Expected string, got null");
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  mark_point();
+  cmd = pr_cmd_alloc(p, 3, "foo", "bar", "baz");
+  cmd->arg = NULL;
+  res = pr_cmd_get_displayable_str(cmd, NULL);
+  
+  /* cmd->argv[0] is the command name; without that, it does not matter
+   * what cmd->arg is.  Hence why if cmd->argv[0] is null, we expect the
+   * empty string.
+   */
+  ok = "foo bar baz";
+  fail_if(res == NULL, "Expected string, got null");
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  /* Make sure we can handle cases where cmd_rec->argv has been tampered
+   * with.
+   */
+  mark_point();
+  cmd = pr_cmd_alloc(p, 3, "foo", "bar", "baz");
+  cmd->argv[0] = NULL;
+  res = pr_cmd_get_displayable_str(cmd, NULL);
+
+  ok = " bar baz";
+  fail_if(res == NULL, "Expected string, got null");
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+}
+END_TEST
+
 Suite *tests_get_cmd_suite(void) {
   Suite *suite;
   TCase *testcase;
@@ -370,6 +456,7 @@ Suite *tests_get_cmd_suite(void) {
   tcase_add_test(testcase, cmd_get_id_test);
   tcase_add_test(testcase, cmd_cmp_test);
   tcase_add_test(testcase, cmd_strcmp_test);
+  tcase_add_test(testcase, cmd_get_displayable_str_test);
 
   suite_add_tcase(suite, testcase);
 

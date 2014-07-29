@@ -1,4 +1,4 @@
-<!-- $Id: mod_ldap.html,v 1.1 2008/08/15 22:16:54 castaglia Exp $ -->
+<!-- $Id: mod_ldap.html,v 1.2 2014/01/21 22:11:45 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_ldap.html,v $ -->
 
 <html>
@@ -46,6 +46,7 @@ questions, concerns, or suggestions regarding this module.
   <li><a href="#LDAPGenerateHomedir">LDAPGenerateHomedir</a>
   <li><a href="#LDAPGenerateHomedirPrefix">LDAPGenerateHomedirPrefix</a>
   <li><a href="#LDAPGenerateHomedirPrefixNoUsername">LDAPGenerateHomedirPrefixNoUsername</a>
+  <li><a href="#LDAPLog">LDAPLog</a>
   <li><a href="#LDAPNegativeCache">LDAPNegativeCache</a>
   <li><a href="#LDAPProtocolVersion">LDAPProtocolVersion</a>
   <li><a href="#LDAPQueryTimeout">LDAPQueryTimeout</a>
@@ -445,6 +446,25 @@ See also: <a href="#LDAPGenerateHomedir"><code>LDAPGenerateHomedir</code></a>, <
 
 <p>
 <hr>
+<h2><a name="LDAPLog">LDAPLog</a></h2>
+<strong>Syntax:</strong> LDAPLog <em>file|"none"</em><br>
+<strong>Default:</strong> <em>None</em><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.3.5rc4 and later
+
+<p>
+The <code>LDAPLog</code> directive is used to specify a log file for
+<code>mod_ldap</code>'s reporting on a per-server basis.  The <em>file</em>
+parameter given must be the full path to the file to use for logging.
+
+<p>
+Note that this path must <b>not</b> be to a world-writable directory and,
+unless <code>AllowLogSymlinks</code> is explicitly set to <em>on</em>
+(generally a bad idea), the path must <b>not</b> be a symbolic link.
+
+<p>
+<hr>
 <h2><a name="LDAPNegativeCache">LDAPNegativeCache</a></h2>
 <strong>Syntax:</strong> LDAPNegativeCache <em>on|off</em><br>
 <strong>Default:</strong> None<br>
@@ -619,12 +639,12 @@ you (or not), please let us know:
 <p>
 <hr><br>
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2008/08/15 22:16:54 $</i><br>
+Last Updated: <i>$Date: 2014/01/21 22:11:45 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2008 TJ Saunders<br>
+&copy; Copyright 2013-2014 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

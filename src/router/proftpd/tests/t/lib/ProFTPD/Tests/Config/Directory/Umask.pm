@@ -59,13 +59,14 @@ sub umask_root_dir_bug2677 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/dir.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/dir.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/dir.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/dir.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -90,7 +91,7 @@ sub umask_root_dir_bug2677 {
  
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -220,6 +221,9 @@ sub umask_root_dir_bug2677 {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -234,13 +238,14 @@ sub umask_server_config_bug2677 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/dir.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/dir.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/dir.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/dir.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -265,7 +270,7 @@ sub umask_server_config_bug2677 {
  
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -395,6 +400,9 @@ sub umask_server_config_bug2677 {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -409,13 +417,14 @@ sub umask_glob_subdirs {
   my $pid_file = File::Spec->rel2abs("$tmpdir/dir.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/dir.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/dir.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/dir.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -444,7 +453,7 @@ sub umask_glob_subdirs {
  
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -600,6 +609,9 @@ sub umask_glob_subdirs {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -614,13 +626,14 @@ sub umask_glob_dir_bug3491 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/dir.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/dir.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/dir.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/dir.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -649,7 +662,7 @@ sub umask_glob_dir_bug3491 {
  
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -776,6 +789,9 @@ sub umask_glob_dir_bug3491 {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -790,13 +806,14 @@ sub umask_no_glob_dir_bug3491 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/dir.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/dir.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/dir.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/dir.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -825,7 +842,7 @@ sub umask_no_glob_dir_bug3491 {
  
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $config = {
     PidFile => $pid_file,
@@ -948,6 +965,9 @@ sub umask_no_glob_dir_bug3491 {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 

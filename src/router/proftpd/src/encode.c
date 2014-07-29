@@ -23,7 +23,7 @@
  */
 
 /* UTF8/charset encoding/decoding
- * $Id: encode.c,v 1.31.2.1 2012/04/06 16:45:31 castaglia Exp $
+ * $Id: encode.c,v 1.33 2012/04/06 16:44:40 castaglia Exp $
  */
 
 #include "conf.h"
@@ -163,11 +163,10 @@ int encode_init(void) {
 
   if (local_charset == NULL) {
     local_charset = pr_encode_get_local_charset();
-
-  } else {
-    pr_trace_msg(trace_channel, 3,
-      "using '%s' as local charset for %s conversion", local_charset, encoding);
   }
+
+  pr_log_debug(DEBUG10, "using '%s' as local charset for %s conversion",
+    local_charset, encoding);
 
 # ifdef HAVE_ICONV
 
@@ -181,8 +180,12 @@ int encode_init(void) {
     /* Get the iconv handles. */
     encode_conv = iconv_open(encoding, local_charset);
     if (encode_conv == (iconv_t) -1) {
-      pr_trace_msg(trace_channel, 1, "error opening conversion handle "
-        "from '%s' to '%s': %s", local_charset, encoding, strerror(errno));
+      int xerrno = errno;
+
+      pr_log_pri(PR_LOG_NOTICE, "error opening conversion handle "
+        "from '%s' to '%s': %s", local_charset, encoding, strerror(xerrno));
+
+      errno = xerrno;
       return -1;
     }
  
@@ -190,8 +193,8 @@ int encode_init(void) {
     if (decode_conv == (iconv_t) -1) {
       int xerrno = errno;
 
-      pr_trace_msg(trace_channel, 1, "error opening conversion handle "
-        "from '%s' to '%s': %s", encoding, local_charset, strerror(errno));
+      pr_log_pri(PR_LOG_NOTICE, "error opening conversion handle "
+        "from '%s' to '%s': %s", encoding, local_charset, strerror(xerrno));
 
       (void) iconv_close(encode_conv);
       encode_conv = (iconv_t) -1;
@@ -357,10 +360,14 @@ int pr_encode_enable_encoding(const char *codeset) {
 
   res = encode_init();
   if (res < 0) {
+    int xerrno = errno;
+
     pr_trace_msg(trace_channel, 1,
       "failed to initialize encoding for %s, disabling encoding: %s", codeset,
-      strerror(errno));
+      strerror(xerrno));
+
     encoding = NULL;
+    errno = xerrno;
   }
 
   return res;

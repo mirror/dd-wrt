@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 /* Timer system, based on alarm() and SIGALRM
- * $Id: timers.c,v 1.38 2011/10/04 20:59:57 castaglia Exp $
+ * $Id: timers.c,v 1.39 2013/10/09 06:36:20 castaglia Exp $
  */
 
 #include "conf.h"
@@ -171,14 +171,14 @@ static RETSIGTYPE sig_alarm(int signo) {
 
   /* Install this handler for SIGALRM. */
   if (sigaction(SIGALRM, &act, NULL) < 0) {
-    pr_log_pri(PR_LOG_NOTICE,
+    pr_log_pri(PR_LOG_WARNING,
       "unable to install SIGALRM handler via sigaction(2): %s",
       strerror(errno));
   }
 
 #ifdef HAVE_SIGINTERRUPT
   if (siginterrupt(SIGALRM, 1) < 0) {
-    pr_log_pri(PR_LOG_NOTICE,
+    pr_log_pri(PR_LOG_WARNING,
       "unable to allow SIGALRM to interrupt system calls: %s", strerror(errno));
   }
 #endif
@@ -206,14 +206,14 @@ static void set_sig_alarm(void) {
 
   /* Install this handler for SIGALRM. */
   if (sigaction(SIGALRM, &act, NULL) < 0) {
-    pr_log_pri(PR_LOG_NOTICE,
+    pr_log_pri(PR_LOG_WARNING,
       "unable to install SIGALRM handler via sigaction(2): %s",
       strerror(errno));
   }
 
 #ifdef HAVE_SIGINTERRUPT
   if (siginterrupt(SIGALRM, 1) < 0) {
-    pr_log_pri(PR_LOG_NOTICE,
+    pr_log_pri(PR_LOG_WARNING,
       "unable to allow SIGALRM to interrupt system calls: %s", strerror(errno));
   }
 #endif

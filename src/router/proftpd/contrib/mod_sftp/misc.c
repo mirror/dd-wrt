@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp miscellaneous
- * Copyright (c) 2010 TJ Saunders
+ * Copyright (c) 2010-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,16 +21,21 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: misc.c,v 1.2 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: misc.c,v 1.4 2012/12/26 23:18:58 castaglia Exp $
  */
 
 #include "mod_sftp.h"
 #include "misc.h"
 
-int sftp_misc_handle_chown(pr_fh_t *fh) {
+int sftp_misc_chown_file(pr_fh_t *fh) {
   struct stat st;
   int res, xerrno;
  
+  if (fh == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   /* session.fsgid defaults to -1, so chown(2) won't chgrp unless specifically
    * requested via GroupOwner.
    */
@@ -140,6 +145,131 @@ int sftp_misc_handle_chown(pr_fh_t *fh) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "%schmod(%s) to %04o failed: %s", use_root_privs ? "root " : "",
           fh->fh_path, (unsigned int) st.st_mode, strerror(xerrno));
+      }
+    }
+  }
+
+  return 0;
+}
+
+int sftp_misc_chown_path(const char *path) {
+  struct stat st;
+  int res, xerrno;
+
+  if (path == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* session.fsgid defaults to -1, so chown(2) won't chgrp unless specifically
+   * requested via GroupOwner.
+   */
+  if (session.fsuid != (uid_t) -1) {
+
+    PRIVS_ROOT
+    res = pr_fsio_lchown(path, session.fsuid, session.fsgid);
+    xerrno = errno;
+    PRIVS_RELINQUISH
+
+    if (res < 0) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "lchown(%s) as root failed: %s", path, strerror(xerrno));
+
+    } else {
+      if (session.fsgid != (gid_t) -1) {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "root lchown(%s) to UID %lu, GID %lu successful", path,
+          (unsigned long) session.fsuid, (unsigned long) session.fsgid);
+
+      } else {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "root lchown(%s) to UID %lu successful", path,
+          (unsigned long) session.fsuid);
+      }
+
+      pr_fs_clear_cache();
+      pr_fsio_stat(path, &st);
+
+      /* The chmod happens after the chown because chown will remove the
+       * S{U,G}ID bits on some files (namely, directories); the subsequent
+       * chmod is used to restore those dropped bits.  This makes it necessary
+       * to use root privs when doing the chmod as well (at least in the case
+       * of chown'ing the file via root privs) in order to ensure that the mode
+       * can be set (a file might be being "given away", and if root privs
+       * aren't used, the chmod() will fail because the old owner/session user
+       * doesn't have the necessary privileges to do so).
+       */
+      PRIVS_ROOT
+      res = pr_fsio_chmod(path, st.st_mode);
+      xerrno = errno;
+      PRIVS_RELINQUISH
+
+      if (res < 0) {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "root chmod(%s) to %04o failed: %s", path,
+          (unsigned int) st.st_mode, strerror(xerrno));
+
+      } else {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "root chmod(%s) to %04o successful", path,
+          (unsigned int) st.st_mode);
+      }
+    }
+
+  } else if (session.fsgid != (gid_t) -1) {
+    register unsigned int i;
+    int use_root_privs = TRUE;
+
+    /* Check if session.fsgid is in session.gids.  If not, use root privs. */
+    for (i = 0; i < session.gids->nelts; i++) {
+      gid_t *group_ids = session.gids->elts;
+
+      if (group_ids[i] == session.fsgid) {
+        use_root_privs = FALSE;
+        break;
+      }
+    }
+
+    if (use_root_privs) {
+      PRIVS_ROOT
+    }
+
+    res = pr_fsio_lchown(path, (uid_t) -1, session.fsgid);
+    xerrno = errno;
+
+    if (use_root_privs) {
+      PRIVS_RELINQUISH
+    }
+
+    if (res < 0) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "%slchown(%s) failed: %s", use_root_privs ? "root " : "", path,
+        strerror(xerrno));
+
+    } else {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "%slchown(%s) to GID %lu successful",
+        use_root_privs ? "root " : "", path,
+        (unsigned long) session.fsgid);
+
+      pr_fs_clear_cache();
+      pr_fsio_stat(path, &st);
+
+      if (use_root_privs) {
+        PRIVS_ROOT
+      }
+
+      res = pr_fsio_chmod(path, st.st_mode);
+      xerrno = errno;
+
+      if (use_root_privs) {
+        PRIVS_RELINQUISH
+      }
+
+      if (res < 0) {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "%schmod(%s) to %04o failed: %s", use_root_privs ? "root " : "",
+          path, (unsigned int) st.st_mode, strerror(xerrno));
       }
     }
   }

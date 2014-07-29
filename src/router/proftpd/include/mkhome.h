@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +23,19 @@
  */
 
 /* Home-on-demand support
- * $Id: mkhome.h,v 1.2 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: mkhome.h,v 1.3 2012/09/05 16:40:58 castaglia Exp $
  */
 
 #ifndef PR_MKHOME_H
 #define PR_MKHOME_H
 
 int create_home(pool *, const char *, const char *, uid_t, gid_t);
+
+/* This flag indicates that root privs should NOT be used when creating
+ * the parent directories for the home directory.  This flag is useful
+ * mostly in cases where the home directory lies on a root-squashed
+ * NFS share; using root privs will ultimately fail in such cases.
+ */
+#define PR_MKHOME_FL_USE_USER_PRIVS	0x0001
 
 #endif /* PR_MKHOME_H */

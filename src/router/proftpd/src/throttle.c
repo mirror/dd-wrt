@@ -23,7 +23,7 @@
  */
 
 /* TransferRate throttling
- * $Id: throttle.c,v 1.11 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: throttle.c,v 1.12 2012/12/28 02:56:32 castaglia Exp $
  */
 
 #include "conf.h"
@@ -220,8 +220,9 @@ void pr_throttle_pause(off_t xferlen, int xfer_ending) {
   long ideal = 0, elapsed = 0;
   off_t orig_xferlen = xferlen;
 
-  if (XFER_ABORTED)
+  if (XFER_ABORTED) {
     return;
+  }
 
   /* Calculate the time interval since the transfer of data started. */
   elapsed = xfer_rate_since(&session.xfer.start_time);
@@ -245,16 +246,16 @@ void pr_throttle_pause(off_t xferlen, int xfer_ending) {
   }
 
   /* Give credit for any configured freebytes. */
-  if (xferlen && xfer_rate_freebytes) {
+  if (xferlen > 0 &&
+      xfer_rate_freebytes > 0) {
 
-    if (xferlen > xfer_rate_freebytes)
-
+    if (xferlen > xfer_rate_freebytes) {
       /* Decrement the number of bytes transferred by the freebytes, so that
        * any throttling does not take into account the freebytes.
        */
       xferlen -= xfer_rate_freebytes;
 
-    else {
+    } else {
       xfer_rate_scoreboard_updates++;
 
       /* The number of bytes transferred is less than the freebytes.  Just
@@ -301,6 +302,7 @@ void pr_throttle_pause(off_t xferlen, int xfer_ending) {
 
       if (XFER_ABORTED) {
         pr_log_pri(PR_LOG_NOTICE, "throttling interrupted, transfer aborted");
+        xfer_rate_sigmask(FALSE);
         return;
       }
 

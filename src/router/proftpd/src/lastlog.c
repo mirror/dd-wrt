@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2012 The ProFTPD Project team
+ * Copyright (c) 2006-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Lastlog code
- * $Id: lastlog.c,v 1.2.2.1 2012/02/17 22:44:06 castaglia Exp $
+ * $Id: lastlog.c,v 1.5 2013/10/13 18:06:57 castaglia Exp $
  */
 
 #include "conf.h"
@@ -47,8 +47,12 @@ int log_lastlog(uid_t uid, const char *user_name, const char *tty,
    * appropriately.
    */
   if (stat(PR_LASTLOG_PATH, &st) < 0) {
+    int xerrno = errno;
+
     pr_log_pri(PR_LOG_NOTICE, "unable to stat '%s': %s",
-      PR_LASTLOG_PATH, strerror(errno));
+      PR_LASTLOG_PATH, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
@@ -59,8 +63,12 @@ int log_lastlog(uid_t uid, const char *user_name, const char *tty,
 
     fd = open(path, O_RDWR|O_CREAT, 0600);
     if (fd < 0) {
+      int xerrno = errno;
+
       pr_log_pri(PR_LOG_NOTICE, "unable to open '%s': %s", path,
-        strerror(errno));
+        strerror(xerrno));
+
+      errno = xerrno;
       return -1;
     }
 
@@ -71,8 +79,12 @@ int log_lastlog(uid_t uid, const char *user_name, const char *tty,
 
     fd = open(path, O_RDWR|O_CREAT, 0600);
     if (fd < 0) {
+      int xerrno = errno;
+
       pr_log_pri(PR_LOG_NOTICE, "unable to open '%s': %s", path,
-        strerror(errno));
+        strerror(xerrno));
+
+      errno = xerrno;
       return -1;
     }
 
@@ -80,9 +92,13 @@ int log_lastlog(uid_t uid, const char *user_name, const char *tty,
     offset = (off_t) ((long) uid * sizeof(ll));
 
     if (lseek(fd, offset, SEEK_SET) != offset) {
+      int xerrno = errno;
+
       pr_log_pri(PR_LOG_NOTICE, "unable to seek to correct lastlog location "
-        "in '%s': %s", path, strerror(errno));
+        "in '%s': %s", path, strerror(xerrno));
       (void) close(fd);
+
+      errno = xerrno;
       return -1;
     }
 
@@ -95,9 +111,13 @@ int log_lastlog(uid_t uid, const char *user_name, const char *tty,
 
   res = write(fd, &ll, sizeof(ll));
   if (res != sizeof(ll)) {
+    int xerrno = errno;
+
     pr_log_pri(PR_LOG_WARNING, "error updating lastlog: %s",
-      strerror(errno));
+      strerror(xerrno));
     (void) close(fd);
+
+    errno = xerrno;
     return -1;
   }
 

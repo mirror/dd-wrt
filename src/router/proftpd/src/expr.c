@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008 The ProFTPD Project team
+ * Copyright (c) 2008-2011 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Expression API implementation
- * $Id: expr.c,v 1.5 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: expr.c,v 1.6 2011/12/11 02:14:43 castaglia Exp $
  */
 
 #include "conf.h"
@@ -97,16 +97,19 @@ int pr_expr_eval_class_and(char **expr) {
       class++;
     }
 
-    if (session.class == NULL &&
-        !found)
+    if (session.conn_class == NULL &&
+        !found) {
       return FALSE;
+    }
 
-    if (session.class &&
-        strcmp(session.class->cls_name, class) == 0)
+    if (session.conn_class != NULL &&
+        strcmp(session.conn_class->cls_name, class) == 0) {
       found = !found;
+    }
 
-    if (!found)
+    if (!found) {
       return FALSE;
+    }
   }
 
   return TRUE;
@@ -134,10 +137,10 @@ int pr_expr_eval_class_or(char **expr) {
       class++;
     }
 
-    if (session.class == NULL)
+    if (session.conn_class == NULL)
       return found;
 
-    if (strcmp(session.class->cls_name, class) == 0)
+    if (strcmp(session.conn_class->cls_name, class) == 0)
       found = !found;
 
     if (found)

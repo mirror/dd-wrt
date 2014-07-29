@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 /* Various basic support routines for ProFTPD, used by all modules
  * and not specific to one or another.
  *
- * $Id: support.c,v 1.112 2011/10/04 20:59:57 castaglia Exp $
+ * $Id: support.c,v 1.120 2013/08/07 16:35:27 castaglia Exp $
  */
 
 #include "conf.h"
@@ -123,15 +123,17 @@ void schedule(void (*f)(void*,void*,void*,void*),int nloops, void *a1,
   pool *p, *sub_pool;
   sched_t *s;
 
-  if (!scheds) {
-   p = make_sub_pool(permanent_pool);
-   pr_pool_tag(p, "Schedules Pool");
-   scheds = xaset_create(p, NULL);
+  if (scheds == NULL) {
+    p = make_sub_pool(permanent_pool);
+    pr_pool_tag(p, "Schedules Pool");
+    scheds = xaset_create(p, NULL);
 
-  } else
-   p = scheds->pool;
+  } else {
+    p = scheds->pool;
+  }
 
   sub_pool = make_sub_pool(p);
+  pr_pool_tag(sub_pool, "schedule pool");
 
   s = pcalloc(sub_pool, sizeof(sched_t));
   s->pool = sub_pool;
@@ -141,21 +143,23 @@ void schedule(void (*f)(void*,void*,void*,void*),int nloops, void *a1,
   s->a3 = a3;
   s->a4 = a4;
   s->loops = nloops;
-  xaset_insert(scheds, (xasetmember_t*)s);
+  xaset_insert(scheds, (xasetmember_t *) s);
 }
 
 void run_schedule(void) {
-  sched_t *s,*snext;
+  sched_t *s, *snext;
 
-  if (!scheds || !scheds->xas_list)
+  if (scheds == NULL ||
+      scheds->xas_list == NULL) {
     return;
+  }
 
-  for (s = (sched_t*)scheds->xas_list; s; s=snext) {
+  for (s = (sched_t *) scheds->xas_list; s; s = snext) {
     snext = s->next;
 
     if (s->loops-- <= 0) {
-      s->f(s->a1,s->a2,s->a3,s->a4);
-      xaset_remove(scheds, (xasetmember_t*)s);
+      s->f(s->a1, s->a2, s->a3, s->a4);
+      xaset_remove(scheds, (xasetmember_t *) s);
       destroy_pool(s->pool);
     }
   }
@@ -171,38 +175,38 @@ void run_schedule(void) {
  * Alas, current (Jul 2000) Linux systems define NAME_MAX anyway.
  * NB: NAME_MAX_GUESS is defined in support.h.
  */
-int get_name_max(char *dirname, int dir_fd) {
-  int name_max = 0;
+size_t get_name_max(char *dirname, int dir_fd) {
+  long res = 0;
 #if defined(HAVE_FPATHCONF) || defined(HAVE_PATHCONF)
   char *msgfmt = "";
 
 # if defined(HAVE_FPATHCONF)
   if (dir_fd > 0) {
-    name_max = fpathconf(dir_fd, _PC_NAME_MAX);
-    msgfmt = "fpathconf(%s, _PC_NAME_MAX) = %d, errno = %d";
+    res = fpathconf(dir_fd, _PC_NAME_MAX);
+    msgfmt = "fpathconf(%s, _PC_NAME_MAX) = %ld, errno = %d";
   } else
 # endif
 # if defined(HAVE_PATHCONF)
   if (dirname != NULL) {
-    name_max = pathconf(dirname, _PC_NAME_MAX);
-    msgfmt = "pathconf(%s, _PC_NAME_MAX) = %d, errno = %d";
+    res = pathconf(dirname, _PC_NAME_MAX);
+    msgfmt = "pathconf(%s, _PC_NAME_MAX) = %ld, errno = %d";
   } else
 # endif
   /* No data provided to use either pathconf() or fpathconf() */
   return -1;
 
-  if (name_max < 0) {
+  if (res < 0) {
     /* NB: errno may not be set if the failure is due to a limit or option
      * not being supported.
      */
-    pr_log_debug(DEBUG1, msgfmt, dirname ? dirname : "(NULL)", name_max, errno);
+    pr_log_debug(DEBUG1, msgfmt, dirname ? dirname : "(NULL)", res, errno);
   }
 
 #else
-  name_max = NAME_MAX_GUESS;
+  res = NAME_MAX_GUESS;
 #endif /* HAVE_FPATHCONF or HAVE_PATHCONF */
 
-  return name_max;
+  return (size_t) res;
 }
 
 
@@ -510,19 +514,19 @@ char *safe_token(char **s) {
   if (!s || !*s)
     return res;
 
-  while (isspace((int) **s) && **s)
+  while (PR_ISSPACE(**s) && **s)
     (*s)++;
 
   if (**s) {
     res = *s;
 
-    while (!isspace((int) **s) && **s)
+    while (!PR_ISSPACE(**s) && **s)
       (*s)++;
 
     if (**s)
       *(*s)++ = '\0';
 
-    while (isspace((int) **s) && **s)
+    while (PR_ISSPACE(**s) && **s)
       (*s)++;
   }
 
@@ -600,6 +604,7 @@ int check_shutmsg(time_t *shut, time_t *deny, time_t *disc, char *msg,
   return 0;
 }
 
+#if !defined(PR_USE_OPENSSL) || OPENSSL_VERSION_NUMBER <= 0x000907000L
 /* "safe" memset() (code borrowed from OpenSSL).  This function should be
  * used to clear/scrub sensitive memory areas instead of memset() for the
  * reasons mentioned in this BugTraq thread:
@@ -607,7 +612,8 @@ int check_shutmsg(time_t *shut, time_t *deny, time_t *disc, char *msg,
  *  http://online.securityfocus.com/archive/1/298598
  */
 
-unsigned char memscrub_ctr = 0;
+static unsigned char memscrub_ctr = 0;
+#endif
 
 void pr_memscrub(void *ptr, size_t ptrlen) {
 #if defined(PR_USE_OPENSSL) && OPENSSL_VERSION_NUMBER > 0x000907000L
@@ -646,6 +652,7 @@ void pr_memscrub(void *ptr, size_t ptrlen) {
 void pr_getopt_reset(void) {
 #if defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
     defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
+    defined(FREEBSD10) || \
     defined(DARWIN7) || defined(DARWIN8) || defined(DARWIN9) || \
     defined(DARWIN10) || defined(DARWIN11)
   optreset = 1;

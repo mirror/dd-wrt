@@ -23,7 +23,7 @@
  */
 
 /* Expression API tests
- * $Id: expr.c,v 1.3 2011/05/23 20:50:31 castaglia Exp $
+ * $Id: expr.c,v 1.4 2011/12/11 02:14:43 castaglia Exp $
  */
 
 #include "tests.h"
@@ -156,7 +156,7 @@ START_TEST (expr_eval_class_and_test) {
   fail_unless(res == -1, "Failed to handle null argument");
   fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
 
-  session.class = NULL;
+  session.conn_class = NULL;
 
   res = pr_expr_eval_class_and(names1);
   fail_unless(res == FALSE, "Expected FALSE, got TRUE");
@@ -176,8 +176,8 @@ START_TEST (expr_eval_class_and_test) {
   res = pr_class_close();
   fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
 
-  session.class = pr_class_find("test");
-  fail_unless(session.class != NULL, "Failed to find 'test' class: %s",
+  session.conn_class = pr_class_find("test");
+  fail_unless(session.conn_class != NULL, "Failed to find 'test' class: %s",
     strerror(errno));
 
   res = pr_expr_eval_class_and(names1);
@@ -201,7 +201,7 @@ START_TEST (expr_eval_class_or_test) {
   fail_unless(res == -1, "Failed to handle null argument");
   fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
 
-  session.class = NULL;
+  session.conn_class = NULL;
 
   res = pr_expr_eval_class_or(names1);
   fail_unless(res == FALSE, "Expected FALSE, got TRUE");
@@ -221,8 +221,8 @@ START_TEST (expr_eval_class_or_test) {
   res = pr_class_close();
   fail_unless(res == 0, "Failed to close class: %s", strerror(errno));
 
-  session.class = pr_class_find("test");
-  fail_unless(session.class != NULL, "Failed to find 'test' class: %s",
+  session.conn_class = pr_class_find("test");
+  fail_unless(session.conn_class != NULL, "Failed to find 'test' class: %s",
     strerror(errno));
 
   res = pr_expr_eval_class_or(names1);

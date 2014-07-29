@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2010-2011 The ProFTPD Project team
+ * Copyright (c) 2010-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Memcache management
- * $Id: memcache.c,v 1.23 2011/09/06 17:21:48 castaglia Exp $
+ * $Id: memcache.c,v 1.26 2013/01/28 01:21:05 castaglia Exp $
  */
 
 #include "conf.h"
@@ -580,7 +580,7 @@ static unsigned int modptr_hash_cb(const void *k, size_t ksz) {
 
   /* XXX Yes, this is a bit hacky for "hashing" a pointer value. */
 
-  memcpy(&key, k, ksz);
+  memcpy(&key, k, sizeof(key));
   key ^= (key >> 16);
 
   return key;

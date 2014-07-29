@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2011 The ProFTPD Project team
+ * Copyright (c) 2004-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Children management code
- * $Id: child.c,v 1.7 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: child.c,v 1.9 2013/10/08 07:01:43 castaglia Exp $
  */
 
 #include "conf.h"
@@ -42,8 +42,14 @@ int child_add(pid_t pid, int fd) {
     pr_pool_tag(child_pool, "Child Pool");
   }
 
-  if (!child_list)
-    child_list = xaset_create(make_sub_pool(child_pool), NULL);
+  if (child_list == NULL) {
+    pool *list_pool;
+
+    list_pool = make_sub_pool(child_pool);
+    pr_pool_tag(list_pool, "Child List Pool");
+
+    child_list = xaset_create(list_pool, NULL);
+  }
 
   p = make_sub_pool(child_pool);
   pr_pool_tag(p, "child session pool");
@@ -66,8 +72,9 @@ unsigned long child_count(void) {
 }
 
 pr_child_t *child_get(pr_child_t *ch) {
-  if (!ch)
+  if (ch == NULL) {
     return (pr_child_t *) child_list->xas_list;
+  }
 
   return ch->next;
 }
@@ -95,8 +102,9 @@ int child_remove(pid_t pid) {
 void child_signal(int signo) {
   pr_child_t *ch;
 
-  if (!child_list)
+  if (child_list == NULL) {
     return;
+  }
 
   for (ch = (pr_child_t *) child_list->xas_list; ch; ch = ch->next) {
     if (kill(ch->ch_pid, signo) < 0) {
@@ -111,16 +119,18 @@ void child_signal(int signo) {
 void child_update(void) {
   pr_child_t *ch, *chn = NULL;
 
-  if (!child_list)
+  if (child_list == NULL) {
     return;
+  }
 
   /* Scan the child list, removing those entries marked as 'dead'. */
   for (ch = (pr_child_t *) child_list->xas_list; ch; ch = chn) {
     chn = ch->next;
 
     if (ch->ch_dead) {
-      if (ch->ch_pipefd != -1)
-        close(ch->ch_pipefd);
+      if (ch->ch_pipefd != -1) {
+        (void) close(ch->ch_pipefd);
+      }
 
       xaset_remove(child_list, (xasetmember_t *) ch);
       destroy_pool(ch->ch_pool);
@@ -128,9 +138,10 @@ void child_update(void) {
   }
 
   /* If the child list is empty, recover the list pool memory. */
-  if (!child_list->xas_list) {
+  if (child_list->xas_list == NULL) {
     destroy_pool(child_list->pool);
     child_list = NULL;
+    child_listlen = 0;
   }
 
   return;

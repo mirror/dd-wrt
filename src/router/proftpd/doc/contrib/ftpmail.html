@@ -1,4 +1,4 @@
-<!-- $Id: ftpmail.html,v 1.3 2010/08/10 21:22:24 castaglia Exp $ -->
+<!-- $Id: ftpmail.html,v 1.4 2013/02/27 05:40:07 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/ftpmail.html,v $ -->
 
 <html>
@@ -97,7 +97,8 @@ can also be obtained by running:
   # ftpmail --help
 
   usage: ftpmail [--help] [--fifo $path] [--from $addr] [--log $path]
-    [--recipient $addr] [--subject $string] [--smtp-server $addr]
+    [--recipient $addrs] [--upload-recipient \$addrs]
+    [--download-recipient $addrs] [--subject $string] [--smtp-server $addr]
     [--attach-file] [--ignore-users $regex | --watch-users $regex]
 
   The purpose of this script is to monitor the TransferLog written by proftpd
@@ -145,6 +146,17 @@ can also be obtained by running:
                           notification of the upload.  This option can be
                           used multiple times to specify multiple recipients.
                           AT LEAST ONE recipient is REQUIRED.
+
+    --upload-recipient $addr
+                          Same as --recipient.
+
+    --download-recipient $addr
+                          Specifies an email address to which to send an email
+                          notification of the download.  This option can be
+                          used multiple times to specify multiple recipients.
+
+                          If this option is specified, then ftpmail will watch
+                          for FTP downloads as well as uploads.
 
     --smtp-server $addr   Specifies the SMTP server to which to send the email.
                           This parameter is REQUIRED.
@@ -197,12 +209,12 @@ Then start instances of <code>ftpmail</code> running, but only for the
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2010/08/10 21:22:24 $</i><br>
+Last Updated: <i>$Date: 2013/02/27 05:40:07 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2008-2010 TJ Saunders<br>
+&copy; Copyright 2008-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

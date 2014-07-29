@@ -79,6 +79,11 @@ my $TESTS = {
     test_class => [qw(forking mod_tls)],
   },
 
+  deflate_netio_close_bad_cmd_sequence_bug3828 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
 };
 
 sub new {
@@ -97,7 +102,7 @@ sub deflate_opts_modez_level {
   my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
@@ -202,6 +207,9 @@ sub deflate_opts_modez_level {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -216,7 +224,7 @@ sub deflate_feat {
   my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
@@ -337,6 +345,9 @@ sub deflate_feat {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -351,7 +362,7 @@ sub deflate_list {
   my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
@@ -502,6 +513,9 @@ sub deflate_list {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -516,7 +530,7 @@ sub deflate_list_alternating_modes {
   my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
@@ -686,6 +700,9 @@ sub deflate_list_alternating_modes {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -700,7 +717,7 @@ sub deflate_rest {
   my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
@@ -811,6 +828,9 @@ sub deflate_rest {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -825,7 +845,7 @@ sub deflate_retr {
   my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
@@ -973,6 +993,9 @@ sub deflate_retr {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -987,7 +1010,7 @@ sub deflate_rest_retr {
   my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
@@ -1173,6 +1196,9 @@ sub deflate_rest_retr {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1187,7 +1213,7 @@ sub deflate_stor {
   my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
@@ -1322,6 +1348,9 @@ sub deflate_stor {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1336,7 +1365,7 @@ sub deflate_rest_stor {
   my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
@@ -1507,6 +1536,9 @@ sub deflate_rest_stor {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1521,7 +1553,7 @@ sub deflate_stor_64kb_binary {
   my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
@@ -1709,8 +1741,6 @@ sub deflate_stor_64kb_binary {
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
 
-      my $expected;
-
       $expected = 226;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
@@ -1762,6 +1792,9 @@ sub deflate_stor_64kb_binary {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -1776,7 +1809,7 @@ sub deflate_stor_64kb_binary_chunks {
   my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
@@ -1989,8 +2022,6 @@ sub deflate_stor_64kb_binary_chunks {
       $resp_code = $client->response_code();
       $resp_msg = $client->response_msg();
 
-      my $expected;
-
       $expected = 226;
       $self->assert($expected == $resp_code,
         test_msg("Expected $expected, got $resp_code"));
@@ -2042,6 +2073,9 @@ sub deflate_stor_64kb_binary_chunks {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -2056,7 +2090,7 @@ sub deflate_mode_z_tls {
   my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
@@ -2184,6 +2218,130 @@ sub deflate_mode_z_tls {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub deflate_netio_close_bad_cmd_sequence_bug3828 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/deflate.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/deflate.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/deflate.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/deflate.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/deflate.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    TimeoutLinger => 1,
+
+    IfModules => {
+      'mod_deflate.c' => {
+        DeflateEngine => 'on',
+        DeflateLog => $log_file,
+      },
+
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0);
+      $client->login($user, $passwd);
+
+      eval { $client->mlsd("DoesNotExist") };
+      unless ($@) {
+        die("MLSD succeeded unexpectedly");
+      }
+
+      $client->mode('Z');
+      $client->port('127,0,0,1,4,5');
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 

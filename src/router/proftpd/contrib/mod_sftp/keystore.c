@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp keystores
- * Copyright (c) 2008-2010 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: keystore.c,v 1.6 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: keystore.c,v 1.7 2012/02/15 23:50:51 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -157,7 +157,7 @@ int sftp_keystore_supports_store(const char *store_type,
 }
 
 int sftp_keystore_verify_host_key(pool *p, const char *user,
-    const char *host_fqdn, const char *host_user, char *key_data,
+    const char *host_fqdn, const char *host_user, unsigned char *key_data,
     uint32_t key_len) {
   register unsigned int i;
   int res = -1;
@@ -258,8 +258,8 @@ int sftp_keystore_verify_host_key(pool *p, const char *user,
   return -1;
 }
 
-int sftp_keystore_verify_user_key(pool *p, const char *user, char *key_data,
-    uint32_t key_len) {
+int sftp_keystore_verify_user_key(pool *p, const char *user,
+    unsigned char *key_data, uint32_t key_len) {
   register unsigned int i;
   int res = -1;
   config_rec *c;

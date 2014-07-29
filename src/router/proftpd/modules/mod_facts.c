@@ -22,7 +22,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_facts.c,v 1.45.2.9 2013/02/02 06:06:53 castaglia Exp $
+ * $Id: mod_facts.c,v 1.60 2013/04/16 16:04:43 castaglia Exp $
  */
 
 #include "conf.h"
@@ -61,6 +61,7 @@ struct mlinfo {
 
 /* Necessary prototypes */
 static void facts_mlinfobuf_flush(void);
+static int facts_sess_init(void);
 
 /* Support functions
  */
@@ -358,8 +359,12 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
 
   res = pr_fsio_lstat(path, &(info->st));
   if (res < 0) {
+    int xerrno = errno;
+
     pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": error lstat'ing '%s': %s",
-      path, strerror(errno));
+      path, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
@@ -1192,7 +1197,7 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
     } else {
       /* Handle the "DirFakeUser off" case (Bug#3715). */
-      fake_uid = session.uid;
+      fake_uid = (uid_t) -1;
     }
   }
 
@@ -1213,7 +1218,7 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
     } else {
       /* Handle the "DirFakeGroup off" case (Bug#3715). */
-      fake_gid = session.gid;
+      fake_gid = (gid_t) -1;
     }
   }
 
@@ -1227,6 +1232,8 @@ MODRET facts_mlsd(cmd_rec *cmd) {
       best_path, strerror(xerrno));
 
     pr_response_add_err(R_550, "%s: %s", path, strerror(xerrno));
+
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
@@ -1247,6 +1254,10 @@ MODRET facts_mlsd(cmd_rec *cmd) {
     pr_signals_handle();
 
     rel_path = pdircat(cmd->tmp_pool, best_path, dent->d_name, NULL);
+    res = dir_check(cmd->tmp_pool, cmd, cmd->group, rel_path, &hidden);
+    if (!res || hidden) {
+      continue;
+    }
 
     /* Check that the file can be listed. */
     abs_path = dir_realpath(cmd->tmp_pool, rel_path);
@@ -1255,8 +1266,9 @@ MODRET facts_mlsd(cmd_rec *cmd) {
       
     } else {
       abs_path = dir_canonical_path(cmd->tmp_pool, rel_path);
-      if (abs_path == NULL)
+      if (abs_path == NULL) {
         abs_path = rel_path;
+      }
 
       res = dir_check_canon(cmd->tmp_pool, cmd, cmd->group, abs_path, &hidden);
     }
@@ -1302,6 +1314,15 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 }
 
 MODRET facts_mlsd_cleanup(cmd_rec *cmd) {
+  const char *proto;
+
+  proto = pr_session_get_protocol(0);
+
+  /* Ignore this for SFTP connections. */
+  if (strncmp(proto, "sftp", 5) == 0) {
+    return PR_DECLINED(cmd);
+  }
+
   if (session.xfer.p) {
     destroy_pool(session.xfer.p);
   }
@@ -1538,6 +1559,27 @@ MODRET facts_opts_mlst(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
+MODRET facts_post_host(cmd_rec *cmd) {
+
+  /* If the HOST command changed the main_server pointer, reinitialize
+   * ourselves.
+   */
+  if (session.prev_server != NULL) {
+    int res;
+
+    facts_opts = 0;
+    facts_mlinfo_opts = 0;
+
+    res = facts_sess_init();
+    if (res < 0) {
+      pr_session_disconnect(&facts_module,
+        PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+    }
+  }
+
+  return PR_DECLINED(cmd);
+}
+
 /* Configuration handlers
  */
 
@@ -1614,8 +1656,15 @@ static int facts_sess_init(void) {
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "FactsOptions", FALSE);
-  if (c) {
-    facts_mlinfo_opts = *((unsigned long *) c->argv[0]);
+  while (c != NULL) {
+    unsigned long opts;
+
+    pr_signals_handle();
+  
+    opts = *((unsigned long *) c->argv[0]);
+    facts_mlinfo_opts |= opts;
+
+    c = find_config_next(c, c->next, CONF_PARAM, "FactsOptions", FALSE);
   }
 
   facts_opts = FACTS_OPT_SHOW_MODIFY|FACTS_OPT_SHOW_PERM|FACTS_OPT_SHOW_SIZE|
@@ -1652,6 +1701,7 @@ static cmdtable facts_cmdtab[] = {
   { LOG_CMD_ERR,C_MLSD,		G_NONE,	facts_mlsd_cleanup, FALSE, FALSE },
   { CMD,	C_MLST,		G_DIRS,	facts_mlst, TRUE, FALSE, CL_DIRS },
   { CMD,	C_OPTS "_MLST", G_NONE, facts_opts_mlst, FALSE, FALSE },
+  { POST_CMD,	C_HOST,		G_NONE,	facts_post_host, FALSE, FALSE },
   { 0, NULL }
 };
 

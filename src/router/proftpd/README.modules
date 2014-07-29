@@ -134,7 +134,12 @@ Feature modules:
     mod_exec
         Execute custom external scripts based on session actions/events.
         See doc/contrib/mod_exec.html
-        Contributed by TJ saunders <tj@castaglia.org>
+        Contributed by TJ Saunders <tj@castaglia.org>
+
+    mod_geoip
+        Look up geographic information based on the client IP address.
+        See doc/contrib/mod_geoip.html
+        Contributed by TJ Saunders <tj@castaglia.org>
 
     mod_ifsession
         Conditional per-user, per-group, per-class configurations
@@ -144,6 +149,11 @@ Feature modules:
     mod_load
         Reject connections based on system load
         See doc/contrib/mod_load.html
+        Contributed by TJ Saunders <tj@castaglia.org>
+
+    mod_log_forensic
+        Only write log information when criteria are met.
+        See doc/contrib/mod_log_forensic.html
         Contributed by TJ Saunders <tj@castaglia.org>
 
     mod_qos

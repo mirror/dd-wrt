@@ -1,4 +1,4 @@
-<!-- $Id: mod_core.html,v 1.14 2011/07/01 18:34:07 castaglia Exp $ -->
+<!-- $Id: mod_core.html,v 1.43 2014/01/30 16:50:10 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/modules/mod_core.html,v $ -->
 
 <html>
@@ -19,21 +19,347 @@ The <code>mod_core</code> module handles most of the core FTP commands.
 
 <h2>Directives</h2>
 <ul>
+  <li><a href="#AllowFilter">AllowFilter</a>
+  <li><a href="#AuthOrder">AuthOrder</a>
+  <li><a href="#DebugLevel">DebugLevel</a>
+  <li><a href="#DefaultAddress">DefaultAddress</a>
+  <li><a href="#DenyFilter">DenyFilter</a>
+  <li><a href="#DisplayChdir">DisplayChdir</a>
+  <li><a href="#DisplayConnect">DisplayConnect</a>
+  <li><a href="#DisplayQuit">DisplayQuit</a>
   <li><a href="#GroupOwner">GroupOwner</a>
+  <li><a href="#HideGroup">HideGroup</a>
+  <li><a href="#HideNoAccess">HideNoAccess</a>
+  <li><a href="#HideUser">HideUser</a>
   <li><a href="#Include">Include</a>
+  <li><a href="#MasqueradeAddress">MasqueradeAddress</a>
   <li><a href="#MaxCommandRate">MaxCommandRate</a>
+  <li><a href="#MaxConnectionRate">MaxConnectionRate</a>
+  <li><a href="#MaxInstances">MaxInstances</a>
   <li><a href="#PassivePorts">PassivePorts</a>
   <li><a href="#PathAllowFilter">PathAllowFilter</a>
   <li><a href="#PathDenyFilter">PathDenyFilter</a>
+  <li><a href="#Port">Port</a>
   <li><a href="#ProcessTitles">ProcessTitles</a>
   <li><a href="#Protocols">Protocols</a>
+  <li><a href="#ScoreboardFile">ScoreboardFile</a>
+  <li><a href="#ScoreboardMutex">ScoreboardMutex</a>
+  <li><a href="#ServerIdent">ServerIdent</a>
+  <li><a href="#ServerType">ServerType</a>
+  <li><a href="#SocketBindTight">SocketBindTight</a>
+  <li><a href="#SocketOptions">SocketOptions</a>
+  <li><a href="#SyslogFacility">SyslogFacility</a>
+  <li><a href="#SyslogLevel">SyslogLevel</a>
   <li><a href="#TCPBacklog">TCPBacklog</a>
+  <li><a href="#TimeoutIdle">TimeoutIdle</a>
   <li><a href="#TimeoutLinger">TimeoutLinger</a>
   <li><a href="#Trace">Trace</a>
   <li><a href="#TraceLog">TraceLog</a>
   <li><a href="#TraceOptions">TraceOptions</a>
   <li><a href="#TransferLog">TransferLog</a>
+  <li><a href="#Umask">Umask</a>
+  <li><a href="#UserOwner">UserOwner</a>
+  <li><a href="#VirtualHost">&lt;VirtualHost&gt;</a>
 </ul>
+
+<hr>
+<h2><a name="AllowFilter">AllowFilter</a></h2>
+<strong>Syntax:</strong> AllowFilter <em>pattern [flags]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>,
+<code>&lt;Directory&gt;</code>, .ftpaccess<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.0pre7 and later
+
+<p>
+The <code>AllowFilter</code> allows the configuration of a regular expression
+<em>pattern</em> that must be matched for all command arguments sent to
+ProFTPD.  It is extremely useful in controlling what characters may be sent in
+a command to ProFTPD, preventing some possible types of attacks against ProFTPD.
+
+<p>
+The regular expression <em>pattern</em> is applied against the arguments to the
+command sent by the client, so care must be taken when creating a proper regex.
+Commands that fail the regex match result in a "Forbidden command" error being
+returned to the client. If the <em>pattern</em> contains whitespace, it
+<b>must</b> be enclosed in quotes.
+
+<p>
+The optional <em>flags</em> parameter, if present, modifies how the
+given<em>pattern</em> will be evaludated.  The supported flags are:
+<ul>
+  <li><b>nocase|NC</b> (<b>n</b>o <b>c</b>ase)<br>
+      This makes the <em>pattern</em> case-insensitive, <i>i.e.</i> there is
+      no difference between 'A-Z' and 'a-z' when <em>pattern</em> is matched
+      against the path
+  </li>
+</ul>
+
+<p>
+The example below allows commands which contain alphanumeric characters and
+whitespace:
+<pre>
+  AllowFilter "^[a-zA-Z0-9 ,]*$"
+</pre>
+
+<p>
+The <a href="../howto/Filters.html">Filters</a> howto covers filtering in
+greater detail.
+
+<p>
+See also: <a href="#DenyFilter"><code>DenyFilter</code></a>, <a href="#PathAllowFilter"><code>PathAllowFilter</code></a>, <a href="#PathDenyFilter"><code>PathDenyFilter</code></a>
+
+<p>
+<hr>
+<h2><a name="AuthOrder">AuthOrder</a></h2>
+<strong>Syntax:</strong> AuthOrder <em>module-name1 ...</em><br>
+<strong>Default:</strong> mod_auth_file.c mod_auth_unix.c<br>
+<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.8rc1 and later
+
+<p>
+The <code>AuthOrder</code> directive configures the names of auth modules, and
+the order in which they will be checked when authenticating a client.
+
+<p>
+At least one module name <b>must</b> be given; there is no maximum number of
+modules that can be listed.  The listed module names must the full name of the
+source file, <i>e.g.</i> "mod_auth_unix.c". To see a full list of module names,
+use:
+<pre>
+  $ proftpd -l
+</pre>
+Do <b>not</b> use "mod_auth.c", as that module is the authentication front end
+module, and is necessary.  Also, do not use "mod_auth_pam.c" as the only module,
+as that module does not provide, by itself, all of the information needed
+by proftpd for authenticating a client.
+
+<p>
+You can make an auth module be "authoritative" by appending an asterisk (*)
+after the module name.  Usually this is done for the "mod_auth_pam.c" module,
+to ensure that the login fails if the PAM check fails.
+
+<p>
+<b>Examples</b>
+<pre>
+  # Use only AuthUserFiles when authenticating, and not the system's /etc/passwd
+  AuthOrder mod_auth_file.c
+
+  # If the user's information is not in LDAP, they're not a user to use
+  # this server.
+  AuthOrder mod_ldap.c
+
+  # Use SQL tables first, then LDAP, for authentication
+  AuthOrder mod_sql.c mod_ldap.c
+
+  # Use the normal system /etc/passwd and PAM, but make sure that PAM is
+  # authoritative about accepting or rejecting the login
+  AuthOrder mod_auth_pam.c* mod_auth_unix.c
+</pre>
+
+<p>
+<hr>
+<h2><a name="DebugLevel">DebugLevel</a></h2>
+<strong>Syntax:</strong> DebugLevel <em>level</em><br>
+<strong>Default:</strong> DebugLevel 0<br>
+<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.8rc1 and later
+
+<p>
+The <code>DebugLevel</code> directive configures the debugging level the
+server will use when logging.  The <em>level</em> parameter must be between 0
+and 10.  This directive will take precedence over any
+<code>-d</code>/<code>--debug</code> command-line debugging option used.
+
+<p>
+The <a href="../howto/Logging.html#Syslog">Logging</a> howto covers logging in
+greater detail.
+
+<p>
+<hr>
+<h2><a name="DefaultAddress">DefaultAddress</a></h2>
+<strong>Syntax:</strong> DefaultAddress <em>ip-address|dns-name</em> <em>[ip-address|dns-name ...]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>DefaultAddress</code> directive sets the the address to which the
+main server instance (<i>i.e.</i> the server configured by the "server config"
+context) will bind.  The default behaviour is to select whatever IP address
+is reported by the operating system as the primary IP address.
+
+<p>
+Starting with <code>proftpd-1.3.0rc1</code>, it is possible to use more than
+one FQDN or IP address.
+
+<p>
+Examples
+<pre>
+  ServerName "Default FTP Server"
+  Port 21
+
+  # We want the main server instance to listen on a specific IP
+  DefaultAddress 192.168.10.30
+
+  # Since 1.3.0rc1 it's also possible to use the following:
+  DefaultAddress 192.168.10.30 my.domain.tld
+</pre>
+
+<p>
+In <code>proftpd-1.3.5rc1</code>, the <code>DefaultAddress</code> directive
+also handles names which indicates the <em>device-name</em> (or
+<em>interface-name</em>); the IP address associated with this device/interface
+will be used.  For example, you can use:
+<pre>
+  DefaultAddress eth0
+</pre>
+Using the device/interface name is useful in cases where the same
+<code>proftpd.conf</code> file is going to be deployed to multiple different
+machines, which will have the same device/interface names but different IP
+addresses.
+
+<p>
+See also: <a href="VirtualHost"><code>&lt;VirtualHost&gt;</code></a>
+
+<p>
+<hr>
+<h2><a name="DenyFilter">DenyFilter</a></h2>
+<strong>Syntax:</strong> DenyFilter <em>pattern [flags]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>,<code>&lt;Directory&gt;</code>, .ftpaccess<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.0pre7 and later
+
+<p>
+The <code>DenyFilter</code> directive, like the <code>AllowFilter</code>
+directive, specifies a regular expression <em>pattern</em> which must not
+match any of the command arguments.  If the <em>pattern</em> does match, a
+"Forbidden command" error is returned to the client.  This can be especially
+useful for forbidding certain command argument combinations from ever reaching
+ProFTPD.
+
+<p>
+Note that the <code>PASV</code> SFTP command <b>cannot</b> be blocked using
+this directive.
+
+<p>
+The optional <em>flags</em> parameter, if present, modifies how the
+given<em>pattern</em> will be evaludated.  The supported flags are:
+<ul>
+  <li><b>nocase|NC</b> (<b>n</b>o <b>c</b>ase)<br>
+      This makes the <em>pattern</em> case-insensitive, <i>i.e.</i> there is
+      no difference between 'A-Z' and 'a-z' when <em>pattern</em> is matched
+      against the path
+  </li>
+</ul>
+
+<p>
+For example, to reject commands which contain the percent (<code>%</code>)
+character, you could use:
+<pre>
+  DenyFilter "%"
+</pre>
+
+<p>
+The <a href="../howto/Filters.html">Filters</a> howto covers filtering in
+greater detail.
+
+<p>
+See also: <a href="#AllowFilter"><code>AllowFilter</code></a>, <a href="#PathAllowFilter"><code>PathAllowFilter</code></a>, <a href="#PathDenyFilter"><code>PathDenyFilter</code></a>
+
+<hr>
+<h2><a name="DisplayChdir">DisplayChdir</a></h2>
+<strong>Syntax:</strong> DisplayChdir <em>filename ["on"|"off"]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.3.1rc1 and later
+
+<p>
+The <code>DisplayChdir</code> directive configures the name of a text file that
+will be displayed to the user, every time they change into a directory.  If the
+text file should only be displayed <b>once</b> to the client, the first time
+they change into the directory (or if <code>proftpd</code> detects that the
+<code>DisplayChdir</code> file has been changed since it was last displayed
+to the client), then set the optional second parameter to <em>on</em> or
+<em>true</em>.
+
+<p>
+If the <em>filename</em> is relative, it is looked for in the directory that
+the user has changed into.  Note that for anonymous ftp logins,
+<em>filename</em> <b>must</b> reside within the <code>chroot()</code>ed
+directory.  If <em>filename</em> cannot be found or accessed, no error occurs
+and nothing is logged or displayed to the client.
+
+<p>
+See the <a href="../howto/DisplayFiles.html">Display files</a> howto for
+more information on the variables that can be used in a
+<code>DisplayChdir</code> file.
+
+<p>
+See also: <a href="#DisplayConnect"><code>DisplayConnect</code></a>, <a href="#DisplayQuit"><code>DisplayQuit</code></a>
+
+<hr>
+<h2><a name="DisplayConnect">DisplayConnect</a></h2>
+<strong>Syntax:</strong> DisplayConnect <em>filename</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.0pre2 and later
+
+<p>
+The <code>DisplayConnect</code> directive configures the <em>filename</em> of a
+text file that will be displayed to the user when they initially connect,
+<i>before</i> they login.  The <em>filename</em> can be either relative or
+absolute.  In the case of a relative filename, the file is searched for
+starting in the home directory of the <code>User</code> as which the server is
+running.  As this can lead confusion, absolute pathnames are <i>highly
+recommended</i>.  If <em>filename</em> cannot be found or accessed, no error
+occurs and nothing is logged or displayed to the client.
+
+<p>
+See the <a href="../howto/DisplayFiles.html">Display files</a> howto for
+more information on the variables that can be used in a
+<code>DisplayConnect</code> file.
+
+<p>
+See also: <a href="#DisplayChdir"><code>DisplayChdir</code></a>,
+<a href="#DisplayQuit"><code>DisplayQuit</code></a>
+
+<hr>
+<h2><a name="DisplayQuit">DisplayQuit</a></h2>
+<strong>Syntax:</strong> DisplayQuit <em>filename</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.0pre8 and later
+
+<p>
+The <code>DisplayQuit</code> directive configures the <em>filename</em> of a
+text file that will be displayed to the user when they explicitly end the
+FTP session using the <code>QUIT</code> command.  The <em>filename</em> can be
+either relative or absolute.  In the case of a relative filename, the file is
+searched for starting in the home directory of the logged-in user.  <b>Note</b>:
+if the session is restricted via <code>chroot</code>, either by the
+<code>DefaultRoot</code> directive or because its an
+<code>&lt;Anonymous&gt;</code> login, then <em>filename</em> must reside
+within the <code>chroot()</code> directory.  As this can lead confusion,
+absolute pathnames are <i>highly recommended</i>.  If <em>filename</em> cannot
+be found or accessed, no error occurs and nothing is logged or displayed to
+the client.
+
+<p>
+See the <a href="../howto/DisplayFiles.html">Display files</a> howto for
+more information on the variables that can be used in a
+<code>DisplayQuit</code> file.
+
+<p>
+See also: <a href="#DisplayChdir"><code>DisplayChdir</code></a>,
+<a href="#DisplayConnect"><code>DisplayConnect</code></a>
 
 <hr>
 <h2><a name="GroupOwner">GroupOwner</a></h2>
@@ -74,6 +400,113 @@ of the newly created file to be that of the logged-in user, use:
 See also: <a href="#UserOwner"><code>UserOwner</code></a>
 
 <hr>
+<h2><a name="HideGroup">HideGroup</a></h2>
+<strong>Syntax:</strong> HideGroup <em>group-name</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>HideGroup</code> directive configures a <code>&lt;Directory&gt;</code>
+or <code>&lt;Anonymous&gt;</code> section to hide all directory entries owned
+by the specified <em>group-name</em>.  The <em>group-name</em> can also be
+<code>~</code> (tilde), which is evaluated as the <em>group-name</em> of
+the primary group of the logged-in user.  This can be combined with a prefix
+<code>!</code> (exclamation point) character, <i>e.g.</i> "!~", to mean
+"any group that is not the primary group of the logged-in-user".
+
+<p>
+Normally, hidden directories and files cannot be seen via <code>LIST</code> or
+<code>NLST</code> commands but can be operated on via other FTP commands
+(<code>CWD</code>, <code>DELE</code>, <code>RETR</code>, <i>etc</i>).  This
+behavior can be modified via the <code>IgnoreHidden</code> directive.
+
+<p>
+Examples:
+<pre>
+  &lt;Directory <i>path</i>&gt;
+    # Hide all files belonging to group 'wheel'
+    HideGroup wheel
+
+    # Hide all files belonging to the primary group of the logged-in user
+    HideGroup ~
+
+    # Hide all files that are NOT owned by the primary group of the logged-in
+    # user
+    HideGroup !~
+  &lt;/Directory&gt;
+</pre>
+
+<p>
+See also: <a href="#HideUser"><code>HideUser</code></a>, <a href="#HideNoAccess"><code>HideNoAccess</code></a>, <a href="#IgnoreHidden"><code>IgnoreHidden</code></a>
+
+<hr>
+<h2><a name="HideNoAccess">HideNoAccess</a></h2>
+<strong>Syntax:</strong> HideNoAccess <em>on|off</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>HideNoAccess</code> directive configures a
+<code>&lt;Directory&gt;</code> or <code>&lt;Anonymous&gt;</code> section to
+hide all directory entries in a directory listing (<i>e.g.</i> via the
+<code>LIST</code> or <code>NLST</code> FTP commands) to which the current
+logged-in, authenticated user has no access.  Normal Unix-style permissions
+<b>always</b> apply, so that although a user may not be able to see a directory
+entry that has "HideNoAccess on" applied, they will receive a normal
+"Permission denied" error message when attempting to blindly manipulate the
+file system object.  The directory or file can be made completely invisible to
+all FTP commands by applying <code>IgnoreHidden</code> in conjunction with
+<code>HideNoAccess</code>.
+
+<p>
+See also: <a href="#HideGroup"><code>HideGroup</code></a>, <a href="#HideUser"><code>HideUser</code></a>, <a href="#IgnoreHidden"><code>IgnoreHidden</code></a>
+
+<hr>
+<h2><a name="HideUser">HideUser</a></h2>
+<strong>Syntax:</strong> HideUser <em>user-name</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>HideUser</code> directive configures a <code>&lt;Directory&gt;</code>
+or <code>&lt;Anonymous&gt;</code> section to hide all directory entries owned
+by the specified <em>user-name</em>.  The <em>user-name</em> can also be
+<code>~</code> (tilde), which is evaluated as the <em>user-name</em> of
+the logged-in user.  This can be combined with a prefix <code>!</code>
+(exclamation point) character, <i>e.g.</i> "!~", to mean "any user that is not
+the logged-in-user".
+
+<p>
+Normally, hidden directories and files cannot be seen via <code>LIST</code> or
+<code>NLST</code> commands but can be operated on via other FTP commands
+(<code>CWD</code>, <code>DELE</code>, <code>RETR</code>, <i>etc</i>).  This
+behavior can be modified via the <code>IgnoreHidden</code> directive.
+
+<p>
+Examples:
+<pre>
+  &lt;Directory <i>path</i>&gt;
+    # Hide all files belonging to user 'root'
+    HideUser root
+
+    # Hide all files belonging to the logged-in user
+    HideUser ~
+
+    # Hide all files that are NOT owned by the logged-in user
+    HideUser !~
+  &lt;/Directory&gt;
+</pre>
+
+<p>
+See also: <a href="#HideGroup"><code>HideGroup</code></a>, <a href="#HideNoAccess"><code>HideNoAccess</code></a>, <a href="#IgnoreHidden"><code>IgnoreHidden</code></a>
+
+<hr>
 <h2><a name="Include">Include</a></h2>
 <strong>Syntax:</strong> Include <em>path|pattern</em><br>
 <strong>Default:</strong> None<br>
@@ -87,9 +520,10 @@ files from within the server configuration files.
 
 <p>
 Shell-style (<code>fnmatch(3)</code>) wildcard characters can be used to
-include several files at once, in alphabetical order.  In addition, if
-<code>Include</code> points to a directory, rather than a file, then
-<code>proftpd</code> will read all files in that directory.  <b>Note</b>
+include several files at once, in alphabetical order.  (If no matches for
+the pattern are found, the <code>Include</code> directive is silently ignored.)
+In addition, if <code>Include</code> points to a directory, rather than a file,
+then <code>proftpd</code> will read all files in that directory.  <b>Note</b>
 that including entire directories is <b>not</b> recommended, as it is easy to
 accidentally leave temporary files in a directory that can cause
 <code>proftpd</code> to fail.
@@ -102,6 +536,38 @@ Examples:
   Include /etc/proftpd/conf/tls.conf
   Include /etc/proftpd/conf/vhosts/*.conf
 </pre>
+
+<p>
+<hr>
+<h2><a name="MasqueradeAddress">MasqueradeAddress</a></h2>
+<strong>Syntax:</strong> MasqueradeAddress <em>ip-address|dns-name|device-name</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.2 and later
+
+<p>
+The <code>MasqueradeAddress</code> directive causes the server to display the
+network information for the specified IP address or DNS hostname to the client
+in the responses to <code>PASV</code> and <code>EPSV</code> FTP commands, on
+the assumption that that IP address or DNS host is acting as a NAT gateway or
+port forwarder for the server.  For example:
+<pre>
+  MasqueradeAddress nat-gw.mydomain.com 
+</pre>
+
+<p>
+The <code>MasqueradeAddress</code> directive also handles a parameter which
+indicates the <em>device-name</em> (or <em>interface-name</em>); the IP address
+associated with this device/interface will be used.  For example, you can
+use:
+<pre>
+  MasqueradeAddress eth0
+</pre>
+Using the device/interface name is useful in cases where the same
+<code>proftpd.conf</code> file is going to be deployed to multiple different
+machines, which will have the same device/interface names but different IP
+addresses.
 
 <p>
 <hr>
@@ -128,7 +594,61 @@ sets a maximum command rate of 200 commands per sec. Or:
 <pre>
   MaxCommandRate 500 2
 </pre>
-sets a maximum command rate of 500 commands every 2 secs.
+sets a maximum command rate of 500 commands every 2 seconds.
+
+<p>
+<hr>
+<h2><a name="MaxConnectionRate">MaxConnectionRate</a></h2>
+<strong>Syntax:</strong> MaxConnectionRate <em>count</em> <em>[interval]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>MaxConnectionRate</code> directive is used to configure a maximum
+<em>count</em> of connections per time <em>interval</em> (in seconds).  If
+this connection rate is reached, <code>proftpd</code> will simply close
+additional connections, until the connection rate drops below the threshold.
+The default <em>interval</em> is 1 second.
+
+<p>
+For example:
+<pre>
+  MaxConnectionRate 200
+</pre>
+sets a maximum connection rate of 200 connections per sec. Or:
+<pre>
+  MaxConnectionRate 500 2
+</pre>
+sets a maximum connection rate of 500 connections every 2 seconds.
+
+<p>
+<hr>
+<h2><a name="MaxInstances">MaxInstances</a></h2>
+<strong>Syntax:</strong> MaxInstances <em>count</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.1.6p11 and later
+
+<p>
+The <code>MaxInstances</code> directive configures the maximum number of child
+(session) processes that may be spawned by the <code>proftpd</code> daemon
+process when running with "ServerType standalone" configured.  The directive
+has no effect when <code>proftpd</code> is configured with "ServerType inetd".
+
+<p>
+Each <code>proftpd</code> child process represents a single client connection,
+and thus this directive also controls the maximum number of simultaneous
+connections allowed.  Additional connections beyond the configured limit are
+logged, and silently disconnected.  The <code>MaxInstances</code> directive
+can be used to prevent undesirable denial-of-service attacks (<i>e.g.</i>
+by repeatedly connecting to the FTP control port, a malicious client could try
+to cause <code>proftpd</code> to repeatedly fork new processes, creating a
+"fork-bomb").   By default, no limit is placed on the number of child
+processes that may run at one time; it is <b>highly recommended</b> that a
+maximum number, suitable to your sites traffic, be configured.
 
 <p>
 <hr>
@@ -180,7 +700,7 @@ an administrator is: why do you think you need such a small
 <h2><a name="PathAllowFilter">PathAllowFilter</a></h2>
 <strong>Syntax:</strong> PathAllowFilter <em>pattern [flags]</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, .ftpaccess<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, .ftpaccess<br>
 <strong>Module:</strong> mod_core<br>
 <strong>Compatibility:</strong> 1.1.7 and later
 
@@ -204,7 +724,7 @@ For example:
 </pre>
 
 <p>
-The optional <em>flags</em> paramete, if present, modifies how the given
+The optional <em>flags</em> parameter, if present, modifies how the given
 <em>pattern</em> will be evaludated.  The supported flags are:
 <ul>
   <li><b>nocase|NC</b> (<b>n</b>o <b>c</b>ase)<br>
@@ -219,14 +739,14 @@ The <a href="../howto/Filters.html">Filters</a> howto covers filtering in
 greater detail.
 
 <p>
-See also: <a href="#PathDenyFilter"><code>PathDenyFilter</code</a>
+See also: <a href="#PathDenyFilter"><code>PathDenyFilter</code></a>
 
 <p>
 <hr>
 <h2><a name="PathDenyFilter">PathDenyFilter</a></h2>
 <strong>Syntax:</strong> PathDenyFilter <em>pattern [flags]</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, .ftpaccess<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, .ftpaccess<br>
 <strong>Module:</strong> mod_core<br>
 <strong>Compatibility:</strong> 1.1.7 and later
 
@@ -245,7 +765,7 @@ For example:
 </pre>
 
 <p>
-The optional <em>flags</em> paramete, if present, modifies how the given
+The optional <em>flags</em> parameter, if present, modifies how the given
 <em>pattern</em> will be evaludated.  The supported flags are:
 <ul>
   <li><b>nocase|NC</b> (<b>n</b>o <b>c</b>ase)<br>
@@ -260,14 +780,46 @@ The <a href="../howto/Filters.html">Filters</a> howto covers filtering in
 greater detail.
 
 <p>
-See also: <a href="#PathAllowFilter"><code>PathAllowFilter</code</a>
+See also: <a href="#PathAllowFilter"><code>PathAllowFilter</code></a>
+
+<p>
+<hr>
+<h2><a name="Port">Port</a></h2>
+<strong>Syntax:</strong> Port <em>number</em><br>
+<strong>Default:</strong> Port 21<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>Port</code> directive configures the TCP port to which
+<code>proftpd</code> will listen while running in standalone mode.  This
+directive has <em>no effect</em> when used on a server running in inetd mode;
+see <a href="#ServerType"><code>ServerType</code></a>.  The directive can be
+used in conjunction with
+<a href="#VirtualHost"><code>&lt;VirtualHost&gt;</code></a> in order to run a
+virtual server on the same IP address as the master server, but listening on a
+different port.
+
+<p>
+For any server, either <code>&lt;VirtualHost&gt;</code> <i>or</i> "server
+config", using a <em>number</em> value of zero (0) will effectively
+disable/turn off that server:
+<pre>
+  &lt;VirtualHost ...&gt;
+    # This virtual server is disabled because of this Port setting
+    Port 0
+
+    ...
+  &lt;/VirtualHost&gt;
+</pre>
 
 <p>
 <hr>
 <h2><a name="ProcessTitles">ProcessTitles</a></h2>
 <strong>Syntax:</strong> ProcessTitles <em>terse|verbose</em><br>
 <strong>Default:</strong> ProcessTitles verbose<br>
-<strong>Context:</strong> server config
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_core<br>
 <strong>Compatibility:</strong> 1.3.4rc2 and later
 
@@ -340,6 +892,399 @@ The currently known/supported protocols include:
 
 <p>
 <hr>
+<h2><a name="ScoreboardFile">ScoreboardFile</a></h2>
+<strong>Syntax:</strong> ScoreboardFile <em>path|"none"</em><br>
+<strong>Default:</strong> ScoreboardFile /usr/local/var/proftpd.scoreboard</br>
+<strong>Context:</strong> server config<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.7rc1 and later
+
+<p>
+The <code>ScoreboardFile</code> directive sets the path to the file where the
+daemon will store its run-time "scoreboard" session information.  This file is
+necessary for support features such as
+<a href="mod_auth.html#MaxClients"><code>MaxClients</code></a> to work properly,
+as well as other utilities (such as <a href="../utils/ftpwho.html">ftpwho</a>,
+<a href="../utils/ftptop.html">ftptop</a>, and
+<a href="../utils/ftpcount.html">ftpcount</a>).  <b>Note</b> that the directory
+containing the scoreboard <b>cannot</b> be world-writable.
+
+<p>
+For performance reasons, it is <b>strongly recommended</b> that the
+<code>ScoreboardFile</code> path <i>not</i> be located on a networked
+filesystem, but rather be located on a local physical disk.
+
+<p>
+In order to <i>disable</i> scoreboarding (which can increase performance,
+at the cost of functionality), any of the following can be used:
+<pre>
+  ScoreboardFile /dev/null
+  ScoreboardFile none
+  ScoreboardFile off
+</pre>
+Please read the
+<a href="../howto/Scoreboard.html#ScoreboardDisabling">Scoreboard</a> howto
+before disabling scoreboarding.
+
+<p>
+<hr>
+<h2><a name="ScoreboardMutex">ScoreboardMutex</a></h2>
+<strong>Syntax:</strong> ScoreboardMutex <em>path</em><br>
+<strong>Default:</strong> ScoreboardMutex /usr/local/var/proftpd.scoreboard.lck</br>
+<strong>Context:</strong> server config<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.3.4rc1 and later
+
+<p>
+The <code>ScoreboardMutex</code> directive sets the path to a "mutex" file
+which is used for scoreboard locking/synchronization; this mutex is used to
+increase the daemon's performance under load.
+
+<p>
+For performance reasons, it is <b>strongly recommended</b> that the
+<code>ScoreboardMutex</code> path <i>not</i> be located on a networked
+filesystem, but rather be located on a local physical disk.  It is best if
+the <code>ScoreboardMutex</code> be located in the same directory as the
+<a href="#ScoreboardFile"><code>ScoreboardFile</code></a>.
+
+<p>
+<hr>
+<h2><a name="ServerIdent">ServerIdent</a></h2>
+<strong>Syntax:</strong> ServerIdent <em>off|on "identification string"</em><br>
+<strong>Default:</strong> ServerIdent on "ProFTPD [version] Server (server name) [hostname]"<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.0pre2 and later
+
+<p>
+The <code>ServerIdent</code> directive sets the default message displayed when
+a new client connects.  Setting this to <em>off</em> displays:
+<pre>
+  [<i>hostname</i>] FTP server ready.
+</pre>
+If set to <em>on</em>, the directive can take an optional string argument,
+which will be displayed instead of the default text.  Sites desiring to give
+out minimal information will probably want a setting like:
+<pre>
+  ServerIdent on "FTP Server ready."
+</pre>
+which won't even reveal the hostname.
+
+<p>
+An example of a custom identification string might be:
+<pre>
+  ServerIdent on "Welcome to ftp.linux.co.uk"
+</pre>
+
+<p>
+<hr>
+<h2><a name="ServerType">ServerType</a></h2>
+<strong>Syntax:</strong> ServerType <em>"standalone"|"inetd"</em><br>
+<strong>Default:</strong> ServerType standalone<br>
+<strong>Context:</strong> server config<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>ServerType</code> directive configures the <code>proftpd</code>
+server operating mode. The parameter can either be <em>inetd</em> or
+<em>standalone</em>.
+
+<p>
+A parameter value of <em>inetd</em> configures <code>proftpd</code> to expect
+to be run from the <code>inetd</code>/<code>xinetd</code> "super server."  New
+connections are passed from <code>inetd</code>/<code>xinetd</code> to
+<code>proftpd</code> and are processed immediately.
+
+<p>
+A parameter value of <em>standalone</em> configures <code>proftpd</code> to
+start up on its own, and to begin listening to the configured addresses/ports
+for incoming connections.  New connections result in forked child processes
+dedicated to processing all requests from the newly connected client.
+
+<p>
+<hr>
+<h2><a name="SocketBindTight">SocketBindTight</a></h2>
+<strong>Syntax:</strong> SocketBindTight <em>on|off</em><br>
+<strong>Default:</strong> <em>off</em><br>
+<strong>Context:</strong> server config<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 0.99.0pl6 and later
+
+<p>
+The <code>SocketBindTight</code> directive controls how <code>proftpd</code>
+creates and binds its initial TCP listening sockets in "ServerType standalone"
+mode (see <a href="#ServerType"><code>ServerType</code></a>).  This directive
+has no effect upon servers running with "ServerType inetd", because
+the TCP listening sockets in that mode are not needed or created by
+<code>proftpd</code>.
+
+<p>
+When <code>SocketBindTight</code> is set to <em>off</em> (the default), a
+single TCP listening socket is created for each port that the server must
+listen on, regardless of the number of IP addresses being used by
+<code>&lt;VirtualHost&gt;</code> configurations.  This has the benefit of
+requiring a relatively small number of file descriptors (one for each socket)
+for the master daemon process, even if a large number of virtual servers are
+configured.  Each of these listening sockets is bound to the "wildcard"
+address, meaning that on all IP addresses on that port (<i>e.g.</i> "*:21").
+
+<p>
+When <code>SocketBindTight</code> is set to <em>on</em>, a TCP listening socket
+is created and bound to <i>a specific IP address</i> for the main "server
+config" server and all configured virtual servers.  This allows for situations
+where an administrator may wish to have a particular port be used by both
+<code>proftpd</code> (on one IP address) and another daemon (on a different IP
+address).  The drawback is that considerably more file descriptors will be
+required <b>if a large number</b> of virtual servers must be supported.
+
+<p>
+Here's an example.  Two servers have been configured (one "server config" and
+one <code>&lt;VirtualHost&gt;</code>), with the IP addresses 10.0.0.1 and
+10.0.0.2, respectively.  The 10.0.0.1 server runs on port 21, while 10.0.0.2
+runs on port 2001.
+
+<p>
+If we use:
+<pre>
+  SocketBindTight off
+</pre>
+then <code>proftpd</code> creates two sockets, both bound to <b>all</b>
+available addresses; one socket listens on port 21 (<i>i.e.</i> "*:21"), the
+other on port 2001 (<i>i.e.</i> "*.2001").  Since each socket is bound to all
+available addresses, no other daemon or process will be allowed to bind to
+ports 21 or 2001.
+
+<p>
+On the other hand, if we use:
+<pre>
+  SocketBindTight on
+</pre>
+then <code>proftpd</code> again creates two sockets.  However one is bound to
+10.0.0.1, port 21 (<i>i.e.</i> "10.0.0.1:21") and the other is bound to
+10.0.0.2, port 2001 (<i>i.e.</i> "10.0.0.2:2001").  Thus these sockets are
+<em>"tightly"</em> bound to the IP addresses.  This means that port 21 can be
+reused on any address <i>other</i> than 10.0.0.1, and similarly for port 2001
+and 10.0.0.2.
+
+<p>
+One side effect of setting <code>SocketBindTight</code> to <em>on</em> is that
+connections to non-bound addresses will result in a "connection refused"
+message rather than the more common:
+<pre>
+  500 Sorry, no server available to handle request on <i>a.b.c.d.</i>
+</pre>
+due to the fact that no TCP listening socket has been bound to the particular
+address/port pair.  This may or may not be aesthetically desirable, depending
+on your circumstances.
+
+<p>
+<hr>
+<h2><a name="SocketOptions">SocketOptions</a></h2>
+<strong>Syntax:</strong> SocketOptions <em>[maxseg <i>byte-count</i>] [rcvbuf <i>byte-count</i>] [sndbuf <i>byte-count</i>] [keepalive "on"|"off"|spec]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.9rc1 and later
+
+<p>
+The <code>SocketOptions</code> directive is used to tune various socket-level
+options.  The <em>rcvbuf</em> and <em>sndbuf</em> parameters are used for
+setting the TCP send/receive window sizes.  The <em>maxseg</em> parameter is
+used for setting a MSS (Maximum Segment Size) via <code>setsockopt(2)</code>'s
+<code>TCP_MAXSEG</code> option.  If the MSS is larger than the network
+interface's MTU, it is ignored and has no effect.
+
+<p>
+Examples:
+<pre>
+  # Use buffer sizes of 32KB for both reading and writing
+  SocketOptions rcvbuf 32768 sndbuf 32768
+</pre>
+
+<p>
+In <code>proftpd-1.3.5rc1</code>, the <code>SocketOptions</code> directive
+gained support for the <em>keepalive</em> parameter.  By default,
+<code>proftpd</code> enables TCP keepalives on all of its connections,
+both control and data.  To disable use of TCP keepalives, use:
+<pre>
+  SocketOptions keepalive off
+</pre>
+while to have TCP keepalives explicitly enabled in the config, you would use:
+<pre>
+  SocketOptions keepalive on
+</pre>
+
+<p>
+The <em>keepalive</em> parameter also handles an argument in the form of
+a "keepalive-spec", which is a colon-separated string of three numeric values:
+<i>idle-secs</i>, <i>probe-count</i>, and <i>interval-secs</i>.  On most TCP
+stacks, the default TCP keepalive behavior uses 2 hours as the time (per
+recommendation in RFC 1122), with 9 probes at 75 seconds between each probe.
+Using the <em>keepalive</em> parameter, this would be configured as:
+<pre>
+  SocketOption keepalive 7200:9:75
+</pre>
+The first number (<i>idle-secs</i>) indicates the number of seconds the TCP
+connection must be idle before the first TCP keepalive probe is sent.  Once
+the <i>idle-secs</i> time has passed, the TCP stack will send a number of
+"probes", trying to elicit a response (<code>ACK</code>, <code>RST</code>,
+<i>etc</i>) from the remote peer; the number of probes sent is configured by
+the second number (<i>probe-count</i>).  The probes will be sent out at
+intervals governed by the third number (<i>interval-secs</i>), which configures
+the number of seconds between each keepalive probe.
+
+<p>
+<b>Note</b> that not all platforms support configuring the idle, count, and
+interval values of the TCP keepalive behavior in their TCP stack.  On such
+platforms, if the <em>keepalive</em> spec format is used, <i>e.g.</i>:
+<pre>
+  SocketOptions keepalive 7500:9:75
+</pre>
+and <code>proftpd</code> knows that it cannot alter the TCP keepalive values,
+then <code>proftpd</code> will assume that the <em>keepalive</em> configuration
+is equivalent to:
+<pre>
+  SocketOptions keepalive on
+</pre>
+
+<p>
+<hr>
+<h2><a name="SyslogFacility">SyslogFacility</a></h2>
+<strong>Syntax:</strong> SyslogFacility <em>facility</em><br>
+<strong>Default:</strong> SyslogFacility daemon<br>
+<strong>Context:</strong> server config<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.1.6 and later
+
+<p>
+By default, ProFTPD logs its activity via the Unix syslog mechanism, which
+allows for several different general classifications of logging messages,
+known as "facilities."  Normally, all authentication related messages are
+logged with the <code>AUTHPRIV</code> (or <code>AUTH</code>) facility
+(since these messages are intended to be secure, and never seen by unwanted
+eyes), while normal operational messages are logged with the
+<code>DAEMON</code> facility.  The <code>SyslogFacility</code> directive
+allows <b>all</b> logging messages to be directed to a different facility than
+the default.
+
+<p>
+When this directive is used, <b>all</b> logging is done with the specified
+<em>facility</em>, both authentication (secure) and otherwise. The
+<em>facility</em> argument must be one of the following:
+<ul>
+  <li><code>AUTH</code> (or <code>AUTHPRIV</code>)
+  <li><code>CRON</code>
+  <li><code>DAEMON</code>
+  <li><code>FTP</code>
+  <li><code>KERN</code>
+  <li><code>LPR</code>
+  <li><code>MAIL</code>
+  <li><code>NEWS</code>
+  <li><code>USER</code>
+  <li><code>UUCP</code>
+  <li><code>LOCAL0</code>
+  <li><code>LOCAL1</code>
+  <li><code>LOCAL2</code>
+  <li><code>LOCAL3</code>
+  <li><code>LOCAL4</code>
+  <li><code>LOCAL5</code>
+  <li><code>LOCAL6</code>
+  <li><code>LOCAL7</code>
+</ul>
+For more information on syslog facilities, see the <code>syslog.conf</code>
+man page.
+
+<p>
+The <a href="../howto/Logging.html#Syslog">Logging</a> howto covers logging in
+greater detail.
+
+<p>
+See also: <a href="#SyslogLevel"><code>SyslogLevel</code></a>,
+<a href="mod_log.html#SystemLog"><code>SystemLog</code></a>
+
+<p>
+<hr>
+<h2><a name="SyslogLevel">SyslogLevel</a></h2>
+<strong>Syntax:</strong> SyslogLevel <em>level</em><br>
+<strong>Default:</strong> SyslogLevel debug<br>
+<strong>Context:</strong> server config<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2.0rc2 and later
+
+<p>
+The <code>SyslogLevel</code> directive adjusts the verbosity of the messages
+recorded via the default Unix syslog logging. The following <em>levels</em>
+are available, in order of decreasing significance:
+
+<p>
+<table border=1>
+  <tr>
+    <td><b>Level</b></td>
+    <td><b>Description</b></td>
+  </tr>
+
+  <tr>
+    <td><code>emerg</code></td>
+    <td>Emergencies (<i>e.g.</i> the system is unusable)</td>
+  </tr>
+
+  <tr>
+    <td><code>alert</code></td>
+    <td>Action must be taken immediately</td>
+  </tr>
+
+  <tr>
+    <td><code>crit</code></td>
+    <td>Critical conditions</td>
+  </tr>
+
+  <tr>
+    <td><code>error</code></td>
+    <td>Error conditions</td>
+  </tr>
+
+  <tr>
+    <td><code>warn</code></td>
+    <td>Warning conditions</td>
+  </tr>
+
+  <tr>
+    <td><code>notice</code></td>
+    <td>Normal but significant conditions</td>
+  </tr>
+
+  <tr>
+    <td><code>info</code></td>
+    <td>Informational</td>
+  </tr>
+
+  <tr>
+    <td><code>debug</code></td>
+    <td>Debug-level messages</td>
+  </tr>
+</table>
+
+<p>
+When a particular <em>level</em> is specified, messages from all other levels
+of higher significance will be reported as well.  For example, when:
+<pre>
+  SyslogLevel info
+</pre>
+is configured, then messages with log levels of <code>notice</code> and
+<code>warn</code> will also be logged.  Using a level of at least
+<code>crit</code> is recommended.
+
+<p>
+The <a href="../howto/Logging.html#Syslog">Logging</a> howto covers logging in
+greater detail.
+
+<p>
+See also: <a href="#SyslogFacility"><code>SyslogFacility</code></a>,
+<a href="mod_log.html#SystemLog"><code>SystemLog</code></a>
+
+<p>
+<hr>
 <h2><a name="TCPBacklog">TCPBacklog</a></h2>
 <strong>Syntax:</strong> TCPBacklog <em>backlog-size</em><br>
 <strong>Default:</strong> 5<br>
@@ -391,8 +1336,37 @@ additional tuning considerations on Solaris.
 
 <p>
 <hr>
+<h2><a name="TimeoutIdle">TimeoutIdle</a></h2>
+<strong>Syntax:</strong> TimeoutIdle <em>seconds</em><br>
+<strong>Default:</strong> 600 seconds<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>TimeoutIdle</code> directive configures the maximum number of
+<em>seconds</em> that <code>proftpd</code> will allow clients to stay connected
+without receiving any data on either the control or data connection.  If data
+are received on either connection, the idle timer is reset.  Setting
+<code>TimeoutIdle</code> to zero disables the idle timer completely, meaning
+that clients can stay connected forever, without sending data.  <b>Note</b>:
+this is generally a <b>very bad idea</b>, as a "hung" TCP connection which is
+never properly disconnected (<i>e.g.</i> the remote network may have become
+disconnected from the Internet, <i>etc</i>) will cause a session process to
+never exit, until manually killed.  This session process will thus linger, using
+up one of the <a href="#MaxInstances"><code>MaxInstances</code></a> as well as
+any of the other configured limits.  The maximum allowed <em>seconds</em> value
+is 65535 (108 minutes).
+
+<p>
+See also: <a href="mod_auth.html#TimeoutLogin"><code>TimeoutLogin</code></a>,
+<a href="mod_xfer.html#TimeoutNoTransfer"><code>TimeoutNoTransfer</code></a>,
+<a href="mod_xfer.html#TimeoutStalled"><code>TimeoutStalled</code></a>.
+
+<p>
+<hr>
 <h2><a name="TimeoutLinger">TimeoutLinger</a></h2>
-<strong>Syntax:</strong> TimeoutLinger <em>secs</em><br>
+<strong>Syntax:</strong> TimeoutLinger <em>seconds</em><br>
 <strong>Default:</strong> 30<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_core<br>
@@ -409,7 +1383,8 @@ closure.  This delay is necessary for properly handling some FTP clients.
 <p>
 If the client aborts a transfer and there is a long delay, this lingering close
 is the most likely culprit.  So if you encounter this delay, set
-<code>TimeoutLinger</code> to a low number to remove the delay.
+<code>TimeoutLinger</code> to a low number to remove the delay.  The maximum
+allowed <em>seconds</em> is 65535 (108 minutes).
 
 <p>
 For the curious, here are the full details: some FTP clients will close their
@@ -544,19 +1519,185 @@ See also: <a href="mod_log.html#ExtendedLog"><code>ExtendedLog</code></a>,
 
 <p>
 <hr>
+<h2><a name="Umask">Umask</a></h2>
+<strong>Syntax:</strong> Umask <em>file-umask [dir-umask]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;, &lt;Anonymous&gt;, .ftpaccess<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>Umask</code> directive sets the mask applied to newly created file
+and directory permissions.  Any parameters supplied must be an octal number,
+in the format <code>0<i>xxx</i></code>.
+
+<p>
+An optional second <em>dir-umask</em> parameter can specify a different
+<code>Umask</code> to be used when creating directories, rather than files.
+If this second parameter is not used, directories are created using the
+<em>file-umask</em> value from the first parameter. For more information on
+umasks, consult your operating system documentation/man pages.
+
+<p>
+<b>Note</b>: ProFTPD will <b>not</b> create files that have the executable bit
+enabled; this is a security-driven design decision.  The permissions of an
+uploaded file can be changed by issuing a <code>SITE CHMOD</code> command,
+<i>e.g.</i>:
+<pre>
+  SITE CHMOD 0755 /path/to/uploaded/file
+</pre>
+
+<p>
+The <code>Umask</code> <a href="../howto/Umask.html">howto</a> also talks about
+umasks in greater detail.
+
+<p>
+<hr>
+<h2><a name="UserOwner">UserOwner</a></h2>
+<strong>Syntax:</strong> UserOwner <em>user-name</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &lt;Anonymous&gt;, &lt;Directory&gt;<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.2pre11 and later
+
+<p>
+The <code>UserOwner</code> directive is used to specify the <em>user-name</em>
+which will own all created files and directories within the
+<code>&lt;Anonymous&gt;</code> or <code>&lt;Directory&gt;</code> section
+contain the <code>UserOwner</code> directive; the default behavior is that
+all created files/directories will be owned by the logged-in user, of course.
+
+<p>
+When the <code>UserOwner</code> directive  is used, the
+<code>GroupOwner</code> directive is <b>not</b> restricted to groups to which
+the logged-in user belongs.
+
+<p>
+See also: <a href="#GroupOwner"><code>GroupOwner</code></a>
+
+<p>
+<hr>
+<h2><a name="VirtualHost">&lt;VirtualHost&gt;</a></h2>
+<strong>Syntax:</strong> &lt;VirtualHost <em>ip-address|dns-name [ip-address|dns-name ...]</em>&gt;<br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 0.99.0 and later
+
+<p>
+The <code>&lt;VirtualHost&gt;</code> configuration section is used to create
+an independent set of configuration directives that apply to a <i>particular
+hostname or IP address</i>.  It is often used in conjunction with system level
+IP aliasing or dummy network interfaces in order to establish one or more
+<em>virtual</em> servers which all run on the same physical machine.  The
+section is terminated with a <code>&lt;/VirtualHost&gt;</code> directive.
+
+<p>
+By using the <a href="#Port"><code>Port</code></a> directive inside a
+<code>&lt;VirtualHost&gt;</code> section, it is possible to create a virtual
+server which uses the same IP address as the master server, <i>but</i>
+which listens on a <em>different</em> TCP port  (Note, however, that this
+approach is incompatible with a
+<a href="#ServerType"><code>ServerType</code></a> of "inetd").
+
+<p>
+When <code>proftpd</code> starts up, virtual server connections are handled in
+one of two ways, depending on the
+<a href="#ServerType"><code>ServerType</code></a> setting:
+<ul>
+  <li><em>inetd</em>
+    <p>
+    The daemon examines the destination address and port of the incoming
+    connection being handed off from <code>inetd/xinetd</code>.  If the
+    connection matches one of the configured <code>&lt;VirtualHost&gt;</code>
+    sections, the connection is handled by that matching configuration. If no
+    <code>&lt;VirtualHost&gt;</code> section matches, and the main server does
+    not match, the client is informed that no server is available to handle
+    their requests, and the client is disconnected.
+  </li>
+
+  <p>
+  <li><em>standalone</em>
+    <p>
+    After parsing the configuration file, the daemon begins listening for
+    connections on all configured ports, spawning child processes as necessary
+    to handle connections for either the main server or any
+    <code>&lt;VirtualHost&gt;</code> sections.
+
+    <p>
+    Because of the method that the daemon uses to listen for connections when
+    in standalone mode, it is possible to support an exceedingly large number
+    of virtual servers, potentially exceeding the number of per-process file
+    descriptors.  This is due to the fact that a single file descriptor is used
+    to listen to each configured port, regardless of the number of addresses
+    being monitored.  Note that it may be necessary to increase the
+    <a href="#TCPBacklog"><code>TCPBackLog</code></a> value on heavily loaded
+    servers in order to avoid kernel-rejected client connections; clients
+    will receive a "Connection refused" error when this condition happens.
+  </li>
+</ul>
+
+<p>
+Starting with <code>proftpd-1.3.0rc1</code>, it is possible to use more than
+one DNS name or IP address.  And starting with <code>proftpd-1.3.5rc1</code>,
+a device/interface name can also be used.
+
+<p>
+Examples:
+<pre>
+  &lt;VirtualHost host1.domain.com host2.domain.com&gt;
+    ...
+  &lt;/VirtualHost&gt;
+
+  # Establish a virtual server for the eth1 interface
+  &lt;VirtualHost eth1&gt;
+    ...
+  &lt;/VirtualHost&gt;
+
+</pre>
+The virtual server <a href="../howto/Vhost.html">howto</a> also talks about
+virtual servers in greater detail.
+
+<p>
+See also: <a href="#DefaultAddress"><code>DefaultAddress</code></a>
+
+<p>
+<hr>
 <h2><a name="Installation">Installation</a></h2>
-The <code>mod_core</code>module is <b>always</b> installed.
+The <code>mod_core</code> module is <b>always</b> installed.
+
+<p><a name="FAQ">
+<hr>
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="ListenOnOneAddressOnly">
+<font color=red>Question</font>: How do I configure <code>proftpd</code> to
+only listen to connections on one address, <i>e.g.</i> 127.0.0.1?  If I use
+the following in my <code>proftpd.conf</code>:
+<pre>
+  DefaultAddress localhost
+</pre>
+I am still able to connect to <code>proftpd</code> from another machine.<br>
+<font color=blue>Answer</font>: The solution is to use the
+<a href="#SocketBindTight"><code>SocketBindTight</code></a>, like this:
+<pre>
+  DefaultAddress localhost
+  SocketBindTight on
+</pre>
+The <code>SocketBindTight</code> directive tells <code>proftpd</code> to
+listen <b>only</b> on that 'localhost' IP address, rather than on all
+addresses.
 
 <p>
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011/07/01 18:34:07 $</i><br>
+Last Updated: <i>$Date: 2014/01/30 16:50:10 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2011 The ProFTPD Project<br>
+&copy; Copyright 2000-2014 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

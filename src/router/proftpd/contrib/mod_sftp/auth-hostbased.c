@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: auth-hostbased.c,v 1.7.2.1 2012/03/13 19:02:24 castaglia Exp $
+ * $Id: auth-hostbased.c,v 1.10 2012/03/13 18:58:48 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -39,16 +39,16 @@
 static const char *trace_channel = "ssh2";
 
 int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
-    const char *orig_user, const char *user, const char *service, char **buf,
-    uint32_t *buflen, int *send_userauth_fail) {
+    const char *orig_user, const char *user, const char *service,
+    unsigned char **buf, uint32_t *buflen, int *send_userauth_fail) {
   struct passwd *pw;
   char *hostkey_algo, *host_fqdn, *host_user, *host_user_utf8;
-  char *hostkey_data, *signature_data;
-  char *buf2, *ptr2;
   const char *fp = NULL;
+  unsigned char *hostkey_data, *signature_data;
+  unsigned char *buf2, *ptr2;
   const unsigned char *id;
   uint32_t buflen2, bufsz2, hostkey_datalen, id_len, signature_len;
-  int pubkey_type;
+  enum sftp_key_type_e pubkey_type;
 
   if (pr_cmd_dispatch_phase(pass_cmd, PRE_CMD, 0) < 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -81,10 +81,21 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     hostkey_algo, host_fqdn, host_user);
 
   if (strncmp(hostkey_algo, "ssh-rsa", 8) == 0) {
-    pubkey_type = EVP_PKEY_RSA;
+    pubkey_type = SFTP_KEY_RSA;
 
   } else if (strncmp(hostkey_algo, "ssh-dss", 8) == 0) {
-    pubkey_type = EVP_PKEY_DSA;
+    pubkey_type = SFTP_KEY_DSA;
+
+#ifdef PR_USE_OPENSSL_ECC
+  } else if (strncmp(hostkey_algo, "ecdsa-sha2-nistp256", 20) == 0) {
+    pubkey_type = SFTP_KEY_ECDSA_256;
+
+  } else if (strncmp(hostkey_algo, "ecdsa-sha2-nistp256", 20) == 0) {
+    pubkey_type = SFTP_KEY_ECDSA_384;
+
+  } else if (strncmp(hostkey_algo, "ecdsa-sha2-nistp256", 20) == 0) {
+    pubkey_type = SFTP_KEY_ECDSA_521;
+#endif /* PR_USE_OPENSSL_ECC */
 
   /* XXX Need to support X509v3 certs here */
 
@@ -184,7 +195,7 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
   bufsz2 = buflen2 = 2048;
   ptr2 = buf2 = sftp_msg_getbuf(pkt->pool, bufsz2);
 
-  sftp_msg_write_data(&buf2, &buflen2, (char *) id, id_len, TRUE);
+  sftp_msg_write_data(&buf2, &buflen2, id, id_len, TRUE);
   sftp_msg_write_byte(&buf2, &buflen2, SFTP_SSH2_MSG_USER_AUTH_REQUEST);
   sftp_msg_write_string(&buf2, &buflen2, orig_user);
 

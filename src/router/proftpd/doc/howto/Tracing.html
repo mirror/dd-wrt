@@ -1,4 +1,4 @@
-<!-- $Id: Tracing.html,v 1.13 2011/04/21 15:59:49 castaglia Exp $ -->
+<!-- $Id: Tracing.html,v 1.15 2012/09/27 17:52:36 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Tracing.html,v $ -->
 
 <html>
@@ -174,17 +174,52 @@ For example:
 This shows process ID 30583 logging to the "auth" channel, log level 6, a
 message about handling the "endgrent" Auth API request.
 
-<p>
+<p><a name="RuntimeTuning">
 <b>Runtime Tracing</b><br>
-If Controls support is enabled in your <code>proftpd</code>, and you are
-using the <code>mod_ctrls_admin</code> module, then you can also use the
+If Controls support is enabled in your <code>proftpd</code>, <i>and</i>
+you are using the <code>mod_ctrls_admin</code> module, then you can also use the
 <code>ftpdctl</code> command to adjust the trace logging settings in the
 running <code>proftpd</code>, without needing to change your
 <code>proftpd.conf</code> file.  See:
 <pre>
   <a href="../contrib/mod_ctrls_admin.html#trace">doc/contrib/mod_ctrls_admin.html#trace</a>
 </pre>
-for more information.
+for more information on the <code>ftpdctl trace</code> action.
+
+<p>
+Here's a concrete example of how tuning the trace logging at runtime can be
+useful.  You may need the extra information logged via trace logging in order
+to track down/debug some issue, <b>but</b> you do not want to enable trace
+logging all of the time in your environment.  Fortunately, it is possible
+to make it possible to get the trace logging information you need, when
+you need to get it, and then turn the trace logging off <i>all without
+restarting proftpd</i>.
+
+<p>
+First, you need to configure your <code>proftpd.conf</code> like so:
+<pre>
+  TraceLog /path/to/proftpd/trace.log
+  Trace DEFAULT:0
+</pre>
+This configuration tells proftpd to direct all trace logging to that
+<code>TraceLog</code> file, <i>but</i> to not actually write anything to the
+file; the log level zero (0) filters out all trace logging messages.  Start
+proftpd with the updated <code>proftpd.conf</code>.  Later, while proftpd is
+running, you can tune the tracing using the
+<a href="Controls.html"><code>ftpdctl</code></a> utility, like this:
+<pre>
+  # ftpdctl trace lock:10 scoreboard:5
+</pre>
+which dynamically changes the 'lock' trace channel level to 10, and the
+'scoreboard' trace channel level to 5.  Once you have gathered the necessary
+information in the <code>TraceLog</code> file, you then use <code>ftpdctl</code>
+again and restore the trace levels back to zero, effectively turning off
+trace logging once more:
+<pre>
+  # ftpdctl trace DEFAULT:0
+</pre>
+Note that the changed settings will only apply to <b>new</b> sessions; this
+does <b>not</b> change the trace logging for <i>existing</i> sessions.
 
 <p>
 <b>Use Only When Needed</b><br>
@@ -196,7 +231,7 @@ ever be used for debugging and development purposes; once your
 <code>proftpd.conf</code>.
 
 <p><a name="FAQ">
-<b>Frequently Asked Questsions</b><br>
+<b>Frequently Asked Questions</b><br>
 
 <p>
 <font color=red>Question</font>: Can I configure <code>Trace</code> on a
@@ -215,7 +250,7 @@ sections as well.
 
 <p>
 <hr>
-<i>$Date: 2011/04/21 15:59:49 $</i><br>
+<i>$Date: 2012/09/27 17:52:36 $</i><br>
 
 </body>
 </html>

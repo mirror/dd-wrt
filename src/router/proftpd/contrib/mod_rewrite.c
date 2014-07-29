@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_rewrite -- a module for rewriting FTP commands
  *
- * Copyright (c) 2001-2012 TJ Saunders
+ * Copyright (c) 2001-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * This is mod_rewrite, contrib software for proftpd 1.2 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_rewrite.c,v 1.64.2.1 2012/04/03 16:02:46 castaglia Exp $
+ * $Id: mod_rewrite.c,v 1.75 2013/10/13 23:43:44 castaglia Exp $
  */
 
 #include "conf.h"
@@ -33,8 +33,8 @@
 #define MOD_REWRITE_VERSION "mod_rewrite/0.9"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030402
-# error "ProFTPD 1.3.4rc2 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030501
+# error "ProFTPD 1.3.5rc1 or later required"
 #endif
 
 #ifdef PR_USE_REGEX
@@ -101,11 +101,13 @@ static array_header *rewrite_conds = NULL;
 static rewrite_match_t rewrite_cond_matches;
 static rewrite_match_t rewrite_rule_matches;
 
+static unsigned int rewrite_max_replace = PR_STR_MAX_REPLACEMENTS;
+
 static const char *trace_channel = "rewrite";
 
-#define REWRITE_MAX_VARS		15
+#define REWRITE_MAX_VARS		23
 
-static char rewrite_vars[REWRITE_MAX_VARS][3] = {
+static char rewrite_vars[REWRITE_MAX_VARS][13] = {
   "%a",		/* Remote IP address */
   "%c",		/* Session class */
   "%F",		/* Full path */
@@ -120,7 +122,15 @@ static char rewrite_vars[REWRITE_MAX_VARS][3] = {
   "%U",		/* Original username */
   "%u",		/* Resolved/real username */
   "%v",		/* Server name */
-  "%w"		/* Rename from (whence) */
+  "%w", 	/* Rename from (whence) */
+  "%{TIME}",	/* Timestamp: YYYYMMDDHHmmss */
+  "%{TIME_YEAR}", /* Year: YYYY */
+  "%{TIME_MON}",  /* Month: MM (1-12) */
+  "%{TIME_DAY}",  /* Day: DD (1-31, depending on month) */
+  "%{TIME_WDAY}", /* Week day: 0-6, 0 = Sunday */
+  "%{TIME_HOUR}", /* Hour: HH (0-23) */
+  "%{TIME_MIN}",  /* Minute: mm (0-59) */
+  "%{TIME_SEC}"  /* Second: ss (0-60) */
 };
 
 /* Necessary prototypes */
@@ -155,15 +165,19 @@ static int rewrite_write_fifo(int, char *, size_t);
  */
 
 #define REWRITE_CHECK_VAR(p, m) \
-    if (!p) rewrite_log("rewrite_expand_var(): %" m " expands to NULL")
+    if (p == NULL) rewrite_log("rewrite_expand_var(): %" m " expands to NULL")
 
 static char *rewrite_expand_var(cmd_rec *cmd, const char *subst_pattern,
     const char *var) {
-  if (strcmp(var, "%c") == 0) {
-    REWRITE_CHECK_VAR(session.class, "%c");
-    return (session.class ? session.class->cls_name : NULL);
+  size_t varlen;
 
-  } else if (strcmp(var, "%F") == 0) {
+  varlen = strlen(var);
+
+  if (strncmp(var, "%c", 3) == 0) {
+    REWRITE_CHECK_VAR(session.conn_class, "%c");
+    return (session.conn_class ? session.conn_class->cls_name : NULL);
+
+  } else if (strncmp(var, "%F", 3) == 0) {
     char *cmd_name;
 
     cmd_name = rewrite_get_cmd_name(cmd);
@@ -172,17 +186,17 @@ static char *rewrite_expand_var(cmd_rec *cmd, const char *subst_pattern,
      * mod_log uses the session.xfer.xfer_path variable, but that is not yet
      * set at this stage in the command dispatch cycle.
      */
-    if (strcmp(cmd_name, C_APPE) == 0 ||
-        strcmp(cmd_name, C_RETR) == 0 ||
-        strcmp(cmd_name, C_STOR) == 0 ||
-        strcmp(cmd_name, C_DELE) == 0 ||
-        strcmp(cmd_name, C_MKD) == 0 ||
-        strcmp(cmd_name, C_MDTM) == 0 ||
-        strcmp(cmd_name, C_RMD) == 0 ||
-        strcmp(cmd_name, C_SIZE) == 0 ||
-        strcmp(cmd_name, C_STOU) == 0 ||
-        strcmp(cmd_name, C_XMKD) == 0 ||
-        strcmp(cmd_name, C_XRMD) == 0) {
+    if (pr_cmd_cmp(cmd, PR_CMD_APPE_ID) == 0 ||
+        pr_cmd_cmp(cmd, PR_CMD_RETR_ID) == 0 ||
+        pr_cmd_cmp(cmd, PR_CMD_STOR_ID) == 0 ||
+        pr_cmd_cmp(cmd, PR_CMD_DELE_ID) == 0 ||
+        pr_cmd_cmp(cmd, PR_CMD_MKD_ID) == 0 ||
+        pr_cmd_cmp(cmd, PR_CMD_MDTM_ID) == 0 ||
+        pr_cmd_cmp(cmd, PR_CMD_RMD_ID) == 0 ||
+        pr_cmd_cmp(cmd, PR_CMD_SIZE_ID) == 0 ||
+        pr_cmd_cmp(cmd, PR_CMD_STOU_ID) == 0 ||
+        pr_cmd_cmp(cmd, PR_CMD_XMKD_ID) == 0 ||
+        pr_cmd_cmp(cmd, PR_CMD_XRMD_ID) == 0) {
       return dir_abs_path(cmd->tmp_pool, cmd->arg, FALSE);
 
     } else if (cmd->argc >= 3 &&
@@ -203,48 +217,48 @@ static char *rewrite_expand_var(cmd_rec *cmd, const char *subst_pattern,
       return NULL;
     }
 
-  } else if (strcmp(var, "%f") == 0) {
+  } else if (strncmp(var, "%f", 3) == 0) {
     REWRITE_CHECK_VAR(cmd->arg, "%f");
     return cmd->arg;
 
-  } else if (strcmp(var, "%m") == 0) {
+  } else if (strncmp(var, "%m", 3) == 0) {
     return rewrite_get_cmd_name(cmd);
 
-  } else if (strcmp(var, "%p") == 0) {
+  } else if (strncmp(var, "%p", 3) == 0) {
     char *port = pcalloc(cmd->tmp_pool, 8 * sizeof(char));
     snprintf(port, 8, "%d", main_server->ServerPort);
     port[7] = '\0';
     return port;
 
-  } else if (strcmp(var, "%U") == 0) {
+  } else if (strncmp(var, "%U", 3) == 0) {
     return pr_table_get(session.notes, "mod_auth.orig-user", NULL);
 
-  } else if (strcmp(var, "%P") == 0) {
+  } else if (strncmp(var, "%P", 3) == 0) {
     char *pid = pcalloc(cmd->tmp_pool, 8 * sizeof(char));
     snprintf(pid, 8, "%lu", (unsigned long) getpid());
     pid[7] = '\0';
     return pid;
 
-  } else if (strcmp(var, "%g") == 0) {
+  } else if (strncmp(var, "%g", 3) == 0) {
     REWRITE_CHECK_VAR(session.group, "%g");
     return session.group;
 
-  } else if (strcmp(var, "%u") == 0) {
+  } else if (strncmp(var, "%u", 3) == 0) {
     REWRITE_CHECK_VAR(session.user, "%u");
     return session.user;
 
-  } else if (strcmp(var, "%a") == 0) {
+  } else if (strncmp(var, "%a", 3) == 0) {
     return (char *) pr_netaddr_get_ipstr(session.c->remote_addr);
 
-  } else if (strcmp(var, "%h") == 0) {
+  } else if (strncmp(var, "%h", 3) == 0) {
     return (char *) session.c->remote_name;
 
-  } else if (strcmp(var, "%v") == 0) {
+  } else if (strncmp(var, "%v", 3) == 0) {
     return (char *) main_server->ServerName;
 
-  } else if (strcmp(var, "%G") == 0) {
+  } else if (strncmp(var, "%G", 3) == 0) {
 
-    if (session.groups) {
+    if (session.groups != NULL) {
       register unsigned int i = 0;
       char *suppl_groups = pstrcat(cmd->tmp_pool, "", NULL);
       char **groups = (char **) session.groups->elts;
@@ -261,36 +275,101 @@ static char *rewrite_expand_var(cmd_rec *cmd, const char *subst_pattern,
       return NULL;
     }
 
-  } else if (strcmp(var, "%w") == 0) {
-    char *cmd_name;
+  } else if (strncmp(var, "%w", 3) == 0) {
 
-    cmd_name = rewrite_get_cmd_name(cmd);
-
-    if (strcmp(cmd_name, C_RNTO) == 0) {
+    if (pr_cmd_cmp(cmd, PR_CMD_RNTO_ID) == 0) {
       return pr_table_get(session.notes, "mod_core.rnfr-path", NULL);
 
     } else {
+      char *cmd_name;
+
+      cmd_name = rewrite_get_cmd_name(cmd);
       rewrite_log("rewrite_expand_var(): %%w not valid for this command ('%s')",
         cmd_name);
       return NULL;
     }
 
-  } else if (strcmp(var, "%t") == 0) {
+  } else if (strncmp(var, "%t", 3) == 0) {
     char *timestr = pcalloc(cmd->tmp_pool, 80 * sizeof(char));
     snprintf(timestr, 80, "%lu", (unsigned long) time(NULL));
     timestr[79] = '\0';
     return timestr;
 
-  } else if (strlen(var) > 7 &&
+  } else if (varlen > 7 &&
              strncmp(var, "%{ENV:", 6) == 0 &&
-             var[strlen(var)-1] == '}') {
+             var[varlen-1] == '}') {
     char *env, *str;
 
     str = pstrdup(cmd->tmp_pool, var);
-    str[strlen(str)-1] = '\0';
+    str[varlen-1] = '\0';
 
     env = pr_env_get(cmd->tmp_pool, str + 6);
     return env ? pstrdup(cmd->tmp_pool, env) : "";
+
+  } else if (varlen >= 7 &&
+             strncmp(var, "%{TIME", 6) == 0 &&
+             var[varlen-1] == '}') {
+    char time_str[32];
+    time_t now;
+    struct tm *tm;
+
+    /* Always use localtime(3) here. */
+    time(&now);
+    tm = pr_localtime(cmd->tmp_pool, &now);
+
+    memset(time_str, '\0', sizeof(time_str));
+
+    if (varlen == 7) {
+      /* %{TIME} */
+      snprintf(time_str, sizeof(time_str)-1, "%04d%02d%02d%02d%02d%02d",
+        tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour,
+        tm->tm_min, tm->tm_sec);
+
+    } else {
+      switch (var[7]) {
+        case 'D':
+          /* %{TIME_DAY} */ 
+          snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_mday);
+          break;
+
+        case 'H':
+          /* %{TIME_HOUR} */ 
+          snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_hour);
+          break;
+
+        case 'M':
+          if (var[8] == 'I') {
+            /* %{TIME_MIN} */ 
+            snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_min);
+
+          } else if (var[8] == 'O') {
+            /* %{TIME_MON} */ 
+            snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_mon + 1);
+          }
+          break;
+
+        case 'S':
+          /* %{TIME_SEC} */ 
+          snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_sec);
+          break;
+
+        case 'W':
+          /* %{TIME_WDAY} */ 
+          snprintf(time_str, sizeof(time_str)-1, "%02d", tm->tm_wday);
+          break;
+
+        case 'Y':
+          /* %{TIME_YEAR} */ 
+          snprintf(time_str, sizeof(time_str)-1, "%04d", tm->tm_year + 1900);
+          break;
+
+        default:
+          rewrite_log("unknown variable: '%s'", var); 
+          return NULL;
+      }
+    }
+
+    return pstrdup(cmd->tmp_pool, time_str);
   }
 
   rewrite_log("unknown variable: '%s'", var); 
@@ -304,8 +383,9 @@ static char *rewrite_argsep(char **arg) {
   if (!arg || !*arg || !**arg)
     return NULL;
 
-  while (**arg && isspace((int) **arg))
+  while (**arg && PR_ISSPACE(**arg)) {
     (*arg)++;
+  }
 
   if (!**arg)
     return NULL;
@@ -318,7 +398,7 @@ static char *rewrite_argsep(char **arg) {
   }
 
   while (**arg && **arg != ',' &&
-      (quote_mode ? (**arg != '\"') : (!isspace((int) **arg)))) {
+      (quote_mode ? (**arg != '\"') : (!PR_ISSPACE(**arg)))) {
 
     if (**arg == '\\' && quote_mode) {
 
@@ -436,33 +516,48 @@ static unsigned char rewrite_match_cond(cmd_rec *cmd, config_rec *cond) {
   /* Check the condition */
   switch (cond_op) {
     case REWRITE_COND_OP_LEX_LT: {
-      int res = strcmp(cond_str, (char *) cond->argv[1]);
-      rewrite_log("rewrite_match_cond(): checking lexical LT cond");
+      int res;
 
-      if (!negated)
+      res = strcmp(cond_str, (char *) cond->argv[1]);
+      rewrite_log("rewrite_match_cond(): checked lexical LT cond: %s > %s: %d",
+        cond_str, (char *) cond->argv[1], res);
+
+      if (!negated) {
         return (res < 0 ? TRUE : FALSE);
-      else
+
+      } else {
         return (res < 0 ? FALSE : TRUE);
+      }
     }
 
     case REWRITE_COND_OP_LEX_GT: {
-      int res = strcmp(cond_str, (char *) cond->argv[1]);
-      rewrite_log("rewrite_match_cond(): checking lexical GT cond");
+      int res;
 
-      if (!negated)
+      res = strcmp(cond_str, (char *) cond->argv[1]);
+      rewrite_log("rewrite_match_cond(): checked lexical GT cond: %s < %s: %d",
+        cond_str, (char *) cond->argv[1], res);
+
+      if (!negated) {
         return (res > 0 ? TRUE : FALSE);
-      else
+
+      } else {
         return (res > 0 ? FALSE : TRUE);
+      }
     }
 
     case REWRITE_COND_OP_LEX_EQ: {
-      int res = strcmp(cond_str, (char *) cond->argv[1]);
-      rewrite_log("rewrite_match_cond(): checking lexical EQ cond");
+      int res;
 
-      if (!negated)
+      res = strcmp(cond_str, (char *) cond->argv[1]);
+      rewrite_log("rewrite_match_cond(): checked lexical EQ cond: %s == %s: %d",
+        cond_str, (char *) cond->argv[1], res);
+
+      if (!negated) {
         return (res == 0 ? TRUE : FALSE);
-      else
+
+      } else {
         return (res == 0 ? FALSE : TRUE);
+      }
     }
 
     case REWRITE_COND_OP_REGEX: {
@@ -634,6 +729,13 @@ static unsigned char rewrite_parse_map_txt(rewrite_map_txt_t *txtmap) {
     return FALSE;
   }
 
+  if (S_ISDIR(st.st_mode)) {
+    errno = EISDIR;
+    rewrite_log("rewrite_parse_map_txt(): unable to use %s: %s",
+      txtmap->txt_path, strerror(errno));
+    return FALSE;
+  }
+
   /* Compare the modification time of the file against what's cached.  Unless
    * the file is newer, do not parse it in again.
    */
@@ -669,7 +771,7 @@ static unsigned char rewrite_parse_map_txt(rewrite_map_txt_t *txtmap) {
     pr_signals_handle();
 
     /* Skip leading whitespace. */
-    for (pos = 0; pos < linelen && isspace(linebuf[pos]); pos++);
+    for (pos = 0; pos < linelen && PR_ISSPACE(linebuf[pos]); pos++);
 
     /* Ignore comments and blank lines. */
     if (linebuf[pos] == '#')
@@ -684,7 +786,7 @@ static unsigned char rewrite_parse_map_txt(rewrite_map_txt_t *txtmap) {
     key_so = pos;
     for (; pos < linelen; pos++) {
  
-      if (isspace(linebuf[pos])) {
+      if (PR_ISSPACE(linebuf[pos])) {
         if (!key_eo)
           key_eo = pos;
 
@@ -916,15 +1018,24 @@ static char *rewrite_subst_backrefs(cmd_rec *cmd, char *pattern,
          * string with the literal string.
          */
         if (*(ptr - 1) == '$') {
-          char *var;
+          char *res, *var;
           size_t var_len = sizeof(buf) + 1;
 
           var = pcalloc(cmd->tmp_pool, var_len);
           var[0] = '$';
           sstrcat(var, buf, var_len);
 
-          replacement_pattern = sreplace(cmd->pool, replacement_pattern, var,
-            buf, NULL);
+          res = pr_str_replace(cmd->pool, rewrite_max_replace,
+            replacement_pattern, var, buf, NULL);
+          if (res == NULL) {
+            pr_trace_msg(trace_channel, 3,
+              "error replacing '%s' with '%s' in '%s': %s", var, buf,
+              replacement_pattern, strerror(errno));
+            
+          } else {
+            replacement_pattern = res;
+          }
+
           continue;
         }
 
@@ -935,22 +1046,31 @@ static char *rewrite_subst_backrefs(cmd_rec *cmd, char *pattern,
          * string with the literal string.
          */
         if (*(ptr - 1) == '%') {
-          char *var;
+          char *res, *var;
           size_t var_len = sizeof(buf) + 1;
 
           var = pcalloc(cmd->tmp_pool, var_len);
           var[0] = '%';
           sstrcat(var, buf, var_len);
 
-          replacement_pattern = sreplace(cmd->pool, replacement_pattern, var,
-            buf, NULL);
+          res = pr_str_replace(cmd->pool, rewrite_max_replace,
+            replacement_pattern, var, buf, NULL);
+          if (res == NULL) {
+            pr_trace_msg(trace_channel, 3,
+              "error replacing '%s' with '%s' in '%s': %s", var, buf,
+              replacement_pattern, strerror(errno));
+            
+          } else {
+            replacement_pattern = res;
+          }
+
           continue;
         }
       }
     }
 
     if (matches->match_groups[i].rm_so != -1) {
-      char *value, tmp;
+      char *value, *res, tmp;
 
       /* There's a match for the backref in the string, substitute in
        * the backreferenced value.
@@ -986,13 +1106,22 @@ static char *rewrite_subst_backrefs(cmd_rec *cmd, char *pattern,
         }
       }
 
-      replacement_pattern = sreplace(cmd->pool, replacement_pattern, buf,
-        value, NULL);
-   
+      res = pr_str_replace(cmd->pool, rewrite_max_replace,
+        replacement_pattern, buf, value, NULL);
+      if (res == NULL) {
+        pr_trace_msg(trace_channel, 3,
+          "error replacing '%s' with '%s' in '%s': %s", buf, value,
+          replacement_pattern, strerror(errno));
+            
+      } else {
+        replacement_pattern = res;
+      }
+
       /* Undo the twiddling of the NUL character. */ 
       (matches->match_string)[matches->match_groups[i].rm_eo] = tmp;
 
     } else {
+      char *res;
 
       /* There's backreference in the string, but there no matching
        * group (i.e. backreferenced value).  Substitute in an empty string
@@ -1024,8 +1153,16 @@ static char *rewrite_subst_backrefs(cmd_rec *cmd, char *pattern,
         }
       }
 
-      replacement_pattern = sreplace(cmd->pool, replacement_pattern, buf,
-        "", NULL);
+      res = pr_str_replace(cmd->pool, rewrite_max_replace, replacement_pattern,
+        buf, "", NULL);
+      if (res == NULL) {
+        pr_trace_msg(trace_channel, 3,
+          "error replacing '%s' with '' in '%s': %s", buf,
+          replacement_pattern, strerror(errno));
+
+      } else {
+        replacement_pattern = res;
+      }
     }
   }
 
@@ -1037,7 +1174,7 @@ static char *rewrite_subst_env(cmd_rec *cmd, char *pattern) {
 
   ptr = strstr(pattern, "%{ENV:");
   while (ptr) {
-    char ch, *ptr2, *key, *val;
+    char ch, *ptr2, *key, *res, *val;
 
     pr_signals_handle();
 
@@ -1061,7 +1198,16 @@ static char *rewrite_subst_env(cmd_rec *cmd, char *pattern) {
         new_pattern = pstrdup(cmd->pool, pattern);
       }
 
-      new_pattern = sreplace(cmd->pool, new_pattern, key, val, NULL);
+      res = pr_str_replace(cmd->pool, rewrite_max_replace, new_pattern, key,
+        val, NULL);
+      if (res == NULL) {
+        pr_trace_msg(trace_channel, 3,
+          "error replacing '%s' with '%s' in '%s': %s", key, val, new_pattern,
+          strerror(errno));
+
+      } else {
+        new_pattern = res;
+      }
     }
 
     /* Look for the next environment variable to process. */
@@ -1097,7 +1243,7 @@ static char *rewrite_subst_maps(cmd_rec *cmd, char *pattern) {
       pr_signals_handle();
 
       if (strcmp(c->argv[0], map.map_name) == 0) { 
-        char *lookup_value = NULL;
+        char *lookup_value = NULL, *res;
         have_map = TRUE;
 
         rewrite_log("rewrite_subst_maps(): mapping '%s' using '%s'",
@@ -1128,11 +1274,21 @@ static char *rewrite_subst_maps(cmd_rec *cmd, char *pattern) {
         rewrite_log("rewrite_subst_maps(): substituting '%s' for '%s'",
           lookup_value, map.map_string);
 
-        if (!new_pattern)
+        if (new_pattern == NULL) {
           new_pattern = pstrdup(cmd->pool, pattern);
+        }
 
-        new_pattern = sreplace(cmd->pool, new_pattern, map.map_string,
-          lookup_value, NULL);
+        res = pr_str_replace(cmd->pool, rewrite_max_replace, new_pattern,
+          map.map_string, lookup_value, NULL);
+        if (res == NULL) {
+          pr_trace_msg(trace_channel, 3,
+            "error replacing '%s' with '%s' in '%s': %s",
+            (char *) map.map_string, lookup_value, new_pattern,
+            strerror(errno));
+
+        } else {
+          new_pattern = res;
+        }
       }
 
       c = find_config_next(c, c->next, CONF_PARAM, "RewriteMap", FALSE);
@@ -1383,7 +1539,7 @@ static char *rewrite_subst_vars(cmd_rec *cmd, char *pattern) {
   char *new_pattern = NULL;
 
   for (i = 0; i < REWRITE_MAX_VARS; i++) {
-    char *val = NULL;
+    char *res, *val = NULL;
 
     /* Does this variable occur in the substitution pattern? */
     if (strstr(pattern, rewrite_vars[i]) == NULL)
@@ -1393,11 +1549,20 @@ static char *rewrite_subst_vars(cmd_rec *cmd, char *pattern) {
     if (val != NULL) {
       rewrite_log("rewrite_subst_vars(): replacing variable '%s' with '%s'",
         rewrite_vars[i], val);
-      if (!new_pattern)
+      if (new_pattern == NULL) {
         new_pattern = pstrdup(cmd->pool, pattern);
+      }
 
-      new_pattern = sreplace(cmd->pool, new_pattern, rewrite_vars[i], val,
-        NULL);
+      res = pr_str_replace(cmd->pool, rewrite_max_replace, new_pattern,
+        rewrite_vars[i], val, NULL);
+      if (res == NULL) {
+        pr_trace_msg(trace_channel, 3,
+          "error replacing '%s' with '%s' in '%s': %s", rewrite_vars[i], val,
+          new_pattern, strerror(errno));
+
+      } else {
+        new_pattern = res;
+      }
     }
   }
 
@@ -1541,7 +1706,7 @@ static int rewrite_utf8_to_ucs4(unsigned long *ucs4_buf,
 static char *rewrite_map_int_replaceall(pool *map_pool, char *key) {
   char sep = *key;
   char *value = NULL, *src = NULL, *dst = NULL;
-  char *tmp = NULL;
+  char *tmp = NULL, *res = NULL;
 
   /* Due to the way in which this internal function works, the first
    * character of the given key is used as a delimiter separating
@@ -1549,7 +1714,7 @@ static char *rewrite_map_int_replaceall(pool *map_pool, char *key) {
    */
   char *str = pstrdup(map_pool, key + 1);
 
-  tmp = strchr(str , sep);
+  tmp = strchr(str, sep);
   if (tmp == NULL) {
     rewrite_log("rewrite_map_int_replaceall(): badly formatted input key");
     return NULL;
@@ -1581,7 +1746,20 @@ static char *rewrite_map_int_replaceall(pool *map_pool, char *key) {
     return NULL;
   }
 
-  return sreplace(map_pool, value, src, dst, NULL);
+  res = pr_str_replace(map_pool, rewrite_max_replace, value, src, dst, NULL);
+  if (res == NULL) {
+    int xerrno = errno;
+
+    rewrite_log("rewrite_map_int_replaceall(): error replacing "
+      "'%s' with '%s' in '%s': %s", src, dst, value, strerror(xerrno));
+
+    errno = xerrno;
+
+  } else {
+    rewrite_log("rewrite_map_int_replaceall(): returning '%s'", res);
+  }
+
+  return res;
 }
 
 static char *rewrite_map_int_tolower(pool *map_pool, char *key) {
@@ -1606,8 +1784,6 @@ static char *rewrite_map_int_toupper(pool *map_pool, char *key) {
   return value;
 }
 
-#define REWRITE_IS_XDIGIT(c) (isxdigit(((unsigned char)(c))))
-
 /* Unescapes the hex escape sequences in the given string (typically a URL-like
  * path).  Returns the escaped string on success, NULL on error; failures can
  * be caused by: bad % escape sequences, decoding %00, or a special character.
@@ -1622,7 +1798,7 @@ static char *rewrite_map_int_unescape(pool *map_pool, char *key) {
 
     } else {
 
-      if (!REWRITE_IS_XDIGIT(key[j+1]) || !REWRITE_IS_XDIGIT(key[j+2])) {
+      if (!PR_ISXDIGIT(key[j+1]) || !PR_ISXDIGIT(key[j+2])) {
         rewrite_log("rewrite_map_int_unescape(): bad escape sequence '%c%c%c'",
           key[j], key[j+1], key[j+2]);
         return NULL;
@@ -1810,7 +1986,7 @@ static char *rewrite_map_int_utf8trans(pool *map_pool, char *key) {
 /* Rewrite logging functions */
 
 static void rewrite_openlog(void) {
-  int res = 0;
+  int res = 0, xerrno = 0;
 
   /* Sanity checks */
   if (rewrite_logfd >= 0)
@@ -1831,6 +2007,7 @@ static void rewrite_openlog(void) {
   pr_signals_block();
   PRIVS_ROOT
   res = pr_log_openfile(rewrite_logfile, &rewrite_logfd, REWRITE_LOG_MODE);
+  xerrno = errno;
   PRIVS_RELINQUISH
   pr_signals_unblock();
 
@@ -1839,17 +2016,17 @@ static void rewrite_openlog(void) {
       case -1:
         pr_log_pri(PR_LOG_NOTICE, MOD_REWRITE_VERSION
           ": error: unable to open RewriteLog '%s': %s", rewrite_logfile,
-          strerror(errno));
+          strerror(xerrno));
         break;
 
       case PR_LOG_WRITABLE_DIR:
-        pr_log_pri(PR_LOG_NOTICE, MOD_REWRITE_VERSION
+        pr_log_pri(PR_LOG_WARNING, MOD_REWRITE_VERSION
           ": error: unable to open RewriteLog '%s': %s", rewrite_logfile,
-          "world-writable parent directory");
+          "parent directory is world-writable");
         break;
 
       case PR_LOG_SYMLINK:
-        pr_log_pri(PR_LOG_NOTICE, MOD_REWRITE_VERSION
+        pr_log_pri(PR_LOG_WARNING, MOD_REWRITE_VERSION
           ": error: unable to open RewriteLog '%s': %s", rewrite_logfile,
           "cannot log to a symbolic link");
         break;
@@ -1865,7 +2042,7 @@ static void rewrite_closelog(void) {
     return;
 
   if (close(rewrite_logfd) < 0) {
-    pr_log_pri(PR_LOG_ERR, MOD_REWRITE_VERSION
+    pr_log_pri(PR_LOG_ALERT, MOD_REWRITE_VERSION
       ": error closing RewriteLog '%s': %s", rewrite_logfile, strerror(errno));
     return;
   }
@@ -1959,16 +2136,16 @@ MODRET set_rewritecondition(cmd_rec *cmd) {
     cond_op = REWRITE_COND_OP_LEX_EQ;
     cond_data = pstrdup(rewrite_pool, ++cmd->argv[2]);
 
-  } else if (strcmp(cmd->argv[2], "-d") == 0) {
+  } else if (strncmp(cmd->argv[2], "-d", 3) == 0) {
     cond_op = REWRITE_COND_OP_TEST_DIR;
 
-  } else if (strcmp(cmd->argv[2], "-f") == 0) {
+  } else if (strncmp(cmd->argv[2], "-f", 3) == 0) {
     cond_op = REWRITE_COND_OP_TEST_FILE;
 
-  } else if (strcmp(cmd->argv[2], "-l") == 0) {
+  } else if (strncmp(cmd->argv[2], "-l", 3) == 0) {
     cond_op = REWRITE_COND_OP_TEST_SYMLINK;
 
-  } else if (strcmp(cmd->argv[2], "-s") == 0) {
+  } else if (strncmp(cmd->argv[2], "-s", 3) == 0) {
     cond_op = REWRITE_COND_OP_TEST_SIZE;
 
   } else {
@@ -1997,19 +2174,21 @@ MODRET set_rewritecondition(cmd_rec *cmd) {
 
     while (*var != '\0' &&
            (var = strchr(var, '%')) != NULL && strlen(var) > 1 &&
-            !isdigit(*(var+1))) {
+            !PR_ISDIGIT(*(var+1))) {
       register unsigned int i = 0;
       unsigned char is_valid_var = FALSE;
 
       for (i = 0; i < REWRITE_MAX_VARS; i++) {
-        if (strncmp(var, rewrite_vars[i], 2) == 0) {
+        if (strcmp(var, rewrite_vars[i]) == 0) {
           is_valid_var = TRUE;
           break;
         }
       }
 
-      if (!is_valid_var)
-        pr_log_debug(DEBUG1, "invalid RewriteCondition variable used");
+      if (is_valid_var == FALSE) {
+        pr_log_debug(DEBUG0, "invalid RewriteCondition variable '%s' used",
+          var);
+      }
 
       var += 2;
     }
@@ -2083,6 +2262,26 @@ MODRET set_rewritelock(cmd_rec *cmd) {
     CONF_ERROR(cmd, "absolute path required");
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
+
+  return PR_HANDLED(cmd);
+}
+
+/* usage: RewriteMaxReplace count */
+MODRET set_rewritemaxreplace(cmd_rec *cmd) {
+  int max_replace = -1;
+  config_rec *c;
+
+  CHECK_ARGS(cmd, 1);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
+
+  max_replace = atoi(cmd->argv[1]);
+  if (max_replace <= 0) {
+    CONF_ERROR(cmd, "count must be greater than zero");
+  }
+
+  c = add_config_param(cmd->argv[0], 1, NULL);
+  c->argv[0] = palloc(c->pool, sizeof(unsigned int));
+  *((unsigned int *) c->argv[0]) = max_replace;
 
   return PR_HANDLED(cmd);
 }
@@ -2214,7 +2413,6 @@ MODRET set_rewriterule(cmd_rec *cmd) {
   unsigned int rule_flags = 0;
   unsigned char negated = FALSE;
   int regex_flags = REG_EXTENDED, res = -1;
-  char *tmp = NULL;
   register unsigned int i = 0;
 
   if (cmd->argc-1 < 2 || cmd->argc-1 > 3)
@@ -2255,11 +2453,6 @@ MODRET set_rewriterule(cmd_rec *cmd) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to compile '",
       cmd->argv[1], "' regex: ", errstr, NULL));
   }
-
-  /* Note: scan through the substitution parameter, checking any given
-   * variables, and noting if any invalid sequences are found
-   */
-  tmp = NULL;
 
   c = add_config_param(cmd->argv[0], 6, pre, NULL, NULL, NULL, NULL, NULL);
 
@@ -2680,6 +2873,12 @@ static int rewrite_sess_init(void) {
       rewrite_rewrite_home_ev, NULL);
   }
 
+  /* Check for the configured number of max replacements */
+  c = find_config(main_server->conf, CONF_PARAM, "RewriteMaxReplace", FALSE);
+  if (c) {
+    rewrite_max_replace = *((unsigned int *) c->argv[0]);
+  }
+
   return 0;
 }
 
@@ -2710,6 +2909,7 @@ static conftable rewrite_conftab[] = {
   { "RewriteCondition",		set_rewritecondition,	NULL },
   { "RewriteEngine",		set_rewriteengine,	NULL },
   { "RewriteLock",		set_rewritelock,	NULL },
+  { "RewriteMaxReplace",	set_rewritemaxreplace,	NULL },
   { "RewriteLog",		set_rewritelog,		NULL },
   { "RewriteMap",		set_rewritemap,		NULL },
   { "RewriteRule",		set_rewriterule,	NULL },

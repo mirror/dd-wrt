@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp RFC4716 keystore
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: rfc4716.c,v 1.15 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: rfc4716.c,v 1.19 2013/06/06 16:45:55 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -39,7 +39,7 @@ struct filestore_key {
   const char *subject;
 
   /* Key data */
-  char *key_data;
+  unsigned char *key_data;
   uint32_t key_datalen;
 };
 
@@ -52,7 +52,7 @@ struct filestore_data {
 static const char *trace_channel = "ssh2";
 
 /* This getline() function is quite similar to pr_fsio_getline(), except
- * that it a) enforces the 72-byte max line length from RFC4716, and
+ * that it a) enforces the 72-byte max line length from RFC4716, and b)
  * properly handles lines ending with CR, LF, or CRLF.
  *
  * Technically it allows one more byte than necessary, since the worst case
@@ -197,12 +197,11 @@ static char *filestore_getline(sftp_keystore_t *store, pool *p) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "Make sure that '%s' is a RFC4716 formatted key", store_data->path);
         errno = EINVAL;
-        return NULL;
+        break;
       }
     }
   }
 
-  /* Should not be reached. */
   return NULL;
 }
 
@@ -331,7 +330,7 @@ static struct filestore_key *filestore_get_key(sftp_keystore_t *store,
 
 static int filestore_verify_host_key(sftp_keystore_t *store, pool *p,
     const char *user, const char *host_fqdn, const char *host_user,
-    char *key_data, uint32_t key_len) {
+    unsigned char *key_data, uint32_t key_len) {
   struct filestore_key *key = NULL;
   struct filestore_data *store_data = store->keystore_data;
 
@@ -388,7 +387,7 @@ static int filestore_verify_host_key(sftp_keystore_t *store, pool *p,
 }
 
 static int filestore_verify_user_key(sftp_keystore_t *store, pool *p,
-    const char *user, char *key_data, uint32_t key_len) {
+    const char *user, unsigned char *key_data, uint32_t key_len) {
   struct filestore_key *key = NULL;
   struct filestore_data *store_data = store->keystore_data;
 
@@ -519,6 +518,14 @@ static sftp_keystore_t *filestore_open(pool *parent_pool,
   /* Stat the opened file to determine the optimal buffer size for IO. */
   memset(&st, 0, sizeof(st));
   pr_fsio_fstat(fh, &st);
+  if (S_ISDIR(st.st_mode)) {
+    destroy_pool(filestore_pool);
+    pr_fsio_close(fh);
+
+    errno = EISDIR;
+    return NULL;
+  }
+
   fh->fh_iosz = st.st_blksize;
 
   store_data = pcalloc(filestore_pool, sizeof(struct filestore_data));

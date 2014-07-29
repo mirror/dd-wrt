@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_sftp_sql -- SQL backend module for retrieving authorized keys
  *
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * This is mod_sftp_sql, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_sftp_sql.c,v 1.6 2011/05/23 20:56:40 castaglia Exp $
+ * $Id: mod_sftp_sql.c,v 1.8 2013/06/06 23:55:59 castaglia Exp $
  */
 
 #include "conf.h"
@@ -33,7 +33,7 @@
 #include "mod_sftp.h"
 #include "mod_sql.h"
 
-#define MOD_SFTP_SQL_VERSION		"mod_sftp_sql/0.2"
+#define MOD_SFTP_SQL_VERSION		"mod_sftp_sql/0.3"
 
 module sftp_sql_module;
 
@@ -41,7 +41,7 @@ struct sqlstore_key {
   const char *subject;
 
   /* Key data */
-  char *key_data;
+  unsigned char *key_data;
   uint32_t key_datalen;
 };
 
@@ -75,18 +75,138 @@ static cmd_rec *sqlstore_cmd_create(pool *parent_pool, int argc, ...) {
   return cmd;
 }
 
-static struct sqlstore_key *sqlstore_get_key_raw(pool *p, char *blob) {
+/* Given a blob of bytes retrieved from a single row, read that blob as if
+ * it were text, line by line.
+ */
+static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
+  char linebuf[75], *line = "", *data;
+  size_t datalen;
+
+  data = *blob;
+  datalen = *bloblen;
+
+  if (data == NULL ||
+      datalen == 0) {
+    pr_trace_msg(trace_channel, 10,
+      "reached end of data, no matching key found");
+    errno = EOF;
+    return NULL;
+  }
+
+  while (data != NULL && datalen > 0) {
+    char *ptr;
+    size_t delimlen, linelen;
+    int have_line_continuation = FALSE;
+
+    pr_signals_handle();
+
+    if (datalen <= 2) {
+      line = pstrcat(p, line, data, NULL);
+
+      *blob = NULL;
+      *bloblen = 0;
+
+      return line;
+    }
+
+    /* Find the CRLF markers in the data. */
+    ptr = strstr(data, "\r\n");
+    if (ptr != NULL) {
+      delimlen = 1;
+
+    } else {
+      ptr = strstr(data, "\n");
+      if (ptr != NULL) {
+        delimlen = 0;
+      }
+    }
+
+    if (ptr == NULL) {
+      /* Just return the rest of the data. */
+      line = pstrcat(p, line, data, NULL);
+
+      *blob = NULL;
+      *bloblen = 0;
+
+      return line;
+    }
+
+    linelen = (ptr - data + 1);
+
+    if (linelen == 1) {
+      data += (delimlen + 1);
+      datalen -= (delimlen + 1);
+
+      continue;
+    }
+
+    memcpy(linebuf, data, linelen);
+    linebuf[linelen-1] = '\0';
+
+    data += (linelen + delimlen);
+    datalen -= (linelen + delimlen);
+
+    /* Check for continued lines. */
+    if (linebuf[linelen-2] == '\\') {
+      linebuf[linelen-2] = '\0';
+      have_line_continuation = TRUE;
+    }
+
+    line = pstrcat(p, line, linebuf, NULL);
+    linelen = strlen(line);
+
+    if (have_line_continuation) {
+      continue;
+    }
+
+    ptr = strchr(line, ':');
+    if (ptr != NULL) {
+      unsigned int header_taglen, header_valuelen;
+
+      /* We have a header.  Make sure the header tag is not longer than
+       * the specified length of 64 bytes, and that the header value is
+       * not longer than 1024 bytes.
+       */
+      header_taglen = ptr - line;
+      if (header_taglen > 64) {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+          "header tag too long (%u) in retrieved SQL data", header_taglen);
+        errno = EINVAL;
+        return NULL;
+      }
+
+      /* Header value starts at 2 after the ':' (one for the mandatory
+       * space character.
+       */
+      header_valuelen = linelen - (header_taglen + 2);
+      if (header_valuelen > 1024) {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+          "header value too long (%u) in retrieved SQL data", header_valuelen);
+        errno = EINVAL;
+        return NULL;
+      }
+    }
+
+    *blob = data;
+    *bloblen = datalen;
+
+    return line;
+  }
+
+  return NULL;
+}
+
+static struct sqlstore_key *sqlstore_get_key_raw(pool *p, char **blob,
+    size_t *bloblen) {
   char chunk[1024], *data = NULL;
   BIO *bio = NULL, *b64 = NULL, *bmem = NULL;
   int chunklen;
   long datalen = 0;
-  size_t bloblen;
   struct sqlstore_key *key = NULL;
 
-  bloblen = strlen(blob);
   bio = BIO_new(BIO_s_mem());
 
-  if (BIO_write(bio, blob, bloblen) < 0) {
+  if (BIO_write(bio, (void *) *blob, *bloblen) < 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
       "error buffering base64 data");
   }
@@ -101,7 +221,7 @@ static struct sqlstore_key *sqlstore_get_key_raw(pool *p, char *blob) {
   bmem = BIO_new(BIO_s_mem());
 
   memset(chunk, '\0', sizeof(chunk));
-  chunklen = BIO_read(bio, chunk, sizeof(chunk));
+  chunklen = BIO_read(bio, (void *) chunk, sizeof(chunk));
 
   if (chunklen < 0 &&
       !BIO_should_retry(bio)) {
@@ -118,7 +238,7 @@ static struct sqlstore_key *sqlstore_get_key_raw(pool *p, char *blob) {
   while (chunklen > 0) {
     pr_signals_handle();
 
-    if (BIO_write(bmem, chunk, chunklen) < 0) {
+    if (BIO_write(bmem, (void *) chunk, chunklen) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
         "error writing to memory BIO: %s", sftp_crypto_get_errors());
       BIO_free_all(bio);
@@ -129,7 +249,7 @@ static struct sqlstore_key *sqlstore_get_key_raw(pool *p, char *blob) {
     }
 
     memset(chunk, '\0', sizeof(chunk));
-    chunklen = BIO_read(bio, chunk, sizeof(chunk));
+    chunklen = BIO_read(bio, (void *) chunk, sizeof(chunk));
   }
 
   datalen = BIO_get_mem_data(bmem, &data);
@@ -153,95 +273,132 @@ static struct sqlstore_key *sqlstore_get_key_raw(pool *p, char *blob) {
   return key;
 }
 
-static struct sqlstore_key *sqlstore_get_key_rfc4716(pool *p, char *blob) {
-  char chunk[1024], *blob2 = NULL, *data = NULL, *tok;
-  BIO *bio = NULL, *b64 = NULL, *bmem = NULL;
-  int chunklen;
-  long datalen = 0;
-  size_t bloblen;
+static struct sqlstore_key *sqlstore_get_key_rfc4716(pool *p, char **blob,
+    size_t *bloblen) {
+  char *line;
+  BIO *bio = NULL;
   struct sqlstore_key *key = NULL;
+  size_t begin_markerlen = 0, end_markerlen = 0;
 
-  bloblen = strlen(blob);
-
-  bio = BIO_new(BIO_s_mem());
-
-  blob2 = pstrdup(p, blob);
-  while ((tok = pr_str_get_token(&blob2, "\r\n")) != NULL) {
+  line = sqlstore_getline(p, blob, bloblen);
+  while (line == NULL &&
+         errno == EINVAL) {
     pr_signals_handle();
-
-    /* Skip begin/end markers and any headers. */
-    if (strchr(tok, '-') != NULL ||
-        strchr(tok, ':') != NULL) {
-      continue;      
-    }
-
-    if (BIO_write(bio, tok, strlen(tok)) < 0) {
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-        "error buffering RFC4716 base64 data");
-      BIO_free_all(bio);
-      return NULL;
-    }
+    line = sqlstore_getline(p, blob, bloblen);
   }
 
-  /* Add a base64 filter BIO, and read the data out, thus base64-decoding
-   * the key.  Write the decoded data into another memory BIO.
-   */
-  b64 = BIO_new(BIO_f_base64());
-  BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
-  bio = BIO_push(b64, bio);
-
-  bmem = BIO_new(BIO_s_mem());
-
-  memset(chunk, '\0', sizeof(chunk));
-  chunklen = BIO_read(bio, chunk, sizeof(chunk));
-
-  if (chunklen < 0 &&
-      !BIO_should_retry(bio)) {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-      "unable to base64-decode RFC4716 data from database: %s",
-      sftp_crypto_get_errors());
-    BIO_free_all(bio);
-    BIO_free_all(bmem);
-
-    errno = EPERM;
+  if (line == NULL) {
     return NULL;
   }
 
-  while (chunklen > 0) {
+  begin_markerlen = strlen(SFTP_SSH2_PUBKEY_BEGIN_MARKER);
+  end_markerlen = strlen(SFTP_SSH2_PUBKEY_END_MARKER);
+
+  while (line != NULL) {
     pr_signals_handle();
 
-    if (BIO_write(bmem, chunk, chunklen) < 0) {
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-        "error writing to memory BIO: %s", sftp_crypto_get_errors());
-      BIO_free_all(bio);
-      BIO_free_all(bmem);
+    if (key == NULL &&
+        strncmp(line, SFTP_SSH2_PUBKEY_BEGIN_MARKER,
+          begin_markerlen + 1) == 0) {
+      key = pcalloc(p, sizeof(struct sqlstore_key));
+      bio = BIO_new(BIO_s_mem());
 
-      errno = EPERM;
-      return NULL;
+    } else if (key != NULL &&
+               strncmp(line, SFTP_SSH2_PUBKEY_END_MARKER,
+                 end_markerlen + 1) == 0) {
+      if (bio != NULL) {
+        char chunk[1024], *data = NULL;
+        BIO *b64 = NULL, *bmem = NULL;
+        int chunklen;
+        long datalen = 0;
+
+        /* Add a base64 filter BIO, and read the data out, thus base64-decoding
+         * the key.  Write the decoded data into another memory BIO.
+         */
+        b64 = BIO_new(BIO_f_base64());
+        BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
+        bio = BIO_push(b64, bio);
+
+        bmem = BIO_new(BIO_s_mem());
+
+        memset(chunk, '\0', sizeof(chunk));
+        chunklen = BIO_read(bio, (void *) chunk, sizeof(chunk));
+
+        if (chunklen < 0 &&
+            !BIO_should_retry(bio)) {
+          (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+            "unable to base64-decode RFC4716 key data from database: %s",
+          sftp_crypto_get_errors());
+          BIO_free_all(bio);
+          BIO_free_all(bmem);
+
+          errno = EPERM;
+          return NULL;
+        }
+
+        while (chunklen > 0) {
+          pr_signals_handle();
+
+          if (BIO_write(bmem, (void *) chunk, chunklen) < 0) {
+            (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+              "error writing to memory BIO: %s", sftp_crypto_get_errors());
+            BIO_free_all(bio);
+            BIO_free_all(bmem);
+
+            errno = EPERM;
+            return NULL;
+          }
+
+          memset(chunk, '\0', sizeof(chunk));
+          chunklen = BIO_read(bio, (void *) chunk, sizeof(chunk));
+        }
+
+        datalen = BIO_get_mem_data(bmem, &data);
+
+        if (data != NULL &&
+            datalen > 0) {
+          key = pcalloc(p, sizeof(struct sqlstore_key));
+          key->key_data = pcalloc(p, datalen + 1);
+          key->key_datalen = datalen;
+          memcpy(key->key_data, data, datalen);
+
+        } else {
+          (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+            "error base64-decoding RFC4716 key data from database");
+        }
+
+        BIO_free_all(bio);
+        bio = NULL;
+
+        BIO_free_all(bmem);
+      }
+
+      break;
+
+    } else {
+      if (key) {
+        if (strstr(line, ": ") != NULL) {
+          if (strncasecmp(line, "Subject: ", 9) == 0) {
+            key->subject = pstrdup(p, line + 9);
+          }
+
+        } else {
+          if (BIO_write(bio, line, strlen(line)) < 0) {
+            (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+              "error buffering base64 data");
+          }
+        }
+      }
     }
 
-    memset(chunk, '\0', sizeof(chunk));
-    chunklen = BIO_read(bio, chunk, sizeof(chunk));
+    line = sqlstore_getline(p, blob, bloblen);
+    while (line == NULL &&
+           errno == EINVAL) {
+      pr_signals_handle();
+      line = sqlstore_getline(p, blob, bloblen);
+    }
   }
 
-  datalen = BIO_get_mem_data(bmem, &data);
-
-  if (data != NULL &&
-      datalen > 0) {
-    key = pcalloc(p, sizeof(struct sqlstore_key));
-    key->key_data = pcalloc(p, datalen + 1);
-    key->key_datalen = datalen;
-    memcpy(key->key_data, data, datalen);
-
-  } else {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-      "error base64-decoding RFC4716 key data from database");
-  }
-
-  BIO_free_all(bio);
-  bio = NULL;
-
-  BIO_free_all(bmem);
   return key;
 }
 
@@ -276,11 +433,78 @@ static char *sqlstore_get_str(pool *p, char *str) {
   return res->data;
 }
 
+static int sqlstore_verify_key_raw(pool *p, struct sqlstore_data *store_data,
+    int nrow, char *col_data, size_t col_datalen, unsigned char *key_data,
+    uint32_t key_datalen) {
+  struct sqlstore_key *key;
+  int res;
+
+  key = sqlstore_get_key_raw(p, &col_data, &col_datalen);
+  if (key == NULL) {
+    pr_trace_msg(trace_channel, 10,
+      "unable to parse data (row %u) as raw data", nrow+1);
+    return -1;
+  }
+
+  res = sftp_keys_compare_keys(p, key_data, key_datalen, key->key_data,
+    key->key_datalen);
+  if (res < 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+      "error comparing client-sent host key with SQL data (row %u) from "
+      "SQLNamedQuery '%s': %s", nrow+1, store_data->select_query,
+      strerror(errno));
+
+  } else if (res == FALSE) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+      "client-sent host key does not match SQL data (row %u) from "
+      "SQLNamedQuery '%s'", nrow+1, store_data->select_query);
+    res = -1;
+
+  } else {
+    res = 0;
+  }
+
+  return res;
+}
+
+static int sqlstore_verify_key_rfc4716(pool *p,
+    struct sqlstore_data *store_data, int nrow, char *col_data,
+    size_t col_datalen, unsigned char *key_data, uint32_t key_datalen) {
+  struct sqlstore_key *key;
+  int res;
+
+  key = sqlstore_get_key_rfc4716(p, &col_data, &col_datalen);
+  while (key != NULL) {
+    pr_signals_handle();
+
+    res = sftp_keys_compare_keys(p, key_data, key_datalen, key->key_data,
+      key->key_datalen);
+    if (res < 0) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+        "error comparing client-sent key with SQL data (row %u) from "
+        "SQLNamedQuery '%s': %s", nrow+1, store_data->select_query,
+        strerror(errno));
+      key = sqlstore_get_key_rfc4716(p, &col_data, &col_datalen);
+      continue;
+
+    } else if (res == FALSE) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+        "client-sent key does not match SQL data (row %u) from "
+        "SQLNamedQuery '%s'", nrow+1, store_data->select_query);
+      key = sqlstore_get_key_rfc4716(p, &col_data, &col_datalen);
+      continue;
+    }
+
+    return 0;
+  }
+
+  return -1;
+}
+
 static int sqlstore_verify_host_key(sftp_keystore_t *store, pool *p,
     const char *user, const char *host_fqdn, const char *host_user,
-    char *key_data, uint32_t key_datalen) {
+    unsigned char *key_data, uint32_t key_datalen) {
   register unsigned int i;
-  struct sqlstore_key *key;
   struct sqlstore_data *store_data;
   pool *tmp_pool;
   cmdtable *sql_cmdtab;
@@ -336,42 +560,33 @@ static int sqlstore_verify_host_key(sftp_keystore_t *store, pool *p,
 
   values = (char **) sql_data->elts;
   for (i = 0; i < sql_data->nelts; i++) {
+    char *col_data;
+    size_t col_datalen;
+
     pr_signals_handle();
 
-    key = sqlstore_get_key_rfc4716(p, values[i]);
-    if (key == NULL) {
-      pr_trace_msg(trace_channel, 10, "unable to parse data (row %u) as "
-        "RFC4716 data, retrying data as raw key data", i+1);
-      key = sqlstore_get_key_raw(p, values[i]);
+    col_data = values[i];
+    col_datalen = strlen(values[i]);
+
+    res = sqlstore_verify_key_rfc4716(p, store_data, i, col_data, col_datalen,
+      key_data, key_datalen);
+    if (res == 0) {
+      pr_trace_msg(trace_channel, 10, "found matching RFC4716 public key "
+        "(row %u) for host '%s' using SQLNamedQuery '%s'", i+1, host_fqdn,
+        store_data->select_query);
+      destroy_pool(tmp_pool);
+      return 0;
     }
 
-    if (key == NULL) {
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-        "error obtaining SSH2 public key from SQL data (row %u)", i+1);
-      continue;
+    res = sqlstore_verify_key_raw(p, store_data, i, col_data, col_datalen,
+      key_data, key_datalen);
+    if (res == 0) {
+      pr_trace_msg(trace_channel, 10, "found matching public key (row %u) for "
+        "host '%s' using SQLNamedQuery '%s'", i+1, host_fqdn,
+        store_data->select_query);
+      destroy_pool(tmp_pool);
+      return 0;
     }
-
-    res = sftp_keys_compare_keys(p, key_data, key_datalen, key->key_data,
-      key->key_datalen);
-    if (res < 0) {
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-        "error comparing client-sent host key with SQL data (row %u) from "
-        "SQLNamedQuery '%s': %s", i+1, store_data->select_query,
-        strerror(errno));
-      continue;
-
-    } else if (res == FALSE) {
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-        "client-sent host key does not match SQL data (row %u) from "
-        "SQLNamedQuery '%s'", i+1, store_data->select_query);
-      continue;
-    }
-
-    pr_trace_msg(trace_channel, 10, "found matching public key (row %u) for "
-      "host '%s' using SQLNamedQuery '%s'", i+1, host_fqdn,
-      store_data->select_query);
-    destroy_pool(tmp_pool);
-    return 0;
   }
 
   destroy_pool(tmp_pool);
@@ -380,9 +595,8 @@ static int sqlstore_verify_host_key(sftp_keystore_t *store, pool *p,
 }
 
 static int sqlstore_verify_user_key(sftp_keystore_t *store, pool *p,
-    const char *user, char *key_data, uint32_t key_datalen) {
+    const char *user, unsigned char *key_data, uint32_t key_datalen) {
   register unsigned int i;
-  struct sqlstore_key *key;
   struct sqlstore_data *store_data;
   pool *tmp_pool;
   cmdtable *sql_cmdtab;
@@ -438,42 +652,33 @@ static int sqlstore_verify_user_key(sftp_keystore_t *store, pool *p,
 
   values = (char **) sql_data->elts;
   for (i = 0; i < sql_data->nelts; i++) {
+    char *col_data;
+    size_t col_datalen;
+
     pr_signals_handle();
 
-    key = sqlstore_get_key_rfc4716(p, values[i]);
-    if (key == NULL) {
-      pr_trace_msg(trace_channel, 10, "unable to parse data (row %u) as "
-        "RFC4716 data, retrying data as raw key data", i+1);
-      key = sqlstore_get_key_raw(p, values[i]);
+    col_data = values[i];
+    col_datalen = strlen(values[i]);
+
+    res = sqlstore_verify_key_rfc4716(p, store_data, i, col_data, col_datalen,
+      key_data, key_datalen);
+    if (res == 0) {
+      pr_trace_msg(trace_channel, 10, "found matching RFC4716 public key "
+        "(row %u) for user '%s' using SQLNamedQuery '%s'", i+1, user,
+        store_data->select_query);
+      destroy_pool(tmp_pool);
+      return 0;
     }
 
-    if (key == NULL) {
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-        "error obtaining SSH2 public key from SQL data (row %u)", i+1);
-      continue;
+    res = sqlstore_verify_key_raw(p, store_data, i, col_data, col_datalen,
+      key_data, key_datalen);
+    if (res == 0) {
+      pr_trace_msg(trace_channel, 10, "found matching public key (row %u) for "
+        "user '%s' using SQLNamedQuery '%s'", i+1, user,
+        store_data->select_query);
+      destroy_pool(tmp_pool);
+      return 0;
     }
-
-    res = sftp_keys_compare_keys(p, key_data, key_datalen, key->key_data,
-      key->key_datalen);
-    if (res < 0) {
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-        "error comparing client-sent user key with SQL data (row %u) from "
-        "SQLNamedQuery '%s': %s", i+1, store_data->select_query,
-        strerror(errno));
-      continue;
-
-    } else if (res == FALSE) {
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-        "client-sent user key does not match SQL data (row %u) from "
-        "SQLNamedQuery '%s'", i+1, store_data->select_query);
-      continue;
-    }
-
-    pr_trace_msg(trace_channel, 10, "found matching public key (row %u) for "
-      "user '%s' using SQLNamedQuery '%s'", i+1, user,
-      store_data->select_query);
-    destroy_pool(tmp_pool);
-    return 0;
   }
 
   destroy_pool(tmp_pool);

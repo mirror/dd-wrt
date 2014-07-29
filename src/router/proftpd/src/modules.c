@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2010 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 /* Module handling routines
- * $Id: modules.c,v 1.62 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: modules.c,v 1.64 2013/10/07 05:51:30 castaglia Exp $
  */
 
 #include "conf.h"
@@ -112,7 +112,7 @@ int modules_session_init(void) {
     if (m && m->sess_init) {
       curr_module = m;
       if (m->sess_init() < 0) {
-        pr_log_pri(PR_LOG_ERR, "mod_%s.c: error initializing session: %s",
+        pr_log_pri(PR_LOG_WARNING, "mod_%s.c: error initializing session: %s",
           m->name, strerror(errno));
         return -1;
       }
@@ -207,6 +207,80 @@ void modules_list(int flags) {
   }
 }
 
+int pr_module_load_authtab(module *m) {
+  if (m == NULL ||
+      m->name == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (m->authtable) {
+    authtable *authtab;
+
+    for (authtab = m->authtable; authtab->name; authtab++) {
+      authtab->m = m;
+
+      if (pr_stash_add_symbol(PR_SYM_AUTH, authtab) < 0) {
+        return -1;
+      }
+    }
+  }
+
+  return 0;
+}
+
+int pr_module_load_cmdtab(module *m) {
+  if (m == NULL ||
+      m->name == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (m->cmdtable) {
+    cmdtable *cmdtab;
+
+    for (cmdtab = m->cmdtable; cmdtab->command; cmdtab++) {
+      cmdtab->m = m;
+
+      if (cmdtab->cmd_type == HOOK) {
+        if (pr_stash_add_symbol(PR_SYM_HOOK, cmdtab) < 0) {
+          return -1;
+        }
+
+      } else {
+        /* All other cmd_types are for CMDs: PRE_CMD, CMD, POST_CMD, etc. */
+        if (pr_stash_add_symbol(PR_SYM_CMD, cmdtab) < 0) {
+          return -1;
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+int pr_module_load_conftab(module *m) {
+  if (m == NULL ||
+      m->name == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (m->conftable) {
+    conftable *conftab;
+
+    for (conftab = m->conftable; conftab->directive; conftab++) {
+      conftab->m = m;
+
+      if (pr_stash_add_symbol(PR_SYM_CONF, conftab) < 0) {
+        return -1;
+      }
+    }
+  }
+
+  return 0;
+}
+
 int pr_module_load(module *m) {
   char buf[256];
 
@@ -240,48 +314,16 @@ int pr_module_load(module *m) {
     m->priority = curr_module_pri++;
 
     /* Add the module's config, cmd, and auth tables. */
-    if (m->conftable) {
-      conftable *conftab;
-
-      for (conftab = m->conftable; conftab->directive; conftab++) {
-        conftab->m = m;
-
-        if (pr_stash_add_symbol(PR_SYM_CONF, conftab) < 0) {
-          return -1;
-        }
-      }
+    if (pr_module_load_conftab(m) < 0) {
+      return -1;
     }
 
-    if (m->cmdtable) {
-      cmdtable *cmdtab;
-
-      for (cmdtab = m->cmdtable; cmdtab->command; cmdtab++) {
-        cmdtab->m = m;
-
-        if (cmdtab->cmd_type == HOOK) {
-          if (pr_stash_add_symbol(PR_SYM_HOOK, cmdtab) < 0) {
-            return -1;
-          }
-
-        } else {
-          /* All other cmd_types are for CMDs: PRE_CMD, CMD, POST_CMD, etc. */
-          if (pr_stash_add_symbol(PR_SYM_CMD, cmdtab) < 0) {
-            return -1;
-          }
-        }
-      }
+    if (pr_module_load_cmdtab(m) < 0) {
+      return -1;
     }
 
-    if (m->authtable) {
-      authtable *authtab;
-
-      for (authtab = m->authtable; authtab->name; authtab++) {
-        authtab->m = m;
-
-        if (pr_stash_add_symbol(PR_SYM_AUTH, authtab) < 0) {
-          return -1;
-        }
-      }
+    if (pr_module_load_authtab(m) < 0) {
+      return -1;
     }
 
     /* Add the module to the loaded_modules list. */
@@ -401,7 +443,7 @@ int modules_init(void) {
     module *m = static_modules[i];
 
     if (pr_module_load(m) < 0) {
-      pr_log_pri(PR_LOG_ERR, "Fatal: unable to load module 'mod_%s.c': %s",
+      pr_log_pri(PR_LOG_WARNING, "fatal: unable to load module 'mod_%s.c': %s",
         m->name, strerror(errno));
       exit(1);
     }

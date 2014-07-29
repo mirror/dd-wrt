@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2011 The ProFTPD Project team
+ * Copyright (c) 2004-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Display of files
- * $Id: display.c,v 1.26 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: display.c,v 1.32 2013/10/07 05:51:30 castaglia Exp $
  */
 
 #include "conf.h"
@@ -33,17 +33,21 @@ static const char *first_msg = NULL;
 static const char *prev_msg = NULL;
 
 static void format_size_str(char *buf, size_t buflen, off_t size) {
-  char units[] = {'K', 'M', 'G', 'T', 'P'};
+  char *units[] = {"", "K", "M", "G", "T", "P"};
+  unsigned int nunits = 6;
   register unsigned int i = 0;
 
   /* Determine the appropriate units label to use. */
-  while (size > 1024) {
+  while (size > 1024 &&
+         i < nunits) {
+    pr_signals_handle();
+
     size /= 1024;
     i++;
   }
 
   /* Now, prepare the buffer. */
-  snprintf(buf, buflen, "%.3" PR_LU "%cB", (pr_off_t) size, units[i]);
+  snprintf(buf, buflen, "%.3" PR_LU "%sB", (pr_off_t) size, units[i]);
 }
 
 static int display_add_line(pool *p, const char *resp_code,
@@ -150,7 +154,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
   pr_fsio_fstat(fh, &st);
   fh->fh_iosz = st.st_blksize;
 
-  res = pr_fs_getsize2(fh->fh_path, &fs_size);
+  res = pr_fs_fgetsize(fh->fh_fd, &fs_size);
   if (res < 0 &&
       errno != ENOSYS) {
     pr_log_debug(DEBUG7, "error getting filesystem size for '%s': %s",
@@ -177,7 +181,8 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
 
   snprintf(mg_cur, sizeof(mg_cur), "%u", current_clients ? *current_clients: 1);
 
-  if (session.class && session.class->cls_name) {
+  if (session.conn_class != NULL &&
+      session.conn_class->cls_name != NULL) {
     unsigned int *class_clients = NULL;
     config_rec *maxc = NULL;
     unsigned int maxclients = 0;
@@ -201,7 +206,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
     while (maxc) {
       pr_signals_handle();
 
-      if (strcmp(maxc->argv[0], session.class->cls_name) != 0) {
+      if (strcmp(maxc->argv[0], session.conn_class->cls_name) != 0) {
         maxc = find_config_next(maxc, maxc->next, CONF_PARAM,
           "MaxClientsPerClass", FALSE);
         continue;
@@ -345,7 +350,8 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
         val = pr_var_get(key);
         if (val == NULL) {
           pr_trace_msg("var", 4,
-            "no value set for name '%s', using \"(none)\"", key);
+            "no value set for name '%s' [%s], using \"(none)\"", key,
+            strerror(errno));
           val = "(none)";
         }
       }
@@ -375,7 +381,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
       "%U", user,
       "%u", rfc1413_ident,
       "%V", main_server->ServerName,
-      "%x", session.class ? session.class->cls_name : "(unknown)",
+      "%x", session.conn_class ? session.conn_class->cls_name : "(unknown)",
       "%y", mg_cur_class,
       "%z", mg_class_limit,
       NULL);
@@ -417,15 +423,30 @@ int pr_display_file(const char *path, const char *fs, const char *code,
     int flags) {
   pr_fh_t *fh = NULL;
   int res, xerrno;
+  struct stat st;
 
-  if (!path || !code) {
+  if (path == NULL ||
+      code == NULL) {
     errno = EINVAL;
     return -1;
   }
 
   fh = pr_fsio_open_canon(path, O_RDONLY);
-  if (fh == NULL)
+  if (fh == NULL) {
     return -1;
+  }
+
+  res = pr_fsio_fstat(fh, &st);
+  if (res < 0) {
+    pr_fsio_close(fh);
+    return -1;
+  }
+
+  if (S_ISDIR(st.st_mode)) {
+    pr_fsio_close(fh);
+    errno = EISDIR;
+    return -1;
+  }
 
   res = display_fh(fh, fs, code, flags);
   xerrno = errno;

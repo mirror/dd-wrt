@@ -26,10 +26,11 @@ CURSES_LIBS=@CURSES_LIBS@
 UTILS_LIBS=@UTILS_LIBS@ @LIBS@
 
 INSTALL=@INSTALL@
+INSTALL_STRIP=@INSTALL_STRIP@
 INSTALL_USER=@install_user@
 INSTALL_GROUP=@install_group@
-INSTALL_BIN=$(INSTALL) @INSTALL_STRIP@ -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0755
-INSTALL_SBIN=$(INSTALL) @INSTALL_STRIP@ -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0755
+INSTALL_BIN=$(INSTALL) $(INSTALL_STRIP) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0755
+INSTALL_SBIN=$(INSTALL) $(INSTALL_STRIP) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0755
 INSTALL_MAN=$(INSTALL) -o $(INSTALL_USER) -g $(INSTALL_GROUP) -m 0644
 
 RM=rm -f
@@ -38,7 +39,9 @@ SHELL=@CONFIG_SHELL@
 ENABLE_NLS=@ENABLE_NLS@
 ENABLE_TESTS=@ENABLE_TESTS@
 
-VERSION=@VERSION@
+BUILD_VERSION=@BUILD_VERSION@
+RELEASE_VERSION=@RELEASE_VERSION@
+RC_VERSION=@RC_VERSION@
 
 # Directory include paths.
 #
@@ -64,7 +67,7 @@ OBJS=main.o timers.o sets.o pool.o privs.o str.o table.o regexp.o dirtree.o \
      xferlog.o bindings.o netacl.o class.o scoreboard.o help.o feat.o netio.o \
      cmd.o response.o data.o modules.o stash.o display.o auth.o fsio.o \
      mkhome.o ctrls.o event.o var.o throttle.o session.o trace.o encode.o \
-     proctitle.o filter.o pidfile.o env.o version.o wtmp.o memcache.o
+     proctitle.o filter.o pidfile.o env.o version.o rlimit.o wtmp.o memcache.o
 
 BUILD_OBJS=src/main.o src/timers.o src/sets.o src/pool.o src/privs.o src/str.o \
            src/table.o src/regexp.o src/dirtree.o src/expr.o src/support.o \
@@ -75,7 +78,7 @@ BUILD_OBJS=src/main.o src/timers.o src/sets.o src/pool.o src/privs.o src/str.o \
            src/auth.o src/fsio.o src/mkhome.o src/ctrls.o src/event.o \
            src/var.o src/throttle.o src/session.o src/trace.o src/encode.o \
            src/proctitle.o src/filter.o src/pidfile.o src/env.o src/version.o \
-           src/wtmp.o src/memcache.o
+           src/rlimit.o src/wtmp.o src/memcache.o
 
 SHARED_MODULE_DIRS=@SHARED_MODULE_DIRS@
 SHARED_MODULE_LIBS=@SHARED_MODULE_LIBS@

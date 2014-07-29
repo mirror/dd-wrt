@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2011 The ProFTPD Project team
+ * Copyright (c) 2009-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: cmd.c,v 1.8.2.1 2011/11/16 20:00:58 castaglia Exp $
+ * $Id: cmd.c,v 1.12 2012/12/28 17:40:36 castaglia Exp $
  */
 
 #include "conf.h"
@@ -106,7 +106,8 @@ static struct cmd_entry cmd_ids[] = {
   { C_PBSZ,	4 },	/* PR_CMD_PBSZ_ID (54) */
   { C_PROT,	4 },	/* PR_CMD_PROT_ID (55) */
   { C_MFF,	3 },	/* PR_CMD_MFF_ID (56) */
-  { C_MFMT,	4 },	/* PR_CMD_PROT_ID (57) */
+  { C_MFMT,	4 },	/* PR_CMD_MFMT_ID (57) */
+  { C_HOST,	4 },	/* PR_CMD_HOST_ID (58) */
 
   { NULL,	0 }
 };
@@ -195,6 +196,19 @@ int pr_cmd_cmp(cmd_rec *cmd, int cmd_id) {
   }
 
   return cmd->cmd_id < cmd_id ? -1 : 1;
+}
+
+int pr_cmd_set_name(cmd_rec *cmd, const char *cmd_name) {
+  if (cmd == NULL ||
+      cmd_name == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  cmd->argv[0] = (char *) cmd_name;
+  cmd->cmd_id = pr_cmd_get_id(cmd->argv[0]);
+
+  return 0;
 }
 
 int pr_cmd_strcmp(cmd_rec *cmd, const char *cmd_name) {

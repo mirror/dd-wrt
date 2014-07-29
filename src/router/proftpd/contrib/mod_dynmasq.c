@@ -2,7 +2,7 @@
  * ProFTPD: mod_dynmasq -- a module for dynamically updating MasqueradeAddress
  *                         configurations, as when DynDNS names are used
  *
- * Copyright (c) 2004-2011 TJ Saunders
+ * Copyright (c) 2004-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * This is mod_dynmasq, contrib software for proftpd 1.2.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_dynmasq.c,v 1.9 2011/05/23 20:56:40 castaglia Exp $
+ * $Id: mod_dynmasq.c,v 1.11 2013/10/13 22:51:36 castaglia Exp $
  */
 
 #include "conf.h"
@@ -98,7 +98,7 @@ static void dynmasq_refresh(void) {
  
       } else {
         pr_log_pri(PR_LOG_NOTICE, MOD_DYNMASQ_VERSION
-          ": unable to resolve '%s', keep previous address",
+          ": unable to resolve '%s', keeping previous address",
           (const char *) c->argv[1]);
       }
     }
@@ -278,7 +278,7 @@ static int dynmasq_init(void) {
 #ifdef PR_USE_CTRLS
   if (pr_ctrls_register(&dynmasq_module, "dynmasq", "mod_dynmasq controls",
       dynmasq_handle_dynmasq) < 0) {
-    pr_log_pri(PR_LOG_INFO, MOD_DYNMASQ_VERSION
+    pr_log_pri(PR_LOG_NOTICE, MOD_DYNMASQ_VERSION
       ": error registering 'dynmasq' control: %s", strerror(errno));
 
   } else {

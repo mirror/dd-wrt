@@ -26,7 +26,7 @@
  * This is mod_sftp_pam, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_sftp_pam.c,v 1.10.2.3 2013/02/26 23:14:19 castaglia Exp $
+ * $Id: mod_sftp_pam.c,v 1.20 2013/10/07 01:29:04 castaglia Exp $
  * $Libraries: -lpam $
  */
 
@@ -117,7 +117,7 @@ static const char *trace_channel = "ssh2";
 
 static int sftppam_converse(int nmsgs, PR_PAM_CONST struct pam_message **msgs,
     struct pam_response **resps, void *app_data) {
-  register unsigned int i;
+  register unsigned int i = 0, j = 0;
   array_header *list;
   unsigned int recvd_count = 0;
   const char **recvd_responses = NULL;
@@ -197,25 +197,16 @@ static int sftppam_converse(int nmsgs, PR_PAM_CONST struct pam_message **msgs,
     return PAM_CONV_ERR;
   }
 
-  if (sftp_kbdint_recv_response(sftppam_driver.driver_pool, &recvd_count,
-      &recvd_responses) < 0) {
+  if (sftp_kbdint_recv_response(sftppam_driver.driver_pool, list->nelts,
+      &recvd_count, &recvd_responses) < 0) {
     pr_trace_msg(trace_channel, 3,
       "error receiving keyboard-interactive responses: %s", strerror(errno));
     return PAM_CONV_ERR;
   }
 
-  /* Make sure that the count of responses matches the challenge count. */
-  if (recvd_count != list->nelts) {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_PAM_VERSION,
-      "sent %d %s, but received %u %s", nmsgs,
-      list->nelts != 1 ? "challenges" : "challenge", recvd_count,
-      recvd_count != 1 ? "responses" : "response");
-    return PAM_CONV_ERR;
-  }
-
   res = calloc(nmsgs, sizeof(struct pam_response));
   if (res == NULL) {
-    pr_log_pri(PR_LOG_CRIT, "Out of memory!");
+    pr_log_pri(PR_LOG_ALERT, MOD_SFTP_PAM_VERSION ": Out of memory!");
     return PAM_BUF_ERR;
   }
 
@@ -261,6 +252,13 @@ static int sftppam_converse(int nmsgs, PR_PAM_CONST struct pam_message **msgs,
         pr_trace_msg(trace_channel, 3,
           "received unknown PAM message style (%d), treating it as an error",
           SFTP_PAM_MSG_MEMBER(msgs, i, msg_style));
+        for (j = 0; j < nmsgs; j++) {
+          if (res[i].resp != NULL) {
+            free(res[i].resp);
+            res[i].resp = NULL;
+          }
+        }
+
         free(res);
 
         return PAM_CONV_ERR;
@@ -320,16 +318,23 @@ static int sftppam_driver_open(sftp_kbdint_driver_t *driver, const char *user) {
 
   sftppam_user = malloc(sftppam_userlen);
   if (sftppam_user == NULL) {
-    pr_log_pri(PR_LOG_CRIT, "Out of memory!");
+    pr_log_pri(PR_LOG_ALERT, MOD_SFTP_PAM_VERSION ": Out of memory!");
     exit(1);
   }
 
-  memset(sftppam_user, '\0', sizeof(sftppam_user));
+  memset(sftppam_user, '\0', sftppam_userlen);
   sstrncpy(sftppam_user, user, sftppam_userlen);
 
   c = find_config(main_server->conf, CONF_PARAM, "SFTPPAMOptions", FALSE);
-  if (c != NULL) {
-    sftppam_opts = *((unsigned long *) c->argv[0]);
+  while (c != NULL) {
+    unsigned long opts;
+
+    pr_signals_handle();
+
+    opts = *((unsigned long *) c->argv[0]);
+    sftppam_opts |= opts;
+
+    c = find_config_next(c, c->next, CONF_PARAM, "SFTPPAMOptions", FALSE);
   }
  
 #ifdef SOLARIS2

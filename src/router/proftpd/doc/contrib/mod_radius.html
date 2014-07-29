@@ -1,4 +1,4 @@
-<!-- $Id: mod_radius.html,v 1.7 2011/08/04 22:34:30 castaglia Exp $ -->
+<!-- $Id: mod_radius.html,v 1.9 2013/08/14 21:40:18 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/contrib/mod_radius.html,v $ -->
 
 <html>
@@ -183,7 +183,7 @@ See Also:
 <strong>Compatibility:</strong> 1.2.5rc2 and later
 
 <p>
-The <code>RadiusLog</code> directive is used to a specify a log file for
+The <code>RadiusLog</code> directive is used to specify a log file for
 <code>mod_radius</code> reporting and debugging, and can be done a per-server
 basis.  The <em>file</em> parameter must be the full path to the file to use for
 logging.  Note that this path must <b>not</b> be to a world-writeable
@@ -474,20 +474,35 @@ The <code>mod_radius</code> module is distributed with ProFTPD.  Simply follow
 the normal steps for using third-party modules in proftpd:
 <pre>
   ./configure --with-modules=mod_radius
-  make
+</pre>
+To build <code>mod_radius</code> as a DSO module:
+<pre>
+  ./configure --enable-dso --with-shared=mod_radius
+</pre>
+Then follow the usual steps:
+<pre>
+  make 
   make install
+</pre>
+
+<p>
+Alternatively, if your proftpd was compiled with DSO support, you can
+use the <code>prxs</code> tool to build <code>mod_radius</code> as a shared
+module:
+<pre>
+  prxs -c -i -d mod_radius.c
 </pre>
 
 <p>
 <hr><br>
 
 Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011/08/04 22:34:30 $</i><br>
+Last Updated: <i>$Date: 2013/08/14 21:40:18 $</i><br>
 
 <br><hr>
 
 <font size=2><b><i>
-&copy; Copyright 2000-2011 TJ Saunders<br>
+&copy; Copyright 2000-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 

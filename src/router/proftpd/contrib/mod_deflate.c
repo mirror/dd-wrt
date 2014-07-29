@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_deflate -- a module for supporting on-the-fly compression
  *
- * Copyright (c) 2004-2012 TJ Saunders
+ * Copyright (c) 2004-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * This is mod_deflate, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_deflate.c,v 1.8.2.1 2012/09/21 22:14:33 castaglia Exp $
+ * $Id: mod_deflate.c,v 1.14 2014/01/03 07:19:01 castaglia Exp $
  * $Libraries: -lz $
  */
 
@@ -34,12 +34,14 @@
 #include "conf.h"
 #include "privs.h"
 
-#define MOD_DEFLATE_VERSION		"mod_deflate/0.5.6"
+#define MOD_DEFLATE_VERSION		"mod_deflate/0.5.7"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030201
-# error "ProFTPD 1.3.2rc1 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030504
+# error "ProFTPD 1.3.5rc4 or later required"
 #endif
+
+module deflate_module;
 
 static int deflate_enabled = FALSE;
 static int deflate_engine = FALSE;
@@ -83,6 +85,7 @@ static Byte *deflate_rbuf = NULL;
 static size_t deflate_rbuflen = 0;
 static size_t deflate_rbufsz = 0;
 
+#define DEFLATE_NETIO_NOTE	"mod_deflate.z_stream"
 static int deflate_zerrno = 0;
 
 static const char *trace_channel = "deflate";
@@ -136,7 +139,7 @@ static int deflate_netio_close_cb(pr_netio_stream_t *nstrm) {
   if (nstrm->strm_type == PR_NETIO_STRM_DATA) {
     z_stream *zstrm;
 
-    zstrm = nstrm->strm_data;
+    zstrm = pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
     if (zstrm == NULL) {
       return 0;
     }
@@ -191,7 +194,7 @@ static int deflate_netio_close_cb(pr_netio_stream_t *nstrm) {
 
   res = close(nstrm->strm_fd);
   nstrm->strm_fd = -1;
-  nstrm->strm_data = NULL;
+  pr_table_remove(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
 
   return res;
 }
@@ -216,7 +219,14 @@ static pr_netio_stream_t *deflate_netio_open_cb(pr_netio_stream_t *nstrm,
     zstrm->avail_in = 0;
     zstrm->avail_out = 0;
 
-    nstrm->strm_data = zstrm;
+    if (pr_table_add(nstrm->notes,
+        pstrdup(nstrm->strm_pool, DEFLATE_NETIO_NOTE), zstrm,
+        sizeof(z_stream *)) < 0) {
+      (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
+        "error stashing '%s' note: %s", DEFLATE_NETIO_NOTE, strerror(errno));
+      errno = EPERM;
+      return NULL;
+    }
 
     memset(deflate_zbuf_ptr, '\0', deflate_zbufsz);
     deflate_zbuf = deflate_zbuf_ptr;
@@ -297,7 +307,7 @@ static int deflate_netio_read_cb(pr_netio_stream_t *nstrm, char *buf,
     size_t copylen = 0;
     z_stream *zstrm;
 
-    zstrm = nstrm->strm_data;
+    zstrm = pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
     if (zstrm == NULL) {
       pr_trace_msg(trace_channel, 2,
         "no zstream found in stream data for reading");
@@ -513,7 +523,7 @@ static int deflate_netio_shutdown_cb(pr_netio_stream_t *nstrm, int how) {
     int res = 0;
     z_stream *zstrm;
 
-    zstrm = nstrm->strm_data;
+    zstrm = pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
     if (zstrm == NULL) {
       return 0;
     }
@@ -602,7 +612,7 @@ static int deflate_netio_write_cb(pr_netio_stream_t *nstrm, char *buf,
     size_t datalen, offset = 0;
     z_stream *zstrm;
 
-    zstrm = nstrm->strm_data;
+    zstrm = pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
     if (zstrm == NULL) {
       pr_trace_msg(trace_channel, 2,
         "no zstream found in stream data for writing");
@@ -845,7 +855,7 @@ MODRET deflate_mode(cmd_rec *cmd) {
      * compression.
      */
 
-    deflate_netio = pr_alloc_netio(session.pool);
+    deflate_netio = pr_alloc_netio2(session.pool, &deflate_module);
     deflate_netio->close = deflate_netio_close_cb;
     deflate_netio->open = deflate_netio_open_cb;
     deflate_netio->read = deflate_netio_read_cb;
@@ -919,11 +929,12 @@ static int deflate_sess_init(void) {
   c = find_config(main_server->conf, CONF_PARAM, "DeflateLog", FALSE);
   if (c &&
       strcasecmp(c->argv[0], "none") != 0) {
-    int res;
+    int res, xerrno = 0;
 
     pr_signals_block();
     PRIVS_ROOT
-    res = pr_log_openfile(c->argv[0], &deflate_logfd, 0640);
+    res = pr_log_openfile(c->argv[0], &deflate_logfd, PR_LOG_SYSTEM_MODE);
+    xerrno = errno;
     PRIVS_RELINQUISH
     pr_signals_unblock();
 
@@ -931,17 +942,17 @@ static int deflate_sess_init(void) {
       case -1:
         pr_log_pri(PR_LOG_NOTICE, MOD_DEFLATE_VERSION
           ": notice: unable to open DeflateLog '%s': %s",
-          (char *) c->argv[0], strerror(errno));
+          (char *) c->argv[0], strerror(xerrno));
         break;
 
       case PR_LOG_WRITABLE_DIR:
-        pr_log_pri(PR_LOG_NOTICE, MOD_DEFLATE_VERSION
+        pr_log_pri(PR_LOG_WARNING, MOD_DEFLATE_VERSION
           ": notice: unable to use DeflateLog '%s': parent directory is "
-            "world-writeable", (char *) c->argv[0]);
+            "world-writable", (char *) c->argv[0]);
         break;
 
       case PR_LOG_SYMLINK:
-        pr_log_pri(PR_LOG_NOTICE, MOD_DEFLATE_VERSION
+        pr_log_pri(PR_LOG_WARNING, MOD_DEFLATE_VERSION
           ": notice: unable to use DeflateLog '%s': cannot log to a symlink",
           (char *) c->argv[0]);
         break;

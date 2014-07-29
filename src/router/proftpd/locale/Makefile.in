@@ -42,7 +42,8 @@ Makefile: Makefile.in ../config.status
 	cd ../ && ./config.status
 
 $(PACKAGE).pot:
-	-$(XGETTEXT) -L C --keyword=_ --flag=_:1:pass-c-format --keyword=N_ --flag=N_:1:pass-c-format --no-wrap --copyright-holder $(COPYRIGHT_HOLDER) --msgid-bugs-address $(CONTACT_ADDRESS) --sort-by-file -f $(FILES) -o $(PACKAGE).pot
+	$(RM) $(PACKAGE).pot
+	$(XGETTEXT) -L C --keyword=_ --flag=_:1:pass-c-format --keyword=N_ --flag=N_:1:pass-c-format --no-wrap --copyright-holder $(COPYRIGHT_HOLDER) --msgid-bugs-address $(CONTACT_ADDRESS) --sort-by-file -f $(FILES) -o $(PACKAGE).pot
 
 locale: $(LANGS)
 

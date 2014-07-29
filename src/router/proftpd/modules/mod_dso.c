@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_dso -- support for loading/unloading modules at run-time
  *
- * Copyright (c) 2004-2011 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2004-2013 TJ Saunders <tj@castaglia.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * This is mod_dso, contrib software for proftpd 1.3.x.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_dso.c,v 1.22 2011/05/23 21:11:56 castaglia Exp $
+ * $Id: mod_dso.c,v 1.33 2013/10/13 23:46:43 castaglia Exp $
  */
 
 #include "conf.h"
@@ -51,8 +51,7 @@ static ctrls_acttab_t dso_acttab[];
 #endif
 
 static int dso_load_file(char *path) {
-
-  if (!path) {
+  if (path == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -72,28 +71,38 @@ static int dso_load_file(char *path) {
 }
 
 static int dso_load_module(char *name) {
-  int res;
-  char *symbol_name, *path, *tmp;
+  int module_load_errno = 0, res;
+  char *symbol_name, *path, *ptr;
+  size_t namelen;
   module *m;
   lt_ptr mh = NULL;
   lt_dladvise advise;
+  const lt_dlinfo *info = NULL;
 
   if (name == NULL) {
     errno = EINVAL;
     return -1;
   }
 
-  if (strncmp(name, "mod_", 4) != 0 ||
-      name[strlen(name)-2] != '.' ||
-      name[strlen(name)-1] != 'c') {
+  namelen = strlen(name);
+
+  if (namelen < 5 ||
+      strncmp(name, "mod_", 4) != 0) {
     errno = EINVAL;
     return -1;
   }
 
-  pr_log_debug(DEBUG7, "loading '%s'", name);
+  /* Handle ".c" and ".cpp" extensions. */
+  if (pr_strnrstr(name, namelen, ".c", 2, 0) != TRUE &&
+      pr_strnrstr(name, namelen, ".cpp", 4, 0) != TRUE) {
+    errno = EINVAL;
+    return -1;
+  }
 
-  tmp = strrchr(name, '.');
-  if (tmp == NULL) {
+  pr_log_debug(DEBUG7, MOD_DSO_VERSION ": loading '%s'", name);
+
+  ptr = strrchr(name, '.');
+  if (ptr == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -121,7 +130,7 @@ static int dso_load_module(char *name) {
     return -1;
   }
 
-  *tmp = '\0';
+  *ptr = '\0';
 
   /* Load file: $prefix/libexec/<module> */
   path = pdircat(dso_pool, dso_module_path, name, NULL);
@@ -130,10 +139,23 @@ static int dso_load_module(char *name) {
 
   mh = lt_dlopenadvise(path, advise);
   if (mh == NULL) {
-    *tmp = '.';
+    int xerrno = errno;
+
+    *ptr = '.';
+
+    /* Remember this errno value, for reporting later if we cannot resolve
+     * the symbol from the main executable.
+     */
+    module_load_errno = errno;
 
     pr_log_debug(DEBUG3, MOD_DSO_VERSION ": unable to dlopen '%s': %s (%s)",
-      name, lt_dlerror(), strerror(errno));
+      name, lt_dlerror(), strerror(xerrno));
+
+    if (xerrno == ENOENT) {
+      pr_log_pri(PR_LOG_NOTICE, MOD_DSO_VERSION
+        ": unable to load '%s'; check to see if '%s.la' exists", name, path);
+    }
+
     pr_log_debug(DEBUG3, MOD_DSO_VERSION
       ": defaulting to 'self' for symbol resolution");
 
@@ -144,22 +166,30 @@ static int dso_load_module(char *name) {
       pr_log_debug(DEBUG0, MOD_DSO_VERSION ": error loading 'self': %s",
         lt_dlerror());
 
-      if (errno == ENOENT) {
-        pr_log_pri(PR_LOG_NOTICE, MOD_DSO_VERSION
-          ": check to see if '%s.la' exists", path);
-      }
-
+      errno = xerrno;
       return -1;
     }
   }
 
   lt_dladvise_destroy(&advise);
 
+  info = lt_dlgetinfo(mh);
+  if (info != NULL) {
+    struct stat st;
+
+    res = stat(info->filename, &st);
+    if (res == 0) {
+      pr_log_debug(DEBUG7, MOD_DSO_VERSION
+        ": loaded module '%s' (from '%s', last modified on %s)", info->name,
+        info->filename, pr_strtime(st.st_mtime));
+    }
+  }
+
   /* Tease name of the module structure out of the given name:
    *  <module>.<ext> --> <module>_module
    */
 
-  *tmp = '\0';
+  *ptr = '\0';
   symbol_name = pstrcat(dso_pool, name+4, "_module", NULL);
 
   /* Lookup module structure symbol by name. */
@@ -169,7 +199,9 @@ static int dso_load_module(char *name) {
 
   m = (module *) lt_dlsym(mh, symbol_name);
   if (m == NULL) {
-    *tmp = '.';
+    int xerrno = errno;
+
+    *ptr = '.';
     pr_log_debug(DEBUG1, MOD_DSO_VERSION
       ": unable to find module symbol '%s' in '%s'", symbol_name,
         mh ? name : "self");
@@ -179,27 +211,41 @@ static int dso_load_module(char *name) {
     lt_dlclose(mh);
     mh = NULL;
 
-    if (errno == ENOENT) {
-      pr_log_pri(PR_LOG_NOTICE,
-        MOD_DSO_VERSION ": check to see if '%s.la' exists", path);
+    if (xerrno == ENOENT) {
+      pr_log_pri(PR_LOG_NOTICE, MOD_DSO_VERSION
+        ": check to see if '%s.la' exists", path);
+    }
+
+    if (module_load_errno != 0) {
+      /* If we had an error loading the original module, AND we had an error
+       * resolving the symbol in the main executable, then return the original
+       * errno from loading the module, rather than the symbol resolution
+       * error.
+       */
+      errno = module_load_errno;
+
+    } else {
+      errno = xerrno;
     }
 
     return -1;
   }
-  *tmp = '.';
+  *ptr = '.';
 
   m->handle = mh;
 
   /* Add the module to the core structures */
   res = pr_module_load(m);
   if (res < 0) {
-    if (errno == EEXIST) {
+    int xerrno = errno;
+
+    if (xerrno == EEXIST) {
       pr_log_pri(PR_LOG_INFO, MOD_DSO_VERSION
         ": module 'mod_%s.c' already loaded", m->name);
       pr_trace_msg(trace_channel, 1, "module 'mod_%s.c' already loaded",
         m->name);
 
-    } else if (errno == EACCES) {
+    } else if (xerrno == EACCES) {
       pr_log_pri(PR_LOG_ERR, MOD_DSO_VERSION
         ": module 'mod_%s.c' has wrong API version (0x%x), must be 0x%x",
         m->name, m->api_version, PR_MODULE_API_VERSION);
@@ -207,7 +253,7 @@ static int dso_load_module(char *name) {
         "module 'mod_%s.c' has wrong API version (0x%x), must be 0x%x",
         m->name, m->api_version, PR_MODULE_API_VERSION);
 
-    } else if (errno == EPERM) {
+    } else if (xerrno == EPERM) {
       pr_log_pri(PR_LOG_ERR, MOD_DSO_VERSION
         ": module 'mod_%s.c' failed to initialize", m->name);
       pr_trace_msg(trace_channel, 1, "module 'mod_%s.c' failed to initialize",
@@ -216,6 +262,8 @@ static int dso_load_module(char *name) {
 
     lt_dlclose(mh);
     mh = NULL;
+
+    errno = xerrno;
     return -1;
   }
 
@@ -228,7 +276,7 @@ static int dso_unload_module(module *m) {
   char *name;
 
   /* Some modules cannot be unloaded. */
-  if (strcmp(m->name, "dso") == 0) {
+  if (strncmp(m->name, "dso", 4) == 0) {
     errno = EPERM;
     return -1;
   }
@@ -239,15 +287,21 @@ static int dso_unload_module(module *m) {
 
   res = pr_module_unload(m);
   if (res < 0) {
+    int xerrno = errno;
+
     pr_log_debug(DEBUG1, MOD_DSO_VERSION
-      ": error unloading module 'mod_%s.c': %s", m->name, strerror(errno));
+      ": error unloading module 'mod_%s.c': %s", m->name, strerror(xerrno));
     pr_trace_msg(trace_channel, 1,
-      "error unloading module 'mod_%s.c': %s", m->name, strerror(errno));
+      "error unloading module 'mod_%s.c': %s", m->name, strerror(xerrno));
   }
 
   if (lt_dlclose(m->handle) < 0) {
+    int xerrno = errno;
+
     pr_log_debug(DEBUG1, MOD_DSO_VERSION ": error closing '%s': %s",
       name, lt_dlerror());
+
+    errno = xerrno;
     return -1;
   }
 
@@ -269,7 +323,7 @@ static int dso_unload_module_by_name(const char *name) {
 
   /* Lookup the module pointer for the given module name. */
   m = pr_module_get(name);
-  if (!m) {
+  if (m == NULL) {
     errno = ENOENT;
     return -1;
   }
@@ -303,9 +357,10 @@ static int dso_handle_insmod(pr_ctrls_t *ctrl, int reqargc,
 
   for (i = 0; i < reqargc; i++) {
     if (dso_load_module(reqargv[i]) < 0) {
+      int xerrno = errno;
 
       /* Make the error messages a little more relevant. */
-      switch (errno) {
+      switch (xerrno) {
         case EINVAL:
           pr_ctrls_add_response(ctrl, "error loading '%s': Bad module name",
             reqargv[i]);
@@ -318,7 +373,7 @@ static int dso_handle_insmod(pr_ctrls_t *ctrl, int reqargc,
 
         default:
           pr_ctrls_add_response(ctrl, "error loading '%s': %s", reqargv[i],
-            strerror(errno));
+            strerror(xerrno));
           break;
       }
 
@@ -379,7 +434,9 @@ static int dso_handle_rmmod(pr_ctrls_t *ctrl, int reqargc,
 
   for (i = 0; i < reqargc; i++) {
     if (dso_unload_module_by_name(reqargv[i]) < 0) {
-      switch (errno) {
+      int xerrno = errno;
+
+      switch (xerrno) {
         case EINVAL:
           pr_ctrls_add_response(ctrl, "error unloading '%s': Bad module name",
             reqargv[i]);
@@ -396,8 +453,9 @@ static int dso_handle_rmmod(pr_ctrls_t *ctrl, int reqargc,
           break;
       }
 
-    } else
+    } else {
       pr_ctrls_add_response(ctrl, "'%s' unloaded", reqargv[i]);
+    }
   }
 
   return 0;
@@ -409,29 +467,34 @@ static int dso_handle_rmmod(pr_ctrls_t *ctrl, int reqargc,
 
 /* usage: LoadFile path */
 MODRET set_loadfile(cmd_rec *cmd) {
-
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  if (pr_fs_valid_path(cmd->argv[1]) < 0)
+  if (pr_fs_valid_path(cmd->argv[1]) < 0) {
     CONF_ERROR(cmd, "must be an absolute path");
+  }
 
-  if (dso_load_file(cmd->argv[1]) < 0)
+  if (dso_load_file(cmd->argv[1]) < 0) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error loading '", cmd->argv[1],
       "': ", strerror(errno), NULL));
+  }
 
   return PR_HANDLED(cmd);
 }
 
 /* usage: LoadModule module */
 MODRET set_loadmodule(cmd_rec *cmd) {
-
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  if (dso_load_module(cmd->argv[1]) < 0)
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error loading module '",
-      cmd->argv[1], "': ", strerror(errno), NULL));
+  if (dso_load_module(cmd->argv[1]) < 0) {
+    int xerrno = errno;
+
+    if (xerrno != EEXIST) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error loading module '",
+        cmd->argv[1], "': ", strerror(xerrno), NULL));
+    }
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -486,9 +549,10 @@ MODRET set_moduleorder(cmd_rec *cmd) {
 
   /* Make sure the given module names exist. */
   for (i = 1; i < cmd->argc; i++) {
-    if (pr_module_get(cmd->argv[i]) == NULL)
+    if (pr_module_get(cmd->argv[i]) == NULL) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "no such module '", cmd->argv[i],
-      "' loaded", NULL));
+        "' loaded", NULL));
+    }
   }
 
   /* Make sure there are no duplicate module names in the list. */
@@ -521,8 +585,9 @@ MODRET set_moduleorder(cmd_rec *cmd) {
       module_list->prev = m;
       module_list = m;
 
-    } else
+    } else {
       module_list = m;
+    }
   }
 
   /* Now, unload all the modules in the loaded_modules list, then load
@@ -547,7 +612,7 @@ MODRET set_moduleorder(cmd_rec *cmd) {
     }
   }
 
-  pr_log_pri(PR_LOG_NOTICE, "module order is now:");
+  pr_log_pri(PR_LOG_NOTICE, "%s: module order is now:", cmd->argv[0]);
   for (m = loaded_modules; m; m = m->next) {
     pr_log_pri(PR_LOG_NOTICE, " mod_%s.c", m->name);
   }
@@ -563,26 +628,31 @@ MODRET set_modulepath(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  if (pr_fs_valid_path(cmd->argv[1]) < 0)
+  if (pr_fs_valid_path(cmd->argv[1]) < 0) {
     CONF_ERROR(cmd, "must be an absolute path");
+  }
 
-  /* Make sure that the configured path is not world-writeable. */
+  /* Make sure that the configured path is not world-writable. */
   res = pr_fsio_stat(cmd->argv[1], &st);
-  if (res < 0)
+  if (res < 0) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error checking '",
       cmd->argv[1], "': ", strerror(errno), NULL)); 
+  }
 
-  if (!S_ISDIR(st.st_mode))
+  if (!S_ISDIR(st.st_mode)) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, cmd->argv[1], " is not a directory",
       NULL));
+  }
 
-  if (st.st_mode & S_IWOTH)
+  if (st.st_mode & S_IWOTH) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, cmd->argv[1], " is world-writable",
       NULL));
+  }
 
-  if (lt_dlsetsearchpath(cmd->argv[1]) < 0)
+  if (lt_dlsetsearchpath(cmd->argv[1]) < 0) {
     CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error setting module path: ",
       lt_dlerror(), NULL));
+  }
 
   dso_module_path = pstrdup(dso_pool, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -632,10 +702,11 @@ static void dso_restart_ev(const void *event_data, void *user_data) {
     }
 
     if (!is_static) {
-      pr_log_debug(DEBUG7, "unloading 'mod_%s.c'", mi->name);
-      if (dso_unload_module(mi) < 0)
-        pr_log_pri(PR_LOG_INFO, "error unloading 'mod_%s.c': %s",
-          mi->name, strerror(errno));
+      pr_log_debug(DEBUG7, MOD_DSO_VERSION ": unloading 'mod_%s.c'", mi->name);
+      if (dso_unload_module(mi) < 0) {
+        pr_log_pri(PR_LOG_NOTICE, MOD_DSO_VERSION
+          ": error unloading 'mod_%s.c': %s", mi->name, strerror(errno));
+      }
     }
   }
 
@@ -692,10 +763,11 @@ static int dso_init(void) {
     pr_ctrls_init_acl(dso_acttab[i].act_acl);
 
     if (pr_ctrls_register(&dso_module, dso_acttab[i].act_action,
-        dso_acttab[i].act_desc, dso_acttab[i].act_cb) < 0)
-      pr_log_pri(PR_LOG_INFO, MOD_DSO_VERSION
+        dso_acttab[i].act_desc, dso_acttab[i].act_cb) < 0) {
+      pr_log_pri(PR_LOG_NOTICE, MOD_DSO_VERSION
         ": error registering '%s' control: %s", dso_acttab[i].act_action,
         strerror(errno));
+    }
   }
 #endif /* PR_USE_CTRLS */
 

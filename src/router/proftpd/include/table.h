@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2011 The ProFTPD Project team
+ * Copyright (c) 2004-2012 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Table management
- * $Id: table.h,v 1.8 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: table.h,v 1.12 2012/01/26 17:55:07 castaglia Exp $
  */
 
 #ifndef PR_TABLE_H
@@ -210,7 +210,12 @@ int pr_table_set(pr_table_t *tab, const char *key_data, void *value_data,
  *    distributed among the chains in a manner that hopefully provides
  *    minimum lookup times.  If a table will be holding a large number of
  *    entries, a larger number of chains will ensure a better distribution.
- *    The default number of chains is 32.
+ *    The default number of chains is 256.
+ *
+ *  PR_TABLE_CTL_SET_MAX_ENTS
+ *    Sets the maximum number of entries the table can hold.  Attempts to
+ *    insert entries above this maximum result in an ENOSPC error value.
+ *    The default maximum number of entries is currently 8192.
  */
 int pr_table_ctl(pr_table_t *tab, int cmd, void *arg);
 #define PR_TABLE_CTL_SET_ENT_INSERT	1
@@ -219,6 +224,18 @@ int pr_table_ctl(pr_table_t *tab, int cmd, void *arg);
 #define PR_TABLE_CTL_SET_KEY_CMP	4
 #define PR_TABLE_CTL_SET_KEY_HASH	5
 #define PR_TABLE_CTL_SET_NCHAINS	6
+#define PR_TABLE_CTL_SET_MAX_ENTS	7
+
+/* Returns the table "load", which is the ratio between the number of
+ * entries in the table (e.g. via pr_table_count()) and the number of chains
+ * among which the entries are distributed.  Note that a negative return value
+ * indicates an error of some sort; check the errno value in such cases.
+ *
+ * The load factor can be used, in combination with tests surrounding entry
+ * lookup time, to determine how well the key hashing function performs with
+ * regard to collision avoidance, especially as the number of entries increases.
+ */
+float pr_table_load(pr_table_t *tab);
 
 /* Dump table information. */
 void pr_table_dump(void (*)(const char *, ...), pr_table_t *tab);
@@ -272,6 +289,6 @@ pr_table_t *pr_table_nalloc(pool *p, int flags, unsigned int nchains);
 void *pr_table_pcalloc(pr_table_t *tab, size_t sz);
 
 /* Internal use only. */
-int table_handling_signal(int bool);
+int table_handling_signal(int);
 
 #endif /* PR_TABLE_H */

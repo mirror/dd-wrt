@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: mod_sftp.h.in,v 1.22 2011/10/12 17:15:56 castaglia Exp $
+ * $Id: mod_sftp.h.in,v 1.30 2014/03/02 22:05:43 castaglia Exp $
  */
 
 #ifndef MOD_SFTP_H
@@ -54,7 +54,7 @@
 /* Define if you have OpenSSL with SHA512 support. */
 #undef HAVE_SHA512_OPENSSL
 
-#define MOD_SFTP_VERSION	"mod_sftp/0.9.8"
+#define MOD_SFTP_VERSION	"mod_sftp/0.9.9"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030402
@@ -78,10 +78,15 @@
 # include <openssl/engine.h>
 # include <openssl/ocsp.h>
 #endif
+#ifdef PR_USE_OPENSSL_ECC
+# include <openssl/ec.h>
+# include <openssl/ecdh.h>
+#endif /* PR_USE_OPENSSL_ECC */
 
 #include <zlib.h>
 
-#define SFTP_ID_STRING	"SSH-2.0-" MOD_SFTP_VERSION
+#define SFTP_ID_PREFIX		"SSH-2.0-"
+#define SFTP_ID_DEFAULT_STRING	SFTP_ID_PREFIX MOD_SFTP_VERSION
 
 /* mod_sftp session state flags */
 #define SFTP_SESS_STATE_HAVE_KEX	0x00001
@@ -97,6 +102,9 @@
 #define SFTP_OPT_MATCH_KEY_SUBJECT		0x0010
 #define SFTP_OPT_IGNORE_SFTP_SET_PERMS		0x0020
 #define SFTP_OPT_IGNORE_SFTP_SET_TIMES		0x0040
+#define SFTP_OPT_IGNORE_SFTP_SET_OWNERS		0x0080
+#define SFTP_OPT_IGNORE_SCP_UPLOAD_TIMES	0x0100
+#define SFTP_OPT_ALLOW_INSECURE_LOGIN		0x0200
 
 /* mod_sftp service flags */
 #define SFTP_SERVICE_FL_SFTP		0x0001
@@ -174,7 +182,8 @@ int sftp_kbdint_register_driver(const char *name, sftp_kbdint_driver_t *driver);
 int sftp_kbdint_unregister_driver(const char *name);
 int sftp_kbdint_send_challenge(const char *, const char *, unsigned int,
   sftp_kbdint_challenge_t *);
-int sftp_kbdint_recv_response(pool *, unsigned int *, const char ***);
+int sftp_kbdint_recv_response(pool *, unsigned int, unsigned int *,
+  const char ***);
 
 /* API for modules that which to register keystores, for the
  * SFTPAuthorizedHostKeys and SFTPAuthorizedUserKeys directives.
@@ -192,12 +201,12 @@ typedef struct keystore_st {
 
   /* Verify the given host key.  Returns zero on success, -1 otherwise. */
   int (*verify_host_key)(struct keystore_st *store, pool *p, const char *user,
-    const char *host_fqdn, const char *host_user, char *host_key,
+    const char *host_fqdn, const char *host_user, unsigned char *host_key,
     uint32_t host_keylen);
 
   /* Verify the given user key.  Returns zero on success, -1 otherwise. */
   int (*verify_user_key)(struct keystore_st *store, pool *p, const char *user,
-    char *user_key, uint32_t user_keylen);
+    unsigned char *user_key, uint32_t user_keylen);
 
   /* Close this keystore, clean up any allocated resources.  Returns
    * zero on success, -1 otherwise (with errno set appropriately).
@@ -215,7 +224,8 @@ int sftp_keystore_register_store(const char *,
 int sftp_keystore_unregister_store(const char *, unsigned int);
 
 /* For use by keystore backend modules. */
-int sftp_keys_compare_keys(pool *, char *, uint32_t, char *, uint32_t);
+int sftp_keys_compare_keys(pool *, unsigned char *, uint32_t, unsigned char *,
+  uint32_t);
 
 /* These strings are part of any RFC4716 key; thus they will be needed by
  * any keystore backend modules.
@@ -236,8 +246,8 @@ int sftp_channel_register_exec_handler(module *, const char *,
   int (*set_params)(pool *, uint32_t, array_header *),
   int (*prep_chan)(uint32_t),
   int (*postopen_chan)(uint32_t),
-  int (*handle_pkt)(pool *, void *, uint32_t, char *, uint32_t),
+  int (*handle_pkt)(pool *, void *, uint32_t, unsigned char *, uint32_t),
   int (*finish_chan)(uint32_t),
-  int (**write_data)(pool *, uint32_t, char *, uint32_t));
+  int (**write_data)(pool *, uint32_t, unsigned char *, uint32_t));
 
 #endif

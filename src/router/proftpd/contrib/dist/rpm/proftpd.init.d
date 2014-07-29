@@ -92,6 +92,12 @@ case "$1" in
 		RETVAL=$?
 		echo
 		;;
+	configtest)
+		echo -n $"Testing $prog configuration: "
+		proftpd -n -t
+		RETVAL=$?
+		echo
+		;;
 	suspend)
 		hash ftpshut >/dev/null 2>&1
 		if [ $? = 0 ]; then

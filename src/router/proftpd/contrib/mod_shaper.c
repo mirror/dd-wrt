@@ -2,7 +2,7 @@
  * ProFTPD: mod_shaper -- a module implementing daemon-wide rate throttling
  *                        via IPC
  *
- * Copyright (c) 2004-2011 TJ Saunders
+ * Copyright (c) 2004-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * This is mod_shaper, contrib software for proftpd 1.2 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_shaper.c,v 1.13 2011/05/23 20:56:40 castaglia Exp $
+ * $Id: mod_shaper.c,v 1.18 2013/10/13 22:51:36 castaglia Exp $
  */
 
 #include "conf.h"
@@ -141,15 +141,43 @@ static int shaper_table_send(void);
 
 static key_t shaper_get_key(const char *path) {
   pr_fh_t *fh;
+  struct stat st;
 
   /* ftok() uses stat(2) on the given path, which means that it needs to exist.
    */
   fh = pr_fsio_open(path, O_WRONLY|O_CREAT);
-  if (!fh) {
+  if (fh == NULL) {
+    int xerrno = errno;
+
     (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
-      "error opening '%s': %s", path, strerror(errno));
+      "error opening '%s': %s", path, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
+
+  if (pr_fsio_fstat(fh, &st) < 0) {
+    int xerrno = errno;
+
+    (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
+      "error checking '%s': %s", path, strerror(xerrno));
+
+    pr_fsio_close(fh);
+    errno = xerrno;
+    return -1;
+  }
+
+  if (S_ISDIR(st.st_mode)) {
+    int xerrno = EISDIR;
+
+    (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
+      "error using '%s': %s", path, strerror(xerrno));
+
+    pr_fsio_close(fh);
+    errno = xerrno;
+    return -1;
+  }
+
   pr_fsio_close(fh);
 
   return ftok(path, SHAPER_PROJ_ID);
@@ -213,7 +241,7 @@ static int shaper_msg_recv(void) {
 
   msg = malloc(sizeof(struct shaper_msg) + msgsz - sizeof(msg->mtext));
   if (msg == NULL) {
-    pr_log_pri(PR_LOG_CRIT, "Out of memory!");
+    pr_log_pri(PR_LOG_ALERT, MOD_SHAPER_VERSION ": Out of memory!");
     pr_session_disconnect(&shaper_module, PR_SESS_DISCONNECT_NOMEM, NULL);
   }
 
@@ -264,7 +292,7 @@ static int shaper_msg_send(pid_t dst_pid, unsigned int prio,
 
   msg = malloc(sizeof(struct shaper_msg) + msgsz - sizeof(msg->mtext));
   if (msg == NULL) {
-    pr_log_pri(PR_LOG_CRIT, "Out of memory!");
+    pr_log_pri(PR_LOG_ALERT, MOD_SHAPER_VERSION ": Out of memory!");
     pr_session_disconnect(&shaper_module, PR_SESS_DISCONNECT_NOMEM, NULL);
   }
 
@@ -361,7 +389,7 @@ static void shaper_msg_clear(pid_t dst_pid) {
 
   msg = malloc(sizeof(struct shaper_msg) + msgsz - sizeof(msg->mtext));
   if (msg == NULL) {
-    pr_log_pri(PR_LOG_CRIT, "Out of memory!");
+    pr_log_pri(PR_LOG_ALERT, MOD_SHAPER_VERSION ": Out of memory!");
     pr_session_disconnect(&shaper_module, PR_SESS_DISCONNECT_NOMEM, NULL);
   }
 
@@ -2146,18 +2174,51 @@ static void shaper_postparse_ev(const void *event_data, void *user_data) {
 
   if (shaper_tab_path) {
     pr_fh_t *fh;
+    int xerrno;
+    struct stat st;
 
     PRIVS_ROOT
     fh = pr_fsio_open(shaper_tab_path, O_RDWR|O_CREAT);
+    xerrno = errno;
     PRIVS_RELINQUISH
 
     if (fh == NULL) {
       (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
         "error opening ShaperTable '%s': %s", shaper_tab_path,
-        strerror(errno));
+        strerror(xerrno));
       pr_log_debug(DEBUG0, MOD_SHAPER_VERSION
         ": error opening ShaperTable '%s': %s", shaper_tab_path,
-        strerror(errno));
+        strerror(xerrno));
+      pr_session_disconnect(&shaper_module, PR_SESS_DISCONNECT_BAD_CONFIG,
+        NULL);
+    }
+
+    if (pr_fsio_fstat(fh, &st) < 0) {
+      xerrno = errno;
+
+      (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
+        "error checking ShaperTable '%s': %s", shaper_tab_path,
+        strerror(xerrno));
+      pr_log_debug(DEBUG0, MOD_SHAPER_VERSION
+        ": error checking ShaperTable '%s': %s", shaper_tab_path,
+        strerror(xerrno));
+
+      pr_fsio_close(fh);
+      pr_session_disconnect(&shaper_module, PR_SESS_DISCONNECT_BAD_CONFIG,
+        NULL);
+    }
+
+    if (S_ISDIR(st.st_mode)) {
+      xerrno = EISDIR;
+
+      (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
+        "error using ShaperTable '%s': %s", shaper_tab_path,
+        strerror(xerrno));
+      pr_log_debug(DEBUG0, MOD_SHAPER_VERSION
+        ": error using ShaperTable '%s': %s", shaper_tab_path,
+        strerror(xerrno));
+      
+      pr_fsio_close(fh);
       pr_session_disconnect(&shaper_module, PR_SESS_DISCONNECT_BAD_CONFIG,
         NULL);
     }
@@ -2299,11 +2360,11 @@ static int shaper_init(void) {
   shaper_tab.nsessions = 0;
 
   if (pr_ctrls_register(&shaper_module, "shaper", "tune mod_shaper settings",
-      shaper_handle_shaper) < 0)
-    pr_log_pri(PR_LOG_INFO, MOD_SHAPER_VERSION
+      shaper_handle_shaper) < 0) {
+    pr_log_pri(PR_LOG_NOTICE, MOD_SHAPER_VERSION
       ": error registering 'shaper' control: %s", strerror(errno));
 
-  else {
+  } else {
     register unsigned int i;
 
     for (i = 0; shaper_acttab[i].act_action; i++) {

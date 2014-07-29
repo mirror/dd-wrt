@@ -63,13 +63,14 @@ sub trace_ok {
   my $pid_file = File::Spec->rel2abs("$tmpdir/trace.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/trace.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/trace.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/trace.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -88,7 +89,7 @@ sub trace_ok {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $trace_log = File::Spec->rel2abs("$tmpdir/trace.log");
 
@@ -192,6 +193,9 @@ sub trace_ok {
   }
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -206,13 +210,14 @@ sub trace_ifclass_ok {
   my $pid_file = File::Spec->rel2abs("$tmpdir/trace.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/trace.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/trace.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/trace.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -231,7 +236,7 @@ sub trace_ifclass_ok {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $trace_log = File::Spec->rel2abs("$tmpdir/trace.log");
 
@@ -357,6 +362,9 @@ EOC
   }
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -371,13 +379,14 @@ sub trace_ifuser_ok {
   my $pid_file = File::Spec->rel2abs("$tmpdir/trace.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/trace.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/trace.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/trace.group");
 
   my $user = 'proftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -396,7 +405,7 @@ sub trace_ifuser_ok {
 
   auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
     '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  auth_group_write($auth_group_file, $group, $gid, $user);
 
   my $trace_log = File::Spec->rel2abs("$tmpdir/trace.log");
 
@@ -516,6 +525,9 @@ EOC
   }
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -530,14 +542,14 @@ sub trace_ifgroup_ok {
   my $pid_file = File::Spec->rel2abs("$tmpdir/trace.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/trace.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/trace.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/trace.group");
 
   my $user = 'proftpd';
-  my $group = 'ftpd';
   my $passwd = 'test';
+  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs($tmpdir);
   my $uid = 500;
   my $gid = 500;
@@ -676,6 +688,9 @@ EOC
   }
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -690,7 +705,7 @@ sub trace_level_range_bug3617 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/trace.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/trace.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/trace.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/trace.group");
@@ -819,6 +834,9 @@ sub trace_level_range_bug3617 {
   }
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -833,7 +851,7 @@ sub trace_session_level_range_bug3617 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/trace.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/trace.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/trace.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/trace.group");
@@ -941,9 +959,9 @@ sub trace_session_level_range_bug3617 {
         $self->assert($expected == $trace_level,
           test_msg("Expected trace level $expected, got $trace_level"));
 
-        next unless $trace_channel eq 'signal';
+        next unless $trace_channel eq 'lock';
 
-        $expected = 'signal';
+        $expected = 'lock';
         $self->assert($expected eq $trace_channel,
           test_msg("Expected trace channel '$expected', got '$trace_channel'"));
 
@@ -962,6 +980,9 @@ sub trace_session_level_range_bug3617 {
   }
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 

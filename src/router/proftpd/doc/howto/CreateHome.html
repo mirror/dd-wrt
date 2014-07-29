@@ -1,4 +1,4 @@
-<!-- $Id: CreateHome.html,v 1.6 2010/09/03 18:51:14 castaglia Exp $ -->
+<!-- $Id: CreateHome.html,v 1.7 2012/09/05 17:30:05 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/CreateHome.html,v $ -->
 
 <html>
@@ -41,7 +41,7 @@ configuration directive.
 <b>How to use <code>CreateHome</code></b><br>
 The description for this configuration directive shows its parameters to be:
 <pre>
-  CreateHome off|on [&lt;mode&gt;] [skel &lt;path&gt;] [dirmode &lt;mode&gt;] [uid &lt;uid&gt;] [gid &lt;gid&gt;] [homegid &lt;gid&gt;]
+  CreateHome off|on [&lt;mode&gt;] [skel &lt;path&gt;] [dirmode &lt;mode&gt;] [uid &lt;uid&gt;] [gid &lt;gid&gt;] [homegid &lt;gid&gt;] [NoRootPrivs]
 </pre>
 The first parameter is a simple Boolean, enabling or disabling the
 <code>proftpd</code> daemon's run-time support for home directory creation.
@@ -138,6 +138,9 @@ might use the <code>CreateHome</code> configuration directive:
   <font color=green># Explicitly configure everything, CreateHome-wise</font>
   CreateHome on 711 skel /etc/ftpd/skel dirmode 700
 
+  <font color=green># Explicitly configure everything, CreateHome-wise.  And do NOT use root privileges when
+  # creating the parent directories.</font>
+  CreateHome on 711 skel /etc/ftpd/skel dirmode 700 NoRootPrivs
 </pre>
 
 <p>
@@ -172,7 +175,7 @@ For example:
 
 <p>
 <hr>
-<i>$Date: 2010/09/03 18:51:14 $</i><br>
+<i>$Date: 2012/09/05 17:30:05 $</i><br>
 
 </body>
 </html>

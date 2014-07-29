@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2011 The ProFTPD Project team
+ * Copyright (c) 2009-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: wtmp.c,v 1.5.2.1 2011/12/21 03:09:51 castaglia Exp $
+ * $Id: wtmp.c,v 1.10 2013/12/09 19:16:15 castaglia Exp $
  */
 
 #include "conf.h"
@@ -67,9 +67,16 @@ int log_wtmp(const char *line, const char *name, const char *host,
 
   if (fdx < 0 &&
       (fdx = open(WTMPX_FILE, O_WRONLY|O_APPEND, 0)) < 0) {
-    pr_log_pri(PR_LOG_WARNING, "wtmpx %s: %s", WTMPX_FILE, strerror(errno));
+    int xerrno = errno;
+
+    pr_log_pri(PR_LOG_WARNING, "failed to open wtmpx %s: %s", WTMPX_FILE,
+      strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
+
+  (void) pr_fs_get_usable_fd2(&fdx);
 
   /* Unfortunately, utmp string fields are terminated by '\0' if they are
    * shorter than the size of the field, but if they are exactly the size of
@@ -97,7 +104,7 @@ int log_wtmp(const char *line, const char *name, const char *host,
 #else /* SVR4 */
     utx.ut_syslen = strlen(utx.ut_host)+1;
 
-#  ifdef __sparcv9
+#  if defined(__sparcv9) && !defined(__FreeBSD__)
     time(&t);
     utx.ut_tv.tv_sec = (time32_t)t;
 #  else
@@ -131,9 +138,16 @@ int log_wtmp(const char *line, const char *name, const char *host,
 
   if (fd < 0 &&
       (fd = open(WTMP_FILE, O_WRONLY|O_APPEND, 0)) < 0) {
-    pr_log_pri(PR_LOG_WARNING, "wtmp %s: %s", WTMP_FILE, strerror(errno));
+    int xerrno = errno;
+
+    pr_log_pri(PR_LOG_WARNING, "failed to open wtmp %s: %s", WTMP_FILE,
+      strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
+
+  (void) pr_fs_get_usable_fd2(&fd);
 
   if (fstat(fd, &buf) == 0) {
     memset(&ut, 0, sizeof(ut));

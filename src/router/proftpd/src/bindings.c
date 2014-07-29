@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2012 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Routines to work with ProFTPD bindings
- * $Id: bindings.c,v 1.44.2.1 2012/02/16 23:17:35 castaglia Exp $
+ * $Id: bindings.c,v 1.52 2013/11/09 23:34:34 castaglia Exp $
  */
 
 #include "conf.h"
@@ -33,18 +33,6 @@
   if ((res = pr_namebind_close((n), (a), (p))) < 0) \
     pr_log_pri(PR_LOG_NOTICE, \
       "%s:%d: notice, unable to close namebind '%s': %s", \
-      __FILE__, __LINE__, (n), strerror(errno))
-
-#define PR_CREATE_NAMEBIND(s, n, a, p) \
-  if ((res = pr_namebind_create((s), (n), (a), (p))) < 0) \
-    pr_log_pri(PR_LOG_NOTICE, \
-      "%s:%d: notice: unable to create namebind '%s': %s", \
-      __FILE__, __LINE__, (n), strerror(errno))
-
-#define PR_OPEN_NAMEBIND(n, a, p) \
-  if ((res = pr_namebind_open((n), (a), (p))) < 0) \
-    pr_log_pri(PR_LOG_NOTICE, \
-      "%s:%d: notice: unable to open namebind '%s': %s", \
       __FILE__, __LINE__, (n), strerror(errno))
 
 /* From src/dirtree.c */
@@ -67,14 +55,16 @@ static void server_cleanup_cb(void *conn) {
  * is stolen from Apache's http_vhost.c
  */
 static unsigned int ipbind_hash_addr(pr_netaddr_t *addr) {
-  size_t offset = pr_netaddr_get_inaddr_len(addr);
+  size_t offset;
+  unsigned int key;
+
+  offset = pr_netaddr_get_inaddr_len(addr);
 
   /* The key is the last four bytes of the IP address.
    * For IPv4, this is the entire address, as always.
    * For IPv6, this is usually part of the MAC address.
    */
-  unsigned int key = *(unsigned *) ((char *) pr_netaddr_get_inaddr(addr) +
-    offset - 4);
+  key = *(unsigned *) ((char *) pr_netaddr_get_inaddr(addr) + offset - 4);
 
   key ^= (key >> 16);
   return ((key >> 8) ^ key) % PR_BINDINGS_TABLE_SIZE;
@@ -166,6 +156,10 @@ conn_t *pr_ipbind_get_listening_conn(server_rec *server, pr_netaddr_t *addr,
   lr->pool = p;
   lr->conn = l;
   lr->addr = pr_netaddr_dup(p, addr);
+  if (lr->addr == NULL &&
+      errno != EINVAL) {
+    return NULL;
+  }
   lr->port = port;
   lr->claimed = TRUE;
 
@@ -213,7 +207,7 @@ conn_t *pr_ipbind_accept_conn(fd_set *readfds, int *listenfd) {
          */
         if (listener->mode == CM_ERROR) {
           pr_log_pri(PR_LOG_ERR, "error: unable to accept an incoming "
-            "connection (%s)", strerror(listener->xerrno));
+            "connection: %s", strerror(listener->xerrno));
           listener->xerrno = 0;
           listener->mode = CM_LISTEN;
           return NULL;
@@ -238,8 +232,7 @@ int pr_ipbind_add_binds(server_rec *serv) {
   if (!serv)
     return -1;
 
-  c = find_config(serv->conf, CONF_PARAM, "_bind", FALSE);
-
+  c = find_config(serv->conf, CONF_PARAM, "_bind_", FALSE);
   while (c) {
     listen_conn = NULL;
 
@@ -247,9 +240,9 @@ int pr_ipbind_add_binds(server_rec *serv) {
 
     addr = pr_netaddr_get_addr(serv->pool, c->argv[0], NULL);
     if (addr == NULL) {
-      pr_log_pri(PR_LOG_NOTICE,
+      pr_log_pri(PR_LOG_WARNING,
        "notice: unable to determine IP address of '%s'", (char *) c->argv[0]);
-      c = find_config_next(c, c->next, CONF_PARAM, "_bind", FALSE);
+      c = find_config_next(c, c->next, CONF_PARAM, "_bind_", FALSE);
       continue;
     }
 
@@ -272,7 +265,7 @@ int pr_ipbind_add_binds(server_rec *serv) {
       PR_OPEN_IPBIND(addr, serv->ServerPort, serv->listen, FALSE, FALSE, TRUE);
     }
 
-    c = find_config_next(c, c->next, CONF_PARAM, "_bind", FALSE);
+    c = find_config_next(c, c->next, CONF_PARAM, "_bind_", FALSE);
   }
 
   return 0;
@@ -418,14 +411,11 @@ int pr_ipbind_close_listeners(void) {
 
 int pr_ipbind_create(server_rec *server, pr_netaddr_t *addr,
     unsigned int port) {
-  int res = 0;
   pr_ipbind_t *ipbind = NULL;
-  config_rec *c = NULL;
-  server_rec *s = NULL;
   register unsigned int i = 0;
 
-  if (!server ||
-      !addr) {
+  if (server == NULL||
+      addr == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -438,7 +428,7 @@ int pr_ipbind_create(server_rec *server, pr_netaddr_t *addr,
         ipbind->ib_port == port) {
 
       /* An ipbind already exists for this IP address */
-      pr_log_pri(PR_LOG_NOTICE, "notice: '%s' (%s:%u) already bound to '%s'",
+      pr_log_pri(PR_LOG_WARNING, "notice: '%s' (%s:%u) already bound to '%s'",
         server->ServerName, pr_netaddr_get_ipstr(addr), port,
         ipbind->ib_server->ServerName);
 
@@ -461,24 +451,15 @@ int pr_ipbind_create(server_rec *server, pr_netaddr_t *addr,
   ipbind->ib_islocalhost = FALSE;
   ipbind->ib_isactive = FALSE;
 
-  pr_trace_msg(trace_channel, 8, "created binding for %s#%u, server %p",
+  pr_trace_msg(trace_channel, 8, "created IP binding for %s#%u, server %p",
     pr_netaddr_get_ipstr(ipbind->ib_addr), ipbind->ib_port, ipbind->ib_server);
 
   /* Add the ipbind to the table. */
-  if (ipbind_table[i])
+  if (ipbind_table[i]) {
     ipbind->ib_next = ipbind_table[i];
-
-  ipbind_table[i] = ipbind;
-
-  /* Create any namebinds associated with this server. */
-  c = find_config(server->conf, CONF_NAMED, NULL, FALSE);
-
-  while (c) {
-    s = (server_rec *) c->argv[0];
-    PR_CREATE_NAMEBIND(s, c->name, server->addr, server->ServerPort);
-    c = find_config_next(c, c->next, CONF_NAMED, NULL, FALSE);
   }
 
+  ipbind_table[i] = ipbind;
   return 0;
 }
 
@@ -490,8 +471,9 @@ pr_ipbind_t *pr_ipbind_find(pr_netaddr_t *addr, unsigned int port,
   for (ipbind = ipbind_table[i]; ipbind; ipbind = ipbind->ib_next) {
 
     if (skip_inactive &&
-        !ipbind->ib_isactive)
+        !ipbind->ib_isactive) {
       continue;
+    }
 
     if (pr_netaddr_cmp(ipbind->ib_addr, addr) == 0 &&
         (!ipbind->ib_port || ipbind->ib_port == port))
@@ -685,7 +667,7 @@ int pr_ipbind_open(pr_netaddr_t *addr, unsigned int port, conn_t *listen_conn,
   int res = 0;
   pr_ipbind_t *ipbind = NULL;
 
-  if (!addr) {
+  if (addr == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -734,8 +716,13 @@ int pr_ipbind_open(pr_netaddr_t *addr, unsigned int port, conn_t *listen_conn,
     for (i = 0; i < ipbind->ib_namebinds->nelts; i++) {
       pr_namebind_t *nb = namebinds[i];
 
-      PR_OPEN_NAMEBIND(nb->nb_name, nb->nb_server->addr,
+      res = pr_namebind_open(nb->nb_name, nb->nb_server->addr,
         nb->nb_server->ServerPort);
+      if (res < 0) {
+        pr_log_pri(PR_LOG_NOTICE,
+          "%s:%d: notice: unable to open namebind '%s': %s", __FILE__,
+          __LINE__, nb->nb_name, strerror(errno));
+      }
     }
   }
 
@@ -770,14 +757,42 @@ int pr_namebind_create(server_rec *server, const char *name,
   pr_ipbind_t *ipbind = NULL;
   pr_namebind_t *namebind = NULL, **namebinds = NULL;
 
-  if (!server ||
-      !name) {
+  if (server == NULL ||
+      name == NULL) {
     errno = EINVAL;
     return -1;
   }
 
   /* First, find the ipbind to hold this namebind. */
   ipbind = pr_ipbind_find(addr, port, FALSE);
+
+  if (ipbind == NULL) {
+    pr_netaddr_t wildcard_addr;
+    int addr_family;
+
+    /* If not found, look for the wildcard address. */
+
+    addr_family = pr_netaddr_get_family(addr);
+    pr_netaddr_clear(&wildcard_addr);
+    pr_netaddr_set_family(&wildcard_addr, addr_family);
+    pr_netaddr_set_sockaddr_any(&wildcard_addr);
+
+    ipbind = pr_ipbind_find(&wildcard_addr, port, FALSE);
+#ifdef PR_USE_IPV6
+    if (ipbind == FALSE &&
+        addr_family == AF_INET6 &&
+        pr_netaddr_use_ipv6()) {
+
+      /* No IPv6 wildcard address found; try the IPv4 wildcard address. */
+      pr_netaddr_clear(&wildcard_addr);
+      pr_netaddr_set_family(&wildcard_addr, AF_INET);
+      pr_netaddr_set_sockaddr_any(&wildcard_addr);
+
+      ipbind = pr_ipbind_find(&wildcard_addr, port, FALSE);
+    }
+#endif /* PR_USE_IPV6 */
+  }
+
   if (ipbind == NULL) {
     errno = ENOENT;
     return -1;
@@ -794,9 +809,20 @@ int pr_namebind_create(server_rec *server, const char *name,
     /* See if there is already a namebind for the given name. */
     for (i = 0; i < ipbind->ib_namebinds->nelts; i++) {
       namebind = namebinds[i];
-      if (namebind && namebind->nb_name && !strcmp(namebind->nb_name, name)) {
-        errno = EEXIST;
-        return -1;
+      if (namebind != NULL &&
+          namebind->nb_name != NULL) {
+
+        /* DNS names are case-insensitive, hence the case-insensitive check
+         * here.
+         *
+         * XXX Ideally, we should check whether any existing namebinds which
+         * are globs will match the newly added namebind as well.
+         */
+
+        if (strcasecmp(namebind->nb_name, name) == 0) {
+          errno = EEXIST;
+          return -1;
+        }
       }
     }
   }
@@ -806,22 +832,27 @@ int pr_namebind_create(server_rec *server, const char *name,
   namebind->nb_server = server;
   namebind->nb_isactive = FALSE;
 
-  /* Inherit server fields from the container server */
-  namebind->nb_server->ServerAdmin = (namebind->nb_server->ServerAdmin ?
-    namebind->nb_server->ServerAdmin : server->ServerAdmin ?
-    server->ServerAdmin : main_server->ServerAdmin);
+  if (pr_str_is_fnmatch(name) == TRUE) {
+    namebind->nb_iswildcard = TRUE;
+  }
 
-  /* These three assignments enforce the use of DNS names as HOST names.
-   * Use of DNS names is not a requirement, so in order to be very flexible,
-   * these may need to change...
+  pr_trace_msg(trace_channel, 8,
+    "created named binding '%s' for %s#%u, server %p", name,
+    pr_netaddr_get_ipstr(server->addr), server->ServerPort, server->ServerName);
+
+  /* The given server should already have the following populated:
+   *
+   *  server->ServerName
+   *  server->ServerAddress
+   *  server->ServerFQDN
    */
-  namebind->nb_server->ServerName = (namebind->nb_server->ServerName ?
-    namebind->nb_server->ServerName : (char *) name);
-  namebind->nb_server->ServerAddress = (server->ServerAddress ?
-    server->ServerAddress : main_server->ServerAddress);
-  namebind->nb_server->ServerFQDN = (server->ServerFQDN ?
-    server->ServerFQDN : main_server->ServerFQDN);
 
+  /* These TCP socket tweaks will not apply to the control connection (it will
+   * already have been established by the time this named vhost is used),
+   * but WILL apply to any data connections established to this named vhost.
+   */
+
+#if 0
   namebind->nb_server->tcp_mss_len = (server->tcp_mss_len ?
     server->tcp_mss_len : main_server->tcp_mss_len);
   namebind->nb_server->tcp_rcvbuf_len = (server->tcp_rcvbuf_len ?
@@ -833,12 +864,17 @@ int pr_namebind_create(server_rec *server, const char *name,
   namebind->nb_server->tcp_sndbuf_override = (server->tcp_sndbuf_override ?
     TRUE : main_server->tcp_sndbuf_override);
 
+  /* XXX Shouldn't need these; the ipbind container handles all of the
+   * connection (listener, port, addr) stuff.
+   */
+
   namebind->nb_server->addr = (server->addr ? server->addr :
     main_server->addr);
   namebind->nb_server->ServerPort = (server->ServerPort ? server->ServerPort :
     main_server->ServerPort);
   namebind->nb_listener = (server->listen ? server->listen :
     main_server->listen);
+#endif
 
   *((pr_namebind_t **) push_array(ipbind->ib_namebinds)) = namebind;
   return 0;
@@ -849,14 +885,42 @@ pr_namebind_t *pr_namebind_find(const char *name, pr_netaddr_t *addr,
   pr_ipbind_t *ipbind = NULL;
   pr_namebind_t *namebind = NULL;
 
-  if (!name ||
-      !addr) {
+  if (name == NULL ||
+      addr == NULL) {
     errno = EINVAL;
     return NULL;
   }
 
   /* First, find an active ipbind for the given addr/port */
   ipbind = pr_ipbind_find(addr, port, skip_inactive);
+
+  if (ipbind == NULL) {
+    pr_netaddr_t wildcard_addr;
+    int addr_family;
+
+    /* If not found, look for the wildcard address. */
+
+    addr_family = pr_netaddr_get_family(addr);
+    pr_netaddr_clear(&wildcard_addr);
+    pr_netaddr_set_family(&wildcard_addr, addr_family);
+    pr_netaddr_set_sockaddr_any(&wildcard_addr);
+
+    ipbind = pr_ipbind_find(&wildcard_addr, port, FALSE);
+#ifdef PR_USE_IPV6
+    if (ipbind == FALSE &&
+        addr_family == AF_INET6 &&
+        pr_netaddr_use_ipv6()) {
+
+      /* No IPv6 wildcard address found; try the IPv4 wildcard address. */
+      pr_netaddr_clear(&wildcard_addr);
+      pr_netaddr_set_family(&wildcard_addr, AF_INET);
+      pr_netaddr_set_sockaddr_any(&wildcard_addr);
+
+      ipbind = pr_ipbind_find(&wildcard_addr, port, FALSE);
+    }
+#endif /* PR_USE_IPV6 */
+  }
+
   if (ipbind == NULL) {
     errno = ENOENT;
     return NULL;
@@ -873,10 +937,11 @@ pr_namebind_t *pr_namebind_find(const char *name, pr_netaddr_t *addr,
       namebind = namebinds[i];
 
       /* Skip inactive namebinds */
-      if (skip_inactive &&
-          namebind &&
-          !namebind->nb_isactive)
+      if (skip_inactive == TRUE &&
+          namebind != NULL &&
+          namebind->nb_isactive == FALSE) {
         continue;
+      }
 
       /* At present, this looks for an exactly matching name.  In the future,
        * we may want to have something like Apache's matching scheme, which
@@ -884,10 +949,28 @@ pr_namebind_t *pr_namebind_find(const char *name, pr_netaddr_t *addr,
        * that scheme, however, is specific to DNS; should any other naming
        * scheme be desired, that sort of matching will be unnecessary.
        */
-      if (namebind &&
-          namebind->nb_name &&
-          strcmp(namebind->nb_name, name) == 0)
-        return namebind;
+      if (namebind != NULL &&
+          namebind->nb_name != NULL) {
+
+        if (namebind->nb_iswildcard == FALSE) {
+          if (strcasecmp(namebind->nb_name, name) == 0)
+            return namebind;
+          }
+
+        } else {
+          int match_flags = PR_FNM_NOESCAPE|PR_FNM_CASEFOLD;
+
+          if (pr_fnmatch(namebind->nb_name, name, match_flags) == 0) {
+            pr_trace_msg(trace_channel, 9,
+              "matched name '%s' against pattern '%s'", name,
+              namebind->nb_name);
+            return namebind;
+          }
+
+          pr_trace_msg(trace_channel, 9,
+            "failed to match name '%s' against pattern '%s'", name,
+            namebind->nb_name);
+        }
     }
   }
 
@@ -909,8 +992,8 @@ server_rec *pr_namebind_get_server(const char *name, pr_netaddr_t *addr,
 int pr_namebind_open(const char *name, pr_netaddr_t *addr, unsigned int port) {
   pr_namebind_t *namebind = NULL;
 
-  if (!name ||
-      !addr) {
+  if (name == NULL ||
+      addr == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -970,11 +1053,16 @@ static int init_inetd_bindings(void) {
 
   /* Fill in all the important connection information. */
   if (pr_inet_get_conn_info(main_server->listen, STDIN_FILENO) == -1) {
-    pr_log_pri(PR_LOG_ERR, "fatal: %s", strerror(errno));
+    int xerrno = errno;
 
-    if (errno == ENOTSOCK)
+    pr_log_pri(PR_LOG_WARNING, "fatal: unable to get connection info: %s",
+      strerror(xerrno));
+
+    if (xerrno == ENOTSOCK) {
       pr_log_pri(PR_LOG_ERR, "(Running from command line? "
         "Use `ServerType standalone' in config file!)");
+    }
+
     exit(1);
   }
 
@@ -1038,8 +1126,10 @@ static int init_standalone_bindings(void) {
         pr_inet_set_default_family(NULL, AF_INET6);
 
       } else {
-        pr_inet_set_default_family(NULL,
-          pr_netaddr_get_family(main_server->addr));
+        int default_family;
+
+        default_family = pr_netaddr_get_family(main_server->addr);
+        pr_inet_set_default_family(NULL, default_family);
       }
 #else
       pr_inet_set_default_family(NULL,
@@ -1059,8 +1149,9 @@ static int init_standalone_bindings(void) {
 
   default_server = get_param_ptr(main_server->conf, "DefaultServer", FALSE);
   if (default_server != NULL &&
-      *default_server == TRUE)
+      *default_server == TRUE) {
     is_default = TRUE;
+  }
 
   if (main_server->ServerPort ||
       is_default) {
@@ -1071,14 +1162,49 @@ static int init_standalone_bindings(void) {
   }
 
   for (serv = main_server->next; serv; serv = serv->next) {
-    if (serv->ServerPort != main_server->ServerPort || SocketBindTight ||
+    config_rec *c;
+    int is_namebind = FALSE;
+
+    /* See if this server is a namebind, to be part of an existing ipbind. */
+    c = find_config(serv->conf, CONF_PARAM, "ServerAlias", FALSE);
+    while (c != NULL) {
+      pr_signals_handle();
+
+      res = pr_namebind_create(serv, c->argv[0], serv->addr, serv->ServerPort);
+      if (res == 0) {
+        is_namebind = TRUE;
+
+        res = pr_namebind_open(c->argv[0], serv->addr, serv->ServerPort);
+        if (res < 0) {
+          pr_log_pri(PR_LOG_NOTICE,
+            "%s:%d: notice: unable to open namebind '%s': %s", __FILE__,
+            __LINE__, (char *) c->argv[0], strerror(errno));
+        }
+
+      } else {
+        pr_log_pri(PR_LOG_NOTICE,
+          "unable to create namebind for '%s' to %s#%u: %s",
+          (char *) c->argv[0], pr_netaddr_get_ipstr(serv->addr),
+          serv->ServerPort, strerror(errno));
+      }
+
+      c = find_config_next(c, c->next, CONF_PARAM, "ServerAlias", FALSE);
+    }
+
+    if (is_namebind == TRUE) {
+      continue;
+    }
+
+    if (serv->ServerPort != main_server->ServerPort ||
+        SocketBindTight ||
         !main_server->listen) {
       is_default = FALSE;
 
       default_server = get_param_ptr(serv->conf, "DefaultServer", FALSE);
       if (default_server != NULL &&
-          *default_server == TRUE)
+          *default_server == TRUE) {
         is_default = TRUE;
+      }
 
       if (serv->ServerPort) {
         if (!SocketBindTight) {
@@ -1186,7 +1312,5 @@ void init_bindings(void) {
       "Unable to start proftpd; check logs for more details");
     exit(1);
   }
-
-  return;
 }
 

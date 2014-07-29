@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp services
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2012 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: service.c,v 1.6 2011/05/23 21:03:12 castaglia Exp $
+ * $Id: service.c,v 1.8 2012/02/15 23:50:51 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -35,7 +35,8 @@ static pool *service_pool = NULL;
 static const char *trace_channel = "ssh2";
 
 static int read_service_req(struct ssh2_packet *pkt, char **service) {
-  char *buf, *service_name;
+  unsigned char *buf;
+  char *service_name;
   uint32_t buflen;
   cmd_rec *cmd;
 
@@ -47,7 +48,7 @@ static int read_service_req(struct ssh2_packet *pkt, char **service) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "SERVICE_REQUEST"));
   cmd->arg = service_name;
-  cmd->class = CL_MISC;
+  cmd->cmd_class = CL_MISC;
 
   if (strncmp(service_name, "ssh-userauth", 13) == 0 ||
       strncmp(service_name, "ssh-connection", 14) == 0) {
@@ -66,7 +67,7 @@ static int read_service_req(struct ssh2_packet *pkt, char **service) {
 }
 
 static int write_service_accept(struct ssh2_packet *pkt, const char *service) {
-  char *buf, *ptr;
+  unsigned char *buf, *ptr;
   uint32_t buflen, bufsz = 1024;
 
   buflen = bufsz;

@@ -21,13 +21,22 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * $Id: keys.h,v 1.4.2.2 2012/03/13 19:05:55 castaglia Exp $
+ * $Id: keys.h,v 1.9 2012/03/13 18:58:48 castaglia Exp $
  */
 
 #include "mod_sftp.h"
 
 #ifndef MOD_SFTP_KEYS_H
 #define MOD_SFTP_KEYS_H
+
+enum sftp_key_type_e {
+  SFTP_KEY_UNKNOWN = 0,
+  SFTP_KEY_DSA,
+  SFTP_KEY_RSA,
+  SFTP_KEY_ECDSA_256,
+  SFTP_KEY_ECDSA_384,
+  SFTP_KEY_ECDSA_521
+};
 
 /* Returns a string of colon-separated lowercase hex characters, representing
  * the key "fingerprint" which has been run through the specified digest
@@ -36,21 +45,28 @@
  * As per draft-ietf-secsh-fingerprint-00, only MD5 fingerprints are currently
  * supported.
  */
-const char *sftp_keys_get_fingerprint(pool *, char *, uint32_t, int);
+const char *sftp_keys_get_fingerprint(pool *, unsigned char *, uint32_t, int);
 #define SFTP_KEYS_FP_DIGEST_MD5		1
 #define SFTP_KEYS_FP_DIGEST_SHA1	2
 
 void sftp_keys_free(void);
-int sftp_keys_get_hostkey(const char *);
-const char *sftp_keys_get_hostkey_data(pool *, int, size_t *);
+int sftp_keys_get_hostkey(pool *p, const char *);
+const unsigned char *sftp_keys_get_hostkey_data(pool *, enum sftp_key_type_e,
+  size_t *);
 void sftp_keys_get_passphrases(void);
 int sftp_keys_have_dsa_hostkey(void);
+int sftp_keys_have_ecdsa_hostkey(pool *, int **);
 int sftp_keys_have_rsa_hostkey(void);
 int sftp_keys_set_passphrase_provider(const char *);
-const char *sftp_keys_sign_data(pool *, int, const unsigned char *, size_t,
-  size_t *);
-int sftp_keys_verify_pubkey_type(pool *, char *, uint32_t, int);
-int sftp_keys_verify_signed_data(pool *, const char *, char *, uint32_t,
-  char *, uint32_t, unsigned char *, size_t);
+const unsigned char *sftp_keys_sign_data(pool *, enum sftp_key_type_e,
+  const unsigned char *, size_t, size_t *);
+#ifdef PR_USE_OPENSSL_ECC
+int sftp_keys_validate_ecdsa_params(const EC_GROUP *, const EC_POINT *);
+#endif /* PR_USE_OPENSSL_ECC */
+int sftp_keys_verify_pubkey_type(pool *, unsigned char *, uint32_t,
+  enum sftp_key_type_e);
+int sftp_keys_verify_signed_data(pool *, const char *,
+  unsigned char *, uint32_t, unsigned char *, uint32_t,
+  unsigned char *, size_t);
 
 #endif

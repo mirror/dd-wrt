@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2011 The ProFTPD Project team
+ * Copyright (c) 2003-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 /* Network address API
- * $Id: netaddr.h,v 1.28 2011/05/23 20:35:35 castaglia Exp $
+ * $Id: netaddr.h,v 1.36 2013/12/23 17:53:42 castaglia Exp $
  */
 
 #ifndef PR_NETADDR_H
@@ -232,6 +232,12 @@ void pr_netaddr_clear(pr_netaddr_t *);
  */
 pr_netaddr_t *pr_netaddr_get_addr(pool *, const char *, array_header **);
 
+/* Like pr_netaddr_get_addr(), with the ability to specify lookup flags. */
+pr_netaddr_t *pr_netaddr_get_addr2(pool *, const char *, array_header **,
+  unsigned int);
+#define PR_NETADDR_GET_ADDR_FL_INCL_DEVICE	0x001
+#define PR_NETADDR_GET_ADDR_FL_EXCL_DNS		0x002
+
 /* Compare the two given pr_netaddr_ts.  In order for the comparison to
  * be accurate, the pr_netaddr_ts must be of the same family (AF_INET or
  * AF_INET6).  In the case where the pr_netaddr_ts are from different
@@ -314,9 +320,16 @@ int pr_netaddr_set_sockaddr_any(pr_netaddr_t *);
 unsigned int pr_netaddr_get_port(const pr_netaddr_t *);
 
 /* Sets the port on the contained struct sockaddr *.  Returns 0 on success,
- * or -1 on error (as when NULL is given as the argument).
+ * or -1 on error (as when NULL is given as the argument). Note that the
+ * given port number is assumed to be in network byte order already.
  */
 int pr_netaddr_set_port(pr_netaddr_t *, unsigned int);
+
+/* Sets the port on the contained struct sockaddr *.  Returns 0 on success,
+ * or -1 on error (as when NULL is given as the argument). Note that the
+ * given port number is assumed to be in host byte order.
+ */
+int pr_netaddr_set_port2(pr_netaddr_t *, unsigned int);
 
 /* Enables or disable use of reverse DNS lookups.  Returns the previous
  * setting.
@@ -360,6 +373,22 @@ uint32_t pr_netaddr_get_addrno(const pr_netaddr_t *);
  * FALSE otherwise.
  */
 int pr_netaddr_is_loopback(const pr_netaddr_t *);
+
+/* Returns TRUE if the given pr_netaddr_t contains an RFC1918 address,
+ * FALSE otherwise.  Note that -1 will be returned if there was an error,
+ * with errno set appropriately.
+ */
+int pr_netaddr_is_rfc1918(const pr_netaddr_t *);
+
+/* Returns TRUE if the given string is an IPv4 address, FALSE if not, and -1
+ * (with errno set appropriately) if there was an error.
+ */
+int pr_netaddr_is_v4(const char *);
+
+/* Returns TRUE if the given string is an IPv6 address, FALSE if not, and -1
+ * (with errno set appropriately) if there was an error.
+ */
+int pr_netaddr_is_v6(const char *);
 
 /* Returns TRUE if the given pr_netaddr_t is of the AF_INET6 family and
  * contains an IPv4-mapped IPv6 address; otherwise FALSE is returned.  A

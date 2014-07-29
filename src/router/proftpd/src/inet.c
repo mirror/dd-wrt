@@ -25,7 +25,7 @@
  */
 
 /* Inet support functions, many wrappers for netdb functions
- * $Id: inet.c,v 1.135.2.5 2013/04/23 15:14:41 castaglia Exp $
+ * $Id: inet.c,v 1.156 2013/10/07 05:51:30 castaglia Exp $
  */
 
 #include "conf.h"
@@ -132,8 +132,12 @@ conn_t *pr_inet_copy_conn(pool *p, conn_t *c) {
   if (c->local_addr) {
     res->local_addr = pr_netaddr_alloc(res->pool);
 
-    pr_netaddr_set_family(res->local_addr,
-      pr_netaddr_get_family(c->local_addr));
+    if (pr_netaddr_set_family(res->local_addr,
+        pr_netaddr_get_family(c->local_addr)) < 0) {
+      destroy_pool(res->pool);
+      return NULL;
+    }
+
     pr_netaddr_set_sockaddr(res->local_addr,
       pr_netaddr_get_sockaddr(c->local_addr));
   }
@@ -141,14 +145,19 @@ conn_t *pr_inet_copy_conn(pool *p, conn_t *c) {
   if (c->remote_addr) {
     res->remote_addr = pr_netaddr_alloc(res->pool);
 
-    pr_netaddr_set_family(res->remote_addr,
-      pr_netaddr_get_family(c->remote_addr));
+    if (pr_netaddr_set_family(res->remote_addr,
+        pr_netaddr_get_family(c->remote_addr)) < 0) {
+      destroy_pool(res->pool);
+      return NULL;
+    }
+
     pr_netaddr_set_sockaddr(res->remote_addr,
       pr_netaddr_get_sockaddr(c->remote_addr));
   }
 
-  if (c->remote_name)
+  if (c->remote_name) {
     res->remote_name = pstrdup(res->pool, c->remote_name);
+  }
 
   register_cleanup(res->pool, (void *) res, conn_cleanup_cb, conn_cleanup_cb);
   return res;
@@ -194,11 +203,12 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
      * support is enabled), otherwise use IPv4.
      */
 #ifdef PR_USE_IPV6
-    if (pr_netaddr_use_ipv6())
+    if (pr_netaddr_use_ipv6()) {
       addr_family = AF_INET6;
 
-    else
+    } else {
       addr_family = AF_INET;
+    }
 #else
     addr_family = AF_INET;
 #endif /* PR_USE_IPV6 */
@@ -220,69 +230,84 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
      * to _all_ BSDs.)
      */
 
+    if (port != INPORT_ANY) {
 #if defined(SOLARIS2) || defined(FREEBSD2) || defined(FREEBSD3) || \
     defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
     defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
+    defined(FREEBSD10) || \
     defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(DARWIN6) || defined(DARWIN7) || defined(DARWIN8) || \
     defined(DARWIN9) || defined(DARWIN10) || defined(DARWIN11) || \
     defined(SCO3) || defined(CYGWIN) || defined(SYSV4_2MP) || \
     defined(SYSV5SCO_SV6) || defined(SYSV5UNIXWARE7)
 # ifdef SOLARIS2
-    if (port != INPORT_ANY && port < 1024) {
+      if (port < 1024) {
 # endif
-      pr_signals_block();
-      PRIVS_ROOT
+        pr_signals_block();
+        PRIVS_ROOT
 # ifdef SOLARIS2
-    }
+      }
 # endif
 #endif
+    }
 
     fd = socket(addr_family, SOCK_STREAM, tcp_proto);
+    inet_errno = errno;
 
+    if (port != INPORT_ANY) {
 #if defined(SOLARIS2) || defined(FREEBSD2) || defined(FREEBSD3) || \
     defined(FREEBSD4) || defined(FREEBSD5) || defined(FREEBSD6) || \
     defined(FREEBSD7) || defined(FREEBSD8) || defined(FREEBSD9) || \
+    defined(FREEBSD10) || \
     defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(DARWIN6) || defined(DARWIN7) || defined(DARWIN8) || \
     defined(DARWIN9) || defined(DARWIN10) || defined(DARWIN11) || \
     defined(SCO3) || defined(CYGWIN) || defined(SYSV4_2MP) || \
     defined(SYSV5SCO_SV6) || defined(SYSV5UNIXWARE7)
 # ifdef SOLARIS2
-    if (port != INPORT_ANY && port < 1024) {
+      if (port < 1024) {
 # endif
-      PRIVS_RELINQUISH
-      pr_signals_unblock();
+        PRIVS_RELINQUISH
+        pr_signals_unblock();
 # ifdef SOLARIS2
-    }
+      }
 # endif
 #endif
+    }
 
     if (fd == -1) {
 
       /* On failure, destroy the connection and return NULL. */
-      inet_errno = errno;
-      if (reporting)
-        pr_log_pri(PR_LOG_ERR, "socket() failed in connection initialization: "
-          "%s", strerror(inet_errno));
+      if (reporting) {
+        pr_log_pri(PR_LOG_WARNING,
+          "socket() failed in connection initialization: %s",
+          strerror(inet_errno));
+      }
+
       destroy_pool(c->pool);
+      errno = inet_errno;
       return NULL;
     }
 
     /* Allow address reuse. */
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *) &one,
-        sizeof(one)) < 0)
+        sizeof(one)) < 0) {
       pr_log_pri(PR_LOG_NOTICE, "error setting SO_REUSEADDR: %s",
         strerror(errno));
+    }
 
     /* Allow socket keep-alive messages. */
     if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *) &one,
-        sizeof(one)) < 0)
+        sizeof(one)) < 0) {
       pr_log_pri(PR_LOG_NOTICE, "error setting SO_KEEPALIVE: %s",
         strerror(errno));
+    }
 
     memset(&na, 0, sizeof(na));
-    pr_netaddr_set_family(&na, addr_family);
+    if (pr_netaddr_set_family(&na, addr_family) < 0) {
+      destroy_pool(c->pool);
+      return NULL;
+    }
 
     if (bind_addr) {
       pr_netaddr_set_sockaddr(&na, pr_netaddr_get_sockaddr(bind_addr));
@@ -348,6 +373,11 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
       PRIVS_ROOT
     }
 
+    if (fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) {
+      pr_log_pri(PR_LOG_WARNING, "unable to set CLOEXEC on socket fd %d: %s",
+        fd, strerror(errno));
+    }
+
     /* According to one expert, the very nature of the FTP protocol, and it's
      * multiple data-connections creates problems with "rapid-fire" connections
      * (transfering lots of files) causing an eventual "Address already in use"
@@ -360,16 +390,17 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
       hold_errno = errno;
 
       if (res == -1 &&
-          errno == EINTR) {
+          hold_errno == EINTR) {
         pr_signals_handle();
-	i++;
-	continue;
+        i++;
+        continue;
       }
 
       if (res != -1 ||
-          errno != EADDRINUSE ||
-	  (port != INPORT_ANY && !retry_bind))
+          hold_errno != EADDRINUSE ||
+          (port != INPORT_ANY && !retry_bind)) {
         break;
+      }
 
       if (port != INPORT_ANY &&
           port < 1024) {
@@ -397,12 +428,17 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
         pr_log_pri(PR_LOG_ERR, "Failed binding to %s, port %d: %s",
           pr_netaddr_get_ipstr(&na), port, strerror(hold_errno));
         pr_log_pri(PR_LOG_ERR, "Check the ServerType directive to ensure "
-          "you are configured correctly.");
+          "you are configured correctly");
+        pr_log_pri(PR_LOG_ERR, "Check to see if inetd/xinetd, or another "
+          "proftpd instance, is already using %s, port %d",
+          pr_netaddr_get_ipstr(&na), port);
       }
 
       inet_errno = hold_errno;
       destroy_pool(c->pool);
-      close(fd);
+      (void) close(fd);
+
+      errno = inet_errno;
       return NULL;
     }
 
@@ -418,8 +454,9 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
 
     salen = pr_netaddr_get_sockaddr_len(&na);
     if (getsockname(fd, pr_netaddr_get_sockaddr(&na), &salen) == 0) {
-      if (!c->local_addr)
+      if (c->local_addr == NULL) {
         c->local_addr = pr_netaddr_alloc(c->pool);
+      }
 
       pr_netaddr_set_family(c->local_addr, pr_netaddr_get_family(&na));
       pr_netaddr_set_sockaddr(c->local_addr, pr_netaddr_get_sockaddr(&na));
@@ -432,15 +469,16 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
 
   } else {
     /* Make sure the netaddr has its address family set. */
-    if (pr_netaddr_get_family(&na) == 0)
+    if (pr_netaddr_get_family(&na) == 0) {
       pr_netaddr_set_family(&na, addr_family);
+    }
   }
 
   c->listen_fd = fd;
   register_cleanup(c->pool, (void *) c, conn_cleanup_cb, conn_cleanup_cb);
 
   pr_trace_msg("binding", 4, "bound address %s, port %d to socket fd %d",
-    pr_netaddr_get_ipstr(&na), port, fd);
+    pr_netaddr_get_ipstr(&na), c->local_port, fd);
 
   return c;
 }
@@ -517,7 +555,7 @@ conn_t *pr_inet_create_conn_portrange(pool *p, pr_netaddr_t *bind_addr,
 
       if (!c &&
           inet_errno != EADDRINUSE) {
-        pr_log_pri(PR_LOG_ERR, "error initializing connection: %s",
+        pr_log_pri(PR_LOG_WARNING, "error initializing connection: %s",
           strerror(inet_errno));
         pr_session_disconnect(NULL, PR_SESS_DISCONNECT_BY_APPLICATION, NULL);
       }
@@ -528,6 +566,9 @@ conn_t *pr_inet_create_conn_portrange(pool *p, pr_netaddr_t *bind_addr,
 }
 
 void pr_inet_close(pool *p, conn_t *c) {
+  if (c == NULL) {
+    return;
+  }
 
   /* It is not necessary to close the fds or schedule netio streams for
    * removal, because the creator of the connection (either
@@ -611,6 +652,38 @@ int pr_inet_set_proto_cork(int sockfd, int cork) {
   return res;
 }
 
+int pr_inet_set_proto_nodelay(pool *p, conn_t *conn, int nodelay) {
+
+#if defined(TCP_NODELAY)
+  int res = 0;
+# ifdef SOL_TCP
+  int tcp_level = SOL_TCP;
+# else
+  int tcp_level = tcp_proto;
+# endif /* SOL_TCP */
+
+  if (conn->rfd != -1) {
+    res = setsockopt(conn->rfd, tcp_level, TCP_NODELAY, (void *) &nodelay,
+      sizeof(nodelay));
+    if (res < 0) {
+      pr_log_pri(PR_LOG_NOTICE, "error setting read fd %d TCP_NODELAY %d: %s",
+       conn->rfd, nodelay, strerror(errno));
+    }
+  }
+
+  if (conn->wfd != -1) {
+    res = setsockopt(conn->wfd, tcp_level, TCP_NODELAY, (void *) &nodelay,
+      sizeof(nodelay));
+    if (res < 0) {
+      pr_log_pri(PR_LOG_NOTICE, "error setting write fd %d TCP_NODELAY %d: %s",
+       conn->wfd, nodelay, strerror(errno));
+    }
+  }
+#endif
+
+  return 0;
+}
+
 int pr_inet_set_proto_opts(pool *p, conn_t *c, int mss, int nodelay,
     int tos, int nopush) {
 
@@ -681,9 +754,7 @@ int pr_inet_set_proto_opts(pool *p, conn_t *c, int mss, int nodelay,
 #endif /* TCP_MAXSEG */
 
 #ifdef IP_TOS
-  /* Only set TOS flags on IPv4 sockets; IPv6 sockets don't seem to support
-   * them.
-   */
+  /* Only set TOS flags on IPv4 sockets; IPv6 sockets use TCLASS. */
   if (pr_netaddr_get_family(c->local_addr) == AF_INET) {
     if (c->listen_fd != -1) {
       if (setsockopt(c->listen_fd, ip_level, IP_TOS, (void *) &tos,
@@ -695,23 +766,34 @@ int pr_inet_set_proto_opts(pool *p, conn_t *c, int mss, int nodelay,
   }
 #endif /* IP_TOS */
 
-#ifdef TCP_NOPUSH
-  /* XXX Note: for backward compatibility, we only call set_proto_cork() for
-   * BSD systems.  This condition can be removed in 1.3.5rc1.
-   */
+#ifdef IPV6_TCLASS
+  if (pr_netaddr_use_ipv6()) {
+    /* Only set TCLASS flags on IPv6 sockets; IPv4 sockets use TOS. */
+    if (pr_netaddr_get_family(c->local_addr) == AF_INET6) {
+      if (c->listen_fd != -1) {
+        if (setsockopt(c->listen_fd, ip_level, IPV6_TCLASS, (void *) &tos,
+            sizeof(tos)) < 0) {
+          pr_log_pri(PR_LOG_NOTICE, "error setting listen fd IPV6_TCLASS: %s",
+            strerror(errno));
+        }
+      }
+    }
+  }
+#endif /* IPV6_TCLASS */
+
   if (c->listen_fd != -1) {
     if (pr_inet_set_proto_cork(c->listen_fd, nopush) < 0) {
       pr_log_pri(PR_LOG_NOTICE, "error corking listen fd %d: %s", c->listen_fd,
         strerror(errno));
     }
   }
-#endif /* TCP_NOPUSH */
 
   return 0;
 }
 
 /* Set socket options on a connection.  */
-int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf) {
+int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
+    struct tcp_keepalive *tcp_keepalive) {
 
   /* Linux and "most" newer networking OSes probably use a highly adaptive
    * window size system, which generally wouldn't require user-space
@@ -721,14 +803,90 @@ int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf) {
    */
 
   if (c->listen_fd != -1) {
-    int keepalive = 0;
+    int keepalive = 1;
     int crcvbuf = 0, csndbuf = 0;
     socklen_t len;
+
+    if (tcp_keepalive != NULL) {
+      keepalive = tcp_keepalive->keepalive_enabled;
+    }
 
     if (setsockopt(c->listen_fd, SOL_SOCKET, SO_KEEPALIVE, (void *)
         &keepalive, sizeof(int)) < 0) {
       pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_KEEPALIVE: %s",
         strerror(errno));
+
+    } else {
+      /* We only try to set the TCP keepalive specifics if SO_KEEPALIVE was
+       * set successfully.
+       */
+      pr_trace_msg(trace_channel, 15,
+        "enabled SO_KEEPALIVE on socket fd %d", c->listen_fd);
+
+      if (tcp_keepalive != NULL) {
+        int val = 0;
+
+#ifdef TCP_KEEPIDLE
+        val = tcp_keepalive->keepalive_idle;
+        if (val != -1) {
+# ifdef __DragonFly__
+          /* DragonFly BSD uses millsecs as the KEEPIDLE unit. */
+          val *= 1000;
+# endif /* DragonFly BSD */
+          if (setsockopt(c->listen_fd, SOL_SOCKET, TCP_KEEPIDLE, (void *)
+              &val, sizeof(int)) < 0) {
+            pr_log_pri(PR_LOG_NOTICE,
+              "error setting TCP_KEEPIDLE %d on fd %d: %s", val, c->listen_fd,
+              strerror(errno));
+
+          } else {
+            pr_trace_msg(trace_channel, 15,
+              "enabled TCP_KEEPIDLE %d on socket fd %d", val, c->listen_fd);
+          }
+        }
+#endif /* TCP_KEEPIDLE */
+
+#ifdef TCP_KEEPCNT
+        val = tcp_keepalive->keepalive_count;
+        if (val != -1) {
+          if (setsockopt(c->listen_fd, SOL_SOCKET, TCP_KEEPCNT, (void *)
+              &val, sizeof(int)) < 0) {
+            pr_log_pri(PR_LOG_NOTICE,
+              "error setting TCP_KEEPCNT %d on fd %d: %s", val, c->listen_fd,
+              strerror(errno));
+
+          } else {
+            pr_trace_msg(trace_channel, 15,
+              "enabled TCP_KEEPCNT %d on socket fd %d", val, c->listen_fd);
+          }
+        }
+#endif /* TCP_KEEPCNT */
+
+#ifdef TCP_KEEPINTVL
+        val = tcp_keepalive->keepalive_intvl;
+        if (val != -1) {
+# ifdef __DragonFly__
+          /* DragonFly BSD uses millsecs as the KEEPINTVL unit. */
+          val *= 1000;
+# endif /* DragonFly BSD */
+          if (setsockopt(c->listen_fd, SOL_SOCKET, TCP_KEEPINTVL, (void *)
+              &val, sizeof(int)) < 0) {
+            pr_log_pri(PR_LOG_NOTICE,
+              "error setting TCP_KEEPINTVL %d on fd %d: %s", val, c->listen_fd,
+              strerror(errno));
+
+          } else {
+            pr_trace_msg(trace_channel, 15,
+              "enabled TCP_KEEPINTVL %d on socket fd %d", val, c->listen_fd);
+          }
+        }
+#endif /* TCP_KEEPINTVL */
+
+        /* Avoid compiler warnings on platforms which do not support any
+         * of the above TCP keepalive macros.
+         */
+        (void) val;
+      }
     }
 
     if (sndbuf > 0) {
@@ -837,7 +995,8 @@ int pr_inet_set_nonblock(pool *p, conn_t *c) {
 
   errno = EBADF;		/* Default */
 
-  if (c->mode == CM_LISTEN) {
+  if (c->mode == CM_LISTEN ||
+      c->mode == CM_CONNECT) {
     flags = fcntl(c->listen_fd, F_GETFL);
     res = fcntl(c->listen_fd, F_SETFL, flags|O_NONBLOCK);
 
@@ -862,7 +1021,8 @@ int pr_inet_set_block(pool *p, conn_t *c) {
 
   errno = EBADF;		/* Default */
 
-  if (c->mode == CM_LISTEN) {
+  if (c->mode == CM_LISTEN ||
+      c->mode == CM_CONNECT) {
     flags = fcntl(c->listen_fd, F_GETFL);
     res = fcntl(c->listen_fd, F_SETFL, flags & (U32BITS ^ O_NONBLOCK));
 
@@ -928,7 +1088,12 @@ int pr_inet_connect(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
   pr_netaddr_t remote_na;
   int res = 0;
 
-  pr_inet_set_block(p, c);
+  c->mode = CM_CONNECT;
+  if (pr_inet_set_block(p, c) < 0) {
+    c->mode = CM_ERROR;
+    c->xerrno = errno;
+    return -1;
+  }
 
   /* No need to initialize the remote_na netaddr here, as we're directly
    * copying the data from the given netaddr into that memory area.
@@ -936,8 +1101,6 @@ int pr_inet_connect(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
 
   memcpy(&remote_na, addr, sizeof(remote_na));
   pr_netaddr_set_port(&remote_na, htons(port));
-
-  c->mode = CM_CONNECT;
 
   while (TRUE) {
     if ((res = connect(c->listen_fd, pr_netaddr_get_sockaddr(&remote_na),
@@ -958,6 +1121,7 @@ int pr_inet_connect(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
   c->mode = CM_OPEN;
 
   if (pr_inet_get_conn_info(c, c->listen_fd) < 0) {
+    c->mode = CM_ERROR;
     c->xerrno = errno;
     return -1;
   }
@@ -973,7 +1137,12 @@ int pr_inet_connect(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
 int pr_inet_connect_nowait(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
   pr_netaddr_t remote_na;
 
-  pr_inet_set_nonblock(p, c);
+  c->mode = CM_CONNECT;
+  if (pr_inet_set_nonblock(p, c) < 0) {
+    c->mode = CM_ERROR;
+    c->xerrno = errno;
+    return -1;
+  }
 
   /* No need to initialize the remote_na netaddr here, as we're directly
    * copying the data from the given netaddr into that memory area.
@@ -982,12 +1151,15 @@ int pr_inet_connect_nowait(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
   memcpy(&remote_na, addr, sizeof(remote_na));
   pr_netaddr_set_port(&remote_na, htons(port));
 
-  c->mode = CM_CONNECT;
   if (connect(c->listen_fd, pr_netaddr_get_sockaddr(&remote_na),
       pr_netaddr_get_sockaddr_len(&remote_na)) == -1) {
     if (errno != EINPROGRESS && errno != EALREADY) {
       c->mode = CM_ERROR;
       c->xerrno = errno;
+
+      pr_inet_set_block(c->pool, c);
+
+      errno = c->xerrno;
       return -1;
     }
 
@@ -998,6 +1170,9 @@ int pr_inet_connect_nowait(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
 
   if (pr_inet_get_conn_info(c, c->listen_fd) < 0) {
     c->xerrno = errno;
+
+    pr_inet_set_block(c->pool, c);
+    errno = c->xerrno;
     return -1;
   }
 
@@ -1014,8 +1189,11 @@ int pr_inet_connect_nowait(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
 int pr_inet_accept_nowait(pool *p, conn_t *c) {
   int fd;
 
-  if (c->mode == CM_LISTEN)
-    pr_inet_set_nonblock(c->pool, c);
+  if (c->mode == CM_LISTEN) {
+    if (pr_inet_set_nonblock(c->pool, c) < 0) {
+      return -1;
+    }
+  }
 
   /* A directive could enforce only IPv4 or IPv6 connections here, by
    * actually using a sockaddr argument to accept(2), and checking the
@@ -1298,7 +1476,7 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, pr_netaddr_t *addr, int strm_type,
   res->outstrm = pr_netio_open(res->pool, strm_type, res->wfd, PR_NETIO_IO_WR);
 
   /* Set options on the sockets. */
-  pr_inet_set_socket_opts(res->pool, res, 0, 0);
+  pr_inet_set_socket_opts(res->pool, res, 0, 0, NULL);
   pr_inet_set_block(res->pool, res);
 
   res->mode = CM_OPEN;

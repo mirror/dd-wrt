@@ -27,14 +27,18 @@
  * This is mod_ctrls, contrib software for proftpd 1.2 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_ctrls.c,v 1.50.2.4 2013/05/28 21:04:36 castaglia Exp $
+ * $Id: mod_ctrls.c,v 1.59 2013/12/05 00:11:01 castaglia Exp $
  */
 
 #include "conf.h"
 #include "privs.h"
 #include "mod_ctrls.h"
 
-#define MOD_CTRLS_VERSION "mod_ctrls/0.9.5"
+#define MOD_CTRLS_VERSION	"mod_ctrls/0.9.5"
+
+#ifndef PR_USE_CTRLS
+# error "Controls support required (use --enable-ctrls)"
+#endif
 
 /* Master daemon in standalone mode? (from src/main.c) */
 extern unsigned char is_master;
@@ -103,14 +107,15 @@ static int ctrls_closelog(void) {
 }
 
 static int ctrls_openlog(void) {
-  int logfd, res = 0;
+  int logfd, res = 0, xerrno = 0;
 
   /* Sanity check */
   if (ctrls_logname == NULL)
     return 0;
 
   PRIVS_ROOT
-  res = pr_log_openfile(ctrls_logname, &logfd, 0640);
+  res = pr_log_openfile(ctrls_logname, &logfd, PR_LOG_SYSTEM_MODE);
+  xerrno = errno;
   PRIVS_RELINQUISH
 
   if (res == 0) {
@@ -120,15 +125,15 @@ static int ctrls_openlog(void) {
     if (res == -1) {
       pr_log_pri(PR_LOG_NOTICE, MOD_CTRLS_VERSION
         ": unable to open ControlsLog '%s': %s", ctrls_logname,
-        strerror(errno));
+        strerror(xerrno));
 
     } else if (res == PR_LOG_WRITABLE_DIR) {
-      pr_log_pri(PR_LOG_NOTICE, MOD_CTRLS_VERSION
+      pr_log_pri(PR_LOG_WARNING, MOD_CTRLS_VERSION
         ": unable to open ControlsLog '%s': "
-        "containing directory is world writable", ctrls_logname);
+        "parent directory is world-writable", ctrls_logname);
 
     } else if (res == PR_LOG_SYMLINK) {
-      pr_log_pri(PR_LOG_NOTICE, MOD_CTRLS_VERSION
+      pr_log_pri(PR_LOG_WARNING, MOD_CTRLS_VERSION
         ": unable to open ControlsLog '%s': %s is a symbolic link",
         ctrls_logname, ctrls_logname);
     }
@@ -463,7 +468,7 @@ static int ctrls_listen(const char *sock_file, int flags) {
       int xerrno = errno;
 
       pr_log_pri(PR_LOG_NOTICE, MOD_CTRLS_VERSION
-        ": error duplicating ctrls socket: %s", strerror(errno));
+        ": error duplicating ctrls socket: %s", strerror(xerrno));
       (void) close(sockfd);
 
       errno = xerrno;
@@ -473,6 +478,19 @@ static int ctrls_listen(const char *sock_file, int flags) {
       (void) close(sockfd);
       sockfd = res;
     }
+  }
+
+  if (fcntl(sockfd, F_SETFD, FD_CLOEXEC) < 0) {
+    int xerrno = errno;
+
+    pr_log_pri(PR_LOG_WARNING,
+      "unable to set CLO_EXEC on ctrls socket fd %d: %s", sockfd,
+      strerror(xerrno));
+
+    (void) close(sockfd);
+    errno = xerrno;
+
+    return -1;
   }
 
   if (flags & CTRLS_LISTEN_FL_REMOVE_SOCKET) {
@@ -707,9 +725,10 @@ static int ctrls_timer_cb(CALLBACK_FRAME) {
   if (first) {
     /* Change the ownership on the socket to that configured by the admin */
     PRIVS_ROOT
-    if (chown(ctrls_sock_file, ctrls_sock_uid, ctrls_sock_gid) < 0)
-      pr_log_pri(PR_LOG_INFO, "mod_ctrls: unable to chown local socket: %s",
-        strerror(errno));
+    if (chown(ctrls_sock_file, ctrls_sock_uid, ctrls_sock_gid) < 0) {
+      pr_log_pri(PR_LOG_NOTICE, MOD_CTRLS_VERSION
+        ": unable to chown local socket: %s", strerror(errno));
+    }
     PRIVS_RELINQUISH
 
     first = FALSE;
@@ -1245,10 +1264,11 @@ static int ctrls_init(void) {
     pr_ctrls_init_acl(ctrls_acttab[i].act_acl);
 
     if (pr_ctrls_register(&ctrls_module, ctrls_acttab[i].act_action,
-        ctrls_acttab[i].act_desc, ctrls_acttab[i].act_cb) < 0)
-      pr_log_pri(PR_LOG_INFO, MOD_CTRLS_VERSION
+        ctrls_acttab[i].act_desc, ctrls_acttab[i].act_cb) < 0) {
+      pr_log_pri(PR_LOG_NOTICE, MOD_CTRLS_VERSION
         ": error registering '%s' control: %s",
         ctrls_acttab[i].act_action, strerror(errno));
+    }
   }
 
   /* Make certain the socket ACL is initialized. */

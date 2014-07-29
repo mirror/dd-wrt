@@ -90,7 +90,7 @@ that your FTP server has local address <code>192.168.1.2</code>.
 <p>
 First we need to enable NAT for our FTP server. As <code>root</code>:
 <pre>
-  echo "1">/proc/sys/net/ipv4/ip_forward
+  echo "1"&gt;/proc/sys/net/ipv4/ip_forward
   ipchains -P forward DENY
   ipchains -I forward -s 192.168.1.2 -j MASQ
 </pre>
@@ -167,6 +167,60 @@ Non-public IP addresses are defined by <a href="http://www.faqs.org/rfcs/rfc1918
 <code>172.16.<i>x</i></code> and <code>192.168.0.<i>x</i></code>.
 
 <p>
+<font color=red>Question</font>: I am using the <code>PassivePorts</code>
+directive, but my FTP client still doesn't work.  In the proftpd debug logging,
+I see:
+<pre>
+  May 20 17:00:55 www.example.com proftpd[10078] wwww.example.com (::ffff:1.2.3.4[::ffff:1.2.3.4]): Refused PORT 192,168,1,2,193,116 (address mismatch)
+</pre>
+<font color=blue>Answer</font>: The <code>PORT</code> there means that the
+FTP client is requesting an <i>active</i> data transfer; this means that
+proftpd is being asked to <i>actively</i> connect <b>to</b> the client
+(to the given address 192.168.1.2, port 49524).
+
+<p>
+The first problem is, as the log message indicates, that the IP address
+given in the <code>PORT</code> command, 192.168.1.2, does <b>not</b> match
+the IP address from which the client connected (<i>i.e.</i> 1.2.3.4).  By
+default, proftpd will refuse to create a data transfer connection to anywhere
+<b>except</b> back to the requesting client's IP address; see the
+<a href="../howto/FXP.html"><code>AllowForeignAddress</code></a> directive for
+more information.
+
+<p>
+The next problem is that 192.168.1.2 IP address is not a publicly routable I
+ address; specifically, it is part of an
+<a href="http://www.faqs.org/rfcs/rfc1918.html">RFC 1918</a> address space.
+This means that is <b>not possible</b> for proftpd to connect to that
+address (unless proftpd is located in the same LAN).
+
+<p>
+The solution for these situations is to <i>a)</i> configure proftpd to use
+<b>both</b> <code>PassivePorts</code> <i>and</i> <code>MasqueradeAddress</code>,
+and <i>b)</i> to configure your FTP client to request <i>passive</i> data
+transfers (via the <code>PASV</code> and <code>EPSV</code> commands), rather
+than active data transfers.
+
+<p>
+<font color=red>Question</font>: I am using <code>MasqueradeAddress</code>
+in my config, using the external DNS name for my site, but <code>proftpd</code>
+still returns the internal/LAN IP address in the <code>PASV</code> response.
+Is it a bug?<br>
+<font color=blue>Answer</font>: Most likely not.  If you use something like:
+<pre>
+  MasqueradeAddress <i>ftp.example.com</i>
+</pre>
+and see the internal IP address in the <code>PASV</code> response, it
+suggests that <code>proftpd</code>, when starting up, resolves that DNS name
+from within your LAN, and gets that internal IP address.  Rather than using
+the DNS name, you should explicitly use the external IP address in your
+<code>MasqueradeAddress</code> directive:
+<pre>
+  MasqueradeAddress <i>1.2.3.4</i>
+</pre>
+where "1.2.3.4" is your real external IP address.
+
+<p>
 <font color=red>Question</font>: Can I configure <code>proftpd</code> so that
 it refuses to handle passive transfers?<br>
 <font color=blue>Answer</font>: If you are using a version of
@@ -218,7 +272,7 @@ For those that need to see a concrete example configuration of this:
 <p>
 <hr>
 Contributor: Tobias Ekbom &lt;tobias <i>at</i> vallcom <i>dot</i>com&gt;<br>
-Last Updated: <i>$Date: 2009/10/19 21:08:12 $</i>
+Last Updated: <i>$Date: 2012/05/22 16:31:39 $</i>
 <hr>
 
 <body>

@@ -27,6 +27,11 @@ my $TESTS = {
     test_class => [qw(bug mod_sql_sqlite)],
   },
 
+  hup_allowoverwrite_bug3740 => {
+    order => ++$order,
+    test_class => [qw(bug)],
+  },
+
 };
 
 sub new {
@@ -37,33 +42,6 @@ sub list_tests {
   return testsuite_get_runnable_tests($TESTS);
 }
 
-sub server_restart {
-  my $pid_file = shift;
-  my $count = shift;
-  $count = 1 unless defined($count);
-
-  my $pid;
-  if (open(my $fh, "< $pid_file")) {
-    $pid = <$fh>;
-    chomp($pid);
-    close($fh);
-
-  } else {
-    croak("Can't read $pid_file: $!");
-  }
-
-  for (my $i = 0; $i < $count; $i++) {
-    unless (kill('HUP', $pid)) {
-      print STDERR "Couldn't send SIGHUP to PID $pid: $!\n";
-
-    } else {
-      if ($ENV{TEST_VERBOSE}) {
-        print STDERR "Restart #", $i + 1, ": Sent SIGHUP to PID $pid\n";
-      }
-    }
-  }
-}
-
 sub hup_daemon_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
@@ -72,7 +50,7 @@ sub hup_daemon_ok {
   my $pid_file = File::Spec->rel2abs("$tmpdir/signals.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/signals.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $config = {
     PidFile => $pid_file,
@@ -92,13 +70,12 @@ sub hup_daemon_ok {
 
   # Start server
   server_start($config_file); 
+  sleep(2);
 
   my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-  my ($resp_code, $resp_msg);
-
-  $resp_code = $client->response_code();
-  $resp_msg = $client->response_msg();
+  my $resp_code = $client->response_code();
+  my $resp_msg = $client->response_msg();
 
   my $expected;
     
@@ -114,6 +91,7 @@ sub hup_daemon_ok {
   $config->{ServerIdent} = 'on bar';
   ($port, $config_user, $config_group) = config_write($config_file, $config);
   server_restart($pid_file);
+  sleep(2);
 
   $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
@@ -140,7 +118,7 @@ sub hup_directory_bug3610 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/signals.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/signals.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $user = 'proftpd';
 
@@ -329,6 +307,168 @@ EOC
   $expected = "foo";
   $self->assert($expected eq $resp_msg,
     test_msg("Expected '$expected', got '$resp_msg'"));
+
+  server_stop($pid_file);
+  unlink($log_file);
+}
+
+sub upload_file {
+  my $port = shift;
+  my $user = shift;
+  my $passwd = shift;
+  my $path = shift;
+
+  my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+  $client->login($user, $passwd);
+
+  my $conn = $client->stor_raw($path);
+  unless ($conn) {
+    die("Failed to STOR $path: " . $client->response_code() . " " .
+      $client->response_msg());
+  }
+
+  my $buf = "Hello again\n";
+  $conn->write($buf, length($buf), 30);
+  eval { $conn->close() };
+
+  my $resp_code = $client->response_code();
+  my $resp_msg = $client->response_msg();
+
+  $client->quit();
+
+  my $expected;
+
+  $expected = 226;
+  unless ($resp_code == $expected) {
+    die("Expected response code $expected, got $resp_code");
+  }
+
+  $expected = "Transfer complete";
+  unless ($resp_msg eq $expected) {
+    die("Expected response message '$expected', got '$resp_msg'");
+  }
+
+  return 1;
+}
+
+sub hup_allowoverwrite_bug3740 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/signals.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/signals.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/signals.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    AllowOverwrite => 'on',
+ 
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Add a <VirtualHost> to the config.  This appears to be a key factor
+  # in causing Bug#3740, according to the bug report.
+  if (open(my $fh, ">> $config_file")) {
+    my $vhost_port = $port + 200;
+
+    print $fh <<EOC;
+<VirtualHost 127.0.0.1>
+  Port $vhost_port
+  ServerName "Bug#3740 vhost"
+  ServerIdent on "Bug#3740 vhost"
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $config_file: $!");
+    }
+
+  } else {
+    die("Can't read $config_file: $!");
+  }
+
+  # Start server
+  server_start($config_file); 
+
+  my $nattempts = 10;
+
+  for (my $i = 0; $i < $nattempts; $i++) {
+    if ($ENV{TEST_VERBOSE}) {
+      print STDERR "Upload attempt #", $i + 1, "...";
+    }
+
+    eval { upload_file($port, $user, $passwd, 'test.txt') };
+    if ($@) {
+      my $ex = $@;
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "FAILED\n";
+      }
+
+      server_stop($pid_file);
+      test_append_logfile($log_file, $ex);
+      unlink($log_file);
+
+      die($ex);
+    }
+
+    if ($ENV{TEST_VERBOSE}) {
+      print STDERR "OK\n";
+    }
+
+    server_restart($pid_file);
+  }
 
   server_stop($pid_file);
   unlink($log_file);

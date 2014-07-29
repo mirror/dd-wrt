@@ -21,7 +21,7 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: filter.c,v 1.7 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: filter.c,v 1.8 2011/12/20 22:56:48 castaglia Exp $
  */
 
 #include "conf.h"
@@ -42,7 +42,8 @@ int pr_filter_allow_path(xaset_t *set, const char *path) {
       return PR_FILTER_ERR_FAILS_ALLOW_FILTER;
     }
 
-    pr_trace_msg(trace_channel, 8, "'%s' allowed by PathAllowFilter", path);
+    pr_trace_msg(trace_channel, 8, "'%s' allowed by PathAllowFilter '%s'", path,
+      pr_regexp_get_pattern(pre));
   }
 
   /* Next check any applicable PathDenyFilter. */
@@ -54,7 +55,8 @@ int pr_filter_allow_path(xaset_t *set, const char *path) {
       return PR_FILTER_ERR_FAILS_DENY_FILTER;
     } 
 
-    pr_trace_msg(trace_channel, 8, "'%s' allowed by PathDenyFilter", path);
+    pr_trace_msg(trace_channel, 8, "'%s' allowed by PathDenyFilter '%s'", path,
+      pr_regexp_get_pattern(pre));
   }
 
   return 0;

@@ -1,4 +1,4 @@
-<!-- $Id: ConfigurationTricks.html,v 1.4 2011/03/30 22:27:20 castaglia Exp $ -->
+<!-- $Id: ConfigurationTricks.html,v 1.6 2013/10/06 15:46:36 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/ConfigurationTricks.html,v $ -->
 
 <html>
@@ -19,7 +19,7 @@ tricks when it comes to configuring their FTP server.  These tricks can
 help to make your <code>proftpd.conf</code> smaller, clearer, and easier to
 maintain.
 
-<p>
+<p><a name="ConfigVariables">
 <b>Configuration File Variables</b><br>
 One juicy tidbit of configuration knowledge is the little known
 <code>%u</code> variable.  It will be substituted, during the handling of
@@ -58,7 +58,7 @@ directives:
   <li><code>&lt;Directory&gt;</code>
 </ul>
 
-<p>
+<p><a name="PerUserDirHash">
 <b>Simple Per-User Directory Hashing</b><br>
 Some sites find that they might have large number of users (on the order of
 hundreds to thousands), each with their own home directory.  You might start
@@ -101,7 +101,7 @@ which would result in <code>/home/b/bo/bob/bobsmith</code>.
 Of course, more <a href="http://michaelandrews.typepad.com/the_technical_times/2009/10/creating-a-hashed-directory-structure.html">complex hashing schemes</a>
 can be used, but <code>proftpd</code> does not currently implement them.
 
-<p>
+<p><a name="EnvironVariables">
 <b>Environment Variables</b><br>
 Did you know that you can also substitute environment variables into your
 <code>proftpd.conf</code> as well?  It's true!  ProFTPD started supporting
@@ -134,7 +134,34 @@ Then the configuration file parser will substitute in an empty string, and
 <code>proftpd</code> will probably fail to start, citing a configuration
 error.
 
+<p><a name="ServerRoot">
+Have you ever wanted functionality like Apache's <code>ServerRoot</code>, where
+you specify the root directory for all of your server-related files in one
+place, and then all the other config files relative to that root, so that
+relocating the entire server configuration is much easier?  ProFTPD does not
+have a <code>ServerRoot</code> directive, <b>but</b> using environment
+variables, we can achieve the same thing!
+
 <p>
+At the top of your <code>proftpd.conf</code>, use the
+<a href="../modules/mod_core.html#SetEnv"><code>SetEnv</code></a> directive,
+like so:
+<pre>
+  # Must be set toward start/top of config
+  SetEnv SERVER_ROOT /path/to/proftpd/config/root
+</pre>
+Now, for the any other config file that should be relative to that location,
+use that environment variable, <i>e.g.</i>:
+<pre>
+  PidFile %{env:SERVER_ROOT}/var/run/proftpd.pid
+  SystemLog %{env:SERVER_ROOT}/log/proftpd.log
+</pre>
+If you want to tell <code>proftpd</code> that your config files are now all
+located elsewhere (say for a custom installation), you only need to change
+a single configuration line: the setting of your <code>SERVER_ROOT</code>
+environment variable.
+
+<p><a name="ConditionalConfigFiles">
 <b>Conditional Configuration Files</b><br>
 Another common request or desire to make large sections of your configuration
 conditional.  Maybe you only want some directives to apply to certain
@@ -239,6 +266,36 @@ If you are really ambitious, you can use devious combinations of
 some terse but powerful files.
 
 <p>
+As a demonstration, here is an example making use of environment variables,
+<code>Define</code>, and <code>&lt;IfDefine&gt;</code>.  First, set an
+environment variable, <i>e.g.</i> (assuming Bourne shell syntax):
+<pre>
+  $ USE_BANS=TRUE
+  $ export USE_BANS
+</pre>
+Now start proftpd using the -D command-line option to set a define based
+on the value of that environment variable:
+<pre>
+  $ ./proftpd -DUSE_BANS=$USE_BANS ...
+</pre>
+And in the <code>proftpd.conf</code>, you might have something like:
+<pre>
+  &lt;IfDefine USE_BANS=TRUE&gt;
+    ..
+  &lt;/IfDefine&gt;
+</pre>
+in which case, the directives within that conditional section would be
+in effect when proftpd was started.  On the other hand, to disable those
+configuration directives before starting proftpd, all that you need to do
+now is change the environment variable value:
+<pre>
+  $ USE_BANS=FALSE
+  $ export USE_BANS
+</pre>
+That <code>&lt;IfDefine&gt;</code> section will no longer be in effect
+when proftpd is started.
+
+<p><a name="MultipleDaemonsSameHost">
 <b>Multiple Daemons on Same Host</b><br>
 What if you wanted to run multiple instances of <code>proftpd</code> on the
 same host?  This is actually a prudent idea, for running one production
@@ -346,7 +403,7 @@ will use the test server configuration.  Omitting the <code>-D</code>
 option on the command-line will cause <code>proftpd</code> to use the
 production configuration.
 
-<p>
+<p><a name="TransferPriority">
 <b>Reducing FTP Traffic Impact on Host System</b><br>
 Some sites run <code>proftpd</code> on a system which is used to host other
 services as well (<i>e.g.</i> Apache, a file server, <i>etc</i>).  These
@@ -370,7 +427,7 @@ approaching full LAN network speed for the FTP data transfer.
 
 <p>
 <hr>
-<i>$Date: 2011/03/30 22:27:20 $</i><br>
+<i>$Date: 2013/10/06 15:46:36 $</i><br>
 
 </body>
 </html>

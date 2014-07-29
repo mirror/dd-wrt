@@ -2,7 +2,7 @@
  * ProFTPD: mod_ifversion -- a module supporting conditional configuration
  *                           depending on the proftpd server version
  *
- * Copyright (c) 2009-2011 TJ Saunders
+ * Copyright (c) 2009-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * This is mod_ifversion, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_ifversion.c,v 1.4 2011/05/23 20:56:40 castaglia Exp $
+ * $Id: mod_ifversion.c,v 1.5 2013/02/15 22:46:42 castaglia Exp $
  */
 
 #include "conf.h"
@@ -72,7 +72,7 @@ static int parse_version(char *version_str, unsigned int *version,
    */
 
   /* Quick sanity check */
-  if (isdigit((int) version_str[0]) == 0) {
+  if (!PR_ISDIGIT(version_str[0])) {
     return -1;
   }
 
@@ -151,7 +151,7 @@ static int parse_version(char *version_str, unsigned int *version,
    */
 
   for (i = 0; i < strlen(version_str); i++) {
-    if (isdigit((int) version_str[i]) == 0) {
+    if (!PR_ISDIGIT(version_str[i])) {
       if (i > 0) {
         have_suffix = TRUE;
         break;
@@ -207,7 +207,7 @@ static int parse_version(char *version_str, unsigned int *version,
    */
 
   if (strlen(version_str) == 1) {
-    if (isalpha((int) version_str[0]) == 0) {
+    if (!PR_ISALPHA(version_str[0])) {
       /* Syntax error */
       return -1;
     }
@@ -233,7 +233,7 @@ static int parse_version(char *version_str, unsigned int *version,
   version_str += 2;
 
   for (i = 0; i < strlen(version_str); i++) {
-    if (isdigit((int) version_str[i]) == 0) {
+    if (!PR_ISDIGIT(version_str[i])) {
       /* Syntax error */
       return -1;
     }

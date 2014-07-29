@@ -1,4 +1,4 @@
-<!-- $Id: DSO.html,v 1.8 2008/09/09 04:00:46 castaglia Exp $ -->
+<!-- $Id: DSO.html,v 1.10 2012/10/12 02:21:19 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/DSO.html,v $ -->
 
 <html>
@@ -272,6 +272,14 @@ loaded:
 Then restart <code>proftpd</code>, and your custom module will be in use.
 
 <p>
+For example, you might use <code>prxs</code> to compile the
+<code>mod_sql_sqlite</code> module like so, from the top level of the
+ProFTPD source directory:
+<pre>
+  # prxs -c -i -d contrib/mod_sql_sqlite.c
+</pre>
+
+<p>
 The following options are also supported:
 <pre>
  -n, --name             Tells prxs the name of the module being compiled.
@@ -319,9 +327,56 @@ should you use a Makefile?  In general, if the third-party module comes with
 its own <code>configure</code> script and <code>Makefile</code>, then you
 should use those.  Otherwise, <code>prxs</code> should suffice.
 
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
+<font color=red>Question</font>: My installed <code>proftpd</code> does not
+include <code>mod_sql_passwd</code> (or some other module).  How can I get
+proftpd to use this module without recompiling?<br>
+<font color=blue>Answer</font>: First, see if your proftpd package came
+with the <a href="#prxs"><code>prxs</code></a> tool; by default, this tool
+is installed as <code>/usr/local/bin/prxs</code>.  If you do not find
+<code>prxs</code> anywhere on your system, you will have to recompile proftpd
+in order to add new modules.
+
+<p>
+Second, you will need the source code for <code>mod_sql_passwd</code> (or
+whatever other module you want to add to your proftpd).  Assume, then, that
+you have found the <code>mod_sql_passwd.c</code> source file.  The next
+step is to use <code>prxs</code> to build that module as a DSO module:
+<pre>
+  # /usr/local/bin/prxs -c -i -d mod_sql_passwd.c
+</pre>
+If the above fails with this error message:
+<pre>
+  Your installed proftpd does not support shared modules/DSOs.
+  Make sure the --enable-dso configure option is used when
+  compiling proftpd.
+</pre>
+It means that your <code>proftpd</code> does not have DSO support -- and
+that means that you will have to recompile proftpd to add the new module.
+
+<p>
+If, on the other hand, your <code>prxs</code> succeeded, the last steps are
+to update your <code>proftpd.conf</code> to load the new module, and then
+restart proftpd so that it reads the updated configuration.  Continuing with
+the example of <code>mod_sql_passwd</code>, you would add the following line
+near the top of your <code>proftpd.conf</code>:
+<pre>
+  LoadModule mod_sql_passwd.c
+</pre>
+and later in the config file, configure your newly added module:
+<pre>
+  &lt;IfModule mod_sql_passwd.c&gt;
+    SQLPasswordEngine on
+    ...
+  &lt;/IfModule&gt;
+</pre>
+Last, restart proftpd, and enjoy your new module's functionality, all without
+needing to recompile/reinstall proftpd itself.
+
 <p>
 <hr>
-<i>$Date: 2008/09/09 04:00:46 $</i><br>
+<i>$Date: 2012/10/12 02:21:19 $</i><br>
 
 </body>
 </html>

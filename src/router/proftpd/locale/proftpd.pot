@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: core@proftpd.org\n"
-"POT-Creation-Date: 2011-04-01 09:16-0700\n"
+"POT-Creation-Date: 2012-02-27 14:46-0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,100 +16,106 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../contrib/mod_ban.c:2081 ../contrib/mod_tls.c:6403
-#: ../contrib/mod_tls.c:6438 ../modules/mod_auth.c:326
-#: ../modules/mod_auth.c:1261 ../modules/mod_auth.c:1285
-#: ../modules/mod_auth.c:1314 ../modules/mod_auth.c:1324
-#: ../modules/mod_auth.c:1360 ../modules/mod_auth.c:1375
-#: ../modules/mod_auth.c:1386 ../modules/mod_auth.c:1847
-#: ../modules/mod_auth.c:1913 ../modules/mod_auth.c:1941
-#: ../modules/mod_auth.c:1961 ../modules/mod_auth.c:2117
-#: ../modules/mod_auth.c:2130
+#: ../contrib/mod_ban.c:2056 ../contrib/mod_tls.c:6597
+#: ../contrib/mod_tls.c:6632 ../modules/mod_auth.c:333
+#: ../modules/mod_auth.c:1273 ../modules/mod_auth.c:1297
+#: ../modules/mod_auth.c:1326 ../modules/mod_auth.c:1336
+#: ../modules/mod_auth.c:1372 ../modules/mod_auth.c:1387
+#: ../modules/mod_auth.c:1398 ../modules/mod_auth.c:1860
+#: ../modules/mod_auth.c:1926 ../modules/mod_auth.c:1954
+#: ../modules/mod_auth.c:1974 ../modules/mod_auth.c:2130
+#: ../modules/mod_auth.c:2143
 msgid "Login incorrect."
 msgstr ""
 
-#: ../contrib/mod_copy.c:333 ../contrib/mod_quotatab.c:3611
-#: ../contrib/mod_site_misc.c:300 ../contrib/mod_site_misc.c:369
-#: ../contrib/mod_site_misc.c:434 ../contrib/mod_site_misc.c:532
-#: ../modules/mod_auth.c:62 ../modules/mod_site.c:471
+#: ../contrib/mod_copy.c:493 ../contrib/mod_quotatab.c:3733
+#: ../contrib/mod_site_misc.c:449 ../contrib/mod_site_misc.c:537
+#: ../contrib/mod_site_misc.c:617 ../contrib/mod_site_misc.c:745
+#: ../modules/mod_auth.c:62 ../modules/mod_site.c:470
 msgid "Please login with USER and PASS"
 msgstr ""
 
-#: ../contrib/mod_copy.c:362 ../contrib/mod_site_misc.c:337
-#: ../contrib/mod_site_misc.c:401 ../contrib/mod_site_misc.c:496
-#: ../contrib/mod_site_misc.c:662 ../modules/mod_site.c:149
-#: ../modules/mod_site.c:400
+#: ../contrib/mod_copy.c:522 ../contrib/mod_site_misc.c:503
+#: ../contrib/mod_site_misc.c:582 ../contrib/mod_site_misc.c:708
+#: ../contrib/mod_site_misc.c:916 ../modules/mod_site.c:148
+#: ../modules/mod_site.c:399
 #, c-format
 msgid "SITE %s command successful"
 msgstr ""
 
-#: ../contrib/mod_copy.c:367
+#: ../contrib/mod_copy.c:527
 msgid "CPFR <sp> pathname"
 msgstr ""
 
-#: ../contrib/mod_copy.c:368
+#: ../contrib/mod_copy.c:528
 msgid "CPTO <sp> pathname"
 msgstr ""
 
-#: ../contrib/mod_copy.c:401 ../contrib/mod_copy.c:407
-#: ../modules/mod_core.c:4419 ../modules/mod_core.c:4425
-#: ../modules/mod_core.c:4482 ../modules/mod_core.c:4488
-#: ../modules/mod_core.c:4699 ../modules/mod_core.c:4705
-#: ../modules/mod_core.c:4808 ../modules/mod_core.c:4814
-#: ../modules/mod_core.c:4904 ../modules/mod_core.c:4910
-#: ../modules/mod_site.c:96 ../modules/mod_site.c:105
-#: ../modules/mod_site.c:183 ../modules/mod_site.c:192
-#: ../modules/mod_xfer.c:1530 ../modules/mod_xfer.c:1536
+#: ../contrib/mod_copy.c:562 ../contrib/mod_copy.c:568
+#: ../modules/mod_core.c:4530 ../modules/mod_core.c:4537
+#: ../modules/mod_core.c:4608 ../modules/mod_core.c:4615
+#: ../modules/mod_core.c:4848 ../modules/mod_core.c:4855
+#: ../modules/mod_core.c:4978 ../modules/mod_core.c:4985
+#: ../modules/mod_core.c:5109 ../modules/mod_core.c:5116
+#: ../modules/mod_site.c:95 ../modules/mod_site.c:104
+#: ../modules/mod_site.c:182 ../modules/mod_site.c:191
+#: ../modules/mod_xfer.c:1462 ../modules/mod_xfer.c:1468
 #, c-format
 msgid "%s: Forbidden filename"
 msgstr ""
 
-#: ../contrib/mod_copy.c:424 ../modules/mod_core.c:4938
+#: ../contrib/mod_copy.c:585 ../modules/mod_core.c:5149
 msgid "File or directory exists, ready for destination name"
 msgstr ""
 
-#: ../contrib/mod_copy.c:441 ../modules/mod_core.c:4794
+#: ../contrib/mod_copy.c:603 ../contrib/mod_quotatab.c:3701
+#: ../contrib/mod_quotatab.c:3843 ../contrib/mod_quotatab.c:3882
+#: ../modules/mod_core.c:4963
 msgid "Bad sequence of commands"
 msgstr ""
 
-#: ../contrib/mod_copy.c:464
+#: ../contrib/mod_copy.c:626
 msgid "Copy successful"
 msgstr ""
 
-#: ../contrib/mod_deflate.c:689
+#: ../contrib/mod_deflate.c:743
 #, c-format
 msgid "%s OK"
 msgstr ""
 
-#: ../contrib/mod_deflate.c:696
+#: ../contrib/mod_deflate.c:750
 msgid "Bad number of parameters"
 msgstr ""
 
-#: ../contrib/mod_deflate.c:703
+#: ../contrib/mod_deflate.c:757
 #, c-format
 msgid "%s: unsupported MODE Z option: %s"
 msgstr ""
 
-#: ../contrib/mod_deflate.c:712
+#: ../contrib/mod_deflate.c:766
 #, c-format
 msgid "%s: bad MODE Z option value: %s %s"
 msgstr ""
 
-#: ../contrib/mod_deflate.c:720
+#: ../contrib/mod_deflate.c:774
 #, c-format
 msgid "%s: unknown MODE Z option: %s"
 msgstr ""
 
-#: ../contrib/mod_deflate.c:727
+#: ../contrib/mod_deflate.c:781
 msgid "OPTS MODE Z OK"
 msgstr ""
 
-#: ../contrib/mod_deflate.c:756
+#: ../contrib/mod_deflate.c:810
 msgid "Unable to handle MODE Z at this time"
 msgstr ""
 
-#: ../contrib/mod_deflate.c:761 ../contrib/mod_deflate.c:788
+#: ../contrib/mod_deflate.c:815 ../contrib/mod_deflate.c:842
 msgid "OK"
+msgstr ""
+
+#: ../contrib/mod_load/mod_load.c:1034
+msgid "System busy, try again later"
 msgstr ""
 
 #: ../contrib/mod_quotatab.c:221 ../contrib/mod_quotatab.c:286
@@ -215,135 +221,135 @@ msgstr ""
 msgid "files:\tunlimited"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:1698 ../contrib/mod_quotatab.c:1713
-#: ../contrib/mod_quotatab.c:1966 ../contrib/mod_quotatab.c:1981
-#: ../contrib/mod_quotatab.c:2021 ../contrib/mod_quotatab.c:2036
-#: ../contrib/mod_quotatab.c:2872 ../contrib/mod_quotatab.c:2887
-#: ../contrib/mod_quotatab.c:2906 ../contrib/mod_quotatab.c:2921
-#: ../contrib/mod_quotatab.c:3196 ../contrib/mod_quotatab.c:3211
-#: ../contrib/mod_quotatab.c:3230 ../contrib/mod_quotatab.c:3245
+#: ../contrib/mod_quotatab.c:1702 ../contrib/mod_quotatab.c:1717
+#: ../contrib/mod_quotatab.c:1997 ../contrib/mod_quotatab.c:2012
+#: ../contrib/mod_quotatab.c:2056 ../contrib/mod_quotatab.c:2071
+#: ../contrib/mod_quotatab.c:2933 ../contrib/mod_quotatab.c:2948
+#: ../contrib/mod_quotatab.c:2967 ../contrib/mod_quotatab.c:2982
+#: ../contrib/mod_quotatab.c:3257 ../contrib/mod_quotatab.c:3272
+#: ../contrib/mod_quotatab.c:3291 ../contrib/mod_quotatab.c:3306
 #, c-format
 msgid "%s denied: quota exceeded: used %s"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:1785 ../contrib/mod_quotatab.c:1812
-#: ../contrib/mod_quotatab.c:1885 ../contrib/mod_quotatab.c:1912
-#: ../contrib/mod_quotatab.c:2111 ../contrib/mod_quotatab.c:2140
-#: ../contrib/mod_quotatab.c:2175 ../contrib/mod_quotatab.c:2186
-#: ../contrib/mod_quotatab.c:2960 ../contrib/mod_quotatab.c:2969
-#: ../contrib/mod_quotatab.c:2982 ../contrib/mod_quotatab.c:2991
-#: ../contrib/mod_quotatab.c:3025 ../contrib/mod_quotatab.c:3037
-#: ../contrib/mod_quotatab.c:3053 ../contrib/mod_quotatab.c:3065
-#: ../contrib/mod_quotatab.c:3343 ../contrib/mod_quotatab.c:3371
-#: ../contrib/mod_quotatab.c:3403 ../contrib/mod_quotatab.c:3414
-#: ../contrib/mod_quotatab.c:3498 ../contrib/mod_quotatab.c:3530
-#: ../contrib/mod_quotatab.c:3564 ../contrib/mod_quotatab.c:3573
+#: ../contrib/mod_quotatab.c:1789 ../contrib/mod_quotatab.c:1825
+#: ../contrib/mod_quotatab.c:1898 ../contrib/mod_quotatab.c:1934
+#: ../contrib/mod_quotatab.c:2153 ../contrib/mod_quotatab.c:2191
+#: ../contrib/mod_quotatab.c:2235 ../contrib/mod_quotatab.c:2246
+#: ../contrib/mod_quotatab.c:3021 ../contrib/mod_quotatab.c:3030
+#: ../contrib/mod_quotatab.c:3043 ../contrib/mod_quotatab.c:3052
+#: ../contrib/mod_quotatab.c:3086 ../contrib/mod_quotatab.c:3098
+#: ../contrib/mod_quotatab.c:3114 ../contrib/mod_quotatab.c:3126
+#: ../contrib/mod_quotatab.c:3404 ../contrib/mod_quotatab.c:3441
+#: ../contrib/mod_quotatab.c:3482 ../contrib/mod_quotatab.c:3493
+#: ../contrib/mod_quotatab.c:3577 ../contrib/mod_quotatab.c:3618
+#: ../contrib/mod_quotatab.c:3661 ../contrib/mod_quotatab.c:3670
 #, c-format
 msgid "%s: notice: quota reached: used %s"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:1801 ../contrib/mod_quotatab.c:1828
-#: ../contrib/mod_quotatab.c:1901 ../contrib/mod_quotatab.c:1928
-#: ../contrib/mod_quotatab.c:2128 ../contrib/mod_quotatab.c:2157
-#: ../contrib/mod_quotatab.c:3359 ../contrib/mod_quotatab.c:3387
-#: ../contrib/mod_quotatab.c:3514 ../contrib/mod_quotatab.c:3546
+#: ../contrib/mod_quotatab.c:1814 ../contrib/mod_quotatab.c:1841
+#: ../contrib/mod_quotatab.c:1923 ../contrib/mod_quotatab.c:1959
+#: ../contrib/mod_quotatab.c:2179 ../contrib/mod_quotatab.c:2217
+#: ../contrib/mod_quotatab.c:3429 ../contrib/mod_quotatab.c:3466
+#: ../contrib/mod_quotatab.c:3602 ../contrib/mod_quotatab.c:3643
 #, c-format
 msgid "%s: notice: quota reached: '%s' removed"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3617
+#: ../contrib/mod_quotatab.c:3739
 msgid "'SITE QUOTA' not understood."
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3636
+#: ../contrib/mod_quotatab.c:3758
 msgid "No quotas in effect"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3644
+#: ../contrib/mod_quotatab.c:3766
 msgid "The current quota for this session are [current/limit]:"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3646
+#: ../contrib/mod_quotatab.c:3768
 #, c-format
 msgid "Name: %s"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3647
+#: ../contrib/mod_quotatab.c:3769
 #, c-format
 msgid "Quota Type: %s"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3648
+#: ../contrib/mod_quotatab.c:3770
 msgid "User"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3649
+#: ../contrib/mod_quotatab.c:3771
 msgid "Group"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3650
+#: ../contrib/mod_quotatab.c:3772
 msgid "Class"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3651 ../contrib/mod_quotatab.c:3659
+#: ../contrib/mod_quotatab.c:3773 ../contrib/mod_quotatab.c:3781
 msgid "(unknown)"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3651
+#: ../contrib/mod_quotatab.c:3773
 msgid "All"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3653
+#: ../contrib/mod_quotatab.c:3775
 #, c-format
 msgid "Per Session: %s"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3654
+#: ../contrib/mod_quotatab.c:3776
 msgid "False"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3654
+#: ../contrib/mod_quotatab.c:3776
 msgid "True"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3656
+#: ../contrib/mod_quotatab.c:3778
 #, c-format
 msgid "Limit Type: %s"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3657
+#: ../contrib/mod_quotatab.c:3779
 msgid "Hard"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3658
+#: ../contrib/mod_quotatab.c:3780
 msgid "Soft"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3661 ../contrib/mod_quotatab.c:3671
+#: ../contrib/mod_quotatab.c:3783 ../contrib/mod_quotatab.c:3793
 #, c-format
 msgid "  Uploaded %s"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3664 ../contrib/mod_quotatab.c:3674
+#: ../contrib/mod_quotatab.c:3786 ../contrib/mod_quotatab.c:3796
 #, c-format
 msgid "  Downloaded %s"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3667 ../contrib/mod_quotatab.c:3677
+#: ../contrib/mod_quotatab.c:3789 ../contrib/mod_quotatab.c:3799
 #, c-format
 msgid "  Transferred %s"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3683
+#: ../contrib/mod_quotatab.c:3805
 #, c-format
 msgid "Please contact %s if these entries are inaccurate"
 msgstr ""
 
-#: ../contrib/mod_quotatab.c:3684
+#: ../contrib/mod_quotatab.c:3806
 msgid "ftp-admin"
 msgstr ""
 
-#: ../contrib/mod_radius.c:2773 ../modules/mod_auth.c:2055
+#: ../contrib/mod_radius.c:2807 ../modules/mod_auth.c:2068
 msgid "Login with USER first"
 msgstr ""
 
@@ -365,155 +371,155 @@ msgstr ""
 msgid "days"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6079 ../contrib/mod_tls.c:6091
-#: ../contrib/mod_tls.c:6101
+#: ../contrib/mod_tls.c:6271 ../contrib/mod_tls.c:6283
+#: ../contrib/mod_tls.c:6293
 msgid "SSL/TLS required on the control channel"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6125 ../contrib/mod_tls.c:6162
+#: ../contrib/mod_tls.c:6317 ../contrib/mod_tls.c:6354
 msgid "SSL/TLS required on the data channel"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6185
+#: ../contrib/mod_tls.c:6377
 msgid "Unwilling to accept second AUTH"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6190
+#: ../contrib/mod_tls.c:6382
 msgid "AUTH requires at least one argument"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6196 ../contrib/mod_tls.c:6296
-#: ../contrib/mod_tls.c:6305 ../contrib/mod_tls.c:6472
-#: ../contrib/mod_tls.c:6490 ../contrib/mod_tls.c:6510
+#: ../contrib/mod_tls.c:6388 ../contrib/mod_tls.c:6488
+#: ../contrib/mod_tls.c:6497 ../contrib/mod_tls.c:6666
+#: ../contrib/mod_tls.c:6684 ../contrib/mod_tls.c:6704
 msgid "Unwilling to accept security parameters"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6206 ../contrib/mod_tls.c:6238
+#: ../contrib/mod_tls.c:6398 ../contrib/mod_tls.c:6430
 #, c-format
 msgid "AUTH %s successful"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6213 ../contrib/mod_tls.c:6222
-#: ../contrib/mod_tls.c:6245 ../contrib/mod_tls.c:6254
+#: ../contrib/mod_tls.c:6405 ../contrib/mod_tls.c:6414
+#: ../contrib/mod_tls.c:6437 ../contrib/mod_tls.c:6446
 msgid "TLS handshake failed"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6291
+#: ../contrib/mod_tls.c:6483
 msgid "CCC not allowed on insecure control connection"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6315
+#: ../contrib/mod_tls.c:6507
 msgid "Clearing control channel protection"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6344
+#: ../contrib/mod_tls.c:6536
 msgid "PBSZ not allowed on insecure control connection"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6350
+#: ../contrib/mod_tls.c:6542
 msgid "PBSZ 0 successful"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6352
+#: ../contrib/mod_tls.c:6545
 msgid "PBSZ=0 successful"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6460
+#: ../contrib/mod_tls.c:6654
 msgid "PROT not allowed on insecure control connection"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6466
+#: ../contrib/mod_tls.c:6660
 msgid "You must issue the PBSZ command prior to PROT"
 msgstr ""
 
-#: ../contrib/mod_tls.c:6520 ../contrib/mod_tls.c:6533
+#: ../contrib/mod_tls.c:6714 ../contrib/mod_tls.c:6727
 #, c-format
 msgid "PROT %s unsupported"
 msgstr ""
 
-#: ../contrib/mod_tls.c:8042 ../modules/mod_core.c:5259
-#: ../modules/mod_core.c:5261 ../modules/mod_core.c:5262
-#: ../modules/mod_core.c:5263
+#: ../contrib/mod_tls.c:8267 ../modules/mod_core.c:5478
+#: ../modules/mod_core.c:5480 ../modules/mod_core.c:5481
+#: ../modules/mod_core.c:5482
 msgid "<sp> base64-data"
 msgstr ""
 
-#: ../contrib/mod_tls.c:8043 ../modules/mod_core.c:5264
+#: ../contrib/mod_tls.c:8268 ../modules/mod_core.c:5483
 msgid "<sp> protection buffer size"
 msgstr ""
 
-#: ../contrib/mod_tls.c:8044 ../modules/mod_core.c:5265
+#: ../contrib/mod_tls.c:8269 ../modules/mod_core.c:5484
 msgid "<sp> protection code"
 msgstr ""
 
-#: ../contrib/mod_wrap.c:943 ../contrib/mod_wrap2/mod_wrap2.c:1808
-#: ../contrib/mod_wrap2/mod_wrap2.c:1980
+#: ../contrib/mod_wrap.c:945 ../contrib/mod_wrap2/mod_wrap2.c:1813
+#: ../contrib/mod_wrap2/mod_wrap2.c:1985
 msgid "Access denied"
 msgstr ""
 
-#: ../include/dirtree.h:204 ../include/dirtree.h:210
-#: ../modules/mod_facts.c:739 ../modules/mod_facts.c:891
-#: ../modules/mod_lang.c:394
+#: ../include/dirtree.h:202 ../include/dirtree.h:208
+#: ../modules/mod_facts.c:741 ../modules/mod_facts.c:893
+#: ../modules/mod_lang.c:416
 msgid "Invalid number of arguments"
 msgstr ""
 
 #: ../modules/mod_auth.c:71
 #, c-format
-msgid "Login timeout (%d seconds): closing control connection"
+msgid "Login timeout (%d %s): closing control connection"
 msgstr ""
 
-#: ../modules/mod_auth.c:92
+#: ../modules/mod_auth.c:93
 #, c-format
 msgid "Session Timeout (%u seconds): closing control connection"
 msgstr ""
 
-#: ../modules/mod_auth.c:201
+#: ../modules/mod_auth.c:202
 msgid "<sp> username"
 msgstr ""
 
-#: ../modules/mod_auth.c:202
+#: ../modules/mod_auth.c:203
 msgid "<sp> password"
 msgstr ""
 
-#: ../modules/mod_auth.c:203 ../modules/mod_auth.c:204
-#: ../modules/mod_core.c:5236
+#: ../modules/mod_auth.c:204 ../modules/mod_auth.c:205
+#: ../modules/mod_core.c:5455
 msgid "is not implemented"
 msgstr ""
 
-#: ../modules/mod_auth.c:482
+#: ../modules/mod_auth.c:489
 msgid "Anonymous access granted, restrictions apply"
 msgstr ""
 
-#: ../modules/mod_auth.c:485
+#: ../modules/mod_auth.c:492
 #, c-format
 msgid "User %s logged in"
 msgstr ""
 
-#: ../modules/mod_auth.c:1094
+#: ../modules/mod_auth.c:1106
 msgid "Unable to set anonymous privileges."
 msgstr ""
 
-#: ../modules/mod_auth.c:1862 ../modules/mod_auth.c:2048
+#: ../modules/mod_auth.c:1875 ../modules/mod_auth.c:2061
 msgid "You are already logged in"
 msgstr ""
 
-#: ../modules/mod_auth.c:1865
+#: ../modules/mod_auth.c:1878
 msgid "USER: command requires a parameter"
 msgstr ""
 
-#: ../modules/mod_auth.c:1982
+#: ../modules/mod_auth.c:1995
 msgid "Anonymous login ok, send your complete email address as your password"
 msgstr ""
 
-#: ../modules/mod_auth.c:2011
+#: ../modules/mod_auth.c:2024
 #, c-format
 msgid "Password required for %s"
 msgstr ""
 
-#: ../modules/mod_auth.c:2137
+#: ../modules/mod_auth.c:2150
 msgid "ACCT command not implemented"
 msgstr ""
 
-#: ../modules/mod_auth.c:2142
+#: ../modules/mod_auth.c:2155
 msgid "REIN command not implemented"
 msgstr ""
 
@@ -522,612 +528,619 @@ msgstr ""
 msgid "Idle timeout (%d seconds): closing control connection"
 msgstr ""
 
-#: ../modules/mod_core.c:3390 ../modules/mod_core.c:3401
+#: ../modules/mod_core.c:3431 ../modules/mod_core.c:3443
 #, c-format
 msgid "%s: Forbidden command argument"
 msgstr ""
 
-#: ../modules/mod_core.c:3462
+#: ../modules/mod_core.c:3505
 msgid "Goodbye."
 msgstr ""
 
-#: ../modules/mod_core.c:3501
+#: ../modules/mod_core.c:3548
 #, c-format
 msgid "\"%s\" is the current directory"
 msgstr ""
 
-#: ../modules/mod_core.c:3514
+#: ../modules/mod_core.c:3561
 msgid "Illegal PASV command, EPSV ALL in effect"
 msgstr ""
 
-#: ../modules/mod_core.c:3571 ../modules/mod_core.c:4113
+#: ../modules/mod_core.c:3623 ../modules/mod_core.c:4207
 msgid "Unable to build data connection: Internal error"
 msgstr ""
 
-#: ../modules/mod_core.c:3636 ../modules/mod_core.c:3776
+#: ../modules/mod_core.c:3696 ../modules/mod_core.c:3848
 msgid "Illegal PORT command, EPSV ALL in effect"
 msgstr ""
 
-#: ../modules/mod_core.c:3661
+#: ../modules/mod_core.c:3726
 msgid "Unable to service PORT commands"
 msgstr ""
 
-#: ../modules/mod_core.c:3669 ../modules/mod_core.c:3676
-#: ../modules/mod_core.c:3699 ../modules/mod_core.c:3725
-#: ../modules/mod_core.c:3734 ../modules/mod_core.c:3747
+#: ../modules/mod_core.c:3735 ../modules/mod_core.c:3743
+#: ../modules/mod_core.c:3767 ../modules/mod_core.c:3794
+#: ../modules/mod_core.c:3804 ../modules/mod_core.c:3818
 msgid "Illegal PORT command"
 msgstr ""
 
-#: ../modules/mod_core.c:3762
+#: ../modules/mod_core.c:3834
 msgid "PORT command successful"
 msgstr ""
 
-#: ../modules/mod_core.c:3804
+#: ../modules/mod_core.c:3881
 msgid "Unable to service EPRT commands"
 msgstr ""
 
-#: ../modules/mod_core.c:3831 ../modules/mod_core.c:4055
+#: ../modules/mod_core.c:3909 ../modules/mod_core.c:4148
 msgid "Network protocol not supported, use (1,2)"
 msgstr ""
 
-#: ../modules/mod_core.c:3833 ../modules/mod_core.c:3835
-#: ../modules/mod_core.c:4057 ../modules/mod_core.c:4059
+#: ../modules/mod_core.c:3911 ../modules/mod_core.c:3913
+#: ../modules/mod_core.c:4150 ../modules/mod_core.c:4152
 msgid "Network protocol not supported, use (1)"
 msgstr ""
 
-#: ../modules/mod_core.c:3851 ../modules/mod_core.c:3857
-#: ../modules/mod_core.c:3882 ../modules/mod_core.c:3898
-#: ../modules/mod_core.c:3918 ../modules/mod_core.c:3933
-#: ../modules/mod_core.c:3946
+#: ../modules/mod_core.c:3930 ../modules/mod_core.c:3938
+#: ../modules/mod_core.c:3964 ../modules/mod_core.c:3981
+#: ../modules/mod_core.c:4002 ../modules/mod_core.c:4018
+#: ../modules/mod_core.c:4032
 msgid "Illegal EPRT command"
 msgstr ""
 
-#: ../modules/mod_core.c:3975
+#: ../modules/mod_core.c:4062
 msgid "EPRT command successful"
 msgstr ""
 
-#: ../modules/mod_core.c:4004
+#: ../modules/mod_core.c:4095
 msgid "EPSV ALL command successful"
 msgstr ""
 
-#: ../modules/mod_core.c:4016
+#: ../modules/mod_core.c:4108
 #, c-format
 msgid "%s: unknown network protocol"
 msgstr ""
 
-#: ../modules/mod_core.c:4177
+#: ../modules/mod_core.c:4281
 #, c-format
 msgid "Unknown command '%s'"
 msgstr ""
 
-#: ../modules/mod_core.c:4399 ../modules/mod_core.c:4456
-#: ../modules/mod_core.c:4776 ../modules/mod_xfer.c:2348
+#: ../modules/mod_core.c:4510 ../modules/mod_core.c:4578
+#: ../modules/mod_core.c:4945 ../modules/mod_xfer.c:2311
 #, c-format
 msgid "%s command successful"
 msgstr ""
 
-#: ../modules/mod_core.c:4468
+#: ../modules/mod_core.c:4593
 #, c-format
 msgid "%s: Invalid directory name"
 msgstr ""
 
-#: ../modules/mod_core.c:4581
+#: ../modules/mod_core.c:4719
 #, c-format
 msgid "\"%s\" - Directory successfully created"
 msgstr ""
 
-#: ../modules/mod_core.c:4620
+#: ../modules/mod_core.c:4761
 #, c-format
 msgid "%s: not a plain file"
 msgstr ""
 
-#: ../modules/mod_core.c:4655
+#: ../modules/mod_core.c:4797
 #, c-format
 msgid "%s not allowed in ASCII mode"
 msgstr ""
 
-#: ../modules/mod_core.c:4672
+#: ../modules/mod_core.c:4819
 #, c-format
 msgid "%s: not a regular file"
 msgstr ""
 
-#: ../modules/mod_core.c:4829
+#: ../modules/mod_core.c:5001
 #, c-format
 msgid "%s: Rename permission denied"
 msgstr ""
 
-#: ../modules/mod_core.c:4844 ../modules/mod_core.c:4859
+#: ../modules/mod_core.c:5017 ../modules/mod_core.c:5044
+#: ../modules/mod_core.c:5062
 #, c-format
 msgid "Rename %s: %s"
 msgstr ""
 
-#: ../modules/mod_core.c:4874
+#: ../modules/mod_core.c:5079
 msgid "Rename successful"
 msgstr ""
 
-#: ../modules/mod_core.c:4945
+#: ../modules/mod_core.c:5156
 msgid "NOOP command successful"
 msgstr ""
 
-#: ../modules/mod_core.c:4962
+#: ../modules/mod_core.c:5177
 msgid "Features:"
 msgstr ""
 
-#: ../modules/mod_core.c:4977
+#: ../modules/mod_core.c:5192
 msgid "End"
 msgstr ""
 
-#: ../modules/mod_core.c:4980
+#: ../modules/mod_core.c:5195
 msgid "No features supported"
 msgstr ""
 
-#: ../modules/mod_core.c:5232 ../modules/mod_core.c:5233
-#: ../modules/mod_core.c:5243 ../modules/mod_core.c:5244
-#: ../modules/mod_core.c:5245 ../modules/mod_core.c:5246
-#: ../modules/mod_core.c:5247 ../modules/mod_core.c:5248
-#: ../modules/mod_core.c:5249 ../modules/mod_core.c:5250
-#: ../modules/mod_core.c:5253 ../modules/mod_xfer.c:3239
-#: ../modules/mod_xfer.c:3240 ../modules/mod_xfer.c:3242
+#: ../modules/mod_core.c:5451 ../modules/mod_core.c:5452
+#: ../modules/mod_core.c:5462 ../modules/mod_core.c:5463
+#: ../modules/mod_core.c:5464 ../modules/mod_core.c:5465
+#: ../modules/mod_core.c:5466 ../modules/mod_core.c:5467
+#: ../modules/mod_core.c:5468 ../modules/mod_core.c:5469
+#: ../modules/mod_core.c:5472 ../modules/mod_xfer.c:3182
+#: ../modules/mod_xfer.c:3183 ../modules/mod_xfer.c:3185
 msgid "<sp> pathname"
 msgstr ""
 
-#: ../modules/mod_core.c:5234 ../modules/mod_core.c:5235
+#: ../modules/mod_core.c:5453 ../modules/mod_core.c:5454
 msgid "(up one directory)"
 msgstr ""
 
-#: ../modules/mod_core.c:5237
+#: ../modules/mod_core.c:5456
 msgid "(close control connection)"
 msgstr ""
 
-#: ../modules/mod_core.c:5238
+#: ../modules/mod_core.c:5457
 msgid "<sp> h1,h2,h3,h4,p1,p2"
 msgstr ""
 
-#: ../modules/mod_core.c:5239
+#: ../modules/mod_core.c:5458
 msgid "(returns address/port)"
 msgstr ""
 
-#: ../modules/mod_core.c:5240
+#: ../modules/mod_core.c:5459
 msgid "<sp> |proto|addr|port|"
 msgstr ""
 
-#: ../modules/mod_core.c:5241
+#: ../modules/mod_core.c:5460
 msgid "(returns port |||port|)"
 msgstr ""
 
-#: ../modules/mod_core.c:5242
+#: ../modules/mod_core.c:5461
 msgid "is not implemented (ignored)"
 msgstr ""
 
-#: ../modules/mod_core.c:5251 ../modules/mod_core.c:5252
+#: ../modules/mod_core.c:5470 ../modules/mod_core.c:5471
 msgid "(returns current working directory)"
 msgstr ""
 
-#: ../modules/mod_core.c:5254
+#: ../modules/mod_core.c:5473
 msgid "(returns system type)"
 msgstr ""
 
-#: ../modules/mod_core.c:5255
+#: ../modules/mod_core.c:5474
 msgid "[<sp> command]"
 msgstr ""
 
-#: ../modules/mod_core.c:5256
+#: ../modules/mod_core.c:5475
 msgid "(no operation)"
 msgstr ""
 
-#: ../modules/mod_core.c:5257
+#: ../modules/mod_core.c:5476
 msgid "(returns feature list)"
 msgstr ""
 
-#: ../modules/mod_core.c:5258
+#: ../modules/mod_core.c:5477
 msgid "<sp> command [<sp> options]"
 msgstr ""
 
-#: ../modules/mod_core.c:5260
+#: ../modules/mod_core.c:5479
 msgid "(clears protection level)"
 msgstr ""
 
-#: ../modules/mod_facts.c:763 ../modules/mod_facts.c:915
-#: ../modules/mod_facts.c:991 ../modules/mod_facts.c:1175
-#: ../modules/mod_lang.c:372 ../modules/mod_lang.c:389
+#: ../modules/mod_facts.c:765 ../modules/mod_facts.c:917
+#: ../modules/mod_facts.c:993 ../modules/mod_facts.c:1191
+#: ../modules/mod_lang.c:394 ../modules/mod_lang.c:411
 msgid "Unable to handle command"
 msgstr ""
 
-#: ../modules/mod_facts.c:866
+#: ../modules/mod_facts.c:868
 #, c-format
 msgid "Cannot modify fact '%s'"
 msgstr ""
 
-#: ../modules/mod_facts.c:1016
+#: ../modules/mod_facts.c:1018
 #, c-format
 msgid "'%s' is not a directory"
 msgstr ""
 
-#: ../modules/mod_facts.c:1183 ../modules/mod_facts.c:1256
+#: ../modules/mod_facts.c:1199 ../modules/mod_facts.c:1286
 #, c-format
 msgid "Start of list for %s"
 msgstr ""
 
-#: ../modules/mod_facts.c:1184 ../modules/mod_facts.c:1258
+#: ../modules/mod_facts.c:1200 ../modules/mod_facts.c:1288
 msgid "End of list"
 msgstr ""
 
-#: ../modules/mod_facts.c:1232
+#: ../modules/mod_facts.c:1262
 #, c-format
 msgid "'%s' cannot be listed"
 msgstr ""
 
-#: ../modules/mod_facts.c:1276 ../modules/mod_lang.c:470
-#: ../modules/mod_lang.c:476 ../modules/mod_xfer.c:1217
-#: ../modules/mod_xfer.c:1364 ../modules/mod_xfer.c:1834
-#: ../modules/mod_xfer.c:1897 ../modules/mod_xfer.c:2170
-#: ../modules/mod_xfer.c:2191 ../modules/mod_xfer.c:2214
-#: ../modules/mod_xfer.c:2224 ../modules/mod_xfer.c:2267
-#: ../modules/mod_xfer.c:2307
+#: ../modules/mod_facts.c:1306 ../modules/mod_lang.c:492
+#: ../modules/mod_lang.c:498 ../modules/mod_xfer.c:1142
+#: ../modules/mod_xfer.c:1291 ../modules/mod_xfer.c:1784
+#: ../modules/mod_xfer.c:1847 ../modules/mod_xfer.c:2128
+#: ../modules/mod_xfer.c:2152 ../modules/mod_xfer.c:2187
+#: ../modules/mod_xfer.c:2230 ../modules/mod_xfer.c:2270
 #, c-format
 msgid "'%s' not understood"
 msgstr ""
 
-#: ../modules/mod_facts.c:1384 ../modules/mod_facts.c:1385
-#: ../modules/mod_ls.c:2996 ../modules/mod_ls.c:2998
+#: ../modules/mod_facts.c:1414 ../modules/mod_facts.c:1415
+#: ../modules/mod_ls.c:3173 ../modules/mod_ls.c:3175
 msgid "[<sp> pathname]"
 msgstr ""
 
-#: ../modules/mod_lang.c:409
+#: ../modules/mod_lang.c:431
 #, c-format
 msgid "Using default language %s"
 msgstr ""
 
-#: ../modules/mod_lang.c:416
+#: ../modules/mod_lang.c:438
 #, c-format
 msgid "Language %s not supported"
 msgstr ""
 
-#: ../modules/mod_lang.c:449
+#: ../modules/mod_lang.c:471
 #, c-format
 msgid "Using language %s"
 msgstr ""
 
-#: ../modules/mod_lang.c:487 ../modules/mod_lang.c:552
+#: ../modules/mod_lang.c:518 ../modules/mod_lang.c:654
 msgid "UTF8 set to on"
 msgstr ""
 
-#: ../modules/mod_lang.c:505 ../modules/mod_lang.c:536
-#: ../modules/mod_lang.c:547
+#: ../modules/mod_lang.c:541 ../modules/mod_lang.c:565
+#: ../modules/mod_lang.c:577 ../modules/mod_lang.c:620
+#: ../modules/mod_lang.c:636 ../modules/mod_lang.c:649
 #, c-format
 msgid "Unable to accept %s"
 msgstr ""
 
-#: ../modules/mod_lang.c:516 ../modules/mod_lang.c:560
+#: ../modules/mod_lang.c:585 ../modules/mod_lang.c:597
+#: ../modules/mod_lang.c:660
 msgid "UTF8 set to off"
 msgstr ""
 
-#: ../modules/mod_ls.c:1269
+#: ../modules/mod_ls.c:1323
 #, c-format
 msgid "ERROR: %s"
 msgstr ""
 
-#: ../modules/mod_ls.c:1871
+#: ../modules/mod_ls.c:1928
 #, c-format
 msgid "Out of memory during globbing of %s"
 msgstr ""
 
-#: ../modules/mod_ls.c:1875
+#: ../modules/mod_ls.c:1932
 #, c-format
 msgid "Read error during globbing of %s"
 msgstr ""
 
-#: ../modules/mod_ls.c:1879
+#: ../modules/mod_ls.c:1936
 #, c-format
 msgid "Unknown error during globbing of %s"
 msgstr ""
 
-#: ../modules/mod_ls.c:2263
+#: ../modules/mod_ls.c:2393
 #, c-format
 msgid "Status of '%s'"
 msgstr ""
 
-#: ../modules/mod_ls.c:2264
+#: ../modules/mod_ls.c:2394
 #, c-format
 msgid "Connected from %s (%s)"
 msgstr ""
 
-#: ../modules/mod_ls.c:2266
+#: ../modules/mod_ls.c:2396
 #, c-format
 msgid "Logged in as %s"
 msgstr ""
 
-#: ../modules/mod_ls.c:2267
+#: ../modules/mod_ls.c:2397
 #, c-format
 msgid "TYPE: %s, STRUcture: File, Mode: Stream"
 msgstr ""
 
-#: ../modules/mod_ls.c:2271
+#: ../modules/mod_ls.c:2401
 msgid "Total bytes transferred for session: %"
 msgstr ""
 
-#: ../modules/mod_ls.c:2279
+#: ../modules/mod_ls.c:2409
 #, c-format
 msgid "%s from %s port %u"
 msgstr ""
 
-#: ../modules/mod_ls.c:2281
+#: ../modules/mod_ls.c:2411
 msgid "Active data transfer to"
 msgstr ""
 
-#: ../modules/mod_ls.c:2281
+#: ../modules/mod_ls.c:2411
 msgid "Passive data transfer from"
 msgstr ""
 
-#: ../modules/mod_ls.c:2297
+#: ../modules/mod_ls.c:2427
 msgid "No data connection"
 msgstr ""
 
-#: ../modules/mod_ls.c:2300 ../modules/mod_ls.c:2381
+#: ../modules/mod_ls.c:2430 ../modules/mod_ls.c:2534
 msgid "End of status"
 msgstr ""
 
-#: ../modules/mod_ls.c:2377
+#: ../modules/mod_ls.c:2530
 #, c-format
 msgid "Status of %s:"
 msgstr ""
 
-#: ../modules/mod_ls.c:2601 ../modules/mod_ls.c:2616 ../modules/mod_ls.c:2683
-#: ../modules/mod_ls.c:2711 ../modules/mod_ls.c:2741 ../src/data.c:656
+#: ../modules/mod_ls.c:2772 ../modules/mod_ls.c:2789 ../modules/mod_ls.c:2855
+#: ../modules/mod_ls.c:2883 ../modules/mod_ls.c:2913 ../src/data.c:677
 msgid "Transfer complete"
 msgstr ""
 
-#: ../modules/mod_ls.c:2607 ../modules/mod_ls.c:2622
+#: ../modules/mod_ls.c:2778 ../modules/mod_ls.c:2795
 msgid "No files found"
 msgstr ""
 
-#: ../modules/mod_ls.c:2768 ../modules/mod_xfer.c:1271
-#: ../modules/mod_xfer.c:1450 ../modules/mod_xfer.c:1944
+#: ../modules/mod_ls.c:2940 ../modules/mod_xfer.c:1196
+#: ../modules/mod_xfer.c:1377 ../modules/mod_xfer.c:1898
 #, c-format
 msgid "%s: Not a regular file"
 msgstr ""
 
-#: ../modules/mod_ls.c:2997
+#: ../modules/mod_ls.c:3174
 msgid "[<sp> (pathname)]"
 msgstr ""
 
-#: ../modules/mod_site.c:78 ../modules/mod_site.c:165
-#: ../modules/mod_site.c:478
+#: ../modules/mod_site.c:77 ../modules/mod_site.c:164
+#: ../modules/mod_site.c:477
 #, c-format
 msgid "'SITE %s' not understood"
 msgstr ""
 
-#: ../modules/mod_site.c:380
+#: ../modules/mod_site.c:379
 #, c-format
 msgid "'%s': invalid mode"
 msgstr ""
 
-#: ../modules/mod_site.c:436
+#: ../modules/mod_site.c:435
 #, c-format
 msgid "Syntax: SITE %s %s"
 msgstr ""
 
-#: ../modules/mod_site.c:441
+#: ../modules/mod_site.c:440
 #, c-format
 msgid "Unknown command 'SITE %s'"
 msgstr ""
 
-#: ../modules/mod_site.c:463
+#: ../modules/mod_site.c:462
 msgid "'SITE' requires parameters"
 msgstr ""
 
-#: ../modules/mod_site.c:488
+#: ../modules/mod_site.c:487
 msgid "The following SITE commands are recognized (* =>'s unimplemented)"
 msgstr ""
 
-#: ../modules/mod_site.c:517 ../src/help.c:125
+#: ../modules/mod_site.c:516 ../src/help.c:127
 #, c-format
 msgid "Direct comments to %s"
 msgstr ""
 
-#: ../modules/mod_site.c:529
+#: ../modules/mod_site.c:528
 msgid "<sp> string"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1110
+#: ../modules/mod_xfer.c:1035
 #, c-format
 msgid "%s: Bad file name"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1126
+#: ../modules/mod_xfer.c:1051
 #, c-format
 msgid "%s: File name too long"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1163
+#: ../modules/mod_xfer.c:1088
 #, c-format
 msgid "%s: Temporary hidden file %s already exists"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1238 ../modules/mod_xfer.c:1369
-#: ../modules/mod_xfer.c:1495 ../modules/mod_xfer.c:1928
+#: ../modules/mod_xfer.c:1163 ../modules/mod_xfer.c:1296
+#: ../modules/mod_xfer.c:1425 ../modules/mod_xfer.c:1878
 #, c-format
 msgid "%s: Too many transfers"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1250 ../modules/mod_xfer.c:1442
+#: ../modules/mod_xfer.c:1175 ../modules/mod_xfer.c:1369
 #, c-format
 msgid "%s: Overwrite permission denied"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1286
+#: ../modules/mod_xfer.c:1213
 #, c-format
 msgid "%s: Append/Restart not permitted, try again"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1322
+#: ../modules/mod_xfer.c:1249
 msgid "REST not compatible with server configuration"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1331
+#: ../modules/mod_xfer.c:1258
 msgid "APPE not compatible with server configuration"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1378
+#: ../modules/mod_xfer.c:1305
 msgid "STOU incompatible with REST"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1400
+#: ../modules/mod_xfer.c:1327
 #, c-format
 msgid "%s: unable to generate unique filename"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1617 ../modules/mod_xfer.c:2016
-#: ../modules/mod_xfer.c:2038
+#: ../modules/mod_xfer.c:1549 ../modules/mod_xfer.c:1972
+#: ../modules/mod_xfer.c:1994
 #, c-format
 msgid "%s: invalid REST argument"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1810
+#: ../modules/mod_xfer.c:1760
 #, c-format
 msgid "%s: Rename of hidden file %s failed: %s"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1843 ../modules/mod_xfer.c:1856
+#: ../modules/mod_xfer.c:1793 ../modules/mod_xfer.c:1806
 msgid "REST requires a value greater than or equal to 0"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1873
+#: ../modules/mod_xfer.c:1823
 #, c-format
 msgid "%s: Resuming transfers not allowed in ASCII mode"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1879
+#: ../modules/mod_xfer.c:1829
 msgid "Restarting at %"
 msgstr ""
 
-#: ../modules/mod_xfer.c:1956
+#: ../modules/mod_xfer.c:1912
 #, c-format
 msgid "%s: Restart not permitted, try again"
 msgstr ""
 
-#: ../modules/mod_xfer.c:2185
+#: ../modules/mod_xfer.c:2143
 msgid "Abort successful"
 msgstr ""
 
-#: ../modules/mod_xfer.c:2218
+#: ../modules/mod_xfer.c:2176
+#, c-format
+msgid "%s not implemented for '%s' parameter"
+msgstr ""
+
+#: ../modules/mod_xfer.c:2181
 #, c-format
 msgid "Type set to %s"
 msgstr ""
 
-#: ../modules/mod_xfer.c:2233
+#: ../modules/mod_xfer.c:2196
 msgid "Structure set to F"
 msgstr ""
 
-#: ../modules/mod_xfer.c:2252
+#: ../modules/mod_xfer.c:2215
 #, c-format
 msgid "'%s' unsupported structure type"
 msgstr ""
 
-#: ../modules/mod_xfer.c:2258
+#: ../modules/mod_xfer.c:2221
 #, c-format
 msgid "'%s' unrecognized structure type"
 msgstr ""
 
-#: ../modules/mod_xfer.c:2276
+#: ../modules/mod_xfer.c:2239
 msgid "Mode set to S"
 msgstr ""
 
-#: ../modules/mod_xfer.c:2284
+#: ../modules/mod_xfer.c:2247
 #, c-format
 msgid "'%s' unsupported transfer mode"
 msgstr ""
 
-#: ../modules/mod_xfer.c:2290
+#: ../modules/mod_xfer.c:2253
 #, c-format
 msgid "'%s' unrecognized transfer mode"
 msgstr ""
 
-#: ../modules/mod_xfer.c:2318
+#: ../modules/mod_xfer.c:2281
 #, c-format
 msgid "%s: invalid ALLO argument"
 msgstr ""
 
-#: ../modules/mod_xfer.c:2353
+#: ../modules/mod_xfer.c:2316
 msgid "SMNT command not implemented"
 msgstr ""
 
-#: ../modules/mod_xfer.c:2412
+#: ../modules/mod_xfer.c:2375
 #, c-format
 msgid "No transfer timeout (%d seconds): closing control connection"
 msgstr ""
 
-#: ../modules/mod_xfer.c:3236
+#: ../modules/mod_xfer.c:3179
 msgid "<sp> type-code (A, I, L 7, L 8)"
 msgstr ""
 
-#: ../modules/mod_xfer.c:3237
+#: ../modules/mod_xfer.c:3180
 msgid "is not implemented (always F)"
 msgstr ""
 
-#: ../modules/mod_xfer.c:3238
+#: ../modules/mod_xfer.c:3181
 msgid "is not implemented (always S)"
 msgstr ""
 
-#: ../modules/mod_xfer.c:3241
+#: ../modules/mod_xfer.c:3184
 msgid "(store unique filename)"
 msgstr ""
 
-#: ../modules/mod_xfer.c:3243
+#: ../modules/mod_xfer.c:3186
 msgid "<sp> byte-count"
 msgstr ""
 
-#: ../modules/mod_xfer.c:3244
+#: ../modules/mod_xfer.c:3187
 msgid "(abort current operation)"
 msgstr ""
 
-#: ../src/data.c:286 ../src/data.c:405
+#: ../src/data.c:286 ../src/data.c:422
 msgid "Opening %s mode data connection for %s (%"
 msgstr ""
 
-#: ../src/data.c:290 ../src/data.c:408
+#: ../src/data.c:290 ../src/data.c:426
 #, c-format
 msgid "Opening %s mode data connection for %s"
 msgstr ""
 
-#: ../src/data.c:326 ../src/data.c:385 ../src/data.c:441 ../src/data.c:565
-#: ../src/data.c:573
+#: ../src/data.c:326 ../src/data.c:400 ../src/data.c:460 ../src/data.c:586
+#: ../src/data.c:594
 #, c-format
 msgid "Unable to build data connection: %s"
 msgstr ""
 
-#: ../src/data.c:729
+#: ../src/data.c:750
 msgid "Data connection closed"
 msgstr ""
 
-#: ../src/data.c:735
+#: ../src/data.c:756
 msgid "Unexpected streams hangup"
 msgstr ""
 
-#: ../src/data.c:748
+#: ../src/data.c:769
 msgid "Insufficient memory or file locked"
 msgstr ""
 
-#: ../src/data.c:854
+#: ../src/data.c:875
 msgid "Link to file server lost"
 msgstr ""
 
-#: ../src/data.c:863
+#: ../src/data.c:884
 #, c-format
 msgid "Unknown or out of range errno [%d]"
 msgstr ""
 
-#: ../src/data.c:874
+#: ../src/data.c:895
 #, c-format
 msgid "Transfer aborted. %s"
 msgstr ""
 
-#: ../src/data.c:976 ../src/data.c:1002
+#: ../src/data.c:997 ../src/data.c:1023
 #, c-format
 msgid "%s: data transfer in progress"
 msgstr ""
 
-#: ../src/data.c:1045 ../src/main.c:871
+#: ../src/data.c:1066 ../src/main.c:922
 msgid "Invalid command: try being more creative"
 msgstr ""
 
@@ -1135,29 +1148,29 @@ msgstr ""
 msgid "The following commands are recognized (* =>'s unimplemented):"
 msgstr ""
 
-#: ../src/main.c:230
+#: ../src/main.c:231
 #, c-format
 msgid "FTP server shutting down - %s"
 msgstr ""
 
-#: ../src/main.c:439
+#: ../src/main.c:463
 #, c-format
 msgid "%s not understood"
 msgstr ""
 
-#: ../src/main.c:833
+#: ../src/main.c:884
 #, c-format
 msgid "%s FTP server ready"
-msgstr ""
-
-#: ../src/main.c:1309
-#, c-format
-msgid "FTP server shut down (%s) -- please try again later"
 msgstr ""
 
 #: ../src/main.c:1324
 #, c-format
 msgid "Sorry, no server available to handle request on %s"
+msgstr ""
+
+#: ../src/main.c:1388
+#, c-format
+msgid "FTP server shut down (%s) -- please try again later"
 msgstr ""
 
 #: ../src/netio.c:372

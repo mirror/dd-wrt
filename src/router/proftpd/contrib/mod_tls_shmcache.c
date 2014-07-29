@@ -2,7 +2,7 @@
  * ProFTPD: mod_tls_shmcache -- a module which provides a shared SSL session
  *                              cache using SysV shared memory
  *
- * Copyright (c) 2009-2011 TJ Saunders
+ * Copyright (c) 2009-2013 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
  *  --- DO NOT DELETE BELOW THIS LINE ----
- *  $Id: mod_tls_shmcache.c,v 1.11 2011/05/23 20:56:40 castaglia Exp $
+ *  $Id: mod_tls_shmcache.c,v 1.15 2013/11/05 21:37:16 castaglia Exp $
  *  $Libraries: -lssl -lcrypto$
  */
 
@@ -139,7 +139,7 @@ static pr_fh_t *shmcache_fh = NULL;
 
 static array_header *shmcache_sess_list = NULL;
 
-static const char *trace_channel = "tls_shmcache";
+static const char *trace_channel = "tls.shmcache";
 
 static int shmcache_close(tls_sess_cache_t *);
 
@@ -570,9 +570,10 @@ static unsigned int shmcache_flush(void) {
  */
 
 static int shmcache_open(tls_sess_cache_t *cache, char *info, long timeout) {
-  int fd;
+  int fd, xerrno;
   char *ptr;
   size_t requested_size;
+  struct stat st;
 
   pr_trace_msg(trace_channel, 9, "opening shmcache cache %p", cache);
 
@@ -680,12 +681,39 @@ static int shmcache_open(tls_sess_cache_t *cache, char *info, long timeout) {
 
   PRIVS_ROOT
   shmcache_fh = pr_fsio_open(info, O_RDWR|O_CREAT);
+  xerrno = errno;
   PRIVS_RELINQUISH
 
   if (shmcache_fh == NULL) {
     pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
-      ": error: unable to open file '%s': %s", info, strerror(errno));
+      ": error: unable to open file '%s': %s", info, strerror(xerrno));
 
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (pr_fsio_fstat(shmcache_fh, &st) < 0) {
+    xerrno = errno;
+
+    pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
+      ": error: unable to stat file '%s': %s", info, strerror(xerrno));
+
+    pr_fsio_close(shmcache_fh);
+    shmcache_fh = NULL;
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (S_ISDIR(st.st_mode)) {
+    xerrno = EISDIR;
+
+    pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
+      ": error: unable to use file '%s': %s", info, strerror(xerrno));
+
+    pr_fsio_close(shmcache_fh);
+    shmcache_fh = NULL;
+    
     errno = EINVAL;
     return -1;
   }
@@ -718,7 +746,7 @@ static int shmcache_open(tls_sess_cache_t *cache, char *info, long timeout) {
 
   shmcache_data = shmcache_get_shm(shmcache_fh, requested_size);
   if (shmcache_data == NULL) {
-    int xerrno = errno;
+    xerrno = errno;
 
     pr_trace_msg(trace_channel, 1,
       "unable to allocate shm: %s", strerror(xerrno));
@@ -740,7 +768,10 @@ static int shmcache_open(tls_sess_cache_t *cache, char *info, long timeout) {
 }
 
 static int shmcache_close(tls_sess_cache_t *cache) {
-  pr_trace_msg(trace_channel, 9, "closing shmcache cache %p", cache);
+
+  if (cache != NULL) {
+    pr_trace_msg(trace_channel, 9, "closing shmcache cache %p", cache);
+  }
 
   if (cache != NULL &&
       cache->cache_pool != NULL) {
@@ -1268,7 +1299,9 @@ static int shmcache_remove(tls_sess_cache_t *cache) {
     return 0;
   }
 
-  pr_trace_msg(trace_channel, 9, "removing shmcache cache %p", cache); 
+  if (cache != NULL) {
+    pr_trace_msg(trace_channel, 9, "removing shmcache cache %p", cache); 
+  }
 
   cache_file = shmcache_fh->fh_path;
   (void) shmcache_close(cache);
@@ -1394,7 +1427,7 @@ static int shmcache_status(tls_sess_cache_t *cache,
         ptr = entry->sess_data;
         sess = d2i_SSL_SESSION(NULL, &ptr, entry->sess_datalen); 
         if (sess == NULL) {
-          pr_log_pri(PR_LOG_INFO, MOD_TLS_SHMCACHE_VERSION
+          pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
             ": error retrieving session from cache: %s",
             shmcache_get_crypto_errors());
           continue;
@@ -1530,14 +1563,12 @@ static int tls_shmcache_init(void) {
   shmcache.remove = shmcache_remove;
   shmcache.status = shmcache_status;
 
-#ifdef SSL_SESS_CACHE_NO_INTERNAL
+#ifdef SSL_SESS_CACHE_NO_INTERNAL_LOOKUP
   /* Take a chance, and inform OpenSSL that it does not need to use its own
-   * internal session caching; using the external session cache (i.e. us)
+   * internal session cache lookups; using the external session cache (i.e. us)
    * will be enough.
-   *
-   * Using NO_INTERNAL is equivalent to NO_INTERNAL_LOOKUP|NO_INTERNAL_STORE.
    */
-  shmcache.cache_mode = SSL_SESS_CACHE_NO_INTERNAL;
+  shmcache.cache_mode = SSL_SESS_CACHE_NO_INTERNAL_LOOKUP;
 #endif
 
   /* Register ourselves with mod_tls. */

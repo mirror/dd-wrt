@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2011 The ProFTPD Project team
+ * Copyright (c) 2009-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
  *
- * $Id: session.c,v 1.14 2011/05/23 21:22:24 castaglia Exp $
+ * $Id: session.c,v 1.16 2013/08/25 21:16:39 castaglia Exp $
  */
 
 #include "conf.h"
@@ -237,6 +237,94 @@ const char *pr_session_get_protocol(int flags) {
 
   /* Should never reach here, but just in case... */
   return "unknown";
+}
+
+void pr_session_send_banner(server_rec *s, int flags) {
+  config_rec *c = NULL;
+  char *display = NULL;
+  const char *serveraddress = NULL;
+  config_rec *masq = NULL;
+
+  display = get_param_ptr(s->conf, "DisplayConnect", FALSE);
+  if (display != NULL) {
+    if (pr_display_file(display, NULL, R_220, flags) < 0) {
+      pr_log_debug(DEBUG6, "unable to display DisplayConnect file '%s': %s",
+        display, strerror(errno));
+    }
+  }
+
+  serveraddress = pr_netaddr_get_ipstr(session.c->local_addr);
+
+  masq = find_config(s->conf, CONF_PARAM, "MasqueradeAddress", FALSE);
+  if (masq != NULL) {
+    pr_netaddr_t *masq_addr = (pr_netaddr_t *) masq->argv[0];
+    serveraddress = pr_netaddr_get_ipstr(masq_addr);
+  }
+
+  c = find_config(s->conf, CONF_PARAM, "ServerIdent", FALSE);
+  if (c == NULL ||
+      *((unsigned char *) c->argv[0]) == TRUE) {
+    unsigned char *defer_welcome;
+
+    defer_welcome = get_param_ptr(s->conf, "DeferWelcome", FALSE);
+
+    if (c &&
+        c->argc > 1) {
+      char *server_ident = c->argv[1];
+
+      if (strstr(server_ident, "%L") != NULL) {
+        server_ident = sreplace(session.pool, server_ident, "%L",
+          serveraddress, NULL);
+      }
+
+      if (strstr(server_ident, "%V") != NULL) {
+        server_ident = sreplace(session.pool, server_ident, "%V",
+          main_server->ServerFQDN, NULL);
+      }
+
+      if (strstr(server_ident, "%v") != NULL) {
+        server_ident = sreplace(session.pool, server_ident, "%v",
+          main_server->ServerName, NULL);
+      }
+
+      if (flags & PR_DISPLAY_FL_SEND_NOW) {
+        pr_response_send(R_220, "%s", server_ident);
+
+      } else {
+        pr_response_add(R_220, "%s", server_ident);
+      }
+
+    } else if (defer_welcome &&
+               *defer_welcome == TRUE) {
+
+      if (flags & PR_DISPLAY_FL_SEND_NOW) {
+        pr_response_send(R_220, "ProFTPD " PROFTPD_VERSION_TEXT
+          " Server ready.");
+
+      } else {
+        pr_response_add(R_220, "ProFTPD " PROFTPD_VERSION_TEXT
+          " Server ready.");
+      }
+
+    } else {
+      if (flags & PR_DISPLAY_FL_SEND_NOW) {
+        pr_response_send(R_220, "ProFTPD " PROFTPD_VERSION_TEXT
+          " Server (%s) [%s]", s->ServerName, serveraddress);
+
+      } else {
+        pr_response_add(R_220, "ProFTPD " PROFTPD_VERSION_TEXT
+          " Server (%s) [%s]", s->ServerName, serveraddress);
+      }
+    }
+
+  } else {
+    if (flags & PR_DISPLAY_FL_SEND_NOW) {
+      pr_response_send(R_220, _("%s FTP server ready"), serveraddress);
+
+    } else {
+      pr_response_add(R_220, _("%s FTP server ready"), serveraddress);
+    }
+  }
 }
 
 int pr_session_set_idle(void) {

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2012 The ProFTPD Project team
+ * Copyright (c) 2001-2013 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,11 +25,12 @@
  */
 
 /* Flexible logging module for proftpd
- * $Id: mod_log.c,v 1.124.2.3 2012/12/26 23:38:01 castaglia Exp $
+ * $Id: mod_log.c,v 1.155 2013/11/11 01:34:04 castaglia Exp $
  */
 
 #include "conf.h"
 #include "privs.h"
+#include "mod_log.h"
 
 module log_module;
 
@@ -68,58 +69,20 @@ struct logfile_struc {
  */
 #define EXTENDED_LOG_SYSLOG	-4
 
-#define META_START		0xff
-#define META_ARG_END		0xfe
-#define META_ARG		1
-#define META_BYTES_SENT		2
-#define META_FILENAME		3
-#define META_ENV_VAR		4
-#define META_REMOTE_HOST	5
-#define META_REMOTE_IP		6
-#define META_IDENT_USER		7
-#define META_PID		8
-#define META_TIME		9
-#define META_SECONDS		10
-#define META_COMMAND		11
-#define META_LOCAL_NAME		12
-#define META_LOCAL_PORT		13
-#define META_LOCAL_IP		14
-#define META_LOCAL_FQDN		15
-#define META_USER		16
-#define META_ORIGINAL_USER	17
-#define META_RESPONSE_CODE	18
-#define META_CLASS		19
-#define META_ANON_PASS		20
-#define META_METHOD		21
-#define META_XFER_PATH		22
-#define META_DIR_NAME		23
-#define META_DIR_PATH		24
-#define META_CMD_PARAMS		25
-#define META_RESPONSE_STR	26
-#define META_PROTOCOL		27
-#define META_VERSION		28
-#define META_RENAME_FROM	29
-#define META_FILE_MODIFIED	30
-#define META_UID		31
-#define META_GID		32
-#define META_RAW_BYTES_IN	33
-#define META_RAW_BYTES_OUT	34
-#define META_EOS_REASON		35
-#define META_VHOST_IP		36
-
 /* For tracking the size of deleted files. */
 static off_t log_dele_filesz = 0;
 
-static pool			*log_pool;
-static logformat_t		*formats = NULL;
-static xaset_t			*format_set = NULL;
-static logfile_t		*logs = NULL;
-static xaset_t			*log_set = NULL;
+static pool *log_pool = NULL;
+static logformat_t *formats = NULL;
+static xaset_t *format_set = NULL;
+static logfile_t *logs = NULL;
+static xaset_t *log_set = NULL;
 
 /* format string args:
    %A			- Anonymous username (password given)
    %a			- Remote client IP address
    %b			- Bytes sent for request
+   %{basename}		- Basename of path
    %c			- Class
    %D			- full directory path
    %d			- directory (for client)
@@ -127,6 +90,7 @@ static xaset_t			*log_set = NULL;
    %{FOOBAR}e		- Contents of environment variable FOOBAR
    %F			- Transfer path (filename for client)
    %f			- Filename
+   %g			- Local user's primary group name
    %H                   - Local IP address of server handling session
    %h			- Remote client DNS name
    %I                   - Total number of "raw" bytes read in from network
@@ -150,17 +114,26 @@ static xaset_t			*log_set = NULL;
    %w                   - RNFR path ("whence" a rename comes, i.e. the source)
    %{file-modified}     - Indicates whether a file is being modified
                           (i.e. already exists) or not.
+   %{iso8601}           - ISO-8601 timestamp: YYYY-MM-dd HH:mm:ss,SSS
+                            for example: "1999-11-27 15:49:37,459"
+   %{microsecs}         - 6 digits of microseconds of current time
+   %{millisecs}         - 3 digits of milliseconds of current time
    %{protocol}          - Current protocol (e.g. "ftp", "sftp", etc)
    %{uid}               - UID of logged-in user
    %{gid}               - Primary GID of logged-in user
+   %{transfer-status}   - "success", "failed", "cancelled", "timeout", or "-"
+   %{transfer-failure}  - reason, or "-"
    %{version}           - ProFTPD version
 */
+
+/* Necessary prototypes */
+static int log_sess_init(void);
 
 static void add_meta(unsigned char **s, unsigned char meta, int args, ...) {
   int arglen;
   char *arg;
 
-  **s = META_START;
+  **s = LOGFMT_META_START;
   (*s) = (*s) + 1;
   **s = meta;
   (*s) = (*s) + 1;
@@ -175,7 +148,7 @@ static void add_meta(unsigned char **s, unsigned char meta, int args, ...) {
 
       memcpy(*s, arg, arglen);
       (*s) = (*s) + arglen;
-      **s = META_ARG_END;
+      **s = LOGFMT_META_ARG_END;
       (*s) = (*s) + 1;
     }
 
@@ -195,7 +168,7 @@ static char *preparse_arg(char **s) {
   return ret;
 }
 
-static void logformat(char *nickname, char *fmts) {
+static void logformat(const char *directive, char *nickname, char *fmts) {
   char *tmp, *arg;
   unsigned char format[4096] = {'\0'}, *outs;
   logformat_t *lf;
@@ -212,35 +185,93 @@ static void logformat(char *nickname, char *fmts) {
       tmp++;
       for (;;) {
         pr_signals_handle();
+
+        if (strncmp(tmp, "{basename}", 10) == 0) {
+          add_meta(&outs, LOGFMT_META_BASENAME, 0);
+          tmp += 10;
+          continue;
+        }
  
         if (strncmp(tmp, "{file-modified}", 15) == 0) {
-          add_meta(&outs, META_FILE_MODIFIED, 0);
+          add_meta(&outs, LOGFMT_META_FILE_MODIFIED, 0);
           tmp += 15;
           continue;
         }
 
         if (strncmp(tmp, "{gid}", 5) == 0) {
-          add_meta(&outs, META_GID, 0);
+          add_meta(&outs, LOGFMT_META_GID, 0);
           tmp += 5;
           continue;
         }
 
+        if (strncasecmp(tmp, "{iso8601}", 9) == 0) {
+          add_meta(&outs, LOGFMT_META_ISO8601, 0);
+          tmp += 9;
+          continue;
+        }
+
+        if (strncmp(tmp, "{microsecs}", 11) == 0) {
+          add_meta(&outs, LOGFMT_META_MICROSECS, 0);
+          tmp += 11;
+          continue;
+        }
+
+        if (strncmp(tmp, "{millisecs}", 11) == 0) {
+          add_meta(&outs, LOGFMT_META_MILLISECS, 0);
+          tmp += 11;
+          continue;
+        }
+
         if (strncmp(tmp, "{protocol}", 10) == 0) {
-          add_meta(&outs, META_PROTOCOL, 0);
+          add_meta(&outs, LOGFMT_META_PROTOCOL, 0);
           tmp += 10;
           continue;
         }
 
         if (strncmp(tmp, "{uid}", 5) == 0) {
-          add_meta(&outs, META_UID, 0);
+          add_meta(&outs, LOGFMT_META_UID, 0);
           tmp += 5;
           continue;
         }
 
+        if (strncmp(tmp, "{transfer-failure}", 18) == 0) {
+          add_meta(&outs, LOGFMT_META_XFER_FAILURE, 0);
+          tmp += 18;
+          continue;
+        }
+
+        if (strncmp(tmp, "{transfer-status}", 17) == 0) {
+          add_meta(&outs, LOGFMT_META_XFER_STATUS, 0);
+          tmp += 17;
+          continue;
+        }
+
         if (strncmp(tmp, "{version}", 9) == 0) {
-          add_meta(&outs, META_VERSION, 0);
+          add_meta(&outs, LOGFMT_META_VERSION, 0);
           tmp += 9;
           continue;
+        }
+
+        if (strncmp(tmp, "{note:", 6) == 0) {
+          char *ptr;
+
+          ptr = strchr(tmp + 6, '}');
+          if (ptr != NULL) {
+            char *note;
+            size_t notelen;
+
+            note = tmp + 6;
+            notelen = (ptr - note);
+
+            add_meta(&outs, LOGFMT_META_NOTE_VAR, 0);
+            add_meta(&outs, LOGFMT_META_ARG, 1, (int) notelen, note);
+
+            /* Advance 6 for the leading '{note:', and one more for the
+             * trailing '}' character.
+             */
+            tmp += (notelen + 6 + 1);
+            continue;
+          }
         }
 
         switch (*tmp) {
@@ -249,128 +280,132 @@ static void logformat(char *nickname, char *fmts) {
             continue;
 
           case 'a':
-            add_meta(&outs, META_REMOTE_IP, 0);
+            add_meta(&outs, LOGFMT_META_REMOTE_IP, 0);
             break;
 
           case 'A':
-            add_meta(&outs, META_ANON_PASS, 0);
+            add_meta(&outs, LOGFMT_META_ANON_PASS, 0);
             break;
 
           case 'b':
-            add_meta(&outs, META_BYTES_SENT, 0);
+            add_meta(&outs, LOGFMT_META_BYTES_SENT, 0);
             break;
 
           case 'c':
-            add_meta(&outs, META_CLASS, 0);
+            add_meta(&outs, LOGFMT_META_CLASS, 0);
             break;
 
           case 'D':
-            add_meta(&outs, META_DIR_PATH, 0);
+            add_meta(&outs, LOGFMT_META_DIR_PATH, 0);
             break;
 
           case 'd':
-            add_meta(&outs, META_DIR_NAME, 0);
+            add_meta(&outs, LOGFMT_META_DIR_NAME, 0);
             break;
 
           case 'E':
-            add_meta(&outs, META_EOS_REASON, 0);
+            add_meta(&outs, LOGFMT_META_EOS_REASON, 0);
             break;
 
           case 'e':
             if (arg) {
-              add_meta(&outs, META_ENV_VAR, 0);
-              add_meta(&outs, META_ARG, 1, (int) strlen(arg), arg);
+              add_meta(&outs, LOGFMT_META_ENV_VAR, 0);
+              add_meta(&outs, LOGFMT_META_ARG, 1, (int) strlen(arg), arg);
             }
             break;
 
           case 'f':
-            add_meta(&outs, META_FILENAME, 0);
+            add_meta(&outs, LOGFMT_META_FILENAME, 0);
             break;
 
           case 'F':
-            add_meta(&outs, META_XFER_PATH, 0);
+            add_meta(&outs, LOGFMT_META_XFER_PATH, 0);
+            break;
+
+          case 'g':
+            add_meta(&outs, LOGFMT_META_GROUP, 0);
             break;
 
           case 'H':
-            add_meta(&outs, META_VHOST_IP, 0);
+            add_meta(&outs, LOGFMT_META_VHOST_IP, 0);
             break;
 
           case 'h':
-            add_meta(&outs, META_REMOTE_HOST, 0);
+            add_meta(&outs, LOGFMT_META_REMOTE_HOST, 0);
             break;
 
           case 'I':
-            add_meta(&outs, META_RAW_BYTES_IN, 0);
+            add_meta(&outs, LOGFMT_META_RAW_BYTES_IN, 0);
             break;
 
           case 'J':
-            add_meta(&outs, META_CMD_PARAMS, 0);
+            add_meta(&outs, LOGFMT_META_CMD_PARAMS, 0);
             break;
 
           case 'l':
-            add_meta(&outs, META_IDENT_USER, 0);
+            add_meta(&outs, LOGFMT_META_IDENT_USER, 0);
             break;
 
           case 'L':
-            add_meta(&outs, META_LOCAL_IP, 0);
+            add_meta(&outs, LOGFMT_META_LOCAL_IP, 0);
             break;
 
           case 'm':
-            add_meta(&outs, META_METHOD, 0);
+            add_meta(&outs, LOGFMT_META_METHOD, 0);
             break;
 
           case 'O':
-            add_meta(&outs, META_RAW_BYTES_OUT, 0);
+            add_meta(&outs, LOGFMT_META_RAW_BYTES_OUT, 0);
             break;
 
           case 'p':
-            add_meta(&outs, META_LOCAL_PORT, 0);
+            add_meta(&outs, LOGFMT_META_LOCAL_PORT, 0);
             break;
 
           case 'P':
-            add_meta(&outs, META_PID, 0);
+            add_meta(&outs, LOGFMT_META_PID, 0);
             break;
 
           case 'r':
-            add_meta(&outs, META_COMMAND, 0);
+            add_meta(&outs, LOGFMT_META_COMMAND, 0);
             break;
 
           case 's':
-            add_meta(&outs, META_RESPONSE_CODE, 0);
+            add_meta(&outs, LOGFMT_META_RESPONSE_CODE, 0);
             break;
 
           case 'S':
-            add_meta(&outs, META_RESPONSE_STR, 0);
+            add_meta(&outs, LOGFMT_META_RESPONSE_STR, 0);
             break;
 
           case 't':
-            add_meta(&outs, META_TIME, 0);
+            add_meta(&outs, LOGFMT_META_TIME, 0);
             if (arg)
-              add_meta(&outs, META_ARG, 1, (int) strlen(arg), arg);
+              add_meta(&outs, LOGFMT_META_ARG, 1, (int) strlen(arg), arg);
             break;
 
           case 'T':
-            add_meta(&outs, META_SECONDS, 0);
+            add_meta(&outs, LOGFMT_META_SECONDS, 0);
             break;
 
           case 'u':
-            add_meta(&outs, META_USER, 0);
+            add_meta(&outs, LOGFMT_META_USER, 0);
             break;
 
           case 'U':
-            add_meta(&outs, META_ORIGINAL_USER, 0);
+            add_meta(&outs, LOGFMT_META_ORIGINAL_USER, 0);
             break;
 
           case 'v':
-            add_meta(&outs, META_LOCAL_NAME, 0);
+            add_meta(&outs, LOGFMT_META_LOCAL_NAME, 0);
             break;
 
           case 'V':
-            add_meta(&outs, META_LOCAL_FQDN, 0);
+            add_meta(&outs, LOGFMT_META_LOCAL_FQDN, 0);
             break;
 
           case 'w':
-            add_meta(&outs, META_RENAME_FROM, 0);
+            add_meta(&outs, LOGFMT_META_RENAME_FROM, 0);
             break;
 
           case '%':
@@ -403,6 +438,20 @@ static void logformat(char *nickname, char *fmts) {
 
   xaset_insert_end(format_set, (xasetmember_t *) lf);
   formats = (logformat_t *) format_set->xas_list;
+
+  if (directive != NULL) {
+    config_rec *c;
+
+    /* Store the parsed format in the config tree as well, for use by other
+     * logging-related modules.
+     */
+    c = add_config_param(directive, 2, NULL, NULL);
+    c->argv[0] = pstrdup(c->pool, nickname);
+    c->argv[1] = palloc(c->pool, outs - format);
+
+    tmp = c->argv[1];
+    memcpy(tmp, format, outs - format); 
+  }
 }
 
 /* Syntax: LogFormat nickname "format string" */
@@ -410,7 +459,7 @@ MODRET set_logformat(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 2);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  logformat(cmd->argv[1], cmd->argv[2]);
+  logformat(cmd->argv[0], cmd->argv[1], cmd->argv[2]);
   return PR_HANDLED(cmd);
 }
 
@@ -565,51 +614,10 @@ MODRET set_serverlog(cmd_rec *cmd) {
 
 /* Syntax: SystemLog <filename> */
 MODRET set_systemlog(cmd_rec *cmd) {
-  char *syslogfn = NULL;
-  int res, xerrno = 0;
-
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  log_closesyslog();
-
-  syslogfn = cmd->argv[1];
-
-  if (strcasecmp(syslogfn, "NONE") == 0) {
-    log_discard();
-    return PR_HANDLED(cmd);
-  }
-
-  if (*syslogfn != '/')
-    syslogfn = dir_canonical_path(cmd->tmp_pool,syslogfn);
-
-  pr_signals_block();
-
-  PRIVS_ROOT
-  res = log_opensyslog(syslogfn);
-  if (res < 0) {
-    xerrno = errno;
-  }
-  PRIVS_RELINQUISH
-
-  if (res < 0) {
-    pr_signals_unblock();
-
-    if (res == PR_LOG_WRITABLE_DIR) {
-      CONF_ERROR(cmd,
-        "you are attempting to log to a world writable directory");
-
-    } else if (res == PR_LOG_SYMLINK) {
-      CONF_ERROR(cmd, "you are attempting to log to a symbolic link");
-
-    } else {
-      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
-        "unable to redirect logging to '", syslogfn, "': ",
-        strerror(xerrno), NULL));
-    }
-  }
-
-  pr_signals_unblock();
+  (void) add_config_param_str(cmd->argv[0], 1, cmd->argv[1]); 
   return PR_HANDLED(cmd);
 }
 
@@ -617,7 +625,7 @@ static struct tm *_get_gmtoff(int *tz) {
   time_t tt = time(NULL);
   struct tm gmt;
   struct tm *t;
-  int days,hours,minutes;
+  int days, hours, minutes;
 
   gmt = *gmtime(&tt);
   t = pr_localtime(NULL, &tt);
@@ -641,10 +649,10 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
 
   m = (*f) + 1;
   switch (*m) {
-    case META_ARG:
+    case LOGFMT_META_ARG:
       m++;
       argp = arg;
-      while (*m != META_ARG_END)
+      while (*m != LOGFMT_META_ARG_END)
         *argp++ = (char) *m++;
 
       *argp = 0;
@@ -652,7 +660,7 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       m++;
       break;
 
-    case META_ANON_PASS:
+    case LOGFMT_META_ANON_PASS:
       argp = arg;
 
       pass = pr_table_get(session.notes, "mod_auth.anon-passwd", NULL);
@@ -664,7 +672,7 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       m++;
       break;
 
-    case META_BYTES_SENT:
+    case LOGFMT_META_BYTES_SENT:
       argp = arg;
       if (session.xfer.p) {
         snprintf(argp, sizeof(arg), "%" PR_LU,
@@ -679,19 +687,22 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       m++;
       break;
 
-    case META_CLASS:
+    case LOGFMT_META_CLASS:
       argp = arg;
-      sstrncpy(argp, session.class ? session.class->cls_name : "-",
+      sstrncpy(argp, session.conn_class ? session.conn_class->cls_name : "-",
         sizeof(arg));
       m++;
       break;
 
-    case META_DIR_NAME:
+    case LOGFMT_META_DIR_NAME:
       argp = arg;
 
       if (pr_cmd_cmp(cmd, PR_CMD_CDUP_ID) == 0 ||
           pr_cmd_cmp(cmd, PR_CMD_CWD_ID) == 0 ||
+          pr_cmd_cmp(cmd, PR_CMD_LIST_ID) == 0 ||
+          pr_cmd_cmp(cmd, PR_CMD_MLSD_ID) == 0 ||
           pr_cmd_cmp(cmd, PR_CMD_MKD_ID) == 0 ||
+          pr_cmd_cmp(cmd, PR_CMD_NLST_ID) == 0 ||
           pr_cmd_cmp(cmd, PR_CMD_RMD_ID) == 0 ||
           pr_cmd_cmp(cmd, PR_CMD_XCWD_ID) == 0 ||
           pr_cmd_cmp(cmd, PR_CMD_XCUP_ID) == 0 ||
@@ -702,7 +713,20 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
         path = pr_fs_decode_path(p, cmd->arg);
         tmp = strrchr(path, '/');
 
-        sstrncpy(argp, tmp ? tmp : path, sizeof(arg));
+        if (tmp != NULL) {
+          if (tmp != path) {
+            sstrncpy(argp, tmp + 1, sizeof(arg));
+
+          } else if (*(tmp+1) != '\0') {
+            sstrncpy(argp, tmp + 1, sizeof(arg));
+
+          } else {
+            sstrncpy(argp, path, sizeof(arg));
+          }
+
+        } else {
+          sstrncpy(argp, path, sizeof(arg));
+        }
 
       } else {
         sstrncpy(argp, pr_fs_getvwd(), sizeof(arg));
@@ -711,11 +735,14 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       m++;
       break;
 
-    case META_DIR_PATH:
+    case LOGFMT_META_DIR_PATH:
       argp = arg;
 
       if (pr_cmd_cmp(cmd, PR_CMD_CDUP_ID) == 0 ||
+          pr_cmd_cmp(cmd, PR_CMD_LIST_ID) == 0 ||
+          pr_cmd_cmp(cmd, PR_CMD_MLSD_ID) == 0 ||
           pr_cmd_cmp(cmd, PR_CMD_MKD_ID) == 0 ||
+          pr_cmd_cmp(cmd, PR_CMD_NLST_ID) == 0 ||
           pr_cmd_cmp(cmd, PR_CMD_RMD_ID) == 0 ||
           pr_cmd_cmp(cmd, PR_CMD_XCUP_ID) == 0 ||
           pr_cmd_cmp(cmd, PR_CMD_XMKD_ID) == 0 ||
@@ -753,7 +780,7 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       m++;
       break;
 
-    case META_EOS_REASON: {
+    case LOGFMT_META_EOS_REASON: {
       const char *reason_str;
       char *details = NULL;
 
@@ -770,20 +797,61 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       break;
     }
 
-    case META_FILENAME:
+    case LOGFMT_META_FILENAME:
       argp = arg;
 
       if (pr_cmd_cmp(cmd, PR_CMD_RNTO_ID) == 0) {
         sstrncpy(argp, dir_abs_path(p, pr_fs_decode_path(p, cmd->arg), TRUE),
           sizeof(arg));
 
+      } else if (pr_cmd_cmp(cmd, PR_CMD_RETR_ID) == 0) {
+        char *path;
+
+        path = pr_table_get(cmd->notes, "mod_xfer.retr-path", NULL);
+        sstrncpy(arg, dir_abs_path(p, path, TRUE), sizeof(arg));
+
+      } else if (pr_cmd_cmp(cmd, PR_CMD_APPE_ID) == 0 ||
+                 pr_cmd_cmp(cmd, PR_CMD_STOR_ID) == 0) {
+        char *path;
+      
+        path = pr_table_get(cmd->notes, "mod_xfer.store-path", NULL);
+        sstrncpy(arg, dir_abs_path(p, path, TRUE), sizeof(arg));
+
       } else if (session.xfer.p &&
                  session.xfer.path) {
         sstrncpy(argp, dir_abs_path(p, session.xfer.path, TRUE), sizeof(arg));
 
+      } else if (pr_cmd_cmp(cmd, PR_CMD_CDUP_ID) == 0 ||
+                 pr_cmd_cmp(cmd, PR_CMD_PWD_ID) == 0 ||
+                 pr_cmd_cmp(cmd, PR_CMD_XCUP_ID) == 0 ||
+                 pr_cmd_cmp(cmd, PR_CMD_XPWD_ID) == 0) {
+        sstrncpy(argp, dir_abs_path(p, pr_fs_getcwd(), TRUE), sizeof(arg));
+
+      } else if (pr_cmd_cmp(cmd, PR_CMD_CWD_ID) == 0 ||
+                 pr_cmd_cmp(cmd, PR_CMD_XCWD_ID) == 0) {
+
+        /* Note: by this point in the dispatch cycle, the current working
+         * directory has already been changed.  For the CWD/XCWD commands,
+         * this means that dir_abs_path() may return an improper path,
+         * with the target directory being reported twice.  To deal with this,
+         * don't use dir_abs_path(), and use pr_fs_getvwd()/pr_fs_getcwd()
+         * instead.
+         */
+        if (session.chroot_path) {
+          /* Chrooted session. */
+          sstrncpy(arg, strcmp(pr_fs_getvwd(), "/") ?
+            pdircat(p, session.chroot_path, pr_fs_getvwd(), NULL) :
+            session.chroot_path, sizeof(arg));
+
+        } else {
+          /* Non-chrooted session. */
+          sstrncpy(arg, pr_fs_getcwd(), sizeof(arg));
+        }
+
       } else if (pr_cmd_cmp(cmd, PR_CMD_SITE_ID) == 0 &&
-                 (strcasecmp(cmd->argv[1], "CHGRP") == 0 ||
-                  strcasecmp(cmd->argv[1], "CHMOD") == 0)) {
+                 (strncasecmp(cmd->argv[1], "CHGRP", 6) == 0 ||
+                  strncasecmp(cmd->argv[1], "CHMOD", 6) == 0 ||
+                  strncasecmp(cmd->argv[1], "UTIME", 6) == 0)) {
         register unsigned int i;
         char *tmp = "";
 
@@ -800,13 +868,23 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
          * should be expanded properly as well.
          */
         if (pr_cmd_cmp(cmd, PR_CMD_DELE_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_LIST_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_MDTM_ID) == 0 ||
             pr_cmd_cmp(cmd, PR_CMD_MKD_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_MLSD_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_MLST_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_NLST_ID) == 0 ||
             pr_cmd_cmp(cmd, PR_CMD_RMD_ID) == 0 ||
             pr_cmd_cmp(cmd, PR_CMD_XMKD_ID) == 0 ||
             pr_cmd_cmp(cmd, PR_CMD_XRMD_ID) == 0) {
           sstrncpy(arg, dir_abs_path(p, pr_fs_decode_path(p, cmd->arg), TRUE),
             sizeof(arg));
 
+        } else if (pr_cmd_cmp(cmd, PR_CMD_MFMT_ID) == 0) {
+          /* MFMT has, as its filename, the second argument. */
+          sstrncpy(arg, dir_abs_path(p, pr_fs_decode_path(p, cmd->argv[2]),
+            TRUE), sizeof(arg));
+ 
         } else {
           /* All other situations get a "-".  */
           sstrncpy(argp, "-", sizeof(arg));
@@ -816,7 +894,116 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       m++;
       break;
 
-    case META_XFER_PATH:
+    case LOGFMT_META_BASENAME: {
+      const char *path = NULL;
+      argp = arg;
+
+      if (pr_cmd_cmp(cmd, PR_CMD_RNTO_ID) == 0) {
+        path = pr_fs_decode_path(p, cmd->arg);
+
+      } else if (pr_cmd_cmp(cmd, PR_CMD_RETR_ID) == 0) {
+        path = pr_table_get(cmd->notes, "mod_xfer.retr-path", NULL);
+
+      } else if (pr_cmd_cmp(cmd, PR_CMD_APPE_ID) == 0 ||
+                 pr_cmd_cmp(cmd, PR_CMD_STOR_ID) == 0) {
+        path = pr_table_get(cmd->notes, "mod_xfer.store-path", NULL);
+
+      } else if (session.xfer.p &&
+                 session.xfer.path) {
+        path = session.xfer.path;
+
+      } else if (pr_cmd_cmp(cmd, PR_CMD_CDUP_ID) == 0 ||
+                 pr_cmd_cmp(cmd, PR_CMD_PWD_ID) == 0 ||
+                 pr_cmd_cmp(cmd, PR_CMD_XCUP_ID) == 0 ||
+                 pr_cmd_cmp(cmd, PR_CMD_XPWD_ID) == 0) {
+        path = pr_fs_getcwd();
+
+      } else if (pr_cmd_cmp(cmd, PR_CMD_CWD_ID) == 0 ||
+                 pr_cmd_cmp(cmd, PR_CMD_XCWD_ID) == 0) {
+
+        /* Note: by this point in the dispatch cycle, the current working
+         * directory has already been changed.  For the CWD/XCWD commands,
+         * this means that dir_abs_path() may return an improper path,
+         * with the target directory being reported twice.  To deal with this,
+         * don't use dir_abs_path(), and use pr_fs_getvwd()/pr_fs_getcwd()
+         * instead.
+         */
+        if (session.chroot_path) {
+          /* Chrooted session. */
+          path = strcmp(pr_fs_getvwd(), "/") ?
+            pr_fs_getvwd() : session.chroot_path;
+
+        } else {
+          /* Non-chrooted session. */
+          path = pr_fs_getcwd();
+        }
+
+      } else if (pr_cmd_cmp(cmd, PR_CMD_SITE_ID) == 0 &&
+                 (strncasecmp(cmd->argv[1], "CHGRP", 6) == 0 ||
+                  strncasecmp(cmd->argv[1], "CHMOD", 6) == 0 ||
+                  strncasecmp(cmd->argv[1], "UTIME", 6) == 0)) {
+        register unsigned int i;
+        char *tmp = "";
+
+        for (i = 3; i <= cmd->argc-1; i++) {
+          tmp = pstrcat(cmd->tmp_pool, tmp, *tmp ? " " : "",
+            pr_fs_decode_path(cmd->tmp_pool, cmd->argv[i]), NULL);
+        }
+
+        path = tmp;
+
+      } else {
+        /* Some commands (i.e. DELE, MKD, RMD, XMKD, and XRMD) have associated
+         * filenames that are not stored in the session.xfer structure; these
+         * should be expanded properly as well.
+         */
+        if (pr_cmd_cmp(cmd, PR_CMD_DELE_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_LIST_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_MDTM_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_MKD_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_MLSD_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_MLST_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_NLST_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_RMD_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_XMKD_ID) == 0 ||
+            pr_cmd_cmp(cmd, PR_CMD_XRMD_ID) == 0) {
+          path = pr_fs_decode_path(p, cmd->arg);
+
+        } else if (pr_cmd_cmp(cmd, PR_CMD_MFMT_ID) == 0) {
+          /* MFMT has, as its filename, the second argument. */
+          path = pr_fs_decode_path(p, cmd->argv[2]);
+        }
+      }
+
+      if (path != NULL) { 
+        char *ptr = NULL;
+
+        ptr = strrchr(path, '/');
+        if (ptr != NULL) {
+          if (ptr != path) {
+            sstrncpy(argp, ptr + 1, sizeof(arg));
+
+          } else if (*(ptr+1) != '\0') {
+            sstrncpy(argp, ptr + 1, sizeof(arg));
+
+          } else {
+            sstrncpy(argp, path, sizeof(arg));
+          }
+
+        } else {
+          sstrncpy(argp, path, sizeof(arg));
+        }
+
+      } else {
+        /* All other situations get a "-".  */
+        sstrncpy(argp, "-", sizeof(arg));
+      }
+
+      m++;
+      break;
+    }
+
+    case LOGFMT_META_XFER_PATH:
       argp = arg;
 
       if (pr_cmd_cmp(cmd, PR_CMD_RNTO_ID) == 0) {
@@ -854,12 +1041,12 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       m++;
       break;
 
-    case META_ENV_VAR:
+    case LOGFMT_META_ENV_VAR:
       argp = arg;
       m++;
 
-      if (*m == META_START &&
-          *(m+1) == META_ARG) {
+      if (*m == LOGFMT_META_START &&
+          *(m+1) == LOGFMT_META_ARG) {
         char *key = get_next_meta(p, cmd, &m);
         if (key) {
           char *env = pr_env_get(cmd->tmp_pool, key);
@@ -871,20 +1058,45 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
 
       break;
 
-    case META_REMOTE_HOST:
+    case LOGFMT_META_NOTE_VAR:
+      argp = arg;
+      m++;
+
+      if (*m == LOGFMT_META_START &&
+          *(m+1) == LOGFMT_META_ARG) {
+        char *key = get_next_meta(p, cmd, &m);
+        if (key) {
+          char *note = NULL;
+
+          /* Check in the cmd->notes table first. */
+          note = pr_table_get(cmd->notes, key, NULL);
+          if (note == NULL) {
+            /* If not there, check the session.notes table. */
+            note = pr_table_get(session.notes, key, NULL);
+          }
+ 
+          if (note) {
+            sstrncpy(argp, note, sizeof(arg));
+          }
+        }
+      }
+
+      break;
+
+    case LOGFMT_META_REMOTE_HOST:
       argp = arg;
       sstrncpy(argp, pr_netaddr_get_sess_remote_name(), sizeof(arg));
       m++;
       break;
 
-    case META_REMOTE_IP:
+    case LOGFMT_META_REMOTE_IP:
       argp = arg;
       sstrncpy(argp, pr_netaddr_get_ipstr(pr_netaddr_get_sess_remote_addr()),
         sizeof(arg));
       m++;
       break;
 
-    case META_RENAME_FROM: {
+    case LOGFMT_META_RENAME_FROM: {
       char *rnfr_path = "-";
 
       argp = arg;
@@ -903,7 +1115,7 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       break;
     }
 
-    case META_IDENT_USER: {
+    case LOGFMT_META_IDENT_USER: {
       char *rfc1413_ident;
 
       argp = arg;
@@ -917,7 +1129,7 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       break;
     }
 
-    case META_METHOD:
+    case LOGFMT_META_METHOD:
       argp = arg;
 
       if (pr_cmd_cmp(cmd, PR_CMD_SITE_ID) != 0) {
@@ -940,33 +1152,60 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       m++;
       break;
 
-    case META_LOCAL_PORT:
+    case LOGFMT_META_LOCAL_PORT:
       argp = arg;
       snprintf(argp, sizeof(arg), "%d", cmd->server->ServerPort);
       m++;
       break;
 
-    case META_LOCAL_IP:
+    case LOGFMT_META_LOCAL_IP:
       argp = arg;
       sstrncpy(argp, pr_netaddr_get_ipstr(pr_netaddr_get_sess_local_addr()),
         sizeof(arg));
       m++;
       break;
 
-    case META_LOCAL_FQDN:
+    case LOGFMT_META_LOCAL_FQDN:
       argp = arg;
       sstrncpy(argp, pr_netaddr_get_dnsstr(pr_netaddr_get_sess_local_addr()),
         sizeof(arg));
       m++;
       break;
 
-    case META_PID:
+    case LOGFMT_META_PID:
       argp = arg;
       snprintf(argp, sizeof(arg), "%u",(unsigned int)getpid());
       m++;
       break;
 
-    case META_TIME:
+    case LOGFMT_META_MICROSECS: {
+      struct timeval now;
+
+      argp = arg;
+      gettimeofday(&now, NULL);
+
+      snprintf(argp, sizeof(arg), "%06lu", (unsigned long) now.tv_usec);
+      m++;
+      break;
+    }
+
+    case LOGFMT_META_MILLISECS: {
+      struct timeval now;
+      unsigned long millis;
+
+      argp = arg;
+
+      gettimeofday(&now, NULL);
+
+      /* Convert microsecs to millisecs. */
+      millis = now.tv_usec / 1000;
+
+      snprintf(argp, sizeof(arg), "%03lu", millis);
+      m++;
+      break;
+    }
+
+    case LOGFMT_META_TIME:
       {
         char *time_fmt = "[%d/%b/%Y:%H:%M:%S ";
         struct tm t;
@@ -977,8 +1216,8 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
         argp = arg;
         m++;
 
-        if (*m == META_START &&
-            *(m+1) == META_ARG) {
+        if (*m == LOGFMT_META_START &&
+            *(m+1) == LOGFMT_META_ARG) {
           time_fmt = get_next_meta(p, cmd, &m);
           internal_fmt = 0;
         }
@@ -1004,7 +1243,28 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       }
       break;
 
-    case META_SECONDS:
+    case LOGFMT_META_ISO8601: {
+      struct tm *tm;
+      struct timeval now;
+      unsigned long millis;
+      size_t len;
+
+      argp = arg;
+
+      gettimeofday(&now, NULL);
+      tm = pr_localtime(NULL, (const time_t *) &(now.tv_sec));
+
+      len = strftime(argp, sizeof(arg), "%Y-%m-%d %H:%M:%S", tm);
+
+      /* Convert microsecs to millisecs. */
+      millis = now.tv_usec / 1000;
+
+      snprintf(argp + len, sizeof(arg), ",%03lu", millis);
+      m++;
+      break;
+    }
+
+    case LOGFMT_META_SECONDS:
       argp = arg;
       if (session.xfer.p) {
         /* Make sure that session.xfer.start_time actually has values (which
@@ -1040,7 +1300,7 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       m++;
       break;
 
-    case META_COMMAND:
+    case LOGFMT_META_COMMAND:
       argp = arg;
 
       if (pr_cmd_cmp(cmd, PR_CMD_PASS_ID) == 0 &&
@@ -1048,13 +1308,13 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
         sstrncpy(argp, "PASS (hidden)", sizeof(arg));
 
       } else {
-        sstrncpy(argp, get_full_cmd(cmd), sizeof(arg));
+        sstrncpy(argp, pr_cmd_get_displayable_str(cmd, NULL), sizeof(arg));
       }
 
       m++;
       break;
 
-    case META_CMD_PARAMS:
+    case LOGFMT_META_CMD_PARAMS:
       argp = arg;
       if (pr_cmd_cmp(cmd, PR_CMD_PASS_ID) == 0 &&
           session.hide_password) {
@@ -1067,13 +1327,13 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       m++;
       break;
 
-    case META_LOCAL_NAME:
+    case LOGFMT_META_LOCAL_NAME:
       argp = arg;
       sstrncpy(argp, cmd->server->ServerName, sizeof(arg));
       m++;
       break;
 
-    case META_USER:
+    case LOGFMT_META_USER:
       argp = arg;
 
       if (session.user != NULL) {
@@ -1086,7 +1346,7 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       m++;
       break;
 
-    case META_ORIGINAL_USER: {
+    case LOGFMT_META_ORIGINAL_USER: {
       char *login_user;
 
       argp = arg;
@@ -1103,7 +1363,20 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       break;
     }
 
-    case META_RESPONSE_CODE: {
+    case LOGFMT_META_GROUP:
+      argp = arg;
+
+      if (session.group != NULL) {
+        sstrncpy(argp, session.group, sizeof(arg));
+
+      } else {
+        sstrncpy(argp, "-", sizeof(arg));
+      }
+
+      m++;
+      break;
+
+    case LOGFMT_META_RESPONSE_CODE: {
       char *resp_code = NULL;
       int res;
 
@@ -1126,7 +1399,7 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       break;
     }
 
-    case META_RESPONSE_STR: {
+    case LOGFMT_META_RESPONSE_STR: {
       char *resp_msg = NULL;
       int res;
 
@@ -1145,31 +1418,188 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       break;
     }
 
-    case META_PROTOCOL:
+    case LOGFMT_META_PROTOCOL:
       argp = arg;
       sstrncpy(argp, pr_session_get_protocol(0), sizeof(arg));
       m++;
       break;
 
-    case META_UID:
+    case LOGFMT_META_UID:
       argp = arg;
       snprintf(argp, sizeof(arg), "%lu", (unsigned long) session.login_uid);
       m++;
       break;
 
-    case META_GID:
+    case LOGFMT_META_GID:
       argp = arg;
       snprintf(argp, sizeof(arg), "%lu", (unsigned long) session.login_gid);
       m++;
       break;
 
-    case META_VERSION:
+    case LOGFMT_META_XFER_FAILURE: {
+      argp = arg;
+
+      /* If the current command is one that incurs a data transfer, then we
+       * need to do more work.  If not, it's an easy substitution.
+       */
+      if (session.curr_cmd_id == PR_CMD_APPE_ID ||
+          session.curr_cmd_id == PR_CMD_LIST_ID ||
+          session.curr_cmd_id == PR_CMD_MLSD_ID ||
+          session.curr_cmd_id == PR_CMD_NLST_ID ||
+          session.curr_cmd_id == PR_CMD_RETR_ID ||
+          session.curr_cmd_id == PR_CMD_STOR_ID ||
+          session.curr_cmd_id == PR_CMD_STOU_ID) {
+        const char *proto;
+
+        proto = pr_session_get_protocol(0);
+
+        if (strncmp(proto, "ftp", 4) == 0 ||
+            strncmp(proto, "ftps", 5) == 0) {
+
+          if (XFER_ABORTED) {
+            sstrncpy(argp, "-", sizeof(arg));
+
+          } else {
+            int res;
+            char *resp_code = NULL, *resp_msg = NULL;
+
+            /* Get the last response code/message.  We use heuristics here to
+             * determine when to use "failed" versus "success".
+             */
+            res = pr_response_get_last(cmd->tmp_pool, &resp_code, &resp_msg);
+            if (res == 0 &&
+                resp_code != NULL) {
+              if (*resp_code != '2' &&
+                  *resp_code != '1') {
+                char *ptr;
+
+                /* Parse out/prettify the resp_msg here */
+                ptr = strchr(resp_msg, '.');
+                if (ptr != NULL) {
+                  sstrncpy(argp, ptr + 2, sizeof(arg));
+
+                } else {
+                  sstrncpy(argp, resp_msg, sizeof(arg));
+                }
+
+              } else {
+                sstrncpy(argp, "-", sizeof(arg));
+              }
+
+            } else {
+              sstrncpy(argp, "-", sizeof(arg));
+            }
+          }
+
+        } else {
+          /* Currently, for failed SFTP/SCP transfers, we can't properly
+           * populate the failure reason.  Maybe in the future.
+           */
+          sstrncpy(argp, "-", sizeof(arg));
+        }
+
+      } else {
+        sstrncpy(argp, "-", sizeof(arg));
+      }
+
+      m++;
+      break;
+    }
+
+    case LOGFMT_META_XFER_STATUS: {
+      argp = arg;
+
+      /* If the current command is one that incurs a data transfer, then we
+       * need to do more work.  If not, it's an easy substitution.
+       */
+      if (session.curr_cmd_id == PR_CMD_ABOR_ID ||
+          session.curr_cmd_id == PR_CMD_APPE_ID ||
+          session.curr_cmd_id == PR_CMD_LIST_ID ||
+          session.curr_cmd_id == PR_CMD_MLSD_ID ||
+          session.curr_cmd_id == PR_CMD_NLST_ID ||
+          session.curr_cmd_id == PR_CMD_RETR_ID ||
+          session.curr_cmd_id == PR_CMD_STOR_ID ||
+          session.curr_cmd_id == PR_CMD_STOU_ID) {
+        const char *proto;
+
+        proto = pr_session_get_protocol(0);
+
+        if (strncmp(proto, "ftp", 4) == 0 ||
+            strncmp(proto, "ftps", 5) == 0) {
+
+          if (!(XFER_ABORTED)) {
+            int res;
+            char *resp_code = NULL, *resp_msg = NULL;
+
+            /* Get the last response code/message.  We use heuristics here to
+             * determine when to use "failed" versus "success".
+             */
+            res = pr_response_get_last(cmd->tmp_pool, &resp_code, &resp_msg);
+            if (res == 0 &&
+                resp_code != NULL) {
+              if (*resp_code == '2') {
+
+                if (pr_cmd_cmp(cmd, PR_CMD_ABOR_ID) != 0) {
+                  sstrncpy(argp, "success", sizeof(arg));
+
+                } else {
+                  /* We're handling the ABOR command, so obviously the value
+                   * should be 'cancelled'.
+                   */
+                  sstrncpy(argp, "cancelled", sizeof(arg));
+                }
+
+              } else if (*resp_code == '1') {
+                /* If the first digit of the response code is 1, then the
+                 * response code (for a data transfer command) is probably 150,
+                 * which means that the transfer was still in progress (didn't
+                 * complete with a 2xx/4xx response code) when we are called
+                 * here, which in turn means a timeout kicked in.
+                 */
+                sstrncpy(argp, "timeout", sizeof(arg));
+
+              } else {
+                sstrncpy(argp, "failed", sizeof(arg));
+              }
+
+            } else {
+              sstrncpy(argp, "success", sizeof(arg));
+            }
+
+          } else {
+            sstrncpy(argp, "cancelled", sizeof(arg));
+          }
+
+        } else {
+          /* mod_sftp stashes a note for us in the command notes if the
+           * transfer failed.
+           */
+          char *status;
+
+          status = pr_table_get(cmd->notes, "mod_sftp.file-status", NULL);
+          if (status == NULL) {
+            sstrncpy(argp, "success", sizeof(arg));
+
+          } else {
+            sstrncpy(argp, "failed", sizeof(arg));
+          }
+        }
+
+      } else {
+        sstrncpy(argp, "-", sizeof(arg));
+      }
+
+      m++;
+      break;
+    }
+
+    case LOGFMT_META_VERSION:
       argp = arg;
       sstrncpy(argp, PROFTPD_VERSION_TEXT, sizeof(arg));
       m++;
       break;
 
-    case META_FILE_MODIFIED: {
+    case LOGFMT_META_FILE_MODIFIED: {
       char *modified;
 
       argp = arg;
@@ -1186,24 +1616,23 @@ static char *get_next_meta(pool *p, cmd_rec *cmd, unsigned char **f) {
       break;
     }
 
-    case META_RAW_BYTES_IN:
+    case LOGFMT_META_RAW_BYTES_IN:
       argp = arg;
       snprintf(argp, sizeof(arg), "%" PR_LU, (pr_off_t) session.total_raw_in);
       m++;
       break;
 
-    case META_RAW_BYTES_OUT:
+    case LOGFMT_META_RAW_BYTES_OUT:
       argp = arg;
       snprintf(argp, sizeof(arg), "%" PR_LU, (pr_off_t) session.total_raw_out);
       m++;
       break;
 
-    case META_VHOST_IP:
+    case LOGFMT_META_VHOST_IP:
       argp = arg;
       sstrncpy(argp, cmd->server->ServerAddress, sizeof(arg));
       m++;
       break;
-
   }
  
   *f = m;
@@ -1232,7 +1661,7 @@ static void do_log(cmd_rec *cmd, logfile_t *lf) {
   while (*f && size) {
     pr_signals_handle();
 
-    if (*f == META_START) {
+    if (*f == LOGFMT_META_START) {
       s = get_next_meta(cmd->tmp_pool, cmd, &f);
       if (s) {
         size_t tmp;
@@ -1255,13 +1684,13 @@ static void do_log(cmd_rec *cmd, logfile_t *lf) {
   *bp++ = '\n';
   *bp = '\0';
 
-  logbuflen = strlen(logbuf);
+  logbuflen = (bp - logbuf);
 
   if (lf->lf_fd != EXTENDED_LOG_SYSLOG) {
     pr_log_event_generate(PR_LOG_TYPE_EXTLOG, lf->lf_fd, -1, logbuf, logbuflen);
 
     if (write(lf->lf_fd, logbuf, logbuflen) < 0) {
-      pr_log_pri(PR_LOG_ERR, "error: cannot write ExtendedLog to fd %d: %s",
+      pr_log_pri(PR_LOG_ALERT, "error: cannot write ExtendedLog to fd %d: %s",
         lf->lf_fd, strerror(errno));
     }
 
@@ -1282,13 +1711,13 @@ MODRET log_any(cmd_rec *cmd) {
         /* If the logging class of this command is one of the classes
          * configured for this ExtendedLog...
          */ 
-        ((cmd->class & lf->lf_classes) ||
+        ((cmd->cmd_class & lf->lf_classes) ||
 
          /* ...or if the logging class of this command is unknown (defaults to
           * zero), and this ExtendedLog is configured to log ALL commands, then
           * log it.
           */
-         (cmd->class == 0 && lf->lf_classes == CL_ALL))) {
+         (cmd->cmd_class == 0 && lf->lf_classes == CL_ALL))) {
 
       if (!session.anon_config &&
           lf->lf_conf &&
@@ -1309,9 +1738,62 @@ static void log_exit_ev(const void *event_data, void *user_data) {
   cmd_rec *cmd;
 
   cmd = pr_cmd_alloc(session.pool, 1, "EXIT");
-  cmd->class |= CL_EXIT;
+  cmd->cmd_class |= CL_EXIT;
 
   (void) log_any(cmd);
+}
+
+static void log_postparse_ev(const void *event_data, void *user_data) {
+  config_rec *c;
+
+  c = find_config(main_server->conf, CONF_PARAM, "SystemLog", FALSE);
+  if (c != NULL) {
+    char *path;
+
+    path = c->argv[0];
+    log_closesyslog();
+
+    if (strncasecmp(path, "none", 5) != 0) {
+      int res, xerrno;
+
+      path = dir_canonical_path(main_server->pool, path);
+
+      pr_signals_block();
+      PRIVS_ROOT
+      res = log_opensyslog(path);
+      xerrno = errno;
+      PRIVS_RELINQUISH
+      pr_signals_unblock();
+
+      if (res < 0) {
+        if (res == PR_LOG_WRITABLE_DIR) {
+          pr_log_pri(PR_LOG_ERR,
+            "unable to open SystemLog '%s': %s is a world-writable directory",
+            path, path);
+
+        } else if (res == PR_LOG_SYMLINK) {
+          pr_log_pri(PR_LOG_ERR,
+            "unable to open SystemLog '%s': %s is a symbolic link", path, path);
+
+        } else {
+          if (xerrno != ENXIO) {
+            pr_log_pri(PR_LOG_ERR,
+              "unable to open SystemLog '%s': %s", path, strerror(xerrno));
+
+          } else {
+            pr_log_pri(PR_LOG_ERR,
+              "unable to open SystemLog '%s': "
+              "FIFO reader process must be running first", path);
+          }
+        }
+
+        exit(1);
+      }
+
+    } else {
+      log_discard();
+    }
+  }
 }
 
 static void log_restart_ev(const void *event_data, void *user_data) {
@@ -1325,8 +1807,7 @@ static void log_restart_ev(const void *event_data, void *user_data) {
   log_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(log_pool, "mod_log pool");
 
-  logformat("", "%h %l %u %t \"%r\" %s %b");
-
+  logformat(NULL, "", "%h %l %u %t \"%r\" %s %b");
   return;
 }
 
@@ -1348,8 +1829,9 @@ static int log_init(void) {
   pr_pool_tag(log_pool, "mod_log pool");
 
   /* Add the "default" extendedlog format */
-  logformat("", "%h %l %u %t \"%r\" %s %b");
+  logformat(NULL, "", "%h %l %u %t \"%r\" %s %b");
 
+  pr_event_register(&log_module, "core.postparse", log_postparse_ev, NULL);
   pr_event_register(&log_module, "core.restart", log_restart_ev, NULL);
   return 0;
 }
@@ -1360,17 +1842,24 @@ static void find_extendedlogs(void) {
   int logclasses = CL_ALL;
   logformat_t *logfmt;
   logfile_t *extlog = NULL;
+  unsigned long config_flags = (PR_CONFIG_FIND_FL_SKIP_DIR|PR_CONFIG_FIND_FL_SKIP_LIMIT|PR_CONFIG_FIND_FL_SKIP_DYNDIR);
 
   /* We _do_ actually want the recursion here.  The reason is that we want
    * to find _all_ ExtendedLog directives in the configuration, including
    * those in <Anonymous> sections.  We have the ability to use root privs
    * now, to make sure these files can be opened, but after the user has
    * authenticated (and we know for sure whether they're anonymous or not),
-   * root privs may be permanently revoked.  Yucky...but necessary, I guess.
+   * root privs may be permanently revoked.
+   *
+   * We mitigate the cost of the recursive search (especially for configs
+   * with thousands of <Directory>/<Limit> sections) by specifying the
+   * find_config() flags to skip those sections; we are only interested
+   * in the top-level (CONF_ROOT, CONF_VIRTUAL) and <Anonymous> sections.
    */
 
-  c = find_config(main_server->conf, CONF_PARAM, "ExtendedLog", TRUE);
-  while (c) {
+  c = find_config2(main_server->conf, CONF_PARAM, "ExtendedLog", TRUE,
+    config_flags);
+  while (c != NULL) {
     pr_signals_handle();
 
     logfname = c->argv[0];
@@ -1421,14 +1910,16 @@ static void find_extendedlogs(void) {
     extlog->lf_classes = logclasses;
     extlog->lf_format = logfmt;
     extlog->lf_conf = c->parent;
-    if (!log_set)
+    if (log_set == NULL) {
       log_set = xaset_create(session.pool, NULL);
+    }
 
     xaset_insert(log_set, (xasetmember_t *) extlog);
     logs = (logfile_t *) log_set->xas_list;
 
 loop_extendedlogs:
-    c = find_config_next(c, c->next, CONF_PARAM, "ExtendedLog", TRUE);
+    c = find_config_next2(c, c->next, CONF_PARAM, "ExtendedLog", TRUE,
+      config_flags);
   }
 }
 
@@ -1448,6 +1939,43 @@ MODRET log_pre_dele(cmd_rec *cmd) {
     pr_fs_clear_cache();
     if (pr_fsio_stat(path, &st) == 0)
       log_dele_filesz = st.st_size;
+  }
+
+  return PR_DECLINED(cmd);
+}
+
+MODRET log_post_host(cmd_rec *cmd) {
+
+  /* If the HOST command changed the main_server pointer, reinitialize
+   * ourselves.
+   */
+  if (session.prev_server != NULL) {
+    int res;
+    logfile_t *lf = NULL;
+
+    pr_event_unregister(&log_module, "core.exit", log_exit_ev);
+    pr_event_unregister(&log_module, "core.timeout-stalled",
+      log_xfer_stalled_ev);
+
+    /* XXX If ServerLog configured, close/reopen syslog? */
+
+    /* XXX Close all ExtendedLog files, to prevent duplicate fds. */
+    for (lf = logs; lf; lf = lf->next) {
+      if (lf->lf_fd > -1) {
+        /* No need to close the special EXTENDED_LOG_SYSLOG (i.e. fake) fd. */
+        if (lf->lf_fd != EXTENDED_LOG_SYSLOG) {
+          (void) close(lf->lf_fd);
+        }
+
+        lf->lf_fd = -1;
+      }
+    }
+
+    res = log_sess_init();
+    if (res < 0) {
+      pr_session_disconnect(&log_module,
+        PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+    }
   }
 
   return PR_DECLINED(cmd);
@@ -1535,10 +2063,79 @@ static int log_sess_init(void) {
   /* Open the ServerLog, if present. */
   serverlog_name = get_param_ptr(main_server->conf, "ServerLog", FALSE);
   if (serverlog_name != NULL) {
-    PRIVS_ROOT
     log_closesyslog();
-    log_opensyslog(serverlog_name);
-    PRIVS_RELINQUISH
+
+    if (strncasecmp(serverlog_name, "none", 5) != 0) {
+      int res, xerrno;
+
+      PRIVS_ROOT
+      res = log_opensyslog(serverlog_name);
+      xerrno = errno;
+      PRIVS_RELINQUISH
+
+      if (res < 0) {
+        if (xerrno != ENXIO) {
+          pr_log_debug(DEBUG4, "unable to open ServerLog '%s': %s",
+            serverlog_name, strerror(xerrno));
+
+        } else {
+          pr_log_debug(DEBUG4,
+            "unable to open ServerLog '%s': "
+            "FIFO reader process must be running first", serverlog_name);
+        }
+      }
+    }
+
+  } else {
+    config_rec *c;
+
+    c = find_config(main_server->conf, CONF_PARAM, "SystemLog", FALSE);
+    if (c != NULL) {
+      char *path;
+
+      path = c->argv[0];
+      log_closesyslog();
+
+      if (strncasecmp(path, "none", 5) != 0) {
+        int res, xerrno;
+
+        path = dir_canonical_path(main_server->pool, path);
+
+        pr_signals_block();
+        PRIVS_ROOT
+        res = log_opensyslog(path);
+        xerrno = errno;
+        PRIVS_RELINQUISH
+        pr_signals_unblock();
+
+        if (res < 0) {
+          if (res == PR_LOG_WRITABLE_DIR) {
+            pr_log_pri(PR_LOG_ERR,
+              "unable to open SystemLog '%s': %s is a world-writable directory",
+              path, path);
+
+          } else if (res == PR_LOG_SYMLINK) {
+            pr_log_pri(PR_LOG_ERR,
+              "unable to open SystemLog '%s': %s is a symbolic link", path,
+              path);
+
+          } else {
+            if (xerrno != ENXIO) {
+              pr_log_pri(PR_LOG_ERR,
+                "unable to open SystemLog '%s': %s", path, strerror(xerrno));
+
+            } else {
+              pr_log_pri(PR_LOG_ERR,
+                "unable to open SystemLog '%s': "
+                "FIFO reader process must be running first", path);
+            }
+          }
+        }
+
+      } else {
+        log_discard();
+      }
+    }
   }
 
   /* Open all the ExtendedLog files. */
@@ -1563,15 +2160,21 @@ static int log_sess_init(void) {
 
         if (res < 0) {
           if (res == -1) {
-            pr_log_pri(PR_LOG_NOTICE, "unable to open ExtendedLog '%s': %s",
-              lf->lf_filename, strerror(xerrno));
+            if (xerrno != ENXIO) {
+              pr_log_pri(PR_LOG_NOTICE, "unable to open ExtendedLog '%s': %s",
+                lf->lf_filename, strerror(xerrno));
+
+            } else {
+              pr_log_pri(PR_LOG_NOTICE, "unable to open ExtendedLog '%s': "
+                "FIFO reader process must be running first", lf->lf_filename);
+            }
 
           } else if (res == PR_LOG_WRITABLE_DIR) {
-            pr_log_pri(PR_LOG_NOTICE, "unable to open ExtendedLog '%s': "
-              "containing directory is world writable", lf->lf_filename);
+            pr_log_pri(PR_LOG_WARNING, "unable to open ExtendedLog '%s': "
+              "parent directory is world-writable", lf->lf_filename);
 
           } else if (res == PR_LOG_SYMLINK) {
-            pr_log_pri(PR_LOG_NOTICE, "unable to open ExtendedLog '%s': "
+            pr_log_pri(PR_LOG_WARNING, "unable to open ExtendedLog '%s': "
               "%s is a symbolic link", lf->lf_filename, lf->lf_filename);
           }
         }
@@ -1607,9 +2210,10 @@ static conftable log_conftab[] = {
 
 static cmdtable log_cmdtab[] = {
   { PRE_CMD,		C_DELE,	G_NONE,	log_pre_dele,	FALSE, FALSE },
-  { LOG_CMD,		C_ANY,	G_NONE,	log_any,		FALSE, FALSE },
-  { LOG_CMD_ERR,	C_ANY,	G_NONE,	log_any,		FALSE, FALSE },
-  { POST_CMD,		C_PASS,	G_NONE,	log_post_pass,		FALSE, FALSE },
+  { LOG_CMD,		C_ANY,	G_NONE,	log_any,	FALSE, FALSE },
+  { LOG_CMD_ERR,	C_ANY,	G_NONE,	log_any,	FALSE, FALSE },
+  { POST_CMD,		C_HOST,	G_NONE,	log_post_host,	FALSE, FALSE },
+  { POST_CMD,		C_PASS,	G_NONE,	log_post_pass,	FALSE, FALSE },
   { 0, NULL }
 };
 

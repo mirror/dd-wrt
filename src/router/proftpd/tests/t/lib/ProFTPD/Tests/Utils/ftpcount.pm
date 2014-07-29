@@ -1,7 +1,7 @@
 package ProFTPD::Tests::Utils::ftpcount;
 
 use lib qw(t/lib);
-use base qw(Test::Unit::TestCase ProFTPD::TestSuite::Child);
+use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
 use File::Path qw(mkpath rmtree);
@@ -31,29 +31,6 @@ sub list_tests {
   return testsuite_get_runnable_tests($TESTS);
 }
 
-sub set_up {
-  my $self = shift;
-  $self->{tmpdir} = testsuite_get_tmp_dir();
-
-  # Create temporary scratch dir
-  eval { mkpath($self->{tmpdir}) };
-  if ($@) {
-    my $abs_path = File::Spec->rel2abs($self->{tmpdir});
-    die("Can't create dir $abs_path: $@");
-  }
-}
-
-sub tear_down {
-  my $self = shift;
-
-  # Remove temporary scratch dir
-  if ($self->{tmpdir}) {
-    eval { rmtree($self->{tmpdir}) };
-  }
-
-  undef $self;
-}
-
 sub ftpcount_wait_alarm {
   # We merely need to interrupt the current process by throwing an exception.
   # Messy, but it gets the job done (it's necessary, at least, on a
@@ -69,7 +46,7 @@ sub ftpcount {
 
   my $ftpcount_bin;
   if ($ENV{PROFTPD_TEST_PATH}) {
-    $ftpcount_bin = "$ENV{PROFTPD_TEST_PATH}/ftpcount";
+    $ftpcount_bin = "$ENV{PROFTPD_TEST_PATH}/../ftpcount";
 
   } else {
     $ftpcount_bin = '../ftpcount';
@@ -159,6 +136,8 @@ sub ftpcount_ok {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
+      sleep(1);
+
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
 
@@ -228,9 +207,8 @@ sub ftpcount_ok {
     }
   }
 
-  unless ($ok) {
-    die("Unexpected ftpcount output (expected user count not found)");
-  }
+  $self->assert($ok,
+    test_msg("Unexpected ftpcount output (expected user count not found)"));
 
   unlink($log_file);
 }

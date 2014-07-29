@@ -96,7 +96,7 @@ sub sftp_wrap2_file_login {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
@@ -257,6 +257,9 @@ sub sftp_wrap2_file_login {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -271,7 +274,7 @@ sub sftp_wrap2_sql_login {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/wrap2.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/wrap2.group");
@@ -458,6 +461,9 @@ EOS
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -472,7 +478,7 @@ sub sftp_wrap2_deny_msg_on_connect_bug3670 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
@@ -631,8 +637,8 @@ sub sftp_wrap2_deny_msg_on_connect_bug3670 {
       $deny_msg =~ s/'//g;
       $deny_msg =~ s/"//g;
 
-      $self->assert($buf eq $deny_msg,
-        test_msg("Expected '$deny_msg', got '$buf'"));
+      $self->assert(qr/$deny_msg/, $buf,
+        test_msg("Expected response '$deny_msg', got '$buf'"));
     };
 
     if ($@) {
@@ -658,6 +664,9 @@ sub sftp_wrap2_deny_msg_on_connect_bug3670 {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 
@@ -672,7 +681,7 @@ sub sftp_wrap2_deny_msg_on_auth_bug3670 {
   my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
   my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
 
-  my $log_file = File::Spec->rel2abs('tests.log');
+  my $log_file = test_get_logfile();
 
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
@@ -823,6 +832,9 @@ sub sftp_wrap2_deny_msg_on_auth_bug3670 {
   $self->assert_child_ok($pid);
 
   if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
     die($ex);
   }
 

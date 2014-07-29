@@ -1,4 +1,4 @@
-<!-- $Id: Limit.html,v 1.20 2010/11/09 19:30:28 castaglia Exp $ -->
+<!-- $Id: Limit.html,v 1.23 2013/05/23 15:43:47 castaglia Exp $ -->
 <!-- $Source: /cvsroot/proftp/proftpd/doc/howto/Limit.html,v $ -->
 
 <html>
@@ -37,7 +37,7 @@ often missing from a thorough <code>&lt;Limit&gt;</code> configuration.
 The FTP command groups are:
 <ul>
   <li>ALL<br>
-    <i>Covering</i>: all FTP commands
+    <i>Covering</i>: all FTP commands (but <b>not</b> <code>LOGIN</code>)
 
   <p>
   <li>DIRS<br>
@@ -159,7 +159,7 @@ First, a common configuration: an upload-only directory.
       DenyAll
     &lt;/Limit&gt;
 
-    &lt;Limit CDUP CWD XCWD XCUP&gt;
+    &lt;Limit CDUP CWD PWD XCWD XCUP&gt;
       AllowAll
     &lt;/Limit&gt;
 
@@ -270,6 +270,33 @@ do this without classes (but still requiring <code>mod_ifsession</code>):
 Note that the same effect can be achieved by using the
 <a href="../../contrib/mod_wrap2.html">mod_wrap2</a> module to configure
 user-specific allow/deny files.
+
+<p>
+One issue that you should avoid is having multiple different
+<code>&lt;Limit LOGIN&gt;</code> sections in your config
+<i>for the same vhost</i>.  Consider a config like this:
+<pre>
+  &lt;VirtualHost 1.2.3.4&gt;
+    ...
+    &lt;Limit LOGIN&gt;
+      Order allow, deny
+      Allow from 192.168.0.0/16
+      DenyAll
+    &lt;/Limit&gt;
+    ...
+    &lt;Limit LOGIN&gt;
+      Order deny, allow
+      Deny from 192.168.0.0/16
+    &lt;/Limit&gt;
+    ...
+  &lt;/VirtualHost&gt;
+</pre>
+The two <code>&lt;Limit LOGIN&gt;</code> sections conflict; which one will
+<code>proftpd</code> actually use for deciding whether to allow a connection
+to that <code>&lt;VirtualHost&gt;</code>?  Answer: the <b>last</b>
+<code>&lt;Limit LOGIN&gt;</code> section defined.  To avoid confusion, then,
+it is best to consolidate all of your <code>&lt;Limit LOGIN&gt;</code> rules
+into a single section for a given vhost.
 
 <p>
 In Apache, it is possible to configure password-protected directories.
@@ -385,7 +412,7 @@ ensuring that it cannot be deleted?  Simply include the <code>RNFR</code> and
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2010/11/09 19:30:28 $</i><br>
+Last Updated: <i>$Date: 2013/05/23 15:43:47 $</i><br>
 <hr>
 
 </body>
