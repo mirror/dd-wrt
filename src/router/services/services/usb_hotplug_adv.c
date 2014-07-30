@@ -368,7 +368,7 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 		sprintf(part_file, "/tmp/disk/disc%d-%s", host, part);
 	}
 	sysprintf("/usr/sbin/disktype %s > %s", path, &part_file);
-
+	unlink(DUMPFILE);
 	sysprintf("echo usb_process_path partfile %s  by path %s>> /tmp/hotplugs", &part_file, path);
 
 	/* determine fs */
@@ -405,7 +405,7 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 					fs = "ext4";
 					usb_load_modules(fs);
 				} else if (strstr(line, "Btrfs")) {
-					fs = "btrfs";
+		    			fs = "btrfs";
 					usb_load_modules(fs);
 				} else if (strstr(line, "HFS Plus")) {
 					fs = "hfsplus";
@@ -503,12 +503,16 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 
 	if (!strcmp(fs, "swap")) {
 		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "swap", dev);
+		sysprintf("cat /tmp/disk/%s >> %s", dev,DUMPFILE);
 	} else {
-		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
+		if (!ret) {
+		    sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
+		    sysprintf("cat /tmp/disk/%s >> %s", dev,DUMPFILE);
+		}
+
 	}
 
 	// now we will get a nice ordered dump of all partitions        
-	sysprintf("cat /tmp/disk/* > %s", DUMPFILE);
 
 	/* avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram everything else can be used for fs cache */
 #ifdef HAVE_80211AC
