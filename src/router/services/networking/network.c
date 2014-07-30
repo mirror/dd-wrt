@@ -4224,10 +4224,10 @@ void start_wan6_done(char *wan_ifname)
 		return 0;
   
 	fprintf(stderr, "Starting wan6 done\n");
-	sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
 	
 
 	if(nvram_match("ipv6_typ", "ipv6native")){
+		sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
 		
 		char ip[INET6_ADDRSTRLEN + 4];
 		const char *p;
@@ -4244,6 +4244,7 @@ void start_wan6_done(char *wan_ifname)
 	
 	
 	if(nvram_match("ipv6_typ", "ipv6pd")){
+		sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
 		fprintf(stderr, "ipv6pd start/stop dhcp6c\n");
 		sysprintf("stopservice dhcp6c -f");
 		sysprintf("startservice dhcp6c -f");
