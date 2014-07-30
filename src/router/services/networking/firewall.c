@@ -2770,7 +2770,9 @@ void start_firewall(void)
 
 	// unlink(IPTABLES_SAVE_FILE);
 #endif
-
+#ifdef HAVE_IPV6
+	        start_firewall6();
+#endif
 	/*
 	 * begin Sveasoft add 
 	 */
@@ -2876,9 +2878,6 @@ void start_firewall(void)
 	cprintf("ready");
 
 	cprintf("done\n");
-#ifdef HAVE_IPV6
-	start_firewall6();
-#endif
 }
 
 void stop_firewall6(void)
