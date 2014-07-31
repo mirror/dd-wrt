@@ -2791,7 +2791,7 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	}
 
 	char isolation[32];
-	if (!strncmp("wl", var, 2)) {
+	if (!strncmp("wl", var, 2) || !strncmp("ath", var, 3)) {
 		sprintf(isolation, "%s_isolation", var);
 		nvram_default_get(isolation, "0");
 		showRadio(wp, "wl_basic.isolation", isolation);
