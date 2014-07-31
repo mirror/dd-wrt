@@ -13,7 +13,7 @@
 					<ul class="wide">
 						<li>AP mode &ndash; This is the default mode, also called Infrastructure mode. Your router acts as an central connection point, which wireless clients can connect to.</li>
 						<li>Client mode &ndash; The radio interface is used to connect the internet-facing side of the router (i.e., the WAN) as a client to a remote accesspoint. NAT or routing are performed between WAN and LAN, like in "normal" gateway or router mode. Use this mode, e.g., if your internet connection is provided by a remote accesspoint, and you want to connect a subnet of your own to it. </li>
-						<li>Client Bridged mode &ndash; The radio interface is used to connect the LAN side of the router to a remote accesspoint. The LAN and the remote AP will be in the same subnet (This is called a "bridge" between two network segments). The WAN side of the router is unused and can be disabled. Use this mode, e.g., to make the router act as a "WLAN adapter" for a device connected to one of its LAN ethernet ports.</li>
+						<li>Client Bridged (Routed) mode &ndash; The radio interface is used to connect the LAN side of the router to a remote accesspoint. The LAN and the remote AP will be in the same subnet (This is called a "bridge" between two network segments). The WAN side of the router is unused and can be disabled. Use this mode, e.g., to make the router act as a "WLAN adapter" for a device connected to one of its LAN ethernet ports.</li>
 						<li>Ad-Hoc mode &ndash; This is for peer to peer wireless connections. Clients running in Ad-Hoc mode can connect to each other as required without involving central access points.</li>
 					</ul><br /><br />
 					<div class="note">
@@ -24,7 +24,7 @@
 				<% tran("hwl_basic.page1"); %>
 				<!--dt>Wireless Network Mode</dt-->
 				<dt><% tran("wl_basic.label2"); %></dt>
-				<!--dd>If you have Wireless-G and 802.11b devices in your network, then keep the default setting, <i>Mixed</i>. If you have only Wireless-G devices, select <i>G-Only</i>. If you would like to limit your network to only 802.11b devices, then select <i>B-Only</i>. If you want to disable wireless networking, select <i>Disable</i>. Note that <i>B-Only</i> mode is not supported under WDS. 
+				<!--dd>If you have mixed b/g/n devices on your network, then keep the default setting, <i>Mixed</i>. If you have only 802.11n devices, select <i>N-Only</i>. If you would like to limit your network to only 802.11g devices, then select <i>G-Only</i>. If you want to disable wireless networking, select <i>Disable</i>. Note that <i>B-Only</i> mode is not supported under WDS. 
 </dd-->
 				<% tran("hwl_basic.page2"); %>
 				<!--dt>Wireless Network Name (SSID)</dt-->
@@ -47,14 +47,14 @@
 <% ifndef("ACK", "<!--"); %>
 				<!--dt>Sensitivity Range</dt-->
 				<dt><% tran("wl_basic.label6"); %></dt>
-				<!--dd>Adjusts the ack timing in Atheros typical way based on the maximum distance in meters
+				<!--dd>Adjusts the ACK timing based on the maximum distance in meters
 					<div class="note">
 						<h4>Note</h4>
-						<div>On Atheros based DD-WRT firmwares 0 will not disable ack timing but will turn into auto ACK timing mode</div>
+						<div>On earlier Atheros based DD-WRT firmwares, 0 will enable auto ACK mode instead of disable it.</div>
 					</div>
 					<ul class="wide">
-						<li> 0 disables ack timing completely</li>
-						<li> 1 - 999999 adjusts ack timing</li>
+						<li> 0 disables ACK timing completely (0 = No-ACK mode)</li>
+						<li> 1 - 999999 adjusts ACK timing</li>
 					</ul>
 				</dd-->
 				<% tran("hwl_basic.page6"); %>

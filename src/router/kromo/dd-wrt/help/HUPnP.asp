@@ -20,14 +20,7 @@
 				
 				<dt><% tran("upnp.clear"); %></dt>
 				<!--dd>If enabled, all UPnP port forwardings are deleted when the router starts up.</dd-->
-				<% tran("hupnp.page4"); %>
-				
-				<dt><% tran("upnp.url"); %></dt>
-				<!--dd>If enabled, a presentation url tag is sent with the device description. This allows the router to show up in <em>Windows's My Network Places</em>. <br/><br/>
-					<div class="note">
-						<h4>Note</h4>
-						<div>When enabling this option you may need to reboot your PC.</div>
-					</div>
+				</div>
 				</dd>
 				
 				<dd>Click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd-->

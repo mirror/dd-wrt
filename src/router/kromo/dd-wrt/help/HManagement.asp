@@ -83,11 +83,11 @@
 				<% tran("hmanagement.page11"); %>
 				
 				<dt><% tran("management.net_legend"); %></dt>
-				<!--dd>If you have any peer-to-peer (P2P) applications running on your network please increase the maximum ports and lower the TCP/UDP timeouts. This is necessary to maintain router stability because peer-to-peer applications open many connections and don't close them properly. Consider using these:
+				<!--dd>If you have any peer-to-peer (P2P) applications running on your network please increase the maximum ports and lower the TCP/UDP timeouts. This is necessary to maintain router stability because peer-to-peer applications open many connections and don't close them properly. Consider using these for old low end routers:
 					<ul>
 						<li>Maximum Ports: 4096</li>
-						<li>TCP Timeout: 120 sec</li>
-						<li>UDP Timeout: 120 sec</li>
+						<li>TCP Timeout: 300 sec</li>
+						<li>UDP Timeout: 60 sec</li>
 					</ul>
 				</dd>
 				<dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd-->
