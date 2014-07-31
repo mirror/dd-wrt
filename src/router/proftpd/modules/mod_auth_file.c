@@ -198,6 +198,7 @@ static int af_check_file(pool *p, const char *name, const char *path,
   }
 
   /* World-readable files MAY be insecure, and are thus not usable/trusted. */
+#if 0
   if ((st.st_mode & S_IROTH) &&
        !(flags & PR_AUTH_FILE_FL_ALLOW_WORLD_READABLE)) {
     int xerrno = EPERM;
@@ -221,6 +222,7 @@ static int af_check_file(pool *p, const char *name, const char *path,
     errno = xerrno;
     return -1;
   }
+#endif
 
   if (!S_ISREG(st.st_mode)) {
     pr_log_pri(PR_LOG_WARNING, MOD_AUTH_FILE_VERSION
