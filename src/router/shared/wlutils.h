@@ -78,6 +78,11 @@ extern int wl_probe(char *name);
 int getchannels(unsigned int *list, char *ifname);
 int getwdslist(char *name, unsigned char *list);
 
+#ifdef HAVE_QTN
+int getassoclist_qtn(char *name, unsigned char *list);
+int getNoiseIndex_qtn(char *ifname, int index);
+int getRssiIndex_qtn(char *ifname, int index);
+#endif
 int getassoclist(char *name, unsigned char *list);
 int getNoise(char *ifname, unsigned char *mac);
 int getUptime(char *ifname, unsigned char *mac);
