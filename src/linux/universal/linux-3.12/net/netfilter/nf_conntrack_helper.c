@@ -213,13 +213,15 @@ int __nf_ct_try_assign_helper(struct nf_conn *ct, struct nf_conn *tmpl,
 	help = nfct_help(ct);
 	if (net->ct.sysctl_auto_assign_helper &&
 	    (helper == NULL || allow_override)) {
-		helper = __nf_ct_helper_find(&ct->tuplehash[IP_CT_DIR_REPLY].tuple);
-		if (unlikely(!net->ct.auto_assign_helper_warned && helper)) {
+		struct nf_conntrack_helper *h;
+		h = __nf_ct_helper_find(&ct->tuplehash[IP_CT_DIR_REPLY].tuple);
+		if (unlikely(!net->ct.auto_assign_helper_warned && h)) {
 			pr_info("nf_conntrack: automatic helper "
 				"assignment is deprecated and it will "
 				"be removed soon. Use the iptables CT target "
 				"to attach helpers instead.\n");
 			net->ct.auto_assign_helper_warned = true;
+			helper = h;
 		}
 	}
 
