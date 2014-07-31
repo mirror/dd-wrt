@@ -116,7 +116,10 @@ int bcm_gettxpower(char *wlname)
 		c = 1;
 	else
 		return pwr;
-
+#ifdef HAVE_QTN
+	if (c==1)
+	    return atoi(nvram_safe_get("wl1_txpwr"));
+#endif
 	sprintf(cmd, "wl -i %s txpwr1", get_wl_instance_name(c));
 
 	FILE *in = popen(cmd, "r");
