@@ -930,17 +930,6 @@ int wl_getbssid(char *wl, char *mac)
 	return 0;
 }
 
-int getRssi(char *ifname, unsigned char *mac) {
-
-#ifdef HAVE_QTN
-	if (has_qtn(name))
-	    return getRssi_qtn(name,mac);
-#endif
-    return 0;
-
-}
-
-
 int getassoclist(char *name, unsigned char *list)
 {
 #ifdef HAVE_QTN
