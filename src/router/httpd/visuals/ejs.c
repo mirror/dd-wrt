@@ -2717,6 +2717,7 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 		return;
 		}
 		qcsapi_interface_get_status("wifi0", status);
+		fprintf(stderr,"status %s\n",status);
 		if (!strcmp(status, "up"))
 			websWrite(wp, "%s", live_translate("wl_basic.radio_on"));
 		else
