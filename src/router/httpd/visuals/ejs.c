@@ -2712,6 +2712,10 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_QTN
 	if (!strcmp(wifi, "wl1")) {
 		char status[16];
+		if (!rpc_qtn_ready()) {
+		websWrite(wp, "%s", live_translate("share.unknown"));
+		return;
+		}
 		qcsapi_interface_get_status("wifi0", status);
 		if (!strcmp(status, "up"))
 			websWrite(wp, "%s", live_translate("wl_basic.radio_on"));

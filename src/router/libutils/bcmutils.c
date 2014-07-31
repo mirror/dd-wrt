@@ -389,6 +389,8 @@ int has_ac(char *prefix)
 int has_qtn(char *prefix)
 {
 #ifdef HAVE_QTN
+	if (!strcmp(prefix,"qtn"))
+		return 1;
 	if (!strncmp(prefix, "wl1", "3"))
 		return 1;
 #endif

@@ -79,6 +79,7 @@ int getchannels(unsigned int *list, char *ifname);
 int getwdslist(char *name, unsigned char *list);
 
 #ifdef HAVE_QTN
+int rpc_qtn_ready(void);
 int getassoclist_qtn(char *name, unsigned char *list);
 int getNoiseIndex_qtn(char *ifname, int index);
 int getRssiIndex_qtn(char *ifname, int index);
