@@ -191,6 +191,7 @@ void start_ftpsrv(void)
 			"UserAlias      anonymous ftp\n" "<Directory *>\n" "  <Limit WRITE>\n" "    DenyAll\n" "  </Limit>\n" "</Directory>\n" "</Anonymous>\n", nvram_safe_get("proftpd_anon_dir"));
 	}
 	fclose(fp);
+	chmod("/tmp/proftpd/etc/passwd", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 #ifdef HAVE_SMP
 	eval("/usr/bin/taskset", "0x2", "proftpd");
 #else
