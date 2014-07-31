@@ -1676,7 +1676,6 @@ int getassoclist_qtn(char *name, unsigned char *list)
 	if (!rpc_qtn_ready())
 		return -1;
 	ret = qcsapi_wifi_get_count_associations(WIFINAME, &count);
-	fprintf(stderr,"wifi count ret %d = %d\n",ret,count);
 	if (ret < 0)
 		return 0;
 	unsigned int *cnt = (unsigned int *)list;
@@ -1684,7 +1683,6 @@ int getassoclist_qtn(char *name, unsigned char *list)
 	cnt[0] = 0;
 	for (i = 0; i < count; i++) {
 		ret = qcsapi_wifi_get_associated_device_mac_addr(WIFINAME, i, the_mac_addr);
-		fprintf(stderr,"get mac ret %d\n",ret);
 		if (ret < 0)
 			break;
 		cnt[0]++;
@@ -1703,7 +1701,7 @@ int getRssiIndex_qtn(char *name, int index)
 	int ret = qcsapi_wifi_get_rssi_per_association(WIFINAME, index, &rssi);
 	if (ret < 0)
 		return 0;
-	return rssi;
+	return -rssi;
 }
 
 int getNoiseIndex_qtn(char *name, int index)
@@ -1715,7 +1713,7 @@ int getNoiseIndex_qtn(char *name, int index)
 	int ret = qcsapi_wifi_get_hw_noise_per_association(WIFINAME, index, &noise);
 	if (ret < 0)
 		return 0;
-	return noise;
+	return noise / 10;
 }
 
 int getTXRate_qtn(char *name, int index)
