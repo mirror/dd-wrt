@@ -76,9 +76,9 @@ void rpc_parse_nvram_from_httpd(void)
 
 	// rpc_qcsapi_set_bw(value);
 	// rpc_qcsapi_set_channel(value);
-	// rpc_qcsapi_set_beacon_type(WIFINAME, value);
-	// rpc_qcsapi_set_WPA_encryption_modes(WIFINAME, value);
-	// rpc_qcsapi_set_key_passphrase(WIFINAME, value);
+	rpc_qcsapi_set_beacon_type(WIFINAME, nvram_safe_get("wl1_akm"));
+	rpc_qcsapi_set_WPA_encryption_modes(WIFINAME, nvram_safe_get("wl1_crypto"));
+	rpc_qcsapi_set_key_passphrase(WIFINAME, nvram_safe_get("wl1_wpa_psk"));
 	rpc_qcsapi_set_dtim(nvram_safe_get("wl1_dtim"));
 	rpc_qcsapi_set_beacon_interval(nvram_safe_get("wl1_bcn"));
 	rpc_set_radio(1, 0, atoi(nvram_default_get("wl1_radio", "1")));
