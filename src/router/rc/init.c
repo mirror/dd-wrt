@@ -142,9 +142,6 @@ pid_t ddrun_shell(int timeout, int nowait)
 		"LD_LIBRARY_PATH=/usr/lib:/lib:/jffs/usr/lib:/jffs/lib:/opt/lib:/opt/usr/lib",
 		"SHELL=" SHELL,
 		"USER=root",
-#ifdef HAVE_QTN
-		"QCSAPI_RPC_TARGET=169.254.39.2",
-#endif
 		tz,
 		NULL
 	};
@@ -671,9 +668,6 @@ int main(int argc, char **argv)
 			killall("udhcpc", SIGKILL);
 			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin", 1);
 			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
-#ifdef HAVE_QTN
-			setenv("QCSAPI_RPC_TARGET", "169.254.39.2", 1);
-#endif
 
 			cprintf("STOP SERVICES\n");
 
@@ -731,9 +725,6 @@ int main(int argc, char **argv)
 			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/sbin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/sbin", 1);
 			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 			update_timezone();
-#ifdef HAVE_QTN
-			setenv("QCSAPI_RPC_TARGET", "169.254.39.2", 1);
-#endif
 #ifdef HAVE_IPV6
 			start_service_f("ipv6");
 #endif
