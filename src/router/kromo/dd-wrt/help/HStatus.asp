@@ -9,21 +9,21 @@
 			<dl>
 				<!--dd>This status screen displays the router's current status and configuration. All information is read-only.</dd>
 				<dt>Firmware Version </dt>
-				<dd>The version number of the firmware currently installed is displayed here. Firmware should only be upgraded from the System screen if you experience problems with the router. Visit <a href="http://www.dd-wrt.com" target="_new">www.dd-wrt.com</a> to find out if there is updated firmware.</dd>
+				<dd>The version number of the firmware currently installed is displayed here. Firmware should only be upgraded from the Administration tab if you experience problems with the router. Visit <a href="http://www.dd-wrt.com" target="_new">www.dd-wrt.com</a> to find out if there is updated firmware.</dd>
 				<dt>Current Time</dt>
-				<dd>The current date and time are displayed here.</dd>
+				<dd>The current date and time is displayed here.</dd>
 				<dt>MAC Address </dt>
 				<dd>The MAC Address of the Internet interface is displayed here.</dd>
 				<dt>Router Name</dt>
-				<dd>Shows the configured name of the router</dd>
+				<dd>Shows the configured name of the router.</dd>
 				<dt>Router Model</dt>
-				<dd>Shows the router vendor and the model</dd>
+				<dd>Shows the router vendor and model.</dd>
 				<dt>CPU</dt>
-				<dd>Shows the CPU type and revision</dd>
-				<dt>CPU Clock</dt>
-				<dd>Shows the current CPU clock</dd>
+				<dd>Shows the CPU type, revision, # of cores, clock speed, load average, & temperature if temp monitoring is supported.</dd>
+				<dt>Memory</dt>
+				<dd>Shows info on how much RAM is used, free, and allocated to where.,</dd>
 				<dt>Host Name</dt>
-				<dd>The Host Name is the name of the router. This entry is necessary for some ISPs.</dd>
+				<dd>The Host Name is the name of the router.</dd>
 				<dt>Configuration Type</dt>
 				<dd>The current Internet connection type is displayed here.</dd>
 				<dt>IP Address, Subnet Mask, and Default Gateway</dt>
