@@ -122,12 +122,12 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 
 	memset(buf, 0, WLC_IOCTL_MAXLEN);	// get_wdev
 	int r;
-	#ifdef HAVE_QTN
+#ifdef HAVE_QTN
 	if (has_qtn(iface))
-	    r = getassoclist_qtn(iface,buf)
+		r = getassoclist_qtn(iface, buf);
 	else
-	#endif
-	    r = getassoclist(iface, buf);
+#endif
+		r = getassoclist(iface, buf);
 
 	if (r < 0)
 		return cnt;
@@ -140,53 +140,55 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		rssi = 0;
 		noise = 0;
 		// get rssi value
-	#ifdef HAVE_QTN
-	if (has_qtn(iface)) {
-		rssi = getRssiIndex_qtn(iface,i);
-		noise = getNoiseIndex_qtn(iface,i);
-		int rx = getRXRate_qtn(iface,i);
-		int tx = getTXRate_qtn(iface,i);
+		int rxrate[32];
+		int txrate[32];
+		int time[32];
 		strcpy(rxrate, "N/A");
 		strcpy(txrate, "N/A");
 		strcpy(time, "N/A");
-					if (tx > 0)
-						sprintf(txrate, "%dM", tx);
+#ifdef HAVE_QTN
+		if (has_qtn(iface)) {
+			rssi = getRssiIndex_qtn(iface, i);
+			noise = getNoiseIndex_qtn(iface, i);
+			int rx = getRXRate_qtn(iface, i);
+			int tx = getTXRate_qtn(iface, i);
+			if (tx > 0)
+				sprintf(txrate, "%dM", tx);
 
-					if (rx > 0)
-						sprintf(rxrate, "%dM", rx);
-	} else {
-	#endif
-		if (strcmp(mode, "ap") && strcmp(mode, "apsta")
-		    && strcmp(mode, "apstawet"))
-			sysprintf("wl -i %s rssi > %s", iface, RSSI_TMP);
-		else
-			sysprintf("wl -i %s rssi \"%s\" > %s", iface, mac, RSSI_TMP);
+			if (rx > 0)
+				sprintf(rxrate, "%dM", rx);
+		} else {
+#endif
+			if (strcmp(mode, "ap") && strcmp(mode, "apsta")
+			    && strcmp(mode, "apstawet"))
+				sysprintf("wl -i %s rssi > %s", iface, RSSI_TMP);
+			else
+				sysprintf("wl -i %s rssi \"%s\" > %s", iface, mac, RSSI_TMP);
 
+			// get noise value if not ap mode
+			// if (strcmp (mode, "ap"))
+			// snprintf (cmd, sizeof (cmd), "wl -i %s noise >> %s", iface,
+			// RSSI_TMP);
+			// system2 (cmd); // get RSSI value for mac
 
-		// get noise value if not ap mode
-		// if (strcmp (mode, "ap"))
-		// snprintf (cmd, sizeof (cmd), "wl -i %s noise >> %s", iface,
-		// RSSI_TMP);
-		// system2 (cmd); // get RSSI value for mac
+			fp2 = fopen(RSSI_TMP, "r");
+			if (fgets(line, sizeof(line), fp2) != NULL) {
 
-		fp2 = fopen(RSSI_TMP, "r");
-		if (fgets(line, sizeof(line), fp2) != NULL) {
+				// get rssi
+				if (sscanf(line, "%d", &rssi) != 1)
+					continue;
+				noise = getNoise(iface, NULL);
+				/*
+				 * if (strcmp (mode, "ap") && fgets (line, sizeof (line), fp2) != 
+				 * NULL && sscanf (line, "%d", &noise) != 1) continue;
+				 */
+				// get noise for client/wet mode
 
-			// get rssi
-			if (sscanf(line, "%d", &rssi) != 1)
-				continue;
-			noise = getNoise(iface, NULL);
-			/*
-			 * if (strcmp (mode, "ap") && fgets (line, sizeof (line), fp2) != 
-			 * NULL && sscanf (line, "%d", &noise) != 1) continue;
-			 */
-			// get noise for client/wet mode
-
-			fclose(fp2);
+				fclose(fp2);
+			}
+#ifdef HAVE_QTN
 		}
-	#ifdef HAVE_QTN
-	}
-	#endif
+#endif
 		if (nvram_match("maskmac", "1") && macmask) {
 			mac[0] = 'x';
 			mac[1] = 'x';
@@ -200,58 +202,52 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		if (cnt)
 			websWrite(wp, ",");
 		cnt++;
-	#ifdef HAVE_QTN
-	if (!has_qtn(iface)) {
-	#endif
-		int rxrate[32];
-		int txrate[32];
-		int time[32];
-		strcpy(rxrate, "N/A");
-		strcpy(txrate, "N/A");
-		strcpy(time, "N/A");
+#ifdef HAVE_QTN
+		if (!has_qtn(iface)) {
+#endif
 #ifndef WL_STA_SCBSTATS
 #define WL_STA_SCBSTATS		0x4000	/* Per STA debug stats */
 #endif
-		sta_info_compat_t *sta;
-		sta_info_compat_old_t *staold;
-		char *param;
-		int buflen;
-		char buf[WLC_IOCTL_MEDLEN];
-		strcpy(buf, "sta_info");
-		buflen = strlen(buf) + 1;
-		param = (char *)(buf + buflen);
-		memcpy(param, (char *)&maclist->ea[i], ETHER_ADDR_LEN);
-		if (!wl_ioctl(iface, WLC_GET_VAR, &buf[0], WLC_IOCTL_MEDLEN)) {
-			/* display the sta info */
-			sta = (sta_info_compat_t *) buf;
-			if (sta->ver == 2) {
-				staold = (sta_info_compat_old_t *) buf;
-				if (staold->flags & WL_STA_SCBSTATS) {
-					int tx = staold->tx_rate;
-					int rx = staold->rx_rate;
-					if (tx > 0)
-						sprintf(txrate, "%dM", tx / 1000);
+			sta_info_compat_t *sta;
+			sta_info_compat_old_t *staold;
+			char *param;
+			int buflen;
+			char buf[WLC_IOCTL_MEDLEN];
+			strcpy(buf, "sta_info");
+			buflen = strlen(buf) + 1;
+			param = (char *)(buf + buflen);
+			memcpy(param, (char *)&maclist->ea[i], ETHER_ADDR_LEN);
+			if (!wl_ioctl(iface, WLC_GET_VAR, &buf[0], WLC_IOCTL_MEDLEN)) {
+				/* display the sta info */
+				sta = (sta_info_compat_t *) buf;
+				if (sta->ver == 2) {
+					staold = (sta_info_compat_old_t *) buf;
+					if (staold->flags & WL_STA_SCBSTATS) {
+						int tx = staold->tx_rate;
+						int rx = staold->rx_rate;
+						if (tx > 0)
+							sprintf(txrate, "%dM", tx / 1000);
 
-					if (rx > 0)
-						sprintf(rxrate, "%dM", rx / 1000);
-					strcpy(time, UPTIME(staold->in));
-				}
-			} else {	// sta->ver == 3
-				if (sta->flags & WL_STA_SCBSTATS) {
-					int tx = sta->tx_rate;
-					int rx = sta->rx_rate;
-					if (tx > 0)
-						sprintf(txrate, "%dM", tx / 1000);
+						if (rx > 0)
+							sprintf(rxrate, "%dM", rx / 1000);
+						strcpy(time, UPTIME(staold->in));
+					}
+				} else {	// sta->ver == 3
+					if (sta->flags & WL_STA_SCBSTATS) {
+						int tx = sta->tx_rate;
+						int rx = sta->rx_rate;
+						if (tx > 0)
+							sprintf(txrate, "%dM", tx / 1000);
 
-					if (rx > 0)
-						sprintf(rxrate, "%dM", rx / 1000);
-					strcpy(time, UPTIME(sta->in));
+						if (rx > 0)
+							sprintf(rxrate, "%dM", rx / 1000);
+						strcpy(time, UPTIME(sta->in));
+					}
 				}
 			}
+#ifdef HAVE_QTN
 		}
-	#ifdef HAVE_QTN
-	}
-	#endif
+#endif
 
 		/*
 		 * if (!strcmp (mode, "ap")) { noise = getNoise(iface,NULL); // null

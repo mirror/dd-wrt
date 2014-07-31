@@ -93,6 +93,10 @@ extern int getNoise_ath9k(char *ifname, unsigned char *mac);
 extern int getUptime_ath9k(char *ifname, unsigned char *mac);
 extern int getRssi_ath9k(char *ifname, unsigned char *mac);
 
+extern int has_mimo(char *prefix);
+extern int has_ac(char *prefix);
+extern int has_qtn(char *prefix);
+
 extern int has_2ghz(char *prefix);
 extern int has_5ghz(char *prefix);
 extern int has_ht40(char *prefix);
