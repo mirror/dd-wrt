@@ -121,7 +121,13 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 	unsigned char buf[WLC_IOCTL_MAXLEN];
 
 	memset(buf, 0, WLC_IOCTL_MAXLEN);	// get_wdev
-	int r = getassoclist(iface, buf);
+	int r;
+	#ifdef HAVE_QTN
+	if (has_qtn(iface))
+	    r = getassoclist_qtn(iface,buf)
+	else
+	#endif
+	    r = getassoclist(iface, buf);
 
 	if (r < 0)
 		return cnt;
@@ -134,11 +140,28 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		rssi = 0;
 		noise = 0;
 		// get rssi value
+	#ifdef HAVE_QTN
+	if (has_qtn(iface)) {
+		rssi = getRssiIndex_qtn(iface,i);
+		noise = getNoiseIndex_qtn(iface,i);
+		int rx = getRXRate_qtn(iface,i);
+		int tx = getTXRate_qtn(iface,i);
+		strcpy(rxrate, "N/A");
+		strcpy(txrate, "N/A");
+		strcpy(time, "N/A");
+					if (tx > 0)
+						sprintf(txrate, "%dM", tx);
+
+					if (rx > 0)
+						sprintf(rxrate, "%dM", rx);
+	} else {
+	#endif
 		if (strcmp(mode, "ap") && strcmp(mode, "apsta")
 		    && strcmp(mode, "apstawet"))
 			sysprintf("wl -i %s rssi > %s", iface, RSSI_TMP);
 		else
 			sysprintf("wl -i %s rssi \"%s\" > %s", iface, mac, RSSI_TMP);
+
 
 		// get noise value if not ap mode
 		// if (strcmp (mode, "ap"))
@@ -161,6 +184,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 
 			fclose(fp2);
 		}
+	#ifdef HAVE_QTN
+	}
+	#endif
 		if (nvram_match("maskmac", "1") && macmask) {
 			mac[0] = 'x';
 			mac[1] = 'x';
@@ -174,6 +200,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		if (cnt)
 			websWrite(wp, ",");
 		cnt++;
+	#ifdef HAVE_QTN
+	if (!has_qtn(iface)) {
+	#endif
 		int rxrate[32];
 		int txrate[32];
 		int time[32];
@@ -220,6 +249,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 				}
 			}
 		}
+	#ifdef HAVE_QTN
+	}
+	#endif
 
 		/*
 		 * if (!strcmp (mode, "ap")) { noise = getNoise(iface,NULL); // null
