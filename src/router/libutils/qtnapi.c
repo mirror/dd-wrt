@@ -1668,57 +1668,59 @@ char *getWPSEncrypType_qtn()
 		return "AES";
 }
 
-
-int getassoclist_qtn(char *name, unsigned char *list) {
-	qcsapi_unsigned_int	 count;
-	qcsapi_mac_addr		 the_mac_addr;
-	int ret;
-	ret = qcsapi_wifi_get_count_associations( WIFINAME, &count );
-	if (ret<0)
-	    return 0;
-	unsigned int *cnt=(unsigned int *)list;
+int getassoclist_qtn(char *name, unsigned char *list)
+{
+	qcsapi_unsigned_int count;
+	qcsapi_mac_addr the_mac_addr;
+	int ret, i;
+	ret = qcsapi_wifi_get_count_associations(WIFINAME, &count);
+	if (ret < 0)
+		return 0;
+	unsigned int *cnt = (unsigned int *)list;
 	unsigned char *maclist = &list[4];
-	*count=0;
-	for (i=0;i<count;i++) {
-	  ret = qcsapi_wifi_get_associated_device_mac_addr( WIFINAME, i, the_mac_addr );
-	    if (ret<0)
-		    break;
-	    cnt[0]++;
-	    memcpy(maclist,the_mac_addr,6);
-	    maclist+=6;
+	cnt[0] = 0;
+	for (i = 0; i < count; i++) {
+		ret = qcsapi_wifi_get_associated_device_mac_addr(WIFINAME, i, the_mac_addr);
+		if (ret < 0)
+			break;
+		cnt[0]++;
+		memcpy(maclist, the_mac_addr, 6);
+		maclist += 6;
 	}
-    return cnt[0];
+	return cnt[0];
 }
 
-int getRssiIndex_qtn(char *name, int index) {
+int getRssiIndex_qtn(char *name, int index)
+{
 
 	unsigned int rssi;
-	int ret = qcsapi_wifi_get_rssi_per_association( WIFINAME, index, &rssi )
-	if (ret<0) 
-	    return 0;
-	return rssi;	    
-}		
+	int ret = qcsapi_wifi_get_rssi_per_association(WIFINAME, index, &rssi);
+	if (ret < 0)
+		return 0;
+	return rssi;
+}
 
-
-int getNoiseIndex_qtn(char *name, int index) {
+int getNoiseIndex_qtn(char *name, int index)
+{
 
 	int noise;
-	int ret = qcsapi_wifi_get_hw_noise_per_association( WIFINAME, index, &noise )
-	if (ret<0) 
-	    return 0;
-	return noise;	    
-}		
+	int ret = qcsapi_wifi_get_hw_noise_per_association(WIFINAME, index, &noise);
+	if (ret < 0)
+		return 0;
+	return noise;
+}
 
-int getTXRate_qtn(char *name, int index) {
+int getTXRate_qtn(char *name, int index)
+{
 	int rate;
-	qcsapi_wifi_get_tx_phy_rate_per_association( WIFINAME, index, &rate );
+	qcsapi_wifi_get_tx_phy_rate_per_association(WIFINAME, index, &rate);
 	return rate;
-} 
+}
 
-int getRXRate_qtn(char *name, int index) {
+int getRXRate_qtn(char *name, int index)
+{
 	int rate;
-	qcsapi_wifi_get_rx_phy_rate_per_association( WIFINAME, index, &rate );
+	qcsapi_wifi_get_rx_phy_rate_per_association(WIFINAME, index, &rate);
 	return rate;
 
-
-} 
+}
