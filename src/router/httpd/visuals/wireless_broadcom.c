@@ -111,7 +111,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 	char line[80];
 	int macmask;
 	macmask = atoi(argv[0]);
-	if (!ifexists(iface))
+	if (strcmp(iface,"qtn") && !ifexists(iface))
 		return cnt;
 	unlink(RSSI_TMP);
 	char wlmode[32];
