@@ -2670,9 +2670,9 @@ void ej_radio_on(webs_t wp, int argc, char_t ** argv)
 void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 {
 	int radiooff = -1;
-
+	char *wifi = nvram_safe_get("wifi_display");
 #ifdef HAVE_MADWIFI
-	char *ifname = nvram_safe_get("wifi_display");
+	char *ifname = wifi;
 
 	if (strlen(ifname) > 0) {
 		int state = get_radiostate(ifname);
@@ -2694,7 +2694,7 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 	}
 #elif HAVE_RT2880
 
-	int state = get_radiostate(nvram_safe_get("wifi_display"));
+	int state = get_radiostate(wifi);
 
 	switch (state) {
 	case 1:
@@ -2709,8 +2709,20 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 		break;
 	}
 #else
+#ifdef HAVE_QTN
+	if (!strcmp(wifi, "wl1")) {
+		char status[16];
+		qcsapi_interface_get_status("wifi0", status);
+		if (!strcmp(status, "up"))
+			websWrite(wp, "%s", live_translate("wl_basic.radio_on"));
+		else
+			websWrite(wp, "%s", live_translate("wl_basic.radio_off"));
+		return;
+	}
+#endif
+
 	char name[32];
-	sprintf(name, "%s_ifname", nvram_safe_get("wifi_display"));
+	sprintf(name, "%s_ifname", wifi);
 
 	char *ifname = nvram_safe_get(name);
 
