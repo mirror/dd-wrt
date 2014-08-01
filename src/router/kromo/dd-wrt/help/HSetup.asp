@@ -109,4 +109,17 @@
 				
 				<dt><% tran("idx.legend3"); %></dt>
 				<!--dd>Select the time zone for your location, or desired location.</dd>
-				<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes. You can test the settings by connecting to th
+				<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes. You can test the settings by connecting to the internet.</dd-->
+				<% tran("hidx.page22"); %>
+			</dl>
+		</div>
+		<div class="also">
+			<h4><% tran("share.seealso"); %></h4>
+			<ul>
+				<li><a href="HWanMAC.asp"><% tran("bmenu.setupmacclone"); %></a></li>
+				<li><a href="HManagement.asp"><% tran("bmenu.adminManagement"); %></a></li>
+				<li><a href="HStatus.asp"><% tran("bmenu.statuRouter"); %></a></li>
+			</ul>
+		</div>
+	</body>
+</html>
