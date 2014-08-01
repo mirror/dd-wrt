@@ -15,7 +15,7 @@ libpcap:
 	$(MAKE) -C libpcap_noring CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) version.h
 ifeq ($(CONFIG_LIBPCAP_SHARED),y)
 	$(MAKE) -C libpcap_noring CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so 
-	-cd libpcap_noring ; ln -s libpcap.so.1.0.0 libpcap.so
+	-cd libpcap_noring ; ln -s libpcap.so.1.6.1 libpcap.so
 else
 	$(MAKE) -C libpcap_noring CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.a 
 endif
