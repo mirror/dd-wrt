@@ -27,8 +27,6 @@
  * SUCH DAMAGE.
  */
 
-/* $Id: addrinfo.h,v 1.1 2002/08/01 08:33:05 risso Exp $ */
-
 #ifndef HAVE_ADDRINFO
 
 /*
@@ -90,6 +88,29 @@ extern struct hostent *getipnodebyaddr (const void *, size_t, int, int *);
 extern struct hostent *getipnodebyname (const char *, int, int, int *);
 extern int inet_pton (int, const char *, void *);
 extern const char *inet_ntop (int, const void *, char *, size_t);
+#else
+
+#ifndef EAI_BADHINTS
+#define EAI_BADHINTS	12
+#endif 
+
+#ifndef EAI_PROTOCOL	
+#define EAI_PROTOCOL	13
+#endif
+
+#ifndef EAI_MAX	
+#define EAI_MAX		14
+#endif
+
+#ifndef NETDB_INTERNAL
+#define	NETDB_INTERNAL	-1	/* see errno */
+#endif
+
+#ifndef AI_MASK
+/* valid flags for addrinfo */
+#define	AI_MASK		(AI_PASSIVE | AI_CANONNAME | AI_NUMERICHOST)
+#endif
+
 #endif /* HAVE_ADDRINFO */
 
 /*
@@ -120,3 +141,4 @@ extern const char *inet_ntop (int, const void *, char *, size_t);
 #ifndef NI_DGRAM
 #define	NI_DGRAM	0x00000010
 #endif
+

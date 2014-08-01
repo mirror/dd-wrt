@@ -22,13 +22,13 @@
  * These functions are not time critical.
  */
 
-#ifndef lint
-static const char rcsid[] _U_ =
-    "@(#) $Header: /tcpdump/master/libpcap/nametoaddr.c,v 1.82.2.1 2008/02/06 10:21:47 guy Exp $ (LBL)";
-#endif
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
+#ifdef DECNETLIB
+#include <sys/types.h>
+#include <netdnet/dnetdb.h>
 #endif
 
 #ifdef WIN32
@@ -43,13 +43,6 @@ static const char rcsid[] _U_ =
 
 #include <netinet/in.h>
 #endif /* WIN32 */
-
-/*
- * XXX - why was this included even on UNIX?
- */
-#ifdef __MINGW32__
-#include "IP6_misc.h"
-#endif
 
 #ifndef WIN32
 #ifdef HAVE_ETHER_HOSTTON
@@ -249,6 +242,7 @@ pcap_nametoportrange(const char *name, int *port1, int *port2, int *proto)
 			free(cpy);
 			return 0;
 		}
+		free(cpy);
 
 		if (*proto != save_proto)
 			*proto = PROTO_UNDEF;
@@ -416,6 +410,8 @@ pcap_ether_aton(const char *s)
 	register u_int d;
 
 	e = ep = (u_char *)malloc(6);
+	if (e == NULL)
+		return (NULL);
 
 	while (*s) {
 		if (*s == ':' || *s == '.' || *s == '-')
