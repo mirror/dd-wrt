@@ -7812,7 +7812,7 @@ $as_echo_n "checking for USB sniffing support... " >&6; }
 case "$host_os" in
 linux*)
 
-$as_echo "#define PCAP_SUPPORT_USB 1" >>confdefs.h
+$as_echo "#undef PCAP_SUPPORT_USB" >>confdefs.h
 
 	USB_SRC=pcap-usb-linux.c
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5

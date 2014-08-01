@@ -1352,7 +1352,7 @@ dnl check for USB sniffing support
 AC_MSG_CHECKING(for USB sniffing support)
 case "$host_os" in
 linux*)
-	AC_DEFINE(PCAP_SUPPORT_USB, 1, [target host supports USB sniffing])
+	AC_DEFINE(PCAP_SUPPORT_USB, 0, [target host supports USB sniffing])
 	USB_SRC=pcap-usb-linux.c
 	AC_MSG_RESULT(yes)
 	ac_usb_dev_name=`udevinfo -q name -p /sys/class/usb_device/usbmon 2>/dev/null`
