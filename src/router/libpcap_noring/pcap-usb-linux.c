@@ -36,7 +36,7 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
-
+#ifdef PCAP_SUPPORT_USB
 #include "pcap-int.h"
 #include "pcap-usb-linux.h"
 #include "pcap/usb.h"
@@ -933,3 +933,4 @@ usb_cleanup_linux_mmap(pcap_t* handle)
 	}
 	pcap_cleanup_live_common(handle);
 }
+#endif
