@@ -7,7 +7,7 @@ VERSION		= 7.0.0.7
 PLATFORM    	= linux
 IPKG		= /home/luis/devel/Kai/ipkg
 PRE_CFLAGS     += -D_REENTRANT -DPLATFORM_$(PLATFORM) -DVERSION=\"$(VERSION)\" $(STATIC)
-CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -g -Wall -Ipthreadcc/src -Isocketcc/src -I../../libpcap_noring $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" $(COPTS) -DNEED_PRINTF
+CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -g -Wall -Ipthreadcc/src -Isocketcc/src -I../../libpcap_noring $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" $(COPTS) -DNEED_PRINTF -static -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 #PRE_CFLAGS	+= -nostdinc
 PRE_CFLAGS	+= -DOPENWRT
@@ -30,6 +30,10 @@ PCAP		= ../../libpcap_noring/pcap.o \
 ../../libpcap_noring/nametoaddr.o \
 ../../libpcap_noring/etherent.o \
 ../../libpcap_noring/grammar.o \
+../../libpcap_noring/pcap-usb-linux.o \
+../../libpcap_noring/sf-pcap.o \
+../../libpcap_noring/sf-pcap-ng.o \
+../../libpcap_noring/pcap-common.o \
 ../../libpcap_noring/scanner.o
 
 ifdef BSD
