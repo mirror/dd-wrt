@@ -1,8 +1,8 @@
 VERSION = 3
 PATCHLEVEL = 15
 SUBLEVEL = 8
-EXTRAVERSION = -rc1
-NAME = Shuffling Zombie Juror
+EXTRAVERSION =
+NAME = Double Funky Skunk
 
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
