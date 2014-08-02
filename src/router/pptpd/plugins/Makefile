@@ -1,6 +1,6 @@
 #CC	= gcc
 CFLAGS = $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
-CFLAGS	+=  -I.. -I../../include -I../../pppd.new/pppd -fPIC
+CFLAGS	+=  -I.. -I../../include -I../../pppd/pppd -fPIC
 LDFLAGS	= -shared
 LDADD   = -lutil
 INSTALL	= install -o root
