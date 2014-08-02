@@ -1054,12 +1054,16 @@ The following options are useful only for clients (that is, if
 
 [[NumEntryGuards]] **NumEntryGuards** __NUM__::
     If UseEntryGuards is set to 1, we will try to pick a total of NUM routers
-    as long-term entries for our circuits. (Default: 3)
+    as long-term entries for our circuits. If NUM is 0, we try to learn
+    the number from the NumEntryGuards consensus parameter, and default
+    to 3 if the consensus parameter isn't set. (Default: 0)
 
 [[NumDirectoryGuards]] **NumDirectoryGuards** __NUM__::
     If UseEntryGuardsAsDirectoryGuards is enabled, we try to make sure we
     have at least NUM routers to use as directory guards. If this option
-    is set to 0, use the value from NumEntryGuards. (Default: 0)
+    is set to 0, use the value from the NumDirectoryGuards consensus
+    parameter, falling back to the value from NumEntryGuards if the
+    consensus parameter is 0 or isn't set. (Default: 0)
 
 [[GuardLifetime]] **GuardLifetime**  __N__ **days**|**weeks**|**months**::
     If nonzero, and UseEntryGuards is set, minimum time to keep a guard before
@@ -1115,15 +1119,17 @@ The following options are useful only for clients (that is, if
     the node "foo". Disabled by default since attacking websites and exit
     relays can use it to manipulate your path selection. (Default: 0)
 
-[[FastFirstHopPK]] **FastFirstHopPK** **0**|**1**::
+[[FastFirstHopPK]] **FastFirstHopPK** **0**|**1**|**auto**::
     When this option is disabled, Tor uses the public key step for the first
     hop of creating circuits. Skipping it is generally safe since we have
     already used TLS to authenticate the relay and to establish forward-secure
-    keys. Turning this option off makes circuit building slower. +
+    keys. Turning this option off makes circuit building a little
+    slower. Setting this option to "auto" takes advice from the authorities
+    in the latest consensus about whether to use this feature.  +
  +
     Note that Tor will always use the public key step for the first hop if it's
     operating as a relay, and it will never use the public key step if it
-    doesn't yet know the onion key of the first hop. (Default: 1)
+    doesn't yet know the onion key of the first hop. (Default: auto)
 
 [[TransPort]] **TransPort**  \['address':]__port__|**auto** [_isolation flags_]::
     Open this port to listen for transparent proxy connections.  Set this to
