@@ -35,7 +35,7 @@
 #include "buffer.h"
 #include "str.h"
 #include "log.h"
-
+
 /* Master list of interfaces. */
 struct list *iflist;
 
@@ -45,7 +45,7 @@ struct if_master
   int (*if_new_hook) (struct interface *);
   int (*if_delete_hook) (struct interface *);
 } if_master;
-
+
 /* Compare interface names, returning an integer greater than, equal to, or
  * less than 0, (following the strcmp convention), according to the
  * relationship between ifp1 and ifp2.  Interface names consist of an
@@ -304,6 +304,30 @@ if_lookup_address (struct in_addr src)
   return match;
 }
 
+/* Lookup interface by prefix */
+struct interface *
+if_lookup_prefix (struct prefix *prefix)
+{
+  struct listnode *node;
+  struct prefix addr;
+  int bestlen = 0;
+  struct listnode *cnode;
+  struct interface *ifp;
+  struct connected *c;
+
+  for (ALL_LIST_ELEMENTS_RO (iflist, node, ifp))
+    {
+      for (ALL_LIST_ELEMENTS_RO (ifp->connected, cnode, c))
+        {
+          if (prefix_cmp(c->address, prefix) == 0)
+            {
+              return ifp;
+            }
+        }
+    }
+  return NULL;
+}
+
 /* Get interface by name if given name interface doesn't exist create
    one. */
 struct interface *
@@ -489,7 +513,7 @@ DEFUN (no_interface_desc,
 
   return CMD_SUCCESS;
 }
-
+
 #ifdef SUNOS_5
 /* Need to handle upgrade from SUNWzebra to Quagga. SUNWzebra created
  * a seperate struct interface for each logical interface, so config
@@ -531,7 +555,7 @@ if_sunwzebra_get (const char *name, size_t nlen)
     return if_get_by_name_len (name, nlen);
 }
 #endif /* SUNOS_5 */
-
+
 DEFUN (interface,
        interface_cmd,
        "interface IFNAME",
@@ -782,7 +806,7 @@ if_indextoname (unsigned int ifindex, char *name)
   return ifp->name;
 }
 #endif
-
+
 #if 0 /* this route_table of struct connected's is unused
        * however, it would be good to use a route_table rather than
        * a list..

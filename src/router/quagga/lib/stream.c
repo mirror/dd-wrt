@@ -154,6 +154,25 @@ stream_dup (struct stream *s)
   return (stream_copy (new, s));
 }
 
+struct stream *
+stream_dupcat (struct stream *s1, struct stream *s2, size_t offset)
+{
+  struct stream *new;
+
+  STREAM_VERIFY_SANE (s1);
+  STREAM_VERIFY_SANE (s2);
+
+  if ( (new = stream_new (s1->endp + s2->endp)) == NULL)
+    return NULL;
+
+  memcpy (new->data, s1->data, offset);
+  memcpy (new->data + offset, s2->data, s2->endp);
+  memcpy (new->data + offset + s2->endp, s1->data + offset,
+	  (s1->endp - offset));
+  new->endp = s1->endp + s2->endp;
+  return new;
+}
+
 size_t
 stream_resize (struct stream *s, size_t newsize)
 {
@@ -177,7 +196,7 @@ stream_resize (struct stream *s, size_t newsize)
   
   return s->size;
 }
-
+
 size_t
 stream_get_getp (struct stream *s)
 {
@@ -266,7 +285,7 @@ stream_forward_endp (struct stream *s, size_t size)
   
   s->endp += size;
 }
-
+
 /* Copy from stream to destination. */
 void
 stream_get (void *dst, struct stream *s, size_t size)
@@ -473,7 +492,7 @@ stream_get_ipv4 (struct stream *s)
 
   return l;
 }
-
+
 /* Copy to source to stream.
  *
  * XXX: This uses CHECK_SIZE and hence has funny semantics -> Size will wrap
@@ -700,19 +719,19 @@ stream_put_prefix (struct stream *s, struct prefix *p)
   
   psize = PSIZE (p->prefixlen);
   
-  if (STREAM_WRITEABLE (s) < psize)
+  if (STREAM_WRITEABLE (s) < (psize + sizeof (u_char)))
     {
       STREAM_BOUND_WARN (s, "put");
       return 0;
     }
   
-  stream_putc (s, p->prefixlen);
+  s->data[s->endp++] = p->prefixlen;
   memcpy (s->data + s->endp, &p->u.prefix, psize);
   s->endp += psize;
   
   return psize;
 }
-
+
 /* Read size from fd. */
 int
 stream_read (struct stream *s, int fd, size_t size)
@@ -918,7 +937,7 @@ stream_flush (struct stream *s, int fd)
   
   return nbytes;
 }
-
+
 /* Stream first in first out queue. */
 
 struct stream_fifo *

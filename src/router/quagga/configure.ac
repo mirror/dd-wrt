@@ -7,7 +7,7 @@
 ##
 AC_PREREQ(2.53)
 
-AC_INIT(Quagga, 0.99.22.4, [https://bugzilla.quagga.net])
+AC_INIT(Quagga, 0.99.23, [https://bugzilla.quagga.net])
 AC_CONFIG_SRCDIR(lib/zebra.h)
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -202,8 +202,6 @@ AC_ARG_ENABLE(ipv6,
 [  --disable-ipv6          turn off IPv6 related features and daemons])
 AC_ARG_ENABLE(doc,
 [  --disable-doc           do not build docs])
-AC_ARG_ENABLE(tests,
-[  --disable-tests         do not build tests])
 AC_ARG_ENABLE(zebra,
 [  --disable-zebra         do not build zebra daemon])
 AC_ARG_ENABLE(bgpd,
@@ -273,7 +271,9 @@ AC_ARG_ENABLE(gcc_ultra_verbose,
 AC_ARG_ENABLE(linux24_tcp_md5,
 [  --enable-linux24-tcp-md5  enable support for old, Linux-2.4 RFC2385 patch])
 AC_ARG_ENABLE(gcc-rdynamic,
-[  --enable-gcc-rdynamic   enable gcc linking with -rdynamic for better backtraces])
+[  --enable-gcc-rdynamic         enable linking with -rdynamic for better backtraces (default if gcc)])
+AC_ARG_ENABLE(backtrace,
+[  --disable-backtrace,          disable crash backtraces (default autodetect)])
 AC_ARG_ENABLE(time-check,
 [  --disable-time-check          disable slow thread warning messages])
 AC_ARG_ENABLE(pcreposix,
@@ -288,8 +288,10 @@ if test x"${enable_gcc_ultra_verbose}" = x"yes" ; then
   CFLAGS="${CFLAGS} -Wpacked -Wpadded"
 fi
 
-if test x"${enable_gcc_rdynamic}" = x"yes" ; then
-  LDFLAGS="${LDFLAGS} -rdynamic"
+if test x"${enable_gcc_rdynamic}" != x"no" ; then
+  if test x"${enable_gcc_rdynamic}" = x"yes" -o x"$COMPILER" = x"GCC"; then
+    LDFLAGS="${LDFLAGS} -rdynamic"
+  fi
 fi
 
 if test x"${enable_time_check}" != x"no" ; then
@@ -1268,13 +1270,6 @@ else
   DOC="doc"
 fi
 
-dnl can't use TESTS as name, that's special with automake
-if test "${enable_tests}" = "no";then
-  BUILD_TESTS=""
-else
-  BUILD_TESTS="tests"
-fi
-
 dnl --------------------
 dnl Daemon disable check
 dnl --------------------
@@ -1368,7 +1363,6 @@ else
 fi
 
 AC_SUBST(DOC)
-AC_SUBST(BUILD_TESTS)
 AC_SUBST(ZEBRA)
 AC_SUBST(BGPD)
 AC_SUBST(RIPD)
@@ -1566,12 +1560,21 @@ AX_SYS_WEAK_ALIAS
 dnl ---------------------------
 dnl check for glibc 'backtrace'
 dnl --------------------------- 
-AC_CHECK_HEADER([execinfo.h],
-  [AC_CHECK_FUNC([backtrace],
-    [AC_DEFINE(HAVE_GLIBC_BACKTRACE,,[Glibc backtrace])
-     AC_DEFINE(HAVE_STACK_TRACE,,[Stack symbol decoding])
+if test x"${enable_backtrace}" != x"no" ; then
+  backtrace_ok=no
+  AC_CHECK_HEADER([execinfo.h], [
+    AC_SEARCH_LIBS([backtrace], [execinfo], [
+      AC_DEFINE(HAVE_GLIBC_BACKTRACE,,[Glibc backtrace])
+      AC_DEFINE(HAVE_STACK_TRACE,,[Stack symbol decoding])
+      backtrace_ok=yes
+    ],, [-lm])
   ])
-])
+
+  if test x"${enable_backtrace}" = x"yes" -a x"${backtrace_ok}" = x"no"; then
+    dnl user explicitly requested backtrace but we failed to find support
+    AC_MSG_FAILURE([failed to find backtrace support])
+  fi
+fi
 
 dnl -----------------------------------------
 dnl check for malloc mallinfo struct and call
@@ -1618,6 +1621,18 @@ fi
 
 AC_SUBST(PICFLAGS)
 AC_SUBST(PILDFLAGS)
+
+dnl -------
+dnl DejaGNU
+dnl -------
+if test x"$DEJAGNU" = x
+then
+  DEJAGNU="\$(top_srcdir)/tests/global-conf.exp"
+fi
+RUNTESTDEFAULTFLAGS="-x --tool \$\$tool"
+
+AC_SUBST(DEJAGNU)
+AC_SUBST(RUNTESTDEFAULTFLAGS)
 
 dnl ------------------------------
 dnl set paths for state directory
@@ -1691,8 +1706,10 @@ AC_MSG_RESULT($ac_cv_htonl_works)
 AC_CONFIG_FILES([Makefile lib/Makefile zebra/Makefile ripd/Makefile 
 	  ripngd/Makefile bgpd/Makefile ospfd/Makefile watchquagga/Makefile
 	  ospf6d/Makefile isisd/Makefile babeld/Makefile vtysh/Makefile
-          doc/Makefile ospfclient/Makefile tests/Makefile m4/Makefile
-          redhat/Makefile
+	  doc/Makefile ospfclient/Makefile tests/Makefile m4/Makefile
+	  tests/bgpd.tests/Makefile
+	  tests/libzebra.tests/Makefile
+	  redhat/Makefile
 	  pkgsrc/Makefile
 	  redhat/quagga.spec 
 	  lib/version.h

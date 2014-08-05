@@ -47,7 +47,7 @@ struct bgp_listener
   union sockunion su;
   struct thread *thread;
 };
-
+
 /*
  * Set MD5 key for the socket, for the given IPv4 peer address.
  * If the password is NULL or zero-length, the option will be disabled.
@@ -122,7 +122,72 @@ bgp_md5_set (struct peer *peer)
   
   return ret;
 }
-
+
+/* Update BGP socket send buffer size */
+static void
+bgp_update_sock_send_buffer_size (int fd)
+{
+  int size = BGP_SOCKET_SNDBUF_SIZE;
+  int optval;
+  socklen_t optlen = sizeof(optval);
+
+  if (getsockopt(fd, SOL_SOCKET, SO_SNDBUF, &optval, &optlen) < 0)
+    {
+      zlog_err("getsockopt of SO_SNDBUF failed %s\n", safe_strerror(errno));
+      return;
+    }
+  if (optval < size)
+    {
+      if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, &size, sizeof(size)) < 0)
+        {
+          zlog_err("Couldn't increase send buffer: %s\n", safe_strerror(errno));
+        }
+    }
+}
+
+static void
+bgp_set_socket_ttl (struct peer *peer, int bgp_sock)
+{
+  char buf[INET_ADDRSTRLEN];
+  int ret;
+
+  /* In case of peer is EBGP, we should set TTL for this connection.  */
+  if (!peer->gtsm_hops && (peer_sort (peer) == BGP_PEER_EBGP))
+    {
+      ret = sockopt_ttl (peer->su.sa.sa_family, bgp_sock, peer->ttl);
+      if (ret)
+	{
+	  zlog_err ("%s: Can't set TxTTL on peer (rtrid %s) socket, err = %d",
+		    __func__,
+		    inet_ntop (AF_INET, &peer->remote_id, buf, sizeof(buf)),
+		    errno);
+	}
+    }
+  else if (peer->gtsm_hops)
+    {
+      /* On Linux, setting minttl without setting ttl seems to mess with the
+	 outgoing ttl. Therefore setting both.
+      */
+      ret = sockopt_ttl (peer->su.sa.sa_family, bgp_sock, MAXTTL);
+      if (ret)
+	{
+	  zlog_err ("%s: Can't set TxTTL on peer (rtrid %s) socket, err = %d",
+		    __func__,
+		    inet_ntop (AF_INET, &peer->remote_id, buf, sizeof(buf)),
+		    errno);
+	}
+      ret = sockopt_minttl (peer->su.sa.sa_family, bgp_sock,
+			    MAXTTL + 1 - peer->gtsm_hops);
+      if (ret)
+	{
+	  zlog_err ("%s: Can't set MinTTL on peer (rtrid %s) socket, err = %d",
+		    __func__,
+		    inet_ntop (AF_INET, &peer->remote_id, buf, sizeof(buf)),
+		    errno);
+	}
+    }
+}
+
 /* Accept bgp connection. */
 static int
 bgp_accept (struct thread *thread)
@@ -153,6 +218,9 @@ bgp_accept (struct thread *thread)
     }
   set_nonblocking (bgp_sock);
 
+  /* Set socket send buffer size */
+  bgp_update_sock_send_buffer_size(bgp_sock);
+
   if (BGP_DEBUG (events, EVENTS))
     zlog_debug ("[Event] BGP connection from host %s", inet_sutop (&su, buf));
   
@@ -173,12 +241,7 @@ bgp_accept (struct thread *thread)
       return -1;
     }
 
-  /* In case of peer is EBGP, we should set TTL for this connection.  */
-  if (peer1->sort == BGP_PEER_EBGP) {
-    sockopt_ttl (peer1->su.sa.sa_family, bgp_sock, peer1->ttl);
-    if (peer1->gtsm_hops)
-      sockopt_minttl (peer1->su.sa.sa_family, bgp_sock, MAXTTL + 1 - peer1->gtsm_hops);
-  }
+  bgp_set_socket_ttl (peer1, bgp_sock);
 
   /* Make dummy peer until read Open packet. */
   if (BGP_DEBUG (events, EVENTS))
@@ -305,12 +368,12 @@ bgp_connect (struct peer *peer)
   if (peer->fd < 0)
     return -1;
 
-  /* If we can get socket for the peer, adjest TTL and make connection. */
-  if (peer->sort == BGP_PEER_EBGP) {
-    sockopt_ttl (peer->su.sa.sa_family, peer->fd, peer->ttl);
-    if (peer->gtsm_hops)
-      sockopt_minttl (peer->su.sa.sa_family, peer->fd, MAXTTL + 1 - peer->gtsm_hops);
-  }
+  set_nonblocking (peer->fd);
+
+  /* Set socket send buffer size */
+  bgp_update_sock_send_buffer_size(peer->fd);
+
+  bgp_set_socket_ttl (peer, peer->fd);
 
   sockopt_reuseaddr (peer->fd);
   sockopt_reuseport (peer->fd);

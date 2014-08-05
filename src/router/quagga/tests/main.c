@@ -95,8 +95,8 @@ Report bugs to %s\n", progname, ZEBRA_BUG_ADDRESS);
     }
   exit (status);
 }
-
-
+
+
 /* main routine. */
 int
 main (int argc, char **argv)
@@ -170,8 +170,6 @@ main (int argc, char **argv)
 
   /* OSPF vty inits. */
   test_vty_init ();
-
-  sort_node ();
 
   /* Change to the daemon program. */
   if (daemon_mode && daemon (0, 0) < 0)

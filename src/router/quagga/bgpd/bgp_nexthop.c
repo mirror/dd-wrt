@@ -45,7 +45,7 @@ struct bgp_nexthop_cache *zlookup_query (struct in_addr);
 #ifdef HAVE_IPV6
 struct bgp_nexthop_cache *zlookup_query_ipv6 (struct in6_addr *);
 #endif /* HAVE_IPV6 */
-
+
 /* Only one BGP scan thread are activated at the same time. */
 static struct thread *bgp_scan_thread = NULL;
 
@@ -68,7 +68,7 @@ static struct bgp_table *bgp_connected_table[AFI_MAX];
 
 /* BGP nexthop lookup query client. */
 struct zclient *zlookup = NULL;
-
+
 /* Add nexthop to the end of the list.  */
 static void
 bnc_nexthop_add (struct bgp_nexthop_cache *bnc, struct nexthop *nexthop)
@@ -109,7 +109,7 @@ bnc_free (struct bgp_nexthop_cache *bnc)
   bnc_nexthop_free (bnc);
   XFREE (MTYPE_BGP_NEXTHOP_CACHE, bnc);
 }
-
+
 static int
 bgp_nexthop_same (struct nexthop *next1, struct nexthop *next2)
 {
@@ -458,7 +458,8 @@ bgp_scan (afi_t afi, safi_t safi)
 	      changed = 0;
 	      metricchanged = 0;
 
-	      if (bi->peer->sort == BGP_PEER_EBGP && bi->peer->ttl == 1)
+	      if (bi->peer->sort == BGP_PEER_EBGP && bi->peer->ttl == 1
+		  && !CHECK_FLAG(bi->peer->flags, PEER_FLAG_DISABLE_CONNECTED_CHECK))
 		valid = bgp_nexthop_onlink (afi, bi->attr);
 	      else
 		valid = bgp_nexthop_lookup (afi, bi->peer, bi,
@@ -609,6 +610,10 @@ bgp_address_del (struct prefix *p)
   tmp.addr = p->u.prefix4;
 
   addr = hash_lookup (bgp_address_hash, &tmp);
+  /* may have been deleted earlier by bgp_interface_down() */
+  if (addr == NULL)
+    return;
+
   addr->refcnt--;
 
   if (addr->refcnt == 0)
@@ -618,7 +623,7 @@ bgp_address_del (struct prefix *p)
     }
 }
 
-
+
 struct bgp_connected_ref
 {
   unsigned int refcnt;
@@ -776,7 +781,7 @@ bgp_nexthop_self (struct attr *attr)
 
   return 0;
 }
-
+
 static struct bgp_nexthop_cache *
 zlookup_read (void)
 {
@@ -1238,7 +1243,7 @@ bgp_multiaccess_check_v4 (struct in_addr nexthop, char *peer)
 
   return 0;
 }
-
+
 DEFUN (bgp_scan_time,
        bgp_scan_time_cmd,
        "bgp scan-time <5-60>",
