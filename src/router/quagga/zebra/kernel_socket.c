@@ -252,7 +252,7 @@ af_check (int family)
 #endif /* HAVE_IPV6 */
   return 0;
 }
-
+
 /* Dump routing table flag for debug purpose. */
 static void
 rtm_flag_dump (int flag)
@@ -299,6 +299,7 @@ ifan_read (struct if_announcemsghdr *ifan)
 				       sizeof(ifan->ifan_name)));
       ifp->ifindex = ifan->ifan_index;
 
+      if_get_metric (ifp);
       if_add_update (ifp);
     }
   else if (ifp != NULL && ifan->ifan_what == IFAN_DEPARTURE)
@@ -556,7 +557,7 @@ ifm_read (struct if_msghdr *ifm)
 
   return 0;
 }
-
+
 /* Address read from struct ifa_msghdr. */
 static void
 ifam_read_mesg (struct ifa_msghdr *ifm,
@@ -750,7 +751,7 @@ ifam_read (struct ifa_msghdr *ifam)
   
   return 0;
 }
-
+
 /* Interface function for reading kernel routing table information. */
 static int
 rtm_read_mesg (struct rt_msghdr *rtm,
@@ -1127,7 +1128,7 @@ rtm_write (int message,
   return ZEBRA_ERR_NOERROR;
 }
 
-
+
 #include "thread.h"
 #include "zebra/zserv.h"
 

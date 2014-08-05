@@ -151,11 +151,16 @@ struct connected
   u_char conf;
 #define ZEBRA_IFC_REAL         (1 << 0)
 #define ZEBRA_IFC_CONFIGURED   (1 << 1)
+#define ZEBRA_IFC_QUEUED       (1 << 2)
   /*
      The ZEBRA_IFC_REAL flag should be set if and only if this address
-     exists in the kernel.
+     exists in the kernel and is actually usable. (A case where it exists but
+     is not yet usable would be IPv6 with DAD)
      The ZEBRA_IFC_CONFIGURED flag should be set if and only if this address
      was configured by the user from inside quagga.
+     The ZEBRA_IFC_QUEUED flag should be set if and only if the address exists
+     in the kernel. It may and should be set although the address might not be
+     usable yet. (compare with ZEBRA_IFC_REAL)
    */
 
   /* Flags for connected address. */
@@ -240,6 +245,7 @@ extern struct interface *if_create (const char *name, int namelen);
 extern struct interface *if_lookup_by_index (unsigned int);
 extern struct interface *if_lookup_exact_address (struct in_addr);
 extern struct interface *if_lookup_address (struct in_addr);
+extern struct interface *if_lookup_prefix (struct prefix *prefix);
 
 /* These 2 functions are to be used when the ifname argument is terminated
    by a '\0' character: */

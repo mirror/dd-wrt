@@ -151,7 +151,7 @@ usage (char *progname, int status)
 
   exit (status);
 }
-
+
 /* SIGHUP handler. */
 static void 
 sighup (void)
@@ -203,7 +203,7 @@ struct quagga_signal_t zebra_signals[] =
     .handler = &sigint,
   },
 };
-
+
 /* Main startup routine. */
 int
 main (int argc, char **argv)
@@ -342,9 +342,6 @@ main (int argc, char **argv)
   kernel_init ();
   interface_list ();
   route_read ();
-
-  /* Sort VTY commands. */
-  sort_node ();
 
 #ifdef HAVE_SNMP
   zebra_snmp_init ();

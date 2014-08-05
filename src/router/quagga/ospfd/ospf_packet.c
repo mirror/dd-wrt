@@ -323,7 +323,7 @@ ospf_packet_max (struct ospf_interface *oi)
   return max;
 }
 
-
+
 static int
 ospf_check_md5_digest (struct ospf_interface *oi, struct ospf_header *ospfh)
 {
@@ -438,7 +438,7 @@ ospf_make_md5_digest (struct ospf_interface *oi, struct ospf_packet *op)
   return OSPF_AUTH_MD5_SIZE;
 }
 
-
+
 static int
 ospf_ls_req_timer (struct thread *thread)
 {
@@ -1854,8 +1854,7 @@ ospf_ls_upd (struct ip *iph, struct ospf_header *ospfh,
 	 then take the following actions: */
 
       if (IS_LSA_MAXAGE (lsa) && !current &&
-	  (ospf_nbr_count (oi, NSM_Exchange) +
-	   ospf_nbr_count (oi, NSM_Loading)) == 0)
+	  ospf_check_nbr_status(oi->ospf))
 	{
 	  /* (4a) Response Link State Acknowledgment. */
 	  ospf_ls_ack_send (nbr, lsa);
@@ -2121,7 +2120,7 @@ ospf_ls_ack (struct ip *iph, struct ospf_header *ospfh,
 
       lsr = ospf_ls_retransmit_lookup (nbr, lsa);
 
-      if (lsr != NULL && lsr->data->ls_seqnum == lsa->data->ls_seqnum)
+      if (lsr != NULL && ospf_lsa_more_recent (lsr, lsa) == 0)
         {
 #ifdef HAVE_OPAQUE_LSA
           if (IS_OPAQUE_LSA (lsr->data->type))
@@ -2137,7 +2136,7 @@ ospf_ls_ack (struct ip *iph, struct ospf_header *ospfh,
 
   return;
 }
-
+
 static struct stream *
 ospf_recv_packet (int fd, struct interface **ifp, struct stream *ibuf)
 {

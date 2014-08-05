@@ -124,6 +124,12 @@ sequences should should be taken into account during the BGP best path
 decision process.
 @end deffn
 
+@deffn {BGP} {bgp bestpath as-path multipath-relax} {}
+This command specifies that BGP decision process should consider paths
+of equal AS_PATH length candidates for multipath computation. Without
+the knob, the entire AS_PATH must match for multipath computation.
+@end deffn
+
 @node BGP route flap dampening
 @subsection BGP route flap dampening
 
@@ -358,6 +364,14 @@ prepended to the AS_PATH when transmitting local-route updates to this peer.
 Note that replace-as can only be specified if no-prepend is.
 
 This command is only allowed for eBGP peers.
+@end deffn
+
+@deffn {BGP} {neighbor @var{peer} ttl-security hops @var{number}} {}
+@deffnx {BGP} {no neighbor @var{peer} ttl-security hops @var{number}} {}
+This command enforces Generalized TTL Security Mechanism (GTSM), as
+specified in RFC 5082. With this command, only neighbors that are the
+specified number of hops away will be allowed to become neighbors. This
+command is mututally exclusive with @command{ebgp-multihop}.
 @end deffn
 
 @node Peer filtering

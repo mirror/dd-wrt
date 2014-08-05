@@ -184,7 +184,7 @@ parse_irdp_packet(char *p,
 		 inet_ntoa (src));
     }
 }
-
+
 static int
 irdp_recvmsg (int sock, u_char *buf, int size, int *ifindex)
 {
@@ -222,7 +222,7 @@ irdp_recvmsg (int sock, u_char *buf, int size, int *ifindex)
 
   return ret;
 }
-
+
 int irdp_read_raw(struct thread *r)
 {
   struct interface *ifp;
@@ -264,7 +264,7 @@ int irdp_read_raw(struct thread *r)
 
   return ret;
 }
-
+
 void 
 send_packet(struct interface *ifp, 
 	    struct stream *s,
@@ -287,7 +287,7 @@ send_packet(struct interface *ifp,
   if (!(ifp->flags & IFF_UP))
     return;
 
-  if (!p) 
+  if (p)
     src = ntohl(p->u.prefix4.s_addr);
   else 
     src = 0; /* Is filled in */

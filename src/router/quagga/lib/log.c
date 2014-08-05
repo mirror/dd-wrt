@@ -69,7 +69,7 @@ const char *zlog_priority[] =
 };
   
 
-
+
 /* For time string format. */
 
 size_t
@@ -145,7 +145,7 @@ time_print(FILE *fp, struct timestamp_control *ctl)
   fprintf(fp, "%s ", ctl->buf);
 }
   
-
+
 /* va_list version of zlog. */
 static void
 vzlog (struct zlog *zl, int priority, const char *format, va_list args)
@@ -443,8 +443,8 @@ zlog_backtrace_sigsafe(int priority, void *program_counter)
 #define LOC s,buf+sizeof(buf)-s
 
 #ifdef HAVE_GLIBC_BACKTRACE
-  if (((size = backtrace(array,array_size(array)) <= 0) ||
-      ((size_t)size > array_size(array))))
+  size = backtrace(array, array_size(array));
+  if (size <= 0 || (size_t)size > array_size(array))
     return;
 
 #define DUMP(FD) { \
@@ -526,8 +526,8 @@ zlog_backtrace(int priority)
   int size, i;
   char **strings;
 
-  if (((size = backtrace(array,array_size(array))) <= 0) ||
-      ((size_t)size > array_size(array)))
+  size = backtrace(array, array_size(array));
+  if (size <= 0 || (size_t)size > array_size(array))
     {
       zlog_err("Cannot get backtrace, returned invalid # of frames %d "
 	       "(valid range is between 1 and %lu)",
@@ -619,7 +619,7 @@ _zlog_assert_failed (const char *assertion, const char *file,
   abort();
 }
 
-
+
 /* Open log stream */
 struct zlog *
 openzlog (const char *progname, zlog_proto_t protocol,
@@ -756,7 +756,7 @@ zlog_rotate (struct zlog *zl)
 
   return 1;
 }
-
+
 /* Message lookup function. */
 const char *
 lookup (const struct message *mes, int key)

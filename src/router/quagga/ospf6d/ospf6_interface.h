@@ -56,6 +56,9 @@ struct ospf6_interface
   /* I/F transmission delay */
   u_int32_t transdelay;
 
+  /* Network Type */
+  u_char type;
+
   /* Router Priority */
   u_char priority;
 
@@ -125,6 +128,7 @@ extern const char *ospf6_interface_state_str[];
 /* flags */
 #define OSPF6_INTERFACE_DISABLE      0x01
 #define OSPF6_INTERFACE_PASSIVE      0x02
+#define OSPF6_INTERFACE_NOAUTOCOST   0x04
 
 /* default values */
 #define OSPF6_INTERFACE_HELLO_INTERVAL 10
@@ -134,8 +138,11 @@ extern const char *ospf6_interface_state_str[];
 #define OSPF6_INTERFACE_PRIORITY       1
 #define OSPF6_INTERFACE_TRANSDELAY     1
 #define OSPF6_INTERFACE_INSTANCE_ID    0
+#define OSPF6_INTERFACE_BANDWIDTH      10000   /* Kbps */
+#define OSPF6_REFERENCE_BANDWIDTH      100000  /* Kbps */
 
-
+
+
 /* Function Prototypes */
 
 extern struct ospf6_interface *ospf6_interface_lookup_by_ifindex (int);
