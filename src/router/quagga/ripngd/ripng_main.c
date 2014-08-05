@@ -127,7 +127,7 @@ Report bugs to %s\n", progname, ZEBRA_BUG_ADDRESS);
     }
   exit (status);
 }
-
+
 /* SIGHUP handler. */
 static void 
 sighup (void)
@@ -182,7 +182,7 @@ struct quagga_signal_t ripng_signals[] =
     .handler = &sigint,
   },
 };
-
+
 /* RIPngd main routine. */
 int
 main (int argc, char **argv)
@@ -281,9 +281,6 @@ main (int argc, char **argv)
   ripng_init ();
   zebra_init ();
   ripng_peer_init ();
-
-  /* Sort all installed commands. */
-  sort_node ();
 
   /* Get configuration file. */
   vty_read_config (config_file, config_default);

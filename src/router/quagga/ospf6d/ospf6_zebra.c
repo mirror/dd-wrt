@@ -117,7 +117,9 @@ ospf6_zebra_if_del (int command, struct zclient *zclient, zebra_size_t length)
 		ifp->name, ifp->ifindex, ifp->mtu6);
 
 #if 0
-  /* Why is this commented out? */
+  /* XXX: ospf6_interface_if_del is not the right way to handle this,
+   * because among other thinkable issues, it will also clear all
+   * settings as they are contained in the struct ospf6_interface. */
   ospf6_interface_if_del (ifp);
 #endif /*0*/
 
@@ -137,9 +139,9 @@ ospf6_zebra_if_state_update (int command, struct zclient *zclient,
   
   if (IS_OSPF6_DEBUG_ZEBRA (RECV))
     zlog_debug ("Zebra Interface state change: "
-                "%s index %d flags %llx metric %d mtu %d",
+                "%s index %d flags %llx metric %d mtu %d bandwidth %d",
 		ifp->name, ifp->ifindex, (unsigned long long)ifp->flags, 
-		ifp->metric, ifp->mtu6);
+		ifp->metric, ifp->mtu6, ifp->bandwidth);
 
   ospf6_interface_state_update (ifp);
   return 0;
@@ -163,8 +165,10 @@ ospf6_zebra_if_address_update_add (int command, struct zclient *zclient,
 			   buf, sizeof (buf)), c->address->prefixlen);
 
   if (c->address->family == AF_INET6)
-    ospf6_interface_connected_route_update (c->ifp);
-
+    {
+      ospf6_interface_state_update (c->ifp);
+      ospf6_interface_connected_route_update (c->ifp);
+    }
   return 0;
 }
 
@@ -186,7 +190,10 @@ ospf6_zebra_if_address_update_delete (int command, struct zclient *zclient,
 			   buf, sizeof (buf)), c->address->prefixlen);
 
   if (c->address->family == AF_INET6)
-    ospf6_interface_connected_route_update (c->ifp);
+    {
+      ospf6_interface_connected_route_update (c->ifp);
+      ospf6_interface_state_update (c->ifp);
+    }
 
   return 0;
 }
@@ -267,7 +274,7 @@ ospf6_zebra_read_ipv6 (int command, struct zclient *zclient,
 
 
 
-
+
 DEFUN (show_zebra,
        show_zebra_cmd,
        "show zebra",
@@ -595,7 +602,7 @@ ospf6_zebra_init (void)
 }
 
 /* Debug */
-
+
 DEFUN (debug_ospf6_zebra_sendrecv,
        debug_ospf6_zebra_sendrecv_cmd,
        "debug ospf6 zebra (send|recv)",

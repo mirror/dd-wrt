@@ -123,7 +123,7 @@ zebra_route_set_delete (struct vty *vty, struct route_map_index *index,
   return CMD_SUCCESS;
 }
 
-
+
 /* `match interface IFNAME' */
 /* Match function return 1 if match is success else return zero. */
 static route_map_result_t
@@ -422,14 +422,10 @@ route_match_ip_next_hop (void *rule, struct prefix *prefix,
       switch (nexthop->type) {
       case NEXTHOP_TYPE_IFINDEX:
       case NEXTHOP_TYPE_IFNAME:
+        /* Interface routes can't match ip next-hop */
+        return RMAP_NOMATCH;
       case NEXTHOP_TYPE_IPV4_IFINDEX:
       case NEXTHOP_TYPE_IPV4_IFNAME:
-        if (nexthop->rtype != NEXTHOP_TYPE_IPV4)
-		return RMAP_NOMATCH;
-        p.family = AF_INET;
-        p.prefix = nexthop->rgate.ipv4;
-        p.prefixlen = IPV4_MAX_BITLEN;
-        break;
       case NEXTHOP_TYPE_IPV4:
         p.family = AF_INET;
         p.prefix = nexthop->gate.ipv4;
@@ -471,7 +467,7 @@ static struct route_map_rule_cmd route_match_ip_next_hop_cmd =
   route_match_ip_next_hop_compile,
   route_match_ip_next_hop_free
 };
-
+
 /* `match ip next-hop prefix-list PREFIX_LIST' */
 
 static route_map_result_t
@@ -488,14 +484,10 @@ route_match_ip_next_hop_prefix_list (void *rule, struct prefix *prefix,
       switch (nexthop->type) {
       case NEXTHOP_TYPE_IFINDEX:
       case NEXTHOP_TYPE_IFNAME:
+        /* Interface routes can't match ip next-hop */
+        return RMAP_NOMATCH;
       case NEXTHOP_TYPE_IPV4_IFINDEX:
       case NEXTHOP_TYPE_IPV4_IFNAME:
-        if (nexthop->rtype != NEXTHOP_TYPE_IPV4)
-		return RMAP_NOMATCH;
-        p.family = AF_INET;
-        p.prefix = nexthop->rgate.ipv4;
-        p.prefixlen = IPV4_MAX_BITLEN;
-        break;
       case NEXTHOP_TYPE_IPV4:
         p.family = AF_INET;
         p.prefix = nexthop->gate.ipv4;
@@ -533,7 +525,7 @@ static struct route_map_rule_cmd route_match_ip_next_hop_prefix_list_cmd =
   route_match_ip_next_hop_prefix_list_compile,
   route_match_ip_next_hop_prefix_list_free
 };
-
+
 /* `match ip address IP_ACCESS_LIST' */
 
 /* Match function should return 1 if match is success else return
@@ -579,7 +571,7 @@ static struct route_map_rule_cmd route_match_ip_address_cmd =
   route_match_ip_address_compile,
   route_match_ip_address_free
 };
-
+
 /* `match ip address prefix-list PREFIX_LIST' */
 
 static route_map_result_t
@@ -620,7 +612,7 @@ static struct route_map_rule_cmd route_match_ip_address_prefix_list_cmd =
   route_match_ip_address_prefix_list_free
 };
 
-
+
 /* `set src A.B.C.D' */
 
 /* Set src. */

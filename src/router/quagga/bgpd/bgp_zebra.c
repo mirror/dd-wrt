@@ -38,7 +38,7 @@ Boston, MA 02111-1307, USA.  */
 #include "bgpd/bgp_fsm.h"
 #include "bgpd/bgp_debug.h"
 #include "bgpd/bgp_mpath.h"
-
+
 /* All information about zebra. */
 struct zclient *zclient = NULL;
 struct in_addr router_id_zebra;
@@ -147,12 +147,11 @@ bgp_interface_down (int command, struct zclient *zclient, zebra_size_t length)
   for (ALL_LIST_ELEMENTS (ifp->connected, node, nnode, c))
     bgp_connected_delete (c);
 
-  /* Fast external-failover (Currently IPv4 only) */
+  /* Fast external-failover */
   {
     struct listnode *mnode;
     struct bgp *bgp;
     struct peer *peer;
-    struct interface *peer_if;
 
     for (ALL_LIST_ELEMENTS_RO (bm->bgp, mnode, bgp))
       {
@@ -161,15 +160,10 @@ bgp_interface_down (int command, struct zclient *zclient, zebra_size_t length)
 
 	for (ALL_LIST_ELEMENTS (bgp->peer, node, nnode, peer))
 	  {
-	    if (peer->ttl != 1)
+	    if ((peer->ttl != 1) && (peer->gtsm_hops != 1))
 	      continue;
 
-	    if (peer->su.sa.sa_family == AF_INET)
-	      peer_if = if_lookup_by_ipv4 (&peer->su.sin.sin_addr);
-	    else
-	      continue;
-
-	    if (ifp == peer_if)
+	    if (ifp == peer->nexthop.ifp)
 	      BGP_EVENT_ADD (peer, BGP_Stop);
 	  }
       }
@@ -387,7 +381,7 @@ zebra_read_ipv6 (int command, struct zclient *zclient, zebra_size_t length)
   return 0;
 }
 #endif /* HAVE_IPV6 */
-
+
 struct interface *
 if_lookup_by_ipv4 (struct in_addr *addr)
 {
@@ -534,6 +528,25 @@ if_get_ipv6_local (struct interface *ifp, struct in6_addr *addr)
 }
 #endif /* HAVE_IPV6 */
 
+static int
+if_get_ipv4_address (struct interface *ifp, struct in_addr *addr)
+{
+  struct listnode *cnode;
+  struct connected *connected;
+  struct prefix *cp;
+
+  for (ALL_LIST_ELEMENTS_RO (ifp->connected, cnode, connected))
+    {
+      cp = connected->address;
+      if ((cp->family == AF_INET) && !ipv4_martian(&(cp->u.prefix4)))
+	  {
+	    *addr = cp->u.prefix4;
+	    return 1;
+	  }
+    }
+  return 0;
+}
+
 int
 bgp_nexthop_set (union sockunion *local, union sockunion *remote, 
 		 struct bgp_nexthop *nexthop, struct peer *peer)
@@ -592,8 +605,9 @@ bgp_nexthop_set (union sockunion *local, union sockunion *remote,
     {
       struct interface *direct = NULL;
 
-      /* IPv4 nexthop.  I don't care about it. */
-      if (peer->local_id.s_addr)
+      /* IPv4 nexthop. */
+      ret = if_get_ipv4_address(ifp, &nexthop->v4);
+      if (!ret && peer->local_id.s_addr)
 	nexthop->v4 = peer->local_id;
 
       /* Global address*/
@@ -929,7 +943,7 @@ bgp_zebra_withdraw (struct prefix *p, struct bgp_info *info, safi_t safi)
     }
 #endif /* HAVE_IPV6 */
 }
-
+
 /* Other routes redistribution into BGP. */
 int
 bgp_redistribute_set (struct bgp *bgp, afi_t afi, int type)
@@ -1055,7 +1069,7 @@ bgp_redistribute_metric_unset (struct bgp *bgp, afi_t afi, int type)
 
   return 1;
 }
-
+
 void
 bgp_zclient_reset (void)
 {

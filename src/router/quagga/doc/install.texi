@@ -49,10 +49,6 @@ use to turn off IPv6 support, to disable the compilation of specific
 daemons, and to enable SNMP support.
 
 @table @option
-@item --enable-guile
-Turn on compilation of the zebra-guile interpreter.  You will need the
-guile library to make this.  zebra-guile implementation is not yet
-finished.  So this option is only useful for zebra-guile developers.
 @item --disable-ipv6
 Turn off IPv6 related features and daemons.  Quagga configure script
 automatically detects IPv6 stack.  But sometimes you might want to
@@ -94,12 +90,16 @@ Enable support for Equal Cost Multipath. @var{ARG} is the maximum number
 of ECMP paths to allow, set to 0 to allow unlimited number of paths.
 @item --disable-rtadv
 Disable support IPV6 router advertisement in zebra.
-@item --disable-tests
-Do not build tests.  Test programs are built by default, but not ran or
-installed.  They can be excluded from build with this option, which will
-minimally decrease compile time and overhead.  They can always be built and
-executed at a later time by running @command{make check} in the @file{tests/}
-subdirectory, even if they're excluded from build.
+@item --enable-gcc-rdynamic
+Pass the @command{-rdynamic} option to the linker driver.  This is in most
+cases neccessary for getting usable backtraces.  This option defaults to on
+if the compiler is detected as gcc, but giving an explicit enable/disable is
+suggested.
+@item --enable-backtrace
+Controls backtrace support for the crash handlers. This is autodetected by
+default. Using the switch will enforce the requested behaviour, failing with
+an error if support is requested but not available.  On BSD systems, this
+needs libexecinfo, while on glibc support for this is part of libc itself.
 @end table
 
 You may specify any combination of the above options to the configure

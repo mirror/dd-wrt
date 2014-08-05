@@ -56,7 +56,7 @@ if_zebra_new_hook (struct interface *ifp)
   zebra_if = XCALLOC (MTYPE_TMP, sizeof (struct zebra_if));
 
   zebra_if->multicast = IF_ZEBRA_MULTICAST_UNSPEC;
-  zebra_if->shutdown = IF_ZEBRA_SHUTDOWN_UNSPEC;
+  zebra_if->shutdown = IF_ZEBRA_SHUTDOWN_OFF;
 
 #ifdef RTADV
   {
@@ -161,11 +161,26 @@ if_subnet_delete (struct interface *ifp, struct connected *ifc)
   /* Get address derived subnet node. */
   rn = route_node_lookup (zebra_if->ipv4_subnets, ifc->address);
   if (! (rn && rn->info))
-    return -1;
+    {
+      zlog_warn("Trying to remove an address from an unknown subnet."
+                " (please report this bug)");
+      return -1;
+    }
   route_unlock_node (rn);
   
   /* Untie address from subnet's address list. */
   addr_list = rn->info;
+
+  /* Deleting an address that is not registered is a bug.
+   * In any case, we shouldn't decrement the lock counter if the address
+   * is unknown. */
+  if (!listnode_lookup(addr_list, ifc))
+    {
+      zlog_warn("Trying to remove an address from a subnet where it is not"
+                " currently registered. (please report this bug)");
+      return -1;
+    }
+
   listnode_delete (addr_list, ifc);
   route_unlock_node (rn);
 
@@ -178,6 +193,9 @@ if_subnet_delete (struct interface *ifp, struct connected *ifc)
 	  ifc = listgetdata (listhead (addr_list));
 	  zebra_interface_address_delete_update (ifp, ifc);
 	  UNSET_FLAG (ifc->flags, ZEBRA_IFA_SECONDARY);
+	  /* XXX: Linux kernel removes all the secondary addresses when the primary
+	   * address is removed. We could try to work around that, though this is
+	   * non-trivial. */
 	  zebra_interface_address_add_update (ifp, ifc);
 	}
       
@@ -274,23 +292,30 @@ if_addr_wakeup (struct interface *ifp)
       p = ifc->address;
 	
       if (CHECK_FLAG (ifc->conf, ZEBRA_IFC_CONFIGURED)
-	  && ! CHECK_FLAG (ifc->conf, ZEBRA_IFC_REAL))
+	  && ! CHECK_FLAG (ifc->conf, ZEBRA_IFC_QUEUED))
 	{
 	  /* Address check. */
 	  if (p->family == AF_INET)
 	    {
 	      if (! if_is_up (ifp))
 		{
-		  /* XXX: WTF is it trying to set flags here?
-		   * caller has just gotten a new interface, has been
-                   * handed the flags already. This code has no business
-                   * trying to override administrative status of the interface.
-                   * The only call path to here which doesn't originate from
-                   * kernel event is irdp - what on earth is it trying to do?
-                   *
-                   * further RUNNING is not a settable flag on any system
-                   * I (paulj) am aware of.
-                   */
+		  /* Assume zebra is configured like following:
+		   *
+		   *   interface gre0
+		   *    ip addr 192.0.2.1/24
+		   *   !
+		   *
+		   * As soon as zebra becomes first aware that gre0 exists in the
+		   * kernel, it will set gre0 up and configure its addresses.
+		   *
+		   * (This may happen at startup when the interface already exists
+		   * or during runtime when the interface is added to the kernel)
+		   *
+		   * XXX: IRDP code is calling here via if_add_update - this seems
+		   * somewhat weird.
+		   * XXX: RUNNING is not a settable flag on any system
+		   * I (paulj) am aware of.
+		  */
 		  if_set_flags (ifp, IFF_UP | IFF_RUNNING);
 		  if_refresh (ifp);
 		}
@@ -303,22 +328,17 @@ if_addr_wakeup (struct interface *ifp)
 		  continue;
 		}
 
-	      /* Add to subnet chain list. */
-	      if_subnet_add (ifp, ifc);
-
-	      SET_FLAG (ifc->conf, ZEBRA_IFC_REAL);
-
-	      zebra_interface_address_add_update (ifp, ifc);
-
-	      if (if_is_operative(ifp))
-		connected_up_ipv4 (ifp, ifc);
+	      SET_FLAG (ifc->conf, ZEBRA_IFC_QUEUED);
+	      /* The address will be advertised to zebra clients when the notification
+	       * from the kernel has been received.
+	       * It will also be added to the interface's subnet list then. */
 	    }
 #ifdef HAVE_IPV6
 	  if (p->family == AF_INET6)
 	    {
 	      if (! if_is_up (ifp))
 		{
-		  /* XXX: See long comment above */
+		  /* See long comment above */
 		  if_set_flags (ifp, IFF_UP | IFF_RUNNING);
 		  if_refresh (ifp);
 		}
@@ -330,12 +350,10 @@ if_addr_wakeup (struct interface *ifp)
 			     safe_strerror(errno));
 		  continue;
 		}
-	      SET_FLAG (ifc->conf, ZEBRA_IFC_REAL);
 
-	      zebra_interface_address_add_update (ifp, ifc);
-
-	      if (if_is_operative(ifp))
-		connected_up_ipv6 (ifp, ifc);
+	      SET_FLAG (ifc->conf, ZEBRA_IFC_QUEUED);
+	      /* The address will be advertised to zebra clients when the notification
+	       * from the kernel has been received. */
 	    }
 #endif /* HAVE_IPV6 */
 	}
@@ -359,6 +377,14 @@ if_add_update (struct interface *ifp)
   if (! CHECK_FLAG (ifp->status, ZEBRA_INTERFACE_ACTIVE))
     {
       SET_FLAG (ifp->status, ZEBRA_INTERFACE_ACTIVE);
+
+      if (if_data && if_data->shutdown == IF_ZEBRA_SHUTDOWN_ON)
+	{
+	  if (IS_ZEBRA_DEBUG_KERNEL)
+	    zlog_debug ("interface %s index %d is shutdown. Won't wake it up.",
+			ifp->name, ifp->ifindex);
+	  return;
+	}
 
       if_addr_wakeup (ifp);
 
@@ -433,12 +459,15 @@ if_delete_update (struct interface *ifp)
 
 		  ifc = listgetdata (anode);
 		  p = ifc->address;
-
 		  connected_down_ipv4 (ifp, ifc);
 
+		  /* XXX: We have to send notifications here explicitly, because we destroy
+		   * the ifc before receiving the notification about the address being deleted.
+		   */
 		  zebra_interface_address_delete_update (ifp, ifc);
 
 		  UNSET_FLAG (ifc->conf, ZEBRA_IFC_REAL);
+		  UNSET_FLAG (ifc->conf, ZEBRA_IFC_QUEUED);
 
 		  /* Remove from subnet chain. */
 		  list_delete_node (addr_list, anode);
@@ -467,6 +496,7 @@ if_delete_update (struct interface *ifp)
 	      zebra_interface_address_delete_update (ifp, ifc);
 
 	      UNSET_FLAG (ifc->conf, ZEBRA_IFC_REAL);
+	      UNSET_FLAG (ifc->conf, ZEBRA_IFC_QUEUED);
 
 	      if (CHECK_FLAG (ifc->conf, ZEBRA_IFC_CONFIGURED))
 		last = node;
@@ -1073,13 +1103,16 @@ DEFUN (shutdown_if,
   struct zebra_if *if_data;
 
   ifp = (struct interface *) vty->index;
-  ret = if_unset_flags (ifp, IFF_UP);
-  if (ret < 0)
+  if (ifp->ifindex != IFINDEX_INTERNAL)
     {
-      vty_out (vty, "Can't shutdown interface%s", VTY_NEWLINE);
-      return CMD_WARNING;
+        ret = if_unset_flags (ifp, IFF_UP);
+        if (ret < 0)
+          {
+            vty_out (vty, "Can't shutdown interface%s", VTY_NEWLINE);
+            return CMD_WARNING;
+          }
+        if_refresh (ifp);
     }
-  if_refresh (ifp);
   if_data = ifp->info;
   if_data->shutdown = IF_ZEBRA_SHUTDOWN_ON;
 
@@ -1097,13 +1130,23 @@ DEFUN (no_shutdown_if,
   struct zebra_if *if_data;
 
   ifp = (struct interface *) vty->index;
-  ret = if_set_flags (ifp, IFF_UP | IFF_RUNNING);
-  if (ret < 0)
+
+  if (ifp->ifindex != IFINDEX_INTERNAL)
     {
-      vty_out (vty, "Can't up interface%s", VTY_NEWLINE);
-      return CMD_WARNING;
+      ret = if_set_flags (ifp, IFF_UP | IFF_RUNNING);
+      if (ret < 0)
+	{
+	  vty_out (vty, "Can't up interface%s", VTY_NEWLINE);
+	  return CMD_WARNING;
+	}
+      if_refresh (ifp);
+
+      /* Some addresses (in particular, IPv6 addresses on Linux) get
+       * removed when the interface goes down. They need to be readded.
+       */
+      if_addr_wakeup(ifp);
     }
-  if_refresh (ifp);
+
   if_data = ifp->info;
   if_data->shutdown = IF_ZEBRA_SHUTDOWN_OFF;
 
@@ -1163,16 +1206,19 @@ ALIAS (no_bandwidth_if,
        NO_STR
        "Set bandwidth informational parameter\n"
        "Bandwidth in kilobits\n")
-
+
 static int
 ip_address_install (struct vty *vty, struct interface *ifp,
 		    const char *addr_str, const char *peer_str,
 		    const char *label)
 {
+  struct zebra_if *if_data;
   struct prefix_ipv4 cp;
   struct connected *ifc;
   struct prefix_ipv4 *p;
   int ret;
+
+  if_data = ifp->info;
 
   ret = str2prefix_ipv4 (addr_str, &cp);
   if (ret <= 0)
@@ -1214,8 +1260,9 @@ ip_address_install (struct vty *vty, struct interface *ifp,
     SET_FLAG (ifc->conf, ZEBRA_IFC_CONFIGURED);
 
   /* In case of this route need to install kernel. */
-  if (! CHECK_FLAG (ifc->conf, ZEBRA_IFC_REAL)
-      && CHECK_FLAG (ifp->status, ZEBRA_INTERFACE_ACTIVE))
+  if (! CHECK_FLAG (ifc->conf, ZEBRA_IFC_QUEUED)
+      && CHECK_FLAG (ifp->status, ZEBRA_INTERFACE_ACTIVE)
+      && !(if_data && if_data->shutdown == IF_ZEBRA_SHUTDOWN_ON))
     {
       /* Some system need to up the interface to set IP address. */
       if (! if_is_up (ifp))
@@ -1232,18 +1279,10 @@ ip_address_install (struct vty *vty, struct interface *ifp,
 	  return CMD_WARNING;
 	}
 
-      /* Add to subnet chain list (while marking secondary attribute). */
-      if_subnet_add (ifp, ifc);
-
-      /* IP address propery set. */
-      SET_FLAG (ifc->conf, ZEBRA_IFC_REAL);
-
-      /* Update interface address information to protocol daemon. */
-      zebra_interface_address_add_update (ifp, ifc);
-
-      /* If interface is up register connected route. */
-      if (if_is_operative(ifp))
-	connected_up_ipv4 (ifp, ifc);
+      SET_FLAG (ifc->conf, ZEBRA_IFC_QUEUED);
+      /* The address will be advertised to zebra clients when the notification
+       * from the kernel has been received.
+       * It will also be added to the subnet chain list, then. */
     }
 
   return CMD_SUCCESS;
@@ -1281,7 +1320,7 @@ ip_address_uninstall (struct vty *vty, struct interface *ifp,
   UNSET_FLAG (ifc->conf, ZEBRA_IFC_CONFIGURED);
   
   /* This is not real address or interface is not active. */
-  if (! CHECK_FLAG (ifc->conf, ZEBRA_IFC_REAL)
+  if (! CHECK_FLAG (ifc->conf, ZEBRA_IFC_QUEUED)
       || ! CHECK_FLAG (ifp->status, ZEBRA_INTERFACE_ACTIVE))
     {
       listnode_delete (ifp->connected, ifc);
@@ -1297,34 +1336,9 @@ ip_address_uninstall (struct vty *vty, struct interface *ifp,
 	       safe_strerror(errno), VTY_NEWLINE);
       return CMD_WARNING;
     }
-  /* success! call returned that the address deletion went through.
-   * this is a synchronous operation, so we know it succeeded and can
-   * now update all internal state. */
-
-  /* the HAVE_NETLINK check is only here because, on BSD, although the
-   * call above is still synchronous, we get a second confirmation later
-   * through the route socket, and we don't want to touch that behaviour
-   * for now.  It should work without the #ifdef, but why take the risk...
-   * -- equinox 2012-07-13 */
-#ifdef HAVE_NETLINK
-
-  /* Remove connected route. */
-  connected_down_ipv4 (ifp, ifc);
-
-  /* Redistribute this information. */
-  zebra_interface_address_delete_update (ifp, ifc);
-
-  /* IP address propery set. */
-  UNSET_FLAG (ifc->conf, ZEBRA_IFC_REAL);
-
-  /* remove from interface, remark secondaries */
-  if_subnet_delete (ifp, ifc);
-
-  /* Free address information. */
-  listnode_delete (ifp->connected, ifc);
-  connected_free (ifc);
-#endif
-
+  UNSET_FLAG (ifc->conf, ZEBRA_IFC_QUEUED);
+  /* we will receive a kernel notification about this route being removed.
+   * this will trigger its removal from the connected list. */
   return CMD_SUCCESS;
 }
 
@@ -1382,10 +1396,13 @@ ipv6_address_install (struct vty *vty, struct interface *ifp,
 		      const char *addr_str, const char *peer_str,
 		      const char *label, int secondary)
 {
+  struct zebra_if *if_data;
   struct prefix_ipv6 cp;
   struct connected *ifc;
   struct prefix_ipv6 *p;
   int ret;
+
+  if_data = ifp->info;
 
   ret = str2prefix_ipv6 (addr_str, &cp);
   if (ret <= 0)
@@ -1422,8 +1439,9 @@ ipv6_address_install (struct vty *vty, struct interface *ifp,
     SET_FLAG (ifc->conf, ZEBRA_IFC_CONFIGURED);
 
   /* In case of this route need to install kernel. */
-  if (! CHECK_FLAG (ifc->conf, ZEBRA_IFC_REAL)
-      && CHECK_FLAG (ifp->status, ZEBRA_INTERFACE_ACTIVE))
+  if (! CHECK_FLAG (ifc->conf, ZEBRA_IFC_QUEUED)
+      && CHECK_FLAG (ifp->status, ZEBRA_INTERFACE_ACTIVE)
+      && !(if_data && if_data->shutdown == IF_ZEBRA_SHUTDOWN_ON))
     {
       /* Some system need to up the interface to set IP address. */
       if (! if_is_up (ifp))
@@ -1441,15 +1459,9 @@ ipv6_address_install (struct vty *vty, struct interface *ifp,
 	  return CMD_WARNING;
 	}
 
-      /* IP address propery set. */
-      SET_FLAG (ifc->conf, ZEBRA_IFC_REAL);
-
-      /* Update interface address information to protocol daemon. */
-      zebra_interface_address_add_update (ifp, ifc);
-
-      /* If interface is up register connected route. */
-      if (if_is_operative(ifp))
-	connected_up_ipv6 (ifp, ifc);
+      SET_FLAG (ifc->conf, ZEBRA_IFC_QUEUED);
+      /* The address will be advertised to zebra clients when the notification
+       * from the kernel has been received. */
     }
 
   return CMD_SUCCESS;
@@ -1484,8 +1496,10 @@ ipv6_address_uninstall (struct vty *vty, struct interface *ifp,
   if (! CHECK_FLAG (ifc->conf, ZEBRA_IFC_CONFIGURED))
     return CMD_WARNING;
 
+  UNSET_FLAG (ifc->conf, ZEBRA_IFC_CONFIGURED);
+
   /* This is not real address or interface is not active. */
-  if (! CHECK_FLAG (ifc->conf, ZEBRA_IFC_REAL)
+  if (! CHECK_FLAG (ifc->conf, ZEBRA_IFC_QUEUED)
       || ! CHECK_FLAG (ifp->status, ZEBRA_INTERFACE_ACTIVE))
     {
       listnode_delete (ifp->connected, ifc);
@@ -1502,16 +1516,9 @@ ipv6_address_uninstall (struct vty *vty, struct interface *ifp,
       return CMD_WARNING;
     }
 
-  /* Redistribute this information. */
-  zebra_interface_address_delete_update (ifp, ifc);
-
-  /* Remove connected route. */
-  connected_down_ipv6 (ifp, ifc);
-
-  /* Free address information. */
-  listnode_delete (ifp->connected, ifc);
-  connected_free (ifc);
-
+  UNSET_FLAG (ifc->conf, ZEBRA_IFC_QUEUED);
+  /* This information will be propagated to the zclients when the
+   * kernel notification is received. */
   return CMD_SUCCESS;
 }
 
@@ -1555,6 +1562,12 @@ if_config_write (struct vty *vty)
       vty_out (vty, "interface %s%s", ifp->name,
 	       VTY_NEWLINE);
 
+      if (if_data)
+	{
+	  if (if_data->shutdown == IF_ZEBRA_SHUTDOWN_ON)
+	    vty_out (vty, " shutdown%s", VTY_NEWLINE);
+	}
+
       if (ifp->desc)
 	vty_out (vty, " description %s%s", ifp->desc,
 		 VTY_NEWLINE);
@@ -1587,9 +1600,6 @@ if_config_write (struct vty *vty)
 
       if (if_data)
 	{
-	  if (if_data->shutdown == IF_ZEBRA_SHUTDOWN_ON)
-	    vty_out (vty, " shutdown%s", VTY_NEWLINE);
-
 	  if (if_data->multicast != IF_ZEBRA_MULTICAST_UNSPEC)
 	    vty_out (vty, " %smulticast%s",
 		     if_data->multicast == IF_ZEBRA_MULTICAST_ON ? "" : "no ",
