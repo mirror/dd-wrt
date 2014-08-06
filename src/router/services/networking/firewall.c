@@ -627,8 +627,7 @@ static void nat_prerouting(void)
 			}
 		}
 		/* no gui setting yet - redirect all except this IP */
-		if( strlen(nvram_safe_get("privoxy_transp_exclude")) )
-		{
+		if (strlen(nvram_safe_get("privoxy_transp_exclude"))) {
 			save2file("-A PREROUTING -p tcp -s %s --dport 80 -j ACCEPT \n", nvram_safe_get("privoxy_transp_exclude"));
 		}
 		/* block access from privoxy to webif */
@@ -838,11 +837,15 @@ static void nat_postrouting(void)
 		if (nvram_match("block_loopback", "0"))
 			writeproc("/proc/sys/net/ipv4/conf/br0/loop", "1");
 
-		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
-		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
+		if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp")) {
+			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
+			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
+		}
 	} else {
-		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
-		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
+		if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp")) {
+			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
+			eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "udp", "-j", "CT", "--helper", "ddtb");	//this speeds up networking alot on slow systems 
+		}
 		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
 		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
 //              eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "CT","--notrack");      //this speeds up networking alot on slow systems 
@@ -2128,9 +2131,9 @@ static void filter_forward(void)
 		filter_web_urls = nvram_nget("filter_web_url%d", i);
 		filter_rule = nvram_nget("filter_rule%d", i);
 
-		if (filter_web_hosts && strcmp(filter_web_hosts, "") 
-		  || filter_web_urls && strcmp(filter_web_urls, "") 
-		  || filter_rule && !strcmp(filter_rule, "STAT:1") ) {
+		if (filter_web_hosts && strcmp(filter_web_hosts, "")
+		    || filter_web_urls && strcmp(filter_web_urls, "")
+		    || filter_rule && !strcmp(filter_rule, "STAT:1")) {
 			filter_host_url = 1;
 		}
 	}
@@ -2585,12 +2588,11 @@ void set_gprules(char *iface)
 
 int isregistered_real(void);
 
-
 void start_firewall6()
 {
-	
+
 	fprintf(stderr, "start firewall6\n");
-	if(nvram_match("ipv6_enable", "0"))
+	if (nvram_match("ipv6_enable", "0"))
 		return;
 	sysprintf("insmod nf_defrag_ipv6");
 	sysprintf("insmod ip6_tables");
@@ -2771,7 +2773,7 @@ void start_firewall(void)
 	// unlink(IPTABLES_SAVE_FILE);
 #endif
 #ifdef HAVE_IPV6
-	        start_firewall6();
+	start_firewall6();
 #endif
 	/*
 	 * begin Sveasoft add 
@@ -2882,9 +2884,9 @@ void start_firewall(void)
 
 void stop_firewall6(void)
 {
-	if(nvram_match("ipv6_enable", "0"))
+	if (nvram_match("ipv6_enable", "0"))
 		return 0;
-	
+
 	eval("ip", "-6", "addr", "flush", "scope", "global");
 }
 
@@ -2928,7 +2930,7 @@ void stop_firewall(void)
 		rmmod("xt_mac");
 	}
 	cprintf("done\n");
-#ifdef HAVE_IPV6	
+#ifdef HAVE_IPV6
 	stop_firewall6();
 #endif
 	return;
