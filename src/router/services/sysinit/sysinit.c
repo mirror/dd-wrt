@@ -383,6 +383,9 @@ static void buffalo_defaults(int force)
 			nvram_set("wps_status", "1");
 		nvram_set("wl_country_code", region);
 #ifdef HAVE_BCMMODERN
+
+		unsigned long boardnum = strtoul(nvram_safe_get("boardnum"), NULL, 0);
+		
 		nvram_set("wl0_country_code", "Q1");
 		nvram_set("wl0_country_rev", "27");
 		nvram_set("wl1_country_code", "Q1");
@@ -395,10 +398,20 @@ static void buffalo_defaults(int force)
 		}
 
 		if (!strcmp(region, "US")) {
-			nvram_set("wl0_country_code", "Q2");
-			nvram_set("wl0_country_rev", "41");
-			nvram_set("wl1_country_code", "Q1");
-			nvram_set("wl1_country_rev", "61");
+			if (boardnum == 00 && nvram_match("boardtype", "0x0665")
+			    && nvram_match("boardrev", "0x1103")
+			    && nvram_match("melco_id", "RD_BB13049")) {
+				// WXR-1900DHP
+				nvram_set("wl1_country_code", "Q2");
+				nvram_set("wl1_country_rev", "41");
+				nvram_set("wl0_country_code", "Q1");
+				nvram_set("wl0_country_rev", "61");
+			} else {
+				nvram_set("wl0_country_code", "Q2");
+				nvram_set("wl0_country_rev", "41");
+				nvram_set("wl1_country_code", "Q1");
+				nvram_set("wl1_country_rev", "61");
+			}
 		}
 
 		if (!strcmp(region, "EU")) {
@@ -409,38 +422,88 @@ static void buffalo_defaults(int force)
 		}
 
 		if (!strcmp(region, "AP")) {
-			nvram_set("wl0_country_code", "CN");
-			nvram_set("wl0_country_rev", "34");
-			nvram_set("wl1_country_code", "Q2");
-			nvram_set("wl1_country_rev", "41");
+			if (boardnum == 00 && nvram_match("boardtype", "0x0665")
+			    && nvram_match("boardrev", "0x1103")
+			    && nvram_match("melco_id", "RD_BB13049")) {
+				// WXR-1900DHP
+				nvram_set("wl1_country_code", "CN");
+				nvram_set("wl1_country_rev", "34");
+				nvram_set("wl0_country_code", "Q2");
+				nvram_set("wl0_country_rev", "41");
+			} else {
+				nvram_set("wl0_country_code", "CN");
+				nvram_set("wl0_country_rev", "34");
+				nvram_set("wl1_country_code", "Q2");
+				nvram_set("wl1_country_rev", "41");
+			}
 		}
 
 		if (!strcmp(region, "KR")) {
-			nvram_set("wl0_country_code", "KR");
-			nvram_set("wl0_country_rev", "55");
-			nvram_set("wl1_country_code", "Q2");
-			nvram_set("wl1_country_rev", "41");
+			if (boardnum == 00 && nvram_match("boardtype", "0x0665")
+			    && nvram_match("boardrev", "0x1103")
+			    && nvram_match("melco_id", "RD_BB13049")) {
+				// WXR-1900DHP
+				nvram_set("wl1_country_code", "KR");
+				nvram_set("wl1_country_rev", "55");
+				nvram_set("wl0_country_code", "Q2");
+				nvram_set("wl0_country_rev", "41");
+			} else {
+				nvram_set("wl0_country_code", "KR");
+				nvram_set("wl0_country_rev", "55");
+				nvram_set("wl1_country_code", "Q2");
+				nvram_set("wl1_country_rev", "41");
+			}
 		}
 
 		if (!strcmp(region, "CH")) {
-			nvram_set("wl0_country_code", "CH");
-			nvram_set("wl0_country_rev", "34");
-			nvram_set("wl1_country_code", "Q2");
-			nvram_set("wl1_country_rev", "41");
+			if (boardnum == 00 && nvram_match("boardtype", "0x0665")
+			    && nvram_match("boardrev", "0x1103")
+			    && nvram_match("melco_id", "RD_BB13049")) {
+				// WXR-1900DHP
+				nvram_set("wl1_country_code", "CH");
+				nvram_set("wl1_country_rev", "34");
+				nvram_set("wl0_country_code", "Q2");
+				nvram_set("wl0_country_rev", "41");
+			} else {
+				nvram_set("wl0_country_code", "CH");
+				nvram_set("wl0_country_rev", "34");
+				nvram_set("wl1_country_code", "Q2");
+				nvram_set("wl1_country_rev", "41");
+			}
 		}
 
 		if (!strcmp(region, "TW")) {
-			nvram_set("wl0_country_code", "TW");
-			nvram_set("wl0_country_rev", "34");
-			nvram_set("wl1_country_code", "Q2");
-			nvram_set("wl1_country_rev", "41");
+			if (boardnum == 00 && nvram_match("boardtype", "0x0665")
+			    && nvram_match("boardrev", "0x1103")
+			    && nvram_match("melco_id", "RD_BB13049")) {
+				// WXR-1900DHP
+				nvram_set("wl1_country_code", "TW");
+				nvram_set("wl1_country_rev", "34");
+				nvram_set("wl0_country_code", "Q2");
+				nvram_set("wl0_country_rev", "41");
+			} else {
+				nvram_set("wl0_country_code", "TW");
+				nvram_set("wl0_country_rev", "34");
+				nvram_set("wl1_country_code", "Q2");
+				nvram_set("wl1_country_rev", "41");
+			}
 		}
 
 		if (!strcmp(region, "RU")) {
-			nvram_set("wl0_country_code", "RU");
-			nvram_set("wl0_country_rev", "37");
-			nvram_set("wl1_country_code", "Q2");
-			nvram_set("wl1_country_rev", "41");
+			if (boardnum == 00 && nvram_match("boardtype", "0x0665")
+			    && nvram_match("boardrev", "0x1103")
+			    && nvram_match("melco_id", "RD_BB13049")) {
+				// WXR-1900DHP
+				nvram_set("wl1_country_code", "RU");
+				nvram_set("wl1_country_rev", "37");
+				nvram_set("wl0_country_code", "Q2");
+				nvram_set("wl0_country_rev", "41");
+			} else {
+				nvram_set("wl0_country_code", "RU");
+				nvram_set("wl0_country_rev", "37");
+				nvram_set("wl1_country_code", "Q2");
+				nvram_set("wl1_country_rev", "41");
+			}
 		}
 #else
 		nvram_set("wl0_country_code", region);
