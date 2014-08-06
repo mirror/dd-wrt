@@ -150,6 +150,7 @@ int gen_stateless_conf(void)
 			fprintf(fp, "wifi0_encryption=TKIPandAESEncryption\n");
 			fprintf(fp, "wifi0_passphrase=%s\n", key);
 		} else {
+			fprintf(fp, "wifi0_auth_mode=NONE\n");
 			fprintf(fp, "wifi0_beacon=Basic\n");
 		}
 	}
