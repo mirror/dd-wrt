@@ -833,6 +833,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
+#ifdef HAVE_UNIWIP
+		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
+#endif
 		// fprintf (fp, "\tmode=0\n");
 		fprintf(fp, "\tscan_ssid=1\n");
 		fprintf(fp, "\tkey_mgmt=WPA-PSK\n");
@@ -890,6 +893,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
+#ifdef HAVE_UNIWIP
+		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
+#endif
 		fprintf(fp, "\tscan_ssid=1\n");
 		if (nvram_prefix_match("8021xtype", prefix, "tls")) {
 // -> added habeIchVergessen
@@ -1047,6 +1053,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
+#ifdef HAVE_UNIWIP
+		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
+#endif
 		// fprintf (fp, "\tmode=0\n");
 		fprintf(fp, "\tscan_ssid=1\n");
 		fprintf(fp, "\tkey_mgmt=NONE\n");
