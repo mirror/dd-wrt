@@ -934,9 +934,8 @@ int getassoclist(char *name, unsigned char *list)
 {
 #ifdef HAVE_QTN
 	if (has_qtn(name))
-	    return getassoclist_qtn(name,list);
+		return getassoclist_qtn(name, list);
 #endif
-
 
 	// int ap;
 	// if ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) 
@@ -1166,7 +1165,7 @@ int iw_mwatt2dbm(int in)
 	return (res);
 }
 
-int isEMP(char *ifname)		//checks if its usually a emp card (no concrete detection possible)
+static int checkid(char *ifname, int vendorid, int productid)	//checks if its usually a emp card (no concrete detection possible)
 {
 	int vendor;
 	int product;
@@ -1189,9 +1188,17 @@ int isEMP(char *ifname)		//checks if its usually a emp card (no concrete detecti
 		fscanf(in, "%d", &product);
 		fclose(in);
 	}
-	if (vendor == 0x168c && product == 0x2062)
+	if (vendor == vendorid && product == productid)	//XR3.3/XR3.6/XR3.7 share the same pci id's
 		return 1;
-	if (vendor == 0x168c && product == 0x2063)	//will include more suspicius cards. 
+	return 0;
+
+}
+
+int isEMP(char *ifname)		//checks if its usually a emp card (no concrete detection possible)
+{
+	if (checkid(ifname, 0x168c, 0x2062))
+		return 1;
+	if (checkid(ifname, 0x168c, 0x2063))	//will include more suspicius cards. 
 		return 1;
 	return 0;
 
@@ -1199,31 +1206,7 @@ int isEMP(char *ifname)		//checks if its usually a emp card (no concrete detecti
 
 int isXR36(char *ifname)	//checks if its usually a emp card (no concrete detection possible)
 {
-	int vendor;
-	int product;
-	int devcount;
-	char readid[64];
-
-	strcpy(readid, ifname);
-	sscanf(readid, "ath%d", &devcount);
-	sprintf(readid, "/proc/sys/dev/wifi%d/idvendor", devcount);
-	FILE *in = fopen(readid, "rb");
-	vendor = 0;
-	if (in) {
-		fscanf(in, "%d", &vendor);
-		fclose(in);
-	}
-	sprintf(readid, "/proc/sys/dev/wifi%d/idproduct", devcount);
-	in = fopen(readid, "rb");
-	product = 0;
-	if (in) {
-		fscanf(in, "%d", &product);
-		fclose(in);
-	}
-	if (vendor == 0x0777 && product == 0x3c03)	//XR3.3/XR3.6/XR3.7 share the same pci id's
-		return 1;
-	return 0;
-
+	return checkid(ifname, 0x0777, 0x3c03);
 }
 
 int isFXXN_PRO(char *ifname)	//checks if its usualla a DBII Networks FxxN-PRO card (no correct detection possible)
@@ -1250,7 +1233,7 @@ int isFXXN_PRO(char *ifname)	//checks if its usualla a DBII Networks FxxN-PRO ca
 
 	if (!strcmp(cvendor, "0x168c") && !strcmp(cproduct, "0x2096")) {	//F36N-PRO / F64N-PRO shares the same id's
 		return 1;
-	} else if (!strcmp(cvendor, "0xdb11") && !strcmp(cproduct, "0x0f50")) { // F50N-PRO
+	} else if (!strcmp(cvendor, "0xdb11") && !strcmp(cproduct, "0x0f50")) {	// F50N-PRO
 		return 2;
 	}
 	return 0;
@@ -1289,29 +1272,29 @@ int isSR71E(char *ifname)
 int isDL4600(char *ifname)
 {
 	int vendor;
-        int product;
-        int devcount;
-        char readid[64];
+	int product;
+	int devcount;
+	char readid[64];
 
-        strcpy(readid, ifname);
-        sscanf(readid, "ath%d", &devcount);
-        sprintf(readid, "/proc/sys/dev/wifi%d/idvendor", devcount);
-        FILE *in = fopen(readid, "rb");
-        vendor = 0;
-        if (in) {
-                fscanf(in, "%d", &vendor);
-                fclose(in);
-        }
-        sprintf(readid, "/proc/sys/dev/wifi%d/idproduct", devcount);
-        in = fopen(readid, "rb");
-        product = 0;
-        if (in) {
-                fscanf(in, "%d", &product);
-                fclose(in);
-        }
-        if (vendor == 0x1C14 && product == 0x19)
-                return 1;
-        return 0;
+	strcpy(readid, ifname);
+	sscanf(readid, "ath%d", &devcount);
+	sprintf(readid, "/proc/sys/dev/wifi%d/idvendor", devcount);
+	FILE *in = fopen(readid, "rb");
+	vendor = 0;
+	if (in) {
+		fscanf(in, "%d", &vendor);
+		fclose(in);
+	}
+	sprintf(readid, "/proc/sys/dev/wifi%d/idproduct", devcount);
+	in = fopen(readid, "rb");
+	product = 0;
+	if (in) {
+		fscanf(in, "%d", &product);
+		fclose(in);
+	}
+	if (vendor == 0x1C14 && product == 0x19)
+		return 1;
+	return 0;
 }
 
 int wifi_gettxpower(char *ifname)
@@ -1458,7 +1441,7 @@ int get_wififreq(char *ifname, int freq)
 
 	if (isDL4600(ifname))
 		return freq - 705;
-	
+
 #ifdef HAVE_ATH9K
 	if (isFXXN_PRO(ifname) == 1) {
 		if (nvram_nmatch("1", "%s_cardtype", ifname)) {
