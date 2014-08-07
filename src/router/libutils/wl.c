@@ -1286,6 +1286,34 @@ int isSR71E(char *ifname)
 
 }
 
+int isDL4600(char *ifname)
+{
+	int vendor;
+        int product;
+        int devcount;
+        char readid[64];
+
+        strcpy(readid, ifname);
+        sscanf(readid, "ath%d", &devcount);
+        sprintf(readid, "/proc/sys/dev/wifi%d/idvendor", devcount);
+        FILE *in = fopen(readid, "rb");
+        vendor = 0;
+        if (in) {
+                fscanf(in, "%d", &vendor);
+                fclose(in);
+        }
+        sprintf(readid, "/proc/sys/dev/wifi%d/idproduct", devcount);
+        in = fopen(readid, "rb");
+        product = 0;
+        if (in) {
+                fscanf(in, "%d", &product);
+                fclose(in);
+        }
+        if (vendor == 0x1C14 && product == 0x19)
+                return 1;
+        return 0;
+}
+
 int wifi_gettxpower(char *ifname)
 {
 	int poweroffset = wifi_gettxpoweroffset(ifname);
@@ -1381,6 +1409,10 @@ int wifi_gettxpoweroffset(char *ifname)
 		if (nvram_nmatch("7", "%s_cardtype", ifname))
 			return 10;
 	}
+
+	if (isDL4600(ifname))
+		return 10;
+
 #ifdef HAVE_ATH9K
 	if (isFXXN_PRO(ifname))
 		return 5;
@@ -1423,6 +1455,10 @@ int get_wififreq(char *ifname, int freq)
 		if (nvram_nmatch("4", "%s_cardtype", ifname))
 			return freq - 2400;
 	}
+
+	if (isDL4600(ifname))
+		return freq - 705;
+	
 #ifdef HAVE_ATH9K
 	if (isFXXN_PRO(ifname) == 1) {
 		if (nvram_nmatch("1", "%s_cardtype", ifname)) {
