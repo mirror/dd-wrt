@@ -199,7 +199,7 @@ static void note_page(struct seq_file *m, struct pg_state *st,
 				   width, st->start_address,
 				   width, st->current_address);
 
-			delta = (st->current_address - st->start_address) >> 10;
+			delta = (st->current_address - st->start_address);
 			while (!(delta & 1023) && unit[1]) {
 				delta >>= 10;
 				unit++;
@@ -215,7 +215,15 @@ static void note_page(struct seq_file *m, struct pg_state *st,
 		 * This helps in the interpretation.
 		 */
 		if (st->current_address >= st->marker[1].start_address) {
+			if (st->marker->max_lines &&
+			    st->lines > st->marker->max_lines) {
+				unsigned long nskip =
+					st->lines - st->marker->max_lines;
+				seq_printf(m, "... %lu entr%s skipped ... \n",
+					   nskip, nskip == 1 ? "y" : "ies");
+			}
 			st->marker++;
+			st->lines = 0;
 			seq_printf(m, "---[ %s ]---\n", st->marker->name);
 		}
 
