@@ -470,7 +470,6 @@ ddtb_forward_v4(struct sk_buff *skb, struct ethhdr *eth, struct iphdr *iph, s16 
 		tuple.proto = IPPROTO_UDP;
 		tuple.sp = uh->source;
 		tuple.dp = uh->dest;
-		tuple.dp = uh->dest;
 		break;
 
 	default:
