@@ -323,7 +323,8 @@ ddtb_ip_setup_skb(struct ddtb_tuple *t, struct sk_buff *skb,
 	skb_reset_mac_header(skb);
 }
 
-static void ddtb_nat_packet(struct ddtb_tuple *tuple, struct iphdr *iph, void *trans, bool src)
+static void ddtb_nat_packet(struct ddtb_tuple *tuple, struct sk_buff *skb,
+			    struct iphdr *iph, void *trans, bool src)
 {
 	struct tcphdr *th;
 	struct udphdr *uh;
@@ -373,11 +374,11 @@ static void ddtb_nat_packet(struct ddtb_tuple *tuple, struct iphdr *iph, void *t
 		}
 	}
 
-	csum_replace4(check, *hdr_ip, new_ip);
-	csum_replace2(check, *hdr_port, new_port);
+	inet_proto_csum_replace4(check, skb, *hdr_ip, new_ip, 0);
+	inet_proto_csum_replace2(check, skb, *hdr_port, new_port, 0);
 	*hdr_port = new_port;
 
-	csum_replace4(&iph->check, *hdr_ip, new_ip);
+	inet_proto_csum_replace4(&iph->check, skb, *hdr_ip, new_ip, 1);
 	*hdr_ip = new_ip;
 }
 
@@ -397,10 +398,10 @@ static int
 ddtb_rewrite_request_v4(struct ddtb_conn *c, struct sk_buff *skb, struct iphdr *iph, void *trans)
 {
 	if (c->request.flags & DDTB_F_SNAT)
-		ddtb_nat_packet(&c->reply.tuple, iph, trans, false);
+		ddtb_nat_packet(&c->reply.tuple, skb, iph, trans, false);
 
 	if (c->request.flags & DDTB_F_DNAT)
-		ddtb_nat_packet(&c->reply.tuple, iph, trans, true);
+		ddtb_nat_packet(&c->reply.tuple, skb, iph, trans, true);
 
 	ddtb_ip_setup_skb(&c->reply.tuple, skb, (void *) iph, trans);
 
@@ -418,10 +419,10 @@ static int
 ddtb_rewrite_reply_v4(struct ddtb_conn *c, struct sk_buff *skb, struct iphdr *iph, void *trans)
 {
 	if (c->request.flags & DDTB_F_SNAT)
-		ddtb_nat_packet(&c->request.tuple, iph, trans, true);
+		ddtb_nat_packet(&c->request.tuple, skb, iph, trans, true);
 
 	if (c->request.flags & DDTB_F_DNAT)
-		ddtb_nat_packet(&c->request.tuple, iph, trans, false);
+		ddtb_nat_packet(&c->request.tuple, skb, iph, trans, false);
 
 	ddtb_ip_setup_skb(&c->request.tuple, skb, (void *) iph, trans);
 

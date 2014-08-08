@@ -57,6 +57,9 @@ static void ddtb_add_ipv4(struct sk_buff *skb, struct nf_conn *ct,
 	struct rtable *rt;
 	bool dst_fastpath;
 
+	if (!test_bit(IPS_ASSURED_BIT, &ct->status))
+		return;
+
 	if (ct->ddtb || !skb->orig_dev || !skb_dst(skb) || !skb_dst(skb)->dev)
 		return;
 
