@@ -40,7 +40,7 @@
 extern int usejffs;
 
 void stop_udhcpd(void);
-extern void addHost(char *host, char *ip);
+extern void addHost(char *host, char *ip, int withdomain);
 
 static int adjust_dhcp_range(void)
 {
@@ -305,7 +305,7 @@ void start_udhcpd(void)
 			if (mac == NULL || host == NULL || ip == NULL)
 				continue;
 			fprintf(fp, "%s %s %s\n", ip, mac, host);
-			addHost(host, ip);
+			addHost(host, ip, 1);
 		}
 		free(cp);
 	}
