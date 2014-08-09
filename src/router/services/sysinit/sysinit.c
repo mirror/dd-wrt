@@ -752,7 +752,7 @@ static void buffalo_defaults(int force)
 			ioctl(s, SIOCGIFHWADDR, &ifr);
 			close(s);
 			unsigned char *edata = (unsigned char *)ifr.ifr_hwaddr.sa_data;
-#if defined(HAVE_WZR300HP) || defined(HAVE_WHR300HP)
+#if defined(HAVE_WZR300HP) || defined(HAVE_WHR300HP) || defined(HAVE_WZR450HP2)
 			sprintf(eabuf, "BUFFALO-%02X%02X%02X", edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
 #elif defined(HAVE_AXTEL)
 			sprintf(eabuf, "AXTELEXTREMO-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);

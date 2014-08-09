@@ -80,7 +80,7 @@ static int alreadyInHost(char *host)
 	}
 }
 
-void addHost(char *host, char *ip)
+void addHost(char *host, char *ip, int withdomain)
 {
 	char buf[100];
 	char newhost[100];
@@ -92,7 +92,7 @@ void addHost(char *host, char *ip)
 	strcpy(newhost, host);
 	char *domain = nvram_safe_get("lan_domain");
 
-	if (domain != NULL && strlen(domain) > 0 && strcmp(host, "localhost")) {
+	if (withdomain && domain != NULL && strlen(domain) > 0 && strcmp(host, "localhost")) {
 		sprintf(newhost, "%s.%s", host, domain);
 	} else
 		sprintf(newhost, "%s", host);
