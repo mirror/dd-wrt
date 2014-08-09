@@ -282,7 +282,7 @@ int RAND_poll(void)
 
 			/* Avoid using same input... Used to be O_NOFOLLOW
 			 * above, but it's not universally appropriate... */
-			if (fstat(fd,st) != 0)	{ close(fd); continue; }
+//			if (fstat(fd,st) != 0)	{ close(fd); continue; }
 			for (j=0;j<i;j++)
 				{
 				if (randomstats[j].st_ino==st->st_ino &&
