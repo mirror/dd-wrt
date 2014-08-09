@@ -1143,7 +1143,7 @@ endif
 ifneq ($(CONFIG_MATRIXSSL),y)
 ifeq ($(CONFIG_OPENSSL),y)
 CFLAGS += -I$(TOP)/openssl/include  -I$(TOP)/openssl/include/openssl
-SSLLDFLAGS += -L$(TOP)/openssl -L$(TOP)/openssl -lcrypto -lssl
+SSLLDFLAGS += -L$(TOP)/openssl -L$(TOP)/openssl -L$(TOP)/zlib -lssl -lcrypto -lz
 CFLAGS += -DHAVE_OPENSSL
 CFLAGS += -DHAVE_HTTPS
 endif
