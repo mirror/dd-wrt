@@ -3824,7 +3824,16 @@ si_gpioout(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 //#include <linux/printk.h>
 static uint32 t_current = 0;
 static si_t *hc_sih = NULL;
+
+
+
+
 void set_hc595_core(si_t *sih)
+{
+hc_sih = sih;
+}
+
+void set_hc595_reset(void)
 {
 uint32 latch = 6;
 uint32 data = 4;
@@ -3832,10 +3841,9 @@ uint32 clk = 7;
 uint32 reset = 8;
 uint32 oe = 5;
 uint32 val;
-hc_sih = sih;
-val = si_gpioouten(sih,0,0,GPIO_HI_PRIORITY);
+val = si_gpioouten(hc_sih,0,0,GPIO_HI_PRIORITY);
 val |= 1<<latch|1<<data|1<<clk|1<<reset|1<<oe;
-si_gpioouten(sih,~0,val,GPIO_HI_PRIORITY); 
+si_gpioouten(hc_sih,~0,val,GPIO_HI_PRIORITY); 
 }
 
 #define set_gpio(m_pin,m_value) if (m_value) { \
@@ -3892,18 +3900,19 @@ extern int isd1800h;
 extern int isac66;
 extern int isac68;
 extern int isbuffalo;
+extern int isbuffalowxr;
 extern int isdefault;
 #ifndef USE_LZMA
-//#include <linux/printk.h>
+#include <linux/printk.h>
 #endif
 /* mask&set gpio output bits */
 uint32
 si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 {
 	uint regoff;
-//#ifndef USE_LZMA
+#ifndef USE_LZMA
 //	printk(KERN_INFO "out2 %X/%d   = %X/%d\n",mask,mask,val,val);
-//#endif
+#endif
 	if (isdefault)
 	    return si_gpioout(sih,mask,val,priority);
 
@@ -3931,6 +3940,10 @@ si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 			return buffalo_mask;
 		}
 	} 
+	if (isbuffalowxr && (mask & (1<<12)))
+	{
+	    return si_gpioout(hc_sih,mask,val,GPIO_HI_PRIORITY);
+	}
 
 	if (isac68 && !(mask & 1<<6))
 	{
@@ -3975,10 +3988,14 @@ si_gpioouten2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 #endif
 	if (isdefault)
 	    return si_gpioouten(sih,mask,val,priority);
+
+
+	if (isbuffalowxr && (mask&(1<<12)))
+	    return si_gpioouten(sih,mask,val,GPIO_HI_PRIORITY);
 	
 	if (isac66 && ((mask & (1<<12)) || (mask & (1<<0)) || (mask & (1<<1))  || (mask & (1<<2)) || (mask & (1<<3))))
 	{
-	    return si_gpioouten(sih,mask,val,priority);
+	    return si_gpioouten(hc_sih,mask,val,priority);
 	}
 
 
