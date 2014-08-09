@@ -1472,9 +1472,11 @@ int main(int argc, char **argv)
 			ssl = SSL_new(ctx);
 
 			SSL_set_bio(ssl, sbio, sbio);
-
-			if ((r = SSL_accept(ssl) <= 0)) {
+			r = SSL_accept(ssl);
+			if (r <= 0) {
 				//berr_exit("SSL accept error");
+//				ERR_print_errors_fp(stderr);
+//				fprintf(stderr,"ssl accept return %d, ssl error %d %d\n",r,SSL_get_error(ssl,r),RAND_status());
 				ct_syslog(LOG_ERR, httpd_level, "SSL accept error");
 				close(conn_fd);
 				continue;
