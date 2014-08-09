@@ -2688,11 +2688,15 @@ void start_lan(void)
 		br_set_stp_state("br0", 1);
 
 	// eval ("rm", "/tmp/hosts");
-	addHost("localhost", "127.0.0.1");
-	if (strlen(nvram_safe_get("wan_hostname")) > 0)
-		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"));
-	else if (strlen(nvram_safe_get("router_name")) > 0)
-		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"));
+	addHost("localhost", "127.0.0.1", 0);
+	if (strlen(nvram_safe_get("wan_hostname")) > 0) {
+		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"),0);
+		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"),1);
+	}
+	else if (strlen(nvram_safe_get("router_name")) > 0) {
+		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"),0);
+		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"),1);
+	}
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif

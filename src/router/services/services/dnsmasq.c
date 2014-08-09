@@ -36,7 +36,7 @@
 
 extern int usejffs;
 
-extern void addHost(char *host, char *ip);
+extern void addHost(char *host, char *ip, int withdomain);
 
 void stop_dnsmasq(void);
 
@@ -347,7 +347,7 @@ void start_dnsmasq(void)
 				else
 					fprintf(fp, "dhcp-host=%s,%s,%s,%sm\n", mac, host, ip, time);
 
-				addHost(host, ip);
+				addHost(host, ip, 1);
 			}
 			free(cp);
 		}
