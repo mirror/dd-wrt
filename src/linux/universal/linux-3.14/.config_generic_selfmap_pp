@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.14.13-rc2 Kernel Configuration
+# Linux/mips 3.14.16 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -868,8 +868,8 @@ CONFIG_MTD_SPIFLASH_PP_GPIO=0
 #
 # Broadcom Flash Devices Support
 #
-# CONFIG_PARPORT is not set
 CONFIG_ARCH_MIGHT_HAVE_PC_PARPORT=y
+# CONFIG_PARPORT is not set
 # CONFIG_BLK_DEV is not set
 
 #
