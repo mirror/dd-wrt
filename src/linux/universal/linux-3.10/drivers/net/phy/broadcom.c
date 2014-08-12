@@ -762,6 +762,19 @@ static struct phy_driver broadcom_drivers[] = {
 	.config_intr	= bcm54xx_config_intr,
 	.driver		= { .owner = THIS_MODULE },
 }, {
+	.phy_id		= 0x600d8440,
+	.phy_id_mask	= 0xfffffff0,
+	.name		= "Broadcom BCM50280",
+	.features	= PHY_GBIT_FEATURES |
+			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
+	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
+	.config_init	= bcm5482_config_init,
+	.config_aneg	= genphy_config_aneg,
+	.read_status	= bcm5482_read_status,
+	.ack_interrupt	= bcm54xx_ack_interrupt,
+	.config_intr	= bcm54xx_config_intr,
+	.driver		= { .owner = THIS_MODULE },
+}, {
 	.phy_id		= PHY_ID_BCM50610,
 	.phy_id_mask	= 0xfffffff0,
 	.name		= "Broadcom BCM50610",
@@ -850,6 +863,7 @@ static struct mdio_device_id __maybe_unused broadcom_tbl[] = {
 	{ PHY_ID_BCM5464, 0xfffffff0 },
 	{ PHY_ID_BCM5482, 0xfffffff0 },
 	{ PHY_ID_BCM5482, 0xfffffff0 },
+	{ 0x600d8440    , 0xfffffff0 },
 	{ PHY_ID_BCM50610, 0xfffffff0 },
 	{ PHY_ID_BCM50610M, 0xfffffff0 },
 	{ PHY_ID_BCM57780, 0xfffffff0 },

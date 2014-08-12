@@ -49,6 +49,7 @@
 
 #define PHY_HAS_INTERRUPT	0x00000001
 #define PHY_HAS_MAGICANEG	0x00000002
+#define PHY_IS_INTERNAL		0x00000004
 
 /* Interface Mode definitions */
 typedef enum {

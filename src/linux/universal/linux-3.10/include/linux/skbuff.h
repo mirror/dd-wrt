@@ -646,6 +646,7 @@ extern int skb_save_cb(struct sk_buff *skb);
 extern int skb_restore_cb(struct sk_buff *skb);
 #endif
 
+extern void skb_release_head_state(struct sk_buff *skb);
 extern void kfree_skb(struct sk_buff *skb);
 extern void kfree_skb_list(struct sk_buff *segs);
 extern void skb_tx_error(struct sk_buff *skb);
