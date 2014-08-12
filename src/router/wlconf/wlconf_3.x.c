@@ -377,6 +377,227 @@ wlconf_set_preauth(char *name, int bsscfg_idx, int preauth)
 }
 #endif /* BCMWPA2 */
 
+static void
+wlconf_set_radarthrs(char *name, char *prefix)
+{
+	wl_radar_thr_t  radar_thr;
+	int  i, ret, len;
+	char nv_buf[NVRAM_MAX_VALUE_LEN], *rargs, *v, *endptr;
+	char buf[WLC_IOCTL_SMLEN];
+
+	char *version = NULL;
+	char *thr0_20_lo = NULL, *thr1_20_lo = NULL;
+	char *thr0_40_lo = NULL, *thr1_40_lo = NULL;
+	char *thr0_80_lo = NULL, *thr1_80_lo = NULL;
+	char *thr0_20_hi = NULL, *thr1_20_hi = NULL;
+	char *thr0_40_hi = NULL, *thr1_40_hi = NULL;
+	char *thr0_80_hi = NULL, *thr1_80_hi = NULL;
+
+	char **locals[] = { &version, &thr0_20_lo, &thr1_20_lo, &thr0_40_lo, &thr1_40_lo,
+	&thr0_80_lo, &thr1_80_lo, &thr0_20_hi, &thr1_20_hi,
+	&thr0_40_hi, &thr1_40_hi, &thr0_80_hi, &thr1_80_hi };
+
+	rargs = nvram_safe_get(strcat_r(prefix, "radarthrs", nv_buf));
+	if (!rargs)
+		goto err;
+
+	len = strlen(rargs);
+	if ((len > NVRAM_MAX_VALUE_LEN) || (len == 0))
+		goto err;
+
+	memset(nv_buf, 0, sizeof(nv_buf));
+	strncpy(nv_buf, rargs, len);
+	v = nv_buf;
+	for (i = 0; i < (sizeof(locals) / sizeof(locals[0])); i++) {
+		*locals[i] = v;
+		while (*v && *v != ' ') {
+			v++;
+		}
+		if (*v) {
+			*v = 0;
+			v++;
+		}
+		if (v >= (nv_buf + len)) /* Check for complete list, if not caught later */
+			break;
+	}
+
+	/* Start building request */
+	memset(buf, 0, sizeof(buf));
+	strcpy(buf, "radarthrs");
+	/* Retrieve radar thrs parameters */
+	if (!version)
+		goto err;
+	radar_thr.version = atoi(version);
+	if (radar_thr.version > WL_RADAR_THR_VERSION)
+		goto err;
+
+	/* Retrieve ver 0 params */
+	if (!thr0_20_lo)
+		goto err;
+	radar_thr.thresh0_20_lo = (uint16)strtol(thr0_20_lo, &endptr, 0);
+	if (*endptr != '\0')
+		goto err;
+
+	if (!thr1_20_lo)
+		goto err;
+	radar_thr.thresh1_20_lo = (uint16)strtol(thr1_20_lo, &endptr, 0);
+	if (*endptr != '\0')
+		goto err;
+
+	if (!thr0_40_lo)
+		goto err;
+	radar_thr.thresh0_40_lo = (uint16)strtol(thr0_40_lo, &endptr, 0);
+	if (*endptr != '\0')
+		goto err;
+
+	if (!thr1_40_lo)
+		goto err;
+	radar_thr.thresh1_40_lo = (uint16)strtol(thr1_40_lo, &endptr, 0);
+	if (*endptr != '\0')
+		goto err;
+
+	if (!thr0_80_lo)
+		goto err;
+	radar_thr.thresh0_80_lo = (uint16)strtol(thr0_80_lo, &endptr, 0);
+	if (*endptr != '\0')
+		goto err;
+
+	if (!thr1_80_lo)
+		goto err;
+	radar_thr.thresh1_80_lo = (uint16)strtol(thr1_80_lo, &endptr, 0);
+	if (*endptr != '\0')
+		goto err;
+
+
+	if (radar_thr.version == 0) {
+		/*
+		 * Attempt a best effort update of ver 0 to ver 1 by updating
+		 * the appropriate values with the specified defaults.  The defaults
+		 * are from the reference design.
+		 */
+		radar_thr.version = WL_RADAR_THR_VERSION; /* avoid driver rejecting it */
+		radar_thr.thresh0_20_hi = 0x6ac;
+		radar_thr.thresh1_20_hi = 0x6cc;
+		radar_thr.thresh0_40_hi = 0x6bc;
+		radar_thr.thresh1_40_hi = 0x6e0;
+		radar_thr.thresh0_80_hi = 0x6b0;
+		radar_thr.thresh1_80_hi = 0x30;
+	} else {
+		/* Retrieve ver 1 params */
+		if (!thr0_20_hi)
+			goto err;
+		radar_thr.thresh0_20_hi = (uint16)strtol(thr0_20_hi, &endptr, 0);
+		if (*endptr != '\0')
+			goto err;
+
+		if (!thr1_20_hi)
+			goto err;
+		radar_thr.thresh1_20_hi = (uint16)strtol(thr1_20_hi, &endptr, 0);
+		if (*endptr != '\0')
+			goto err;
+
+		if (!thr0_40_hi)
+			goto err;
+		radar_thr.thresh0_40_hi = (uint16)strtol(thr0_40_hi, &endptr, 0);
+		if (*endptr != '\0')
+			goto err;
+
+		if (!thr1_40_hi)
+			goto err;
+		radar_thr.thresh1_40_hi = (uint16)strtol(thr1_40_hi, &endptr, 0);
+		if (*endptr != '\0')
+			goto err;
+
+		if (!thr0_80_hi)
+			goto err;
+		radar_thr.thresh0_80_hi = (uint16)strtol(thr0_80_hi, &endptr, 0);
+		if (*endptr != '\0')
+			goto err;
+
+		if (!thr1_80_hi)
+			goto err;
+		radar_thr.thresh1_80_hi = (uint16)strtol(thr1_80_hi, &endptr, 0);
+		if (*endptr != '\0')
+			goto err;
+
+	}
+
+	/* Copy radar parameters into buffer and plug them to the driver */
+	memcpy((char*)(buf + strlen(buf) + 1), (char*)&radar_thr, sizeof(wl_radar_thr_t));
+	WL_IOCTL(name, WLC_SET_VAR, buf, sizeof(buf));
+
+	return;
+
+err:
+	WLCONF_DBG("Did not parse radar thrs params, using driver defaults\n");
+	return;
+}
+
+/*
+ * This allows phy antenna selection to be retrieved from NVRAM
+ */
+static void
+wlconf_set_antsel(char *name, char *prefix)
+{
+	int	i, j, len, argc, ret;
+	char	buf[WLC_IOCTL_SMLEN];
+	wlc_antselcfg_t val = { {0}, 0};
+	char	*argv[ANT_SELCFG_MAX] = {};
+	char	nv_buf[NVRAM_MAX_VALUE_LEN], *argstr, *v, *endptr;
+
+	argstr = nvram_safe_get(strcat_r(prefix, "phy_antsel", nv_buf));
+	if (!argstr) {
+		return;
+	}
+	len = strlen(argstr);
+	if ((len == 0) || (len > NVRAM_MAX_VALUE_LEN)) {
+		return;
+	}
+
+	memset(nv_buf, 0, sizeof(nv_buf));
+	strncpy(nv_buf, argstr, len);
+	v = nv_buf;
+	for (argc = 0; argc < ANT_SELCFG_MAX; ) {
+		argv[argc++] = v;
+		while (*v && *v != ' ') {
+			v++;
+		}
+		if (*v) {
+			*v = 0;
+			v++;
+		}
+		if (v >= (nv_buf + len)) {
+			break;
+		}
+	}
+	if ((argc != 1) && (argc != ANT_SELCFG_MAX)) {
+		WLCONF_DBG("phy_antsel requires 1 or %d arguments\n", ANT_SELCFG_MAX);
+		return;
+	}
+
+	memset(buf, 0, sizeof(buf));
+	strcpy(buf, "phy_antsel");
+	for (i = 0, j = 0; i < ANT_SELCFG_MAX; i++) {
+		val.ant_config[i] = (uint8)strtol(argv[j], &endptr, 0);
+		if (*endptr != '\0') {
+			WLCONF_DBG("Invalid antsel argument\n");
+			return;
+		}
+		if (argc > 1) {
+			/* ANT_SELCFG_MAX argument format */
+			j++;
+		}
+	}
+
+	/* Copy antsel parameters into buffer and plug them to the driver */
+	memcpy((char*)(buf + strlen(buf) + 1), (char*)&val, sizeof(wlc_antselcfg_t));
+	WL_IOCTL(name, WLC_SET_VAR, buf, sizeof(buf));
+
+	return;
+}
+
+
+
 /* Set up WME */
 static void
 wlconf_set_wme(char *name, char *prefix)
@@ -1473,11 +1694,16 @@ cprintf("set reg mode %s\n",name);
 		WL_IOCTL(name, WLC_SET_REGULATORY, &val, sizeof(val));
 		WL_IOCTL(name, WLC_SET_RADAR, &val, sizeof(val));
 		WL_IOCTL(name, WLC_SET_SPECT_MANAGMENT, &val, sizeof(val));
-	} else if (nvram_match(tmp, "h")) {
+	} else if (nvram_match(tmp, "h") || nvram_match(tmp, "strict_h")) {
 		val = 0;
 		WL_IOCTL(name, WLC_SET_REGULATORY, &val, sizeof(val));
 		val = 1;
 		WL_IOCTL(name, WLC_SET_RADAR, &val, sizeof(val));
+		radar_enab = TRUE;
+		if (nvram_match(tmp, "h"))
+			val = 1;
+		else
+			val = 2;
 		WL_IOCTL(name, WLC_SET_SPECT_MANAGMENT, &val, sizeof(val));
 
 		/* Set the CAC parameters */
@@ -2272,7 +2498,46 @@ cprintf("set antdiv mode %s\n",name);
 	val = atoi(nvram_default_get(strcat_r(prefix, "antdiv", tmp),"3"));
 	WL_IOCTL(name, WLC_SET_ANTDIV, &val, sizeof(val));
 
+	/* Set antenna selection */
+	wlconf_set_antsel(name, prefix);
 
+	/* Set radar parameters if it is enabled */
+	if (radar_enab) {
+		wlconf_set_radarthrs(name, prefix);
+	}
+
+
+	/* set pspretend */
+	val = 0;
+	if (ap) {
+		/* Set pspretend for multi-ssid bss */
+		for (i = 0; i < bclist->count; i++) {
+			bsscfg = &bclist->bsscfgs[i];
+			str = nvram_safe_get(strcat_r(bsscfg->prefix,
+				"pspretend_retry_limit", tmp));
+			if (str) {
+				val = atoi(str);
+				WL_BSSIOVAR_SETINT(name, "pspretend_retry_limit", bsscfg->idx, val);
+			}
+		}
+
+		/* now set it for primary bss */
+		val = 0;
+		str = nvram_get(strcat_r(prefix, "pspretend_retry_limit", tmp));
+		if (str) {
+			val = atoi(str);
+		}
+	}
+	WL_IOVAR_SETINT(name, "pspretend_retry_limit", val);
+
+	val = 0;
+	if (ap) {
+		str = nvram_get(strcat_r(prefix, "pspretend_threshold", tmp));
+		if (str) {
+			val = atoi(str);
+		}
+	}
+	WL_IOVAR_SETINT(name, "pspretend_threshold", val);
 
 	/* Set channel interference threshold value if it is enabled */
 	str = nvram_get(strcat_r(prefix, "glitchthres", tmp));
