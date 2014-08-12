@@ -2060,8 +2060,17 @@ struct nvram_tuple srouter_defaults[] = {
 	{"telnetd_enable", "1", 0},
 #endif
 	{"ipv6_enable", "0", 0},
-	{"radvd_enable", "0", 0},
+	{"ipv6_pf_len", "64", 0},
+	{"ipv6_mtu", "", 0},
+	{"ipv6_tun_client_addr_pref", "64", 0},
+	{"radvd_custom", "0", 0},
 	{"radvd_conf", "", 0},
+	{"dhcp6c_custom", "0", 0},
+	{"dhcp6c_conf", "", 0},
+	{"dhcp6s_enable", "0", 0},
+	{"dhcp6s_seq_ips", "0", 0},
+	{"dhcp6s_custom", "0", 0},
+	{"dhcp6s_conf", "", 0},
 #ifdef HAVE_CHILLI
 	{"chilli_net", "192.168.182.0/24", 0},
 	{"chilli_enable", "0", 0},
