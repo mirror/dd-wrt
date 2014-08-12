@@ -4864,10 +4864,6 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n", !strcmp(wl_tpcdb, "3") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >4\");\n", !strcmp(wl_tpcdb, "4") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
-
-
-
-	showOptions(wp, "wl_regmode", "off h strict_h d", nvram_default_get("wl_regmode", "off"));
 	websWrite(wp, "</div></fieldset><br />\n");
 
 #endif
