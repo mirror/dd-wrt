@@ -2371,6 +2371,13 @@ cprintf("set frag tres %s\n",name);
 		val = nvram_match(strcat_r(prefix, "frameburst", tmp), "on");
 	WL_IOCTL(name, WLC_SET_FAKEFRAG, &val, sizeof(val));
 
+	/* Set dynamic frameburst max station limit */
+	str = nvram_get(strcat_r(prefix, "frameburst_dyn_max_stations", tmp));
+	if (!str) { /* Fall back to previous name, frameburst_dyn */
+		str = nvram_default_get("frameburst_dyn","0");
+	}
+	wl_iovar_setint(name, "frameburst_dyn_max_stations", atoi(str));
+
 	/* Enable or disable PLC failover */
 	val = atoi(nvram_safe_get(strcat_r(prefix, "plc", tmp)));
 	WL_IOVAR_SETINT(name, "plc", val);
