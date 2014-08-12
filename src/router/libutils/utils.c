@@ -61,6 +61,7 @@
 #include <linux/sockios.h>
 #include <cymac.h>
 #include <broadcom.h>
+#include <ifaddrs.h>
 
 #ifndef IP_ALEN
 #define IP_ALEN 4
@@ -145,6 +146,44 @@ unsigned int daysformonth(unsigned int month, unsigned int year)
 								 && (((year % 100) != 0)
 								     || ((year % 400) == 0)))
 							       && (month == 2)));
+}
+
+const char *getifaddr(char *ifname, int family, int linklocal)
+{
+	static char buf[INET6_ADDRSTRLEN];
+	void *addr = NULL;
+	struct ifaddrs *ifap, *ifa;
+
+	if (getifaddrs(&ifap) != 0) {
+		dprintf("getifaddrs failed: %s\n", strerror(errno));
+		return NULL;
+	}
+
+	for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+		if ((ifa->ifa_addr == NULL) ||
+		(strncmp(ifa->ifa_name, ifname, IFNAMSIZ) != 0) ||
+		(ifa->ifa_addr->sa_family != family))
+		continue;
+
+
+		if (ifa->ifa_addr->sa_family == AF_INET6) {
+		struct sockaddr_in6 *s6 = (struct sockaddr_in6 *)(ifa->ifa_addr);
+		if (IN6_IS_ADDR_LINKLOCAL(&s6->sin6_addr) ^ linklocal)
+		continue;
+		addr = (void *)&(s6->sin6_addr);
+		} else {
+		struct sockaddr_in *s = (struct sockaddr_in *)(ifa->ifa_addr);
+		addr = (void *)&(s->sin_addr);
+		}
+
+		if ((addr) && inet_ntop(ifa->ifa_addr->sa_family, addr, buf, sizeof(buf)) != NULL) {
+			freeifaddrs(ifap);
+			return buf;
+		}
+	}
+
+	freeifaddrs(ifap);
+	return NULL;
 }
 
 #ifdef HAVE_VLANTAGGING
@@ -1185,11 +1224,12 @@ int internal_getRouterBrand()
 		FILE *model = fopen(devname, "rb");
 		if (model) {
 #define R6300V2 "U12H240T00_NETGEAR"
+#define R6300V2CH "U12H240T70_NETGEAR"		  
 #define AC1450 "U12H240T99_NETGEAR"
 #define EX6200 "U12H269T00_NETGEAR"
 			char modelstr[32];
 			fread(modelstr, 1, strlen(R6300V2), model);
-			if (!strncmp(modelstr, R6300V2, strlen(R6300V2))) {
+			if (!strncmp(modelstr, R6300V2, strlen(R6300V2)) || !strncmp(modelstr, R6300V2CH, strlen(R6300V2CH))) {
 				setRouter("Netgear R6300V2");
 				fclose(model);
 				return ROUTER_NETGEAR_R6300V2;
