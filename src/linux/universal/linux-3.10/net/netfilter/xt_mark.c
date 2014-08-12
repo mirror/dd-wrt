@@ -127,7 +127,7 @@ struct compat_xt_mark_target_info {
 	compat_ulong_t	mark;
 };
 
-static void mark_tg_compat_from_user_v0(void *dst, void *src)
+static void mark_tg_compat_from_user_v0(void *dst, const void *src)
 {
 	const struct compat_xt_mark_target_info *cm = src;
 	struct xt_mark_target_info m = {
@@ -136,7 +136,7 @@ static void mark_tg_compat_from_user_v0(void *dst, void *src)
 	memcpy(dst, &m, sizeof(m));
 }
 
-static int mark_tg_compat_to_user_v0(void __user *dst, void *src)
+static int mark_tg_compat_to_user_v0(void __user *dst, const void *src)
 {
 	const struct xt_mark_target_info *m = src;
 	struct compat_xt_mark_target_info cm = {
@@ -152,7 +152,7 @@ struct compat_xt_mark_target_info_v1 {
 	u_int16_t	__pad2;
 };
 
-static void mark_tg_compat_from_user_v1(void *dst, void *src)
+static void mark_tg_compat_from_user_v1(void *dst, const void *src)
 {
 	const struct compat_xt_mark_target_info_v1 *cm = src;
 	struct xt_mark_target_info_v1 m = {
@@ -162,7 +162,7 @@ static void mark_tg_compat_from_user_v1(void *dst, void *src)
 	memcpy(dst, &m, sizeof(m));
 }
 
-static int mark_tg_compat_to_user_v1(void __user *dst, void *src)
+static int mark_tg_compat_to_user_v1(void __user *dst, const void *src)
 {
 	const struct xt_mark_target_info_v1 *m = src;
 	struct compat_xt_mark_target_info_v1 cm = {
@@ -181,7 +181,7 @@ struct compat_xt_mark_info {
 	u_int16_t	__pad2;
  };
  
-static void mark_mt_compat_from_user_v0(void *dst, void *src)
+static void mark_mt_compat_from_user_v0(void *dst, const void *src)
 {
 	const struct compat_xt_mark_info *cm = src;
 	struct xt_mark_info m = {
@@ -192,7 +192,7 @@ static void mark_mt_compat_from_user_v0(void *dst, void *src)
 	memcpy(dst, &m, sizeof(m));
 }
 
-static int mark_mt_compat_to_user_v0(void __user *dst, void *src)
+static int mark_mt_compat_to_user_v0(void __user *dst, const void *src)
 {
 	const struct xt_mark_info *m = src;
 	struct compat_xt_mark_info cm = {
