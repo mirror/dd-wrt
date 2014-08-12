@@ -1688,7 +1688,8 @@ cprintf("get phy type %s\n",name);
 cprintf("set reg mode %s\n",name);
 //fprintf(stderr, "set reg mode %s\n",name);
 	/* Setup regulatory mode */
-	strcat_r(prefix, "reg_mode", tmp);
+	strcmp(tmp,"wl_reg_mode");
+//	strcat_r(prefix, "reg_mode", tmp);
 	if (nvram_default_match(tmp, "off","off"))  {
 		val = 0;
 		WL_IOCTL(name, WLC_SET_REGULATORY, &val, sizeof(val));
@@ -1711,7 +1712,9 @@ cprintf("set reg mode %s\n",name);
 		wl_iovar_setint(name, "dfs_preism", val);
 		val = atoi(nvram_safe_get(strcat_r(prefix, "dfs_postism", tmp)));
 		wl_iovar_setint(name, "dfs_postism", val);
-		val = atoi(nvram_safe_get(strcat_r(prefix, "tpc_db", tmp)));
+	
+//		val = atoi(nvram_safe_get(strcat_r(prefix, "tpc_db", tmp)));
+		val = atoi(nvram_safe_get("wl_tpc_db"));
 		WL_IOCTL(name, WLC_SEND_PWR_CONSTRAINT, &val, sizeof(val));
 
 	} else if (nvram_match(tmp, "d")) {
