@@ -29,6 +29,7 @@
 #include <linux/cache.h>
 #include <linux/cpumask.h>
 #include <linux/netdevice.h>
+#include <linux/init.h>
 #include <linux/etherdevice.h>
 #include <linux/ip.h>
 #include <linux/string.h>
@@ -71,15 +72,13 @@ struct cvm_oct_core_state {
 	int baseline_cores;
 	/*
 	 * The number of additional cores that could be processing
-	 * input packets.
+	 * input packtes.
 	 */
 	atomic_t available_cores;
 	cpumask_t cpu_state;
 } ____cacheline_aligned_in_smp;
 
 static struct cvm_oct_core_state core_state __cacheline_aligned_in_smp;
-
-static int cvm_irq_cpu;
 
 static void cvm_oct_enable_napi(void *_)
 {
@@ -113,7 +112,11 @@ static void cvm_oct_no_more_work(void)
 {
 	int cpu = smp_processor_id();
 
-	if (cpu == cvm_irq_cpu) {
+	/*
+	 * CPU zero is special.  It always has the irq enabled when
+	 * waiting for incoming packets.
+	 */
+	if (cpu == 0) {
 		enable_irq(OCTEON_IRQ_WORKQ0 + pow_receive_group);
 		return;
 	}
@@ -132,7 +135,6 @@ static irqreturn_t cvm_oct_do_interrupt(int cpl, void *dev_id)
 {
 	/* Disable the IRQ and start napi_poll. */
 	disable_irq_nosync(OCTEON_IRQ_WORKQ0 + pow_receive_group);
-	cvm_irq_cpu = smp_processor_id();
 	cvm_oct_enable_napi(NULL);
 
 	return IRQ_HANDLED;
@@ -512,7 +514,7 @@ void cvm_oct_rx_initialize(void)
 	if (NULL == dev_for_napi)
 		panic("No net_devices were allocated.");
 
-	if (max_rx_cpus >= 1 && max_rx_cpus < num_online_cpus())
+	if (max_rx_cpus > 1  && max_rx_cpus < num_online_cpus())
 		atomic_set(&core_state.available_cores, max_rx_cpus);
 	else
 		atomic_set(&core_state.available_cores, num_online_cpus());
@@ -524,7 +526,7 @@ void cvm_oct_rx_initialize(void)
 			       cvm_oct_napi_poll, rx_napi_weight);
 		napi_enable(&cvm_oct_napi[i].napi);
 	}
-	/* Register an IRQ handler to receive POW interrupts */
+	/* Register an IRQ hander for to receive POW interrupts */
 	i = request_irq(OCTEON_IRQ_WORKQ0 + pow_receive_group,
 			cvm_oct_do_interrupt, 0, "Ethernet", cvm_oct_device);
 
