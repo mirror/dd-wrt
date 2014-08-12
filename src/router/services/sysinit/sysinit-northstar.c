@@ -374,7 +374,7 @@ void start_sysinit(void)
 		set_gpio(4, 1);	//ses
 		set_gpio(5, 1);	//wifi
 		nvram_set("pci/1/1/vendid", "0x14E4");
-
+		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_NETGEAR_R6250:
 
@@ -826,6 +826,7 @@ void start_sysinit(void)
 		set_gpio(4, 1);	//ses
 		set_gpio(5, 1);	//wifi
 		nvram_set("pci/1/1/vendid", "0x14E4");
+		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_NETGEAR_R7000:
 
@@ -1317,6 +1318,7 @@ void start_sysinit(void)
 		set_gpio(9,1);  //red connected
 		set_gpio(10,1); //green 2.4
 		set_gpio(12,1); //green 5
+		nvram_unset("et1macaddr");
 		break;
 	case ROUTER_NETGEAR_R8000:
 		nvram_set("vlan2hwname", "et2");
