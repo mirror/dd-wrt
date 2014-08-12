@@ -43,7 +43,7 @@ ln -sf tmp/var var
 mkdir -p dev
 cd dev
 
-mknod nvram c 253 0
+mknod nvram c 229 0
 mknod ppp c 108 0
 mknod console c 5 1
 mknod tty c 5 0
@@ -61,18 +61,26 @@ mknod mtd/3 c 90 6
 mknod mtd/3ro c 90 7
 mknod mtd/4 c 90 8
 mknod mtd/4ro c 90 9
+mknod mtd/5 c 90 10
+mknod mtd/5ro c 90 11
 mkdir mtdblock
 mknod mtdblock/0 b 31 0
 mknod mtdblock/1 b 31 1
 mknod mtdblock/2 b 31 2
 mknod mtdblock/3 b 31 3
 mknod mtdblock/4 b 31 4
+mknod mtdblock/5 b 31 5
 mknod urandom c 1 9
 mknod zero c 1 5
 mknod random c 1 8
 mknod null c 1 3
+mknod lp0 c 128 0
+mknod lp1 c 128 1
+mknod lp2 c 128 2
 mkdir misc
 mknod misc/watchdog c 10 130
+mknod misc/rtc c 254 0
+mknod misc/gpio c 253 0
 mknod kmem c 1 2
 mknod mem c 1 1
 mknod ptmx c 5 2
@@ -125,10 +133,8 @@ echo "" > tmp/TZ
 /sbin/ldconfig -r $ROOTDIR
 
 # miscellaneous
-mkdir -p mnt
+ln -s /tmp/mnt /mnt
 mkdir -p proc
 mkdir -p opt/lib/iptables
 ln -sf /opt/usr/lib/iptables usr/lib/iptables
 ln -sf /tmp/TZ etc/TZ
-ln -sf /tmp/dhcp6c.conf etc/dhcp6c.conf
-ln -sf /tmp/dhcp6s.conf etc/dhcp6s.conf
