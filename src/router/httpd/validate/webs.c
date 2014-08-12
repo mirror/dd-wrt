@@ -3173,6 +3173,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	}
 
 	copytonv(wp, n);
+	copytonv(wp, "wl_regdomain");
+	copytonv(wp, "wl_reg_mode");
+	copytonv(wp, "wl_tpc_db");
 
 #if defined(HAVE_NORTHSTAR) && !defined(HAVE_BUFFALO)
 	sprintf(n, "wl_regdomain");
@@ -3184,7 +3187,6 @@ static void save_prefix(webs_t wp, char *prefix)
 		}
 	}
 #endif
-	copytonv(wp, "wl_regdomain");
 
 }
 
