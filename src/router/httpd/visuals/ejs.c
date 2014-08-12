@@ -2012,8 +2012,8 @@ void ej_show_ipv6options(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<option value=\"ipv6native\" %s>Native IPv6 from ISP</option>\n", nvram_match("ipv6_typ", "ipv6native") ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"ipv6pd\" %s>DHCPv6 with Prefix Delegation</option>\n", nvram_match("ipv6_typ", "ipv6pd") ? "selected=\"selected\"" : "");
+	websWrite(wp, "<option value=\"ipv6in4\" %s>6in4 Static Tunnel</option>\n", nvram_match("ipv6_typ", "ipv6in4") ? "selected=\"selected\"" : "");
 	//websWrite(wp, "<option value=\"ipv6to4\" %s>6to4 Anycast Releay</option>\n", nvram_match("ipv6_typ", "ipv6to4") ? "selected=\"selected\"" : "");
-	//websWrite(wp, "<option value=\"ipv6in4\" %s>6in4 Static Tunnel</option>\n", nvram_match("ipv6_typ", "ipv6in4") ? "selected=\"selected\"" : "");
 }
 
 void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
@@ -2054,7 +2054,12 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
 	}
 
-	websWrite(wp, "&nbsp;IP: %s", wan_ipaddr);
+	websWrite(wp, "&nbsp;IPv4: %s", wan_ipaddr);
+	if( nvram_match("ipv6_typ", "ipv6in4") && getifaddr("ip6tun", AF_INET6, 0) != NULL)
+			websWrite(wp, "&nbsp;IPv6: %s", getifaddr("ip6tun", AF_INET6, 0));
+	if( nvram_match("ipv6_typ", "ipv6pd") && getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0) != NULL)
+			websWrite(wp, "&nbsp;IPv6: %s", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
+	
 
 	return;
 }
