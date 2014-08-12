@@ -4222,14 +4222,45 @@ const char *ipv6_router_address(struct in6_addr *in6addr)
 
 	return addr6;
 }
+
+
+void start_ipv6_tunnel(char *wan_ifname)
+{
+	char *remote_endpoint = nvram_safe_get("ipv6_tun_end_ipv4");
+	char *tun_client_ipv6 = nvram_safe_get("ipv6_tun_client_addr");
+	char *tun_client_pref = nvram_safe_get("ipv6_tun_client_addr_pref");
+	char *ipv6_prefix     = nvram_safe_get("ipv6_prefix");
+	char *ipv6_pf_len     = nvram_safe_get("ipv6_pf_len");	
+	
+	int mtu = atoi( nvram_default_get("wan_mtu", "1500") ) - 20;
+	
+	if( nvram_invmatch("ipv6_mtu", "") )
+		mtu = atoi( nvram_safe_get("ipv6_mtu") );
+	
+	sysprintf("ip tunnel add ip6tun mode sit ttl 64 local %s remote %s", nvram_get("wan_ipaddr"), remote_endpoint );
+	sysprintf("ip link set ip6tun mtu %d", mtu);
+	sysprintf("ip link set ip6tun up");
+	sysprintf("ip -6 addr add %s/%s dev ip6tun", tun_client_ipv6, tun_client_pref );
+	sysprintf("ip -6 addr add %s/%s dev %s", ipv6_prefix, ipv6_pf_len, nvram_get("lan_ifname"));
+	sysprintf("ip -6 route add 2000::/3 dev ip6tun");
+
+}
+
+void stop_ipv6_tunnel()
+{
+	if( nvram_match("ipv6_typ", "ipv6rd") || nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6to4") )
+		sysprintf("ip", "tunnel", "del", nvram_get("wan_ifname"));
+	
+	if ( nvram_match("ipv6_typ", "ipv6to4") || nvram_match("ipv6_typ", "ipv6rd") ) {
+		eval("ip", "-6", "addr", "flush", "dev", nvram_safe_get("lan_ifname"), "scope", "global");
+	}
+}
+
 void start_wan6_done(char *wan_ifname)
 {
 	if(nvram_match("ipv6_enable", "0"))
-		return 0;
-  
-	fprintf(stderr, "Starting wan6 done\n");
+		return;
 	
-
 	if(nvram_match("ipv6_typ", "ipv6native")){
 		sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
 		
@@ -4242,17 +4273,22 @@ void start_wan6_done(char *wan_ifname)
 			eval("ip", "-6", "addr", "add", ip, "dev", nvram_safe_get("lan_ifname"));
 		}
 		
-		fprintf(stderr, "ipv6native route add\n");
 		sysprintf("ip", "route", "add", "::/0", "dev", nvram_get("wan_ifname"), "metric", "2048");
 	}
-	
-	
+		
 	if(nvram_match("ipv6_typ", "ipv6pd")){
 		sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
-		fprintf(stderr, "ipv6pd start/stop dhcp6c\n");
 		sysprintf("stopservice dhcp6c -f");
 		sysprintf("startservice dhcp6c -f");
 	}
+	
+	if(nvram_match("ipv6_typ", "ipv6in4")){
+		start_ipv6_tunnel(wan_ifname);
+	}
+	
+	sysprintf("stopservice dhcp6s -f");
+	sysprintf("startservice dhcp6s -f");
+		
  
 }
 
@@ -4576,6 +4612,9 @@ void stop_wan(void)
 	 * Stop firewall 
 	 */
 	stop_firewall();
+#ifdef HAVE_IPV6
+	stop_ipv6_tunnel();
+#endif
 	/*
 	 * Kill any WAN client daemons or callbacks 
 	 */
