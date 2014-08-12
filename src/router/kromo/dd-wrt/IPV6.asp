@@ -15,7 +15,21 @@ var update;
 
 addEvent(window, "load", function() {
 	show_layer_ext(document.setup.ipv6_enable,'idipv6', <% nvem("ipv6_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.setup.ipv6_native,'idipv6_native', <% nvem("ipv6_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.dhcp6c_custom,'iddhcp6c_custom', <% nvem("dhcp6c_custom", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.dhcp6s_enable,'iddhcp6s_enabled', <% nvem("dhcp6s_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.dhcp6s_custom,'iddhcp6s_custom', <% nvem("dhcp6s_custom", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.radvd_custom,'idradvd_custom', <% nvem("radvd_custom", "1", "1", "0"); %> == 1);
+	
+	show_layer_ext(document.setup.ipv6_typ,'idipv6_native', false);
+	show_layer_ext(document.setup.ipv6_typ,'idipv6_6in4', false);
+	
+	if( "<% nvram_gozila_get("ipv6_typ"); %>" == "ipv6native" ){
+		show_layer_ext(document.setup.ipv6_typ,'idipv6_native', true);
+	} else if ( "<% nvram_gozila_get("ipv6_typ"); %>" == "ipv6in4" ) {
+		show_layer_ext(document.setup.ipv6_typ,'idipv6_native', true);
+		show_layer_ext(document.setup.ipv6_typ,'idipv6_6in4', true);
+	}
+	
 	update = new StatusbarUpdate();
 	update.start();
 	
