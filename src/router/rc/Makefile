@@ -998,6 +998,9 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc mtd
 	cd $(INSTALLDIR)/sbin && ln -sf rc beep
 	cd $(INSTALLDIR)/sbin && ln -sf rc ledtracking
+ifeq ($(CONFIG_IPV6),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc dhcp6c-state
+endif
 ifeq ($(CONFIG_REGISTER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc regshell
 endif
