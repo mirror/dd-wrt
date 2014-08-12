@@ -370,8 +370,8 @@ int mtd_write(const char *path, const char *mtd)
 				}
 				break;
 			case ROUTER_NETGEAR_R6300V2:
-				if (strncmp(board_id, "U12H240T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H240T00_NETGEAR");
+				if (strncmp(board_id, "U12H240T00_NETGEAR", sizeof(board_id)) && strncmp(board_id, "U12H240T70_NETGEAR", sizeof(board_id))) {
+					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H240T00_NETGEAR or U12H240T70_NETGEAR");
 					fclose(fp);
 					return -1;
 				}
