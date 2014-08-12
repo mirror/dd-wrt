@@ -55,26 +55,147 @@
 #include <services.h>
 
 #ifdef HAVE_RADVD
+
+int write_ipv6_dns_servers(FILE *f, const char *prefix, char *dns, const char *suffix, int once)
+{
+	char p[INET6_ADDRSTRLEN + 1], *next = NULL;
+	struct in6_addr addr;
+	int cnt = 0;
+
+	foreach(p, dns, next) {
+		// verify that this is a valid IPv6 address
+		if (inet_pton(AF_INET6, p, &addr) == 1) {
+			fprintf(f, "%s%s%s", (once && cnt) ? "" : prefix, p, suffix);
+			++cnt;
+		}
+	}
+
+	return cnt;
+}
+
 void start_radvd(void)
 {
-	int ret = 0;
-	int c = 0;
-	char *buf, *buf2;
-	int i;
+	int c = 0, manual = 0;
+	int *mtu = 1500;;
+	char *buf, *prefix;
+	const char *ip;
+	char *p = NULL;
+	int do_mtu=0, do_6to4=0, do_6rd=0;
 	FILE *fp;
 
-	if (!nvram_match("radvd_enable", "1"))
-		return;
 	if (!nvram_match("ipv6_enable", "1"))
 		return;
-	buf = nvram_get("radvd_conf");
-	if (buf != NULL)
-		writenvram("radvd_conf", "/tmp/radvd.conf");
+	
+	
+	if( nvram_match("dhcp6s_enable", "1") &&  ( nvram_match("dhcp6s_seq_ips", "1") || nvram_invmatch("dhcp6s_hosts", "") ) )
+		manual = 1;
+	
+	if( nvram_invmatch("ipv6_mtu", "") ) {
+		do_mtu = 1;
+		mtu = atoi(nvram_safe_get("ipv6_mtu"));
+	} else {
+		mtu = atoi( nvram_safe_get("wan_mtu") ) - 20;
+	}
+	
+        if ((fp = fopen("/proc/sys/net/ipv6/conf/all/forwarding", "r+"))) {
+                fputc('1', fp);
+                fclose(fp);
+        }
+        
+	if (nvram_match("radvd_custom", "1")) {
+		buf = nvram_get("radvd_conf");
+		if (buf != NULL)
+			writenvram("radvd_conf", "/tmp/radvd.conf");
 
-	system2("sync");
+		system2("sync");
+	} else {
+  
+		if( !strcmp(nvram_get("ipv6_typ"), "ipv6native") ) {
+			if(do_mtu) {
+				mtu = atoi( nvram_safe_get("ipv6_mtu") );
+			} else {
+				mtu = atoi( nvram_safe_get("wan_mtu") );
+			}
+			
+		}
+		
+		if( !strcmp(nvram_get("ipv6_typ"), "ipv6to4") ) {
+			do_6to4 = 1;
+		} 
+		
+                if( !strcmp(nvram_get("ipv6_typ"), "ipv6in4") ) {}
+                
+                if( !strcmp(nvram_get("ipv6_typ"), "ipv6rd") ) {
+			do_6rd = 1;
+		}
+                
+                
+                prefix = do_6to4 ? "0:0:0:1::" : nvram_safe_get("ipv6_prefix");
+		
+                if ( !(*prefix) || (strlen(prefix) <= 0) ) prefix = "::";
+		if ( ( fp = fopen("/tmp/radvd.conf", "w") ) == NULL ) 
+			return;
+		
+		ip = getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, GIF_LINKLOCAL) ? : "";
+		
+                fprintf(fp,
+                        "interface %s\n"
+                        "{\n"
+                        " IgnoreIfMissing on;\n"
+                        " AdvSendAdvert on;\n"
+                        " MinRtrAdvInterval 3;\n"
+                        " MaxRtrAdvInterval 10;\n"
+                        " AdvHomeAgentFlag off;\n"
+                        " AdvManagedFlag %s;\n"
+                        " AdvOtherConfigFlag on;\n"
+                        " AdvLinkMTU %d;\n"
+                        " prefix %s/64 \n"
+                        " {\n"
+                        "  AdvOnLink on;\n"
+                        "  AdvAutonomous %s;\n"
+                        "%s"
+                        "%s%s%s"
+                        " };\n",
+                        nvram_safe_get("lan_ifname"),
+                        manual ? "on" : "off",
+                        mtu,
+                        prefix,
+                        manual ? "off" : "on",
+                        do_6to4 | do_6rd ? "  AdvValidLifetime 300;\n  AdvPreferredLifetime 120;\n" : "",
+                        do_6to4 ? "  Base6to4Interface " : "",
+                        do_6to4 ? nvram_get("wan_ifname")  : "",
+                        do_6to4 ? ";\n" : "");
+		
+		char ipv6_dns_str[1024] = "";
+		char nvname[sizeof("ipv6_dnsXXX")];
+		char *next = ipv6_dns_str;
+		int i,cnt;
 
-	ret = eval("radvd", "-C", "/tmp/radvd.conf");
-	dd_syslog(LOG_INFO, "radvd : RADV daemon successfully started\n");
+		ipv6_dns_str[0] = '\0';
+		for (i = 0; i < 2; i++) {
+			snprintf(nvname, sizeof(nvname), "ipv6_dns%d", i + 1);
+			p = nvram_safe_get(nvname);
+			if (!strlen(p)) continue;
+
+			next += sprintf(next, strlen(ipv6_dns_str) ? " %s" : "%s", p);
+		}
+
+		
+		
+		if( !strcmp(nvram_get("ipv6_typ"), "ipv6pd") )
+			p = nvram_safe_get("ipv6_get_dns");
+		else
+			p = ipv6_dns_str;
+
+		cnt = write_ipv6_dns_servers(fp, " RDNSS ", (char*) ((p && *p) ? p : ip), " ", 1);
+		if (cnt) 
+			fprintf(fp, "{};\n");
+		fprintf(fp,"};\n");
+		fclose(fp);
+	}
+	
+	eval("radvd", "-C", "/tmp/radvd.conf");
+	dd_syslog(LOG_INFO, "radvd : RADVD daemon successfully started\n");
 
 	cprintf("done\n");
 	return;
@@ -84,6 +205,7 @@ void stop_radvd(void)
 {
 
 	stop_process("radvd", "RADV daemon");
+	stop_process("dhcp6s", "DHCP6S daemon");
 	unlink("/var/run/radvd.pid");
 
 	cprintf("done\n");
