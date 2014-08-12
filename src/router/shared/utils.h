@@ -716,6 +716,7 @@ extern int pos_nthoccurence(char *source, int cmp, int which);
 extern char *substring(int start, int stop, const char *src, char *dst);
 extern void strtrim_right(char *p, int c);
 extern unsigned int daysformonth(unsigned int month, unsigned int year);
+const char *getifaddr(char *ifname, int family, int linklocal);
 extern int weekday(int month, int day, int year);
 extern int getRouterBrand(void);
 extern char *getRouter(void);
@@ -857,6 +858,9 @@ struct detect_wans {
 	char *name;
 	char desc[1024];
 };
+
+#define GIF_LINKLOCAL  0x0001  /* return link-local addr */
+#define GIF_PREFIXLEN  0x0002  /* return addr & prefix */
 
 #define	PROTO_DHCP	0
 #define	PROTO_STATIC	1
