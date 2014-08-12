@@ -315,6 +315,7 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 		if (card->ext_csd.sectors > (2u * 1024 * 1024 * 1024) / 512)
 			mmc_card_set_blockaddr(card);
 	}
+
 	card->ext_csd.raw_card_type = ext_csd[EXT_CSD_CARD_TYPE];
 	mmc_select_card_type(card);
 
@@ -823,7 +824,8 @@ static int mmc_select_hs200(struct mmc_card *card)
 	/* switch to HS200 mode if bus width set successfully */
 	if (!err)
 		err = mmc_switch(card, EXT_CSD_CMD_SET_NORMAL,
-				 EXT_CSD_HS_TIMING, 2, 0);
+				EXT_CSD_HS_TIMING, 2,
+				card->ext_csd.generic_cmd6_time);
 err:
 	return err;
 }
@@ -861,7 +863,7 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 	mmc_go_idle(host);
 
 	/* The extra bit indicates that we support high capacity */
-	err = mmc_send_op_cond(host, ocr , &rocr);
+	err = mmc_send_op_cond(host, ocr | (1 << 30), &rocr);
 	if (err)
 		goto err;
 
@@ -1086,14 +1088,10 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 	 */
 	if (mmc_card_highspeed(card)) {
 		if ((card->ext_csd.card_type & EXT_CSD_CARD_TYPE_DDR_1_8V)
-			&& ((host->caps & (MMC_CAP_1_8V_DDR |
-			     MMC_CAP_UHS_DDR50))
-				== (MMC_CAP_1_8V_DDR | MMC_CAP_UHS_DDR50)))
+			&& (host->caps & MMC_CAP_1_8V_DDR))
 				ddr = MMC_1_8V_DDR_MODE;
 		else if ((card->ext_csd.card_type & EXT_CSD_CARD_TYPE_DDR_1_2V)
-			&& ((host->caps & (MMC_CAP_1_2V_DDR |
-			     MMC_CAP_UHS_DDR50))
-				== (MMC_CAP_1_2V_DDR | MMC_CAP_UHS_DDR50)))
+			&& (host->caps & MMC_CAP_1_2V_DDR))
 				ddr = MMC_1_2V_DDR_MODE;
 	}
 
@@ -1542,11 +1540,6 @@ int mmc_attach_mmc(struct mmc_host *host)
 		return err;
 
 	mmc_attach_bus_ops(host);
-
-//Jacky for eMMC capabilities
-	host->caps   |= (MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA);
-        host->caps   |= MMC_CAP_MMC_HIGHSPEED;
-
 	if (host->ocr_avail_mmc)
 		host->ocr_avail = host->ocr_avail_mmc;
 
