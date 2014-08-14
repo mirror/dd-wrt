@@ -25,7 +25,7 @@
 #include <asm/unified.h>
 #include <asm/fiq.h>
 #include <mach/smp.h>
-#include "cns3xxx.h"
+#include <mach/cns3xxx.h>
 
 static struct fiq_handler fh = {
 	.name = "cns3xxx-fiq"
@@ -313,7 +313,7 @@ void fiq_dma_map_area(const void *addr, size_t size, int dir)
 	req->flags = dir | CNS3XXX_MAP_AREA;
 	smp_mb();
 
-	if (has_fiq)
+	if (hasfiq)
 		writel_relaxed(FIQ_GENERATE, req->reg);
 
 	v6_dma_map_area(addr, size, dir);
@@ -342,7 +342,7 @@ void fiq_dma_unmap_area(const void *addr, size_t size, int dir)
 	req->flags = dir | CNS3XXX_UNMAP_AREA;
 	smp_mb();
 
-	if (has_fiq)
+	if (hasfiq)
 		writel_relaxed(FIQ_GENERATE, req->reg);
 
 	v6_dma_unmap_area(addr, size, dir);
@@ -372,7 +372,7 @@ void fiq_dma_flush_range(const void *start, const void *end)
 	req->flags = CNS3XXX_FLUSH_RANGE;
 	smp_mb();
 
-	if (has_fiq)
+	if (hasfiq)
 		writel_relaxed(FIQ_GENERATE, req->reg);
 
 	v6_dma_flush_range(start, end);
