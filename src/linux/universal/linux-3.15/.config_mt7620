@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.15.6-rc2 Kernel Configuration
+# Linux/mips 3.15.9 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -956,8 +956,8 @@ CONFIG_OF_MDIO=y
 CONFIG_OF_PCI=y
 CONFIG_OF_PCI_IRQ=y
 CONFIG_OF_MTD=y
-# CONFIG_PARPORT is not set
 CONFIG_ARCH_MIGHT_HAVE_PC_PARPORT=y
+# CONFIG_PARPORT is not set
 CONFIG_BLK_DEV=y
 # CONFIG_BLK_DEV_NULL_BLK is not set
 # CONFIG_BLK_DEV_PCIESSD_MTIP32XX is not set

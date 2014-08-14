@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.13.11.4 Kernel Configuration
+# Linux/arm 3.13.11.5 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -2121,7 +2121,7 @@ CONFIG_USB_SERIAL_ZTE=m
 # CONFIG_USB_ISP1301 is not set
 # CONFIG_USB_RCAR_PHY is not set
 # CONFIG_USB_ULPI is not set
-# CONFIG_USB_GADGET is not set
+CONFIG_USB_GADGET=y
 # CONFIG_USB_GADGET_DEBUG_FILES is not set
 # CONFIG_USB_GADGET_DEBUG_FS is not set
 CONFIG_USB_GADGET_VBUS_DRAW=2

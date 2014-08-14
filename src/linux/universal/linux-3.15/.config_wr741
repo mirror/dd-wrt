@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.15.6-rc2 Kernel Configuration
+# Linux/mips 3.15.9 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -852,8 +852,8 @@ CONFIG_MTD_AR7240_SPI_FLASH=y
 #
 # Broadcom Flash Devices Support
 #
-# CONFIG_PARPORT is not set
 CONFIG_ARCH_MIGHT_HAVE_PC_PARPORT=y
+# CONFIG_PARPORT is not set
 # CONFIG_BLK_DEV is not set
 
 #
