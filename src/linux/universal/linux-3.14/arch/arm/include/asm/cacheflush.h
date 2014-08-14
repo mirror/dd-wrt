@@ -17,10 +17,6 @@
 #include <asm/cachetype.h>
 #include <asm/outercache.h>
 
-#ifdef CONFIG_SMP
-#include <asm/smp.h>
-#endif
-
 #define CACHE_COLOUR(vaddr)	((vaddr & (SHMLBA - 1)) >> PAGE_SHIFT)
 
 /*
