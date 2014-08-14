@@ -223,11 +223,11 @@ __lzo_init_v2(unsigned v, int s1, int s2, int s3, int s4, int s5,
     if (!r)
         return LZO_E_ERROR;
 
-    r = _lzo_config_check();
-    if (r != LZO_E_OK)
-        return r;
+//    r = _lzo_config_check();
+//    if (r != LZO_E_OK)
+//        return r;
 
-    return r;
+    return LZO_E_OK;
 }
 
 
