@@ -1250,6 +1250,11 @@ int gnttab_init(void)
 		}
 	}
 
+	ret = arch_gnttab_init(boot_max_nr_grant_frames,
+			       nr_status_frames(boot_max_nr_grant_frames));
+	if (ret < 0)
+		goto ini_nomem;
+
 	if (gnttab_setup() < 0) {
 		ret = -ENODEV;
 		goto ini_nomem;

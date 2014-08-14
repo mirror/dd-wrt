@@ -6914,6 +6914,20 @@ static int igb_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
 	}
 }
 
+void igb_read_pci_cfg(struct e1000_hw *hw, u32 reg, u16 *value)
+{
+	struct igb_adapter *adapter = hw->back;
+
+	pci_read_config_word(adapter->pdev, reg, value);
+}
+
+void igb_write_pci_cfg(struct e1000_hw *hw, u32 reg, u16 *value)
+{
+	struct igb_adapter *adapter = hw->back;
+
+	pci_write_config_word(adapter->pdev, reg, *value);
+}
+
 s32 igb_read_pcie_cap_reg(struct e1000_hw *hw, u32 reg, u16 *value)
 {
 	struct igb_adapter *adapter = hw->back;
@@ -7843,6 +7857,8 @@ int igb_reinit_queues(struct igb_adapter *adapter)
 
 	if (netif_running(netdev))
 		igb_close(netdev);
+	else
+		igb_reset(adapter);
 
 	igb_clear_interrupt_scheme(adapter);
 
