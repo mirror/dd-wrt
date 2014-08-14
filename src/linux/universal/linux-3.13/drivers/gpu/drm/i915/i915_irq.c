@@ -2392,7 +2392,7 @@ static int semaphore_passed(struct intel_ring_buffer *ring)
 {
 	struct drm_i915_private *dev_priv = ring->dev->dev_private;
 	struct intel_ring_buffer *signaller;
-	u32 seqno, ctl;
+	u32 seqno;
 
 	ring->hangcheck.deadlock++;
 
@@ -2404,15 +2404,12 @@ static int semaphore_passed(struct intel_ring_buffer *ring)
 	if (signaller->hangcheck.deadlock >= I915_NUM_RINGS)
 		return -1;
 
-	/* cursory check for an unkickable deadlock */
-	ctl = I915_READ_CTL(signaller);
-	if (ctl & RING_WAIT_SEMAPHORE && semaphore_passed(signaller) < 0)
-		return -1;
-
 	if (i915_seqno_passed(signaller->get_seqno(signaller, false), seqno))
 		return 1;
 
-	if (signaller->hangcheck.deadlock)
+	/* cursory check for an unkickable deadlock */
+	if (I915_READ_CTL(signaller) & RING_WAIT_SEMAPHORE &&
+	    semaphore_passed(signaller) < 0)
 		return -1;
 
 	return 0;
