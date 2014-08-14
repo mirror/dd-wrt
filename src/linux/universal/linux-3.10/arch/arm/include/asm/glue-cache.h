@@ -101,14 +101,6 @@
 # define MULTI_CACHE 1
 #endif
 
-#if defined(CONFIG_ARCH_CNS3XXX)
-# ifdef _CACHE
-#  define MULTI_CACHE 1
-# else
-#  define _CACHE v6
-# endif
-#endif 
-
 #if defined(CONFIG_CPU_V6) || defined(CONFIG_CPU_V6K)
 # ifdef _CACHE
 #  define MULTI_CACHE 1
@@ -137,11 +129,19 @@
 #define __cpuc_flush_user_range		__glue(_CACHE,_flush_user_cache_range)
 #define __cpuc_coherent_kern_range	__glue(_CACHE,_coherent_kern_range)
 #define __cpuc_coherent_user_range	__glue(_CACHE,_coherent_user_range)
+#ifndef CONFIG_DMA_CACHE_FIQ_BROADCAST
 #define __cpuc_flush_dcache_area	__glue(_CACHE,_flush_kern_dcache_area)
 
 #define dmac_map_area			__glue(_CACHE,_dma_map_area)
 #define dmac_unmap_area			__glue(_CACHE,_dma_unmap_area)
 #define dmac_flush_range		__glue(_CACHE,_dma_flush_range)
+#else
+#define __cpuc_flush_dcache_area	__glue(fiq,_flush_kern_dcache_area)
+
+#define dmac_map_area			__glue(fiq,_dma_map_area)
+#define dmac_unmap_area			__glue(fiq,_dma_unmap_area)
+#define dmac_flush_range		__glue(fiq,_dma_flush_range)
+#endif /* CONFIG_DMA_CACHE_FIQ_BROADCAST */
 #endif
 
 #endif
