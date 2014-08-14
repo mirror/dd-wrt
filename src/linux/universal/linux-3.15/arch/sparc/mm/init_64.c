@@ -350,6 +350,10 @@ void update_mmu_cache(struct vm_area_struct *vma, unsigned long address, pte_t *
 
 	mm = vma->vm_mm;
 
+	/* Don't insert a non-valid PTE into the TSB, we'll deadlock.  */
+	if (!pte_accessible(mm, pte))
+		return;
+
 	spin_lock_irqsave(&mm->context.lock, flags);
 
 #if defined(CONFIG_HUGETLB_PAGE) || defined(CONFIG_TRANSPARENT_HUGEPAGE)
@@ -2614,6 +2618,10 @@ void update_mmu_cache_pmd(struct vm_area_struct *vma, unsigned long addr,
 
 	pte = pmd_val(entry);
 
+	/* Don't insert a non-valid PMD into the TSB, we'll deadlock.  */
+	if (!(pte & _PAGE_VALID))
+		return;
+
 	/* We are fabricating 8MB pages using 4MB real hw pages.  */
 	pte |= (addr & (1UL << REAL_HPAGE_SHIFT));
 
@@ -2694,3 +2702,26 @@ void hugetlb_setup(struct pt_regs *regs)
 	}
 }
 #endif
+
+#ifdef CONFIG_SMP
+#define do_flush_tlb_kernel_range	smp_flush_tlb_kernel_range
+#else
+#define do_flush_tlb_kernel_range	__flush_tlb_kernel_range
+#endif
+
+void flush_tlb_kernel_range(unsigned long start, unsigned long end)
+{
+	if (start < HI_OBP_ADDRESS && end > LOW_OBP_ADDRESS) {
+		if (start < LOW_OBP_ADDRESS) {
+			flush_tsb_kernel_range(start, LOW_OBP_ADDRESS);
+			do_flush_tlb_kernel_range(start, LOW_OBP_ADDRESS);
+		}
+		if (end > HI_OBP_ADDRESS) {
+			flush_tsb_kernel_range(end, HI_OBP_ADDRESS);
+			do_flush_tlb_kernel_range(end, HI_OBP_ADDRESS);
+		}
+	} else {
+		flush_tsb_kernel_range(start, end);
+		do_flush_tlb_kernel_range(start, end);
+	}
+}
