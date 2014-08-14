@@ -556,13 +556,7 @@ void xen_enable_syscall(void)
 	}
 #endif /* CONFIG_X86_64 */
 }
-void xen_enable_nmi(void)
-{
-#ifdef CONFIG_X86_64
-	if (register_callback(CALLBACKTYPE_nmi, nmi))
-		BUG();
-#endif
-}
+
 void __init xen_arch_setup(void)
 {
 	xen_panic_handler_init();
@@ -580,7 +574,6 @@ void __init xen_arch_setup(void)
 
 	xen_enable_sysenter();
 	xen_enable_syscall();
-	xen_enable_nmi();
 #ifdef CONFIG_ACPI
 	if (!(xen_start_info->flags & SIF_INITDOMAIN)) {
 		printk(KERN_INFO "ACPI in unprivileged domain disabled\n");
