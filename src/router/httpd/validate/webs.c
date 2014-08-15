@@ -3176,7 +3176,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "wl_reg_mode");
 	copytonv(wp, "wl_tpc_db");
 	
-#if defined(HAVE_NORTHSTAR) && !defined(HAVE_BUFFALO)
+#if defined(HAVE_NORTHSTAR) && defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
 	sprintf(n, "wl_regdomain");
 	char *reg = websGetVar(wp, n, NULL);
 	if (reg) {
