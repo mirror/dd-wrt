@@ -196,9 +196,11 @@ void start_sysinit(void)
 #endif
 		fseek(fp, firstoffset, SEEK_SET);
 		fread(buf2, 19, 1, fp);
-		if (buf2[0] == 0xff)
+
+		if (buf2[0] == 0xff) {
 			fseek(fp, secondoffset, SEEK_SET);
-		fread(buf2, 19, 1, fp);
+			fread(buf2, 19, 1, fp);
+		}
 
 		fclose(fp);
 		fprintf(stderr, "configure eth0 to %s\n", buf2);
