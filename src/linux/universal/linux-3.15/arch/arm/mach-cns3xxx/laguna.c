@@ -369,11 +369,34 @@ static struct cns3xxx_plat_info laguna_net_data = {
 	},
 };
 
+static struct resource laguna_net_resource[] = {
+	{
+		.name = "eth0_mem",
+		.start = CNS3XXX_SWITCH_BASE,
+		.end = CNS3XXX_SWITCH_BASE + SZ_4K - 1,
+		.flags = IORESOURCE_MEM
+	}, {
+		.name = "eth_rx",
+		.start = IRQ_CNS3XXX_SW_R0RXC,
+		.end = IRQ_CNS3XXX_SW_R0RXC,
+		.flags = IORESOURCE_IRQ
+	}, {
+		.name = "eth_stat",
+		.start = IRQ_CNS3XXX_SW_STATUS,
+		.end = IRQ_CNS3XXX_SW_STATUS,
+		.flags = IORESOURCE_IRQ
+	}
+};
+
 static struct platform_device laguna_net_device = {
 	.name = "cns3xxx_eth",
 	.id = 0,
+	.resource = laguna_net_resource,
+	.num_resources = ARRAY_SIZE(laguna_net_resource),
 	.dev.platform_data = &laguna_net_data,
 };
+
+
 
 /*
  * UART
@@ -964,7 +987,7 @@ static int __init laguna_model_setup(void)
 			cns3xxx_pwr_power_up(1 << PM_PLL_HM_PD_CTRL_REG_OFFSET_PLL_USB);
 
 			/* DRVVBUS pins share with GPIOA */
-			mem = (void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0010);
+			mem = (void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0014);
 			reg = __raw_readl(mem);
 			reg |= 0x8;
 			__raw_writel(reg, mem);
@@ -991,7 +1014,7 @@ static int __init laguna_model_setup(void)
 			cns3xxx_pwr_power_up(1 << PM_PLL_HM_PD_CTRL_REG_OFFSET_PLL_USB);
 
 			/* DRVVBUS pins share with GPIOA */
-			mem = (void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0010);
+			mem = (void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0014);
 			reg = __raw_readl(mem);
 			reg |= 0x8;
 			__raw_writel(reg, mem);
