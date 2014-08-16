@@ -147,7 +147,7 @@ unsigned int daysformonth(unsigned int month, unsigned int year)
 								     || ((year % 400) == 0)))
 							       && (month == 2)));
 }
-
+#ifdef HAVE_IPV6
 const char *getifaddr(char *ifname, int family, int linklocal)
 {
 	static char buf[INET6_ADDRSTRLEN];
@@ -185,7 +185,7 @@ const char *getifaddr(char *ifname, int family, int linklocal)
 	freeifaddrs(ifap);
 	return NULL;
 }
-
+#endif
 #ifdef HAVE_VLANTAGGING
 char *getBridge(char *ifname)
 {
