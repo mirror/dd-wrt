@@ -61,8 +61,9 @@
 #include <linux/sockios.h>
 #include <cymac.h>
 #include <broadcom.h>
+#ifdef HAVE_IPV6
 #include <ifaddrs.h>
-
+#endif
 #ifndef IP_ALEN
 #define IP_ALEN 4
 #endif

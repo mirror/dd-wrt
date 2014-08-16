@@ -64,6 +64,14 @@ static void ipv6netmask(unsigned prefix_length, struct sockaddr_in6 *sa)
 		hb[onebytes] = x;
 	}
 }
+#ifndef IFF_LOWER_UP
+#define IFF_LOWER_UP	0x10000		/* driver signals L1 up		*/
+#endif
+
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC   02000000
+#define SOCK_NONBLOCK  04000
+#endif
 
 static void dealwithipv6(stor **list, stor** head)
 {
