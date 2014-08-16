@@ -96,6 +96,7 @@ OBJS += $(TOP)/register/register_check.o
 endif
 ifeq ($(CONFIG_IPV6),y)
 OBJS += getifaddrs.o
+CFLAGS += -DHAVE_IPV6
 endif
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
   CFLAGS += -DHAVE_DROPBEAR -DHAVE_SSHD
