@@ -23,10 +23,15 @@
 #include <mach/cns3xxx.h>
 #include "core.h"
 
+enum cns3xxx_access_type {
+	CNS3XXX_HOST_TYPE = 0,
+	CNS3XXX_CFG0_TYPE,
+	CNS3XXX_CFG1_TYPE,
+	CNS3XXX_NUM_ACCESS_TYPES,
+};
+
 struct cns3xxx_pcie {
-	void __iomem *host_regs; /* PCI config registers for host bridge */
-	void __iomem *cfg0_regs; /* PCI Type 0 config registers */
-	void __iomem *cfg1_regs; /* PCI Type 1 config registers */
+	struct map_desc cfg_bases[CNS3XXX_NUM_ACCESS_TYPES];
 	unsigned int irqs[2];
 	struct resource res_io;
 	struct resource res_mem;
@@ -61,6 +66,7 @@ static void __iomem *cns3xxx_pci_cfg_base(struct pci_bus *bus,
 	int busno = bus->number;
 	int slot = PCI_SLOT(devfn);
 	int offset;
+	enum cns3xxx_access_type type;
 	void __iomem *base;
 
 	/* If there is no link, just show the CNS PCI bridge. */
@@ -72,21 +78,17 @@ static void __iomem *cns3xxx_pci_cfg_base(struct pci_bus *bus,
 	 * we still want to access it. For this to work, we must place
 	 * the first device on the same bus as the CNS PCI bridge.
 	 */
-	if (busno == 0) { /* directly connected PCIe bus */
-		switch (slot) {
-		case 0: /* host bridge device, function 0 only */
-			base = cnspci->host_regs;
-			break;
-		case 1: /* directly connected device */
-			base = cnspci->cfg0_regs;
-			break;
-		default:
-			return NULL; /* no such device */
-		}
-	} else /* remote PCI bus */
-		base = cnspci->cfg1_regs;
+	if (busno == 0) {
+		if (slot > 1)
+			return NULL;
+		type = slot;
+	} else {
+		type = CNS3XXX_CFG1_TYPE;
+	}
 
+	base = (void __iomem *)cnspci->cfg_bases[type].virtual;
 	offset = ((busno & 0xf) << 20) | (devfn << 12) | (where & 0xffc);
+
 	return base + offset;
 }
 
@@ -264,19 +266,36 @@ static int cns3xxx_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 
 static struct cns3xxx_pcie cns3xxx_pcie[] = {
 	[0] = {
-		.host_regs = (void __iomem *)CNS3XXX_PCIE0_HOST_BASE_VIRT,
-		.cfg0_regs = (void __iomem *)CNS3XXX_PCIE0_CFG0_BASE_VIRT,
-		.cfg1_regs = (void __iomem *)CNS3XXX_PCIE0_CFG1_BASE_VIRT,
+		.cfg_bases = {
+			[CNS3XXX_HOST_TYPE] = {
+				.virtual = CNS3XXX_PCIE0_HOST_BASE_VIRT,
+				.pfn = __phys_to_pfn(CNS3XXX_PCIE0_HOST_BASE),
+				.length = SZ_16M,
+				.type = MT_DEVICE,
+			},
+			[CNS3XXX_CFG0_TYPE] = {
+				.virtual = CNS3XXX_PCIE0_CFG0_BASE_VIRT,
+				.pfn = __phys_to_pfn(CNS3XXX_PCIE0_CFG0_BASE),
+				.length = SZ_16M,
+				.type = MT_DEVICE,
+			},
+			[CNS3XXX_CFG1_TYPE] = {
+				.virtual = CNS3XXX_PCIE0_CFG1_BASE_VIRT,
+				.pfn = __phys_to_pfn(CNS3XXX_PCIE0_CFG1_BASE),
+				.length = SZ_16M,
+				.type = MT_DEVICE,
+			},
+		},
 		.res_io = {
 			.name = "PCIe0 I/O space",
 			.start = CNS3XXX_PCIE0_IO_BASE,
-			.end = CNS3XXX_PCIE0_CFG0_BASE - 1, /* 16 MiB */
+			.end = CNS3XXX_PCIE0_IO_BASE + SZ_16M - 1,
 			.flags = IORESOURCE_IO,
 		},
 		.res_mem = {
 			.name = "PCIe0 non-prefetchable",
 			.start = CNS3XXX_PCIE0_MEM_BASE,
-			.end = CNS3XXX_PCIE0_HOST_BASE - 1, /* 176 MiB */
+			.end = CNS3XXX_PCIE0_MEM_BASE + SZ_16M - 1,
 			.flags = IORESOURCE_MEM,
 		},
 		.irqs = { IRQ_CNS3XXX_PCIE0_RC, IRQ_CNS3XXX_PCIE0_DEVICE, },
@@ -289,19 +308,36 @@ static struct cns3xxx_pcie cns3xxx_pcie[] = {
 		},
 	},
 	[1] = {
-		.host_regs = (void __iomem *)CNS3XXX_PCIE1_HOST_BASE_VIRT,
-		.cfg0_regs = (void __iomem *)CNS3XXX_PCIE1_CFG0_BASE_VIRT,
-		.cfg1_regs = (void __iomem *)CNS3XXX_PCIE1_CFG1_BASE_VIRT,
+		.cfg_bases = {
+			[CNS3XXX_HOST_TYPE] = {
+				.virtual = CNS3XXX_PCIE1_HOST_BASE_VIRT,
+				.pfn = __phys_to_pfn(CNS3XXX_PCIE1_HOST_BASE),
+				.length = SZ_16M,
+				.type = MT_DEVICE,
+			},
+			[CNS3XXX_CFG0_TYPE] = {
+				.virtual = CNS3XXX_PCIE1_CFG0_BASE_VIRT,
+				.pfn = __phys_to_pfn(CNS3XXX_PCIE1_CFG0_BASE),
+				.length = SZ_16M,
+				.type = MT_DEVICE,
+			},
+			[CNS3XXX_CFG1_TYPE] = {
+				.virtual = CNS3XXX_PCIE1_CFG1_BASE_VIRT,
+				.pfn = __phys_to_pfn(CNS3XXX_PCIE1_CFG1_BASE),
+				.length = SZ_16M,
+				.type = MT_DEVICE,
+			},
+		},
 		.res_io = {
 			.name = "PCIe1 I/O space",
 			.start = CNS3XXX_PCIE1_IO_BASE,
-			.end = CNS3XXX_PCIE1_CFG0_BASE - 1, /* 16 MiB */
+			.end = CNS3XXX_PCIE1_IO_BASE + SZ_16M - 1,
 			.flags = IORESOURCE_IO,
 		},
 		.res_mem = {
 			.name = "PCIe1 non-prefetchable",
 			.start = CNS3XXX_PCIE1_MEM_BASE,
-			.end = CNS3XXX_PCIE1_HOST_BASE - 1, /* 176 MiB */
+			.end = CNS3XXX_PCIE1_MEM_BASE + SZ_16M - 1,
 			.flags = IORESOURCE_MEM,
 		},
 		.irqs = { IRQ_CNS3XXX_PCIE1_RC, IRQ_CNS3XXX_PCIE1_DEVICE, },
@@ -378,9 +414,9 @@ static void __init cns3xxx_pcie_hw_init(struct cns3xxx_pcie *cnspci)
 	pci_bus_read_config_byte(&bus, devfn, PCI_SUBORDINATE_BUS, &tmp8);
 
 	pci_bus_write_config_word(&bus, devfn, PCI_MEMORY_BASE, mem_base);
-	pci_bus_write_config_word(&bus, devfn, PCI_MEMORY_LIMIT, mem_limit);
+	pci_bus_write_config_word(&bus, devfn, PCI_MEMORY_LIMIT, host_base);
 	pci_bus_write_config_word(&bus, devfn, PCI_IO_BASE_UPPER16, io_base);
-	pci_bus_write_config_word(&bus, devfn, PCI_IO_LIMIT_UPPER16, io_limit);
+	pci_bus_write_config_word(&bus, devfn, PCI_IO_LIMIT_UPPER16, cfg0_base);
 
 	pci_bus_read_config_byte(&bus, devfn, PCI_CAPABILITY_LIST, &cp);
 	while (cp != 0) {
