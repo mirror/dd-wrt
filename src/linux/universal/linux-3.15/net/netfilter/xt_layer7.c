@@ -69,13 +69,15 @@ static int total_acct_packets(struct nf_conn *ct)
 	BUG_ON(ct == NULL);
 	return (ct->counters[IP_CT_DIR_ORIGINAL].packets + ct->counters[IP_CT_DIR_REPLY].packets);
 #else
-	struct nf_conn_counter *acct;
+	struct nf_conn_acct *acct;
+	struct nf_conn_counter *counter;
 
-	BUG_ON(ct == NULL);
 	acct = nf_conn_acct_find(ct);
 	if (!acct)
 		return 0;
-	return (atomic64_read(&acct[IP_CT_DIR_ORIGINAL].packets) + atomic64_read(&acct[IP_CT_DIR_REPLY].packets));
+
+	counter = acct->counter;
+	return (atomic64_read(&counter[IP_CT_DIR_ORIGINAL].packets) + atomic64_read(&counter[IP_CT_DIR_REPLY].packets));
 #endif
 }
 
