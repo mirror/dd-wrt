@@ -314,7 +314,7 @@ void fiq_dma_map_area(const void *addr, size_t size, int dir)
 	smp_mb();
 
 	if (hasfiq)
-	    writel_relaxed(FIQ_GENERATE, req->reg);
+		writel_relaxed(FIQ_GENERATE, req->reg);
 
 	v6_dma_map_area(addr, size, dir);
 	while (req->flags)
@@ -343,7 +343,7 @@ void fiq_dma_unmap_area(const void *addr, size_t size, int dir)
 	smp_mb();
 
 	if (hasfiq)
-	    writel_relaxed(FIQ_GENERATE, req->reg);
+		writel_relaxed(FIQ_GENERATE, req->reg);
 
 	v6_dma_unmap_area(addr, size, dir);
 	while (req->flags)
@@ -373,7 +373,7 @@ void fiq_dma_flush_range(const void *start, const void *end)
 	smp_mb();
 
 	if (hasfiq)
-	    writel_relaxed(FIQ_GENERATE, req->reg);
+		writel_relaxed(FIQ_GENERATE, req->reg);
 
 	v6_dma_flush_range(start, end);
 
