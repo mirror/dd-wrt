@@ -5,7 +5,7 @@
  *
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
-
+#ifdef NEED_PRINF
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -50,3 +50,4 @@ die(char *msg, ...)
   vlog(msg, args);
   exit(1);
 }
+#endif
