@@ -97,7 +97,6 @@ cli_alloc_out(cli *c, int size)
   o->wpos += size;
   return o->wpos - size;
 }
-
 /**
  * cli_printf - send reply to a CLI connection
  * @c: CLI connection
@@ -158,7 +157,6 @@ cli_printf(cli *c, int code, char *msg, ...)
   buf[size++] = '\n';
   memcpy(cli_alloc_out(c, size), buf, size);
 }
-
 static void
 cli_copy_message(cli *c)
 {

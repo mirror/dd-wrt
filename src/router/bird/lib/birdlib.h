@@ -47,6 +47,7 @@ struct rate_limit {
 };
 
 #define log log_msg
+#ifdef NEED_PRINTF
 void log_reset(void);
 void log_commit(int class);
 void log_msg(char *msg, ...);
@@ -54,7 +55,17 @@ void log_rl(struct rate_limit *rl, char *msg, ...);
 void logn(char *msg, ...);
 void die(char *msg, ...) NORET;
 void bug(char *msg, ...) NORET;
-
+void debug(char *msg, ...);		/* Printf to debug output */
+#else
+#define log_reset() do { } while(0)
+#define log_commit(class) do { } while(0)
+#define log_msg(msg, ...) do { } while(0)
+#define log_rl(rl, msg, ...) do { } while(0)
+#define logn(msg, ...) do { } while(0)
+#define die(msg, ...) do {  exit(-1); } while(0)
+#define bug(msg, ...) do {  exit(-1); } while(0)
+#define debug(msg, ...) do { } while(0)
+#endif
 #define L_DEBUG "\001"			/* Debugging messages */
 #define L_TRACE "\002"			/* Protocol tracing */
 #define L_INFO "\003"			/* Informational messages */
@@ -64,8 +75,6 @@ void bug(char *msg, ...) NORET;
 #define L_AUTH "\007"			/* Authorization failed etc. */
 #define L_FATAL "\010"			/* Fatal errors */
 #define L_BUG "\011"			/* BIRD bugs */
-
-void debug(char *msg, ...);		/* Printf to debug output */
 
 /* Debugging */
 

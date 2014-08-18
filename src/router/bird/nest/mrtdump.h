@@ -25,7 +25,11 @@
 
 
 /* implemented in sysdep */
+#ifdef NEED_PRINTF
 void mrt_dump_message(struct proto *p, u16 type, u16 subtype, byte *buf, u32 len);
+#else
+#define mrt_dump_message(p, type, subtype, buf, len) do { } while(0)
+#endif
 
 #endif
 

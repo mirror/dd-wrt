@@ -14,7 +14,7 @@
  * used by this module are described in |birdlib.h| and also in the
  * user's manual.
  */
-
+#ifdef NEED_PRINTF
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -69,9 +69,9 @@ static char *class_names[] = {
 static char log_buffer[LOG_BUFFER_SIZE];
 static char *log_buffer_pos;
 static int log_buffer_remains;
-
+#ifdef NEED_PRINTF
 const char *log_buffer_ptr = log_buffer;
-
+#endif
 
 /**
  * log_reset - reset the log buffer
@@ -370,3 +370,4 @@ mrt_dump_message(struct proto *p, u16 type, u16 subtype, byte *buf, u32 len)
   if (p->cf->global->mrtdump_file != -1)
     write(p->cf->global->mrtdump_file, buf, len);
 }
+#endif
