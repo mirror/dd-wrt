@@ -249,6 +249,9 @@ int stop_services_main(int argc, char **argv)
 #ifdef HAVE_UPNP
 	stop_service_f("upnp");
 #endif
+#ifdef HAVE_DNSMASQ
+	stop_service_f("dnsmasq");
+#endif
 	stop_service_f("udhcpd");
 	startstop_f("dns_clear_resolv");
 	stop_service_f("cron");
