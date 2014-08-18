@@ -52,7 +52,6 @@ extern struct cli *this_cli;		/* Used during parsing */
 #define CLI_ASYNC_CODE 10000
 
 /* Functions to be called by command handlers */
-
 void cli_printf(cli *, int, char *, ...);
 #define cli_msg(x...) cli_printf(this_cli, x)
 void cli_set_log_echo(cli *, unsigned int mask, unsigned int size);

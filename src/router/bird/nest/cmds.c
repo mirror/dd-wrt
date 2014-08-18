@@ -92,8 +92,9 @@ cmd_show_memory(void)
   cli_msg(0, "");
 }
 
+#ifdef NEED_PRINTF
 extern const char *log_buffer_ptr;
-
+#endif
 void
 cmd_eval(struct f_inst *expr)
 {
@@ -107,6 +108,8 @@ cmd_eval(struct f_inst *expr)
     }
 
   val_print(v);
+#ifdef NEED_PRINTF
   cli_msg(23, "%s", log_buffer_ptr);
+#endif
   log_reset();
 }

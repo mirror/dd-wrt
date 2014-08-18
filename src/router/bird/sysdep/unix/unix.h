@@ -66,10 +66,13 @@ void test_old_bird(char *path);
 void krt_io_init(void);
 
 /* log.c */
-
+#ifdef NEED_PRINTF
 void log_init_debug(char *);		/* Initialize debug dump to given file (NULL=stderr, ""=off) */
 void log_switch(int debug, list *l, char *); /* Use l=NULL for initial switch */
-
+#else
+#define log_init_debug(d) do {} while(0)
+#define log_switch(debug, l, c) do {} while(0)
+#endif
 struct log_config {
   node n;
   unsigned int mask;			/* Classes to log */
