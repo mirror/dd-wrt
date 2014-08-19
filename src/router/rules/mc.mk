@@ -42,6 +42,7 @@ mc-configure: ncurses
 	--without-tk \
 	--without-xview \
 	--disable-glibtest \
+	--disable-vfs-sftp \
 	--prefix=/usr \
 
 #	--without-subshell \
