@@ -2671,20 +2671,11 @@ gso:
 		if (!list_empty(&ptype_all)) 
 			dev_queue_xmit_nit(nskb, dev);
 
-#ifdef CONFIG_ETHERNET_PACKET_MANGLE
-		if (!dev->eth_mangle_tx ||
-		    (nskb = dev->eth_mangle_tx(dev, nskb)) != NULL)
-#else
-		if (1)
-#endif
-		{
-			skb_len = nskb->len;
-			trace_net_dev_start_xmit(nskb, dev);
-			rc = ops->ndo_start_xmit(nskb, dev);
-			trace_net_dev_xmit(nskb, rc, dev, skb_len);
-		} else {
-			rc = NETDEV_TX_OK;
-		}
+		skb_len = nskb->len;
+		trace_net_dev_start_xmit(nskb, dev);
+		rc = ops->ndo_start_xmit(nskb, dev);
+		trace_net_dev_xmit(nskb, rc, dev, skb_len);
+
 		if (unlikely(rc != NETDEV_TX_OK)) {
 			if (rc & ~NETDEV_TX_MASK)
 				goto out_kfree_gso_skb;
