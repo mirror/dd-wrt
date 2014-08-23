@@ -694,9 +694,13 @@ static PyMethodDef preg_methods[] = {
 void initpreg(void)
 {
 	PyObject *m;
+	PyObject *dep_samba_dcerpc_base;
 	PyObject *dep_talloc;
 	PyObject *dep_samba_dcerpc_misc;
-	PyObject *dep_samba_dcerpc_base;
+
+	dep_samba_dcerpc_base = PyImport_ImportModule("samba.dcerpc.base");
+	if (dep_samba_dcerpc_base == NULL)
+		return;
 
 	dep_talloc = PyImport_ImportModule("talloc");
 	if (dep_talloc == NULL)
@@ -704,10 +708,6 @@ void initpreg(void)
 
 	dep_samba_dcerpc_misc = PyImport_ImportModule("samba.dcerpc.misc");
 	if (dep_samba_dcerpc_misc == NULL)
-		return;
-
-	dep_samba_dcerpc_base = PyImport_ImportModule("samba.dcerpc.base");
-	if (dep_samba_dcerpc_base == NULL)
 		return;
 
 	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");

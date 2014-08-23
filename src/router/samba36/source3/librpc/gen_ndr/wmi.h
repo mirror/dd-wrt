@@ -22,7 +22,7 @@ struct BSTR {
 struct Delete {
 	struct {
 		struct ORPCTHIS ORPCthis;
-		const char *wszName;/* [ref,charset(UTF16)] */
+		const char *wszName;/* [charset(UTF16),ref] */
 	} in;
 
 	struct {
@@ -910,7 +910,7 @@ struct IEnumWbemClassObject_Next {
 
 	struct {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
-		struct MInterfacePointer **apObjects;/* [ref,length_is(*puReturned),size_is(uCount)] */
+		struct MInterfacePointer **apObjects;/* [length_is(*puReturned),ref,size_is(uCount)] */
 		uint32_t *puReturned;/* [ref] */
 		WERROR result;
 	} out;
@@ -1108,13 +1108,13 @@ struct EstablishPosition {
 struct RequestChallenge {
 	struct {
 		struct ORPCTHIS ORPCthis;
-		const char *wszNetworkResource;/* [unique,charset(UTF16)] */
+		const char *wszNetworkResource;/* [charset(UTF16),unique] */
 		const char *wszUser;/* [unique,charset(UTF16)] */
 	} in;
 
 	struct {
 		struct ORPCTHAT *ORPCthat;/* [ref] */
-		uint8_t *Nonce;/* [ref,length_is(16),size_is(16)] */
+		uint8_t *Nonce;/* [length_is(16),ref,size_is(16)] */
 		WERROR result;
 	} out;
 
@@ -1125,7 +1125,7 @@ struct WBEMLogin {
 	struct {
 		struct ORPCTHIS ORPCthis;
 		const char *wszPreferredLocale;/* [unique,charset(UTF16)] */
-		uint8_t *AccessToken;/* [unique,length_is(16),size_is(16)] */
+		uint8_t *AccessToken;/* [length_is(16),unique,size_is(16)] */
 		int32_t lFlags;
 		struct MInterfacePointer *pCtx;/* [ref] */
 	} in;

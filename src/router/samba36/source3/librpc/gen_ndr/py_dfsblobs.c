@@ -21,8 +21,8 @@ staticforward PyTypeObject dfs_referral_resp_Type;
 staticforward PyTypeObject dfs_GetDFSReferral_in_Type;
 staticforward PyTypeObject dfsblobs_InterfaceType;
 
-void initdfsblobs(void);static PyTypeObject *Object_Type;
-static PyTypeObject *ClientConnection_Type;
+void initdfsblobs(void);static PyTypeObject *ClientConnection_Type;
+static PyTypeObject *Object_Type;
 
 static PyObject *py_dfs_referral_v1_get_size(PyObject *obj, void *closure)
 {
@@ -1416,13 +1416,9 @@ static PyMethodDef dfsblobs_methods[] = {
 void initdfsblobs(void)
 {
 	PyObject *m;
-	PyObject *dep_talloc;
 	PyObject *dep_samba_dcerpc_misc;
 	PyObject *dep_samba_dcerpc_base;
-
-	dep_talloc = PyImport_ImportModule("talloc");
-	if (dep_talloc == NULL)
-		return;
+	PyObject *dep_talloc;
 
 	dep_samba_dcerpc_misc = PyImport_ImportModule("samba.dcerpc.misc");
 	if (dep_samba_dcerpc_misc == NULL)
@@ -1432,12 +1428,16 @@ void initdfsblobs(void)
 	if (dep_samba_dcerpc_base == NULL)
 		return;
 
-	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
-	if (Object_Type == NULL)
+	dep_talloc = PyImport_ImportModule("talloc");
+	if (dep_talloc == NULL)
 		return;
 
 	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
 	if (ClientConnection_Type == NULL)
+		return;
+
+	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
+	if (Object_Type == NULL)
 		return;
 
 	dfs_referral_v1_Type.tp_base = Object_Type;
@@ -1525,13 +1525,13 @@ void initdfsblobs(void)
 	if (m == NULL)
 		return;
 
+	PyModule_AddObject(m, "DFS_FLAG_REFERRAL_DOMAIN_RESP", PyInt_FromLong(DFS_FLAG_REFERRAL_DOMAIN_RESP));
+	PyModule_AddObject(m, "DFS_HEADER_FLAG_REFERAL_SVR", PyInt_FromLong(DFS_HEADER_FLAG_REFERAL_SVR));
+	PyModule_AddObject(m, "DFS_FLAG_REFERRAL_FIRST_TARGET_SET", PyInt_FromLong(DFS_FLAG_REFERRAL_FIRST_TARGET_SET));
 	PyModule_AddObject(m, "DFS_SERVER_ROOT", PyInt_FromLong(DFS_SERVER_ROOT));
+	PyModule_AddObject(m, "DFS_HEADER_FLAG_STORAGE_SVR", PyInt_FromLong(DFS_HEADER_FLAG_STORAGE_SVR));
 	PyModule_AddObject(m, "DFS_SERVER_NON_ROOT", PyInt_FromLong(DFS_SERVER_NON_ROOT));
 	PyModule_AddObject(m, "DFS_HEADER_FLAG_TARGET_BCK", PyInt_FromLong(DFS_HEADER_FLAG_TARGET_BCK));
-	PyModule_AddObject(m, "DFS_FLAG_REFERRAL_DOMAIN_RESP", PyInt_FromLong(DFS_FLAG_REFERRAL_DOMAIN_RESP));
-	PyModule_AddObject(m, "DFS_FLAG_REFERRAL_FIRST_TARGET_SET", PyInt_FromLong(DFS_FLAG_REFERRAL_FIRST_TARGET_SET));
-	PyModule_AddObject(m, "DFS_HEADER_FLAG_STORAGE_SVR", PyInt_FromLong(DFS_HEADER_FLAG_STORAGE_SVR));
-	PyModule_AddObject(m, "DFS_HEADER_FLAG_REFERAL_SVR", PyInt_FromLong(DFS_HEADER_FLAG_REFERAL_SVR));
 	Py_INCREF((PyObject *)(void *)&dfs_referral_v1_Type);
 	PyModule_AddObject(m, "dfs_referral_v1", (PyObject *)(void *)&dfs_referral_v1_Type);
 	Py_INCREF((PyObject *)(void *)&dfs_referral_v2_Type);

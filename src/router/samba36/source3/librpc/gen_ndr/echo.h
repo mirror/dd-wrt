@@ -145,7 +145,7 @@ struct echo_TestCall {
 	} in;
 
 	struct {
-		const char **s2;/* [ref,charset(UTF16)] */
+		const char **s2;/* [charset(UTF16),ref] */
 	} out;
 
 };

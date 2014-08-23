@@ -49,7 +49,7 @@ enum NL_AUTH_MESSAGE_TYPE
 union NL_AUTH_MESSAGE_BUFFER {
 	const char * a;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM),case(NL_FLAG_OEM_NETBIOS_DOMAIN_NAME)] */
 	const char * u;/* [case(NL_FLAG_UTF8_DNS_DOMAIN_NAME)] */
-}/* [noprint,nodiscriminant,public] */;
+}/* [nodiscriminant,noprint,public] */;
 
 union NL_AUTH_MESSAGE_BUFFER_REPLY {
 	uint32_t dummy;/* [case(NL_NEGOTIATE_RESPONSE)] */
@@ -102,7 +102,7 @@ struct NL_AUTH_SIGNATURE {
 	uint8_t SequenceNumber[8];
 	uint8_t Checksum[8];
 	uint8_t Confounder[8];
-}/* [public,flag(LIBNDR_PRINT_ARRAY_HEX)] */;
+}/* [flag(LIBNDR_PRINT_ARRAY_HEX),public] */;
 
 struct NL_AUTH_SHA2_SIGNATURE {
 	enum NL_SIGNATURE_ALGORITHM SignatureAlgorithm;/* [value(NL_SIGN_HMAC_SHA256)] */

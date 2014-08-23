@@ -136,10 +136,10 @@ staticforward PyTypeObject srvsvc_NetTransportInfoCtr_Type;
 staticforward PyTypeObject srvsvc_NetRemoteTODInfo_Type;
 staticforward PyTypeObject srvsvc_InterfaceType;
 
-void initsrvsvc(void);static PyTypeObject *sec_desc_buf_Type;
-static PyTypeObject *policy_handle_Type;
+void initsrvsvc(void);static PyTypeObject *policy_handle_Type;
 static PyTypeObject *Object_Type;
 static PyTypeObject *ClientConnection_Type;
+static PyTypeObject *sec_desc_buf_Type;
 
 static PyObject *py_srvsvc_NetCharDevInfo0_get_device(PyObject *obj, void *closure)
 {
@@ -18814,23 +18814,11 @@ static PyMethodDef srvsvc_methods[] = {
 void initsrvsvc(void)
 {
 	PyObject *m;
-	PyObject *dep_samba_dcerpc_security;
-	PyObject *dep_talloc;
-	PyObject *dep_samba_dcerpc_misc;
 	PyObject *dep_samba_dcerpc_base;
 	PyObject *dep_samba_dcerpc_svcctl;
-
-	dep_samba_dcerpc_security = PyImport_ImportModule("samba.dcerpc.security");
-	if (dep_samba_dcerpc_security == NULL)
-		return;
-
-	dep_talloc = PyImport_ImportModule("talloc");
-	if (dep_talloc == NULL)
-		return;
-
-	dep_samba_dcerpc_misc = PyImport_ImportModule("samba.dcerpc.misc");
-	if (dep_samba_dcerpc_misc == NULL)
-		return;
+	PyObject *dep_talloc;
+	PyObject *dep_samba_dcerpc_security;
+	PyObject *dep_samba_dcerpc_misc;
 
 	dep_samba_dcerpc_base = PyImport_ImportModule("samba.dcerpc.base");
 	if (dep_samba_dcerpc_base == NULL)
@@ -18840,8 +18828,16 @@ void initsrvsvc(void)
 	if (dep_samba_dcerpc_svcctl == NULL)
 		return;
 
-	sec_desc_buf_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_security, "sec_desc_buf");
-	if (sec_desc_buf_Type == NULL)
+	dep_talloc = PyImport_ImportModule("talloc");
+	if (dep_talloc == NULL)
+		return;
+
+	dep_samba_dcerpc_security = PyImport_ImportModule("samba.dcerpc.security");
+	if (dep_samba_dcerpc_security == NULL)
+		return;
+
+	dep_samba_dcerpc_misc = PyImport_ImportModule("samba.dcerpc.misc");
+	if (dep_samba_dcerpc_misc == NULL)
 		return;
 
 	policy_handle_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_misc, "policy_handle");
@@ -18854,6 +18850,10 @@ void initsrvsvc(void)
 
 	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
 	if (ClientConnection_Type == NULL)
+		return;
+
+	sec_desc_buf_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_security, "sec_desc_buf");
+	if (sec_desc_buf_Type == NULL)
 		return;
 
 	srvsvc_NetCharDevInfo0_Type.tp_base = Object_Type;
@@ -19733,28 +19733,28 @@ void initsrvsvc(void)
 		return;
 
 	PyModule_AddObject(m, "SHARE_1005_IN_DFS", PyInt_FromLong(SHARE_1005_IN_DFS));
-	PyModule_AddObject(m, "STYPE_DEVICE", PyInt_FromLong(STYPE_DEVICE));
-	PyModule_AddObject(m, "PLATFORM_ID_NT", PyInt_FromLong(PLATFORM_ID_NT));
-	PyModule_AddObject(m, "STYPE_IPC_TEMPORARY", PyInt_FromLong(STYPE_IPC_TEMPORARY));
-	PyModule_AddObject(m, "STYPE_HIDDEN", PyInt_FromLong(0x80000000));
-	PyModule_AddObject(m, "STYPE_PRINTQ", PyInt_FromLong(STYPE_PRINTQ));
-	PyModule_AddObject(m, "STYPE_TEMPORARY", PyInt_FromLong(0x40000000));
-	PyModule_AddObject(m, "PLATFORM_ID_OSF", PyInt_FromLong(PLATFORM_ID_OSF));
-	PyModule_AddObject(m, "STYPE_DISKTREE", PyInt_FromLong(STYPE_DISKTREE));
-	PyModule_AddObject(m, "STYPE_DISKTREE_HIDDEN", PyInt_FromLong(STYPE_DISKTREE_HIDDEN));
-	PyModule_AddObject(m, "PLATFORM_ID_VMS", PyInt_FromLong(PLATFORM_ID_VMS));
-	PyModule_AddObject(m, "STYPE_IPC_HIDDEN", PyInt_FromLong(STYPE_IPC_HIDDEN));
-	PyModule_AddObject(m, "SHARE_1005_DFS_ROOT", PyInt_FromLong(SHARE_1005_DFS_ROOT));
 	PyModule_AddObject(m, "STYPE_PRINTQ_HIDDEN", PyInt_FromLong(STYPE_PRINTQ_HIDDEN));
-	PyModule_AddObject(m, "STYPE_DEVICE_TEMPORARY", PyInt_FromLong(STYPE_DEVICE_TEMPORARY));
-	PyModule_AddObject(m, "STYPE_IPC", PyInt_FromLong(STYPE_IPC));
-	PyModule_AddObject(m, "SHARE_1005_CSC_POLICY_MASK", PyInt_FromLong(0x00000030));
-	PyModule_AddObject(m, "STYPE_PRINTQ_TEMPORARY", PyInt_FromLong(STYPE_PRINTQ_TEMPORARY));
+	PyModule_AddObject(m, "STYPE_DEVICE", PyInt_FromLong(STYPE_DEVICE));
+	PyModule_AddObject(m, "STYPE_TEMPORARY", PyInt_FromLong(0x40000000));
 	PyModule_AddObject(m, "STYPE_DEVICE_HIDDEN", PyInt_FromLong(STYPE_DEVICE_HIDDEN));
-	PyModule_AddObject(m, "STYPE_DISKTREE_TEMPORARY", PyInt_FromLong(STYPE_DISKTREE_TEMPORARY));
 	PyModule_AddObject(m, "PLATFORM_ID_OS2", PyInt_FromLong(PLATFORM_ID_OS2));
+	PyModule_AddObject(m, "SHARE_1005_DFS_ROOT", PyInt_FromLong(SHARE_1005_DFS_ROOT));
+	PyModule_AddObject(m, "STYPE_PRINTQ_TEMPORARY", PyInt_FromLong(STYPE_PRINTQ_TEMPORARY));
+	PyModule_AddObject(m, "STYPE_IPC", PyInt_FromLong(STYPE_IPC));
 	PyModule_AddObject(m, "SHARE_1005_CSC_POLICY_SHIFT", PyInt_FromLong(4));
+	PyModule_AddObject(m, "SHARE_1005_CSC_POLICY_MASK", PyInt_FromLong(0x00000030));
+	PyModule_AddObject(m, "PLATFORM_ID_OSF", PyInt_FromLong(PLATFORM_ID_OSF));
+	PyModule_AddObject(m, "STYPE_PRINTQ", PyInt_FromLong(STYPE_PRINTQ));
 	PyModule_AddObject(m, "PLATFORM_ID_DOS", PyInt_FromLong(PLATFORM_ID_DOS));
+	PyModule_AddObject(m, "STYPE_DEVICE_TEMPORARY", PyInt_FromLong(STYPE_DEVICE_TEMPORARY));
+	PyModule_AddObject(m, "STYPE_HIDDEN", PyInt_FromLong(0x80000000));
+	PyModule_AddObject(m, "STYPE_IPC_HIDDEN", PyInt_FromLong(STYPE_IPC_HIDDEN));
+	PyModule_AddObject(m, "STYPE_DISKTREE_TEMPORARY", PyInt_FromLong(STYPE_DISKTREE_TEMPORARY));
+	PyModule_AddObject(m, "STYPE_DISKTREE_HIDDEN", PyInt_FromLong(STYPE_DISKTREE_HIDDEN));
+	PyModule_AddObject(m, "PLATFORM_ID_NT", PyInt_FromLong(PLATFORM_ID_NT));
+	PyModule_AddObject(m, "STYPE_DISKTREE", PyInt_FromLong(STYPE_DISKTREE));
+	PyModule_AddObject(m, "PLATFORM_ID_VMS", PyInt_FromLong(PLATFORM_ID_VMS));
+	PyModule_AddObject(m, "STYPE_IPC_TEMPORARY", PyInt_FromLong(STYPE_IPC_TEMPORARY));
 	Py_INCREF((PyObject *)(void *)&srvsvc_NetCharDevInfo0_Type);
 	PyModule_AddObject(m, "NetCharDevInfo0", (PyObject *)(void *)&srvsvc_NetCharDevInfo0_Type);
 	Py_INCREF((PyObject *)(void *)&srvsvc_NetCharDevCtr0_Type);

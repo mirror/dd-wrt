@@ -144,7 +144,7 @@ struct tevent_req *dcerpc_lsa_QueryInfoPolicy_send(TALLOC_CTX *mem_ctx,
 						   struct dcerpc_binding_handle *h,
 						   struct policy_handle *_handle /* [in] [ref] */,
 						   enum lsa_PolicyInfo _level /* [in]  */,
-						   union lsa_PolicyInformation **_info /* [out] [ref,switch_is(level)] */);
+						   union lsa_PolicyInformation **_info /* [out] [switch_is(level),ref] */);
 NTSTATUS dcerpc_lsa_QueryInfoPolicy_recv(struct tevent_req *req,
 					 TALLOC_CTX *mem_ctx,
 					 NTSTATUS *result);
@@ -152,7 +152,7 @@ NTSTATUS dcerpc_lsa_QueryInfoPolicy(struct dcerpc_binding_handle *h,
 				    TALLOC_CTX *mem_ctx,
 				    struct policy_handle *_handle /* [in] [ref] */,
 				    enum lsa_PolicyInfo _level /* [in]  */,
-				    union lsa_PolicyInformation **_info /* [out] [ref,switch_is(level)] */,
+				    union lsa_PolicyInformation **_info /* [out] [switch_is(level),ref] */,
 				    NTSTATUS *result);
 
 struct tevent_req *dcerpc_lsa_SetInfoPolicy_r_send(TALLOC_CTX *mem_ctx,
@@ -516,7 +516,7 @@ struct tevent_req *dcerpc_lsa_QueryTrustedDomainInfo_send(TALLOC_CTX *mem_ctx,
 							  struct dcerpc_binding_handle *h,
 							  struct policy_handle *_trustdom_handle /* [in] [ref] */,
 							  enum lsa_TrustDomInfoEnum _level /* [in]  */,
-							  union lsa_TrustedDomainInfo **_info /* [out] [ref,switch_is(level)] */);
+							  union lsa_TrustedDomainInfo **_info /* [out] [switch_is(level),ref] */);
 NTSTATUS dcerpc_lsa_QueryTrustedDomainInfo_recv(struct tevent_req *req,
 						TALLOC_CTX *mem_ctx,
 						NTSTATUS *result);
@@ -524,7 +524,7 @@ NTSTATUS dcerpc_lsa_QueryTrustedDomainInfo(struct dcerpc_binding_handle *h,
 					   TALLOC_CTX *mem_ctx,
 					   struct policy_handle *_trustdom_handle /* [in] [ref] */,
 					   enum lsa_TrustDomInfoEnum _level /* [in]  */,
-					   union lsa_TrustedDomainInfo **_info /* [out] [ref,switch_is(level)] */,
+					   union lsa_TrustedDomainInfo **_info /* [out] [switch_is(level),ref] */,
 					   NTSTATUS *result);
 
 struct tevent_req *dcerpc_lsa_SetInformationTrustedDomain_r_send(TALLOC_CTX *mem_ctx,
@@ -813,7 +813,7 @@ struct tevent_req *dcerpc_lsa_QueryTrustedDomainInfoBySid_send(TALLOC_CTX *mem_c
 							       struct policy_handle *_handle /* [in] [ref] */,
 							       struct dom_sid2 *_dom_sid /* [in] [ref] */,
 							       enum lsa_TrustDomInfoEnum _level /* [in]  */,
-							       union lsa_TrustedDomainInfo **_info /* [out] [ref,switch_is(level)] */);
+							       union lsa_TrustedDomainInfo **_info /* [out] [switch_is(level),ref] */);
 NTSTATUS dcerpc_lsa_QueryTrustedDomainInfoBySid_recv(struct tevent_req *req,
 						     TALLOC_CTX *mem_ctx,
 						     NTSTATUS *result);
@@ -822,7 +822,7 @@ NTSTATUS dcerpc_lsa_QueryTrustedDomainInfoBySid(struct dcerpc_binding_handle *h,
 						struct policy_handle *_handle /* [in] [ref] */,
 						struct dom_sid2 *_dom_sid /* [in] [ref] */,
 						enum lsa_TrustDomInfoEnum _level /* [in]  */,
-						union lsa_TrustedDomainInfo **_info /* [out] [ref,switch_is(level)] */,
+						union lsa_TrustedDomainInfo **_info /* [out] [switch_is(level),ref] */,
 						NTSTATUS *result);
 
 struct tevent_req *dcerpc_lsa_SetTrustedDomainInfo_r_send(TALLOC_CTX *mem_ctx,
@@ -970,7 +970,7 @@ struct tevent_req *dcerpc_lsa_QueryInfoPolicy2_send(TALLOC_CTX *mem_ctx,
 						    struct dcerpc_binding_handle *h,
 						    struct policy_handle *_handle /* [in] [ref] */,
 						    enum lsa_PolicyInfo _level /* [in]  */,
-						    union lsa_PolicyInformation **_info /* [out] [ref,switch_is(level)] */);
+						    union lsa_PolicyInformation **_info /* [out] [switch_is(level),ref] */);
 NTSTATUS dcerpc_lsa_QueryInfoPolicy2_recv(struct tevent_req *req,
 					  TALLOC_CTX *mem_ctx,
 					  NTSTATUS *result);
@@ -978,7 +978,7 @@ NTSTATUS dcerpc_lsa_QueryInfoPolicy2(struct dcerpc_binding_handle *h,
 				     TALLOC_CTX *mem_ctx,
 				     struct policy_handle *_handle /* [in] [ref] */,
 				     enum lsa_PolicyInfo _level /* [in]  */,
-				     union lsa_PolicyInformation **_info /* [out] [ref,switch_is(level)] */,
+				     union lsa_PolicyInformation **_info /* [out] [switch_is(level),ref] */,
 				     NTSTATUS *result);
 
 struct tevent_req *dcerpc_lsa_SetInfoPolicy2_r_send(TALLOC_CTX *mem_ctx,
@@ -1015,7 +1015,7 @@ struct tevent_req *dcerpc_lsa_QueryTrustedDomainInfoByName_send(TALLOC_CTX *mem_
 								struct policy_handle *_handle /* [in] [ref] */,
 								struct lsa_String *_trusted_domain /* [in] [ref] */,
 								enum lsa_TrustDomInfoEnum _level /* [in]  */,
-								union lsa_TrustedDomainInfo **_info /* [out] [ref,switch_is(level)] */);
+								union lsa_TrustedDomainInfo **_info /* [out] [switch_is(level),ref] */);
 NTSTATUS dcerpc_lsa_QueryTrustedDomainInfoByName_recv(struct tevent_req *req,
 						      TALLOC_CTX *mem_ctx,
 						      NTSTATUS *result);
@@ -1024,7 +1024,7 @@ NTSTATUS dcerpc_lsa_QueryTrustedDomainInfoByName(struct dcerpc_binding_handle *h
 						 struct policy_handle *_handle /* [in] [ref] */,
 						 struct lsa_String *_trusted_domain /* [in] [ref] */,
 						 enum lsa_TrustDomInfoEnum _level /* [in]  */,
-						 union lsa_TrustedDomainInfo **_info /* [out] [ref,switch_is(level)] */,
+						 union lsa_TrustedDomainInfo **_info /* [out] [switch_is(level),ref] */,
 						 NTSTATUS *result);
 
 struct tevent_req *dcerpc_lsa_SetTrustedDomainInfoByName_r_send(TALLOC_CTX *mem_ctx,

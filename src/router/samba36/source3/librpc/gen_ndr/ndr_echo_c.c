@@ -928,7 +928,7 @@ struct tevent_req *dcerpc_echo_TestCall_send(TALLOC_CTX *mem_ctx,
 					     struct tevent_context *ev,
 					     struct dcerpc_binding_handle *h,
 					     const char *_s1 /* [in] [ref,charset(UTF16)] */,
-					     const char **_s2 /* [out] [ref,charset(UTF16)] */)
+					     const char **_s2 /* [out] [charset(UTF16),ref] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_echo_TestCall_state *state;
@@ -1017,7 +1017,7 @@ NTSTATUS dcerpc_echo_TestCall_recv(struct tevent_req *req,
 NTSTATUS dcerpc_echo_TestCall(struct dcerpc_binding_handle *h,
 			      TALLOC_CTX *mem_ctx,
 			      const char *_s1 /* [in] [ref,charset(UTF16)] */,
-			      const char **_s2 /* [out] [ref,charset(UTF16)] */)
+			      const char **_s2 /* [out] [charset(UTF16),ref] */)
 {
 	struct echo_TestCall r;
 	NTSTATUS status;

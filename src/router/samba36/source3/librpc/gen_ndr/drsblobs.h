@@ -84,13 +84,13 @@ struct repsFromTo1 {
 	struct GUID source_dsa_obj_guid;
 	struct GUID source_dsa_invocation_id;
 	struct GUID transport_guid;
-}/* [gensize,public,flag(LIBNDR_PRINT_ARRAY_HEX)] */;
+}/* [public,flag(LIBNDR_PRINT_ARRAY_HEX),gensize] */;
 
 struct repsFromTo2OtherInfo {
 	uint32_t __ndr_size;/* [value(ndr_size_repsFromTo2OtherInfo(this,ndr->flags))] */
-	const char * dns_name1;/* [relative,flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2)] */
+	const char * dns_name1;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2),relative] */
 	uint32_t unknown1;
-	const char * dns_name2;/* [relative,flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2)] */
+	const char * dns_name2;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2),relative] */
 	uint64_t unknown2;
 }/* [relative_base,gensize,public] */;
 
@@ -110,7 +110,7 @@ struct repsFromTo2 {
 	struct GUID source_dsa_invocation_id;
 	struct GUID transport_guid;
 	uint64_t unknown1;
-}/* [gensize,public,flag(LIBNDR_PRINT_ARRAY_HEX)] */;
+}/* [public,gensize,flag(LIBNDR_PRINT_ARRAY_HEX)] */;
 
 union repsFromTo {
 	struct repsFromTo1 ctr1;/* [case] */
@@ -179,7 +179,7 @@ struct prefixMapBlob {
 
 union ldapControlDirSyncExtra {
 	struct replUpToDateVectorBlob uptodateness_vector;/* [default] */
-}/* [gensize,nodiscriminant] */;
+}/* [nodiscriminant,gensize] */;
 
 struct ldapControlDirSyncBlob {
 	uint32_t u1;/* [value(3)] */
@@ -217,7 +217,7 @@ enum supplementalCredentialsSignature
 ;
 
 struct supplementalCredentialsSubBlob {
-	const char *prefix;/* [value(SUPPLEMENTAL_CREDENTIALS_PREFIX),charset(UTF16)] */
+	const char *prefix;/* [charset(UTF16),value(SUPPLEMENTAL_CREDENTIALS_PREFIX)] */
 	enum supplementalCredentialsSignature signature;/* [value(SUPPLEMENTAL_CREDENTIALS_SIGNATURE)] */
 	uint16_t num_packages;
 	struct supplementalCredentialsPackage *packages;
@@ -227,7 +227,7 @@ struct supplementalCredentialsBlob {
 	uint32_t unknown1;/* [value(0)] */
 	uint32_t __ndr_size;/* [value(ndr_size_supplementalCredentialsSubBlob(&sub,ndr->flags))] */
 	uint32_t unknown2;/* [value(0)] */
-	struct supplementalCredentialsSubBlob sub;/* [subcontext_size(__ndr_size),subcontext(0)] */
+	struct supplementalCredentialsSubBlob sub;/* [subcontext(0),subcontext_size(__ndr_size)] */
 	uint8_t unknown3;/* [value(0)] */
 }/* [public] */;
 
@@ -238,7 +238,7 @@ struct package_PackagesBlob {
 struct package_PrimaryKerberosString {
 	uint16_t length;/* [value(2*strlen_m(string))] */
 	uint16_t size;/* [value(2*strlen_m(string))] */
-	const char * string;/* [relative,subcontext_size(size),subcontext(0),flag(LIBNDR_FLAG_STR_NOTERM|LIBNDR_FLAG_REMAINING)] */
+	const char * string;/* [subcontext(0),flag(LIBNDR_FLAG_STR_NOTERM|LIBNDR_FLAG_REMAINING),relative,subcontext_size(size)] */
 };
 
 struct package_PrimaryKerberosKey3 {
@@ -247,7 +247,7 @@ struct package_PrimaryKerberosKey3 {
 	uint32_t reserved3;/* [value(0)] */
 	uint32_t keytype;
 	uint32_t value_len;/* [value((value?value->length:0))] */
-	DATA_BLOB *value;/* [relative,subcontext_size(value_len),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
+	DATA_BLOB *value;/* [relative,subcontext_size(value_len),flag(LIBNDR_FLAG_REMAINING),subcontext(0)] */
 };
 
 struct package_PrimaryKerberosCtr3 {
@@ -270,7 +270,7 @@ struct package_PrimaryKerberosKey4 {
 	uint32_t iteration_count;
 	uint32_t keytype;
 	uint32_t value_len;/* [value((value?value->length:0))] */
-	DATA_BLOB *value;/* [relative,subcontext_size(value_len),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
+	DATA_BLOB *value;/* [subcontext_size(value_len),relative,flag(LIBNDR_FLAG_REMAINING),subcontext(0)] */
 };
 
 struct package_PrimaryKerberosCtr4 {
@@ -350,15 +350,15 @@ struct AuthenticationInformation {
 struct AuthenticationInformationArray {
 	uint32_t count;
 	struct AuthenticationInformation *array;
-}/* [gensize,nopush,public,nopull] */;
+}/* [nopush,nopull,gensize,public] */;
 
 struct trustAuthInOutBlob {
 	uint32_t count;
 	uint32_t current_offset;/* [value((count>0)?12:0)] */
 	uint32_t previous_offset;/* [value((count>0)?12+ndr_size_AuthenticationInformationArray(&current,ndr->flags):0)] */
 	struct AuthenticationInformationArray current;/* [subcontext_size((previous_offset)-(current_offset)),subcontext(0)] */
-	struct AuthenticationInformationArray previous;/* [subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
-}/* [gensize,public,nopush] */;
+	struct AuthenticationInformationArray previous;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0)] */
+}/* [public,gensize,nopush] */;
 
 struct trustDomainPasswords {
 	uint8_t confounder[512];
@@ -375,12 +375,12 @@ struct DsCompressedChunk {
 
 struct ExtendedErrorAString {
 	uint16_t __size;
-	const char *string;/* [unique,charset(DOS),size_is(__size)] */
+	const char *string;/* [unique,size_is(__size),charset(DOS)] */
 };
 
 struct ExtendedErrorUString {
 	uint16_t __size;
-	const char *string;/* [unique,charset(UTF16),size_is(__size)] */
+	const char *string;/* [unique,size_is(__size),charset(UTF16)] */
 };
 
 struct ExtendedErrorBlob {
@@ -507,7 +507,7 @@ struct ForestTrustInfoRecord {
 	NTTIME timestamp;
 	enum ForestTrustInfoRecordType type;
 	union ForestTrustData data;/* [switch_is(type)] */
-}/* [gensize,public,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [gensize,flag(LIBNDR_FLAG_NOALIGN),public] */;
 
 struct ForestTrustInfoRecordArmor {
 	uint32_t record_size;/* [value(ndr_size_ForestTrustInfoRecord(&record,ndr->flags))] */

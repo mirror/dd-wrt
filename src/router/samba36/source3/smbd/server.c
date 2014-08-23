@@ -1251,16 +1251,6 @@ extern void build_options(bool screen);
 		return -1;
 	}
 
-#ifdef PRINTER_SUPPORT
-	/*
-	 * The print backend init also migrates the printing tdb's,
-	 * this requires a winreg pipe.
-	 */
-	if (!print_backend_init(smbd_messaging_context()))
-		exit(1);
-
-#endif
-
 	if (!init_guest_info()) {
 		DEBUG(0,("ERROR: failed to setup guest info.\n"));
 		return -1;
@@ -1287,7 +1277,14 @@ extern void build_options(bool screen);
 		exit(1);
 	}
 
+	/*
+	 * The print backend init also migrates the printing tdb's,
+	 * this requires a winreg pipe.
+	 */
 #ifdef PRINTER_SUPPORT
+	if (!print_backend_init(smbd_messaging_context()))
+		exit(1);
+
 	/* only start the background queue daemon if we are 
 	   running as a daemon -- bad things will happen if
 	   smbd is launched via inetd and we fork a copy of 
@@ -1324,7 +1321,6 @@ extern void build_options(bool screen);
 		}
 	}
 #endif
-
 	if (!is_daemon) {
 		/* inetd mode */
 		TALLOC_FREE(frame);

@@ -2432,8 +2432,8 @@ static bool housekeeping_fn(const struct timeval *now, void *private_data)
 	check_reload(sconn, time_mono(NULL));
 
 #ifdef NETLOGON_SUPPORT
- 	/* Change machine password if neccessary. */
- 	attempt_machine_password_change();
+	/* Change machine password if neccessary. */
+	attempt_machine_password_change();
 #endif
 
         /*

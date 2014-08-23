@@ -171,9 +171,9 @@ union dnsRecordData {
 	const char * ptr;/* [case(DNS_TYPE_PTR)] */
 	struct dnsp_hinfo hinfo;/* [case(DNS_TYPE_HINFO)] */
 	const char * ipv6;/* [case(DNS_TYPE_AAAA)] */
-	struct dnsp_srv srv;/* [flag(LIBNDR_FLAG_BIGENDIAN),case(DNS_TYPE_SRV)] */
+	struct dnsp_srv srv;/* [case(DNS_TYPE_SRV),flag(LIBNDR_FLAG_BIGENDIAN)] */
 	DATA_BLOB data;/* [default,flag(LIBNDR_FLAG_REMAINING)] */
-}/* [gensize,nodiscriminant] */;
+}/* [nodiscriminant,gensize] */;
 
 struct dnsp_DnssrvRpcRecord {
 	uint16_t wDataLength;/* [value(ndr_size_dnsRecordData(&data,wType,ndr->flags))] */

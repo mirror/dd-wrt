@@ -46,7 +46,7 @@ struct dfs_referral_v1 {
 	uint16_t size;
 	uint16_t server_type;
 	uint16_t entry_flags;
-	const char * share_name;/* [unique,flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2)] */
+	const char * share_name;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2),unique] */
 };
 
 struct dfs_referral_v2 {
@@ -56,12 +56,12 @@ struct dfs_referral_v2 {
 	uint32_t proximity;
 	uint32_t ttl;
 	const char * DFS_path;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2),relative_short] */
-	const char * DFS_alt_path;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2),relative_short] */
+	const char * DFS_alt_path;/* [relative_short,flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2)] */
 	const char * netw_address;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2),relative_short] */
 };
 
 struct dfs_normal_referral {
-	const char * DFS_path;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2),relative_short] */
+	const char * DFS_path;/* [relative_short,flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2)] */
 	const char * DFS_alt_path;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2),relative_short] */
 	const char * netw_address;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2),relative_short] */
 };
@@ -69,7 +69,7 @@ struct dfs_normal_referral {
 struct dfs_domain_referral {
 	const char * special_name;/* [flag(LIBNDR_FLAG_STR_NULLTERM|LIBNDR_FLAG_ALIGN2),relative_short] */
 	uint16_t nb_expanded_names;
-	const char ** expanded_names;/* [subcontext(0),flag(LIBNDR_FLAG_REMAINING|LIBNDR_FLAG_STR_NULLTERM),relative_short] */
+	const char ** expanded_names;/* [relative_short,subcontext(0),flag(LIBNDR_FLAG_REMAINING|LIBNDR_FLAG_STR_NULLTERM)] */
 };
 
 union dfs_referral {
@@ -112,7 +112,7 @@ union dfs_referral_version {
 struct dfs_referral_type {
 	uint16_t version;
 	union dfs_referral_version referral;/* [switch_is(version)] */
-}/* [relative_base,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),relative_base] */;
 
 struct dfs_referral_resp {
 	uint16_t path_consumed;
