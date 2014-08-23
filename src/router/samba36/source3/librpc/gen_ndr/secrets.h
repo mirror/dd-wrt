@@ -18,7 +18,7 @@ struct TRUSTED_DOM_PASS {
 	const char * pass;/* [flag(LIBNDR_FLAG_STR_ASCII|LIBNDR_FLAG_STR_NULLTERM)] */
 	time_t mod_time;
 	struct dom_sid domain_sid;
-}/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),public] */;
 
 #endif /* _HEADER_secrets */
 #endif /* _PIDL_HEADER_secrets */

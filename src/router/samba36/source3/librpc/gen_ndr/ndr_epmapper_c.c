@@ -524,7 +524,7 @@ struct tevent_req *dcerpc_epm_Lookup_send(TALLOC_CTX *mem_ctx,
 					  struct policy_handle *_entry_handle /* [in,out] [ref] */,
 					  uint32_t _max_ents /* [in]  */,
 					  uint32_t *_num_ents /* [out] [ref] */,
-					  struct epm_entry_t *_entries /* [out] [length_is(*num_ents),size_is(max_ents)] */)
+					  struct epm_entry_t *_entries /* [out] [size_is(max_ents),length_is(*num_ents)] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_epm_Lookup_state *state;
@@ -646,7 +646,7 @@ NTSTATUS dcerpc_epm_Lookup(struct dcerpc_binding_handle *h,
 			   struct policy_handle *_entry_handle /* [in,out] [ref] */,
 			   uint32_t _max_ents /* [in]  */,
 			   uint32_t *_num_ents /* [out] [ref] */,
-			   struct epm_entry_t *_entries /* [out] [length_is(*num_ents),size_is(max_ents)] */,
+			   struct epm_entry_t *_entries /* [out] [size_is(max_ents),length_is(*num_ents)] */,
 			   uint32_t *result)
 {
 	struct epm_Lookup r;
@@ -781,7 +781,7 @@ struct tevent_req *dcerpc_epm_Map_send(TALLOC_CTX *mem_ctx,
 				       struct policy_handle *_entry_handle /* [in,out] [ref] */,
 				       uint32_t _max_towers /* [in]  */,
 				       uint32_t *_num_towers /* [out] [ref] */,
-				       struct epm_twr_p_t *_towers /* [out] [length_is(*num_towers),size_is(max_towers)] */)
+				       struct epm_twr_p_t *_towers /* [out] [size_is(max_towers),length_is(*num_towers)] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_epm_Map_state *state;
@@ -899,7 +899,7 @@ NTSTATUS dcerpc_epm_Map(struct dcerpc_binding_handle *h,
 			struct policy_handle *_entry_handle /* [in,out] [ref] */,
 			uint32_t _max_towers /* [in]  */,
 			uint32_t *_num_towers /* [out] [ref] */,
-			struct epm_twr_p_t *_towers /* [out] [length_is(*num_towers),size_is(max_towers)] */,
+			struct epm_twr_p_t *_towers /* [out] [size_is(max_towers),length_is(*num_towers)] */,
 			uint32_t *result)
 {
 	struct epm_Map r;

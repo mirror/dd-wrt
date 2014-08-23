@@ -298,10 +298,10 @@ static void dcerpc_dfs_Add_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_dfs_Add_send(TALLOC_CTX *mem_ctx,
 				       struct tevent_context *ev,
 				       struct dcerpc_binding_handle *h,
-				       const char *_path /* [in] [ref,charset(UTF16)] */,
-				       const char *_server /* [in] [ref,charset(UTF16)] */,
+				       const char *_path /* [in] [charset(UTF16),ref] */,
+				       const char *_server /* [in] [charset(UTF16),ref] */,
 				       const char *_share /* [in] [unique,charset(UTF16)] */,
-				       const char *_comment /* [in] [unique,charset(UTF16)] */,
+				       const char *_comment /* [in] [charset(UTF16),unique] */,
 				       uint32_t _flags /* [in]  */)
 {
 	struct tevent_req *req;
@@ -396,10 +396,10 @@ NTSTATUS dcerpc_dfs_Add_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_dfs_Add(struct dcerpc_binding_handle *h,
 			TALLOC_CTX *mem_ctx,
-			const char *_path /* [in] [ref,charset(UTF16)] */,
-			const char *_server /* [in] [ref,charset(UTF16)] */,
+			const char *_path /* [in] [charset(UTF16),ref] */,
+			const char *_server /* [in] [charset(UTF16),ref] */,
 			const char *_share /* [in] [unique,charset(UTF16)] */,
-			const char *_comment /* [in] [unique,charset(UTF16)] */,
+			const char *_comment /* [in] [charset(UTF16),unique] */,
 			uint32_t _flags /* [in]  */,
 			WERROR *result)
 {
@@ -727,8 +727,8 @@ struct tevent_req *dcerpc_dfs_SetInfo_send(TALLOC_CTX *mem_ctx,
 					   struct tevent_context *ev,
 					   struct dcerpc_binding_handle *h,
 					   const char *_dfs_entry_path /* [in] [charset(UTF16)] */,
-					   const char *_servername /* [in] [unique,charset(UTF16)] */,
-					   const char *_sharename /* [in] [unique,charset(UTF16)] */,
+					   const char *_servername /* [in] [charset(UTF16),unique] */,
+					   const char *_sharename /* [in] [charset(UTF16),unique] */,
 					   uint32_t _level /* [in]  */,
 					   union dfs_Info *_info /* [in] [ref,switch_is(level)] */)
 {
@@ -825,8 +825,8 @@ NTSTATUS dcerpc_dfs_SetInfo_recv(struct tevent_req *req,
 NTSTATUS dcerpc_dfs_SetInfo(struct dcerpc_binding_handle *h,
 			    TALLOC_CTX *mem_ctx,
 			    const char *_dfs_entry_path /* [in] [charset(UTF16)] */,
-			    const char *_servername /* [in] [unique,charset(UTF16)] */,
-			    const char *_sharename /* [in] [unique,charset(UTF16)] */,
+			    const char *_servername /* [in] [charset(UTF16),unique] */,
+			    const char *_sharename /* [in] [charset(UTF16),unique] */,
 			    uint32_t _level /* [in]  */,
 			    union dfs_Info *_info /* [in] [ref,switch_is(level)] */,
 			    WERROR *result)
@@ -948,10 +948,10 @@ struct tevent_req *dcerpc_dfs_GetInfo_send(TALLOC_CTX *mem_ctx,
 					   struct tevent_context *ev,
 					   struct dcerpc_binding_handle *h,
 					   const char *_dfs_entry_path /* [in] [charset(UTF16)] */,
-					   const char *_servername /* [in] [unique,charset(UTF16)] */,
-					   const char *_sharename /* [in] [unique,charset(UTF16)] */,
+					   const char *_servername /* [in] [charset(UTF16),unique] */,
+					   const char *_sharename /* [in] [charset(UTF16),unique] */,
 					   uint32_t _level /* [in]  */,
-					   union dfs_Info *_info /* [out] [ref,switch_is(level)] */)
+					   union dfs_Info *_info /* [out] [switch_is(level),ref] */)
 {
 	struct tevent_req *req;
 	struct dcerpc_dfs_GetInfo_state *state;
@@ -1053,10 +1053,10 @@ NTSTATUS dcerpc_dfs_GetInfo_recv(struct tevent_req *req,
 NTSTATUS dcerpc_dfs_GetInfo(struct dcerpc_binding_handle *h,
 			    TALLOC_CTX *mem_ctx,
 			    const char *_dfs_entry_path /* [in] [charset(UTF16)] */,
-			    const char *_servername /* [in] [unique,charset(UTF16)] */,
-			    const char *_sharename /* [in] [unique,charset(UTF16)] */,
+			    const char *_servername /* [in] [charset(UTF16),unique] */,
+			    const char *_sharename /* [in] [charset(UTF16),unique] */,
 			    uint32_t _level /* [in]  */,
-			    union dfs_Info *_info /* [out] [ref,switch_is(level)] */,
+			    union dfs_Info *_info /* [out] [switch_is(level),ref] */,
 			    WERROR *result)
 {
 	struct dfs_GetInfo r;
@@ -2745,7 +2745,7 @@ struct tevent_req *dcerpc_dfs_GetDcAddress_send(TALLOC_CTX *mem_ctx,
 						struct tevent_context *ev,
 						struct dcerpc_binding_handle *h,
 						const char *_servername /* [in] [charset(UTF16)] */,
-						const char **_server_fullname /* [in,out] [ref,charset(UTF16)] */,
+						const char **_server_fullname /* [in,out] [charset(UTF16),ref] */,
 						uint8_t *_is_root /* [in,out] [ref] */,
 						uint32_t *_ttl /* [in,out] [ref] */)
 {
@@ -2853,7 +2853,7 @@ NTSTATUS dcerpc_dfs_GetDcAddress_recv(struct tevent_req *req,
 NTSTATUS dcerpc_dfs_GetDcAddress(struct dcerpc_binding_handle *h,
 				 TALLOC_CTX *mem_ctx,
 				 const char *_servername /* [in] [charset(UTF16)] */,
-				 const char **_server_fullname /* [in,out] [ref,charset(UTF16)] */,
+				 const char **_server_fullname /* [in,out] [charset(UTF16),ref] */,
 				 uint8_t *_is_root /* [in,out] [ref] */,
 				 uint32_t *_ttl /* [in,out] [ref] */,
 				 WERROR *result)

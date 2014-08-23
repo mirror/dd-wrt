@@ -23,7 +23,7 @@ struct PAC_LOGON_NAME {
 struct PAC_SIGNATURE_DATA {
 	uint32_t type;
 	DATA_BLOB signature;/* [flag(LIBNDR_FLAG_REMAINING)] */
-}/* [public,flag(LIBNDR_PRINT_ARRAY_HEX)] */;
+}/* [flag(LIBNDR_PRINT_ARRAY_HEX),public] */;
 
 struct PAC_LOGON_INFO {
 	struct netr_SamInfo3 info3;
@@ -74,19 +74,19 @@ struct DATA_BLOB_REM {
 };
 
 union PAC_INFO {
-	struct PAC_LOGON_INFO_CTR logon_info;/* [subcontext(0xFFFFFC01),case(PAC_TYPE_LOGON_INFO)] */
+	struct PAC_LOGON_INFO_CTR logon_info;/* [case(PAC_TYPE_LOGON_INFO),subcontext(0xFFFFFC01)] */
 	struct PAC_SIGNATURE_DATA srv_cksum;/* [case(PAC_TYPE_SRV_CHECKSUM)] */
 	struct PAC_SIGNATURE_DATA kdc_cksum;/* [case(PAC_TYPE_KDC_CHECKSUM)] */
 	struct PAC_LOGON_NAME logon_name;/* [case(PAC_TYPE_LOGON_NAME)] */
-	struct DATA_BLOB_REM unknown;/* [subcontext(0),default] */
-}/* [gensize,nodiscriminant,public] */;
+	struct DATA_BLOB_REM unknown;/* [default,subcontext(0)] */
+}/* [nodiscriminant,public,gensize] */;
 
 struct PAC_BUFFER {
 	enum PAC_TYPE type;
 	uint32_t _ndr_size;/* [value(_ndr_size_PAC_INFO(info,type,0))] */
-	union PAC_INFO *info;/* [relative,subcontext_size(_subcontext_size_PAC_INFO(r,ndr->flags)),subcontext(0),switch_is(type),flag(LIBNDR_FLAG_ALIGN8)] */
+	union PAC_INFO *info;/* [subcontext(0),flag(LIBNDR_FLAG_ALIGN8),switch_is(type),subcontext_size(_subcontext_size_PAC_INFO(r,ndr->flags)),relative] */
 	uint32_t _pad;/* [value(0)] */
-}/* [noprint,nopull,public,nopush] */;
+}/* [public,nopull,noprint,nopush] */;
 
 struct PAC_DATA {
 	uint32_t num_buffers;
@@ -97,7 +97,7 @@ struct PAC_DATA {
 struct PAC_BUFFER_RAW {
 	enum PAC_TYPE type;
 	uint32_t ndr_size;
-	struct DATA_BLOB_REM *info;/* [relative,subcontext_size(NDR_ROUND(ndr_size,8)),subcontext(0),flag(LIBNDR_FLAG_ALIGN8)] */
+	struct DATA_BLOB_REM *info;/* [subcontext_size(NDR_ROUND(ndr_size,8)),relative,flag(LIBNDR_FLAG_ALIGN8),subcontext(0)] */
 	uint32_t _pad;/* [value(0)] */
 }/* [public] */;
 

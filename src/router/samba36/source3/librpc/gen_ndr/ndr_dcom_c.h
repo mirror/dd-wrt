@@ -136,7 +136,7 @@ struct tevent_req *dcerpc_CreateInstance_send(TALLOC_CTX *mem_ctx,
 					      struct ORPCTHIS _ORPCthis /* [in]  */,
 					      struct MInterfacePointer *_pUnknown /* [in] [unique] */,
 					      struct GUID *_iid /* [in] [unique] */,
-					      struct MInterfacePointer *_ppv /* [out] [unique,iid_is(riid)] */);
+					      struct MInterfacePointer *_ppv /* [out] [iid_is(riid),unique] */);
 NTSTATUS dcerpc_CreateInstance_recv(struct tevent_req *req,
 				    TALLOC_CTX *mem_ctx,
 				    WERROR *result);
@@ -146,7 +146,7 @@ NTSTATUS dcerpc_CreateInstance(struct dcerpc_binding_handle *h,
 			       struct ORPCTHIS _ORPCthis /* [in]  */,
 			       struct MInterfacePointer *_pUnknown /* [in] [unique] */,
 			       struct GUID *_iid /* [in] [unique] */,
-			       struct MInterfacePointer *_ppv /* [out] [unique,iid_is(riid)] */,
+			       struct MInterfacePointer *_ppv /* [out] [iid_is(riid),unique] */,
 			       WERROR *result);
 
 struct tevent_req *dcerpc_RemoteCreateInstance_r_send(TALLOC_CTX *mem_ctx,
@@ -231,7 +231,7 @@ struct tevent_req *dcerpc_RemQueryInterface_send(TALLOC_CTX *mem_ctx,
 						 struct GUID *_ripid /* [in] [unique] */,
 						 uint32_t _cRefs /* [in]  */,
 						 uint16_t _cIids /* [in]  */,
-						 struct GUID *_iids /* [in] [unique,size_is(cIids)] */,
+						 struct GUID *_iids /* [in] [size_is(cIids),unique] */,
 						 struct MInterfacePointer *_ip /* [out] [unique,size_is(cIids)] */);
 NTSTATUS dcerpc_RemQueryInterface_recv(struct tevent_req *req,
 				       TALLOC_CTX *mem_ctx,
@@ -243,7 +243,7 @@ NTSTATUS dcerpc_RemQueryInterface(struct dcerpc_binding_handle *h,
 				  struct GUID *_ripid /* [in] [unique] */,
 				  uint32_t _cRefs /* [in]  */,
 				  uint16_t _cIids /* [in]  */,
-				  struct GUID *_iids /* [in] [unique,size_is(cIids)] */,
+				  struct GUID *_iids /* [in] [size_is(cIids),unique] */,
 				  struct MInterfacePointer *_ip /* [out] [unique,size_is(cIids)] */,
 				  WERROR *result);
 
@@ -260,7 +260,7 @@ struct tevent_req *dcerpc_RemAddRef_send(TALLOC_CTX *mem_ctx,
 					 struct ORPCTHIS _ORPCthis /* [in]  */,
 					 uint16_t _cInterfaceRefs /* [in]  */,
 					 struct REMINTERFACEREF *_InterfaceRefs /* [in] [size_is(cInterfaceRefs)] */,
-					 WERROR *_pResults /* [out] [unique,size_is(cInterfaceRefs)] */);
+					 WERROR *_pResults /* [out] [size_is(cInterfaceRefs),unique] */);
 NTSTATUS dcerpc_RemAddRef_recv(struct tevent_req *req,
 			       TALLOC_CTX *mem_ctx,
 			       WERROR *result);
@@ -270,7 +270,7 @@ NTSTATUS dcerpc_RemAddRef(struct dcerpc_binding_handle *h,
 			  struct ORPCTHIS _ORPCthis /* [in]  */,
 			  uint16_t _cInterfaceRefs /* [in]  */,
 			  struct REMINTERFACEREF *_InterfaceRefs /* [in] [size_is(cInterfaceRefs)] */,
-			  WERROR *_pResults /* [out] [unique,size_is(cInterfaceRefs)] */,
+			  WERROR *_pResults /* [out] [size_is(cInterfaceRefs),unique] */,
 			  WERROR *result);
 
 struct tevent_req *dcerpc_RemRelease_r_send(TALLOC_CTX *mem_ctx,
@@ -456,9 +456,9 @@ struct tevent_req *dcerpc_RemQueryInterface2_send(TALLOC_CTX *mem_ctx,
 						  struct ORPCTHIS _ORPCthis /* [in]  */,
 						  struct GUID *_ripid /* [in] [unique] */,
 						  uint16_t _cIids /* [in]  */,
-						  struct GUID *_iids /* [in] [unique,size_is(cIids)] */,
-						  WERROR *_phr /* [out] [unique,size_is(cIids)] */,
-						  struct MInterfacePointer *_ppMIF /* [out] [unique,size_is(cIids)] */);
+						  struct GUID *_iids /* [in] [size_is(cIids),unique] */,
+						  WERROR *_phr /* [out] [size_is(cIids),unique] */,
+						  struct MInterfacePointer *_ppMIF /* [out] [size_is(cIids),unique] */);
 NTSTATUS dcerpc_RemQueryInterface2_recv(struct tevent_req *req,
 					TALLOC_CTX *mem_ctx,
 					WERROR *result);
@@ -468,9 +468,9 @@ NTSTATUS dcerpc_RemQueryInterface2(struct dcerpc_binding_handle *h,
 				   struct ORPCTHIS _ORPCthis /* [in]  */,
 				   struct GUID *_ripid /* [in] [unique] */,
 				   uint16_t _cIids /* [in]  */,
-				   struct GUID *_iids /* [in] [unique,size_is(cIids)] */,
-				   WERROR *_phr /* [out] [unique,size_is(cIids)] */,
-				   struct MInterfacePointer *_ppMIF /* [out] [unique,size_is(cIids)] */,
+				   struct GUID *_iids /* [in] [size_is(cIids),unique] */,
+				   WERROR *_phr /* [out] [size_is(cIids),unique] */,
+				   struct MInterfacePointer *_ppMIF /* [out] [size_is(cIids),unique] */,
 				   WERROR *result);
 
 #endif /* _HEADER_RPC_IRemUnknown2 */
@@ -541,7 +541,7 @@ struct tevent_req *dcerpc_GetIDsOfNames_send(TALLOC_CTX *mem_ctx,
 					     struct GUID *_riid /* [in] [unique] */,
 					     uint16_t _cNames /* [in]  */,
 					     uint32_t _lcid /* [in]  */,
-					     uint32_t *_rgDispId /* [out] [unique,size_is(cNames)] */);
+					     uint32_t *_rgDispId /* [out] [size_is(cNames),unique] */);
 NTSTATUS dcerpc_GetIDsOfNames_recv(struct tevent_req *req,
 				   TALLOC_CTX *mem_ctx,
 				   WERROR *result);
@@ -552,7 +552,7 @@ NTSTATUS dcerpc_GetIDsOfNames(struct dcerpc_binding_handle *h,
 			      struct GUID *_riid /* [in] [unique] */,
 			      uint16_t _cNames /* [in]  */,
 			      uint32_t _lcid /* [in]  */,
-			      uint32_t *_rgDispId /* [out] [unique,size_is(cNames)] */,
+			      uint32_t *_rgDispId /* [out] [size_is(cNames),unique] */,
 			      WERROR *result);
 
 struct tevent_req *dcerpc_Invoke_r_send(TALLOC_CTX *mem_ctx,
@@ -654,7 +654,7 @@ struct tevent_req *dcerpc_MakeCoffee_send(TALLOC_CTX *mem_ctx,
 					  struct dcerpc_binding_handle *h,
 					  struct ORPCTHAT *_ORPCthat /* [out] [ref] */,
 					  struct ORPCTHIS _ORPCthis /* [in]  */,
-					  const char *_flavor /* [in] [ref,charset(UTF16)] */);
+					  const char *_flavor /* [in] [charset(UTF16),ref] */);
 NTSTATUS dcerpc_MakeCoffee_recv(struct tevent_req *req,
 				TALLOC_CTX *mem_ctx,
 				WERROR *result);
@@ -662,7 +662,7 @@ NTSTATUS dcerpc_MakeCoffee(struct dcerpc_binding_handle *h,
 			   TALLOC_CTX *mem_ctx,
 			   struct ORPCTHAT *_ORPCthat /* [out] [ref] */,
 			   struct ORPCTHIS _ORPCthis /* [in]  */,
-			   const char *_flavor /* [in] [ref,charset(UTF16)] */,
+			   const char *_flavor /* [in] [charset(UTF16),ref] */,
 			   WERROR *result);
 
 #endif /* _HEADER_RPC_ICoffeeMachine */
@@ -682,7 +682,7 @@ struct tevent_req *dcerpc_Read_send(TALLOC_CTX *mem_ctx,
 				    struct dcerpc_binding_handle *h,
 				    struct ORPCTHAT *_ORPCthat /* [out] [ref] */,
 				    struct ORPCTHIS _ORPCthis /* [in]  */,
-				    uint8_t *_pv /* [out] [length_is(*num_read),size_is(num_requested)] */,
+				    uint8_t *_pv /* [out] [size_is(num_requested),length_is(*num_read)] */,
 				    uint32_t _num_requested /* [in]  */,
 				    uint32_t *_num_readx /* [in] [unique] */,
 				    uint32_t *_num_read /* [out] [ref] */);
@@ -693,7 +693,7 @@ NTSTATUS dcerpc_Read(struct dcerpc_binding_handle *h,
 		     TALLOC_CTX *mem_ctx,
 		     struct ORPCTHAT *_ORPCthat /* [out] [ref] */,
 		     struct ORPCTHIS _ORPCthis /* [in]  */,
-		     uint8_t *_pv /* [out] [length_is(*num_read),size_is(num_requested)] */,
+		     uint8_t *_pv /* [out] [size_is(num_requested),length_is(*num_read)] */,
 		     uint32_t _num_requested /* [in]  */,
 		     uint32_t *_num_readx /* [in] [unique] */,
 		     uint32_t *_num_read /* [out] [ref] */,

@@ -226,7 +226,7 @@ union dns_rdata {
 	struct dns_mx_record mx_record;/* [case(DNS_QTYPE_MX)] */
 	const char * ipv6_record;/* [case(DNS_QTYPE_AAAA)] */
 	struct dns_srv_record srv_record;/* [case(DNS_QTYPE_SRV)] */
-}/* [public,nodiscriminant,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),public,nodiscriminant] */;
 
 struct dns_res_rec {
 	const char * name;
@@ -249,7 +249,7 @@ struct dns_name_packet {
 	struct dns_res_rec *answers;
 	struct dns_res_rec *nsrecs;
 	struct dns_res_rec *additional;
-}/* [public,flag(LIBNDR_FLAG_NOALIGN|LIBNDR_FLAG_BIGENDIAN|LIBNDR_PRINT_ARRAY_HEX)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN|LIBNDR_FLAG_BIGENDIAN|LIBNDR_PRINT_ARRAY_HEX),public] */;
 
 
 struct decode_dns_name_packet {

@@ -18,16 +18,16 @@
 #define SHARE_1005_CSC_POLICY_MASK	( 0x00000030 )
 #define SHARE_1005_CSC_POLICY_SHIFT	( 4 )
 struct srvsvc_NetCharDevInfo0 {
-	const char *device;/* [unique,charset(UTF16)] */
+	const char *device;/* [charset(UTF16),unique] */
 };
 
 struct srvsvc_NetCharDevCtr0 {
 	uint32_t count;
-	struct srvsvc_NetCharDevInfo0 *array;/* [unique,size_is(count)] */
+	struct srvsvc_NetCharDevInfo0 *array;/* [size_is(count),unique] */
 };
 
 struct srvsvc_NetCharDevInfo1 {
-	const char *device;/* [unique,charset(UTF16)] */
+	const char *device;/* [charset(UTF16),unique] */
 	uint32_t status;
 	const char *user;/* [unique,charset(UTF16)] */
 	uint32_t time;
@@ -35,16 +35,16 @@ struct srvsvc_NetCharDevInfo1 {
 
 struct srvsvc_NetCharDevCtr1 {
 	uint32_t count;
-	struct srvsvc_NetCharDevInfo1 *array;/* [unique,size_is(count)] */
+	struct srvsvc_NetCharDevInfo1 *array;/* [size_is(count),unique] */
 };
 
 union srvsvc_NetCharDevInfo {
 	struct srvsvc_NetCharDevInfo0 *info0;/* [unique,case(0)] */
-	struct srvsvc_NetCharDevInfo1 *info1;/* [unique,case] */
+	struct srvsvc_NetCharDevInfo1 *info1;/* [case,unique] */
 };
 
 union srvsvc_NetCharDevCtr {
-	struct srvsvc_NetCharDevCtr0 *ctr0;/* [unique,case(0)] */
+	struct srvsvc_NetCharDevCtr0 *ctr0;/* [case(0),unique] */
 	struct srvsvc_NetCharDevCtr1 *ctr1;/* [unique,case] */
 };
 
@@ -63,26 +63,26 @@ struct srvsvc_NetCharDevQCtr0 {
 };
 
 struct srvsvc_NetCharDevQInfo1 {
-	const char *device;/* [unique,charset(UTF16)] */
+	const char *device;/* [charset(UTF16),unique] */
 	uint32_t priority;
-	const char *devices;/* [unique,charset(UTF16)] */
+	const char *devices;/* [charset(UTF16),unique] */
 	uint32_t users;
 	uint32_t num_ahead;
 };
 
 struct srvsvc_NetCharDevQCtr1 {
 	uint32_t count;
-	struct srvsvc_NetCharDevQInfo1 *array;/* [unique,size_is(count)] */
+	struct srvsvc_NetCharDevQInfo1 *array;/* [size_is(count),unique] */
 };
 
 union srvsvc_NetCharDevQInfo {
 	struct srvsvc_NetCharDevQInfo0 *info0;/* [unique,case(0)] */
-	struct srvsvc_NetCharDevQInfo1 *info1;/* [unique,case] */
+	struct srvsvc_NetCharDevQInfo1 *info1;/* [case,unique] */
 };
 
 union srvsvc_NetCharDevQCtr {
-	struct srvsvc_NetCharDevQCtr0 *ctr0;/* [unique,case(0)] */
-	struct srvsvc_NetCharDevQCtr1 *ctr1;/* [unique,case] */
+	struct srvsvc_NetCharDevQCtr0 *ctr0;/* [case(0),unique] */
+	struct srvsvc_NetCharDevQCtr1 *ctr1;/* [case,unique] */
 };
 
 struct srvsvc_NetCharDevQInfoCtr {
@@ -111,11 +111,11 @@ struct srvsvc_NetConnInfo1 {
 
 struct srvsvc_NetConnCtr1 {
 	uint32_t count;
-	struct srvsvc_NetConnInfo1 *array;/* [unique,size_is(count)] */
+	struct srvsvc_NetConnInfo1 *array;/* [size_is(count),unique] */
 };
 
 union srvsvc_NetConnCtr {
-	struct srvsvc_NetConnCtr0 *ctr0;/* [unique,case(0)] */
+	struct srvsvc_NetConnCtr0 *ctr0;/* [case(0),unique] */
 	struct srvsvc_NetConnCtr1 *ctr1;/* [unique,case] */
 };
 
@@ -130,14 +130,14 @@ struct srvsvc_NetFileInfo2 {
 
 struct srvsvc_NetFileCtr2 {
 	uint32_t count;
-	struct srvsvc_NetFileInfo2 *array;/* [unique,size_is(count)] */
+	struct srvsvc_NetFileInfo2 *array;/* [size_is(count),unique] */
 };
 
 struct srvsvc_NetFileInfo3 {
 	uint32_t fid;
 	uint32_t permissions;
 	uint32_t num_locks;
-	const char *path;/* [unique,charset(UTF16)] */
+	const char *path;/* [charset(UTF16),unique] */
 	const char *user;/* [unique,charset(UTF16)] */
 };
 
@@ -147,13 +147,13 @@ struct srvsvc_NetFileCtr3 {
 };
 
 union srvsvc_NetFileInfo {
-	struct srvsvc_NetFileInfo2 *info2;/* [unique,case(2)] */
+	struct srvsvc_NetFileInfo2 *info2;/* [case(2),unique] */
 	struct srvsvc_NetFileInfo3 *info3;/* [unique,case(3)] */
 };
 
 union srvsvc_NetFileCtr {
-	struct srvsvc_NetFileCtr2 *ctr2;/* [unique,case(2)] */
-	struct srvsvc_NetFileCtr3 *ctr3;/* [unique,case(3)] */
+	struct srvsvc_NetFileCtr2 *ctr2;/* [case(2),unique] */
+	struct srvsvc_NetFileCtr3 *ctr3;/* [case(3),unique] */
 };
 
 struct srvsvc_NetFileInfoCtr {
@@ -162,7 +162,7 @@ struct srvsvc_NetFileInfoCtr {
 };
 
 struct srvsvc_NetSessInfo0 {
-	const char *client;/* [unique,charset(UTF16)] */
+	const char *client;/* [charset(UTF16),unique] */
 };
 
 struct srvsvc_NetSessCtr0 {
@@ -191,34 +191,34 @@ struct srvsvc_NetSessInfo2 {
 	uint32_t time;
 	uint32_t idle_time;
 	uint32_t user_flags;
-	const char *client_type;/* [unique,charset(UTF16)] */
+	const char *client_type;/* [charset(UTF16),unique] */
 };
 
 struct srvsvc_NetSessCtr2 {
 	uint32_t count;
-	struct srvsvc_NetSessInfo2 *array;/* [unique,size_is(count)] */
+	struct srvsvc_NetSessInfo2 *array;/* [size_is(count),unique] */
 };
 
 struct srvsvc_NetSessInfo10 {
-	const char *client;/* [unique,charset(UTF16)] */
-	const char *user;/* [unique,charset(UTF16)] */
+	const char *client;/* [charset(UTF16),unique] */
+	const char *user;/* [charset(UTF16),unique] */
 	uint32_t time;
 	uint32_t idle_time;
 };
 
 struct srvsvc_NetSessCtr10 {
 	uint32_t count;
-	struct srvsvc_NetSessInfo10 *array;/* [unique,size_is(count)] */
+	struct srvsvc_NetSessInfo10 *array;/* [size_is(count),unique] */
 };
 
 struct srvsvc_NetSessInfo502 {
-	const char *client;/* [unique,charset(UTF16)] */
-	const char *user;/* [unique,charset(UTF16)] */
+	const char *client;/* [charset(UTF16),unique] */
+	const char *user;/* [charset(UTF16),unique] */
 	uint32_t num_open;
 	uint32_t time;
 	uint32_t idle_time;
 	uint32_t user_flags;
-	const char *client_type;/* [unique,charset(UTF16)] */
+	const char *client_type;/* [charset(UTF16),unique] */
 	const char *transport;/* [unique,charset(UTF16)] */
 };
 
@@ -229,8 +229,8 @@ struct srvsvc_NetSessCtr502 {
 
 union srvsvc_NetSessCtr {
 	struct srvsvc_NetSessCtr0 *ctr0;/* [unique,case(0)] */
-	struct srvsvc_NetSessCtr1 *ctr1;/* [unique,case] */
-	struct srvsvc_NetSessCtr2 *ctr2;/* [unique,case(2)] */
+	struct srvsvc_NetSessCtr1 *ctr1;/* [case,unique] */
+	struct srvsvc_NetSessCtr2 *ctr2;/* [case(2),unique] */
 	struct srvsvc_NetSessCtr10 *ctr10;/* [unique,case(10)] */
 	struct srvsvc_NetSessCtr502 *ctr502;/* [unique,case(502)] */
 };
@@ -283,24 +283,24 @@ struct srvsvc_NetShareCtr0 {
 };
 
 struct srvsvc_NetShareInfo1 {
-	const char *name;/* [unique,charset(UTF16)] */
+	const char *name;/* [charset(UTF16),unique] */
 	enum srvsvc_ShareType type;
-	const char *comment;/* [unique,charset(UTF16)] */
+	const char *comment;/* [charset(UTF16),unique] */
 };
 
 struct srvsvc_NetShareCtr1 {
 	uint32_t count;
-	struct srvsvc_NetShareInfo1 *array;/* [unique,size_is(count)] */
+	struct srvsvc_NetShareInfo1 *array;/* [size_is(count),unique] */
 };
 
 struct srvsvc_NetShareInfo2 {
 	const char *name;/* [unique,charset(UTF16)] */
 	enum srvsvc_ShareType type;
-	const char *comment;/* [unique,charset(UTF16)] */
+	const char *comment;/* [charset(UTF16),unique] */
 	uint32_t permissions;
 	uint32_t max_users;
 	uint32_t current_users;
-	const char *path;/* [unique,charset(UTF16)] */
+	const char *path;/* [charset(UTF16),unique] */
 	const char *password;/* [unique,charset(UTF16)] */
 };
 
@@ -318,28 +318,28 @@ struct srvsvc_NetShareInfo501 {
 
 struct srvsvc_NetShareCtr501 {
 	uint32_t count;
-	struct srvsvc_NetShareInfo501 *array;/* [unique,size_is(count)] */
+	struct srvsvc_NetShareInfo501 *array;/* [size_is(count),unique] */
 };
 
 struct srvsvc_NetShareInfo502 {
-	const char *name;/* [unique,charset(UTF16)] */
+	const char *name;/* [charset(UTF16),unique] */
 	enum srvsvc_ShareType type;
-	const char *comment;/* [unique,charset(UTF16)] */
+	const char *comment;/* [charset(UTF16),unique] */
 	uint32_t permissions;
 	uint32_t max_users;
 	uint32_t current_users;
-	const char *path;/* [unique,charset(UTF16)] */
-	const char *password;/* [unique,charset(UTF16)] */
+	const char *path;/* [charset(UTF16),unique] */
+	const char *password;/* [charset(UTF16),unique] */
 	struct sec_desc_buf sd_buf;
 };
 
 struct srvsvc_NetShareCtr502 {
 	uint32_t count;
-	struct srvsvc_NetShareInfo502 *array;/* [unique,size_is(count)] */
+	struct srvsvc_NetShareInfo502 *array;/* [size_is(count),unique] */
 };
 
 struct srvsvc_NetShareInfo1004 {
-	const char *comment;/* [unique,charset(UTF16)] */
+	const char *comment;/* [charset(UTF16),unique] */
 };
 
 struct srvsvc_NetShareCtr1004 {
@@ -371,7 +371,7 @@ struct srvsvc_NetShareCtr1006 {
 
 struct srvsvc_NetShareInfo1007 {
 	uint32_t flags;
-	const char *alternate_directory_name;/* [unique,charset(UTF16)] */
+	const char *alternate_directory_name;/* [charset(UTF16),unique] */
 };
 
 struct srvsvc_NetShareCtr1007 {
@@ -386,25 +386,25 @@ struct srvsvc_NetShareCtr1501 {
 
 union srvsvc_NetShareInfo {
 	struct srvsvc_NetShareInfo0 *info0;/* [unique,case(0)] */
-	struct srvsvc_NetShareInfo1 *info1;/* [unique,case] */
-	struct srvsvc_NetShareInfo2 *info2;/* [unique,case(2)] */
+	struct srvsvc_NetShareInfo1 *info1;/* [case,unique] */
+	struct srvsvc_NetShareInfo2 *info2;/* [case(2),unique] */
 	struct srvsvc_NetShareInfo501 *info501;/* [unique,case(501)] */
-	struct srvsvc_NetShareInfo502 *info502;/* [unique,case(502)] */
+	struct srvsvc_NetShareInfo502 *info502;/* [case(502),unique] */
 	struct srvsvc_NetShareInfo1004 *info1004;/* [unique,case(1004)] */
 	struct srvsvc_NetShareInfo1005 *info1005;/* [unique,case(1005)] */
 	struct srvsvc_NetShareInfo1006 *info1006;/* [unique,case(1006)] */
-	struct srvsvc_NetShareInfo1007 *info1007;/* [unique,case(1007)] */
+	struct srvsvc_NetShareInfo1007 *info1007;/* [case(1007),unique] */
 	struct sec_desc_buf *info1501;/* [unique,case(1501)] */
 };
 
 union srvsvc_NetShareCtr {
 	struct srvsvc_NetShareCtr0 *ctr0;/* [unique,case(0)] */
-	struct srvsvc_NetShareCtr1 *ctr1;/* [unique,case] */
+	struct srvsvc_NetShareCtr1 *ctr1;/* [case,unique] */
 	struct srvsvc_NetShareCtr2 *ctr2;/* [unique,case(2)] */
-	struct srvsvc_NetShareCtr501 *ctr501;/* [unique,case(501)] */
+	struct srvsvc_NetShareCtr501 *ctr501;/* [case(501),unique] */
 	struct srvsvc_NetShareCtr502 *ctr502;/* [unique,case(502)] */
 	struct srvsvc_NetShareCtr1004 *ctr1004;/* [unique,case(1004)] */
-	struct srvsvc_NetShareCtr1005 *ctr1005;/* [unique,case(1005)] */
+	struct srvsvc_NetShareCtr1005 *ctr1005;/* [case(1005),unique] */
 	struct srvsvc_NetShareCtr1006 *ctr1006;/* [unique,case(1006)] */
 	struct srvsvc_NetShareCtr1007 *ctr1007;/* [unique,case(1007)] */
 	struct srvsvc_NetShareCtr1501 *ctr1501;/* [unique,case(1501)] */
@@ -445,16 +445,16 @@ struct srvsvc_NetSrvInfo101 {
 	uint32_t version_major;
 	uint32_t version_minor;
 	uint32_t server_type;
-	const char *comment;/* [unique,charset(UTF16)] */
+	const char *comment;/* [charset(UTF16),unique] */
 }/* [public] */;
 
 struct srvsvc_NetSrvInfo102 {
 	enum srvsvc_PlatformId platform_id;
-	const char *server_name;/* [unique,charset(UTF16)] */
+	const char *server_name;/* [charset(UTF16),unique] */
 	uint32_t version_major;
 	uint32_t version_minor;
 	uint32_t server_type;
-	const char *comment;/* [unique,charset(UTF16)] */
+	const char *comment;/* [charset(UTF16),unique] */
 	uint32_t users;
 	uint32_t disc;
 	uint32_t hidden;
@@ -472,7 +472,7 @@ struct srvsvc_NetSrvInfo402 {
 	uint32_t security;
 	uint32_t numadmin;
 	uint32_t lanmask;
-	const char *guestaccount;/* [unique,charset(UTF16)] */
+	const char *guestaccount;/* [charset(UTF16),unique] */
 	uint32_t chdevs;
 	uint32_t chdevqs;
 	uint32_t chdevjobs;
@@ -495,18 +495,18 @@ struct srvsvc_NetSrvInfo402 {
 	uint32_t diskalert;
 	uint32_t netioalert;
 	uint32_t maxaudits;
-	const char *srvheuristics;/* [unique,charset(UTF16)] */
+	const char *srvheuristics;/* [charset(UTF16),unique] */
 };
 
 struct srvsvc_NetSrvInfo403 {
 	uint32_t ulist_mtime;
 	uint32_t glist_mtime;
 	uint32_t alist_mtime;
-	const char *alerts;/* [unique,charset(UTF16)] */
+	const char *alerts;/* [charset(UTF16),unique] */
 	uint32_t security;
 	uint32_t numadmin;
 	uint32_t lanmask;
-	const char *guestaccount;/* [unique,charset(UTF16)] */
+	const char *guestaccount;/* [charset(UTF16),unique] */
 	uint32_t chdevs;
 	uint32_t chdevqs;
 	uint32_t chdevjobs;
@@ -620,7 +620,7 @@ struct srvsvc_NetSrvInfo599 {
 	uint32_t timesource;
 	uint32_t acceptdownlevelapis;
 	uint32_t lmannounce;
-	const char *domain;/* [unique,charset(UTF16)] */
+	const char *domain;/* [charset(UTF16),unique] */
 	uint32_t maxcopyreadlen;
 	uint32_t maxcopywritelen;
 	uint32_t minkeepsearch;
@@ -660,7 +660,7 @@ struct srvsvc_NetSrvInfo599 {
 };
 
 struct srvsvc_NetSrvInfo1005 {
-	const char *comment;/* [unique,charset(UTF16)] */
+	const char *comment;/* [charset(UTF16),unique] */
 };
 
 struct srvsvc_NetSrvInfo1010 {
@@ -864,62 +864,62 @@ struct srvsvc_NetSrvInfo1556 {
 };
 
 union srvsvc_NetSrvInfo {
-	struct srvsvc_NetSrvInfo100 *info100;/* [unique,case(100)] */
-	struct srvsvc_NetSrvInfo101 *info101;/* [unique,case(101)] */
-	struct srvsvc_NetSrvInfo102 *info102;/* [unique,case(102)] */
+	struct srvsvc_NetSrvInfo100 *info100;/* [case(100),unique] */
+	struct srvsvc_NetSrvInfo101 *info101;/* [case(101),unique] */
+	struct srvsvc_NetSrvInfo102 *info102;/* [case(102),unique] */
 	struct srvsvc_NetSrvInfo402 *info402;/* [unique,case(402)] */
 	struct srvsvc_NetSrvInfo403 *info403;/* [unique,case(403)] */
-	struct srvsvc_NetSrvInfo502 *info502;/* [unique,case(502)] */
+	struct srvsvc_NetSrvInfo502 *info502;/* [case(502),unique] */
 	struct srvsvc_NetSrvInfo503 *info503;/* [unique,case(503)] */
-	struct srvsvc_NetSrvInfo599 *info599;/* [unique,case(599)] */
-	struct srvsvc_NetSrvInfo1005 *info1005;/* [unique,case(1005)] */
-	struct srvsvc_NetSrvInfo1010 *info1010;/* [unique,case(1010)] */
-	struct srvsvc_NetSrvInfo1016 *info1016;/* [unique,case(1016)] */
+	struct srvsvc_NetSrvInfo599 *info599;/* [case(599),unique] */
+	struct srvsvc_NetSrvInfo1005 *info1005;/* [case(1005),unique] */
+	struct srvsvc_NetSrvInfo1010 *info1010;/* [case(1010),unique] */
+	struct srvsvc_NetSrvInfo1016 *info1016;/* [case(1016),unique] */
 	struct srvsvc_NetSrvInfo1017 *info1017;/* [unique,case(1017)] */
 	struct srvsvc_NetSrvInfo1018 *info1018;/* [unique,case(1018)] */
 	struct srvsvc_NetSrvInfo1107 *info1107;/* [unique,case(1107)] */
 	struct srvsvc_NetSrvInfo1501 *info1501;/* [unique,case(1501)] */
 	struct srvsvc_NetSrvInfo1502 *info1502;/* [unique,case(1502)] */
-	struct srvsvc_NetSrvInfo1503 *info1503;/* [unique,case(1503)] */
+	struct srvsvc_NetSrvInfo1503 *info1503;/* [case(1503),unique] */
 	struct srvsvc_NetSrvInfo1506 *info1506;/* [unique,case(1506)] */
-	struct srvsvc_NetSrvInfo1509 *info1509;/* [unique,case(1509)] */
+	struct srvsvc_NetSrvInfo1509 *info1509;/* [case(1509),unique] */
 	struct srvsvc_NetSrvInfo1510 *info1510;/* [unique,case(1510)] */
 	struct srvsvc_NetSrvInfo1511 *info1511;/* [unique,case(1511)] */
 	struct srvsvc_NetSrvInfo1512 *info1512;/* [unique,case(1512)] */
-	struct srvsvc_NetSrvInfo1513 *info1513;/* [unique,case(1513)] */
+	struct srvsvc_NetSrvInfo1513 *info1513;/* [case(1513),unique] */
 	struct srvsvc_NetSrvInfo1514 *info1514;/* [unique,case(1514)] */
-	struct srvsvc_NetSrvInfo1515 *info1515;/* [unique,case(1515)] */
-	struct srvsvc_NetSrvInfo1516 *info1516;/* [unique,case(1516)] */
-	struct srvsvc_NetSrvInfo1518 *info1518;/* [unique,case(1518)] */
-	struct srvsvc_NetSrvInfo1520 *info1520;/* [unique,case(1520)] */
-	struct srvsvc_NetSrvInfo1521 *info1521;/* [unique,case(1521)] */
-	struct srvsvc_NetSrvInfo1522 *info1522;/* [unique,case(1522)] */
+	struct srvsvc_NetSrvInfo1515 *info1515;/* [case(1515),unique] */
+	struct srvsvc_NetSrvInfo1516 *info1516;/* [case(1516),unique] */
+	struct srvsvc_NetSrvInfo1518 *info1518;/* [case(1518),unique] */
+	struct srvsvc_NetSrvInfo1520 *info1520;/* [case(1520),unique] */
+	struct srvsvc_NetSrvInfo1521 *info1521;/* [case(1521),unique] */
+	struct srvsvc_NetSrvInfo1522 *info1522;/* [case(1522),unique] */
 	struct srvsvc_NetSrvInfo1523 *info1523;/* [unique,case(1523)] */
 	struct srvsvc_NetSrvInfo1524 *info1524;/* [unique,case(1524)] */
 	struct srvsvc_NetSrvInfo1525 *info1525;/* [unique,case(1525)] */
 	struct srvsvc_NetSrvInfo1528 *info1528;/* [unique,case(1528)] */
 	struct srvsvc_NetSrvInfo1529 *info1529;/* [unique,case(1529)] */
-	struct srvsvc_NetSrvInfo1530 *info1530;/* [unique,case(1530)] */
+	struct srvsvc_NetSrvInfo1530 *info1530;/* [case(1530),unique] */
 	struct srvsvc_NetSrvInfo1533 *info1533;/* [unique,case(1533)] */
-	struct srvsvc_NetSrvInfo1534 *info1534;/* [unique,case(1534)] */
-	struct srvsvc_NetSrvInfo1535 *info1535;/* [unique,case(1535)] */
+	struct srvsvc_NetSrvInfo1534 *info1534;/* [case(1534),unique] */
+	struct srvsvc_NetSrvInfo1535 *info1535;/* [case(1535),unique] */
 	struct srvsvc_NetSrvInfo1536 *info1536;/* [unique,case(1536)] */
 	struct srvsvc_NetSrvInfo1537 *info1537;/* [unique,case(1537)] */
 	struct srvsvc_NetSrvInfo1538 *info1538;/* [unique,case(1538)] */
 	struct srvsvc_NetSrvInfo1539 *info1539;/* [unique,case(1539)] */
-	struct srvsvc_NetSrvInfo1540 *info1540;/* [unique,case(1540)] */
+	struct srvsvc_NetSrvInfo1540 *info1540;/* [case(1540),unique] */
 	struct srvsvc_NetSrvInfo1541 *info1541;/* [unique,case(1541)] */
 	struct srvsvc_NetSrvInfo1542 *info1542;/* [unique,case(1542)] */
-	struct srvsvc_NetSrvInfo1543 *info1543;/* [unique,case(1543)] */
-	struct srvsvc_NetSrvInfo1544 *info1544;/* [unique,case(1544)] */
-	struct srvsvc_NetSrvInfo1545 *info1545;/* [unique,case(1545)] */
-	struct srvsvc_NetSrvInfo1546 *info1546;/* [unique,case(1546)] */
+	struct srvsvc_NetSrvInfo1543 *info1543;/* [case(1543),unique] */
+	struct srvsvc_NetSrvInfo1544 *info1544;/* [case(1544),unique] */
+	struct srvsvc_NetSrvInfo1545 *info1545;/* [case(1545),unique] */
+	struct srvsvc_NetSrvInfo1546 *info1546;/* [case(1546),unique] */
 	struct srvsvc_NetSrvInfo1547 *info1547;/* [unique,case(1547)] */
 	struct srvsvc_NetSrvInfo1548 *info1548;/* [unique,case(1548)] */
 	struct srvsvc_NetSrvInfo1549 *info1549;/* [unique,case(1549)] */
-	struct srvsvc_NetSrvInfo1550 *info1550;/* [unique,case(1550)] */
+	struct srvsvc_NetSrvInfo1550 *info1550;/* [case(1550),unique] */
 	struct srvsvc_NetSrvInfo1552 *info1552;/* [unique,case(1552)] */
-	struct srvsvc_NetSrvInfo1553 *info1553;/* [unique,case(1553)] */
+	struct srvsvc_NetSrvInfo1553 *info1553;/* [case(1553),unique] */
 	struct srvsvc_NetSrvInfo1554 *info1554;/* [unique,case(1554)] */
 	struct srvsvc_NetSrvInfo1555 *info1555;/* [unique,case(1555)] */
 	struct srvsvc_NetSrvInfo1556 *info1556;/* [unique,case(1556)] */
@@ -933,7 +933,7 @@ struct srvsvc_NetDiskInfo0 {
 
 struct srvsvc_NetDiskInfo {
 	uint32_t count;
-	struct srvsvc_NetDiskInfo0 *disks;/* [unique,length_is(count),size_is(count)] */
+	struct srvsvc_NetDiskInfo0 *disks;/* [length_is(count),unique,size_is(count)] */
 };
 
 struct srvsvc_Statistics {
@@ -961,7 +961,7 @@ struct srvsvc_NetTransportInfo0 {
 	const char *name;/* [unique,charset(UTF16)] */
 	uint8_t *addr;/* [unique,size_is(addr_len)] */
 	uint32_t addr_len;
-	const char *net_addr;/* [unique,charset(UTF16)] */
+	const char *net_addr;/* [charset(UTF16),unique] */
 };
 
 struct srvsvc_NetTransportCtr0 {
@@ -971,10 +971,10 @@ struct srvsvc_NetTransportCtr0 {
 
 struct srvsvc_NetTransportInfo1 {
 	uint32_t vcs;
-	const char *name;/* [unique,charset(UTF16)] */
-	uint8_t *addr;/* [unique,size_is(addr_len)] */
+	const char *name;/* [charset(UTF16),unique] */
+	uint8_t *addr;/* [size_is(addr_len),unique] */
 	uint32_t addr_len;
-	const char *net_addr;/* [unique,charset(UTF16)] */
+	const char *net_addr;/* [charset(UTF16),unique] */
 	const char *domain;/* [unique,charset(UTF16)] */
 };
 
@@ -986,10 +986,10 @@ struct srvsvc_NetTransportCtr1 {
 struct srvsvc_NetTransportInfo2 {
 	uint32_t vcs;
 	const char *name;/* [unique,charset(UTF16)] */
-	uint8_t *addr;/* [unique,size_is(addr_len)] */
+	uint8_t *addr;/* [size_is(addr_len),unique] */
 	uint32_t addr_len;
 	const char *net_addr;/* [unique,charset(UTF16)] */
-	const char *domain;/* [unique,charset(UTF16)] */
+	const char *domain;/* [charset(UTF16),unique] */
 	uint32_t unknown;
 };
 
@@ -1001,7 +1001,7 @@ struct srvsvc_NetTransportCtr2 {
 struct srvsvc_NetTransportInfo3 {
 	uint32_t vcs;
 	const char *name;/* [unique,charset(UTF16)] */
-	uint8_t *addr;/* [unique,size_is(addr_len)] */
+	uint8_t *addr;/* [size_is(addr_len),unique] */
 	uint32_t addr_len;
 	const char *net_addr;/* [unique,charset(UTF16)] */
 	const char *domain;/* [unique,charset(UTF16)] */
@@ -1012,14 +1012,14 @@ struct srvsvc_NetTransportInfo3 {
 
 struct srvsvc_NetTransportCtr3 {
 	uint32_t count;
-	struct srvsvc_NetTransportInfo3 *array;/* [unique,size_is(count)] */
+	struct srvsvc_NetTransportInfo3 *array;/* [size_is(count),unique] */
 };
 
 union srvsvc_NetTransportCtr {
-	struct srvsvc_NetTransportCtr0 *ctr0;/* [unique,case(0)] */
-	struct srvsvc_NetTransportCtr1 *ctr1;/* [unique,case] */
+	struct srvsvc_NetTransportCtr0 *ctr0;/* [case(0),unique] */
+	struct srvsvc_NetTransportCtr1 *ctr1;/* [case,unique] */
 	struct srvsvc_NetTransportCtr2 *ctr2;/* [unique,case(2)] */
-	struct srvsvc_NetTransportCtr3 *ctr3;/* [unique,case(3)] */
+	struct srvsvc_NetTransportCtr3 *ctr3;/* [case(3),unique] */
 };
 
 struct srvsvc_NetTransportInfoCtr {
@@ -1052,7 +1052,7 @@ union srvsvc_NetTransportInfo {
 
 struct srvsvc_NetCharDevEnum {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		uint32_t max_buffer;
 		struct srvsvc_NetCharDevInfoCtr *info_ctr;/* [ref] */
 		uint32_t *resume_handle;/* [unique] */
@@ -1085,7 +1085,7 @@ struct srvsvc_NetCharDevGetInfo {
 
 struct srvsvc_NetCharDevControl {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		const char *device_name;/* [charset(UTF16)] */
 		uint32_t opcode;
 	} in;
@@ -1099,7 +1099,7 @@ struct srvsvc_NetCharDevControl {
 
 struct srvsvc_NetCharDevQEnum {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		const char *user;/* [unique,charset(UTF16)] */
 		uint32_t max_buffer;
 		struct srvsvc_NetCharDevQInfoCtr *info_ctr;/* [ref] */
@@ -1134,7 +1134,7 @@ struct srvsvc_NetCharDevQGetInfo {
 
 struct srvsvc_NetCharDevQSetInfo {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		const char *queue_name;/* [charset(UTF16)] */
 		uint32_t level;
 		union srvsvc_NetCharDevQInfo info;/* [switch_is(level)] */
@@ -1151,7 +1151,7 @@ struct srvsvc_NetCharDevQSetInfo {
 
 struct srvsvc_NetCharDevQPurge {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		const char *queue_name;/* [charset(UTF16)] */
 	} in;
 
@@ -1198,8 +1198,8 @@ struct srvsvc_NetConnEnum {
 struct srvsvc_NetFileEnum {
 	struct {
 		const char *server_unc;/* [unique,charset(UTF16)] */
-		const char *path;/* [unique,charset(UTF16)] */
-		const char *user;/* [unique,charset(UTF16)] */
+		const char *path;/* [charset(UTF16),unique] */
+		const char *user;/* [charset(UTF16),unique] */
 		uint32_t max_buffer;
 		struct srvsvc_NetFileInfoCtr *info_ctr;/* [ref] */
 		uint32_t *resume_handle;/* [unique] */
@@ -1217,7 +1217,7 @@ struct srvsvc_NetFileEnum {
 
 struct srvsvc_NetFileGetInfo {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		uint32_t fid;
 		uint32_t level;
 	} in;
@@ -1232,7 +1232,7 @@ struct srvsvc_NetFileGetInfo {
 
 struct srvsvc_NetFileClose {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		uint32_t fid;
 	} in;
 
@@ -1246,8 +1246,8 @@ struct srvsvc_NetFileClose {
 struct srvsvc_NetSessEnum {
 	struct {
 		const char *server_unc;/* [unique,charset(UTF16)] */
-		const char *client;/* [unique,charset(UTF16)] */
-		const char *user;/* [unique,charset(UTF16)] */
+		const char *client;/* [charset(UTF16),unique] */
+		const char *user;/* [charset(UTF16),unique] */
 		uint32_t max_buffer;
 		struct srvsvc_NetSessInfoCtr *info_ctr;/* [ref] */
 		uint32_t *resume_handle;/* [unique] */
@@ -1267,7 +1267,7 @@ struct srvsvc_NetSessDel {
 	struct {
 		const char *server_unc;/* [unique,charset(UTF16)] */
 		const char *client;/* [unique,charset(UTF16)] */
-		const char *user;/* [unique,charset(UTF16)] */
+		const char *user;/* [charset(UTF16),unique] */
 	} in;
 
 	struct {
@@ -1279,9 +1279,9 @@ struct srvsvc_NetSessDel {
 
 struct srvsvc_NetShareAdd {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		uint32_t level;
-		union srvsvc_NetShareInfo *info;/* [ref,switch_is(level)] */
+		union srvsvc_NetShareInfo *info;/* [switch_is(level),ref] */
 		uint32_t *parm_error;/* [unique] */
 	} in;
 
@@ -1328,10 +1328,10 @@ struct srvsvc_NetShareGetInfo {
 
 struct srvsvc_NetShareSetInfo {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		const char *share_name;/* [charset(UTF16)] */
 		uint32_t level;
-		union srvsvc_NetShareInfo *info;/* [ref,switch_is(level)] */
+		union srvsvc_NetShareInfo *info;/* [switch_is(level),ref] */
 		uint32_t *parm_error;/* [unique] */
 	} in;
 
@@ -1373,7 +1373,7 @@ struct srvsvc_NetShareDelSticky {
 
 struct srvsvc_NetShareCheck {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		const char *device_name;/* [charset(UTF16)] */
 	} in;
 
@@ -1387,12 +1387,12 @@ struct srvsvc_NetShareCheck {
 
 struct srvsvc_NetSrvGetInfo {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		uint32_t level;
 	} in;
 
 	struct {
-		union srvsvc_NetSrvInfo *info;/* [ref,switch_is(level)] */
+		union srvsvc_NetSrvInfo *info;/* [switch_is(level),ref] */
 		WERROR result;
 	} out;
 
@@ -1417,7 +1417,7 @@ struct srvsvc_NetSrvSetInfo {
 
 struct srvsvc_NetDiskEnum {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		uint32_t level;
 		uint32_t maxlen;
 		struct srvsvc_NetDiskInfo *info;/* [ref] */
@@ -1437,7 +1437,7 @@ struct srvsvc_NetDiskEnum {
 struct srvsvc_NetServerStatisticsGet {
 	struct {
 		const char *server_unc;/* [unique,charset(UTF16)] */
-		const char *service;/* [unique,charset(UTF16)] */
+		const char *service;/* [charset(UTF16),unique] */
 		uint32_t level;
 		uint32_t options;
 	} in;
@@ -1466,7 +1466,7 @@ struct srvsvc_NetTransportAdd {
 
 struct srvsvc_NetTransportEnum {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		uint32_t max_buffer;
 		struct srvsvc_NetTransportInfoCtr *transports;/* [ref] */
 		uint32_t *resume_handle;/* [unique] */
@@ -1484,7 +1484,7 @@ struct srvsvc_NetTransportEnum {
 
 struct srvsvc_NetTransportDel {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		uint32_t level;
 		struct srvsvc_NetTransportInfo0 *info0;/* [ref] */
 	} in;
@@ -1498,7 +1498,7 @@ struct srvsvc_NetTransportDel {
 
 struct srvsvc_NetRemoteTOD {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 	} in;
 
 	struct {
@@ -1511,7 +1511,7 @@ struct srvsvc_NetRemoteTOD {
 
 struct srvsvc_NetSetServiceBits {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		const char *transport;/* [unique,charset(UTF16)] */
 		uint32_t servicebits;
 		uint32_t updateimmediately;
@@ -1560,7 +1560,7 @@ struct srvsvc_NetPathCanonicalize {
 
 struct srvsvc_NetPathCompare {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		const char *path1;/* [charset(UTF16)] */
 		const char *path2;/* [charset(UTF16)] */
 		uint32_t pathtype;
@@ -1615,7 +1615,7 @@ struct srvsvc_NetPRNameCompare {
 
 struct srvsvc_NetShareEnum {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		uint32_t max_buffer;
 		struct srvsvc_NetShareInfoCtr *info_ctr;/* [ref] */
 		uint32_t *resume_handle;/* [unique] */
@@ -1678,7 +1678,7 @@ struct srvsvc_NetGetFileSecurity {
 struct srvsvc_NetSetFileSecurity {
 	struct {
 		const char *server_unc;/* [unique,charset(UTF16)] */
-		const char *share;/* [unique,charset(UTF16)] */
+		const char *share;/* [charset(UTF16),unique] */
 		const char *file;/* [charset(UTF16)] */
 		uint32_t securityinformation;
 		struct sec_desc_buf *sd_buf;/* [ref] */
@@ -1693,7 +1693,7 @@ struct srvsvc_NetSetFileSecurity {
 
 struct srvsvc_NetServerTransportAddEx {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
 		uint32_t level;
 		union srvsvc_NetTransportInfo info;/* [switch_is(level)] */
 	} in;
@@ -1707,9 +1707,9 @@ struct srvsvc_NetServerTransportAddEx {
 
 struct srvsvc_NetServerSetServiceBitsEx {
 	struct {
-		const char *server_unc;/* [unique,charset(UTF16)] */
-		const char *emulated_server_unc;/* [unique,charset(UTF16)] */
-		const char *transport;/* [unique,charset(UTF16)] */
+		const char *server_unc;/* [charset(UTF16),unique] */
+		const char *emulated_server_unc;/* [charset(UTF16),unique] */
+		const char *transport;/* [charset(UTF16),unique] */
 		uint32_t servicebitsofinterest;
 		uint32_t servicebits;
 		uint32_t updateimmediately;

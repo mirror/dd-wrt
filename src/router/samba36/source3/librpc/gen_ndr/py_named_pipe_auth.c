@@ -751,14 +751,10 @@ static PyMethodDef named_pipe_auth_methods[] = {
 void initnamed_pipe_auth(void)
 {
 	PyObject *m;
-	PyObject *dep_samba_dcerpc_security;
 	PyObject *dep_talloc;
 	PyObject *dep_samba_dcerpc_netlogon;
 	PyObject *dep_samba_dcerpc_auth;
-
-	dep_samba_dcerpc_security = PyImport_ImportModule("samba.dcerpc.security");
-	if (dep_samba_dcerpc_security == NULL)
-		return;
+	PyObject *dep_samba_dcerpc_security;
 
 	dep_talloc = PyImport_ImportModule("talloc");
 	if (dep_talloc == NULL)
@@ -770,6 +766,10 @@ void initnamed_pipe_auth(void)
 
 	dep_samba_dcerpc_auth = PyImport_ImportModule("samba.dcerpc.auth");
 	if (dep_samba_dcerpc_auth == NULL)
+		return;
+
+	dep_samba_dcerpc_security = PyImport_ImportModule("samba.dcerpc.security");
+	if (dep_samba_dcerpc_security == NULL)
 		return;
 
 	auth_session_info_transport_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_auth, "session_info_transport");
