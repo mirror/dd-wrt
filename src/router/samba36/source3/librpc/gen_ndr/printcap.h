@@ -12,8 +12,8 @@
 
 struct pcap_printer {
 	const char *name;/* [unique,charset(UTF8)] */
-	const char *info;/* [unique,charset(UTF8)] */
-	const char *location;/* [unique,charset(UTF8)] */
+	const char *info;/* [charset(UTF8),unique] */
+	const char *location;/* [charset(UTF8),unique] */
 };
 
 struct pcap_data {

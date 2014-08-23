@@ -23,7 +23,7 @@ struct BrowserrSrvInfo101Ctr {
 
 union BrowserrSrvInfoUnion {
 	struct BrowserrSrvInfo100Ctr *info100;/* [unique,case(100)] */
-	struct BrowserrSrvInfo101Ctr *info101;/* [unique,case(101)] */
+	struct BrowserrSrvInfo101Ctr *info101;/* [case(101),unique] */
 }/* [switch_type(uint32)] */;
 
 struct BrowserrSrvInfo {

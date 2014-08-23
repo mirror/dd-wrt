@@ -25,14 +25,14 @@ struct bkrp_exported_RSA_key_pair {
 	uint32_t magic3;/* [value(0x32415352)] */
 	uint32_t magic4;/* [value(0x00000800)] */
 	DATA_BLOB public_exponent;/* [subcontext_size(4),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB modulus;/* [subcontext_size(256),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB prime1;/* [subcontext_size(128),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB prime2;/* [subcontext_size(128),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
+	DATA_BLOB modulus;/* [subcontext(0),flag(LIBNDR_FLAG_REMAINING),subcontext_size(256)] */
+	DATA_BLOB prime1;/* [subcontext(0),flag(LIBNDR_FLAG_REMAINING),subcontext_size(128)] */
+	DATA_BLOB prime2;/* [subcontext_size(128),flag(LIBNDR_FLAG_REMAINING),subcontext(0)] */
 	DATA_BLOB exponent1;/* [subcontext_size(128),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB exponent2;/* [subcontext_size(128),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB coefficient;/* [subcontext_size(128),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
+	DATA_BLOB exponent2;/* [subcontext_size(128),flag(LIBNDR_FLAG_REMAINING),subcontext(0)] */
+	DATA_BLOB coefficient;/* [subcontext_size(128),flag(LIBNDR_FLAG_REMAINING),subcontext(0)] */
 	DATA_BLOB private_exponent;/* [subcontext_size(256),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
-	DATA_BLOB cert;/* [subcontext_size(certificate_len),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
+	DATA_BLOB cert;/* [subcontext(0),flag(LIBNDR_FLAG_REMAINING),subcontext_size(certificate_len)] */
 };
 
 struct bkrp_dc_serverwrap_key {
@@ -51,7 +51,7 @@ struct bkrp_client_side_wrapped {
 
 struct bkrp_client_side_unwrapped {
 	uint32_t magic;/* [value(0x00000000)] */
-	DATA_BLOB secret;/* [subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
+	DATA_BLOB secret;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0)] */
 };
 
 struct bkrp_encrypted_secret_v2 {
@@ -116,7 +116,7 @@ struct bkrp_BackupKey {
 	} in;
 
 	struct {
-		uint8_t **data_out;/* [ref,size_is(,*data_out_len)] */
+		uint8_t **data_out;/* [size_is(,*data_out_len),ref] */
 		uint32_t *data_out_len;/* [ref] */
 		WERROR result;
 	} out;

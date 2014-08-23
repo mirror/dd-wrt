@@ -50,7 +50,7 @@ struct frsapi_Info {
 	uint32_t unknown2;
 	uint32_t offset;
 	uint32_t blob_len;
-	DATA_BLOB blob;/* [subcontext_size(length-offset),subcontext(0),flag(LIBNDR_FLAG_REMAINING)] */
+	DATA_BLOB blob;/* [flag(LIBNDR_FLAG_REMAINING),subcontext(0),subcontext_size(length-offset)] */
 };
 
 enum frsapi_ReplicaSetType
@@ -148,7 +148,7 @@ struct frsapi_InfoW {
 
 struct frsapi_IsPathReplicated {
 	struct {
-		const char *path;/* [unique,charset(UTF16)] */
+		const char *path;/* [charset(UTF16),unique] */
 		enum frsapi_ReplicaSetType replica_set_type;
 	} in;
 

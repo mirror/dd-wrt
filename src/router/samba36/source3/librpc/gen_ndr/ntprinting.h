@@ -33,7 +33,7 @@ struct ntprinting_driver {
 	const char * monitorname;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
 	const char * defaultdatatype;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
 	const char ** dependent_files;/* [flag((ndr_ntprinting_string_flags(r->string_flags)&~LIBNDR_FLAG_STR_NULLTERM)|LIBNDR_FLAG_STR_NOTERM|LIBNDR_FLAG_REMAINING)] */
-}/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),public] */;
 
 struct ntprinting_devicemode {
 	uint32_t string_flags;/* [skip] */
@@ -72,7 +72,7 @@ struct ntprinting_devicemode {
 	uint32_t panningwidth;
 	uint32_t panningheight;
 	DATA_BLOB *nt_dev_private;/* [unique] */
-}/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),public] */;
 
 struct ntprinting_printer_data {
 	uint32_t string_flags;/* [skip] */
@@ -106,14 +106,14 @@ struct ntprinting_printer_info {
 	const char * printprocessor;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
 	const char * datatype;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
 	const char * parameters;/* [flag(ndr_ntprinting_string_flags(r->string_flags))] */
-}/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),public] */;
 
 struct ntprinting_printer {
 	struct ntprinting_printer_info info;
 	struct ntprinting_devicemode *devmode;/* [unique] */
 	uint32_t count;
 	struct ntprinting_printer_data *printer_data;
-}/* [public,nopull,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [public,flag(LIBNDR_FLAG_NOALIGN),nopull] */;
 
 
 struct decode_ntprinting_form {

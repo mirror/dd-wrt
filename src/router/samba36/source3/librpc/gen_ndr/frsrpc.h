@@ -355,15 +355,15 @@ enum frsrpc_CommPktChunkType
 
 union frsrpc_CommPktChunkData {
 	DATA_BLOB blob;/* [flag(LIBNDR_FLAG_REMAINING),default] */
-	uint32_t bop;/* [value(0),case(FRSRPC_COMM_PKT_CHUNK_BOP)] */
+	uint32_t bop;/* [case(FRSRPC_COMM_PKT_CHUNK_BOP),value(0)] */
 	enum frsrpc_CommPktCommand command;/* [case(FRSRPC_COMM_PKT_CHUNK_COMMAND)] */
 	struct frsrpc_CommPktChunkGuidName to;/* [case(FRSRPC_COMM_PKT_CHUNK_TO)] */
 	struct frsrpc_CommPktChunkGuidName from;/* [case(FRSRPC_COMM_PKT_CHUNK_FROM)] */
 	struct frsrpc_CommPktChunkGuidName replica;/* [case(FRSRPC_COMM_PKT_CHUNK_REPLICA)] */
 	struct frsrpc_CommPktChunkGuidName connection;/* [case(FRSRPC_COMM_PKT_CHUNK_CONNECTION)] */
-	struct GUID join_guid;/* [subcontext(4),case(FRSRPC_COMM_PKT_CHUNK_JOIN_GUID)] */
+	struct GUID join_guid;/* [case(FRSRPC_COMM_PKT_CHUNK_JOIN_GUID),subcontext(4)] */
 	NTTIME last_join_time;/* [case(FRSRPC_COMM_PKT_CHUNK_LAST_JOIN_TIME)] */
-	struct frsrpc_CommPktGSVN vvector;/* [subcontext(4),case(FRSRPC_COMM_PKT_CHUNK_VVECTOR)] */
+	struct frsrpc_CommPktGSVN vvector;/* [case(FRSRPC_COMM_PKT_CHUNK_VVECTOR),subcontext(4)] */
 	NTTIME join_time;/* [subcontext(4),case(FRSRPC_COMM_PKT_CHUNK_JOIN_TIME)] */
 	struct GUID replica_version_guid;/* [subcontext(4),case(FRSRPC_COMM_PKT_CHUNK_REPLICA_VERSION_GUID)] */
 	struct GUID compression_guid;/* [case(FRSRPC_COMM_PKT_CHUNK_COMPRESSION_GUID)] */
@@ -372,22 +372,22 @@ union frsrpc_CommPktChunkData {
 	uint64_t file_size;/* [case(FRSRPC_COMM_PKT_CHUNK_FILE_SIZE)] */
 	uint64_t file_offset;/* [case(FRSRPC_COMM_PKT_CHUNK_FILE_OFFSET)] */
 	struct frsrpc_CommPktGSVN gvsn;/* [subcontext(4),case(FRSRPC_COMM_PKT_CHUNK_GVSN)] */
-	struct GUID co_guid;/* [subcontext(4),case(FRSRPC_COMM_PKT_CHUNK_CO_GUID)] */
+	struct GUID co_guid;/* [case(FRSRPC_COMM_PKT_CHUNK_CO_GUID),subcontext(4)] */
 	uint32_t co_sequnence_number;/* [case(FRSRPC_COMM_PKT_CHUNK_CO_SEQUENCE_NUMBER)] */
 	struct frsrpc_CommPktChangeOrderCommand remote_co;/* [subcontext(4),case(FRSRPC_COMM_PKT_CHUNK_REMOTE_CO)] */
-	struct frsrpc_CommPktCoRecordExtensionWin2k co_ext_win2k;/* [subcontext(4),case(FRSRPC_COMM_PKT_CHUNK_CO_EXT_WIN2K)] */
+	struct frsrpc_CommPktCoRecordExtensionWin2k co_ext_win2k;/* [case(FRSRPC_COMM_PKT_CHUNK_CO_EXT_WIN2K),subcontext(4)] */
 	struct frsrpc_CommPktChangeOrderRecordExtension co_extension2;/* [subcontext(4),case(FRSRPC_COMM_PKT_CHUNK_CO_EXTENTION_2)] */
 }/* [nodiscriminant] */;
 
 struct frsrpc_CommPktChunk {
 	enum frsrpc_CommPktChunkType type;
 	union frsrpc_CommPktChunkData data;/* [subcontext(4),switch_is(type)] */
-}/* [public,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),public] */;
 
 struct frsrpc_CommPktChunkCtr {
 	uint32_t num_chunks;
 	struct frsrpc_CommPktChunk *chunks;
-}/* [nopush,nopull,flag(LIBNDR_FLAG_NOALIGN)] */;
+}/* [flag(LIBNDR_FLAG_NOALIGN),nopull,nopush] */;
 
 enum frsrpc_CommPktMajor
 #ifndef USE_UINT_ENUMS
@@ -436,7 +436,7 @@ struct frsrpc_FrsSendCommPktReq {
 	uint32_t memory_len;/* [value(pkt_len+12)] */
 	uint32_t pkt_len;/* [value(ndr_size_frsrpc_CommPktChunkCtr(r->ctr,ndr->flags)),range(0,262144)] */
 	uint32_t upk_len;/* [value(0)] */
-	struct frsrpc_CommPktChunkCtr *ctr;/* [unique,subcontext_size(pkt_len),subcontext(4)] */
+	struct frsrpc_CommPktChunkCtr *ctr;/* [subcontext(4),unique,subcontext_size(pkt_len)] */
 	uint32_t data_name;/* [value(0)] */
 	uint32_t data_handle;/* [value(0)] */
 };
@@ -469,9 +469,9 @@ struct frsrpc_FrsSendCommPkt {
 
 struct frsrpc_FrsVerifyPromotionParent {
 	struct {
-		const char *parent_account;/* [unique,charset(UTF16)] */
-		const char *parent_password;/* [unique,charset(UTF16)] */
-		const char *replica_set_name;/* [unique,charset(UTF16)] */
+		const char *parent_account;/* [charset(UTF16),unique] */
+		const char *parent_password;/* [charset(UTF16),unique] */
+		const char *replica_set_name;/* [charset(UTF16),unique] */
 		const char *replica_set_type;/* [unique,charset(UTF16)] */
 		enum frsrpc_PartnerAuthLevel partner_auth_level;
 		uint32_t __ndr_guid_size;
@@ -488,20 +488,20 @@ struct frsrpc_FrsStartPromotionParent {
 	struct {
 		const char *parent_account;/* [unique,charset(UTF16)] */
 		const char *parent_password;/* [unique,charset(UTF16)] */
-		const char *replica_set_name;/* [unique,charset(UTF16)] */
-		const char *replica_set_type;/* [unique,charset(UTF16)] */
-		const char *connection_name;/* [unique,charset(UTF16)] */
-		const char *partner_name;/* [unique,charset(UTF16)] */
-		const char *partner_princ_name;/* [unique,charset(UTF16)] */
+		const char *replica_set_name;/* [charset(UTF16),unique] */
+		const char *replica_set_type;/* [charset(UTF16),unique] */
+		const char *connection_name;/* [charset(UTF16),unique] */
+		const char *partner_name;/* [charset(UTF16),unique] */
+		const char *partner_princ_name;/* [charset(UTF16),unique] */
 		enum frsrpc_PartnerAuthLevel partner_auth_level;
-		uint32_t __ndr_guid_size;/* [value(16),range(16,16)] */
-		struct GUID *connection_guid;/* [unique,subcontext_size(16),subcontext(4)] */
+		uint32_t __ndr_guid_size;/* [range(16,16),value(16)] */
+		struct GUID *connection_guid;/* [subcontext(4),unique,subcontext_size(16)] */
 		struct GUID *partner_guid;/* [unique,subcontext_size(16),subcontext(4)] */
-		struct GUID *parent_guid;/* [unique,subcontext_size(16),subcontext(4)] */
+		struct GUID *parent_guid;/* [subcontext_size(16),unique,subcontext(4)] */
 	} in;
 
 	struct {
-		struct GUID *parent_guid;/* [unique,subcontext_size(16),subcontext(4)] */
+		struct GUID *parent_guid;/* [subcontext_size(16),unique,subcontext(4)] */
 		WERROR result;
 	} out;
 

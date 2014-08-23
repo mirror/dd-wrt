@@ -101,7 +101,7 @@ static void dcerpc_atsvc_JobAdd_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_atsvc_JobAdd_send(TALLOC_CTX *mem_ctx,
 					    struct tevent_context *ev,
 					    struct dcerpc_binding_handle *h,
-					    const char *_servername /* [in] [unique,charset(UTF16)] */,
+					    const char *_servername /* [in] [charset(UTF16),unique] */,
 					    struct atsvc_JobInfo *_job_info /* [in] [ref] */,
 					    uint32_t *_job_id /* [out] [ref] */)
 {
@@ -202,7 +202,7 @@ NTSTATUS dcerpc_atsvc_JobAdd_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_atsvc_JobAdd(struct dcerpc_binding_handle *h,
 			     TALLOC_CTX *mem_ctx,
-			     const char *_servername /* [in] [unique,charset(UTF16)] */,
+			     const char *_servername /* [in] [charset(UTF16),unique] */,
 			     struct atsvc_JobInfo *_job_info /* [in] [ref] */,
 			     uint32_t *_job_id /* [out] [ref] */,
 			     NTSTATUS *result)
@@ -318,7 +318,7 @@ static void dcerpc_atsvc_JobDel_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_atsvc_JobDel_send(TALLOC_CTX *mem_ctx,
 					    struct tevent_context *ev,
 					    struct dcerpc_binding_handle *h,
-					    const char *_servername /* [in] [unique,charset(UTF16)] */,
+					    const char *_servername /* [in] [charset(UTF16),unique] */,
 					    uint32_t _min_job_id /* [in]  */,
 					    uint32_t _max_job_id /* [in]  */)
 {
@@ -412,7 +412,7 @@ NTSTATUS dcerpc_atsvc_JobDel_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_atsvc_JobDel(struct dcerpc_binding_handle *h,
 			     TALLOC_CTX *mem_ctx,
-			     const char *_servername /* [in] [unique,charset(UTF16)] */,
+			     const char *_servername /* [in] [charset(UTF16),unique] */,
 			     uint32_t _min_job_id /* [in]  */,
 			     uint32_t _max_job_id /* [in]  */,
 			     NTSTATUS *result)
@@ -531,7 +531,7 @@ static void dcerpc_atsvc_JobEnum_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_atsvc_JobEnum_send(TALLOC_CTX *mem_ctx,
 					     struct tevent_context *ev,
 					     struct dcerpc_binding_handle *h,
-					     const char *_servername /* [in] [unique,charset(UTF16)] */,
+					     const char *_servername /* [in] [charset(UTF16),unique] */,
 					     struct atsvc_enum_ctr *_ctr /* [in,out] [ref] */,
 					     uint32_t _preferred_max_len /* [in]  */,
 					     uint32_t *_total_entries /* [out] [ref] */,
@@ -642,7 +642,7 @@ NTSTATUS dcerpc_atsvc_JobEnum_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_atsvc_JobEnum(struct dcerpc_binding_handle *h,
 			      TALLOC_CTX *mem_ctx,
-			      const char *_servername /* [in] [unique,charset(UTF16)] */,
+			      const char *_servername /* [in] [charset(UTF16),unique] */,
 			      struct atsvc_enum_ctr *_ctr /* [in,out] [ref] */,
 			      uint32_t _preferred_max_len /* [in]  */,
 			      uint32_t *_total_entries /* [out] [ref] */,
@@ -769,7 +769,7 @@ static void dcerpc_atsvc_JobGetInfo_done(struct tevent_req *subreq);
 struct tevent_req *dcerpc_atsvc_JobGetInfo_send(TALLOC_CTX *mem_ctx,
 						struct tevent_context *ev,
 						struct dcerpc_binding_handle *h,
-						const char *_servername /* [in] [unique,charset(UTF16)] */,
+						const char *_servername /* [in] [charset(UTF16),unique] */,
 						uint32_t _job_id /* [in]  */,
 						struct atsvc_JobInfo **_job_info /* [out] [ref] */)
 {
@@ -870,7 +870,7 @@ NTSTATUS dcerpc_atsvc_JobGetInfo_recv(struct tevent_req *req,
 
 NTSTATUS dcerpc_atsvc_JobGetInfo(struct dcerpc_binding_handle *h,
 				 TALLOC_CTX *mem_ctx,
-				 const char *_servername /* [in] [unique,charset(UTF16)] */,
+				 const char *_servername /* [in] [charset(UTF16),unique] */,
 				 uint32_t _job_id /* [in]  */,
 				 struct atsvc_JobInfo **_job_info /* [out] [ref] */,
 				 NTSTATUS *result)

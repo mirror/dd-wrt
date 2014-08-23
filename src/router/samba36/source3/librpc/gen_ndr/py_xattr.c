@@ -25,9 +25,9 @@ staticforward PyTypeObject security_descriptor_hash_v3_Type;
 staticforward PyTypeObject xattr_NTACL_Type;
 staticforward PyTypeObject xattr_InterfaceType;
 
-void initxattr(void);static PyTypeObject *Object_Type;
+void initxattr(void);static PyTypeObject *ClientConnection_Type;
+static PyTypeObject *Object_Type;
 static PyTypeObject *security_descriptor_Type;
-static PyTypeObject *ClientConnection_Type;
 #include "librpc/ndr/py_xattr.c"
 
 
@@ -2050,19 +2050,23 @@ void initxattr(void)
 {
 	PyObject *m;
 	PyObject *dep_samba_dcerpc_security;
-	PyObject *dep_talloc;
 	PyObject *dep_samba_dcerpc_base;
+	PyObject *dep_talloc;
 
 	dep_samba_dcerpc_security = PyImport_ImportModule("samba.dcerpc.security");
 	if (dep_samba_dcerpc_security == NULL)
+		return;
+
+	dep_samba_dcerpc_base = PyImport_ImportModule("samba.dcerpc.base");
+	if (dep_samba_dcerpc_base == NULL)
 		return;
 
 	dep_talloc = PyImport_ImportModule("talloc");
 	if (dep_talloc == NULL)
 		return;
 
-	dep_samba_dcerpc_base = PyImport_ImportModule("samba.dcerpc.base");
-	if (dep_samba_dcerpc_base == NULL)
+	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
+	if (ClientConnection_Type == NULL)
 		return;
 
 	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
@@ -2071,10 +2075,6 @@ void initxattr(void)
 
 	security_descriptor_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_security, "descriptor");
 	if (security_descriptor_Type == NULL)
-		return;
-
-	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
-	if (ClientConnection_Type == NULL)
 		return;
 
 	xattr_DosInfoFFFFCompat_Type.tp_base = Object_Type;
@@ -2190,24 +2190,24 @@ void initxattr(void)
 	if (m == NULL)
 		return;
 
+	PyModule_AddObject(m, "XATTR_DOSINFO_ALLOC_SIZE", PyInt_FromLong(XATTR_DOSINFO_ALLOC_SIZE));
 	PyModule_AddObject(m, "XATTR_DOSATTRIB_ESTIMATED_SIZE", PyInt_FromLong(64));
-	PyModule_AddObject(m, "XATTR_DOSINFO_SIZE", PyInt_FromLong(XATTR_DOSINFO_SIZE));
-	PyModule_AddObject(m, "XATTR_DOSATTRIB_NAME", PyString_FromString("user.DosAttrib"));
-	PyModule_AddObject(m, "XATTR_SD_HASH_TYPE_SHA256", PyInt_FromLong(0x1));
-	PyModule_AddObject(m, "XATTR_DOSINFO_CREATE_TIME", PyInt_FromLong(XATTR_DOSINFO_CREATE_TIME));
-	PyModule_AddObject(m, "XATTR_SD_HASH_TYPE_NONE", PyInt_FromLong(0x0));
 	PyModule_AddObject(m, "XATTR_MAX_STREAM_SIZE_TDB", PyInt_FromLong(0x100000));
+	PyModule_AddObject(m, "XATTR_DOSSTREAMS_NAME", PyString_FromString("user.DosStreams"));
+	PyModule_AddObject(m, "XATTR_DOSATTRIB_NAME", PyString_FromString("user.DosAttrib"));
+	PyModule_AddObject(m, "XATTR_DOSINFO_CHANGE_TIME", PyInt_FromLong(XATTR_DOSINFO_CHANGE_TIME));
+	PyModule_AddObject(m, "XATTR_DOSINFO_EA_SIZE", PyInt_FromLong(XATTR_DOSINFO_EA_SIZE));
+	PyModule_AddObject(m, "XATTR_DOSINFO_ATTRIB", PyInt_FromLong(XATTR_DOSINFO_ATTRIB));
 	PyModule_AddObject(m, "XATTR_DOSEAS_NAME", PyString_FromString("user.DosEAs"));
 	PyModule_AddObject(m, "XATTR_NTACL_NAME", PyString_FromString("security.NTACL"));
-	PyModule_AddObject(m, "XATTR_DOSSTREAMS_NAME", PyString_FromString("user.DosStreams"));
-	PyModule_AddObject(m, "XATTR_DOSINFO_ALLOC_SIZE", PyInt_FromLong(XATTR_DOSINFO_ALLOC_SIZE));
-	PyModule_AddObject(m, "XATTR_DOSINFO_CHANGE_TIME", PyInt_FromLong(XATTR_DOSINFO_CHANGE_TIME));
-	PyModule_AddObject(m, "XATTR_DOSINFO_ATTRIB", PyInt_FromLong(XATTR_DOSINFO_ATTRIB));
 	PyModule_AddObject(m, "XATTR_SD_HASH_SIZE", PyInt_FromLong(64));
-	PyModule_AddObject(m, "XATTR_DOSINFO_EA_SIZE", PyInt_FromLong(XATTR_DOSINFO_EA_SIZE));
-	PyModule_AddObject(m, "XATTR_MAX_STREAM_SIZE", PyInt_FromLong(0x4000));
 	PyModule_AddObject(m, "XATTR_DOSSTREAM_PREFIX", PyString_FromString("user.DosStream."));
+	PyModule_AddObject(m, "XATTR_SD_HASH_TYPE_NONE", PyInt_FromLong(0x0));
+	PyModule_AddObject(m, "XATTR_SD_HASH_TYPE_SHA256", PyInt_FromLong(0x1));
 	PyModule_AddObject(m, "XATTR_STREAM_FLAG_INTERNAL", PyInt_FromLong(0x00000001));
+	PyModule_AddObject(m, "XATTR_DOSINFO_CREATE_TIME", PyInt_FromLong(XATTR_DOSINFO_CREATE_TIME));
+	PyModule_AddObject(m, "XATTR_DOSINFO_SIZE", PyInt_FromLong(XATTR_DOSINFO_SIZE));
+	PyModule_AddObject(m, "XATTR_MAX_STREAM_SIZE", PyInt_FromLong(0x4000));
 	Py_INCREF((PyObject *)(void *)&xattr_DosInfoFFFFCompat_Type);
 	PyModule_AddObject(m, "DosInfoFFFFCompat", (PyObject *)(void *)&xattr_DosInfoFFFFCompat_Type);
 	Py_INCREF((PyObject *)(void *)&xattr_DosInfo1_Type);

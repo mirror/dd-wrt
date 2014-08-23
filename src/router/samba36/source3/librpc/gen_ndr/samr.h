@@ -457,7 +457,7 @@ struct samr_UserInfo2 {
 
 struct samr_LogonHours {
 	uint16_t units_per_week;
-	uint8_t *bits;/* [unique,length_is(units_per_week/8),size_is(1260)] */
+	uint8_t *bits;/* [unique,size_is(1260),length_is(units_per_week/8)] */
 }/* [public,flag(LIBNDR_PRINT_ARRAY_HEX)] */;
 
 struct samr_UserInfo3 {
@@ -712,7 +712,7 @@ struct samr_DispEntryGeneral {
 
 struct samr_DispInfoGeneral {
 	uint32_t count;
-	struct samr_DispEntryGeneral *entries;/* [unique,size_is(count)] */
+	struct samr_DispEntryGeneral *entries;/* [size_is(count),unique] */
 };
 
 struct samr_DispEntryFull {
@@ -738,7 +738,7 @@ struct samr_DispEntryFullGroup {
 
 struct samr_DispInfoFullGroups {
 	uint32_t count;
-	struct samr_DispEntryFullGroup *entries;/* [unique,size_is(count)] */
+	struct samr_DispEntryFullGroup *entries;/* [size_is(count),unique] */
 };
 
 struct samr_DispEntryAscii {
@@ -876,7 +876,7 @@ enum samr_ValidationStatus
 
 struct samr_ValidationBlob {
 	uint32_t length;
-	uint8_t *data;/* [unique,size_is(length)] */
+	uint8_t *data;/* [size_is(length),unique] */
 };
 
 struct samr_ValidatePasswordInfo {
@@ -886,7 +886,7 @@ struct samr_ValidatePasswordInfo {
 	NTTIME lockout_time;
 	uint32_t bad_pwd_count;
 	uint32_t pwd_history_len;
-	struct samr_ValidationBlob *pwd_history;/* [unique,size_is(pwd_history_len)] */
+	struct samr_ValidationBlob *pwd_history;/* [size_is(pwd_history_len),unique] */
 };
 
 struct samr_ValidatePasswordRepCtr {
@@ -1188,7 +1188,7 @@ struct samr_LookupNames {
 	struct {
 		struct policy_handle *domain_handle;/* [ref] */
 		uint32_t num_names;/* [range(0,1000)] */
-		struct lsa_String *names;/* [length_is(num_names),size_is(1000)] */
+		struct lsa_String *names;/* [size_is(1000),length_is(num_names)] */
 	} in;
 
 	struct {
@@ -1204,7 +1204,7 @@ struct samr_LookupRids {
 	struct {
 		struct policy_handle *domain_handle;/* [ref] */
 		uint32_t num_rids;/* [range(0,1000)] */
-		uint32_t *rids;/* [length_is(num_rids),size_is(1000)] */
+		uint32_t *rids;/* [size_is(1000),length_is(num_rids)] */
 	} in;
 
 	struct {
@@ -1238,7 +1238,7 @@ struct samr_QueryGroupInfo {
 	} in;
 
 	struct {
-		union samr_GroupInfo **info;/* [ref,switch_is(level)] */
+		union samr_GroupInfo **info;/* [switch_is(level),ref] */
 		NTSTATUS result;
 	} out;
 
@@ -1348,7 +1348,7 @@ struct samr_QueryAliasInfo {
 	} in;
 
 	struct {
-		union samr_AliasInfo **info;/* [ref,switch_is(level)] */
+		union samr_AliasInfo **info;/* [switch_is(level),ref] */
 		NTSTATUS result;
 	} out;
 
@@ -1524,7 +1524,7 @@ struct samr_QueryDisplayInfo {
 	struct {
 		uint32_t *total_size;/* [ref] */
 		uint32_t *returned_size;/* [ref] */
-		union samr_DispInfo *info;/* [ref,switch_is(level)] */
+		union samr_DispInfo *info;/* [switch_is(level),ref] */
 		NTSTATUS result;
 	} out;
 
@@ -1617,7 +1617,7 @@ struct samr_QueryUserInfo2 {
 	} in;
 
 	struct {
-		union samr_UserInfo **info;/* [ref,switch_is(level)] */
+		union samr_UserInfo **info;/* [switch_is(level),ref] */
 		NTSTATUS result;
 	} out;
 
@@ -1785,7 +1785,7 @@ struct samr_SetUserInfo2 {
 	struct {
 		struct policy_handle *user_handle;/* [ref] */
 		enum samr_UserInfoLevel level;
-		union samr_UserInfo *info;/* [ref,switch_is(level)] */
+		union samr_UserInfo *info;/* [switch_is(level),ref] */
 	} in;
 
 	struct {
@@ -1840,7 +1840,7 @@ struct samr_Connect3 {
 
 struct samr_Connect4 {
 	struct {
-		const char *system_name;/* [unique,charset(UTF16)] */
+		const char *system_name;/* [charset(UTF16),unique] */
 		enum samr_ConnectVersion client_version;
 		uint32_t access_mask;
 	} in;
@@ -1876,7 +1876,7 @@ struct samr_ChangePasswordUser3 {
 
 struct samr_Connect5 {
 	struct {
-		const char *system_name;/* [unique,charset(UTF16)] */
+		const char *system_name;/* [charset(UTF16),unique] */
 		uint32_t access_mask;
 		uint32_t level_in;
 		union samr_ConnectInfo *info_in;/* [ref,switch_is(level_in)] */
@@ -1923,11 +1923,11 @@ struct samr_SetDsrmPassword {
 struct samr_ValidatePassword {
 	struct {
 		enum samr_ValidatePasswordLevel level;
-		union samr_ValidatePasswordReq *req;/* [ref,switch_is(level)] */
+		union samr_ValidatePasswordReq *req;/* [switch_is(level),ref] */
 	} in;
 
 	struct {
-		union samr_ValidatePasswordRep **rep;/* [ref,switch_is(level)] */
+		union samr_ValidatePasswordRep **rep;/* [switch_is(level),ref] */
 		NTSTATUS result;
 	} out;
 

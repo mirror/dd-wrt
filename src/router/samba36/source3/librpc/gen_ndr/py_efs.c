@@ -16,10 +16,10 @@ staticforward PyTypeObject EFS_CERTIFICATE_BLOB_Type;
 staticforward PyTypeObject ENCRYPTION_CERTIFICATE_Type;
 staticforward PyTypeObject efs_InterfaceType;
 
-void initefs(void);static PyTypeObject *dom_sid_Type;
-static PyTypeObject *policy_handle_Type;
+void initefs(void);static PyTypeObject *policy_handle_Type;
 static PyTypeObject *Object_Type;
 static PyTypeObject *ClientConnection_Type;
+static PyTypeObject *dom_sid_Type;
 
 static PyObject *py_EFS_HASH_BLOB_get_cbData(PyObject *obj, void *closure)
 {
@@ -840,16 +840,12 @@ void initefs(void)
 {
 	PyObject *m;
 	PyObject *dep_samba_dcerpc_security;
-	PyObject *dep_talloc;
 	PyObject *dep_samba_dcerpc_misc;
 	PyObject *dep_samba_dcerpc_base;
+	PyObject *dep_talloc;
 
 	dep_samba_dcerpc_security = PyImport_ImportModule("samba.dcerpc.security");
 	if (dep_samba_dcerpc_security == NULL)
-		return;
-
-	dep_talloc = PyImport_ImportModule("talloc");
-	if (dep_talloc == NULL)
 		return;
 
 	dep_samba_dcerpc_misc = PyImport_ImportModule("samba.dcerpc.misc");
@@ -860,8 +856,8 @@ void initefs(void)
 	if (dep_samba_dcerpc_base == NULL)
 		return;
 
-	dom_sid_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_security, "dom_sid");
-	if (dom_sid_Type == NULL)
+	dep_talloc = PyImport_ImportModule("talloc");
+	if (dep_talloc == NULL)
 		return;
 
 	policy_handle_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_misc, "policy_handle");
@@ -874,6 +870,10 @@ void initefs(void)
 
 	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
 	if (ClientConnection_Type == NULL)
+		return;
+
+	dom_sid_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_security, "dom_sid");
+	if (dom_sid_Type == NULL)
 		return;
 
 	EFS_HASH_BLOB_Type.tp_base = Object_Type;

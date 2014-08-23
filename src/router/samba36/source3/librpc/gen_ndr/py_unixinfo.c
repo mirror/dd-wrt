@@ -13,8 +13,8 @@ staticforward PyTypeObject unixinfo_GetPWUidInfo_Type;
 staticforward PyTypeObject unixinfo_InterfaceType;
 
 void initunixinfo(void);static PyTypeObject *dom_sid_Type;
-static PyTypeObject *Object_Type;
 static PyTypeObject *ClientConnection_Type;
+static PyTypeObject *Object_Type;
 
 static PyObject *py_unixinfo_GetPWUidInfo_get_status(PyObject *obj, void *closure)
 {
@@ -366,12 +366,12 @@ void initunixinfo(void)
 	if (dom_sid_Type == NULL)
 		return;
 
-	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
-	if (Object_Type == NULL)
-		return;
-
 	ClientConnection_Type = (PyTypeObject *)PyObject_GetAttrString(dep_samba_dcerpc_base, "ClientConnection");
 	if (ClientConnection_Type == NULL)
+		return;
+
+	Object_Type = (PyTypeObject *)PyObject_GetAttrString(dep_talloc, "Object");
+	if (Object_Type == NULL)
 		return;
 
 	unixinfo_GetPWUidInfo_Type.tp_base = Object_Type;
