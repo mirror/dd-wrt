@@ -745,6 +745,15 @@ ar8327_init_globals(struct ar8216_priv *priv)
 	/* setup MTU */
 	ar8216_rmw(priv, AR8327_REG_MAX_FRAME_SIZE,
 		   AR8327_MAX_FRAME_SIZE_MTU, 1518 + 8 + 2);
+
+	/* Disable EEE on all ports due to stability issues */
+	t = priv->read(priv, AR8327_REG_EEE_CTRL);
+	t |= AR8327_EEE_CTRL_DISABLE_PHY(0) |
+	     AR8327_EEE_CTRL_DISABLE_PHY(1) |
+	     AR8327_EEE_CTRL_DISABLE_PHY(2) |
+	     AR8327_EEE_CTRL_DISABLE_PHY(3) |
+	     AR8327_EEE_CTRL_DISABLE_PHY(4);
+	priv->write(priv, AR8327_REG_EEE_CTRL, t);
 }
 
 static void
