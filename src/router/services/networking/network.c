@@ -4246,7 +4246,7 @@ void start_ipv6_tunnel(char *wan_ifname)
 void stop_ipv6_tunnel(char *wan_ifname)
 {
 	if (nvram_match("ipv6_typ", "ipv6rd") || nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6to4"))
-		sysprintf("ip", "tunnel", "del", wan_ifname);
+		eval("ip", "tunnel", "del", wan_ifname);
 
 	if (nvram_match("ipv6_typ", "ipv6to4") || nvram_match("ipv6_typ", "ipv6rd")) {
 		eval("ip", "-6", "addr", "flush", "dev", nvram_safe_get("lan_ifname"), "scope", "global");
