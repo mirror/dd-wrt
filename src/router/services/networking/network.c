@@ -409,7 +409,6 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork)
 
 }
 
-
 /*
  * Enable WET DHCP relay for ethernet clients 
  */
@@ -2690,12 +2689,11 @@ void start_lan(void)
 	// eval ("rm", "/tmp/hosts");
 	addHost("localhost", "127.0.0.1", 0);
 	if (strlen(nvram_safe_get("wan_hostname")) > 0) {
-		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"),0);
-		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"),1);
-	}
-	else if (strlen(nvram_safe_get("router_name")) > 0) {
-		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"),0);
-		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"),1);
+		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 0);
+		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 1);
+	} else if (strlen(nvram_safe_get("router_name")) > 0) {
+		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 0);
+		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 1);
 	}
 #ifdef HAVE_MICRO
 	br_shutdown();
@@ -4223,73 +4221,78 @@ const char *ipv6_router_address(struct in6_addr *in6addr)
 	return addr6;
 }
 
-
 void start_ipv6_tunnel(char *wan_ifname)
 {
 	char *remote_endpoint = nvram_safe_get("ipv6_tun_end_ipv4");
 	char *tun_client_ipv6 = nvram_safe_get("ipv6_tun_client_addr");
 	char *tun_client_pref = nvram_safe_get("ipv6_tun_client_addr_pref");
-	char *ipv6_prefix     = nvram_safe_get("ipv6_prefix");
-	char *ipv6_pf_len     = nvram_safe_get("ipv6_pf_len");	
-	
-	int mtu = atoi( nvram_default_get("wan_mtu", "1500") ) - 20;
-	
-	if( nvram_invmatch("ipv6_mtu", "") )
-		mtu = atoi( nvram_safe_get("ipv6_mtu") );
-	
-	sysprintf("ip tunnel add ip6tun mode sit ttl 64 local %s remote %s", get_wan_ipaddr(), remote_endpoint );
+	char *ipv6_prefix = nvram_safe_get("ipv6_prefix");
+	char *ipv6_pf_len = nvram_safe_get("ipv6_pf_len");
+
+	int mtu = atoi(nvram_default_get("wan_mtu", "1500")) - 20;
+
+	if (nvram_invmatch("ipv6_mtu", ""))
+		mtu = atoi(nvram_safe_get("ipv6_mtu"));
+
+	sysprintf("ip tunnel add ip6tun mode sit ttl 64 local %s remote %s", get_wan_ipaddr(), remote_endpoint);
 	sysprintf("ip link set ip6tun mtu %d", mtu);
 	sysprintf("ip link set ip6tun up");
-	sysprintf("ip -6 addr add %s/%s dev ip6tun", tun_client_ipv6, tun_client_pref );
-	sysprintf("ip -6 addr add %s/%s dev %s", ipv6_prefix, ipv6_pf_len, nvram_get("lan_ifname"));
+	sysprintf("ip -6 addr add %s/%s dev ip6tun", tun_client_ipv6, tun_client_pref);
+	sysprintf("ip -6 addr add %s/%s dev %s", ipv6_prefix, ipv6_pf_len, nvram_safe_get("lan_ifname"));
 	sysprintf("ip -6 route add 2000::/3 dev ip6tun");
 
 }
 
 void stop_ipv6_tunnel(char *wan_ifname)
 {
-	if( nvram_match("ipv6_typ", "ipv6rd") || nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6to4") )
+	if (nvram_match("ipv6_typ", "ipv6rd") || nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6to4"))
 		sysprintf("ip", "tunnel", "del", wan_ifname);
-	
-	if ( nvram_match("ipv6_typ", "ipv6to4") || nvram_match("ipv6_typ", "ipv6rd") ) {
+
+	if (nvram_match("ipv6_typ", "ipv6to4") || nvram_match("ipv6_typ", "ipv6rd")) {
 		eval("ip", "-6", "addr", "flush", "dev", nvram_safe_get("lan_ifname"), "scope", "global");
 	}
 }
 
 void start_wan6_done(char *wan_ifname)
 {
-	if(nvram_match("ipv6_enable", "0"))
+	if (nvram_match("ipv6_enable", "0"))
 		return;
-	
-	if(nvram_match("ipv6_typ", "ipv6native")){
-		sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
-		
+
+	if (nvram_match("ipv6_typ", "ipv6native")) {
+		if (nvram_match("wan_proto", "disabled")) {
+			sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra", nvram_safe_get("lan_ifname"));
+		} else {
+			sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
+		}
+
 		char ip[INET6_ADDRSTRLEN + 4];
 		const char *p;
 
 		p = ipv6_router_address(NULL);
 		if (*p) {
-			snprintf(ip, sizeof(ip), "%s/%d", p, atoi(nvram_get("ipv6_pf_len")) ? : 64);
+			snprintf(ip, sizeof(ip), "%s/%d", p, atoi(nvram_safe_get("ipv6_pf_len")) ? : 64);
 			eval("ip", "-6", "addr", "add", ip, "dev", nvram_safe_get("lan_ifname"));
 		}
-		
-		sysprintf("ip", "route", "add", "::/0", "dev", nvram_get("wan_ifname"), "metric", "2048");
+		if (nvram_match("wan_proto", "disabled")) {
+			eval("ip", "route", "add", "::/0", "dev", nvram_safe_get("lan_ifname"), "metric", "2048");
+		} else {
+			eval("ip", "route", "add", "::/0", "dev", wan_ifname, "metric", "2048");
+		}
 	}
-		
-	if(nvram_match("ipv6_typ", "ipv6pd")){
+
+	if (nvram_match("ipv6_typ", "ipv6pd")) {
 		sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
 		sysprintf("stopservice dhcp6c -f");
 		sysprintf("startservice dhcp6c -f");
 	}
-	
-	if(nvram_match("ipv6_typ", "ipv6in4")){
+
+	if (nvram_match("ipv6_typ", "ipv6in4")) {
 		start_ipv6_tunnel(wan_ifname);
 	}
-	
+
 	sysprintf("stopservice dhcp6s -f");
 	sysprintf("startservice dhcp6s -f");
-		
- 
+
 }
 
 void start_wan_done(char *wan_ifname)
