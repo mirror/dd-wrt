@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.5.7.27 Kernel Configuration
+# Linux/mips 3.5.7.33 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1435,4 +1435,3 @@ CONFIG_GENERIC_ATOMIC64=y
 CONFIG_AVERAGE=y
 # CONFIG_CORDIC is not set
 # CONFIG_DDR is not set
-CONFIG_DDTB=y
