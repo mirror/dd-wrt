@@ -516,9 +516,9 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 		    )
 			save2file("-A PREROUTING -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s\n", wan_iface, proto, proto, from, ip, to);
 #endif
-		if( !strcmp(nvram_get("lan_ipaddr"), ip) ) {
+		if (!strcmp(nvram_get("lan_ipaddr"), ip)) {
 			snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
-		}else{
+		} else {
 			snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
 		}
 	} else {
@@ -528,7 +528,7 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 		    )
 			save2file("-A PREROUTING -i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s\n", wan_iface, proto, proto, from, ip, to);
 #endif
-		if( !strcmp(nvram_get("lan_ipaddr"), ip) ) {
+		if (!strcmp(nvram_get("lan_ipaddr"), ip)) {
 			snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -d %s --dport %s -j %s\n", proto, proto, ip, to, log_accept);
 		} else {
 			snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -d %s --dport %s -j %s\n", proto, proto, ip, to, log_accept);
@@ -2602,54 +2602,55 @@ void start_firewall6()
 	fprintf(stderr, "start firewall6\n");
 	if (nvram_match("ipv6_enable", "0"))
 		return;
-	
+
 	sysprintf("insmod nf_defrag_ipv6");
 	sysprintf("insmod ip6_tables");
 	sysprintf("insmod nf_conntrack_ipv6");
 	sysprintf("insmod ip6table_filter");
-	
+
 	sysprintf("ip6tables -F INPUT");
 	sysprintf("ip6tables -F FORWARD");
 	sysprintf("ip6tables -F OUTPUT");
 	sysprintf("ip6tables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT");
 	sysprintf("ip6tables -A INPUT -p icmpv6 -j ACCEPT");
 	sysprintf("ip6tables -A INPUT -s fe80::/64 -j ACCEPT");
-	
-	
-	
-	if( nvram_match("ipv6_typ", "ipv6rd") || nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6to4") ){
-	  
+
+	if (nvram_match("ipv6_typ", "ipv6rd") || nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6to4")) {
+
 		sysprintf("iptables -I INPUT -p 41 -j ACCEPT");
-		
+
 		//we have to update ip6tables to support clamp-mss
 		sysprintf("ip6tables -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
-		
+
 	}
-	
+
 	/* accept ICMP requests from the remote tunnel endpoint */
-	if( nvram_match("ipv6_typ", "ipv6in4") ) {
+	if (nvram_match("ipv6_typ", "ipv6in4")) {
 		char *ip = nvram_safe_get("ipv6_tun_end_ipv4");
 		if (*ip && strcmp(ip, "0.0.0.0") != 0)
 			sysprintf("iptables -I INPUT -p icmp -s %s -j ACCEPT", ip);
 	}
-		
-	if( nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6native"))
+
+	if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6native"))
 		sysprintf("ip6tables -A INPUT -p udp --dport 546 -j ACCEPT");
-	
+
 	sysprintf("ip6tables -A INPUT -j DROP");
-	
-	
+
 	sysprintf("ip6tables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT");
-	
-	if( nvram_match("ipv6_typ", "ipv6native") || nvram_match("ipv6_typ", "ipv6pd")) 
-		sysprintf("ip6tables -A FORWARD -o %s -j ACCEPT", nvram_get("wan_ifname"));
-	
-	if( nvram_match("ipv6_typ", "ipv6in4") )
+
+	if (nvram_match("ipv6_typ", "ipv6native") || nvram_match("ipv6_typ", "ipv6pd")) {
+		if (nvram_match("wan_proto", "disabled")) {
+			sysprintf("ip6tables -A FORWARD -o %s -j ACCEPT", nvram_get("lan_ifname"));
+		} else {
+			sysprintf("ip6tables -A FORWARD -o %s -j ACCEPT", nvram_get("wan_ifname"));
+		}
+	}
+
+	if (nvram_match("ipv6_typ", "ipv6in4"))
 		sysprintf("ip6tables -A FORWARD -o ip6tun -j ACCEPT");
-	
+
 	sysprintf("ip6tables -A FORWARD -j DROP");
-	
-		
+
 }
 
 #ifdef DEVELOPE_ENV
