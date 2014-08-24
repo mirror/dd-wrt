@@ -4237,7 +4237,7 @@ void start_ipv6_tunnel(char *wan_ifname)
 	if( nvram_invmatch("ipv6_mtu", "") )
 		mtu = atoi( nvram_safe_get("ipv6_mtu") );
 	
-	sysprintf("ip tunnel add ip6tun mode sit ttl 64 local %s remote %s", nvram_get("wan_ipaddr"), remote_endpoint );
+	sysprintf("ip tunnel add ip6tun mode sit ttl 64 local %s remote %s", get_wan_ipaddr();, remote_endpoint );
 	sysprintf("ip link set ip6tun mtu %d", mtu);
 	sysprintf("ip link set ip6tun up");
 	sysprintf("ip -6 addr add %s/%s dev ip6tun", tun_client_ipv6, tun_client_pref );
@@ -4246,10 +4246,10 @@ void start_ipv6_tunnel(char *wan_ifname)
 
 }
 
-void stop_ipv6_tunnel()
+void stop_ipv6_tunnel(char *wan_ifname)
 {
 	if( nvram_match("ipv6_typ", "ipv6rd") || nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6to4") )
-		sysprintf("ip", "tunnel", "del", nvram_get("wan_ifname"));
+		sysprintf("ip", "tunnel", "del", wan_ifname);
 	
 	if ( nvram_match("ipv6_typ", "ipv6to4") || nvram_match("ipv6_typ", "ipv6rd") ) {
 		eval("ip", "-6", "addr", "flush", "dev", nvram_safe_get("lan_ifname"), "scope", "global");
@@ -4613,7 +4613,7 @@ void stop_wan(void)
 	 */
 	stop_firewall();
 #ifdef HAVE_IPV6
-	stop_ipv6_tunnel();
+	stop_ipv6_tunnel(wan_ifname);
 #endif
 	/*
 	 * Kill any WAN client daemons or callbacks 
