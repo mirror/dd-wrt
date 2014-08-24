@@ -76,7 +76,7 @@ int write_ipv6_dns_servers(FILE * f, const char *prefix, char *dns, const char *
 void start_radvd(void)
 {
 	int c = 0, manual = 0;
-	int *mtu = 1500;;
+	int mtu = 1500;;
 	char *buf, *prefix;
 	const char *ip;
 	char *p = NULL;

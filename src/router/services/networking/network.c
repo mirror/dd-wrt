@@ -4237,7 +4237,7 @@ void start_ipv6_tunnel(char *wan_ifname)
 	if( nvram_invmatch("ipv6_mtu", "") )
 		mtu = atoi( nvram_safe_get("ipv6_mtu") );
 	
-	sysprintf("ip tunnel add ip6tun mode sit ttl 64 local %s remote %s", get_wan_ipaddr();, remote_endpoint );
+	sysprintf("ip tunnel add ip6tun mode sit ttl 64 local %s remote %s", get_wan_ipaddr(), remote_endpoint );
 	sysprintf("ip link set ip6tun mtu %d", mtu);
 	sysprintf("ip link set ip6tun up");
 	sysprintf("ip -6 addr add %s/%s dev ip6tun", tun_client_ipv6, tun_client_pref );
