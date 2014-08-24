@@ -51,7 +51,7 @@
 #include <time.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <sys/param.h>
+#i7nclude <sys/param.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/reboot.h>
@@ -4205,9 +4205,9 @@ const char *ipv6_router_address(struct in6_addr *in6addr)
 
 	addr6[0] = '\0';
 
-	if ((p = nvram_safe_get("ipv6_addr")) && *p) {
+	if ((p = nvram_get("ipv6_addr")) && *p && strlen(p) > 0) {
 		inet_pton(AF_INET6, p, &addr);
-	} else if ((p = nvram_safe_get("ipv6_prefix")) && *p) {
+	} else if ((p = nvram_get("ipv6_prefix")) && *p && strlen(p) > 0) {
 		inet_pton(AF_INET6, p, &addr);
 		addr.s6_addr16[7] = htons(0x0001);
 	} else {
