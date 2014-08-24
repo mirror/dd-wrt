@@ -103,14 +103,14 @@ void start_radvd(void)
         }
         
 	if (nvram_match("radvd_custom", "1")) {
-		buf = nvram_get("radvd_conf");
+		buf = nvram_safe_get("radvd_conf");
 		if (buf != NULL)
 			writenvram("radvd_conf", "/tmp/radvd.conf");
 
 		system2("sync");
 	} else {
   
-		if( !strcmp(nvram_get("ipv6_typ"), "ipv6native") ) {
+		if( nvram_match("ipv6_typ", "ipv6native")) {
 			if(do_mtu) {
 				mtu = atoi( nvram_safe_get("ipv6_mtu") );
 			} else {
@@ -119,11 +119,13 @@ void start_radvd(void)
 			
 		}
 		
-		if( !strcmp(nvram_get("ipv6_typ"), "ipv6to4") ) {
+		if( nvram_match("ipv6_typ", "ipv6to4") ) {
 			do_6to4 = 1;
 		} 
 		
-                if( !strcmp(nvram_get("ipv6_typ"), "ipv6in4") ) {}
+		if( nvram_match("ipv6_typ", "ipv6in4") ) {
+			do_6to4 = 1;
+		} 
                 
                 if( !strcmp(nvram_get("ipv6_typ"), "ipv6rd") ) {
 			do_6rd = 1;
@@ -163,7 +165,7 @@ void start_radvd(void)
                         manual ? "off" : "on",
                         do_6to4 | do_6rd ? "  AdvValidLifetime 300;\n  AdvPreferredLifetime 120;\n" : "",
                         do_6to4 ? "  Base6to4Interface " : "",
-                        do_6to4 ? nvram_get("wan_ifname")  : "",
+                        do_6to4 ? get_wan_face()  : "",
                         do_6to4 ? ";\n" : "");
 		
 		char ipv6_dns_str[1024] = "";
