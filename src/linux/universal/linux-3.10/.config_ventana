@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.10.52 Kernel Configuration
+# Linux/arm 3.10.53 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_MIGHT_HAVE_PCI=y
@@ -810,7 +810,7 @@ CONFIG_IP6_NF_MATCH_FRAG=m
 # CONFIG_IP6_NF_MATCH_HL is not set
 CONFIG_IP6_NF_MATCH_IPV6HEADER=m
 # CONFIG_IP6_NF_MATCH_MH is not set
-# CONFIG_IP6_NF_MATCH_RPFILTER is not set
+CONFIG_IP6_NF_MATCH_RPFILTER=m
 CONFIG_IP6_NF_MATCH_RT=m
 # CONFIG_IP6_NF_TARGET_HL is not set
 CONFIG_IP6_NF_FILTER=m
