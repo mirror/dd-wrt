@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.10.52 Kernel Configuration
+# Linux/mips 3.10.53 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -626,7 +626,6 @@ CONFIG_IP6_NF_MATCH_RT=m
 # CONFIG_IP6_NF_TARGET_HL is not set
 CONFIG_IP6_NF_FILTER=m
 CONFIG_IP6_NF_TARGET_REJECT=m
-# CONFIG_IP6_NF_TARGET_SYNPROXY is not set
 CONFIG_IP6_NF_MANGLE=m
 # CONFIG_IP6_NF_RAW is not set
 CONFIG_NF_NAT_IPV6=m
