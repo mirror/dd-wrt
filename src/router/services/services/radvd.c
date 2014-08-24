@@ -122,11 +122,7 @@ void start_radvd(void)
 		if( nvram_match("ipv6_typ", "ipv6to4") ) {
 			do_6to4 = 1;
 		} 
-		
-		if( nvram_match("ipv6_typ", "ipv6in4") ) {
-			do_6to4 = 1;
-		} 
-                
+		                
                 if( !strcmp(nvram_get("ipv6_typ"), "ipv6rd") ) {
 			do_6rd = 1;
 		}
