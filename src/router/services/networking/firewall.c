@@ -2928,7 +2928,7 @@ void start_firewall(void)
 void stop_firewall6(void)
 {
 	if (nvram_match("ipv6_enable", "0"))
-		return 0;
+		return;
 
 	eval("ip", "-6", "addr", "flush", "scope", "global");
 }
