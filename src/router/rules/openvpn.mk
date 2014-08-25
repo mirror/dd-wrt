@@ -25,11 +25,16 @@ endif
 CONFIGURE_ARGS_OVPN += \
 	--host=$(ARCH)-linux \
 	CPPFLAGS="-I$(TOP)/lzo/include -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs" \
+	--disable-selinux \
+	--disable-systemd \
+	--disable-debug \
+	--disable-eurephia \
+	--disable-pkcs11 \
 	--disable-plugins \
-	--enable-debug \
 	--enable-password-save \
 	--enable-management \
 	--enable-lzo \
+	--enable-fragment \
 	--enable-server \
 	--enable-multihome \
 	--with-crypto-library=$(SSL_TYPE) \
