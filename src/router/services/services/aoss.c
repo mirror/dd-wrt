@@ -86,7 +86,7 @@ void start_aoss(void)
 	if (!is_ath9k("ath0"))
 #endif
 	{
-		sysprintf("startservice deconfigurewifi -f");
+		eval("startservice","deconfigurewifi","-f");
 	}
 	nvram_unset("ath0_vifs");
 #ifdef HAVE_WZRHPAG300NH
@@ -96,7 +96,7 @@ void start_aoss(void)
 	if (!is_ath9k("ath0"))
 #endif
 	{
-		sysprintf("startservice configurewifi -f");
+		eval("startservice","configurewifi","-f");
 	}
 	nvram_set("ath0_vifs", copy);
 #ifdef HAVE_WZRHPAG300NH

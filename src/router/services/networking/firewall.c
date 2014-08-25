@@ -2596,7 +2596,7 @@ void set_gprules(char *iface)
 
 int isregistered_real(void);
 
-void start_firewall6()
+void start_firewall6(void)
 {
 
 	fprintf(stderr, "start firewall6\n");

@@ -101,10 +101,10 @@ int dhcp6c_state_main(int argc, char **argv)
 	
 	dns_to_resolv();
 	
-	sysprintf("stopservice radvd -f");
-	sysprintf("startservice radvd -f");
-	sysprintf("stopservice dhcp6s -f");
-	sysprintf("startservice dhcp6s -f");
+	eval("stopservice","radvd","-f");
+	eval("startservice","radvd","-f");
+	eval("stopservice","dhcp6s","-f");
+	eval("startservice","dhcp6s","-f");
 	return 0;
 }
 #endif

@@ -4233,13 +4233,14 @@ void start_ipv6_tunnel(char *wan_ifname)
 
 	if (nvram_invmatch("ipv6_mtu", ""))
 		mtu = atoi(nvram_safe_get("ipv6_mtu"));
-
-	sysprintf("ip tunnel add ip6tun mode sit ttl 64 local %s remote %s", get_wan_ipaddr(), remote_endpoint);
+	sysprintf("echo ip tunnel add ip6tun mode sit ttl 64 local %s remote %s >> /tmp/tunneldebug", get_wan_ipaddr(), remote_endpoint);
+	
+	eval("ip","tunnel","add","ip6tun","mode","sit","ttl","64","local",get_wan_ipaddr(),"remote",remote_endpoint);
 	sysprintf("ip link set ip6tun mtu %d", mtu);
-	sysprintf("ip link set ip6tun up");
-	sysprintf("ip -6 addr add %s/%s dev ip6tun", tun_client_ipv6, tun_client_pref);
-	sysprintf("ip -6 addr add %s/%s dev %s", ipv6_prefix, ipv6_pf_len, nvram_safe_get("lan_ifname"));
-	sysprintf("ip -6 route add 2000::/3 dev ip6tun");
+	eval("ip","link","set","ip6tun","up");
+	eval("ip","-6","addr","add",tun_client_ipv6,"/",tun_client_pref,"dev","ip6tun");
+	eval("ip","-6","addr","add",ipv6_prefix,"/",ipv6_pf_len,"dev",nvram_safe_get("lan_ifname"));
+	eval("ip","-6","route","add","2000::/3","dev","ip6tun");
 
 }
 
@@ -4282,16 +4283,16 @@ void start_wan6_done(char *wan_ifname)
 
 	if (nvram_match("ipv6_typ", "ipv6pd")) {
 		sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
-		sysprintf("stopservice dhcp6c -f");
-		sysprintf("startservice dhcp6c -f");
+		eval("stopservice","dhcp6c","-f");
+		eval("startservice","dhcp6c","-f");
 	}
 
 	if (nvram_match("ipv6_typ", "ipv6in4")) {
 		start_ipv6_tunnel(wan_ifname);
 	}
 
-	sysprintf("stopservice dhcp6s -f");
-	sysprintf("startservice dhcp6s -f");
+	eval("stopservice","dhcp6s","-f");
+	eval("startservice","dhcp6s","-f");
 
 }
 
