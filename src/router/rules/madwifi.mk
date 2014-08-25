@@ -1,5 +1,37 @@
 include $(TOP)/.config
 
+
+ifeq ($(ARCH),mips64)
+madwifi:
+ifeq ($(CONFIG_BOESE),y)
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=mips64-boese-be-elf
+else
+	make -j 4 -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) TARGET=mips64-be-elf
+endif
+	make -j 4 -C madwifi.dev/madwifi.dev/tools TARGET=mips64-be-elf BINDIR=$(INSTALLDIR)/madwifi/usr/sbin
+
+madwifi-clean:
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=mips64-boese-be-elf
+else
+	make -C madwifi.dev/madwifi.dev clean KERNELPATH=$(LINUXDIR) TARGET=mips64-be-elf
+endif
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin clean
+
+madwifi-install:
+	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+ifneq ($(CONFIG_NOWIFI),y)
+	make -C madwifi.dev/madwifi.dev/tools BINDIR=$(INSTALLDIR)/madwifi/usr/sbin install TARGET=mips64-be-elf install
+ifeq ($(CONFIG_BOESE),y)
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mips64-boese-be-elf install
+else
+	make -C madwifi.dev/madwifi.dev KERNELPATH=$(LINUXDIR) BINDIR=/usr/sbin DESTDIR=$(INSTALLDIR)/madwifi TARGET=mips64-be-elf install
+endif
+endif
+
+endif
+
+
 ifeq ($(ARCH),mipsel)
 
 
@@ -1011,4 +1043,6 @@ else
 endif
 endif
 endif
+
+
 
