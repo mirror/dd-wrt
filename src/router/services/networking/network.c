@@ -4238,8 +4238,12 @@ void start_ipv6_tunnel(char *wan_ifname)
 	eval("ip","tunnel","add","ip6tun","mode","sit","ttl","64","local",get_wan_ipaddr(),"remote",remote_endpoint);
 	sysprintf("ip link set ip6tun mtu %d", mtu);
 	eval("ip","link","set","ip6tun","up");
-	eval("ip","-6","addr","add",tun_client_ipv6,"/",tun_client_pref,"dev","ip6tun");
-	eval("ip","-6","addr","add",ipv6_prefix,"/",ipv6_pf_len,"dev",nvram_safe_get("lan_ifname"));
+	char clientip[64];
+	char prefix[64];
+	sprintf(clientip, "%s/%s",tun_client_ipv6,tun_client_pref);
+	sprintf(prefix, "%s/%s",ipv6_prefix,ipv6_pf_len);
+	eval("ip","-6","addr","add",clientip,"dev","ip6tun");
+	eval("ip","-6","addr","add",prefix,"dev",nvram_safe_get("lan_ifname"));
 	eval("ip","-6","route","add","2000::/3","dev","ip6tun");
 
 }
