@@ -68,6 +68,9 @@ endif
 ifeq ($(ARCH),i386)
 	cp busybox/.config_wrap busybox/.config
 endif
+ifeq ($(ARCH),mips64)
+	cp busybox/.config_fonera busybox/.config
+endif
 ifeq ($(ARCH),x86_64)
 	cp busybox/.config_wrap busybox/.config
 endif
