@@ -143,8 +143,8 @@ struct maclist {
 
 void security_disable(char *iface)
 {
-	sysprintf("iwpriv %s set ACLClearAll=1", iface);
-	sysprintf("iwpriv %s set AccessPolicy=0", iface);
+	eval("iwpriv",iface,"set","ACLClearAll=1");
+	eval("iwpriv",iface,"set","AccessPolicy=0");
 
 }
 

@@ -29,20 +29,20 @@
 #define SHELL "/bin/login"
 #define	_PATH_CONSOLE	"/dev/console"
 
-#define start_service(a) sysprintf("startservice %s",a);
-#define start_service_force(a) sysprintf("startservice %s -f",a);
-#define start_service_f(a) sysprintf("startservice_f %s",a);
-#define start_service_force_f(a) sysprintf("startservice_f %s -f",a);
-#define start_services() system("startservices");
-#define start_single_service() system("start_single_service");
-#define stop_service(a) sysprintf("stopservice %s",a);
-#define stop_service_force(a) sysprintf("stopservice %s -f",a);
-#define stop_running(a) sysprintf("stop_running");
-#define stop_service_f(a) sysprintf("stopservice_f %s",a);
-#define stop_service_force_f(a) sysprintf("stopservice_f %s -f",a);
-#define stop_services() system("stopservices");
-#define startstop(a) sysprintf("startstop %s",a);
-#define startstop_f(a) sysprintf("startstop_f %s",a);
+#define start_service(a) eval("startservice",a);
+#define start_service_force(a) eval("startservice",a,"-f");
+#define start_service_f(a) eval("startservice_f",a);
+#define start_service_force_f(a) eval("startservice_f",a,"-f");
+#define start_services() eval("startservices");
+#define start_single_service() eval("start_single_service");
+#define stop_service(a) eval("stopservice",a);
+#define stop_service_force(a) eval("stopservice","-f",a);
+#define stop_running(a) eval("stop_running");
+#define stop_service_f(a) eval("stopservice_f",a);
+#define stop_service_force_f(a) eval("stopservice_f",a,"-f");
+#define stop_services() eval("stopservices");
+#define startstop(a) eval("startstop",a);
+#define startstop_f(a) eval("startstop_f",a);
 
 static void set_term(int fd)
 {
