@@ -105,8 +105,6 @@ void start_radvd(void)
 		buf = nvram_safe_get("radvd_conf");
 		if (buf != NULL)
 			writenvram("radvd_conf", "/tmp/radvd.conf");
-
-		system2("sync");
 	} else {
 
 		if (nvram_match("ipv6_typ", "ipv6native")) {
