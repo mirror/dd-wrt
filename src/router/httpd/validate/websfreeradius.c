@@ -239,7 +239,7 @@ static void save_radius_users(webs_t wp)
 		if (!u)
 			break;
 		sprintf(filename, "/jffs/etc/freeradius/certs/clients/%s-cert.pem", u);
-		sysprintf("rm -f %s", filename);
+		unlink(filename);
 		char *p = websGetVar(wp, passwd, NULL);
 		if (!p)
 			break;
