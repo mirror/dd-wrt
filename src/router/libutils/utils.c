@@ -148,6 +148,7 @@ unsigned int daysformonth(unsigned int month, unsigned int year)
 								     || ((year % 400) == 0)))
 							       && (month == 2)));
 }
+
 #ifdef HAVE_IPV6
 const char *getifaddr(char *ifname, int family, int linklocal)
 {
@@ -161,20 +162,17 @@ const char *getifaddr(char *ifname, int family, int linklocal)
 	}
 
 	for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-		if ((ifa->ifa_addr == NULL) ||
-		(strncmp(ifa->ifa_name, ifname, IFNAMSIZ) != 0) ||
-		(ifa->ifa_addr->sa_family != family))
-		continue;
-
+		if ((ifa->ifa_addr == NULL) || (strncmp(ifa->ifa_name, ifname, IFNAMSIZ) != 0) || (ifa->ifa_addr->sa_family != family))
+			continue;
 
 		if (ifa->ifa_addr->sa_family == AF_INET6) {
-		struct sockaddr_in6 *s6 = (struct sockaddr_in6 *)(ifa->ifa_addr);
-		if (IN6_IS_ADDR_LINKLOCAL(&s6->sin6_addr) ^ linklocal)
-		continue;
-		addr = (void *)&(s6->sin6_addr);
+			struct sockaddr_in6 *s6 = (struct sockaddr_in6 *)(ifa->ifa_addr);
+			if (IN6_IS_ADDR_LINKLOCAL(&s6->sin6_addr) ^ linklocal)
+				continue;
+			addr = (void *)&(s6->sin6_addr);
 		} else {
-		struct sockaddr_in *s = (struct sockaddr_in *)(ifa->ifa_addr);
-		addr = (void *)&(s->sin_addr);
+			struct sockaddr_in *s = (struct sockaddr_in *)(ifa->ifa_addr);
+			addr = (void *)&(s->sin_addr);
 		}
 
 		if ((addr) && inet_ntop(ifa->ifa_addr->sa_family, addr, buf, sizeof(buf)) != NULL) {
@@ -1225,7 +1223,7 @@ int internal_getRouterBrand()
 		FILE *model = fopen(devname, "rb");
 		if (model) {
 #define R6300V2 "U12H240T00_NETGEAR"
-#define R6300V2CH "U12H240T70_NETGEAR"		  
+#define R6300V2CH "U12H240T70_NETGEAR"
 #define AC1450 "U12H240T99_NETGEAR"
 #define EX6200 "U12H269T00_NETGEAR"
 			char modelstr[32];
@@ -1255,7 +1253,7 @@ int internal_getRouterBrand()
 		setRouter("Netgear R7000");
 		return ROUTER_NETGEAR_R7000;
 	}
-	
+
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
 	    && nvram_match("boardrev", "0x1101")) {
 		setRouter("Netgear R8000");

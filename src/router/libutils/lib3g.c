@@ -153,7 +153,7 @@ static void modeswitch_expose_all(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "MessageContent=\"55534243785634120100000080000601000000000000000000000000000000\"\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 
 	sleep(3);
 }
@@ -166,7 +166,7 @@ static void select_config1(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "Configuration=1\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
 
 static void select_config2(int needreset, int devicecount)
@@ -177,7 +177,7 @@ static void select_config2(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "Configuration=2\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
 
 /* std eject is "allow media change" + "stop unit" */
@@ -191,16 +191,16 @@ static void modeswitch_std_eject(int needreset, int devicecount)
 	fprintf(out, "MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n");
 	fprintf(out, "NeedResponse=1\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
 
 static void modeswitch_pantech(int needreset, int devicecount)
 {
-	eval("usb_modeswitch","-v","0x106c","-p","0x3b03","-I","-M","555342431234567824000000800008ff024445564348470000000000000000");
-	eval("usb_modeswitch","-v","0x106c","-p","0x3b05","-I","-M","555342431234567824000000800008ff020000000000000000000000000000");
-	eval("usb_modeswitch","-v","0x106c","-p","0x3b06","-I","-M","555342431234567824000000800008ff020000000000000000000000000000");
-	eval("usb_modeswitch","-v","0x106c","-p","0x3b11","-I","-M","555342431234567824000000800008ff024445564348470000000000000000");
-	eval("usb_modeswitch","-v","0x106c","-p","0x3b14","-I","-M","555342431234567824000000800008ff024445564348470000000000000000");
+	eval("usb_modeswitch", "-v", "0x106c", "-p", "0x3b03", "-I", "-M", "555342431234567824000000800008ff024445564348470000000000000000");
+	eval("usb_modeswitch", "-v", "0x106c", "-p", "0x3b05", "-I", "-M", "555342431234567824000000800008ff020000000000000000000000000000");
+	eval("usb_modeswitch", "-v", "0x106c", "-p", "0x3b06", "-I", "-M", "555342431234567824000000800008ff020000000000000000000000000000");
+	eval("usb_modeswitch", "-v", "0x106c", "-p", "0x3b11", "-I", "-M", "555342431234567824000000800008ff024445564348470000000000000000");
+	eval("usb_modeswitch", "-v", "0x106c", "-p", "0x3b14", "-I", "-M", "555342431234567824000000800008ff024445564348470000000000000000");
 }
 
 static void modeswitch_sierra(int needreset, int devicecount)
@@ -211,7 +211,7 @@ static void modeswitch_sierra(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "SierraMode=1\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 	sleep(5);		// give Sierra additional time
 }
 
@@ -223,7 +223,7 @@ static void modeswitch_huawei_std(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "MessageContent=\"55534243123456780000000000000011062000000101000100000000000000\"\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
 
 static void modeswitch_devchg_fe(int needreset, int devicecount)
@@ -234,7 +234,7 @@ static void modeswitch_devchg_fe(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "MessageContent=\"555342431234567824000000800008fe524445564348470000000000000000\"\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
 
 static void modeswitch_devchg_ff(int needreset, int devicecount)
@@ -245,7 +245,7 @@ static void modeswitch_devchg_ff(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "MessageContent=\"555342431234567824000000800008ff524445564348470000000000000000\"\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
 
 static void modeswitch_devchg1(int needreset, int devicecount)
@@ -256,7 +256,7 @@ static void modeswitch_devchg1(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "MessageContent=\"555342431234567824000000800009ff524445564348473100000000000000\"\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
 
 static void modeswitch_zte_3msg(int needreset, int devicecount)
@@ -269,17 +269,17 @@ static void modeswitch_zte_3msg(int needreset, int devicecount)
 		"MessageContent=\"5553424312345678000000000000061e000000000000000000000000000000\"\n"
 		"MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n" "MessageContent3=\"55534243123456702000000080000c85010101180101010101000000000000\"\n" "NeedResponse=1\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
 
 static void modeswitch_zte_other(int needreset, int devicecount)
 {
 
-	eval("usb_modeswitch","-v","0x19d2","-p","0x0166","-I","-M","55534243123456782400000080000685000000240000000000000000000000");
-	eval("usb_modeswitch","-v","0x19d2","-p","0x0266","-I","-M","55534243123456782400000080000685000000240000000000000000000000");
-	eval("usb_modeswitch","-v","0x19d2","-p","0x1514","-I","-M","5553424348c4758600000000000010ff000000000000000000000000000000");	//modeswitch_onda ?
-	eval("usb_modeswitch","-v","0x19d2","-p","0xfff5","-I","-M","5553424312345678c00000008000069f030000000000000000000000000000");
-	eval("usb_modeswitch","-v","0x19d2","-p","0xfff6","-I","-M","5553424312345678c00000008000069f030000000000000000000000000000");
+	eval("usb_modeswitch", "-v", "0x19d2", "-p", "0x0166", "-I", "-M", "55534243123456782400000080000685000000240000000000000000000000");
+	eval("usb_modeswitch", "-v", "0x19d2", "-p", "0x0266", "-I", "-M", "55534243123456782400000080000685000000240000000000000000000000");
+	eval("usb_modeswitch", "-v", "0x19d2", "-p", "0x1514", "-I", "-M", "5553424348c4758600000000000010ff000000000000000000000000000000");	//modeswitch_onda ?
+	eval("usb_modeswitch", "-v", "0x19d2", "-p", "0xfff5", "-I", "-M", "5553424312345678c00000008000069f030000000000000000000000000000");
+	eval("usb_modeswitch", "-v", "0x19d2", "-p", "0xfff6", "-I", "-M", "5553424312345678c00000008000069f030000000000000000000000000000");
 }
 
 static void modeswitch_alcatel(int needreset, int devicecount)
@@ -291,7 +291,7 @@ static void modeswitch_alcatel(int needreset, int devicecount)
 	fprintf(out, "MessageContent=\"55534243123456788000000080000606f50402527000000000000000000000\"\n");
 	fprintf(out, "CheckSuccess=20\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
 
 static void modeswitch_icon210(int needreset, int devicecount)
@@ -305,7 +305,7 @@ static void modeswitch_icon210(int needreset, int devicecount)
 	fprintf(out, "MessageContent=\"555342431234567800000000000006bd000000020000000000000000000000\"\n");
 	fprintf(out, "NeedResponse=1\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
 
 static void modeswitch_linktop(int needreset, int devicecount)
@@ -316,8 +316,8 @@ static void modeswitch_linktop(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "Configuration=3\n");
 	fclose(out);
-	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
-	eval("comgt","-d","/dev/ttyACM0","-s","/etc/comgt/wakeup.comgt");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
+	eval("comgt", "-d", "/dev/ttyACM0", "-s", "/etc/comgt/wakeup.comgt");
 	sleep(2);
 }
 
@@ -1163,7 +1163,7 @@ char *get3GControlDevice(void)
 				fprintf(out, "PASS=%s\n", nvram_safe_get("ppp_passwd"));
 				fprintf(out, "PIN=%s\n", nvram_safe_get("wan_pin"));
 				fclose(out);
-				eval("/etc/hso/hso_connect.sh","restart");
+				eval("/etc/hso/hso_connect.sh", "restart");
 			} else if ((devicelist[devicecount].modeswitch & ACM)) {
 				insmod("cdc-acm");
 				sprintf(control, "/dev/ttyACM%s", devicelist[devicecount].controldevice);
