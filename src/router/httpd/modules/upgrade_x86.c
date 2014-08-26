@@ -216,7 +216,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #else
 	sprintf(drive, "/dev/%s", getdisc());
 #endif
-	fprintf(stderr, "Write Linux %d to %s\n", linuxsize, dev);
+	fprintf(stderr, "Write Linux %d to %s\n", linuxsize, drive);
 	//backup nvram
 #ifndef HAVE_EROUTER
 	fprintf(stderr, "backup nvram\n");
