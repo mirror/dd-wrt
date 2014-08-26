@@ -689,7 +689,7 @@ static void do_portsetup(char *lan, char *ifname)
 		br_add_interface(getBridge(IFMAP(ifname)), IFMAP(ifname));
 	} else {
 		ifconfig(ifname, IFUP, nvram_nget("%s_ipaddr", IFMAP(ifname)), nvram_nget("%s_netmask", ifname));
-		sysprintf("/sbin/gratarp %s", ifname);
+		eval("gratarp",ifname);
 	}
 
 }
@@ -2383,7 +2383,7 @@ void start_lan(void)
 #ifdef HAVE_QTN
 	start_qtn();		//bootup quantenna firmware
 #endif
-	sysprintf("/sbin/gratarp %s", lan_ifname);
+	eval("gratarp",lan_ifname);
 
 	cprintf("%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 
@@ -3300,19 +3300,19 @@ void start_wan(int status)
 			}
 			clientid = 0;
 			if (nvram_match("wan_conmode", "6"))
-				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes lte");
+				eval("uqmi","-d","/dev/cdc-wdm0","--set-network-modes","lte");
 //              if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
 //                  sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
 			if (nvram_match("wan_conmode", "4"))
-				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm,umts");
+				eval("uqmi","-d","/dev/cdc-wdm0","--set-network-modes","gsm,umts");
 			if (nvram_match("wan_conmode", "3"))
-				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes umts,gsm");
+				eval("uqmi","-d","/dev/cdc-wdm0","--set-network-modes","umts,gsm");
 			if (nvram_match("wan_conmode", "2"))
-				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes gsm");
+				eval("uqmi","-d","/dev/cdc-wdm0","--set-network-modes","gsm");
 			if (nvram_match("wan_conmode", "1"))
-				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes umts");
+				eval("uqmi","-d","/dev/cdc-wdm0","--set-network-modes","umts");
 			if (nvram_match("wan_conmode", "0"))
-				sysprintf("uqmi -d /dev/cdc-wdm0 --set-network-modes all");
+				eval("uqmi","-d","/dev/cdc-wdm0","--set-network-modes","all");
 
 			//set pin
 			sysprintf("uqmi -d /dev/cdc-wdm0 --verify-pin1 %s", nvram_safe_get("wan_pin"));
@@ -4085,7 +4085,7 @@ void start_wan(int status)
 	else {
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 		start_wan_done(wan_ifname);
-		sysprintf("/sbin/gratarp %s", wan_ifname);
+		eval("gratarp",wan_ifname);
 	}
 	cprintf("dhcp client ready\n");
 
@@ -4232,9 +4232,7 @@ void start_ipv6_tunnel(char *wan_ifname)
 	int mtu = atoi(nvram_default_get("wan_mtu", "1500")) - 20;
 
 	if (nvram_invmatch("ipv6_mtu", ""))
-		mtu = atoi(nvram_safe_get("ipv6_mtu"));
-	sysprintf("echo ip tunnel add ip6tun mode sit ttl 64 local %s remote %s >> /tmp/tunneldebug", get_wan_ipaddr(), remote_endpoint);
-	
+		mtu = atoi(nvram_safe_get("ipv6_mtu"));	
 	eval("ip","tunnel","add","ip6tun","mode","sit","ttl","64","local",get_wan_ipaddr(),"remote",remote_endpoint);
 	sysprintf("ip link set ip6tun mtu %d", mtu);
 	eval("ip","link","set","ip6tun","up");
