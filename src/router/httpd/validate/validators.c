@@ -619,7 +619,7 @@ void validate_password(webs_t wp, char *value, struct variable *v)
 	if (strcmp(value, TMP_PASSWD) && valid_name(wp, value, v)) {
 		nvram_set(v->name, zencrypt(value));
 
-		system2("/sbin/setpasswd");
+		eval("/sbin/setpasswd");
 	}
 }
 

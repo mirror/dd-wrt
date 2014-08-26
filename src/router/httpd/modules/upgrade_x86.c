@@ -339,7 +339,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	 */
 #ifndef HAVE_EROUTER
 	if (nvram_match("sv_restore_defaults", "1")) {
-		system2("rm -f /usr/local/nvram/nvram.bin");
+		unlink("/usr/local/nvram/nvram.bin");
 		char drive[64];
 #ifdef HAVE_RB600
 		sprintf(drive, "/dev/sda");

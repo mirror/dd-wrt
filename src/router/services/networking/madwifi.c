@@ -2228,7 +2228,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			fclose(fp);
 			usleep(100 * 1000);	// wait 100 ms
 		}
-		eval("rm", "-f", "/tmp/.crdalock");	// delete lock file, no matter if crda still running. 4 sec is enough
+		unlink("/tmp/.crdalock");	// delete lock file, no matter if crda still running. 4 sec is enough
 	}
 #endif
 

@@ -360,7 +360,7 @@ static void usb_unmount(char *path)
 	else
 		strcpy(mount_point, path);
 	eval("/bin/umount", mount_point);
-	eval("rm", "-f", DUMPFILE);
+	unlink(DUMPFILE);
 	eval("startservice_f", "samba3");
 	eval("startservice_f", "ftpsrv");
 	eval("startservice_f", "dlna");

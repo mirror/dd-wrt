@@ -219,7 +219,7 @@ void stop_samba3(void)
 	stop_process("smbd", "samba");
 	stop_process("nmbd", "nmbd");
 	//samba has changed the way pidfiles are named, thus stop process will not kill smbd and nmbd pidfiles, see pidfile.c in samba 
-	sysprintf("rm -rf %s", "/var/run/*smb.conf.pid");
+	sysprintf("rm -rf /var/run/*smb.conf.pid");
 
 }
 #endif

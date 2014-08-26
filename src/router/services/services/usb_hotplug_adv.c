@@ -140,7 +140,7 @@ void start_hotplug_usb(void)
 				sprintf(link, "/dev/scsi/host%d/bus0/target0/lun0", host);
 				if (!strcmp(action, "add")) {
 					usb_add_ufd(link, host, devpath, 0);
-					eval("rm","-rf", MOUNTSTAT);
+					unlink(MOUNTSTAT);
 				}
 				break;
 			}
