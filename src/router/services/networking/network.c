@@ -4297,6 +4297,7 @@ void start_wan6_done(char *wan_ifname)
 	}
 
 	if (nvram_match("ipv6_typ", "ipv6in4")) {
+		stop_ipv6_tunnel(wan_ifname);
 		start_ipv6_tunnel(wan_ifname);
 	}
 
