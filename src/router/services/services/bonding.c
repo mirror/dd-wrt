@@ -68,9 +68,9 @@ void start_bonding(void)
 		}
 		if (!strncmp(port, "ath", 3)
 		    && nvram_nmatch("wdsap", "%s_mode", port)) {
-			sysprintf("ifconfig %s down", port);
-			sysprintf("iwpriv %s wdssep 0", port);
-			sysprintf("ifconfig %s up", port);
+			eval("ifconfig",port"down");
+			eval("iwpriv",port,"wdssep","0");
+			eval("ifconfig",port,"up");
 		}
 		if (!first) {
 			eval("insmod", "bonding", "miimon=100", "downdelay=200", "updelay=200", mode, count);
