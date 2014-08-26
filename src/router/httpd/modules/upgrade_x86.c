@@ -208,7 +208,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	linuxsize += getc(fifo) * 256;
 	linuxsize += getc(fifo) * 256 * 256;
 	linuxsize += getc(fifo) * 256 * 256 * 256;
-	char dev[128];
 
 	char drive[64];
 #ifdef HAVE_RB600
