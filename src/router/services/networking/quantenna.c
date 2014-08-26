@@ -197,16 +197,16 @@ static void inc_mac(char *mac, int plus)
 	int i;
 
 	for (i = 0; i < 6; i++)
-		m[i] = (unsigned char) strtol(mac + (3 * i), (char **)NULL, 16);
+		m[i] = (unsigned char)strtol(mac + (3 * i), (char **)NULL, 16);
 	while (plus != 0) {
 		for (i = 5; i >= 3; --i) {
 			m[i] += (plus < 0) ? -1 : 1;
-			if (m[i] != 0) break;	// continue if rolled over
+			if (m[i] != 0)
+				break;	// continue if rolled over
 		}
 		plus += (plus < 0) ? 1 : -1;
 	}
-	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X",
-		m[0], m[1], m[2], m[3], m[4], m[5]);
+	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2], m[3], m[4], m[5]);
 }
 
 /* start: 169.254.39.1, 0x127fea9 */
@@ -224,35 +224,32 @@ int gen_rpc_qcsapi_ip(void)
 
 	/* BRCM */
 	ether_atoe(nvram_safe_get("lan_hwaddr"), (unsigned char *)&ifr.ifr_hwaddr.sa_data);
-	for (j = 0, i = 0; i < 6; i++){
+	for (j = 0, i = 0; i < 6; i++) {
 		j += ifr.ifr_hwaddr.sa_data[i] + (j << 6) + (j << 16) - j;
 	}
-	start.s_addr = htonl(ntohl(0x127fea9 /* start */) +
-		((j + 0 /* c->addr_epoch */) % (1 + ntohl(0xfe27fea9 /* end */) - ntohl(0x127fea9 /* start */))));
+	start.s_addr = htonl(ntohl(0x127fea9 /* start */ ) +
+			     ((j + 0 /* c->addr_epoch */ ) % (1 + ntohl(0xfe27fea9 /* end */ ) - ntohl(0x127fea9 /* start */ ))));
 	nvram_set("QTN_RPC_CLIENT", inet_ntoa(start));
 
 	/* QTN */
 	strcpy(hwaddr_5g, nvram_safe_get("lan_hwaddr"));
 	inc_mac(hwaddr_5g, 4);
 	ether_atoe(hwaddr_5g, (unsigned char *)&ifr.ifr_hwaddr.sa_data);
-	for (j = 0, i = 0; i < 6; i++){
+	for (j = 0, i = 0; i < 6; i++) {
 		j += ifr.ifr_hwaddr.sa_data[i] + (j << 6) + (j << 16) - j;
 	}
-	start.s_addr = htonl(ntohl(0x127fea9 /* start */) +
-		((j + 0 /* c->addr_epoch */) % (1 + ntohl(0xfe27fea9 /* end */) - ntohl(0x127fea9 /* start */))));
+	start.s_addr = htonl(ntohl(0x127fea9 /* start */ ) +
+			     ((j + 0 /* c->addr_epoch */ ) % (1 + ntohl(0xfe27fea9 /* end */ ) - ntohl(0x127fea9 /* start */ ))));
 	nvram_set("QTN_RPC_SERVER", inet_ntoa(start));
-	if ((fp_qcsapi_conf = fopen("/tmp/qcsapi_target_ip.conf", "w")) == NULL){
-	//	logmessage("qcsapi", "write qcsapi conf error");
-	}else{
+	if ((fp_qcsapi_conf = fopen("/tmp/qcsapi_target_ip.conf", "w")) == NULL) {
+		//      logmessage("qcsapi", "write qcsapi conf error");
+	} else {
 		fprintf(fp_qcsapi_conf, "%s", nvram_safe_get("QTN_RPC_SERVER"));
 		fclose(fp_qcsapi_conf);
-	//	logmessage("qcsapi", "write qcsapi conf ok");
+		//      logmessage("qcsapi", "write qcsapi conf ok");
 	}
 
 }
-
-
-
 
 void start_qtn(void)
 {
@@ -261,7 +258,7 @@ void start_qtn(void)
 
 	nvram_set("qtn_ready", "0");
 	sysprintf("cp /etc/qtn/* /tmp/");
-	if(!nvram_match("QTN_RPC_CLIENT", ""))
+	if (!nvram_match("QTN_RPC_CLIENT", ""))
 		eval("ifconfig", "br0:1", nvram_safe_get("QTN_RPC_CLIENT"), "netmask", "255.255.255.0");
 	else
 		eval("ifconfig", "br0:1", "169.254.39.1", "netmask", "255.255.255.0");

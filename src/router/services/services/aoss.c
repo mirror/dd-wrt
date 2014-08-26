@@ -54,11 +54,11 @@ void start_aoss(void)
 		unlink("/tmp/.wpsdone");
 		if (nvram_match("wps_enabled", "1")) {
 			if (!nvram_match("ath0_net_mode", "disabled")) {
-				eval("hostapd_cli","-i","ath0","wps_pbc");
+				eval("hostapd_cli", "-i", "ath0", "wps_pbc");
 			}
 #ifdef HAVE_WZRHPAG300NH
 			if (!nvram_match("ath1_net_mode", "disabled")) {
-				eval("hostapd_cli","-i","ath1","wps_pbc");
+				eval("hostapd_cli", "-i", "ath1", "wps_pbc");
 			}
 #endif
 		}
@@ -86,7 +86,7 @@ void start_aoss(void)
 	if (!is_ath9k("ath0"))
 #endif
 	{
-		eval("startservice","deconfigurewifi","-f");
+		eval("startservice", "deconfigurewifi", "-f");
 	}
 	nvram_unset("ath0_vifs");
 #ifdef HAVE_WZRHPAG300NH
@@ -96,7 +96,7 @@ void start_aoss(void)
 	if (!is_ath9k("ath0"))
 #endif
 	{
-		eval("startservice","configurewifi","-f");
+		eval("startservice", "configurewifi", "-f");
 	}
 	nvram_set("ath0_vifs", copy);
 #ifdef HAVE_WZRHPAG300NH
@@ -127,10 +127,10 @@ void start_aoss(void)
 			int pid;
 			fscanf(fp, "%d", &pid);
 			fclose(fp);
-			kill(pid,SIGTERM);
+			kill(pid, SIGTERM);
 			sleep(2);
 		}
-		eval("hostapd","-B","-P","/var/run/ath0_hostapd.pid","/tmp/ath0_hostap.conf");
+		eval("hostapd", "-B", "-P", "/var/run/ath0_hostapd.pid", "/tmp/ath0_hostap.conf");
 	}
 	if ((nvram_match("ath1_mode", "ap")
 	     || nvram_match("ath1_mode", "wdsap"))
@@ -153,10 +153,10 @@ void start_aoss(void)
 			int pid;
 			fscanf(fp, "%d", &pid);
 			fclose(fp);
-			kill(pid,SIGTERM);
+			kill(pid, SIGTERM);
 			sleep(2);
 		}
-		eval("hostapd","-B","-P","/var/run/ath1_hostapd.pid","/tmp/ath1_hostap.conf");
+		eval("hostapd", "-B", "-P", "/var/run/ath1_hostapd.pid", "/tmp/ath1_hostap.conf");
 
 	}
 #else
@@ -165,34 +165,34 @@ void start_aoss(void)
 	     || nvram_match("ath1_mode", "wdsap"))
 	    && !nvram_match("ath1_net_mode", "disabled")) {
 		hasaoss = 1;
-		eval("80211n_wlanconfig","aossa","create","wlandev","wifi1","wlanmode","ap");
-		eval("iwconfig","aossa","essid","ESSID-AOSS-1");
-		eval("iwpriv","aossa","authmode","4");
-		eval("iwconfig","aossa","key","[1]","4D454C434F");
-		eval("iwconfig","aossa","key","[1]");
-		eval("ifconfig","aossa","0.0.0.0","up");
+		eval("80211n_wlanconfig", "aossa", "create", "wlandev", "wifi1", "wlanmode", "ap");
+		eval("iwconfig", "aossa", "essid", "ESSID-AOSS-1");
+		eval("iwpriv", "aossa", "authmode", "4");
+		eval("iwconfig", "aossa", "key", "[1]", "4D454C434F");
+		eval("iwconfig", "aossa", "key", "[1]");
+		eval("ifconfig", "aossa", "0.0.0.0", "up");
 	}
 	if ((nvram_match("ath0_mode", "ap")
 	     || nvram_match("ath0_mode", "wdsap"))
 	    && !nvram_match("ath0_net_mode", "disabled")) {
 		hasaoss = 1;
-		eval("80211n_wlanconfig","aossg create","wlandev","wifi0","wlanmode","ap");
-		eval("iwconfig","aossg","essid","ESSID-AOSS");
-		eval("iwpriv","aossg","authmode","4");
-		eval("iwconfig","aossg","key","[1]","4D454C434F");
-		eval("iwconfig","aossg","key","[1]");
-		eval("ifconfig","aossg","0.0.0.0","up");
+		eval("80211n_wlanconfig", "aossg create", "wlandev", "wifi0", "wlanmode", "ap");
+		eval("iwconfig", "aossg", "essid", "ESSID-AOSS");
+		eval("iwpriv", "aossg", "authmode", "4");
+		eval("iwconfig", "aossg", "key", "[1]", "4D454C434F");
+		eval("iwconfig", "aossg", "key", "[1]");
+		eval("ifconfig", "aossg", "0.0.0.0", "up");
 	}
 #endif
 	if (hasaoss) {
 		//create aoss bridge
-		eval("brctl","addbr","aoss");
-		eval("ifconfig","aoss","0.0.0.0","up");
+		eval("brctl", "addbr", "aoss");
+		eval("ifconfig", "aoss", "0.0.0.0", "up");
 		if (!nvram_match("ath1_net_mode", "disabled")) {
-			eval("brctl","addif","aoss","aossa");
+			eval("brctl", "addif", "aoss", "aossa");
 		}
 		if (!nvram_match("ath0_net_mode", "disabled")) {
-			eval("brctl","addif","aoss","aossg");
+			eval("brctl", "addif", "aoss", "aossg");
 		}
 	}
 #else
@@ -216,27 +216,27 @@ void start_aoss(void)
 				int pid;
 				fscanf(fp, "%d", &pid);
 				fclose(fp);
-				kill(pid,SIGTERM);
+				kill(pid, SIGTERM);
 				sleep(2);
 			}
-			eval("hostapd","-B","-P","/var/run/ath0_hostapd.pid","/tmp/ath0_hostap.conf");
+			eval("hostapd", "-B", "-P", "/var/run/ath0_hostapd.pid", "/tmp/ath0_hostap.conf");
 		} else
 #endif
 
 		{
 			hasaoss = 1;
-			eval("80211n_wlanconfig","aoss","create","wlandev","wifi0","wlanmode","ap");
-			eval("iwconfig","aoss","essid","ESSID-AOSS");
-			eval("iwpriv","aoss","authmode","4");
-			eval("iwconfig","aoss","key","[1]","4D454C434F");
-			eval("iwconfig","aoss","key","[1]");
-			eval("ifconfig","aoss","0.0.0.0","up");
+			eval("80211n_wlanconfig", "aoss", "create", "wlandev", "wifi0", "wlanmode", "ap");
+			eval("iwconfig", "aoss", "essid", "ESSID-AOSS");
+			eval("iwpriv", "aoss", "authmode", "4");
+			eval("iwconfig", "aoss", "key", "[1]", "4D454C434F");
+			eval("iwconfig", "aoss", "key", "[1]");
+			eval("ifconfig", "aoss", "0.0.0.0", "up");
 		}
 	}
 #endif
 	if (hasaoss) {
-		eval("iptables","-I","OUTPUT","-o","aoss","-j","ACCEPT");
-		eval("iptables","-I","INPUT","-i","aoss","-j","ACCEPT");
+		eval("iptables", "-I", "OUTPUT", "-o", "aoss", "-j", "ACCEPT");
+		eval("iptables", "-I", "INPUT", "-i", "aoss", "-j", "ACCEPT");
 		ret = eval("aoss", "-i", "aoss", "-m", "ap");
 		dd_syslog(LOG_INFO, "aoss : aoss daemon successfully started\n");
 	} else
@@ -249,8 +249,8 @@ void start_aoss(void)
 void stop_aoss(void)
 {
 	stop_process("aoss", "buffalo aoss daemon");
-	eval("iptables","-D","OUTPUT","-o","aoss","-j","ACCEPT");
-	eval("iptables","-D","INPUT","-i","aoss","-j","ACCEPT");
+	eval("iptables", "-D", "OUTPUT", "-o", "aoss", "-j", "ACCEPT");
+	eval("iptables", "-D", "INPUT", "-i", "aoss", "-j", "ACCEPT");
 	return;
 }
 
