@@ -125,7 +125,7 @@ void start_hotplug_usb(void)
 			for (i = 0; i <= 10; i++)
 				sleep(1);
 		} else {
-			sysprintf("touch %s ", MOUNTSTAT);
+			eval("touch", MOUNTSTAT);
 		}
 
 		if (!strcmp(action, "add")) {	//let the disc settle before we mount
@@ -140,7 +140,7 @@ void start_hotplug_usb(void)
 				sprintf(link, "/dev/scsi/host%d/bus0/target0/lun0", host);
 				if (!strcmp(action, "add")) {
 					usb_add_ufd(link, host, devpath, 0);
-					sysprintf("rm -rf %s ", MOUNTSTAT);
+					eval("rm","-rf", MOUNTSTAT);
 				}
 				break;
 			}
