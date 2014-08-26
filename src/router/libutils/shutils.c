@@ -153,9 +153,10 @@ int eval_va(const char *cmd, ...)
 	va_start(args, (char *)cmd);
 	char *next;
 	int i;
-	for (i = 0; i < 128; i++) {
+	s_args[0]=cmd;
+	for (i = 0; i < 127; i++) {
 		const char *arg = va_arg(args, const char *);
-		s_args[i] = arg;
+		s_args[i+1] = arg;
 		if (arg == NULL)
 			break;
 	}
