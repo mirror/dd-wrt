@@ -41,7 +41,6 @@
 #include <cy_conf.h>
 #include <arpa/inet.h>
 
-
 #include <revision.h>
 
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
@@ -53,11 +52,11 @@ static void check_qmi(void)
 	if (fp) {
 		fscanf(fp, "%d", &clientid);
 		fclose(fp);
-		fp = fopen("/tmp/qmistatus.sh","wb");
-		fprintf(fp,"#!/bin/sh\n");
-		fprintf(fp,"uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-serving-system|grep registered|wc -l>/tmp/qmistatus\n", clientid);
+		fp = fopen("/tmp/qmistatus.sh", "wb");
+		fprintf(fp, "#!/bin/sh\n");
+		fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-serving-system|grep registered|wc -l>/tmp/qmistatus\n", clientid);
 		fclose(fp);
-		chmod("/tmp/qmistatus.sh",0700);
+		chmod("/tmp/qmistatus.sh", 0700);
 		eval("/tmp/qmistatus.sh");
 	} else {
 		sysprintf("echo 0 > /tmp/qmistatus");
@@ -77,7 +76,6 @@ int dhcp6c_state_main(int argc, char **argv)
 
 	nvram_set("ipv6_rtr_addr", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
 
-
 	// extract prefix from configured IPv6 address
 	if (inet_pton(AF_INET6, nvram_safe_get("ipv6_rtr_addr"), &addr) > 0) {
 
@@ -85,8 +83,8 @@ int dhcp6c_state_main(int argc, char **argv)
 		for (r = 128 - r, i = 15; r > 0; r -= 8) {
 			if (r >= 8)
 				addr.s6_addr[i--] = 0;
-		else
-			addr.s6_addr[i--] &= (0xff << r);
+			else
+				addr.s6_addr[i--] &= (0xff << r);
 		}
 		inet_ntop(AF_INET6, &addr, prefix, sizeof(prefix));
 
@@ -97,14 +95,13 @@ int dhcp6c_state_main(int argc, char **argv)
 	nvram_set("ipv6_get_domain", getenv("new_domain_name"));
 	nvram_set("ipv6_get_sip_name", getenv("new_sip_name"));
 	nvram_set("ipv6_get_sip_servers", getenv("new_sip_servers"));
-	
-	
+
 	dns_to_resolv();
-	
-	eval("stopservice","radvd","-f");
-	eval("startservice","radvd","-f");
-	eval("stopservice","dhcp6s","-f");
-	eval("startservice","dhcp6s","-f");
+
+	eval("stopservice", "radvd", "-f");
+	eval("startservice", "radvd", "-f");
+	eval("stopservice", "dhcp6s", "-f");
+	eval("startservice", "dhcp6s", "-f");
 	return 0;
 }
 #endif

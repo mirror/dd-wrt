@@ -472,8 +472,8 @@ static void do_client_check(void)
 		} else {
 			eval("wl", "-i", ifname, "join", nvram_nget("wl%d_ssid", instance));
 		}
-		eval("stopservice","nas");
-		eval("startservice_f","nas");
+		eval("stopservice", "nas");
+		eval("startservice_f", "nas");
 	} else {
 #ifdef HAVE_DDLAN
 		nvram_set("cur_state", "<span style=\"background-color: rgb(135, 255, 51);\">Verbunden</span>");
