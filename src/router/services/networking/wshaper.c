@@ -388,52 +388,53 @@ int svqos_iptables(void)
 
 	// set-up mark/filter tables
 
-	system2("iptables -t mangle -F SVQOS_SVCS");
-	system2("iptables -t mangle -X SVQOS_SVCS");
-	system2("iptables -t mangle -N SVQOS_SVCS");
+	eval("iptables", "-t", "mangle", "-F", "SVQOS_SVCS");
+	eval("iptables", "-t", "mangle", "-X", "SVQOS_SVCS");
+	eval("iptables", "-t", "mangle", "-N", "SVQOS_SVCS");
 
-	system2("iptables -t mangle -F FILTER_OUT");
-	system2("iptables -t mangle -X FILTER_OUT");
-	system2("iptables -t mangle -N FILTER_OUT");
-	system2("iptables -t mangle -A FILTER_OUT -j CONNMARK --restore");
-	sysprintf("iptables -t mangle -A FILTER_OUT -m mark --mark %s -j SVQOS_SVCS", nullmask);
+	eval("iptables", "-t", "mangle", "-F", "FILTER_OUT");
+	eval("iptables", "-t", "mangle", "-X", "FILTER_OUT");
+	eval("iptables", "-t", "mangle", "-N", "FILTER_OUT");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-j", "CONNMARK", "--restore");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_OUT", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
 
-	system2("iptables -t mangle -F FILTER_IN");
-	system2("iptables -t mangle -X FILTER_IN");
-	system2("iptables -t mangle -N FILTER_IN");
-	system2("iptables -t mangle -A FILTER_IN -j CONNMARK --restore");
-	sysprintf("iptables -t mangle -A FILTER_IN -m mark --mark %s -j SVQOS_SVCS", nullmask);
+	eval("iptables", "-t", "mangle", "-F", "FILTER_IN");
+	eval("iptables", "-t", "mangle", "-X", "FILTER_IN");
+	eval("iptables", "-t", "mangle", "-N", "FILTER_IN");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-j", "CONNMARK", "--restore");
+	eval("iptables", "-t", "mangle", "-A", "FILTER_IN", "-m", "mark", "--mark", nullmask, "-j", "SVQOS_SVCS");
 
-	sysprintf("iptables -t mangle -D PREROUTING -j FILTER_IN");
-	sysprintf("iptables -t mangle -I PREROUTING -j FILTER_IN");
-	sysprintf("iptables -t mangle -D POSTROUTING -j FILTER_OUT");
-	sysprintf("iptables -t mangle -I POSTROUTING -j FILTER_OUT");
+	eval("iptables", "-t", "mangle", "-D", "PREROUTING", "-j", "FILTER_IN");
+	eval("iptables", "-t", "mangle", "-I", "PREROUTING", "-j", "FILTER_IN");
+	eval("iptables", "-t", "mangle", "-D", "POSTROUTING", "-j", "FILTER_OUT");
+	eval("iptables", "-t", "mangle", "-I", "POSTROUTING", "-j", "FILTER_OUT");
 
-	system2("iptables -t mangle -A POSTROUTING -m dscp --dscp ! 0 -j DSCP --set-dscp 0");
+	eval("iptables", "-t", "mangle", "-A", "POSTROUTING", "-m", "dscp", "--dscp", "!", "0", "-j", "DSCP", "--set-dscp", "0");
 
 	if (!strcmp(wshaper_dev, "WAN")) {
-		sysprintf("iptables -t mangle -D INPUT -i %s -j IMQ --todev 0", wan_dev);
-		sysprintf("iptables -t mangle -A INPUT -i %s -j IMQ --todev 0", wan_dev);
-		sysprintf("iptables -t mangle -D FORWARD -i %s -j IMQ --todev 0", wan_dev);
-		sysprintf("iptables -t mangle -A FORWARD -i %s -j IMQ --todev 0", wan_dev);
+		eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+		eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+		eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+		eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 	}
 	if (!strcmp(wshaper_dev, "LAN")) {
 		if (!client_bridged_enabled()
 		    && nvram_invmatch("wan_proto", "disabled")) {
-			sysprintf("iptables -t mangle -D INPUT -i %s -j IMQ --todev 0", wan_dev);
-			sysprintf("iptables -t mangle -A INPUT -i %s -j IMQ --todev 0", wan_dev);
-			sysprintf("iptables -t mangle -D FORWARD -i %s -j IMQ --todev 0", wan_dev);
-			sysprintf("iptables -t mangle -A FORWARD -i %s -j IMQ --todev 0", wan_dev);
+			eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+			eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+			eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
+			eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", wan_dev, "-j", "IMQ", "--todev", "0");
 
-			sysprintf("iptables -t mangle -D INPUT -i ! %s -j IMQ --todev 1", wan_dev);
-			sysprintf("iptables -t mangle -A INPUT -i ! %s -j IMQ --todev 1", wan_dev);
-			sysprintf("iptables -t mangle -D FORWARD -i ! %s -o ! %s -j IMQ --todev 1", wan_dev, wan_dev);
-			sysprintf("iptables -t mangle -A FORWARD -i ! %s -o ! %s -j IMQ --todev 1", wan_dev, wan_dev);
+			eval("iptables", "-t", "mangle", "-D", "INPUT", "-i", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+			eval("iptables", "-t", "mangle", "-A", "INPUT", "-i", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+
+			eval("iptables", "-t", "mangle", "-D", "FORWARD", "-i", "!", wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
+			eval("iptables", "-t", "mangle", "-A", "FORWARD", "-i", "!", wan_dev, "-o", "!", wan_dev, "-j", "IMQ", "--todev", "1");
 		} else {
-			sysprintf("iptables -t mangle -D INPUT -j IMQ --todev 1");
-			sysprintf("iptables -t mangle -A INPUT -j IMQ --todev 1");
-			sysprintf("iptables -t mangle -D FORWARD -j IMQ --todev 1");
-			sysprintf("iptables -t mangle -A FORWARD -j IMQ --todev 1");
+			eval("iptables", "-t", "mangle", "-D", "INPUT", "-j", "IMQ", "--todev", "1");
+			eval("iptables", "-t", "mangle", "-A", "INPUT", "-j", "IMQ", "--todev", "1");
+			eval("iptables", "-t", "mangle", "-D", "FORWARD", "-j", "IMQ", "--todev", "1");
+			eval("iptables", "-t", "mangle", "-A", "FORWARD", "-j", "IMQ", "--todev", "1");
 		}
 	}
 
