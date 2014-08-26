@@ -54,6 +54,11 @@ extern int waitfor(int fd, int timeout);
 int _evalpid(char *const argv[], char *path, int timeout, int *ppid);
 
 extern int _eval(char *const argv[]);
+extern int eval_va(const char *cmd, ...);
+
+#define eval(cmd, args...) eval_va(cmd, ## args, NULL)
+
+
 
 /*
  * Concatenates NULL-terminated list of arguments into a single
@@ -213,10 +218,11 @@ void showmemdebugstat();
 /*
  * Simple version of _eval() (no timeout and wait for child termination) 
  */
-#define eval(cmd, args...) ({ \
-	char *argv[] = { cmd, ## args, NULL }; \
-	_eval(argv); \
-})
+
+//#define eval(cmd, args...) ({ \
+//	char *argv[] = { cmd, ## args, NULL }; \
+//	_eval(argv); \
+//})
 
 /*
  * Copy each token in wordlist delimited by space into word 
