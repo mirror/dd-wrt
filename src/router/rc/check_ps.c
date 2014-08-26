@@ -207,7 +207,7 @@ void checkupgrade(void)
 
 	if (in != NULL) {
 		fclose(in);
-		system("rm /tmp/cron.d/check_ps");	// deleting cron file to
+		unlink("rm /tmp/cron.d/check_ps");	// deleting cron file to
 		// prevent double call of
 		// this
 		fprintf(stderr, "found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
