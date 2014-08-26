@@ -303,7 +303,7 @@ int mtd_write(const char *path, const char *mtd)
 	fprintf(stderr, "size of ETRX header = %d\n", sizeof(struct etrx_header));
 	if ((fp = fopen(path, "r"))) {
 		count = safe_fread(&etrx, 1, sizeof(struct etrx_header), fp);
-	}else
+	} else
 		return -1;
 	memcpy(&trx, &etrx.trx, sizeof(struct trx_header));
 #else
@@ -421,7 +421,7 @@ int mtd_write(const char *path, const char *mtd)
 	stop_service("pptpd");
 	stop_service("upnp");
 	stop_service("freeradius");
-	killall("process_monitor",SIGTERM);
+	killall("process_monitor", SIGTERM);
 #endif
 #ifdef HAVE_MAGICBOX
 	trx.magic = STORE32_LE(trx.magic);

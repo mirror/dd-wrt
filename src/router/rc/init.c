@@ -238,7 +238,7 @@ void shutdown_system(void)
 	kill(-1, SIGKILL);
 	sync();
 	sleep(1);
-	eval("/bin/umount","-a","-r");
+	eval("/bin/umount", "-a", "-r");
 
 }
 

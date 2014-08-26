@@ -1405,7 +1405,7 @@ void period_check(int sig)
 		 * Although it's unpushed now, it had ever been pushed 
 		 */
 		if (mode == 1) {
-//			fprintf(stderr, "[RESETBUTTON] released %d\n", count);
+//                      fprintf(stderr, "[RESETBUTTON] released %d\n", count);
 #ifdef HAVE_UNFY
 			if (count > UPGRADE_WAIT_COUNT) {
 
