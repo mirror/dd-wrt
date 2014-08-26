@@ -59,7 +59,7 @@ int main(int argc, char **argv)
 		killall("ledtool", SIGKILL);
 		nvram_set("wps_status", "1");
 		nvram_commit();
-		eval("ledtool","1800","3");
+		eval("ledtool", "1800", "3");
 	}
 	return 0;
 }				// end main

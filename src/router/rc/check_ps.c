@@ -104,15 +104,15 @@ void checknas(void)		// for broadcom v24 only
 	if (strlen(buf) != count_processes("nas"))	// restart all nas
 		// processes
 	{
-		eval("stopservice","nas");
-		eval("startservice","nas","-f");
+		eval("stopservice", "nas");
+		eval("startservice", "nas", "-f");
 	}
 
 	return;
 
 #endif
 #ifdef HAVE_MADWIFI
-	eval("startservice_f","checkhostapd","-f");
+	eval("startservice_f", "checkhostapd", "-f");
 #endif
 }
 
@@ -213,12 +213,12 @@ void checkupgrade(void)
 		fprintf(stderr, "found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
 		sleep(30);
 #if defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_LS5)
-		eval("write","/tmp/firmware.bin","rootfs");
+		eval("write", "/tmp/firmware.bin", "rootfs");
 #else
-		eval("write","/tmp/firmware.bin","linux");
+		eval("write", "/tmp/firmware.bin", "linux");
 #endif
 		fprintf(stderr, "done. rebooting now\n");
-		killall("init",SIGQUIT);
+		killall("init", SIGQUIT);
 	}
 #endif
 }
@@ -249,9 +249,9 @@ int do_mon(void)
 		if (!search_process(v->name, v->count)) {
 
 			printf("Maybe %s had died, we need to re-exec it\n", v->name);
-			eval("stopservice",v->name);
+			eval("stopservice", v->name);
 			killall(v->name, SIGKILL);
-			eval("startservice_f",v->name);
+			eval("startservice_f", v->name);
 		}
 		printf("checking for %s done\n", v->name);
 	}

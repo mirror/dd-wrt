@@ -82,39 +82,39 @@ int main(int argc, char **argv)
 
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
 		    && nvram_match("cron_enable", "1")) {
-			eval("stopservice","cron");
+			eval("stopservice", "cron");
 			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting cron  (time sync change)\n");
-			eval("startservice_f","cron");
+			eval("startservice_f", "cron");
 
 		}
 #ifdef HAVE_SNMP
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
 		    && nvram_match("snmpd_enable", "1")) {
-			eval("stopservice","snmp");
+			eval("stopservice", "snmp");
 			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting snmpd  (time sync change)\n");
-			eval("startservice_f","snmp");
+			eval("startservice_f", "snmp");
 
 		}
 #endif
 #ifdef HAVE_CHILLI
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
 		    && (nvram_match("chilli_enable", "1") || nvram_match("hotss_enable", "1"))) {
-			eval("stopservice","chilli");
+			eval("stopservice", "chilli");
 			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting Chillispot (time sync change)\n");
-			eval("startservice_f","chilli");
+			eval("startservice_f", "chilli");
 
 		}
 #endif
 #ifdef HAVE_WIFIDOG		// dirty fix for wifidog
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
 		    && nvram_match("wd_enable", "1")) {
-			eval("stopservice","wifidog");
+			eval("stopservice", "wifidog");
 			sleep(1);
 			dd_syslog(LOG_DEBUG, "Restarting Wifidog daemon (time sync change)\n");
-			eval("startservice_f","wifidog");
+			eval("startservice_f", "wifidog");
 		}
 #endif
 		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds\n", NTP_M_TIMER);
