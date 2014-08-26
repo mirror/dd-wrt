@@ -68,7 +68,7 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 	}
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_MAGICBOX) || defined(HAVE_X86) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5)
 	eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-	eval("rm", "-f", "/tmp/nvram/.lock");	// delete nvram database
+	unlink("/tmp/nvram/.lock");	// delete nvram database
 #endif
 	// fprintf (stderr, "file write");
 	unsigned short count;
@@ -82,7 +82,7 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 		restore_ret = 99;
 	else
 		restore_ret = 0;
-	eval("rm", "-f", "/tmp/restore.bin");
+	unlink("/tmp/restore.bin");
 	chdir("/www");
 }
 
@@ -115,7 +115,7 @@ void nv_file_out(struct mime_handler *handler, char *path, webs_t wp, char *quer
 #endif
 	nvram_backup("/tmp/nvrambak.bin");
 	do_file_attach(handler, "/tmp/nvrambak.bin", wp, query, "nvrambak.bin");
-	eval("rm", "-f", "/tmp/nvrambak.bin");
+	unlink("/tmp/nvrambak.bin");
 	return;
 }
 

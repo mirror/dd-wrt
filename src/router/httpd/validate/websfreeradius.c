@@ -55,18 +55,18 @@ void radius_generate_certificate(webs_t wp)
 	nvram_set("radius_common", websGetVar(wp, "radius_common", ""));
 
 //system("rm /jffs/etc/freeradius/certs/dh");
-	system("rm /jffs/etc/freeradius/certs/server.csr");
-	system("rm /jffs/etc/freeradius/certs/server.key");
-	system("rm /jffs/etc/freeradius/certs/ca.pem");
-	system("rm /jffs/etc/freeradius/certs/ca.key");
-	system("rm /jffs/etc/freeradius/certs/server.crt");
-	system("rm /jffs/etc/freeradius/certs/server.p12");
-	system("rm /jffs/etc/freeradius/certs/server.pem");
-	system("rm /jffs/etc/freeradius/certs/ca.der");
-	system("rm /jffs/etc/freeradius/certs/index.txt");
-	system("rm /jffs/etc/freeradius/certs/serial");
+	unlink("/jffs/etc/freeradius/certs/server.csr");
+	unlink("/jffs/etc/freeradius/certs/server.key");
+	unlink("/jffs/etc/freeradius/certs/ca.pem");
+	unlink("/jffs/etc/freeradius/certs/ca.key");
+	unlink("/jffs/etc/freeradius/certs/server.crt");
+	unlink("/jffs/etc/freeradius/certs/server.p12");
+	unlink("/jffs/etc/freeradius/certs/server.pem");
+	unlink("/jffs/etc/freeradius/certs/ca.der");
+	unlink("/jffs/etc/freeradius/certs/index.txt");
+	unlink("/jffs/etc/freeradius/certs/serial");
 	system("rm -rf /jffs/etc/freeradius/certs/clients");	//delete client certificates since they will become invalid
-	system("startservice gen_radius_cert -f");
+	eval("startservice","gen_radius_cert","-f");
 }
 
 /*struct radiususer {

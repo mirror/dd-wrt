@@ -3182,7 +3182,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	if (reg) {
 		if (strcmp(nvram_get("wl_regdomain"), reg)) {
 			setRegulationDomain(reg);
-			system("startstop lan");
+			eval("startstop","lan");
 		}
 	}
 	copytonv(wp, "wl_regdomain");
@@ -3248,8 +3248,8 @@ void wireless_save(webs_t wp)
 	// nvram_commit ();
 	applytake(value);
 #ifdef HAVE_GUESTPORT
-	system("stopservice firewall");
-	system("startservice firewall");
+	eval("stopservice","firewall");
+	eval("startservice","firewall");
 #endif
 }
 

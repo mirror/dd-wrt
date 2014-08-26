@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 			killall("ledtool", SIGKILL);
 			nvram_set("wps_status", "1");
 			nvram_commit();
-			sysprintf("rm -f /tmp/.wpsdone");
+			unlink("/tmp/.wpsdone");
 			fclose(fp);
 			led_control(LED_SES, LED_ON);
 			break;

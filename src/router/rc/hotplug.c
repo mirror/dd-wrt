@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 		if (!strcmp(argv[1], "regulatory")) {
 			syslog(LOG_DEBUG, "hotplug: old style regulatory called\n");
 			int r = eval("/sbin/crda");
-			eval("rm", "-f", "/tmp/.crdalock");
+			unlink("/tmp/.crdalock");
 			return r;
 		}
 		if (!strcmp(argv[1], "platform")) {
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 			    && !strcmp(devicepath, "/devices/platform/regulatory.0")) {
 				syslog(LOG_DEBUG, "hotplug: new style regulatory called\n");
 				int r = eval("/sbin/crda");
-				eval("rm", "-f", "/tmp/.crdalock");
+				unlink("/tmp/.crdalock");
 				return r;
 			}
 		}
