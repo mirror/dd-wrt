@@ -213,12 +213,12 @@ void checkupgrade(void)
 		fprintf(stderr, "found firmware upgrade, flashing now, but we will wait for another 30 seconds\n");
 		sleep(30);
 #if defined(HAVE_WHRAG108) || defined(HAVE_TW6600) || defined(HAVE_LS5)
-		system("write /tmp/firmware.bin rootfs");
+		eval("write","/tmp/firmware.bin","rootfs");
 #else
-		system("write /tmp/firmware.bin linux");
+		eval("write","/tmp/firmware.bin","linux");
 #endif
 		fprintf(stderr, "done. rebooting now\n");
-		system("killall -3 init");
+		killall("init",SIGQUIT);
 	}
 #endif
 }

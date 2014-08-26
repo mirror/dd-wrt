@@ -58,7 +58,7 @@ static void check_qmi(void)
 		fprintf(fp,"uqmi -d /dev/cdc-wdm0 --set-client-id wds,%d --keep-client-id wds --get-serving-system|grep registered|wc -l>/tmp/qmistatus\n", clientid);
 		fclose(fp);
 		chmod("/tmp/qmistatus.sh",0700);
-		system("/tmp/qmistatus.sh");
+		eval("/tmp/qmistatus.sh");
 	} else {
 		sysprintf("echo 0 > /tmp/qmistatus");
 	}

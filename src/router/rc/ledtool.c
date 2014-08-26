@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 		count++;
 	}
 	if (type == 3) {
-		system("startstop ses_led_control");
+		eval("startstop","ses_led_control");
 	}
 
 	return 0;

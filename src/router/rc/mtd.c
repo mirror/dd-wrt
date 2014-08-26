@@ -421,7 +421,7 @@ int mtd_write(const char *path, const char *mtd)
 	stop_service("pptpd");
 	stop_service("upnp");
 	stop_service("freeradius");
-	system("killall process_monitor");
+	killall("process_monitor",SIGTERM);
 #endif
 #ifdef HAVE_MAGICBOX
 	trx.magic = STORE32_LE(trx.magic);
