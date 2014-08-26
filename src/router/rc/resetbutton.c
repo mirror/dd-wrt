@@ -1264,7 +1264,7 @@ void period_check(int sig)
 					eval("mount", "/usr/local", "-o", "remount,rw");
 					eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
 					// database
-					eval("rm", "-f", "/tmp/nvram/.lock");	// delete
+					unlink("/tmp/nvram/.lock");	// delete
 					// nvram
 					// database
 					eval("rm", "-f", "/usr/local/nvram/*");	// delete
@@ -1274,7 +1274,7 @@ void period_check(int sig)
 #elif HAVE_RB500
 					eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
 					// database
-					eval("rm", "-f", "/tmp/nvram/.lock");	// delete
+					unlink("/tmp/nvram/.lock");	// delete
 					// nvram
 					// database
 					eval("rm", "-f", "/etc/nvram/*");	// delete nvram
@@ -1282,7 +1282,7 @@ void period_check(int sig)
 #elif HAVE_MAGICBOX
 					eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
 					// database
-					eval("rm", "-f", "/tmp/nvram/.lock");	// delete
+					unlink("/tmp/nvram/.lock");	// delete
 					// nvram
 					// database
 					eval("erase", "nvram");

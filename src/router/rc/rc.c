@@ -515,7 +515,7 @@ int main(int argc, char **argv)
 			fprintf(stderr, "Erasing configuration data...\n");
 			eval("mount", "/usr/local", "-o", "remount,rw");
 			eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
-			eval("rm", "-f", "/tmp/nvram/.lock");	// delete nvram
+			unlink("/tmp/nvram/.lock");	// delete nvram
 			// database
 			eval("rm", "-f", "/etc/nvram/*");	// delete nvram database
 			eval("mount", "/usr/local", "-o", "remount,ro");

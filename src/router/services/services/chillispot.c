@@ -157,7 +157,7 @@ void stop_chilli(void)
 		unlink("/tmp/chilli/hotss.conf");
 		unlink("/tmp/chilli/ip-up.sh");
 		unlink("/tmp/chilli/ip-down.sh");
-		system("rm -rf /var/run/chilli1");
+		unlink("/var/run/chilli1");
 	}
 	cprintf("done\n");
 	return;

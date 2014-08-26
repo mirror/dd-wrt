@@ -158,7 +158,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		ret = ENOMEM;
 		goto err;
 	}
-	system("ledtool 500");
+	eval("ledtool","500");
 	/*
 	 * Pipe the rest to the FIFO 
 	 */
