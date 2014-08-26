@@ -238,7 +238,7 @@ void shutdown_system(void)
 	kill(-1, SIGKILL);
 	sync();
 	sleep(1);
-	system("/bin/umount -a -r");
+	eval("/bin/umount","-a","-r");
 
 }
 
@@ -392,7 +392,7 @@ static int noconsole = 0;
 
 static void set_tcp_params(void)
 {
-	system("/etc/preinit");	// sets default values for ip_conntrack
+	eval("/etc/preinit");	// sets default values for ip_conntrack
 
 	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
 	if (fp == NULL) {
@@ -790,10 +790,10 @@ int main(int argc, char **argv)
 			{
 				startstop_f("run_rc_startup");
 // start init scripts                           
-				system("/etc/init.d/rcS");
-				system("/opt/etc/init.d/rcS");
-				system("/jffs/etc/init.d/rcS");
-				system("/mmc/etc/init.d/rcS");
+				eval("/etc/init.d/rcS");
+				eval("/opt/etc/init.d/rcS");
+				eval("/jffs/etc/init.d/rcS");
+				eval("/mmc/etc/init.d/rcS");
 				// startup script
 				// (siPath impl)
 				cprintf("start modules\n");
