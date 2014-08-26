@@ -68,7 +68,7 @@ void start_bonding(void)
 		}
 		if (!strncmp(port, "ath", 3)
 		    && nvram_nmatch("wdsap", "%s_mode", port)) {
-			eval("ifconfig",port"down");
+			eval("ifconfig",port,"down");
 			eval("iwpriv",port,"wdssep","0");
 			eval("ifconfig",port,"up");
 		}
