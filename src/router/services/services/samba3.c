@@ -85,7 +85,7 @@ void start_samba3(void)
 			if (strlen(cu->username)
 			    && cu->sharetype & SHARETYPE_SAMBA) {
 				sysprintf("echo \"%s\"\":*:%d:1000:\"%s\":/var:/bin/false\" >> /etc/passwd", cu->username, uniqueuserid++, cu->username);
-				sysprintf("smbpasswd \"%s\" \"%s\"", cu->username, cu->password);
+				eval("smbpasswd", cu->username, cu->password);
 			}
 			cunext = cu->next;
 			free(cu);
