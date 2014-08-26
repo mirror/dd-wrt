@@ -4455,7 +4455,7 @@ void start_wan_done(char *wan_ifname)
 			chmod("/tmp/ppp/sh_pptp_customipup", 0744);
 
 			// Execute our custom ipup script
-			system2("/tmp/ppp/sh_pptp_customipup");
+			eval("/tmp/ppp/sh_pptp_customipup");
 
 		}
 	}
