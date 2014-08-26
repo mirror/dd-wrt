@@ -73,8 +73,6 @@ void start_dhcp6c(void)
 		buf = nvram_get("dhcp6c_conf");
 		if (buf != NULL)
 			writenvram("dhcp6c_conf", "/tmp/dhcp6c.conf");
-
-		system2("sync");
 	} else {
 
 		prefix_len = 64 - (atoi(nvram_get("ipv6_pf_len")) ? : 64);
@@ -148,8 +146,6 @@ void start_dhcp6s(void)
 		buf = nvram_get("dhcp6s_conf");
 		if (buf != NULL)
 			writenvram("dhcp6s_conf", "/tmp/dhcp6s.conf");
-
-		system2("sync");
 	} else {
 
 		if ((fp = fopen("/tmp/dhcp6s.conf", "w")) == NULL)
