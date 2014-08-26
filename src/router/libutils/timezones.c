@@ -819,7 +819,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	{NULL, NULL}
 };
 
-void update_timezone(void) 
+void update_timezone(void)
 {
 	char *tz;
 	tz = nvram_safe_get("time_zone");	//e.g. EUROPE/BERLIN
