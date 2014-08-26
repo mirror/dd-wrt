@@ -146,6 +146,23 @@ int sysprintf(const char *fmt, ...)
 	return system2(varbuf);
 }
 
+int eval_va(const char *cmd, ...)
+{
+	char *s_args[128];
+	va_list args;
+	va_start(args, (char *)cmd);
+	char *next;
+	int i;
+	for (i = 0; i < 128; i++) {
+		const char *arg = va_arg(args, const char *);
+		s_args[i] = arg;
+		if (arg == NULL)
+			break;
+	}
+	return _eval(s_args);
+
+}
+
 // FILE *debugfp=NULL;
 int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 {
@@ -350,7 +367,6 @@ int safe_fread(void *ptr, size_t size, size_t nmemb, FILE * stream)
 		ret += fread((char *)ptr + (ret * size), size, nmemb - ret, stream);
 	}
 	while (ret < nmemb && ferror(stream) && errno == EINTR);
-	
 
 	return ret;
 }
