@@ -108,8 +108,8 @@ void start_sysinit(void)
 		eval("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 		eval("/usr/sbin/convertnvram");
 		nvram_commit();
-		eval("rm", "-f", "/etc/nvram/nvram.db");
-		eval("rm", "-f", "/etc/nvram/offsets.db");
+		unlink("/etc/nvram/nvram.db");
+		unlink("/etc/nvram/offsets.db");
 	}
 	//recover nvram if available
 	in = fopen("/usr/local/nvram/nvram.bin", "rb");

@@ -113,7 +113,7 @@ void delete_leases(webs_t wp)
 	ip = websGetVar(wp, "ip_del", NULL);
 	mac = websGetVar(wp, "mac_del", NULL);
 
-	sysprintf("dhcp_release %s %s %s", iface, ip, mac);
+	eval("dhcp_release", iface, ip, mac);
 }
 
 #if defined(HAVE_PPTPD) || defined(HAVE_PPPOESERVER)
@@ -122,7 +122,7 @@ void delete_pptp(webs_t wp)
 	char *iface;
 	iface = websGetVar(wp, "if_del", NULL);
 	if (iface)
-		sysprintf("kill %s", iface);
+		kill(iface,SIGTERM);
 }
 #endif
 void save_wifi(webs_t wp)
@@ -3321,7 +3321,7 @@ void changepass(webs_t wp)
 	    && valid_name(wp, value, NULL)) {
 		nvram_set("http_username", zencrypt(value));
 
-		system2("/sbin/setpasswd");
+		eval("/sbin/setpasswd");
 #ifdef HAVE_IAS
 		nvram_set("http_userpln", value);
 #endif
@@ -3331,7 +3331,7 @@ void changepass(webs_t wp)
 	    && valid_name(wp, pass, NULL)) {
 		nvram_set("http_passwd", zencrypt(pass));
 
-		system2("/sbin/setpasswd");
+		eval("/sbin/setpasswd");
 #ifdef HAVE_IAS
 		nvram_set("http_pwdpln", pass);
 #endif
@@ -3453,7 +3453,7 @@ char *request_freedns(char *user, char *password)
 
 	for (i = 0; i < 20; i++)
 		sprintf(request, "%s%02x", request, final[i]);
-	system2("rm -f /tmp/.hash");
+	unlink("/tmp/.hash");
 	sysprintf("wget \"http://freedns.afraid.org/api/?action=getdyndns&sha=%s\" -O /tmp/.hash", request);
 	FILE *in = fopen("/tmp/.hash", "rb");
 

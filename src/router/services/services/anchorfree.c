@@ -244,7 +244,7 @@ void start_anchorfree(void)
 		char cat[64];
 
 		toURL(nvram_safe_get("af_category"), cat);
-		eval("rm", "-f", "/tmp/.anchorfree");
+		unlink("/tmp/.anchorfree");
 		char callbuffer[512];
 
 		sprintf(callbuffer,
@@ -366,7 +366,7 @@ void start_anchorfreednat(void)
 void stop_anchorfree_unregister(void)
 {
 
-	eval("rm", "-f", "/tmp/.anchorfree");
+	unlink("/tmp/.anchorfree");
 	char callbuffer[512];
 
 	sprintf(callbuffer, "wget -q -O- \"http://afhrp.anchorfree.com/unregister.php?" "uid=%s&" "sid=%s\"", nvram_safe_get("af_hash"), nvram_safe_get("af_serviceid"));
@@ -401,7 +401,7 @@ void stop_anchorfree(void)
 
 		}
 
-		eval("rm", "-f", "/tmp/.anchorfree");
+		unlink("/tmp/.anchorfree");
 		if (nvram_match("af_enable", "0"))
 			stop_anchorfree_unregister();
 		nvram_commit();
