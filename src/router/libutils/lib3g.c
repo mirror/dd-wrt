@@ -212,8 +212,6 @@ static void modeswitch_sierra(int needreset, int devicecount)
 	fprintf(out, "SierraMode=1\n");
 	fclose(out);
 	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
-}
-
 	sleep(5);		// give Sierra additional time
 }
 
@@ -319,7 +317,6 @@ static void modeswitch_linktop(int needreset, int devicecount)
 	fprintf(out, "Configuration=3\n");
 	fclose(out);
 	eval("usb_modeswitch","-I","-c","/tmp/usb_modeswitch.conf");
-
 	eval("comgt","-d","/dev/ttyACM0","-s","/etc/comgt/wakeup.comgt");
 	sleep(2);
 }
