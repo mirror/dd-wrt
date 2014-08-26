@@ -689,7 +689,7 @@ static void do_portsetup(char *lan, char *ifname)
 		br_add_interface(getBridge(IFMAP(ifname)), IFMAP(ifname));
 	} else {
 		ifconfig(ifname, IFUP, nvram_nget("%s_ipaddr", IFMAP(ifname)), nvram_nget("%s_netmask", ifname));
-		eval("gratarp",ifname);
+		eval("gratarp", ifname);
 	}
 
 }
@@ -2383,7 +2383,7 @@ void start_lan(void)
 #ifdef HAVE_QTN
 	start_qtn();		//bootup quantenna firmware
 #endif
-	eval("gratarp",lan_ifname);
+	eval("gratarp", lan_ifname);
 
 	cprintf("%s %s\n", nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 
@@ -3300,19 +3300,19 @@ void start_wan(int status)
 			}
 			clientid = 0;
 			if (nvram_match("wan_conmode", "6"))
-				eval("uqmi","-d","/dev/cdc-wdm0","--set-network-modes","lte");
+				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "lte");
 //              if (nvram_match("wan_conmode","5")) //unsupported and useless. i dont know what that means
 //                  sysprintf("qmicli -d /dev/cdc-wdm0 --nas-set-network-mode=LTE");
 			if (nvram_match("wan_conmode", "4"))
-				eval("uqmi","-d","/dev/cdc-wdm0","--set-network-modes","gsm,umts");
+				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "gsm,umts");
 			if (nvram_match("wan_conmode", "3"))
-				eval("uqmi","-d","/dev/cdc-wdm0","--set-network-modes","umts,gsm");
+				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "umts,gsm");
 			if (nvram_match("wan_conmode", "2"))
-				eval("uqmi","-d","/dev/cdc-wdm0","--set-network-modes","gsm");
+				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "gsm");
 			if (nvram_match("wan_conmode", "1"))
-				eval("uqmi","-d","/dev/cdc-wdm0","--set-network-modes","umts");
+				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "umts");
 			if (nvram_match("wan_conmode", "0"))
-				eval("uqmi","-d","/dev/cdc-wdm0","--set-network-modes","all");
+				eval("uqmi", "-d", "/dev/cdc-wdm0", "--set-network-modes", "all");
 
 			//set pin
 			sysprintf("uqmi -d /dev/cdc-wdm0 --verify-pin1 %s", nvram_safe_get("wan_pin"));
@@ -4085,7 +4085,7 @@ void start_wan(int status)
 	else {
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 		start_wan_done(wan_ifname);
-		eval("gratarp",wan_ifname);
+		eval("gratarp", wan_ifname);
 	}
 	cprintf("dhcp client ready\n");
 
@@ -4232,17 +4232,17 @@ void start_ipv6_tunnel(char *wan_ifname)
 	int mtu = atoi(nvram_default_get("wan_mtu", "1500")) - 20;
 
 	if (nvram_invmatch("ipv6_mtu", ""))
-		mtu = atoi(nvram_safe_get("ipv6_mtu"));	
-	eval("ip","tunnel","add","ip6tun","mode","sit","ttl","64","local",get_wan_ipaddr(),"remote",remote_endpoint);
+		mtu = atoi(nvram_safe_get("ipv6_mtu"));
+	eval("ip", "tunnel", "add", "ip6tun", "mode", "sit", "ttl", "64", "local", get_wan_ipaddr(), "remote", remote_endpoint);
 	sysprintf("ip link set ip6tun mtu %d", mtu);
-	eval("ip","link","set","ip6tun","up");
+	eval("ip", "link", "set", "ip6tun", "up");
 	char clientip[64];
 	char prefix[64];
-	sprintf(clientip, "%s/%s",tun_client_ipv6,tun_client_pref);
-	sprintf(prefix, "%s/%s",ipv6_prefix,ipv6_pf_len);
-	eval("ip","-6","addr","add",clientip,"dev","ip6tun");
-	eval("ip","-6","addr","add",prefix,"dev",nvram_safe_get("lan_ifname"));
-	eval("ip","-6","route","add","2000::/3","dev","ip6tun");
+	sprintf(clientip, "%s/%s", tun_client_ipv6, tun_client_pref);
+	sprintf(prefix, "%s/%s", ipv6_prefix, ipv6_pf_len);
+	eval("ip", "-6", "addr", "add", clientip, "dev", "ip6tun");
+	eval("ip", "-6", "addr", "add", prefix, "dev", nvram_safe_get("lan_ifname"));
+	eval("ip", "-6", "route", "add", "2000::/3", "dev", "ip6tun");
 
 }
 
@@ -4251,7 +4251,7 @@ void stop_ipv6_tunnel(char *wan_ifname)
 	if (nvram_match("ipv6_typ", "ipv6rd") || nvram_match("ipv6_typ", "ipv6to4")) {
 		eval("ip", "tunnel", "del", wan_ifname);
 	}
-	
+
 	if (nvram_match("ipv6_typ", "ipv6in4")) {
 		eval("ip", "tunnel", "del", "ip6tun");
 	}
@@ -4290,8 +4290,8 @@ void start_wan6_done(char *wan_ifname)
 
 	if (nvram_match("ipv6_typ", "ipv6pd")) {
 		sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
-		eval("stopservice","dhcp6c","-f");
-		eval("startservice","dhcp6c","-f");
+		eval("stopservice", "dhcp6c", "-f");
+		eval("startservice", "dhcp6c", "-f");
 	}
 
 	if (nvram_match("ipv6_typ", "ipv6in4")) {
@@ -4299,8 +4299,8 @@ void start_wan6_done(char *wan_ifname)
 		start_ipv6_tunnel(wan_ifname);
 	}
 
-	eval("stopservice","dhcp6s","-f");
-	eval("startservice","dhcp6s","-f");
+	eval("stopservice", "dhcp6s", "-f");
+	eval("startservice", "dhcp6s", "-f");
 
 }
 

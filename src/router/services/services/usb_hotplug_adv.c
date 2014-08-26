@@ -405,7 +405,7 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 					fs = "ext4";
 					usb_load_modules(fs);
 				} else if (strstr(line, "Btrfs")) {
-		    			fs = "btrfs";
+					fs = "btrfs";
 					usb_load_modules(fs);
 				} else if (strstr(line, "HFS Plus")) {
 					fs = "hfsplus";
@@ -503,11 +503,11 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 
 	if (!strcmp(fs, "swap")) {
 		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "swap", dev);
-		sysprintf("cat /tmp/disk/%s >> %s", dev,DUMPFILE);
+		sysprintf("cat /tmp/disk/%s >> %s", dev, DUMPFILE);
 	} else {
 		if (!ret) {
-		    sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
-		    sysprintf("cat /tmp/disk/%s >> %s", dev,DUMPFILE);
+			sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
+			sysprintf("cat /tmp/disk/%s >> %s", dev, DUMPFILE);
 		}
 
 	}
