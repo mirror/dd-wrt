@@ -261,7 +261,7 @@ void start_pppoe_dual(int status)
 
 #ifdef HAVE_IPV6
 	if (nvram_match("ipv6_enable", "1"))
-		fprintf(fp, "ipv6\n");
+		fprintf(fp, "ipv6 ,\n");
 #endif
 	fclose(fp);
 
