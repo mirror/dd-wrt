@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <memory.h>
+#include <shutils.h>
 
 #ifdef HAVE_MADWIFI
 #include <sys/types.h>
@@ -37,7 +38,6 @@
 #include "net80211/ieee80211_ioctl.h"
 #include <stdio.h>
 #include <utils.h>
-#include <shutils.h>
 
 static int set80211param(char *iface, int op, int arg)
 {
