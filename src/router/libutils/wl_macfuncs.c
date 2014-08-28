@@ -174,12 +174,12 @@ void set_maclist(char *iface, char *buf)
 void security_deny(char *iface)
 {
 
-	sysprintf("iwpriv %s set AccessPolicy=2", iface);
+	eval("iwpriv",iface,"set","AccessPolicy=2");
 }
 
 void security_allow(char *iface)
 {
-	sysprintf("iwpriv %s set AccessPolicy=1", iface);
+	eval("iwpriv",iface,"set","AccessPolicy=1");
 }
 
 void kick_mac(char *iface, char *mac)
