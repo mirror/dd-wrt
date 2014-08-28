@@ -37,6 +37,7 @@
 #include "net80211/ieee80211_ioctl.h"
 #include <stdio.h>
 #include <utils.h>
+#include <shutils.h>
 
 static int set80211param(char *iface, int op, int arg)
 {
