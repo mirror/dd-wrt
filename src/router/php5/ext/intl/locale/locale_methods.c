@@ -279,7 +279,7 @@ static char* get_icu_value_internal( const char* loc_name , char* tag_name, int*
 	if( fromParseLocale==1 ){
 		/* Handle singletons */
 		if( strcmp(tag_name , LOC_LANG_TAG)==0 ){
-			if( strlen(loc_name)>1 && isIDPrefix(loc_name) ){
+			if( strlen(loc_name)>1 && (isIDPrefix(loc_name) == 1) ){
 				return estrdup(loc_name);
 			}
 		}
@@ -506,7 +506,7 @@ static void get_icu_disp_value_src_php( char* tag_name, INTERNAL_FUNCTION_PARAME
     }
 
 	if(loc_name_len == 0) {
-		loc_name = INTL_G(default_locale);
+		loc_name = intl_locale_get_default(TSRMLS_C);
 	}
 
 	if( strcmp(tag_name, DISP_NAME) != 0 ){

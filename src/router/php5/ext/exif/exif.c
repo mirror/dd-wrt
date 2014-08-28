@@ -17,7 +17,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id$ */
+/* $Id: 38907b4d942a8d2419060a688aa3c5e5dedcb118 $ */
 
 /*  ToDos
  *
@@ -138,7 +138,7 @@ const zend_function_entry exif_functions[] = {
 };
 /* }}} */
 
-#define EXIF_VERSION "1.4 $Id$"
+#define EXIF_VERSION "1.4 $Id: 38907b4d942a8d2419060a688aa3c5e5dedcb118 $"
 
 /* {{{ PHP_MINFO_FUNCTION
  */
