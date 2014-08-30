@@ -10,9 +10,9 @@ PATHS= -DSSHDIR=\"$(sysconfdir)\" \
 	-D_PATH_PRIVSEP_CHROOT_DIR=\"$(PRIVSEP_PATH)\" \
 	-DSSH_RAND_HELPER=\"$(RAND_HELPER)\"
 
-LDFLAGS=-L. -Lopenbsd-compat/ 
+LDFLAGS=-L. -Lopenbsd-compat/ $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-CFLAGS=$(COPTS) -Wall -Wpointer-arith -Wuninitialized -Wsign-compare -Wno-pointer-sign -Wformat-security -fno-builtin-memset -std=gnu99  -I$(TOP)/openssl/include
+CFLAGS=$(COPTS) -Wall -Wpointer-arith -Wuninitialized -Wsign-compare -Wno-pointer-sign -Wformat-security -fno-builtin-memset -std=gnu99  -I$(TOP)/openssl/include $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 CPPFLAGS=-I. -I$(srcdir)  $(PATHS) -DHAVE_CONFIG_H
 #LIBS=-lresolv
