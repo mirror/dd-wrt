@@ -771,8 +771,10 @@ static int igb_set_eeprom(struct net_device *netdev,
 	if (eeprom->len == 0)
 		return -EOPNOTSUPP;
 
-	if (hw->mac.type == e1000_i211)
+	if ((hw->mac.type >= e1000_i210) &&
+	    !igb_get_flash_presence_i210(hw)) {
 		return -EOPNOTSUPP;
+	}
 
 	if (eeprom->magic != (hw->vendor_id | (hw->device_id << 16)))
 		return -EFAULT;
@@ -1659,7 +1661,8 @@ static int igb_setup_loopback_test(struct igb_adapter *adapter)
 		if ((hw->device_id == E1000_DEV_ID_DH89XXCC_SGMII) ||
 		(hw->device_id == E1000_DEV_ID_DH89XXCC_SERDES) ||
 		(hw->device_id == E1000_DEV_ID_DH89XXCC_BACKPLANE) ||
-		(hw->device_id == E1000_DEV_ID_DH89XXCC_SFP)) {
+		(hw->device_id == E1000_DEV_ID_DH89XXCC_SFP) ||
+		(hw->device_id == E1000_DEV_ID_I354_SGMII)) {
 
 			/* Enable DH89xxCC MPHY for near end loopback */
 			reg = rd32(E1000_MPHY_ADDR_CTL);
@@ -1725,7 +1728,8 @@ static void igb_loopback_cleanup(struct igb_adapter *adapter)
 	if ((hw->device_id == E1000_DEV_ID_DH89XXCC_SGMII) ||
 	(hw->device_id == E1000_DEV_ID_DH89XXCC_SERDES) ||
 	(hw->device_id == E1000_DEV_ID_DH89XXCC_BACKPLANE) ||
-	(hw->device_id == E1000_DEV_ID_DH89XXCC_SFP)) {
+	(hw->device_id == E1000_DEV_ID_DH89XXCC_SFP) ||
+	(hw->device_id == E1000_DEV_ID_I354_SGMII)) {
 		u32 reg;
 
 		/* Disable near end loopback on DH89xxCC */
@@ -2055,13 +2059,14 @@ static void igb_get_wol(struct net_device *netdev, struct ethtool_wolinfo *wol)
 {
 	struct igb_adapter *adapter = netdev_priv(netdev);
 
-	wol->supported = WAKE_UCAST | WAKE_MCAST |
-			 WAKE_BCAST | WAKE_MAGIC |
-			 WAKE_PHY;
 	wol->wolopts = 0;
 
 	if (!(adapter->flags & IGB_FLAG_WOL_SUPPORTED))
 		return;
+
+	wol->supported = WAKE_UCAST | WAKE_MCAST |
+			 WAKE_BCAST | WAKE_MAGIC |
+			 WAKE_PHY;
 
 	/* apply any specific unsupported masks here */
 	switch (adapter->hw.device_id) {
