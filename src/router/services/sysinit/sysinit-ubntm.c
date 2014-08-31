@@ -144,6 +144,9 @@ void start_sysinit(void)
 #ifdef HAVE_WPE72
 	sysprintf("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
 
+#elif HAVE_UBNTXW
+	writeproc("/proc/sys/dev/wifi0/softled", "0");
+	sysprintf("/sbin/wlanled -L generic_11:-94 -L generic_16:-80 -l generic_13:-73 -L generic_14:-65");
 #else
 	if (brand == ROUTER_BOARD_UNIFI) {
 		setWirelessLed(0, 0);
