@@ -309,6 +309,9 @@ endif
 ifeq ($(CONFIG_WDR2543),y)
 	cp $(LINUXDIR)/.config_wdr2543 $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_UBNTXW),y)
+	cp $(LINUXDIR)/.config_ubntxw $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_JJAP93),y)
 	cp $(LINUXDIR)/.config_ar7240_nousb $(LINUXDIR)/.config
 endif
@@ -1168,6 +1171,10 @@ ifeq ($(CONFIG_UBNTM),y)
 	./tools/trx_n  -m 40000000 -o $(ARCH)-uclibc/ar7420-firmware.bin $(ARCH)-uclibc/aligned.uimage
 	tools/ubnt/src/mkfwimage -v XM.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntm-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 	tools/ubnt/src/mkfwimage -v BZ.ar7240.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+endif
+
+ifeq ($(CONFIG_UBNTXW),y)
+	tools/ubnt/src/mkfwimage -v XW.ar934x.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntxw-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 endif
 
 ifeq ($(CONFIG_UBNTTI),y)
