@@ -1975,11 +1975,19 @@ int internal_getRouterBrand()
 #define M35 (- (5540 - 3540))
 #define M10 (- (5540 - 10322))
 	struct UBNTDEV dev[] = {
+
+		{"Ubiquiti NanoBeam M2", 0xe2c2, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
+		{"Ubiquiti NanoBeam M5", 0xe3e5, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
+		{"Ubiquiti NanoBeam M5", 0xe4e5, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
+		{"Ubiquiti NanoBeam M5", 0xe815, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
+		{"Ubiquiti NanoBeam M5", 0xe825, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
+
 		{"Ubiquiti NanoStation M2", 0xe002, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
 		{"Ubiquiti NanoStation M2", 0xe012, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
 		{"Ubiquiti NanoStation M5", 0xe005, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
 		{"Ubiquiti NanoStation M6", 0xe006, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
 		{"Ubiquiti NanoStation M5", 0xe805, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
+		{"Ubiquiti NanoStation M5", 0xe855, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
 		{"Ubiquiti NanoStation M3", 0xe035, "3", "3", ROUTER_BOARD_NS5M, M35, 10},	//
 		{"Ubiquiti NanoStation M365", 0xe003, "3", "3", ROUTER_BOARD_NS5M, M365, 10},	//
 		{"Ubiquiti NanoStation M900", 0xe2b9, "3", "3", ROUTER_BOARD_NS5M, M900, 10},	//
@@ -1989,8 +1997,10 @@ int internal_getRouterBrand()
 		{"Ubiquiti Rocket M2", 0xe1b2, "3", "3", ROUTER_BOARD_R2M, 0, 10},	//
 		{"Ubiquiti Rocket M2", 0xe1c2, "3", "3", ROUTER_BOARD_R2M, 0, 10},	//
 		{"Ubiquiti Rocket M2 Titanium", 0xe1d2, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{"Ubiquiti Rocket M5 Titanium", 0xe4d5, "3", "3", ROUTER_BOARD_TI, 0, 10},	// Titanium
 		{"Ubiquiti Rocket M5", 0xe105, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Rocket M5", 0xe1b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
+		{"Ubiquiti Rocket M5", 0xe6b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Rocket M5", 0xe8b5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Rocket M5", 0xe1c5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
 		{"Ubiquiti Airbeam 5", 0xe1e5, "3", "3", ROUTER_BOARD_R5M, 0, 10},	//
@@ -2010,6 +2020,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti Airgrid M2", 0xe242, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
 		{"Ubiquiti Airgrid M5", 0xe215, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti Airgrid M5", 0xe245, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
+		{"Ubiquiti Airgrid M5", 0xe835, "1", "1", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti AirRouter", 0xe4a2, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
 		{"Ubiquiti AirRouter", 0xe4b2, "3", "3", ROUTER_BOARD_NS2M, 0, 10},	//
 		{"Ubiquiti Pico M2", 0xe302, "1", "1", ROUTER_BOARD_BS2M, 0, 10},	//
@@ -2018,6 +2029,7 @@ int internal_getRouterBrand()
 		{"Ubiquiti Airwire", 0xe4a5, "3", "3", ROUTER_BOARD_BS5M, 0, 10},	//
 		{"Ubiquiti Loco M5", 0xe0a5, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
 		{"Ubiquiti Loco M5", 0xe8a5, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
+		{"Ubiquiti Loco M5", 0xe845, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
 		{"Ubiquiti Loco M2", 0xe0a2, "3", "3", ROUTER_BOARD_NS5M, 0, 10},	//
 //              {"Ubiquiti Loco M2", 0xe8a2, "3", "3", ROUTER_BOARD_NS5M, 0},   //
 		{"Ubiquiti Loco M900", 0xe009, "3", "3", ROUTER_BOARD_NS5M, M900, 10},	//
@@ -2062,11 +2074,10 @@ int internal_getRouterBrand()
 	int device = 0;
 	if (fp) {
 		fseek(fp, 0x1006, SEEK_SET);
-		unsigned short cal[128];
+		unsigned short cal[132];
 		fread(&cal[0], 1, 256, fp);
-		fclose(fp);
 		int calcnt = 0;
-		while (((cal[calcnt] & 0xffff) != 0xffff)) {
+		while (((cal[calcnt] & 0xffff) != 0xffff) && calcnt < 128) {
 			unsigned short reg = cal[calcnt++] & 0xffff;
 			if (reg == 0x602c || reg == 0x502c) {
 				calcnt++;
@@ -2076,6 +2087,14 @@ int internal_getRouterBrand()
 				calcnt += 2;
 			}
 		}
+		if (device == 0) {
+			fseek(fp, 12, SEEK_SET);
+			unsigned short devid;
+			fread(&devid, 2, 1, fp);
+			device = devid;
+		}
+
+		fclose(fp);
 	}
 #endif
 	int devcnt = 0;
