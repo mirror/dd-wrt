@@ -88,12 +88,12 @@ void start_dhcp6c(void)
 				" script \"/sbin/dhcp6c-state\";\n"
 				"};\n"
 				"id-assoc pd 0 {\n"
-				" prefix-interface %s {\n" "  sla-id 0;\n" "  sla-len %d;\n" " };\n" "};\n" "id-assoc na 0 { };\n", nvram_safe_get("wan_ifname"), nvram_safe_get("lan_ifname"), prefix_len);
+				" prefix-interface %s {\n" "  sla-id 0;\n" "  sla-len %d;\n" " };\n" "};\n" "id-assoc na 0 { };\n", get_wan_face(), nvram_safe_get("lan_ifname"), prefix_len);
 			fclose(fpc);
 		}
 	}
 
-	eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", "-D", nvram_safe_get("wan_ifname"));
+	eval("dhcp6c", "-c", "/tmp/dhcp6c.conf", "-T", "LL", "-D", get_wan_face());
 }
 
 void stop_dhcp6c(void)
