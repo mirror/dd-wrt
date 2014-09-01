@@ -143,12 +143,34 @@ void stop_vlantagging(void)
 	}
 }
 
+int getBridgeSTP(char *br)
+{
+
+	static char word[256];
+	char *next, *wordlist;
+	wordlist = nvram_safe_get("bridges");
+	foreach(word, wordlist, next) {
+		char *stp = word;
+		char *bridge = strsep(&stp, ">");
+		char *prio = stp;
+		if (strcmp(bridge, br))
+			continue;
+		stp = strsep(&prio, ">");
+		if (!stp)
+			break;
+		if (!strcmp(stp, "On"))
+			return 1;
+		return 0;
+	}
+	if (!strcmp(br, "br0"))
+		return nvram_match("lan_stp", "1") ? 1 : 0;
+	return -1;
+}
+
 void start_bridgesif(void)
 {
-	if (nvram_match("lan_stp", "0"))
-		br_set_stp_state("br0", 0);
-	else
-		br_set_stp_state("br0", 1);
+
+	br_set_stp_state("br0", getBridgeSTP("br0"));
 
 	static char word[256];
 	char *next, *wordlist;
