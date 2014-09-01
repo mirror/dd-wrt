@@ -792,7 +792,6 @@ void mndp_broadcast() {
 		uptime = htole32(((unsigned int)ts.tv_sec));
 	}
 #endif
-
 	if (uname(&s_uname) != 0) {
 		return;
 	}
