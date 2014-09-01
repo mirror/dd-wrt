@@ -35,7 +35,7 @@
 
 #define _(String) String
 
-int init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char *srcmac, unsigned char *dstmac, unsigned short sessionkey, unsigned int counter) {
+int32_t init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char *srcmac, unsigned char *dstmac, unsigned short sessionkey, uint32_t counter) {
 	unsigned char *data = packet->data;
 
 	/* Packet version */
@@ -75,7 +75,7 @@ int init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char *sr
 	return 22;
 }
 
-int add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cpdata, int data_len) {
+int32_t add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cpdata, int32_t data_len) {
 	unsigned char *data = packet->data + packet->size;
 
 	/* Something is really wrong. Packets should never become over 1500 bytes */
@@ -102,7 +102,7 @@ int add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cp
 	/* Data length */
 #if BYTE_ORDER == LITTLE_ENDIAN
 	{
-		unsigned int templen;
+		uint32_t templen;
 		templen = htonl(data_len);
 		memcpy(data + 5, &templen, sizeof(templen));
 	}
@@ -120,7 +120,7 @@ int add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cp
 	return MT_CPHEADER_LEN + data_len;
 }
 
-int init_pingpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac) {
+int32_t init_pingpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac) {
 	init_packet(packet, MT_PTYPE_PING, srcmac, dstmac, 0, 0);
 
 	/* Zero out sessionkey & counter */
@@ -131,7 +131,7 @@ int init_pingpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned ch
 	return packet->size;
 }
 
-int init_pongpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac) {
+int32_t init_pongpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac) {
 	init_packet(packet, MT_PTYPE_PONG, srcmac, dstmac, 0, 0);
 
 	/* Zero out sessionkey & counter */
@@ -142,7 +142,7 @@ int init_pongpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned ch
 	return packet->size;
 }
 
-int add_packetdata(struct mt_packet *packet, unsigned char *data, unsigned short length) {
+int32_t add_packetdata(struct mt_packet *packet, unsigned char *data, unsigned short length) {
 	if (packet->size + length > MT_PACKET_LEN) {
 		fprintf(stderr, _("add_control_packet: ERROR, too large packet. Exceeds %d bytes\n"), MT_PACKET_LEN);
 		return -1;
@@ -192,10 +192,10 @@ void parse_packet(unsigned char *data, struct mt_mactelnet_hdr *pkthdr) {
 }
 
 
-int parse_control_packet(unsigned char *packetdata, int data_len, struct mt_mactelnet_control_hdr *cpkthdr) {
+int32_t parse_control_packet(unsigned char *packetdata, int32_t data_len, struct mt_mactelnet_control_hdr *cpkthdr) {
 	static unsigned char *int_data;
-	static unsigned int int_data_len;
-	static unsigned int int_pos;
+	static uint32_t int_data_len;
+	static uint32_t int_pos;
 	unsigned char *data;
 
 	/* Store info so we can call this function once with data,
@@ -257,35 +257,31 @@ int parse_control_packet(unsigned char *packetdata, int data_len, struct mt_mact
 	}
 }
 
-int mndp_init_packet(struct mt_packet *packet, unsigned char version, unsigned char ttl) {
+int32_t mndp_init_packet(struct mt_packet *packet, unsigned char version, unsigned char ttl) {
 	struct mt_mndp_hdr *header = (struct mt_mndp_hdr *)packet->data;
-
 	header->version = version;
 	header->ttl = ttl;
 	header->cksum = 0;
 	
-	packet->size = sizeof(header);
+	packet->size = sizeof(*header);
 	
-	return sizeof(header);
+	return sizeof(*header);
 }
 
-int mndp_add_attribute(struct mt_packet *packet, enum mt_mndp_attrtype attrtype, void *attrdata, unsigned short data_len) {
+int32_t mndp_add_attribute(struct mt_packet *packet, enum mt_mndp_attrtype attrtype, void *attrdata, unsigned short data_len) {
 	unsigned char *data = packet->data + packet->size;
 	unsigned short type = attrtype;
 	unsigned short len = data_len;
-
 	/* Something is really wrong. Packets should never become over 1500 bytes */
 	if (packet->size + 4 + data_len > MT_PACKET_LEN) {
 		fprintf(stderr, _("mndp_add_attribute: ERROR, too large packet. Exceeds %d bytes\n"), MT_PACKET_LEN);
 		return -1;
 	}
-
 	type = htons(type);
 	memcpy(data, &type, sizeof(type));
 
 	len = htons(len);
 	memcpy(data + 2, &len, sizeof(len));
-
 	memcpy(data + 4, attrdata, data_len);
 
 	packet->size += 4 + data_len;
@@ -294,7 +290,7 @@ int mndp_add_attribute(struct mt_packet *packet, enum mt_mndp_attrtype attrtype,
 }
 
 
-struct mt_mndp_info *parse_mndp(const unsigned char *data, const int packet_len) {
+struct mt_mndp_info *parse_mndp(const unsigned char *data, const int32_t packet_len) {
 	const unsigned char *p;
 	static struct mt_mndp_info packet;
 	struct mt_mndp_hdr *mndp_hdr;
@@ -397,13 +393,14 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int packet_len)
 	return &packet;
 }
 
-int query_mndp(const char *identity, unsigned char *mac) {
+int32_t query_mndp(const char *identity, unsigned char *mac) {
 	int fastlookup = 0;
-	int sock, length;
+	int32_t length;
+	int sock;
 	int optval = 1;
 	struct sockaddr_in si_me, si_remote;
 	unsigned char buff[MT_PACKET_LEN];
-	unsigned int message = 0;
+	uint32_t message = 0;
 	struct timeval timeout;
 	time_t start_time;
 	fd_set read_fds;
@@ -489,7 +486,7 @@ done:
  * This function accepts either a full MAC address using : or - as seperators.
  * Or a router hostname. The hostname will be searched for via MNDP broadcast packets.
  */
-int query_mndp_or_mac(char *address, unsigned char *dstmac, int verbose) {
+int32_t query_mndp_or_mac(char *address, unsigned char *dstmac, int verbose) {
 	char *p = address;
 	int colons = 0;
 	int dashs = 0;
