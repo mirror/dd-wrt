@@ -85,7 +85,6 @@
 					 * change when it's running */
 
 #define IFF_NO_IP_ALIGN	0x200000	/* do not ip-align allocated rx pkts */
-#define IFF_FAST_PATH	0x400000	/* ddtb fastpath capable */
 
 
 #define IF_GET_IFACE	0x0001		/* for querying only */

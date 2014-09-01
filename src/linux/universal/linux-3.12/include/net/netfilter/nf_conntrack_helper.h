@@ -18,7 +18,6 @@ struct module;
 enum nf_ct_helper_flags {
 	NF_CT_HELPER_F_USERSPACE	= (1 << 0),
 	NF_CT_HELPER_F_CONFIGURED	= (1 << 1),
-	NF_CT_HELPER_F_OVERRIDE		= (1 << 2),
 };
 
 #define NF_CT_HELPER_NAME_LEN	16
