@@ -25,8 +25,8 @@ install: all
 	install -d $(INSTALLDIR)/usr/sbin
 	install -o root mactelnetd $(INSTALLDIR)/usr/sbin/
 	install -d $(INSTALLDIR)/etc/config
-	install -m 600 -o root config/mactelnetd.webservices $(INSTALLDIR)/etc/config
-	install -m 600 -o root config/mactelnetd.nvramconfig $(INSTALLDIR)/etc/config
+	install -m 600 -o root config/mactelnet.webservices $(INSTALLDIR)/etc/config
+	install -m 600 -o root config/mactelnet.nvramconfig $(INSTALLDIR)/etc/config
 
 install-docs:
 	install -d $(DESTDIR)/usr/share/man/man1/
