@@ -64,14 +64,12 @@ void start_dlna(void)
 	for (cs = dlna_shares; cs; cs = csnext) {
 		if (strlen(cs->mp)) {
 			if ((cs->types & (TYPE_VIDEO | TYPE_AUDIO | TYPE_IMAGES))) {
-				fprintf(fp, "media_dir=");
 				if (cs->types & TYPE_VIDEO)
-					fprintf(fp, "V");
+					fprintf(fp, "media_dir=V,%s\n", cs->mp);
 				if (cs->types & TYPE_AUDIO)
-					fprintf(fp, "A");
+					fprintf(fp, "media_dir=A,%s\n", cs->mp);
 				if (cs->types & TYPE_IMAGES)
-					fprintf(fp, "P");
-				fprintf(fp, ",%s\n", cs->mp);	// comma separted list
+					fprintf(fp, "media_dir=P,%s\n", cs->mp);
 			}
 
 		}
