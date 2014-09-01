@@ -51,9 +51,6 @@
 
 #define AG71XX_TX_MTU_LEN	1540
 
-#define AG71XX_TX_RING_SPLIT		256
-#define AG71XX_TX_RING_DS_PER_PKT	DIV_ROUND_UP(AG71XX_TX_MTU_LEN, \
-						     AG71XX_TX_RING_SPLIT)
 #define AG71XX_TX_RING_SIZE_DEFAULT	32
 #define AG71XX_RX_RING_SIZE_DEFAULT	128
 
@@ -101,8 +98,7 @@ struct ag71xx_ring {
 	struct ag71xx_buf	*buf;
 	u8			*descs_cpu;
 	dma_addr_t		descs_dma;
-	u16			desc_split;
-	u16			desc_size;
+	unsigned int		desc_size;
 	unsigned int		curr;
 	unsigned int		dirty;
 	unsigned int		size;
