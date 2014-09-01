@@ -397,11 +397,11 @@ static void handle_index(void)
 	stop_running_main(0, NULL);
 
 #ifdef HAVE_VLANTAGGING
-	start_service_f("bridging");
+	start_service("bridging");
 #endif
-	start_service_force_f("lan");
+	start_service_force("lan");
 #ifdef HAVE_BONDING
-	start_service_f("bonding");
+	start_service("bonding");
 #endif
 	start_service_force("wan_boot");
 	start_service_f("ttraff");
@@ -517,7 +517,7 @@ static void handle_hotspot(void)
 #ifdef HAVE_BONDING
 	start_service("bonding");
 #endif
-	start_service_force_f("wan");
+	start_service_force("wan");
 	start_service_f("ttraff");
 #ifdef HAVE_MADWIFI
 	start_service_f("stabridge");
