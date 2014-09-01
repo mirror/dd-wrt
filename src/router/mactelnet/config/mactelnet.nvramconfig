@@ -1,0 +1,2 @@
+ "mactelnetd_enable" "MACTelnetd Relay" "CHOICE" "2" "0" "1" "TRUE" "0"
+ "mactelnetd_passwd" "MACTelnetd Password" "NULL" "TRUE" "0"

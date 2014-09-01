@@ -24,8 +24,9 @@ install: all
 	install mactelnet $(INSTALLDIR)/usr/bin/
 	install -d $(INSTALLDIR)/usr/sbin
 	install -o root mactelnetd $(INSTALLDIR)/usr/sbin/
-	install -d $(INSTALLDIR)/etc
-	install -m 600 -o root config/mactelnetd.users $(INSTALLDIR)/etc/
+	install -d $(INSTALLDIR)/etc/config
+	install -m 600 -o root config/mactelnetd.webservices $(INSTALLDIR)/etc/config
+	install -m 600 -o root config/mactelnetd.nvramconfig $(INSTALLDIR)/etc/config
 
 install-docs:
 	install -d $(DESTDIR)/usr/share/man/man1/
@@ -40,7 +41,7 @@ autologin.o: autologin.c autologin.h
 	${CC} -Wall ${CFLAGS} -c autologin.c
 
 users.o: users.c users.h
-	${CC} -Wall ${CFLAGS} -DUSERSFILE='"/etc/mactelnetd.users"' -c users.c
+	${CC} -Wall ${CFLAGS} -DUSERSFILE='"/tmp/mactelnetd.users"' -c users.c
 
 protocol.o: protocol.c protocol.h
 	${CC} -Wall ${CFLAGS} -c protocol.c
