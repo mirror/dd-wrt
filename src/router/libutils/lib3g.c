@@ -223,7 +223,7 @@ static void modeswitch_huawei_old(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out, "HuaweiMode=1\n");
 	fclose(out);
-	eval("usb_modeswitch, " - I ", " - c " " / tmp / usb_modeswitch.conf ");
+	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
 
 static void modeswitch_huawei_std(int needreset, int devicecount)
