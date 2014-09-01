@@ -3,7 +3,11 @@
 	<legend><% tran("service.mactelnetd_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.mactelnetd"); %></div>
-		<input class="spaceradio" type="radio" name="mactelnetd_enable" value="1" <% nvram_selmatch("mactelnetd_enable", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="mactelnetd_enable" value="0" <% nvram_selmatch("mactelnetd_enable", "0", "checked"); %> /><% tran("share.disable"); %>
-		</div>
+		<input class="spaceradio" type="radio" name="mactelnetd_enable" value="1" <% nvram_checked("mactelnetd_enable", "1"); %> onclick="show_layer_ext(this, 'idmactelnetd', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="mactelnetd_enable" value="0" <% nvram_checked("mactelnetd_enable", "0"); %> onclick="show_layer_ext(this, 'idmactelnetd', false)" /><% tran("share.disable"); %>
+	</div>
+	<div class="setting" id="idmactelnetd">
+		<div class="label"><% tran("share.passwd"); %></div>
+		<input maxlength="64" size="25" name="mactelnetd_passwd" value="<% nvram_get("mactelnetd_passwd"); %>" />
+	</div>
 </fieldset><br />
