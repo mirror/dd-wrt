@@ -687,6 +687,9 @@ endif
 ifeq ($(CONFIG_TELNET),y)
 CFLAGS += -DHAVE_TELNET
 endif
+ifeq ($(CONFIG_MACTELNET),y)
+CFLAGS += -DHAVE_MACTELNET
+endif
 
 ifeq ($(CONFIG_FTP),y)
 CFLAGS += -DHAVE_FTP
