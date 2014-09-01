@@ -147,8 +147,6 @@
 #define BCMFASTPATH_HOST
 #endif
 
-#include <linux/ddtb.h>
-
 /* Instead of increasing this, you should create a hash table. */
 #define MAX_GRO_SKBS 8
 
@@ -3569,8 +3567,6 @@ static int __netif_receive_skb_core(struct sk_buff *skb, bool pfmemalloc)
 
 	trace_netif_receive_skb(skb);
 
-	if (!ddtb_intercept(skb))
-		return NET_RX_SUCCESS;
 
 	orig_dev = skb->dev;
 

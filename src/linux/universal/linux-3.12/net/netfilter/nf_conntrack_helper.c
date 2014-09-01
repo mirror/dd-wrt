@@ -189,7 +189,6 @@ int __nf_ct_try_assign_helper(struct nf_conn *ct, struct nf_conn *tmpl,
 	struct nf_conntrack_helper *helper = NULL;
 	struct nf_conn_help *help;
 	struct net *net = nf_ct_net(ct);
-	bool allow_override = false;
 	int ret = 0;
 
 	/* We already got a helper explicitly attached. The function
@@ -206,13 +205,11 @@ int __nf_ct_try_assign_helper(struct nf_conn *ct, struct nf_conn *tmpl,
 		if (help != NULL) {
 			helper = help->helper;
 			set_bit(IPS_HELPER_BIT, &ct->status);
-			allow_override = helper->flags & NF_CT_HELPER_F_OVERRIDE;
 		}
 	}
 
 	help = nfct_help(ct);
-	if (net->ct.sysctl_auto_assign_helper &&
-	    (helper == NULL || allow_override)) {
+	if (net->ct.sysctl_auto_assign_helper && helper == NULL) {
 		struct nf_conntrack_helper *h;
 		h = __nf_ct_helper_find(&ct->tuplehash[IP_CT_DIR_REPLY].tuple);
 		if (unlikely(!net->ct.auto_assign_helper_warned && h)) {
