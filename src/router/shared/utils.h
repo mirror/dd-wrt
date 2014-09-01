@@ -934,6 +934,7 @@ void lcdmessaged(char *dual, char *message);
 
 extern char *getBridgeMTU(char *);
 extern char *getMTU(char *);
+extern int getBridgeSTP(char *br);
 
 /* NF packet marks */
 char *get_NFServiceMark(char *service, uint32 mark);
