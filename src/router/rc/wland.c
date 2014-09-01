@@ -374,15 +374,6 @@ void start_wds_check(void)
 		}
 	}
 	close(sock);
-	if (nvram_match("lan_stp", "0")) {
-
-		eval("brctl", "stp", "br0", "0");
-
-	} else {
-		eval("brctl", "stp", "br0", "1");
-
-	}
-
 	return;
 }
 
