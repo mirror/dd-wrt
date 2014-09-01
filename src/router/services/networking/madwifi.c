@@ -2342,12 +2342,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			br_del_bridge("br1");
 			br_add_bridge("br1");
 
-			if (nvram_match("lan_stp", "0"))
-				br_set_stp_state("br1", 0);	// eval ("brctl", "stp",
-			// "br1", "off");
-			else
-				br_set_stp_state("br1", 1);	// eval ("brctl", "stp",
-			// "br1", "off");
+			br_set_stp_state("br1", getBridgeSTP("br1"));
 			br_set_bridge_forward_delay("br1", 2);
 
 			/*
@@ -2356,14 +2351,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			if (nvram_invmatch(br1ipaddr, "0.0.0.0")) {
 				ifconfig("br1", IFUP, nvram_safe_get(br1ipaddr), nvram_safe_get(br1netmask));
 
-				if (nvram_match("lan_stp", "0"))
-					br_set_stp_state("br1", 0);	// eval ("brctl",
-				// "stp", "br1",
-				// "off");
-				else
-					br_set_stp_state("br1", 1);	// eval ("brctl",
-				// "stp", "br1",
-				// "off");
+				br_set_stp_state("br1", getBridgeSTP("br1"));
 
 			}
 
