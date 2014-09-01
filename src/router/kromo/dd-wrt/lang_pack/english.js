@@ -1573,6 +1573,9 @@ service.syslog_ip="Remote Server";
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
 
+service.mactelnetd_legend="Mikrotik MAC Telnet";
+service.mactelnetd="MAC Telnet";
+
 //pptpd_client.webservices
 service.pptpd_legend="PPTP Client";
 service.pptpd_option="PPTP Client Options";

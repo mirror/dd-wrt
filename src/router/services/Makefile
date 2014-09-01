@@ -1261,6 +1261,10 @@ ifeq ($(CONFIG_TELNET),y)
 CFLAGS_EXTRA += -DHAVE_TELNET
 OBJS += telnet.o
 endif
+ifeq ($(CONFIG_MACTELNET),y)
+CFLAGS_EXTRA += -DHAVE_MACTELNET
+#OBJS += telnet.o
+endif
 
 
 CFLAGS_EXTRA += -DHAVE_AQOS

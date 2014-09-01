@@ -2044,6 +2044,7 @@ struct nvram_tuple srouter_defaults[] = {
 	{"pptp_encrypt", "0", 0},
 #endif
 	{"resetbutton_enable", "1", 0},
+
 #ifdef HAVE_SKYTRON
 	{"telnetd_enable", "0", 0},
 #elif HAVE_GGEW
@@ -3395,6 +3396,9 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_TRANSMISSION
 	{"transmission_enable", "0", 0},
 	{"transmission_dir", "/jffs/transmission", 0},
+#endif
+#ifdef HAVE_MACTELNET
+	{"mactelnetd_enable", "0", 0},
 #endif
 	{"ptoken", "0", 0},
 	{0, 0, 0}
