@@ -95,6 +95,9 @@ int start_services_main(int argc, char **argv)
 #ifdef HAVE_TELNET
 	start_service_f("telnetd");
 #endif
+#ifdef HAVE_MACTELNET
+	start_service_f("mactelnetd");
+#endif
 #ifdef HAVE_FTP
 	start_service_f("ftpsrv");
 #endif
@@ -271,6 +274,9 @@ int stop_services_main(int argc, char **argv)
 	stop_service_f("wland");
 #ifdef HAVE_TELNET
 	stop_service_f("telnetd");
+#endif
+#ifdef HAVE_MACTELNET
+	stop_service_f("mactelnetd");
 #endif
 #ifdef HAVE_CPUTEMP
 	stop_service_f("hwmon");
@@ -590,6 +596,9 @@ static void handle_services(void)
 #endif
 #ifdef HAVE_TELNET
 	startstop_f("telnetd");
+#endif
+#ifdef HAVE_MACTELNET
+	startstop_f("mactelnetd");
 #endif
 #ifdef HAVE_SNMP
 	startstop_f("snmp");
