@@ -1263,7 +1263,7 @@ OBJS += telnet.o
 endif
 ifeq ($(CONFIG_MACTELNET),y)
 CFLAGS_EXTRA += -DHAVE_MACTELNET
-#OBJS += telnet.o
+OBJS += mactelnet.o
 endif
 
 

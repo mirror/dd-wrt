@@ -7,6 +7,10 @@ extern void stop_httpd(void);
 extern void start_telnetd(void);
 extern void stop_telnetd(void);
 #endif
+#ifdef HAVE_MACTELNET
+extern void start_mactelnetd(void);
+extern void stop_mactelnetd(void);
+#endif
 
 extern void start_resetbutton(void);
 extern void stop_resetbutton(void);
