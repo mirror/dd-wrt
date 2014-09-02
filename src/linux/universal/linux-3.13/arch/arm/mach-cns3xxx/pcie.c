@@ -18,6 +18,7 @@
 #include <linux/io.h>
 #include <linux/ioport.h>
 #include <linux/interrupt.h>
+#include <linux/irq.h>
 #include <linux/ptrace.h>
 #include <asm/mach/map.h>
 #include <mach/cns3xxx.h>
@@ -32,7 +33,7 @@ enum cns3xxx_access_type {
 
 struct cns3xxx_pcie {
 	struct map_desc cfg_bases[CNS3XXX_NUM_ACCESS_TYPES];
-	unsigned int irqs[2];
+	unsigned int irqs[6];
 	struct resource res_io;
 	struct resource res_mem;
 	struct hw_pci hw_pci;
@@ -255,7 +256,7 @@ struct pci_ops cns3xxx_pcie_ops = {
 static int cns3xxx_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
 	struct cns3xxx_pcie *cnspci = pdev_to_cnspci(dev);
-	int irq = cnspci->irqs[slot];
+	int irq = cnspci->irqs[slot+pin-1];
 
 	pr_info("PCIe map irq: %04d:%02x:%02x.%02x slot %d, pin %d, irq: %d\n",
 		pci_domain_nr(dev->bus), dev->bus->number, PCI_SLOT(dev->devfn),
@@ -298,7 +299,12 @@ static struct cns3xxx_pcie cns3xxx_pcie[] = {
 			.end = CNS3XXX_PCIE0_MEM_BASE + SZ_16M - 1,
 			.flags = IORESOURCE_MEM,
 		},
-		.irqs = { IRQ_CNS3XXX_PCIE0_RC, IRQ_CNS3XXX_PCIE0_DEVICE, },
+		.irqs = { IRQ_CNS3XXX_PCIE0_RC,
+			  IRQ_CNS3XXX_PCIE0_DEVICE,
+			  IRQ_CNS3XXX_PCIE0_DEVICE,
+			  IRQ_CNS3XXX_PCIE0_DEVICE,
+			  IRQ_CNS3XXX_PCIE0_DEVICE,
+			},
 		.hw_pci = {
 			.domain = 0,
 			.nr_controllers = 1,
@@ -340,7 +346,13 @@ static struct cns3xxx_pcie cns3xxx_pcie[] = {
 			.end = CNS3XXX_PCIE1_MEM_BASE + SZ_16M - 1,
 			.flags = IORESOURCE_MEM,
 		},
-		.irqs = { IRQ_CNS3XXX_PCIE1_RC, IRQ_CNS3XXX_PCIE1_DEVICE, },
+		.irqs = {
+			IRQ_CNS3XXX_PCIE1_RC,
+			IRQ_CNS3XXX_PCIE1_DEVICE,
+			IRQ_CNS3XXX_PCIE1_DEVICE,
+			IRQ_CNS3XXX_PCIE1_DEVICE,
+			IRQ_CNS3XXX_PCIE1_DEVICE,
+		},
 		.hw_pci = {
 			.domain = 1,
 			.nr_controllers = 1,
@@ -465,12 +477,21 @@ static int cns3xxx_pcie_abort_handler(unsigned long addr, unsigned int fsr,
 	return 0;
 }
 
-static int __init cns3xxx_pcie_init(void)
+int __init cns3xxx_pcie_init(int *pcie0_irqs, int *pcie1_irqs)
 {
 	int i;
 
 	pcibios_min_io = 0;
 	pcibios_min_mem = 0;
+
+	if (pcie0_irqs) {
+		for (i = 0; i < 4; i++)
+			cns3xxx_pcie[0].irqs[i+1] = pcie0_irqs[i];
+	}
+	if (pcie1_irqs) {
+		for (i = 0; i < 4; i++)
+			cns3xxx_pcie[1].irqs[i+1] = pcie1_irqs[i];
+	}
 
 	hook_fault_code(16 + 6, cns3xxx_pcie_abort_handler, SIGBUS, 0,
 			"imprecise external abort");
@@ -491,4 +512,3 @@ static int __init cns3xxx_pcie_init(void)
 	return 0;
 }
 
-device_initcall(cns3xxx_pcie_init);
