@@ -147,7 +147,7 @@ static int FIQcompatible(void)
 		printk(KERN_INFO "Chip Version: c\n");
 		return 1;
 	}else if( rev_id_from_efuse == 0x0060) {
-		printk(KERN_INFO "chip Version: d\n");	
+		printk(KERN_INFO "Chip Version: d\n");	
 		return 1;
 	}else if( rev_id == 0x2) {
 		printk(KERN_INFO "Chip Version: c\n");
