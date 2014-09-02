@@ -461,12 +461,15 @@ irqreturn_t eth_stat_irq(int irq, void *pdev)
 	u32 stat = __raw_readl(&sw->regs->intr_stat);
 	__raw_writel(0xffffffff, &sw->regs->intr_stat);
 
-	if (stat & MAC2_RX_ERROR)
+	if (stat & MAC2_RX_ERROR) {
 		switch_port_tab[3]->netdev->stats.rx_dropped++;
-	if (stat & MAC1_RX_ERROR)
+		}
+	if (stat & MAC1_RX_ERROR) {
 		switch_port_tab[1]->netdev->stats.rx_dropped++;
-	if (stat & MAC0_RX_ERROR)
+		}
+	if (stat & MAC0_RX_ERROR) {
 		switch_port_tab[0]->netdev->stats.rx_dropped++;
+		}
 
 	if (stat & MAC0_STATUS_CHANGE) {
 		cfg = __raw_readl(&sw->regs->mac_cfg[0]);
