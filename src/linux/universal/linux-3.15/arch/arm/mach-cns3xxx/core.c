@@ -84,67 +84,6 @@ static struct map_desc cns3xxx_io_desc[] __initdata = {
 	},
 };
 
-int irq2gpio(int irq)
-{
-	if (irq == IRQ_CNS3XXX_GPIOA)
-		return 0;
-	else if (irq == IRQ_CNS3XXX_GPIOB)
-		return 32;
-	else
-		return -EINVAL;
-}
-EXPORT_SYMBOL(irq2gpio);
-
-static int cns3xxx_gpio_direction_input(struct gpio_chip *chip, unsigned gpio)
-{
-	gpio_line_config(gpio, CNS3XXX_GPIO_IN);
-	return 0;
-}
-
-static int cns3xxx_gpio_direction_output(struct gpio_chip *chip, unsigned gpio, int level)
-{
-	gpio_line_set(gpio, level);
-	gpio_line_config(gpio, CNS3XXX_GPIO_OUT);
-	return 0;
-}
-
-static int cns3xxx_gpio_get_value(struct gpio_chip *chip, unsigned gpio)
-{
-	int value;
-	gpio_line_get(gpio,&value);
-	return value;
-}
-
-static void cns3xxx_gpio_set_value(struct gpio_chip *chip, unsigned gpio, int value)
-{
-	gpio_line_set(gpio, value);
-}
-
-
-static int cns3xxx_gpio_to_irq(struct gpio_chip *chip, unsigned pin)
-{
-
-	if (pin > 63)
-		return -EINVAL;
-
-	if (pin < 32)
-		return IRQ_CNS3XXX_GPIOA;
-	else
-		return IRQ_CNS3XXX_GPIOB;
-}
-
-static struct gpio_chip cns3xxx_gpio_chip = {
-	.label			= "CNS3XXX_GPIO_CHIP",
-	.direction_input	= cns3xxx_gpio_direction_input,
-	.direction_output	= cns3xxx_gpio_direction_output,
-	.get			= cns3xxx_gpio_get_value,
-	.set			= cns3xxx_gpio_set_value,
-	.base			= 0,
-	.ngpio			= 64,
-	.to_irq			= cns3xxx_gpio_to_irq,
-};
-
-
 static DEFINE_TWD_LOCAL_TIMER(twd_local_timer,
 			      CNS3XXX_TC11MP_TWD_BASE,
 			      IRQ_LOCALTIMER);
@@ -164,7 +103,6 @@ void __init cns3xxx_common_init(void)
 #ifdef CONFIG_CACHE_L2CC
 	l2cc_init((void __iomem *) CNS3XXX_L2C_BASE_VIRT);
 #endif
-	gpiochip_add(&cns3xxx_gpio_chip);
 }
 
 /* used by entry-macro.S */

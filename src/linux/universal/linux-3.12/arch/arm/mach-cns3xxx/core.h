@@ -25,5 +25,6 @@ void __init cns3xxx_common_init(void);
 void __init cns3xxx_init_irq(void);
 void cns3xxx_power_off(void);
 void cns3xxx_restart(enum reboot_mode, const char *);
+int  __init cns3xxx_pcie_init(int *pcie0_irqs, int *pcie1_irqs);
 
 #endif /* __CNS3XXX_CORE_H */

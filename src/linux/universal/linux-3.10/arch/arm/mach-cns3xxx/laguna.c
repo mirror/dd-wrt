@@ -19,6 +19,7 @@
 #include <linux/kernel.h>
 #include <linux/compiler.h>
 #include <linux/io.h>
+#include <linux/irq.h>
 #include <linux/gpio.h>
 #include <linux/vmalloc.h>
 #include <linux/dma-mapping.h>
@@ -947,12 +948,89 @@ static int laguna_register_gpio(struct gpio *array, size_t num)
 #define SPI_TRANSMIT_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x50)
 #define SPI_RECEIVE_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x58)
 
+/* allow disabling of external isolated PCIe IRQs */
+static int cns3xxx_pciextirq = 1;
+static int __init cns3xxx_pciextirq_disable(char *s)
+{
+        cns3xxx_pciextirq = 0;
+        return 1;
+}
+__setup("noextirq", cns3xxx_pciextirq_disable);
+
+
+static int __init laguna_pcie_init(void)
+{
+	u32 __iomem *mem = (void __iomem *)(CNS3XXX_GPIOB_BASE_VIRT + 0x0004);
+	u32 reg = (__raw_readl(mem) >> 26) & 0xf;
+	int irqs[] = {
+		IRQ_CNS3XXX_EXTERNAL_PIN0,
+		IRQ_CNS3XXX_EXTERNAL_PIN1,
+		IRQ_CNS3XXX_EXTERNAL_PIN2,
+		154,
+	};
+
+	if (!machine_is_gw2388())
+		return 0;
+
+	/* Verify GPIOB[26:29] == 0001b indicating support for ext irqs */
+	if (cns3xxx_pciextirq && reg != 1)
+		cns3xxx_pciextirq = 0;
+
+	if (cns3xxx_pciextirq) {
+		printk("laguna: using isolated PCI interrupts:"
+		       " irq%d/irq%d/irq%d/irq%d\n",
+		       irqs[0], irqs[1], irqs[2], irqs[3]);
+		return cns3xxx_pcie_init(irqs, NULL);
+	}
+	printk("laguna: using shared PCI interrupts: irq%d\n",
+	       IRQ_CNS3XXX_PCIE0_DEVICE);
+	irqs[0] = IRQ_CNS3XXX_PCIE0_DEVICE;
+	irqs[1] = IRQ_CNS3XXX_PCIE0_DEVICE;
+	irqs[2] = IRQ_CNS3XXX_PCIE0_DEVICE;
+	return cns3xxx_pcie_init(irqs, NULL);
+}
+
+subsys_initcall(laguna_pcie_init);
+
+extern void __init cns3xxx_gpio_init(int gpio_base, int ngpio,
+	u32 base, int irq, int secondary_irq_base);
+
 static int __init laguna_model_setup(void)
 {
 	u32 __iomem *mem;
 	u32 reg;
 
 	printk("Running on Gateworks Laguna %s\n", laguna_info.model);
+
+	cns3xxx_gpio_init( 0, 32, CNS3XXX_GPIOA_BASE_VIRT, IRQ_CNS3XXX_GPIOA,
+		NR_IRQS_CNS3XXX);
+	/*
+	 * If pcie external interrupts are supported and desired
+	 * configure IRQ types and configure pin function.
+	 * Note that cns3xxx_pciextirq is enabled by default, but can be
+	 * unset via the 'noextirq' kernel param or by laguna_pcie_init() if
+	 * the baseboard model does not support this hardware feature.
+	 */
+	if (cns3xxx_pciextirq) {
+		mem = (void __iomem *)(CNS3XXX_MISC_BASE_VIRT + 0x0018);
+		reg = __raw_readl(mem);
+		/* GPIO26 is gpio, EXT_INT[0:2] not gpio func */
+		reg &= ~0x3c000000;
+		reg |= 0x38000000;
+		__raw_writel(reg, mem);
+
+		cns3xxx_gpio_init(32, 32, CNS3XXX_GPIOB_BASE_VIRT,
+				  IRQ_CNS3XXX_GPIOB, NR_IRQS_CNS3XXX + 32);
+
+		irq_set_irq_type(154, IRQ_TYPE_LEVEL_LOW);
+		irq_set_irq_type(93, IRQ_TYPE_LEVEL_HIGH);
+		irq_set_irq_type(94, IRQ_TYPE_LEVEL_HIGH);
+		irq_set_irq_type(95, IRQ_TYPE_LEVEL_HIGH);
+	} else {
+		cns3xxx_gpio_init(32, 32, CNS3XXX_GPIOB_BASE_VIRT,
+				  IRQ_CNS3XXX_GPIOB, NR_IRQS_CNS3XXX + 32);
+	}
+
 
 	if (strncmp(laguna_info.model, "GW", 2) == 0) {
 		printk("CONFIG BITMAP = 0x%08X\n",laguna_info.config_bitmap);
