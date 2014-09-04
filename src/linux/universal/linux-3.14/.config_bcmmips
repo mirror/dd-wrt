@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.14.16 Kernel Configuration
+# Linux/mips 3.14.18-rc2 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -820,7 +820,6 @@ CONFIG_RFKILL=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
-CONFIG_DDTB=y
 
 #
 # Device Drivers
