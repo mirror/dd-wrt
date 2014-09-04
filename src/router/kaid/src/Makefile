@@ -7,7 +7,7 @@ VERSION		= 7.0.0.7
 PLATFORM    	= linux
 IPKG		= /home/luis/devel/Kai/ipkg
 PRE_CFLAGS     += -D_REENTRANT -DPLATFORM_$(PLATFORM) -DVERSION=\"$(VERSION)\" $(STATIC)
-CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -g -Wall -Ipthreadcc/src -Isocketcc/src -I../../libpcap_noring $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" $(COPTS) -DNEED_PRINTF -static -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -Wall -Ipthreadcc/src -Isocketcc/src -I../../libpcap_noring $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" $(COPTS) -DNEED_PRINTF
 
 #PRE_CFLAGS	+= -nostdinc
 PRE_CFLAGS	+= -DOPENWRT
@@ -42,7 +42,8 @@ else
 PCAP	+= ../../libpcap_noring/pcap-linux.o
 endif
 
-PCAP		+= ../../libpcap_noring/fad-gifc.o
+#PCAP		+= ../../libpcap_noring/fad-gifc.o
+PCAP		+= ../../libpcap_noring/fad-getad.o
 PRE_CFLAGS	+= -DOPENWRT
 
 # Uneeded obj, cutting down size for OPENWRT static bin
