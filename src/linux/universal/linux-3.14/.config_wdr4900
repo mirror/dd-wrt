@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.14.16 Kernel Configuration
+# Linux/powerpc 3.14.18-rc2 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -873,7 +873,6 @@ CONFIG_WEXT_PRIV=y
 # CONFIG_CAIF is not set
 # CONFIG_CEPH_LIB is not set
 # CONFIG_NFC is not set
-CONFIG_DDTB=y
 
 #
 # Device Drivers
