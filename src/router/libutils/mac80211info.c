@@ -727,6 +727,8 @@ int has_ht40(char *interface)
 	char regdomain[32];
 	char *country;
 
+	if (is_ath5k(interface)) return(0);
+
 	sprintf(regdomain, "%s_regdomain", interface);
 	country = nvram_default_get(regdomain, "UNITED_STATES");
 

@@ -103,6 +103,7 @@ static void detect_wireless_devices(void)
 {
 	int loadath9k = 1;
 	int loadlegacy = 1;
+	int loadath5k = 0;
 #ifdef HAVE_RT61
 	if (!strcmp(has_device("0e.0"), "0x3592"))
 		nvram_set("rtchip", "3062");
@@ -199,6 +200,12 @@ static void detect_wireless_devices(void)
 			loadlegacy = 1;
 	}
 #endif
+#ifdef HAVE_ATH5K
+//	if (nvram_match("use_ath5k", "1")) {
+		loadath5k=loadlegacy;
+		loadlegacy=0;
+//                }
+#endif
 #ifndef HAVE_NOWIFI
 	nvram_default_get("rate_control", "minstrel");
 #ifdef HAVE_MADWIFI
@@ -223,7 +230,7 @@ static void detect_wireless_devices(void)
 	if (nvram_match("mimo_driver", "ath9k"))
 #endif
 	{
-		if (loadath9k) {
+		if (loadath9k || loadath5k) {
 			fprintf(stderr, "load ATH9K 802.11n Driver\n");
 			// some are just for future use and not (yet) there
 			insmod("/lib/ath9k/compat.ko");
@@ -231,6 +238,12 @@ static void detect_wireless_devices(void)
 			insmod("/lib/ath9k/cfg80211.ko");
 			insmod("/lib/ath9k/mac80211.ko");
 			insmod("/lib/ath9k/ath.ko");
+#ifdef HAVE_ATH5K
+			if (loadath5k) {
+				fprintf(stderr, "load ATH5K 802.11 Driver\n");
+				insmod("/lib/ath9k/ath5k.ko");
+			}
+#endif
 			insmod("/lib/ath9k/ath9k_hw.ko");
 			insmod("/lib/ath9k/ath9k_common.ko");
 #ifdef HAVE_WZRG450
