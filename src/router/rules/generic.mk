@@ -41,3 +41,6 @@ endif
 ifeq ($(CONFIG_UDPXY),y)
 DD_CFLAGS += -DHAVE_UDPXY  
 endif
+ifeq ($(CONFIG_ATH5K),y)
+CFLAGS += -DHAVE_ATH5K
+endif

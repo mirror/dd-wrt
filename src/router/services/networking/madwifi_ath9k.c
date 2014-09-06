@@ -103,12 +103,14 @@ void configure_single_ath9k(int count)
 	static char rxantenna[32];
 	static char txantenna[32];
 	static int vapcount = 0;
+	int isath5k=0;
 	char *apm;
 	char isolate[32];
 	char primary[32] = { 0 };
 	char regdomain[16];
 	char *country;
 	sprintf(dev, "ath%d", count);
+	isath5k=is_ath5k(dev);
 	// sprintf(regdomain, "%s_regdomain", dev);
 	// country = nvram_default_get(regdomain, "US");
 	// sysprintf("iw reg set %s", getIsoName(country));
@@ -135,12 +137,24 @@ void configure_single_ath9k(int count)
 	// set channelbw ht40 is also 20!
 
 	sprintf(bw, "%s_channelbw", dev);
-	if (nvram_match(bw, "5"))
-		sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
-	else if (nvram_match(bw, "10"))
-		sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
-	else
-		sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
+	if(isath5k) {
+		if (nvram_match(bw, "5"))
+			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
+		else if (nvram_match(bw, "10"))
+			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
+		else if (nvram_match(bw, "40"))
+			sysprintf("echo 40 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
+		else
+			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
+	}
+	else {
+		if (nvram_match(bw, "5"))
+			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
+		else if (nvram_match(bw, "10"))
+			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
+		else
+			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
+	}
 
 #ifdef HAVE_REGISTER
 	int cpeonly = iscpe();
@@ -261,6 +275,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	static char nfreq[16];
 	int i = 0;
 	char *caps;
+	int isath5k=is_ath5k(prefix);
 	fprintf(fp, "driver=nl80211\n");
 	fprintf(fp, "ctrl_interface=/var/run/hostapd\n");
 	fprintf(fp, "wmm_ac_bk_cwmin=4\n");
@@ -271,7 +286,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	fprintf(fp, "wmm_ac_be_aifs=3\n");
 	fprintf(fp, "wmm_ac_be_cwmin=4\n");
 	fprintf(fp, "wmm_ac_be_cwmax=10\n");
-	fprintf(fp, "wmm_ac_be_txop_limit=0\n");
 	fprintf(fp, "wmm_ac_be_acm=0\n");
 	fprintf(fp, "wmm_ac_vi_aifs=2\n");
 	fprintf(fp, "wmm_ac_vi_cwmin=3\n");
@@ -290,7 +304,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	fprintf(fp, "tx_queue_data2_aifs=3\n");
 	fprintf(fp, "tx_queue_data2_cwmin=15\n");
 	fprintf(fp, "tx_queue_data2_cwmax=63\n");
-	fprintf(fp, "tx_queue_data2_burst=0\n");
 	fprintf(fp, "tx_queue_data1_aifs=1\n");
 	fprintf(fp, "tx_queue_data1_cwmin=7\n");
 	fprintf(fp, "tx_queue_data1_cwmax=15\n");
@@ -300,6 +313,15 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	fprintf(fp, "tx_queue_data0_cwmax=7\n");
 	fprintf(fp, "tx_queue_data0_burst=1.5\n");
 	char *netmode = nvram_nget("%s_net_mode", prefix);
+	if (isath5k || !(nvram_match(netmode, "n2-only") || nvram_match(netmode, "n5-only")) ) {
+		fprintf(fp, "tx_queue_data2_burst=2.0\n");
+		fprintf(fp, "wmm_ac_be_txop_limit=64\n");
+	}
+	else {
+		fprintf(fp, "tx_queue_data2_burst=0\n");
+		fprintf(fp, "wmm_ac_be_txop_limit=0\n");
+	}
+		
 	char *akm = nvram_nget("%s_akm", prefix);
 	char *crypto = nvram_nget("%s_crypto", prefix);
 	char ht[5];
@@ -316,9 +338,11 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 
 		if (strcmp(netmode, "mixed") && strcmp(netmode, "ng-only")
 		    && strcmp(netmode, "na-only")) {
-			fprintf(fp, "require_ht=1\n");
+			if (!isath5k)
+				fprintf(fp, "require_ht=1\n");
 		}
-		fprintf(fp, "ieee80211n=1\n");
+		if (!isath5k)
+			fprintf(fp, "ieee80211n=1\n");
 		if (nvram_match(bw, "2040")) {
 			fprintf(fp, "dynamic_ht40=1\n");
 		}
@@ -408,9 +432,11 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			channel = ieee80211_mhz2ieee(freq);
 		}
 	}
-	caps = mac80211_get_caps(prefix);
-	fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
-	free(caps);
+	if (!isath5k) {
+		caps = mac80211_get_caps(prefix);
+		fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
+		free(caps);
+	}
 #ifdef HAVE_ATH10K
 	if (is_ath10k(prefix)) {
 		if ((!strcmp(netmode, "mixed") ||	//
