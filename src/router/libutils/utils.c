@@ -6254,24 +6254,11 @@ int is_ath10k(const char *prefix)
 #endif
 	// correct index if there are legacy cards arround
 	devnum = get_ath9k_phy_ifname(prefix);
-	sprintf(globstring, "/sys/class/ieee80211/phy%d", devnum);
+	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:ath10k", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	if (globresult == 0)
 		count = (int)globbuf.gl_pathc;
 	globfree(&globbuf);
-	if (!count)
-		return 0;
-	FILE *fp;
-	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/device", devnum);
-	fp = fopen(globstring, "rb");
-	if (fp) {
-		char match[32];
-		fscanf(fp, "%s", match);
-		fclose(fp);
-		if (strcmp(match, "0x003c"))
-			return 0;
-	} else
-		return 0;
 	return (count);
 }
 
