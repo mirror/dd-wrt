@@ -42,7 +42,7 @@
 #include <netdb.h>
 #include <resolv.h>
 #include <signal.h>
-#ifdef HAVE_ATH9K
+#if defined(HAVE_ATH9K) || defined(HAVE_ATH5K) || defined(HAVE_ATH10K)
 #include <glob.h>
 #endif
 
@@ -6217,6 +6217,27 @@ int is_ath9k(const char *prefix)
 	globfree(&globbuf);
 	return (count);
 }
+#endif
+#ifdef HAVE_ATH5K
+int is_ath5k(const char *prefix) {
+	glob_t globbuf;
+	int count = 0;
+	char globstring[1024];
+	int globresult;
+	int devnum;
+	// correct index if there are legacy cards arround... should not...
+	devnum = get_ath9k_phy_ifname(prefix);
+	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:ath5k", devnum);
+	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	if (globresult == 0)
+		count = (int)globbuf.gl_pathc;
+	globfree(&globbuf);
+	return (count);
+}
+#else
+int is_ath5k(const char *prefix) {
+	return(0);
+	}
 #endif
 #ifdef HAVE_ATH10K
 int is_ath10k(const char *prefix)
