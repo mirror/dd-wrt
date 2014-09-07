@@ -6254,7 +6254,7 @@ int is_ath10k(const char *prefix)
 #endif
 	// correct index if there are legacy cards arround
 	devnum = get_ath9k_phy_ifname(prefix);
-	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:ath10k", devnum);
+	sprintf(globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:ath10k_pci", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	if (globresult == 0)
 		count = (int)globbuf.gl_pathc;
