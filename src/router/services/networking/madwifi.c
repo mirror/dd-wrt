@@ -114,27 +114,27 @@ static void deconfigure_single(int count)
 		sprintf(dev, "ath%d.wds%d", count, s - 1);
 		if (ifexists(dev)) {
 			br_del_interface("br0", dev);
-			sysprintf("ifconfig %s down", dev);
+			eval("ifconfig", dev, "down");
 		}
 	}
 	sprintf(dev, "ath%d", count);
 	if (ifexists(dev)) {
 		br_del_interface("br0", dev);
-		sysprintf("ifconfig %s down", dev);
+		eval("ifconfig", dev, "down");
 	}
 	foreach(var, vifs, next) {
 		if (ifexists(var)) {
-			sysprintf("ifconfig %s down", dev);
+			eval("ifconfig", var, "down");
 		}
 	}
 	sprintf(dev, "ath%d", count);
 
 	if (ifexists(dev))
-		sysprintf("wlanconfig %s destroy", dev);
+		eval("wlanconfig", dev, "destroy");
 
 	foreach(var, vifs, next) {
 		if (ifexists(var)) {
-			sysprintf("wlanconfig %s destroy", var);
+			eval("wlanconfig", var, "destroy");
 		}
 	}
 #endif
@@ -191,11 +191,11 @@ void setupKey(char *prefix)
 		char bul[8];
 		char *authmode = nvram_nget("%s_authmode", prefix);
 		if (!strcmp(authmode, "shared"))
-			sysprintf("iwpriv %s authmode 2", prefix);
+			eval("iwpriv", prefix, "authmode", "2");
 		else if (!strcmp(authmode, "auto"))
-			sysprintf("iwpriv %s authmode 4", prefix);
+			eval("iwpriv", prefix, "authmode", "4");
 		else
-			sysprintf("iwpriv %s authmode 1", prefix);
+			eval("iwpriv", prefix, "authmode", "1");
 		for (i = 1; i < 5; i++) {
 			char *athkey = nvram_nget("%s_key%d", prefix, i);
 
@@ -476,7 +476,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			fwritenvram(extra, fp);
 		fclose(fp);
 		sprintf(psk, "-i%s", prefix);
-		sysprintf("iwpriv %s hostroaming 2", prefix);
+		eval("iwpriv", prefix, "hostroaming", "2");
 #ifdef HAVE_RELAYD
 		if (nvram_match(bridged, "1")
 		    && (nvram_match(wmode, "wdssta")))
@@ -1017,7 +1017,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			pragma = "";
 		sysprintf("wrt-radauth %s %s %s %s %s 1 1 0 &", pragma, prefix, server, port, share);
 	} else {
-		sysprintf("iwconfig %s key off", prefix);
+		eval("iwconfig", prefix, "key", "off");
 	}
 
 }
@@ -1060,14 +1060,14 @@ static void set_scanlist(char *dev, char *wif)
 	char *sl = nvram_default_get(scanlist, "default");
 	int c = 0;
 
-	sysprintf("iwpriv %s setscanlist -ALL", dev);
+	eval("iwpriv", dev, "setscanlist", "-ALL");
 	if (strlen(sl) > 0 && strcmp(sl, "default")) {
 		foreach(var, sl, next) {
 			sprintf(list, "+%s", var);
-			sysprintf("iwpriv %s setscanlist %s", dev, list);
+			eval("iwpriv", dev, "setscanlist", list);
 		}
 	} else {
-		sysprintf("iwpriv %s setscanlist +ALL", dev);
+		eval("iwpriv", dev, "setscanlist", "+ALL");
 	}
 }
 
@@ -2219,9 +2219,9 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		country = nvram_default_get(regdomain, "GERMANY");
 		sysprintf("iw reg set 00");
 		char *iso = getIsoName(country);
-		
+
 		if (!iso)
-			iso="DE";
+			iso = "DE";
 		sysprintf("iw reg set %s", iso);
 		eval("touch", "/tmp/.crdalock");	// create lock file
 		int i = 40;	// max wait 4 sec
