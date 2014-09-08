@@ -312,6 +312,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	fprintf(fp, "tx_queue_data0_cwmin=3\n");
 	fprintf(fp, "tx_queue_data0_cwmax=7\n");
 	fprintf(fp, "tx_queue_data0_burst=1.5\n");
+	char *country = getIsoName(nvram_default_get("ath0_regdomain","GERMANY"));
+	if (!country)
+	    country="DE";
+	fprintf(fp, "country_code=%s\n",country);
 	char *netmode = nvram_nget("%s_net_mode", prefix);
 	if (isath5k || !(nvram_match(netmode, "n2-only") || nvram_match(netmode, "n5-only")) ) {
 		fprintf(fp, "tx_queue_data2_burst=2.0\n");
@@ -368,12 +372,15 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		sprintf(ht, "HT20");
 	}
 	char regdomain[16];
-	char *country;
 	sprintf(regdomain, "%s_regdomain", prefix);
-	country = nvram_default_get(regdomain, "UNITED_STATES");
+	country = nvram_default_get(regdomain, "GERMANY");
 	// jumps to world if set here?!?
 	// fprintf(fp, "country_code=%s\n", getIsoName(country));
-	chan = mac80211_get_channels(prefix, getIsoName(country), 40, 0xff);
+	char *iso = getIsoName(country);
+	if (!iso)
+	    iso="DE";
+
+	chan = mac80211_get_channels(prefix, iso, 40, 0xff);
 	if (isrepeater) {
 		// for ht40- take second channel otherwise hostapd is unhappy (and does not start)
 		if (iht == -1)

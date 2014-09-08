@@ -142,17 +142,20 @@ void start_sysinit(void)
 
 	int brand = getRouterBrand();
 #ifdef HAVE_WPE72
-	sysprintf("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
+	if (!nvram_match("wlanled","0"))
+		sysprintf("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
 
 #elif HAVE_UBNTXW
 	writeproc("/proc/sys/dev/wifi0/softled", "0");
-	sysprintf("/sbin/wlanled -L generic_11:-94 -L generic_16:-80 -l generic_13:-73 -L generic_14:-65");
+	if (!nvram_match("wlanled","0"))
+		sysprintf("/sbin/wlanled -L generic_11:-94 -L generic_16:-80 -l generic_13:-73 -L generic_14:-65");
 #else
 	if (brand == ROUTER_BOARD_UNIFI) {
 		setWirelessLed(0, 0);
 	} else {
 		writeproc("/proc/sys/dev/wifi0/softled", "0");
-		sysprintf("/sbin/wlanled -l generic_0:-94 -l generic_1:-80 -l generic_11:-73 -l generic_7:-65");
+		if (!nvram_match("wlanled","0"))
+			sysprintf("/sbin/wlanled -l generic_0:-94 -l generic_1:-80 -l generic_11:-73 -l generic_7:-65");
 	}
 #endif
 	/* ubnt has a hardware fault as it seems, so the power bridge feature can break the hardware which causes endless reboot loops. we keep it disabled here. devices which are already broken will work again then */
