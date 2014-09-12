@@ -157,13 +157,6 @@ addEvent(window, "unload", function() {
 								<th width="70%"><% tran("networking.iface"); %></th>
 								</tr>
 								</table><br />
-								<div class="center">
-									<script type="text/javascript">
-									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" name=\"refresh_button\" value=\"" + <% nvem("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload();\" />");
-									//]]>
-									</script>
-								</div>
 							</fieldset>
 							<br />
 							<% show_bondings(); %>
