@@ -202,7 +202,7 @@ function Status(F,I) {
 	for(var i=0 ; i < total ; i++){
 		if(F.elements[i].name == "_filter_p2p")
 			start = i;
-		if(F.elements[i].name == "url7")
+		if(F.elements[i].name == "url15")
 			end = i;
 	}
 	if(start == '' || end == '') return true;
