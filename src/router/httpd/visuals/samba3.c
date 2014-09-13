@@ -132,7 +132,7 @@ void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"smbshare_subdir%s\" id=\"smbshare_subdir%s\" value=\"%s\" style=\"width: 150px;\" onChange=\"updateSambaUserShare(this);\" /></td>\n",
 			  number, number, cs->sd);
 		websWrite(wp,
-			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"smbshare_label%s\" id=\"smbshare_label%s\" value=\"%s\" style=\"width: 120px;\" onChange=\"updateSambaUserShare(this);\" /></td>\n",
+			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"smbshare_label%s\" id=\"smbshare_label%s\" value=\"%s\" style=\"width: 100px;\" onChange=\"updateSambaUserShare(this);\" /></td>\n",
 			  number, number, cs->label);
 		websWrite(wp,
 			  "				<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"smbshare_public%s\" id=\"smbshare_public%s\" value=\"1\" %s></td>\n",
