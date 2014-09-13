@@ -21,6 +21,10 @@
            <div class="label"><% tran("lighttpd.wan"); %></div>
            <input class="spaceradio" type="radio" name="lighttpd_wan" value="1" <% nvram_checked("lighttpd_wan", "1"); %> /><% tran("share.enable"); %>&nbsp;
            <input class="spaceradio" type="radio" name="lighttpd_wan" value="0" <% nvram_checked("lighttpd_wan", "0"); %> /><% tran("share.disable"); %>
-</div>
+  </div>
+  <div class="setting">
+           <div class="label"><% tran("lighttpd.url"); %></div>
+           <a href="https://<% nvram_get("lan_ipaddr"); %>:<% nvram_get("lighttpd_sslport"); %>">https://<% nvram_get("lan_ipaddr"); %>:<% nvram_get("lighttpd_sslport"); %></a>
+  </div>
 </div>
 </fieldset><br />
