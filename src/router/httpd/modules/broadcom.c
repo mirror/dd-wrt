@@ -1968,7 +1968,9 @@ static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, ch
 						websWrite(stream, "<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
 					} else if (strstr(line, "authpriv.notice")) {
 						websWrite(stream, "<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
-					} else if (strstr(line, "mounting unchecked fs") || strstr(line, "httpd login failure")) {
+					} else if (strstr(line, "mounting unchecked fs") 
+						|| strstr(line, "httpd login failure")
+						|| strstr(line, "auth-failure") ) {
 						websWrite(stream, "<tr bgcolor=\"#FF0000\"><td>%s</td></tr>", line);
 					} else {
 						websWrite(stream, "<tr><td>%s</td></tr>", line);
@@ -2256,31 +2258,19 @@ struct mime_handler mime_handlers[] = {
 #ifdef HAVE_ROUTERSTYLE
 	{"style/blue/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
 	{"style/cyan/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
-	{"style/elegant/style.css", "text/css", NULL, NULL, do_stylecss, NULL,
-	 1},
+	{"style/elegant/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
+	{"style/elegant/fresh.css", "text/css", NULL, NULL, do_ej, NULL, 1}, 
 	{"style/green/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
-	{"style/orange/style.css", "text/css", NULL, NULL, do_stylecss, NULL,
-	 1},
+	{"style/orange/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
 	{"style/red/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
-	{"style/yellow/style.css", "text/css", NULL, NULL, do_stylecss, NULL,
-	 1},
-	{"style/blue/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
-	 NULL,
-	 1},
-	{"style/cyan/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
-	 NULL,
-	 1},
-	{"style/elegant/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
-	 NULL, 1},
-	{"style/green/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
-	 NULL,
-	 1},
-	{"style/orange/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
-	 NULL, 1},
-	{"style/red/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL,
-	 1},
-	{"style/yellow/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie,
-	 NULL, 1},
+	{"style/yellow/style.css", "text/css", NULL, NULL, do_stylecss, NULL, 1},
+	{"style/blue/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL, 1},
+	{"style/cyan/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL, 1},
+	{"style/elegant/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL, 1},
+	{"style/green/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL, 1},
+	{"style/orange/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL, 1},
+	{"style/red/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL, 1},
+	{"style/yellow/style_ie.css", "text/css", NULL, NULL, do_stylecss_ie, NULL, 1},
 #endif
 #ifdef HAVE_REGISTER
 	{"style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, 0},
