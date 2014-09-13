@@ -793,6 +793,7 @@ usb.usb_automnt="Automatic Drive Mount";
 usb.usb_mntpoint="Disk Mount Point";
 usb.usb_runonmount="Run-on-mount Script Name";
 usb.usb_diskinfo="Disk Info";
+usb.usb_diskspace="Diskspace";
 usb.usb_mntjffs="Mount this Partition to /jffs";
 usb.usb_mntopt="Mount this Partition to /opt";
 usb.usb_ses_umount="Use SES Button to remove drives";
@@ -870,6 +871,7 @@ lighttpd.legend="Lighttpd Webserver";
 lighttpd.port="HTTP Port";
 lighttpd.sslport="HTTPS Port";
 lighttpd.wan="WAN Access";
+lighttpd.url="URL";
 
 var hlighttpd=new Object();
 hlighttpd.right2="Enable lighttpd and configure the HTTP/HTTPS ports lighttpd will listen for request. Default webserver root is under /jffs/www where you can place your websites.";
