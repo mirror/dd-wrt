@@ -926,7 +926,7 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < c; i++) {
 		//name
 		websWrite(wp, "<tr><td>\n");
-		websWrite(wp, "<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
+		websWrite(wp, "<input maxlength=\"12\" size=\"10\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"", i);
 		port_forward_spec(wp, "name", i);
 		websWrite(wp, "\" /></td>\n");
 
@@ -947,7 +947,7 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 
 		//src net
 		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input class=\"num\" maxlength=\"18\" size=\"18\" name=\"src%d\" value=\"", i);
+		websWrite(wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"src%d\" value=\"", i);
 		port_forward_spec(wp, "src", i);
 		websWrite(wp, "\" /></td>\n");
 
@@ -1949,7 +1949,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n", style);
 	websWrite(wp, "\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n", style);
-
+	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/fresh.css\" />\n", style);
 #ifdef HAVE_PWC
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n");
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n");
