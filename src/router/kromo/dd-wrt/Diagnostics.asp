@@ -75,7 +75,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("diag.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("diag.cmd"); %></div>
-									<textarea id="ping_ip" name="ping_ip" rows="6" cols="40" style="font-family:Courier, Courier New" wrap="off"><% nvg("ping_ip"); %></textarea>
+									<textarea id="ping_ip" name="ping_ip" rows="6" cols="80" style="font-family:Courier, Courier New" wrap="off"><% nvg("ping_ip"); %></textarea>
 								</div>
 									<script type="text/javascript">
 									//<![CDATA[
