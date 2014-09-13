@@ -1341,11 +1341,38 @@ void show_custominputlabel(webs_t wp, char *labelname, char *propertyname, char 
 void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 {
 	char buff[512];
+	char line[256];
+	char used[32];
+	char total[32];
+	char per[16];
+	char mp[128];
+	char *pos;
 	FILE *fp;
 	int mounted = 0;
 	if (!nvram_match("usb_automnt", "1"))
 		return;
+        //exclude proftpd bind mount points and don't display the first 3 lines which are header and rootfs
+	sysprintf("df -h | grep -v proftpd | awk '{ print $3 \" \" $4 \" \" $5 \" \" $6}' | tail -n +4 > /tmp/df");
 
+	if ((fp = fopen("/tmp/df", "r"))) {
+		
+		while (fgets(line, sizeof(line), fp)) {
+			if ( strlen(line) > 2 ){
+			  
+				sscanf(line, "%s %s %s %s", used, total, per, mp);
+
+				websWrite(wp, "<div class=\"setting\">");
+				websWrite(wp, "<div class=\"label\">%s %s</div>", live_translate("usb.usb_diskspace"), mp);
+				websWrite(wp, "<span id=\"usage\">");
+				websWrite(wp, "<div class=\"meter\"><div class=\"bar\" style=\"width:%s;\"></div>", per);
+				websWrite(wp, "<div class=\"text\">%s</div></div>", per);
+				websWrite(wp, "%s / %s </span></div><br><br>", used, total);
+			}
+		}
+		websWrite(wp, "<hr><br>");
+		fclose(fp);
+	}
+	websWrite(wp, "<div class=\"setting\">");
 	if ((fp = fopen("/tmp/disktype.dump", "r"))) {
 		while (fgets(buff, sizeof(buff), fp)) {
 			if (strcmp(buff, "\n"))
@@ -1362,6 +1389,7 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 		fclose(fp);
 		mounted = 1;
 	}
+	websWrite(wp, "</div>");
 
 	if (!mounted)
 		websWrite(wp, "%s", live_translate("status_router.notavail"));
@@ -1766,7 +1794,7 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<script type=\"text/javascript\">Capture(networking.iface);</script> %s: IP %s/%s\n", interface, ipaddr, netmask);
 		}
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">DHCP %d</div>\n", count);
+		websWrite(wp, "DHCP %d &nbsp;\n", count);
 		sprintf(vlan_name, "mdhcpifname%d", count);
 		showOptions(wp, vlan_name, buffer, interface);
 		// on off
