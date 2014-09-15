@@ -24,6 +24,7 @@
 #include <linux/netdevice.h>
 #include <linux/dma-mapping.h>
 #include <linux/phy.h>
+#include <linux/inet_lro.h>
 
 
 enum fe_reg {
@@ -278,6 +279,8 @@ struct fe_rx_dma {
 
 #define TX_DMA_PLEN0_MASK	((0x3fff) << 16)
 #define TX_DMA_PLEN0(_x)	(((_x) & 0x3fff) << 16)
+#define TX_DMA_PLEN1(_x)	((_x) & 0x3fff)
+#define TX_DMA_LS1		BIT(14)
 #define TX_DMA_LSO		BIT(30)
 #define TX_DMA_DONE		BIT(31)
 #define TX_DMA_QN(_x)		((_x) << 16)
@@ -316,12 +319,14 @@ struct fe_soc_data
 	unsigned char mac[6];
 	const u32 *reg_table;
 
+	void (*init_data)(struct fe_soc_data *data);
 	void (*reset_fe)(void);
 	void (*set_mac)(struct fe_priv *priv, unsigned char *mac);
 	void (*fwd_config)(struct fe_priv *priv);
-	void (*tx_dma)(struct fe_priv *priv, int idx, int len);
+	void (*tx_dma)(struct fe_priv *priv, int idx, struct sk_buff *skb);
 	void (*rx_dma)(struct fe_priv *priv, int idx, int len);
 	int (*switch_init)(struct fe_priv *priv);
+	int (*switch_config)(struct fe_priv *priv);
 	void (*port_init)(struct fe_priv *priv, struct device_node *port);
 	int (*has_carrier)(struct fe_priv *priv);
 	int (*mdio_init)(struct fe_priv *priv);
@@ -329,12 +334,14 @@ struct fe_soc_data
 	int (*mdio_write)(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val);
 	int (*mdio_read)(struct mii_bus *bus, int phy_addr, int phy_reg);
 	void (*mdio_adjust_link)(struct fe_priv *priv, int port);
+	int (*get_skb_header)(struct sk_buff *skb, void **iphdr, void **tcph, u64 *hdr_flags, void *priv);
 
 	void *swpriv;
 	u32 pdma_glo_cfg;
 	u32 rx_dly_int;
 	u32 tx_dly_int;
 	u32 checksum_bit;
+	u32 tso;
 
 	int min_pkt_len;
 };
@@ -364,6 +371,9 @@ struct fe_priv
 	int				mii_irq[PHY_MAX_ADDR];
 
 	int				link[8];
+
+	struct net_lro_mgr		lro_mgr;
+	struct net_lro_desc		lro_arr[8];
 };
 
 extern const struct of_device_id of_fe_match[];

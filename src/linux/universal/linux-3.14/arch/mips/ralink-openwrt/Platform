@@ -26,3 +26,4 @@ cflags-$(CONFIG_SOC_RT3883_OPENWRT)	+= -I$(srctree)/arch/mips/include/asm/mach-r
 # Ralink MT7620
 #
 load-$(CONFIG_SOC_MT7620_OPENWRT)	+= 0xffffffff80000000
+cflags-$(CONFIG_SOC_MT7620_OPENWRT)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink-openwrt/mt7620
