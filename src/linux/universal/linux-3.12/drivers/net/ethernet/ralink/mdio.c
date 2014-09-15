@@ -73,7 +73,6 @@ static void fe_phy_link_adjust(struct net_device *dev)
 			}
 		}
 	}
-	spin_unlock_irqrestore(&priv->phy->lock, flags);
 }
 
 int fe_connect_phy_node(struct fe_priv *priv, struct device_node *phy_node)
@@ -84,7 +83,7 @@ int fe_connect_phy_node(struct fe_priv *priv, struct device_node *phy_node)
 
 	_port = of_get_property(phy_node, "reg", NULL);
 
-	if (!_port || (be32_to_cpu(*_port) >= 8)) {
+	if (!_port || (be32_to_cpu(*_port) >= 0x20)) {
 		pr_err("%s: invalid port id\n", phy_node->name);
 		return -EINVAL;
 	}

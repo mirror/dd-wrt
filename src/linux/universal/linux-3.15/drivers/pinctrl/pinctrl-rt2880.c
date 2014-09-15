@@ -204,6 +204,7 @@ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
 {
 	struct rt2880_priv *p = pinctrl_dev_get_drvdata(pctrldev);
         u32 mode = 0;
+	int i;
 
 	/* dont allow double use */
 	if (p->groups[group].enabled) {
@@ -217,18 +218,20 @@ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
 	mode = rt_sysc_r32(SYSC_REG_GPIO_MODE);
 	mode &= ~(p->groups[group].mask << p->groups[group].shift);
 
+	/* mark the pins as gpio */
+	for (i = 0; i < p->groups[group].func[0].pin_count; i++)
+		p->gpio[p->groups[group].func[0].pins[i]] = 1;
+
 	/* function 0 is gpio and needs special handling */
 	if (func == 0) {
-		int i;
-
-		mode |= p->groups[group].mask << p->groups[group].shift;
-		/* mark the pins as gpio */
-		for (i = 0; i < p->groups[group].func[0].pin_count; i++)
-			p->gpio[p->groups[group].func[0].pins[i]] = 1;
+		mode |= p->groups[group].gpio << p->groups[group].shift;
 	} else {
+		for (i = 0; i < p->func[func]->pin_count; i++)
+			p->gpio[p->func[func]->pins[i]] = 0;
 		mode |= p->func[func]->value << p->groups[group].shift;
 	}
 	rt_sysc_w32(mode, SYSC_REG_GPIO_MODE);
+
 
 	return 0;
 }
@@ -308,8 +311,6 @@ static int rt2880_pinmux_index(struct rt2880_priv *p)
 	/* add remaining functions */
 	for (i = 0; i < p->group_count; i++) {
 		for (j = 0; j < p->groups[i].func_count; j++) {
-			int k;
-
 			f[c] = &p->groups[i].func[j];
 			f[c]->groups = devm_kzalloc(p->dev, sizeof(int), GFP_KERNEL);
 			f[c]->groups[0] = i;
@@ -350,6 +351,15 @@ static int rt2880_pinmux_pins(struct rt2880_priv *p)
 	if (!p->pads || !p->gpio ) {
 		dev_err(p->dev, "Failed to allocate gpio data\n");
 		return -ENOMEM;
+	}
+
+	memset(p->gpio, 1, sizeof(uint8_t) * p->max_pins);
+	for (i = 0; i < p->func_count; i++) {
+		if (!p->func[i]->pin_count)
+			continue;
+
+		for (j = 0; j < p->func[i]->pin_count; j++)
+			p->gpio[p->func[i]->pins[j]] = 0;
 	}
 
 	/* pin 0 is always a gpio */
@@ -427,6 +437,7 @@ static int rt2880_pinmux_probe(struct platform_device *pdev)
 		sprintf(name, "pio");
 		range->npins = __be32_to_cpu(*ngpio);
 		range->base = __be32_to_cpu(*gpiobase);
+		range->pin_base = range->base;
 		pinctrl_add_gpio_range(dev, range);
 	}
 

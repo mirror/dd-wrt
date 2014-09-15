@@ -19,7 +19,7 @@
 
 		spi@b00 {
 			status = "okay";
-		
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -59,10 +59,11 @@
 
 		pinctrl-names = "default";
 		pinctrl-0 = <&ephy_pins>;
+
+		ralink,port-map = "llllw";
 	};
 
 	gsw@10110000 {
-		status = "okay";
 		ralink,port4 = "ephy";
 	};
 

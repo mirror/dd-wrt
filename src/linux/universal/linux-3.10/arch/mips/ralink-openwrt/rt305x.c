@@ -35,9 +35,13 @@ static struct rt2880_pmx_func uartf_func[] = {
 	FUNC("gpio i2s", RT305X_GPIO_MODE_GPIO_I2S, 7, 4),
 };
 static struct rt2880_pmx_func uartlite_func[] = { FUNC("uartlite", 0, 15, 2) };
-static struct rt2880_pmx_func jtag_func[] = { FUNC("jtag", 0, 17, 25) };
+static struct rt2880_pmx_func jtag_func[] = { FUNC("jtag", 0, 17, 5) };
 static struct rt2880_pmx_func mdio_func[] = { FUNC("mdio", 0, 22, 2) };
 static struct rt2880_pmx_func rt5350_led_func[] = { FUNC("led", 0, 22, 5) };
+static struct rt2880_pmx_func rt5350_cs1_func[] = {
+	FUNC("spi_cs1", 0, 27, 1),
+	FUNC("wdg_cs1", 1, 27, 1),
+};
 static struct rt2880_pmx_func sdram_func[] = { FUNC("sdram", 0, 24, 16) };
 static struct rt2880_pmx_func rt3352_rgmii_func[] = { FUNC("rgmii", 0, 24, 12) };
 static struct rt2880_pmx_func rgmii_func[] = { FUNC("rgmii", 0, 40, 12) };
@@ -81,6 +85,7 @@ static struct rt2880_pmx_group rt5350_pinmux_data[] = {
 	GRP("uartlite", uartlite_func, 1, RT305X_GPIO_MODE_UART1),
 	GRP("jtag", jtag_func, 1, RT305X_GPIO_MODE_JTAG),
 	GRP("led", rt5350_led_func, 1, RT5350_GPIO_MODE_PHY_LED),
+	GRP("spi_cs1", rt5350_cs1_func, 2, RT5350_GPIO_MODE_SPI_CS1),
 	{ 0 }
 };
 
@@ -250,7 +255,7 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
 		name = "RT5350";
 		soc_info->compatible = "ralink,rt5350-soc";
 	} else {
-		panic("rt305x: unknown SoC, n0:%08x n1:%08x\n", n0, n1);
+		panic("rt305x: unknown SoC, n0:%08x n1:%08x", n0, n1);
 	}
 
 	id = __raw_readl(sysc + SYSC_REG_CHIP_ID);

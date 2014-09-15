@@ -9,7 +9,7 @@
 	palmbus@10000000 {
 		spi@b00 {
 			status = "okay";
-		
+
 			m25p80@0 {
 				#address-cells = <1>;
 				#size-cells = <1>;
@@ -21,13 +21,11 @@
 				partition@0 {
 					label = "u-boot";
 					reg = <0x0 0x30000>;
-					read-only;
 				};
 
 				partition@30000 {
 					label = "u-boot-env";
 					reg = <0x30000 0x10000>;
-					read-only;
 				};
 
 				factory: partition@40000 {
@@ -58,21 +56,81 @@
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "mdio", "rgmii1";
+				ralink,group = "i2c", "uartf";
 				ralink,function = "gpio";
 			};
 		};
 	};
 
-	gsw@10110000 {
-		ralink,port4 = "ephy";
+	ethernet@10100000 {
+		status = "okay";
 
-/*		pinctrl-names = "default";
-		pinctrl-0 = <&ephy_pins>;*/
+		pinctrl-names = "default";
+		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
+
+		ralink,port-map = "llllw";
+
+		port@4 {
+			status = "okay";
+			phy-mode = "rgmii";
+			phy-handle = <&phy4>;
+		};
+
+		port@5 {
+			status = "okay";
+			phy-mode = "rgmii";
+			phy-handle = <&phy5>;
+		};
+
+		mdio-bus {
+			status = "okay";
+
+			phy4: ethernet-phy@4 {
+				reg = <4>;
+				phy-mode = "rgmii";
+			};
+
+			phy5: ethernet-phy@5 {
+				reg = <5>;
+				phy-mode = "rgmii";
+			};
+		};
+	};
+
+	gsw@10110000 {
+		ralink,port4 = "gmac";
+	};
+
+	sdhci@10130000 {
+		status = "okay";
 	};
 
 	pcie@10140000 {
 		status = "okay";
 	};
 
+	gpio-keys-polled {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		poll-interval = <20>;
+		s2 {
+			label = "S2";
+			gpios = <&gpio0 1 1>;
+			linux,code = <0x100>;
+		};
+		s3 {
+			label = "S3";
+			gpios = <&gpio0 2 1>;
+			linux,code = <0x101>;
+		};
+	};
+
+	ehci@101c0000 {
+		status = "okay";
+	};
+
+	ohci@101c1000 {
+		status = "okay";
+	};
 };

@@ -145,6 +145,7 @@ static inline int soc_is_rt5350(void)
 #define RT305X_GPIO_MODE_SDRAM		8
 #define RT305X_GPIO_MODE_RGMII		9
 #define RT5350_GPIO_MODE_PHY_LED	14
+#define RT5350_GPIO_MODE_SPI_CS1	21
 #define RT3352_GPIO_MODE_LNA		18
 #define RT3352_GPIO_MODE_PA		20
 
