@@ -197,6 +197,9 @@ endif
 ifeq ($(CONFIG_WHR300HP2),y)
 CFLAGS += -DHAVE_WHR300HP2
 endif
+ifeq ($(CONFIG_E1700),y)
+CFLAGS += -DHAVE_E1700
+endif
 ifeq ($(CONFIG_WDR4900),y)
 CFLAGS += -DHAVE_WDR4900
 endif

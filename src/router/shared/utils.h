@@ -678,6 +678,8 @@
 
 #define ROUTER_NETGEAR_R8000 0xde16
 
+#define ROUTER_BOARD_E1700 0xdf11
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
