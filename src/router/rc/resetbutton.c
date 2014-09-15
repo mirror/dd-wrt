@@ -840,6 +840,8 @@ void period_check(int sig)
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_WHR300HP2) {
 		val = get_gpio(52) << 1;
+	} else if (brand == ROUTER_BOARD_E1700) {
+		val = get_gpio(1) << 1;
 	} else if (brand == ROUTER_BOARD_W502U) {
 		val = get_gpio(10) << 10;
 	} else if (brand == ROUTER_BOARD_GW2380) {
@@ -882,6 +884,9 @@ void period_check(int sig)
 #ifdef HAVE_WZRG300NH
 	sesgpio = 0x117;
 	val |= get_gpio(23) << 23;	//aoss pushbutton
+#elif defined(HAVE_E1700)
+	sesgpio = 0x102;
+	val |= get_gpio(2) << 2;	//aoss pushbutton
 #elif defined(HAVE_WHR300HP2)
 	sesgpio = 0x102;
 	val |= get_gpio(53) << 2;	//aoss pushbutton

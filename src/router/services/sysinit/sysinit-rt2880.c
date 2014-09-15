@@ -118,6 +118,12 @@ void start_sysinit(void)
 	system("swconfig dev eth0 set apply");*/
 
 	//LAN/WAN ports as security mode
+	if (getRouterBrand() == ROUTER_BOARD_E1700) {
+	sysprintf("switch reg w 3600 5ee3a");
+	sysprintf("switch reg w 7000 717fc3");
+	sysprintf("switch reg w 7804 1015e9f");
+	sysprintf("switch reg w 3600 5ee3b");
+	}  else {
 	sysprintf("switch reg w 2004 ff0003");
 	sysprintf("switch reg w 2104 ff0003");
 	sysprintf("switch reg w 2204 ff0003");
@@ -148,6 +154,7 @@ void start_sysinit(void)
 	sysprintf("switch vlan set 0 1 11110111");
 	sysprintf("switch vlan set 1 2 00001011");
 	sysprintf("switch clear");
+	}
 	eval("ifconfig", "eth0", "up");
 
 	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");

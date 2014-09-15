@@ -286,6 +286,9 @@ endif
 ifeq ($(CONFIG_WHR300HP2),y)
   CFLAGS_EXTRA += -DHAVE_WHR300HP2
 endif
+ifeq ($(CONFIG_E1700),y)
+  CFLAGS_EXTRA += -DHAVE_E1700
+endif
 ifeq ($(CONFIG_DIR615I),y)
   CFLAGS_EXTRA += -DHAVE_DIR615I
 endif
@@ -1515,6 +1518,9 @@ all: services.so services.a
 ifeq ($(CONFIG_RT2880),y)
 ifeq ($(CONFIG_MT7620),y)
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch_gsw.c -DCONFIG_RALINK_MT7620
+ifeq ($(CONFIG_E1700),y)
+	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch_7530.c -DCONFIG_RALINK_MT7620
+endif
 else
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch.c
 endif
