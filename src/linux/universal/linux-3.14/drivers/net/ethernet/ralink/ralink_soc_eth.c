@@ -29,6 +29,7 @@
 #include <linux/of_net.h>
 #include <linux/of_mdio.h>
 #include <linux/if_vlan.h>
+#include <linux/reset.h>
 
 #include <asm/mach-ralink-openwrt/ralink_regs.h>
 
@@ -36,8 +37,9 @@
 #include "esw_rt3052.h"
 #include "mdio.h"
 
-#define TX_TIMEOUT		(20 * HZ / 100)
+#define TX_TIMEOUT		(2 * HZ)
 #define	MAX_RX_LENGTH		1536
+#define DMA_DUMMY_DESC		0xffffffff
 
 static const u32 fe_reg_table_default[FE_REG_COUNT] = {
 	[FE_REG_PDMA_GLO_CFG] = FE_PDMA_GLO_CFG,
@@ -189,7 +191,7 @@ static int fe_alloc_tx(struct fe_priv *priv)
 
 	for (i = 0; i < NUM_DMA_DESC; i++) {
 		if (priv->soc->tx_dma) {
-			priv->soc->tx_dma(priv, i, 0);
+			priv->soc->tx_dma(priv, i, NULL);
 			continue;
 		}
 
@@ -238,12 +240,41 @@ static void fe_free_dma(struct fe_priv *priv)
 	netdev_reset_queue(priv->netdev);
 }
 
+static void fe_start_tso(struct sk_buff *skb, struct net_device *dev, unsigned int nr_frags, int idx)
+{
+        struct fe_priv *priv = netdev_priv(dev);
+	struct skb_frag_struct *frag;
+	int i;
+
+	for (i = 0; i < nr_frags; i++) {
+		dma_addr_t mapped_addr;
+
+		frag = &skb_shinfo(skb)->frags[i];
+		mapped_addr = skb_frag_dma_map(&dev->dev, frag, 0, skb_frag_size(frag), DMA_TO_DEVICE);
+		if (i % 2) {
+			idx = (idx + 1) % NUM_DMA_DESC;
+			priv->tx_dma[idx].txd1 = mapped_addr;
+			if (i == nr_frags - 1)
+				priv->tx_dma[idx].txd2 = TX_DMA_LSO | TX_DMA_PLEN0(frag->size);
+			else
+				priv->tx_dma[idx].txd2 = TX_DMA_PLEN0(frag->size);
+		} else {
+			priv->tx_dma[idx].txd3 = mapped_addr;
+			if (i == nr_frags - 1)
+				priv->tx_dma[idx].txd2 |= TX_DMA_LS1 | TX_DMA_PLEN1(frag->size);
+			else
+				priv->tx_dma[idx].txd2 |= TX_DMA_PLEN1(frag->size);
+		}
+	}
+}
+
 static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 {
+	unsigned int nr_frags = skb_shinfo(skb)->nr_frags;
 	struct fe_priv *priv = netdev_priv(dev);
 	dma_addr_t mapped_addr;
-	u32 tx_next;
-	u32 tx;
+	u32 tx_next, tx, tx_num = 1;
+	int i;
 
 	if (priv->soc->min_pkt_len) {
 		if (skb->len < priv->soc->min_pkt_len) {
@@ -264,8 +295,9 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	spin_lock(&priv->page_lock);
 
 	tx = fe_reg_r32(FE_REG_TX_CTX_IDX0);
-	tx_next = (tx + 1) % NUM_DMA_DESC;
-
+	if (priv->soc->tso && nr_frags)
+		tx_num += nr_frags >> 1;
+	tx_next = (tx + tx_num) % NUM_DMA_DESC;
 	if ((priv->tx_skb[tx]) || (priv->tx_skb[tx_next]) ||
 			!(priv->tx_dma[tx].txd2 & TX_DMA_DONE) ||
 			!(priv->tx_dma[tx_next].txd2 & TX_DMA_DONE))
@@ -277,11 +309,21 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 		return NETDEV_TX_OK;
 	}
 
-	priv->tx_skb[tx] = skb;
+	if (priv->soc->tso) {
+		int t = tx_num;
+
+		priv->tx_skb[(tx + t - 1) % NUM_DMA_DESC] = skb;
+		while (--t)
+			priv->tx_skb[(tx + t - 1) % NUM_DMA_DESC] = (struct sk_buff *) DMA_DUMMY_DESC;
+	} else {
+		priv->tx_skb[tx] = skb;
+	}
 	priv->tx_dma[tx].txd1 = (unsigned int) mapped_addr;
 	wmb();
+
+	priv->tx_dma[tx].txd4 &= ~0x80;
 	if (priv->soc->tx_dma)
-		priv->soc->tx_dma(priv, tx, skb->len);
+		priv->soc->tx_dma(priv, tx, skb);
 	else
 		priv->tx_dma[tx].txd2 = TX_DMA_LSO | TX_DMA_PLEN0(skb->len);
 
@@ -290,11 +332,36 @@ static int fe_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	else
 		priv->tx_dma[tx].txd4 &= ~TX_DMA_CHKSUM;
 
-	priv->tx_dma[tx].txd4 &= ~0x80;
+	if (priv->soc->tso)
+		fe_start_tso(skb, dev, nr_frags, tx);
+
+	if (priv->soc->tso && (skb_shinfo(skb)->gso_segs > 1)) {
+		struct iphdr *iph = NULL;
+		struct tcphdr *th = NULL;
+		struct ipv6hdr *ip6h = NULL;
+
+		ip6h = (struct ipv6hdr *) skb_network_header(skb);
+		iph = (struct iphdr *) skb_network_header(skb);
+		if ((iph->version == 4) && (iph->protocol == IPPROTO_TCP)) {
+			th = (struct tcphdr *)skb_transport_header(skb);
+			priv->tx_dma[tx].txd4 |= BIT(28);
+			th->check = htons(skb_shinfo(skb)->gso_size);
+			dma_cache_sync(NULL, th, sizeof(struct tcphdr), DMA_TO_DEVICE);
+		} else if ((ip6h->version == 6) && (ip6h->nexthdr == NEXTHDR_TCP)) {
+			th = (struct tcphdr *)skb_transport_header(skb);
+			priv->tx_dma[tx].txd4 |= BIT(28);
+			th->check = htons(skb_shinfo(skb)->gso_size);
+			dma_cache_sync(NULL, th, sizeof(struct tcphdr), DMA_TO_DEVICE);
+		}
+	}
+
+	for (i = 0; i < tx_num; i++)
+		dma_cache_sync(NULL,  &priv->tx_dma[tx + i], sizeof(struct fe_tx_dma), DMA_TO_DEVICE);
 
 	dev->stats.tx_packets++;
 	dev->stats.tx_bytes += skb->len;
 
+	wmb();
 	fe_reg_w32(tx_next, FE_REG_TX_CTX_IDX0);
 	netdev_sent_queue(dev, skb->len);
 
@@ -332,7 +399,13 @@ static int fe_poll_rx(struct napi_struct *napi, int budget)
 					priv->rx_skb[idx]->ip_summed = CHECKSUM_NONE;
 				priv->netdev->stats.rx_packets++;
 				priv->netdev->stats.rx_bytes += pktlen;
-				netif_receive_skb(priv->rx_skb[idx]);
+
+#ifdef CONFIG_INET_LRO
+				if (priv->soc->get_skb_header && priv->rx_skb[idx]->ip_summed == CHECKSUM_UNNECESSARY)
+					lro_receive_skb(&priv->lro_mgr, priv->rx_skb[idx], NULL);
+				else
+#endif
+					netif_receive_skb(priv->rx_skb[idx]);
 
 				priv->rx_skb[idx] = new_skb;
 
@@ -358,6 +431,10 @@ static int fe_poll_rx(struct napi_struct *napi, int budget)
 		}
 	}
 
+#ifdef CONFIG_INET_LRO
+	if (priv->soc->get_skb_header)
+		lro_flush_all(&priv->lro_mgr);
+#endif
 	if (complete) {
 		napi_complete(&priv->rx_napi);
 		fe_int_enable(priv->soc->rx_dly_int);
@@ -382,10 +459,11 @@ static void fe_tx_housekeeping(unsigned long ptr)
 		if (!(txd->txd2 & TX_DMA_DONE) || !(priv->tx_skb[priv->tx_free_idx]))
 			break;
 
-		bytes_compl += priv->tx_skb[priv->tx_free_idx]->len;
+		if (priv->tx_skb[priv->tx_free_idx] != (struct sk_buff *) DMA_DUMMY_DESC) {
+			bytes_compl += priv->tx_skb[priv->tx_free_idx]->len;
+			dev_kfree_skb_irq(priv->tx_skb[priv->tx_free_idx]);
+		}
 		pkts_compl++;
-
-		dev_kfree_skb_irq(priv->tx_skb[priv->tx_free_idx]);
 		priv->tx_skb[priv->tx_free_idx] = NULL;
 		priv->tx_free_idx++;
 		if (priv->tx_free_idx >= NUM_DMA_DESC)
@@ -555,7 +633,6 @@ static int __init fe_init(struct net_device *dev)
 	if (priv->soc->switch_init)
 		priv->soc->switch_init(priv);
 
-	net_srandom(jiffies);
 	memcpy(dev->dev_addr, priv->soc->mac, ETH_ALEN);
 	of_get_mac_address_mtd(priv->device->of_node, dev->dev_addr);
 
@@ -571,12 +648,15 @@ static int __init fe_init(struct net_device *dev)
 
 	if (priv->soc->port_init)
 		for_each_child_of_node(priv->device->of_node, port)
-			if (of_device_is_compatible(port, "ralink,eth-port"))
+			if (of_device_is_compatible(port, "ralink,eth-port") && of_device_is_available(port))
 				priv->soc->port_init(priv, port);
 
 	err = fe_hw_init(dev);
 	if (err)
 		goto err_phy_disconnect;
+
+	if (priv->soc->switch_config)
+		priv->soc->switch_config(priv);
 
 	return 0;
 
@@ -604,7 +684,6 @@ static void fe_uninit(struct net_device *dev)
 
 	fe_free_dma(priv);
 }
-
 
 typedef struct rt3052_esw_reg {
 	unsigned int off;
@@ -680,8 +759,13 @@ static int fe_probe(struct platform_device *pdev)
 	struct clk *sysclk;
 	int err;
 
+	device_reset(&pdev->dev);
+
 	match = of_match_device(of_fe_match, &pdev->dev);
 	soc = (struct fe_soc_data *) match->data;
+
+	if (soc->init_data)
+		soc->init_data(soc);
 	if (soc->reg_table)
 		fe_reg_table = soc->reg_table;
 
@@ -700,6 +784,15 @@ static int fe_probe(struct platform_device *pdev)
 	netdev->base_addr = (unsigned long) fe_base;
 	netdev->watchdog_timeo = TX_TIMEOUT;
 	netdev->features |= NETIF_F_IP_CSUM | NETIF_F_RXCSUM;
+
+	if (fe_reg_table[FE_REG_FE_DMA_VID_BASE])
+		netdev->features |= NETIF_F_HW_VLAN_CTAG_TX;
+
+	if (soc->tso) {
+		dev_info(&pdev->dev, "Enabling TSO\n");
+		netdev->features |= NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 | NETIF_F_IPV6_CSUM;
+	}
+	netdev->hw_features = netdev->features;
 
 	netdev->irq = platform_get_irq(pdev, 0);
 	if (netdev->irq < 0) {
@@ -727,6 +820,21 @@ static int fe_probe(struct platform_device *pdev)
 		return err;
 	}
 	netif_napi_add(netdev, &priv->rx_napi, fe_poll_rx, 32);
+
+#ifdef CONFIG_INET_LRO
+	if (priv->soc->get_skb_header) {
+		priv->lro_mgr.dev = netdev;
+		memset(&priv->lro_mgr.stats, 0, sizeof(priv->lro_mgr.stats));
+		priv->lro_mgr.features = LRO_F_NAPI;
+		priv->lro_mgr.ip_summed = CHECKSUM_UNNECESSARY;
+		priv->lro_mgr.ip_summed_aggr = CHECKSUM_UNNECESSARY;
+		priv->lro_mgr.max_desc = ARRAY_SIZE(priv->lro_arr);
+		priv->lro_mgr.max_aggr = 64;
+		priv->lro_mgr.frag_align_pad = 0;
+		priv->lro_mgr.lro_arr = priv->lro_arr;
+		priv->lro_mgr.get_skb_header = priv->soc->get_skb_header;
+	}
+#endif
 
 	platform_set_drvdata(pdev, netdev);
 

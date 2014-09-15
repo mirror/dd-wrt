@@ -45,6 +45,7 @@
 
 #include "ralink_soc_eth.h"
 #include "gsw_mt7620a.h"
+#include "mt7530.h"
 #include "mdio.h"
 
 #define GSW_REG_PHY_TIMEOUT	(5 * HZ)
@@ -75,29 +76,6 @@
 #define SYSC_REG_CFG1		0x14
 
 #define PORT_IRQ_ST_CHG		0x7f
-
-#define GSW_VLAN_VTCR		0x90
-#define GSW_VLAN_VTCR_VID_M	0xfff
-#define GSW_VLAN_ID(_x)		(0x100 + (4 * (_x)))
-#define GSW_VLAN_ID_VID_S	12
-#define GSW_VLAN_ID_VID_M	0xfff
-
-#define GSW_VAWD1		0x94
-#define GSW_VAWD1_VTAG_EN	BIT(28)
-#define GSW_VAWD1_PORTM_S	16
-#define GSW_VAWD1_PORTM_M	0xff
-
-#define GSW_VAWD2		0x98
-#define GSW_VAWD2_PORTT_S	16
-#define GSW_VAWD2_PORTT_M	0xff
-
-#define GSW_VTIM(_x)		(0x100 + (4 * (_x)))
-#define GSW_VTIM_M		0xfff
-#define GSW_VTIM_S		12
-
-#define GSW_REG_PCR(x)		(0x2004 + (x * 0x100))
-#define GSW_REG_PCR_EG_TAG_S	28
-#define GSW_REG_PCR_EG_TAG_M	0x3
 
 #define SYSCFG1			0x14
 
@@ -132,28 +110,12 @@ enum {
 	PORT4_EXT,
 };
 
-struct gsw_port {
-	bool	disable;
-	bool	untag;
-	u16	pvid;
-};
-
-struct gsw_vlan {
-	u8	ports;
-	u16	vid;
-};
-
 struct mt7620_gsw {
 	struct device		*dev;
 	void __iomem		*base;
 	int			irq;
-
-	struct switch_dev	swdev;
-	bool			global_vlan_enable;
-	struct gsw_vlan		vlans[GSW_NUM_VLANS];
-	struct gsw_port		ports[GSW_NUM_PORTS];
-	long unsigned int	autopoll;
 	int			port4;
+	long unsigned int	autopoll;
 };
 
 static inline void gsw_w32(struct mt7620_gsw *gsw, u32 val, unsigned reg)
@@ -201,18 +163,8 @@ static u32 _mt7620_mii_write(struct mt7620_gsw *gsw, u32 phy_addr, u32 phy_regis
 	return 0;
 }
 
-int mt7620_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val)
+static u32 _mt7620_mii_read(struct mt7620_gsw *gsw, int phy_addr, int phy_reg)
 {
-	struct fe_priv *priv = bus->priv;
-	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
-
-	return _mt7620_mii_write(gsw, phy_addr, phy_reg, val);
-}
-
-int mt7620_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
-{
-	struct fe_priv *priv = bus->priv;
-	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
 	u32 d;
 
 	if (mt7620_mii_busy_wait(gsw))
@@ -229,6 +181,22 @@ int mt7620_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
 	d = gsw_r32(gsw, MT7620A_GSW_REG_PIAC) & 0xffff;
 
 	return d;
+}
+
+int mt7620_mdio_write(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val)
+{
+	struct fe_priv *priv = bus->priv;
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
+
+	return _mt7620_mii_write(gsw, phy_addr, phy_reg, val);
+}
+
+int mt7620_mdio_read(struct mii_bus *bus, int phy_addr, int phy_reg)
+{
+	struct fe_priv *priv = bus->priv;
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
+
+	return _mt7620_mii_read(gsw, phy_addr, phy_reg);
 }
 
 static unsigned char *fe_speed_str(int speed)
@@ -374,7 +342,7 @@ void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 		mask = 2;
 		break;
 	default:
-		dev_err(priv->device, "port %d - invalid phy mode\n", priv->phy->speed[id]);
+		dev_err(priv->device, "port %d - invalid phy mode\n", id);
 		return;
 	}
 
@@ -389,11 +357,12 @@ void mt7620_port_init(struct fe_priv *priv, struct device_node *np)
 
 	if (priv->phy->phy_fixed[id]) {
 		const __be32 *link = priv->phy->phy_fixed[id];
-		int tx_fc = be32_to_cpup(link++);
-		int rx_fc = be32_to_cpup(link++);
+		int tx_fc, rx_fc;
 		u32 val = 0;
 
 		priv->phy->speed[id] = be32_to_cpup(link++);
+		tx_fc = be32_to_cpup(link++);
+		rx_fc = be32_to_cpup(link++);
 		priv->phy->duplex[id] = be32_to_cpup(link++);
 		priv->link[id] = 1;
 
@@ -504,8 +473,6 @@ static void gsw_hw_init(struct mt7620_gsw *gsw)
 	/* Set Port6 CPU Port */
 	gsw_w32(gsw, 0x7f7f7fe0, 0x0010);
 
-//	GSW_VAWD2
-
 	/* setup port 4 */
 	if (gsw->port4 == PORT4_EPHY) {
 		u32 val = rt_sysc_r32(SYSCFG1);
@@ -517,435 +484,6 @@ static void gsw_hw_init(struct mt7620_gsw *gsw)
 		pr_info("gsw: setting port4 to ephy mode\n");
 	}
 }
-
-static int gsw_reset_switch(struct switch_dev *dev)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-
-	gsw->global_vlan_enable = 0;
-	memset(gsw->ports, 0, sizeof(gsw->ports));
-	memset(gsw->vlans, 0, sizeof(gsw->vlans));
-	gsw_hw_init(gsw);
-
-	return 0;
-}
-
-static int gsw_get_vlan_enable(struct switch_dev *dev,
-			   const struct switch_attr *attr,
-			   struct switch_val *val)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-
-	val->value.i = gsw->global_vlan_enable;
-
-	return 0;
-}
-
-static int gsw_set_vlan_enable(struct switch_dev *dev,
-			   const struct switch_attr *attr,
-			   struct switch_val *val)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-
-	gsw->global_vlan_enable = val->value.i != 0;
-
-	return 0;
-}
-
-static unsigned gsw_get_pvid(struct mt7620_gsw *gsw, unsigned port)
-{
-	unsigned s, val;
-
-	s = GSW_VTIM_S * (port % 2);
-	val = gsw_r32(gsw, GSW_VTIM(port / 2));
-
-	return (val >> s) & GSW_VTIM_M;
-}
-
-static void gsw_set_pvid(struct mt7620_gsw *gsw, unsigned port, unsigned pvid)
-{
-	unsigned s, val;
-
-	s = GSW_VTIM_S * (port % 2);
-	val = gsw_r32(gsw, GSW_VTIM(port / 2));
-	val &= ~(GSW_VTIM_M << s);
-	val |= (pvid && GSW_VTIM_M) << s;
-	gsw_w32(gsw, val, GSW_VTIM(port / 2));
-}
-
-static int gsw_get_port_bool(struct switch_dev *dev,
-			 const struct switch_attr *attr,
-			 struct switch_val *val)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-	int idx = val->port_vlan;
-
-	if (idx < 0 || idx >= GSW_NUM_PORTS)
-		return -EINVAL;
-
-	switch (attr->id) {
-	case GSW_ATTR_PORT_UNTAG:
-		return gsw->ports[idx].untag;
-	}
-
-	return -EINVAL;
-}
-
-static int gsw_get_port_pvid(struct switch_dev *dev, int port, int *val)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-
-	if (port >= GSW_NUM_PORTS)
-		return -EINVAL;
-
-	*val = gsw_get_pvid(gsw, port);
-
-	return 0;
-}
-
-static int gsw_set_port_pvid(struct switch_dev *dev, int port, int val)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-
-	if (port >= GSW_NUM_PORTS)
-		return -EINVAL;
-
-	gsw->ports[port].pvid = val;
-
-	return 0;
-}
-
-static void gsw_set_vtcr(struct switch_dev *dev, u32 vid)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-	int retry = 1000;
-
-	gsw_w32(gsw, 0x80000000 | (BIT(vid) & GSW_VLAN_VTCR_VID_M), GSW_VLAN_VTCR);
-	while (retry-- && (gsw_r32(gsw, GSW_VLAN_VTCR) & 0x80000000))
-		;
-}
-
-static void gsw_apply_vtcr(struct switch_dev *dev, u32 vid)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-	int retry = 1000;
-
-	gsw_w32(gsw, 0x80001000 | (BIT(vid) & GSW_VLAN_VTCR_VID_M), GSW_VLAN_VTCR);
-	while (retry-- && (gsw_r32(gsw, GSW_VLAN_VTCR) & 0x80000000))
-		;
-}
-
-static unsigned gsw_get_vlan_id(struct mt7620_gsw *gsw, unsigned vlan)
-{
-	unsigned s;
-	unsigned val;
-
-	s = GSW_VLAN_ID_VID_S * (vlan % 2);
-	val = gsw_r32(gsw, GSW_VLAN_ID(vlan / 2));
-	val = (val >> s) & GSW_VLAN_ID_VID_M;
-
-	return val;
-}
-
-static void gsw_set_vlan_id(struct mt7620_gsw *gsw, unsigned vlan, unsigned vid)
-{
-	unsigned s;
-	unsigned val;
-
-	s = GSW_VLAN_ID_VID_S * (vlan % 2);
-	val = gsw_r32(gsw, GSW_VLAN_ID(vlan / 2));
-	val &= ~(GSW_VLAN_ID_VID_M << s);
-	val |= (vid << s);
-	gsw_w32(gsw, val, GSW_VLAN_ID(vlan / 2));
-}
-
-static void gsw_vlan_tagging_enable(struct mt7620_gsw *gsw, unsigned vlan, unsigned enable)
-{
-	unsigned val;
-
-	val = gsw_r32(gsw, GSW_VAWD1);
-	if (enable)
-		val |= GSW_VAWD1_VTAG_EN;
-	else
-		val &= ~GSW_VAWD1_VTAG_EN;
-	gsw_w32(gsw, val, GSW_VAWD1);
-}
-
-static unsigned gsw_get_port_member(struct mt7620_gsw *gsw, unsigned vlan)
-{
-	unsigned val;
-
-	gsw_set_vtcr(&gsw->swdev, vlan);
-
-	val = gsw_r32(gsw, GSW_VAWD1);
-	val = (val >> GSW_VAWD1_PORTM_S) & GSW_VAWD1_PORTM_M;
-
-	return val;
-}
-
-static void gsw_set_port_member(struct mt7620_gsw *gsw, unsigned vlan, unsigned member)
-{
-	unsigned val;
-
-	val = gsw_r32(gsw, GSW_VAWD1);
-	val = ~(GSW_VAWD1_PORTM_M << GSW_VAWD1_PORTM_S);
-	val |= (member & GSW_VAWD1_PORTM_M) << GSW_VAWD1_PORTM_S;
-        gsw_w32(gsw, val, GSW_VAWD1);
-}
-
-static unsigned gsw_get_port_tag(struct mt7620_gsw *gsw, unsigned port)
-{
-	unsigned val;
-
-	val = gsw_r32(gsw, GSW_REG_PCR(port));
-	val >>= GSW_REG_PCR_EG_TAG_S;
-	val &= GSW_REG_PCR_EG_TAG_M;
-
-	return !!val;
-}
-
-static void gsw_set_port_untag(struct mt7620_gsw *gsw, unsigned port, unsigned untag)
-{
-	unsigned val;
-
-	val = gsw_r32(gsw, GSW_REG_PCR(port));
-	if (!untag)
-		untag = 0x2;
-	else
-		untag = 0;
-	val &= ~(GSW_REG_PCR_EG_TAG_M << GSW_REG_PCR_EG_TAG_S);
-	val |= (untag & GSW_REG_PCR_EG_TAG_M) << GSW_REG_PCR_EG_TAG_S;
-	gsw_w32(gsw, val, GSW_REG_PCR(port));
-}
-
-static int gsw_get_vlan_ports(struct switch_dev *dev, struct switch_val *val)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-	int vlan_idx = -1;
-	u32 member;
-	int i;
-
-	val->len = 0;
-
-	if (val->port_vlan < 0 || val->port_vlan >= GSW_NUM_VIDS)
-		return -EINVAL;
-
-	/* valid vlan? */
-	for (i = 0; i < GSW_NUM_VLANS; i++) {
-		if (gsw_get_vlan_id(gsw, i) != val->port_vlan)
-			continue;
-		member = gsw_get_port_member(gsw, i);
-		vlan_idx = i;
-		break;
-	}
-
-	if (vlan_idx == -1)
-		return -EINVAL;
-
-	for (i = 0; i < GSW_NUM_PORTS; i++) {
-		struct switch_port *p;
-		int port_mask = 1 << i;
-
-		if (!(member & port_mask))
-			continue;
-
-		p = &val->value.ports[val->len++];
-		p->id = i;
-		if (gsw_get_port_tag(gsw, i))
-			p->flags = 1 << SWITCH_PORT_FLAG_TAGGED;
-		else
-			p->flags = 0;
-	}
-
-	return 0;
-}
-
-static int gsw_set_vlan_ports(struct switch_dev *dev, struct switch_val *val)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-	int ports;
-	int vlan_idx = -1;
-	int i;
-
-	if (val->port_vlan < 0 || val->port_vlan >= GSW_NUM_VIDS ||
-			val->len > GSW_NUM_PORTS)
-		return -EINVAL;
-
-	/* one of the already defined vlans? */
-	for (i = 0; i < GSW_NUM_VLANS; i++) {
-		if (gsw->vlans[i].vid == val->port_vlan &&
-		    gsw->vlans[i].ports) {
-			vlan_idx = i;
-			break;
-		}
-	}
-
-	/* select a free slot */
-	for (i = 0; vlan_idx == -1 && i < GSW_NUM_VLANS; i++) {
-		if (!gsw->vlans[i].ports)
-			vlan_idx = i;
-	}
-
-	/* bail if all slots are in use */
-	if (vlan_idx == -1)
-		return -EINVAL;
-
-	ports = 0;
-	for (i = 0; i < val->len; i++) {
-		struct switch_port *p = &val->value.ports[i];
-		int port_mask = 1 << p->id;
-		bool untagged = !(p->flags & (1 << SWITCH_PORT_FLAG_TAGGED));
-
-		if (p->id >= GSW_NUM_PORTS)
-			return -EINVAL;
-
-		ports |= port_mask;
-		gsw->ports[p->id].untag = untagged;
-	}
-	gsw->vlans[vlan_idx].ports = ports;
-	if (!ports)
-		gsw->vlans[vlan_idx].vid = 0xfff;
-	else
-		gsw->vlans[vlan_idx].vid = val->port_vlan;
-
-	return 0;
-}
-
-static int gsw_apply_config(struct switch_dev *dev)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-	int i;
-
-	for (i = 0; i < GSW_NUM_VLANS; i++) {
-		gsw_set_vtcr(&gsw->swdev, i);
-		if (gsw->global_vlan_enable) {
-			gsw_set_vlan_id(gsw, i, gsw->vlans[i].vid);
-			gsw_set_port_member(gsw, i, gsw->vlans[i].ports);
-			gsw_vlan_tagging_enable(gsw, i, 1);
-		} else {
-			gsw_set_vlan_id(gsw, i, 0xfff);
-			gsw_set_port_member(gsw, i, 0);
-			gsw_vlan_tagging_enable(gsw, i, 0);
-		}
-		gsw_apply_vtcr(&gsw->swdev, i);
-	}
-
-	for (i = 0; i < GSW_NUM_PORTS; i++) {
-		if (gsw->global_vlan_enable) {
-			gsw_set_port_untag(gsw, i, !gsw->ports[i].untag);
-			gsw_set_pvid(gsw, i, gsw->ports[i].pvid);
-		} else {
-			gsw_set_port_untag(gsw, i, 0);
-			gsw_set_pvid(gsw, i, 0);
-		}
-	}
-
-	if (!gsw->global_vlan_enable)
-		gsw_set_vlan_id(gsw, 0, 0);
-
-	return 0;
-}
-
-static int gsw_get_port_link(struct switch_dev *dev,
-			 int port,
-			 struct switch_port_link *link)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-	u32 status;
-
-	if (port < 0 || port >= GSW_NUM_PORTS)
-		return -EINVAL;
-
-	status = gsw_r32(gsw, GSW_REG_PORT_STATUS(port));
-	link->link = status & 0x1;
-	link->duplex = (status >> 1) & 1;
-
-	switch ((status >> 2) & 0x3) {
-	case 0:
-		link->speed = SWITCH_PORT_SPEED_10;
-		break;
-	case 1:
-		link->speed = SWITCH_PORT_SPEED_100;
-		break;
-	case 2:
-	case 3: // forced gige speed can be 2 or 3
-		link->speed = SWITCH_PORT_SPEED_1000;
-		break;
-	}
-
-	return 0;
-}
-
-static int gsw_set_port_bool(struct switch_dev *dev,
-			 const struct switch_attr *attr,
-			 struct switch_val *val)
-{
-	struct mt7620_gsw *gsw = container_of(dev, struct mt7620_gsw, swdev);
-	int idx = val->port_vlan;
-
-	if (idx < 0 || idx >= GSW_NUM_PORTS ||
-	    val->value.i < 0 || val->value.i > 1)
-		return -EINVAL;
-
-	switch (attr->id) {
-	case GSW_ATTR_PORT_UNTAG:
-		gsw->ports[idx].untag = val->value.i;
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-static const struct switch_attr gsw_global[] = {
-	{
-		.type = SWITCH_TYPE_INT,
-		.name = "enable_vlan",
-		.description = "VLAN mode (1:enabled)",
-		.max = 1,
-		.id = GSW_ATTR_ENABLE_VLAN,
-		.get = gsw_get_vlan_enable,
-		.set = gsw_set_vlan_enable,
-	},
-};
-
-static const struct switch_attr gsw_port[] = {
-	{
-		.type = SWITCH_TYPE_INT,
-		.name = "untag",
-		.description = "Untag (1:strip outgoing vlan tag)",
-		.max = 1,
-		.id = GSW_ATTR_PORT_UNTAG,
-		.get = gsw_get_port_bool,
-		.set = gsw_set_port_bool,
-	},
-};
-
-static const struct switch_attr gsw_vlan[] = {
-};
-
-static const struct switch_dev_ops gsw_ops = {
-	.attr_global = {
-		.attr = gsw_global,
-		.n_attr = ARRAY_SIZE(gsw_global),
-	},
-	.attr_port = {
-		.attr = gsw_port,
-		.n_attr = ARRAY_SIZE(gsw_port),
-	},
-	.attr_vlan = {
-		.attr = gsw_vlan,
-		.n_attr = ARRAY_SIZE(gsw_vlan),
-	},
-	.get_vlan_ports = gsw_get_vlan_ports,
-	.set_vlan_ports = gsw_set_vlan_ports,
-	.get_port_pvid = gsw_get_port_pvid,
-	.set_port_pvid = gsw_set_port_pvid,
-	.get_port_link = gsw_get_port_link,
-	.apply_config = gsw_apply_config,
-	.reset_switch = gsw_reset_switch,
-};
 
 void mt7620_set_mac(struct fe_priv *priv, unsigned char *mac)
 {
@@ -964,11 +502,23 @@ static struct of_device_id gsw_match[] = {
 	{}
 };
 
+int mt7620_gsw_config(struct fe_priv *priv)
+{
+	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
+
+	/* is the mt7530 internal or external */
+	if ((_mt7620_mii_read(gsw, 0x1f, 2) == 1) && (_mt7620_mii_read(gsw, 0x1f, 3) == 0xbeef))
+		mt7530_probe(priv->device, NULL, priv->mii_bus);
+	else
+		mt7530_probe(priv->device, gsw->base, NULL);
+
+	return 0;
+}
+
 int mt7620_gsw_probe(struct fe_priv *priv)
 {
 	struct mt7620_gsw *gsw;
 	struct device_node *np;
-	struct switch_dev *swdev;
 	const char *port4 = NULL;
 
 	np = of_find_matching_node(NULL, gsw_match);
@@ -993,22 +543,11 @@ int mt7620_gsw_probe(struct fe_priv *priv)
 	gsw->base = of_iomap(np, 0);
 	if (!gsw->base) {
 		dev_err(priv->device, "gsw ioremap failed\n");
+		return -ENOMEM;
 	}
 
 	gsw->dev = priv->device;
 	priv->soc->swpriv = gsw;
-
-	swdev = &gsw->swdev;
-	swdev->of_node = np;
-	swdev->name = "mt7620a-gsw";
-	swdev->alias = "mt7620x";
-	swdev->cpu_port = GSW_PORT6;
-	swdev->ports = GSW_NUM_PORTS;
-	swdev->vlans = GSW_NUM_VLANS;
-	swdev->ops = &gsw_ops;
-
-	if (register_switch(swdev, NULL))
-		dev_err(priv->device, "register_switch failed\n");
 
 	of_property_read_string(np, "ralink,port4", &port4);
 	if (port4 && !strcmp(port4, "ephy"))

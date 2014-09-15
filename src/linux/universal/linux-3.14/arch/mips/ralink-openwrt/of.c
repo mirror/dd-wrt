@@ -15,18 +15,19 @@
 #include <linux/of_fdt.h>
 #include <linux/kernel.h>
 #include <linux/bootmem.h>
+#include <linux/module.h>
 #include <linux/of_platform.h>
 #include <linux/of_address.h>
 
 #include <asm/reboot.h>
 #include <asm/bootinfo.h>
 #include <asm/addrspace.h>
+#include <asm/prom.h>
 
 #include "common.h"
 
 __iomem void *rt_sysc_membase;
 __iomem void *rt_memc_membase;
-
 EXPORT_SYMBOL(rt_sysc_membase);
 EXPORT_SYMBOL(rt_memc_membase);
 
@@ -80,6 +81,17 @@ void __init device_tree_init(void)
 	//free_bootmem(base, size);
 }
 
+static int memory_dtb;
+
+static int __init early_init_dt_find_memory(unsigned long node, const char *uname,
+				     int depth, void *data)
+{
+	if (depth == 1 && !strcmp(uname, "memory@0"))
+		memory_dtb = 1;
+
+	return 0;
+}
+
 extern struct boot_param_header __image_dtb;
 
 void __init plat_mem_setup(void)
@@ -92,7 +104,12 @@ void __init plat_mem_setup(void)
 	 */
 	__dt_setup_arch(&__image_dtb);
 
-	if (soc_info.mem_size)
+	strlcpy(arcs_cmdline, boot_command_line, COMMAND_LINE_SIZE);
+
+	of_scan_flat_dt(early_init_dt_find_memory, NULL);
+	if (memory_dtb)
+		of_scan_flat_dt(early_init_dt_scan_memory, NULL);
+	else if (soc_info.mem_size)
 		add_memory_region(soc_info.mem_base, soc_info.mem_size * SZ_1M,
 				  BOOT_MEM_RAM);
 	else
@@ -109,11 +126,11 @@ static int __init plat_of_setup(void)
 	if (!of_have_populated_dt())
 		panic("device tree not present");
 
-	strncpy(of_ids[0].compatible, soc_info.compatible, len);
+	strlcpy(of_ids[0].compatible, soc_info.compatible, len);
 	strncpy(of_ids[1].compatible, "palmbus", len);
 
 	if (of_platform_populate(NULL, of_ids, NULL, NULL))
-		panic("failed to populate DT\n");
+		panic("failed to populate DT");
 
 	/* make sure ithat the reset controller is setup early */
 	ralink_rst_init();

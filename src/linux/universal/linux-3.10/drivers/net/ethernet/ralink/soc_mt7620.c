@@ -17,9 +17,11 @@
 
 #include <linux/module.h>
 #include <linux/platform_device.h>
+#include <linux/if_vlan.h>
 
 #include <asm/mach-ralink-openwrt/ralink_regs.h>
 
+#include <mt7620.h>
 #include "ralink_soc_eth.h"
 #include "gsw_mt7620a.h"
 
@@ -64,17 +66,38 @@ static void mt7620_fe_reset(void)
 
 static void mt7620_fwd_config(struct fe_priv *priv)
 {
+	int i;
+
+	/* frame engine will push VLAN tag regarding to VIDX feild in Tx desc. */
+	for (i = 0; i < 16; i += 2)
+		fe_w32(((i + 1) << 16) + i, MT7620_DMA_VID + (i * 2));
+
 	fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) & ~7, MT7620A_GDMA1_FWD_CFG);
 	fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) | (GDMA_ICS_EN | GDMA_TCS_EN | GDMA_UCS_EN), MT7620A_GDMA1_FWD_CFG);
 	fe_w32(fe_r32(MT7620A_CDMA_CSG_CFG) | (CDMA_ICS_EN | CDMA_UCS_EN | CDMA_TCS_EN), MT7620A_CDMA_CSG_CFG);
 }
 
-static void mt7620_tx_dma(struct fe_priv *priv, int idx, int len)
+static void mt7620_tx_dma(struct fe_priv *priv, int idx, struct sk_buff *skb)
 {
-	if (len)
+	unsigned int nr_frags = 0;
+	unsigned int len = 0;
+
+	if (skb) {
+		nr_frags = skb_shinfo(skb)->nr_frags;
+		len = skb->len - skb->data_len;
+	}
+
+	if (!skb)
+		priv->tx_dma[idx].txd2 = TX_DMA_LSO | TX_DMA_DONE;
+	else if (!nr_frags)
 		priv->tx_dma[idx].txd2 = TX_DMA_LSO | TX_DMA_PLEN0(len);
 	else
-		priv->tx_dma[idx].txd2 = TX_DMA_LSO | TX_DMA_DONE;
+		priv->tx_dma[idx].txd2 = TX_DMA_PLEN0(len);
+
+	if(skb && vlan_tx_tag_present(skb))
+		priv->tx_dma[idx].txd4 = 0x80 | (vlan_tx_tag_get(skb) >> 13) << 4 | (vlan_tx_tag_get(skb) & 0xF);
+	else
+		priv->tx_dma[idx].txd4 = 0;
 }
 
 static void mt7620_rx_dma(struct fe_priv *priv, int idx, int len)
@@ -82,14 +105,49 @@ static void mt7620_rx_dma(struct fe_priv *priv, int idx, int len)
 	priv->rx_dma[idx].rxd2 = RX_DMA_PLEN0(len);
 }
 
+#ifdef CONFIG_INET_LRO
+static int
+mt7620_get_skb_header(struct sk_buff *skb, void **iphdr, void **tcph,
+			u64 *hdr_flags, void *_priv)
+{
+	struct iphdr *iph = NULL;
+	int vhdr_len = 0;
+
+	/*
+	 * Make sure that this packet is Ethernet II, is not VLAN
+	 * tagged, is IPv4, has a valid IP header, and is TCP.
+	 */
+	if (skb->protocol == 0x0081)
+		vhdr_len = VLAN_HLEN;
+
+	iph = (struct iphdr *)(skb->data + vhdr_len);
+	if(iph->protocol != IPPROTO_TCP)
+		return -1;
+
+	*iphdr = iph;
+	*tcph = skb->data + (iph->ihl << 2) + vhdr_len;
+	*hdr_flags = LRO_IPV4 | LRO_TCP;
+
+	return 0;
+}
+#endif
+
+static void mt7620_init_data(struct fe_soc_data *data)
+{
+	if (mt7620_get_eco() >= 5)
+		data->tso = 1;
+}
+
 static struct fe_soc_data mt7620_data = {
 	.mac = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 },
+	.init_data = mt7620_init_data,
 	.reset_fe = mt7620_fe_reset,
 	.set_mac = mt7620_set_mac,
 	.fwd_config = mt7620_fwd_config,
 	.tx_dma = mt7620_tx_dma,
 	.rx_dma = mt7620_rx_dma,
 	.switch_init = mt7620_gsw_probe,
+	.switch_config = mt7620_gsw_config,
 	.port_init = mt7620_port_init,
 	.min_pkt_len = 0,
 	.reg_table = rt5350_reg_table,
@@ -101,6 +159,9 @@ static struct fe_soc_data mt7620_data = {
 	.mdio_read = mt7620_mdio_read,
 	.mdio_write = mt7620_mdio_write,
 	.mdio_adjust_link = mt7620_mdio_link_adjust,
+#ifdef CONFIG_INET_LRO
+	.get_skb_header = mt7620_get_skb_header,
+#endif
 };
 
 const struct of_device_id of_fe_match[] = {
