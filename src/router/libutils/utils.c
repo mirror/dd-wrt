@@ -1566,6 +1566,9 @@ int internal_getRouterBrand()
 #elif HAVE_ASUSRTN13U
 	setRouter("Asus RT-N13U");
 	return ROUTER_BOARD_WHRG300N;
+#elif HAVE_E1700
+	setRouter("Linksys E1700 / N300");
+	return ROUTER_BOARD_E1700;
 #elif HAVE_WHR300HP2
 	FILE *fp = fopen("/sys/bus/pci/devices/0000:01:00.0/device", "rb");
 	if (fp) {
