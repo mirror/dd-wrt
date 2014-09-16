@@ -24,8 +24,8 @@ END-INFO-DIR-ENTRY
    This file documents the Quagga Software Routing Suite which manages
 common TCP/IP routing protocols.
 
-   This is Edition 0.99.23, last updated 24 June 2014 of `The Quagga
-Manual', for {No value for `PACKAGE_NAME'} Version 0.99.23.
+   This is Edition 0.99.23.1, last updated 25 August 2014 of `The
+Quagga Manual', for {No value for `PACKAGE_NAME'} Version 0.99.23.1.
 
    {No value for `COPYRIGHT_STR'}
 
@@ -1059,7 +1059,7 @@ all.
      Connected to localhost.
      Escape character is '^]'.
 
-     Hello, this is {No value for `PACKAGE_NAME'} (version 0.99.23)
+     Hello, this is {No value for `PACKAGE_NAME'} (version 0.99.23.1)
      {No value for `COPYRIGHT_STR'}
 
      User Access Verification
