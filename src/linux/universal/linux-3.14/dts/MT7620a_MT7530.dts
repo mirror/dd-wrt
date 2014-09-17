@@ -63,6 +63,12 @@
 		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
 
 		ralink,port-map = "llllw";
+		
+		port@4 {
+			status = "okay";
+			ralink,fixed-link = <1000 1 1 1>;
+			phy-mode = "rgmii";
+		};
 
 		port@5 {
 			status = "okay";
@@ -91,6 +97,14 @@
 			};
 			phy4: ethernet-phy@4 {
 				reg = <4>;
+				phy-mode = "rgmii";
+			};
+			phy5: ethernet-phy@5 {
+				reg = <5>;
+				phy-mode = "rgmii";
+			};
+			phy6: ethernet-phy@6 {
+				reg = <6>;
 				phy-mode = "rgmii";
 			};
 			phy1f: ethernet-phy@1f {
