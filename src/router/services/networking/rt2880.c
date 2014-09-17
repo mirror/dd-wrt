@@ -959,12 +959,19 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 
 	int channel = atoi(nvram_nget("wl%d_channel", idx));
 
-	if (channel <= 4)
-		fprintf(fp, "HT_EXTCHA=1\n");
-	else if (channel >= 8)
-		fprintf(fp, "HT_EXTCHA=0\n");
-	else
-		fprintf(fp, "HT_EXTCHA=0\n");
+	if (idx == 0) {
+		if (channel <= 4)
+			fprintf(fp, "HT_EXTCHA=1\n");
+		else if (channel >= 8)
+			fprintf(fp, "HT_EXTCHA=0\n");
+		else
+			fprintf(fp, "HT_EXTCHA=0\n");
+	} else {
+		if (nvram_match("wl1_nctrlsb", "ll") || nvram_match("wl1_nctrlsb", "ll ll"))
+			fprintf(fp, "HT_EXTCHA=0\n");
+		else
+			fprintf(fp, "HT_EXTCHA=1\n");
+	}
 
 	int mcs;
 	if (idx == 0) {
