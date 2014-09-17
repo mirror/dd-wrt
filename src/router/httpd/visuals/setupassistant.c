@@ -434,7 +434,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	int argc = 1;
 	char *argv[] = { "3" };
 	char *stage_visible_css = "display: none;";
-	char frequencies[16];
+	char frequencies[128];
 
 	if (ej_sas_stage_is_visible(wp, argc, argv) == 0) {
 		stage_visible_css = "";
