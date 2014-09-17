@@ -689,12 +689,6 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div>\n");
 			websWrite(wp, "<select name=\"%s_nbw\">\n", prefix);
-#ifdef HAVE_RT2880
-			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"20\\\" %s >20 MHz</option>\");\n//]]>\n</script>\n",
-				  nvram_selnmatch(wp, "20", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "<option value=\"40\" %s>40 MHz</option>", nvram_selnmatch(wp, "40", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
-#else
 			websWrite(wp,
 				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + share.auto + \"</option>\");\n//]]>\n</script>\n",
 				  nvram_selnmatch(wp, "0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
@@ -704,7 +698,6 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "<option value=\"80\" %s>80 MHz</option>\n", nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 
 			}
-#endif
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
 
