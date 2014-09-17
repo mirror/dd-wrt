@@ -574,10 +574,10 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus)
 	if (map)
 		mt7530_apply_mapping(mt7530, map);
 	mt7530_apply_config(swdev);
-	printk(KERN_INFO "add special quirk\n");
+/*	printk(KERN_INFO "add special quirk\n");
 	mt7530_w32(mt7530, 0x3600, 0x5ee3a);
 	mt7530_w32(mt7530, 0x7000, 0x717fc3);
 	mt7530_w32(mt7530, 0x7804, 0x1015e9f);
-	mt7530_w32(mt7530, 0x3600, 0x5ee3b);
+	mt7530_w32(mt7530, 0x3600, 0x5ee3b);*/
 	return 0;
 }
