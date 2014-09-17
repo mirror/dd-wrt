@@ -1569,6 +1569,9 @@ int internal_getRouterBrand()
 #elif HAVE_E1700
 	setRouter("Linksys E1700 / N300");
 	return ROUTER_BOARD_E1700;
+#elif HAVE_WHR1166D
+	setRouter("Buffalo WHR-1166D");
+	return ROUTER_WHR300HP2;
 #elif HAVE_WHR300HP2
 	FILE *fp = fopen("/sys/bus/pci/devices/0000:01:00.0/device", "rb");
 	if (fp) {
