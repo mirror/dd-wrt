@@ -597,7 +597,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 //      fprintf( fp, "HtBw=1\n" );
 	char *refif = "ra0";
 	if (idx == 1)
-		refif == "ba0";
+		refif = "ba0";
 
 	if (nvram_nmatch("bg-mixed", "wl%d_net_mode", idx))
 		fprintf(fp, "WirelessMode=0\n");
