@@ -102,6 +102,7 @@ typedef union _MACHTTRANSMIT_SETTING {
 	unsigned short word;
 } MACHTTRANSMIT_SETTING;
 
+
 typedef struct _RT_802_11_MAC_ENTRY {
 	unsigned char ApIdx;
 	unsigned char Addr[6];
@@ -113,11 +114,9 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	char AvgRssi2;
 	unsigned int ConnectedTime;
 	MACHTTRANSMIT_SETTING TxRate;
-//#ifdef RTMP_RBUS_SUPPORT
 	unsigned int LastRxRate;
-	int StreamSnr[3];
-	int SoundingRespSnr[3];
-//#endif // RTMP_RBUS_SUPPORT //
+	short StreamSnr[3];
+	short SoundingRespSnr[3];
 } RT_802_11_MAC_ENTRY;
 
 		// Last RX Rate
