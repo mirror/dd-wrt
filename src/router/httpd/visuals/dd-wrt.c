@@ -2385,13 +2385,12 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				}
 
 				if ((nvram_match(wl_net_mode, "na-only") || nvram_match(wl_net_mode, "ac-only")
-
 				     || (net_is_a && nvram_match(wl_net_mode, "mixed"))
 				     || nvram_match(wl_net_mode, "n5-only"))
 				    && nvram_match(wl_nbw, "40")) {
 					showit = 0;
 					j = 0;
-					if (nvram_nmatch("upper", "%s_nctrlsb", prefix)) {
+					if (nvram_nmatch("upper", "%s_nctrlsb", prefix) || nvram_nmatch("uu", "%s_nctrlsb", prefix) || nvram_nmatch("lu", "%s_nctrlsb", prefix)) {
 						while (na_upper[j]) {
 							if (chanlist[i] == na_upper[j]) {
 								showit = 1;
@@ -2399,7 +2398,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 							}
 							j++;
 						}
-					} else if (nvram_nmatch("lower", "%s_nctrlsb", prefix)) {
+					} else if (nvram_nmatch("lower", "%s_nctrlsb", prefix) || nvram_nmatch("ll", "%s_nctrlsb", prefix) || nvram_nmatch("ul", "%s_nctrlsb", prefix)) {
 						while (na_lower[j]) {
 							if (chanlist[i] == na_lower[j]) {
 								showit = 1;
@@ -2416,11 +2415,11 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				     || (!net_is_a && nvram_match(wl_net_mode, "mixed")))
 				    && nvram_match(wl_nbw, "40")) {
 					showit = 0;
-					if (nvram_nmatch("upper", "%s_nctrlsb", prefix)) {
+					if (nvram_nmatch("upper", "%s_nctrlsb", prefix) || nvram_nmatch("uu", "%s_nctrlsb", prefix) || nvram_nmatch("lu", "%s_nctrlsb", prefix)) {
 						if (chanlist[i] >= 5 && chanlist[i] <= 13) {
 							showit = 1;
 						}
-					} else if (nvram_nmatch("lower", "%s_nctrlsb", prefix)) {
+					} else if (nvram_nmatch("lower", "%s_nctrlsb", prefix) || nvram_nmatch("ll", "%s_nctrlsb", prefix) || nvram_nmatch("ul", "%s_nctrlsb", prefix)) {
 						if (chanlist[i] <= 9) {
 							showit = 1;
 						}

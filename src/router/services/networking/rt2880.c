@@ -967,7 +967,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		else
 			fprintf(fp, "HT_EXTCHA=0\n");
 	} else {
-		if (nvram_match("wl1_nctrlsb", "ll") || nvram_match("wl1_nctrlsb", "ll ll"))
+		if (nvram_match("wl1_nctrlsb", "ll") || nvram_match("wl1_nctrlsb", "lower") || nvram_match("wl1_nctrlsb", "lu"))
 			fprintf(fp, "HT_EXTCHA=0\n");
 		else
 			fprintf(fp, "HT_EXTCHA=1\n");
