@@ -3386,7 +3386,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_mode[16];
 	char wl_macaddr[18];
 	char wl_ssid[16];
-	char frequencies[48];
+	char frequencies[128];
 
 	sprintf(wl_mode, "%s_mode", prefix);
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
@@ -3413,6 +3413,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [", IFMAP(prefix));
 	tf_webWriteESCNV(wp, wl_ssid);	// fix 
+	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(wl_macaddr));
 	char power[16];
 
