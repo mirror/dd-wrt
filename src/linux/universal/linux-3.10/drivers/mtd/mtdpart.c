@@ -759,6 +759,10 @@ static int split_rootfs_data(struct mtd_info *master, struct mtd_info *rpart, co
 	dpart->size = rpart->size - (split_offset - spart->offset);
 	dpart->size /= 65536;
 	dpart->size *= 65536;
+#ifdef CONFIG_SOC_MT7620_OPENWRT
+	// todo: add proper board detection
+	dpart->size -= 0x110000;
+#endif
 	dpart->offset = split_offset;
 	dpart->mask_flags = 0;
 
