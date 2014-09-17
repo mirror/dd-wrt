@@ -89,6 +89,7 @@ void start_sysinit(void)
 	nvram_set("wl0_ifname", "ra0");
 	insmod("rt2860v2_ap");
 	insmod("RTPCI_ap");
+	insmod("rlt_wifi");
 	insmod("raeth");
 #ifdef HAVE_WHR300HP2
 	insmod("rt2880_wdt");

@@ -476,6 +476,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		eval("ifconfig", "wds19", "down");
 		eval("ifconfig", "apcli1", "down");
 		rmmod("RTPCI_ap");
+		rmmod("rlt_wifi");
 		rmmod("rt2860v2_ap");
 		rmmod("rt2860v2_sta");
 		rmmod("rt3062ap");
@@ -594,6 +595,9 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	}
 /* suggestion by Jimmy */
 //      fprintf( fp, "HtBw=1\n" );
+	char *refif = "ra0";
+	if (idx == 1)
+		refif == "ba0";
 
 	if (nvram_nmatch("bg-mixed", "wl%d_net_mode", idx))
 		fprintf(fp, "WirelessMode=0\n");
@@ -613,8 +617,20 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		fprintf(fp, "WirelessMode=11\n");
 	if (nvram_nmatch("na-only", "wl%d_net_mode", idx))
 		fprintf(fp, "WirelessMode=8\n");
-	if (nvram_nmatch("mixed", "wl%d_net_mode", idx))
-		fprintf(fp, "WirelessMode=5\n");
+
+	if (nvram_nmatch("mixed", "wl%d_net_mode", idx)) {
+		if (has_ac(refif))
+			fprintf(fp, "WirelessMode=14\n");
+		else
+			fprintf(fp, "WirelessMode=5\n");
+	}
+	if (nvram_nmatch("ac-only", "wl%d_net_mode", idx)) {
+		fprintf(fp, "WirelessMode=15\n");
+		fprintf(fp, "VHT_DisallowNonVHT=1\n");
+	}
+	if (nvram_nmatch("acn-only", "wl%d_net_mode", idx)) {
+		fprintf(fp, "WirelessMode=15\n");
+	}
 
 	char hidestr[64];
 
@@ -934,8 +950,12 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 //channel width
 	if (nvram_nmatch("20", "wl%d_nbw", idx))
 		fprintf(fp, "HT_BW=0\n");
-	else
+	else if (nvram_nmatch("40", "wl%d_nbw", idx))
 		fprintf(fp, "HT_BW=1\n");
+	else if (nvram_nmatch("80", "wl%d_nbw", idx)) {
+		fprintf(fp, "HT_BW=1\n");
+		fprintf(fp, "VHT_BW=1\n");
+	}
 
 	int channel = atoi(nvram_nget("wl%d_channel", idx));
 
@@ -1111,6 +1131,9 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	fprintf(fp, "HT_BAWinSize=64\n");
 	fprintf(fp, "HT_GI=1\n");
 	fprintf(fp, "HT_STBC=1\n");
+	if (has_ac(refif)) {
+		fprintf(fp, "VHT_STBC=1\n");
+	}
 	fclose(fp);
 
 	if (isSTA(idx)) {
@@ -1175,6 +1198,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 #endif
 		} else {
 			insmod("RTPCI_ap");
+			insmod("rlt_wifi");
 		}
 
 		char dev[32];

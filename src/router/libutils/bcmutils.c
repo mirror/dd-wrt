@@ -345,6 +345,16 @@ int has_mimo(char *prefix)
 
 int has_ac(char *prefix)
 {
+	if (!strncmp(prefix, "ba", 2) || !strncmp(prefix, "wl1", 3)) {
+		FILE *fp = fopen("/sys/bus/pci/devices/0000:01:00.0/device", "rb");
+		if (!fp)
+			return 0;
+		char id[32];
+		fscanf(fp, "%s", id);
+		fclose(fp);
+		if (!strcmp(id, "0x7662"))
+			return 1;
+	}
 	return 0;
 }
 #else
