@@ -315,6 +315,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 
 	if (sta) {
 		char mac[32];
+		if (cnt)
+			websWrite(wp, ",");
+		cnt++;
 
 		int qual = sta->rssi * 124 + 11600;
 		double rate = 1;
