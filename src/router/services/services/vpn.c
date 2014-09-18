@@ -56,16 +56,13 @@
 
 void start_vpn_modules(void)
 {
-	if ((nvram_match("pptp_pass", "1") || nvram_match("l2tp_pass", "1")
-	     || nvram_match("ipsec_pass", "1"))) {
+	if (nvram_match("pptp_pass", "1")) {
 		insmod("nf_conntrack_proto_gre");
 		insmod("ip_conntrack_proto_gre");
 		dd_syslog(LOG_INFO, "vpn modules : nf_conntrack_proto_gre successfully loaded\n");
 		insmod("nf_nat_proto_gre");
 		insmod("ip_nat_proto_gre");
 		dd_syslog(LOG_INFO, "vpn modules : nf_nat_proto_gre successfully loaded\n");
-	}
-	if (nvram_match("pptp_pass", "1")) {
 		insmod("nf_conntrack_pptp");
 		insmod("ip_conntrack_pptp");
 		dd_syslog(LOG_INFO, "vpn modules : nf_conntrack_pptp successfully loaded\n");
