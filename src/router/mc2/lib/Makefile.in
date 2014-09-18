@@ -189,14 +189,15 @@ am__libmc_la_SOURCES_DIST = event.h event-types.h filehighlight.h \
 	utilunix.c utilunix.h unixcompat.h util.c util.h fileloc.h \
 	fs.h hook.c hook.h glibcompat.c glibcompat.h global.c global.h \
 	keybind.c keybind.h lock.c lock.h serialize.c serialize.h \
-	timefmt.c timefmt.h logging.c logging.h charsets.c charsets.h
+	timefmt.c timefmt.h timer.c timer.h logging.c logging.h \
+	charsets.c charsets.h
 am__objects_1 =
 am__objects_2 = utilunix.lo util.lo
 @USE_MAINTAINER_MODE_TRUE@am__objects_3 = logging.lo
 @CHARSET_TRUE@am__objects_4 = charsets.lo
 am_libmc_la_OBJECTS = $(am__objects_1) $(am__objects_2) hook.lo \
 	glibcompat.lo global.lo keybind.lo lock.lo serialize.lo \
-	timefmt.lo $(am__objects_3) $(am__objects_4)
+	timefmt.lo timer.lo $(am__objects_3) $(am__objects_4)
 libmc_la_OBJECTS = $(am_libmc_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -543,7 +544,8 @@ SRC_mc_utils = \
 libmc_la_SOURCES = $(SUBLIB_includes) $(SRC_mc_utils) fileloc.h fs.h \
 	hook.c hook.h glibcompat.c glibcompat.h global.c global.h \
 	keybind.c keybind.h lock.c lock.h serialize.c serialize.h \
-	timefmt.c timefmt.h $(am__append_1) $(am__append_2)
+	timefmt.c timefmt.h timer.c timer.h $(am__append_1) \
+	$(am__append_2)
 AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir) $(PCRE_CPPFLAGS)
 libmc_la_LIBADD = event/libmcevent.la \
 	filehighlight/libmcfilehighlight.la mcconfig/libmcconfig.la \
@@ -650,6 +652,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logging.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serialize.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timefmt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timer.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utilunix.Plo@am__quote@
 

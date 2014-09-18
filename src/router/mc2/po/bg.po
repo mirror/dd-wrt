@@ -4,14 +4,14 @@
 #
 # Translators:
 # Slava Zanko <slavazanko@gmail.com>, 2011
-# Yasen Pramatarov <yasen@lindeas.com>, 2011-2013
+# Yasen Pramatarov <yasen@lindeas.com>, 2011-2014
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Bulgarian (http://www.transifex.com/projects/p/mc/language/"
 "bg/)\n"
 "Language: bg\n"
@@ -212,16 +212,16 @@ msgid "Backspace"
 msgstr ""
 
 msgid "Up arrow"
-msgstr ""
+msgstr "Стрелка нагоре"
 
 msgid "Down arrow"
-msgstr ""
+msgstr "Стрелка надолу"
 
 msgid "Left arrow"
-msgstr ""
+msgstr "Стрелка наляво"
 
 msgid "Right arrow"
-msgstr ""
+msgstr "Стрелка надясно"
 
 msgid "Insert"
 msgstr ""
@@ -236,10 +236,10 @@ msgid "End key"
 msgstr "End"
 
 msgid "Page Up"
-msgstr ""
+msgstr "Страница нагоре"
 
 msgid "Page Down"
-msgstr ""
+msgstr "Страница надолу"
 
 msgid "/ on keypad"
 msgstr ""
@@ -509,7 +509,7 @@ msgid "DialogTitle|History cleanup"
 msgstr ""
 
 msgid "Do you want clean this history?"
-msgstr ""
+msgstr "Да се изчисти ли историята?"
 
 msgid "&Yes"
 msgstr "Да"
@@ -528,6 +528,13 @@ msgstr "Фонов процес:"
 
 msgid "Error"
 msgstr "Грешка"
+
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "Отказ"
 
 msgid "Displays the current version"
 msgstr "Показване на текущата версия"
@@ -622,7 +629,7 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 
@@ -836,6 +843,60 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr ""
 
+msgid "Bookmarks"
+msgstr ""
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Подреждане"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+msgid " - Filter: "
+msgstr ""
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "Отиване на &ред..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "Добави нов"
+
+msgid "&Remove"
+msgstr "Изтрий"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "&Файл"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Подреждане"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "Обратен ред"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr ""
 
@@ -846,8 +907,18 @@ msgid "< Reload Current Syntax >"
 msgstr ""
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr "Зареждане: %3d%%"
+
+msgid "Loading..."
+msgstr "Зареждане..."
+
+#, c-format
 msgid "Cannot open %s for reading"
-msgstr ""
+msgstr "Грешка при отваряне на %s за четене"
+
+msgid "Load file"
+msgstr "Зареждане на файл"
 
 #, c-format
 msgid "Error reading %s"
@@ -874,6 +945,14 @@ msgstr ""
 #, c-format
 msgid "Cannot open pipe for reading: %s"
 msgstr ""
+
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr "Търсене на %s: %3d%%"
+
+#, c-format
+msgid "Searching %s"
+msgstr "Търся %s"
 
 msgid "File has hard-links. Detach before saving?"
 msgstr ""
@@ -921,6 +1000,9 @@ msgid "Save As"
 msgstr "Запазване като"
 
 msgid "Block is large, you may not be able to undo this action"
+msgstr ""
+
+msgid "Collect completions"
 msgstr ""
 
 msgid "&Quick save"
@@ -1037,13 +1119,13 @@ msgid "This function is not implemented"
 msgstr "Това действие все още не е внедрено"
 
 msgid "Copy to clipboard"
-msgstr ""
+msgstr "Копиране в буфера"
 
 msgid "Unable to save to file"
 msgstr "Грешка при запис на файла"
 
 msgid "Cut to clipboard"
-msgstr ""
+msgstr "Изрязване в буфера"
 
 msgid "Goto line"
 msgstr "Отиване на ред"
@@ -1150,7 +1232,7 @@ msgid ""
 msgstr ""
 
 msgid "NoName"
-msgstr ""
+msgstr "БезИме"
 
 msgid "&Open file..."
 msgstr "Отвори файл..."
@@ -1472,6 +1554,78 @@ msgstr ""
 msgid "ButtonBar|PullDn"
 msgstr ""
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr "Чешки"
+
+msgid "Welsh"
+msgstr "Уелски"
+
+msgid "Danish"
+msgstr "Датски"
+
+msgid "German"
+msgstr "Немски"
+
+msgid "Greek"
+msgstr "Гръцки"
+
+msgid "English"
+msgstr "Английски"
+
+msgid "British English"
+msgstr "Британски английски"
+
+msgid "Canadian English"
+msgstr "Канадски английски"
+
+msgid "American English"
+msgstr "Американски английски"
+
+msgid "Esperanto"
+msgstr "Есперанто"
+
+msgid "Spanish"
+msgstr "Испански"
+
+msgid "Faroese"
+msgstr "Фаройски"
+
+msgid "French"
+msgstr "Френски"
+
+msgid "Italian"
+msgstr "Италиански"
+
+msgid "Dutch"
+msgstr "Холандски"
+
+msgid "Norwegian"
+msgstr "Норвежки"
+
+msgid "Polish"
+msgstr "Полски"
+
+msgid "Portuguese"
+msgstr "Португалски"
+
+msgid "Romanian"
+msgstr "Румънски"
+
+msgid "Russian"
+msgstr "Руски"
+
+msgid "Slovak"
+msgstr "Словашки"
+
+msgid "Swedish"
+msgstr "Шведски"
+
+msgid "Ukrainian"
+msgstr "Украински"
+
 msgid "&Add word"
 msgstr ""
 
@@ -1479,19 +1633,19 @@ msgid "Language"
 msgstr "Език"
 
 msgid "Misspelled"
-msgstr ""
+msgstr "Сгрешено"
 
 msgid "Check word"
-msgstr ""
+msgstr "Проверка на дума"
 
 msgid "Suggest"
-msgstr ""
+msgstr "Предложение"
 
 msgid "Select language"
 msgstr "Избор на език"
 
 msgid "Load syntax file"
-msgstr ""
+msgstr "Зареждане на файл със синтаксис"
 
 #, c-format
 msgid ""
@@ -1651,7 +1805,7 @@ msgid "Skin:"
 msgstr ""
 
 msgid "Appearance"
-msgstr ""
+msgstr "Изглед"
 
 msgid "Case &insensitive"
 msgstr ""
@@ -1974,15 +2128,6 @@ msgstr ""
 msgid "Set expression for filtering filenames"
 msgstr ""
 
-msgid "&Files only"
-msgstr "Само &файлове"
-
-msgid "&Using shell patterns"
-msgstr "Mетасимволи на обвивката"
-
-msgid "&Case sensitive"
-msgstr "Чувствителност към &регистъра"
-
 #, c-format
 msgid "Link %s to:"
 msgstr ""
@@ -2021,12 +2166,6 @@ msgid "Create a new Directory"
 msgstr " Създай нова директория "
 
 msgid "Enter directory name:"
-msgstr ""
-
-msgid "Select"
-msgstr ""
-
-msgid "Unselect"
 msgstr ""
 
 msgid "Extension file edit"
@@ -2107,6 +2246,9 @@ msgid ""
 "Enter device (without /dev/) to undelete\n"
 "files on: (F1 for details)"
 msgstr ""
+
+msgid "Directory scanning"
+msgstr "Претърсване на директория"
 
 msgid "Setup"
 msgstr "Настройка"
@@ -2226,9 +2368,6 @@ msgid ""
 "Cannot create target symlink \"%s\"\n"
 "%s"
 msgstr ""
-
-msgid "&Abort"
-msgstr "Отказ"
 
 msgid "Ski&p all"
 msgstr ""
@@ -2454,13 +2593,8 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Directory scanning"
-msgstr "Претърсване на директория"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2568,6 +2702,12 @@ msgstr "Източник"
 msgid "Target"
 msgstr "Назначение"
 
+msgid "Deleting"
+msgstr "Изтриване"
+
+msgid "&Using shell patterns"
+msgstr "Mетасимволи на обвивката"
+
 msgid "to:"
 msgstr "в:"
 
@@ -2661,10 +2801,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] ""
 msgstr[1] ""
 
-#, c-format
-msgid "Searching %s"
-msgstr "Търся %s"
-
 msgid "Searching"
 msgstr "Търся"
 
@@ -2691,9 +2827,6 @@ msgstr ""
 
 msgid "&Insert"
 msgstr "Вмъкни"
-
-msgid "&Remove"
-msgstr "Изтрий"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Подгрупа - натиснете ENTER за списък"
@@ -2784,7 +2917,7 @@ msgstr "Свободно пространство %s/%s (%d%%)"
 
 #, c-format
 msgid "Type:      %s"
-msgstr ""
+msgstr "Вид: %s"
 
 msgid "non-local vfs"
 msgstr "не-локална vfs"
@@ -2808,7 +2941,7 @@ msgstr "Променян:     %s"
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
 msgid "Changed:   %s"
-msgstr ""
+msgstr "Променено: %s"
 
 #, c-format
 msgid "Dev. type: major %lu, minor %lu"
@@ -3216,6 +3349,18 @@ msgid "Panelize"
 msgstr ""
 
 msgid "Unknown tag on display format:"
+msgstr ""
+
+msgid "&Files only"
+msgstr "Само &файлове"
+
+msgid "&Case sensitive"
+msgstr "Чувствителност към &регистъра"
+
+msgid "Select"
+msgstr ""
+
+msgid "Unselect"
 msgstr ""
 
 msgid "Do you really want to execute?"
@@ -3817,9 +3962,6 @@ msgstr ""
 msgid "sftp: Invalid host name."
 msgstr ""
 
-msgid "sftp: Invalid port value."
-msgstr ""
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4000,7 +4142,7 @@ msgstr ""
 msgid "Empty output from child filter"
 msgstr ""
 
-msgid "&Line number (decimal)"
+msgid "&Line number"
 msgstr ""
 
 msgid "Pe&rcents"
@@ -4059,7 +4201,7 @@ msgid ""
 msgstr ""
 
 msgid "View: "
-msgstr ""
+msgstr "Преглед:"
 
 #, c-format
 msgid ""
@@ -4076,9 +4218,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Seeking to search result"
-msgstr ""
-
 msgid "Search done"
 msgstr "Търсенето приключи"
 
@@ -4087,6 +4226,3 @@ msgstr "Да се продължи ли от началото?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
-
-#~ msgid "&Select"
-#~ msgstr "Маркирай"

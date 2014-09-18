@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Dutch (http://www.transifex.com/projects/p/mc/language/nl/)\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
@@ -546,6 +546,13 @@ msgstr "Achtergrondproces:"
 msgid "Error"
 msgstr "Fout"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "&Afbreken"
+
 msgid "Displays the current version"
 msgstr "Toon de huidige versie"
 
@@ -639,26 +646,9 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
-"--colors KEYWORD={FORE},{BACK},{ATTR}:KEYWORD2=...\n"
-"\n"
-"{FORE}, {BACK} and {ATTR} can be omitted, and the default will be used\n"
-"\n"
-" Keywords:\n"
-"   Global:       errors, disabled, reverse, gauge, header\n"
-"                 input, inputmark, inputunchanged, commandlinemark\n"
-"                 bbarhotkey, bbarbutton, statusbar\n"
-"   File display: normal, selected, marked, markselect\n"
-"   Dialog boxes: dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
-"                 errdhotfocus\n"
-"   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
-"   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
-"   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
-"   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -895,6 +885,62 @@ msgstr "Diff viewer: ongeldige modus"
 msgid "Two files are needed to compare"
 msgstr "Er zijn twee bestanden nodig om te vergelijken"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "&Flush bladwijzers"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Sorteren"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Filter"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "&Ga naar regel..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "Nieuw toevoegen"
+
+msgid "&Remove"
+msgstr "Ver&wijderen"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Filter"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Sorteren"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "Omd&raaien"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Kies syntax highlighting"
 
@@ -905,8 +951,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Herlaadt Huidige Syntax >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Kan %s niet openen om te lezen"
+
+msgid "Load file"
+msgstr ""
 
 #, c-format
 msgid "Error reading %s"
@@ -936,6 +992,14 @@ msgstr "Probleem bij het lezen van pipe: %s "
 msgid "Cannot open pipe for reading: %s"
 msgstr "Openen van pipe voor lezen mislukt: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "Zoeken naar %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "Bestand heeft harde links. Ontkoppelen voor het opslaan? "
 
@@ -954,9 +1018,8 @@ msgstr "Openen van pipe voor lezen mislukt: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Openen van bestand voor schrijven mislukt: %s "
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "Het bestand wat u opslaat eindigt niet met een nieuwe regel"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "D&oorgaan"
@@ -984,6 +1047,9 @@ msgstr "Opslaan als"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Groot blok, wellicht kunt u deze actie niet ongedaan maken..."
+
+msgid "Collect completions"
+msgstr ""
 
 msgid "&Quick save"
 msgstr "&Snel opslaan "
@@ -1542,6 +1608,78 @@ msgstr "Verwder"
 msgid "ButtonBar|PullDn"
 msgstr "Menu"
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr "&Woord toevoegen"
 
@@ -2059,15 +2197,6 @@ msgstr "Filter"
 msgid "Set expression for filtering filenames"
 msgstr " Zet expressie voor het filteren van bestandsnamen"
 
-msgid "&Files only"
-msgstr "Alleen &bestanden"
-
-msgid "&Using shell patterns"
-msgstr "Shell Patroon gebr&uiken"
-
-msgid "&Case sensitive"
-msgstr "Hoofd-/kleine le&tters"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "%s verbinden met:"
@@ -2107,12 +2236,6 @@ msgstr "Maak een nieuwe map"
 
 msgid "Enter directory name:"
 msgstr "Geef mapnaam:"
-
-msgid "Select"
-msgstr "Selectie maken"
-
-msgid "Unselect"
-msgstr "Selectie wissen"
 
 msgid "Extension file edit"
 msgstr "Bewerken uitbreidingsbestand"
@@ -2198,6 +2321,9 @@ msgid ""
 msgstr ""
 "Geef apparaatnaam (zonder /dev/) om gewiste bestanden te herstellen op: (F1 "
 "voor details)"
+
+msgid "Directory scanning"
+msgstr "Map scannen"
 
 msgid "Setup"
 msgstr "Configuratie"
@@ -2335,9 +2461,6 @@ msgid ""
 msgstr ""
 "Maken van doel van symbolische link \"%s\" mislukt \n"
 "%s "
-
-msgid "&Abort"
-msgstr "&Afbreken"
 
 msgid "Ski&p all"
 msgstr "Alles ove&rslaan"
@@ -2622,14 +2745,9 @@ msgstr ""
 "Kan map  \"%s\" niet naar \"%s\" verplaatsen \n"
 "%s "
 
-msgid "Directory scanning"
-msgstr "Map scannen"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
-msgstr "%s⏎ Mappen: %zd, totale grootte: %s"
+msgid "Directories: %zd, total size: %s"
+msgstr ""
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Opereren op \"..\" is niet mogelijk! "
@@ -2736,6 +2854,12 @@ msgstr "Bron"
 msgid "Target"
 msgstr "Doel"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "Shell Patroon gebr&uiken"
+
 msgid "to:"
 msgstr "naar:"
 
@@ -2829,10 +2953,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] "Klaar (%zd directory genegeerd)"
 msgstr[1] "Klaar (%zd directories genegeerd)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "Zoeken naar %s"
-
 msgid "Searching"
 msgstr "Aan het zoeken"
 
@@ -2859,9 +2979,6 @@ msgstr "Nieuw &Item"
 
 msgid "&Insert"
 msgstr "&Invoegen"
-
-msgid "&Remove"
-msgstr "Ver&wijderen"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgroep - druk ENTER om de lijst te zien"
@@ -3389,6 +3506,18 @@ msgstr "Als venster"
 
 msgid "Unknown tag on display format:"
 msgstr "Onbekend tag in weergaveformaat: "
+
+msgid "&Files only"
+msgstr "Alleen &bestanden"
+
+msgid "&Case sensitive"
+msgstr "Hoofd-/kleine le&tters"
+
+msgid "Select"
+msgstr "Selectie maken"
+
+msgid "Unselect"
+msgstr "Selectie wissen"
 
 msgid "Do you really want to execute?"
 msgstr "Wilt u die opdracht echt uitvoeren? "
@@ -4012,9 +4141,6 @@ msgstr "sftp: Het lukt niet de huidige gebruikersnaam te achterhalen"
 msgid "sftp: Invalid host name."
 msgstr "sftp: Ongeldige hostnaam."
 
-msgid "sftp: Invalid port value."
-msgstr "sftp: Ongeldige poortwaarde"
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4197,8 +4323,8 @@ msgstr "Kan geen kindproces opstarten"
 msgid "Empty output from child filter"
 msgstr "Geen uitvoer van kindfilter"
 
-msgid "&Line number (decimal)"
-msgstr "Rege&lnummer (decimaal)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "Pe&rcenten"
@@ -4278,9 +4404,6 @@ msgstr ""
 "Kan \"%s\" niet openen in parsemodus\n"
 "%s"
 
-msgid "Seeking to search result"
-msgstr "Op zoek naar zoekresultaat"
-
 msgid "Search done"
 msgstr "Zoeken afgerond"
 
@@ -4290,5 +4413,5 @@ msgstr "Doorgaan vanaf het begin?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Kan geen lokale versie van /ftp://some.host/editme.txt ophalen"
 
-#~ msgid "&Select"
-#~ msgstr "&Selecteer"
+#~ msgid "sftp: Invalid port value."
+#~ msgstr "sftp: Ongeldige poortwaarde"

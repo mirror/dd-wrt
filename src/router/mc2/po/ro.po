@@ -4,15 +4,15 @@
 #
 # Translators:
 # Arthur Titeica <arthur@psw.ro>, 2013
-# roentgen <arthur.titeica@gmail.com>, 2013-2014
+# Arthur Țițeică <arthur.titeica@gmail.com>, 2013-2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-03-30 14:05+0000\n"
-"Last-Translator: roentgen <arthur.titeica@gmail.com>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Romanian (http://www.transifex.com/projects/p/mc/language/"
 "ro/)\n"
 "Language: ro\n"
@@ -547,6 +547,13 @@ msgstr "Sarcină în fundal:"
 msgid "Error"
 msgstr "Eroare"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "&Anulează"
+
 msgid "Displays the current version"
 msgstr "Afișează versiunea curentă"
 
@@ -642,7 +649,7 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 
@@ -883,6 +890,62 @@ msgstr "Vizualizator diff: mod invalid"
 msgid "Two files are needed to compare"
 msgstr "Sunt necesare două fișiere pentru comparare"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "Ște&rge marcaje"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Sortare"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Filtru"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "Mer&gi la linia..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Adaugă nou"
+
+msgid "&Remove"
+msgstr "Ș&terge"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Filtru"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Sortare"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "In&vers"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Alege sintaxa de evidenţiere"
 
@@ -893,8 +956,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Reîncarcă sintaxa curentă >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Nu se poate deschide %s pentru citire"
+
+msgid "Load file"
+msgstr ""
 
 #, c-format
 msgid "Error reading %s"
@@ -924,6 +997,14 @@ msgstr "Eroare la citirea din pipe: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "Nu se poate deschide pipe pentru citire: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "Caut %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "Fișierul are hard-links. Desprinzi înainte de a salva?"
 
@@ -942,9 +1023,8 @@ msgstr "Nu se poate pipe pentru scriere: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Nu se poate deschide fișierul pentru scriere: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "Fișierul pe care îl salvezi nu se termină cu o linie nouă"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "C&ontinuă"
@@ -972,6 +1052,9 @@ msgstr "Salvează ca"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Blocul este mare, este posibil sa nu poți anula această acțiune"
+
+msgid "Collect completions"
+msgstr ""
 
 msgid "&Quick save"
 msgstr "Salvare &rapidă"
@@ -1533,6 +1616,78 @@ msgstr "ButtonBar|Șterge"
 msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|ÎnJos"
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr "&Adaugă cuvânt"
 
@@ -2049,15 +2204,6 @@ msgstr "Filtru"
 msgid "Set expression for filtering filenames"
 msgstr "Folosește expresia pentru filtrarea numelor de fișiere"
 
-msgid "&Files only"
-msgstr "Numai &fișiere"
-
-msgid "&Using shell patterns"
-msgstr "&Folosire șabloane shell"
-
-msgid "&Case sensitive"
-msgstr "Sensibil la majus&cule"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Leagă %s la:"
@@ -2097,12 +2243,6 @@ msgstr "Creează un nou dosar"
 
 msgid "Enter directory name:"
 msgstr "Introdu numele dosarului:"
-
-msgid "Select"
-msgstr "Selectează"
-
-msgid "Unselect"
-msgstr "Deselectează"
 
 msgid "Extension file edit"
 msgstr "Editează fișierul de extensii"
@@ -2188,6 +2328,9 @@ msgid ""
 msgstr ""
 "Introdu dispozitivul (fără /dev/) în care se vor recupera\n"
 "fișiere: (F1 pentru detalii)"
+
+msgid "Directory scanning"
+msgstr "Scanarea dosarelor"
 
 msgid "Setup"
 msgstr "Configurație"
@@ -2323,9 +2466,6 @@ msgid ""
 msgstr ""
 "Nu se poate crea legătura destinație \"%s\"\n"
 "%s"
-
-msgid "&Abort"
-msgstr "&Anulează"
 
 msgid "Ski&p all"
 msgstr "Sări t&ot"
@@ -2610,16 +2750,9 @@ msgstr ""
 "Nu se poate muta dosarul \"%s\" în \"%s\"\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Scanarea dosarelor"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
-"%s\n"
-"Dosare: %zd, mărime totală: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Nu se poate acționa asupra \"..\"!"
@@ -2726,6 +2859,12 @@ msgstr "Sursă"
 msgid "Target"
 msgstr "Destinație"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "&Folosire șabloane shell"
+
 msgid "to:"
 msgstr "către:"
 
@@ -2820,10 +2959,6 @@ msgstr[0] "Finalizat (a fost ignorat %zd dosar)"
 msgstr[1] "Finalizat (au fost ignorate %zd dosare)"
 msgstr[2] "Finalizat (au fost ignorate %zd de dosare)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "Caut %s"
-
 msgid "Searching"
 msgstr "Caut"
 
@@ -2850,9 +2985,6 @@ msgstr "Înr&egistrare nouă"
 
 msgid "&Insert"
 msgstr "&Inserează"
-
-msgid "&Remove"
-msgstr "Ș&terge"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgrup - apăsați ENTER ca să vedeți lista"
@@ -3384,6 +3516,18 @@ msgstr "Panelizare"
 
 msgid "Unknown tag on display format:"
 msgstr "Etichetă necunoscută în formatul de afișare:"
+
+msgid "&Files only"
+msgstr "Numai &fișiere"
+
+msgid "&Case sensitive"
+msgstr "Sensibil la majus&cule"
+
+msgid "Select"
+msgstr "Selectează"
+
+msgid "Unselect"
+msgstr "Deselectează"
 
 msgid "Do you really want to execute?"
 msgstr "Chiar dorești să execuți?"
@@ -4006,9 +4150,6 @@ msgstr "sftp: Nu se poate obține numele de utlizator curent."
 msgid "sftp: Invalid host name."
 msgstr "sftp: Nume de gazdă incorect."
 
-msgid "sftp: Invalid port value."
-msgstr "sftp: Port nevalid."
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4197,8 +4338,8 @@ msgstr "Nu se poate porni procesul copil"
 msgid "Empty output from child filter"
 msgstr "Ieșire vidă de la filtrul copil"
 
-msgid "&Line number (decimal)"
-msgstr "Număr de &linie (zecimal)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "P&rocente"
@@ -4282,9 +4423,6 @@ msgstr ""
 "Nu se poate deschide \"%s\" în mod parsare\n"
 "%s"
 
-msgid "Seeking to search result"
-msgstr "Se merge la rezultatul căutării"
-
 msgid "Search done"
 msgstr "Căutarea a fost efectuată"
 
@@ -4294,5 +4432,5 @@ msgstr "Continuă de la început?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Nu se poate aduce o copie locală a /ftp://some.host/editme.txt"
 
-#~ msgid "&Select"
-#~ msgstr "&Selectare"
+#~ msgid "sftp: Invalid port value."
+#~ msgstr "sftp: Port nevalid."

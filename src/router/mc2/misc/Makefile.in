@@ -84,7 +84,9 @@ host_triplet = @host@
 @CHARSET_FALSE@am__append_2 = mc.charsets
 subdir = misc
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
-	$(top_srcdir)/config/mkinstalldirs $(srcdir)/mc.ext.in
+	$(top_srcdir)/config/mkinstalldirs $(srcdir)/mc.menu.in \
+	$(srcdir)/mcedit.menu.in $(srcdir)/mc.menu.sr.in \
+	$(srcdir)/mc.ext.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/glibc2.m4 \
@@ -142,7 +144,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = mc.ext
+CONFIG_CLEAN_FILES = mc.menu mcedit.menu mc.menu.sr mc.ext
 CONFIG_CLEAN_VPATH_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -470,14 +472,21 @@ SUBDIRS = ext.d macros.d skins syntax
 LIBFILES_OUT = mc.ext
 noinst_DATA = xterm.ad
 pkgdata_DATA = mc.lib $(am__append_1)
+SCRIPTS_IN = \
+	mc.menu.in \
+	mc.menu.sr.in \
+	mcedit.menu.in
+
+SCRIPTS_OUT = \
+	mc.menu \
+	mc.menu.sr \
+	mcedit.menu
+
 LIBFILES_CONST = \
-	mcedit.menu \
 	filehighlight.ini \
 	mc.keymap \
 	mc.default.keymap \
-	mc.emacs.keymap \
-	mc.menu \
-	mc.menu.sr
+	mc.emacs.keymap
 
 LIBFILES_SCRIPT = \
 	edit.indent.rc
@@ -486,6 +495,7 @@ CLEANFILES = $(SCRIPTS_OUT)
 cfgdir = $(sysconfdir)/@PACKAGE@
 cfg_DATA = \
 	$(LIBFILES_CONST) \
+	$(SCRIPTS_OUT) \
 	$(LIBFILES_OUT)
 
 cfg_SCRIPTS = \
@@ -528,6 +538,12 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+mc.menu: $(top_builddir)/config.status $(srcdir)/mc.menu.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+mcedit.menu: $(top_builddir)/config.status $(srcdir)/mcedit.menu.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+mc.menu.sr: $(top_builddir)/config.status $(srcdir)/mc.menu.sr.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 mc.ext: $(top_builddir)/config.status $(srcdir)/mc.ext.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-cfgSCRIPTS: $(cfg_SCRIPTS)

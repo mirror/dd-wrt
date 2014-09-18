@@ -3,16 +3,17 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# Mátyás Demeter <mathias.demeter@gmail.com>, 2014
 # Rezső Páder <rezso@rezso.net>, 2012-2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
-# Atekka <atekka@gmail.com>, 2013
+# Szabo Attila <atekka@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 16:07+0000\n"
-"Last-Translator: Rezső Páder <rezso@rezso.net>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Hungarian (http://www.transifex.com/projects/p/mc/language/"
 "hu/)\n"
 "Language: hu\n"
@@ -546,6 +547,13 @@ msgstr "Háttérfolyamat:"
 msgid "Error"
 msgstr "Hiba"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "&Megszakítás"
+
 msgid "Displays the current version"
 msgstr "Verzióinformáció megjelenítése"
 
@@ -641,29 +649,9 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
-"--colors KULCSSZÓ={FORE},{BACK},{ATTR}:KEYWORD2=...\n"
-"\n"
-"{FORE}, {BACK} és {ATTR} elhagyható, ekkor az alapértelmezett lesz "
-"használva\n"
-"\n"
-" Kulcsszavak:\n"
-"   Általános:       errors, disabled, reverse, gauge, header\n"
-"                 input, inputmark, inputunchanged, commandlinemark\n"
-"                 bbarhotkey, bbarbutton, statusbar\n"
-"   Fájl megjelenítés: normal, selected, marked, markselect\n"
-"   Párbeszéd dobozok: dnormal, dfocus, dhotnormal, dhotfocus, "
-"errdhotnormal,\n"
-"                 errdhotfocus\n"
-"   Menük:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
-"   Popup menük:  pmenunormal, pmenusel, pmenutitle\n"
-"   Szerkesztő:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate, editbg, editframe, editframeactive\n"
-"                 editframedrag\n"
-"   Megjelenítő:       viewbold, viewunderline, viewselected\n"
-"   Súgó:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -903,6 +891,62 @@ msgstr "Különbség megjelenítő: érvénytelen mód"
 msgid "Two files are needed to compare"
 msgstr "Két fájl kell az összehasonlításhoz"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "Könyvjelzők &törlése"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Rendezés"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Szűrő"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "U&grás sorra..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "Ú&j"
+
+msgid "&Remove"
+msgstr "&Törlés"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Szűrő"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Rendezés"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "&Fordított sorrend"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Válasszon szintaktikus szövegkiemelést"
 
@@ -913,8 +957,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Aktuális szintaktika újratöltése >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr "Betöltés: %3d%%"
+
+msgid "Loading..."
+msgstr "Betöltés..."
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "A(z) \"%s\" fájl nem megnyitható olvasásra"
+
+msgid "Load file"
+msgstr "Fájl betöltése"
 
 #, c-format
 msgid "Error reading %s"
@@ -944,6 +998,14 @@ msgstr "Hiba a cső olvasásakor: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "A cső nem megnyitható olvasásra: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "\"%s\" keresése"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "A fájlban \"hard-link\" van. Leválaszt mentés előtt?"
 
@@ -962,9 +1024,8 @@ msgstr "A cső nem megnyitható írásra: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "A(z) \"%s\" fájl nem megnyitható írásra."
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "A file nem soremeléssel ér véget"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "&Tovább"
@@ -992,6 +1053,9 @@ msgstr "Mentés másként"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Nagy blokk, a művelet nem biztos hogy visszavonható."
+
+msgid "Collect completions"
+msgstr ""
 
 msgid "&Quick save"
 msgstr "Gyors mentés"
@@ -1552,6 +1616,78 @@ msgstr "Töröl"
 msgid "ButtonBar|PullDn"
 msgstr "Főmenü"
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr "Dán"
+
+msgid "German"
+msgstr "német"
+
+msgid "Greek"
+msgstr "görög"
+
+msgid "English"
+msgstr "angol"
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr "Eszperantó"
+
+msgid "Spanish"
+msgstr "Spanyol"
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr "francia"
+
+msgid "Italian"
+msgstr "olasz"
+
+msgid "Dutch"
+msgstr "holland"
+
+msgid "Norwegian"
+msgstr "norvég"
+
+msgid "Polish"
+msgstr "lengyel"
+
+msgid "Portuguese"
+msgstr "portugál"
+
+msgid "Romanian"
+msgstr "román"
+
+msgid "Russian"
+msgstr "orosz"
+
+msgid "Slovak"
+msgstr "szlovák"
+
+msgid "Swedish"
+msgstr "svéd"
+
+msgid "Ukrainian"
+msgstr "ukrán"
+
 msgid "&Add word"
 msgstr "Szó hozzá&adása"
 
@@ -2067,15 +2203,6 @@ msgstr "Szűrő"
 msgid "Set expression for filtering filenames"
 msgstr "Adja meg a fájlnevekre vonatkozó szűrőkifejezést"
 
-msgid "&Files only"
-msgstr "Csak &fájlokat"
-
-msgid "&Using shell patterns"
-msgstr "&Shell-minta"
-
-msgid "&Case sensitive"
-msgstr "&Kis-/nagybetű számít"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "\"%s\" linkelése ide:"
@@ -2115,12 +2242,6 @@ msgstr "Új könyvtár létrehozása"
 
 msgid "Enter directory name:"
 msgstr "Könyvtár neve:"
-
-msgid "Select"
-msgstr "Kiválaszt"
-
-msgid "Unselect"
-msgstr "Kijelölések megszüntetése"
 
 msgid "Extension file edit"
 msgstr "Kiterjesztésfájl szerkesztése"
@@ -2206,6 +2327,9 @@ msgid ""
 msgstr ""
 "A visszaállítandó fájlokat tároló eszköz neve\n"
 "(/dev/ nélkül) (részletek: F1 billentyű):"
+
+msgid "Directory scanning"
+msgstr "Könyvtárak átfésülése"
 
 msgid "Setup"
 msgstr "Beállítások"
@@ -2341,9 +2465,6 @@ msgid ""
 msgstr ""
 "Nem sikerült létrehozni a cél szim-linket \"%s\"\n"
 "%s"
-
-msgid "&Abort"
-msgstr "&Megszakítás"
 
 msgid "Ski&p all"
 msgstr "Ö&sszes kihagyása"
@@ -2630,16 +2751,9 @@ msgstr ""
 "A(z) \"%s\" könyvtár nem átnevezhető/mozgatható erre: \"%s\" \n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Könyvtárak átfésülése"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
-"%s\n"
-"Könyvtár: %zd, összméret: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "A \"..\" könyvtárral ez nem lehetséges!"
@@ -2746,6 +2860,12 @@ msgstr "Forrás"
 msgid "Target"
 msgstr "Cél"
 
+msgid "Deleting"
+msgstr "Törlés"
+
+msgid "&Using shell patterns"
+msgstr "&Shell-minta"
+
 msgid "to:"
 msgstr "Cél:"
 
@@ -2839,10 +2959,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] "Befejezve (%zd könyvtár kihagyva)"
 msgstr[1] "Befejezve (%zd könyvtár kihagyva)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "\"%s\" keresése"
-
 msgid "Searching"
 msgstr "Keresés"
 
@@ -2869,9 +2985,6 @@ msgstr "Ú&j bejegyzés"
 
 msgid "&Insert"
 msgstr "Be&szúrás"
-
-msgid "&Remove"
-msgstr "&Törlés"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Alcsoport (listázás: \"Enter\" billentyű)"
@@ -3399,6 +3512,18 @@ msgstr "Panelra helyezés"
 
 msgid "Unknown tag on display format:"
 msgstr "Ismeretlen címke a megjelenítési formátumban:"
+
+msgid "&Files only"
+msgstr "Csak &fájlokat"
+
+msgid "&Case sensitive"
+msgstr "&Kis-/nagybetű számít"
+
+msgid "Select"
+msgstr "Kiválaszt"
+
+msgid "Unselect"
+msgstr "Kijelölések megszüntetése"
 
 msgid "Do you really want to execute?"
 msgstr "Biztosan futtatni kívánja a programot?"
@@ -4021,9 +4146,6 @@ msgstr "sftp: A jelenlegi felhasználó nevet nem kaptam meg."
 msgid "sftp: Invalid host name."
 msgstr "sftp: Érvénytelen kiszolgálónév."
 
-msgid "sftp: Invalid port value."
-msgstr "sftp: Érvénytelen portszám."
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4212,8 +4334,8 @@ msgstr "Nem sikerült programot indítani"
 msgid "Empty output from child filter"
 msgstr "A szűrő kimenete üres."
 
-msgid "&Line number (decimal)"
-msgstr "&Sorszám (decimális)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "Szá&zalék"
@@ -4295,9 +4417,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Seeking to search result"
-msgstr "Találat keresése"
-
 msgid "Search done"
 msgstr "Keresés kész"
 
@@ -4307,5 +4426,5 @@ msgstr "Folytatás az elejéről?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Nem sikerült behozni /ftp://some.host/editme.txt helyi másolatát"
 
-#~ msgid "&Select"
-#~ msgstr "&Kiválaszt"
+#~ msgid "sftp: Invalid port value."
+#~ msgstr "sftp: Érvénytelen portszám."

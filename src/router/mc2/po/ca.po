@@ -5,15 +5,15 @@
 # Translators:
 # Daniel <danicases@gmail.com>, 2011
 # Daniel <danicases@gmail.com>, 2012
-# Libre El Chaval <el.libre@gmail.com>, 2011
+# el_libre como el chaval <el.libre@gmail.com>, 2011
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Catalan (http://www.transifex.com/projects/p/mc/language/"
 "ca/)\n"
 "Language: ca\n"
@@ -534,6 +534,13 @@ msgstr "Procés de fons:"
 msgid "Error"
 msgstr "S'ha produït un error"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "a&Vorta"
+
 msgid "Displays the current version"
 msgstr "Mostra la versió actual"
 
@@ -627,7 +634,7 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 
@@ -841,6 +848,62 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr ""
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "Favorit &Següent"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Ordena"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Filtre"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "Vés a la &línia..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "Afegeix un &nou"
+
+msgid "&Remove"
+msgstr "&Suprimeix"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Filtre"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Ordena"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "in&Verteix"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr ""
 
@@ -851,7 +914,17 @@ msgid "< Reload Current Syntax >"
 msgstr ""
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
+msgstr ""
+
+msgid "Load file"
 msgstr ""
 
 #, c-format
@@ -879,6 +952,14 @@ msgstr ""
 #, c-format
 msgid "Cannot open pipe for reading: %s"
 msgstr ""
+
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "S'està cercant a %s"
 
 msgid "File has hard-links. Detach before saving?"
 msgstr ""
@@ -926,6 +1007,9 @@ msgid "Save As"
 msgstr "Anomena i desa"
 
 msgid "Block is large, you may not be able to undo this action"
+msgstr ""
+
+msgid "Collect completions"
 msgstr ""
 
 msgid "&Quick save"
@@ -1477,6 +1561,78 @@ msgstr ""
 msgid "ButtonBar|PullDn"
 msgstr ""
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr ""
 
@@ -1981,15 +2137,6 @@ msgstr "Filtre"
 msgid "Set expression for filtering filenames"
 msgstr ""
 
-msgid "&Files only"
-msgstr "Només &fitxers"
-
-msgid "&Using shell patterns"
-msgstr "amb patrons d'&Intèrpret"
-
-msgid "&Case sensitive"
-msgstr "Diferencia majús&cules"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Enllaça %s a:"
@@ -2029,12 +2176,6 @@ msgstr "Crea un directori nou"
 
 msgid "Enter directory name:"
 msgstr ""
-
-msgid "Select"
-msgstr "Selecciona"
-
-msgid "Unselect"
-msgstr "No seleccionis"
 
 msgid "Extension file edit"
 msgstr "Edita el fitxer d'extensions"
@@ -2113,6 +2254,9 @@ msgstr ""
 msgid ""
 "Enter device (without /dev/) to undelete\n"
 "files on: (F1 for details)"
+msgstr ""
+
+msgid "Directory scanning"
 msgstr ""
 
 msgid "Setup"
@@ -2233,9 +2377,6 @@ msgid ""
 "Cannot create target symlink \"%s\"\n"
 "%s"
 msgstr ""
-
-msgid "&Abort"
-msgstr "a&Vorta"
 
 msgid "Ski&p all"
 msgstr ""
@@ -2457,13 +2598,8 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Directory scanning"
-msgstr ""
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2571,6 +2707,12 @@ msgstr "Font/Origen"
 msgid "Target"
 msgstr "Objectiu/Destí"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "amb patrons d'&Intèrpret"
+
 msgid "to:"
 msgstr "cap a:"
 
@@ -2664,10 +2806,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] ""
 msgstr[1] ""
 
-#, c-format
-msgid "Searching %s"
-msgstr "S'està cercant a %s"
-
 msgid "Searching"
 msgstr "Cercant"
 
@@ -2694,9 +2832,6 @@ msgstr "Entrada &nova"
 
 msgid "&Insert"
 msgstr "&Insereix"
-
-msgid "&Remove"
-msgstr "&Suprimeix"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgrup - premeu RETORN per veure la llista"
@@ -3220,6 +3355,18 @@ msgstr ""
 
 msgid "Unknown tag on display format:"
 msgstr ""
+
+msgid "&Files only"
+msgstr "Només &fitxers"
+
+msgid "&Case sensitive"
+msgstr "Diferencia majús&cules"
+
+msgid "Select"
+msgstr "Selecciona"
+
+msgid "Unselect"
+msgstr "No seleccionis"
 
 msgid "Do you really want to execute?"
 msgstr ""
@@ -3827,9 +3974,6 @@ msgstr ""
 msgid "sftp: Invalid host name."
 msgstr ""
 
-msgid "sftp: Invalid port value."
-msgstr ""
-
 #, c-format
 msgid "sftp: %s"
 msgstr ""
@@ -4013,7 +4157,7 @@ msgstr ""
 msgid "Empty output from child filter"
 msgstr ""
 
-msgid "&Line number (decimal)"
+msgid "&Line number"
 msgstr ""
 
 msgid "Pe&rcents"
@@ -4093,9 +4237,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Seeking to search result"
-msgstr ""
-
 msgid "Search done"
 msgstr ""
 
@@ -4104,6 +4245,3 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
-
-#~ msgid "&Select"
-#~ msgstr "&Seleccioneu"

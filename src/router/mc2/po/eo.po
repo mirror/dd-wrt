@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-03-05 22:46+0000\n"
-"Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Esperanto (http://www.transifex.com/projects/p/mc/language/"
 "eo/)\n"
 "Language: eo\n"
@@ -227,16 +227,16 @@ msgid "Backspace"
 msgstr "Retropaŝa klavo"
 
 msgid "Up arrow"
-msgstr "Supra sagoklavo"
+msgstr "Supriga sagoklavo"
 
 msgid "Down arrow"
-msgstr "Malsupra sagoklavo"
+msgstr "Malsupriga sagoklavo"
 
 msgid "Left arrow"
-msgstr "Maldekstra sagoklavo"
+msgstr "Maldekstriga sagoklavo"
 
 msgid "Right arrow"
-msgstr "Dekstra sagoklavo"
+msgstr "Dekstriga sagoklavo"
 
 msgid "Insert"
 msgstr "Enmeta klavo"
@@ -269,16 +269,16 @@ msgid "+ on keypad"
 msgstr "+ ĉe cifera klavaro"
 
 msgid "Left arrow keypad"
-msgstr "Maldekstra sagoklavo [cifera klavaro]"
+msgstr "Maldekstriga sagoklavo [cifera klavaro]"
 
 msgid "Right arrow keypad"
-msgstr "Dekstra sagoklavo [cifera klavaro]"
+msgstr "Dekstriga sagoklavo [cifera klavaro]"
 
 msgid "Up arrow keypad"
-msgstr "Supra sagoklavo [cifera klavaro]"
+msgstr "Supriga sagoklavo [cifera klavaro]"
 
 msgid "Down arrow keypad"
-msgstr "Suba sagoklavo [cifera klavaro]"
+msgstr "Malsupriga sagoklavo [cifera klavaro]"
 
 msgid "Home on keypad"
 msgstr "Hejma klavo [cifera klavaro]"
@@ -544,6 +544,13 @@ msgstr "Fona procezo:"
 msgid "Error"
 msgstr "Eraro"
 
+#, c-format
+msgid "%d: %s"
+msgstr "%d: %s"
+
+msgid "&Abort"
+msgstr "Ĉ&esigi"
+
 msgid "Displays the current version"
 msgstr "Eligi la uzatan eldonon"
 
@@ -637,24 +644,27 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 "--colors Ŝlosilvorto={teksto},{fono},{atributo}:Ŝlosilvorto2=...\n"
-"Se {teksto}, {fono} aŭ {attr} estas ellasitaj, la aprioraj estas uzotaj\n"
+"Se {teksto}, {fono} aŭ {atributo} estas ellasitaj, la aprioraj estas uzotaj\n"
 "\n"
 " Ŝlosilvortoj:\n"
 "   Tutprograma:        errors, disabled, reverse, gauge, header\n"
 "                       input, inputmark, inputunchanged, commandlinemark\n"
 "                       bbarhotkey, bbarhotbutton, statusbar\n"
 "   Dosieradministrado: normal, selected, marked, markselect\n"
+"   Dialogujo:          dnormal, dfocus, dhotnormal, dhotfocus, "
+"errdhotnormal,\n"
+"                       errdhotfocus\n"
 "   Menuoj:             menunormal, menuhot, menusel, menuhotsel, "
 "menuinactive\n"
 "   Ŝprucmenuoj:        pmenunormal, pmenusel, pmenutitle\n"
 "   Tekstoredaktilo:    editnormal, editbold, editmarked, editwhitespace\n"
 "                       editlinestate, editbg, editframe, editframeactive\n"
 "                       editframedrag\n"
-"   Tekstolegilo:       viewbold, viewunderline, viewselected\n"
+"   Tekstolegilo:       viewnormal, viewbold, viewunderline, viewselected\n"
 "   Helpilo:            helpnormal, helpitalic, helpbold, helplink, "
 "helpslink\n"
 
@@ -894,6 +904,62 @@ msgstr "Diff-legilo: neprava reĝimo"
 msgid "Two files are needed to compare"
 msgstr "Du dosieroj estas bezonataj por kompari"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "&Forviŝi legosignojn"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Ordigi"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Filtri"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "&Iri al linio..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Aldoni novan"
+
+msgid "&Remove"
+msgstr "&Forigi"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Filtri"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Ordigi"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "In&versigi"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Elekti sintaksan prilumadon"
 
@@ -904,8 +970,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Reŝargi nunan sintakson >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr "Ŝarganta: %3d%%"
+
+msgid "Loading..."
+msgstr "Ŝarganta..."
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Ne eblas malfermi je %s por legi"
+
+msgid "Load file"
+msgstr "Ŝargi dosieron"
 
 #, c-format
 msgid "Error reading %s"
@@ -935,6 +1011,14 @@ msgstr "Eraro dum legi de dukto: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "Ne eblas malfermi dukton por legi: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr "Serĉanta en %s: %3d%%"
+
+#, c-format
+msgid "Searching %s"
+msgstr "Serĉanta en %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "Dosiero havas malmolajn ligilojn. Ĉu elmeti antaŭ ol konservi?"
 
@@ -953,9 +1037,8 @@ msgstr "Ne eblas malfermi dukton por skribi: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Ne eblas malfermi dosieron por skribi: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "La dosiero, kiun vi estas konservanta, ne finiĝas per nova linio"
+msgstr "La dosiero, kiun vi estas konservanta, ne finiĝas per novlinio."
 
 msgid "C&ontinue"
 msgstr "D&aŭrigi"
@@ -983,6 +1066,9 @@ msgstr "Konservi kiel"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Bloko estas tra granda, do vi eble ne povos malfari tiun agon"
+
+msgid "Collect completions"
+msgstr "Kolekti kompletigojn"
 
 msgid "&Quick save"
 msgstr "&Rapida konservado"
@@ -1204,7 +1290,7 @@ msgid "A&ll"
 msgstr "Ĉ&io"
 
 msgid "&Skip"
-msgstr "&Preterpasi"
+msgstr "Preter&lasi"
 
 msgid "Confirm replace"
 msgstr "Konfirmi anstataŭigon"
@@ -1544,6 +1630,78 @@ msgstr "ButtonBar|Forigi"
 msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|Menuzono"
 
+msgid "Breton"
+msgstr "Bretona"
+
+msgid "Czech"
+msgstr "Ĉeĥa"
+
+msgid "Welsh"
+msgstr "Kimra"
+
+msgid "Danish"
+msgstr "Dana"
+
+msgid "German"
+msgstr "Germana"
+
+msgid "Greek"
+msgstr "Greka"
+
+msgid "English"
+msgstr "Angla"
+
+msgid "British English"
+msgstr "Britangla"
+
+msgid "Canadian English"
+msgstr "Kanadangla"
+
+msgid "American English"
+msgstr "Usonangla"
+
+msgid "Esperanto"
+msgstr "Esperanto"
+
+msgid "Spanish"
+msgstr "Hispana"
+
+msgid "Faroese"
+msgstr "Feroa"
+
+msgid "French"
+msgstr "Franca"
+
+msgid "Italian"
+msgstr "Itala"
+
+msgid "Dutch"
+msgstr "Nederlanda"
+
+msgid "Norwegian"
+msgstr "Norvega"
+
+msgid "Polish"
+msgstr "Pola"
+
+msgid "Portuguese"
+msgstr "Portugala"
+
+msgid "Romanian"
+msgstr "Rumana"
+
+msgid "Russian"
+msgstr "Rusa"
+
+msgid "Slovak"
+msgstr "Slovaka"
+
+msgid "Swedish"
+msgstr "Sveda"
+
+msgid "Ukrainian"
+msgstr "Ukrajna"
+
 msgid "&Add word"
 msgstr "&Aldoni vorton"
 
@@ -1603,7 +1761,7 @@ msgid "Set &all"
 msgstr "Fari ĉ&ion"
 
 msgid "S&kip"
-msgstr "P&reterpasi"
+msgstr "P&reterlasi"
 
 msgid "&Set"
 msgstr "&Fari"
@@ -2060,15 +2218,6 @@ msgstr "Filtri"
 msgid "Set expression for filtering filenames"
 msgstr "Agordi esprimon por filtri dosiernomojn"
 
-msgid "&Files only"
-msgstr "Nur &dosierujoj"
-
-msgid "&Using shell patterns"
-msgstr "U&zi ŝelajn ŝablonojn"
-
-msgid "&Case sensitive"
-msgstr "&Usklecon ignori"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Ligi je %s al:"
@@ -2108,12 +2257,6 @@ msgstr "Krei novan dosierujon"
 
 msgid "Enter directory name:"
 msgstr "Enmetu dosierujan nomon:"
-
-msgid "Select"
-msgstr "Elekti"
-
-msgid "Unselect"
-msgstr "Malelekti"
 
 msgid "Extension file edit"
 msgstr "sufikso-dosiera redaktilo"
@@ -2199,6 +2342,9 @@ msgid ""
 msgstr ""
 "Enmetu aparaton (sen /dev/) por reatingi\n"
 "dosierojn: (F1 por detaloj)"
+
+msgid "Directory scanning"
+msgstr "Dosieruja skanado"
 
 msgid "Setup"
 msgstr "Agordo"
@@ -2334,9 +2480,6 @@ msgid ""
 msgstr ""
 "Ne eblas krei celan molan ligilon \"%s\"\n"
 "%s"
-
-msgid "&Abort"
-msgstr "Ĉ&esigi"
 
 msgid "Ski&p all"
 msgstr "Preter&lasi ĉion"
@@ -2621,16 +2764,9 @@ msgstr ""
 "Ne eblas movi dosierujon \"%s\" al \"%s\"\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Dosieruja skanado"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
-msgstr ""
-"%s\n"
-"Dosierujoj: %zd, ĉioma grando: %s"
+msgid "Directories: %zd, total size: %s"
+msgstr "Dosierujoj: %zd, ĉioma grando: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Ne eblas operacii je \"..\"!"
@@ -2737,6 +2873,12 @@ msgstr "Fonto"
 msgid "Target"
 msgstr "Celo"
 
+msgid "Deleting"
+msgstr "Foriganta"
+
+msgid "&Using shell patterns"
+msgstr "U&zi ŝelajn ŝablonojn"
+
 msgid "to:"
 msgstr "al:"
 
@@ -2788,7 +2930,7 @@ msgid "&Find recursively"
 msgstr "&Trovi rekursie"
 
 msgid "S&kip hidden"
-msgstr "P&reterpasi kaŝitan"
+msgstr "P&reterlasi kaŝitan"
 
 msgid "Content:"
 msgstr "Enhavo:"
@@ -2830,10 +2972,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] "Finita (ignoris %zd dosierujo)"
 msgstr[1] "Finita (ignoris %zd dosierujojn)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "Serĉanta en %s"
-
 msgid "Searching"
 msgstr "Serĉanta"
 
@@ -2860,9 +2998,6 @@ msgstr "&Nova ero"
 
 msgid "&Insert"
 msgstr "&Enmeti"
-
-msgid "&Remove"
-msgstr "&Forigi"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgrupo - premu enen-klavon por vidi liston"
@@ -3245,7 +3380,7 @@ msgid "&Left"
 msgstr "&Maldekstra"
 
 msgid "&Below"
-msgstr "S&uba"
+msgstr "Muls&upra"
 
 msgid "&Right"
 msgstr "D&ekstra"
@@ -3368,7 +3503,7 @@ msgid "SYMLINK"
 msgstr "MOLA LIGILO"
 
 msgid "SUB-DIR"
-msgstr "SUB-DOSIERUJO"
+msgstr "MALSUPREN"
 
 msgid "<readlink failed>"
 msgstr "<legi ligilon malsukcesis>"
@@ -3390,6 +3525,18 @@ msgstr "F&lankigi"
 
 msgid "Unknown tag on display format:"
 msgstr "Nekonata etikedo en elmontra formato:"
+
+msgid "&Files only"
+msgstr "Nur &dosierujoj"
+
+msgid "&Case sensitive"
+msgstr "&Usklecon ignori"
+
+msgid "Select"
+msgstr "Elekti"
+
+msgid "Unselect"
+msgstr "Malelekti"
 
 msgid "Do you really want to execute?"
 msgstr "Ĉu vi efekti volas plenumigi?"
@@ -3785,7 +3932,7 @@ msgstr ""
 
 #, c-format
 msgid "%s contains duplicate entries! Skipping!"
-msgstr "%s enhavas duplikatajn erojn! Preterpasanta!"
+msgstr "%s enhavas duplikatajn erojn! Preterlasanta!"
 
 #, c-format
 msgid ""
@@ -4010,9 +4157,6 @@ msgstr "sftp: Ne eblas atingi la aktualan salutnomon."
 msgid "sftp: Invalid host name."
 msgstr "sftp: Nevalida retnodnomo."
 
-msgid "sftp: Invalid port value."
-msgstr "sftp: Nevalida pordnumero."
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4201,8 +4345,8 @@ msgstr "Ne eblas krei idan procezon"
 msgid "Empty output from child filter"
 msgstr "Vaka eligo el ida filtrilo"
 
-msgid "&Line number (decimal)"
-msgstr "&Linia numero (dekuma)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "&Elcentoj"
@@ -4286,9 +4430,6 @@ msgstr ""
 "Ne eblas malfermi je \"%s\" laŭ analiza reĝimo\n"
 "%s"
 
-msgid "Seeking to search result"
-msgstr "Trovanta en serĉa rezulto"
-
 msgid "Search done"
 msgstr "Serĉo finita"
 
@@ -4298,5 +4439,5 @@ msgstr "Ĉu deiri de la komenco?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Ne eblas atingi lokan kopion de /ftp://some.host/editme.txt"
 
-#~ msgid "&Select"
-#~ msgstr "&Elekti"
+#~ msgid "sftp: Invalid port value."
+#~ msgstr "sftp: Nevalida pordnumero."

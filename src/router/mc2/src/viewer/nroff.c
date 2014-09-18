@@ -104,19 +104,14 @@ mcview_display_nroff (mcview_t * view)
     int c;
     int c_prev = 0;
     int c_next = 0;
-    struct hexedit_change_node *curr = view->change_list;
 
     mcview_display_clean (view);
     mcview_display_ruler (view);
 
     /* Find the first displayable changed byte */
     from = view->dpy_start;
-    while (curr && (curr->offset < from))
-    {
-        curr = curr->next;
-    }
 
-    tty_setcolor (NORMAL_COLOR);
+    tty_setcolor (VIEW_NORMAL_COLOR);
     for (row = 0, col = 0; row < height;)
     {
 #ifdef HAVE_CHARSET
@@ -245,7 +240,7 @@ mcview_display_nroff (mcview_t * view)
                 col--;
         }
 #endif
-        tty_setcolor (NORMAL_COLOR);
+        tty_setcolor (VIEW_NORMAL_COLOR);
     }
     view->dpy_end = from;
 }
@@ -319,8 +314,7 @@ mcview_nroff_seq_free (mcview_nroff_t ** nroff)
 {
     if (nroff == NULL || *nroff == NULL)
         return;
-    g_free (*nroff);
-    *nroff = NULL;
+    MC_PTR_FREE (*nroff);
 }
 
 /* --------------------------------------------------------------------------------------------- */

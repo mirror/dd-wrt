@@ -1,4 +1,4 @@
-.\" -*- mode: troff; coding: utf8 -*-
+.\" -*- mode: troff; coding: UTF-8 -*-
 .\"Przetłumaczone przez by Macieja Wojciechowskiego    wojciech@staszic.waw.pl
 .TH MC 1 "%DATE_OF_MAN_PAGE%" "MC Version %DISTR_VERSION%" "GNU Midnight Commander"
 .\"SKIP_SECTION"
@@ -2621,7 +2621,10 @@ marked, markselect, errors, input, reverse menunormal, menusel, menuhot, menuhot
 menuinactive, gauge;  kolory okien dialogowych: dnormal, dfocus, dhotnormal,
 dhotfocus; Kolory pomocy: helpnormal, helpitalic, helpbold, helplink,
 helpslink; Kolory podglądu: viewunderline; Specjalne tryby podświetlenia:
-executable, directory, link, device, special.
+executable, directory, link, device, special. Viewer colors are: viewnormal,
+viewbold, viewunderline, viewselected. Editor colors are: editnormal, editbold,
+editmarked, editwhitespace, editlinestate. Popup menu colors are: pmenunormal,
+pmenusel, pmenutitle.
 [nie tłumaczyłem nazw z racji tego, że trzeba je stosować w ich angielskim
 brzmieniu \- jeśli jesteś aż tak zaawansowany, użyj słownika].
 .PP

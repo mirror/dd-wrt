@@ -4,16 +4,16 @@
 #
 # Translators:
 # Slava Zanko <slavazanko@gmail.com>, 2011
-# Tadashi "ELF" Jokagi <elf@poyo.jp>, 2012
-# Tadashi "ELF" Jokagi <elf@poyo.jp>, 2011
+# Tadashi Jokagi <elf@poyo.jp>, 2012
+# Tadashi Jokagi <elf@poyo.jp>, 2011
 # Yoshitaka Yamashita <drum@magic-touch.org>, 2012
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Japanese (http://www.transifex.com/projects/p/mc/language/"
 "ja/)\n"
 "Language: ja\n"
@@ -538,6 +538,13 @@ msgstr "バックグラウンド処理:"
 msgid "Error"
 msgstr "エラー"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "中断(&A)"
+
 msgid "Displays the current version"
 msgstr "バージョンを表示"
 
@@ -631,7 +638,7 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 
@@ -845,6 +852,62 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr ""
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "次のブックマーク(&N)"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "並び替え"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "フィルター"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "行移動(&G)..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "新規追加(&A)"
+
+msgid "&Remove"
+msgstr "削除(&R)"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "フィルター"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "並び替え"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "反転(&R)"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr ""
 
@@ -855,7 +918,17 @@ msgid "< Reload Current Syntax >"
 msgstr ""
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
+msgstr ""
+
+msgid "Load file"
 msgstr ""
 
 #, c-format
@@ -883,6 +956,14 @@ msgstr ""
 #, c-format
 msgid "Cannot open pipe for reading: %s"
 msgstr ""
+
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "%sを検索中"
 
 msgid "File has hard-links. Detach before saving?"
 msgstr ""
@@ -930,6 +1011,9 @@ msgid "Save As"
 msgstr "別名で保存"
 
 msgid "Block is large, you may not be able to undo this action"
+msgstr ""
+
+msgid "Collect completions"
 msgstr ""
 
 msgid "&Quick save"
@@ -1481,6 +1565,78 @@ msgstr ""
 msgid "ButtonBar|PullDn"
 msgstr ""
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr ""
 
@@ -1987,15 +2143,6 @@ msgstr "フィルター"
 msgid "Set expression for filtering filenames"
 msgstr ""
 
-msgid "&Files only"
-msgstr "ファイルのみ(&F)"
-
-msgid "&Using shell patterns"
-msgstr "シェルパターンを使用(&U)"
-
-msgid "&Case sensitive"
-msgstr ""
-
 #, c-format
 msgid "Link %s to:"
 msgstr ""
@@ -2035,12 +2182,6 @@ msgstr "新規ディレクトリの作成"
 
 msgid "Enter directory name:"
 msgstr "ディレクトリー名の入力:"
-
-msgid "Select"
-msgstr "選択"
-
-msgid "Unselect"
-msgstr "選択解除"
 
 msgid "Extension file edit"
 msgstr "拡張ファイルの編集"
@@ -2119,6 +2260,9 @@ msgstr ""
 msgid ""
 "Enter device (without /dev/) to undelete\n"
 "files on: (F1 for details)"
+msgstr ""
+
+msgid "Directory scanning"
 msgstr ""
 
 msgid "Setup"
@@ -2241,9 +2385,6 @@ msgid ""
 "Cannot create target symlink \"%s\"\n"
 "%s"
 msgstr ""
-
-msgid "&Abort"
-msgstr "中断(&A)"
 
 msgid "Ski&p all"
 msgstr "すべて飛ばす(&P)"
@@ -2461,13 +2602,8 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Directory scanning"
-msgstr ""
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2575,6 +2711,12 @@ msgstr "元"
 msgid "Target"
 msgstr "ターゲット"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "シェルパターンを使用(&U)"
+
 msgid "to:"
 msgstr "to:"
 
@@ -2667,10 +2809,6 @@ msgid "Finished (ignored %zd directory)"
 msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] ""
 
-#, c-format
-msgid "Searching %s"
-msgstr "%sを検索中"
-
 msgid "Searching"
 msgstr "検索"
 
@@ -2697,9 +2835,6 @@ msgstr "新しいエントリー(&E)"
 
 msgid "&Insert"
 msgstr "挿入(&I)"
-
-msgid "&Remove"
-msgstr "削除(&R)"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "サブグループ - ENTER を押せばリストが表示されます"
@@ -3219,6 +3354,18 @@ msgstr ""
 
 msgid "Unknown tag on display format:"
 msgstr ""
+
+msgid "&Files only"
+msgstr "ファイルのみ(&F)"
+
+msgid "&Case sensitive"
+msgstr ""
+
+msgid "Select"
+msgstr "選択"
+
+msgid "Unselect"
+msgstr "選択解除"
 
 msgid "Do you really want to execute?"
 msgstr "本当に実行しますか?"
@@ -3816,9 +3963,6 @@ msgstr ""
 msgid "sftp: Invalid host name."
 msgstr ""
 
-msgid "sftp: Invalid port value."
-msgstr ""
-
 #, c-format
 msgid "sftp: %s"
 msgstr ""
@@ -3999,8 +4143,8 @@ msgstr ""
 msgid "Empty output from child filter"
 msgstr ""
 
-msgid "&Line number (decimal)"
-msgstr "行番号(10進数)(&L)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr ""
@@ -4079,9 +4223,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Seeking to search result"
-msgstr ""
-
 msgid "Search done"
 msgstr "検索終了"
 
@@ -4090,6 +4231,3 @@ msgstr "初めから続けますか?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
-
-#~ msgid "&Select"
-#~ msgstr "選択(&S)"

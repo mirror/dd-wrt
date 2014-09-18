@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-03-08 14:35+0000\n"
-"Last-Translator: David Martin <dhmartina@yahoo.es>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Spanish (http://www.transifex.com/projects/p/mc/language/"
 "es/)\n"
 "Language: es\n"
@@ -549,6 +549,13 @@ msgstr "Procesos en 2º plano"
 msgid "Error"
 msgstr "Error"
 
+#, c-format
+msgid "%d: %s"
+msgstr "%d: %s"
+
+msgid "&Abort"
+msgstr "&Abortar"
+
 msgid "Displays the current version"
 msgstr "Mostrar el número de versión"
 
@@ -642,7 +649,7 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 "--colors CONTEXTO={FRENTE},{FONDO},{ATRIBUTOS}:CONTEXTO2=...\n"
@@ -664,7 +671,7 @@ msgstr ""
 "   Editor:            editnormal, editbold, editmarked, editwhitespace,\n"
 "                      editlinestate, editbg, editframe, editframeactive\n"
 "                      editframedrag\n"
-"   Visor:             viewbold, viewunderline, viewselected\n"
+"   Visor:             viewnormal, viewbold, viewunderline, viewselected\n"
 "   Ayuda:             helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
@@ -905,6 +912,62 @@ msgstr ""
 "Para comparar se necesita\n"
 "un archivo en cada panel"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "borrar &Todas las marcas"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Ordenar"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Filtro"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "ir a la &Línea..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Añadir nuevo..."
+
+msgid "&Remove"
+msgstr "&Quitar"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Filtro"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Ordenar"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "inve&Rtir"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Sintaxis coloreada"
 
@@ -915,8 +978,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Releer sintaxis >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr "Cargando: %3d%%"
+
+msgid "Loading..."
+msgstr "Cargando..."
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Imposible abrir %s para lectura"
+
+msgid "Load file"
+msgstr "Cargar archivo"
 
 #, c-format
 msgid "Error reading %s"
@@ -946,6 +1019,14 @@ msgstr "Error al leer en tubería: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "Imposible abrir tubería para lectura: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr "Buscando %s: %3d%%"
+
+#, c-format
+msgid "Searching %s"
+msgstr "Buscando %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "Hay otros enlaces al archivo. ¿Desea separarlo al guardar?"
 
@@ -964,7 +1045,6 @@ msgstr "Imposible abrir tubería para escritura: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Imposible abrir archivo para escritura: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
 msgstr "El archivo a guardar no acaba con salto de línea"
 
@@ -994,6 +1074,9 @@ msgstr "Guardar como"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "El bloque es enorme, quizás no se pueda deshacer esta acción."
+
+msgid "Collect completions"
+msgstr "Encontrar finales"
 
 msgid "&Quick save"
 msgstr "guardar &Rápido"
@@ -1531,7 +1614,7 @@ msgid "About"
 msgstr "Acerca de..."
 
 msgid "Open files"
-msgstr "Abrir archivos"
+msgstr "Archivos abiertos"
 
 msgid "Edit: "
 msgstr "Edición:"
@@ -1554,6 +1637,78 @@ msgstr "Borrar"
 msgid "ButtonBar|PullDn"
 msgstr "Menú"
 
+msgid "Breton"
+msgstr "Bretón"
+
+msgid "Czech"
+msgstr "Checo"
+
+msgid "Welsh"
+msgstr "Galés"
+
+msgid "Danish"
+msgstr "Danés"
+
+msgid "German"
+msgstr "Alemán"
+
+msgid "Greek"
+msgstr "Griego"
+
+msgid "English"
+msgstr "Inglés"
+
+msgid "British English"
+msgstr "Inglés británico"
+
+msgid "Canadian English"
+msgstr "Inglés canadiense"
+
+msgid "American English"
+msgstr "Inglés americano"
+
+msgid "Esperanto"
+msgstr "Esperanto"
+
+msgid "Spanish"
+msgstr "Español"
+
+msgid "Faroese"
+msgstr "Feroés"
+
+msgid "French"
+msgstr "Francés"
+
+msgid "Italian"
+msgstr "Italiano"
+
+msgid "Dutch"
+msgstr "Danés"
+
+msgid "Norwegian"
+msgstr "Noruego"
+
+msgid "Polish"
+msgstr "Polaco"
+
+msgid "Portuguese"
+msgstr "Portugués"
+
+msgid "Romanian"
+msgstr "Rumano"
+
+msgid "Russian"
+msgstr "Ruso"
+
+msgid "Slovak"
+msgstr "Eslovaco"
+
+msgid "Swedish"
+msgstr "Sueco"
+
+msgid "Ukrainian"
+msgstr "Ucraniano"
+
 msgid "&Add word"
 msgstr "&Aprender"
 
@@ -1567,7 +1722,7 @@ msgid "Check word"
 msgstr "Revisar palabra"
 
 msgid "Suggest"
-msgstr "Sugerir"
+msgstr "Sugerencias"
 
 msgid "Select language"
 msgstr "Elegir idioma"
@@ -2070,15 +2225,6 @@ msgstr "Filtro"
 msgid "Set expression for filtering filenames"
 msgstr "Teclee la expresión para filtrar nombres de archivo"
 
-msgid "&Files only"
-msgstr "sólo &Archivos"
-
-msgid "&Using shell patterns"
-msgstr "&Usando patrones shell"
-
-msgid "&Case sensitive"
-msgstr "distinguir &May/min"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Crear enlace a %s como:"
@@ -2118,12 +2264,6 @@ msgstr "Crear directorio"
 
 msgid "Enter directory name:"
 msgstr "Teclee el nombre del directorio:"
-
-msgid "Select"
-msgstr "Seleccionar grupo"
-
-msgid "Unselect"
-msgstr "De-seleccionar grupo"
 
 msgid "Extension file edit"
 msgstr "Editar extensiones"
@@ -2209,6 +2349,9 @@ msgid ""
 msgstr ""
 "Introduzca el dispositivo (sin /dev/) donde quiere\n"
 "recuperar archivos: (F1 para más detalles)"
+
+msgid "Directory scanning"
+msgstr "Analizando directorio"
 
 msgid "Setup"
 msgstr "Configuración"
@@ -2346,9 +2489,6 @@ msgid ""
 msgstr ""
 "Imposible crear el enlace simbólico destino «%s»\n"
 "%s"
-
-msgid "&Abort"
-msgstr "&Abortar"
 
 msgid "Ski&p all"
 msgstr "saltar &Todos"
@@ -2632,16 +2772,9 @@ msgstr ""
 "Imposible mover el directorio «%s» a «%s»\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Analizando directorio"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
-msgstr ""
-"%s\n"
-"Directorios: %zd, tamaño total: %s"
+msgid "Directories: %zd, total size: %s"
+msgstr "Directorios: %zd, tamaño total: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "¡Imposible operar sobre «..»!"
@@ -2748,6 +2881,12 @@ msgstr "Origen"
 msgid "Target"
 msgstr "Destino"
 
+msgid "Deleting"
+msgstr "Eliminando"
+
+msgid "&Using shell patterns"
+msgstr "&Usando patrones shell"
+
 msgid "to:"
 msgstr "a:"
 
@@ -2841,10 +2980,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] "Terminado (%zd directorio ignorado)"
 msgstr[1] "Terminado (%zd directorios ignorados)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "Buscando %s"
-
 msgid "Searching"
 msgstr "Buscando"
 
@@ -2871,9 +3006,6 @@ msgstr "&Nuevo"
 
 msgid "&Insert"
 msgstr "&Insertar"
-
-msgid "&Remove"
-msgstr "&Quitar"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgrupo - presione ENTER para ver la lista"
@@ -3097,7 +3229,7 @@ msgid "SM&B link..."
 msgstr "conexión por &SMB..."
 
 msgid "Paneli&ze"
-msgstr "búsquedas e&Xternas"
+msgstr "búsqueda e&Xterna"
 
 msgid "&Rescan"
 msgstr "&Actualizar"
@@ -3178,7 +3310,7 @@ msgid "C&ompare files"
 msgstr "c&Omparar archivos"
 
 msgid "E&xternal panelize"
-msgstr "búsquedas e&Xternas..."
+msgstr "búsqueda e&Xterna..."
 
 msgid "Show directory s&izes"
 msgstr "mostrar &Tamaños de los directorios"
@@ -3397,10 +3529,22 @@ msgstr[0] "%s en %d archivo"
 msgstr[1] "%s en %d archivos"
 
 msgid "Panelize"
-msgstr "Búsquedas externas"
+msgstr "Búsqueda externa"
 
 msgid "Unknown tag on display format:"
 msgstr "Campo desconocido en el formato de pantalla:"
+
+msgid "&Files only"
+msgstr "sólo &Archivos"
+
+msgid "&Case sensitive"
+msgstr "distinguir &May/min"
+
+msgid "Select"
+msgstr "Seleccionar grupo"
+
+msgid "Unselect"
+msgstr "De-seleccionar grupo"
 
 msgid "Do you really want to execute?"
 msgstr "¿Realmente quiere ejecutar?"
@@ -3412,7 +3556,7 @@ msgid "&Add new"
 msgstr "&Añadir nuevo..."
 
 msgid "External panelize"
-msgstr "Búsquedas externas"
+msgstr "Búsqueda externa"
 
 msgid "Other command"
 msgstr "Otro comando"
@@ -3433,7 +3577,7 @@ msgid "Pipe close failed"
 msgstr "Fallo al cerrar la tubería"
 
 msgid "Cannot run external panelize in a non-local directory"
-msgstr "Imposible ejecutar búsquedas externas en un directorio no local"
+msgstr "Imposible ejecutar una búsqueda externa en un directorio no local"
 
 msgid "Modified git files"
 msgstr "Archivos git modificados"
@@ -4020,9 +4164,6 @@ msgstr "sftp: No se pudo obtener el nombre de usuario actual."
 msgid "sftp: Invalid host name."
 msgstr "sftp: Nombre de máquina incorrecto"
 
-msgid "sftp: Invalid port value."
-msgstr "sftp: Número de puerto no válido"
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4211,8 +4352,8 @@ msgstr "Imposible ejecutar el proceso hijo"
 msgid "Empty output from child filter"
 msgstr "Salida del filtro vacía"
 
-msgid "&Line number (decimal)"
-msgstr "número de &Línea (decimal)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "po&Rcentaje del archivo"
@@ -4296,9 +4437,6 @@ msgstr ""
 "Imposible abrir «%s» para analizar\n"
 "%s"
 
-msgid "Seeking to search result"
-msgstr "Avanzando al resultado de búsqueda"
-
 msgid "Search done"
 msgstr "Búsqueda finalizada"
 
@@ -4308,5 +4446,5 @@ msgstr "¿Continuar desde el principio?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Imposible obtener una copia local de /ftp://some.host/editme.txt"
 
-#~ msgid "&Select"
-#~ msgstr "&Seleccionar"
+#~ msgid "sftp: Invalid port value."
+#~ msgstr "sftp: Número de puerto no válido"

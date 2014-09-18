@@ -3,17 +3,17 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# EAAL <aryaz.egh@gmail.com>, 2012
-# monta2009 <monta2009@gmail.com>, 2012
+# Aryaz Eghbali <aryaz.egh@gmail.com>, 2012
+# Mohammadreza MontazeriShatoori <monta2009@gmail.com>, 2012
 # Sina Saharkhiz <sinas1991@gmail.com>, 2012-2013
 # Slava Zanko <slavazanko@gmail.com>, 2012
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Persian (http://www.transifex.com/projects/p/mc/language/"
 "fa/)\n"
 "Language: fa\n"
@@ -529,6 +529,13 @@ msgstr "فرآیند پس‌زمینه:"
 msgid "Error"
 msgstr "خطا"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr ""
+
 msgid "Displays the current version"
 msgstr "نسخه‌ی فعلی را نشان می‌دهد"
 
@@ -622,7 +629,7 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 
@@ -836,6 +843,58 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr "دو فایل برای مقایسه لازم است"
 
+msgid "Bookmarks"
+msgstr ""
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "مرتب‌سازی"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "فیلتر"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+msgid "&Go to"
+msgstr ""
+
+msgid "&Add"
+msgstr ""
+
+msgid "&Remove"
+msgstr ""
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "فیلتر"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "مرتب‌سازی"
+
+msgid "Re&verse"
+msgstr ""
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr ""
 
@@ -846,7 +905,17 @@ msgid "< Reload Current Syntax >"
 msgstr ""
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
+msgstr ""
+
+msgid "Load file"
 msgstr ""
 
 #, c-format
@@ -875,6 +944,14 @@ msgstr ""
 msgid "Cannot open pipe for reading: %s"
 msgstr ""
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "در حال جستجوی %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr ""
 
@@ -893,9 +970,8 @@ msgstr ""
 msgid "Cannot open file for writing: %s"
 msgstr "امکان باز کردن فایل برای نوشتن وجود ندارد: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "فایلی که در حال ذخیره‌اش هستید، با خط خالی به پایان نرسیده است"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "ادامه"
@@ -922,6 +998,9 @@ msgid "Save As"
 msgstr "ذخیره به عنوان"
 
 msgid "Block is large, you may not be able to undo this action"
+msgstr ""
+
+msgid "Collect completions"
 msgstr ""
 
 msgid "&Quick save"
@@ -1473,6 +1552,78 @@ msgstr ""
 msgid "ButtonBar|PullDn"
 msgstr ""
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr ""
 
@@ -1975,15 +2126,6 @@ msgstr "فیلتر"
 msgid "Set expression for filtering filenames"
 msgstr ""
 
-msgid "&Files only"
-msgstr ""
-
-msgid "&Using shell patterns"
-msgstr ""
-
-msgid "&Case sensitive"
-msgstr ""
-
 #, c-format
 msgid "Link %s to:"
 msgstr ""
@@ -2023,12 +2165,6 @@ msgstr "ساخت پوشه‌ی جدید"
 
 msgid "Enter directory name:"
 msgstr "نام پوشه را وارد کنید:"
-
-msgid "Select"
-msgstr "انتخاب"
-
-msgid "Unselect"
-msgstr ""
 
 msgid "Extension file edit"
 msgstr ""
@@ -2107,6 +2243,9 @@ msgstr ""
 msgid ""
 "Enter device (without /dev/) to undelete\n"
 "files on: (F1 for details)"
+msgstr ""
+
+msgid "Directory scanning"
 msgstr ""
 
 msgid "Setup"
@@ -2226,9 +2365,6 @@ msgstr ""
 msgid ""
 "Cannot create target symlink \"%s\"\n"
 "%s"
-msgstr ""
-
-msgid "&Abort"
 msgstr ""
 
 msgid "Ski&p all"
@@ -2447,13 +2583,8 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Directory scanning"
-msgstr ""
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2561,6 +2692,12 @@ msgstr ""
 msgid "Target"
 msgstr ""
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr ""
+
 msgid "to:"
 msgstr "به:"
 
@@ -2653,10 +2790,6 @@ msgid "Finished (ignored %zd directory)"
 msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] ""
 
-#, c-format
-msgid "Searching %s"
-msgstr "در حال جستجوی %s"
-
 msgid "Searching"
 msgstr "در حال جستجو"
 
@@ -2683,9 +2816,6 @@ msgstr ""
 
 msgid "&Insert"
 msgstr "درج"
-
-msgid "&Remove"
-msgstr ""
 
 msgid "Subgroup - press ENTER to see list"
 msgstr ""
@@ -3204,6 +3334,18 @@ msgid "Panelize"
 msgstr ""
 
 msgid "Unknown tag on display format:"
+msgstr ""
+
+msgid "&Files only"
+msgstr ""
+
+msgid "&Case sensitive"
+msgstr ""
+
+msgid "Select"
+msgstr "انتخاب"
+
+msgid "Unselect"
 msgstr ""
 
 msgid "Do you really want to execute?"
@@ -3769,9 +3911,6 @@ msgstr ""
 msgid "sftp: Invalid host name."
 msgstr ""
 
-msgid "sftp: Invalid port value."
-msgstr ""
-
 #, c-format
 msgid "sftp: %s"
 msgstr ""
@@ -3952,7 +4091,7 @@ msgstr ""
 msgid "Empty output from child filter"
 msgstr ""
 
-msgid "&Line number (decimal)"
+msgid "&Line number"
 msgstr ""
 
 msgid "Pe&rcents"
@@ -4026,9 +4165,6 @@ msgstr ""
 msgid ""
 "Cannot open \"%s\" in parse mode\n"
 "%s"
-msgstr ""
-
-msgid "Seeking to search result"
 msgstr ""
 
 msgid "Search done"

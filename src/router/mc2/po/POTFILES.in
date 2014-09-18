@@ -11,9 +11,7 @@ lib/tty/key.c
 lib/tty/tty.c
 lib/tty/tty-slang.c
 lib/utilunix.c
-lib/vfs/dir/entry.c
 lib/vfs/direntry.c
-lib/vfs/dir/utils.c
 lib/vfs/interface.c
 lib/vfs/parse_ls_vga.c
 lib/vfs/utilvfs.c
@@ -27,6 +25,7 @@ src/background.c
 src/diffviewer/internal.h
 src/diffviewer/search.c
 src/diffviewer/ydiff.c
+src/editor/bookmark_list.c
 src/editor/choosesyntax.c
 src/editor/edit.c
 src/editor/editcmd.c
@@ -73,7 +72,7 @@ src/vfs/extfs/extfs.c
 src/vfs/fish/fish.c
 src/vfs/ftpfs/ftpfs.c
 src/vfs/sfs/sfs.c
-src/vfs/sftpfs/config_parcer.c
+src/vfs/sftpfs/config_parser.c
 src/vfs/sftpfs/connection.c
 src/vfs/sftpfs/file.c
 src/vfs/sftpfs/vfs_class.c

@@ -9,9 +9,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Basque (http://www.transifex.com/projects/p/mc/language/eu/)\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
@@ -544,6 +544,13 @@ msgstr "Atzeko planoko prozesua:"
 msgid "Error"
 msgstr "Errorea"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "&Abortatu"
+
 msgid "Displays the current version"
 msgstr "Uneko bertsioa bistaratzen du"
 
@@ -637,7 +644,7 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 
@@ -873,6 +880,62 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr "Bi fitxategi behar dira konparatzeko"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "&Hustu liburu-markak"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Sailkatu"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Iragazi"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "&Joan...lerrora"
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Gehitu berria"
+
+msgid "&Remove"
+msgstr "Ke&ndu"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Iragazi"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Sailkatu"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "&Alderantzikatu"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Hautatu sintaxi nabarmentzea"
 
@@ -883,8 +946,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Birzamatu uneko sintaxia >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "%s irakurtzeko ezin ireki"
+
+msgid "Load file"
+msgstr ""
 
 #, c-format
 msgid "Error reading %s"
@@ -912,6 +985,14 @@ msgstr "Akatsa hoditik irakurtzerakoan: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "Hodia irakurtzeko ezin ireki: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "%s bilatzen"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "Fitxategiak esteka-trinkoak dauzka. Deslotu gorde aurretik?"
 
@@ -930,9 +1011,8 @@ msgstr "Hodia idazteko ezin ireki: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Fitxategia idazteko ezin ireki: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "Gordetzen ari zaren fitxategia ez da lerro-berri batekin amaitzen"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "&Jarraitu"
@@ -960,6 +1040,9 @@ msgstr "Gorde honela"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Blokea handia da, ezingo duzu ekintza hau desegin"
+
+msgid "Collect completions"
+msgstr ""
 
 msgid "&Quick save"
 msgstr "Gordeketa &azkarra"
@@ -1516,6 +1599,78 @@ msgstr "Ezabatu"
 msgid "ButtonBar|PullDn"
 msgstr "Jaitsi"
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr ""
 
@@ -2034,15 +2189,6 @@ msgstr "Iragazi"
 msgid "Set expression for filtering filenames"
 msgstr "Ezarri fitxategi izenak iragazteko adierazpena"
 
-msgid "&Files only"
-msgstr "&Fitxategiak soilik"
-
-msgid "&Using shell patterns"
-msgstr "&Shell ereduak erabiltzen"
-
-msgid "&Case sensitive"
-msgstr "Berei&zi maius/minus"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Estekatu %s hona:"
@@ -2082,12 +2228,6 @@ msgstr "Sortu direktorio berria"
 
 msgid "Enter directory name:"
 msgstr "Sartu direktorio izena:"
-
-msgid "Select"
-msgstr "Hautatu"
-
-msgid "Unselect"
-msgstr "Desegin hautaketa"
 
 msgid "Extension file edit"
 msgstr "Editatu luzapen fitxategia"
@@ -2173,6 +2313,9 @@ msgid ""
 msgstr ""
 "Sartu gailua (/dev/ gabe) nondik fitxategiak\n"
 "berreskuratuko diren: (F1 xehetasunetarako)"
+
+msgid "Directory scanning"
+msgstr "Direktorio azterketa"
 
 msgid "Setup"
 msgstr "Ezarpena"
@@ -2310,9 +2453,6 @@ msgid ""
 msgstr ""
 "\"%s\" helburu esteka sinbolikoa ezin sortu\n"
 "%s"
-
-msgid "&Abort"
-msgstr "&Abortatu"
 
 msgid "Ski&p all"
 msgstr "Sa&hiestu guztia"
@@ -2592,13 +2732,8 @@ msgstr ""
 "\"%s\" direktorioa \"%s\"-ra ezin mugitu\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Direktorio azterketa"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2706,6 +2841,12 @@ msgstr "Iturburua"
 msgid "Target"
 msgstr "Helburua"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "&Shell ereduak erabiltzen"
+
 msgid "to:"
 msgstr "hona:"
 
@@ -2799,10 +2940,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] "Amaituta (direktorio %zd baztertuta)"
 msgstr[1] "Amaituta (%zd direktorio baztertuta)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "%s bilatzen"
-
 msgid "Searching"
 msgstr "Bilatzen"
 
@@ -2829,9 +2966,6 @@ msgstr "&Sarrera berria"
 
 msgid "&Insert"
 msgstr "T&xertatu"
-
-msgid "&Remove"
-msgstr "Ke&ndu"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Azpitaldea - sakatu SARTU zerrenda ikusteko"
@@ -3355,6 +3489,18 @@ msgstr "Panelatu"
 
 msgid "Unknown tag on display format:"
 msgstr "Etiketa ezezaguna bistaratzeko formatuan:"
+
+msgid "&Files only"
+msgstr "&Fitxategiak soilik"
+
+msgid "&Case sensitive"
+msgstr "Berei&zi maius/minus"
+
+msgid "Select"
+msgstr "Hautatu"
+
+msgid "Unselect"
+msgstr "Desegin hautaketa"
 
 msgid "Do you really want to execute?"
 msgstr "Beneta exekutatu nahi duzu?"
@@ -3973,9 +4119,6 @@ msgstr ""
 msgid "sftp: Invalid host name."
 msgstr ""
 
-msgid "sftp: Invalid port value."
-msgstr ""
-
 #, c-format
 msgid "sftp: %s"
 msgstr ""
@@ -4165,8 +4308,8 @@ msgstr "Ezin sortu ume prozesua"
 msgid "Empty output from child filter"
 msgstr "Ume iragazkiaren irteera hutsa"
 
-msgid "&Line number (decimal)"
-msgstr "&Lerro zenbakia (hamartarra)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "Eh&unekoak"
@@ -4248,9 +4391,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Seeking to search result"
-msgstr "Bilaketa emaitzetan bilatzen"
-
 msgid "Search done"
 msgstr "Bilaketa eginda"
 
@@ -4259,6 +4399,3 @@ msgstr "Hasieratik jarraitu?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
-
-#~ msgid "&Select"
-#~ msgstr "&Hautatu"

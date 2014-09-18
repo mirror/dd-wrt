@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/projects/p/mc/"
 "language/pt_BR/)\n"
 "Language: pt_BR\n"
@@ -538,6 +538,13 @@ msgstr "Processo em segundo plano:"
 msgid "Error"
 msgstr "Erro"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "C&Ancelar"
+
 msgid "Displays the current version"
 msgstr "Mostra a versão atual"
 
@@ -631,7 +638,7 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 
@@ -854,6 +861,60 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr "Dois arquivos são necessários para comparar"
 
+msgid "Bookmarks"
+msgstr ""
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Ordenar"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Filtro"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+msgid "&Go to"
+msgstr ""
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Adicionar Novo"
+
+msgid "&Remove"
+msgstr "&Remover"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Filtro"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Ordenar"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "&Reversa"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Escolha sintaxe de realce"
 
@@ -864,8 +925,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Recarregar Sintaxe Atual >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Não foi possível abrir %s para leitura"
+
+msgid "Load file"
+msgstr ""
 
 #, c-format
 msgid "Error reading %s"
@@ -893,6 +964,14 @@ msgstr "Erro na leitura a partir do pipe: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "Não foi possível abrir pipe para leitura: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "Examinando %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "Arquivo tem hard-links. Desatar antes de salvar?"
 
@@ -911,9 +990,8 @@ msgstr "Não foi possível abrir pipe para escrita: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Não foi possível abrir arquivo para escrita: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "O arquivo que você está salvando não termina com nova linha"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "C&ontinuar"
@@ -941,6 +1019,9 @@ msgstr "Salvar Como"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "O bloco é grande, você pode não ser capaz de desfazer esta ação"
+
+msgid "Collect completions"
+msgstr ""
 
 msgid "&Quick save"
 msgstr ""
@@ -1494,6 +1575,78 @@ msgstr "ButtonBar|Deletar"
 msgid "ButtonBar|PullDn"
 msgstr ""
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr ""
 
@@ -2008,15 +2161,6 @@ msgstr "Filtro"
 msgid "Set expression for filtering filenames"
 msgstr "Defina expressão para filtrar nome de arquivos"
 
-msgid "&Files only"
-msgstr "Apenas &arquivos"
-
-msgid "&Using shell patterns"
-msgstr "&Usando máscaras de ambiente de trabalho"
-
-msgid "&Case sensitive"
-msgstr ""
-
 #, c-format
 msgid "Link %s to:"
 msgstr ""
@@ -2056,12 +2200,6 @@ msgstr "Criar um novo diretório"
 
 msgid "Enter directory name:"
 msgstr "Insira nome de diretório"
-
-msgid "Select"
-msgstr "Selecionar"
-
-msgid "Unselect"
-msgstr "Desselecionar"
 
 msgid "Extension file edit"
 msgstr "Editar extensão de arquivos"
@@ -2145,6 +2283,9 @@ msgid ""
 "Enter device (without /dev/) to undelete\n"
 "files on: (F1 for details)"
 msgstr ""
+
+msgid "Directory scanning"
+msgstr "Escaneando diretório"
 
 msgid "Setup"
 msgstr "Configuração"
@@ -2272,9 +2413,6 @@ msgid ""
 msgstr ""
 "Não foi possível criar alvo symlink \"%s\"\n"
 "%s"
-
-msgid "&Abort"
-msgstr "C&Ancelar"
 
 msgid "Ski&p all"
 msgstr ""
@@ -2552,13 +2690,8 @@ msgstr ""
 "Não foi possível mover o diretório \"%s\" para \"%s\"\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Escaneando diretório"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2666,6 +2799,12 @@ msgstr "Origem"
 msgid "Target"
 msgstr "Destino"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "&Usando máscaras de ambiente de trabalho"
+
 msgid "to:"
 msgstr "para:"
 
@@ -2761,10 +2900,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] ""
 msgstr[1] ""
 
-#, c-format
-msgid "Searching %s"
-msgstr "Examinando %s"
-
 msgid "Searching"
 msgstr "Procurando"
 
@@ -2791,9 +2926,6 @@ msgstr ""
 
 msgid "&Insert"
 msgstr "&Inserir"
-
-msgid "&Remove"
-msgstr "&Remover"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgrupo - pressione ENTER para ver lista"
@@ -3317,6 +3449,18 @@ msgstr ""
 
 msgid "Unknown tag on display format:"
 msgstr ""
+
+msgid "&Files only"
+msgstr "Apenas &arquivos"
+
+msgid "&Case sensitive"
+msgstr ""
+
+msgid "Select"
+msgstr "Selecionar"
+
+msgid "Unselect"
+msgstr "Desselecionar"
 
 msgid "Do you really want to execute?"
 msgstr ""
@@ -3921,9 +4065,6 @@ msgstr ""
 msgid "sftp: Invalid host name."
 msgstr ""
 
-msgid "sftp: Invalid port value."
-msgstr ""
-
 #, c-format
 msgid "sftp: %s"
 msgstr ""
@@ -4112,7 +4253,7 @@ msgstr ""
 msgid "Empty output from child filter"
 msgstr ""
 
-msgid "&Line number (decimal)"
+msgid "&Line number"
 msgstr ""
 
 msgid "Pe&rcents"
@@ -4186,9 +4327,6 @@ msgstr ""
 msgid ""
 "Cannot open \"%s\" in parse mode\n"
 "%s"
-msgstr ""
-
-msgid "Seeking to search result"
 msgstr ""
 
 msgid "Search done"
