@@ -3,16 +3,16 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# mcrapet <mcrapet@gmail.com>, 2013
+# Matthieu Crapet <mcrapet@gmail.com>, 2013-2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
-# Stéphane Aulery, 2012
+# lkppo, 2012
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: French (http://www.transifex.com/projects/p/mc/language/fr/)\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
@@ -538,6 +538,13 @@ msgstr "Processus en tâche de fond:"
 msgid "Error"
 msgstr "Erreur"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "&Interrompre"
+
 msgid "Displays the current version"
 msgstr "Affiche le numéro de la version courante"
 
@@ -631,7 +638,7 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 
@@ -854,6 +861,62 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr "Deux fichiers sont nécessaires à la comparaison"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "Supprimer tous les marque-pages"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr " Trier"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Filtre"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "&Aller à la ligne..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Ajouter un nouveau"
+
+msgid "&Remove"
+msgstr "&Supprimer"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Filtre"
+
+#, fuzzy
+msgid "&Sort"
+msgstr " Trier"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "Inve&Rsé"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Choisir la coloration syntaxique"
 
@@ -864,8 +927,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Recharger la syntaxe courante >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Impossible d'ouvrir %s en lecture"
+
+msgid "Load file"
+msgstr ""
 
 #, c-format
 msgid "Error reading %s"
@@ -893,6 +966,14 @@ msgstr "Erreur de lecture dans le tube: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "Impossible d'ouvrir le tube pour lire: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "Recherche %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr ""
 
@@ -911,10 +992,8 @@ msgstr "Impossible d'ouvrir le tube en écriture: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Impossible d'ouvrir le fichier en écriture: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
 msgstr ""
-"Le fichier que vous enregistré ne se termine pas par une nouvelle ligne"
 
 msgid "C&ontinue"
 msgstr "C&ontinuer"
@@ -941,6 +1020,9 @@ msgid "Save As"
 msgstr "Enregistrer sous"
 
 msgid "Block is large, you may not be able to undo this action"
+msgstr ""
+
+msgid "Collect completions"
 msgstr ""
 
 msgid "&Quick save"
@@ -1373,7 +1455,7 @@ msgid "&Menu file"
 msgstr "Fichier &Menu"
 
 msgid "&Save setup"
-msgstr "Enregi&Strer la configuration"
+msgstr "Enregi&strer la configuration"
 
 msgid "&File"
 msgstr "&Fichier"
@@ -1496,6 +1578,78 @@ msgstr "ButtonBar|Sup"
 
 msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|MenuDer"
+
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
 
 msgid "&Add word"
 msgstr "&Ajout d'un mot"
@@ -1682,7 +1836,7 @@ msgid "Skin:"
 msgstr ""
 
 msgid "Appearance"
-msgstr ""
+msgstr "Apparence"
 
 msgid "Case &insensitive"
 msgstr "Insens&ible à la casse"
@@ -1798,7 +1952,7 @@ msgid "Confirmation|E&xit"
 msgstr "Confirmation|&Quitter"
 
 msgid "Confirmation|Di&rectory hotlist delete"
-msgstr ""
+msgstr "Confirmation|E&ffacer un répertoire de la hotlist"
 
 msgid "Confirmation|&History cleanup"
 msgstr "Confirmation|Effacer l'&historique"
@@ -2005,15 +2159,6 @@ msgstr "Filtre"
 msgid "Set expression for filtering filenames"
 msgstr " Expression pour filtrer les noms des fichiers"
 
-msgid "&Files only"
-msgstr "&Fichiers seulement"
-
-msgid "&Using shell patterns"
-msgstr "&Utiliser les « shell patterns »"
-
-msgid "&Case sensitive"
-msgstr "Respect de la &Casse "
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Lien %s vers:"
@@ -2054,12 +2199,6 @@ msgstr "Créer un nouveau répertoire"
 msgid "Enter directory name:"
 msgstr " Saisissez le nom du répertoire :"
 
-msgid "Select"
-msgstr "Sélectionner"
-
-msgid "Unselect"
-msgstr "Désélectionner"
-
 msgid "Extension file edit"
 msgstr "Éditer les extensions de fichiers"
 
@@ -2070,7 +2209,7 @@ msgid "&System Wide"
 msgstr "Pour tout le &Système"
 
 msgid "Highlighting groups file edit"
-msgstr ""
+msgstr "Édition du fichier pour la coloration syntaxique"
 
 msgid "Which highlighting file you want to edit?"
 msgstr " Quel fichier de coloration syntaxique voulez-vous éditer ? "
@@ -2114,7 +2253,7 @@ msgstr "  édition de lien symbolique, incapable d'enlever %s : %s "
 
 #, c-format
 msgid "edit symlink: %s"
-msgstr " éditer le lien symbolique : %s "
+msgstr "Éditer le lien symbolique : %s"
 
 #, c-format
 msgid "'%s' is not a symbolic link"
@@ -2141,6 +2280,9 @@ msgid ""
 msgstr ""
 " Saisissez le périphérique (sans /dev/) sur\n"
 "   lequel la récupération doit être faite : (F1 pour les détails)"
+
+msgid "Directory scanning"
+msgstr "Analyse du répertoire"
 
 msgid "Setup"
 msgstr "Configuration"
@@ -2268,9 +2410,6 @@ msgid ""
 msgstr ""
 "Impossible de créer le lien symbolique cible \"%s\"\n"
 "%s"
-
-msgid "&Abort"
-msgstr "&Interrompre"
 
 msgid "Ski&p all"
 msgstr "Sauter &tout"
@@ -2546,16 +2685,9 @@ msgstr ""
 "Impossible de déplacer le répertoire de \"%s\" vers \"%s\"\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Analyse du répertoire"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
-"%s\n"
-"Répertoires: %zd, taille totale: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Impossible de travailler avec \"..\"!"
@@ -2662,6 +2794,12 @@ msgstr "Source"
 msgid "Target"
 msgstr "Cible"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "&Utiliser les « shell patterns »"
+
 msgid "to:"
 msgstr "vers:"
 
@@ -2725,7 +2863,7 @@ msgid "Case sens&itive"
 msgstr "Respec&t de la casse"
 
 msgid "A&ll charsets"
-msgstr ""
+msgstr "Tous les encodages"
 
 msgid "Fir&st hit"
 msgstr "Première occurence"
@@ -2755,10 +2893,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] "Terminé (répertoire %zd ignoré)"
 msgstr[1] "Terminé (%zd répertoires ignorés)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "Recherche %s"
-
 msgid "Searching"
 msgstr "Recherche en cours"
 
@@ -2785,9 +2919,6 @@ msgstr "Nouvelle &entrée"
 
 msgid "&Insert"
 msgstr "&Insérer"
-
-msgid "&Remove"
-msgstr "&Supprimer"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Sous-groupe - tapez Entrée pour voir la liste"
@@ -3045,7 +3176,7 @@ msgid "Ch&own"
 msgstr "Ch&own"
 
 msgid "&Advanced chown"
-msgstr "chown &Avancé"
+msgstr "Chown &avancé"
 
 msgid "&Rename/Move"
 msgstr "&Renommer/Déplacer"
@@ -3081,7 +3212,7 @@ msgid "S&wap panels"
 msgstr "Échan&ger les panneaux"
 
 msgid "Switch &panels on/off"
-msgstr "Inverser &Panneaux on/off"
+msgstr "Masquer et démasquer les &panneaux"
 
 msgid "&Compare directories"
 msgstr "&Comparer des répertoires"
@@ -3090,10 +3221,10 @@ msgid "C&ompare files"
 msgstr "C&omparer des fichiers"
 
 msgid "E&xternal panelize"
-msgstr ""
+msgstr "Panneaux e&xternes..."
 
 msgid "Show directory s&izes"
-msgstr "Aff&Icher la taille des rép."
+msgstr "Aff&icher la taille des rép."
 
 msgid "Command &history"
 msgstr "&Historique des commandes"
@@ -3108,7 +3239,7 @@ msgid "&Background jobs"
 msgstr "&Processus en tâche de fond"
 
 msgid "Screen lis&t"
-msgstr ""
+msgstr "Liste des écrans"
 
 msgid "&Undelete files (ext2fs only)"
 msgstr "Réc&up. de fichiers (ext2fs seul)"
@@ -3138,7 +3269,7 @@ msgid "C&onfirmation..."
 msgstr "C&onfirmation..."
 
 msgid "&Appearance..."
-msgstr ""
+msgstr "&Apparence..."
 
 msgid "&Display bits..."
 msgstr "&Bits d'affichage..."
@@ -3313,6 +3444,18 @@ msgstr "Mettre en panneau"
 
 msgid "Unknown tag on display format:"
 msgstr ""
+
+msgid "&Files only"
+msgstr "&Fichiers seulement"
+
+msgid "&Case sensitive"
+msgstr "Respect de la &Casse "
+
+msgid "Select"
+msgstr "Sélectionner"
+
+msgid "Unselect"
+msgstr "Désélectionner"
 
 msgid "Do you really want to execute?"
 msgstr "Voulez-vous vraiment l'exécuter ?"
@@ -3934,9 +4077,6 @@ msgstr "sftp: Impossible d'obtenir le nom utilisateur."
 msgid "sftp: Invalid host name."
 msgstr "sftp: nom d'hôte invalide."
 
-msgid "sftp: Invalid port value."
-msgstr "sftp: Numéro de port invalide."
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4124,8 +4264,8 @@ msgstr "Impossible de créer un processus fils"
 msgid "Empty output from child filter"
 msgstr "Sortie vide du processus fils"
 
-msgid "&Line number (decimal)"
-msgstr "&Numéro de ligne (décimal)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "Pou&rcents"
@@ -4204,9 +4344,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Seeking to search result"
-msgstr ""
-
 msgid "Search done"
 msgstr "Recherche terminée"
 
@@ -4216,5 +4353,5 @@ msgstr "Continuer à partir de début ?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
 
-#~ msgid "&Select"
-#~ msgstr "&Sélectionner"
+#~ msgid "sftp: Invalid port value."
+#~ msgstr "sftp: Numéro de port invalide."

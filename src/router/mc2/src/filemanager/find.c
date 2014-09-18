@@ -265,10 +265,7 @@ parse_ignore_dirs (const char *ignore_dirs)
         if (find_ignore_dirs[w][0] != '\0')
             w++;
         else
-        {
-            g_free (find_ignore_dirs[w]);
-            find_ignore_dirs[w] = NULL;
-        }
+            MC_PTR_FREE (find_ignore_dirs[w]);
     }
 
     if (find_ignore_dirs[0] == NULL)
@@ -315,10 +312,7 @@ find_load_options (void)
     options.ignore_dirs = mc_config_get_string (mc_main_config, "FindFile", "ignore_dirs", "");
 
     if (options.ignore_dirs[0] == '\0')
-    {
-        g_free (options.ignore_dirs);
-        options.ignore_dirs = NULL;
-    }
+        MC_PTR_FREE (options.ignore_dirs);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1241,7 +1235,6 @@ do_search (WDialog * h)
     static DIR *dirp = NULL;
     static char *directory = NULL;
     struct stat tmp_stat;
-    static int subdirs_left = 0;
     gsize bytes_found;
     unsigned short count;
 
@@ -1252,8 +1245,7 @@ do_search (WDialog * h)
             mc_closedir (dirp);
             dirp = NULL;
         }
-        g_free (directory);
-        directory = NULL;
+        MC_PTR_FREE (directory);
         dp = NULL;
         return 1;
     }
@@ -1319,13 +1311,6 @@ do_search (WDialog * h)
                     g_snprintf (buffer, sizeof (buffer), _("Searching %s"), directory);
                     status_update (str_trunc (directory, WIDGET (h)->cols - 8));
                 }
-                /* mc_stat should not be called after mc_opendir
-                   because vfs_s_opendir modifies the st_nlink
-                 */
-                if (mc_stat (tmp_vpath, &tmp_stat) == 0)
-                    subdirs_left = tmp_stat.st_nlink - 2;
-                else
-                    subdirs_left = 0;
 
                 dirp = mc_opendir (tmp_vpath);
                 vfs_path_free (tmp_vpath);
@@ -1349,7 +1334,7 @@ do_search (WDialog * h)
         {
             gboolean search_ok;
 
-            if ((subdirs_left != 0) && options.find_recurs && (directory != NULL))
+            if (options.find_recurs && (directory != NULL))
             {                   /* Can directory be NULL ? */
                 /* handle relative ignore dirs here */
                 if (options.ignore_dirs_enable && find_ignore_dir_search (dp->d_name))
@@ -1361,10 +1346,7 @@ do_search (WDialog * h)
                     tmp_vpath = vfs_path_build_filename (directory, dp->d_name, (char *) NULL);
 
                     if (mc_lstat (tmp_vpath, &tmp_stat) == 0 && S_ISDIR (tmp_stat.st_mode))
-                    {
                         push_directory (tmp_vpath);
-                        subdirs_left--;
-                    }
                     else
                         vfs_path_free (tmp_vpath);
                 }
@@ -1397,8 +1379,7 @@ do_search (WDialog * h)
 static void
 init_find_vars (void)
 {
-    g_free (old_dir);
-    old_dir = NULL;
+    MC_PTR_FREE (old_dir);
     matches = 0;
     ignore_count = 0;
 
@@ -1824,8 +1805,7 @@ do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
     g_free (content_pattern);
     kill_gui ();
     do_search (NULL);           /* force do_search to release resources */
-    g_free (old_dir);
-    old_dir = NULL;
+    MC_PTR_FREE (old_dir);
     rotate_dash (FALSE);
 
     return return_value;

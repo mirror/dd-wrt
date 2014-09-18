@@ -1,4 +1,4 @@
-.\" -*- mode: troff; coding: utf8 -*-
+.\" -*- mode: troff; coding: UTF-8 -*-
 .\"TOPICS "Tartalomjegyzék"
 .TH MC 1 "%DATE_OF_MAN_PAGE%" "MC Version %DISTR_VERSION%" "GNU Midnight Commander"
 .\"SKIP_SECTION"
@@ -2948,6 +2948,7 @@ menusel, menuhot, menuhotsel, menuinactive; A dialog színek: dnormal, dfocus,
 dhotnormal, dhotfocus; Súgó színek: helpnormal, helpitalic, helpbold,
 helplink, helpslink; Fájlnéző színek: viewunderline; Speciális kijelölés
 színei: executable, directory, link, stalelink, device, special, core;
+Viewer colors are: viewnormal, viewbold, viewunderline, viewselected.
 Szerkesztő színei: editnormal, editbold, editmarked.
 .PP
 .I input

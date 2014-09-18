@@ -143,7 +143,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libvfs_sftpfs_la_LIBADD =
-am_libvfs_sftpfs_la_OBJECTS = config_parcer.lo connection.lo dir.lo \
+am_libvfs_sftpfs_la_OBJECTS = config_parser.lo connection.lo dir.lo \
 	file.lo init.lo internal.lo vfs_class.lo vfs_subclass.lo
 libvfs_sftpfs_la_OBJECTS = $(am_libvfs_sftpfs_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -424,7 +424,7 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = $(GLIB_CFLAGS) -I$(top_srcdir) $(LIBSSH_CFLAGS)
 noinst_LTLIBRARIES = libvfs-sftpfs.la
 libvfs_sftpfs_la_SOURCES = \
-	config_parcer.c \
+	config_parser.c \
 	connection.c \
 	dir.c \
 	file.c \
@@ -488,7 +488,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/config_parcer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/config_parser.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/connection.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dir.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file.Plo@am__quote@

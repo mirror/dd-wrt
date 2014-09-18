@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Kristjan Räts <kristjanrats@gmail.com>, 2013
+# Kristjan Räts <kristjanrats@gmail.com>, 2013-2014
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Estonian (http://www.transifex.com/projects/p/mc/language/"
 "et/)\n"
 "Language: et\n"
@@ -155,7 +155,7 @@ msgstr ""
 "Laeti vaikimisi nahk"
 
 msgid "Escape"
-msgstr ""
+msgstr "Paoklahv"
 
 msgid "Function key 1"
 msgstr "Klahv F1"
@@ -221,43 +221,43 @@ msgid "Completion/M-tab"
 msgstr "Lõpetamine/M-Tab"
 
 msgid "BackTab/S-tab"
-msgstr ""
+msgstr "TagasiTab/S-tab"
 
 msgid "Backspace"
-msgstr ""
+msgstr "Tagasisamm"
 
 msgid "Up arrow"
-msgstr ""
+msgstr "Nool üles"
 
 msgid "Down arrow"
-msgstr ""
+msgstr "Nool alla"
 
 msgid "Left arrow"
-msgstr ""
+msgstr "Nool vasakule"
 
 msgid "Right arrow"
-msgstr ""
+msgstr "Nool paremale"
 
 msgid "Insert"
-msgstr ""
+msgstr "Lisamine"
 
 msgid "Delete"
-msgstr ""
+msgstr "Kustuta"
 
 msgid "Home"
-msgstr ""
+msgstr "Algus"
 
 msgid "End key"
 msgstr "Klahv End"
 
 msgid "Page Up"
-msgstr ""
+msgstr "Lk üles"
 
 msgid "Page Down"
-msgstr ""
+msgstr "Lk alla"
 
 msgid "/ on keypad"
-msgstr ""
+msgstr "/ numbristikul"
 
 msgid "* on keypad"
 msgstr "numbristiku *"
@@ -544,6 +544,13 @@ msgstr "Taustaprotsess:"
 msgid "Error"
 msgstr "Viga"
 
+#, c-format
+msgid "%d: %s"
+msgstr "%d: %s"
+
+msgid "&Abort"
+msgstr "&Katkesta"
+
 msgid "Displays the current version"
 msgstr "Kuvab praeguse versiooni"
 
@@ -637,28 +644,28 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
-"--colors VÕTMESÕNA={EES},{TAGA},{TUNNUS}:VÕTMESÕNA2=...\n"
+"--colors VÕTMESÕNA={TEKST},{TAUST},{ATTR}:VÕTMESÕNA2=...\n"
 "\n"
-"Väärtused {EES}, {TAGA} ja {TUNNUS} võib ära jätta; ärajäetud väärtuse kohal "
-"kasutatakse vaikeväärtust.\n"
+"{TEKST}, {TAUST} ja {ATTR} võivad puududa; sel juhul kasutatakse "
+"vaikeväärtuseid.\n"
 "\n"
-"Võtmesõnad:\n"
-"   Üldised: errors, disabled, reverse, gauge, header\n"
+" Võtmesõnad:\n"
+"   Globaalsed: errors, disabled, reverse, gauge, header\n"
 "                 input, inputmark, inputunchanged, commandlinemark\n"
 "                 bbarhotkey, bbarbutton, statusbar\n"
-"   Failide kuva: normal, selected, marked, markselect\n"
-"   Dialoogid: dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
-"                    errdhotfocus\n"
-"   Menüüd: menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
-"   Hüpikmenüüd: pmenunormal, pmenusel, pmenutitle\n"
-"   Toimeti: editnormal, editbold, editmarked, editwhitespace,\n"
+"   Faili kuvamine: normal, selected, marked, markselect\n"
+"   Dialoogid:   dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
+"                 errdhotfocus\n"
+"   Menüüd:       menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
+"   Hüpikmenüüd:  pmenunormal, pmenusel, pmenutitle\n"
+"   Toimeti:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Vaatur:  viewbold, viewunderline, viewselected\n"
-"   Abi:        helpnormal, helpitalic, helpbold, helplink, helpslink\n"
+"   Kuvaja:       viewnormal,viewbold, viewunderline, viewselected\n"
+"   Abi:          helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -896,6 +903,62 @@ msgstr "Erinevuste vaatur: vale režiim"
 msgid "Two files are needed to compare"
 msgstr "Võrdlemiseks on vaja kahte faili"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "&Tühjenda kohaviidad"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Sorteeri"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Filter"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "&Mine reale..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Lisa uus"
+
+msgid "&Remove"
+msgstr "&Kustuta"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Filter"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Sorteeri"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "&Tagurpidi"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Valsi süntaksi esiletoomine"
 
@@ -906,8 +969,18 @@ msgid "< Reload Current Syntax >"
 msgstr "<Valitud süntaksi taaslaadimine>"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr "Laaditakse: %3d%%"
+
+msgid "Loading..."
+msgstr "Laaditakse..."
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Faili %s avamine lugemiseks nurjus"
+
+msgid "Load file"
+msgstr "Laadi fail"
 
 #, c-format
 msgid "Error reading %s"
@@ -937,6 +1010,14 @@ msgstr "Viga torust lugemisel: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "Toru avamine lugemiseks nurjus: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr "Otsitakse %s: %3d%%"
+
+#, c-format
+msgid "Searching %s"
+msgstr "Otsitakse %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "Failil on jäiku viitasid. Kas võtta need enne salvestamist lahti?"
 
@@ -955,9 +1036,8 @@ msgstr "Toru avamine kirjutamiseks nurjus: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Faili avamine kirjutamiseks nurjus: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "Fail, mida salvestad, ei lõppe reavahetusega"
+msgstr "Fail, mida sa salvestad, ei lõppe reavahetusega."
 
 msgid "C&ontinue"
 msgstr "&Jätka"
@@ -985,6 +1065,9 @@ msgstr "Salvesta kui"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Plokk on suur, selle muudatuse tagasi võtmine võib ebaõnnestuda."
+
+msgid "Collect completions"
+msgstr "Koonda lõpetamised"
 
 msgid "&Quick save"
 msgstr "&Kiirsalvestus"
@@ -1516,7 +1599,7 @@ msgstr ""
 "on loodud Midnight Commanderile."
 
 msgid "Copyright (C) 1996-2014 the Free Software Foundation"
-msgstr ""
+msgstr "Autoriõigus (C) 1996-2014 Free Software Foundation"
 
 msgid "About"
 msgstr "Programmist"
@@ -1544,6 +1627,78 @@ msgstr "ButtonBar|Kustuta"
 
 msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|Menüü"
+
+msgid "Breton"
+msgstr "bretooni keel"
+
+msgid "Czech"
+msgstr "tšehhi keel"
+
+msgid "Welsh"
+msgstr "kõmri keel"
+
+msgid "Danish"
+msgstr "taani keel"
+
+msgid "German"
+msgstr "saksa keel"
+
+msgid "Greek"
+msgstr "kreeka keel"
+
+msgid "English"
+msgstr "inglise keel"
+
+msgid "British English"
+msgstr "Briti inglise keel"
+
+msgid "Canadian English"
+msgstr "Kanada inglise keel"
+
+msgid "American English"
+msgstr "Ameerika inglise keel"
+
+msgid "Esperanto"
+msgstr "esperanto keel"
+
+msgid "Spanish"
+msgstr "hispaania keel"
+
+msgid "Faroese"
+msgstr "fääri keel"
+
+msgid "French"
+msgstr "prantsuse keel"
+
+msgid "Italian"
+msgstr "itaalia keel"
+
+msgid "Dutch"
+msgstr "hollandi keel"
+
+msgid "Norwegian"
+msgstr "norra keel"
+
+msgid "Polish"
+msgstr "poola keel"
+
+msgid "Portuguese"
+msgstr "portugali keel"
+
+msgid "Romanian"
+msgstr "rumeenia keel"
+
+msgid "Russian"
+msgstr "vene keel"
+
+msgid "Slovak"
+msgstr "slovaki keel"
+
+msgid "Swedish"
+msgstr "rootsi keel"
+
+msgid "Ukrainian"
+msgstr "ukraina keel"
 
 msgid "&Add word"
 msgstr "&Lisa sõna"
@@ -1724,16 +1879,16 @@ msgid "Configure options"
 msgstr "Valikute seadistamine"
 
 msgid "< Default >"
-msgstr ""
+msgstr "< Vaikimisi >"
 
 msgid "Skins"
-msgstr ""
+msgstr "Nahad"
 
 msgid "Skin:"
-msgstr ""
+msgstr "Nahk:"
 
 msgid "Appearance"
-msgstr ""
+msgstr "Välimus"
 
 msgid "Case &insensitive"
 msgstr "&Tõstutundetu"
@@ -2059,15 +2214,6 @@ msgstr "Filter"
 msgid "Set expression for filtering filenames"
 msgstr "Määra failinimede filtri väljend"
 
-msgid "&Files only"
-msgstr "&Ainult failid"
-
-msgid "&Using shell patterns"
-msgstr "&Kasutades kesta mustreid"
-
-msgid "&Case sensitive"
-msgstr "&Tõstutundlik"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Loo link %s:"
@@ -2107,12 +2253,6 @@ msgstr "Loo uus kataloog"
 
 msgid "Enter directory name:"
 msgstr "Sisesta kataloogi nimi:"
-
-msgid "Select"
-msgstr "Vali"
-
-msgid "Unselect"
-msgstr "Tühista valik"
 
 msgid "Extension file edit"
 msgstr "Laiendite faili muutmine"
@@ -2199,6 +2339,9 @@ msgstr ""
 "Sisesta seade (ilma /dev/'ta) millelt\n"
 "faile taastada (F1 lisainfo):"
 
+msgid "Directory scanning"
+msgstr "Kataloogi skannimine"
+
 msgid "Setup"
 msgstr "Seadistamine"
 
@@ -2280,7 +2423,7 @@ msgstr "FileOperation|Kustutamine"
 
 #, no-c-format
 msgid "%o %f%n\"%s\"%m"
-msgstr ""
+msgstr "%o %f%n\"%s\"%m"
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2332,9 +2475,6 @@ msgid ""
 msgstr ""
 "Siht nimeviida \"%s\" loomine nurjus\n"
 "%s"
-
-msgid "&Abort"
-msgstr "&Katkesta"
 
 msgid "Ski&p all"
 msgstr "Jäta &kõik vahele"
@@ -2619,16 +2759,9 @@ msgstr ""
 "Kataloogi \"%s\" teisaldamine kataloogi \"%s\" nurjus\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Kataloogi skannimine"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
-msgstr ""
-"%s\n"
-"Kataloogid: %zd, kogusuurus: %s"
+msgid "Directories: %zd, total size: %s"
+msgstr "Kataloogid: %zd, kogu suurus: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Kataloogi \"..\" kasutamine on keelatud!"
@@ -2735,6 +2868,12 @@ msgstr "Lähe"
 msgid "Target"
 msgstr "Siht"
 
+msgid "Deleting"
+msgstr "Kustutatakse"
+
+msgid "&Using shell patterns"
+msgstr "&Kasutades kesta mustreid"
+
 msgid "to:"
 msgstr "asukohta:"
 
@@ -2828,10 +2967,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] "Lõpetatud (%zd kataloog jäeti vahele)"
 msgstr[1] "Lõpetatud (%zd kataloogi jäeti vahele)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "Otsitakse %s"
-
 msgid "Searching"
 msgstr "Otsimine"
 
@@ -2858,9 +2993,6 @@ msgstr "Uus &Kirje"
 
 msgid "&Insert"
 msgstr "&Sisesta"
-
-msgid "&Remove"
-msgstr "&Kustuta"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Alamgrupp - loendi nägemiseks vajuta ENTER"
@@ -3213,7 +3345,7 @@ msgid "C&onfirmation..."
 msgstr "&Kinnituste küsimine..."
 
 msgid "&Appearance..."
-msgstr ""
+msgstr "&Välimus..."
 
 msgid "&Display bits..."
 msgstr "&Kuva bitid"
@@ -3388,6 +3520,18 @@ msgstr "Paneel"
 
 msgid "Unknown tag on display format:"
 msgstr "Tundmatu silt kuva vorminduses:"
+
+msgid "&Files only"
+msgstr "&Ainult failid"
+
+msgid "&Case sensitive"
+msgstr "&Tõstutundlik"
+
+msgid "Select"
+msgstr "Vali"
+
+msgid "Unselect"
+msgstr "Tühista valik"
 
 msgid "Do you really want to execute?"
 msgstr "Kas sa soovid tõesti käivitada?"
@@ -4007,9 +4151,6 @@ msgstr "sftp: aktiivse kasutaja nime hankimine nurjus."
 msgid "sftp: Invalid host name."
 msgstr "sftp: vigane hosti nimi."
 
-msgid "sftp: Invalid port value."
-msgstr "sftp: vigane pordi väärtus."
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4198,8 +4339,8 @@ msgstr "Alamprotsessi loomine nurjus"
 msgid "Empty output from child filter"
 msgstr "Alamprotsessi filter ei väljastanud mitte midagi"
 
-msgid "&Line number (decimal)"
-msgstr "&Rea number (kümnendarv)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "P&rotsendid"
@@ -4283,9 +4424,6 @@ msgstr ""
 "Faili \"%s\" avamine parsimisrežiimis nurjus\n"
 "%s"
 
-msgid "Seeking to search result"
-msgstr "Liigutakse otsingu tulemuseni"
-
 msgid "Search done"
 msgstr "Otsing lõpetatud"
 
@@ -4295,5 +4433,5 @@ msgstr "Kas jätkata algusest?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Kohaliku koopia hankimine failist /ftp://some.host/editme.txt nurjus"
 
-#~ msgid "&Select"
-#~ msgstr "&Vali"
+#~ msgid "sftp: Invalid port value."
+#~ msgstr "sftp: vigane pordi väärtus."

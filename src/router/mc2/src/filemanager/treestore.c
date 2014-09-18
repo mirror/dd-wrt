@@ -539,23 +539,24 @@ remove_entry (tree_entry * entry)
 static void
 process_special_dirs (GList ** special_dirs, const char *file)
 {
-    gchar **buffers, **start_buff;
+    gchar **start_buff;
     mc_config_t *cfg;
-    gsize buffers_len;
 
     cfg = mc_config_init (file, TRUE);
     if (cfg == NULL)
         return;
 
-    start_buff = buffers = mc_config_get_string_list (cfg, "Special dirs", "list", &buffers_len);
-    if (buffers != NULL)
+    start_buff = mc_config_get_string_list (cfg, "Special dirs", "list", NULL);
+    if (start_buff != NULL)
     {
-        while (*buffers != NULL)
+        gchar **buffers;
+
+        for (buffers = start_buff; *buffers != NULL; buffers++)
         {
             *special_dirs = g_list_prepend (*special_dirs, *buffers);
             *buffers = NULL;
-            buffers++;
         }
+
         g_strfreev (start_buff);
     }
     mc_config_deinit (cfg);
@@ -893,8 +894,7 @@ tree_store_end_check (void)
     }
 
     /* get the stuff in the scan order */
-    ts.add_queue_vpath = g_list_reverse (ts.add_queue_vpath);
-    the_queue = ts.add_queue_vpath;
+    the_queue = g_list_reverse (ts.add_queue_vpath);
     ts.add_queue_vpath = NULL;
     vfs_path_free (ts.check_name);
     ts.check_name = NULL;

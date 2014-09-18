@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Slovak (http://www.transifex.com/projects/p/mc/language/sk/)\n"
 "Language: sk\n"
 "MIME-Version: 1.0\n"
@@ -538,6 +538,13 @@ msgstr "Proces v pozadí:"
 msgid "Error"
 msgstr "Chyba"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "p&Rerušiť"
+
 msgid "Displays the current version"
 msgstr "Zobrazí aktuálnu verziu"
 
@@ -631,7 +638,7 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 
@@ -845,6 +852,59 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr ""
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "Ď&Alšia záložka"
+
+msgid " - Sort: "
+msgstr ""
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+msgid " - Filter: "
+msgstr ""
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "&Prejsť na riadok..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Pridať nové"
+
+msgid "&Remove"
+msgstr "&Odstrániť"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "&Súbor"
+
+msgid "&Sort"
+msgstr ""
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "o&Brátený"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr ""
 
@@ -855,7 +915,17 @@ msgid "< Reload Current Syntax >"
 msgstr "< Znovu načítať aktuálnu syntax >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
+msgstr ""
+
+msgid "Load file"
 msgstr ""
 
 #, c-format
@@ -884,6 +954,14 @@ msgstr ""
 msgid "Cannot open pipe for reading: %s"
 msgstr ""
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "Hľadanie %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr ""
 
@@ -902,9 +980,8 @@ msgstr ""
 msgid "Cannot open file for writing: %s"
 msgstr ""
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "Súbor, ktorý ukladáte nie je ukončený znakom nového riadka"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "P&okračovať"
@@ -931,6 +1008,9 @@ msgid "Save As"
 msgstr ""
 
 msgid "Block is large, you may not be able to undo this action"
+msgstr ""
+
+msgid "Collect completions"
 msgstr ""
 
 msgid "&Quick save"
@@ -1482,6 +1562,78 @@ msgstr "ButtonBar|Zmaza"
 msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|H.menu"
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr ""
 
@@ -1984,15 +2136,6 @@ msgstr ""
 msgid "Set expression for filtering filenames"
 msgstr ""
 
-msgid "&Files only"
-msgstr "&Iba súbory"
-
-msgid "&Using shell patterns"
-msgstr "po&Užiť shell vzory"
-
-msgid "&Case sensitive"
-msgstr "&Rozlišovať veľkosť"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Odkaz %s na:"
@@ -2031,12 +2174,6 @@ msgid "Create a new Directory"
 msgstr "Vytvoriť nový adresár"
 
 msgid "Enter directory name:"
-msgstr ""
-
-msgid "Select"
-msgstr ""
-
-msgid "Unselect"
 msgstr ""
 
 msgid "Extension file edit"
@@ -2117,6 +2254,9 @@ msgid ""
 "Enter device (without /dev/) to undelete\n"
 "files on: (F1 for details)"
 msgstr ""
+
+msgid "Directory scanning"
+msgstr "Prehľadávanie adresára"
 
 msgid "Setup"
 msgstr ""
@@ -2236,9 +2376,6 @@ msgid ""
 "Cannot create target symlink \"%s\"\n"
 "%s"
 msgstr ""
-
-msgid "&Abort"
-msgstr "p&Rerušiť"
 
 msgid "Ski&p all"
 msgstr ""
@@ -2456,13 +2593,8 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Directory scanning"
-msgstr "Prehľadávanie adresára"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2570,6 +2702,12 @@ msgstr "Zdroj"
 msgid "Target"
 msgstr "Cieľ"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "po&Užiť shell vzory"
+
 msgid "to:"
 msgstr "k:"
 
@@ -2664,10 +2802,6 @@ msgstr[0] ""
 msgstr[1] ""
 msgstr[2] ""
 
-#, c-format
-msgid "Searching %s"
-msgstr "Hľadanie %s"
-
 msgid "Searching"
 msgstr "Hľadanie"
 
@@ -2694,9 +2828,6 @@ msgstr ""
 
 msgid "&Insert"
 msgstr "v&Ložiť"
-
-msgid "&Remove"
-msgstr "&Odstrániť"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Podskupina - stlačte ENTER, ak chcete vidieť zoznam"
@@ -3223,6 +3354,18 @@ msgid "Panelize"
 msgstr ""
 
 msgid "Unknown tag on display format:"
+msgstr ""
+
+msgid "&Files only"
+msgstr "&Iba súbory"
+
+msgid "&Case sensitive"
+msgstr "&Rozlišovať veľkosť"
+
+msgid "Select"
+msgstr ""
+
+msgid "Unselect"
 msgstr ""
 
 msgid "Do you really want to execute?"
@@ -3831,9 +3974,6 @@ msgstr ""
 msgid "sftp: Invalid host name."
 msgstr ""
 
-msgid "sftp: Invalid port value."
-msgstr ""
-
 #, c-format
 msgid "sftp: %s"
 msgstr ""
@@ -4016,7 +4156,7 @@ msgstr ""
 msgid "Empty output from child filter"
 msgstr "Prázdny výstup z filtra potomka"
 
-msgid "&Line number (decimal)"
+msgid "&Line number"
 msgstr ""
 
 msgid "Pe&rcents"
@@ -4092,9 +4232,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Seeking to search result"
-msgstr "Presúva sa na pozíciu výsledku vyhľadávania"
-
 msgid "Search done"
 msgstr ""
 
@@ -4103,6 +4240,3 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
-
-#~ msgid "&Select"
-#~ msgstr "&Vybrať"

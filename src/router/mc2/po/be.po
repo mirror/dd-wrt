@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Belarusian (http://www.transifex.com/projects/p/mc/language/"
 "be/)\n"
 "Language: be\n"
@@ -546,6 +546,13 @@ msgstr "Працэс на тле:"
 msgid "Error"
 msgstr "Памылка"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "&Перапыніць"
+
 msgid "Displays the current version"
 msgstr "Паказвае дзейную вэрсію"
 
@@ -640,28 +647,9 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
-"--colors КЛЮЧ={ПЯРЭДНІ_ПЛЯН},{ТЛО},{АЗНАКІ}:КЛЮЧ2=…\n"
-"\n"
-"{ПЯРЭДНІ_ПЛЯН}, {ТЛО} і {АЗНАКІ} можна прапусьціць, тады будзе ўжывацца "
-"звычайнае\n"
-"\n"
-" Ключы:\n"
-"   Агульнае:       errors, disabled, reverse, gauge, header\n"
-"                 input, inputmark, inputunchanged, commandlinemark\n"
-"                 bbarhotkey, bbarbutton, statusbar\n"
-"   Файлы:          normal, selected, marked, markselect\n"
-"   Дыялёґі:        dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
-"                 errdhotfocus\n"
-"   Мэню:           menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
-"   Выплыўныя мэню: pmenunormal, pmenusel, pmenutitle\n"
-"   Рэдактар:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate, editbg, editframe, editframeactive\n"
-"                 editframedrag\n"
-"   Прагляднік:     viewbold, viewunderline, viewselected\n"
-"   Даведка:        helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -896,6 +884,62 @@ msgstr "Прагляднік адрозьненьняў запусьцілі ў 
 msgid "Two files are needed to compare"
 msgstr "Каб параўноўваць, трэба два файлы"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "&Ачысьціць закладкі"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Упарадкаваць"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Прасеяць"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "Перайсьці да &радку…"
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Дадаць"
+
+msgid "&Remove"
+msgstr "&Выдаліць"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Прасеяць"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Упарадкаваць"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "&Адваротны парадак"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Абярыце, як падсьвечваць сынтакс"
 
@@ -906,8 +950,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Перазаладаваць цяперашні сынтакс >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Файл «%s» немагчыма адчыніць чытаць"
+
+msgid "Load file"
+msgstr ""
 
 #, c-format
 msgid "Error reading %s"
@@ -935,6 +989,14 @@ msgstr "Не ўдалося прачытаць з каналу: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "Канал не ўдалося адчыніць чытаць: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "Шукаем «%s»"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "Файл мае строгія спасылкі. Ці адлучыць іх перад тым, як захоўваць?"
 
@@ -953,9 +1015,8 @@ msgstr "Канал не ўдалося адчыніць запісваць: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Файл не ўдалося адчыніць запісваць: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "Файл, які вы спрабуеце захаваць, не заканчваецца новым радком"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "&Працягваць"
@@ -983,6 +1044,9 @@ msgstr "Захаваць як"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Можа не атрымацца адрабіць дзеяньне: вялікі блёк"
+
+msgid "Collect completions"
+msgstr ""
 
 msgid "&Quick save"
 msgstr "Захоўваць &хутка"
@@ -1541,6 +1605,78 @@ msgstr "Выдаліць"
 msgid "ButtonBar|PullDn"
 msgstr "МэнюМК"
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr "&Дадаць слова"
 
@@ -2057,15 +2193,6 @@ msgstr "Прасеяць"
 msgid "Set expression for filtering filenames"
 msgstr "Вызначце выраз, па якім прасейваць назвы файлаў"
 
-msgid "&Files only"
-msgstr "&Толькі файлы"
-
-msgid "&Using shell patterns"
-msgstr "&Шаблёны абалонкі"
-
-msgid "&Case sensitive"
-msgstr "&Улічваць памер літар"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Стварыць спасылку «%s» на:"
@@ -2105,12 +2232,6 @@ msgstr "Стварыць каталёґ"
 
 msgid "Enter directory name:"
 msgstr "Упішыце назву каталёґа:"
-
-msgid "Select"
-msgstr "Абраць"
-
-msgid "Unselect"
-msgstr "Не абіраць"
 
 msgid "Extension file edit"
 msgstr "Рэдаґаваць файл пашырэньняў"
@@ -2196,6 +2317,9 @@ msgid ""
 msgstr ""
 "Каб аднавіць файлы на прыладзе (даведка — «F1»),\n"
 "упішыце ейную назву (без «/dev/»)"
+
+msgid "Directory scanning"
+msgstr "Аглядаць каталёґ"
 
 msgid "Setup"
 msgstr "Наладзіць"
@@ -2330,9 +2454,6 @@ msgid ""
 msgstr ""
 "Немагчыма стварыць прызначаную спасылку «%s»\n"
 "%s"
-
-msgid "&Abort"
-msgstr "&Перапыніць"
 
 msgid "Ski&p all"
 msgstr "Прапусьціць &усё"
@@ -2610,13 +2731,8 @@ msgstr ""
 "Немагчыма перамясьціць каталёґ «%s» у «%s»\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Аглядаць каталёґ"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2724,6 +2840,12 @@ msgstr "Крыніца"
 msgid "Target"
 msgstr "Прызначэньне"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "&Шаблёны абалонкі"
+
 msgid "to:"
 msgstr "сюды:"
 
@@ -2819,10 +2941,6 @@ msgstr[1] "Скончылі (прапусьцілі %zd каталёґі)"
 msgstr[2] "Скончылі (прапусьцілі %zd каталёґаў)"
 msgstr[3] "Скончылі (прапусьцілі %zd каталёґаў)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "Шукаем «%s»"
-
 msgid "Searching"
 msgstr "Шукаем"
 
@@ -2849,9 +2967,6 @@ msgstr "Новы &запіс"
 
 msgid "&Insert"
 msgstr "У &пачатак"
-
-msgid "&Remove"
-msgstr "&Выдаліць"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Падсуполка (каб прагледзець, націсьніце «Enter»)"
@@ -3387,6 +3502,18 @@ msgstr "На панэлі"
 
 msgid "Unknown tag on display format:"
 msgstr "Невядомая пазнака ў разьметцы адлюстраваньня:"
+
+msgid "&Files only"
+msgstr "&Толькі файлы"
+
+msgid "&Case sensitive"
+msgstr "&Улічваць памер літар"
+
+msgid "Select"
+msgstr "Абраць"
+
+msgid "Unselect"
+msgstr "Не абіраць"
 
 msgid "Do you really want to execute?"
 msgstr "Ці сапраўды выканаць?"
@@ -4003,9 +4130,6 @@ msgstr "sftp: немагчыма атрымаць імя карыстальні�
 msgid "sftp: Invalid host name."
 msgstr "sftp: хібная назва вузла."
 
-msgid "sftp: Invalid port value."
-msgstr "sftp: хібны порт."
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4194,8 +4318,8 @@ msgstr "Немагчыма нарадзіць даччын працэс"
 msgid "Empty output from child filter"
 msgstr "Даччына сіта не вярнула зьвестак"
 
-msgid "&Line number (decimal)"
-msgstr "&Нумар радку (дзесятковы)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "&Адсоткі"
@@ -4277,9 +4401,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Seeking to search result"
-msgstr "Перайсьці да знойдзенага"
-
 msgid "Search done"
 msgstr "Скончылі шукаць"
 
@@ -4289,5 +4410,5 @@ msgstr "Ці працягваць ад пачатку?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
 
-#~ msgid "&Select"
-#~ msgstr "&Абраць"
+#~ msgid "sftp: Invalid port value."
+#~ msgstr "sftp: хібны порт."
