@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Danish (http://www.transifex.com/projects/p/mc/language/da/)\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
@@ -534,6 +534,13 @@ msgstr "Baggrundsproces:"
 msgid "Error"
 msgstr "Fejl"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "&Afbryd"
+
 msgid "Displays the current version"
 msgstr "Udskriver versionsnummer"
 
@@ -627,7 +634,7 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 
@@ -852,6 +859,62 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr "To filer kræves for sammenligning"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "&Næste bogmærke"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Sorter"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Filter"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "&Gå til linje..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Tilføj ny"
+
+msgid "&Remove"
+msgstr "&Fjern"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Filter"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Sorter"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "&Omvendt"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Vælg syntaksfremhævelse"
 
@@ -862,8 +925,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Genindlæs aktuel syntaks >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Kan ikke åbne %s til læsning"
+
+msgid "Load file"
+msgstr ""
 
 #, c-format
 msgid "Error reading %s"
@@ -891,6 +964,14 @@ msgstr "Der opstod en fejl under læsning fra datakanal: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "Kan ikke åbne datakanal til læsning: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "Søger i %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "Fil har hårde henvisninger. Frigør før der gemmes?"
 
@@ -909,9 +990,8 @@ msgstr "Kan ikke åbne datakanal til skrivning: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Kan ikke åbne fil til skrivning: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "Filen, du gemmer, er ikke afsluttet med et linjeskift"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "&Fortsæt"
@@ -939,6 +1019,9 @@ msgstr "Gem som"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Blok er stor, du vil måske ikke kunne fortryde denne handling"
+
+msgid "Collect completions"
+msgstr ""
 
 msgid "&Quick save"
 msgstr "&Hurtiggem"
@@ -1493,6 +1576,78 @@ msgstr "Slet"
 msgid "ButtonBar|PullDn"
 msgstr "Træk ned"
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr ""
 
@@ -2010,15 +2165,6 @@ msgstr "Filter"
 msgid "Set expression for filtering filenames"
 msgstr "Angiv udtryk til filtrering af filnavne"
 
-msgid "&Files only"
-msgstr "&Kun filer"
-
-msgid "&Using shell patterns"
-msgstr "Br&uger skalmønstre"
-
-msgid "&Case sensitive"
-msgstr "%Store/små bogstaver"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Henvis %s til:"
@@ -2058,12 +2204,6 @@ msgstr "Opret en ny mappe"
 
 msgid "Enter directory name:"
 msgstr "Indtast mappenavn:"
-
-msgid "Select"
-msgstr "Vælg"
-
-msgid "Unselect"
-msgstr "Fravælg"
 
 msgid "Extension file edit"
 msgstr "Rediger filendelse"
@@ -2149,6 +2289,9 @@ msgid ""
 msgstr ""
 "Indtast enhed (uden /dev/) for at gendanne\n"
 "filer på: (F1 for detaljer)"
+
+msgid "Directory scanning"
+msgstr "Mappeskanning"
 
 msgid "Setup"
 msgstr "Opsætning"
@@ -2282,9 +2425,6 @@ msgid ""
 msgstr ""
 "Kan ikke oprette symbolsk målhenvisning »%s«\n"
 "%s"
-
-msgid "&Abort"
-msgstr "&Afbryd"
 
 msgid "Ski&p all"
 msgstr ""
@@ -2562,13 +2702,8 @@ msgstr ""
 "Kan ikke flytte mappe »%s« til »%s«\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Mappeskanning"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2676,6 +2811,12 @@ msgstr "Kilde"
 msgid "Target"
 msgstr "Mål"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "Br&uger skalmønstre"
+
 msgid "to:"
 msgstr "til:"
 
@@ -2769,10 +2910,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] ""
 msgstr[1] ""
 
-#, c-format
-msgid "Searching %s"
-msgstr "Søger i %s"
-
 msgid "Searching"
 msgstr "Søger"
 
@@ -2799,9 +2936,6 @@ msgstr "Ny &punkt"
 
 msgid "&Insert"
 msgstr "&Indsæt"
-
-msgid "&Remove"
-msgstr "&Fjern"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Undergruppe - tryk RETUR for at se listen"
@@ -3325,6 +3459,18 @@ msgstr ""
 
 msgid "Unknown tag on display format:"
 msgstr "Ukendt mærke på visningsformat:"
+
+msgid "&Files only"
+msgstr "&Kun filer"
+
+msgid "&Case sensitive"
+msgstr "%Store/små bogstaver"
+
+msgid "Select"
+msgstr "Vælg"
+
+msgid "Unselect"
+msgstr "Fravælg"
 
 msgid "Do you really want to execute?"
 msgstr "Ønsker du virkelig at køre?"
@@ -3936,9 +4082,6 @@ msgstr ""
 msgid "sftp: Invalid host name."
 msgstr ""
 
-msgid "sftp: Invalid port value."
-msgstr ""
-
 #, c-format
 msgid "sftp: %s"
 msgstr ""
@@ -4127,8 +4270,8 @@ msgstr "Kan ikke spawn underproces"
 msgid "Empty output from child filter"
 msgstr "Tom uddata fra underfilter"
 
-msgid "&Line number (decimal)"
-msgstr "&Linjenummer (decimal)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "&Procenter"
@@ -4210,9 +4353,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Seeking to search result"
-msgstr "Går til søgeresultat"
-
 msgid "Search done"
 msgstr "Søgning færdig"
 
@@ -4221,6 +4361,3 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
-
-#~ msgid "&Select"
-#~ msgstr "&Vælg"

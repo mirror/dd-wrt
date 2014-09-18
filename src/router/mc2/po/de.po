@@ -10,9 +10,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: German (http://www.transifex.com/projects/p/mc/language/de/)\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -538,6 +538,13 @@ msgstr "Hintergrundprozess:"
 msgid "Error"
 msgstr "Fehler"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "&Abbrechen"
+
 msgid "Displays the current version"
 msgstr "Zeigt die aktuelle Version an"
 
@@ -631,27 +638,9 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
-"--colors KEYWORD={FORE},{BACK},{ATTR}:KEYWORD2=...\n"
-"\n"
-"{FORE}, {BACK} and {ATTR} can be omitted, and the default will be used\n"
-"\n"
-" Keywords:\n"
-"   Global:       errors, disabled, reverse, gauge, header\n"
-"                 input, inputmark, inputunchanged, commandlinemark\n"
-"                 bbarhotkey, bbarbutton, statusbar\n"
-"   File display: normal, selected, marked, markselect\n"
-"   Dialog boxes: dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
-"                 errdhotfocus\n"
-"   Menus:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
-"   Popup menus:  pmenunormal, pmenusel, pmenutitle\n"
-"   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate, editbg, editframe, editframeactive\n"
-"                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
-"   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -874,6 +863,62 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr "2 Dateien sind zum Vergleichen erforderlich"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "&Nächstes Lesezeichen"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Sortieren"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Filter"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "&Gehe zu Zeile..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "Neues hinzufügen"
+
+msgid "&Remove"
+msgstr "Löschen"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Filter"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Sortieren"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "&Rückwärts"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Syntaxhervorhebung auswählen"
 
@@ -884,8 +929,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Aktuelle Hervorhebung neu laden >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Kann Datei \"%s\" nicht zum Lesen öffnen"
+
+msgid "Load file"
+msgstr ""
 
 #, c-format
 msgid "Error reading %s"
@@ -913,6 +968,14 @@ msgstr "Fehler beim Lesen aus einer Pipe: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "Kann Pipe zum Lesen nicht öffnen: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "Suche %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr ""
 "Die Datei ist statisch verlinkt. Diesen Link vor dem  Speichern entfernt?"
@@ -932,9 +995,8 @@ msgstr "Kann Pipe zum Schreiben nicht öffnen: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Kann die Datei \"%s\" zum Schreiben nicht öffnen"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "Die gespeicherte Datei endet nicht mit einem Zeilenvorschub"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "Weiter"
@@ -962,6 +1024,9 @@ msgstr "Speichern unter"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Großer Block, diese Aktion kann nicht rückgängig gemacht werden"
+
+msgid "Collect completions"
+msgstr ""
 
 msgid "&Quick save"
 msgstr "&Schnelles Speichern "
@@ -1518,6 +1583,78 @@ msgstr "ButtonBar|Löschen"
 msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|Menüs"
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr "&Wort hinzufügen"
 
@@ -2033,15 +2170,6 @@ msgstr "Filter"
 msgid "Set expression for filtering filenames"
 msgstr "Ausdruck zum Filtern von Dateinamen setzen"
 
-msgid "&Files only"
-msgstr "Nur &Dateien"
-
-msgid "&Using shell patterns"
-msgstr "Shell-Pattern ben&utzen"
-
-msgid "&Case sensitive"
-msgstr "Groß-/Kle&inschreibung"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Link %s zu:"
@@ -2081,12 +2209,6 @@ msgstr "Legt ein neues Verzeichnis an"
 
 msgid "Enter directory name:"
 msgstr "Verzeichnisnamen eingeben:"
-
-msgid "Select"
-msgstr "Auswahl"
-
-msgid "Unselect"
-msgstr "Deselektieren"
 
 msgid "Extension file edit"
 msgstr "Bearbeiten der Erweiterungsdatei"
@@ -2172,6 +2294,9 @@ msgid ""
 msgstr ""
 "Name des Gerätes (ohne /dev/) angeben, auf dem das Löschen von\n"
 "Dateien rückgängig gemacht werden soll: (Details mit F1)"
+
+msgid "Directory scanning"
+msgstr "Verzeichnis scannen"
 
 msgid "Setup"
 msgstr "Einstellungen"
@@ -2306,9 +2431,6 @@ msgid ""
 msgstr ""
 "Kann das Ziel des symbolischen Links \"%s\" nicht anlegen\n"
 "%s"
-
-msgid "&Abort"
-msgstr "&Abbrechen"
 
 msgid "Ski&p all"
 msgstr "Alle übers&pringen"
@@ -2586,13 +2708,8 @@ msgstr ""
 "Kann Verzeichnis \"%s\" nicht in \"%s\" umbenennen\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Verzeichnis scannen"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2700,6 +2817,12 @@ msgstr "Quelle"
 msgid "Target"
 msgstr "Ziel"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "Shell-Pattern ben&utzen"
+
 msgid "to:"
 msgstr "nach:"
 
@@ -2793,10 +2916,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] ""
 msgstr[1] ""
 
-#, c-format
-msgid "Searching %s"
-msgstr "Suche %s"
-
 msgid "Searching"
 msgstr "Suche "
 
@@ -2823,9 +2942,6 @@ msgstr "Neuer &Eintrag"
 
 msgid "&Insert"
 msgstr "E&infügen"
-
-msgid "&Remove"
-msgstr "Löschen"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Untergruppe - ENTER drücken, um die Liste zu sehen"
@@ -3349,6 +3465,18 @@ msgstr ""
 
 msgid "Unknown tag on display format:"
 msgstr "Unbekannter Tag in Anzeigeformat: "
+
+msgid "&Files only"
+msgstr "Nur &Dateien"
+
+msgid "&Case sensitive"
+msgstr "Groß-/Kle&inschreibung"
+
+msgid "Select"
+msgstr "Auswahl"
+
+msgid "Unselect"
+msgstr "Deselektieren"
 
 msgid "Do you really want to execute?"
 msgstr "Möchten Sie wirklich ausführen?"
@@ -3964,9 +4092,6 @@ msgstr ""
 msgid "sftp: Invalid host name."
 msgstr ""
 
-msgid "sftp: Invalid port value."
-msgstr ""
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4155,8 +4280,8 @@ msgstr "Kann Kindprozess nicht hervorbringen"
 msgid "Empty output from child filter"
 msgstr "Der Filter gab nichts aus"
 
-msgid "&Line number (decimal)"
-msgstr "Zei&lennummer (dezimal)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "P&rozente"
@@ -4238,9 +4363,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Seeking to search result"
-msgstr "Suchergebnis durchsuchen"
-
 msgid "Search done"
 msgstr "Suche abgeschlossen"
 
@@ -4249,6 +4371,3 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
-
-#~ msgid "&Select"
-#~ msgstr "Aus&wahl"

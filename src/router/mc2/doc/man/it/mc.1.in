@@ -1,4 +1,4 @@
-.\" -*- mode: troff; coding: utf8 -*-
+.\" -*- mode: troff; coding: UTF-8 -*-
 .\" Tradotto dal 15 agosto 2002 da
 .\"     Marco Ciampa <ciampix@libero.it>
 .\" Chi vuole contribuire aggiunga il nome qui sotto.
@@ -2958,6 +2958,7 @@ sono: helpnormal, helpitalic, helpbold, helplink, helpslink.
 Il colore del visualizzatore è: viewunderline.
 Colori speciali di evidenziazione: executable, directory, link, device, 
 special, core.
+I colori dell'viewer sono: viewnormal, viewbold, viewunderline, viewselected.
 I colori dell'editor sono: editnormal, editbold, editmarked.
 .PP
 .I input 

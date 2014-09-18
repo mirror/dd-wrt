@@ -3,18 +3,18 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# mbouzada <mbouzada@gmail.com>, 2013
-# mbouzada <mbouzada@gmail.com>, 2011-2012
-# mbouzada <mbouzada@gmail.com>, 2011
-# mbouzada <mbouzada@gmail.com>, 2012
+# Miguel Anxo Bouzada <mbouzada@gmail.com>, 2013
+# Miguel Anxo Bouzada <mbouzada@gmail.com>, 2011-2012
+# Miguel Anxo Bouzada <mbouzada@gmail.com>, 2011
+# Miguel Anxo Bouzada <mbouzada@gmail.com>, 2012,2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Galician (http://www.transifex.com/projects/p/mc/language/"
 "gl/)\n"
 "Language: gl\n"
@@ -161,7 +161,7 @@ msgstr ""
 "Cargouse o tema predeterminado"
 
 msgid "Escape"
-msgstr ""
+msgstr "Escape"
 
 msgid "Function key 1"
 msgstr "Tecla «F1»"
@@ -227,43 +227,43 @@ msgid "Completion/M-tab"
 msgstr "Completar/M-Tab"
 
 msgid "BackTab/S-tab"
-msgstr ""
+msgstr "Retroceso/S-tab"
 
 msgid "Backspace"
-msgstr ""
+msgstr "Retroceso (<--)"
 
 msgid "Up arrow"
-msgstr ""
+msgstr "Frecha arriba"
 
 msgid "Down arrow"
-msgstr ""
+msgstr "Frecha abaixo"
 
 msgid "Left arrow"
-msgstr ""
+msgstr "Frecha esquerda"
 
 msgid "Right arrow"
-msgstr ""
+msgstr "Frecha dereita"
 
 msgid "Insert"
-msgstr ""
+msgstr "Inserir"
 
 msgid "Delete"
-msgstr ""
+msgstr "Eliminar"
 
 msgid "Home"
-msgstr ""
+msgstr "Inicio"
 
 msgid "End key"
 msgstr "Tecla «Fin»"
 
 msgid "Page Up"
-msgstr ""
+msgstr "Re Páx"
 
 msgid "Page Down"
-msgstr ""
+msgstr "Av Páx"
 
 msgid "/ on keypad"
-msgstr ""
+msgstr "/ no teclado numérico"
 
 msgid "* on keypad"
 msgstr "* no teclado numérico"
@@ -550,6 +550,13 @@ msgstr "Procesos en 2º plano"
 msgid "Error"
 msgstr "Erro"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "&Interromper"
+
 msgid "Displays the current version"
 msgstr "Mostrar a versión actual"
 
@@ -643,28 +650,9 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
-"--colors CONTEXTO={FRENTE},{FONDO},{ATRIBUTOS}:CONTEXTO2=...\n"
-"\n"
-"{FRENTE}, {FONDO} e {ATRIBUTOS} poden omitirse e utilizarase o el valor "
-"predeterminado\n"
-"\n"
-" Contextos:\n"
-"   Global:       errors, disabled, reverse, gauge, header\n"
-"                 input, inputmark, inputunchanged, commandlinemark\n"
-"                 bbarhotkey, bbarbutton, statusbar\n"
-"   Visor de ficheiros: normal, selected, marked, markselect\n"
-"   Diálogos:     dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
-"                 errdhotfocus\n"
-"   Menús:        menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
-"   Menús emerxentes: pmenunormal, pmenusel, pmenutitle\n"
-"   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate, editbg, editframe, editframeactive\n"
-"                 editframedrag\n"
-"   Visor:        viewbold, viewunderline, viewselected\n"
-"   Axuda:        helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -902,6 +890,62 @@ msgstr "Visor de diferenzas: modo incorrecto"
 msgid "Two files are needed to compare"
 msgstr "Son precisos dous ficheiros para comparar"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "Limpar &Todos os marcadores"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Ordenar"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Filtro"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "&Ir á liña "
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Engadir novo"
+
+msgid "&Remove"
+msgstr "&Quitar"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Filtro"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Ordenar"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "Inve&Rter"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Elixa a sintaxe de resalte"
 
@@ -912,8 +956,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Recargar a sintaxe actual >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Non é posíbel abrir %s para lectura"
+
+msgid "Load file"
+msgstr ""
 
 #, c-format
 msgid "Error reading %s"
@@ -943,6 +997,14 @@ msgstr "Produciuse un erro ao ler da canalización: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "Non é posíbel abrir canalización para lectura: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "Buscando %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "Hai outras ligazóns duras ao ficheiro. Desexa separalas ao gardar?"
 
@@ -961,9 +1023,8 @@ msgstr "Non é posíbel abrir canalización para escritura: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Non é posíbel abrir o ficheiro para escritura: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "O ficheiro a gardar non remata cun salto de liña"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "c&Ontinuar"
@@ -991,6 +1052,9 @@ msgstr "Gardar como"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "O bloque é moi grande, pode que non se poida desfacer esta acción"
+
+msgid "Collect completions"
+msgstr ""
 
 msgid "&Quick save"
 msgstr "Gardar &Rápido"
@@ -1522,7 +1586,7 @@ msgstr ""
 "escrito para o Midnight Commander."
 
 msgid "Copyright (C) 1996-2014 the Free Software Foundation"
-msgstr ""
+msgstr "Copyright (C) 1996-2014 a Free Software Foundation"
 
 msgid "About"
 msgstr "Sobre"
@@ -1550,6 +1614,78 @@ msgstr "ButtonBar|Eliminar"
 
 msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|Baixar"
+
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
 
 msgid "&Add word"
 msgstr "&Engadir palabra"
@@ -1731,16 +1867,16 @@ msgid "Configure options"
 msgstr "Configuración"
 
 msgid "< Default >"
-msgstr ""
+msgstr "< Predeterminado >"
 
 msgid "Skins"
-msgstr ""
+msgstr "Temas"
 
 msgid "Skin:"
-msgstr ""
+msgstr "Tema:"
 
 msgid "Appearance"
-msgstr ""
+msgstr "Aparencia"
 
 msgid "Case &insensitive"
 msgstr "&Non distinguir maiúsculas"
@@ -2068,15 +2204,6 @@ msgstr "Filtro"
 msgid "Set expression for filtering filenames"
 msgstr "Introduza a expresión para filtrar nomes de ficheiro"
 
-msgid "&Files only"
-msgstr "Só &Ficheiros"
-
-msgid "&Using shell patterns"
-msgstr "&Usando modelos de consola"
-
-msgid "&Case sensitive"
-msgstr "&Distinguir maiúsculas"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Crear ligazón a %s como:"
@@ -2116,12 +2243,6 @@ msgstr "Crear un novo directorio"
 
 msgid "Enter directory name:"
 msgstr "Introduza nome do directorio:"
-
-msgid "Select"
-msgstr "Seleccionar"
-
-msgid "Unselect"
-msgstr "Desmarcar"
 
 msgid "Extension file edit"
 msgstr "Editar o ficheiro de extensións"
@@ -2208,6 +2329,9 @@ msgstr ""
 "Introduza o dispositivo (sen /dev/) onde quere\n"
 "recuperar ficheiros: (F1 para máis detalles)"
 
+msgid "Directory scanning"
+msgstr "Examinando directorio"
+
 msgid "Setup"
 msgstr "Configuración"
 
@@ -2290,7 +2414,7 @@ msgstr "FileOperation|Eliminar"
 
 #, no-c-format
 msgid "%o %f%n\"%s\"%m"
-msgstr ""
+msgstr "%o %f%n«%s»%m"
 
 #, no-c-format
 msgid "%o %d %f%m"
@@ -2343,9 +2467,6 @@ msgid ""
 msgstr ""
 "Non é posíbel crear a ligazón simbólica «%s»\n"
 "%s"
-
-msgid "&Abort"
-msgstr "&Interromper"
 
 msgid "Ski&p all"
 msgstr "omitir &Todos"
@@ -2630,16 +2751,9 @@ msgstr ""
 "Non é posíbel mover o directorio «%s» a «%s»\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Examinando directorio"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
-"%s\n"
-"Directorios: %zd, tamaño total: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Non é posíbel operar sobre «..»!"
@@ -2746,6 +2860,12 @@ msgstr "Orixe"
 msgid "Target"
 msgstr "Destino"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "&Usando modelos de consola"
+
 msgid "to:"
 msgstr "a:"
 
@@ -2839,10 +2959,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] "Rematado (%zd directorio ignorado)"
 msgstr[1] "Rematado (%zd directorios ignorados)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "Buscando %s"
-
 msgid "Searching"
 msgstr "Buscando"
 
@@ -2869,9 +2985,6 @@ msgstr "Nova &Entrada"
 
 msgid "&Insert"
 msgstr "&Inserir"
-
-msgid "&Remove"
-msgstr "&Quitar"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Subgrupo - prema INTRO para ver a lista"
@@ -3224,7 +3337,7 @@ msgid "C&onfirmation..."
 msgstr "c&Onfirmación..."
 
 msgid "&Appearance..."
-msgstr ""
+msgstr "&Aparencia..."
 
 msgid "&Display bits..."
 msgstr "&Mostrar bits..."
@@ -3399,6 +3512,18 @@ msgstr "Poñer no panel"
 
 msgid "Unknown tag on display format:"
 msgstr "Etiqueta descoñecida no formato de pantalla:"
+
+msgid "&Files only"
+msgstr "Só &Ficheiros"
+
+msgid "&Case sensitive"
+msgstr "&Distinguir maiúsculas"
+
+msgid "Select"
+msgstr "Seleccionar"
+
+msgid "Unselect"
+msgstr "Desmarcar"
 
 msgid "Do you really want to execute?"
 msgstr "Confirma que quere executalo?"
@@ -4020,9 +4145,6 @@ msgstr "sftp: Non é posíbel obter o nome do usuario actual."
 msgid "sftp: Invalid host name."
 msgstr "sftp: nome de máquina incorrecto."
 
-msgid "sftp: Invalid port value."
-msgstr "sftp: porto incorrecto."
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4211,8 +4333,8 @@ msgstr "Non é posíbel executar o proceso fillo"
 msgid "Empty output from child filter"
 msgstr "Saída do filtro baleira"
 
-msgid "&Line number (decimal)"
-msgstr "Número de &Liña (decimal)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "Pe&Rcentiles"
@@ -4296,9 +4418,6 @@ msgstr ""
 "Non é posíbel abrir «%s» en modo de análise\n"
 "%s"
 
-msgid "Seeking to search result"
-msgstr "Avanzando ao resultado da busca"
-
 msgid "Search done"
 msgstr "Busca rematada"
 
@@ -4308,5 +4427,5 @@ msgstr "Continuar desde o principio?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Non é posíbel obter unha copia local de /ftp://some.host/editme.txt"
 
-#~ msgid "&Select"
-#~ msgstr "&Seleccionar"
+#~ msgid "sftp: Invalid port value."
+#~ msgstr "sftp: porto incorrecto."

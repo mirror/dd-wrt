@@ -14,7 +14,7 @@
    Pavel Machek, 1998
    Roland Illig <roland.illig@gmx.de>, 2004, 2005
    Slava Zanko <slavazanko@google.com>, 2009, 2013
-   Andrew Borodin <aborodin@vmail.ru>, 2009, 2013
+   Andrew Borodin <aborodin@vmail.ru>, 2009, 2013, 2014
    Ilia Maslakov <il.smind@gmail.com>, 2009
 
    This file is part of the Midnight Commander.
@@ -75,7 +75,7 @@ const off_t OFFSETTYPE_MAX = ((off_t) 1 << (OFF_T_BITWIDTH - 1)) - 1;
 void
 mcview_toggle_magic_mode (mcview_t * view)
 {
-    char *command;
+    char *filename, *command;
     dir_list *dir;
     int *dir_idx;
 
@@ -83,6 +83,7 @@ mcview_toggle_magic_mode (mcview_t * view)
     view->magic_mode = !view->magic_mode;
 
     /* reinit view */
+    filename = g_strdup (vfs_path_as_str (view->filename_vpath));
     command = g_strdup (view->command);
     dir = view->dir;
     dir_idx = view->dir_idx;
@@ -90,9 +91,10 @@ mcview_toggle_magic_mode (mcview_t * view)
     view->dir_idx = NULL;
     mcview_done (view);
     mcview_init (view);
-    mcview_load (view, command, vfs_path_as_str (view->filename_vpath), 0);
+    mcview_load (view, command, filename, 0);
     view->dir = dir;
     view->dir_idx = dir_idx;
+    g_free (filename);
     g_free (command);
 
     view->dpy_bbar_dirty = TRUE;
@@ -222,8 +224,7 @@ mcview_done (mcview_t * view)
     view->filename_vpath = NULL;
     vfs_path_free (view->workdir_vpath);
     view->workdir_vpath = NULL;
-    g_free (view->command);
-    view->command = NULL;
+    MC_PTR_FREE (view->command);
 
     mcview_close_datasource (view);
     /* the growing buffer is freed with the datasource */
@@ -403,6 +404,38 @@ mcview_get_title (const WDialog * h, size_t len)
 
     ret_str = g_strconcat (_("View: "), modified, file_label, (char *) NULL);
     return ret_str;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+int
+mcview_calc_percent (mcview_t * view, off_t p)
+{
+    const screen_dimen right = view->status_area.left + view->status_area.width;
+    const screen_dimen height = view->status_area.height;
+    off_t filesize;
+    int percent;
+
+    if (height < 1 || right < 4)
+        return (-1);
+    if (mcview_may_still_grow (view))
+        return (-1);
+
+    filesize = mcview_get_filesize (view);
+    if (view->hex_mode && filesize > 0)
+    {
+        /* p can't be beyond the last char, only over that. Compensate for this. */
+        filesize--;
+    }
+
+    if (filesize == 0 || p >= filesize)
+        percent = 100;
+    else if (p > (INT_MAX / 100))
+        percent = p / (filesize / 100);
+    else
+        percent = p * 100 / filesize;
+
+    return percent;
 }
 
 /* --------------------------------------------------------------------------------------------- */

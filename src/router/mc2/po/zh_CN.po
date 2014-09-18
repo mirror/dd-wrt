@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/projects/p/mc/"
 "language/zh_CN/)\n"
 "Language: zh_CN\n"
@@ -549,6 +549,13 @@ msgstr "后台进程: "
 msgid "Error"
 msgstr "错误"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "中止(&A)"
+
 msgid "Displays the current version"
 msgstr "显示当前版本"
 
@@ -642,27 +649,9 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
-"--colors KEYWORD={FORE},{BACK},{ATTR}:KEYWORD2=...\n"
-"\n"
-"{FORE}, {BACK} 及 {ATTR} 可以忽略，忽略时使用默认值\n"
-"\n"
-" 关键词: \n"
-"   全局:         errors, disabled, reverse, gauge, header\n"
-"                 input, inputmark, inputunchanged, commandlinemark\n"
-"                 bbarhotkey, bbarbutton, statusbar\n"
-"   文件显示:     normal, selected, marked, markselect\n"
-"   对话框窗口:   dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
-"                 errdhotfocus\n"
-"   菜单:         menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
-"   弹出菜单:     pmenunormal, pmenusel, pmenutitle\n"
-"   编辑器:       editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate, editbg, editframe, editframeactive\n"
-"                 editframedrag\n"
-"   查看器:       viewbold, viewunderline, viewselected\n"
-"   帮助:         helpnormal, helpi talic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -900,6 +889,62 @@ msgstr "Diff 查看器: 模式无效"
 msgid "Two files are needed to compare"
 msgstr "比较时需要两个文件"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "清理书签(&F)"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "排序"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "过滤"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "转到行(&G)..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "添加新(&A)"
+
+msgid "&Remove"
+msgstr "删除(&R)"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "过滤"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "排序"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "反向(&R)"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "选择语法突出显示"
 
@@ -910,8 +955,18 @@ msgid "< Reload Current Syntax >"
 msgstr "<重新加载当前语法>"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "无法打开 %s 读取内容"
+
+msgid "Load file"
+msgstr ""
 
 #, c-format
 msgid "Error reading %s"
@@ -941,6 +996,14 @@ msgstr "读取管道时发生错误: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "无法打开管道读取: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "正在搜索 %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "文件有硬链接。保存文件前分离该链接吗?"
 
@@ -959,9 +1022,8 @@ msgstr "试图打开管道写入时失败: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "无法打开文件进行写操作: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "您要保存的文件没有以换行符结束"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "继续(&O)"
@@ -989,6 +1051,9 @@ msgstr "另存为"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "块过大，您可能无法撤消这个操作"
+
+msgid "Collect completions"
+msgstr ""
 
 msgid "&Quick save"
 msgstr "快速保存(&Q)"
@@ -1549,6 +1614,78 @@ msgstr "ButtonBar|删除"
 msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|菜单"
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr "添加单词(&A)"
 
@@ -2063,15 +2200,6 @@ msgstr "过滤"
 msgid "Set expression for filtering filenames"
 msgstr "设置过滤文件名的表达式"
 
-msgid "&Files only"
-msgstr "仅文件(&F)"
-
-msgid "&Using shell patterns"
-msgstr "使用 shell 模式(&U)"
-
-msgid "&Case sensitive"
-msgstr "大小写敏感(&C)"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "链接 %s 到: "
@@ -2111,12 +2239,6 @@ msgstr "创建新目录"
 
 msgid "Enter directory name:"
 msgstr "输入目录名称: "
-
-msgid "Select"
-msgstr "选择"
-
-msgid "Unselect"
-msgstr "取消选择"
 
 msgid "Extension file edit"
 msgstr "扩展文件编辑"
@@ -2202,6 +2324,9 @@ msgid ""
 msgstr ""
 "输入要反删除的文件所在的设备(不带 /dev/)\n"
 "(F1 获取详细信息)"
+
+msgid "Directory scanning"
+msgstr "扫描目录"
 
 msgid "Setup"
 msgstr "设置"
@@ -2336,9 +2461,6 @@ msgid ""
 msgstr ""
 "无法创建目标符号链接“%s”\n"
 "%s"
-
-msgid "&Abort"
-msgstr "中止(&A)"
 
 msgid "Ski&p all"
 msgstr "路过全部(&I)"
@@ -2623,16 +2745,9 @@ msgstr ""
 "无法移动目录“%s”到“%s”\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "扫描目录"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
-"%s\n"
-"目录: %zd, 总体积: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "无法操作\"..\"!"
@@ -2739,6 +2854,12 @@ msgstr "来源"
 msgid "Target"
 msgstr "目标"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "使用 shell 模式(&U)"
+
 msgid "to:"
 msgstr "至: "
 
@@ -2831,10 +2952,6 @@ msgid "Finished (ignored %zd directory)"
 msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] "完成 (忽略 %zd 个目录)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "正在搜索 %s"
-
 msgid "Searching"
 msgstr "正在搜索"
 
@@ -2861,9 +2978,6 @@ msgstr "新建项(&E)"
 
 msgid "&Insert"
 msgstr "插入(&I)"
-
-msgid "&Remove"
-msgstr "删除(&R)"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "子组－按 ENTER 查看列表"
@@ -3387,6 +3501,18 @@ msgstr "面板化"
 
 msgid "Unknown tag on display format:"
 msgstr "显示格式中未知的标记: "
+
+msgid "&Files only"
+msgstr "仅文件(&F)"
+
+msgid "&Case sensitive"
+msgstr "大小写敏感(&C)"
+
+msgid "Select"
+msgstr "选择"
+
+msgid "Unselect"
+msgstr "取消选择"
 
 msgid "Do you really want to execute?"
 msgstr "您真的要执行吗?"
@@ -4006,9 +4132,6 @@ msgstr "sftp: 无法获取当前用户的用户名。"
 msgid "sftp: Invalid host name."
 msgstr "sftp: 无效的主机名。"
 
-msgid "sftp: Invalid port value."
-msgstr "sftp: 无效的端口值。"
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4197,8 +4320,8 @@ msgstr "无法生成子进程"
 msgid "Empty output from child filter"
 msgstr "子过滤器输出为空"
 
-msgid "&Line number (decimal)"
-msgstr "行号(10进制&L)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "百分比(&R)"
@@ -4282,9 +4405,6 @@ msgstr ""
 "无法打开“%s”，当前解析模式\n"
 "%s"
 
-msgid "Seeking to search result"
-msgstr "查询搜索结果"
-
 msgid "Search done"
 msgstr "搜索完成"
 
@@ -4294,5 +4414,5 @@ msgstr "从头继续搜索?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "无法获取 /ftp://some.host/editme.txt 的本地副本"
 
-#~ msgid "&Select"
-#~ msgstr "选择(&S)"
+#~ msgid "sftp: Invalid port value."
+#~ msgstr "sftp: 无效的端口值。"

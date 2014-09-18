@@ -135,8 +135,7 @@ resolve_symlinks (const vfs_path_t * vpath)
         *q = 0;
         if (mc_lstat (vpath, &mybuf) < 0)
         {
-            g_free (buf);
-            buf = NULL;
+            MC_PTR_FREE (buf);
             goto ret;
         }
         if (!S_ISLNK (mybuf.st_mode))
@@ -148,8 +147,7 @@ resolve_symlinks (const vfs_path_t * vpath)
             len = mc_readlink (vpath, buf2, MC_MAXPATHLEN - 1);
             if (len < 0)
             {
-                g_free (buf);
-                buf = NULL;
+                MC_PTR_FREE (buf);
                 goto ret;
             }
             buf2[len] = 0;
@@ -648,6 +646,9 @@ x_basename (const char *s)
     url_delim = g_strrstr (s, VFS_PATH_URL_DELIMITER);
     path_sep = strrchr (s, PATH_SEP);
 
+    if (path_sep == NULL)
+        return s;
+
     if (url_delim == NULL
         || url_delim < path_sep - strlen (VFS_PATH_URL_DELIMITER)
         || url_delim - s + strlen (VFS_PATH_URL_DELIMITER) < strlen (s))
@@ -717,12 +718,12 @@ skip_numbers (const char *s)
  * "control sequence", in a sort of pidgin BNF, as follows:
  *
  * control-seq = Esc non-'['
- *             | Esc '[' (0 or more digits or ';' or '?') (any other char)
+ *             | Esc '[' (0 or more digits or ';' or ':' or '?') (any other char)
  *
- * This scheme works for all the terminals described in my termcap /
- * terminfo databases, except the Hewlett-Packard 70092 and some Wyse
- * terminals.  If I hear from a single person who uses such a terminal
- * with MC, I'll be glad to add support for it.  (Dugan)
+ * The 256-color and true-color escape sequences should allow either ';' or ':' inside as separator,
+ * actually, ':' is the more correct according to ECMA-48.
+ * Some terminal emulators (e.g. xterm, gnome-terminal) support this.
+ *
  * Non-printable characters are also removed.
  */
 
@@ -744,7 +745,7 @@ strip_ctrl_codes (char *s)
             if (*(++r) == '[' || *r == '(')
             {
                 /* strchr() matches trailing binary 0 */
-                while (*(++r) != '\0' && strchr ("0123456789;?", *r) != NULL)
+                while (*(++r) != '\0' && strchr ("0123456789;:?", *r) != NULL)
                     ;
             }
             else if (*r == ']')
@@ -1393,6 +1394,60 @@ guess_message_value (void)
         locale = "";
 
     return g_strdup (locale);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Propagate error in simple way.
+ *
+ * @param dest error return location
+ * @param code error code
+ * @param format printf()-style format for error message
+ * @param ... parameters for message format
+ */
+
+void
+mc_propagate_error (GError ** dest, int code, const char *format, ...)
+{
+    if (dest != NULL && *dest == NULL)
+    {
+        GError *tmp_error;
+        va_list args;
+
+        va_start (args, format);
+        tmp_error = g_error_new_valist (MC_ERROR, code, format, args);
+        va_end (args);
+
+        g_propagate_error (dest, tmp_error);
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
+ * Replace existing error in simple way.
+ *
+ * @param dest error return location
+ * @param code error code
+ * @param format printf()-style format for error message
+ * @param ... parameters for message format
+ */
+
+void
+mc_replace_error (GError ** dest, int code, const char *format, ...)
+{
+    if (dest != NULL)
+    {
+        GError *tmp_error;
+        va_list args;
+
+        va_start (args, format);
+        tmp_error = g_error_new_valist (MC_ERROR, code, format, args);
+        va_end (args);
+
+        g_error_free (*dest);
+        *dest = NULL;
+        g_propagate_error (dest, tmp_error);
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */

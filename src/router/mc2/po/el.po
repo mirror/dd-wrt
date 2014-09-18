@@ -9,9 +9,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-03-20 12:25+0000\n"
-"Last-Translator: Drakevr <apnatsios@gmail.com>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Greek (http://www.transifex.com/projects/p/mc/language/el/)\n"
 "Language: el\n"
 "MIME-Version: 1.0\n"
@@ -539,6 +539,13 @@ msgstr "Διαδικασία παρασκηνίου:"
 msgid "Error"
 msgstr "Σφάλμα"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "&Εγκατάλειψη"
+
 msgid "Displays the current version"
 msgstr "Εμφανίζει την τρέχουσα έκδοση"
 
@@ -634,7 +641,7 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
 
@@ -855,6 +862,60 @@ msgstr ""
 msgid "Two files are needed to compare"
 msgstr "Χρειάζονται δύο αρχεία για σύγκριση"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "&Επόμενος σελιδοδείκτης"
+
+msgid " - Sort: "
+msgstr ""
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Φίλτρο"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "&Μετακίνηση στη γραμμή..."
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Προσθήκη νέου"
+
+msgid "&Remove"
+msgstr "&Αφαίρεση"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Φίλτρο"
+
+msgid "&Sort"
+msgstr ""
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "&Αναστροφή"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Επιλογή συντακτικού τονισμού"
 
@@ -865,8 +926,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Επαναφόρτωση τρέχοντος συντακτικού >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Αδύνατο το άνοιγμα του %s για ανάγνωση"
+
+msgid "Load file"
+msgstr ""
 
 #, c-format
 msgid "Error reading %s"
@@ -894,6 +965,14 @@ msgstr ""
 msgid "Cannot open pipe for reading: %s"
 msgstr ""
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "Αναζήτηση %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr ""
 
@@ -912,9 +991,8 @@ msgstr ""
 msgid "Cannot open file for writing: %s"
 msgstr "Αδύνατο το άνοιγμα του αρχείου για εγγραφή: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "Το αρχείου που αποθηκεύετε δεν τελειώνει με νέα γραμμή"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "&Συνέχεια"
@@ -941,6 +1019,9 @@ msgid "Save As"
 msgstr "Αποθήκευση ως"
 
 msgid "Block is large, you may not be able to undo this action"
+msgstr ""
+
+msgid "Collect completions"
 msgstr ""
 
 msgid "&Quick save"
@@ -1496,6 +1577,78 @@ msgstr ""
 msgid "ButtonBar|PullDn"
 msgstr ""
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr ""
 
@@ -2004,15 +2157,6 @@ msgstr "Φίλτρο"
 msgid "Set expression for filtering filenames"
 msgstr "Ρύθμιση έκφρασης για φιλτράρισμα ονομάτων αρχείων"
 
-msgid "&Files only"
-msgstr "&Αρχεία μόνο"
-
-msgid "&Using shell patterns"
-msgstr ""
-
-msgid "&Case sensitive"
-msgstr ""
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Δεσμός %s σε:"
@@ -2052,12 +2196,6 @@ msgstr "Δημιουργία νέου καταλόγου"
 
 msgid "Enter directory name:"
 msgstr "Εισαγωγή ονόματος καταλόγου:"
-
-msgid "Select"
-msgstr "Επιλογή"
-
-msgid "Unselect"
-msgstr "Αποεπιλογή"
 
 msgid "Extension file edit"
 msgstr "Επεξεργασία αρχείου επέκτασης"
@@ -2139,6 +2277,9 @@ msgid ""
 msgstr ""
 "Εισάγετε τη συσκευή (χωρίς το /dev/) για να επαναφέρετε\n"
 "αρχεία σε: (F1 για λεπτομέρειες)"
+
+msgid "Directory scanning"
+msgstr "Σάρωση καταλόγου"
 
 msgid "Setup"
 msgstr "Εγκατάσταση"
@@ -2268,9 +2409,6 @@ msgid ""
 "Cannot create target symlink \"%s\"\n"
 "%s"
 msgstr ""
-
-msgid "&Abort"
-msgstr "&Εγκατάλειψη"
 
 msgid "Ski&p all"
 msgstr "&Παράβλεψη όλων"
@@ -2536,13 +2674,8 @@ msgstr ""
 "Αδυναμία μετακίνησης καταλόγου \"%s\" to \"%s\"\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Σάρωση καταλόγου"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2650,6 +2783,12 @@ msgstr "Πηγή"
 msgid "Target"
 msgstr "Στόχος"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr ""
+
 msgid "to:"
 msgstr "προς"
 
@@ -2743,10 +2882,6 @@ msgid_plural "Finished (ignored %zd directories)"
 msgstr[0] "Τελείωσε (αγνοήθηκε %zd φακελος)"
 msgstr[1] "Τελείωσε (αγνοήθηκαν %zd φάκελοι)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "Αναζήτηση %s"
-
 msgid "Searching"
 msgstr "Αναζήτηση"
 
@@ -2773,9 +2908,6 @@ msgstr "Νέα &εισαγωγή"
 
 msgid "&Insert"
 msgstr "&Εισαγωγή"
-
-msgid "&Remove"
-msgstr "&Αφαίρεση"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr ""
@@ -3301,6 +3433,18 @@ msgstr ""
 
 msgid "Unknown tag on display format:"
 msgstr ""
+
+msgid "&Files only"
+msgstr "&Αρχεία μόνο"
+
+msgid "&Case sensitive"
+msgstr ""
+
+msgid "Select"
+msgstr "Επιλογή"
+
+msgid "Unselect"
+msgstr "Αποεπιλογή"
 
 msgid "Do you really want to execute?"
 msgstr "Σίγουρα θέλετε να γίνει εκτέλεση;"
@@ -3899,9 +4043,6 @@ msgstr ""
 msgid "sftp: Invalid host name."
 msgstr ""
 
-msgid "sftp: Invalid port value."
-msgstr ""
-
 #, c-format
 msgid "sftp: %s"
 msgstr ""
@@ -4086,7 +4227,7 @@ msgstr ""
 msgid "Empty output from child filter"
 msgstr ""
 
-msgid "&Line number (decimal)"
+msgid "&Line number"
 msgstr ""
 
 msgid "Pe&rcents"
@@ -4169,9 +4310,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Seeking to search result"
-msgstr ""
-
 msgid "Search done"
 msgstr "Η αναζήτηση τελείωσε"
 
@@ -4180,6 +4318,3 @@ msgstr "Συνέχεια από την αρχή;"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
-
-#~ msgid "&Select"
-#~ msgstr "&Επιλογή"

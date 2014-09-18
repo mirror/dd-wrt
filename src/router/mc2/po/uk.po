@@ -4,15 +4,15 @@
 #
 # Translators:
 # Oleksandr Natalenko <oleksandr@natalenko.name>, 2011, 2012
-# peinguin <pingvein@gmail.com>, 2012-2013
+# Sergey Fesyura <pingvein@gmail.com>, 2012-2013
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2014-04-01 14:47+0300\n"
-"PO-Revision-Date: 2014-02-19 09:12+0000\n"
-"Last-Translator: aborodin <aborodin@vmail.ru>\n"
+"POT-Creation-Date: 2014-09-04 16:51+0300\n"
+"PO-Revision-Date: 2014-09-04 10:10+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Ukrainian (http://www.transifex.com/projects/p/mc/language/"
 "uk/)\n"
 "Language: uk\n"
@@ -548,6 +548,13 @@ msgstr "Фоновий процес:"
 msgid "Error"
 msgstr "Помилка"
 
+#, c-format
+msgid "%d: %s"
+msgstr ""
+
+msgid "&Abort"
+msgstr "&Перервати"
+
 msgid "Displays the current version"
 msgstr "Показує поточну версію"
 
@@ -641,28 +648,9 @@ msgid ""
 "   Editor:       editnormal, editbold, editmarked, editwhitespace,\n"
 "                 editlinestate, editbg, editframe, editframeactive\n"
 "                 editframedrag\n"
-"   Viewer:       viewbold, viewunderline, viewselected\n"
+"   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
-"--colors КЛЮЧ={ТЕКСТ},{ФОН},{АТРИБУТ}:КЛЮЧ2=...\n"
-"\n"
-"{ТЕКСТ}, {ФОН} і {АТРИБУТ} можна не вказувати, в такому випадку "
-"використовуватимуться стандартні значення\n"
-"\n"
-" Ключі:\n"
-"   Глобальні:    errors, disabled, reverse, gauge, header\n"
-"                 input, inputmark, inputunchanged, commandlinemark\n"
-"                 bbarhotkey, bbarbutton, statusbar\n"
-"   Відображення файлів: normal, selected, marked, markselect\n"
-"   Діалогові вікна: dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal,\n"
-"                 errdhotfocus\n"
-"   Меню:         menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
-"   Спливні меню: pmenunormal, pmenusel, pmenutitle\n"
-"   Редактор:     editnormal, editbold, editmarked, editwhitespace,\n"
-"                 editlinestate, editbg, editframe, editframeactive\n"
-"                 editframedrag\n"
-"   Переглядач:   viewbold, viewunderline, viewselected\n"
-"   Довідка:      helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -896,6 +884,62 @@ msgstr "Переглядач diff: некоректний режим"
 msgid "Two files are needed to compare"
 msgstr "Для порівняння необхідно вказати два файли"
 
+#, fuzzy
+msgid "Bookmarks"
+msgstr "&Скинути закладки"
+
+#, fuzzy
+msgid " - Sort: "
+msgstr "Сортування"
+
+msgid "ABC"
+msgstr ""
+
+msgid "FRQ"
+msgstr ""
+
+#, fuzzy
+msgid " - Filter: "
+msgstr "Фільтр"
+
+msgid "FOUND"
+msgstr ""
+
+msgid "USER"
+msgstr ""
+
+#, fuzzy
+msgid "&Go to"
+msgstr "Пе&рейти на рядок…"
+
+#, fuzzy
+msgid "&Add"
+msgstr "&Додати новий"
+
+msgid "&Remove"
+msgstr "Ви&далити"
+
+msgid "Fl&ush"
+msgstr ""
+
+#, fuzzy
+msgid "&Filter"
+msgstr "Фільтр"
+
+#, fuzzy
+msgid "&Sort"
+msgstr "Сортування"
+
+#, fuzzy
+msgid "Re&verse"
+msgstr "&Зворотній"
+
+msgid "Bookmark list"
+msgstr ""
+
+msgid "Bookmark detail"
+msgstr ""
+
 msgid "Choose syntax highlighting"
 msgstr "Оберіть підсвітку синтаксису"
 
@@ -906,8 +950,18 @@ msgid "< Reload Current Syntax >"
 msgstr "< Оновити поточний синтаксис >"
 
 #, c-format
+msgid "Loading: %3d%%"
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+#, c-format
 msgid "Cannot open %s for reading"
 msgstr "Не вдалося відкрити %s для читання"
+
+msgid "Load file"
+msgstr ""
 
 #, c-format
 msgid "Error reading %s"
@@ -935,6 +989,14 @@ msgstr "Сталася помилка читання з каналу: %s"
 msgid "Cannot open pipe for reading: %s"
 msgstr "Не вдалося відкрити канал для читання: %s"
 
+#, c-format
+msgid "Searching %s: %3d%%"
+msgstr ""
+
+#, c-format
+msgid "Searching %s"
+msgstr "Виконується пошук %s"
+
 msgid "File has hard-links. Detach before saving?"
 msgstr "Файл має жорсткі посилання. Відкріпити їх перед зберіганням?"
 
@@ -953,9 +1015,8 @@ msgstr "Не вдалося відкрити канал для запису: %s"
 msgid "Cannot open file for writing: %s"
 msgstr "Не вдалося відкрити файл для запису: %s"
 
-#, fuzzy
 msgid "The file you are saving does not end with a newline."
-msgstr "Файл, що зберігається, не завершено новим рядком"
+msgstr ""
 
 msgid "C&ontinue"
 msgstr "Пр&одовжити"
@@ -983,6 +1044,9 @@ msgstr "Зберегти як"
 
 msgid "Block is large, you may not be able to undo this action"
 msgstr "Блок завеликий, імовірно, цю дію не можна буде повернути."
+
+msgid "Collect completions"
+msgstr ""
 
 msgid "&Quick save"
 msgstr "&Швидке збереження"
@@ -1543,6 +1607,78 @@ msgstr "ButtonBar|Видалити"
 msgid "ButtonBar|PullDn"
 msgstr "ButtonBar|Меню"
 
+msgid "Breton"
+msgstr ""
+
+msgid "Czech"
+msgstr ""
+
+msgid "Welsh"
+msgstr ""
+
+msgid "Danish"
+msgstr ""
+
+msgid "German"
+msgstr ""
+
+msgid "Greek"
+msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "British English"
+msgstr ""
+
+msgid "Canadian English"
+msgstr ""
+
+msgid "American English"
+msgstr ""
+
+msgid "Esperanto"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+
+msgid "Faroese"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid "Italian"
+msgstr ""
+
+msgid "Dutch"
+msgstr ""
+
+msgid "Norwegian"
+msgstr ""
+
+msgid "Polish"
+msgstr ""
+
+msgid "Portuguese"
+msgstr ""
+
+msgid "Romanian"
+msgstr ""
+
+msgid "Russian"
+msgstr ""
+
+msgid "Slovak"
+msgstr ""
+
+msgid "Swedish"
+msgstr ""
+
+msgid "Ukrainian"
+msgstr ""
+
 msgid "&Add word"
 msgstr "&Додати слово"
 
@@ -2057,15 +2193,6 @@ msgstr "Фільтр"
 msgid "Set expression for filtering filenames"
 msgstr "Задати вираз для відбору назв файлів"
 
-msgid "&Files only"
-msgstr "&Тільки файли"
-
-msgid "&Using shell patterns"
-msgstr "Використання &шаблону оболонки"
-
-msgid "&Case sensitive"
-msgstr "&Регістрозалежний"
-
 #, c-format
 msgid "Link %s to:"
 msgstr "Створити посилання на %s:"
@@ -2105,12 +2232,6 @@ msgstr "Створити новий каталог"
 
 msgid "Enter directory name:"
 msgstr "Введіть назву каталогу:"
-
-msgid "Select"
-msgstr "Вибрати"
-
-msgid "Unselect"
-msgstr "Зняти відмітку"
 
 msgid "Extension file edit"
 msgstr "Редагування файла розширень"
@@ -2196,6 +2317,9 @@ msgid ""
 msgstr ""
 "Введіть назву пристрою (без /dev/), на якому\n"
 "потрібно відновити файли після видалення: (F1 — подробиці)"
+
+msgid "Directory scanning"
+msgstr "Сканування каталогу"
 
 msgid "Setup"
 msgstr "Настройки"
@@ -2331,9 +2455,6 @@ msgid ""
 msgstr ""
 "Не вдалося створити цільове символьне посилання «%s»\n"
 "%s"
-
-msgid "&Abort"
-msgstr "&Перервати"
 
 msgid "Ski&p all"
 msgstr "П&ропустити все"
@@ -2616,13 +2737,8 @@ msgstr ""
 "Не вдалося перенести каталог «%s» у «%s»\n"
 "%s"
 
-msgid "Directory scanning"
-msgstr "Сканування каталогу"
-
 #, c-format
-msgid ""
-"%s\n"
-"Directories: %zd, total size: %s"
+msgid "Directories: %zd, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2730,6 +2846,12 @@ msgstr "Джерело"
 msgid "Target"
 msgstr "Ціль"
 
+msgid "Deleting"
+msgstr ""
+
+msgid "&Using shell patterns"
+msgstr "Використання &шаблону оболонки"
+
 msgid "to:"
 msgstr "до:"
 
@@ -2824,10 +2946,6 @@ msgstr[0] "Завершено (ігноровано каталогів: %zd)"
 msgstr[1] "Завершено (ігноровано каталогів: %zd)"
 msgstr[2] "Завершено (ігноровано каталогів: %zd)"
 
-#, c-format
-msgid "Searching %s"
-msgstr "Виконується пошук %s"
-
 msgid "Searching"
 msgstr "Виконується пошук"
 
@@ -2854,9 +2972,6 @@ msgstr "Новий &запис"
 
 msgid "&Insert"
 msgstr "&Вставити"
-
-msgid "&Remove"
-msgstr "Ви&далити"
 
 msgid "Subgroup - press ENTER to see list"
 msgstr "Підгрупа — для перегляду натисніть Enter"
@@ -3388,6 +3503,18 @@ msgstr "Панелізувати"
 
 msgid "Unknown tag on display format:"
 msgstr "Невідомий тег у форматі показу:"
+
+msgid "&Files only"
+msgstr "&Тільки файли"
+
+msgid "&Case sensitive"
+msgstr "&Регістрозалежний"
+
+msgid "Select"
+msgstr "Вибрати"
+
+msgid "Unselect"
+msgstr "Зняти відмітку"
 
 msgid "Do you really want to execute?"
 msgstr "Справді виконати?"
@@ -4008,9 +4135,6 @@ msgstr "sftp: Неможливо отримати ім’я поточного �
 msgid "sftp: Invalid host name."
 msgstr "sftp: Неправильне ім’я хоста."
 
-msgid "sftp: Invalid port value."
-msgstr "sftp: Неправильний порт."
-
 #, c-format
 msgid "sftp: %s"
 msgstr "sftp: %s"
@@ -4202,8 +4326,8 @@ msgstr "Не вдалося створити процес-нащадок"
 msgid "Empty output from child filter"
 msgstr "Фільтр-нащадок не повернув даних"
 
-msgid "&Line number (decimal)"
-msgstr "&Номер рядка (десяткове число)"
+msgid "&Line number"
+msgstr ""
 
 msgid "Pe&rcents"
 msgstr "Ві&дсотки"
@@ -4285,9 +4409,6 @@ msgid ""
 "%s"
 msgstr ""
 
-msgid "Seeking to search result"
-msgstr "Виконується перехід до результату пошуку"
-
 msgid "Search done"
 msgstr "Пошук завершено"
 
@@ -4297,5 +4418,5 @@ msgstr "Почати спочатку?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
 
-#~ msgid "&Select"
-#~ msgstr "&Вибрати"
+#~ msgid "sftp: Invalid port value."
+#~ msgstr "sftp: Неправильний порт."
