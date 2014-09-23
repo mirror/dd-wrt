@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU Public License v2 or v3 licenses,
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: file-tree.cc 14150 2013-07-27 21:58:14Z jordan $
+ * $Id: file-tree.cc 14225 2014-01-19 01:09:44Z jordan $
  */
 
 #include <algorithm>
@@ -380,6 +377,30 @@ FileTreeItem :: twiddleWanted (QSet<int>& ids, bool& wanted)
   setSubtreeWanted (wanted, ids);
 }
 
+QString
+FileTreeItem :: path () const
+{
+  QString itemPath;
+  const FileTreeItem * item = this;
+
+  while (item != NULL && !item->name().isEmpty())
+    {
+      if (itemPath.isEmpty())
+        itemPath = item->name();
+      else
+        itemPath = item->name() + "/" + itemPath;
+      item = item->parent ();
+    }
+
+  return itemPath;
+}
+
+bool
+FileTreeItem :: isComplete () const
+{
+  return myHaveSize == totalSize ();
+}
+
 /***
 ****
 ****
@@ -435,19 +456,9 @@ FileTreeModel :: setData (const QModelIndex& index, const QVariant& newname, int
 {
   if (role == Qt::EditRole)
     {
-      QString oldpath;
       FileTreeItem * item = itemFromIndex (index);
 
-      while (item && !item->name().isEmpty())
-        {
-          if (oldpath.isEmpty())
-            oldpath = item->name();
-          else
-            oldpath = item->name() + "/" + oldpath;
-          item = item->parent ();
-        }
-
-      emit pathEdited (oldpath, newname.toString());
+      emit pathEdited (item->path (), newname.toString ());
     }
 
   return false; // don't update the view until the session confirms the change
@@ -739,6 +750,22 @@ FileTreeModel :: clicked (const QModelIndex& index)
     }
 }
 
+void
+FileTreeModel :: doubleClicked (const QModelIndex& index)
+{
+  if (!index.isValid())
+    return;
+
+  const int column (index.column());
+  if (column == COL_WANTED || column == COL_PRIORITY)
+    return;
+
+  FileTreeItem * item = itemFromIndex (index);
+
+  if (item->childCount () == 0 && item->isComplete ())
+    emit openRequested (item->path ());
+}
+
 /****
 *****
 ****/
@@ -885,11 +912,19 @@ FileTreeView :: FileTreeView (QWidget * parent, bool isEditable):
   for (int i=0; i<NUM_COLUMNS; ++i)
     {
       setColumnHidden (i, (i<FIRST_VISIBLE_COLUMN) || (LAST_VISIBLE_COLUMN<i));
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+      header()->setResizeMode(i, QHeaderView::Interactive);
+#else
       header()->setSectionResizeMode(i, QHeaderView::Interactive);
+#endif
     }
 
   connect (this, SIGNAL(clicked(const QModelIndex&)),
            this, SLOT(onClicked(const QModelIndex&)));
+
+  connect (this, SIGNAL(doubleClicked(const QModelIndex&)),
+           this, SLOT(onDoubleClicked(const QModelIndex&)));
 
   connect (&myModel, SIGNAL(priorityChanged(const QSet<int>&, int)),
            this,     SIGNAL(priorityChanged(const QSet<int>&, int)));
@@ -899,6 +934,10 @@ FileTreeView :: FileTreeView (QWidget * parent, bool isEditable):
 
   connect (&myModel, SIGNAL(pathEdited(const QString&, const QString&)),
            this,     SIGNAL(pathEdited(const QString&, const QString&)));
+
+  connect (&myModel, SIGNAL (openRequested (const QString&)),
+           this,     SLOT (onOpenRequested (const QString&)),
+           Qt::QueuedConnection);
 }
 
 FileTreeView :: ~FileTreeView ()
@@ -911,6 +950,22 @@ FileTreeView :: onClicked (const QModelIndex& proxyIndex)
 {
   const QModelIndex modelIndex = myProxy->mapToSource (proxyIndex);
   myModel.clicked (modelIndex);
+}
+
+void
+FileTreeView :: onDoubleClicked (const QModelIndex& proxyIndex)
+{
+  const QModelIndex modelIndex = myProxy->mapToSource (proxyIndex);
+  myModel.doubleClicked (modelIndex);
+}
+
+void
+FileTreeView :: onOpenRequested (const QString& path)
+{
+  if (state () == EditingState)
+    return;
+
+  emit openRequested (path);
 }
 
 bool
@@ -943,6 +998,25 @@ FileTreeView :: eventFilter (QObject * o, QEvent * event)
         }
       left -= 20; // not sure why this is necessary.  it works in different themes + font sizes though...
       setColumnWidth(COL_NAME, std::max(left,0));
+    }
+
+  // handle using the keyboard to toggle the
+  // wanted/unwanted state or the file priority
+  else if (event->type () == QEvent::KeyPress && state () != EditingState)
+    {
+      switch (static_cast<QKeyEvent*> (event)->key ())
+        {
+        case Qt::Key_Space:
+          foreach (const QModelIndex& i, selectionModel ()->selectedRows (COL_WANTED))
+            clicked (i);
+          break;
+
+        case Qt::Key_Enter:
+        case Qt::Key_Return:
+          foreach (const QModelIndex& i, selectionModel ()->selectedRows (COL_PRIORITY))
+            clicked (i);
+          break;
+        }
     }
 
   return false;

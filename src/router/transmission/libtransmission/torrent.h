@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: torrent.h 14108 2013-07-08 16:41:12Z jordan $
+ * $Id: torrent.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef __TRANSMISSION__
@@ -228,16 +225,16 @@ struct tr_torrent
 
     int                        queuePosition;
 
-    tr_torrent_metadata_func  * metadata_func;
+    tr_torrent_metadata_func    metadata_func;
     void                      * metadata_func_user_data;
 
-    tr_torrent_completeness_func  * completeness_func;
-    void                          *  completeness_func_user_data;
+    tr_torrent_completeness_func    completeness_func;
+    void                          * completeness_func_user_data;
 
-    tr_torrent_ratio_limit_hit_func  * ratio_limit_hit_func;
+    tr_torrent_ratio_limit_hit_func    ratio_limit_hit_func;
     void                             * ratio_limit_hit_func_user_data;
 
-    tr_torrent_idle_limit_hit_func  * idle_limit_hit_func;
+    tr_torrent_idle_limit_hit_func    idle_limit_hit_func;
     void                            * idle_limit_hit_func_user_data;
 
     void * queue_started_user_data;
@@ -249,6 +246,8 @@ struct tr_torrent
     bool                       startAfterVerify;
     bool                       isDirty;
     bool                       isQueued;
+
+    bool                       magnetVerify;
 
     bool                       infoDictOffsetIsCached;
 
@@ -323,10 +322,16 @@ tr_torrentExists (const tr_session * session, const uint8_t *   torrentHash)
     return tr_torrentFindFromHash ((tr_session*)session, torrentHash) != NULL;
 }
 
+static inline tr_completeness
+tr_torrentGetCompleteness (const tr_torrent * tor)
+{
+    return tor->completeness;
+}
+
 static inline bool
 tr_torrentIsSeed (const tr_torrent * tor)
 {
-    return tor->completeness != TR_LEECH;
+    return tr_torrentGetCompleteness(tor) != TR_LEECH;
 }
 
 static inline bool tr_torrentIsPrivate (const tr_torrent * tor)
@@ -439,17 +444,71 @@ bool tr_torrentIsStalled (const tr_torrent * tor);
 
 const unsigned char * tr_torrentGetPeerId (tr_torrent * tor);
 
+static inline uint64_t
+tr_torrentGetLeftUntilDone (const tr_torrent * tor)
+{
+  return tr_cpLeftUntilDone (&tor->completion);
+}
+
+static inline bool
+tr_torrentHasAll (const tr_torrent * tor)
+{
+  return tr_cpHasAll (&tor->completion);
+}
+
+static inline bool
+tr_torrentHasNone (const tr_torrent * tor)
+{
+  return tr_cpHasNone (&tor->completion);
+}
+
+static inline bool
+tr_torrentPieceIsComplete (const tr_torrent * tor, tr_piece_index_t i)
+{
+  return tr_cpPieceIsComplete (&tor->completion, i);
+}
+
+static inline bool
+tr_torrentBlockIsComplete (const tr_torrent * tor, tr_block_index_t i)
+{
+  return tr_cpBlockIsComplete (&tor->completion, i);
+}
+
+static inline size_t
+tr_torrentMissingBlocksInPiece (const tr_torrent * tor, tr_piece_index_t i)
+{
+  return tr_cpMissingBlocksInPiece (&tor->completion, i);
+}
+
+static inline size_t
+tr_torrentMissingBytesInPiece (const tr_torrent * tor, tr_piece_index_t i)
+{
+  return tr_cpMissingBytesInPiece (&tor->completion, i);
+}
+
+static inline void *
+tr_torrentCreatePieceBitfield (const tr_torrent * tor, size_t * byte_count)
+{
+  return tr_cpCreatePieceBitfield (&tor->completion, byte_count);
+}
+
+static inline uint64_t
+tr_torrentHaveTotal (const tr_torrent * tor)
+{
+  return tr_cpHaveTotal (&tor->completion);
+}
+
 
 static inline bool
 tr_torrentIsQueued (const tr_torrent * tor)
 {
-    return tor->isQueued;
+  return tor->isQueued;
 }
 
 static inline tr_direction
 tr_torrentGetQueueDirection (const tr_torrent * tor)
 {
-    return tr_torrentIsSeed (tor) ? TR_UP : TR_DOWN;
+  return tr_torrentIsSeed (tor) ? TR_UP : TR_DOWN;
 }
 
 #endif

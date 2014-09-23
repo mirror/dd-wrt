@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU Public License v2 or v3 licenses,
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: tracker-model.cc 11092 2010-08-01 20:36:13Z charles $
+ * $Id: tracker-model.cc 14225 2014-01-19 01:09:44Z jordan $
  */
 
 #include <algorithm> // std::sort()
@@ -18,138 +15,152 @@
 #include "tracker-model.h"
 
 int
-TrackerModel :: rowCount( const QModelIndex& parent ) const
+TrackerModel :: rowCount (const QModelIndex& parent) const
 {
-    Q_UNUSED( parent );
+  Q_UNUSED (parent);
 
-    return parent.isValid() ? 0 : myRows.size();
+  return parent.isValid() ? 0 : myRows.size();
 }
 
 QVariant
-TrackerModel :: data( const QModelIndex& index, int role ) const
+TrackerModel :: data (const QModelIndex& index, int role) const
 {
-    QVariant var;
+  QVariant var;
 
-    const int row = index.row( );
-    if( ( 0<=row ) && ( row<myRows.size( ) ) )
+  const int row = index.row ();
+
+  if ((0<=row) && (row<myRows.size()))
     {
-        const TrackerInfo& trackerInfo = myRows.at( row );
+      const TrackerInfo& trackerInfo = myRows.at (row);
 
-        switch( role )
+      switch (role)
         {
-            case Qt::DisplayRole:
-                var = QString( trackerInfo.st.announce );
-                break;
+          case Qt::DisplayRole:
+            var = QString (trackerInfo.st.announce);
+            break;
 
-            case Qt::DecorationRole:
-                var = trackerInfo.st.getFavicon( );
-                break;
+          case Qt::DecorationRole:
+            var = trackerInfo.st.getFavicon ();
+            break;
 
-            case TrackerRole:
-                var = qVariantFromValue( trackerInfo );
-                break;
+          case TrackerRole:
+            var = qVariantFromValue (trackerInfo);
+            break;
 
-            default:
-                break;
+          default:
+            break;
         }
     }
 
-    return var;
+  return var;
 }
 
 /***
 ****
 ***/
 
-struct CompareTrackers {
-    bool operator()( const TrackerInfo& a, const TrackerInfo& b ) const {
-        if( a.torrentId   != b.torrentId   ) return a.torrentId < b.torrentId;
-        if( a.st.tier     != b.st.tier     ) return a.st.tier < b.st.tier;
-        if( a.st.isBackup != b.st.isBackup ) return !a.st.isBackup;
-        return a.st.announce < b.st.announce;
-    }
+struct CompareTrackers
+{
+  bool operator() (const TrackerInfo& a, const TrackerInfo& b) const
+  {
+    if (a.torrentId != b.torrentId )
+      return a.torrentId < b.torrentId;
+
+    if (a.st.tier != b.st.tier)
+      return a.st.tier < b.st.tier;
+
+    if (a.st.isBackup != b.st.isBackup)
+      return !a.st.isBackup;
+
+    return a.st.announce < b.st.announce;
+  }
 };
 
 void
-TrackerModel :: refresh( const TorrentModel& torrentModel, const QSet<int>& ids )
+TrackerModel :: refresh (const TorrentModel& torrentModel, const QSet<int>& ids)
 {
-    // build a list of the TrackerInfos
-    QVector<TrackerInfo> trackers;
-    foreach( int id, ids ) {
-        const Torrent * tor = torrentModel.getTorrentFromId( id );
-        if( tor != 0 ) {
-            const TrackerStatsList trackerList = tor->trackerStats( );
-            foreach( const TrackerStat& st, trackerList ) {
-                TrackerInfo trackerInfo;
-                trackerInfo.st = st;
-                trackerInfo.torrentId = id;
-                trackers.append( trackerInfo );
+  // build a list of the TrackerInfos
+  QVector<TrackerInfo> trackers;
+  foreach (int id, ids)
+    {
+      const Torrent * tor = torrentModel.getTorrentFromId (id);
+      if (tor != 0)
+        {
+          const TrackerStatsList trackerList = tor->trackerStats ();
+          foreach (const TrackerStat& st, trackerList)
+            {
+              TrackerInfo trackerInfo;
+              trackerInfo.st = st;
+              trackerInfo.torrentId = id;
+              trackers.append (trackerInfo);
             }
         }
     }
 
-    // sort 'em
-    CompareTrackers comp;
-    std::sort( trackers.begin(), trackers.end(), comp );
+  // sort 'em
+  CompareTrackers comp;
+  std::sort (trackers.begin(), trackers.end(), comp);
 
-    // merge 'em with the existing list
-    int old_index = 0;
-    int new_index = 0;
+  // merge 'em with the existing list
+  int old_index = 0;
+  int new_index = 0;
 
-    while( ( old_index < myRows.size() ) || ( new_index < trackers.size() ) )
+  while  ((old_index < myRows.size()) ||  (new_index < trackers.size()))
     {
-        if( old_index == myRows.size() )
+      if (old_index == myRows.size())
         {
-            // add this new row
-            beginInsertRows( QModelIndex( ), old_index, old_index );
-            myRows.insert( old_index, trackers.at( new_index ) );
-            endInsertRows( );
-            ++old_index;
-            ++new_index;
+          // add this new row
+          beginInsertRows (QModelIndex (), old_index, old_index);
+          myRows.insert (old_index, trackers.at (new_index));
+          endInsertRows ();
+          ++old_index;
+          ++new_index;
         }
-        else if( new_index == trackers.size() )
+      else if (new_index == trackers.size())
         {
-            // remove this old row
-            beginRemoveRows( QModelIndex( ), old_index, old_index );
-            myRows.remove( old_index );
-            endRemoveRows( );
+          // remove this old row
+          beginRemoveRows (QModelIndex (), old_index, old_index);
+          myRows.remove (old_index);
+          endRemoveRows ();
         }
-        else if( comp( myRows.at(old_index), trackers.at(new_index) ) )
+      else if (comp (myRows.at(old_index), trackers.at(new_index)))
         {
-            // remove this old row
-            beginRemoveRows( QModelIndex( ), old_index, old_index );
-            myRows.remove( old_index );
-            endRemoveRows( );
+          // remove this old row
+          beginRemoveRows (QModelIndex (), old_index, old_index);
+          myRows.remove (old_index);
+          endRemoveRows ();
         }
-        else if( comp( trackers.at(new_index), myRows.at(old_index) ) )
+      else if (comp (trackers.at(new_index), myRows.at(old_index)))
         {
-            // add this new row
-            beginInsertRows( QModelIndex( ), old_index, old_index );
-            myRows.insert( old_index, trackers.at( new_index ) );
-            endInsertRows( );
-            ++old_index;
-            ++new_index;
+          // add this new row
+          beginInsertRows (QModelIndex (), old_index, old_index);
+          myRows.insert (old_index, trackers.at (new_index));
+          endInsertRows ();
+          ++old_index;
+          ++new_index;
         }
-        else // update existing row
+      else // update existing row
         {
-            myRows[old_index].st = trackers.at(new_index).st;
-            QModelIndex topLeft;
-            QModelIndex bottomRight;
-            dataChanged( index(old_index,0), index(old_index,0) );
-            ++old_index;
-            ++new_index;
+          myRows[old_index].st = trackers.at(new_index).st;
+          QModelIndex topLeft;
+          QModelIndex bottomRight;
+          dataChanged (index(old_index,0), index(old_index,0));
+          ++old_index;
+          ++new_index;
         }
     }
 }
 
 int
-TrackerModel :: find( int torrentId, const QString& url ) const
+TrackerModel :: find (int torrentId, const QString& url) const
 {
-    for( int i=0, n=myRows.size(); i<n; ++i ) {
-        const TrackerInfo& inf = myRows.at(i);
-        if( ( inf.torrentId == torrentId ) && ( url == inf.st.announce ) )
-            return i;
+  for (int i=0, n=myRows.size(); i<n; ++i)
+    {
+      const TrackerInfo& inf = myRows.at(i);
+
+      if ((inf.torrentId == torrentId) &&  (url == inf.st.announce))
+        return i;
     }
 
-    return -1;
+  return -1;
 }

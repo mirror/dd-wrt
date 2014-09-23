@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2008-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: variant-benc.c 13968 2013-02-04 21:07:24Z jordan $
+ * $Id: variant-benc.c 14301 2014-06-29 01:41:33Z jordan $
  */
 
 #include <assert.h>
@@ -87,32 +84,42 @@ tr_bencParseStr (const uint8_t  * buf,
                  const uint8_t ** setme_str,
                  size_t *         setme_strlen)
 {
-  size_t len;
   const void * end;
-  char * endptr;
+  size_t len;
+  char * ulend;
+  const uint8_t * strbegin;
+  const uint8_t * strend;
 
   if (buf >= bufend)
-    return EILSEQ;
+    goto err;
 
   if (!isdigit (*buf))
-    return EILSEQ;
+    goto err;
 
   end = memchr (buf, ':', bufend - buf);
   if (end == NULL)
-    return EILSEQ;
+    goto err;
 
   errno = 0;
-  len = strtoul ((const char*)buf, &endptr, 10);
-  if (errno || endptr != end)
-    return EILSEQ;
+  len = strtoul ((const char*)buf, &ulend, 10);
+  if (errno || ulend != end)
+    goto err;
 
-  if ((const uint8_t*)end + 1 + len > bufend)
-    return EILSEQ;
+  strbegin = (const uint8_t*)end + 1;
+  strend = strbegin + len;
+  if ((strend<strbegin) || (strend>bufend))
+    goto err;
 
   *setme_end = (const uint8_t*)end + 1 + len;
   *setme_str = (const uint8_t*)end + 1;
   *setme_strlen = len;
   return 0;
+
+err:
+  *setme_end = NULL;
+  *setme_str = NULL;
+  *setme_strlen= 0;
+  return EILSEQ;
 }
 
 static tr_variant*
@@ -297,7 +304,7 @@ saveStringFunc (const tr_variant * v, void * evbuf)
   size_t len;
   const char * str;
   tr_variantGetStr (v, &str, &len);
-  evbuffer_add_printf (evbuf, "%zu:", len);
+  evbuffer_add_printf (evbuf, "%"TR_PRIuSIZE":", len);
   evbuffer_add (evbuf, str, len);
 }
 

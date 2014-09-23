@@ -1,14 +1,13 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU Public License v2 or v3 licenses,
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: options.cc 14150 2013-07-27 21:58:14Z jordan $
+ * $Id: options.cc 14225 2014-01-19 01:09:44Z jordan $
  */
+
+#include <algorithm> // std::min()
 
 #include <QApplication>
 #include <QCheckBox>
@@ -54,7 +53,7 @@ FileAdded :: executed (int64_t tag, const QString& result, struct tr_variant * a
   if (tag != myTag)
     return;
 
-  if ( (result == "success") && !myDelFile.isEmpty ())
+  if ((result == "success") && !myDelFile.isEmpty ())
     {
       QFile file (myDelFile);
       file.setPermissions (QFile::ReadOwner | QFile::WriteOwner);
@@ -315,7 +314,7 @@ Options :: reload ()
         break;
 
       case AddData::METAINFO:
-        tr_ctorSetMetainfo (ctor, (const uint8_t*)myAdd.metainfo.constData (), myAdd.metainfo.size ());
+        tr_ctorSetMetainfo (ctor, (const quint8*)myAdd.metainfo.constData (), myAdd.metainfo.size ());
         break;
 
       default:
@@ -512,7 +511,7 @@ Options :: onDestinationsSelected (const QStringList& destinations)
 {
   if (destinations.size () == 1)
     {
-      const QString& destination (destinations.first ());
+      QString destination = Utils::removeTrailingDirSeparator (destinations.first ());
       myFreespaceLabel->setPath (destination);
       myLocalDestination.setPath (destination);
       refreshDestinationButton ();

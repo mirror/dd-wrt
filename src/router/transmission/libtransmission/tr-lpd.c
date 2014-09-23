@@ -64,10 +64,10 @@ THE SOFTWARE.
 * This module implements the Local Peer Discovery (LPD) protocol as supported by the
 * uTorrent client application. A typical LPD datagram is 119 bytes long.
 *
-* $Id: tr-lpd.c 13868 2013-01-25 23:34:20Z jordan $
+* $Id: tr-lpd.c 14192 2013-09-08 17:58:14Z jordan $
 */
 
-static void event_callback (int, short, void*);
+static void event_callback (evutil_socket_t, short, void*);
 
 enum {
    UPKEEP_INTERVAL_SECS = 5
@@ -216,7 +216,7 @@ static int lpd_extractParam (const char* const str, const char* const name, int 
 {
     /* configure maximum length of search string here */
     enum { maxLength = 30 };
-    char sstr[maxLength] = { };
+    char sstr[maxLength] = { 0 };
     const char* pos;
 
     assert (str != NULL && name != NULL);
@@ -255,7 +255,7 @@ static int lpd_extractParam (const char* const str, const char* const name, int 
 /**
 * @} */
 
-static void on_upkeep_timer (int, short, void *);
+static void on_upkeep_timer (evutil_socket_t, short, void *);
 
 /**
 * @brief Initializes Local Peer Discovery for this node
@@ -445,7 +445,7 @@ tr_lpdSendAnnounce (const tr_torrent* t)
         CRLF;
 
     char hashString[lengthof (t->info.hashString)];
-    char query[lpd_maxDatagramLength + 1] = { };
+    char query[lpd_maxDatagramLength + 1] = { 0 };
 
     if (t == NULL)
         return false;
@@ -499,8 +499,8 @@ static int tr_lpdConsiderAnnounce (tr_pex* peer, const char* const msg)
     };
 
     struct lpd_protocolVersion ver = { -1, -1 };
-    char value[maxValueLen] = { };
-    char hashString[maxHashLen] = { };
+    char value[maxValueLen] = { 0 };
+    char hashString[maxHashLen] = { 0 };
     int res = 0, peerPort = 0;
 
     if (peer != NULL && msg != NULL)
@@ -619,7 +619,7 @@ tr_lpdAnnounceMore (const time_t now, const int interval)
 }
 
 static void
-on_upkeep_timer (int foo UNUSED, short bar UNUSED, void * vsession UNUSED)
+on_upkeep_timer (evutil_socket_t foo UNUSED, short bar UNUSED, void * vsession UNUSED)
 {
     const time_t now = tr_time ();
     tr_lpdAnnounceMore (now, UPKEEP_INTERVAL_SECS);
@@ -630,7 +630,7 @@ on_upkeep_timer (int foo UNUSED, short bar UNUSED, void * vsession UNUSED)
 * @brief Processing of timeout notifications and incoming data on the socket
 * @note maximum rate of read events is limited according to @a lpd_maxAnnounceCap
 * @see DoS */
-static void event_callback (int s UNUSED, short type, void* ignore UNUSED)
+static void event_callback (evutil_socket_t s UNUSED, short type, void* ignore UNUSED)
 {
     assert (tr_isSession (session));
 
@@ -644,7 +644,7 @@ static void event_callback (int s UNUSED, short type, void* ignore UNUSED)
         int addrLen = sizeof foreignAddr;
 
         /* be paranoid enough about zero terminating the foreign string */
-        char foreignMsg[lpd_maxDatagramLength + 1] = { };
+        char foreignMsg[lpd_maxDatagramLength + 1] = { 0 };
 
         /* process local announcement from foreign peer */
         int res = recvfrom (lpd_socket, foreignMsg, lpd_maxDatagramLength,

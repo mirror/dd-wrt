@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2008-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: web.c 14140 2013-07-24 00:00:03Z jordan $
+ * $Id: web.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <assert.h>
@@ -76,7 +73,7 @@ struct tr_web_task
   char * range;
   char * cookies;
   tr_session * session;
-  tr_web_done_func * done_func;
+  tr_web_done_func done_func;
   void * done_func_user_data;
   CURL * curl_easy;
   struct tr_web_task * next;
@@ -133,7 +130,7 @@ writeFunc (void * ptr, size_t size, size_t nmemb, void * vtask)
     }
 
   evbuffer_add (task->response, ptr, byteCount);
-  dbgmsg ("wrote %zu bytes to task %p's buffer", byteCount, task);
+  dbgmsg ("wrote %"TR_PRIuSIZE" bytes to task %p's buffer", byteCount, (void*)task);
   return byteCount;
 }
 
@@ -237,7 +234,7 @@ static void
 task_finish_func (void * vtask)
 {
   struct tr_web_task * task = vtask;
-  dbgmsg ("finished web task %p; got %ld", task, task->code);
+  dbgmsg ("finished web task %p; got %ld", (void*)task, task->code);
 
   if (task->done_func != NULL)
     task->done_func (task->session,

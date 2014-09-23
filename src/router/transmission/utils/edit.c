@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2012-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: edit.c 13868 2013-01-25 23:34:20Z jordan $
+ * $Id: edit.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <stdio.h> /* fprintf () */
@@ -279,7 +276,7 @@ addURL (tr_variant * metainfo, const char * url)
         {
           tr_variant * tier = tr_variantListAddList (announce_list, 1);
           tr_variantListAddStr (tier, url);
-          printf ("\tAdded \"%s\" to \"announce-list\" tier %zu\n", url, tr_variantListSize (announce_list));
+          printf ("\tAdded \"%s\" to \"announce-list\" tier %"TR_PRIuSIZE"\n", url, tr_variantListSize (announce_list));
           changed = true;
         }
     }

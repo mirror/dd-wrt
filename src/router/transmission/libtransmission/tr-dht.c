@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  *
- * $Id: tr-dht.c 13868 2013-01-25 23:34:20Z jordan $
+ * $Id: tr-dht.c 14268 2014-05-05 20:45:14Z jordan $
  *
  */
 
@@ -66,7 +66,7 @@ static struct event *dht_timer = NULL;
 static unsigned char myid[20];
 static tr_session *session = NULL;
 
-static void timer_callback (int s, short type, void *ignore);
+static void timer_callback (evutil_socket_t s, short type, void *ignore);
 
 struct bootstrap_closure {
     tr_session *session;
@@ -514,7 +514,7 @@ tr_dhtPrintableStatus (int status)
 
 static void
 callback (void *ignore UNUSED, int event,
-          unsigned char *info_hash, void *data, size_t data_len)
+          const unsigned char *info_hash, const void *data, size_t data_len)
 {
     if (event == DHT_EVENT_VALUES || event == DHT_EVENT_VALUES6) {
         tr_torrent *tor;
@@ -657,7 +657,7 @@ tr_dhtCallback (unsigned char *buf, int buflen,
 }
 
 static void
-timer_callback (int s UNUSED, short type UNUSED, void *session)
+timer_callback (evutil_socket_t s UNUSED, short type UNUSED, void *session)
 {
     tr_dhtCallback (NULL, 0, NULL, 0, session);
 }

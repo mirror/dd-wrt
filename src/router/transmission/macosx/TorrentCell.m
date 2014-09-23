@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: TorrentCell.m 13340 2012-06-10 02:35:58Z livings124 $
+ * $Id: TorrentCell.m 14221 2014-01-10 17:50:05Z livings124 $
  *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
@@ -157,7 +157,7 @@
     
     NSPoint point = [controlView convertPoint: [event locationInWindow] fromView: nil];
     
-    const NSRect controlRect= [self controlButtonRectForBounds: cellFrame];
+    const NSRect controlRect = [self controlButtonRectForBounds: cellFrame];
     const BOOL checkControl = NSMouseInRect(point, controlRect, [controlView isFlipped]);
     
     const NSRect revealRect = [self revealButtonRectForBounds: cellFrame];

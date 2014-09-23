@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2010-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: cache.c 13909 2013-01-31 17:39:06Z jordan $
+ * $Id: cache.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <stdlib.h> /* qsort () */
@@ -96,7 +93,7 @@ getBlockRun (const tr_cache * cache, int pos, struct run_info * info)
         break;
       if (b->tor != ref->tor)
         break;
-      //fprintf (stderr, "pos %d tor %d block %zu time %zu\n", i, b->tor->uniqueId, (size_t)b->block, (size_t)b->time);
+      //fprintf (stderr, "pos %d tor %d block %"TR_PRIuSIZE" time %"TR_PRIuSIZE"\n", i, b->tor->uniqueId, (size_t)b->block, (size_t)b->time);
     }
 
   //fprintf (stderr, "run is %d long from [%d to %d)\n", (int)(i-pos), i, (int)pos);
@@ -105,8 +102,8 @@ getBlockRun (const tr_cache * cache, int pos, struct run_info * info)
     {
       const struct cache_block * b = blocks[i-1];
       info->last_block_time = b->time;
-      info->is_piece_done = tr_cpPieceIsComplete (&b->tor->completion, b->piece);
-      info->is_multi_piece = b->piece != blocks[pos]->piece ? true : false;
+      info->is_piece_done = tr_torrentPieceIsComplete (b->tor, b->piece);
+      info->is_multi_piece = b->piece != blocks[pos]->piece;
       info->len = i - pos;
       info->pos = pos;
     }
@@ -441,7 +438,7 @@ tr_cacheFlushFile (tr_cache * cache, tr_torrent * torrent, tr_file_index_t i)
 
   tr_torGetFileBlockRange (torrent, i, &first, &last);
   pos = findBlockPos (cache, torrent, first);
-  dbgmsg ("flushing file %d from cache to disk: blocks [%zu...%zu]", (int)i, (size_t)first, (size_t)last);
+  dbgmsg ("flushing file %d from cache to disk: blocks [%"TR_PRIuSIZE"...%"TR_PRIuSIZE"]", (int)i, (size_t)first, (size_t)last);
 
   /* flush out all the blocks in that file */
   while (!err && (pos < tr_ptrArraySize (&cache->blocks)))

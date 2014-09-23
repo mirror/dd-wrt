@@ -1,3 +1,12 @@
+/*
+ * This file Copyright (C) 2013-2014 Mnemosyne LLC
+ *
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
+ *
+ * $Id: variant-test.c 14301 2014-06-29 01:41:33Z jordan $
+ */
+
 #include <ctype.h> /* isspace () */
 #include <errno.h> /* EILSEQ */
 #include <string.h> /* strlen (), strncmp () */
@@ -85,13 +94,23 @@ testStr (void)
 {
   uint8_t buf[128];
   int err;
+  int n;
   const uint8_t * end;
   const uint8_t * str;
   size_t len;
 
+  /* string len is designed to overflow */
+  n = tr_snprintf ((char*)buf, sizeof (buf), "%zu:boat", (size_t)(SIZE_MAX-2));
+  err = tr_bencParseStr (buf, buf+n, &end, &str, &len);
+  check_int_eq (EILSEQ, err);
+  check_int_eq (0, len);
+  check (str == NULL);
+  check (end == NULL);
+  check (!len);
+
   /* good string */
-  tr_snprintf ((char*)buf, sizeof (buf), "4:boat");
-  err = tr_bencParseStr (buf, buf + 6, &end, &str, &len);
+  n = tr_snprintf ((char*)buf, sizeof (buf), "4:boat");
+  err = tr_bencParseStr (buf, buf+n, &end, &str, &len);
   check_int_eq (0, err);
   check_int_eq (4, len);
   check (!strncmp ((char*)str, "boat", len));
@@ -101,7 +120,7 @@ testStr (void)
   len = 0;
 
   /* string goes past end of buffer */
-  err = tr_bencParseStr (buf, buf + 5, &end, &str, &len);
+  err = tr_bencParseStr (buf, buf+(n-1), &end, &str, &len);
   check_int_eq (EILSEQ, err);
   check_int_eq (0, len);
   check (str == NULL);
@@ -109,8 +128,8 @@ testStr (void)
   check (!len);
 
   /* empty string */
-  tr_snprintf ((char*)buf, sizeof (buf), "0:");
-  err = tr_bencParseStr (buf, buf + 2, &end, &str, &len);
+  n = tr_snprintf ((char*)buf, sizeof (buf), "0:");
+  err = tr_bencParseStr (buf, buf+n, &end, &str, &len);
   check_int_eq (0, err);
   check_int_eq (0, len);
   check (!*str);
@@ -120,8 +139,8 @@ testStr (void)
   len = 0;
 
   /* short string */
-  tr_snprintf ((char*)buf, sizeof (buf), "3:boat");
-  err = tr_bencParseStr (buf, buf + 6, &end, &str, &len);
+  n = tr_snprintf ((char*)buf, sizeof (buf), "3:boat");
+  err = tr_bencParseStr (buf, buf+n, &end, &str, &len);
   check_int_eq (0, err);
   check_int_eq (3, len);
   check (!strncmp ((char*)str, "boa", len));

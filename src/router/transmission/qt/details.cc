@@ -1,21 +1,20 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU Public License v2 or v3 licenses,
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: details.cc 14150 2013-07-27 21:58:14Z jordan $
+ * $Id: details.cc 14238 2014-01-20 23:56:06Z jordan $
  */
 
 #include <cassert>
+#include <climits> /* INT_MAX */
 #include <ctime>
 
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDateTime>
+#include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QDoubleSpinBox>
 #include <QEvent>
@@ -943,8 +942,8 @@ Details :: createInfoTab ()
   hig->addSectionTitle (tr ("Activity"));
   hig->addRow (tr ("Have:"), myHaveLabel = new SqueezeLabel);
   hig->addRow (tr ("Availability:"), myAvailabilityLabel = new SqueezeLabel);
-  hig->addRow (tr ("Downloaded:"), myDownloadedLabel = new SqueezeLabel);
   hig->addRow (tr ("Uploaded:"), myUploadedLabel = new SqueezeLabel);
+  hig->addRow (tr ("Downloaded:"), myDownloadedLabel = new SqueezeLabel);
   hig->addRow (tr ("State:"), myStateLabel = new SqueezeLabel);
   hig->addRow (tr ("Running time:"), myRunTimeLabel = new SqueezeLabel);
   hig->addRow (tr ("Remaining time:"), myETALabel = new SqueezeLabel);
@@ -1393,6 +1392,9 @@ Details :: createFilesTab ()
   connect (myFileTreeView, SIGNAL (pathEdited (const QString&, const QString&)),
            this,           SLOT (onPathEdited (const QString&, const QString&)));
 
+  connect (myFileTreeView, SIGNAL (openRequested (const QString&)),
+           this,           SLOT (onOpenRequested (const QString&)));
+
   return myFileTreeView;
 }
 
@@ -1432,4 +1434,25 @@ void
 Details :: onPathEdited (const QString& oldpath, const QString& newname)
 {
   mySession.torrentRenamePath (myIds, oldpath, newname);
+}
+
+void
+Details :: onOpenRequested (const QString& path)
+{
+  if (!mySession.isLocal ())
+    return;
+
+  foreach (const int id, myIds)
+    {
+      const Torrent * const tor = myModel.getTorrentFromId (id);
+      if (tor == NULL)
+        continue;
+
+      const QString localFilePath = tor->getPath () + "/" + path;
+      if (!QFile::exists (localFilePath))
+        continue;
+
+      if (QDesktopServices::openUrl (QUrl::fromLocalFile (localFilePath)))
+        break;
+    }
 }

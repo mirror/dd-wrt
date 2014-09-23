@@ -1,19 +1,15 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2008-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: rpc-server.c 14025 2013-02-18 00:12:51Z jordan $
+ * $Id: rpc-server.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <assert.h>
 #include <errno.h>
 #include <string.h> /* memcpy */
-#include <limits.h> /* INT_MAX */
 
 #include <unistd.h>    /* close */
 
@@ -388,7 +384,7 @@ add_response (struct evhttp_request * req,
           iovec[0].iov_len -= server->stream.avail_out;
 
 #if 0
-          fprintf (stderr, "compressed response is %.2f of original (raw==%zu bytes; compressed==%zu)\n",
+          fprintf (stderr, "compressed response is %.2f of original (raw==%"TR_PRIuSIZE" bytes; compressed==%"TR_PRIuSIZE")\n",
                    (double)evbuffer_get_length (out)/content_len,
                    content_len, evbuffer_get_length (out));
 #endif
@@ -844,7 +840,9 @@ void
 tr_rpcSetWhitelistEnabled (tr_rpc_server  * server,
                            bool             isEnabled)
 {
-  server->isWhitelistEnabled = isEnabled != 0;
+  assert (tr_isBool (isEnabled));
+
+  server->isWhitelistEnabled = isEnabled;
 }
 
 bool

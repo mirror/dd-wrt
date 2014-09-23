@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2010-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: filters.h 12611 2011-08-02 03:59:54Z jordan $
+ * $Id: filters.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef QTR_FILTERS_H
@@ -19,35 +16,37 @@
 
 class FilterMode
 {
-    private:
-        int myMode;
-    public:
-        FilterMode( int mode=SHOW_ALL ): myMode(mode) { }
-        FilterMode( const QString& name ): myMode(modeFromName(name)) { }
-        static const QString names[];
-        enum { SHOW_ALL, SHOW_ACTIVE, SHOW_DOWNLOADING, SHOW_SEEDING, SHOW_PAUSED,
-               SHOW_FINISHED, SHOW_VERIFYING, SHOW_ERROR, NUM_MODES };
-        static int modeFromName( const QString& name );
-        static const QString& nameFromMode( int mode ) { return names[mode]; }
-        int mode() const { return myMode; }
-        const QString& name() const { return names[myMode]; }
+  private:
+    int myMode;
+
+  public:
+    FilterMode( int mode=SHOW_ALL ): myMode(mode) {}
+    FilterMode( const QString& name ): myMode(modeFromName(name)) {}
+    static const QString names[];
+    enum { SHOW_ALL, SHOW_ACTIVE, SHOW_DOWNLOADING, SHOW_SEEDING, SHOW_PAUSED,
+           SHOW_FINISHED, SHOW_VERIFYING, SHOW_ERROR, NUM_MODES };
+    static int modeFromName( const QString& name );
+    static const QString& nameFromMode( int mode ) { return names[mode]; }
+    int mode() const { return myMode; }
+    const QString& name() const { return names[myMode]; }
 };
 
 class SortMode
 {
-    private:
-        int myMode;
-    public:
-        SortMode( int mode=SORT_BY_ID ): myMode(mode) { }
-        SortMode( const QString& name ): myMode(modeFromName(name)) { }
-        static const QString names[];
-        enum { SORT_BY_ACTIVITY, SORT_BY_AGE, SORT_BY_ETA, SORT_BY_NAME,
-               SORT_BY_PROGRESS, SORT_BY_QUEUE, SORT_BY_RATIO, SORT_BY_SIZE,
-               SORT_BY_STATE, SORT_BY_ID, NUM_MODES };
-        static int modeFromName( const QString& name );
-        static const QString& nameFromMode( int mode );
-        int mode() const { return myMode; }
-        const QString& name() const { return names[myMode]; }
+  private:
+    int myMode;
+
+  public:
+    SortMode( int mode=SORT_BY_ID ): myMode(mode) {}
+    SortMode( const QString& name ): myMode(modeFromName(name)) {}
+    static const QString names[];
+    enum { SORT_BY_ACTIVITY, SORT_BY_AGE, SORT_BY_ETA, SORT_BY_NAME,
+           SORT_BY_PROGRESS, SORT_BY_QUEUE, SORT_BY_RATIO, SORT_BY_SIZE,
+           SORT_BY_STATE, SORT_BY_ID, NUM_MODES };
+    static int modeFromName( const QString& name );
+    static const QString& nameFromMode( int mode );
+    int mode() const { return myMode; }
+    const QString& name() const { return names[myMode]; }
 };
 
 Q_DECLARE_METATYPE(FilterMode)

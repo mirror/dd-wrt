@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2013-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id:$
+ * $Id: platform-quota.c 14259 2014-04-27 00:02:00Z jordan $
  */
 
 #include <errno.h>
@@ -20,6 +17,11 @@
  #include <sys/types.h> /* types needed by quota.h */
  #if defined(__FreeBSD__) || defined(__OpenBSD__)
   #include <ufs/ufs/quota.h> /* quotactl() */
+ #elif defined (__NetBSD__)
+  #include <sys/param.h>
+  #ifndef statfs
+   #define statfs statvfs
+  #endif
  #elif defined (__sun)
   #include <sys/fs/ufs_quota.h> /* quotactl */
  #else
@@ -195,6 +197,47 @@ getblkdev (const char * path)
   return device;
 }
 
+#if defined(__NetBSD__) && (__NetBSD_Version__ >= 600000000)
+#include <quota.h>
+
+static int64_t
+getquota (const char * device)
+{
+  struct quotahandle *qh;
+  struct quotakey qk;
+  struct quotaval qv;
+  int64_t limit;
+  int64_t freespace;
+  int64_t spaceused;
+
+  qh = quota_open(device);
+  if (qh == NULL) {
+    return -1;
+  }
+  qk.qk_idtype = QUOTA_IDTYPE_USER;
+  qk.qk_id = getuid();
+  qk.qk_objtype = QUOTA_OBJTYPE_BLOCKS;
+  if (quota_get(qh, &qk, &qv) == -1) {
+    quota_close(qh);
+    return -1;
+  }
+  if (qv.qv_softlimit > 0) {
+    limit = qv.qv_softlimit;
+  }
+  else if (qv.qv_hardlimit > 0) {
+    limit = qv.qv_hardlimit;
+  }
+  else {
+    quota_close(qh);
+    return -1;
+  }
+  spaceused = qv.qv_usage;
+  quota_close(qh);
+
+  freespace = limit - spaceused;
+  return (freespace < 0) ? 0 : freespace;
+}
+#else
 static int64_t
 getquota (const char * device)
 {
@@ -259,6 +302,7 @@ getquota (const char * device)
   /* something went wrong */
   return -1;
 }
+#endif
 
 #ifdef HAVE_XQM
 static int64_t

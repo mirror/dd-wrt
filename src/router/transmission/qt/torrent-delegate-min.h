@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: torrent-delegate-min.h 11092 2010-08-01 20:36:13Z charles $
+ * $Id: torrent-delegate-min.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef QTR_TORRENT_DELEGATE_MIN_H
@@ -23,15 +20,15 @@ class Torrent;
 
 class TorrentDelegateMin: public TorrentDelegate
 {
-        Q_OBJECT
+    Q_OBJECT
 
-    protected:
-        virtual QSize sizeHint( const QStyleOptionViewItem&, const Torrent& ) const;
-        void drawTorrent( QPainter* painter, const QStyleOptionViewItem& option, const Torrent& ) const;
+  protected:
+    virtual QSize sizeHint (const QStyleOptionViewItem&, const Torrent&) const;
+    void drawTorrent (QPainter* painter, const QStyleOptionViewItem& option, const Torrent&) const;
 
-    public:
-        explicit TorrentDelegateMin( QObject * parent=0 ): TorrentDelegate(parent) { }
-        virtual ~TorrentDelegateMin( ) { }
+  public:
+    explicit TorrentDelegateMin (QObject * parent=0): TorrentDelegate(parent) {}
+    virtual ~TorrentDelegateMin () {}
 };
 
 #endif

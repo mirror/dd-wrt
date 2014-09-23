@@ -1,16 +1,18 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU Public License v2 or v3 licenses,
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: utils.cc 13730 2012-12-31 22:43:29Z jordan $
+ * $Id: utils.cc 14225 2014-01-19 01:09:44Z jordan $
  */
 
 #include <iostream>
+
+#ifdef WIN32
+ #include <windows.h>
+ #include <shellapi.h>
+#endif
 
 #include <QApplication>
 #include <QDataStream>
@@ -19,6 +21,7 @@
 #include <QFileInfo>
 #include <QInputDialog>
 #include <QObject>
+#include <QPixmapCache>
 #include <QSet>
 #include <QStyle>
 
@@ -31,111 +34,186 @@
 ****
 ***/
 
+#if defined(WIN32) && QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+// Should be in QtWinExtras soon, but for now let's import it manually
+extern QPixmap qt_pixmapFromWinHICON(HICON icon);
+#endif
+
 QString
-Utils :: remoteFileChooser( QWidget * parent, const QString& title, const QString& myPath, bool dir, bool local )
+Utils :: remoteFileChooser (QWidget * parent, const QString& title, const QString& myPath, bool dir, bool local)
 {
-    QString path;
+  QString path;
 
-    if( local )
+  if (local)
     {
-        if( dir )
-            path = QFileDialog::getExistingDirectory( parent, title, myPath );
-        else
-            path = QFileDialog::getOpenFileName( parent, title, myPath );
+      if (dir)
+        path = QFileDialog::getExistingDirectory (parent, title, myPath);
+      else
+        path = QFileDialog::getOpenFileName (parent, title, myPath);
     }
-    else
-        path = QInputDialog::getText( parent, title, tr( "Enter a location:" ), QLineEdit::Normal, myPath, NULL );
+  else
+    {
+      path = QInputDialog::getText (parent, title, tr ("Enter a location:"), QLineEdit::Normal, myPath, NULL);
+    }
 
-    return path;
+  return path;
 }
 
 void
-Utils :: toStderr( const QString& str )
+Utils :: toStderr (const QString& str)
 {
-    std::cerr << qPrintable(str) << std::endl;
+  std::cerr << qPrintable(str) << std::endl;
 }
 
-const QIcon&
-Utils :: guessMimeIcon( const QString& filename )
+#ifdef WIN32
+namespace
 {
-    enum { DISK, DOCUMENT, PICTURE, VIDEO, ARCHIVE, AUDIO, APP, TYPE_COUNT };
-    static QIcon fallback;
-    static QIcon fileIcons[TYPE_COUNT];
-    static QSet<QString> suffixes[TYPE_COUNT];
+  void
+  addAssociatedFileIcon (const QFileInfo& fileInfo, UINT iconSize, QIcon& icon)
+  {
+    QString const pixmapCacheKey = QLatin1String ("tr_file_ext_")
+                                 + QString::number (iconSize)
+                                 + "_"
+                                 + fileInfo.suffix ();
 
-    if( fileIcons[0].isNull( ) )
+    QPixmap pixmap;
+    if (!QPixmapCache::find (pixmapCacheKey, &pixmap))
+      {
+        const QString filename = fileInfo.fileName ();
+
+        SHFILEINFO shellFileInfo;
+        if (::SHGetFileInfoW ((const wchar_t*) filename.utf16 (), FILE_ATTRIBUTE_NORMAL,
+                              &shellFileInfo, sizeof(shellFileInfo),
+                              SHGFI_ICON | iconSize | SHGFI_USEFILEATTRIBUTES) != 0)
+          {
+            if (shellFileInfo.hIcon != NULL)
+              {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+                pixmap = qt_pixmapFromWinHICON (shellFileInfo.hIcon);
+#else
+                pixmap = QPixmap::fromWinHICON (shellFileInfo.hIcon);
+#endif
+                ::DestroyIcon (shellFileInfo.hIcon);
+              }
+          }
+
+        QPixmapCache::insert (pixmapCacheKey, pixmap);
+      }
+
+    if (!pixmap.isNull ())
+      icon.addPixmap (pixmap);
+  }
+} // namespace
+#endif
+
+QIcon
+Utils :: guessMimeIcon (const QString& filename)
+{
+#ifdef WIN32
+  QIcon icon;
+
+  if (!filename.isEmpty ())
     {
-        fallback = QApplication::style()->standardIcon( QStyle :: SP_FileIcon );
+      const QFileInfo fileInfo (filename);
 
-        suffixes[DISK] << QString::fromLatin1("iso");
-        fileIcons[DISK]= QIcon::fromTheme( QString::fromLatin1("media-optical"), fallback );
-
-        const char * doc_types[] = {
-            "abw", "csv", "doc", "dvi", "htm", "html", "ini", "log", "odp",
-            "ods", "odt", "pdf", "ppt", "ps",  "rtf", "tex", "txt", "xml" };
-        for( int i=0, n=sizeof(doc_types)/sizeof(doc_types[0]); i<n; ++i )
-            suffixes[DOCUMENT] << QString::fromLatin1(doc_types[i] );
-        fileIcons[DOCUMENT] = QIcon::fromTheme( QString::fromLatin1("text-x-generic"), fallback );
-
-        const char * pic_types[] = {
-            "bmp", "gif", "jpg", "jpeg", "pcx", "png", "psd", "ras", "tga", "tiff" };
-        for( int i=0, n=sizeof(pic_types)/sizeof(pic_types[0]); i<n; ++i )
-            suffixes[PICTURE] << QString::fromLatin1(pic_types[i]);
-        fileIcons[PICTURE]  = QIcon::fromTheme( QString::fromLatin1("image-x-generic"), fallback );
-
-        const char * vid_types[] = {
-            "3gp", "asf", "avi", "mkv", "mov", "mpeg", "mpg", "mp4",
-            "ogm", "ogv", "qt", "rm", "wmv" };
-        for( int i=0, n=sizeof(vid_types)/sizeof(vid_types[0]); i<n; ++i )
-            suffixes[VIDEO] << QString::fromLatin1(vid_types[i]);
-        fileIcons[VIDEO] = QIcon::fromTheme( QString::fromLatin1("video-x-generic"), fallback );
-
-        const char * arc_types[] = {
-            "7z", "ace", "bz2", "cbz", "gz", "gzip", "lzma", "rar", "sft", "tar", "zip" };
-        for( int i=0, n=sizeof(arc_types)/sizeof(arc_types[0]); i<n; ++i )
-            suffixes[ARCHIVE] << QString::fromLatin1(arc_types[i]);
-        fileIcons[ARCHIVE]  = QIcon::fromTheme( QString::fromLatin1("package-x-generic"), fallback );
-
-        const char * aud_types[] = {
-            "aac", "ac3", "aiff", "ape", "au", "flac", "m3u", "m4a", "mid", "midi", "mp2",
-            "mp3", "mpc", "nsf", "oga", "ogg", "ra", "ram", "shn", "voc", "wav", "wma" };
-        for( int i=0, n=sizeof(aud_types)/sizeof(aud_types[0]); i<n; ++i )
-            suffixes[AUDIO] << QString::fromLatin1(aud_types[i]);
-        fileIcons[AUDIO] = QIcon::fromTheme( QString::fromLatin1("audio-x-generic"), fallback );
-
-        const char * exe_types[] = { "bat", "cmd", "com", "exe" };
-        for( int i=0, n=sizeof(exe_types)/sizeof(exe_types[0]); i<n; ++i )
-            suffixes[APP] << QString::fromLatin1(exe_types[i]);
-        fileIcons[APP] = QIcon::fromTheme( QString::fromLatin1("application-x-executable"), fallback );
+      addAssociatedFileIcon (fileInfo, SHGFI_SMALLICON, icon);
+      addAssociatedFileIcon (fileInfo, 0, icon);
+      addAssociatedFileIcon (fileInfo, SHGFI_LARGEICON, icon);
     }
 
-    QString suffix( QFileInfo( filename ).suffix( ).toLower( ) );
+  if (icon.isNull ())
+    icon = QApplication::style ()->standardIcon (QStyle::SP_FileIcon);
 
-    for( int i=0; i<TYPE_COUNT; ++i )
-        if( suffixes[i].contains( suffix ) )
-            return fileIcons[i];
+  return icon;
+#else
+  enum { DISK, DOCUMENT, PICTURE, VIDEO, ARCHIVE, AUDIO, APP, TYPE_COUNT };
+  static QIcon fallback;
+  static QIcon fileIcons[TYPE_COUNT];
+  static QSet<QString> suffixes[TYPE_COUNT];
 
-    return fallback;
+  if (fileIcons[0].isNull ())
+    {
+      fallback = QApplication::style()->standardIcon (QStyle :: SP_FileIcon);
+
+      suffixes[DISK] << QString::fromLatin1("iso");
+      fileIcons[DISK]= QIcon::fromTheme (QString::fromLatin1("media-optical"), fallback);
+
+      const char * doc_types[] = {
+        "abw", "csv", "doc", "dvi", "htm", "html", "ini", "log", "odp",
+        "ods", "odt", "pdf", "ppt", "ps",  "rtf", "tex", "txt", "xml" };
+      for (int i=0, n=sizeof(doc_types)/sizeof(doc_types[0]); i<n; ++i)
+        suffixes[DOCUMENT] << QString::fromLatin1(doc_types[i]);
+      fileIcons[DOCUMENT] = QIcon::fromTheme (QString::fromLatin1("text-x-generic"), fallback);
+
+      const char * pic_types[] = {
+        "bmp", "gif", "jpg", "jpeg", "pcx", "png", "psd", "ras", "tga", "tiff" };
+      for (int i=0, n=sizeof(pic_types)/sizeof(pic_types[0]); i<n; ++i)
+        suffixes[PICTURE] << QString::fromLatin1(pic_types[i]);
+      fileIcons[PICTURE]  = QIcon::fromTheme (QString::fromLatin1("image-x-generic"), fallback);
+
+      const char * vid_types[] = {
+        "3gp", "asf", "avi", "mkv", "mov", "mpeg", "mpg", "mp4",
+        "ogm", "ogv", "qt", "rm", "wmv" };
+      for (int i=0, n=sizeof(vid_types)/sizeof(vid_types[0]); i<n; ++i)
+        suffixes[VIDEO] << QString::fromLatin1(vid_types[i]);
+      fileIcons[VIDEO] = QIcon::fromTheme (QString::fromLatin1("video-x-generic"), fallback);
+
+      const char * arc_types[] = {
+        "7z", "ace", "bz2", "cbz", "gz", "gzip", "lzma", "rar", "sft", "tar", "zip" };
+      for (int i=0, n=sizeof(arc_types)/sizeof(arc_types[0]); i<n; ++i)
+        suffixes[ARCHIVE] << QString::fromLatin1(arc_types[i]);
+      fileIcons[ARCHIVE]  = QIcon::fromTheme (QString::fromLatin1("package-x-generic"), fallback);
+
+      const char * aud_types[] = {
+        "aac", "ac3", "aiff", "ape", "au", "flac", "m3u", "m4a", "mid", "midi", "mp2",
+        "mp3", "mpc", "nsf", "oga", "ogg", "ra", "ram", "shn", "voc", "wav", "wma" };
+      for (int i=0, n=sizeof(aud_types)/sizeof(aud_types[0]); i<n; ++i)
+        suffixes[AUDIO] << QString::fromLatin1(aud_types[i]);
+      fileIcons[AUDIO] = QIcon::fromTheme (QString::fromLatin1("audio-x-generic"), fallback);
+
+      const char * exe_types[] = { "bat", "cmd", "com", "exe" };
+      for (int i=0, n=sizeof(exe_types)/sizeof(exe_types[0]); i<n; ++i)
+        suffixes[APP] << QString::fromLatin1(exe_types[i]);
+      fileIcons[APP] = QIcon::fromTheme (QString::fromLatin1("application-x-executable"), fallback);
+    }
+
+  QString suffix (QFileInfo (filename).suffix ().toLower ());
+
+  for (int i=0; i<TYPE_COUNT; ++i)
+    if (suffixes[i].contains (suffix))
+      return fileIcons[i];
+
+  return fallback;
+#endif
 }
 
 bool
-Utils :: isValidUtf8 ( const char *s )
+Utils :: isValidUtf8  (const char *s)
 {
-    int n;  // number of bytes in a UTF-8 sequence
+  int n;  // number of bytes in a UTF-8 sequence
 
-    for ( const char *c = s;  *c;  c += n )
+  for (const char *c = s;  *c;  c += n)
     {
-        if ( (*c & 0x80) == 0x00 )    n = 1;        // ASCII
-        else if ((*c & 0xc0) == 0x80) return false; // not valid
-        else if ((*c & 0xe0) == 0xc0) n = 2;
-        else if ((*c & 0xf0) == 0xe0) n = 3;
-        else if ((*c & 0xf8) == 0xf0) n = 4;
-        else if ((*c & 0xfc) == 0xf8) n = 5;
-        else if ((*c & 0xfe) == 0xfc) n = 6;
-        else return false;
-        for ( int m = 1; m < n; m++ )
-            if ( (c[m] & 0xc0) != 0x80 )
-                return false;
+      if  ((*c & 0x80) == 0x00)    n = 1;        // ASCII
+      else if ((*c & 0xc0) == 0x80) return false; // not valid
+      else if ((*c & 0xe0) == 0xc0) n = 2;
+      else if ((*c & 0xf0) == 0xe0) n = 3;
+      else if ((*c & 0xf8) == 0xf0) n = 4;
+      else if ((*c & 0xfc) == 0xf8) n = 5;
+      else if ((*c & 0xfe) == 0xfc) n = 6;
+      else return false;
+      for  (int m = 1; m < n; m++)
+        if  ((c[m] & 0xc0) != 0x80)
+          return false;
     } 
-    return true;
+
+  return true;
+}
+
+QString
+Utils :: removeTrailingDirSeparator (const QString& path)
+{
+  return path.endsWith (QDir::separator ())
+    ? path.left (path.length()-1)
+    : path;
 }

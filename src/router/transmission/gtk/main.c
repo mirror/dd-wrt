@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: main.c 14154 2013-08-05 02:39:30Z jordan $
+ * $Id: main.c 14242 2014-01-21 03:15:33Z jordan $
  *
  * Copyright (c) Transmission authors and contributors
  *
@@ -63,10 +63,19 @@
 
 #define SHOW_LICENSE
 static const char * LICENSE =
-"The OS X client, CLI client, and parts of libtransmission are licensed under the terms of the MIT license.\n\n"
-"The Transmission daemon, GTK+ client, Qt client, Web client, and most of libtransmission are licensed under the terms of the GNU GPL version 2, with two special exceptions:\n\n"
-"1. The MIT-licensed portions of Transmission listed above are exempt from GPLv2 clause 2 (b) and may retain their MIT license.\n\n"
-"2. Permission is granted to link the code in this release with the OpenSSL project's 'OpenSSL' library and to distribute the linked executables. Works derived from Transmission may, at their authors' discretion, keep or delete this exception.";
+  "Copyright 2005-2014. All code is copyrighted by the respective authors.\n"
+  "\n"           
+  "Transmission can be redistributed and/or modified under the terms of the "
+  "GNU GPL versions 2 or 3 or by any future license endorsed by Mnemosyne LLC.\n"
+  "\n"
+  "In addition, linking to and/or using OpenSSL is allowed.\n"
+  "\n"
+  "This program is distributed in the hope that it will be useful, "
+  "but WITHOUT ANY WARRANTY; without even the implied warranty of "
+  "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
+  "\n"
+  "Some of Transmission's source files have more permissive licenses. "
+  "Those files may, of course, be used on their own under their own terms.\n";
 
 struct cbdata
 {

@@ -1,15 +1,13 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: file-list.c 14132 2013-07-20 16:19:15Z jordan $
+ * $Id: file-list.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
+#include <limits.h> /* INT_MAX */
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -880,7 +878,7 @@ cell_edited_callback (GtkCellRendererText * cell G_GNUC_UNUSED,
   rename_data->newname = g_strdup (newname);
   rename_data->file_data = data;
   rename_data->path_string = g_strdup (path_string);
-  tr_torrentRenamePath (tor, oldpath->str, newname, (tr_torrent_rename_done_func*)on_rename_done, rename_data);
+  tr_torrentRenamePath (tor, oldpath->str, newname, (tr_torrent_rename_done_func)on_rename_done, rename_data);
 
   /* cleanup */
   g_string_free (oldpath, TRUE);

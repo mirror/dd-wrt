@@ -1,22 +1,31 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2007-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: list.c 13625 2012-12-05 17:29:46Z jordan $
+ * $Id: list.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include "transmission.h"
 #include "list.h"
+#include "platform.h"
 #include "utils.h"
 
 static const tr_list TR_LIST_CLEAR = { NULL, NULL, NULL };
 
 static tr_list * recycled_nodes = NULL;
+
+static tr_lock*
+getRecycledNodesLock (void)
+{
+  static tr_lock * l = NULL;
+
+  if (!l)
+    l = tr_lockNew ();
+
+  return l;
+}
 
 static tr_list*
 node_alloc (void)
@@ -29,8 +38,10 @@ node_alloc (void)
     }
   else
     {
+      tr_lockLock (getRecycledNodesLock ());
       ret = recycled_nodes;
       recycled_nodes = recycled_nodes->next;
+      tr_lockUnlock (getRecycledNodesLock ());
     }
 
   *ret = TR_LIST_CLEAR;
@@ -43,8 +54,10 @@ node_free (tr_list* node)
   if (node != NULL)
     {
       *node = TR_LIST_CLEAR;
+      tr_lockLock (getRecycledNodesLock ());
       node->next = recycled_nodes;
       recycled_nodes = node;
+      tr_lockUnlock (getRecycledNodesLock ());
     }
 }
 

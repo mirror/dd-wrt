@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: platform.c 14110 2013-07-08 17:07:31Z jordan $
+ * $Id: platform.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #define _XOPEN_SOURCE 600  /* needed for recursive locks. */
@@ -28,7 +25,7 @@
  #include <windows.h>
  #include <shlobj.h> /* for CSIDL_APPDATA, CSIDL_MYDOCUMENTS */
 #else
- #ifdef SYS_DARWIN
+ #ifdef BUILD_MAC_CLIENT
   #include <CoreFoundation/CoreFoundation.h>
  #endif
  #ifdef __HAIKU__
@@ -429,7 +426,7 @@ tr_getWebClientDir (const tr_session * session UNUSED)
       else
         {
 
-#ifdef SYS_DARWIN /* on Mac, look in the Application Support folder first, then in the app bundle. */
+#ifdef BUILD_MAC_CLIENT /* on Mac, look in the Application Support folder first, then in the app bundle. */
 
           /* Look in the Application Support folder */
           s = tr_buildPath (tr_sessionGetConfigDir (session), "web", NULL);

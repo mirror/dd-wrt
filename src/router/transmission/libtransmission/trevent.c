@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2007-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: trevent.c 13868 2013-01-25 23:34:20Z jordan $
+ * $Id: trevent.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <assert.h>
@@ -160,9 +157,9 @@ struct tr_run_data
     } while (0)
 
 static void
-readFromPipe (int    fd,
-              short  eventType,
-              void * veh)
+readFromPipe (evutil_socket_t   fd,
+              short             eventType,
+              void            * veh)
 {
     char              ch;
     int               ret;
@@ -265,7 +262,8 @@ tr_eventInit (tr_session * session)
 
     eh = tr_new0 (tr_event_handle, 1);
     eh->lock = tr_lockNew ();
-    pipe (eh->fds);
+    if (pipe (eh->fds) == -1)
+      tr_logAddError ("Unable to write to pipe() in libtransmission: %s", tr_strerror(errno));
     eh->session = session;
     eh->thread = tr_threadNew (libeventThreadFunc, eh);
 
@@ -305,25 +303,35 @@ void
 tr_runInEventThread (tr_session * session,
                      void func (void*), void * user_data)
 {
-    assert (tr_isSession (session));
-    assert (session->events != NULL);
+  assert (tr_isSession (session));
+  assert (session->events != NULL);
 
-    if (tr_amInThread (session->events->thread))
+  if (tr_amInThread (session->events->thread))
     {
       (func)(user_data);
     }
-    else
+  else
     {
-        const char         ch = 'r';
-        int                fd = session->events->fds[1];
-        tr_lock *          lock = session->events->lock;
-        struct tr_run_data data;
+      int fd;
+      char ch;
+      ssize_t res_1;
+      ssize_t res_2;
+      tr_event_handle * e = session->events;
+      struct tr_run_data data;
 
-        tr_lockLock (lock);
-        pipewrite (fd, &ch, 1);
-        data.func = func;
-        data.user_data = user_data;
-        pipewrite (fd, &data, sizeof (data));
-        tr_lockUnlock (lock);
+      tr_lockLock (e->lock);
+
+      fd = e->fds[1];
+      ch = 'r';
+      res_1 = pipewrite (fd, &ch, 1);
+
+      data.func = func;
+      data.user_data = user_data;
+      res_2 = pipewrite (fd, &data, sizeof (data));
+
+      tr_lockUnlock (e->lock);
+
+      if ((res_1 == -1) || (res_2 == -1))
+        tr_logAddError ("Unable to write to libtransmisison event queue: %s", tr_strerror(errno));
     }
 }
