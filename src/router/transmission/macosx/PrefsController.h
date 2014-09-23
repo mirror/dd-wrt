@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: PrefsController.h 13449 2012-08-19 19:06:52Z livings124 $
+ * $Id: PrefsController.h 14161 2013-08-10 02:29:12Z livings124 $
  *
  * Copyright (c) 2005-2012 Transmission authors and contributors
  *
@@ -42,6 +42,7 @@
     IBOutlet NSButton * fCheckForUpdatesButton, * fCheckForUpdatesBetaButton;
     
     IBOutlet NSPopUpButton * fFolderPopUp, * fIncompleteFolderPopUp, * fImportFolderPopUp, * fDoneScriptPopUp;
+    IBOutlet NSButton * fShowMagnetAddWindowCheck;
     IBOutlet NSTextField * fRatioStopField, * fIdleStopField, * fQueueDownloadField, * fQueueSeedField, * fStalledField;
 
     IBOutlet NSTextField * fUploadField, * fDownloadField,
@@ -123,6 +124,9 @@
 - (void) setUseIncompleteFolder: (id) sender;
 
 - (void) setRenamePartialFiles: (id) sender;
+
+- (IBAction) setShowAddMagnetWindow: (id) sender;
+- (void) updateShowAddMagnetWindowField;
 
 - (void) setDoneScriptEnabled: (id) sender;
 - (void) doneScriptSheetShow: (id) sender;

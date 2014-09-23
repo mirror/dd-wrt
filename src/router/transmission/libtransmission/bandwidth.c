@@ -1,17 +1,13 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2008-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: bandwidth.c 13935 2013-02-02 16:31:05Z jordan $
+ * $Id: bandwidth.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <assert.h>
-#include <limits.h>
 #include <string.h> /* memset () */
 
 #include "transmission.h"
@@ -141,14 +137,8 @@ tr_bandwidthSetParent (tr_bandwidth  * b,
 
   if (b->parent)
     {
-      void * removed;
-
       assert (tr_isBandwidth (b->parent));
-
-      removed = tr_ptrArrayRemoveSorted (&b->parent->children, b, compareBandwidth);
-      assert (removed == b);
-      assert (tr_ptrArrayFindSorted (&b->parent->children, b, compareBandwidth) == NULL);
-
+      tr_ptrArrayRemoveSortedPointer (&b->parent->children, b, compareBandwidth);
       b->parent = NULL;
     }
 
@@ -402,7 +392,7 @@ tr_bandwidthUsed (tr_bandwidth  * b,
 
 #ifdef DEBUG_DIRECTION
 if ((dir == DEBUG_DIRECTION) && (band->isLimited))
-fprintf (stderr, "%p consumed %5zu bytes of %5s data... was %6zu, now %6zu left\n",
+fprintf (stderr, "%p consumed %5"TR_PRIuSIZE" bytes of %5s data... was %6"TR_PRIuSIZE", now %6"TR_PRIuSIZE" left\n",
          b, byteCount, (isPieceData?"piece":"raw"), oldBytesLeft, band->bytesLeft);
 #endif
 

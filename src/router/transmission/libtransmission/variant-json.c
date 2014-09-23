@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2008-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: variant-json.c 13868 2013-01-25 23:34:20Z jordan $
+ * $Id: variant-json.c 14266 2014-04-27 23:10:01Z jordan $
  */
 
 #include <assert.h>
@@ -91,7 +88,7 @@ error_handler (jsonsl_t                  jsn,
 
   if (data->source)
     {
-      tr_logAddError ("JSON parse failed in %s at pos %zu: %s -- remaining text \"%.16s\"",
+      tr_logAddError ("JSON parse failed in %s at pos %"TR_PRIuSIZE": %s -- remaining text \"%.16s\"",
               data->source,
               jsn->pos,
               jsonsl_strerror (error),
@@ -99,7 +96,7 @@ error_handler (jsonsl_t                  jsn,
     }
   else
     {
-      tr_logAddError ("JSON parse failed at pos %zu: %s -- remaining text \"%.16s\"",
+      tr_logAddError ("JSON parse failed at pos %"TR_PRIuSIZE": %s -- remaining text \"%.16s\"",
               jsn->pos,
               jsonsl_strerror (error),
               buf);
@@ -607,7 +604,7 @@ jsonContainerEndFunc (const tr_variant * val,
                       void             * vdata)
 {
   struct jsonWalk * data = vdata;
-  int emptyContainer = false;
+  bool emptyContainer = false;
 
   jsonPopParent (data);
 

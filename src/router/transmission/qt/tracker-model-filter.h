@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2010-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: tracker-model-filter.h 11092 2010-08-01 20:36:13Z charles $
+ * $Id: tracker-model-filter.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef QTR_TRACKER_MODEL_FILTER_H
@@ -17,20 +14,20 @@
 
 class TrackerModelFilter : public QSortFilterProxyModel
 {
-        Q_OBJECT
+    Q_OBJECT
 
-    public:
-        TrackerModelFilter( QObject *parent = 0 );
+  public:
+    TrackerModelFilter (QObject *parent = 0);
 
-    public:
-        void setShowBackupTrackers( bool );
-        bool showBackupTrackers( ) const { return myShowBackups; }
+  public:
+    void setShowBackupTrackers (bool);
+    bool showBackupTrackers () const { return myShowBackups; }
 
-    protected:
-        bool filterAcceptsRow( int sourceRow, const QModelIndex&sourceParent ) const;
+  protected:
+    bool filterAcceptsRow (int sourceRow, const QModelIndex&sourceParent) const;
 
-    private:
-        bool myShowBackups;
+  private:
+    bool myShowBackups;
 };
 
 #endif

@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2012-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: favicon.h 11092 2010-08-01 20:36:13Z charles $
+ * $Id: favicon.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef FAVICON_CACHE_H
@@ -24,41 +21,41 @@ class QUrl;
 
 class Favicons: public QObject
 {
-        Q_OBJECT;
+    Q_OBJECT;
 
-    public:
+  public:
 
-        static QString getHost( const QUrl& url );
+    static QString getHost( const QUrl& url );
 
-    public:
+  public:
 
-        Favicons();
-        virtual ~Favicons();
+    Favicons();
+    virtual ~Favicons();
 
-        /* returns a cached pixmap, or a NULL pixmap if there's no match in the cache */
-        QPixmap find( const QUrl& url );
+    // returns a cached pixmap, or a NULL pixmap if there's no match in the cache
+    QPixmap find (const QUrl& url);
 
-        /* returns a cached pixmap, or a NULL pixmap if there's no match in the cache */
-        QPixmap findFromHost( const QString& host );
+    // returns a cached pixmap, or a NULL pixmap if there's no match in the cache
+    QPixmap findFromHost (const QString& host);
 
-        /* this will emit a signal when (if) the icon becomes ready */
-        void add( const QUrl& url );
+    // this will emit a signal when (if) the icon becomes ready
+    void add (const QUrl& url);
 
-    signals:
+  signals:
 
-        void pixmapReady( const QString& host );
+    void pixmapReady (const QString& host);
 
-    private:
+  private:
 
-        QNetworkAccessManager * myNAM;
-        QMap<QString,QPixmap> myPixmaps;
+    QNetworkAccessManager * myNAM;
+    QMap<QString,QPixmap> myPixmaps;
 
-        QString getCacheDir( );
-        void ensureCacheDirHasBeenScanned( );
+    QString getCacheDir ();
+    void ensureCacheDirHasBeenScanned ();
 
-    private slots:
+  private slots:
 
-        void onRequestFinished( QNetworkReply * reply );
+    void onRequestFinished (QNetworkReply * reply);
 };
 
 #endif

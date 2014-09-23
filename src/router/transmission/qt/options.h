@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: options.h 14002 2013-02-09 23:11:17Z jordan $
+ * $Id: options.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef OPTIONS_DIALOG_H
@@ -40,15 +37,18 @@ class FreespaceLabel;
 class Prefs;
 class Session;
 
-extern "C" { struct tr_variant; };
+extern "C"
+{
+  struct tr_variant;
+}
 
 class FileAdded: public QObject
 {
     Q_OBJECT
 
   public:
-    FileAdded (int tag, const QString& name): myTag (tag), myName (name) { }
-    ~FileAdded () { }
+    FileAdded (int tag, const QString& name): myTag (tag), myName (name) {}
+    ~FileAdded () {}
     void setFileToDelete (const QString& file) { myDelFile = file; }
 
   public slots:

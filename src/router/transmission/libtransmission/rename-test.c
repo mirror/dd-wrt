@@ -1,3 +1,12 @@
+/*
+ * This file Copyright (C) 2013-2014 Mnemosyne LLC
+ *
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
+ *
+ * $Id: rename-test.c 14241 2014-01-21 03:10:30Z jordan $
+ */
+
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h> /* fopen() */
@@ -86,16 +95,14 @@ torrentRenameAndWait (tr_torrent * tor,
 static void
 create_file_with_contents (const char * path, const char * str)
 {
-  int rv;
   FILE * fp;
   char * dir;
   const int tmperr = errno;
 
   dir = tr_dirname (path);
   errno = 0;
-  rv = tr_mkdirp (dir, 0700);
+  tr_mkdirp (dir, 0700);
   assert (errno == 0);
-  assert (rv == 0);
   tr_free (dir);
 
   tr_remove (path);

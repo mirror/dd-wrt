@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2008-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: web.h 14070 2013-04-13 20:25:28Z jordan $
+ * $Id: web.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef TR_HTTP_H
@@ -39,13 +36,13 @@ tr_web_close_mode;
 
 void tr_webClose (tr_session * session, tr_web_close_mode close_mode);
 
-typedef void (tr_web_done_func)(tr_session       * session,
-                                bool               timeout_flag,
-                                bool               did_connect_flag,
-                                long               response_code,
-                                const void       * response,
-                                size_t             response_byte_count,
-                                void             * user_data);
+typedef void (*tr_web_done_func)(tr_session       * session,
+                                 bool               timeout_flag,
+                                 bool               did_connect_flag,
+                                 long               response_code,
+                                 const void       * response,
+                                 size_t             response_byte_count,
+                                 void             * user_data);
 
 const char * tr_webGetResponseStr (long response_code);
 

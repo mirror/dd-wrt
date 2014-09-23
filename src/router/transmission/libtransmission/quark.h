@@ -1,11 +1,8 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2013-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
  * $Id: utils.h 13667 2012-12-14 04:34:42Z jordan $
  */
@@ -414,7 +411,7 @@ bool tr_quark_lookup (const void * str, size_t len, tr_quark * setme);
 /**
  * Get the string that corresponds to the specified quark
  */
-const char * tr_quark_get_string (const tr_quark quark, size_t * len);
+const char * tr_quark_get_string (tr_quark quark, size_t * len);
 
 /**
  * Create a new quark for the specified string. If a quark already

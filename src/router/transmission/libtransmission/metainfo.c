@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2007-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: metainfo.c 13970 2013-02-04 21:53:19Z jordan $
+ * $Id: metainfo.c 14264 2014-04-27 20:17:16Z jordan $
  */
 
 #include <assert.h>
@@ -33,6 +30,19 @@
 ****
 ***/
 
+
+#ifdef WIN32
+  #define PATH_DELIMITER_CHARS "/\\"
+#else
+  #define PATH_DELIMITER_CHARS "/"
+#endif
+
+static inline bool
+char_is_path_separator (char c)
+{
+  return strchr(PATH_DELIMITER_CHARS, c) != NULL;
+}
+
 char*
 tr_metainfoGetBasename (const tr_info * inf)
 {
@@ -42,7 +52,7 @@ tr_metainfoGetBasename (const tr_info * inf)
   char * ret = tr_strdup_printf ("%s.%16.16s", name, inf->hashString);
 
   for (i=0; i<name_len; ++i)
-    if (ret[i] == '/')
+    if (char_is_path_separator (ret[i]))
       ret[i] = '_';
 
   return ret;
@@ -63,10 +73,13 @@ getTorrentFilename (const tr_session * session, const tr_info * inf)
 ***/
 
 static bool
-path_is_suspicious (const char * path)
+path_component_is_suspicious (const char * component)
 {
-  return (path == NULL)
-      || (strstr (path, "../") != NULL);
+  return (component == NULL)
+      || (*component == '\0')
+      || (strpbrk (component, PATH_DELIMITER_CHARS) != NULL)
+      || (strcmp (component, ".") == 0)
+      || (strcmp (component, "..") == 0);
 }
 
 static bool
@@ -74,35 +87,41 @@ getfile (char ** setme, const char * root, tr_variant * path, struct evbuffer * 
 {
   bool success = false;
 
+  *setme = NULL;
+
+  /* root's already been checked by caller */
+  assert (!path_component_is_suspicious (root));
+
   if (tr_variantIsList (path))
     {
       int i;
       const int n = tr_variantListSize (path);
 
+      success = true;
       evbuffer_drain (buf, evbuffer_get_length (buf));
       evbuffer_add (buf, root, strlen (root));
+
       for (i=0; i<n; i++)
         {
           size_t len;
           const char * str;
 
-          if (tr_variantGetStr (tr_variantListChild (path, i), &str, &len))
+          if (!tr_variantGetStr (tr_variantListChild (path, i), &str, &len) ||
+              path_component_is_suspicious (str))
             {
-              evbuffer_add (buf, TR_PATH_DELIMITER_STR, 1);
-              evbuffer_add (buf, str, len);
+              success = false;
+              break;
             }
-        }
 
-      *setme = tr_utf8clean ((char*)evbuffer_pullup (buf, -1), evbuffer_get_length (buf));
-      /* fprintf (stderr, "[%s]\n", *setme); */
-      success = true;
+          evbuffer_add (buf, TR_PATH_DELIMITER_STR, 1);
+          evbuffer_add (buf, str, len);
+        }
     }
 
-  if ((*setme != NULL) && path_is_suspicious (*setme))
+  if (success)
     {
-      tr_free (*setme);
-      *setme = NULL;
-      success = false;
+      *setme = tr_utf8clean ((char*)evbuffer_pullup (buf, -1), evbuffer_get_length (buf));
+      /*fprintf (stderr, "[%s]\n", *setme);*/
     }
 
   return success;
@@ -118,7 +137,14 @@ parseFiles (tr_info * inf, tr_variant * files, const tr_variant * length)
   if (tr_variantIsList (files)) /* multi-file mode */
     {
       tr_file_index_t i;
-      struct evbuffer * buf = evbuffer_new ();
+      struct evbuffer * buf;
+      const char * result;
+
+      if (path_component_is_suspicious (inf->name))
+        return "path";
+
+      buf = evbuffer_new ();
+      result = NULL;
 
       inf->isMultifile = 1;
       inf->fileCount = tr_variantListSize (files);
@@ -131,27 +157,40 @@ parseFiles (tr_info * inf, tr_variant * files, const tr_variant * length)
 
           file = tr_variantListChild (files, i);
           if (!tr_variantIsDict (file))
-            return "files";
+            {
+              result = "files";
+              break;
+            }
 
           if (!tr_variantDictFindList (file, TR_KEY_path_utf_8, &path))
             if (!tr_variantDictFindList (file, TR_KEY_path, &path))
-              return "path";
+              {
+                result = "path";
+                break;
+              }
 
           if (!getfile (&inf->files[i].name, inf->name, path, buf))
-            return "path";
+            {
+              result = "path";
+              break;
+            }
 
           if (!tr_variantDictFindInt (file, TR_KEY_length, &len))
-            return "length";
+            {
+              result = "length";
+              break;
+            }
 
           inf->files[i].length = len;
           inf->totalSize      += len;
         }
 
       evbuffer_free (buf);
+      return result;
     }
   else if (tr_variantGetInt (length, &len)) /* single-file mode */
     {
-      if (path_is_suspicious (inf->name))
+      if (path_component_is_suspicious (inf->name))
         return "path";
 
       inf->isMultifile      = 0;

@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2007-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: peer-io.c 13868 2013-01-25 23:34:20Z jordan $
+ * $Id: peer-io.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <assert.h>
@@ -246,7 +243,7 @@ canReadWrapper (tr_peerIo * io)
 }
 
 static void
-event_read_cb (int fd, short event UNUSED, void * vio)
+event_read_cb (evutil_socket_t fd, short event UNUSED, void * vio)
 {
     int res;
     int e;
@@ -325,7 +322,7 @@ tr_evbuffer_write (tr_peerIo * io, int fd, size_t howmuch)
 }
 
 static void
-event_write_cb (int fd, short event UNUSED, void * vio)
+event_write_cb (evutil_socket_t fd, short event UNUSED, void * vio)
 {
     int res = 0;
     int e;
@@ -416,7 +413,7 @@ utp_on_read (void *closure, const unsigned char *buf, size_t buflen)
     assert (tr_isPeerIo (io));
 
     rc = evbuffer_add (io->inbuf, buf, buflen);
-    dbgmsg (io, "utp_on_read got %zu bytes", buflen);
+    dbgmsg (io, "utp_on_read got %"TR_PRIuSIZE" bytes", buflen);
 
     if (rc < 0) {
         tr_logAddNamedError ("UTP", "On read evbuffer_add");
@@ -435,7 +432,7 @@ utp_on_write (void *closure, unsigned char *buf, size_t buflen)
     assert (tr_isPeerIo (io));
 
     rc = evbuffer_remove (io->outbuf, buf, buflen);
-    dbgmsg (io, "utp_on_write sending %zu bytes... evbuffer_remove returned %d", buflen, rc);
+    dbgmsg (io, "utp_on_write sending %"TR_PRIuSIZE" bytes... evbuffer_remove returned %d", buflen, rc);
     assert (rc == (int)buflen); /* if this fails, we've corrupted our bookkeeping somewhere */
     if (rc < (long)buflen) {
         tr_logAddNamedError ("UTP", "Short write: %d < %ld", rc, (long)buflen);
@@ -453,7 +450,7 @@ utp_get_rb_size (void *closure)
 
     bytes = tr_bandwidthClamp (&io->bandwidth, TR_DOWN, UTP_READ_BUFFER_SIZE);
 
-    dbgmsg (io, "utp_get_rb_size is saying it's ready to read %zu bytes", bytes);
+    dbgmsg (io, "utp_get_rb_size is saying it's ready to read %"TR_PRIuSIZE" bytes", bytes);
     return UTP_READ_BUFFER_SIZE - bytes;
 }
 
@@ -514,7 +511,7 @@ utp_on_overhead (void *closure, uint8_t send, size_t count, int type UNUSED)
     tr_peerIo *io = closure;
     assert (tr_isPeerIo (io));
 
-    dbgmsg (io, "utp_on_overhead -- count is %zu", count);
+    dbgmsg (io, "utp_on_overhead -- count is %"TR_PRIuSIZE, count);
 
     tr_bandwidthUsed (&io->bandwidth, send ? TR_UP : TR_DOWN,
                       count, false, tr_time_msec ());
@@ -624,14 +621,14 @@ tr_peerIoNew (tr_session       * session,
     io->port = port;
     io->socket = socket;
     io->utp_socket = utp_socket;
-    io->isIncoming = isIncoming != 0;
+    io->isIncoming = isIncoming;
     io->timeCreated = tr_time ();
     io->inbuf = evbuffer_new ();
     io->outbuf = evbuffer_new ();
     tr_bandwidthConstruct (&io->bandwidth, session, parent);
     tr_bandwidthSetPeer (&io->bandwidth, io);
-    dbgmsg (io, "bandwidth is %p; its parent is %p", &io->bandwidth, parent);
-    dbgmsg (io, "socket is %d, utp_socket is %p", socket, utp_socket);
+    dbgmsg (io, "bandwidth is %p; its parent is %p", (void*)&io->bandwidth, (void*)parent);
+    dbgmsg (io, "socket is %d, utp_socket is %p", socket, (void*)utp_socket);
 
     if (io->socket >= 0) {
         io->event_read = event_new (session->event_base,
@@ -1051,7 +1048,7 @@ addDatatype (tr_peerIo * io, size_t byteCount, bool isPieceData)
 {
     struct tr_datatype * d;
     d = datatype_new ();
-    d->isPieceData = isPieceData != 0;
+    d->isPieceData = isPieceData;
     d->length = byteCount;
     peer_io_push_datatype (io, d);
 }
@@ -1269,7 +1266,7 @@ tr_peerIoTryWrite (tr_peerIo * io, size_t howmuch)
 {
     int n = 0;
     const size_t old_len = evbuffer_get_length (io->outbuf);
-    dbgmsg (io, "in tr_peerIoTryWrite %zu", howmuch);
+    dbgmsg (io, "in tr_peerIoTryWrite %"TR_PRIuSIZE, howmuch);
 
     if (howmuch > old_len)
         howmuch = old_len;
@@ -1322,7 +1319,7 @@ tr_peerIoFlush (tr_peerIo  * io, tr_direction dir, size_t limit)
     else
         bytesUsed = tr_peerIoTryWrite (io, limit);
 
-    dbgmsg (io, "flushing peer-io, direction %d, limit %zu, bytesUsed %d", (int)dir, limit, bytesUsed);
+    dbgmsg (io, "flushing peer-io, direction %d, limit %"TR_PRIuSIZE", bytesUsed %d", (int)dir, limit, bytesUsed);
     return bytesUsed;
 }
 

@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2010-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: tracker-model.h 11092 2010-08-01 20:36:13Z charles $
+ * $Id: tracker-model.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef QTR_TRACKER_MODEL_H
@@ -29,23 +26,23 @@ Q_DECLARE_METATYPE(TrackerInfo)
 
 class TrackerModel: public QAbstractListModel
 {
-        Q_OBJECT
+    Q_OBJECT
 
-        typedef QVector<TrackerInfo> rows_t;
-        rows_t myRows;
+    typedef QVector<TrackerInfo> rows_t;
+    rows_t myRows;
 
-    public:
-        void refresh( const TorrentModel&, const QSet<int>& ids );
-        int find( int torrentId, const QString& url ) const;
+  public:
+    void refresh (const TorrentModel&, const QSet<int>& ids);
+    int find (int torrentId, const QString& url) const;
 
-    public:
-        virtual int rowCount( const QModelIndex& parent = QModelIndex() ) const;
-        virtual QVariant data( const QModelIndex& index, int role = Qt::DisplayRole ) const;
-        enum Role { TrackerRole = Qt::UserRole };
+  public:
+    virtual int rowCount (const QModelIndex& parent = QModelIndex()) const;
+    virtual QVariant data (const QModelIndex& index, int role = Qt::DisplayRole) const;
+    enum Role { TrackerRole = Qt::UserRole };
 
-    public:
-        TrackerModel( ) { }
-        virtual ~TrackerModel( ) { }
+  public:
+    TrackerModel () {}
+    virtual ~TrackerModel () {}
 };
 
 #endif

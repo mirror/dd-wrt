@@ -132,6 +132,7 @@ TESTS = \
   bitfield-test \
   blocklist-test \
   clients-test \
+  crypto-test \
   history-test \
   json-test \
   magnet-test \
@@ -141,7 +142,7 @@ TESTS = \
   quark-test \
   rename-test \
   rpc-test \
-  test-peer-id \
+  session-test \
   tr-getopt-test \
   utils-test \
   variant-test
@@ -178,6 +179,10 @@ clients_test_SOURCES = clients-test.c $(TEST_SOURCES)
 clients_test_LDADD = ${apps_ldadd}
 clients_test_LDFLAGS = ${apps_ldflags}
 
+crypto_test_SOURCES = crypto-test.c $(TEST_SOURCES)
+crypto_test_LDADD = ${apps_ldadd}
+crypto_test_LDFLAGS = ${apps_ldflags}
+
 history_test_SOURCES = history-test.c $(TEST_SOURCES)
 history_test_LDADD = ${apps_ldadd}
 history_test_LDFLAGS = ${apps_ldflags}
@@ -210,9 +215,9 @@ rpc_test_SOURCES = rpc-test.c $(TEST_SOURCES)
 rpc_test_LDADD = ${apps_ldadd}
 rpc_test_LDFLAGS = ${apps_ldflags}
 
-test_peer_id_SOURCES = test-peer-id.c $(TEST_SOURCES)
-test_peer_id_LDADD = ${apps_ldadd}
-test_peer_id_LDFLAGS = ${apps_ldflags}
+session_test_SOURCES = session-test.c $(TEST_SOURCES)
+session_test_LDADD = ${apps_ldadd}
+session_test_LDFLAGS = ${apps_ldflags}
 
 tr_getopt_test_SOURCES = tr-getopt-test.c $(TEST_SOURCES)
 tr_getopt_test_LDADD = ${apps_ldadd}

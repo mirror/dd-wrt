@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2008-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: resume.c 14136 2013-07-21 14:58:24Z jordan $
+ * $Id: resume.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <string.h>
@@ -89,14 +86,14 @@ loadPeers (tr_variant * dict, tr_torrent * tor)
   size_t len;
   uint64_t ret = 0;
 
-  if (tr_variantDictFindRaw (dict, TR_KEY_peers, &str, &len))
+  if (tr_variantDictFindRaw (dict, TR_KEY_peers2, &str, &len))
     {
       const int numAdded = addPeers (tor, str, len);
       tr_logAddTorDbg (tor, "Loaded %d IPv4 peers from resume file", numAdded);
       ret = TR_FR_PEERS;
     }
 
-  if (tr_variantDictFindRaw (dict, TR_KEY_peers6, &str, &len))
+  if (tr_variantDictFindRaw (dict, TR_KEY_peers2_6, &str, &len))
     {
       const int numAdded = addPeers (tor, str, len);
       tr_logAddTorDbg (tor, "Loaded %d IPv6 peers from resume file", numAdded);
@@ -164,8 +161,8 @@ loadDND (tr_variant * dict, tr_torrent * tor)
     }
   else
     {
-      tr_logAddTorDbg (tor, "Couldn't load DND flags. DND list (%p) has %zu children; torrent has %d files",
-                       list, tr_variantListSize (list), (int)n);
+      tr_logAddTorDbg (tor, "Couldn't load DND flags. DND list (%p) has %"TR_PRIuSIZE" children; torrent has %d files",
+                       (void*)list, tr_variantListSize (list), (int)n);
     }
 
   return ret;
@@ -675,7 +672,7 @@ tr_torrentSaveResume (tr_torrent * tor)
   tr_variantDictAddInt (&top, TR_KEY_uploaded, tor->uploadedPrev + tor->uploadedCur);
   tr_variantDictAddInt (&top, TR_KEY_max_peers, tor->maxConnectedPeers);
   tr_variantDictAddInt (&top, TR_KEY_bandwidth_priority, tr_torrentGetPriority (tor));
-  tr_variantDictAddBool (&top, TR_KEY_paused, !tor->isRunning);
+  tr_variantDictAddBool (&top, TR_KEY_paused, !tor->isRunning && !tor->isQueued);
   savePeers (&top, tor);
   if (tr_torrentHasMetadata (tor))
     {
@@ -778,7 +775,7 @@ loadFromFile (tr_torrent * tor, uint64_t fieldsToLoad)
   if ((fieldsToLoad & TR_FR_RUN)
       && tr_variantDictFindBool (&top, TR_KEY_paused, &boolVal))
     {
-      tor->isRunning = !boolVal && !tor->isQueued; 
+      tor->isRunning = !boolVal;
       fieldsLoaded |= TR_FR_RUN;
     }
 
