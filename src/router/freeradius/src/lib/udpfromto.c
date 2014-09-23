@@ -32,11 +32,11 @@
  * sendfromto	added 18/08/2003, Jan Berkel <jan@sitadelle.com>
  *		Works on Linux and FreeBSD (5.x)
  *
- * Version: $Id: a3186d4e889cbb5f55a2484a5162aaa45b743f9d $
+ * Version: $Id: 7665e85f9bff53912e8122964d22168bc823ad72 $
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: a3186d4e889cbb5f55a2484a5162aaa45b743f9d $")
+RCSID("$Id: 7665e85f9bff53912e8122964d22168bc823ad72 $")
 
 #include <freeradius-devel/udpfromto.h>
 
@@ -117,7 +117,7 @@ int udpfromto_init(int s)
 		proto = SOL_IP;
 		flag = IP_PKTINFO;
 #endif
-		
+
 #ifdef IP_RECVDSTADDR
 		/*
 		 *	Set the IP_RECVDSTADDR option (BSD).  Note:
@@ -147,7 +147,7 @@ int udpfromto_init(int s)
 		 */
 		return -1;
 	}
-		
+
 	/*
 	 *	Unsupported.  Don't worry about it.
 	 */
@@ -199,7 +199,7 @@ int recvfromto(int s, void *buf, size_t len, int flags,
 #else
 		struct sockaddr_in *dst = (struct sockaddr_in *) to;
 		struct sockaddr_in *src = (struct sockaddr_in *) &si;
-		
+
 		if (*tolen < sizeof(*dst)) {
 			errno = EINVAL;
 			return -1;
@@ -216,7 +216,7 @@ int recvfromto(int s, void *buf, size_t len, int flags,
 #else
 		struct sockaddr_in6 *dst = (struct sockaddr_in6 *) to;
 		struct sockaddr_in6 *src = (struct sockaddr_in6 *) &si;
-		
+
 		if (*tolen < sizeof(*dst)) {
 			errno = EINVAL;
 			return -1;
@@ -228,7 +228,7 @@ int recvfromto(int s, void *buf, size_t len, int flags,
 #endif
 	/*
 	 *	Unknown address family.
-	 */		
+	 */
 	else {
 		errno = EINVAL;
 		return -1;
@@ -303,12 +303,41 @@ int sendfromto(int s, void *buf, size_t len, int flags,
 	struct iovec iov;
 	char cbuf[256];
 
-#if !defined(IP_PKTINFO) && !defined(IP_SENDSRCADDR) && !defined(IPV6_PKTINFO)
+#ifdef __FreeBSD__
+	/*
+	 *	FreeBSD is extra pedantic about the use of IP_SENDSRCADDR,
+	 *	and sendmsg will fail with EINVAL if IP_SENDSRCADDR is used
+	 *	with a socket which is bound to something other than
+	 *	INADDR_ANY
+	 */
+	struct sockaddr bound;
+	socklen_t bound_len = sizeof(bound);
+
+	if (getsockname(s, &bound, &bound_len) < 0) {
+		return -1;
+	}
+
+	switch (bound.sa_family) {
+	case AF_INET:
+		if (((struct sockaddr_in *) &bound)->sin_addr.s_addr != INADDR_ANY) {
+			from = NULL;
+		}
+		break;
+
+	case AF_INET6:
+		if (!IN6_IS_ADDR_UNSPECIFIED(&((struct sockaddr_in6 *) &bound)->sin6_addr)) {
+			from = NULL;
+		}
+		break;
+	}
+#else
+#  if !defined(IP_PKTINFO) && !defined(IP_SENDSRCADDR) && !defined(IPV6_PKTINFO)
 	/*
 	 *	If the sendmsg() flags aren't defined, fall back to
 	 *	using sendto().
 	 */
 	from = NULL;
+#  endif
 #endif
 
 	/*
@@ -370,7 +399,7 @@ int sendfromto(int s, void *buf, size_t len, int flags,
 	else if (from->sa_family == AF_INET6) {
 #if !defined(IPV6_PKTINFO)
 		return sendto(s, buf, len, flags, to, tolen);
-#else		
+#else
 		struct sockaddr_in6 *s6 = (struct sockaddr_in6 *) from;
 
 		struct in6_pktinfo *pkt;
@@ -392,7 +421,7 @@ int sendfromto(int s, void *buf, size_t len, int flags,
 
 	/*
 	 *	Unknown address family.
-	 */		
+	 */
 	else {
 		errno = EINVAL;
 		return -1;

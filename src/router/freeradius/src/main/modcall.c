@@ -1,7 +1,7 @@
 /*
  * modcall.c
  *
- * Version:	$Id: 469e2da919dba198b3840b0fdc5ea0b2cd432b7a $
+ * Version:	$Id: df384cada17e5c27f089349c81db670ec8b1bb11 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 469e2da919dba198b3840b0fdc5ea0b2cd432b7a $")
+RCSID("$Id: df384cada17e5c27f089349c81db670ec8b1bb11 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -290,8 +290,8 @@ static int call_modsingle(int component, modsingle *sp, REQUEST *request)
 	       comp2str[component], sp->modinst->name,
 	       sp->modinst->entry->name, request->number);
 
-	if (sp->modinst->dead) {
-		myresult = RLM_MODULE_FAIL;
+	if (sp->modinst->force) {
+		myresult = sp->modinst->code;
 		goto fail;
 	}
 

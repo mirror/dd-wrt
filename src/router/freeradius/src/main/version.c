@@ -1,7 +1,7 @@
 /*
  * version.c	Print version number and exit.
  *
- * Version:	$Id: e08ca8cb53f96237a5893e5e2fb69e36c4f63d40 $
+ * Version:	$Id: af82d4126a65d94929c22f44da2b2d0ff75e2f49 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: e08ca8cb53f96237a5893e5e2fb69e36c4f63d40 $")
+RCSID("$Id: af82d4126a65d94929c22f44da2b2d0ff75e2f49 $")
 
 #include <freeradius-devel/radiusd.h>
 
@@ -41,7 +41,7 @@ static long ssl_built = OPENSSL_VERSION_NUMBER;
  *
  * @return 0 if ok, else -1
  */
-int ssl_check_version(void)
+int ssl_check_version(int allow_vulnerable)
 {
 	long ssl_linked;
 
@@ -63,6 +63,18 @@ int ssl_check_version(void)
 		return -1;
 	};
 
+	if (!allow_vulnerable) {
+		/* Check for bad versions */
+		/* 1.0.1 - 1.0.1f CVE-2014-0160 http://heartbleed.com */
+		if ((ssl_linked >= 0x010001000) && (ssl_linked < 0x010001070)) {
+			radlog(L_ERR, "Refusing to start with libssl version %s (in range 1.0.1 - 1.0.1f).  "
+			      "Security advisory CVE-2014-0160 (Heartbleed)", ssl_version());
+			radlog(L_ERR, "For more information see http://heartbleed.com");
+
+			return -1;
+		}
+	}
+
 	return 0;
 }
 
@@ -75,7 +87,8 @@ const char *ssl_version(void)
 	return SSLeay_version(SSLEAY_VERSION);
 }
 #else
-int ssl_check_version(void) {
+int ssl_check_version(UNUSED int allow_vulnerable)
+{
 	return 0;
 }
 

@@ -1,5 +1,5 @@
 ###########################################################################
-# $Id: 758479f27b273dbad1f2d8e58a7f27ab4ebb6d80 $                 #
+# $Id: 70d8d07b56b44bf4129d7a512a5132ca67d6cd4c $                 #
 #                                                                         #
 #  schema.sql                       rlm_sql - FreeRADIUS SQL Module       #
 #                                                                         #
@@ -26,7 +26,7 @@ CREATE TABLE radacct (
   nasporttype varchar(32) default NULL,
   acctstarttime datetime NULL default NULL,
   acctstoptime datetime NULL default NULL,
-  acctsessiontime int(12) default NULL,
+  acctsessiontime int(12) unsigned default NULL,
   acctauthentic varchar(32) default NULL,
   connectinfo_start varchar(50) default NULL,
   connectinfo_stop varchar(50) default NULL,
@@ -38,8 +38,8 @@ CREATE TABLE radacct (
   servicetype varchar(32) default NULL,
   framedprotocol varchar(32) default NULL,
   framedipaddress varchar(15) NOT NULL default '',
-  acctstartdelay int(12) default NULL,
-  acctstopdelay int(12) default NULL,
+  acctstartdelay int(12) unsigned default NULL,
+  acctstopdelay int(12) unsigned default NULL,
   xascendsessionsvrkey varchar(10) default NULL,
   PRIMARY KEY  (radacctid),
   UNIQUE KEY acctuniqueid (acctuniqueid),

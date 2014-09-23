@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:	$Id: a14719ed4215d4ed0a03aba79a63852dd334bc21 $
+# Version:	$Id: e561465cedb7083cd65baf2b7595ffdcb1867021 $
 #
 
 include ../../../../Make.inc
@@ -22,12 +22,12 @@ TARGET		= $(LIBPREFIX)freeradius-eap
 
 # Define new rule for libtool objects
 %.lo: %.c
-	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $<
+	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CFLAGS) -c $<
 
 all: $(TARGET).la
 
 $(TARGET).la: $(LT_OBJS)
-	$(LIBTOOL) --mode=link $(CC) -release $(RADIUSD_VERSION_STRING) \
+	$(LIBTOOL) --mode=link --tag=CC $(CC) -release $(RADIUSD_VERSION_STRING) \
 	$(LDFLAGS) $(LINK_MODE) -o $@ -rpath $(libdir) $^ \
 	$(LIBRADIUS) $(LIBS)
 	@for x in .libs/* $^; do \

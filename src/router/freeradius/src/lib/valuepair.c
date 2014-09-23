@@ -1,7 +1,7 @@
 /*
  * valuepair.c	Functions to handle VALUE_PAIRs
  *
- * Version:	$Id: fcfdb4bbc3c6e852f5c636e0a2dfca57fcd586ef $
+ * Version:	$Id: 6788409749322caf3206a82c3653cdffb6abc1d2 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: fcfdb4bbc3c6e852f5c636e0a2dfca57fcd586ef $")
+RCSID("$Id: 6788409749322caf3206a82c3653cdffb6abc1d2 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -366,7 +366,7 @@ VALUE_PAIR *paircopy2(VALUE_PAIR *vp, int attr)
 	last = &first;
 
 	while (vp) {
-		if (attr >= 0 && vp->attribute != attr) {
+		if ((vp->attribute != attr) && (attr != -1)) {
 			vp = vp->next;
 			continue;
 		}

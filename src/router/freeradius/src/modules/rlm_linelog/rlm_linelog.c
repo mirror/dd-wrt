@@ -1,7 +1,7 @@
 /*
  * rlm_linelog.c
  *
- * Version:	$Id: 2c322c1dbca57213d35efa18e11e35e060a947c2 $
+ * Version:	$Id: 16b553c7e9c5d24e3d41ddfcc0f5657711ce7654 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 2c322c1dbca57213d35efa18e11e35e060a947c2 $")
+RCSID("$Id: 16b553c7e9c5d24e3d41ddfcc0f5657711ce7654 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -210,7 +210,7 @@ static size_t linelog_escape_func(char *out, size_t outlen, const char *in)
 
 		default:
 			if (outlen <= 4) break;
-			snprintf(out, outlen,  "\\%03o", *in);
+			snprintf(out, outlen,  "\\%03o", (uint8_t) *in);
 			in++;
 			out += 4;
 			outlen -= 4;

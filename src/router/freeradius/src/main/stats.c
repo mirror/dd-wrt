@@ -1,7 +1,7 @@
 /*
  * stats.c	Internal statistics handling.
  *
- * Version:	$Id: 6b7779ca3e826fa2a68e8b0e0b8dc22cef4d1829 $
+ * Version:	$Id: 8a0dbdb6b87475ad58eb09234951f55251e6cb5b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 6b7779ca3e826fa2a68e8b0e0b8dc22cef4d1829 $")
+RCSID("$Id: 8a0dbdb6b87475ad58eb09234951f55251e6cb5b $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -77,7 +77,7 @@ void request_stats_final(REQUEST *request)
 	 *	deleted, because only the main server thread calls
 	 *	this function, which makes it thread-safe.
 	 */
-	switch (request->reply->code) {
+	if (request->reply && (request->packet->code != PW_STATUS_SERVER)) switch (request->reply->code) {
 	case PW_AUTHENTICATION_ACK:
 		INC_AUTH(total_responses);
 		INC_AUTH(total_access_accepts);

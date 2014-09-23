@@ -1,7 +1,7 @@
 /*
  * rlm_eap_tls.c  contains the interfaces that are called from eap
  *
- * Version:     $Id: 27db07d7272e9e0d3dfd7c356f867daa049226a2 $
+ * Version:     $Id: 04640e9a8f26e638d8815992ec8db73a530012cc $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 27db07d7272e9e0d3dfd7c356f867daa049226a2 $")
+RCSID("$Id: 04640e9a8f26e638d8815992ec8db73a530012cc $")
 
 #include <freeradius-devel/autoconf.h>
 
@@ -159,6 +159,8 @@ static int load_dh_params(SSL_CTX *ctx, char *file)
 {
 	DH *dh = NULL;
 	BIO *bio;
+
+	if (!ctx || !file) return 0;
 
 	if ((bio = BIO_new_file(file, "r")) == NULL) {
 		radlog(L_ERR, "rlm_eap_tls: Unable to open DH file - %s", file);

@@ -2,7 +2,7 @@
  * xlat.c	Translate strings.  This is the first version of xlat
  * 		incorporated to RADIUS
  *
- * Version:	$Id: 9b97db0820836850b3569f64ff216e09efd594c5 $
+ * Version:	$Id: 0d46327d5d2e58821f36dd05ed7894d9da7e9667 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 9b97db0820836850b3569f64ff216e09efd594c5 $")
+RCSID("$Id: 0d46327d5d2e58821f36dd05ed7894d9da7e9667 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/rad_assert.h>
@@ -62,6 +62,8 @@ static const char * const internal_xlat[] = {"check",
 #endif
 static const int xlat_inst[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };	/* up to 8 for regex */
 
+char const *radiusd_short_version = RADIUSD_VERSION_STRING;
+
 /**
  * @brief Convert the value on a VALUE_PAIR to string
  */
@@ -71,7 +73,7 @@ static int valuepair2str(char * out,int outlen,VALUE_PAIR * pair,
 	char buffer[MAX_STRING_LEN * 4];
 
 	if (pair != NULL) {
-		vp_prints_value(buffer, sizeof(buffer), pair, -1);
+		vp_prints_value(buffer, sizeof(buffer), pair, 0);
 		return func(out, outlen, buffer);
 	}
 
@@ -110,7 +112,7 @@ redo:
 	if (!vp->flags.has_tag) return NULL;
 
 	if (vp->flags.tag == tag) return vp;
-	
+
 	vp = vp->next;
 	goto redo;
 }
@@ -162,20 +164,20 @@ static size_t xlat_packet(void *instance, REQUEST *request,
 			packet = request->parent->packet;
 		}
 		break;
-			
+
 	case 6:
 		if (request->parent && request->parent->reply) {
 			vps = request->parent->reply->vps;
 			packet = request->parent->reply;
 		}
 		break;
-			
+
 	case 7:
 		if (request->parent) {
 			vps = request->parent->config_items;
 		}
 		break;
-			
+
 	default:		/* WTF? */
 		return 0;
 	}
@@ -330,7 +332,7 @@ static size_t xlat_packet(void *instance, REQUEST *request,
 				*out = '\0';
 				return 0;
 			}
-			
+
 			return snprintf(out, outlen, "%u", vp->vp_integer);
 		}
 
@@ -556,10 +558,10 @@ static size_t xlat_hex(UNUSED void *instance, REQUEST *request,
 		*out = '\0';
 		return 0;
 	}
-	
+
 	ret = rad_vp2data(vp, buffer, sizeof(buffer));
 	len = (size_t) ret;
-	
+
 	/*
 	 *	Don't truncate the data.
 	 */
@@ -587,24 +589,24 @@ static size_t xlat_base64(UNUSED void *instance, REQUEST *request,
 	ssize_t	ret;
 	size_t	len;
 	size_t	enc;
-	
+
 	while (isspace((int) *fmt)) fmt++;
 
 	if (!radius_get_vp(request, fmt, &vp) || !vp) {
 		*out = '\0';
 		return 0;
 	}
-	
+
 	ret = rad_vp2data(vp, buffer, sizeof(buffer));
 	if (ret < 0) {
 		*out = 0;
 		return 0;
 	}
-	
+
 	len = (size_t) ret;
-	
+
 	enc = FR_BASE64_ENC_LENGTH(len);
-	
+
 	/*
 	 *	Don't truncate the data.
 	 */
@@ -612,7 +614,7 @@ static size_t xlat_base64(UNUSED void *instance, REQUEST *request,
 		*out = 0;
 		return 0;
 	}
-	
+
 	fr_base64_encode(buffer, len, out, outlen);
 
 	return enc;
@@ -630,10 +632,10 @@ static size_t xlat_dhcp_options(UNUSED void *instance, REQUEST *request,
 
 	if (!radius_get_vp(request, fmt, &vp) || !vp) {
 		*out = '\0';
-		
+
 		return 0;
 	}
-	
+
 	if ((fr_dhcp_decode_options(vp->vp_octets, vp->length, &head) < 0) ||
 	    (head == NULL)) {
 		RDEBUG("WARNING: DHCP option decoding failed");
@@ -641,21 +643,21 @@ static size_t xlat_dhcp_options(UNUSED void *instance, REQUEST *request,
 	}
 
 	next = head;
-	
+
 	do {
 		next = next->next;
 		decoded++;
 	} while (next);
-	
+
 	pairmove(&(request->packet->vps), &head);
-	
+
 	/* Free any unmoved pairs */
 	pairfree(&head);
 
 	fail:
-	
+
 	snprintf(out, outlen, "%i", decoded);
-		  	
+
 	return strlen(out);
 }
 #endif
@@ -701,18 +703,18 @@ static size_t xlat_debug(UNUSED void *instance, REQUEST *request,
 			  UNUSED RADIUS_ESCAPE_STRING func)
 {
 	int level = 0;
-	
-	/* 
+
+	/*
 	 *  Expand to previous (or current) level
 	 */
 	snprintf(out, outlen, "%d", request->options & RAD_REQUEST_OPTION_DEBUG4);
 
-	/* 
+	/*
 	 *  Assume we just want to get the current value and NOT set it to 0
 	 */
 	if (!*fmt)
 		goto done;
-		
+
 	level = atoi(fmt);
 	if (level == 0) {
 		request->options = RAD_REQUEST_OPTION_NONE;
@@ -723,7 +725,7 @@ static size_t xlat_debug(UNUSED void *instance, REQUEST *request,
 		request->options = level;
 		request->radlog = radlog_request;
 	}
-	
+
 	done:
 	return strlen(out);
 }
@@ -805,7 +807,7 @@ int xlat_register(const char *module, RAD_XLAT_FUNC func, void *instance)
 		c = xlat_find("control");
 		rad_assert(c != NULL);
 		c->internal = TRUE;
-		
+
 		xlat_register("hex", xlat_hex, "");
 		c = xlat_find("hex");
 		rad_assert(c != NULL);
@@ -815,7 +817,7 @@ int xlat_register(const char *module, RAD_XLAT_FUNC func, void *instance)
 		c = xlat_find("integer");
 		rad_assert(c != NULL);
 		c->internal = TRUE;
-		
+
 		xlat_register("base64", xlat_base64, "");
 		c = xlat_find("base64");
 		rad_assert(c != NULL);
@@ -1124,7 +1126,7 @@ static int decode_attribute(const char **from, char **to, int freespace,
 
 	/* module name, followed by (possibly) per-module string */
 	xlat_str = p;
-	
+
 do_xlat:
 	c = xlat_find(module_name);
 	if (!c) {
@@ -1145,7 +1147,7 @@ do_xlat:
 			snprintf(q, freespace, "%d", retlen);
 			retlen = strlen(q);
 		}
-		
+
 	} else if (next) {
 		/*
 		 *	Expand the second bit.
@@ -1348,6 +1350,11 @@ int radius_xlat(char *out, int outlen, const char *fmt,
 				q += valuepair2str(q,freespace,pairfind(request->packet->vps,PW_USER_NAME),PW_TYPE_STRING, func);
 				p++;
 				break;
+			case 'v': /* server version */
+				strlcpy(q,radiusd_short_version,freespace);
+                                q += strlen(q);
+                                p++;
+                                break;
 			case 'A': /* radacct_dir */
 				strlcpy(q,radacct_dir,freespace);
 				q += strlen(q);

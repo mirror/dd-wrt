@@ -1,7 +1,7 @@
 /*
  * eap_tls.c
  *
- * Version:     $Id: 3e2efbf244262334dcfb71f8fcff353a35b593c0 $
+ * Version:     $Id: ff008f672062eb915dec9825f7136b7c8eca2f2b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 3e2efbf244262334dcfb71f8fcff353a35b593c0 $")
+RCSID("$Id: ff008f672062eb915dec9825f7136b7c8eca2f2b $")
 
 #include <freeradius-devel/autoconf.h>
 #include <assert.h>
@@ -154,6 +154,9 @@ int eaptls_success(EAP_HANDLER *handler, int peap_flag)
 		vp = paircopy2(request->packet->vps, PW_STRIPPED_USER_NAME);
 		if (vp) pairadd(&vps, vp);
 
+		vp = paircopy2(request->reply->vps, PW_CHARGEABLE_USER_IDENTITY);
+		if (vp) pairadd(&vps, vp);
+		
 		vp = paircopy2(request->reply->vps, PW_CACHED_SESSION_POLICY);
 		if (vp) pairadd(&vps, vp);
 
@@ -787,7 +790,7 @@ static eaptls_status_t eaptls_operation(eaptls_status_t status,
 	 */
 	if (!tls_handshake_recv(handler->request, tls_session)) {
 		DEBUG2("TLS receive handshake failed during operation");
-		eaptls_fail(handler, tls_session->peap_flag);
+		SSL_CTX_remove_session(tls_session->ctx, tls_session->ssl->session);
 		return EAPTLS_FAIL;
 	}
 

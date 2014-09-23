@@ -1,7 +1,7 @@
 /*
  * mainconf.c	Handle the server's configuration.
  *
- * Version:	$Id: da0c16c01ff21557362a028214a9776c0f6c7b24 $
+ * Version:	$Id: faf69fb9aca6ab611d63271fafb176253375129d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: da0c16c01ff21557362a028214a9776c0f6c7b24 $")
+RCSID("$Id: faf69fb9aca6ab611d63271fafb176253375129d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -172,6 +172,7 @@ static const CONF_PARSER security_config[] = {
 	{ "max_attributes",  PW_TYPE_INTEGER, 0, &fr_max_attributes, Stringify(0) },
 	{ "reject_delay",  PW_TYPE_INTEGER, 0, &mainconfig.reject_delay, Stringify(0) },
 	{ "status_server", PW_TYPE_BOOLEAN, 0, &mainconfig.status_server, "no"},
+	{ "allow_vulnerable_openssl", PW_TYPE_BOOLEAN, 0, &mainconfig.allow_vulnerable_openssl, "no"},
 	{ NULL, -1, 0, NULL, NULL }
 };
 
@@ -236,6 +237,7 @@ static const CONF_PARSER server_config[] = {
 	{ "run_dir",            PW_TYPE_STRING_PTR, 0, &run_dir,           "${localstatedir}/run/${name}"},
 	{ "libdir",             PW_TYPE_STRING_PTR, 0, &radlib_dir,        "${prefix}/lib"},
 	{ "radacctdir",         PW_TYPE_STRING_PTR, 0, &radacct_dir,       "${logdir}/radacct" },
+	{ "panic_action",	PW_TYPE_STRING_PTR, 0, &mainconfig.panic_action, NULL},
 	{ "hostname_lookups",   PW_TYPE_BOOLEAN,    0, &fr_dns_lookups,      "no" },
 	{ "max_request_time", PW_TYPE_INTEGER, 0, &mainconfig.max_request_time, Stringify(MAX_REQUEST_TIME) },
 	{ "cleanup_delay", PW_TYPE_INTEGER, 0, &mainconfig.cleanup_delay, Stringify(CLEANUP_DELAY) },
@@ -413,7 +415,7 @@ static size_t xlat_client(UNUSED void *instance, REQUEST *request,
 		*out = '\0';
 		return 0;
 	}
-	
+
 	strlcpy(out, value, outlen);
 
 	return strlen(out);
@@ -464,7 +466,7 @@ static void fr_set_dumpable(void)
 
 		no_core.rlim_cur = 0;
 		no_core.rlim_max = 0;
-		
+
 		if (setrlimit(RLIMIT_CORE, &no_core) < 0) {
 			radlog(L_ERR, "Failed disabling core dumps: %s",
 			       strerror(errno));
@@ -503,7 +505,7 @@ static int doing_setuid = FALSE;
 void fr_suid_up(void)
 {
 	uid_t ruid, euid, suid;
-	
+
 	if (getresuid(&ruid, &euid, &suid) < 0) {
 		radlog(L_ERR, "Failed getting saved UID's");
 		_exit(1);
@@ -529,7 +531,7 @@ void fr_suid_down(void)
 			progname, uid_name, strerror(errno));
 		_exit(1);
 	}
-		
+
 	if (geteuid() != server_uid) {
 		fprintf(stderr, "%s: Failed switching uid: UID is incorrect\n",
 			progname);
@@ -593,7 +595,7 @@ void fr_suid_down_permanent(void)
 	fr_set_dumpable();
 }
 #endif /* HAVE_SETUID */
- 
+
 #ifdef HAVE_SETUID
 
 /*
@@ -648,7 +650,7 @@ static int switch_users(CONF_SECTION *cs)
 	/*  Set UID.  */
 	if (uid_name) {
 		struct passwd *pw;
-		
+
 		pw = getpwnam(uid_name);
 		if (pw == NULL) {
 			fprintf(stderr, "%s: Cannot get passwd entry for user %s: %s\n",
@@ -724,14 +726,14 @@ static int switch_users(CONF_SECTION *cs)
 				fprintf(stderr, "radiusd: Failed to open log file %s: %s\n", mainconfig.log_file, strerror(errno));
 				return 0;
 			}
-		
+
 			if (chown(mainconfig.log_file, server_uid, server_gid) < 0) {
-				fprintf(stderr, "%s: Cannot change ownership of log file %s: %s\n", 
+				fprintf(stderr, "%s: Cannot change ownership of log file %s: %s\n",
 					progname, mainconfig.log_file, strerror(errno));
 				return 0;
 			}
 		}
-	}		
+	}
 
 	if (uid_name) {
 		doing_setuid = TRUE;
@@ -804,13 +806,13 @@ int read_mainconfig(int reload)
 			cf_section_free(&cs);
 			return -1;
 		}
-		
+
 		if (!radlog_dest) {
 			fprintf(stderr, "radiusd: Error: No log destination specified.\n");
 			cf_section_free(&cs);
 			return -1;
 		}
-		
+
 		mainconfig.radlog_dest = fr_str2int(str2dest, radlog_dest,
 						    RADLOG_NUM_DEST);
 		if (mainconfig.radlog_dest == RADLOG_NUM_DEST) {
@@ -819,7 +821,7 @@ int read_mainconfig(int reload)
 			cf_section_free(&cs);
 			return -1;
 		}
-		
+
 		if (mainconfig.radlog_dest == RADLOG_SYSLOG) {
 			/*
 			 *	Make sure syslog_facility isn't NULL
@@ -947,11 +949,6 @@ int read_mainconfig(int reload)
 	}
 	if (mainconfig.reject_delay < 0) mainconfig.reject_delay = 0;
 
-	/*  Reload the modules.  */
-	if (setup_modules(reload, mainconfig.config) < 0) {
-		return -1;
-	}
-
 	if (chroot_dir) {
 		if (chdir(radlog_dir) < 0) {
 			radlog(L_ERR, "Failed to 'chdir %s' after chroot: %s",
@@ -1002,7 +999,7 @@ int free_mainconfig(void)
 void hup_logfile(void)
 {
 		int fd, old_fd;
-		
+
 		if (mainconfig.radlog_dest != RADLOG_FILES) return;
 
  		fd = open(mainconfig.log_file,

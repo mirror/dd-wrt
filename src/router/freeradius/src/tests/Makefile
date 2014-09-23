@@ -3,7 +3,7 @@
 ## Makefile -- Build and run tests for the server.
 ##
 ##	http://www.freeradius.org/
-##	$Id: 859bac333a298ac968ba565e8537f87e04e1c2a6 $
+##	$Id: e087687d070ab9ce0af58f4ccee2552471f39fea $
 ##
 #
 include ../../Make.inc
@@ -46,6 +46,10 @@ test.conf: dictionary
 	@echo 'logdir = $${testdir}' >> test.conf
 	@echo 'radacctdir = $${testdir}' >> test.conf
 	@echo 'pidfile = $${testdir}/radiusd.pid' >> test.conf
+	@echo 'security {' >> $@
+	@echo '        allow_vulnerable_openssl = yes' >> $@
+	@echo '}' >> $@
+	@echo >> $@
 	@echo '$$INCLUDE radiusd.conf' >> test.conf
 	@echo '$$INCLUDE $${testdir}/config/' >> test.conf
 

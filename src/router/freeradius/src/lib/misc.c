@@ -1,7 +1,7 @@
 /*
  * misc.c	Various miscellaneous functions.
  *
- * Version:	$Id: 507afe0724c229c937cea2db7690213b5c4faf3b $
+ * Version:	$Id: 8746e252b270a8308e8305645d0cb66cfdb0d801 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  */
 
 #include	<freeradius-devel/ident.h>
-RCSID("$Id: 507afe0724c229c937cea2db7690213b5c4faf3b $")
+RCSID("$Id: 8746e252b270a8308e8305645d0cb66cfdb0d801 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -31,6 +31,34 @@ RCSID("$Id: 507afe0724c229c937cea2db7690213b5c4faf3b $")
 
 int		fr_dns_lookups = 0;
 int		fr_debug_flag = 0;
+
+/** Sets a signal handler using sigaction if available, else signal
+ *
+ * @param sig to set handler for.
+ * @param func handler to set.
+ */
+int fr_set_signal(int sig, sig_t func)
+{
+#ifdef HAVE_SIGACTION
+	struct sigaction act;
+
+	memset(&act, 0, sizeof(act));
+	act.sa_flags = 0;
+	sigemptyset(&act.sa_mask);
+	act.sa_handler = func;
+
+	if (sigaction(sig, &act, NULL) < 0) {
+		fr_strerror_printf("Failed setting signal %i handler via sigaction(): %s", sig, strerror(errno));
+		return -1;
+	}
+#else
+	if (signal(sig, func) < 0) {
+		fr_strerror_printf("Failed setting signal %i handler via signal(): %s", sig, strerror(errno));
+		return -1;
+	}
+#endif
+	return 0;
+}
 
 /*
  *	Return an IP address in standard dot notation
@@ -620,21 +648,21 @@ int fr_sockaddr2ipaddr(const struct sockaddr_storage *sa, socklen_t salen,
 			fr_strerror_printf("IPv4 address is too small");
 			return 0;
 		}
-		
+
 		memcpy(&s4, sa, sizeof(s4));
 		ipaddr->af = AF_INET;
 		ipaddr->ipaddr.ip4addr = s4.sin_addr;
 		if (port) *port = ntohs(s4.sin_port);
-		
+
 #ifdef HAVE_STRUCT_SOCKADDR_IN6
 	} else if (sa->ss_family == AF_INET6) {
 		struct sockaddr_in6	s6;
-		
+
 		if (salen < sizeof(s6)) {
 			fr_strerror_printf("IPv6 address is too small");
 			return 0;
 		}
-		
+
 		memcpy(&s6, sa, sizeof(s6));
 		ipaddr->af = AF_INET6;
 		ipaddr->ipaddr.ip6addr = s6.sin6_addr;

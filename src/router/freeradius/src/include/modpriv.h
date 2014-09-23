@@ -1,7 +1,7 @@
 /* modpriv.h: Stuff needed by both modules.c and modcall.c, but should not be
  * accessed from anywhere else.
  *
- * Version: $Id: 5cbaaab96dcf53355cb2e8e9c8c9975c643002cf $ */
+ * Version: $Id: a27bedbf2b5798c9e2b13521f9638a96d0cdd33b $ */
 #ifndef FR_MODPRIV_H
 #define FR_MODPRIV_H
 
@@ -58,7 +58,8 @@ typedef struct module_instance_t {
 	pthread_mutex_t		*mutex;
 #endif
 	CONF_SECTION		*cs;
-	int			dead;
+	int			force;
+	int			code;
 	fr_module_hup_t	       	*mh;
 } module_instance_t;
 
