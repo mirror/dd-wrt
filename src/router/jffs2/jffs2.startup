@@ -10,14 +10,13 @@ if [ "$(nvram get clean_jffs2)" = "1" ]; then
     nvram set clean_jffs2=0
     nvram set sys_clean_jffs2=1
     nvram commit
-    stopservice jffs2
-    startservice jffs2
+    startstop jffs2
 fi
 if [ "$(nvram get enable_jffs2)" = "1" ]; then
     if [ "$(nvram get sys_enable_jffs2)" = "0" ]; then
     nvram set sys_enable_jffs2=1
     nvram commit
-    startservice jffs2
+    startstop jffs2
     fi
 fi
 
