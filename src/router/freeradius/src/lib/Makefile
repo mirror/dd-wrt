@@ -1,16 +1,16 @@
 #
 # Makefile
 #
-# Version:      $Id: ee72f786b28669751a3cd7752f0de1e4c7adeb82 $
+# Version:      $Id: a715b01b31672189a65bb81482587fc721eff6aa $
 #
 
 include ../../Make.inc
 
-SRCS		= dict.c filters.c hash.c hmac.c hmacsha1.c isaac.c log.c \
-		  misc.c missing.c md4.c md5.c print.c radius.c rbtree.c \
-		  sha1.c snprintf.c strlcat.c strlcpy.c token.c udpfromto.c \
-		  valuepair.c fifo.c packet.c event.c getaddrinfo.c vqp.c \
-		  heap.c dhcp.c base64.c
+SRCS		= debug.c dict.c filters.c hash.c hmac.c hmacsha1.c isaac.c \
+		  log.c misc.c missing.c md4.c md5.c print.c radius.c \
+		  rbtree.c sha1.c snprintf.c strlcat.c strlcpy.c token.c \
+		  udpfromto.c valuepair.c fifo.c packet.c event.c \
+		  getaddrinfo.c vqp.c heap.c dhcp.c base64.c
 
 LT_OBJS		= $(SRCS:.c=.lo)
 
@@ -35,13 +35,13 @@ TARGET		= $(LIBPREFIX)freeradius-radius
 
 # Define new rule for libtool objects
 %.lo : %.c
-	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) -c $<
+	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CFLAGS) -c $<
 
 .PHONY: all clean install reconfig
 all: $(TARGET).la
 
 $(TARGET).la: $(LT_OBJS)
-	$(LIBTOOL) --mode=link $(CC) -release $(RADIUSD_VERSION) \
+	$(LIBTOOL) --mode=link --tag=CC $(CC) -release $(RADIUSD_VERSION) \
 	$(LDFLAGS) $(LINK_MODE) -o $@ -rpath $(libdir) $^
 
 $(LT_OBJS): $(INCLUDES)

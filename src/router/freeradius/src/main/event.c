@@ -1,7 +1,7 @@
 /*
  * event.c	Server event handling
  *
- * Version:	$Id: 537530cf70c025d6bf501005cf7c68d0512cea7b $
+ * Version:	$Id: 44089021565f5d5a8d0032d39d3958f50bbd20a8 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 537530cf70c025d6bf501005cf7c68d0512cea7b $")
+RCSID("$Id: 44089021565f5d5a8d0032d39d3958f50bbd20a8 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -505,14 +505,11 @@ static void wait_for_child_to_die(void *ctx)
 
 	/*
 	 *	If it's still queued (waiting for a thread to pick it
-	 *	up) OR, it's running AND there's still a child thread
-	 *	handling it, THEN delay some more.
+	 *	up) OR there's still a child thread handling it, THEN
+	 *	delay some more.
 	 */
-	if ((request->child_state == REQUEST_QUEUED) ||
-	    (request->thread_id != NO_CHILD_THREAD) ||
-	    ((request->child_state == REQUEST_RUNNING) &&
-	     (request->thread_id == NO_CHILD_THREAD))) {
-
+	if ((request->child_state = REQUEST_QUEUED) ||
+	    (request->thread_id != NO_CHILD_THREAD)) {
 		/*
 		 *	Cap delay at max_request_time
 		 */
@@ -531,6 +528,7 @@ static void wait_for_child_to_die(void *ctx)
 		return;
 	}
 
+	rad_assert(request->thread_id == NO_CHILD_THREAD);
 	RDEBUG2("Child is finally responsive for request %u", request->number);
 
 #ifdef WITH_PROXY
@@ -540,8 +538,7 @@ static void wait_for_child_to_die(void *ctx)
 	}
 #endif
 
-	rad_assert(request->child_state == REQUEST_DONE);
-	rad_assert(request->thread_id == NO_CHILD_THREAD);
+	request->child_state = REQUEST_DONE;
 
 	ev_request_free(&request);
 }
@@ -723,10 +720,13 @@ static void received_response_to_ping(REQUEST *request)
 	if (home->state == HOME_STATE_ALIVE) return;
 
 	/*
-	 *	We haven't received enough ping responses to mark it
-	 *	"alive".  Wait a bit.
+	 *	It's dead, and we haven't received enough ping
+	 *	responses to mark it "alive".  Wait a bit.
+	 *
+	 *	If it's zombie, we mark it alive immediately.
 	 */
-	if (home->num_received_pings < home->num_pings_to_alive) {
+	if ((home->state == HOME_STATE_IS_DEAD) &&
+	    (home->num_received_pings < home->num_pings_to_alive)) {
 		return;
 	}
 
@@ -1066,6 +1066,7 @@ static void post_proxy_fail_handler(REQUEST *request)
 static void no_response_to_proxied_request(void *ctx)
 {
 	REQUEST *request = ctx;
+	time_t start;
 	home_server *home;
 	char buffer[128];
 
@@ -1130,19 +1131,18 @@ static void no_response_to_proxied_request(void *ctx)
 	 *	where the proxy still sends packets to an unresponsive
 	 *	home server.
 	 */
-	if ((home->last_packet + ((home->zombie_period + 3) / 4)) >= now.tv_sec) {
+	start = now.tv_sec - ((home->zombie_period + 3) / 4);
+	if (home->last_packet >= start) {
 		return;
 	}
 
 	/*
-	 *	Enable the zombie period when we notice that the home
-	 *	server hasn't responded for a while.  We back-date the
-	 *	zombie period to when we last received a response from
-	 *	the home server.
+	 *	Set the home server to "zombie", as of the time
+	 *	calculated above.
 	 */
 	home->state = HOME_STATE_ZOMBIE;
-	
-	home->zombie_period_start.tv_sec = home->last_packet;
+
+	home->zombie_period_start.tv_sec = start;
 	home->zombie_period_start.tv_usec = USEC / 2;
 	
 	fr_event_delete(el, &home->ev);

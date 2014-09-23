@@ -1,6 +1,6 @@
 #######################################################################
 #
-# $Id: 05e9930bc09ecc83f71d5cd407f814abf0262f9e $
+# $Id: 05b63d6db571bebc0de9408c3fc079c7d64a3069 $
 #
 #  Each module should have a few common defines at the TOP of the
 # Makefile, and the 'include ../rules.mak'
@@ -55,7 +55,7 @@ $(LT_OBJS):  $(SERVER_HEADERS)
 #
 #######################################################################
 %.lo: %.c
-	$(LIBTOOL) --mode=compile $(CC) $(CFLAGS) $(RLM_SQL_CFLAGS) -c $<
+	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CFLAGS) $(RLM_SQL_CFLAGS) -c $<
 
 ifneq ($(TARGET),)
 #######################################################################
@@ -101,7 +101,7 @@ build-module: $(TARGET).la
 	done
 
 $(TARGET).la: $(LT_OBJS)
-	$(LIBTOOL) --mode=link $(CC) -release $(RADIUSD_VERSION_STRING) \
+	$(LIBTOOL) --mode=link --tag=CC $(CC) -release $(RADIUSD_VERSION_STRING) \
 	-module $(LINK_MODE) $(LDFLAGS) $(RLM_SQL_LDFLAGS) -o $@ \
 	-rpath $(libdir) $^ $(RLM_SQL_LIBS)
 

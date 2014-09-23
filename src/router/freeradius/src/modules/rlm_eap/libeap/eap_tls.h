@@ -1,7 +1,7 @@
 /*
  * eap_tls.h
  *
- * Version:     $Id: a32f232312a8fdc8282279a568e9c096043b767b $
+ * Version:     $Id: 48c2333f96ee0678602089ff0bfeabf8d133a18f $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 #define _EAP_TLS_H
 
 #include <freeradius-devel/ident.h>
-RCSIDH(eap_tls_h, "$Id: a32f232312a8fdc8282279a568e9c096043b767b $")
+RCSIDH(eap_tls_h, "$Id: 48c2333f96ee0678602089ff0bfeabf8d133a18f $")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -157,6 +157,8 @@ typedef struct _tls_session_t {
 	unsigned int 	(*record_minus)(record_t *buf, void *ptr,
 					unsigned int size);
 
+
+	int		invalid_hb_used;
 
 	/*
 	 * Framed-MTU attribute in RADIUS,

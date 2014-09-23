@@ -109,6 +109,8 @@ release.  They also do NOT permit the use of conditional syntax
 +-----------+---------------------------+-----------------------+
 |%u         |User name		  	|%{User-Name}           |
 +-----------+---------------------------+-----------------------+
+|%v         |Server Version             |                       |
++-----------+---------------------------+-----------------------+
 |%A         |radacct_dir		|%{config:radacctdir}	|
 +-----------+---------------------------+-----------------------+
 |%C         |clientname	                |                       |
@@ -146,4 +148,4 @@ release.  They also do NOT permit the use of conditional syntax
 +-----------+---------------------------+-----------------------+
 
 
- $Id: e128899e3b4e23456c2bc94c5a5be0a287369b5e $
+ $Id: 88eaa932148d65065f499b8dd4d59472bc74787b $

@@ -4,7 +4,7 @@
  * radiusd.h	Structures, prototypes and global variables
  *		for the FreeRADIUS server.
  *
- * Version:	$Id: 904920dc235be8c07ce5ad3e34b656eebbc1ea75 $
+ * Version:	$Id: 2bf51737f841f133313a4daaef44182f178fde80 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSIDH(radiusd_h, "$Id: 904920dc235be8c07ce5ad3e34b656eebbc1ea75 $")
+RCSIDH(radiusd_h, "$Id: 2bf51737f841f133313a4daaef44182f178fde80 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/radpaths.h>
@@ -360,6 +360,7 @@ typedef struct main_config_t {
 	int		proxy_requests;
 	int		reject_delay;
 	int		status_server;
+	int		allow_vulnerable_openssl;
 	int		max_request_time;
 	int		cleanup_delay;
 	int		max_requests;
@@ -381,6 +382,7 @@ typedef struct main_config_t {
 	int		post_proxy_authorize;
 #endif
 	int		debug_memory;
+	const char	*panic_action;
 } MAIN_CONFIG_T;
 
 #define DEBUG	if(debug_flag)log_debug
@@ -530,7 +532,7 @@ int		pairlist_read(const char *file, PAIR_LIST **list, int complain);
 void		pairlist_free(PAIR_LIST **);
 
 /* version.c */
-int 		ssl_check_version(void);
+int 		ssl_check_version(int allow_vulnerable);
 const char	*ssl_version(void);
 void		version(void);
 

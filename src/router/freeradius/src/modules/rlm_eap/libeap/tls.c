@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 88530ac431d632a1a54fe2830945613f20379764 $
+ * Version:     $Id: da73230fd71af80f11218d75adfaca87a312a4e9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: 88530ac431d632a1a54fe2830945613f20379764 $")
+RCSID("$Id: da73230fd71af80f11218d75adfaca87a312a4e9 $")
 
 #include "eap_tls.h"
 
@@ -182,6 +182,8 @@ static int int_ssl_check(REQUEST *request, SSL *s, int ret, const char *text)
 int tls_handshake_recv(REQUEST *request, tls_session_t *ssn)
 {
 	int err;
+
+	if (ssn->invalid_hb_used) return 0;
 
 	BIO_write(ssn->into_ssl, ssn->dirty_in.data, ssn->dirty_in.used);
 

@@ -1,15 +1,13 @@
 #
 #	Scripts to format dictionary files.
 #
-#	$Id: ab342b41a9a879fd95f62b8e970f732c0068254b $
+#	$Id: d3b199c507e20c7f3d95beeeefc5c4274a4eecd0 $
 #
-.PHONY: format
 
 #
 #  This should only be run by hand, and then sanity checked by hand!
 #
-format: dictionary*
-	@for x in dictionary* ; do \
-		cat $$x | ./format.pl > tmp; \
-		mv tmp $$x; \
+format: $(wildcard dictionary*)
+	@for x in $(wildcard dictionary*) ; do \
+		./format.pl $$x; \
 	done
