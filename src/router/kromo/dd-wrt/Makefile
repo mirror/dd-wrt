@@ -742,7 +742,7 @@ endif
 
 ifneq ($(CONFIG_USB),y)
 	rm -f $(INSTALLDIR)/www/USB.asp
-	rm -f $(INSTALLDIR)/www/USB.live.asp	
+	rm -f $(INSTALLDIR)/www/USB.live.asp
 	rm -f $(INSTALLDIR)/www/help/HUSB.asp
 endif
 
@@ -752,9 +752,13 @@ ifneq ($(CONFIG_WEBSERVER),y)
 endif
 
 ifneq ($(CONFIG_FTP),y)
-ifneq ($(CONFIG_SAMBASRV),y)
+ifneq ($(CONFIG_TRANSMISSION),y)
+ifneq ($(CONFIG_SAMBA3),y)
+ifneq ($(CONFIG_MINIDLNA),y)
 	rm -f $(INSTALLDIR)/www/NAS.asp
 	rm -f $(INSTALLDIR)/www/help/HNAS.asp.asp
+endif
+endif
 endif
 endif
 
