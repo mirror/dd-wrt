@@ -1,3 +1,45 @@
+FreeRADIUS 2.2.5 Monday 28 Apr 2014 15:20:00 EDT, urgency=medium
+	Feature improvements
+	* Update dictionary.terena.
+	* expose server version via %v.  Patch from Alan Buxey.
+	* Forbid running with vulnerable versions of OpenSSL.
+	  See "allow_vulnerable_openssl" in the "security"
+	  subsection of "radiusd.conf"
+	* Catch underlying "heartbleed" problem, so that nothing bad
+	  happens even when using a vulnerable version of OpenSSL.
+	* Add dictionary.zte
+
+	Bug fixes
+	* Minor changes to build on Sun.
+	* Print non-ASCII characters as octal in linelog.  Closes #578
+	* close stdout in daemon mode.
+	* Fix zombie period calculation.  Closes #579
+
+FreeRADIUS 2.2.4 Wednesday 19 Mar 2014 13:20:00 EDT, urgency=medium
+	Feature improvements
+	* A "panic_action" can be set to have the server dump a gdb
+	  log on SEGV or other fatal error.
+	* allow radmin command "set module status <module> <code>"
+	  which can be used to forcibly enable/disable modules.
+
+	Bug fixes
+	* If the server fails to bind() after fork(), that is now
+	  reported to the parent, which exits with an error.
+	* Session / delay times in MySQL are unsigned int.
+	* Use --tag=CC for libtool.  Closes #497.  Because libtool
+	  is too stupid to notice that compiling means compilation.
+	* Fix bug when copying attributes for vendors > 32767
+	* Fix behaviour on FreeBSD where sending packets from an interface
+	  bound to an IP address would fail when the server was built with
+	  udpfromto.
+	* Don't fail config check if were listening on an IP which is
+	  also a home server. Some deployments have valid reasons
+	  to loop packets back to another virtual server.
+	* Use correct port when DHCP relaying.
+	* Set source IP address for DHCP packets from DHCP-Server-IP-Address,
+	  or DHCP-DHCP-Server-Identifier, if we're unable to otherwise
+	  determine the source IP.
+
 FreeRADIUS 2.2.3 Wednesday 11 Dec 2013 15:00:00 EST, urgency=medium
 	Feature improvements
 	* Added dictionary.efficientip, dictionary.alcatel-lucent-aaa

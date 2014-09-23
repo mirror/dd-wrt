@@ -3,7 +3,7 @@
 ## radiusd.conf	-- FreeRADIUS server configuration file.
 ##
 ##	http://www.freeradius.org/
-##	$Id: 30644199c1192f35c88a094ad9414d2e17332aa9 $
+##	$Id: 201b70b31b5bb4c2ef98c102690daa3462d5e1e3 $
 ##
 
 ######################################################################
@@ -155,6 +155,39 @@ pidfile = ${run_dir}/${name}.pid
 #
 #user = radius
 #group = radius
+
+#  panic_action: Command to execute if the server dies unexpectedly.
+#
+#  FOR PRODUCTION SYSTEMS, ACTIONS SHOULD ALWAYS EXIT.
+#  AN INTERACTIVE ACTION MEANS THE SERVER IS NOT RESPONDING TO REQUESTS.
+#  AN INTERACTICE ACTION MEANS THE SERVER WILL NOT RESTART.
+#
+#  The panic action is a command which will be executed if the server
+#  receives a fatal, non user generated signal, i.e. SIGSEGV, SIGBUS,
+#  SIGABRT or SIGFPE.
+#
+#  This can be used to start an interactive debugging session so
+#  that information regarding the current state of the server can
+#  be acquired.
+#
+#  The following string substitutions are available:
+#  - %e   The currently executing program e.g. /sbin/radiusd
+#  - %p   The PID of the currently executing program e.g. 12345
+#
+#  Standard ${} substitutions are also allowed.
+#
+#  An example panic action for opening an interactive session in GDB would be:
+#
+#panic_action = "gdb %e %p"
+#
+#  Again, don't use that on a production system.
+#
+#  An example panic action for opening an automated session in GDB would be:
+#
+#panic_action = "gdb -silent -x ${raddbdir}/panic.gdb %e %p > ${logdir}/gdb-%e-%p.log 2>&1"
+#
+#  That command can be used on a production system.
+#
 
 #  max_request_time: The maximum time (in seconds) to handle a request.
 #
@@ -509,6 +542,16 @@ security {
 	#  See also raddb/sites-available/status
 	#
 	status_server = yes
+
+	#
+	#  allow_vulnerable_openssl: Allow the server to start with
+	#  versions of OpenSSL known to have critical vulnerabilities.
+	#
+	#  This check is based on the version number reported by libssl
+	#  and may not reflect patches applied to libssl by
+	#  distribution maintainers.
+	#
+	allow_vulnerable_openssl = no
 }
 
 # PROXY CONFIGURATION
@@ -533,7 +576,7 @@ proxy_requests  = no
 
 # CLIENTS CONFIGURATION
 #
-#  Client configuration is defined in "clients.conf".  
+#  Client configuration is defined in "clients.conf".
 #
 
 #  The 'clients.conf' file contains all of the information from the old

@@ -5294,6 +5294,7 @@ fi
 
 
 
+LTCFLAGS=" "
 
 # Check whether --enable-shared was given.
 if test "${enable_shared+set}" = set; then :
@@ -21236,6 +21237,7 @@ for ac_header in \
 	unistd.h \
 	crypt.h \
 	errno.h \
+	execinfo.h \
 	resource.h \
 	sys/resource.h \
 	getopt.h \
@@ -21534,6 +21536,58 @@ rm -f conftest*
   else
     OPENSSL_INCLUDE="-DOPENSSL_NO_KRB5"
   fi
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking OpenSSL library and header version consistency" >&5
+$as_echo_n "checking OpenSSL library and header version consistency... " >&6; }
+  if test "$cross_compiling" = yes; then :
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+        #include <stdio.h>
+        #include <openssl/opensslv.h>
+        #include <openssl/crypto.h>
+
+int
+main ()
+{
+
+        if (SSLeay() == OPENSSL_VERSION_NUMBER) {
+          return 0;
+        } else {
+          printf("library: %lx header: %lx... ", (unsigned long) SSLeay(), (unsigned long) OPENSSL_VERSION_NUMBER);
+          return 1;
+        }
+
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+      { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "OpenSSL library version does not match header version
+See \`config.log' for more details" "$LINENO" 5; }
+
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
 
   if test "x$OPENSSL_LIBS" = x; then
     LIBS=$old_LIBS
@@ -21881,6 +21935,44 @@ $as_echo "$ac_cv_type_uint32_t" >&6; }
   if test "$ac_cv_type_uint32_t" != "yes"; then
 
 $as_echo "#define uint32_t unsigned int" >>confdefs.h
+
+  fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sig_t" >&5
+$as_echo_n "checking for sig_t... " >&6; }
+if ${ac_cv_type_sig_t+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+   ac_cv_type_sig_t=no
+      cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#ifdef HAVE_SIGNAL_H
+    #  include <signal.h>
+    #endif
+
+int
+main ()
+{
+sig_t foo
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  ac_cv_type_sig_t=yes
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_type_sig_t" >&5
+$as_echo "$ac_cv_type_sig_t" >&6; }
+
+  if test "$ac_cv_type_sig_t" != "yes"; then
+
+$as_echo "#define sig_t void(*sig_t)(int)" >>confdefs.h
 
   fi
 

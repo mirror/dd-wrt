@@ -1,7 +1,7 @@
 /*
  * cb.c
  *
- * Version:     $Id: f7a0bebc488f19d3b0c3effbb89e46729cbb9002 $
+ * Version:     $Id: 7048f6eca5a3bec76fdf1a7f17446595805a9bea $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: f7a0bebc488f19d3b0c3effbb89e46729cbb9002 $")
+RCSID("$Id: 7048f6eca5a3bec76fdf1a7f17446595805a9bea $")
 
 #include "eap_tls.h"
 
@@ -118,7 +118,25 @@ void cbtls_msg(int write_p, int msg_version, int content_type,
 		state->info.handshake_type = ((const unsigned char*)buf)[0];
 		state->info.alert_level = 0x00;
 		state->info.alert_description = 0x00;
+
+#ifdef SSL3_RT_HEARTBEAT
+	} else if (content_type == TLS1_RT_HEARTBEAT) {
+		uint8_t *p = buf;
+
+		if ((len >= 3) && (p[0] == 1)) {
+			size_t payload_len;
+
+			payload_len = (p[1] << 8) | p[2];
+
+			if ((payload_len + 3) > len) {
+				state->invalid_hb_used = TRUE;
+				ERROR("OpenSSL Heartbeat attack detected.  Closing connection");
+				return;
+			}
+		}
+#endif
 	}
+
 	tls_session_information(state);
 }
 

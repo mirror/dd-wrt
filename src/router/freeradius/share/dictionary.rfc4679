@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 4679.
 #	http://www.ietf.org/rfc/4679.txt
 #
-#	$Id: e4d4d1be60c5bcffd48dd450c056eedd09aef7f0 $
+#	$Id: 4ce1920b5541fe0a98a42e7c05b30041a986fdae $
 #
 
 VENDOR		ADSL-Forum			3561
@@ -58,6 +58,6 @@ ATTRIBUTE	Access-Loop-Encapsulation		144	octets # 3
 #  If this attribute exists, it means that IFW has been performed
 #  for the subscribers session.
 #
-ATTRIBUTE	IWF-Session				252	octets # 0
+ATTRIBUTE	IWF-Session				254	octets # 0
 
 END-VENDOR ADSL-Forum

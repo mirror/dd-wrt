@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: d782b67d0776f425e2405cfc66fe340cf603d047 $
+ * Version:	$Id: bd993e3701f73a070ef1efb9ee8afbf1d9a7f6ad $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: d782b67d0776f425e2405cfc66fe340cf603d047 $")
+RCSID("$Id: bd993e3701f73a070ef1efb9ee8afbf1d9a7f6ad $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -255,8 +255,8 @@ static int name2_cmp(const void *a, const void *b)
 	rad_assert(strcmp(one->name1, two->name1) == 0);
 
 	if (!one->name2 && !two->name2) return 0;
-	if (!one->name2) return -1;
-	if (!two->name2) return +1;
+	if (one->name2 && !two->name2) return -1;
+	if (!one->name2 && two->name2) return +1;
 
 	return strcmp(one->name2, two->name2);
 }
@@ -2233,17 +2233,43 @@ CONF_SECTION *cf_section_sub_find_name2(const CONF_SECTION *cs,
 	CONF_ITEM    *ci;
 
 	if (!cs) cs = mainconfig.config;
-
-	if (name1 && (cs->section_tree)) {
+	if (!cs) return NULL;
+	if (name1) {
 		CONF_SECTION mycs, *master_cs;
+
+		if (!cs->section_tree) return NULL;
 
 		mycs.name1 = name1;
 		mycs.name2 = name2;
 
 		master_cs = rbtree_finddata(cs->section_tree, &mycs);
-		if (master_cs) {
-			return rbtree_finddata(master_cs->name2_tree, &mycs);
+		if (!master_cs) return NULL;
+
+		/*
+		 *	Look it up in the name2 tree.  If it's there,
+		 *	return it.
+		 */
+		if (master_cs->name2_tree) {
+			CONF_SECTION *subcs;
+
+			subcs = rbtree_finddata(master_cs->name2_tree, &mycs);
+			if (subcs) return subcs;
 		}
+
+		/*
+		 *	We don't insert ourselves into the name2 tree.
+		 *	So if there's nothing in the name2 tree, maybe
+		 *	*we* are the answer.
+		 */
+		if (!master_cs->name2 && name2) return NULL;
+		if (master_cs->name2 && !name2) return NULL;
+		if (!master_cs->name2 && !name2) return master_cs;
+
+		if (strcmp(master_cs->name2, name2) == 0) {
+			return master_cs;
+		}
+
+		return NULL;
 	}
 
 	/*
@@ -2265,10 +2291,13 @@ CONF_SECTION *cf_section_sub_find_name2(const CONF_SECTION *cs,
 			continue; /* don't do the string comparisons below */
 		}
 
-		if ((strcmp(subcs->name1, name1) == 0) &&
-		    (subcs->name2 != NULL) &&
-		    (strcmp(subcs->name2, name2) == 0))
-			break;
+		if (strcmp(subcs->name1, name1) != 0) continue;
+		if (!subcs->name2 && name2) continue;
+		if (subcs->name2 && !name2) continue;
+
+		if (!subcs->name2 && !name2) break;
+
+		if (strcmp(subcs->name2, name2) == 0) break;
 	}
 
 	return cf_itemtosection(ci);

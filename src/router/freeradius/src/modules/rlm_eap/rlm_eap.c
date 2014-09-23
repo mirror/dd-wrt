@@ -1,7 +1,7 @@
 /*
  * rlm_eap.c  contains handles that are called from modules.
  *
- * Version:     $Id: a4a01f5a7166e09156a8bef3fe56a2f2a223bf26 $
+ * Version:     $Id: e165b73752ebe6bdfe0dd7c472bf723b605e9fbf $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
  */
 
 #include <freeradius-devel/ident.h>
-RCSID("$Id: a4a01f5a7166e09156a8bef3fe56a2f2a223bf26 $")
+RCSID("$Id: e165b73752ebe6bdfe0dd7c472bf723b605e9fbf $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -661,6 +661,11 @@ static int eap_post_proxy(void *inst, REQUEST *request)
 	} else {
 		RDEBUG2("No pre-existing handler found");
 	}
+
+	/*
+	 *	This is allowed.
+	 */
+	if (!request->proxy_reply) return RLM_MODULE_NOOP;
 
 	/*
 	 *	There may be more than one Cisco-AVPair.

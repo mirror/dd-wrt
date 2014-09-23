@@ -1,7 +1,7 @@
 #
 # Makefile
 #
-# Version:	$Id: 9d1a55a7bbc0baaca12272f3bdf08f96777f4db3 $
+# Version:	$Id: f4fc97240170bdc826b43640500c74f0b89280f1 $
 #
 
 TARGET		= rlm_mschap
@@ -19,7 +19,7 @@ include ../rules.mak
 $(LT_OBJS): $(HEADERS)
 
 smbencrypt$(EXEEXT): smbencrypt.lo smbdes.lo $(LIBRADIUS)
-	$(LIBTOOL) --mode=link $(CC) $(LDFLAGS) $(RLM_LDFLAGS) \
+	$(LIBTOOL) --mode=link --tag=CC $(CC) $(LDFLAGS) $(RLM_LDFLAGS) \
 		-o $@ $^ $(RLM_LIBS) $(LIBS)
 
 smbencrypt-install:
