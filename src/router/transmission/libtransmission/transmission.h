@@ -1,33 +1,18 @@
-/******************************************************************************
- * $Id: transmission.h 14077 2013-05-22 20:35:38Z jordan $
+/*
+ * This file Copyright (C) Transmission authors and contributors
  *
- * Copyright (c) Transmission authors and contributors
+ * It may be used under the 3-Clause BSD License, the GNU Public License v2,
+ * or v3, or any future license endorsed by Mnemosyne LLC.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- *****************************************************************************/
+ * $Id: transmission.h 14225 2014-01-19 01:09:44Z jordan $
+ */
 
 /*
  * This file defines the public API for the libtransmission library.
- *
- * Other headers with a public API are bencode.h and utils.h.
- * Most of the remaining headers in libtransmission are private.
+ * The other public API headers are variant.h and utils.h;
+ * most of the remaining headers in libtransmission are private.
  */
+
 #ifndef TR_TRANSMISSION_H
 #define TR_TRANSMISSION_H 1
 
@@ -44,6 +29,11 @@ extern "C" {
 #include <inttypes.h> /* uintN_t */
 #include <time.h> /* time_t */
 
+#ifdef WIN32
+ #define __USE_MINGW_ANSI_STDIO 1
+ #define __STDC_FORMAT_MACROS 1
+#endif
+
 #if !defined (__cplusplus)
  #ifdef HAVE_STDBOOL_H
   #include <stdbool.h>
@@ -55,13 +45,35 @@ extern "C" {
 #endif
 
 #ifndef PRId64
- #define PRId64 "lld"
+ #ifdef WIN32
+  #define PRId64 "I64"
+ #else
+  #define PRId64 "lld"
+ #endif
 #endif
+
 #ifndef PRIu64
- #define PRIu64 "llu"
+ #ifdef WIN32
+  #define PRIu64 "I64u"
+ #else
+  #define PRIu64 "llu"
+ #endif
 #endif
+
 #ifndef PRIu32
- #define PRIu32 "lu"
+ #ifdef WIN32
+  #define PRIu32 "u"
+ #else
+  #define PRIu32 "lu"
+ #endif
+#endif
+
+#ifndef TR_PRIuSIZE
+ #ifdef _MSC_VER
+  #define TR_PRIuSIZE "Iu"
+ #else
+  #define TR_PRIuSIZE "zu"
+ #endif
 #endif
 
 #if defined (WIN32) && defined (_MSC_VER)
@@ -632,13 +644,13 @@ tr_sched_day;
 void         tr_sessionSetAltSpeedDay (tr_session *, tr_sched_day day);
 tr_sched_day tr_sessionGetAltSpeedDay (const tr_session *);
 
-typedef void (tr_altSpeedFunc)(tr_session *,
+typedef void (*tr_altSpeedFunc)(tr_session *,
                                   bool active,
                                   bool userDriven,
                                   void *);
 
 void  tr_sessionClearAltSpeedFunc (tr_session *);
-void  tr_sessionSetAltSpeedFunc  (tr_session *, tr_altSpeedFunc *, void *);
+void  tr_sessionSetAltSpeedFunc  (tr_session *, tr_altSpeedFunc, void *);
 
 
 bool  tr_sessionGetActiveSpeedLimit_KBps (const tr_session  * session,
@@ -1087,7 +1099,7 @@ tr_torrent * tr_torrentNew (const tr_ctor   * ctor,
 /** @addtogroup tr_torrent Torrents
     @{ */
 
-typedef int tr_fileFunc (const char * filename);
+typedef int (*tr_fileFunc) (const char * filename);
 
 /** @brief Removes our .torrent and .resume files for this torrent */
 void tr_torrentRemove (tr_torrent  * torrent,
@@ -1101,11 +1113,11 @@ void tr_torrentStart (tr_torrent * torrent);
 void tr_torrentStop (tr_torrent * torrent);
 
 
-typedef void (tr_torrent_rename_done_func)(tr_torrent  * torrent,
-                                           const char  * oldpath,
-                                           const char  * newname,
-                                           int           error,
-                                           void        * user_data);
+typedef void (*tr_torrent_rename_done_func)(tr_torrent  * torrent,
+                                            const char  * oldpath,
+                                            const char  * newname,
+                                            int           error,
+                                            void        * user_data);
 
 /**
  * @brief Rename a file or directory in a torrent.
@@ -1413,16 +1425,16 @@ tr_completeness;
  * @param wasRunning whether or not the torrent was running when
  *                   it changed its completeness state
  */
-typedef void (tr_torrent_completeness_func)(tr_torrent       * torrent,
-                                            tr_completeness    completeness,
-                                            bool               wasRunning,
-                                            void             * user_data);
+typedef void (*tr_torrent_completeness_func)(tr_torrent       * torrent,
+                                             tr_completeness    completeness,
+                                             bool               wasRunning,
+                                             void             * user_data);
 
-typedef void (tr_torrent_ratio_limit_hit_func)(tr_torrent   * torrent,
+typedef void (*tr_torrent_ratio_limit_hit_func)(tr_torrent   * torrent,
+                                                void         * user_data);
+
+typedef void (*tr_torrent_idle_limit_hit_func)(tr_torrent   * torrent,
                                                void         * user_data);
-
-typedef void (tr_torrent_idle_limit_hit_func)(tr_torrent   * torrent,
-                                              void         * user_data);
 
 
 /**
@@ -1447,8 +1459,8 @@ void tr_torrentClearCompletenessCallback (tr_torrent * torrent);
 
 
 
-typedef void (tr_torrent_metadata_func)(tr_torrent  * torrent,
-                                        void        * user_data);
+typedef void (*tr_torrent_metadata_func)(tr_torrent  * torrent,
+                                         void        * user_data);
 /**
  * Register to be notified whenever a torrent changes from
  * having incomplete metadata to having complete metadata.

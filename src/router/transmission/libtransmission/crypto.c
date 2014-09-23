@@ -1,18 +1,14 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2007-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: crypto.c 13868 2013-01-25 23:34:20Z jordan $
+ * $Id: crypto.c 14282 2014-05-18 20:47:58Z jordan $
  */
 
 #include <assert.h>
 #include <inttypes.h> /* uint8_t */
-#include <limits.h> /* INT_MAX */
 #include <stdarg.h>
 #include <stdlib.h> /* abs () */
 #include <string.h> /* memcpy (), memset (), strcmp () */
@@ -286,9 +282,8 @@ const uint8_t*
 tr_cryptoGetTorrentHash (const tr_crypto * crypto)
 {
   assert (crypto);
-  assert (crypto->torrentHashIsSet);
 
-  return crypto->torrentHash;
+  return crypto->torrentHashIsSet ? crypto->torrentHash : NULL;
 }
 
 int

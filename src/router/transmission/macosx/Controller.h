@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Controller.h 14042 2013-03-04 04:18:21Z livings124 $
+ * $Id: Controller.h 14221 2014-01-10 17:50:05Z livings124 $
  *
  * Copyright (c) 2005-2012 Transmission authors and contributors
  *
@@ -50,7 +50,7 @@ typedef enum
     ADD_CREATED
 } addType;
 
-@interface Controller : NSObject <GrowlApplicationBridgeDelegate, NSURLDownloadDelegate, NSUserNotificationCenterDelegate, NSPopoverDelegate, NSSoundDelegate, NSToolbarDelegate, NSWindowDelegate, QLPreviewPanelDataSource, QLPreviewPanelDelegate, VDKQueueDelegate>
+@interface Controller : NSObject <GrowlApplicationBridgeDelegate, NSURLDownloadDelegate, NSUserNotificationCenterDelegate, NSPopoverDelegate, NSSharingServiceDelegate, NSSharingServicePickerDelegate, NSSoundDelegate, NSToolbarDelegate, NSWindowDelegate, QLPreviewPanelDataSource, QLPreviewPanelDelegate, VDKQueueDelegate>
 {
     tr_session                      * fLib;
     
@@ -96,6 +96,9 @@ typedef enum
     IBOutlet NSMenuItem             * fCheckRatioItem, * fNoCheckRatioItem;
     
     IBOutlet NSMenu                 * fGroupsSetMenu, * fGroupsSetContextMenu;
+    
+    IBOutlet NSMenu                 * fShareMenu, * fShareContextMenu;
+    IBOutlet NSMenuItem             * fShareMenuItem, * fShareContextMenuItem; // remove when dropping 10.6
     
     QLPreviewPanel                  * fPreviewPanel;
     BOOL                            fQuitting;
@@ -179,6 +182,8 @@ typedef enum
 
 - (void) verifySelectedTorrents: (id) sender;
 - (void) verifyTorrents: (NSArray *) torrents;
+
+- (NSArray *)selectedTorrents;
 
 @property (retain, readonly) PrefsController * prefsController;
 - (void) showPreferenceWindow: (id) sender;

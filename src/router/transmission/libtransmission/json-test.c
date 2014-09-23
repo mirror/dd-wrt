@@ -1,3 +1,12 @@
+/*
+ * This file Copyright (C) 2013-2014 Mnemosyne LLC
+ *
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
+ *
+ * $Id: json-test.c 14241 2014-01-21 03:10:30Z jordan $
+ */
+
 #include <string.h> /* strlen () */
 
 #include <locale.h> /* setlocale() */

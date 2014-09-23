@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- * $Id: net.c 14069 2013-04-13 19:34:34Z jordan $
+ * $Id: net.c 14266 2014-04-27 23:10:01Z jordan $
  *
  * Copyright (c) Transmission authors and contributors
  *
@@ -59,7 +59,7 @@ const tr_address tr_inaddr_any = { TR_AF_INET, { { { { INADDR_ANY, 0x00, 0x00, 0
 void
 tr_netInit (void)
 {
-    static int initialized = false;
+    static bool initialized = false;
 
     if (!initialized)
     {

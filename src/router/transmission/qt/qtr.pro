@@ -11,9 +11,13 @@ unix: INSTALLS += man
 man.path = /share/man/man1/
 man.files = transmission-qt.1
 
-CONFIG += qt thread debug link_pkgconfig
-QT += network dbus widgets
+CONFIG += qt thread debug link_pkgconfig c++11 warn_on
+QT += network dbus
 PKGCONFIG = fontconfig libcurl openssl libevent
+
+greaterThan(QT_MAJOR_VERSION, 4) {
+    QT += widgets
+}
 
 TRANSMISSION_TOP = ..
 

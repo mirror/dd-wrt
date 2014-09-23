@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2008-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: blocklist.c 13970 2013-02-04 21:53:19Z jordan $
+ * $Id: blocklist.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <assert.h>
@@ -113,7 +110,7 @@ blocklistLoad (tr_blocklistFile * b)
   b->ruleCount = byteCount / sizeof (struct tr_ipv4_range);
 
   base = tr_basename (b->filename);
-  tr_logAddInfo (_("Blocklist \"%s\" contains %zu entries"), base, b->ruleCount);
+  tr_logAddInfo (_("Blocklist \"%s\" contains %"TR_PRIuSIZE" entries"), base, b->ruleCount);
   tr_free (base);
 }
 
@@ -173,12 +170,10 @@ tr_blocklistFileFree (tr_blocklistFile * b)
   tr_free (b);
 }
 
-int
+bool
 tr_blocklistFileExists (const tr_blocklistFile * b)
 {
-  struct stat st;
-
-  return !stat (b->filename, &st);
+  return tr_fileExists (b->filename, NULL);
 }
 
 int
@@ -189,7 +184,7 @@ tr_blocklistFileGetRuleCount (const tr_blocklistFile * b)
   return b->ruleCount;
 }
 
-int
+bool
 tr_blocklistFileIsEnabled (tr_blocklistFile * b)
 {
   return b->isEnabled;
@@ -198,10 +193,13 @@ tr_blocklistFileIsEnabled (tr_blocklistFile * b)
 void
 tr_blocklistFileSetEnabled (tr_blocklistFile * b, bool isEnabled)
 {
-  b->isEnabled = isEnabled ? 1 : 0;
+  assert (b != NULL);
+  assert (tr_isBool (isEnabled));
+
+  b->isEnabled = isEnabled;
 }
 
-int
+bool
 tr_blocklistFileHasAddress (tr_blocklistFile * b, const tr_address * addr)
 {
   uint32_t needle;
@@ -210,12 +208,12 @@ tr_blocklistFileHasAddress (tr_blocklistFile * b, const tr_address * addr)
   assert (tr_address_is_valid (addr));
 
   if (!b->isEnabled || addr->type == TR_AF_INET6)
-    return 0;
+    return false;
 
   blocklistEnsureLoaded (b);
 
   if (!b->rules || !b->ruleCount)
-    return 0;
+    return false;
 
   needle = ntohl (addr->addr.addr4.s_addr);
 
@@ -297,7 +295,7 @@ parseLine2 (const char * line, struct tr_ipv4_range * range)
   return true;
 }
 
-static int
+static bool
 parseLine (const char * line, struct tr_ipv4_range * range)
 {
   return parseLine1 (line, range)
@@ -419,7 +417,7 @@ tr_blocklistFileSetContent (tr_blocklistFile * b, const char * filename)
   else
     {
       char * base = tr_basename (b->filename);
-      tr_logAddInfo (_("Blocklist \"%s\" updated with %zu entries"), base, ranges_count);
+      tr_logAddInfo (_("Blocklist \"%s\" updated with %"TR_PRIuSIZE" entries"), base, ranges_count);
       tr_free (base);
     }
 

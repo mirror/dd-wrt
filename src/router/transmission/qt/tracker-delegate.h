@@ -1,17 +1,14 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: tracker-delegate.h 11522 2010-12-12 16:43:19Z charles $
+ * $Id: tracker-delegate.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
-#ifndef QTR_TORRENT_DELEGATE_H
-#define QTR_TORRENT_DELEGATE_H
+#ifndef QTR_TRACKER_DELEGATE_H
+#define QTR_TRACKER_DELEGATE_H
 
 #include <QItemDelegate>
 #include <QSize>
@@ -20,31 +17,31 @@ class QPainter;
 class QStyleOptionViewItem;
 class QStyle;
 class Session;
-class TrackerInfo;
+struct TrackerInfo;
 
 class TrackerDelegate: public QItemDelegate
 {
-        Q_OBJECT
+    Q_OBJECT
 
-    public:
-        TrackerDelegate( QObject * parent=0 ): QItemDelegate(parent), myShowMore(false) { }
-        virtual ~TrackerDelegate( ) { }
+  public:
+    TrackerDelegate (QObject * parent=0): QItemDelegate(parent), myShowMore(false) {}
+    virtual ~TrackerDelegate () {}
 
-    public:
-        QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const;
-        void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const;
+  public:
+    QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const;
+    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const;
 
-    public:
-        void setShowMore( bool b );
+  public:
+    void setShowMore (bool b);
 
-    protected:
-        QString getText( const TrackerInfo& ) const;
-        QSize margin( const QStyle& style ) const;
-        virtual QSize sizeHint( const QStyleOptionViewItem&, const TrackerInfo& ) const;
-        void drawTracker( QPainter*, const QStyleOptionViewItem&, const TrackerInfo& ) const;
+  protected:
+    QString getText (const TrackerInfo&) const;
+    QSize margin (const QStyle& style) const;
+    virtual QSize sizeHint (const QStyleOptionViewItem&, const TrackerInfo&) const;
+    void drawTracker (QPainter*, const QStyleOptionViewItem&, const TrackerInfo&) const;
 
-    private:
-        bool myShowMore;
+  private:
+    bool myShowMore;
 };
 
 #endif

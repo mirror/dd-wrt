@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2010-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: announcer-http.c 14070 2013-04-13 20:25:28Z jordan $
+ * $Id: announcer-http.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <limits.h> /* USHRT_MAX */
@@ -164,7 +161,7 @@ listToPex (tr_variant * peerList, size_t * setme_len)
 struct announce_data
 {
     tr_announce_response response;
-    tr_announce_response_func * response_func;
+    tr_announce_response_func response_func;
     void * response_func_user_data;
     char log_name[128];
 };
@@ -262,18 +259,18 @@ on_announce_done (tr_session   * session,
                 response->downloads = i;
 
             if (tr_variantDictFindRaw (&benc, TR_KEY_peers6, &raw, &len)) {
-                dbgmsg (data->log_name, "got a peers6 length of %zu", len);
+                dbgmsg (data->log_name, "got a peers6 length of %"TR_PRIuSIZE, len);
                 response->pex6 = tr_peerMgrCompact6ToPex (raw, len,
                                               NULL, 0, &response->pex6_count);
             }
 
             if (tr_variantDictFindRaw (&benc, TR_KEY_peers, &raw, &len)) {
-                dbgmsg (data->log_name, "got a compact peers length of %zu", len);
+                dbgmsg (data->log_name, "got a compact peers length of %"TR_PRIuSIZE, len);
                 response->pex = tr_peerMgrCompactToPex (raw, len,
                                                NULL, 0, &response->pex_count);
             } else if (tr_variantDictFindList (&benc, TR_KEY_peers, &tmp)) {
                 response->pex = listToPex (tmp, &response->pex_count);
-                dbgmsg (data->log_name, "got a peers list with %zu entries",
+                dbgmsg (data->log_name, "got a peers list with %"TR_PRIuSIZE" entries",
                         response->pex_count);
             }
         }
@@ -318,7 +315,7 @@ tr_tracker_http_announce (tr_session                 * session,
 struct scrape_data
 {
     tr_scrape_response response;
-    tr_scrape_response_func * response_func;
+    tr_scrape_response_func response_func;
     void * response_func_user_data;
     char log_name[128];
 };

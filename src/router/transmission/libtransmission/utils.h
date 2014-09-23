@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: utils.h 13991 2013-02-09 04:05:03Z jordan $
+ * $Id: utils.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef TR_UTILS_H
@@ -16,6 +13,7 @@
 #include <inttypes.h>
 #include <stddef.h> /* size_t */
 #include <time.h> /* time_t */
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -387,6 +385,11 @@ char* tr_strratio (char * buf, size_t buflen, double ratio, const char * infinit
 
 /** @brief Portability wrapper for localtime_r () that uses the system implementation if available */
 struct tm * tr_localtime_r (const time_t *_clock, struct tm *_result);
+
+struct timeval;
+
+/** @brief Portability wrapper for gettimeofday (), with tz argument dropped */
+int tr_gettimeofday (struct timeval * tv);
 
 
 /**

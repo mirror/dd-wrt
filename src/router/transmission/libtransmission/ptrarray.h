@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2008-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: ptrarray.h 13826 2013-01-21 21:14:14Z jordan $
+ * $Id: ptrarray.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef __TRANSMISSION__
@@ -130,11 +127,11 @@ int tr_ptrArrayInsertSorted (tr_ptrArray * array,
                              void        * value,
                              int compare (const void*, const void*));
 
-/** @brief Remove a pointer from an array sorted by the specified sort function
-    @return the matching pointer, or NULL if no match was found */
-void* tr_ptrArrayRemoveSorted (tr_ptrArray * array,
-                               const void  * value,
-                               int compare (const void*, const void*));
+/** @brief Remove this specific pointer from a sorted ptrarray */
+void tr_ptrArrayRemoveSortedPointer (tr_ptrArray * t,
+                                     const void  * ptr,
+                                     int           compare (const void*, const void*));
+
 
 /** @brief Find a pointer from an array sorted by the specified sort function
     @return the matching pointer, or NULL if no match was found */

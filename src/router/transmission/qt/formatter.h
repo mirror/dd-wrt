@@ -1,23 +1,20 @@
 /*
- * This file Copyright(C) Mnemosyne LLC
+ * This file Copyright (C) 2012-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: formatter.h 13996 2013-02-09 18:59:05Z jordan $
+ * $Id: formatter.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef QTR_UNITS
 #define QTR_UNITS
 
-#include <inttypes.h> /* uint64_t */
-
 #include <QString>
 #include <QObject>
 #include <QIcon>
+
+#include <stdint.h> // int64_t
 
 class Speed;
 

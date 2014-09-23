@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2007-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: peer-mgr.c 14114 2013-07-09 17:05:32Z jordan $
+ * $Id: peer-mgr.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <assert.h>
@@ -881,7 +878,7 @@ testForEndgame (const tr_swarm * s)
   /* we consider ourselves to be in endgame if the number of bytes
      we've got requested is >= the number of bytes left to download */
   return (s->requestCount * s->tor->blockSize)
-               >= tr_cpLeftUntilDone (&s->tor->completion);
+               >= tr_torrentGetLeftUntilDone (s->tor);
 }
 
 static void
@@ -955,10 +952,10 @@ comparePieceByWeight (const void * va, const void * vb)
   const uint16_t * rep = weightReplication;
 
   /* primary key: weight */
-  missing = tr_cpMissingBlocksInPiece (&tor->completion, a->index);
+  missing = tr_torrentMissingBlocksInPiece (tor, a->index);
   pending = a->requestCount;
   ia = missing > pending ? missing - pending : (tor->blockCountInPiece + pending);
-  missing = tr_cpMissingBlocksInPiece (&tor->completion, b->index);
+  missing = tr_torrentMissingBlocksInPiece (tor, b->index);
   pending = b->requestCount;
   ib = missing > pending ? missing - pending : (tor->blockCountInPiece + pending);
   if (ia < ib) return -1;
@@ -1091,7 +1088,7 @@ pieceListRebuild (tr_swarm * s)
       pool = tr_new (tr_piece_index_t, inf->pieceCount);
       for (i=0; i<inf->pieceCount; ++i)
         if (!inf->pieces[i].dnd)
-          if (!tr_cpPieceIsComplete (&tor->completion, i))
+          if (!tr_torrentPieceIsComplete (tor, i))
             pool[poolCount++] = i;
       pieceCount = poolCount;
       pieces = tr_new0 (struct weighted_piece, pieceCount);
@@ -1375,7 +1372,7 @@ tr_peerMgrGetNextRequests (tr_torrent           * tor,
               tr_peer ** peers;
 
               /* don't request blocks we've already got */
-              if (tr_cpBlockIsComplete (&tor->completion, b))
+              if (tr_torrentBlockIsComplete (tor, b))
                 continue;
 
               /* always add peer if this block has no peers yet */
@@ -1475,7 +1472,7 @@ tr_peerMgrDidPeerRequest (const tr_torrent  * tor,
 
 /* cancel requests that are too old */
 static void
-refillUpkeep (int foo UNUSED, short bar UNUSED, void * vmgr)
+refillUpkeep (evutil_socket_t foo UNUSED, short bar UNUSED, void * vmgr)
 {
     time_t now;
     time_t too_old;
@@ -1580,7 +1577,7 @@ peerSuggestedPiece (tr_swarm           * s UNUSED,
         return;
 
     /* don't ask for it if we've already got it */
-    if (tr_cpPieceIsComplete (t->tor->completion, pieceIndex))
+    if (tr_torrentPieceIsComplete (t->tor, pieceIndex))
         return;
 
     /* don't ask for it if they don't have it */
@@ -1602,7 +1599,7 @@ peerSuggestedPiece (tr_swarm           * s UNUSED,
 
         for (b=first; b<=last; ++b)
         {
-            if (!tr_cpBlockIsComplete (tor->completion, b))
+            if (tr_torrentBlockIsComplete (tor, b))
             {
                 const uint32_t offset = getBlockOffsetInPiece (tor, b);
                 const uint32_t length = tr_torBlockCountBytes (tor, b);
@@ -1954,7 +1951,6 @@ myHandshakeDoneCB (tr_handshake  * handshake,
   const tr_address * addr;
   tr_peerMgr * manager = vmanager;
   tr_swarm  * s;
-  tr_handshake * ours;
 
   assert (io);
   assert (tr_isBool (ok));
@@ -1964,16 +1960,11 @@ myHandshakeDoneCB (tr_handshake  * handshake,
     : NULL;
 
   if (tr_peerIoIsIncoming (io))
-    ours = tr_ptrArrayRemoveSorted (&manager->incomingHandshakes,
+    tr_ptrArrayRemoveSortedPointer (&manager->incomingHandshakes,
                                     handshake, handshakeCompare);
   else if (s)
-    ours = tr_ptrArrayRemoveSorted (&s->outgoingHandshakes,
+    tr_ptrArrayRemoveSortedPointer (&s->outgoingHandshakes,
                                     handshake, handshakeCompare);
-  else
-    ours = handshake;
-
-  assert (ours);
-  assert (ours == handshake);
 
   if (s)
     swarmLock (s);
@@ -2377,13 +2368,13 @@ tr_peerMgrGetPeers (tr_torrent   * tor,
   return count;
 }
 
-static void atomPulse    (int, short, void *);
-static void bandwidthPulse (int, short, void *);
-static void rechokePulse (int, short, void *);
-static void reconnectPulse (int, short, void *);
+static void atomPulse      (evutil_socket_t, short, void *);
+static void bandwidthPulse (evutil_socket_t, short, void *);
+static void rechokePulse   (evutil_socket_t, short, void *);
+static void reconnectPulse (evutil_socket_t, short, void *);
 
 static struct event *
-createTimer (tr_session * session, int msec, void (*callback)(int, short, void *), void * cbdata)
+createTimer (tr_session * session, int msec, event_callback_fn callback, void * cbdata)
 {
   struct event * timer = evtimer_new (session->event_base, callback, cbdata);
   tr_timerAddMsec (timer, msec);
@@ -2550,13 +2541,13 @@ tr_peerMgrTorrentAvailability (const tr_torrent  * tor,
       const int peerCount = tr_ptrArraySize (&tor->swarm->peers);
       const tr_peer ** peers = (const tr_peer**) tr_ptrArrayBase (&tor->swarm->peers);
       const float interval = tor->info.pieceCount / (float)tabCount;
-      const bool isSeed = tr_cpGetStatus (&tor->completion) == TR_SEED;
+      const bool isSeed = tr_torrentGetCompleteness (tor) == TR_SEED;
 
       for (i=0; i<tabCount; ++i)
         {
           const int piece = i * interval;
 
-          if (isSeed || tr_cpPieceIsComplete (&tor->completion, piece))
+          if (isSeed || tr_torrentPieceIsComplete (tor, piece))
             {
               tab[i] = -1;
             }
@@ -2641,7 +2632,7 @@ tr_peerMgrGetDesiredAvailable (const tr_torrent * tor)
       const tr_peer ** peers = (const tr_peer**) tr_ptrArrayBase (&s->peers);
       for (i=0; i<n; ++i)
         if (peers[i]->atom && atomIsSeed (peers[i]->atom))
-          return tr_cpLeftUntilDone (&tor->completion);
+          return tr_torrentGetLeftUntilDone (tor);
     }
 
   if (!s->pieceReplication || !s->pieceReplicationSize)
@@ -2652,7 +2643,7 @@ tr_peerMgrGetDesiredAvailable (const tr_torrent * tor)
   desiredAvailable = 0;
   for (i=0, n=MIN (tor->info.pieceCount, s->pieceReplicationSize); i<n; ++i)
     if (!tor->info.pieces[i].dnd && (s->pieceReplication[i] > 0))
-      desiredAvailable += tr_cpMissingBytesInPiece (&tor->completion, i);
+      desiredAvailable += tr_torrentMissingBytesInPiece (tor, i);
 
   assert (desiredAvailable <= tor->info.totalSize);
   return desiredAvailable;
@@ -2924,7 +2915,7 @@ rechokeDownloads (tr_swarm * s)
       /* build a bitfield of interesting pieces... */
       piece_is_interesting = tr_new (bool, n);
       for (i=0; i<n; i++)
-        piece_is_interesting[i] = !tor->info.pieces[i].dnd && !tr_cpPieceIsComplete (&tor->completion, i);
+        piece_is_interesting[i] = !tor->info.pieces[i].dnd && !tr_torrentPieceIsComplete (tor, i);
 
       /* decide WHICH peers to be interested in (based on their cancel-to-block ratio) */
       for (i=0; i<peerCount; ++i)
@@ -3165,7 +3156,7 @@ rechokeUploads (tr_swarm * s, const uint64_t now)
 }
 
 static void
-rechokePulse (int foo UNUSED, short bar UNUSED, void * vmgr)
+rechokePulse (evutil_socket_t foo UNUSED, short bar UNUSED, void * vmgr)
 {
   tr_torrent * tor = NULL;
   tr_peerMgr * mgr = vmgr;
@@ -3307,7 +3298,6 @@ getReconnectIntervalSecs (const struct peer_atom * atom, const time_t now)
 static void
 removePeer (tr_swarm * s, tr_peer * peer)
 {
-  tr_peer * removed;
   struct peer_atom * atom = peer->atom;
 
   assert (swarmIsLocked (s));
@@ -3315,18 +3305,17 @@ removePeer (tr_swarm * s, tr_peer * peer)
 
   atom->time = tr_time ();
 
-  removed = tr_ptrArrayRemoveSorted (&s->peers, peer, peerCompare);
+  tr_ptrArrayRemoveSortedPointer (&s->peers, peer, peerCompare);
   --s->stats.peerCount;
   --s->stats.peerFromCount[atom->fromFirst];
 
   if (replicationExists (s))
     tr_decrReplicationFromBitfield (s, &peer->have);
 
-  assert (removed == peer);
   assert (s->stats.peerCount == tr_ptrArraySize (&s->peers));
   assert (s->stats.peerFromCount[atom->fromFirst] >= 0);
 
-  tr_peerFree (removed);
+  tr_peerFree (peer);
 }
 
 static void
@@ -3528,7 +3517,7 @@ enforceSessionPeerLimit (tr_session * session, uint64_t now)
 static void makeNewPeerConnections (tr_peerMgr * mgr, const int max);
 
 static void
-reconnectPulse (int foo UNUSED, short bar UNUSED, void * vmgr)
+reconnectPulse (evutil_socket_t foo UNUSED, short bar UNUSED, void * vmgr)
 {
   tr_torrent * tor;
   tr_peerMgr * mgr = vmgr;
@@ -3615,7 +3604,7 @@ queuePulse (tr_session * session, tr_direction dir)
 }
 
 static void
-bandwidthPulse (int foo UNUSED, short bar UNUSED, void * vmgr)
+bandwidthPulse (evutil_socket_t foo UNUSED, short bar UNUSED, void * vmgr)
 {
   tr_torrent * tor;
   tr_peerMgr * mgr = vmgr;
@@ -3712,7 +3701,7 @@ getMaxAtomCount (const tr_torrent * tor)
 }
 
 static void
-atomPulse (int foo UNUSED, short bar UNUSED, void * vmgr)
+atomPulse (evutil_socket_t foo UNUSED, short bar UNUSED, void * vmgr)
 {
   tr_torrent * tor = NULL;
   tr_peerMgr * mgr = vmgr;

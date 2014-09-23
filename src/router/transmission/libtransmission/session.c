@@ -1,17 +1,15 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2008-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: session.c 14148 2013-07-27 17:48:59Z jordan $
+ * $Id: session.c 14266 2014-04-27 23:10:01Z jordan $
  */
 
 #include <assert.h>
 #include <errno.h> /* ENOENT */
+#include <limits.h> /* INT_MAX */
 #include <stdlib.h>
 #include <string.h> /* memcpy */
 
@@ -179,7 +177,7 @@ free_incoming_peer_port (tr_session * session)
 }
 
 static void
-accept_incoming_peer (int fd, short what UNUSED, void * vsession)
+accept_incoming_peer (evutil_socket_t fd, short what UNUSED, void * vsession)
 {
   int clientSocket;
   tr_port clientPort;
@@ -547,7 +545,7 @@ tr_sessionSaveSettings (tr_session       * session,
  * in the case of a crash, unclean shutdown, clumsy user, etc.
  */
 static void
-onSaveTimer (int foo UNUSED, short bar UNUSED, void * vsession)
+onSaveTimer (evutil_socket_t foo UNUSED, short bar UNUSED, void * vsession)
 {
   tr_torrent * tor = NULL;
   tr_session * session = vsession;
@@ -628,7 +626,7 @@ tr_sessionInit (const char  * tag,
 static void turtleCheckClock (tr_session * s, struct tr_turtle_info * t);
 
 static void
-onNowTimer (int foo UNUSED, short bar UNUSED, void * vsession)
+onNowTimer (evutil_socket_t foo UNUSED, short bar UNUSED, void * vsession)
 {
   int usec;
   const int min = 100;
@@ -668,14 +666,14 @@ onNowTimer (int foo UNUSED, short bar UNUSED, void * vsession)
   **/
 
   /* schedule the next timer for right after the next second begins */
-  gettimeofday (&tv, NULL);
+  tr_gettimeofday (&tv);
   usec = 1000000 - tv.tv_usec;
   if (usec > max)
     usec = max;
   if (usec < min)
     usec = min;
   tr_timerAdd (session->nowTimer, 0, usec);
-  /* fprintf (stderr, "time %zu sec, %zu microsec\n", (size_t)tr_time (), (size_t)tv.tv_usec); */
+  /* fprintf (stderr, "time %"TR_PRIuSIZE" sec, %"TR_PRIuSIZE" microsec\n", (size_t)tr_time (), (size_t)tv.tv_usec); */
 }
 
 static void loadBlocklists (tr_session * session);
@@ -692,7 +690,7 @@ tr_sessionInitImpl (void * vdata)
   assert (tr_variantIsDict (clientSettings));
 
   dbgmsg ("tr_sessionInit: the session's top-level bandwidth object is %p",
-          &session->bandwidth);
+          (void*)&session->bandwidth);
 
   tr_variantInitDict (&settings, 0);
   tr_sessionGetDefaultSettings (&settings);
@@ -1245,7 +1243,7 @@ tr_sessionGetIdleLimit (const tr_session * session)
 bool
 tr_sessionGetActiveSpeedLimit_Bps (const tr_session * session, tr_direction dir, unsigned int * setme_Bps)
 {
-  int isLimited = true;
+  bool isLimited = true;
 
   if (!tr_isSession (session))
     return false;
@@ -1867,7 +1865,7 @@ tr_sessionClose (tr_session * session)
 
   assert (tr_isSession (session));
 
-  dbgmsg ("shutting down transmission session %p... now is %zu, deadline is %zu", session, (size_t)time (NULL), (size_t)deadline);
+  dbgmsg ("shutting down transmission session %p... now is %"TR_PRIuSIZE", deadline is %"TR_PRIuSIZE, (void*)session, (size_t)time (NULL), (size_t)deadline);
 
   /* close the session */
   tr_runInEventThread (session, sessionCloseImpl, session);
@@ -1884,8 +1882,8 @@ tr_sessionClose (tr_session * session)
   while ((session->shared || session->web || session->announcer || session->announcer_udp)
            && !deadlineReached (deadline))
     {
-      dbgmsg ("waiting on port unmap (%p) or announcer (%p)... now %zu deadline %zu",
-              session->shared, session->announcer, (size_t)time (NULL), (size_t)deadline);
+      dbgmsg ("waiting on port unmap (%p) or announcer (%p)... now %"TR_PRIuSIZE" deadline %"TR_PRIuSIZE,
+              (void*)session->shared, (void*)session->announcer, (size_t)time (NULL), (size_t)deadline);
       tr_wait_msec (50);
     }
 
@@ -1896,7 +1894,7 @@ tr_sessionClose (tr_session * session)
   while (session->events != NULL)
     {
       static bool forced = false;
-      dbgmsg ("waiting for libtransmission thread to finish... now %zu deadline %zu", (size_t)time (NULL), (size_t)deadline);
+      dbgmsg ("waiting for libtransmission thread to finish... now %"TR_PRIuSIZE" deadline %"TR_PRIuSIZE, (size_t)time (NULL), (size_t)deadline);
       tr_wait_msec (100);
 
       if (deadlineReached (deadline) && !forced)
@@ -2027,8 +2025,9 @@ void
 tr_sessionSetPexEnabled (tr_session * session, bool enabled)
 {
   assert (tr_isSession (session));
+  assert (tr_isBool (enabled));
 
-  session->isPexEnabled = enabled != 0;
+  session->isPexEnabled = enabled;
 }
 
 bool
@@ -2070,7 +2069,7 @@ tr_sessionSetDHTEnabled (tr_session * session, bool enabled)
   assert (tr_isSession (session));
   assert (tr_isBool (enabled));
 
-  if ((enabled != 0) != (session->isDHTEnabled != 0))
+  if (enabled != session->isDHTEnabled)
     tr_runInEventThread (session, toggleDHTImpl, session);
 }
 
@@ -2111,7 +2110,7 @@ tr_sessionSetUTPEnabled (tr_session * session, bool enabled)
   assert (tr_isSession (session));
   assert (tr_isBool (enabled));
 
-  if ((enabled != 0) != (session->isUTPEnabled != 0))
+  if (enabled != session->isUTPEnabled)
     tr_runInEventThread (session, toggle_utp, session);
 }
 
@@ -2140,7 +2139,7 @@ tr_sessionSetLPDEnabled (tr_session * session, bool enabled)
   assert (tr_isSession (session));
   assert (tr_isBool (enabled));
 
-  if ((enabled != 0) != (session->isLPDEnabled != 0))
+  if (enabled != session->isLPDEnabled)
     tr_runInEventThread (session, toggleLPDImpl, session);
 }
 
@@ -2240,6 +2239,12 @@ loadBlocklists (tr_session * session)
   /* walk the blocklist directory... */
   dirname = tr_buildPath (session->configDir, "blocklists", NULL);
   odir = opendir (dirname);
+  if (odir == NULL)
+    {
+      tr_free (dirname);
+      return;
+    }
+
   while ((d = readdir (odir)))
     {
       char * path;
@@ -2371,8 +2376,9 @@ tr_blocklistSetEnabled (tr_session * session, bool isEnabled)
   tr_list * l;
 
   assert (tr_isSession (session));
+  assert (tr_isBool (isEnabled));
 
-  session->isBlocklistEnabled = isEnabled != 0;
+  session->isBlocklistEnabled = isEnabled;
 
   for (l=session->blocklists; l!=NULL; l=l->next)
     tr_blocklistFileSetEnabled (l->data, isEnabled);
@@ -2796,7 +2802,6 @@ struct TorrentAndPosition
   int position;
 };
 
-/* higher positions come first */
 static int
 compareTorrentAndPositions (const void * va, const void * vb)
 {
@@ -2805,9 +2810,9 @@ compareTorrentAndPositions (const void * va, const void * vb)
   const struct TorrentAndPosition * b = vb;
 
   if (a->position > b->position)
-    ret = -1;
-  else if (a->position < b->position)
     ret = 1;
+  else if (a->position < b->position)
+    ret = -1;
   else
     ret = 0;
 

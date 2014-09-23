@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: details.h 13893 2013-01-28 07:01:58Z jordan $
+ * $Id: details.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef DETAILS_DIALOG_H
@@ -55,6 +52,7 @@ class Details: public QDialog
     Details (Session&, Prefs&, TorrentModel&, QWidget * parent = 0);
     ~Details ();
     void setIds (const QSet<int>& ids);
+    virtual QSize sizeHint () const { return QSize (440, 460); }
 
   private:
     QWidget * createPeersTab ();
@@ -141,6 +139,7 @@ class Details: public QDialog
     void onFilePriorityChanged (const QSet<int>& fileIndices, int);
     void onFileWantedChanged (const QSet<int>& fileIndices, bool);
     void onPathEdited (const QString& oldpath, const QString& newname);
+    void onOpenRequested (const QString& path);
     void onHonorsSessionLimitsToggled (bool);
     void onDownloadLimitedToggled (bool);
     void onSpinBoxEditingFinished ();

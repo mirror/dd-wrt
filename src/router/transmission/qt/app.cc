@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU Public License v2 or v3 licenses,
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: app.cc 14150 2013-07-27 21:58:14Z jordan $
+ * $Id: app.cc 14272 2014-05-09 02:32:28Z jordan $
  */
 
 #include <cassert>
@@ -294,7 +291,7 @@ MyApp :: onTorrentCompleted (int id)
   if (tor)
     {
       if (myPrefs->getBool (Prefs::SHOW_NOTIFICATION_ON_COMPLETE))
-        notify (tr ("Torrent Completed"), tor->name ());
+        notifyApp (tr ("Torrent Completed"), tor->name ());
 
       if (myPrefs->getBool (Prefs::COMPLETE_SOUND_ENABLED))
         {
@@ -318,7 +315,7 @@ MyApp :: onNewTorrentChanged (int id)
     {
       const int age_secs = tor->dateAdded ().secsTo (QDateTime::currentDateTime ());
       if (age_secs < 30)
-        notify (tr ("Torrent Added"), tor->name ());
+        notifyApp (tr ("Torrent Added"), tor->name ());
 
       disconnect (tor, SIGNAL (torrentChanged (int)), this, SLOT (onNewTorrentChanged (int)));
 
@@ -462,7 +459,7 @@ MyApp :: raise ()
 }
 
 bool
-MyApp :: notify (const QString& title, const QString& body) const
+MyApp :: notifyApp (const QString& title, const QString& body) const
 {
   const QString dbusServiceName   = QString::fromUtf8 ("org.freedesktop.Notifications");
   const QString dbusInterfaceName = QString::fromUtf8 ("org.freedesktop.Notifications");

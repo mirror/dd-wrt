@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2012-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: torrent-magnet.c 13969 2013-02-04 21:45:20Z jordan $
+ * $Id: torrent-magnet.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <assert.h>
@@ -302,6 +299,9 @@ tr_torrentSetMetadataPiece (tr_torrent  * tor, int piece, const void  * data, in
         {
           incompleteMetadataFree (tor->incompleteMetadata);
           tor->incompleteMetadata = NULL;
+          tor->isStopping = true;
+          tor->magnetVerify = true;
+          tor->startAfterVerify = true;
         }
         else /* drat. */
         {

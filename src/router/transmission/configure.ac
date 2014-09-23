@@ -3,8 +3,8 @@ dnl STATUS: "X" for prerelease beta builds,
 dnl         "Z" for unsupported trunk builds,
 dnl         "0" for stable, supported releases
 dnl these should be the only two lines you need to change
-m4_define([user_agent_prefix],[2.82])
-m4_define([peer_id_prefix],[-TR2820-])
+m4_define([user_agent_prefix],[2.84])
+m4_define([peer_id_prefix],[-TR2840-])
 
 AC_INIT([transmission],[user_agent_prefix],[http://trac.transmissionbt.com/newticket])
 AC_SUBST(USERAGENT_PREFIX,[user_agent_prefix])
@@ -69,15 +69,6 @@ AC_SUBST(LIBAPPINDICATOR_MINIMUM)
 
 AC_PROG_CC
 AC_PROG_CXX
-if test "x$CXX" != "x"; then # CXX is set...
-  if test -f "$CXX"; then # maybe it's an absolute path passed in env variables...
-    AC_MSG_CHECKING([for $CXX])
-    HAVE_CXX="yes"
-    AC_MSG_RESULT([$HAVE_CXX])
-  else
-    AC_CHECK_PROG([HAVE_CXX],[$CXX],[yes],[no])
-  fi
-fi
 AC_C_INLINE
 if test "x$GCC" = "xyes" ; then
 
@@ -117,6 +108,7 @@ fi
 AC_SEARCH_LIBS(cos, [m])
 AC_SEARCH_LIBS([socket], [socket net])
 AC_SEARCH_LIBS([gethostbyname], [nsl bind])
+AC_SEARCH_LIBS([quotacursor_skipidtype], [quota])
 PKG_CHECK_MODULES(OPENSSL, [openssl >= $OPENSSL_MINIMUM], , [CHECK_SSL()])
 PKG_CHECK_MODULES(LIBCURL, [libcurl >= $CURL_MINIMUM])
 PKG_CHECK_MODULES(LIBEVENT, [libevent >= $LIBEVENT_MINIMUM])
@@ -183,7 +175,7 @@ dnl file monitoring for the daemon
 # Check whether to enable systemd startup notification.
 # This requires libsystemd-daemon.
 AC_ARG_WITH([systemd-daemon], AS_HELP_STRING([--with-systemd-daemon],
-            [Add support for systemd startup notification (default is autodetected)])
+            [Add support for systemd startup notification (default is autodetected)]),
             [USE_SYSTEMD_DAEMON=$withval], [USE_SYSTEMD_DAEMON=auto])
 AS_IF([test "x$USE_SYSTEMD_DAEMON" != "xno"], [
     PKG_CHECK_MODULES([SYSTEMD_DAEMON], [libsystemd-daemon],
@@ -216,7 +208,7 @@ AC_CHECK_LIB([rt],
 
 AC_MSG_CHECKING([µTP])
 build_utp="no"
-if test "x$HAVE_CXX" = "xyes" ; then
+if test "x$CXX" != "x" ; then
     have_utp="yes"
 else
     have_utp="no"
@@ -251,41 +243,47 @@ dnl
 dnl  look for preinstalled miniupnpc...
 dnl
 
-AC_MSG_CHECKING([supported miniupnp library])
-upnp_version="none"
 ac_save_LIBS="$LIBS"
 LIBS="-lminiupnpc"
-# See if the OS has its miniupnp 1.5 installed
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-    #include <stdlib.h>
-    #include <miniupnpc/miniupnpc.h>
-    #include <miniupnpc/upnpcommands.h>
-]], [[
-    struct UPNPDev * devlist;
-    struct UPNPUrls    urls;
-    struct IGDdatas    data;
-    char lanaddr[16];
-    char portStr[8];
-    char intPort[8];
-    char intClient[16];
-    upnpDiscover( 2000, NULL, NULL, 0 );
-    UPNP_GetValidIGD( devlist, &urls, &data, lanaddr, sizeof( lanaddr ) ); 
-    UPNP_GetSpecificPortMappingEntry( urls.controlURL, data.first.servicetype,
-                        portStr, "TCP", intClient, intPort );
-]])],[
-AC_DEFINE(HAVE_MINIUPNP_15, 1, [Define to 1 if you have miniupnpc version 1.5])
-upnp_version="1.5"],[])
+AC_MSG_CHECKING([system miniupnpc library])
 
-# See if the OS has its miniupnp 1.6 installed
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+dnl See if ANY version of miniupnpc is installed
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([#include <miniupnpc/miniupnpc.h>],
+                   [struct UPNPDev dev;])],
+  [upnp_version="unknown"],
+  [upnp_version="none"]
+)
+
+dnl Let's hope it's 1.7 or higher, since it provides
+dnl MINIUPNPC_API_VERSION and we won't have to figure
+dnl it out on our own
+if test "x$upnp_version" = "xunknown" ; then
+  AC_RUN_IFELSE(
+    [AC_LANG_PROGRAM(
+      [#include <stdlib.h>
+       #include <miniupnpc/miniupnpc.h>],
+      [#ifdef MINIUPNPC_API_VERSION
+       return EXIT_SUCCESS;
+       #else
+       return EXIT_FAILURE;
+       #endif]
+    )],
+    [upnp_version=">= 1.7"]
+  )
+fi
+
+dnl Or maybe it's miniupnp 1.6
+if test "x$upnp_version" = "xunknown" ; then
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     #include <stdlib.h>
     #include <errno.h>
     #include <miniupnpc/miniupnpc.h>
     #include <miniupnpc/upnpcommands.h>
-]], [[
+  ]], [[
     struct UPNPDev * devlist;
-    struct UPNPUrls    urls;
-    struct IGDdatas    data;
+    struct UPNPUrls urls;
+    struct IGDdatas data;
     char lanaddr[16];
     char portStr[8];
     char intPort[8];
@@ -294,9 +292,33 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     UPNP_GetValidIGD( devlist, &urls, &data, lanaddr, sizeof( lanaddr ) ); 
     UPNP_GetSpecificPortMappingEntry( urls.controlURL, data.first.servicetype,
                         portStr, "TCP", intClient, intPort, NULL, NULL, NULL );
-]])],[
-AC_DEFINE(HAVE_MINIUPNP_16, 1, [Define to 1 if you have miniupnpc version 1.6])
-upnp_version="1.6"],[])
+  ]])],[
+  AC_DEFINE(MINIUPNPC_API_VERSION, 8, [miniupnpc 1.6 has API version 8])
+  upnp_version="1.6"])
+fi
+
+dnl Or maybe it's miniupnp 1.5
+if test "x$upnp_version" = "xunknown" ; then
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+    #include <stdlib.h>
+    #include <miniupnpc/miniupnpc.h>
+    #include <miniupnpc/upnpcommands.h>
+  ]], [[
+    struct UPNPDev * devlist;
+    struct UPNPUrls urls;
+    struct IGDdatas data;
+    char lanaddr[16];
+    char portStr[8];
+    char intPort[8];
+    char intClient[16];
+    upnpDiscover( 2000, NULL, NULL, 0 );
+    UPNP_GetValidIGD( devlist, &urls, &data, lanaddr, sizeof( lanaddr ) ); 
+    UPNP_GetSpecificPortMappingEntry( urls.controlURL, data.first.servicetype,
+                        portStr, "TCP", intClient, intPort );
+  ]])],[
+  AC_DEFINE(MINIUPNPC_API_VERSION, 5, [miniupnpc 1.5 has API version 5])
+  upnp_version="1.5"])
+fi
 
 # ... and the results of our tests
 LIBS="$ac_save_LIBS"
@@ -306,8 +328,6 @@ if test "x$upnp_version" = "xnone" ; then
     LIBUPNP_CFLAGS="-I\$(top_srcdir)/third-party/"
     LIBUPNP_LIBS="\$(top_builddir)/third-party/miniupnp/libminiupnp.a"
     LIBUPNP_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/miniupnp/libminiupnp.a"
-    dnl because this is the version that we bundle...
-    AC_DEFINE(HAVE_MINIUPNP_16, 1, [Define to 1 if you have miniupnpc version 1.6])
 else
     AC_DEFINE([SYSTEM_MINIUPNP])
     LIBUPNP_CFLAGS="" 
@@ -474,6 +494,7 @@ AM_CONDITIONAL([BUILD_DAEMON],[test "x$build_daemon" = "xyes"])
 
 
 if test "x$build_mac" = "xyes" ; then
+   AC_DEFINE([BUILD_MAC_CLIENT], 1)
     # Make sure the proper Mac SDK is installed
     if test ! -d /Developer/SDKs/MacOSX10.5.sdk; then
       cat << EOF

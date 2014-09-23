@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2008-2014 Mnemosyne LLC
  *
- * This file is licensed by the GPL version 2. Works owned by the
- * Transmission project are granted a special exemption to clause 2 (b)
- * so that the bulk of its code can remain under the MIT license.
- * This exemption does not extend to derived works not owned by
- * the Transmission project.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: rpcimpl.c 14130 2013-07-20 15:37:13Z jordan $
+ * $Id: rpcimpl.c 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #include <assert.h>
@@ -253,6 +250,15 @@ queueMoveBottom (tr_session               * session,
   return NULL;
 }
 
+static int 
+compareTorrentByQueuePosition (const void * va, const void * vb) 
+{ 
+  const tr_torrent * a = * (const tr_torrent **) va; 
+  const tr_torrent * b = * (const tr_torrent **) vb; 
+
+  return a->queuePosition - b->queuePosition; 
+} 
+
 static const char*
 torrentStart (tr_session               * session,
               tr_variant               * args_in,
@@ -266,6 +272,7 @@ torrentStart (tr_session               * session,
   assert (idle_data == NULL);
 
   torrents = getTorrents (session, args_in, &torrentCount);
+  qsort (torrents, torrentCount, sizeof (tr_torrent *), compareTorrentByQueuePosition); 
   for (i=0; i<torrentCount; ++i)
     {
       tr_torrent * tor = torrents[i];
@@ -293,6 +300,7 @@ torrentStartNow (tr_session               * session,
   assert (idle_data == NULL);
 
   torrents = getTorrents (session, args_in, &torrentCount);
+  qsort (torrents, torrentCount, sizeof (tr_torrent *), compareTorrentByQueuePosition); 
   for (i=0; i<torrentCount; ++i)
     {
       tr_torrent * tor = torrents[i];
@@ -746,7 +754,7 @@ addField (tr_torrent       * const tor,
         if (tr_torrentHasMetadata (tor))
           {
             size_t byte_count = 0;
-            void * bytes = tr_cpCreatePieceBitfield (&tor->completion, &byte_count);
+            void * bytes = tr_torrentCreatePieceBitfield (tor, &byte_count);
             char * str = tr_base64_encode (bytes, byte_count, NULL);
             tr_variantDictAddStr (d, key, str!=NULL ? str : "");
             tr_free (str);
@@ -900,8 +908,8 @@ addInfo (tr_torrent * tor, tr_variant * d, tr_variant * fields)
   if (n > 0)
     {
       int i;
-      const tr_info const * inf = tr_torrentInfo (tor);
-      const tr_stat const * st = tr_torrentStat ((tr_torrent*)tor);
+      const tr_info * const inf = tr_torrentInfo (tor);
+      const tr_stat * const st = tr_torrentStat ((tr_torrent*)tor);
 
       for (i=0; i<n; ++i)
         {
@@ -1534,6 +1542,8 @@ gotNewBlocklist (tr_session       * session,
         if (write (fd, response, response_byte_count) < 0)
           tr_snprintf (result, sizeof (result), _("Couldn't save file \"%1$s\": %2$s"), filename, tr_strerror (errno));
 
+      tr_close_file(fd);
+
       if (*result)
         {
           tr_logAddError ("%s", result);
@@ -1587,16 +1597,16 @@ addTorrentImpl (struct tr_rpc_idle_data * data, tr_ctor * ctor)
       key = TR_KEY_torrent_added;
       result = NULL;
     }
-  else if (err == TR_PARSE_ERR)
-    {
-      key = 0;
-      result = "invalid or corrupt torrent file";
-    }
   else if (err == TR_PARSE_DUPLICATE)
     {
       tor = tr_torrentFindFromId (data->session, duplicate_id);
       key = TR_KEY_torrent_duplicate;
       result = "duplicate torrent";
+    }
+  else /* err == TR_PARSE_ERR */
+    {
+      key = 0;
+      result = "invalid or corrupt torrent file";
     }
 
   if (tor && key)
@@ -1633,7 +1643,7 @@ gotMetadataFromURL (tr_session       * session UNUSED,
 {
   struct add_torrent_idle_data * data = user_data;
 
-  dbgmsg ("torrentAdd: HTTP response code was %ld (%s); response length was %zu bytes",
+  dbgmsg ("torrentAdd: HTTP response code was %ld (%s); response length was %"TR_PRIuSIZE" bytes",
           response_code, tr_webGetResponseStr (response_code), response_byte_count);
 
   if (response_code==200 || response_code==221) /* http or ftp success.. */

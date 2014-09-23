@@ -1,13 +1,10 @@
 /*
- * This file Copyright (C) Mnemosyne LLC
+ * This file Copyright (C) 2009-2014 Mnemosyne LLC
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2
- * as published by the Free Software Foundation.
+ * It may be used under the GNU GPL versions 2 or 3
+ * or any future license endorsed by Mnemosyne LLC.
  *
- * http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
- *
- * $Id: relocate.h 13944 2013-02-03 19:40:20Z jordan $
+ * $Id: relocate.h 14241 2014-01-21 03:10:30Z jordan $
  */
 
 #ifndef RELOCATE_DIALOG_H
@@ -46,7 +43,7 @@ class RelocateDialog: public QDialog
 
   public:
     RelocateDialog (Session&, TorrentModel&, const QSet<int>& ids, QWidget * parent = 0);
-    ~RelocateDialog () { }
+    ~RelocateDialog () {}
 };
 
 #endif
