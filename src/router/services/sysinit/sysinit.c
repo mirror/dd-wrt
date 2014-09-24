@@ -653,6 +653,23 @@ static void buffalo_defaults(int force)
 							nvram_set("ath0_security_mode", "psk psk2");
 						}
 					}
+				} else if (mode_ex && !strcmp(mode_ex, "wpa2-psk")) {
+					char *mode = getUEnv("DEF-p_wireless_ath0_11bg-authmode");
+					if (!mode)
+						mode = getUEnv("DEF-p_wireless_ath00_11bg-authmode");
+					if (!mode) {
+						nvram_set("ath0_akm", "disabled");
+						nvram_set("ath0_security_mode", "disabled");
+					} else {
+						if (!strcmp(mode, "psk")) {
+							nvram_set("ath0_akm", "psk2");
+							nvram_set("ath0_security_mode", "psk2");
+						}
+						if (!strcmp(mode, "psk2")) {
+							nvram_set("ath0_akm", "psk2");
+							nvram_set("ath0_security_mode", "psk2");
+						}
+					}
 				} else {
 					char *mode = getUEnv("DEF-p_wireless_ath0_11bg-authmode");
 					if (!mode)
