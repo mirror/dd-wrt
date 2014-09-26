@@ -253,7 +253,7 @@ include rules/dns_responder.mk
 include rules/minidlna.mk
 include rules/nrpe.mk
 include rules/links.mk
-include rules/softflowd.mk
+include rules/lighttpd.mk
 include rules/nextmediaextra.mk
 include rules/libqmi.mk
 include rules/strongswan.mk
@@ -266,6 +266,7 @@ include rules/transmission.mk
 include rules/libevent.mk
 include rules/tor.mk
 include rules/emf.mk
+include rules/softflowd.mk
 
 #
 # Generic rules
