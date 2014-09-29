@@ -219,7 +219,12 @@ void configure_single_ath9k(int count)
 	getMacAddr(dev, macaddr);
 	nvram_set(athmac, macaddr);
 	int distance = atoi(nvram_default_get(sens, "2000"));	// to meter
-	sysprintf("iw phy %s set distance %d", wif, distance);
+	char dist[32];
+	if (distance > 0)
+		sprintf(dist, "%d", distance);
+	else
+		sprintf(dist, "auto", distance);
+	eval("iw", "phy", wif, "set", "distance", dist);
 
 // das scheint noch aerger zu machen
 	eval("iw", "dev", dev, "set", "power_save", "off");
