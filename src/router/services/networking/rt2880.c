@@ -1139,7 +1139,9 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	fprintf(fp, "HT_GI=1\n");
 	fprintf(fp, "HT_STBC=1\n");
 	if (has_ac(refif)) {
+		fprintf(fp, "HT_LDPC=1\n");
 		fprintf(fp, "VHT_STBC=1\n");
+		fprintf(fp, "VHT_LDPC=1\n");
 	}
 	fclose(fp);
 
