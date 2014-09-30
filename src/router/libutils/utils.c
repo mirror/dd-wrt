@@ -3692,11 +3692,6 @@ static char *getUEnvExt(char *name)
 void *getUEnv(char *name)
 {
 
-#ifdef HAVE_WZR450HP2
-	char *result = getUEnvExt(name);
-	if (result)
-		return result;
-#endif
 
 #ifdef HAVE_WZRG300NH
 #define UOFFSET 0x40000
@@ -3735,6 +3730,11 @@ void *getUEnv(char *name)
 		}
 	}
 	free(mem);
+#ifdef HAVE_WZR450HP2
+	char *result = getUEnvExt(name);
+	if (result)
+		return result;
+#endif
 	return NULL;
 }
 #endif
