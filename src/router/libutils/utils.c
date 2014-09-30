@@ -3622,9 +3622,82 @@ int check_wan_link(int num)
 	return wan_link;
 }
 
+#ifdef HAVE_WZR450HP2
+struct ENV_EXTDATA {
+	unsigned char wanmac[6];	// 0x0
+	unsigned char lanmac[6];	// 0x6
+	unsigned char wpspin[8];	// 0xc
+	unsigned char passphrase[25];	// 0x14, length is max <=24 followed by 0 termination
+	unsigned char authmode[3];
+	unsigned char crypto[3];
+	unsigned char authmode_ex[4];
+	unsigned char region[2];
+	unsigned char productid[16];
+	unsigned char bootversion[8];
+	unsigned char hwversion;
+	unsigned char customid;
+	unsigned char melcoid[11];
+	unsigned char builddate[28];
+	unsigned char inspection;
+};
+
+static char *getUEnvExt(char *name)
+{
+	struct ENV_EXTDATA data;
+	FILE *fp = fopen("/dev/mtdblock5", "rb");	// board data
+	if (!fp)
+		return NULL;
+
+	fread(&data, 1, sizeof(data), fp);
+	fclose(fp);
+	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-authmode_ex")) {
+		if (!memcmp(data.authmode_ex, "WPA2", 4))
+			return "wpa2-psk";
+		if (!memcmp(data.authmode_ex, "WPA", 3))
+			return "wpa-psk";
+	}
+	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-authmode")) {
+		if (!memcmp(data.authmode_ex, "WPA2", 4) && !memcmp(data.authmode, "PSK", 3))
+			return "psk2";
+		if (!memcmp(data.authmode_ex, "WPA", 3) && !memcmp(data.authmode, "PSK", 3))
+			return "psk";
+	}
+	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-wpapsk")) {
+		static char passphrase[25];
+		strcpy(passphrase, data.passphrase);
+		return passphrase;
+	}
+	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-crypto")) {
+		if (!memcmp(data.crypto, "AES", 3))
+			return "aes";
+	}
+	if (!strcmp(name, "region")) {
+		static char region[3];
+		region[2] = 0;
+		memcpy(region, data.region, 2);
+		return region;
+	}
+	if (!strcmp(name, "pincode")) {
+		static char pincode[8];
+		strcpy(pincode, data.wpspin);
+		return pincode;
+	}
+
+	return NULL;
+}
+
+#endif
+
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450)
 void *getUEnv(char *name)
 {
+
+#ifdef HAVE_WZR450HP2
+	char *result = getUEnvExt(name);
+	if (result)
+		return result;
+#endif
+
 #ifdef HAVE_WZRG300NH
 #define UOFFSET 0x40000
 #elif HAVE_WZR450HP2
@@ -5148,7 +5221,7 @@ int led_control(int type, int act)
 //              power_gpio = 0x10e;
 //              usb_power = 0x01a;
 //              usb_gpio = 0x10b;
-		
+
 		connected_gpio = 0x10d;
 		power_gpio = 0x113;
 		ses_gpio = 0x103;
@@ -6228,7 +6301,8 @@ int is_ath9k(const char *prefix)
 }
 #endif
 #ifdef HAVE_ATH5K
-int is_ath5k(const char *prefix) {
+int is_ath5k(const char *prefix)
+{
 	glob_t globbuf;
 	int count = 0;
 	char globstring[1024];
@@ -6244,9 +6318,10 @@ int is_ath5k(const char *prefix) {
 	return (count);
 }
 #else
-int is_ath5k(const char *prefix) {
-	return(0);
-	}
+int is_ath5k(const char *prefix)
+{
+	return (0);
+}
 #endif
 #ifdef HAVE_ATH10K
 int is_ath10k(const char *prefix)
