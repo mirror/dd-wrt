@@ -49,6 +49,9 @@ ifdef CONFIG_NORTHSTAR
 	install -d $(INSTALLDIR)/etc/cfe
 	install cfe/cfe_600.bin $(INSTALLDIR)/etc/cfe
 endif
+ifdef CONFIG_MT7612
+	install rt2880/SingleSKU.dat $(INSTALLDIR)/etc/wlan
+endif
 ifdef CONFIG_RT3052
 	install -d $(INSTALLDIR)/etc/wlan
 	install rt2880/RT30*.bin $(INSTALLDIR)/etc/wlan
