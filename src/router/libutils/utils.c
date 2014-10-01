@@ -3678,8 +3678,9 @@ static char *getUEnvExt(char *name)
 		return region;
 	}
 	if (!strcmp(name, "pincode")) {
-		static char pincode[8];
-		strcpy(pincode, data.wpspin);
+		static char pincode[9];
+		memcpy(pincode, data.wpspin,8);
+		pincode[8]=0;
 		return pincode;
 	}
 
