@@ -3664,7 +3664,7 @@ static char *getUEnvExt(char *name)
 	}
 	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-wpapsk")) {
 		static char passphrase[25];
-		strncpy(passphrase, data.passphrase,24);
+		strncpy(passphrase, (char*)&data.passphrase[1],(data.passphrase[0]&0xff));
 		return passphrase;
 	}
 	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-crypto")) {
