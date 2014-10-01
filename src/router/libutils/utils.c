@@ -3664,7 +3664,7 @@ static char *getUEnvExt(char *name)
 	}
 	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-wpapsk")) {
 		static char passphrase[25];
-		strcpy(passphrase, data.passphrase);
+		strncpy(passphrase, data.passphrase,24);
 		return passphrase;
 	}
 	if (!strcmp(name, "DEF-p_wireless_ath0_11bg-crypto")) {
@@ -3680,7 +3680,7 @@ static char *getUEnvExt(char *name)
 	if (!strcmp(name, "pincode")) {
 		static char pincode[9];
 		memcpy(pincode, data.wpspin,8);
-		pincode[8]=0;
+		pincode[7]=0;
 		return pincode;
 	}
 
