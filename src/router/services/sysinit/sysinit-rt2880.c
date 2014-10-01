@@ -125,6 +125,7 @@ void start_sysinit(void)
 	sysprintf("switch reg w 7804 1015e9f");
 	sysprintf("switch reg w 3600 5ee3b");
 	}  else {
+#ifndef HAVE_WHR1166D
 	sysprintf("switch reg w 2004 ff0003");
 	sysprintf("switch reg w 2104 ff0003");
 	sysprintf("switch reg w 2204 ff0003");
@@ -155,6 +156,7 @@ void start_sysinit(void)
 	sysprintf("switch vlan set 0 1 11110111");
 	sysprintf("switch vlan set 1 2 00001011");
 	sysprintf("switch clear");
+#endif
 	}
 	eval("ifconfig", "eth0", "up");
 

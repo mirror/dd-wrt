@@ -1088,6 +1088,9 @@ endif
 ifeq ($(CONFIG_ADM5120),y)
 CFLAGS_EXTRA += -DHAVE_ADM5120
 endif
+ifeq ($(CONFIG_WHR1166D),y)
+CFLAGS_EXTRA += -DHAVE_WHR1166D
+endif
 
 ifneq ($(ARCHITECTURE),broadcom)
 ifeq ($(CONFIG_RELAYD),y)
@@ -1460,6 +1463,7 @@ endif
 ifeq ($(CONFIG_RT61),y)
   CFLAGS_EXTRA += -DHAVE_RT61
 endif
+
 ifeq ($(CONFIG_HAMEA15),y)
   CFLAGS_EXTRA += -DHAVE_HAMEA15
 endif
