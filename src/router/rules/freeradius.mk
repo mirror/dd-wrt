@@ -15,6 +15,7 @@ freeradius-configure: openssl
 	ac_cv_func_setlinebuf=yes \
 	ac_cv_host=$(ARCH)-uclibc-linux \
 	./configure  --target=$(ARCH)-linux --host=$(ARCH) CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include " LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" --enable-shared \
+	--disable-fast-install \
 	--program-prefix="" \
 	--program-suffix="" \
 	--prefix=/usr \
@@ -23,7 +24,7 @@ freeradius-configure: openssl
 	--datadir=/usr/share \
 	--includedir=/usr/include \
 	--infodir=/usr/share/info \
-	--libdir=/usr/lib \
+	--libdir=/tmp/$(ARCH)_freeradius \
 	--libexecdir=/usr/lib \
 	--with-raddbdir=/etc/freeradius2 \
 	--with-radacctdir=/var/db/radacct \
@@ -113,6 +114,12 @@ freeradius-clean:
 
 freeradius-install:
 	make -C freeradius install R=$(INSTALLDIR)/freeradius
+	mkdir -p /tmp/$(ARCH)_freeradius
+	cp $(INSTALLDIR)/freeradius/tmp/$(ARCH)_freeradius/* /tmp/$(ARCH)_freeradius
+	make -C freeradius install R=$(INSTALLDIR)/freeradius
+	mkdir -p $(INSTALLDIR)/freeradius/usr/lib
+	cp $(INSTALLDIR)/freeradius/tmp/$(ARCH)_freeradius/* $(INSTALLDIR)/freeradius/usr/lib
+	rm -rf $(INSTALLDIR)/freeradius/tmp
 	rm -rf $(INSTALLDIR)/freeradius/usr/share/doc
 	rm -rf $(INSTALLDIR)/freeradius/usr/share/man
 	rm -rf $(INSTALLDIR)/freeradius/usr/include
