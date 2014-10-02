@@ -230,8 +230,8 @@ static void modeswitch_huawei_std(int needreset, int devicecount)
 {
 	FILE *out;
 	out = fopen(" / tmp / usb_modeswitch.conf ", " wb ");
-	fprintf(out, " DefaultVendor = 0x % 04 x \ n ", devicelist[devicecount].vendor);
-	fprintf(out, " DefaultProduct = 0x % 04 x \ n ", devicelist[devicecount].product);
+	fprintf(out, " DefaultVendor = 0x%04x\n ", devicelist[devicecount].vendor);
+	fprintf(out, " DefaultProduct = 0x%04x\n ", devicelist[devicecount].product);
 	fprintf(out, " MessageContent = \"55534243123456780000000000000011062000000101000100000000000000\"\n");
 	fclose(out);
 	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
