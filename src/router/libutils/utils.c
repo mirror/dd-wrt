@@ -3680,7 +3680,7 @@ static char *getUEnvExt(char *name)
 	if (!strcmp(name, "pincode")) {
 		static char pincode[9];
 		memcpy(pincode, data.wpspin,8);
-		pincode[7]=0;
+		pincode[8]=0;
 		return pincode;
 	}
 
