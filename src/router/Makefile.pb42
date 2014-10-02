@@ -170,7 +170,7 @@ kernelsource:
 	cd $(LINUXDIR)/../ && ./patch $(KERNELVERSION)
 
 
-kernel: clean
+kernel:
         # Also build kernel
 	# Also build kernel
 ifeq ($(CONFIG_LSX),y)
@@ -981,6 +981,38 @@ else
 endif
 endif
 endif
+
+
+
+
+ifeq ($(CONFIG_WZR450HP2),y)
+	tools/wzrg300nh/tftpfw $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr450hp2-firmware.tftp
+ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),MULTI)
+ifeq ($(CONFIG_BUFFALO),y)
+ifeq ($(CONFIG_BUFFALO_SA),y)
+	tools/bufenc/encryptRC4 WZR-450HP2 1.86 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr450hp2-firmware.enc
+	tools/bufenc/mkfw -hw_ver=0 -productid=00000003  -hcrypt="Buffalo" "WZR-450HP2" "WZR-450HP2" "1.86" "2.08" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr450hp2-firmware.enc $(ARCH)-uclibc/wzr450hp2-firmware_MULTI.enc
+else
+	tools/bufenc/encryptRC4 WZR-450HP2 1.86 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr450hp2-firmware.enc
+	tools/bufenc/mkfw -hw_ver=0 -productid=00000003  -hcrypt="Buffalo" "WZR-450HP2" "WZR-450HP2" "1.86" "2.08" "US-EU-AP-TW-KR-CH-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr450hp2-firmware.enc $(ARCH)-uclibc/wzr450hp2-firmware_MULTI.enc
+endif
+else
+	tools/bufenc/encryptRC4 WZR-450HP2 1.86 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr450hp2-firmware.enc
+	tools/bufenc/mkfw -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "WZR-450HP2" "WZR-450HP2" "1.86" "2.08" "US-EU-AP-TW-KR-CH-JP-RU" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr450hp2-firmware.enc $(ARCH)-uclibc/wzr450hp2-firmware_MULTI.enc
+endif
+else
+ifeq ($(CONFIG_DEFAULT_COUNTRYCODE),EU-US)
+#eu-us region
+	tools/bufenc/encryptRC4 WZR-450HP2 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr450hp2-firmware.enc
+	tools/bufenc/mkfw-new -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "WZR-450HP2" "WZR-450HP2" "1.75" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr450hp2-firmware.enc $(ARCH)-uclibc/wzr450hp2-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+else
+	tools/bufenc/encryptRC4 WZR-450HP2 1.74 Buffalo $(ARCH)-uclibc/aligned.uimage $(ARCH)-uclibc/wzr450hp2-firmware.enc
+	tools/bufenc/mkfw-new -hw_ver=0 -productid=00000003 -hcrypt="Buffalo" "WZR-450HP2" "WZR-450HP2" "1.75" "1.01" "$(CONFIG_DEFAULT_COUNTRYCODE)" "mlang8" "ath" "" 80041000 80200000 1 $(ARCH)-uclibc/wzr450hp2-firmware.enc $(ARCH)-uclibc/wzr450hp2-firmware_$(CONFIG_DEFAULT_COUNTRYCODE).enc
+endif
+endif
+endif
+
+
 
 
 ifeq ($(CONFIG_WZRG450),y)
