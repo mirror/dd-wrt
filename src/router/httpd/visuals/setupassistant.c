@@ -520,12 +520,11 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		sprintf(wl_relayd, "%s_relayd_gw_ipaddr", prefix);
 		sscanf(nvram_safe_get(wl_relayd), "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
 		sprintf(wl_relayd, "%s_relayd_gw_auto", prefix);
-		websWrite(wp, "\
-	<div id=\"%s_relayd_gw_ipaddr\" class=\"setting\"%s>\n\
-	          <input type=\"hidden\" name=\"%s_relayd_gw_ipaddr\" value=\"4\">\n\
-	          <div class=\"label\"><script type=\"text/javascript\">Capture(share.gateway)</script></div>\n\
-	          <input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_0\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_1\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_2\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_3\" value=\"%d\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\">\n\
-       </div>\n", prefix, nvram_selmatch(wp, wl_relayd, "1") ? " style=\"display: none; visibility: hidden;\"" : "", prefix, prefix, ip[0], prefix, ip[1], prefix, ip[2], prefix, ip[3]);
+		websWrite(wp, "<div id=\"%s_relayd_gw_ipaddr\" class=\"setting\"%s>\n"
+	          "<input type=\"hidden\" name=\"%s_relayd_gw_ipaddr\" value=\"4\">\n"
+	          "<div class=\"label\"><script type=\"text/javascript\">Capture(share.gateway)</script></div>\n"
+	          "<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_0\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_1\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_2\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_3\" value=\"%d\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\">\n"
+       "</div>\n", prefix, nvram_selmatch(wp, wl_relayd, "1") ? " style=\"display: none; visibility: hidden;\"" : "", prefix, prefix, ip[0], prefix, ip[1], prefix, ip[2], prefix, ip[3]);
 	}
 #endif
 
