@@ -258,7 +258,7 @@ static int ieee80211n_allowed_ht40_channel_pair(struct hostapd_iface *iface)
 	 * 2.4 GHz rules allow all cases where the secondary channel fits into
 	 * the list of allowed channels (already checked above).
 	 */
-	if (1 || iface->current_mode->mode != HOSTAPD_MODE_IEEE80211A)
+//	if (1 || iface->current_mode->mode != HOSTAPD_MODE_IEEE80211A)
 		return 1;
 
 	if (iface->conf->secondary_channel > 0)
@@ -477,7 +477,7 @@ static void ieee80211n_check_scan(struct hostapd_iface *iface)
 		oper40 = ieee80211n_check_40mhz_2g4(iface, scan_res);
 	wpa_scan_results_free(scan_res);
 
-	if (!oper40) {
+	if (!oper40 && iface->conf->dynamic_ht40) {
 		wpa_printf(MSG_INFO, "20/40 MHz operation not permitted on "
 			   "channel pri=%d sec=%d based on overlapping BSSes",
 			   iface->conf->channel,
