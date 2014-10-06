@@ -115,10 +115,10 @@ freeradius-clean:
 freeradius-install:
 	make -C freeradius install R=$(INSTALLDIR)/freeradius
 	mkdir -p /tmp/$(ARCH)_freeradius
-	cp $(INSTALLDIR)/freeradius/tmp/$(ARCH)_freeradius/* /tmp/$(ARCH)_freeradius
+	cp -P $(INSTALLDIR)/freeradius/tmp/$(ARCH)_freeradius/* /tmp/$(ARCH)_freeradius
 	make -C freeradius install R=$(INSTALLDIR)/freeradius
 	mkdir -p $(INSTALLDIR)/freeradius/usr/lib
-	cp $(INSTALLDIR)/freeradius/tmp/$(ARCH)_freeradius/* $(INSTALLDIR)/freeradius/usr/lib
+	cp -P $(INSTALLDIR)/freeradius/tmp/$(ARCH)_freeradius/* $(INSTALLDIR)/freeradius/usr/lib
 	rm -rf $(INSTALLDIR)/freeradius/tmp
 	rm -rf $(INSTALLDIR)/freeradius/usr/share/doc
 	rm -rf $(INSTALLDIR)/freeradius/usr/share/man
