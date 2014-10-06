@@ -1,10 +1,5 @@
-ifndef CC
-CC=gcc
-endif
-
-ifndef CFLAGS
-CFLAGS = -MMD -O2 -Wall -g
-endif
+CFLAGS+ = -MMD $(MIPS16_OPT) $(COPTS) -Wall -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 CFLAGS += -I$(abspath ../src)
 CFLAGS += -I$(abspath ../src/utils)
@@ -30,9 +25,6 @@ LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
 ifeq ($(CONFIG_MINIDLNA),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
-endif
-ifeq ($(CONFIG_UQMI),y)
-LDFLAGS +=-L$(TOP)/_staging/usr/lib -ljson-c
 endif
 
 ifdef CONFIG_TESTING_OPTIONS
@@ -887,6 +879,9 @@ endif
 
 ifdef CONFIG_NO_STDOUT_DEBUG
 CFLAGS += -DCONFIG_NO_STDOUT_DEBUG
+#ifndef CONFIG_CTRL_IFACE
+CFLAGS += -DCONFIG_NO_WPA_MSG
+#endif
 endif
 
 ifdef CONFIG_DEBUG_LINUX_TRACING

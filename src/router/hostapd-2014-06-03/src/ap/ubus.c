@@ -11,6 +11,7 @@
 #include "utils/eloop.h"
 #include "common/ieee802_11_defs.h"
 #include "hostapd.h"
+#include "wps_hostapd.h"
 #include "sta_info.h"
 #include "ubus.h"
 
@@ -260,10 +261,44 @@ hostapd_bss_list_bans(struct ubus_context *ctx, struct ubus_object *obj,
 	return 0;
 }
 
+static int
+hostapd_bss_wps_start(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	int rc;
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+
+	rc = hostapd_wps_button_pushed(hapd, NULL);
+
+	if (rc != 0)
+		return UBUS_STATUS_NOT_SUPPORTED;
+
+	return 0;
+}
+
+static int
+hostapd_bss_wps_cancel(struct ubus_context *ctx, struct ubus_object *obj,
+			struct ubus_request_data *req, const char *method,
+			struct blob_attr *msg)
+{
+	int rc;
+	struct hostapd_data *hapd = container_of(obj, struct hostapd_data, ubus.obj);
+
+	rc = hostapd_wps_cancel(hapd);
+
+	if (rc != 0)
+		return UBUS_STATUS_NOT_SUPPORTED;
+
+	return 0;
+}
+
 static const struct ubus_method bss_methods[] = {
 	UBUS_METHOD_NOARG("get_clients", hostapd_bss_get_clients),
 	UBUS_METHOD("del_client", hostapd_bss_del_client, del_policy),
 	UBUS_METHOD_NOARG("list_bans", hostapd_bss_list_bans),
+	UBUS_METHOD_NOARG("wps_start", hostapd_bss_wps_start),
+	UBUS_METHOD_NOARG("wps_cancel", hostapd_bss_wps_cancel),
 };
 
 static struct ubus_object_type bss_object_type =
