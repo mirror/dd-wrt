@@ -23,6 +23,7 @@
 #include "beacon.h"
 #include "iapp.h"
 #include "ieee802_1x.h"
+#include "ieee802_11.h"
 #include "ieee802_11_auth.h"
 #include "vlan_init.h"
 #include "wpa_auth.h"
@@ -342,6 +343,7 @@ static void hostapd_cleanup(struct hostapd_data *hapd)
 static void hostapd_cleanup_iface_partial(struct hostapd_iface *iface)
 {
 	wpa_printf(MSG_DEBUG, "%s(%p)", __func__, iface);
+	hostapd_deinit_ht(iface);
 	hostapd_free_hw_features(iface->hw_features, iface->num_hw_features);
 	iface->hw_features = NULL;
 	os_free(iface->current_rates);
