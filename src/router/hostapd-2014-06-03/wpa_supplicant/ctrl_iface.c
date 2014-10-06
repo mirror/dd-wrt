@@ -1602,7 +1602,7 @@ static int wpa_supplicant_ctrl_iface_status(struct wpa_supplicant *wpa_s,
 			pos += ret;
 		}
 
-#ifdef CONFIG_AP
+#if defined(CONFIG_AP) && defined(CONFIG_CTRL_IFACE_MIB)
 		if (wpa_s->ap_iface) {
 			pos += ap_ctrl_iface_wpa_get_status(wpa_s, pos,
 							    end - pos,
@@ -6673,12 +6673,14 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 		reply_len = ap_ctrl_iface_sta_next(wpa_s, buf + 9, reply,
 						   reply_size);
 #endif
+#ifdef CONFIG_CTRL_IFACE_MIB
 	} else if (os_strncmp(buf, "DEAUTHENTICATE ", 15) == 0) {
 		if (ap_ctrl_iface_sta_deauthenticate(wpa_s, buf + 15))
 			reply_len = -1;
 	} else if (os_strncmp(buf, "DISASSOCIATE ", 13) == 0) {
 		if (ap_ctrl_iface_sta_disassociate(wpa_s, buf + 13))
 			reply_len = -1;
+#endif
 	} else if (os_strncmp(buf, "CHAN_SWITCH ", 12) == 0) {
 		if (ap_ctrl_iface_chanswitch(wpa_s, buf + 12))
 			reply_len = -1;

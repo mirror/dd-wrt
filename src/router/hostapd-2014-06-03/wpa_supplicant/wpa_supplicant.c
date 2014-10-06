@@ -140,8 +140,8 @@ static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 	}
 
 	hw_mode = ieee80211_freq_to_chan(bss->freq, &channel);
-	if (asprintf(&cmd, "UPDATE channel=%d frequency=%d sec_chan=%d hw_mode=%d ieee80211n=%d",
-		     channel, bss->freq, sec_chan, hw_mode, !!bss->ht_capab) < 0)
+	if (asprintf(&cmd, "UPDATE channel=%d sec_chan=%d hw_mode=%d ieee80211n=%d",
+		     channel, sec_chan, hw_mode, !!bss->ht_capab) < 0)
 		return -1;
 
 	ret = wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL);

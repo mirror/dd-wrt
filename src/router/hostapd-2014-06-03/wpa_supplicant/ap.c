@@ -984,7 +984,7 @@ int wpas_ap_wps_nfc_report_handover(struct wpa_supplicant *wpa_s,
 #endif /* CONFIG_WPS */
 
 
-#ifdef CONFIG_CTRL_IFACE
+#if defined(CONFIG_CTRL_IFACE) && defined(CONFIG_CTRL_IFACE_MIB)
 
 int ap_ctrl_iface_sta_first(struct wpa_supplicant *wpa_s,
 			    char *buf, size_t buflen)
@@ -1064,7 +1064,7 @@ int ap_ctrl_iface_wpa_get_status(struct wpa_supplicant *wpa_s, char *buf,
 	return pos - buf;
 }
 
-#endif /* CONFIG_CTRL_IFACE && CONFIG_AP */
+#endif /* CONFIG_CTRL_IFACE */
 
 
 int wpa_supplicant_ap_update_beacon(struct wpa_supplicant *wpa_s)
