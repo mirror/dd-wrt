@@ -315,9 +315,6 @@ struct hostapd_bss_config {
 	int fragment_size;
 	u16 pwd_group;
 
-	int n_radius_eap_allowed;
-	u8 *radius_eap_allowed;
-
 	char *radius_server_clients;
 	int radius_server_auth_port;
 	int radius_server_acct_port;
@@ -532,8 +529,8 @@ struct hostapd_config {
 	int fragm_threshold;
 	u8 send_probe_response;
 	u8 channel;
-	int *chanlist;
 	u16 frequency;
+	int *chanlist;
 	enum hostapd_hw_mode hw_mode; /* HOSTAPD_MODE_IEEE80211A, .. */
 	enum {
 		LONG_PREAMBLE = 0,

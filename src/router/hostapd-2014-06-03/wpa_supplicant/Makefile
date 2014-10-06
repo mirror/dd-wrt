@@ -2,9 +2,9 @@ ifndef CC
 CC=gcc
 endif
 
-ifndef CFLAGS
-CFLAGS = -MMD -O2 -Wall -g
-endif
+CFLAGS+ = -MMD  $(MIPS16_OPT) $(COPTS) -Wall 
+LDFLAGS += -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += -I. -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 export LIBDIR ?= /usr/local/lib/
 export BINDIR ?= /usr/local/sbin/
@@ -41,10 +41,7 @@ endif
 ifeq ($(CONFIG_MINIDLNA),y)
 LDFLAGS += -Wl,-rpath,$(TOP)/jansson/src/.libs
 endif
-ifeq ($(CONFIG_UQMI),y)
-#LDFLAGS += -Wl,-rpath,$(TOP)/_staging/usr/lib -ljson
-LDFLAGS +=-L$(TOP)/_staging/usr/lib -ljson-c
-endif
+
 
 BINALL=wpa_supplicant wpa_cli
 

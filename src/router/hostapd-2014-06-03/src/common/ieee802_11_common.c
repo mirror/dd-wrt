@@ -494,33 +494,31 @@ enum hostapd_hw_mode ieee80211_freq_to_chan(int freq, u8 *channel)
 {
 	enum hostapd_hw_mode mode = NUM_HOSTAPD_MODES;
 
-	if (freq == 2484)
-		mode = HOSTAPD_MODE_IEEE80211B;
-	else if (freq < 4000)
+	if (freq >= 2412 && freq <= 2472) {
 		mode = HOSTAPD_MODE_IEEE80211G;
-	else if (freq < 7000)
-		mode = HOSTAPD_MODE_IEEE80211A;
-	else
-		mode = HOSTAPD_MODE_IEEE80211AD;
-
-	if (freq == 2484)
-		*channel = 14;
-	else if (freq == 2407)
-		*channel = 0;
-	else if (freq < 2412)
-		*channel = (freq - 2407) / 5 + 256;
-	else if (freq < 2484)
 		*channel = (freq - 2407) / 5;
-	else if (freq > 2484 && freq < 4000)
-		*channel = (freq - 2414) / 5;
-	else if (freq > 4940 && freq < 4990)
-		*channel = (freq - 4940) * 2 + !!((freq % 5) == 2);
-	else if (freq >= 4800 && freq < 5005)
+	} else if (freq < 2412) {
+		mode = HOSTAPD_MODE_IEEE80211G;
+		return (freq - 2407) / 5 + 256;
+	} else if (freq == 2484) {
+		mode = HOSTAPD_MODE_IEEE80211B;
+		*channel = 14;
+	} else if (freq > 2484 && freq < 4000 ) {
+		mode = HOSTAPD_MODE_IEEE80211G;
+		return (freq - 2414) / 5;
+	} else if (freq < 4990 && freq > 4940) {
+		mode = HOSTAPD_MODE_IEEE80211A;
+		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
+	} else if (freq >= 4900 && freq < 5000) {
+		mode = HOSTAPD_MODE_IEEE80211A;
 		*channel = (freq - 4000) / 5;
-	else if (freq >= 5000 && freq < 7000)
+	} else if (freq >= 5000 && freq < 5900) {
+		mode = HOSTAPD_MODE_IEEE80211A;
 		*channel = (freq - 5000) / 5;
-	else if (freq >= 56160 + 2160 * 1 && freq <= 56160 + 2160 * 4)
+	} else if (freq >= 56160 + 2160 * 1 && freq <= 56160 + 2160 * 4) {
+		mode = HOSTAPD_MODE_IEEE80211AD;
 		*channel = (freq - 56160) / 2160;
+	}
 
 	return mode;
 }
