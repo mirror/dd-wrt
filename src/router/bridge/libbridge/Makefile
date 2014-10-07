@@ -1,4 +1,4 @@
-CC := $(CC) -Wall -c -g $(COPTS) -DNEED_PRINTF -D_GNU_SOURCE
+CC := $(CC) -Wall -c $(COPTS) -DNEED_PRINTF -D_GNU_SOURCE $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 all:			libbridge.a
 
