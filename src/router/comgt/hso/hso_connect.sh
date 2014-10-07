@@ -173,11 +173,11 @@ Connect()
 	ifconfig $NETDEV $PIP netmask 255.255.255.255 up
 	echo "Adding route"
 	route add default dev $NETDEV
-	mv -f /etc/resolv.conf /tmp/resolv.conf.hso
+	cp -f /etc/resolv.conf /tmp/resolv.conf.hso
 	echo "Setting nameserver"
 	echo "nameserver	$NS1" > $OUTPUTFILE
 	echo "nameserver	$NS2" >> $OUTPUTFILE
-	mv $OUTPUTFILE /etc/resolv.conf
+	#mv $OUTPUTFILE /etc/resolv.conf
 	export DNS1=$NS1
 	export DNS2=$NS2
 	export IPLOCAL=$PIP
