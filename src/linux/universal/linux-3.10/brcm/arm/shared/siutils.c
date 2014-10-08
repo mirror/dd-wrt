@@ -3942,7 +3942,7 @@ si_gpioout2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 	} 
 	if (isbuffalowxr && (mask & (1<<12)))
 	{
-	    return si_gpioout(hc_sih,mask,val,GPIO_HI_PRIORITY);
+	    return si_gpioout(sih,mask,val,GPIO_HI_PRIORITY);
 	}
 
 	if (isac68 && !(mask & 1<<6))
@@ -3995,7 +3995,7 @@ si_gpioouten2(si_t *sih, uint32 mask, uint32 val, uint8 priority)
 	
 	if (isac66 && ((mask & (1<<12)) || (mask & (1<<0)) || (mask & (1<<1))  || (mask & (1<<2)) || (mask & (1<<3))))
 	{
-	    return si_gpioouten(hc_sih,mask,val,priority);
+	    return si_gpioouten(sih,mask,val,priority);
 	}
 
 
