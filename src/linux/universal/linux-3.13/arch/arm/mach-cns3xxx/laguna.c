@@ -984,10 +984,7 @@ static int __init laguna_pcie_init(void)
 	}
 	printk("laguna: using shared PCI interrupts: irq%d\n",
 	       IRQ_CNS3XXX_PCIE0_DEVICE);
-	irqs[0] = IRQ_CNS3XXX_PCIE0_DEVICE;
-	irqs[1] = IRQ_CNS3XXX_PCIE0_DEVICE;
-	irqs[2] = IRQ_CNS3XXX_PCIE0_DEVICE;
-	return cns3xxx_pcie_init(irqs, NULL);
+	return cns3xxx_pcie_init(NULL, NULL);
 }
 
 subsys_initcall(laguna_pcie_init);
