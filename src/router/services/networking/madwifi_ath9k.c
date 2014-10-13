@@ -335,6 +335,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	int iht = 0;
 	char bw[32];
 	sprintf(bw, "%s_channelbw", prefix);
+	ht[0] = 0;
 	if ((!strcmp(netmode, "ng-only") ||	//
 	     !strcmp(netmode, "na-only") ||	//
 	     !strcmp(netmode, "n2-only") ||	//
@@ -445,7 +446,11 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	}
 	if (!isath5k) {
 		caps = mac80211_get_caps(prefix);
-		fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
+		if (strlen(ht) > 0) {
+			fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
+		} else {
+			fprintf(fp, "ht_capab=%s\n", caps);
+		}
 		free(caps);
 	}
 #ifdef HAVE_ATH10K
