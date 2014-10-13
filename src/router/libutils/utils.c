@@ -3767,6 +3767,10 @@ char *get_wan_ipaddr(void)
 	} else {
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
 	}
+
+	if (strlen(wan_ipaddr)==0)
+		wan_ipaddr = "0.0.0.0";
+
 	return wan_ipaddr;
 }
 
