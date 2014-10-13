@@ -331,7 +331,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 
 	char *akm = nvram_nget("%s_akm", prefix);
 	char *crypto = nvram_nget("%s_crypto", prefix);
-	char ht[5];
+	char ht[6];
 	int iht = 0;
 	char bw[32];
 	sprintf(bw, "%s_channelbw", prefix);
@@ -339,6 +339,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	     !strcmp(netmode, "na-only") ||	//
 	     !strcmp(netmode, "n2-only") ||	//
 	     !strcmp(netmode, "n5-only") ||	//
+	     !strcmp(netmode, "ac-only") ||	//
 	     !strcmp(netmode, "mixed"))
 	    && strcmp(akm, "wep")
 	    && !aoss) {
