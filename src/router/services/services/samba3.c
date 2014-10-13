@@ -68,6 +68,8 @@ void start_samba3(void)
 		return;
 
 	}
+	
+	update_timezone();
 
 	if (!nvram_match("txworkq", "1")) {
 		nvram_set("txworkq", "1");
