@@ -42,7 +42,7 @@ void start_openvpnserver(void)
 
 	if (nvram_invmatch("openvpn_enable", "1"))
 		return;
-
+	update_timezone();
 	if ((freediskSpace("/jffs") > 16384)
 	    || (nvram_match("enable_jffs2", "1")
 		&& nvram_match("jffs_mounted", "1")
