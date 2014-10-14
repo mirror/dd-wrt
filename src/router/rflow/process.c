@@ -32,7 +32,7 @@
 #include "storage.h"
 #include "cfgvar.h"
 
-#include "pcap-bpf.h"
+#include <pcap-bpf.h>
 
 /*
  * Get a pointer to the IPv4 header given the type of the input source,
