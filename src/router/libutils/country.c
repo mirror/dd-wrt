@@ -820,7 +820,7 @@ void setRegulationDomain(char *reg)
 		strcpy(ccode0, "DE");
 		strcpy(rrev0, "0");
 		strcpy(ccode1, "EU");
-		strcpy(rrev1, "61");
+		strcpy(rrev1, "38");
 	} else if (!strcmp(ccode, "CN")) {
 		strcpy(ccode0, "CN");
 		strcpy(rrev0, "34");
