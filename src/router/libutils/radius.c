@@ -153,7 +153,10 @@ void writeradiusdb(struct radiusdb *db)
 		else
 			db->users[i].passwordsize = 0;
 
-		db->users[i].fieldlen = sizeof(struct radiususer) + db->users[i].usersize + db->users[i].passwordsize - 8;
+		if (sizeof(char *) == 8) //64 bit pointers are 8 bytes (2 fields need to be substracted)
+			db->users[i].fieldlen = sizeof(struct radiususer) + db->users[i].usersize + db->users[i].passwordsize - 16;
+		else
+			db->users[i].fieldlen = sizeof(struct radiususer) + db->users[i].usersize + db->users[i].passwordsize - 8;
 
 		writeword(db->users[i].fieldlen, fp);
 		writeword(db->users[i].usersize, fp);
@@ -246,7 +249,10 @@ void writeradiusclientdb(struct radiusclientdb *db)
 		else
 			db->users[i].passwordsize = 0;
 
-		db->users[i].fieldlen = sizeof(struct radiusclient) + db->users[i].clientsize + db->users[i].passwordsize - 8;
+		if (sizeof(char *) == 8) //64 bit pointers are 8 bytes (2 fields need to be substracted)
+			db->users[i].fieldlen = sizeof(struct radiusclient) + db->users[i].clientsize + db->users[i].passwordsize - 16;
+		else
+			db->users[i].fieldlen = sizeof(struct radiusclient) + db->users[i].clientsize + db->users[i].passwordsize - 8;
 
 		writeword(db->users[i].fieldlen, fp);
 		writeword(db->users[i].clientsize, fp);
