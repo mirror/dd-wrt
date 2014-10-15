@@ -1,10 +1,12 @@
 PROG        = usb_modeswitch
-VERS        = 1.2.7
+VERS        = 2.2.0
 CC          ?= gcc
 #CFLAGS      += -Wall
-CFLAGS     = $(COPTS)  $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections    -D_GNU_SOURCE -DNEED_PRINTF -Ilibusb-compat/libusb
+CFLAGS     = $(COPTS)  $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections    -D_GNU_SOURCE -DNEED_PRINTF -Ilibusb/libusb 
+#-Ilibusb-compat/libusb
 #LIBS        = libusb.a
-LIBS        = libusb-compat/libusb/.libs/libusb.a libusb/libusb/.libs/libusb-1.0.a -lpthread
+#LIBS        = libusb-compat/libusb/.libs/libusb.a 
+LIBS        = libusb/libusb/.libs/libusb-1.0.a -lpthread
 RM          = /bin/rm -f
 OBJS        = usb_modeswitch.c
 PREFIX      = $(DESTDIR)/usr
@@ -12,6 +14,8 @@ ETCDIR      = $(DESTDIR)/etc
 UDEVDIR     = $(DESTDIR)/lib/udev
 SBINDIR     = $(PREFIX)/sbin
 MANDIR      = $(PREFIX)/share/man/man1
+SYSDIR      = $(ETCDIR)/systemd/system
+UPSDIR      = $(ETCDIR)/init
 VPATH       = jimtcl
 HOST_TCL   := $(shell cd jim && ./autosetup/find-tclsh)
 ifeq (,$(findstring jimsh0,$(HOST_TCL)))
@@ -19,7 +23,7 @@ TCL        ?= $(HOST_TCL)
 else
 TCL        ?= /usr/bin/tclsh
 endif
-JIM_CONFIGURE_OPTS =--disable-lineedit \
+JIM_CONFIGURE_OPTS = --disable-lineedit \
 	--with-out-jim-ext="stdlib posix load signal syslog" --prefix=/usr
 
 .PHONY: clean install install-common uninstall \
@@ -39,7 +43,7 @@ $(PROG): $(OBJS) usb_modeswitch.h
 	cd libusb && make all
 	cd libusb-compat && make all
 	$(CC) -o $(PROG) $(OBJS) $(CFLAGS) $(LIBS) $(LDFLAGS)
-	$(CC) $(CFLAGS) -o ozerocdoff ozerocdoff.c $(LIBS)
+	$(CC) $(CFLAGS) -Ilibusb-compat/libusb -o ozerocdoff ozerocdoff.c  libusb-compat/libusb/.libs/libusb.a $(LIBS) 
 
 jim/libjim.so:
 	cd jim && CFLAGS="$(CFLAGS)" CC="$(CC)" ./configure $(JIM_CONFIGURE_OPTS) --shared
@@ -85,13 +89,19 @@ ums-clean:
 	$(RM) usb_modeswitch_dispatcher
 	$(RM) usb_modeswitch.string
 
+# If the systemd folder is present, install the service for starting the dispatcher
+# If not, use the dispatcher directly from the udev rule as in previous versions
+
 install-common: $(PROG) usb_modeswitch_dispatcher
 	install -D --mode=755 usb_modeswitch $(SBINDIR)/usb_modeswitch
 	install -D --mode=755 usb_modeswitch.sh $(UDEVDIR)/usb_modeswitch
 	install -D --mode=644 usb_modeswitch.conf $(ETCDIR)/usb_modeswitch.conf
 	install -D --mode=644 usb_modeswitch.1 $(MANDIR)/usb_modeswitch.1
+	install -D --mode=644 usb_modeswitch_dispatcher.1 $(MANDIR)/usb_modeswitch_dispatcher.1
 	install -D --mode=755 usb_modeswitch_dispatcher $(SBINDIR)/usb_modeswitch_dispatcher
 	install -d $(DESTDIR)/var/lib/usb_modeswitch
+	test -d $(UPSDIR) -a -e /sbin/initctl && install --mode=644 usb-modeswitch-upstart.conf $(UPSDIR) || test 1
+	test -d $(SYSDIR) -a -e /usr/bin/systemctl && install --mode=644 usb_modeswitch@.service $(SYSDIR) || test 1
 
 install: install-script
 
@@ -108,3 +118,4 @@ uninstall:
 	$(RM) $(ETCDIR)/usb_modeswitch.conf
 	$(RM) $(MANDIR)/usb_modeswitch.1
 	$(RM) -R $(DESTDIR)/var/lib/usb_modeswitch
+	$(RM) $(SYSDIR)/usb_modeswitch@.service
