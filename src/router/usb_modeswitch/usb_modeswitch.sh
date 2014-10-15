@@ -1,5 +1,5 @@
 #!/bin/sh
-# part of usb_modeswitch 1.2.7
+# part of usb_modeswitch 2.2.0
 device_in()
 {
 	if [ ! -e /var/lib/usb_modeswitch/$1 ]; then
@@ -56,8 +56,8 @@ case "$1" in
 			if [ -e "$id_attr" ]; then
 				echo "$v_id $p_id ff" > $id_attr
 			else
-				modprobe -r usbserial
-				modprobe usbserial "vendor=0x$v_id" "product=0x$p_id"
+				modprobe -r usbserial 2>/dev/null
+				modprobe usbserial "vendor=0x$v_id" "product=0x$p_id" 2>/dev/null
 			fi
 		fi
 		) &
@@ -75,13 +75,19 @@ case "$1" in
 esac
 exec 1<&- 2<&- 5<&- 7<&-
 (
-count=120
+count=20
 while [ $count != 0 ]; do
 	if [ ! -e "/usr/sbin/usb_modeswitch_dispatcher" ]; then
 		sleep 1
 		count=$(($count - 1))
 	else
-		exec usb_modeswitch_dispatcher --switch-mode $1 $0 &
+		if [ -e "/etc/init/usb-modeswitch-upstart.conf" ]; then
+			exec /sbin/initctl emit --no-wait usb-modeswitch-upstart UMS_PARAM=$1
+		elif [ -e "/etc/systemd/system/usb_modeswitch@.service" ]; then
+			exec /usr/bin/systemctl --no-block start usb_modeswitch@$1.service
+		else
+			exec /usr/sbin/usb_modeswitch_dispatcher --switch-mode $1 &
+		fi
 		exit 0
 	fi
 done

@@ -2,6 +2,46 @@
 History of USB_ModeSwitch
 =========================
 
+Version 2.2.0, 2014/05/29
+    Introduction of parameter "HuaweiNewMode", wrapping the standard bulk
+    message for all newer Huawei devices; support for generic fall-back
+    config files, combined with OS switch (per vendor ID), implementation
+    to use a specific switching command on Android for all Huawei devices
+    (see README of data package for details); this change was suggested
+    by Huawei
+Version 2.1.1, 2014/03/27
+    Code cleanup, better use of libusb1; this also fixes problems with
+    determination of the active USB configuration (Samsung, Option modems);
+    "Interface" parameter was not working as expected, fixed (see also:
+    https://bugs.launchpad.net/bugs/1261923 ); fixed bogus interface release
+    in "inquire" function, again a report by "Sonya@zte"
+Version 2.1.0, 2014/01/28
+    ATTENTION: -I flag meaning reversed, default is to skip SCSI inquiry;
+    introduction of StandardEject, replacing many MessageContents with the
+    same function, reducing size of device config files, and always including
+    the 'Allow Medium Removal' before ejecting (thanks to Lars Melin for
+    the idea); fix in "bulk_read", removing bogus CSW request (report from
+    "Sonya@zte")
+Version 2.0.1, 2013/09/03
+    Fixed stupid string size bug which could lead to memory corruption
+    (thanks to Leonid Myravjev)
+Version 2.0.0, 2013/09/01
+    Switched to libusb1.0, with much help from folks of the wl500g project
+    (http://wl500g.googlecode.com): Vladislav Grishenko, Leonid Lisovskiy,
+    Roman Samarev, Andrey Tikhomirov;
+    major code and debug output cleanup; man page corrections and additions
+    (thanks to Thomas Haller);
+    experimental systemd and upstart integration, if present
+    (Explanation: newer udev versions kill all subprocesses, detached or
+    not. The suggested way to handle longer running processes like the
+    usb_modeswitch_dispatcher is to add simple services or tasks and start
+    these by sending signals from the udev rule)
+    !! Attention, system integrators: a crude install facility is included
+    in the Makefile to check if "upstart" or "systemd" is active and to
+    install the matching service file; you may want to adapt it better to
+    your respective system, possibly adding dependencies/targets to the
+    services. Note that the udev starter script usb_modeswitch.sh also
+    checks for the existence of the service files
 Version 1.2.7, 2013/08/07
     Two new dedicated control message functions to support Pantech LTE
     (thanks to Adam Goode) and Blackberry Q10/Z10 (thanks to Daniel Mende)
