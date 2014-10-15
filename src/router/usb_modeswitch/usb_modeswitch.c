@@ -1,8 +1,8 @@
 /*
   Mode switching tool for controlling flip flop (multiple device) USB gear
-  Version 1.2.4, 2012/08/12
+  Version 1.2.7, 2013/08/07
 
-  Copyright (C) 2007 - 2012 Josua Dietze (mail to "usb_admin" at the domain
+  Copyright (C) 2007 - 2013 Josua Dietze (mail to "usb_admin" at the domain
   of the home page; or write a personal message through the forum to "Josh".
   NO SUPPORT VIA E-MAIL - please use the forum for that)
 
@@ -45,7 +45,7 @@
 
 /* Recommended tab size: 4 */
 
-#define VERSION "1.2.4"
+#define VERSION "1.2.7"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,9 +83,10 @@ int devnum=-1, busnum=-1;
 int ret;
 
 char DetachStorageOnly=0, HuaweiMode=0, SierraMode=0, SonyMode=0, GCTMode=0, KobilMode=0;
-char SequansMode=0, MobileActionMode=0, CiscoMode=0, QisdaMode=0;
+char SequansMode=0, MobileActionMode=0, CiscoMode=0, QisdaMode=0, QuantaMode=0;
+char BlackberryMode=0, PantechMode=0;
 char verbose=0, show_progress=1, ResetUSB=0, CheckSuccess=0, config_read=0;
-char NeedResponse=0, NoDriverLoading=0, InquireDevice=1, sysmode=0;
+char NeedResponse=0, NoDriverLoading=0, InquireDevice=1, sysmode=0, mbim=0;
 
 char imanufact[DESCR_MAX], iproduct[DESCR_MAX], iserial[DESCR_MAX];
 
@@ -124,11 +125,14 @@ static struct option long_options[] = {
 	{"sierra-mode",			no_argument, 0, 'S'},
 	{"sony-mode",			no_argument, 0, 'O'},
 	{"qisda-mode",			no_argument, 0, 'B'},
+	{"quanta-mode",			no_argument, 0, 'E'},
 	{"kobil-mode",			no_argument, 0, 'T'},
 	{"gct-mode",			no_argument, 0, 'G'},
 	{"sequans-mode",		no_argument, 0, 'N'},
 	{"mobileaction-mode",	no_argument, 0, 'A'},
-	{"cisco-mode",	        no_argument, 0, 'L'},
+	{"cisco-mode",			no_argument, 0, 'L'},
+	{"blackberry-mode",		no_argument, 0, 'Z'},
+	{"pantech-mode",		no_argument, 0, 'F'},
 	{"need-response",		no_argument, 0, 'n'},
 	{"reset-usb",			no_argument, 0, 'R'},
 	{"config-file",			required_argument, 0, 'c'},
@@ -137,6 +141,7 @@ static struct option long_options[] = {
 	{"sysmode",				no_argument, 0, 'D'},
 	{"no-inquire",			no_argument, 0, 'I'},
 	{"stdinput",			no_argument, 0, 't'},
+	{"find-mbim",			no_argument, 0, 'j'},
 	{"long-config",			required_argument, 0, 'f'},
 	{"check-success",		required_argument, 0, 's'},
 	{"interface",			required_argument, 0, 'i'},
@@ -159,11 +164,14 @@ void readConfigFile(const char *configFilename)
 	ParseParamBool(configFilename, SierraMode);
 	ParseParamBool(configFilename, SonyMode);
 	ParseParamBool(configFilename, QisdaMode);
+	ParseParamBool(configFilename, QuantaMode);
 	ParseParamBool(configFilename, GCTMode);
 	ParseParamBool(configFilename, KobilMode);
 	ParseParamBool(configFilename, SequansMode);
 	ParseParamBool(configFilename, MobileActionMode);
 	ParseParamBool(configFilename, CiscoMode);
+	ParseParamBool(configFilename, BlackberryMode);
+	ParseParamBool(configFilename, PantechMode);
 	ParseParamBool(configFilename, NoDriverLoading);
 	ParseParamHex(configFilename, MessageEndpoint);
 	ParseParamString(configFilename, MessageContent);
@@ -217,11 +225,14 @@ void printConfig()
 	fprintf (output,"SierraMode=%i\n",			(int)SierraMode);
 	fprintf (output,"SonyMode=%i\n",			(int)SonyMode);
 	fprintf (output,"QisdaMode=%i\n",		(int)QisdaMode);
+	fprintf (output,"QuantaMode=%i\n",		(int)QuantaMode);
 	fprintf (output,"GCTMode=%i\n",			(int)GCTMode);
 	fprintf (output,"KobilMode=%i\n",		(int)KobilMode);
 	fprintf (output,"SequansMode=%i\n",		(int)SequansMode);
 	fprintf (output,"MobileActionMode=%i\n",	(int)MobileActionMode);
 	fprintf (output,"CiscoMode=%i\n",			(int)CiscoMode);
+	fprintf (output,"BlackberryMode=%i\n",		(int)BlackberryMode);
+	fprintf (output,"PantechMode=%i\n",			(int)PantechMode);
 	if ( MessageEndpoint )
 		fprintf (output,"MessageEndpoint=0x%02x\n",	MessageEndpoint);
 	else
@@ -271,7 +282,7 @@ int readArguments(int argc, char **argv)
 
 	while (1)
 	{
-		c = getopt_long (argc, argv, "heWQDndHSOBGTNALRItv:p:V:P:C:m:M:2:3:w:r:c:i:u:a:s:f:b:g:",
+		c = getopt_long (argc, argv, "hejWQDndHSOBEGTNALZFRItv:p:V:P:C:m:M:2:3:w:r:c:i:u:a:s:f:b:g:",
 						long_options, &option_index);
 
 		/* Detect the end of the options. */
@@ -298,16 +309,19 @@ int readArguments(int argc, char **argv)
 			case 'S': SierraMode = 1; break;
 			case 'O': SonyMode = 1; break;
 			case 'B': QisdaMode = 1; break;
+			case 'E': QuantaMode = 1; break;
 			case 'G': GCTMode = 1; break;
 			case 'T': KobilMode = 1; break;
 			case 'N': SequansMode = 1; break;
 			case 'A': MobileActionMode = 1; break;
 			case 'L': CiscoMode = 1; break;
+			case 'Z': BlackberryMode = 1; break;
+			case 'F': PantechMode = 1; break;
 			case 'c': readConfigFile(optarg); break;
 			case 't': readConfigFile("stdin"); break;
 			case 'W': verbose = 1; show_progress = 1; count--; break;
 			case 'Q': show_progress = 0; verbose = 0; count--; break;
-			case 'D': sysmode = 1; count--; break;
+			case 'D': sysmode = 1; InquireDevice = 0; count--; break;
 			case 's': CheckSuccess = strtol(optarg, NULL, 10); count--; break;
 			case 'I': InquireDevice = 0; break;
 			case 'b': busnum = strtol(optarg, NULL, 10); break;
@@ -316,6 +330,7 @@ int readArguments(int argc, char **argv)
 			case 'i': Interface = strtol(optarg, NULL, 16); break;
 			case 'u': Configuration = strtol(optarg, NULL, 16); break;
 			case 'a': AltSetting = strtol(optarg, NULL, 16); break;
+			case 'j': mbim = 1; break;
 
 			case 'f':
 				longConfig = malloc(strlen(optarg)+5);
@@ -378,11 +393,11 @@ int main(int argc, char **argv)
 				if (verbose) fprintf(output,"Taking all parameters from the command line\n\n");
 	}
 
-	if (verbose)
+	if (verbose) {
 		printVersion();
-
-	if (verbose)
 		printConfig();
+		SHOW_PROGRESS(output,"\n");
+	}
 
 	/* Some sanity checks. The default IDs are mandatory */
 	if (!(DefaultVendor && DefaultProduct)) {
@@ -399,7 +414,6 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 	}
-	SHOW_PROGRESS(output,"\n");
 
 	if (devnum == -1) {
 		searchMode = SEARCH_DEFAULT;
@@ -420,6 +434,11 @@ int main(int argc, char **argv)
 
 	usb_find_busses();
 	usb_find_devices();
+	
+	if (mbim) {
+		printf("%d\n", findMBIMConfig(DefaultVendor, DefaultProduct, searchMode) );
+		exit(0);
+	}
 
 	/* Count existing target devices, remember for success check */
 	if ((TargetVendor || TargetClass) && searchMode != SEARCH_BUSDEV) {
@@ -544,7 +563,7 @@ int main(int argc, char **argv)
 
 	/* Some scenarios are exclusive, so check for unwanted combinations */
  	specialMode = DetachStorageOnly + HuaweiMode + SierraMode + SonyMode + QisdaMode + KobilMode
-		+ SequansMode + MobileActionMode + CiscoMode;
+		+ SequansMode + MobileActionMode + CiscoMode + BlackberryMode + QuantaMode + PantechMode;
 	if ( specialMode > 1 ) {
 		SHOW_PROGRESS(output,"Invalid mode combination. Check your configuration. Aborting.\n\n");
 		exit(1);
@@ -590,6 +609,9 @@ int main(int argc, char **argv)
 		detachDriver();
 		switchKobilMode();
 	}
+	if(QuantaMode) {
+		switchQuantaMode();
+	}
 	if (SequansMode) {
 		switchSequansMode();
 	}
@@ -599,6 +621,14 @@ int main(int argc, char **argv)
 	if(CiscoMode) {
 		detachDriver();
 		switchCiscoMode();
+	}
+	if(BlackberryMode) {
+		detachDriver();
+	    switchBlackberryMode();
+	}
+	if(PantechMode) {
+		detachDriver();
+		switchPantechMode();
 	}
 	if (SonyMode) {
 		if (CheckSuccess)
@@ -799,6 +829,55 @@ out:
 }
 
 
+int findMBIMConfig(int vendor, int product, int mode)
+{
+	struct usb_bus *bus;
+	int resultConfig=0;
+	int i, j;
+
+	SHOW_PROGRESS(output,"Search USB devices...\n");
+	for (bus = usb_get_busses(); bus; bus = bus->next) {
+		if (mode == SEARCH_BUSDEV)
+			if (busnum != (int)strtol(bus->dirname,NULL,10))
+				continue;
+		struct usb_device *dev;
+		for (dev = bus->devices; dev; dev = dev->next) {
+			if (mode == SEARCH_BUSDEV) {
+				if (dev->devnum != devnum)
+					continue;
+			} else {
+//				if (verbose)
+//					fprintf (output,"  searching devices, found USB ID %04x:%04x\n", dev->descriptor.idVendor, dev->descriptor.idProduct);
+				if (dev->descriptor.idVendor != vendor)
+					continue;
+				if (product != dev->descriptor.idProduct)
+					continue;
+			}
+			SHOW_PROGRESS(output,"Found device, searching for MBIM configuration...\n");
+
+			// No check if there is only one configuration
+			if (dev->descriptor.bNumConfigurations < 2)
+				return -1;
+
+			// Checking all interfaces of all configurations
+			for (j=0; j<dev->descriptor.bNumConfigurations; j++) {
+				resultConfig = dev->config[j].bConfigurationValue;
+				for (i=0; i<dev->config[j].bNumInterfaces; i++) {
+//					SHOW_PROGRESS(output,"MBIM Check: looking at ifc %d, class is %d, subclass is %d\n",
+//						i,dev->config[j].interface[i].altsetting[0].bInterfaceClass,dev->config[j].interface[i].altsetting[0].bInterfaceSubClass);
+
+					if ( dev->config[j].interface[i].altsetting[0].bInterfaceClass == 2 )
+						if ( dev->config[j].interface[i].altsetting[0].bInterfaceSubClass == 0x0e )
+							// found MBIM interface in this configuration
+							return resultConfig;
+				}
+			}
+			return -1;
+		}
+	}
+	return 0;
+}
+
 void resetUSB ()
 {
 	int success;
@@ -884,7 +963,8 @@ int switchSendMessage ()
 	ret = usb_clear_halt(devh, MessageEndpoint);
 	if (ret)
 		SHOW_PROGRESS(output," Could not reset endpoint (probably harmless): %d\n", ret);
-	usleep(200000);
+	usleep(50000);
+
 	if (ReleaseDelay) {
 		SHOW_PROGRESS(output,"Blocking the interface for %d ms before releasing ...\n", ReleaseDelay);
 		usleep(ReleaseDelay*1000);
@@ -951,6 +1031,25 @@ void switchHuaweiMode ()
 		SHOW_PROGRESS(output," OK, Huawei control message sent\n");
 }
 
+void switchBlackberryMode ()
+{
+    int ret;
+    SHOW_PROGRESS(output,"Sending Blackberry control message 1 ...\n");
+	ret = usb_control_msg(devh, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN, 0xb1, 0x0000, 0, buffer, 8, 1000);
+	if (ret != 8) {
+        fprintf(stderr, "Error: sending Blackberry control message 1 failed (error %d). Aborting.\n\n", ret);
+		exit(1);
+	} else
+		SHOW_PROGRESS(output," OK, Blackberry control message 1 sent\n");
+	
+	SHOW_PROGRESS(output,"Sending Blackberry control message 2 ...\n");
+	ret = usb_control_msg(devh, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN, 0xa9, 0x000e, 0, buffer, 2, 1000);
+	if (ret != 2) {
+        fprintf(stderr, "Error: sending Blackberry control message 2 failed (error %d). Aborting.\n\n", ret);
+		exit(1);
+	} else
+		SHOW_PROGRESS(output," OK, Blackberry control message 2 sent\n");
+}
 
 void switchSierraMode ()
 {
@@ -968,7 +1067,6 @@ void switchSierraMode ()
 	} else
 		SHOW_PROGRESS(output," OK, Sierra control message sent\n");
 }
-
 
 void switchGCTMode ()
 {
@@ -988,8 +1086,8 @@ void switchGCTMode ()
 	usb_release_interface(devh, Interface);
 }
 
-
-int switchKobilMode() {
+void switchKobilMode()
+{
 	int ret;
 
 	SHOW_PROGRESS(output,"Sending Kobil control message ...\n");
@@ -999,11 +1097,11 @@ int switchKobilMode() {
 		exit(1);
 	} else
 		SHOW_PROGRESS(output," OK, Kobil control message sent\n");
-	return 1;
 }
 
 
-int switchQisdaMode () {
+void switchQisdaMode ()
+{
 	int ret;
 
 	SHOW_PROGRESS(output,"Sending Qisda control message ...\n");
@@ -1014,9 +1112,33 @@ int switchQisdaMode () {
 		exit(1);
 	} else
 		SHOW_PROGRESS(output," OK, Qisda control message sent\n");
-	return 1;
 }
 
+void switchQuantaMode()
+{
+	int ret;
+
+	SHOW_PROGRESS(output,"Sending Quanta control message ...\n");
+	ret = usb_control_msg(devh, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN, 0xff, 0, 0, buffer, 0, 1000);
+	if (ret < 0) {
+		SHOW_PROGRESS(output," Sending Quanta control message returned error %d, continue anyway ...\n", ret);
+	} else {
+		SHOW_PROGRESS(output," OK, Quanta control message sent\n");
+	}
+}
+
+void switchPantechMode()
+{
+	int ret;
+
+	SHOW_PROGRESS(output,"Sending Pantech control message ...\n");
+	ret = usb_control_msg(devh, USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0x70, 2, 0, buffer, 0, 1000);
+	if (ret < 0) {
+		SHOW_PROGRESS(output," Sending Pantech control message returned error %d, continue anyway ...\n", ret);
+	} else {
+		SHOW_PROGRESS(output," OK, Pantech control message sent\n");
+	}
+}
 
 int switchSonyMode ()
 {
@@ -1091,7 +1213,7 @@ int switchSonyMode ()
 #define MOBILE_ACTION_READLOOP1 63
 #define MOBILE_ACTION_READLOOP2 73
 
-int switchActionMode ()
+void switchActionMode ()
 {
 	int i;
 	SHOW_PROGRESS(output,"Sending MobileAction control sequence ...\n");
@@ -1131,13 +1253,10 @@ int switchActionMode ()
 	usb_interrupt_read(devh, EP_IN, buffer, SIZE, 1000);
 	if (ret < 0) {
 		SHOW_PROGRESS(output," MobileAction control sequence did not complete\n Last error was %d\n",ret);
-		return 1;
 	} else {
 		SHOW_PROGRESS(output," MobileAction control sequence complete\n");
-		return 0;
 	}
 }
-
 
 #define SQN_SET_DEVICE_MODE_REQUEST		0x0b
 #define SQN_GET_DEVICE_MODE_REQUEST		0x0a
@@ -1146,7 +1265,8 @@ int switchActionMode ()
 #define SQN_MASS_STORAGE_MODE			0x01
 #define SQN_CUSTOM_DEVICE_MODE			0x02
 
-int switchSequansMode() {
+void switchSequansMode()
+{
 	int ret;
 
 	SHOW_PROGRESS(output,"Sending Sequans vendor request\n");
@@ -1156,11 +1276,10 @@ int switchSequansMode() {
 	    exit(1);
 	} else
 		SHOW_PROGRESS(output," OK, Sequans request was sent\n");
-
-	return 1;
 }
 
-int switchCiscoMode() {
+int switchCiscoMode()
+{
 	int ret, i;
 	char* msg[11];
 
@@ -1397,7 +1516,6 @@ int checkSuccess()
 		closelog();
 
 	return success;
-
 }
 
 
@@ -1413,7 +1531,6 @@ int write_bulk(int endpoint, char *message, int length)
 		} else
 			SHOW_PROGRESS(output," Sending the message returned error %d. Trying to continue\n", ret);
 	return ret;
-
 }
 
 int read_bulk(int endpoint, char *buffer, int length)
@@ -1429,10 +1546,10 @@ int read_bulk(int endpoint, char *buffer, int length)
 		} else
 			SHOW_PROGRESS(output," Response reading got error %d\n", ret);
 	return ret;
-
 }
 
-void release_usb_device(int dummy) {
+void release_usb_device(int __attribute__((unused)) dummy)
+{
 	SHOW_PROGRESS(output,"Program cancelled by system. Bye.\n\n");
 	if (devh) {
 		usb_release_interface(devh, Interface);
@@ -1441,7 +1558,6 @@ void release_usb_device(int dummy) {
 	if (sysmode)
 		closelog();
 	exit(0);
-
 }
 
 
@@ -1680,7 +1796,6 @@ int get_interface_class(struct usb_device *dev, int cfgNumber, int ifcNumber)
 	return -1;
 }
 
-
 /* Parameter parsing */
 
 char* ReadParseParam(const char* FileName, char *VariableName)
@@ -1690,7 +1805,8 @@ char* ReadParseParam(const char* FileName, char *VariableName)
 
 	char *VarName, *Comment=NULL, *Equal=NULL;
 	char *FirstQuote, *LastQuote, *P1, *P2;
-	int Line=0, Len=0, Pos=0;
+	int Line=0;
+	unsigned Len=0, Pos=0;
 	char Str[LINE_DIM], *token, *configPos;
 	FILE *file = NULL;
 
@@ -1792,7 +1908,6 @@ char* ReadParseParam(const char* FileName, char *VariableName)
 	return NULL;
 }
 
-
 int hex2num(char c)
 {
 	if (c >= '0' && c <= '9')
@@ -1803,7 +1918,6 @@ int hex2num(char c)
 	return c - 'A' + 10;
 	return -1;
 }
-
 
 int hex2byte(const char *hex)
 {
@@ -1848,6 +1962,7 @@ void printHelp()
 	fprintf (output,"\nUsage: usb_modeswitch [<params>] [-c filename]\n\n"
 	" -h, --help                    this help\n"
 	" -e, --version                 print version information and exit\n"
+	" -j, --find-mbim               return config no. with MBIM interface, exit\n"
 	" -v, --default-vendor NUM      vendor ID of original mode (mandatory)\n"
 	" -p, --default-product NUM     product ID of original mode (mandatory)\n"
 	" -V, --target-vendor NUM       target mode vendor ID (optional)\n"
@@ -1870,6 +1985,9 @@ void printHelp()
 	" -T, --kobil-mode              apply a special procedure\n"
 	" -L, --cisco-mode              apply a special procedure\n"
 	" -B, --qisda-mode              apply a special procedure\n"
+	" -E, --quanta-mode             apply a special procedure\n"
+	" -Z, --blackberry-mode         apply a special procedure\n"
+	" -F, --pantech-mode            apply a special procedure\n"
 	" -R, --reset-usb               reset the device after all other actions\n"
 	" -Q, --quiet                   don't show progress or error messages\n"
 	" -W, --verbose                 print all settings and debug output\n"
