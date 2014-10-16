@@ -1,6 +1,9 @@
 /* opensslconf.h */
 /* WARNING: Generated automatically from opensslconf.h.in by Configure. */
 
+#ifdef  __cplusplus
+extern "C" {
+#endif
 /* OpenSSL was configured with the following options: */
 #ifndef OPENSSL_DOING_MAKEDEPEND
 
@@ -29,9 +32,6 @@
 #ifndef OPENSSL_NO_ECDSA
 # define OPENSSL_NO_ECDSA
 #endif
-#ifndef OPENSSL_NO_ENGINES
-# define OPENSSL_NO_ENGINES
-#endif
 #ifndef OPENSSL_NO_GMP
 # define OPENSSL_NO_GMP
 #endif
@@ -52,9 +52,6 @@
 #endif
 #ifndef OPENSSL_NO_MDC2
 # define OPENSSL_NO_MDC2
-#endif
-#ifndef OPENSSL_NO_PERLASM
-# define OPENSSL_NO_PERLASM
 #endif
 #ifndef OPENSSL_NO_RC5
 # define OPENSSL_NO_RC5
@@ -128,9 +125,6 @@
 # if defined(OPENSSL_NO_ECDSA) && !defined(NO_ECDSA)
 #  define NO_ECDSA
 # endif
-# if defined(OPENSSL_NO_ENGINES) && !defined(NO_ENGINES)
-#  define NO_ENGINES
-# endif
 # if defined(OPENSSL_NO_GMP) && !defined(NO_GMP)
 #  define NO_GMP
 # endif
@@ -151,9 +145,6 @@
 # endif
 # if defined(OPENSSL_NO_MDC2) && !defined(NO_MDC2)
 #  define NO_MDC2
-# endif
-# if defined(OPENSSL_NO_PERLASM) && !defined(NO_PERLASM)
-#  define NO_PERLASM
 # endif
 # if defined(OPENSSL_NO_RC5) && !defined(NO_RC5)
 #  define NO_RC5
@@ -340,3 +331,6 @@ YOU SHOULD NOT HAVE BOTH DES_RISC1 AND DES_RISC2 DEFINED!!!!!
 
 #endif /* DES_DEFAULT_OPTIONS */
 #endif /* HEADER_DES_LOCL_H */
+#ifdef  __cplusplus
+}
+#endif
