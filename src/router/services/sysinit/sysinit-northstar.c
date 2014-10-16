@@ -2672,7 +2672,7 @@ void start_sysinit(void)
 		nvram_set("bootpartition", "0");
 
 	}
-	insmod("ctf");
+
 	insmod("et");
 	//load mmc drivers
 	eval("ifconfig", "eth0", "up");
