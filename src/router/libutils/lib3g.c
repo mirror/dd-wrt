@@ -229,10 +229,10 @@ static void modeswitch_huawei_old(int needreset, int devicecount)
 static void modeswitch_huawei_std(int needreset, int devicecount)
 {
 	FILE *out;
-	out = fopen(" / tmp / usb_modeswitch.conf ", " wb ");
-	fprintf(out, " DefaultVendor = 0x%04x\n ", devicelist[devicecount].vendor);
-	fprintf(out, " DefaultProduct = 0x%04x\n ", devicelist[devicecount].product);
-	fprintf(out, " MessageContent = \"55534243123456780000000000000011062000000101000100000000000000\"\n");
+	out = fopen("/tmp/usb_modeswitch.conf", "wb");
+	fprintf(out, "DefaultVendor=0x%04x\n", devicelist[devicecount].vendor);
+	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
+	fprintf(out, "MessageContent=\"55534243123456780000000000000011062000000101000100000000000000\"\n");
 	fclose(out);
 	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
@@ -278,7 +278,9 @@ static void modeswitch_zte_3msg(int needreset, int devicecount)
 	fprintf(out, "DefaultProduct=0x%04x\n", devicelist[devicecount].product);
 	fprintf(out,
 		"MessageContent=\"5553424312345678000000000000061e000000000000000000000000000000\"\n"
-		"MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n" "MessageContent3=\"55534243123456702000000080000c85010101180101010101000000000000\"\n" "NeedResponse=1\n");
+		"MessageContent2=\"5553424312345679000000000000061b000000020000000000000000000000\"\n" 
+		"MessageContent3=\"55534243123456702000000080000c85010101180101010101000000000000\"\n" 
+		"NeedResponse=1\n");
 	fclose(out);
 	eval("usb_modeswitch", "-I", "-c", "/tmp/usb_modeswitch.conf");
 }
