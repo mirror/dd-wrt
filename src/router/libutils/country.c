@@ -1031,7 +1031,7 @@ void setRegulationDomain(char *reg)
 		strcpy(rrev1, "41");
 	} else if (!strcmp(ccode, "JP")) {
 		strcpy(ccode0, "JP");
-		strcpy(rrev0, "45");
+		strcpy(rrev0, "44");
 		strcpy(ccode1, "JP");
 		strcpy(rrev1, "45");
 	} else if (!strcmp(ccode, "AU")) {
@@ -1040,10 +1040,10 @@ void setRegulationDomain(char *reg)
 		strcpy(ccode1, "AU");
 		strcpy(rrev1, "0");
 	} else {
-		strcpy(ccode0, "Q1");
-		strcpy(rrev0, "27");
-		strcpy(ccode1, "Q2");
-		strcpy(rrev1, "41");
+		strcpy(ccode0, "US");
+		strcpy(rrev0, "0");
+		strcpy(ccode1, "US");
+		strcpy(rrev1, "0");
 	}
 
 	//fprintf(stderr, "setRegulationDomain ccode: %s rrev: %s\n", ccode, rrev);
