@@ -1019,7 +1019,7 @@ void setRegulationDomain(char *reg)
 
 	strncpy(ccode, getIsoName(reg), 3);
 
-	if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE")) {
+	if (!strcmp(ccode, "EU")) {
 		strcpy(ccode0, "EU");
 		strcpy(rrev0, "0");
 		strcpy(ccode1, "EU");
