@@ -1019,8 +1019,8 @@ void setRegulationDomain(char *reg)
 
 	strncpy(ccode, getIsoName(reg), 3);
 
-	if (!strcmp(ccode, "EU") || !strcmp(ccode, "TW")) {
-		strcpy(ccode0, "DE");
+	if (!strcmp(ccode, "EU") || !strcmp(ccode, "DE")) {
+		strcpy(ccode0, "EU");
 		strcpy(rrev0, "0");
 		strcpy(ccode1, "EU");
 		strcpy(rrev1, "38");
@@ -1040,9 +1040,9 @@ void setRegulationDomain(char *reg)
 		strcpy(ccode1, "AU");
 		strcpy(rrev1, "0");
 	} else {
-		strcpy(ccode0, "US");
+		strcpy(ccode0, ccode);
 		strcpy(rrev0, "0");
-		strcpy(ccode1, "US");
+		strcpy(ccode1, ccode);
 		strcpy(rrev1, "0");
 	}
 
