@@ -1,0 +1,35 @@
+#!/usr/bin/make -f
+export DEB_BUILD_HARDENING=1
+
+include /usr/share/hardening-includes/hardening.make
+CFLAGS=$(shell dpkg-buildflags --get CFLAGS)
+LDFLAGS=$(shell dpkg-buildflags --get LDFLAGS)
+CFLAGS+=$(HARDENING_CFLAGS)
+LDFLAGS+=$(HARDENING_LDFLAGS)
+
+configure:
+    
+    ./configure \
+        --prefix=/usr \
+        --sysconfdir=/etc \
+        --localstatedir=/var \
+        --includedir=${prefix}/include \
+        --libexecdir=${prefix}/lib/sstp-client \
+        --mandir=${prefix}/share/man \
+        --infodir=${prefix}/share/info \
+        --disable-dependency-tracking \
+        --with-runtime-dir="/var/run/sstpc" \
+        --enable-user \
+        --enable-group
+
+%:
+	dh $@
+
+override_dh_makeshlibs:
+	dh_makeshlibs -X/usr/lib/pppd/
+
+
+get-orig-source:
+	cd $(dir $(firstword $(MAKEFILE_LIST)))../ && \
+    uscan --rename --force-download --watchfile debian/watch --destdir $(CURDIR)
+

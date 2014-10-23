@@ -1,0 +1,34 @@
+Release 1.0.3: (November 13, 2011)
+- Added command line option to specify the uuid of the connection
+- Fixed various bugs, to mention:
+   * Cleanup of unix socket on termination
+   * Correct parsing of the URL 
+   * Fix connected time error when using --nolaunchpppd option
+   * Unit tests was added
+   * Added hardening of ubuntu build scripts
+
+
+Release 1.0.2: (October 20, 2011)
+- Added Basic HTTP proxy support
+- Allow for user to ignore certificate warnings by specifying '--cert-warn'
+- Network Manager SSTP plugin finally works on Ubuntu 11.10
+- Covering up passwords per command line.
+- Added privilege separation user, group, and directory
+
+
+Release 1.0.1: (October 02, 2011)
+- Fixing various bugs found while porting to Fedora Core 15.
+- Improved signal handling and summary on connection termination
+- Improved task handling of pppd
+
+
+Release 1.0: (September 18, 2011)
+- Updated version to 1.0 after 6 months of beta testing.
+- Packages provided for Ubuntu 11.04, and Fedora Core 15 
+
+
+Release 1.0-beta: (February 12, 2011)
+- Connect to a Windows 2K8 server using SSTP
+- Async PPP support
+- IPv6 support
+- Certificate validation

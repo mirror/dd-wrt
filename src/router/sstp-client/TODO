@@ -1,0 +1,14 @@
+sstp-client:
+* HTTP Proxy Digest Authentication support
+* Improve Certificate Verification
+  - Restrict certain cipher suites.
+  - Support for CRL and certificate revocation
+* Automate the unit-tests
+  - Autotools to help do this 'make check'
+* Build doxygen target
+* SSTP Server Support
+
+network-manager-sstp:
+* Sync up to latest git branch for pptp (any bug fixes?)
+* Add proxy configuration support
+* Additional options to limit the crypto
