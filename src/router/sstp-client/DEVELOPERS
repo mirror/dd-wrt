@@ -1,0 +1,36 @@
+Developers Information
+
+
+Mailing List
+
+Subscribe to the sstp-client-devel mailing list at sstp-client-devel@lists.sourceforge.net 
+if you intend to contribute to this project.  On this mailing list we discuss problems
+and changes.
+
+	http://lists.sourceforge.net/mailman/listinfo/sstp-client-devel
+
+
+Patches
+
+You may send patches by e-mail, direct or to the mailing list, or if
+you have SVN commit rights, you may use them.
+
+Developers have permission (and encouragement) to adjust more than the
+file that they are submitting.  Other files that may be adjusted are:
+
+ChangeLog
+	documentation of changes at the code level.
+
+NEWS
+	a history of changes as far as an end user is concerned.
+
+AUTHORS
+	a list of people who want credit for contributions.
+
+TODO
+	a list of things yet to be done.
+
+See section two of Eric Raymond's Software Release Practice HOWTO for
+some useful information on good patching practice.
+
+	http://www.linuxdoc.org/HOWTO/Software-Release-Practice-HOWTO/

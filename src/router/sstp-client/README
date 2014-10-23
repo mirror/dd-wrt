@@ -1,0 +1,86 @@
+SSTP-CLIENT
+------------------------------------------
+
+Background:
+SSTP is Microsofts Remote Access Solution (RAS) for PPP over SSL. It can be used
+instead of PPTP or L2TP, and is only available with Windows Vista/7 connecting to
+a Windows 2008 Server. For further information on SSTP check out wikipedia's 
+article on Secure Socket Tunneling Protocol.
+
+http://en.wikipedia.org/wiki/Secure_Socket_Tunneling_Protocol
+
+
+What is SSTP-CLIENT:
+SSTP-CLIENT is an SSTP client for Linux. It can be used to establish a SSTP 
+connection to a Windows 2008 Server. This software is similar commandline 
+and configuration as the pptp-client software.
+
+
+Features:
+* Establish a SSTP connection to a remote Windows 2k8 server.
+* Async PPP support (most distributions provide this).
+* Similar command line handling as pptp-client for easy integration.
+* IPv6 support
+* Basic HTTP Proxy support
+* Certficate handling and verification
+* SSTP plugin integration with NetworkManager v0.9 (available as separate package)
+
+
+SSTP-CLIENT on Ubuntu:
+It's pretty simple to integrate sstp-client into the Ubuntu / Debian distribution
+distribution. An example script is provided in support/peer-sstp-example.txt
+
+- Specify your MSCHAP password in /etc/ppp/chap-secrets
+  Example Entry:
+     SSTP-TEST\\JonDoe  sstp-test   'testme1234!'    *
+- Create a connect script in /etc/ppp/peers/sstp-test, similar to the example 
+  provided in ./support. Swap out user-name as appropriate
+- Start the script as: pon sstp-test
+
+
+Future:
+In the future we want to provide a SSTP server functionality as well. Code have
+been refactored such that this goal can be accomplishable. Also check out the 
+TODO file.
+
+
+Help Wanted:
+I need help with various features, please drop me an email if you have some
+bandwidth to work on any of this. The TODO file should provide you with a
+list of wanted features. 
+
+
+Compiling:
+To compile this on your favorite distribution make sure you have the development 
+tools and headers available. This project depends on the PPP package, libevent and
+OpenSSL.
+
+For example:
+  sudo apt-get install ppp-dev
+  sudo apt-get install libevent-dev
+  sudo apt-get install libssl-dev
+
+
+Important Links:
+ * How to setup SSTP on windows 2008 server, technotes from Microsoft
+   http://technet.microsoft.com/en-us/library/cc731352%28WS.10%29.aspx
+
+ * The SSTP specification:
+   http://msdn.microsoft.com/en-us/library/cc247338%28v=prot.10%29.aspx
+ 
+ * A reference to the pptp-client software, this has much in common with 
+   the SSTP protocol. http://pptpclient.sourceforge.net/
+ 
+ * OpenSSL Examples:
+   http://www.rtfm.com/openssl-examples/
+
+ * MicroTik have a working server and client version in the router software (as of March 2010).
+
+ * SSToPer is another SSTP client, but doesn't support Async HDLC frames
+
+
+Other related software required to get this working:
+ * OpenSSL  (http://www.openssl.org)
+ * PPPD     (http://ppp.samba.org)
+ * Libevent (monkey.org/~provos/libevent)
+

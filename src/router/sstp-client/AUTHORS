@@ -1,0 +1,13 @@
+The sstp-client Project
+http://sourceforge.net/projects/sstp-client
+
+Primary Author of this package:
+* Eivind Naess
+
+Patches and bug-fixes by:
+- Adding route to VPN server, Dmitriy Belokurov.
+
+
+Third-Party Resources:
+  Nick Mathewson and Niels Provos for libevent. <http://monkey.org/~provos/libevent/>
+

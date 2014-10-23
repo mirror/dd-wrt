@@ -1,0 +1,61 @@
+Sat Apr 28 20:00:00 2012  Eivind Naess <eivnaes@yahoo.com>
+
+	* sstp-client 1.0.7 released
+		- Fixed a problem where client failed to send connected message to server 
+			when specifying user/pass on command line
+		- Various changes to support Mac OS-X / Darwin via Mac Ports project
+
+Sat Mar 12 20:00:00 2012  Eivind Naess <eivnaes@yahoo.com>
+
+	* sstp-client 1.0.6 released
+		- Fixed a critical bug where the pppd configuration file was deleted before 
+			authentication could proceed (use of --user <user> and --password <pass>).
+
+Sat Mar 03 20:00:00 2012  Eivind Naess <eivnaes@yahoo.com>
+
+	* sstp-client 1.0.5 released
+		- Fixed a critical bug in the pppd plugin, connection would fail after
+			60 seconds as the MPPE keys wasn't set correctly.
+		- Updated the documentation and added a couple of pppd peers examples 
+
+Wed Feb 07 16:00:00 2012  Eivind Naess <eivnaes@yahoo.com>
+
+	* sstp-client 1.0.4 released
+		- Added command line to save host route
+		- Fixed various bugs, to mention
+			Disconnect of SSL connection when handling multiple SSL_write()
+
+Sat Nov 12 16:00:00 2011  Eivind Naess <eivnaes@yahoo.com>
+
+	* sstp-client 1.0.3 released
+		- Added command line option to specify the uuid of the connection
+	* Fixed various bugs
+		- Cleanup of unix socket on termination
+		- Correct parsing of the URL 
+		- Fix connected time error when using --nolaunchpppd option
+		- Unit tests was added
+		- Added hardening of ubuntu build scripts
+
+Sat Oct 22 08:00:00 2011  Eivind Naess <eivnaes@yahoo.com>
+
+	* sstp-client 1.0.2 released
+		- Added http proxy support, using basic authentication
+		- Adding privilege separation by chroot, and sstpc user.
+		- Covering up traces of passwords after specifying --password per command line.
+		- Command line option to ignore cerfificate errors (e.g. does not match host).
+		- Fixing various bugs
+
+Sat Sep 18 08:00:00 2011  Eivind Naess <eivnaes@yahoo.com>
+
+	* sstp-client 1.0.1 released
+		- Fixing various bug fixes found while porting to Fedora Core 15.
+		- Adding signal handling, and pretty print of data on termination
+		- Improved handling of pppd upon termination.
+
+Sun Oct 2 13:22:00 2011  Eivind Naess <eivnaes@yahoo.com>
+
+	* sstp-client 1.0 released
+		- Fixing various bugs found while porting to Fedora Core 15
+		- Adding support for configure with libevent2 (--with-libevent=2) 
+		  which is required for newer distributions.
+		- Better handling of pppd, and signal handling

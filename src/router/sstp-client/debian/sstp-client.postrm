@@ -1,0 +1,11 @@
+#!/bin/bash -e
+
+if [ "$1" = "purge" ]; then
+    rm -rf /var/run/sstpc
+    userdel sstpc >/dev/null 2>&1 || true
+fi
+
+#DEBHELPER#
+if [ "$1" = "remove" ]; then
+	ldconfig
+fi

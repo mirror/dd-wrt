@@ -1,0 +1,47 @@
+Source: sstp-client
+Section: net
+Priority: optional
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Uploaders: Eivind Naess <eivnaes@yahoo.com>
+Build-Depends:
+ debhelper (>= 8),
+ ppp-dev,
+ libevent-dev,
+ libssl-dev,
+ hardening-includes,
+ hardening-wrapper
+Standards-Version: 3.9.3
+Vcs-Svn: https://sstp-client.svn.sourceforge.net/svnroot/sstp-client
+Homepage: http://sstp-client.sourceforge.net
+
+Package: sstp-client
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libsstp-client0 (= ${binary:Version}), ppp (>= 2.4.5), adduser
+Recommends: network-manager-sstp | network-manager-sstp-gnome
+Description: Connect to a Microsoft Windows 2008 server using SSTP VPN
+ A client implementation of Secure Socket Tunneling Protocol (SSTP) for 
+ Linux / Mac OS-X that allows remote access via SSTP VPN to Microsoft 
+ Windows 2008 Server. It does so by tunneling PPP data over SSL.
+
+Package: libsstp-client0
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Section: libs
+Description: Connect to a Microsoft Windows 2008 server using SSTP VPN
+ A client implementation of Secure Socket Tunneling Protocol (SSTP) for 
+ Linux / Mac OS-X that allows remote access via SSTP VPN to Microsoft 
+ Windows 2008 Server. It does so by tunneling PPP data over SSL.
+ .
+ This package provides the shared library libsstp-client0.
+
+Package: libsstp-client-dev
+Architecture: any
+Depends: ${misc:Depends}, libsstp-client0 (= ${binary:Version})
+Section: libdevel
+Description: Connect to a Microsoft Windows 2008 server using SSTP VPN
+ A client implementation of Secure Socket Tunneling Protocol (SSTP) for 
+ Linux / Mac OS-X that allows remote access via SSTP VPN to Microsoft 
+ Windows 2008 Server. It does so by tunneling PPP data over SSL.
+ .
+ This package provides headers for the libsstp-client0 library and
+ the library itself for static linking.
