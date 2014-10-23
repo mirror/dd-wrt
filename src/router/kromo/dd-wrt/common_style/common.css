@@ -170,6 +170,19 @@ input.num {
   width:36.774em;
   margin-left:.906em;
 }
+#main #contentsInfoS {
+  width:70.471em;
+  padding:.906em;
+}
+#main #contentsInfoS div.col2l {
+  float:left;
+  width:34.774em;
+}
+#main #contentsInfoS div.col2r {
+  float:left;
+  width:34.774em;
+  margin-left:.906em;
+}
 h2,
 h3,
 .submitFooter {
