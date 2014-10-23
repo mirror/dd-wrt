@@ -22,14 +22,13 @@
  * 
  */
 
-
 #include "ndpi_utils.h"
 #ifdef NDPI_PROTOCOL_RTP
 
 #define RTP_MAX_OUT_OF_ORDER 11
 
 static void ndpi_int_rtp_add_connection(struct ndpi_detection_module_struct
-										  *ndpi_struct, struct ndpi_flow_struct *flow)
+					*ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_RTP, NDPI_REAL_PROTOCOL);
 }
@@ -49,51 +48,43 @@ static void ndpi_int_rtp_add_connection(struct ndpi_detection_module_struct
  *   1, if the current packet should count towards the total, or
  *   0, if it it regarded as belonging to the previous reporting interval
  */
-	
+
 #if !defined(WIN32)
- static inline
+static inline
 #else
 __forceinline static
 #endif
-	 void init_seq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow,
-							u_int8_t direction, u_int16_t seq, u_int8_t include_current_packet)
+void init_seq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int8_t direction, u_int16_t seq, u_int8_t include_current_packet)
 {
 	flow->rtp_seqnum[direction] = seq;
 	NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "rtp_seqnum[%u] = %u\n", direction, seq);
 }
 
 /* returns difference between old and new highest sequence number */
-	
+
 #if !defined(WIN32)
- static inline
+static inline
 #else
 __forceinline static
 #endif
-	 u_int16_t update_seq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow,
-							 u_int8_t direction, u_int16_t seq)
+u_int16_t update_seq(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, u_int8_t direction, u_int16_t seq)
 {
 	u_int16_t delta = seq - flow->rtp_seqnum[direction];
 
-
 	if (delta < RTP_MAX_OUT_OF_ORDER) {	/* in order, with permissible gap */
 		flow->rtp_seqnum[direction] = seq;
-		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "rtp_seqnum[%u] = %u (increased by %u)\n",
-				direction, seq, delta);
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "rtp_seqnum[%u] = %u (increased by %u)\n", direction, seq, delta);
 		return delta;
 	} else {
-		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "retransmission (dir %u, seqnum %u)\n",
-				direction, seq);
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "retransmission (dir %u, seqnum %u)\n", direction, seq);
 		return 0;
 	}
 }
 
-
-static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
-			    struct ndpi_flow_struct *flow,
-			    const u_int8_t * payload, const u_int16_t payload_len)
+static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, const u_int8_t *payload, const u_int16_t payload_len)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	
+
 	u_int8_t stage;
 	u_int16_t seqnum = ntohs(get_u_int16_t(payload, 2));
 
@@ -105,14 +96,12 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
 	}
 
 	if (payload_len == 5 && memcmp(payload, "hello", 5) == 0) {
-		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG,
-				"need next packet, initial hello packet of SIP out calls.\n");
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "need next packet, initial hello packet of SIP out calls.\n");
 		return;
 	}
 
 	if (payload_len == 1 && payload[0] == 0) {
-		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG,
-				"need next packet, payload_packet_len == 1 && payload[0] == 0.\n");
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "need next packet, payload_packet_len == 1 && payload[0] == 0.\n");
 		return;
 	}
 
@@ -138,8 +127,7 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
 	}
 
 	if ((payload[0] & 0xc0) != 0x80) {
-		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct,
-				NDPI_LOG_DEBUG, "rtp version must be 2, first two bits of a packets must be 10.\n");
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "rtp version must be 2, first two bits of a packets must be 10.\n");
 		goto exclude_rtp;
 	}
 
@@ -154,8 +142,7 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
 	stage = (packet->packet_direction == 0 ? flow->rtp_stage1 : flow->rtp_stage2);
 
 	if (stage > 0) {
-		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct,
-				NDPI_LOG_DEBUG, "stage = %u.\n", packet->packet_direction == 0 ? flow->rtp_stage1 : flow->rtp_stage2);
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "stage = %u.\n", packet->packet_direction == 0 ? flow->rtp_stage1 : flow->rtp_stage2);
 		if (flow->rtp_ssid[packet->packet_direction] != get_u_int32_t(payload, 8)) {
 			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "ssid has changed, goto exclude rtp.\n");
 			goto exclude_rtp;
@@ -164,23 +151,18 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
 		if (seqnum == flow->rtp_seqnum[packet->packet_direction]) {
 			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "maybe \"retransmission\", need next packet.\n");
 			return;
-		} else if ((u_int16_t) (seqnum - flow->rtp_seqnum[packet->packet_direction]) < RTP_MAX_OUT_OF_ORDER) {
-			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG,
-					"new packet has larger sequence number (within valid range)\n");
+		} else if ((u_int16_t)(seqnum - flow->rtp_seqnum[packet->packet_direction]) < RTP_MAX_OUT_OF_ORDER) {
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "new packet has larger sequence number (within valid range)\n");
 			update_seq(ndpi_struct, flow, packet->packet_direction, seqnum);
-		} else if ((u_int16_t) (flow->rtp_seqnum[packet->packet_direction] - seqnum) < RTP_MAX_OUT_OF_ORDER) {
-			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG,
-					"new packet has smaller sequence number (within valid range)\n");
+		} else if ((u_int16_t)(flow->rtp_seqnum[packet->packet_direction] - seqnum) < RTP_MAX_OUT_OF_ORDER) {
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "new packet has smaller sequence number (within valid range)\n");
 			init_seq(ndpi_struct, flow, packet->packet_direction, seqnum, 1);
 		} else {
-			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG,
-					"sequence number diff is too big, goto exclude rtp.\n");
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "sequence number diff is too big, goto exclude rtp.\n");
 			goto exclude_rtp;
 		}
 	} else {
-		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct,
-				NDPI_LOG_DEBUG, "rtp_ssid[%u] = %u.\n", packet->packet_direction,
-				flow->rtp_ssid[packet->packet_direction]);
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "rtp_ssid[%u] = %u.\n", packet->packet_direction, flow->rtp_ssid[packet->packet_direction]);
 		flow->rtp_ssid[packet->packet_direction] = get_u_int32_t(payload, 8);
 		if (flow->packet_counter < 3) {
 			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "packet_counter < 3, need next packet.\n");
@@ -188,8 +170,7 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
 		init_seq(ndpi_struct, flow, packet->packet_direction, seqnum, 1);
 	}
 	if (seqnum <= 3) {
-		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct,
-				NDPI_LOG_DEBUG, "sequence_number = %u, too small, need next packet, return.\n", seqnum);
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "sequence_number = %u, too small, need next packet, return.\n", seqnum);
 		return;
 	}
 
@@ -198,28 +179,24 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct,
 		ndpi_int_rtp_add_connection(ndpi_struct, flow);
 	} else {
 		packet->packet_direction == 0 ? flow->rtp_stage1++ : flow->rtp_stage2++;
-		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "stage[%u]++; need next packet.\n",
-				packet->packet_direction);
+		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "stage[%u]++; need next packet.\n", packet->packet_direction);
 	}
 	return;
 
-  exclude_rtp:
+exclude_rtp:
 #ifdef NDPI_PROTOCOL_STUN
-	if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_STUN
-		|| packet->real_protocol_read_only == NDPI_PROTOCOL_STUN) {
+	if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_STUN || packet->real_protocol_read_only == NDPI_PROTOCOL_STUN) {
 		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "STUN: is detected, need next packet.\n");
 		return;
 	}
-#endif							/*  NDPI_PROTOCOL_STUN */
+#endif				/*  NDPI_PROTOCOL_STUN */
 	NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "exclude rtp.\n");
 	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_RTP);
 }
 
-
 static void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	
 
 	if (packet->udp) {
 		ndpi_rtp_search(ndpi_struct, flow, packet->payload, packet->payload_packet_len);
@@ -227,11 +204,10 @@ static void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, st
 
 		/* skip special packets seen at yahoo traces */
 		if (packet->payload_packet_len >= 20 && ntohs(get_u_int16_t(packet->payload, 2)) + 20 == packet->payload_packet_len &&
-			packet->payload[0] == 0x90 && packet->payload[1] >= 0x01 && packet->payload[1] <= 0x07) {
+		    packet->payload[0] == 0x90 && packet->payload[1] >= 0x01 && packet->payload[1] <= 0x07) {
 			if (flow->packet_counter == 2)
 				flow->l4.tcp.rtp_special_packets_seen = 1;
-			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG,
-					"skipping STUN-like, special yahoo packets with payload[0] == 0x90.\n");
+			NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "skipping STUN-like, special yahoo packets with payload[0] == 0x90.\n");
 			return;
 		}
 #ifdef NDPI_PROTOCOL_STUN
@@ -242,8 +218,7 @@ static void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, st
 		 * we can remove this restriction
 		 */
 
-		if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_STUN
-			|| packet->detected_protocol_stack[0] == NDPI_PROTOCOL_RTP) {
+		if (packet->detected_protocol_stack[0] == NDPI_PROTOCOL_STUN || packet->detected_protocol_stack[0] == NDPI_PROTOCOL_RTP) {
 
 			/* RTP may be encapsulated in TCP packets */
 
@@ -283,4 +258,4 @@ static void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, st
 	}
 }
 
-#endif							/* NDPI_PROTOCOL_RTP */
+#endif				/* NDPI_PROTOCOL_RTP */
