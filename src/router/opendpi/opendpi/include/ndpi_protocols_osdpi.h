@@ -191,7 +191,12 @@ typedef struct {
 #define NDPI_PROTOCOL_LLMNR					143
 #define NDPI_PROTOCOL_REMOTE_SCAN				144
 #define NDPI_PROTOCOL_DROPBOX					145
-
+#define NDPI_PROTOCOL_VIBER					146
+#define NDPI_PROTOCOL_MEGACO					147
+#define NDPI_PROTOCOL_REDIS					148
+#define NDPI_PROTOCOL_ZMQ					149
+#define NDPI_PROTOCOL_VHUA					150
+#define NDPI_PROTOCOL_TOR					151
 
 
 #define NDPI_PROTOCOL_LONG_STRING "Unknown","FTP","Mail_POP","Mail_SMTP","Mail_IMAP","DNS","IPP","HTTP","MDNS","NTP",\
@@ -199,14 +204,14 @@ typedef struct {
     "AppleJuice","DirectConnect","Socrates","WinMX","MANOLITO","PANDO","Filetopia","iMESH","Kontiki","OpenFT","Kazaa/Fasttrack", \
     "Gnutella","eDonkey","Bittorrent","OFF","AVI","Flash","OGG","MPEG","QuickTime","RealMedia","Windowsmedia","MMS","XBOX","QQ", \
     "MOVE","RTSP","Feidian","Icecast","PPLive","PPStream","Zattoo","SHOUTCast","SopCast","TVAnts","TVUplayer","VeohTV",	\
-    "QQLive","Thunder/Webthunder","Soulseek","GaduGadu","IRC","Popo","Jabber","MSN","Oscar","Yahoo","Battlefield","Quake", \
+    "QQLive","Thunder/Webthunder","Soulseek","GaduGadu","IRC","Popo","Jabber","MSN","Oscar","Yahoo","Battlefield","Quake",\
     "Second Life","Steam","Halflife2","World of Warcraft","Telnet","STUN","IPSEC","GRE","ICMP","IGMP","EGP","SCTP","OSPF", \
     "IP in IP","RTP","RDP","VNC","PCAnywhere","SSL","SSH","USENET","MGCP","IAX","TFTP","AFP","StealthNet","Aimini","SIP","Truphone", \
     "ICMPv6","DHCPv6","Armagetron","CrossFire","Dofus","Fiesta","Florensia","Guildwars","HTTP Application Activesync","Kerberos", \
     "LDAP","MapleStory","msSQL","PPTP","WARCRAFT3","World of Kung Fu","MEEBO", \
     "Twitter","Skype","Google","DCE RPC","NetFlow_IPFIX","sFlow", \
     "HTTP Connect","HTTP Proxy","Citrix","Netflix","Skyfile_PREPAID","Skyfile_RUDICS","Skyfile_POSTPAID","CitrixOnline_GotoMeeting","Apple","Webex",\
-    "WhatsApp","Radius","WindowsUpdate","TeamViewer","Lotus Notes","SAP","GTP","UPNP","LLMNR","Remote Scan","Dropbox"
+    "WhatsApp","Radius","WindowsUpdate","TeamViewer","Lotus Notes","SAP","GTP","UPNP","LLMNR","Remote Scan","Dropbox", "Viber", "MegaCo","Redis","ZeroMQ","VHUA","TOR"
 
 
 #define NDPI_PROTOCOL_SHORT_STRING "ukn","ftp","pop","smtp","imap","dns","ipp","http","mdns","ntp","netbios","nfs","ssdp", \
@@ -220,14 +225,14 @@ typedef struct {
     "guildwars","httpactivesync","kerberos","ldap","maplestory","mssql","pptp","warcraft3","wokf","meebo",\
     "twitter","skype","google","dcerpc","netflow","sflow", \
     "http_connect","http_proxy","citrix","netflix","skyfile_pre", "Skyfile_ru","skyfile_post","citrixonline","imessage_facetime","webex", \
-    "whatsapp","radius","winupdate","teamviewer","lotus_notes","sap","gtp","upnp","llmnr","remotescan","dropbox"
+    "whatsapp","radius","winupdate","teamviewer","lotus_notes","sap","gtp","upnp","llmnr","remotescan","dropbox","viber","megaco","redis","zeromq","vhua","tor"
 
 
 
 
 /* NOTE: REMEMBER TO UPDATE NDPI_PROTOCOL_LONG_STRING / NDPI_PROTOCOL_SHORT_STRING */
 
-#define NDPI_LAST_IMPLEMENTED_PROTOCOL                          145
+#define NDPI_LAST_IMPLEMENTED_PROTOCOL                          151
 
 #define NDPI_MAX_SUPPORTED_PROTOCOLS (NDPI_LAST_IMPLEMENTED_PROTOCOL + 1)
 #define NDPI_MAX_NUM_CUSTOM_PROTOCOLS                           128

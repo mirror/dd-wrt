@@ -369,6 +369,10 @@ struct ndpi_flow_tcp_struct {
 #ifdef NDPI_PROTOCOL_TEAMVIEWER
   u_int8_t teamviewer_stage;
 #endif
+#ifdef NDPI_PROTOCOL_ZMQ
+  u_int8_t prev_zmq_pkt_len;
+  u_char prev_zmq_pkt[10];
+#endif
 }
 
 /* ************************************************** */ 
@@ -671,6 +675,10 @@ typedef struct ndpi_flow_struct {
 #ifdef NDPI_PROTOCOL_RTP
   /* tcp and udp */
   u_int8_t rtp_payload_type[2];
+#endif
+
+#ifdef NDPI_PROTOCOL_REDIS
+  u_int8_t redis_s2d_first_char, redis_d2s_first_char;
 #endif
 
 #ifdef NDPI_PROTOCOL_BITTORRENT

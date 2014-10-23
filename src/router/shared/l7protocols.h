@@ -13,9 +13,6 @@ typedef struct _l7filters	// l7 and p2p filters
 
 } l7filters;
 
-
-
-
 #ifdef HAVE_OPENDPI
 #define DPI 2 //open dpi based
 #define PDPI 2 //open dpi based
@@ -386,6 +383,8 @@ l7filters filters_list[] = {
 	{
 	 "mdns", 2},		// Medal of Honor Allied Assault - an
 	{
+	 "megaco", 2},
+	{
 	 "mgcp", 2},		// Medal of Honor Allied Assault - an
 #endif
 #ifdef HAVE_OPENDPI
@@ -571,6 +570,8 @@ l7filters filters_list[] = {
 	{
 	 "realmedia", 2},
 	{
+	 "redis", 2},
+	{
 	 "remotescan", 2},
 #endif
 	{
@@ -719,7 +720,7 @@ l7filters filters_list[] = {
 	{
 	 "tonghuashun", 0},	// Tonghuashun - stock analysis and trading; Chinese - http://www.10jqka.com.cn
 	{
-	 "tor", 0},		// Tor - The Onion Router - used for
+	 "tor", DPI},		// Tor - The Onion Router - used for
 	// anonymization - http://tor.eff.org
 #ifdef HAVE_OPENDPI
 	{
@@ -755,6 +756,12 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{
 	 "veohtv", 2},
+#endif
+#ifdef HAVE_OPENDPI
+	{
+	 "vhua", 2},
+	{
+	 "viber", 2},
 #endif
 	{
 	 "vnc", DPI},		// VNC - Virtual Network Computing. Also
@@ -847,6 +854,8 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{
 	 "zattoo", 2},
+	{
+	 "zeromq", 2},
 #endif
 	{
 	 "zip", 0},		// ZIP - (PK|Win)Zip archive format
