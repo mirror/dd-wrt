@@ -22,9 +22,11 @@
  *
  */
 
+
 #include "ndpi_protocols.h"
 
 #if defined(NDPI_PROTOCOL_IPSEC) || defined(NDPI_PROTOCOL_GRE) || defined(NDPI_PROTOCOL_ICMP)  || defined(NDPI_PROTOCOL_IGMP) || defined(NDPI_PROTOCOL_EGP) || defined(NDPI_PROTOCOL_SCTP) || defined(NDPI_PROTOCOL_OSPF) || defined(NDPI_PROTOCOL_IP_IN_IP)
+
 
 #define NDPI_IPSEC_PROTOCOL_ESP	50
 #define NDPI_IPSEC_PROTOCOL_AH	51
@@ -44,6 +46,7 @@
 
 #define NDPI_ICMPV6_PROTOCOL_TYPE  0x3a
 
+
 #define set_protocol_and_bmask(nprot)	\
 {													\
 	if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(ndpi_struct->detection_bitmask,nprot) != 0)		\
@@ -54,8 +57,9 @@
 	}												\
 }
 
+
 static void ndpi_search_in_non_tcp_udp(struct ndpi_detection_module_struct
-				       *ndpi_struct, struct ndpi_flow_struct *flow)
+								  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
 
@@ -71,47 +75,47 @@ static void ndpi_search_in_non_tcp_udp(struct ndpi_detection_module_struct
 	case NDPI_IPSEC_PROTOCOL_AH:
 		set_protocol_and_bmask(NDPI_PROTOCOL_IPSEC);
 		break;
-#endif				/* NDPI_PROTOCOL_IPSEC */
+#endif							/* NDPI_PROTOCOL_IPSEC */
 #ifdef NDPI_PROTOCOL_GRE
 	case NDPI_GRE_PROTOCOL_TYPE:
 		set_protocol_and_bmask(NDPI_PROTOCOL_GRE);
 		break;
-#endif				/* NDPI_PROTOCOL_GRE */
+#endif							/* NDPI_PROTOCOL_GRE */
 #ifdef NDPI_PROTOCOL_ICMP
 	case NDPI_ICMP_PROTOCOL_TYPE:
 		set_protocol_and_bmask(NDPI_PROTOCOL_ICMP);
 		break;
-#endif				/* NDPI_PROTOCOL_ICMP */
+#endif							/* NDPI_PROTOCOL_ICMP */
 #ifdef NDPI_PROTOCOL_IGMP
 	case NDPI_IGMP_PROTOCOL_TYPE:
 		set_protocol_and_bmask(NDPI_PROTOCOL_IGMP);
 		break;
-#endif				/* NDPI_PROTOCOL_IGMP */
+#endif							/* NDPI_PROTOCOL_IGMP */
 #ifdef NDPI_PROTOCOL_EGP
 	case NDPI_EGP_PROTOCOL_TYPE:
 		set_protocol_and_bmask(NDPI_PROTOCOL_EGP);
 		break;
-#endif				/* NDPI_PROTOCOL_EGP */
+#endif							/* NDPI_PROTOCOL_EGP */
 #ifdef NDPI_PROTOCOL_SCTP
 	case NDPI_SCTP_PROTOCOL_TYPE:
 		set_protocol_and_bmask(NDPI_PROTOCOL_SCTP);
 		break;
-#endif				/* NDPI_PROTOCOL_SCTP */
+#endif							/* NDPI_PROTOCOL_SCTP */
 #ifdef NDPI_PROTOCOL_OSPF
 	case NDPI_OSPF_PROTOCOL_TYPE:
 		set_protocol_and_bmask(NDPI_PROTOCOL_OSPF);
 		break;
-#endif				/* NDPI_PROTOCOL_OSPF */
+#endif							/* NDPI_PROTOCOL_OSPF */
 #ifdef NDPI_PROTOCOL_IP_IN_IP
 	case NDPI_IPIP_PROTOCOL_TYPE:
 		set_protocol_and_bmask(NDPI_PROTOCOL_IP_IN_IP);
 		break;
-#endif				/* NDPI_PROTOCOL_IP_IN_IP */
+#endif							/* NDPI_PROTOCOL_IP_IN_IP */
 #ifdef NDPI_PROTOCOL_ICMPV6
 	case NDPI_ICMPV6_PROTOCOL_TYPE:
 		set_protocol_and_bmask(NDPI_PROTOCOL_ICMPV6);
 		break;
-#endif				/* NDPI_PROTOCOL_ICMPV6 */
+#endif							/* NDPI_PROTOCOL_ICMPV6 */
 	}
 }
 
