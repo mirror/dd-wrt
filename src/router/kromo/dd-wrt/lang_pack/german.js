@@ -1582,6 +1582,7 @@ service.samba3_advanced="Erweitert"
 service.samba3_custom="Eigene Konfiguration benutzen";
 service.samba3_shares="Freigaben";
 service.samba3_share_path="Verzeichnis";
+service.samba3_share_subdir="Unterverzeichniss";
 service.samba3_share_label="Name";
 service.samba3_share_public="Öffentlich";
 service.samba3_share_access="Zugriff";
