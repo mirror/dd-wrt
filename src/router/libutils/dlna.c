@@ -47,6 +47,7 @@ struct dlna_share *getdlnashares(void)
 
 			// reset
 			mp[0] = 0;
+			sd[0] = 0;
 			types = 0;
 
 			while (iterator) {
