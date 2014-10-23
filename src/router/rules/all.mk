@@ -107,6 +107,7 @@ include rules/dnsmasq.mk
 include rules/iptables.mk
 include rules/netconf.mk
 include rules/pptpd.mk
+include rules/sstp.mk
 include rules/pipsec.mk
 include rules/snmp.mk
 include rules/wifidog.mk
