@@ -22,37 +22,44 @@
  * 
  */
 
+
 #include "ndpi_protocols.h"
 
 #ifdef NDPI_PROTOCOL_MMS
 
+
 static void ndpi_int_mms_add_connection(struct ndpi_detection_module_struct
-					*ndpi_struct, struct ndpi_flow_struct *flow)
+										  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_MMS, NDPI_REAL_PROTOCOL);
 }
 
+
 static void ndpi_search_mms_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-
+	
 //      struct ndpi_id_struct         *src=ndpi_struct->src;
 //      struct ndpi_id_struct         *dst=ndpi_struct->dst;
+
 
 	/* search MSMMS packets */
 	if (packet->payload_packet_len >= 20) {
 
 		if (flow->l4.tcp.mms_stage == 0 && packet->payload[4] == 0xce
-		    && packet->payload[5] == 0xfa && packet->payload[6] == 0x0b
-		    && packet->payload[7] == 0xb0 && packet->payload[12] == 0x4d && packet->payload[13] == 0x4d && packet->payload[14] == 0x53 && packet->payload[15] == 0x20) {
+			&& packet->payload[5] == 0xfa && packet->payload[6] == 0x0b
+			&& packet->payload[7] == 0xb0 && packet->payload[12] == 0x4d
+			&& packet->payload[13] == 0x4d && packet->payload[14] == 0x53 && packet->payload[15] == 0x20) {
 			NDPI_LOG(NDPI_PROTOCOL_MMS, ndpi_struct, NDPI_LOG_DEBUG, "MMS: MSMMS Request found \n");
 			flow->l4.tcp.mms_stage = 1 + packet->packet_direction;
 			return;
 		}
 
 		if (flow->l4.tcp.mms_stage == 2 - packet->packet_direction
-		    && packet->payload[4] == 0xce && packet->payload[5] == 0xfa
-		    && packet->payload[6] == 0x0b && packet->payload[7] == 0xb0 && packet->payload[12] == 0x4d && packet->payload[13] == 0x4d && packet->payload[14] == 0x53 && packet->payload[15] == 0x20) {
+			&& packet->payload[4] == 0xce && packet->payload[5] == 0xfa
+			&& packet->payload[6] == 0x0b && packet->payload[7] == 0xb0
+			&& packet->payload[12] == 0x4d && packet->payload[13] == 0x4d
+			&& packet->payload[14] == 0x53 && packet->payload[15] == 0x20) {
 			NDPI_LOG(NDPI_PROTOCOL_MMS, ndpi_struct, NDPI_LOG_DEBUG, "MMS: MSMMS Response found \n");
 			ndpi_int_mms_add_connection(ndpi_struct, flow);
 			return;
@@ -60,7 +67,7 @@ static void ndpi_search_mms_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	}
 #ifdef NDPI_PROTOCOL_HTTP
 	if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_HTTP) != 0) {
-#endif				/* NDPI_PROTOCOL_HTTP */
+#endif							/* NDPI_PROTOCOL_HTTP */
 		NDPI_LOG(NDPI_PROTOCOL_MMS, ndpi_struct, NDPI_LOG_DEBUG, "MMS: exclude\n");
 		NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_MMS);
 
@@ -68,7 +75,7 @@ static void ndpi_search_mms_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	} else {
 		NDPI_LOG(NDPI_PROTOCOL_MMS, ndpi_struct, NDPI_LOG_DEBUG, "MMS avoid early exclude from http\n");
 	}
-#endif				/* NDPI_PROTOCOL_HTTP */
+#endif							/* NDPI_PROTOCOL_HTTP */
 
 }
 #endif
