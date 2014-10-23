@@ -1531,7 +1531,7 @@ u_int ieee80211_mhz2ieee(u_int freq)
 		return d;
 	}
 	if (freq > 2484 && freq < 4000)
-		return (freq - 2407) / 5;
+		return (freq - 2414) / 5;
 	if (freq < 4990 && freq > 4940)
 		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
 	// 5000 will become  channel 200
