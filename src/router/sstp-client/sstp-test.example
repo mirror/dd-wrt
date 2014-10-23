@@ -1,0 +1,35 @@
+#
+# Put this file in /etc/ppp/peers/sstp-test, the name should be the same as 
+#   for remotename, linkname, and ipparam. Update the url for the server as a part
+#   of the pty statement, and finally update your username.
+#
+# Make sure your user 'kendo' have an appropriate entry in /etc/ppp/chap-secrets.
+# Example:
+#  #client		server	secret			IP addresses
+#  kendo                *       xxxxxxx                 *
+#  'DOMAIN\\kendo'      *       xxxxxxx
+#
+# Connect to sstp-test peer:
+#   sudo pon sstp-test
+#
+remotename	sstp-test
+linkname 	sstp-test
+ipparam 	sstp-test
+pty             "sstpc --ipparam sstp-test --log-level 4 --nolaunchpppd sstp-test.yourdomain.com"
+name 		kendo
+plugin          sstp-pppd-plugin.so
+sstp-sock       /var/run/sstpc/sstpc-sstp-test
+usepeerdns
+require-mppe
+require-mschap-v2
+noauth
+lock
+refuse-pap
+refuse-eap
+refuse-chap
+refuse-mschap
+nobsdcomp
+nodeflate
+
+# Uncomment this if you want additional debug in your /var/log/messages
+# debug

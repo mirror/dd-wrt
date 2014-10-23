@@ -1,0 +1,87 @@
+sstp-client (1.0.9) quantal; urgency=high
+
+  * Fixed a critical bug that caused received packets to become corrupt, inability to access
+    internal web-sites and caused random segfaults. Thanks to Damijan A. for reporting and 
+    providing an environment to test in.
+  
+ -- Eivind Naess <eivnaes@yahoo.com>  Sat, 12 Oct 2012 08:00:00 -0800
+
+sstp-client (1.0.8) oneiric; urgency=low
+  
+  * Unable to authenticate using --password, causing server to timeout
+    the connection after 60 seconds.
+  * Fixed a bug resulting in connection aborted on Ubuntu 12.04 with the 
+    message: "Connection was aborted, value of attribute is incorrect"
+
+ -- Eivind Naess <eivnaes@yahoo.com>  Sat, 12 Oct 2012 08:00:00 -0800
+
+sstp-client (1.0.7) oneiric; urgency=low
+  
+  * Fixed a problem where client failed to send connected message to server 
+    when specifying user/pass on command line
+  * Various changes to support Mac OS-X / Darwin via Mac Ports project
+
+ -- Eivind Naess <eivnaes@yahoo.com>  Sat, 28 Apr 2012 20:00:00 -0800
+
+sstp-client (1.0.6) oneiric; urgency=low
+
+  * Fixed a critical bug where the pppd configuration file was deleted before 
+    authentication could proceed (use of --user <user> and --password <pass>).
+
+ -- Eivind Naess <eivnaes@yahoo.com>  Sat, 12 Mar 2012 20:00:00 -0800
+
+sstp-client (1.0.5) oneiric; urgency=low
+
+  * Fixed a critical bug in the pppd plugin, connection would fail after
+    60 seconds as the MPPE keys wasn't set correctly.
+  * Updated the documentation and added a couple of pppd peers examples 
+
+ -- Eivind Naess <eivnaes@yahoo.com>  Sat, 03 Mar 2012 20:00:00 -0800
+
+sstp-client (1.0.4) oneiric; urgency=low
+
+  * Added command line to save host route
+  * Fixed various bugs, to mention:
+    - Disconnect of SSL connection when handling multiple SSL_write()
+
+ -- Eivind Naess <eivnaes@yahoo.com>  Wed, 07 Feb 2012 16:00:00 -0800
+
+sstp-client (1.0.3) oneiric; urgency=low
+
+  * Added command line option to specify the uuid of the connection
+  * Fixed various bugs, to mention:
+    - Cleanup of unix socket on termination
+    - Correct parsing of the URL 
+    - Fix connected time error when using --nolaunchpppd option
+    - Unit tests was added
+    - Added hardening of ubuntu build scripts
+
+ -- Eivind Naess <eivnaes@yahoo.com>  Sat, 12 Nov 2011 16:00:00 -0800
+
+sstp-client (1.0.2) oneiric; urgency=low
+
+  * Added http proxy support, using basic authentication
+  * Adding privilege separation by chroot, and sstpc user.
+  * Covering up traces of passwords after specifying --password per command line.
+  * Command line option to ignore cerfificate errors (e.g. does not match host).
+  * Fixing various bugs
+
+ -- Eivind Naess <eivnaes@yahoo.com>  Sat, 22 Oct 2011 08:00:00 -0800
+
+sstp-client (1.0.1) oneiric; urgency=low
+
+  * Fixing various bug fixes found while porting to Fedora Core 15.
+  * Adding signal handling, and pretty print of data on termination
+  * Improved handling of pppd upon termination.
+
+ -- Eivind Naess <eivnaes@yahoo.com>  Sat, 18 Sept 2011 08:00:00 -0800
+
+sstp-client (1.0) oneiric; urgency=low
+
+  * Initial release
+
+ -- Eivind Naess <eivnaes@yahoo.com>  Sat, 18 Sept 2011 08:00:00 -0800
+
+Local variables:
+mode: debian-changelog
+End:

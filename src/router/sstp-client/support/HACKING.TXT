@@ -1,0 +1,48 @@
+0. The following files are included:
+  a) The server CA for the SSTP-TEST domain
+     SSTP-TEST-N3ZZ-DC1-CA.PEM (X509)
+  b) The server certificate  
+     N3ZZ-DC1-SSTP-TEST-NET.PEM (X509)
+  c) The server certificate private key
+     N3ZZ-DC1-SSTP-TEST-NET.KEY (PEM)
+
+1. Configure Windows 2008 R2 Server with
+  a) A domain controller
+  b) Certificate service
+  b) RAS VPN + SSTP
+
+2. Generate the server certificate based on the trusted CA for the A/D
+  a) Use the Certificate snap-in with the 'mmc.exe', 
+    - All Tasks -> Create new certificate request
+    - Select a template based on Client and Server Authentication.
+    - Make sure you edit the template before creating the 
+      cert, allow export of private keys
+    - CN must have the domain you anticipate to use for your server
+    - Create the certificate
+  b) Right click on certificate, click export
+  c) Export as PKCS#12, save keys to a location on disk; e.g. c:\sstp-keys.pfx
+
+3. Use openssl to convert the keys into a non-encrypted RSA file
+    Example:
+      openssl pkcs12 -in sstp--keys.pfx -out sstp-rsa.pem -nodes
+
+4. Open Wireshark
+   a) Edit Preferences (Edit->Preferences)
+   b) Unfold the protocol list, locate SSL
+   c) In the textbox for RSA keys List, enter: <ipaddr>,<port>,https,/path/to/sstp-rsa.pem
+   d) Optionally, you can allow SSL debug file to be redirected to a file of your choice.
+
+5. There is not much to the HTTP headers for the SSTP protocol but the 
+   initial HTTP handshake.
+
+HTTP Request:
+  SSTP_DUPLEX_POST /sra_{BA195980-CD49-458b-9E23-C84EE0ADCD75}/ HTTP/1.1
+  SSTPCORRELATIONID: {2834FD17-10EE-4658-A1E8-BBF3966C211C}
+  Content-Length: 18446744073709551615
+  Host: n3zz-dc1.sstp-test.net
+
+HTTP Response:
+  HTTP/1.1 200
+  Content-Length: 18446744073709551615
+  Server: Microsoft-HTTPAPI/2.0
+  Date: Sat, 19 Feb 2011 02:13:44 GMT

@@ -1,0 +1,58 @@
+Usage Notes
+
+The sstpc binary can be started in a various number of ways as listed below:
+ * Pseudo-TTY child process 
+ * Use sstpc to start pppd
+
+You will need to setup provider file for your connection that provides the 
+most common options and store this file in /etc/ppp/peers/<provider>:
+
+remotename	<provider>		# Used in ip up/down scripts
+linkname	<provider>		# Used in ip up/down scripts
+ipparam		<provider>		# Used in ip up/down scripts
+name		<DOMAIN\\USER>		# Specifies the DOMAIN and USER
+plugin		sstp-pppd-plugin.so	# REQUIRED (SSTP)
+sstp-sock	/var/run/sstpc/sstp-uds-sock # REQUIRED (SSTP)
+usepeerdns				# Use the peer dns addresses
+require-mppe				# REQUIRED (MPPE)
+noauth					# We don't need the server to auth itself
+require-mschap-v2			# MSCHAPv2 Authentication Support
+refuse-eap				# Not yet supported
+refuse-chap				# Don't accept CHAP-MD5
+refuse-mschap				# Don't accept MSCHAP
+lock					# Lock the port
+nsbsdcomp				# Turn off compression protocols
+nodeflate				# Turn off compression protocols
+
+You can use the above example to setup a SSTP connection using sstpc. You can
+either add the pty option to this file, or execute it by command line:
+
+   pppd call <provider> \
+	pty "/usr/sbin/sstpc [<sstp-opts>] server --nolaunchpppd"
+
+Or you can have sstpc launch it directly using the following command line:
+   sstpc [<sstp-opts>] <server> \
+	call <provider>
+
+If your require not to compile/run with the PPP plugin support, there is an 
+alternative to invoke the sstpc application specifying the username and the
+password on command line too.
+
+   sstpc --user <DOMAIN\\USER> --password <PASS> [<sstp-opts>] server \
+	call <provider>
+
+Then remove the 'plugin' and 'sstp-sock' options in the provider file.
+
+Two examples have been included in the support directory: 
+ - peer-example-sstp-test-nopty
+ - peer-example-sstp-test
+
+Additionally, there's sstp-test example files put into your documentation 
+directory. Dependent on your installation, that should be in the following
+location: /usr/share/doc/sstp-client
+
+
+NOTE THAT PPTP MUST BE RUN AS ROOT for the first two venues of invoking the 
+sstpc application. This is because of the plugin option.  If you chose not
+to specify the user/password on command line, then you need to make sure 
+your user have an appropriate entry in the /etc/ppp/chap-secrets file.

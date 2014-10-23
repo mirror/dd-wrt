@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: sstp-client
+Description: Library to communciate with the sstp-client software
+Version: @PACKAGE_VERSION@
+Libs: -L${libdir} -lsstp_api
+Cflags: -I${includedir}/sstp-client

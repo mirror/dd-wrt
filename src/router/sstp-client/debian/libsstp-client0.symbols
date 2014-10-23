@@ -1,0 +1,6 @@
+libsstp_api-0.so sstp-client (>= 1.0.6)
+ sstp_api_attr_add@Base 1.0.7
+ sstp_api_attr_parse@Base 1.0.7
+ sstp_api_msg_len@Base 1.0.7
+ sstp_api_msg_new@Base 1.0.7
+ sstp_api_msg_type@Base 1.0.7
