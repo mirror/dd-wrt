@@ -3180,7 +3180,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	sprintf(n, "wl_regdomain");
 	char *reg = websGetVar(wp, n, NULL);
 	if (reg) {
-		if (strcmp(nvram_get("wl_regdomain"), reg)) {
+		if (strcmp(nvram_safe_get("wl_regdomain"), reg)) {
 			setRegulationDomain(reg);
 			eval("startstop","lan");
 		}
@@ -3875,6 +3875,8 @@ static void dlna_save(webs_t wp)
 		entry = json_object();
 		sprintf(var, "dlnashare_mp_%d", c);
 		json_object_set_new(entry, "mp", json_string(websGetVar(wp, var, "")));
+		sprintf(var, "dlnashare_subdir_%d", c);
+		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
 		int type = 0;
 		sprintf(var, "dlnashare_audio_%d", c);
 		if (atoi(websGetVar(wp, var, "0")))
