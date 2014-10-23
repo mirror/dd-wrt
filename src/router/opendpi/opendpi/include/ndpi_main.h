@@ -103,6 +103,13 @@ void *ndpi_tsearch(const void *, void **, int (*)(const void *, const void *));
 void ndpi_twalk(const void *, void (*)(const void *, ndpi_VISIT, int));
 void ndpi_tdestroy(void *vrootp, void (*freefct)(void *));
 
+extern u_int8_t ndpi_net_match(u_int32_t ip_to_check,
+			       u_int32_t net,
+			       u_int32_t num_bits);
+
+extern u_int8_t ndpi_ips_match(u_int32_t src, u_int32_t dst,
+			       u_int32_t net, u_int32_t num_bits);
+
 
 typedef struct node_t {
   char	  *key;
