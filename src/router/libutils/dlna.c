@@ -9,12 +9,13 @@ void refjson(void)
 }
 #endif
 
-struct dlna_share *getdlnashare(char *mp, int types)
+struct dlna_share *getdlnashare(char *mp, char *sd, int types)
 {
 
 	struct dlna_share *share = calloc(1, sizeof(struct dlna_share));
 
 	strncpy(share->mp, mp, sizeof(share->mp) - 1);
+	strncpy(share->sd, sd, sizeof(share->sd) - 1);
 	share->types = types;
 	return share;
 }
@@ -28,10 +29,10 @@ struct dlna_share *getdlnashares(void)
 	json_error_t error;
 	const char *key;
 	json_t *iterator, *entry, *value;
-	char mp[64], types;
+	char mp[64],sd[64], types;
 
 	// first create dummy entry
-	list = getdlnashare("", 0);
+	list = getdlnashare("", "", 0);
 	current = list;
 
 //      json = json_loads( "[{\"mp\":\"/jffs\",\"label\":\"testshare\",\"perms\":\"rw\",\"public\":0},{\"mp\":\"/mnt\",\"label\":\"othertest\",\"perms\":\"ro\",\"public\":1},{\"label\":\"blah\"}]", &error );
@@ -54,13 +55,15 @@ struct dlna_share *getdlnashares(void)
 				/* use key and value ... */
 				if (!strcmp(key, "mp")) {
 					strncpy(mp, json_string_value(value), sizeof(mp) - 1);
+				} else if (!strcmp(key, "sd")) {
+					strncpy(sd, json_string_value(value), sizeof(sd) - 1);
 				} else if (!strcmp(key, "types")) {
 					types = json_integer_value(value);
 				}
 				iterator = json_object_iter_next(entry, iterator);
 			}
 			if (mp[0] != 0) {
-				current->next = getdlnashare(mp, types);
+				current->next = getdlnashare(mp, sd, types);
 				current = current->next;
 			}
 		}

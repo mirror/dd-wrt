@@ -216,15 +216,6 @@ void showmemdebugstat();
 #endif
 
 /*
- * Simple version of _eval() (no timeout and wait for child termination) 
- */
-
-//#define eval(cmd, args...) ({ \
-//	char *argv[] = { cmd, ## args, NULL }; \
-//	_eval(argv); \
-//})
-
-/*
  * Copy each token in wordlist delimited by space into word 
  */
 #define foreach(word, foreachwordlist, next) \

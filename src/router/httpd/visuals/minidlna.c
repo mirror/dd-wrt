@@ -61,6 +61,7 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "		<tr><th colspan=\"5\"><script type=\"text/javascript\">Capture(service.samba3_shares)</script></th></tr>\n");
 	websWrite(wp, "		<tr>\n");
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_path)</script></th>\n");
+	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.samba3_share_subdir)</script></th>\n");
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.dlna_type_audio)</script></th>\n");
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.dlna_type_video)</script></th>\n");
 	websWrite(wp, "			<th><script type=\"text/javascript\">Capture(service.dlna_type_images)</script></th>\n");
@@ -125,6 +126,9 @@ void ej_dlna_sharepaths(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "				<option value=\"%s\" rel='{\"fstype\":\"\",\"perms\":[\"%s\"],\"avail\":0}' selected>[not available!]</option>\n", cs->mp, cs->mp);
 		}
 		websWrite(wp, "				</select></td>\n");
+		websWrite(wp,
+			  "				<td style=\"width: 1%%;\"><input type=\"text\" name=\"dlnashare_subdir%s\" id=\"dlnashare_subdir%s\" value=\"%s\" style=\"width: 150px;\"/></td>\n",
+			  number, number, cs->sd);
 		websWrite(wp,
 			  "				<td style=\"width: 25px; text-align: center;\"><input type=\"checkbox\" name=\"dlnashare_audio%s\" id=\"dlnashare_audio%s\" value=\"1\" %s></td>\n",
 			  number, number, cs->types & TYPE_AUDIO ? "checked" : "");
