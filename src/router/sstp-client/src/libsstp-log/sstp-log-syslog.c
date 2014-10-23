@@ -33,6 +33,7 @@
 #include <sys/un.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <sstp-common.h>
 #include <sstp-log.h>
