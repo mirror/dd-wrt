@@ -3306,6 +3306,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_MINIDLNA
 	{"dlna_enable", "0", 0},
 	{"dlna_thumb", "0", 0},
+	{"dlna_merge", "0", 0},
 	{"dlna_cleandb", "0", 0},
 #endif
 #ifdef HAVE_VNCREPEATER
