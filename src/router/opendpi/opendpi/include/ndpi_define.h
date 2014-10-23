@@ -207,4 +207,7 @@
 #define NDPI_COMPARE_IPV6_ADDRESS_STRUCTS(x,y)  \
   ((((u_int64_t *)(x))[0]) < (((u_int64_t *)(y))[0]) || ( (((u_int64_t *)(x))[0]) == (((u_int64_t *)(y))[0]) && (((u_int64_t *)(x))[1]) < (((u_int64_t *)(y))[1])) )
 
+/* define memory callback function */
+#define match_first_bytes(payload,st) (memcmp((payload),(st),(sizeof(st)-1))==0)
+
 #endif /* __NDPI_DEFINE_INCLUDE_FILE__ */

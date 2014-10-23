@@ -308,9 +308,6 @@ struct ndpi_flow_tcp_struct {
 #ifdef NDPI_PROTOCOL_VNC
   u_int32_t vnc_stage:2;			// 0 - 3
 #endif
-#ifdef NDPI_PROTOCOL_STEAM
-  u_int32_t steam_stage:2;			// 0 - 3
-#endif
 #ifdef NDPI_PROTOCOL_TELNET
   u_int32_t telnet_stage:2;			// 0 - 2
 #endif
@@ -729,6 +726,12 @@ typedef struct ndpi_flow_struct {
 #endif
 #ifdef NDPI_PROTOCOL_FLORENSIA
   u_int32_t florensia_stage:1;
+#endif
+#ifdef NDPI_PROTOCOL_STEAM
+  u_int32_t steam_stage:3;
+  u_int32_t steam_stage1:3;			// 0 - 4
+  u_int32_t steam_stage2:2;			// 0 - 2
+  u_int32_t steam_stage3:2;			// 0 - 2
 #endif
 
   /* internal structures to save functions calls */
