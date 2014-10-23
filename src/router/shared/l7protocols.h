@@ -13,6 +13,7 @@ typedef struct _l7filters	// l7 and p2p filters
 
 } l7filters;
 
+
 #ifdef HAVE_OPENDPI
 #define DPI 2 //open dpi based
 #define PDPI 2 //open dpi based
@@ -89,7 +90,7 @@ l7filters filters_list[] = {
 	 "cimd", 0},		// Computer Interface to Message
 	// Distribution, an SMSC protocol by Nokia
 	{
-	 "ciscovpn", 0},	// Cisco VPN - VPN client software to a Cisco 
+	 "ciscovpn", DPI},	// Cisco VPN - VPN client software to a Cisco 
 	// VPN server
 	{
 	 "citrix", DPI},		// Citrix ICA - proprietary remote desktop
@@ -448,6 +449,10 @@ l7filters filters_list[] = {
 	{
 	 "nimda", 0},		// Nimda - a worm that attacks Microsoft IIS
 	// web servers, and MORE!
+#ifdef HAVE_OPENDPI
+	{
+	 "noe", 2},		// Medal of Honor Allied Assault - an
+#endif
 	{
 	 "nntp", 0},		// NNTP - Network News Transfer Protocol -
 	// RFCs 977 and 2980
@@ -463,6 +468,10 @@ l7filters filters_list[] = {
 	// file, just vorbis)
 	{
 	 "openft", DPI},		// OpenFT - P2P filesharing (implemented in
+#ifdef HAVE_OPENDPI
+	{
+	 "openvpn", 2},
+#endif
 #ifdef HAVE_OPENDPI
 	{
 	 "oscar", 2},
@@ -693,7 +702,7 @@ l7filters filters_list[] = {
 	 "teamfortress2", 0},	// Team Fortress 2 - network game -
 	// http://www.valvesoftware.com
 	{
-	 "teamspeak", 0},	// TeamSpeak - VoIP application -
+	 "teamspeak", DPI},	// TeamSpeak - VoIP application -
 	{
 	 "teamviewer", DPI},
 	{
