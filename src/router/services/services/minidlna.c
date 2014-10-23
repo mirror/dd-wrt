@@ -65,11 +65,11 @@ void start_dlna(void)
 		if (strlen(cs->mp)) {
 			if ((cs->types & (TYPE_VIDEO | TYPE_AUDIO | TYPE_IMAGES))) {
 				if (cs->types & TYPE_VIDEO)
-					fprintf(fp, "media_dir=V,%s\n", cs->mp);
+					fprintf(fp, "media_dir=V,%s%s%s\n", cs->mp, (cs->sd[0] != '/' && cs->sd[0] != 0) ? "/" : "", cs->sd);
 				if (cs->types & TYPE_AUDIO)
-					fprintf(fp, "media_dir=A,%s\n", cs->mp);
+					fprintf(fp, "media_dir=A,%s%s%s\n", cs->mp, (cs->sd[0] != '/' && cs->sd[0] != 0) ? "/" : "", cs->sd);
 				if (cs->types & TYPE_IMAGES)
-					fprintf(fp, "media_dir=P,%s\n", cs->mp);
+					fprintf(fp, "media_dir=P,%s%s%s\n", cs->mp, (cs->sd[0] != '/' && cs->sd[0] != 0) ? "/" : "", cs->sd);
 			}
 
 		}
