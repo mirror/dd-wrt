@@ -216,7 +216,7 @@ function refresh(F)
 					</div>
 				</div>
 				<div id="main">
-					<div id="contentsInfo">
+					<div id="contentsInfoS">
 						<form name="Info" action="apply.cgi<% insertpageToken(); %>" method="post">
 							<input type="hidden" name="submit_button" value="Info" />
 							<input type="hidden" name="next_page" value="Info.htm" />
@@ -268,7 +268,7 @@ function refresh(F)
 									</div>
 									<% ifndef("HASWIFI", "-->"); %>
 									<div class="setting">
-										<div class="label">WAN IP</div>
+										<div class="label">WAN IPv4</div>
 										<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>&nbsp;
 									</div>
 									<div class="setting">
