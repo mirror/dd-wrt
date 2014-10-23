@@ -888,11 +888,11 @@ void ej_show_forward(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<option value=\"udp\" ");
 		port_forward_table(wp, "sel_udp", i);
 		websWrite(wp, ">UDP</option>\n");
-		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n"
-		 		"document.write(\"<option value=\\\"both\\\" ");
+		websWrite(wp, 	"<script type=\"text/javascript\">\n//<![CDATA[\n" //
+			        "document.write(\"<option value=\\\"both\\\" ");
 		port_forward_table(wp, "sel_both", i);
-		websWrite(wp, " >\" + share.both + \"</option>\");\n"
-      	"\n//]]>\n</script>\n");
+		websWrite(wp, " >\" + share.both + \"</option>\");\n" //
+				"\n//]]>\n</script>\n");
 		websWrite(wp, "</select></td>\n");
 		websWrite(wp, "<td>\n");
 		websWrite(wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"", i);
@@ -938,11 +938,10 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<option value=\"udp\" ");
 		port_forward_spec(wp, "sel_udp", i);
 		websWrite(wp, ">UDP</option>\n");
-		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n"
-		 		"document.write(\"<option value=\\\"both\\\" ");
+		websWrite(wp, 	"<script type=\"text/javascript\">\n//<![CDATA[\n" //
+				"document.write(\"<option value=\\\"both\\\" ");
 		port_forward_spec(wp, "sel_both", i);
-		websWrite(wp, " >\" + share.both + \"</option>\");\n"
-      		"\n//]]>\n</script>\n");
+		websWrite(wp, " >\" + share.both + \"</option>\");\n" "\n//]]>\n</script>\n");
 		websWrite(wp, "</select></td>\n");
 
 		//src net
@@ -1011,11 +1010,10 @@ void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<option value=\"udp\" ");
 		port_trigger_table(wp, "sel_udp", i);
 		websWrite(wp, ">UDP</option>\n");
-		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n"
-		 		"document.write(\"<option value=\\\"both\\\" ");
+		websWrite(wp, 	"<script type=\"text/javascript\">\n//<![CDATA[\n" //
+			        "document.write(\"<option value=\\\"both\\\" ");
 		port_trigger_table(wp, "sel_both", i);
-		websWrite(wp, " >\" + share.both + \"</option>\");\n"
-      		"\n//]]>\n</script>\n");
+		websWrite(wp, " >\" + share.both + \"</option>\");\n" "\n//]]>\n</script>\n");
 		websWrite(wp, "</select></td>\n");
 		websWrite(wp, "<td><input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"", i);
 		port_trigger_table(wp, "o_from", i);
@@ -1949,7 +1947,9 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n", style);
 	websWrite(wp, "\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n", style);
-	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/fresh.css\" />\n", style);
+	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
+		websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
+	}
 #ifdef HAVE_PWC
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n");
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n");
@@ -2056,16 +2056,16 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 
 #ifdef HAVE_IPV6
 	if (nvram_match("ipv6_typ", "ipv6in4") || nvram_match("ipv6_typ", "ipv6pd"))
-	    websWrite(wp, "&nbsp;IPv4: %s", wan_ipaddr);
+		websWrite(wp, "&nbsp;IPv4: %s", wan_ipaddr);
 	else
 #endif
-	    websWrite(wp, "&nbsp;IP: %s", wan_ipaddr);
+		websWrite(wp, "&nbsp;IP: %s", wan_ipaddr);
 #ifdef HAVE_IPV6
-	if( nvram_match("ipv6_typ", "ipv6in4") && getifaddr("ip6tun", AF_INET6, 0) != NULL)
-			websWrite(wp, "&nbsp;IPv6: %s", getifaddr("ip6tun", AF_INET6, 0));
-	else if( nvram_match("ipv6_typ", "ipv6pd") && getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0) != NULL)
-			websWrite(wp, "&nbsp;IPv6: %s", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
-#endif	
+	if (nvram_match("ipv6_typ", "ipv6in4") && getifaddr("ip6tun", AF_INET6, 0) != NULL)
+		websWrite(wp, "&nbsp;IPv6: %s", getifaddr("ip6tun", AF_INET6, 0));
+	else if (nvram_match("ipv6_typ", "ipv6pd") && getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0) != NULL)
+		websWrite(wp, "&nbsp;IPv6: %s", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
+#endif
 
 	return;
 }
