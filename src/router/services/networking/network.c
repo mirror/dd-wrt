@@ -659,6 +659,10 @@ void start_wlconf(void)
 {
 	int cnt = get_wl_instances();
 	int c;
+#if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
+	setRegulationDomain(nvram_safe_get("wl_regdomain"));
+#endif
+
 #ifdef HAVE_QTN
 	cnt = 1;
 #endif
