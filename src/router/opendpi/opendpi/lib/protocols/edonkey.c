@@ -28,18 +28,17 @@
 #define NDPI_PROTOCOL_SAFE_DETECTION 		1
 
 #define NDPI_PROTOCOL_PLAIN_DETECTION 	0
-static void ndpi_add_connection_as_edonkey(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow,
-					   const u_int8_t save_detection, const u_int8_t encrypted_connection)
+static void ndpi_add_connection_as_edonkey(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, const u_int8_t save_detection, const u_int8_t encrypted_connection)
 {
 	ndpi_int_change_protocol(ndpi_struct, flow, NDPI_PROTOCOL_EDONKEY, NDPI_REAL_PROTOCOL);
 }
 
 #if !defined(WIN32)
- static inline
+static inline
 #else
 __forceinline static
 #endif
-	 u_int8_t check_edk_len(const u_int8_t * payload, u_int16_t payload_packet_len)
+u_int8_t check_edk_len(const u_int8_t *payload, u_int16_t payload_packet_len)
 {
 	u_int32_t edk_len_parsed = 0;
 	// we use a do / while loop here, because we have checked the byte 0 for 0xe3 or 0xc5 already before this call
@@ -68,7 +67,7 @@ __forceinline static
 static void ndpi_int_edonkey_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	
+
 	int edk_stage2_len;
 
 	/*len range increase if safe mode and also only once */
@@ -79,7 +78,6 @@ static void ndpi_int_edonkey_tcp(struct ndpi_detection_module_struct *ndpi_struc
 
 	} else
 		edk_stage2_len = 140;
-
 
 	/* skip excluded connections */
 	if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_EDONKEY) != 0)
@@ -110,13 +108,11 @@ static void ndpi_int_edonkey_tcp(struct ndpi_detection_module_struct *ndpi_struc
 	if (flow->edk_stage == 0) {
 		/* check for client hello */
 		if (packet->payload_packet_len >= 32 && get_l32(packet->payload, 1) <= (packet->payload_packet_len - 5)
-			&& (packet->payload[0] == 0xe3 || packet->payload[0] == 0xc5)) {
+		    && (packet->payload[0] == 0xe3 || packet->payload[0] == 0xc5)) {
 
 			if (packet->payload[5] == 0x01 && ((packet->payload[6] == 0x10 && get_l32(packet->payload, 29) < 0x0F)
-											   || (get_l32(packet->payload, 28) > 0x00
-												   && get_l32(packet->payload, 28) < 0x0F))) {
-				NDPI_LOG_EDONKEY(NDPI_PROTOCOL_EDONKEY, ndpi_struct, NDPI_LOG_DEBUG,
-								"edk hello meta tag recognized\n");
+							   || (get_l32(packet->payload, 28) > 0x00 && get_l32(packet->payload, 28) < 0x0F))) {
+				NDPI_LOG_EDONKEY(NDPI_PROTOCOL_EDONKEY, ndpi_struct, NDPI_LOG_DEBUG, "edk hello meta tag recognized\n");
 				flow->edk_stage = 16 + packet->packet_direction;
 				return;
 			}
@@ -124,39 +120,33 @@ static void ndpi_int_edonkey_tcp(struct ndpi_detection_module_struct *ndpi_struc
 	}
 	if ((17 - packet->packet_direction) == flow->edk_stage) {
 		if ((packet->payload_packet_len >= 32 && get_l32(packet->payload, 1) == 9 && (packet->payload[0] == 0xe3)
-			 && packet->payload[5] == 0x40)
-			|| (packet->payload_packet_len >= 32 && (packet->payload[0] == 0xe3)
-				&& packet->payload[5] == 0x40 && check_edk_len(packet->payload, packet->payload_packet_len))
-			|| (packet->payload_packet_len >= 32 && packet->payload[0] == 0xe3
-				&& packet->payload[5] == 0x4c && (get_l32(packet->payload, 1) == (packet->payload_packet_len - 5)
-												  || check_edk_len(packet->payload, packet->payload_packet_len)))
-			|| (packet->payload_packet_len >= 32 && get_l32(packet->payload, 1) == (packet->payload_packet_len - 5)
-				&& packet->payload[0] == 0xe3 && packet->payload[5] == 0x38)
-			|| (packet->payload_packet_len >= 20 && get_l32(packet->payload, 1) == (packet->payload_packet_len - 5)
-				&& packet->payload[0] == 0xc5 && packet->payload[5] == 0x92)
-			|| (packet->payload_packet_len >= 20 && get_l32(packet->payload, 1) <= (packet->payload_packet_len - 5)
-				&& packet->payload[0] == 0xe3 && packet->payload[5] == 0x58)
-			|| (packet->payload_packet_len >= 20 && get_l32(packet->payload, 1) <= (packet->payload_packet_len - 5)
-				&& (packet->payload[0] == 0xe3 || packet->payload[0] == 0xc5)
-				&& packet->payload[5] == 0x01)) {
-			NDPI_LOG_EDONKEY(NDPI_PROTOCOL_EDONKEY, ndpi_struct,
-							NDPI_LOG_DEBUG, "edk 17: detected plain detection\n");
-			ndpi_add_connection_as_edonkey(ndpi_struct, flow,
-						       NDPI_PROTOCOL_SAFE_DETECTION, NDPI_PROTOCOL_PLAIN_DETECTION);
+		     && packet->payload[5] == 0x40)
+		    || (packet->payload_packet_len >= 32 && (packet->payload[0] == 0xe3)
+			&& packet->payload[5] == 0x40 && check_edk_len(packet->payload, packet->payload_packet_len))
+		    || (packet->payload_packet_len >= 32 && packet->payload[0] == 0xe3 && packet->payload[5] == 0x4c && (get_l32(packet->payload, 1) == (packet->payload_packet_len - 5)
+															 || check_edk_len(packet->payload, packet->payload_packet_len)))
+		    || (packet->payload_packet_len >= 32 && get_l32(packet->payload, 1) == (packet->payload_packet_len - 5)
+			&& packet->payload[0] == 0xe3 && packet->payload[5] == 0x38)
+		    || (packet->payload_packet_len >= 20 && get_l32(packet->payload, 1) == (packet->payload_packet_len - 5)
+			&& packet->payload[0] == 0xc5 && packet->payload[5] == 0x92)
+		    || (packet->payload_packet_len >= 20 && get_l32(packet->payload, 1) <= (packet->payload_packet_len - 5)
+			&& packet->payload[0] == 0xe3 && packet->payload[5] == 0x58)
+		    || (packet->payload_packet_len >= 20 && get_l32(packet->payload, 1) <= (packet->payload_packet_len - 5)
+			&& (packet->payload[0] == 0xe3 || packet->payload[0] == 0xc5)
+			&& packet->payload[5] == 0x01)) {
+			NDPI_LOG_EDONKEY(NDPI_PROTOCOL_EDONKEY, ndpi_struct, NDPI_LOG_DEBUG, "edk 17: detected plain detection\n");
+			ndpi_add_connection_as_edonkey(ndpi_struct, flow, NDPI_PROTOCOL_SAFE_DETECTION, NDPI_PROTOCOL_PLAIN_DETECTION);
 			return;
 		}
 
-		NDPI_LOG_EDONKEY(NDPI_PROTOCOL_EDONKEY, ndpi_struct, NDPI_LOG_DEBUG,
-						"edk 17: id: %u, %u, %u not detected\n",
-						packet->payload[0], get_l32(packet->payload, 1), packet->payload[5]);
+		NDPI_LOG_EDONKEY(NDPI_PROTOCOL_EDONKEY, ndpi_struct, NDPI_LOG_DEBUG, "edk 17: id: %u, %u, %u not detected\n", packet->payload[0], get_l32(packet->payload, 1), packet->payload[5]);
 	}
-  exclude_edk_tcp:
+exclude_edk_tcp:
 
 	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_EDONKEY);
 
 	return;
 }
-
 
 static void ndpi_search_edonkey(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
@@ -164,7 +154,7 @@ static void ndpi_search_edonkey(struct ndpi_detection_module_struct *ndpi_struct
 	if (packet->detected_protocol_stack[0] != NDPI_PROTOCOL_EDONKEY) {
 		/* check for retransmission here */
 		if (packet->tcp != NULL && packet->tcp_retransmission == 0)
-		  ndpi_int_edonkey_tcp(ndpi_struct, flow);
+			ndpi_int_edonkey_tcp(ndpi_struct, flow);
 	}
 }
 #endif
