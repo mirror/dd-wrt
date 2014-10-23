@@ -838,10 +838,55 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			  ndpi_build_default_ports(ports_b, 58267, 0, 0, 0, 0) /* UDP */);
 
+  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_OPENVPN, "OpenVPN",
+			  ndpi_build_default_ports(ports_a, 1194, 0, 0, 0, 0) /* TCP */,
+			  ndpi_build_default_ports(ports_b, 1194, 0, 0, 0, 0) /* UDP */);
+  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_NOE, "NOE",
+			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_CISCOVPN, "CiscoVPN",
+			  ndpi_build_default_ports(ports_a, 10000, 0, 0, 0, 0) /* TCP */,
+			  ndpi_build_default_ports(ports_b, 10000, 0, 0, 0, 0) /* UDP */);
+  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_TEAMSPEAK, "TeamSpeak",
+			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
   ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_TOR, "TOR",
 			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
 			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
-
+//  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SKINNY, "CiscoSkinny",
+//			  ndpi_build_default_ports(ports_a, 2000, 0, 0, 0, 0) /* TCP */,
+//			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+//  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_RTCP, "RTCP",
+//			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+//			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+//  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_RSYNC, "RSYNC",
+//			  ndpi_build_default_ports(ports_a, 873, 0, 0, 0, 0) /* TCP */,
+//			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+//  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ORACLE, "Oracle",
+//			  ndpi_build_default_ports(ports_a, 1521, 0, 0, 0, 0) /* TCP */,
+//			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+//  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_CORBA, "Corba",
+//			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+//			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+//  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_UBUNTUONE, "UbuntuONE",
+//			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+//			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+//  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_WHOIS_DAS, "Whois-DAS",
+//			  ndpi_build_default_ports(ports_a, 43, 4343, 0, 0, 0) /* TCP */,
+//			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+//  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_COLLECTD, "Collectd",
+//			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+//			  ndpi_build_default_ports(ports_b, 25826, 0, 0, 0, 0) /* UDP */);
+//  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SOCKS5, "SOCKS5",
+//			  ndpi_build_default_ports(ports_a, 1080, 0, 0, 0, 0) /* TCP */,
+//			  ndpi_build_default_ports(ports_b, 1080, 0, 0, 0, 0) /* UDP */);
+//  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SOCKS4, "SOCKS4",
+//			  ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */,
+//			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+//  ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_RTMP, "RTMP",
+//			  ndpi_build_default_ports(ports_a, 1935, 0, 0, 0, 0) /* TCP */,
+//			  ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */);
+//
 
   for(i=0; i<_ndpi_num_supported_protocols; i++) {
     if(ndpi_mod->proto_defaults[i].protoName == NULL) {
@@ -2899,6 +2944,7 @@ void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *n
 
 #ifdef NDPI_PROTOCOL_ZMQ
   if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, NDPI_PROTOCOL_ZMQ) != 0) {
+    ndpi_struct->callback_buffer[a].func = ndpi_search_zmq;
     ndpi_struct->callback_buffer[a].ndpi_selection_bitmask =
       NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION;
 
@@ -2932,6 +2978,54 @@ void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_struct *n
     NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[a].detection_bitmask, NDPI_PROTOCOL_UNKNOWN);
     NDPI_ADD_PROTOCOL_TO_BITMASK(ndpi_struct->callback_buffer[a].detection_bitmask, NDPI_PROTOCOL_TWITTER);
     NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[a].excluded_protocol_bitmask, NDPI_PROTOCOL_TWITTER);
+    a++;
+  }
+#endif
+#ifdef NDPI_PROTOCOL_OPENVPN
+  if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, NDPI_PROTOCOL_OPENVPN) != 0) {
+    ndpi_struct->callback_buffer[a].func = ndpi_search_openvpn;
+    ndpi_struct->callback_buffer[a].ndpi_selection_bitmask =
+      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
+
+    NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[a].detection_bitmask, NDPI_PROTOCOL_UNKNOWN);
+    NDPI_ADD_PROTOCOL_TO_BITMASK(ndpi_struct->callback_buffer[a].detection_bitmask, NDPI_PROTOCOL_OPENVPN);
+    NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[a].excluded_protocol_bitmask, NDPI_PROTOCOL_OPENVPN);
+    a++;
+  }
+#endif
+#ifdef NDPI_PROTOCOL_NOE
+  if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, NDPI_PROTOCOL_NOE) != 0) {
+    ndpi_struct->callback_buffer[a].func = ndpi_search_noe;
+    ndpi_struct->callback_buffer[a].ndpi_selection_bitmask =
+      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
+
+    NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[a].detection_bitmask, NDPI_PROTOCOL_UNKNOWN);
+    NDPI_ADD_PROTOCOL_TO_BITMASK(ndpi_struct->callback_buffer[a].detection_bitmask, NDPI_PROTOCOL_NOE);
+    NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[a].excluded_protocol_bitmask, NDPI_PROTOCOL_NOE);
+    a++;
+  }
+#endif
+#ifdef NDPI_PROTOCOL_CISCOVPN
+  if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, NDPI_PROTOCOL_CISCOVPN) != 0) {
+    ndpi_struct->callback_buffer[a].func = ndpi_search_ciscovpn;
+    ndpi_struct->callback_buffer[a].ndpi_selection_bitmask =
+      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
+
+    NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[a].detection_bitmask, NDPI_PROTOCOL_UNKNOWN);
+    NDPI_ADD_PROTOCOL_TO_BITMASK(ndpi_struct->callback_buffer[a].detection_bitmask, NDPI_PROTOCOL_CISCOVPN);
+    NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[a].excluded_protocol_bitmask, NDPI_PROTOCOL_CISCOVPN);
+    a++;
+  }
+#endif
+#ifdef NDPI_PROTOCOL_TEAMSPEAK
+  if (NDPI_COMPARE_PROTOCOL_TO_BITMASK(*detection_bitmask, NDPI_PROTOCOL_TEAMSPEAK) != 0) {
+    ndpi_struct->callback_buffer[a].func = ndpi_search_teamspeak;
+    ndpi_struct->callback_buffer[a].ndpi_selection_bitmask =
+      NDPI_SELECTION_BITMASK_PROTOCOL_TCP_OR_UDP_WITH_PAYLOAD;
+
+    NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[a].detection_bitmask, NDPI_PROTOCOL_UNKNOWN);
+    NDPI_ADD_PROTOCOL_TO_BITMASK(ndpi_struct->callback_buffer[a].detection_bitmask, NDPI_PROTOCOL_TEAMSPEAK);
+    NDPI_SAVE_AS_BITMASK(ndpi_struct->callback_buffer[a].excluded_protocol_bitmask, NDPI_PROTOCOL_TEAMSPEAK);
     a++;
   }
 #endif
