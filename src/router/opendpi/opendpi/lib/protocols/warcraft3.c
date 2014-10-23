@@ -22,31 +22,28 @@
  * 
  */
 
-
-
 /* include files */
 
 #include "ndpi_protocols.h"
 #ifdef NDPI_PROTOCOL_WARCRAFT3
 
 static void ndpi_int_warcraft3_add_connection(struct ndpi_detection_module_struct
-												*ndpi_struct, struct ndpi_flow_struct *flow)
+					      *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	ndpi_int_add_connection(ndpi_struct, flow, NDPI_PROTOCOL_WARCRAFT3, NDPI_REAL_PROTOCOL);
 }
 
 static void ndpi_search_warcraft3(struct ndpi_detection_module_struct
-							 *ndpi_struct, struct ndpi_flow_struct *flow)
+				  *ndpi_struct, struct ndpi_flow_struct *flow)
 {
 	struct ndpi_packet_struct *packet = &flow->packet;
-	
+
 //      struct ndpi_id_struct         *src=ndpi_struct->src;
 //      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	u_int16_t l;
 
 	NDPI_LOG(NDPI_PROTOCOL_WARCRAFT3, ndpi_struct, NDPI_LOG_DEBUG, "search WARCRAFT3\n");
-
 
 	if (flow->packet_counter == 1 && packet->payload_packet_len == 1 && packet->payload[0] == 0x01) {
 		NDPI_LOG(NDPI_PROTOCOL_WARCRAFT3, ndpi_struct, NDPI_LOG_DEBUG, "maybe warcraft3: packet_len == 1\n");
@@ -76,11 +73,9 @@ static void ndpi_search_warcraft3(struct ndpi_detection_module_struct
 			}
 		}
 
-
 		if (l == packet->payload_packet_len) {
 			NDPI_LOG(NDPI_PROTOCOL_WARCRAFT3, ndpi_struct, NDPI_LOG_DEBUG, "maybe WARCRAFT3\n");
-			NDPI_LOG(NDPI_PROTOCOL_WARCRAFT3, ndpi_struct, NDPI_LOG_DEBUG, "flow->packet_counter = %u \n",
-					flow->packet_counter);
+			NDPI_LOG(NDPI_PROTOCOL_WARCRAFT3, ndpi_struct, NDPI_LOG_DEBUG, "flow->packet_counter = %u \n", flow->packet_counter);
 			if (flow->packet_counter > 2) {
 				NDPI_LOG(NDPI_PROTOCOL_WARCRAFT3, ndpi_struct, NDPI_LOG_DEBUG, "detected WARCRAFT3\n");
 				ndpi_int_warcraft3_add_connection(ndpi_struct, flow);
@@ -89,9 +84,7 @@ static void ndpi_search_warcraft3(struct ndpi_detection_module_struct
 			return;
 		}
 
-
 	}
-
 
 	NDPI_LOG(NDPI_PROTOCOL_WARCRAFT3, ndpi_struct, NDPI_LOG_DEBUG, "no warcraft3 detected.\n");
 	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_WARCRAFT3);
