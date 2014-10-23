@@ -197,6 +197,11 @@ typedef struct {
 #define NDPI_PROTOCOL_ZMQ					149
 #define NDPI_PROTOCOL_VHUA					150
 #define NDPI_PROTOCOL_TOR					151
+#define NDPI_PROTOCOL_OPENVPN					152
+#define NDPI_PROTOCOL_NOE					153
+#define NDPI_PROTOCOL_CISCOVPN					154
+#define NDPI_PROTOCOL_TEAMSPEAK					155
+
 
 
 #define NDPI_PROTOCOL_LONG_STRING "Unknown","FTP","Mail_POP","Mail_SMTP","Mail_IMAP","DNS","IPP","HTTP","MDNS","NTP",\
@@ -211,7 +216,7 @@ typedef struct {
     "LDAP","MapleStory","msSQL","PPTP","WARCRAFT3","World of Kung Fu","MEEBO", \
     "Twitter","Skype","Google","DCE RPC","NetFlow_IPFIX","sFlow", \
     "HTTP Connect","HTTP Proxy","Citrix","Netflix","Skyfile_PREPAID","Skyfile_RUDICS","Skyfile_POSTPAID","CitrixOnline_GotoMeeting","Apple","Webex",\
-    "WhatsApp","Radius","WindowsUpdate","TeamViewer","Lotus Notes","SAP","GTP","UPNP","LLMNR","Remote Scan","Dropbox", "Viber", "MegaCo","Redis","ZeroMQ","VHUA","TOR"
+    "WhatsApp","Radius","WindowsUpdate","TeamViewer","Lotus Notes","SAP","GTP","UPNP","LLMNR","Remote Scan","Dropbox", "Viber", "MegaCo","Redis","ZeroMQ","VHUA","TOR","OpenVPN","NOE","CiscoVPN","TeamSpeak"
 
 
 #define NDPI_PROTOCOL_SHORT_STRING "ukn","ftp","pop","smtp","imap","dns","ipp","http","mdns","ntp","netbios","nfs","ssdp", \
@@ -225,14 +230,14 @@ typedef struct {
     "guildwars","httpactivesync","kerberos","ldap","maplestory","mssql","pptp","warcraft3","wokf","meebo",\
     "twitter","skype","google","dcerpc","netflow","sflow", \
     "http_connect","http_proxy","citrix","netflix","skyfile_pre", "Skyfile_ru","skyfile_post","citrixonline","imessage_facetime","webex", \
-    "whatsapp","radius","winupdate","teamviewer","lotus_notes","sap","gtp","upnp","llmnr","remotescan","dropbox","viber","megaco","redis","zeromq","vhua","tor"
+    "whatsapp","radius","winupdate","teamviewer","lotus_notes","sap","gtp","upnp","llmnr","remotescan","dropbox","viber","megaco","redis","zeromq","vhua","tor","openvpn","noe","ciscovpn","teamspeak"
 
 
 
 
 /* NOTE: REMEMBER TO UPDATE NDPI_PROTOCOL_LONG_STRING / NDPI_PROTOCOL_SHORT_STRING */
 
-#define NDPI_LAST_IMPLEMENTED_PROTOCOL                          151
+#define NDPI_LAST_IMPLEMENTED_PROTOCOL                          155
 
 #define NDPI_MAX_SUPPORTED_PROTOCOLS (NDPI_LAST_IMPLEMENTED_PROTOCOL + 1)
 #define NDPI_MAX_NUM_CUSTOM_PROTOCOLS                           128
