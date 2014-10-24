@@ -1937,6 +1937,8 @@ struct nvram_tuple srouter_defaults[] = {
 	{"ath5_txpwrdbm", "17", 0},
 #elif defined(HAVE_GGEW) && defined(HAVE_EOC5610)
 	{"ath0_txpwrdbm", "28", 0},
+#elif HAVE_WZR450HP2
+	{"ath0_txpwrdbm", "30", 0},
 #else
 
 	{"ath0_txpwrdbm", "20", 0},
