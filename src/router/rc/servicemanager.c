@@ -110,12 +110,14 @@ static int _STOPPED(const char *method, const char *name)
 
 static int handle_service(const char *method, const char *name)
 {
-	if (!strcmp(method, "start"))
-		RELEASESTOPPED("stop");
-	if (!strcmp(method, "stop")) {
-		RELEASESTOPPED("start");
+	
+	if( strcmp(name, "hotplug_block") ) {
+		if (!strcmp(method, "start"))
+			RELEASESTOPPED("stop");
+		if (!strcmp(method, "stop"))
+			RELEASESTOPPED("start");
+		STOPPED();
 	}
-	STOPPED();
 
 #ifndef HAVE_X86
 	if (nvram_match("service_debug", "1"))
