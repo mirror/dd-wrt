@@ -177,14 +177,6 @@ video_filter(){
         $FLAGS $ENC_OPTS -vf "$filters" -vcodec rawvideo $* -f nut md5:
 }
 
-pixdesc(){
-    pix_fmts="$(ffmpeg -pix_fmts list 2>/dev/null | awk 'NR > 8 && /^IO/ { print $2 }' | sort)"
-    for pix_fmt in $pix_fmts; do
-        test=$pix_fmt
-        video_filter "format=$pix_fmt,pixdesctest" -pix_fmt $pix_fmt
-    done
-}
-
 pixfmts(){
     filter=${test#filter-pixfmts-}
     filter=${filter%_*}
@@ -256,6 +248,7 @@ if test $err = 0; then
     rm -f $outfile $errfile $cmpfile $cleanfiles
 elif test $gen = "no"; then
     echo "Test $test failed. Look at $errfile for details."
+    test "${V:-0}" -gt 0 && cat $errfile
 else
     echo "Updating reference failed, possibly no output file was generated."
 fi

@@ -19,6 +19,7 @@
 #ifdef __UCLIBC__
 #undef _GNU_SOURCE
 #endif
+#define _XOPEN_SOURCE 600 /* XSI-compliant version of strerror_r */
 #include "avutil.h"
 #include "avstring.h"
 #include "common.h"

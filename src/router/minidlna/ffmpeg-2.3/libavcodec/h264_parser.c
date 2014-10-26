@@ -66,7 +66,7 @@ static int h264_find_frame_end(H264Context *h, const uint8_t *buf,
         }
 
         if (state == 7) {
-            i += h->h264dsp.h264_find_start_code_candidate(buf + i, next_avc - i);
+            i += h->h264dsp.startcode_find_candidate(buf + i, next_avc - i);
             if (i < next_avc)
                 state = 2;
         } else if (state <= 2) {
@@ -92,14 +92,13 @@ static int h264_find_frame_end(H264Context *h, const uint8_t *buf,
             state = 7;
         } else {
             h->parse_history[h->parse_history_count++]= buf[i];
-            if (h->parse_history_count>3) {
+            if (h->parse_history_count>5) {
                 unsigned int mb, last_mb= h->parse_last_mb;
                 GetBitContext gb;
 
                 init_get_bits(&gb, h->parse_history, 8*h->parse_history_count);
                 h->parse_history_count=0;
                 mb= get_ue_golomb_long(&gb);
-                last_mb= h->parse_last_mb;
                 h->parse_last_mb= mb;
                 if (pc->frame_start_found) {
                     if (mb <= last_mb)
@@ -120,7 +119,7 @@ found:
     pc->frame_start_found = 0;
     if (h->is_avc)
         return next_avc;
-    return i - (state & 5) - 3 * (state > 7);
+    return i - (state & 5) - 5 * (state > 7);
 }
 
 static int scan_mmco_reset(AVCodecParserContext *s)
@@ -263,7 +262,7 @@ static inline int parse_nal_units(AVCodecParserContext *s,
             break;
         }
         ptr = ff_h264_decode_nal(h, buf, &dst_length, &consumed, src_length);
-        if (ptr == NULL || dst_length < 0)
+        if (!ptr || dst_length < 0)
             break;
 
         init_get_bits(&h->gb, ptr, 8 * dst_length);

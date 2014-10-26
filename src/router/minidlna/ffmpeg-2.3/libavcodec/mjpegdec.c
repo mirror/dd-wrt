@@ -244,7 +244,7 @@ int ff_mjpeg_decode_dht(MJpegDecodeContext *s)
 
 int ff_mjpeg_decode_sof(MJpegDecodeContext *s)
 {
-    int len, nb_components, i, width, height, pix_fmt_id, ret;
+    int len, nb_components, i, width, height, bits, pix_fmt_id, ret;
     int h_count[MAX_COMPONENTS];
     int v_count[MAX_COMPONENTS];
 
@@ -254,11 +254,11 @@ int ff_mjpeg_decode_sof(MJpegDecodeContext *s)
     /* XXX: verify len field validity */
     len     = get_bits(&s->gb, 16);
     s->avctx->bits_per_raw_sample =
-    s->bits = get_bits(&s->gb, 8);
+    bits = get_bits(&s->gb, 8);
 
     if (s->pegasus_rct)
-        s->bits = 9;
-    if (s->bits == 9 && !s->pegasus_rct)
+        bits = 9;
+    if (bits == 9 && !s->pegasus_rct)
         s->rct  = 1;    // FIXME ugly
 
     if(s->lossless && s->avctx->lowres){
@@ -291,7 +291,7 @@ int ff_mjpeg_decode_sof(MJpegDecodeContext *s)
             return AVERROR_INVALIDDATA;
         }
     }
-    if (s->ls && !(s->bits <= 8 || nb_components == 1)) {
+    if (s->ls && !(bits <= 8 || nb_components == 1)) {
         avpriv_report_missing_feature(s->avctx,
                                       "JPEG-LS that is not <= 8 "
                                       "bits/component or 16-bit gray");
@@ -337,11 +337,13 @@ int ff_mjpeg_decode_sof(MJpegDecodeContext *s)
 
     /* if different size, realloc/alloc picture */
     if (   width != s->width || height != s->height
+        || bits != s->bits
         || memcmp(s->h_count, h_count, sizeof(h_count))
         || memcmp(s->v_count, v_count, sizeof(v_count))) {
 
         s->width      = width;
         s->height     = height;
+        s->bits       = bits;
         memcpy(s->h_count, h_count, sizeof(h_count));
         memcpy(s->v_count, v_count, sizeof(v_count));
         s->interlaced = 0;
@@ -468,7 +470,7 @@ int ff_mjpeg_decode_sof(MJpegDecodeContext *s)
         else
             goto unk_pixfmt;
         s->avctx->color_range = s->cs_itu601 ? AVCOL_RANGE_MPEG : AVCOL_RANGE_JPEG;
-        s->chroma_height = s->height / 2;
+        s->chroma_height = (s->height + 1) / 2;
         break;
     case 0x11000000:
     case 0x13000000:
@@ -485,13 +487,14 @@ int ff_mjpeg_decode_sof(MJpegDecodeContext *s)
             s->avctx->pix_fmt = AV_PIX_FMT_GRAY16;
         break;
     case 0x12111100:
+    case 0x14121200:
     case 0x22211100:
     case 0x22112100:
         if (s->bits <= 8) s->avctx->pix_fmt = s->cs_itu601 ? AV_PIX_FMT_YUV440P : AV_PIX_FMT_YUVJ440P;
         else
             goto unk_pixfmt;
         s->avctx->color_range = s->cs_itu601 ? AVCOL_RANGE_MPEG : AVCOL_RANGE_JPEG;
-        s->chroma_height = s->height / 2;
+        s->chroma_height = (s->height + 1) / 2;
         break;
     case 0x21111100:
         if (s->bits <= 8) s->avctx->pix_fmt = s->cs_itu601 ? AV_PIX_FMT_YUV422P : AV_PIX_FMT_YUVJ422P;
@@ -512,7 +515,7 @@ int ff_mjpeg_decode_sof(MJpegDecodeContext *s)
         s->avctx->color_range = s->cs_itu601 ? AVCOL_RANGE_MPEG : AVCOL_RANGE_JPEG;
         if (pix_fmt_id == 0x42111100) {
             s->upscale_h = 6;
-            s->chroma_height = s->height / 2;
+            s->chroma_height = (s->height + 1) / 2;
         }
         break;
     case 0x41111100:
@@ -1894,6 +1897,7 @@ int ff_mjpeg_decode_frame(AVCodecContext *avctx, void *data, int *got_frame,
     int start_code;
     int i, index;
     int ret = 0;
+    int is16bit;
 
     av_dict_free(&s->exif_metadata);
     av_freep(&s->stereo3d);
@@ -2072,6 +2076,9 @@ fail:
     s->got_picture = 0;
     return ret;
 the_end:
+
+    is16bit = av_pix_fmt_desc_get(s->avctx->pix_fmt)->comp[0].step_minus1;
+
     if (s->upscale_h) {
         int p;
         av_assert0(avctx->pix_fmt == AV_PIX_FMT_YUVJ444P ||
@@ -2081,6 +2088,7 @@ the_end:
                    avctx->pix_fmt == AV_PIX_FMT_YUVA444P ||
                    avctx->pix_fmt == AV_PIX_FMT_YUVJ420P ||
                    avctx->pix_fmt == AV_PIX_FMT_YUV420P  ||
+                   avctx->pix_fmt == AV_PIX_FMT_YUV420P16||
                    avctx->pix_fmt == AV_PIX_FMT_GBRAP
                   );
         avcodec_get_chroma_sub_sample(s->avctx->pix_fmt, &hshift, &vshift);
@@ -2091,9 +2099,16 @@ the_end:
                 continue;
             if (p==1 || p==2)
                 w >>= hshift;
+            av_assert0(w > 0);
             for (i = 0; i < s->chroma_height; i++) {
-                for (index = w - 1; index; index--)
-                    line[index] = (line[index / 2] + line[(index + 1) / 2]) >> 1;
+                if (is16bit) ((uint16_t*)line)[w - 1] = ((uint16_t*)line)[(w - 1) / 2];
+                else                      line[w - 1] = line[(w - 1) / 2];
+                for (index = w - 2; index > 0; index--) {
+                    if (is16bit)
+                        ((uint16_t*)line)[index] = (((uint16_t*)line)[index / 2] + ((uint16_t*)line)[(index + 1) / 2]) >> 1;
+                    else
+                        line[index] = (line[index / 2] + line[(index + 1) / 2]) >> 1;
+                }
                 line += s->linesize[p];
             }
         }
@@ -2114,11 +2129,11 @@ the_end:
             if (!(s->upscale_v & (1<<p)))
                 continue;
             if (p==1 || p==2)
-                w >>= hshift;
+                w = FF_CEIL_RSHIFT(w, hshift);
             for (i = s->height - 1; i; i--) {
                 uint8_t *src1 = &((uint8_t *)s->picture_ptr->data[p])[i / 2 * s->linesize[p]];
                 uint8_t *src2 = &((uint8_t *)s->picture_ptr->data[p])[(i + 1) / 2 * s->linesize[p]];
-                if (src1 == src2) {
+                if (src1 == src2 || i == s->height - 1) {
                     memcpy(dst, src1, w);
                 } else {
                     for (index = 0; index < w; index++)
