@@ -189,7 +189,7 @@ static char *extradata2psets(AVCodecContext *c)
     }
 
     psets = av_mallocz(MAX_PSET_SIZE);
-    if (psets == NULL) {
+    if (!psets) {
         av_log(c, AV_LOG_ERROR, "Cannot allocate memory for the parameter sets.\n");
         av_free(orig_extradata);
         return NULL;
@@ -216,7 +216,7 @@ static char *extradata2psets(AVCodecContext *c)
             sps = r;
             sps_end = r1;
         }
-        if (av_base64_encode(p, MAX_PSET_SIZE - (p - psets), r, r1 - r) == NULL) {
+        if (!av_base64_encode(p, MAX_PSET_SIZE - (p - psets), r, r1 - r)) {
             av_log(c, AV_LOG_ERROR, "Cannot Base64-encode %"PTRDIFF_SPECIFIER" %"PTRDIFF_SPECIFIER"!\n", MAX_PSET_SIZE - (p - psets), r1 - r);
             av_free(psets);
 
@@ -250,7 +250,7 @@ static char *extradata2config(AVCodecContext *c)
         return NULL;
     }
     config = av_malloc(10 + c->extradata_size * 2);
-    if (config == NULL) {
+    if (!config) {
         av_log(c, AV_LOG_ERROR, "Cannot allocate memory for the config info.\n");
         return NULL;
     }
@@ -414,6 +414,19 @@ static char *sdp_write_media_attributes(char *buff, int size, AVCodecContext *c,
                                      payload_type, mode, config ? config : "");
             break;
         }
+        case AV_CODEC_ID_H261:
+        {
+            const char *pic_fmt = NULL;
+            /* only QCIF and CIF are specified as supported in RFC 4587 */
+            if (c->width == 176 && c->height == 144)
+                pic_fmt = "QCIF=1";
+            if (c->width == 352 && c->height == 288)
+                pic_fmt = "CIF=1";
+            av_strlcatf(buff, size, "a=rtpmap:%d H261/90000\r\n", payload_type);
+            if (pic_fmt)
+                av_strlcatf(buff, size, "a=fmtp:%d %s\r\n", payload_type, pic_fmt);
+            break;
+        }
         case AV_CODEC_ID_H263:
         case AV_CODEC_ID_H263P:
             /* a=framesize is required by 3GPP TS 26.234 (PSS). It
@@ -457,7 +470,7 @@ static char *sdp_write_media_attributes(char *buff, int size, AVCodecContext *c,
                     av_log(c, AV_LOG_ERROR, "AAC with no global headers is currently not supported.\n");
                     return NULL;
                 }
-                if (config == NULL) {
+                if (!config) {
                     return NULL;
                 }
                 av_strlcatf(buff, size, "a=rtpmap:%d MPEG4-GENERIC/%d/%d\r\n"
