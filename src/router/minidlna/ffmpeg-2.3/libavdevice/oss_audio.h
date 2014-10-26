@@ -16,17 +16,30 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_ALPHA_DSPUTIL_ALPHA_H
-#define AVCODEC_ALPHA_DSPUTIL_ALPHA_H
+#ifndef AVDEVICE_OSS_AUDIO_H
+#define AVDEVICE_OSS_AUDIO_H
 
-#include <stddef.h>
-#include <stdint.h>
+#include "libavcodec/avcodec.h"
 
-int pix_abs8x8_mvi(void *v, uint8_t *pix1, uint8_t *pix2, int line_size, int h);
-int pix_abs16x16_mvi_asm(void *v, uint8_t *pix1, uint8_t *pix2, int line_size, int h);
-int pix_abs16x16_x2_mvi(void *v, uint8_t *pix1, uint8_t *pix2, int line_size, int h);
-int pix_abs16x16_y2_mvi(void *v, uint8_t *pix1, uint8_t *pix2, int line_size, int h);
-int pix_abs16x16_xy2_mvi(void *v, uint8_t *pix1, uint8_t *pix2, int line_size, int h);
+#include "libavformat/avformat.h"
 
+#define OSS_AUDIO_BLOCK_SIZE 4096
 
-#endif /* AVCODEC_ALPHA_DSPUTIL_ALPHA_H */
+typedef struct OSSAudioData {
+    AVClass *class;
+    int fd;
+    int sample_rate;
+    int channels;
+    int frame_size; /* in bytes ! */
+    enum AVCodecID codec_id;
+    unsigned int flip_left : 1;
+    uint8_t buffer[OSS_AUDIO_BLOCK_SIZE];
+    int buffer_ptr;
+} OSSAudioData;
+
+int ff_oss_audio_open(AVFormatContext *s1, int is_output,
+                      const char *audio_device);
+
+int ff_oss_audio_close(OSSAudioData *s);
+
+#endif /* AVDEVICE_OSS_AUDIO_H */
