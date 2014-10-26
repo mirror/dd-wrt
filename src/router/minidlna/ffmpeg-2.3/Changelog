@@ -1,6 +1,69 @@
 Entries are sorted chronologically from oldest to youngest within each release,
 releases are sorted from youngest to oldest.
 
+version <next>:
+
+version 2.4.2:
+- avcodec/on2avc: Check number of channels
+- avcodec/hevc: fix chroma transform_add size
+- avcodec/h264: Check mode before considering mixed mode intra prediction
+- avformat/mpegts: use a padded buffer in read_sl_header()
+- avformat/mpegts: Check desc_len / get8() return code
+- avcodec/vorbisdec: Fix off by 1 error in ptns_to_read
+- sdp: add support for H.261
+- avcodec/svq3: Do not memcpy AVFrame
+- avcodec/smc: fix off by 1 error
+- avcodec/qpeg: fix off by 1 error in MV bounds check
+- avcodec/gifdec: factorize interleave end handling out
+- avcodec/cinepak: fix integer underflow
+- avcodec/pngdec: Check bits per pixel before setting monoblack pixel format
+- avcodec/pngdec: Calculate MPNG bytewidth more defensively
+- avcodec/tiff: more completely check bpp/bppcount
+- avcodec/mmvideo: Bounds check 2nd line of HHV Intra blocks
+- avcodec/h263dec: Fix decoding messenger.h263
+- avcodec/utils: Add case for jv to avcodec_align_dimensions2()
+- avcodec/mjpegdec: check bits per pixel for changes similar to dimensions
+- avcodec/jpeglsdec: Check run value more completely in ls_decode_line()
+- avformat/hlsenc: export inner muxer timebase
+- configure: add noexecstack to linker options if supported.
+- avcodec/ac3enc_template: fix out of array read
+- avutil/x86/cpu: fix cpuid sub-leaf selection
+- avformat/img2dec: enable generic seeking for image pipes
+- avformat/img2dec: initialize pkt->pos for image pipes
+- avformat/img2dec: pass error code and signal EOF
+- avformat/img2dec: fix error code at EOF for pipes
+- libavutil/opt: fix av_opt_set_channel_layout() to access correct memory address
+- tests/fate-run.sh: Cat .err file in case of error with V>0
+- avformat/riffenc: Filter out "BottomUp" in ff_put_bmp_header()
+- avcodec/webp: fix default palette color 0xff000000 -> 0x00000000
+- avcodec/asvenc: fix AAN scaling
+- Fix compile error on arm4/arm5 platform
+
+
+version 2.4.1:
+- swscale: Allow chroma samples to be above and to the left of luma samples
+- avcodec/libilbc: support for latest git of libilbc
+- avcodec/webp: treat out-of-bound palette index as translucent black
+- vf_deshake: rename Transform.vector to Transform.vec to avoid compiler confusion
+- apetag: Fix APE tag size check
+- tools/crypto_bench: fix build when AV_READ_TIME is unavailable
+
+
+version 2.4:
+- Icecast protocol
+- ported lenscorrection filter from frei0r filter
+- large optimizations in dctdnoiz to make it usable
+- ICY metadata are now requested by default with the HTTP protocol
+- support for using metadata in stream specifiers in fftools
+- LZMA compression support in TIFF decoder
+- support for H.261 RTP payload format (RFC 4587)
+- HEVC/H.265 RTP payload format (draft v6) depacketizer
+- added codecview filter to visualize information exported by some codecs
+- Matroska 3D support thorugh side data
+- HTML generation using texi2html is deprecated in favor of makeinfo/texi2any
+- silenceremove filter
+
+
 version 2.3:
 - AC3 fixed-point decoding
 - shuffleplanes filter
@@ -24,7 +87,7 @@ version 2.3:
 - libbs2b-based stereo-to-binaural audio filter
 - libx264 reference frames count limiting depending on level
 - native Opus decoder
-- display matrix export and rotation api
+- display matrix export and rotation API
 - WebVTT encoder
 - showcqt multimedia filter
 - zoompan filter
@@ -66,6 +129,7 @@ version 2.2:
 - libx265 encoder
 - dejudder filter
 - Autodetect VDA like all other hardware accelerations
+- aliases and defaults for Ogg subtypes (opus, spx)
 
 
 version 2.1:

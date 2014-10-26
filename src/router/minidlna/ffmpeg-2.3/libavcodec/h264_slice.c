@@ -31,7 +31,6 @@
 #include "internal.h"
 #include "cabac.h"
 #include "cabac_functions.h"
-#include "dsputil.h"
 #include "error_resilience.h"
 #include "avcodec.h"
 #include "h264.h"
@@ -230,9 +229,9 @@ static int init_table_pools(H264Context *h)
                                                av_buffer_allocz);
     h->mb_type_pool      = av_buffer_pool_init((big_mb_num + h->mb_stride) *
                                                sizeof(uint32_t), av_buffer_allocz);
-    h->motion_val_pool = av_buffer_pool_init(2 * (b4_array_size + 4) *
-                                             sizeof(int16_t), av_buffer_allocz);
-    h->ref_index_pool  = av_buffer_pool_init(4 * mb_array_size, av_buffer_allocz);
+    h->motion_val_pool   = av_buffer_pool_init(2 * (b4_array_size + 4) *
+                                               sizeof(int16_t), av_buffer_allocz);
+    h->ref_index_pool    = av_buffer_pool_init(4 * mb_array_size, av_buffer_allocz);
 
     if (!h->qscale_table_pool || !h->mb_type_pool || !h->motion_val_pool ||
         !h->ref_index_pool) {
@@ -538,7 +537,7 @@ int ff_h264_update_thread_context(AVCodecContext *dst,
         h->pps = h1->pps;
 
         if ((err = h264_slice_header_init(h, 1)) < 0) {
-            av_log(h->avctx, AV_LOG_ERROR, "h264_slice_header_init() failed");
+            av_log(h->avctx, AV_LOG_ERROR, "h264_slice_header_init() failed\n");
             return err;
         }
         context_reinitialized = 1;
@@ -550,7 +549,7 @@ int ff_h264_update_thread_context(AVCodecContext *dst,
 #endif
     }
     /* update linesize on resize for h264. The h264 decoder doesn't
-     * necessarily call ff_MPV_frame_start in the new thread */
+     * necessarily call ff_mpv_frame_start in the new thread */
     h->linesize   = h1->linesize;
     h->uvlinesize = h1->uvlinesize;
 
@@ -784,7 +783,7 @@ static int h264_frame_start(H264Context *h)
 
     /* We mark the current picture as non-reference after allocating it, so
      * that if we break out due to an error it can be released automatically
-     * in the next ff_MPV_frame_start().
+     * in the next ff_mpv_frame_start().
      */
     h->cur_pic_ptr->reference = 0;
 
@@ -1026,76 +1025,79 @@ static int clone_slice(H264Context *dst, H264Context *src)
 
 static enum AVPixelFormat get_pixel_format(H264Context *h, int force_callback)
 {
+    enum AVPixelFormat pix_fmts[2];
+    const enum AVPixelFormat *choices = pix_fmts;
+    int i;
+
+    pix_fmts[1] = AV_PIX_FMT_NONE;
+
     switch (h->sps.bit_depth_luma) {
     case 9:
         if (CHROMA444(h)) {
             if (h->avctx->colorspace == AVCOL_SPC_RGB) {
-                return AV_PIX_FMT_GBRP9;
+                pix_fmts[0] = AV_PIX_FMT_GBRP9;
             } else
-                return AV_PIX_FMT_YUV444P9;
+                pix_fmts[0] = AV_PIX_FMT_YUV444P9;
         } else if (CHROMA422(h))
-            return AV_PIX_FMT_YUV422P9;
+            pix_fmts[0] = AV_PIX_FMT_YUV422P9;
         else
-            return AV_PIX_FMT_YUV420P9;
+            pix_fmts[0] = AV_PIX_FMT_YUV420P9;
         break;
     case 10:
         if (CHROMA444(h)) {
             if (h->avctx->colorspace == AVCOL_SPC_RGB) {
-                return AV_PIX_FMT_GBRP10;
+                pix_fmts[0] = AV_PIX_FMT_GBRP10;
             } else
-                return AV_PIX_FMT_YUV444P10;
+                pix_fmts[0] = AV_PIX_FMT_YUV444P10;
         } else if (CHROMA422(h))
-            return AV_PIX_FMT_YUV422P10;
+            pix_fmts[0] = AV_PIX_FMT_YUV422P10;
         else
-            return AV_PIX_FMT_YUV420P10;
+            pix_fmts[0] = AV_PIX_FMT_YUV420P10;
         break;
     case 12:
         if (CHROMA444(h)) {
             if (h->avctx->colorspace == AVCOL_SPC_RGB) {
-                return AV_PIX_FMT_GBRP12;
+                pix_fmts[0] = AV_PIX_FMT_GBRP12;
             } else
-                return AV_PIX_FMT_YUV444P12;
+                pix_fmts[0] = AV_PIX_FMT_YUV444P12;
         } else if (CHROMA422(h))
-            return AV_PIX_FMT_YUV422P12;
+            pix_fmts[0] = AV_PIX_FMT_YUV422P12;
         else
-            return AV_PIX_FMT_YUV420P12;
+            pix_fmts[0] = AV_PIX_FMT_YUV420P12;
         break;
     case 14:
         if (CHROMA444(h)) {
             if (h->avctx->colorspace == AVCOL_SPC_RGB) {
-                return AV_PIX_FMT_GBRP14;
+                pix_fmts[0] = AV_PIX_FMT_GBRP14;
             } else
-                return AV_PIX_FMT_YUV444P14;
+                pix_fmts[0] = AV_PIX_FMT_YUV444P14;
         } else if (CHROMA422(h))
-            return AV_PIX_FMT_YUV422P14;
+            pix_fmts[0] = AV_PIX_FMT_YUV422P14;
         else
-            return AV_PIX_FMT_YUV420P14;
+            pix_fmts[0] = AV_PIX_FMT_YUV420P14;
         break;
     case 8:
         if (CHROMA444(h)) {
-            if (h->avctx->colorspace == AVCOL_SPC_RGB) {
-                av_log(h->avctx, AV_LOG_DEBUG, "Detected GBR colorspace.\n");
-                return AV_PIX_FMT_GBR24P;
-            } else if (h->avctx->colorspace == AVCOL_SPC_YCGCO) {
+            if (h->avctx->colorspace == AVCOL_SPC_YCGCO)
                 av_log(h->avctx, AV_LOG_WARNING, "Detected unsupported YCgCo colorspace.\n");
-            }
-            return h->avctx->color_range == AVCOL_RANGE_JPEG ? AV_PIX_FMT_YUVJ444P
-                                                                : AV_PIX_FMT_YUV444P;
+            if (h->avctx->colorspace == AVCOL_SPC_RGB)
+                pix_fmts[0] = AV_PIX_FMT_GBRP;
+            else if (h->avctx->color_range == AVCOL_RANGE_JPEG)
+                pix_fmts[0] = AV_PIX_FMT_YUVJ444P;
+            else
+                pix_fmts[0] = AV_PIX_FMT_YUV444P;
         } else if (CHROMA422(h)) {
-            return h->avctx->color_range == AVCOL_RANGE_JPEG ? AV_PIX_FMT_YUVJ422P
-                                                             : AV_PIX_FMT_YUV422P;
+            if (h->avctx->color_range == AVCOL_RANGE_JPEG)
+                pix_fmts[0] = AV_PIX_FMT_YUVJ422P;
+            else
+                pix_fmts[0] = AV_PIX_FMT_YUV422P;
         } else {
-            int i;
-            const enum AVPixelFormat * fmt = h->avctx->codec->pix_fmts ?
-                                        h->avctx->codec->pix_fmts :
-                                        h->avctx->color_range == AVCOL_RANGE_JPEG ?
-                                        h264_hwaccel_pixfmt_list_jpeg_420 :
-                                        h264_hwaccel_pixfmt_list_420;
-
-            for (i=0; fmt[i] != AV_PIX_FMT_NONE; i++)
-                if (fmt[i] == h->avctx->pix_fmt && !force_callback)
-                    return fmt[i];
-            return ff_thread_get_format(h->avctx, fmt);
+            if (h->avctx->codec->pix_fmts)
+                choices = h->avctx->codec->pix_fmts;
+            else if (h->avctx->color_range == AVCOL_RANGE_JPEG)
+                choices = h264_hwaccel_pixfmt_list_jpeg_420;
+            else
+                choices = h264_hwaccel_pixfmt_list_420;
         }
         break;
     default:
@@ -1103,6 +1105,11 @@ static enum AVPixelFormat get_pixel_format(H264Context *h, int force_callback)
                "Unsupported bit depth %d\n", h->sps.bit_depth_luma);
         return AVERROR_INVALIDDATA;
     }
+
+    for (i=0; choices[i] != AV_PIX_FMT_NONE; i++)
+        if (choices[i] == h->avctx->pix_fmt && !force_callback)
+            return choices[i];
+    return ff_thread_get_format(h->avctx, choices);
 }
 
 /* export coded and cropped frame dimensions to AVCodecContext */
@@ -1110,11 +1117,13 @@ static int init_dimensions(H264Context *h)
 {
     int width  = h->width  - (h->sps.crop_right + h->sps.crop_left);
     int height = h->height - (h->sps.crop_top   + h->sps.crop_bottom);
+    int crop_present = h->sps.crop_left  || h->sps.crop_top ||
+                       h->sps.crop_right || h->sps.crop_bottom;
     av_assert0(h->sps.crop_right + h->sps.crop_left < (unsigned)h->width);
     av_assert0(h->sps.crop_top + h->sps.crop_bottom < (unsigned)h->height);
 
     /* handle container cropping */
-    if (!h->sps.crop &&
+    if (!crop_present &&
         FFALIGN(h->avctx->width,  16) == h->width &&
         FFALIGN(h->avctx->height, 16) == h->height) {
         width  = h->avctx->width;
@@ -1128,7 +1137,10 @@ static int init_dimensions(H264Context *h)
             return AVERROR_INVALIDDATA;
 
         av_log(h->avctx, AV_LOG_WARNING, "Ignoring cropping information.\n");
-        h->sps.crop_bottom = h->sps.crop_top = h->sps.crop_right = h->sps.crop_left = 0;
+        h->sps.crop_bottom =
+        h->sps.crop_top    =
+        h->sps.crop_right  =
+        h->sps.crop_left   =
         h->sps.crop        = 0;
 
         width  = h->width;
@@ -1171,7 +1183,7 @@ static int h264_slice_header_init(H264Context *h, int reinit)
     ret = ff_h264_alloc_tables(h);
     if (ret < 0) {
         av_log(h->avctx, AV_LOG_ERROR, "Could not allocate memory\n");
-        return ret;
+        goto fail;
     }
 
     if (nb_slices > H264_MAX_THREADS || (nb_slices > h->mb_height && h->mb_height)) {
@@ -1190,17 +1202,19 @@ static int h264_slice_header_init(H264Context *h, int reinit)
         ret = ff_h264_context_init(h);
         if (ret < 0) {
             av_log(h->avctx, AV_LOG_ERROR, "context_init() failed.\n");
-            return ret;
+            goto fail;
         }
     } else {
         for (i = 1; i < h->slice_context_count; i++) {
             H264Context *c;
             c                    = h->thread_context[i] = av_mallocz(sizeof(H264Context));
-            if (!c)
-                return AVERROR(ENOMEM);
+            if (!c) {
+                ret = AVERROR(ENOMEM);
+                goto fail;
+            }
             c->avctx             = h->avctx;
             if (CONFIG_ERROR_RESILIENCE) {
-                c->dsp               = h->dsp;
+                c->mecc              = h->mecc;
             }
             c->vdsp              = h->vdsp;
             c->h264dsp           = h->h264dsp;
@@ -1236,13 +1250,17 @@ static int h264_slice_header_init(H264Context *h, int reinit)
         for (i = 0; i < h->slice_context_count; i++)
             if ((ret = ff_h264_context_init(h->thread_context[i])) < 0) {
                 av_log(h->avctx, AV_LOG_ERROR, "context_init() failed.\n");
-                return ret;
+                goto fail;
             }
     }
 
     h->context_initialized = 1;
 
     return 0;
+fail:
+    ff_h264_free_tables(h, 0);
+    h->context_initialized = 0;
+    return ret;
 }
 
 static enum AVPixelFormat non_j_pixfmt(enum AVPixelFormat a)
@@ -2491,14 +2509,12 @@ static int decode_slice(struct AVCodecContext *avctx, void *arg)
                     if (   get_bits_left(&h->gb) == 0
                         || get_bits_left(&h->gb) > 0 && !(h->avctx->err_recognition & AV_EF_AGGRESSIVE)) {
                         er_add_slice(h, h->resync_mb_x, h->resync_mb_y,
-                                     h->mb_x - 1, h->mb_y,
-                                     ER_MB_END);
+                                     h->mb_x - 1, h->mb_y, ER_MB_END);
 
                         return 0;
                     } else {
                         er_add_slice(h, h->resync_mb_x, h->resync_mb_y,
-                                     h->mb_x, h->mb_y,
-                                     ER_MB_END);
+                                     h->mb_x, h->mb_y, ER_MB_END);
 
                         return AVERROR_INVALIDDATA;
                     }
@@ -2511,8 +2527,7 @@ static int decode_slice(struct AVCodecContext *avctx, void *arg)
 
                 if (get_bits_left(&h->gb) == 0) {
                     er_add_slice(h, h->resync_mb_x, h->resync_mb_y,
-                                 h->mb_x - 1, h->mb_y,
-                                 ER_MB_END);
+                                 h->mb_x - 1, h->mb_y, ER_MB_END);
                     if (h->mb_x > lf_x_start)
                         loop_filter(h, lf_x_start, h->mb_x);
 
