@@ -734,7 +734,7 @@ void reset_hwaddr(char *ifname)
 				nvram_set("et0macaddr", wlmac);
 				nvram_unset("lan_hwaddr");
 				nvram_unset("wan_hwaddr");
-				// fis dlink quirk, by restarting system. utils.c will
+				// fix dlink quirk, by restarting system. utils.c will
 				// automaticly assign the et0macaddr then
 				nvram_commit();
 				eval("event", "5", "1", "15");
@@ -758,6 +758,7 @@ void reset_hwaddr(char *ifname)
 		}
 	}
 	close(s);
+	nvram_set("lan_hwaddr",nvram_safe_get("et0macaddr")); //after all fixes have been made, we set lan_hwaddr to et0macaddr to ensure equalness between all devices based first eth interface
 	// lock mac address on bridge if possible
 	eval("ifconfig", ifname, "hw", "ether", nvram_safe_get("lan_hwaddr"));
 
