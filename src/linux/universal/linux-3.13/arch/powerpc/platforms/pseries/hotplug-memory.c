@@ -164,7 +164,7 @@ static inline int pseries_remove_memblock(unsigned long base,
 }
 static inline int pseries_remove_memory(struct device_node *np)
 {
-	return -EOPNOTSUPP;
+	return 0;
 }
 #endif /* CONFIG_MEMORY_HOTREMOVE */
 

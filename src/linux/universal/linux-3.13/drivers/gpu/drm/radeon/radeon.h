@@ -99,6 +99,7 @@ extern int radeon_fastfb;
 extern int radeon_dpm;
 extern int radeon_aspm;
 extern int radeon_runtime_pm;
+extern int radeon_bapm;
 
 /*
  * Copy from radeon_drv.h so we don't have to include both and have conflicting
@@ -289,6 +290,9 @@ int radeon_atom_get_leakage_vddc_based_on_leakage_params(struct radeon_device *r
 							 u16 *vddc, u16 *vddci,
 							 u16 virtual_voltage_id,
 							 u16 vbios_voltage_id);
+int radeon_atom_get_voltage_evv(struct radeon_device *rdev,
+				u16 virtual_voltage_id,
+				u16 *voltage);
 int radeon_atom_round_to_true_voltage(struct radeon_device *rdev,
 				      u8 voltage_type,
 				      u16 nominal_voltage,

@@ -4350,6 +4350,11 @@ static long cgroup_create(struct cgroup *parent, struct dentry *dentry,
 	struct cgroup_subsys *ss;
 	struct super_block *sb = root->sb;
 
+	/* Do not accept '\n' to prevent making /proc/<pid>/cgroup unparsable.
+	 */
+	if (strchr(dentry->d_name.name, '\n'))
+		return -EINVAL;
+
 	/* allocate the cgroup and its ID, 0 is reserved for the root */
 	cgrp = kzalloc(sizeof(*cgrp), GFP_KERNEL);
 	if (!cgrp)

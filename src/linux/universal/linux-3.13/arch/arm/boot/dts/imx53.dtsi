@@ -1111,7 +1111,7 @@
 				compatible = "fsl,imx53-vpu";
 				reg = <0x63ff4000 0x1000>;
 				interrupts = <9>;
-				clocks = <&clks 63>, <&clks 63>;
+				clocks = <&clks 64>, <&clks 63>;
 				clock-names = "per", "ahb";
 				iram = <&ocram>;
 				status = "disabled";

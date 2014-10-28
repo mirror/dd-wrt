@@ -3236,7 +3236,7 @@ int snd_soc_bytes_put(struct snd_kcontrol *kcontrol,
 	unsigned int val;
 	void *data;
 
-	if (!codec->using_regmap)
+	if (!codec->using_regmap || !params->num_regs)
 		return -EINVAL;
 
 	len = params->num_regs * codec->val_bytes;
