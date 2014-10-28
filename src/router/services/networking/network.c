@@ -724,7 +724,7 @@ void reset_hwaddr(char *ifname)
 
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
-		if (strlen(nvram_safe_get("lan_hwaddr")) > 0)
+		if (strlen(nvram_safe_get("lan_hwaddr")) == 0)
 			nvram_set("lan_hwaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 		if (getRouterBrand() == ROUTER_DLINK_DIR320) {
 			if (strlen(nvram_safe_get("et0macaddr")) == 12) {
