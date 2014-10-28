@@ -1905,6 +1905,8 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
 		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"1500\" />\n", bridge_name);
+		sprintf(bridge_name, "lan_hwaddr");
+		websWrite(wp, "</br>&nbsp;Root MAC&nbsp;<input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" />\n", bridge_name,nvram_safe_get(bridge_name));
 		websWrite(wp, "</div>\n");
 		// don't show that here, since that is under Basic Setup
 		// show_ipnetmask(wp, bridge);
@@ -1960,6 +1962,12 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  count);
+		if (!strcmp(bridge,"br0"))
+		    sprintf(bridge_name, "lan_hwaddr");
+		else
+		    sprintf(bridge_name, "%s_hwaddr",bridge);
+		
+		websWrite(wp, "</br>&nbsp;Root MAC&nbsp;<input class=\"num\" name=\"%s\"size=\"16\" value=\"1500\" />\n", bridge_name,nvram_safe_get(bridge_name));
 		websWrite(wp, "</div>\n");
 		// don't show that here, since that is under Basic Setup
 		if (strcmp(bridge, "br0")) {
