@@ -2471,6 +2471,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 			conf->channel = 0;
 		} else
 			conf->channel = atoi(pos);
+	} else if (os_strcmp(buf, "frequency") == 0) {
+		conf->frequency = atoi(pos);
 	} else if (os_strcmp(buf, "chanlist") == 0) {
 		if (hostapd_parse_intlist(&conf->chanlist, pos)) {
 			wpa_printf(MSG_ERROR, "Line %d: invalid channel list",

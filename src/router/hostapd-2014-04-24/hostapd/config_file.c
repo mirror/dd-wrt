@@ -125,7 +125,7 @@ static int hostapd_config_read_maclist(const char *fname,
 				       struct mac_acl_entry **acl, int *num)
 {
 	FILE *f;
-	char buf[128], *pos, *sep;
+	char buf[128], *pos, *macpos, *sep;
 	int line = 0;
 	u8 addr[ETH_ALEN];
 	struct mac_acl_entry *newacl;
@@ -165,6 +165,7 @@ static int hostapd_config_read_maclist(const char *fname,
 		}
 
 		pos = buf;
+		macpos = buf;
 		while (*pos != '\0' && *pos != ' ' && *pos != '\t')
 			pos++;
 
@@ -183,7 +184,7 @@ static int hostapd_config_read_maclist(const char *fname,
 			mask = 0;
 		}
 
-		if (hwaddr_aton(pos, addr)) {
+		if (hwaddr_aton(macpos, addr)) {
 			wpa_printf(MSG_ERROR, "Invalid MAC address '%s' at "
 				   "line %d in '%s'", pos, line, fname);
 			fclose(f);
