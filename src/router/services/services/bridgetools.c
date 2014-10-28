@@ -142,9 +142,11 @@ int br_add_bridge(const char *brname)
 	dd_syslog(LOG_INFO, "bridge added successfully\n");
 	char ipaddr[32];
 	char brmcast[32];
+	char hwaddr[32];
 
 	sprintf(brmcast, "%s_mcast", brname);
 	sprintf(ipaddr, "%s_ipaddr", brname);
+	sprintf(hwaddr, "%s_hwaddr", brname);
 	char netmask[32];
 
 	sprintf(netmask, "%s_netmask", brname);
@@ -170,6 +172,10 @@ int br_add_bridge(const char *brname)
 		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu", getBridgeMTU(brname), "up");
 	} else
 		eval("ifconfig", brname, "mtu", getBridgeMTU(brname));
+
+	if (strcmp(brname, "br0") && strlen(nvram_safe_get(hwaddr)) > 0) {
+		eval("ifconfig", brname, "hw", "ether", nvram_safe_get(hwaddr));
+	}
 
 	return ret;
 }
@@ -218,7 +224,7 @@ int br_add_interface(const char *br, const char *dev)
 #ifdef HAVE_80211AC
 	eval("emf", "add", "iface", br, dev);
 #endif
-	if (strcmp(br,"br0") && (nvram_nget("%s_hwaddr", br) == NULL || strlen(nvram_nget("%s_hwaddr", br)) == 0)) {
+	if (strcmp(br, "br0") && (nvram_nget("%s_hwaddr", br) == NULL || strlen(nvram_nget("%s_hwaddr", br)) == 0)) {
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 			return ret;
 		strncpy(ifr.ifr_name, br, IFNAMSIZ);
