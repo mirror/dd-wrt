@@ -24,6 +24,10 @@
 #include <shutils.h>
 #include <utils.h>
 #include <syslog.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <sys/ioctl.h>
+
 #ifdef HAVE_MICRO
 
 int brctl_main(int argc, char **argv)
@@ -187,6 +191,10 @@ int br_del_bridge(const char *brname)
 
 int br_add_interface(const char *br, const char *dev)
 {
+	struct ifreq ifr;
+	char eabuf[32];
+	int s;
+
 	if (!ifexists(dev))
 		return -1;
 	char ipaddr[32];
@@ -210,6 +218,15 @@ int br_add_interface(const char *br, const char *dev)
 #ifdef HAVE_80211AC
 	eval("emf", "add", "iface", br, dev);
 #endif
+	if (nvram_nget("%s_hwaddr", br) == NULL || strlen(nvram_nget("%s_hwaddr", br)) == 0) {
+		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+			return ret;
+		strncpy(ifr.ifr_name, br, IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);	// get hw addr
+		nvram_nset(ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf), "%s_hwaddr", br);	// safe addr for gui 
+		ioctl(s, SIOCSIFHWADDR, &ifr);	// set hw addr and fix it
+	}
+
 	return ret;
 }
 
