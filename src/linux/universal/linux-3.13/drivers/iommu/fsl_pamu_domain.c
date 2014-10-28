@@ -1050,7 +1050,7 @@ static int fsl_pamu_add_device(struct device *dev)
 	struct iommu_group *group = NULL;
 	struct pci_dev *pdev;
 	const u32 *prop;
-	int ret, len;
+	int ret = 0, len;
 
 	/*
 	 * For platform devices we allocate a separate group for
@@ -1073,7 +1073,13 @@ static int fsl_pamu_add_device(struct device *dev)
 	if (!group || IS_ERR(group))
 		return PTR_ERR(group);
 
-	ret = iommu_group_add_device(group, dev);
+	/*
+	 * Check if device has already been added to an iommu group.
+	 * Group could have already been created for a PCI device in
+	 * the iommu_group_get_for_dev path.
+	 */
+	if (!dev->iommu_group)
+		ret = iommu_group_add_device(group, dev);
 
 	iommu_group_put(group);
 	return ret;

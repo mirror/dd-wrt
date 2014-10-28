@@ -1711,6 +1711,7 @@ void xhci_mem_cleanup(struct xhci_hcd *xhci)
 
 	if (xhci->lpm_command)
 		xhci_free_command(xhci, xhci->lpm_command);
+	xhci->lpm_command = NULL;
 	xhci->cmd_ring_reserved_trbs = 0;
 	if (xhci->cmd_ring)
 		xhci_ring_free(xhci, xhci->cmd_ring);
@@ -1723,7 +1724,7 @@ void xhci_mem_cleanup(struct xhci_hcd *xhci)
 	}
 
 	num_ports = HCS_MAX_PORTS(xhci->hcs_params1);
-	for (i = 0; i < num_ports; i++) {
+	for (i = 0; i < num_ports && xhci->rh_bw; i++) {
 		struct xhci_interval_bw_table *bwt = &xhci->rh_bw[i].bw_table;
 		for (j = 0; j < XHCI_MAX_INTERVAL; j++) {
 			struct list_head *ep = &bwt->interval_bw[j].endpoints;

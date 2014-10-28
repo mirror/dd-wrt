@@ -286,11 +286,11 @@ static inline void netlbl_secattr_catmap_free(
 {
 	struct netlbl_lsm_secattr_catmap *iter;
 
-	do {
+	while (catmap) {
 		iter = catmap;
 		catmap = catmap->next;
 		kfree(iter);
-	} while (catmap);
+	}
 }
 
 /**
@@ -395,13 +395,20 @@ int netlbl_secattr_catmap_walk(struct netlbl_lsm_secattr_catmap *catmap,
 			       u32 offset);
 int netlbl_secattr_catmap_walk_rng(struct netlbl_lsm_secattr_catmap *catmap,
 				   u32 offset);
-int netlbl_secattr_catmap_setbit(struct netlbl_lsm_secattr_catmap *catmap,
+int netlbl_secattr_catmap_getlong(struct netlbl_lsm_secattr_catmap *catmap,
+				  u32 *offset,
+				  unsigned long *bitmap);
+int netlbl_secattr_catmap_setbit(struct netlbl_lsm_secattr_catmap **catmap,
 				 u32 bit,
 				 gfp_t flags);
-int netlbl_secattr_catmap_setrng(struct netlbl_lsm_secattr_catmap *catmap,
+int netlbl_secattr_catmap_setrng(struct netlbl_lsm_secattr_catmap **catmap,
 				 u32 start,
 				 u32 end,
 				 gfp_t flags);
+int netlbl_secattr_catmap_setlong(struct netlbl_lsm_secattr_catmap **catmap,
+				  u32 offset,
+				  unsigned long bitmap,
+				  gfp_t flags);
 
 /*
  * LSM protocol operations (NetLabel LSM/kernel API)
@@ -505,17 +512,32 @@ static inline int netlbl_secattr_catmap_walk_rng(
 {
 	return -ENOENT;
 }
+static inline int netlbl_secattr_catmap_getlong(
+				      struct netlbl_lsm_secattr_catmap *catmap,
+				      u32 *offset,
+				      unsigned long *bitmap)
+{
+	return 0;
+}
 static inline int netlbl_secattr_catmap_setbit(
-	                              struct netlbl_lsm_secattr_catmap *catmap,
+				      struct netlbl_lsm_secattr_catmap **catmap,
 				      u32 bit,
 				      gfp_t flags)
 {
 	return 0;
 }
 static inline int netlbl_secattr_catmap_setrng(
-	                              struct netlbl_lsm_secattr_catmap *catmap,
+				      struct netlbl_lsm_secattr_catmap **catmap,
 				      u32 start,
 				      u32 end,
+				      gfp_t flags)
+{
+	return 0;
+}
+static int netlbl_secattr_catmap_setlong(
+				      struct netlbl_lsm_secattr_catmap **catmap,
+				      u32 offset,
+				      unsigned long bitmap,
 				      gfp_t flags)
 {
 	return 0;

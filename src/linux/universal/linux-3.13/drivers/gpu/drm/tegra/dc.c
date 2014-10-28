@@ -1252,6 +1252,7 @@ static struct of_device_id tegra_dc_of_match[] = {
 	{ .compatible = "nvidia,tegra20-dc", },
 	{ },
 };
+MODULE_DEVICE_TABLE(of, tegra_dc_of_match);
 
 struct platform_driver tegra_dc_driver = {
 	.driver = {
