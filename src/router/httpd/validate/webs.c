@@ -2506,6 +2506,15 @@ void save_networking(webs_t wp)
 		strcat(buffer, mtu);
 		if (i < bridgescount - 1)
 			strcat(buffer, " ");
+
+		char brname[32];
+		
+		if (!strcmp(ifname,"br0"))
+			sprintf(brname,"lan_hwaddr");
+		else
+			sprintf(brname,"%s_hwaddr",ifname);
+
+		nvram_set(brname,websGetVar(wp,brname,NULL));
 	}
 	nvram_set("bridges", buffer);
 	// save bridge assignment
@@ -2535,14 +2544,6 @@ void save_networking(webs_t wp)
 		strcat(buffer, prio);
 		if (i < bridgesifcount - 1)
 			strcat(buffer, " ");
-		char brname[32];
-		
-		if (!strcmp(ifname,"br0"))
-			sprintf(brname,"lan_hwaddr");
-		else
-			sprintf(brname,"%s_hwaddr",ifname);
-
-		nvram_set(brname,websGetVar(wp,brname,NULL));
 	}
 	nvram_set("bridgesif", buffer);
 #ifdef HAVE_MDHCP
