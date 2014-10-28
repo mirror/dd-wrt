@@ -3231,6 +3231,7 @@ static void cik_gpu_init(struct radeon_device *rdev)
 			   (rdev->pdev->device == 0x130B) ||
 			   (rdev->pdev->device == 0x130E) ||
 			   (rdev->pdev->device == 0x1315) ||
+			   (rdev->pdev->device == 0x1318) ||
 			   (rdev->pdev->device == 0x131B)) {
 			rdev->config.cik.max_cu_per_sh = 4;
 			rdev->config.cik.max_backends_per_se = 1;
@@ -4326,7 +4327,7 @@ struct bonaire_mqd
  */
 static int cik_cp_compute_resume(struct radeon_device *rdev)
 {
-	int r, i, idx;
+	int r, i, j, idx;
 	u32 tmp;
 	bool use_doorbell = true;
 	u64 hqd_gpu_addr;
@@ -4445,7 +4446,7 @@ static int cik_cp_compute_resume(struct radeon_device *rdev)
 		mqd->queue_state.cp_hqd_pq_wptr= 0;
 		if (RREG32(CP_HQD_ACTIVE) & 1) {
 			WREG32(CP_HQD_DEQUEUE_REQUEST, 1);
-			for (i = 0; i < rdev->usec_timeout; i++) {
+			for (j = 0; j < rdev->usec_timeout; j++) {
 				if (!(RREG32(CP_HQD_ACTIVE) & 1))
 					break;
 				udelay(1);
@@ -5332,12 +5333,13 @@ static void cik_vm_decode_fault(struct radeon_device *rdev,
 void cik_vm_flush(struct radeon_device *rdev, int ridx, struct radeon_vm *vm)
 {
 	struct radeon_ring *ring = &rdev->ring[ridx];
+	int usepfp = (ridx == RADEON_RING_TYPE_GFX_INDEX);
 
 	if (vm == NULL)
 		return;
 
 	radeon_ring_write(ring, PACKET3(PACKET3_WRITE_DATA, 3));
-	radeon_ring_write(ring, (WRITE_DATA_ENGINE_SEL(0) |
+	radeon_ring_write(ring, (WRITE_DATA_ENGINE_SEL(usepfp) |
 				 WRITE_DATA_DST_SEL(0)));
 	if (vm->id < 8) {
 		radeon_ring_write(ring,
@@ -5396,7 +5398,7 @@ void cik_vm_flush(struct radeon_device *rdev, int ridx, struct radeon_vm *vm)
 	radeon_ring_write(ring, 1 << vm->id);
 
 	/* compute doesn't have PFP */
-	if (ridx == RADEON_RING_TYPE_GFX_INDEX) {
+	if (usepfp) {
 		/* sync PFP to ME, otherwise we might get invalid PFP reads */
 		radeon_ring_write(ring, PACKET3(PACKET3_PFP_SYNC_ME, 0));
 		radeon_ring_write(ring, 0x0);
@@ -7575,6 +7577,7 @@ restart_ih:
 static int cik_startup(struct radeon_device *rdev)
 {
 	struct radeon_ring *ring;
+	u32 nop;
 	int r;
 
 	/* enable pcie gen2/3 link */
@@ -7692,10 +7695,16 @@ static int cik_startup(struct radeon_device *rdev)
 	}
 	cik_irq_set(rdev);
 
+	if (rdev->family == CHIP_HAWAII) {
+		nop = RADEON_CP_PACKET2;
+	} else {
+		nop = PACKET3(PACKET3_NOP, 0x3FFF);
+	}
+
 	ring = &rdev->ring[RADEON_RING_TYPE_GFX_INDEX];
 	r = radeon_ring_init(rdev, ring, ring->ring_size, RADEON_WB_CP_RPTR_OFFSET,
 			     CP_RB0_RPTR, CP_RB0_WPTR,
-			     PACKET3(PACKET3_NOP, 0x3FFF));
+			     nop);
 	if (r)
 		return r;
 
@@ -7704,7 +7713,7 @@ static int cik_startup(struct radeon_device *rdev)
 	ring = &rdev->ring[CAYMAN_RING_TYPE_CP1_INDEX];
 	r = radeon_ring_init(rdev, ring, ring->ring_size, RADEON_WB_CP1_RPTR_OFFSET,
 			     CP_HQD_PQ_RPTR, CP_HQD_PQ_WPTR,
-			     PACKET3(PACKET3_NOP, 0x3FFF));
+			     nop);
 	if (r)
 		return r;
 	ring->me = 1; /* first MEC */
@@ -7716,7 +7725,7 @@ static int cik_startup(struct radeon_device *rdev)
 	ring = &rdev->ring[CAYMAN_RING_TYPE_CP2_INDEX];
 	r = radeon_ring_init(rdev, ring, ring->ring_size, RADEON_WB_CP2_RPTR_OFFSET,
 			     CP_HQD_PQ_RPTR, CP_HQD_PQ_WPTR,
-			     PACKET3(PACKET3_NOP, 0x3FFF));
+			     nop);
 	if (r)
 		return r;
 	/* dGPU only have 1 MEC */

@@ -488,6 +488,9 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 
 	msr = rcar_i2c_status_get(priv);
 
+	/* Only handle interrupts that are currently enabled */
+	msr &= rcar_i2c_read(priv, ICMIER);
+
 	/*
 	 * Arbitration lost
 	 */
@@ -503,15 +506,6 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 	}
 
 	/*
-	 * Stop
-	 */
-	if (msr & MST) {
-		dev_dbg(dev, "Stop\n");
-		rcar_i2c_flags_set(priv, ID_DONE);
-		goto out;
-	}
-
-	/*
 	 * Nack
 	 */
 	if (msr & MNR) {
@@ -521,6 +515,12 @@ static irqreturn_t rcar_i2c_irq(int irq, void *ptr)
 		rcar_i2c_bus_phase(priv, RCAR_BUS_PHASE_STOP);
 		rcar_i2c_irq_mask(priv, RCAR_IRQ_OPEN_FOR_STOP);
 		rcar_i2c_flags_set(priv, ID_NACK);
+		goto out;
+	}
+
+	/* Stop */
+	if (msr & MST) {
+		rcar_i2c_flags_set(priv, ID_DONE);
 		goto out;
 	}
 
