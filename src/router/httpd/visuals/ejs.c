@@ -1455,8 +1455,8 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 				ifname = strrchr(globbuf.gl_pathv[awdscount], '/');
 				if (!ifname)
 					continue;
-				sprintf(name, "%s (%s)", live_translate("share.wireless"), ifname);
-				show_bwif(wp, ifname, name);
+				sprintf(name, "%s (%s)", live_translate("share.wireless"), ifname+1);
+				show_bwif(wp, ifname+1, name);
 			}
 			globfree(&globbuf);
 		}
