@@ -759,6 +759,7 @@ void reset_hwaddr(char *ifname)
 	}
 	close(s);
 	nvram_set("lan_hwaddr",nvram_safe_get("et0macaddr")); //after all fixes have been made, we set lan_hwaddr to et0macaddr to ensure equalness between all devices based first eth interface
+	nvram_set("br0_hwaddr",nvram_safe_get("et0macaddr")); //after all fixes have been made, we set lan_hwaddr to et0macaddr to ensure equalness between all devices based first eth interface
 	// lock mac address on bridge if possible
 	eval("ifconfig", ifname, "hw", "ether", nvram_safe_get("lan_hwaddr"));
 
