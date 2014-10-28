@@ -760,7 +760,7 @@ void reset_hwaddr(char *ifname)
 	}
 	close(s);
 	if (strlen(nvram_safe_get("lan_hwaddr")) == 0)
-		nvram_set("lan_hwaddr",nvram_safe_get("et0macaddr")); //after all fixes have been made, we set lan_hwaddr to et0macaddr to ensure equalness between all devices based first eth interface
+		nvram_set("lan_hwaddr", nvram_safe_get("et0macaddr"));	//after all fixes have been made, we set lan_hwaddr to et0macaddr to ensure equalness between all devices based first eth interface
 	// lock mac address on bridge if possible
 	eval("ifconfig", ifname, "hw", "ether", nvram_safe_get("lan_hwaddr"));
 
@@ -3140,31 +3140,33 @@ void start_wan(int status)
 		}
 	}
 
-	if (memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN)) {
-		ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	if (!nvram_match("wan_proto", "disabled")) {
+		if (memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN)) {
+			ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 
-		if (wlifname && !strcmp(wan_ifname, wlifname))
-			eval("wl", "-i", wan_ifname, "down");
-		else if (strcmp(wan_ifname, "br0"))
-			eval("ifconfig", wan_ifname, "down");
+			if (wlifname && !strcmp(wan_ifname, wlifname))
+				eval("wl", "-i", wan_ifname, "down");
+			else if (strcmp(wan_ifname, "br0"))
+				eval("ifconfig", wan_ifname, "down");
 
-		ioctl(s, SIOCSIFHWADDR, &ifr);
-#else
-		if (!wlifname && strcmp(wan_ifname, "br0")) {
-			eval("ifconfig", wan_ifname, "down");
 			ioctl(s, SIOCSIFHWADDR, &ifr);
-		}
+#else
+			if (!wlifname && strcmp(wan_ifname, "br0")) {
+				eval("ifconfig", wan_ifname, "down");
+				ioctl(s, SIOCSIFHWADDR, &ifr);
+			}
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-		if (wlifname && !strcmp(wan_ifname, wlifname)) {
-			eval("wl", "-i", wan_ifname, "up");
-			config_macs(wan_ifname);
-		}
+			if (wlifname && !strcmp(wan_ifname, wlifname)) {
+				eval("wl", "-i", wan_ifname, "up");
+				config_macs(wan_ifname);
+			}
 #endif
-		cprintf("Write WAN mac successfully\n");
-	} else
-		perror("Write WAN mac fail : \n");
+			cprintf("Write WAN mac successfully\n");
+		} else
+			perror("Write WAN mac fail : \n");
+	}
 	// fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 
 	/*
