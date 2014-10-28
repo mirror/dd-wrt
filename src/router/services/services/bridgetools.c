@@ -218,7 +218,7 @@ int br_add_interface(const char *br, const char *dev)
 #ifdef HAVE_80211AC
 	eval("emf", "add", "iface", br, dev);
 #endif
-	if (nvram_nget("%s_hwaddr", br) == NULL || strlen(nvram_nget("%s_hwaddr", br)) == 0) {
+	if (strcmp(br,"br0") && nvram_nget("%s_hwaddr", br) == NULL || strlen(nvram_nget("%s_hwaddr", br)) == 0) {
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 			return ret;
 		strncpy(ifr.ifr_name, br, IFNAMSIZ);
