@@ -2535,6 +2535,10 @@ void save_networking(webs_t wp)
 		strcat(buffer, prio);
 		if (i < bridgesifcount - 1)
 			strcat(buffer, " ");
+		if (!strcmp(ifname,"br0"))
+			nvram_set("lan_hwaddr",websGetVar(wp,"lan_hwaddr",NULL));
+		else
+			nvram_nset(websGetVar(wp,var,NULL),"%s_hwaddr",ifname);
 	}
 	nvram_set("bridgesif", buffer);
 #ifdef HAVE_MDHCP
