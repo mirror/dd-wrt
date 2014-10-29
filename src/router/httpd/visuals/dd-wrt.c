@@ -1883,31 +1883,41 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 			break;
 		}
 	}
-	if (!br0found) {
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<script type=\"text/javascript\">Capture(networking.bridge)</script> %d\n", count);
-		sprintf(bridge_name, "bridgename%d", count);
-		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"br0\" />\n", bridge_name);
+	
+	websWrite(wp, "<table cellspacing=\"5\" summary=\"bridges\" id=\"Bridge_table\" class=\"table center\"><tr>\n");
+	websWrite(wp, "<th>Name</th>\n");
 #ifdef HAVE_MSTP
-		websWrite(wp, "&nbsp;MSTP&nbsp;");
+	websWrite(wp, "<th>MSTP</th>\n");
 #else
-		websWrite(wp, "&nbsp;STP&nbsp;");
-#endif
+	websWrite(wp, "<th>STP</th>\n");
+#endif		
+	websWrite(wp, "<th><script type=\"text/javascript\">Capture(networking.snooping)</script></th>\n");
+	websWrite(wp, "<th><script type=\"text/javascript\">Capture(networking.prio)</script></th>\n");
+	websWrite(wp, "<th>MTU</th>\n");
+	websWrite(wp, "<th>Root MAC</th>\n");
+	websWrite(wp, "<th>&nbsp;</th></tr>\n");
+	
+	if (!br0found) {
+
+		sprintf(bridge_name, "bridgename%d", count);
+		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\"size=\"3\" value=\"br0\" /></td>\n", bridge_name);
+		
 		sprintf(bridge_name, "bridgestp%d", count);
+		websWrite(wp, "<td>");
 		showOptions(wp, bridge_name, "On Off", "Off");
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.snooping)</script>&nbsp;");	//IGMP Snooping
+		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgemcastbr%d", count);
+		websWrite(wp, "<td>");
 		showOptions(wp, bridge_name, "On Off", nvram_default_match("br0_mcast", "1", "0") ? "On" : "Off");
-		websWrite(wp, "&nbsp;<script type=\"text/javascript\">Capture(networking.prio)</script>&nbsp;");
+		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
-		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"32768\" />\n", bridge_name);
-		websWrite(wp, "&nbsp;MTU&nbsp;");
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"5\" value=\"32768\" /></td>\n", bridge_name);
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
-		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"1500\" />\n", bridge_name);
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"1500\" /></td>\n", bridge_name);
+		
 		sprintf(bridge_name, "lan_hwaddr");
-		websWrite(wp, "</br>&nbsp;Root MAC&nbsp;<input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" />\n", bridge_name,nvram_safe_get(bridge_name));
-		websWrite(wp, "</div>\n");
+		websWrite(wp,"<td><input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" /></td></tr>\n", bridge_name,nvram_safe_get(bridge_name));
 		// don't show that here, since that is under Basic Setup
 		// show_ipnetmask(wp, bridge);
 		count++;
@@ -1936,42 +1946,39 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		if (!bridge || !stp)
 			break;
 
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "Bridge %d\n", count);
 		sprintf(bridge_name, "bridgename%d", count);
-		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n", bridge_name, bridge);
-#ifdef HAVE_MSTP
-		websWrite(wp, "&nbsp;MSTP&nbsp;");
-#else
-		websWrite(wp, "&nbsp;STP&nbsp;");
-#endif
+		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, bridge);
 		sprintf(bridge_name, "bridgestp%d", count);
+		websWrite(wp, "<td>");
 		showOptions(wp, bridge_name, "On Off", stp);
-		websWrite(wp, "&nbsp;IGMP Snooping&nbsp;");	//IGMP Snooping
+		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		char mcast[32];
 		sprintf(mcast, "%s_mcast", bridge);
+		websWrite(wp, "<td>");
 		showOptions(wp, bridge_name, "On Off", nvram_default_match(mcast, "1", "0") ? "On" : "Off");
-		websWrite(wp, "&nbsp;Prio&nbsp;");
+		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
-		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", bridge_name, prio != NULL ? prio : "32768");
-		websWrite(wp, "&nbsp;MTU&nbsp;");
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" /></td>\n", bridge_name, prio != NULL ? prio : "32768");
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
-		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n", bridge_name, mtu != NULL ? mtu : "1500");
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, mtu != NULL ? mtu : "1500");
 		if (!strcmp(bridge,"br0"))
 		    sprintf(bridge_name, "lan_hwaddr");
 		else
 		    sprintf(bridge_name, "%s_hwaddr",bridge);
 		
-		websWrite(wp, "</br>&nbsp;Root MAC&nbsp;<input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" />\n", bridge_name,nvram_safe_get(bridge_name));
+		
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" /></td>\n", bridge_name,nvram_safe_get(bridge_name));
+		websWrite(wp, "<td>");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
 			  count);
-		websWrite(wp, "</div>\n");
 		// don't show that here, since that is under Basic Setup
 		if (strcmp(bridge, "br0")) {
+			websWrite(wp, "<tr><td colspan=\"7\" align=\"center\">");
 			show_ipnetmask(wp, bridge);
+			websWrite(wp, "</td></tr>");
 		}
 		count++;
 	}
@@ -1980,32 +1987,28 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 
 	for (i = count; i < realcount; i++) {
 
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "Bridge %d\n", i);
 		sprintf(bridge_name, "bridgename%d", i);
-		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" />\n", bridge_name);
-#ifdef HAVE_MSTP
-		websWrite(wp, "&nbsp;MSTP&nbsp;");
-#else
-		websWrite(wp, "&nbsp;STP&nbsp;");
-#endif
+		websWrite(wp, "<tr><td><input class=\"num\" name=\"%s\"size=\"3\" /></td>\n", bridge_name);
 		sprintf(bridge_name, "bridgestp%d", i);
+		websWrite(wp, "<td>");
 		showOptions(wp, bridge_name, "On Off", "On");
-		websWrite(wp, "&nbsp;IGMP Snooping&nbsp;");	//IGMP Snooping
+		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgemcastbr%d", count);
+		websWrite(wp, "<td>");
 		showOptions(wp, bridge_name, "On Off", "Off");
-		websWrite(wp, "&nbsp;Prio&nbsp;");
+		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", i);
-		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" />\n", bridge_name, "32768");
-		websWrite(wp, "&nbsp;MTU&nbsp;");
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"5\" value=\"%s\" /></td>\n", bridge_name, "32768");
 		sprintf(bridge_name, "bridgemtu%d", count);
-		websWrite(wp, "<input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" />\n", bridge_name, "1500");
+		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, "1500");
+		websWrite(wp, "<td></td><td>");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"bridge_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script></td></tr>\n",
 			  i);
-		websWrite(wp, "</div>\n");
 		totalcount++;
 	}
+	websWrite(wp, "</table>");
+	
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"bridge_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
 	char var[32];
