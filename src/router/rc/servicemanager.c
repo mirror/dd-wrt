@@ -346,7 +346,7 @@ void startstop_fdelay(char *name, int delay)
 	init_shared();
 	if (stops_running)
 		stops_running[0]++;
-	FORK(startstop_delay(name, 0));
+	FORK(startstop_delay(name, delay));
 }
 
 void startstop_f(char *name)
