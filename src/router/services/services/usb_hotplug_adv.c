@@ -507,13 +507,8 @@ int usb_process_path(char *path, int host, char *part, char *devpath)
 		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
 	}
 
-	// only need partition dumps  
-	sysprintf("rm -f /tmp/disk/sda");
-	sysprintf("rm -f /tmp/disk/sdb");
-	sysprintf("rm -f /tmp/disk/sdc");
-	sysprintf("rm -f /tmp/disk/sdd");
 	// now we will get a nice ordered dump of all partitions
-	sysprintf("cat /tmp/disk/* > %s", DUMPFILE);
+	sysprintf("cat /tmp/disk/sd*[1-6] > %s", DUMPFILE);
 
 	/* avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram everything else can be used for fs cache */
 #ifdef HAVE_80211AC
