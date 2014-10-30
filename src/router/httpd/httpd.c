@@ -818,7 +818,7 @@ static void handle_request(void)
 	}
 #endif
 
-	if (!referer && strcasecmp(method, "post") == 0) {
+	if (!referer && strcasecmp(method, "post") == 0 && nodetect == 0) {
 		send_error(400, "Bad Request", (char *)0, "Cross Site Action detected!");
 		return;
 	}
