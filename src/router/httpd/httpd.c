@@ -817,6 +817,11 @@ static void handle_request(void)
 		}
 	}
 #endif
+
+	if (!referer && strcasecmp(method, "post") == 0) {
+		send_error(400, "Bad Request", (char *)0, "Cross Site Action detected!");
+		return;
+	}
 	if (referer && host && nodetect == 0) {
 		int i;
 		int hlen = strlen(host);
