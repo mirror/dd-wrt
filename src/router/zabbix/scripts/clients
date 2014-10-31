@@ -1,0 +1,6 @@
+#!/bin/sh
+
+ARP=`grep 0x2 /proc/net/arp | grep -v $(get_wanface) | wc -l`
+WL0=`wl -i eth1 assoclist | wc -l`
+WL1=`wl -i eth2 assoclist | wc -l`
+echo `expr $ARP - $WL0 - $WL1`
