@@ -1,0 +1,77 @@
+#!/opt/bin/bash
+#####################################################
+# regtop
+#####################################################
+# Uses logtail & readlink
+# http://sourceforge.net/projects/logtail/
+#####################################################
+# echo 'zabbix ALL =(ALL) NOPASSWD: /opt/usr/sbin/regtop' >>/opt/etc/sudoers.d/zabbix
+#
+# echo 'UserParameter=vfs.file.regtop[*],  sudo /opt/usr/sbin/regtop   "$1" "$2" "$3" "$4" "$5" "$6"' >>/opt/etc/zabbix/zabbix_agentd.conf
+#####################################################
+# 08-12-2010 by Frater
+#
+# The 4th parameter (minutes) is optional.
+# When 0 or empty, it will use 'logtail' which only checks the portion which hasn't been parsed before
+# When minutes is 1, it will take the whole file
+# When it's greater than 1, it will use 'lastmins' that will only output the last x minutes
+#####################################################
+export PATH=/opt/usr/sbin:$PATH
+offset=/opt/var/run/regtop.
+
+v=
+while getopts v name
+do
+  case $name in
+    v)   v='-v ';;
+    ?)   printf "Usage: %s: [-v] <file> <Eregexp>,  [<Eregexp>] , [ <minutes> ]\n" $0
+    exit 2;;
+  esac
+done
+shift $(($OPTIND - 1))
+
+[ ! -h "$1" ] && [ ! -f "$1" ] && exit 1
+[ -z "$2" ]   && exit 1
+
+minutes=`echo "$4" | awk -F. '{print $1}' | tr -cd '0-9'`
+[ -z "${minutes}" ] && minutes=0
+
+ftmp1=`mktemp`
+file2parse="$1"
+
+if [ ${minutes} -eq 0 ] ; then
+  fname="`readlink -f "$1"`"
+  fname="`basename "${fname}"`"
+  expression="`echo "$fname.${v}$2$3" | tr -cd '.0-9A-Za-z-'`"
+  offset="${offset}${expression}.offset"
+  logtail -f "$1" -o $offset >${ftmp1}
+  file2parse=${ftmp1}
+elif [ ${minutes} -gt 1 ] ; then
+  cat "$1" | lastmins ${minutes} >${ftmp1}
+  file2parse=${ftmp1}
+fi
+
+if [ ! -z "$3" ] ; then
+  ftmp2=`mktemp`
+  grep $v -E "$3" ${file2parse} >${ftmp2}
+  file2parse=${ftmp2}
+fi
+
+grep -oE "${2}" ${file2parse} | sort -o ${ftmp1}
+
+total=`cat ${ftmp1} | wc -l`
+if [ $total -gt 0 ] ; then
+
+  rows=`echo "${5}" | tr -cd '0-9'`
+  [ -z "${rows}" ] && rows=5
+  expression="${2}"
+
+  [ -z "$3" ] || expression="${expression} && $3"
+  uniq -c ${ftmp1} | sort -rn | head -n${rows}
+  echo "Total: $total lines with \"${expression}\""
+else
+  echo '-'
+fi
+
+rm -f ${ftmp1} 2>/dev/null
+rm -f ${ftmp2} 2>/dev/null
