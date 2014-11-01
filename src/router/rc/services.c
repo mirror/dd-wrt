@@ -125,7 +125,7 @@ int start_services_main(int argc, char **argv)
 #ifdef HAVE_TFTP
 	start_service_f("tftpd");
 #endif
-	start_service_f("httpd");
+	startstop_fdelay("httpd", 2);
 	start_service_f("udhcpd");
 #ifdef HAVE_DNSMASQ
 	start_service_f("dnsmasq");
