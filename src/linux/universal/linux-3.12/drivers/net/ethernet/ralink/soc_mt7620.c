@@ -32,8 +32,10 @@
 #define MT7620A_RESET_ESW	BIT(23)
 #define MT7620_L4_VALID		BIT(23)
 
+#define MT7620_TX_DMA_UDF	BIT(15)
+#define TX_DMA_FP_BMAP		((0xff) << 19)
+
 #define SYSC_REG_RESET_CTRL     0x34
-#define MAX_RX_LENGTH           1536
 
 #define CDMA_ICS_EN		BIT(2)
 #define CDMA_UCS_EN		BIT(1)
@@ -43,7 +45,13 @@
 #define GDMA_TCS_EN		BIT(21)
 #define GDMA_UCS_EN		BIT(20)
 
-static const u32 rt5350_reg_table[FE_REG_COUNT] = {
+/* frame engine counters */
+#define MT7620_REG_MIB_OFFSET	0x1000
+#define MT7620_PPE_AC_BCNT0	(MT7620_REG_MIB_OFFSET + 0x00)
+#define MT7620_GDM1_TX_GBCNT	(MT7620_REG_MIB_OFFSET + 0x300)
+#define MT7620_GDM2_TX_GBCNT	(MT7620_GDM1_TX_GBCNT + 0x40)
+
+static const u32 mt7620_reg_table[FE_REG_COUNT] = {
 	[FE_REG_PDMA_GLO_CFG] = RT5350_PDMA_GLO_CFG,
 	[FE_REG_PDMA_RST_CFG] = RT5350_PDMA_RST_CFG,
 	[FE_REG_DLY_INT_CFG] = RT5350_DLY_INT_CFG,
@@ -56,6 +64,7 @@ static const u32 rt5350_reg_table[FE_REG_COUNT] = {
 	[FE_REG_FE_INT_ENABLE] = RT5350_FE_INT_ENABLE,
 	[FE_REG_FE_INT_STATUS] = RT5350_FE_INT_STATUS,
 	[FE_REG_FE_DMA_VID_BASE] = MT7620_DMA_VID,
+	[FE_REG_FE_COUNTER_BASE] = MT7620_GDM1_TX_GBCNT,
 };
 
 static void mt7620_fe_reset(void)
@@ -64,40 +73,45 @@ static void mt7620_fe_reset(void)
 	rt_sysc_w32(0, SYSC_REG_RESET_CTRL);
 }
 
-static void mt7620_fwd_config(struct fe_priv *priv)
+static void mt7620_rxcsum_config(bool enable)
 {
-	int i;
+	if (enable)
+		fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) | (GDMA_ICS_EN |
+					GDMA_TCS_EN | GDMA_UCS_EN),
+				MT7620A_GDMA1_FWD_CFG);
+	else
+		fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) & ~(GDMA_ICS_EN |
+					GDMA_TCS_EN | GDMA_UCS_EN),
+				MT7620A_GDMA1_FWD_CFG);
+}
 
-	/* frame engine will push VLAN tag regarding to VIDX feild in Tx desc. */
-	for (i = 0; i < 16; i += 2)
-		fe_w32(((i + 1) << 16) + i, MT7620_DMA_VID + (i * 2));
+static void mt7620_txcsum_config(bool enable)
+{
+	if (enable)
+		fe_w32(fe_r32(MT7620A_CDMA_CSG_CFG) | (CDMA_ICS_EN |
+					CDMA_UCS_EN | CDMA_TCS_EN),
+				MT7620A_CDMA_CSG_CFG);
+	else
+		fe_w32(fe_r32(MT7620A_CDMA_CSG_CFG) & ~(CDMA_ICS_EN |
+					CDMA_UCS_EN | CDMA_TCS_EN),
+				MT7620A_CDMA_CSG_CFG);
+}
+
+static int mt7620_fwd_config(struct fe_priv *priv)
+{
+	struct net_device *dev = priv_netdev(priv);
 
 	fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) & ~7, MT7620A_GDMA1_FWD_CFG);
-	fe_w32(fe_r32(MT7620A_GDMA1_FWD_CFG) | (GDMA_ICS_EN | GDMA_TCS_EN | GDMA_UCS_EN), MT7620A_GDMA1_FWD_CFG);
-	fe_w32(fe_r32(MT7620A_CDMA_CSG_CFG) | (CDMA_ICS_EN | CDMA_UCS_EN | CDMA_TCS_EN), MT7620A_CDMA_CSG_CFG);
+
+	mt7620_txcsum_config((dev->features & NETIF_F_IP_CSUM));
+	mt7620_rxcsum_config((dev->features & NETIF_F_RXCSUM));
+
+	return 0;
 }
 
 static void mt7620_tx_dma(struct fe_priv *priv, int idx, struct sk_buff *skb)
 {
-	unsigned int nr_frags = 0;
-	unsigned int len = 0;
-
-	if (skb) {
-		nr_frags = skb_shinfo(skb)->nr_frags;
-		len = skb->len - skb->data_len;
-	}
-
-	if (!skb)
-		priv->tx_dma[idx].txd2 = TX_DMA_LSO | TX_DMA_DONE;
-	else if (!nr_frags)
-		priv->tx_dma[idx].txd2 = TX_DMA_LSO | TX_DMA_PLEN0(len);
-	else
-		priv->tx_dma[idx].txd2 = TX_DMA_PLEN0(len);
-
-	if(skb && vlan_tx_tag_present(skb))
-		priv->tx_dma[idx].txd4 = 0x80 | (vlan_tx_tag_get(skb) >> 13) << 4 | (vlan_tx_tag_get(skb) & 0xF);
-	else
-		priv->tx_dma[idx].txd4 = 0;
+	priv->tx_dma[idx].txd4 = 0;
 }
 
 static void mt7620_rx_dma(struct fe_priv *priv, int idx, int len)
@@ -105,37 +119,18 @@ static void mt7620_rx_dma(struct fe_priv *priv, int idx, int len)
 	priv->rx_dma[idx].rxd2 = RX_DMA_PLEN0(len);
 }
 
-#ifdef CONFIG_INET_LRO
-static int
-mt7620_get_skb_header(struct sk_buff *skb, void **iphdr, void **tcph,
-			u64 *hdr_flags, void *_priv)
+static void mt7620_init_data(struct fe_soc_data *data,
+		struct net_device *netdev)
 {
-	struct iphdr *iph = NULL;
-	int vhdr_len = 0;
+	struct fe_priv *priv = netdev_priv(netdev);
 
-	/*
-	 * Make sure that this packet is Ethernet II, is not VLAN
-	 * tagged, is IPv4, has a valid IP header, and is TCP.
-	 */
-	if (skb->protocol == 0x0081)
-		vhdr_len = VLAN_HLEN;
+	priv->flags = FE_FLAG_PADDING_64B;
+	netdev->hw_features = NETIF_F_IP_CSUM | NETIF_F_RXCSUM |
+		NETIF_F_HW_VLAN_CTAG_TX;
 
-	iph = (struct iphdr *)(skb->data + vhdr_len);
-	if(iph->protocol != IPPROTO_TCP)
-		return -1;
-
-	*iphdr = iph;
-	*tcph = skb->data + (iph->ihl << 2) + vhdr_len;
-	*hdr_flags = LRO_IPV4 | LRO_TCP;
-
-	return 0;
-}
-#endif
-
-static void mt7620_init_data(struct fe_soc_data *data)
-{
 	if (mt7620_get_eco() >= 5)
-		data->tso = 1;
+		netdev->hw_features |= NETIF_F_SG | NETIF_F_TSO | NETIF_F_TSO6 |
+			NETIF_F_IPV6_CSUM;
 }
 
 static struct fe_soc_data mt7620_data = {
@@ -149,19 +144,16 @@ static struct fe_soc_data mt7620_data = {
 	.switch_init = mt7620_gsw_probe,
 	.switch_config = mt7620_gsw_config,
 	.port_init = mt7620_port_init,
-	.min_pkt_len = 0,
-	.reg_table = rt5350_reg_table,
+	.reg_table = mt7620_reg_table,
 	.pdma_glo_cfg = FE_PDMA_SIZE_16DWORDS | MT7620A_DMA_2B_OFFSET,
 	.rx_dly_int = RT5350_RX_DLY_INT,
 	.tx_dly_int = RT5350_TX_DLY_INT,
 	.checksum_bit = MT7620_L4_VALID,
+	.tx_udf_bit = MT7620_TX_DMA_UDF,
 	.has_carrier = mt7620a_has_carrier,
 	.mdio_read = mt7620_mdio_read,
 	.mdio_write = mt7620_mdio_write,
 	.mdio_adjust_link = mt7620_mdio_link_adjust,
-#ifdef CONFIG_INET_LRO
-	.get_skb_header = mt7620_get_skb_header,
-#endif
 };
 
 const struct of_device_id of_fe_match[] = {
