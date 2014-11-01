@@ -1250,7 +1250,11 @@ int internal_getRouterBrand()
 
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
 	    && nvram_match("boardrev", "0x1301")) {
-		setRouter("Netgear R7000");
+		if(nvram_match("board_id", "U12H270T10_NETGEAR")) {
+			setRouter("Netgear R6700");
+		} else {
+			setRouter("Netgear R7000");
+		}
 		return ROUTER_NETGEAR_R7000;
 	}
 
