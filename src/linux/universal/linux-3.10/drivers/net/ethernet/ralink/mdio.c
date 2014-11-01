@@ -118,8 +118,38 @@ int fe_connect_phy_node(struct fe_priv *priv, struct device_node *phy_node)
 	return 0;
 }
 
+static void phy_init(struct fe_priv *priv, struct phy_device *phy)
+{
+	phy_attach(priv->netdev, dev_name(&phy->dev), PHY_INTERFACE_MODE_MII);
+
+	phy->autoneg = AUTONEG_ENABLE;
+	phy->speed = 0;
+	phy->duplex = 0;
+	phy->supported &= PHY_BASIC_FEATURES;
+	phy->advertising = phy->supported | ADVERTISED_Autoneg;
+
+	phy_start_aneg(phy);
+}
+
 static int fe_phy_connect(struct fe_priv *priv)
 {
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		if (priv->phy->phy_node[i]) {
+			if (!priv->phy_dev) {
+				priv->phy_dev = priv->phy->phy[i];
+				priv->phy_flags = FE_PHY_FLAG_PORT;
+			}
+		} else if (priv->mii_bus && priv->mii_bus->phy_map[i]) {
+			phy_init(priv, priv->mii_bus->phy_map[i]);
+			if (!priv->phy_dev) {
+				priv->phy_dev = priv->mii_bus->phy_map[i];
+				priv->phy_flags = FE_PHY_FLAG_ATTACH;
+			}
+		}
+	}
+
 	return 0;
 }
 
@@ -137,6 +167,8 @@ static void fe_phy_disconnect(struct fe_priv *priv)
 			spin_unlock_irqrestore(&priv->phy->lock, flags);
 		} else if (priv->phy->phy[i]) {
 			phy_disconnect(priv->phy->phy[i]);
+		} else if (priv->mii_bus && priv->mii_bus->phy_map[i]) {
+			phy_detach(priv->mii_bus->phy_map[i]);
 		}
 }
 
@@ -214,7 +246,6 @@ int fe_mdio_init(struct fe_priv *priv)
 	priv->mii_bus->read = priv->soc->mdio_read;
 	priv->mii_bus->write = priv->soc->mdio_write;
 	priv->mii_bus->reset = fe_mdio_reset;
-	priv->mii_bus->irq = priv->mii_irq;
 	priv->mii_bus->priv = priv;
 	priv->mii_bus->parent = priv->device;
 
