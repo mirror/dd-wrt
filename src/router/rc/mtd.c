@@ -377,8 +377,10 @@ int mtd_write(const char *path, const char *mtd)
 				}
 				break;
 			case ROUTER_NETGEAR_R7000:
-				if (strncmp(board_id, "U12H270T00_NETGEAR", sizeof(board_id)) && strncmp(board_id, "QU12H270T00_NETGEAR", sizeof(board_id))) {
-					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H270T00_NETGEAR or QU12H270T00_NETGEAR");
+				if (strncmp(board_id, "U12H270T00_NETGEAR", sizeof(board_id)) && 
+				    strncmp(board_id, "U12H270T10_NETGEAR", sizeof(board_id)) && 
+				    strncmp(board_id, "QU12H270T00_NETGEAR", sizeof(board_id)) ) {
+					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H270T00_NETGEAR U12H270T10_NETGEAR or QU12H270T00_NETGEAR");
 					fclose(fp);
 					return -1;
 				}
