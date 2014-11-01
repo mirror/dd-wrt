@@ -13,6 +13,6 @@
 		"    --auth-type pap|chap|both|none: Use network authentication type\n" \
 		"    --username <name>:              Use network username\n" \
 		"    --password <password>:          Use network password\n" \
-		"    --autconnect:                   Enable automatic connect/reconnect\n" \
+		"    --autoconnect:                   Enable automatic connect/reconnect\n" \
 		"  --get-data-status:                Get current data access status\n" \
 
