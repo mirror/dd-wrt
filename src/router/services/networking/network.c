@@ -511,6 +511,10 @@ static int wlconf_up(char *name)
 			eval("wl", "-i", name, "vht_features", "1");
 	}
 #endif
+#if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
+	setRegulationDomain(nvram_safe_get("wl_regdomain"));
+#endif
+
 	ret = eval("wlconf", name, "up");
 	/*
 	 * eval("wl","radio","off"); eval("wl","atten","0","0","60");
@@ -659,10 +663,6 @@ void start_wlconf(void)
 {
 	int cnt = get_wl_instances();
 	int c;
-#if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
-	setRegulationDomain(nvram_safe_get("wl_regdomain"));
-#endif
-
 #ifdef HAVE_QTN
 	cnt = 1;
 #endif
