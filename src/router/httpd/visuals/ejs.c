@@ -2473,10 +2473,12 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_80211AC		//broadcom
 		if (txpower == 1496) {
 			websWrite(wp, "Auto");
-		} else {
+		} 
+		else 
+#endif
+		{
 			websWrite(wp, "%d mW", txpower);
 		}
-#endif
 #endif
 #endif
 	}
