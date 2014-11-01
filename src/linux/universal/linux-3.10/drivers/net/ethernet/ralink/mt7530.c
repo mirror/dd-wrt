@@ -60,6 +60,9 @@ enum {
 #define REG_ESW_PORT_PCR(x)	(0x2004 | ((x) << 8))
 #define REG_ESW_PORT_PVC(x)	(0x2010 | ((x) << 8))
 #define REG_ESW_PORT_PPBV1(x)	(0x2014 | ((x) << 8))
+
+#define REG_HWTRAP		0x7804
+
 enum {
 	/* Global attributes. */
 	MT7530_ATTR_ENABLE_VLAN,
@@ -127,8 +130,6 @@ static void
 mt7530_apply_mapping(struct mt7530_priv *mt7530, struct mt7530_mapping *map)
 {
 	int i = 0;
-
-	mt7530->global_vlan_enable = 1;
 
 	for (i = 0; i < MT7530_NUM_PORTS; i++)
 		mt7530->port_entries[i].pvid = map->pvids[i];
@@ -388,9 +389,9 @@ mt7530_apply_config(struct switch_dev *dev)
 			mt7530_w32(priv, REG_ESW_PORT_PCR(i), 0x00ff0000);
 
 		for (i = 0; i < MT7530_NUM_PORTS; i++)
-			mt7530_w32(priv, REG_ESW_PORT_PVC(i), 0x8100000c);
+			mt7530_w32(priv, REG_ESW_PORT_PVC(i), 0x810000c0);
 
-	  	return 0;
+		return 0;
 	}
 
 	/* set all ports as security mode */
@@ -536,15 +537,12 @@ static const struct switch_dev_ops mt7530_ops = {
 };
 
 int
-mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus)
+mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus, int vlan)
 {
 	struct switch_dev *swdev;
 	struct mt7530_priv *mt7530;
 	struct mt7530_mapping *map;
 	int ret;
-
-	if (bus && bus->phy_map[0x1f]->phy_id != 0x1beef)
-		return 0;
 
 	mt7530 = devm_kzalloc(dev, sizeof(struct mt7530_priv), GFP_KERNEL);
 	if (!mt7530)
@@ -552,11 +550,16 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus)
 
 	mt7530->base = base;
 	mt7530->bus = bus;
-	mt7530->global_vlan_enable = 1;
+	mt7530->global_vlan_enable = vlan;
 
 	swdev = &mt7530->swdev;
-	swdev->name = "mt7530";
-	swdev->alias = "mt7530";
+	if (bus) {
+		swdev->alias = "mt7530";
+		swdev->name = "mt7530";
+	} else {
+		swdev->alias = "mt7620";
+		swdev->name = "mt7620";
+	}
 	swdev->cpu_port = MT7530_CPU_PORT;
 	swdev->ports = MT7530_NUM_PORTS;
 	swdev->vlans = MT7530_NUM_VLANS;
@@ -568,16 +571,18 @@ mt7530_probe(struct device *dev, void __iomem *base, struct mii_bus *bus)
 		return ret;
 	}
 
-	dev_info(dev, "loaded mt7530 driver\n");
 
 	map = mt7530_find_mapping(dev->of_node);
 	if (map)
 		mt7530_apply_mapping(mt7530, map);
 	mt7530_apply_config(swdev);
-/*	printk(KERN_INFO "add special quirk\n");
-	mt7530_w32(mt7530, 0x3600, 0x5ee3a);
-	mt7530_w32(mt7530, 0x7000, 0x717fc3);
-	mt7530_w32(mt7530, 0x7804, 0x1015e9f);
-	mt7530_w32(mt7530, 0x3600, 0x5ee3b);*/
+
+	/* magic vodoo */
+	if (bus && mt7530_r32(mt7530, REG_HWTRAP) !=  0x1117edf) {
+	        dev_info(dev, "fixing up MHWTRAP register - bootloader probably played with it\n");
+		mt7530_w32(mt7530, REG_HWTRAP, 0x1117edf);
+	}
+	dev_info(dev, "loaded %s driver\n", swdev->name);
+
 	return 0;
 }
