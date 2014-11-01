@@ -2655,6 +2655,10 @@ void start_lan(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	for (c = 0; c < cnt; c++) {
 		eval("wl", "-i", get_wl_instance_name(c), "radio", nvram_nmatch("disabled", "wl%d_net_mode", c) ? "off" : "on");
+#ifndef HAVE_80211AC
+		eval("wl", "-i", get_wl_instance_name(c), "down");
+		eval("wl", "-i", get_wl_instance_name(c), "up");
+#endif
 	}
 #endif
 	/*
