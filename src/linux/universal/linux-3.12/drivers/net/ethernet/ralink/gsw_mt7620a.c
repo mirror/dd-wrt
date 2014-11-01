@@ -462,6 +462,7 @@ static void gsw_hw_init(struct mt7620_gsw *gsw)
 	_mt7620_mii_write(gsw, 1, 4, 0x05e1);
 	_mt7620_mii_write(gsw, 2, 4, 0x05e1);
 	_mt7620_mii_write(gsw, 3, 4, 0x05e1);
+
 	_mt7620_mii_write(gsw, 1, 31, 0xa000); //local, page 2
 	_mt7620_mii_write(gsw, 0, 16, 0x1111);
 	_mt7620_mii_write(gsw, 1, 16, 0x1010);
@@ -507,10 +508,12 @@ int mt7620_gsw_config(struct fe_priv *priv)
 	struct mt7620_gsw *gsw = (struct mt7620_gsw *) priv->soc->swpriv;
 
 	/* is the mt7530 internal or external */
-	if ((_mt7620_mii_read(gsw, 0x1f, 2) == 1) && (_mt7620_mii_read(gsw, 0x1f, 3) == 0xbeef))
-		mt7530_probe(priv->device, NULL, priv->mii_bus);
-	else
-		mt7530_probe(priv->device, gsw->base, NULL);
+	if (priv->mii_bus && priv->mii_bus->phy_map[0x1f]) {
+		mt7530_probe(priv->device, gsw->base, NULL, 0);
+		mt7530_probe(priv->device, NULL, priv->mii_bus, 1);
+	} else {
+		mt7530_probe(priv->device, gsw->base, NULL, 1);
+	}
 
 	return 0;
 }

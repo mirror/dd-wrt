@@ -2,7 +2,7 @@
 # Makefile for the Ralink SoCs built-in ethernet macs
 #
 
-ralink-eth-y					+= ralink_soc_eth.o
+ralink-eth-y					+= ralink_soc_eth.o ralink_ethtool.o
 
 ralink-eth-$(CONFIG_NET_RALINK_MDIO)		+= mdio.o
 ralink-eth-$(CONFIG_NET_RALINK_MDIO_RT2880)	+= mdio_rt2880.o
