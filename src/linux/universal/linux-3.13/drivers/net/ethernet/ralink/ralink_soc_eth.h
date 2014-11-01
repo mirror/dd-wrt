@@ -24,8 +24,7 @@
 #include <linux/netdevice.h>
 #include <linux/dma-mapping.h>
 #include <linux/phy.h>
-#include <linux/inet_lro.h>
-
+#include <linux/ethtool.h>
 
 enum fe_reg {
 	FE_REG_PDMA_GLO_CFG = 0,
@@ -40,17 +39,24 @@ enum fe_reg {
 	FE_REG_FE_INT_ENABLE,
 	FE_REG_FE_INT_STATUS,
 	FE_REG_FE_DMA_VID_BASE,
+	FE_REG_FE_COUNTER_BASE,
 	FE_REG_COUNT
 };
 
-#define NUM_DMA_DESC		0x100
+#define FE_DRV_VERSION		"0.1.0"
+
+/* power of 2 to let NEXT_TX_DESP_IDX work */
+#define NUM_DMA_DESC		(1 << 7)
+#define MAX_DMA_DESC		0xfff
 
 #define FE_DELAY_EN_INT		0x80
 #define FE_DELAY_MAX_INT	0x04
 #define FE_DELAY_MAX_TOUT	0x04
+#define FE_DELAY_TIME		20
 #define FE_DELAY_CHAN		(((FE_DELAY_EN_INT | FE_DELAY_MAX_INT) << 8) | FE_DELAY_MAX_TOUT)
 #define FE_DELAY_INIT		((FE_DELAY_CHAN << 16) | FE_DELAY_CHAN)
 #define FE_PSE_FQFC_CFG_INIT	0x80504000
+#define FE_PSE_FQFC_CFG_256Q	0xff908000
 
 /* interrupt bits */
 #define FE_CNT_PPE_AF		BIT(31)
@@ -230,6 +236,8 @@ enum fe_reg {
 #define FE_MDIO_CFG_TX_CLK_SKEW_INV	3
 
 /* uni-cast port */
+#define FE_GDM1_JMB_LEN_MASK	0xf
+#define FE_GDM1_JMB_LEN_SHIFT	28
 #define FE_GDM1_ICS_EN		BIT(22)
 #define FE_GDM1_TCS_EN		BIT(21)
 #define FE_GDM1_UCS_EN		BIT(20)
@@ -280,14 +288,30 @@ struct fe_rx_dma {
 #define TX_DMA_PLEN0_MASK	((0x3fff) << 16)
 #define TX_DMA_PLEN0(_x)	(((_x) & 0x3fff) << 16)
 #define TX_DMA_PLEN1(_x)	((_x) & 0x3fff)
+#define TX_DMA_GET_PLEN0(_x)    (((_x) >> 16 ) & 0x3fff)
+#define TX_DMA_GET_PLEN1(_x)    ((_x) & 0x3fff)
 #define TX_DMA_LS1		BIT(14)
-#define TX_DMA_LSO		BIT(30)
+#define TX_DMA_LS0		BIT(30)
 #define TX_DMA_DONE		BIT(31)
+
+#define TX_DMA_INS_VLAN		BIT(7)
+#define TX_DMA_INS_PPPOE	BIT(12)
 #define TX_DMA_QN(_x)		((_x) << 16)
 #define TX_DMA_PN(_x)		((_x) << 24)
 #define TX_DMA_QN_MASK		TX_DMA_QN(0x7)
 #define TX_DMA_PN_MASK		TX_DMA_PN(0x7)
+#define TX_DMA_UDF		BIT(20)
 #define TX_DMA_CHKSUM		(0x7 << 29)
+#define TX_DMA_TSO		BIT(28)
+
+/* frame engine counters */
+#define FE_PPE_AC_BCNT0		(FE_CMTABLE_OFFSET + 0x00)
+#define FE_GDMA1_TX_GBCNT	(FE_CMTABLE_OFFSET + 0x300)
+#define FE_GDMA2_TX_GBCNT	(FE_GDMA1_TX_GBCNT + 0x40)
+
+/* phy device flags */
+#define FE_PHY_FLAG_PORT	BIT(0)
+#define FE_PHY_FLAG_ATTACH	BIT(1)
 
 struct fe_tx_dma {
 	unsigned int txd1;
@@ -319,10 +343,10 @@ struct fe_soc_data
 	unsigned char mac[6];
 	const u32 *reg_table;
 
-	void (*init_data)(struct fe_soc_data *data);
+	void (*init_data)(struct fe_soc_data *data, struct net_device *netdev);
 	void (*reset_fe)(void);
 	void (*set_mac)(struct fe_priv *priv, unsigned char *mac);
-	void (*fwd_config)(struct fe_priv *priv);
+	int (*fwd_config)(struct fe_priv *priv);
 	void (*tx_dma)(struct fe_priv *priv, int idx, struct sk_buff *skb);
 	void (*rx_dma)(struct fe_priv *priv, int idx, int len);
 	int (*switch_init)(struct fe_priv *priv);
@@ -334,16 +358,40 @@ struct fe_soc_data
 	int (*mdio_write)(struct mii_bus *bus, int phy_addr, int phy_reg, u16 val);
 	int (*mdio_read)(struct mii_bus *bus, int phy_addr, int phy_reg);
 	void (*mdio_adjust_link)(struct fe_priv *priv, int port);
-	int (*get_skb_header)(struct sk_buff *skb, void **iphdr, void **tcph, u64 *hdr_flags, void *priv);
 
 	void *swpriv;
 	u32 pdma_glo_cfg;
 	u32 rx_dly_int;
 	u32 tx_dly_int;
 	u32 checksum_bit;
-	u32 tso;
+	u32 tx_udf_bit;
+};
 
-	int min_pkt_len;
+#define FE_FLAG_PADDING_64B		BIT(0)
+#define FE_FLAG_PADDING_BUG		BIT(1)
+#define FE_FLAG_JUMBO_FRAME		BIT(2)
+
+#define FE_STAT_REG_DECLARE		\
+	_FE(tx_bytes)			\
+	_FE(tx_packets)			\
+	_FE(tx_skip)			\
+	_FE(tx_collisions)		\
+	_FE(rx_bytes)			\
+	_FE(rx_packets)			\
+	_FE(rx_overflow)		\
+	_FE(rx_fcs_errors)		\
+	_FE(rx_short_errors)		\
+	_FE(rx_long_errors)		\
+	_FE(rx_checksum_errors)		\
+	_FE(rx_flow_control_packets)
+
+struct fe_hw_stats
+{
+	spinlock_t stats_lock;
+	struct u64_stats_sync syncp;
+#define _FE(x) u64 x;
+FE_STAT_REG_DECLARE
+#undef _FE
 };
 
 struct fe_priv
@@ -352,33 +400,49 @@ struct fe_priv
 
 	struct fe_soc_data		*soc;
 	struct net_device		*netdev;
+	u32				msg_enable;
+	u32				flags;
+
 	struct device			*device;
 	unsigned long			sysclk;
 
+	u16				frag_size;
+	u16				rx_buf_size;
 	struct fe_rx_dma		*rx_dma;
-        struct napi_struct		rx_napi;
-	struct sk_buff			*rx_skb[NUM_DMA_DESC];
+	u8				**rx_data;
 	dma_addr_t			rx_phys;
+	struct napi_struct		rx_napi;
 
 	struct fe_tx_dma		*tx_dma;
-	struct tasklet_struct		tx_tasklet;
-	struct sk_buff			*tx_skb[NUM_DMA_DESC];
+	struct sk_buff			**tx_skb;
 	dma_addr_t			tx_phys;
 	unsigned int			tx_free_idx;
 
 	struct fe_phy			*phy;
 	struct mii_bus			*mii_bus;
-	int				mii_irq[PHY_MAX_ADDR];
+	struct phy_device		*phy_dev;
+	u32				phy_flags;
 
 	int				link[8];
 
-	struct net_lro_mgr		lro_mgr;
-	struct net_lro_desc		lro_arr[8];
+	struct fe_hw_stats		*hw_stats;
 };
 
 extern const struct of_device_id of_fe_match[];
 
 void fe_w32(u32 val, unsigned reg);
 u32 fe_r32(unsigned reg);
+
+int fe_set_clock_cycle(struct fe_priv *priv);
+void fe_csum_config(struct fe_priv *priv);
+void fe_stats_update(struct fe_priv *priv);
+void fe_fwd_config(struct fe_priv *priv);
+void fe_reg_w32(u32 val, enum fe_reg reg);
+u32 fe_reg_r32(enum fe_reg reg);
+
+static inline void *priv_netdev(struct fe_priv *priv)
+{
+	return (char *)priv - ALIGN(sizeof(struct net_device), NETDEV_ALIGN);
+}
 
 #endif /* FE_ETH_H */
