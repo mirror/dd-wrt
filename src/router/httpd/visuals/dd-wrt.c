@@ -58,7 +58,7 @@ static unsigned int type7_clocks[10] = { 183, 187, 198, 200, 216, 225, 233, 237,
 static unsigned int type8_clocks[9] = { 200, 300, 400, 500, 600, 632, 650, 662, 0 };
 
 static unsigned int type9_clocks[7] =	// 1200 seem to be the last value which works stable
-{ 600, 800, 1000, 1200, 1400, 1600 };
+{ 600, 800, 1000, 1200, 1400, 1600, 0 };
 
 static unsigned int type10_clocks[7] = { 300, 333, 400, 480, 500, 533, 0 };
 
