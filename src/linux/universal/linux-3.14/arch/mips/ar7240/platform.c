@@ -351,6 +351,14 @@ static struct ar8327_led_cfg dir825c1_ar8327_led_cfg = {
 	.open_drain = true,
 };
 
+static struct ar8327_led_cfg wndr4300_ar8327_led_cfg = {
+	.led_ctrl0 = 0xc737c737,
+	.led_ctrl1 = 0x00000000,
+	.led_ctrl2 = 0x00000000,
+	.led_ctrl3 = 0x0030c300,
+	.open_drain = false,
+};
+
 static struct ar8327_platform_data db120_ar8327_data = {
 	.pad0_cfg = &db120_ar8327_pad0_cfg,
 	.port0_cfg = {
@@ -366,7 +374,11 @@ static struct ar8327_platform_data db120_ar8327_data = {
 		      .rxpause = 1,
 		      },
 #ifdef CONFIG_DIR825C1
+#if defined(CONFIG_MTD_NAND_ATH)
+	.led_cfg = &wndr4300_ar8327_led_cfg,
+#else
 	.led_cfg = &dir825c1_ar8327_led_cfg,
+#endif
 #endif
 };
 
@@ -769,7 +781,6 @@ int __init ar7240_platform_init(void)
 		#ifdef CONFIG_WDR4300
 	mdiobus_register_board_info(wdr4300_mdio0_info, ARRAY_SIZE(wdr4300_mdio0_info));
 		#else
-
 	mdiobus_register_board_info(db120_mdio0_info, ARRAY_SIZE(db120_mdio0_info));
 		#endif
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
