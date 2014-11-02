@@ -181,6 +181,8 @@ else
 endif
 ifeq ($(CONFIG_DIST),"mini")
 	sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/CONFIG_CC_OPTIMIZE_FOR_SIZE=y/g' $(LINUXDIR)/.config
+else
+	sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_SIZE=y/# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config
 endif
 
 	$(MAKE) -C $(LINUXDIR) oldconfig	
