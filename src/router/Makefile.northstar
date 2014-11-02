@@ -179,6 +179,10 @@ ifeq ($(CONFIG_EOP_TUNNEL),y)
 else
 	echo "# CONFIG_NET_ETHERIP is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_DIST),"mini")
+	sed -i 's/\# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/CONFIG_CC_OPTIMIZE_FOR_SIZE=y/g' $(LINUXDIR)/.config
+endif
+
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 
 	$(MAKE) -j 4 -C $(LINUXDIR) zImage  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" KBUILD_MODPOST_WARN=1
