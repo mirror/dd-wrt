@@ -184,7 +184,11 @@ ifeq ($(CONFIG_DIST),"mini")
 else
 	sed -i 's/\CONFIG_CC_OPTIMIZE_FOR_SIZE=y/# CONFIG_CC_OPTIMIZE_FOR_SIZE is not set/g' $(LINUXDIR)/.config
 endif
-
+ifeq ($(CONFIG_SWAP),y)
+	sed -i 's/\# CONFIG_SWAP is not set/CONFIG_SWAP=y/g' $(LINUXDIR)/.config
+else
+	sed -i 's/\CONFIG_SWAP=y/# CONFIG_SWAP is not set/g' $(LINUXDIR)/.config
+endif
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 
 	$(MAKE) -j 4 -C $(LINUXDIR) zImage  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" KBUILD_MODPOST_WARN=1
