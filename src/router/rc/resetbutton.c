@@ -1360,7 +1360,7 @@ void period_check(int sig)
 
 				ses_mode = 0;
 				break;
-			case 2:
+			case 0:
 
 				// (AOSS) led
 #ifdef HAVE_RADIOOFF
