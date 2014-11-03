@@ -1056,6 +1056,11 @@ void setRegulationDomain(char *reg)
 	nvram_set("wl1_country_code", ccode1);
 
 	switch (getRouterBrand()) {
+	case ROUTER_D1800H:
+	case ROUTER_LINKSYS_EA6500:
+	case ROUTER_NETGEAR_WNDR4500:
+	case ROUTER_NETGEAR_WNDR4500V2:
+	case ROUTER_NETGEAR_R6300:
 	case ROUTER_NETGEAR_AC1450:
 	case ROUTER_NETGEAR_R6250:
 	case ROUTER_NETGEAR_R6300V2:
