@@ -148,7 +148,10 @@ static inline void finish_buffer(struct em28xx *dev,
 	em28xx_isocdbg("[%p/%d] wakeup\n", buf, buf->top_field);
 
 	buf->vb.v4l2_buf.sequence = dev->field_count++;
-	buf->vb.v4l2_buf.field = V4L2_FIELD_INTERLACED;
+	if (dev->progressive)
+		buf->vb.v4l2_buf.field = V4L2_FIELD_NONE;
+	else
+		buf->vb.v4l2_buf.field = V4L2_FIELD_INTERLACED;
 	v4l2_get_timestamp(&buf->vb.v4l2_buf.timestamp);
 
 	vb2_buffer_done(&buf->vb, VB2_BUF_STATE_DONE);
@@ -696,13 +699,16 @@ static int em28xx_stop_streaming(struct vb2_queue *vq)
 	}
 
 	spin_lock_irqsave(&dev->slock, flags);
+	if (dev->usb_ctl.vid_buf != NULL) {
+		vb2_buffer_done(&dev->usb_ctl.vid_buf->vb, VB2_BUF_STATE_ERROR);
+		dev->usb_ctl.vid_buf = NULL;
+	}
 	while (!list_empty(&vidq->active)) {
 		struct em28xx_buffer *buf;
 		buf = list_entry(vidq->active.next, struct em28xx_buffer, list);
 		list_del(&buf->list);
 		vb2_buffer_done(&buf->vb, VB2_BUF_STATE_ERROR);
 	}
-	dev->usb_ctl.vid_buf = NULL;
 	spin_unlock_irqrestore(&dev->slock, flags);
 
 	return 0;
@@ -724,13 +730,16 @@ int em28xx_stop_vbi_streaming(struct vb2_queue *vq)
 	}
 
 	spin_lock_irqsave(&dev->slock, flags);
+	if (dev->usb_ctl.vbi_buf != NULL) {
+		vb2_buffer_done(&dev->usb_ctl.vbi_buf->vb, VB2_BUF_STATE_ERROR);
+		dev->usb_ctl.vbi_buf = NULL;
+	}
 	while (!list_empty(&vbiq->active)) {
 		struct em28xx_buffer *buf;
 		buf = list_entry(vbiq->active.next, struct em28xx_buffer, list);
 		list_del(&buf->list);
 		vb2_buffer_done(&buf->vb, VB2_BUF_STATE_ERROR);
 	}
-	dev->usb_ctl.vbi_buf = NULL;
 	spin_unlock_irqrestore(&dev->slock, flags);
 
 	return 0;

@@ -510,6 +510,10 @@ struct hv_context {
 	 * basis.
 	 */
 	struct tasklet_struct *event_dpc[NR_CPUS];
+	/*
+	 * buffer to post messages to the host.
+	 */
+	void *post_msg_page[NR_CPUS];
 };
 
 extern struct hv_context hv_context;
