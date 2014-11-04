@@ -888,11 +888,11 @@ void ej_show_forward(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<option value=\"udp\" ");
 		port_forward_table(wp, "sel_udp", i);
 		websWrite(wp, ">UDP</option>\n");
-		websWrite(wp, 	"<script type=\"text/javascript\">\n//<![CDATA[\n" //
-			        "document.write(\"<option value=\\\"both\\\" ");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n"	//
+			  "document.write(\"<option value=\\\"both\\\" ");
 		port_forward_table(wp, "sel_both", i);
-		websWrite(wp, " >\" + share.both + \"</option>\");\n" //
-				"\n//]]>\n</script>\n");
+		websWrite(wp, " >\" + share.both + \"</option>\");\n"	//
+			  "\n//]]>\n</script>\n");
 		websWrite(wp, "</select></td>\n");
 		websWrite(wp, "<td>\n");
 		websWrite(wp, "<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"", i);
@@ -938,8 +938,8 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<option value=\"udp\" ");
 		port_forward_spec(wp, "sel_udp", i);
 		websWrite(wp, ">UDP</option>\n");
-		websWrite(wp, 	"<script type=\"text/javascript\">\n//<![CDATA[\n" //
-				"document.write(\"<option value=\\\"both\\\" ");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n"	//
+			  "document.write(\"<option value=\\\"both\\\" ");
 		port_forward_spec(wp, "sel_both", i);
 		websWrite(wp, " >\" + share.both + \"</option>\");\n" "\n//]]>\n</script>\n");
 		websWrite(wp, "</select></td>\n");
@@ -1010,8 +1010,8 @@ void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<option value=\"udp\" ");
 		port_trigger_table(wp, "sel_udp", i);
 		websWrite(wp, ">UDP</option>\n");
-		websWrite(wp, 	"<script type=\"text/javascript\">\n//<![CDATA[\n" //
-			        "document.write(\"<option value=\\\"both\\\" ");
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n"	//
+			  "document.write(\"<option value=\\\"both\\\" ");
 		port_trigger_table(wp, "sel_both", i);
 		websWrite(wp, " >\" + share.both + \"</option>\");\n" "\n//]]>\n</script>\n");
 		websWrite(wp, "</select></td>\n");
@@ -1455,8 +1455,8 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 				ifname = strrchr(globbuf.gl_pathv[awdscount], '/');
 				if (!ifname)
 					continue;
-				sprintf(name, "%s (%s)", live_translate("share.wireless"), ifname+1);
-				show_bwif(wp, ifname+1, name);
+				sprintf(name, "%s (%s)", live_translate("share.wireless"), ifname + 1);
+				show_bwif(wp, ifname + 1, name);
 			}
 			globfree(&globbuf);
 		}
@@ -2473,8 +2473,7 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_80211AC		//broadcom
 		if (txpower == 1496) {
 			websWrite(wp, "Auto");
-		} 
-		else 
+		} else
 #endif
 		{
 			websWrite(wp, "%d mW", txpower);

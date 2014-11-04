@@ -6801,6 +6801,38 @@ void ej_statfs(webs_t wp, int argc, char_t ** argv)
 		  ((uint64_t) sizefs.f_bsize * sizefs.f_blocks));
 }
 
+void ej_show_filters(webs_t wp, int argc, char_t ** argv)
+{
+	int numfilters = atoi(nvram_default_get("numfilterservice", "4"));
+	int i;
+	for (i = 0; i < numfilters; i++) {
+		websWrite(wp, "<div class=\"setting\">\n"	//
+			  "<select size=\"1\" name=\"blocked_service%d\" onchange=\"onchange_blockedServices(blocked_service%d.selectedIndex, port%d_start, port%d_end)\">\n"	//
+			  "<option value=\"None\" selected=\"selected\">%s</option>\n"	//
+			  "<script type=\"text/javascript\">\n"	//
+			  "//<![CDATA[\n"	//
+			  "write_service_options(servport_name%d);\n"	//
+			  "//]]>\n"	//
+			  "</script>\n"	//
+			  "</select>\n"	//
+			  "<input maxLength=\"5\" size=\"5\" name=\"port%d_start\" class=\"num\" readonly=\"readonly\" /> ~ <input maxLength=\"5\" size=\"5\" name=\"port%d_end\" class=\"num\" readonly=\"readonly\" />\n"	//
+			  "</div>\n", i, i, i, i, "", i, i, i);	//
+	}
+
+}
+
+void ej_gen_filters(webs_t wp, int argc, char_t ** argv)
+{
+	int numfilters = atoi(nvram_default_get("numfilterservice", "4"));
+	int i;
+	for (i = 0; i < numfilters; i++) {
+		websWrite(wp, "var servport_name%d = \"", i);
+		filter_port_services_get(wp, "services", i);
+		websWrite(wp, "\";\n");
+	}
+
+}
+
 void ej_statnv(webs_t wp, int argc, char_t ** argv)
 {
 	int space = 0;
