@@ -6827,7 +6827,7 @@ void ej_gen_filters(webs_t wp, int argc, char_t ** argv)
 	int i;
 	for (i = 0; i < numfilters; i++) {
 		websWrite(wp, "var servport_name%d = \"", i);
-		filter_port_services_get(wp, "services", i);
+		filter_port_services_get(wp, "service", i);
 		websWrite(wp, "\";\n");
 	}
 
