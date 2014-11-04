@@ -275,7 +275,7 @@ extern void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv);
 extern void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv);
 extern void ej_filter_tod_get(webs_t wp, int argc, char_t ** argv);
 extern void ej_filter_web_get(webs_t wp, int argc, char_t ** argv);
-extern void ej_filter_port_services_get(webs_t wp, int argc, char_t ** argv);
+extern void filter_port_services_get(webs_t wp, char *type, int which);
 extern void validate_filter_policy(webs_t wp, char *value, struct variable *v);
 extern void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v);
 extern void validate_filter_mac_grp(webs_t wp, char *value, struct variable *v);

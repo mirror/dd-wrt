@@ -1665,6 +1665,26 @@ void forward_add(webs_t wp)
 	macro_add("forward_entries");
 }
 
+void filter_remove(webs_t wp)
+{
+	int numfilters = atoi(nvram_default_get("numfilterservice","4"));
+	if (numfilters>0)
+	    numfilters--;
+	char num[32];
+	sprintf(num,"%d",numfilters);
+	nvram_set("numfilterservice",num);
+}
+
+void filter_add(webs_t wp)
+{
+	int numfilters = atoi(nvram_default_get("numfilterservice","4"));
+	    numfilters++;
+	char num[32];
+	sprintf(num,"%d",numfilters);
+	nvram_set("numfilterservice",num);
+}
+
+
 void lease_remove(webs_t wp)
 {
 	macro_rem("static_leasenum", "static_leases");

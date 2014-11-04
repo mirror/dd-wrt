@@ -2979,7 +2979,8 @@ void validate_blocked_service(webs_t wp, char *value, struct variable *v)
 	char port_grp[] = "filter_port_grpXXX";
 
 	D("validate_blocked_service");
-	for (i = 0; i < BLOCKED_SERVICE_NUM; i++) {
+	int numfilters = atoi(nvram_default_get("numfilterservice","4"));
+	for (i = 0; i < numfilters; i++) {
 		char blocked_service[] = "blocked_serviceXXX";
 		char *service;
 
