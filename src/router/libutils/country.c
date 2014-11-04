@@ -1048,12 +1048,6 @@ void setRegulationDomain(char *reg)
 
 	//fprintf(stderr, "setRegulationDomain ccode: %s rrev: %s\n", ccode, rrev);
 	
-	nvram_set("wl_country_rev", rrev0);
-	nvram_set("wl0_country_rev", rrev0);
-	nvram_set("wl1_country_rev", rrev1);
-	nvram_set("wl_country_code", ccode0);
-	nvram_set("wl0_country_code", ccode0);
-	nvram_set("wl1_country_code", ccode1);
 
 	switch (getRouterBrand()) {
 	case ROUTER_D1800H:
@@ -1067,7 +1061,7 @@ void setRegulationDomain(char *reg)
 		nvram_set("pci/2/1/regrev", rrev0);
 		nvram_set("pci/1/1/ccode", ccode1);
 		nvram_set("pci/2/1/ccode", ccode0);
-		break;
+		return;
 	case ROUTER_LINKSYS_EA6500:
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
@@ -1091,5 +1085,11 @@ void setRegulationDomain(char *reg)
 		nvram_set("0:ccode", ccode0);
 		nvram_set("1:ccode", ccode1);
 	}
+	nvram_set("wl_country_rev", rrev0);
+	nvram_set("wl0_country_rev", rrev0);
+	nvram_set("wl1_country_rev", rrev1);
+	nvram_set("wl_country_code", ccode0);
+	nvram_set("wl0_country_code", ccode0);
+	nvram_set("wl1_country_code", ccode1);
 
 }
