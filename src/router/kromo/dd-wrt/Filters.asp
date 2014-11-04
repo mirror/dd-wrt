@@ -399,7 +399,7 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<script type="text/javascript">
 									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.del + "\" onclick=\"filter_del_submit(this.form);\"/>");
+									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.del + "\" onclick=\"filter_remove_submit(this.form);\"/>");
 									//]]>
 									</script>
 								</div>
