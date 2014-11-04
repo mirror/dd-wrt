@@ -115,10 +115,7 @@ var services_length=0;
 <% filter_port_services_get("all_list", "0"); %>
 services.sort(sorton);
 
-var servport_name0 = "<% filter_port_services_get("service", "0"); %>";
-var servport_name1 = "<% filter_port_services_get("service", "1"); %>";
-var servport_name2 = "<% filter_port_services_get("service", "2"); %>";
-var servport_name3 = "<% filter_port_services_get("service", "3"); %>";
+<% gen_filters(); %>
 var p2p_value = "<% filter_port_services_get("p2p", "0"); %>";
 
 function search_service_index(name) {
@@ -152,35 +149,13 @@ function setBlockedServicesValue() {
 	    document.filters._filter_p2p.checked = false;
 
 	/* for service port 0 */
-	index = search_service_index(servport_name0);
+	for (i=0;i<document.filters.numfilters;i++) {
+	index = search_service_index(eval("servport_name"+i));
 	if(index!=-1){
-		document.filters.port0_start.value = services[index].start;
-		document.filters.port0_end.value = services[index].end;
-		document.filters.blocked_service0.selectedIndex = index+1; /* first will be none */
+		eval("document.filters.port"+i+"_start").value = services[index].start;
+		eval("document.filters.port"+i+"_end").value = services[index].end;
+		eval("document.filters.blocked_service"+i).selectedIndex = index+1; /* first will be none */
 	}
-
-	/* for service port 1 */
-	index = search_service_index(servport_name1);
-	if(index!=-1){
-		document.filters.port1_start.value = services[index].start;
-		document.filters.port1_end.value = services[index].end;
-		document.filters.blocked_service1.selectedIndex = index+1; /* first will be none */
-	}
-
-	/* for service port 2 */
-	index = search_service_index(servport_name2);
-	if(index!=-1){
-		document.filters.port2_start.value = services[index].start;
-		document.filters.port2_end.value = services[index].end;
-		document.filters.blocked_service2.selectedIndex = index+1; /* first will be none */
-	}
-
-	/* for service port 3 */
-	index = search_service_index(servport_name3);
-	if(index!=-1){
-		document.filters.port3_start.value = services[index].start;
-		document.filters.port3_end.value = services[index].end;
-		document.filters.blocked_service3.selectedIndex = index+1; /* first will be none */
 	}
 }
 
@@ -215,17 +190,26 @@ function Status(F,I) {
 		for(i = start; i<=end; i++) {
 			choose_enable(F.elements[i]);
 		}
-		choose_disable(document.filters.port0_start);
-		choose_disable(document.filters.port0_end);
-		choose_disable(document.filters.port1_start);
-		choose_disable(document.filters.port1_end);
-		choose_disable(document.filters.port2_start);
-		choose_disable(document.filters.port2_end);
-		choose_disable(document.filters.port3_start);
-		choose_disable(document.filters.port3_end);
+		for(i = 0; i < F.numfilters; i++) {
+		    choose_disable(eval("document.filters.port"+i+"_start"));
+		    choose_disable(eval("document.filters.port"+i+"_end"));
+		}
 	}
 	return true;
 }
+
+function filter_add_submit(F) {
+	F.change_action.value = "gozila_cgi";
+	F.submit_type.value = "add_filter";
+	apply(F);
+}
+
+function filter_remove_submit(F) {
+	F.change_action.value = "gozila_cgi";
+	F.submit_type.value = "remove_filter";
+	apply(F);
+}
+
 
 function SelFilter(num,F) {
 	F.change_action.value="gozila_cgi";
@@ -266,14 +250,10 @@ addEvent(window, "load", function() {
 	time_enable_disable(document.filters, "<% filter_tod_get("time_all_init"); %>");
 	setBlockedServicesValue();
 	Status(document.filters, "<% filter_policy_get("f_status","onload_status"); %>");
-	choose_disable(document.filters.port0_start);
-	choose_disable(document.filters.port0_end);
-	choose_disable(document.filters.port1_start);
-	choose_disable(document.filters.port1_end);
-	choose_disable(document.filters.port2_start);
-	choose_disable(document.filters.port2_end);
-	choose_disable(document.filters.port3_start);
-	choose_disable(document.filters.port3_end);
+	for(i = 0; i < document.filters.numfilters; i++) {
+		choose_disable(eval("document.filters.port"+i+"_start"));
+		choose_disable(eval("document.filters.port"+i+"_end"));
+	}
 	
 	update = new StatusbarUpdate();
 	update.start();
@@ -306,6 +286,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="numfilters" value="<% nvg("numfilterservice"); %> />
 							
 							<input type="hidden" name="blocked_service" />
 							<input type="hidden" name="filter_web" />
@@ -407,49 +388,20 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("filter.catchall"); %></div>
 									<input class="spaceradio" type="checkbox" name="_filter_p2p" value="1" <% nvc("filter_p2p", "1"); %> />
 								</div>
+								<% show_filters(); %>
 								<div class="setting">
-									<select size="1" name="blocked_service0" onchange="onchange_blockedServices(blocked_service0.selectedIndex, port0_start, port0_end)">
-										<option value="None" selected="selected"><% tran("filter.none"); %></option>
-										<script type="text/javascript">
-										//<![CDATA[
-										write_service_options(servport_name0);
-										//]]>
-										</script>
-									</select>
-									<input maxLength="5" size="5" name="port0_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port0_end" class="num" readonly="readonly" />
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"filter_add_submit(this.form);\"/>");
+									//]]>
+									</script>
 								</div>
 								<div class="setting">
-									<select size="1" name="blocked_service1" onchange="onchange_blockedServices(blocked_service1.selectedIndex, port1_start, port1_end)">
-										<option value="None" selected="selected"><% tran("filter.none"); %></option>
-										<script type="text/javascript">
-										//<![CDATA[
-										write_service_options(servport_name1);
-										//]]>
-										</script>
-									</select>
-									<input maxLength="5" size="5" name="port1_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port1_end" class="num" readonly="readonly" />
-								</div>
-								<div class="setting">
-									<select size="1" name="blocked_service2" onchange="onchange_blockedServices(blocked_service2.selectedIndex, port2_start, port2_end)">
-										<option value="None" selected="selected"><% tran("filter.none"); %></option>
-										<script type="text/javascript">
-										//<![CDATA[
-										write_service_options(servport_name2);
-										//]]>
-										</script>
-									</select>
-										<input maxLength="5" size="5" name="port2_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port2_end" class="num" readonly="readonly" />
-								</div>
-								<div class="setting">
-									<select size="1" name="blocked_service3" onchange="onchange_blockedServices(blocked_service3.selectedIndex, port3_start, port3_end)">
-										<option value="None" selected="selected"><% tran("filter.none"); %></option>
-										<script type="text/javascript">
-										//<![CDATA[
-										write_service_options(servport_name3);
-										//]]>
-										</script>
-									</select>
-									<input maxLength="5" size="5" name="port3_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port3_end" class="num" readonly="readonly" />
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.del + "\" onclick=\"filter_del_submit(this.form);\"/>");
+									//]]>
+									</script>
 								</div>
 								<div class="setting">
 									<script type="text/javascript">

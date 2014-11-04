@@ -897,6 +897,8 @@ static struct gozila_action gozila_actions[] = {
 	 */
 	{"Forward", "add_forward", "", 0, REFRESH, "forward_add"},
 	{"Forward", "remove_forward", "", 0, REFRESH, "forward_remove"},
+	{"Filters", "add_filter", "", 0, REFRESH, "filter_add"},
+	{"Filters", "remove_filter", "", 0, REFRESH, "filter_remove"},
 	{"Wireless_Basic", "add_vifs", "", 0, REFRESH, "add_vifs"},
 	{"Wireless_Basic", "remove_vifs", "", 0, REFRESH, "remove_vifs"},
 #ifdef HAVE_FREERADIUS

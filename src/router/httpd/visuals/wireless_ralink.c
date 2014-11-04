@@ -102,7 +102,6 @@ typedef union _MACHTTRANSMIT_SETTING {
 	unsigned short word;
 } MACHTTRANSMIT_SETTING;
 
-
 typedef struct _RT_802_11_MAC_ENTRY {
 	unsigned char ApIdx;
 	unsigned char Addr[6];
