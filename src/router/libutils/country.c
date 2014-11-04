@@ -1047,7 +1047,7 @@ void setRegulationDomain(char *reg)
 	}
 
 	//fprintf(stderr, "setRegulationDomain ccode: %s rrev: %s\n", ccode, rrev);
-
+	
 	nvram_set("wl_country_rev", rrev0);
 	nvram_set("wl0_country_rev", rrev0);
 	nvram_set("wl1_country_rev", rrev1);
@@ -1057,6 +1057,12 @@ void setRegulationDomain(char *reg)
 
 	switch (getRouterBrand()) {
 	case ROUTER_D1800H:
+		nvram_set("wl_country_rev", rrev1);   //DH1800 wl0 is 5G so needs to be inverted
+		nvram_set("wl0_country_rev", rrev1);
+		nvram_set("wl1_country_rev", rrev0);
+		nvram_set("wl_country_code", ccode1);
+		nvram_set("wl0_country_code", ccode1);
+		nvram_set("wl1_country_code", ccode0);
 	case ROUTER_LINKSYS_EA6500:
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
