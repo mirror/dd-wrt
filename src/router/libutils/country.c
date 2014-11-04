@@ -1063,6 +1063,11 @@ void setRegulationDomain(char *reg)
 		nvram_set("wl_country_code", ccode1);
 		nvram_set("wl0_country_code", ccode1);
 		nvram_set("wl1_country_code", ccode0);
+		nvram_set("pci/1/1/regrev", rrev1);
+		nvram_set("pci/2/1/regrev", rrev0);
+		nvram_set("pci/1/1/ccode", ccode1);
+		nvram_set("pci/2/1/ccode", ccode0);
+		break;
 	case ROUTER_LINKSYS_EA6500:
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
