@@ -149,7 +149,7 @@ function setBlockedServicesValue() {
 	    document.filters._filter_p2p.checked = false;
 
 	/* for service port 0 */
-	for (i=0;i<document.filters.numfilters;i++) {
+	for (i=0;i<document.filters.numfilters.value;i++) {
 	index = search_service_index(eval("servport_name"+i));
 	if(index!=-1){
 		eval("document.filters.port"+i+"_start").value = services[index].start;
@@ -190,7 +190,7 @@ function Status(F,I) {
 		for(i = start; i<=end; i++) {
 			choose_enable(F.elements[i]);
 		}
-		for(i = 0; i < F.numfilters; i++) {
+		for(i = 0; i < F.numfilters.value; i++) {
 		    choose_disable(eval("document.filters.port"+i+"_start"));
 		    choose_disable(eval("document.filters.port"+i+"_end"));
 		}
@@ -250,7 +250,7 @@ addEvent(window, "load", function() {
 	time_enable_disable(document.filters, "<% filter_tod_get("time_all_init"); %>");
 	setBlockedServicesValue();
 	Status(document.filters, "<% filter_policy_get("f_status","onload_status"); %>");
-	for(i = 0; i < document.filters.numfilters; i++) {
+	for(i = 0; i < document.filters.numfilters.value; i++) {
 		choose_disable(eval("document.filters.port"+i+"_start"));
 		choose_disable(eval("document.filters.port"+i+"_end"));
 	}
