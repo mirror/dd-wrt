@@ -2140,8 +2140,9 @@ static void filter_forward(void)
 		filter_rule = nvram_nget("filter_rule%d", i);
 
 		if (filter_web_hosts && strcmp(filter_web_hosts, "")
-		    || filter_web_urls && strcmp(filter_web_urls, "")
-		    || filter_rule && !strcmp(filter_rule, "STAT:1")) {
+		    || (filter_web_urls && strcmp(filter_web_urls, ""))
+		    || (filter_rule && !strncmp(filter_rule, "$STAT:1",7))
+		    || (filter_rule && !strncmp(filter_rule, "$STAT:2",7))) {
 			filter_host_url = 1;
 		}
 	}
