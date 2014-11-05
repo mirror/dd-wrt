@@ -6803,7 +6803,9 @@ void ej_statfs(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_filters(webs_t wp, int argc, char_t ** argv)
 {
-	int numfilters = atoi(nvram_default_get("numfilterservice", "4"));
+	char filter[32];
+	sprintf(filter,"numfilterservice%s",nvram_safe_get("filter_id"));
+	int numfilters = atoi(nvram_default_get(filter,"4"));
 	int i;
 	for (i = 0; i < numfilters; i++) {
 		websWrite(wp, "<div class=\"setting\">\n"	//
@@ -6823,7 +6825,9 @@ void ej_show_filters(webs_t wp, int argc, char_t ** argv)
 
 void ej_gen_filters(webs_t wp, int argc, char_t ** argv)
 {
-	int numfilters = atoi(nvram_default_get("numfilterservice", "4"));
+	char filter[32];
+	sprintf(filter,"numfilterservice%s",nvram_safe_get("filter_id"));
+	int numfilters = atoi(nvram_default_get(filter,"4"));
 	int i;
 	for (i = 0; i < numfilters; i++) {
 		websWrite(wp, "var servport_name%d = \"", i);
