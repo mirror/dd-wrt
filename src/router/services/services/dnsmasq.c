@@ -285,7 +285,7 @@ void start_dnsmasq(void)
 				fprintf(fp, "%d.%d.%d.%d,",
 					get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
 					get_single_ip(nvram_safe_get("lan_ipaddr"), 1),
-					((atoi(nvram_safe_get("dhcp_num")) / 256) - 1), 255 - (atoi(nvram_safe_get("dhcp_num") - atoi(nvram_safe_get("dhcp_start"))) % 256) - 1);
+					((atoi(nvram_safe_get("dhcp_num")) / 256)), abs(( 255 - atoi(nvram_safe_get("dhcp_num")) - atoi(nvram_safe_get("dhcp_start"))) % 256) - 1);
 				fprintf(fp, "%s,", nvram_safe_get("lan_netmask"));
 				fprintf(fp, "%sm\n", nvram_safe_get("dhcp_lease"));
 			} else {
