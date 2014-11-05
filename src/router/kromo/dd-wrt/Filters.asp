@@ -286,7 +286,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="numfilters" value="<% nvg("numfilterservice"); %>" />
+							<input type="hidden" name="numfilters" value="<% nvg("numfilterservice"); %><% nvg("filter_id"); %>" />
 							
 							<input type="hidden" name="blocked_service" />
 							<input type="hidden" name="filter_web" />

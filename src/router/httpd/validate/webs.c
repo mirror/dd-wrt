@@ -1667,21 +1667,25 @@ void forward_add(webs_t wp)
 
 void filter_remove(webs_t wp)
 {
-	int numfilters = atoi(nvram_default_get("numfilterservice","4"));
+	char filter[32];
+	sprintf(filter,"numfilterservice%s",nvram_safe_get("filter_id"));
+	int numfilters = atoi(nvram_default_get(filter,"4"));
 	if (numfilters>0)
 	    numfilters--;
 	char num[32];
 	sprintf(num,"%d",numfilters);
-	nvram_set("numfilterservice",num);
+	nvram_set(filter,num);
 }
 
 void filter_add(webs_t wp)
 {
-	int numfilters = atoi(nvram_default_get("numfilterservice","4"));
+	char filter[32];
+	sprintf(filter,"numfilterservice%s",nvram_safe_get("filter_id"));
+	int numfilters = atoi(nvram_default_get(filter,"4"));
 	    numfilters++;
 	char num[32];
 	sprintf(num,"%d",numfilters);
-	nvram_set("numfilterservice",num);
+	nvram_set(filter,num);
 }
 
 
