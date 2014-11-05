@@ -106,7 +106,7 @@ function valid_dhcp_server(F) {
 
 	a1 = parseInt(F.dhcp_start.value,10);
 	a2 = parseInt(F.dhcp_num.value,10);
-	if (a1 + a2 > 255) {
+	if (a1 + a2 > 999) {
 		alert(errmsg.err2);
 		return false;
 	}
