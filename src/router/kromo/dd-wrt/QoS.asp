@@ -335,7 +335,7 @@ addEvent(window, "unload", function() {
 									<% get_qosmacs(); %>
 									<tr>
 										<td>&nbsp;</td>
-										<td colspan="3">
+										<td colspan="4">
 											<script type="text/javascript">
 											//<![CDATA[
 											document.write("<input class=\"button\" type=\"button\" name=\"add_macprio_button\" value=\"" + sbutton.add + "\" onclick=\"mac_add_submit(this.form);\" />")
