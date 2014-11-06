@@ -1743,7 +1743,12 @@ cprintf("set n prot mode %s\n",name);
 
 		val_ptr = (uint32*)(buf + buflen);
 		buflen += sizeof(override);
-		memcpy(val_ptr, &override, sizeof(override));
+		int i;
+		unsigned char *src = &override;
+		unsigned char *dst = val_ptr;
+		for (i=0;i<sizeof(override);i++)
+			dst[i]=src[i];
+//		memcpy(val_ptr, &override, sizeof(override));
 		WL_IOCTL(name, WLC_SET_VAR, buf, sizeof(buf));
 		WL_IOCTL(name, WLC_SET_PROTECTION_CONTROL, &control, sizeof(control));
 	}
