@@ -169,6 +169,11 @@ int getbuttonstate()
 		return 0;;
 	return 1;
 }
+#elif defined(HAVE_DAP3410)
+int getbuttonstate()
+{
+	return 0;
+}
 #elif defined(HAVE_UBNTM)
 int getbuttonstate()
 {

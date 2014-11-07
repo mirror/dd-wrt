@@ -145,6 +145,8 @@ void start_sysinit(void)
 	if (!nvram_match("wlanled","0"))
 		sysprintf("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
 
+#elif HAVE_DAP3410
+//todo
 #elif HAVE_UBNTXW
 	writeproc("/proc/sys/dev/wifi0/softled", "0");
 	if (!nvram_match("wlanled","0"))

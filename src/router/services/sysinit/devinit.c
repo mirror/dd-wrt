@@ -170,8 +170,8 @@ void start_devinit(void)
 	mkdir("/usr/local/nvram", 0700);
 #endif
 #ifdef HAVE_MSTP
-	fprintf(stderr, "start MSTP Daemon\n");
-	eval("/sbin/mstpd");
+	// fprintf(stderr, "start MSTP Daemon\n");
+	// eval("/sbin/mstpd");
 #endif
 	fprintf(stderr, "done\n");
 }
