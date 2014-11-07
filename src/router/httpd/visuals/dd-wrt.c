@@ -6801,6 +6801,13 @@ void ej_statfs(webs_t wp, int argc, char_t ** argv)
 		  ((uint64_t) sizefs.f_bsize * sizefs.f_blocks));
 }
 
+void ej_getnumfilters(webs_t wp, int argc, char_t ** argv)
+{
+	char filter[32];
+	sprintf(filter,"numfilterservice%s",nvram_safe_get("filter_id"));
+	websWrite(wp,"%s",nvram_default_get(filter,"4"));
+}
+
 void ej_show_filters(webs_t wp, int argc, char_t ** argv)
 {
 	char filter[32];
