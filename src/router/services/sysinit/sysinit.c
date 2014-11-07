@@ -2329,6 +2329,7 @@ void start_restore_defaults(void)
 	case ROUTER_WRT610N:
 	case ROUTER_WRT350N:
 	case ROUTER_WRT310N:
+	case ROUTER_DLINK_DIR865:
 	case ROUTER_D1800H:
 	case ROUTER_ASUS_AC66U:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
