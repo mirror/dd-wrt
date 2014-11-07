@@ -1968,6 +1968,9 @@ int internal_getRouterBrand()
 	return ROUTER_BOARD_NS5M;
 #elif HAVE_UBNTTI
 	return ROUTER_BOARD_TI;
+#elif HAVE_DAP3310
+	setRouter("DLink DAP3310");
+	return ROUTER_BOARD_NS5M;
 #elif HAVE_DAP3410
 	setRouter("DLink DAP3410");
 	return ROUTER_BOARD_NS5M;
