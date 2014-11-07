@@ -172,6 +172,10 @@ int getbuttonstate()
 #elif defined(HAVE_DAP3410)
 int getbuttonstate()
 {
+	int ret = get_gpio(17);
+
+	if (ret == 0)
+		return 1;
 	return 0;
 }
 #elif defined(HAVE_UBNTM)

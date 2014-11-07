@@ -132,7 +132,20 @@ void start_sysinit(void)
 		close(s);
 	}
 #ifdef HAVE_SWCONFIG
-#ifdef HAVE_DAP3410
+#ifdef HAVE_DAP3310
+	eval("swconfig","dev","eth0","set","reset","1");
+	eval("swconfig","dev","eth0","set","enable_vlan","1");
+	eval("swconfig","dev","eth0","vlan","1","set","ports","0t 1");
+	eval("swconfig","dev","eth0","vlan","2","set","ports","0t 2");
+	eval("swconfig","dev","eth0","set","apply");
+	eval("ifconfig", "eth0", "up");
+	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+	eval("vconfig", "add", "eth0", "1");
+	eval("vconfig", "add", "eth0", "2");
+//	setEthLED(19, "vlan2");
+//	setEthLED(18, "vlan1");
+
+#elif HAVE_DAP3410
 	eval("swconfig","dev","eth0","set","reset","1");
 	eval("swconfig","dev","eth0","set","enable_vlan","1");
 	eval("swconfig","dev","eth0","vlan","1","set","ports","0t 3");
@@ -156,6 +169,9 @@ void start_sysinit(void)
 #ifdef HAVE_WPE72
 	if (!nvram_match("wlanled","0"))
 		sysprintf("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
+#elif HAVE_DAP3310
+	if (!nvram_match("wlanled","0"))
+		sysprintf("/sbin/wlanled -L generic_14:-94 -L generic_13:-76 -L generic_20:-65");
 #elif HAVE_DAP3410
 	if (!nvram_match("wlanled","0"))
 		sysprintf("/sbin/wlanled -L generic_14:-94 -L generic_15:-76 -L generic_16:-65");
