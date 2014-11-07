@@ -164,11 +164,17 @@ void start_sysinit(void)
 	if (!nvram_match("wlanled","0"))
 		sysprintf("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
 #elif HAVE_DAP3310
+	set_gpio(14,1);
+	set_gpio(13,1);
+	set_gpio(20,1);
 	if (!nvram_match("wlanled","0"))
 		sysprintf("/sbin/wlanled -L generic_14:-94 -l generic_13:-76 -L generic_20:-65");
 #elif HAVE_DAP3410
+	set_gpio(14,1);
+	set_gpio(15,1);
+	set_gpio(16,1);
 	if (!nvram_match("wlanled","0"))
-		sysprintf("/sbin/wlanled -L generic_14:-94 -l generic_15:-76 -L generic_16:-65");
+		sysprintf("/sbin/wlanled -L generic_14:-94 -L generic_15:-76 -L generic_16:-65");
 #elif HAVE_UBNTXW
 	writeproc("/proc/sys/dev/wifi0/softled", "0");
 	if (!nvram_match("wlanled","0"))
