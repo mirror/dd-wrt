@@ -916,6 +916,9 @@ endif
 ifeq ($(CONFIG_UBNTM),y)
 CFLAGS += -DHAVE_UBNTM
 endif
+ifeq ($(CONFIG_DAP3410),y)
+CFLAGS += -DHAVE_DAP3410
+endif
 ifeq ($(CONFIG_UBNTTI),y)
 CFLAGS += -DHAVE_UBNTTI
 endif

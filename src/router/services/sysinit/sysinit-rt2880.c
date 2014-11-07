@@ -120,10 +120,10 @@ void start_sysinit(void)
 
 	//LAN/WAN ports as security mode
 	if (getRouterBrand() == ROUTER_BOARD_E1700) {
-	sysprintf("switch reg w 3600 5ee3a");
-	sysprintf("switch reg w 7000 717fc3");
-	sysprintf("switch reg w 7804 1015e9f");
-	sysprintf("switch reg w 3600 5ee3b");
+//	sysprintf("switch reg w 3600 5ee3a");
+//	sysprintf("switch reg w 7000 717fc3");
+//	sysprintf("switch reg w 7804 1015e9f");
+//	sysprintf("switch reg w 3600 5ee3b");
 	}  else {
 #ifndef HAVE_WHR1166D
 	sysprintf("switch reg w 2004 ff0003");
