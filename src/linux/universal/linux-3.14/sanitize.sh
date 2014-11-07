@@ -52,6 +52,7 @@ do
 	    echo CONFIG_NVRAM_60K=y >> .config
 	    echo CONFIG_ALFANX=y >> .config
 	    echo CONFIG_AP135=y >> .config
+	    echo CONFIG_DAP3310=y >> .config
 	    echo CONFIG_WR1043V2=y >> .config
 	    echo CONFIG_ARCHERC7=y >> .config
 	    echo CONFIG_MMS344=y >> .config
@@ -68,6 +69,7 @@ do
 	    sed -i 's/\CONFIG_NVRAM_60K=y/ /g' .config	    
 	    sed -i 's/\CONFIG_ALFANX=y/ /g' .config	    
 	    sed -i 's/\CONFIG_AP135=y/ /g' .config	    
+	    sed -i 's/\CONFIG_DAP3310=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR1043V2=y/ /g' .config	    
 	    sed -i 's/\CONFIG_ARCHERC7=y/ /g' .config	    
 	    sed -i 's/\CONFIG_MMS344=y/ /g' .config	    
