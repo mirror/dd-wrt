@@ -1868,7 +1868,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	static char word[256];
 	char *next, *wordlist;
 	char *stp = word;
-	char *bridge, *prio, *mtu, *mcast;
+	char *bridge, *prio, *mtu, *mcast, *mac;
 	char bridge_name[32];
 
 	memset(buffer, 0, 256);
@@ -1963,11 +1963,15 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		// Bridges are bridges, Ports are ports, show it again HERE          
 		sprintf(bridge_name, "bridgemtu%d", count);
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"3\" value=\"%s\" /></td>\n", bridge_name, mtu != NULL ? mtu : "1500");
-		if (!strcmp(bridge, "br0"))
+		if (!strcmp(bridge, "br0")){
 			sprintf(bridge_name, "lan_hwaddr");
-		else
+		} else {
 			sprintf(bridge_name, "%s_hwaddr", bridge);
-
+			mac = nvram_safe_get(bridge_name);
+			if(!strcmp(mac, ""))
+				sprintf(bridge_name, "lan_hwaddr");
+		}
+		
 		websWrite(wp, "<td><input class=\"num\" name=\"%s\"size=\"16\" value=\"%s\" /></td>\n", bridge_name, nvram_safe_get(bridge_name));
 		websWrite(wp, "<td>");
 		websWrite(wp,
