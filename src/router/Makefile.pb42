@@ -340,6 +340,12 @@ ifeq ($(CONFIG_AP135),y)
 else
 	echo "# CONFIG_AP135 is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_DAP3310),y)
+	sed -i 's/\# CONFIG_LEDS_TRIGGER_NETDEV is not set/CONFIG_LEDS_TRIGGER_NETDEV=y/g' $(LINUXDIR)/.config
+	echo CONFIG_DAP3310=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_DAP3310 is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_WR1043V2),y)
 	echo CONFIG_WR1043V2=y >> $(LINUXDIR)/.config
 else
@@ -1208,7 +1214,10 @@ endif
 ifeq ($(CONFIG_UBNTXW),y)
 	tools/ubnt/src/mkfwimage -v XW.ar934x.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntxw-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
 endif
-
+ifeq ($(CONFIG_DAP3410),y)
+	tools/dap3410/makedap $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dap3410.bin DAP3410
+	tools/dap3410/makedap $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dap3310.bin DAP3310
+endif
 ifeq ($(CONFIG_UBNTTI),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
 	cat $(ARCH)-uclibc/root.fs  >> $(ARCH)-uclibc/aligned.uimage
