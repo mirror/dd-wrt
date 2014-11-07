@@ -156,6 +156,7 @@ void start_sysinit(void)
 #ifdef HAVE_WPE72
 	if (!nvram_match("wlanled","0"))
 		sysprintf("/sbin/wlanled -l generic_14:-94 -l generic_15:-80 -l generic_16:-73 -l generic_17:-65");
+#elif HAVE_DAP3410
 	if (!nvram_match("wlanled","0"))
 		sysprintf("/sbin/wlanled -L generic_14:-94 -L generic_15:-76 -L generic_16:-65");
 #elif HAVE_UBNTXW
