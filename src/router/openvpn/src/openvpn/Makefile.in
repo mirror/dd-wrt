@@ -181,7 +181,7 @@ openvpn_DEPENDENCIES = $(top_builddir)/src/compat/libcompat.la \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -316,6 +316,7 @@ OPTIONAL_LZO_LIBS = @OPTIONAL_LZO_LIBS@
 OPTIONAL_PKCS11_HELPER_CFLAGS = @OPTIONAL_PKCS11_HELPER_CFLAGS@
 OPTIONAL_PKCS11_HELPER_LIBS = @OPTIONAL_PKCS11_HELPER_LIBS@
 OPTIONAL_SELINUX_LIBS = @OPTIONAL_SELINUX_LIBS@
+OPTIONAL_SYSTEMD_LIBS = @OPTIONAL_SYSTEMD_LIBS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -344,6 +345,7 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SOCKETS_LIBS = @SOCKETS_LIBS@
 STRIP = @STRIP@
+SYSTEMD_ASK_PASSWORD = @SYSTEMD_ASK_PASSWORD@
 TAP_CFLAGS = @TAP_CFLAGS@
 TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
 TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
@@ -384,6 +386,8 @@ infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
+libsystemd_CFLAGS = @libsystemd_CFLAGS@
+libsystemd_LIBS = @libsystemd_LIBS@
 localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
@@ -451,7 +455,8 @@ openvpn_SOURCES = base64.c base64.h basic.h buffer.c buffer.h \
 openvpn_LDADD = $(top_builddir)/src/compat/libcompat.la \
 	$(SOCKETS_LIBS) $(OPTIONAL_LZO_LIBS) \
 	$(OPTIONAL_PKCS11_HELPER_LIBS) $(OPTIONAL_CRYPTO_LIBS) \
-	$(OPTIONAL_SELINUX_LIBS) $(OPTIONAL_DL_LIBS) $(am__append_3)
+	$(OPTIONAL_SELINUX_LIBS) $(OPTIONAL_SYSTEMD_LIBS) \
+	$(OPTIONAL_DL_LIBS) $(am__append_3)
 all: all-am
 
 .SUFFIXES:
