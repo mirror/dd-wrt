@@ -183,10 +183,12 @@ ce_management_query_proxy (struct context *c)
   if (management)
     {
       gc = gc_new ();
-      struct buffer out = alloc_buf_gc (256, &gc);
-      buf_printf (&out, ">PROXY:%u,%s,%s", (l ? l->current : 0) + 1,
-                  (proto_is_udp (ce->proto) ? "UDP" : "TCP"), np (ce->remote));
-      management_notify_generic (management, BSTR (&out));
+      {
+	struct buffer out = alloc_buf_gc (256, &gc);
+	buf_printf (&out, ">PROXY:%u,%s,%s", (l ? l->current : 0) + 1,
+		    (proto_is_udp (ce->proto) ? "UDP" : "TCP"), np (ce->remote));
+	management_notify_generic (management, BSTR (&out));
+      }
       ce->flags |= CE_MAN_QUERY_PROXY;
       while (ce->flags & CE_MAN_QUERY_PROXY)
         {
@@ -2159,7 +2161,7 @@ do_init_crypto_tls (struct context *c, const unsigned int flags)
 			       options->use_iv);
 
   /* In short form, unique datagram identifier is 32 bits, in long form 64 bits */
-  packet_id_long_form = cfb_ofb_mode (&c->c1.ks.key_type);
+  packet_id_long_form = cipher_kt_mode_ofb_cfb (c->c1.ks.key_type.cipher);
 
   /* Compute MTU parameters */
   crypto_adjust_frame_parameters (&c->c2.frame,
