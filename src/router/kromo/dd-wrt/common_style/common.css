@@ -20,12 +20,12 @@ hr {
   height:.09em;
 }
 pre {
-	width: 95%;
   overflow: auto;
   padding: 1em;
   margin: 0;
   font-family:"Courier New", Courier, monospace;
   background-color:#F7F7F7;
+  white-space: pre-wrap;
 }
 form {
   margin:0;
