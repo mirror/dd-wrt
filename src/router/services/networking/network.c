@@ -3243,6 +3243,7 @@ void start_wan(int status)
 	eval("ifconfig", wan_ifname, "txqueuelen", getTXQ(wan_ifname));
 
 	if (strcmp(wan_proto, "disabled") == 0) {
+		close(s);
 		start_wan_done(wan_ifname);
 		return;
 	}
