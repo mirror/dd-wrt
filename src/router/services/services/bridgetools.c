@@ -233,6 +233,7 @@ int br_add_interface(const char *br, const char *dev)
 		ioctl(s, SIOCGIFHWADDR, &ifr);	// get hw addr
 		nvram_nset(ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf), "%s_hwaddr", br);	// safe addr for gui 
 		ioctl(s, SIOCSIFHWADDR, &ifr);	// set hw addr and fix it
+		close(s);
 	}
 
 	return ret;
