@@ -3551,7 +3551,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-#ifndef HAVE_WZR450HP2
+#if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO) 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
@@ -4614,7 +4614,7 @@ if (!strcmp(prefix, "wl1"))
 	}
 #endif
 #endif
-#ifndef HAVE_WZR450HP2
+#if !defined(HAVE_WZR450HP2) || !defined(HAVE_BUFFALO) 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
 		  "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.TXpower)</script></div><input class=\"num\" name=\"%s\" size=\"6\" maxlength=\"3\" value=\"%d\" /> dBm\n",
