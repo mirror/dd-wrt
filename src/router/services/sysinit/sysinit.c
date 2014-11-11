@@ -2134,6 +2134,8 @@ void start_restore_defaults(void)
 #endif
 	case ROUTER_ASUS_AC66U:
 	case ROUTER_D1800H:
+	case ROUTER_DLINK_DIR865:
+	case ROUTER_UBNT_UNIFIAC:
 		linux_overrides = wrt6102vlan;
 		break;
 	case ROUTER_BUFFALO_WZRG144NH:
@@ -2345,6 +2347,9 @@ void start_restore_defaults(void)
 			nvram_set("vlan1ports", "0 1 2 3 8*");
 			nvram_set("vlan2ports", "4 8");
 		}
+	case ROUTER_UBNT_UNIFIAC:
+		nvram_set("vlan1ports", "1 8*");
+		nvram_set("vlan2ports", "2 8");
 		break;
 	case ROUTER_WRT610N:
 	case ROUTER_WRT350N:

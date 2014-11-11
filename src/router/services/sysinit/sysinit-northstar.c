@@ -81,7 +81,6 @@ static void set_regulation(int card, char *code, char *rev)
 	case ROUTER_NETGEAR_R6300V2:
 	case ROUTER_NETGEAR_R7000:
 	case ROUTER_DLINK_DIR868:
-	case ROUTER_DLINK_DIR865:
 		sprintf(path, "pci/%d/1/regrev", card + 1);
 		nvram_set(path, rev);
 		sprintf(path, "pci/%d/1/ccode", card + 1);
