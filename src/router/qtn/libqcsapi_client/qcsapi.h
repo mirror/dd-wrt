@@ -665,6 +665,14 @@ enum qcsapi_errno
 	 * <QCS API error 1046: MLME statistics is not supported>
 	 */
 	qcsapi_mlme_stats_not_supported = qcsapi_errno_base + 46,
+        /**
+         * This error code is returned when a board parameter requested for is not supported.
+         *
+         * <c>call_qcsapi</c> printed error message:
+         *
+         * <QCS API error 1047: Board parameter is not supported>
+         */
+        qcsapi_board_parameter_not_supported = qcsapi_errno_base + 47,
 };
 
 /*
@@ -962,6 +970,17 @@ typedef enum {
 	qcsapi_stbc,
 	qcsapi_nosuch_option = 0
 } qcsapi_option_type;
+
+/**
+ * \brief Enumeration used in the board parameter get API.
+ *
+ * \sa qcsapi_get_board_parameter
+ */
+typedef enum {
+	qcsapi_hw_revision = 1,
+	qcsapi_rf_chipid,
+	qcsapi_nosuch_parameter = 0
+} qcsapi_board_parameter_type;
 
 /**
  * \brief This enumeration represents the bandwidth in use on the device.
@@ -5176,6 +5195,97 @@ extern int qcsapi_regulatory_set_bw_power(const char *ifname,
 			const int power_80M);
 
 /**
+ * \brief Get the transmit powers for 20/40/80MHz bandwidths with beam-forming on.
+ *
+ * This API call gets the current transmit powers that is being used for a particular
+ * channel in beam-forming on case.
+ * The TX powers are reported in dBm.
+ *
+ * \param ifname \wifi0
+ * \param the_channel the channel for which the tx power is returned.
+ * \param number_ss the number of spatial streams for which case the tx_power is returned.
+ * \param p_power_20M return parameter to contains the transmit power for 20MHz bandwidth.
+ * \param p_power_40M return parameter to contains the transmit power for 40MHz bandwidth.
+ * \param p_power_80M return parameter to contains the transmit power for 80MHz bandwidth.
+ *
+ * \note This API is only available on the primary WiFi interface.
+ *
+ * \return -EINVAL or other negative values on error, or 0 on success.
+ *
+ * \callqcsapi
+ *
+ * <c>call_qcsapi get_bf_power \<WiFi interface\> \<channel\> \<number_ss\> </c>
+ *
+ * Unless an error occurs, the output will be the transmit powers.
+ */
+extern int	qcsapi_wifi_get_bf_power(const char *ifname,
+					const qcsapi_unsigned_int the_channel,
+					const qcsapi_unsigned_int number_ss,
+					int *p_power_20M,
+					int *p_power_40M,
+					int *p_power_80M);
+
+/**
+ * \brief Set the transmit power for 20/40/80MHz bandwidths with beam-forming on.
+ *
+ * This API call sets the current transmit powers for a particular channel in beam-forming on case.
+ * The TX powers are in dBm unit.
+ *
+ * \param ifname \wifi0
+ * \param the_channel the channel for which the tx power is set.
+ * \param number_ss the number of spatial streams for which case the tx_power is set.
+ * \param power_20M tx power for 20MHz bandwidth to be set.
+ * \param power_40M tx power for 40MHz bandwidth to be set.
+ * \param power_80M tx power for 80MHz bandwidth to be set.
+ *
+ * \note This API is only available on the primary WiFi interface.
+ *
+ * \return negative value on error, 0 on success.
+ *
+ * \callqcsapi
+ *
+ * <c>call_qcsapi set_bf_power \<WiFi interface\> \<channel\> \<number_ss\> \<power_20M\> \<power_40M\> \<power_80M\></c>
+ *
+ * Unless an error occurs, the output will be the string <c>complete</c>'.
+ */
+extern int qcsapi_wifi_set_bf_power(const char *ifname,
+			const qcsapi_unsigned_int the_channel,
+			const qcsapi_unsigned_int number_ss,
+			const int power_20M,
+			const int power_40M,
+			const int power_80M);
+
+/**
+ * \brief Set the transmit power for 20/40/80MHz bandwidths with beam-forming on.
+ *
+ * This API call sets the current transmit powers for a particular channel in beam-forming on case.
+ * The TX powers are in dBm unit.
+ *
+ * \param ifname \wifi0
+ * \param the_channel the channel for which the tx power is set.
+ * \param number_ss the number of spatial streams for which case the tx_power is set.
+ * \param power_20M tx power for 20MHz bandwidth to be set.
+ * \param power_40M tx power for 40MHz bandwidth to be set.
+ * \param power_80M tx power for 80MHz bandwidth to be set.
+ *
+ * \note This API is only available on the primary WiFi interface.
+ *
+ * \return negative value on error, 0 on success.
+ *
+ * \callqcsapi
+ *
+ * <c>call_qcsapi set_bf_power \<WiFi interface\> \<channel\> \<number_ss\> \<power_20M\> \<power_40M\> \<power_80M\></c>
+ *
+ * Unless an error occurs, the output will be the string <c>complete</c>'.
+ */
+extern int qcsapi_regulatory_set_bf_power(const char *ifname,
+			const qcsapi_unsigned_int the_channel,
+			const qcsapi_unsigned_int number_ss,
+			const int power_20M,
+			const int power_40M,
+			const int power_80M);
+
+/**
  * \brief Get Carrier/Interference.
  *
  * This API is used to get Carrier/Interference (db).
@@ -6673,6 +6783,31 @@ extern int	qcsapi_wifi_get_option( const char *ifname, qcsapi_option_type qcsapi
 extern int	qcsapi_wifi_set_option( const char *ifname, qcsapi_option_type qcsapi_option, int new_option );
 /**@}*/
 
+/**
+* @brief Get a board related parameter
+*
+* Get the value for the specified board parameter, as specified by
+* the qcsapi_board_parameter_type parameter, with the value returned
+* in the address specified by p_buffer.
+*
+* If the parameter (feature) is not supported, the API will
+* return <c>-qcsapi_board_parameter_not_supported</c>.
+*
+* \param board_param the board parameter to get the value of.
+* \param p_buffer return parameter to contain the value of the board parameter.
+* \param buf_length the parameter that specifies the length of p_buffer.
+*
+* \return 0 if the command succeeded.
+* \return A negative value if an error occurred. See @ref mysection4_1_4 "QCSAPI Return Values"
+* for error codes and messages.
+*
+* \callqcsapi
+*
+* <c>call_qcsapi get_board_parameter \<board parameter\> </c>
+*
+* \sa qcsapi_board_parameter_type
+*/
+extern int	qcsapi_get_board_parameter(qcsapi_board_parameter_type board_param, char *p_buffer, int buf_len);
 
 /*
  * Service Set (SSID) QCSAPIs
@@ -11593,6 +11728,39 @@ extern int qcsapi_wifi_get_nss_cap(const char *ifname, const qcsapi_mimo_type mo
  * <c>call_qcsapi disassoc_reason \<wifi interface\> </c>
  */
 extern int qcsapi_wifi_get_disassoc_reason( const char *ifname, qcsapi_unsigned_int *reason );
+
+/**
+ * \brief get bb param.
+ *
+ * This API get the bb param.
+ *
+ * \param ifname \wifi0
+ *
+ * \return >= 0 on success, < 0 on error.
+ *
+ * Unless an error occurs, the output will be the status of lock detect function enabled .
+ *
+ * \call_qcsapi
+ *
+ * <c>call_qcsapi get_bb_param\<wifi interface\> </c>
+ */
+extern int qcsapi_wifi_get_bb_param(const char * ifname, unsigned int * p_jedecid);
+/**
+ * \brief set bb param.
+ *
+ * This API set the bb param.
+ *
+ * \param ifname \wifi0
+ *
+ * \return >= 0 on success, < 0 on error.
+ *
+ * Unless an error occurs, the output will be <c>1</c> (enabled) or <c>0</c> (disabled)
+ *
+ * \call_qcsapi
+ *
+ * <c>call_qcsapi set_bb_param \<wifi interface\> </c>
+ */
+extern int qcsapi_wifi_set_bb_param(const char * ifname, const qcsapi_unsigned_int p_jedecid);
 
 /**@}*/
 #ifdef __cplusplus
