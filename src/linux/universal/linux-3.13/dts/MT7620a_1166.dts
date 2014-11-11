@@ -56,39 +56,24 @@
 	pinctrl {
 		state_default: pinctrl0 {
 			gpio {
-				ralink,group = "i2c", "uartf";
+				ralink,group = "i2c", "uartf", "wled", "nd_sd";
 				ralink,function = "gpio";
 			};
 		};
 	};
 
 	ethernet@10100000 {
-		status = "okay";
-
 		pinctrl-names = "default";
-		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
-
-		ralink,port-map = "llllw";
-
-		port@4 {
-			status = "okay";
-			phy-mode = "rgmii";
-			phy-handle = <&phy4>;
-		};
+		pinctrl-0 = <&rgmii1_pins &mdio_pins>;
 
 		port@5 {
 			status = "okay";
-			phy-mode = "rgmii";
 			phy-handle = <&phy5>;
+			phy-mode = "rgmii";
 		};
 
 		mdio-bus {
 			status = "okay";
-
-			phy4: ethernet-phy@4 {
-				reg = <4>;
-				phy-mode = "rgmii";
-			};
 
 			phy5: ethernet-phy@5 {
 				reg = <5>;
@@ -98,8 +83,9 @@
 	};
 
 	gsw@10110000 {
-		ralink,port4 = "gmac";
+		ralink,port4 = "ephy";
 	};
+
 
 	sdhci@10130000 {
 		status = "okay";
