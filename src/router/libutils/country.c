@@ -1075,6 +1075,7 @@ void setRegulationDomain(char *reg)
 	case ROUTER_LINKSYS_EA6500V2:
 	case ROUTER_LINKSYS_EA6700:
 	case ROUTER_LINKSYS_EA6900:
+	case ROUTER_UBNT_UNIFIAC:
 		nvram_set("pci/1/1/regrev", rrev0);
 		nvram_set("pci/2/1/regrev", rrev1);
 		nvram_set("pci/1/1/ccode", ccode0);
