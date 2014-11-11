@@ -2600,10 +2600,12 @@ int isregistered_real(void);
 void start_firewall6(void)
 {
 
-	fprintf(stderr, "start firewall6\n");
+
 	if (nvram_match("ipv6_enable", "0"))
 		return;
-
+	
+	fprintf(stderr, "start firewall6\n");
+	
 	insmod("nf_defrag_ipv6");
 	insmod("ip6_tables");
 	insmod("nf_conntrack_ipv6");
