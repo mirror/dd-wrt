@@ -2348,8 +2348,8 @@ void start_restore_defaults(void)
 			nvram_set("vlan2ports", "4 8");
 		}
 	case ROUTER_UBNT_UNIFIAC:
-		nvram_set("vlan1ports", "1 8*");
-		nvram_set("vlan2ports", "2 8");
+		nvram_set("vlan1ports", "0 8*");
+		nvram_set("vlan2ports", "1 8");
 		break;
 	case ROUTER_WRT610N:
 	case ROUTER_WRT350N:

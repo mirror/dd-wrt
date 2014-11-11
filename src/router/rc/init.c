@@ -508,8 +508,8 @@ int main(int argc, char **argv)
 		start_service("config_vlan");
 		break;
 	case ROUTER_UBNT_UNIFIAC:
-		nvram_set("vlan1ports", "1 8*");
-		nvram_set("vlan2ports", "2 8");
+		nvram_set("vlan1ports", "0 8*");
+		nvram_set("vlan2ports", "1 8");
 		start_service("config_vlan");
 		break;
 	default:
